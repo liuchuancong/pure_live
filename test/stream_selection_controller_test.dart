@@ -12,6 +12,7 @@ import 'package:pure_live/modules/live_play/states/load_type.dart';
 import 'package:pure_live/modules/live_play/states/player_state.dart';
 import 'package:pure_live/modules/live_play/states/room_state.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller.dart';
+import 'package:pure_live/player/core/player_manager.dart';
 
 void main() {
   test('selection policy clamps stale quality and line indices', () {
@@ -71,7 +72,7 @@ void main() {
     final opened = <_OpenedStream>[];
     final controller = PlayerController(
       host,
-      streamSourceOpener: (url, urls, headers, openedRoom, audioOnly) async {
+      streamSourceOpener: (url, urls, headers, openedRoom, audioOnly, sourceResolver, sourceRefreshAt) async {
         opened.add(_OpenedStream(url, urls, openedRoom, audioOnly));
       },
     )..initSite(Site(id: 'test', name: 'Test', logo: '', liveSite: siteImpl));
@@ -104,7 +105,7 @@ void main() {
     final opened = <_OpenedStream>[];
     final controller = PlayerController(
       host,
-      streamSourceOpener: (url, urls, headers, openedRoom, audioOnly) async {
+      streamSourceOpener: (url, urls, headers, openedRoom, audioOnly, sourceResolver, sourceRefreshAt) async {
         opened.add(_OpenedStream(url, urls, openedRoom, audioOnly));
       },
     )..initSite(Site(id: 'test', name: 'Test', logo: '', liveSite: siteImpl));
@@ -119,13 +120,44 @@ void main() {
     expect(host.state.value.player.currentLineIndex, 1);
   });
 
+  test('signed platform line switch reacquires fresh URLs and installs a recovery resolver', () async {
+    final room = LiveRoom(roomId: 'room', platform: 'signed');
+    final siteImpl = _SignedSelectionLiveSite();
+    final host = _SelectionHost(room);
+    PlaybackSourceResolver? installedResolver;
+    final opened = <_OpenedStream>[];
+    final controller = PlayerController(
+      host,
+      streamSourceOpener: (url, urls, headers, openedRoom, audioOnly, sourceResolver, sourceRefreshAt) async {
+        installedResolver = sourceResolver;
+        opened.add(_OpenedStream(url, urls, openedRoom, audioOnly));
+      },
+    )..initSite(Site(id: 'signed', name: 'Signed', logo: '', liveSite: siteImpl));
+
+    expect(
+      await controller.switchStreamSelection(type: ReloadDataType.changeLine, qualityIndex: 0, lineIndex: 1),
+      isTrue,
+    );
+
+    expect(siteImpl.recoveryCalls, 1);
+    expect(opened.single.url, 'https://fresh-1/two');
+    expect(installedResolver, isNotNull);
+
+    final refreshed = await installedResolver!(
+      const PlaybackSourceRefreshRequest(currentLineIndex: 1, advanceLine: false),
+    );
+    expect(siteImpl.recoveryCalls, 2);
+    expect(refreshed.urls, const <String>['https://fresh-2/one', 'https://fresh-2/two']);
+    expect(refreshed.preferredLineIndex, 1);
+  });
+
   test('failed player open rolls quality, line and URL state back atomically', () async {
     final room = LiveRoom(roomId: 'room', platform: 'test');
     final siteImpl = _SelectionLiveSite();
     final host = _SelectionHost(room);
     final controller = PlayerController(
       host,
-      streamSourceOpener: (url, urls, headers, openedRoom, audioOnly) async {
+      streamSourceOpener: (url, urls, headers, openedRoom, audioOnly, sourceResolver, sourceRefreshAt) async {
         throw StateError('decoder rejected source');
       },
     )..initSite(Site(id: 'test', name: 'Test', logo: '', liveSite: siteImpl));
@@ -151,7 +183,7 @@ void main() {
     var openCalls = 0;
     final controller = PlayerController(
       host,
-      streamSourceOpener: (url, urls, headers, openedRoom, audioOnly) async {
+      streamSourceOpener: (url, urls, headers, openedRoom, audioOnly, sourceResolver, sourceRefreshAt) async {
         openCalls++;
       },
     )..initSite(Site(id: 'test', name: 'Test', logo: '', liveSite: siteImpl));
@@ -177,6 +209,22 @@ class _SelectionLiveSite extends LiveSite {
   Future<List<String>> getPlayUrls({required LiveRoom detail, required LivePlayQuality quality}) {
     playUrlCalls++;
     return qualityUrls.future;
+  }
+}
+
+class _SignedSelectionLiveSite extends LiveSite implements LivePlayRecoveryResolver {
+  int recoveryCalls = 0;
+
+  @override
+  Future<LivePlayUrlResolution> resolvePlayUrlsForRecoveryRaw({
+    required LiveRoom detail,
+    required LivePlayQuality quality,
+  }) async {
+    recoveryCalls++;
+    return LivePlayUrlResolution(
+      urls: <String>['https://fresh-$recoveryCalls/one', 'https://fresh-$recoveryCalls/two'],
+      appliedQualityData: quality.selectionId,
+    );
   }
 }
 

@@ -73,4 +73,24 @@ class RecorderContinuationPolicy {
     if (unexpectedEof) return false;
     return retryCount >= maximumRetries.clamp(1, 100);
   }
+
+  /// Starts acquiring the replacement a few seconds before the active input
+  /// reaches its platform refresh boundary. The result is only cached in
+  /// memory and remains constrained by the adapter's own invalid-at metadata.
+  static Duration leasePrefetchDelay({
+    required DateTime now,
+    required DateTime refreshAt,
+    Duration lead = const Duration(seconds: 5),
+  }) {
+    final remaining = refreshAt.toUtc().difference(now.toUtc()) - lead;
+    return remaining > Duration.zero ? remaining : Duration.zero;
+  }
+
+  /// A timer that is already late runs on the next event-loop turn rather than
+  /// being silently omitted. This matters after sleep/resume where wall time
+  /// may cross the signed transport boundary while Dart timers are suspended.
+  static Duration leaseRotationDelay({required DateTime now, required DateTime refreshAt}) {
+    final remaining = refreshAt.toUtc().difference(now.toUtc());
+    return remaining > Duration.zero ? remaining : Duration.zero;
+  }
 }

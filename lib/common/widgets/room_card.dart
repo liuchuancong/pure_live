@@ -712,7 +712,7 @@ class RoomCard extends StatelessWidget {
                       dense: dense,
                     ),
                   )
-                else if (room.isRecord == false && room.liveStatus == LiveStatus.live)
+                else if (room.isLiveNow)
                   Positioned(
                     right: 8,
                     bottom: 8,

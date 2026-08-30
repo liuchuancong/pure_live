@@ -44,11 +44,11 @@
 - 每个完成的 Bug 修复批次默认递增版本，优先构建 Android `arm64-v8a` 正式更新包，并同步源码、版本标签、安装包与校验文件到本仓库 GitHub Release；其他平台仍按本轮明确范围串行构建。
 - 每次同步上游、分析 Bug 和审查原项目 Issue 的来源判定、根因、兼容、验证与回滚流程见[维护范围与问题处置策略](MAINTENANCE_POLICY.md)及[上游同步审查策略](UPSTREAM_REVIEW_POLICY.md)。
 
-- **最新稳定版**：[v3.0.23](https://github.com/wzgrx/pure_live/releases/tag/v3.0.23)
-- **当前 Android 构建版本**：`3.0.23+4111`（竖屏全屏提供完整画面、沉浸背景、平衡填充与铺满裁剪；全面屏底部控制区改为双层紧凑布局，画面模式、方向、退出、画质线路和本地弹幕入口均保持可见且可点击）
+- **最新稳定版**：[v3.0.24](https://github.com/wzgrx/pure_live/releases/tag/v3.0.24)
+- **当前 Android / Windows 构建版本**：`3.0.24+4112`（虎牙匿名取流、AntiCode、短会话续接、录制续租、直播状态与多画面离线空态完成加固；Windows 使用首帧门控的双播放器暖切换，Android 保持平台原生播放路径）
 - **Android 系统要求**：Android 8.0 / API 26 及以上（与当前 FFmpegKit 原生录制依赖一致）
 - **v3.0.0 上游源码基线**：`liuchuancong/pure_live@e808dcae`；完整记录见 `docs/STAGE_UPDATE_3_0_0.md`
-- **本轮构建平台**：仅 Android arm64-v8a；Windows 继续使用 v3.0.19，其他平台继续使用 v3.0.0 安装包
+- **本轮构建平台**：Android arm64-v8a 与 Windows x64 串行构建；其他平台继续使用 v3.0.0 安装包
 - **质量门禁**：播放器来源/Surface/几何回归见 `docs/PLAYER_RECOVERY_AUDIT_3_0_15.md`，十个平台录制链路见 `docs/RECORDER_REPAIR_AUDIT_2026-08-27.md`
 
 本版本还会在启动、备份恢复和手动清理时剔除空平台、空房间号、`0/null/undefined/nan/none` 等无效关注记录，并按“平台 + 房间号”去重，避免损坏的历史收藏继续参与首页刷新。

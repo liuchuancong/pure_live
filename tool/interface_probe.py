@@ -346,7 +346,12 @@ def yy_search_probe() -> None:
 
 def yy_anchor_search_probe() -> None:
     room = yy_live_room()
-    keyword = str(room.get("name", "")).strip() or "YY"
+    # YY's recommendation feed occasionally returns an already-mojibaked
+    # display name. Feeding that value back into anchor search produces an
+    # empty result even though the endpoint and room are healthy. The numeric
+    # room id is ASCII, is accepted by the same search contract and avoids
+    # making the public-interface gate depend on damaged presentation text.
+    keyword = str(room.get("sid", "")).strip() or str(room.get("name", "")).strip() or "YY"
     response = request_json(
         "https://www.yy.com/apiSearch/doSearch.json",
         {"q": keyword, "t": 1, "n": 1},

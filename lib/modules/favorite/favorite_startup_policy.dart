@@ -44,9 +44,9 @@ FavoriteVerificationPreview buildFavoriteVerificationPreview(Iterable<LiveRoom> 
   for (var index = 0; index < persisted.length; index++) {
     final previous = persisted[index];
     final preview = pending[index];
-    if (previous.liveStatus == LiveStatus.live && previous.isRecord == true) {
+    if (previous.effectiveLiveStatus == LiveStatus.replay) {
       replay.add(preview);
-    } else if (previous.liveStatus == LiveStatus.live) {
+    } else if (previous.isLiveNow) {
       online.add(preview);
     } else {
       offline.add(preview);

@@ -116,6 +116,28 @@ void main() {
     );
   });
 
+  test('signed recorder lease prefetches before rotation and catches up after resume', () {
+    final now = DateTime.utc(2026, 8, 30, 7);
+    final refreshAt = now.add(const Duration(seconds: 100));
+
+    expect(RecorderContinuationPolicy.leasePrefetchDelay(now: now, refreshAt: refreshAt), const Duration(seconds: 95));
+    expect(RecorderContinuationPolicy.leaseRotationDelay(now: now, refreshAt: refreshAt), const Duration(seconds: 100));
+    expect(
+      RecorderContinuationPolicy.leasePrefetchDelay(
+        now: refreshAt.add(const Duration(seconds: 1)),
+        refreshAt: refreshAt,
+      ),
+      Duration.zero,
+    );
+    expect(
+      RecorderContinuationPolicy.leaseRotationDelay(
+        now: refreshAt.add(const Duration(seconds: 1)),
+        refreshAt: refreshAt,
+      ),
+      Duration.zero,
+    );
+  });
+
   test('a restarted recording gets a fresh timestamp and zeroed progress', () {
     final task = LiveRecordTask.fromRoom(LiveRoom(roomId: '1', platform: 'bilibili', title: 'title', nick: 'nick'))
       ..recordedSeconds = 120

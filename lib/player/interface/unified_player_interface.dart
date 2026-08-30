@@ -107,3 +107,15 @@ abstract interface class SourceTransitionAwarePlayer {
 abstract interface class DecoderRecoveryAwarePlayer {
   Future<bool> prepareSoftwareDecoderFallback(PlayerException error);
 }
+
+/// Optional capability for adapters that can prove that video frames reached
+/// the presentation surface, rather than merely reporting that the transport
+/// is in a `playing` state.
+///
+/// A monotonically increasing value is sufficient. Consumers use the event as
+/// a liveness heartbeat and must not infer frame rate from it.
+abstract interface class VideoFrameProgressAwarePlayer {
+  bool get supportsVideoFrameProgress;
+
+  Stream<int> get onVideoFrameProgress;
+}

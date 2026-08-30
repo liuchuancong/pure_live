@@ -345,13 +345,13 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
     _lastSyncedFavoriteSnapshot = _favoriteSnapshotSignature(roomsBase);
     final nextOnline = preview != null
         ? List<LiveRoom>.from(preview.onlineRooms)
-        : roomsBase.where((r) => r.liveStatus == LiveStatus.live && r.isRecord == false).toList();
+        : roomsBase.where((r) => r.isLiveNow && r.isRecord == false).toList();
     final nextOffline = preview != null
         ? List<LiveRoom>.from(preview.offlineRooms)
-        : roomsBase.where((r) => r.liveStatus != LiveStatus.live).toList();
+        : roomsBase.where((r) => !r.isPlayableNow).toList();
     final nextReplay = preview != null
         ? List<LiveRoom>.from(preview.replayRooms)
-        : roomsBase.where((r) => r.liveStatus == LiveStatus.live && r.isRecord == true).toList();
+        : roomsBase.where((r) => r.effectiveLiveStatus == LiveStatus.replay).toList();
 
     final currentAvailableSites = Sites().availableSites(containsAll: true);
     var nextVisibleTags = <LiveTag>[];
@@ -427,7 +427,7 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
       rooms.map(
         (room) => Object.hash(
           room.identityKey,
-          room.liveStatus,
+          room.effectiveLiveStatus,
           room.isRecord,
           room.title,
           room.nick,

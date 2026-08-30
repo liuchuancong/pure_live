@@ -1,32 +1,32 @@
 {
-  "version": "3.0.23",
-  "build_number": 4111,
-  "version_num": 300234111,
-  "version_desc": "- 竖屏全屏新增完整画面、沉浸背景、平衡填充和铺满裁剪四种模式，默认使用不裁剪的沉浸背景。\n- 沉浸背景降低过重黑色蒙层并修复模糊图片边缘发黑；封面缺失时使用非纯黑渐变，全面屏上下区域不再表现为两条黑边。\n- 平衡填充最多放大 8%，只裁掉少量左右内容；铺满裁剪显式交由用户选择，不会悄悄改变原始画面。\n- 播放器内提供即时画面模式入口，设置页同步持久化；普通竖屏页、横屏直播和小窗比例保持原逻辑。\n- 竖屏全屏控制区改为双层紧凑布局，画质线路、本地弹幕、画面模式、方向和退出按钮均处于真实可点击区域。\n- 新增显示模式、全面屏缩放上限、旧配置迁移、原生铺满委托、控制区命中与背景层隔离回归。\n- 本轮只发布 Android arm64-v8a；Windows 稳定版继续保持 3.0.19。",
+  "version": "3.0.24",
+  "build_number": 4112,
+  "version_num": 300244112,
+  "version_desc": "- 对齐虎牙当前网页匿名观看、64 位观众身份、完整 AntiCode 模板及服务端租约边界，登录不再被当作长播稳定性的必要条件。\n- Windows 虎牙使用首帧门控的双播放器暖切换，旧画面保留到候选真实出帧；0×0 候选、迟到事件和覆盖页面返回不再破坏活动纹理。\n- 直播卡片、进入房间与多画面统一权威开播状态；下播格使用可重新选台的业务空态，不创建播放器或误报播放错误。\n- 录制器从原生 startAck 安装签名续租，先建立下一路输入再延后封装旧分片，跨租约累计时长、大小和待处理产物。\n- Android arm64-v8a 与 Windows x64 串行发布；包含完整静态分析、Flutter 回归、接口探针和平台产物完整性检查。",
   "prerelease": false,
-  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.23",
+  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.24",
   "android_abis": [
     "arm64-v8a"
   ],
   "platforms": {
     "android": {
-      "version": "3.0.23",
-      "build_number": 4111,
-      "version_num": 300234111,
-      "version_desc": "- 竖屏全屏新增完整画面、沉浸背景、平衡填充和铺满裁剪四种模式，默认使用不裁剪的沉浸背景。\n- 沉浸背景降低过重黑色蒙层并修复模糊图片边缘发黑；封面缺失时使用非纯黑渐变，全面屏上下区域不再表现为两条黑边。\n- 平衡填充最多放大 8%，只裁掉少量左右内容；铺满裁剪显式交由用户选择，不会悄悄改变原始画面。\n- 播放器内提供即时画面模式入口，设置页同步持久化；普通竖屏页、横屏直播和小窗比例保持原逻辑。\n- 竖屏全屏控制区改为双层紧凑布局，画质线路、本地弹幕、画面模式、方向和退出按钮均处于真实可点击区域。\n- 新增显示模式、全面屏缩放上限、旧配置迁移、原生铺满委托、控制区命中与背景层隔离回归。\n- 本轮只发布 Android arm64-v8a；Windows 稳定版继续保持 3.0.19。",
+      "version": "3.0.24",
+      "build_number": 4112,
+      "version_num": 300244112,
+      "version_desc": "- 同步虎牙匿名取流、完整 AntiCode、短会话元数据、直播状态和录制续租修复；Android 继续使用平台原生播放路径。\n- 多画面下播房间不创建播放器，状态未知与明确下播分开显示；应用启动及恢复前台重新核验直播状态。\n- 录制输入按签名租约主动续接，旧分片延后封装并持久化待处理清单，避免封装阻塞下一路输入。\n- 发布 arm64-v8a 正式更新包，并核验包名、版本、ABI、Flutter 资源、关键原生库、签名和 SHA-256。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.23",
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.24",
       "android_abis": [
         "arm64-v8a"
       ]
     },
     "windows": {
-      "version": "3.0.19",
-      "build_number": 4107,
-      "version_num": 300194107,
-      "version_desc": "- 修复 Windows 普通启动提前预热 FFmpeg、无条件导入 IPTV 资源和设置控制器重复注册，降低空闲线程、内存与磁盘活动。\n- 普通直播页退出会关闭当前播放源；45 秒空闲宽限后释放原生播放器资源，重复进入仍可快速复用且资源会回落。\n- 修复普通直播间 Escape 误入全屏或留在当前页、录制源时间戳污染实时统计、同房间画质/线路重载丢弃本地弹幕，以及弹幕列表首次滚轮上移仍自动跟随。\n- 控制条上下命中区与画面弹幕手势隔离；全屏返回、录制中心边界、画质线路、实时弹幕和本地互动完成 Win11 实机与确定性回归。\n- Windows x64 提供可选安装目录的 EXE 安装包与便携 ZIP；覆盖安装保留安装目录 AppData 中的关注、设置、历史、IPTV 与录制数据。",
+      "version": "3.0.24",
+      "build_number": 4112,
+      "version_num": 300244112,
+      "version_desc": "- 虎牙按本地 40 秒与服务器刷新点中的较早值建立后台候选，候选实际呈现首帧后才替换旧画面。\n- 固定复用两个 MediaKit/D3D 输出交替续接；0×0 候选、旧会话迟到事件和覆盖页面返回不会释放有效纹理。\n- 直播状态与多画面离线空态统一，下播房间不初始化播放器；离线直播页 Escape 可直接返回。\n- 录制在 startAck 后预取并主动切换签名输入，停止后统一封装待处理分片；342 秒虎牙样本跨三次续接保持累计。\n- 提供 Windows x64 可选目录安装程序和便携 ZIP，附构建元数据与 SHA-256。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.19",
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.24",
       "windows_msix_available": false
     },
     "linux": {

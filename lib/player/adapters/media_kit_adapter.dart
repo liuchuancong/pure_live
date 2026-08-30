@@ -36,7 +36,8 @@ class MediaKitAdapter
         MediaKitPlayerAccessor,
         VideoFitAwarePlayer,
         SourceTransitionAwarePlayer,
-        DecoderRecoveryAwarePlayer {
+        DecoderRecoveryAwarePlayer,
+        VideoFrameProgressAwarePlayer {
   MediaKitAdapter() {
     _audioModeTransitions = LatestAsyncValueQueue<bool>(_applyAudioOnly);
   }
@@ -178,6 +179,10 @@ class MediaKitAdapter
 
   final _heightSubject = BehaviorSubject<int?>.seeded(null);
 
+  final _videoFrameProgressSubject = PublishSubject<int>();
+
+  VoidCallback? _videoFrameRevisionListener;
+
   // =========================
   // subscriptions
   // =========================
@@ -266,6 +271,20 @@ class MediaKitAdapter
                 androidAttachSurfaceAfterVideoParameters: false,
               ),
             );
+
+      if (PlatformUtils.isWindows) {
+        var lastRevision = _controller.frameRevision.value;
+        void handleFrameRevision() {
+          if (_disposed) return;
+          final revision = _controller.frameRevision.value;
+          if (revision == lastRevision) return;
+          lastRevision = revision;
+          _videoFrameProgressSubject.add(revision);
+        }
+
+        _videoFrameRevisionListener = handleFrameRevision;
+        _controller.frameRevision.addListener(handleFrameRevision);
+      }
 
       await _bindListeners(sourceGeneration: _sourceFence.generation);
 
@@ -415,10 +434,15 @@ class MediaKitAdapter
     _sourceHasVideoFrame = true;
     _openingNativeDiagnostic = null;
     _sourceProgressRevision++;
-    _loadingSubject.add(false);
+    // Native frame probes are progress heartbeats, not playback-state
+    // transitions. Republishing playing/loading on every decoded frame made
+    // PlayerManager recreate watchdog timers and notify UI listeners dozens of
+    // times per second on Windows. Keep the dedicated frame stream hot while
+    // emitting state only when it actually changes.
+    if (_loadingSubject.value) _loadingSubject.add(false);
     if (_player.state.playing) {
-      _playingSubject.add(true);
-      _stateSubject.add(PlayerState.playing);
+      if (!_playingSubject.value) _playingSubject.add(true);
+      if (_stateSubject.value != PlayerState.playing) _stateSubject.add(PlayerState.playing);
     }
     _cancelRecoveredNativeError(NativeDiagnosticComponent.video);
   }
@@ -428,9 +452,9 @@ class MediaKitAdapter
     _sourceHasAudioFrame = true;
     _sourceProgressRevision++;
     if (_isAudioOnly && _player.state.playing) {
-      _loadingSubject.add(false);
-      _playingSubject.add(true);
-      _stateSubject.add(PlayerState.playing);
+      if (_loadingSubject.value) _loadingSubject.add(false);
+      if (!_playingSubject.value) _playingSubject.add(true);
+      if (_stateSubject.value != PlayerState.playing) _stateSubject.add(PlayerState.playing);
     }
     _cancelRecoveredNativeError(NativeDiagnosticComponent.audio);
   }
@@ -1065,6 +1089,12 @@ class MediaKitAdapter
 
     _sourceFence.clear();
 
+    final frameRevisionListener = _videoFrameRevisionListener;
+    if (frameRevisionListener != null) {
+      _controller.frameRevision.removeListener(frameRevisionListener);
+      _videoFrameRevisionListener = null;
+    }
+
     await _cancelAllSubscriptions();
 
     if (_nativePathObserved && _player.platform is NativePlayer) {
@@ -1102,6 +1132,7 @@ class MediaKitAdapter
       _completeSubject.close(),
       _widthSubject.close(),
       _heightSubject.close(),
+      _videoFrameProgressSubject.close(),
     ]);
   }
 
@@ -1116,19 +1147,25 @@ class MediaKitAdapter
   bool get isPlayingNow => _playingSubject.value;
 
   @override
-  bool get isReusable => false;
+  // Windows keeps the libmpv/D3D renderer valid after [softStop]; only the
+  // current Media (and therefore the CDN transport, demuxer and decoder
+  // buffers) is unloaded.  The Huya first-frame-gated hand-off can therefore
+  // alternate two initialized players instead of allocating another native
+  // renderer every lease period.  Keep the contract Windows-only until the
+  // surface-backed mobile implementations have equivalent lifecycle proof.
+  bool get isReusable => PlatformUtils.isWindows;
 
   @override
   Stream<PlayerState> get onStateChanged => _stateSubject.stream;
 
   @override
-  Stream<bool> get onPlaying => _playingSubject.stream;
+  Stream<bool> get onPlaying => _playingSubject.stream.distinct();
 
   @override
   Stream<PlayerException> get onError => _errorSubject.stream;
 
   @override
-  Stream<bool> get onLoading => _loadingSubject.stream;
+  Stream<bool> get onLoading => _loadingSubject.stream.distinct();
 
   @override
   Stream<bool> get onComplete => _completeSubject.stream;
@@ -1138,6 +1175,12 @@ class MediaKitAdapter
 
   @override
   Stream<int?> get height => _heightSubject.stream;
+
+  @override
+  bool get supportsVideoFrameProgress => PlatformUtils.isWindows;
+
+  @override
+  Stream<int> get onVideoFrameProgress => _videoFrameProgressSubject.stream;
 
   @override
   PlayerEngine get engine => PlayerEngine.mediaKit;
@@ -1188,6 +1231,7 @@ class _WindowsViewportSizedVideoState extends State<_WindowsViewportSizedVideo> 
   Size? _logicalViewport;
   double _devicePixelRatio = 1;
   Size? _requestedSize;
+  bool _hasPublishedViewport = false;
 
   @override
   void initState() {
@@ -1205,6 +1249,7 @@ class _WindowsViewportSizedVideoState extends State<_WindowsViewportSizedVideo> 
     }
     if (!identical(oldWidget.controller, widget.controller)) {
       _requestedSize = null;
+      _hasPublishedViewport = false;
       _scheduleResize();
     }
   }
@@ -1248,10 +1293,27 @@ class _WindowsViewportSizedVideoState extends State<_WindowsViewportSizedVideo> 
     _resizeTimer?.cancel();
     _resizeTimer = Timer(_resizeDebounce, () async {
       if (!mounted) return;
-      _requestedSize = target;
+      final controller = widget.controller;
+      final force = !_hasPublishedViewport;
       try {
-        await widget.controller.setSize(width: target.width.toInt(), height: target.height.toInt());
+        await controller.setSize(
+          width: target.width.toInt(),
+          height: target.height.toInt(),
+          // StableVideoLayer deliberately unmounts the Windows Texture while a
+          // covering route is present. On the first layout after reattachment,
+          // reassert the viewport even when NativeVideoController cached the
+          // same numbers before detachment. Size equality is not proof that the
+          // current Flutter presentation owns a usable native output.
+          force: force,
+        );
+        if (!mounted || !identical(controller, widget.controller)) return;
+        _requestedSize = target;
+        _hasPublishedViewport = true;
       } catch (_) {
+        if (identical(controller, widget.controller)) {
+          _requestedSize = null;
+          _hasPublishedViewport = false;
+        }
         // The controller can be disposed while a room/window transition is
         // completing. The next mounted video session will publish its size.
       }

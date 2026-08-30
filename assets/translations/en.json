@@ -1367,6 +1367,8 @@
     "multiview_change_room": "Change channel",
     "multiview_close_cell": "Close cell",
     "multiview_play_failed": "Playback failed",
+    "multiview_room_offline": "This channel is offline",
+    "multiview_room_offline_hint": "Click this view to choose another channel",
     "multiview_error_resolve": "Failed to resolve stream address: {detail}",
     "multiview_error_start": "Failed to start playback: {detail}",
     "multiview_search_hint": "Search streamer or title",

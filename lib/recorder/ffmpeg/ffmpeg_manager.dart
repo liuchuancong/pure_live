@@ -56,6 +56,11 @@ class FFmpegManager {
     await _ffmpeg.stop(taskId);
   }
 
+  Future<void> refreshLease(String taskId) async {
+    await initialize();
+    await _ffmpeg.refreshLease(taskId);
+  }
+
   bool isRunning(String taskId) {
     return _ffmpeg.isRunning(taskId);
   }

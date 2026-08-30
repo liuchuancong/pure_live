@@ -167,6 +167,19 @@ void MediaKitVideoPlugin::HandleMethodCall(
                 }),
                 nullptr);
           });
+        },
+        [this, handle = handle_value]() {
+          RunOnMainThread([=]() {
+            channel_->InvokeMethod(
+                "VideoOutput.Frame",
+                std::make_unique<flutter::EncodableValue>(flutter::EncodableMap{
+                    {
+                        flutter::EncodableValue("handle"),
+                        flutter::EncodableValue(handle),
+                    },
+                }),
+                nullptr);
+          });
         });
     result->Success(flutter::EncodableValue(std::monostate{}));
   } else if (method_call.method_name().compare("VideoOutputManager.Dispose") ==

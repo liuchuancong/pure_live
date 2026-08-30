@@ -110,7 +110,8 @@ MailboxSwapChain::GetDesc(DXGI_SWAP_CHAIN_DESC* pDesc) {
   return S_OK;
 }
 
-void MailboxSwapChain::ProducerCommit() {
+bool MailboxSwapChain::ProducerCommit() {
+  bool promoted = false;
   auto& ws = slots_[write_slot_];
   context4_->Signal(ws.fence.Get(), ++ws.fence_value);
 
@@ -145,6 +146,7 @@ void MailboxSwapChain::ProducerCommit() {
                 std::memory_order_acq_rel,
                 std::memory_order_relaxed)) {
           latest_completed_slot_.store(pend, std::memory_order_release);
+          promoted = true;
         }
         // CAS failure means no concurrent writer exists (ProducerCommit is
         // called from a single producer thread); the only way it can fail is
@@ -179,6 +181,7 @@ void MailboxSwapChain::ProducerCommit() {
       break;
     }
   }
+  return promoted;
 }
 
 HANDLE MailboxSwapChain::ConsumerAcquire() {

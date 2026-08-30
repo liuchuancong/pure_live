@@ -60,8 +60,38 @@ enum MultiviewCellStatus {
   /// 已成功起播。
   playing,
 
+  /// 房间被平台明确标记为未开播/已封禁。
+  ///
+  /// 这是可预期的业务状态，不是播放地址解析失败；该状态不创建播放器，
+  /// UI 展示可重新选台的未开播占位。
+  offline,
+
   /// 解析或起播失败，[MultiviewCellState.errorKind]/[MultiviewCellState.errorDetail] 携带原因。
   error,
+}
+
+/// Whether a picker selection may replace this cell without first asking the
+/// user to stop an active decoder. Offline and failed cells retain room/error
+/// context for display, but are still vacant from a playback-resource point of
+/// view.
+bool isMultiviewCellAssignable(MultiviewCellStatus status) {
+  return status == MultiviewCellStatus.empty ||
+      status == MultiviewCellStatus.offline ||
+      status == MultiviewCellStatus.error;
+}
+
+/// Strict room lookup reported an authoritative non-playable state.
+///
+/// The resolver uses this typed signal so the controller can distinguish a
+/// normal offline room from transport, parser and player failures without
+/// parsing localized exception strings.
+class MultiviewRoomOffline implements Exception {
+  const MultiviewRoomOffline(this.room);
+
+  final LiveRoom room;
+
+  @override
+  String toString() => 'MultiviewRoomOffline(${room.identityKey}, ${room.effectiveLiveStatus.name})';
 }
 
 /// 单格失败种类。

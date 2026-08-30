@@ -139,6 +139,37 @@ void main() {
     expect(site.cursorCalls, <String>['source:0', 'source:1']);
   });
 
+  test('lease renewal keeps the applied quality and CDN line', () async {
+    final site = _CursorSite();
+    final resolver = StreamResolverService(siteResolver: (_) => site);
+
+    final first = await resolver.resolveStream(roomId: '1', platform: 'huya', preferredQuality: '原画');
+    final renewed = await resolver.resolveStream(
+      roomId: '1',
+      platform: 'huya',
+      preferredQuality: '原画',
+      previousQualityId: first.qualityCursorId,
+      previousLineIndex: first.lineIndex,
+      renewCurrent: true,
+    );
+
+    expect(first.lineIndex, 0);
+    expect(renewed.lineIndex, 0);
+    expect(renewed.qualityCursorId, first.qualityCursorId);
+    expect(site.cursorCalls, <String>['source:0', 'source:0']);
+  });
+
+  test('recorder carries platform lease metadata with the selected URL', () async {
+    final now = DateTime.utc(2026, 8, 30, 7);
+    final site = _LeaseSite(now);
+    final resolver = StreamResolverService(siteResolver: (_) => site);
+
+    final stream = await resolver.resolveStream(roomId: '1', platform: 'huya', preferredQuality: '原画');
+
+    expect(stream.refreshAt, now.add(const Duration(seconds: 100)));
+    expect(stream.invalidAt, now.add(const Duration(seconds: 125)));
+  });
+
   test('offline rooms and unknown platforms stop before FFmpeg', () async {
     final offline = StreamResolverService(siteResolver: (_) => _FakeSite(live: false));
     await expectLater(
@@ -320,4 +351,16 @@ class _CursorSite extends LiveSite implements LivePlayUrlCursorResolver {
       appliedQualityData: quality.selectionId,
     );
   }
+}
+
+class _LeaseSite extends _CursorSite implements LivePlayLeaseMetadata {
+  _LeaseSite(this.now);
+
+  final DateTime now;
+
+  @override
+  DateTime? getPlayUrlRefreshAt(String url, {DateTime? now}) => this.now.add(const Duration(seconds: 100));
+
+  @override
+  DateTime? getPlayUrlInvalidAt(String url, {DateTime? now}) => this.now.add(const Duration(seconds: 125));
 }

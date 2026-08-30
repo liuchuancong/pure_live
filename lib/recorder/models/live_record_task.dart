@@ -48,6 +48,13 @@ class LiveRecordTask {
   /// 输出目录
   String? outputDir;
 
+  /// Completed native input attempts whose MPEG-TS segments still need to be
+  /// remuxed. A short-lived CDN can deliberately end one HTTP transport while
+  /// the room remains live. Keeping those attempts here lets the recorder
+  /// reconnect first and perform the comparatively slow MP4 finalization only
+  /// when the user-visible recording session actually stops.
+  final List<PendingRecordingAttempt> pendingAttempts;
+
   /// =========================
   /// 实时录制状态
   /// =========================
@@ -116,6 +123,7 @@ class LiveRecordTask {
     this.selectedQualityId,
     this.selectedLineIndex,
     this.outputDir,
+    List<PendingRecordingAttempt> pendingAttempts = const <PendingRecordingAttempt>[],
 
     /// 实时信息
     this.recordedSeconds = 0,
@@ -134,7 +142,7 @@ class LiveRecordTask {
     this.lastFailTime,
     this.lastError,
     this.lastErrorStage,
-  });
+  }) : pendingAttempts = List<PendingRecordingAttempt>.of(pendingAttempts);
 
   /// =========================
   /// 从房间创建
@@ -208,7 +216,27 @@ class LiveRecordTask {
   void beginNewRecording({DateTime? now}) {
     recordedSeconds = 0;
     fileSize = 0;
+    // A previous interrupted/failing remux remains recoverable. Do not discard
+    // its absolute directory merely because the user starts the room again.
     beginNewAttempt(now: now);
+  }
+
+  void queuePendingAttempt({required String directoryPath, required String filePrefix}) {
+    final directory = directoryPath.trim();
+    final prefix = filePrefix.trim();
+    if (directory.isEmpty || prefix.isEmpty) return;
+    final duplicate = pendingAttempts.any(
+      (attempt) => attempt.directoryPath == directory && attempt.filePrefix == prefix,
+    );
+    if (!duplicate) {
+      pendingAttempts.add(PendingRecordingAttempt(directoryPath: directory, filePrefix: prefix));
+    }
+  }
+
+  void removePendingAttempt(PendingRecordingAttempt attempt) {
+    pendingAttempts.removeWhere(
+      (candidate) => candidate.directoryPath == attempt.directoryPath && candidate.filePrefix == attempt.filePrefix,
+    );
   }
 
   /// Starts one native FFmpeg attempt without discarding the aggregate
@@ -252,7 +280,7 @@ class LiveRecordTask {
   /// =========================
 
   Map<String, dynamic> toJson() => {
-    "schemaVersion": 4,
+    "schemaVersion": 5,
     "taskId": taskId,
     "roomId": roomId,
     "platform": platform,
@@ -277,6 +305,7 @@ class LiveRecordTask {
     "selectedQualityId": selectedQualityId,
     "selectedLineIndex": selectedLineIndex,
     "outputDir": outputDir,
+    "pendingAttempts": pendingAttempts.map((attempt) => attempt.toJson()).toList(growable: false),
 
     /// 实时信息
     "recordedSeconds": recordedSeconds,
@@ -344,6 +373,8 @@ class LiveRecordTask {
       selectedLineIndex: _nullableInt(json["selectedLineIndex"]),
 
       outputDir: _nullableString(json["outputDir"]),
+
+      pendingAttempts: _pendingAttempts(json["pendingAttempts"]),
 
       /// 实时录制
       recordedSeconds: _recordedSeconds(json["recordedSeconds"]),
@@ -449,6 +480,20 @@ class LiveRecordTask {
 
   static DateTime? _date(dynamic value) => DateTime.tryParse(value?.toString() ?? '');
 
+  static List<PendingRecordingAttempt> _pendingAttempts(dynamic value) {
+    if (value is! List) return const <PendingRecordingAttempt>[];
+    final attempts = <PendingRecordingAttempt>[];
+    final seen = <String>{};
+    for (final item in value) {
+      if (item is! Map) continue;
+      final attempt = PendingRecordingAttempt.fromJson(Map<String, dynamic>.from(item));
+      if (attempt == null) continue;
+      final key = '${attempt.directoryPath}\u0000${attempt.filePrefix}';
+      if (seen.add(key)) attempts.add(attempt);
+    }
+    return attempts;
+  }
+
   static T _enumValue<T>(List<T> values, {dynamic name, dynamic index, required T fallback}) {
     final normalizedName = name?.toString().trim();
     if (normalizedName?.isNotEmpty == true) {
@@ -461,5 +506,21 @@ class LiveRecordTask {
       return values[parsedIndex];
     }
     return fallback;
+  }
+}
+
+class PendingRecordingAttempt {
+  const PendingRecordingAttempt({required this.directoryPath, required this.filePrefix});
+
+  final String directoryPath;
+  final String filePrefix;
+
+  Map<String, String> toJson() => <String, String>{'directoryPath': directoryPath, 'filePrefix': filePrefix};
+
+  static PendingRecordingAttempt? fromJson(Map<String, dynamic> json) {
+    final directoryPath = json['directoryPath']?.toString().trim() ?? '';
+    final filePrefix = json['filePrefix']?.toString().trim() ?? '';
+    if (directoryPath.isEmpty || filePrefix.isEmpty) return null;
+    return PendingRecordingAttempt(directoryPath: directoryPath, filePrefix: filePrefix);
   }
 }

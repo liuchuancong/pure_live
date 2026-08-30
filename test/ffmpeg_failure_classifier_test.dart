@@ -63,6 +63,12 @@ void main() {
     final avEof = FFmpegTerminalDecision.forSession(code: -541478725, manuallyStopped: false, liveRecording: true);
     final nativeFailure = FFmpegTerminalDecision.forSession(code: 1, manuallyStopped: false, liveRecording: true);
     final completedMerge = FFmpegTerminalDecision.forSession(code: 0, manuallyStopped: false, liveRecording: false);
+    final leaseRotation = FFmpegTerminalDecision.forSession(
+      code: 255,
+      manuallyStopped: false,
+      liveRecording: true,
+      leaseRefresh: true,
+    );
 
     expect(userStop.isComplete, isTrue);
     expect(userStop.unexpectedEof, isFalse);
@@ -74,5 +80,8 @@ void main() {
     expect(nativeFailure.unexpectedEof, isFalse);
     expect(completedMerge.isComplete, isTrue);
     expect(completedMerge.unexpectedEof, isFalse);
+    expect(leaseRotation.isComplete, isFalse);
+    expect(leaseRotation.retryable, isTrue);
+    expect(leaseRotation.unexpectedEof, isTrue);
   });
 }

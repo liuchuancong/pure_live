@@ -27,12 +27,14 @@ class LivePlayPage extends GetView<LivePlayController> {
 
       final content = _withLocalGiftEffect(child);
 
-      final page = videoController != null
-          ? VideoKeyboardShortcuts(
-              controller: videoController,
-              child: Container(color: Colors.black, width: double.infinity, height: double.infinity, child: content),
-            )
-          : Container(color: Colors.black, width: double.infinity, height: double.infinity, child: content);
+      // Keep desktop route shortcuts mounted even when metadata loading ends
+      // in an offline/error placeholder before a VideoController exists.
+      // Otherwise the visible back button works while Escape silently does
+      // nothing on exactly those failure states.
+      final page = VideoKeyboardShortcuts(
+        controller: videoController,
+        child: Container(color: Colors.black, width: double.infinity, height: double.infinity, child: content),
+      );
 
       return LivePlayBackScope(
         presentationActive: presentationActive,

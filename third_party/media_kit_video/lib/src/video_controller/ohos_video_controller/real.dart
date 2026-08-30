@@ -201,6 +201,7 @@ class OhosVideoController extends PlatformVideoController {
   Future<void> setSize({
     int? width,
     int? height,
+    bool force = false,
   }) {
     throw UnsupportedError(
       '[OhosVideoController.setSize] is not available on Ohos',

@@ -135,9 +135,13 @@ class FFmpegTerminalDecision {
     required int code,
     required bool manuallyStopped,
     required bool liveRecording,
+    bool leaseRefresh = false,
   }) {
     if (manuallyStopped) {
       return const FFmpegTerminalDecision(isComplete: true, retryable: false, unexpectedEof: false);
+    }
+    if (liveRecording && leaseRefresh) {
+      return const FFmpegTerminalDecision(isComplete: false, retryable: true, unexpectedEof: true);
     }
     if (liveRecording && (code == 0 || code == -541478725)) {
       return const FFmpegTerminalDecision(isComplete: false, retryable: true, unexpectedEof: true);
@@ -167,6 +171,7 @@ class FFmpegRecordSession {
   var _diagnosticCharacters = 0;
 
   bool manualStop = false;
+  bool leaseRefresh = false;
   bool mediaStarted = false;
   int recordedSeconds = 0;
   int fileSize = 0;
@@ -281,10 +286,13 @@ class FFmpegService {
       try {
         final code = completedSession.getReturnCode();
         final manuallyStopped = session.manualStop;
+        final leaseRefresh = session.leaseRefresh;
+        final sessionAgeMilliseconds = DateTime.now().difference(session.createdAt).inMilliseconds;
         final terminal = FFmpegTerminalDecision.forSession(
           code: code,
           manuallyStopped: manuallyStopped,
           liveRecording: session.liveRecording,
+          leaseRefresh: leaseRefresh,
         );
 
         final rawLogs = session.diagnosticTail.isNotEmpty ? session.diagnosticTail : (completedSession.getLogs() ?? '');
@@ -292,7 +300,8 @@ class FFmpegService {
         final logTail = _diagnosticTail(diagnosticLogs, maxCharacters: 1600);
         Log.i(
           'FFmpeg complete => taskId: $taskId; sessionId: ${session.sessionId}; '
-          'code: $code; live: ${session.liveRecording}; diagnostics: $logTail',
+          'code: $code; live: ${session.liveRecording}; leaseRefresh: $leaseRefresh; '
+          'ageMs: $sessionAgeMilliseconds; diagnostics: $logTail',
         );
         // `dart:developer` reaches Android logcat in debug builds, while the
         // app logger may be disabled by the user's diagnostics preference.
@@ -300,6 +309,7 @@ class FFmpegService {
         log(
           'terminal task=$taskId session=${session.sessionId} code=$code '
           'live=${session.liveRecording} media=${session.mediaStarted} '
+          'leaseRefresh=$leaseRefresh ageMs=$sessionAgeMilliseconds '
           'seconds=${session.recordedSeconds} bytes=${session.fileSize}\n$logTail',
           name: 'PureLiveRecorder',
         );
@@ -316,13 +326,20 @@ class FFmpegService {
           'sessionId': session.sessionId,
           'code': code,
           'manualStop': manuallyStopped,
+          'sessionAgeMs': sessionAgeMilliseconds,
           if (!isComplete) 'raw_logs': _diagnosticTail(diagnosticLogs),
-          if (!isComplete) 'failure_kind': terminal.unexpectedEof ? 'unexpectedEof' : diagnosis.kind.name,
-          if (!isComplete) 'retryable': terminal.unexpectedEof ? terminal.retryable : diagnosis.retryable,
-          if (terminal.unexpectedEof) 'silent': true,
+          if (!isComplete)
+            'failure_kind': leaseRefresh
+                ? 'leaseRefresh'
+                : terminal.unexpectedEof
+                ? 'unexpectedEof'
+                : diagnosis.kind.name,
+          if (!isComplete)
+            'retryable': leaseRefresh || terminal.unexpectedEof ? terminal.retryable : diagnosis.retryable,
+          if (terminal.unexpectedEof || leaseRefresh) 'silent': true,
         };
         if (!isComplete) {
-          errorData['message'] = terminal.unexpectedEof
+          errorData['message'] = terminal.unexpectedEof || leaseRefresh
               ? i18n('recorder_transport_failed')
               : _friendlyError(code, diagnosticLogs, diagnosis);
         }
@@ -402,6 +419,22 @@ class FFmpegService {
       await session.completion.future.timeout(const Duration(seconds: 10));
     } on TimeoutException {
       Log.w('FFmpeg stop timeout => taskId: $taskId; sessionId: ${session.sessionId}');
+    }
+  }
+
+  /// Ends the current native input at a platform lease boundary. This is not a
+  /// user stop: the controller receives a silent retryable terminal event,
+  /// resolves a fresh signed URL and starts the next attempt immediately.
+  Future<void> refreshLease(String taskId) async {
+    final session = _sessions[taskId];
+    if (session == null || session.manualStop || session.leaseRefresh) return;
+    session.leaseRefresh = true;
+    log('FFmpeg lease refresh => $taskId (${session.sessionId})');
+    FFmpegKit.cancel(session.session);
+    try {
+      await session.completion.future.timeout(const Duration(seconds: 10));
+    } on TimeoutException {
+      Log.w('FFmpeg lease refresh timeout => taskId: $taskId; sessionId: ${session.sessionId}');
     }
   }
 

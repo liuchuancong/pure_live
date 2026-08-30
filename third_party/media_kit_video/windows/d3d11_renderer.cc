@@ -47,10 +47,11 @@ void D3D11Renderer::SetSize(int32_t width, int32_t height) {
   }
 }
 
-void D3D11Renderer::ProducerCommit() {
+bool D3D11Renderer::ProducerCommit() {
   if (mailbox_swap_chain_) {
-    mailbox_swap_chain_->ProducerCommit();
+    return mailbox_swap_chain_->ProducerCommit();
   }
+  return false;
 }
 
 HANDLE D3D11Renderer::ConsumerAcquire() {

@@ -4,10 +4,8 @@ import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
 import 'package:pure_live/common/index.dart';
-import 'package:timezone/timezone.dart' as tz;
 import 'package:pure_live/core/tars/types.dart';
 import 'package:pure_live/core/common/log.dart';
-import 'package:timezone/data/latest.dart' as tz;
 import 'package:pure_live/plugins/race_http.dart';
 import 'package:pure_live/model/live_category.dart';
 import 'package:pure_live/core/common/core_log.dart';
@@ -15,7 +13,6 @@ import 'package:pure_live/model/live_anchor_item.dart';
 import 'package:pure_live/core/common/http_client.dart';
 import 'package:pure_live/model/live_play_quality.dart';
 import 'package:pure_live/core/interface/live_site.dart';
-import 'package:easy_localization/easy_localization.dart';
 import 'package:pure_live/core/danmaku/huya_danmaku.dart';
 import 'package:pure_live/common/utils/githup_mirror.dart';
 import 'package:pure_live/pkg/tars/net/base_tars_http.dart';
@@ -28,7 +25,14 @@ import 'package:pure_live/core/tars/get_game_event_message_board_rsp.dart';
 import 'package:pure_live/modules/live_play/controllers/player_controller.dart';
 import 'package:pure_live/core/utils/live_quality_label.dart';
 
-class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResolver, LivePlayUrlCursorResolver {
+class HuyaSite
+    implements
+        LiveSite,
+        LiveSiteRoomRefresher,
+        LiveSiteRecordRoomResolver,
+        LivePlayUrlCursorResolver,
+        LivePlayRecoveryResolver,
+        LivePlayLeaseMetadata {
   @override
   String id = Sites.huyaSite;
   static const baseUrl = HuyaRequestParams.baseUrl;
@@ -36,14 +40,106 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
   String name = "虎牙直播";
   @override
   LiveDanmaku getDanmaku() => HuyaDanmaku();
-  final Map<String, Future<String>> _tokenCache = {};
+
+  /// Huya's web player treats playback as a viewer session, not as an anchor-
+  /// signed static URL. Keep one anonymous identity for this site instance and
+  /// deduplicate only requests concurrently acquiring the same token.
+  final Map<String, Future<HuyaCdnTokenLease>> _inFlightTokenRequests = <String, Future<HuyaCdnTokenLease>>{};
+  final Map<String, HuyaCdnTokenLease> _playbackTokenLeases = <String, HuyaCdnTokenLease>{};
+  final Map<String, DateTime> _playbackTransportIssuedAt = <String, DateTime>{};
+  HuyaViewerIdentity? _anonymousViewerIdentity;
+  Future<HuyaViewerIdentity>? _anonymousViewerIdentityRequest;
+  late final int _fallbackViewerUid = _createFallbackViewerUid();
+  late final String _viewerGuid = _createViewerGuid();
   static String? playUserAgent;
+  static const Duration _transportRefreshAge = Duration(seconds: 100);
+  static const Duration _transportInvalidAge = Duration(seconds: 125);
+
+  @override
+  DateTime? getPlayUrlRefreshAt(String url, {DateTime? now}) {
+    final current = (now ?? DateTime.now()).toUtc();
+    final signedInvalidAt = _getSignedUrlInvalidAt(url);
+    final tokenLease = _getPlaybackTokenLease(url);
+    final transportIssuedAt = _isHuyaCdnUrl(url)
+        ? getSignedSequenceIssuedAt(url) ?? _getRememberedTransportIssuedAt(url)
+        : null;
+    final transportInvalidAt = transportIssuedAt?.add(_transportInvalidAge);
+    final invalidAt = _earlierDate(_earlierDate(signedInvalidAt, tokenLease?.invalidAt), transportInvalidAt);
+    if (invalidAt == null) return null;
+    final signatureRefreshAt = signedInvalidAt?.subtract(const Duration(seconds: 30));
+    final transportRefreshAt = transportIssuedAt?.add(_transportRefreshAge);
+    final refreshAt =
+        _earlierDate(_earlierDate(signatureRefreshAt, tokenLease?.refreshAt), transportRefreshAt) ?? current;
+    return refreshAt.isAfter(current) ? refreshAt : current;
+  }
+
+  @override
+  DateTime? getPlayUrlInvalidAt(String url, {DateTime? now}) {
+    final tokenLease = _getPlaybackTokenLease(url);
+    final transportIssuedAt = _isHuyaCdnUrl(url)
+        ? getSignedSequenceIssuedAt(url) ?? _getRememberedTransportIssuedAt(url)
+        : null;
+    return _earlierDate(
+      _earlierDate(_getSignedUrlInvalidAt(url), tokenLease?.invalidAt),
+      transportIssuedAt?.add(_transportInvalidAge),
+    );
+  }
+
+  DateTime? _getSignedUrlInvalidAt(String url) {
+    final query = Uri.tryParse(url)?.queryParameters;
+    return query == null ? null : _signedUrlInvalidAtFromQuery(query);
+  }
+
+  static DateTime? _signedUrlInvalidAtFromQuery(Map<String, String> query) {
+    final wsTime = int.tryParse(query['wsTime'] ?? '', radix: 16);
+    if (wsTime == null) return null;
+    return DateTime.fromMillisecondsSinceEpoch(wsTime * 1000, isUtc: true).add(const Duration(minutes: 5));
+  }
+
+  static DateTime? _earlierDate(DateTime? first, DateTime? second) {
+    if (first == null) return second;
+    if (second == null) return first;
+    return first.isBefore(second) ? first : second;
+  }
+
+  static bool _isHuyaCdnUrl(String url) {
+    final host = Uri.tryParse(url)?.host.toLowerCase() ?? '';
+    return host == 'huya.com' || host.endsWith('.huya.com');
+  }
+
+  /// Recovers the issue time encoded by the official web player's
+  /// `seqid = viewerUid + Date.now()` contract. Huya's CDN can close a signed
+  /// transport roughly two minutes after this point while `wsTime` is still
+  /// valid, so the issue time is a stable transport-age anchor. It must not be
+  /// recomputed from the time this metadata method happens to be called.
+  @visibleForTesting
+  static DateTime? getSignedSequenceIssuedAt(String url) {
+    final query = Uri.tryParse(url)?.queryParameters;
+    if (query == null) return null;
+    final seqId = int.tryParse(query['seqid'] ?? '');
+    final isWap = query['t'] == '103';
+    final encodedUid = int.tryParse(query[isWap ? 'uid' : 'u'] ?? '');
+    if (seqId == null || encodedUid == null) return null;
+    final viewerUid = isWap ? encodedUid : unrotateViewerUid32(encodedUid);
+    final issuedMillis = seqId - viewerUid;
+    if (issuedMillis <= 0) return null;
+
+    final issuedAt = DateTime.fromMillisecondsSinceEpoch(issuedMillis, isUtc: true);
+    if (issuedAt.isBefore(DateTime.utc(2020)) || issuedAt.isAfter(DateTime.utc(2100))) return null;
+    final signedInvalidAt = _signedUrlInvalidAtFromQuery(query);
+    if (signedInvalidAt != null && issuedAt.isAfter(signedInvalidAt)) return null;
+    return issuedAt;
+  }
 
   // ignore: constant_identifier_names
   static const String HYSDK_UA = HuyaRequestParams.hysdkUa;
+  // Frozen from the current official room bootstrap bundle. This is the TARS
+  // identity passed to TafLink.getUserId(), not the browser HTTP User-Agent.
+  static const String webPlaybackTarsUserAgent = 'webh5&0.1.0&websocket';
+  static const int webPlaybackAppId = 66;
+  static const int webPlaybackTokenLoopTime = 0;
   static const String fallbackPlayUserAgent = HuyaRequestParams.kUserAgent;
   static Map<String, String> requestHeaders = {'Origin': baseUrl, 'Referer': baseUrl, 'User-Agent': HYSDK_UA};
-  final BaseTarsHttp tupClient = BaseTarsHttp("http://wup.huya.com", "liveui", headers: requestHeaders);
 
   /// Huya's public room detail currently returns `userCount` and
   /// `totalCount` as the same multi-million popularity value. Treating
@@ -154,6 +250,7 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
   /// could only reopen the same source stream while the UI claimed a change.
   @visibleForTesting
   static List<LivePlayQuality> parsePlayQualities(HuyaUrlDataModel data) {
+    final playbackLines = List<HuyaLineModel>.unmodifiable(data.lines);
     final rates = data.bitRates.isEmpty ? <HuyaBitRateModel>[HuyaBitRateModel(name: '原画', bitRate: 0)] : data.bitRates;
     final unique = <int, HuyaBitRateModel>{};
     for (final rate in rates) {
@@ -171,7 +268,7 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
             ),
             id: rate.bitRate,
             sort: rate.bitRate == 0 ? 1 << 30 : rate.bitRate,
-            data: <String, Object>{'urls': List<HuyaLineModel>.unmodifiable(data.lines), 'bitRate': rate.bitRate},
+            data: <String, Object>{'urls': playbackLines, 'bitRate': rate.bitRate},
           ),
         )
         .toList(growable: false);
@@ -186,12 +283,59 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
     final bitRate = int.tryParse(data['bitRate']?.toString() ?? '');
     final rawLines = data['urls'];
     if (bitRate == null || rawLines is! List) return const <String>[];
+    final lines = rawLines.whereType<HuyaLineModel>().toList(growable: false);
+    // Each CDN token request is independent. Resolving them serially multiplied
+    // startup time by the line count and made a normal quality switch look like
+    // a player freeze. Keep the server priority order, but also isolate a bad
+    // token/template to its own CDN. Huya can roll AntiCode material per line;
+    // one malformed or already-expired line must not discard every healthy FLV
+    // and HLS alternative returned in the same room snapshot.
+    final resolved = await Future.wait<String>(
+      lines.map((line) async {
+        try {
+          return await getPlayUrl(line, bitRate);
+        } on Object catch (error) {
+          CoreLog.error('Huya ${line.cdnType} ${line.lineType.name} URL resolve failed: ${error.runtimeType}');
+          return '';
+        }
+      }),
+    );
     final urls = <String>[];
-    for (final line in rawLines.whereType<HuyaLineModel>()) {
-      final url = await getPlayUrl(line, bitRate);
+    for (final url in resolved) {
       if (url.isNotEmpty && !urls.contains(url)) urls.add(url);
     }
     return urls;
+  }
+
+  @override
+  Future<LivePlayUrlResolution> resolvePlayUrlsForRecoveryRaw({
+    required LiveRoom detail,
+    required LivePlayQuality quality,
+  }) async {
+    final roomId = detail.roomId?.trim() ?? '';
+    final platform = detail.platform?.trim().isNotEmpty == true ? detail.platform! : Sites.huyaSite;
+    if (roomId.isEmpty) return LivePlayUrlResolution(urls: const <String>[], appliedQualityData: quality.selectionId);
+
+    // Reacquire the room template and build a fresh viewer signature. HLS
+    // AntiCode material lives in the room snapshot, while FLV additionally
+    // obtains a WUP token when that template is unusable or expired.
+    final refreshedDetail = await getRoomDetailForRecording(platform: platform, roomId: roomId);
+    if (refreshedDetail.isExplicitlyOfflineNow) {
+      return LivePlayUrlResolution(urls: const <String>[], appliedQualityData: quality.selectionId);
+    }
+    final refreshedQualities = await getPlayQualites(detail: refreshedDetail);
+    if (refreshedQualities.isEmpty) {
+      return LivePlayUrlResolution(urls: const <String>[], appliedQualityData: quality.selectionId);
+    }
+    final requestedId = quality.selectionId.toString();
+    final refreshedQuality = refreshedQualities.firstWhere(
+      (item) => item.selectionId.toString() == requestedId,
+      orElse: () => refreshedQualities.first,
+    );
+    return LivePlayUrlResolution(
+      urls: await getPlayUrls(detail: refreshedDetail, quality: refreshedQuality),
+      appliedQualityData: refreshedQuality.selectionId,
+    );
   }
 
   @override
@@ -231,19 +375,52 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
   }
 
   Future<String> getPlayUrl(HuyaLineModel line, int bitRate) async {
-    var antiCode = line.lineType == HuyaLineType.hls ? line.hlsAntiCode.trim() : line.flvAntiCode.trim();
-    if (antiCode.isEmpty && line.lineType == HuyaLineType.flv) {
-      antiCode = await getCndTokenInfoEx(line.streamName);
+    HuyaViewerIdentity? viewer;
+    HuyaCdnTokenLease? tokenLease;
+    // Select signing material by transport before any fallback. Starting every
+    // line from HLS AntiCode made an FLV WUP failure accidentally reuse the HLS
+    // token; both strings happen to match for many rooms, but Huya does not
+    // promise that invariant.
+    var antiCode = line.lineType == HuyaLineType.flv ? line.flvAntiCode.trim() : line.hlsAntiCode.trim();
+    var signatureAlreadyBuilt = false;
+    if (line.lineType == HuyaLineType.flv) {
+      final roomFlvAntiCode = line.flvAntiCode.trim();
+      final isLegacyStaticToken = !RegExp(r'(^|&)fm=').hasMatch(roomFlvAntiCode);
+      // The official web player opens a fresh room with the room-provided FLV
+      // template. It asks getCdnTokenInfoEx only after that lease expires.
+      // Refreshing an already-valid room template on every open changes the
+      // token family unnecessarily and was the first invalid state behind the
+      // Windows FLV 403 -> HLS fallback -> visible black-screen delay.
+      if (isLegacyStaticToken) {
+        antiCode = roomFlvAntiCode;
+      } else {
+        viewer = await resolveViewerIdentity();
+        try {
+          antiCode = buildAntiCode(line.streamName, viewer.uid, roomFlvAntiCode);
+          signatureAlreadyBuilt = true;
+        } on Object catch (roomTokenError) {
+          CoreLog.error('Huya room FLV token is unusable: ${roomTokenError.runtimeType}');
+          try {
+            tokenLease = await getCndTokenInfoEx(line, viewer);
+            antiCode = tokenLease.antiCode.trim();
+          } catch (refreshError) {
+            CoreLog.error('Huya fresh FLV token request failed: ${refreshError.runtimeType}');
+          }
+        }
+      }
+      if (antiCode.isEmpty) antiCode = roomFlvAntiCode;
     }
     if (antiCode.isEmpty) {
       final protocol = line.lineType == HuyaLineType.hls ? 'HLS' : 'FLV';
       throw StateError('Huya $protocol token is unavailable');
     }
-    // Huya HTTPS stream signatures are effectively single-connection tokens.
-    // Playback and recording can run at the same time, so every consumer must
-    // receive a freshly calculated seqid/wsSecret instead of reusing the room
-    // metadata token. Queries without `fm` are legacy fixtures and remain as-is.
-    antiCode = buildAntiCode(line.streamName, line.presenterUid, antiCode);
+    // `viewer.uid`, rather than `line.presenterUid`, is the identity used by
+    // Huya's current web player. Queries without `fm` are legacy fixtures and
+    // remain as-is.
+    if (!signatureAlreadyBuilt && RegExp(r'(^|&)fm=').hasMatch(antiCode)) {
+      viewer ??= await resolveViewerIdentity();
+      antiCode = buildAntiCode(line.streamName, viewer.uid, antiCode);
+    }
 
     final extension = line.lineType == HuyaLineType.hls ? 'm3u8' : 'flv';
     final cdnBase = secureHuyaCdnBase(line.line);
@@ -253,8 +430,51 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
     // the user's new selection. Always replace it for a transcode and remove
     // it for source quality (bitRate=0), matching the current web extractor.
     antiCode = replaceQueryParameter(antiCode, 'ratio', bitRate > 0 ? '$bitRate' : null);
-    return '$cdnBase/${line.streamName}.$extension?$antiCode';
+    final url = '$cdnBase/${line.streamName}.$extension?$antiCode';
+    // Current AntiCode templates encode the issue instant through seqid. Some
+    // legacy/static token families do not. The CDN transport can still end far
+    // earlier than wsTime, so remember the connection issue instant for every
+    // URL constructed by this site instance. This keeps legacy lines on the
+    // same proactive hand-off path instead of waiting for a black-screen EOF.
+    _rememberTransportIssuedAt(url, getSignedSequenceIssuedAt(url) ?? DateTime.now().toUtc());
+    if (tokenLease != null) _rememberPlaybackTokenLease(url, tokenLease);
+    return url;
   }
+
+  void _rememberTransportIssuedAt(String url, DateTime issuedAt) {
+    final key = _playbackTokenLeaseKey(url);
+    if (_playbackTransportIssuedAt.length >= 64 && !_playbackTransportIssuedAt.containsKey(key)) {
+      _playbackTransportIssuedAt.remove(_playbackTransportIssuedAt.keys.first);
+    }
+    _playbackTransportIssuedAt[key] = issuedAt.toUtc();
+  }
+
+  DateTime? _getRememberedTransportIssuedAt(String url) {
+    // Keep a past deadline authoritative. Removing it exactly at expiry would
+    // reveal the much later wsTime bound and incorrectly make a dead URL look
+    // healthy again.
+    return _playbackTransportIssuedAt[_playbackTokenLeaseKey(url)];
+  }
+
+  void _rememberPlaybackTokenLease(String url, HuyaCdnTokenLease lease) {
+    final now = DateTime.now().toUtc();
+    _playbackTokenLeases.removeWhere((_, value) => value.isExpired(now));
+    final key = _playbackTokenLeaseKey(url);
+    if (_playbackTokenLeases.length >= 32 && !_playbackTokenLeases.containsKey(key)) {
+      final oldestKey = _playbackTokenLeases.keys.first;
+      _playbackTokenLeases.remove(oldestKey);
+    }
+    _playbackTokenLeases[key] = lease;
+  }
+
+  HuyaCdnTokenLease? _getPlaybackTokenLease(String url) {
+    // Keep an expired entry until the next URL is registered. Forgetting it at
+    // the exact expiry instant would make the longer wsTime bound appear valid
+    // again and postpone a recovery that is already due.
+    return _playbackTokenLeases[_playbackTokenLeaseKey(url)];
+  }
+
+  static String _playbackTokenLeaseKey(String url) => sha256.convert(utf8.encode(url)).toString();
 
   @visibleForTesting
   static String replaceQueryParameter(String query, String key, String? value) {
@@ -346,7 +566,17 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
     required bool allowUiFallback,
   }) async {
     var resultText = await HttpClient.instance.getText(
-      'https://mp.huya.com/cache.php?m=Live&do=profileRoom&roomid=$roomId&showSecret=1',
+      'https://mp.huya.com/cache.php',
+      queryParameters: <String, dynamic>{
+        'm': 'Live',
+        'do': 'profileRoom',
+        'roomid': roomId,
+        'showSecret': 1,
+        // The endpoint advertises a 30-second public cache. Room entry and an
+        // explicit refresh need an authoritative transition instead of a
+        // previously cached ON response after the anchor has stopped.
+        '_': DateTime.now().millisecondsSinceEpoch,
+      },
       header: {
         'Accept': '*/*',
         'Origin': 'https://www.huya.com',
@@ -356,6 +586,8 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
         'Sec-Fetch-Site': 'same-site',
         "user-agent": kUserAgent,
         "Cookie": SettingsService.to.cookieManager.huyaCookie.v,
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache',
       },
     );
     final result = json.decode(resultText);
@@ -398,7 +630,7 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
                   flvAntiCode: currentStream["sFlvAntiCode"].toString(),
                   hlsAntiCode: currentStream["sHlsAntiCode"].toString(),
                   streamName: currentStream["sStreamName"].toString(),
-                  cdnType: item["sCdnType"].toString(),
+                  cdnType: item["cdnType"].toString(),
                   presenterUid:
                       int.tryParse(currentStream['lPresenterUid']?.toString() ?? '') ??
                       int.tryParse(data['profileInfo']?['uid']?.toString() ?? '') ??
@@ -431,7 +663,7 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
                   flvAntiCode: currentStream["sFlvAntiCode"].toString(),
                   hlsAntiCode: currentStream["sHlsAntiCode"].toString(),
                   streamName: currentStream["sStreamName"].toString(),
-                  cdnType: item["sCdnType"].toString(),
+                  cdnType: item["cdnType"].toString(),
                   presenterUid:
                       int.tryParse(currentStream['lPresenterUid']?.toString() ?? '') ??
                       int.tryParse(data['profileInfo']?['uid']?.toString() ?? '') ??
@@ -472,10 +704,8 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
         introduction: data['liveData']?['introduction'] ?? '',
         notice: data['welcomeText'] ?? '',
         isRecord: normalizedLiveState == 'REPLAY',
-        status: normalizedLiveState == 'ON' || normalizedLiveState == 'REPLAY',
-        liveStatus: normalizedLiveState == 'ON' || normalizedLiveState == 'REPLAY'
-            ? LiveStatus.live
-            : LiveStatus.offline,
+        status: normalizedLiveState == 'ON',
+        liveStatus: parseHuyaLiveStatus(normalizedLiveState),
         platform: Sites.huyaSite,
         data: HuyaUrlDataModel(url: "", lines: huyaLines, bitRates: huyaBiterates, uid: "", isXingxiu: isXingxiu),
         danmakuData: HuyaDanmakuArgs(
@@ -504,6 +734,16 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
   static bool isExplicitOfflineState(Object? value) {
     final normalized = value?.toString().trim().toUpperCase() ?? '';
     return const {'OFF', 'OFFLINE', 'CLOSED'}.contains(normalized);
+  }
+
+  @visibleForTesting
+  static LiveStatus parseHuyaLiveStatus(Object? value) {
+    return switch (value?.toString().trim().toUpperCase()) {
+      'ON' => LiveStatus.live,
+      'REPLAY' => LiveStatus.replay,
+      'OFF' || 'OFFLINE' || 'CLOSED' => LiveStatus.offline,
+      _ => LiveStatus.unknown,
+    };
   }
 
   LiveRoom _buildInactiveRoom(Map<dynamic, dynamic> data, {required String platform, required String roomId}) {
@@ -550,7 +790,14 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
   @override
   Future<LiveRoom> getRoomDetailForRefresh({required String platform, required String roomId}) async {
     final resultText = await HttpClient.instance.getText(
-      'https://mp.huya.com/cache.php?m=Live&do=profileRoom&roomid=$roomId&showSecret=1',
+      'https://mp.huya.com/cache.php',
+      queryParameters: <String, dynamic>{
+        'm': 'Live',
+        'do': 'profileRoom',
+        'roomid': roomId,
+        'showSecret': 1,
+        '_': DateTime.now().millisecondsSinceEpoch,
+      },
       header: {
         'Accept': '*/*',
         'Origin': 'https://www.huya.com',
@@ -560,6 +807,8 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
         'Sec-Fetch-Site': 'same-site',
         'user-agent': kUserAgent,
         'Cookie': SettingsService.to.cookieManager.huyaCookie.v,
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache',
       },
     );
     final decoded = json.decode(resultText);
@@ -572,7 +821,7 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
     final profile = data['profileInfo'] is Map ? data['profileInfo'] as Map : const <dynamic, dynamic>{};
     final audience = parseRoomAudience(liveData);
     final state = data['liveStatus']?.toString().trim().toUpperCase() ?? '';
-    final live = state == 'ON' || state == 'REPLAY';
+    final liveStatus = parseHuyaLiveStatus(state);
     return LiveRoom(
       cover: liveData['screenshot']?.toString() ?? '',
       watching: audience.popularity,
@@ -587,8 +836,8 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
       introduction: liveData['introduction']?.toString() ?? '',
       notice: data['welcomeText']?.toString() ?? '',
       isRecord: state == 'REPLAY',
-      status: live,
-      liveStatus: live ? LiveStatus.live : LiveStatus.offline,
+      status: liveStatus == LiveStatus.live,
+      liveStatus: liveStatus,
       platform: Sites.huyaSite,
       link: 'https://www.huya.com/$roomId',
     );
@@ -690,25 +939,8 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
 
   @override
   Future<bool> getLiveStatus({required String platform, required String roomId}) async {
-    var resultText = await HttpClient.instance.getText(
-      "https://m.huya.com/$roomId",
-      queryParameters: {},
-      header: {
-        "user-agent": kUserAgent,
-        'Accept': '*/*',
-        'Origin': 'https://www.huya.com',
-        'Referer': 'https://www.huya.com/',
-        'Sec-Fetch-Dest': 'empty',
-        'Sec-Fetch-Mode': 'cors',
-        'Sec-Fetch-Site': 'same-site',
-      },
-    );
-    var text = RegExp(
-      r"window\.HNF_GLOBAL_INIT.=.\{(.*?)\}.</script>",
-      multiLine: false,
-    ).firstMatch(resultText)?.group(1);
-    var jsonObj = json.decode("{$text}");
-    return jsonObj["roomInfo"]["eLiveStatus"] == 2;
+    final room = await getRoomDetailForRefresh(platform: platform, roomId: roomId);
+    return room.isLiveNow;
   }
 
   /// 匿名登录获取uid
@@ -729,80 +961,79 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
     return result["data"]["uid"].toString();
   }
 
-  String getUUid(String cookie, String streamName) {
-    return getUid(cookie, streamName).toString();
-  }
-
-  int getUid(String cookie, String streamName) {
-    try {
-      if (cookie.contains('yyuid=')) {
-        final match = RegExp(r'yyuid=(\d+)').firstMatch(cookie);
-        if (match != null && match.groupCount >= 1) {
-          return int.parse(match.group(1)!);
-        }
-      }
-      final parts = streamName.split('-');
-      if (parts.isNotEmpty) {
-        final anchorUid = int.tryParse(parts[0]);
-        if (anchorUid != null && anchorUid > 0) {
-          return anchorUid;
-        }
-      }
-    } catch (e) {
-      // 在这里可以选择打印错误信息或采取其他措施
-      debugPrint('An error occurred: $e');
+  /// Resolves the viewer identity used by Huya's current web signature.
+  ///
+  /// `lPresenterUid` identifies the anchor and must never be substituted for
+  /// the viewer. The official web client uses `yyuid` for an account session
+  /// and the UID returned by `anonymousLogin` otherwise.
+  Future<HuyaViewerIdentity> resolveViewerIdentity({String? cookie}) async {
+    final resolvedCookie = cookie ?? SettingsService.to.cookieManager.huyaCookie.v;
+    final accountUid = parseViewerUidFromCookie(resolvedCookie);
+    if (accountUid != null) {
+      return HuyaViewerIdentity(uid: accountUid, guid: _viewerGuid, isAnonymous: false);
     }
-    // 如果没有找到有效的UID，则生成一个随机数
-    final random = Random();
-    return 1400000000000 + random.nextInt(100000000000); // 生成范围内的随机整数
+
+    final cached = _anonymousViewerIdentity;
+    if (cached != null) return cached;
+    final pending = _anonymousViewerIdentityRequest;
+    if (pending != null) return pending;
+
+    final request = _loadAnonymousViewerIdentity();
+    _anonymousViewerIdentityRequest = request;
+    try {
+      final identity = await request;
+      // A locally generated fallback keeps one already-open recovery attempt
+      // deterministic, but it is not an identity acknowledged by Huya's
+      // anonymous-login service. Caching it for the whole process made a brief
+      // endpoint outage turn into persistent 403s until the app restarted.
+      // Keep the fallback UID stable, yet retry the official endpoint on the
+      // next independent source acquisition.
+      if (identity.uid != _fallbackViewerUid) {
+        _anonymousViewerIdentity = identity;
+      }
+      return identity;
+    } finally {
+      if (identical(_anonymousViewerIdentityRequest, request)) {
+        _anonymousViewerIdentityRequest = null;
+      }
+    }
   }
 
-  String processAnticode(String anticode, String streamName) {
-    var query = Uri.splitQueryString(anticode);
-    final uid = int.parse(getUUid(SettingsService.to.cookieManager.huyaCookie.v, streamName));
-    query["ctype"] = "huya_live";
-    query["t"] = "100";
+  Future<HuyaViewerIdentity> _loadAnonymousViewerIdentity() async {
+    try {
+      final uid = int.tryParse((await getAnonymousUid()).trim());
+      if (uid != null && uid > 0) {
+        return HuyaViewerIdentity(uid: uid, guid: _viewerGuid, isAnonymous: true);
+      }
+    } catch (error) {
+      CoreLog.error('Huya anonymous viewer identity request failed: ${error.runtimeType}');
+    }
+    // The fallback remains a viewer-shaped UID and is stable for this process.
+    // The next independent source acquisition on this site instance retries the
+    // official anonymous session endpoint.
+    return HuyaViewerIdentity(uid: _fallbackViewerUid, guid: _viewerGuid, isAnonymous: true);
+  }
 
-    final convertUid = (uid << 8 | uid >> 24) & 0xFFFFFFFF;
-    final wsTime = query["wsTime"]!;
+  @visibleForTesting
+  static int? parseViewerUidFromCookie(String cookie) {
+    final match = RegExp(r'(?:^|;\s*)yyuid=(\d+)(?:;|$)').firstMatch(cookie);
+    final uid = int.tryParse(match?.group(1) ?? '');
+    return uid != null && uid > 0 ? uid : null;
+  }
 
-    final seqId = (DateTime.now().millisecondsSinceEpoch + uid).toString();
-    int ct = ((int.parse(wsTime, radix: 16) + Random().nextDouble()) * 1000).toInt();
-    final fm = utf8.decode(base64.decode(Uri.decodeComponent(query['fm']!)));
-    final wsSecretPrefix = fm.split('_').first;
-    final wsSecretHash = md5.convert(utf8.encode('$seqId|${query["ctype"]}|${query["t"]}')).toString();
-    final wsSecret = md5
-        .convert(utf8.encode('${wsSecretPrefix}_${convertUid}_${streamName}_${wsSecretHash}_$wsTime'))
-        .toString();
-    tz.initializeTimeZones();
-    final location = tz.getLocation('Asia/Shanghai');
-    final now = tz.TZDateTime.now(location);
-    final formatter = DateFormat('yyyyMMddHH');
-    final formatted = formatter.format(now);
-    DateFormat timeStampFormat = DateFormat("yyyy-MM-dd_HH:mm:ss.SSS");
+  static String _createViewerGuid() {
+    final random = Random.secure();
+    const alphabet = '0123456789abcdef';
+    return List<String>.generate(32, (_) => alphabet[random.nextInt(alphabet.length)]).join();
+  }
 
-    // 格式化当前时间
-    String formattedDate = timeStampFormat.format(now);
-    return Uri(
-      queryParameters: {
-        "wsSecret": wsSecret,
-        "wsTime": wsTime,
-        "seqid": seqId,
-        "ctype": query["ctype"]!,
-        "ver": "1",
-        "fs": query["fs"]!,
-        "t": query["t"]!,
-        "u": convertUid.toString(),
-        "uuid": (((ct % 1e10 + Random().nextDouble()) * 1e3).toInt() & 0xFFFFFFFF).toString(),
-        "sdk_sid": DateTime.now().millisecondsSinceEpoch.toString(),
-        "codec": "264",
-        "sv": formatted,
-        "dMod": "mseh-0",
-        "sdkPcdn": "1_1",
-        "a_block": "0",
-        "timeStamp": formattedDate,
-      },
-    ).query;
+  static int _createFallbackViewerUid() {
+    final random = Random.secure();
+    // Random.nextInt is limited to 2^32, so requesting a 100-billion range
+    // throws exactly when anonymousLogin is unavailable and the fallback is
+    // first evaluated. Compose two supported uniform ranges instead.
+    final offset = random.nextInt(1000000) * 100000 + random.nextInt(100000);
+    return 1400000000000 + offset;
   }
 
   @override
@@ -816,87 +1047,171 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
     return ls;
   }
 
-  // 构造 anticode, python转写
-  /// [stream] streamname [presenterUid] 用户id [antiCode] 页面anti
-  ///
-  /// return ture anticode
-  String buildAntiCode(String stream, int presenterUid, String antiCode, {DateTime? now}) {
-    final mapAnti = Uri(query: antiCode).queryParametersAll;
-    final encodedFm = mapAnti['fm']?.firstOrNull?.trim() ?? '';
+  /// Builds the per-open AntiCode using the viewer UID and the server-issued
+  /// expiry. The official player refreshes the WUP token before expiry; it
+  /// never extends `wsTime` locally.
+  String buildAntiCode(String stream, int viewerUid, String antiCode, {DateTime? now}) {
+    final original = Uri(query: antiCode).queryParameters;
+    final encodedFm = original['fm']?.trim() ?? '';
     if (encodedFm.isEmpty) {
       return antiCode;
     }
 
-    final ctype = mapAnti['ctype']?.firstOrNull?.trim().isNotEmpty == true
-        ? mapAnti['ctype']!.first.trim()
-        : 'huya_live';
-    final platformId = mapAnti['t']?.firstOrNull?.trim().isNotEmpty == true ? mapAnti['t']!.first.trim() : '100';
+    final ctype = original['ctype']?.trim().isNotEmpty == true ? original['ctype']!.trim() : 'huya_webh5';
+    final platformId = original['t']?.trim().isNotEmpty == true ? original['t']!.trim() : '100';
     final isWap = platformId == '103';
     final timestamp = now ?? DateTime.now();
     final currentMillis = timestamp.millisecondsSinceEpoch;
     final currentSeconds = currentMillis ~/ 1000;
-    final uid = presenterUid > 0 ? presenterUid : getUid(SettingsService.to.cookieManager.huyaCookie.v, stream);
+    final uid = viewerUid > 0 ? viewerUid : _fallbackViewerUid;
 
-    var wsTimeSeconds = int.tryParse(mapAnti['wsTime']?.firstOrNull ?? '', radix: 16);
-    if (wsTimeSeconds == null || wsTimeSeconds < currentSeconds + const Duration(minutes: 20).inSeconds) {
-      wsTimeSeconds = currentSeconds + const Duration(days: 1).inSeconds;
+    final wsTimeRaw = original['wsTime']?.trim() ?? '';
+    final wsTimeSeconds = int.tryParse(wsTimeRaw, radix: 16);
+    if (wsTimeSeconds == null) {
+      throw const FormatException('Huya AntiCode has no valid wsTime');
     }
-    final wsTime = wsTimeSeconds.toRadixString(16);
+    if (currentSeconds > wsTimeSeconds + const Duration(minutes: 5).inSeconds) {
+      throw StateError('Huya AntiCode lease expired');
+    }
+    final wsTime = wsTimeRaw.toLowerCase();
     final seqId = uid + currentMillis;
     final secretHash = md5.convert(utf8.encode('$seqId|$ctype|$platformId')).toString();
 
-    final convertUid = rotl64(uid);
+    final convertUid = rotateViewerUid32(uid);
     final calcUid = isWap ? uid : convertUid;
-    final secretPrefix = utf8.decode(base64.decode(base64.normalize(Uri.decodeComponent(encodedFm)))).split('_').first;
-    final secretStr = '${secretPrefix}_${calcUid}_${stream}_${secretHash}_$wsTime';
+    // The official player treats `fm` as a server-owned template and replaces
+    // its four placeholders in place.  Splitting on `_` and rebuilding a
+    // presumed `prefix_$0_$1_$2_$3` layout happened to work for the current
+    // token family, but would silently sign the wrong string as soon as Huya
+    // adds a field, changes a separator or moves a placeholder.  Preserve the
+    // complete decoded template instead.
+    final secretTemplate = utf8.decode(base64.decode(base64.normalize(encodedFm)));
+    if (!const <String>[r'$0', r'$1', r'$2', r'$3'].every(secretTemplate.contains)) {
+      throw const FormatException('Huya AntiCode fm template is incomplete');
+    }
+    final secretStr = secretTemplate
+        .replaceFirst(r'$0', calcUid.toString())
+        .replaceFirst(r'$1', stream)
+        .replaceFirst(r'$2', secretHash)
+        .replaceFirst(r'$3', wsTime);
     final wsSecret = md5.convert(utf8.encode(secretStr)).toString();
 
     final rnd = Random();
     final ct = ((wsTimeSeconds + rnd.nextDouble()) * 1000).toInt();
     final uuid = (((ct % 1e10) + rnd.nextDouble()) * 1e3 % 0xffffffff).toInt().toString();
-    final antiCodeRes = <String, String>{
-      'wsSecret': wsSecret,
-      'wsTime': wsTime,
-      'seqid': seqId.toString(),
-      'ctype': ctype,
-      'ver': '1',
-      'fs': mapAnti['fs']?.firstOrNull ?? 'bgct',
-      'fm': Uri.encodeComponent(encodedFm),
-      't': platformId,
-    };
+    final antiCodeRes = <String, String>{...original}
+      ..remove('wsSecret')
+      ..remove('seqid')
+      ..remove('u')
+      ..remove('uid')
+      ..remove('uuid')
+      // `fm` is signing material, not a media query field.  The official web
+      // player consumes it locally and omits it from the emitted CDN URL.
+      ..remove('fm')
+      ..addAll(<String, String>{
+        'wsSecret': wsSecret,
+        'wsTime': wsTime,
+        'seqid': seqId.toString(),
+        'ctype': ctype,
+        'ver': '1',
+        'fs': original['fs'] ?? 'bgct',
+        't': platformId,
+      });
     if (isWap) {
       antiCodeRes.addAll({'uid': uid.toString(), 'uuid': uuid});
     } else {
       antiCodeRes['u'] = convertUid.toString();
     }
 
-    return antiCodeRes.entries.map((e) => '${e.key}=${e.value}').join('&');
+    return Uri(queryParameters: antiCodeRes).query;
   }
 
-  /// return sFlvToken
-  Future<String> getCndTokenInfoEx(String stream) {
-    return _tokenCache.putIfAbsent(stream, () async {
-      var func = "getCdnTokenInfoEx";
-      var tid = HuyaUserId();
-      tid.sHuYaUA = "pc_exe&7060000&official";
-      var tReq = GetCdnTokenExReq();
-      tReq.tId = tid;
-      tReq.sStreamName = stream;
-      var resp = await tupClient.tupRequest(func, tReq, GetCdnTokenExResp());
-      return resp.sFlvToken;
-    });
+  Future<HuyaCdnTokenLease> getCndTokenInfoEx(HuyaLineModel line, HuyaViewerIdentity viewer) async {
+    final key = '${viewer.uid}|${line.line}|${line.streamName}';
+    final current = _inFlightTokenRequests[key];
+    if (current != null) return current;
+
+    final request = _fetchCdnTokenInfoEx(line, viewer);
+    _inFlightTokenRequests[key] = request;
+    try {
+      return await request;
+    } finally {
+      if (identical(_inFlightTokenRequests[key], request)) {
+        _inFlightTokenRequests.remove(key);
+      }
+    }
   }
 
-  int rotl64(int t) {
-    final low = t & 0xFFFFFFFF;
-    final rotatedLow = ((low << 8) | (low >> 24)) & 0xFFFFFFFF;
-    final high = t & ~0xFFFFFFFF;
+  Future<HuyaCdnTokenLease> _fetchCdnTokenInfoEx(HuyaLineModel line, HuyaViewerIdentity viewer) async {
+    final cookie = SettingsService.to.cookieManager.huyaCookie.v.trim();
+    final request = buildPlaybackTokenRequest(line, viewer, cookie: cookie);
+    final tokenClient = BaseTarsHttp(
+      "https://wup.huya.com",
+      "liveui",
+      headers: <String, String>{
+        'Origin': baseUrl,
+        'Referer': '$baseUrl/',
+        'User-Agent': fallbackPlayUserAgent,
+        if (cookie.isNotEmpty) 'Cookie': cookie,
+      },
+    );
+    final response = await tokenClient.tupRequest('getCdnTokenInfoEx', request, GetCdnTokenExResp());
+    return HuyaCdnTokenLease.fromResponse(response);
+  }
+
+  @visibleForTesting
+  static GetCdnTokenExReq buildPlaybackTokenRequest(
+    HuyaLineModel line,
+    HuyaViewerIdentity viewer, {
+    String cookie = '',
+  }) {
+    return GetCdnTokenExReq()
+      ..sFlvUrl = secureHuyaCdnBase(line.line)
+      ..sStreamName = line.streamName
+      ..iLoopTime = webPlaybackTokenLoopTime
+      ..tId = buildPlaybackTokenUserId(viewer, cookie: cookie)
+      ..iAppId = webPlaybackAppId;
+  }
+
+  @visibleForTesting
+  static HuyaUserId buildPlaybackTokenUserId(HuyaViewerIdentity viewer, {String cookie = ''}) {
+    // Huya's current web bundle passes TafLink.getUserId() to
+    // getCdnTokenInfoEx. That identity is webh5 + the page cookie, rather than
+    // the desktop HYSDK/pc_exe identity used by unrelated legacy WUP calls.
+    return HuyaUserId()
+      ..lUid = viewer.uid
+      ..sGuid = viewer.guid
+      ..sToken = ''
+      ..sHuYaUA = webPlaybackTarsUserAgent
+      ..sCookie = cookie
+      ..iTokenType = 0;
+  }
+
+  @visibleForTesting
+  static int rotateViewerUid32(int value) {
+    // Huya's web player names this operation `rotl64`: only the low 32-bit
+    // lane is rotated, while the upper 32-bit lane of the 64-bit viewer UID is
+    // preserved. Returning only the rotated low lane happens to look valid for
+    // small fixture UIDs, but truncates real anonymous UIDs (normally > 2^32).
+    // The resulting `u` then no longer matches the WUP viewer identity and the
+    // FLV CDN rejects the otherwise well-formed URL with HTTP 403.
+    final low = value & 0xffffffff;
+    final high = value - low;
+    final rotatedLow = ((low << 8) | (low >> 24)) & 0xffffffff;
     return high | rotatedLow;
+  }
+
+  @visibleForTesting
+  static int unrotateViewerUid32(int value) {
+    final low = value & 0xffffffff;
+    final high = value - low;
+    final originalLow = ((low >> 8) | (low << 24)) & 0xffffffff;
+    return high | originalLow;
   }
 
   Future<List<LiveSuperChatMessage>> getHuyaSuperChatMessageList({required int lPid, bool first = false}) async {
     final BaseTarsHttp messageBoardClient = BaseTarsHttp(
-      "http://wup.huya.com",
+      "https://wup.huya.com",
       "wupui",
       headers: HuyaRequestParams.requestHeaders,
     );
@@ -951,6 +1266,61 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
   }
 }
 
+@immutable
+class HuyaViewerIdentity {
+  const HuyaViewerIdentity({required this.uid, required this.guid, required this.isAnonymous});
+
+  final int uid;
+  final String guid;
+  final bool isAnonymous;
+}
+
+@immutable
+class HuyaCdnTokenLease {
+  const HuyaCdnTokenLease({
+    required this.antiCode,
+    required this.invalidAt,
+    required this.refreshAt,
+    required this.serverExpireValue,
+  });
+
+  factory HuyaCdnTokenLease.fromResponse(GetCdnTokenExResp response, {DateTime? now}) {
+    final antiCode = response.sFlvToken.trim();
+    if (antiCode.isEmpty) throw const FormatException('Huya WUP returned an empty FLV token');
+    final query = Uri(query: antiCode).queryParameters;
+    final wsTime = int.tryParse(query['wsTime'] ?? '', radix: 16);
+    if (wsTime == null) throw const FormatException('Huya WUP token has no valid wsTime');
+
+    // This matches the current official player: wsTime receives a five-minute
+    // validity allowance and the refresh is requested thirty seconds earlier.
+    var invalidAt = DateTime.fromMillisecondsSinceEpoch(wsTime * 1000, isUtc: true).add(const Duration(minutes: 5));
+    final current = (now ?? DateTime.now()).toUtc();
+    final serverExpiry = response.iExpireTime;
+    if (serverExpiry > 0) {
+      final serverInvalidAt = serverExpiry > 1000000000000
+          ? DateTime.fromMillisecondsSinceEpoch(serverExpiry, isUtc: true)
+          : serverExpiry > 1000000000
+          ? DateTime.fromMillisecondsSinceEpoch(serverExpiry * 1000, isUtc: true)
+          : current.add(Duration(seconds: serverExpiry));
+      if (serverInvalidAt.isBefore(invalidAt)) invalidAt = serverInvalidAt;
+    }
+    return HuyaCdnTokenLease(
+      antiCode: antiCode,
+      invalidAt: invalidAt,
+      refreshAt: invalidAt.subtract(const Duration(seconds: 30)),
+      serverExpireValue: serverExpiry,
+    );
+  }
+
+  final String antiCode;
+  final DateTime invalidAt;
+  final DateTime refreshAt;
+  final int serverExpireValue;
+
+  bool needsRefresh(DateTime timestamp) => !timestamp.toUtc().isBefore(refreshAt);
+  bool isExpired(DateTime timestamp) => !timestamp.toUtc().isBefore(invalidAt);
+}
+
 class HuyaUrlDataModel {
   final String url;
   final String uid;
@@ -989,7 +1359,8 @@ class HuyaLineModel {
   });
   @override
   String toString() {
-    return 'HuyaLineModel{line: $line, flvAntiCode: $flvAntiCode, hlsAntiCode: $hlsAntiCode, streamName: $streamName, lineType: $lineType, presenterUid: $presenterUid}';
+    final host = Uri.tryParse(line)?.host;
+    return 'HuyaLineModel{host: ${host?.isNotEmpty == true ? host : 'unknown'}, lineType: $lineType, cdnType: $cdnType, bitRate: $bitRate}';
   }
 }
 

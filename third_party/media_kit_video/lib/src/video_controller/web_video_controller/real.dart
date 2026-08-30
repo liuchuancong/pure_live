@@ -107,6 +107,7 @@ class WebVideoController extends PlatformVideoController {
   Future<void> setSize({
     int? width,
     int? height,
+    bool force = false,
   }) {
     throw UnsupportedError(
       '[AndroidVideoController.setSize] is not available on web',

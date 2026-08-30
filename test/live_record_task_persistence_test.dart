@@ -81,7 +81,7 @@ void main() {
     );
 
     final json = task.toJson();
-    expect(json['schemaVersion'], 4);
+    expect(json['schemaVersion'], 5);
     expect(json['lastErrorStage'], 'ffmpeg');
     expect(json['lastError'], contains('[stream-url]'));
     expect(json['lastError'], isNot(contains('secret')));
@@ -135,6 +135,21 @@ void main() {
     expect(restored.selectedLineIndex, 2);
     expect(restored.selectedQuality, '原画');
     expect(restored.selectedLine, '线路3');
+  });
+
+  test('deferred recording attempts persist as deduplicated local artifacts', () {
+    final task = LiveRecordTask.fromJson(<String, dynamic>{'roomId': '1', 'platform': 'huya'});
+    task.queuePendingAttempt(directoryPath: r'D:\PureLive\room', filePrefix: '20260830_070000_001');
+    task.queuePendingAttempt(directoryPath: r'D:\PureLive\room', filePrefix: '20260830_070000_001');
+
+    final json = task.toJson();
+    final restored = LiveRecordTask.fromJson(json);
+
+    expect(restored.pendingAttempts, hasLength(1));
+    expect(restored.pendingAttempts.single.directoryPath, r'D:\PureLive\room');
+    expect(restored.pendingAttempts.single.filePrefix, '20260830_070000_001');
+    restored.removePendingAttempt(restored.pendingAttempts.single);
+    expect(restored.pendingAttempts, isEmpty);
   });
 
   test('specific FFmpeg failure stages survive persistence', () {

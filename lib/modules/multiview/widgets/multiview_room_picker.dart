@@ -12,7 +12,7 @@ int compareMultiviewRooms(
   bool preferRealOnline = false,
   bool Function(String? platform)? platformEnabled,
 }) {
-  var result = (b.status == true ? 1 : 0).compareTo(a.status == true ? 1 : 0);
+  var result = (b.isPlayableNow ? 1 : 0).compareTo(a.isPlayableNow ? 1 : 0);
   if (result != 0) return result;
   return LiveRoom.compareAudienceRanking(
     a,
@@ -194,25 +194,34 @@ class _LiveStatusBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isLive = room.liveStatus == LiveStatus.live;
+    final status = room.effectiveLiveStatus;
+    final isLive = status == LiveStatus.live;
+    final isReplay = status == LiveStatus.replay;
+    final isPending = status == LiveStatus.unknown;
+    final color = isLive
+        ? const Color(0xFF31C24C)
+        : isReplay
+        ? theme.colorScheme.tertiary
+        : theme.colorScheme.onSurfaceVariant.withValues(alpha: isPending ? 0.5 : 0.35);
+    final labelKey = isLive
+        ? 'live_now'
+        : isReplay
+        ? 'replay'
+        : isPending
+        ? 'favorite_status_unknown'
+        : 'offline';
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
           width: 7,
           height: 7,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: isLive ? const Color(0xFF31C24C) : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.35),
-          ),
+          decoration: BoxDecoration(shape: BoxShape.circle, color: color),
         ),
         const SizedBox(width: 5),
         Text(
-          i18n(isLive ? 'live_now' : 'offline'),
-          style: AppTextStyles.t11.copyWith(
-            color: isLive ? const Color(0xFF31C24C) : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
-            fontWeight: FontWeight.w600,
-          ),
+          i18n(labelKey),
+          style: AppTextStyles.t11.copyWith(color: color, fontWeight: FontWeight.w600),
         ),
       ],
     );

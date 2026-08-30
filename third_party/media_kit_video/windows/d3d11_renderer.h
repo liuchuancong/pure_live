@@ -64,7 +64,7 @@ class D3D11Renderer {
   // mpv_render_context_render returns.  Signals the frame fence, then
   // non-blockingly attempts to promote the previous pending frame to
   // latest_completed_slot_, and finally publishes the new pending frame.
-  void ProducerCommit();
+  bool ProducerCommit();
 
   // Called from the consumer thread (Flutter GpuSurfaceTexture callback).
   // Returns the DXGI shared HANDLE of the most recent fence-confirmed frame

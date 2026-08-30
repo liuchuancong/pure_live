@@ -286,6 +286,8 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
   bool get isAudioOnly => audioOnlyState.value;
   final AudioOnlyCallback? onAudioOnlyChanged;
   final bool reuseCurrentSession;
+  final PlaybackSourceResolver? sourceResolver;
+  final DateTime? sourceRefreshAt;
 
   final Battery _battery;
   final SettingsService _settingsService;
@@ -378,6 +380,8 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
     required this.currentLineIndex,
     required this.currentQuality,
     required bool isAudioOnly,
+    this.sourceResolver,
+    this.sourceRefreshAt,
     this.reuseCurrentSession = false,
     this.allowScreenKeepOn = false,
     this.allowFullScreen = true,
@@ -476,7 +480,15 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
   }
 
   Future<void> _playVideo() async {
-    await _playerManager.play(datasource, playUrs, headers, room: room, audioOnly: isAudioOnly);
+    await _playerManager.play(
+      datasource,
+      playUrs,
+      headers,
+      room: room,
+      audioOnly: isAudioOnly,
+      sourceResolver: sourceResolver,
+      sourceRefreshAt: sourceRefreshAt,
+    );
   }
 
   /// Rebinds the existing room controller to a freshly-created native player.
@@ -940,7 +952,7 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
     var liveRoom = await Sites.of(room.platform!).liveSite
         .getRoomDetail(roomId: room.roomId!, platform: room.platform!);
 
-    if (liveRoom.liveStatus == LiveStatus.offline) {
+    if (liveRoom.isExplicitlyOfflineNow) {
       _livePlayController.setNormalScreen();
       ToastUtil.show(i18n("room_offline"));
     } else {

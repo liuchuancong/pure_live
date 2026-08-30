@@ -168,6 +168,7 @@ class _Harness {
   final List<(int, int)> requestedSizes = <(int, int)>[];
   final Map<String, Completer<void>> gates = <String, Completer<void>>{};
   final Set<String> resolveFailures = <String>{};
+  final Set<String> resolvedOfflineRooms = <String>{};
   final Map<String, bool> resolvePreferences = <String, bool>{};
   final Map<String, Completer<void>> qualityGates = <String, Completer<void>>{};
   final Set<String> qualityLoadFailures = <String>{};
@@ -195,6 +196,9 @@ class _Harness {
 
   Future<MultiviewStreamSource> _resolver(LiveRoom room, {required bool preferLowest}) async {
     final id = room.roomId!;
+    if (resolvedOfflineRooms.contains(id)) {
+      throw MultiviewRoomOffline(room.copyWith(status: false, liveStatus: LiveStatus.offline, isRecord: false));
+    }
     if (resolveFailures.contains(id)) {
       throw StateError('resolver boom for $id');
     }
@@ -244,9 +248,23 @@ class _Harness {
   }
 }
 
-LiveRoom _room(String id) => LiveRoom(roomId: id, platform: 'bilibili', danmakuData: <String, dynamic>{'id': id});
+LiveRoom _room(String id) => LiveRoom(
+  roomId: id,
+  platform: 'bilibili',
+  status: true,
+  liveStatus: LiveStatus.live,
+  danmakuData: <String, dynamic>{'id': id},
+);
 
 void main() {
+  test('offline and failed multiview cells remain picker targets', () {
+    expect(isMultiviewCellAssignable(MultiviewCellStatus.empty), isTrue);
+    expect(isMultiviewCellAssignable(MultiviewCellStatus.offline), isTrue);
+    expect(isMultiviewCellAssignable(MultiviewCellStatus.error), isTrue);
+    expect(isMultiviewCellAssignable(MultiviewCellStatus.resolving), isFalse);
+    expect(isMultiviewCellAssignable(MultiviewCellStatus.playing), isFalse);
+  });
+
   group('MultiviewController', () {
     test('assignRoom 走 empty→resolving→playing 并自动成为音频焦点', () async {
       final harness = _Harness();
@@ -274,6 +292,46 @@ void main() {
       expect(controller.audioFocusIndex, 1);
       expect(harness.players[0].volume, 0.0);
       expect(harness.players[1].volume, 1.0);
+    });
+
+    test('已知未开播房间进入业务空态且不解析、不创建播放器', () async {
+      final harness = _Harness();
+      final controller = harness.controller;
+      final room = LiveRoom(
+        roomId: 'offline-known',
+        platform: 'bilibili',
+        nick: '未开播主播',
+        status: false,
+        liveStatus: LiveStatus.offline,
+      );
+
+      await controller.assignRoom(0, room);
+
+      expect(controller.cells[0].status, MultiviewCellStatus.offline);
+      expect(controller.cells[0].errorKind, isNull);
+      expect(controller.cells[0].errorDetail, isNull);
+      expect(controller.cells[0].room?.nick, '未开播主播');
+      expect(harness.resolvePreferences, isEmpty);
+      expect(harness.players, isEmpty);
+    });
+
+    test('严格解析后确认未开播与传输解析失败分流', () async {
+      final harness = _Harness();
+      final controller = harness.controller;
+      harness.resolvedOfflineRooms.add('offline-after-refresh');
+
+      await controller.assignRoom(0, _room('offline-after-refresh'));
+
+      expect(controller.cells[0].status, MultiviewCellStatus.offline);
+      expect(controller.cells[0].errorKind, isNull);
+      expect(harness.players, isEmpty);
+
+      harness.resolveFailures.add('transport-error');
+      await controller.assignRoom(1, _room('transport-error'));
+
+      expect(controller.cells[1].status, MultiviewCellStatus.error);
+      expect(controller.cells[1].errorKind, MultiviewCellErrorKind.resolveFailure);
+      expect(controller.cells[1].errorDetail, contains('resolver boom'));
     });
 
     test('assignRoom 按布局均分结果固定每格渲染分辨率', () async {

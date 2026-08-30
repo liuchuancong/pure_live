@@ -1,9 +1,16 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:pure_live/player/adapters/media_kit_adapter.dart';
 
 void main() {
+  test('media_kit advertises soft-stop reuse only on Windows', () {
+    final adapter = MediaKitAdapter();
+    expect(adapter.isReusable, Platform.isWindows);
+  });
+
   group('MediaKit source readiness', () {
     test('native playing is authoritative without optional mpv frame properties', () {
       expect(shouldPublishMediaKitPlaying(true), isTrue);

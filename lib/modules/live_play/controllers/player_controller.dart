@@ -20,6 +20,8 @@ typedef StreamSourceOpener = Future<void> Function(
   Map<String, String> headers,
   LiveRoom room,
   bool audioOnly,
+  PlaybackSourceResolver? sourceResolver,
+  DateTime? sourceRefreshAt,
 );
 
 @immutable
@@ -138,13 +140,25 @@ class PlayerController extends GetxController {
     Map<String, String> headers,
     LiveRoom room,
     bool audioOnly,
+    PlaybackSourceResolver? sourceResolver,
+    DateTime? sourceRefreshAt,
   ) {
     final manager = GlobalPlayerService.instance.player;
-    return manager.play(url, playUrls, headers, room: room, audioOnly: audioOnly).then((_) {
-      if (manager.hasError.value) {
-        throw PlayerException(message: 'Selected stream failed to open', type: PlayerErrorType.source);
-      }
-    });
+    return manager
+        .play(
+          url,
+          playUrls,
+          headers,
+          room: room,
+          audioOnly: audioOnly,
+          sourceResolver: sourceResolver,
+          sourceRefreshAt: sourceRefreshAt,
+        )
+        .then((_) {
+          if (manager.hasError.value) {
+            throw PlayerException(message: 'Selected stream failed to open', type: PlayerErrorType.source);
+          }
+        });
   }
 
   LivePlayState get _state => _main.state.value;
@@ -175,6 +189,40 @@ class PlayerController extends GetxController {
 
   Future<Map<String, String>> getHeaders({Site? expectedSite, LiveRoom? expectedRoom}) {
     return resolvePlaybackHeaders(site: expectedSite ?? currentSite, room: expectedRoom ?? currentRoom);
+  }
+
+  PlaybackSourceResolver? _buildSourceResolver({
+    required Site site,
+    required LiveRoom room,
+    required LivePlayQuality quality,
+  }) {
+    final liveSite = site.liveSite;
+    if (liveSite is! LivePlayRecoveryResolver) return null;
+
+    return (request) async {
+      final resolution = await liveSite.resolvePlayUrlsForRecovery(detail: room, quality: quality);
+      final urls = resolution.urls;
+      if (urls.isEmpty) {
+        return const PlaybackSourceRefreshResult(urls: <String>[], preferredLineIndex: 0);
+      }
+      final currentIndex = request.currentLineIndex.clamp(0, urls.length - 1);
+      final preferredIndex = request.advanceLine ? (currentIndex + 1) % urls.length : currentIndex;
+      return PlaybackSourceRefreshResult(
+        urls: urls,
+        preferredLineIndex: preferredIndex,
+        refreshAt: liveSite is LivePlayLeaseMetadata
+            ? (liveSite as LivePlayLeaseMetadata).getPlayUrlRefreshAt(urls[preferredIndex])
+            : null,
+        invalidAt: liveSite is LivePlayLeaseMetadata
+            ? (liveSite as LivePlayLeaseMetadata).getPlayUrlInvalidAt(urls[preferredIndex])
+            : null,
+      );
+    };
+  }
+
+  DateTime? _getSourceRefreshAt({required Site site, required String url}) {
+    final liveSite = site.liveSite;
+    return liveSite is LivePlayLeaseMetadata ? (liveSite as LivePlayLeaseMetadata).getPlayUrlRefreshAt(url) : null;
   }
 
   Future<VideoController?> setPlayer({
@@ -212,6 +260,12 @@ class PlayerController extends GetxController {
       currentLineIndex: playerState.currentLineIndex,
       currentQuality: playerState.currentQuality,
       isAudioOnly: playerState.isCurrentRoomAudioOnly,
+      sourceResolver: _buildSourceResolver(
+        site: site,
+        room: room,
+        quality: playerState.qualites[playerState.currentQuality.clamp(0, playerState.qualites.length - 1)],
+      ),
+      sourceRefreshAt: _getSourceRefreshAt(site: site, url: playerState.playUrlSafe),
       onAudioOnlyChanged: _main.setCurrentRoomAudioOnlyFromUser,
     );
 
@@ -260,6 +314,11 @@ class PlayerController extends GetxController {
       currentQuality: currentQuality,
       isAudioOnly: manager.desiredAudioOnlyMode,
       reuseCurrentSession: true,
+      sourceResolver: _buildSourceResolver(site: currentSite, room: session.room, quality: qualities[currentQuality]),
+      sourceRefreshAt: _getSourceRefreshAt(
+        site: currentSite,
+        url: session.dataSource.isNotEmpty ? session.dataSource : (playUrls.isEmpty ? '' : playUrls[currentLineIndex]),
+      ),
       onAudioOnlyChanged: _main.setCurrentRoomAudioOnlyFromUser,
     );
     _main.updatePlayer(videoController: videoController);
@@ -395,8 +454,12 @@ class PlayerController extends GetxController {
     isStreamSwitching.value = true;
 
     try {
-      final resolution = type == ReloadDataType.changeQuality
-          ? await site.liveSite.resolvePlayUrls(detail: room, quality: before.qualites[requestedQuality])
+      final requestedQualityValue = before.qualites[requestedQuality];
+      final refreshSignedSource = site.liveSite is LivePlayRecoveryResolver;
+      final resolution = refreshSignedSource
+          ? await site.liveSite.resolvePlayUrlsForRecovery(detail: room, quality: requestedQualityValue)
+          : type == ReloadDataType.changeQuality
+          ? await site.liveSite.resolvePlayUrls(detail: room, quality: requestedQualityValue)
           : LivePlayUrlResolution(
               urls: List<String>.from(before.playUrls),
               appliedQualityData: before.qualites[before.currentQuality].selectionId,
@@ -446,6 +509,8 @@ class PlayerController extends GetxController {
         Map<String, String>.unmodifiable(headers),
         room,
         _state.player.isCurrentRoomAudioOnly,
+        _buildSourceResolver(site: site, room: room, quality: before.qualites[selection.qualityIndex]),
+        _getSourceRefreshAt(site: site, url: immutableUrls[selection.lineIndex]),
       );
       if (!_isLoadCurrent(loadEpoch, room, site) || selectionEpoch != _streamSelectionEpoch) return false;
       _main.updatePlayer(

@@ -12,4 +12,27 @@ void main() {
 
     expect(rooms.map((room) => room.roomId), <String?>['large', 'small', 'offline']);
   });
+
+  test('picker uses canonical state when legacy bool and enum disagree', () {
+    final rooms = <LiveRoom>[
+      LiveRoom(
+        roomId: 'stale-offline-enum',
+        platform: 'douyu',
+        status: true,
+        liveStatus: LiveStatus.offline,
+        watching: '9500',
+      ),
+      LiveRoom(
+        roomId: 'explicit-unknown',
+        platform: 'douyu',
+        status: true,
+        liveStatus: LiveStatus.unknown,
+        watching: '99万',
+      ),
+      LiveRoom(roomId: 'offline', platform: 'douyu', status: false, watching: '100万'),
+    ]..sort(compareMultiviewRooms);
+
+    expect(rooms.map((room) => room.roomId), <String?>['offline', 'explicit-unknown', 'stale-offline-enum']);
+    expect(rooms.last.isLiveNow, isFalse);
+  });
 }
