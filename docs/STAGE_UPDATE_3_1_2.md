@@ -78,3 +78,12 @@
 - 代码回滚点只涉及 `lib/player/utils/fullscreen.dart` 的 Windows 全屏准备步骤及对应测试。
 - 若未来 `window_manager` 原生实现移除 `is_frameless_` 阻断，可在升级审计和同一运行矩阵通过后删除兼容步骤；在此之前保留幂等调用。
 - Android 不执行 Windows 专用分支，移动端旋转、沉浸式系统栏和竖屏直播比例逻辑不受本补丁影响。
+
+## 8. 正式包发布后运行复验
+
+- Android v3.1.2 APK 已在 PJZ110 / Android 16 覆盖升级，原关注数据保留；10 次冷启动全部成功，293～332 ms、平均 306.2 ms，0 FATAL/ANR。
+- Android 分类和搜索平台标签左右端点稳定；网易 CC 旧分类地址返回官方 Glive HTML 时仍保留四个稳定入口。
+- Android 正确识别 120 Hz；省电、均衡、最高三档即时切换，最高档在冷启动后保持。
+- Android 直连 Twitch 搜索会显示局部失败；临时使用手机可达的本机 Clash 应用代理后，Twitch 原生搜索和在线人数正常，测试结束已恢复原代理地址与关闭状态。
+- Windows v3.1.2 便携 Release 正确识别 3840×2400 / 200 Hz；三档刷新率即时生效并可持久化。普通窗口和最大化进入全屏均覆盖完整逻辑显示器，Escape 后分别精确恢复。
+- Android 与 Windows 完整运行记录分别见 `docs/ANDROID_RUNTIME_AUDIT_3_1_2.md`、`docs/WINDOWS_RUNTIME_AUDIT_3_1_2.md`；未执行项目继续保留在验收矩阵中，不以已通过子集替代全平台长时结论。

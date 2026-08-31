@@ -24,7 +24,7 @@
 |---|---|---|---|
 | A0-01 | PASS | v3.0.24 正式 APK 覆盖安装，包名、版本、签名、arm64 与原数据保留 | `local-artifacts/3.0.24-4112/release-verify/`；PJZ110 `versionName=3.0.24`, `versionCode=6112` |
 | A0-02 | PASS | 冷启动一次进入，无 FATAL/ANR；首屏可交互 | 当前实机 `am start -W`: Total 312 ms / Wait 316 ms；13.17 秒录像显示启动页后进入完整关注网格 |
-| A0-03 | NR | 连续 10 次冷启动、更新后首次启动、清理进程后启动 | 待执行 |
+| A0-03 | PASS | 连续 10 次冷启动、更新后首次启动、清理进程后启动 | v3.1.2 arm64 Release 覆盖升级保留关注数据；10 次强制结束后冷启动全部存活并获得焦点，293～332 ms、平均 306.2 ms，0 FATAL/ANR。见 `docs/ANDROID_RUNTIME_AUDIT_3_1_2.md` |
 | A0-04 | RUN | 后台 15 秒、2 分钟、锁屏后恢复；直播状态按阈值刷新且卡片位置稳定 | 后台 20 秒热恢复已通过：先保留完整旧快照与卡片位置，仅显示顶部核验进度；约 8 秒后一次性提交新状态/排序，随后稳定。证据：`local-artifacts/runtime/android-6458d541/resume-after-20s-refresh.mp4`；2 分钟和锁屏待执行 |
 
 ### A1 首页、关注、热门、分区与搜索
@@ -33,8 +33,8 @@
 |---|---|---|
 | A1-01 | RUN | 关注：已开播/录播/未开播与全部平台；下拉动画、失败保留快照、刷新后状态准确。下拉录像确认 Material 指示器从拖动、释放到完成均可见；当前冷启动录像先让全部卡片保持原桶位并统一显示“正在核验”，约 3 秒后一次提交完整结果，8～11 秒布局稳定；20 秒热恢复保留旧快照到请求完成，再单次提交新排序。启动/下拉策略测试 9/9 通过：`local-artifacts/build-records/20260830T202928675Z-quality-focused.json`。开播事实仍待逐平台交叉验证 |
 | A1-02 | RUN | 热门：平台页签边界、快速左右滑、网格纵向惯性、切回保持位置、卡片不跳动。v3.0.24 已完成页签条左右各 20 次快速滑动并稳定停在首尾边界，无 FATAL/ANR；截图、语义树与日志位于 `local-artifacts/runtime/android-v3.0.24/home-platform-boundary/`。下拉刷新录像显示刷新中网格不做逐卡重排、完成后单次提交；纵向帧时序仍待当前源码包复验 |
-| A1-03 | NR | 分区：一级/二级标签都有硬边界，切页不串数据，短列表也支持受控刷新 |
-| A1-04 | NR | 搜索：全部/单平台页签有边界，输入防抖、分页终止、去重、在播优先和平台能力说明 |
+| A1-03 | PASS | 分区：平台标签左右各重复 10/20 次后稳定停在首尾硬边界；网易 CC 旧 JSON 跳转官方 HTML 时返回稳定的“全部 / 端游 / 手游 / 其他”，未串数据、未崩溃。见 `docs/ANDROID_RUNTIME_AUDIT_3_1_2.md` |
+| A1-04 | RUN | 搜索：全部/单平台标签左右端点稳定，`LOL` 聚合结果、开播优先排序和平台能力说明均可用；直连 Twitch 明确显示部分平台失败，经可达 Clash 应用代理后 Twitch 原生结果和在线人数正常。分页终止、重复结果与连续输入防抖仍待长列表压力复验 |
 | A1-05 | NR | 历史、标签、工具箱、IPTV、WebDAV、备份/恢复、关于、更新检查 |
 | A1-06 | NR | 首页上/下各 20 次、平台左/右各 20 次；记录 SurfaceFlinger/Perfetto 帧和主线程阻塞 |
 
@@ -45,10 +45,10 @@
 | ID | 状态 | 验收内容 |
 |---|---|---|
 | A2-01 | NR | 设置顶/中/底三级页面全部可达，长页滚动到边界，开关与数值无重叠 |
-| A2-02 | NR | 省电/均衡/最高刷新率即时作用于界面和主/小窗弹幕；后台交还系统策略 |
+| A2-02 | PASS | PJZ110 正确识别 `120 / 120 Hz`；省电/均衡/最高三档即时更新，恢复最高档后强制结束并冷启动仍保持。主界面与自动弹幕的联动说明一致；证据见 `docs/ANDROID_RUNTIME_AUDIT_3_1_2.md` |
 | A2-03 | PASS | 后台播放与手动纯音频策略一致；自动助眠按计时继续 | `6458d541` arm64 Release 四组合实机通过：关闭开关后手动纯音频退桌面由 `PLAYING` 转 `PAUSED` 且当前 Wake Lock 为 0，回前台恢复；开启开关时普通视频退桌面保持 `PLAYING` 并持有必要锁；关闭开关后主动进入系统 PiP 仍保持 `PLAYING`；关闭开关并启用 1 分钟自动助眠时，后台在期限内保持 `PLAYING`，到点变为 `NONE`，Pure Live 保活锁消失且 CPU 样本为 0%。证据：`local-artifacts/runtime/android-6458d541/background-off-audio-only.txt`、`background-on-video.txt`、`pip-background-off.txt`、`auto-sleep-one-minute.txt` |
 | A2-04 | NR | 小窗弹幕固定预览/双栏预览实时更新，保存/恢复默认与模板状态一致 |
-| A2-05 | RUN | 应用代理覆盖平台 API、封面/头像和弹幕 WebSocket；全角地址归一化，播放器代理保持独立 | 路由与 WebSocket 回归通过，虎牙协议探针收到 command 22；Android Debug 已验证 API、封面和地址输入。最终 v3.1.0 APK 的弹幕代理复验待执行；详见 `docs/NETWORK_PROXY_AUDIT_3_1_0.md` |
+| A2-05 | RUN | 应用代理覆盖平台 API、封面/头像和弹幕 WebSocket；全角地址归一化，播放器代理保持独立 | 路由与 WebSocket 回归通过，虎牙协议探针收到 command 22；v3.1.2 Android Release 已用可达 Clash 端点验证 Twitch 原生搜索由直连失败恢复为真实结果，播放代理保持关闭。最终 APK 的弹幕 WebSocket 与视频播放代理仍待逐平台复验；详见 `docs/NETWORK_PROXY_AUDIT_3_1_0.md`、`docs/ANDROID_RUNTIME_AUDIT_3_1_2.md` |
 
 ### A3 播放与呈现核心矩阵
 
@@ -81,8 +81,8 @@
 | 虎牙 | NR | NR | NR | NR | NR | NR | NR |
 | 抖音 | NR | NR | NR | NR | NR | NR | NR |
 | 快手 | NR | NR | NR | NR | NR | NR | NR |
-| 网易 CC | NR | NR | NR | NR | NR | NR | NR |
-| Twitch（Clash） | NR | NR | NR | NR | NR | NR | NR |
+| 网易 CC | PASS（分类迁移回退） | NR | NR | NR | NR | NR | NR |
+| Twitch（Clash） | PASS（原生搜索） | NR | PASS（搜索在线人数） | NR | NR | NR | NR |
 | SOOP Live（Clash） | NR | NR | NR | NR | NR | NR | NR |
 | YY | NR | NR | NR | NR | NR | NR | NR |
 | IPTV | NR | NR | N/A | NR | N/A | NR | NR |
@@ -108,6 +108,7 @@
 ### A8 当前实机事实
 
 - 设备：OnePlus PJZ110，Android 16，1440×3168，640 dpi，最高 120 Hz。
+- v3.1.2 arm64 Release 已覆盖升级并保留关注数据；10 次冷启动 293～332 ms、平均 306.2 ms，0 FATAL/ANR。分类/搜索标签硬边界、CC 官方 HTML 迁移回退、120 Hz 三档即时切换与冷启动持久化均通过；Twitch 直连失败可由 Pure Live 应用层 Clash 代理恢复，测试后代理设置已原样还原。完整记录见 `docs/ANDROID_RUNTIME_AUDIT_3_1_2.md`。
 - v3.0.24 首页已加载并可操作；冷启动后 8 秒样本 `TOTAL PSS 226040 KB`、`TOTAL RSS 399688 KB`，仅作基线，不代表长时通过。
 - #818 已在 `6458d541` arm64 Release 实机闭环：普通视频和手动纯音频均遵循后台播放总开关；关闭时退桌面暂停并释放当前 Wake Lock，回前台恢复；开启时普通视频继续；系统 PiP 作为用户主动紧凑播放继续；1 分钟自动助眠在总开关关闭时仍按计时播放，到点停止并释放 Pure Live 保活锁。纯音频/视频自动化也改为先等待 2 秒控件自动隐藏，再确定性唤出并点击，避免测试脚本把已显示的控制层反向隐藏。
 - 结束媒体会话 55 秒后样本从播放态 `TOTAL PSS 396782 KB / RSS 587176 KB` 回落至 `313511 KB / 502796 KB`；随后两次 `top` 瞬时采样均为 0% CPU。该结果证明解码/纹理资源有回落，但仍需以正常退出房间路径执行 10～50 次循环，区分图片缓存、Flutter Surface 与播放器残留。
@@ -134,12 +135,15 @@
 |---|---|---|
 | W0-01 | RUN | v3.1.0 Windows x64 便携 ZIP 已独立解压到 `.local-build/windows-v3.1.0-runtime-20260831T060618Z/`，`pure_live.exe` 报告 `3.1.0+4113`，数据目录位于便携目录旁的 `AppData`；程序启动、运行和窗口关闭正常。安装器自选目录、旧版本覆盖迁移和卸载残留仍待执行 |
 | W1-01 | RUN | 热门页已验证哔哩哔哩到最右侧“网络”平台切换、20 张卡片加载、缩略图懒加载与纵向滚动；直播间弹幕设置长页滚动可达下部选项，Esc 从直播间返回热门页。多 DPI、主副屏、触控板和全部二/三级页面仍待执行 |
+| W1-02 | PASS | v3.1.2 Windows x64 便携 Release 在 `3840×2400 / 200 Hz` 显示器正确显示当前与最高刷新率。省电、均衡、最高三档均即时刷新文案与策略；均衡模式在强制结束隔离实例并用相同 instance id 冷启动后仍恢复，随后成功回到省电默认。应用全过程响应，证据见 `docs/WINDOWS_RUNTIME_AUDIT_3_1_2.md` 与 `local-artifacts/runtime/windows-v3.1.2/refresh-rate-and-fullscreen-20260831.json` |
 | W2-01 | RUN | Windows 实际进入 Bilibili `EdmundDZhang` 房间并持续播放，画面、声音、画面弹幕和列表弹幕均工作；画质从“超清”请求“原画”时，平台实际仍返回“超清”，提示与最终 UI 都保留真实结果而非伪成功；弹幕设置主题与应用主题一致。宽屏/真全屏、PiP 置顶和多窗口矩阵仍待执行 |
+| W2-02 | PASS | v3.1.2 便携 Release 实际进入 Bilibili 开播房间，视频与两层弹幕持续更新。普通窗口 `1276×718 @ (325,240)` 进入真全屏后覆盖 `1536×960 @ (0,0)`，Esc 精确恢复；最大化 `1536×912` 进入后同样覆盖 `1536×960`，Esc 恢复最大化工作区。两条往返过程中播放与弹幕不中断，证据见 `docs/WINDOWS_RUNTIME_AUDIT_3_1_2.md` |
 | W3-01 | RUN | Bilibili 短录 89.831 秒，输出 MP4 18,301,583 bytes；`ffprobe` 读到 H.264 1280×720 约 30 fps 与 AAC 音轨，统计从 0.5 MB 单调增长至 19.4 MB。随后播放/弹幕/设置/录制混合场景采样 600.643 秒、61 点、全程 Responding、CPU 平均 3.6807%/P95 4.2325%；Working Set 401.41→463.46 MiB，Private Bytes 762.41→834.80 MiB，仍需更长平台矩阵判断缓存平台期。证据：`local-artifacts/diagnostics/windows-regression/20260831T062626030Z-v3.1.0-bilibili-play-danmaku-pid70096-summary.json` |
 
 ### W4 当前 Windows 运行事实
 
 - 测试对象是 GitHub Release 的 `PureLive-3.1.0-4113-windows-x64-portable.zip` 独立解压副本，不是开发态 `flutter run`。
+- v3.1.2 补充测试对象同样来自冻结提交 `4d79e5fa` 的便携 Release，而不是开发态运行；验证了当前 200 Hz 显示器检测、刷新率模式即时生效/持久化，以及普通窗口和最大化两种真全屏往返。
 - 实际录制文件：`D:\Soft\pure_live\AppData\RECORDS\PureLiveRecords\bilibili\EdmundDZhang\2026-08-31\14-27-35\20260831_142734_898.mp4`；短录期间时长、大小和速度持续更新，停止后 MP4 音视频轨均可读取。
 - “立即启动录制”当前会创建一个录制任务；停止录制后任务保留为“已监控”，而“添加监控”又是独立入口。该行为已记录为待澄清的产品语义，暂不把“立即录制”解释成一次性任务，也不据此扩大改动录制生命周期。
 - 10 分钟样本没有无响应、线程持续增长或进程退出；Working Set 增长约 62 MiB，Private Bytes 净增长约 72 MiB，中间峰值 989.32 MiB。单段样本尚不足以区分图片/媒体缓存平台期与泄漏，后续需要空闲基线、退出房间回落和第二段等长样本作对照。

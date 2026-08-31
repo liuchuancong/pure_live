@@ -2,7 +2,7 @@
 
 审计基线：维护分支 `v3.1.0+4113` / `b1182034`，当前目标补丁版本 `v3.1.2+4115`。本轮只读取上游 Issue 和当前维护分支代码进行归因，不合并上游提交。状态只描述已经取得的证据；静态覆盖不会替代 Android / Windows 实机结果。
 
-快照时间为 2026-08-31（Asia/Shanghai）：维护仓库当前没有未关闭 Issue；上游未关闭列表共 10 项，最新项为 #821。下表覆盖全部当前未关闭上游 Issue，并保留与 v3.1.0 直接相关、刚完成处置的 #818/#801 作为闭环记录。
+快照时间为 2026-08-31（Asia/Shanghai）：维护仓库当前没有未关闭 Issue；上游未关闭列表共 8 项，最新项为 #821。#801、#807、#810、#818 已由上游在 2026-08-31 关闭；关闭状态只表示 Issue 生命周期变化，不替代本维护分支的代码与运行验证。下表覆盖全部当前未关闭上游 Issue，并保留这四项与维护分支直接相关的闭环或后续设计记录。
 
 ## 结论表
 
@@ -13,9 +13,9 @@
 | [#818 后台播放关闭后仍播放](https://github.com/liuchuancong/pure_live/issues/818) | Android 策略缺陷；最初由维护分支 `2ca7ff6a` 的纯音频稳定化策略引入，后来进入上游 | PJZ110 / Android 16 / `6458d541` arm64 Release：关闭开关后手动纯音频退桌面由 `PLAYING` 转 `PAUSED` 且当前 Wake Lock 为 0；回前台恢复。开启开关时普通视频后台继续；关闭开关后主动系统 PiP 继续；关闭开关时 1 分钟自动助眠在后台按时停止，媒体状态为 `NONE`，Pure Live 保活锁释放，CPU 样本为 0% | 原复现链及视频、纯音频、自动助眠、系统 PiP 四组合均已实机通过，记入 v3.1.0 发布闭环 |
 | [#817 iOS 定时结束后屏幕不立即熄灭](https://github.com/liuchuancong/pure_live/issues/817) | 平台能力与预期边界，不是播放器停止失败 | Issue 没有日志；当前计时结束会停止播放并释放媒体资源。iOS 未向普通第三方应用开放立即锁屏入口，屏幕熄灭由系统自动锁定策略决定 | 验证停止播放、释放屏幕常亮和音频会话；文案明确“停止播放并恢复系统自动锁屏”，不伪造锁屏动作 |
 | [#819 小红书直播](https://github.com/liuchuancong/pure_live/issues/819) | 新平台请求，被错误标为 Bug | 当前平台目录、接口探针、画质、弹幕、录制、登录与故障语义均没有小红书合同 | 进入平台研究清单；先形成公开入口、登录依赖、直播源寿命与协议证据，再决定是否进入稳定版，避免只加一个不完整首页入口 |
-| [#810 新窗口使用现有配置](https://github.com/liuchuancong/pure_live/issues/810) | Windows 体验缺口，现有隔离是有意设计 | `WindowsMultiInstanceLauncher` 为每个窗口生成独立 instance 目录，避免多个进程并发写同一 Hive；因此新窗口从默认配置启动 | 设计“只读配置快照 + 独立运行时状态”：创建窗口时复制主题、播放器、弹幕、代理和平台设置，不共享可变数据库；收藏、历史和窗口位置按字段决定是否导入。先加迁移/并发测试，再做实机 |
-| [#807 局域网数据同步](https://github.com/liuchuancong/pure_live/issues/807) | 功能缺口 | 当前仍有 WebDAV、Firebase 配置同步和 TV 数据同步文案，但没有完整的局域网发现、配对、冲突合并与传输状态入口 | 作为独立同步工程；先统一配置 schema、设备身份、一次性配对和冲突策略，不在播放器稳定批次中恢复半套服务 |
-| [#801 Windows 弹幕刷新率 / MSIX 日志目录](https://github.com/liuchuancong/pure_live/issues/801) | 维护分支已有代码修复，待当前 Windows 包复验 | Windows 已显示省电/均衡/最高档位；`DisplayModeService` 提供当前与最高刷新率，主画面和小窗弹幕使用同一自适应 FPS；日志 UI 使用统一日志目录解析 | Windows 阶段在主屏/副屏分别验证刷新率切换、165 Hz 上限、窗口跨屏与日志目录打开；通过后在 Issue 审计中标记实证完成 |
+| [#810 新窗口使用现有配置](https://github.com/liuchuancong/pure_live/issues/810) | 上游已关闭；Windows 体验缺口，现有隔离是有意设计 | `WindowsMultiInstanceLauncher` 为每个窗口生成独立 instance 目录，避免多个进程并发写同一 Hive；因此新窗口从默认配置启动 | 关闭状态不改变技术结论。后续设计“只读配置快照 + 独立运行时状态”：创建窗口时复制主题、播放器、弹幕、代理和平台设置，不共享可变数据库；收藏、历史和窗口位置按字段决定是否导入。先加迁移/并发测试，再做实机 |
+| [#807 局域网数据同步](https://github.com/liuchuancong/pure_live/issues/807) | 上游已关闭；功能缺口 | 当前仍有 WebDAV、Firebase 配置同步和 TV 数据同步文案，但没有完整的局域网发现、配对、冲突合并与传输状态入口 | 关闭状态不等于功能已实现。仍作为独立同步工程；先统一配置 schema、设备身份、一次性配对和冲突策略，不在播放器稳定批次中恢复半套服务 |
+| [#801 Windows 弹幕刷新率 / MSIX 日志目录](https://github.com/liuchuancong/pure_live/issues/801) | 上游已关闭；维护分支代码与当前 Release 运行验证均完成 | `DisplayModeService` 在 v3.1.2 便携 Release 实测识别 `3840×2400 · 200 Hz（最高 200 Hz）`；省电、均衡、最高三档切换均即时更新说明，均衡模式在同一隔离实例冷重启后仍保留，最后恢复省电默认。主画面和小窗弹幕继续使用同一自适应 FPS 解析 | 当前显示器检测、三档即时生效、持久化和默认回退闭环；证据见 `docs/WINDOWS_RUNTIME_AUDIT_3_1_2.md`。副屏跨屏与 MSIX 日志目录仍属于后续设备/封装矩阵，不外推为已验证 |
 | [#792 虎牙未开播房间显示历史弹幕](https://github.com/liuchuancong/pure_live/issues/792) | 功能请求，不是当前弹幕连接故障 | 虎牙实时弹幕连接只覆盖当前直播会话；项目没有可信的历史弹幕归档来源、时间线合同或本地录制索引 | 不把缓存的其他房间/旧会话弹幕伪装成历史弹幕。后续若引入本地随录存档，必须按平台、房间、场次和时间戳隔离，并显式标注来源 |
 | [#779 可选择另一套应用图标](https://github.com/liuchuancong/pure_live/issues/779) | 外观功能请求 | Android 动态图标需要预置 `activity-alias` 并处理启动器缓存；Windows 快捷方式/安装器图标是另一套更新路径，不是替换一张资源即可跨平台生效 | 留作独立外观批次；先准备各尺寸资源、升级兼容和启动器回退测试，不把图标切换混入播放器稳定版 |
 | [#767 Windows 4K / 高 DPI GPU 过高](https://github.com/liuchuancong/pure_live/issues/767) | 性能问题，代码层已有多轮缓解，仍需硬件实测 | 当前按可见 viewport / DPR 约束纹理，关闭房间有延迟释放与硬销毁，Windows 虎牙使用双播放器候选但限制为固定两个实例 | 用 Windows Performance Counter 记录 4K/150%、1440p/100%、单窗/双窗、弹幕开关和小窗；同时记录 GPU 3D、Video Decode、CPU、PSS/Working Set 和关闭后回落。未达门限则继续定位合成面或候选播放器生命周期 |
