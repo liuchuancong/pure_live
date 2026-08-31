@@ -16,7 +16,7 @@ on:
         required: true
         type: string
       staged_metadata:
-        description: Temporary BUILD_METADATA asset name
+        description: Temporary build metadata asset name (a unique name is preferred)
         required: true
         type: string
 
@@ -220,6 +220,14 @@ jobs:
             SHA256SUMS.txt ANDROID_SHA256SUM.txt --clobber --repo "$GITHUB_REPOSITORY"
 
           for name in "$STAGED_APK" "$STAGED_METADATA"; do
+            # A caller may use BUILD_METADATA.json as the staging name. The
+            # final signed metadata is uploaded under that same canonical
+            # name, so deleting it here would remove the verified result.
+            case "$name" in
+              "$FINAL_APK"|BUILD_METADATA.json|SHA256SUMS.txt|ANDROID_SHA256SUM.txt)
+                continue
+                ;;
+            esac
             # The releases/tags REST endpoint omits draft releases. The gh
             # release command resolves drafts by tag and removes the staging
             # asset without depending on that endpoint.
