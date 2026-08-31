@@ -1,3 +1,4 @@
+import 'package:remixicon/remixicon.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
@@ -41,8 +42,8 @@ class _RemoteSyncPageState extends State<RemoteSyncPage> {
         title: Text(i18n('remote_sync_receive')),
         content: Text(i18n('remote_sync_receive_confirm')),
         actions: [
-          TextButton(onPressed: () => Get.back(result: false), child: Text(i18n('cancel'))),
-          FilledButton(onPressed: () => Get.back(result: true), child: Text(i18n('confirm'))),
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(i18n('cancel'))),
+          FilledButton(onPressed: () => Navigator.of(context).pop(true), child: Text(i18n('confirm'))),
         ],
       ),
     );
@@ -119,14 +120,8 @@ class _RemoteSyncPageState extends State<RemoteSyncPage> {
         title: Text(i18n('remote_sync_select_action')),
         content: Text('${parsed.ip}:${parsed.port}'),
         actions: [
-          TextButton(
-            onPressed: () => Get.back(result: 'receive'),
-            child: Text(i18n('remote_sync_receive')),
-          ),
-          FilledButton(
-            onPressed: () => Get.back(result: 'send'),
-            child: Text(i18n('remote_sync_send')),
-          ),
+          TextButton(onPressed: () => Navigator.of(context).pop('receive'), child: Text(i18n('remote_sync_receive'))),
+          FilledButton(onPressed: () => Navigator.of(context).pop('send'), child: Text(i18n('remote_sync_send'))),
         ],
       ),
     );
@@ -145,7 +140,14 @@ class _RemoteSyncPageState extends State<RemoteSyncPage> {
         title: Text(i18n('remote_sync')),
         actions: [
           if (!PlatformUtils.isDesktop) IconButton(onPressed: _scanQr, icon: const Icon(Icons.qr_code_scanner)),
-          IconButton(onPressed: service.start, icon: const Icon(Icons.refresh)),
+          Obx(
+            () => IconButton(
+              onPressed: service.isDiscovering.value ? service.stop : service.start,
+              icon: Icon(service.isDiscovering.value ? Remix.stop_circle_line : Remix.play_circle_line),
+              tooltip: service.isDiscovering.value ? i18n('stop') : i18n('start'),
+            ),
+          ),
+          SizedBox(width: 8),
         ],
       ),
       body: Obx(
@@ -353,7 +355,7 @@ class _RemoteSyncScannerPageState extends State<_RemoteSyncScannerPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(i18n('remote_sync_scan'))),
+      appBar: AppBar(title: Text(i18n('remote_sync_scan_qr'))),
       body: MobileScanner(
         controller: controller,
         onDetect: (capture) {
@@ -373,7 +375,7 @@ class _RemoteSyncScannerPageState extends State<_RemoteSyncScannerPage> {
             }
 
             found = true;
-            Get.back(result: value);
+            Navigator.of(context).pop(value);
             break;
           }
         },

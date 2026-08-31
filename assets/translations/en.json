@@ -1524,5 +1524,7 @@
     "remote_sync_confirm": "Confirm",
     "remote_sync_no_address": "Unable to get local address",
     "remote_sync_not_running": "Sync service is not running",
-    "remote_sync_running": "Sync service is running"
+    "remote_sync_running": "Sync service is running",
+    "remote_sync_receive_confirm": "Do you want to receive the configuration from remote sync?",
+    "remote_sync_select_action": "Select Sync Action"
 }

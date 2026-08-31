@@ -1524,5 +1524,7 @@
     "remote_sync_confirm": "确认",
     "remote_sync_no_address": "未获取到本机地址",
     "remote_sync_not_running": "同步服务未运行",
-    "remote_sync_running": "同步服务运行中"
+    "remote_sync_running": "同步服务运行中",
+    "remote_sync_receive_confirm": "是否接收远程同步的配置？",
+    "remote_sync_select_action": "选择同步操作"
 }

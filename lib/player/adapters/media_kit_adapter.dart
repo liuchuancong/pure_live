@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:rxdart/rxdart.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/core/common/log.dart';
@@ -18,7 +19,6 @@ import 'package:pure_live/player/models/player_super_resolution.dart';
 import 'package:pure_live/common/utils/latest_async_value_queue.dart';
 import 'package:pure_live/player/interface/unified_player_interface.dart';
 import 'package:pure_live/player/interface/media_kit_player_accessor.dart';
-
 
 @visibleForTesting
 ({int width, int height})? resolveMediaKitDisplaySize(VideoParams params) {
@@ -71,15 +71,24 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
   StreamSubscription? _errorSub;
 
   static Future<void> applyNativeLiveProperties(NativePlayer native) async {
+    await native.setProperty('force-seekable', 'yes');
+
     await native.setProperty(
       'protocol_whitelist',
       'httpproxy,udp,rtp,tcp,tls,data,file,http,https,crypto,rtmp,rtmps,rtsp,srt',
     );
     await native.setProperty("demuxer-cache-dir", await FileUtils().getTempPath());
-    
+
     await native.setProperty('demuxer-lavf-probesize', '2097152');
 
+    // Live FLV/HLS streams need a short probe rather than a long-file
+    // analysis pass.  This reduces the black-screen interval before the
+    // first decoded frame while retaining enough data for codec detection.
+    await native.setProperty('demuxer-lavf-analyzeduration', '2');
+
     await native.setProperty('demuxer-max-bytes', LiveBufferPolicy.forwardBytes.toString());
+
+    await native.setProperty('demuxer-max-back-bytes', LiveBufferPolicy.backBytes.toString());
 
     await native.setProperty('demuxer-readahead-secs', LiveBufferPolicy.readaheadSeconds.toString());
 

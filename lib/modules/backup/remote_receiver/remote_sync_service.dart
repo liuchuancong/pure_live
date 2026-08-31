@@ -19,6 +19,8 @@ class RemoteSyncService extends GetxService {
   final RxString localIp = ''.obs;
   final RxInt localPort = RemoteSyncProtocol.defaultHttpPort.obs;
 
+  final Set<String> _localIps = <String>{};
+
   final RxList<RemoteSyncDevice> devices = <RemoteSyncDevice>[].obs;
 
   HttpServer? _server;
@@ -46,9 +48,13 @@ class RemoteSyncService extends GetxService {
     }
   }
 
-  String get platform => Platform.operatingSystem;
+  String get platform {
+    return Platform.operatingSystem;
+  }
 
-  String get version => '1.0.0';
+  String get version {
+    return '1.0.0';
+  }
 
   String get address {
     if (localIp.value.isEmpty) {
@@ -91,16 +97,41 @@ class RemoteSyncService extends GetxService {
     await startDiscovery();
   }
 
+  Future<void> stop() async {
+    _broadcastTimer?.cancel();
+    _broadcastTimer = null;
+
+    _cleanupTimer?.cancel();
+    _cleanupTimer = null;
+
+    _discoverySocket?.close();
+    _discoverySocket = null;
+
+    await _server?.close(force: true);
+    _server = null;
+
+    devices.clear();
+
+    isServerRunning.value = false;
+    isDiscovering.value = false;
+  }
+
   Future<void> _resolveLocalIp() async {
     try {
       final interfaces = await NetworkInterface.list(type: InternetAddressType.IPv4, includeLoopback: false);
+
+      final ips = <String>{};
 
       String? privateIp;
       String? fallbackIp;
 
       for (final interface in interfaces) {
         for (final address in interface.addresses) {
-          final ip = address.address;
+          final ip = address.address.trim();
+
+          if (ip.isEmpty) {
+            continue;
+          }
 
           if (ip.startsWith('127.')) {
             continue;
@@ -110,21 +141,23 @@ class RemoteSyncService extends GetxService {
             continue;
           }
 
+          ips.add(ip);
+
           fallbackIp ??= ip;
 
           if (_isPrivateIpv4(ip)) {
-            privateIp = ip;
-            break;
+            privateIp ??= ip;
           }
-        }
-
-        if (privateIp != null) {
-          break;
         }
       }
 
+      _localIps
+        ..clear()
+        ..addAll(ips);
+
       localIp.value = privateIp ?? fallbackIp ?? '';
     } catch (_) {
+      _localIps.clear();
       localIp.value = '';
     }
   }
@@ -152,6 +185,33 @@ class RemoteSyncService extends GetxService {
     }
 
     if (a == 192 && b == 168) {
+      return true;
+    }
+
+    return false;
+  }
+
+  bool _isLocalDevice(RemoteSyncDevice device, {String? senderIp}) {
+    if (device.id == _deviceId) {
+      return true;
+    }
+
+    final deviceIp = device.ip.trim();
+    final sourceIp = senderIp?.trim() ?? '';
+
+    if (deviceIp.isNotEmpty && _localIps.contains(deviceIp)) {
+      return true;
+    }
+
+    if (sourceIp.isNotEmpty && _localIps.contains(sourceIp)) {
+      return true;
+    }
+
+    if (deviceIp.isNotEmpty && deviceIp == localIp.value) {
+      return true;
+    }
+
+    if (sourceIp.isNotEmpty && sourceIp == localIp.value) {
       return true;
     }
 
@@ -338,6 +398,12 @@ class RemoteSyncService extends GetxService {
       return true;
     }
 
+    await _resolveLocalIp();
+
+    if (localIp.value.isEmpty) {
+      return false;
+    }
+
     try {
       _discoverySocket = await RawDatagramSocket.bind(
         InternetAddress.anyIPv4,
@@ -360,6 +426,7 @@ class RemoteSyncService extends GetxService {
       _broadcastDiscovery();
 
       _broadcastTimer?.cancel();
+
       _broadcastTimer = Timer.periodic(const Duration(seconds: 2), (_) => _broadcastDiscovery());
 
       return true;
@@ -407,7 +474,11 @@ class RemoteSyncService extends GetxService {
 
     while ((datagram = socket.receive()) != null) {
       try {
-        final json = jsonDecode(utf8.decode(datagram!.data));
+        final packet = datagram!;
+
+        final senderIp = packet.address.address.trim();
+
+        final json = jsonDecode(utf8.decode(packet.data));
 
         if (json is! Map) {
           continue;
@@ -419,25 +490,47 @@ class RemoteSyncService extends GetxService {
           continue;
         }
 
-        final id = data['id']?.toString() ?? '';
+        final id = data['id']?.toString().trim() ?? '';
 
-        if (id.isEmpty || id == _deviceId) {
+        if (id.isEmpty) {
+          continue;
+        }
+
+        if (id == _deviceId) {
           continue;
         }
 
         final device = RemoteSyncDevice.fromJson(data);
 
-        final ip = device.ip.isNotEmpty ? device.ip : datagram.address.address;
+        final advertisedIp = device.ip.trim();
+
+        final ip = advertisedIp.isNotEmpty ? advertisedIp : senderIp;
+
+        if (ip.isEmpty) {
+          continue;
+        }
+
+        if (_isLocalDevice(device, senderIp: senderIp)) {
+          continue;
+        }
 
         final actual = device.copyWith(ip: ip, lastSeen: DateTime.now());
 
-        final index = devices.indexWhere((item) => item.id == actual.id);
+        final indexById = devices.indexWhere((item) => item.id == actual.id);
 
-        if (index >= 0) {
-          devices[index] = actual;
-        } else {
-          devices.add(actual);
+        if (indexById >= 0) {
+          devices[indexById] = actual;
+          continue;
         }
+
+        final indexByIp = devices.indexWhere((item) => item.ip.trim() == actual.ip.trim());
+
+        if (indexByIp >= 0) {
+          devices[indexByIp] = actual;
+          continue;
+        }
+
+        devices.add(actual);
       } catch (_) {}
     }
   }
@@ -471,13 +564,19 @@ class RemoteSyncService extends GetxService {
       final client = HttpClient();
 
       try {
-        final request = await client.postUrl(Uri.parse('http://$ip:$port${RemoteSyncProtocol.apiSettings}'));
+        final request = await client.postUrl(
+          Uri.parse(
+            'http://$ip:$port'
+            '${RemoteSyncProtocol.apiSettings}',
+          ),
+        );
 
         request.headers.contentType = ContentType('application', 'json', charset: 'utf-8');
 
         request.write(jsonEncode(RemoteSyncProtocol.settingsPacket(settings: settings)));
 
         final response = await request.close();
+
         final responseBody = await utf8.decoder.bind(response).join();
 
         if (response.statusCode != HttpStatus.ok) {
@@ -508,7 +607,12 @@ class RemoteSyncService extends GetxService {
       final client = HttpClient();
 
       try {
-        final request = await client.getUrl(Uri.parse('http://$ip:$port${RemoteSyncProtocol.apiStatus}'));
+        final request = await client.getUrl(
+          Uri.parse(
+            'http://$ip:$port'
+            '${RemoteSyncProtocol.apiStatus}',
+          ),
+        );
 
         final response = await request.close();
 
@@ -532,7 +636,12 @@ class RemoteSyncService extends GetxService {
       final client = HttpClient();
 
       try {
-        final request = await client.getUrl(Uri.parse('http://$ip:$port${RemoteSyncProtocol.apiStatus}'));
+        final request = await client.getUrl(
+          Uri.parse(
+            'http://$ip:$port'
+            '${RemoteSyncProtocol.apiStatus}',
+          ),
+        );
 
         final response = await request.close();
 
