@@ -26,6 +26,14 @@ typedef MultiviewStreamResolver = Future<MultiviewStreamSource> Function(LiveRoo
 /// 两者同时出声不可接受，进入时必须先让全局侧静默。注入以便测试。
 typedef MultiviewGlobalPauseHook = Future<void> Function();
 
+/// Loads and saves the per-room volume used by multiview.
+///
+/// Production reuses the same persistent room-volume store as the normal
+/// player. Tests inject deterministic callbacks so the controller remains
+/// independent from the GetX settings lifecycle.
+typedef MultiviewRoomVolumeLoader = double Function(LiveRoom room);
+typedef MultiviewRoomVolumeSaver = Future<void> Function(LiveRoom room, double volume);
+
 /// 多画面同看控制器（无头核心层）。
 ///
 /// 架构决策：
@@ -43,11 +51,15 @@ class MultiviewController extends GetxController {
     MultiviewStreamResolver? streamResolver,
     MultiviewGlobalPauseHook? pauseGlobalPlayback,
     MultiviewDanmakuEngineFactory? danmakuEngineFactory,
+    MultiviewRoomVolumeLoader? roomVolumeLoader,
+    MultiviewRoomVolumeSaver? roomVolumeSaver,
     int? maxCellCount,
   }) : _playerFactory = playerFactory ?? _defaultPlayerFactory,
        _streamResolver = streamResolver ?? _defaultStreamResolver,
        _pauseGlobalPlayback = pauseGlobalPlayback ?? _defaultPauseGlobalPlayback,
        _danmakuEngineFactory = danmakuEngineFactory ?? _defaultDanmakuEngineFactory,
+       _roomVolumeLoader = roomVolumeLoader ?? _defaultRoomVolumeLoader,
+       _roomVolumeSaver = roomVolumeSaver ?? _defaultRoomVolumeSaver,
        maxCellCount = maxCellCount ?? (PlatformUtils.isDesktop ? maxCells : MultiviewLayout.focus.capacity) {
     if (this.maxCellCount < MultiviewLayout.focus.capacity || this.maxCellCount > maxCells) {
       throw ArgumentError.value(this.maxCellCount, 'maxCellCount', 'must be between 4 and $maxCells');
@@ -135,6 +147,12 @@ class MultiviewController extends GetxController {
     return Sites.of(room.platform!).liveSite.getDanmaku();
   }
 
+  static double _defaultRoomVolumeLoader(LiveRoom room) => room.getSavedVolume();
+
+  static Future<void> _defaultRoomVolumeSaver(LiveRoom room, double volume) {
+    return room.saveCurrentVolume(volume);
+  }
+
   /// 生产环境全局播放静默钩子。
   ///
   /// 全局播放服务尚未初始化说明当前没有全局会话，无需处理。
@@ -192,7 +210,11 @@ class MultiviewController extends GetxController {
   );
 
   /// 音频焦点格下标，默认 0。
-  int _audioFocusIndex = 0;
+  ///
+  /// 必须是响应式状态：非 focus 布局点击格子后，顶部音量入口、声音来源
+  /// 标识和弹幕目标需要在同一帧切换。旧实现使用普通 int，只能依赖页面
+  /// 手工 setState，导致页级弹幕按钮在 1×1/1×2/2×2 下没有有效目标。
+  final RxInt _audioFocusIndex = 0.obs;
 
   /// Serializes native mute calls and coalesces rapid focus taps to the latest
   /// cell, preventing out-of-order futures from leaving multiple cells audible.
@@ -219,6 +241,8 @@ class MultiviewController extends GetxController {
   final MultiviewStreamResolver _streamResolver;
   final MultiviewGlobalPauseHook _pauseGlobalPlayback;
   final MultiviewDanmakuEngineFactory _danmakuEngineFactory;
+  final MultiviewRoomVolumeLoader _roomVolumeLoader;
+  final MultiviewRoomVolumeSaver _roomVolumeSaver;
 
   /// 大画面弹幕会话：异常自容错（记日志不外抛），绝不影响播放主链路。
   late final MultiviewDanmakuSession _danmakuSession = MultiviewDanmakuSession(
@@ -230,7 +254,10 @@ class MultiviewController extends GetxController {
   final List<Worker> _rxWorkers = <Worker>[];
 
   /// 当前持有音频焦点的格子下标。
-  int get audioFocusIndex => _audioFocusIndex;
+  int get audioFocusIndex => _audioFocusIndex.value;
+
+  /// UI-only reactive source for selected-cell controls.
+  RxInt get audioFocusIndexState => _audioFocusIndex;
 
   /// focus 布局下是否还能追加小格。
   bool get canAddCell => layout.value == MultiviewLayout.focus && cells.length < maxCellCount;
@@ -250,7 +277,9 @@ class MultiviewController extends GetxController {
       }),
     );
     // 弹幕会话跟随页级开关与大画面切换；房间变化由各变更点显式触发同步。
-    _rxWorkers.add(everAll([danmakuEnabled, focusedCellIndex], (_) => unawaited(_syncDanmakuSession())));
+    _rxWorkers.add(
+      everAll([danmakuEnabled, layout, focusedCellIndex, _audioFocusIndex], (_) => unawaited(_syncDanmakuSession())),
+    );
     // 降质开关切换后即时 reconcile 在播小格，避免开关只影响后续分配。
     _rxWorkers.add(ever(smallCellsLowQuality, (_) => unawaited(_reconcileSmallCellQualities())));
   }
@@ -284,11 +313,19 @@ class MultiviewController extends GetxController {
     );
   }
 
-  /// 按当前开关/布局/大画面房间同步弹幕会话（幂等）。
+  int get _selectedCellIndex {
+    if (cells.isEmpty) return 0;
+    final selected = layout.value == MultiviewLayout.focus ? focusedCellIndex.value : _audioFocusIndex.value;
+    return selected.clamp(0, cells.length - 1);
+  }
+
+  /// 按当前开关/布局/所选房间同步弹幕会话（幂等）。
+  ///
+  /// focus 布局的目标是大画面；1×1/1×2/2×2 的目标是当前声音来源格。
+  /// 因而顶部弹幕按钮在所有布局中都有明确、唯一且可见的渲染目标。
   Future<void> _syncDanmakuSession() async {
     try {
-      final active = danmakuEnabled.value && layout.value == MultiviewLayout.focus;
-      final room = active ? cells[focusedCellIndex.value].room : null;
+      final room = danmakuEnabled.value && cells.isNotEmpty ? cells[_selectedCellIndex].room : null;
       if (room == null || !MultiviewDanmakuSession.supportsRoom(room)) {
         await _danmakuSession.disconnect();
         return;
@@ -339,7 +376,7 @@ class MultiviewController extends GetxController {
     // 避免出现「大画面无声、声音来自某个小格」的失同步。
     // 进入 focus 时容量为 4，_audioFocusIndex 必在其内，故先同步后钳制安全。
     if (newLayout == MultiviewLayout.focus) {
-      focusedCellIndex.value = _audioFocusIndex;
+      focusedCellIndex.value = _audioFocusIndex.value;
     }
 
     // 缩容后旧的大画面格可能越界，钳制到新容量内
@@ -348,7 +385,7 @@ class MultiviewController extends GetxController {
       focusedCellIndex.value = capacity - 1;
     }
 
-    if (_audioFocusIndex >= capacity) {
+    if (_audioFocusIndex.value >= capacity) {
       _refocusToFirstPlaying(fallback: 0);
     }
 
@@ -485,6 +522,20 @@ class MultiviewController extends GetxController {
       await _teardown(handle);
       _failCell(cellIndex, epoch, MultiviewCellErrorKind.startFailure, error.toString());
       return;
+    }
+
+    // Restore the same per-room volume used by the normal player before this
+    // handle can receive audio focus. All multiview handles start muted, so
+    // this cannot create a first-frame volume burst.
+    try {
+      await handle.setVolume(_roomVolumeLoader(room).clamp(0.0, 1.0));
+    } catch (error, stackTrace) {
+      developer.log(
+        'MultiviewController: restore room volume failed',
+        name: 'MultiviewController',
+        error: error,
+        stackTrace: stackTrace,
+      );
     }
     if (_isStale(cellIndex, epoch)) {
       await _teardown(handle);
@@ -654,7 +705,8 @@ class MultiviewController extends GetxController {
     }
   }
 
-  /// 设置指定格的会话音量（0.0-1.0，不持久化；静音状态独立于音量值）。
+  /// 设置指定格的音量（0.0-1.0）并写入普通播放器共用的房间音量存储。
+  /// 静音状态独立于音量值。
   Future<void> setCellVolume(int cellIndex, double volume) async {
     RangeError.checkValidIndex(cellIndex, cells, 'cellIndex');
     if (cells[cellIndex].status != MultiviewCellStatus.playing) {
@@ -664,7 +716,22 @@ class MultiviewController extends GetxController {
     if (handle == null) {
       throw StateError('multiview: cell $cellIndex is not playing');
     }
-    await handle.setVolume(volume);
+    final resolved = volume.clamp(0.0, 1.0).toDouble();
+    await handle.setVolume(resolved);
+    final room = cells[cellIndex].room;
+    if (room == null) return;
+    try {
+      await _roomVolumeSaver(room, resolved);
+    } catch (error, stackTrace) {
+      // A damaged preference store must not turn a working volume adjustment
+      // into a playback failure. The active player has already applied it.
+      developer.log(
+        'MultiviewController: persist room volume failed',
+        name: 'MultiviewController',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
   }
 
   /// 读取指定格的会话音量当前值（供 UI 音量控件初始化）；未起播返回 1.0。
@@ -679,7 +746,7 @@ class MultiviewController extends GetxController {
   void removeCell(int cellIndex) {
     RangeError.checkValidIndex(cellIndex, cells, 'cellIndex');
     final handle = _captureSlot(cellIndex);
-    if (_audioFocusIndex == cellIndex) {
+    if (_audioFocusIndex.value == cellIndex) {
       _refocusToFirstPlaying(fallback: cellIndex);
     }
     // 关闭大画面格后显示焦点不能空置：转移到第一个播放中的格，无播放格归 0
@@ -697,7 +764,7 @@ class MultiviewController extends GetxController {
   /// 切换音频焦点：仅目标格出声，其余全部静音。
   Future<void> setAudioFocus(int cellIndex) {
     RangeError.checkValidIndex(cellIndex, cells, 'cellIndex');
-    _audioFocusIndex = cellIndex;
+    _audioFocusIndex.value = cellIndex;
     return _audioFocusTransitions.submit(cellIndex).catchError((Object error, StackTrace stackTrace) {
       developer.log(
         'MultiviewController: audio focus transition failed',
@@ -729,7 +796,7 @@ class MultiviewController extends GetxController {
 
     // A newer tap arrived while native mute calls were in flight. The queue
     // will apply that pending target next, so never unmute this stale target.
-    if (_audioFocusIndex != targetIndex || targetIndex >= _players.length) return;
+    if (_audioFocusIndex.value != targetIndex || targetIndex >= _players.length) return;
     final target = _players[targetIndex];
     if (target != null) await target.setMuted(false);
   }
@@ -747,7 +814,7 @@ class MultiviewController extends GetxController {
         handles.add(handle);
       }
     }
-    _audioFocusIndex = 0;
+    _audioFocusIndex.value = 0;
     focusedCellIndex.value = 0;
 
     // 弹幕会话先行断开：网络栈清理与播放器销毁互不依赖。
@@ -790,7 +857,7 @@ class MultiviewController extends GetxController {
     );
     // 大画面解析/起播失败时其房间状态已不可用，同步弹幕会话
     // （幂等入口：健康同键会话保持，失效则按当前大画面房间按需重连）。
-    if (layout.value == MultiviewLayout.focus && cellIndex == focusedCellIndex.value) {
+    if (cellIndex == _selectedCellIndex) {
       unawaited(_syncDanmakuSession());
     }
   }
@@ -858,7 +925,7 @@ class MultiviewController extends GetxController {
     if (target != null) {
       setAudioFocus(target);
     } else {
-      _audioFocusIndex = fallback;
+      _audioFocusIndex.value = fallback;
     }
   }
 

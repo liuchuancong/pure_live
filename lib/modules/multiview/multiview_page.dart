@@ -467,6 +467,21 @@ class _MultiviewPageState extends State<MultiviewPage> {
               onPressed: () => controller.danmakuEnabled.toggle(),
             );
           }),
+          // The selected room volume is available in every layout. In focus
+          // mode the selected room is the large cell; in grid layouts it is
+          // the cell carrying audio focus.
+          Obx(() {
+            final selectedIndex = controller.audioFocusIndexState.value;
+            final canAdjust =
+                selectedIndex >= 0 &&
+                selectedIndex < controller.cells.length &&
+                controller.cells[selectedIndex].status == MultiviewCellStatus.playing;
+            return IconButton(
+              tooltip: i18n('multiview_volume'),
+              icon: const Icon(Remix.volume_up_line, size: 22),
+              onPressed: canAdjust ? () => _showVolumeSheet(selectedIndex) : null,
+            );
+          }),
           // 小格自动降质联动：仅 focus 布局生效，非 focus 下置灰防误触。
           Obx(() {
             final isFocusLayout = controller.layout.value == MultiviewLayout.focus;
@@ -511,6 +526,7 @@ class _MultiviewPageState extends State<MultiviewPage> {
       final cells = controller.cells;
       // 在 Obx 内读取以建立订阅：晋升与弹幕开关变化即时驱动重绘。
       final focused = controller.focusedCellIndex.value;
+      final audioFocus = controller.audioFocusIndexState.value;
       final danmakuEnabled = controller.danmakuEnabled.value;
       final content = layout == MultiviewLayout.focus
           ? _buildFocusLayout(cells, focused: focused, isWide: isWide, danmakuEnabled: danmakuEnabled)
@@ -524,7 +540,12 @@ class _MultiviewPageState extends State<MultiviewPage> {
                           Expanded(
                             child: Padding(
                               padding: const EdgeInsets.all(3),
-                              child: _buildCellAt(cells, row * layout.columns + col, isWide: isWide),
+                              child: _buildCellAt(
+                                cells,
+                                row * layout.columns + col,
+                                isWide: isWide,
+                                showDanmaku: danmakuEnabled && row * layout.columns + col == audioFocus,
+                              ),
                             ),
                           ),
                       ],
@@ -727,28 +748,54 @@ class _MultiviewPageState extends State<MultiviewPage> {
     );
   }
 
-  /// 音量调节弹窗：拖动即时下发每格会话音量（0.0-1.0）。
+  /// 音量调节弹窗：拖动即时下发并保存所选房间音量（0.0-1.0）。
   void _showVolumeSheet(int cellIndex) {
     var value = controller.cellVolume(cellIndex);
+    final room = controller.cells[cellIndex].room;
     showModalBottomSheet(
       context: context,
       builder: (sheetContext) => StatefulBuilder(
         builder: (sheetContext, setSheetState) => SafeArea(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-            child: Row(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Remix.volume_down_line),
-                Expanded(
-                  child: Slider(
-                    value: value,
-                    onChanged: (v) {
-                      setSheetState(() => value = v);
-                      unawaited(controller.setCellVolume(cellIndex, v));
-                    },
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        room?.nick?.trim().isNotEmpty == true ? room!.nick! : i18n('multiview_volume'),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(sheetContext).textTheme.titleMedium,
+                      ),
+                    ),
+                    Text('${(value * 100).round()}%'),
+                  ],
                 ),
-                const Icon(Remix.volume_up_line),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    const Icon(Remix.volume_down_line),
+                    Expanded(
+                      child: Slider(
+                        value: value,
+                        onChanged: (v) {
+                          setSheetState(() => value = v);
+                          unawaited(controller.setCellVolume(cellIndex, v));
+                        },
+                      ),
+                    ),
+                    const Icon(Remix.volume_up_line),
+                  ],
+                ),
+                Text(
+                  i18n('room_volume'),
+                  style: Theme.of(sheetContext).textTheme.bodySmall
+                      ?.copyWith(color: Theme.of(sheetContext).colorScheme.onSurfaceVariant),
+                ),
               ],
             ),
           ),
@@ -806,8 +853,6 @@ class _MultiviewPageState extends State<MultiviewPage> {
               return;
             }
             unawaited(controller.setAudioFocus(index));
-            // audioFocusIndex 非 Rx，焦点标识需要手动触发一次重绘。
-            setState(() {});
           case MultiviewCellStatus.empty || MultiviewCellStatus.offline || MultiviewCellStatus.error:
             _openPickerFor(index, isWide: isWide);
           case MultiviewCellStatus.resolving:

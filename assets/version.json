@@ -1,32 +1,32 @@
 {
-  "version": "3.1.0",
-  "build_number": 4113,
-  "version_num": 301004113,
-  "version_desc": "- 修复后台播放关闭时手动纯音频仍继续播放；后台总开关、自动助眠和系统 PiP 使用明确且一致的生命周期策略。\n- Bilibili 弹幕协议增加传输、解压、帧数和嵌套深度边界，畸形帧不再造成死循环、内存放大或后续弹幕停滞。\n- 平台 API、封面头像和弹幕 WebSocket 统一应用代理；全角代理地址自动归一化，播放器代理继续独立控制媒体流。\n- 首次启动等待设置服务完成注册；Android UI 自动化、APK 内容核验和本机构建证据进一步加固。\n- Android arm64-v8a 与 Windows x64 从同一提交串行构建，附完整更新说明、元数据和 SHA-256。",
+  "version": "3.1.1",
+  "build_number": 4114,
+  "version_num": 301014114,
+  "version_desc": "- 修复多画面四种布局的音量入口、声音来源同步与弹幕目标；非 1+3 布局的弹幕跟随当前声音来源格。\n- 多画面音量复用普通直播间的按房间持久化存储，格子替换、播放器重建和重新进入后恢复用户设置。\n- 补充 Windows 正式包播放、弹幕、画质、录制和 10 分钟资源采样证据。\n- Android arm64-v8a 与 Windows x64 从同一提交串行构建，附详细根因、构建元数据和 SHA-256。",
   "prerelease": false,
-  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.1.0",
+  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.1.1",
   "android_abis": [
     "arm64-v8a"
   ],
   "platforms": {
     "android": {
-      "version": "3.1.0",
-      "build_number": 4113,
-      "version_num": 301004113,
-      "version_desc": "- 后台播放关闭时手动纯音频退后台暂停，自动助眠按计时继续并到点释放媒体会话与保活锁；主动系统 PiP 保持播放。\n- Bilibili 弹幕畸形帧有界解析，完整用户名优先；房间关闭、重连和后续正常消息保持隔离与恢复。\n- 应用代理同时覆盖 API、封面头像和弹幕 WebSocket；中文输入法全角地址即时转换，媒体流由独立播放器代理控制。\n- 发布 arm64-v8a 正式更新包，并核验包名、版本、唯一 ABI、Flutter 资源、关键原生库、签名和 SHA-256。",
+      "version": "3.1.1",
+      "build_number": 4114,
+      "version_num": 301014114,
+      "version_desc": "- 修复多画面 1×1、1×2、2×2、1+3 布局的声音来源、音量入口与弹幕目标。\n- 当前房间音量按房间保存，替换格子或重建播放器后自动恢复。\n- 发布 arm64-v8a 更新包，并核验版本、唯一 ABI、Flutter 资源、关键原生库、签名和 SHA-256。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.1.0",
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.1.1",
       "android_abis": [
         "arm64-v8a"
       ]
     },
     "windows": {
-      "version": "3.1.0",
-      "build_number": 4113,
-      "version_num": 301004113,
-      "version_desc": "- Bilibili 弹幕帧增加有界解析与坏消息恢复，降低长时间观看时异常输入导致的停滞和内存放大风险。\n- API、封面头像与弹幕 WebSocket 使用同一应用代理；地址归一化与错误配置回退在桌面设置页同步生效。\n- 保留虎牙首帧门控双播放器续接、录制租约切换、窗口返回与资源释放链路。\n- 提供 Windows x64 可选目录安装程序和便携 ZIP，附构建元数据与 SHA-256。",
+      "version": "3.1.1",
+      "build_number": 4114,
+      "version_num": 301014114,
+      "version_desc": "- 修复多画面非 1+3 布局没有音量入口、弹幕按钮不建立会话的问题。\n- 声音焦点、工具栏、音量弹窗和弹幕目标使用同一响应式状态；音量按房间保存。\n- 提供 Windows x64 可选目录安装程序和便携 ZIP，附构建元数据与 SHA-256。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.1.0",
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.1.1",
       "windows_msix_available": false
     },
     "linux": {

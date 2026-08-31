@@ -159,6 +159,10 @@ class _Harness {
       streamResolver: _resolver,
       pauseGlobalPlayback: () async => globalPauseCalls++,
       danmakuEngineFactory: _danmakuFactory,
+      roomVolumeLoader: (room) => savedRoomVolumes[_volumeKey(room)] ?? 1.0,
+      roomVolumeSaver: (room, volume) async {
+        savedRoomVolumes[_volumeKey(room)] = volume;
+      },
       maxCellCount: maxCellCount,
     );
   }
@@ -173,6 +177,7 @@ class _Harness {
   final Map<String, Completer<void>> qualityGates = <String, Completer<void>>{};
   final Set<String> qualityLoadFailures = <String>{};
   final Map<String, _FakeDanmaku> danmakuEngines = <String, _FakeDanmaku>{};
+  final Map<String, double> savedRoomVolumes = <String, double>{};
   int globalPauseCalls = 0;
   int playerSeq = 0;
   int danmakuSeq = 0;
@@ -181,6 +186,8 @@ class _Harness {
   Object? nextStartError;
 
   late final MultiviewController controller;
+
+  String _volumeKey(LiveRoom room) => '${room.platform}/${room.roomId}';
 
   MultiviewCellPlayerHandle _factory({required int renderWidth, required int renderHeight}) {
     requestedSizes.add((renderWidth, renderHeight));
@@ -834,6 +841,27 @@ void main() {
       expect(harness.danmakuEngines['r3']!.log, contains('dm2:stop'));
     });
 
+    test('非 focus 布局弹幕跟随当前声音来源格', () async {
+      final harness = _Harness();
+      final controller = harness.controller;
+      controller.onInit();
+      await controller.assignRoom(0, _room('r1'));
+      await controller.assignRoom(1, _room('r2'));
+
+      // quad 下后分配的格取得声音来源；页级弹幕开关应连接该格，
+      // 不能像旧实现一样因为不是 focus 布局而保持无效。
+      expect(controller.layout.value, MultiviewLayout.quad);
+      expect(controller.audioFocusIndex, 1);
+      controller.danmakuEnabled.value = true;
+      await harness.pump();
+      expect(harness.danmakuEngines['r2']!.log, contains('dm0:start'));
+
+      await controller.setAudioFocus(0);
+      await harness.pump();
+      expect(harness.danmakuEngines['r2']!.log, contains('dm0:stop'));
+      expect(harness.danmakuEngines['r1']!.log, contains('dm1:start'));
+    });
+
     test('例外平台大画面不建立弹幕会话', () async {
       final harness = _Harness();
       final controller = harness.controller;
@@ -961,6 +989,24 @@ void main() {
       expect(player.volume, 0.0);
       await player.setMuted(false);
       expect(player.volume, 0.5);
+    });
+
+    test('房间音量跨格子重建恢复并写入共用存储', () async {
+      final harness = _Harness();
+      final controller = harness.controller;
+      await controller.assignRoom(0, _room('r1'));
+
+      await controller.setCellVolume(0, 0.28);
+      expect(harness.savedRoomVolumes['bilibili/r1'], 0.28);
+
+      controller.removeCell(0);
+      await harness.pump();
+      await controller.assignRoom(0, _room('r1'));
+
+      final replacement = harness.players.last;
+      expect(replacement.sessionVolume, 0.28);
+      expect(replacement.volume, 0.28, reason: '重新选择同房间后应按持久化房间音量出声');
+      expect(controller.cellVolume(0), 0.28);
     });
 
     test('setCellLine 同实例换线路并更新下标', () async {

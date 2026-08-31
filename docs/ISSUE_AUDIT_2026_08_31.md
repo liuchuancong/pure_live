@@ -1,13 +1,15 @@
 # 近期 Issue 审计（2026-08-31）
 
-审计基线：维护分支 `v3.0.24+4112` / `db7d0df3`，目标版本 `v3.1.0`。本轮只读取上游 Issue 和代码进行归因，不合并上游提交。状态只描述已经取得的证据；静态覆盖不会替代 Android / Windows 实机结果。
+审计基线：维护分支 `v3.1.0+4113` / `b1182034`，目标补丁版本 `v3.1.1+4114`。本轮只读取上游 Issue 和当前维护分支代码进行归因，不合并上游提交。状态只描述已经取得的证据；静态覆盖不会替代 Android / Windows 实机结果。
 
-快照时间为 2026-08-31（Asia/Shanghai）：维护仓库当前没有未关闭 Issue；上游未关闭列表共 10 项，最新项为 #819。下表覆盖全部当前未关闭上游 Issue，而不只抽取带 `bug` 标签的条目。
+快照时间为 2026-08-31（Asia/Shanghai）：维护仓库当前没有未关闭 Issue；上游未关闭列表共 10 项，最新项为 #821。下表覆盖全部当前未关闭上游 Issue，并保留与 v3.1.0 直接相关、刚完成处置的 #818/#801 作为闭环记录。
 
 ## 结论表
 
-| Issue | 类型与归因 | 当前证据 | v3.1.0 处理 |
+| Issue | 类型与归因 | 当前证据 | 处理状态 |
 |---|---|---|---|
+| [#821 iOS 最低系统版本](https://github.com/liuchuancong/pure_live/issues/821) | `community-platform`；iOS 14.3 闪退报告，缺少崩溃日志且不属于本分支主要维护设备 | Issue 仅给出 TrollStore 安装与系统版本，没有 IPA 架构、Deployment Target、崩溃堆栈或签名信息；Android/Windows 结果不能外推 | 保留为社区证据；需要 iOS 构建元数据和崩溃堆栈后再定位，不修改 Android/Windows 公共启动链掩盖未知 iOS 问题 |
+| [#820 多画面声音、音量与弹幕](https://github.com/liuchuancong/pure_live/issues/820) | `fork-regression`；多画面最初由维护分支提交 `6ec8713d` 引入，控制入口与会话目标被硬编码到 1+3 focus 布局 | 根因已静态复现：`_buildLargeControlBar` 是唯一音量入口且只在 focus 大格渲染；`_syncDanmakuSession` 又要求 `layout == focus`，所以 1×1/1×2/2×2 顶部弹幕开关没有连接/渲染目标。音量只保存在播放器句柄，重建格子后回到 100% | v3.1.1 在所有布局顶部增加当前声音来源格的音量入口；声音来源改成 Rx 单一状态，非 focus 弹幕连接并只渲染到该格；音量复用普通播放器的按房间持久化存储。聚焦 Analyze 为 0，`test/multiview_test.dart` 45/45 通过（含 quad 弹幕焦点切换和房间音量重建恢复）；Windows Debug 已确认 2×2 顶部音量入口实际渲染，联网房间交互仍由最终包继续观察 |
 | [#818 后台播放关闭后仍播放](https://github.com/liuchuancong/pure_live/issues/818) | Android 策略缺陷；最初由维护分支 `2ca7ff6a` 的纯音频稳定化策略引入，后来进入上游 | PJZ110 / Android 16 / `6458d541` arm64 Release：关闭开关后手动纯音频退桌面由 `PLAYING` 转 `PAUSED` 且当前 Wake Lock 为 0；回前台恢复。开启开关时普通视频后台继续；关闭开关后主动系统 PiP 继续；关闭开关时 1 分钟自动助眠在后台按时停止，媒体状态为 `NONE`，Pure Live 保活锁释放，CPU 样本为 0% | 原复现链及视频、纯音频、自动助眠、系统 PiP 四组合均已实机通过，记入 v3.1.0 发布闭环 |
 | [#817 iOS 定时结束后屏幕不立即熄灭](https://github.com/liuchuancong/pure_live/issues/817) | 平台能力与预期边界，不是播放器停止失败 | Issue 没有日志；当前计时结束会停止播放并释放媒体资源。iOS 未向普通第三方应用开放立即锁屏入口，屏幕熄灭由系统自动锁定策略决定 | 验证停止播放、释放屏幕常亮和音频会话；文案明确“停止播放并恢复系统自动锁屏”，不伪造锁屏动作 |
 | [#819 小红书直播](https://github.com/liuchuancong/pure_live/issues/819) | 新平台请求，被错误标为 Bug | 当前平台目录、接口探针、画质、弹幕、录制、登录与故障语义均没有小红书合同 | 进入平台研究清单；先形成公开入口、登录依赖、直播源寿命与协议证据，再决定是否进入稳定版，避免只加一个不完整首页入口 |
