@@ -1,5 +1,61 @@
 [
   {
+    "version": "3.1.1",
+    "title": "Pure Live v3.1.1",
+    "date": "2026-08-31",
+    "github": "https://github.com/wzgrx/pure_live/releases/tag/v3.1.1",
+    "author": {
+      "name": "wzgrx",
+      "avatar": "https://avatars.githubusercontent.com/u/39661556?v=4",
+      "profile": "https://github.com/wzgrx"
+    },
+    "changelog": "# Pure Live v3.1.1\n\nv3.1.1 build 4114 是 Android / Windows 多画面体验补丁。本轮没有合并新的上游提交；修复 Issue #820 中只有 1+3 布局可调音量、其他布局弹幕按钮不工作，以及格子重建后音量丢失的问题。Android `arm64-v8a`、Windows x64 安装程序和便携 ZIP 从同一源码提交串行构建。\n\n## 多画面声音与音量\n\n- 1×1、1×2、2×2、1+3 四种布局都增加当前声音来源格的音量入口；没有有效播放格时入口保持禁用。\n- 声音来源改为唯一响应式状态，音频启用、工具栏、音量弹窗和弹幕目标不再依赖多处手动刷新。\n- 音量弹窗显示房间名称、实时百分比与滑杆；复用普通直播间的按房间音量存储，移除格子、重建播放器或重新进入后继续恢复用户设置。\n- 音量存储异常只进入诊断，不会阻断播放、切台或播放器释放。\n\n## 多画面弹幕\n\n- 1+3 布局继续把弹幕绑定到大画面；1×1、1×2、2×2 改为绑定当前声音来源格。\n- 切换声音来源会同步切换弹幕会话与渲染目标，旧格不会残留同一房间弹幕。\n- 修复顶部弹幕按钮在非 1+3 布局只改变视觉状态、实际没有连接和渲染目标的结构问题。\n\n## 验证与交付\n\n- 聚焦 Analyze 为 0 issue，`test/multiview_test.dart` 45/45 通过；新增 2×2 弹幕目标切换与按房间音量重建恢复测试。\n- 冻结源码完整门禁通过：Analyze 0 issue、Flutter 669/669、公开平台接口 42/42、全仓审计 0 error。\n- Windows Debug 2×2 页面确认全布局音量入口实际渲染；v3.0.1 以来的跨模式比例、播放器释放和录制状态回归继续进入完整门禁。\n- v3.1.0 Windows 便携正式包补充 Bilibili 播放/弹幕/设置/画质/录制与 10 分钟资源采样证据，详细记录见 `docs/ACCEPTANCE_MATRIX_3_1_0.md`。\n- APK、Windows 安装程序和便携 ZIP 均附独立构建元数据及 SHA-256；完整根因、改动和证据边界见 `docs/STAGE_UPDATE_3_1_1.md` 与 `docs/ISSUE_AUDIT_2026_08_31.md`。",
+    "files": [
+      {
+        "name": "BUILD_METADATA.json",
+        "size": "0.0mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.1/BUILD_METADATA.json"
+      },
+      {
+        "name": "PureLive-3.1.1-4114-debug-signed-android-arm64-v8a",
+        "size": "112.96mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.1/PureLive-3.1.1-4114-debug-signed-android-arm64-v8a-release.apk"
+      },
+      {
+        "name": "PureLive-3.1.1-4114-windows-x64-portable.zip",
+        "size": "68.96mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.1/PureLive-3.1.1-4114-windows-x64-portable.zip"
+      },
+      {
+        "name": "PureLive-3.1.1-4114-windows-x64-setup.exe",
+        "size": "53.45mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.1/PureLive-3.1.1-4114-windows-x64-setup.exe"
+      },
+      {
+        "name": "SHA256SUMS.txt",
+        "size": "0.0mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.1/SHA256SUMS.txt"
+      },
+      {
+        "name": "WINDOWS_BUILD_METADATA.json",
+        "size": "0.0mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.1/WINDOWS_BUILD_METADATA.json"
+      },
+      {
+        "name": "WINDOWS_SHA256SUMS.txt",
+        "size": "0.0mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.1/WINDOWS_SHA256SUMS.txt"
+      }
+    ]
+  },
+  {
     "version": "3.1.0",
     "title": "Pure Live v3.1.0",
     "date": "2026-08-31",
@@ -14,37 +70,37 @@
       {
         "name": "ANDROID_SHA256SUM.txt",
         "size": "0.0mb",
-        "downloads": 0,
+        "downloads": 1,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.0/ANDROID_SHA256SUM.txt"
       },
       {
         "name": "BUILD_METADATA.json",
         "size": "0.0mb",
-        "downloads": 0,
+        "downloads": 1,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.0/BUILD_METADATA.json"
       },
       {
         "name": "PureLive-3.1.0-4113-android-arm64-v8a",
         "size": "113.11mb",
-        "downloads": 0,
+        "downloads": 59,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.0/PureLive-3.1.0-4113-android-arm64-v8a-release.apk"
       },
       {
         "name": "PureLive-3.1.0-4113-windows-x64-portable.zip",
         "size": "70.36mb",
-        "downloads": 0,
+        "downloads": 5,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.0/PureLive-3.1.0-4113-windows-x64-portable.zip"
       },
       {
         "name": "PureLive-3.1.0-4113-windows-x64-setup.exe",
         "size": "53.44mb",
-        "downloads": 0,
+        "downloads": 8,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.0/PureLive-3.1.0-4113-windows-x64-setup.exe"
       },
       {
         "name": "SHA256SUMS.txt",
         "size": "0.0mb",
-        "downloads": 0,
+        "downloads": 1,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.0/SHA256SUMS.txt"
       },
       {
@@ -88,19 +144,19 @@
       {
         "name": "PureLive-3.0.24-4112-android-arm64-v8a",
         "size": "113.11mb",
-        "downloads": 96,
+        "downloads": 107,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v3.0.24/PureLive-3.0.24-4112-android-arm64-v8a-release.apk"
       },
       {
         "name": "PureLive-3.0.24-4112-windows-x64-portable.zip",
         "size": "68.95mb",
-        "downloads": 6,
+        "downloads": 7,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v3.0.24/PureLive-3.0.24-4112-windows-x64-portable.zip"
       },
       {
         "name": "PureLive-3.0.24-4112-windows-x64-setup.exe",
         "size": "53.44mb",
-        "downloads": 9,
+        "downloads": 14,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v3.0.24/PureLive-3.0.24-4112-windows-x64-setup.exe"
       },
       {
