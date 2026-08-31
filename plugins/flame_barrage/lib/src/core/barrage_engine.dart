@@ -288,17 +288,36 @@ class BarrageEngine extends FlameGame with TapCallbacks {
   Color backgroundColor() => Colors.transparent;
 
   void updateConfig(BarrageConfig newConfig) {
-    final fpsChanged = _config.fps != newConfig.fps;
+    final oldConfig = _config;
+
+    final speedChanged = oldConfig.baseSpeed != newConfig.baseSpeed;
+
     _config = newConfig;
+
     _parser.updateMaxCacheSize(newConfig.textCacheMaxSize);
     _layout.updateMaxTextCacheSize(newConfig.textCacheMaxSize);
     _pictureCache.updateMaxSize(newConfig.pictureCacheMaxSize);
     _pool.updateMaxSize(newConfig.barragePoolMaxSize);
+
     if (_initialized) {
       _trackManager.initialize(_config, _calculateAllowedHeight(size.y));
     }
-    if (fpsChanged && _frameTicker?.isActive == true) {
+
+    if (speedChanged) {
+      _updateActiveBarrageSpeed();
+    }
+
+    if (oldConfig.fps != newConfig.fps && _frameTicker?.isActive == true) {
       _startFramePulses();
+    }
+  }
+
+  void _updateActiveBarrageSpeed() {
+    for (final entry in _activeEntries) {
+      if (!entry.active) continue;
+      if (entry.item.type != BarrageType.scroll) continue;
+
+      entry.speed = _config.baseSpeed;
     }
   }
 
