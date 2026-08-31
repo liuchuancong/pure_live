@@ -1,9 +1,13 @@
 # Pure Live v3.1.2 Android Release 运行审计
 
-审计日期：2026-08-31（Asia/Shanghai）  
-源码提交：`4d79e5fa6e0b861577d4e7dc0db3e37d50f8e5db`  
-测试产物：`PureLive-3.1.2-4115-debug-signed-android-arm64-v8a-release.apk`  
-测试设备：OnePlus PJZ110，Android 16 / API 36，`1440×3168`，640 dpi，最高 120 Hz。  
+审计日期：2026-08-31（Asia/Shanghai）
+
+源码提交：`4d79e5fa6e0b861577d4e7dc0db3e37d50f8e5db`
+
+测试产物：`PureLive-3.1.2-4115-debug-signed-android-arm64-v8a-release.apk`
+
+测试设备：OnePlus PJZ110，Android 16 / API 36，`1440×3168`，640 dpi，最高 120 Hz。
+
 测试方式：通过网络 ADB 覆盖安装 GitHub Release APK，保留用户数据；不是 `flutter run`。
 
 ## 安装、数据与启动

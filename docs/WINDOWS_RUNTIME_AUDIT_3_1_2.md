@@ -1,8 +1,10 @@
 # Pure Live v3.1.2 Windows Release 运行审计
 
-审计日期：2026-08-31（Asia/Shanghai）  
-源码提交：`4d79e5fa6e0b861577d4e7dc0db3e37d50f8e5db`  
-测试产物：`PureLive-3.1.2-4115-windows-x64-portable.zip`  
+审计日期：2026-08-31（Asia/Shanghai）
+
+源码提交：`4d79e5fa6e0b861577d4e7dc0db3e37d50f8e5db`
+
+测试产物：`PureLive-3.1.2-4115-windows-x64-portable.zip`
 测试方式：独立解压、独立 instance id、真实 Windows 桌面与真实直播；不是 `flutter run`。
 
 ## 设备选择
@@ -47,4 +49,3 @@
 - 上游 #801 已关闭；本分支当前 Release 已取得显示器检测、三档即时切换、冷启动持久化和默认回退的直接证据。
 - 副屏跨屏、不同刷新率双显示器和 MSIX 日志目录仍需对应设备/封装证据；本报告没有把单显示器结果外推到这些场景。
 - #708 的 Windows 真全屏根因与两种窗口状态回归已经闭环。
-
