@@ -18,8 +18,10 @@ v3.1.5 build 4118 是 Android / Windows 双平台一致性发布。本轮没有�
 
 - 功能源码沿用 v3.1.4 冻结前完整门禁：Analyze 0 issue、Flutter 675/675、公开平台接口 42/42、全仓审计 3895 个文件且 0 error；本轮只修改版本、发布说明和平台打包元数据。
 - Android 与 Windows 按构建策略串行执行，不并发占用 Gradle、Java、Dart、Flutter 或 CMake 资源。
-- 两个平台分别发布构建元数据和 SHA-256 清单；安装包的实际大小、哈希、签名状态与构建记录在完成后写入 `docs/STAGE_UPDATE_3_1_5.md` 和 GitHub Release。
-- Android 本地候选包使用调试证书时，文件名和元数据会明确标注 `debug-signed`；Windows 未配置 Authenticode 时同样明确标注未签名，不以 Release 编译模式冒充正式证书签名。
+- 两个平台均从冻结提交 `dacd2daf07e1817923a02d04c7d3519c97df829a` 串行构建，结束后重型进程数均为 0；发布配置测试 4/4 通过。
+- Android APK 为 `118449355` bytes，SHA-256 `c4380eefa002b525e1fabeadd7ecb5c616b3b5972af232dccc2fc86ba2e8ff39`；本地调试证书状态已在文件名和元数据标注 `debug-signed`。
+- Windows 便携 ZIP 为 `72310038` bytes，SHA-256 `b07741c5acab25b56e252aaf9286c8f3e2f79b7114d0e56813ce1e8a5dc3bd0b`；安装程序为 `56041592` bytes，SHA-256 `6d00beb58d66dd7e0b1f8ee201ffa98923b7efd7563bf1ce2752911ecf4a38ae`。两者未配置 Authenticode，元数据明确记录 `unsigned`。
+- Windows ZIP 内容审计 1301 项：必需 EXE、WebView2 loader、Flutter manifest 和 v3.1.5 更新源齐全，开发符号、退役 QuickJS DLL 与用户运行数据均为 0。
 
 完整范围、版本关系、证据和回滚边界见 `docs/STAGE_UPDATE_3_1_5.md`。
 

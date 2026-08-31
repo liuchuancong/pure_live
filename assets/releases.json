@@ -1,5 +1,61 @@
 [
   {
+    "version": "3.1.5",
+    "title": "Pure Live v3.1.5",
+    "date": "2026-08-31",
+    "github": "https://github.com/wzgrx/pure_live/releases/tag/v3.1.5",
+    "author": {
+      "name": "wzgrx",
+      "avatar": "https://avatars.githubusercontent.com/u/39661556?v=4",
+      "profile": "https://github.com/wzgrx"
+    },
+    "changelog": "# Pure Live v3.1.5\r\n\r\nv3.1.5 build 4118 是 Android / Windows 双平台一致性发布。本轮没有同步上游，也没有改动播放器、平台接口、弹幕或录制业务逻辑；目标是把已通过回归的 v3.1.4 Android 平板关注刷新修复与 v3.1.3 Windows 多画面/全屏修复冻结到同一版本、同一源码提交和同一 GitHub Release，避免用户需要跨两个发布页判断安装包。\r\n\r\n## Android arm64-v8a\r\n\r\n- 平板横屏继续按移动平台保留逐平台下拉刷新，不再因视口宽度超过 680 px 被错误归入桌面分支。\r\n- 手机竖屏、短列表、空列表与平台左右切换逻辑不变；网格列数仍按宽度响应，刷新交互按输入平台判断。\r\n- APK 只包含 `arm64-v8a`；Release 模式、Manifest 版本、Flutter 资源、关键原生库和 SHA-256 由本机构建门禁核验。\r\n\r\n## Windows x64\r\n\r\n- 多画面真全屏保留安全区内的显式退出按钮，同时支持 `Escape` 和既有系统返回链路。\r\n- 延续真全屏窗口边界、普通窗口/最大化状态恢复、安装目录数据保护和单实例启动修复。\r\n- 提供可选择安装目录的 Inno Setup 安装程序与便携 ZIP；不会把开发符号、旧插件残留或运行期用户数据打进安装包。\r\n\r\n## 质量与发布边界\r\n\r\n- 功能源码沿用 v3.1.4 冻结前完整门禁：Analyze 0 issue、Flutter 675/675、公开平台接口 42/42、全仓审计 3895 个文件且 0 error；本轮只修改版本、发布说明和平台打包元数据。\r\n- Android 与 Windows 按构建策略串行执行，不并发占用 Gradle、Java、Dart、Flutter 或 CMake 资源。\r\n- 两个平台均从冻结提交 `dacd2daf07e1817923a02d04c7d3519c97df829a` 串行构建，结束后重型进程数均为 0；发布配置测试 4/4 通过。\r\n- Android APK 为 `118449355` bytes，SHA-256 `c4380eefa002b525e1fabeadd7ecb5c616b3b5972af232dccc2fc86ba2e8ff39`；本地调试证书状态已在文件名和元数据标注 `debug-signed`。\r\n- Windows 便携 ZIP 为 `72310038` bytes，SHA-256 `b07741c5acab25b56e252aaf9286c8f3e2f79b7114d0e56813ce1e8a5dc3bd0b`；安装程序为 `56041592` bytes，SHA-256 `6d00beb58d66dd7e0b1f8ee201ffa98923b7efd7563bf1ce2752911ecf4a38ae`。两者未配置 Authenticode，元数据明确记录 `unsigned`。\r\n- Windows ZIP 内容审计 1301 项：必需 EXE、WebView2 loader、Flutter manifest 和 v3.1.5 更新源齐全，开发符号、退役 QuickJS DLL 与用户运行数据均为 0。\r\n\r\n完整范围、版本关系、证据和回滚边界见 `docs/STAGE_UPDATE_3_1_5.md`。",
+    "files": [
+      {
+        "name": "BUILD_METADATA.json",
+        "size": "0.0mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.5/BUILD_METADATA.json"
+      },
+      {
+        "name": "PureLive-3.1.5-4118-debug-signed-android-arm64-v8a",
+        "size": "112.96mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.5/PureLive-3.1.5-4118-debug-signed-android-arm64-v8a-release.apk"
+      },
+      {
+        "name": "PureLive-3.1.5-4118-windows-x64-portable.zip",
+        "size": "68.96mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.5/PureLive-3.1.5-4118-windows-x64-portable.zip"
+      },
+      {
+        "name": "PureLive-3.1.5-4118-windows-x64-setup.exe",
+        "size": "53.45mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.5/PureLive-3.1.5-4118-windows-x64-setup.exe"
+      },
+      {
+        "name": "SHA256SUMS.txt",
+        "size": "0.0mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.5/SHA256SUMS.txt"
+      },
+      {
+        "name": "WINDOWS_BUILD_METADATA.json",
+        "size": "0.0mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.5/WINDOWS_BUILD_METADATA.json"
+      },
+      {
+        "name": "WINDOWS_SHA256SUMS.txt",
+        "size": "0.0mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.5/WINDOWS_SHA256SUMS.txt"
+      }
+    ]
+  },
+  {
     "version": "3.1.4",
     "title": "Pure Live v3.1.4",
     "date": "2026-08-31",
@@ -9,7 +65,7 @@
       "avatar": "https://avatars.githubusercontent.com/u/39661556?v=4",
       "profile": "https://github.com/wzgrx"
     },
-    "changelog": "# Pure Live v3.1.4\n\nv3.1.4 build 4117 是 Android 平板横屏关注页下拉刷新补丁。本轮不合并上游代码；近期 Issue #826 的现象在维护分支同样存在，根因是关注网格用 `width > 680` 直接关闭逐平台 `EasyRefresh`。Android 平板横屏会超过这个阈值，但仍属于触控移动平台，于是外层刷新已因嵌套 `TabBarView` 主动关闭，内层刷新又被宽度判断移除，最终只剩一个裸 `GridView`。\n\n## 平板横屏关注刷新\n\n- 宽度继续只决定网格列数和图片缓存范围，不再独自决定刷新交互类型。\n- Android/iOS 无论横竖屏和窗口宽度都保留逐平台纵向下拉刷新；Windows 等桌面宽屏继续使用分页、重试按钮和键盘入口。\n- 每个平台页仍持有独立 `EasyRefresh.builder`，并把 builder 返回的 physics 直接安装到唯一纵向滚动视图；平台左右切换与纵向下拉不会共用手势轴。\n- 空列表与短列表继续使用 `AlwaysScrollableScrollPhysics`，72 px 释放时显示 Material 指示器并调用同一串行刷新事务。\n\n## 回归与影响边界\n\n- 新增宽屏移动设备、宽屏桌面和窄窗口三种判定回归；既有真实 pointer drag 测试继续验证动画、释放和回调，不用直接调用 callback 代替手势证据。\n- 聚焦 `test/favorite_pull_refresh_test.dart` 2/2 通过；冻结前 Analyze 0 issue、完整 Flutter 675/675、公开平台接口 42/42、全仓审计 3895 个文件且 0 error。\n- 完整质量记录：`local-artifacts/build-records/20260831T171731254Z-quality-full.json`。\n- 本轮只修改关注网格的刷新包装条件；启动核验、卡片单次发布、平台状态、播放器、弹幕、录制和 Windows 列表行为均未改动。\n- Android `arm64-v8a` 进入正式构建与安装验证；Windows 继续使用 v3.1.3 安装程序和便携 ZIP。\n\n完整根因、近期 Issue 分类、测试和交付证据见 `docs/STAGE_UPDATE_3_1_4.md`、`docs/FAVORITE_REFRESH_DESIGN.md` 与 `docs/ISSUE_AUDIT_2026_08_31.md`。",
+    "changelog": "# Pure Live v3.1.4\n\nv3.1.4 build 4117 是 Android 平板横屏关注页下拉刷新补丁。本轮不合并上游代码；近期 Issue #826 的现象在维护分支同样存在，根因是关注网格用 `width > 680` 直接关闭逐平台 `EasyRefresh`。Android 平板横屏会超过这个阈值，但仍属于触控移动平台，于是外层刷新已因嵌套 `TabBarView` 主动关闭，内层刷新又被宽度判断移除，最终只剩一个裸 `GridView`。\n\n## 平板横屏关注刷新\n\n- 宽度继续只决定网格列数和图片缓存范围，不再独自决定刷新交互类型。\n- Android/iOS 无论横竖屏和窗口宽度都保留逐平台纵向下拉刷新；Windows 等桌面宽屏继续使用分页、重试按钮和键盘入口。\n- 每个平台页仍持有独立 `EasyRefresh.builder`，并把 builder 返回的 physics 直接安装到唯一纵向滚动视图；平台左右切换与纵向下拉不会共用手势轴。\n- 空列表与短列表继续使用 `AlwaysScrollableScrollPhysics`，72 px 释放时显示 Material 指示器并调用同一串行刷新事务。\n\n## 回归与影响边界\n\n- 新增宽屏移动设备、宽屏桌面和窄窗口三种判定回归；既有真实 pointer drag 测试继续验证动画、释放和回调，不用直接调用 callback 代替手势证据。\n- 聚焦 `test/favorite_pull_refresh_test.dart` 2/2 通过；冻结前 Analyze 0 issue、完整 Flutter 675/675、公开平台接口 42/42、全仓审计 3895 个文件且 0 error。\n- 完整质量记录：`local-artifacts/build-records/20260831T171731254Z-quality-full.json`。\n- Android Release 模式 APK 完成单一 arm64-v8a、版本 `3.1.4 (6117)`、Flutter 资源与关键原生库核验；大小 `118445503` bytes，SHA-256 `e52eaf396ac233528cc4930bdf70368c9715798d28905f6339e6a05fb0b12691`。\n- PJZ110 / Android 16 已在不切走用户当前前台应用的情况下覆盖安装成功；手机手势与平板横屏运行证据继续单独记录，不用安装成功替代交互测试。\n- 本轮只修改关注网格的刷新包装条件；启动核验、卡片单次发布、平台状态、播放器、弹幕、录制和 Windows 列表行为均未改动。\n- Android `arm64-v8a` 进入正式构建与安装验证；Windows 继续使用 v3.1.3 安装程序和便携 ZIP。\n\n完整根因、近期 Issue 分类、测试和交付证据见 `docs/STAGE_UPDATE_3_1_4.md`、`docs/FAVORITE_REFRESH_DESIGN.md` 与 `docs/ISSUE_AUDIT_2026_08_31.md`。",
     "files": [
       {
         "name": "BUILD_METADATA.json",
@@ -20,7 +76,7 @@
       {
         "name": "PureLive-3.1.4-4117-debug-signed-android-arm64-v8a",
         "size": "112.96mb",
-        "downloads": 0,
+        "downloads": 7,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.4/PureLive-3.1.4-4117-debug-signed-android-arm64-v8a-release.apk"
       },
       {
@@ -58,7 +114,7 @@
       {
         "name": "PureLive-3.1.3-4116-windows-x64-portable.zip",
         "size": "68.96mb",
-        "downloads": 0,
+        "downloads": 1,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.3/PureLive-3.1.3-4116-windows-x64-portable.zip"
       },
       {
@@ -97,7 +153,7 @@
       "avatar": "https://avatars.githubusercontent.com/u/39661556?v=4",
       "profile": "https://github.com/wzgrx"
     },
-    "changelog": "# Pure Live v3.1.2\r\n\r\nv3.1.2 build 4115 是 Android / Windows 全屏一致性与平台接口韧性补丁。本轮没有同步上游代码；Windows 根因来自隐藏标题栏初始化与 `window_manager 0.5.2` 原生 `frameless` 状态的交互，不是 v3.1.1 多画面业务代码。旧版会把 Dart 侧标记为全屏，但原生窗口没有改变样式或边界，因此仍保留标题栏、任务栏和普通页面布局。\r\n\r\n## Windows 真全屏\r\n\r\n- Windows 进入全屏前重新应用同一隐藏标题栏样式，清除插件原生层遗留的 `frameless` 阻断状态，再执行系统全屏边界切换。\r\n- 全屏窗口现在覆盖当前显示器完整区域；标题栏、任务栏和普通直播间侧栏不会继续占位。\r\n- `Escape` 退出后，普通窗口精确恢复进入前的位置和尺寸；从最大化进入时恢复原最大化状态。\r\n- macOS、Linux 继续直接调用既有全屏路径，不执行 Windows 专用准备步骤。\r\n\r\n## 网易 CC 分类接口迁移兼容\r\n\r\n- 完整回归发现 CC 旧分类 JSON 地址已在部分网络直接跳转到网易官方 `ds.163.com/glive` HTML 页面；旧实现会在 `jsonDecode` 处终止分类页加载。\r\n- 分类解析改为防御式合同：旧 JSON 仍可解析全部游戏子分类；遇到官方迁移跳转、HTML、空响应或部分 schema 时保留“全部 / 端游 / 手游 / 其他”稳定入口，推荐直播、搜索、房间和播放链路互不连带失败。\r\n- 公开接口探针同时识别旧 JSON 合同与官方 Glive 迁移目标，仍会拒绝第三方重定向和未知 HTML；新增解析回归覆盖 HTML 回退与旧 JSON 分组。\r\n\r\n## 回归与运行验证\r\n\r\n- 新增 `test/windows_fullscreen_transition_test.dart`，锁定 Windows 的“标题栏准备 → 原生全屏”调用顺序，并验证其他桌面平台不执行 Windows 专用步骤。\r\n- 聚焦 Analyze 为 0 issue；Windows 全屏与 PiP 呈现测试 4/4 通过，记录为 `20260831T091722185Z-quality-focused.json`。\r\n- Windows Debug 在 3840×2400、250% 缩放、200 Hz 显示器完成真实直播复验：全屏截图从普通窗口 `1155×703` 或最大化 `1536×912` 变为完整显示器 `1536×960`；原生窗口边界为 `(0,0)-(1536,960)`。\r\n- 普通窗口全屏往返后边界精确恢复为 `(188,104)-(1347,809)`；最大化往返后 `IsZoomed=true`，进程全程响应。\r\n- Android arm64-v8a、Windows x64 安装程序和便携 ZIP 从同一冻结提交串行构建，并附构建元数据与 SHA-256。\r\n\r\n## 证据与边界\r\n\r\n- 完整根因、旧/新行为、验证矩阵和回滚点见 `docs/STAGE_UPDATE_3_1_2.md`。\r\n- 本修复解决 Windows 原生窗口进入全屏失败；平台直播接口、主播下播、CDN 波动和账号风控仍按各平台运行时诊断处理。\r\n\n\n## 发布后正式包复验（2026-08-31）\n\n- Android：PJZ110 / Android 16 覆盖升级保留关注数据；10 次冷启动全部成功，293～332 ms、平均 306.2 ms，0 FATAL/ANR。分类/搜索标签硬边界、网易 CC 官方 HTML 迁移回退、120 Hz 三档即时切换与冷启动持久化均通过。\n- Twitch：直连搜索明确显示局部失败；临时启用手机可达的本机 Clash 应用代理后，Twitch 原生搜索和在线人数正常。测试结束已恢复原代理地址及关闭状态。\n- Windows：3840×2400、200 Hz 环境确认三档刷新率即时生效和持久化；普通窗口、最大化两条真全屏往返均覆盖完整显示器并精确恢复，播放和弹幕持续。\n- 详细证据已更新到 master：[ANDROID_RUNTIME_AUDIT_3_1_2.md](https://github.com/wzgrx/pure_live/blob/master/docs/ANDROID_RUNTIME_AUDIT_3_1_2.md)、[WINDOWS_RUNTIME_AUDIT_3_1_2.md](https://github.com/wzgrx/pure_live/blob/master/docs/WINDOWS_RUNTIME_AUDIT_3_1_2.md)、[ACCEPTANCE_MATRIX_3_1_0.md](https://github.com/wzgrx/pure_live/blob/master/docs/ACCEPTANCE_MATRIX_3_1_0.md)。\n- Release 二进制和源码标签仍对应冻结提交 4d79e5fa；发布后运行审计文档提交为 \u00004e40124，没有替换安装包内容。",
+    "changelog": "# Pure Live v3.1.2\r\n\r\nv3.1.2 build 4115 是 Android / Windows 全屏一致性与平台接口韧性补丁。本轮没有同步上游代码；Windows 根因来自隐藏标题栏初始化与 `window_manager 0.5.2` 原生 `frameless` 状态的交互，不是 v3.1.1 多画面业务代码。旧版会把 Dart 侧标记为全屏，但原生窗口没有改变样式或边界，因此仍保留标题栏、任务栏和普通页面布局。\r\n\r\n## Windows 真全屏\r\n\r\n- Windows 进入全屏前重新应用同一隐藏标题栏样式，清除插件原生层遗留的 `frameless` 阻断状态，再执行系统全屏边界切换。\r\n- 全屏窗口现在覆盖当前显示器完整区域；标题栏、任务栏和普通直播间侧栏不会继续占位。\r\n- `Escape` 退出后，普通窗口精确恢复进入前的位置和尺寸；从最大化进入时恢复原最大化状态。\r\n- macOS、Linux 继续直接调用既有全屏路径，不执行 Windows 专用准备步骤。\r\n\r\n## 网易 CC 分类接口迁移兼容\r\n\r\n- 完整回归发现 CC 旧分类 JSON 地址已在部分网络直接跳转到网易官方 `ds.163.com/glive` HTML 页面；旧实现会在 `jsonDecode` 处终止分类页加载。\r\n- 分类解析改为防御式合同：旧 JSON 仍可解析全部游戏子分类；遇到官方迁移跳转、HTML、空响应或部分 schema 时保留“全部 / 端游 / 手游 / 其他”稳定入口，推荐直播、搜索、房间和播放链路互不连带失败。\r\n- 公开接口探针同时识别旧 JSON 合同与官方 Glive 迁移目标，仍会拒绝第三方重定向和未知 HTML；新增解析回归覆盖 HTML 回退与旧 JSON 分组。\r\n\r\n## 回归与运行验证\r\n\r\n- 新增 `test/windows_fullscreen_transition_test.dart`，锁定 Windows 的“标题栏准备 → 原生全屏”调用顺序，并验证其他桌面平台不执行 Windows 专用步骤。\r\n- 聚焦 Analyze 为 0 issue；Windows 全屏与 PiP 呈现测试 4/4 通过，记录为 `20260831T091722185Z-quality-focused.json`。\r\n- Windows Debug 在 3840×2400、250% 缩放、200 Hz 显示器完成真实直播复验：全屏截图从普通窗口 `1155×703` 或最大化 `1536×912` 变为完整显示器 `1536×960`；原生窗口边界为 `(0,0)-(1536,960)`。\r\n- 普通窗口全屏往返后边界精确恢复为 `(188,104)-(1347,809)`；最大化往返后 `IsZoomed=true`，进程全程响应。\r\n- Android arm64-v8a、Windows x64 安装程序和便携 ZIP 从同一冻结提交串行构建，并附构建元数据与 SHA-256。\r\n\r\n## 证据与边界\r\n\r\n- 完整根因、旧/新行为、验证矩阵和回滚点见 `docs/STAGE_UPDATE_3_1_2.md`。\r\n- 本修复解决 Windows 原生窗口进入全屏失败；平台直播接口、主播下播、CDN 波动和账号风控仍按各平台运行时诊断处理。\r\n\n\n## 发布后正式包复验（2026-08-31）\n\n- Android：PJZ110 / Android 16 覆盖升级保留关注数据；10 次冷启动全部成功，293～332 ms、平均 306.2 ms，0 FATAL/ANR。分类/搜索标签硬边界、网易 CC 官方 HTML 迁移回退、120 Hz 三档即时切换与冷启动持久化均通过。\n- Twitch：直连搜索明确显示局部失败；临时启用手机可达的本机 Clash 应用代理后，Twitch 原生搜索和在线人数正常。测试结束已恢复原代理地址及关闭状态。\n- Windows：3840×2400、200 Hz 环境确认三档刷新率即时生效和持久化；普通窗口、最大化两条真全屏往返均覆盖完整显示器并精确恢复，播放和弹幕持续。\n- 详细证据已更新到 master：[ANDROID_RUNTIME_AUDIT_3_1_2.md](https://github.com/wzgrx/pure_live/blob/master/docs/ANDROID_RUNTIME_AUDIT_3_1_2.md)、[WINDOWS_RUNTIME_AUDIT_3_1_2.md](https://github.com/wzgrx/pure_live/blob/master/docs/WINDOWS_RUNTIME_AUDIT_3_1_2.md)、[ACCEPTANCE_MATRIX_3_1_0.md](https://github.com/wzgrx/pure_live/blob/master/docs/ACCEPTANCE_MATRIX_3_1_0.md)。\n- Release 二进制和源码标签仍对应冻结提交 4d79e5fa；发布后运行审计文档提交为 ^@4e40124，没有替换安装包内容。",
     "files": [
       {
         "name": "BUILD_METADATA.json",
