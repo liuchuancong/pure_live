@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pure_live/core/common/web_socket_util.dart';
@@ -14,7 +15,7 @@ void main() {
       heartBeatTime: 10,
       inactivityTimeout: const Duration(milliseconds: 25),
       reconnectBaseDelay: const Duration(milliseconds: 5),
-      connector: (endpoint, {connectTimeout, protocols, headers}) {
+      connector: (endpoint, {connectTimeout, protocols, headers, customClient}) {
         endpoints.add(endpoint);
         final channel = _FakeWebSocketChannel();
         channels.add(channel);
@@ -45,7 +46,7 @@ void main() {
       heartBeatTime: 10,
       inactivityTimeout: const Duration(milliseconds: 40),
       reconnectBaseDelay: const Duration(milliseconds: 5),
-      connector: (endpoint, {connectTimeout, protocols, headers}) {
+      connector: (endpoint, {connectTimeout, protocols, headers, customClient}) {
         connectionCount++;
         channel = _FakeWebSocketChannel();
         return channel;
@@ -61,6 +62,26 @@ void main() {
 
     expect(connectionCount, 1);
     expect(socket.status, SocketStatus.connected);
+    await socket.close();
+  });
+
+  test('configured proxy routing is applied to the WebSocket handshake client', () async {
+    HttpClient? capturedClient;
+    configureWebSocketProxyRouting((uri) => 'PROXY localhost:7897');
+    addTearDown(() => configureWebSocketProxyRouting(null));
+
+    final socket = WebScoketUtils(
+      url: 'wss://primary.example/ws',
+      heartBeatTime: 0,
+      connector: (endpoint, {connectTimeout, protocols, headers, customClient}) {
+        capturedClient = customClient;
+        return _FakeWebSocketChannel();
+      },
+    );
+
+    await socket.connect();
+    expect(capturedClient, isNotNull);
+    expect(resolveWebSocketProxyDirective(Uri.parse('wss://primary.example/ws')), 'PROXY localhost:7897');
     await socket.close();
   });
 }

@@ -1,5 +1,6 @@
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/core/common/http_client.dart';
+import 'package:pure_live/core/common/proxy_routing.dart';
 
 class ProxySettingsController extends GetxController {
   final RxBool enableProxy = hiveBool('enableProxy', false);
@@ -13,6 +14,11 @@ class ProxySettingsController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+
+    final normalizedAppHost = normalizeProxyHost(appProxyHost.v);
+    if (normalizedAppHost != appProxyHost.v) appProxyHost.v = normalizedAppHost;
+    final normalizedPlayerHost = normalizeProxyHost(proxyHost.v);
+    if (normalizedPlayerHost != proxyHost.v) proxyHost.v = normalizedPlayerHost;
 
     ever<bool>(enableAppProxy, (_) => _refreshDioConnections());
     ever<String>(appProxyHost, (_) => _refreshDioConnections());
@@ -28,20 +34,20 @@ class ProxySettingsController extends GetxController {
   Map<String, dynamic> toJson() {
     return {
       'enableProxy': enableProxy.v,
-      'proxyHost': proxyHost.v,
+      'proxyHost': normalizeProxyHost(proxyHost.v),
       'proxyPort': proxyPort.v,
       'enableAppProxy': enableAppProxy.v,
-      'appProxyHost': appProxyHost.v,
+      'appProxyHost': normalizeProxyHost(appProxyHost.v),
       'appProxyPort': appProxyPort.v,
     };
   }
 
   void fromJson(Map<String, dynamic> json) {
     enableProxy.v = json['enableProxy'] ?? false;
-    proxyHost.v = json['proxyHost'] ?? '';
+    proxyHost.v = normalizeProxyHost((json['proxyHost'] ?? '').toString());
     proxyPort.v = json['proxyPort'] ?? 1080;
     enableAppProxy.v = json['enableAppProxy'] ?? false;
-    appProxyHost.v = json['appProxyHost'] ?? '';
+    appProxyHost.v = normalizeProxyHost((json['appProxyHost'] ?? '').toString());
     appProxyPort.v = json['appProxyPort'] ?? 1080;
   }
 
