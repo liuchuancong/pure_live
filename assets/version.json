@@ -1,23 +1,23 @@
 {
-  "version": "3.0.8",
-  "build_number": 4096,
-  "version_num": 300084096,
+  "version": "3.0.9",
+  "build_number": 4097,
+  "version_num": 300094097,
   "android_abis": [
     "armeabi-v7a",
     "arm64-v8a",
     "x86_64"
   ],
-  "version_desc": "version: 3.0.8\n版本更新：\n- 修复huya断流",
+  "version_desc": "version: 3.0.9\n版本更新：\n- 优化MPV播放器支持超高清观看。\n- 添加设备同步。\n- 修复弹幕速度不同步。\n",
   "prerelease": false,
-  "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.0.8",
+  "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.0.9",
   "platforms": {
     "android": {
-      "version": "3.0.8",
-      "build_number": 4096,
-      "version_num": 300084096,
-      "version_desc": "version: 3.0.8\n版本更新：\n- 修复huya断流",
+      "version": "3.0.9",
+      "build_number": 4097,
+      "version_num": 300094097,
+      "version_desc": "version: 3.0.9\n版本更新：\n- 优化MPV播放器支持超高清观看。\n- 添加设备同步。\n- 修复弹幕速度不同步。\n",
       "prerelease": false,
-      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.0.8",
+      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.0.9",
       "android_abis": [
         "armeabi-v7a",
         "arm64-v8a",
@@ -25,37 +25,37 @@
       ]
     },
     "windows": {
-      "version": "3.0.8",
-      "build_number": 4096,
-      "version_num": 300084096,
-      "version_desc": "version: 3.0.8\n版本更新：\n- 修复huya断流",
+      "version": "3.0.9",
+      "build_number": 4097,
+      "version_num": 300094097,
+      "version_desc": "version: 3.0.9\n版本更新：\n- 优化MPV播放器支持超高清观看。\n- 添加设备同步。\n- 修复弹幕速度不同步。\n",
       "prerelease": false,
-      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.0.8",
+      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.0.9",
       "windows_msix_available": true
     },
     "linux": {
-      "version": "3.0.8",
-      "build_number": 4096,
-      "version_num": 300084096,
-      "version_desc": "version: 3.0.8\n版本更新：\n- 修复huya断流",
+      "version": "3.0.9",
+      "build_number": 4097,
+      "version_num": 300094097,
+      "version_desc": "version: 3.0.9\n版本更新：\n- 优化MPV播放器支持超高清观看。\n- 添加设备同步。\n- 修复弹幕速度不同步。\n",
       "prerelease": false,
-      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.0.8"
+      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.0.9"
     },
     "macos": {
-      "version": "3.0.8",
-      "build_number": 4096,
-      "version_num": 300084096,
-      "version_desc": "version: 3.0.8\n版本更新：\n- 修复huya断流",
+      "version": "3.0.9",
+      "build_number": 4097,
+      "version_num": 300094097,
+      "version_desc": "version: 3.0.9\n版本更新：\n- 优化MPV播放器支持超高清观看。\n- 添加设备同步。\n- 修复弹幕速度不同步。\n",
       "prerelease": false,
-      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.0.8"
+      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.0.9"
     },
     "ios": {
-      "version": "3.0.8",
-      "build_number": 4096,
-      "version_num": 300084096,
-      "version_desc": "version: 3.0.8\n版本更新：\n- 修复huya断流",
+      "version": "3.0.9",
+      "build_number": 4097,
+      "version_num": 300094097,
+      "version_desc": "version: 3.0.9\n版本更新：\n- 优化MPV播放器支持超高清观看。\n- 添加设备同步。\n- 修复弹幕速度不同步。\n",
       "prerelease": false,
-      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.0.8"
+      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.0.9"
     }
   }
 }
