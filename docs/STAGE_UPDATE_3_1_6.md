@@ -44,17 +44,37 @@
 
   ```powershell
   .\tool\local_ci.ps1 -Scope Focused `
-    -TestPath @('test/huya_danmaku_protocol_test.dart','test/super_chat_expiry_policy_test.dart') `
-    -SkipPubGet
+    -TestPath @('test/huya_danmaku_protocol_test.dart','test/super_chat_expiry_policy_test.dart')
   ```
 
 - 结果：延迟快照、重复快照、跨房间代际隔离与到期策略共 9/9 通过；仓库策略、设备 UI 映射、Built-in Kotlin 审计通过；全仓审计 3896 个已跟踪文件、0 error、1 条既有警告。
 - 聚焦记录：`local-artifacts/build-records/20260831T195751960Z-quality-focused.json`。
 - 最终完整门禁：Analyze 0 issue、Flutter 678/678、公开平台接口 42/42、仓库审计 3896 个已跟踪文件且 0 error；耗时 1007.180 秒，峰值 CPU 34.68%，峰值工作集 19,126,968,320 bytes，结束后活跃重型进程 0。
 - 完整记录：`local-artifacts/build-records/20260831T201458105Z-quality-full.json`。
-- 构建命令、安装包大小与 SHA-256 在冻结与发布后补记到本文件。
+- 冻结源码与 `v3.1.6` 标签均指向 `398d182dcb02a3587a6ae74e35f258f7d3eebbc9`。
 
-## 5. 平台影响
+## 5. 构建与 GitHub 资产
+
+Android、Windows 按构建策略串行执行，均复用同一源码完整门禁：
+
+| 平台 | 命令 | 耗时 | 峰值 CPU | 峰值工作集 | 收尾 |
+| --- | --- | ---: | ---: | ---: | --- |
+| Android arm64-v8a | `build_local_release.ps1 -Target AndroidArm64 -Configuration Release -SkipQuality` | 932.682 s | 58.36% | 20,766,429,184 bytes | 活跃重型进程 0 |
+| Windows x64 | `build_local_release.ps1 -Target WindowsX64 -Configuration Release -SkipQuality` | 1071.061 s | 50.78% | 20,692,557,824 bytes | 活跃重型进程 0 |
+
+GitHub Release：[v3.1.6](https://github.com/wzgrx/pure_live/releases/tag/v3.1.6)。Release 共 7 个资产：三个客户端产物、Android/Windows 两份构建元数据和两份 SHA-256 清单。
+
+| 资产 | 大小 | SHA-256 | 签名状态 |
+| --- | ---: | --- | --- |
+| `PureLive-3.1.6-4119-debug-signed-android-arm64-v8a-release.apk` | 118,450,755 bytes | `0736e9cb2844a2bbfbccf22eaba5e0da8f0ed11410437b35c4faad6abe171a17` | Release 编译模式，本地调试证书 |
+| `PureLive-3.1.6-4119-windows-x64-portable.zip` | 72,313,273 bytes | `0e7423e84e9ec694aabffadf4de0f1eff1392ef3d72c946117fd4fbd99da758e` | 便携 ZIP，不适用 Authenticode |
+| `PureLive-3.1.6-4119-windows-x64-setup.exe` | 56,046,319 bytes | `1a2fa055ec2497469493a98e224cca9fbba8bccd9c0e2d62bb1024460ae9068a` | 未配置 Authenticode |
+
+- Android 内容门禁：包名 `com.mystyle.purelive`、版本名 `3.1.6`、基础 build `4119`、arm64 ABI 偏移 `2000`、Manifest `versionCode=6119`、唯一 ABI `arm64-v8a`、Flutter 资源 1258 项。
+- Android 构建记录：`local-artifacts/build-records/20260831T203326711Z-build-androidarm64-release.json`。
+- Windows 构建记录：`local-artifacts/build-records/20260831T205143452Z-build-windowsx64-release.json`。
+
+## 6. 平台影响
 
 | 平台 | 代码影响 | 交付 |
 | --- | --- | --- |
@@ -62,13 +82,13 @@
 | Windows x64 | 使用同一 Dart 虎牙协议层，因此同步获得非阻塞补偿与空板容错 | 可选目录安装程序、便携 ZIP |
 | 其他平台 | 源码层同样受益，但本轮没有对应设备交付要求 | 不生成安装包 |
 
-## 6. 运行验证边界
+## 7. 运行验证边界
 
 - 确定性测试覆盖“通知先于快照”“空快照”“重复快照”“解码不阻塞”“到期清理”。
-- Android v3.1.5 已在 PJZ110 / Android 16 通过网络 ADB 静默覆盖安装，安装前后用户原前台应用保持不变；v3.1.6 产物生成后按相同方式只做不抢前台的安装与版本核对。
+- Android v3.1.6 已在 PJZ110 / Android 16 通过网络 ADB 从 v3.1.5 静默覆盖安装；核对 `versionName=3.1.6`、`versionCode=6119`，安装前后用户原前台小红书 Activity 完全一致，没有启动 Pure Live 或抢占界面。
 - 真实付费醒目留言依赖主播房间在观察窗口内出现对应事件。没有截获真实事件时标记为运行观察项，不用模拟结果冒充实播证据。
 - 本轮没有修改画质、线路、播放器恢复、录制或竖屏几何，因此完整门禁用于确认共享代码没有回归，但不会把未执行的平台实播矩阵写成已经通过。
 
-## 7. 回滚边界
+## 8. 回滚边界
 
 回滚只需恢复虎牙 URI `2001314` 的协调逻辑、空列表处理、对应协议测试以及版本/发布文档。由于新实现不改变消息模型、控制器列表和 UI，回滚不涉及用户配置迁移或数据库结构。

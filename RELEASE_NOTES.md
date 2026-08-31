@@ -16,6 +16,8 @@ v3.1.6 build 4119 是 Android / Windows 虎牙醒目留言实时刷新补丁。�
 - 虎牙协议、跨房间代际隔离与醒目留言到期策略聚焦测试 9/9 通过；最终 Analyze 0 issue、Flutter 全量回归 678/678、公开平台接口 42/42、全仓审计 3896 个已跟踪文件且 0 error。
 - Android `arm64-v8a` 与 Windows x64 从同一提交串行构建；Windows 同时提供可选择安装目录的安装程序和便携 ZIP。
 - 自动测试证明时序协调、去重、空板和生命周期边界；真实付费醒目留言仍依赖外部直播事件，发布说明保留这项实播观察边界。
+- 冻结源码/标签提交为 `398d182dcb02a3587a6ae74e35f258f7d3eebbc9`。Android APK 为 118,450,755 bytes，SHA-256 `0736e9cb2844a2bbfbccf22eaba5e0da8f0ed11410437b35c4faad6abe171a17`；Windows 便携 ZIP 为 72,313,273 bytes，SHA-256 `0e7423e84e9ec694aabffadf4de0f1eff1392ef3d72c946117fd4fbd99da758e`；Windows 安装程序为 56,046,319 bytes，SHA-256 `1a2fa055ec2497469493a98e224cca9fbba8bccd9c0e2d62bb1024460ae9068a`。
+- Android 为 Release 编译模式、本地调试证书签名，文件名和元数据明确标记 `debug-signed`；Windows 资产未配置 Authenticode，元数据明确标记 `unsigned`。
 
 完整根因、影响范围、回归证据、安装包与校验信息见 `docs/STAGE_UPDATE_3_1_6.md`。
 

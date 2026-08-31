@@ -28,6 +28,7 @@
 | A0-04 | RUN | 后台 15 秒、2 分钟、锁屏后恢复；直播状态按阈值刷新且卡片位置稳定 | 首页后台 20 秒热恢复已通过；v3.1.2 虎牙实际播放在其他应用前台时连续 10 分钟保持 `PLAYING`，21 个样本无 FATAL/ANR，结束后进程、媒体会话和 Wake Lock 释放。锁屏后的首页刷新与播放器恢复仍待当前版本补充。见 `docs/ANDROID_RUNTIME_AUDIT_3_1_2.md` |
 | A0-05 | RUN | v3.1.4 Android 专项包覆盖升级与关注刷新 | PJZ110 网络 ADB 保持用户其他应用前台完成覆盖安装，核对 `versionName=3.1.4`、`versionCode=6117`；没有强制启动或清理用户任务。手机关注下拉与平板横屏仍按 A1-01 继续 |
 | A0-06 | PASS | v3.1.5 双平台一致版静默覆盖升级 | PJZ110 / Android 16 通过网络 ADB 执行 `adb install -r`，安装前后用户前台均保持小红书；核对 `versionName=3.1.5`、`versionCode=6118`，没有启动 Pure Live 或打断用户任务 |
+| A0-07 | PASS | v3.1.6 Android arm64-v8a 安装包静默覆盖升级 | PJZ110 / Android 16 从 v3.1.5 执行 `adb install -r` 成功，核对 `versionName=3.1.6`、`versionCode=6119`；安装前后 `com.xingin.xhs/.index.v2.IndexActivityV2` 保持同一前台 Activity，没有启动 Pure Live 或抢占用户界面 |
 
 ### A1 首页、关注、热门、分区与搜索
 

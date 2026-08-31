@@ -1,5 +1,61 @@
 [
   {
+    "version": "3.1.6",
+    "title": "Pure Live v3.1.6",
+    "date": "2026-08-31",
+    "github": "https://github.com/wzgrx/pure_live/releases/tag/v3.1.6",
+    "author": {
+      "name": "wzgrx",
+      "avatar": "https://avatars.githubusercontent.com/u/39661556?v=4",
+      "profile": "https://github.com/wzgrx"
+    },
+    "changelog": "# Pure Live v3.1.6\n\nv3.1.6 build 4119 是 Android / Windows 虎牙醒目留言实时刷新补丁。本轮没有同步上游代码；修复来自上游 Issue #828 的共享协议时序问题：虎牙 WebSocket 的 URI `2001314` 只表示留言板已经发生变化，通知到达时 WUP `getHeadLineMessageBoard` 的快照可能尚未更新。旧实现只查询一次、直接取最后一项并在弹幕解码链中等待网络请求，因此会出现留言延迟到手动刷新才显示、空列表异常，以及普通弹幕被慢请求连带阻塞。\n\n## 虎牙醒目留言\n\n- 将通知处理改为后台非阻塞协调，不再在 WebSocket 解码函数中等待 WUP 请求。\n- 采用 `0 / 600 / 1800 / 4000 ms` 的有界补偿窗口；每次请求最多等待 3 秒，覆盖“推送先到、留言板稍后可见”的最终一致性时序，同时避免无限轮询。\n- 用房间会话代际隔离补偿任务；切换房间或停止弹幕后，旧任务不会把消息写入新房间。\n- 合并短时间内的重复通知，对完整快照做值相等去重；同一醒目留言只进入列表一次。\n- 留言板为空时返回空列表，不再调用 `.last`；接口失败或超时只结束本轮补偿，不中断普通弹幕通道。\n\n## 验证与交付\n\n- 新增确定性协议回归：模拟首轮 WUP 为空、后续快照出现，验证 WebSocket 解码先返回而醒目留言随后自动出现；模拟重复快照，验证只发送一次。\n- 虎牙协议、跨房间代际隔离与醒目留言到期策略聚焦测试 9/9 通过；最终 Analyze 0 issue、Flutter 全量回归 678/678、公开平台接口 42/42、全仓审计 3896 个已跟踪文件且 0 error。\n- Android `arm64-v8a` 与 Windows x64 从同一提交串行构建；Windows 同时提供可选择安装目录的安装程序和便携 ZIP。\n- 自动测试证明时序协调、去重、空板和生命周期边界；真实付费醒目留言仍依赖外部直播事件，发布说明保留这项实播观察边界。\n\n完整根因、影响范围、回归证据、安装包与校验信息见 `docs/STAGE_UPDATE_3_1_6.md`。",
+    "files": [
+      {
+        "name": "BUILD_METADATA.json",
+        "size": "0.0mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.6/BUILD_METADATA.json"
+      },
+      {
+        "name": "PureLive-3.1.6-4119-debug-signed-android-arm64-v8a",
+        "size": "112.96mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.6/PureLive-3.1.6-4119-debug-signed-android-arm64-v8a-release.apk"
+      },
+      {
+        "name": "PureLive-3.1.6-4119-windows-x64-portable.zip",
+        "size": "68.96mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.6/PureLive-3.1.6-4119-windows-x64-portable.zip"
+      },
+      {
+        "name": "PureLive-3.1.6-4119-windows-x64-setup.exe",
+        "size": "53.45mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.6/PureLive-3.1.6-4119-windows-x64-setup.exe"
+      },
+      {
+        "name": "SHA256SUMS.txt",
+        "size": "0.0mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.6/SHA256SUMS.txt"
+      },
+      {
+        "name": "WINDOWS_BUILD_METADATA.json",
+        "size": "0.0mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.6/WINDOWS_BUILD_METADATA.json"
+      },
+      {
+        "name": "WINDOWS_SHA256SUMS.txt",
+        "size": "0.0mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.6/WINDOWS_SHA256SUMS.txt"
+      }
+    ]
+  },
+  {
     "version": "3.1.5",
     "title": "Pure Live v3.1.5",
     "date": "2026-08-31",
@@ -20,19 +76,19 @@
       {
         "name": "PureLive-3.1.5-4118-debug-signed-android-arm64-v8a",
         "size": "112.96mb",
-        "downloads": 0,
+        "downloads": 10,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.5/PureLive-3.1.5-4118-debug-signed-android-arm64-v8a-release.apk"
       },
       {
         "name": "PureLive-3.1.5-4118-windows-x64-portable.zip",
         "size": "68.96mb",
-        "downloads": 0,
+        "downloads": 1,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.5/PureLive-3.1.5-4118-windows-x64-portable.zip"
       },
       {
         "name": "PureLive-3.1.5-4118-windows-x64-setup.exe",
         "size": "53.45mb",
-        "downloads": 0,
+        "downloads": 2,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.5/PureLive-3.1.5-4118-windows-x64-setup.exe"
       },
       {
@@ -76,7 +132,7 @@
       {
         "name": "PureLive-3.1.4-4117-debug-signed-android-arm64-v8a",
         "size": "112.96mb",
-        "downloads": 7,
+        "downloads": 9,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.4/PureLive-3.1.4-4117-debug-signed-android-arm64-v8a-release.apk"
       },
       {
@@ -108,7 +164,7 @@
       {
         "name": "PureLive-3.1.3-4116-debug-signed-android-arm64-v8a",
         "size": "112.96mb",
-        "downloads": 11,
+        "downloads": 12,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.3/PureLive-3.1.3-4116-debug-signed-android-arm64-v8a-release.apk"
       },
       {
@@ -153,7 +209,7 @@
       "avatar": "https://avatars.githubusercontent.com/u/39661556?v=4",
       "profile": "https://github.com/wzgrx"
     },
-    "changelog": "# Pure Live v3.1.2\r\n\r\nv3.1.2 build 4115 是 Android / Windows 全屏一致性与平台接口韧性补丁。本轮没有同步上游代码；Windows 根因来自隐藏标题栏初始化与 `window_manager 0.5.2` 原生 `frameless` 状态的交互，不是 v3.1.1 多画面业务代码。旧版会把 Dart 侧标记为全屏，但原生窗口没有改变样式或边界，因此仍保留标题栏、任务栏和普通页面布局。\r\n\r\n## Windows 真全屏\r\n\r\n- Windows 进入全屏前重新应用同一隐藏标题栏样式，清除插件原生层遗留的 `frameless` 阻断状态，再执行系统全屏边界切换。\r\n- 全屏窗口现在覆盖当前显示器完整区域；标题栏、任务栏和普通直播间侧栏不会继续占位。\r\n- `Escape` 退出后，普通窗口精确恢复进入前的位置和尺寸；从最大化进入时恢复原最大化状态。\r\n- macOS、Linux 继续直接调用既有全屏路径，不执行 Windows 专用准备步骤。\r\n\r\n## 网易 CC 分类接口迁移兼容\r\n\r\n- 完整回归发现 CC 旧分类 JSON 地址已在部分网络直接跳转到网易官方 `ds.163.com/glive` HTML 页面；旧实现会在 `jsonDecode` 处终止分类页加载。\r\n- 分类解析改为防御式合同：旧 JSON 仍可解析全部游戏子分类；遇到官方迁移跳转、HTML、空响应或部分 schema 时保留“全部 / 端游 / 手游 / 其他”稳定入口，推荐直播、搜索、房间和播放链路互不连带失败。\r\n- 公开接口探针同时识别旧 JSON 合同与官方 Glive 迁移目标，仍会拒绝第三方重定向和未知 HTML；新增解析回归覆盖 HTML 回退与旧 JSON 分组。\r\n\r\n## 回归与运行验证\r\n\r\n- 新增 `test/windows_fullscreen_transition_test.dart`，锁定 Windows 的“标题栏准备 → 原生全屏”调用顺序，并验证其他桌面平台不执行 Windows 专用步骤。\r\n- 聚焦 Analyze 为 0 issue；Windows 全屏与 PiP 呈现测试 4/4 通过，记录为 `20260831T091722185Z-quality-focused.json`。\r\n- Windows Debug 在 3840×2400、250% 缩放、200 Hz 显示器完成真实直播复验：全屏截图从普通窗口 `1155×703` 或最大化 `1536×912` 变为完整显示器 `1536×960`；原生窗口边界为 `(0,0)-(1536,960)`。\r\n- 普通窗口全屏往返后边界精确恢复为 `(188,104)-(1347,809)`；最大化往返后 `IsZoomed=true`，进程全程响应。\r\n- Android arm64-v8a、Windows x64 安装程序和便携 ZIP 从同一冻结提交串行构建，并附构建元数据与 SHA-256。\r\n\r\n## 证据与边界\r\n\r\n- 完整根因、旧/新行为、验证矩阵和回滚点见 `docs/STAGE_UPDATE_3_1_2.md`。\r\n- 本修复解决 Windows 原生窗口进入全屏失败；平台直播接口、主播下播、CDN 波动和账号风控仍按各平台运行时诊断处理。\r\n\n\n## 发布后正式包复验（2026-08-31）\n\n- Android：PJZ110 / Android 16 覆盖升级保留关注数据；10 次冷启动全部成功，293～332 ms、平均 306.2 ms，0 FATAL/ANR。分类/搜索标签硬边界、网易 CC 官方 HTML 迁移回退、120 Hz 三档即时切换与冷启动持久化均通过。\n- Twitch：直连搜索明确显示局部失败；临时启用手机可达的本机 Clash 应用代理后，Twitch 原生搜索和在线人数正常。测试结束已恢复原代理地址及关闭状态。\n- Windows：3840×2400、200 Hz 环境确认三档刷新率即时生效和持久化；普通窗口、最大化两条真全屏往返均覆盖完整显示器并精确恢复，播放和弹幕持续。\n- 详细证据已更新到 master：[ANDROID_RUNTIME_AUDIT_3_1_2.md](https://github.com/wzgrx/pure_live/blob/master/docs/ANDROID_RUNTIME_AUDIT_3_1_2.md)、[WINDOWS_RUNTIME_AUDIT_3_1_2.md](https://github.com/wzgrx/pure_live/blob/master/docs/WINDOWS_RUNTIME_AUDIT_3_1_2.md)、[ACCEPTANCE_MATRIX_3_1_0.md](https://github.com/wzgrx/pure_live/blob/master/docs/ACCEPTANCE_MATRIX_3_1_0.md)。\n- Release 二进制和源码标签仍对应冻结提交 4d79e5fa；发布后运行审计文档提交为 ^@4e40124，没有替换安装包内容。",
+    "changelog": "# Pure Live v3.1.2\r\n\r\nv3.1.2 build 4115 是 Android / Windows 全屏一致性与平台接口韧性补丁。本轮没有同步上游代码；Windows 根因来自隐藏标题栏初始化与 `window_manager 0.5.2` 原生 `frameless` 状态的交互，不是 v3.1.1 多画面业务代码。旧版会把 Dart 侧标记为全屏，但原生窗口没有改变样式或边界，因此仍保留标题栏、任务栏和普通页面布局。\r\n\r\n## Windows 真全屏\r\n\r\n- Windows 进入全屏前重新应用同一隐藏标题栏样式，清除插件原生层遗留的 `frameless` 阻断状态，再执行系统全屏边界切换。\r\n- 全屏窗口现在覆盖当前显示器完整区域；标题栏、任务栏和普通直播间侧栏不会继续占位。\r\n- `Escape` 退出后，普通窗口精确恢复进入前的位置和尺寸；从最大化进入时恢复原最大化状态。\r\n- macOS、Linux 继续直接调用既有全屏路径，不执行 Windows 专用准备步骤。\r\n\r\n## 网易 CC 分类接口迁移兼容\r\n\r\n- 完整回归发现 CC 旧分类 JSON 地址已在部分网络直接跳转到网易官方 `ds.163.com/glive` HTML 页面；旧实现会在 `jsonDecode` 处终止分类页加载。\r\n- 分类解析改为防御式合同：旧 JSON 仍可解析全部游戏子分类；遇到官方迁移跳转、HTML、空响应或部分 schema 时保留“全部 / 端游 / 手游 / 其他”稳定入口，推荐直播、搜索、房间和播放链路互不连带失败。\r\n- 公开接口探针同时识别旧 JSON 合同与官方 Glive 迁移目标，仍会拒绝第三方重定向和未知 HTML；新增解析回归覆盖 HTML 回退与旧 JSON 分组。\r\n\r\n## 回归与运行验证\r\n\r\n- 新增 `test/windows_fullscreen_transition_test.dart`，锁定 Windows 的“标题栏准备 → 原生全屏”调用顺序，并验证其他桌面平台不执行 Windows 专用步骤。\r\n- 聚焦 Analyze 为 0 issue；Windows 全屏与 PiP 呈现测试 4/4 通过，记录为 `20260831T091722185Z-quality-focused.json`。\r\n- Windows Debug 在 3840×2400、250% 缩放、200 Hz 显示器完成真实直播复验：全屏截图从普通窗口 `1155×703` 或最大化 `1536×912` 变为完整显示器 `1536×960`；原生窗口边界为 `(0,0)-(1536,960)`。\r\n- 普通窗口全屏往返后边界精确恢复为 `(188,104)-(1347,809)`；最大化往返后 `IsZoomed=true`，进程全程响应。\r\n- Android arm64-v8a、Windows x64 安装程序和便携 ZIP 从同一冻结提交串行构建，并附构建元数据与 SHA-256。\r\n\r\n## 证据与边界\r\n\r\n- 完整根因、旧/新行为、验证矩阵和回滚点见 `docs/STAGE_UPDATE_3_1_2.md`。\r\n- 本修复解决 Windows 原生窗口进入全屏失败；平台直播接口、主播下播、CDN 波动和账号风控仍按各平台运行时诊断处理。\r\n\n\n## 发布后正式包复验（2026-08-31）\n\n- Android：PJZ110 / Android 16 覆盖升级保留关注数据；10 次冷启动全部成功，293～332 ms、平均 306.2 ms，0 FATAL/ANR。分类/搜索标签硬边界、网易 CC 官方 HTML 迁移回退、120 Hz 三档即时切换与冷启动持久化均通过。\n- Twitch：直连搜索明确显示局部失败；临时启用手机可达的本机 Clash 应用代理后，Twitch 原生搜索和在线人数正常。测试结束已恢复原代理地址及关闭状态。\n- Windows：3840×2400、200 Hz 环境确认三档刷新率即时生效和持久化；普通窗口、最大化两条真全屏往返均覆盖完整显示器并精确恢复，播放和弹幕持续。\n- 详细证据已更新到 master：[ANDROID_RUNTIME_AUDIT_3_1_2.md](https://github.com/wzgrx/pure_live/blob/master/docs/ANDROID_RUNTIME_AUDIT_3_1_2.md)、[WINDOWS_RUNTIME_AUDIT_3_1_2.md](https://github.com/wzgrx/pure_live/blob/master/docs/WINDOWS_RUNTIME_AUDIT_3_1_2.md)、[ACCEPTANCE_MATRIX_3_1_0.md](https://github.com/wzgrx/pure_live/blob/master/docs/ACCEPTANCE_MATRIX_3_1_0.md)。\n- Release 二进制和源码标签仍对应冻结提交 4d79e5fa；发布后运行审计文档提交为 \u00004e40124，没有替换安装包内容。",
     "files": [
       {
         "name": "BUILD_METADATA.json",
@@ -176,7 +232,7 @@
       {
         "name": "PureLive-3.1.2-4115-windows-x64-setup.exe",
         "size": "53.45mb",
-        "downloads": 10,
+        "downloads": 11,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.2/PureLive-3.1.2-4115-windows-x64-setup.exe"
       },
       {
@@ -406,7 +462,7 @@
       {
         "name": "PureLive-3.0.23-4111-android-arm64-v8a",
         "size": "112.98mb",
-        "downloads": 377,
+        "downloads": 378,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v3.0.23/PureLive-3.0.23-4111-android-arm64-v8a-release.apk"
       },
       {
