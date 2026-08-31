@@ -39,10 +39,12 @@
 
 | 场景 | 状态 | 证据边界 |
 | --- | --- | --- |
-| Android 手机竖屏 | 待最终 APK 快速复验 | 现有手势链不变，确定性真实拖动测试通过 |
+| Android 手机竖屏 | 覆盖安装 PASS，交互待复验 | PJZ110 保留其他应用前台完成升级；现有手势链不变，确定性真实拖动测试通过 |
 | Android 平板横屏 | 待对应设备/可调宽窗口复验 | 根因分支已移除，宽屏移动判定测试通过 |
 | Android 空列表/短列表 | 自动化 PASS | 唯一纵向 ScrollView 使用刷新器提供的 physics |
 | Windows 宽屏 | 静态隔离 PASS | 仍走桌面分支，不新增触控刷新包装；v3.1.3 包继续有效 |
+
+Android 16 网络 ADB 设备已从 v3.1.3 覆盖安装为 `versionName=3.1.4`、`versionCode=6117`，安装前后前台都保持在用户正在操作的其他应用，没有强制拉起 Pure Live。由于当前连接设备是手机且用户仍在操作，本轮不把安装成功替代关注页手势实测，也不伪造平板横屏设备证据。
 
 ## 6. 发布门禁
 
@@ -51,6 +53,15 @@
 3. 覆盖安装后核对启动、普通手机关注页下拉和原有数据保留；平板横屏缺少对应设备时保持明确的运行证据边界；
 4. GitHub `master`、`v3.1.4`、Release、更新源、构建元数据和 APK 对齐同一冻结提交；
 5. Windows 不因 Android 专项补丁重复构建，下载索引继续指向 v3.1.3。
+
+实际交付核对：
+
+- 源码提交与标签提交：`e7a694efd3c1d93934407aa8e4ad4691d2c2e0bf`；
+- Android Release 模式、单一 `arm64-v8a`、包名 `com.mystyle.purelive`、Manifest `versionCode=6117`；
+- APK 大小 `118445503` bytes，SHA-256 `e52eaf396ac233528cc4930bdf70368c9715798d28905f6339e6a05fb0b12691`；
+- 本机构建使用调试证书，文件名和 `BUILD_METADATA.json` 均明确记录 `debug-signed` / `android_signing=debug`；
+- 构建记录：`local-artifacts/build-records/20260831T173341306Z-build-androidarm64-release.json`；
+- GitHub v3.1.4 为正式 Release，包含 APK、构建元数据和 SHA-256 清单 3 个资产。
 
 ## 7. 回滚边界
 

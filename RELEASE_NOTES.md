@@ -14,6 +14,8 @@ v3.1.4 build 4117 是 Android 平板横屏关注页下拉刷新补丁。本轮�
 - 新增宽屏移动设备、宽屏桌面和窄窗口三种判定回归；既有真实 pointer drag 测试继续验证动画、释放和回调，不用直接调用 callback 代替手势证据。
 - 聚焦 `test/favorite_pull_refresh_test.dart` 2/2 通过；冻结前 Analyze 0 issue、完整 Flutter 675/675、公开平台接口 42/42、全仓审计 3895 个文件且 0 error。
 - 完整质量记录：`local-artifacts/build-records/20260831T171731254Z-quality-full.json`。
+- Android Release 模式 APK 完成单一 arm64-v8a、版本 `3.1.4 (6117)`、Flutter 资源与关键原生库核验；大小 `118445503` bytes，SHA-256 `e52eaf396ac233528cc4930bdf70368c9715798d28905f6339e6a05fb0b12691`。
+- PJZ110 / Android 16 已在不切走用户当前前台应用的情况下覆盖安装成功；手机手势与平板横屏运行证据继续单独记录，不用安装成功替代交互测试。
 - 本轮只修改关注网格的刷新包装条件；启动核验、卡片单次发布、平台状态、播放器、弹幕、录制和 Windows 列表行为均未改动。
 - Android `arm64-v8a` 进入正式构建与安装验证；Windows 继续使用 v3.1.3 安装程序和便携 ZIP。
 
