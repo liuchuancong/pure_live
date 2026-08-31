@@ -58,7 +58,26 @@ v3.1.6 已经把虎牙 URI `2001314` 的留言板补偿改成非阻塞、有界�
 
 ## 7. 构建与校验
 
-Android、Windows 按 `BUILD_POLICY.md` 串行构建。最终冻结提交、命令耗时、峰值资源、安装包大小、SHA-256、签名状态和 GitHub Release 资产在发布完成后写回本节及 `RELEASE_NOTES.md`。
+冻结源码与 `v3.1.7` 标签均指向 `13d4d4094a200ff43b2ec98e986818e7a58a1fc3`。Android、Windows 按 `BUILD_POLICY.md` 串行构建；Android 收尾时仍有两个 Java 后台进程处于回落窗口，Windows 构建守卫先排队至其退出再启动，最终活跃重型进程为 0，没有并发执行两个平台构建。
+
+| 平台 | 命令 | 耗时 | 峰值 CPU | 峰值工作集 | 最终收尾 |
+|---|---|---:|---:|---:|---|
+| Android arm64-v8a | `build_local_release.ps1 -Target AndroidArm64 -Configuration Release -SkipQuality` | 795.991 s | 67.01% | 19,677,376,512 bytes | Windows 阶段启动前守卫确认回落 |
+| Windows x64 | `build_local_release.ps1 -Target WindowsX64 -Configuration Release -SkipQuality` | 1158.972 s | 63.76% | 16,422,981,632 bytes | 活跃重型进程 0 |
+
+GitHub Release：[v3.1.7](https://github.com/wzgrx/pure_live/releases/tag/v3.1.7)。Release 为非草稿、非预发布，共 7 个资产；GitHub 返回的服务端 SHA-256 与本地清单逐项一致。
+
+| 资产 | 大小 | SHA-256 | 签名状态 |
+|---|---:|---|---|
+| `PureLive-3.1.7-4120-debug-signed-android-arm64-v8a-release.apk` | 118,451,707 bytes | `7233a01ad90e207df483fb63b125ac7d9ab33f9811b6b797f78e3b5397969a7a` | Release 编译模式，本地调试证书 |
+| `PureLive-3.1.7-4120-windows-x64-portable.zip` | 73,781,511 bytes | `ac174263d67c3d131656c69043d21562b5c4fd85512c5fca970e23ef2c603013` | 便携 ZIP，不适用 Authenticode |
+| `PureLive-3.1.7-4120-windows-x64-setup.exe` | 56,046,835 bytes | `99b3f1983aac9025d4f6da41a4dde52bdb135c1afa55921e25dcbb08b76f81f3` | 未配置 Authenticode |
+
+- Android 包核验：包名 `com.mystyle.purelive`、版本 `3.1.7`、Manifest `versionCode=6120`、唯一 ABI `arm64-v8a`、Flutter 资源 1258 项。
+- PJZ110 / Android 16 已从 v3.1.6 静默覆盖安装到 v3.1.7；安装前后用户前台都保持 `com.xingin.xhs/.index.v2.IndexActivityV2`，没有启动 Pure Live，安装后核对 `versionName=3.1.7`、`versionCode=6120`。
+- Windows 便携 ZIP 共 1301 项；`pure_live.exe`、WebView2 loader、Flutter manifest 和内置 `3.1.7+4120` 更新源各 1，退役 QuickJS DLL 与运行期用户数据均为 0。
+- Android 构建记录：`local-artifacts/build-records/20260831T224917895Z-build-androidarm64-release.json`。
+- Windows 构建记录：`local-artifacts/build-records/20260831T231008974Z-build-windowsx64-release.json`。
 
 ## 8. 回滚边界
 

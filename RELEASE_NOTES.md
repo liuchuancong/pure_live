@@ -16,6 +16,7 @@ v3.1.7 build 4120 是 Android / Windows 虎牙醒目留言事件身份补丁。�
 - 虎牙协议、跨房间代际隔离与醒目留言到期策略聚焦测试 11/11 通过；最终 Analyze 0 issue、Flutter 全量回归 680/680、公开平台接口 42/42、全仓审计 3898 个已跟踪文件且 0 error。
 - Android `arm64-v8a` 与 Windows x64 从同一冻结源码串行构建；Windows 同时提供可选择安装目录的安装程序和便携 ZIP。
 - 自动测试证明事件身份、快照合并、有界缓存和生命周期边界；真实付费醒目留言仍依赖外部直播事件，继续保留为实播观察项。
+- 冻结源码与 `v3.1.7` 标签均指向 `13d4d4094a200ff43b2ec98e986818e7a58a1fc3`。Android APK 为 118,451,707 bytes，SHA-256 `7233a01ad90e207df483fb63b125ac7d9ab33f9811b6b797f78e3b5397969a7a`；Windows 便携 ZIP 为 73,781,511 bytes，SHA-256 `ac174263d67c3d131656c69043d21562b5c4fd85512c5fca970e23ef2c603013`；Windows 安装程序为 56,046,835 bytes，SHA-256 `99b3f1983aac9025d4f6da41a4dde52bdb135c1afa55921e25dcbb08b76f81f3`。
 - Android 为 Release 编译模式、本地调试证书签名，文件名和元数据明确标记 `debug-signed`；Windows 资产未配置 Authenticode，元数据明确标记 `unsigned`。
 
 完整根因、影响范围、回归证据、安装包与校验信息见 `docs/STAGE_UPDATE_3_1_7.md`。
