@@ -1,3 +1,26 @@
+# Pure Live v3.1.4
+
+v3.1.4 build 4117 是 Android 平板横屏关注页下拉刷新补丁。本轮不合并上游代码；近期 Issue #826 的现象在维护分支同样存在，根因是关注网格用 `width > 680` 直接关闭逐平台 `EasyRefresh`。Android 平板横屏会超过这个阈值，但仍属于触控移动平台，于是外层刷新已因嵌套 `TabBarView` 主动关闭，内层刷新又被宽度判断移除，最终只剩一个裸 `GridView`。
+
+## 平板横屏关注刷新
+
+- 宽度继续只决定网格列数和图片缓存范围，不再独自决定刷新交互类型。
+- Android/iOS 无论横竖屏和窗口宽度都保留逐平台纵向下拉刷新；Windows 等桌面宽屏继续使用分页、重试按钮和键盘入口。
+- 每个平台页仍持有独立 `EasyRefresh.builder`，并把 builder 返回的 physics 直接安装到唯一纵向滚动视图；平台左右切换与纵向下拉不会共用手势轴。
+- 空列表与短列表继续使用 `AlwaysScrollableScrollPhysics`，72 px 释放时显示 Material 指示器并调用同一串行刷新事务。
+
+## 回归与影响边界
+
+- 新增宽屏移动设备、宽屏桌面和窄窗口三种判定回归；既有真实 pointer drag 测试继续验证动画、释放和回调，不用直接调用 callback 代替手势证据。
+- 聚焦 `test/favorite_pull_refresh_test.dart` 2/2 通过；冻结前 Analyze 0 issue、完整 Flutter 675/675、公开平台接口 42/42、全仓审计 3895 个文件且 0 error。
+- 完整质量记录：`local-artifacts/build-records/20260831T171731254Z-quality-full.json`。
+- 本轮只修改关注网格的刷新包装条件；启动核验、卡片单次发布、平台状态、播放器、弹幕、录制和 Windows 列表行为均未改动。
+- Android `arm64-v8a` 进入正式构建与安装验证；Windows 继续使用 v3.1.3 安装程序和便携 ZIP。
+
+完整根因、近期 Issue 分类、测试和交付证据见 `docs/STAGE_UPDATE_3_1_4.md`、`docs/FAVORITE_REFRESH_DESIGN.md` 与 `docs/ISSUE_AUDIT_2026_08_31.md`。
+
+---
+
 # Pure Live v3.1.3
 
 v3.1.3 build 4116 是 Android / Windows 多画面真全屏退出补丁。本轮没有同步上游代码；问题来自本仓库多画面页面把真全屏设计成“完全没有界面控件”，只留下 Android 系统返回手势和 Windows `Escape`。因此用户点击任意画面时只会按既有逻辑切换声音来源，界面本身没有可发现的退出路径。

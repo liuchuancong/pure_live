@@ -1,21 +1,21 @@
 {
-  "version": "3.1.3",
-  "build_number": 4116,
-  "version_num": 301034116,
-  "version_desc": "- 修复多画面真全屏没有可见退出入口、点击画面只能切换声音来源的问题。\n- 全屏左上角新增避让刘海和挖孔的 44×44 半透明退出按钮；系统返回手势与桌面 Escape 继续有效。\n- 退出按钮之外的区域保持原有格子点击和音源焦点切换，视频网格继续铺满整个屏幕。\n- Android arm64-v8a 与 Windows x64 从同一提交串行构建，附根因、测试记录、构建元数据和 SHA-256。",
+  "version": "3.1.4",
+  "build_number": 4117,
+  "version_num": 301034117,
+  "version_desc": "- 修复 Android 平板横屏时关注页没有下拉刷新动画、手势也不会触发刷新的问题。\n- 宽度只负责响应式网格列数；是否保留下拉刷新改由移动平台身份决定，横屏和平板形态不再被当成桌面。\n- 手机短列表、空列表和桌面分页行为保持原样；新增宽屏移动设备判定与真实拖动回归。\n- 本轮发布 Android arm64-v8a 更新包；Windows 继续使用 v3.1.3。",
   "prerelease": false,
-  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.1.3",
+  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.1.4",
   "android_abis": [
     "arm64-v8a"
   ],
   "platforms": {
     "android": {
-      "version": "3.1.3",
-      "build_number": 4116,
-      "version_num": 301034116,
-      "version_desc": "- 多画面真全屏新增安全区内的显式退出按钮，不再只依赖系统返回手势。\n- 按钮触控范围与画面格子隔离，点击其他区域仍按原逻辑切换声音来源。\n- 发布 arm64-v8a 更新包，并核验版本、唯一 ABI、Flutter 资源、关键原生库、签名状态和 SHA-256。",
+      "version": "3.1.4",
+      "build_number": 4117,
+      "version_num": 301034117,
+      "version_desc": "- Android 平板横屏关注页恢复逐平台下拉刷新动画与回调。\n- 宽屏移动设备继续使用触控刷新，桌面宽屏仍保留分页/按钮式刷新，避免两套交互互相覆盖。\n- 发布 arm64-v8a 更新包，并核验版本、唯一 ABI、Flutter 资源、关键原生库、签名状态和 SHA-256。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.1.3",
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.1.4",
       "android_abis": [
         "arm64-v8a"
       ]
