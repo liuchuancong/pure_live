@@ -1377,6 +1377,7 @@
     "multiview_immersive": "Immersive",
     "multiview_immersive_exit": "Exit immersive",
     "multiview_fullscreen": "Fullscreen",
+    "multiview_fullscreen_exit": "Exit fullscreen",
     "multiview_add_cell": "Add view",
     "multiview_small_low_quality": "Data saver for small views",
     "multiview_play": "Play",
