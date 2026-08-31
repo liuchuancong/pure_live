@@ -1377,6 +1377,7 @@
     "multiview_immersive": "沉浸模式",
     "multiview_immersive_exit": "退出沉浸",
     "multiview_fullscreen": "全屏",
+    "multiview_fullscreen_exit": "退出全屏",
     "multiview_add_cell": "添加画面",
     "multiview_small_low_quality": "小格省流",
     "multiview_play": "播放",

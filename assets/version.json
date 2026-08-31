@@ -1,32 +1,32 @@
 {
-  "version": "3.1.2",
-  "build_number": 4115,
-  "version_num": 301024115,
-  "version_desc": "- 修复 Windows 隐藏标题栏窗口只更新“全屏”布尔值、却没有改变原生窗口边界和样式的问题。\n- 进入 Windows 全屏前重新同步隐藏标题栏状态，确保真正覆盖当前显示器；退出后精确恢复普通窗口位置、尺寸或最大化状态。\n- 新增 Windows 全屏原生调用顺序回归，并在 3840×2400、250% 缩放、200 Hz 显示器验证普通窗口与最大化窗口往返。\n- Android arm64-v8a 与 Windows x64 从同一提交串行构建，附详细根因、构建元数据和 SHA-256。",
+  "version": "3.1.3",
+  "build_number": 4116,
+  "version_num": 301034116,
+  "version_desc": "- 修复多画面真全屏没有可见退出入口、点击画面只能切换声音来源的问题。\n- 全屏左上角新增避让刘海和挖孔的 44×44 半透明退出按钮；系统返回手势与桌面 Escape 继续有效。\n- 退出按钮之外的区域保持原有格子点击和音源焦点切换，视频网格继续铺满整个屏幕。\n- Android arm64-v8a 与 Windows x64 从同一提交串行构建，附根因、测试记录、构建元数据和 SHA-256。",
   "prerelease": false,
-  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.1.2",
+  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.1.3",
   "android_abis": [
     "arm64-v8a"
   ],
   "platforms": {
     "android": {
-      "version": "3.1.2",
-      "build_number": 4115,
-      "version_num": 301024115,
-      "version_desc": "- 与 Windows 使用同一冻结源码提交，保留 v3.1.1 多画面声音、音量、弹幕目标和按房间持久化修复。\n- 发布 arm64-v8a 更新包，并核验版本、唯一 ABI、Flutter 资源、关键原生库、签名状态和 SHA-256。",
+      "version": "3.1.3",
+      "build_number": 4116,
+      "version_num": 301034116,
+      "version_desc": "- 多画面真全屏新增安全区内的显式退出按钮，不再只依赖系统返回手势。\n- 按钮触控范围与画面格子隔离，点击其他区域仍按原逻辑切换声音来源。\n- 发布 arm64-v8a 更新包，并核验版本、唯一 ABI、Flutter 资源、关键原生库、签名状态和 SHA-256。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.1.2",
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.1.3",
       "android_abis": [
         "arm64-v8a"
       ]
     },
     "windows": {
-      "version": "3.1.2",
-      "build_number": 4115,
-      "version_num": 301024115,
-      "version_desc": "- 修复隐藏标题栏与 window_manager 0.5.2 原生 frameless 状态冲突导致的伪全屏。\n- 真全屏覆盖当前显示器；Escape 退出后精确恢复普通窗口位置/尺寸或原最大化状态。\n- 提供 Windows x64 可选目录安装程序和便携 ZIP，附构建元数据与 SHA-256。",
+      "version": "3.1.3",
+      "build_number": 4116,
+      "version_num": 301034116,
+      "version_desc": "- 多画面真全屏新增显式退出按钮，同时保留 Escape 和系统返回链路。\n- 延续 v3.1.2 真全屏窗口边界与普通/最大化精确恢复修复。\n- 提供 Windows x64 可选目录安装程序和便携 ZIP，附构建元数据与 SHA-256。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.1.2",
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.1.3",
       "windows_msix_available": false
     },
     "linux": {

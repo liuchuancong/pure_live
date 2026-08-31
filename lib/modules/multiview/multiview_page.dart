@@ -13,11 +13,12 @@ import 'package:pure_live/modules/live_play/pages/danmaku_settings_page.dart';
 import 'package:pure_live/modules/multiview/danmaku/multiview_danmaku_settings_binding.dart';
 import 'package:pure_live/modules/multiview/models/multiview_models.dart';
 import 'package:pure_live/modules/multiview/multiview_controller.dart';
+import 'package:pure_live/modules/multiview/widgets/multiview_fullscreen_surface.dart';
 import 'package:pure_live/modules/multiview/widgets/multiview_room_picker.dart';
 import 'package:pure_live/player/utils/fullscreen.dart';
 
 /// 页面显示状态机：normal（完整界面）→ immersive（隐藏工具条与侧板，
-/// 留悬浮恢复钮）→ fullscreen（无任何 chrome）。
+/// 留悬浮恢复钮）→ fullscreen（仅保留安全区内的退出钮）。
 ///
 /// 只影响 chrome 显隐，不触碰布局/格子状态；返回手势与 Esc 均沿
 /// fullscreen/immersive → normal → 退出页面 的单一路径回退。
@@ -379,14 +380,14 @@ class _MultiviewPageState extends State<MultiviewPage> {
           ),
         ),
         // 全屏：复用 WindowService 真全屏（移动端隐藏系统栏、桌面端无边框
-        // 占满整屏），并剥离 SafeArea 类系统留白，画面真正 edge-to-edge；
-        // 不显示任何 chrome（连沉浸恢复钮也不显示，退出走 Esc/返回手势）。
+        // 占满整屏），网格保持 edge-to-edge；左上角仅保留避让刘海/挖孔的
+        // 显式退出钮。返回手势与 Esc 仍是等价回退路径，格子其余区域的
+        // 点击继续只切换音源焦点。
         _DisplayMode.fullscreen => Scaffold(
           backgroundColor: Colors.black,
-          body: MediaQuery.removePadding(
-            context: context,
-            removeTop: true,
-            removeBottom: true,
+          body: MultiviewFullscreenSurface(
+            exitTooltip: i18n('multiview_fullscreen_exit'),
+            onExit: () => unawaited(_changeDisplayMode(_DisplayMode.normal)),
             child: _buildContentArea(isWide: false),
           ),
         ),
