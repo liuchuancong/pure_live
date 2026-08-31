@@ -12,6 +12,23 @@ bool supportsOrientationLockForLogicalDisplay(Size logicalDisplaySize) {
   return logicalDisplaySize.shortestSide < 600;
 }
 
+@visibleForTesting
+Future<void> enterDesktopFullscreen({
+  required bool isWindows,
+  required Future<void> Function() prepareWindowsFullscreen,
+  required Future<void> Function(bool fullscreen) setFullScreen,
+}) async {
+  // window_manager 0.5.2 marks a hidden-title-bar window as frameless while
+  // initializing it on Windows. Its native SetFullScreen implementation skips
+  // every style and bounds update while that flag is set, although it still
+  // reports fullscreen=true. Reapplying the same title-bar style clears the
+  // stale native guard before the actual transition.
+  if (isWindows) {
+    await prepareWindowsFullscreen();
+  }
+  await setFullScreen(true);
+}
+
 @immutable
 class WindowPresentationSnapshot {
   const WindowPresentationSnapshot({required this.fullscreen, required this.widescreen});
@@ -163,7 +180,11 @@ class WindowService {
 
   Future<void> doEnterWindowFullScreen({bool enableEscListener = true, VoidCallback? onEsc}) async {
     if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
-      await windowManager.setFullScreen(true);
+      await enterDesktopFullscreen(
+        isWindows: Platform.isWindows,
+        prepareWindowsFullscreen: () => windowManager.setTitleBarStyle(TitleBarStyle.hidden),
+        setFullScreen: windowManager.setFullScreen,
+      );
     }
   }
 }

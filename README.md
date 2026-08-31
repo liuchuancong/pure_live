@@ -44,8 +44,8 @@
 - 每个完成的 Bug 修复批次默认递增版本，优先构建 Android `arm64-v8a` 正式更新包，并同步源码、版本标签、安装包与校验文件到本仓库 GitHub Release；其他平台仍按本轮明确范围串行构建。
 - 每次同步上游、分析 Bug 和审查原项目 Issue 的来源判定、根因、兼容、验证与回滚流程见[维护范围与问题处置策略](MAINTENANCE_POLICY.md)及[上游同步审查策略](UPSTREAM_REVIEW_POLICY.md)。
 
-- **最新稳定版**：[v3.1.1](https://github.com/wzgrx/pure_live/releases/tag/v3.1.1)
-- **当前 Android / Windows 构建版本**：`3.1.1+4114`（修复多画面所有布局的音量入口、声音来源同步、弹幕目标与按房间音量持久化；Android arm64-v8a 与 Windows x64 从同一提交串行构建）
+- **最新稳定版**：[v3.1.2](https://github.com/wzgrx/pure_live/releases/tag/v3.1.2)
+- **当前 Android / Windows 构建版本**：`3.1.2+4115`（修复 Windows 隐藏标题栏与 `window_manager` 全屏状态不一致，恢复真正覆盖当前显示器的全屏及精确窗口往返；Android arm64-v8a 与 Windows x64 从同一提交串行构建）
 - **Android 系统要求**：Android 8.0 / API 26 及以上（与当前 FFmpegKit 原生录制依赖一致）
 - **v3.0.0 上游源码基线**：`liuchuancong/pure_live@e808dcae`；完整记录见 `docs/STAGE_UPDATE_3_0_0.md`
 - **本轮构建平台**：Android arm64-v8a 与 Windows x64 串行构建；其他平台继续使用 v3.0.0 安装包
@@ -104,6 +104,7 @@ Pure Live 聚合多个第三方直播平台，并支持自定义直播源：
 | [依赖与接口审计](docs/DEPENDENCY_AUDIT.md) | 固定工具链、升级约束和接口探测范围 |
 | [平台接口与兼容性](docs/PLATFORM_COMPATIBILITY.md) | 分区、搜索、弹幕和人数指标的当前能力 |
 | [高刷新率与性能验证](docs/PERFORMANCE.md) | Android 120 Hz 适配、渲染优化和真机帧统计 |
+| [v3.1.2 Android / Windows 阶段更新](docs/STAGE_UPDATE_3_1_2.md) | Windows 真全屏根因、窗口往返、定向回归与发布证据 |
 | [v3.1.1 Android / Windows 阶段更新](docs/STAGE_UPDATE_3_1_1.md) | 多画面声音、音量、弹幕目标、持久化、根因与发布证据 |
 | [v3.1.0 Android / Windows 验收矩阵](docs/ACCEPTANCE_MATRIX_3_1_0.md) | 快速回归顺序、全功能实机账本、平台/录制/性能矩阵与发布门禁 |
 | [2026-08-31 近期 Issue 审计](docs/ISSUE_AUDIT_2026_08_31.md) | #818 后台播放实机根因、最新 Issue 归因与 v3.1.0 处理范围 |
