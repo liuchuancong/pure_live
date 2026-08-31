@@ -1,7 +1,9 @@
 # Pure Live v3.1.1 Windows 正式包运行报告
 
-测试日期：2026-08-31（Asia/Shanghai）  
-测试对象：GitHub Release `v3.1.1` 的 `PureLive-3.1.1-4114-windows-x64-portable.zip`  
+测试日期：2026-08-31（Asia/Shanghai）
+
+测试对象：GitHub Release `v3.1.1` 的 `PureLive-3.1.1-4114-windows-x64-portable.zip`
+
 数据隔离：解压到 `.local-build/windows-v3.1.1-runtime-20260831T081204Z/`，只复制上一轮隔离运行目录的 `AppData`，没有修改 `D:\Soft\PureLive\AppData`。
 
 ## 1. 测试目的
