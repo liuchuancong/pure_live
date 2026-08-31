@@ -85,7 +85,6 @@ class SettingsService extends GetxService {
     Get.lazyPut(() => lockInject(() => CookieSettingsController()), fenix: true);
     Get.lazyPut(() => lockInject(() => PageSettingsController()), fenix: true);
     Get.lazyPut(() => lockInject(() => WebDavController()), fenix: true);
-    Get.lazyPut(() => lockInject(() => BackupController()), fenix: true);
     Get.lazyPut(() => lockInject(() => TagManagementController()), fenix: true);
     Get.lazyPut(() => lockInject(() => BiliBiliAccountService()), fenix: true);
     Get.lazyPut(() => lockInject(() => FontSettingsController()), fenix: true);

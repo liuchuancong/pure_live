@@ -201,6 +201,35 @@ class BackupController extends GetxController {
     }
   }
 
+  Future<bool> recoverAndDelete(File file) async {
+    try {
+      if (!await file.exists()) {
+        return false;
+      }
+      final json = await file.readAsString();
+      final data = jsonDecode(json);
+      if (data is! Map<String, dynamic>) {
+        return false;
+      }
+      importAllSettings(data);
+      return true;
+    } catch (_) {
+      return false;
+    } finally {
+      try {
+        if (await file.exists()) {
+          await file.delete();
+        }
+        final parent = file.parent;
+        if (await parent.exists()) {
+          try {
+            await parent.delete();
+          } catch (_) {}
+        }
+      } catch (_) {}
+    }
+  }
+
   Map<String, dynamic> exportToTVSettings({bool includeSensitiveData = false}) {
     final danmaku = Get.find<DanmakuSettingsController>().toJson();
     final iptv = Get.find<IptvSettingsController>().toJson();

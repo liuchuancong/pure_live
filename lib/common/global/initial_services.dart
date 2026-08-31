@@ -9,6 +9,7 @@ import 'package:pure_live/recorder/services/cache_service.dart';
 import 'package:pure_live/recorder/consts/recorder_config.dart';
 import 'package:pure_live/routes/route_observer_controller.dart';
 import 'package:pure_live/recorder/services/stream_resolver_service.dart';
+import 'package:pure_live/common/services/settings/backup_controller.dart';
 import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 import 'package:pure_live/recorder/pages/recorder/recorder_controller.dart';
 import 'package:pure_live/core/iptv/services/channel_detail_controller.dart';
@@ -19,6 +20,7 @@ import 'package:pure_live/modules/live_play/widgets/local_interaction/local_inte
 class InitialServices {
   static void initGlobalServices() {
     Get.put(SettingsService(), permanent: true);
+    Get.put(BackupController(), permanent: true);
     Get.put(LocalInteractionController(), permanent: true);
     Get.put(RouteObserverController(), permanent: true);
     Get.put<MeteredNetworkService>(MeteredNetworkService(), permanent: true);
