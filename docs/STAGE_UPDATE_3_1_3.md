@@ -57,7 +57,7 @@ Android 正式 APK 已在 Android 16、arm64-v8a 设备覆盖安装并核对为 
 4. Windows 安装程序保留自选目录，安装包和便携 ZIP 均记录 SHA-256；
 5. GitHub `master`、`v3.1.3` 标签、Release、更新源、构建元数据与安装包来自同一提交。
 
-发布核对结果：`master` 与 `v3.1.3^{commit}` 均为 `41b75c28d8e131fab632aeffeb458245a979b0ab`；Release 为正式发布且包含 7 个资产。Android APK SHA-256 为 `3ce007d6f2755fd59d232807f366c5890eeb995d782ba251910b6aaa72d69245`，Windows 便携 ZIP 为 `19e02cd576635d80ac090591b5a1cf00bbfda9a5e3a7e907a9428ff334c35c51`，Windows 安装程序为 `5a7288b2997611b0a7f8f75d8843bc689efd1585c2eaad116eb609828f48e4c2`。
+发布冻结时的 `master` 与 `v3.1.3^{commit}` 均为 `41b75c28d8e131fab632aeffeb458245a979b0ab`；发布后 `master` 只追加本节运行证据，不移动标签、不重建二进制。Release 为正式发布且包含 7 个资产。Android APK SHA-256 为 `3ce007d6f2755fd59d232807f366c5890eeb995d782ba251910b6aaa72d69245`，Windows 便携 ZIP 为 `19e02cd576635d80ac090591b5a1cf00bbfda9a5e3a7e907a9428ff334c35c51`，Windows 安装程序为 `5a7288b2997611b0a7f8f75d8843bc689efd1585c2eaad116eb609828f48e4c2`。
 
 ## 7. 回滚与影响边界
 
