@@ -5,7 +5,7 @@
 - 版本：`3.1.2+4115`
 - 维护基线：本仓库 `master`，本轮没有同步上游代码。
 - 交付目标：Android `arm64-v8a`、Windows x64 安装程序与便携 ZIP。
-- 问题来源：`window_manager 0.5.2` 的 Windows 原生状态与本项目隐藏标题栏初始化组合后触发的依赖交互缺陷；不是 v3.1.1 多画面音量、声音焦点或弹幕改动引入。
+- 问题来源：Windows 全屏为 `window_manager 0.5.2` 原生状态与本项目隐藏标题栏初始化组合后触发的依赖交互缺陷；CC 分类为平台把旧 JSON 地址迁移到官方 Glive HTML 后暴露出的本仓库容错缺口。两者都不是 v3.1.1 多画面音量、声音焦点或弹幕改动引入。
 
 ## 2. 根因链
 
@@ -25,6 +25,13 @@
 - 不修改退出路径。插件在退出时继续恢复进入前保存的窗口样式、矩形、标题栏类型和最大化状态。
 - 每次进入都重复执行幂等准备，覆盖首次启动、普通窗口、最大化、PiP 往返及其他曾经把窗口设为 frameless 的路径。
 - 新增确定性测试锁定调用顺序，避免后续依赖升级或重构再次删掉必要准备步骤。
+
+### 3.1 CC 分类迁移兼容
+
+- 现网核对确认 `https://cc.163.com/category/?format=json` 会跳转到网易官方 `https://ds.163.com/glive/`，响应由 JSON 变为 HTML；旧代码在 `jsonDecode` 位于保护块之外，分类页因此直接失败。
+- 解析器现在始终先建立稳定的四个顶级分类。旧 `game_list` JSON 可用时继续填充游戏子分类；HTML、空响应、未知或部分 schema 时返回顶级分类，不影响推荐、搜索、房间详情与播放。
+- 接口门禁只接受两种合同：包含 `game_list` 的旧 JSON，或主机、路径均匹配网易官方 Glive 的迁移跳转；未知重定向和任意 HTML 继续报错。
+- 新增确定性测试覆盖 HTML 回退、旧 JSON 全部分类与三种标签分组，避免后续把解码异常重新提升为页面级故障。
 
 ## 4. 旧版与修复版实测
 
@@ -47,6 +54,9 @@
   - 其他桌面平台只调用全屏。
 - `test/windows_pip_presentation_test.dart`
   - PiP 前的宽屏/全屏呈现快照保持原有优先级。
+- `test/cc_category_fallback_test.dart`
+  - 官方迁移 HTML 返回稳定顶级分类；
+  - 旧 JSON 继续正确填充端游、手游和其他子分类。
 - 聚焦门禁：Analyze 0 issue，4/4 测试通过。
 - 质量记录：`local-artifacts/build-records/20260831T091722185Z-quality-focused.json`。
 - Windows Debug 构建记录：`local-artifacts/build-records/20260831T101208353Z-build-windowsx64-debug.json`。

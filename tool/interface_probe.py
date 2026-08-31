@@ -1315,6 +1315,42 @@ def cc_recommend_probe() -> None:
         raise ValueError("CC heat/concurrent audience fields missing")
 
 
+def cc_categories_probe() -> None:
+    """Accept either the legacy JSON list or CC's official Glive migration.
+
+    The application keeps the stable top-level category tabs when the legacy
+    endpoint redirects to HTML, so the probe verifies that the redirect target
+    is the official NetEase service rather than treating valid migration
+    behavior as malformed JSON.
+    """
+    url = "https://cc.163.com/category/?format=json"
+    request = urllib.request.Request(
+        url,
+        headers={
+            "User-Agent": USER_AGENT,
+            "Accept": "application/json,text/plain,*/*",
+            "Connection": "close",
+        },
+    )
+    with urllib.request.urlopen(request, timeout=20) as response:
+        payload = response.read().decode("utf-8", errors="replace")
+        response_url = response.geturl()
+        final_url = urllib.parse.urlsplit(response_url)
+        content_type = response.headers.get("Content-Type", "")
+
+    try:
+        result = json.loads(payload.lstrip("\ufeff"))
+    except json.JSONDecodeError:
+        if final_url.hostname == "ds.163.com" and final_url.path.rstrip("/") == "/glive":
+            return
+        preview = payload[:80].replace("\r", " ").replace("\n", " ")
+        raise ValueError(
+            f"unexpected CC category response ({content_type}) at {response_url}: {preview!r}"
+        )
+
+    require_path(result, "game_list")
+
+
 def soop_recommend_probe() -> None:
     rooms = require_path(
         request_json(
@@ -1393,10 +1429,7 @@ def main() -> int:
         ),
         ("kuaishou.home", kuaishou_home_probe),
         ("kuaishou.playback", kuaishou_playback_probe),
-        (
-            "cc.categories",
-            lambda: require_path(request_json("https://cc.163.com/category/", {"format": "json"}), "game_list"),
-        ),
+        ("cc.categories", cc_categories_probe),
         ("cc.recommend", cc_recommend_probe),
         ("bilibili.popularity_rank", bilibili_recommend_probe),
         ("bilibili.playback", bilibili_playback_probe),
