@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
+import 'package:pure_live/player/core/live_audio_service.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_loading.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller_panel.dart';
@@ -8,6 +11,7 @@ class VideoPlayer extends StatefulWidget {
   final VideoController controller;
   final Color surfaceColor;
   final double? videoViewportAspectRatio;
+
   const VideoPlayer({
     super.key,
     required this.controller,
@@ -19,8 +23,52 @@ class VideoPlayer extends StatefulWidget {
   State<VideoPlayer> createState() => _VideoPlayerState();
 }
 
-class _VideoPlayerState extends State<VideoPlayer> {
+class _VideoPlayerState extends State<VideoPlayer> with WidgetsBindingObserver {
   VideoController get controller => widget.controller;
+
+  bool _isPausedByLifecycle = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    final player = GlobalPlayerService.instance.player;
+
+    if (state == AppLifecycleState.paused) {
+      if (player.isAudioOnlyMode) {
+        unawaited(player.commitAudioOnlyPowerSaving());
+      }
+
+      if (!LiveAudioService.shouldContinueInBackground) {
+        if (player.isPlayingNow) {
+          _isPausedByLifecycle = true;
+          unawaited(player.pause());
+        }
+      }
+    } else if (state == AppLifecycleState.resumed) {
+      if (player.isAudioOnlyMode && !LiveAudioService.isSleepSessionActive) {
+        unawaited(player.prepareAudioOnlyVideoRestore());
+      }
+
+      if (_isPausedByLifecycle) {
+        unawaited(player.resume());
+        _isPausedByLifecycle = false;
+      }
+    }
+  }
+
   Widget _buildVideo() {
     return Obx(() {
       final audioOnly = controller.audioOnlyState.value;
@@ -29,12 +77,6 @@ class _VideoPlayerState extends State<VideoPlayer> {
 
       return StableVideoLayer(
         visible: displayVideo,
-        // Android SurfaceProducer instances are expensive and historically
-        // failed to recover when a covered route rebuilt the video subtree.
-        // Windows uses a native media_kit texture with different lifetime
-        // rules: leaving it mounted while another Flutter route animates over
-        // it can race the compositor and crash flutter_windows.dll.  Tear the
-        // texture widget down only on Windows; the Player itself stays alive.
         preserveMountedVideo: !PlatformUtils.isWindows,
         placeholder: const VideoLoading(),
         video: GlobalPlayerService.instance.player.getVideoWidget(
@@ -54,14 +96,6 @@ class _VideoPlayerState extends State<VideoPlayer> {
   }
 }
 
-/// Controls native-texture ownership while another route temporarily covers it.
-///
-/// Replacing the texture with a loading widget used to tear down and recreate
-/// the Flutter video subtree around the recording page. On Android that races
-/// SurfaceProducer cleanup/availability callbacks and can leave a black frame,
-/// paused decoder or stale portrait geometry after returning, so Android keeps
-/// it offstage. Windows detaches it until the covering route has fully popped
-/// to avoid a native-texture teardown race.
 class StableVideoLayer extends StatelessWidget {
   const StableVideoLayer({
     super.key,
@@ -81,6 +115,7 @@ class StableVideoLayer extends StatelessWidget {
     if (!visible && !preserveMountedVideo) {
       return placeholder;
     }
+
     return Stack(
       fit: StackFit.expand,
       children: [
