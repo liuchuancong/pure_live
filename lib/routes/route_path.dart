@@ -10,7 +10,7 @@ class RoutePath {
   static const kFavorite = "/favorite";
 
   /// 关注
-  static const kFavoriteAreas = "/favoriteAreas";
+  static const kFavoriteAreas = "/favorite_areas";
 
   /// 热门
   static const kPopular = "/popular";
@@ -108,5 +108,7 @@ class RoutePath {
 
   static const kIptv = "/iptv";
 
-  static const kSettingsTags = '/settingTags';
+  static const kSettingsTags = '/setting_tags';
+
+  static const kRemoteSync = '/remote_sync';
 }

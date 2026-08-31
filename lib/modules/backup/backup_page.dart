@@ -114,6 +114,12 @@ class _BackupPageState extends State<BackupPage> {
                 subtitle: i18n("backup_to_webdav"),
                 onTap: () => Get.toNamed(RoutePath.kWebDavPage),
               ),
+              context.buildTile(
+                icon: Remix.qr_scan_2_line,
+                title: i18n("remote_sync"),
+                subtitle: i18n("remote_sync_subtitle"),
+                onTap: () => Get.toNamed(RoutePath.kRemoteSync),
+              ),
               if (Platform.isAndroid || Platform.isIOS)
                 context.buildTile(
                   icon: Remix.qr_code_line,

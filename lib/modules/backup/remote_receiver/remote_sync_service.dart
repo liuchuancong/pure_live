@@ -1,0 +1,615 @@
+import 'dart:io';
+import 'dart:async';
+import 'dart:convert';
+
+import 'package:pure_live/common/index.dart';
+import 'package:pure_live/common/global/platform_utils.dart';
+import 'package:pure_live/common/services/settings/backup_controller.dart';
+import 'package:pure_live/modules/backup/remote_receiver/remote_sync_device.dart';
+import 'package:pure_live/modules/backup/remote_receiver/remote_sync_protocol.dart';
+
+class RemoteSyncService extends GetxService {
+  static RemoteSyncService get to => Get.find<RemoteSyncService>();
+
+  final RxBool isServerRunning = false.obs;
+  final RxBool isDiscovering = false.obs;
+  final RxBool isSyncing = false.obs;
+  final RxBool isApplying = false.obs;
+
+  final RxString localIp = ''.obs;
+  final RxInt localPort = RemoteSyncProtocol.defaultHttpPort.obs;
+
+  final RxList<RemoteSyncDevice> devices = <RemoteSyncDevice>[].obs;
+
+  HttpServer? _server;
+  RawDatagramSocket? _discoverySocket;
+
+  Timer? _broadcastTimer;
+  Timer? _cleanupTimer;
+
+  final String _deviceId = '${Platform.operatingSystem}-${DateTime.now().microsecondsSinceEpoch}';
+
+  String get deviceName {
+    switch (Platform.operatingSystem) {
+      case 'android':
+        return 'PureLive Android';
+      case 'ios':
+        return 'PureLive iPhone';
+      case 'windows':
+        return 'PureLive Windows';
+      case 'macos':
+        return 'PureLive macOS';
+      case 'linux':
+        return 'PureLive Linux';
+      default:
+        return 'PureLive';
+    }
+  }
+
+  String get platform => Platform.operatingSystem;
+
+  String get version => '1.0.0';
+
+  String get address {
+    if (localIp.value.isEmpty) {
+      return '';
+    }
+
+    return '${localIp.value}:${localPort.value}';
+  }
+
+  String get qrData {
+    if (localIp.value.isEmpty) {
+      return '';
+    }
+
+    return RemoteSyncProtocol.createQrUri(ip: localIp.value, port: localPort.value).toString();
+  }
+
+  bool get isMobile {
+    return Platform.isAndroid || Platform.isIOS;
+  }
+
+  bool get isDesktop {
+    return PlatformUtils.isDesktop;
+  }
+
+  @override
+  void onInit() {
+    super.onInit();
+    start();
+  }
+
+  Future<void> start() async {
+    await _resolveLocalIp();
+
+    if (localIp.value.isEmpty) {
+      return;
+    }
+
+    await startServer();
+    await startDiscovery();
+  }
+
+  Future<void> _resolveLocalIp() async {
+    try {
+      final interfaces = await NetworkInterface.list(type: InternetAddressType.IPv4, includeLoopback: false);
+
+      String? privateIp;
+      String? fallbackIp;
+
+      for (final interface in interfaces) {
+        for (final address in interface.addresses) {
+          final ip = address.address;
+
+          if (ip.startsWith('127.')) {
+            continue;
+          }
+
+          if (ip.startsWith('169.254.')) {
+            continue;
+          }
+
+          fallbackIp ??= ip;
+
+          if (_isPrivateIpv4(ip)) {
+            privateIp = ip;
+            break;
+          }
+        }
+
+        if (privateIp != null) {
+          break;
+        }
+      }
+
+      localIp.value = privateIp ?? fallbackIp ?? '';
+    } catch (_) {
+      localIp.value = '';
+    }
+  }
+
+  bool _isPrivateIpv4(String ip) {
+    final parts = ip.split('.');
+
+    if (parts.length != 4) {
+      return false;
+    }
+
+    final a = int.tryParse(parts[0]);
+    final b = int.tryParse(parts[1]);
+
+    if (a == null || b == null) {
+      return false;
+    }
+
+    if (a == 10) {
+      return true;
+    }
+
+    if (a == 172 && b >= 16 && b <= 31) {
+      return true;
+    }
+
+    if (a == 192 && b == 168) {
+      return true;
+    }
+
+    return false;
+  }
+
+  Future<void> startServer() async {
+    if (isServerRunning.value) {
+      return;
+    }
+
+    await _resolveLocalIp();
+
+    HttpServer? server;
+    var port = RemoteSyncProtocol.defaultHttpPort;
+
+    for (var i = 0; i < 100; i++) {
+      try {
+        server = await HttpServer.bind(InternetAddress.anyIPv4, port, shared: true);
+
+        break;
+      } catch (_) {
+        port++;
+      }
+    }
+
+    if (server == null) {
+      isServerRunning.value = false;
+      return;
+    }
+
+    _server = server;
+    localPort.value = port;
+    isServerRunning.value = true;
+
+    _server!.listen(_handleRequest);
+
+    _startCleanupTimer();
+  }
+
+  Future<void> _handleRequest(HttpRequest request) async {
+    final response = request.response;
+
+    response.headers.contentType = ContentType('application', 'json', charset: 'utf-8');
+
+    response.headers.set('Access-Control-Allow-Origin', '*');
+
+    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type');
+
+    if (request.method == 'OPTIONS') {
+      response.statusCode = HttpStatus.ok;
+      await response.close();
+      return;
+    }
+
+    try {
+      switch (request.uri.path) {
+        case RemoteSyncProtocol.apiStatus:
+          await _handleStatus(request);
+          return;
+
+        case RemoteSyncProtocol.apiSettings:
+          await _handleSettings(request);
+          return;
+
+        default:
+          response.statusCode = HttpStatus.notFound;
+
+          await _writeResponse(response, {'code': 404, 'msg': 'Not Found', 'data': false});
+      }
+    } catch (_) {
+      response.statusCode = HttpStatus.internalServerError;
+
+      await _writeResponse(response, {'code': 500, 'msg': 'Internal Server Error', 'data': false});
+    }
+  }
+
+  Future<void> _handleStatus(HttpRequest request) async {
+    await _writeResponse(request.response, {
+      'code': 200,
+      'msg': 'ok',
+      'data': {
+        'id': _deviceId,
+        'name': deviceName,
+        'platform': platform,
+        'version': version,
+        'ip': localIp.value,
+        'port': localPort.value,
+      },
+    });
+  }
+
+  Future<void> _handleSettings(HttpRequest request) async {
+    if (request.method != 'POST') {
+      request.response.statusCode = HttpStatus.methodNotAllowed;
+
+      await _writeResponse(request.response, {'code': 405, 'msg': 'Method Not Allowed', 'data': false});
+
+      return;
+    }
+
+    try {
+      final content = await utf8.decoder.bind(request).join();
+
+      if (content.trim().isEmpty) {
+        request.response.statusCode = HttpStatus.badRequest;
+
+        await _writeResponse(request.response, {'code': 400, 'msg': 'Empty request', 'data': false});
+
+        return;
+      }
+
+      final body = jsonDecode(content);
+
+      if (body is! Map<String, dynamic>) {
+        request.response.statusCode = HttpStatus.badRequest;
+
+        await _writeResponse(request.response, {'code': 400, 'msg': 'Invalid request', 'data': false});
+
+        return;
+      }
+
+      final type = body['type']?.toString();
+
+      if (type != RemoteSyncProtocol.syncType) {
+        request.response.statusCode = HttpStatus.badRequest;
+
+        await _writeResponse(request.response, {'code': 400, 'msg': 'Invalid sync type', 'data': false});
+
+        return;
+      }
+
+      final settings = body['settings'];
+
+      if (settings is! Map) {
+        request.response.statusCode = HttpStatus.badRequest;
+
+        await _writeResponse(request.response, {'code': 400, 'msg': 'Settings is empty', 'data': false});
+
+        return;
+      }
+
+      isSyncing.value = true;
+
+      final success = await _applyRemoteSettings(Map<String, dynamic>.from(settings));
+
+      isSyncing.value = false;
+
+      await _writeResponse(request.response, {
+        'code': success ? 200 : 500,
+        'msg': success ? 'ok' : 'apply settings failed',
+        'data': success,
+      });
+    } catch (_) {
+      isSyncing.value = false;
+
+      request.response.statusCode = HttpStatus.internalServerError;
+
+      await _writeResponse(request.response, {'code': 500, 'msg': 'Internal Server Error', 'data': false});
+    }
+  }
+
+  Future<bool> _applyRemoteSettings(Map<String, dynamic> settings) async {
+    try {
+      final backup = Get.find<BackupController>();
+
+      backup.importAllSettings(settings);
+
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<void> _writeResponse(HttpResponse response, Map<String, dynamic> data) async {
+    response.write(jsonEncode(data));
+    await response.close();
+  }
+
+  Future<bool> startDiscovery() async {
+    if (isDiscovering.value) {
+      return true;
+    }
+
+    try {
+      _discoverySocket = await RawDatagramSocket.bind(
+        InternetAddress.anyIPv4,
+        RemoteSyncProtocol.discoveryPort,
+        reuseAddress: true,
+        reusePort: false,
+      );
+
+      _discoverySocket!.broadcastEnabled = true;
+
+      _discoverySocket!.listen(
+        _handleDiscoveryPacket,
+        onError: (_) {
+          isDiscovering.value = false;
+        },
+      );
+
+      isDiscovering.value = true;
+
+      _broadcastDiscovery();
+
+      _broadcastTimer?.cancel();
+      _broadcastTimer = Timer.periodic(const Duration(seconds: 2), (_) => _broadcastDiscovery());
+
+      return true;
+    } catch (_) {
+      isDiscovering.value = false;
+      return false;
+    }
+  }
+
+  void _broadcastDiscovery() {
+    final socket = _discoverySocket;
+
+    if (socket == null || localIp.value.isEmpty) {
+      return;
+    }
+
+    final data = RemoteSyncProtocol.discoveryPacket(
+      id: _deviceId,
+      name: deviceName,
+      ip: localIp.value,
+      port: localPort.value,
+      platform: platform,
+      version: version,
+    );
+
+    final bytes = utf8.encode(jsonEncode(data));
+
+    try {
+      socket.send(bytes, InternetAddress('255.255.255.255'), RemoteSyncProtocol.discoveryPort);
+    } catch (_) {}
+  }
+
+  void _handleDiscoveryPacket(RawSocketEvent event) {
+    if (event != RawSocketEvent.read) {
+      return;
+    }
+
+    final socket = _discoverySocket;
+
+    if (socket == null) {
+      return;
+    }
+
+    Datagram? datagram;
+
+    while ((datagram = socket.receive()) != null) {
+      try {
+        final json = jsonDecode(utf8.decode(datagram!.data));
+
+        if (json is! Map) {
+          continue;
+        }
+
+        final data = Map<String, dynamic>.from(json);
+
+        if (data['type'] != RemoteSyncProtocol.discoveryType) {
+          continue;
+        }
+
+        final id = data['id']?.toString() ?? '';
+
+        if (id.isEmpty || id == _deviceId) {
+          continue;
+        }
+
+        final device = RemoteSyncDevice.fromJson(data);
+
+        final ip = device.ip.isNotEmpty ? device.ip : datagram.address.address;
+
+        final actual = device.copyWith(ip: ip, lastSeen: DateTime.now());
+
+        final index = devices.indexWhere((item) => item.id == actual.id);
+
+        if (index >= 0) {
+          devices[index] = actual;
+        } else {
+          devices.add(actual);
+        }
+      } catch (_) {}
+    }
+  }
+
+  void _startCleanupTimer() {
+    _cleanupTimer?.cancel();
+
+    _cleanupTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      final now = DateTime.now();
+
+      devices.removeWhere((device) => now.difference(device.lastSeen).inSeconds > 8);
+    });
+  }
+
+  Future<bool> syncToDevice(RemoteSyncDevice device) {
+    return syncToAddress(device.ip, device.port);
+  }
+
+  Future<bool> syncToAddress(String ip, int port) async {
+    if (isSyncing.value) {
+      return false;
+    }
+
+    isSyncing.value = true;
+
+    try {
+      final backup = Get.find<BackupController>();
+
+      final settings = backup.exportAllSettings(includeSensitiveData: true);
+
+      final client = HttpClient();
+
+      try {
+        final request = await client.postUrl(Uri.parse('http://$ip:$port${RemoteSyncProtocol.apiSettings}'));
+
+        request.headers.contentType = ContentType('application', 'json', charset: 'utf-8');
+
+        request.write(jsonEncode(RemoteSyncProtocol.settingsPacket(settings: settings)));
+
+        final response = await request.close();
+        final responseBody = await utf8.decoder.bind(response).join();
+
+        if (response.statusCode != HttpStatus.ok) {
+          return false;
+        }
+
+        final result = jsonDecode(responseBody);
+
+        return result is Map && result['data'] == true;
+      } finally {
+        client.close(force: true);
+      }
+    } catch (_) {
+      return false;
+    } finally {
+      isSyncing.value = false;
+    }
+  }
+
+  Future<bool> receiveFromAddress(String ip, int port) async {
+    if (isApplying.value) {
+      return false;
+    }
+
+    isApplying.value = true;
+
+    try {
+      final client = HttpClient();
+
+      try {
+        final request = await client.getUrl(Uri.parse('http://$ip:$port${RemoteSyncProtocol.apiStatus}'));
+
+        final response = await request.close();
+
+        if (response.statusCode != HttpStatus.ok) {
+          return false;
+        }
+
+        return true;
+      } finally {
+        client.close(force: true);
+      }
+    } catch (_) {
+      return false;
+    } finally {
+      isApplying.value = false;
+    }
+  }
+
+  Future<Map<String, dynamic>?> getRemoteSettings(String ip, int port) async {
+    try {
+      final client = HttpClient();
+
+      try {
+        final request = await client.getUrl(Uri.parse('http://$ip:$port${RemoteSyncProtocol.apiStatus}'));
+
+        final response = await request.close();
+
+        if (response.statusCode != HttpStatus.ok) {
+          return null;
+        }
+
+        final body = await utf8.decoder.bind(response).join();
+
+        final result = jsonDecode(body);
+
+        if (result is! Map) {
+          return null;
+        }
+
+        final data = result['data'];
+
+        if (data is! Map) {
+          return null;
+        }
+
+        return Map<String, dynamic>.from(data);
+      } finally {
+        client.close(force: true);
+      }
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<bool> syncByAddress(String value) async {
+    final parsed = RemoteSyncProtocol.parseHttpAddress(value);
+
+    if (parsed == null) {
+      return false;
+    }
+
+    return syncToAddress(parsed.ip, parsed.port);
+  }
+
+  Future<bool> syncByQr(String value) async {
+    final parsed = RemoteSyncProtocol.parseQr(value);
+
+    if (parsed == null) {
+      return false;
+    }
+
+    return syncToAddress(parsed.ip, parsed.port);
+  }
+
+  Future<bool> receiveByQr(String value) async {
+    final parsed = RemoteSyncProtocol.parseQr(value);
+
+    if (parsed == null) {
+      return false;
+    }
+
+    return receiveFromAddress(parsed.ip, parsed.port);
+  }
+
+  @override
+  void onClose() {
+    _broadcastTimer?.cancel();
+    _broadcastTimer = null;
+
+    _cleanupTimer?.cancel();
+    _cleanupTimer = null;
+
+    _discoverySocket?.close();
+    _discoverySocket = null;
+
+    _server?.close(force: true);
+    _server = null;
+
+    isServerRunning.value = false;
+    isDiscovering.value = false;
+
+    super.onClose();
+  }
+}
