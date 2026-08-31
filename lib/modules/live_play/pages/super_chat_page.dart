@@ -16,7 +16,9 @@ class SuperChatPage extends StatelessWidget {
     final uniqueMessages = <String, LiveSuperChatMessage>{};
 
     for (final message in messages) {
-      final key = '${message.userName}|${message.message}|${message.price}|${message.startTime.microsecondsSinceEpoch}';
+      final key = message.messageId.isNotEmpty
+          ? message.messageId
+          : '${message.userName}|${message.message}|${message.price}|${message.startTime.microsecondsSinceEpoch}';
 
       uniqueMessages.putIfAbsent(key, () => message);
     }

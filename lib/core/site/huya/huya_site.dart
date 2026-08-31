@@ -1246,6 +1246,7 @@ class HuyaSite
       final startTime = endTime.subtract(Duration(seconds: totalSeconds));
 
       final message = LiveSuperChatMessage(
+        messageId: item.lMessageId > 0 ? 'huya:${item.lMessageId}' : '',
         backgroundBottomColor: "#246488",
         backgroundColor: "#ffffff",
         endTime: endTime,

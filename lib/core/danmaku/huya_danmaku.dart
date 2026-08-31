@@ -41,6 +41,7 @@ class HuyaDanmaku implements LiveDanmaku {
   final HuyaSuperChatFetcher _superChatFetcher;
   final List<Duration> _superChatRetryDelays;
   final Set<LiveSuperChatMessage> _emittedSuperChats = <LiveSuperChatMessage>{};
+  static const int _maxRememberedSuperChats = 512;
   Future<void>? _superChatRefreshFuture;
   bool _superChatRefreshQueued = false;
 
@@ -258,7 +259,7 @@ class HuyaDanmaku implements LiveDanmaku {
         final hadKnownMessages = _emittedSuperChats.isNotEmpty;
         var emittedNewMessage = false;
         for (final message in messages) {
-          if (!_emittedSuperChats.add(message)) continue;
+          if (!_rememberSuperChat(message)) continue;
           emittedNewMessage = true;
           onMessage?.call(
             LiveMessage(
@@ -280,6 +281,14 @@ class HuyaDanmaku implements LiveDanmaku {
         }
       }
     }
+  }
+
+  bool _rememberSuperChat(LiveSuperChatMessage message) {
+    if (!_emittedSuperChats.add(message)) return false;
+    while (_emittedSuperChats.length > _maxRememberedSuperChats) {
+      _emittedSuperChats.remove(_emittedSuperChats.first);
+    }
+    return true;
   }
 
   @visibleForTesting

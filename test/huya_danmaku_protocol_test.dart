@@ -9,9 +9,10 @@ import 'package:pure_live/pkg/tars/codec/tars_output_stream.dart';
 
 void main() {
   group('Huya danmaku protocol', () {
-    LiveSuperChatMessage superChat(String message) {
-      final now = DateTime.utc(2026, 9, 1, 12);
+    LiveSuperChatMessage superChat(String message, {String messageId = '', Duration startOffset = Duration.zero}) {
+      final now = DateTime.utc(2026, 9, 1, 12).add(startOffset);
       return LiveSuperChatMessage(
+        messageId: messageId,
         backgroundBottomColor: '#246488',
         backgroundColor: '#ffffff',
         endTime: now.add(const Duration(minutes: 1)),
@@ -133,6 +134,45 @@ void main() {
 
       expect(received, hasLength(1));
       expect((received.single.data as LiveSuperChatMessage).message, 'same');
+    });
+
+    test('uses stable Huya event identity instead of reconstructed countdown times', () {
+      final first = superChat('same', messageId: 'huya:101');
+      final refreshedSnapshot = superChat(
+        'same',
+        messageId: 'huya:101',
+        startOffset: const Duration(milliseconds: 850),
+      );
+      final laterEvent = superChat('same', messageId: 'huya:102', startOffset: const Duration(minutes: 5));
+
+      expect(first, refreshedSnapshot);
+      expect(first.hashCode, refreshedSnapshot.hashCode);
+      expect(first, isNot(laterEvent));
+    });
+
+    test('keeps distinct Huya paid messages with identical visible content', () async {
+      var fetches = 0;
+      final received = <LiveMessage>[];
+      final first = superChat('same visible content', messageId: 'huya:101');
+      final second = superChat('same visible content', messageId: 'huya:102');
+      final danmaku =
+          HuyaDanmaku(
+              superChatFetcher: (_) async {
+                fetches++;
+                return fetches == 1 ? <LiveSuperChatMessage>[first] : <LiveSuperChatMessage>[first, second];
+              },
+              superChatRetryDelays: const <Duration>[Duration.zero],
+            )
+            ..danmakuArgs = HuyaDanmakuArgs(uid: 1, topSid: 2, subSid: 3)
+            ..onMessage = received.add;
+
+      await danmaku.decodeMessage(superChatNotification());
+      await danmaku.waitForPendingSuperChatRefresh();
+      await danmaku.decodeMessage(superChatNotification());
+      await danmaku.waitForPendingSuperChatRefresh();
+
+      expect(received, hasLength(2));
+      expect(received.map((item) => (item.data as LiveSuperChatMessage).messageId), <String>['huya:101', 'huya:102']);
     });
 
     test('a stale room refresh cannot suppress the next room notification', () async {

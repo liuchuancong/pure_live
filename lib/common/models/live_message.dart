@@ -157,6 +157,14 @@ class LiveMessageColor {
 }
 
 class LiveSuperChatMessage {
+  /// Stable platform event identity when the protocol exposes one.
+  ///
+  /// Some message-board APIs rebuild [startTime] from a countdown on every
+  /// poll, so time-based equality would make the same paid message look new.
+  /// Keeping the protocol identity here lets transports coalesce snapshots
+  /// without suppressing a later, genuinely distinct message with identical
+  /// user/text/price fields.
+  final String messageId;
   final String userName;
   final String face;
   final String message;
@@ -167,6 +175,7 @@ class LiveSuperChatMessage {
   final String backgroundBottomColor;
 
   LiveSuperChatMessage({
+    this.messageId = '',
     required this.backgroundBottomColor,
     required this.backgroundColor,
     required this.endTime,
@@ -179,12 +188,13 @@ class LiveSuperChatMessage {
 
   @override
   bool operator ==(Object other) {
-    return other is LiveSuperChatMessage &&
-        other.userName == userName &&
-        other.message == message &&
-        other.price == price;
+    if (other is! LiveSuperChatMessage) return false;
+    if (messageId.isNotEmpty || other.messageId.isNotEmpty) {
+      return messageId.isNotEmpty && other.messageId.isNotEmpty && other.messageId == messageId;
+    }
+    return other.userName == userName && other.message == message && other.price == price;
   }
 
   @override
-  int get hashCode => Object.hash(userName, message, price);
+  int get hashCode => messageId.isNotEmpty ? messageId.hashCode : Object.hash(userName, message, price);
 }

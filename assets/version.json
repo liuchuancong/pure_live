@@ -1,32 +1,32 @@
 {
-  "version": "3.1.6",
-  "build_number": 4119,
-  "version_num": 301064119,
-  "version_desc": "- 修复虎牙醒目留言推送先于留言板接口更新时必须手动刷新的问题：通知后执行有界后台重试并合并最新快照。\n- 醒目留言补偿请求不再阻塞虎牙实时弹幕 WebSocket 解码；空列表安全返回，避免取最后一项触发异常。\n- Android arm64-v8a 与 Windows x64 从同一冻结源码串行构建，附安装包、便携包、构建元数据和 SHA-256。\n- 本轮不合并上游代码；自动化覆盖延迟可见、重复通知去重与到期策略，真实付费消息仍按外部直播事件复验。",
+  "version": "3.1.7",
+  "build_number": 4120,
+  "version_num": 301074120,
+  "version_desc": "- 修复虎牙同一用户在同一房间再次发送相同文字和金额的醒目留言时被整场误去重的问题，使用平台 lMessageId 识别真实事件。\n- 同一留言板快照仍稳定合并；重建的倒计时时间不再作为事件身份，已发送缓存限制为 512 项，避免长时间直播持续增长。\n- Android arm64-v8a 与 Windows x64 从同一冻结源码串行构建，附安装包、便携包、构建元数据和 SHA-256。\n- 本轮不合并上游代码；Analyze 0 issue、Flutter 全量回归 680/680、公开平台接口 42/42。",
   "prerelease": false,
-  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.1.6",
+  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.1.7",
   "android_abis": [
     "arm64-v8a"
   ],
   "platforms": {
     "android": {
-      "version": "3.1.6",
-      "build_number": 4119,
-      "version_num": 301064119,
-      "version_desc": "- 虎牙醒目留言通知采用非阻塞有界补偿，接口短暂滞后时自动重试，无需手动刷新列表。\n- 空留言板和重复快照安全处理，不阻塞普通弹幕接收。\n- 提供单一 arm64-v8a Release 更新包并核验版本、ABI、Flutter 资源、关键原生库和 SHA-256。",
+      "version": "3.1.7",
+      "build_number": 4120,
+      "version_num": 301074120,
+      "version_desc": "- 虎牙醒目留言改用平台事件 ID 去重：相同用户、文字和金额的后续新留言不会被整场抑制。\n- 重复留言板快照仍只显示一次，长期会话的已发送身份缓存限制为 512 项。\n- 提供单一 arm64-v8a Release 更新包并核验版本、ABI、Flutter 资源、关键原生库和 SHA-256。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.1.6",
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.1.7",
       "android_abis": [
         "arm64-v8a"
       ]
     },
     "windows": {
-      "version": "3.1.6",
-      "build_number": 4119,
-      "version_num": 301064119,
-      "version_desc": "- 同步修复虎牙醒目留言延迟显示与 WebSocket 解码阻塞风险。\n- 延续可选择安装目录的 x64 安装程序和免安装便携 ZIP。\n- Windows 资产按当前 CMake 安装清单打包并核验版本、资源、残留文件和 SHA-256。",
+      "version": "3.1.7",
+      "build_number": 4120,
+      "version_num": 301074120,
+      "version_desc": "- 同步修复虎牙合法重复醒目留言被整场误去重的问题，并限制长时会话去重缓存。\n- 延续可选择安装目录的 x64 安装程序和免安装便携 ZIP。\n- Windows 资产按当前 CMake 安装清单打包并核验版本、资源、残留文件和 SHA-256。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.1.6",
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.1.7",
       "windows_msix_available": false
     },
     "linux": {
