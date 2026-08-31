@@ -1466,5 +1466,7 @@
     "super_resolution_description": "超分辨率需要启用硬件解码。如果启用硬件解码后仍然不生效，请尝试将视频渲染器切换为 GPU。",
     "default_behavior": "默认行为",
     "disable_super_resolution_warning": "关闭提示",
-    "disable_super_resolution_warning_subtitle": "关闭每次启用超分辨率时的提示"
+    "disable_super_resolution_warning_subtitle": "关闭每次启用超分辨率时的提示",
+    "custom_output_required": "启用自定义输出后才能使用兼容模式",
+    "performance_settings": "性能设置"
 }

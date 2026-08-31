@@ -380,7 +380,7 @@ class PlayerManager {
       _scheduleAudioServiceSync(player, audioOnly, sessionId: sessionId);
     } catch (e, s) {
       if (!_isSessionValid(sessionId)) return;
-
+      log(e.toString());
       final exception = PlayerException(
         message: 'Initialize player failed',
         type: PlayerErrorType.initialization,

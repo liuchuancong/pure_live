@@ -6,6 +6,7 @@ import 'core/line_fallback_manager.dart';
 import 'core/engine_fallback_manager.dart';
 
 import 'package:pure_live/common/global/platform_utils.dart';
+import 'package:pure_live/player/shaders/shader_asset_service.dart';
 
 class GlobalPlayerService {
   GlobalPlayerService._();
@@ -37,6 +38,7 @@ class GlobalPlayerService {
   }
 
   Future<void> _initialize(PlayerEngine defaultEngine) async {
+    await ShaderAssetService.instance.initialize();
     // 1. Instantiate the Orchestrator with all its specialized managers
     playerManager = PlayerManager(
       fallbackManager: EngineFallbackManager(

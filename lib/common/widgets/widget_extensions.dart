@@ -202,6 +202,7 @@ extension AppLayoutFactory on BuildContext {
     Color? subtitleColor,
     Widget? trailing,
     bool isLong = false,
+    bool enabled = true,
   }) {
     final theme = Theme.of(this);
 
@@ -239,13 +240,23 @@ extension AppLayoutFactory on BuildContext {
       minVerticalPadding: 0,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       leading: leadingWidget,
-      title: Text(title, style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600)),
+      title: Text(
+        title,
+        style: AppTextStyles.t15.copyWith(
+          fontWeight: FontWeight.w600,
+          color: enabled ? null : theme.hintColor.withValues(alpha: 0.4),
+        ),
+      ),
       subtitle: subtitle != null && subtitle.isNotEmpty
           ? Padding(
               padding: const EdgeInsets.only(top: 2),
               child: Text(
                 subtitle,
-                style: AppTextStyles.t12.copyWith(color: subtitleColor ?? theme.hintColor.withValues(alpha: 0.75)),
+                style: AppTextStyles.t12.copyWith(
+                  color:
+                      subtitleColor ??
+                      (enabled ? theme.hintColor.withValues(alpha: 0.75) : theme.hintColor.withValues(alpha: 0.25)),
+                ),
                 maxLines: isLong ? null : 1,
                 overflow: isLong ? TextOverflow.visible : TextOverflow.ellipsis,
               ),
@@ -260,12 +271,19 @@ extension AppLayoutFactory on BuildContext {
             child:
                 trailing ??
                 (onTap != null
-                    ? Icon(Icons.chevron_right_rounded, color: theme.hintColor.withValues(alpha: 0.4), size: 20)
+                    ? Icon(
+                        Icons.chevron_right_rounded,
+                        color: enabled
+                            ? theme.hintColor.withValues(alpha: 0.4)
+                            : theme.hintColor.withValues(alpha: 0.15),
+                        size: 20,
+                      )
                     : null),
           ),
         ],
       ),
-      onTap: onTap,
+      onTap: enabled ? onTap : null,
+      enabled: enabled,
     );
   }
 

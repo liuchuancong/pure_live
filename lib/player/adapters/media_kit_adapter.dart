@@ -1,10 +1,10 @@
 import 'dart:async';
-
 import 'package:rxdart/rxdart.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/core/common/log.dart';
 import 'package:pure_live/plugins/file_utils.dart';
 import 'package:media_kit_video/media_kit_video.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:pure_live/player/utils/player_consts.dart';
 import 'package:pure_live/player/models/player_state.dart';
 import 'package:media_kit/media_kit.dart' hide PlayerState;
@@ -19,6 +19,7 @@ import 'package:pure_live/common/utils/latest_async_value_queue.dart';
 import 'package:pure_live/player/interface/unified_player_interface.dart';
 import 'package:pure_live/player/interface/media_kit_player_accessor.dart';
 
+
 @visibleForTesting
 ({int width, int height})? resolveMediaKitDisplaySize(VideoParams params) {
   final size = resolveVideoParamsDisplaySize(params);
@@ -32,17 +33,13 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
   }
 
   late final Player _player;
-
   late final VideoController _controller;
 
   bool _initialized = false;
-
   bool _disposed = false;
-
   bool _listenerBound = false;
 
   String? _currentUrl;
-
   bool _isAudioOnly = false;
 
   SuperResolutionMode _superResolutionMode = SuperResolutionMode.off;
@@ -73,17 +70,13 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
   StreamSubscription? _completeSub;
   StreamSubscription? _errorSub;
 
-  // ---------------------------------------------------------------------------
-  // Native configuration
-  // ---------------------------------------------------------------------------
-
   static Future<void> applyNativeLiveProperties(NativePlayer native) async {
     await native.setProperty(
       'protocol_whitelist',
-      'httpproxy,udp,rtp,tcp,tls,data,file,http,https,crypto,'
-          'rtmp,rtmps,rtsp,srt',
+      'httpproxy,udp,rtp,tcp,tls,data,file,http,https,crypto,rtmp,rtmps,rtsp,srt',
     );
-
+    await native.setProperty("demuxer-cache-dir", await FileUtils().getTempPath());
+    
     await native.setProperty('demuxer-lavf-probesize', '2097152');
 
     await native.setProperty('demuxer-max-bytes', LiveBufferPolicy.forwardBytes.toString());
@@ -97,22 +90,18 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
     await native.setProperty('volume-max', '100');
 
     await native.setProperty('af', 'scaletempo2=max-speed=8');
-
-    if (PlatformUtils.isAndroid) {
-      await _configureAndroidNative(native);
-    } else if (PlatformUtils.isIOS) {
-      await _configureIOSNative(native);
-    } else if (PlatformUtils.isMacOS) {
-      await _configureMacOSNative(native);
-    } else if (PlatformUtils.isWindows) {
-      await _configureWindowsNative(native);
-    } else if (PlatformUtils.isLinux) {
-      await _configureLinuxNative(native);
-    }
   }
 
-  static Future<void> _configureAndroidNative(NativePlayer native) async {
+  static Future<void> _configureAndroidCustomOutput(NativePlayer native) async {
     final settings = SettingsService.to.player;
+
+    if (!settings.customPlayerOutput.v) {
+      return;
+    }
+
+    if (PlatformUtils.isAndroid && settings.playerCompatMode.v) {
+      return;
+    }
 
     await native.setProperty('ao', settings.androidEnableOpenSLES.v ? 'opensles' : 'audiotrack');
 
@@ -120,68 +109,56 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
 
     await native.setProperty('hwdec-software-fallback', '1');
 
-    if (settings.playerCompatMode.v) {
-      await native.setProperty('hwdec', 'mediacodec');
+    final hwdec = settings.videoHardwareDecoder.v;
 
-      await native.setProperty('vo', 'mediacodec_embed');
-
-      return;
-    }
-
-    await native.setProperty('hwdec', settings.videoHardwareDecoder.v);
+    await native.setProperty('hwdec', hwdec.isEmpty ? 'auto' : hwdec);
 
     final renderer = settings.videoOutputDriver.v;
 
-    await native.setProperty('vo', renderer == 'auto' || renderer.isEmpty ? 'gpu' : renderer);
+    await native.setProperty('vo', renderer.isEmpty || renderer == 'auto' ? 'gpu' : renderer);
   }
 
-  static Future<void> _configureIOSNative(NativePlayer native) async {
-    await native.setProperty('hwdec', 'auto');
-
-    await native.setProperty('hwdec-software-fallback', '1');
-  }
-
-  static Future<void> _configureMacOSNative(NativePlayer native) async {
-    await native.setProperty('hwdec', 'no');
-
-    await native.setProperty('vo', 'gpu');
-  }
-
-  static Future<void> _configureWindowsNative(NativePlayer native) async {
+  static Future<void> _configureWindowsCustomOutput(NativePlayer native) async {
     final settings = SettingsService.to.player;
 
-    await native.setProperty('vo', 'gpu');
-
-    if (settings.enableRtxVsr.value) {
-      await native.setProperty('hwdec', 'd3d11va');
-
-      await native.setProperty('vf', 'd3d11vpp=scale=2:scaling-mode=nvidia');
-
+    if (!settings.customPlayerOutput.v) {
       return;
     }
 
-    await native.setProperty('hwdec', settings.videoHardwareDecoder.v);
+    if (settings.enableRtxVsr.v) {
+      await native.setProperty('vf', 'd3d11vpp=scale=2:scaling-mode=nvidia');
+    }
   }
 
-  static Future<void> _configureLinuxNative(NativePlayer native) async {
+  static Future<void> _configureMacOSCustomOutput(NativePlayer native) async {
     final settings = SettingsService.to.player;
+
+    if (!settings.customPlayerOutput.v) {
+      return;
+    }
+
+    await native.setProperty('hwdec', 'no');
+  }
+
+  static Future<void> _configureLinuxCustomOutput(NativePlayer native) async {
+    final settings = SettingsService.to.player;
+
+    if (!settings.customPlayerOutput.v) {
+      return;
+    }
 
     await native.setProperty('ao', 'alsa');
 
-    await native.setProperty('vo', 'gpu');
-
-    await native.setProperty('hwdec', settings.videoHardwareDecoder.v);
+    await native.setProperty(
+      'hwdec',
+      settings.videoHardwareDecoder.v.isEmpty ? 'auto' : settings.videoHardwareDecoder.v,
+    );
   }
 
-  // ---------------------------------------------------------------------------
-  // Super Resolution
-  // ---------------------------------------------------------------------------
-
-  /// 从设置中获取默认超分模式，并处理平台限制。
   SuperResolutionMode _resolveInitialSuperResolutionMode() {
     final settings = SettingsService.to.player;
 
-    if (PlatformUtils.isIOS) {
+    if (!settings.customPlayerOutput.v) {
       return SuperResolutionMode.off;
     }
 
@@ -189,25 +166,25 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
       return SuperResolutionMode.off;
     }
 
-    if (PlatformUtils.isWindows && settings.enableRtxVsr.value) {
+    if (PlatformUtils.isIOS) {
+      return SuperResolutionMode.off;
+    }
+
+    if (PlatformUtils.isWindows && settings.enableRtxVsr.v) {
       return SuperResolutionMode.off;
     }
 
     return SuperResolutionMode.fromStorageValue(settings.defaultSuperResolutionMode.v);
   }
 
-  /// 根据当前模式获取 Shader。
   List<String> _getSuperResolutionShaders() {
     return switch (_superResolutionMode) {
       SuperResolutionMode.off => const <String>[],
-
       SuperResolutionMode.efficiency => PlayerConsts.mpvAnime4KShadersLiteKeys,
-
       SuperResolutionMode.quality => PlayerConsts.mpvAnime4KShaderKeys,
     };
   }
 
-  /// 应用当前超分 Shader。
   Future<void> _configureSuperResolution() async {
     if (_disposed) {
       return;
@@ -237,7 +214,8 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
 
       return;
     }
-    final String shaderCommand = FileUtils().buildShadersAbsolutePath(
+
+    final shaderCommand = FileUtils().buildShadersAbsolutePath(
       ShaderAssetService.instance.shadersDirectoryPath!,
       shaders,
     );
@@ -245,7 +223,6 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
     await native.command(['change-list', 'glsl-shaders', 'set', shaderCommand]);
   }
 
-  /// 动态切换超分模式。
   Future<void> setSuperResolution(SuperResolutionMode mode) async {
     if (_disposed) {
       return;
@@ -291,7 +268,6 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
 
       Log.e('MediaKitAdapter: failed to set super resolution', s);
 
-      // 尝试恢复旧 Shader。
       try {
         await _configureSuperResolution();
       } catch (restoreError, restoreStack) {
@@ -309,7 +285,7 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
   bool _isSuperResolutionSupported() {
     final settings = SettingsService.to.player;
 
-    if (PlatformUtils.isIOS) {
+    if (!settings.customPlayerOutput.v) {
       return false;
     }
 
@@ -317,16 +293,81 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
       return false;
     }
 
-    if (PlatformUtils.isWindows && settings.enableRtxVsr.value) {
+    if (PlatformUtils.isIOS) {
+      return false;
+    }
+
+    if (PlatformUtils.isWindows && settings.enableRtxVsr.v) {
       return false;
     }
 
     return true;
   }
 
-  // ---------------------------------------------------------------------------
-  // Initialization
-  // ---------------------------------------------------------------------------
+  Future<VideoControllerConfiguration> _buildVideoControllerConfiguration() async {
+    final settings = SettingsService.to.player;
+    final customOutput = settings.customPlayerOutput.v;
+    if (!customOutput) {
+      _superResolutionMode = SuperResolutionMode.off;
+
+      return VideoControllerConfiguration(
+        enableHardwareAcceleration: settings.enableCodec.v,
+        enableAndroidSurfaceProducer: false,
+        androidAttachSurfaceAfterVideoParameters: false,
+      );
+    }
+    if (PlatformUtils.isAndroid && settings.playerCompatMode.v) {
+      _superResolutionMode = SuperResolutionMode.off;
+
+      return const VideoControllerConfiguration(
+        vo: 'mediacodec_embed',
+        hwdec: 'mediacodec',
+        enableHardwareAcceleration: true,
+        enableAndroidSurfaceProducer: false,
+        androidAttachSurfaceAfterVideoParameters: false,
+      );
+    }
+
+    String? vo;
+    String? hwdec;
+    if (PlatformUtils.isAndroid) {
+      final renderer = settings.videoOutputDriver.v;
+
+      if (renderer.isEmpty || renderer == 'auto') {
+        final androidInfo = await DeviceInfoPlugin().androidInfo;
+        vo = androidInfo.version.sdkInt >= 34 ? 'gpu-next' : 'gpu';
+      } else {
+        vo = renderer;
+      }
+      hwdec = settings.videoHardwareDecoder.v.isEmpty ? 'auto' : settings.videoHardwareDecoder.v;
+    } else if (PlatformUtils.isWindows) {
+      vo = settings.videoOutputDriver.v;
+      if (settings.enableRtxVsr.v) {
+        hwdec = 'd3d11va';
+      } else {
+        hwdec = settings.videoHardwareDecoder.v.isEmpty ? 'auto' : settings.videoHardwareDecoder.v;
+      }
+    } else if (PlatformUtils.isLinux) {
+      vo = settings.videoOutputDriver.v;
+      hwdec = settings.videoHardwareDecoder.v.isEmpty ? 'auto' : settings.videoHardwareDecoder.v;
+    } else if (PlatformUtils.isMacOS) {
+      vo = settings.videoOutputDriver.v;
+      hwdec = 'no';
+    } else if (PlatformUtils.isIOS) {
+      vo = null;
+      hwdec = settings.videoHardwareDecoder.v.isEmpty ? 'auto' : settings.videoHardwareDecoder.v;
+    }
+
+    final enableHardwareAcceleration = PlatformUtils.isMacOS ? false : settings.enableCodec.v;
+
+    return VideoControllerConfiguration(
+      vo: vo,
+      hwdec: hwdec,
+      enableHardwareAcceleration: enableHardwareAcceleration,
+      enableAndroidSurfaceProducer: false,
+      androidAttachSurfaceAfterVideoParameters: false,
+    );
+  }
 
   @override
   Future<void> init({bool audioOnly = false}) async {
@@ -354,103 +395,21 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
         final native = _player.platform as NativePlayer;
 
         await applyNativeLiveProperties(native);
-      }
 
-      // -----------------------------------------------------------------------
-      // VideoController
-      // -----------------------------------------------------------------------
-
-      if (settings.playerCompatMode.v) {
-        _superResolutionMode = SuperResolutionMode.off;
-
-        _controller = VideoController(
-          _player,
-          configuration: const VideoControllerConfiguration(
-            vo: 'mediacodec_embed',
-            hwdec: 'mediacodec',
-            enableHardwareAcceleration: true,
-            enableAndroidSurfaceProducer: false,
-            androidAttachSurfaceAfterVideoParameters: false,
-          ),
-        );
-      } else if (settings.customPlayerOutput.v) {
-        String? vo;
-
-        if (PlatformUtils.isAndroid) {
-          final renderer = settings.videoOutputDriver.v;
-
-          vo = renderer == 'auto' || renderer.isEmpty ? 'gpu' : renderer;
-        } else if (PlatformUtils.isWindows || PlatformUtils.isLinux || PlatformUtils.isMacOS) {
-          vo = 'gpu';
-        }
-
-        String? hwdec;
-
-        if (PlatformUtils.isMacOS) {
-          hwdec = 'no';
-        } else if (PlatformUtils.isIOS) {
-          hwdec = 'auto';
-        } else if (PlatformUtils.isWindows && settings.enableRtxVsr.value) {
-          hwdec = 'd3d11va';
-        } else {
-          hwdec = settings.videoHardwareDecoder.v;
-        }
-
-        final enableHardwareAcceleration = PlatformUtils.isMacOS ? false : settings.enableCodec.v;
-
-        _controller = VideoController(
-          _player,
-          configuration: VideoControllerConfiguration(
-            vo: vo,
-            hwdec: hwdec,
-            enableHardwareAcceleration: enableHardwareAcceleration,
-            enableAndroidSurfaceProducer: false,
-            androidAttachSurfaceAfterVideoParameters: false,
-          ),
-        );
-      } else {
-        String? vo;
-        String? hwdec;
-
-        bool enableHardwareAcceleration = settings.enableCodec.v;
-
-        if (PlatformUtils.isAndroid) {
-          final renderer = settings.videoOutputDriver.v;
-
-          vo = renderer == 'auto' || renderer.isEmpty ? 'gpu' : renderer;
-
-          hwdec = settings.videoHardwareDecoder.v;
-        } else if (PlatformUtils.isIOS) {
-          vo = null;
-          hwdec = 'auto';
-        } else if (PlatformUtils.isMacOS) {
-          vo = 'gpu';
-          hwdec = 'no';
-          enableHardwareAcceleration = false;
-        } else if (PlatformUtils.isWindows) {
-          vo = 'gpu';
-
-          if (settings.enableRtxVsr.value) {
-            hwdec = 'd3d11va';
-          } else {
-            hwdec = settings.videoHardwareDecoder.v;
+        if (settings.customPlayerOutput.v && !(PlatformUtils.isAndroid && settings.playerCompatMode.v)) {
+          if (PlatformUtils.isAndroid) {
+            await _configureAndroidCustomOutput(native);
+          } else if (PlatformUtils.isWindows) {
+            await _configureWindowsCustomOutput(native);
+          } else if (PlatformUtils.isMacOS) {
+            await _configureMacOSCustomOutput(native);
+          } else if (PlatformUtils.isLinux) {
+            await _configureLinuxCustomOutput(native);
           }
-        } else if (PlatformUtils.isLinux) {
-          vo = 'gpu';
-          hwdec = settings.videoHardwareDecoder.v;
         }
-
-        _controller = VideoController(
-          _player,
-          configuration: VideoControllerConfiguration(
-            vo: vo,
-            hwdec: hwdec,
-            enableHardwareAcceleration: enableHardwareAcceleration,
-            enableAndroidSurfaceProducer: false,
-            androidAttachSurfaceAfterVideoParameters: false,
-          ),
-        );
       }
+
+      _controller = VideoController(_player, configuration: await _buildVideoControllerConfiguration());
 
       await _bindListeners();
 
@@ -476,10 +435,6 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
       throw exception;
     }
   }
-
-  // ---------------------------------------------------------------------------
-  // Data Source
-  // ---------------------------------------------------------------------------
 
   @override
   Future<void> setDataSource(
@@ -515,15 +470,9 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
         final proxy = SettingsService.to.proxy;
 
         if (proxy.enableProxy.v && proxy.proxyHost.v.isNotEmpty) {
-          final proxyUrl =
-              'http://${proxy.proxyHost.v}:'
-              '${proxy.proxyPort.v}';
+          final proxyUrl = 'http://${proxy.proxyHost.v}:${proxy.proxyPort.v}';
 
           await native.setProperty('http-proxy', proxyUrl);
-        }
-
-        if (PlatformUtils.isWindows && SettingsService.to.player.enableRtxVsr.value) {
-          await native.setProperty('vf', 'd3d11vpp=scale=2:scaling-mode=nvidia');
         }
 
         await native.setProperty('vid', audioOnly ? 'no' : 'auto');
@@ -531,27 +480,26 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
 
       await _player.setAudioTrack(AudioTrack.auto());
 
-      await _player.open(Media(url, httpHeaders: headers), play: true);
+      final urls = <String>[url, ...playUrls.where((item) => item.isNotEmpty && item != url)];
+
+      final playlist = Playlist(urls.map((item) => Media(item, httpHeaders: headers)).toList());
+
+      await _player.open(playlist, play: true);
 
       if (PlatformUtils.isAndroid && !audioOnly) {
         _isAudioOnly = false;
       } else {
         await _applyAudioOnly(audioOnly, force: true);
       }
-
-      // 继续使用当前 Adapter 的超分状态，
-      // 不重新从 SettingsService 覆盖。
       if (_superResolutionMode != SuperResolutionMode.off) {
         await _configureSuperResolution();
       }
-
       _stateSubject.add(PlayerState.ready);
 
       if (PlatformUtils.isMobile) {
         await setVolume(1.0);
       } else {
         final targetVolume = room?.getSavedVolume() ?? 1.0;
-
         await setVolume(targetVolume);
       }
     } catch (e, s) {
@@ -573,10 +521,6 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
       }
     }
   }
-
-  // ---------------------------------------------------------------------------
-  // Listeners
-  // ---------------------------------------------------------------------------
 
   Future<void> _bindListeners() async {
     if (_listenerBound) {
@@ -636,6 +580,7 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
         final size = resolveMediaKitDisplaySize(params);
 
         _widthSubject.add(size?.width);
+
         _heightSubject.add(size?.height);
       },
       onError: (e, s) {
@@ -698,10 +643,6 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
     _errorSub = null;
   }
 
-  // ---------------------------------------------------------------------------
-  // Error
-  // ---------------------------------------------------------------------------
-
   void _emitError(Object error, StackTrace stackTrace, PlayerErrorType type) {
     if (_disposed) {
       return;
@@ -744,10 +685,6 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
     return PlayerErrorType.native;
   }
 
-  // ---------------------------------------------------------------------------
-  // Video
-  // ---------------------------------------------------------------------------
-
   @override
   Widget getVideoWidget(BoxFit fit) {
     return StreamBuilder<List<int?>>(
@@ -773,10 +710,6 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
       },
     );
   }
-
-  // ---------------------------------------------------------------------------
-  // Playback
-  // ---------------------------------------------------------------------------
 
   @override
   Future<void> play() async {
@@ -812,10 +745,6 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
 
     _stateSubject.add(PlayerState.stopped);
   }
-
-  // ---------------------------------------------------------------------------
-  // Audio Only
-  // ---------------------------------------------------------------------------
 
   @override
   Future<void> setAudioOnly(bool audioOnly) {
@@ -894,10 +823,6 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // Volume / Speed / Properties
-  // ---------------------------------------------------------------------------
-
   @override
   Future<void> setVolume(double volume) async {
     final vol = (volume * 100).clamp(0.0, 100.0);
@@ -923,10 +848,6 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
     await native.setProperty(property, value);
   }
 
-  // ---------------------------------------------------------------------------
-  // Prefetch
-  // ---------------------------------------------------------------------------
-
   Future<void> setPrefetchSuspended(bool suspended) async {
     if (!PlatformUtils.isAndroid || _disposed) {
       return;
@@ -942,10 +863,6 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
 
     await native.setProperty('demuxer-readahead-secs', suspended ? '0' : LiveBufferPolicy.readaheadSeconds.toString());
   }
-
-  // ---------------------------------------------------------------------------
-  // Dispose
-  // ---------------------------------------------------------------------------
 
   @override
   Future<void> hardDispose() async {
@@ -980,10 +897,6 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
     ]);
   }
 
-  // ---------------------------------------------------------------------------
-  // Getters
-  // ---------------------------------------------------------------------------
-
   @override
   bool get isInitialized => _initialized;
 
@@ -993,7 +906,6 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
   @override
   bool get isReusable => PlatformUtils.isWindows;
 
-  /// 当前实际生效的超分模式。
   SuperResolutionMode get superResolutionMode => _superResolutionMode;
 
   @override

@@ -1466,5 +1466,7 @@
     "super_resolution_description": "Super resolution requires hardware decoding. If it still does not work after enabling hardware decoding, try switching the video renderer to GPU.",
     "default_behavior": "Default Behavior",
     "disable_super_resolution_warning": "Disable Warning",
-    "disable_super_resolution_warning_subtitle": "Disable the warning shown each time super resolution is enabled"
+    "disable_super_resolution_warning_subtitle": "Disable the warning shown each time super resolution is enabled",
+    "custom_output_required": "Enable custom output first",
+    "performance_settings": "Performance Settings"
 }

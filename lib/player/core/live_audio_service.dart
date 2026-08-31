@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:pure_live/common/index.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
@@ -8,7 +9,6 @@ import 'package:pure_live/player/core/background_playback_policy.dart';
 import 'package:pure_live/player/core/background_playback_service.dart';
 import 'package:pure_live/player/interface/unified_player_interface.dart';
 import 'package:pure_live/common/services/settings/app_settings_controller.dart';
-
 
 class LiveAudioService {
   LiveAudioService._();
@@ -79,7 +79,7 @@ class LiveAudioService {
           androidNotificationChannelId: 'com.mystyle.purelive.audio',
           androidNotificationChannelName: i18n('audio_channel_name'),
           androidNotificationOngoing: true,
-          androidStopForegroundOnPause: false,
+          androidStopForegroundOnPause: true,
           androidNotificationClickStartsActivity: true,
           notificationColor: Colors.blue,
         ),
