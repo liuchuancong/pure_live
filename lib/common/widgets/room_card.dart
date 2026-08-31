@@ -690,6 +690,8 @@ class RoomCard extends StatelessWidget {
                     ),
                   ),
                 ),
+                Positioned(left: 8, top: 8, child: context.buildPlatformTag(room.platform!, mini: true)),
+
                 if (room.isRecord == true)
                   Positioned(
                     right: 8,

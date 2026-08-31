@@ -1,7 +1,6 @@
-import 'package:flutter/material.dart';
 import 'package:pure_live/get/get.dart';
+import 'package:pure_live/common/index.dart';
 import 'package:syncfusion_flutter_sliders/sliders.dart';
-import 'package:pure_live/common/style/app_text_styles.dart';
 
 extension AppLayoutFactory on BuildContext {
   Widget buildGroupTitle(String text) {
@@ -15,6 +14,47 @@ extension AppLayoutFactory on BuildContext {
           color: theme.colorScheme.primary.withValues(alpha: 0.65),
           letterSpacing: 0.5,
         ),
+      ),
+    );
+  }
+
+  Widget buildPlatformTag(String platform, {bool mini = false}) {
+    final theme = Theme.of(this);
+    final id = platform.trim().toLowerCase();
+
+    final site = Sites.supportSites.firstWhere((e) => e.id == id);
+
+    final gradient = Sites.gradientOf(id);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: mini ? 5 : 7, vertical: mini ? 2 : 4),
+      decoration: BoxDecoration(
+        gradient: gradient,
+        borderRadius: BorderRadius.circular(999),
+        border: isDark ? Border.all(color: Colors.white.withValues(alpha: 0.12), width: 0.5) : null,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: mini ? 13 : 16,
+            height: mini ? 13 : 16,
+            padding: EdgeInsets.all(mini ? 1.8 : 2),
+            decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.9), shape: BoxShape.circle),
+            child: Image.asset(site.logo, fit: BoxFit.contain),
+          ),
+          SizedBox(width: mini ? 3 : 4),
+          Text(
+            i18n('site_$id'),
+            style: AppTextStyles.t11.copyWith(
+              color: Colors.white,
+              fontSize: mini ? 8 : 9,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.2,
+            ),
+          ),
+        ],
       ),
     );
   }

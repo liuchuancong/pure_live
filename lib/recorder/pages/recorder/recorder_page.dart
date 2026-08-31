@@ -203,32 +203,6 @@ class _TaskCard extends GetView<RecorderController> {
     }
   }
 
-  Color _platformColor() {
-    switch (task.platform.toLowerCase()) {
-      case Sites.bilibiliSite:
-        return const Color(0xFFFB7299);
-
-      case Sites.douyuSite:
-        return const Color(0xFFFF7700);
-
-      case Sites.huyaSite:
-        return const Color(0xFFFFB000);
-
-      case Sites.douyinSite:
-        return const Color(0xFF000000);
-      case Sites.ccSite:
-        return const Color.fromARGB(253, 13, 145, 233);
-      case Sites.iptvSite:
-        return const Color.fromARGB(255, 204, 71, 9);
-      case Sites.twitchSite:
-        return const Color(0xFF9146FF);
-      case Sites.soopSite:
-        return const Color(0xFF0675E8);
-      default:
-        return const Color.fromARGB(255, 11, 223, 117);
-    }
-  }
-
   String _formatDuration(int sec) {
     final d = Duration(seconds: sec);
 
@@ -584,7 +558,7 @@ class _TaskCard extends GetView<RecorderController> {
                                 ),
                               ),
                             ),
-                            _Tag(text: task.platform.toUpperCase(), icon: Remix.plant_fill, color: _platformColor()),
+                            context.buildPlatformTag(task.platform),
                           ],
                         ),
                         const SizedBox(height: 10),
@@ -705,33 +679,6 @@ class _TaskCard extends GetView<RecorderController> {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _Tag extends StatelessWidget {
-  final IconData icon;
-  final String text;
-  final Color color;
-
-  const _Tag({required this.text, required this.icon, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
-      decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(999)),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 11, color: color),
-          const SizedBox(width: 4),
-          Text(
-            text,
-            style: AppTextStyles.t11.copyWith(fontWeight: FontWeight.bold, color: color, letterSpacing: 0.2),
-          ),
-        ],
       ),
     );
   }

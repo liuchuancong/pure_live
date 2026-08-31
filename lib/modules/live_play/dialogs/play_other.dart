@@ -389,14 +389,7 @@ class _RoomSwitchCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(color: colors.primary, borderRadius: BorderRadius.circular(12)),
-                child: Text(
-                  i18n('site_${room.platform}'),
-                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w400, color: Colors.white),
-                ),
-              ),
+              context.buildPlatformTag(room.platform!, mini: true),
               if (!history) Text(meta, style: TextStyle(fontSize: 12, color: Colors.orange.shade700)),
             ],
           ),
@@ -456,23 +449,7 @@ class _RoomSwitchCover extends StatelessWidget {
               );
             },
           ),
-        Positioned(
-          top: 7,
-          right: 7,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-            decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: .58),
-              borderRadius: BorderRadius.circular(7),
-            ),
-            child: Text(
-              i18n('site_${room.platform}'),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.labelSmall?.copyWith(color: Colors.white, fontWeight: FontWeight.w700, height: 1),
-            ),
-          ),
-        ),
+        Positioned(top: 7, right: 7, child: context.buildPlatformTag(room.platform!, mini: true)),
         Positioned(
           left: 0,
           right: 0,
