@@ -1,5 +1,149 @@
 [
   {
+    "version": "3.1.4",
+    "title": "Pure Live v3.1.4",
+    "date": "2026-08-31",
+    "github": "https://github.com/wzgrx/pure_live/releases/tag/v3.1.4",
+    "author": {
+      "name": "wzgrx",
+      "avatar": "https://avatars.githubusercontent.com/u/39661556?v=4",
+      "profile": "https://github.com/wzgrx"
+    },
+    "changelog": "# Pure Live v3.1.4\n\nv3.1.4 build 4117 是 Android 平板横屏关注页下拉刷新补丁。本轮不合并上游代码；近期 Issue #826 的现象在维护分支同样存在，根因是关注网格用 `width > 680` 直接关闭逐平台 `EasyRefresh`。Android 平板横屏会超过这个阈值，但仍属于触控移动平台，于是外层刷新已因嵌套 `TabBarView` 主动关闭，内层刷新又被宽度判断移除，最终只剩一个裸 `GridView`。\n\n## 平板横屏关注刷新\n\n- 宽度继续只决定网格列数和图片缓存范围，不再独自决定刷新交互类型。\n- Android/iOS 无论横竖屏和窗口宽度都保留逐平台纵向下拉刷新；Windows 等桌面宽屏继续使用分页、重试按钮和键盘入口。\n- 每个平台页仍持有独立 `EasyRefresh.builder`，并把 builder 返回的 physics 直接安装到唯一纵向滚动视图；平台左右切换与纵向下拉不会共用手势轴。\n- 空列表与短列表继续使用 `AlwaysScrollableScrollPhysics`，72 px 释放时显示 Material 指示器并调用同一串行刷新事务。\n\n## 回归与影响边界\n\n- 新增宽屏移动设备、宽屏桌面和窄窗口三种判定回归；既有真实 pointer drag 测试继续验证动画、释放和回调，不用直接调用 callback 代替手势证据。\n- 聚焦 `test/favorite_pull_refresh_test.dart` 2/2 通过；冻结前 Analyze 0 issue、完整 Flutter 675/675、公开平台接口 42/42、全仓审计 3895 个文件且 0 error。\n- 完整质量记录：`local-artifacts/build-records/20260831T171731254Z-quality-full.json`。\n- 本轮只修改关注网格的刷新包装条件；启动核验、卡片单次发布、平台状态、播放器、弹幕、录制和 Windows 列表行为均未改动。\n- Android `arm64-v8a` 进入正式构建与安装验证；Windows 继续使用 v3.1.3 安装程序和便携 ZIP。\n\n完整根因、近期 Issue 分类、测试和交付证据见 `docs/STAGE_UPDATE_3_1_4.md`、`docs/FAVORITE_REFRESH_DESIGN.md` 与 `docs/ISSUE_AUDIT_2026_08_31.md`。",
+    "files": [
+      {
+        "name": "BUILD_METADATA.json",
+        "size": "0.0mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.4/BUILD_METADATA.json"
+      },
+      {
+        "name": "PureLive-3.1.4-4117-debug-signed-android-arm64-v8a",
+        "size": "112.96mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.4/PureLive-3.1.4-4117-debug-signed-android-arm64-v8a-release.apk"
+      },
+      {
+        "name": "SHA256SUMS.txt",
+        "size": "0.0mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.4/SHA256SUMS.txt"
+      }
+    ]
+  },
+  {
+    "version": "3.1.3",
+    "title": "Pure Live v3.1.3",
+    "date": "2026-08-31",
+    "github": "https://github.com/wzgrx/pure_live/releases/tag/v3.1.3",
+    "author": {
+      "name": "wzgrx",
+      "avatar": "https://avatars.githubusercontent.com/u/39661556?v=4",
+      "profile": "https://github.com/wzgrx"
+    },
+    "changelog": "# Pure Live v3.1.3\n\nv3.1.3 build 4116 是 Android / Windows 多画面真全屏退出补丁。本轮没有同步上游代码；问题来自本仓库多画面页面把真全屏设计成“完全没有界面控件”，只留下 Android 系统返回手势和 Windows `Escape`。因此用户点击任意画面时只会按既有逻辑切换声音来源，界面本身没有可发现的退出路径。\n\n## 多画面真全屏退出\n\n- 真全屏左上角增加 44×44 半透明退出按钮，避让刘海、挖孔和系统安全区；视频网格仍然铺满整个屏幕。\n- 按钮只占用自身触控区域，其他区域继续响应格子选择与声音来源切换，不用牺牲原有多画面操作。\n- Android 系统侧边返回和 Windows `Escape` 继续作为等价回退路径；三种入口都只从真全屏恢复到普通多画面页面，不直接销毁多路播放器。\n- 独立封装全屏表面，统一按钮样式、语义标签和命中边界，避免后续布局重构再次删掉退出入口。\n\n## 根因与验证\n\n- Issue #824 的复现描述与当前代码一致：`_DisplayMode.fullscreen` 明确只渲染网格，没有任何 chrome；格子点击则由音频焦点逻辑处理。\n- 新增 `test/multiview_fullscreen_surface_test.dart`，验证安全区位置、退出回调、视频内容去除上下系统留白，以及按钮外点击仍落到网格。\n- 冻结前完整门禁通过：Analyze 0 issue、Flutter 674/674、公开平台接口 42/42、全仓审计 0 error；质量记录为 `20260831T153514548Z-quality-full.json`。\n- Android arm64-v8a 与 Windows x64 从同一冻结提交串行构建；安装包附构建元数据与 SHA-256。\n- 完整根因、影响边界与回归记录见 `docs/STAGE_UPDATE_3_1_3.md` 和 `docs/ISSUE_AUDIT_2026_08_31.md`。",
+    "files": [
+      {
+        "name": "BUILD_METADATA.json",
+        "size": "0.0mb",
+        "downloads": 1,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.3/BUILD_METADATA.json"
+      },
+      {
+        "name": "PureLive-3.1.3-4116-debug-signed-android-arm64-v8a",
+        "size": "112.96mb",
+        "downloads": 11,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.3/PureLive-3.1.3-4116-debug-signed-android-arm64-v8a-release.apk"
+      },
+      {
+        "name": "PureLive-3.1.3-4116-windows-x64-portable.zip",
+        "size": "68.96mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.3/PureLive-3.1.3-4116-windows-x64-portable.zip"
+      },
+      {
+        "name": "PureLive-3.1.3-4116-windows-x64-setup.exe",
+        "size": "53.45mb",
+        "downloads": 1,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.3/PureLive-3.1.3-4116-windows-x64-setup.exe"
+      },
+      {
+        "name": "SHA256SUMS.txt",
+        "size": "0.0mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.3/SHA256SUMS.txt"
+      },
+      {
+        "name": "WINDOWS_BUILD_METADATA.json",
+        "size": "0.0mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.3/WINDOWS_BUILD_METADATA.json"
+      },
+      {
+        "name": "WINDOWS_SHA256SUMS.txt",
+        "size": "0.0mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.3/WINDOWS_SHA256SUMS.txt"
+      }
+    ]
+  },
+  {
+    "version": "3.1.2",
+    "title": "Pure Live v3.1.2",
+    "date": "2026-08-31",
+    "github": "https://github.com/wzgrx/pure_live/releases/tag/v3.1.2",
+    "author": {
+      "name": "wzgrx",
+      "avatar": "https://avatars.githubusercontent.com/u/39661556?v=4",
+      "profile": "https://github.com/wzgrx"
+    },
+    "changelog": "# Pure Live v3.1.2\r\n\r\nv3.1.2 build 4115 是 Android / Windows 全屏一致性与平台接口韧性补丁。本轮没有同步上游代码；Windows 根因来自隐藏标题栏初始化与 `window_manager 0.5.2` 原生 `frameless` 状态的交互，不是 v3.1.1 多画面业务代码。旧版会把 Dart 侧标记为全屏，但原生窗口没有改变样式或边界，因此仍保留标题栏、任务栏和普通页面布局。\r\n\r\n## Windows 真全屏\r\n\r\n- Windows 进入全屏前重新应用同一隐藏标题栏样式，清除插件原生层遗留的 `frameless` 阻断状态，再执行系统全屏边界切换。\r\n- 全屏窗口现在覆盖当前显示器完整区域；标题栏、任务栏和普通直播间侧栏不会继续占位。\r\n- `Escape` 退出后，普通窗口精确恢复进入前的位置和尺寸；从最大化进入时恢复原最大化状态。\r\n- macOS、Linux 继续直接调用既有全屏路径，不执行 Windows 专用准备步骤。\r\n\r\n## 网易 CC 分类接口迁移兼容\r\n\r\n- 完整回归发现 CC 旧分类 JSON 地址已在部分网络直接跳转到网易官方 `ds.163.com/glive` HTML 页面；旧实现会在 `jsonDecode` 处终止分类页加载。\r\n- 分类解析改为防御式合同：旧 JSON 仍可解析全部游戏子分类；遇到官方迁移跳转、HTML、空响应或部分 schema 时保留“全部 / 端游 / 手游 / 其他”稳定入口，推荐直播、搜索、房间和播放链路互不连带失败。\r\n- 公开接口探针同时识别旧 JSON 合同与官方 Glive 迁移目标，仍会拒绝第三方重定向和未知 HTML；新增解析回归覆盖 HTML 回退与旧 JSON 分组。\r\n\r\n## 回归与运行验证\r\n\r\n- 新增 `test/windows_fullscreen_transition_test.dart`，锁定 Windows 的“标题栏准备 → 原生全屏”调用顺序，并验证其他桌面平台不执行 Windows 专用步骤。\r\n- 聚焦 Analyze 为 0 issue；Windows 全屏与 PiP 呈现测试 4/4 通过，记录为 `20260831T091722185Z-quality-focused.json`。\r\n- Windows Debug 在 3840×2400、250% 缩放、200 Hz 显示器完成真实直播复验：全屏截图从普通窗口 `1155×703` 或最大化 `1536×912` 变为完整显示器 `1536×960`；原生窗口边界为 `(0,0)-(1536,960)`。\r\n- 普通窗口全屏往返后边界精确恢复为 `(188,104)-(1347,809)`；最大化往返后 `IsZoomed=true`，进程全程响应。\r\n- Android arm64-v8a、Windows x64 安装程序和便携 ZIP 从同一冻结提交串行构建，并附构建元数据与 SHA-256。\r\n\r\n## 证据与边界\r\n\r\n- 完整根因、旧/新行为、验证矩阵和回滚点见 `docs/STAGE_UPDATE_3_1_2.md`。\r\n- 本修复解决 Windows 原生窗口进入全屏失败；平台直播接口、主播下播、CDN 波动和账号风控仍按各平台运行时诊断处理。\r\n\n\n## 发布后正式包复验（2026-08-31）\n\n- Android：PJZ110 / Android 16 覆盖升级保留关注数据；10 次冷启动全部成功，293～332 ms、平均 306.2 ms，0 FATAL/ANR。分类/搜索标签硬边界、网易 CC 官方 HTML 迁移回退、120 Hz 三档即时切换与冷启动持久化均通过。\n- Twitch：直连搜索明确显示局部失败；临时启用手机可达的本机 Clash 应用代理后，Twitch 原生搜索和在线人数正常。测试结束已恢复原代理地址及关闭状态。\n- Windows：3840×2400、200 Hz 环境确认三档刷新率即时生效和持久化；普通窗口、最大化两条真全屏往返均覆盖完整显示器并精确恢复，播放和弹幕持续。\n- 详细证据已更新到 master：[ANDROID_RUNTIME_AUDIT_3_1_2.md](https://github.com/wzgrx/pure_live/blob/master/docs/ANDROID_RUNTIME_AUDIT_3_1_2.md)、[WINDOWS_RUNTIME_AUDIT_3_1_2.md](https://github.com/wzgrx/pure_live/blob/master/docs/WINDOWS_RUNTIME_AUDIT_3_1_2.md)、[ACCEPTANCE_MATRIX_3_1_0.md](https://github.com/wzgrx/pure_live/blob/master/docs/ACCEPTANCE_MATRIX_3_1_0.md)。\n- Release 二进制和源码标签仍对应冻结提交 4d79e5fa；发布后运行审计文档提交为 \u00004e40124，没有替换安装包内容。",
+    "files": [
+      {
+        "name": "BUILD_METADATA.json",
+        "size": "0.0mb",
+        "downloads": 1,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.2/BUILD_METADATA.json"
+      },
+      {
+        "name": "PureLive-3.1.2-4115-debug-signed-android-arm64-v8a",
+        "size": "112.96mb",
+        "downloads": 64,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.2/PureLive-3.1.2-4115-debug-signed-android-arm64-v8a-release.apk"
+      },
+      {
+        "name": "PureLive-3.1.2-4115-windows-x64-portable.zip",
+        "size": "68.96mb",
+        "downloads": 2,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.2/PureLive-3.1.2-4115-windows-x64-portable.zip"
+      },
+      {
+        "name": "PureLive-3.1.2-4115-windows-x64-setup.exe",
+        "size": "53.45mb",
+        "downloads": 10,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.2/PureLive-3.1.2-4115-windows-x64-setup.exe"
+      },
+      {
+        "name": "SHA256SUMS.txt",
+        "size": "0.0mb",
+        "downloads": 1,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.2/SHA256SUMS.txt"
+      },
+      {
+        "name": "WINDOWS_BUILD_METADATA.json",
+        "size": "0.0mb",
+        "downloads": 1,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.2/WINDOWS_BUILD_METADATA.json"
+      },
+      {
+        "name": "WINDOWS_SHA256SUMS.txt",
+        "size": "0.0mb",
+        "downloads": 1,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.2/WINDOWS_SHA256SUMS.txt"
+      }
+    ]
+  },
+  {
     "version": "3.1.1",
     "title": "Pure Live v3.1.1",
     "date": "2026-08-31",
@@ -9,7 +153,7 @@
       "avatar": "https://avatars.githubusercontent.com/u/39661556?v=4",
       "profile": "https://github.com/wzgrx"
     },
-    "changelog": "# Pure Live v3.1.1\n\nv3.1.1 build 4114 是 Android / Windows 多画面体验补丁。本轮没有合并新的上游提交；修复 Issue #820 中只有 1+3 布局可调音量、其他布局弹幕按钮不工作，以及格子重建后音量丢失的问题。Android `arm64-v8a`、Windows x64 安装程序和便携 ZIP 从同一源码提交串行构建。\n\n## 多画面声音与音量\n\n- 1×1、1×2、2×2、1+3 四种布局都增加当前声音来源格的音量入口；没有有效播放格时入口保持禁用。\n- 声音来源改为唯一响应式状态，音频启用、工具栏、音量弹窗和弹幕目标不再依赖多处手动刷新。\n- 音量弹窗显示房间名称、实时百分比与滑杆；复用普通直播间的按房间音量存储，移除格子、重建播放器或重新进入后继续恢复用户设置。\n- 音量存储异常只进入诊断，不会阻断播放、切台或播放器释放。\n\n## 多画面弹幕\n\n- 1+3 布局继续把弹幕绑定到大画面；1×1、1×2、2×2 改为绑定当前声音来源格。\n- 切换声音来源会同步切换弹幕会话与渲染目标，旧格不会残留同一房间弹幕。\n- 修复顶部弹幕按钮在非 1+3 布局只改变视觉状态、实际没有连接和渲染目标的结构问题。\n\n## 验证与交付\n\n- 聚焦 Analyze 为 0 issue，`test/multiview_test.dart` 45/45 通过；新增 2×2 弹幕目标切换与按房间音量重建恢复测试。\n- 冻结源码完整门禁通过：Analyze 0 issue、Flutter 669/669、公开平台接口 42/42、全仓审计 0 error。\n- Windows Debug 2×2 页面确认全布局音量入口实际渲染；v3.0.1 以来的跨模式比例、播放器释放和录制状态回归继续进入完整门禁。\n- v3.1.0 Windows 便携正式包补充 Bilibili 播放/弹幕/设置/画质/录制与 10 分钟资源采样证据，详细记录见 `docs/ACCEPTANCE_MATRIX_3_1_0.md`。\n- APK、Windows 安装程序和便携 ZIP 均附独立构建元数据及 SHA-256；完整根因、改动和证据边界见 `docs/STAGE_UPDATE_3_1_1.md` 与 `docs/ISSUE_AUDIT_2026_08_31.md`。",
+    "changelog": "# Pure Live v3.1.1\r\n\r\nv3.1.1 build 4114 是 Android / Windows 多画面体验补丁。本轮没有合并新的上游提交；修复 Issue #820 中只有 1+3 布局可调音量、其他布局弹幕按钮不工作，以及格子重建后音量丢失的问题。Android `arm64-v8a`、Windows x64 安装程序和便携 ZIP 从同一源码提交串行构建。\r\n\r\n## 多画面声音与音量\r\n\r\n- 1×1、1×2、2×2、1+3 四种布局都增加当前声音来源格的音量入口；没有有效播放格时入口保持禁用。\r\n- 声音来源改为唯一响应式状态，音频启用、工具栏、音量弹窗和弹幕目标不再依赖多处手动刷新。\r\n- 音量弹窗显示房间名称、实时百分比与滑杆；复用普通直播间的按房间音量存储，移除格子、重建播放器或重新进入后继续恢复用户设置。\r\n- 音量存储异常只进入诊断，不会阻断播放、切台或播放器释放。\r\n\r\n## 多画面弹幕\r\n\r\n- 1+3 布局继续把弹幕绑定到大画面；1×1、1×2、2×2 改为绑定当前声音来源格。\r\n- 切换声音来源会同步切换弹幕会话与渲染目标，旧格不会残留同一房间弹幕。\r\n- 修复顶部弹幕按钮在非 1+3 布局只改变视觉状态、实际没有连接和渲染目标的结构问题。\r\n\r\n## 验证与交付\r\n\r\n- 聚焦 Analyze 为 0 issue，`test/multiview_test.dart` 45/45 通过；新增 2×2 弹幕目标切换与按房间音量重建恢复测试。\r\n- 冻结源码完整门禁通过：Analyze 0 issue、Flutter 669/669、公开平台接口 42/42、全仓审计 0 error。\r\n- Windows Debug 2×2 页面确认全布局音量入口实际渲染；v3.0.1 以来的跨模式比例、播放器释放和录制状态回归继续进入完整门禁。\r\n- v3.1.0 Windows 便携正式包补充 Bilibili 播放/弹幕/设置/画质/录制与 10 分钟资源采样证据，详细记录见 `docs/ACCEPTANCE_MATRIX_3_1_0.md`。\r\n- APK、Windows 安装程序和便携 ZIP 均附独立构建元数据及 SHA-256；完整根因、改动和证据边界见 `docs/STAGE_UPDATE_3_1_1.md` 与 `docs/ISSUE_AUDIT_2026_08_31.md`。\r\n\n## 发布后 Windows 正式包复验\n\n- GitHub Release 的 Windows x64 便携包已在隔离数据目录完成真实联网复验：2×2 同时播放 Letme 与虎牙赛事两路直播，声音来源可在两格间切换，音量面板显示当前房间。\n- Letme 房间音量从 100% 调至 54%，切换四种布局、正常退出并重启进程后，重新选入同一房间仍恢复 54%。\n- 两路播放采样 182.3 秒、19 点且全程响应；Working Set 峰值 493.19 MiB。退出多画面约 5 秒后降至 238.70 MiB，线程 325→154、句柄 2032→1266；关闭应用后进程消失。\n- 详细操作、指标与证据边界见 `docs/V3_1_1_WINDOWS_RUNTIME_REPORT_2026_08_31.md`。在线观察窗内未截获可见聊天消息，因此平台弹幕实时接收仍保留为后续运行观察项。",
     "files": [
       {
         "name": "BUILD_METADATA.json",
@@ -20,19 +164,19 @@
       {
         "name": "PureLive-3.1.1-4114-debug-signed-android-arm64-v8a",
         "size": "112.96mb",
-        "downloads": 0,
+        "downloads": 49,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.1/PureLive-3.1.1-4114-debug-signed-android-arm64-v8a-release.apk"
       },
       {
         "name": "PureLive-3.1.1-4114-windows-x64-portable.zip",
         "size": "68.96mb",
-        "downloads": 0,
+        "downloads": 10,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.1/PureLive-3.1.1-4114-windows-x64-portable.zip"
       },
       {
         "name": "PureLive-3.1.1-4114-windows-x64-setup.exe",
         "size": "53.45mb",
-        "downloads": 0,
+        "downloads": 16,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.1/PureLive-3.1.1-4114-windows-x64-setup.exe"
       },
       {
@@ -82,19 +226,19 @@
       {
         "name": "PureLive-3.1.0-4113-android-arm64-v8a",
         "size": "113.11mb",
-        "downloads": 59,
+        "downloads": 99,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.0/PureLive-3.1.0-4113-android-arm64-v8a-release.apk"
       },
       {
         "name": "PureLive-3.1.0-4113-windows-x64-portable.zip",
         "size": "70.36mb",
-        "downloads": 5,
+        "downloads": 7,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.0/PureLive-3.1.0-4113-windows-x64-portable.zip"
       },
       {
         "name": "PureLive-3.1.0-4113-windows-x64-setup.exe",
         "size": "53.44mb",
-        "downloads": 8,
+        "downloads": 13,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.0/PureLive-3.1.0-4113-windows-x64-setup.exe"
       },
       {
@@ -144,7 +288,7 @@
       {
         "name": "PureLive-3.0.24-4112-android-arm64-v8a",
         "size": "113.11mb",
-        "downloads": 107,
+        "downloads": 139,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v3.0.24/PureLive-3.0.24-4112-android-arm64-v8a-release.apk"
       },
       {
@@ -156,7 +300,7 @@
       {
         "name": "PureLive-3.0.24-4112-windows-x64-setup.exe",
         "size": "53.44mb",
-        "downloads": 14,
+        "downloads": 20,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v3.0.24/PureLive-3.0.24-4112-windows-x64-setup.exe"
       },
       {
@@ -206,7 +350,7 @@
       {
         "name": "PureLive-3.0.23-4111-android-arm64-v8a",
         "size": "112.98mb",
-        "downloads": 374,
+        "downloads": 377,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v3.0.23/PureLive-3.0.23-4111-android-arm64-v8a-release.apk"
       },
       {
@@ -1146,7 +1290,7 @@
       {
         "name": "ANDROID_SHA256SUM.txt",
         "size": "0.0mb",
-        "downloads": 152,
+        "downloads": 153,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.9.8/ANDROID_SHA256SUM.txt"
       },
       {
@@ -3028,7 +3172,7 @@
       {
         "name": "arm64-v8a",
         "size": "122.25mb",
-        "downloads": 14270,
+        "downloads": 14271,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.22/app-arm64-v8a-release.apk"
       },
       {
@@ -3040,7 +3184,7 @@
       {
         "name": "x86_64",
         "size": "136.7mb",
-        "downloads": 1141,
+        "downloads": 1142,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.22/app-x86_64-release.apk"
       },
       {
@@ -3102,7 +3246,7 @@
       {
         "name": "PureLive-2.0.21+32-windows-x64-setup.exe",
         "size": "61.45mb",
-        "downloads": 2394,
+        "downloads": 2395,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.21/PureLive-2.0.21%2B32-windows-x64-setup.exe"
       },
       {
@@ -3450,7 +3594,7 @@
       {
         "name": "arm64-v8a",
         "size": "77.53mb",
-        "downloads": 4732,
+        "downloads": 4733,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.14/app-arm64-v8a-release.apk"
       },
       {
@@ -3500,7 +3644,7 @@
       {
         "name": "arm64-v8a",
         "size": "67.95mb",
-        "downloads": 872,
+        "downloads": 873,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.0.13/app-arm64-v8a-release.apk"
       },
       {
