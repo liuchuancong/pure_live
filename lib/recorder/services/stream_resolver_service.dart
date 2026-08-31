@@ -1,6 +1,6 @@
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/core/interface/live_site.dart';
 import 'package:pure_live/model/live_play_quality.dart';
+import 'package:pure_live/core/interface/live_site.dart';
 import 'package:pure_live/player/utils/player_consts.dart';
 
 enum StreamErrorType { roomNotFound, notLive, noQuality, cdnFailed, networkError, loginExpired, banned, unknown }

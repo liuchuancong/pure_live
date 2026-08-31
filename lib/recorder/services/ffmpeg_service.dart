@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:developer';
+import 'dart:math' as math;
 
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
@@ -8,6 +9,23 @@ import 'package:pure_live/plugins/locale_helper.dart';
 import 'package:pure_live/recorder/ffmpeg/ffmpeg_event.dart';
 import 'package:pure_live/recorder/ffmpeg/ffmpeg_types.dart';
 import 'package:ffmpeg_kit_extended_flutter/ffmpeg_kit_extended_flutter.dart' hide Log;
+
+/// Converts FFmpegKit's progress timestamp into a live-session duration.
+///
+/// Some MPEG-TS/HLS inputs expose a sentinel or source PTS close to
+/// `INT32_MAX` as the first statistics timestamp.  Treating that value as an
+/// elapsed duration produces counters such as `596523:14:08`.  A live capture
+/// cannot run materially ahead of its wall clock, so source/sentinel values
+/// fall back to wall time while ordinary FFmpeg progress remains authoritative.
+@visibleForTesting
+int normalizeLiveRecordedSeconds({required int rawMilliseconds, required int wallSeconds}) {
+  final wall = wallSeconds < 0 ? 0 : wallSeconds;
+  if (rawMilliseconds <= 0) return 0;
+  final rawSeconds = rawMilliseconds ~/ 1000;
+  if (rawSeconds < 0) return 0;
+  if (rawSeconds > wall + 15) return wall;
+  return rawSeconds;
+}
 
 enum FFmpegFailureKind { outputPath, command, httpAccess, transport, inputOpen, inputFormat, decoder, native }
 
@@ -117,9 +135,13 @@ class FFmpegTerminalDecision {
     required int code,
     required bool manuallyStopped,
     required bool liveRecording,
+    bool leaseRefresh = false,
   }) {
     if (manuallyStopped) {
       return const FFmpegTerminalDecision(isComplete: true, retryable: false, unexpectedEof: false);
+    }
+    if (liveRecording && leaseRefresh) {
+      return const FFmpegTerminalDecision(isComplete: false, retryable: true, unexpectedEof: true);
     }
     if (liveRecording && (code == 0 || code == -541478725)) {
       return const FFmpegTerminalDecision(isComplete: false, retryable: true, unexpectedEof: true);
@@ -220,7 +242,10 @@ class FFmpegService {
 
     nativeSession.setStatisticsCallback((statistics) {
       if (!identical(_sessions[taskId], session)) return;
-      final recordedSeconds = statistics.time ~/ 1000;
+      final wallSeconds = DateTime.now().difference(session.createdAt).inSeconds;
+      final recordedSeconds = session.liveRecording
+          ? normalizeLiveRecordedSeconds(rawMilliseconds: statistics.time, wallSeconds: wallSeconds)
+          : math.max(0, statistics.time ~/ 1000);
       final fileSize = statistics.size;
       session
         ..recordedSeconds = recordedSeconds > session.recordedSeconds ? recordedSeconds : session.recordedSeconds
@@ -245,7 +270,9 @@ class FFmpegService {
           type: FFmpegEventType.progress,
           data: {
             'sessionId': session.sessionId,
-            'time': statistics.time,
+            // Keep the event contract in milliseconds while shielding the
+            // recorder controller from source-PTS/sentinel timestamps.
+            'time': session.liveRecording ? recordedSeconds * 1000 : statistics.time,
             'size': statistics.size,
             'bitrate': statistics.bitrate,
             'speed': statistics.speed,
@@ -259,10 +286,13 @@ class FFmpegService {
       try {
         final code = completedSession.getReturnCode();
         final manuallyStopped = session.manualStop;
+        final leaseRefresh = session.leaseRefresh;
+        final sessionAgeMilliseconds = DateTime.now().difference(session.createdAt).inMilliseconds;
         final terminal = FFmpegTerminalDecision.forSession(
           code: code,
           manuallyStopped: manuallyStopped,
           liveRecording: session.liveRecording,
+          leaseRefresh: leaseRefresh,
         );
 
         final rawLogs = session.diagnosticTail.isNotEmpty ? session.diagnosticTail : (completedSession.getLogs() ?? '');
@@ -270,7 +300,8 @@ class FFmpegService {
         final logTail = _diagnosticTail(diagnosticLogs, maxCharacters: 1600);
         Log.i(
           'FFmpeg complete => taskId: $taskId; sessionId: ${session.sessionId}; '
-          'code: $code; live: ${session.liveRecording}; diagnostics: $logTail',
+          'code: $code; live: ${session.liveRecording}; leaseRefresh: $leaseRefresh; '
+          'ageMs: $sessionAgeMilliseconds; diagnostics: $logTail',
         );
         // `dart:developer` reaches Android logcat in debug builds, while the
         // app logger may be disabled by the user's diagnostics preference.
@@ -278,6 +309,7 @@ class FFmpegService {
         log(
           'terminal task=$taskId session=${session.sessionId} code=$code '
           'live=${session.liveRecording} media=${session.mediaStarted} '
+          'leaseRefresh=$leaseRefresh ageMs=$sessionAgeMilliseconds '
           'seconds=${session.recordedSeconds} bytes=${session.fileSize}\n$logTail',
           name: 'PureLiveRecorder',
         );
@@ -294,13 +326,20 @@ class FFmpegService {
           'sessionId': session.sessionId,
           'code': code,
           'manualStop': manuallyStopped,
+          'sessionAgeMs': sessionAgeMilliseconds,
           if (!isComplete) 'raw_logs': _diagnosticTail(diagnosticLogs),
-          if (!isComplete) 'failure_kind': terminal.unexpectedEof ? 'unexpectedEof' : diagnosis.kind.name,
-          if (!isComplete) 'retryable': terminal.unexpectedEof ? terminal.retryable : diagnosis.retryable,
-          if (terminal.unexpectedEof) 'silent': true,
+          if (!isComplete)
+            'failure_kind': leaseRefresh
+                ? 'leaseRefresh'
+                : terminal.unexpectedEof
+                ? 'unexpectedEof'
+                : diagnosis.kind.name,
+          if (!isComplete)
+            'retryable': leaseRefresh || terminal.unexpectedEof ? terminal.retryable : diagnosis.retryable,
+          if (terminal.unexpectedEof || leaseRefresh) 'silent': true,
         };
         if (!isComplete) {
-          errorData['message'] = terminal.unexpectedEof
+          errorData['message'] = terminal.unexpectedEof || leaseRefresh
               ? i18n('recorder_transport_failed')
               : _friendlyError(code, diagnosticLogs, diagnosis);
         }

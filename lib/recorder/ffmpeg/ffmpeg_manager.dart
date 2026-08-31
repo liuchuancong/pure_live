@@ -37,7 +37,6 @@ class FFmpegManager {
       // gets one fresh attempt while concurrent callers still share this one.
       if (identical(_initializeFuture, initialization)) {
         _initializeFuture = null;
-        _caFilePath = null;
       }
       Error.throwWithStackTrace(error, stackTrace);
     });
