@@ -1456,5 +1456,15 @@
     "portrait_custom_height_setting": "Adjust the video display height in pixels",
     "portrait_reset_video_height": "Reset Portrait Video Height",
     "portrait_reset_video_height_desc": "Reset to adaptive mode and clear custom height",
-    "portrait_height_presets": "Preset Height"
+    "portrait_height_presets": "Preset Height",
+    "low_latency_audio": "Low Latency Audio",
+    "low_latency_audio_subtitle": "Enable OpenSLES audio output to reduce latency",
+    "low_memory_mode": "Low Memory Mode",
+    "low_memory_mode_subtitle": "Disable advanced caching to reduce memory usage",
+    "low_memory_mode_metered": "Automatically enabled on metered networks",
+    "super_resolution": "Super Resolution",
+    "super_resolution_description": "Super resolution requires hardware decoding. If it still does not work after enabling hardware decoding, try switching the video renderer to GPU.",
+    "default_behavior": "Default Behavior",
+    "disable_super_resolution_warning": "Disable Warning",
+    "disable_super_resolution_warning_subtitle": "Disable the warning shown each time super resolution is enabled"
 }

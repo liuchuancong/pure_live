@@ -32,6 +32,14 @@ class PlayerSettingsController extends GetxController {
 
   final RxString videoHardwareDecoder = hiveString('videoHardwareDecoder', 'auto');
 
+  final RxBool lowMemoryMode = hiveBool('lowMemoryMode', false);
+
+  final RxBool androidEnableOpenSLES = hiveBool('androidEnableOpenSLES', false);
+
+  final RxInt defaultSuperResolutionMode = hiveInt('videoFitIndex', 1);
+
+  final RxBool disableSuperResolutionWarning = hiveBool('disableSuperResolutionWarning', false);
+
   final RxBool floatPlay = hiveBool('floatPlay', false);
 
   final RxBool windowsPipAlwaysOnTop = hiveBool('windowsPipAlwaysOnTop', false);
@@ -132,6 +140,10 @@ class PlayerSettingsController extends GetxController {
     preferResolution.v = PlayerConsts.resolutions.first;
     preferResolutionCellular.v = PlayerConsts.resolutions.first;
     useHardStopOnExit.v = false;
+    lowMemoryMode.v = false;
+    androidEnableOpenSLES.v = false;
+    defaultSuperResolutionMode.v = 1;
+    disableSuperResolutionWarning.v = false;
   }
 
   // ---------------------------------------------------------------------------
@@ -150,6 +162,10 @@ class PlayerSettingsController extends GetxController {
       'videoOutputDriver': videoOutputDriver.v,
       'audioOutputDriver': audioOutputDriver.v,
       'videoHardwareDecoder': videoHardwareDecoder.v,
+      'lowMemoryMode': lowMemoryMode.v,
+      'androidEnableOpenSLES': androidEnableOpenSLES.v,
+      'defaultSuperResolutionMode': defaultSuperResolutionMode.v,
+      'disableSuperResolutionWarning': disableSuperResolutionWarning.v,
       'floatPlay': floatPlay.v,
       'windowsPipAlwaysOnTop': windowsPipAlwaysOnTop.v,
       'enableRtxVsr': enableRtxVsr.v,
@@ -186,6 +202,14 @@ class PlayerSettingsController extends GetxController {
     audioOutputDriver.v = json['audioOutputDriver'] ?? 'auto';
 
     videoHardwareDecoder.v = json['videoHardwareDecoder'] ?? 'auto';
+
+    lowMemoryMode.v = json['lowMemoryMode'] ?? false;
+
+    androidEnableOpenSLES.v = json['androidEnableOpenSLES'] ?? false;
+
+    defaultSuperResolutionMode.v = json['defaultSuperResolutionMode'] ?? 1;
+
+    disableSuperResolutionWarning.v = json['disableSuperResolutionWarning'] ?? false;
 
     floatPlay.v = json['floatPlay'] ?? false;
 
@@ -245,6 +269,14 @@ class PlayerSettingsController extends GetxController {
       'audioOutputDriver': player['audioOutputDriver'] ?? 'auto',
 
       'videoHardwareDecoder': player['videoHardwareDecoder'] ?? 'auto',
+
+      'lowMemoryMode': player['lowMemoryMode'] ?? false,
+
+      'androidEnableOpenSLES': player['androidEnableOpenSLES'] ?? false,
+
+      'defaultSuperResolutionMode': player['defaultSuperResolutionMode'] ?? 1,
+
+      'disableSuperResolutionWarning': player['disableSuperResolutionWarning'] ?? false,
 
       'floatPlay': player['floatPlay'] ?? false,
 

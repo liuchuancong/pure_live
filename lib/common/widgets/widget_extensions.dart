@@ -156,29 +156,37 @@ extension AppLayoutFactory on BuildContext {
     Color? iconColor,
     Color? subtitleColor,
     bool isLong = false,
+    bool enabled = true,
     ValueChanged<bool>? onChanged,
   }) {
     final theme = Theme.of(this);
+
     return Obx(
       () => SwitchListTile(
-        secondary: icon != null ? Icon(icon, color: iconColor ?? theme.colorScheme.primary, size: 22) : null,
+        secondary: icon != null
+            ? Icon(icon, color: enabled ? (iconColor ?? theme.colorScheme.primary) : theme.disabledColor, size: 22)
+            : null,
         title: Text(title, style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600)),
         subtitle: subtitle != null && subtitle.isNotEmpty
             ? Padding(
                 padding: const EdgeInsets.only(top: 2),
                 child: Text(
                   subtitle,
-                  style: AppTextStyles.t12.copyWith(color: subtitleColor ?? theme.hintColor.withValues(alpha: 0.75)),
+                  style: AppTextStyles.t12.copyWith(
+                    color: enabled ? (subtitleColor ?? theme.hintColor.withValues(alpha: 0.75)) : theme.disabledColor,
+                  ),
                   maxLines: isLong ? null : 1,
                   overflow: isLong ? TextOverflow.visible : TextOverflow.ellipsis,
                 ),
               )
             : null,
         value: value.value,
-        onChanged: (val) {
-          value.value = val;
-          onChanged?.call(val);
-        },
+        onChanged: enabled
+            ? (val) {
+                value.value = val;
+                onChanged?.call(val);
+              }
+            : null,
         contentPadding: const EdgeInsets.only(left: 16, top: 2, bottom: 2, right: 8),
       ),
     );

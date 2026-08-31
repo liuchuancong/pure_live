@@ -6,6 +6,12 @@ import 'package:url_launcher/url_launcher_string.dart';
 import 'package:pure_live/player/utils/player_consts.dart';
 import 'package:pure_live/player/models/player_engine.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
+import 'package:pure_live/player/models/player_super_resolution.dart';
+import 'package:pure_live/modules/settings/pages/decoder_settings.dart';
+import 'package:pure_live/modules/settings/pages/renderer_settings.dart';
+import 'package:pure_live/common/services/settings/metered_network_service.dart';
+import 'package:pure_live/modules/settings/pages/audio_output_settings_page.dart';
+import 'package:pure_live/modules/settings/pages/super_resolution_settings_page.dart';
 
 class PlayerKernelSettingsPage extends GetView<SettingsService> {
   const PlayerKernelSettingsPage({super.key});
@@ -171,40 +177,106 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
         ),
         context.buildModernCard([
           context.buildSwitchTile(
-            icon: Remix.code_box_line,
+            icon: Icons.memory_rounded,
             title: i18n("custom_output_hwdec"),
             value: SettingsService.to.player.customPlayerOutput,
           ),
-          Obx(
-            () => context.buildMenuTile<String>(
-              title: i18n("video_output_driver"),
-              icon: Remix.movie_line,
-              value: SettingsService.to.player.videoOutputDriver.v,
-              valueMap: PlayerConsts.videoOutputDrivers,
-              onChanged: (e) => SettingsService.to.player.videoOutputDriver.v = e,
-            ),
+          context.buildSwitchTile(
+            title: i18n('low_memory_mode'),
+            subtitle: MeteredNetworkService.to.isMetered
+                ? i18n('low_memory_mode_metered')
+                : i18n('low_memory_mode_subtitle'),
+            value: SettingsService.to.player.lowMemoryMode,
+            icon: Remix.database_2_line,
+            enabled: !MeteredNetworkService.to.isMetered,
           ),
-          Obx(
-            () => context.buildMenuTile<String>(
-              title: i18n("audio_output_driver"),
-              icon: Remix.volume_up_line,
-              value: SettingsService.to.player.audioOutputDriver.v,
-              valueMap: PlayerConsts.audioOutputDrivers,
-              onChanged: (e) => SettingsService.to.player.audioOutputDriver.v = e,
+          if (Platform.isAndroid)
+            context.buildSwitchTile(
+              title: i18n('low_latency_audio'),
+              subtitle: i18n('low_latency_audio_subtitle'),
+              value: SettingsService.to.player.androidEnableOpenSLES,
+              icon: Remix.equalizer_2_line,
             ),
-          ),
+          Obx(() {
+            final value = SettingsService.to.player.defaultSuperResolutionMode.v;
+
+            final mode = SuperResolutionMode.fromStorageValue(value);
+            final bool isZh = Get.locale?.languageCode == 'zh';
+
+            return context.buildTile(
+              icon: Remix.sparkling_2_line,
+              title: i18n('super_resolution'),
+              subtitle: isZh ? mode.nameZh : mode.nameEn,
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () => Get.to(() => const SuperResolutionSettingsPage()),
+            );
+          }),
+
           Obx(
-            () => context.buildMenuTile<String>(
-              title: i18n("hardware_decoder"),
+            () => context.buildTile(
               icon: Remix.cpu_line,
-              value: SettingsService.to.player.videoHardwareDecoder.v,
-              valueMap: PlayerConsts.hardwareDecoder,
-              onChanged: (e) => SettingsService.to.player.videoHardwareDecoder.v = e,
+              title: i18n("hardware_decoder"),
+              subtitle: _getHardwareDecoderName(context),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () => Get.to(() => const DecoderSettingsPage()),
+            ),
+          ),
+          if (Platform.isAndroid)
+            Obx(
+              () => context.buildTile(
+                icon: Icons.tv_rounded,
+                title: i18n("video_output_driver"),
+                subtitle: _getRendererName(context),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () => Get.to(() => const RendererSettingsPage()),
+              ),
+            ),
+          Obx(
+            () => context.buildTile(
+              icon: Remix.volume_up_line,
+              title: i18n("audio_output_driver"),
+              subtitle: _getAudioOutputDriverName(context),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () => Get.to(() => const AudioOutputSettingsPage()),
             ),
           ),
         ]),
       ],
     );
+  }
+
+  String _getAudioOutputDriverName(BuildContext context) {
+    final key = SettingsService.to.player.audioOutputDriver.v;
+
+    final item = PlayerConsts.audioOutputDriversList.firstWhere(
+      (item) => item['key'] == key,
+      orElse: () => PlayerConsts.audioOutputDriversList.first,
+    );
+
+    final bool isZh = Get.locale?.languageCode == 'zh';
+    return isZh ? item['nameZh']! : item['nameEn']!;
+  }
+
+  String _getRendererName(BuildContext context) {
+    final key = SettingsService.to.player.videoOutputDriver.v;
+
+    final item = PlayerConsts.androidVideoRenderersList.firstWhere(
+      (item) => item['key'] == key,
+      orElse: () => PlayerConsts.androidVideoRenderersList.first,
+    );
+    final bool isZh = Get.locale?.languageCode == 'zh';
+    return isZh ? item['nameZh']! : item['nameEn']!;
+  }
+
+  String _getHardwareDecoderName(BuildContext context) {
+    final key = SettingsService.to.player.videoHardwareDecoder.v;
+
+    final item = PlayerConsts.hardwareDecodersList.firstWhere(
+      (item) => item['key'] == key,
+      orElse: () => PlayerConsts.hardwareDecodersList.first,
+    );
+    final bool isZh = Get.locale?.languageCode == 'zh';
+    return isZh ? item['nameZh']! : item['nameEn']!;
   }
 
   // 播放器选择弹窗

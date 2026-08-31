@@ -33,70 +33,90 @@ class PlayerConsts {
     "Variant": const Color(0xFF3700B3),
     "Secondary": const Color(0xFF03DAC6),
   };
-  static const videoOutputDrivers = {
-    "gpu": "gpu",
-    "gpu-next": "gpu-next",
-    "xv": "xv (X11 only)",
-    "x11": "x11 (X11 only)",
-    "vdpau": "vdpau (X11 only)",
-    "direct3d": "direct3d (Windows only)",
-    "sdl": "sdl",
-    "dmabuf-wayland": "dmabuf-wayland",
-    "vaapi": "vaapi",
-    "null": "null",
-    "libmpv": "libmpv",
-    "mediacodec_embed": "mediacodec_embed (Android only)",
-  };
 
-  static const audioOutputDrivers = {
-    "null": "null (No audio output)",
-    "pulse": "pulse (Linux, uses PulseAudio)",
-    "pipewire": "pipewire (Linux, via Pulse compatibility or native)",
-    "alsa": "alsa (Linux only)",
-    "oss": "oss (Linux only)",
-    "jack": "jack (Linux/macOS, low-latency audio)",
-    "directsound": "directsound (Windows only)",
-    "wasapi": "wasapi (Windows only)",
-    "winmm": "winmm (Windows only, legacy API)",
-    "audiounit": "audiounit (iOS only)",
-    "coreaudio": "coreaudio (macOS only)",
-    "opensles": "opensles (Android only)",
-    "audiotrack": "audiotrack (Android only)",
-    "aaudio": "aaudio (Android only)",
-    "pcm": "pcm (Cross-platform)",
-    "sdl": "sdl (Cross-platform, via SDL library)",
-    "openal": "openal (Cross-platform, OpenAL backend)",
-    "libao": "libao (Cross-platform, uses libao library)",
-    "auto": "auto (Not available)",
-  };
+  /// 可选硬件解码器
+  static const List<Map<String, String>> hardwareDecodersList = [
+    {'key': 'auto', 'nameEn': 'Any Available Decoder', 'nameZh': '启用任意可用解码器'},
+    {'key': 'auto-safe', 'nameEn': 'Best Decoder', 'nameZh': '启用最佳解码器'},
+    {'key': 'auto-copy', 'nameEn': 'Best Decoder with Copy-Back', 'nameZh': '启用带拷贝功能的最佳解码器'},
+    {'key': 'd3d11va', 'nameEn': 'DirectX 11 (Windows 8+)', 'nameZh': 'DirectX 11（Windows 8 及以上）'},
+    {'key': 'd3d11va-copy', 'nameEn': 'DirectX 11 (Copy-Back)', 'nameZh': 'DirectX 11（非直通）'},
+    {'key': 'videotoolbox', 'nameEn': 'VideoToolbox (macOS / iOS)', 'nameZh': 'VideoToolbox（macOS / iOS）'},
+    {'key': 'videotoolbox-copy', 'nameEn': 'VideoToolbox (Copy-Back)', 'nameZh': 'VideoToolbox（非直通）'},
+    {'key': 'vaapi', 'nameEn': 'VAAPI (Linux)', 'nameZh': 'VAAPI（Linux）'},
+    {'key': 'vaapi-copy', 'nameEn': 'VAAPI (Copy-Back)', 'nameZh': 'VAAPI（非直通）'},
+    {'key': 'nvdec', 'nameEn': 'NVDEC (NVIDIA Only)', 'nameZh': 'NVDEC（仅 NVIDIA）'},
+    {'key': 'nvdec-copy', 'nameEn': 'NVDEC (NVIDIA Only, Copy-Back)', 'nameZh': 'NVDEC（仅 NVIDIA，非直通）'},
+    {'key': 'drm', 'nameEn': 'DRM (Linux)', 'nameZh': 'DRM（Linux）'},
+    {'key': 'drm-copy', 'nameEn': 'DRM (Copy-Back)', 'nameZh': 'DRM（非直通）'},
+    {'key': 'vulkan', 'nameEn': 'Vulkan (Experimental)', 'nameZh': 'Vulkan（全平台，实验性）'},
+    {'key': 'vulkan-copy', 'nameEn': 'Vulkan (Experimental, Copy-Back)', 'nameZh': 'Vulkan（全平台，实验性，非直通）'},
+    {'key': 'dxva2', 'nameEn': 'DXVA2 (Windows 7+)', 'nameZh': 'DXVA2（Windows 7 及以上）'},
+    {'key': 'dxva2-copy', 'nameEn': 'DXVA2 (Copy-Back)', 'nameZh': 'DXVA2（非直通）'},
+    {'key': 'vdpau', 'nameEn': 'VDPAU (Linux)', 'nameZh': 'VDPAU（Linux）'},
+    {'key': 'vdpau-copy', 'nameEn': 'VDPAU (Copy-Back)', 'nameZh': 'VDPAU（非直通）'},
+    {'key': 'mediacodec', 'nameEn': 'MediaCodec (Android)', 'nameZh': 'MediaCodec（Android）'},
+    {'key': 'mediacodec-copy', 'nameEn': 'MediaCodec (Copy-Back)', 'nameZh': 'MediaCodec（Android，非直通）'},
+    {'key': 'cuda', 'nameEn': 'CUDA (NVIDIA Only, Deprecated)', 'nameZh': 'CUDA（仅 NVIDIA，已过时）'},
+    {'key': 'cuda-copy', 'nameEn': 'CUDA (NVIDIA Only, Deprecated, Copy-Back)', 'nameZh': 'CUDA（仅 NVIDIA，已过时，非直通）'},
+    {'key': 'crystalhd', 'nameEn': 'CrystalHD (Deprecated)', 'nameZh': 'CrystalHD（全平台，已过时）'},
+    {'key': 'rkmpp', 'nameEn': 'Rockchip MPP (Selected Rockchip SoCs)', 'nameZh': 'Rockchip MPP（仅部分 Rockchip 芯片）'},
+  ];
 
-  static const hardwareDecoder = {
-    "no": "no",
-    "auto": "auto",
-    "auto-safe": "auto-safe",
-    "yes": "yes",
-    "auto-copy": "auto-copy",
-    "d3d11va": "d3d11va",
-    "d3d11va-copy": "d3d11va-copy",
-    "videotoolbox": "videotoolbox",
-    "videotoolbox-copy": "videotoolbox-copy",
-    "vaapi": "vaapi",
-    "vaapi-copy": "vaapi-copy",
-    "nvdec": "nvdec",
-    "nvdec-copy": "nvdec-copy",
-    "drm": "drm",
-    "drm-copy": "drm-copy",
-    "vulkan": "vulkan",
-    "vulkan-copy": "vulkan-copy",
-    "dxva2": "dxva2",
-    "dxva2-copy": "dxva2-copy",
-    "vdpau": "vdpau",
-    "vdpau-copy": "vdpau-copy",
-    "mediacodec": "mediacodec",
-    "mediacodec-copy": "mediacodec-copy",
-    "cuda": "cuda",
-    "cuda-copy": "cuda-copy",
-    "crystalhd": "crystalhd",
-    "rkmpp": "rkmpp",
-  };
+  /// 可选音频输出驱动
+  static const List<Map<String, String>> audioOutputDriversList = [
+    {'key': 'auto', 'nameEn': 'Auto', 'nameZh': '自动选择'},
+    {'key': 'null', 'nameEn': 'Null (No Audio Output)', 'nameZh': 'Null（不输出音频）'},
+    {'key': 'pulse', 'nameEn': 'PulseAudio (Linux)', 'nameZh': 'PulseAudio（Linux）'},
+    {'key': 'pipewire', 'nameEn': 'PipeWire (Linux)', 'nameZh': 'PipeWire（Linux）'},
+    {'key': 'alsa', 'nameEn': 'ALSA (Linux Only)', 'nameZh': 'ALSA（仅 Linux）'},
+    {'key': 'oss', 'nameEn': 'OSS (Linux Only)', 'nameZh': 'OSS（仅 Linux）'},
+    {'key': 'jack', 'nameEn': 'JACK (Linux / macOS, Low Latency)', 'nameZh': 'JACK（Linux / macOS，低延迟音频）'},
+    {'key': 'directsound', 'nameEn': 'DirectSound (Windows Only)', 'nameZh': 'DirectSound（仅 Windows）'},
+    {'key': 'wasapi', 'nameEn': 'WASAPI (Windows Only)', 'nameZh': 'WASAPI（仅 Windows）'},
+    {'key': 'winmm', 'nameEn': 'WinMM (Windows Only, Legacy)', 'nameZh': 'WinMM（仅 Windows，旧版 API）'},
+    {'key': 'audiounit', 'nameEn': 'AudioUnit (iOS Only)', 'nameZh': 'AudioUnit（仅 iOS）'},
+    {'key': 'coreaudio', 'nameEn': 'CoreAudio (macOS Only)', 'nameZh': 'CoreAudio（仅 macOS）'},
+    {'key': 'opensles', 'nameEn': 'OpenSL ES (Android Only)', 'nameZh': 'OpenSL ES（仅 Android）'},
+    {'key': 'audiotrack', 'nameEn': 'AudioTrack (Android Only)', 'nameZh': 'AudioTrack（仅 Android）'},
+    {'key': 'aaudio', 'nameEn': 'AAudio (Android Only)', 'nameZh': 'AAudio（仅 Android）'},
+    {'key': 'pcm', 'nameEn': 'PCM (Cross-Platform)', 'nameZh': 'PCM（跨平台）'},
+    {'key': 'sdl', 'nameEn': 'SDL (Cross-Platform)', 'nameZh': 'SDL（跨平台）'},
+    {'key': 'openal', 'nameEn': 'OpenAL (Cross-Platform)', 'nameZh': 'OpenAL（跨平台）'},
+    {'key': 'libao', 'nameEn': 'libao (Cross-Platform)', 'nameZh': 'libao（跨平台）'},
+  ];
+
+  /// Android 可选视频渲染器
+  static const List<Map<String, String>> androidVideoRenderersList = [
+    {'key': 'auto', 'nameEn': 'Auto', 'nameZh': '自动选择'},
+    {'key': 'gpu', 'nameEn': 'GPU (OpenGL)', 'nameZh': 'GPU（基于 OpenGL，通用和稳健）'},
+    {'key': 'gpu-next', 'nameEn': 'GPU Next (Vulkan)', 'nameZh': 'GPU Next（基于 Vulkan，新设备上表现最好）'},
+    {'key': 'mediacodec_embed', 'nameEn': 'MediaCodec Embed', 'nameZh': 'MediaCodec Embed（功耗最低，不支持超分辨率）'},
+  ];
+
+  /// 超分辨率滤镜
+  static const List<Map<String, String>> mpvAnime4KShaders = [
+    {'key': 'Anime4K_Clamp_Highlights.glsl', 'nameEn': 'Clamp Highlights', 'nameZh': '高光限制'},
+    {'key': 'Anime4K_Restore_CNN_VL.glsl', 'nameEn': 'CNN Restoration (VL)', 'nameZh': 'CNN 图像恢复（高质量）'},
+    {'key': 'Anime4K_Upscale_CNN_x2_VL.glsl', 'nameEn': 'CNN 2× Upscaling (VL)', 'nameZh': 'CNN 2 倍放大（高质量）'},
+    {'key': 'Anime4K_AutoDownscalePre_x2.glsl', 'nameEn': 'Auto Downscale Preprocess 2×', 'nameZh': '2 倍自动预降采样'},
+    {'key': 'Anime4K_AutoDownscalePre_x4.glsl', 'nameEn': 'Auto Downscale Preprocess 4×', 'nameZh': '4 倍自动预降采样'},
+    {'key': 'Anime4K_Upscale_CNN_x2_M.glsl', 'nameEn': 'CNN 2× Upscaling (Medium)', 'nameZh': 'CNN 2 倍放大（中等）'},
+  ];
+
+  /// 超分辨率滤镜（轻量）
+  static const List<Map<String, String>> mpvAnime4KShadersLite = [
+    {'key': 'Anime4K_Clamp_Highlights.glsl', 'nameEn': 'Clamp Highlights', 'nameZh': '高光限制'},
+    {'key': 'Anime4K_Restore_CNN_M.glsl', 'nameEn': 'CNN Restoration (Medium)', 'nameZh': 'CNN 图像恢复（中等）'},
+    {'key': 'Anime4K_Restore_CNN_S.glsl', 'nameEn': 'CNN Restoration (Light)', 'nameZh': 'CNN 图像恢复（轻量）'},
+    {'key': 'Anime4K_Upscale_CNN_x2_M.glsl', 'nameEn': 'CNN 2× Upscaling (Medium)', 'nameZh': 'CNN 2 倍放大（中等）'},
+    {'key': 'Anime4K_AutoDownscalePre_x2.glsl', 'nameEn': 'Auto Downscale Preprocess 2×', 'nameZh': '2 倍自动预降采样'},
+    {'key': 'Anime4K_AutoDownscalePre_x4.glsl', 'nameEn': 'Auto Downscale Preprocess 4×', 'nameZh': '4 倍自动预降采样'},
+    {'key': 'Anime4K_Upscale_CNN_x2_S.glsl', 'nameEn': 'CNN 2× Upscaling (Light)', 'nameZh': 'CNN 2 倍放大（轻量）'},
+  ];
+
+  static List<String> get mpvAnime4KShadersLiteKeys =>
+      mpvAnime4KShadersLite.map((e) => e['key']!).toList(growable: false);
+
+  static List<String> get mpvAnime4KShaderKeys => mpvAnime4KShaders.map((e) => e['key']!).toList(growable: false);
 }

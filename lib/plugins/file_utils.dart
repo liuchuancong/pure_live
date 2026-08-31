@@ -1,12 +1,11 @@
 import 'dart:io';
 import 'dart:math';
-
 import 'package:path/path.dart' as p;
 import 'package:open_filex/open_filex.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:android_intent_plus/android_intent.dart';
-import 'package:permission_handler/permission_handler.dart';
+
 
 class FileUtils {
   static const String systemHotProviderId = "88888";
@@ -145,5 +144,20 @@ class FileUtils {
     }
 
     return false;
+  }
+
+  Future<String> getTempPath() async {
+    final directory = await getTemporaryDirectory();
+    return directory.path;
+  }
+
+  String buildShadersAbsolutePath(String baseDirectory, List<String> shaders) {
+    final absolutePaths = shaders.map((shader) {
+      return p.join(baseDirectory, shader);
+    }).toList();
+    if (Platform.isWindows) {
+      return absolutePaths.join(';');
+    }
+    return absolutePaths.join(':');
   }
 }
