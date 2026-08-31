@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'dart:developer';
+
 import 'package:flutter/scheduler.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/player/core/player_manager.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/player/utils/fullscreen.dart' show WindowService;
 import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
-
 
 class LiveRouteObserver extends RouteObserver<PageRoute<dynamic>> {
   @override
@@ -36,7 +36,8 @@ class LiveRouteObserver extends RouteObserver<PageRoute<dynamic>> {
   }
 
   void _onLivePlayEnter() {
-    unawaited(GlobalPlayerService.instance.player.closeAppFloating());
+    final playerManager = GlobalPlayerService.instance.player;
+    unawaited(playerManager.closeAppFloating());
   }
 
   void _onLivePlayExit(Route<dynamic> route) {
