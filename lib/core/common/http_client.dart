@@ -4,6 +4,7 @@ import 'package:dio/io.dart';
 import 'package:dio/dio.dart';
 import 'package:pure_live/core/common/core_error.dart';
 import 'package:pure_live/core/common/custom_interceptor.dart';
+import 'package:pure_live/core/common/proxy_routing.dart';
 import 'package:pure_live/common/services/settings_service.dart';
 
 class HttpClient {
@@ -33,14 +34,11 @@ class HttpClient {
           client.idleTimeout = const Duration(seconds: 30);
           client.findProxy = (uri) {
             final proxyCtrl = SettingsService.to.proxy;
-            if (proxyCtrl.enableAppProxy.value &&
-                proxyCtrl.appProxyHost.value.trim().isNotEmpty &&
-                proxyCtrl.appProxyPort.value > 0) {
-              final host = proxyCtrl.appProxyHost.value.trim();
-              final port = proxyCtrl.appProxyPort.value;
-              return 'PROXY $host:$port';
-            }
-            return 'DIRECT';
+            return buildProxyDirective(
+              enabled: proxyCtrl.enableAppProxy.value,
+              host: proxyCtrl.appProxyHost.value,
+              port: proxyCtrl.appProxyPort.value,
+            );
           };
           return client;
         },

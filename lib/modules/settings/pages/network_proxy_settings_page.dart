@@ -1,6 +1,17 @@
 import 'package:flutter/services.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/common/proxy_routing.dart';
+
+final TextInputFormatter _proxyHostInputFormatter = TextInputFormatter.withFunction((oldValue, newValue) {
+  final normalized = normalizeProxyHost(newValue.text);
+  if (normalized == newValue.text) return newValue;
+  return TextEditingValue(
+    text: normalized,
+    selection: TextSelection.collapsed(offset: normalized.length),
+    composing: TextRange.empty,
+  );
+});
 
 class NetworkProxySettingsPage extends StatefulWidget {
   const NetworkProxySettingsPage({super.key});
@@ -64,13 +75,17 @@ class _NetworkProxySettingsPageState extends State<NetworkProxySettingsPage> {
                         flex: 3,
                         child: TextField(
                           controller: _appHostController,
+                          keyboardType: TextInputType.url,
+                          autocorrect: false,
+                          enableSuggestions: false,
+                          inputFormatters: [_proxyHostInputFormatter],
                           decoration: InputDecoration(
                             labelText: i18n("proxy_address_label"),
                             hintText: "127.0.0.1",
                             border: const OutlineInputBorder(),
                             isDense: true,
                           ),
-                          onChanged: (val) => proxyCtrl.appProxyHost.v = val.trim(),
+                          onChanged: (val) => proxyCtrl.appProxyHost.v = normalizeProxyHost(val),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -117,13 +132,17 @@ class _NetworkProxySettingsPageState extends State<NetworkProxySettingsPage> {
                         flex: 3,
                         child: TextField(
                           controller: _playerHostController,
+                          keyboardType: TextInputType.url,
+                          autocorrect: false,
+                          enableSuggestions: false,
+                          inputFormatters: [_proxyHostInputFormatter],
                           decoration: InputDecoration(
                             labelText: i18n("proxy_address_label"),
                             hintText: "127.0.0.1",
                             border: const OutlineInputBorder(),
                             isDense: true,
                           ),
-                          onChanged: (val) => proxyCtrl.proxyHost.v = val.trim(),
+                          onChanged: (val) => proxyCtrl.proxyHost.v = normalizeProxyHost(val),
                         ),
                       ),
                       const SizedBox(width: 12),

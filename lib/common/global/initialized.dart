@@ -12,6 +12,8 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/common/global/initial_services.dart';
+import 'package:pure_live/core/common/proxy_routing.dart';
+import 'package:pure_live/core/common/web_socket_util.dart';
 import 'package:pure_live/recorder/ffmpeg/ffmpeg_manager.dart';
 import 'package:windows_single_instance/windows_single_instance.dart';
 import 'package:pure_live/common/global/platform/mobile_manager.dart';
@@ -74,14 +76,30 @@ class AppInitializer {
         'history=${migrationReport.historyCount}.',
       );
     }
-    await CustomImageCacheManager.initialize();
-
     // Settings and controller registration is a hard startup dependency for
     // MyApp.build.  Leaving this future detached created a first-launch race:
     // a freshly upgraded install could build the widget tree before
     // SettingsService was registered, then work on a later launch only because
     // the database/cache files had already been created.
     await InitialServices.init();
+    configureWebSocketProxyRouting((_) {
+      final proxy = SettingsService.to.proxy;
+      return buildProxyDirective(
+        enabled: proxy.enableAppProxy.v,
+        host: proxy.appProxyHost.v,
+        port: proxy.appProxyPort.v,
+      );
+    });
+    await CustomImageCacheManager.initialize(
+      proxyDirectiveProvider: () {
+        final proxy = SettingsService.to.proxy;
+        return buildProxyDirective(
+          enabled: proxy.enableAppProxy.v,
+          host: proxy.appProxyHost.v,
+          port: proxy.appProxyPort.v,
+        );
+      },
+    );
     // Android FFmpegKit must begin native initialization during application
     // startup. Deferring it until after the first frame reintroduced the
     // upstream-recorded I/O failure on the first recording attempt. Keep this
