@@ -1,22 +1,22 @@
+import 'dart:io';
+import 'dart:async';
+import 'dart:collection';
+import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart';
+import 'package:media_kit/media_kit.dart';
+import 'package:synchronized/synchronized.dart';
+import 'package:media_kit_video/src/utils/query_decoders.dart';
+import 'package:media_kit_video/src/video_controller/video_output_policy.dart';
+import 'package:media_kit_video/src/video_controller/video_params_geometry.dart';
+import 'package:media_kit_video/src/video_controller/platform_video_controller.dart';
 /// This file is a part of media_kit (https://github.com/media-kit/media-kit).
 ///
 /// Copyright © 2021 & onwards, Hitesh Kumar Saini <saini123hitesh@gmail.com>.
 /// All rights reserved.
 /// Use of this source code is governed by MIT license that can be found in the LICENSE file.
-import 'dart:io';
-import 'dart:async';
-import 'dart:collection';
 
-import 'package:flutter/services.dart';
-import 'package:flutter/foundation.dart';
-import 'package:synchronized/synchronized.dart';
 
-import 'package:media_kit/media_kit.dart';
 
-import 'package:media_kit_video/src/utils/query_decoders.dart';
-import 'package:media_kit_video/src/video_controller/platform_video_controller.dart';
-import 'package:media_kit_video/src/video_controller/video_output_policy.dart';
-import 'package:media_kit_video/src/video_controller/video_params_geometry.dart';
 
 /// {@template android_video_controller}
 ///
@@ -291,8 +291,6 @@ class AndroidVideoController extends PlatformVideoController {
     'com.alexmercerind/media_kit_video',
   )..setMethodCallHandler((MethodCall call) async {
       try {
-        debugPrint(call.method.toString());
-        debugPrint(call.arguments.toString());
         switch (call.method) {
           case 'VideoOutput.Resize':
             {
