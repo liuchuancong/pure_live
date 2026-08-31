@@ -1,32 +1,32 @@
 {
-  "version": "3.1.5",
-  "build_number": 4118,
-  "version_num": 301054118,
-  "version_desc": "- 汇总发布 Android arm64-v8a 与 Windows x64，同一冻结源码、同一版本号和同一 GitHub Release。\n- 包含 v3.1.4 Android 平板横屏关注页下拉刷新修复，以及 v3.1.3 Windows 多画面真全屏退出和窗口恢复修复。\n- Windows 提供可自选安装目录的安装程序和免安装便携 ZIP；Android 提供单一 arm64-v8a APK。\n- 两个平台分别附构建元数据和 SHA-256，发布说明明确质量证据、签名状态与实测边界。",
+  "version": "3.1.6",
+  "build_number": 4119,
+  "version_num": 301064119,
+  "version_desc": "- 修复虎牙醒目留言推送先于留言板接口更新时必须手动刷新的问题：通知后执行有界后台重试并合并最新快照。\n- 醒目留言补偿请求不再阻塞虎牙实时弹幕 WebSocket 解码；空列表安全返回，避免取最后一项触发异常。\n- Android arm64-v8a 与 Windows x64 从同一冻结源码串行构建，附安装包、便携包、构建元数据和 SHA-256。\n- 本轮不合并上游代码；自动化覆盖延迟可见、重复通知去重与到期策略，真实付费消息仍按外部直播事件复验。",
   "prerelease": false,
-  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.1.5",
+  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.1.6",
   "android_abis": [
     "arm64-v8a"
   ],
   "platforms": {
     "android": {
-      "version": "3.1.5",
-      "build_number": 4118,
-      "version_num": 301054118,
-      "version_desc": "- Android 平板横屏关注页恢复逐平台下拉刷新动画与回调。\n- 宽屏移动设备继续使用触控刷新，桌面宽屏仍保留分页/按钮式刷新。\n- 发布单一 arm64-v8a 更新包，并核验版本、ABI、Flutter 资源、关键原生库和 SHA-256。",
+      "version": "3.1.6",
+      "build_number": 4119,
+      "version_num": 301064119,
+      "version_desc": "- 虎牙醒目留言通知采用非阻塞有界补偿，接口短暂滞后时自动重试，无需手动刷新列表。\n- 空留言板和重复快照安全处理，不阻塞普通弹幕接收。\n- 提供单一 arm64-v8a Release 更新包并核验版本、ABI、Flutter 资源、关键原生库和 SHA-256。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.1.5",
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.1.6",
       "android_abis": [
         "arm64-v8a"
       ]
     },
     "windows": {
-      "version": "3.1.5",
-      "build_number": 4118,
-      "version_num": 301054118,
-      "version_desc": "- Windows 多画面真全屏保留显式退出按钮、Escape 与系统返回链路。\n- 真全屏窗口边界及普通/最大化恢复沿用已验证修复；宽屏关注页继续使用桌面分页交互。\n- 提供可选择安装目录的 x64 安装程序与便携 ZIP，并附构建元数据和 SHA-256。",
+      "version": "3.1.6",
+      "build_number": 4119,
+      "version_num": 301064119,
+      "version_desc": "- 同步修复虎牙醒目留言延迟显示与 WebSocket 解码阻塞风险。\n- 延续可选择安装目录的 x64 安装程序和免安装便携 ZIP。\n- Windows 资产按当前 CMake 安装清单打包并核验版本、资源、残留文件和 SHA-256。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.1.5",
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.1.6",
       "windows_msix_available": false
     },
     "linux": {

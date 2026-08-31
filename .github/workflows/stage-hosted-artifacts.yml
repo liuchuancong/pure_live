@@ -19,7 +19,7 @@ on:
         description: Existing draft release tag
         required: true
         type: string
-        default: v3.1.5
+        default: v3.1.6
 
 permissions:
   actions: read

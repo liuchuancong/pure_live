@@ -12,6 +12,7 @@
 - [上游同步审计（c7d99cc3）](UPSTREAM_AUDIT_C7D99CC3.md)：上游吸收维护分支后的返回、录制权限、初始化与 FFmpeg 参数冲突处置。
 - [竖屏比例与直播记录根因审计](BUG_AUDIT_2026_08_26_PORTRAIT_HISTORY.md)：移动端单一可信比例、完整观看日期与不限数量回归证据。
 - [直播连续性与录制中心根因审计](BUG_AUDIT_2026_08_28_PLAYBACK_RECORDER.md)：意外暂停、音频焦点、录制真实状态/大小、滚动边界与十一项发布门禁。
+- [v3.1.6 虎牙醒目留言实时刷新修复](STAGE_UPDATE_3_1_6.md)：通知先于 WUP 留言板更新的时序根因、非阻塞有界补偿、Android/Windows 交付与证据边界。
 - [v3.1.5 Android / Windows 双平台发布](STAGE_UPDATE_3_1_5.md)：同一冻结源码、双平台版本对齐、串行构建、安装包与校验说明。
 - [v3.1.4 Android 平板关注刷新修复](STAGE_UPDATE_3_1_4.md)：宽屏移动设备误判、平台内纵向刷新链路、回归与 Android 交付证据。
 - [v3.1.3 Android / Windows 阶段更新](STAGE_UPDATE_3_1_3.md)：多画面真全屏退出入口、安全区适配、触控隔离与双平台交付证据。

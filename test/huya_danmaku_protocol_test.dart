@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -8,6 +9,37 @@ import 'package:pure_live/pkg/tars/codec/tars_output_stream.dart';
 
 void main() {
   group('Huya danmaku protocol', () {
+    LiveSuperChatMessage superChat(String message) {
+      final now = DateTime.utc(2026, 9, 1, 12);
+      return LiveSuperChatMessage(
+        backgroundBottomColor: '#246488',
+        backgroundColor: '#ffffff',
+        endTime: now.add(const Duration(minutes: 1)),
+        face: '',
+        message: message,
+        price: 100,
+        startTime: now,
+        userName: 'tester',
+      );
+    }
+
+    List<int> superChatNotification() {
+      final push = HYPushMessageV2()
+        ..groupId = 'live:2272316519'
+        ..items = <HYMessageItem>[
+          HYMessageItem()
+            ..uri = 2001314
+            ..msg = <int>[]
+            ..messageId = 2018964510849866753,
+        ];
+      final pushPayload = TarsOutputStream();
+      push.writeTo(pushPayload);
+      return (TarsOutputStream()
+            ..write(22, 0)
+            ..write(pushPayload.toUint8List(), 1))
+          .toUint8List();
+    }
+
     test('uses the current website heartbeat command', () {
       final heartbeat = HuyaDanmaku().heartbeatData;
       final outer = TarsInputStream(Uint8List.fromList(heartbeat));
@@ -52,6 +84,88 @@ void main() {
       expect(update.kind, LiveAudienceMetricKind.popularity);
       expect(update.value, 3212923);
       expect(messages.single.messageId, 'huya:2018964510849866752');
+    });
+
+    test('retries a delayed Huya super-chat board without blocking websocket decode', () async {
+      var fetches = 0;
+      final firstResponse = Completer<List<LiveSuperChatMessage>>();
+      final received = <LiveMessage>[];
+      final danmaku =
+          HuyaDanmaku(
+              superChatFetcher: (_) {
+                fetches++;
+                return fetches == 1
+                    ? firstResponse.future
+                    : Future<List<LiveSuperChatMessage>>.value(<LiveSuperChatMessage>[superChat('delayed')]);
+              },
+              superChatRetryDelays: const <Duration>[Duration.zero, Duration.zero],
+            )
+            ..danmakuArgs = HuyaDanmakuArgs(uid: 1, topSid: 2, subSid: 3)
+            ..onMessage = received.add;
+
+      await danmaku.decodeMessage(superChatNotification());
+      expect(fetches, 1, reason: 'websocket decode must not await WUP reconciliation');
+      expect(received, isEmpty);
+
+      firstResponse.complete(<LiveSuperChatMessage>[]);
+
+      await danmaku.waitForPendingSuperChatRefresh();
+
+      expect(fetches, 2);
+      expect(received, hasLength(1));
+      expect(received.single.type, LiveMessageType.superChat);
+      expect((received.single.data as LiveSuperChatMessage).message, 'delayed');
+    });
+
+    test('coalesces duplicate Huya board snapshots into one super-chat event', () async {
+      final item = superChat('same');
+      final received = <LiveMessage>[];
+      final danmaku =
+          HuyaDanmaku(
+              superChatFetcher: (_) async => <LiveSuperChatMessage>[item],
+              superChatRetryDelays: const <Duration>[Duration.zero, Duration.zero, Duration.zero],
+            )
+            ..danmakuArgs = HuyaDanmakuArgs(uid: 1, topSid: 2, subSid: 3)
+            ..onMessage = received.add;
+
+      await danmaku.decodeMessage(superChatNotification());
+      await danmaku.waitForPendingSuperChatRefresh();
+
+      expect(received, hasLength(1));
+      expect((received.single.data as LiveSuperChatMessage).message, 'same');
+    });
+
+    test('a stale room refresh cannot suppress the next room notification', () async {
+      final staleResponse = Completer<List<LiveSuperChatMessage>>();
+      var fetches = 0;
+      final received = <LiveMessage>[];
+      final danmaku =
+          HuyaDanmaku(
+              superChatFetcher: (_) {
+                fetches++;
+                return fetches == 1
+                    ? staleResponse.future
+                    : Future<List<LiveSuperChatMessage>>.value(<LiveSuperChatMessage>[superChat('next-room')]);
+              },
+              superChatRetryDelays: const <Duration>[Duration.zero],
+            )
+            ..danmakuArgs = HuyaDanmakuArgs(uid: 1, topSid: 2, subSid: 3)
+            ..onMessage = received.add;
+
+      await danmaku.decodeMessage(superChatNotification());
+      expect(fetches, 1);
+
+      await danmaku.stop();
+      danmaku.danmakuArgs = HuyaDanmakuArgs(uid: 4, topSid: 5, subSid: 6);
+      danmaku.onMessage = received.add;
+      await danmaku.decodeMessage(superChatNotification());
+      await danmaku.waitForPendingSuperChatRefresh();
+      staleResponse.complete(<LiveSuperChatMessage>[superChat('stale-room')]);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(fetches, 2);
+      expect(received, hasLength(1));
+      expect((received.single.data as LiveSuperChatMessage).message, 'next-room');
     });
   });
 }

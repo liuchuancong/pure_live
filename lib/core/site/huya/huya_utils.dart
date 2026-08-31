@@ -18,7 +18,7 @@ int rotl64(int t) {
 // 这里会有一个复用，当taf-websocket监听到 type=2001314 重新拉起huya-sc-list
 // 为了符合各个平台接口数据统一直通前端的需求，从site.getSuperMessage 标记首次拉起全量返回
 // 从 danmaku.websocket拉起，则只返回最后一个，实现增量SC
-// 接口数据错误不在考虑范围内
+// WebSocket 通知可能早于留言板写入；调用方会执行有界补偿拉取。
 // lPid--s = a.lPresenterUid == topSid
 Future<List<LiveSuperChatMessage>> getHuyaSuperChatMessageList({required int lPid, bool first = false}) async {
   final BaseTarsHttp messageBoardClient = BaseTarsHttp(
@@ -69,7 +69,7 @@ Future<List<LiveSuperChatMessage>> getHuyaSuperChatMessageList({required int lPi
 
     messages.add(message);
   }
-  if (first) {
+  if (first || messages.isEmpty) {
     return messages;
   } else {
     // huya 按money->level->countDown 排序 调整为 startTime
