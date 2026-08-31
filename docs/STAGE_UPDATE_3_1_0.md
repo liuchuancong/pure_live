@@ -42,6 +42,8 @@ v3.1.0 汇总 v3.0.24 之后已经完成的稳定性修复、设备验证和发�
   - [`ISSUE_AUDIT_2026_08_31.md`](ISSUE_AUDIT_2026_08_31.md)
   - [`RECORDER_REFERENCE_AUDIT_3_1_0.md`](RECORDER_REFERENCE_AUDIT_3_1_0.md)
 
+冻结提交 `3e4cdbeb` 的完整质量门禁耗时 924.527 秒：Analyze 只执行一次且为 0 issue，完整 Flutter 回归 667/667，公开接口探针 42/42，全仓审计覆盖 3884 个文件且为 0 error。记录：`local-artifacts/build-records/20260831T032317652Z-quality-full.json`。
+
 ## 6. 安装包与升级
 
 - Android：正式 `arm64-v8a` APK，包名保持 `com.mystyle.purelive`；split ABI Manifest code 在基础 build 4113 上按 Flutter 规则增加 arm64 偏移。

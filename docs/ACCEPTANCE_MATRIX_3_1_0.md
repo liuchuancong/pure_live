@@ -139,6 +139,8 @@
 
 ## 4. v3.1.0 发布门禁
 
+当前源码质量证据：`3e4cdbeb` 完整门禁耗时 924.527 秒；Analyze 0 issue、完整 Flutter 回归 667/667、公开接口 42/42、全仓 3884 个文件审计 0 error。记录：`local-artifacts/build-records/20260831T032317652Z-quality-full.json`。
+
 1. 所有 P0/P1 `FAIL` 清零；外部房间暂时不开播时标为 `BLOCKED` 并提供同平台替代房间证据。
 2. `flutter analyze` 在修改冻结后只跑一次并为 0；完整测试、接口探针和仓库审计全部通过。
 3. Android 正式 APK 在当前提交覆盖安装，签名、版本、ABI、资源和关键原生库核验通过；Android 实机矩阵完成。

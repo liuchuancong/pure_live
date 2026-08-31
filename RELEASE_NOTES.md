@@ -30,6 +30,7 @@ v3.1.0 build 4113 是 Android / Windows 稳定性与网络一致性更新。本�
 - Android UI 自动化补充启动稳定等待、控制层确定性唤出和包版本校验；后台播放、助眠和 PiP 证据写入 v3.1.0 验收矩阵。
 - APK 门禁核对包名、版本、唯一 arm64 ABI、Flutter 资源、FFmpegKit、SQLite、MediaKit、应用原生库、签名状态和 SHA-256。
 - Windows 安装程序继续支持自选目录，并同时提供便携 ZIP；两个平台分别记录构建命令、耗时、峰值资源、产物路径和校验文件。
+- 冻结源码完成一次 Analyze（0 issue）、完整 Flutter 回归（667/667）、公开平台接口探针（42/42）和全仓审计（3884 个文件、0 error）；质量记录为 `20260831T032317652Z-quality-full.json`。
 
 ## 证据与已知边界
 
