@@ -77,7 +77,14 @@ dependencies:
     path: plugins/built_in_kotlin/better_player_plus # Local AGP 9 Built‑in Kotlin patch
 
   audio_service: ^0.18.18 # 后台音频服务
-  audio_service_win: ^0.0.3
+  audio_service_mpris:
+    git:
+      url: https://github.com/Predidit/audio-service-mpris.git
+      ref: d30b53fb7dbdd8f10ceda7447fe0a0218711a220
+  audio_service_win:
+    git:
+      url: https://github.com/Predidit/audio_service_win.git
+      ref: 8ad650c6eb487208b9861d44755c8e58db061c88
   audio_session: ^0.2.3 # 音频会话管理
   ffmpeg_kit_extended_flutter: ^0.6.0
 

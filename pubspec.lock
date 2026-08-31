@@ -113,6 +113,15 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.18.19"
+  audio_service_mpris:
+    dependency: "direct main"
+    description:
+      path: "."
+      ref: d30b53fb7dbdd8f10ceda7447fe0a0218711a220
+      resolved-ref: d30b53fb7dbdd8f10ceda7447fe0a0218711a220
+      url: "https://github.com/Predidit/audio-service-mpris.git"
+    source: git
+    version: "1.0.0-beta.1"
   audio_service_platform_interface:
     dependency: transitive
     description:
@@ -132,10 +141,11 @@ packages:
   audio_service_win:
     dependency: "direct main"
     description:
-      name: audio_service_win
-      sha256: "677e25f447d3d49f537ea6f4fd36e9511acdc0badc6534c9cb92a205566ba12a"
-      url: "https://pub.dev"
-    source: hosted
+      path: "."
+      ref: "8ad650c6eb487208b9861d44755c8e58db061c88"
+      resolved-ref: "8ad650c6eb487208b9861d44755c8e58db061c88"
+      url: "https://github.com/Predidit/audio_service_win.git"
+    source: git
     version: "0.0.3"
   audio_session:
     dependency: "direct main"
