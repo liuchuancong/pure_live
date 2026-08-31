@@ -100,6 +100,7 @@ Pure Live 聚合多个第三方直播平台，并支持自定义直播源：
 | [依赖与接口审计](docs/DEPENDENCY_AUDIT.md) | 固定工具链、升级约束和接口探测范围 |
 | [平台接口与兼容性](docs/PLATFORM_COMPATIBILITY.md) | 分区、搜索、弹幕和人数指标的当前能力 |
 | [高刷新率与性能验证](docs/PERFORMANCE.md) | Android 120 Hz 适配、渲染优化和真机帧统计 |
+| [v3.1.1 Android / Windows 阶段更新](docs/STAGE_UPDATE_3_1_1.md) | 多画面声音、音量、弹幕目标、持久化、根因与发布证据 |
 | [v3.1.0 Android / Windows 验收矩阵](docs/ACCEPTANCE_MATRIX_3_1_0.md) | 快速回归顺序、全功能实机账本、平台/录制/性能矩阵与发布门禁 |
 | [2026-08-31 近期 Issue 审计](docs/ISSUE_AUDIT_2026_08_31.md) | #818 后台播放实机根因、最新 Issue 归因与 v3.1.0 处理范围 |
 | [v3.1.0 直播录制参考项目审计](docs/RECORDER_REFERENCE_AUDIT_3_1_0.md) | biliup / bililive-go 固定基线、协议韧性、录制状态机和平台引入门槛 |
