@@ -1,13 +1,13 @@
 import 'dart:async';
 import 'dart:developer';
 
-import 'package:ffmpeg_kit_extended_flutter/ffmpeg_kit_extended_flutter.dart' hide Log;
-import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart';
 import 'package:pure_live/core/common/log.dart';
 import 'package:pure_live/plugins/locale_helper.dart';
 import 'package:pure_live/recorder/ffmpeg/ffmpeg_event.dart';
 import 'package:pure_live/recorder/ffmpeg/ffmpeg_types.dart';
+import 'package:ffmpeg_kit_extended_flutter/ffmpeg_kit_extended_flutter.dart' hide Log;
 
 enum FFmpegFailureKind { outputPath, command, httpAccess, transport, inputOpen, inputFormat, decoder, native }
 
@@ -143,11 +143,13 @@ class FFmpegRecordSession {
   final int sessionId;
   final FFmpegSession session;
   final bool liveRecording;
+  final DateTime createdAt = DateTime.now();
   final Completer<void> completion = Completer<void>();
   final List<String> _diagnosticLines = <String>[];
   var _diagnosticCharacters = 0;
 
   bool manualStop = false;
+  bool leaseRefresh = false;
   bool mediaStarted = false;
   int recordedSeconds = 0;
   int fileSize = 0;
@@ -378,6 +380,22 @@ class FFmpegService {
       await session.completion.future.timeout(const Duration(seconds: 10));
     } on TimeoutException {
       Log.w('FFmpeg stop timeout => taskId: $taskId; sessionId: ${session.sessionId}');
+    }
+  }
+
+  /// Ends the current native input at a platform lease boundary. This is not a
+  /// user stop: the controller receives a silent retryable terminal event,
+  /// resolves a fresh signed URL and starts the next attempt immediately.
+  Future<void> refreshLease(String taskId) async {
+    final session = _sessions[taskId];
+    if (session == null || session.manualStop || session.leaseRefresh) return;
+    session.leaseRefresh = true;
+    log('FFmpeg lease refresh => $taskId (${session.sessionId})');
+    FFmpegKit.cancel(session.session);
+    try {
+      await session.completion.future.timeout(const Duration(seconds: 10));
+    } on TimeoutException {
+      Log.w('FFmpeg lease refresh timeout => taskId: $taskId; sessionId: ${session.sessionId}');
     }
   }
 

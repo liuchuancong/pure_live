@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/services.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/modules/live_play/controllers/player_state.dart';
@@ -57,14 +59,6 @@ class _VideoKeyboardShortcutsState extends State<VideoKeyboardShortcuts> {
         // room shortcut.
         return false;
     }
-    return false;
-  }
-
-  void _handleEscExit() async {
-    if (GlobalPlayerState.to.isPipMode.value) {
-      return;
-    }
-    widget.controller.toggleFullScreen();
   }
 
   @override
@@ -98,4 +92,19 @@ class _VideoKeyboardShortcutsState extends State<VideoKeyboardShortcuts> {
       child: widget.child,
     );
   }
+}
+
+@visibleForTesting
+enum EscapePresentationAction { none, exitFullscreen, exitWidescreen, popRoute }
+
+@visibleForTesting
+EscapePresentationAction resolveEscapePresentationAction({
+  required bool pip,
+  required bool fullscreen,
+  required bool widescreen,
+}) {
+  if (pip) return EscapePresentationAction.none;
+  if (fullscreen) return EscapePresentationAction.exitFullscreen;
+  if (widescreen) return EscapePresentationAction.exitWidescreen;
+  return EscapePresentationAction.popRoute;
 }

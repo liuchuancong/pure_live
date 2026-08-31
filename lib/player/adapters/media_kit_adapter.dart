@@ -701,12 +701,6 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
   Stream<int?> get height => _heightSubject.stream;
 
   @override
-  bool get supportsVideoFrameProgress => PlatformUtils.isWindows;
-
-  @override
-  Stream<int> get onVideoFrameProgress => _videoFrameProgressSubject.stream;
-
-  @override
   PlayerEngine get engine => PlayerEngine.mediaKit;
 
   @override
