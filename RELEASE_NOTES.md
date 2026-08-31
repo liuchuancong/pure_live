@@ -18,6 +18,7 @@ v3.1.1 build 4114 是 Android / Windows 多画面体验补丁。本轮没有合�
 ## 验证与交付
 
 - 聚焦 Analyze 为 0 issue，`test/multiview_test.dart` 45/45 通过；新增 2×2 弹幕目标切换与按房间音量重建恢复测试。
+- 冻结源码完整门禁通过：Analyze 0 issue、Flutter 669/669、公开平台接口 42/42、全仓审计 0 error。
 - Windows Debug 2×2 页面确认全布局音量入口实际渲染；v3.0.1 以来的跨模式比例、播放器释放和录制状态回归继续进入完整门禁。
 - v3.1.0 Windows 便携正式包补充 Bilibili 播放/弹幕/设置/画质/录制与 10 分钟资源采样证据，详细记录见 `docs/ACCEPTANCE_MATRIX_3_1_0.md`。
 - APK、Windows 安装程序和便携 ZIP 均附独立构建元数据及 SHA-256；完整根因、改动和证据边界见 `docs/STAGE_UPDATE_3_1_1.md` 与 `docs/ISSUE_AUDIT_2026_08_31.md`。

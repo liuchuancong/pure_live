@@ -34,6 +34,7 @@ v3.1.1 专门收口上游 Issue #820 暴露的多画面声音、音量和弹幕�
 - 新增按房间音量保存、移除格子、重新创建播放器后恢复音量测试。
 - 聚焦质量门禁：Analyze 0 issue，`test/multiview_test.dart` 45/45 通过，全仓审计 0 error。
 - Windows Debug 2×2 页面已确认顶部音量入口真实渲染；最终正式包继续执行启动与产物完整性核验。
+- 冻结源码完整门禁耗时 747.409 秒：Analyze 仅执行一次且为 0 issue，Flutter 回归 669/669、公开平台接口探针 42/42、全仓审计 3885 个文件且 0 error；峰值 CPU 48.3%，峰值工作集约 9.24 GiB，结束后重型进程为 0。记录：`local-artifacts/build-records/20260831T073307308Z-quality-full.json`。
 
 ## 5. v3.1.0 运行证据补充
 
