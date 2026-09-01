@@ -78,6 +78,9 @@
 - 斗鱼截图同时暴露了共享录制任务模型遗漏：直播页明确写“热度 509.3万”，录制卡片却只画“人数”图标和 `509.3万`，容易再次把平台热度理解成真实在线人数。根因是 `LiveRoom` 已有 `AudienceMetricType`，但 `LiveRecordTask` 只复制 `watching` 数值，丢弃类型；录制中心因而统一使用人数图标。
 - 任务持久化 schema 升至 7，新增并兼容恢复 `audienceMetricType`；新任务、房间刷新、JSON 保存恢复和旧任务平台推断均保留热度/在线/累计观看语义。录制卡片现在使用对应图标和明确文字。定向回归 14/14、单次 Analyze 0 issue；质量记录为 `local-artifacts/build-records/20260901T142519204Z-quality-focused.json`。
 - 修复后的 arm64 Debug APK 为 301,636,158 B，SHA-256 `689494D85719120C02C8965894F48C8637887332939305A14FD1F4256D78487A`，16 个 arm64 原生库的最小 ELF LOAD 对齐仍不低于 `0x4000`。cycle 44 覆盖安装后再次实录斗鱼，录制卡片已明确显示火焰图标和“热度 503.9万”；当前选中 `4K超高清 / 线路1`，成品 140,249,937 B、61.416867 秒，`ffprobe` 读取 H.264 3840×2160 + AAC。证据为 `local-artifacts/diagnostics/android-recording-smoke-20260901T223414348/summary.json`。同一 APK 哈希随后从干净提交 `7574e467` 增量复建，构建记录为 `local-artifacts/build-records/20260901T144658257Z-build-androidarm64-debug.json`，元数据确认 `tracked_files_dirty=false`。
+- cycle 44 的首个抖音样本完整通过播放、9 条以上实时弹幕、5 档画质、2 条线路、录制写入、停止封装和资源清理，但截图发现画质菜单末尾出现平台内部 `ao`。真实响应中该条目是 `only_audio=1` 的纯音频 rendition，不属于视频清晰度；把它当画质既暴露原始 SDK 标识，也可能在用户选择后留下无视频轨的播放状态。解析器现同时按 `ao/audio/audio_only` 标识和 URL 的 `only_audio` 参数排除纯音频 rendition，仍保留未来未知但确有视频信息的画质。
+- 新 Debug APK 覆盖安装后，cycle 46 再次完成抖音全链路并真实退出 0。画质菜单只剩 `蓝光 / 超清 / 高清 / 标清 / 流畅`，纯音频标签门禁成立；线路为 `线路1 / 线路2`，9 条可见弹幕持续更新。录制中心显示 31 秒、26.50 MB、1.0x、6.3 Mbps，私有 TS 在 3.007 秒内从 29,097,984 B 增至 31,195,136 B；停止后得到 42,616,963 B、49.933122 秒且同时含视频/音频轨的 MP4。监控、进程和活动 Wake Lock 均清理，证据为 `local-artifacts/diagnostics/android-recording-smoke-20260901T232058196/summary.json`。
+- 抖音抽样房间会在横向和竖向布局间变化，旧测试器复用横向房间的画质坐标时会误触视频并进入竖屏沉浸，再把页面当前的“原画”误认成已打开菜单。测试器现在从当前 UI 语义树定位画质和线路入口，并要求出现独立的“关闭菜单”语义后才判定弹层打开；因此本轮证据不是缓存坐标造成的假通过。
 
 ## 8. 后续实机顺序
 

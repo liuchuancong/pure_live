@@ -140,5 +140,39 @@ void main() {
       expect(qualities.map((quality) => quality.selectionId), ['origin', 'full_hd1', 'hd1', 'sd2', 'sd1', 'md']);
       expect(qualities.last.sort, 1000000);
     });
+
+    test('does not expose Douyin audio-only renditions as video quality choices', () {
+      final streamData = jsonEncode({
+        'data': {
+          'origin': {
+            'main': {'flv': 'https://cdn.test/source.flv?expire=1'},
+          },
+          'ao': {
+            'main': {'flv': 'https://cdn.test/source.flv?expire=1&only_audio=1'},
+          },
+          'future_audio': {
+            'main': {'flv': 'https://cdn.test/future.flv?only_audio=true'},
+          },
+        },
+      });
+
+      final qualities = DouyinSite.parseStreamQualities({
+        'live_core_sdk_data': {
+          'pull_data': {
+            'stream_data': streamData,
+            'options': {
+              'qualities': [
+                {'name': '原画', 'sdk_key': 'origin'},
+                {'name': 'ao', 'sdk_key': 'ao'},
+                {'name': 'audio', 'sdk_key': 'future_audio'},
+              ],
+            },
+          },
+        },
+      });
+
+      expect(qualities.map((quality) => quality.selectionId), ['origin']);
+      expect(qualities.single.quality, '原画');
+    });
   });
 }

@@ -404,10 +404,24 @@ try {
     $result.checks.visibleDanmakuLineCount = $visibleDanmakuLines.Count
     $result.checks.liveDanmakuVisible = $visibleDanmakuLines.Count -ge 3
 
-    Invoke-Ui -Action Tap -Value 'live.quality'
+    # The quality/line row moves down for portrait live streams. Semantic taps
+    # follow the actual control instead of reusing a coordinate learned from a
+    # landscape room, which otherwise taps the video and enters portrait
+    # fullscreen rather than opening the menu.
+    $roomLabels = @(Get-UiLabels -Xml $roomXml)
+    $currentQualityLabel = @(
+        $roomLabels | Where-Object {
+            $_ -match '^(?:原画.*|蓝光.*|超清.*|高清.*|标清.*|流畅.*|省流.*|自动.*|origin|uhd|hd|sd|ld)$'
+        }
+    ) | Select-Object -First 1
+    if ([string]::IsNullOrWhiteSpace($currentQualityLabel)) {
+        Invoke-Ui -Action Tap -Value 'live.quality'
+    } else {
+        Invoke-Ui -Action TapSemantic -Value $currentQualityLabel
+    }
     $qualityState = Wait-UiPattern `
         -Name 'quality-before-record' `
-        -Pattern '原画|蓝光|超清|高清|标清|流畅|省流|自动|origin|uhd|hd|sd|ld' `
+        -Pattern '关闭菜单' `
         -TimeoutSeconds 12
     Save-Screenshot 'quality-before-record'
     $qualityOptions = @(
@@ -415,15 +429,27 @@ try {
             $_ -match '^(?:原画.*|蓝光.*|超清.*|高清.*|标清.*|流畅.*|省流.*|自动.*|origin|uhd|hd|sd|ld)$'
         }
     )
+    $audioOnlyQualityLabels = @(
+        Get-UiLabels -Xml $qualityState.Xml | Where-Object { $_ -match '^(?i:ao|audio|audio[_ -]?only)$' }
+    )
     $result.checks.qualityOptions = $qualityOptions
     $result.checks.qualitySheetVisible = $qualityOptions.Count -gt 0
+    $result.checks.audioOnlyQualityLabels = $audioOnlyQualityLabels
+    $result.checks.audioOnlyQualityAbsent = $audioOnlyQualityLabels.Count -eq 0
     Invoke-Adb -AdbArguments @('shell', 'input', 'keyevent', '4') | Out-Null
     Wait-UiPattern -Name 'room-after-quality-check' -Pattern '弹幕列表' -TimeoutSeconds 12 | Out-Null
 
-    Invoke-Ui -Action Tap -Value 'live.line'
+    $currentLineLabel = @(
+        $roomLabels | Where-Object { $_ -match '^(?:线路\s*\d+|主线路|备用线路)$' }
+    ) | Select-Object -First 1
+    if ([string]::IsNullOrWhiteSpace($currentLineLabel)) {
+        Invoke-Ui -Action Tap -Value 'live.line'
+    } else {
+        Invoke-Ui -Action TapSemantic -Value $currentLineLabel
+    }
     $lineState = Wait-UiPattern `
         -Name 'line-before-record' `
-        -Pattern '线路\s*\d+|主线路|备用线路|播放线路' `
+        -Pattern '关闭菜单' `
         -TimeoutSeconds 12
     Save-Screenshot 'line-before-record'
     $lineOptions = @(
@@ -620,6 +646,7 @@ $assertions = [ordered]@{
     roomUiAlive = [bool]$result.checks.roomUiAlive
     liveDanmakuVisible = [bool]$result.checks.liveDanmakuVisible
     qualitySheetVisible = [bool]$result.checks.qualitySheetVisible
+    audioOnlyQualityAbsent = [bool]$result.checks.audioOnlyQualityAbsent
     lineSheetVisible = [bool]$result.checks.lineSheetVisible
     recordingCenterScreenshotCaptured = [bool]$result.checks.recordingCenterScreenshotCaptured
     runningFileGrowthObserved = [bool]$result.checks.runningFileGrowthObserved

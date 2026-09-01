@@ -721,6 +721,11 @@ class DouyinSite implements LiveSite, LiveSiteRecordRoomResolver {
       _addPlayableUrl(urls, _caseInsensitiveMapValue(flvMap, key));
       _addPlayableUrl(urls, _caseInsensitiveMapValue(hlsMap, key));
       if (urls.isEmpty) continue;
+      // Douyin may publish an `ao` entry beside its video renditions. It is
+      // an audio-only pull URL (`only_audio=1`), not a selectable video
+      // quality. Exposing it in the quality menu produced a raw "ao" button
+      // and could leave the player without a video track after selection.
+      if (_isAudioOnlyVariant(key, urls)) continue;
 
       final configuredName = descriptor['name']?.toString().trim() ?? '';
       final resolutionName = _caseInsensitiveMapValue(resolutionNames, key)?.toString().trim() ?? '';
@@ -805,6 +810,17 @@ class DouyinSite implements LiveSite, LiveSiteRecordRoomResolver {
     final uri = Uri.tryParse(url);
     if (uri == null || !uri.hasScheme || !const {'http', 'https'}.contains(uri.scheme) || urls.contains(url)) return;
     urls.add(url);
+  }
+
+  static bool _isAudioOnlyVariant(String key, List<String> urls) {
+    final token = key.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '');
+    if (const {'ao', 'audio', 'audioonly'}.contains(token)) return true;
+    if (urls.isEmpty) return false;
+    return urls.every((url) {
+      final uri = Uri.tryParse(url);
+      final value = uri?.queryParameters['only_audio']?.toLowerCase();
+      return value == '1' || value == 'true';
+    });
   }
 
   static int _douyinQualityRank(String key) => switch (key.toUpperCase()) {
