@@ -49,6 +49,8 @@ v3.1.7 Windows 便携版实际进入虎牙房间后，画质从 `蓝光20M` 切�
 
 聚焦回归 13/13 通过；记录：`local-artifacts/build-records/20260901T011808521Z-quality-focused.json`。完整质量门禁、构建资源和最终产物校验在冻结源码后执行并补记。
 
+首次完整门禁的 Analyze 0 issue 与 Flutter 682/682 均通过，但接口探针自身把应用使用的 Twitch `ZH/KO` 请求扩展为 `EN/ZH/KO`；Twitch 当前对三语言组合返回 `game.streams = null` 的部分 GraphQL 错误，而应用原请求和单语言请求均正常。探针已恢复为与产品完全相同的 `ZH/KO` 合同，避免把探针扩展参数的服务端拒绝误报为客户端故障；修正后重新执行 42 项公开接口探测。
+
 v3.1.7 Windows 虎牙实播前置证据：
 
 - 录制中心停止时显示 `00:03:18 / 82.75 MB / 1.1x / 2.1 Mbps`，FFmpeg 进程随后归零。

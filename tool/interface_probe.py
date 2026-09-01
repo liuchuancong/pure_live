@@ -1016,7 +1016,12 @@ def twitch_directory_request(slug: str, *, limit: int = 5) -> dict[str, object]:
 
 def twitch_directory_probe() -> None:
     request = twitch_directory_request("just-chatting", limit=10)
-    request["variables"]["options"]["broadcasterLanguages"] = ["EN", "ZH", "KO"]
+    # Match the application request exactly. Twitch currently returns a
+    # partial GraphQL response with ``game.streams = null`` for the combined
+    # EN/ZH/KO filter even though each language and the app's ZH/KO pair are
+    # healthy. The previous broader probe therefore failed while the product
+    # contract it was intended to verify still worked.
+    request["variables"]["options"]["broadcasterLanguages"] = ["ZH", "KO"]
     response = twitch_gql([request])
     if not isinstance(response, list) or not response:
         raise ValueError("Twitch directory result missing")
@@ -1073,10 +1078,10 @@ def twitch_playback_probe() -> None:
     slugs = ("just-chatting", "grand-theft-auto-v", "league-of-legends", "valorant", "music")
     requests = [twitch_directory_request(slug, limit=10) for slug in slugs]
     for request in requests:
-        # An empty language list currently returns an empty directory in some
-        # anonymous Twitch rollouts. Use the same bounded public-language set
-        # as the application, with English added for a reliable live sample.
-        request["variables"]["options"]["broadcasterLanguages"] = ["EN", "ZH", "KO"]
+        # Validate the same public-language request as the application. Do not
+        # add EN here: Twitch currently rejects the combined EN/ZH/KO filter
+        # with a partial GraphQL service error.
+        request["variables"]["options"]["broadcasterLanguages"] = ["ZH", "KO"]
     directory = twitch_gql(requests)
     login = None
     if isinstance(directory, list):
