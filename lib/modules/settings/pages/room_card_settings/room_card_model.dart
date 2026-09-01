@@ -7,7 +7,6 @@ enum RoomCardPreset {
   custom('custom', '自定义');
 
   const RoomCardPreset(this.key, this.label);
-
   final String key;
   final String label;
 
@@ -35,7 +34,7 @@ class RoomCardModel {
     this.cacheCover = true,
     this.coverPositionPadding = 8,
     this.avatarSize = 40,
-    this.denseAvatarSize = 34,
+    this.denseAvatarSize = 40,
     this.showAvatar = true,
     this.contentHorizontalPadding = 12,
     this.denseContentHorizontalPadding = 10,
@@ -107,7 +106,6 @@ class RoomCardModel {
   final double cardElevation;
   final bool enableShadow;
   final EdgeInsetsGeometry cardMargin;
-
   final double coverAspectRatio;
   final double coverBorderRadius;
   final Color? coverPlaceholderColor;
@@ -118,18 +116,15 @@ class RoomCardModel {
   final int coverCacheMaxWidth;
   final bool cacheCover;
   final double coverPositionPadding;
-
   final double avatarSize;
   final double denseAvatarSize;
   final bool showAvatar;
-
   final double contentHorizontalPadding;
   final double denseContentHorizontalPadding;
   final double contentVerticalPadding;
   final double denseContentVerticalPadding;
   final double horizontalTitleGap;
   final double denseHorizontalTitleGap;
-
   final double titleFontSize;
   final double denseTitleFontSize;
   final double subtitleFontSize;
@@ -141,7 +136,6 @@ class RoomCardModel {
   final Color? titleColor;
   final Color? subtitleColor;
   final bool showSubtitle;
-
   final double platformFontSize;
   final double densePlatformFontSize;
   final FontWeight platformFontWeight;
@@ -151,9 +145,7 @@ class RoomCardModel {
   final double platformHorizontalPadding;
   final double platformVerticalPadding;
   final bool showPlatform;
-
   final bool showAudience;
-
   final double chipFontSize;
   final double denseChipFontSize;
   final FontWeight chipFontWeight;
@@ -166,7 +158,6 @@ class RoomCardModel {
   final Color chipTextColor;
   final bool showRecordBadge;
   final bool showLiveBadge;
-
   final double metricFontSize;
   final double denseMetricFontSize;
   final FontWeight metricFontWeight;
@@ -181,7 +172,6 @@ class RoomCardModel {
   final Color? metricBorderColor;
   final double metricBorderWidth;
   final double badgeOpacity;
-
   final bool showDelete;
   final Color? deleteButtonBackgroundColor;
   final double deleteButtonPadding;
@@ -190,16 +180,19 @@ class RoomCardModel {
   final Color deleteButtonIconColor;
   final double deleteButtonBorderRadius;
   final bool denseMode;
-
   final bool showAsListTile;
 
+  /// 简洁模式：行式紧凑卡片、浅灰白底色，文字柔和
   static RoomCardModel compact() {
     return const RoomCardModel(
       preset: RoomCardPreset.compact,
+      cardBackground: Color(0xfff8f9fa),
       cardBorderRadius: 12,
       coverBorderRadius: 12,
       cardElevation: 0,
       enableShadow: false,
+      titleColor: Color(0xff1c1c1e),
+      subtitleColor: Color(0xff6e6e73),
       titleFontSize: 13,
       denseTitleFontSize: 11,
       subtitleFontSize: 11,
@@ -212,11 +205,13 @@ class RoomCardModel {
       denseContentVerticalPadding: 3,
       horizontalTitleGap: 8,
       denseHorizontalTitleGap: 6,
-      avatarSize: 28,
-      denseAvatarSize: 24,
+      avatarSize: 40,
+      denseAvatarSize: 40,
       showAvatar: true,
       platformFontSize: 10,
       densePlatformFontSize: 9,
+      platformBackgroundColor: Color(0xffe5e7eb),
+      platformTextColor: Color(0xff374151),
       showPlatform: true,
       showAudience: true,
       chipFontSize: 11,
@@ -225,6 +220,7 @@ class RoomCardModel {
       denseChipHorizontalPadding: 6,
       chipVerticalPadding: 4,
       denseChipVerticalPadding: 3,
+      chipBackgroundColor: Color(0xffef4444),
       showRecordBadge: true,
       showLiveBadge: true,
       metricFontSize: 10,
@@ -235,23 +231,28 @@ class RoomCardModel {
       denseMetricVerticalPadding: 2,
       metricBorderRadius: 8,
       denseMetricBorderRadius: 6,
+      metricBackgroundColor: Color(0xff222222),
       badgeOpacity: 0.6,
       showDelete: true,
       showSubtitle: true,
       coverAspectRatio: 16 / 9,
       cacheCover: true,
       denseMode: true,
-      showAsListTile: false,
+      showAsListTile: true,
     );
   }
 
+  /// 正常模式：网格标准卡片，白色底色，主副文字层次清晰
   static RoomCardModel normal() {
     return const RoomCardModel(
       preset: RoomCardPreset.normal,
+      cardBackground: Colors.white,
       cardBorderRadius: 20,
       coverBorderRadius: 20,
       cardElevation: 0,
       enableShadow: false,
+      titleColor: Color(0xff1d1d1f),
+      subtitleColor: Color(0xff747479),
       titleFontSize: 15,
       denseTitleFontSize: 13,
       subtitleFontSize: 13,
@@ -265,11 +266,13 @@ class RoomCardModel {
       horizontalTitleGap: 12,
       denseHorizontalTitleGap: 8,
       avatarSize: 40,
-      denseAvatarSize: 34,
+      denseAvatarSize: 40,
       showAvatar: true,
       platformFontSize: 11,
       densePlatformFontSize: 10,
-      showPlatform: true,
+      platformBackgroundColor: Color(0xffeef2ff),
+      platformTextColor: Color(0xff3b5bdb),
+      showPlatform: false,
       showAudience: true,
       chipFontSize: 13,
       denseChipFontSize: 12,
@@ -277,6 +280,7 @@ class RoomCardModel {
       denseChipHorizontalPadding: 10,
       chipVerticalPadding: 6,
       denseChipVerticalPadding: 4,
+      chipBackgroundColor: Color(0xfff03e3e),
       showRecordBadge: true,
       showLiveBadge: true,
       metricFontSize: 12,
@@ -287,6 +291,7 @@ class RoomCardModel {
       denseMetricVerticalPadding: 4,
       metricBorderRadius: 12,
       denseMetricBorderRadius: 10,
+      metricBackgroundColor: Color(0xff000000),
       badgeOpacity: 0.48,
       showDelete: true,
       showSubtitle: true,
@@ -297,13 +302,17 @@ class RoomCardModel {
     );
   }
 
+  /// 丰富模式：大卡片 + 柔和阴影，精致高级感
   static RoomCardModel rich() {
     return const RoomCardModel(
       preset: RoomCardPreset.rich,
+      cardBackground: Colors.white,
       cardBorderRadius: 24,
       coverBorderRadius: 24,
-      cardElevation: 4,
+      cardElevation: 3,
       enableShadow: true,
+      titleColor: Color(0xff0f0f11),
+      subtitleColor: Color(0xff86868b),
       titleFontSize: 17,
       denseTitleFontSize: 15,
       subtitleFontSize: 14,
@@ -316,11 +325,13 @@ class RoomCardModel {
       denseContentVerticalPadding: 8,
       horizontalTitleGap: 14,
       denseHorizontalTitleGap: 12,
-      avatarSize: 48,
-      denseAvatarSize: 42,
+      avatarSize: 40,
+      denseAvatarSize: 40,
       showAvatar: true,
       platformFontSize: 12,
       densePlatformFontSize: 11,
+      platformBackgroundColor: Color(0xffe6f7ff),
+      platformTextColor: Color(0xff096dd9),
       showPlatform: true,
       showAudience: true,
       chipFontSize: 14,
@@ -329,6 +340,7 @@ class RoomCardModel {
       denseChipHorizontalPadding: 12,
       chipVerticalPadding: 8,
       denseChipVerticalPadding: 6,
+      chipBackgroundColor: Color(0xffe03131),
       showRecordBadge: true,
       showLiveBadge: true,
       metricFontSize: 13,
@@ -339,6 +351,7 @@ class RoomCardModel {
       denseMetricVerticalPadding: 5,
       metricBorderRadius: 14,
       denseMetricBorderRadius: 12,
+      metricBackgroundColor: Color(0xff121212),
       badgeOpacity: 0.35,
       showDelete: true,
       showSubtitle: true,

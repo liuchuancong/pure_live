@@ -7,83 +7,75 @@ import 'package:pure_live/common/services/settings_service.dart';
 
 class CommonAvatar extends StatelessWidget {
   final String? avatarUrl;
-  final String? assets;
   final bool dense;
-  final double? radius;
+  final double? size;
   final String? fallbackName;
 
-  const CommonAvatar({
-    super.key,
-    required this.avatarUrl,
-    this.assets,
-    this.dense = false,
-    this.radius,
-    this.fallbackName,
-  });
+  const CommonAvatar({super.key, this.avatarUrl, this.dense = false, this.size, this.fallbackName});
+
+  bool _isNetwork(String value) {
+    return RegExp(r'^(?:https?:)?//', caseSensitive: false).hasMatch(value.trim());
+  }
+
+  bool _isAsset(String value) {
+    return RegExp(
+      r'^(?:assets?/|.*\.(?:png|jpe?g|webp|gif|bmp|avif)(?:[?#].*)?)$',
+      caseSensitive: false,
+    ).hasMatch(value.trim());
+  }
 
   @override
   Widget build(BuildContext context) {
-    final double r = radius ?? (dense ? 17.0 : 20.0);
-    final double size = r * 2;
-    final normalizedAvatarUrl = normalizeNetworkImageUrl(avatarUrl);
-    final hasAvatar = normalizedAvatarUrl.isNotEmpty;
+    final avatarSize = size ?? (dense ? 34 : 40);
+    final value = avatarUrl?.trim() ?? '';
 
     Widget fallback() {
-      final String text = (fallbackName != null && fallbackName!.isNotEmpty)
-          ? fallbackName!.characters.first.toUpperCase()
-          : '';
+      final text = fallbackName != null && fallbackName!.isNotEmpty ? fallbackName!.characters.first.toUpperCase() : '';
 
       return Container(
-        width: size,
-        height: size,
         alignment: Alignment.center,
-        decoration: BoxDecoration(shape: BoxShape.circle, color: Theme.of(context).disabledColor.withAlpha(80)),
+        color: Theme.of(context).disabledColor.withValues(alpha: 80 / 255),
         child: Text(
           text,
-          style: TextStyle(fontSize: r * 0.8, fontWeight: FontWeight.bold),
+          maxLines: 1,
+          style: TextStyle(fontSize: avatarSize * 0.4, fontWeight: FontWeight.bold),
         ),
       );
     }
 
-    if (assets != null && assets!.isNotEmpty) {
-      return ClipOval(
-        child: Image.asset(
-          assets!,
-          width: size,
-          height: size,
+    Widget child;
+
+    if (_isNetwork(value)) {
+      final url = normalizeNetworkImageUrl(value);
+
+      child = Obx(() {
+        final epoch = SettingsService.to.cache.imageCacheEpoch.value;
+
+        return CachedNetworkImage(
+          imageUrl: url,
+          cacheKey: epoch == 0 ? url : '$url#$epoch',
+          httpHeaders: networkImageHeaders(url),
+          cacheManager: CustomImageCacheManager.instance,
           fit: BoxFit.cover,
-          errorBuilder: (_, _, _) => fallback(),
-        ),
-      );
+          filterQuality: FilterQuality.low,
+          memCacheWidth: (avatarSize * MediaQuery.devicePixelRatioOf(context)).round().clamp(48, 256).toInt(),
+          fadeInDuration: Duration.zero,
+          fadeOutDuration: Duration.zero,
+          useOldImageOnUrlChange: true,
+          placeholder: (_, _) => Container(color: Theme.of(context).disabledColor.withValues(alpha: 0.2)),
+          errorWidget: (_, _, _) => fallback(),
+        );
+      });
+    } else if (_isAsset(value)) {
+      child = Image.asset(value, fit: BoxFit.cover, errorBuilder: (_, _, _) => fallback());
+    } else {
+      child = fallback();
     }
 
-    if (!hasAvatar) {
-      return fallback();
-    }
-
-    return Obx(() {
-      final epoch = SettingsService.to.cache.imageCacheEpoch.value;
-
-      return SizedBox(
-        width: size,
-        height: size,
-        child: ClipOval(
-          child: CachedNetworkImage(
-            imageUrl: normalizedAvatarUrl,
-            cacheKey: epoch == 0 ? normalizedAvatarUrl : '$normalizedAvatarUrl#$epoch',
-            httpHeaders: networkImageHeaders(normalizedAvatarUrl),
-            cacheManager: CustomImageCacheManager.instance,
-            fit: BoxFit.cover,
-            filterQuality: FilterQuality.low,
-            memCacheWidth: (size * MediaQuery.devicePixelRatioOf(context)).round().clamp(48, 256).toInt(),
-            fadeInDuration: Duration.zero,
-            fadeOutDuration: Duration.zero,
-            useOldImageOnUrlChange: true,
-            placeholder: (_, _) => Container(color: Theme.of(context).disabledColor.withValues(alpha: 0.2)),
-            errorWidget: (_, _, _) => fallback(),
-          ),
-        ),
-      );
-    });
+    return SizedBox(
+      width: avatarSize,
+      height: avatarSize,
+      child: ClipOval(child: child),
+    );
   }
 }

@@ -10,14 +10,60 @@ class RoomCardSettingsPage extends GetView<RoomCardConfigController> {
 
   @override
   Widget build(BuildContext context) {
-    final isLargeScreen = Get.width > 680;
-
     return Scaffold(
       appBar: AppBar(title: Text(i18n('room_card_settings'))),
-      body: Row(
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final isLargeScreen = constraints.maxWidth >= 680;
+
+          if (isLargeScreen) {
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(flex: 3, child: _buildSettingsList(context)),
+                const VerticalDivider(width: 1, thickness: 1),
+                Expanded(flex: 2, child: _buildPreview(context, compact: false)),
+              ],
+            );
+          }
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SizedBox(height: 260, child: _buildPreview(context, compact: true)),
+              const Divider(height: 1),
+              Expanded(child: _buildSettingsList(context)),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildPreview(BuildContext context, {bool compact = false}) {
+    final theme = Theme.of(context);
+
+    return Container(
+      padding: EdgeInsets.all(compact ? 10 : 16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerLowest,
+        border: Border(left: compact ? BorderSide.none : BorderSide(color: theme.dividerColor.withValues(alpha: 0.1))),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(flex: isLargeScreen ? 3 : 1, child: _buildSettingsList(context)),
-          if (isLargeScreen) Expanded(flex: 2, child: _buildPreview(context)),
+          Text(i18n('preview'), style: AppTextStyles.t16.copyWith(fontWeight: FontWeight.w700)),
+          if (!compact) ...[
+            Text(i18n('preview_subtitle'), style: AppTextStyles.t12.copyWith(color: theme.colorScheme.outline)),
+          ],
+          Expanded(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: compact ? 280 : 360, maxHeight: compact ? 220 : double.infinity),
+                child: GetBuilder<RoomCardConfigController>(builder: (_) => _buildPreviewCard(context)),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -46,8 +92,6 @@ class RoomCardSettingsPage extends GetView<RoomCardConfigController> {
             const SizedBox(height: 20),
             _buildMetricSection(context),
             const SizedBox(height: 20),
-            _buildDeleteSection(context),
-            const SizedBox(height: 20),
             _buildResetSection(context),
           ],
           const SizedBox(height: 32),
@@ -56,39 +100,8 @@ class RoomCardSettingsPage extends GetView<RoomCardConfigController> {
     );
   }
 
-  Widget _buildPreview(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerLowest,
-        border: Border(left: BorderSide(color: Theme.of(context).dividerColor.withValues(alpha: 0.1), width: 1)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(i18n('preview'), style: AppTextStyles.t16.copyWith(fontWeight: FontWeight.w700)),
-          const SizedBox(height: 4),
-          Text(
-            i18n('preview_subtitle'),
-            style: AppTextStyles.t12.copyWith(color: Theme.of(context).colorScheme.outline),
-          ),
-          const SizedBox(height: 20),
-          Expanded(
-            child: Center(
-              child: SizedBox(
-                width: 360,
-                child: GetBuilder<RoomCardConfigController>(builder: (_) => _buildPreviewCard(context)),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildPreviewCard(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Obx(() {
       final room = LiveRoom(
         roomId: '100001',
@@ -113,107 +126,118 @@ class RoomCardSettingsPage extends GetView<RoomCardConfigController> {
         cover: 'assets/images/banner.png',
       );
 
-      final config = RoomCardModel(
-        // ===== 卡片样式 =====
-        cardBackground: isDark ? controller.darkCardColorValue : controller.lightCardColorValue,
-        cardBorderRadius: controller.cardRadius.value,
-        cardElevation: controller.cardElevation.value,
-        enableShadow: controller.enableShadow.value,
-        cardMargin: const EdgeInsets.all(0),
+      late RoomCardModel config;
+      if (controller.presetValue != RoomCardPreset.custom) {
+        config = RoomCardModel.fromPreset(controller.presetValue);
+        if (isDark) {
+          config = config.copyWith(
+            cardBackground: controller.darkCardColorValue,
+            titleColor: controller.darkTitleColorValue,
+            subtitleColor: controller.darkSubtitleColorValue,
+            platformBackgroundColor: controller.platformBackgroundDarkValue,
+            platformTextColor: controller.platformTextDarkValue,
+          );
+        }
+      } else {
+        config = RoomCardModel(
+          cardBackground: isDark ? controller.darkCardColorValue : controller.lightCardColorValue,
+          cardBorderRadius: controller.cardRadius.value,
+          cardElevation: controller.cardElevation.value,
+          enableShadow: controller.enableShadow.value,
+          cardMargin: const EdgeInsets.all(0),
 
-        // ===== 封面设置 =====
-        coverAspectRatio: controller.coverAspectRatio.value,
-        coverBorderRadius: controller.coverRadius.value,
-        coverPlaceholderColor: controller.coverPlaceholderColorValue,
-        coverFallbackColor: controller.coverFallbackColorValue,
-        coverFit: controller.coverFit,
-        coverFilterQuality: controller.coverFilterQuality,
-        coverCacheMinWidth: controller.coverCacheMinWidth.value,
-        coverCacheMaxWidth: controller.coverCacheMaxWidth.value,
-        cacheCover: controller.cacheCover.value,
-        coverPositionPadding: controller.coverPositionPadding.value,
+          // ===== 封面设置 =====
+          coverAspectRatio: controller.coverAspectRatio.value,
+          coverBorderRadius: controller.coverRadius.value,
+          coverPlaceholderColor: controller.coverPlaceholderColorValue,
+          coverFallbackColor: controller.coverFallbackColorValue,
+          coverFit: controller.coverFit,
+          coverFilterQuality: controller.coverFilterQuality,
+          coverCacheMinWidth: controller.coverCacheMinWidth.value,
+          coverCacheMaxWidth: controller.coverCacheMaxWidth.value,
+          cacheCover: controller.cacheCover.value,
+          coverPositionPadding: controller.coverPositionPadding.value,
 
-        // ===== 内容布局 =====
-        avatarSize: controller.avatarSize.value,
-        denseAvatarSize: controller.avatarSize.value * 0.8,
-        showAvatar: controller.showAvatar.value,
-        contentHorizontalPadding: controller.horizontalPadding.value,
-        denseContentHorizontalPadding: controller.horizontalPadding.value * 0.8,
-        contentVerticalPadding: controller.verticalPadding.value,
-        denseContentVerticalPadding: controller.verticalPadding.value * 0.7,
-        horizontalTitleGap: controller.horizontalTitleGap.value,
-        denseHorizontalTitleGap: controller.horizontalTitleGap.value * 0.7,
-        showSubtitle: controller.showSubtitle.value,
-        denseMode: controller.denseMode.value,
+          // ===== 内容布局 =====
+          avatarSize: controller.avatarSize.value,
+          denseAvatarSize: controller.avatarSize.value * 0.8,
+          showAvatar: controller.showAvatar.value,
+          contentHorizontalPadding: controller.horizontalPadding.value,
+          denseContentHorizontalPadding: controller.horizontalPadding.value * 0.8,
+          contentVerticalPadding: controller.verticalPadding.value,
+          denseContentVerticalPadding: controller.verticalPadding.value * 0.7,
+          horizontalTitleGap: controller.horizontalTitleGap.value,
+          denseHorizontalTitleGap: controller.horizontalTitleGap.value * 0.7,
+          showSubtitle: controller.showSubtitle.value,
+          denseMode: controller.denseMode.value,
 
-        // ===== 文字排版 =====
-        titleFontSize: controller.titleFontSize.value,
-        denseTitleFontSize: controller.titleFontSize.value * 0.85,
-        titleFontWeight: controller.titleFontWeight,
-        titleLineHeight: controller.titleLineHeight.value,
-        titleColor: isDark ? controller.darkTitleColorValue : controller.lightTitleColorValue,
-        subtitleFontSize: controller.subtitleFontSize.value,
-        denseSubtitleFontSize: controller.subtitleFontSize.value * 0.85,
-        subtitleFontWeight: controller.subtitleFontWeight,
-        subtitleLineHeight: controller.subtitleLineHeight.value,
-        subtitleColor: isDark ? controller.darkSubtitleColorValue : controller.lightSubtitleColorValue,
+          // ===== 文字排版 =====
+          titleFontSize: controller.titleFontSize.value,
+          denseTitleFontSize: controller.titleFontSize.value * 0.85,
+          titleFontWeight: controller.titleFontWeight,
+          titleLineHeight: controller.titleLineHeight.value,
+          titleColor: isDark ? controller.darkTitleColorValue : controller.lightTitleColorValue,
+          subtitleFontSize: controller.subtitleFontSize.value,
+          denseSubtitleFontSize: controller.subtitleFontSize.value * 0.85,
+          subtitleFontWeight: controller.subtitleFontWeight,
+          subtitleLineHeight: controller.subtitleLineHeight.value,
+          subtitleColor: isDark ? controller.darkSubtitleColorValue : controller.lightSubtitleColorValue,
 
-        // ===== 平台标签 =====
-        showPlatform: controller.showPlatform.value,
-        platformFontSize: controller.platformFontSize.value,
-        densePlatformFontSize: controller.platformFontSize.value * 0.9,
-        platformFontWeight: controller.platformFontWeight,
-        platformBackgroundColor: isDark
-            ? controller.platformBackgroundDarkValue
-            : controller.platformBackgroundLightValue,
-        platformTextColor: isDark ? controller.platformTextDarkValue : controller.platformTextLightValue,
-        platformBorderRadius: controller.platformBorderRadius.value,
-        platformHorizontalPadding: controller.platformHorizontalPadding.value,
-        platformVerticalPadding: controller.platformVerticalPadding.value,
+          // ===== 平台标签 =====
+          showPlatform: controller.showPlatform.value,
+          platformFontSize: controller.platformFontSize.value,
+          densePlatformFontSize: controller.platformFontSize.value * 0.9,
+          platformFontWeight: controller.platformFontWeight,
+          platformBackgroundColor: isDark
+              ? controller.platformBackgroundDarkValue
+              : controller.platformBackgroundLightValue,
+          platformTextColor: isDark ? controller.platformTextDarkValue : controller.platformTextLightValue,
+          platformBorderRadius: controller.platformBorderRadius.value,
+          platformHorizontalPadding: controller.platformHorizontalPadding.value,
+          platformVerticalPadding: controller.platformVerticalPadding.value,
 
-        // ===== 徽章设置 =====
-        showLiveBadge: controller.showLiveBadge.value,
-        showRecordBadge: controller.showRecordBadge.value,
-        showAudience: controller.showAudience.value,
-        chipFontSize: controller.chipFontSize.value,
-        denseChipFontSize: controller.chipFontSize.value * 0.85,
-        chipFontWeight: controller.chipFontWeight,
-        chipBorderRadius: controller.chipBorderRadius.value,
-        chipHorizontalPadding: controller.chipHorizontalPadding.value,
-        denseChipHorizontalPadding: controller.chipHorizontalPadding.value * 0.8,
-        chipVerticalPadding: controller.chipVerticalPadding.value,
-        denseChipVerticalPadding: controller.chipVerticalPadding.value * 0.7,
-        chipBackgroundColor: controller.chipBackgroundColorValue,
-        chipTextColor: controller.chipTextColorValue,
+          // ===== 徽章设置 =====
+          showLiveBadge: controller.showLiveBadge.value,
+          showRecordBadge: controller.showRecordBadge.value,
+          showAudience: controller.showAudience.value,
+          chipFontSize: controller.chipFontSize.value,
+          denseChipFontSize: controller.chipFontSize.value * 0.85,
+          chipFontWeight: controller.chipFontWeight,
+          chipBorderRadius: controller.chipBorderRadius.value,
+          chipHorizontalPadding: controller.chipHorizontalPadding.value,
+          denseChipHorizontalPadding: controller.chipHorizontalPadding.value * 0.8,
+          chipVerticalPadding: controller.chipVerticalPadding.value,
+          denseChipVerticalPadding: controller.chipVerticalPadding.value * 0.7,
+          chipBackgroundColor: controller.chipBackgroundColorValue,
+          chipTextColor: controller.chipTextColorValue,
 
-        // ===== 观众指标 =====
-        metricFontSize: controller.metricFontSize.value,
-        denseMetricFontSize: controller.metricFontSize.value * 0.85,
-        metricFontWeight: controller.metricFontWeight,
-        metricBorderRadius: controller.badgeRadius.value,
-        denseMetricBorderRadius: controller.badgeRadius.value * 0.8,
-        badgeOpacity: controller.badgeOpacity.value,
-        metricBackgroundColor: controller.badgeBackgroundValue,
-        metricTextColor: controller.badgeForegroundValue,
-        metricBorderColor: controller.metricBorderColorValue,
-        metricBorderWidth: controller.metricBorderWidth.value,
-        metricHorizontalPadding: controller.metricHorizontalPadding.value,
-        denseMetricHorizontalPadding: controller.metricHorizontalPadding.value * 0.8,
-        metricVerticalPadding: controller.metricVerticalPadding.value,
-        denseMetricVerticalPadding: controller.metricVerticalPadding.value * 0.7,
+          // ===== 观众指标 =====
+          metricFontSize: controller.metricFontSize.value,
+          denseMetricFontSize: controller.metricFontSize.value * 0.85,
+          metricFontWeight: controller.metricFontWeight,
+          metricBorderRadius: controller.badgeRadius.value,
+          denseMetricBorderRadius: controller.badgeRadius.value * 0.8,
+          badgeOpacity: controller.badgeOpacity.value,
+          metricBackgroundColor: controller.badgeBackgroundValue,
+          metricTextColor: controller.badgeForegroundValue,
+          metricBorderColor: controller.metricBorderColorValue,
+          metricBorderWidth: controller.metricBorderWidth.value,
+          metricHorizontalPadding: controller.metricHorizontalPadding.value,
+          denseMetricHorizontalPadding: controller.metricHorizontalPadding.value * 0.8,
+          metricVerticalPadding: controller.metricVerticalPadding.value,
+          denseMetricVerticalPadding: controller.metricVerticalPadding.value * 0.7,
 
-        // ===== 删除按钮 =====
-        showDelete: controller.showDelete.value,
-        deleteButtonBackgroundColor: controller.deleteButtonBackgroundColorValue,
-        deleteButtonPadding: controller.deleteButtonPadding.value,
-        deleteButtonSize: controller.deleteButtonSize.value,
-        denseDeleteButtonSize: controller.deleteButtonSize.value * 0.85,
-        deleteButtonIconColor: controller.deleteButtonIconColorValue,
-        deleteButtonBorderRadius: controller.deleteButtonBorderRadius.value,
-
-        // ===== 显示选项 =====
-        showAsListTile: controller.showAsListTile.value,
-      );
+          // ===== 删除按钮 =====
+          showDelete: controller.showDelete.value,
+          deleteButtonBackgroundColor: controller.deleteButtonBackgroundColorValue,
+          deleteButtonPadding: controller.deleteButtonPadding.value,
+          deleteButtonSize: controller.deleteButtonSize.value,
+          denseDeleteButtonSize: controller.deleteButtonSize.value * 0.85,
+          deleteButtonIconColor: controller.deleteButtonIconColorValue,
+          deleteButtonBorderRadius: controller.deleteButtonBorderRadius.value,
+          showAsListTile: controller.showAsListTile.value,
+        );
+      }
 
       return RoomCardPage(
         room: room,
@@ -225,1289 +249,751 @@ class RoomCardSettingsPage extends GetView<RoomCardConfigController> {
     });
   }
 
-  // ============================================================
-  // 1. 预设选择
-  // ============================================================
   Widget _buildPresetSection(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        context.buildGroupTitle(i18n('preset_style')),
-        context.buildModernCard([
-          GetBuilder<RoomCardConfigController>(
-            builder: (_) => context.buildTile(
-              icon: Remix.layout_line,
-              title: i18n('preset_style'),
-              subtitle: i18n('preset_style_subtitle'),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    controller.presetValue.label,
-                    style: AppTextStyles.t13.copyWith(color: Theme.of(context).colorScheme.outline),
-                  ),
-                  const Icon(Icons.chevron_right_rounded, size: 20),
-                ],
-              ),
-              onTap: () => _showPresetDialog(context),
-            ),
-          ),
-        ]),
-      ],
-    );
+    return _section(context, i18n('preset_style'), [
+      _tile(
+        context,
+        icon: Remix.layout_masonry_line,
+        title: i18n('preset_style'),
+        subtitle: i18n('preset_style_subtitle'),
+        trailing: _arrowValue(context, controller.presetValue.label),
+        onTap: () => _showPresetDialog(context),
+      ),
+    ]);
   }
 
-  // ============================================================
-  // 2. 卡片样式
-  // ============================================================
   Widget _buildCardStyleSection(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        context.buildGroupTitle(i18n('card_style')),
-        context.buildModernCard([
-          GetBuilder<RoomCardConfigController>(
-            builder: (_) => context.buildSwitchTile(
-              title: i18n('show_as_list_tile'),
-              subtitle: i18n('show_as_list_tile_subtitle'),
-              value: controller.showAsListTile,
-              icon: Remix.list_settings_line,
-              onChanged: (val) {
-                controller.switchToCustom();
-                controller.showAsListTile.v = val;
-                controller.update();
-              },
-            ),
-          ),
-          GetBuilder<RoomCardConfigController>(
-            builder: (_) => context.buildSliderTile(
-              context,
-              icon: Remix.rounded_corner,
-              title: i18n('card_radius'),
-              value: controller.cardRadius.v,
-              min: 0,
-              max: 40,
-              displayValue: '${controller.cardRadius.v.round()} px',
-              onChanged: (val) {
-                controller.switchToCustom();
-                controller.cardRadius.v = val;
-                controller.update();
-              },
-            ),
-          ),
-          GetBuilder<RoomCardConfigController>(
-            builder: (_) => context.buildSliderTile(
-              context,
-              icon: Remix.shadow_line,
-              title: i18n('card_elevation'),
-              value: controller.cardElevation.v,
-              min: 0,
-              max: 12,
-              displayValue: controller.cardElevation.v.toStringAsFixed(1),
-              onChanged: (val) {
-                controller.switchToCustom();
-                controller.cardElevation.v = val;
-                controller.update();
-              },
-            ),
-          ),
-          GetBuilder<RoomCardConfigController>(
-            builder: (_) => context.buildSwitchTile(
-              title: i18n('enable_shadow'),
-              subtitle: i18n('enable_shadow_subtitle'),
-              value: controller.enableShadow,
-              icon: Remix.shadow_line,
-              onChanged: (val) {
-                controller.switchToCustom();
-                controller.enableShadow.v = val;
-                controller.update();
-              },
-            ),
-          ),
-          GetBuilder<RoomCardConfigController>(
-            builder: (_) => context.buildTile(
-              icon: Remix.palette_line,
-              title: i18n('card_background_light'),
-              onTap: () => _showColorPickerDialog(
-                context,
-                title: i18n('card_background_light'),
-                currentColor: controller.lightCardColorValue,
-                onColorSelected: (color) {
-                  controller.switchToCustom();
-                  controller.lightCardColor.v = color.hex;
-                  controller.update();
-                },
-              ),
-              trailing: ColorIndicator(
-                width: 28,
-                height: 28,
-                borderRadius: 6,
-                color: controller.lightCardColorValue,
-                onSelectFocus: false,
-              ),
-            ),
-          ),
-          GetBuilder<RoomCardConfigController>(
-            builder: (_) => context.buildTile(
-              icon: Remix.palette_line,
-              title: i18n('card_background_dark'),
-              onTap: () => _showColorPickerDialog(
-                context,
-                title: i18n('card_background_dark'),
-                currentColor: controller.darkCardColorValue,
-                onColorSelected: (color) {
-                  controller.switchToCustom();
-                  controller.darkCardColor.v = color.hex;
-                  controller.update();
-                },
-              ),
-              trailing: ColorIndicator(
-                width: 28,
-                height: 28,
-                borderRadius: 6,
-                color: controller.darkCardColorValue,
-                onSelectFocus: false,
-              ),
-            ),
-          ),
-        ]),
-      ],
-    );
+    return _section(context, i18n('card_style'), [
+      _switchTile(
+        context,
+        icon: Remix.list_settings_line,
+        title: i18n('show_as_list_tile'),
+        subtitle: i18n('show_as_list_tile_subtitle'),
+        value: controller.showAsListTile,
+      ),
+      _sliderTile(
+        context,
+        icon: Remix.rounded_corner,
+        title: i18n('card_radius'),
+        value: controller.cardRadius.value,
+        min: 0,
+        max: 40,
+        displayValue: '${controller.cardRadius.value.round()} px',
+        onChanged: (value) {
+          controller.cardRadius.value = value;
+        },
+      ),
+      _sliderTile(
+        context,
+        icon: Remix.shadow_line,
+        title: i18n('card_elevation'),
+        value: controller.cardElevation.value,
+        min: 0,
+        max: 12,
+        displayValue: controller.cardElevation.value.toStringAsFixed(1),
+        onChanged: (value) {
+          controller.cardElevation.value = value;
+        },
+      ),
+      _switchTile(
+        context,
+        icon: Remix.contrast_2_line,
+        title: i18n('enable_shadow'),
+        subtitle: i18n('enable_shadow_subtitle'),
+        value: controller.enableShadow,
+      ),
+      _colorTile(
+        context,
+        icon: Remix.paint_brush_line,
+        title: i18n('card_background_light'),
+        color: () => controller.lightCardColorValue,
+        onColorSelected: (color) {
+          controller.lightCardColor.value = color.hex;
+        },
+      ),
+      _colorTile(
+        context,
+        icon: Remix.moon_line,
+        title: i18n('card_background_dark'),
+        color: () => controller.darkCardColorValue,
+        onColorSelected: (color) {
+          controller.darkCardColor.value = color.hex;
+        },
+      ),
+    ]);
   }
 
-  // ============================================================
-  // 3. 封面设置
-  // ============================================================
   Widget _buildCoverSection(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        context.buildGroupTitle(i18n('cover_settings')),
-        context.buildModernCard([
-          GetBuilder<RoomCardConfigController>(
-            builder: (_) => context.buildSliderTile(
-              context,
-              icon: Remix.rounded_corner,
-              title: i18n('cover_radius'),
-              value: controller.coverRadius.v,
-              min: 0,
-              max: 40,
-              displayValue: '${controller.coverRadius.v.round()} px',
-              onChanged: (val) {
-                controller.switchToCustom();
-                controller.coverRadius.v = val;
-                controller.update();
-              },
-            ),
-          ),
-          GetBuilder<RoomCardConfigController>(
-            builder: (_) => context.buildSliderTile(
-              context,
-              icon: Remix.aspect_ratio_line,
-              title: i18n('cover_aspect_ratio'),
-              value: controller.coverAspectRatio.v,
-              min: 1.0,
-              max: 2.5,
-              step: 0.1,
-              displayValue: controller.coverAspectRatio.v.toStringAsFixed(1),
-              onChanged: (val) {
-                controller.switchToCustom();
-                controller.coverAspectRatio.v = val;
-                controller.update();
-              },
-            ),
-          ),
-          GetBuilder<RoomCardConfigController>(
-            builder: (_) => context.buildSliderTile(
-              context,
-              icon: Remix.rounded_corner,
-              title: i18n('cover_position_padding'),
-              value: controller.coverPositionPadding.v,
-              min: 0,
-              max: 24,
-              displayValue: '${controller.coverPositionPadding.v.round()} px',
-              onChanged: (val) {
-                controller.switchToCustom();
-                controller.coverPositionPadding.v = val;
-                controller.update();
-              },
-            ),
-          ),
-          GetBuilder<RoomCardConfigController>(
-            builder: (_) => context.buildSwitchTile(
-              title: i18n('cache_cover'),
-              subtitle: i18n('cache_cover_subtitle'),
-              value: controller.cacheCover,
-              icon: Remix.database_line,
-              onChanged: (val) {
-                controller.switchToCustom();
-                controller.cacheCover.v = val;
-                controller.update();
-              },
-            ),
-          ),
-          GetBuilder<RoomCardConfigController>(
-            builder: (_) => context.buildTile(
-              icon: Remix.image_line,
-              title: i18n('cover_fit'),
-              subtitle: _getBoxFitName(controller.coverFitIndex.v),
-              onTap: () => _showBoxFitDialog(
-                context,
-                currentIndex: controller.coverFitIndex.v,
-                onSelected: (index) {
-                  controller.switchToCustom();
-                  controller.coverFitIndex.v = index;
-                  controller.update();
-                },
-              ),
-              trailing: Icon(Icons.chevron_right_rounded, color: Theme.of(context).colorScheme.outline),
-            ),
-          ),
-          GetBuilder<RoomCardConfigController>(
-            builder: (_) => context.buildTile(
-              icon: Remix.palette_line,
-              title: i18n('cover_placeholder_color'),
-              onTap: () => _showColorPickerDialog(
-                context,
-                title: i18n('cover_placeholder_color'),
-                currentColor: controller.coverPlaceholderColorValue,
-                onColorSelected: (color) {
-                  controller.switchToCustom();
-                  controller.coverPlaceholderColor.v = color.hex;
-                  controller.update();
-                },
-              ),
-              trailing: ColorIndicator(
-                width: 28,
-                height: 28,
-                borderRadius: 6,
-                color: controller.coverPlaceholderColorValue,
-                onSelectFocus: false,
-              ),
-            ),
-          ),
-          GetBuilder<RoomCardConfigController>(
-            builder: (_) => context.buildTile(
-              icon: Remix.palette_line,
-              title: i18n('cover_fallback_color'),
-              onTap: () => _showColorPickerDialog(
-                context,
-                title: i18n('cover_fallback_color'),
-                currentColor: controller.coverFallbackColorValue,
-                onColorSelected: (color) {
-                  controller.switchToCustom();
-                  controller.coverFallbackColor.v = color.hex;
-                  controller.update();
-                },
-              ),
-              trailing: ColorIndicator(
-                width: 28,
-                height: 28,
-                borderRadius: 6,
-                color: controller.coverFallbackColorValue,
-                onSelectFocus: false,
-              ),
-            ),
-          ),
-        ]),
-      ],
-    );
+    return _section(context, i18n('cover_settings'), [
+      _sliderTile(
+        context,
+        icon: Remix.crop_2_line,
+        title: i18n('cover_radius'),
+        value: controller.coverRadius.value,
+        min: 0,
+        max: 40,
+        displayValue: '${controller.coverRadius.value.round()} px',
+        onChanged: (value) {
+          controller.coverRadius.value = value;
+        },
+      ),
+      _sliderTile(
+        context,
+        icon: Remix.aspect_ratio_line,
+        title: i18n('cover_aspect_ratio'),
+        value: controller.coverAspectRatio.value,
+        min: 1.0,
+        max: 2.5,
+        step: 0.1,
+        displayValue: controller.coverAspectRatio.value.toStringAsFixed(1),
+        onChanged: (value) {
+          controller.coverAspectRatio.value = value;
+        },
+      ),
+      _sliderTile(
+        context,
+        icon: Remix.expand_left_right_line,
+        title: i18n('cover_position_padding'),
+        value: controller.coverPositionPadding.value,
+        min: 0,
+        max: 24,
+        displayValue: '${controller.coverPositionPadding.value.round()} px',
+        onChanged: (value) {
+          controller.coverPositionPadding.value = value;
+        },
+      ),
+      _switchTile(
+        context,
+        icon: Remix.database_2_line,
+        title: i18n('cache_cover'),
+        subtitle: i18n('cache_cover_subtitle'),
+        value: controller.cacheCover,
+      ),
+      _tile(
+        context,
+        icon: Remix.image_2_line,
+        title: i18n('cover_fit'),
+        subtitle: _getBoxFitName(controller.coverFitIndex.value),
+        trailing: _arrow(context),
+        onTap: () => _showBoxFitDialog(
+          context,
+          currentIndex: controller.coverFitIndex.value,
+          onSelected: (index) {
+            controller.coverFitIndex.value = index;
+          },
+        ),
+      ),
+      _colorTile(
+        context,
+        icon: Remix.image_add_line,
+        title: i18n('cover_placeholder_color'),
+        color: () => controller.coverPlaceholderColorValue,
+        onColorSelected: (color) {
+          controller.coverPlaceholderColor.value = color.hex;
+        },
+      ),
+      _colorTile(
+        context,
+        icon: Remix.image_edit_line,
+        title: i18n('cover_fallback_color'),
+        color: () => controller.coverFallbackColorValue,
+        onColorSelected: (color) {
+          controller.coverFallbackColor.value = color.hex;
+        },
+      ),
+    ]);
   }
 
-  // ============================================================
-  // 4. 内容布局
-  // ============================================================
   Widget _buildContentSection(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        context.buildGroupTitle(i18n('content_layout')),
-        context.buildModernCard([
-          GetBuilder<RoomCardConfigController>(
-            builder: (_) => context.buildSliderTile(
-              context,
-              icon: Remix.arrow_left_right_line,
-              title: i18n('horizontal_padding'),
-              value: controller.horizontalPadding.v,
-              min: 0,
-              max: 24,
-              displayValue: '${controller.horizontalPadding.v.round()} px',
-              onChanged: (val) {
-                controller.switchToCustom();
-                controller.horizontalPadding.v = val;
-                controller.update();
-              },
-            ),
-          ),
-          GetBuilder<RoomCardConfigController>(
-            builder: (_) => context.buildSliderTile(
-              context,
-              icon: Remix.arrow_up_down_line,
-              title: i18n('vertical_padding'),
-              value: controller.verticalPadding.v,
-              min: 0,
-              max: 16,
-              displayValue: '${controller.verticalPadding.v.round()} px',
-              onChanged: (val) {
-                controller.switchToCustom();
-                controller.verticalPadding.v = val;
-                controller.update();
-              },
-            ),
-          ),
-          GetBuilder<RoomCardConfigController>(
-            builder: (_) => context.buildSliderTile(
-              context,
-              icon: Remix.text_spacing,
-              title: i18n('title_gap'),
-              value: controller.horizontalTitleGap.v,
-              min: 0,
-              max: 24,
-              displayValue: '${controller.horizontalTitleGap.v.round()} px',
-              onChanged: (val) {
-                controller.switchToCustom();
-                controller.horizontalTitleGap.v = val;
-                controller.update();
-              },
-            ),
-          ),
-          GetBuilder<RoomCardConfigController>(
-            builder: (_) => context.buildSliderTile(
-              context,
-              icon: Remix.user_line,
-              title: i18n('avatar_size'),
-              value: controller.avatarSize.v,
-              min: 20,
-              max: 64,
-              displayValue: '${controller.avatarSize.v.round()} px',
-              onChanged: (val) {
-                controller.switchToCustom();
-                controller.avatarSize.v = val;
-                controller.update();
-              },
-            ),
-          ),
-          GetBuilder<RoomCardConfigController>(
-            builder: (_) => context.buildSwitchTile(
-              title: i18n('show_avatar'),
-              subtitle: i18n('show_avatar_subtitle'),
-              value: controller.showAvatar,
-              icon: Remix.user_line,
-              onChanged: (val) {
-                controller.switchToCustom();
-                controller.showAvatar.v = val;
-                controller.update();
-              },
-            ),
-          ),
-          GetBuilder<RoomCardConfigController>(
-            builder: (_) => context.buildSwitchTile(
-              title: i18n('show_subtitle'),
-              subtitle: i18n('show_subtitle_subtitle'),
-              value: controller.showSubtitle,
-              icon: Remix.pencil_line,
-              onChanged: (val) {
-                controller.switchToCustom();
-                controller.showSubtitle.v = val;
-                controller.update();
-              },
-            ),
-          ),
-          GetBuilder<RoomCardConfigController>(
-            builder: (_) => context.buildSwitchTile(
-              title: i18n('dense_mode'),
-              subtitle: i18n('dense_mode_subtitle'),
-              value: controller.denseMode,
-              icon: Remix.layout_grid_line,
-              onChanged: (val) {
-                controller.switchToCustom();
-                controller.denseMode.v = val;
-                controller.update();
-              },
-            ),
-          ),
-        ]),
-      ],
-    );
+    return _section(context, i18n('content_layout'), [
+      _sliderTile(
+        context,
+        icon: Remix.expand_left_right_line,
+        title: i18n('horizontal_padding'),
+        value: controller.horizontalPadding.value,
+        min: 0,
+        max: 24,
+        displayValue: '${controller.horizontalPadding.value.round()} px',
+        onChanged: (value) {
+          controller.horizontalPadding.value = value;
+        },
+      ),
+      _sliderTile(
+        context,
+        icon: Remix.expand_up_down_line,
+        title: i18n('vertical_padding'),
+        value: controller.verticalPadding.value,
+        min: 0,
+        max: 16,
+        displayValue: '${controller.verticalPadding.value.round()} px',
+        onChanged: (value) {
+          controller.verticalPadding.value = value;
+        },
+      ),
+      _sliderTile(
+        context,
+        icon: Remix.space,
+        title: i18n('title_gap'),
+        value: controller.horizontalTitleGap.value,
+        min: 0,
+        max: 24,
+        displayValue: '${controller.horizontalTitleGap.value.round()} px',
+        onChanged: (value) {
+          controller.horizontalTitleGap.value = value;
+        },
+      ),
+      _switchTile(
+        context,
+        icon: Remix.user_smile_line,
+        title: i18n('show_avatar'),
+        subtitle: i18n('show_avatar_subtitle'),
+        value: controller.showAvatar,
+      ),
+      _sliderTile(
+        context,
+        icon: Remix.user_3_line,
+        title: i18n('avatar_size'),
+        value: controller.avatarSize.value,
+        min: 20,
+        max: 64,
+        displayValue: '${controller.avatarSize.value.round()} px',
+        onChanged: (value) {
+          controller.avatarSize.value = value;
+        },
+      ),
+      _switchTile(
+        context,
+        icon: Remix.text,
+        title: i18n('show_subtitle'),
+        subtitle: i18n('show_subtitle_subtitle'),
+        value: controller.showSubtitle,
+      ),
+      _switchTile(
+        context,
+        icon: Remix.layout_grid_2_line,
+        title: i18n('dense_mode'),
+        subtitle: i18n('dense_mode_subtitle'),
+        value: controller.denseMode,
+      ),
+    ]);
   }
 
-  // ============================================================
-  // 5. 文字排版
-  // ============================================================
   Widget _buildTypographySection(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        context.buildGroupTitle(i18n('typography')),
-        context.buildModernCard([
-          // 标题
-          GetBuilder<RoomCardConfigController>(
-            builder: (_) => context.buildSliderTile(
-              context,
-              icon: Remix.font_size,
-              title: i18n('title_font_size'),
-              value: controller.titleFontSize.v,
-              min: 10,
-              max: 24,
-              displayValue: '${controller.titleFontSize.v.round()} px',
-              onChanged: (val) {
-                controller.switchToCustom();
-                controller.titleFontSize.v = val;
-                controller.update();
-              },
-            ),
-          ),
-          GetBuilder<RoomCardConfigController>(
-            builder: (_) => context.buildTile(
-              icon: Remix.font_size_2,
-              title: i18n('title_font_weight'),
-              subtitle: _getFontWeightName(controller.titleFontWeightIndex.v),
-              onTap: () => _showFontWeightDialog(
-                context,
-                title: i18n('title_font_weight'),
-                currentIndex: controller.titleFontWeightIndex.v,
-                onSelected: (index) {
-                  controller.switchToCustom();
-                  controller.titleFontWeightIndex.v = index;
-                  controller.update();
-                },
-              ),
-              trailing: Icon(Icons.chevron_right_rounded, color: Theme.of(context).colorScheme.outline),
-            ),
-          ),
-          GetBuilder<RoomCardConfigController>(
-            builder: (_) => context.buildSliderTile(
-              context,
-              icon: Remix.text_spacing,
-              title: i18n('title_line_height'),
-              value: controller.titleLineHeight.v,
-              min: 0.8,
-              max: 2.0,
-              step: 0.1,
-              displayValue: controller.titleLineHeight.v.toStringAsFixed(1),
-              onChanged: (val) {
-                controller.switchToCustom();
-                controller.titleLineHeight.v = val;
-                controller.update();
-              },
-            ),
-          ),
-          GetBuilder<RoomCardConfigController>(
-            builder: (_) => context.buildTile(
-              icon: Remix.palette_line,
-              title: i18n('title_color_light'),
-              onTap: () => _showColorPickerDialog(
-                context,
-                title: i18n('title_color_light'),
-                currentColor: controller.lightTitleColorValue,
-                onColorSelected: (color) {
-                  controller.switchToCustom();
-                  controller.lightTitleColor.v = color.hex;
-                  controller.update();
-                },
-              ),
-              trailing: ColorIndicator(
-                width: 28,
-                height: 28,
-                borderRadius: 6,
-                color: controller.lightTitleColorValue,
-                onSelectFocus: false,
-              ),
-            ),
-          ),
-          GetBuilder<RoomCardConfigController>(
-            builder: (_) => context.buildTile(
-              icon: Remix.palette_line,
-              title: i18n('title_color_dark'),
-              onTap: () => _showColorPickerDialog(
-                context,
-                title: i18n('title_color_dark'),
-                currentColor: controller.darkTitleColorValue,
-                onColorSelected: (color) {
-                  controller.switchToCustom();
-                  controller.darkTitleColor.v = color.hex;
-                  controller.update();
-                },
-              ),
-              trailing: ColorIndicator(
-                width: 28,
-                height: 28,
-                borderRadius: 6,
-                color: controller.darkTitleColorValue,
-                onSelectFocus: false,
-              ),
-            ),
-          ),
-          const Divider(height: 1),
-          // 副标题
-          GetBuilder<RoomCardConfigController>(
-            builder: (_) => context.buildSliderTile(
-              context,
-              icon: Remix.font_size,
-              title: i18n('subtitle_font_size'),
-              value: controller.subtitleFontSize.v,
-              min: 8,
-              max: 20,
-              displayValue: '${controller.subtitleFontSize.v.round()} px',
-              onChanged: (val) {
-                controller.switchToCustom();
-                controller.subtitleFontSize.v = val;
-                controller.update();
-              },
-            ),
-          ),
-          GetBuilder<RoomCardConfigController>(
-            builder: (_) => context.buildTile(
-              icon: Remix.font_size_2,
-              title: i18n('subtitle_font_weight'),
-              subtitle: _getFontWeightName(controller.subtitleFontWeightIndex.v),
-              onTap: () => _showFontWeightDialog(
-                context,
-                title: i18n('subtitle_font_weight'),
-                currentIndex: controller.subtitleFontWeightIndex.v,
-                onSelected: (index) {
-                  controller.switchToCustom();
-                  controller.subtitleFontWeightIndex.v = index;
-                  controller.update();
-                },
-              ),
-              trailing: Icon(Icons.chevron_right_rounded, color: Theme.of(context).colorScheme.outline),
-            ),
-          ),
-          GetBuilder<RoomCardConfigController>(
-            builder: (_) => context.buildSliderTile(
-              context,
-              icon: Remix.text_spacing,
-              title: i18n('subtitle_line_height'),
-              value: controller.subtitleLineHeight.v,
-              min: 0.8,
-              max: 2.0,
-              step: 0.1,
-              displayValue: controller.subtitleLineHeight.v.toStringAsFixed(1),
-              onChanged: (val) {
-                controller.switchToCustom();
-                controller.subtitleLineHeight.v = val;
-                controller.update();
-              },
-            ),
-          ),
-          GetBuilder<RoomCardConfigController>(
-            builder: (_) => context.buildTile(
-              icon: Remix.palette_line,
-              title: i18n('subtitle_color_light'),
-              onTap: () => _showColorPickerDialog(
-                context,
-                title: i18n('subtitle_color_light'),
-                currentColor: controller.lightSubtitleColorValue,
-                onColorSelected: (color) {
-                  controller.switchToCustom();
-                  controller.lightSubtitleColor.v = color.hex;
-                  controller.update();
-                },
-              ),
-              trailing: ColorIndicator(
-                width: 28,
-                height: 28,
-                borderRadius: 6,
-                color: controller.lightSubtitleColorValue,
-                onSelectFocus: false,
-              ),
-            ),
-          ),
-          GetBuilder<RoomCardConfigController>(
-            builder: (_) => context.buildTile(
-              icon: Remix.palette_line,
-              title: i18n('subtitle_color_dark'),
-              onTap: () => _showColorPickerDialog(
-                context,
-                title: i18n('subtitle_color_dark'),
-                currentColor: controller.darkSubtitleColorValue,
-                onColorSelected: (color) {
-                  controller.switchToCustom();
-                  controller.darkSubtitleColor.v = color.hex;
-                  controller.update();
-                },
-              ),
-              trailing: ColorIndicator(
-                width: 28,
-                height: 28,
-                borderRadius: 6,
-                color: controller.darkSubtitleColorValue,
-                onSelectFocus: false,
-              ),
-            ),
-          ),
-        ]),
-      ],
-    );
+    return _section(context, i18n('typography'), [
+      _sliderTile(
+        context,
+        icon: Remix.font_size,
+        title: i18n('title_font_size'),
+        value: controller.titleFontSize.value,
+        min: 10,
+        max: 24,
+        displayValue: '${controller.titleFontSize.value.round()} px',
+        onChanged: (value) {
+          controller.titleFontSize.value = value;
+        },
+      ),
+      _fontWeightTile(
+        context,
+        title: i18n('title_font_weight'),
+        currentIndex: controller.titleFontWeightIndex.value,
+        onSelected: (index) {
+          controller.titleFontWeightIndex.value = index;
+        },
+      ),
+      _sliderTile(
+        context,
+        icon: Remix.line_height,
+        title: i18n('title_line_height'),
+        value: controller.titleLineHeight.value,
+        min: 0.8,
+        max: 2.0,
+        step: 0.1,
+        displayValue: controller.titleLineHeight.value.toStringAsFixed(1),
+        onChanged: (value) {
+          controller.titleLineHeight.value = value;
+        },
+      ),
+      _colorTile(
+        context,
+        icon: Remix.palette_line,
+        title: i18n('title_color_light'),
+        color: () => controller.lightTitleColorValue,
+        onColorSelected: (color) {
+          controller.lightTitleColor.value = color.hex;
+        },
+      ),
+      _colorTile(
+        context,
+        icon: Remix.palette_line,
+        title: i18n('title_color_dark'),
+        color: () => controller.darkTitleColorValue,
+        onColorSelected: (color) {
+          controller.darkTitleColor.value = color.hex;
+        },
+      ),
+      const Divider(height: 1),
+      _sliderTile(
+        context,
+        icon: Remix.font_size,
+        title: i18n('subtitle_font_size'),
+        value: controller.subtitleFontSize.value,
+        min: 8,
+        max: 20,
+        displayValue: '${controller.subtitleFontSize.value.round()} px',
+        onChanged: (value) {
+          controller.subtitleFontSize.value = value;
+        },
+      ),
+      _fontWeightTile(
+        context,
+        title: i18n('subtitle_font_weight'),
+        currentIndex: controller.subtitleFontWeightIndex.value,
+        onSelected: (index) {
+          controller.subtitleFontWeightIndex.value = index;
+        },
+      ),
+      _sliderTile(
+        context,
+        icon: Remix.line_height,
+        title: i18n('subtitle_line_height'),
+        value: controller.subtitleLineHeight.value,
+        min: 0.8,
+        max: 2.0,
+        step: 0.1,
+        displayValue: controller.subtitleLineHeight.value.toStringAsFixed(1),
+        onChanged: (value) {
+          controller.subtitleLineHeight.value = value;
+        },
+      ),
+      _colorTile(
+        context,
+        icon: Remix.palette_line,
+        title: i18n('subtitle_color_light'),
+        color: () => controller.lightSubtitleColorValue,
+        onColorSelected: (color) {
+          controller.lightSubtitleColor.value = color.hex;
+        },
+      ),
+      _colorTile(
+        context,
+        icon: Remix.palette_line,
+        title: i18n('subtitle_color_dark'),
+        color: () => controller.darkSubtitleColorValue,
+        onColorSelected: (color) {
+          controller.darkSubtitleColor.value = color.hex;
+        },
+      ),
+    ]);
   }
 
-  // ============================================================
-  // 6. 平台标签
-  // ============================================================
   Widget _buildPlatformSection(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        context.buildGroupTitle(i18n('platform_tag')),
-        context.buildModernCard([
-          GetBuilder<RoomCardConfigController>(
-            builder: (_) => context.buildSwitchTile(
-              title: i18n('show_platform'),
-              subtitle: i18n('show_platform_subtitle'),
-              value: controller.showPlatform,
-              icon: Remix.global_line,
-              onChanged: (val) {
-                controller.switchToCustom();
-                controller.showPlatform.v = val;
-                controller.update();
-              },
-            ),
-          ),
-          GetBuilder<RoomCardConfigController>(
-            builder: (_) => context.buildSliderTile(
-              context,
-              icon: Remix.font_size,
-              title: i18n('platform_font_size'),
-              value: controller.platformFontSize.v,
-              min: 8,
-              max: 16,
-              displayValue: '${controller.platformFontSize.v.round()} px',
-              onChanged: (val) {
-                controller.switchToCustom();
-                controller.platformFontSize.v = val;
-                controller.update();
-              },
-            ),
-          ),
-          GetBuilder<RoomCardConfigController>(
-            builder: (_) => context.buildTile(
-              icon: Remix.font_size_2,
-              title: i18n('platform_font_weight'),
-              subtitle: _getFontWeightName(controller.platformFontWeightIndex.v),
-              onTap: () => _showFontWeightDialog(
-                context,
-                title: i18n('platform_font_weight'),
-                currentIndex: controller.platformFontWeightIndex.v,
-                onSelected: (index) {
-                  controller.switchToCustom();
-                  controller.platformFontWeightIndex.v = index;
-                  controller.update();
-                },
-              ),
-              trailing: Icon(Icons.chevron_right_rounded, color: Theme.of(context).colorScheme.outline),
-            ),
-          ),
-          GetBuilder<RoomCardConfigController>(
-            builder: (_) => context.buildSliderTile(
-              context,
-              icon: Remix.rounded_corner,
-              title: i18n('platform_border_radius'),
-              value: controller.platformBorderRadius.v,
-              min: 0,
-              max: 20,
-              displayValue: '${controller.platformBorderRadius.v.round()} px',
-              onChanged: (val) {
-                controller.switchToCustom();
-                controller.platformBorderRadius.v = val;
-                controller.update();
-              },
-            ),
-          ),
-          GetBuilder<RoomCardConfigController>(
-            builder: (_) => context.buildTile(
-              icon: Remix.palette_line,
-              title: i18n('platform_background_light'),
-              onTap: () => _showColorPickerDialog(
-                context,
-                title: i18n('platform_background_light'),
-                currentColor: controller.platformBackgroundLightValue,
-                onColorSelected: (color) {
-                  controller.switchToCustom();
-                  controller.platformBackgroundLight.v = color.hex;
-                  controller.update();
-                },
-              ),
-              trailing: ColorIndicator(
-                width: 28,
-                height: 28,
-                borderRadius: 6,
-                color: controller.platformBackgroundLightValue,
-                onSelectFocus: false,
-              ),
-            ),
-          ),
-          GetBuilder<RoomCardConfigController>(
-            builder: (_) => context.buildTile(
-              icon: Remix.palette_line,
-              title: i18n('platform_background_dark'),
-              onTap: () => _showColorPickerDialog(
-                context,
-                title: i18n('platform_background_dark'),
-                currentColor: controller.platformBackgroundDarkValue,
-                onColorSelected: (color) {
-                  controller.switchToCustom();
-                  controller.platformBackgroundDark.v = color.hex;
-                  controller.update();
-                },
-              ),
-              trailing: ColorIndicator(
-                width: 28,
-                height: 28,
-                borderRadius: 6,
-                color: controller.platformBackgroundDarkValue,
-                onSelectFocus: false,
-              ),
-            ),
-          ),
-          GetBuilder<RoomCardConfigController>(
-            builder: (_) => context.buildTile(
-              icon: Remix.palette_line,
-              title: i18n('platform_text_light'),
-              onTap: () => _showColorPickerDialog(
-                context,
-                title: i18n('platform_text_light'),
-                currentColor: controller.platformTextLightValue,
-                onColorSelected: (color) {
-                  controller.switchToCustom();
-                  controller.platformTextLight.v = color.hex;
-                  controller.update();
-                },
-              ),
-              trailing: ColorIndicator(
-                width: 28,
-                height: 28,
-                borderRadius: 6,
-                color: controller.platformTextLightValue,
-                onSelectFocus: false,
-              ),
-            ),
-          ),
-          GetBuilder<RoomCardConfigController>(
-            builder: (_) => context.buildTile(
-              icon: Remix.palette_line,
-              title: i18n('platform_text_dark'),
-              onTap: () => _showColorPickerDialog(
-                context,
-                title: i18n('platform_text_dark'),
-                currentColor: controller.platformTextDarkValue,
-                onColorSelected: (color) {
-                  controller.switchToCustom();
-                  controller.platformTextDark.v = color.hex;
-                  controller.update();
-                },
-              ),
-              trailing: ColorIndicator(
-                width: 28,
-                height: 28,
-                borderRadius: 6,
-                color: controller.platformTextDarkValue,
-                onSelectFocus: false,
-              ),
-            ),
-          ),
-        ]),
-      ],
-    );
+    return _section(context, i18n('platform_tag'), [
+      _switchTile(
+        context,
+        icon: Remix.global_line,
+        title: i18n('show_platform'),
+        subtitle: i18n('show_platform_subtitle'),
+        value: controller.showPlatform,
+      ),
+      _sliderTile(
+        context,
+        icon: Remix.font_size,
+        title: i18n('platform_font_size'),
+        value: controller.platformFontSize.value,
+        min: 8,
+        max: 16,
+        displayValue: '${controller.platformFontSize.value.round()} px',
+        onChanged: (value) {
+          controller.platformFontSize.value = value;
+        },
+      ),
+      _fontWeightTile(
+        context,
+        title: i18n('platform_font_weight'),
+        currentIndex: controller.platformFontWeightIndex.value,
+        onSelected: (index) {
+          controller.platformFontWeightIndex.value = index;
+        },
+      ),
+      _sliderTile(
+        context,
+        icon: Remix.shape_line,
+        title: i18n('platform_border_radius'),
+        value: controller.platformBorderRadius.value,
+        min: 0,
+        max: 20,
+        displayValue: '${controller.platformBorderRadius.value.round()} px',
+        onChanged: (value) {
+          controller.platformBorderRadius.value = value;
+        },
+      ),
+      _colorTile(
+        context,
+        icon: Remix.paint_brush_line,
+        title: i18n('platform_background_light'),
+        color: () => controller.platformBackgroundLightValue,
+        onColorSelected: (color) {
+          controller.platformBackgroundLight.value = color.hex;
+        },
+      ),
+      _colorTile(
+        context,
+        icon: Remix.moon_clear_line,
+        title: i18n('platform_background_dark'),
+        color: () => controller.platformBackgroundDarkValue,
+        onColorSelected: (color) {
+          controller.platformBackgroundDark.value = color.hex;
+        },
+      ),
+      _colorTile(
+        context,
+        icon: Remix.font_color,
+        title: i18n('platform_text_light'),
+        color: () => controller.platformTextLightValue,
+        onColorSelected: (color) {
+          controller.platformTextLight.value = color.hex;
+        },
+      ),
+      _colorTile(
+        context,
+        icon: Remix.font_color,
+        title: i18n('platform_text_dark'),
+        color: () => controller.platformTextDarkValue,
+        onColorSelected: (color) {
+          controller.platformTextDark.value = color.hex;
+        },
+      ),
+    ]);
   }
 
-  // ============================================================
-  // 7. 徽章设置
-  // ============================================================
   Widget _buildBadgeSection(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        context.buildGroupTitle(i18n('badge_settings')),
-        context.buildModernCard([
-          GetBuilder<RoomCardConfigController>(
-            builder: (_) => context.buildSwitchTile(
-              title: i18n('show_live_badge'),
-              subtitle: i18n('show_live_badge_subtitle'),
-              value: controller.showLiveBadge,
-              icon: Remix.live_line,
-              onChanged: (val) {
-                controller.switchToCustom();
-                controller.showLiveBadge.v = val;
-                controller.update();
-              },
-            ),
-          ),
-          GetBuilder<RoomCardConfigController>(
-            builder: (_) => context.buildSwitchTile(
-              title: i18n('show_record_badge'),
-              subtitle: i18n('show_record_badge_subtitle'),
-              value: controller.showRecordBadge,
-              icon: Remix.vidicon_line,
-              onChanged: (val) {
-                controller.switchToCustom();
-                controller.showRecordBadge.v = val;
-                controller.update();
-              },
-            ),
-          ),
-          GetBuilder<RoomCardConfigController>(
-            builder: (_) => context.buildSwitchTile(
-              title: i18n('show_audience'),
-              subtitle: i18n('show_audience_subtitle'),
-              value: controller.showAudience,
-              icon: Remix.eye_line,
-              onChanged: (val) {
-                controller.switchToCustom();
-                controller.showAudience.v = val;
-                controller.update();
-              },
-            ),
-          ),
-          GetBuilder<RoomCardConfigController>(
-            builder: (_) => context.buildSliderTile(
-              context,
-              icon: Remix.font_size,
-              title: i18n('chip_font_size'),
-              value: controller.chipFontSize.v,
-              min: 8,
-              max: 18,
-              displayValue: '${controller.chipFontSize.v.round()} px',
-              onChanged: (val) {
-                controller.switchToCustom();
-                controller.chipFontSize.v = val;
-                controller.update();
-              },
-            ),
-          ),
-          GetBuilder<RoomCardConfigController>(
-            builder: (_) => context.buildTile(
-              icon: Remix.font_size_2,
-              title: i18n('chip_font_weight'),
-              subtitle: _getFontWeightName(controller.chipFontWeightIndex.v),
-              onTap: () => _showFontWeightDialog(
-                context,
-                title: i18n('chip_font_weight'),
-                currentIndex: controller.chipFontWeightIndex.v,
-                onSelected: (index) {
-                  controller.switchToCustom();
-                  controller.chipFontWeightIndex.v = index;
-                  controller.update();
-                },
-              ),
-              trailing: Icon(Icons.chevron_right_rounded, color: Theme.of(context).colorScheme.outline),
-            ),
-          ),
-          GetBuilder<RoomCardConfigController>(
-            builder: (_) => context.buildSliderTile(
-              context,
-              icon: Remix.rounded_corner,
-              title: i18n('chip_border_radius'),
-              value: controller.chipBorderRadius.v,
-              min: 0,
-              max: 30,
-              displayValue: '${controller.chipBorderRadius.v.round()} px',
-              onChanged: (val) {
-                controller.switchToCustom();
-                controller.chipBorderRadius.v = val;
-                controller.update();
-              },
-            ),
-          ),
-          GetBuilder<RoomCardConfigController>(
-            builder: (_) => context.buildTile(
-              icon: Remix.palette_line,
-              title: i18n('chip_background'),
-              onTap: () => _showColorPickerDialog(
-                context,
-                title: i18n('chip_background'),
-                currentColor: controller.chipBackgroundColorValue,
-                onColorSelected: (color) {
-                  controller.switchToCustom();
-                  controller.chipBackground.v = color.hex;
-                  controller.update();
-                },
-              ),
-              trailing: ColorIndicator(
-                width: 28,
-                height: 28,
-                borderRadius: 6,
-                color: controller.chipBackgroundColorValue,
-                onSelectFocus: false,
-              ),
-            ),
-          ),
-          GetBuilder<RoomCardConfigController>(
-            builder: (_) => context.buildTile(
-              icon: Remix.palette_line,
-              title: i18n('chip_text'),
-              onTap: () => _showColorPickerDialog(
-                context,
-                title: i18n('chip_text'),
-                currentColor: controller.chipTextColorValue,
-                onColorSelected: (color) {
-                  controller.switchToCustom();
-                  controller.chipText.v = color.hex;
-                  controller.update();
-                },
-              ),
-              trailing: ColorIndicator(
-                width: 28,
-                height: 28,
-                borderRadius: 6,
-                color: controller.chipTextColorValue,
-                onSelectFocus: false,
-              ),
-            ),
-          ),
-        ]),
-      ],
-    );
+    return _section(context, i18n('badge_settings'), [
+      _switchTile(
+        context,
+        icon: Remix.live_line,
+        title: i18n('show_live_badge'),
+        subtitle: i18n('show_live_badge_subtitle'),
+        value: controller.showLiveBadge,
+      ),
+      _switchTile(
+        context,
+        icon: Remix.record_circle_line,
+        title: i18n('show_record_badge'),
+        subtitle: i18n('show_record_badge_subtitle'),
+        value: controller.showRecordBadge,
+      ),
+      _switchTile(
+        context,
+        icon: Remix.eye_line,
+        title: i18n('show_audience'),
+        subtitle: i18n('show_audience_subtitle'),
+        value: controller.showAudience,
+      ),
+      _sliderTile(
+        context,
+        icon: Remix.font_size,
+        title: i18n('chip_font_size'),
+        value: controller.chipFontSize.value,
+        min: 8,
+        max: 18,
+        displayValue: '${controller.chipFontSize.value.round()} px',
+        onChanged: (value) {
+          controller.chipFontSize.value = value;
+        },
+      ),
+      _fontWeightTile(
+        context,
+        title: i18n('chip_font_weight'),
+        currentIndex: controller.chipFontWeightIndex.value,
+        onSelected: (index) {
+          controller.chipFontWeightIndex.value = index;
+        },
+      ),
+      _sliderTile(
+        context,
+        icon: Remix.shape_line,
+        title: i18n('chip_border_radius'),
+        value: controller.chipBorderRadius.value,
+        min: 0,
+        max: 30,
+        displayValue: '${controller.chipBorderRadius.value.round()} px',
+        onChanged: (value) {
+          controller.chipBorderRadius.value = value;
+        },
+      ),
+      _colorTile(
+        context,
+        icon: Remix.price_tag_3_line,
+        title: i18n('chip_background'),
+        color: () => controller.chipBackgroundColorValue,
+        onColorSelected: (color) {
+          controller.chipBackground.value = color.hex;
+        },
+      ),
+      _colorTile(
+        context,
+        icon: Remix.font_color,
+        title: i18n('chip_text'),
+        color: () => controller.chipTextColorValue,
+        onColorSelected: (color) {
+          controller.chipText.value = color.hex;
+        },
+      ),
+    ]);
   }
 
-  // ============================================================
-  // 8. 观众指标
-  // ============================================================
   Widget _buildMetricSection(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        context.buildGroupTitle(i18n('metric_badge')),
-        context.buildModernCard([
-          GetBuilder<RoomCardConfigController>(
-            builder: (_) => context.buildSliderTile(
-              context,
-              icon: Remix.font_size,
-              title: i18n('metric_font_size'),
-              value: controller.metricFontSize.v,
-              min: 8,
-              max: 16,
-              displayValue: '${controller.metricFontSize.v.round()} px',
-              onChanged: (val) {
-                controller.switchToCustom();
-                controller.metricFontSize.v = val;
-                controller.update();
-              },
-            ),
-          ),
-          GetBuilder<RoomCardConfigController>(
-            builder: (_) => context.buildTile(
-              icon: Remix.font_size_2,
-              title: i18n('metric_font_weight'),
-              subtitle: _getFontWeightName(controller.metricFontWeightIndex.v),
-              onTap: () => _showFontWeightDialog(
-                context,
-                title: i18n('metric_font_weight'),
-                currentIndex: controller.metricFontWeightIndex.v,
-                onSelected: (index) {
-                  controller.switchToCustom();
-                  controller.metricFontWeightIndex.v = index;
-                  controller.update();
-                },
-              ),
-              trailing: Icon(Icons.chevron_right_rounded, color: Theme.of(context).colorScheme.outline),
-            ),
-          ),
-          GetBuilder<RoomCardConfigController>(
-            builder: (_) => context.buildSliderTile(
-              context,
-              icon: Remix.rounded_corner,
-              title: i18n('metric_border_radius'),
-              value: controller.badgeRadius.v,
-              min: 4,
-              max: 24,
-              displayValue: '${controller.badgeRadius.v.round()} px',
-              onChanged: (val) {
-                controller.switchToCustom();
-                controller.badgeRadius.v = val;
-                controller.update();
-              },
-            ),
-          ),
-          GetBuilder<RoomCardConfigController>(
-            builder: (_) => context.buildSliderTile(
-              context,
-              icon: Remix.contrast_2_line,
-              title: i18n('metric_opacity'),
-              value: controller.badgeOpacity.v,
-              min: 0.1,
-              max: 1.0,
-              step: 0.05,
-              displayValue: controller.badgeOpacity.v.toStringAsFixed(2),
-              onChanged: (val) {
-                controller.switchToCustom();
-                controller.badgeOpacity.v = val;
-                controller.update();
-              },
-            ),
-          ),
-          GetBuilder<RoomCardConfigController>(
-            builder: (_) => context.buildTile(
-              icon: Remix.palette_line,
-              title: i18n('metric_background'),
-              onTap: () => _showColorPickerDialog(
-                context,
-                title: i18n('metric_background'),
-                currentColor: controller.badgeBackgroundValue,
-                onColorSelected: (color) {
-                  controller.switchToCustom();
-                  controller.badgeBackground.v = color.hex;
-                  controller.update();
-                },
-              ),
-              trailing: ColorIndicator(
-                width: 28,
-                height: 28,
-                borderRadius: 6,
-                color: controller.badgeBackgroundValue,
-                onSelectFocus: false,
-              ),
-            ),
-          ),
-          GetBuilder<RoomCardConfigController>(
-            builder: (_) => context.buildTile(
-              icon: Remix.palette_line,
-              title: i18n('metric_text'),
-              onTap: () => _showColorPickerDialog(
-                context,
-                title: i18n('metric_text'),
-                currentColor: controller.badgeForegroundValue,
-                onColorSelected: (color) {
-                  controller.switchToCustom();
-                  controller.badgeForeground.v = color.hex;
-                  controller.update();
-                },
-              ),
-              trailing: ColorIndicator(
-                width: 28,
-                height: 28,
-                borderRadius: 6,
-                color: controller.badgeForegroundValue,
-                onSelectFocus: false,
-              ),
-            ),
-          ),
-          GetBuilder<RoomCardConfigController>(
-            builder: (_) => context.buildTile(
-              icon: Remix.palette_line,
-              title: i18n('metric_border_color'),
-              onTap: () => _showColorPickerDialog(
-                context,
-                title: i18n('metric_border_color'),
-                currentColor: controller.metricBorderColorValue,
-                onColorSelected: (color) {
-                  controller.switchToCustom();
-                  controller.metricBorderColor.v = color.hex;
-                  controller.update();
-                },
-              ),
-              trailing: ColorIndicator(
-                width: 28,
-                height: 28,
-                borderRadius: 6,
-                color: controller.metricBorderColorValue,
-                onSelectFocus: false,
-              ),
-            ),
-          ),
-          GetBuilder<RoomCardConfigController>(
-            builder: (_) => context.buildSliderTile(
-              context,
-              icon: Remix.drag_move_line,
-              title: i18n('metric_border_width'),
-              value: controller.metricBorderWidth.v,
-              min: 0,
-              max: 3,
-              step: 0.1,
-              displayValue: controller.metricBorderWidth.v.toStringAsFixed(1),
-              onChanged: (val) {
-                controller.switchToCustom();
-                controller.metricBorderWidth.v = val;
-                controller.update();
-              },
-            ),
-          ),
-          GetBuilder<RoomCardConfigController>(
-            builder: (_) => context.buildSliderTile(
-              context,
-              icon: Remix.arrow_left_right_line,
-              title: i18n('metric_horizontal_padding'),
-              value: controller.metricHorizontalPadding.v,
-              min: 2,
-              max: 16,
-              displayValue: '${controller.metricHorizontalPadding.v.round()} px',
-              onChanged: (val) {
-                controller.switchToCustom();
-                controller.metricHorizontalPadding.v = val;
-                controller.update();
-              },
-            ),
-          ),
-          GetBuilder<RoomCardConfigController>(
-            builder: (_) => context.buildSliderTile(
-              context,
-              icon: Remix.arrow_up_down_line,
-              title: i18n('metric_vertical_padding'),
-              value: controller.metricVerticalPadding.v,
-              min: 1,
-              max: 12,
-              displayValue: '${controller.metricVerticalPadding.v.round()} px',
-              onChanged: (val) {
-                controller.switchToCustom();
-                controller.metricVerticalPadding.v = val;
-                controller.update();
-              },
-            ),
-          ),
-        ]),
-      ],
-    );
+    return _section(context, i18n('metric_badge'), [
+      _sliderTile(
+        context,
+        icon: Remix.font_size,
+        title: i18n('metric_font_size'),
+        value: controller.metricFontSize.value,
+        min: 8,
+        max: 16,
+        displayValue: '${controller.metricFontSize.value.round()} px',
+        onChanged: (value) {
+          controller.metricFontSize.value = value;
+        },
+      ),
+      _fontWeightTile(
+        context,
+        title: i18n('metric_font_weight'),
+        currentIndex: controller.metricFontWeightIndex.value,
+        onSelected: (index) {
+          controller.metricFontWeightIndex.value = index;
+        },
+      ),
+      _sliderTile(
+        context,
+        icon: Remix.shape_line,
+        title: i18n('metric_border_radius'),
+        value: controller.badgeRadius.value,
+        min: 4,
+        max: 24,
+        displayValue: '${controller.badgeRadius.value.round()} px',
+        onChanged: (value) {
+          controller.badgeRadius.value = value;
+        },
+      ),
+      _sliderTile(
+        context,
+        icon: Remix.eye_line,
+        title: i18n('metric_opacity'),
+        value: controller.badgeOpacity.value,
+        min: 0.1,
+        max: 1.0,
+        step: 0.05,
+        displayValue: controller.badgeOpacity.value.toStringAsFixed(2),
+        onChanged: (value) {
+          controller.badgeOpacity.value = value;
+        },
+      ),
+      _colorTile(
+        context,
+        icon: Remix.paint_brush_line,
+        title: i18n('metric_background'),
+        color: () => controller.badgeBackgroundValue,
+        onColorSelected: (color) {
+          controller.badgeBackground.value = color.hex;
+        },
+      ),
+      _colorTile(
+        context,
+        icon: Remix.font_color,
+        title: i18n('metric_text'),
+        color: () => controller.badgeForegroundValue,
+        onColorSelected: (color) {
+          controller.badgeForeground.value = color.hex;
+        },
+      ),
+      _colorTile(
+        context,
+        icon: Remix.focus_line,
+        title: i18n('metric_border_color'),
+        color: () => controller.metricBorderColorValue,
+        onColorSelected: (color) {
+          controller.metricBorderColor.value = color.hex;
+        },
+      ),
+      _sliderTile(
+        context,
+        icon: Remix.crop_line,
+        title: i18n('metric_border_width'),
+        value: controller.metricBorderWidth.value,
+        min: 0,
+        max: 3,
+        step: 0.1,
+        displayValue: controller.metricBorderWidth.value.toStringAsFixed(1),
+        onChanged: (value) {
+          controller.metricBorderWidth.value = value;
+        },
+      ),
+      _sliderTile(
+        context,
+        icon: Remix.expand_left_right_line,
+        title: i18n('metric_horizontal_padding'),
+        value: controller.metricHorizontalPadding.value,
+        min: 2,
+        max: 16,
+        displayValue: '${controller.metricHorizontalPadding.value.round()} px',
+        onChanged: (value) {
+          controller.metricHorizontalPadding.value = value;
+        },
+      ),
+      _sliderTile(
+        context,
+        icon: Remix.expand_up_down_line,
+        title: i18n('metric_vertical_padding'),
+        value: controller.metricVerticalPadding.value,
+        min: 1,
+        max: 12,
+        displayValue: '${controller.metricVerticalPadding.value.round()} px',
+        onChanged: (value) {
+          controller.metricVerticalPadding.value = value;
+        },
+      ),
+    ]);
   }
 
-  // ============================================================
-  // 9. 删除按钮
-  // ============================================================
-  Widget _buildDeleteSection(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        context.buildGroupTitle(i18n('delete_button')),
-        context.buildModernCard([
-          GetBuilder<RoomCardConfigController>(
-            builder: (_) => context.buildSwitchTile(
-              title: i18n('show_delete'),
-              subtitle: i18n('show_delete_subtitle'),
-              value: controller.showDelete,
-              icon: Remix.delete_bin_line,
-              onChanged: (val) {
-                controller.switchToCustom();
-                controller.showDelete.v = val;
-                controller.update();
-              },
-            ),
-          ),
-          GetBuilder<RoomCardConfigController>(
-            builder: (_) => context.buildSliderTile(
-              context,
-              icon: Remix.rounded_corner,
-              title: i18n('delete_button_radius'),
-              value: controller.deleteButtonBorderRadius.v,
-              min: 0,
-              max: 999,
-              displayValue: controller.deleteButtonBorderRadius.v >= 999
-                  ? '∞'
-                  : '${controller.deleteButtonBorderRadius.v.round()} px',
-              onChanged: (val) {
-                controller.switchToCustom();
-                controller.deleteButtonBorderRadius.v = val;
-                controller.update();
-              },
-            ),
-          ),
-          GetBuilder<RoomCardConfigController>(
-            builder: (_) => context.buildSliderTile(
-              context,
-              icon: Remix.arrow_left_right_line,
-              title: i18n('delete_button_size'),
-              value: controller.deleteButtonSize.v,
-              min: 12,
-              max: 32,
-              displayValue: '${controller.deleteButtonSize.v.round()} px',
-              onChanged: (val) {
-                controller.switchToCustom();
-                controller.deleteButtonSize.v = val;
-                controller.update();
-              },
-            ),
-          ),
-          GetBuilder<RoomCardConfigController>(
-            builder: (_) => context.buildSliderTile(
-              context,
-              icon: Remix.arrow_up_down_line,
-              title: i18n('delete_button_padding'),
-              value: controller.deleteButtonPadding.v,
-              min: 2,
-              max: 16,
-              displayValue: '${controller.deleteButtonPadding.v.round()} px',
-              onChanged: (val) {
-                controller.switchToCustom();
-                controller.deleteButtonPadding.v = val;
-                controller.update();
-              },
-            ),
-          ),
-          GetBuilder<RoomCardConfigController>(
-            builder: (_) => context.buildTile(
-              icon: Remix.palette_line,
-              title: i18n('delete_button_background'),
-              onTap: () => _showColorPickerDialog(
-                context,
-                title: i18n('delete_button_background'),
-                currentColor: controller.deleteButtonBackgroundColorValue,
-                onColorSelected: (color) {
-                  controller.switchToCustom();
-                  controller.deleteButtonBackground.v = color.hex;
-                  controller.update();
-                },
-              ),
-              trailing: ColorIndicator(
-                width: 28,
-                height: 28,
-                borderRadius: 6,
-                color: controller.deleteButtonBackgroundColorValue,
-                onSelectFocus: false,
-              ),
-            ),
-          ),
-          GetBuilder<RoomCardConfigController>(
-            builder: (_) => context.buildTile(
-              icon: Remix.palette_line,
-              title: i18n('delete_button_icon'),
-              onTap: () => _showColorPickerDialog(
-                context,
-                title: i18n('delete_button_icon'),
-                currentColor: controller.deleteButtonIconColorValue,
-                onColorSelected: (color) {
-                  controller.switchToCustom();
-                  controller.deleteButtonIcon.v = color.hex;
-                  controller.update();
-                },
-              ),
-              trailing: ColorIndicator(
-                width: 28,
-                height: 28,
-                borderRadius: 6,
-                color: controller.deleteButtonIconColorValue,
-                onSelectFocus: false,
-              ),
-            ),
-          ),
-        ]),
-      ],
-    );
-  }
-
-  // ============================================================
-  // 10. 重置
-  // ============================================================
   Widget _buildResetSection(BuildContext context) {
+    return _section(context, i18n('reset'), [
+      _tile(
+        context,
+        icon: Remix.restart_line,
+        title: i18n('reset_all_settings'),
+        subtitle: i18n('reset_all_settings_subtitle'),
+        trailing: _arrow(context),
+        onTap: () => _showResetDialog(context),
+      ),
+    ]);
+  }
+
+  Widget _section(BuildContext context, String title, List<Widget> children) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        context.buildGroupTitle(i18n('reset')),
-        context.buildModernCard([
-          GetBuilder<RoomCardConfigController>(
-            builder: (_) => context.buildTile(
-              icon: Remix.refresh_line,
-              title: i18n('reset_all_settings'),
-              subtitle: i18n('reset_all_settings_subtitle'),
-              onTap: () => _showResetDialog(context),
-              trailing: Icon(Icons.chevron_right_rounded, color: Theme.of(context).colorScheme.outline),
-            ),
-          ),
-        ]),
-      ],
+      children: [context.buildGroupTitle(title), context.buildModernCard(children)],
     );
   }
 
-  // ============================================================
-  // 对话框方法
-  // ============================================================
+  Widget _tile(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    String? subtitle,
+    Widget? trailing,
+    VoidCallback? onTap,
+  }) {
+    return GetBuilder<RoomCardConfigController>(
+      builder: (_) => context.buildTile(icon: icon, title: title, subtitle: subtitle, trailing: trailing, onTap: onTap),
+    );
+  }
+
+  Widget _switchTile(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    String? subtitle,
+    required RxBool value,
+  }) {
+    return context.buildSwitchTile(icon: icon, title: title, subtitle: subtitle, value: value);
+  }
+
+  Widget _sliderTile(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required double value,
+    required double min,
+    required double max,
+    double? step,
+    required String displayValue,
+    required ValueChanged<double> onChanged,
+  }) {
+    return GetBuilder<RoomCardConfigController>(
+      builder: (_) => context.buildSliderTile(
+        context,
+        icon: icon,
+        title: title,
+        value: value,
+        min: min,
+        max: max,
+        step: step,
+        displayValue: displayValue,
+        onChanged: (value) {
+          controller.switchToCustom();
+          onChanged(value);
+          controller.update();
+        },
+      ),
+    );
+  }
+
+  Widget _colorTile(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required Color Function() color,
+    required ValueChanged<Color> onColorSelected,
+  }) {
+    return GetBuilder<RoomCardConfigController>(
+      builder: (_) => context.buildTile(
+        icon: icon,
+        title: title,
+        trailing: ColorIndicator(width: 28, height: 28, borderRadius: 6, color: color(), onSelectFocus: false),
+        onTap: () => _showColorPickerDialog(
+          context,
+          title: title,
+          currentColor: color(),
+          onColorSelected: (newColor) {
+            controller.switchToCustom();
+            onColorSelected(newColor);
+            controller.update();
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _fontWeightTile(
+    BuildContext context, {
+    required String title,
+    required int currentIndex,
+    required ValueChanged<int> onSelected,
+  }) {
+    return _tile(
+      context,
+      icon: Remix.bold,
+      title: title,
+      subtitle: _getFontWeightName(currentIndex),
+      trailing: _arrow(context),
+      onTap: () => _showFontWeightDialog(
+        context,
+        title: title,
+        currentIndex: currentIndex,
+        onSelected: (index) {
+          controller.switchToCustom();
+          onSelected(index);
+          controller.update();
+        },
+      ),
+    );
+  }
+
+  Widget _arrow(BuildContext context) {
+    return Icon(Icons.chevron_right_rounded, color: Theme.of(context).colorScheme.outline);
+  }
+
+  Widget _arrowValue(BuildContext context, String value) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(value, style: AppTextStyles.t13.copyWith(color: Theme.of(context).colorScheme.outline)),
+        const SizedBox(width: 2),
+        _arrow(context),
+      ],
+    );
+  }
 
   void _showPresetDialog(BuildContext context) {
     final theme = Theme.of(context);
@@ -1573,7 +1059,7 @@ class RoomCardSettingsPage extends GetView<RoomCardConfigController> {
     required int currentIndex,
     required ValueChanged<int> onSelected,
   }) {
-    final fontWeightNames = ['100', '200', '300', '400', '500', '600', '700', '800', '900'];
+    const names = ['100', '200', '300', '400', '500', '600', '700', '800', '900'];
 
     showDialog(
       context: context,
@@ -1596,7 +1082,7 @@ class RoomCardSettingsPage extends GetView<RoomCardConfigController> {
               },
               child: Column(
                 mainAxisSize: MainAxisSize.min,
-                children: fontWeightNames.asMap().entries.map((entry) {
+                children: names.asMap().entries.map((entry) {
                   final index = entry.key;
                   final name = entry.value;
 
@@ -1617,19 +1103,31 @@ class RoomCardSettingsPage extends GetView<RoomCardConfigController> {
 
   String _getFontWeightName(int index) {
     const names = ['100', '200', '300', '400', '500', '600', '700', '800', '900'];
-    if (index < 0 || index >= names.length) return '400';
+
+    if (index < 0 || index >= names.length) {
+      return '400';
+    }
+
     return names[index];
   }
 
   String _getFontWeightDisplay(int index) {
     const displays = ['Thin', 'ExtraLight', 'Light', 'Regular', 'Medium', 'SemiBold', 'Bold', 'ExtraBold', 'Black'];
-    if (index < 0 || index >= displays.length) return 'Regular';
+
+    if (index < 0 || index >= displays.length) {
+      return 'Regular';
+    }
+
     return displays[index];
   }
 
   String _getBoxFitName(int index) {
     const names = ['fill', 'contain', 'cover', 'fitWidth', 'fitHeight', 'none', 'scaleDown'];
-    if (index < 0 || index >= names.length) return 'cover';
+
+    if (index < 0 || index >= names.length) {
+      return 'cover';
+    }
+
     return names[index];
   }
 

@@ -166,7 +166,7 @@ class _RoomTileLeading extends StatelessWidget {
     return Stack(
       clipBehavior: Clip.none,
       children: [
-        CommonAvatar(avatarUrl: room.avatar, fallbackName: room.nick, radius: 19),
+        CommonAvatar(avatarUrl: room.avatar, fallbackName: room.nick, size: 40),
         if (hasLogo)
           Positioned(
             right: -3,

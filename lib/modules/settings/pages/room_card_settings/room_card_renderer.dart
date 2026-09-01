@@ -43,7 +43,6 @@ class RoomCardRenderer {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final effectiveDense = this.effectiveDense;
-
     if (config.showAsListTile) {
       return _buildListTileOnly(context, isDark, effectiveDense);
     }
@@ -53,13 +52,14 @@ class RoomCardRenderer {
       elevation: config.enableShadow ? config.cardElevation : 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(config.cardBorderRadius)),
       color: config.cardBackground ?? (isDark ? Colors.grey[900] : Colors.white),
-      child: InkWell(
+      child: InkResponse(
         borderRadius: BorderRadius.circular(config.cardBorderRadius),
         onTap: onTap,
         onLongPress: onLongPress,
         onSecondaryTap: onLongPress,
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _buildCover(context, isDark, effectiveDense),
             if (config.showAvatar || config.showSubtitle || config.showPlatform)
@@ -71,6 +71,8 @@ class RoomCardRenderer {
   }
 
   Widget _buildListTileOnly(BuildContext context, bool isDark, bool effectiveDense) {
+    final avatarSize = effectiveDense ? config.denseAvatarSize : config.avatarSize;
+
     final titleStyle = TextStyle(
       fontSize: effectiveDense ? config.denseTitleFontSize : config.titleFontSize,
       fontWeight: config.titleFontWeight,
@@ -85,6 +87,47 @@ class RoomCardRenderer {
       height: config.subtitleLineHeight,
     );
 
+    final Widget? avatar = config.showAvatar
+        ? CommonAvatar(avatarUrl: room.avatar, fallbackName: room.nick, dense: effectiveDense, size: avatarSize)
+        : null;
+
+    final Widget title = Text(room.title ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: titleStyle);
+
+    final Widget? subtitle = config.showSubtitle
+        ? Text(room.nick ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: subtitleStyle)
+        : null;
+
+    final Widget trailing = _buildListTileTrailing(context, isDark, effectiveDense);
+
+    final bool hasTrailing = trailing is! SizedBox || (trailing.width != 0);
+
+    final Widget content = Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: effectiveDense ? config.denseContentHorizontalPadding : config.contentHorizontalPadding,
+        vertical: effectiveDense ? config.denseContentVerticalPadding : config.contentVerticalPadding,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          if (avatar != null) ...[
+            SizedBox(width: avatarSize, height: avatarSize, child: avatar),
+            SizedBox(width: effectiveDense ? config.denseHorizontalTitleGap : config.horizontalTitleGap),
+          ],
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                title,
+                if (subtitle != null) ...[SizedBox(height: effectiveDense ? 2 : 3), subtitle],
+              ],
+            ),
+          ),
+          if (hasTrailing) ...[SizedBox(width: effectiveDense ? 8 : 12), Flexible(child: trailing)],
+        ],
+      ),
+    );
+
     return Card(
       margin: config.cardMargin,
       elevation: config.enableShadow ? config.cardElevation : 0,
@@ -95,25 +138,7 @@ class RoomCardRenderer {
         onTap: onTap,
         onLongPress: onLongPress,
         onSecondaryTap: onLongPress,
-        child: ListTile(
-          dense: effectiveDense,
-          minLeadingWidth: config.showAvatar ? (effectiveDense ? config.denseAvatarSize : config.avatarSize) : 0,
-          contentPadding: EdgeInsets.symmetric(
-            horizontal: effectiveDense ? config.denseContentHorizontalPadding : config.contentHorizontalPadding,
-            vertical: effectiveDense ? config.denseContentVerticalPadding : config.contentVerticalPadding,
-          ),
-          horizontalTitleGap: config.showAvatar
-              ? (effectiveDense ? config.denseHorizontalTitleGap : config.horizontalTitleGap)
-              : 0,
-          leading: config.showAvatar
-              ? CommonAvatar(avatarUrl: room.avatar, fallbackName: room.nick, dense: effectiveDense)
-              : null,
-          title: Text(room.title ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: titleStyle),
-          subtitle: config.showSubtitle
-              ? Text(room.nick ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: subtitleStyle)
-              : null,
-          trailing: _buildListTileTrailing(context, isDark, effectiveDense),
-        ),
+        child: content,
       ),
     );
   }
@@ -156,6 +181,61 @@ class RoomCardRenderer {
       );
     }
 
+    if (room.isLiveNow && config.showAudience) {
+      return Obx(() {
+        final app = SettingsService.to.app;
+        final preferReal = app.preferRealOnlineCounts.v;
+        final platformEnabled = app.isRealOnlineEnabledFor(room.platform);
+
+        final type = room.audienceType(preferRealOnline: preferReal, platformEnabled: platformEnabled);
+        final value = room.audienceValue(preferRealOnline: preferReal, platformEnabled: platformEnabled);
+
+        final icon = switch (type) {
+          AudienceMetricType.onlineViewers => Icons.people_alt_rounded,
+          AudienceMetricType.followers => Icons.favorite_rounded,
+          AudienceMetricType.totalViewers => Icons.visibility_rounded,
+          _ => Icons.whatshot_rounded,
+        };
+
+        final displayValue = value.isEmpty ? i18n('audience_waiting') : readableCount(value);
+
+        return Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: effectiveDense ? config.denseMetricHorizontalPadding : config.metricHorizontalPadding,
+            vertical: effectiveDense ? config.denseMetricVerticalPadding : config.metricVerticalPadding,
+          ),
+          decoration: BoxDecoration(
+            color:
+                config.metricBackgroundColor ??
+                (isDark ? Colors.black.withValues(alpha: 0.58) : Colors.black.withValues(alpha: 0.48)),
+            borderRadius: BorderRadius.circular(
+              effectiveDense ? config.denseMetricBorderRadius : config.metricBorderRadius,
+            ),
+            border: Border.all(
+              color: config.metricBorderColor ?? Get.theme.primaryColor.withValues(alpha: 0.12),
+              width: config.metricBorderWidth,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, color: config.metricTextColor, size: effectiveDense ? 14 : 16),
+              SizedBox(width: effectiveDense ? 4 : 5),
+              Text(
+                displayValue,
+                style: TextStyle(
+                  fontSize: effectiveDense ? config.denseMetricFontSize : config.metricFontSize,
+                  color: config.metricTextColor,
+                  fontWeight: config.metricFontWeight,
+                  letterSpacing: 0.1,
+                ),
+              ),
+            ],
+          ),
+        );
+      });
+    }
+
     if (room.isLiveNow) {
       return Container(
         padding: EdgeInsets.symmetric(horizontal: effectiveDense ? 8 : 10, vertical: effectiveDense ? 4 : 6),
@@ -181,125 +261,132 @@ class RoomCardRenderer {
     return const SizedBox.shrink();
   }
 
-  Widget _buildCover(BuildContext context, bool isDark, bool effectiveDense) {
-    final showRecordBadge = room.isRecord == true && config.showRecordBadge;
-    final showDeleteButton = showDelete && config.showDelete;
-    final showAudienceBadge = room.isLiveNow && config.showLiveBadge && config.showAudience && !statusPending;
+  Widget _buildPlatformTag(BuildContext context) {
+    final platform = room.platform;
+    if (platform == null || platform.isEmpty) {
+      return const SizedBox.shrink();
+    }
 
-    return Stack(
-      children: [
-        AspectRatio(
-          aspectRatio: config.coverAspectRatio,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(config.coverBorderRadius),
-            child: ColoredBox(
-              color: config.coverPlaceholderColor ?? (isDark ? Colors.grey[850]! : Colors.grey.shade100),
-              child: _buildCoverImage(context, isDark, effectiveDense),
+    final id = platform.trim().toLowerCase();
+    final effectiveDense = this.effectiveDense;
+
+    final site = Sites.supportSites.firstWhere((e) => e.id == id, orElse: () => Sites.supportSites.first);
+
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: config.platformHorizontalPadding,
+        vertical: config.platformVerticalPadding,
+      ),
+      decoration: BoxDecoration(
+        color: config.platformBackgroundColor ?? Colors.black.withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(config.platformBorderRadius),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: effectiveDense ? 13 : 16,
+            height: effectiveDense ? 13 : 16,
+            padding: EdgeInsets.all(effectiveDense ? 1.8 : 2),
+            decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+            child: Image.asset(site.logo, fit: BoxFit.contain),
+          ),
+          SizedBox(width: effectiveDense ? 3 : 4),
+          Text(
+            i18n('site_$id'),
+            style: TextStyle(
+              color: config.platformTextColor ?? Colors.white,
+              fontSize: effectiveDense ? (config.densePlatformFontSize) : config.platformFontSize,
+              fontWeight: config.platformFontWeight,
+              letterSpacing: 0.2,
             ),
           ),
-        ),
-        if (config.showPlatform && room.platform != null && room.platform!.isNotEmpty)
-          Positioned(
-            left: config.coverPositionPadding,
-            top: config.coverPositionPadding,
-            child: context.buildPlatformTag(room.platform!, mini: true),
-          )
-        else if (debug)
-          _buildDebugMarker(
-            context,
-            key: 'platform',
-            left: config.coverPositionPadding,
-            top: config.coverPositionPadding,
-          ),
-        if (showRecordBadge)
-          Positioned(
-            right: showDeleteButton ? config.coverPositionPadding + 32 : config.coverPositionPadding,
-            top: config.coverPositionPadding,
-            child: CountChip(
-              icon: Icons.videocam_rounded,
-              count: i18n('replay'),
-              dense: effectiveDense,
-              color: config.chipBackgroundColor ?? Theme.of(context).primaryColor,
-              textColor: config.chipTextColor,
-              fontSize: effectiveDense ? config.denseChipFontSize : config.chipFontSize,
-              fontWeight: config.chipFontWeight,
-              horizontalPadding: effectiveDense ? config.denseChipHorizontalPadding : config.chipHorizontalPadding,
-              verticalPadding: effectiveDense ? config.denseChipVerticalPadding : config.chipVerticalPadding,
-            ),
-          )
-        else if (debug && room.isRecord == true)
-          _buildDebugMarker(
-            context,
-            key: 'record',
-            right: showDeleteButton ? config.coverPositionPadding + 32 : config.coverPositionPadding,
-            top: config.coverPositionPadding,
-          ),
-        if (showDeleteButton)
-          Positioned(
-            right: config.coverPositionPadding,
-            top: config.coverPositionPadding,
-            child: _buildDeleteButton(effectiveDense),
-          )
-        else if (debug && showDelete)
-          _buildDebugMarker(
-            context,
-            key: 'delete',
-            right: config.coverPositionPadding,
-            top: config.coverPositionPadding,
-          ),
-        if (statusPending)
-          Positioned(
-            right: config.coverPositionPadding,
-            bottom: config.coverPositionPadding,
-            child: CoverMetricBadge(
-              icon: Icons.sync_rounded,
-              value: statusPendingLabel ?? i18n('favorite_status_verifying'),
-              semanticLabel: statusPendingLabel ?? i18n('favorite_status_verifying'),
-              dense: effectiveDense,
-              backgroundColor: config.metricBackgroundColor,
-              borderColor: config.metricBorderColor,
-              borderWidth: config.metricBorderWidth,
-              textColor: config.metricTextColor,
-              fontSize: effectiveDense ? config.denseMetricFontSize : config.metricFontSize,
-              fontWeight: config.metricFontWeight,
-              borderRadius: effectiveDense ? config.denseMetricBorderRadius : config.metricBorderRadius,
-              horizontalPadding: effectiveDense ? config.denseMetricHorizontalPadding : config.metricHorizontalPadding,
-              verticalPadding: effectiveDense ? config.denseMetricVerticalPadding : config.metricVerticalPadding,
-            ),
-          )
-        else if (showAudienceBadge)
-          Positioned(
-            right: config.coverPositionPadding,
-            bottom: config.coverPositionPadding,
-            child: _buildAudienceBadge(context, effectiveDense),
-          )
-        else if (debug && room.isLiveNow)
-          _buildDebugMarker(
-            context,
-            key: 'audience',
-            right: config.coverPositionPadding,
-            bottom: config.coverPositionPadding,
-          ),
-      ],
+        ],
+      ),
     );
   }
 
-  Widget _buildDebugMarker(
-    BuildContext context, {
-    required String key,
-    double? left,
-    double? right,
-    double? top,
-    double? bottom,
-  }) {
-    if (!debug) return const SizedBox.shrink();
+  Widget _buildCover(BuildContext context, bool isDark, bool effectiveDense) {
+    final showRecordBadge = room.isRecord == true && config.showRecordBadge;
 
-    return Positioned(
-      left: left,
-      right: right,
-      top: top,
-      bottom: bottom,
-      child: _DebugFlash(keyName: key),
+    final showDeleteButton = showDelete && config.showDelete;
+
+    final showAudienceBadge = room.isLiveNow && config.showLiveBadge && config.showAudience && !statusPending;
+
+    return AspectRatio(
+      aspectRatio: config.coverAspectRatio > 0 ? config.coverAspectRatio : 16 / 9,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(config.coverBorderRadius),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            ColoredBox(
+              color: config.coverPlaceholderColor ?? (isDark ? Colors.grey[850]! : Colors.grey.shade100),
+              child: _buildCoverImage(context, isDark, effectiveDense),
+            ),
+
+            if (config.showPlatform && room.platform != null && room.platform!.isNotEmpty)
+              Positioned(
+                left: config.coverPositionPadding,
+                top: config.coverPositionPadding,
+                child: _buildPlatformTag(context),
+              ),
+
+            if (showRecordBadge)
+              Positioned(
+                right: showDeleteButton ? config.coverPositionPadding + 32 : config.coverPositionPadding,
+                top: config.coverPositionPadding,
+                child: CountChip(
+                  icon: Icons.videocam_rounded,
+                  count: i18n('replay'),
+                  dense: effectiveDense,
+                  color: config.chipBackgroundColor ?? Theme.of(context).primaryColor,
+                  textColor: config.chipTextColor,
+                  fontSize: effectiveDense ? config.denseChipFontSize : config.chipFontSize,
+                  fontWeight: config.chipFontWeight,
+                  horizontalPadding: effectiveDense ? config.denseChipHorizontalPadding : config.chipHorizontalPadding,
+                  verticalPadding: effectiveDense ? config.denseChipVerticalPadding : config.chipVerticalPadding,
+                ),
+              ),
+
+            if (showDeleteButton)
+              Positioned(
+                right: config.coverPositionPadding,
+                top: config.coverPositionPadding,
+                child: _buildDeleteButton(effectiveDense),
+              ),
+
+            if (statusPending)
+              Positioned(
+                right: config.coverPositionPadding,
+                bottom: config.coverPositionPadding,
+                child: CoverMetricBadge(
+                  icon: Icons.sync_rounded,
+                  value: statusPendingLabel ?? i18n('favorite_status_verifying'),
+                  semanticLabel: statusPendingLabel ?? i18n('favorite_status_verifying'),
+                  dense: effectiveDense,
+                  backgroundColor: config.metricBackgroundColor,
+                  borderColor: config.metricBorderColor,
+                  borderWidth: config.metricBorderWidth,
+                  textColor: config.metricTextColor,
+                  fontSize: effectiveDense ? config.denseMetricFontSize : config.metricFontSize,
+                  fontWeight: config.metricFontWeight,
+                  borderRadius: effectiveDense ? config.denseMetricBorderRadius : config.metricBorderRadius,
+                  horizontalPadding: effectiveDense
+                      ? config.denseMetricHorizontalPadding
+                      : config.metricHorizontalPadding,
+                  verticalPadding: effectiveDense ? config.denseMetricVerticalPadding : config.metricVerticalPadding,
+                ),
+              )
+            else if (showAudienceBadge)
+              Positioned(
+                right: config.coverPositionPadding,
+                bottom: config.coverPositionPadding,
+                child: _buildAudienceBadge(context, effectiveDense),
+              ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -343,6 +430,8 @@ class RoomCardRenderer {
 
         return Image.asset(
           asset,
+          width: double.infinity,
+          height: double.infinity,
           fit: config.coverFit,
           filterQuality: config.coverFilterQuality,
           cacheWidth: cacheWidth,
@@ -372,6 +461,8 @@ class RoomCardRenderer {
             cacheKey: epoch == 0 ? coverUrl : '$coverUrl#$epoch',
             httpHeaders: networkImageHeaders(coverUrl),
             cacheManager: CustomImageCacheManager.instance,
+            width: double.infinity,
+            height: double.infinity,
             fit: config.coverFit,
             filterQuality: config.coverFilterQuality,
             memCacheWidth: cacheWidth,
@@ -402,6 +493,8 @@ class RoomCardRenderer {
 
         return Image.network(
           coverUrl,
+          width: double.infinity,
+          height: double.infinity,
           fit: config.coverFit,
           filterQuality: config.coverFilterQuality,
           cacheWidth: cacheWidth,
@@ -497,37 +590,106 @@ class RoomCardRenderer {
   }
 
   Widget _buildInfo(BuildContext context, bool isDark, bool effectiveDense) {
+    double safeSize(double value, {required double min, required double max, required double fallback}) {
+      if (!value.isFinite) {
+        return fallback;
+      }
+      return value.clamp(min, max).toDouble();
+    }
+
+    final avatarSize = safeSize(
+      effectiveDense ? config.denseAvatarSize : config.avatarSize,
+      min: 16,
+      max: 200,
+      fallback: effectiveDense ? 36 : 44,
+    );
+
+    final titleFontSize = safeSize(
+      effectiveDense ? config.denseTitleFontSize : config.titleFontSize,
+      min: 6,
+      max: 40,
+      fallback: effectiveDense ? 13 : 15,
+    );
+
+    final subtitleFontSize = safeSize(
+      effectiveDense ? config.denseSubtitleFontSize : config.subtitleFontSize,
+      min: 6,
+      max: 32,
+      fallback: effectiveDense ? 11 : 12,
+    );
+
+    final titleLineHeight = safeSize(config.titleLineHeight, min: 0.5, max: 3, fallback: 1.2);
+
+    final subtitleLineHeight = safeSize(config.subtitleLineHeight, min: 0.5, max: 3, fallback: 1.2);
+
+    final contentHorizontalPadding = safeSize(
+      effectiveDense ? config.denseContentHorizontalPadding : config.contentHorizontalPadding,
+      min: 0,
+      max: 100,
+      fallback: effectiveDense ? 10 : 16,
+    );
+
+    final contentVerticalPadding = safeSize(
+      effectiveDense ? config.denseContentVerticalPadding : config.contentVerticalPadding,
+      min: 0,
+      max: 100,
+      fallback: effectiveDense ? 8 : 10,
+    );
+
+    final titleGap = safeSize(
+      effectiveDense ? config.denseHorizontalTitleGap : config.horizontalTitleGap,
+      min: 0,
+      max: 100,
+      fallback: 8,
+    );
+
     final titleStyle = TextStyle(
-      fontSize: effectiveDense ? config.denseTitleFontSize : config.titleFontSize,
+      fontSize: titleFontSize,
       fontWeight: config.titleFontWeight,
       color: config.titleColor ?? (isDark ? Colors.white : Colors.black87),
-      height: config.titleLineHeight,
+      height: titleLineHeight,
     );
 
     final subtitleStyle = TextStyle(
-      fontSize: effectiveDense ? config.denseSubtitleFontSize : config.subtitleFontSize,
+      fontSize: subtitleFontSize,
       fontWeight: config.subtitleFontWeight,
       color: config.subtitleColor ?? (isDark ? Colors.grey[400] : Colors.grey[700]),
-      height: config.subtitleLineHeight,
+      height: subtitleLineHeight,
     );
 
-    return ListTile(
-      dense: effectiveDense,
-      minLeadingWidth: config.showAvatar ? (effectiveDense ? config.denseAvatarSize : config.avatarSize) : 0,
-      contentPadding: EdgeInsets.symmetric(
-        horizontal: effectiveDense ? config.denseContentHorizontalPadding : config.contentHorizontalPadding,
-        vertical: effectiveDense ? config.denseContentVerticalPadding : config.contentVerticalPadding,
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: contentHorizontalPadding, vertical: contentVerticalPadding),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          if (config.showAvatar) ...[
+            SizedBox(
+              width: avatarSize,
+              height: avatarSize,
+              child: CommonAvatar(
+                avatarUrl: room.avatar,
+                fallbackName: room.nick,
+                dense: effectiveDense,
+                size: avatarSize,
+              ),
+            ),
+            SizedBox(width: titleGap),
+          ],
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(room.title ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: titleStyle),
+                if (config.showSubtitle) ...[
+                  SizedBox(height: effectiveDense ? 2 : 3),
+                  Text(room.nick ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: subtitleStyle),
+                ],
+              ],
+            ),
+          ),
+        ],
       ),
-      horizontalTitleGap: config.showAvatar
-          ? (effectiveDense ? config.denseHorizontalTitleGap : config.horizontalTitleGap)
-          : 0,
-      leading: config.showAvatar
-          ? CommonAvatar(avatarUrl: room.avatar, fallbackName: room.nick, dense: effectiveDense)
-          : null,
-      title: Text(room.title ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: titleStyle),
-      subtitle: config.showSubtitle
-          ? Text(room.nick ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: subtitleStyle)
-          : null,
     );
   }
 }
