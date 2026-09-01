@@ -99,6 +99,15 @@ daemon 让后续阶段长期误排队。
 
 禁止绕过互斥脚本并行启动另一套全量测试或构建。
 
+### 5.1 共享 Android 实机互斥
+
+同一部 Android 手机还会被哔哩哔哩模块、小红书模块与 Pure Live 三个任务共同使用。实机测试固定按
+`biliroaming → xhs → purelive → biliroaming` 轮转，并遵守
+[`docs/ANDROID_DEVICE_TEST_ROTATION.md`](docs/ANDROID_DEVICE_TEST_ROTATION.md)。Pure Live 的安装、启动/停止、触控、旋转、UIAutomator、截图、日志清理和设备设置操作必须通过
+`tool/run_android_device_test_turn.ps1` 取得 `purelive` lane；不得在其他 lane 的轮次直接操作设备。
+
+设备租约与重型构建锁相互独立：需要同时构建和实机验证时，先完成受构建资源守卫保护的构建，再以一个有边界的设备轮次执行安装与验证，避免持有手机租约等待长时间编译。
+
 ## 6. 记录与收尾
 
 每次重型任务在 `local-artifacts/build-records/` 写入 JSON 记录，至少包含：

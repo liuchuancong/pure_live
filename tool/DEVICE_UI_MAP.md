@@ -34,6 +34,12 @@ Dynamic room titles and danmaku text are not treated as stable controls.
 
 ## Fast path and verification
 
+Before any state-changing device command, acquire the Pure Live turn through
+`tool/run_android_device_test_turn.ps1`. The phone is shared with the BiliRoaming and
+Xiaohongshu tasks in the fixed `biliroaming -> xhs -> purelive` rotation; see
+`docs/ANDROID_DEVICE_TEST_ROTATION.md`. The foreground-package guard below is
+still mandatory after the lease is acquired.
+
 Normal runs use the cached coordinates directly, so they do not take a
 screenshot and do not run image recognition. The script brings PureLive to the
 foreground and verifies `topResumedActivity` before every action. This prevents

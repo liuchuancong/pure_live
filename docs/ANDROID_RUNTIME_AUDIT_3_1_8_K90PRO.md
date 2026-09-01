@@ -11,7 +11,7 @@
 - 物理显示为 `1200×2608`、480 dpi，系统公开 60/90/120 Hz 三种模式；测试时活动模式及 SurfaceFlinger 应用请求均为 120 Hz。
 - 网络 ADB 同时暴露 IP serial 与 mDNS alias，所有命令固定指定同一个 IP serial，避免同一物理设备被当成两台设备。配对端口、配对码和连接地址不写入仓库。
 - UI 回归不依赖 root；设备中安装了管理工具不等同于 ADB shell 已获得 root。本轮没有修改应用数据、账号、Cookie、系统包或其他应用。
-- 用户切到其他应用时，`android_ui.ps1` 的前台校验会在触控前终止。本轮准备进入直播间时检测到 Bilibili 在前台，操作按设计停止，没有把缓存坐标发送给其他应用。
+- 用户切到其他应用时，测试包装层和 `android_ui.ps1 -NoBringToFront` 的前台校验会在触控前终止。本轮准备进入直播间时检测到 Bilibili 在前台，操作按设计停止，没有把缓存坐标发送给其他应用；需要主动开始一段测试时才显式把 Pure Live 拉到前台。
 
 ## 2. 覆盖安装与启动
 
@@ -27,6 +27,7 @@
 - 新增首页顶部下拉刷新手势和 `refresh_home` 流程；实际执行后应用保持前台、操作完成且无 Pure Live FATAL/ANR。
 - 实机暴露了两个测试工具问题并已修复：Windows PowerShell 5.1 解析脚本中损坏的非 ASCII 正则会中止快照；其 JSON 序列化还会制造大面积无意义缩进差异。过滤表达式现为 ASCII，UI XML 以二进制拉取后显式按 UTF-8 读取，JSON 使用跨 PowerShell 版本一致的两空格格式写回。
 - `validate_device_ui_map.py` 现在检查点位/节点边界、中心、语义类型和 Unicode replacement character，避免乱码快照进入仓库。
+- 当前 Issue 相邻回归分两组执行：WebSocket 重连、弹幕生命周期、虎牙醒目留言和多画面退出 17/17；导航边界、关注刷新、搜索、画质文案、直播页布局、竖屏面板、录制中心、弹幕列表和设置面板 64/64。记录分别为 `local-artifacts/build-records/20260901T031920369Z-quality-focused.json` 与 `local-artifacts/build-records/20260901T032610237Z-quality-focused.json`。
 
 ## 4. 首页与热门页
 
@@ -38,9 +39,15 @@
 | 热门纵向手势 | RUN | 连续上下滑动后应用仍响应；Android `gfxinfo` 对 Flutter Surface 本轮返回 0 个 View 帧，故不把该计数写成帧率通过，后续改用 SurfaceFlinger/Perfetto 或屏幕录像时间线 |
 | 刷新率请求 | PASS（首页） | K90 Pro 活动显示模式为 120 Hz；SurfaceFlinger 存在 Pure Live 的 `RequestedRefreshRateVote=120.00001` |
 
+## 5. 权限与后台前置条件
+
+- 通知权限已授予，系统允许 `START_FOREGROUND`、Wake Lock 和后台运行，Pure Live 也在 device-idle 用户白名单中。
+- 新设备当前没有授予悬浮窗 app-op，`SYSTEM_ALERT_WINDOW` 为 `ignore`；系统 PiP 不依赖该权限，但应用外悬浮窗测试必须先走一次真实授权流程。
+- `READ_MEDIA_VIDEO` 当前未授予，`MANAGE_EXTERNAL_STORAGE` 仍为系统默认。默认应用私有录制目录会先执行真实写入探针并可直接使用；外部自定义录制目录必须在实机选择目录后验证读写、重启持久化、打开目录和拒绝权限提示。先保留新安装的真实状态，避免预授权掩盖权限流程缺陷。
+
 截图和语义证据位于 `local-artifacts/diagnostics/android-k90pro/`，其中包括干净首页、Bilibili 热门双列网格和对应 UI XML。该目录是本地证据，不提交包含设备状态的图片。
 
-## 5. 后续实机顺序
+## 6. 后续实机顺序
 
 手机空闲且 Pure Live 处于前台后，按以下顺序继续，并在每次触控前保留前台保护：
 
@@ -50,4 +57,3 @@
 4. 纯音频往返、后台总开关、锁屏、系统 PiP 与停止计时；
 5. 录制中心的实时大小、稳定会话开始时间、重试分片、停止/删除和滚动边界；
 6. 30～60 分钟资源趋势、CPU/温度、播放器结束后的进程/媒体会话/Wake Lock 回落。
-
