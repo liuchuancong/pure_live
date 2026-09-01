@@ -64,7 +64,15 @@
 
 本轮证据目录：`local-artifacts/diagnostics/android-runtime-smoke-20260901T142833509/`、`local-artifacts/diagnostics/android-runtime-smoke-20260901T145018348/`、`local-artifacts/diagnostics/android-local-interaction-20260901T154001015/`、`local-artifacts/diagnostics/android-runtime-smoke-20260901T202512542/`。
 
-## 7. 后续实机顺序
+## 7. Android 真实录制与退出清理
+
+- 新增 `tool/android_recording_smoke.ps1`，并继续通过三任务共享手机的 Pure Live 轮次运行。脚本会自动唤醒 10 分钟锁屏设备、解除无密码 keyguard，进入真实 Bilibili 房间，启动录制、读取录制中心实时指标、停止并取消监控，再从应用私有目录实读成品文件。
+- cycle 38 在 `3.1.8 / 6121` arm64 Debug 包上真实退出 0，全部命名断言通过。录制中心在运行时显示 35 秒、2.75 MB、1.1x；启动状态在 3,650 ms 内到达，停止后 3,532 ms 内完成封装并显示“已停止”，没有“录制失败”“最近失败”或流地址格式错误。
+- 本轮从应用私有目录取得 `7,763,631 bytes` MP4，SHA-256 为 `A12A4B6DF16ADA3BD0C90D113FC552287A1D24AD62C809CE8666B59C9AB3105E`。`ffprobe` 读取到 H.264 视频轨和 AAC 音频轨，媒体时长 60.086333 秒；从客户端确认“录制中”到提交停止的实测墙钟为 57.220 秒，差值处于封装容差内。
+- 测试结束后监控任务已取消，`am force-stop` 后 `pidof` 返回无进程。`dumpsys power` 的当前 `Wake Locks` 区段没有 Pure Live，只剩设备上的 MT 管理工具锁。测试器原先搜索整个 power dump，会把历史 ACQ/REL 事件误判为当前持锁；现仅解析 `Wake Locks` 到 `Suspend Blockers` 之间的活动区段，并把“区段成功解析”作为独立门禁。
+- 证据为 `local-artifacts/diagnostics/android-recording-smoke-20260901T212952600/summary.json`。本样本证明 Bilibili 短录、实时指标、停止封装、私有文件读取及强制停止后的进程/活动 Wake Lock 清理；其他平台、失败重连、待开播、跨签名续接及长录趋势继续保留在验收矩阵中。
+
+## 8. 后续实机顺序
 
 手机空闲且 Pure Live 处于前台后，按以下顺序继续，并在每次触控前保留前台保护：
 
@@ -72,5 +80,5 @@
 2. 抖音原生竖屏房间：普通页、竖屏沉浸、横屏居中背景、PiP 与应用小窗；
 3. 虎牙、斗鱼代表房间：短签名续接、画质线路、弹幕和 2～3 分钟录制；
 4. 纯音频往返已完成单轮；继续执行后台总开关、锁屏、重复 10 次系统 PiP 与停止计时；
-5. 录制中心的实时大小、稳定会话开始时间、重试分片、停止/删除和滚动边界；
+5. Bilibili 单次短录已通过；继续补充录制中心指标的连续单调采样、删除和滚动边界，以及其他平台、重试分片和稳定会话开始时间；
 6. 30～60 分钟资源趋势、CPU/温度、播放器结束后的进程/媒体会话/Wake Lock 回落。
