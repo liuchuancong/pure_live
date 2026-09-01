@@ -162,7 +162,11 @@ function Get-AppVersion {
 }
 
 function Get-TopPackage {
-    $line = (Invoke-Adb -AdbArguments @('shell', 'dumpsys', 'activity', 'activities') | Select-String 'topResumedActivity=' | Select-Object -First 1).Line
+    $match = Invoke-Adb -AdbArguments @('shell', 'dumpsys', 'activity', 'activities') |
+        Select-String 'topResumedActivity=|mResumedActivity:' |
+        Select-Object -First 1
+    if ($null -eq $match) { return '' }
+    $line = $match.Line
     if ($line -match ' u\d+ ([^/\s]+)/') { return $Matches[1] }
     ''
 }
