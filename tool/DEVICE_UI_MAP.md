@@ -7,7 +7,20 @@ swipes and common multi-step flows.
 
 ## Recorded baseline
 
-The repository currently contains measured OnePlus 13 / PJZ110 profiles for:
+The primary device is now the K90 Pro (`25102RKBEC`, codename `myron`) running
+Android 17. Its network-ADB profiles are:
+
+- portrait `1200 x 2608`;
+- landscape `2608 x 1200`.
+
+The first K90 Pro coordinates are proportionally migrated from the retained
+PJZ110 measurements. Before the first state-changing use of any point, run
+`-Validate` and prefer `-VerifySemantics`; record a fresh screen snapshot after
+the corresponding route is physically verified. This avoids treating scaled
+coordinates as measured evidence.
+
+The repository also retains the measured OnePlus 13 / PJZ110 profiles as an
+archived regression baseline for:
 
 - portrait `1440 x 3168`: home, live/offline filters, visible platform tabs,
   room cards, drawer, the full settings list, live-room app bar, player controls,
@@ -34,6 +47,11 @@ coordinate remains the fallback.
 
 Screenshots and UI XML are collected only when a command fails and
 `-CaptureOnFailure` was explicitly supplied.
+
+Always pass the exact IP serial when the same wireless device is also exposed
+through an mDNS alias. Pairing ports and codes are ephemeral and must not be
+stored in this repository. Root access is not required by the UI regression
+workflow and is never inferred from device-side manager applications.
 
 ## Commands
 
@@ -88,7 +106,7 @@ deliberately skipped on this fast path because it can outlive the control layer.
 
 ## v3.0.22 竖屏全屏手势
 
-连接 PJZ110 并进入已经稳定识别的竖屏直播间后，可直接复用：
+在已经验证坐标的设备上进入稳定识别的竖屏直播间后，可直接复用：
 
 ```powershell
 .\tool\android_ui.ps1 -Sequence enter_portrait_fullscreen

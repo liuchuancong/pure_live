@@ -1,5 +1,61 @@
 [
   {
+    "version": "3.1.8",
+    "title": "Pure Live v3.1.8",
+    "date": "2026-09-01",
+    "github": "https://github.com/wzgrx/pure_live/releases/tag/v3.1.8",
+    "author": {
+      "name": "wzgrx",
+      "avatar": "https://avatars.githubusercontent.com/u/39661556?v=4",
+      "profile": "https://github.com/wzgrx"
+    },
+    "changelog": "# Pure Live v3.1.8\n\nv3.1.8 build 4121 是 Android / Windows 录制会话时间一致性补丁。本轮没有同步上游代码。Windows v3.1.7 实播回归证明虎牙画质、线路、弹幕和跨短签名续接录制均能工作，但同时发现录制中心把用户首次点击开始录制的时间错误地改成了最近一次 FFmpeg 自动续接时间。\n\n## 录制会话时间\n\n- 将“用户录制会话开始时间”与“当前 FFmpeg 尝试文件前缀”拆成两个独立状态。\n- 用户明确开始或重新开始录制时只写入一次会话时间；CDN 短签名更新、自动重连和换线只轮换尝试前缀，不再修改界面时间。\n- 会话时间进入任务持久化 schema 6，应用重启和录制中心恢复后仍显示原始开始时间。\n- 旧版任务没有新字段时回退到既有 `createTime`，升级读取保持兼容；显式重新录制会生成新的会话时间。\n- 每次原生尝试仍保留毫秒级唯一文件前缀，分段文件隔离和失败分片恢复语义不变。\n\n## 实播验证与交付\n\n- v3.1.7 Windows 虎牙实播中完成 `蓝光20M → 蓝光8M`、`线路1 → 线路2` 切换，视频与弹幕持续；短录跨一次签名续接得到两个可解码的 H.264 1080p60 + AAC MP4，总媒体时长 195.550334 秒、总大小 83,138,772 bytes。\n- 新增确定性回归，覆盖自动续接保留会话时间、尝试前缀轮换、累计大小/时长不清零、持久化恢复和显式重启重置；聚焦回归 13/13 通过。\n- 校正 Twitch 公开接口门禁，使目录探针与客户端实际 `ZH/KO` 语言合同一致；不再用当前会触发 GraphQL 部分服务错误的 `EN/ZH/KO` 组合制造误报。\n- Android `arm64-v8a` 与 Windows x64 从同一冻结源码串行构建；Windows 提供可选择安装目录的安装程序和便携 ZIP。\n- 本轮只修复已实测的录制中心时间语义，不改播放器、平台线路算法、竖屏几何或用户配置目录。\n\n完整根因、兼容边界、测试证据和交付信息见 `docs/STAGE_UPDATE_3_1_8.md`。",
+    "files": [
+      {
+        "name": "BUILD_METADATA.json",
+        "size": "0.0mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.8/BUILD_METADATA.json"
+      },
+      {
+        "name": "PureLive-3.1.8-4121-debug-signed-android-arm64-v8a",
+        "size": "112.97mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.8/PureLive-3.1.8-4121-debug-signed-android-arm64-v8a-release.apk"
+      },
+      {
+        "name": "PureLive-3.1.8-4121-windows-x64-portable.zip",
+        "size": "68.97mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.8/PureLive-3.1.8-4121-windows-x64-portable.zip"
+      },
+      {
+        "name": "PureLive-3.1.8-4121-windows-x64-setup.exe",
+        "size": "53.45mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.8/PureLive-3.1.8-4121-windows-x64-setup.exe"
+      },
+      {
+        "name": "SHA256SUMS.txt",
+        "size": "0.0mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.8/SHA256SUMS.txt"
+      },
+      {
+        "name": "WINDOWS_BUILD_METADATA.json",
+        "size": "0.0mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.8/WINDOWS_BUILD_METADATA.json"
+      },
+      {
+        "name": "WINDOWS_SHA256SUMS.txt",
+        "size": "0.0mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.8/WINDOWS_SHA256SUMS.txt"
+      }
+    ]
+  },
+  {
     "version": "3.1.7",
     "title": "Pure Live v3.1.7",
     "date": "2026-08-31",
@@ -20,19 +76,19 @@
       {
         "name": "PureLive-3.1.7-4120-debug-signed-android-arm64-v8a",
         "size": "112.96mb",
-        "downloads": 3,
+        "downloads": 19,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.7/PureLive-3.1.7-4120-debug-signed-android-arm64-v8a-release.apk"
       },
       {
         "name": "PureLive-3.1.7-4120-windows-x64-portable.zip",
         "size": "70.36mb",
-        "downloads": 0,
+        "downloads": 1,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.7/PureLive-3.1.7-4120-windows-x64-portable.zip"
       },
       {
         "name": "PureLive-3.1.7-4120-windows-x64-setup.exe",
         "size": "53.45mb",
-        "downloads": 0,
+        "downloads": 5,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.7/PureLive-3.1.7-4120-windows-x64-setup.exe"
       },
       {
@@ -76,13 +132,13 @@
       {
         "name": "PureLive-3.1.6-4119-debug-signed-android-arm64-v8a",
         "size": "112.96mb",
-        "downloads": 6,
+        "downloads": 8,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.6/PureLive-3.1.6-4119-debug-signed-android-arm64-v8a-release.apk"
       },
       {
         "name": "PureLive-3.1.6-4119-windows-x64-portable.zip",
         "size": "68.96mb",
-        "downloads": 1,
+        "downloads": 2,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.6/PureLive-3.1.6-4119-windows-x64-portable.zip"
       },
       {
@@ -232,7 +288,7 @@
       {
         "name": "PureLive-3.1.3-4116-windows-x64-setup.exe",
         "size": "53.45mb",
-        "downloads": 1,
+        "downloads": 3,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.3/PureLive-3.1.3-4116-windows-x64-setup.exe"
       },
       {
@@ -344,7 +400,7 @@
       {
         "name": "PureLive-3.1.1-4114-windows-x64-setup.exe",
         "size": "53.45mb",
-        "downloads": 16,
+        "downloads": 17,
         "url": "https://github.com/wzgrx/pure_live/releases/download/v3.1.1/PureLive-3.1.1-4114-windows-x64-setup.exe"
       },
       {
@@ -1470,7 +1526,7 @@
       {
         "name": "PureLive-2.9.8-4087-android-arm64-v8a",
         "size": "112.74mb",
-        "downloads": 2682,
+        "downloads": 2685,
         "url": "https://github.com/liuchuancong/pure_live/releases/download/v2.9.8/PureLive-2.9.8-4087-android-arm64-v8a-release.apk"
       },
       {

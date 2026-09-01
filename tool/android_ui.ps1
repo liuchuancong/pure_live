@@ -69,9 +69,68 @@ function Get-Map {
     Get-Content -LiteralPath $mapPath -Raw -Encoding UTF8 | ConvertFrom-Json
 }
 
+function Format-JsonText {
+    param([Parameter(Mandatory = $true)][string]$Json)
+    $builder = [System.Text.StringBuilder]::new()
+    $indent = 0
+    $inString = $false
+    $escaped = $false
+    for ($index = 0; $index -lt $Json.Length; $index++) {
+        $character = $Json[$index]
+        if ($inString) {
+            $null = $builder.Append($character)
+            if ($escaped) { $escaped = $false }
+            elseif ($character -eq '\') { $escaped = $true }
+            elseif ($character -eq '"') { $inString = $false }
+            continue
+        }
+        if ($character -eq '"') {
+            $inString = $true
+            $null = $builder.Append($character)
+            continue
+        }
+        if ([char]::IsWhiteSpace($character)) { continue }
+        switch ($character) {
+            { $_ -eq '{' -or $_ -eq '[' } {
+                $null = $builder.Append($character)
+                $next = if ($index + 1 -lt $Json.Length) { $Json[$index + 1] } else { [char]0 }
+                $matchingClose = if ($character -eq '{') { '}' } else { ']' }
+                if ($next -ne $matchingClose) {
+                    $indent++
+                    $null = $builder.Append("`n").Append(' ' * ($indent * 2))
+                }
+                break
+            }
+            { $_ -eq '}' -or $_ -eq ']' } {
+                $previous = if ($index -gt 0) { $Json[$index - 1] } else { [char]0 }
+                $matchingOpen = if ($character -eq '}') { '{' } else { '[' }
+                if ($previous -ne $matchingOpen) {
+                    $indent--
+                    $null = $builder.Append("`n").Append(' ' * ($indent * 2))
+                }
+                $null = $builder.Append($character)
+                break
+            }
+            ',' {
+                $null = $builder.Append(",`n").Append(' ' * ($indent * 2))
+                break
+            }
+            ':' {
+                $null = $builder.Append(': ')
+                break
+            }
+            default { $null = $builder.Append($character) }
+        }
+    }
+    $builder.ToString()
+}
+
 function Save-Map {
     param($Map)
-    $Map | ConvertTo-Json -Depth 30 | Set-Content -LiteralPath $mapPath -Encoding UTF8
+    $compact = $Map | ConvertTo-Json -Depth 30 -Compress
+    $formatted = Format-JsonText $compact
+    $utf8WithoutBom = [System.Text.UTF8Encoding]::new($false)
+    [System.IO.File]::WriteAllText($mapPath, $formatted + [Environment]::NewLine, $utf8WithoutBom)
 }
 
 function Get-DeviceMetrics {
@@ -171,12 +230,22 @@ function Convert-Bounds {
 function Get-UiNodes {
     Assert-TargetApp $map.package
     $remote = '/sdcard/purelive-ui-map.xml'
+    $local = [System.IO.Path]::GetTempFileName()
     # Live danmaku changes continuously, so UIAutomator may never observe an
     # idle frame. Android's built-in timeout keeps semantic verification from
     # blocking the whole device regression; --compressed also reduces work.
-    Invoke-Adb shell timeout 10 uiautomator dump --compressed $remote | Out-Null
-    $raw = (Invoke-Adb shell cat $remote) -join "`n"
-    Invoke-Adb shell rm $remote | Out-Null
+    try {
+        Invoke-Adb shell timeout 10 uiautomator dump --compressed $remote | Out-Null
+        # Pull the XML as bytes. Capturing `adb shell cat` output through Windows
+        # PowerShell 5.1 decodes UTF-8 semantics with the active OEM code page,
+        # corrupting Chinese labels and making semantic verification unreliable.
+        Invoke-Adb pull $remote $local | Out-Null
+        $raw = [System.IO.File]::ReadAllText($local, [System.Text.Encoding]::UTF8)
+    }
+    finally {
+        Invoke-Adb shell rm -f $remote | Out-Null
+        Remove-Item -LiteralPath $local -Force -ErrorAction SilentlyContinue
+    }
     [xml]$xml = $raw
     Assert-TargetApp $map.package
     $nodes = foreach ($node in $xml.SelectNodes('//node')) {
@@ -284,7 +353,10 @@ function Save-Snapshot {
         $hasIdentity = $node.Text -or $node.Description -or $node.ResourceId
         $actionable = $node.Clickable -or $node.LongClickable -or $node.Scrollable -or $node.Checkable
         if (-not $hasIdentity -or (-not $IncludeNonActionable -and -not $actionable)) { continue }
-        if ($node.Description -match '\*{3}\s*[:：]' -or $node.Text -match '\*{3}\s*[:：]') { continue }
+        # Keep this expression ASCII-only so the helper also parses correctly in
+        # Windows PowerShell 5.1, which treats a UTF-8 file without a BOM as an
+        # ANSI script. Password-like semantics use the ordinary colon form.
+        if ($node.Description -match '\*{3}\s*:' -or $node.Text -match '\*{3}\s*:') { continue }
         [ordered]@{
             text = $node.Text
             semantic = $node.Description

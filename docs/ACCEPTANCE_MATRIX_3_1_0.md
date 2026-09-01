@@ -30,6 +30,7 @@
 | A0-06 | PASS | v3.1.5 双平台一致版静默覆盖升级 | PJZ110 / Android 16 通过网络 ADB 执行 `adb install -r`，安装前后用户前台均保持小红书；核对 `versionName=3.1.5`、`versionCode=6118`，没有启动 Pure Live 或打断用户任务 |
 | A0-07 | PASS | v3.1.6 Android arm64-v8a 安装包静默覆盖升级 | PJZ110 / Android 16 从 v3.1.5 执行 `adb install -r` 成功，核对 `versionName=3.1.6`、`versionCode=6119`；安装前后 `com.xingin.xhs/.index.v2.IndexActivityV2` 保持同一前台 Activity，没有启动 Pure Live 或抢占用户界面。安装后空闲基线为活动进程/服务/通知/Wake Lock 均 0，DropBox 中以 Pure Live 为主进程的崩溃/ANR 为 0；见 `docs/ANDROID_POST_INSTALL_BASELINE_3_1_6.md` |
 | A0-08 | PASS | v3.1.7 Android arm64-v8a 事件身份补丁静默覆盖升级 | PJZ110 / Android 16 从 v3.1.6 执行 `adb install -r` 成功，核对 `versionName=3.1.7`、`versionCode=6120`；安装前后同一 `com.xingin.xhs/.index.v2.IndexActivityV2` 保持前台，Pure Live 没有被启动且安装后无运行进程 |
+| A0-09 | PASS | v3.1.8 Android arm64-v8a 在新主力设备覆盖升级、启动与数据保留 | K90 Pro / `25102RKBEC` / Android 17 通过网络 ADB 覆盖安装，核对 `versionName=3.1.8`、arm64 分包 `versionCode=6121`；一次启动成功、原 6 个关注记录保留、无 AndroidRuntime/FATAL。短时内存只记录为启动基线，完整运行矩阵继续执行 |
 
 ### A1 首页、关注、热门、分区与搜索
 
@@ -114,7 +115,7 @@
 
 ### A8 当前实机事实
 
-- 设备：OnePlus PJZ110，Android 16，1440×3168，640 dpi，最高 120 Hz。
+- 当前主设备：K90 Pro / `25102RKBEC`（`myron`），Android 17 / API 37，1200×2608，arm64-v8a，支持 60/90/120 Hz。旧 OnePlus PJZ110 / Android 16 记录保留为历史基线，不与新设备结果混写。
 - v3.1.2 arm64 Release 已覆盖升级并保留关注数据；10 次冷启动 293～332 ms、平均 306.2 ms，0 FATAL/ANR。分类/搜索标签硬边界、CC 官方 HTML 迁移回退、120 Hz 三档即时切换与冷启动持久化均通过；Twitch 直连失败可由 Pure Live 应用层 Clash 代理恢复，测试后代理设置已原样还原。完整记录见 `docs/ANDROID_RUNTIME_AUDIT_3_1_2.md`。
 - v3.0.24 首页已加载并可操作；冷启动后 8 秒样本 `TOTAL PSS 226040 KB`、`TOTAL RSS 399688 KB`，仅作基线，不代表长时通过。
 - #818 已在 `6458d541` arm64 Release 实机闭环：普通视频和手动纯音频均遵循后台播放总开关；关闭时退桌面暂停并释放当前 Wake Lock，回前台恢复；开启时普通视频继续；系统 PiP 作为用户主动紧凑播放继续；1 分钟自动助眠在总开关关闭时仍按计时播放，到点停止并释放 Pure Live 保活锁。纯音频/视频自动化也改为先等待 2 秒控件自动隐藏，再确定性唤出并点击，避免测试脚本把已显示的控制层反向隐藏。

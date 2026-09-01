@@ -47,9 +47,9 @@ v3.1.7 Windows 便携版实际进入虎牙房间后，画质从 `蓝光20M` 切�
 5. 用户显式重新录制时会话时间正确重置；
 6. 签名 URL 继续不写入持久化数据。
 
-聚焦回归 13/13 通过；记录：`local-artifacts/build-records/20260901T011808521Z-quality-focused.json`。完整质量门禁、构建资源和最终产物校验在冻结源码后执行并补记。
+聚焦回归 13/13 通过；记录：`local-artifacts/build-records/20260901T011808521Z-quality-focused.json`。
 
-首次完整门禁的 Analyze 0 issue 与 Flutter 682/682 均通过，但接口探针自身把应用使用的 Twitch `ZH/KO` 请求扩展为 `EN/ZH/KO`；Twitch 当前对三语言组合返回 `game.streams = null` 的部分 GraphQL 错误，而应用原请求和单语言请求均正常。探针已恢复为与产品完全相同的 `ZH/KO` 合同，避免把探针扩展参数的服务端拒绝误报为客户端故障；修正后重新执行 42 项公开接口探测。
+完整门禁的 Analyze 0 issue 与 Flutter 682/682 均通过；仓库审计 3901 个已跟踪文件、0 error、1 条既有警告。第一次命令最后在公开接口阶段退出非零，因为探针自身把应用使用的 Twitch `ZH/KO` 请求扩展为 `EN/ZH/KO`；Twitch 当前对三语言组合返回 `game.streams = null` 的部分 GraphQL 错误，而应用原请求和单语言请求均正常。探针恢复为与产品完全相同的 `ZH/KO` 合同后，公开接口复跑 42/42 通过。完整命令记录：`local-artifacts/build-records/20260901T020356896Z-quality-full.json`；该记录保留首次探针误报的非零状态，不改写历史结果，最终门禁由同次 Analyze/Flutter/仓库审计和修正后的 42/42 接口复跑共同组成。
 
 v3.1.7 Windows 虎牙实播前置证据：
 
@@ -69,9 +69,25 @@ v3.1.7 Windows 虎牙实播前置证据：
 
 ## 6. 构建、签名与发布
 
-- 冻结源码提交、完整门禁记录、Android/Windows 串行构建耗时、资源峰值、安装包大小、SHA-256 与 GitHub Release 地址将在本地构建及服务端核验完成后补记。
-- Android APK 使用本机现有签名条件构建，签名类型在文件名和元数据中明确标注；Windows 安装程序的 Authenticode 状态同样以构建元数据为准。
-- GitHub Release 只接收与冻结提交一致、校验清单覆盖且通过包内容门禁的资产。
+冻结源码和 `v3.1.8` 标签均指向 `e94f94d73953e9ee295738a121df522e4710bf58`。Android 与 Windows 按 `BUILD_POLICY.md` 串行执行；两个阶段结束时活跃重型进程均为 0。
+
+| 平台 | 命令 | 耗时 | 峰值 CPU | 峰值工作集 | 结果 |
+| --- | --- | ---: | ---: | ---: | --- |
+| Android arm64-v8a | `build_local_release.ps1 -Target AndroidArm64 -Configuration Release -SkipQuality -DedicatedBuild` | 1499.656 s | 66.18% | 15,051,489,280 bytes | APK 内容、版本、ABI、资源和原生库门禁通过 |
+| Windows x64 | `build_local_release.ps1 -Target WindowsX64 -Configuration Release -SkipQuality -DedicatedBuild` | 409.978 s | 19.16% | 16,807,096,320 bytes | 安装程序与便携包按安装清单打包成功 |
+
+GitHub Release：[v3.1.8](https://github.com/wzgrx/pure_live/releases/tag/v3.1.8)。Release 为非草稿、非预发布，共 7 个资产；GitHub 服务端摘要与本地清单一致。
+
+| 资产 | 大小 | SHA-256 | 签名/用途 |
+| --- | ---: | --- | --- |
+| `PureLive-3.1.8-4121-debug-signed-android-arm64-v8a-release.apk` | 118,453,007 bytes | `f6f48e23a90cf46943157fc6ae2d3b07b7009780d75f32d743012b80c0fd3d60` | Release 编译模式，本地调试证书 |
+| `PureLive-3.1.8-4121-windows-x64-portable.zip` | 72,315,778 bytes | `1bc337f8eec98c29e70a25446947d4b4b5ad5ea334bee6173b558d01b6a54cb1` | 免安装便携包 |
+| `PureLive-3.1.8-4121-windows-x64-setup.exe` | 56,047,876 bytes | `6a6086eed886f9a840f1e26ab292cdf7d0bd98305672484983411f9c73bc6a0a` | 可选择安装目录，未配置 Authenticode |
+
+- Android 包名 `com.mystyle.purelive`、版本名 `3.1.8`、基础 build `4121`、arm64 Manifest `versionCode=6121`、唯一 ABI `arm64-v8a`、Flutter 资源 1258 项。
+- Android 和 Windows 构建元数据、平台独立 SHA-256 清单与安装包一并发布；没有使用旧包改名。
+- K90 Pro（`25102RKBEC` / `myron`，Android 17，`1200×2608`，arm64-v8a，最高 120 Hz）已完成网络 ADB 配对并覆盖安装本次 Android APK；核对 `versionName=3.1.8`、arm64 分包 `versionCode=6121`，原关注数据仍在且首次启动成功，未见 AndroidRuntime/FATAL。首个 12 秒样本为 TOTAL PSS 179,370 KB、TOTAL RSS 377,012 KB；该短样本只作为启动基线，不代替长时间直播、录制、横竖屏、PiP、音频与热稳定性矩阵。
+- 新设备 UI 基线已切换到 K90 Pro；旧 PJZ110 坐标继续保留作历史回归。K90 初始坐标由旧设备按物理分辨率缩放，只在语义核对后用于状态变更，并在实际进入对应页面后逐页重新快照，避免把比例换算当作实测。
 
 ## 7. 回滚边界
 

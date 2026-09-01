@@ -17,6 +17,9 @@ v3.1.8 build 4121 是 Android / Windows 录制会话时间一致性补丁。本�
 - 校正 Twitch 公开接口门禁，使目录探针与客户端实际 `ZH/KO` 语言合同一致；不再用当前会触发 GraphQL 部分服务错误的 `EN/ZH/KO` 组合制造误报。
 - Android `arm64-v8a` 与 Windows x64 从同一冻结源码串行构建；Windows 提供可选择安装目录的安装程序和便携 ZIP。
 - 本轮只修复已实测的录制中心时间语义，不改播放器、平台线路算法、竖屏几何或用户配置目录。
+- Analyze 0 issue、Flutter 682/682、公开平台接口 42/42、全仓审计 3901 个已跟踪文件且 0 error；Twitch 探针首次误报及修正过程完整保留在阶段文档中。
+- 冻结源码与 `v3.1.8` 标签均指向 `e94f94d73953e9ee295738a121df522e4710bf58`。Android APK 为 118,453,007 bytes，SHA-256 `f6f48e23a90cf46943157fc6ae2d3b07b7009780d75f32d743012b80c0fd3d60`；Windows 便携 ZIP 为 72,315,778 bytes，SHA-256 `1bc337f8eec98c29e70a25446947d4b4b5ad5ea334bee6173b558d01b6a54cb1`；Windows 安装程序为 56,047,876 bytes，SHA-256 `6a6086eed886f9a840f1e26ab292cdf7d0bd98305672484983411f9c73bc6a0a`。
+- Android 为 Release 编译模式、本地调试证书签名，文件名与元数据明确标注 `debug-signed`；Windows 资产未配置 Authenticode。
 
 完整根因、兼容边界、测试证据和交付信息见 `docs/STAGE_UPDATE_3_1_8.md`。
 
