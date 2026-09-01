@@ -97,8 +97,6 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
     await native.setProperty('hwdec-software-fallback', '1');
 
     await native.setProperty('volume-max', '100');
-
-    await native.setProperty('af', 'scaletempo2=max-speed=8');
   }
 
   static Future<void> _configureAndroidCustomOutput(NativePlayer native) async {
@@ -117,14 +115,6 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
     await native.setProperty('volume-max', '100');
 
     await native.setProperty('hwdec-software-fallback', '1');
-
-    final hwdec = settings.videoHardwareDecoder.v;
-
-    await native.setProperty('hwdec', hwdec.isEmpty ? 'auto' : hwdec);
-
-    final renderer = settings.videoOutputDriver.v;
-
-    await native.setProperty('vo', renderer.isEmpty || renderer == 'auto' ? 'gpu' : renderer);
   }
 
   static Future<void> _configureWindowsCustomOutput(NativePlayer native) async {
@@ -319,11 +309,7 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
     if (!customOutput) {
       _superResolutionMode = SuperResolutionMode.off;
 
-      return VideoControllerConfiguration(
-        enableHardwareAcceleration: settings.enableCodec.v,
-        enableAndroidSurfaceProducer: false,
-        androidAttachSurfaceAfterVideoParameters: false,
-      );
+      return VideoControllerConfiguration(enableHardwareAcceleration: settings.enableCodec.v);
     }
     if (PlatformUtils.isAndroid && settings.playerCompatMode.v) {
       _superResolutionMode = SuperResolutionMode.off;
@@ -363,19 +349,13 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
       vo = settings.videoOutputDriver.v;
       hwdec = 'no';
     } else if (PlatformUtils.isIOS) {
-      vo = null;
+      vo = settings.videoOutputDriver.v;
       hwdec = settings.videoHardwareDecoder.v.isEmpty ? 'auto' : settings.videoHardwareDecoder.v;
     }
 
     final enableHardwareAcceleration = PlatformUtils.isMacOS ? false : settings.enableCodec.v;
 
-    return VideoControllerConfiguration(
-      vo: vo,
-      hwdec: hwdec,
-      enableHardwareAcceleration: enableHardwareAcceleration,
-      enableAndroidSurfaceProducer: false,
-      androidAttachSurfaceAfterVideoParameters: false,
-    );
+    return VideoControllerConfiguration(vo: vo, hwdec: hwdec, enableHardwareAcceleration: enableHardwareAcceleration);
   }
 
   @override
@@ -405,9 +385,11 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
 
         await applyNativeLiveProperties(native);
 
-        if (settings.customPlayerOutput.v && !(PlatformUtils.isAndroid && settings.playerCompatMode.v)) {
+        if (settings.customPlayerOutput.v) {
           if (PlatformUtils.isAndroid) {
-            await _configureAndroidCustomOutput(native);
+            if (!settings.playerCompatMode.v) {
+              await _configureAndroidCustomOutput(native);
+            }
           } else if (PlatformUtils.isWindows) {
             await _configureWindowsCustomOutput(native);
           } else if (PlatformUtils.isMacOS) {
