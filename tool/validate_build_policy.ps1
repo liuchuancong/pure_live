@@ -133,6 +133,7 @@ $powerShellFiles = @(
     'tool\publish_local_release.ps1',
     'tool\prefetch_windows_native.ps1',
     'tool\flutterw.ps1',
+    'tool\android_ui.ps1',
     'tool\review_upstream_update.ps1',
     'tool\validate_build_policy.ps1'
 )
@@ -148,6 +149,30 @@ foreach ($relativePath in $powerShellFiles) {
         $details = ($parseErrors | ForEach-Object { "line $($_.Extent.StartLineNumber): $($_.Message)" }) -join '; '
         throw "PowerShell parse error in ${relativePath}: $details"
     }
+}
+
+# ADB options such as `-p`, `-n` and `-f` overlap PowerShell common-parameter
+# abbreviations. Keep every wrapper invocation array-shaped so device evidence
+# capture cannot mask the original UI failure with a parameter-binding error.
+$androidUiPath = Join-Path $repoRoot 'tool\android_ui.ps1'
+$tokens = $null
+$parseErrors = $null
+$androidUiAst = [System.Management.Automation.Language.Parser]::ParseFile(
+    $androidUiPath,
+    [ref] $tokens,
+    [ref] $parseErrors
+)
+$adbCalls = @(
+    $androidUiAst.FindAll({
+        param($node)
+        $node -is [System.Management.Automation.Language.CommandAst] -and
+            $node.GetCommandName() -eq 'Invoke-Adb'
+    }, $true)
+)
+$positionalAdbCalls = @($adbCalls | Where-Object { $_.Extent.Text -notmatch '-AdbArguments' })
+if ($positionalAdbCalls.Count -gt 0) {
+    $lines = ($positionalAdbCalls | ForEach-Object { $_.Extent.StartLineNumber }) -join ', '
+    throw "android_ui.ps1 must pass ADB arguments through -AdbArguments arrays (lines: $lines)."
 }
 
 $properties = @{}

@@ -56,12 +56,12 @@ $adb = $adbCandidates | Where-Object {
 if (-not $adb) { throw 'ADB executable was not found.' }
 
 function Invoke-Adb {
-    param([Parameter(ValueFromRemainingArguments)][string[]]$Arguments)
+    param([Parameter(Mandatory = $true)][string[]]$AdbArguments)
     $all = @()
     if ($Serial) { $all += @('-s', $Serial) }
-    $all += $Arguments
+    $all += $AdbArguments
     $result = & $adb @all
-    if ($LASTEXITCODE -ne 0) { throw "adb exited with code ${LASTEXITCODE}: $($Arguments -join ' ')" }
+    if ($LASTEXITCODE -ne 0) { throw "adb exited with code ${LASTEXITCODE}: $($AdbArguments -join ' ')" }
     $result
 }
 
@@ -134,13 +134,13 @@ function Save-Map {
 }
 
 function Get-DeviceMetrics {
-    $window = (Invoke-Adb shell dumpsys window displays | Select-String 'cur=(\d+)x(\d+)' | Select-Object -First 1)
+    $window = (Invoke-Adb -AdbArguments @('shell', 'dumpsys', 'window', 'displays') | Select-String 'cur=(\d+)x(\d+)' | Select-Object -First 1)
     if ($window -and $window.Line -match 'cur=(\d+)x(\d+)') {
         $width = [int]$Matches[1]
         $height = [int]$Matches[2]
     }
     else {
-        $line = (Invoke-Adb shell wm size | Select-Object -First 1)
+        $line = (Invoke-Adb -AdbArguments @('shell', 'wm', 'size') | Select-Object -First 1)
         if ($line -notmatch '(\d+)x(\d+)') { throw "Unexpected device size output: $line" }
         $width = [int]$Matches[1]
         $height = [int]$Matches[2]
@@ -154,7 +154,7 @@ function Get-DeviceMetrics {
 
 function Get-AppVersion {
     param([string]$Package)
-    $lines = Invoke-Adb shell dumpsys package $Package
+    $lines = Invoke-Adb -AdbArguments @('shell', 'dumpsys', 'package', $Package)
     $versionName = (($lines | Select-String 'versionName=' | Select-Object -First 1).Line -replace '^.*versionName=', '').Trim()
     $versionCodeLine = ($lines | Select-String 'versionCode=' | Select-Object -First 1).Line
     $versionCode = if ($versionCodeLine -match 'versionCode=(\d+)') { $Matches[1] } else { '' }
@@ -162,7 +162,7 @@ function Get-AppVersion {
 }
 
 function Get-TopPackage {
-    $line = (Invoke-Adb shell dumpsys activity activities | Select-String 'topResumedActivity=' | Select-Object -First 1).Line
+    $line = (Invoke-Adb -AdbArguments @('shell', 'dumpsys', 'activity', 'activities') | Select-String 'topResumedActivity=' | Select-Object -First 1).Line
     if ($line -match ' u\d+ ([^/\s]+)/') { return $Matches[1] }
     ''
 }
@@ -178,7 +178,7 @@ function Assert-TargetApp {
 function Enter-TargetApp {
     param([string]$Package)
     if (-not $NoBringToFront) {
-        Invoke-Adb shell am start -n "$Package/.MainActivity" | Out-Null
+        Invoke-Adb -AdbArguments @('shell', 'am', 'start', '-n', "$Package/.MainActivity") | Out-Null
         Start-Sleep -Milliseconds 250
     }
     Assert-TargetApp $Package
@@ -235,15 +235,15 @@ function Get-UiNodes {
     # idle frame. Android's built-in timeout keeps semantic verification from
     # blocking the whole device regression; --compressed also reduces work.
     try {
-        Invoke-Adb shell timeout 10 uiautomator dump --compressed $remote | Out-Null
+        Invoke-Adb -AdbArguments @('shell', 'timeout', '10', 'uiautomator', 'dump', '--compressed', $remote) | Out-Null
         # Pull the XML as bytes. Capturing `adb shell cat` output through Windows
         # PowerShell 5.1 decodes UTF-8 semantics with the active OEM code page,
         # corrupting Chinese labels and making semantic verification unreliable.
-        Invoke-Adb pull $remote $local | Out-Null
+        Invoke-Adb -AdbArguments @('pull', $remote, $local) | Out-Null
         $raw = [System.IO.File]::ReadAllText($local, [System.Text.Encoding]::UTF8)
     }
     finally {
-        Invoke-Adb shell rm -f $remote | Out-Null
+        Invoke-Adb -AdbArguments @('shell', 'rm', '-f', $remote) | Out-Null
         Remove-Item -LiteralPath $local -Force -ErrorAction SilentlyContinue
     }
     [xml]$xml = $raw
@@ -316,7 +316,7 @@ function Invoke-TapPoint {
     $nodes = if ($SemanticCheck) { Get-UiNodes } else { $null }
     $point = Resolve-Point $SelectedProfile $Name $nodes
     Write-Host ("tap {0} ({1},{2}) [{3}] - {4}" -f $point.Name, $point.X, $point.Y, $point.Source, $point.Label)
-    if (-not $DryRun) { Invoke-Adb shell input tap $point.X $point.Y | Out-Null }
+    if (-not $DryRun) { Invoke-Adb -AdbArguments @('shell', 'input', 'tap', $point.X, $point.Y) | Out-Null }
 }
 
 function Invoke-TapSemantic {
@@ -325,7 +325,7 @@ function Invoke-TapSemantic {
     $node = Find-SemanticNode (Get-UiNodes) @($Semantic)
     if (-not $node) { throw "Semantic target '$Semantic' is not visible." }
     Write-Host ("tap semantic '{0}' ({1},{2})" -f $Semantic, $node.Bounds.X, $node.Bounds.Y)
-    if (-not $DryRun) { Invoke-Adb shell input tap $node.Bounds.X $node.Bounds.Y | Out-Null }
+    if (-not $DryRun) { Invoke-Adb -AdbArguments @('shell', 'input', 'tap', $node.Bounds.X, $node.Bounds.Y) | Out-Null }
 }
 
 function Invoke-SwipeGesture {
@@ -341,7 +341,7 @@ function Invoke-SwipeGesture {
     $y2 = [math]::Round(([double]$gesture.y2 / $SelectedProfile.Data.height) * $metrics.Height)
     $duration = if ($gesture.durationMs) { [int]$gesture.durationMs } else { 350 }
     Write-Host ("swipe {0} ({1},{2})->({3},{4}) {5}ms" -f $Name, $x1, $y1, $x2, $y2, $duration)
-    if (-not $DryRun) { Invoke-Adb shell input swipe $x1 $y1 $x2 $y2 $duration | Out-Null }
+    if (-not $DryRun) { Invoke-Adb -AdbArguments @('shell', 'input', 'swipe', $x1, $y1, $x2, $y2, $duration) | Out-Null }
 }
 
 function Save-Snapshot {
@@ -441,11 +441,11 @@ function Save-FailureEvidence {
     $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
     $remoteImage = "/sdcard/purelive-$stamp.png"
     $remoteXml = "/sdcard/purelive-$stamp.xml"
-    Invoke-Adb shell screencap -p $remoteImage | Out-Null
-    Invoke-Adb shell timeout 10 uiautomator dump --compressed $remoteXml | Out-Null
-    Invoke-Adb pull $remoteImage (Join-Path $dir "$stamp-$safeName.png") | Out-Null
-    Invoke-Adb pull $remoteXml (Join-Path $dir "$stamp-$safeName.xml") | Out-Null
-    Invoke-Adb shell rm $remoteImage $remoteXml | Out-Null
+    Invoke-Adb -AdbArguments @('shell', 'screencap', '-p', $remoteImage) | Out-Null
+    Invoke-Adb -AdbArguments @('shell', 'timeout', '10', 'uiautomator', 'dump', '--compressed', $remoteXml) | Out-Null
+    Invoke-Adb -AdbArguments @('pull', $remoteImage, (Join-Path $dir "$stamp-$safeName.png")) | Out-Null
+    Invoke-Adb -AdbArguments @('pull', $remoteXml, (Join-Path $dir "$stamp-$safeName.xml")) | Out-Null
+    Invoke-Adb -AdbArguments @('shell', 'rm', $remoteImage, $remoteXml) | Out-Null
 }
 
 $map = Get-Map
