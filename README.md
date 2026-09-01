@@ -105,6 +105,7 @@ Pure Live 聚合多个第三方直播平台，并支持自定义直播源：
 | [平台接口与兼容性](docs/PLATFORM_COMPATIBILITY.md) | 分区、搜索、弹幕和人数指标的当前能力 |
 | [高刷新率与性能验证](docs/PERFORMANCE.md) | Android 120 Hz 适配、渲染优化和真机帧统计 |
 | [v3.1.8 录制会话时间修复](docs/STAGE_UPDATE_3_1_8.md) | 自动续接与用户录制会话时间解耦、持久化兼容、Android/Windows 双平台交付 |
+| [v3.1.8 Windows 运行审计](docs/WINDOWS_RUNTIME_AUDIT_3_1_8.md) | Bilibili 播放、远端/本地弹幕、短录媒体实读、退出回落与最终大小口径修正 |
 | [v3.1.7 虎牙醒目留言事件身份修复](docs/STAGE_UPDATE_3_1_7.md) | 平台事件 ID、合法重复留言、有界去重缓存与双平台交付 |
 | [v3.1.6 虎牙醒目留言实时刷新修复](docs/STAGE_UPDATE_3_1_6.md) | 通知/WUP 时序根因、非阻塞有界补偿、双平台安装包与验证边界 |
 | [v3.1.5 Android / Windows 双平台发布](docs/STAGE_UPDATE_3_1_5.md) | 同源版本冻结、分平台串行构建、安装包、签名状态与校验说明 |

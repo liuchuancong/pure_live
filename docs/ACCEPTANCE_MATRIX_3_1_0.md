@@ -143,16 +143,19 @@
 |---|---|---|
 | W0-01 | RUN | v3.1.0 Windows x64 便携 ZIP 已独立解压到 `.local-build/windows-v3.1.0-runtime-20260831T060618Z/`，`pure_live.exe` 报告 `3.1.0+4113`，数据目录位于便携目录旁的 `AppData`；程序启动、运行和窗口关闭正常。安装器自选目录、旧版本覆盖迁移和卸载残留仍待执行 |
 | W0-02 | PASS | v3.1.7 Windows x64 便携 ZIP 在全新隔离目录以独立 instance 启动，FileVersion/ProductVersion 均为 `3.1.7+4120`；数据只写入便携目录内独立 `AppData`，180 秒 37/37 样本均响应，退出后同路径残留进程为 0。见 `docs/WINDOWS_RUNTIME_AUDIT_3_1_7.md` |
+| W0-03 | PASS | v3.1.8 正式便携 ZIP 在独立目录与独立 instance 启动，FileVersion/ProductVersion 均为 `3.1.8+4121`；完成真实播放、弹幕和短录后正常退出，匹配的应用与 FFmpeg 进程均为 0。见 `docs/WINDOWS_RUNTIME_AUDIT_3_1_8.md` |
 | W1-01 | RUN | 热门页已验证哔哩哔哩到最右侧“网络”平台切换、20 张卡片加载、缩略图懒加载与纵向滚动；直播间弹幕设置长页滚动可达下部选项，Esc 从直播间返回热门页。多 DPI、主副屏、触控板和全部二/三级页面仍待执行 |
 | W1-02 | PASS | v3.1.2 Windows x64 便携 Release 在 `3840×2400 / 200 Hz` 显示器正确显示当前与最高刷新率。省电、均衡、最高三档均即时刷新文案与策略；均衡模式在强制结束隔离实例并用相同 instance id 冷启动后仍恢复，随后成功回到省电默认。应用全过程响应，证据见 `docs/WINDOWS_RUNTIME_AUDIT_3_1_2.md` 与 `local-artifacts/runtime/windows-v3.1.2/refresh-rate-and-fullscreen-20260831.json` |
 | W2-01 | RUN | Windows 实际进入 Bilibili `EdmundDZhang` 房间并持续播放，画面、声音、画面弹幕和列表弹幕均工作；画质从“超清”请求“原画”时，平台实际仍返回“超清”，提示与最终 UI 都保留真实结果而非伪成功；弹幕设置主题与应用主题一致。宽屏/真全屏、PiP 置顶和多窗口矩阵仍待执行 |
 | W2-02 | PASS | v3.1.2 便携 Release 实际进入 Bilibili 开播房间，视频与两层弹幕持续更新。普通窗口 `1276×718 @ (325,240)` 进入真全屏后覆盖 `1536×960 @ (0,0)`，Esc 精确恢复；最大化 `1536×912` 进入后同样覆盖 `1536×960`，Esc 恢复最大化工作区。两条往返过程中播放与弹幕不中断，证据见 `docs/WINDOWS_RUNTIME_AUDIT_3_1_2.md` |
 | W2-03 | RUN | v3.1.7 GitHub Release 便携实例加载 Bilibili 热门卡片并进入真实开播房间；约 10 秒取得首帧并连接弹幕，列表与画面持续更新。本地测试弹幕约 3.5 秒后同时进入列表和画面；浅色主题设置页、长页滚动、双击真全屏与 Esc 返回均正常，返回后弹幕继续。该房间只返回 `原画 / 线路1`，纯音频、PiP、多画质/多线路和录制继续执行。见 `docs/WINDOWS_RUNTIME_AUDIT_3_1_7.md` |
 | W2-04 | RUN | v3.1.7 Windows 实际打开虎牙房间，画质 `蓝光20M→蓝光8M`、线路 `线路1→线路2` 均提交真实结果，切换后视频和弹幕继续。短录累计 198 秒并跨一次短签名续接，两个 MP4 均有 H.264 1080p60 与 AAC 音轨。实测同时暴露录制中心时间被续接尝试覆盖；工作树已用独立 `recordingStartedAt` 修复并通过 13/13 聚焦回归，待下一 Windows 包复验。见 `docs/WINDOWS_RUNTIME_AUDIT_3_1_7.md` |
+| W2-05 | RUN | v3.1.8 Windows Bilibili 热门完成 20 张缩略图加载并进入真实在播房间，约 9 秒取得首帧，远端弹幕持续更新；本地弹幕约 3.5 秒后同时进入列表与画面层。当前样本只覆盖单一画质/线路，多画质、多线路、纯音频和 PiP 继续执行。见 `docs/WINDOWS_RUNTIME_AUDIT_3_1_8.md` |
 | W3-01 | RUN | Bilibili 短录 89.831 秒，输出 MP4 18,301,583 bytes；`ffprobe` 读到 H.264 1280×720 约 30 fps 与 AAC 音轨，统计从 0.5 MB 单调增长至 19.4 MB。随后播放/弹幕/设置/录制混合场景采样 600.643 秒、61 点、全程 Responding、CPU 平均 3.6807%/P95 4.2325%；Working Set 401.41→463.46 MiB，Private Bytes 762.41→834.80 MiB，仍需更长平台矩阵判断缓存平台期。证据：`local-artifacts/diagnostics/windows-regression/20260831T062626030Z-v3.1.0-bilibili-play-danmaku-pid70096-summary.json` |
 | W3-02 | RUN | v3.1.7 干净便携实例空闲采样 180.930 秒、37 点、全程响应；Working Set 196.0078→196.0234 MiB（+0.0024 MiB/min），Private Bytes 530.9766→528.8086 MiB，句柄 1072→1043、线程 153→147，退出后残留进程 0。空闲基线通过；播放、弹幕、录制和多窗口长时对照继续执行。见 `docs/WINDOWS_RUNTIME_AUDIT_3_1_7.md` |
 | W3-03 | RUN | v3.1.7 Bilibili 播放、弹幕、设置与全屏交互采样 300.648 秒、61 点，全部响应；CPU 平均 2.2202%/P95 3.5525%，Working Set 399.72→421.52 MiB，句柄 1666→1656、线程 242→238。Private Bytes 816.29→889.95 MiB，存在会回落的短时峰值，仍需退出回落、第二段等长与录制对照后判断缓存平台期。见 `docs/WINDOWS_RUNTIME_AUDIT_3_1_7.md` |
 | W3-04 | RUN | v3.1.7 虎牙录制中心实时大小/时长/速度/码率可见，停止后 FFmpeg 进程为 0；短签名续接产生的两段 MP4 共 83,138,772 bytes、媒体时长 195.550334 秒，均通过 `ffprobe`。工作树修复会话开始时间在续接后漂移的问题；退出后完整资源回落与新包 UI 复验继续执行。见 `docs/WINDOWS_RUNTIME_AUDIT_3_1_7.md` |
+| W3-05 | RUN | v3.1.8 Bilibili 短录停止时 UI 为 103 秒，最终 MP4 为 8,584,393 bytes / 101.283 秒，H.264 540×960 10 fps + AAC 且可读；退出后应用与 FFmpeg 残留进程为 0。实测发现停止卡片仍保留 9.00 MB 的 TS 临时累计，工作树已改为逐尝试用最终 MP4 替换临时字节并覆盖部分成功重试，待新包复验。见 `docs/WINDOWS_RUNTIME_AUDIT_3_1_8.md` |
 
 ### W4 当前 Windows 运行事实
 

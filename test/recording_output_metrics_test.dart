@@ -12,6 +12,29 @@ void main() {
     expect(firstRetry.totalBytes(-1), 8 * 1024 * 1024);
   });
 
+  test('finalization replaces only one provisional attempt in the session total', () {
+    expect(RecordingOutputMetrics.reconcileFinalizedBytes(totalBytes: 200, sourceBytes: 100, finalizedBytes: 90), 190);
+  });
+
+  test('partial finalization retries preserve output committed by earlier passes', () {
+    final afterFirst = RecordingOutputMetrics.reconcileFinalizedBytes(
+      totalBytes: 200,
+      sourceBytes: 100,
+      finalizedBytes: 90,
+    );
+    final afterRetry = RecordingOutputMetrics.reconcileFinalizedBytes(
+      totalBytes: afterFirst,
+      sourceBytes: 100,
+      finalizedBytes: 80,
+    );
+
+    expect(afterRetry, 170);
+  });
+
+  test('finalization recovers committed output when provisional bytes were not persisted', () {
+    expect(RecordingOutputMetrics.reconcileFinalizedBytes(totalBytes: 0, sourceBytes: 100, finalizedBytes: 90), 90);
+  });
+
   test('sums only the active recording prefix segment files', () async {
     final directory = await Directory.systemTemp.createTemp('pure-live-recording-metrics-');
     addTearDown(() => directory.delete(recursive: true));
@@ -31,6 +54,44 @@ void main() {
     final snapshot = await const RecordingOutputMetrics().measure(
       directoryPath: '${Directory.systemTemp.path}${Platform.pathSeparator}pure-live-missing-output',
       filePrefix: 'attempt',
+    );
+
+    expect(snapshot.bytes, 0);
+    expect(snapshot.segmentCount, 0);
+  });
+
+  test('finalized output reports the newest committed same-prefix MP4', () async {
+    final directory = await Directory.systemTemp.createTemp('pure-live-finalized-metrics-');
+    addTearDown(() => directory.delete(recursive: true));
+    const prefix = '20260901_115810_719';
+    final oldOutput = File('${directory.path}${Platform.pathSeparator}$prefix.mp4');
+    final currentOutput = File('${directory.path}${Platform.pathSeparator}$prefix-1.mp4');
+    await oldOutput.writeAsBytes(List<int>.filled(17, 1), flush: true);
+    await oldOutput.setLastModified(DateTime(2026, 9, 1, 11, 58));
+    await currentOutput.writeAsBytes(List<int>.filled(29, 2), flush: true);
+    await currentOutput.setLastModified(DateTime(2026, 9, 1, 11, 59));
+    await File('${directory.path}${Platform.pathSeparator}${prefix}_000000.ts').writeAsBytes(List<int>.filled(101, 3));
+    await File('${directory.path}${Platform.pathSeparator}$prefix.mp4.partial').writeAsBytes(List<int>.filled(211, 4));
+
+    final snapshot = await const RecordingOutputMetrics().measureFinalized(
+      directoryPath: directory.path,
+      filePrefix: prefix,
+    );
+
+    expect(snapshot.bytes, 29);
+    expect(snapshot.segmentCount, 1);
+    expect(snapshot.latestModified, DateTime(2026, 9, 1, 11, 59));
+  });
+
+  test('finalized output ignores other attempts and incomplete files', () async {
+    final directory = await Directory.systemTemp.createTemp('pure-live-finalized-empty-');
+    addTearDown(() => directory.delete(recursive: true));
+    await File('${directory.path}${Platform.pathSeparator}other.mp4').writeAsBytes(List<int>.filled(31, 1));
+    await File('${directory.path}${Platform.pathSeparator}target.mp4.partial').writeAsBytes(List<int>.filled(43, 2));
+
+    final snapshot = await const RecordingOutputMetrics().measureFinalized(
+      directoryPath: directory.path,
+      filePrefix: 'target',
     );
 
     expect(snapshot.bytes, 0);
