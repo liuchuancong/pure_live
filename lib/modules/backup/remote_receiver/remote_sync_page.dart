@@ -152,6 +152,7 @@ class _RemoteSyncPageState extends State<RemoteSyncPage> {
       ),
       body: Obx(
         () => ListView(
+          physics: const PureLiveScrollPhysics(),
           padding: const EdgeInsets.all(16),
           children: [
             _buildLocalDevice(),

@@ -36,7 +36,7 @@ class DanmakuTabView extends GetView<LivePlayController> {
                   // RxList mutations do not invalidate this outer Obx unless
                   // its value is read while building. Snapshot it here so new
                   // SC entries appear immediately without switching tabs.
-                  Obx(() => SuperChatPage(messages: controller.superChats.toList(growable: false))),
+                  const SuperChatPage(),
                   DanmakuSettingsPage(controller: state.player.videoController!),
                   const KeywordBlockPage(),
                 ],
