@@ -151,6 +151,16 @@ function Test-UiSemanticEnabled {
     }
 }
 
+function Get-UiLabels {
+    param([Parameter(Mandatory = $true)][string] $Xml)
+    [xml]$document = $Xml
+    @(
+        $document.SelectNodes('//node') | ForEach-Object {
+            @($_.GetAttribute('text'), $_.GetAttribute('content-desc'))
+        } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Sort-Object -Unique
+    )
+}
+
 function Wait-UiSemanticEnabled {
     param(
         [Parameter(Mandatory = $true)][string] $Name,
@@ -387,6 +397,12 @@ try {
     $roomXml = Get-Content -LiteralPath (Join-Path $evidence 'room-before-record.xml') -Raw -Encoding UTF8
     $result.checks.roomUiAlive = $roomXml.Contains('弹幕列表') -and $roomXml.Contains('弹幕设置')
     if (-not $result.checks.roomUiAlive) { throw "A live $Platform room did not open." }
+    $visibleDanmakuLines = @(
+        Get-UiLabels -Xml $roomXml | Where-Object { $_ -match '^.{1,48}[:：]\s*.+$' }
+    )
+    Save-Text 'visible-danmaku-lines.txt' $visibleDanmakuLines
+    $result.checks.visibleDanmakuLineCount = $visibleDanmakuLines.Count
+    $result.checks.liveDanmakuVisible = $visibleDanmakuLines.Count -ge 3
 
     Invoke-Ui -Action Tap -Value 'live.quality'
     $qualityState = Wait-UiPattern `
@@ -394,8 +410,13 @@ try {
         -Pattern '原画|蓝光|超清|高清|标清|流畅|省流|自动|origin|uhd|hd|sd|ld' `
         -TimeoutSeconds 12
     Save-Screenshot 'quality-before-record'
-    $result.checks.qualitySheetVisible =
-        $qualityState.Xml -match '原画|蓝光|超清|高清|标清|流畅|省流|自动|origin|uhd|hd|sd|ld'
+    $qualityOptions = @(
+        Get-UiLabels -Xml $qualityState.Xml | Where-Object {
+            $_ -match '^(?:原画.*|蓝光.*|超清.*|高清.*|标清.*|流畅.*|省流.*|自动.*|origin|uhd|hd|sd|ld)$'
+        }
+    )
+    $result.checks.qualityOptions = $qualityOptions
+    $result.checks.qualitySheetVisible = $qualityOptions.Count -gt 0
     Invoke-Adb -AdbArguments @('shell', 'input', 'keyevent', '4') | Out-Null
     Wait-UiPattern -Name 'room-after-quality-check' -Pattern '弹幕列表' -TimeoutSeconds 12 | Out-Null
 
@@ -405,8 +426,13 @@ try {
         -Pattern '线路\s*\d+|主线路|备用线路|播放线路' `
         -TimeoutSeconds 12
     Save-Screenshot 'line-before-record'
-    $result.checks.lineSheetVisible =
-        $lineState.Xml -match '线路\s*\d+|主线路|备用线路|播放线路'
+    $lineOptions = @(
+        Get-UiLabels -Xml $lineState.Xml | Where-Object {
+            $_ -match '^(?:线路\s*\d+|主线路|备用线路|播放线路.*)$'
+        }
+    )
+    $result.checks.lineOptions = $lineOptions
+    $result.checks.lineSheetVisible = $lineOptions.Count -gt 0
     Invoke-Adb -AdbArguments @('shell', 'input', 'keyevent', '4') | Out-Null
     Wait-UiPattern -Name 'room-after-line-check' -Pattern '弹幕列表' -TimeoutSeconds 12 | Out-Null
 
@@ -592,6 +618,7 @@ $assertions = [ordered]@{
     runAsAvailable = [bool]$result.checks.runAsAvailable
     roomForeground = ($result.checks.roomForeground -match $Package)
     roomUiAlive = [bool]$result.checks.roomUiAlive
+    liveDanmakuVisible = [bool]$result.checks.liveDanmakuVisible
     qualitySheetVisible = [bool]$result.checks.qualitySheetVisible
     lineSheetVisible = [bool]$result.checks.lineSheetVisible
     recordingCenterScreenshotCaptured = [bool]$result.checks.recordingCenterScreenshotCaptured

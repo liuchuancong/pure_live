@@ -470,6 +470,21 @@ class _TaskCard extends GetView<RecorderController> {
     final theme = Theme.of(context);
 
     final color = _statusColor();
+    final audienceLabelKey = switch (task.audienceMetricType) {
+      AudienceMetricType.popularity => 'audience_popularity',
+      AudienceMetricType.onlineViewers => 'audience_online',
+      AudienceMetricType.totalViewers => 'audience_total',
+      AudienceMetricType.followers => 'audience_followers',
+      AudienceMetricType.unknown => 'audience_count',
+    };
+    final audienceIcon = switch (task.audienceMetricType) {
+      AudienceMetricType.popularity => Icons.whatshot_rounded,
+      AudienceMetricType.onlineViewers => Icons.people_alt_rounded,
+      AudienceMetricType.totalViewers => Icons.visibility_rounded,
+      AudienceMetricType.followers => Icons.favorite_rounded,
+      AudienceMetricType.unknown => Icons.people_alt_rounded,
+    };
+    final audienceText = '${i18n(audienceLabelKey)} ${readableCount(task.watching)}';
 
     final showRecordingStats =
         const <RecordStatus>{
@@ -504,6 +519,7 @@ class _TaskCard extends GetView<RecorderController> {
               cover: task.cover,
               watching: task.watching,
               followers: task.followers,
+              audienceMetricType: task.audienceMetricType,
               liveStatus: task.liveStatus,
             ),
           );
@@ -564,7 +580,7 @@ class _TaskCard extends GetView<RecorderController> {
                             _miniInfo(Icons.high_quality_rounded, task.selectedQuality ?? i18n("recorder_auto"), theme),
                             if (task.selectedLine?.isNotEmpty == true)
                               _miniInfo(Icons.alt_route_rounded, task.selectedLine!, theme),
-                            _miniInfo(Icons.people_alt_rounded, readableCount(task.watching), theme),
+                            _miniInfo(audienceIcon, audienceText, theme),
                           ],
                         ),
                       ],

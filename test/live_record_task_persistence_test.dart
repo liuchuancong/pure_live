@@ -81,7 +81,7 @@ void main() {
     );
 
     final json = task.toJson();
-    expect(json['schemaVersion'], 6);
+    expect(json['schemaVersion'], 7);
     expect(json['lastErrorStage'], 'ffmpeg');
     expect(json['lastError'], contains('[stream-url]'));
     expect(json['lastError'], isNot(contains('secret')));
@@ -208,5 +208,47 @@ void main() {
     restored.beginNewRecording(now: secondStart);
     expect(restored.recordingStartedAt, secondStart);
     expect(restored.createTime, secondStart);
+  });
+
+  test('recording task preserves audience metric semantics across updates and persistence', () {
+    final task = LiveRecordTask.fromRoom(
+      LiveRoom(
+        roomId: '1',
+        platform: 'douyu',
+        watching: '509.3万',
+        popularity: '509.3万',
+        audienceMetricType: AudienceMetricType.popularity,
+      ),
+    );
+
+    expect(task.audienceMetricType, AudienceMetricType.popularity);
+    expect(LiveRecordTask.fromJson(task.toJson()).audienceMetricType, AudienceMetricType.popularity);
+
+    final onlineTask = LiveRecordTask.fromRoom(
+      LiveRoom(
+        roomId: '2',
+        platform: 'kuaishou',
+        watching: '3821',
+        onlineViewers: '3821',
+        audienceMetricType: AudienceMetricType.onlineViewers,
+      ),
+    );
+    onlineTask.updateFromRoom(
+      LiveRoom(
+        roomId: '2',
+        platform: 'kuaishou',
+        watching: '4012',
+        onlineViewers: '4012',
+        audienceMetricType: AudienceMetricType.onlineViewers,
+      ),
+    );
+    expect(onlineTask.audienceMetricType, AudienceMetricType.onlineViewers);
+
+    final legacyDouyin = LiveRecordTask.fromJson(<String, dynamic>{
+      'roomId': '2',
+      'platform': 'douyin',
+      'watching': '12.6万',
+    });
+    expect(legacyDouyin.audienceMetricType, AudienceMetricType.totalViewers);
   });
 }

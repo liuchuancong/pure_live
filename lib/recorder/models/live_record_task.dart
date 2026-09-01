@@ -25,6 +25,10 @@ class LiveRecordTask {
 
   String watching;
 
+  /// Semantic type of [watching]. Recording cards must not present a
+  /// platform popularity score as a concurrent audience head count.
+  AudienceMetricType audienceMetricType;
+
   String followers;
 
   bool isRecord;
@@ -122,6 +126,7 @@ class LiveRecordTask {
 
     this.liveStatus = LiveStatus.unknown,
     this.watching = "0",
+    this.audienceMetricType = AudienceMetricType.unknown,
     this.followers = "0",
     this.isRecord = false,
 
@@ -177,6 +182,7 @@ class LiveRecordTask {
       cover: room.cover ?? "",
 
       watching: room.watching ?? "0",
+      audienceMetricType: room.effectiveAudienceMetricType,
 
       followers: room.followers ?? "0",
 
@@ -203,6 +209,8 @@ class LiveRecordTask {
     cover = room.cover ?? cover;
 
     watching = room.watching ?? watching;
+
+    audienceMetricType = room.effectiveAudienceMetricType;
 
     followers = room.followers ?? followers;
 
@@ -290,7 +298,7 @@ class LiveRecordTask {
   /// =========================
 
   Map<String, dynamic> toJson() => {
-    "schemaVersion": 6,
+    "schemaVersion": 7,
     "taskId": taskId,
     "roomId": roomId,
     "platform": platform,
@@ -301,6 +309,8 @@ class LiveRecordTask {
     "cover": cover,
 
     "watching": watching,
+    "audienceMetricType": audienceMetricType.index,
+    "audienceMetricTypeName": audienceMetricType.name,
     "followers": followers,
 
     "isRecord": isRecord,
@@ -360,6 +370,13 @@ class LiveRecordTask {
       cover: _string(json["cover"]),
 
       watching: _string(json["watching"], fallback: "0"),
+
+      audienceMetricType: _enumValue(
+        AudienceMetricType.values,
+        name: json["audienceMetricTypeName"],
+        index: json["audienceMetricType"],
+        fallback: _defaultAudienceMetricType(platform),
+      ),
 
       followers: _string(json["followers"], fallback: "0"),
 
@@ -428,6 +445,15 @@ class LiveRecordTask {
   static String _string(dynamic value, {String fallback = ''}) {
     final text = value?.toString() ?? '';
     return text.isEmpty ? fallback : text;
+  }
+
+  static AudienceMetricType _defaultAudienceMetricType(String platform) {
+    return switch (platform.trim().toLowerCase()) {
+      'bilibili' || 'douyu' || 'huya' || 'cc' || 'yy' => AudienceMetricType.popularity,
+      'kuaishou' || 'twitch' || 'soop' => AudienceMetricType.onlineViewers,
+      'douyin' => AudienceMetricType.totalViewers,
+      _ => AudienceMetricType.unknown,
+    };
   }
 
   static String? _nullableString(dynamic value) {

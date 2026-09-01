@@ -74,6 +74,10 @@
 - 测试器随后改为平台参数驱动，并在 cycle 42 完成虎牙实录。清晰度和线路入口均真实打开，录制卡片显示 `蓝光30M / 线路1`；视觉证据中的运行指标为 40 秒、19.00 MB、1.2x、4.2 Mbps。应用私有 TS 在 3.120 秒内从 20,709,376 B 增至 21,495,808 B，证明录制仍持续写入，而不是仅有静态卡片。
 - 虎牙停止封装在 3,999 ms 内完成，成品为 `27,681,159 bytes`，SHA-256 `293FAA18F55FDC81743C8E10BA0C9D42DD372A5BFCADEB689872E1E98994D5AA`。`ffprobe` 读取到 H.264 2560×1440、120 fps 视频和 AAC 音频，媒体时长 56.813667 秒；监控移除、进程退出、活动 Wake Lock 清理及 FATAL/ANR 过滤全部通过。证据为 `local-artifacts/diagnostics/android-recording-smoke-20260901T215737232/summary.json`。
 - 虎牙录制中心每秒刷新时间和大小，导致系统 `uiautomator dump` 一直等不到一秒安静窗口。Android shell 实现确实固定执行 `waitForIdle(1000, 10000)`，超时即输出 `could not get idle state`（[AOSP `DumpCommand.java`](https://android.googlesource.com/platform/frameworks/uiautomator/+/17fac436d78f6ac642386a245fb4fdb7243a91a4/cmds/uiautomator/src/com/android/commands/uiautomator/DumpCommand.java)）。测试门禁因此使用原始截图加私有文件双采样，不再把持续更新的正常页面误判为客户端故障；录制对话框还会保留禁用按钮语义，脚本现只点击同时为 `enabled=true` 和 `clickable=true` 的动作。
+- cycle 43 完成斗鱼当前房间的第一次全链路实录：真实视频与多条普通弹幕可见，清晰度菜单给出 `原画1080P60 / 蓝光4M / 超清 / 高清`，线路菜单给出 `线路1`。录制中心显示 35 秒、21.75 MB、1.1x、6.3 Mbps，TS 在 2.905 秒内从 23,592,960 B 增至 25,427,968 B。停止后得到 30,574,552 B、49.930667 秒的 H.264 1920×1080@60 + AAC MP4，停止、监控移除、进程和 Wake Lock 清理全部通过。
+- 斗鱼截图同时暴露了共享录制任务模型遗漏：直播页明确写“热度 509.3万”，录制卡片却只画“人数”图标和 `509.3万`，容易再次把平台热度理解成真实在线人数。根因是 `LiveRoom` 已有 `AudienceMetricType`，但 `LiveRecordTask` 只复制 `watching` 数值，丢弃类型；录制中心因而统一使用人数图标。
+- 任务持久化 schema 升至 7，新增并兼容恢复 `audienceMetricType`；新任务、房间刷新、JSON 保存恢复和旧任务平台推断均保留热度/在线/累计观看语义。录制卡片现在使用对应图标和明确文字。定向回归 14/14、单次 Analyze 0 issue；质量记录为 `local-artifacts/build-records/20260901T142519204Z-quality-focused.json`。
+- 修复后的 arm64 Debug APK 为 301,636,158 B，SHA-256 `689494D85719120C02C8965894F48C8637887332939305A14FD1F4256D78487A`，16 个 arm64 原生库的最小 ELF LOAD 对齐仍不低于 `0x4000`。cycle 44 覆盖安装后再次实录斗鱼，录制卡片已明确显示火焰图标和“热度 503.9万”；当前选中 `4K超高清 / 线路1`，成品 140,249,937 B、61.416867 秒，`ffprobe` 读取 H.264 3840×2160 + AAC。证据为 `local-artifacts/diagnostics/android-recording-smoke-20260901T223414348/summary.json`，构建记录为 `local-artifacts/build-records/20260901T143143116Z-build-androidarm64-debug.json`。
 
 ## 8. 后续实机顺序
 
@@ -81,7 +85,7 @@
 
 1. Bilibili 普通 16:9 房间：继续补充非竖屏样本的画面比例、横屏全屏、应用小窗与系统返回；
 2. 抖音原生竖屏房间：普通页、竖屏沉浸、横屏居中背景、PiP 与应用小窗；
-3. 虎牙短录、画质/线路入口和清理已通过；继续执行虎牙切换/短签名续接，以及斗鱼代表房间的弹幕和 2～3 分钟录制；
+3. 虎牙与斗鱼短录、画质/线路入口和清理已通过；继续执行实际画质/线路切换、短签名续接与 2～3 分钟录制；
 4. 纯音频往返已完成单轮；继续执行后台总开关、锁屏、重复 10 次系统 PiP 与停止计时；
 5. Bilibili 单次短录已通过；继续补充录制中心指标的连续单调采样、删除和滚动边界，以及其他平台、重试分片和稳定会话开始时间；
 6. 30～60 分钟资源趋势、CPU/温度、播放器结束后的进程/媒体会话/Wake Lock 回落。
