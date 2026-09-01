@@ -1,21 +1,21 @@
 import 'dart:async';
 import 'dart:developer' as developer;
-
-import 'package:flame_barrage/flame_barrage.dart';
 import 'package:flutter/services.dart';
-import 'package:media_kit_video/media_kit_video.dart';
 import 'package:remixicon/remixicon.dart';
-
-import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/common/index.dart';
+import 'package:flame_barrage/flame_barrage.dart';
+import 'package:media_kit_video/media_kit_video.dart';
+import 'package:pure_live/player/utils/fullscreen.dart';
+import 'package:pure_live/common/global/platform_utils.dart';
+import 'package:pure_live/modules/multiview/multiview_controller.dart';
+import 'package:pure_live/modules/multiview/models/multiview_models.dart';
 import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 import 'package:pure_live/modules/live_play/pages/danmaku_settings_page.dart';
-import 'package:pure_live/modules/multiview/danmaku/multiview_danmaku_settings_binding.dart';
-import 'package:pure_live/modules/multiview/models/multiview_models.dart';
-import 'package:pure_live/modules/multiview/multiview_controller.dart';
-import 'package:pure_live/modules/multiview/widgets/multiview_fullscreen_surface.dart';
 import 'package:pure_live/modules/multiview/widgets/multiview_room_picker.dart';
-import 'package:pure_live/player/utils/fullscreen.dart';
+import 'package:pure_live/modules/multiview/widgets/multiview_fullscreen_surface.dart';
+import 'package:pure_live/modules/multiview/danmaku/multiview_danmaku_settings_binding.dart';
+
+
 
 /// 页面显示状态机：normal（完整界面）→ immersive（隐藏工具条与侧板，
 /// 留悬浮恢复钮）→ fullscreen（仅保留安全区内的退出钮）。

@@ -1,17 +1,17 @@
 import 'dart:async';
 import 'dart:developer' as developer;
 
-import 'package:flame_barrage/flame_barrage.dart';
 import 'package:pure_live/common/index.dart';
+import 'package:flame_barrage/flame_barrage.dart';
+import 'package:pure_live/model/live_play_quality.dart';
+import 'package:pure_live/core/interface/live_site.dart';
+import 'package:pure_live/core/interface/live_danmaku.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/common/utils/latest_async_value_queue.dart';
-import 'package:pure_live/core/interface/live_danmaku.dart';
-import 'package:pure_live/core/interface/live_site.dart';
-import 'package:pure_live/model/live_play_quality.dart';
-import 'package:pure_live/modules/live_play/controllers/player_controller.dart';
-import 'package:pure_live/modules/multiview/cells/multiview_cell_player.dart';
-import 'package:pure_live/modules/multiview/danmaku/multiview_danmaku_session.dart';
 import 'package:pure_live/modules/multiview/models/multiview_models.dart';
+import 'package:pure_live/modules/multiview/cells/multiview_cell_player.dart';
+import 'package:pure_live/modules/live_play/controllers/player_controller.dart';
+import 'package:pure_live/modules/multiview/danmaku/multiview_danmaku_session.dart';
 
 /// 房间对象 → 可播放源解析器。
 ///

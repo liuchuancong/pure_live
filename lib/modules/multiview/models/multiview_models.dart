@@ -1,6 +1,5 @@
-import 'package:media_kit_video/media_kit_video.dart';
-
 import 'package:pure_live/common/index.dart';
+import 'package:media_kit_video/media_kit_video.dart';
 import 'package:pure_live/model/live_play_quality.dart';
 
 /// 多画面布局枚举。
