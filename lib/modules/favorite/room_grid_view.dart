@@ -1,5 +1,14 @@
-import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:pure_live/common/index.dart';
+import 'package:pure_live/common/global/platform_utils.dart';
+import 'package:flutter/rendering.dart' show ScrollCacheExtent;
+
+@visibleForTesting
+bool shouldWrapFavoritePullToRefresh({required double viewportWidth, required bool isMobilePlatform}) {
+  // A wide Android/iOS tablet still uses the touch-first home shell and must
+  // keep pull-to-refresh. Width alone only selects the responsive grid; it is
+  // not a reliable desktop-platform signal.
+  return isMobilePlatform || viewportWidth <= 680;
+}
 
 class RoomGridView extends GetView<FavoriteController> {
   const RoomGridView({
@@ -83,7 +92,7 @@ class RoomGridView extends GetView<FavoriteController> {
             );
           }
 
-          if (width > 680) {
+          if (!shouldWrapFavoritePullToRefresh(viewportWidth: width, isMobilePlatform: PlatformUtils.isMobile)) {
             return buildScrollable(const PureLiveScrollPhysics(parent: AlwaysScrollableScrollPhysics()));
           }
 
