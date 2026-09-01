@@ -92,6 +92,13 @@ class LiveRecordTask {
 
   DateTime createTime;
 
+  /// Start of the user-visible recording session. A signed CDN can rotate
+  /// through several native FFmpeg attempts, but the recording center must
+  /// keep showing the original session start instead of the latest retry.
+  DateTime? recordingStartedAt;
+
+  DateTime get displayStartTime => recordingStartedAt ?? createTime;
+
   DateTime? lastFailTime;
 
   /// Sanitized user-visible failure from the most recent attempt.
@@ -111,6 +118,7 @@ class LiveRecordTask {
     required this.avatar,
     required this.cover,
     required this.createTime,
+    this.recordingStartedAt,
 
     this.liveStatus = LiveStatus.unknown,
     this.watching = "0",
@@ -214,11 +222,13 @@ class LiveRecordTask {
   }
 
   void beginNewRecording({DateTime? now}) {
+    final startedAt = now ?? DateTime.now();
     recordedSeconds = 0;
     fileSize = 0;
+    recordingStartedAt = startedAt;
     // A previous interrupted/failing remux remains recoverable. Do not discard
     // its absolute directory merely because the user starts the room again.
-    beginNewAttempt(now: now);
+    beginNewAttempt(now: startedAt);
   }
 
   void queuePendingAttempt({required String directoryPath, required String filePrefix}) {
@@ -280,7 +290,7 @@ class LiveRecordTask {
   /// =========================
 
   Map<String, dynamic> toJson() => {
-    "schemaVersion": 5,
+    "schemaVersion": 6,
     "taskId": taskId,
     "roomId": roomId,
     "platform": platform,
@@ -323,6 +333,7 @@ class LiveRecordTask {
     "retryCount": retryCount,
 
     "createTime": createTime.toIso8601String(),
+    "recordingStartedAt": recordingStartedAt?.toIso8601String(),
 
     "lastFailTime": lastFailTime?.toIso8601String(),
     "lastError": lastError,
@@ -404,6 +415,8 @@ class LiveRecordTask {
       retryCount: _int(json["retryCount"]),
 
       createTime: _date(json["createTime"]) ?? DateTime.now(),
+
+      recordingStartedAt: _date(json["recordingStartedAt"]),
 
       lastFailTime: _date(json["lastFailTime"]),
       lastError: _diagnostic(json["lastError"]),

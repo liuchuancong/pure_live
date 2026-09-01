@@ -1,32 +1,32 @@
 {
-  "version": "3.1.7",
-  "build_number": 4120,
-  "version_num": 301074120,
-  "version_desc": "- 修复虎牙同一用户在同一房间再次发送相同文字和金额的醒目留言时被整场误去重的问题，使用平台 lMessageId 识别真实事件。\n- 同一留言板快照仍稳定合并；重建的倒计时时间不再作为事件身份，已发送缓存限制为 512 项，避免长时间直播持续增长。\n- Android arm64-v8a 与 Windows x64 从同一冻结源码串行构建，附安装包、便携包、构建元数据和 SHA-256。\n- 本轮不合并上游代码；Analyze 0 issue、Flutter 全量回归 680/680、公开平台接口 42/42。",
+  "version": "3.1.8",
+  "build_number": 4121,
+  "version_num": 301084121,
+  "version_desc": "- 修复自动续接后录制中心开始时间跳到最近一次 FFmpeg 尝试的问题，用户会话与原生分片时间分离。\n- 录制会话时间持久化到 schema 6；应用重启后保持，旧任务安全回退，用户显式重新录制时正确重置。\n- Android arm64-v8a 与 Windows x64 从同一冻结源码串行构建，附安装包、便携包、构建元数据和 SHA-256。\n- 本轮不合并上游代码；Windows 虎牙实播已验证跨短签名录制、画质与线路切换，新增确定性模型回归。",
   "prerelease": false,
-  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.1.7",
+  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.1.8",
   "android_abis": [
     "arm64-v8a"
   ],
   "platforms": {
     "android": {
-      "version": "3.1.7",
-      "build_number": 4120,
-      "version_num": 301074120,
-      "version_desc": "- 虎牙醒目留言改用平台事件 ID 去重：相同用户、文字和金额的后续新留言不会被整场抑制。\n- 重复留言板快照仍只显示一次，长期会话的已发送身份缓存限制为 512 项。\n- 提供单一 arm64-v8a Release 更新包并核验版本、ABI、Flutter 资源、关键原生库和 SHA-256。",
+      "version": "3.1.8",
+      "build_number": 4121,
+      "version_num": 301084121,
+      "version_desc": "- 录制中心固定显示用户本次录制的真实开始时间；CDN 续签、自动重连和换线不再覆盖。\n- schema 6 保存会话时间，升级旧任务安全回退，显式重新录制生成新时间。\n- 提供单一 arm64-v8a Release 更新包并核验版本、ABI、Flutter 资源、关键原生库和 SHA-256。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.1.7",
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.1.8",
       "android_abis": [
         "arm64-v8a"
       ]
     },
     "windows": {
-      "version": "3.1.7",
-      "build_number": 4120,
-      "version_num": 301074120,
-      "version_desc": "- 同步修复虎牙合法重复醒目留言被整场误去重的问题，并限制长时会话去重缓存。\n- 延续可选择安装目录的 x64 安装程序和免安装便携 ZIP。\n- Windows 资产按当前 CMake 安装清单打包并核验版本、资源、残留文件和 SHA-256。",
+      "version": "3.1.8",
+      "build_number": 4121,
+      "version_num": 301084121,
+      "version_desc": "- 修复虎牙短签名续接后录制中心时间漂移，同时保留独立分片前缀和累计统计。\n- 延续可选择安装目录的 x64 安装程序和免安装便携 ZIP。\n- Windows 资产按当前 CMake 安装清单打包并核验版本、资源、残留文件和 SHA-256。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.1.7",
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.1.8",
       "windows_msix_available": false
     },
     "linux": {

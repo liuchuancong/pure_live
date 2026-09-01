@@ -661,7 +661,7 @@ class _TaskCard extends GetView<RecorderController> {
                   Icon(Icons.schedule_rounded, size: 14, color: theme.colorScheme.onSurfaceVariant),
                   const SizedBox(width: 5),
                   Text(
-                    task.createTime.toString().substring(5, 16),
+                    task.displayStartTime.toString().substring(5, 16),
                     style: AppTextStyles.t12.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                       fontWeight: FontWeight.w500,
