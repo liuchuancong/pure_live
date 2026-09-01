@@ -118,6 +118,15 @@ class FFmpegCommandBuilder {
       threadQueueSize.clamp(64, 65536).toString(),
       if (userAgent != null && userAgent.isNotEmpty) ...['-user_agent', userAgent],
       if (headerString.isNotEmpty) ...['-headers', headerString],
+      // Preserve the source cadence while correcting only discontinuities.
+      // `use_wallclock_as_timestamps` is intentionally avoided: HLS/HTTP
+      // downloads packets in bursts, so arrival time collapses many frames
+      // into near-identical timestamps and produces visibly uneven playback.
+      // FFmpeg applies dts_delta_threshold to discontinuity-aware inputs such
+      // as HLS/MPEG-TS and dts_error_threshold to formats such as live FLV;
+      // together with +genpts above this removes a CDN timestamp jump without
+      // replacing every valid source timestamp.
+      if (_usesNetworkInput(url)) ...['-dts_delta_threshold', '2', '-dts_error_threshold', '2'],
       '-i',
       url,
       // Optional mappings support audio-only rooms and temporarily missing
@@ -181,6 +190,11 @@ class FFmpegCommandBuilder {
     }
 
     return options;
+  }
+
+  static bool _usesNetworkInput(String rawUrl) {
+    final scheme = Uri.tryParse(rawUrl.trim())?.scheme.toLowerCase() ?? '';
+    return const <String>{'http', 'https', 'rtmp', 'rtmps', 'rtsp', 'rtp', 'udp', 'srt'}.contains(scheme);
   }
 
   static Map<String, String> _normalizeHeaders(Map<String, String>? headers) {

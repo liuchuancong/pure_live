@@ -24,6 +24,11 @@ void main() {
     expect(arguments.last, '$outputDir${Platform.pathSeparator}session-001_%06d.ts');
     expect(_valueAfter(arguments, '-reconnect_on_network_error'), '1');
     expect(_valueAfter(arguments, '-reconnect_on_http_error'), '5xx');
+    expect(_valueAfter(arguments, '-dts_delta_threshold'), '2');
+    expect(_valueAfter(arguments, '-dts_error_threshold'), '2');
+    expect(arguments.indexOf('-dts_delta_threshold'), lessThan(arguments.indexOf('-i')));
+    expect(arguments.indexOf('-dts_error_threshold'), lessThan(arguments.indexOf('-i')));
+    expect(arguments, isNot(contains('-use_wallclock_as_timestamps')));
     expect(arguments, isNot(contains('-seekable')));
     expect(arguments, isNot(contains('-reconnect_at_eof')));
     expect(arguments, isNot(contains('-tls_verify')));
@@ -49,10 +54,29 @@ void main() {
     );
 
     expect(_valueAfter(rtsp, '-rtsp_transport'), 'tcp');
+    expect(_valueAfter(rtsp, '-dts_delta_threshold'), '2');
+    expect(_valueAfter(rtsp, '-dts_error_threshold'), '2');
     expect(rtsp, isNot(contains('-reconnect')));
     expect(_valueAfter(udp, '-fifo_size'), '5000000');
     expect(_valueAfter(udp, '-overrun_nonfatal'), '1');
+    expect(_valueAfter(udp, '-dts_delta_threshold'), '2');
+    expect(_valueAfter(udp, '-dts_error_threshold'), '2');
     expect(_valueAfter(udp, '-thread_queue_size'), '65536');
+  });
+
+  test('recording keeps local files on their authored timestamp timeline', () {
+    final arguments = FFmpegCommandBuilder.buildRecordArguments(
+      url: Uri.file('${Directory.systemTemp.path}${Platform.pathSeparator}sample.ts').toString(),
+      outputDir: Directory.systemTemp.path,
+      segmentTime: 60,
+      preferBestStream: true,
+      rwTimeout: 15,
+      threadQueueSize: 1024,
+    );
+
+    expect(arguments, isNot(contains('-dts_delta_threshold')));
+    expect(arguments, isNot(contains('-dts_error_threshold')));
+    expect(arguments, isNot(contains('-use_wallclock_as_timestamps')));
   });
 
   test('header sanitizing blocks line injection and emits one user-agent argument', () {

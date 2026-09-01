@@ -178,8 +178,17 @@ try {
     $result.checks.model = ((Invoke-Adb -AdbArguments @('shell', 'getprop', 'ro.product.model')) -join '').Trim()
     $result.checks.android = ((Invoke-Adb -AdbArguments @('shell', 'getprop', 'ro.build.version.release')) -join '').Trim()
     $result.checks.sdk = ((Invoke-Adb -AdbArguments @('shell', 'getprop', 'ro.build.version.sdk')) -join '').Trim()
+    $result.checks.pageSizeBytes = [long](((Invoke-Adb -AdbArguments @('shell', 'getconf', 'PAGE_SIZE')) -join '').Trim())
     Save-Text 'device.txt' (Invoke-Adb -AdbArguments @('shell', 'getprop'))
-    Save-Text 'package.txt' (Invoke-Adb -AdbArguments @('shell', 'dumpsys', 'package', $package))
+    $packageInfo = Invoke-Adb -AdbArguments @('shell', 'dumpsys', 'package', $package)
+    Save-Text 'package.txt' $packageInfo
+    $packageText = $packageInfo -join "`n"
+    if ($packageText -match '(?m)^\s*versionName=([^\s]+)') {
+        $result.checks.installedVersionName = $Matches[1]
+    }
+    if ($packageText -match '(?m)^\s*versionCode=(\d+)') {
+        $result.checks.installedVersionCode = [long]$Matches[1]
+    }
     Save-Text 'display-before.txt' (Invoke-Adb -AdbArguments @('shell', 'dumpsys', 'display'))
     Save-Text 'foreground-before.txt' (Get-Foreground)
 
@@ -199,6 +208,21 @@ try {
     $result.checks.coldStartForeground = Get-Foreground
     Save-UiDump 'home-cold'
     Save-Screenshot 'home-cold'
+    $homeColdXml = Get-Content -LiteralPath (Join-Path $evidence 'home-cold.xml') -Raw -Encoding UTF8
+    $result.checks.android16KbCompatibilityWarningAbsent = -not (
+        $homeColdXml.Contains('Android 应用兼容性') -and
+        ($homeColdXml.Contains('不符合 16 KB 对齐要求') -or
+            $homeColdXml.Contains('ELF 文件对齐检查失败'))
+    )
+    if (-not $result.checks.android16KbCompatibilityWarningAbsent) {
+        # Preserve the failure evidence, dismiss only the modal and continue
+        # the functional matrix so one packaging regression does not hide an
+        # unrelated player/danmaku regression in the same exclusive turn.
+        Invoke-Adb -AdbArguments @('shell', 'input', 'keyevent', '4') | Out-Null
+        Start-Sleep -Seconds 1
+        Save-UiDump 'home-after-compatibility-warning'
+        Save-Screenshot 'home-after-compatibility-warning'
+    }
 
     & (Join-Path $repo 'tool\android_ui.ps1') -Sequence refresh_home -Serial $serial -CaptureOnFailure |
         Out-File -LiteralPath (Join-Path $evidence 'refresh-home.txt') -Encoding utf8
@@ -214,8 +238,25 @@ try {
     Save-Screenshot 'room-playing'
     $roomXml = Get-Content -LiteralPath (Join-Path $evidence 'room-playing.xml') -Raw -Encoding UTF8
     $result.checks.roomUiAlive = $roomXml.Contains('弹幕列表') -and $roomXml.Contains('弹幕设置')
-    $result.checks.danmakuConnected = $roomXml.Contains('弹幕服务器连接正常')
-    $result.checks.hasQuality = $roomXml.Contains('原画') -or $roomXml.Contains('清晰度')
+    # Flutter exposes the visible room content through accessibility
+    # descriptions rather than Android's `text` attribute.  A busy room can
+    # rotate the short-lived "弹幕服务器连接正常" system row out of the
+    # semantics tree before this dump is taken, so the connection assertion
+    # also accepts a real `用户: 内容` row.  This keeps the smoke gate tied to
+    # visible/live evidence instead of a timing-sensitive diagnostic string.
+    $visibleDanmakuRows = [regex]::Matches(
+        $roomXml,
+        'content-desc="[^"\r\n]{1,80}[:：]\s*[^"\r\n]+"'
+    ).Count
+    $result.checks.visibleDanmakuRows = $visibleDanmakuRows
+    $result.checks.danmakuConnected =
+        $roomXml.Contains('弹幕服务器连接正常') -or $visibleDanmakuRows -gt 0
+
+    # Different platforms and account states use different concrete quality
+    # labels.  The room control is still present when the selected label is
+    # 超清/高清/流畅 rather than 原画, so cover every normalized label emitted
+    # by the adapters instead of treating only 原画 as proof.
+    $result.checks.hasQuality = $roomXml -match '原画|蓝光|超清|高清|标清|流畅|清晰度'
     $result.checks.hasLine = $roomXml.Contains('线路')
     if (-not $result.checks.roomUiAlive) {
         throw 'Popular-feed navigation did not open a live-room UI; stopping before mode/PiP coordinates.'
@@ -314,6 +355,7 @@ try {
 
 $assertions = [ordered]@{
     deviceReady = ($result.checks.deviceState -eq 'device')
+    android16KbCompatibilityWarningAbsent = [bool]$result.checks.android16KbCompatibilityWarningAbsent
     coldStartForeground = ($result.checks.coldStartForeground -match $package)
     roomForeground = ($result.checks.roomForeground -match $package)
     roomUiAlive = [bool]$result.checks.roomUiAlive

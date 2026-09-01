@@ -278,11 +278,61 @@ foreach ($marker in @(
     'assets/flutter_assets/assets/version.json',
     'libffmpegkit.so',
     'libsqlite3.so',
-    '$flutterAssets.Count -lt 1000'
+    '$flutterAssets.Count -lt 1000',
+    'verify_android_elf_alignment.ps1',
+    'zipalign.exe',
+    '-P 16'
 )) {
     if (-not $androidVerifier.Contains($marker)) {
         throw "Android APK integrity marker is missing: $marker"
     }
+}
+
+$androidElfVerifier = Get-Content -LiteralPath (Join-Path $repoRoot 'tool\verify_android_elf_alignment.ps1') -Raw
+foreach ($marker in @(
+    'llvm-readelf.exe',
+    'minimum LOAD alignment',
+    'MinimumLoadAlignment = 0x4000'
+)) {
+    if (-not $androidElfVerifier.Contains($marker)) {
+        throw "Android 16 KB ELF verifier marker is missing: $marker"
+    }
+}
+
+$fplayerPluginBuildPath = Join-Path $repoRoot 'plugins\flv_lzc\android\build.gradle'
+$fplayerPluginBuild = Get-Content -LiteralPath $fplayerPluginBuildPath -Raw
+$androidRootBuild = Get-Content -LiteralPath (Join-Path $repoRoot 'android\build.gradle.kts') -Raw
+$fplayerCoreVersion = '1.0.4-purelive16k'
+$fplayerCoreRelativePath =
+    "plugins\flv_lzc\android\libs\io\github\flutterplayer\fplayer-core\$fplayerCoreVersion\fplayer-core-$fplayerCoreVersion.aar"
+$fplayerCorePath = Join-Path $repoRoot $fplayerCoreRelativePath
+foreach ($marker in @(
+    'url = uri("$projectDir/libs")',
+    'includeModule("io.github.flutterplayer", "fplayer-core")',
+    "io.github.flutterplayer:fplayer-core:$fplayerCoreVersion"
+)) {
+    if (-not $fplayerPluginBuild.Contains($marker)) {
+        throw "Local 16 KB fplayer dependency marker is missing: $marker"
+    }
+}
+foreach ($marker in @(
+    'maven(rootProject.file("../plugins/flv_lzc/android/libs"))',
+    'includeModule("io.github.flutterplayer", "fplayer-core")'
+)) {
+    if (-not $androidRootBuild.Contains($marker)) {
+        throw "Android app local fplayer repository marker is missing: $marker"
+    }
+}
+if ($fplayerPluginBuild.Contains("io.github.flutterplayer:fplayer-core:1.0.4'")) {
+    throw 'The 4 KB-aligned Maven fplayer-core 1.0.4 artifact must not be restored.'
+}
+if (-not (Test-Path -LiteralPath $fplayerCorePath -PathType Leaf)) {
+    throw "Local 16 KB fplayer AAR is missing: $fplayerCoreRelativePath"
+}
+$expectedFplayerCoreHash = '3643B36BC906F1FED56B313AC98669EEAA9DA0D2262409808429C5B614C676DA'
+$actualFplayerCoreHash = (Get-FileHash -LiteralPath $fplayerCorePath -Algorithm SHA256).Hash
+if ($actualFplayerCoreHash -ne $expectedFplayerCoreHash) {
+    throw "Local 16 KB fplayer AAR hash mismatch: $actualFplayerCoreHash"
 }
 
 $androidSigningWorkflow = Get-Content -LiteralPath (Join-Path $repoRoot '.github\workflows\sign-staged-android.yml') -Raw
@@ -291,7 +341,11 @@ foreach ($marker in @(
     'assets/flutter_assets/assets/version.json',
     'libffmpegkit.so',
     'libsqlite3.so',
-    'Flutter asset file count is incomplete'
+    'Flutter asset file count is incomplete',
+    'verify_android_16kb',
+    'zipalign" -c -P 16 4',
+    'Android 16 KB ELF alignment failed',
+    'verify_android_16kb "$final_apk"'
 )) {
     if (-not $androidSigningWorkflow.Contains($marker)) {
         throw "Android signing workflow integrity marker is missing: $marker"

@@ -56,10 +56,13 @@
 - 恢复直播并稳定后的离散点为 TOTAL PSS 277,778 KB、TOTAL RSS 462,584 KB、Swap PSS 166 KB、75 线程、`dumpsys cpuinfo` 瞬时 1.6%；日志没有 Pure Live FATAL/ANR。`gfxinfo` 只观察到 9 个 Android View 帧、P50/P90/P95/P99 均 5 ms，覆盖范围不足以代表 Flutter 播放/滚动流畅度。
 - cycle 12 的应用功能同样为 14/14，但测试器末尾把逗号分隔的比较表达式解析成一次“值与数组比较”，产生了假失败。断言现改为命名有序表，失败时输出具体名称；旧证据离线回放 14/14，新脚本在 cycle 14 实机退出 0，问题归属于测试工具而不是客户端。
 - cycle 15 再次真实退出 0，14/14 断言通过；直播、弹幕、纯音频往返、系统 PiP 恢复和返回链保持正常，日志过滤结果为 0 个 FATAL/ANR/Flutter/解码/Surface 异常。离散资源点为 TOTAL PSS 276,561 KB、TOTAL RSS 460,320 KB、Swap PSS 163 KB、75 线程、瞬时 CPU 1.5%。本轮脚本在租约内先执行唤醒和无凭据 keyguard 清理，系统证据为 `SCREEN_STATE_ON`、`INTERACTIVE_STATE_AWAKE`。
+- cycle 27 使用最终时间戳修复源码重新构建的 arm64 Debug APK 覆盖安装并真实退出 0。APK 为 `301,635,003 bytes`，SHA-256 `BB517F79BB25CB9C1700128F295DD0A99E9C9FF5B9E3F509D70F0B48FEBC42C2`；构建门禁核对 16 个 arm64 原生库的最小 ELF LOAD 对齐均不低于 `0x4000`，APK 同时通过 `zipalign -P 16`。设备当前页大小为 4096 bytes，但冷启动没有出现 Android 16 KB 兼容性警告。
+- cycle 27 的 15/15 命名断言全部通过：覆盖安装后的版本为 `3.1.8 / 6121`，房间 UI、9 条可见真实弹幕、画质、线路、纯音频往返、系统 PiP、恢复后的弹幕页和返回链均成立，日志没有 FATAL/ANR。此前测试器只接受短暂的“弹幕服务器连接正常”和“原画”两个固定文案，忙碌房间中系统消息滚出可访问树、选中“超清”时会产生客户端正常但脚本失败；断言现同时接受真实 `用户: 内容` 行及平台归一化画质标签。最终证据为 `local-artifacts/diagnostics/android-runtime-smoke-20260901T202512542/summary.json`，构建记录为 `local-artifacts/build-records/20260901T122355411Z-build-androidarm64-debug.json`。
+- 本轮 Debug 离散资源点为 TOTAL PSS 799,687 KB、TOTAL RSS 996,192 KB、Swap PSS 114 KB、80 线程。Debug 包含完整调试资产，且采样发生在视频/音频/PiP 连续切换后；该单点只触发后续 Release 长时趋势验证，不据此推导正式包泄漏。`gfxinfo` 仍只覆盖 9 个 Android View 帧，也不作为 Flutter 动画流畅度结论。
 - 上游 #829 相邻场景已用 `tool/android_local_interaction_visibility_smoke.ps1` 单独验收：覆盖安装、读取并暂时关闭“本地互动体验”、进入 Bilibili 房间、切换横屏全屏、检查禁用入口不占位、恢复用户原设置并停止应用。cycle 19 的一次运行在安装后遇到进程级 ADB daemon 被重启，命令没有送达；测试器补充有界 server 恢复。cycle 20 随后真实退出 0，观察到 `2608×1200` 横屏视口、`enablePromptHidden=true`、`originalStateRestored=true`，且没有触发 server 恢复。
 - 截图顶部的坐标、压力与边界线来自手机开发者选项“指针位置/布局边界”，不是 Pure Live 绘制层。PiP 截图中的底层页面属于进入 PiP 前的其他任务，Pure Live 只占右上系统 PiP 窗口，恢复后前台包重新为 Pure Live。
 
-本轮证据目录：`local-artifacts/diagnostics/android-runtime-smoke-20260901T142833509/`、`local-artifacts/diagnostics/android-runtime-smoke-20260901T145018348/`、`local-artifacts/diagnostics/android-local-interaction-20260901T154001015/`。
+本轮证据目录：`local-artifacts/diagnostics/android-runtime-smoke-20260901T142833509/`、`local-artifacts/diagnostics/android-runtime-smoke-20260901T145018348/`、`local-artifacts/diagnostics/android-local-interaction-20260901T154001015/`、`local-artifacts/diagnostics/android-runtime-smoke-20260901T202512542/`。
 
 ## 7. 后续实机顺序
 

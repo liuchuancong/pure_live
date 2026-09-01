@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>io.github.flutterplayer</groupId>
+  <artifactId>fplayer-core</artifactId>
+  <version>1.0.4-purelive16k</version>
+  <packaging>aar</packaging>
+  <name>fplayer-core Pure Live arm64 16KB build</name>
+  <description>fplayer-core 1.0.4 with 16KB-aligned arm64 native libraries</description>
+  <url>https://github.com/FlutterPlayer/ijkplayer</url>
+  <licenses>
+    <license>
+      <name>LGPL-2.1</name>
+      <url>https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+  <scm>
+    <connection>scm:git:https://github.com/FlutterPlayer/ijkplayer.git</connection>
+    <url>https://github.com/FlutterPlayer/ijkplayer/tree/a085295480fdbad13187c9ad953f6144ded2b21e</url>
+  </scm>
+</project>

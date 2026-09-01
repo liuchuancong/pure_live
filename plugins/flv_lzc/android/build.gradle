@@ -13,6 +13,18 @@ allprojects {
 
 apply plugin: "com.android.library"
 
+repositories {
+    // The published 1.0.4 arm64 binaries use 4 KB ELF LOAD alignment.
+    // Resolve the byte-compatible Pure Live rebuild from the repository-local
+    // Maven layout so this library project can consume the AAR transitively.
+    maven {
+        url = uri("$projectDir/libs")
+        content {
+            includeModule("io.github.flutterplayer", "fplayer-core")
+        }
+    }
+}
+
 android {
     namespace = "com.example.my_flutter_plugin"
 
@@ -29,7 +41,7 @@ android {
 
     dependencies {
         implementation 'androidx.annotation:annotation:1.2.0'
-        implementation 'io.github.flutterplayer:fplayer-core:1.0.4'
+        implementation 'io.github.flutterplayer:fplayer-core:1.0.4-purelive16k'
         testImplementation("org.jetbrains.kotlin:kotlin-test")
         testImplementation("org.mockito:mockito-core:5.0.0")
     }

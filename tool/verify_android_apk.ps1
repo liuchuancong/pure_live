@@ -84,6 +84,26 @@ $sdkRoots = @(
     $env:ANDROID_HOME,
     $(if ($env:LOCALAPPDATA) { Join-Path $env:LOCALAPPDATA 'Android\Sdk' })
 ) | Where-Object { $_ -and (Test-Path -LiteralPath $_ -PathType Container) } | Select-Object -Unique
+$buildTools = $(foreach ($sdkRoot in $sdkRoots) {
+    Get-ChildItem -LiteralPath (Join-Path $sdkRoot 'build-tools') -Directory -ErrorAction SilentlyContinue
+}) | Sort-Object { [version]$_.Name } -Descending | Select-Object -First 1
+if (-not $buildTools) {
+    throw 'Android APK verification requires Android SDK build-tools.'
+}
+
+$zipAlign = Join-Path $buildTools.FullName 'zipalign.exe'
+if (-not (Test-Path -LiteralPath $zipAlign -PathType Leaf)) {
+    throw "Android APK verification requires zipalign.exe: $zipAlign"
+}
+& $zipAlign -c -P 16 4 $resolvedApk
+if ($LASTEXITCODE -ne 0) {
+    throw "Android APK ZIP alignment is not 16 KB compatible: $resolvedApk"
+}
+
+$elfAlignment = & (Join-Path $PSScriptRoot 'verify_android_elf_alignment.ps1') `
+    -InputPath $resolvedApk `
+    -ExpectedAbi $ExpectedAbi
+
 $aapt2 = $(foreach ($sdkRoot in $sdkRoots) {
     Get-ChildItem -LiteralPath (Join-Path $sdkRoot 'build-tools') -Recurse -File -Filter 'aapt2.exe' -ErrorAction SilentlyContinue
 }) | Sort-Object FullName -Descending | Select-Object -First 1
@@ -134,6 +154,8 @@ Write-Host (
     abi_version_code_offset = $ExpectedAbiVersionOffset
     manifest_version_code = $manifestVersionCode
     abi = $ExpectedAbi
+    native_library_count = $elfAlignment.library_count
+    minimum_elf_load_alignment = $elfAlignment.minimum_required_alignment
     size_bytes = $apkFile.Length
     sha256 = $apkHash
 }

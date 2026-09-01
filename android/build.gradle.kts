@@ -2,6 +2,11 @@ import com.android.build.gradle.BaseExtension
 
 allprojects {
     repositories {
+        maven(rootProject.file("../plugins/flv_lzc/android/libs")) {
+            content {
+                includeModule("io.github.flutterplayer", "fplayer-core")
+            }
+        }
         if (System.getenv("PURE_LIVE_USE_CN_MIRRORS") == "1") {
             maven("https://maven.aliyun.com/repository/google")
             maven("https://maven.aliyun.com/repository/central")

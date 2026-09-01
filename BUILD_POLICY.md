@@ -75,7 +75,8 @@ Windows Firebase C++ SDK 由 `tool/prefetch_windows_native.ps1` 在构建前按�
   `.dart_tool/package_config.json` 已存在时，可显式传入 `-SkipPubGet`，避免对同一锁文件重复执行
   分钟级依赖求解。脚本会自行核对前置条件；完整回归始终重新解析并校验锁定依赖。
 - 打包脚本要求显式传入 `-Target` 与 `-Configuration`，每次调用只生成该目标产物。
-- Android APK 在复制、签名和发布前必须通过内容完整性门禁：核对唯一目标 ABI、Flutter AssetManifest/版本清单/翻译与表情资源，以及 FFmpegKit、SQLite、MediaKit、Flutter 和应用原生库。仅验证包名、版本、ABI 与签名不构成完整交付证据。
+- Android APK 在复制、签名和发布前必须通过内容完整性门禁：核对唯一目标 ABI、Flutter AssetManifest/版本清单/翻译与表情资源，以及 FFmpegKit、SQLite、MediaKit、Flutter 和应用原生库；同时用 `zipalign -P 16` 核对 APK 内部对齐，并要求每个目标 ABI ELF 的全部 `LOAD` 段对齐不低于 `0x4000`。仅验证包名、版本、ABI 与签名不构成完整交付证据。
+- `fplayer-core` 固定解析仓库内的 `1.0.4-purelive16k` Maven 工件；其 Java 层与上游 1.0.4 保持一致，arm64 原生库哈希和源码来源记录在 `plugins/flv_lzc/android/libs/README.md`。禁止回退到含 4 KB ELF LOAD 对齐的公共 1.0.4 AAR。
 - Android 正式打包复用同一源码提交质量门已经锁定的 `.dart_tool/package_config.json`，目标构建使用 `--no-pub`，避免为 Android 打包重建 Windows/iOS/macOS 插件链接，也避免 Windows 长路径目录联接与 SUBST 盘符在同一增量图中混用。
 - 同一应用源码提交已通过完整回归后，如果失败阶段只涉及构建脚本、Gradle 兼容配置或
   发布流程，打包重试可使用 `-SkipQuality`；构建记录与交付报告必须引用此前通过的完整
