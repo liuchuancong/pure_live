@@ -37,7 +37,7 @@
 | ID | 状态 | 验收内容 |
 |---|---|---|
 | A1-01 | RUN | 关注：已开播/录播/未开播与全部平台；下拉动画、失败保留快照、刷新后状态准确。下拉录像确认 Material 指示器从拖动、释放到完成均可见；当前冷启动录像先让全部卡片保持原桶位并统一显示“正在核验”，约 3 秒后一次提交完整结果，8～11 秒布局稳定；20 秒热恢复保留旧快照到请求完成，再单次提交新排序。v3.1.4 修复 Android 平板横屏被 `width > 680` 误判为桌面而同时失去内外刷新器的问题；宽屏移动/桌面/窄窗判定与真实拖动回归 2/2 通过：`local-artifacts/build-records/20260831T164210088Z-quality-focused.json`。最终 APK 手机回归、平板横屏设备和开播事实仍待逐平台交叉验证 |
-| A1-02 | RUN | 热门：平台页签边界、快速左右滑、网格纵向惯性、切回保持位置、卡片不跳动。v3.0.24 已完成页签条左右各 20 次快速滑动并稳定停在首尾边界，无 FATAL/ANR；截图、语义树与日志位于 `local-artifacts/runtime/android-v3.0.24/home-platform-boundary/`。下拉刷新录像显示刷新中网格不做逐卡重排、完成后单次提交；纵向帧时序仍待当前源码包复验 |
+| A1-02 | RUN | 热门：平台页签边界、快速左右滑、网格纵向惯性、切回保持位置、卡片不跳动。v3.0.24 已完成页签条左右各 20 次快速滑动并稳定停在首尾边界，无 FATAL/ANR；截图、语义树与日志位于 `local-artifacts/runtime/android-v3.0.24/home-platform-boundary/`。K90 Pro / v3.1.8 的 Bilibili 热门约 7 秒得到完整双列缩略图，可见热度严格递减且无逐卡跳位；下拉刷新和连续上下滑后仍可操作。Flutter Surface 没有进入本轮 `gfxinfo` View 帧计数，纵向帧时序仍需 SurfaceFlinger/Perfetto 证据。见 `docs/ANDROID_RUNTIME_AUDIT_3_1_8_K90PRO.md` |
 | A1-03 | PASS | 分区：平台标签左右各重复 10/20 次后稳定停在首尾硬边界；网易 CC 旧 JSON 跳转官方 HTML 时返回稳定的“全部 / 端游 / 手游 / 其他”，未串数据、未崩溃。见 `docs/ANDROID_RUNTIME_AUDIT_3_1_2.md` |
 | A1-04 | RUN | 搜索：全部/单平台标签左右端点稳定，`LOL` 聚合结果、开播优先排序和平台能力说明均可用；直连 Twitch 明确显示部分平台失败，经可达 Clash 应用代理后 Twitch 原生结果和在线人数正常。分页终止、重复结果与连续输入防抖仍待长列表压力复验 |
 | A1-05 | NR | 历史、标签、工具箱、IPTV、WebDAV、备份/恢复、关于、更新检查 |
@@ -50,7 +50,7 @@
 | ID | 状态 | 验收内容 |
 |---|---|---|
 | A2-01 | NR | 设置顶/中/底三级页面全部可达，长页滚动到边界，开关与数值无重叠 |
-| A2-02 | PASS | PJZ110 正确识别 `120 / 120 Hz`；省电/均衡/最高三档即时更新，恢复最高档后强制结束并冷启动仍保持。主界面与自动弹幕的联动说明一致；证据见 `docs/ANDROID_RUNTIME_AUDIT_3_1_2.md` |
+| A2-02 | PASS | PJZ110 正确识别 `120 / 120 Hz`；省电/均衡/最高三档即时更新，恢复最高档后强制结束并冷启动仍保持。K90 Pro / Android 17 也识别 60/90/120 Hz，首页活动模式为 120 Hz 且 SurfaceFlinger 记录 Pure Live 的 120 Hz 请求。主界面与自动弹幕的联动说明一致；证据见 `docs/ANDROID_RUNTIME_AUDIT_3_1_2.md`、`docs/ANDROID_RUNTIME_AUDIT_3_1_8_K90PRO.md` |
 | A2-03 | PASS | 后台播放与手动纯音频策略一致；自动助眠按计时继续 | `6458d541` arm64 Release 四组合实机通过：关闭开关后手动纯音频退桌面由 `PLAYING` 转 `PAUSED` 且当前 Wake Lock 为 0，回前台恢复；开启开关时普通视频退桌面保持 `PLAYING` 并持有必要锁；关闭开关后主动进入系统 PiP 仍保持 `PLAYING`；关闭开关并启用 1 分钟自动助眠时，后台在期限内保持 `PLAYING`，到点变为 `NONE`，Pure Live 保活锁消失且 CPU 样本为 0%。证据：`local-artifacts/runtime/android-6458d541/background-off-audio-only.txt`、`background-on-video.txt`、`pip-background-off.txt`、`auto-sleep-one-minute.txt` |
 | A2-04 | NR | 小窗弹幕固定预览/双栏预览实时更新，保存/恢复默认与模板状态一致 |
 | A2-05 | RUN | 应用代理覆盖平台 API、封面/头像和弹幕 WebSocket；全角地址归一化，播放器代理保持独立 | 路由与 WebSocket 回归通过，虎牙协议探针收到 command 22；v3.1.2 Android Release 已用可达 Clash 端点验证 Twitch 原生搜索由直连失败恢复为真实结果，播放代理保持关闭。最终 APK 的弹幕 WebSocket 与视频播放代理仍待逐平台复验；详见 `docs/NETWORK_PROXY_AUDIT_3_1_0.md`、`docs/ANDROID_RUNTIME_AUDIT_3_1_2.md` |

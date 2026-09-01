@@ -16,6 +16,24 @@ def require(condition: bool, message: str) -> None:
         raise ValueError(message)
 
 
+def validate_bounds(value: object, width: int, height: int, owner: str) -> None:
+    require(isinstance(value, list) and len(value) == 4, f"{owner}: invalid bounds")
+    left, top, right, bottom = value
+    require(
+        all(isinstance(item, (int, float)) for item in value),
+        f"{owner}: bounds must be numeric",
+    )
+    require(0 <= left <= right <= width, f"{owner}: horizontal bounds outside profile")
+    require(0 <= top <= bottom <= height, f"{owner}: vertical bounds outside profile")
+
+
+def validate_text(value: object, owner: str) -> None:
+    if value is None:
+        return
+    require(isinstance(value, str), f"{owner}: expected text")
+    require("\ufffd" not in value, f"{owner}: contains Unicode replacement characters")
+
+
 def main() -> None:
     data = json.loads(MAP_PATH.read_text(encoding="utf-8-sig"))
     require(data.get("schemaVersion") == 2, "device UI map schemaVersion must be 2")
@@ -53,6 +71,16 @@ def main() -> None:
             require(0 <= x <= width, f"{profile_name}.{point_name}: x outside profile")
             require(0 <= y <= height, f"{profile_name}.{point_name}: y outside profile")
             require(bool(point.get("label")), f"{profile_name}.{point_name}: missing label")
+            validate_text(point.get("label"), f"{profile_name}.{point_name}.label")
+            semantic = point.get("semantic")
+            if isinstance(semantic, list):
+                require(bool(semantic), f"{profile_name}.{point_name}: empty semantic list")
+                for semantic_index, item in enumerate(semantic):
+                    validate_text(item, f"{profile_name}.{point_name}.semantic[{semantic_index}]")
+            else:
+                validate_text(semantic, f"{profile_name}.{point_name}.semantic")
+            if "bounds" in point:
+                validate_bounds(point["bounds"], width, height, f"{profile_name}.{point_name}")
 
         for gesture_name, gesture in gestures.items():
             for axis, limit in (("x1", width), ("x2", width), ("y1", height), ("y2", height)):
@@ -83,6 +111,26 @@ def main() -> None:
             require(screen.get("width") == width, f"{profile_name}.{screen_name}: width mismatch")
             require(screen.get("height") == height, f"{profile_name}.{screen_name}: height mismatch")
             require(screen.get("topPackage") == data["package"], f"{profile_name}.{screen_name}: wrong package")
+            nodes = screen.get("nodes")
+            require(isinstance(nodes, list), f"{profile_name}.{screen_name}: nodes must be a list")
+            for node_index, node in enumerate(nodes):
+                owner = f"{profile_name}.{screen_name}.nodes[{node_index}]"
+                validate_text(node.get("text"), f"{owner}.text")
+                validate_text(node.get("semantic"), f"{owner}.semantic")
+                validate_text(node.get("resourceId"), f"{owner}.resourceId")
+                validate_text(node.get("class"), f"{owner}.class")
+                validate_bounds(node.get("bounds"), width, height, owner)
+                center = node.get("center")
+                require(isinstance(center, list) and len(center) == 2, f"{owner}: invalid center")
+                center_x, center_y = center
+                require(
+                    isinstance(center_x, (int, float)) and 0 <= center_x <= width,
+                    f"{owner}: center x outside profile",
+                )
+                require(
+                    isinstance(center_y, (int, float)) and 0 <= center_y <= height,
+                    f"{owner}: center y outside profile",
+                )
 
         total_points += len(points)
         total_sequences += len(sequences)
