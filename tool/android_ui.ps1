@@ -66,6 +66,28 @@ function Invoke-Adb {
     $result
 }
 
+function Wake-AndDismissKeyguard {
+    # The K90 Pro is configured to lock after ten minutes. Restore an
+    # interactive surface only after this task owns the shared device lease and
+    # before bringing Pure Live forward. The conditional swipe avoids scrolling
+    # whichever app the previous lane left on screen when the phone is already
+    # unlocked.
+    Invoke-Adb -AdbArguments @('shell', 'input', 'keyevent', 'KEYCODE_WAKEUP') | Out-Null
+    Invoke-Adb -AdbArguments @('shell', 'wm', 'dismiss-keyguard') | Out-Null
+    Start-Sleep -Milliseconds 250
+    $policyText = (Invoke-Adb -AdbArguments @('shell', 'dumpsys', 'window', 'policy')) -join "`n"
+    $stillLocked = $policyText -match '(?im)(?:mShowingLockscreen|mKeyguardShowing|isKeyguardShowing|keyguardShowing|mDreamingLockscreen|isStatusBarKeyguard)\s*=\s*true'
+    if ($stillLocked) {
+        $metrics = Get-DeviceMetrics
+        $x = [math]::Round($metrics.Width * 0.5)
+        $startY = [math]::Round($metrics.Height * 0.84)
+        $endY = [math]::Round($metrics.Height * 0.24)
+        Invoke-Adb -AdbArguments @('shell', 'input', 'swipe', $x, $startY, $x, $endY, '350') | Out-Null
+        Start-Sleep -Milliseconds 350
+        Invoke-Adb -AdbArguments @('shell', 'wm', 'dismiss-keyguard') | Out-Null
+    }
+}
+
 function Get-Map {
     Get-Content -LiteralPath $mapPath -Raw -Encoding UTF8 | ConvertFrom-Json
 }
@@ -464,6 +486,7 @@ $selected = Resolve-Profile $map
 
 try {
     if ($PSCmdlet.ParameterSetName -in @('Tap', 'TapSemantic', 'Sequence', 'Snapshot')) {
+        Wake-AndDismissKeyguard
         Enter-TargetApp $map.package
     }
     switch ($PSCmdlet.ParameterSetName) {

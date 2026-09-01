@@ -2067,6 +2067,12 @@ class FullscreenLocalDanmakuComposer extends StatefulWidget {
   State<FullscreenLocalDanmakuComposer> createState() => _FullscreenLocalDanmakuComposerState();
 }
 
+/// The fullscreen composer is a presentation of the room-local interaction
+/// feature, not an entry point that silently changes the user's global setting.
+/// Keeping this decision pure also prevents portrait and landscape fullscreen
+/// layouts from drifting apart when the setting is disabled.
+bool shouldShowFullscreenLocalDanmakuComposer(bool localInteractionEnabled) => localInteractionEnabled;
+
 class _FullscreenLocalDanmakuComposerState extends State<FullscreenLocalDanmakuComposer> {
   final TextEditingController _textController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
@@ -2110,21 +2116,7 @@ class _FullscreenLocalDanmakuComposerState extends State<FullscreenLocalDanmakuC
   Widget build(BuildContext context) {
     return Obx(() {
       final local = controller.livePlayController.localInteractionController;
-      if (!local.enabled.v) {
-        return Center(
-          child: FilledButton.tonalIcon(
-            key: const ValueKey('fullscreen-local-danmaku-enable'),
-            style: FilledButton.styleFrom(
-              visualDensity: VisualDensity.compact,
-              backgroundColor: Colors.black45,
-              foregroundColor: Colors.white,
-            ),
-            onPressed: () => local.enabled.v = true,
-            icon: const Icon(Icons.auto_awesome_rounded, size: 17),
-            label: Text(i18n('local_interaction_enable'), maxLines: 1, overflow: TextOverflow.ellipsis),
-          ),
-        );
-      }
+      if (!shouldShowFullscreenLocalDanmakuComposer(local.enabled.v)) return const SizedBox.shrink();
 
       final localStyle = local.currentDanmakuStyle;
       return SizedBox(

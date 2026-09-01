@@ -76,6 +76,26 @@ function Invoke-Adb {
     $result
 }
 
+function Wake-AndDismissKeyguard {
+    Invoke-Adb -AdbArguments @('shell', 'input', 'keyevent', 'KEYCODE_WAKEUP') | Out-Null
+    Invoke-Adb -AdbArguments @('shell', 'wm', 'dismiss-keyguard') | Out-Null
+    Start-Sleep -Milliseconds 250
+    $policyText = (Invoke-Adb -AdbArguments @('shell', 'dumpsys', 'window', 'policy')) -join "`n"
+    $stillLocked = $policyText -match '(?im)(?:mShowingLockscreen|mKeyguardShowing|isKeyguardShowing|keyguardShowing|mDreamingLockscreen|isStatusBarKeyguard)\s*=\s*true'
+    if ($stillLocked) {
+        $sizeText = ((Invoke-Adb -AdbArguments @('shell', 'wm', 'size')) -join "`n")
+        if ($sizeText -notmatch '(\d+)x(\d+)') { throw "Unexpected device size output: $sizeText" }
+        $width = [int]$Matches[1]
+        $height = [int]$Matches[2]
+        $x = [math]::Round($width * 0.5)
+        $startY = [math]::Round($height * 0.84)
+        $endY = [math]::Round($height * 0.24)
+        Invoke-Adb -AdbArguments @('shell', 'input', 'swipe', $x, $startY, $x, $endY, '350') | Out-Null
+        Start-Sleep -Milliseconds 350
+        Invoke-Adb -AdbArguments @('shell', 'wm', 'dismiss-keyguard') | Out-Null
+    }
+}
+
 function Save-Text {
     param([string] $Name, [object] $Value)
     $Value | Out-File -LiteralPath (Join-Path $evidence $Name) -Encoding utf8 -Width 4096
@@ -151,9 +171,7 @@ try {
     # A previous lane may finish with the display asleep or keyguard showing.
     # Restore an interactive surface inside this lease before any coordinate
     # action; this touches no package data and is recorded for diagnosis.
-    Invoke-Adb -AdbArguments @('shell', 'input', 'keyevent', 'KEYCODE_WAKEUP') | Out-Null
-    Invoke-Adb -AdbArguments @('shell', 'wm', 'dismiss-keyguard') | Out-Null
-    Invoke-Adb -AdbArguments @('shell', 'input', 'swipe', '600', '2200', '600', '500', '350') | Out-Null
+    Wake-AndDismissKeyguard
     Start-Sleep -Milliseconds 750
     Save-Text 'keyguard-after-wake.txt' (Invoke-Adb -AdbArguments @('shell', 'dumpsys', 'window', 'policy'))
 

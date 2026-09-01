@@ -174,6 +174,11 @@ void main() {
     expect(style.size.width / viewport.width, inInclusiveRange(.47, .51));
   });
 
+  test('fullscreen local composer follows the global interaction switch', () {
+    expect(shouldShowFullscreenLocalDanmakuComposer(false), isFalse);
+    expect(shouldShowFullscreenLocalDanmakuComposer(true), isTrue);
+  });
+
   test('large landscape windows keep dense panels split internally', () {
     const viewport = Size(1920, 1080);
     for (final kind in ContentFirstPanelKind.values) {
