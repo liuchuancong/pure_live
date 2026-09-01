@@ -8,7 +8,7 @@
 | B | `xhs` | 小红书模块 |
 | C | `purelive` | Pure Live |
 
-逻辑顺序固定为 `A → B → C → A`。同一时刻只有一个 lane 持有文件租约；一轮命令结束后自动记录结果并交给下一 lane。后续 lane 不按等待时长越过预期 lane，因此三个任务不会并发触摸、安装或重启同一部手机上的应用。本轮没有实机步骤时，当前 lane 必须通过自己的包装器提交显式 `-Pass`；任务自身发生系统错误时先恢复该任务再交棒，不由其他任务冒充其 lane。
+正常逻辑顺序固定为 `A → B → C → A`。同一时刻只有一个 lane 持有文件租约；一轮命令结束后自动记录结果并交给下一 lane。预期 lane 已提交活动请求时，后续 lane 始终排队，不会越过，因此三个任务不会并发触摸、安装或重启同一部手机上的应用。本轮没有实机步骤时，当前 lane 应通过自己的包装器提交显式 `-Pass`。若预期任务崩溃或消失且 120 秒内没有活动请求，协调器会记录 `graceSkip` 后放行下一个已经排队的 lane，避免另外两个任务永久等待；这不是由其他任务冒充被跳过的 lane，其后仍按循环状态继续交棒。
 
 ## Pure Live 调用
 
@@ -18,6 +18,16 @@ Pure Live 的实机命令统一由仓库包装器进入 `purelive` lane：
 .\tool\run_android_device_test_turn.ps1 `
   -CommandLine '.\tool\android_ui.ps1 -Validate'
 ```
+
+播放、弹幕、音频模式往返、系统画中画恢复以及 CPU/PSS/帧时间证据使用同一个可重复冒烟脚本，并放在一个 C 轮次内执行：
+
+```powershell
+.\tool\run_android_device_test_turn.ps1 `
+  -CommandLine '.\tool\android_runtime_smoke.ps1' `
+  -TimeoutMinutes 30
+```
+
+同一台手机同时出现 USB 与网络 ADB 时，脚本优先选取唯一网络 transport；出现多个手机或多个网络 transport 时必须传入 `-Serial`，脚本拒绝猜测目标设备。默认证据写入 `local-artifacts/diagnostics/android-runtime-smoke-<时间>`，不会进入 Git。音频模式切换使用 UI 状态轮询完成串行确认，不用固定短延时连续点击，避免把尚未完成的第一次切换误判为第二次恢复。
 
 需要把安装、仅重启 Pure Live、测试和证据采集合并成一个有边界的测试轮次时，把这些命令放进同一个 `-CommandLine`。包装器会等待 A、B 完成本轮，再独占设备执行 C，最后把下一轮交回 A。
 
