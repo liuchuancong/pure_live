@@ -4,6 +4,8 @@ param(
     [string] $EvidenceDirectory,
     [ValidateRange(20, 300)]
     [int] $RecordSeconds = 45,
+    [ValidateSet('bilibili', 'douyu', 'huya', 'douyin', 'kuaishou')]
+    [string] $Platform = 'bilibili',
     [string] $Package = 'com.mystyle.purelive',
     [string] $Activity = '.MainActivity'
 )
@@ -36,6 +38,15 @@ $adb = $adbCandidates | Where-Object {
     else { [bool](Get-Command $_ -ErrorAction SilentlyContinue) }
 } | Select-Object -First 1
 if (-not $adb) { throw 'ADB executable was not found.' }
+
+$platformLabels = @{
+    bilibili = '哔哩哔哩'
+    douyu = '斗鱼'
+    huya = '虎牙'
+    douyin = '抖音'
+    kuaishou = '快手'
+}
+$platformLabel = $platformLabels[$Platform]
 
 function Start-AdbServer {
     $output = & $adb start-server 2>&1
@@ -120,45 +131,42 @@ function Wait-UiPattern {
     throw "UI pattern did not settle within $TimeoutSeconds seconds: $Pattern"
 }
 
-function Wait-RecordingMetrics {
-    param([int] $TimeoutSeconds = 25)
+function Test-UiSemanticEnabled {
+    param(
+        [Parameter(Mandatory = $true)][string] $Xml,
+        [Parameter(Mandatory = $true)][string] $Semantic
+    )
+    try {
+        [xml]$document = $Xml
+        $matches = @(
+            $document.SelectNodes('//node') | Where-Object {
+                ($_.GetAttribute('text') -eq $Semantic -or $_.GetAttribute('content-desc') -eq $Semantic) -and
+                $_.GetAttribute('enabled') -eq 'true' -and
+                $_.GetAttribute('clickable') -eq 'true'
+            }
+        )
+        return $matches.Count -gt 0
+    } catch {
+        return $false
+    }
+}
+
+function Wait-UiSemanticEnabled {
+    param(
+        [Parameter(Mandatory = $true)][string] $Name,
+        [Parameter(Mandatory = $true)][string] $Semantic,
+        [int] $TimeoutSeconds = 20
+    )
     $timer = [Diagnostics.Stopwatch]::StartNew()
     do {
-        Save-UiDump 'record-center-running'
-        $xml = Get-Content -LiteralPath (Join-Path $evidence 'record-center-running.xml') -Raw -Encoding UTF8
-        $durationMatch = [regex]::Match($xml, '(\d{2}):(\d{2}):(\d{2})')
-        $sizeMatch = [regex]::Match($xml, '(\d+(?:\.\d+)?)\s*(KB|MB|GB)')
-        $speedMatch = [regex]::Match($xml, '(\d+(?:\.\d+)?)x')
-        $durationSeconds = if ($durationMatch.Success) {
-            ([int]$durationMatch.Groups[1].Value * 3600) +
-            ([int]$durationMatch.Groups[2].Value * 60) +
-            [int]$durationMatch.Groups[3].Value
-        } else {
-            0
-        }
-        $sizeValue = if ($sizeMatch.Success) {
-            [double]::Parse($sizeMatch.Groups[1].Value, [Globalization.CultureInfo]::InvariantCulture)
-        } else {
-            0.0
-        }
-        $speedValue = if ($speedMatch.Success) {
-            [double]::Parse($speedMatch.Groups[1].Value, [Globalization.CultureInfo]::InvariantCulture)
-        } else {
-            0.0
-        }
-        if ($xml.Contains('录制中') -and $durationSeconds -gt 0 -and $sizeValue -gt 0 -and $speedValue -gt 0) {
-            return [pscustomobject]@{
-                Xml = $xml
-                ElapsedMs = $timer.ElapsedMilliseconds
-                DurationSeconds = $durationSeconds
-                Size = $sizeValue
-                SizeUnit = $(if ($sizeMatch.Success) { $sizeMatch.Groups[2].Value } else { '' })
-                Speed = $speedValue
-            }
+        Save-UiDump $Name
+        $xml = Get-Content -LiteralPath (Join-Path $evidence "$Name.xml") -Raw -Encoding UTF8
+        if (Test-UiSemanticEnabled -Xml $xml -Semantic $Semantic) {
+            return [pscustomobject]@{ Xml = $xml; ElapsedMs = $timer.ElapsedMilliseconds }
         }
         Start-Sleep -Milliseconds 700
     } while ($timer.Elapsed.TotalSeconds -lt $TimeoutSeconds)
-    throw 'Recording center metrics did not become non-zero while the task was running.'
+    throw "Enabled UI semantic did not settle within $TimeoutSeconds seconds: $Semantic"
 }
 
 function Get-Foreground {
@@ -239,6 +247,36 @@ function Get-PrivateFileInfo {
     }
 }
 
+function Wait-RecordingFileGrowth {
+    param(
+        [Parameter(Mandatory = $true)][string[]] $BeforeFiles,
+        [int] $TimeoutSeconds = 30
+    )
+    $timer = [Diagnostics.Stopwatch]::StartNew()
+    $previousBytes = @{}
+    do {
+        $currentFiles = @(Get-PrivateRecordingFiles)
+        foreach ($path in $currentFiles) {
+            if ($path -in $BeforeFiles) { continue }
+            $info = Get-PrivateFileInfo $path
+            if ($previousBytes.ContainsKey($path)) {
+                $earlierBytes = [long]$previousBytes[$path]
+                if ($earlierBytes -gt 0 -and $info.Bytes -gt $earlierBytes) {
+                    return [pscustomobject]@{
+                        Path = $path
+                        InitialBytes = $earlierBytes
+                        FinalBytes = $info.Bytes
+                        ElapsedMs = $timer.ElapsedMilliseconds
+                    }
+                }
+            }
+            $previousBytes[$path] = $info.Bytes
+        }
+        Start-Sleep -Seconds 2
+    } while ($timer.Elapsed.TotalSeconds -lt $TimeoutSeconds)
+    throw 'The active recording file did not show positive byte growth.'
+}
+
 function Copy-PrivateFile {
     param(
         [Parameter(Mandatory = $true)][string] $Source,
@@ -312,6 +350,8 @@ $result = [ordered]@{
     startedAt = [DateTime]::Now.ToString('o')
     serial = $script:serial
     package = $Package
+    platform = $Platform
+    platformLabel = $platformLabel
     requestedRecordSeconds = $RecordSeconds
     checks = [ordered]@{}
 }
@@ -335,17 +375,66 @@ try {
     $beforeFiles = @(Get-PrivateRecordingFiles)
     Save-Text 'record-files-before.txt' $beforeFiles
 
-    Invoke-Ui -Action Sequence -Value 'enter_first_bilibili_room'
+    Invoke-Ui -Action TapSemantic -Value '热门'
+    Start-Sleep -Milliseconds 1200
+    Invoke-Ui -Action TapSemantic -Value $platformLabel
+    Start-Sleep -Seconds 8
+    Invoke-Ui -Action Tap -Value 'home.first_left_room'
     Start-Sleep -Seconds 12
     $result.checks.roomForeground = Get-Foreground
     Save-UiDump 'room-before-record'
     Save-Screenshot 'room-before-record'
     $roomXml = Get-Content -LiteralPath (Join-Path $evidence 'room-before-record.xml') -Raw -Encoding UTF8
     $result.checks.roomUiAlive = $roomXml.Contains('弹幕列表') -and $roomXml.Contains('弹幕设置')
-    if (-not $result.checks.roomUiAlive) { throw 'A live Bilibili room did not open.' }
+    if (-not $result.checks.roomUiAlive) { throw "A live $Platform room did not open." }
+
+    Invoke-Ui -Action Tap -Value 'live.quality'
+    $qualityState = Wait-UiPattern `
+        -Name 'quality-before-record' `
+        -Pattern '原画|蓝光|超清|高清|标清|流畅|省流|自动|origin|uhd|hd|sd|ld' `
+        -TimeoutSeconds 12
+    Save-Screenshot 'quality-before-record'
+    $result.checks.qualitySheetVisible =
+        $qualityState.Xml -match '原画|蓝光|超清|高清|标清|流畅|省流|自动|origin|uhd|hd|sd|ld'
+    Invoke-Adb -AdbArguments @('shell', 'input', 'keyevent', '4') | Out-Null
+    Wait-UiPattern -Name 'room-after-quality-check' -Pattern '弹幕列表' -TimeoutSeconds 12 | Out-Null
+
+    Invoke-Ui -Action Tap -Value 'live.line'
+    $lineState = Wait-UiPattern `
+        -Name 'line-before-record' `
+        -Pattern '线路\s*\d+|主线路|备用线路|播放线路' `
+        -TimeoutSeconds 12
+    Save-Screenshot 'line-before-record'
+    $result.checks.lineSheetVisible =
+        $lineState.Xml -match '线路\s*\d+|主线路|备用线路|播放线路'
+    Invoke-Adb -AdbArguments @('shell', 'input', 'keyevent', '4') | Out-Null
+    Wait-UiPattern -Name 'room-after-line-check' -Pattern '弹幕列表' -TimeoutSeconds 12 | Out-Null
 
     Invoke-Ui -Action Tap -Value 'live.record'
-    Wait-UiPattern -Name 'record-dialog-before-start' -Pattern '立即启动录制' -TimeoutSeconds 10 | Out-Null
+    $preflightDialog = Wait-UiPattern `
+        -Name 'record-dialog-preflight' `
+        -Pattern '立即启动录制|停止录制|取消监控' `
+        -TimeoutSeconds 10
+    if (Test-UiSemanticEnabled -Xml $preflightDialog.Xml -Semantic '停止录制') {
+        Invoke-Ui -Action TapSemantic -Value '停止录制'
+        $preflightDialog = Wait-UiSemanticEnabled `
+            -Name 'record-dialog-after-preflight-stop' `
+            -Semantic '取消监控' `
+            -TimeoutSeconds 60
+    }
+    if (Test-UiSemanticEnabled -Xml $preflightDialog.Xml -Semantic '取消监控') {
+        Invoke-Ui -Action TapSemantic -Value '取消监控'
+        Wait-UiPattern -Name 'room-after-preflight-cleanup' -Pattern '弹幕列表' -TimeoutSeconds 12 | Out-Null
+        Start-Sleep -Seconds 2
+        Invoke-Ui -Action Tap -Value 'live.record'
+        $preflightDialog = Wait-UiSemanticEnabled `
+            -Name 'record-dialog-before-start' `
+            -Semantic '立即启动录制' `
+            -TimeoutSeconds 10
+    }
+    if (-not (Test-UiSemanticEnabled -Xml $preflightDialog.Xml -Semantic '立即启动录制')) {
+        throw 'The record action did not reach the one-shot start state.'
+    }
     Invoke-Ui -Action TapSemantic -Value '立即启动录制'
     $runningState = Wait-UiPattern -Name 'room-recording' -Pattern '录制中' -TimeoutSeconds 30
     $recordingWallTimer = [Diagnostics.Stopwatch]::StartNew()
@@ -354,25 +443,35 @@ try {
 
     Start-Sleep -Seconds ([math]::Min(15, $RecordSeconds))
     Invoke-Ui -Action Tap -Value 'live.record'
-    Wait-UiPattern -Name 'record-dialog-running' -Pattern '进入录制中心' -TimeoutSeconds 10 | Out-Null
+    Wait-UiSemanticEnabled -Name 'record-dialog-running' -Semantic '进入录制中心' -TimeoutSeconds 10 | Out-Null
     Invoke-Ui -Action TapSemantic -Value '进入录制中心'
-    $centerState = Wait-RecordingMetrics -TimeoutSeconds 25
+    Start-Sleep -Seconds 4
     Save-Screenshot 'record-center-running'
-    $result.checks.runningDurationVisible = $centerState.DurationSeconds -gt 0
-    $result.checks.runningDurationSeconds = $centerState.DurationSeconds
-    $result.checks.runningSizeVisible = $centerState.Size -gt 0
-    $result.checks.runningSize = $centerState.Size
-    $result.checks.runningSizeUnit = $centerState.SizeUnit
-    $result.checks.runningSpeedVisible = $centerState.Speed -gt 0
-    $result.checks.runningSpeed = $centerState.Speed
+    $recordCenterScreenshot = Join-Path $evidence 'record-center-running.png'
+    $result.checks.recordingCenterScreenshotCaptured =
+        (Test-Path -LiteralPath $recordCenterScreenshot -PathType Leaf) -and
+        (Get-Item -LiteralPath $recordCenterScreenshot).Length -gt 0
+    # The shell uiautomator command hard-codes a one-second quiet window. A
+    # recorder page that legitimately publishes time/size every second may
+    # never become idle, so use two real private-file samples for the machine
+    # gate and keep the screenshot for visual UI verification.
+    $growth = Wait-RecordingFileGrowth -BeforeFiles $beforeFiles -TimeoutSeconds 30
+    $result.checks.runningFileGrowthObserved = $growth.FinalBytes -gt $growth.InitialBytes
+    $result.checks.runningFilePath = $growth.Path
+    $result.checks.runningFileInitialBytes = $growth.InitialBytes
+    $result.checks.runningFileFinalBytes = $growth.FinalBytes
+    $result.checks.runningFileGrowthMs = $growth.ElapsedMs
 
-    $remainingSeconds = [math]::Max(0, $RecordSeconds - 15)
+    $remainingSeconds = [math]::Max(
+        0,
+        [math]::Ceiling($RecordSeconds - $recordingWallTimer.Elapsed.TotalSeconds)
+    )
     if ($remainingSeconds -gt 0) { Start-Sleep -Seconds $remainingSeconds }
 
     Invoke-Adb -AdbArguments @('shell', 'input', 'keyevent', '4') | Out-Null
     Wait-UiPattern -Name 'room-before-stop' -Pattern '弹幕列表' -TimeoutSeconds 15 | Out-Null
     Invoke-Ui -Action Tap -Value 'live.record'
-    Wait-UiPattern -Name 'record-dialog-before-stop' -Pattern '停止录制' -TimeoutSeconds 10 | Out-Null
+    Wait-UiSemanticEnabled -Name 'record-dialog-before-stop' -Semantic '停止录制' -TimeoutSeconds 10 | Out-Null
     Invoke-Ui -Action TapSemantic -Value '停止录制'
     $recordingWallTimer.Stop()
     $result.checks.recordingWallSeconds = [math]::Round($recordingWallTimer.Elapsed.TotalSeconds, 3)
@@ -431,7 +530,7 @@ try {
     Invoke-Adb -AdbArguments @('shell', 'input', 'keyevent', '4') | Out-Null
     Wait-UiPattern -Name 'room-before-monitor-cleanup' -Pattern '弹幕列表' -TimeoutSeconds 15 | Out-Null
     Invoke-Ui -Action Tap -Value 'live.record'
-    Wait-UiPattern -Name 'record-dialog-cleanup' -Pattern '取消监控' -TimeoutSeconds 10 | Out-Null
+    Wait-UiSemanticEnabled -Name 'record-dialog-cleanup' -Semantic '取消监控' -TimeoutSeconds 10 | Out-Null
     Invoke-Ui -Action TapSemantic -Value '取消监控'
     $cleanupState = Wait-UiPattern -Name 'room-after-monitor-cleanup' -Pattern '录制' -TimeoutSeconds 10
     $monitorRemoved = -not ($cleanupState.Xml -match '已监控|录制中')
@@ -493,9 +592,10 @@ $assertions = [ordered]@{
     runAsAvailable = [bool]$result.checks.runAsAvailable
     roomForeground = ($result.checks.roomForeground -match $Package)
     roomUiAlive = [bool]$result.checks.roomUiAlive
-    runningDurationVisible = [bool]$result.checks.runningDurationVisible
-    runningSizeVisible = [bool]$result.checks.runningSizeVisible
-    runningSpeedVisible = [bool]$result.checks.runningSpeedVisible
+    qualitySheetVisible = [bool]$result.checks.qualitySheetVisible
+    lineSheetVisible = [bool]$result.checks.lineSheetVisible
+    recordingCenterScreenshotCaptured = [bool]$result.checks.recordingCenterScreenshotCaptured
+    runningFileGrowthObserved = [bool]$result.checks.runningFileGrowthObserved
     stoppedStatusVisible = [bool]$result.checks.stoppedStatusVisible
     failureAbsent = [bool]$result.checks.failureAbsent
     recordingFileNonEmpty = [bool]$result.checks.recordingFileNonEmpty

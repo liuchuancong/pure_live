@@ -71,6 +71,9 @@
 - 本轮从应用私有目录取得 `7,763,631 bytes` MP4，SHA-256 为 `A12A4B6DF16ADA3BD0C90D113FC552287A1D24AD62C809CE8666B59C9AB3105E`。`ffprobe` 读取到 H.264 视频轨和 AAC 音频轨，媒体时长 60.086333 秒；从客户端确认“录制中”到提交停止的实测墙钟为 57.220 秒，差值处于封装容差内。
 - 测试结束后监控任务已取消，`am force-stop` 后 `pidof` 返回无进程。`dumpsys power` 的当前 `Wake Locks` 区段没有 Pure Live，只剩设备上的 MT 管理工具锁。测试器原先搜索整个 power dump，会把历史 ACQ/REL 事件误判为当前持锁；现仅解析 `Wake Locks` 到 `Suspend Blockers` 之间的活动区段，并把“区段成功解析”作为独立门禁。
 - 证据为 `local-artifacts/diagnostics/android-recording-smoke-20260901T212952600/summary.json`。本样本证明 Bilibili 短录、实时指标、停止封装、私有文件读取及强制停止后的进程/活动 Wake Lock 清理；其他平台、失败重连、待开播、跨签名续接及长录趋势继续保留在验收矩阵中。
+- 测试器随后改为平台参数驱动，并在 cycle 42 完成虎牙实录。清晰度和线路入口均真实打开，录制卡片显示 `蓝光30M / 线路1`；视觉证据中的运行指标为 40 秒、19.00 MB、1.2x、4.2 Mbps。应用私有 TS 在 3.120 秒内从 20,709,376 B 增至 21,495,808 B，证明录制仍持续写入，而不是仅有静态卡片。
+- 虎牙停止封装在 3,999 ms 内完成，成品为 `27,681,159 bytes`，SHA-256 `293FAA18F55FDC81743C8E10BA0C9D42DD372A5BFCADEB689872E1E98994D5AA`。`ffprobe` 读取到 H.264 2560×1440、120 fps 视频和 AAC 音频，媒体时长 56.813667 秒；监控移除、进程退出、活动 Wake Lock 清理及 FATAL/ANR 过滤全部通过。证据为 `local-artifacts/diagnostics/android-recording-smoke-20260901T215737232/summary.json`。
+- 虎牙录制中心每秒刷新时间和大小，导致系统 `uiautomator dump` 一直等不到一秒安静窗口。Android shell 实现确实固定执行 `waitForIdle(1000, 10000)`，超时即输出 `could not get idle state`（[AOSP `DumpCommand.java`](https://android.googlesource.com/platform/frameworks/uiautomator/+/17fac436d78f6ac642386a245fb4fdb7243a91a4/cmds/uiautomator/src/com/android/commands/uiautomator/DumpCommand.java)）。测试门禁因此使用原始截图加私有文件双采样，不再把持续更新的正常页面误判为客户端故障；录制对话框还会保留禁用按钮语义，脚本现只点击同时为 `enabled=true` 和 `clickable=true` 的动作。
 
 ## 8. 后续实机顺序
 
@@ -78,7 +81,7 @@
 
 1. Bilibili 普通 16:9 房间：继续补充非竖屏样本的画面比例、横屏全屏、应用小窗与系统返回；
 2. 抖音原生竖屏房间：普通页、竖屏沉浸、横屏居中背景、PiP 与应用小窗；
-3. 虎牙、斗鱼代表房间：短签名续接、画质线路、弹幕和 2～3 分钟录制；
+3. 虎牙短录、画质/线路入口和清理已通过；继续执行虎牙切换/短签名续接，以及斗鱼代表房间的弹幕和 2～3 分钟录制；
 4. 纯音频往返已完成单轮；继续执行后台总开关、锁屏、重复 10 次系统 PiP 与停止计时；
 5. Bilibili 单次短录已通过；继续补充录制中心指标的连续单调采样、删除和滚动边界，以及其他平台、重试分片和稳定会话开始时间；
 6. 30～60 分钟资源趋势、CPU/温度、播放器结束后的进程/媒体会话/Wake Lock 回落。
