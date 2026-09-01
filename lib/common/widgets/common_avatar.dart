@@ -7,10 +7,19 @@ import 'package:pure_live/common/services/settings_service.dart';
 
 class CommonAvatar extends StatelessWidget {
   final String? avatarUrl;
+  final String? assets;
   final bool dense;
   final double? radius;
   final String? fallbackName;
-  const CommonAvatar({super.key, required this.avatarUrl, this.dense = false, this.radius, this.fallbackName});
+
+  const CommonAvatar({
+    super.key,
+    required this.avatarUrl,
+    this.assets,
+    this.dense = false,
+    this.radius,
+    this.fallbackName,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -23,6 +32,7 @@ class CommonAvatar extends StatelessWidget {
       final String text = (fallbackName != null && fallbackName!.isNotEmpty)
           ? fallbackName!.characters.first.toUpperCase()
           : '';
+
       return Container(
         width: size,
         height: size,
@@ -35,10 +45,25 @@ class CommonAvatar extends StatelessWidget {
       );
     }
 
-    if (!hasAvatar) return fallback();
+    if (assets != null && assets!.isNotEmpty) {
+      return ClipOval(
+        child: Image.asset(
+          assets!,
+          width: size,
+          height: size,
+          fit: BoxFit.cover,
+          errorBuilder: (_, _, _) => fallback(),
+        ),
+      );
+    }
+
+    if (!hasAvatar) {
+      return fallback();
+    }
 
     return Obx(() {
       final epoch = SettingsService.to.cache.imageCacheEpoch.value;
+
       return SizedBox(
         width: size,
         height: size,
@@ -51,7 +76,6 @@ class CommonAvatar extends StatelessWidget {
             fit: BoxFit.cover,
             filterQuality: FilterQuality.low,
             memCacheWidth: (size * MediaQuery.devicePixelRatioOf(context)).round().clamp(48, 256).toInt(),
-            // maxWidthDiskCache: 256,
             fadeInDuration: Duration.zero,
             fadeOutDuration: Duration.zero,
             useOldImageOnUrlChange: true,

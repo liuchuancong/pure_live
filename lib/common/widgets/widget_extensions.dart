@@ -415,6 +415,7 @@ extension AppLayoutFactory on BuildContext {
     required double max,
     required String displayValue,
     required ValueChanged<double> onChanged,
+    double? step,
   }) {
     final theme = Theme.of(context);
     return Padding(
@@ -460,6 +461,7 @@ extension AppLayoutFactory on BuildContext {
                     child: SfSlider(
                       min: min,
                       max: max,
+                      stepSize: step,
                       value: value,
                       activeColor: theme.colorScheme.primary,
                       inactiveColor: theme.colorScheme.primary.withValues(alpha: 0.15),
