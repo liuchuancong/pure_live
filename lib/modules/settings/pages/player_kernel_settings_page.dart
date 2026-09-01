@@ -53,11 +53,27 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
             subtitle: i18n('gpu_decode'),
             value: settings.player.enableCodec,
           ),
+        ]),
+        const SizedBox(height: 20),
+        _buildSectionTitle(context, icon: Remix.shut_down_line, title: i18n('player_lifecycle_settings')),
+        context.buildModernCard([
           context.buildSwitchTile(
             icon: Remix.shut_down_line,
             title: i18n('force_destroy_player'),
             subtitle: i18n('force_destroy_player_subtitle'),
             value: settings.player.useHardStopOnExit,
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 12, 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  i18n('player_dispose_notice_desc'),
+                  style: AppTextStyles.t12.copyWith(color: Theme.of(context).hintColor),
+                ),
+              ],
+            ),
           ),
         ]),
       ],
@@ -120,6 +136,7 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
         const SizedBox(height: 20),
         const Divider(),
         const SizedBox(height: 4),
+
         _buildAdvancedSection(context),
         _buildOutputSection(context),
         _buildVideoSection(context),

@@ -1532,5 +1532,8 @@
     "custom_output": "Custom Output",
     "custom_output_subtitle": "Customize video, audio output and hardware decoding",
     "compat_mode_enabled_subtitle": "MediaCodec compatibility mode is enabled",
-    "disabled_by_rtx_vsr": "Disabled by NVIDIA RTX VSR"
+    "disabled_by_rtx_vsr": "Disabled by NVIDIA RTX VSR",
+    "player_dispose_notice": "Player Resource Release",
+    "player_dispose_notice_desc": "Soft stop does not destroy the player instance; it only stops the current playback. To fully release the player and video output resources, the \"Force Destroy Player\" option must be enabled for this behavior to take effect.",
+    "player_lifecycle_settings": "Player Lifecycle Settings"
 }

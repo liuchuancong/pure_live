@@ -1532,5 +1532,8 @@
     "custom_output": "自定义输出",
     "custom_output_subtitle": "自定义视频、音频输出与硬件解码方式",
     "compat_mode_enabled_subtitle": "已启用 MediaCodec 兼容模式",
-    "disabled_by_rtx_vsr": "已被 NVIDIA RTX VSR 禁用"
+    "disabled_by_rtx_vsr": "已被 NVIDIA RTX VSR 禁用",
+    "player_dispose_notice": "播放器资源释放",
+    "player_dispose_notice_desc": "软停止不会销毁播放器实例，仅会停止当前播放。若需要彻底释放播放器及视频输出资源，必须开启“强制销毁播放器”配置后才能生效。",
+    "player_lifecycle_settings": "播放器生命周期设置"
 }

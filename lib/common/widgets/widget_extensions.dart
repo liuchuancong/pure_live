@@ -166,7 +166,10 @@ extension AppLayoutFactory on BuildContext {
         secondary: icon != null
             ? Icon(icon, color: enabled ? (iconColor ?? theme.colorScheme.primary) : theme.disabledColor, size: 22)
             : null,
-        title: Text(title, style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600)),
+        title: Text(
+          title,
+          style: AppTextStyles.t15.copyWith(color: enabled ? null : theme.disabledColor, fontWeight: FontWeight.w600),
+        ),
         subtitle: subtitle != null && subtitle.isNotEmpty
             ? Padding(
                 padding: const EdgeInsets.only(top: 2),
