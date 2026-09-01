@@ -186,7 +186,7 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
           context.buildModernCard([
             _buildSuperResolutionTile(context, enabled: superResolutionEnabled, rtxVsr: rtxVsr),
             _buildHardwareDecoderTile(context, enabled: videoSettingsEnabled),
-            if (PlatformUtils.isAndroid) _buildRendererTile(context, enabled: videoSettingsEnabled),
+            _buildRendererTile(context, enabled: videoSettingsEnabled),
           ]),
         ],
       );
@@ -401,9 +401,9 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
   String _getRendererName() {
     final key = settings.player.videoOutputDriver.v;
 
-    final item = PlayerConsts.androidVideoRenderersList.firstWhere(
+    final item = PlayerConsts.videoRenderersList.firstWhere(
       (item) => item['key'] == key,
-      orElse: () => PlayerConsts.androidVideoRenderersList.first,
+      orElse: () => PlayerConsts.videoRenderersList.first,
     );
 
     final isZh = Get.locale?.languageCode == 'zh';

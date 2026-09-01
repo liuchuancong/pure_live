@@ -16,7 +16,7 @@ class RendererSettingsPage extends GetView<SettingsService> {
           context.buildModernCard([
             Obx(
               () => Column(
-                children: PlayerConsts.androidVideoRenderersList.map((item) {
+                children: PlayerConsts.videoRenderersList.map((item) {
                   final key = item['key']!;
                   final selected = controller.player.videoOutputDriver.v == key;
 

@@ -86,12 +86,24 @@ class PlayerConsts {
     {'key': 'libao', 'nameEn': 'libao (Cross-Platform)', 'nameZh': 'libao（跨平台）'},
   ];
 
-  /// Android 可选视频渲染器
-  static const List<Map<String, String>> androidVideoRenderersList = [
+  /// 可选视频渲染器
+  static const List<Map<String, String>> videoRenderersList = [
     {'key': 'auto', 'nameEn': 'Auto', 'nameZh': '自动选择'},
-    {'key': 'gpu', 'nameEn': 'GPU (OpenGL)', 'nameZh': 'GPU（基于 OpenGL，通用和稳健）'},
-    {'key': 'gpu-next', 'nameEn': 'GPU Next (Vulkan)', 'nameZh': 'GPU Next（基于 Vulkan，新设备上表现最好）'},
-    {'key': 'mediacodec_embed', 'nameEn': 'MediaCodec Embed', 'nameZh': 'MediaCodec Embed（功耗最低，不支持超分辨率）'},
+    {'key': 'gpu', 'nameEn': 'GPU', 'nameZh': 'GPU'},
+    {'key': 'gpu-next', 'nameEn': 'GPU Next', 'nameZh': 'GPU Next'},
+    {'key': 'sdl', 'nameEn': 'SDL', 'nameZh': 'SDL'},
+    {'key': 'null', 'nameEn': 'Null (No Video Output)', 'nameZh': 'Null（不输出视频）'},
+    {'key': 'mediacodec_embed', 'nameEn': 'MediaCodec Embed (Android Only)', 'nameZh': 'MediaCodec Embed（仅 Android）'},
+    {'key': 'direct3d', 'nameEn': 'Direct3D (Windows Only)', 'nameZh': 'Direct3D（仅 Windows）'},
+    {'key': 'vaapi', 'nameEn': 'VA-API (Linux Only)', 'nameZh': 'VA-API（仅 Linux）'},
+    {'key': 'vdpau', 'nameEn': 'VDPAU (Linux Only)', 'nameZh': 'VDPAU（仅 Linux）'},
+    {'key': 'drm', 'nameEn': 'DRM (Linux Only)', 'nameZh': 'DRM（仅 Linux）'},
+    {'key': 'wlshm', 'nameEn': 'Wayland SHM (Linux Only)', 'nameZh': 'Wayland SHM（仅 Linux）'},
+    {'key': 'dmabuf-wayland', 'nameEn': 'DMABUF Wayland (Linux Only)', 'nameZh': 'DMABUF Wayland（仅 Linux）'},
+    {'key': 'x11', 'nameEn': 'X11 (Linux Only)', 'nameZh': 'X11（仅 Linux）'},
+    {'key': 'xv', 'nameEn': 'XVideo (Linux Only)', 'nameZh': 'XVideo（仅 Linux）'},
+    {'key': 'caca', 'nameEn': 'CACA (macOS / Linux)', 'nameZh': 'CACA（macOS / Linux）'},
+    {'key': 'avfoundation', 'nameEn': 'AVFoundation (macOS / iOS)', 'nameZh': 'AVFoundation（macOS / iOS）'},
   ];
 
   /// 超分辨率滤镜
