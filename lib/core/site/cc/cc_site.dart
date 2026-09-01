@@ -9,8 +9,8 @@ import 'package:pure_live/model/live_play_quality.dart';
 import 'package:pure_live/core/interface/live_site.dart';
 import 'package:pure_live/core/danmaku/empty_danmaku.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
-import 'package:pure_live/modules/live_play/controllers/player_controller.dart';
 import 'package:pure_live/core/utils/live_quality_label.dart';
+import 'package:pure_live/modules/live_play/controllers/player_controller.dart';
 
 class CCSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResolver {
   @override
@@ -26,21 +26,39 @@ class CCSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResol
 
   @override
   Future<List<LiveCategory>> getCategores(int page, int pageSize) async {
-    List<LiveCategory> categories = [
-      LiveCategory(id: "1", name: "全部", children: []),
-      LiveCategory(id: "2", name: "端游", children: []),
-      LiveCategory(id: "4", name: "手游", children: []),
-      LiveCategory(id: "5", name: "其他", children: []),
-    ];
-    var res = await HttpClient.instance.getText(
-      "https://cc.163.com/category/",
-      queryParameters: {"format": "json"},
-      header: {"user-agent": kUserAgent},
-    );
-    var result = jsonDecode(res);
     try {
+      final payload = await HttpClient.instance.getText(
+        "https://cc.163.com/category/",
+        queryParameters: {"format": "json"},
+        header: {"user-agent": kUserAgent},
+      );
+      return parseCategoryPayload(payload);
+    } catch (error) {
+      // CC now redirects this legacy JSON endpoint to the official
+      // `ds.163.com/glive` HTML application in some regions. Category
+      // navigation must remain usable while the platform migrates the API.
+      CoreLog.error(error);
+      return defaultCategories();
+    }
+  }
+
+  static List<LiveCategory> defaultCategories() => [
+    LiveCategory(id: "1", name: "全部", children: []),
+    LiveCategory(id: "2", name: "端游", children: []),
+    LiveCategory(id: "4", name: "手游", children: []),
+    LiveCategory(id: "5", name: "其他", children: []),
+  ];
+
+  /// Parses the legacy CC category payload without allowing an HTML redirect,
+  /// empty response, or a partially migrated schema to break the whole page.
+  static List<LiveCategory> parseCategoryPayload(String payload) {
+    final categories = defaultCategories();
+    try {
+      final result = jsonDecode(payload);
+      if (result is! Map || result['game_list'] is! List) return categories;
+      final allGames = List<dynamic>.from(result['game_list'] as List);
       for (var item in categories) {
-        List games = result['game_list'];
+        var games = allGames;
         if (item.id == "2") {
           games = games.where((x) => x["game_tag"] == "pc_game").toList();
         } else if (item.id == "4") {
@@ -48,18 +66,19 @@ class CCSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResol
         } else if (item.id == "5") {
           games = games.where((x) => x["game_tag"] == "other").toList();
         }
-        var items = await getSubCategores(item, games);
-        item.children.addAll(items);
+        item.children.addAll(_getSubCategories(item, games));
       }
-    } catch (e) {
-      CoreLog.error(e);
+    } catch (_) {
+      // Keep the stable top-level categories. The recommendation feed still
+      // provides rooms even when CC withdraws the legacy game-list payload.
     }
     return categories;
   }
 
-  Future<List<LiveArea>> getSubCategores(LiveCategory liveCategory, List result) async {
-    List<LiveArea> subs = [];
+  static List<LiveArea> _getSubCategories(LiveCategory liveCategory, List<dynamic> result) {
+    final subs = <LiveArea>[];
     for (var item in result) {
+      if (item is! Map) continue;
       var gid = item["gametype"].toString();
       var subCategory = LiveArea(
         areaId: gid,
