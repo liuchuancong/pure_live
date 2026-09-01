@@ -84,6 +84,8 @@
 - 快手此前能播放和录制、却始终没有真实弹幕，根因不在直播间样本：平台适配器直接返回 `EmptyDanmaku`，直播页、画中画和多画面还把快手排除在弹幕连接之外。现改为快手移动端增量 feed：按服务端 cursor 串行拉取，解析真实评论和在线人数；请求失败执行两端点故障转移与有界指数退避，停止、切房或旧请求迟到时由 generation/cancel 门禁丢弃，不创建重叠 Timer 或隐藏 WebView。
 - 快手解析、生命周期、多画面相邻回归最终 58/58 通过，Analyze 为 0 issue；记录为 `local-artifacts/build-records/20260901T161206337Z-quality-focused.json` 与 `local-artifacts/build-records/20260901T161811979Z-quality-focused.json`。从干净提交 `4d0e3202` 构建的 arm64 Debug APK 为 301,647,869 B，16 个 arm64 原生库的最小 ELF LOAD 对齐不低于 `0x4000`，构建记录为 `local-artifacts/build-records/20260901T162138140Z-build-androidarm64-debug.json`。
 - cycle 52 覆盖安装上述 APK 后，快手当前房间完成播放、11 条真实可见评论、`蓝光 质臻 / 蓝光4M / 超清 / 高清` 画质入口、线路1、持续写入、停止封装和退出清理。私有 TS 在 3.551 秒内从 110,624,768 B 增至 117,702,656 B；最终 MP4 为 151,779,525 B，SHA-256 `71E3719C0F592912B0D7FCF27E8C389757CC85E5C0335FB9E2F4FA2336CF1F1F`，`ffprobe` 读取 H.264 + AAC、时长 60.225667 秒。监控已移除、进程消失、活动 Wake Lock 无 Pure Live，证据为 `local-artifacts/diagnostics/android-recording-smoke-20260902T002303173/summary.json`。
+- 录制冒烟新增可选锁屏区间，并以“同一个私有 TS 在锁屏前后真实增长”作为门禁，而不是只检查通知或进程。K90 Pro 的常显屏在交互面板关闭后报告 `mWakefulness=Dozing`，测试器现把 Dozing 与 Asleep 都视为有效暗屏状态，不再误判常显屏设备。
+- cycle 54 强制锁屏/Dozing 60 秒，Bilibili 同一 TS 从 1,310,720 B 增至 7,602,176 B；Pure Live 进程与 `AudioService` 媒体前台服务保持活动，唤醒解锁后仍回到原直播间。停止后得到 11,224,519 B、112.749333 秒、H.264 + AAC MP4；播放、弹幕、画质/线路、锁屏写入、恢复、封装、监控移除、进程和 Wake Lock 清理共 25 项断言全部通过。证据为 `local-artifacts/diagnostics/android-recording-smoke-20260902T004408576/summary.json`。
 
 ## 8. 后续实机顺序
 

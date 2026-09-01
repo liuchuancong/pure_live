@@ -4,6 +4,8 @@ param(
     [string] $EvidenceDirectory,
     [ValidateRange(20, 300)]
     [int] $RecordSeconds = 45,
+    [ValidateRange(0, 180)]
+    [int] $ScreenOffSeconds = 0,
     [ValidateSet('bilibili', 'douyu', 'huya', 'douyin', 'kuaishou')]
     [string] $Platform = 'bilibili',
     [string] $Package = 'com.mystyle.purelive',
@@ -446,6 +448,7 @@ $result = [ordered]@{
     platform = $Platform
     platformLabel = $platformLabel
     requestedRecordSeconds = $RecordSeconds
+    requestedScreenOffSeconds = $ScreenOffSeconds
     checks = [ordered]@{}
 }
 $monitorRemoved = $false
@@ -576,7 +579,40 @@ try {
     $result.checks.recordStartMs = $runningState.ElapsedMs
     Save-Screenshot 'room-recording'
 
-    Start-Sleep -Seconds ([math]::Min(15, $RecordSeconds))
+    if ($ScreenOffSeconds -gt 0) {
+        # Prove recorder continuity while the panel and keyguard are off. This
+        # is deliberately stronger than checking a notification or process:
+        # the same private TS must continue growing during the dark interval.
+        $beforeScreenOff = Wait-RecordingFileGrowth -BeforeFiles $beforeFiles -TimeoutSeconds 30
+        $screenOffStart = Get-PrivateFileInfo $beforeScreenOff.Path
+        Invoke-Adb -AdbArguments @('shell', 'input', 'keyevent', 'KEYCODE_SLEEP') | Out-Null
+        Start-Sleep -Milliseconds 750
+        $screenOffPower = (Invoke-Adb -AdbArguments @('shell', 'dumpsys', 'power')) -join "`n"
+        Save-Text 'power-during-screen-off.txt' $screenOffPower
+        # Always-on-display devices report Dozing rather than Asleep while the
+        # interactive panel is dark and locked. Both states satisfy this gate;
+        # Awake does not.
+        $result.checks.screenOffConfirmed =
+            $screenOffPower -match '(?im)mWakefulness\s*=\s*(?:Asleep|Dozing)|mInteractive\s*=\s*false|Display Power:\s*state=OFF'
+        Start-Sleep -Seconds $ScreenOffSeconds
+        $screenOffEnd = Get-PrivateFileInfo $beforeScreenOff.Path
+        $result.checks.screenOffRecordingPath = $beforeScreenOff.Path
+        $result.checks.screenOffInitialBytes = $screenOffStart.Bytes
+        $result.checks.screenOffFinalBytes = $screenOffEnd.Bytes
+        $result.checks.screenOffGrowthBytes = $screenOffEnd.Bytes - $screenOffStart.Bytes
+        $result.checks.screenOffRecordingContinued = $screenOffEnd.Bytes -gt $screenOffStart.Bytes
+        $result.checks.processAliveDuringScreenOff =
+            -not [string]::IsNullOrWhiteSpace(((Invoke-Adb -AdbArguments @('shell', 'pidof', $Package)) -join '').Trim())
+        Save-Text 'services-during-screen-off.txt' (
+            Invoke-Adb -AdbArguments @('shell', 'dumpsys', 'activity', 'services', $Package)
+        )
+        Wake-AndDismissKeyguard
+        Start-Sleep -Seconds 2
+        $result.checks.roomForegroundAfterScreenOff = Get-Foreground
+        Wait-UiPattern -Name 'room-after-screen-off' -Pattern '弹幕列表' -TimeoutSeconds 15 | Out-Null
+    } else {
+        Start-Sleep -Seconds ([math]::Min(15, $RecordSeconds))
+    }
     Invoke-Ui -Action Tap -Value 'live.record'
     Wait-UiSemanticEnabled -Name 'record-dialog-running' -Semantic '进入录制中心' -TimeoutSeconds 10 | Out-Null
     Invoke-Ui -Action TapSemantic -Value '进入录制中心'
@@ -733,6 +769,13 @@ $assertions = [ordered]@{
     lineSheetVisible = [bool]$result.checks.lineSheetVisible
     recordingCenterScreenshotCaptured = [bool]$result.checks.recordingCenterScreenshotCaptured
     runningFileGrowthObserved = [bool]$result.checks.runningFileGrowthObserved
+    screenOffConfirmed = ($ScreenOffSeconds -eq 0 -or [bool]$result.checks.screenOffConfirmed)
+    screenOffRecordingContinued = ($ScreenOffSeconds -eq 0 -or [bool]$result.checks.screenOffRecordingContinued)
+    processAliveDuringScreenOff = ($ScreenOffSeconds -eq 0 -or [bool]$result.checks.processAliveDuringScreenOff)
+    roomRestoredAfterScreenOff = (
+        $ScreenOffSeconds -eq 0 -or
+        ([string]$result.checks.roomForegroundAfterScreenOff -match $Package)
+    )
     stoppedStatusVisible = [bool]$result.checks.stoppedStatusVisible
     failureAbsent = [bool]$result.checks.failureAbsent
     recordingFileNonEmpty = [bool]$result.checks.recordingFileNonEmpty
