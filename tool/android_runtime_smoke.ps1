@@ -33,6 +33,15 @@ $adb = $adbCandidates | Where-Object {
 } | Select-Object -First 1
 if (-not $adb) { throw 'ADB executable was not found.' }
 
+function Start-AdbServer {
+    $serverResult = & $adb start-server 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        throw "adb start-server failed ($LASTEXITCODE):`n$($serverResult -join "`n")"
+    }
+}
+
+Start-AdbServer
+
 $deviceRows = & $adb devices -l
 if ([string]::IsNullOrWhiteSpace($Serial)) {
     $deviceCandidates = @(
@@ -70,8 +79,16 @@ if ([string]::IsNullOrWhiteSpace($Serial)) {
 function Invoke-Adb {
     param([Parameter(Mandatory = $true)][string[]] $AdbArguments)
     $result = & $adb -s $serial @AdbArguments 2>&1
-    if ($LASTEXITCODE -ne 0) {
-        throw "adb failed ($LASTEXITCODE): $($AdbArguments -join ' ')`n$($result -join "`n")"
+    $exitCode = $LASTEXITCODE
+    $output = $result -join "`n"
+    if ($exitCode -ne 0 -and $output -match '(?i)cannot connect to daemon|daemon still not running') {
+        Start-AdbServer
+        Start-Sleep -Milliseconds 350
+        $result = & $adb -s $serial @AdbArguments 2>&1
+        $exitCode = $LASTEXITCODE
+    }
+    if ($exitCode -ne 0) {
+        throw "adb failed ($exitCode): $($AdbArguments -join ' ')`n$($result -join "`n")"
     }
     $result
 }

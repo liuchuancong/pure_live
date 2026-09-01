@@ -779,11 +779,11 @@
         ],
         "open_local_interaction_settings": [
           {
-            "tap": "home.menu",
+            "tapSemantic": "菜单",
             "waitMs": 350
           },
           {
-            "tap": "drawer.settings",
+            "tapSemantic": "设置",
             "waitMs": 600
           },
           {
@@ -795,7 +795,7 @@
             "waitMs": 450
           },
           {
-            "tap": "settings.local_interaction_after_scroll2",
+            "tapSemantic": "本地互动体验",
             "waitMs": 600
           }
         ],
@@ -3431,11 +3431,11 @@
         ],
         "open_local_interaction_settings": [
           {
-            "tap": "home.menu",
+            "tapSemantic": "菜单",
             "waitMs": 350
           },
           {
-            "tap": "drawer.settings",
+            "tapSemantic": "设置",
             "waitMs": 600
           },
           {
@@ -3447,7 +3447,7 @@
             "waitMs": 450
           },
           {
-            "tap": "settings.local_interaction_after_scroll2",
+            "tapSemantic": "本地互动体验",
             "waitMs": 600
           }
         ],
