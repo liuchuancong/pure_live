@@ -723,8 +723,12 @@
         ],
         "enter_first_bilibili_room": [
           {
-            "tap": "home.bilibili_tab",
-            "waitMs": 700
+            "tapSemantic": "热门",
+            "waitMs": 1200
+          },
+          {
+            "tapSemantic": "哔哩哔哩",
+            "waitMs": 8000
           },
           {
             "tap": "home.first_left_room",
@@ -3371,8 +3375,12 @@
         ],
         "enter_first_bilibili_room": [
           {
-            "tap": "home.bilibili_tab",
-            "waitMs": 700
+            "tapSemantic": "热门",
+            "waitMs": 1200
+          },
+          {
+            "tapSemantic": "哔哩哔哩",
+            "waitMs": 8000
           },
           {
             "tap": "home.first_left_room",
