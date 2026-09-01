@@ -477,19 +477,18 @@ class HuyaDanmaku implements LiveDanmaku {
 
           if (item.iUri == 2001314) {
             final sc = await getHuyaSuperChatMessageList(lPid: danmakuArgs.topSid);
-
             if (generation != _generation) {
               return;
             }
-
-            if (sc.isNotEmpty) {
+            for (final item in sc) {
               onMessage?.call(
                 LiveMessage(
+                  messageId: item.messageId.isNotEmpty ? 'huya:${item.messageId}' : '',
                   type: LiveMessageType.superChat,
                   userName: 'SUPER_CHAT_MESSAGE',
                   message: 'SUPER_CHAT_MESSAGE',
                   color: LiveMessageColor.white,
-                  data: sc.first,
+                  data: item,
                 ),
               );
             }
