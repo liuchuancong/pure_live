@@ -10,7 +10,7 @@ import 'package:pure_live/plugins/fake_useragent.dart';
 import 'package:pure_live/core/common/http_client.dart';
 import 'package:pure_live/model/live_play_quality.dart';
 import 'package:pure_live/core/interface/live_site.dart';
-import 'package:pure_live/core/danmaku/empty_danmaku.dart';
+import 'package:pure_live/core/danmaku/kuaishou_danmaku.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
 import 'package:pure_live/modules/live_play/controllers/player_controller.dart';
@@ -47,7 +47,7 @@ class KuaishowSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoo
     'gif',
   ];
   @override
-  LiveDanmaku getDanmaku() => EmptyDanmaku();
+  LiveDanmaku getDanmaku() => KuaishouDanmaku();
 
   @override
   Future<List<LiveCategory>> getCategores(int page, int pageSize) async {
@@ -144,6 +144,7 @@ class KuaishowSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoo
     );
     var items = <LiveRoom>[];
     for (var item in result["data"]["list"]) {
+      final liveStreamId = item['id']?.toString() ?? '';
       var roomItem = LiveRoom(
         roomId: item["author"]["id"] ?? '',
         title: item['caption'] ?? '',
@@ -157,6 +158,10 @@ class KuaishowSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoo
         liveStatus: LiveStatus.live,
         status: true,
         platform: Sites.kuaishouSite,
+        link: liveStreamId,
+        danmakuData: liveStreamId.isEmpty
+            ? null
+            : KuaishouDanmakuArgs(liveStreamId: liveStreamId, cookie: _effectiveCookie),
         data: item["playUrls"],
       );
       items.add(roomItem);
@@ -276,6 +281,7 @@ class KuaishowSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoo
           for (var titem in sitem["liveInfo"]) {
             var author = titem["author"];
             var gameInfo = titem["gameInfo"];
+            final liveStreamId = titem['id']?.toString() ?? '';
             var roomItems = LiveRoom(
               cover: gameInfo['poster'].toString(),
               watching: titem["watchingCount"].toString(),
@@ -291,6 +297,10 @@ class KuaishowSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoo
               status: true,
               liveStatus: LiveStatus.live,
               platform: Sites.kuaishouSite,
+              link: liveStreamId,
+              danmakuData: liveStreamId.isEmpty
+                  ? null
+                  : KuaishouDanmakuArgs(liveStreamId: liveStreamId, cookie: _effectiveCookie),
               data: titem["playUrls"],
             );
             items.add(roomItems);
@@ -357,17 +367,6 @@ class KuaishowSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoo
     return map;
   }
 
-  // 获取pageId
-  String getPageId() {
-    var pageId = '';
-    const charset = 'bjectSymhasOwnProp-0123456789ABCDEFGHIJKLMNQRTUVWXYZ_dfgiklquvxz';
-    for (var i = 0; i < 16; i++) {
-      pageId += charset[math.Random().nextInt(63)];
-    }
-    var currentTime = DateTime.now().millisecondsSinceEpoch;
-    return pageId += '_$currentTime';
-  }
-
   Future getCookie(String url) async {
     final dio = Dio();
     final cookieJar = CookieJar();
@@ -384,18 +383,6 @@ class KuaishowSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoo
       }
       cookieObj[cookies[i].name] = cookies[i].value;
     }
-  }
-
-  Future getWebsocketUrl(String liveRoomId) async {
-    var variables = {'liveStreamId': liveRoomId};
-    var query =
-        r'query WebSocketInfoQuery($liveStreamId: String) {\n  webSocketInfo(liveStreamId: $liveStreamId) {\n    token\n    webSocketUrls\n    __typename\n  }\n}\n';
-    var res = await HttpClient.instance.postJson(
-      'https://live.kuaishou.com/live_graphql',
-      header: headers,
-      data: {"operationName": 'WebSocketInfoQuery', "variables": variables, "query": query},
-    );
-    return res;
   }
 
   @override
@@ -471,6 +458,7 @@ class KuaishowSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoo
     final rawLiveState = room['isLiving'];
     final live = rawLiveState == true || rawLiveState == 1 || rawLiveState?.toString().toLowerCase() == 'true';
     final description = author["description"]?.toString() ?? '';
+    final liveStreamId = liveStream["id"]?.toString() ?? '';
     return LiveRoom(
       cover: isImage(liveStream['poster']) ? liveStream['poster'].toString() : '${liveStream['poster'].toString()}.jpg',
       watching: live ? gameInfo["watchingCount"].toString() : '0',
@@ -486,7 +474,10 @@ class KuaishowSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoo
       status: live,
       liveStatus: live ? LiveStatus.live : LiveStatus.offline,
       platform: Sites.kuaishouSite,
-      link: liveStream["id"]?.toString() ?? '',
+      link: liveStreamId,
+      danmakuData: liveStreamId.isEmpty
+          ? null
+          : KuaishouDanmakuArgs(liveStreamId: liveStreamId, cookie: _effectiveCookie),
       data: includePlaybackData ? liveStream["playUrls"] : null,
     );
   }
@@ -502,10 +493,13 @@ class KuaishowSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoo
     result['sec-fetch-site'] = 'same-origin';
     result['sec-fetch-user'] = '?1';
     result['accept'] = 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9';
-    final configuredCookie = SettingsService.to.cookieManager.kuaishouCookie.v.trim();
-    final effectiveCookie = configuredCookie.isNotEmpty ? configuredCookie : cookie;
-    if (effectiveCookie.isNotEmpty) result['cookie'] = effectiveCookie;
+    if (_effectiveCookie.isNotEmpty) result['cookie'] = _effectiveCookie;
     return result;
+  }
+
+  String get _effectiveCookie {
+    final configuredCookie = SettingsService.to.cookieManager.kuaishouCookie.v.trim();
+    return configuredCookie.isNotEmpty ? configuredCookie : cookie;
   }
 
   Future<void> _ensureSession(String url) async {

@@ -140,7 +140,12 @@ function Test-UiSemanticEnabled {
         [xml]$document = $Xml
         $matches = @(
             $document.SelectNodes('//node') | Where-Object {
-                ($_.GetAttribute('text') -eq $Semantic -or $_.GetAttribute('content-desc') -eq $Semantic) -and
+                (
+                    $_.GetAttribute('text') -eq $Semantic -or
+                    $_.GetAttribute('content-desc') -eq $Semantic -or
+                    $_.GetAttribute('text') -like "$Semantic`n*" -or
+                    $_.GetAttribute('content-desc') -like "$Semantic`n*"
+                ) -and
                 $_.GetAttribute('enabled') -eq 'true' -and
                 $_.GetAttribute('clickable') -eq 'true'
             }
@@ -159,6 +164,84 @@ function Get-UiLabels {
             @($_.GetAttribute('text'), $_.GetAttribute('content-desc'))
         } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Sort-Object -Unique
     )
+}
+
+function Select-PlatformTab {
+    param([Parameter(Mandatory = $true)][string] $Label)
+
+    $targetIndex = @{
+        '哔哩哔哩' = 1
+        '斗鱼' = 2
+        '虎牙' = 3
+        '抖音' = 4
+        '快手' = 5
+    }[$Label]
+    if (-not $targetIndex) { throw "No platform tab index is registered for '$Label'." }
+
+    for ($attempt = 0; $attempt -lt 4; $attempt++) {
+        $name = "home-platform-tab-$attempt"
+        Save-UiDump $name
+        $xmlText = Get-Content -LiteralPath (Join-Path $evidence "$name.xml") -Raw -Encoding UTF8
+        if (Test-UiSemanticEnabled -Xml $xmlText -Semantic $Label) {
+            Invoke-Ui -Action TapSemantic -Value $Label
+            return
+        }
+        if ($attempt -eq 3) { break }
+
+        [xml]$document = $xmlText
+        $visibleTabs = @(
+            $document.SelectNodes('//node') | ForEach-Object {
+                $semantic = if (-not [string]::IsNullOrWhiteSpace($_.GetAttribute('content-desc'))) {
+                    $_.GetAttribute('content-desc')
+                } else {
+                    $_.GetAttribute('text')
+                }
+                if (
+                    $_.GetAttribute('enabled') -eq 'true' -and
+                    $_.GetAttribute('clickable') -eq 'true' -and
+                    $semantic -match '^(.+?)[\r\n]+第\s*(\d+)\s*个标签，共\s*10\s*个$' -and
+                    $_.GetAttribute('bounds') -match '^\[(\d+),(\d+)\]\[(\d+),(\d+)\]$'
+                ) {
+                    $ordinal = [int]([regex]::Match($semantic, '第\s*(\d+)\s*个标签').Groups[1].Value)
+                    $null = $_.GetAttribute('bounds') -match '^\[(\d+),(\d+)\]\[(\d+),(\d+)\]$'
+                    [pscustomobject]@{
+                        Index = $ordinal
+                        Left = [int]$Matches[1]
+                        Top = [int]$Matches[2]
+                        Right = [int]$Matches[3]
+                        Bottom = [int]$Matches[4]
+                    }
+                }
+            }
+        )
+        if ($visibleTabs.Count -eq 0) {
+            throw "No visible platform tabs were available while locating '$Label'."
+        }
+        $left = ($visibleTabs | Measure-Object Left -Minimum).Minimum
+        $right = ($visibleTabs | Measure-Object Right -Maximum).Maximum
+        $top = ($visibleTabs | Measure-Object Top -Minimum).Minimum
+        $bottom = ($visibleTabs | Measure-Object Bottom -Maximum).Maximum
+        $minIndex = ($visibleTabs | Measure-Object Index -Minimum).Minimum
+        $maxIndex = ($visibleTabs | Measure-Object Index -Maximum).Maximum
+        $y = [math]::Round(($top + $bottom) / 2)
+        $averageWidth = [math]::Round((($visibleTabs | ForEach-Object { $_.Right - $_.Left } | Measure-Object -Average).Average))
+        if ($targetIndex -gt $maxIndex) {
+            $distance = [math]::Min(2, $targetIndex - $maxIndex)
+            $delta = [math]::Max(160, [math]::Min(440, [math]::Round($averageWidth * 0.9 * $distance)))
+            $x1 = $right - 24
+            $x2 = $x1 - $delta
+        } elseif ($targetIndex -lt $minIndex) {
+            $distance = [math]::Min(2, $minIndex - $targetIndex)
+            $delta = [math]::Max(160, [math]::Min(440, [math]::Round($averageWidth * 0.9 * $distance)))
+            $x1 = $left + 24
+            $x2 = $x1 + $delta
+        } else {
+            throw "Platform tab '$Label' is absent inside the visible platform index range $minIndex-$maxIndex."
+        }
+        Invoke-Adb -AdbArguments @('shell', 'input', 'swipe', $x1, $y, $x2, $y, '320') | Out-Null
+        Start-Sleep -Milliseconds 700
+    }
+    throw "Platform tab '$Label' did not become visible after bounded horizontal scrolling."
 }
 
 function Wait-UiSemanticEnabled {
@@ -387,7 +470,7 @@ try {
 
     Invoke-Ui -Action TapSemantic -Value '热门'
     Start-Sleep -Milliseconds 1200
-    Invoke-Ui -Action TapSemantic -Value $platformLabel
+    Select-PlatformTab -Label $platformLabel
     Start-Sleep -Seconds 8
     Invoke-Ui -Action Tap -Value 'home.first_left_room'
     Start-Sleep -Seconds 12

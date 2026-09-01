@@ -723,7 +723,7 @@ class LivePlayController extends GetxController
   }
 
   Future<void> _syncDanmakuConnection(LiveRoom liveRoom) async {
-    const except = [Sites.kuaishouSite, Sites.iptvSite, Sites.ccSite];
+    const except = [Sites.iptvSite, Sites.ccSite];
     final danmakuSettings = SettingsService.to.danmaku;
     final shouldConnectDanmaku = danmakuSettings.enableDanmakuDisplay.v || danmakuSettings.enablePipDanmaku.v;
     if (!except.contains(liveRoom.platform) && shouldConnectDanmaku) {

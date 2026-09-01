@@ -33,7 +33,7 @@ $repositoryRoot = Split-Path -Parent $PSScriptRoot
 $effectiveCommand = if ($Pass.IsPresent) {
     "Write-Host 'Pure Live has no device work in this round; passing the phone.'"
 } else {
-    $CommandLine
+    "& '.\tool\wake_android_device.ps1'; if (`$LASTEXITCODE -ne 0) { exit `$LASTEXITCODE }; $CommandLine"
 }
 
 & $coordinator `
