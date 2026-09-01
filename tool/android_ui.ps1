@@ -42,6 +42,7 @@ param(
     [switch]$NoBringToFront
 )
 
+Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $mapPath = Join-Path $PSScriptRoot 'device_ui_map.json'
 $adbCandidates = @(
@@ -155,8 +156,14 @@ function Get-DeviceMetrics {
 function Get-AppVersion {
     param([string]$Package)
     $lines = Invoke-Adb -AdbArguments @('shell', 'dumpsys', 'package', $Package)
-    $versionName = (($lines | Select-String 'versionName=' | Select-Object -First 1).Line -replace '^.*versionName=', '').Trim()
-    $versionCodeLine = ($lines | Select-String 'versionCode=' | Select-Object -First 1).Line
+    $versionNameMatch = $lines | Select-String 'versionName=' | Select-Object -First 1
+    $versionCodeMatch = $lines | Select-String 'versionCode=' | Select-Object -First 1
+    $versionName = if ($null -ne $versionNameMatch) {
+        ($versionNameMatch.Line -replace '^.*versionName=', '').Trim()
+    } else {
+        ''
+    }
+    $versionCodeLine = if ($null -ne $versionCodeMatch) { $versionCodeMatch.Line } else { '' }
     $versionCode = if ($versionCodeLine -match 'versionCode=(\d+)') { $Matches[1] } else { '' }
     [pscustomobject]@{ Name = $versionName; Code = $versionCode }
 }
@@ -484,7 +491,8 @@ try {
             if (-not $property) { throw "Unknown UI sequence '$Sequence'. Run .\tool\android_ui.ps1 -List." }
             foreach ($step in $property.Value) {
                 if ($step.PSObject.Properties['tap']) {
-                    Invoke-TapPoint $selected $step.tap -SemanticCheck:($VerifySemantics -or [bool]$step.verifySemantics)
+                    $verifyStep = $step.PSObject.Properties['verifySemantics'] -and [bool]$step.verifySemantics
+                    Invoke-TapPoint $selected $step.tap -SemanticCheck:($VerifySemantics -or $verifyStep)
                 }
                 elseif ($step.PSObject.Properties['tapSemantic']) {
                     Invoke-TapSemantic $step.tapSemantic
