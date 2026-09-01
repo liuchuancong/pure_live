@@ -76,6 +76,7 @@ GitHub Release：[v3.1.7](https://github.com/wzgrx/pure_live/releases/tag/v3.1.7
 - Android 包核验：包名 `com.mystyle.purelive`、版本 `3.1.7`、Manifest `versionCode=6120`、唯一 ABI `arm64-v8a`、Flutter 资源 1258 项。
 - PJZ110 / Android 16 已从 v3.1.6 静默覆盖安装到 v3.1.7；安装前后用户前台都保持 `com.xingin.xhs/.index.v2.IndexActivityV2`，没有启动 Pure Live，安装后核对 `versionName=3.1.7`、`versionCode=6120`。
 - Windows 便携 ZIP 共 1301 项；`pure_live.exe`、WebView2 loader、Flutter manifest 和内置 `3.1.7+4120` 更新源各 1，退役 QuickJS DLL 与运行期用户数据均为 0。
+- GitHub 发布后的同一 Windows 便携产物已在全新独立 instance 隐藏启动并连续空闲采样 180.930 秒：37/37 样本均响应，Working Set 196.0078→196.0234 MiB、Private Bytes 530.9766→528.8086 MiB，退出后残留进程为 0；详见 `docs/WINDOWS_RUNTIME_AUDIT_3_1_7.md`。
 - Android 构建记录：`local-artifacts/build-records/20260831T224917895Z-build-androidarm64-release.json`。
 - Windows 构建记录：`local-artifacts/build-records/20260831T231008974Z-build-windowsx64-release.json`。
 
