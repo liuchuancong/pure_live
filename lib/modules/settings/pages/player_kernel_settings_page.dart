@@ -14,33 +14,19 @@ import 'package:pure_live/modules/settings/pages/super_resolution_settings_page.
 class PlayerKernelSettingsPage extends GetView<SettingsService> {
   const PlayerKernelSettingsPage({super.key});
 
+  SettingsService get settings => SettingsService.to;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text(i18n('player_kernel_settings'))),
       body: ListView(
         physics: const PureLiveScrollPhysics(),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
         children: [
-          context.buildGroupTitle(i18n('core_kernel_settings')),
-          context.buildModernCard([
-            _buildPlayerKernelTile(context),
-            _buildProxyTile(context),
-            context.buildSwitchTile(
-              icon: Remix.speed_up_line,
-              title: i18n('enable_codec'),
-              subtitle: i18n('gpu_decode'),
-              value: SettingsService.to.player.enableCodec,
-            ),
-            context.buildSwitchTile(
-              icon: Remix.shut_down_line,
-              title: i18n('force_destroy_player'),
-              subtitle: i18n('force_destroy_player_subtitle'),
-              value: SettingsService.to.player.useHardStopOnExit,
-            ),
-          ]),
+          _buildCoreSettings(context),
           Obx(() {
-            final activeKey = SettingsService.to.player.videoPlayerKey.v;
+            final activeKey = settings.player.videoPlayerKey.v;
 
             if (PlayerConsts.engines[activeKey] != PlayerEngine.mediaKit) {
               return const SizedBox.shrink();
@@ -48,9 +34,33 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
 
             return _buildMpvSettings(context);
           }),
-          const SizedBox(height: 32),
         ],
       ),
+    );
+  }
+
+  Widget _buildCoreSettings(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        context.buildGroupTitle(i18n('core_kernel_settings')),
+        context.buildModernCard([
+          _buildPlayerKernelTile(context),
+          _buildProxyTile(context),
+          context.buildSwitchTile(
+            icon: Remix.speed_up_line,
+            title: i18n('enable_codec'),
+            subtitle: i18n('gpu_decode'),
+            value: settings.player.enableCodec,
+          ),
+          context.buildSwitchTile(
+            icon: Remix.shut_down_line,
+            title: i18n('force_destroy_player'),
+            subtitle: i18n('force_destroy_player_subtitle'),
+            value: settings.player.useHardStopOnExit,
+          ),
+        ]),
+      ],
     );
   }
 
@@ -58,7 +68,7 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
     final theme = Theme.of(context);
 
     return Obx(() {
-      final activeKey = SettingsService.to.player.videoPlayerKey.v;
+      final activeKey = settings.player.videoPlayerKey.v;
 
       final i18nKey = PlayerConsts.names[activeKey] ?? PlayerConsts.names[PlayerConsts.defaultKey] ?? '';
 
@@ -79,13 +89,13 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
     final theme = Theme.of(context);
 
     return Obx(() {
-      final activeKey = SettingsService.to.player.videoPlayerKey.v;
+      final activeKey = settings.player.videoPlayerKey.v;
 
       if (PlayerConsts.engines[activeKey] == PlayerEngine.exo) {
         return const SizedBox.shrink();
       }
 
-      final enabled = SettingsService.to.proxy.enableProxy.v;
+      final enabled = settings.proxy.enableProxy.v;
 
       return context.buildTile(
         icon: Remix.global_line,
@@ -107,126 +117,138 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(padding: EdgeInsets.only(left: 16, right: 16, top: 12), child: Divider()),
-        const SizedBox(height: 8),
+        const SizedBox(height: 20),
+        const Divider(),
+        const SizedBox(height: 4),
         _buildAdvancedSection(context),
-        _buildCustomOutputSection(context),
-        const SizedBox(height: 8),
+        _buildOutputSection(context),
         _buildVideoSection(context),
-        const SizedBox(height: 8),
         _buildAudioSection(context),
-        const SizedBox(height: 8),
         _buildPerformanceSection(context),
-        const SizedBox(height: 8),
       ],
     );
   }
 
-  Widget _buildCustomOutputSection(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildSectionTitle(context, icon: Icons.memory_rounded, title: i18n('custom_output_hwdec')),
-        context.buildModernCard([
-          context.buildSwitchTile(
-            icon: Icons.memory_rounded,
-            title: i18n('custom_output_hwdec'),
-            subtitle: i18n('gpu_decode'),
-            value: SettingsService.to.player.customPlayerOutput,
-          ),
-          if (PlatformUtils.isAndroid)
-            context.buildSwitchTile(
-              icon: Remix.shield_check_line,
-              title: i18n('compat_mode'),
-              subtitle: i18n('compat_mode_subtitle'),
-              value: SettingsService.to.player.playerCompatMode,
-              enabled: SettingsService.to.player.customPlayerOutput.v,
-            ),
-          if (PlatformUtils.isWindows)
-            context.buildSwitchTile(
-              icon: Remix.image_edit_line,
-              title: i18n('enable_rtx_vsr'),
-              subtitle: i18n('enable_rtx_vsr_subtitle'),
-              value: SettingsService.to.player.enableRtxVsr,
-              enabled: SettingsService.to.player.customPlayerOutput.v,
-            ),
-        ]),
-      ],
-    );
-  }
-
-  Widget _buildVideoSection(BuildContext context) {
+  Widget _buildOutputSection(BuildContext context) {
     return Obx(() {
-      final customOutput = SettingsService.to.player.customPlayerOutput.v;
-
-      final compat = PlatformUtils.isAndroid && SettingsService.to.player.playerCompatMode.v;
-
-      final enabled = customOutput && !compat;
+      final customOutput = settings.player.customPlayerOutput.v;
+      final compatMode = PlatformUtils.isAndroid && settings.player.playerCompatMode.v;
 
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSectionTitle(context, icon: Remix.movie_2_line, title: i18n('video_settings')),
+          _buildSectionTitle(context, icon: Remix.settings_4_line, title: i18n('output_settings')),
           context.buildModernCard([
-            _buildSuperResolutionTile(context, enabled),
-            _buildHardwareDecoderTile(context, enabled),
-            if (PlatformUtils.isAndroid) _buildRendererTile(context, enabled),
+            context.buildSwitchTile(
+              icon: Remix.settings_5_line,
+              title: i18n('custom_output'),
+              subtitle: i18n('custom_output_subtitle'),
+              value: settings.player.customPlayerOutput,
+            ),
+            if (PlatformUtils.isAndroid)
+              context.buildSwitchTile(
+                icon: Remix.shield_check_line,
+                title: i18n('compat_mode'),
+                subtitle: compatMode ? i18n('compat_mode_enabled_subtitle') : i18n('compat_mode_subtitle'),
+                value: settings.player.playerCompatMode,
+                enabled: customOutput,
+              ),
+            if (PlatformUtils.isWindows)
+              context.buildSwitchTile(
+                icon: Remix.sparkling_2_line,
+                title: i18n('enable_rtx_vsr'),
+                subtitle: i18n('enable_rtx_vsr_subtitle'),
+                value: settings.player.enableRtxVsr,
+                enabled: customOutput,
+              ),
           ]),
         ],
       );
     });
   }
 
-  Widget _buildSuperResolutionTile(BuildContext context, bool enabled) {
-    final value = SettingsService.to.player.defaultSuperResolutionMode.v;
+  Widget _buildVideoSection(BuildContext context) {
+    return Obx(() {
+      final customOutput = settings.player.customPlayerOutput.v;
 
-    final mode = SuperResolutionMode.fromStorageValue(value);
+      final compatMode = PlatformUtils.isAndroid && settings.player.playerCompatMode.v;
 
-    final isZh = Get.locale?.languageCode == 'zh';
+      final rtxVsr = PlatformUtils.isWindows && settings.player.enableRtxVsr.v;
 
-    final rtxVsr = PlatformUtils.isWindows && SettingsService.to.player.enableRtxVsr.v;
+      final videoSettingsEnabled = customOutput && !compatMode;
 
-    final itemEnabled = enabled && !rtxVsr;
+      final superResolutionEnabled = videoSettingsEnabled && !rtxVsr;
 
-    return context.buildTile(
-      icon: Remix.sparkling_2_line,
-      title: i18n('super_resolution'),
-      subtitle: isZh ? mode.nameZh : mode.nameEn,
-      trailing: const Icon(Icons.chevron_right_rounded),
-      enabled: itemEnabled,
-      onTap: itemEnabled ? () => Get.to(() => const SuperResolutionSettingsPage()) : null,
-    );
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSectionTitle(context, icon: Remix.movie_2_line, title: i18n('video_settings')),
+          context.buildModernCard([
+            _buildSuperResolutionTile(context, enabled: superResolutionEnabled, rtxVsr: rtxVsr),
+            _buildHardwareDecoderTile(context, enabled: videoSettingsEnabled),
+            if (PlatformUtils.isAndroid) _buildRendererTile(context, enabled: videoSettingsEnabled),
+          ]),
+        ],
+      );
+    });
   }
 
-  Widget _buildHardwareDecoderTile(BuildContext context, bool enabled) {
-    return context.buildTile(
-      icon: Remix.cpu_line,
-      title: i18n('hardware_decoder'),
-      subtitle: _getHardwareDecoderName(context),
-      trailing: const Icon(Icons.chevron_right_rounded),
-      enabled: enabled,
-      onTap: enabled ? () => Get.to(() => const DecoderSettingsPage()) : null,
-    );
+  Widget _buildSuperResolutionTile(BuildContext context, {required bool enabled, required bool rtxVsr}) {
+    return Obx(() {
+      final value = settings.player.defaultSuperResolutionMode.v;
+
+      final mode = SuperResolutionMode.fromStorageValue(value);
+
+      final isZh = Get.locale?.languageCode == 'zh';
+
+      return context.buildTile(
+        icon: Remix.sparkling_2_line,
+        title: i18n('super_resolution'),
+        subtitle: rtxVsr
+            ? i18n('disabled_by_rtx_vsr')
+            : isZh
+            ? mode.nameZh
+            : mode.nameEn,
+        trailing: const Icon(Remix.arrow_right_s_line),
+        enabled: enabled,
+        onTap: enabled ? () => Get.to(() => const SuperResolutionSettingsPage()) : null,
+      );
+    });
   }
 
-  Widget _buildRendererTile(BuildContext context, bool enabled) {
-    return context.buildTile(
-      icon: Icons.tv_rounded,
-      title: i18n('video_output_driver'),
-      subtitle: _getRendererName(context),
-      trailing: const Icon(Icons.chevron_right_rounded),
-      enabled: enabled,
-      onTap: enabled ? () => Get.to(() => const RendererSettingsPage()) : null,
-    );
+  Widget _buildHardwareDecoderTile(BuildContext context, {required bool enabled}) {
+    return Obx(() {
+      return context.buildTile(
+        icon: Remix.cpu_line,
+        title: i18n('hardware_decoder'),
+        subtitle: _getHardwareDecoderName(),
+        trailing: const Icon(Remix.arrow_right_s_line),
+        enabled: enabled,
+        onTap: enabled ? () => Get.to(() => const DecoderSettingsPage()) : null,
+      );
+    });
+  }
+
+  Widget _buildRendererTile(BuildContext context, {required bool enabled}) {
+    return Obx(() {
+      return context.buildTile(
+        icon: Remix.tv_line,
+        title: i18n('video_output_driver'),
+        subtitle: _getRendererName(),
+        trailing: const Icon(Remix.arrow_right_s_line),
+        enabled: enabled,
+        onTap: enabled ? () => Get.to(() => const RendererSettingsPage()) : null,
+      );
+    });
   }
 
   Widget _buildAudioSection(BuildContext context) {
     return Obx(() {
-      final customOutput = SettingsService.to.player.customPlayerOutput.v;
+      final customOutput = settings.player.customPlayerOutput.v;
 
-      final compat = PlatformUtils.isAndroid && SettingsService.to.player.playerCompatMode.v;
+      final compatMode = PlatformUtils.isAndroid && settings.player.playerCompatMode.v;
 
-      final enabled = customOutput && !compat;
+      final enabled = customOutput && !compatMode;
 
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -235,17 +257,17 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
           context.buildModernCard([
             if (PlatformUtils.isAndroid)
               context.buildSwitchTile(
+                icon: Remix.equalizer_2_line,
                 title: i18n('low_latency_audio'),
                 subtitle: i18n('low_latency_audio_subtitle'),
-                value: SettingsService.to.player.androidEnableOpenSLES,
-                icon: Remix.equalizer_2_line,
+                value: settings.player.androidEnableOpenSLES,
                 enabled: enabled,
               ),
             context.buildTile(
               icon: Remix.volume_up_line,
               title: i18n('audio_output_driver'),
-              subtitle: _getAudioOutputDriverName(context),
-              trailing: const Icon(Icons.chevron_right_rounded),
+              subtitle: _getAudioOutputDriverName(),
+              trailing: const Icon(Remix.arrow_right_s_line),
               enabled: enabled,
               onTap: enabled ? () => Get.to(() => const AudioOutputSettingsPage()) : null,
             ),
@@ -256,23 +278,25 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
   }
 
   Widget _buildPerformanceSection(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildSectionTitle(context, icon: Remix.speed_up_line, title: i18n('performance_settings')),
-        context.buildModernCard([
-          context.buildSwitchTile(
-            title: i18n('low_memory_mode'),
-            subtitle: MeteredNetworkService.to.isMetered
-                ? i18n('low_memory_mode_metered')
-                : i18n('low_memory_mode_subtitle'),
-            value: SettingsService.to.player.lowMemoryMode,
-            icon: Remix.database_2_line,
-            enabled: !MeteredNetworkService.to.isMetered,
-          ),
-        ]),
-      ],
-    );
+    return Obx(() {
+      final metered = MeteredNetworkService.to.isMetered;
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSectionTitle(context, icon: Remix.speed_up_line, title: i18n('performance_settings')),
+          context.buildModernCard([
+            context.buildSwitchTile(
+              icon: Remix.database_2_line,
+              title: i18n('low_memory_mode'),
+              subtitle: metered ? i18n('low_memory_mode_metered') : i18n('low_memory_mode_subtitle'),
+              value: settings.player.lowMemoryMode,
+              enabled: !metered,
+            ),
+          ]),
+        ],
+      );
+    });
   }
 
   Widget _buildAdvancedSection(BuildContext context) {
@@ -284,13 +308,13 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
         _buildSectionTitle(context, icon: Remix.equalizer_line, title: i18n('mpv_advanced_settings')),
         context.buildModernCard([
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+            padding: const EdgeInsets.fromLTRB(16, 8, 12, 12),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.only(top: 5.0),
+                    padding: const EdgeInsets.only(top: 5),
                     child: Wrap(
                       crossAxisAlignment: WrapCrossAlignment.center,
                       spacing: 4,
@@ -319,16 +343,16 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 8),
                 InkWell(
                   borderRadius: BorderRadius.circular(8),
-                  onTap: () => SettingsService.to.player.resetMpvPlayerSettings(),
+                  onTap: () => settings.player.resetMpvPlayerSettings(),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Remix.refresh_line, size: 14, color: Colors.red),
+                        const Icon(Remix.refresh_line, size: 15, color: Colors.red),
                         const SizedBox(width: 4),
                         Text(
                           i18n('reset'),
@@ -350,7 +374,7 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
     final theme = Theme.of(context);
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+      padding: const EdgeInsets.fromLTRB(12, 18, 12, 8),
       child: Row(
         children: [
           Icon(icon, size: 18, color: theme.colorScheme.primary),
@@ -361,8 +385,8 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
     );
   }
 
-  String _getAudioOutputDriverName(BuildContext context) {
-    final key = SettingsService.to.player.audioOutputDriver.v;
+  String _getAudioOutputDriverName() {
+    final key = settings.player.audioOutputDriver.v;
 
     final item = PlayerConsts.audioOutputDriversList.firstWhere(
       (item) => item['key'] == key,
@@ -374,8 +398,8 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
     return isZh ? item['nameZh']! : item['nameEn']!;
   }
 
-  String _getRendererName(BuildContext context) {
-    final key = SettingsService.to.player.videoOutputDriver.v;
+  String _getRendererName() {
+    final key = settings.player.videoOutputDriver.v;
 
     final item = PlayerConsts.androidVideoRenderersList.firstWhere(
       (item) => item['key'] == key,
@@ -387,8 +411,8 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
     return isZh ? item['nameZh']! : item['nameEn']!;
   }
 
-  String _getHardwareDecoderName(BuildContext context) {
-    final key = SettingsService.to.player.videoHardwareDecoder.v;
+  String _getHardwareDecoderName() {
+    final key = settings.player.videoHardwareDecoder.v;
 
     final item = PlayerConsts.hardwareDecodersList.firstWhere(
       (item) => item['key'] == key,
@@ -417,7 +441,7 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
           title: Text(i18n('change_player')),
           children: [
             Obx(() {
-              final activeKey = SettingsService.to.player.videoPlayerKey.v;
+              final activeKey = settings.player.videoPlayerKey.v;
 
               return RadioGroup<String>(
                 groupValue: activeKey,
@@ -461,7 +485,7 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
       return;
     }
 
-    SettingsService.to.player.videoPlayerKey.v = key;
+    settings.player.videoPlayerKey.v = key;
 
     GlobalPlayerService.instance.player.switchEngine(engine, isManual: true);
 
@@ -469,9 +493,9 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
   }
 
   void showProxySettingsDialog() {
-    final hostController = TextEditingController(text: SettingsService.to.proxy.proxyHost.v);
+    final hostController = TextEditingController(text: settings.proxy.proxyHost.v);
 
-    final portController = TextEditingController(text: SettingsService.to.proxy.proxyPort.v.toString());
+    final portController = TextEditingController(text: settings.proxy.proxyPort.v.toString());
 
     showDialog(
       context: Get.context!,
@@ -486,23 +510,23 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
                   context.buildSwitchTile(
                     icon: Remix.shield_keyhole_line,
                     title: i18n('enable_player_proxy'),
-                    value: SettingsService.to.proxy.enableProxy,
+                    value: settings.proxy.enableProxy,
                   ),
                   const SizedBox(height: 12),
                   TextField(
                     controller: hostController,
-                    enabled: SettingsService.to.proxy.enableProxy.v,
+                    enabled: settings.proxy.enableProxy.v,
                     decoration: InputDecoration(
                       labelText: i18n('proxy_host'),
                       prefixIcon: const Icon(Remix.global_line, size: 20),
                       border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
                     ),
-                    onChanged: (value) => SettingsService.to.proxy.proxyHost.v = value,
+                    onChanged: (value) => settings.proxy.proxyHost.v = value,
                   ),
                   const SizedBox(height: 16),
                   TextField(
                     controller: portController,
-                    enabled: SettingsService.to.proxy.enableProxy.v,
+                    enabled: settings.proxy.enableProxy.v,
                     keyboardType: TextInputType.number,
                     decoration: InputDecoration(
                       labelText: i18n('proxy_port'),
@@ -512,8 +536,8 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
                     onChanged: (value) {
                       final port = int.tryParse(value);
 
-                      if (port != null) {
-                        SettingsService.to.proxy.proxyPort.v = port;
+                      if (port != null && port >= 1 && port <= 65535) {
+                        settings.proxy.proxyPort.v = port;
                       }
                     },
                   ),

@@ -1527,5 +1527,10 @@
     "remote_sync_not_running": "同步服务未运行",
     "remote_sync_running": "同步服务运行中",
     "remote_sync_receive_confirm": "是否接收远程同步的配置？",
-    "remote_sync_select_action": "选择同步操作"
+    "remote_sync_select_action": "选择同步操作",
+    "output_settings": "输出设置",
+    "custom_output": "自定义输出",
+    "custom_output_subtitle": "自定义视频、音频输出与硬件解码方式",
+    "compat_mode_enabled_subtitle": "已启用 MediaCodec 兼容模式",
+    "disabled_by_rtx_vsr": "已被 NVIDIA RTX VSR 禁用"
 }

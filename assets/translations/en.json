@@ -1527,5 +1527,10 @@
     "remote_sync_not_running": "Sync service is not running",
     "remote_sync_running": "Sync service is running",
     "remote_sync_receive_confirm": "Do you want to receive the configuration from remote sync?",
-    "remote_sync_select_action": "Select Sync Action"
+    "remote_sync_select_action": "Select Sync Action",
+    "output_settings": "Output Settings",
+    "custom_output": "Custom Output",
+    "custom_output_subtitle": "Customize video, audio output and hardware decoding",
+    "compat_mode_enabled_subtitle": "MediaCodec compatibility mode is enabled",
+    "disabled_by_rtx_vsr": "Disabled by NVIDIA RTX VSR"
 }
