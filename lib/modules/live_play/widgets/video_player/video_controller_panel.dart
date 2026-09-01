@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math';
 import 'dart:async';
 
 import 'package:flutter_svg/svg.dart';
@@ -1262,137 +1263,165 @@ class FullscreenStreamSelectorButton extends StatelessWidget {
   final VideoController controller;
 
   Future<void> _showSelector(BuildContext context) async {
-    final layout = resolveContentFirstPanelLayout(MediaQuery.sizeOf(context), ContentFirstPanelKind.streamSelector);
+    final size = MediaQuery.sizeOf(context);
+    final isDesktop = Get.width > 680;
+
     controller.isMenuOpen.value = true;
     controller.stopHideController();
+
     try {
       await showDialog<void>(
         context: context,
-        builder: (dialogContext) => Obx(() {
-          final live = controller.livePlayController;
-          final state = live.state.value.player;
-          final switching = live.playerController.isStreamSwitching.value;
-          final panelLayout = resolveStreamSelectorPanelLayout(
-            maximumDialogSize: layout.size,
-            qualityCount: state.qualites.length,
-            lineCount: state.playUrls.length,
-            splitContent: layout.splitContent,
-          );
-          final qualityPane = _StreamChoicePane(
-            key: const ValueKey('stream-quality-pane'),
-            icon: Icons.high_quality_rounded,
-            title: i18n('select_quality'),
-            itemCount: state.qualites.length,
-            selectedIndex: state.currentQuality,
-            labelBuilder: (index) => state.qualites[index].quality,
-            onSelected: switching
-                ? null
-                : (index) async {
-                    await live.setResolution(ReloadDataType.changeQuality, index, state.currentLineIndex);
-                  },
-          );
-          final linePane = _StreamChoicePane(
-            key: const ValueKey('stream-line-pane'),
-            icon: Icons.alt_route_rounded,
-            title: i18n('select_line'),
-            itemCount: state.playUrls.length,
-            selectedIndex: state.currentLineIndex,
-            labelBuilder: (index) => i18n('toolbox_line', args: {'index': (index + 1).toString()}),
-            onSelected: switching
-                ? null
-                : (index) async {
-                    await live.setResolution(ReloadDataType.changeLine, state.currentQuality, index);
-                  },
-          );
+        barrierColor: Colors.black.withValues(alpha: 0.32),
+        builder: (dialogContext) {
+          return Obx(() {
+            final live = controller.livePlayController;
+            final state = live.state.value.player;
+            final switching = live.playerController.isStreamSwitching.value;
 
-          return Dialog(
-            key: const ValueKey('fullscreen-stream-selector-panel'),
-            alignment: Alignment.centerRight,
-            insetPadding: layout.insetPadding,
-            clipBehavior: Clip.antiAlias,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              curve: Curves.easeOutCubic,
-              width: layout.size.width,
-              height: panelLayout.dialogHeight,
-              child: Column(
-                children: [
-                  SizedBox(
-                    height: 35,
-                    child: Padding(
-                      padding: const EdgeInsets.only(left: 9, right: 1),
-                      child: Row(
-                        children: [
-                          Icon(Icons.tune_rounded, size: 17, color: Theme.of(dialogContext).colorScheme.primary),
-                          const SizedBox(width: 5),
-                          Expanded(
-                            child: Text(
-                              i18n('fullscreen_stream_settings'),
-                              style: Theme.of(dialogContext).textTheme.titleSmall,
+            final qualityCount = state.qualites.length;
+            final lineCount = state.playUrls.length;
+
+            final colorScheme = Theme.of(dialogContext).colorScheme;
+            final textTheme = Theme.of(dialogContext).textTheme;
+
+            final splitContent = isDesktop || size.width >= 560;
+
+            final double dialogWidth = isDesktop
+                ? min(560.0, max(440.0, size.width * 0.36))
+                : min(size.width - 32, 500.0);
+
+            final double dialogHeight = isDesktop
+                ? min(400.0, max(300.0, size.height * 0.55))
+                : min(520.0, size.height - 48);
+
+            final qualityPane = _StreamChoicePane(
+              key: const ValueKey('stream-quality-pane'),
+              icon: Icons.high_quality_rounded,
+              title: i18n('select_quality'),
+              itemCount: qualityCount,
+              selectedIndex: state.currentQuality,
+              labelBuilder: (index) {
+                return state.qualites[index].quality;
+              },
+              onSelected: switching
+                  ? null
+                  : (index) async {
+                      await live.setResolution(ReloadDataType.changeQuality, index, state.currentLineIndex);
+                    },
+            );
+
+            final linePane = _StreamChoicePane(
+              key: const ValueKey('stream-line-pane'),
+              icon: Icons.alt_route_rounded,
+              title: i18n('select_line'),
+              itemCount: lineCount,
+              selectedIndex: state.currentLineIndex,
+              labelBuilder: (index) {
+                return i18n('toolbox_line', args: {'index': (index + 1).toString()});
+              },
+              onSelected: switching
+                  ? null
+                  : (index) async {
+                      await live.setResolution(ReloadDataType.changeLine, state.currentQuality, index);
+                    },
+            );
+
+            return Dialog(
+              key: const ValueKey('fullscreen-stream-selector-panel'),
+              alignment: isDesktop ? Alignment.centerRight : Alignment.center,
+              insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+              backgroundColor: colorScheme.surface,
+              elevation: isDesktop ? 12 : 8,
+              clipBehavior: Clip.antiAlias,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(isDesktop ? 18 : 16)),
+              child: SizedBox(
+                width: dialogWidth,
+                height: dialogHeight,
+                child: Column(
+                  children: [
+                    SizedBox(
+                      height: 46,
+                      child: Padding(
+                        padding: const EdgeInsets.only(left: 14, right: 8),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 28,
+                              height: 28,
+                              decoration: BoxDecoration(
+                                color: colorScheme.primaryContainer,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Icon(Icons.tune_rounded, size: 16, color: colorScheme.onPrimaryContainer),
                             ),
-                          ),
-                          IconButton(
-                            tooltip: i18n('close'),
-                            visualDensity: VisualDensity.compact,
-                            constraints: const BoxConstraints.tightFor(width: 32, height: 32),
-                            padding: EdgeInsets.zero,
-                            onPressed: () => Navigator.pop(dialogContext),
-                            icon: const Icon(Icons.close_rounded, size: 19),
-                          ),
-                        ],
+                            const SizedBox(width: 9),
+                            Expanded(
+                              child: Text(
+                                i18n('fullscreen_stream_settings'),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                            IconButton(
+                              tooltip: i18n('close'),
+                              visualDensity: VisualDensity.compact,
+                              constraints: const BoxConstraints.tightFor(width: 32, height: 32),
+                              padding: EdgeInsets.zero,
+                              onPressed: () {
+                                Navigator.pop(dialogContext);
+                              },
+                              icon: Icon(Icons.close_rounded, size: 18, color: colorScheme.onSurfaceVariant),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                  const Divider(height: 1),
-                  Expanded(
-                    child: Stack(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.all(6),
-                          child: panelLayout.splitContent
-                              ? Row(
-                                  children: [
-                                    Expanded(
-                                      child: SizedBox(height: panelLayout.qualityHeight, child: qualityPane),
-                                    ),
-                                    SizedBox(width: panelLayout.gap),
-                                    Expanded(
-                                      child: SizedBox(height: panelLayout.lineHeight, child: linePane),
-                                    ),
-                                  ],
-                                )
-                              : Column(
-                                  children: [
-                                    SizedBox(
-                                      key: const ValueKey('stream-quality-content-sized-slot'),
-                                      height: panelLayout.qualityHeight,
-                                      child: qualityPane,
-                                    ),
-                                    SizedBox(height: panelLayout.gap),
-                                    SizedBox(height: panelLayout.lineHeight, child: linePane),
-                                  ],
-                                ),
-                        ),
-                        if (switching)
-                          const Positioned(
-                            top: 0,
-                            left: 0,
-                            right: 0,
-                            child: LinearProgressIndicator(
-                              key: ValueKey('fullscreen-stream-switch-progress'),
-                              minHeight: 3,
-                              backgroundColor: Colors.transparent,
-                            ),
-                          ),
-                      ],
+
+                    Divider(height: 1, thickness: 1, color: colorScheme.outlineVariant.withValues(alpha: 0.5)),
+
+                    Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.all(isDesktop ? 10 : 8),
+                        child: splitContent
+                            ? Row(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  Expanded(child: qualityPane),
+                                  const SizedBox(width: 8),
+                                  Expanded(child: linePane),
+                                ],
+                              )
+                            : Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  Expanded(child: qualityPane),
+                                  const SizedBox(height: 8),
+                                  Expanded(child: linePane),
+                                ],
+                              ),
+                      ),
                     ),
-                  ),
-                ],
+
+                    if (switching)
+                      Positioned(
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        child: LinearProgressIndicator(
+                          key: const ValueKey('fullscreen-stream-switch-progress'),
+                          minHeight: 2,
+                          backgroundColor: Colors.transparent,
+                          color: colorScheme.primary,
+                        ),
+                      ),
+                  ],
+                ),
               ),
-            ),
-          );
-        }),
+            );
+          });
+        },
       );
     } finally {
       if (controller.status != PlayerStatus.disposed) {
@@ -1474,7 +1503,9 @@ class _StreamChoicePane extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
     return DecoratedBox(
       decoration: BoxDecoration(
         color: colors.surfaceContainerLow,
@@ -1482,91 +1513,131 @@ class _StreamChoicePane extends StatelessWidget {
         border: Border.all(color: colors.outlineVariant.withValues(alpha: .55)),
       ),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(6, 4, 6, 6),
+        padding: const EdgeInsets.fromLTRB(7, 5, 7, 7),
         child: Column(
           children: [
             SizedBox(
-              height: 23,
+              height: 25,
               child: Row(
                 children: [
                   Icon(icon, size: 16, color: colors.primary),
-                  const SizedBox(width: 5),
+                  const SizedBox(width: 6),
                   Expanded(
                     child: Text(
                       title,
-                      style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
                     ),
                   ),
+                  if (itemCount > 0)
+                    Text(
+                      '$itemCount',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: colors.onSurfaceVariant,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                 ],
               ),
             ),
-            const Divider(height: 4),
+            Divider(height: 7, thickness: 1, color: colors.outlineVariant.withValues(alpha: .45)),
             Expanded(
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final columns = resolveStreamChoiceColumns(constraints.maxWidth, itemCount: itemCount);
-                  return GridView.builder(
-                    primary: false,
-                    padding: EdgeInsets.zero,
-                    physics: const PureLiveScrollPhysics(),
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: columns,
-                      mainAxisExtent: 42,
-                      mainAxisSpacing: 5,
-                      crossAxisSpacing: 5,
+              child: itemCount <= 0
+                  ? Center(
+                      child: Text('—', style: theme.textTheme.bodySmall?.copyWith(color: colors.onSurfaceVariant)),
+                    )
+                  : LayoutBuilder(
+                      builder: (context, constraints) {
+                        final columns = resolveStreamChoiceColumns(constraints.maxWidth, itemCount: itemCount);
+
+                        return GridView.builder(
+                          primary: false,
+                          padding: EdgeInsets.zero,
+                          physics: const PureLiveScrollPhysics(),
+                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: columns,
+                            mainAxisExtent: 38,
+                            mainAxisSpacing: 5,
+                            crossAxisSpacing: 5,
+                          ),
+                          itemCount: itemCount,
+                          itemBuilder: (context, index) {
+                            final selected = selectedIndex == index;
+
+                            return _StreamChoiceItem(
+                              label: labelBuilder(index),
+                              selected: selected,
+                              enabled: onSelected != null && !selected,
+                              onTap: onSelected == null || selected
+                                  ? null
+                                  : () {
+                                      unawaited(onSelected!(index));
+                                    },
+                            );
+                          },
+                        );
+                      },
                     ),
-                    itemCount: itemCount,
-                    itemBuilder: (context, index) {
-                      final selected = selectedIndex == index;
-                      return Material(
-                        color: selected
-                            ? colors.primaryContainer.withValues(alpha: .78)
-                            : colors.surfaceContainerHighest,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          side: BorderSide(
-                            color: selected
-                                ? colors.primary.withValues(alpha: .62)
-                                : colors.outlineVariant.withValues(alpha: .2),
-                            width: selected ? 1.2 : 1,
-                          ),
-                        ),
-                        clipBehavior: Clip.antiAlias,
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(8),
-                          onTap: onSelected == null || selected ? null : () => unawaited(onSelected!(index)),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 5),
-                            child: Stack(
-                              alignment: Alignment.center,
-                              children: [
-                                Padding(
-                                  padding: EdgeInsets.symmetric(horizontal: selected ? 18 : 2),
-                                  child: Text(
-                                    labelBuilder(index),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    textAlign: TextAlign.center,
-                                    style: Theme.of(context).textTheme.bodyMedium
-                                        ?.copyWith(fontWeight: selected ? FontWeight.w800 : FontWeight.w600),
-                                  ),
-                                ),
-                                if (selected)
-                                  Positioned(
-                                    right: 1,
-                                    child: Icon(Icons.check_circle_rounded, size: 16, color: colors.primary),
-                                  ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  );
-                },
-              ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _StreamChoiceItem extends StatelessWidget {
+  const _StreamChoiceItem({required this.label, required this.selected, required this.enabled, required this.onTap});
+
+  final String label;
+  final bool selected;
+  final bool enabled;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
+    return Material(
+      color: selected ? colors.primaryContainer.withValues(alpha: .82) : colors.surfaceContainerHighest,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: BorderSide(
+          color: selected ? colors.primary.withValues(alpha: .65) : colors.outlineVariant.withValues(alpha: .2),
+          width: selected ? 1.2 : 1,
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(8),
+        onTap: enabled ? onTap : null,
+        hoverColor: colors.primary.withValues(alpha: .08),
+        splashColor: colors.primary.withValues(alpha: .12),
+        highlightColor: colors.primary.withValues(alpha: .06),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 6),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Padding(
+                padding: EdgeInsets.only(left: selected ? 15 : 2, right: selected ? 18 : 2),
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                    color: selected ? colors.onPrimaryContainer : colors.onSurface,
+                  ),
+                ),
+              ),
+              if (selected)
+                Positioned(right: 0, child: Icon(Icons.check_circle_rounded, size: 15, color: colors.primary)),
+            ],
+          ),
         ),
       ),
     );
