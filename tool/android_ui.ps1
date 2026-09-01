@@ -401,9 +401,15 @@ function Test-Map {
     }
     foreach ($sequence in $SelectedProfile.Data.sequences.PSObject.Properties) {
         foreach ($step in $sequence.Value) {
-            $actions = @('tap', 'tapSemantic', 'swipe', 'wait') | Where-Object {
-                $step.PSObject.Properties[$_]
-            }
+            # PowerShell unwraps a one-item pipeline result into a scalar.
+            # StrictMode then rejects `$actions.Count`, even though every valid
+            # sequence step intentionally contains exactly one action. Keep the
+            # filtered result as an array on both Windows PowerShell and pwsh.
+            $actions = @(
+                @('tap', 'tapSemantic', 'swipe', 'wait') | Where-Object {
+                    $step.PSObject.Properties[$_]
+                }
+            )
             if ($actions.Count -ne 1) {
                 $errors.Add("Sequence '$($sequence.Name)' must declare exactly one action per step.")
             }
