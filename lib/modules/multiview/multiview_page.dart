@@ -13,6 +13,7 @@ import 'package:pure_live/modules/multiview/models/multiview_models.dart';
 import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 import 'package:pure_live/modules/live_play/pages/danmaku_settings_page.dart';
 import 'package:pure_live/modules/multiview/widgets/multiview_room_picker.dart';
+import 'package:pure_live/modules/live_play/widgets/layout/live_play_back_scope.dart';
 import 'package:pure_live/modules/multiview/widgets/multiview_room_search_panel.dart';
 import 'package:pure_live/modules/multiview/widgets/multiview_fullscreen_surface.dart';
 import 'package:pure_live/modules/multiview/danmaku/multiview_danmaku_settings_binding.dart';
@@ -106,8 +107,7 @@ class _MultiviewPageState extends State<MultiviewPage> {
   }
 
   /// 返回意图统一入口：非 normal 先回 normal，normal 走安全退出序列。
-  void _handleBackIntent({required bool didPop}) {
-    if (didPop) return;
+  void _handleBackIntent() {
     if (_displayMode != _DisplayMode.normal) {
       unawaited(_changeDisplayMode(_DisplayMode.normal));
       return;
@@ -134,7 +134,6 @@ class _MultiviewPageState extends State<MultiviewPage> {
     await WidgetsBinding.instance.endOfFrame;
     await WidgetsBinding.instance.endOfFrame;
     if (!mounted) return;
-    Navigator.of(context).pop();
   }
 
   bool _handleGlobalKeyEvent(KeyEvent event) {
@@ -367,9 +366,9 @@ class _MultiviewPageState extends State<MultiviewPage> {
 
   @override
   Widget build(BuildContext context) {
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, _) => _handleBackIntent(didPop: didPop),
+    return LivePlayBackScope(
+      presentationActive: _displayMode != _DisplayMode.normal,
+      onExitPresentation: () => _handleBackIntent(),
       child: switch (_displayMode) {
         _DisplayMode.normal => Scaffold(
           appBar: AppBar(

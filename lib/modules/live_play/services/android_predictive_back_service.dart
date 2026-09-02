@@ -8,7 +8,7 @@ class AndroidPredictiveBackService {
   AndroidPredictiveBackService._();
 
   static final AndroidPredictiveBackService instance = AndroidPredictiveBackService._();
-  static const MethodChannel _channel = MethodChannel('pure_live/predictive_back');
+  static const MethodChannel _channel = MethodChannel('pure_live/system_back');
 
   VoidCallback? onBackStarted;
   ValueChanged<double>? onBackProgress;
