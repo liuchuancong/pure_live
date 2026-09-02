@@ -74,9 +74,9 @@ class RecordingForegroundService : Service() {
             this,
             CHANNEL_ID,
         )
-            .setContentTitle("PureLive")
+            .setContentTitle("纯粹直播")
             .setContentText("正在录制直播")
-            .setSmallIcon(applicationInfo.icon)
+             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setOngoing(true)
             .setCategory(NotificationCompat.CATEGORY_SERVICE)
             .setPriority(NotificationCompat.PRIORITY_LOW)

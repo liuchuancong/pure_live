@@ -20,13 +20,6 @@ import 'package:pure_live/common/utils/latest_async_value_queue.dart';
 import 'package:pure_live/player/interface/unified_player_interface.dart';
 import 'package:pure_live/player/interface/media_kit_player_accessor.dart';
 
-@visibleForTesting
-({int width, int height})? resolveMediaKitDisplaySize(VideoParams params) {
-  final size = resolveVideoParamsDisplaySize(params);
-
-  return size == null ? null : (width: size.width, height: size.height);
-}
-
 class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
   MediaKitAdapter() {
     _audioModeTransitions = LatestAsyncValueQueue<bool>(_applyAudioOnly);
@@ -68,7 +61,6 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
 
   StreamSubscription? _playingSub;
   StreamSubscription? _bufferingSub;
-  StreamSubscription? _videoParamsSub;
   StreamSubscription? _completeSub;
   StreamSubscription? _errorSub;
 
@@ -390,8 +382,6 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
 
     try {
       _stateSubject.add(PlayerState.initializing);
-
-      MediaKit.ensureInitialized();
       _cachePolicy = PlaybackCachePolicy(isLocalPlayback: () => false, currentPlayer: () => _player);
       final settings = SettingsService.to.player;
 
@@ -580,25 +570,6 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
       },
     );
 
-    _videoParamsSub = _player.stream.videoParams.listen(
-      (params) {
-        if (_disposed) {
-          return;
-        }
-
-        final size = resolveMediaKitDisplaySize(params);
-
-        _widthSubject.add(size?.width);
-
-        _heightSubject.add(size?.height);
-      },
-      onError: (e, s) {
-        Log.e(e, s);
-
-        _emitError(e, s, PlayerErrorType.native);
-      },
-    );
-
     _completeSub = _player.stream.completed.listen(
       (completed) {
         if (_disposed || !completed) {
@@ -635,7 +606,7 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
       },
     );
 
-    _subscriptions.addAll([_playingSub!, _bufferingSub!, _videoParamsSub!, _completeSub!, _errorSub!]);
+    _subscriptions.addAll([_playingSub!, _bufferingSub!, _completeSub!, _errorSub!]);
   }
 
   Future<void> _cancelAllSubscriptions() async {
@@ -647,7 +618,6 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
 
     _playingSub = null;
     _bufferingSub = null;
-    _videoParamsSub = null;
     _completeSub = null;
     _errorSub = null;
   }
@@ -776,7 +746,7 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
     try {
       if (PlatformUtils.isAndroid) {
         if (audioOnly) {
-          await _controller.setVideoOutputEnabled(false);
+          await _player.setVideoTrack(VideoTrack.no());
         } else {
           await _restoreAndroidVideoOutput();
         }
@@ -813,7 +783,7 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
     try {
       armed = true;
 
-      await _controller.setVideoOutputEnabled(true);
+      await _player.setVideoTrack(VideoTrack.auto());
 
       var observedFreshFrame = true;
 

@@ -23,6 +23,7 @@ import 'package:pure_live/common/index.dart';
 import '../interface/unified_player_interface.dart';
 
 import 'package:pure_live/routes/app_navigation.dart';
+import 'package:media_kit/media_kit.dart' show MediaKit;
 import 'package:pure_live/model/live_play_quality.dart';
 import 'package:pure_live/player/utils/fullscreen.dart';
 import 'package:flutter_floating/flutter_floating.dart';
@@ -166,6 +167,9 @@ class PlayerManager {
   void configureDefaultEngine(PlayerEngine engine) {
     if (_disposed || _currentPlayer != null) return;
     _defaultEngine = engine;
+    if (engine == PlayerEngine.mediaKit) {
+      MediaKit.ensureInitialized();
+    }
   }
 
   /// Whether the room already owns a live native source that can accept an
@@ -380,7 +384,8 @@ class PlayerManager {
       _scheduleAudioServiceSync(player, audioOnly, sessionId: sessionId);
     } catch (e, s) {
       if (!_isSessionValid(sessionId)) return;
-      log(e.toString());
+      log('Initialize player failed: $e', name: 'PlayerManager', error: e, stackTrace: s);
+
       final exception = PlayerException(
         message: 'Initialize player failed',
         type: PlayerErrorType.initialization,

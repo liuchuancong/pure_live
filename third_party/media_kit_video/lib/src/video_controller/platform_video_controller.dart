@@ -1,15 +1,13 @@
+import 'dart:async';
+import 'package:flutter/widgets.dart';
+import 'package:media_kit/media_kit.dart';
+import 'package:media_kit_video/src/video_controller/video_controller.dart';
+
 /// This file is a part of media_kit (https://github.com/media-kit/media-kit).
 ///
 /// Copyright © 2021 & onwards, Hitesh Kumar Saini <saini123hitesh@gmail.com>.
 /// All rights reserved.
 /// Use of this source code is governed by MIT license that can be found in the LICENSE file.
-import 'dart:async';
-
-import 'package:flutter/widgets.dart';
-
-import 'package:media_kit/media_kit.dart';
-
-import 'package:media_kit_video/src/video_controller/video_controller.dart';
 
 /// {@template platform_video_controller}
 ///
@@ -35,16 +33,11 @@ abstract class PlatformVideoController {
   /// [Rect] of the video output, received from the native implementation.
   final ValueNotifier<Rect?> rect = ValueNotifier<Rect?>(null);
 
-  /// Monotonic native-render progress signal.
-  ///
-  /// Windows increments this at a throttled rate only after a GPU-completed
-  /// frame becomes available to Flutter. Other platforms may leave it at 0.
-  /// It deliberately carries no pixels and is cheap enough for playback
-  /// liveness supervision.
-  final ValueNotifier<int> frameRevision = ValueNotifier<int>(0);
-
   /// {@macro platform_video_controller}
-  PlatformVideoController(this.player, this.configuration);
+  PlatformVideoController(
+    this.player,
+    this.configuration,
+  );
 
   /// Sets the required size of the video output.
   /// This may yield substantial performance improvements if a small [width] & [height] is specified.
@@ -52,23 +45,13 @@ abstract class PlatformVideoController {
   /// Remember:
   /// * “Premature optimization is the root of all evil”
   /// * “With great power comes great responsibility”
-  /// [force] reasserts the native output size even when the Dart-side cache
-  /// already contains the same dimensions. This is required when a Flutter
-  /// [Texture] view is detached and later mounted again on Windows: presentation
-  /// ownership changed even though the requested viewport did not.
-  Future<void> setSize({int? width, int? height, bool force = false});
-
-  /// Enables or disables decoded video output without replacing the player.
-  ///
-  /// Platform implementations may override this when their rendering surface
-  /// also manages mpv's selected video track.
-  Future<void> setVideoOutputEnabled(bool enabled) {
-    return player.setVideoTrack(enabled ? VideoTrack.auto() : VideoTrack.no());
-  }
+  Future<void> setSize({
+    int? width,
+    int? height,
+  });
 
   /// A [Future] that completes when the first video frame has been rendered.
-  Future<void> get waitUntilFirstFrameRendered =>
-      waitUntilFirstFrameRenderedCompleter.future;
+  Future<void> get waitUntilFirstFrameRendered => waitUntilFirstFrameRenderedCompleter.future;
 
   /// [Completer] used to signal the decoding & rendering of the first video frame.
   /// Use [waitUntilFirstFrameRendered] to wait for the first frame to be rendered.
@@ -78,7 +61,6 @@ abstract class PlatformVideoController {
   void dispose() {
     id.dispose();
     rect.dispose();
-    frameRevision.dispose();
   }
 }
 
@@ -176,12 +158,9 @@ class VideoControllerConfiguration {
         scale: scale ?? this.scale,
         width: width ?? this.width,
         height: height ?? this.height,
-        enableHardwareAcceleration:
-            enableHardwareAcceleration ?? this.enableHardwareAcceleration,
-        enableAndroidSurfaceProducer:
-            enableAndroidSurfaceProducer ?? this.enableAndroidSurfaceProducer,
+        enableHardwareAcceleration: enableHardwareAcceleration ?? this.enableHardwareAcceleration,
+        enableAndroidSurfaceProducer: enableAndroidSurfaceProducer ?? this.enableAndroidSurfaceProducer,
         androidAttachSurfaceAfterVideoParameters:
-            androidAttachSurfaceAfterVideoParameters ??
-                this.androidAttachSurfaceAfterVideoParameters,
+            androidAttachSurfaceAfterVideoParameters ?? this.androidAttachSurfaceAfterVideoParameters,
       );
 }

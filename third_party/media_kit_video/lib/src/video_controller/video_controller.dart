@@ -1,19 +1,17 @@
+import 'dart:async';
+import 'package:flutter/widgets.dart';
+import 'package:media_kit/media_kit.dart';
+import 'package:media_kit_video/src/video_controller/platform_video_controller.dart';
+import 'package:media_kit_video/src/video_controller/web_video_controller/web_video_controller.dart';
+import 'package:media_kit_video/src/video_controller/ohos_video_controller/ohos_video_controller.dart';
+import 'package:media_kit_video/src/video_controller/native_video_controller/native_video_controller.dart';
+import 'package:media_kit_video/src/video_controller/android_video_controller/android_video_controller.dart';
+
 /// This file is a part of media_kit (https://github.com/media-kit/media-kit).
 ///
 /// Copyright © 2021 & onwards, Hitesh Kumar Saini <saini123hitesh@gmail.com>.
 /// All rights reserved.
 /// Use of this source code is governed by MIT license that can be found in the LICENSE file.
-import 'dart:async';
-
-import 'package:flutter/widgets.dart';
-import 'package:media_kit/media_kit.dart';
-
-import 'package:media_kit_video/src/video_controller/platform_video_controller.dart';
-
-import 'package:media_kit_video/src/video_controller/native_video_controller/native_video_controller.dart';
-import 'package:media_kit_video/src/video_controller/android_video_controller/android_video_controller.dart';
-import 'package:media_kit_video/src/video_controller/ohos_video_controller/ohos_video_controller.dart';
-import 'package:media_kit_video/src/video_controller/web_video_controller/web_video_controller.dart';
 
 /// {@template video_controller}
 ///
@@ -70,14 +68,10 @@ class VideoController {
   /// [Rect] of the video output, received from the native implementation.
   final ValueNotifier<Rect?> rect = ValueNotifier<Rect?>(null);
 
-  /// Throttled native-render progress revision when supported by the platform.
-  final ValueNotifier<int> frameRevision = ValueNotifier<int>(0);
-
   /// {@macro video_controller}
   VideoController(
     this.player, {
-    VideoControllerConfiguration configuration =
-        const VideoControllerConfiguration(),
+    VideoControllerConfiguration configuration = const VideoControllerConfiguration(),
   }) {
     player.platform?.isVideoControllerAttached = true;
 
@@ -109,7 +103,10 @@ class VideoController {
           platform.complete(result);
           notifier.value = result;
         } else if (WebVideoController.supported) {
-          final result = await WebVideoController.create(player, configuration);
+          final result = await WebVideoController.create(
+            player,
+            configuration,
+          );
           platform.complete(result);
           notifier.value = result;
         }
@@ -120,18 +117,14 @@ class VideoController {
           // Add listeners.
           void fn0() => id.value = controller.id.value;
           void fn1() => rect.value = controller.rect.value;
-          void fn2() => frameRevision.value = controller.frameRevision.value;
           fn0();
           fn1();
-          fn2();
           controller.id.addListener(fn0);
           controller.rect.addListener(fn1);
-          controller.frameRevision.addListener(fn2);
           // Remove listeners upon [Player.dispose].
           player.platform?.release.add(() async {
             controller.id.removeListener(fn0);
             controller.rect.removeListener(fn1);
-            controller.frameRevision.removeListener(fn2);
           });
         } else {
           platform.completeError(
@@ -158,15 +151,15 @@ class VideoController {
   /// Remember:
   /// * “Premature optimization is the root of all evil”
   /// * “With great power comes great responsibility”
-  Future<void> setSize({int? width, int? height, bool force = false}) async {
+  Future<void> setSize({
+    int? width,
+    int? height,
+  }) async {
     final instance = await platform.future;
-    return instance.setSize(width: width, height: height, force: force);
-  }
-
-  /// Enables or disables decoded video output on the existing controller.
-  Future<void> setVideoOutputEnabled(bool enabled) async {
-    final instance = await platform.future;
-    return instance.setVideoOutputEnabled(enabled);
+    return instance.setSize(
+      width: width,
+      height: height,
+    );
   }
 
   /// A [Future] that completes when the first video frame has been rendered.

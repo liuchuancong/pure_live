@@ -85,7 +85,7 @@ dependencies:
       url: https://github.com/Predidit/audio_service_win.git
       ref: 8ad650c6eb487208b9861d44755c8e58db061c88
   audio_session: ^0.2.3 # 音频会话管理
-  ffmpeg_kit_extended_flutter: ^0.6.0
+  ffmpeg_kit_extended_flutter: ^0.6.2
 
   flv_lzc:
     path: plugins/flv_lzc # Vendored from liuchuancong/flv_lzc@030d611
