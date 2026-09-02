@@ -696,6 +696,7 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
     required bool bypassFailureCooldown,
   }) async {
     final key = _roomKey(room);
+
     final failedAt = _refreshFailureCooldown[key];
     if (!bypassFailureCooldown && failedAt != null && DateTime.now().difference(failedAt) < _refreshFailureRetryAfter) {
       return null;
@@ -704,27 +705,28 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
     try {
       final platform = room.normalizedPlatformId;
       final roomId = room.normalizedRoomId;
+
       final liveSite = siteCache.putIfAbsent(platform, () => Sites.of(platform).liveSite);
+
       final operation = liveSite is LiveSiteRoomRefresher
           ? (liveSite as LiveSiteRoomRefresher).getRoomDetailForRefresh(roomId: roomId, platform: platform)
           : liveSite.getRoomDetail(roomId: roomId, platform: platform);
+
       final result = await operation.timeout(_roomRefreshTimeout);
+
       _refreshFailureCooldown.remove(key);
+
       return result;
-    } catch (error, stackTrace) {
-      final key = _roomKey(room);
+    } on TimeoutException {
       _refreshFailureCooldown[key] = DateTime.now();
 
-      if (error is FormatException && error.message == 'Huya room metadata is unavailable') {
-        developer.log('Favorite room unavailable: $key', name: 'FavoriteController');
-      } else {
-        developer.log(
-          'Favorite room refresh failed: $key',
-          name: 'FavoriteController',
-          error: error,
-          stackTrace: stackTrace,
-        );
-      }
+      developer.log('Favorite room refresh timeout: $key', name: 'FavoriteController');
+
+      return null;
+    } catch (error) {
+      _refreshFailureCooldown[key] = DateTime.now();
+
+      developer.log('Favorite room refresh failed: $key (${error.runtimeType})', name: 'FavoriteController');
 
       return null;
     }
