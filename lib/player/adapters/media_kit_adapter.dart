@@ -98,15 +98,9 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
     if (PlatformUtils.isAndroid && settings.playerCompatMode.v) {
       return;
     }
-
-    await native.setProperty(
-      'ao',
-      settings.androidEnableOpenSLES.v
-          ? 'opensles'
-          : settings.audioOutputDriver.v == 'auto'
-          ? 'audiotrack'
-          : settings.audioOutputDriver.v,
-    );
+    if (settings.audioOutputDriver.v != 'auto') {
+      await native.setProperty('ao', settings.androidEnableOpenSLES.v ? 'opensles' : settings.audioOutputDriver.v);
+    }
 
     await native.setProperty('volume-max', '100');
 
@@ -123,8 +117,9 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
     if (settings.enableRtxVsr.v) {
       await native.setProperty('vf', 'd3d11vpp=scale=2:scaling-mode=nvidia');
     }
-
-    await native.setProperty('ao', settings.audioOutputDriver.v);
+    if (settings.audioOutputDriver.v != 'auto') {
+      await native.setProperty('ao', settings.audioOutputDriver.v);
+    }
   }
 
   static Future<void> _configureMacOSCustomOutput(NativePlayer native) async {
@@ -133,7 +128,20 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
     if (!settings.customPlayerOutput.v) {
       return;
     }
-    await native.setProperty('ao', settings.audioOutputDriver.v);
+    if (settings.audioOutputDriver.v != 'auto') {
+      await native.setProperty('ao', settings.audioOutputDriver.v);
+    }
+  }
+
+  static Future<void> _configureIOSCustomOutput(NativePlayer native) async {
+    final settings = SettingsService.to.player;
+
+    if (!settings.customPlayerOutput.v) {
+      return;
+    }
+    if (settings.audioOutputDriver.v != 'auto') {
+      await native.setProperty('ao', settings.audioOutputDriver.v);
+    }
   }
 
   static Future<void> _configureLinuxCustomOutput(NativePlayer native) async {
@@ -143,7 +151,9 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
       return;
     }
 
-    await native.setProperty('ao', settings.audioOutputDriver.v);
+    if (settings.audioOutputDriver.v != 'auto') {
+      await native.setProperty('ao', settings.audioOutputDriver.v);
+    }
   }
 
   SuperResolutionMode _resolveInitialSuperResolutionMode() {
@@ -364,6 +374,7 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
     Log.i(
       'MediaKit VideoOutput: '
       'videoOutputDriver=${settings.videoOutputDriver.v}, '
+      'audioOutputDriver=${settings.audioOutputDriver.v}, '
       'vo=$vo, '
       'enableRtxVsr=${settings.enableRtxVsr.v}, '
       'videoHardwareDecoder=${settings.videoHardwareDecoder.v}',
@@ -406,6 +417,8 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
             await _configureWindowsCustomOutput(native);
           } else if (PlatformUtils.isMacOS) {
             await _configureMacOSCustomOutput(native);
+          } else if (PlatformUtils.isIOS) {
+            await _configureIOSCustomOutput(native);
           } else if (PlatformUtils.isLinux) {
             await _configureLinuxCustomOutput(native);
           }
