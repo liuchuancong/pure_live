@@ -132,7 +132,7 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
       return;
     }
 
-    await native.setProperty('hwdec', 'no');
+    await native.setProperty('hwdec', settings.videoHardwareDecoder.v);
   }
 
   static Future<void> _configureLinuxCustomOutput(NativePlayer native) async {

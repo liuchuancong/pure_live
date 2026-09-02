@@ -51,7 +51,7 @@ class GlobalPlayerService {
     // 2. Keep native decoders, network workers and textures cold until the
     // first room is opened. This avoids paying hundreds of MiB and background
     // CPU merely for browsing the home/settings UI.
-    await playerManager.initialize(engine: defaultEngine, audioOnly: false);
+    playerManager.configureDefaultEngine(defaultEngine);
     _initialized = true;
     log("GlobalPlayerService: Player initialized.", name: "GlobalPlayerService");
   }
