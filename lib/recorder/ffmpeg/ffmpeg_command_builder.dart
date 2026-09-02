@@ -15,8 +15,15 @@ class FFmpegCommandBuilder {
     required int port,
     int rwTimeout = 15,
     Map<String, String>? headers,
+    String? caFile,
   }) => formatArguments(
-    buildAudioStreamArguments(remoteStreamUrl: remoteStreamUrl, port: port, rwTimeout: rwTimeout, headers: headers),
+    buildAudioStreamArguments(
+      remoteStreamUrl: remoteStreamUrl,
+      port: port,
+      rwTimeout: rwTimeout,
+      headers: headers,
+      caFile: caFile,
+    ),
   );
 
   /// Returns native FFmpeg arguments without shell quoting.
@@ -41,7 +48,7 @@ class FFmpegCommandBuilder {
       'info',
       '-protocol_whitelist',
       _protocolWhitelist,
-      ..._inputProtocolOptions(remoteStreamUrl, rwTimeout: rwTimeout),
+      ..._inputProtocolOptions(remoteStreamUrl, rwTimeout: rwTimeout, caFile: caFile),
       if (userAgent != null && userAgent.isNotEmpty) ...['-user_agent', userAgent],
       if (headerString.isNotEmpty) ...['-headers', headerString],
       '-i',
@@ -73,6 +80,7 @@ class FFmpegCommandBuilder {
     required int threadQueueSize,
     String? filePrefix,
     Map<String, String>? headers,
+    String? caFile,
   }) => formatArguments(
     buildRecordArguments(
       url: url,
@@ -83,6 +91,7 @@ class FFmpegCommandBuilder {
       threadQueueSize: threadQueueSize,
       filePrefix: filePrefix,
       headers: headers,
+      caFile: caFile,
     ),
   );
 
@@ -120,7 +129,7 @@ class FFmpegCommandBuilder {
       '+genpts+discardcorrupt',
       '-protocol_whitelist',
       _protocolWhitelist,
-      ..._inputProtocolOptions(url, rwTimeout: rwTimeout),
+      ..._inputProtocolOptions(url, rwTimeout: rwTimeout, caFile: caFile),
       '-thread_queue_size',
       threadQueueSize.clamp(64, 65536).toString(),
       if (userAgent != null && userAgent.isNotEmpty) ...['-user_agent', userAgent],
@@ -170,7 +179,7 @@ class FFmpegCommandBuilder {
   /// Native execution always receives the original argument list.
   static String formatArguments(Iterable<String> arguments) => arguments.map(quoteArgument).join(' ');
 
-  static List<String> _inputProtocolOptions(String rawUrl, {required int rwTimeout}) {
+  static List<String> _inputProtocolOptions(String rawUrl, {required int rwTimeout, String? caFile}) {
     final scheme = Uri.tryParse(rawUrl.trim())?.scheme.toLowerCase() ?? '';
     final timeoutMicros = (rwTimeout.clamp(1, 3600) * 1000000).clamp(1, 2147483647).toString();
     final options = <String>[];
@@ -191,6 +200,7 @@ class FFmpegCommandBuilder {
         '5',
         '-rw_timeout',
         timeoutMicros,
+        if (Platform.isAndroid && scheme == 'https' && caFile != null && caFile.isNotEmpty) ...['-ca_file', caFile],
       ]);
     } else if (scheme == 'rtsp') {
       options.addAll(['-rtsp_transport', 'tcp', '-rw_timeout', timeoutMicros]);
