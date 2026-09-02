@@ -2,7 +2,7 @@
 
 ## 1. 基线与范围
 
-- 维护仓库：`wzgrx/pure_live`
+- 维护仓库：`liuchuancong/pure_live`
 - 测试起点提交：`1e609cb05714347e124b5d6806579ab426e29394`
 - Windows 发行版本：`3.0.18+4106`
 - 目标系统：当前 Win11 x64 实机

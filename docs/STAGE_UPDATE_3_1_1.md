@@ -1,7 +1,7 @@
 # Pure Live v3.1.1 Android / Windows 阶段更新
 
 版本：`3.1.1+4114`  
-维护仓库：`wzgrx/pure_live`  
+维护仓库：`liuchuancong/pure_live`  
 源码基线：`v3.1.0` 之后的维护分支；本轮没有合并新的上游提交。  
 交付平台：Android `arm64-v8a`、Windows x64 安装程序与便携 ZIP。
 

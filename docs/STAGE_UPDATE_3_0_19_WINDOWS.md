@@ -1,7 +1,7 @@
 # Pure Live v3.0.19 Windows x64 稳定版
 
 - 版本：`3.0.19+4107`
-- 维护分支：`wzgrx/pure_live` `master`
+- 维护分支：`liuchuancong/pure_live` `master`
 - 目标：Windows 10/11 x64 EXE 安装包与便携 ZIP
 - 同版本 Android：`arm64-v8a` Release APK 已先行发布
 

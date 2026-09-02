@@ -1487,7 +1487,7 @@
         "avatar": "https://avatars.githubusercontent.com/in/15368?v=4",
         "profile": "https://github.com/apps/github-actions"
       },
-      "changelog": "# 纯粹直播 v2.1.1\n|版本|下载地址|\n|---|---|\n|TV版|[pure_live_TV](https://github.com/liuchuancong/pure_live_TV/releases/latest)|\n|Windows/macOS/Android版|[pure_live](https://github.com/liuchuancong/pure_live/releases/latest)|\n### 🖥️ Windows 版\n- **EXE 安装包**：适合所有用户\n- **MSIX 包**：现代应用格式，支持干净卸载\n- 适配：Windows 10/11 x64\n### 🍎 macOS 版\n- macOS 桌面版\n### 📱 Android 版\n- Android 6.0+\n- ARM64-v8a\n- armeabi-v7a\n- x86_64\n### 🐧 Linux 版\n- Linux x64\n### 🍎 iOS 版\n- unsigned iOS device application\n### 📝 本次更新\n合并来自于 @wzgrx 的更改，包含以及不限于\n- 修复真实在线平台设置卡片空白，明确展示各平台数据来源与支持状态。\n- 优化首页平台横滑，页面停稳后再加载目标平台并保留已构建网格。\n- 搜索增加平台覆盖说明、直播与未开播筛选、四种排序及逐平台分页终止。\n- 优化部分UI",
+      "changelog": "# 纯粹直播 v2.1.1\n|版本|下载地址|\n|---|---|\n|TV版|[pure_live_TV](https://github.com/liuchuancong/pure_live_TV/releases/latest)|\n|Windows/macOS/Android版|[pure_live](https://github.com/liuchuancong/pure_live/releases/latest)|\n### 🖥️ Windows 版\n- **EXE 安装包**：适合所有用户\n- **MSIX 包**：现代应用格式，支持干净卸载\n- 适配：Windows 10/11 x64\n### 🍎 macOS 版\n- macOS 桌面版\n### 📱 Android 版\n- Android 6.0+\n- ARM64-v8a\n- armeabi-v7a\n- x86_64\n### 🐧 Linux 版\n- Linux x64\n### 🍎 iOS 版\n- unsigned iOS device application\n### 📝 本次更新\n合并来自于 @liuchuancong 的更改，包含以及不限于\n- 修复真实在线平台设置卡片空白，明确展示各平台数据来源与支持状态。\n- 优化首页平台横滑，页面停稳后再加载目标平台并保留已构建网格。\n- 搜索增加平台覆盖说明、直播与未开播筛选、四种排序及逐平台分页终止。\n- 优化部分UI",
       "files": [
         {
           "name": "PureLive-2.1.1-android-arm64",

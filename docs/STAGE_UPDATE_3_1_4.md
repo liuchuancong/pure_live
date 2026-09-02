@@ -4,7 +4,7 @@
 
 - 版本：`3.1.4+4117`
 - 目标平台：Android `arm64-v8a`；Windows 继续使用 v3.1.3。
-- 维护基线：当前 `wzgrx/pure_live`；本轮只读取近期上游 Issue，不同步上游提交。
+- 维护基线：当前 `liuchuancong/pure_live`；本轮只读取近期上游 Issue，不同步上游提交。
 - 对应问题：[#826 平板横屏状态下不能下拉刷新](https://github.com/liuchuancong/pure_live/issues/826)。
 - 归因：`shared-current-bug`。Issue 报告版本为上游 v3.0.9，维护分支的关注网格仍保留相同宽度分支，因此当前代码可确定复现，不需要把问题归因于网络接口、刷新任务或设备厂商手势。
 

@@ -180,6 +180,6 @@ python .\tool\update_releases.py
 3. 按本轮发布范围串行运行 `tool/build_local_release.ps1 -Target <目标> -Configuration Release -SkipQuality`，逐个平台核对产物、构建记录和 SHA-256。
 4. 当前任务明确安排设备验收时，再运行 `tool/install_android_local.ps1` 覆盖安装并启动；正式 Release 使用仓库持久签名验证升级链。
 5. 提交并推送 `master`，创建与该提交一致的 tag 和草稿 Release；Android 本地暂存包通过 `sign-staged-android` 正式签名后再公开发布。
-6. 在 [维护分支 Releases](https://github.com/wzgrx/pure_live/releases) 核对附件、固定证书指纹、校验文件和源码提交，随后刷新 `assets/releases.json` 并推送 `[skip ci]` 索引提交。
+6. 在 [维护分支 Releases](https://github.com/liuchuancong/pure_live/releases) 核对附件、固定证书指纹、校验文件和源码提交，随后刷新 `assets/releases.json` 并推送 `[skip ci]` 索引提交。
 
 返回 [文档索引](README.md)。

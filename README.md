@@ -12,17 +12,17 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/wzgrx/pure_live/releases/latest">
-    <img alt="Latest Release" src="https://img.shields.io/github/v/release/wzgrx/pure_live">
+  <a href="https://github.com/liuchuancong/pure_live/releases/latest">
+    <img alt="Latest Release" src="https://img.shields.io/github/v/release/liuchuancong/pure_live">
   </a>
-  <a href="https://github.com/wzgrx/pure_live/actions/workflows/feature-build.yml">
-    <img alt="Manual Build" src="https://github.com/wzgrx/pure_live/actions/workflows/feature-build.yml/badge.svg">
+  <a href="https://github.com/liuchuancong/pure_live/actions/workflows/feature-build.yml">
+    <img alt="Manual Build" src="https://github.com/liuchuancong/pure_live/actions/workflows/feature-build.yml/badge.svg">
   </a>
   <a href="https://github.com/liuchuancong/pure_live">
     <img alt="Stars" src="https://img.shields.io/github/stars/liuchuancong/pure_live?color=yellow">
   </a>
-  <a href="https://github.com/wzgrx/pure_live/releases">
-    <img alt="Downloads" src="https://img.shields.io/github/downloads/wzgrx/pure_live/total?style=flat-square">
+  <a href="https://github.com/liuchuancong/pure_live/releases">
+    <img alt="Downloads" src="https://img.shields.io/github/downloads/liuchuancong/pure_live/total?style=flat-square">
   </a>
   <a href="LICENSE">
     <img alt="License" src="https://img.shields.io/github/license/liuchuancong/pure_live?color=blue">
@@ -44,17 +44,7 @@
 - 每个完成的 Bug 修复批次默认递增版本，优先构建 Android `arm64-v8a` 正式更新包，并同步源码、版本标签、安装包与校验文件到本仓库 GitHub Release；其他平台仍按本轮明确范围串行构建。
 - 每次同步上游、分析 Bug 和审查原项目 Issue 的来源判定、根因、兼容、验证与回滚流程见[维护范围与问题处置策略](MAINTENANCE_POLICY.md)及[上游同步审查策略](UPSTREAM_REVIEW_POLICY.md)。
 
-- **最新稳定版**：[v3.1.8](https://github.com/wzgrx/pure_live/releases/tag/v3.1.8)
-- **当前构建版本**：Android / Windows `3.1.8+4121`（同一冻结源码、分平台串行构建）
-- **Android 系统要求**：Android 8.0 / API 26 及以上（与当前 FFmpegKit 原生录制依赖一致）
-- **v3.0.0 上游源码基线**：`liuchuancong/pure_live@e808dcae`；完整记录见 `docs/STAGE_UPDATE_3_0_0.md`
-- **本轮构建平台**：Android arm64-v8a、Windows x64 安装程序与便携 ZIP；其他平台继续使用 v3.0.0 安装包
-- **质量门禁**：播放器来源/Surface/几何回归见 `docs/PLAYER_RECOVERY_AUDIT_3_0_15.md`，十个平台录制链路见 `docs/RECORDER_REPAIR_AUDIT_2026-08-27.md`
-
-本版本还会在启动、备份恢复和手动清理时剔除空平台、空房间号、`0/null/undefined/nan/none` 等无效关注记录，并按“平台 + 房间号”去重，避免损坏的历史收藏继续参与首页刷新。
-
-录制页的自动重连、轮询、缓存限制、最高画质和目录命名等开关现在直接绑定持久化配置；缓存限制改为实时读取，重新进入页面或升级后保持用户选择。
-Android 录制在创建任务和申请存储权限前检查目录：应用私有目录会提示选择可导出的目录且不会留下“未启动”幽灵任务；工作资料等任意数字用户空间均能正确识别，外部同名文件夹不会误判。
+- **最新稳定版**：[v3.1.0](https://github.com/liuchuancong/pure_live/releases/tag/v3.1.0)
 
 ![Pure Live 界面预览](assets/images/banner.png)
 
@@ -104,49 +94,6 @@ Pure Live 聚合多个第三方直播平台，并支持自定义直播源：
 | [依赖与接口审计](docs/DEPENDENCY_AUDIT.md) | 固定工具链、升级约束和接口探测范围 |
 | [平台接口与兼容性](docs/PLATFORM_COMPATIBILITY.md) | 分区、搜索、弹幕和人数指标的当前能力 |
 | [高刷新率与性能验证](docs/PERFORMANCE.md) | Android 120 Hz 适配、渲染优化和真机帧统计 |
-| [v3.1.1 Android / Windows 阶段更新](docs/STAGE_UPDATE_3_1_1.md) | 多画面声音、音量、弹幕目标、持久化、根因与发布证据 |
-| [v3.1.0 Android / Windows 验收矩阵](docs/ACCEPTANCE_MATRIX_3_1_0.md) | 快速回归顺序、全功能实机账本、平台/录制/性能矩阵与发布门禁 |
-| [2026-08-31 近期 Issue 审计](docs/ISSUE_AUDIT_2026_08_31.md) | #818 后台播放实机根因、最新 Issue 归因与 v3.1.0 处理范围 |
-| [v3.1.0 直播录制参考项目审计](docs/RECORDER_REFERENCE_AUDIT_3_1_0.md) | biliup / bililive-go 固定基线、协议韧性、录制状态机和平台引入门槛 |
-| [WebDAV 配置](docs/WEBDAV.md) | 通用配置字段、坚果云示例和故障排查 |
-| [v3.0.0 全平台稳定版](docs/STAGE_UPDATE_3_0_0.md) | 最新上游状态绑定、Android 录制恢复、依赖锁与全平台发布门禁 |
-| [v3.0.1 Android 竖屏直播适配](docs/STAGE_UPDATE_3_0_1.md) | 稳定源方向识别、普通页自适应、全屏策略、画中画比例和房间覆盖 |
-| [v3.0.2 Android 播放比例修复](docs/STAGE_UPDATE_3_0_2.md) | 普通横屏 16:9 边界、竖屏适配隔离、原生单层缩放与弹幕主题布局 |
-| [v3.0.3 Android 竖屏 Surface 修复](docs/STAGE_UPDATE_3_0_3.md) | 原生/应用层几何统一、切换时序和横屏直播记录自适应双列 |
-| [v3.0.4 Android 可信画面比例修复](docs/STAGE_UPDATE_3_0_4.md) | 移动端单一比例控制、异常元数据回退与历史记录数量/日期增强 |
-| [v3.0.5 Android 有效画面识别](docs/STAGE_UPDATE_3_0_5.md) | 黑边内嵌竖屏识别、三档互动面板、横屏沉浸背景与动态 PiP |
-| [v3.0.6 Android 竖屏几何仲裁修复](docs/STAGE_UPDATE_3_0_6.md) | 抖音流元数据识别、裁边代际隔离、延迟有效采样与渲染一致性门禁 |
-| [v3.0.7 Android 竖屏真实画布修复](docs/STAGE_UPDATE_3_0_7.md) | 截图/解码坐标隔离、原生纹理防拉伸与显式横屏全屏入口 |
-| [v3.0.8 Android 竖屏与小窗比例修复](docs/STAGE_UPDATE_3_0_8.md) | 抖音选中流几何、可逆居中裁边、动态应用小窗与 PiP 可视区域 |
-| [v3.0.11 Android 跨模式比例隔离修复](docs/STAGE_UPDATE_3_0_11.md) | 清理 3.0.10 错误草稿、共享 fit 状态隔离与全屏局部竖屏视口 |
-| [v3.0.12 录制与全平台画质审计](docs/RECORDING_AND_QUALITY_AUDIT_3_0_12.md) | 十个平台画质名称/排序/真实请求、录制重连、分片隔离、原子合并与资源边界 |
-| [v3.0.13 十个平台录制修复](docs/RECORDING_AUDIT_3_0_13.md) | 严格房间状态、播放完整元数据、Android 首次初始化、原始 FFmpeg 参数向量与可见失败诊断 |
-| [v3.0.13 Android 阶段更新](docs/STAGE_UPDATE_3_0_13.md) | 版本范围、关键修复、质量门禁与正式交付要求 |
-| [v3.0.15 播放器回归修复审计](docs/PLAYER_RECOVERY_AUDIT_3_0_15.md) | 3.0.14 回归来源、路径/首帧门控撤除、竖屏几何恢复、推测式超时下线与回滚策略 |
-| [v3.0.18 Android 真机播放与录制加固](docs/STAGE_UPDATE_3_0_18.md) | Android 硬解截图探测隔离、虎牙单连接签名刷新、跨重试录制统计与录制中心真机边界验证 |
-| [v3.0.19 Windows x64 稳定版](docs/STAGE_UPDATE_3_0_19_WINDOWS.md) | Windows 启动按需初始化、播放器资源释放、录制统计、Escape、弹幕交互与正式安装/便携包验证 |
-| [v3.0.17 播放与录制连续性更新](docs/STAGE_UPDATE_3_0_17.md) | 用户播放意图/音频焦点统一、直播暂停/EOF 恢复、分片真实大小与录制中心有界滚动 |
-| [v3.0.16 播放器与录制阶段更新](docs/STAGE_UPDATE_3_0_16.md) | 生命周期单一所有权、Android Surface/几何、录制按需清晰度/线路、斗鱼输入与录制中心稳定性 |
-| [2026-08-27 录制链路审计](docs/RECORDER_REPAIR_AUDIT_2026-08-27.md) | 十个平台录制契约、斗鱼/虎牙线路游标、FFmpeg 错误分类、持久化和回滚 |
-| [v3.0.14 播放器与录制恢复审计](docs/PLAYER_RECOVERY_AUDIT_3_0_14.md) | 已由 v3.0.15 纠正的恢复设计及 FFmpeg 故障分层历史记录 |
-| [v3.0.14 Android 阶段更新](docs/STAGE_UPDATE_3_0_14.md) | 播放器稳定性修复、目标产物与正式交付门禁 |
-| [v3.0.9 Android 竖屏原生缩放修复](docs/STAGE_UPDATE_3_0_9.md) | 抖音官方几何模型、移动端单层缩放、实测裁边与四种呈现统一 |
-| [2026-08-25 上游 Issue 审计](docs/ISSUE_AUDIT_2026_08_25.md) | #793～#798、#791 录制根因及既有问题处理状态 |
-| [v2.9.7 Android update](docs/STAGE_UPDATE_2_9_7.md) | 全平台观看指标语义、热门排行、SOOP PC/移动端总在线与 40 项接口门禁 |
-| [v2.9.6 Android update](docs/STAGE_UPDATE_2_9_6.md) | 上游同步、抖音 Feed、Bilibili 热度排行与 40 项接口门禁 |
-| [v2.9.5 Android update](docs/STAGE_UPDATE_2_9_5.md) | 全平台画质切换契约、横屏自适应面板、观看指标与接口回归 |
-| [v2.9.4 全平台稳定版](docs/STAGE_UPDATE_2_9_4.md) | 上游多画面、录制目录保护、平台签名/快手兼容与全平台交付 |
-| [v2.9.5 上游 Issue 审计](docs/ISSUE_AUDIT_2026_08_24.md) | #778、#779、#780、#782、#783、#784, #785 的复现、根因与处理结果 |
-| [v2.9.3 Android 专项更新](docs/STAGE_UPDATE_2_9_3.md) | 横屏画质/线路内容驱动布局与小视口边界保护 |
-| [v2.9.2 Android 专项更新](docs/STAGE_UPDATE_2_9_2.md) | 横屏画质/线路、四宫格直播记录与左右分栏实时弹幕预览 |
-| [v2.9.1 Android 专项更新](docs/STAGE_UPDATE_2_9_1.md) | 横屏半屏内容面板、本地弹幕个性化与渲染缓存 |
-| [v2.1.5 阶段更新](docs/STAGE_UPDATE_2_1_5.md) | 本地弹幕同步、列表阅读、模板状态和 Windows 平滑滚动 |
-| [v2.1.6 Android 播放修复](docs/STAGE_UPDATE_2_1_6.md) | 音频/视频切换灰白画面与后台音频生命周期 |
-| [v2.2.0 阶段更新](docs/STAGE_UPDATE_2_2_0.md) | 播放恢复、音频模式、弹幕设置、Windows 多开与最终验证 |
-| [v2.3.0 稳定性更新](docs/STAGE_UPDATE_2_3_0.md) | PiP 返回弹幕恢复、启动刷新、横屏输入、长时间资源边界与验收状态 |
-| [v2.7.0 阶段稳定版](docs/STAGE_UPDATE_2_7_0.md) | 最新上游整合、热门页生命周期与全平台阶段发布 |
-| [v2.6.0 阶段稳定版](docs/STAGE_UPDATE_2_6_0.md) | 上游同步、近期 Issue、字体/SC/播放器与全平台阶段发布 |
-| [v2.5.0 阶段稳定版](docs/STAGE_UPDATE_2_5_0.md) | 首页有界并发、三档刷新率、Windows 视频纹理与依赖/上游审计 |
 | [近期 Issue 审计](docs/ISSUE_AUDIT_2026_08_23.md) | #769、#770、#771、#773 与 Windows 高 DPI 问题映射 |
 | [参与贡献](CONTRIBUTING.md) | 分支、提交、测试和 Pull Request 要求 |
 | [安全策略](SECURITY.md) | 私密漏洞报告和签名材料管理 |
@@ -419,7 +366,7 @@ Firebase 不是 Pure Live 使用的必要条件。
 
 ## 📥 下载
 
-前往 [维护分支 GitHub Releases](https://github.com/wzgrx/pure_live/releases/latest) 获取最新安装包，并使用同一 Release 的 `SHA256SUMS.txt` 校验完整性。
+前往 [维护分支 GitHub Releases](https://github.com/liuchuancong/pure_live/releases/latest) 获取最新安装包，并使用同一 Release 的 `SHA256SUMS.txt` 校验完整性。
 
 ### Android
 

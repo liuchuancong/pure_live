@@ -2,7 +2,7 @@
 
 审计日期：2026-08-27
 
-基线：`wzgrx/pure_live@fd763c750fa55917e00c7f5b350df00a3bb5f805`
+基线：`liuchuancong/pure_live@fd763c750fa55917e00c7f5b350df00a3bb5f805`
 
 问题来源：`upstream-existing` 与 `fork-regression` 的组合。旧录制模块把平台画质显示名、请求 ID、URL 列表和 FFmpeg 生命周期混在一起；部分维护分支修复只覆盖播放器，没有同步录制器。
 

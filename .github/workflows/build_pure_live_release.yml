@@ -871,7 +871,7 @@ jobs:
           |版本|下载地址|
           |---|---|
           |TV版|[pure_live_TV](https://github.com/liuchuancong/pure_live_TV/releases/latest)|
-          |Windows/macOS/Android/iOS版|[pure_live](https://github.com/wzgrx/pure_live/releases/latest)|
+          |Windows/macOS/Android/iOS版|[pure_live](https://github.com/liuchuancong/pure_live/releases/latest)|
           ### 🖥️ Windows 版
           - **Portable ZIP**：解压即用，无需安装
           - **EXE 安装包**：适合所有用户
@@ -886,7 +886,7 @@ jobs:
           - ARM64-v8a
           - ARMv7
           - x86_64
-          - 统一 SHA256 校验文件：[**ANDROID_SHA256SUM.txt**](https://github.com/wzgrx/pure_live/releases/download/${{ inputs.release_tag }}/ANDROID_SHA256SUM.txt)
+          - 统一 SHA256 校验文件：[**ANDROID_SHA256SUM.txt**](https://github.com/liuchuancong/pure_live/releases/download/${{ inputs.release_tag }}/ANDROID_SHA256SUM.txt)
           ### 🐧 Linux 版
           - Linux x64
           - Portable tar.gz
@@ -895,7 +895,7 @@ jobs:
           - TrollStore / ad-hoc IPA
           - ARM64
           ### 🔧 Build Metadata
-          [**BUILD_METADATA.json**](https://github.com/wzgrx/pure_live/releases/download/${{ inputs.release_tag }}/BUILD_METADATA.json)
+          [**BUILD_METADATA.json**](https://github.com/liuchuancong/pure_live/releases/download/${{ inputs.release_tag }}/BUILD_METADATA.json)
           ### 📝 本次更新
           ${{ fromJson(steps.version.outputs.content).version_desc }}
           EOF

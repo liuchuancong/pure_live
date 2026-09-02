@@ -76,7 +76,7 @@ v3.1.7 Windows 虎牙实播前置证据：
 | Android arm64-v8a | `build_local_release.ps1 -Target AndroidArm64 -Configuration Release -SkipQuality -DedicatedBuild` | 1499.656 s | 66.18% | 15,051,489,280 bytes | APK 内容、版本、ABI、资源和原生库门禁通过 |
 | Windows x64 | `build_local_release.ps1 -Target WindowsX64 -Configuration Release -SkipQuality -DedicatedBuild` | 409.978 s | 19.16% | 16,807,096,320 bytes | 安装程序与便携包按安装清单打包成功 |
 
-GitHub Release：[v3.1.8](https://github.com/wzgrx/pure_live/releases/tag/v3.1.8)。Release 为非草稿、非预发布，共 7 个资产；GitHub 服务端摘要与本地清单一致。
+GitHub Release：[v3.1.8](https://github.com/liuchuancong/pure_live/releases/tag/v3.1.8)。Release 为非草稿、非预发布，共 7 个资产；GitHub 服务端摘要与本地清单一致。
 
 | 资产 | 大小 | SHA-256 | 签名/用途 |
 | --- | ---: | --- | --- |

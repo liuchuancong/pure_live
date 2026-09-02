@@ -35,13 +35,13 @@
 | `fdd472ef44f505b0f0eafade98caee457367b6be` | fix(fijk_helper): disable audio focus request in FijkPlayer options | rewrite | 并入播放器会话、Surface 和呈现事务，不直接复用补丁式实现。 |
 | `5c6cd453c83dd45a141abc6e6c4f092ca3bc5164` | refactor(live_audio_handler): reorganize imports and improve code readability | accept | 低耦合变更，合并后由对应定向测试验证。 |
 | `83bb72b97b9b9acb86003e926df9938c9a95abd4` | refactor(yy_site): streamline getLiveStreamObj by consolidating request parameters | accept | 低耦合变更，合并后由对应定向测试验证。 |
-| `844420ba1406728102da0f89561121c26fd53d8b` | Merge remote-tracking branch 'wzgrx/master' | accept | 仅接受祖先关系；冲突以逐文件台账处置。 |
+| `844420ba1406728102da0f89561121c26fd53d8b` | Merge remote-tracking branch 'liuchuancong/master' | accept | 仅接受祖先关系；冲突以逐文件台账处置。 |
 | `a41898c1785d6ca4307327250d3fac6e2070ede7` | 修复全屏返回 | rewrite | 并入播放器会话、Surface 和呈现事务，不直接复用补丁式实现。 |
-| `8f5312935f9733c596fe1000fd6433a33cc46fd0` | Merge remote-tracking branch 'wzgrx/master' | accept | 仅接受祖先关系；冲突以逐文件台账处置。 |
+| `8f5312935f9733c596fe1000fd6433a33cc46fd0` | Merge remote-tracking branch 'liuchuancong/master' | accept | 仅接受祖先关系；冲突以逐文件台账处置。 |
 | `59643f4c0b693debb9670a087fe4457ee955ef63` | 优化房间切换界面布局，调整组件间距和尺寸，增强用户体验 | adapt | 保留意图，按维护分支状态合同与回归门禁适配。 |
 | `48f907ab819038dee28e1f9078a504f01adfa330` | 优化房间切换功能，重构历史观看时间格式化逻辑，新增兼容性布局选项 | adapt | 保留意图，按维护分支状态合同与回归门禁适配。 |
 | `f5dd66b0f7ca6fc767cf93c5f65783f52191d38d` | fix(视频播放比例) | adapt | 保留意图，按维护分支状态合同与回归门禁适配。 |
-| `9dbeef7266bef106b9895671482b376538b4e9fe` | Update repository references from wzgrx to liuchuancong across documentation and codebase | drop | 保留维护分支版本、更新源、签名和按需串行构建策略。 |
+| `9dbeef7266bef106b9895671482b376538b4e9fe` | Update repository references from liuchuancong to liuchuancong across documentation and codebase | drop | 保留维护分支版本、更新源、签名和按需串行构建策略。 |
 | `4fcc53f5d2b962f5f41d172dfeb21675b3b4c9d3` | 优化构建配置，默认启用所有平台构建选项，简化包管理命令 | drop | 保留维护分支版本、更新源、签名和按需串行构建策略。 |
 | `5d57cb0ccfd79fe1df95822c21c85c453696c1ae` | chore: update releases.json for v3.0.4 [skip ci] | drop | 保留维护分支版本、更新源、签名和按需串行构建策略。 |
 | `b14f289ddd579067277cf2bc37e9317db31d6502` | Update version from 3.0.4 to 2.9.8 | drop | 保留维护分支版本、更新源、签名和按需串行构建策略。 |
@@ -92,9 +92,9 @@
 | file | category | disposition | 处置理由/验证 |
 |---|---|---|---|
 | `.github/workflows/sign-staged-android.yml` | workflows_and_release | accept | 审查净化提交带入维护分支正式签名工作流；保留固定引用、Secrets 短时签名和目标产物校验。 |
-| `.env` | repository_metadata | drop | 保留 wzgrx 更新源和维护分支环境元数据。 |
-| `.env.dev` | repository_metadata | drop | 保留 wzgrx 更新源和维护分支环境元数据。 |
-| `.env.prod` | repository_metadata | drop | 保留 wzgrx 更新源和维护分支环境元数据。 |
+| `.env` | repository_metadata | drop | 保留 liuchuancong 更新源和维护分支环境元数据。 |
+| `.env.dev` | repository_metadata | drop | 保留 liuchuancong 更新源和维护分支环境元数据。 |
+| `.env.prod` | repository_metadata | drop | 保留 liuchuancong 更新源和维护分支环境元数据。 |
 | `.github/ISSUE_TEMPLATE/config.yml` | repository_governance | adapt | 保留维护范围说明和本仓库 Issue/链接。 |
 | `.github/workflows/build_pure_live_release.yml` | workflows_and_release | drop | 保留维护分支版本、Release 索引、签名与按需串行工作流。 |
 | `.github/workflows/feature-build.yml` | workflows_and_release | drop | 保留维护分支版本、Release 索引、签名与按需串行工作流。 |
