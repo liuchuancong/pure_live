@@ -24,6 +24,7 @@ import 'package:pure_live/modules/live_play/widgets/video_player/volume_control.
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/danmaku/danmaku_settings_binding.dart';
 import 'package:pure_live/modules/live_play/widgets/local_interaction/local_danmaku_style_editor.dart';
+import 'package:pure_live/modules/live_play/widgets/local_interaction/local_interaction_controller.dart';
 
 @visibleForTesting
 enum TopActionLeadingSlot { back, datetime, battery }
@@ -1675,12 +1676,13 @@ class BottomActionBar extends StatelessWidget {
           ),
           child: LayoutBuilder(
             builder: (context, constraints) {
+              final localInteraction = controller.livePlayController.localInteractionController;
               final fullscreen = GlobalPlayerState.to.fullscreenUI;
               final compact = constraints.maxWidth < 760;
-              final left = _buildLeftActions(compact: fullscreen && compact);
+              final left = _buildLeftActions(compact: fullscreen && compact && localInteraction.enabled.value);
               final right = _buildRightActions(compact: fullscreen && compact);
 
-              if (fullscreen) {
+              if (fullscreen && localInteraction.enabled.value) {
                 return Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 8),
                   child: Row(
@@ -1741,10 +1743,11 @@ class BottomActionBar extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (GlobalPlayerState.to.isWindowFullscreen.value || GlobalPlayerState.to.isFullscreen.value) ...[
+        if (GlobalPlayerState.to.isWindowFullscreen.value && !compact ||
+            GlobalPlayerState.to.isFullscreen.value && !compact) ...[
           FullscreenStreamSelectorButton(controller: controller),
         ],
-        if (!compact) VideoFitSetting(controller: controller),
+        VideoFitSetting(controller: controller),
         if (Platform.isWindows) OverlayVolumeControl(controller: controller),
         if (Platform.isWindows && controller.supportWindowFull && !GlobalPlayerState.to.isFullscreen.value)
           ExpandWindowButton(controller: controller),

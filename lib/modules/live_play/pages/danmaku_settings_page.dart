@@ -7,6 +7,7 @@ import 'package:pure_live/common/widgets/count_button.dart';
 import 'package:pure_live/modules/settings/pages/pip_danmaku_settings_page.dart';
 import 'package:pure_live/modules/live_play/widgets/danmaku/danmaku_viewing_preset.dart';
 import 'package:pure_live/modules/live_play/widgets/danmaku/danmaku_settings_binding.dart';
+import 'package:pure_live/modules/live_play/widgets/local_interaction/local_interaction_controller.dart';
 
 class DanmakuSettingsPage extends StatelessWidget {
   const DanmakuSettingsPage({super.key, required this.controller});
@@ -199,6 +200,17 @@ class _DanmakuSettingsContentState extends State<DanmakuSettingsContent> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          context.buildGroupTitle(i18n('local_interaction_settings')),
+          context.buildModernCard([
+            context.buildSwitchTile(
+              title: i18n('local_interaction_enable'),
+              subtitle: i18n('local_interaction_enable_desc'),
+              value: Get.find<LocalInteractionController>().enabled,
+              icon: Icons.auto_awesome_rounded,
+              isLong: true,
+            ),
+          ]),
+          const SizedBox(height: 8),
           context.buildGroupTitle(i18n('danmaku_templates')),
           const SizedBox(height: 8),
           _buildTemplateSection(theme),
