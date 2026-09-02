@@ -10,6 +10,7 @@ import 'package:pure_live/plugins/file_utils.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:pure_live/core/interface/live_site.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
+import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/recorder/ffmpeg/ffmpeg_event.dart';
 import 'package:pure_live/recorder/ffmpeg/ffmpeg_types.dart';
 import 'package:pure_live/recorder/consts/recorder_keys.dart';
@@ -574,8 +575,31 @@ class RecorderController extends GetxService {
     }
   }
 
+  Future<bool> _hasUsableRecordPath() async {
+    if (!PlatformUtils.isAndroid) {
+      return true;
+    }
+
+    final recordPath = await CacheService.to.getDisplayPath();
+    if (!CacheService.isAndroidPrivatePath(recordPath)) {
+      return true;
+    }
+
+    Get.snackbar(
+      i18n('record_private_path_title'),
+      i18n('record_private_path_message'),
+      backgroundColor: Colors.orange.shade700,
+      colorText: Colors.white,
+      icon: const Icon(Icons.warning_amber_rounded, color: Colors.white),
+    );
+    return false;
+  }
+
   Future<LiveRecordTask?> addTask({required LiveRoom room, bool startImmediately = true}) async {
     if (!await requestStoragePermission()) return null;
+    if (!await _hasUsableRecordPath()) {
+      return null;
+    }
     final existing = tasks.firstWhereOrNull((task) => task.roomId == room.roomId && task.platform == room.platform);
     if (existing != null) return existing;
 
@@ -598,6 +622,9 @@ class RecorderController extends GetxService {
 
   Future<bool> startTask(LiveRecordTask task) async {
     if (!await requestStoragePermission()) return false;
+    if (!await _hasUsableRecordPath()) {
+      return false;
+    }
     if (_startingTasks.contains(task.taskId) || scheduler.isRunning(task.taskId) || scheduler.isQueued(task.taskId)) {
       return true;
     }
@@ -1056,7 +1083,11 @@ class RecorderController extends GetxService {
     )) {
       await _recoverInterruptedRecording(task);
     }
-    if (!settings.autoStartOnBoot.value || restored.isEmpty || !await requestStoragePermission()) return;
+    if (!settings.autoStartOnBoot.value ||
+        restored.isEmpty ||
+        !await requestStoragePermission() ||
+        !await _hasUsableRecordPath())
+      return;
 
     for (final task in restored) {
       await refreshTaskStatus(task);
