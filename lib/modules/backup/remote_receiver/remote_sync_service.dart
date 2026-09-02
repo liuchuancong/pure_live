@@ -35,7 +35,7 @@ class RemoteSyncService extends GetxService {
 
   final String _deviceId = '${Platform.operatingSystem}-${DateTime.now().microsecondsSinceEpoch}';
 
-  static const String _mdnsServiceType = '_purelive._tcp';
+  static const String _mdnsServiceType = '_my-service._tcp';
 
   String get deviceName {
     switch (Platform.operatingSystem) {
@@ -557,12 +557,14 @@ class RemoteSyncService extends GetxService {
 
   void _removeDevice(BonsoirService service) {
     final id = service.attributes['id'];
+    if (id == null || id.isEmpty) return;
 
-    if (id == null || id.isEmpty) {
-      return;
+    final index = devices.indexWhere((device) => device.id == id);
+    if (index >= 0) {
+      Future.delayed(const Duration(seconds: 30), () {
+        devices.removeWhere((device) => device.id == id);
+      });
     }
-
-    devices.removeWhere((device) => device.id == id);
   }
 
   String? _resolveServiceIp(BonsoirService service) {
@@ -654,11 +656,11 @@ class RemoteSyncService extends GetxService {
   void _startCleanupTimer() {
     _cleanupTimer?.cancel();
 
-    _cleanupTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+    _cleanupTimer = Timer.periodic(const Duration(seconds: 15), (_) {
       final now = DateTime.now();
 
       devices.removeWhere((device) {
-        return now.difference(device.lastSeen).inSeconds > 8;
+        return now.difference(device.lastSeen).inSeconds > 120;
       });
     });
   }

@@ -92,7 +92,7 @@ BEGIN
             VALUE "CompanyName", "com.mystyle" "\0"
             VALUE "FileDescription", "纯粹直播" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "pure_live" "\0"
+            VALUE "InternalName", "纯粹直播" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2025 com.mystyle. All rights reserved." "\0"
             VALUE "OriginalFilename", "pure_live.exe" "\0"
             VALUE "ProductName", "纯粹直播" "\0"

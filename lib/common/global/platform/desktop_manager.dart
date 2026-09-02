@@ -10,13 +10,13 @@ import 'package:tray_manager/tray_manager.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:pure_live/routes/app_navigation.dart';
 import 'package:flutter_acrylic/flutter_acrylic.dart';
+import 'package:pure_live/player/utils/window_helper.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/plugins/share_command_handler.dart';
 import 'package:pure_live/routes/route_observer_controller.dart';
 import 'package:pure_live/common/utils/share_command_handler.dart';
 import 'package:pure_live/modules/live_play/controllers/player_state.dart';
-import 'package:pure_live/player/utils/window_helper.dart';
 
 class DesktopManager {
   static State? _currentState;
@@ -31,6 +31,7 @@ class DesktopManager {
       final double height = SettingsService.to.window.storedHeight.v;
 
       final WindowOptions windowOptions = WindowOptions(
+        title: i18nOr('app_name', '纯粹直播'),
         size: Size(width, height),
         minimumSize: const Size(400, 300),
         center: true,
