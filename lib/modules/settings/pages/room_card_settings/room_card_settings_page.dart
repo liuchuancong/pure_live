@@ -1,11 +1,25 @@
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/modules/settings/pages/room_card_settings/room_card_model.dart';
 import 'package:pure_live/modules/settings/pages/room_card_settings/mobile_settings_page.dart';
 import 'package:pure_live/modules/settings/pages/room_card_settings/desktop_settings_page.dart';
 import 'package:pure_live/modules/settings/pages/room_card_settings/room_card_config_controller.dart';
 
 class RoomCardSettingsPage extends GetView<RoomCardConfigController> {
   const RoomCardSettingsPage({super.key});
+
+  String _getPresetLabel(String presetKey) {
+    switch (presetKey) {
+      case 'compact':
+        return i18n('preset_compact');
+      case 'normal':
+        return i18n('preset_normal');
+      case 'rich':
+        return i18n('preset_rich');
+      case 'custom':
+        return i18n('preset_custom');
+      default:
+        return i18n('preset_normal');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -20,13 +34,13 @@ class RoomCardSettingsPage extends GetView<RoomCardConfigController> {
             context.buildTile(
               icon: Icons.phone_android_rounded,
               title: i18n('mobile'),
-              subtitle: '${i18n('mobile_layout')} • ${RoomCardPreset.fromKey(controller.mobilePreset.value).label}',
+              subtitle: '${i18n('mobile_layout')} • ${_getPresetLabel(controller.mobilePreset.value)}',
               onTap: () => Get.to(() => const MobileSettingsPage()),
             ),
             context.buildTile(
               icon: Icons.computer_rounded,
               title: i18n('desktop'),
-              subtitle: '${i18n('desktop_layout')} • ${RoomCardPreset.fromKey(controller.desktopPreset.value).label}',
+              subtitle: '${i18n('desktop_layout')} • ${_getPresetLabel(controller.desktopPreset.value)}',
               onTap: () => Get.to(() => const DesktopSettingsPage()),
             ),
           ]),

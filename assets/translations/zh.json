@@ -1666,5 +1666,10 @@
     "desktop_layout": "电脑/大屏布局",
     "mobile_card_settings": "📱 移动端卡片设置",
     "desktop_card_settings": "🖥️ 桌面端卡片设置",
-    "room_card_height_threshold": "卡片高度调整"
+    "room_card_height_threshold": "卡片高度调整",
+    "preset_compact": "简洁",
+    "preset_normal": "正常",
+    "preset_rich": "丰富",
+    "preset_custom": "自定义",
+    "preset_custom_description": "自定义布局，自由调整所有参数"
 }

@@ -1,9 +1,9 @@
 import 'dart:math';
+
 import 'package:pure_live/common/index.dart';
 import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/modules/settings/pages/room_card_settings/room_card_config_controller.dart';
-
 
 enum RoomCardViewportPreset {
   mobile('mobile', '移动端'),
@@ -257,8 +257,10 @@ class RoomCardModel {
     final textHeight = titleHeight + subtitleGap + subtitleHeight;
 
     final rowHeight = showAvatar ? max(avatar, textHeight) : textHeight;
-
-    return coverHeight + vp * 2 + rowHeight + RoomCardConfigController.to.cardHeightThreshold.value;
+    if (preset == RoomCardPreset.custom) {
+      return coverHeight + vp * 2 + rowHeight + RoomCardConfigController.to.cardHeightThreshold.value;
+    }
+    return coverHeight + vp * 2 + rowHeight;
   }
 
   static RoomCardModel compact() {
@@ -277,8 +279,8 @@ class RoomCardModel {
       coverCacheMaxWidth: 640,
       cacheCover: false,
       coverPositionPadding: 6,
-      avatarSize: 56,
-      denseAvatarSize: 50,
+      avatarSize: 48,
+      denseAvatarSize: 40,
       showAvatar: true,
       contentHorizontalPadding: 8,
       denseContentHorizontalPadding: 6,
@@ -364,10 +366,10 @@ class RoomCardModel {
       avatarSize: 40,
       denseAvatarSize: 36,
       showAvatar: true,
-      contentHorizontalPadding: 12,
-      denseContentHorizontalPadding: 10,
-      contentVerticalPadding: 7,
-      denseContentVerticalPadding: 5,
+      contentHorizontalPadding: 16,
+      denseContentHorizontalPadding: 14,
+      contentVerticalPadding: 10,
+      denseContentVerticalPadding: 8,
       horizontalTitleGap: 10,
       denseHorizontalTitleGap: 8,
       titleFontSize: 15,

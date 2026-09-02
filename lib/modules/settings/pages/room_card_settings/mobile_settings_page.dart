@@ -147,15 +147,31 @@ class MobileSettingsPage extends GetView<RoomCardConfigController> {
   }
 
   // ========== Preset Section ==========
+  String _getPresetLabel(String presetKey) {
+    switch (presetKey) {
+      case 'compact':
+        return i18n('preset_compact');
+      case 'normal':
+        return i18n('preset_normal');
+      case 'rich':
+        return i18n('preset_rich');
+      case 'custom':
+        return i18n('preset_custom');
+      default:
+        return i18n('preset_normal');
+    }
+  }
+
+  // ========== Preset Section ==========
   Widget _buildPresetSection(BuildContext context) {
     return _section(context, i18n('preset_style'), [
       _tile(
         context,
         icon: Remix.layout_masonry_line,
         title: i18n('preset_style'),
-        subtitle: controller.mobilePresetLabel,
-        trailing: _arrowValue(context, controller.mobilePresetLabel),
-        onTap: () => _showPresetDialog(context),
+        subtitle: _getPresetLabel(controller.desktopPreset.value),
+        trailing: _arrowValue(context, _getPresetLabel(controller.desktopPreset.value)),
+        onTap: () => _showPresetDialog(context, isMobile: true),
       ),
     ]);
   }
@@ -1157,23 +1173,31 @@ class MobileSettingsPage extends GetView<RoomCardConfigController> {
   }
 
   // ========== Dialog Helpers ==========
-  void _showPresetDialog(BuildContext context) {
+  void _showPresetDialog(BuildContext context, {required bool isMobile}) {
     final theme = Theme.of(context);
+    final deviceType = isMobile ? i18n('mobile') : i18n('desktop');
 
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Text('${i18n('preset_style')} - 📱 移动端'),
+          title: Text('${i18n('preset_style')} - $deviceType'),
           content: GetBuilder<RoomCardConfigController>(
             builder: (_) {
-              final currentPreset = controller.getMobileConfig().preset;
+              final currentPreset = isMobile
+                  ? controller.getMobileConfig().preset
+                  : controller.getDesktopConfig().preset;
+
               return RadioGroup<RoomCardPreset>(
                 groupValue: currentPreset,
                 onChanged: (value) {
                   if (value != null) {
-                    controller.applyMobilePreset(value);
+                    if (isMobile) {
+                      controller.applyMobilePreset(value);
+                    } else {
+                      controller.applyDesktopPreset(value);
+                    }
                     Navigator.pop(context);
                   }
                 },
@@ -1181,13 +1205,16 @@ class MobileSettingsPage extends GetView<RoomCardConfigController> {
                   mainAxisSize: MainAxisSize.min,
                   children: RoomCardPreset.values.map((preset) {
                     return RadioListTile<RoomCardPreset>(
-                      title: Text(preset.label),
+                      title: Text(_getPresetLabel(preset.key)),
                       subtitle: preset != RoomCardPreset.custom
                           ? Text(
                               _getPresetDescription(preset),
                               style: AppTextStyles.t12.copyWith(color: theme.colorScheme.onSurfaceVariant),
                             )
-                          : null,
+                          : Text(
+                              i18n('preset_custom_description'),
+                              style: AppTextStyles.t12.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                            ),
                       value: preset,
                       selected: currentPreset == preset,
                     );

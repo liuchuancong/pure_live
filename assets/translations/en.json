@@ -1666,5 +1666,10 @@
     "desktop_layout": "Computer/Large screen layout",
     "mobile_card_settings": "📱 Mobile Card Settings",
     "desktop_card_settings": "🖥️ Desktop Card Settings",
-    "room_card_height_threshold": "Card Height Adjustment"
+    "room_card_height_threshold": "Card Height Adjustment",
+    "preset_compact": "Compact",
+    "preset_normal": "Normal",
+    "preset_rich": "Rich",
+    "preset_custom": "Custom",
+    "preset_custom_description": "Custom layout, freely adjust all parameters"
 }
