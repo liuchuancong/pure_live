@@ -74,7 +74,7 @@ class RoomGridView extends GetView<FavoriteController> {
                 crossAxisCount: crossAxisCount,
                 crossAxisSpacing: spacing,
                 mainAxisSpacing: mainAxisSpacing,
-                mainAxisExtent: itemWidth * 9 / 16 + (dense ? 72 : 84),
+                mainAxisExtent: itemWidth,
               ),
               itemCount: displayList.length,
               itemBuilder: (context, index) {

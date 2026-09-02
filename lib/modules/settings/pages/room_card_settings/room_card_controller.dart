@@ -5,11 +5,12 @@ import 'package:pure_live/common/utils/share_command_handler.dart';
 import 'package:pure_live/modules/tags/tag_management_controller.dart';
 
 class RoomCardController {
-  RoomCardController({required this.room});
+  RoomCardController({required this.room, this.debug = false});
 
   final LiveRoom room;
-
+  final bool debug;
   void onTap(BuildContext context) {
+    if (debug) return;
     AppNavigator.toLiveRoomDetail(liveRoom: room);
   }
 

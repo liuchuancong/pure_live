@@ -18,10 +18,7 @@ class CommonAvatar extends StatelessWidget {
   }
 
   bool _isAsset(String value) {
-    return RegExp(
-      r'^(?:assets?/|.*\.(?:png|jpe?g|webp|gif|bmp|avif)(?:[?#].*)?)$',
-      caseSensitive: false,
-    ).hasMatch(value.trim());
+    return value.trim().toLowerCase().startsWith('assets/');
   }
 
   @override

@@ -43,13 +43,13 @@ class RoomCardRenderer {
 
   bool get debugShowSubtitle => debug || config.showSubtitle;
 
-  bool get debugShowPlatform => debug || config.showPlatform;
+  bool get debugShowPlatform => config.showPlatform;
 
-  bool get debugShowAudience => debug || config.showAudience;
+  bool get debugShowAudience => config.showAudience;
 
-  bool get debugShowLiveBadge => debug || config.showLiveBadge;
+  bool get debugShowLiveBadge => config.showLiveBadge;
 
-  bool get debugShowRecordBadge => debug || config.showRecordBadge;
+  bool get debugShowRecordBadge => config.showRecordBadge;
 
   bool get debugShowDelete => debug || (showDelete && config.showDelete);
 
@@ -154,8 +154,6 @@ class RoomCardRenderer {
 
     final Widget trailing = _buildListTileTrailing(context, isDark, effectiveDense);
 
-    final bool hasTrailing = trailing is! SizedBox || (trailing.width ?? 0) > 0;
-
     final content = Padding(
       padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: verticalPadding),
       child: Row(
@@ -174,10 +172,10 @@ class RoomCardRenderer {
             ),
           ),
 
-          if (hasTrailing) ...[
+          if (trailing is! SizedBox) ...[
             SizedBox(width: effectiveDense ? 8 : 12),
             ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: effectiveDense ? 110 : 150),
+              constraints: BoxConstraints(maxWidth: effectiveDense ? 150 : 180),
               child: trailing,
             ),
           ],
@@ -200,74 +198,89 @@ class RoomCardRenderer {
   }
 
   Widget _buildListTileTrailing(BuildContext context, bool isDark, bool effectiveDense) {
-    if (debugShowDelete) {
-      return GestureDetector(
-        onTap: onDelete,
-        behavior: HitTestBehavior.opaque,
-        child: Container(
-          padding: EdgeInsets.all(config.deleteButtonPadding),
-          decoration: BoxDecoration(
-            color: config.deleteButtonBackgroundColor ?? Colors.black.withValues(alpha: 0.1),
-            shape: BoxShape.circle,
-          ),
-          child: Icon(
-            RemixIcons.delete_bin_line,
-            color: config.deleteButtonIconColor,
-            size: effectiveDense ? config.denseDeleteButtonSize : config.deleteButtonSize,
-          ),
-        ),
-      );
-    }
+    final children = <Widget>[];
 
     if (statusPending && !debug) {
-      return Container(
-        padding: EdgeInsets.symmetric(horizontal: effectiveDense ? 8 : 10, vertical: effectiveDense ? 4 : 6),
-        decoration: BoxDecoration(color: Colors.orange.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(8)),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(
-              width: 12,
-              height: 12,
-              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.orange),
-            ),
-            const SizedBox(width: 6),
-            Text(
-              statusPendingLabel ?? i18n('favorite_status_verifying'),
-              style: TextStyle(fontSize: effectiveDense ? 10 : 12, color: Colors.orange, fontWeight: FontWeight.w500),
-            ),
-          ],
+      children.add(
+        Container(
+          padding: EdgeInsets.symmetric(horizontal: effectiveDense ? 8 : 10, vertical: effectiveDense ? 4 : 6),
+          decoration: BoxDecoration(
+            color: Colors.orange.withValues(alpha: 0.2),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(
+                width: 12,
+                height: 12,
+                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.orange),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                statusPendingLabel ?? i18n('favorite_status_verifying'),
+                style: TextStyle(fontSize: effectiveDense ? 10 : 12, color: Colors.orange, fontWeight: FontWeight.w500),
+              ),
+            ],
+          ),
+        ),
+      );
+    } else if (debugShowAudience) {
+      children.add(_buildAudienceBadge(context, effectiveDense));
+    } else if (debugShowLiveBadge) {
+      children.add(
+        Container(
+          padding: EdgeInsets.symmetric(horizontal: effectiveDense ? 8 : 10, vertical: effectiveDense ? 4 : 6),
+          decoration: BoxDecoration(color: Colors.green.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(8)),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 8,
+                height: 8,
+                decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                i18n('live'),
+                style: TextStyle(fontSize: effectiveDense ? 10 : 12, color: Colors.green, fontWeight: FontWeight.w500),
+              ),
+            ],
+          ),
         ),
       );
     }
 
-    if (debugShowAudience) {
-      return _buildAudienceBadge(context, effectiveDense);
-    }
+    if (debugShowDelete) {
+      if (children.isNotEmpty) {
+        children.add(SizedBox(width: effectiveDense ? 6 : 8));
+      }
 
-    if (debugShowLiveBadge) {
-      return Container(
-        padding: EdgeInsets.symmetric(horizontal: effectiveDense ? 8 : 10, vertical: effectiveDense ? 4 : 6),
-        decoration: BoxDecoration(color: Colors.green.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(8)),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 8,
-              height: 8,
-              decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle),
+      children.add(
+        GestureDetector(
+          onTap: onDelete,
+          behavior: HitTestBehavior.opaque,
+          child: Container(
+            padding: EdgeInsets.all(config.deleteButtonPadding),
+            decoration: BoxDecoration(
+              color: config.deleteButtonBackgroundColor ?? Colors.black.withValues(alpha: isDark ? 0.24 : 0.10),
+              shape: BoxShape.circle,
             ),
-            const SizedBox(width: 6),
-            Text(
-              i18n('live'),
-              style: TextStyle(fontSize: effectiveDense ? 10 : 12, color: Colors.green, fontWeight: FontWeight.w500),
+            child: Icon(
+              RemixIcons.delete_bin_line,
+              color: config.deleteButtonIconColor,
+              size: effectiveDense ? config.denseDeleteButtonSize : config.deleteButtonSize,
             ),
-          ],
+          ),
         ),
       );
     }
 
-    return const SizedBox.shrink();
+    if (children.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Row(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.center, children: children);
   }
 
   Widget _buildPlatformTag(BuildContext context) {
@@ -432,7 +445,6 @@ class RoomCardRenderer {
   Widget _buildCoverImage(BuildContext context, bool isDark, bool effectiveDense) {
     final cover = room.cover ?? '';
     final coverUrl = normalizeNetworkImageUrl(cover);
-
     if (_isAsset(cover)) {
       return _buildAssetCover(context, cover, isDark, effectiveDense);
     }
@@ -449,14 +461,7 @@ class RoomCardRenderer {
   }
 
   bool _isAsset(String value) {
-    final lower = value.toLowerCase();
-
-    return lower.startsWith('assets/') ||
-        lower.startsWith('asset/') ||
-        lower.endsWith('.png') ||
-        lower.endsWith('.jpg') ||
-        lower.endsWith('.jpeg') ||
-        lower.endsWith('.webp');
+    return value.trim().toLowerCase().startsWith('assets/');
   }
 
   Widget _buildAssetCover(BuildContext context, String asset, bool isDark, bool effectiveDense) {
@@ -496,7 +501,6 @@ class RoomCardRenderer {
               .round()
               .clamp(config.coverCacheMinWidth, config.coverCacheMaxWidth)
               .toInt();
-
           return CachedNetworkImage(
             imageUrl: coverUrl,
             cacheKey: epoch == 0 ? coverUrl : '$coverUrl#$epoch',

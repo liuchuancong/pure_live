@@ -92,6 +92,8 @@ class RoomCardSettingsPage extends GetView<RoomCardConfigController> {
             const SizedBox(height: 20),
             _buildMetricSection(context),
             const SizedBox(height: 20),
+            _buildDeleteButtonSection(context),
+            const SizedBox(height: 20),
             _buildResetSection(context),
           ],
           const SizedBox(height: 32),
@@ -144,9 +146,9 @@ class RoomCardSettingsPage extends GetView<RoomCardConfigController> {
           cardBorderRadius: controller.cardRadius.value,
           cardElevation: controller.cardElevation.value,
           enableShadow: controller.enableShadow.value,
-          cardMargin: const EdgeInsets.all(0),
+          cardMargin: EdgeInsets.all(controller.cardMargin.value),
 
-          // ===== 封面设置 =====
+          // ===== Cover Settings =====
           coverAspectRatio: controller.coverAspectRatio.value,
           coverBorderRadius: controller.coverRadius.value,
           coverPlaceholderColor: controller.coverPlaceholderColorValue,
@@ -158,35 +160,35 @@ class RoomCardSettingsPage extends GetView<RoomCardConfigController> {
           cacheCover: controller.cacheCover.value,
           coverPositionPadding: controller.coverPositionPadding.value,
 
-          // ===== 内容布局 =====
+          // ===== Content Layout =====
           avatarSize: controller.avatarSize.value,
-          denseAvatarSize: controller.avatarSize.value * 0.8,
+          denseAvatarSize: controller.denseAvatarSize.value,
           showAvatar: controller.showAvatar.value,
           contentHorizontalPadding: controller.horizontalPadding.value,
-          denseContentHorizontalPadding: controller.horizontalPadding.value * 0.8,
+          denseContentHorizontalPadding: controller.denseContentHorizontalPadding.value,
           contentVerticalPadding: controller.verticalPadding.value,
-          denseContentVerticalPadding: controller.verticalPadding.value * 0.7,
+          denseContentVerticalPadding: controller.denseContentVerticalPadding.value,
           horizontalTitleGap: controller.horizontalTitleGap.value,
-          denseHorizontalTitleGap: controller.horizontalTitleGap.value * 0.7,
+          denseHorizontalTitleGap: controller.denseHorizontalTitleGap.value,
           showSubtitle: controller.showSubtitle.value,
           denseMode: controller.denseMode.value,
 
-          // ===== 文字排版 =====
+          // ===== Typography =====
           titleFontSize: controller.titleFontSize.value,
-          denseTitleFontSize: controller.titleFontSize.value * 0.85,
+          denseTitleFontSize: controller.denseTitleFontSize.value,
           titleFontWeight: controller.titleFontWeight,
           titleLineHeight: controller.titleLineHeight.value,
           titleColor: isDark ? controller.darkTitleColorValue : controller.lightTitleColorValue,
           subtitleFontSize: controller.subtitleFontSize.value,
-          denseSubtitleFontSize: controller.subtitleFontSize.value * 0.85,
+          denseSubtitleFontSize: controller.denseSubtitleFontSize.value,
           subtitleFontWeight: controller.subtitleFontWeight,
           subtitleLineHeight: controller.subtitleLineHeight.value,
           subtitleColor: isDark ? controller.darkSubtitleColorValue : controller.lightSubtitleColorValue,
 
-          // ===== 平台标签 =====
+          // ===== Platform Tag =====
           showPlatform: controller.showPlatform.value,
           platformFontSize: controller.platformFontSize.value,
-          densePlatformFontSize: controller.platformFontSize.value * 0.9,
+          densePlatformFontSize: controller.densePlatformFontSize.value,
           platformFontWeight: controller.platformFontWeight,
           platformBackgroundColor: isDark
               ? controller.platformBackgroundDarkValue
@@ -196,45 +198,46 @@ class RoomCardSettingsPage extends GetView<RoomCardConfigController> {
           platformHorizontalPadding: controller.platformHorizontalPadding.value,
           platformVerticalPadding: controller.platformVerticalPadding.value,
 
-          // ===== 徽章设置 =====
+          // ===== Badge Settings =====
           showLiveBadge: controller.showLiveBadge.value,
           showRecordBadge: controller.showRecordBadge.value,
           showAudience: controller.showAudience.value,
           chipFontSize: controller.chipFontSize.value,
-          denseChipFontSize: controller.chipFontSize.value * 0.85,
+          denseChipFontSize: controller.denseChipFontSize.value,
           chipFontWeight: controller.chipFontWeight,
           chipBorderRadius: controller.chipBorderRadius.value,
           chipHorizontalPadding: controller.chipHorizontalPadding.value,
-          denseChipHorizontalPadding: controller.chipHorizontalPadding.value * 0.8,
+          denseChipHorizontalPadding: controller.denseChipHorizontalPadding.value,
           chipVerticalPadding: controller.chipVerticalPadding.value,
-          denseChipVerticalPadding: controller.chipVerticalPadding.value * 0.7,
+          denseChipVerticalPadding: controller.denseChipVerticalPadding.value,
           chipBackgroundColor: controller.chipBackgroundColorValue,
           chipTextColor: controller.chipTextColorValue,
 
-          // ===== 观众指标 =====
+          // ===== Metric Badge =====
           metricFontSize: controller.metricFontSize.value,
-          denseMetricFontSize: controller.metricFontSize.value * 0.85,
+          denseMetricFontSize: controller.denseMetricFontSize.value,
           metricFontWeight: controller.metricFontWeight,
           metricBorderRadius: controller.badgeRadius.value,
-          denseMetricBorderRadius: controller.badgeRadius.value * 0.8,
+          denseMetricBorderRadius: controller.denseMetricBorderRadius.value,
           badgeOpacity: controller.badgeOpacity.value,
           metricBackgroundColor: controller.badgeBackgroundValue,
           metricTextColor: controller.badgeForegroundValue,
           metricBorderColor: controller.metricBorderColorValue,
           metricBorderWidth: controller.metricBorderWidth.value,
           metricHorizontalPadding: controller.metricHorizontalPadding.value,
-          denseMetricHorizontalPadding: controller.metricHorizontalPadding.value * 0.8,
+          denseMetricHorizontalPadding: controller.denseMetricHorizontalPadding.value,
           metricVerticalPadding: controller.metricVerticalPadding.value,
-          denseMetricVerticalPadding: controller.metricVerticalPadding.value * 0.7,
+          denseMetricVerticalPadding: controller.denseMetricVerticalPadding.value,
 
-          // ===== 删除按钮 =====
+          // ===== Delete Button =====
           showDelete: controller.showDelete.value,
           deleteButtonBackgroundColor: controller.deleteButtonBackgroundColorValue,
           deleteButtonPadding: controller.deleteButtonPadding.value,
           deleteButtonSize: controller.deleteButtonSize.value,
-          denseDeleteButtonSize: controller.deleteButtonSize.value * 0.85,
+          denseDeleteButtonSize: controller.denseDeleteButtonSize.value,
           deleteButtonIconColor: controller.deleteButtonIconColorValue,
           deleteButtonBorderRadius: controller.deleteButtonBorderRadius.value,
+
           showAsListTile: controller.showAsListTile.value,
         );
       }
@@ -301,6 +304,18 @@ class RoomCardSettingsPage extends GetView<RoomCardConfigController> {
         title: i18n('enable_shadow'),
         subtitle: i18n('enable_shadow_subtitle'),
         value: controller.enableShadow,
+      ),
+      _sliderTile(
+        context,
+        icon: Remix.expand_left_right_line,
+        title: i18n('card_margin'),
+        value: controller.cardMargin.value,
+        min: 0,
+        max: 24,
+        displayValue: '${controller.cardMargin.value.round()} px',
+        onChanged: (value) {
+          controller.cardMargin.value = value;
+        },
       ),
       _colorTile(
         context,
@@ -369,6 +384,32 @@ class RoomCardSettingsPage extends GetView<RoomCardConfigController> {
         subtitle: i18n('cache_cover_subtitle'),
         value: controller.cacheCover,
       ),
+      _sliderTile(
+        context,
+        icon: Remix.image_edit_line,
+        title: i18n('cover_cache_min_width'),
+        value: controller.coverCacheMinWidth.value.toDouble(),
+        min: 120,
+        max: 480,
+        step: 10,
+        displayValue: '${controller.coverCacheMinWidth.value} px',
+        onChanged: (value) {
+          controller.coverCacheMinWidth.value = value.round();
+        },
+      ),
+      _sliderTile(
+        context,
+        icon: Remix.image_edit_line,
+        title: i18n('cover_cache_max_width'),
+        value: controller.coverCacheMaxWidth.value.toDouble(),
+        min: 360,
+        max: 1200,
+        step: 10,
+        displayValue: '${controller.coverCacheMaxWidth.value} px',
+        onChanged: (value) {
+          controller.coverCacheMaxWidth.value = value.round();
+        },
+      ),
       _tile(
         context,
         icon: Remix.image_2_line,
@@ -380,6 +421,20 @@ class RoomCardSettingsPage extends GetView<RoomCardConfigController> {
           currentIndex: controller.coverFitIndex.value,
           onSelected: (index) {
             controller.coverFitIndex.value = index;
+          },
+        ),
+      ),
+      _tile(
+        context,
+        icon: Remix.image_edit_line,
+        title: i18n('cover_filter_quality'),
+        subtitle: _getFilterQualityName(controller.coverFilterQualityIndex.value),
+        trailing: _arrow(context),
+        onTap: () => _showFilterQualityDialog(
+          context,
+          currentIndex: controller.coverFilterQualityIndex.value,
+          onSelected: (index) {
+            controller.coverFilterQualityIndex.value = index;
           },
         ),
       ),
@@ -406,6 +461,14 @@ class RoomCardSettingsPage extends GetView<RoomCardConfigController> {
 
   Widget _buildContentSection(BuildContext context) {
     return _section(context, i18n('content_layout'), [
+      _switchTile(
+        context,
+        icon: Remix.layout_grid_2_line,
+        title: i18n('dense_mode'),
+        subtitle: i18n('dense_mode_subtitle'),
+        value: controller.denseMode,
+      ),
+      const Divider(height: 1),
       _sliderTile(
         context,
         icon: Remix.expand_left_right_line,
@@ -461,6 +524,60 @@ class RoomCardSettingsPage extends GetView<RoomCardConfigController> {
           controller.avatarSize.value = value;
         },
       ),
+      const Divider(height: 1),
+      Text(
+        i18n('dense_mode_settings'),
+        style: AppTextStyles.t13.copyWith(color: Theme.of(context).colorScheme.outline, fontWeight: FontWeight.w600),
+      ),
+      const SizedBox(height: 4),
+      _sliderTile(
+        context,
+        icon: Remix.user_3_line,
+        title: i18n('dense_avatar_size'),
+        value: controller.denseAvatarSize.value,
+        min: 16,
+        max: 52,
+        displayValue: '${controller.denseAvatarSize.value.round()} px',
+        onChanged: (value) {
+          controller.denseAvatarSize.value = value;
+        },
+      ),
+      _sliderTile(
+        context,
+        icon: Remix.expand_left_right_line,
+        title: i18n('dense_horizontal_padding'),
+        value: controller.denseContentHorizontalPadding.value,
+        min: 0,
+        max: 20,
+        displayValue: '${controller.denseContentHorizontalPadding.value.round()} px',
+        onChanged: (value) {
+          controller.denseContentHorizontalPadding.value = value;
+        },
+      ),
+      _sliderTile(
+        context,
+        icon: Remix.expand_up_down_line,
+        title: i18n('dense_vertical_padding'),
+        value: controller.denseContentVerticalPadding.value,
+        min: 0,
+        max: 12,
+        displayValue: '${controller.denseContentVerticalPadding.value.round()} px',
+        onChanged: (value) {
+          controller.denseContentVerticalPadding.value = value;
+        },
+      ),
+      _sliderTile(
+        context,
+        icon: Remix.space,
+        title: i18n('dense_title_gap'),
+        value: controller.denseHorizontalTitleGap.value,
+        min: 0,
+        max: 20,
+        displayValue: '${controller.denseHorizontalTitleGap.value.round()} px',
+        onChanged: (value) {
+          controller.denseHorizontalTitleGap.value = value;
+        },
+      ),
       _switchTile(
         context,
         icon: Remix.text,
@@ -468,18 +585,16 @@ class RoomCardSettingsPage extends GetView<RoomCardConfigController> {
         subtitle: i18n('show_subtitle_subtitle'),
         value: controller.showSubtitle,
       ),
-      _switchTile(
-        context,
-        icon: Remix.layout_grid_2_line,
-        title: i18n('dense_mode'),
-        subtitle: i18n('dense_mode_subtitle'),
-        value: controller.denseMode,
-      ),
     ]);
   }
 
   Widget _buildTypographySection(BuildContext context) {
     return _section(context, i18n('typography'), [
+      Text(
+        i18n('title_typography'),
+        style: AppTextStyles.t13.copyWith(color: Theme.of(context).colorScheme.outline, fontWeight: FontWeight.w600),
+      ),
+      const SizedBox(height: 4),
       _sliderTile(
         context,
         icon: Remix.font_size,
@@ -490,6 +605,18 @@ class RoomCardSettingsPage extends GetView<RoomCardConfigController> {
         displayValue: '${controller.titleFontSize.value.round()} px',
         onChanged: (value) {
           controller.titleFontSize.value = value;
+        },
+      ),
+      _sliderTile(
+        context,
+        icon: Remix.font_size,
+        title: i18n('dense_title_font_size'),
+        value: controller.denseTitleFontSize.value,
+        min: 8,
+        max: 20,
+        displayValue: '${controller.denseTitleFontSize.value.round()} px',
+        onChanged: (value) {
+          controller.denseTitleFontSize.value = value;
         },
       ),
       _fontWeightTile(
@@ -532,6 +659,11 @@ class RoomCardSettingsPage extends GetView<RoomCardConfigController> {
         },
       ),
       const Divider(height: 1),
+      Text(
+        i18n('subtitle_typography'),
+        style: AppTextStyles.t13.copyWith(color: Theme.of(context).colorScheme.outline, fontWeight: FontWeight.w600),
+      ),
+      const SizedBox(height: 4),
       _sliderTile(
         context,
         icon: Remix.font_size,
@@ -542,6 +674,18 @@ class RoomCardSettingsPage extends GetView<RoomCardConfigController> {
         displayValue: '${controller.subtitleFontSize.value.round()} px',
         onChanged: (value) {
           controller.subtitleFontSize.value = value;
+        },
+      ),
+      _sliderTile(
+        context,
+        icon: Remix.font_size,
+        title: i18n('dense_subtitle_font_size'),
+        value: controller.denseSubtitleFontSize.value,
+        min: 7,
+        max: 17,
+        displayValue: '${controller.denseSubtitleFontSize.value.round()} px',
+        onChanged: (value) {
+          controller.denseSubtitleFontSize.value = value;
         },
       ),
       _fontWeightTile(
@@ -607,6 +751,18 @@ class RoomCardSettingsPage extends GetView<RoomCardConfigController> {
           controller.platformFontSize.value = value;
         },
       ),
+      _sliderTile(
+        context,
+        icon: Remix.font_size,
+        title: i18n('dense_platform_font_size'),
+        value: controller.densePlatformFontSize.value,
+        min: 6,
+        max: 14,
+        displayValue: '${controller.densePlatformFontSize.value.round()} px',
+        onChanged: (value) {
+          controller.densePlatformFontSize.value = value;
+        },
+      ),
       _fontWeightTile(
         context,
         title: i18n('platform_font_weight'),
@@ -625,6 +781,30 @@ class RoomCardSettingsPage extends GetView<RoomCardConfigController> {
         displayValue: '${controller.platformBorderRadius.value.round()} px',
         onChanged: (value) {
           controller.platformBorderRadius.value = value;
+        },
+      ),
+      _sliderTile(
+        context,
+        icon: Remix.expand_left_right_line,
+        title: i18n('platform_horizontal_padding'),
+        value: controller.platformHorizontalPadding.value,
+        min: 0,
+        max: 16,
+        displayValue: '${controller.platformHorizontalPadding.value.round()} px',
+        onChanged: (value) {
+          controller.platformHorizontalPadding.value = value;
+        },
+      ),
+      _sliderTile(
+        context,
+        icon: Remix.expand_up_down_line,
+        title: i18n('platform_vertical_padding'),
+        value: controller.platformVerticalPadding.value,
+        min: 0,
+        max: 12,
+        displayValue: '${controller.platformVerticalPadding.value.round()} px',
+        onChanged: (value) {
+          controller.platformVerticalPadding.value = value;
         },
       ),
       _colorTile(
@@ -701,6 +881,18 @@ class RoomCardSettingsPage extends GetView<RoomCardConfigController> {
           controller.chipFontSize.value = value;
         },
       ),
+      _sliderTile(
+        context,
+        icon: Remix.font_size,
+        title: i18n('dense_chip_font_size'),
+        value: controller.denseChipFontSize.value,
+        min: 6,
+        max: 15,
+        displayValue: '${controller.denseChipFontSize.value.round()} px',
+        onChanged: (value) {
+          controller.denseChipFontSize.value = value;
+        },
+      ),
       _fontWeightTile(
         context,
         title: i18n('chip_font_weight'),
@@ -719,6 +911,54 @@ class RoomCardSettingsPage extends GetView<RoomCardConfigController> {
         displayValue: '${controller.chipBorderRadius.value.round()} px',
         onChanged: (value) {
           controller.chipBorderRadius.value = value;
+        },
+      ),
+      _sliderTile(
+        context,
+        icon: Remix.expand_left_right_line,
+        title: i18n('chip_horizontal_padding'),
+        value: controller.chipHorizontalPadding.value,
+        min: 0,
+        max: 20,
+        displayValue: '${controller.chipHorizontalPadding.value.round()} px',
+        onChanged: (value) {
+          controller.chipHorizontalPadding.value = value;
+        },
+      ),
+      _sliderTile(
+        context,
+        icon: Remix.expand_up_down_line,
+        title: i18n('chip_vertical_padding'),
+        value: controller.chipVerticalPadding.value,
+        min: 0,
+        max: 14,
+        displayValue: '${controller.chipVerticalPadding.value.round()} px',
+        onChanged: (value) {
+          controller.chipVerticalPadding.value = value;
+        },
+      ),
+      _sliderTile(
+        context,
+        icon: Remix.expand_left_right_line,
+        title: i18n('dense_chip_horizontal_padding'),
+        value: controller.denseChipHorizontalPadding.value,
+        min: 0,
+        max: 16,
+        displayValue: '${controller.denseChipHorizontalPadding.value.round()} px',
+        onChanged: (value) {
+          controller.denseChipHorizontalPadding.value = value;
+        },
+      ),
+      _sliderTile(
+        context,
+        icon: Remix.expand_up_down_line,
+        title: i18n('dense_chip_vertical_padding'),
+        value: controller.denseChipVerticalPadding.value,
+        min: 0,
+        max: 10,
+        displayValue: '${controller.denseChipVerticalPadding.value.round()} px',
+        onChanged: (value) {
+          controller.denseChipVerticalPadding.value = value;
         },
       ),
       _colorTile(
@@ -756,6 +996,18 @@ class RoomCardSettingsPage extends GetView<RoomCardConfigController> {
           controller.metricFontSize.value = value;
         },
       ),
+      _sliderTile(
+        context,
+        icon: Remix.font_size,
+        title: i18n('dense_metric_font_size'),
+        value: controller.denseMetricFontSize.value,
+        min: 6,
+        max: 14,
+        displayValue: '${controller.denseMetricFontSize.value.round()} px',
+        onChanged: (value) {
+          controller.denseMetricFontSize.value = value;
+        },
+      ),
       _fontWeightTile(
         context,
         title: i18n('metric_font_weight'),
@@ -778,6 +1030,18 @@ class RoomCardSettingsPage extends GetView<RoomCardConfigController> {
       ),
       _sliderTile(
         context,
+        icon: Remix.shape_line,
+        title: i18n('dense_metric_border_radius'),
+        value: controller.denseMetricBorderRadius.value,
+        min: 2,
+        max: 20,
+        displayValue: '${controller.denseMetricBorderRadius.value.round()} px',
+        onChanged: (value) {
+          controller.denseMetricBorderRadius.value = value;
+        },
+      ),
+      _sliderTile(
+        context,
         icon: Remix.eye_line,
         title: i18n('metric_opacity'),
         value: controller.badgeOpacity.value,
@@ -787,6 +1051,54 @@ class RoomCardSettingsPage extends GetView<RoomCardConfigController> {
         displayValue: controller.badgeOpacity.value.toStringAsFixed(2),
         onChanged: (value) {
           controller.badgeOpacity.value = value;
+        },
+      ),
+      _sliderTile(
+        context,
+        icon: Remix.expand_left_right_line,
+        title: i18n('metric_horizontal_padding'),
+        value: controller.metricHorizontalPadding.value,
+        min: 2,
+        max: 16,
+        displayValue: '${controller.metricHorizontalPadding.value.round()} px',
+        onChanged: (value) {
+          controller.metricHorizontalPadding.value = value;
+        },
+      ),
+      _sliderTile(
+        context,
+        icon: Remix.expand_up_down_line,
+        title: i18n('metric_vertical_padding'),
+        value: controller.metricVerticalPadding.value,
+        min: 1,
+        max: 12,
+        displayValue: '${controller.metricVerticalPadding.value.round()} px',
+        onChanged: (value) {
+          controller.metricVerticalPadding.value = value;
+        },
+      ),
+      _sliderTile(
+        context,
+        icon: Remix.expand_left_right_line,
+        title: i18n('dense_metric_horizontal_padding'),
+        value: controller.denseMetricHorizontalPadding.value,
+        min: 1,
+        max: 12,
+        displayValue: '${controller.denseMetricHorizontalPadding.value.round()} px',
+        onChanged: (value) {
+          controller.denseMetricHorizontalPadding.value = value;
+        },
+      ),
+      _sliderTile(
+        context,
+        icon: Remix.expand_up_down_line,
+        title: i18n('dense_metric_vertical_padding'),
+        value: controller.denseMetricVerticalPadding.value,
+        min: 1,
+        max: 10,
+        displayValue: '${controller.denseMetricVerticalPadding.value.round()} px',
+        onChanged: (value) {
+          controller.denseMetricVerticalPadding.value = value;
         },
       ),
       _colorTile(
@@ -829,28 +1141,84 @@ class RoomCardSettingsPage extends GetView<RoomCardConfigController> {
           controller.metricBorderWidth.value = value;
         },
       ),
+    ]);
+  }
+
+  Widget _buildDeleteButtonSection(BuildContext context) {
+    return _section(context, i18n('delete_button'), [
+      _switchTile(
+        context,
+        icon: Remix.close_circle_line,
+        title: i18n('show_delete_button'),
+        subtitle: i18n('show_delete_button_subtitle'),
+        value: controller.showDelete,
+      ),
       _sliderTile(
         context,
-        icon: Remix.expand_left_right_line,
-        title: i18n('metric_horizontal_padding'),
-        value: controller.metricHorizontalPadding.value,
-        min: 2,
-        max: 16,
-        displayValue: '${controller.metricHorizontalPadding.value.round()} px',
+        icon: Remix.rounded_corner,
+        title: i18n('delete_button_border_radius'),
+        value: controller.deleteButtonBorderRadius.value,
+        min: 0,
+        max: 999,
+        displayValue: controller.deleteButtonBorderRadius.value >= 999
+            ? '∞'
+            : '${controller.deleteButtonBorderRadius.value.round()} px',
         onChanged: (value) {
-          controller.metricHorizontalPadding.value = value;
+          controller.deleteButtonBorderRadius.value = value;
         },
       ),
       _sliderTile(
         context,
-        icon: Remix.expand_up_down_line,
-        title: i18n('metric_vertical_padding'),
-        value: controller.metricVerticalPadding.value,
-        min: 1,
-        max: 12,
-        displayValue: '${controller.metricVerticalPadding.value.round()} px',
+        icon: Remix.expand_left_right_line,
+        title: i18n('delete_button_size'),
+        value: controller.deleteButtonSize.value,
+        min: 12,
+        max: 32,
+        displayValue: '${controller.deleteButtonSize.value.round()} px',
         onChanged: (value) {
-          controller.metricVerticalPadding.value = value;
+          controller.deleteButtonSize.value = value;
+        },
+      ),
+      _sliderTile(
+        context,
+        icon: Remix.expand_left_right_line,
+        title: i18n('dense_delete_button_size'),
+        value: controller.denseDeleteButtonSize.value,
+        min: 10,
+        max: 28,
+        displayValue: '${controller.denseDeleteButtonSize.value.round()} px',
+        onChanged: (value) {
+          controller.denseDeleteButtonSize.value = value;
+        },
+      ),
+      _sliderTile(
+        context,
+        icon: Remix.drag_move_line,
+        title: i18n('delete_button_padding'),
+        value: controller.deleteButtonPadding.value,
+        min: 0,
+        max: 16,
+        displayValue: '${controller.deleteButtonPadding.value.round()} px',
+        onChanged: (value) {
+          controller.deleteButtonPadding.value = value;
+        },
+      ),
+      _colorTile(
+        context,
+        icon: Remix.paint_brush_line,
+        title: i18n('delete_button_background'),
+        color: () => controller.deleteButtonBackgroundColorValue,
+        onColorSelected: (color) {
+          controller.deleteButtonBackground.value = color.hex;
+        },
+      ),
+      _colorTile(
+        context,
+        icon: Remix.font_color,
+        title: i18n('delete_button_icon_color'),
+        color: () => controller.deleteButtonIconColorValue,
+        onColorSelected: (color) {
+          controller.deleteButtonIcon.value = color.hex;
         },
       ),
     ]);
@@ -868,6 +1236,8 @@ class RoomCardSettingsPage extends GetView<RoomCardConfigController> {
       ),
     ]);
   }
+
+  // ===== Helper Widgets =====
 
   Widget _section(BuildContext context, String title, List<Widget> children) {
     return Column(
@@ -995,6 +1365,8 @@ class RoomCardSettingsPage extends GetView<RoomCardConfigController> {
     );
   }
 
+  // ===== Dialog Helpers =====
+
   void _showPresetDialog(BuildContext context) {
     final theme = Theme.of(context);
 
@@ -1103,31 +1475,25 @@ class RoomCardSettingsPage extends GetView<RoomCardConfigController> {
 
   String _getFontWeightName(int index) {
     const names = ['100', '200', '300', '400', '500', '600', '700', '800', '900'];
-
-    if (index < 0 || index >= names.length) {
-      return '400';
-    }
-
+    if (index < 0 || index >= names.length) return '400';
     return names[index];
   }
 
   String _getFontWeightDisplay(int index) {
     const displays = ['Thin', 'ExtraLight', 'Light', 'Regular', 'Medium', 'SemiBold', 'Bold', 'ExtraBold', 'Black'];
-
-    if (index < 0 || index >= displays.length) {
-      return 'Regular';
-    }
-
+    if (index < 0 || index >= displays.length) return 'Regular';
     return displays[index];
   }
 
   String _getBoxFitName(int index) {
     const names = ['fill', 'contain', 'cover', 'fitWidth', 'fitHeight', 'none', 'scaleDown'];
+    if (index < 0 || index >= names.length) return 'cover';
+    return names[index];
+  }
 
-    if (index < 0 || index >= names.length) {
-      return 'cover';
-    }
-
+  String _getFilterQualityName(int index) {
+    const names = ['low', 'medium', 'high'];
+    if (index < 0 || index >= names.length) return 'low';
     return names[index];
   }
 
@@ -1143,6 +1509,49 @@ class RoomCardSettingsPage extends GetView<RoomCardConfigController> {
           backgroundColor: theme.colorScheme.surface,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Text(i18n('cover_fit')),
+          content: SizedBox(
+            width: 280,
+            child: RadioGroup<int>(
+              groupValue: currentIndex,
+              onChanged: (value) {
+                if (value != null) {
+                  onSelected(value);
+                  Navigator.pop(context);
+                }
+              },
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: names.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final name = entry.value;
+
+                  return RadioListTile<int>(title: Text(name), value: index, selected: index == currentIndex);
+                }).toList(),
+              ),
+            ),
+          ),
+          actions: [TextButton(onPressed: () => Navigator.pop(context), child: Text(i18n('close')))],
+        );
+      },
+    );
+  }
+
+  void _showFilterQualityDialog(
+    BuildContext context, {
+    required int currentIndex,
+    required ValueChanged<int> onSelected,
+  }) {
+    const names = ['low', 'medium', 'high'];
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        final theme = Theme.of(context);
+
+        return AlertDialog(
+          backgroundColor: theme.colorScheme.surface,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Text(i18n('cover_filter_quality')),
           content: SizedBox(
             width: 280,
             child: RadioGroup<int>(

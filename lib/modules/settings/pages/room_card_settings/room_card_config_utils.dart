@@ -1,7 +1,7 @@
 import 'package:pure_live/common/index.dart';
 
-class RoomCardConfig {
-  // ===== 字体权重工具 =====
+class RoomCardConfigUtils {
+  // ===== Font Weight Utilities =====
   static FontWeight getFontWeight(int index) {
     switch (index) {
       case 0:
@@ -40,7 +40,7 @@ class RoomCardConfig {
     return 3;
   }
 
-  // ===== 封面转换 =====
+  // ===== Cover Utilities =====
   static BoxFit coverFit(int index) {
     switch (index) {
       case 0:
@@ -62,6 +62,17 @@ class RoomCardConfig {
     }
   }
 
+  static int getCoverFitIndex(BoxFit fit) {
+    if (fit == BoxFit.fill) return 0;
+    if (fit == BoxFit.contain) return 1;
+    if (fit == BoxFit.cover) return 2;
+    if (fit == BoxFit.fitWidth) return 3;
+    if (fit == BoxFit.fitHeight) return 4;
+    if (fit == BoxFit.none) return 5;
+    if (fit == BoxFit.scaleDown) return 6;
+    return 2;
+  }
+
   static FilterQuality coverFilterQuality(int index) {
     switch (index) {
       case 0:
@@ -75,6 +86,14 @@ class RoomCardConfig {
     }
   }
 
+  static int getFilterQualityIndex(FilterQuality quality) {
+    if (quality == FilterQuality.low) return 0;
+    if (quality == FilterQuality.medium) return 1;
+    if (quality == FilterQuality.high) return 2;
+    return 0;
+  }
+
+  // ===== Color Utilities =====
   static Color coverPlaceholderColorValue(String hex) {
     if (hex.isEmpty) {
       final isDark = Get.isDarkMode;

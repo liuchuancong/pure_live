@@ -1,19 +1,20 @@
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/modules/settings/pages/room_card_settings/room_card_model.dart';
-import 'package:pure_live/modules/settings/pages/room_card_settings/room_card_config.dart';
+import 'package:pure_live/modules/settings/pages/room_card_settings/room_card_config_utils.dart';
 
 class RoomCardConfigController extends GetxController {
   static RoomCardConfigController get to => Get.find();
 
-  // ===== 预设 【持久化】=====
+  // ===== Preset [Persistent] =====
   final RxString preset = hiveString('room_card_preset', RoomCardPreset.normal.key);
 
-  // ===== 卡片样式 =====
+  // ===== Card Style =====
   final RxDouble cardRadius = hiveDouble('room_card_radius', 20.0);
   final RxDouble cardElevation = hiveDouble('room_card_elevation', 0.0);
   final RxBool enableShadow = hiveBool('room_card_shadow', false);
+  final RxDouble cardMargin = hiveDouble('room_card_margin', 0.0); // Added
 
-  // ===== 封面设置 =====
+  // ===== Cover Settings =====
   final RxDouble coverRadius = hiveDouble('room_card_cover_radius', 20.0);
   final RxDouble coverAspectRatio = hiveDouble('room_card_cover_ratio', 16 / 9);
   final RxDouble coverPositionPadding = hiveDouble('room_card_cover_padding', 8.0);
@@ -23,11 +24,11 @@ class RoomCardConfigController extends GetxController {
   final RxInt coverFitIndex = hiveInt('room_card_fit_index', 2);
   final RxInt coverFilterQualityIndex = hiveInt('room_card_filter_index', 0);
 
-  // ===== 封面颜色 =====
+  // ===== Cover Colors =====
   final RxString coverPlaceholderColor = hiveString('room_card_placeholder_color', '');
   final RxString coverFallbackColor = hiveString('room_card_fallback_color', '');
 
-  // ===== 内容布局 =====
+  // ===== Content Layout =====
   final RxDouble horizontalPadding = hiveDouble('room_card_h_pad', 12.0);
   final RxDouble verticalPadding = hiveDouble('room_card_v_pad', 6.0);
   final RxDouble horizontalTitleGap = hiveDouble('room_card_title_gap', 12.0);
@@ -36,7 +37,24 @@ class RoomCardConfigController extends GetxController {
   final RxBool showSubtitle = hiveBool('room_card_show_subtitle', true);
   final RxBool denseMode = hiveBool('room_card_dense', false);
 
-  // ===== 文字排版 =====
+  // ===== Dense Variants (used when denseMode is true) =====
+  final RxDouble denseAvatarSize = hiveDouble('room_card_dense_avatar_size', 40.0);
+  final RxDouble denseContentHorizontalPadding = hiveDouble('room_card_dense_h_pad', 10.0);
+  final RxDouble denseContentVerticalPadding = hiveDouble('room_card_dense_v_pad', 4.0);
+  final RxDouble denseHorizontalTitleGap = hiveDouble('room_card_dense_title_gap', 8.0);
+  final RxDouble denseTitleFontSize = hiveDouble('room_card_dense_title_font', 13.0);
+  final RxDouble denseSubtitleFontSize = hiveDouble('room_card_dense_sub_font', 12.0);
+  final RxDouble densePlatformFontSize = hiveDouble('room_card_dense_platform_font', 10.0);
+  final RxDouble denseChipFontSize = hiveDouble('room_card_dense_chip_font', 12.0);
+  final RxDouble denseChipHorizontalPadding = hiveDouble('room_card_dense_chip_h', 10.0);
+  final RxDouble denseChipVerticalPadding = hiveDouble('room_card_dense_chip_v', 4.0);
+  final RxDouble denseMetricFontSize = hiveDouble('room_card_dense_metric_font', 11.0);
+  final RxDouble denseMetricHorizontalPadding = hiveDouble('room_card_dense_metric_h', 6.0);
+  final RxDouble denseMetricVerticalPadding = hiveDouble('room_card_dense_metric_v', 4.0);
+  final RxDouble denseMetricBorderRadius = hiveDouble('room_card_dense_badge_radius', 10.0);
+  final RxDouble denseDeleteButtonSize = hiveDouble('room_card_dense_del_size', 16.0);
+
+  // ===== Typography =====
   final RxDouble titleFontSize = hiveDouble('room_card_title_font', 15.0);
   final RxInt titleFontWeightIndex = hiveInt('room_card_title_weight', 5);
   final RxDouble titleLineHeight = hiveDouble('room_card_title_line', 1.2);
@@ -44,7 +62,7 @@ class RoomCardConfigController extends GetxController {
   final RxInt subtitleFontWeightIndex = hiveInt('room_card_sub_weight', 4);
   final RxDouble subtitleLineHeight = hiveDouble('room_card_sub_line', 1.2);
 
-  // ===== 平台标签 =====
+  // ===== Platform Label =====
   final RxBool showPlatform = hiveBool('room_card_show_platform', true);
   final RxDouble platformFontSize = hiveDouble('room_card_platform_font', 11.0);
   final RxInt platformFontWeightIndex = hiveInt('room_card_platform_weight', 5);
@@ -56,10 +74,10 @@ class RoomCardConfigController extends GetxController {
   final RxString platformTextLight = hiveString('room_card_platform_txt_light', '');
   final RxString platformTextDark = hiveString('room_card_platform_txt_dark', '');
 
-  // ===== 观众 =====
+  // ===== Audience =====
   final RxBool showAudience = hiveBool('room_card_show_audience', true);
 
-  // ===== 芯片/录播徽章 =====
+  // ===== Chip / Record Badge =====
   final RxBool showRecordBadge = hiveBool('room_card_show_record', true);
   final RxBool showLiveBadge = hiveBool('room_card_show_live', true);
   final RxDouble chipFontSize = hiveDouble('room_card_chip_font', 13.0);
@@ -70,7 +88,7 @@ class RoomCardConfigController extends GetxController {
   final RxString chipBackground = hiveString('room_card_chip_bg', '');
   final RxString chipText = hiveString('room_card_chip_txt', '');
 
-  // ===== 指标徽章（观众数） =====
+  // ===== Metric Badge (viewer count) =====
   final RxDouble metricFontSize = hiveDouble('room_card_metric_font', 12.0);
   final RxInt metricFontWeightIndex = hiveInt('room_card_metric_weight', 6);
   final RxDouble metricHorizontalPadding = hiveDouble('room_card_metric_h', 8.0);
@@ -82,7 +100,7 @@ class RoomCardConfigController extends GetxController {
   final RxString badgeForeground = hiveString('room_card_badge_fg', '');
   final RxString metricBorderColor = hiveString('room_card_metric_border_color', '');
 
-  // ===== 删除按钮 =====
+  // ===== Delete Button =====
   final RxBool showDelete = hiveBool('room_card_show_delete', true);
   final RxDouble deleteButtonBorderRadius = hiveDouble('room_card_del_radius', 999.0);
   final RxDouble deleteButtonSize = hiveDouble('room_card_del_size', 18.0);
@@ -90,10 +108,10 @@ class RoomCardConfigController extends GetxController {
   final RxString deleteButtonBackground = hiveString('room_card_del_bg', '');
   final RxString deleteButtonIcon = hiveString('room_card_del_icon', '');
 
-  // ===== 显示选项 =====
+  // ===== Display Options =====
   final RxBool showAsListTile = hiveBool('room_card_list_tile', false);
 
-  // ===== 颜色 =====
+  // ===== Colors =====
   final RxString lightCardColor = hiveString('room_card_light_card', '');
   final RxString darkCardColor = hiveString('room_card_dark_card', '');
   final RxString lightTitleColor = hiveString('room_card_light_title', '');
@@ -101,45 +119,47 @@ class RoomCardConfigController extends GetxController {
   final RxString lightSubtitleColor = hiveString('room_card_light_sub', '');
   final RxString darkSubtitleColor = hiveString('room_card_dark_sub', '');
 
-  // ===== 衍生 Getter（只读）=====
+  // ===== Derived Getters (read-only) =====
   RoomCardPreset get presetValue => RoomCardPreset.fromKey(preset.value);
   bool get isCustomMode => presetValue == RoomCardPreset.custom;
 
-  BoxFit get coverFit => RoomCardConfig.coverFit(coverFitIndex.value);
-  FilterQuality get coverFilterQuality => RoomCardConfig.coverFilterQuality(coverFilterQualityIndex.value);
+  BoxFit get coverFit => RoomCardConfigUtils.coverFit(coverFitIndex.value);
+  FilterQuality get coverFilterQuality => RoomCardConfigUtils.coverFilterQuality(coverFilterQualityIndex.value);
 
-  FontWeight get titleFontWeight => RoomCardConfig.getFontWeight(titleFontWeightIndex.value);
-  FontWeight get subtitleFontWeight => RoomCardConfig.getFontWeight(subtitleFontWeightIndex.value);
-  FontWeight get platformFontWeight => RoomCardConfig.getFontWeight(platformFontWeightIndex.value);
-  FontWeight get chipFontWeight => RoomCardConfig.getFontWeight(chipFontWeightIndex.value);
-  FontWeight get metricFontWeight => RoomCardConfig.getFontWeight(metricFontWeightIndex.value);
+  FontWeight get titleFontWeight => RoomCardConfigUtils.getFontWeight(titleFontWeightIndex.value);
+  FontWeight get subtitleFontWeight => RoomCardConfigUtils.getFontWeight(subtitleFontWeightIndex.value);
+  FontWeight get platformFontWeight => RoomCardConfigUtils.getFontWeight(platformFontWeightIndex.value);
+  FontWeight get chipFontWeight => RoomCardConfigUtils.getFontWeight(chipFontWeightIndex.value);
+  FontWeight get metricFontWeight => RoomCardConfigUtils.getFontWeight(metricFontWeightIndex.value);
 
-  // 颜色值计算
-  Color get coverPlaceholderColorValue => RoomCardConfig.coverPlaceholderColorValue(coverPlaceholderColor.value);
-  Color get coverFallbackColorValue => RoomCardConfig.coverFallbackColorValue(coverFallbackColor.value);
+  // Color value computation
+  Color get coverPlaceholderColorValue => RoomCardConfigUtils.coverPlaceholderColorValue(coverPlaceholderColor.value);
+  Color get coverFallbackColorValue => RoomCardConfigUtils.coverFallbackColorValue(coverFallbackColor.value);
 
-  Color get platformBackgroundLightValue => RoomCardConfig.platformBackgroundLightValue(platformBackgroundLight.value);
-  Color get platformBackgroundDarkValue => RoomCardConfig.platformBackgroundDarkValue(platformBackgroundDark.value);
-  Color get platformTextLightValue => RoomCardConfig.platformTextLightValue(platformTextLight.value);
-  Color get platformTextDarkValue => RoomCardConfig.platformTextDarkValue(platformTextDark.value);
+  Color get platformBackgroundLightValue =>
+      RoomCardConfigUtils.platformBackgroundLightValue(platformBackgroundLight.value);
+  Color get platformBackgroundDarkValue =>
+      RoomCardConfigUtils.platformBackgroundDarkValue(platformBackgroundDark.value);
+  Color get platformTextLightValue => RoomCardConfigUtils.platformTextLightValue(platformTextLight.value);
+  Color get platformTextDarkValue => RoomCardConfigUtils.platformTextDarkValue(platformTextDark.value);
 
-  Color get chipBackgroundColorValue => RoomCardConfig.chipBackgroundColorValue(chipBackground.value);
-  Color get chipTextColorValue => RoomCardConfig.chipTextColorValue(chipText.value);
+  Color get chipBackgroundColorValue => RoomCardConfigUtils.chipBackgroundColorValue(chipBackground.value);
+  Color get chipTextColorValue => RoomCardConfigUtils.chipTextColorValue(chipText.value);
 
-  Color get badgeBackgroundValue => RoomCardConfig.badgeBackgroundValue(badgeBackground.value);
-  Color get badgeForegroundValue => RoomCardConfig.badgeForegroundValue(badgeForeground.value);
-  Color get metricBorderColorValue => RoomCardConfig.metricBorderColorValue(metricBorderColor.value);
+  Color get badgeBackgroundValue => RoomCardConfigUtils.badgeBackgroundValue(badgeBackground.value);
+  Color get badgeForegroundValue => RoomCardConfigUtils.badgeForegroundValue(badgeForeground.value);
+  Color get metricBorderColorValue => RoomCardConfigUtils.metricBorderColorValue(metricBorderColor.value);
 
   Color get deleteButtonBackgroundColorValue =>
-      RoomCardConfig.deleteButtonBackgroundColorValue(deleteButtonBackground.value);
-  Color get deleteButtonIconColorValue => RoomCardConfig.deleteButtonIconColorValue(deleteButtonIcon.value);
+      RoomCardConfigUtils.deleteButtonBackgroundColorValue(deleteButtonBackground.value);
+  Color get deleteButtonIconColorValue => RoomCardConfigUtils.deleteButtonIconColorValue(deleteButtonIcon.value);
 
-  Color get lightCardColorValue => RoomCardConfig.lightCardColorValue(lightCardColor.value);
-  Color get darkCardColorValue => RoomCardConfig.darkCardColorValue(darkCardColor.value);
-  Color get lightTitleColorValue => RoomCardConfig.lightTitleColorValue(lightTitleColor.value);
-  Color get darkTitleColorValue => RoomCardConfig.darkTitleColorValue(darkTitleColor.value);
-  Color get lightSubtitleColorValue => RoomCardConfig.lightSubtitleColorValue(lightSubtitleColor.value);
-  Color get darkSubtitleColorValue => RoomCardConfig.darkSubtitleColorValue(darkSubtitleColor.value);
+  Color get lightCardColorValue => RoomCardConfigUtils.lightCardColorValue(lightCardColor.value);
+  Color get darkCardColorValue => RoomCardConfigUtils.darkCardColorValue(darkCardColor.value);
+  Color get lightTitleColorValue => RoomCardConfigUtils.lightTitleColorValue(lightTitleColor.value);
+  Color get darkTitleColorValue => RoomCardConfigUtils.darkTitleColorValue(darkTitleColor.value);
+  Color get lightSubtitleColorValue => RoomCardConfigUtils.lightSubtitleColorValue(lightSubtitleColor.value);
+  Color get darkSubtitleColorValue => RoomCardConfigUtils.darkSubtitleColorValue(darkSubtitleColor.value);
 
   Color getCardColor(bool isDark) => isDark ? darkCardColorValue : lightCardColorValue;
   Color getTitleColor(bool isDark) => isDark ? darkTitleColorValue : lightTitleColorValue;
@@ -147,30 +167,31 @@ class RoomCardConfigController extends GetxController {
   Color getPlatformBackground(bool isDark) => isDark ? platformBackgroundDarkValue : platformBackgroundLightValue;
   Color getPlatformText(bool isDark) => isDark ? platformTextDarkValue : platformTextLightValue;
 
-  // ===== 生命周期初始化（缺失的初始化代码）=====
+  // ===== Lifecycle initialization =====
   @override
   void onInit() {
     super.onInit();
-    // 页面打开：非自定义模式，加载预设刷新表单UI
+    // On page open: if not in custom mode, load preset to refresh form UI
     if (!isCustomMode) {
       _loadPresetValue(presetValue);
     }
   }
 
-  // ===== 切换预设 =====
+  // ===== Apply Preset =====
   void applyPreset(RoomCardPreset newPreset) {
     _loadPresetValue(newPreset);
     preset.value = newPreset.key;
     update();
   }
 
-  // 从预设模板完整加载所有字段（补全之前漏掉的字段）
+  // Load all fields from preset model (complete)
   void _loadPresetValue(RoomCardPreset newPreset) {
     final model = RoomCardModel.fromPreset(newPreset);
 
     cardRadius.value = model.cardBorderRadius;
     cardElevation.value = model.cardElevation;
     enableShadow.value = model.enableShadow;
+    cardMargin.value = model.cardMargin.horizontal; // Store as double for persistence
 
     coverRadius.value = model.coverBorderRadius;
     coverAspectRatio.value = model.coverAspectRatio;
@@ -178,6 +199,25 @@ class RoomCardConfigController extends GetxController {
     cacheCover.value = model.cacheCover;
     coverCacheMinWidth.value = model.coverCacheMinWidth;
     coverCacheMaxWidth.value = model.coverCacheMaxWidth;
+    coverFitIndex.value = RoomCardConfigUtils.getCoverFitIndex(model.coverFit);
+    coverFilterQualityIndex.value = RoomCardConfigUtils.getFilterQualityIndex(model.coverFilterQuality);
+
+    // Dense variants
+    denseAvatarSize.value = model.denseAvatarSize;
+    denseContentHorizontalPadding.value = model.denseContentHorizontalPadding;
+    denseContentVerticalPadding.value = model.denseContentVerticalPadding;
+    denseHorizontalTitleGap.value = model.denseHorizontalTitleGap;
+    denseTitleFontSize.value = model.denseTitleFontSize;
+    denseSubtitleFontSize.value = model.denseSubtitleFontSize;
+    densePlatformFontSize.value = model.densePlatformFontSize;
+    denseChipFontSize.value = model.denseChipFontSize;
+    denseChipHorizontalPadding.value = model.denseChipHorizontalPadding;
+    denseChipVerticalPadding.value = model.denseChipVerticalPadding;
+    denseMetricFontSize.value = model.denseMetricFontSize;
+    denseMetricHorizontalPadding.value = model.denseMetricHorizontalPadding;
+    denseMetricVerticalPadding.value = model.denseMetricVerticalPadding;
+    denseMetricBorderRadius.value = model.denseMetricBorderRadius;
+    denseDeleteButtonSize.value = model.denseDeleteButtonSize;
 
     horizontalPadding.value = model.contentHorizontalPadding;
     verticalPadding.value = model.contentVerticalPadding;
@@ -191,14 +231,15 @@ class RoomCardConfigController extends GetxController {
     titleLineHeight.value = model.titleLineHeight;
     subtitleFontSize.value = model.subtitleFontSize;
     subtitleLineHeight.value = model.subtitleLineHeight;
-    titleFontWeightIndex.value = RoomCardConfig.getFontWeightIndex(model.titleFontWeight);
-    subtitleFontWeightIndex.value = RoomCardConfig.getFontWeightIndex(model.subtitleFontWeight);
+    titleFontWeightIndex.value = RoomCardConfigUtils.getFontWeightIndex(model.titleFontWeight);
+    subtitleFontWeightIndex.value = RoomCardConfigUtils.getFontWeightIndex(model.subtitleFontWeight);
 
     showPlatform.value = model.showPlatform;
     platformFontSize.value = model.platformFontSize;
     platformBorderRadius.value = model.platformBorderRadius;
     platformHorizontalPadding.value = model.platformHorizontalPadding;
     platformVerticalPadding.value = model.platformVerticalPadding;
+    platformFontWeightIndex.value = RoomCardConfigUtils.getFontWeightIndex(model.platformFontWeight);
 
     showAudience.value = model.showAudience;
     showRecordBadge.value = model.showRecordBadge;
@@ -208,6 +249,7 @@ class RoomCardConfigController extends GetxController {
     chipBorderRadius.value = model.chipBorderRadius;
     chipHorizontalPadding.value = model.chipHorizontalPadding;
     chipVerticalPadding.value = model.chipVerticalPadding;
+    chipFontWeightIndex.value = RoomCardConfigUtils.getFontWeightIndex(model.chipFontWeight);
 
     metricFontSize.value = model.metricFontSize;
     badgeRadius.value = model.metricBorderRadius;
@@ -215,6 +257,7 @@ class RoomCardConfigController extends GetxController {
     metricHorizontalPadding.value = model.metricHorizontalPadding;
     metricVerticalPadding.value = model.metricVerticalPadding;
     metricBorderWidth.value = model.metricBorderWidth;
+    metricFontWeightIndex.value = RoomCardConfigUtils.getFontWeightIndex(model.metricFontWeight);
 
     showDelete.value = model.showDelete;
     deleteButtonBorderRadius.value = model.deleteButtonBorderRadius;
@@ -231,23 +274,23 @@ class RoomCardConfigController extends GetxController {
   }
 
   void setTitleFontWeight(FontWeight weight) {
-    titleFontWeightIndex.value = RoomCardConfig.getFontWeightIndex(weight);
+    titleFontWeightIndex.value = RoomCardConfigUtils.getFontWeightIndex(weight);
   }
 
   void setSubtitleFontWeight(FontWeight weight) {
-    subtitleFontWeightIndex.value = RoomCardConfig.getFontWeightIndex(weight);
+    subtitleFontWeightIndex.value = RoomCardConfigUtils.getFontWeightIndex(weight);
   }
 
   void setPlatformFontWeight(FontWeight weight) {
-    platformFontWeightIndex.value = RoomCardConfig.getFontWeightIndex(weight);
+    platformFontWeightIndex.value = RoomCardConfigUtils.getFontWeightIndex(weight);
   }
 
   void setChipFontWeight(FontWeight weight) {
-    chipFontWeightIndex.value = RoomCardConfig.getFontWeightIndex(weight);
+    chipFontWeightIndex.value = RoomCardConfigUtils.getFontWeightIndex(weight);
   }
 
   void setMetricFontWeight(FontWeight weight) {
-    metricFontWeightIndex.value = RoomCardConfig.getFontWeightIndex(weight);
+    metricFontWeightIndex.value = RoomCardConfigUtils.getFontWeightIndex(weight);
   }
 
   Future<void> reset() async {
@@ -277,13 +320,14 @@ class RoomCardConfigController extends GetxController {
     update();
   }
 
-  // ===== 序列化导出（和ThemeSettingsController保持一模一样风格）=====
+  // ===== Serialization (same style as ThemeSettingsController) =====
   Map<String, dynamic> toJson() {
     return {
       'preset': preset.value,
       'cardRadius': cardRadius.value,
       'cardElevation': cardElevation.value,
       'enableShadow': enableShadow.value,
+      'cardMargin': cardMargin.value,
       'coverRadius': coverRadius.value,
       'coverAspectRatio': coverAspectRatio.value,
       'coverPositionPadding': coverPositionPadding.value,
@@ -301,6 +345,21 @@ class RoomCardConfigController extends GetxController {
       'showAvatar': showAvatar.value,
       'showSubtitle': showSubtitle.value,
       'denseMode': denseMode.value,
+      'denseAvatarSize': denseAvatarSize.value,
+      'denseContentHorizontalPadding': denseContentHorizontalPadding.value,
+      'denseContentVerticalPadding': denseContentVerticalPadding.value,
+      'denseHorizontalTitleGap': denseHorizontalTitleGap.value,
+      'denseTitleFontSize': denseTitleFontSize.value,
+      'denseSubtitleFontSize': denseSubtitleFontSize.value,
+      'densePlatformFontSize': densePlatformFontSize.value,
+      'denseChipFontSize': denseChipFontSize.value,
+      'denseChipHorizontalPadding': denseChipHorizontalPadding.value,
+      'denseChipVerticalPadding': denseChipVerticalPadding.value,
+      'denseMetricFontSize': denseMetricFontSize.value,
+      'denseMetricHorizontalPadding': denseMetricHorizontalPadding.value,
+      'denseMetricVerticalPadding': denseMetricVerticalPadding.value,
+      'denseMetricBorderRadius': denseMetricBorderRadius.value,
+      'denseDeleteButtonSize': denseDeleteButtonSize.value,
       'titleFontSize': titleFontSize.value,
       'titleFontWeightIndex': titleFontWeightIndex.value,
       'titleLineHeight': titleLineHeight.value,
@@ -358,6 +417,7 @@ class RoomCardConfigController extends GetxController {
     cardRadius.value = (json['cardRadius'] ?? 20.0).toDouble();
     cardElevation.value = (json['cardElevation'] ?? 0.0).toDouble();
     enableShadow.value = json['enableShadow'] ?? false;
+    cardMargin.value = (json['cardMargin'] ?? 0.0).toDouble();
     coverRadius.value = (json['coverRadius'] ?? 20.0).toDouble();
     coverAspectRatio.value = (json['coverAspectRatio'] ?? 16 / 9).toDouble();
     coverPositionPadding.value = (json['coverPositionPadding'] ?? 8.0).toDouble();
@@ -375,6 +435,21 @@ class RoomCardConfigController extends GetxController {
     showAvatar.value = json['showAvatar'] ?? true;
     showSubtitle.value = json['showSubtitle'] ?? true;
     denseMode.value = json['denseMode'] ?? false;
+    denseAvatarSize.value = (json['denseAvatarSize'] ?? 40.0).toDouble();
+    denseContentHorizontalPadding.value = (json['denseContentHorizontalPadding'] ?? 10.0).toDouble();
+    denseContentVerticalPadding.value = (json['denseContentVerticalPadding'] ?? 4.0).toDouble();
+    denseHorizontalTitleGap.value = (json['denseHorizontalTitleGap'] ?? 8.0).toDouble();
+    denseTitleFontSize.value = (json['denseTitleFontSize'] ?? 13.0).toDouble();
+    denseSubtitleFontSize.value = (json['denseSubtitleFontSize'] ?? 12.0).toDouble();
+    densePlatformFontSize.value = (json['densePlatformFontSize'] ?? 10.0).toDouble();
+    denseChipFontSize.value = (json['denseChipFontSize'] ?? 12.0).toDouble();
+    denseChipHorizontalPadding.value = (json['denseChipHorizontalPadding'] ?? 10.0).toDouble();
+    denseChipVerticalPadding.value = (json['denseChipVerticalPadding'] ?? 4.0).toDouble();
+    denseMetricFontSize.value = (json['denseMetricFontSize'] ?? 11.0).toDouble();
+    denseMetricHorizontalPadding.value = (json['denseMetricHorizontalPadding'] ?? 6.0).toDouble();
+    denseMetricVerticalPadding.value = (json['denseMetricVerticalPadding'] ?? 4.0).toDouble();
+    denseMetricBorderRadius.value = (json['denseMetricBorderRadius'] ?? 10.0).toDouble();
+    denseDeleteButtonSize.value = (json['denseDeleteButtonSize'] ?? 16.0).toDouble();
     titleFontSize.value = (json['titleFontSize'] ?? 15.0).toDouble();
     titleFontWeightIndex.value = json['titleFontWeightIndex'] ?? 5;
     titleLineHeight.value = (json['titleLineHeight'] ?? 1.2).toDouble();
@@ -435,6 +510,7 @@ class RoomCardConfigController extends GetxController {
       'cardRadius',
       'cardElevation',
       'enableShadow',
+      'cardMargin',
       'coverRadius',
       'coverAspectRatio',
       'coverPositionPadding',
@@ -452,6 +528,21 @@ class RoomCardConfigController extends GetxController {
       'showAvatar',
       'showSubtitle',
       'denseMode',
+      'denseAvatarSize',
+      'denseContentHorizontalPadding',
+      'denseContentVerticalPadding',
+      'denseHorizontalTitleGap',
+      'denseTitleFontSize',
+      'denseSubtitleFontSize',
+      'densePlatformFontSize',
+      'denseChipFontSize',
+      'denseChipHorizontalPadding',
+      'denseChipVerticalPadding',
+      'denseMetricFontSize',
+      'denseMetricHorizontalPadding',
+      'denseMetricVerticalPadding',
+      'denseMetricBorderRadius',
+      'denseDeleteButtonSize',
       'titleFontSize',
       'titleFontWeightIndex',
       'titleLineHeight',

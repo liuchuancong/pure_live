@@ -1,8 +1,8 @@
 import 'room_card_renderer.dart';
 import 'room_card_controller.dart';
-
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/modules/settings/pages/room_card_settings/room_card_model.dart';
+
 
 class RoomCardPage extends StatelessWidget {
   const RoomCardPage({
@@ -28,7 +28,7 @@ class RoomCardPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = RoomCardController(room: room);
+    final controller = RoomCardController(room: room, debug: debug);
 
     return RoomCardRenderer(
       room: room,
