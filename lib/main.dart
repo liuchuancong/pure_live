@@ -47,9 +47,13 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> with DesktopWindowMixin {
   StreamSubscription<SharedMedia>? _sharedMediaSubscription;
 
+  Timer? _themeChangeDebounce;
+  ThemeData? _pendingTheme;
+
   @override
   void initState() {
     super.initState();
+
     // Start favourite verification after the first Flutter frame instead of
     // waiting until HomePage is created. When the splash page is enabled this
     // overlaps its one-second animation; when it is disabled the first frame
@@ -61,20 +65,27 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
         Get.find<FavoriteController>();
       }
     });
+
     if (PlatformUtils.isDesktop) {
       DesktopManager.initializeListeners(this);
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) unawaited(DesktopManager.updateTrayWhenLocalized());
+        if (mounted) {
+          unawaited(DesktopManager.updateTrayWhenLocalized());
+        }
       });
     }
+
     unawaited(initSharedMediaListener());
     unawaited(initGlobalPlayer());
   }
 
   Future<void> initGlobalPlayer() async {
     final String savedKey = SettingsService.to.player.videoPlayerKey.v;
+
     final String validKey = PlayerConsts.engines.containsKey(savedKey) ? savedKey : PlayerConsts.defaultKey;
+
     final PlayerEngine targetEngine = PlayerConsts.engines[validKey]!;
+
     final PlayerEngine defaultEngine;
 
     if (PlatformUtils.isDesktop) {
@@ -82,27 +93,74 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
     } else {
       defaultEngine = targetEngine;
     }
+
     await GlobalPlayerService.instance.initialize(defaultEngine: defaultEngine);
+  }
+
+  void _debounceThemeChange(ThemeData theme) {
+    _pendingTheme = theme;
+
+    _themeChangeDebounce?.cancel();
+
+    _themeChangeDebounce = Timer(const Duration(milliseconds: 200), () {
+      if (!mounted) return;
+
+      final latestTheme = _pendingTheme;
+      if (latestTheme == null) return;
+
+      final currentTheme = Get.theme;
+
+      if (_isSameTheme(currentTheme, latestTheme)) {
+        return;
+      }
+
+      Get.changeTheme(latestTheme);
+    });
+  }
+
+  bool _isSameTheme(ThemeData a, ThemeData b) {
+    return a.brightness == b.brightness &&
+        a.colorScheme.primary == b.colorScheme.primary &&
+        a.colorScheme.secondary == b.colorScheme.secondary &&
+        a.colorScheme.tertiary == b.colorScheme.tertiary &&
+        a.colorScheme.surface == b.colorScheme.surface &&
+        a.colorScheme.surfaceContainer == b.colorScheme.surfaceContainer &&
+        a.colorScheme.surfaceContainerLow == b.colorScheme.surfaceContainerLow &&
+        a.colorScheme.surfaceContainerHigh == b.colorScheme.surfaceContainerHigh;
   }
 
   @override
   void dispose() {
+    _themeChangeDebounce?.cancel();
+    _themeChangeDebounce = null;
+    _pendingTheme = null;
+    _pendingTheme = null;
+
     if (PlatformUtils.isDesktop) {
       DesktopManager.disposeListeners();
     }
+
     final subscription = _sharedMediaSubscription;
-    if (subscription != null) unawaited(subscription.cancel());
+    if (subscription != null) {
+      unawaited(subscription.cancel());
+    }
+
     unawaited(GlobalPlayerService.instance.dispose());
+
     super.dispose();
   }
 
   Future<void> initSharedMediaListener() async {
     if (Platform.isAndroid) {
       final handler = ShareHandler.instance;
+
       await handler.getInitialSharedMedia();
+
       _sharedMediaSubscription = handler.sharedMediaStream.listen((SharedMedia media) async {
         final path = media.content?.trim().toLowerCase() ?? '';
+
         if (path.isEmpty) return;
+
         if (path.endsWith('.m3u') || path.endsWith('.txt') || path.contains('.m3u8')) {
           await IptvImportManager().importFromSharedMedia(media);
         } else if (path.endsWith('.xml') || path.endsWith('.gz') || path.endsWith('.json')) {
@@ -117,31 +175,63 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
   @override
   Widget build(BuildContext context) {
     return DynamicColorBuilder(
-      builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
+      builder: (lightDynamic, darkDynamic) {
         return Obx(() {
           final themeColor = HexColor(SettingsService.to.theme.themeColorSwitch.v);
+
           final showSplashPage = SettingsService.to.app.showSplashPage.v;
+
           final currentFactor = SettingsService.to.font.textScaleFactor.v;
+
+          final enableDynamicTheme = SettingsService.to.theme.enableDynamicTheme.value;
 
           ThemeData lightTheme;
           ThemeData darkTheme;
 
-          if (SettingsService.to.theme.enableDynamicTheme.v && lightDynamic != null && darkDynamic != null) {
-            lightTheme = MyTheme(colorScheme: lightDynamic.harmonized()).lightThemeData;
-            darkTheme = MyTheme(colorScheme: darkDynamic.harmonized()).darkThemeData;
+          if (enableDynamicTheme && lightDynamic != null && darkDynamic != null) {
+            lightTheme = MyTheme(primaryColor: lightDynamic.primary).lightThemeData;
+
+            darkTheme = MyTheme(primaryColor: darkDynamic.primary).darkThemeData;
           } else {
             lightTheme = MyTheme(primaryColor: themeColor).lightThemeData;
+
             darkTheme = MyTheme(primaryColor: themeColor).darkThemeData;
           }
+
+          final themeMode = AppConsts.themeModes[SettingsService.to.theme.themeModeName.v]!;
+
+          final brightness = WidgetsBinding.instance.platformDispatcher.platformBrightness;
+
+          final ThemeData currentTheme;
+
+          switch (themeMode) {
+            case ThemeMode.dark:
+              currentTheme = darkTheme;
+              break;
+
+            case ThemeMode.light:
+              currentTheme = lightTheme;
+              break;
+
+            case ThemeMode.system:
+              currentTheme = brightness == Brightness.dark ? darkTheme : lightTheme;
+              break;
+          }
+
+          _debounceThemeChange(currentTheme);
 
           return GetMaterialApp(
             // The localized title is rendered by CustomTitleBar. A stable
             // application title avoids asking EasyLocalization for a key
             // before its delegate has completed the first load.
             title: i18n('app_name'),
+
             scrollBehavior: MyCustomScrollBehavior(),
+
             debugShowCheckedModeBanner: false,
-            themeMode: AppConsts.themeModes[SettingsService.to.theme.themeModeName.v]!,
+
+            themeMode: themeMode,
+
             theme: lightTheme.copyWith(
               appBarTheme: const AppBarTheme(surfaceTintColor: Colors.transparent),
               pageTransitionsTheme: PageTransitionsTheme(
@@ -151,6 +241,7 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
                 },
               ),
             ),
+
             darkTheme: darkTheme.copyWith(
               appBarTheme: const AppBarTheme(surfaceTintColor: Colors.transparent),
               pageTransitionsTheme: const PageTransitionsTheme(
@@ -160,11 +251,15 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
                 },
               ),
             ),
+
             locale: context.locale,
+
             navigatorObservers: [FlutterSmartDialog.observer, LiveRouteObserver()],
+
             builder: FlutterSmartDialog.init(
               builder: (context, child) {
                 Widget resultWidget = child ?? const SizedBox.shrink();
+
                 if (PlatformUtils.isDesktopNotMac) {
                   resultWidget = DesktopManager.buildWithTitleBar(resultWidget);
                 } else if (Platform.isAndroid) {
@@ -173,21 +268,28 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
                     child: resultWidget,
                   );
                 }
+
                 return MediaQuery(
                   data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(currentFactor)),
                   child: resultWidget,
                 );
               },
             ),
+
             supportedLocales: context.supportedLocales,
+
             localizationsDelegates: context.localizationDelegates,
+
             initialRoute: showSplashPage ? RoutePath.kSplash : RoutePath.kInitial,
+
             defaultTransition: Transition.native,
+
             routingCallback: (routing) {
               if (routing != null) {
                 RouteObserverController.to.updateRoute(routing.current);
               }
             },
+
             getPages: AppPages.routes,
           );
         });

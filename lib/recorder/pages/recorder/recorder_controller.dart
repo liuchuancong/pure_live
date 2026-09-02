@@ -1086,8 +1086,9 @@ class RecorderController extends GetxService {
     if (!settings.autoStartOnBoot.value ||
         restored.isEmpty ||
         !await requestStoragePermission() ||
-        !await _hasUsableRecordPath())
+        !await _hasUsableRecordPath()) {
       return;
+    }
 
     for (final task in restored) {
       await refreshTaskStatus(task);
