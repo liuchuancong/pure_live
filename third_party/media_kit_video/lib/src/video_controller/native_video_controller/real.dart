@@ -75,36 +75,30 @@ class NativeVideoController extends PlatformVideoController {
 
         final int handle = await player.handle;
 
-        final int sourceWidth;
-        final int sourceHeight;
+        final int width;
+        final int height;
         if (event.rotate == 0 || event.rotate == 180) {
-          sourceWidth = event.dw ?? 0;
-          sourceHeight = event.dh ?? 0;
+          width = event.dw ?? 0;
+          height = event.dh ?? 0;
         } else {
           // width & height are swapped for 90 or 270 degrees rotation.
-          sourceWidth = event.dh ?? 0;
-          sourceHeight = event.dw ?? 0;
+          width = event.dh ?? 0;
+          height = event.dw ?? 0;
         }
 
-        if (videoParamsWidth == sourceWidth && videoParamsHeight == sourceHeight) {
+        if (videoParamsWidth == width && videoParamsHeight == height) {
           return;
         }
 
-        videoParamsWidth = sourceWidth;
-        videoParamsHeight = sourceHeight;
-
-        // Respect an application-provided viewport size. Previously every
-        // video-parameter event overwrote setSize(), recreating a source-sized
-        // BGRA texture even when the visible Windows viewport was much smaller.
-        final outputWidth = this.width ?? sourceWidth;
-        final outputHeight = this.height ?? sourceHeight;
+        videoParamsWidth = width;
+        videoParamsHeight = height;
 
         await _channel.invokeMethod(
           'VideoOutputManager.SetSize',
           {
             'handle': handle.toString(),
-            'width': outputWidth.toString(),
-            'height': outputHeight.toString(),
+            'width': width.toString(),
+            'height': height.toString(),
           },
         );
       }),
@@ -204,10 +198,9 @@ class NativeVideoController extends PlatformVideoController {
   Future<void> setSize({
     int? width,
     int? height,
-    bool force = false,
   }) async {
     final handle = await player.handle;
-    if (!force && this.width == width && this.height == height) {
+    if (this.width == width && this.height == height) {
       // No need to resize if the requested size is same as the current size.
       return;
     }
@@ -255,59 +248,32 @@ class NativeVideoController extends PlatformVideoController {
   static final _controllers = HashMap<int, NativeVideoController>();
 
   /// [MethodChannel] for invoking platform specific native implementation.
-  static final _channel =
-      const MethodChannel('com.alexmercerind/media_kit_video')
-        ..setMethodCallHandler(
-          (MethodCall call) async {
-            try {
-              debugPrint(call.method.toString());
-              debugPrint(call.arguments.toString());
-              switch (call.method) {
-                case 'VideoOutput.Resize':
-                  {
-                    // Notify about updated texture ID & [Rect].
-                    final int handle = call.arguments['handle'];
-                    final Rect rect = Rect.fromLTWH(
-                      call.arguments['rect']['left'] * 1.0,
-                      call.arguments['rect']['top'] * 1.0,
-                      call.arguments['rect']['width'] * 1.0,
-                      call.arguments['rect']['height'] * 1.0,
-                    );
-                    final int id = call.arguments['id'];
-                    _controllers[handle]?.rect.value = rect;
-                    _controllers[handle]?.id.value = id;
-                    // Notify about the first frame being rendered.
-                    if (rect.width > 0 && rect.height > 0) {
-                      final completer = _controllers[handle]
-                          ?.waitUntilFirstFrameRenderedCompleter;
-                      if (!(completer?.isCompleted ?? true)) {
-                        completer?.complete();
-                      }
-                    }
-                    break;
-                  }
-                case 'VideoOutput.Frame':
-                  {
-                    final int handle = call.arguments['handle'];
-                    final controller = _controllers[handle];
-                    if (controller != null) {
-                      controller.frameRevision.value++;
-                    }
-                    break;
-                  }
-                default:
-                  {
-                    break;
-                  }
-                }
-                break;
-              }
-            case 'VideoOutput.Frame':
+  static final _channel = const MethodChannel('com.alexmercerind/media_kit_video')
+    ..setMethodCallHandler(
+      (MethodCall call) async {
+        try {
+          debugPrint(call.method.toString());
+          debugPrint(call.arguments.toString());
+          switch (call.method) {
+            case 'VideoOutput.Resize':
               {
+                // Notify about updated texture ID & [Rect].
                 final int handle = call.arguments['handle'];
-                final controller = _controllers[handle];
-                if (controller != null) {
-                  controller.frameRevision.value++;
+                final Rect rect = Rect.fromLTWH(
+                  call.arguments['rect']['left'] * 1.0,
+                  call.arguments['rect']['top'] * 1.0,
+                  call.arguments['rect']['width'] * 1.0,
+                  call.arguments['rect']['height'] * 1.0,
+                );
+                final int id = call.arguments['id'];
+                _controllers[handle]?.rect.value = rect;
+                _controllers[handle]?.id.value = id;
+                // Notify about the first frame being rendered.
+                if (rect.width > 0 && rect.height > 0) {
+                  final completer = _controllers[handle]?.waitUntilFirstFrameRenderedCompleter;
+                  if (!(completer?.isCompleted ?? true)) {
+                    completer?.complete();
+                  }
                 }
                 break;
               }

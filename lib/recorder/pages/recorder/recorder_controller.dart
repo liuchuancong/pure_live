@@ -23,6 +23,7 @@ import 'package:pure_live/recorder/services/ffmpeg_header_factory.dart';
 import 'package:pure_live/recorder/services/stream_resolver_service.dart';
 import 'package:pure_live/recorder/services/video_processor_service.dart';
 import 'package:pure_live/recorder/services/recording_output_metrics.dart';
+import 'package:pure_live/recorder/services/recording_keep_alive_service.dart';
 import 'package:pure_live/recorder/services/recorder_continuation_policy.dart';
 import 'package:pure_live/recorder/pages/record_settings/record_settings_controller.dart';
 
@@ -57,7 +58,7 @@ class RecorderController extends GetxService {
   final Map<String, DateTime> _outputStartedAt = <String, DateTime>{};
   final Map<String, DateTime> _lastOutputPersist = <String, DateTime>{};
   final Map<String, RecordingAttemptProgress> _attemptProgress = <String, RecordingAttemptProgress>{};
-
+  bool _recordingForegroundServiceEnabled = false;
   Timer? _persistTimer;
   Timer? _resourceMonitor;
   bool _persistDirty = false;
@@ -463,13 +464,42 @@ class RecorderController extends GetxService {
 
   void updateTask(LiveRecordTask task, {bool persist = true}) {
     final index = tasks.indexWhere((candidate) => candidate.taskId == task.taskId);
+
     if (index == -1) return;
-    // Preserve the user's spatial context. Sorting on every status/progress
-    // transition made recorder cards jump between rows while they were being
-    // read or operated. Tabs already expose status-specific views; the all tab
-    // therefore keeps insertion/restoration order stable.
+
     tasks[index] = task;
-    if (persist) schedulePersist();
+
+    if (persist) {
+      schedulePersist();
+    }
+
+    unawaited(_updateRecordingForegroundService());
+  }
+
+  bool _isRecordingLifecycleActive(LiveRecordTask task) {
+    return const <RecordStatus>{
+      RecordStatus.queued,
+      RecordStatus.preparing,
+      RecordStatus.running,
+      RecordStatus.reconnecting,
+      RecordStatus.processing,
+    }.contains(task.status);
+  }
+
+  Future<void> _updateRecordingForegroundService() async {
+    final shouldRun = tasks.any(_isRecordingLifecycleActive);
+
+    if (shouldRun == _recordingForegroundServiceEnabled) {
+      return;
+    }
+
+    _recordingForegroundServiceEnabled = shouldRun;
+
+    if (shouldRun) {
+      await RecordingKeepAliveService.start();
+    } else {
+      await RecordingKeepAliveService.stop();
+    }
   }
 
   void schedulePersist() {

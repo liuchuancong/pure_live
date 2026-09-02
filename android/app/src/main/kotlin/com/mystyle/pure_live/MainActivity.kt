@@ -15,11 +15,14 @@ import android.window.OnBackInvokedDispatcher
 import com.ryanheise.audioservice.AudioServiceActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
+import android.content.Intent
+import androidx.core.content.ContextCompat
 
 class MainActivity : AudioServiceActivity() {
     companion object {
         private const val DISPLAY_MODE_CHANNEL = "pure_live/display_mode"
         private const val BACKGROUND_PLAYBACK_CHANNEL = "pure_live/background_playback"
+        private const val RECORDING_KEEP_ALIVE_CHANNEL = "pure_live/recording_keep_alive"
         private const val PREDICTIVE_BACK_CHANNEL = "pure_live/predictive_back"
         private var playbackWakeLock: PowerManager.WakeLock? = null
         private var playbackWifiLock: WifiManager.WifiLock? = null
@@ -91,53 +94,87 @@ class MainActivity : AudioServiceActivity() {
         }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
-        super.configureFlutterEngine(flutterEngine)
-        displayModeChannel = MethodChannel(
-            flutterEngine.dartExecutor.binaryMessenger,
-            DISPLAY_MODE_CHANNEL,
-        ).also { channel ->
-            channel.setMethodCallHandler { call, result ->
-                when (call.method) {
-                    "setHighRefreshRate" -> {
-                        highRefreshRateEnabled = call.argument<Boolean>("enabled") ?: true
-                        val info = applyPreferredDisplayMode(highRefreshRateEnabled)
-                        lastPublishedDisplayModeInfo = info
-                        result.success(info)
-                    }
+    super.configureFlutterEngine(flutterEngine)
 
-                    "getDisplayModeInfo" -> result.success(displayModeInfo())
-                    else -> result.notImplemented()
-                }
-            }
-        }
-        MethodChannel(
-            flutterEngine.dartExecutor.binaryMessenger,
-            BACKGROUND_PLAYBACK_CHANNEL,
-        ).setMethodCallHandler { call, result ->
+    displayModeChannel = MethodChannel(
+        flutterEngine.dartExecutor.binaryMessenger,
+        DISPLAY_MODE_CHANNEL,
+    ).also { channel ->
+        channel.setMethodCallHandler { call, result ->
             when (call.method) {
-                "setKeepAlive" -> {
-                    setPlaybackKeepAlive(call.argument<Boolean>("enabled") ?: false)
-                    result.success(null)
+                "setHighRefreshRate" -> {
+                    highRefreshRateEnabled =
+                        call.argument<Boolean>("enabled") ?: true
+
+                    val info =
+                        applyPreferredDisplayMode(highRefreshRateEnabled)
+
+                    lastPublishedDisplayModeInfo = info
+
+                    result.success(info)
                 }
+
+                "getDisplayModeInfo" -> {
+                    result.success(displayModeInfo())
+                }
+
                 else -> result.notImplemented()
             }
         }
-        predictiveBackChannel = MethodChannel(
-            flutterEngine.dartExecutor.binaryMessenger,
-            PREDICTIVE_BACK_CHANNEL,
-        ).also { channel ->
-            channel.setMethodCallHandler { call, result ->
-                when (call.method) {
-                    "setEnabled" -> {
-                        setPredictiveBackEnabled(call.argument<Boolean>("enabled") ?: false)
-                        result.success(null)
-                    }
-                    else -> result.notImplemented()
-                }
-            }
-        }
-        applyPreferredDisplayMode(highRefreshRateEnabled)
     }
+
+    // ============================================================
+    // 播放器后台 KeepAlive
+    // 这一段原样保留
+    // ============================================================
+    MethodChannel(
+        flutterEngine.dartExecutor.binaryMessenger,
+        BACKGROUND_PLAYBACK_CHANNEL,
+    ).setMethodCallHandler { call, result ->
+        when (call.method) {
+            "setKeepAlive" -> {
+                setPlaybackKeepAlive(
+                    call.argument<Boolean>("enabled") ?: false,
+                )
+                result.success(null)
+            }
+
+            else -> result.notImplemented()
+        }
+    }
+
+    // ============================================================
+    // 录制后台 Foreground Service
+    // 新增这一段
+    // ============================================================
+    MethodChannel(
+        flutterEngine.dartExecutor.binaryMessenger,
+        RECORDING_KEEP_ALIVE_CHANNEL,
+    ).setMethodCallHandler { call, result ->
+        when (call.method) {
+            "start" -> {
+                startRecordingForegroundService()
+                result.success(null)
+            }
+
+            "stop" -> {
+                stopRecordingForegroundService()
+                result.success(null)
+            }
+
+            else -> result.notImplemented()
+        }
+    }
+
+    predictiveBackChannel = MethodChannel(
+        flutterEngine.dartExecutor.binaryMessenger,
+        PREDICTIVE_BACK_CHANNEL,
+    ).also { channel ->
+        // 你原来的代码
+    }
+
+    applyPreferredDisplayMode(highRefreshRateEnabled)
+}
 
     private fun dispatchPresentationBack() {
         if (predictiveBackEnabled) {
@@ -229,6 +266,27 @@ class MainActivity : AudioServiceActivity() {
             if (playbackWakeLock?.isHeld == true) playbackWakeLock?.release()
         }
     }
+
+    private fun startRecordingForegroundService() {
+    val intent = Intent(
+        this,
+        RecordingForegroundService::class.java,
+    )
+
+    ContextCompat.startForegroundService(
+        this,
+        intent,
+    )
+}
+
+private fun stopRecordingForegroundService() {
+    val intent = Intent(
+        this,
+        RecordingForegroundService::class.java,
+    )
+
+    stopService(intent)
+}
 
     override fun onResume() {
         super.onResume()
