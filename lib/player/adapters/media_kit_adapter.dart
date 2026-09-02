@@ -333,7 +333,7 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
         vo = renderer;
       }
 
-      hwdec = settings.videoHardwareDecoder.v.isEmpty ? 'auto' : settings.videoHardwareDecoder.v;
+      hwdec = settings.videoHardwareDecoder.v;
     } else if (PlatformUtils.isWindows) {
       final driver = settings.videoOutputDriver.v;
 
@@ -341,15 +341,13 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
         vo = driver;
       }
 
-      hwdec = settings.enableRtxVsr.v
-          ? 'd3d11va'
-          : (settings.videoHardwareDecoder.v.isEmpty ? 'auto' : settings.videoHardwareDecoder.v);
+      hwdec = settings.enableRtxVsr.v ? 'd3d11va' : settings.videoHardwareDecoder.v;
     } else if (PlatformUtils.isLinux) {
       final driver = settings.videoOutputDriver.v;
       if (driver.isNotEmpty && driver != 'auto') {
         vo = driver;
       }
-      hwdec = settings.videoHardwareDecoder.v.isEmpty ? 'auto' : settings.videoHardwareDecoder.v;
+      hwdec = settings.videoHardwareDecoder.v;
     } else if (PlatformUtils.isMacOS) {
       final driver = settings.videoOutputDriver.v;
 
@@ -357,16 +355,16 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
         vo = driver;
       }
 
-      hwdec = 'no';
+      hwdec = settings.videoHardwareDecoder.v;
     } else if (PlatformUtils.isIOS) {
       final driver = settings.videoOutputDriver.v;
       if (driver.isNotEmpty && driver != 'auto') {
         vo = driver;
       }
-      hwdec = settings.videoHardwareDecoder.v.isEmpty ? 'auto' : settings.videoHardwareDecoder.v;
+      hwdec = settings.videoHardwareDecoder.v;
     }
 
-    final enableHardwareAcceleration = PlatformUtils.isMacOS ? false : settings.enableCodec.v;
+    final enableHardwareAcceleration = settings.enableCodec.v;
     Log.i(
       'MediaKit VideoOutput: '
       'videoOutputDriver=${settings.videoOutputDriver.v}, '
