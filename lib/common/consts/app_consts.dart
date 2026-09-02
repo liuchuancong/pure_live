@@ -37,7 +37,7 @@ class AppConsts {
   static const Map<String, Locale> languages = {"English": Locale('en'), "简体中文": Locale('zh')};
 
   // 视频 Fit 模式
-  List<BoxFit> videoFitList = [
+  static final List<BoxFit> videoFitList = [
     BoxFit.contain,
     BoxFit.cover,
     BoxFit.fill,
@@ -47,13 +47,20 @@ class AppConsts {
   ];
 
   /// desc 改成 key
-  List<Map<String, dynamic>> videoFitType = [
+  static final List<Map<String, dynamic>> videoFitType = [
     {'attr': BoxFit.contain, 'desc': 'video_fit_default'},
     {'attr': BoxFit.cover, 'desc': 'video_fit_crop_center'},
     {'attr': BoxFit.fill, 'desc': 'video_fit_fill_screen'},
     {'attr': BoxFit.fitHeight, 'desc': 'video_fit_fit_height'},
     {'attr': BoxFit.fitWidth, 'desc': 'video_fit_fit_width'},
     {'attr': BoxFit.scaleDown, 'desc': 'video_fit_scale_down'},
+  ];
+
+  /// 图像滤波质量
+  static final List<Map<String, dynamic>> filterQualityType = [
+    {'attr': FilterQuality.low, 'desc': 'filter_quality_low'},
+    {'attr': FilterQuality.medium, 'desc': 'filter_quality_medium'},
+    {'attr': FilterQuality.high, 'desc': 'filter_quality_high'},
   ];
 
   static Map<String, Color> themeColors = {
@@ -75,6 +82,19 @@ class AppConsts {
   static Map<ColorSwatch<Object>, String> colorsNameMap = AppConsts.themeColors.map(
     (key, value) => MapEntry(ColorTools.createPrimarySwatch(value), key),
   );
+
+  static final List<Map<String, dynamic>> fontWeightType = [
+    {'attr': FontWeight.w100, 'desc': fontWeightLabels[100]},
+    {'attr': FontWeight.w200, 'desc': fontWeightLabels[200]},
+    {'attr': FontWeight.w300, 'desc': fontWeightLabels[300]},
+    {'attr': FontWeight.w400, 'desc': fontWeightLabels[400]},
+    {'attr': FontWeight.w500, 'desc': fontWeightLabels[500]},
+    {'attr': FontWeight.w600, 'desc': fontWeightLabels[600]},
+    {'attr': FontWeight.w700, 'desc': fontWeightLabels[700]},
+    {'attr': FontWeight.w800, 'desc': fontWeightLabels[800]},
+    {'attr': FontWeight.w900, 'desc': fontWeightLabels[900]},
+  ];
+
   static const Map<int, String> fontWeightLabels = {
     100: 'font_weight_thin',
     200: 'font_weight_extra_light',

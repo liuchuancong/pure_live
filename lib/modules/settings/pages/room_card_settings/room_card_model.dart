@@ -1,5 +1,23 @@
-import 'package:flutter/material.dart';
-import 'package:pure_live/modules/settings/pages/room_card_settings/room_card_config_controller.dart';
+import 'package:pure_live/common/index.dart';
+import 'package:flex_color_picker/flex_color_picker.dart';
+import 'package:pure_live/common/global/platform_utils.dart';
+
+enum RoomCardViewportPreset {
+  mobile('mobile', '移动端'),
+  desktop('desktop', '桌面端');
+
+  const RoomCardViewportPreset(this.key, this.label);
+  final String key;
+  final String label;
+
+  static RoomCardViewportPreset fromWidth(double width) {
+    return width < 680 && PlatformUtils.isMobile ? RoomCardViewportPreset.mobile : RoomCardViewportPreset.desktop;
+  }
+
+  static RoomCardViewportPreset fromKey(String key) {
+    return values.firstWhere((e) => e.key == key, orElse: () => RoomCardViewportPreset.mobile);
+  }
+}
 
 enum RoomCardPreset {
   compact('compact', '简洁'),
@@ -183,6 +201,30 @@ class RoomCardModel {
   final double deleteButtonBorderRadius;
   final bool denseMode;
   final bool showAsListTile;
+
+  double calculateCardHeight(double itemWidth, {bool denseOverride = false, bool smallScreen = false}) {
+    final actualDense = denseOverride || denseMode || smallScreen;
+
+    final vp = actualDense ? denseContentVerticalPadding : contentVerticalPadding;
+    final avatar = actualDense ? denseAvatarSize : avatarSize;
+    final titleFs = actualDense ? denseTitleFontSize : titleFontSize;
+    final subtitleFs = actualDense ? denseSubtitleFontSize : subtitleFontSize;
+
+    final titleHeight = titleFs * titleLineHeight;
+    final subtitleHeight = showSubtitle ? subtitleFs * subtitleLineHeight : 0.0;
+    final subtitleGap = showSubtitle ? (actualDense ? 2.0 : 3.0) : 0.0;
+    final textHeight = titleHeight + subtitleGap + subtitleHeight;
+    final rowHeight = showAvatar && avatar > textHeight ? avatar : textHeight;
+
+    if (showAsListTile) {
+      return vp * 2 + rowHeight;
+    }
+
+    final aspectRatio = coverAspectRatio > 0 ? coverAspectRatio : 16 / 9;
+    final coverHeight = itemWidth / aspectRatio;
+
+    return coverHeight + vp * 2 + rowHeight;
+  }
 
   static RoomCardModel compact() {
     return const RoomCardModel(
@@ -621,111 +663,309 @@ class RoomCardModel {
     );
   }
 
-  static RoomCardModel fromController(
-    RoomCardConfigController controller, {
+  static RoomCardModel fromController({
+    required RoomCardModel config,
     required bool isDark,
     bool dense = false,
     bool showDelete = false,
   }) {
     return RoomCardModel(
       // ===== Card Style =====
-      cardBackground: isDark ? controller.darkCardColorValue : controller.lightCardColorValue,
-      cardBorderRadius: controller.cardRadius.value,
-      cardElevation: controller.cardElevation.value,
-      enableShadow: controller.enableShadow.value,
-      cardMargin: EdgeInsets.all(controller.cardMargin.value),
+      cardBackground: isDark ? config.cardBackground ?? Colors.grey.shade900 : config.cardBackground ?? Colors.white,
+      cardBorderRadius: config.cardBorderRadius,
+      cardElevation: config.cardElevation,
+      enableShadow: config.enableShadow,
+      cardMargin: config.cardMargin,
 
       // ===== Cover Settings =====
-      coverAspectRatio: controller.coverAspectRatio.value,
-      coverBorderRadius: controller.coverRadius.value,
-      coverPlaceholderColor: controller.coverPlaceholderColorValue,
-      coverFallbackColor: controller.coverFallbackColorValue,
-      coverFit: controller.coverFit,
-      coverFilterQuality: controller.coverFilterQuality,
-      coverCacheMinWidth: controller.coverCacheMinWidth.value,
-      coverCacheMaxWidth: controller.coverCacheMaxWidth.value,
-      cacheCover: controller.cacheCover.value,
-      coverPositionPadding: controller.coverPositionPadding.value,
+      coverAspectRatio: config.coverAspectRatio,
+      coverBorderRadius: config.coverBorderRadius,
+      coverPlaceholderColor: config.coverPlaceholderColor,
+      coverFallbackColor: config.coverFallbackColor,
+      coverFit: config.coverFit,
+      coverFilterQuality: config.coverFilterQuality,
+      coverCacheMinWidth: config.coverCacheMinWidth,
+      coverCacheMaxWidth: config.coverCacheMaxWidth,
+      cacheCover: config.cacheCover,
+      coverPositionPadding: config.coverPositionPadding,
 
       // ===== Content Layout =====
-      avatarSize: controller.avatarSize.value,
-      denseAvatarSize: controller.denseAvatarSize.value,
-      showAvatar: controller.showAvatar.value,
-      contentHorizontalPadding: controller.horizontalPadding.value,
-      denseContentHorizontalPadding: controller.denseContentHorizontalPadding.value,
-      contentVerticalPadding: controller.verticalPadding.value,
-      denseContentVerticalPadding: controller.denseContentVerticalPadding.value,
-      horizontalTitleGap: controller.horizontalTitleGap.value,
-      denseHorizontalTitleGap: controller.denseHorizontalTitleGap.value,
-      showSubtitle: controller.showSubtitle.value,
-      denseMode: controller.denseMode.value || dense,
+      avatarSize: config.avatarSize,
+      denseAvatarSize: config.denseAvatarSize,
+      showAvatar: config.showAvatar,
+      contentHorizontalPadding: config.contentHorizontalPadding,
+      denseContentHorizontalPadding: config.denseContentHorizontalPadding,
+      contentVerticalPadding: config.contentVerticalPadding,
+      denseContentVerticalPadding: config.denseContentVerticalPadding,
+      horizontalTitleGap: config.horizontalTitleGap,
+      denseHorizontalTitleGap: config.denseHorizontalTitleGap,
+      showSubtitle: config.showSubtitle,
+      denseMode: config.denseMode || dense,
 
       // ===== Typography =====
-      titleFontSize: controller.titleFontSize.value,
-      denseTitleFontSize: controller.denseTitleFontSize.value,
-      titleFontWeight: controller.titleFontWeight,
-      titleLineHeight: controller.titleLineHeight.value,
-      titleColor: isDark ? controller.darkTitleColorValue : controller.lightTitleColorValue,
-      subtitleFontSize: controller.subtitleFontSize.value,
-      denseSubtitleFontSize: controller.denseSubtitleFontSize.value,
-      subtitleFontWeight: controller.subtitleFontWeight,
-      subtitleLineHeight: controller.subtitleLineHeight.value,
-      subtitleColor: isDark ? controller.darkSubtitleColorValue : controller.lightSubtitleColorValue,
+      titleFontSize: config.titleFontSize,
+      denseTitleFontSize: config.denseTitleFontSize,
+      titleFontWeight: config.titleFontWeight,
+      titleLineHeight: config.titleLineHeight,
+      titleColor: config.titleColor,
+      subtitleFontSize: config.subtitleFontSize,
+      denseSubtitleFontSize: config.denseSubtitleFontSize,
+      subtitleFontWeight: config.subtitleFontWeight,
+      subtitleLineHeight: config.subtitleLineHeight,
+      subtitleColor: config.subtitleColor,
 
       // ===== Platform Tag =====
-      showPlatform: controller.showPlatform.value,
-      platformFontSize: controller.platformFontSize.value,
-      densePlatformFontSize: controller.densePlatformFontSize.value,
-      platformFontWeight: controller.platformFontWeight,
-      platformBackgroundColor: isDark
-          ? controller.platformBackgroundDarkValue
-          : controller.platformBackgroundLightValue,
-      platformTextColor: isDark ? controller.platformTextDarkValue : controller.platformTextLightValue,
-      platformBorderRadius: controller.platformBorderRadius.value,
-      platformHorizontalPadding: controller.platformHorizontalPadding.value,
-      platformVerticalPadding: controller.platformVerticalPadding.value,
+      showPlatform: config.showPlatform,
+      platformFontSize: config.platformFontSize,
+      densePlatformFontSize: config.densePlatformFontSize,
+      platformFontWeight: config.platformFontWeight,
+      platformBackgroundColor: config.platformBackgroundColor,
+      platformTextColor: config.platformTextColor,
+      platformBorderRadius: config.platformBorderRadius,
+      platformHorizontalPadding: config.platformHorizontalPadding,
+      platformVerticalPadding: config.platformVerticalPadding,
 
       // ===== Badge Settings =====
-      showLiveBadge: controller.showLiveBadge.value,
-      showRecordBadge: controller.showRecordBadge.value,
-      showAudience: controller.showAudience.value,
-      chipFontSize: controller.chipFontSize.value,
-      denseChipFontSize: controller.denseChipFontSize.value,
-      chipFontWeight: controller.chipFontWeight,
-      chipBorderRadius: controller.chipBorderRadius.value,
-      chipHorizontalPadding: controller.chipHorizontalPadding.value,
-      denseChipHorizontalPadding: controller.denseChipHorizontalPadding.value,
-      chipVerticalPadding: controller.chipVerticalPadding.value,
-      denseChipVerticalPadding: controller.denseChipVerticalPadding.value,
-      chipBackgroundColor: controller.chipBackgroundColorValue,
-      chipTextColor: controller.chipTextColorValue,
+      showLiveBadge: config.showLiveBadge,
+      showRecordBadge: config.showRecordBadge,
+      showAudience: config.showAudience,
+      chipFontSize: config.chipFontSize,
+      denseChipFontSize: config.denseChipFontSize,
+      chipFontWeight: config.chipFontWeight,
+      chipBorderRadius: config.chipBorderRadius,
+      chipHorizontalPadding: config.chipHorizontalPadding,
+      denseChipHorizontalPadding: config.denseChipHorizontalPadding,
+      chipVerticalPadding: config.chipVerticalPadding,
+      denseChipVerticalPadding: config.denseChipVerticalPadding,
+      chipBackgroundColor: config.chipBackgroundColor,
+      chipTextColor: config.chipTextColor,
 
       // ===== Metric Badge =====
-      metricFontSize: controller.metricFontSize.value,
-      denseMetricFontSize: controller.denseMetricFontSize.value,
-      metricFontWeight: controller.metricFontWeight,
-      metricBorderRadius: controller.badgeRadius.value,
-      denseMetricBorderRadius: controller.denseMetricBorderRadius.value,
-      badgeOpacity: controller.badgeOpacity.value,
-      metricBackgroundColor: controller.badgeBackgroundValue,
-      metricTextColor: controller.badgeForegroundValue,
-      metricBorderColor: controller.metricBorderColorValue,
-      metricBorderWidth: controller.metricBorderWidth.value,
-      metricHorizontalPadding: controller.metricHorizontalPadding.value,
-      denseMetricHorizontalPadding: controller.denseMetricHorizontalPadding.value,
-      metricVerticalPadding: controller.metricVerticalPadding.value,
-      denseMetricVerticalPadding: controller.denseMetricVerticalPadding.value,
+      metricFontSize: config.metricFontSize,
+      denseMetricFontSize: config.denseMetricFontSize,
+      metricFontWeight: config.metricFontWeight,
+      metricBorderRadius: config.metricBorderRadius,
+      denseMetricBorderRadius: config.denseMetricBorderRadius,
+      badgeOpacity: config.badgeOpacity,
+      metricBackgroundColor: config.metricBackgroundColor,
+      metricTextColor: config.metricTextColor,
+      metricBorderColor: config.metricBorderColor,
+      metricBorderWidth: config.metricBorderWidth,
+      metricHorizontalPadding: config.metricHorizontalPadding,
+      denseMetricHorizontalPadding: config.denseMetricHorizontalPadding,
+      metricVerticalPadding: config.metricVerticalPadding,
+      denseMetricVerticalPadding: config.denseMetricVerticalPadding,
 
       // ===== Delete Button =====
-      showDelete: controller.showDelete.value && showDelete,
-      deleteButtonBackgroundColor: controller.deleteButtonBackgroundColorValue,
-      deleteButtonPadding: controller.deleteButtonPadding.value,
-      deleteButtonSize: controller.deleteButtonSize.value,
-      denseDeleteButtonSize: controller.denseDeleteButtonSize.value,
-      deleteButtonIconColor: controller.deleteButtonIconColorValue,
-      deleteButtonBorderRadius: controller.deleteButtonBorderRadius.value,
+      showDelete: config.showDelete && showDelete,
+      deleteButtonBackgroundColor: config.deleteButtonBackgroundColor,
+      deleteButtonPadding: config.deleteButtonPadding,
+      deleteButtonSize: config.deleteButtonSize,
+      denseDeleteButtonSize: config.denseDeleteButtonSize,
+      deleteButtonIconColor: config.deleteButtonIconColor,
+      deleteButtonBorderRadius: config.deleteButtonBorderRadius,
 
-      showAsListTile: controller.showAsListTile.value,
+      showAsListTile: config.showAsListTile,
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'preset': preset.key,
+      'cardBackground': cardBackground?.hex,
+      'cardBorderRadius': cardBorderRadius,
+      'cardElevation': cardElevation,
+      'enableShadow': enableShadow,
+      'cardMarginHorizontal': cardMargin.horizontal,
+      'coverAspectRatio': coverAspectRatio,
+      'coverBorderRadius': coverBorderRadius,
+      'coverPlaceholderColor': coverPlaceholderColor?.hex,
+      'coverFallbackColor': coverFallbackColor?.hex,
+      'coverFit': coverFit.name,
+      'coverFilterQuality': coverFilterQuality.name,
+      'coverCacheMinWidth': coverCacheMinWidth,
+      'coverCacheMaxWidth': coverCacheMaxWidth,
+      'cacheCover': cacheCover,
+      'coverPositionPadding': coverPositionPadding,
+      'avatarSize': avatarSize,
+      'denseAvatarSize': denseAvatarSize,
+      'showAvatar': showAvatar,
+      'contentHorizontalPadding': contentHorizontalPadding,
+      'denseContentHorizontalPadding': denseContentHorizontalPadding,
+      'contentVerticalPadding': contentVerticalPadding,
+      'denseContentVerticalPadding': denseContentVerticalPadding,
+      'horizontalTitleGap': horizontalTitleGap,
+      'denseHorizontalTitleGap': denseHorizontalTitleGap,
+      'titleFontSize': titleFontSize,
+      'denseTitleFontSize': denseTitleFontSize,
+      'subtitleFontSize': subtitleFontSize,
+      'denseSubtitleFontSize': denseSubtitleFontSize,
+      'titleFontWeight': titleFontWeight.value,
+      'subtitleFontWeight': subtitleFontWeight.value,
+      'titleLineHeight': titleLineHeight,
+      'subtitleLineHeight': subtitleLineHeight,
+      'titleColor': titleColor?.hex,
+      'subtitleColor': subtitleColor?.hex,
+      'showSubtitle': showSubtitle,
+      'platformFontSize': platformFontSize,
+      'densePlatformFontSize': densePlatformFontSize,
+      'platformFontWeight': platformFontWeight.value,
+      'platformBackgroundColor': platformBackgroundColor?.hex,
+      'platformTextColor': platformTextColor?.hex,
+      'platformBorderRadius': platformBorderRadius,
+      'platformHorizontalPadding': platformHorizontalPadding,
+      'platformVerticalPadding': platformVerticalPadding,
+      'showPlatform': showPlatform,
+      'showAudience': showAudience,
+      'chipFontSize': chipFontSize,
+      'denseChipFontSize': denseChipFontSize,
+      'chipFontWeight': chipFontWeight.value,
+      'chipHorizontalPadding': chipHorizontalPadding,
+      'denseChipHorizontalPadding': denseChipHorizontalPadding,
+      'chipVerticalPadding': chipVerticalPadding,
+      'denseChipVerticalPadding': denseChipVerticalPadding,
+      'chipBorderRadius': chipBorderRadius,
+      'chipBackgroundColor': chipBackgroundColor?.hex,
+      'chipTextColor': chipTextColor.hex,
+      'showRecordBadge': showRecordBadge,
+      'showLiveBadge': showLiveBadge,
+      'metricFontSize': metricFontSize,
+      'denseMetricFontSize': denseMetricFontSize,
+      'metricFontWeight': metricFontWeight.value,
+      'metricHorizontalPadding': metricHorizontalPadding,
+      'denseMetricHorizontalPadding': denseMetricHorizontalPadding,
+      'metricVerticalPadding': metricVerticalPadding,
+      'denseMetricVerticalPadding': denseMetricVerticalPadding,
+      'metricBorderRadius': metricBorderRadius,
+      'denseMetricBorderRadius': denseMetricBorderRadius,
+      'metricBackgroundColor': metricBackgroundColor?.hex,
+      'metricTextColor': metricTextColor.hex,
+      'metricBorderColor': metricBorderColor?.hex,
+      'metricBorderWidth': metricBorderWidth,
+      'badgeOpacity': badgeOpacity,
+      'showDelete': showDelete,
+      'deleteButtonBackgroundColor': deleteButtonBackgroundColor?.hex,
+      'deleteButtonPadding': deleteButtonPadding,
+      'deleteButtonSize': deleteButtonSize,
+      'denseDeleteButtonSize': denseDeleteButtonSize,
+      'deleteButtonIconColor': deleteButtonIconColor.hex,
+      'deleteButtonBorderRadius': deleteButtonBorderRadius,
+      'denseMode': denseMode,
+      'showAsListTile': showAsListTile,
+    };
+  }
+
+  static RoomCardModel fromJson(Map<String, dynamic> json) {
+    return RoomCardModel(
+      preset: RoomCardPreset.fromKey(json['preset'] as String? ?? RoomCardPreset.normal.key),
+      cardBackground: _colorFromJson(json['cardBackground']),
+      cardBorderRadius: (json['cardBorderRadius'] as num? ?? 20).toDouble(),
+      cardElevation: (json['cardElevation'] as num? ?? 2).toDouble(),
+      enableShadow: json['enableShadow'] as bool? ?? true,
+      cardMargin: EdgeInsets.all((json['cardMarginHorizontal'] as num? ?? 0).toDouble()),
+      coverAspectRatio: (json['coverAspectRatio'] as num? ?? 16 / 9).toDouble(),
+      coverBorderRadius: (json['coverBorderRadius'] as num? ?? 20).toDouble(),
+      coverPlaceholderColor: _colorFromJson(json['coverPlaceholderColor']),
+      coverFallbackColor: _colorFromJson(json['coverFallbackColor']),
+      coverFit: _boxFitFromJson(json['coverFit']),
+      coverFilterQuality: _filterQualityFromJson(json['coverFilterQuality']),
+      coverCacheMinWidth: json['coverCacheMinWidth'] as int? ?? 240,
+      coverCacheMaxWidth: json['coverCacheMaxWidth'] as int? ?? 720,
+      cacheCover: json['cacheCover'] as bool? ?? true,
+      coverPositionPadding: (json['coverPositionPadding'] as num? ?? 8).toDouble(),
+      avatarSize: (json['avatarSize'] as num? ?? 40).toDouble(),
+      denseAvatarSize: (json['denseAvatarSize'] as num? ?? 40).toDouble(),
+      showAvatar: json['showAvatar'] as bool? ?? true,
+      contentHorizontalPadding: (json['contentHorizontalPadding'] as num? ?? 12).toDouble(),
+      denseContentHorizontalPadding: (json['denseContentHorizontalPadding'] as num? ?? 10).toDouble(),
+      contentVerticalPadding: (json['contentVerticalPadding'] as num? ?? 6).toDouble(),
+      denseContentVerticalPadding: (json['denseContentVerticalPadding'] as num? ?? 4).toDouble(),
+      horizontalTitleGap: (json['horizontalTitleGap'] as num? ?? 12).toDouble(),
+      denseHorizontalTitleGap: (json['denseHorizontalTitleGap'] as num? ?? 8).toDouble(),
+      titleFontSize: (json['titleFontSize'] as num? ?? 15).toDouble(),
+      denseTitleFontSize: (json['denseTitleFontSize'] as num? ?? 13).toDouble(),
+      subtitleFontSize: (json['subtitleFontSize'] as num? ?? 13).toDouble(),
+      denseSubtitleFontSize: (json['denseSubtitleFontSize'] as num? ?? 12).toDouble(),
+      titleFontWeight: _fontWeightFromJson(json['titleFontWeight']),
+      subtitleFontWeight: _fontWeightFromJson(json['subtitleFontWeight']),
+      titleLineHeight: (json['titleLineHeight'] as num? ?? 1.2).toDouble(),
+      subtitleLineHeight: (json['subtitleLineHeight'] as num? ?? 1.2).toDouble(),
+      titleColor: _colorFromJson(json['titleColor']),
+      subtitleColor: _colorFromJson(json['subtitleColor']),
+      showSubtitle: json['showSubtitle'] as bool? ?? true,
+      platformFontSize: (json['platformFontSize'] as num? ?? 11).toDouble(),
+      densePlatformFontSize: (json['densePlatformFontSize'] as num? ?? 10).toDouble(),
+      platformFontWeight: _fontWeightFromJson(json['platformFontWeight']),
+      platformBackgroundColor: _colorFromJson(json['platformBackgroundColor']),
+      platformTextColor: _colorFromJson(json['platformTextColor']),
+      platformBorderRadius: (json['platformBorderRadius'] as num? ?? 8).toDouble(),
+      platformHorizontalPadding: (json['platformHorizontalPadding'] as num? ?? 8).toDouble(),
+      platformVerticalPadding: (json['platformVerticalPadding'] as num? ?? 4).toDouble(),
+      showPlatform: json['showPlatform'] as bool? ?? false,
+      showAudience: json['showAudience'] as bool? ?? true,
+      chipFontSize: (json['chipFontSize'] as num? ?? 13).toDouble(),
+      denseChipFontSize: (json['denseChipFontSize'] as num? ?? 12).toDouble(),
+      chipFontWeight: _fontWeightFromJson(json['chipFontWeight']),
+      chipHorizontalPadding: (json['chipHorizontalPadding'] as num? ?? 12).toDouble(),
+      denseChipHorizontalPadding: (json['denseChipHorizontalPadding'] as num? ?? 10).toDouble(),
+      chipVerticalPadding: (json['chipVerticalPadding'] as num? ?? 6).toDouble(),
+      denseChipVerticalPadding: (json['denseChipVerticalPadding'] as num? ?? 4).toDouble(),
+      chipBorderRadius: (json['chipBorderRadius'] as num? ?? 20).toDouble(),
+      chipBackgroundColor: _colorFromJson(json['chipBackgroundColor']),
+      chipTextColor: _colorFromJson(json['chipTextColor']) ?? Colors.white,
+      showRecordBadge: json['showRecordBadge'] as bool? ?? true,
+      showLiveBadge: json['showLiveBadge'] as bool? ?? true,
+      metricFontSize: (json['metricFontSize'] as num? ?? 12).toDouble(),
+      denseMetricFontSize: (json['denseMetricFontSize'] as num? ?? 11).toDouble(),
+      metricFontWeight: _fontWeightFromJson(json['metricFontWeight']),
+      metricHorizontalPadding: (json['metricHorizontalPadding'] as num? ?? 8).toDouble(),
+      denseMetricHorizontalPadding: (json['denseMetricHorizontalPadding'] as num? ?? 6).toDouble(),
+      metricVerticalPadding: (json['metricVerticalPadding'] as num? ?? 5).toDouble(),
+      denseMetricVerticalPadding: (json['denseMetricVerticalPadding'] as num? ?? 4).toDouble(),
+      metricBorderRadius: (json['metricBorderRadius'] as num? ?? 12).toDouble(),
+      denseMetricBorderRadius: (json['denseMetricBorderRadius'] as num? ?? 10).toDouble(),
+      metricBackgroundColor: _colorFromJson(json['metricBackgroundColor']),
+      metricTextColor: _colorFromJson(json['metricTextColor']) ?? Colors.white,
+      metricBorderColor: _colorFromJson(json['metricBorderColor']),
+      metricBorderWidth: (json['metricBorderWidth'] as num? ?? 0.6).toDouble(),
+      badgeOpacity: (json['badgeOpacity'] as num? ?? 0.48).toDouble(),
+      showDelete: json['showDelete'] as bool? ?? true,
+      deleteButtonBackgroundColor: _colorFromJson(json['deleteButtonBackgroundColor']),
+      deleteButtonPadding: (json['deleteButtonPadding'] as num? ?? 6).toDouble(),
+      deleteButtonSize: (json['deleteButtonSize'] as num? ?? 18).toDouble(),
+      denseDeleteButtonSize: (json['denseDeleteButtonSize'] as num? ?? 16).toDouble(),
+      deleteButtonIconColor: _colorFromJson(json['deleteButtonIconColor']) ?? Colors.white,
+      deleteButtonBorderRadius: (json['deleteButtonBorderRadius'] as num? ?? 999).toDouble(),
+      denseMode: json['denseMode'] as bool? ?? false,
+      showAsListTile: json['showAsListTile'] as bool? ?? false,
+    );
+  }
+
+  static Color? _colorFromJson(dynamic value) {
+    if (value == null) return null;
+    if (value is Color) return value;
+    if (value is String && value.isNotEmpty) {
+      return HexColor(value);
+    }
+    return null;
+  }
+
+  static FontWeight _fontWeightFromJson(dynamic value) {
+    if (value == null) return FontWeight.w400;
+    if (value is FontWeight) return value;
+    if (value is int) {
+      return FontWeight.values.firstWhere((e) => e.value == value, orElse: () => FontWeight.w400);
+    }
+    return FontWeight.w400;
+  }
+
+  static BoxFit _boxFitFromJson(String? name) {
+    if (name == null) return BoxFit.cover;
+    return BoxFit.values.firstWhere((e) => e.name == name, orElse: () => BoxFit.cover);
+  }
+
+  static FilterQuality _filterQualityFromJson(String? name) {
+    if (name == null) return FilterQuality.low;
+    return FilterQuality.values.firstWhere((e) => e.name == name, orElse: () => FilterQuality.low);
   }
 }

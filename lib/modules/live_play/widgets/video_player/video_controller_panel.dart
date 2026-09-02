@@ -2162,8 +2162,8 @@ class _VideoFitSettingState extends State<VideoFitSetting> {
   VideoController get controller => widget.controller;
   @override
   Widget build(BuildContext context) {
-    final descs = AppConsts().videoFitType.map((e) => i18n(e['desc'])).toList();
-    final attrs = AppConsts().videoFitList;
+    final descs = AppConsts.videoFitType.map((e) => i18n(e['desc'])).toList();
+    final attrs = AppConsts.videoFitList;
     final player = SettingsService.to.player;
 
     return GestureDetector(

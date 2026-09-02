@@ -26,15 +26,56 @@ class RoomCard extends StatelessWidget {
     final controller = SettingsService.to.roomCardConfig;
 
     return Obx(() {
-      final config = controller.presetValue != RoomCardPreset.custom
-          ? RoomCardModel.fromPreset(controller.presetValue)
-          : RoomCardModel.fromController(controller, isDark: isDark);
+      // Determine which config to use based on current viewport
+      final isMobile = controller.isMobileCustomMode;
+      RoomCardModel config;
+
+      if (isMobile) {
+        config = controller.getMobileConfig();
+        // Apply dark mode colors if needed
+        if (isDark) {
+          config = config.copyWith(
+            cardBackground: controller.mobileDarkCardColor,
+            titleColor: controller.mobileDarkTitleColor,
+            subtitleColor: controller.mobileDarkSubtitleColor,
+            platformBackgroundColor: controller.mobilePlatformBackgroundDark,
+            platformTextColor: controller.mobilePlatformTextDark,
+          );
+        } else {
+          config = config.copyWith(
+            cardBackground: controller.mobileLightCardColor,
+            titleColor: controller.mobileLightTitleColor,
+            subtitleColor: controller.mobileLightSubtitleColor,
+            platformBackgroundColor: controller.mobilePlatformBackgroundLight,
+            platformTextColor: controller.mobilePlatformTextLight,
+          );
+        }
+      } else {
+        config = controller.getDesktopConfig();
+        if (isDark) {
+          config = config.copyWith(
+            cardBackground: controller.desktopDarkCardColor,
+            titleColor: controller.desktopDarkTitleColor,
+            subtitleColor: controller.desktopDarkSubtitleColor,
+            platformBackgroundColor: controller.desktopPlatformBackgroundDark,
+            platformTextColor: controller.desktopPlatformTextDark,
+          );
+        } else {
+          config = config.copyWith(
+            cardBackground: controller.desktopLightCardColor,
+            titleColor: controller.desktopLightTitleColor,
+            subtitleColor: controller.desktopLightSubtitleColor,
+            platformBackgroundColor: controller.desktopPlatformBackgroundLight,
+            platformTextColor: controller.desktopPlatformTextLight,
+          );
+        }
+      }
 
       return RoomCardPage(
         room: room,
         config: config,
-        dense: controller.denseMode.value || dense,
-        showDelete: showDelete,
+        dense: config.denseMode || dense,
+        showDelete: showDelete && config.showDelete,
         statusPending: statusPending,
         statusPendingLabel: statusPendingLabel,
         onDelete: onDelete,

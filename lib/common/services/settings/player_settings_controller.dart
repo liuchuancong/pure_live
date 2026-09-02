@@ -107,7 +107,7 @@ class PlayerSettingsController extends GetxController {
   // Video fit
   // ---------------------------------------------------------------------------
 
-  List<BoxFit> get videoFitArray => AppConsts().videoFitType.map((e) => e['attr'] as BoxFit).toList();
+  List<BoxFit> get videoFitArray => AppConsts.videoFitType.map((e) => e['attr'] as BoxFit).toList();
 
   // ---------------------------------------------------------------------------
   // Resolution

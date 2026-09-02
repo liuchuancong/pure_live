@@ -1,6 +1,7 @@
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:flutter/rendering.dart' show ScrollCacheExtent;
+import 'package:pure_live/modules/settings/pages/room_card_settings/room_card_config_controller.dart';
 
 @visibleForTesting
 bool shouldWrapFavoritePullToRefresh({required double viewportWidth, required bool isMobilePlatform}) {
@@ -74,7 +75,10 @@ class RoomGridView extends GetView<FavoriteController> {
                 crossAxisCount: crossAxisCount,
                 crossAxisSpacing: spacing,
                 mainAxisSpacing: mainAxisSpacing,
-                mainAxisExtent: itemWidth,
+                mainAxisExtent: RoomCardConfigController.to.calculateCardHeight(
+                  itemWidth: itemWidth,
+                  denseOverride: dense,
+                ),
               ),
               itemCount: displayList.length,
               itemBuilder: (context, index) {

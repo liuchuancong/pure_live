@@ -39,19 +39,44 @@ class RoomCardRenderer {
 
   bool get effectiveDense => isDense || isSmallScreen;
 
-  bool get debugShowAvatar => debug || config.showAvatar;
+  // ===== debug = true: 完全按 config 控制 =====
+  // ===== debug = false: 真实数据 + config 共同控制 =====
 
-  bool get debugShowSubtitle => debug || config.showSubtitle;
+  bool get showAvatar => debug ? config.showAvatar : true;
 
-  bool get debugShowPlatform => config.showPlatform;
+  bool get showSubtitle => debug ? config.showSubtitle : true;
 
-  bool get debugShowAudience => config.showAudience;
+  bool get showPlatform => config.showPlatform;
 
-  bool get debugShowLiveBadge => config.showLiveBadge;
+  bool get showAudience => config.showAudience;
 
-  bool get debugShowRecordBadge => config.showRecordBadge;
+  bool get showLiveBadge => config.showLiveBadge;
 
-  bool get debugShowDelete => debug || (showDelete && config.showDelete);
+  bool get showRecordBadge => config.showRecordBadge;
+
+  bool get showDeleteButton => debug ? config.showDelete : (showDelete && config.showDelete);
+
+  bool get showStatusPending => statusPending && !debug;
+
+  bool get showAudienceBadge {
+    if (debug) {
+      return config.showAudience && config.showLiveBadge;
+    }
+    return room.isLiveNow && config.showLiveBadge && config.showAudience && !statusPending;
+  }
+
+  bool get showRecordBadgeOnCover {
+    if (debug) {
+      return config.showRecordBadge;
+    }
+    return room.isRecord == true && config.showRecordBadge;
+  }
+
+  bool get showDebugFlash => debug;
+
+  bool get showInfoSection => debug || config.showAvatar || config.showSubtitle || config.showPlatform;
+
+  bool get showPlatformTag => showPlatform;
 
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -77,8 +102,7 @@ class RoomCardRenderer {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _buildCover(context, isDark, effectiveDense),
-            if (debug || config.showAvatar || config.showSubtitle || config.showPlatform)
-              _buildInfo(context, isDark, effectiveDense),
+            if (showInfoSection) _buildInfo(context, isDark, effectiveDense),
           ],
         ),
       ),
@@ -123,7 +147,7 @@ class RoomCardRenderer {
       height: config.subtitleLineHeight.clamp(1.0, 1.5).toDouble(),
     );
 
-    final Widget? avatar = debugShowAvatar
+    final Widget? avatar = showAvatar
         ? SizedBox(
             width: avatarSize,
             height: avatarSize,
@@ -143,7 +167,7 @@ class RoomCardRenderer {
       style: titleStyle,
     );
 
-    final Widget? subtitle = debugShowSubtitle
+    final Widget? subtitle = showSubtitle
         ? Text(
             room.nick?.trim().isNotEmpty == true ? room.nick! : i18n('unknown'),
             maxLines: 1,
@@ -160,7 +184,6 @@ class RoomCardRenderer {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           if (avatar != null) ...[avatar, SizedBox(width: effectiveDense ? 10 : 12)],
-
           Expanded(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -171,7 +194,6 @@ class RoomCardRenderer {
               ],
             ),
           ),
-
           if (trailing is! SizedBox) ...[
             SizedBox(width: effectiveDense ? 8 : 12),
             ConstrainedBox(
@@ -200,7 +222,7 @@ class RoomCardRenderer {
   Widget _buildListTileTrailing(BuildContext context, bool isDark, bool effectiveDense) {
     final children = <Widget>[];
 
-    if (statusPending && !debug) {
+    if (showStatusPending) {
       children.add(
         Container(
           padding: EdgeInsets.symmetric(horizontal: effectiveDense ? 8 : 10, vertical: effectiveDense ? 4 : 6),
@@ -225,9 +247,9 @@ class RoomCardRenderer {
           ),
         ),
       );
-    } else if (debugShowAudience) {
+    } else if (showAudienceBadge) {
       children.add(_buildAudienceBadge(context, effectiveDense));
-    } else if (debugShowLiveBadge) {
+    } else if (showLiveBadge && !debug) {
       children.add(
         Container(
           padding: EdgeInsets.symmetric(horizontal: effectiveDense ? 8 : 10, vertical: effectiveDense ? 4 : 6),
@@ -251,7 +273,7 @@ class RoomCardRenderer {
       );
     }
 
-    if (debugShowDelete) {
+    if (showDeleteButton) {
       if (children.isNotEmpty) {
         children.add(SizedBox(width: effectiveDense ? 6 : 8));
       }
@@ -351,12 +373,11 @@ class RoomCardRenderer {
   }
 
   Widget _buildCover(BuildContext context, bool isDark, bool effectiveDense) {
-    final showRecordBadge = debug || room.isRecord == true && config.showRecordBadge;
-
-    final showDeleteButton = debug || (showDelete && config.showDelete);
-
-    final showAudienceBadge =
-        debug || (room.isLiveNow && config.showLiveBadge && config.showAudience && !statusPending);
+    final showRecordBadge = showRecordBadgeOnCover;
+    final showDeleteButton = this.showDeleteButton;
+    final showAudienceBadge = this.showAudienceBadge;
+    final showPlatformTag = this.showPlatformTag;
+    final showDebugFlash = this.showDebugFlash;
 
     return AspectRatio(
       aspectRatio: config.coverAspectRatio > 0 ? config.coverAspectRatio : 16 / 9,
@@ -370,7 +391,7 @@ class RoomCardRenderer {
               child: _buildCoverImage(context, isDark, effectiveDense),
             ),
 
-            if (debugShowPlatform)
+            if (showPlatformTag)
               Positioned(
                 left: config.coverPositionPadding,
                 top: config.coverPositionPadding,
@@ -401,14 +422,14 @@ class RoomCardRenderer {
                 child: _buildDeleteButton(effectiveDense),
               ),
 
-            if (debug)
+            if (showDebugFlash)
               Positioned(
                 left: config.coverPositionPadding,
                 bottom: config.coverPositionPadding,
-                child: const _DebugFlash(keyName: 'DEBUG'),
+                child: const _DebugFlash(keyName: 'PREVIEW'),
               ),
 
-            if (statusPending && !debug)
+            if (showStatusPending)
               Positioned(
                 right: config.coverPositionPadding,
                 bottom: config.coverPositionPadding,
@@ -710,7 +731,7 @@ class RoomCardRenderer {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          if (debugShowAvatar) ...[
+          if (showAvatar) ...[
             SizedBox(
               width: avatarSize,
               height: avatarSize,
@@ -729,7 +750,7 @@ class RoomCardRenderer {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(room.title ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: titleStyle),
-                if (debugShowSubtitle) ...[
+                if (showSubtitle) ...[
                   SizedBox(height: effectiveDense ? 2 : 3),
                   Text(room.nick ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: subtitleStyle),
                 ],
