@@ -63,6 +63,7 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
   StreamSubscription? _bufferingSub;
   StreamSubscription? _completeSub;
   StreamSubscription? _errorSub;
+  StreamSubscription? _videoParamsSub;
 
   static Future<void> applyNativeLiveProperties(NativePlayer native) async {
     await native.setProperty('force-seekable', 'yes');
@@ -98,7 +99,14 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
       return;
     }
 
-    await native.setProperty('ao', settings.androidEnableOpenSLES.v ? 'opensles' : 'audiotrack');
+    await native.setProperty(
+      'ao',
+      settings.androidEnableOpenSLES.v
+          ? 'opensles'
+          : settings.audioOutputDriver.v == 'auto'
+          ? 'audiotrack'
+          : settings.audioOutputDriver.v,
+    );
 
     await native.setProperty('volume-max', '100');
 
@@ -115,6 +123,8 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
     if (settings.enableRtxVsr.v) {
       await native.setProperty('vf', 'd3d11vpp=scale=2:scaling-mode=nvidia');
     }
+
+    await native.setProperty('ao', settings.audioOutputDriver.v);
   }
 
   static Future<void> _configureMacOSCustomOutput(NativePlayer native) async {
@@ -123,8 +133,7 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
     if (!settings.customPlayerOutput.v) {
       return;
     }
-
-    await native.setProperty('hwdec', settings.videoHardwareDecoder.v);
+    await native.setProperty('ao', settings.audioOutputDriver.v);
   }
 
   static Future<void> _configureLinuxCustomOutput(NativePlayer native) async {
@@ -134,12 +143,7 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
       return;
     }
 
-    await native.setProperty('ao', 'alsa');
-
-    await native.setProperty(
-      'hwdec',
-      settings.videoHardwareDecoder.v.isEmpty ? 'auto' : settings.videoHardwareDecoder.v,
-    );
+    await native.setProperty('ao', settings.audioOutputDriver.v);
   }
 
   SuperResolutionMode _resolveInitialSuperResolutionMode() {
@@ -587,6 +591,20 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
       },
     );
 
+    _videoParamsSub = _player.stream.videoParams.listen((params) {
+      if (_disposed) return;
+      final width = params.dw ?? params.w;
+      final height = params.dh ?? params.h;
+
+      if (width != null && width > 0) {
+        _widthSubject.add(width);
+      }
+
+      if (height != null && height > 0) {
+        _heightSubject.add(height);
+      }
+    });
+
     _errorSub = _player.stream.error.distinct().listen(
       (error) {
         if (_disposed) {
@@ -606,7 +624,7 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
       },
     );
 
-    _subscriptions.addAll([_playingSub!, _bufferingSub!, _completeSub!, _errorSub!]);
+    _subscriptions.addAll([_playingSub!, _bufferingSub!, _completeSub!, _errorSub!, _videoParamsSub!]);
   }
 
   Future<void> _cancelAllSubscriptions() async {
@@ -620,6 +638,7 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
     _bufferingSub = null;
     _completeSub = null;
     _errorSub = null;
+    _videoParamsSub = null;
   }
 
   void _emitError(Object error, StackTrace stackTrace, PlayerErrorType type) {
