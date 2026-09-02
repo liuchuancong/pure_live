@@ -879,7 +879,7 @@ jobs:
           EOF 
           echo "body_path=$(pwd)/release_body.txt" >> "$GITHUB_OUTPUT" 
       - name: Create GitHub Release 
-        uses: softprops/action-gh-release@v2 
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65
         with: 
           tag_name: ${{ inputs.release_tag }} 
           name: ${{ inputs.release_tag }} 
