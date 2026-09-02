@@ -10,6 +10,7 @@ import 'package:pure_live/routes/navigation_observer.dart';
 import 'package:pure_live/player/models/player_engine.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/routes/route_observer_controller.dart';
+import 'package:pure_live/routes/android_native_page_transition.dart';
 import 'package:pure_live/core/iptv/services/epg_import_manager.dart';
 import 'package:pure_live/common/global/platform/desktop_manager.dart';
 import 'package:pure_live/core/iptv/services/iptv_import_manager.dart';
@@ -143,9 +144,9 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
             themeMode: AppConsts.themeModes[SettingsService.to.theme.themeModeName.v]!,
             theme: lightTheme.copyWith(
               appBarTheme: const AppBarTheme(surfaceTintColor: Colors.transparent),
-              pageTransitionsTheme: const PageTransitionsTheme(
+              pageTransitionsTheme: PageTransitionsTheme(
                 builders: <TargetPlatform, PageTransitionsBuilder>{
-                  TargetPlatform.android: PredictiveBackPageTransitionsBuilder(),
+                  TargetPlatform.android: AndroidMaterialPageTransitionsBuilder(),
                   TargetPlatform.windows: FadeForwardsPageTransitionsBuilder(),
                 },
               ),
@@ -154,7 +155,7 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
               appBarTheme: const AppBarTheme(surfaceTintColor: Colors.transparent),
               pageTransitionsTheme: const PageTransitionsTheme(
                 builders: <TargetPlatform, PageTransitionsBuilder>{
-                  TargetPlatform.android: PredictiveBackPageTransitionsBuilder(),
+                  TargetPlatform.android: AndroidMaterialPageTransitionsBuilder(),
                   TargetPlatform.windows: FadeForwardsPageTransitionsBuilder(),
                 },
               ),

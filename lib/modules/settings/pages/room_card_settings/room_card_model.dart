@@ -1,6 +1,9 @@
+import 'dart:math';
 import 'package:pure_live/common/index.dart';
 import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
+import 'package:pure_live/modules/settings/pages/room_card_settings/room_card_config_controller.dart';
+
 
 enum RoomCardViewportPreset {
   mobile('mobile', '移动端'),
@@ -205,25 +208,57 @@ class RoomCardModel {
   double calculateCardHeight(double itemWidth, {bool denseOverride = false, bool smallScreen = false}) {
     final actualDense = denseOverride || denseMode || smallScreen;
 
-    final vp = actualDense ? denseContentVerticalPadding : contentVerticalPadding;
-    final avatar = actualDense ? denseAvatarSize : avatarSize;
-    final titleFs = actualDense ? denseTitleFontSize : titleFontSize;
-    final subtitleFs = actualDense ? denseSubtitleFontSize : subtitleFontSize;
+    final aspectRatio = coverAspectRatio > 0 ? coverAspectRatio : 16 / 9;
 
-    final titleHeight = titleFs * titleLineHeight;
-    final subtitleHeight = showSubtitle ? subtitleFs * subtitleLineHeight : 0.0;
-    final subtitleGap = showSubtitle ? (actualDense ? 2.0 : 3.0) : 0.0;
-    final textHeight = titleHeight + subtitleGap + subtitleHeight;
-    final rowHeight = showAvatar && avatar > textHeight ? avatar : textHeight;
+    final coverHeight = itemWidth / aspectRatio;
 
     if (showAsListTile) {
+      final vp = actualDense ? denseContentVerticalPadding : contentVerticalPadding;
+
+      final avatar = actualDense ? denseAvatarSize : avatarSize;
+
+      final titleFs = actualDense ? denseTitleFontSize : titleFontSize;
+
+      final subtitleFs = actualDense ? denseSubtitleFontSize : subtitleFontSize;
+
+      final titleHeight = titleFs * titleLineHeight;
+
+      final subtitleHeight = showSubtitle ? subtitleFs * subtitleLineHeight : 0;
+
+      final subtitleGap = showSubtitle ? (actualDense ? 2.0 : 3.0) : 0;
+
+      final textHeight = titleHeight + subtitleGap + subtitleHeight;
+
+      final rowHeight = showAvatar ? max(avatar, textHeight) : textHeight;
+
       return vp * 2 + rowHeight;
     }
 
-    final aspectRatio = coverAspectRatio > 0 ? coverAspectRatio : 16 / 9;
-    final coverHeight = itemWidth / aspectRatio;
+    final showInfo = showAvatar || showSubtitle || showPlatform;
 
-    return coverHeight + vp * 2 + rowHeight;
+    if (!showInfo) {
+      return coverHeight;
+    }
+
+    final vp = actualDense ? denseContentVerticalPadding : contentVerticalPadding;
+
+    final avatar = actualDense ? denseAvatarSize : avatarSize;
+
+    final titleFs = actualDense ? denseTitleFontSize : titleFontSize;
+
+    final subtitleFs = actualDense ? denseSubtitleFontSize : subtitleFontSize;
+
+    final titleHeight = titleFs * titleLineHeight;
+
+    final subtitleHeight = showSubtitle ? subtitleFs * subtitleLineHeight : 0;
+
+    final subtitleGap = showSubtitle ? (actualDense ? 2.0 : 3.0) : 0;
+
+    final textHeight = titleHeight + subtitleGap + subtitleHeight;
+
+    final rowHeight = showAvatar ? max(avatar, textHeight) : textHeight;
+
+    return coverHeight + vp * 2 + rowHeight + RoomCardConfigController.to.cardHeightThreshold.value;
   }
 
   static RoomCardModel compact() {

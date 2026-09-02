@@ -1665,5 +1665,6 @@
     "mobile_layout": "Phone/Tablet layout",
     "desktop_layout": "Computer/Large screen layout",
     "mobile_card_settings": "📱 Mobile Card Settings",
-    "desktop_card_settings": "🖥️ Desktop Card Settings"
+    "desktop_card_settings": "🖥️ Desktop Card Settings",
+    "room_card_height_threshold": "Card Height Adjustment"
 }

@@ -39,9 +39,6 @@ class RoomCardRenderer {
 
   bool get effectiveDense => isDense || isSmallScreen;
 
-  // ===== debug = true: 完全按 config 控制 =====
-  // ===== debug = false: 真实数据 + config 共同控制 =====
-
   bool get showAvatar => debug ? config.showAvatar : true;
 
   bool get showSubtitle => debug ? config.showSubtitle : true;

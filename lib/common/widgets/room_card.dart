@@ -26,13 +26,17 @@ class RoomCard extends StatelessWidget {
     final controller = SettingsService.to.roomCardConfig;
 
     return Obx(() {
-      // Determine which config to use based on current viewport
-      final isMobile = controller.isMobileCustomMode;
-      RoomCardModel config;
+      // 👉 修复1：使用视口宽度判断，不是自定义模式标记
+      final isMobileViewport = controller.isMobileViewport;
+      late RoomCardModel config;
 
-      if (isMobile) {
-        config = controller.getMobileConfig();
-        // Apply dark mode colors if needed
+      if (isMobileViewport) {
+        // 👉 必须直接读取 Rx 变量，让 Obx 捕获依赖
+        final json = controller.mobileConfigJson.value;
+        config = json.isNotEmpty
+            ? RoomCardModel.fromJson(json)
+            : RoomCardModel.fromPreset(RoomCardPreset.fromKey(controller.mobilePreset.value));
+
         if (isDark) {
           config = config.copyWith(
             cardBackground: controller.mobileDarkCardColor,
@@ -51,7 +55,11 @@ class RoomCard extends StatelessWidget {
           );
         }
       } else {
-        config = controller.getDesktopConfig();
+        final json = controller.desktopConfigJson.value;
+        config = json.isNotEmpty
+            ? RoomCardModel.fromJson(json)
+            : RoomCardModel.fromPreset(RoomCardPreset.fromKey(controller.desktopPreset.value));
+
         if (isDark) {
           config = config.copyWith(
             cardBackground: controller.desktopDarkCardColor,

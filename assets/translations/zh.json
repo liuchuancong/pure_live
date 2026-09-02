@@ -1665,5 +1665,6 @@
     "mobile_layout": "手机/平板布局",
     "desktop_layout": "电脑/大屏布局",
     "mobile_card_settings": "📱 移动端卡片设置",
-    "desktop_card_settings": "🖥️ 桌面端卡片设置"
+    "desktop_card_settings": "🖥️ 桌面端卡片设置",
+    "room_card_height_threshold": "卡片高度调整"
 }

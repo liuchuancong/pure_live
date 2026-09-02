@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-class AndroidNativePageTransitionsBuilder extends PageTransitionsBuilder {
-  const AndroidNativePageTransitionsBuilder();
+class AndroidMaterialPageTransitionsBuilder extends PageTransitionsBuilder {
+  const AndroidMaterialPageTransitionsBuilder();
 
   @override
   Widget buildTransitions<T>(
@@ -11,18 +11,12 @@ class AndroidNativePageTransitionsBuilder extends PageTransitionsBuilder {
     Animation<double> secondaryAnimation,
     Widget child,
   ) {
-    final primarySlide = Tween<Offset>(
-      begin: const Offset(1.0, 0.0),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic, reverseCurve: Curves.easeInCubic));
-
-    final secondarySlide = Tween<Offset>(begin: Offset.zero, end: const Offset(-0.04, 0.0)).animate(
-      CurvedAnimation(parent: secondaryAnimation, curve: Curves.easeOutCubic, reverseCurve: Curves.easeInCubic),
-    );
-
-    return SlideTransition(
-      position: primarySlide,
-      child: SlideTransition(position: secondarySlide, child: child),
+    return const OpenUpwardsPageTransitionsBuilder().buildTransitions(
+      route,
+      context,
+      animation,
+      secondaryAnimation,
+      child,
     );
   }
 }

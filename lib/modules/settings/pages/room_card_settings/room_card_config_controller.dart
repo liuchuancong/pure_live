@@ -7,6 +7,7 @@ class RoomCardConfigController extends GetxController {
   // ===== Preset per viewport =====
   final RxString mobilePreset = hiveString('room_card_mobile_preset', RoomCardPreset.normal.key);
   final RxString desktopPreset = hiveString('room_card_desktop_preset', RoomCardPreset.normal.key);
+  final RxDouble cardHeightThreshold = hiveDouble('room_card_height_threshold', 0.0);
 
   // ===== Config per viewport =====
   final Rx<Map<String, dynamic>> mobileConfigJson = hiveObject<Map<String, dynamic>>(
@@ -509,6 +510,7 @@ class RoomCardConfigController extends GetxController {
       'desktopPreset': desktopPreset.value,
       'mobileConfig': mobileConfigJson.value,
       'desktopConfig': desktopConfigJson.value,
+      'cardHeightThreshold': cardHeightThreshold.value,
     };
   }
 
@@ -517,6 +519,7 @@ class RoomCardConfigController extends GetxController {
     desktopPreset.value = json['desktopPreset'] ?? RoomCardPreset.normal.key;
     mobileConfigJson.value = json['mobileConfig'] ?? {};
     desktopConfigJson.value = json['desktopConfig'] ?? {};
+    cardHeightThreshold.value = (json['cardHeightThreshold'] ?? 0.0).toDouble();
     update();
   }
 
