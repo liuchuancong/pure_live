@@ -3,6 +3,7 @@ import 'package:pure_live/plugins/cache_manager.dart';
 import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:pure_live/common/widgets/keep_alive_wrapper.dart';
+import 'package:pure_live/modules/settings/pages/room_card_settings/room_card_config_controller.dart';
 
 class AreasRoomPage extends StatefulWidget {
   final Site site;
@@ -55,7 +56,7 @@ class _AreasRoomPageState extends State<AreasRoomPage> {
                     crossAxisCount: crossAxisCount,
                     crossAxisSpacing: spacing,
                     mainAxisSpacing: SettingsService.to.theme.mainAxisSpacing.v,
-                    mainAxisExtent: itemWidth * 9 / 16 + 72,
+                    mainAxisExtent: RoomCardConfigController.to.calculateCardHeight(itemWidth: itemWidth),
                   ),
                   padding: const EdgeInsets.fromLTRB(6, 6, 6, 80),
                   controller: scrollController,

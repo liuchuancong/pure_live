@@ -1,6 +1,7 @@
 import 'package:remixicon/remixicon.dart';
-import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:pure_live/common/index.dart';
+import 'package:flutter/rendering.dart' show ScrollCacheExtent;
+import 'package:pure_live/modules/settings/pages/room_card_settings/room_card_config_controller.dart';
 
 class PopularGridView extends StatelessWidget {
   final String tag;
@@ -41,7 +42,7 @@ class PopularGridView extends StatelessWidget {
                 crossAxisCount: crossAxisCount,
                 crossAxisSpacing: spacing,
                 mainAxisSpacing: SettingsService.to.theme.mainAxisSpacing.v,
-                mainAxisExtent: itemWidth * 9 / 16 + 72,
+                mainAxisExtent: RoomCardConfigController.to.calculateCardHeight(itemWidth: itemWidth),
               ),
               itemCount: list.length,
               itemBuilder: (context, index) {
