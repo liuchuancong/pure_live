@@ -19,7 +19,7 @@ AppId={{C76CD88E-EB3F-49AD-9191-65691050035A}
 AppName={#AppName}
 AppVersion={#AppVersion}
 AppPublisher=Pure Live
-AppPublisherURL=https://github.com/liuchuancong/pure_live
+AppPublisherURL=https://github.com/wzgrx/pure_live
 DefaultDirName={autopf}\PureLive
 DisableDirPage=no
 UsePreviousAppDir=yes
@@ -46,6 +46,19 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 
 [Files]
 Source: "{#SourceDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+
+[InstallDelete]
+; Flutter/CMake uses an incremental output directory, while an Inno upgrade
+; installs over the previous application directory. Remove only replaceable
+; runtime payload before copying the reviewed package so retired plugins,
+; obsolete assets and linker by-products cannot survive an upgrade. AppData
+; remains outside this list and retains follows, settings, IPTV and recordings.
+Type: filesandordirs; Name: "{app}\data"
+Type: files; Name: "{app}\*.dll"
+Type: files; Name: "{app}\*.exp"
+Type: files; Name: "{app}\*.ilk"
+Type: files; Name: "{app}\*.lib"
+Type: files; Name: "{app}\*.pdb"
 
 [Dirs]
 ; Runtime state is intentionally retained during an uninstall/reinstall so a

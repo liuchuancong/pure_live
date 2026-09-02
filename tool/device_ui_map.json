@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "package": "com.mystyle.purelive",
-  "defaultProfile": "pjz110_portrait_1440x3168",
+  "defaultProfile": "k90pro_portrait_1200x2608",
   "profiles": {
     "pjz110_portrait_1440x3168": {
       "deviceModel": "PJZ110",
@@ -621,6 +621,29 @@
           "x": 1260,
           "y": 3008,
           "label": "底部动态导航第 4 项（具体菜单由用户设置决定）"
+        },
+        "live.portrait_sheet_handle": {
+          "x": 720,
+          "y": 2000,
+          "label": "竖屏直播：下滑进入竖屏全屏的弹幕面板手柄",
+          "semantic": "下滑进入竖屏全屏",
+          "bounds": [
+            0,
+            1940,
+            1440,
+            2060
+          ]
+        },
+        "live.portrait_fullscreen_restore_zone": {
+          "x": 720,
+          "y": 3070,
+          "label": "竖屏全屏：底部上滑恢复弹幕栏手势区",
+          "bounds": [
+            0,
+            2784,
+            1440,
+            3168
+          ]
         }
       },
       "gestures": {
@@ -655,6 +678,22 @@
           "y2": 900,
           "durationMs": 380,
           "label": "首页直播间列表向上滚动"
+        },
+        "live.portrait_fullscreen_down": {
+          "x1": 720,
+          "y1": 2000,
+          "x2": 720,
+          "y2": 3050,
+          "durationMs": 650,
+          "label": "竖屏直播弹幕面板下滑进入竖屏全屏"
+        },
+        "live.portrait_fullscreen_up": {
+          "x1": 720,
+          "y1": 3100,
+          "x2": 720,
+          "y2": 2420,
+          "durationMs": 420,
+          "label": "竖屏全屏底部上滑恢复弹幕栏"
         }
       },
       "sequences": {
@@ -684,8 +723,12 @@
         ],
         "enter_first_bilibili_room": [
           {
-            "tap": "home.bilibili_tab",
-            "waitMs": 700
+            "tapSemantic": "热门",
+            "waitMs": 1200
+          },
+          {
+            "tapSemantic": "哔哩哔哩",
+            "waitMs": 8000
           },
           {
             "tap": "home.first_left_room",
@@ -694,8 +737,12 @@
         ],
         "toggle_audio": [
           {
+            "wait": true,
+            "waitMs": 2600
+          },
+          {
             "tap": "live.show_controls",
-            "waitMs": 700
+            "waitMs": 300
           },
           {
             "tap": "live.audio_toggle",
@@ -704,8 +751,12 @@
         ],
         "toggle_cast": [
           {
+            "wait": true,
+            "waitMs": 2600
+          },
+          {
             "tap": "live.show_controls",
-            "waitMs": 700
+            "waitMs": 300
           },
           {
             "tap": "live.cast",
@@ -714,8 +765,12 @@
         ],
         "enter_pip": [
           {
+            "wait": true,
+            "waitMs": 2600
+          },
+          {
             "tap": "live.show_controls",
-            "waitMs": 700
+            "waitMs": 300
           },
           {
             "tap": "live.pip",
@@ -724,11 +779,11 @@
         ],
         "open_local_interaction_settings": [
           {
-            "tap": "home.menu",
+            "tapSemantic": "菜单",
             "waitMs": 350
           },
           {
-            "tap": "drawer.settings",
+            "tapSemantic": "设置",
             "waitMs": 600
           },
           {
@@ -740,7 +795,7 @@
             "waitMs": 450
           },
           {
-            "tap": "settings.local_interaction_after_scroll2",
+            "tapSemantic": "本地互动体验",
             "waitMs": 600
           }
         ],
@@ -820,6 +875,18 @@
           {
             "swipe": "settings.scroll_up",
             "waitMs": 450
+          }
+        ],
+        "enter_portrait_fullscreen": [
+          {
+            "swipe": "live.portrait_fullscreen_down",
+            "waitMs": 900
+          }
+        ],
+        "restore_portrait_panel": [
+          {
+            "swipe": "live.portrait_fullscreen_up",
+            "waitMs": 900
           }
         ]
       },
@@ -2481,8 +2548,12 @@
       "sequences": {
         "toggle_audio": [
           {
+            "wait": true,
+            "waitMs": 2600
+          },
+          {
             "tap": "live.show_controls",
-            "waitMs": 700
+            "waitMs": 300
           },
           {
             "tap": "live.audio_toggle",
@@ -2491,8 +2562,12 @@
         ],
         "toggle_cast": [
           {
+            "wait": true,
+            "waitMs": 2600
+          },
+          {
             "tap": "live.show_controls",
-            "waitMs": 700
+            "waitMs": 300
           },
           {
             "tap": "live.cast",
@@ -2501,8 +2576,1713 @@
         ],
         "enter_pip": [
           {
+            "wait": true,
+            "waitMs": 2600
+          },
+          {
             "tap": "live.show_controls",
-            "waitMs": 700
+            "waitMs": 300
+          },
+          {
+            "tap": "live.pip",
+            "waitMs": 0
+          }
+        ],
+        "enter_fullscreen": [
+          {
+            "tap": "live.show_controls",
+            "waitMs": 300
+          },
+          {
+            "tap": "fullscreen.enter_from_split",
+            "waitMs": 600
+          }
+        ],
+        "open_fullscreen_danmaku_settings": [
+          {
+            "tap": "fullscreen.video_center",
+            "waitMs": 300
+          },
+          {
+            "tap": "fullscreen.danmaku_settings",
+            "waitMs": 500
+          }
+        ]
+      },
+      "screens": {}
+    },
+    "k90pro_portrait_1200x2608": {
+      "deviceModel": "K90 Pro / 25102RKBEC (myron)",
+      "orientation": "portrait",
+      "width": 1200,
+      "height": 2608,
+      "recordedAt": "2026-09-01",
+      "notes": "K90 Pro Android 17 network-ADB baseline. Coordinates are initially scaled from the retained PJZ110 map and must be verified against semantics before first destructive or state-changing use; screen snapshots are device-local.",
+      "points": {
+        "home.menu": {
+          "x": 84,
+          "y": 228,
+          "label": "首页侧边菜单",
+          "semantic": "菜单",
+          "bounds": [
+            0,
+            144,
+            168,
+            312
+          ]
+        },
+        "home.status_live": {
+          "x": 346,
+          "y": 228,
+          "label": "首页状态：已开播",
+          "semantic": "已开播",
+          "bounds": [
+            216,
+            156,
+            476,
+            300
+          ]
+        },
+        "home.status_recorded": {
+          "x": 606,
+          "y": 228,
+          "label": "首页状态：录播",
+          "semantic": "录播",
+          "bounds": [
+            476,
+            156,
+            736,
+            300
+          ]
+        },
+        "home.status_offline": {
+          "x": 866,
+          "y": 228,
+          "label": "首页状态：未开播",
+          "semantic": "未开播",
+          "bounds": [
+            736,
+            156,
+            996,
+            300
+          ]
+        },
+        "home.more": {
+          "x": 1116,
+          "y": 228,
+          "label": "首页更多操作",
+          "semantic": "更多",
+          "bounds": [
+            1044,
+            156,
+            1188,
+            300
+          ]
+        },
+        "home.all_tab": {
+          "x": 93,
+          "y": 384,
+          "label": "首页平台栏：全部",
+          "semantic": "全部",
+          "bounds": [
+            0,
+            312,
+            187,
+            456
+          ]
+        },
+        "home.bilibili_tab": {
+          "x": 325,
+          "y": 384,
+          "label": "首页平台栏：哔哩哔哩",
+          "semantic": "哔哩哔哩",
+          "bounds": [
+            187,
+            312,
+            464,
+            456
+          ]
+        },
+        "home.douyu_tab": {
+          "x": 557,
+          "y": 384,
+          "label": "首页平台栏：斗鱼",
+          "semantic": "斗鱼",
+          "bounds": [
+            464,
+            312,
+            650,
+            456
+          ]
+        },
+        "home.huya_tab": {
+          "x": 743,
+          "y": 384,
+          "label": "首页平台栏：虎牙",
+          "semantic": "虎牙",
+          "bounds": [
+            650,
+            312,
+            837,
+            456
+          ]
+        },
+        "home.douyin_tab": {
+          "x": 930,
+          "y": 384,
+          "label": "首页平台栏：抖音",
+          "semantic": "抖音",
+          "bounds": [
+            837,
+            312,
+            1024,
+            456
+          ]
+        },
+        "home.kuaishou_tab_visible_edge": {
+          "x": 1112,
+          "y": 384,
+          "label": "首页平台栏：快手（当前滚动位置右侧可见区域）",
+          "semantic": "快手",
+          "bounds": [
+            1024,
+            312,
+            1200,
+            456
+          ]
+        },
+        "home.first_left_room": {
+          "x": 317,
+          "y": 741,
+          "label": "首页左列第一个直播间",
+          "bounds": [
+            40,
+            514,
+            590,
+            1056
+          ]
+        },
+        "home.first_right_room": {
+          "x": 885,
+          "y": 741,
+          "label": "首页右列第一个直播间",
+          "bounds": [
+            610,
+            514,
+            1160,
+            1056
+          ]
+        },
+        "home.second_left_room": {
+          "x": 317,
+          "y": 1348,
+          "label": "首页左列第二个直播间",
+          "bounds": [
+            40,
+            1076,
+            590,
+            1619
+          ]
+        },
+        "home.second_right_room": {
+          "x": 885,
+          "y": 1348,
+          "label": "首页右列第二个直播间",
+          "bounds": [
+            610,
+            1076,
+            1160,
+            1619
+          ]
+        },
+        "drawer.settings": {
+          "x": 227,
+          "y": 395,
+          "label": "侧边菜单：设置",
+          "semantic": "设置",
+          "bounds": [
+            40,
+            316,
+            413,
+            474
+          ]
+        },
+        "drawer.about": {
+          "x": 227,
+          "y": 553,
+          "label": "侧边菜单：关于",
+          "semantic": "关于",
+          "bounds": [
+            40,
+            474,
+            413,
+            632
+          ]
+        },
+        "drawer.history": {
+          "x": 227,
+          "y": 711,
+          "label": "侧边菜单：历史记录",
+          "semantic": "历史记录",
+          "bounds": [
+            40,
+            632,
+            413,
+            790
+          ]
+        },
+        "drawer.close": {
+          "x": 833,
+          "y": 988,
+          "label": "关闭侧边菜单（点击遮罩区）",
+          "semantic": "关闭菜单",
+          "bounds": [
+            0,
+            0,
+            1200,
+            2608
+          ]
+        },
+        "settings.back": {
+          "x": 93,
+          "y": 224,
+          "label": "设置页返回",
+          "semantic": "返回",
+          "bounds": [
+            13,
+            145,
+            173,
+            303
+          ]
+        },
+        "settings.config_preview": {
+          "x": 1010,
+          "y": 224,
+          "label": "设置：配置预览",
+          "semantic": "配置预览",
+          "bounds": [
+            847,
+            145,
+            1173,
+            303
+          ]
+        },
+        "settings.theme": {
+          "x": 600,
+          "y": 580,
+          "label": "设置：主题定制",
+          "semantic": "主题定制…",
+          "bounds": [
+            53,
+            435,
+            1147,
+            724
+          ]
+        },
+        "settings.iptv": {
+          "x": 600,
+          "y": 1014,
+          "label": "设置：IPTV",
+          "semantic": "IPTV 设置…",
+          "bounds": [
+            53,
+            869,
+            1147,
+            1159
+          ]
+        },
+        "settings.refresh": {
+          "x": 600,
+          "y": 1449,
+          "label": "设置：刷新设置",
+          "semantic": "刷新设置…",
+          "bounds": [
+            53,
+            1304,
+            1147,
+            1594
+          ]
+        },
+        "settings.video": {
+          "x": 600,
+          "y": 1884,
+          "label": "设置：视频设置",
+          "semantic": "视频…",
+          "bounds": [
+            53,
+            1739,
+            1147,
+            2028
+          ]
+        },
+        "settings.pip_danmaku": {
+          "x": 600,
+          "y": 2175,
+          "label": "设置：小窗弹幕",
+          "semantic": "小窗弹幕…",
+          "bounds": [
+            53,
+            2030,
+            1147,
+            2320
+          ]
+        },
+        "settings.player_kernel": {
+          "x": 600,
+          "y": 2536,
+          "label": "设置：播放器内核",
+          "semantic": [
+            "播放器内核…",
+            "播放器内核"
+          ],
+          "bounds": [
+            53,
+            2465,
+            1147,
+            2608
+          ]
+        },
+        "settings.network_proxy_after_scroll1": {
+          "x": 600,
+          "y": 687,
+          "label": "设置向下滚动一次后：自定义网络代理",
+          "semantic": "自定义网络代理",
+          "bounds": [
+            53,
+            543,
+            1147,
+            832
+          ]
+        },
+        "settings.local_interaction_after_scroll2": {
+          "x": 600,
+          "y": 446,
+          "label": "设置向下滚动两次后：本地互动体验",
+          "semantic": "本地互动体验",
+          "bounds": [
+            53,
+            316,
+            1147,
+            576
+          ]
+        },
+        "settings.general_after_scroll2": {
+          "x": 600,
+          "y": 866,
+          "label": "设置向下滚动两次后：通用",
+          "semantic": "通用",
+          "bounds": [
+            53,
+            721,
+            1147,
+            1011
+          ]
+        },
+        "settings.navigation_after_scroll2": {
+          "x": 600,
+          "y": 1157,
+          "label": "设置向下滚动两次后：导航栏显示控制",
+          "semantic": "导航栏显示控制",
+          "bounds": [
+            53,
+            1013,
+            1147,
+            1302
+          ]
+        },
+        "settings.platform_after_scroll2": {
+          "x": 600,
+          "y": 1449,
+          "label": "设置向下滚动两次后：平台显示与授权",
+          "semantic": "平台显示与授权",
+          "bounds": [
+            53,
+            1304,
+            1147,
+            1594
+          ]
+        },
+        "settings.cache_after_scroll2": {
+          "x": 600,
+          "y": 1884,
+          "label": "设置向下滚动两次后：缓存与数据管理",
+          "semantic": "缓存与数据管理",
+          "bounds": [
+            53,
+            1739,
+            1147,
+            2028
+          ]
+        },
+        "settings.backup_after_scroll2": {
+          "x": 600,
+          "y": 2318,
+          "label": "设置向下滚动两次后：备份与恢复",
+          "semantic": "备份与恢复",
+          "bounds": [
+            53,
+            2173,
+            1147,
+            2463
+          ]
+        },
+        "live.back": {
+          "x": 93,
+          "y": 224,
+          "label": "直播间返回",
+          "semantic": "返回",
+          "bounds": [
+            13,
+            145,
+            173,
+            303
+          ]
+        },
+        "live.streamer": {
+          "x": 473,
+          "y": 224,
+          "label": "主播信息",
+          "bounds": [
+            187,
+            171,
+            760,
+            277
+          ]
+        },
+        "live.follow": {
+          "x": 833,
+          "y": 224,
+          "label": "关注按钮",
+          "semantic": "已关注",
+          "bounds": [
+            767,
+            158,
+            900,
+            290
+          ]
+        },
+        "live.record": {
+          "x": 973,
+          "y": 224,
+          "label": "录制按钮",
+          "semantic": "录制",
+          "bounds": [
+            907,
+            161,
+            1040,
+            286
+          ]
+        },
+        "live.menu": {
+          "x": 84,
+          "y": 228,
+          "label": "直播间菜单",
+          "semantic": "菜单",
+          "bounds": [
+            0,
+            144,
+            168,
+            312
+          ]
+        },
+        "live.show_controls": {
+          "x": 600,
+          "y": 906,
+          "label": "显示播放器控制栏（避开弹幕手势区域）"
+        },
+        "live.audio_toggle": {
+          "x": 817,
+          "y": 379,
+          "label": "纯音频/视频模式切换",
+          "semantic": [
+            "切换到纯音频模式",
+            "切换到视频模式"
+          ],
+          "bounds": [
+            763,
+            326,
+            870,
+            431
+          ]
+        },
+        "live.cast": {
+          "x": 948,
+          "y": 379,
+          "label": "投屏",
+          "bounds": [
+            895,
+            326,
+            1002,
+            431
+          ]
+        },
+        "live.pip": {
+          "x": 1098,
+          "y": 379,
+          "label": "系统小窗",
+          "bounds": [
+            1045,
+            326,
+            1152,
+            431
+          ]
+        },
+        "live.quality": {
+          "x": 969,
+          "y": 1073,
+          "label": "清晰度",
+          "semantic": "原画",
+          "bounds": [
+            904,
+            1047,
+            1034,
+            1100
+          ]
+        },
+        "live.line": {
+          "x": 1110,
+          "y": 1073,
+          "label": "播放线路",
+          "semantic": "线路1",
+          "bounds": [
+            1034,
+            1047,
+            1187,
+            1100
+          ]
+        },
+        "live.video_center": {
+          "x": 600,
+          "y": 650,
+          "label": "播放器画面中心",
+          "bounds": [
+            0,
+            316,
+            1200,
+            983
+          ]
+        },
+        "live.danmaku_list_tab": {
+          "x": 292,
+          "y": 1246,
+          "label": "直播间：弹幕列表",
+          "semantic": "弹幕列表…",
+          "bounds": [
+            138,
+            1167,
+            446,
+            1325
+          ]
+        },
+        "live.danmaku_settings_tab": {
+          "x": 600,
+          "y": 1246,
+          "label": "直播间：弹幕设置",
+          "semantic": "弹幕设置…",
+          "bounds": [
+            446,
+            1167,
+            754,
+            1325
+          ]
+        },
+        "live.danmaku_block_tab": {
+          "x": 908,
+          "y": 1246,
+          "label": "直播间：屏蔽管理",
+          "semantic": "屏蔽管理…",
+          "bounds": [
+            754,
+            1167,
+            1062,
+            1325
+          ]
+        },
+        "live.local_danmaku_send": {
+          "x": 1058,
+          "y": 2501,
+          "label": "直播间：发送本地弹幕",
+          "semantic": "发送本地弹幕",
+          "bounds": [
+            978,
+            2422,
+            1138,
+            2580
+          ]
+        },
+        "nav.slot1": {
+          "x": 150,
+          "y": 2488,
+          "label": "底部动态导航第 1 项（具体菜单由用户设置决定）",
+          "bounds": [
+            0,
+            2368,
+            300,
+            2608
+          ]
+        },
+        "nav.slot2": {
+          "x": 450,
+          "y": 2488,
+          "label": "底部动态导航第 2 项（具体菜单由用户设置决定）",
+          "bounds": [
+            300,
+            2368,
+            600,
+            2608
+          ]
+        },
+        "nav.slot3": {
+          "x": 750,
+          "y": 2488,
+          "label": "底部动态导航第 3 项（具体菜单由用户设置决定）",
+          "bounds": [
+            600,
+            2368,
+            900,
+            2608
+          ]
+        },
+        "nav.slot4": {
+          "x": 1050,
+          "y": 2488,
+          "label": "底部动态导航第 4 项（具体菜单由用户设置决定）",
+          "bounds": [
+            900,
+            2368,
+            1200,
+            2608
+          ]
+        },
+        "live.portrait_sheet_handle": {
+          "x": 600,
+          "y": 1646,
+          "label": "竖屏直播：下滑进入竖屏全屏的弹幕面板手柄",
+          "semantic": "下滑进入竖屏全屏",
+          "bounds": [
+            0,
+            1597,
+            1200,
+            1696
+          ]
+        },
+        "live.portrait_fullscreen_restore_zone": {
+          "x": 600,
+          "y": 2527,
+          "label": "竖屏全屏：底部上滑恢复弹幕栏手势区",
+          "bounds": [
+            0,
+            2292,
+            1200,
+            2608
+          ]
+        },
+        "home.view_offline": {
+          "x": 600,
+          "y": 1700,
+          "label": "首页空状态：查看未开播",
+          "semantic": "查看未开播",
+          "bounds": [
+            421,
+            1628,
+            779,
+            1772
+          ]
+        }
+      },
+      "gestures": {
+        "settings.scroll_down": {
+          "x1": 600,
+          "y1": 2206,
+          "x2": 600,
+          "y2": 626,
+          "durationMs": 420,
+          "label": "设置列表向下滚动一屏"
+        },
+        "settings.scroll_up": {
+          "x1": 600,
+          "y1": 626,
+          "x2": 600,
+          "y2": 2206,
+          "durationMs": 420,
+          "label": "设置列表向上滚动一屏"
+        },
+        "home.platforms_left": {
+          "x1": 1033,
+          "y1": 395,
+          "x2": 200,
+          "y2": 395,
+          "durationMs": 300,
+          "label": "首页平台标签向左滚动"
+        },
+        "home.rooms_up": {
+          "x1": 600,
+          "y1": 1959,
+          "x2": 600,
+          "y2": 741,
+          "durationMs": 380,
+          "label": "首页直播间列表向上滚动"
+        },
+        "live.portrait_fullscreen_down": {
+          "x1": 600,
+          "y1": 1646,
+          "x2": 600,
+          "y2": 2511,
+          "durationMs": 650,
+          "label": "竖屏直播弹幕面板下滑进入竖屏全屏"
+        },
+        "live.portrait_fullscreen_up": {
+          "x1": 600,
+          "y1": 2552,
+          "x2": 600,
+          "y2": 1992,
+          "durationMs": 420,
+          "label": "竖屏全屏底部上滑恢复弹幕栏"
+        },
+        "home.pull_to_refresh": {
+          "x1": 600,
+          "y1": 560,
+          "x2": 600,
+          "y2": 1440,
+          "durationMs": 520,
+          "label": "首页列表下拉刷新（仅在列表顶部使用）"
+        }
+      },
+      "sequences": {
+        "open_settings": [
+          {
+            "tap": "home.menu",
+            "waitMs": 350
+          },
+          {
+            "tap": "drawer.settings",
+            "waitMs": 600
+          }
+        ],
+        "open_pip_danmaku_settings": [
+          {
+            "tap": "home.menu",
+            "waitMs": 350
+          },
+          {
+            "tap": "drawer.settings",
+            "waitMs": 600
+          },
+          {
+            "tap": "settings.pip_danmaku",
+            "waitMs": 600
+          }
+        ],
+        "enter_first_bilibili_room": [
+          {
+            "tapSemantic": "热门",
+            "waitMs": 1200
+          },
+          {
+            "tapSemantic": "哔哩哔哩",
+            "waitMs": 8000
+          },
+          {
+            "tap": "home.first_left_room",
+            "waitMs": 1200
+          }
+        ],
+        "toggle_audio": [
+          {
+            "wait": true,
+            "waitMs": 2600
+          },
+          {
+            "tap": "live.show_controls",
+            "waitMs": 300
+          },
+          {
+            "tap": "live.audio_toggle",
+            "waitMs": 0
+          }
+        ],
+        "toggle_cast": [
+          {
+            "wait": true,
+            "waitMs": 2600
+          },
+          {
+            "tap": "live.show_controls",
+            "waitMs": 300
+          },
+          {
+            "tap": "live.cast",
+            "waitMs": 0
+          }
+        ],
+        "enter_pip": [
+          {
+            "wait": true,
+            "waitMs": 2600
+          },
+          {
+            "tap": "live.show_controls",
+            "waitMs": 300
+          },
+          {
+            "tap": "live.pip",
+            "waitMs": 0
+          }
+        ],
+        "open_local_interaction_settings": [
+          {
+            "tapSemantic": "菜单",
+            "waitMs": 350
+          },
+          {
+            "tapSemantic": "设置",
+            "waitMs": 600
+          },
+          {
+            "swipe": "settings.scroll_down",
+            "waitMs": 450
+          },
+          {
+            "swipe": "settings.scroll_down",
+            "waitMs": 450
+          },
+          {
+            "tapSemantic": "本地互动体验",
+            "waitMs": 600
+          }
+        ],
+        "open_general_settings": [
+          {
+            "tap": "home.menu",
+            "waitMs": 350
+          },
+          {
+            "tap": "drawer.settings",
+            "waitMs": 600
+          },
+          {
+            "swipe": "settings.scroll_down",
+            "waitMs": 450
+          },
+          {
+            "swipe": "settings.scroll_down",
+            "waitMs": 450
+          },
+          {
+            "tap": "settings.general_after_scroll2",
+            "waitMs": 600
+          }
+        ],
+        "open_platform_settings": [
+          {
+            "tap": "home.menu",
+            "waitMs": 350
+          },
+          {
+            "tap": "drawer.settings",
+            "waitMs": 600
+          },
+          {
+            "swipe": "settings.scroll_down",
+            "waitMs": 450
+          },
+          {
+            "swipe": "settings.scroll_down",
+            "waitMs": 450
+          },
+          {
+            "tap": "settings.platform_after_scroll2",
+            "waitMs": 600
+          }
+        ],
+        "open_backup_settings": [
+          {
+            "tap": "home.menu",
+            "waitMs": 350
+          },
+          {
+            "tap": "drawer.settings",
+            "waitMs": 600
+          },
+          {
+            "swipe": "settings.scroll_down",
+            "waitMs": 450
+          },
+          {
+            "swipe": "settings.scroll_down",
+            "waitMs": 450
+          },
+          {
+            "tap": "settings.backup_after_scroll2",
+            "waitMs": 600
+          }
+        ],
+        "settings_scroll_down": [
+          {
+            "swipe": "settings.scroll_down",
+            "waitMs": 450
+          }
+        ],
+        "settings_scroll_up": [
+          {
+            "swipe": "settings.scroll_up",
+            "waitMs": 450
+          }
+        ],
+        "enter_portrait_fullscreen": [
+          {
+            "swipe": "live.portrait_fullscreen_down",
+            "waitMs": 900
+          }
+        ],
+        "restore_portrait_panel": [
+          {
+            "swipe": "live.portrait_fullscreen_up",
+            "waitMs": 900
+          }
+        ],
+        "refresh_home": [
+          {
+            "swipe": "home.pull_to_refresh",
+            "waitMs": 2800
+          }
+        ]
+      },
+      "screens": {
+        "home.v318.k90pro": {
+          "recordedAt": "2026-09-01T11:03:14",
+          "appVersion": "3.1.8",
+          "versionCode": "6121",
+          "orientation": "portrait",
+          "width": 1200,
+          "height": 2608,
+          "topPackage": "com.mystyle.purelive",
+          "nodes": [
+            {
+              "text": "",
+              "semantic": "菜单",
+              "resourceId": "",
+              "class": "android.widget.Button",
+              "bounds": [
+                0,
+                144,
+                168,
+                312
+              ],
+              "center": [
+                84,
+                228
+              ],
+              "clickable": true,
+              "longClickable": false,
+              "scrollable": false,
+              "checkable": false,
+              "checked": false,
+              "selected": false
+            },
+            {
+              "text": "",
+              "semantic": "已开播\n第 1 个标签，共 3 个",
+              "resourceId": "",
+              "class": "android.view.View",
+              "bounds": [
+                216,
+                156,
+                476,
+                300
+              ],
+              "center": [
+                346,
+                228
+              ],
+              "clickable": true,
+              "longClickable": false,
+              "scrollable": false,
+              "checkable": false,
+              "checked": false,
+              "selected": true
+            },
+            {
+              "text": "",
+              "semantic": "录播\n第 2 个标签，共 3 个",
+              "resourceId": "",
+              "class": "android.view.View",
+              "bounds": [
+                476,
+                156,
+                736,
+                300
+              ],
+              "center": [
+                606,
+                228
+              ],
+              "clickable": true,
+              "longClickable": false,
+              "scrollable": false,
+              "checkable": false,
+              "checked": false,
+              "selected": false
+            },
+            {
+              "text": "",
+              "semantic": "未开播\n第 3 个标签，共 3 个",
+              "resourceId": "",
+              "class": "android.view.View",
+              "bounds": [
+                736,
+                156,
+                996,
+                300
+              ],
+              "center": [
+                866,
+                228
+              ],
+              "clickable": true,
+              "longClickable": false,
+              "scrollable": false,
+              "checkable": false,
+              "checked": false,
+              "selected": false
+            },
+            {
+              "text": "",
+              "semantic": "更多",
+              "resourceId": "",
+              "class": "android.widget.Button",
+              "bounds": [
+                1044,
+                156,
+                1188,
+                300
+              ],
+              "center": [
+                1116,
+                228
+              ],
+              "clickable": true,
+              "longClickable": false,
+              "scrollable": false,
+              "checkable": false,
+              "checked": false,
+              "selected": false
+            },
+            {
+              "text": "",
+              "semantic": "全部\n第 1 个标签，共 11 个",
+              "resourceId": "",
+              "class": "android.view.View",
+              "bounds": [
+                0,
+                312,
+                187,
+                456
+              ],
+              "center": [
+                93,
+                384
+              ],
+              "clickable": true,
+              "longClickable": false,
+              "scrollable": false,
+              "checkable": false,
+              "checked": false,
+              "selected": true
+            },
+            {
+              "text": "",
+              "semantic": "哔哩哔哩\n第 2 个标签，共 11 个",
+              "resourceId": "",
+              "class": "android.view.View",
+              "bounds": [
+                187,
+                312,
+                464,
+                456
+              ],
+              "center": [
+                325,
+                384
+              ],
+              "clickable": true,
+              "longClickable": false,
+              "scrollable": false,
+              "checkable": false,
+              "checked": false,
+              "selected": false
+            },
+            {
+              "text": "",
+              "semantic": "斗鱼\n第 3 个标签，共 11 个",
+              "resourceId": "",
+              "class": "android.view.View",
+              "bounds": [
+                464,
+                312,
+                650,
+                456
+              ],
+              "center": [
+                557,
+                384
+              ],
+              "clickable": true,
+              "longClickable": false,
+              "scrollable": false,
+              "checkable": false,
+              "checked": false,
+              "selected": false
+            },
+            {
+              "text": "",
+              "semantic": "虎牙\n第 4 个标签，共 11 个",
+              "resourceId": "",
+              "class": "android.view.View",
+              "bounds": [
+                650,
+                312,
+                837,
+                456
+              ],
+              "center": [
+                743,
+                384
+              ],
+              "clickable": true,
+              "longClickable": false,
+              "scrollable": false,
+              "checkable": false,
+              "checked": false,
+              "selected": false
+            },
+            {
+              "text": "",
+              "semantic": "抖音\n第 5 个标签，共 11 个",
+              "resourceId": "",
+              "class": "android.view.View",
+              "bounds": [
+                837,
+                312,
+                1024,
+                456
+              ],
+              "center": [
+                930,
+                384
+              ],
+              "clickable": true,
+              "longClickable": false,
+              "scrollable": false,
+              "checkable": false,
+              "checked": false,
+              "selected": false
+            },
+            {
+              "text": "",
+              "semantic": "快手\n第 6 个标签，共 11 个",
+              "resourceId": "",
+              "class": "android.view.View",
+              "bounds": [
+                1024,
+                312,
+                1200,
+                456
+              ],
+              "center": [
+                1112,
+                384
+              ],
+              "clickable": true,
+              "longClickable": false,
+              "scrollable": false,
+              "checkable": false,
+              "checked": false,
+              "selected": false
+            },
+            {
+              "text": "",
+              "semantic": "查看未开播",
+              "resourceId": "",
+              "class": "android.widget.Button",
+              "bounds": [
+                421,
+                1628,
+                779,
+                1772
+              ],
+              "center": [
+                600,
+                1700
+              ],
+              "clickable": true,
+              "longClickable": false,
+              "scrollable": false,
+              "checkable": false,
+              "checked": false,
+              "selected": false
+            },
+            {
+              "text": "",
+              "semantic": "关注\n第 1 个标签，共 4 个",
+              "resourceId": "",
+              "class": "android.widget.Button",
+              "bounds": [
+                0,
+                2368,
+                300,
+                2608
+              ],
+              "center": [
+                150,
+                2488
+              ],
+              "clickable": true,
+              "longClickable": false,
+              "scrollable": false,
+              "checkable": false,
+              "checked": false,
+              "selected": true
+            },
+            {
+              "text": "",
+              "semantic": "热门\n第 2 个标签，共 4 个",
+              "resourceId": "",
+              "class": "android.widget.Button",
+              "bounds": [
+                300,
+                2368,
+                600,
+                2608
+              ],
+              "center": [
+                450,
+                2488
+              ],
+              "clickable": true,
+              "longClickable": false,
+              "scrollable": false,
+              "checkable": false,
+              "checked": false,
+              "selected": false
+            },
+            {
+              "text": "",
+              "semantic": "分区\n第 3 个标签，共 4 个",
+              "resourceId": "",
+              "class": "android.widget.Button",
+              "bounds": [
+                600,
+                2368,
+                900,
+                2608
+              ],
+              "center": [
+                750,
+                2488
+              ],
+              "clickable": true,
+              "longClickable": false,
+              "scrollable": false,
+              "checkable": false,
+              "checked": false,
+              "selected": false
+            },
+            {
+              "text": "",
+              "semantic": "录制中心\n第 4 个标签，共 4 个",
+              "resourceId": "",
+              "class": "android.widget.Button",
+              "bounds": [
+                900,
+                2368,
+                1200,
+                2608
+              ],
+              "center": [
+                1050,
+                2488
+              ],
+              "clickable": true,
+              "longClickable": false,
+              "scrollable": false,
+              "checkable": false,
+              "checked": false,
+              "selected": false
+            }
+          ]
+        }
+      }
+    },
+    "k90pro_landscape_2608x1200": {
+      "deviceModel": "K90 Pro / 25102RKBEC (myron)",
+      "orientation": "landscape",
+      "width": 2608,
+      "height": 1200,
+      "recordedAt": "2026-09-01",
+      "notes": "K90 Pro Android 17 network-ADB baseline. Coordinates are initially scaled from the retained PJZ110 map and must be verified against semantics before first destructive or state-changing use; screen snapshots are device-local.",
+      "points": {
+        "live.back": {
+          "x": 224,
+          "y": 227,
+          "label": "横屏直播间返回",
+          "semantic": "返回",
+          "bounds": [
+            145,
+            147,
+            303,
+            307
+          ]
+        },
+        "live.streamer": {
+          "x": 1193,
+          "y": 227,
+          "label": "横屏主播信息",
+          "bounds": [
+            316,
+            173,
+            2070,
+            280
+          ]
+        },
+        "live.follow": {
+          "x": 2154,
+          "y": 227,
+          "label": "横屏关注按钮",
+          "semantic": "已关注",
+          "bounds": [
+            2077,
+            183,
+            2233,
+            270
+          ]
+        },
+        "live.record": {
+          "x": 2345,
+          "y": 227,
+          "label": "横屏录制按钮",
+          "semantic": "录制",
+          "bounds": [
+            2239,
+            163,
+            2450,
+            290
+          ]
+        },
+        "live.menu": {
+          "x": 2529,
+          "y": 227,
+          "label": "横屏直播间菜单",
+          "semantic": "菜单",
+          "bounds": [
+            2450,
+            147,
+            2608,
+            307
+          ]
+        },
+        "live.video_center": {
+          "x": 711,
+          "y": 760,
+          "label": "横屏播放器中心",
+          "bounds": [
+            132,
+            430,
+            1291,
+            1090
+          ]
+        },
+        "live.show_controls": {
+          "x": 711,
+          "y": 750,
+          "label": "横屏显示播放器控制层"
+        },
+        "live.audio_toggle": {
+          "x": 909,
+          "y": 523,
+          "label": "横屏纯音频/视频模式切换",
+          "semantic": [
+            "切换到纯音频模式",
+            "切换到视频模式"
+          ],
+          "bounds": [
+            843,
+            457,
+            975,
+            590
+          ]
+        },
+        "live.cast": {
+          "x": 1041,
+          "y": 523,
+          "label": "横屏投屏",
+          "semantic": "投屏",
+          "bounds": [
+            975,
+            457,
+            1106,
+            590
+          ]
+        },
+        "live.pip": {
+          "x": 1185,
+          "y": 523,
+          "label": "横屏系统小窗",
+          "semantic": "小窗播放",
+          "bounds": [
+            1106,
+            443,
+            1264,
+            603
+          ]
+        },
+        "live.quality": {
+          "x": 2380,
+          "y": 412,
+          "label": "横屏清晰度",
+          "semantic": "原画",
+          "bounds": [
+            2316,
+            385,
+            2444,
+            438
+          ]
+        },
+        "live.line": {
+          "x": 2519,
+          "y": 412,
+          "label": "横屏播放线路",
+          "semantic": "线路1",
+          "bounds": [
+            2444,
+            385,
+            2595,
+            438
+          ]
+        },
+        "live.danmaku_list_tab": {
+          "x": 1645,
+          "y": 587,
+          "label": "横屏弹幕列表",
+          "semantic": "弹幕列表",
+          "bounds": [
+            1493,
+            507,
+            1797,
+            667
+          ]
+        },
+        "live.danmaku_settings_tab": {
+          "x": 1949,
+          "y": 587,
+          "label": "横屏弹幕设置",
+          "semantic": "弹幕设置",
+          "bounds": [
+            1797,
+            507,
+            2102,
+            667
+          ]
+        },
+        "live.danmaku_block_tab": {
+          "x": 2253,
+          "y": 587,
+          "label": "横屏屏蔽管理",
+          "semantic": "屏蔽管理",
+          "bounds": [
+            2102,
+            507,
+            2405,
+            667
+          ]
+        },
+        "live.local_danmaku_send": {
+          "x": 2468,
+          "y": 1092,
+          "label": "横屏发送本地弹幕",
+          "semantic": "发送本地弹幕",
+          "bounds": [
+            2389,
+            1012,
+            2547,
+            1172
+          ]
+        },
+        "fullscreen.video_center": {
+          "x": 1304,
+          "y": 600,
+          "label": "横屏全屏播放器中心"
+        },
+        "fullscreen.enter_from_split": {
+          "x": 1185,
+          "y": 997,
+          "label": "横屏分栏播放器：进入全屏",
+          "bounds": [
+            1133,
+            903,
+            1238,
+            1090
+          ]
+        },
+        "fullscreen.audio_toggle": {
+          "x": 2384,
+          "y": 93,
+          "label": "横屏全屏纯音频/视频模式切换",
+          "semantic": [
+            "切换到纯音频模式",
+            "切换到视频模式"
+          ],
+          "bounds": [
+            2318,
+            27,
+            2450,
+            160
+          ]
+        },
+        "fullscreen.cast": {
+          "x": 2516,
+          "y": 93,
+          "label": "横屏全屏投屏",
+          "semantic": "投屏",
+          "bounds": [
+            2450,
+            27,
+            2582,
+            160
+          ]
+        },
+        "fullscreen.switch_room": {
+          "x": 1908,
+          "y": 93,
+          "label": "横屏全屏切换直播间",
+          "semantic": "切换直播间",
+          "bounds": [
+            1829,
+            13,
+            1987,
+            173
+          ]
+        },
+        "fullscreen.danmaku_toggle": {
+          "x": 516,
+          "y": 1107,
+          "label": "横屏全屏弹幕显示开关",
+          "bounds": [
+            457,
+            1013,
+            575,
+            1200
+          ]
+        },
+        "fullscreen.danmaku_settings": {
+          "x": 635,
+          "y": 1107,
+          "label": "横屏全屏弹幕设置",
+          "bounds": [
+            575,
+            1013,
+            694,
+            1200
+          ]
+        },
+        "fullscreen.quality": {
+          "x": 2002,
+          "y": 1107,
+          "label": "横屏全屏清晰度",
+          "semantic": "原画",
+          "bounds": [
+            1932,
+            1057,
+            2072,
+            1157
+          ]
+        },
+        "fullscreen.line": {
+          "x": 2154,
+          "y": 1107,
+          "label": "横屏全屏线路",
+          "semantic": "线路1",
+          "bounds": [
+            2072,
+            1057,
+            2238,
+            1157
+          ]
+        },
+        "fullscreen.fit": {
+          "x": 2344,
+          "y": 1107,
+          "label": "横屏全屏画面适配",
+          "semantic": "适应宽度",
+          "bounds": [
+            2238,
+            1065,
+            2450,
+            1148
+          ]
+        },
+        "fullscreen.exit": {
+          "x": 2503,
+          "y": 1107,
+          "label": "退出横屏全屏",
+          "bounds": [
+            2450,
+            1013,
+            2555,
+            1200
+          ]
+        },
+        "fullscreen.settings_close": {
+          "x": 2421,
+          "y": 176,
+          "label": "关闭横屏全屏弹幕设置",
+          "semantic": "关闭",
+          "bounds": [
+            2342,
+            96,
+            2500,
+            256
+          ]
+        }
+      },
+      "gestures": {},
+      "sequences": {
+        "toggle_audio": [
+          {
+            "wait": true,
+            "waitMs": 2600
+          },
+          {
+            "tap": "live.show_controls",
+            "waitMs": 300
+          },
+          {
+            "tap": "live.audio_toggle",
+            "waitMs": 0
+          }
+        ],
+        "toggle_cast": [
+          {
+            "wait": true,
+            "waitMs": 2600
+          },
+          {
+            "tap": "live.show_controls",
+            "waitMs": 300
+          },
+          {
+            "tap": "live.cast",
+            "waitMs": 0
+          }
+        ],
+        "enter_pip": [
+          {
+            "wait": true,
+            "waitMs": 2600
+          },
+          {
+            "tap": "live.show_controls",
+            "waitMs": 300
           },
           {
             "tap": "live.pip",

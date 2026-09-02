@@ -2,7 +2,7 @@
 
 <!-- maintenance-policy-markers: android-first; windows-maintained; feature-requests-upstream; bug-provenance-required; semantic-change-ledger; evidence-layered; rollback-required; bugfix-android-release-default -->
 
-本文件定义 `liuchuancong/pure_live` 维护分支的支持边界、Issue 分流、Bug 根因判定、上游同步和发布证据要求。它与 [上游同步审查策略](UPSTREAM_REVIEW_POLICY.md) 和 [构建资源策略](BUILD_POLICY.md) 一起构成本仓库后续工作的默认流程。
+本文件定义 `wzgrx/pure_live` 维护分支的支持边界、Issue 分流、Bug 根因判定、上游同步和发布证据要求。它与 [上游同步审查策略](UPSTREAM_REVIEW_POLICY.md) 和 [构建资源策略](BUILD_POLICY.md) 一起构成本仓库后续工作的默认流程。
 
 ## 1. 仓库定位与维护范围
 
@@ -26,7 +26,7 @@
 - Android 与 Windows 的性能、资源释放和交互一致性问题；
 - 已有功能在上游同步后发生的兼容冲突。
 
-新增功能、产品方向和全新平台适配统一提交到[原项目 Issue](https://github.com/liuchuancong/pure_live/issues/new/choose)。安全漏洞通过本仓库的 [Security Advisory](https://github.com/liuchuancong/pure_live/security/advisories/new) 私密提交。
+新增功能、产品方向和全新平台适配统一提交到[原项目 Issue](https://github.com/liuchuancong/pure_live/issues/new/choose)。安全漏洞通过本仓库的 [Security Advisory](https://github.com/wzgrx/pure_live/security/advisories/new) 私密提交。
 
 Linux、macOS、iOS 等社区验证平台的问题可以保留为技术记录；处置结论会明确标为“社区证据”“待贡献者验证”或“已由上游覆盖”，不写成已完成本机验证。
 
@@ -117,6 +117,17 @@ Linux、macOS、iOS 等社区验证平台的问题可以保留为技术记录；
 5. 外部接口修复应保留类型容错、超时、错误分类、有限退避和可观测日志；禁止无限重试和静默吞错。
 6. 性能优化以可重复基线比较 CPU、内存趋势、帧耗时、网络请求数和后台任务数量，不以主观“更流畅”作为唯一证据。
 7. 不使用“全部 Bug 已修复”一类绝对结论；报告已覆盖范围、未覆盖平台和剩余风险。
-8. 每个已完成的 Bug 修复批次默认递增补丁版本和 build，构建 Android `arm64-v8a` Release，并将最终源码、tag、正式签名 APK、构建元数据和校验文件同步到 `liuchuancong/pure_live`；多个同根因修复在同一任务内合并为一个版本。
+8. 每个已完成的 Bug 修复批次默认递增补丁版本和 build，构建 Android `arm64-v8a` Release，并将最终源码、tag、正式签名 APK、构建元数据和校验文件同步到 `wzgrx/pure_live`；多个同根因修复在同一任务内合并为一个版本。
 9. 正式 APK 优先在本机构建，GitHub Actions 只承担 Secrets 短时签名和 Release 更新；Android、Windows 与其他平台始终分阶段串行，Bug 修复默认交付不会扩展为全平台构建。
 10. 发布页面与 APK 核验通过后刷新 `assets/releases.json` 并推送索引提交。当前任务明确要求暂缓版本、构建或发布时，以该次要求为准并在报告中记录闭环停在哪一层。
+
+## 8. 播放器子系统回归隔离
+
+播放器属于高耦合核心路径，来源切换、播放状态、解码诊断、画面几何、横竖屏呈现、画中画、音频模式和录制必须按独立不变量维护：
+
+1. 单个修复批次不得同时重写来源所有权、错误分类、自动恢复、几何识别和录制链路；确有共同根因时也要拆成可独立回滚的提交。
+2. 原生可选诊断属性、日志文本、URL 字符串一致性和固定延时不得成为 `playing`、首帧或当前几何的唯一授权条件。
+3. 自动线路/内核恢复只响应明确错误或经过测试的健康状态，不以“若干秒内没有某个可选事件”推测直播失败。
+4. 每轮保留上一稳定 tag 与故障快照分支；先用版本差异定位第一个错误状态，再决定局部回退、适配或重写。
+5. 播放器正式交付至少覆盖：事件早于 open 完成、重定向 URL、无 path、无可选首帧属性、同 URL 重开、成对尺寸、竖屏/横屏/小窗共享几何，以及无用户操作时不调用 pause/stop。
+6. 自动化通过只表示已覆盖的状态合同成立；原生后端与设备采样单独报告。没有对应证据时不把 Release 描述为设备端全面稳定。

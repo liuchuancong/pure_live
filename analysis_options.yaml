@@ -8,6 +8,9 @@ analyzer:
     - "**/*_zh_CN.dart"
     - "**/*.js"
     - build/**
+    # Device captures, build records and one-off forensic helpers live here;
+    # they are evidence artifacts rather than application source.
+    - local-artifacts/**
     - android/**
     - ios/**
     - web/**

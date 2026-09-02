@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/core/common/core_log.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
@@ -7,7 +8,6 @@ import 'package:pure_live/modules/live_play/controllers/danmaku_message_gate.dar
 import 'package:pure_live/modules/live_play/controllers/danmaku_session_host.dart';
 import 'package:pure_live/modules/live_play/controllers/repeated_danmaku_filter.dart';
 import 'package:pure_live/modules/live_play/controllers/danmaku_similarity_filter.dart';
-
 
 /// Owns exactly one room-bound danmaku session.
 ///
@@ -309,7 +309,7 @@ class DanmakuController extends GetxController {
     if (!_initialized) return;
     final room = _state.room.detail;
     if (room == null) return;
-    const except = [Sites.kuaishouSite, Sites.iptvSite, Sites.ccSite];
+    const except = [Sites.iptvSite, Sites.ccSite];
     final settings = SettingsService.to.danmaku;
     try {
       if (except.contains(room.platform) || (!settings.enableDanmakuDisplay.v && !settings.enablePipDanmaku.v)) {
@@ -337,7 +337,7 @@ class DanmakuController extends GetxController {
   bool _isRecoveryAllowed(LiveRoom room) {
     final override = recoveryAllowed;
     if (override != null) return override(room);
-    const except = [Sites.kuaishouSite, Sites.iptvSite, Sites.ccSite];
+    const except = [Sites.iptvSite, Sites.ccSite];
     final settings = SettingsService.to.danmaku;
     return !except.contains(room.platform) && (settings.enableDanmakuDisplay.v || settings.enablePipDanmaku.v);
   }

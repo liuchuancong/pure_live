@@ -22,6 +22,37 @@ if (-not $flutter) {
     throw "Flutter $expectedVersion was not found. Set PURE_LIVE_FLUTTER to flutter.bat."
 }
 
+# Dart Pub shells out to Git for pinned dependencies. A stale/broken Git that
+# happens to appear first on PATH makes a reproducible lockfile look like a
+# missing commit. Select the first executable that actually starts, then make
+# the same binary visible to every Flutter/Dart child process.
+$bundledGit = Join-Path $HOME '.cache\codex-runtimes\codex-primary-runtime\dependencies\native\git\cmd\git.exe'
+$gitCandidates = @(
+    $env:PURE_LIVE_GIT,
+    $bundledGit,
+    'C:\Program Files\Git\cmd\git.exe',
+    @((Get-Command git.exe -All -ErrorAction SilentlyContinue) | ForEach-Object { $_.Source })
+) | Where-Object { $_ } | Select-Object -Unique
+$workingGit = $null
+foreach ($candidate in $gitCandidates) {
+    if (-not (Test-Path -LiteralPath $candidate)) { continue }
+    $previousErrorActionPreference = $ErrorActionPreference
+    try {
+        $ErrorActionPreference = 'Continue'
+        & $candidate --version *> $null
+        if ($LASTEXITCODE -eq 0) {
+            $workingGit = $candidate
+            break
+        }
+    } finally {
+        $ErrorActionPreference = $previousErrorActionPreference
+    }
+}
+if (-not $workingGit) {
+    throw 'A working Git executable is required for locked dependencies. Set PURE_LIVE_GIT to git.exe.'
+}
+$env:PATH = "$(Split-Path -Parent $workingGit);$env:PATH"
+
 if (-not $env:ANDROID_HOME) {
     $localSdk = Join-Path $env:LOCALAPPDATA 'Android\Sdk'
     if (Test-Path -LiteralPath $localSdk) {
@@ -89,12 +120,17 @@ $requiresBuildShortPath =
     $repoRoot.Length -gt 80 -and
     $executable -eq $flutter -and
     $flutterCommand -in @('assemble', 'build', 'drive', 'install', 'run')
+$isWindowsDesktopBuild =
+    $flutterCommand -eq 'build' -and
+    $FlutterArgs.Count -gt 1 -and
+    $FlutterArgs[1] -eq 'windows'
+$requiresJunctionShortPath = $requiresBuildShortPath -and -not $isWindowsDesktopBuild
 $requiresTestSubstPath =
     $repoRoot.Length -gt 80 -and
     $executable -eq $flutter -and
     $flutterCommand -eq 'test'
 
-if ($requiresBuildShortPath) {
+if ($requiresJunctionShortPath) {
     # Keep the short project path on the same drive as the Pub cache. Kotlin's
     # incremental compiler cannot relativize plugin sources when a SUBST drive
     # (for example P:) and the default C: Pub cache are mixed, so it discards
@@ -137,9 +173,12 @@ $substDrive = $null
 $substMappingFile = Join-Path $repoRoot '.dart_tool\pure_live_subst_drive.txt'
 # Native Assets hooks receive Platform.packageConfig after Dart canonicalizes a
 # junction back to this repository's long physical path. Tests therefore use a
-# stable SUBST path; Android/Windows builds keep the same-drive junction so
-# Kotlin and the Pub cache retain their incremental-path contract.
-if ($requiresTestSubstPath -or ($requiresBuildShortPath -and -not $shortPathReady)) {
+# stable SUBST path. Windows/MSBuild also uses SUBST: Visual Studio's generated
+# ZERO_CHECK tlog writer resolves a directory junction inconsistently and can
+# try to write under a non-existent x64/Debug subtree. Android keeps the
+# same-drive junction so Kotlin and the Pub cache retain their incremental-path
+# contract.
+if ($requiresTestSubstPath -or $isWindowsDesktopBuild -or ($requiresBuildShortPath -and -not $shortPathReady)) {
     $repoParent = Split-Path -Parent $repoRoot
     $repoLeaf = Split-Path -Leaf $repoRoot
     $savedDrive = if (Test-Path -LiteralPath $substMappingFile) {

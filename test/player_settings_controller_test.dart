@@ -51,6 +51,7 @@ void main() {
       expect(config['portraitAdaptiveHeight'], isTrue);
       expect(config['portraitLayoutMode'], 'balanced');
       expect(config['portraitFullscreenPolicy'], 'followSource');
+      expect(config['portraitFullscreenDisplayMode'], 'ambient');
       expect(config['portraitPipFollowSource'], isTrue);
       expect(config['portraitDanmakuMode'], 'followGlobal');
       expect(config['portraitRoomOverrides'], isEmpty);
@@ -61,6 +62,7 @@ void main() {
         'player': <String, dynamic>{
           'portraitLayoutMode': 'broken',
           'portraitFullscreenPolicy': 'broken',
+          'portraitFullscreenDisplayMode': 'broken',
           'portraitDanmakuMode': 'broken',
           'portraitRoomOverrides': <String, String>{'bilibili:1': 'portrait'},
         },
@@ -68,6 +70,7 @@ void main() {
 
       expect(config['portraitLayoutMode'], 'balanced');
       expect(config['portraitFullscreenPolicy'], 'followSource');
+      expect(config['portraitFullscreenDisplayMode'], 'ambient');
       expect(config['portraitDanmakuMode'], 'followGlobal');
       expect(config['portraitRoomOverrides'], <String, String>{'bilibili:1': 'portrait'});
     });

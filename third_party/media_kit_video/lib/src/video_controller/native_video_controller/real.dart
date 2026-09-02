@@ -255,29 +255,49 @@ class NativeVideoController extends PlatformVideoController {
   static final _controllers = HashMap<int, NativeVideoController>();
 
   /// [MethodChannel] for invoking platform specific native implementation.
-  static final _channel = const MethodChannel('com.alexmercerind/media_kit_video')
-    ..setMethodCallHandler(
-      (MethodCall call) async {
-        try {
-          switch (call.method) {
-            case 'VideoOutput.Resize':
-              {
-                // Notify about updated texture ID & [Rect].
-                final int handle = call.arguments['handle'];
-                final Rect rect = Rect.fromLTWH(
-                  call.arguments['rect']['left'] * 1.0,
-                  call.arguments['rect']['top'] * 1.0,
-                  call.arguments['rect']['width'] * 1.0,
-                  call.arguments['rect']['height'] * 1.0,
-                );
-                final int id = call.arguments['id'];
-                _controllers[handle]?.rect.value = rect;
-                _controllers[handle]?.id.value = id;
-                // Notify about the first frame being rendered.
-                if (rect.width > 0 && rect.height > 0) {
-                  final completer = _controllers[handle]?.waitUntilFirstFrameRenderedCompleter;
-                  if (!(completer?.isCompleted ?? true)) {
-                    completer?.complete();
+  static final _channel =
+      const MethodChannel('com.alexmercerind/media_kit_video')
+        ..setMethodCallHandler(
+          (MethodCall call) async {
+            try {
+              debugPrint(call.method.toString());
+              debugPrint(call.arguments.toString());
+              switch (call.method) {
+                case 'VideoOutput.Resize':
+                  {
+                    // Notify about updated texture ID & [Rect].
+                    final int handle = call.arguments['handle'];
+                    final Rect rect = Rect.fromLTWH(
+                      call.arguments['rect']['left'] * 1.0,
+                      call.arguments['rect']['top'] * 1.0,
+                      call.arguments['rect']['width'] * 1.0,
+                      call.arguments['rect']['height'] * 1.0,
+                    );
+                    final int id = call.arguments['id'];
+                    _controllers[handle]?.rect.value = rect;
+                    _controllers[handle]?.id.value = id;
+                    // Notify about the first frame being rendered.
+                    if (rect.width > 0 && rect.height > 0) {
+                      final completer = _controllers[handle]
+                          ?.waitUntilFirstFrameRenderedCompleter;
+                      if (!(completer?.isCompleted ?? true)) {
+                        completer?.complete();
+                      }
+                    }
+                    break;
+                  }
+                case 'VideoOutput.Frame':
+                  {
+                    final int handle = call.arguments['handle'];
+                    final controller = _controllers[handle];
+                    if (controller != null) {
+                      controller.frameRevision.value++;
+                    }
+                    break;
+                  }
+                default:
+                  {
+                    break;
                   }
                 }
                 break;

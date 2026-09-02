@@ -31,8 +31,23 @@ $configurationLower = $Configuration.ToLowerInvariant()
 $configurationDirectory = if ($Configuration -eq 'Release') { 'Release' } else { 'Debug' }
 $versionLine = Select-String -Path (Join-Path $repoRoot 'pubspec.yaml') -Pattern '^version:\s*(\S+)' | Select-Object -First 1
 if (-not $versionLine) { throw 'pubspec.yaml version was not found.' }
-$fullVersion = $versionLine.Matches[0].Groups[1].Value
+$repositoryFullVersion = $versionLine.Matches[0].Groups[1].Value
+$fullVersion = $repositoryFullVersion
 $displayVersion = $fullVersion.Split('+')[0]
+$buildNumber = if ($fullVersion.Contains('+')) { $fullVersion.Split('+')[1] } else { '1' }
+if ($Target -eq 'WindowsX64') {
+    # Maintained platforms can intentionally be released at different
+    # versions. Always build Windows from its platform feed entry rather than
+    # silently stamping the newer Android/pubspec version onto the EXE.
+    $versionFeedPath = Join-Path $repoRoot 'assets\version.json'
+    $versionFeed = Get-Content -LiteralPath $versionFeedPath -Raw -Encoding utf8 | ConvertFrom-Json
+    if (-not $versionFeed.platforms.windows.version -or -not $versionFeed.platforms.windows.build_number) {
+        throw 'assets/version.json is missing the Windows platform version.'
+    }
+    $displayVersion = [string]$versionFeed.platforms.windows.version
+    $buildNumber = [string]$versionFeed.platforms.windows.build_number
+    $fullVersion = "$displayVersion+$buildNumber"
+}
 $artifactVersion = $fullVersion.Replace('+', '-')
 $output = Join-Path $repoRoot "local-artifacts\$artifactVersion"
 $recordDirectory = Join-Path $repoRoot 'local-artifacts\build-records'
@@ -50,6 +65,7 @@ $stopwatch = [Diagnostics.Stopwatch]::StartNew()
 $status = 'failed'
 $failureMessage = $null
 $artifactPaths = @()
+$packageMetadata = $null
 $commandLog = Join-Path $recordDirectory "$([DateTime]::UtcNow.ToString('yyyyMMddTHHmmssfffZ'))-$($Target.ToLowerInvariant())-$configurationLower.log"
 Set-Content -LiteralPath $commandLog -Value '' -Encoding utf8
 $incrementalStateBefore = if ($Target -eq 'AndroidArm64') {
@@ -144,6 +160,7 @@ try {
     $monitor = Start-PureLiveResourceMonitor
 
     if ($Target -eq 'AndroidArm64') {
+        & (Join-Path $PSScriptRoot 'normalize_flutter_generated_paths.ps1')
         $packageConfig = Join-Path $repoRoot '.dart_tool\package_config.json'
         if (-not (Test-Path -LiteralPath $packageConfig -PathType Leaf)) {
             throw 'Android packaging requires the lock-resolved package config from the preceding quality/dependency stage.'
@@ -172,6 +189,7 @@ try {
         $androidArgs = @(
             'build', 'apk', "--$configurationLower", '--split-per-abi',
             '--target-platform', 'android-arm64',
+            "--build-name=$displayVersion", "--build-number=$buildNumber",
             '--no-pub',
             '--dart-define=PURELIVE_BUILD_SOURCE=local'
         )
@@ -182,9 +200,13 @@ try {
         if (-not (Test-Path -LiteralPath $apkSource -PathType Leaf)) {
             throw "Expected Android artifact was not produced: $apkSource"
         }
-        & (Join-Path $PSScriptRoot 'verify_android_apk.ps1') `
+        $packageMetadata = & (Join-Path $PSScriptRoot 'verify_android_apk.ps1') `
             -ApkPath $apkSource `
-            -ExpectedAbi 'arm64-v8a'
+            -ExpectedAbi 'arm64-v8a' `
+            -BuildMode $Configuration `
+            -ExpectedVersionName $displayVersion `
+            -ExpectedBaseVersionCode $buildNumber `
+            -ExpectedAbiVersionOffset 2000
         $artifactName = if ($Configuration -eq 'Debug') {
             "PureLive-$artifactVersion-android-arm64-v8a-debug.apk"
         } elseif ($hasReleaseSigning) {
@@ -204,6 +226,13 @@ try {
 
         $windowsArgs = @(
             'build', 'windows', "--$configurationLower",
+            "--build-name=$displayVersion", "--build-number=$buildNumber",
+            # The locked pub stage above has already generated the Windows
+            # plugin links from the physical repository path. Re-running pub
+            # while Flutter is using the short junction can delete that tree
+            # and then fail to recreate `.plugin_symlinks` through the
+            # reparse point. Keep dependency resolution single-owner.
+            '--no-pub',
             '--dart-define=PURELIVE_BUILD_SOURCE=local'
         )
         $buildExitCode = Invoke-PureLiveLoggedFlutter -Arguments $windowsArgs -LogPath $commandLog
@@ -220,7 +249,24 @@ try {
             Join-Path $windowsSource 'IPTV_CACHE'
         ) | Where-Object { Test-Path -LiteralPath $_ }
         if ($runtimeState) {
-            throw "Runtime state appeared in the Windows bundle: $($runtimeState -join ', ')"
+            # A previously launched Debug/Release tree writes portable user
+            # state beside its EXE. It is not a build input and must never be
+            # copied into a distributable. Preserve it in an auditable local
+            # quarantine instead of forcing a clean build or deleting data.
+            $runtimeArchiveRoot = Join-Path $repoRoot (
+                "local-artifacts\test-runtime\windows-$configurationLower-" +
+                [DateTime]::UtcNow.ToString('yyyyMMddTHHmmssfffZ')
+            )
+            $runtimeArchiveRootFull = [IO.Path]::GetFullPath($runtimeArchiveRoot)
+            $allowedArchivePrefix = [IO.Path]::GetFullPath((Join-Path $repoRoot 'local-artifacts\test-runtime')).TrimEnd('\') + '\'
+            if (-not $runtimeArchiveRootFull.StartsWith($allowedArchivePrefix, [StringComparison]::OrdinalIgnoreCase)) {
+                throw "Windows runtime archive escaped the repository: $runtimeArchiveRootFull"
+            }
+            New-Item -ItemType Directory -Force -Path $runtimeArchiveRootFull | Out-Null
+            foreach ($runtimePath in $runtimeState) {
+                Move-Item -LiteralPath $runtimePath -Destination $runtimeArchiveRootFull
+            }
+            Write-Host "Archived Windows runtime state outside the package: $runtimeArchiveRootFull"
         }
 
         # Clean only the disposable packaging stage, never Flutter/CMake build state.
@@ -248,7 +294,7 @@ try {
             throw 'Windows install manifest is empty.'
         }
         $windowsSourcePrefix = $windowsSourceFull.TrimEnd('\') + '\'
-        $manifestSourceMarker = '\build\windows\x64\runner\Release\'
+        $manifestSourceMarker = "\build\windows\x64\runner\$configurationDirectory\"
         foreach ($entry in $manifestEntries) {
             # Flutter may invoke CMake through its short/substituted P: path,
             # while this script runs from the long workspace path. Resolve the
@@ -382,6 +428,7 @@ try {
         peak_resources = $resourceSummary
         active_heavy_processes_after = $remainingHeavyProcesses
         outputs = $artifactPaths
+        package_metadata = $packageMetadata
         automatic_follow_up = $false
     }
     $recordPath = Write-PureLiveTaskRecord -RepoRoot $repoRoot -Record $record
@@ -406,8 +453,12 @@ try {
         } else {
             'not-built'
         }
+        $metadataName = if ($Target -eq 'WindowsX64') { 'WINDOWS_BUILD_METADATA.json' } else { 'BUILD_METADATA.json' }
+        $checksumName = if ($Target -eq 'WindowsX64') { 'WINDOWS_SHA256SUMS.txt' } else { 'SHA256SUMS.txt' }
+        $metadataPath = Join-Path $output $metadataName
         [ordered]@{
             version = $fullVersion
+            repository_version = $repositoryFullVersion
             built_at_utc = [DateTime]::UtcNow.ToString('o')
             source_commit = $sourceCommit
             tracked_files_dirty = $trackedDirty
@@ -420,12 +471,16 @@ try {
             cache = $cacheSummary
             resource_record = [IO.Path]::GetFullPath($recordPath)
             build_source = 'local'
-        } | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath (Join-Path $output 'BUILD_METADATA.json') -Encoding utf8
+        } | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $metadataPath -Encoding utf8
 
-        Get-ChildItem $output -File | Where-Object Name -ne 'SHA256SUMS.txt' | Sort-Object Name | ForEach-Object {
-            $hash = Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256
-            '{0} *{1}' -f $hash.Hash.ToLowerInvariant(), $_.Name
-        } | Set-Content -Path (Join-Path $output 'SHA256SUMS.txt') -Encoding ascii
+        # Hash only files produced by this target invocation. A platform may
+        # intentionally share a version directory with an older platform
+        # build, and its checksum manifest must never absorb unrelated assets.
+        @($artifactPaths + $metadataPath) | Sort-Object -Unique | ForEach-Object {
+            $file = Get-Item -LiteralPath $_
+            $hash = Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256
+            '{0} *{1}' -f $hash.Hash.ToLowerInvariant(), $file.Name
+        } | Set-Content -Path (Join-Path $output $checksumName) -Encoding ascii
         Get-ChildItem $output -File | Select-Object Name, Length, LastWriteTime
     }
     Write-Host "Build record: $recordPath"

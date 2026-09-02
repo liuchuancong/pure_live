@@ -7,7 +7,20 @@ swipes and common multi-step flows.
 
 ## Recorded baseline
 
-The repository currently contains measured OnePlus 13 / PJZ110 profiles for:
+The primary device is now the K90 Pro (`25102RKBEC`, codename `myron`) running
+Android 17. Its network-ADB profiles are:
+
+- portrait `1200 x 2608`;
+- landscape `2608 x 1200`.
+
+The first K90 Pro coordinates are proportionally migrated from the retained
+PJZ110 measurements. Before the first state-changing use of any point, run
+`-Validate` and prefer `-VerifySemantics`; record a fresh screen snapshot after
+the corresponding route is physically verified. This avoids treating scaled
+coordinates as measured evidence.
+
+The repository also retains the measured OnePlus 13 / PJZ110 profiles as an
+archived regression baseline for:
 
 - portrait `1440 x 3168`: home, live/offline filters, visible platform tabs,
   room cards, drawer, the full settings list, live-room app bar, player controls,
@@ -20,6 +33,12 @@ The repository currently contains measured OnePlus 13 / PJZ110 profiles for:
 Dynamic room titles and danmaku text are not treated as stable controls.
 
 ## Fast path and verification
+
+Before any state-changing device command, acquire the Pure Live turn through
+`tool/run_android_device_test_turn.ps1`. The phone is shared with the BiliRoaming and
+Xiaohongshu tasks in the fixed `biliroaming -> xhs -> purelive` rotation; see
+`docs/ANDROID_DEVICE_TEST_ROTATION.md`. The foreground-package guard below is
+still mandatory after the lease is acquired.
 
 Normal runs use the cached coordinates directly, so they do not take a
 screenshot and do not run image recognition. The script brings PureLive to the
@@ -34,6 +53,11 @@ coordinate remains the fallback.
 
 Screenshots and UI XML are collected only when a command fails and
 `-CaptureOnFailure` was explicitly supplied.
+
+Always pass the exact IP serial when the same wireless device is also exposed
+through an mDNS alias. Pairing ports and codes are ephemeral and must not be
+stored in this repository. Root access is not required by the UI regression
+workflow and is never inferred from device-side manager applications.
 
 ## Commands
 
@@ -85,3 +109,14 @@ deliberately skipped on this fast path because it can outlive the control layer.
    `-Validate` before device regression.
 5. Verify player state through app logs/semantics after each action. A successful
    tap alone is not a playback result.
+
+## v3.0.22 竖屏全屏手势
+
+在已经验证坐标的设备上进入稳定识别的竖屏直播间后，可直接复用：
+
+```powershell
+.\tool\android_ui.ps1 -Sequence enter_portrait_fullscreen
+.\tool\android_ui.ps1 -Sequence restore_portrait_panel
+```
+
+两个流程分别从竖屏弹幕面板手柄下滑进入沉浸展示、从屏幕底部上滑恢复弹幕栏。它们只记录确定坐标与等待时间；直播源是否为稳定竖屏仍由应用自身状态机判定，脚本不会强制普通直播进入该模式。

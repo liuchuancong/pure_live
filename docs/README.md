@@ -11,6 +11,23 @@
 - [上游同步审计（9e80f3be）](UPSTREAM_AUDIT_9E80F3BE.md)：竖屏比例、直播记录、录播与播放器布局入站提交的逐项处置。
 - [上游同步审计（c7d99cc3）](UPSTREAM_AUDIT_C7D99CC3.md)：上游吸收维护分支后的返回、录制权限、初始化与 FFmpeg 参数冲突处置。
 - [竖屏比例与直播记录根因审计](BUG_AUDIT_2026_08_26_PORTRAIT_HISTORY.md)：移动端单一可信比例、完整观看日期与不限数量回归证据。
+- [直播连续性与录制中心根因审计](BUG_AUDIT_2026_08_28_PLAYBACK_RECORDER.md)：意外暂停、音频焦点、录制真实状态/大小、滚动边界与十一项发布门禁。
+- [v3.1.8 录制会话时间修复](STAGE_UPDATE_3_1_8.md)：自动续接尝试与用户录制会话时间解耦、持久化兼容及 Android/Windows 双平台交付。
+- [v3.1.8 K90 Pro Android 运行审计](ANDROID_RUNTIME_AUDIT_3_1_8_K90PRO.md)：新主设备覆盖安装、UI 地图、首页/热门、120 Hz 与资源基线，以及待执行的直播矩阵。
+- [共享 Android 实机轮转](ANDROID_DEVICE_TEST_ROTATION.md)：哔哩哔哩模块、小红书模块与 Pure Live 按 A→B→C 串行占用同一部手机的默认规则与调用方式。
+- [v3.1.7 虎牙醒目留言事件身份修复](STAGE_UPDATE_3_1_7.md)：平台事件 ID、合法重复留言、有界去重缓存与 Android/Windows 交付。
+- [v3.1.6 虎牙醒目留言实时刷新修复](STAGE_UPDATE_3_1_6.md)：通知先于 WUP 留言板更新的时序根因、非阻塞有界补偿、Android/Windows 交付与证据边界。
+- [v3.1.5 Android / Windows 双平台发布](STAGE_UPDATE_3_1_5.md)：同一冻结源码、双平台版本对齐、串行构建、安装包与校验说明。
+- [v3.1.4 Android 平板关注刷新修复](STAGE_UPDATE_3_1_4.md)：宽屏移动设备误判、平台内纵向刷新链路、回归与 Android 交付证据。
+- [v3.1.3 Android / Windows 阶段更新](STAGE_UPDATE_3_1_3.md)：多画面真全屏退出入口、安全区适配、触控隔离与双平台交付证据。
+- [v3.1.2 Android / Windows 阶段更新](STAGE_UPDATE_3_1_2.md)：Windows 真全屏根因、窗口往返、定向回归与发布证据。
+- [v3.1.1 Android / Windows 阶段更新](STAGE_UPDATE_3_1_1.md)：多画面全布局音量、声音来源、弹幕目标、按房间持久化与发布证据。
+- [v3.1.0 Android / Windows 阶段更新](STAGE_UPDATE_3_1_0.md)：后台策略、弹幕有界解析、统一代理、安装包与证据边界。
+- [v3.1.0 Android / Windows 验收矩阵](ACCEPTANCE_MATRIX_3_1_0.md)：全功能测试账本、平台接口、播放录制、性能与发布门禁。
+- [v3.1.0 网络代理链路审计](NETWORK_PROXY_AUDIT_3_1_0.md)：API、封面头像、弹幕 WebSocket、全角地址与代理故障根因。
+- [v3.0.18 Android 真机播放与录制加固](STAGE_UPDATE_3_0_18.md)：硬解截图探测隔离、虎牙独立签名、跨重试录制统计和真机证据边界。
+- [v3.0.19 Windows x64 稳定版](STAGE_UPDATE_3_0_19_WINDOWS.md)：启动按需初始化、播放器释放、录制统计、Escape、弹幕交互与正式安装/便携包验证。
+- [v3.0.17 Android 阶段更新](STAGE_UPDATE_3_0_17.md)：直播连续性、录制真实统计、固定成本分片跟踪和录制中心边界。
 - [本地构建、测试与发布](BUILD_AND_RELEASE.md)：固定工具链、一键质量门禁、Android 签名、Windows 打包与本地发布。
 - [Windows 数据目录与升级](WINDOWS_DATA_AND_UPGRADE.md)：安装目录数据、旧版关注合并、换盘迁移与回滚。
 - [依赖与接口审计](DEPENDENCY_AUDIT.md)：依赖锁定策略、暂缓升级原因和直播平台接口探测边界。
@@ -25,6 +42,16 @@
 - [v3.0.2 Android 播放比例修复](STAGE_UPDATE_3_0_2.md)：普通横屏 16:9 边界、竖屏适配隔离、原生单层缩放与弹幕主题布局。
 - [v3.0.3 Android 竖屏 Surface 修复](STAGE_UPDATE_3_0_3.md)：原生/应用层几何统一、切换时序和横屏直播记录自适应双列。
 - [v3.0.4 Android 可信画面比例修复](STAGE_UPDATE_3_0_4.md)：普通页、全屏、系统画中画和应用内小窗共享单一可信比例，并增强历史记录日期与容量。
+- [v3.0.5 Android 有效画面识别](STAGE_UPDATE_3_0_5.md)：双证据几何引擎、黑边内嵌竖屏裁边、普通页/横屏/小窗三种呈现。
+- [v3.0.6 Android 竖屏几何仲裁修复](STAGE_UPDATE_3_0_6.md)：抖音平台分辨率证据、裁边代际隔离、延迟有界采样与渲染比例一致性门禁。
+- [v3.0.7 Android 竖屏真实画布修复](STAGE_UPDATE_3_0_7.md)：截图/解码坐标隔离、原生纹理防拉伸与显式横屏全屏入口。
+- [v3.0.8 Android 竖屏与小窗比例修复](STAGE_UPDATE_3_0_8.md)：抖音选中流几何、可逆居中裁边、应用小窗动态尺寸与 PiP 可视区域。
+- [v3.0.11 Android 跨模式比例隔离修复](STAGE_UPDATE_3_0_11.md)：清理 3.0.10 错误草稿、共享播放器 fit 污染回滚、全屏局部视频视口与整屏控件。
+- [v3.0.12 录制与全平台画质审计](RECORDING_AND_QUALITY_AUDIT_3_0_12.md)：十个平台画质显示/排序/实际请求，录制重连、分片隔离、原子合并和资源生命周期。
+- [v3.0.13 十个平台录制修复](RECORDING_AUDIT_3_0_13.md)：严格房间状态、播放完整元数据、Android 首次初始化、原始 FFmpeg 参数向量和可见失败诊断。
+- [v3.0.13 Android 阶段更新](STAGE_UPDATE_3_0_13.md)：版本范围、关键修复、质量门禁与正式交付要求。
+- [v3.0.9 Android 竖屏原生缩放修复](STAGE_UPDATE_3_0_9.md)：抖音官方几何模型、移动端原生单层缩放、实测裁边与四种呈现统一。
+- [Video Geometry Engine](VIDEO_GEOMETRY_ENGINE_2026_08_26.md)：编码画布、有效节目区域与呈现窗口的统一识别和普通直播保护设计。
 - [v2.9.7 Android update](STAGE_UPDATE_2_9_7.md): cross-platform audience semantics, stable popular ranking and SOOP PC/mobile totals.
 - [v2.9.6 Android update](STAGE_UPDATE_2_9_6.md): upstream synchronization, Douyin/Bilibili repairs and 40 interface probes.
 - [v2.9.5 Android update](STAGE_UPDATE_2_9_5.md): Douyu playback, YY integration and 36 interface probes.

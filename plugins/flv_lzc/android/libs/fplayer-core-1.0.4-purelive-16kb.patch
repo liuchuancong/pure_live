@@ -1,0 +1,32 @@
+diff --git a/android/ijkplayer/fijkplayer-full/src/main/CMakeLists.txt b/android/ijkplayer/fijkplayer-full/src/main/CMakeLists.txt
+index a3ea244..a49926a 100644
+--- a/android/ijkplayer/fijkplayer-full/src/main/CMakeLists.txt
++++ b/android/ijkplayer/fijkplayer-full/src/main/CMakeLists.txt
+@@ -75,8 +75,10 @@ set_target_properties( # Specifies the target library.
+ )
+
+ add_custom_target(cpffmpeg
+-    COMMAND mkdir -p ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}
+-    COMMAND cp ${IJK_FFMPAG_BUILD_DIR}/libijkffmpeg.so ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}
++    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}
++    COMMAND ${CMAKE_COMMAND} -E copy_if_different
++            ${IJK_FFMPAG_BUILD_DIR}/libijkffmpeg.so
++            ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/libijkffmpeg.so
+ )
+
+ add_dependencies(ijkffmpeg cpffmpeg)
+diff --git a/ijkmedia/ijksdl/CMakeLists.txt b/ijkmedia/ijksdl/CMakeLists.txt
+index 09a0319..2a33d44 100644
+--- a/ijkmedia/ijksdl/CMakeLists.txt
++++ b/ijkmedia/ijksdl/CMakeLists.txt
+@@ -177,7 +177,9 @@ endif()
+ #include ffmpeg header files
+ target_include_directories(${IJKSDL_LIB_NAME} PRIVATE ${IJK_FFMPAG_BUILD_DIR}/include)
+
+-target_compile_options(${IJKSDL_LIB_NAME} PUBLIC "-Werror")
++# Keep strict diagnostics local to SDL.  PUBLIC leaks -Werror into ijkplayer
++# and turns newer Clang diagnostics in the legacy FFmpeg bridge into errors.
++target_compile_options(${IJKSDL_LIB_NAME} PRIVATE "-Werror")
+ if (ANDROID)
+     # build cpufeatures as a static lib
+     # add_library(cpufeatures STATIC

@@ -20,7 +20,7 @@
 
 1. 将语义版本补丁位和数字 build 各递增一次，并同步 `pubspec.yaml`、`assets/version.json`、工作流默认标签、MSIX 版本、README、Release Notes 与阶段文档。
 2. 在干净提交上执行一次完整质量门禁；同一业务源码已通过完整门禁而后续只修改发布脚本或文档时，可引用该证据并使用 `-SkipQuality` 重建最终提交。
-3. 仅在本机串行构建 Android `arm64-v8a` Release，执行 APK 内容、包名、版本、ABI、关键原生库、文件大小和 SHA-256 核验。
+3. 仅在本机串行构建 Android `arm64-v8a` Release，执行 APK 内容、包名、版本、ABI、关键原生库、文件大小和 SHA-256 核验。`--split-per-abi` 会由 Flutter 为 arm64 Manifest `versionCode` 增加 2000；构建门禁必须同时记录并核对 pubspec 基础 build 与 APK Manifest 实际 code，禁止只凭文件名判断升级顺序。
 4. 推送最终 `master`，创建与源码提交一致的版本 tag 和草稿 Release，上传本机暂存 APK、构建元数据与校验文件。
 5. 仅调用 `sign-staged-android` 使用 GitHub Secrets 完成短时正式签名；核对固定证书指纹和最终 APK 哈希后发布 Release。
 6. 刷新 `assets/releases.json`，以独立的 `[skip ci]` 索引提交同步 GitHub；确认 Release 页面、附件、下载地址和源码提交一致后结束。
@@ -55,7 +55,7 @@
 
 构建脚本不传 `--no-daemon`，也不在每轮开始停止 Gradle daemon。保留 `.gradle`、`.dart_tool`、`build` 和原生依赖缓存；仅在缓存损坏、生成物与源码明显不一致或工具链迁移确有需要时执行针对性清理。`flutter clean` 与递归删除整个构建目录不属于常规步骤。
 
-Windows 长路径工作区由 `tool/flutterw.ps1` 优先映射到 `%LOCALAPPDATA%\Codex\workspaces` 下的稳定同盘目录联接，使工程与默认 Pub 缓存保持同一盘符，避免 Kotlin 插件增量缓存因跨盘相对路径失败而回退到完整编译；目录联接受限时才使用稳定 `SUBST` 盘符作为兼容后备。
+Android 长路径工作区由 `tool/flutterw.ps1` 优先映射到 `%LOCALAPPDATA%\Codex\workspaces` 下的稳定同盘目录联接，使工程与默认 Pub 缓存保持同一盘符，避免 Kotlin 插件增量缓存因跨盘相对路径失败而回退到完整编译。Windows/MSBuild 使用稳定 `SUBST` 盘符，避开 Visual Studio 在目录联接下写入 `ZERO_CHECK.tlog` 时解析到不存在目录的问题；Flutter 测试继续使用同一稳定盘符。
 
 Windows 增量构建目录可能保留已移除插件的旧 DLL 或资源。正式 ZIP/安装程序按当前
 `build/windows/x64/install_manifest.txt` 与经审查的 runner 运行时小型白名单建立独立打包
@@ -75,7 +75,8 @@ Windows Firebase C++ SDK 由 `tool/prefetch_windows_native.ps1` 在构建前按�
   `.dart_tool/package_config.json` 已存在时，可显式传入 `-SkipPubGet`，避免对同一锁文件重复执行
   分钟级依赖求解。脚本会自行核对前置条件；完整回归始终重新解析并校验锁定依赖。
 - 打包脚本要求显式传入 `-Target` 与 `-Configuration`，每次调用只生成该目标产物。
-- Android APK 在复制、签名和发布前必须通过内容完整性门禁：核对唯一目标 ABI、Flutter AssetManifest/版本清单/翻译与表情资源，以及 FFmpegKit、SQLite、MediaKit、Flutter 和应用原生库。仅验证包名、版本、ABI 与签名不构成完整交付证据。
+- Android APK 在复制、签名和发布前必须通过内容完整性门禁：核对唯一目标 ABI、Flutter AssetManifest/版本清单/翻译与表情资源，以及 FFmpegKit、SQLite、MediaKit、Flutter 和应用原生库；同时用 `zipalign -P 16` 核对 APK 内部对齐，并要求每个目标 ABI ELF 的全部 `LOAD` 段对齐不低于 `0x4000`。仅验证包名、版本、ABI 与签名不构成完整交付证据。
+- `fplayer-core` 固定解析仓库内的 `1.0.4-purelive16k` Maven 工件；其 Java 层与上游 1.0.4 保持一致，arm64 原生库哈希和源码来源记录在 `plugins/flv_lzc/android/libs/README.md`。禁止回退到含 4 KB ELF LOAD 对齐的公共 1.0.4 AAR。
 - Android 正式打包复用同一源码提交质量门已经锁定的 `.dart_tool/package_config.json`，目标构建使用 `--no-pub`，避免为 Android 打包重建 Windows/iOS/macOS 插件链接，也避免 Windows 长路径目录联接与 SUBST 盘符在同一增量图中混用。
 - 同一应用源码提交已通过完整回归后，如果失败阶段只涉及构建脚本、Gradle 兼容配置或
   发布流程，打包重试可使用 `-SkipQuality`；构建记录与交付报告必须引用此前通过的完整
@@ -99,6 +100,15 @@ daemon 让后续阶段长期误排队。
 
 禁止绕过互斥脚本并行启动另一套全量测试或构建。
 
+### 5.1 共享 Android 实机互斥
+
+同一部 Android 手机还会被哔哩哔哩模块、小红书模块与 Pure Live 三个任务共同使用。实机测试固定按
+`biliroaming → xhs → purelive → biliroaming` 轮转，并遵守
+[`docs/ANDROID_DEVICE_TEST_ROTATION.md`](docs/ANDROID_DEVICE_TEST_ROTATION.md)。Pure Live 的安装、启动/停止、触控、旋转、UIAutomator、截图、日志清理和设备设置操作必须通过
+`tool/run_android_device_test_turn.ps1` 取得 `purelive` lane；不得在其他 lane 的轮次直接操作设备。
+
+设备租约与重型构建锁相互独立：需要同时构建和实机验证时，先完成受构建资源守卫保护的构建，再以一个有边界的设备轮次执行安装与验证，避免持有手机租约等待长时间编译。
+
 ## 6. 记录与收尾
 
 每次重型任务在 `local-artifacts/build-records/` 写入 JSON 记录，至少包含：
@@ -107,7 +117,7 @@ daemon 让后续阶段长期误排队。
 - 开始时间、耗时和结果；
 - Gradle/配置缓存启用状态、日志中可观察到的命中与 `UP-TO-DATE` 数量；
 - 重型进程峰值 CPU、峰值内存与进程数；
-- 产物绝对路径或验证范围；
+- 产物绝对路径或验证范围；Android 同时记录包名、`versionName`、pubspec 基础 build、ABI 偏移、Manifest 实际 `versionCode`、文件大小和 SHA-256；
 - 任务结束后的活跃重型进程数。
 
 监控任务、临时脚本与互斥锁在 `finally` 中释放。构建结束后确认后台 CPU 回落。Bug 修复批次只继续既定的 Android 签名、GitHub 发布和索引同步，不追加下一轮完整回归或其他平台打包；普通构建任务在目标产物完成后结束。

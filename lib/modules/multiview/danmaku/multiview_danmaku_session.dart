@@ -50,9 +50,9 @@ class MultiviewDanmakuSession {
   /// 当前会话绑定的房间键（platform:roomId）；未连接为 null。
   String? get sessionKey => _sessionKey;
 
-  /// 平台例外表：与 live_play 的弹幕门禁保持一致（kuaishou/iptv/cc 不连）。
+  /// 平台例外表：与 live_play 的弹幕门禁保持一致（iptv/cc 不连）。
   static bool isSupportedPlatform(String? platform) {
-    const except = [Sites.kuaishouSite, Sites.iptvSite, Sites.ccSite];
+    const except = [Sites.iptvSite, Sites.ccSite];
     return platform != null && !except.contains(platform);
   }
 

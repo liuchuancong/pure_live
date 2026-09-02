@@ -5,11 +5,11 @@ contact_links:
     url: https://github.com/liuchuancong/pure_live/issues/new/choose
     about: 本维护分支 Issue 仅受理可复现维护型 Bug；新增功能、产品方向和全新平台适配统一提交到原项目。
   - name: 使用与构建文档
-    url: https://github.com/liuchuancong/pure_live#文档
+    url: https://github.com/wzgrx/pure_live#文档
     about: 提交问题前先核对功能说明、构建流程和常见问题。
   - name: 搜索已有 Issue
-    url: https://github.com/liuchuancong/pure_live/issues
+    url: https://github.com/wzgrx/pure_live/issues
     about: 使用平台、播放器、设备型号和报错关键词搜索重复问题。
   - name: 私密安全报告
-    url: https://github.com/liuchuancong/pure_live/security/advisories/new
+    url: https://github.com/wzgrx/pure_live/security/advisories/new
     about: 涉及凭据、隐私或可被利用的漏洞时使用私密报告入口。

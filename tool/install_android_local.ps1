@@ -16,11 +16,18 @@ $aapt = Get-ChildItem (Join-Path $sdkRoot 'build-tools') -Directory -ErrorAction
 if (-not (Test-Path -LiteralPath $adb)) { throw "adb.exe was not found under $sdkRoot." }
 if (-not $aapt) { throw "aapt.exe was not found under $sdkRoot\build-tools." }
 
-$onlineDevices = & $adb devices | Select-String '^([^\s]+)\s+device$' | ForEach-Object { $_.Matches[0].Groups[1].Value }
+$onlineDevices = & $adb devices |
+    Select-String '^(.+?)\s+device\s*$' |
+    ForEach-Object { $_.Matches[0].Groups[1].Value.Trim() }
+$wirelessDevices = @($onlineDevices | Where-Object { $_ -match '^(?:\d{1,3}\.){3}\d{1,3}:\d+$' })
 if ($Device) {
     if ($Device -notin $onlineDevices) { throw "Android device $Device is not online." }
 } elseif ($onlineDevices.Count -eq 1) {
     $Device = $onlineDevices[0]
+} elseif ($wirelessDevices.Count -eq 1) {
+    # A network transport can also appear through an mDNS alias. Prefer the
+    # unique IPv4 endpoint so one physical phone is not treated as two devices.
+    $Device = $wirelessDevices[0]
 } elseif ($onlineDevices.Count -eq 0) {
     throw 'No online Android device was found.'
 } else {

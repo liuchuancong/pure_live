@@ -26,7 +26,9 @@ When the build follows a Bug fix, upstream Issue review or upstream merge, first
    plumbing only; cite that prior run in the delivery report.
 5. Before staging or signing Android, run `tool/verify_android_apk.ps1`. Require the
    complete Flutter asset bundle, the single requested ABI, and the FFmpegKit,
-   SQLite, MediaKit, Flutter, IJK and app native libraries; package metadata and
+   SQLite, MediaKit, Flutter, IJK and app native libraries. Also assert and record
+   `versionName`, the pubspec base build number, Flutter's split-ABI offset, the
+   APK Manifest's effective `versionCode`, size, and SHA-256; package metadata and
    signature checks alone are insufficient.
 6. Android packaging consumes the package config produced by the preceding
    quality/dependency stage and uses `--no-pub`; do not regenerate unrelated

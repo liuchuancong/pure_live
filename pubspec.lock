@@ -430,10 +430,10 @@ packages:
     dependency: transitive
     description:
       name: cross_file
-      sha256: f141ea4f277af142a0356955707f6556f37b03947d39d55585981a06ca437bd6
+      sha256: "92c9c43c383bfa1c32079d3bc492d55d6d4318044b7b47edaff8971cbb555c51"
       url: "https://pub.dev"
     source: hosted
-    version: "0.3.5+5"
+    version: "0.3.5+4"
   crypto:
     dependency: "direct main"
     description:
@@ -486,10 +486,10 @@ packages:
     dependency: transitive
     description:
       name: dart_style
-      sha256: "82ade9fc4273f29ed673e33166944465225b4f7fc5d4aaef48605cc751c18fc1"
+      sha256: "3f88fc9c96c568d631356507355a2d1e983ee000c9ac008bdcb39b5bf53ce777"
       url: "https://pub.dev"
     source: hosted
-    version: "3.1.13"
+    version: "3.1.12"
   date_format:
     dependency: "direct main"
     description:
@@ -1489,10 +1489,10 @@ packages:
     dependency: transitive
     description:
       name: native_toolchain_c
-      sha256: a1c26117c48cebe5677b0cf0e33a980a79a7c5577effc86f52e5a0d309cdcb60
+      sha256: "8aaead321425bd3f03bd5894aa27c8ea6993eab95531da7e59f5d39c6e5708ec"
       url: "https://pub.dev"
     source: hosted
-    version: "0.19.3"
+    version: "0.18.0"
   nm:
     dependency: transitive
     description:

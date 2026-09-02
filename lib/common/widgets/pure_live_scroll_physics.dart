@@ -138,7 +138,6 @@ class PureLiveBoundedScrollPhysics extends ClampingScrollPhysics {
       isScrolling: isScrolling,
       velocity: velocity,
     );
-
     return adjusted.clamp(newPosition.minScrollExtent, newPosition.maxScrollExtent).toDouble();
   }
 }

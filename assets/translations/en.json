@@ -1441,6 +1441,16 @@
     "portrait_fullscreen_follow_source": "Follow source (recommended)",
     "portrait_fullscreen_follow_system": "Follow system",
     "portrait_fullscreen_landscape": "Always landscape",
+    "portrait_fullscreen_display_mode": "Portrait fullscreen display",
+    "portrait_fullscreen_display_mode_desc": "Applies immediately only to portrait-source portrait fullscreen; landscape rooms and PiP keep their own ratios",
+    "portrait_fullscreen_display_complete": "Complete frame",
+    "portrait_fullscreen_display_complete_desc": "Preserves the full stream with a solid unused area",
+    "portrait_fullscreen_display_ambient": "Ambient background (recommended)",
+    "portrait_fullscreen_display_ambient_desc": "Preserves the full frame and extends a softly blurred cover into the gap",
+    "portrait_fullscreen_display_balanced": "Balanced fill",
+    "portrait_fullscreen_display_balanced_desc": "Zooms by at most 8% and fills the remaining gap with the ambient background",
+    "portrait_fullscreen_display_cover": "Crop to fill",
+    "portrait_fullscreen_display_cover_desc": "Fills the display and may crop content from the left and right edges",
     "portrait_pip_follow_source": "Use the real source ratio in PiP",
     "portrait_pip_follow_source_desc": "Applies the stable ratio before PiP and clamps it to Android's supported range",
     "portrait_danmaku_mode": "Portrait danmaku layout",
@@ -1692,5 +1702,7 @@
     "preset_normal": "Normal",
     "preset_rich": "Rich",
     "preset_custom": "Custom",
-    "preset_custom_description": "Custom layout, freely adjust all parameters"
+    "preset_custom_description": "Custom layout, freely adjust all parameters",
+    "portrait_fullscreen_enter_hint": "Swipe down for portrait fullscreen",
+    "portrait_fullscreen_restore_hint": "Portrait fullscreen · Swipe up to restore danmaku"
 }

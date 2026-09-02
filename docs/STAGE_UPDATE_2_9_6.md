@@ -2,7 +2,7 @@
 
 Version: `2.9.6+4085`
 
-Maintained repository: `liuchuancong/pure_live`
+Maintained repository: `wzgrx/pure_live`
 
 Upstream baseline: `liuchuancong/pure_live@974f4c32`
 

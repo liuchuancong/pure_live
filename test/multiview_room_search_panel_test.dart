@@ -1,21 +1,22 @@
-import 'dart:convert';
 import 'dart:io';
+import 'dart:convert';
 
-import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter_test/flutter_test.dart';
-import 'package:remixicon/remixicon.dart';
 import 'package:hive_ce/hive.dart';
-import 'package:pure_live/common/services/settings/font_settings_controller.dart';
+import 'package:remixicon/remixicon.dart';
+import 'package:pure_live/common/index.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:pure_live/core/interface/live_site.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:pure_live/common/index.dart';
-import 'package:pure_live/core/interface/live_site.dart';
+import 'package:pure_live/common/services/settings/font_settings_controller.dart';
 import 'package:pure_live/modules/multiview/multiview_room_search_controller.dart';
 import 'package:pure_live/modules/multiview/widgets/multiview_room_search_panel.dart';
 
 /// Deterministic platform adapter: search returns canned rooms and the direct
 /// lookup path is observable, so nothing in these tests touches the network.
 class _FakeLiveSite extends LiveSite {
+  // ignore: prefer_initializing_formals
   _FakeLiveSite({List<LiveRoom> rooms = const <LiveRoom>[], this.detail, this.fail = false}) : _rooms = rooms;
 
   final List<LiveRoom> _rooms;

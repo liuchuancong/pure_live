@@ -1,6 +1,6 @@
 # 依赖与接口审计
 
-最近核验日期：2026-08-25
+最近核验日期：2026-09-01
 
 ## 固定工具链
 
@@ -35,6 +35,20 @@ AGP 9.3.1 是当前 9.3 稳定补丁，官方兼容表给出的默认 Gradle 为
 - 升级 `app_links`、`connectivity_plus`、`pro_mpack` 与 Syncfusion sliders，并通过静态分析和完整测试。
 - GitHub Actions 固定到已核验的完整提交 SHA，Dependabot 每月汇总检查 pub、Gradle 和 Actions 更新；日常分支推送不构建，仅手动入口或显式阶段标签按平台运行。
 - 当前锁定的 Predidit Linux `libmpv` 需要 glibc 2.38 与 GLIBCXX 3.4.32，因此 Linux 作业固定使用 Ubuntu 24.04；Ubuntu 22.04 链接失败属于二进制基线不匹配，而非缺少单个开发包。
+
+## Android 16 KB 页面兼容性
+
+Android 官方要求同时检查 APK 内原生库的 ZIP 对齐与 ELF `LOAD` 段对齐；仅有 `zipalign -P 16` 通过不足以证明每个 `.so` 支持 16 KB 页面。官方说明见 [Support 16 KB page sizes](https://developer.android.com/guide/practices/page-sizes)。
+
+2026-09-01 对 v3.1.8+4121 arm64 Debug 和当前 Release APK 做了独立核验：
+
+- Android Build Tools 36 的 `zipalign -c -P 16 -v 4` 均通过；
+- 用 NDK r29 `llvm-objdump -p` 检查 16 个 arm64 ELF，13 个的最小 `LOAD` 对齐达到 `2**14` 或更高；
+- `libijkffmpeg.so`、`libijkplayer.so`、`libijksdl.so` 的最小 `LOAD` 对齐仍为 `2**12`；它们来自 `plugins/flv_lzc/android/build.gradle` 锁定的 `io.github.flutterplayer:fplayer-core:1.0.4`；
+- K90 Pro 当前运行页大小为 4096 字节，因此现有包在该设备可启动；Android 17 安装 Debug 包仍给出原生库兼容提示，这三项在 16 KB 页设备/严格模式下属于发布阻断项；
+- Maven Central 的 [fplayer-core 1.0.4](https://central.sonatype.com/artifact/io.github.flutterplayer/fplayer-core) 仍是该坐标最新版本，直接升小版本不会得到已验证的 16 KB 二进制。后续采用源码可复现重编译或经过 API/许可证/ABI 回归的播放器替换，不引入来源不明的预编译库。
+
+本地逐 ELF 结果保存于 `local-artifacts/diagnostics/elf-alignment-20260901T152627221/`。正式稳定版门禁将以所有打包 ABI 的 ZIP + ELF 双重对齐为准。
 
 ## 直播接口探测
 

@@ -81,7 +81,7 @@ void main() {
     );
 
     final json = task.toJson();
-    expect(json['schemaVersion'], 5);
+    expect(json['schemaVersion'], 7);
     expect(json['lastErrorStage'], 'ffmpeg');
     expect(json['lastError'], contains('[stream-url]'));
     expect(json['lastError'], isNot(contains('secret')));
@@ -173,5 +173,82 @@ void main() {
     });
 
     expect(task.recordedSeconds, 0);
+  });
+
+  test('recorder retry keeps the user session start while rotating attempt prefixes', () {
+    final task = LiveRecordTask.fromRoom(LiveRoom(roomId: '1', platform: 'huya', title: 'title', nick: 'nick'));
+    final sessionStart = DateTime.parse('2026-09-01T08:42:24.483');
+    final retryStart = DateTime.parse('2026-09-01T08:44:07.901');
+
+    task.beginNewRecording(now: sessionStart);
+    final firstPrefix = task.recordingFilePrefix;
+    task
+      ..recordedSeconds = 105
+      ..fileSize = 62650135;
+    task.beginNewAttempt(now: retryStart);
+
+    expect(task.recordingStartedAt, sessionStart);
+    expect(task.displayStartTime, sessionStart);
+    expect(task.createTime, retryStart);
+    expect(task.recordingFilePrefix, isNot(firstPrefix));
+    expect(task.recordedSeconds, 105);
+    expect(task.fileSize, 62650135);
+  });
+
+  test('recording session start survives persistence and resets on explicit restart', () {
+    final firstStart = DateTime.parse('2026-09-01T08:42:24.483');
+    final secondStart = DateTime.parse('2026-09-01T09:00:00.001');
+    final task = LiveRecordTask.fromRoom(LiveRoom(roomId: '1', platform: 'huya', title: 'title', nick: 'nick'))
+      ..beginNewRecording(now: firstStart);
+
+    final restored = LiveRecordTask.fromJson(task.toJson());
+    expect(restored.recordingStartedAt, firstStart);
+    expect(restored.displayStartTime, firstStart);
+
+    restored.beginNewRecording(now: secondStart);
+    expect(restored.recordingStartedAt, secondStart);
+    expect(restored.createTime, secondStart);
+  });
+
+  test('recording task preserves audience metric semantics across updates and persistence', () {
+    final task = LiveRecordTask.fromRoom(
+      LiveRoom(
+        roomId: '1',
+        platform: 'douyu',
+        watching: '509.3万',
+        popularity: '509.3万',
+        audienceMetricType: AudienceMetricType.popularity,
+      ),
+    );
+
+    expect(task.audienceMetricType, AudienceMetricType.popularity);
+    expect(LiveRecordTask.fromJson(task.toJson()).audienceMetricType, AudienceMetricType.popularity);
+
+    final onlineTask = LiveRecordTask.fromRoom(
+      LiveRoom(
+        roomId: '2',
+        platform: 'kuaishou',
+        watching: '3821',
+        onlineViewers: '3821',
+        audienceMetricType: AudienceMetricType.onlineViewers,
+      ),
+    );
+    onlineTask.updateFromRoom(
+      LiveRoom(
+        roomId: '2',
+        platform: 'kuaishou',
+        watching: '4012',
+        onlineViewers: '4012',
+        audienceMetricType: AudienceMetricType.onlineViewers,
+      ),
+    );
+    expect(onlineTask.audienceMetricType, AudienceMetricType.onlineViewers);
+
+    final legacyDouyin = LiveRecordTask.fromJson(<String, dynamic>{
+      'roomId': '2',
+      'platform': 'douyin',
+      'watching': '12.6万',
+    });
+    expect(legacyDouyin.audienceMetricType, AudienceMetricType.totalViewers);
   });
 }

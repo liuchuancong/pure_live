@@ -5,7 +5,6 @@
  * All rights reserved.
  * Use of this source code is governed by MIT license that can be found in the LICENSE file.
  */
-
 package com.alexmercerind.media_kit_video;
 
 import android.os.Handler;
@@ -31,18 +30,12 @@ public class VideoOutput implements TextureRegistry.SurfaceProducer.Callback {
 
     private static final Method newGlobalObjectRef;
     private static final Method deleteGlobalObjectRef;
-
     private static final Handler handler = new Handler(Looper.getMainLooper());
 
     static {
         try {
-            /*
-             * com.alexmercerind.mediakitandroidhelper.MediaKitAndroidHelper
-             * is provided by:
-             *
-             * package:media_kit_libs_android_video
-             * package:media_kit_libs_android_audio
-             */
+            // com.alexmercerind.mediakitandroidhelper.MediaKitAndroidHelper is part of package:media_kit_libs_android_video & package:media_kit_libs_android_audio packages.
+            // Use reflection to invoke methods of com.alexmercerind.mediakitandroidhelper.MediaKitAndroidHelper.
             Class<?> mediaKitAndroidHelperClass = Class.forName("com.alexmercerind.mediakitandroidhelper.MediaKitAndroidHelper");
 
             newGlobalObjectRef = mediaKitAndroidHelperClass.getDeclaredMethod("newGlobalObjectRef", Object.class);
@@ -59,9 +52,6 @@ public class VideoOutput implements TextureRegistry.SurfaceProducer.Callback {
         }
     }
 
-    /**
-     * Flutter texture / surface id.
-     */
     private long id = 0;
 
     /**
@@ -73,10 +63,6 @@ public class VideoOutput implements TextureRegistry.SurfaceProducer.Callback {
      * Surface currently referenced by the current WID.
      */
     private Surface referencedSurface;
-
-    /**
-     * Prevent operations after dispose.
-     */
     private boolean disposed = false;
 
     private final TextureUpdateCallback textureUpdateCallback;
@@ -116,9 +102,6 @@ public class VideoOutput implements TextureRegistry.SurfaceProducer.Callback {
 
     private boolean surfaceTextureNotified = false;
 
-    /**
-     * Protect Surface / WID lifecycle operations.
-     */
     private final Object lock = new Object();
 
     VideoOutput(TextureRegistry textureRegistryReference, boolean enableSurfaceProducer, TextureUpdateCallback textureUpdateCallback) {
@@ -146,28 +129,19 @@ public class VideoOutput implements TextureRegistry.SurfaceProducer.Callback {
         }
     }
 
-    /**
-     * Dispose the video output.
-     */
     public void dispose() {
         synchronized (lock) {
             if (disposed) {
                 return;
             }
-
             disposed = true;
-
-            Log.i(TAG, "dispose: id=" + id + ", wid=" + wid + ", producer=" + enableSurfaceProducer);
-
             if (enableSurfaceProducer) {
                 try {
                     surfaceProducer.setCallback(null);
                 } catch (Throwable e) {
                     Log.w(TAG, "Unable to clear SurfaceProducer callback", e);
                 }
-
                 detachSurfaceReference();
-
                 try {
                     surfaceProducer.release();
                 } catch (Throwable e) {
@@ -186,26 +160,10 @@ public class VideoOutput implements TextureRegistry.SurfaceProducer.Callback {
         }
     }
 
-    /**
-     * Update SurfaceProducer / SurfaceTexture buffer size.
-     */
     public void setSurfaceSize(int width, int height) {
         setSurfaceSize(width, height, false);
     }
 
-    /**
-     * Internal Surface size update.
-     * <p>
-     * For SurfaceProducer:
-     * <p>
-     * setSize()
-     * ↓
-     * getSurface()
-     * ↓
-     * detect Surface replacement
-     * ↓
-     * create new WID if necessary
-     */
     private void setSurfaceSize(int width, int height, boolean force) {
         synchronized (lock) {
             if (disposed || width <= 0 || height <= 0) {
@@ -214,39 +172,15 @@ public class VideoOutput implements TextureRegistry.SurfaceProducer.Callback {
 
             if (enableSurfaceProducer) {
                 try {
-                    final int oldWidth = surfaceProducer.getWidth();
-                    final int oldHeight = surfaceProducer.getHeight();
-
-                    Log.i(TAG, "setSurfaceSize: requested=" + width + "x" + height + ", current=" + oldWidth + "x" + oldHeight + ", force=" + force);
-
-                    /*
-                     * If the size is already correct, avoid calling
-                     * setSize() unnecessarily.
-                     *
-                     * Still publish the current Surface because Flutter
-                     * may have replaced the Surface independently.
-                     */
-                    if (!force && oldWidth == width && oldHeight == height) {
-
-                        updateLastSurfaceSize(width, height);
+                    if (!force && surfaceProducer.getWidth() == width && surfaceProducer.getHeight() == height) {
                         publishCurrentSurface();
-
                         return;
                     }
-
-                    /*
-                     * Flutter may replace the underlying Surface
-                     * when setSize() is called.
-                     */
                     surfaceProducer.setSize(width, height);
-
-                    updateLastSurfaceSize(width, height);
-
-                    /*
-                     * Query the current Surface again.
-                     */
+                    // SurfaceProducer is allowed to replace its Surface after
+                    // setSize. Query it again instead of reusing the old JNI
+                    // reference while waiting for a lifecycle callback.
                     publishCurrentSurface();
-
                 } catch (Throwable e) {
                     Log.e(TAG, "setSurfaceSize SurfaceProducer", e);
                 }
@@ -274,203 +208,93 @@ public class VideoOutput implements TextureRegistry.SurfaceProducer.Callback {
         }
     }
 
-    /**
-     * Flutter has a valid Surface available.
-     */
     @Override
     public void onSurfaceAvailable() {
         synchronized (lock) {
-            if (disposed) {
-                return;
-            }
-
-            Log.i(TAG, "onSurfaceAvailable: id=" + id + ", wid=" + wid);
-
             publishCurrentSurface();
         }
     }
 
-    /**
-     * Flutter is going to clean up the current Surface.
-     */
     @Override
     public void onSurfaceCleanup() {
         synchronized (lock) {
             if (disposed) {
                 return;
             }
-
-            Log.i(TAG, "onSurfaceCleanup: id=" + id + ", wid=" + wid + ", size=" + lastSurfaceWidth + "x" + lastSurfaceHeight);
-
-            /*
-             * Tell native/mpv that the current Surface is no longer valid.
-             */
+            Log.i(TAG, "onSurfaceCleanup");
             detachSurfaceReference();
         }
     }
 
     /**
-     * Publish the Surface currently owned by Flutter.
-     * <p>
-     * SurfaceProducer allows getSurface() to return a different Surface
-     * after setSize(), rotation, background/resume, or lifecycle changes.
-     * <p>
-     * Therefore the Surface object and WID must be updated together.
+     * Publishes the Surface currently owned by Flutter.
+     *
+     * Flutter's SurfaceProducer contract explicitly permits getSurface() to
+     * return a different Surface after setSize, rotation or background/resume.
+     * The Java object and its JNI global reference must therefore be compared
+     * and replaced as one transaction before mpv receives the new WID.
      */
     private void publishCurrentSurface() {
         if (disposed || !enableSurfaceProducer) {
             return;
         }
-
         try {
-            /*
-             * Always query the current Surface.
-             */
             final Surface currentSurface = surfaceProducer.getSurface();
-
-            /*
-             * Refresh texture id.
-             */
             id = surfaceProducer.id();
-
-            /*
-             * Read the current size once.
-             */
-            final int width = surfaceProducer.getWidth();
-            final int height = surfaceProducer.getHeight();
-
-            updateLastSurfaceSize(width, height);
-
-            /*
-             * Surface may temporarily be null or invalid during
-             * Android lifecycle transitions.
-             */
             if (currentSurface == null || !currentSurface.isValid()) {
-
-                Log.w(TAG, "publishCurrentSurface: invalid Surface, id=" + id + ", wid=" + wid + ", size=" + width + "x" + height);
-
                 detachSurfaceReference();
-
                 return;
             }
 
-            final boolean surfaceChanged = currentSurface != referencedSurface;
-
-            Log.i(TAG, "publishCurrentSurface: id=" + id + ", oldWid=" + wid + ", surfaceChanged=" + surfaceChanged + ", size=" + width + "x" + height);
-
-            /*
-             * Create a new WID when:
-             *
-             * 1. There is no current WID.
-             * 2. Flutter replaced the underlying Surface.
-             */
-            if (wid == 0 || surfaceChanged) {
-
-                /*
-                 * Detach the previous WID first.
-                 *
-                 * The old WID itself is released asynchronously.
-                 */
+            if (wid == 0 || currentSurface != referencedSurface) {
+                // Detach the previous WID before releasing its JNI reference;
+                // this keeps mpv from rendering into a retired Surface.
                 detachSurfaceReference();
-
-                /*
-                 * Store the new Surface.
-                 */
                 referencedSurface = currentSurface;
-
-                /*
-                 * Create JNI global reference for the new Surface.
-                 */
                 wid = newGlobalObjectRef(currentSurface);
-
-                Log.i(TAG, "new Surface/WID: id=" + id + ", wid=" + wid + ", size=" + width + "x" + height);
             }
-
-            /*
-             * Do not send an invalid WID to native.
-             */
-            if (wid == 0) {
-                Log.e(TAG, "publishCurrentSurface: failed to create WID");
-
-                return;
-            }
-
-            /*
-             * Publish the current Surface/WID pair.
-             */
-            textureUpdateCallback.onTextureUpdate(id, wid, width, height);
-
+            textureUpdateCallback.onTextureUpdate(
+                    id,
+                    wid,
+                    surfaceProducer.getWidth(),
+                    surfaceProducer.getHeight()
+            );
         } catch (Throwable e) {
             Log.e(TAG, "publishCurrentSurface", e);
-
             detachSurfaceReference();
         }
     }
 
-    /**
-     * Save the last known SurfaceProducer dimensions.
-     * <p>
-     * This avoids querying SurfaceProducer dimensions during cleanup.
-     */
-    private void updateLastSurfaceSize(int width, int height) {
-        if (width > 0) {
-            lastSurfaceWidth = width;
-        }
-
-        if (height > 0) {
-            lastSurfaceHeight = height;
-        }
-    }
-
-    /**
-     * Detach the current Surface/WID from native/mpv.
-     * <p>
-     * The WID itself is deleted asynchronously.
-     */
     private void detachSurfaceReference() {
         if (enableSurfaceProducer) {
             try {
-                textureUpdateCallback.onTextureUpdate(id, 0, lastSurfaceWidth, lastSurfaceHeight);
+                textureUpdateCallback.onTextureUpdate(
+                        id,
+                        0,
+                        surfaceProducer.getWidth(),
+                        surfaceProducer.getHeight()
+                );
             } catch (Throwable e) {
                 Log.w(TAG, "Unable to detach Surface", e);
             }
         }
-
         referencedSurface = null;
-
         releaseWid();
     }
 
-    /**
-     * Release the JNI global WID reference after a delay.
-     * <p>
-     * mpv may process WID changes asynchronously, so deleting the JNI
-     * global reference immediately can race with native code.
-     */
     private void releaseWid() {
         if (wid == 0) {
             return;
         }
-
         final long widReference = wid;
-
-        /*
-         * Mark the current WID as detached immediately.
-         */
         wid = 0;
-
-        Log.i(TAG, "schedule deleteGlobalObjectRef: wid=" + widReference + ", delay=" + WID_RELEASE_DELAY_MS + "ms");
-
-        handler.postDelayed(() -> deleteGlobalObjectRef(widReference), WID_RELEASE_DELAY_MS);
+        // mpv applies WID changes asynchronously. Delay deletion while the
+        // detached reference is no longer reachable from this owner.
+        handler.postDelayed(() -> deleteGlobalObjectRef(widReference), 5000);
     }
 
-    /**
-     * Create the SurfaceTexture Surface used by the legacy path.
-     */
     private void createSurfaceTextureSurface() {
-        /*
-         * Reuse the existing Surface.
-         */
+        // The SurfaceTexture fallback is only effective with Android's Skia backend.
         if (surfaceTextureSurface != null) {
             return;
         }
@@ -482,9 +306,6 @@ public class VideoOutput implements TextureRegistry.SurfaceProducer.Callback {
         Log.i(TAG, "createSurfaceTextureSurface: id=" + id + ", wid=" + wid);
     }
 
-    /**
-     * Cleanup legacy SurfaceTexture rendering path.
-     */
     private void onSurfaceTextureCleanup() {
         Log.i(TAG, "onSurfaceTextureCleanup: id=" + id + ", wid=" + wid + ", size=" + surfaceTextureWidth + "x" + surfaceTextureHeight);
 
@@ -515,12 +336,8 @@ public class VideoOutput implements TextureRegistry.SurfaceProducer.Callback {
         }
     }
 
-    /**
-     * Create JNI global reference.
-     */
     private static long newGlobalObjectRef(Object object) {
         Log.i(TAG, String.format(Locale.ENGLISH, "newGlobalRef: object = %s", object));
-
         try {
             return (long) Objects.requireNonNull(newGlobalObjectRef.invoke(null, object));
         } catch (Throwable e) {
@@ -530,16 +347,8 @@ public class VideoOutput implements TextureRegistry.SurfaceProducer.Callback {
         }
     }
 
-    /**
-     * Delete JNI global reference.
-     */
     private static void deleteGlobalObjectRef(long ref) {
-        if (ref == 0) {
-            return;
-        }
-
         Log.i(TAG, String.format(Locale.ENGLISH, "deleteGlobalObjectRef: ref = %d", ref));
-
         try {
             deleteGlobalObjectRef.invoke(null, ref);
         } catch (Throwable e) {

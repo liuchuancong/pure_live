@@ -42,6 +42,7 @@ param(
     [switch]$NoBringToFront
 )
 
+Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $mapPath = Join-Path $PSScriptRoot 'device_ui_map.json'
 $adbCandidates = @(
@@ -55,33 +56,134 @@ $adb = $adbCandidates | Where-Object {
 
 if (-not $adb) { throw 'ADB executable was not found.' }
 
+function Start-AdbServer {
+    $serverResult = & $adb start-server 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        throw "adb start-server failed ($LASTEXITCODE):`n$($serverResult -join "`n")"
+    }
+}
+
 function Invoke-Adb {
-    param([Parameter(ValueFromRemainingArguments)][string[]]$Arguments)
+    param([Parameter(Mandatory = $true)][string[]]$AdbArguments)
     $all = @()
     if ($Serial) { $all += @('-s', $Serial) }
-    $all += $Arguments
-    $result = & $adb @all
-    if ($LASTEXITCODE -ne 0) { throw "adb exited with code ${LASTEXITCODE}: $($Arguments -join ' ')" }
+    $all += $AdbArguments
+    $result = & $adb @all 2>&1
+    $exitCode = $LASTEXITCODE
+    $output = $result -join "`n"
+    if ($exitCode -ne 0 -and $output -match '(?i)cannot connect to daemon|daemon still not running') {
+        # A different desktop task may have restarted the process-global ADB
+        # server after this lane acquired the device lease. The command was not
+        # delivered in this failure mode, so one bounded restart/retry is safe.
+        Start-AdbServer
+        Start-Sleep -Milliseconds 350
+        $result = & $adb @all 2>&1
+        $exitCode = $LASTEXITCODE
+    }
+    if ($exitCode -ne 0) {
+        throw "adb exited with code ${exitCode}: $($AdbArguments -join ' ')`n$($result -join "`n")"
+    }
     $result
+}
+
+function Wake-AndDismissKeyguard {
+    # The K90 Pro is configured to lock after ten minutes. Restore an
+    # interactive surface only after this task owns the shared device lease and
+    # before bringing Pure Live forward. The conditional swipe avoids scrolling
+    # whichever app the previous lane left on screen when the phone is already
+    # unlocked.
+    Invoke-Adb -AdbArguments @('shell', 'input', 'keyevent', 'KEYCODE_WAKEUP') | Out-Null
+    Invoke-Adb -AdbArguments @('shell', 'wm', 'dismiss-keyguard') | Out-Null
+    Start-Sleep -Milliseconds 250
+    $policyText = (Invoke-Adb -AdbArguments @('shell', 'dumpsys', 'window', 'policy')) -join "`n"
+    $stillLocked = $policyText -match '(?im)(?:mShowingLockscreen|mKeyguardShowing|isKeyguardShowing|keyguardShowing|mDreamingLockscreen|isStatusBarKeyguard)\s*=\s*true'
+    if ($stillLocked) {
+        $metrics = Get-DeviceMetrics
+        $x = [math]::Round($metrics.Width * 0.5)
+        $startY = [math]::Round($metrics.Height * 0.84)
+        $endY = [math]::Round($metrics.Height * 0.24)
+        Invoke-Adb -AdbArguments @('shell', 'input', 'swipe', $x, $startY, $x, $endY, '350') | Out-Null
+        Start-Sleep -Milliseconds 350
+        Invoke-Adb -AdbArguments @('shell', 'wm', 'dismiss-keyguard') | Out-Null
+    }
 }
 
 function Get-Map {
     Get-Content -LiteralPath $mapPath -Raw -Encoding UTF8 | ConvertFrom-Json
 }
 
+function Format-JsonText {
+    param([Parameter(Mandatory = $true)][string]$Json)
+    $builder = [System.Text.StringBuilder]::new()
+    $indent = 0
+    $inString = $false
+    $escaped = $false
+    for ($index = 0; $index -lt $Json.Length; $index++) {
+        $character = $Json[$index]
+        if ($inString) {
+            $null = $builder.Append($character)
+            if ($escaped) { $escaped = $false }
+            elseif ($character -eq '\') { $escaped = $true }
+            elseif ($character -eq '"') { $inString = $false }
+            continue
+        }
+        if ($character -eq '"') {
+            $inString = $true
+            $null = $builder.Append($character)
+            continue
+        }
+        if ([char]::IsWhiteSpace($character)) { continue }
+        switch ($character) {
+            { $_ -eq '{' -or $_ -eq '[' } {
+                $null = $builder.Append($character)
+                $next = if ($index + 1 -lt $Json.Length) { $Json[$index + 1] } else { [char]0 }
+                $matchingClose = if ($character -eq '{') { '}' } else { ']' }
+                if ($next -ne $matchingClose) {
+                    $indent++
+                    $null = $builder.Append("`n").Append(' ' * ($indent * 2))
+                }
+                break
+            }
+            { $_ -eq '}' -or $_ -eq ']' } {
+                $previous = if ($index -gt 0) { $Json[$index - 1] } else { [char]0 }
+                $matchingOpen = if ($character -eq '}') { '{' } else { '[' }
+                if ($previous -ne $matchingOpen) {
+                    $indent--
+                    $null = $builder.Append("`n").Append(' ' * ($indent * 2))
+                }
+                $null = $builder.Append($character)
+                break
+            }
+            ',' {
+                $null = $builder.Append(",`n").Append(' ' * ($indent * 2))
+                break
+            }
+            ':' {
+                $null = $builder.Append(': ')
+                break
+            }
+            default { $null = $builder.Append($character) }
+        }
+    }
+    $builder.ToString()
+}
+
 function Save-Map {
     param($Map)
-    $Map | ConvertTo-Json -Depth 30 | Set-Content -LiteralPath $mapPath -Encoding UTF8
+    $compact = $Map | ConvertTo-Json -Depth 30 -Compress
+    $formatted = Format-JsonText $compact
+    $utf8WithoutBom = [System.Text.UTF8Encoding]::new($false)
+    [System.IO.File]::WriteAllText($mapPath, $formatted + [Environment]::NewLine, $utf8WithoutBom)
 }
 
 function Get-DeviceMetrics {
-    $window = (Invoke-Adb shell dumpsys window displays | Select-String 'cur=(\d+)x(\d+)' | Select-Object -First 1)
+    $window = (Invoke-Adb -AdbArguments @('shell', 'dumpsys', 'window', 'displays') | Select-String 'cur=(\d+)x(\d+)' | Select-Object -First 1)
     if ($window -and $window.Line -match 'cur=(\d+)x(\d+)') {
         $width = [int]$Matches[1]
         $height = [int]$Matches[2]
     }
     else {
-        $line = (Invoke-Adb shell wm size | Select-Object -First 1)
+        $line = (Invoke-Adb -AdbArguments @('shell', 'wm', 'size') | Select-Object -First 1)
         if ($line -notmatch '(\d+)x(\d+)') { throw "Unexpected device size output: $line" }
         $width = [int]$Matches[1]
         $height = [int]$Matches[2]
@@ -95,15 +197,25 @@ function Get-DeviceMetrics {
 
 function Get-AppVersion {
     param([string]$Package)
-    $lines = Invoke-Adb shell dumpsys package $Package
-    $versionName = (($lines | Select-String 'versionName=' | Select-Object -First 1).Line -replace '^.*versionName=', '').Trim()
-    $versionCodeLine = ($lines | Select-String 'versionCode=' | Select-Object -First 1).Line
+    $lines = Invoke-Adb -AdbArguments @('shell', 'dumpsys', 'package', $Package)
+    $versionNameMatch = $lines | Select-String 'versionName=' | Select-Object -First 1
+    $versionCodeMatch = $lines | Select-String 'versionCode=' | Select-Object -First 1
+    $versionName = if ($null -ne $versionNameMatch) {
+        ($versionNameMatch.Line -replace '^.*versionName=', '').Trim()
+    } else {
+        ''
+    }
+    $versionCodeLine = if ($null -ne $versionCodeMatch) { $versionCodeMatch.Line } else { '' }
     $versionCode = if ($versionCodeLine -match 'versionCode=(\d+)') { $Matches[1] } else { '' }
     [pscustomobject]@{ Name = $versionName; Code = $versionCode }
 }
 
 function Get-TopPackage {
-    $line = (Invoke-Adb shell dumpsys activity activities | Select-String 'topResumedActivity=' | Select-Object -First 1).Line
+    $match = Invoke-Adb -AdbArguments @('shell', 'dumpsys', 'activity', 'activities') |
+        Select-String 'topResumedActivity=|mResumedActivity:' |
+        Select-Object -First 1
+    if ($null -eq $match) { return '' }
+    $line = $match.Line
     if ($line -match ' u\d+ ([^/\s]+)/') { return $Matches[1] }
     ''
 }
@@ -119,7 +231,7 @@ function Assert-TargetApp {
 function Enter-TargetApp {
     param([string]$Package)
     if (-not $NoBringToFront) {
-        Invoke-Adb shell am start -n "$Package/.MainActivity" | Out-Null
+        Invoke-Adb -AdbArguments @('shell', 'am', 'start', '-n', "$Package/.MainActivity") | Out-Null
         Start-Sleep -Milliseconds 250
     }
     Assert-TargetApp $Package
@@ -171,12 +283,22 @@ function Convert-Bounds {
 function Get-UiNodes {
     Assert-TargetApp $map.package
     $remote = '/sdcard/purelive-ui-map.xml'
+    $local = [System.IO.Path]::GetTempFileName()
     # Live danmaku changes continuously, so UIAutomator may never observe an
     # idle frame. Android's built-in timeout keeps semantic verification from
     # blocking the whole device regression; --compressed also reduces work.
-    Invoke-Adb shell timeout 10 uiautomator dump --compressed $remote | Out-Null
-    $raw = (Invoke-Adb shell cat $remote) -join "`n"
-    Invoke-Adb shell rm $remote | Out-Null
+    try {
+        Invoke-Adb -AdbArguments @('shell', 'timeout', '10', 'uiautomator', 'dump', '--compressed', $remote) | Out-Null
+        # Pull the XML as bytes. Capturing `adb shell cat` output through Windows
+        # PowerShell 5.1 decodes UTF-8 semantics with the active OEM code page,
+        # corrupting Chinese labels and making semantic verification unreliable.
+        Invoke-Adb -AdbArguments @('pull', $remote, $local) | Out-Null
+        $raw = [System.IO.File]::ReadAllText($local, [System.Text.Encoding]::UTF8)
+    }
+    finally {
+        Invoke-Adb -AdbArguments @('shell', 'rm', '-f', $remote) | Out-Null
+        Remove-Item -LiteralPath $local -Force -ErrorAction SilentlyContinue
+    }
     [xml]$xml = $raw
     Assert-TargetApp $map.package
     $nodes = foreach ($node in $xml.SelectNodes('//node')) {
@@ -247,7 +369,7 @@ function Invoke-TapPoint {
     $nodes = if ($SemanticCheck) { Get-UiNodes } else { $null }
     $point = Resolve-Point $SelectedProfile $Name $nodes
     Write-Host ("tap {0} ({1},{2}) [{3}] - {4}" -f $point.Name, $point.X, $point.Y, $point.Source, $point.Label)
-    if (-not $DryRun) { Invoke-Adb shell input tap $point.X $point.Y | Out-Null }
+    if (-not $DryRun) { Invoke-Adb -AdbArguments @('shell', 'input', 'tap', $point.X, $point.Y) | Out-Null }
 }
 
 function Invoke-TapSemantic {
@@ -256,7 +378,7 @@ function Invoke-TapSemantic {
     $node = Find-SemanticNode (Get-UiNodes) @($Semantic)
     if (-not $node) { throw "Semantic target '$Semantic' is not visible." }
     Write-Host ("tap semantic '{0}' ({1},{2})" -f $Semantic, $node.Bounds.X, $node.Bounds.Y)
-    if (-not $DryRun) { Invoke-Adb shell input tap $node.Bounds.X $node.Bounds.Y | Out-Null }
+    if (-not $DryRun) { Invoke-Adb -AdbArguments @('shell', 'input', 'tap', $node.Bounds.X, $node.Bounds.Y) | Out-Null }
 }
 
 function Invoke-SwipeGesture {
@@ -272,7 +394,7 @@ function Invoke-SwipeGesture {
     $y2 = [math]::Round(([double]$gesture.y2 / $SelectedProfile.Data.height) * $metrics.Height)
     $duration = if ($gesture.durationMs) { [int]$gesture.durationMs } else { 350 }
     Write-Host ("swipe {0} ({1},{2})->({3},{4}) {5}ms" -f $Name, $x1, $y1, $x2, $y2, $duration)
-    if (-not $DryRun) { Invoke-Adb shell input swipe $x1 $y1 $x2 $y2 $duration | Out-Null }
+    if (-not $DryRun) { Invoke-Adb -AdbArguments @('shell', 'input', 'swipe', $x1, $y1, $x2, $y2, $duration) | Out-Null }
 }
 
 function Save-Snapshot {
@@ -284,7 +406,10 @@ function Save-Snapshot {
         $hasIdentity = $node.Text -or $node.Description -or $node.ResourceId
         $actionable = $node.Clickable -or $node.LongClickable -or $node.Scrollable -or $node.Checkable
         if (-not $hasIdentity -or (-not $IncludeNonActionable -and -not $actionable)) { continue }
-        if ($node.Description -match '\*{3}\s*[:：]' -or $node.Text -match '\*{3}\s*[:：]') { continue }
+        # Keep this expression ASCII-only so the helper also parses correctly in
+        # Windows PowerShell 5.1, which treats a UTF-8 file without a BOM as an
+        # ANSI script. Password-like semantics use the ordinary colon form.
+        if ($node.Description -match '\*{3}\s*:' -or $node.Text -match '\*{3}\s*:') { continue }
         [ordered]@{
             text = $node.Text
             semantic = $node.Description
@@ -329,11 +454,26 @@ function Test-Map {
     }
     foreach ($sequence in $SelectedProfile.Data.sequences.PSObject.Properties) {
         foreach ($step in $sequence.Value) {
+            # PowerShell unwraps a one-item pipeline result into a scalar.
+            # StrictMode then rejects `$actions.Count`, even though every valid
+            # sequence step intentionally contains exactly one action. Keep the
+            # filtered result as an array on both Windows PowerShell and pwsh.
+            $actions = @(
+                @('tap', 'tapSemantic', 'swipe', 'wait') | Where-Object {
+                    $step.PSObject.Properties[$_]
+                }
+            )
+            if ($actions.Count -ne 1) {
+                $errors.Add("Sequence '$($sequence.Name)' must declare exactly one action per step.")
+            }
             if ($step.PSObject.Properties['tap'] -and -not $SelectedProfile.Data.points.PSObject.Properties[$step.tap]) {
                 $errors.Add("Sequence '$($sequence.Name)' references missing point '$($step.tap)'.")
             }
             if ($step.PSObject.Properties['swipe'] -and -not $SelectedProfile.Data.gestures.PSObject.Properties[$step.swipe]) {
                 $errors.Add("Sequence '$($sequence.Name)' references missing gesture '$($step.swipe)'.")
+            }
+            if ($step.PSObject.Properties['wait'] -and ((-not [bool]$step.wait) -or $step.waitMs -le 0)) {
+                $errors.Add("Sequence '$($sequence.Name)' has an invalid wait action.")
             }
         }
     }
@@ -354,11 +494,11 @@ function Save-FailureEvidence {
     $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
     $remoteImage = "/sdcard/purelive-$stamp.png"
     $remoteXml = "/sdcard/purelive-$stamp.xml"
-    Invoke-Adb shell screencap -p $remoteImage | Out-Null
-    Invoke-Adb shell timeout 10 uiautomator dump --compressed $remoteXml | Out-Null
-    Invoke-Adb pull $remoteImage (Join-Path $dir "$stamp-$safeName.png") | Out-Null
-    Invoke-Adb pull $remoteXml (Join-Path $dir "$stamp-$safeName.xml") | Out-Null
-    Invoke-Adb shell rm $remoteImage $remoteXml | Out-Null
+    Invoke-Adb -AdbArguments @('shell', 'screencap', '-p', $remoteImage) | Out-Null
+    Invoke-Adb -AdbArguments @('shell', 'timeout', '10', 'uiautomator', 'dump', '--compressed', $remoteXml) | Out-Null
+    Invoke-Adb -AdbArguments @('pull', $remoteImage, (Join-Path $dir "$stamp-$safeName.png")) | Out-Null
+    Invoke-Adb -AdbArguments @('pull', $remoteXml, (Join-Path $dir "$stamp-$safeName.xml")) | Out-Null
+    Invoke-Adb -AdbArguments @('shell', 'rm', $remoteImage, $remoteXml) | Out-Null
 }
 
 $map = Get-Map
@@ -366,6 +506,7 @@ $selected = Resolve-Profile $map
 
 try {
     if ($PSCmdlet.ParameterSetName -in @('Tap', 'TapSemantic', 'Sequence', 'Snapshot')) {
+        Wake-AndDismissKeyguard
         Enter-TargetApp $map.package
     }
     switch ($PSCmdlet.ParameterSetName) {
@@ -393,13 +534,20 @@ try {
             if (-not $property) { throw "Unknown UI sequence '$Sequence'. Run .\tool\android_ui.ps1 -List." }
             foreach ($step in $property.Value) {
                 if ($step.PSObject.Properties['tap']) {
-                    Invoke-TapPoint $selected $step.tap -SemanticCheck:($VerifySemantics -or [bool]$step.verifySemantics)
+                    $verifyStep = $step.PSObject.Properties['verifySemantics'] -and [bool]$step.verifySemantics
+                    Invoke-TapPoint $selected $step.tap -SemanticCheck:($VerifySemantics -or $verifyStep)
                 }
                 elseif ($step.PSObject.Properties['tapSemantic']) {
                     Invoke-TapSemantic $step.tapSemantic
                 }
                 elseif ($step.PSObject.Properties['swipe']) {
                     Invoke-SwipeGesture $selected $step.swipe
+                }
+                elseif ($step.PSObject.Properties['wait']) {
+                    if (-not [bool]$step.wait -or $step.waitMs -le 0) {
+                        throw "Sequence '$Sequence' has an invalid wait action."
+                    }
+                    Write-Host "wait $($step.waitMs)ms"
                 }
                 if ($step.waitMs -gt 0 -and -not $DryRun) { Start-Sleep -Milliseconds $step.waitMs }
             }

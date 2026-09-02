@@ -133,6 +133,7 @@ $powerShellFiles = @(
     'tool\publish_local_release.ps1',
     'tool\prefetch_windows_native.ps1',
     'tool\flutterw.ps1',
+    'tool\android_ui.ps1',
     'tool\review_upstream_update.ps1',
     'tool\validate_build_policy.ps1'
 )
@@ -148,6 +149,30 @@ foreach ($relativePath in $powerShellFiles) {
         $details = ($parseErrors | ForEach-Object { "line $($_.Extent.StartLineNumber): $($_.Message)" }) -join '; '
         throw "PowerShell parse error in ${relativePath}: $details"
     }
+}
+
+# ADB options such as `-p`, `-n` and `-f` overlap PowerShell common-parameter
+# abbreviations. Keep every wrapper invocation array-shaped so device evidence
+# capture cannot mask the original UI failure with a parameter-binding error.
+$androidUiPath = Join-Path $repoRoot 'tool\android_ui.ps1'
+$tokens = $null
+$parseErrors = $null
+$androidUiAst = [System.Management.Automation.Language.Parser]::ParseFile(
+    $androidUiPath,
+    [ref] $tokens,
+    [ref] $parseErrors
+)
+$adbCalls = @(
+    $androidUiAst.FindAll({
+        param($node)
+        $node -is [System.Management.Automation.Language.CommandAst] -and
+            $node.GetCommandName() -eq 'Invoke-Adb'
+    }, $true)
+)
+$positionalAdbCalls = @($adbCalls | Where-Object { $_.Extent.Text -notmatch '-AdbArguments' })
+if ($positionalAdbCalls.Count -gt 0) {
+    $lines = ($positionalAdbCalls | ForEach-Object { $_.Extent.StartLineNumber }) -join ', '
+    throw "android_ui.ps1 must pass ADB arguments through -AdbArguments arrays (lines: $lines)."
 }
 
 $properties = @{}
@@ -213,10 +238,38 @@ foreach ($marker in @(
     "Join-Path `$PSScriptRoot 'prefetch_windows_native.ps1'",
     '/DArtifactVersion=$artifactVersion',
     'build\windows\x64\install_manifest.txt',
+    '$manifestSourceMarker = "\build\windows\x64\runner\$configurationDirectory\"',
+    'Keep dependency resolution single-owner',
     'Retired QuickJS runtime files appeared in the Windows package',
     'automatic_follow_up = $false'
 )) {
     if (-not $buildScript.Contains($marker)) { throw "Build script policy marker is missing: $marker" }
+}
+
+$windowsInstaller = Get-Content -LiteralPath (Join-Path $repoRoot 'windows\packaging\exe\local_release.iss') -Raw
+foreach ($marker in @(
+    '[InstallDelete]',
+    'Type: filesandordirs; Name: "{app}\data"',
+    'Type: files; Name: "{app}\*.dll"',
+    'Name: "{app}\AppData"; Flags: uninsneveruninstall'
+)) {
+    if (-not $windowsInstaller.Contains($marker)) {
+        throw "Windows installer upgrade-cleanup marker is missing: $marker"
+    }
+}
+
+$windowsFlutterRunner = Get-Content -LiteralPath (Join-Path $repoRoot 'windows\runner\flutter_window.cpp') -Raw
+if ($windowsFlutterRunner -notmatch '(?s)FlutterWindow::~FlutterWindow\(\)\s*\{.*?Destroy\(\);.*?\}') {
+    throw 'Windows FlutterWindow must destroy its child controller while derived teardown guards are still alive.'
+}
+foreach ($marker in @(
+    'flutter_controller_destroying_ = true;',
+    'flutter_controller_.reset();',
+    'flutter_controller_ && !flutter_controller_destroying_'
+)) {
+    if (-not $windowsFlutterRunner.Contains($marker)) {
+        throw "Windows Flutter controller teardown guard is missing: $marker"
+    }
 }
 
 $androidVerifier = Get-Content -LiteralPath (Join-Path $repoRoot 'tool\verify_android_apk.ps1') -Raw
@@ -225,11 +278,61 @@ foreach ($marker in @(
     'assets/flutter_assets/assets/version.json',
     'libffmpegkit.so',
     'libsqlite3.so',
-    '$flutterAssets.Count -lt 1000'
+    '$flutterAssets.Count -lt 1000',
+    'verify_android_elf_alignment.ps1',
+    'zipalign.exe',
+    '-P 16'
 )) {
     if (-not $androidVerifier.Contains($marker)) {
         throw "Android APK integrity marker is missing: $marker"
     }
+}
+
+$androidElfVerifier = Get-Content -LiteralPath (Join-Path $repoRoot 'tool\verify_android_elf_alignment.ps1') -Raw
+foreach ($marker in @(
+    'llvm-readelf.exe',
+    'minimum LOAD alignment',
+    'MinimumLoadAlignment = 0x4000'
+)) {
+    if (-not $androidElfVerifier.Contains($marker)) {
+        throw "Android 16 KB ELF verifier marker is missing: $marker"
+    }
+}
+
+$fplayerPluginBuildPath = Join-Path $repoRoot 'plugins\flv_lzc\android\build.gradle'
+$fplayerPluginBuild = Get-Content -LiteralPath $fplayerPluginBuildPath -Raw
+$androidRootBuild = Get-Content -LiteralPath (Join-Path $repoRoot 'android\build.gradle.kts') -Raw
+$fplayerCoreVersion = '1.0.4-purelive16k'
+$fplayerCoreRelativePath =
+    "plugins\flv_lzc\android\libs\io\github\flutterplayer\fplayer-core\$fplayerCoreVersion\fplayer-core-$fplayerCoreVersion.aar"
+$fplayerCorePath = Join-Path $repoRoot $fplayerCoreRelativePath
+foreach ($marker in @(
+    'url = uri("$projectDir/libs")',
+    'includeModule("io.github.flutterplayer", "fplayer-core")',
+    "io.github.flutterplayer:fplayer-core:$fplayerCoreVersion"
+)) {
+    if (-not $fplayerPluginBuild.Contains($marker)) {
+        throw "Local 16 KB fplayer dependency marker is missing: $marker"
+    }
+}
+foreach ($marker in @(
+    'maven(rootProject.file("../plugins/flv_lzc/android/libs"))',
+    'includeModule("io.github.flutterplayer", "fplayer-core")'
+)) {
+    if (-not $androidRootBuild.Contains($marker)) {
+        throw "Android app local fplayer repository marker is missing: $marker"
+    }
+}
+if ($fplayerPluginBuild.Contains("io.github.flutterplayer:fplayer-core:1.0.4'")) {
+    throw 'The 4 KB-aligned Maven fplayer-core 1.0.4 artifact must not be restored.'
+}
+if (-not (Test-Path -LiteralPath $fplayerCorePath -PathType Leaf)) {
+    throw "Local 16 KB fplayer AAR is missing: $fplayerCoreRelativePath"
+}
+$expectedFplayerCoreHash = '3643B36BC906F1FED56B313AC98669EEAA9DA0D2262409808429C5B614C676DA'
+$actualFplayerCoreHash = (Get-FileHash -LiteralPath $fplayerCorePath -Algorithm SHA256).Hash
+if ($actualFplayerCoreHash -ne $expectedFplayerCoreHash) {
+    throw "Local 16 KB fplayer AAR hash mismatch: $actualFplayerCoreHash"
 }
 
 $androidSigningWorkflow = Get-Content -LiteralPath (Join-Path $repoRoot '.github\workflows\sign-staged-android.yml') -Raw
@@ -238,7 +341,11 @@ foreach ($marker in @(
     'assets/flutter_assets/assets/version.json',
     'libffmpegkit.so',
     'libsqlite3.so',
-    'Flutter asset file count is incomplete'
+    'Flutter asset file count is incomplete',
+    'verify_android_16kb',
+    'zipalign" -c -P 16 4',
+    'Android 16 KB ELF alignment failed',
+    'verify_android_16kb "$final_apk"'
 )) {
     if (-not $androidSigningWorkflow.Contains($marker)) {
         throw "Android signing workflow integrity marker is missing: $marker"
@@ -511,11 +618,13 @@ if ($pubspecText -notmatch '(?m)^version:\s*([0-9]+\.[0-9]+\.[0-9]+)\+([0-9]+)\s
 $displayVersion = $Matches[1]
 $buildNumber = [int]$Matches[2]
 $releaseTag = "v$displayVersion"
-$msixConfig = Get-Content -LiteralPath (Join-Path $repoRoot 'windows\packaging\msix\make_config.yaml') -Raw
-if ($msixConfig -notmatch "(?m)^msix_version:\s*$([regex]::Escape($displayVersion))\.$buildNumber\s*$") {
-    throw 'Windows MSIX version must match pubspec.yaml display version and build number.'
-}
 $versionFeed = Get-Content -LiteralPath (Join-Path $repoRoot 'assets\version.json') -Raw -Encoding UTF8 | ConvertFrom-Json
+$msixConfig = Get-Content -LiteralPath (Join-Path $repoRoot 'windows\packaging\msix\make_config.yaml') -Raw
+$windowsDisplayVersion = $versionFeed.platforms.windows.version
+$windowsBuildNumber = [int]$versionFeed.platforms.windows.build_number
+if ($msixConfig -notmatch "(?m)^msix_version:\s*$([regex]::Escape($windowsDisplayVersion))\.$windowsBuildNumber\s*$") {
+    throw 'Windows MSIX version must match the Windows platform entry in assets/version.json.'
+}
 if ($versionFeed.version -ne $displayVersion -or [int]$versionFeed.build_number -ne $buildNumber) {
     throw 'assets/version.json top-level version must match pubspec.yaml.'
 }
@@ -523,7 +632,7 @@ if ($versionFeed.platforms.android.version -ne $displayVersion -or
     [int]$versionFeed.platforms.android.build_number -ne $buildNumber) {
     throw 'assets/version.json Android version must match the current application version.'
 }
-if ($versionFeed.download_url -ne "https://github.com/liuchuancong/pure_live/releases/tag/$releaseTag") {
+if ($versionFeed.download_url -ne "https://github.com/wzgrx/pure_live/releases/tag/$releaseTag") {
     throw 'assets/version.json must advertise the maintained repository release.'
 }
 foreach ($workflowName in @('feature-build.yml', 'stage-hosted-artifacts.yml', 'publish-staged-release.yml')) {
@@ -537,9 +646,9 @@ foreach ($workflowName in @('feature-build.yml', 'stage-hosted-artifacts.yml', '
 
 $environmentText = Get-Content -LiteralPath (Join-Path $repoRoot '.env.prod') -Raw
 $generatedEnvironment = Get-Content -LiteralPath (Join-Path $repoRoot 'lib\gen\env.g.dart') -Raw
-if ($environmentText -notmatch '(?m)^PURELIVE_UPDATE_OWNER=liuchuancong\s*$' -or
-    $generatedEnvironment -notmatch "pureliveUpdateOwner = 'liuchuancong'") {
-    throw 'Production and generated update repositories must both target liuchuancong/pure_live.'
+if ($environmentText -notmatch '(?m)^PURELIVE_UPDATE_OWNER=wzgrx\s*$' -or
+    $generatedEnvironment -notmatch "pureliveUpdateOwner = 'wzgrx'") {
+    throw 'Production and generated update repositories must both target wzgrx/pure_live.'
 }
 
 Write-Host 'Build policy static validation passed.'

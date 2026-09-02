@@ -155,6 +155,25 @@ class Floating {
         : PiPStatus.unavailable;
   }
 
+  /// Updates an active PiP window after the decoded programme geometry changes.
+  /// Android recommends publishing parameters as soon as the source ratio is
+  /// known instead of leaving the system window at its entry-time shape.
+  Future<void> update({required Rational aspectRatio, Rectangle<int>? sourceRectHint}) async {
+    if (!aspectRatio.fitsInAndroidRequirements) {
+      throw RationalNotMatchingAndroidRequirementsException(aspectRatio);
+    }
+    await _channel.invokeMethod('updatePip', {
+      ...aspectRatio.toMap(),
+      if (sourceRectHint != null)
+        'sourceRectHintLTRB': [
+          sourceRectHint.left,
+          sourceRectHint.top,
+          sourceRectHint.right,
+          sourceRectHint.bottom,
+        ],
+    });
+  }
+
   /// Cancels current picture-in-picture setup for [OnLeavePiP]
   Future<void> cancelOnLeavePiP() {
     lastEnableArguments = null;

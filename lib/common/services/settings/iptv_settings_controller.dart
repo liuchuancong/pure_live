@@ -1,25 +1,44 @@
+import 'dart:async';
+
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/core/iptv/services/auto_sync_scheduler.dart';
 
 class IptvSettingsController extends GetxController {
+  static const String autoSyncHoursIntervalKey = 'autoSyncHoursInterval';
+
   final RxString selectedSourceName = hiveString('selectedSourceName', '');
   final RxString selectedSourceId = hiveString('selectedSourceId', '');
   final RxBool isAutoSyncEnabled = hiveBool('isAutoSyncEnabled', false);
-  final RxInt autoSyncHoursInterval = hiveInt('autoShutDownTime', 24);
+  final RxInt autoSyncHoursInterval = hiveInt(autoSyncHoursIntervalKey, 24);
   final RxString customIptvUserAgent = hiveString('customIptvUserAgent', '');
   final RxString m3uDirectory = hiveString('m3uDirectory', 'm3uDirectory');
+
+  Timer? _startupSyncTimer;
 
   @override
   void onInit() {
     super.onInit();
-    Future.delayed(3.seconds, () {
-      if (SettingsService.to.fav.hotAreasList.v.contains(Sites.iptvSite)) {
-        AutoSyncScheduler.instance.checkAndExecuteAutoSync();
-        AutoSyncScheduler.instance.loadHotResources();
-        AutoSyncScheduler.instance.loadDefaultEpgResources();
-      }
+    if (!isAutoSyncEnabled.v) return;
+    _startupSyncTimer = Timer(3.seconds, () {
+      final iptvEnabled = SettingsService.to.fav.hotAreasList.v.contains(Sites.iptvSite);
+      if (!shouldRunBackgroundStartupSync(iptvEnabled: iptvEnabled, autoSyncEnabled: isAutoSyncEnabled.v)) return;
+      unawaited(AutoSyncScheduler.instance.checkAndExecuteAutoSync());
     });
   }
+
+  @override
+  void onClose() {
+    _startupSyncTimer?.cancel();
+    _startupSyncTimer = null;
+    super.onClose();
+  }
+
+  /// Ordinary launches stay network-idle. Only an explicit auto-sync setting
+  /// may schedule maintenance, and built-in IPTV/EPG resources are loaded by
+  /// their feature entry points instead of by application startup.
+  @visibleForTesting
+  static bool shouldRunBackgroundStartupSync({required bool iptvEnabled, required bool autoSyncEnabled}) =>
+      iptvEnabled && autoSyncEnabled;
 
   Map<String, dynamic> toJson() {
     return {

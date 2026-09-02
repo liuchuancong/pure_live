@@ -404,7 +404,12 @@ class RecorderController extends GetxService {
 
   Future<bool> _finalizePendingAttempts(LiveRecordTask task, {bool allowLegacy = false}) async {
     var allSucceeded = true;
-    for (final attempt in List<PendingRecordingAttempt>.of(task.pendingAttempts)) {
+    final attempts = List<PendingRecordingAttempt>.of(task.pendingAttempts);
+    for (final attempt in attempts) {
+      // Capture the provisional TS size before the successful converter
+      // deletes those source files. Each attempt is reconciled independently
+      // so a later retry never loses output committed by an earlier pass.
+      final source = await _outputMetrics.measure(directoryPath: attempt.directoryPath, filePrefix: attempt.filePrefix);
       final merged = await VideoProcessorService.to.convertToMp4(
         task: task,
         allowLegacySegments: allowLegacy,
@@ -412,6 +417,17 @@ class RecorderController extends GetxService {
         filePrefix: attempt.filePrefix,
       );
       if (merged) {
+        final output = await _outputMetrics.measureFinalized(
+          directoryPath: attempt.directoryPath,
+          filePrefix: attempt.filePrefix,
+        );
+        if (source.bytes > 0 && output.bytes > 0) {
+          task.fileSize = RecordingOutputMetrics.reconcileFinalizedBytes(
+            totalBytes: task.fileSize,
+            sourceBytes: source.bytes,
+            finalizedBytes: output.bytes,
+          );
+        }
         task.removePendingAttempt(attempt);
         updateTask(task);
       } else {

@@ -3,11 +3,25 @@ import 'dart:async';
 import 'package:pure_live/common/models/live_message.dart';
 
 class LocalMessageDelivery {
-  const LocalMessageDelivery({required this.message, required this.showAsDanmaku, required this.roomEpoch});
+  const LocalMessageDelivery({
+    required this.message,
+    required this.showAsDanmaku,
+    required this.roomId,
+    required this.platform,
+  });
 
   final LiveMessage message;
   final bool showAsDanmaku;
-  final int roomEpoch;
+  final String? roomId;
+  final String? platform;
+
+  /// A local message belongs to the room session, not to one particular
+  /// stream-detail/quality request. Player retries and quality or line changes
+  /// advance the room-load request generation while the user is still in the
+  /// same room, so request epochs must not invalidate a queued local echo.
+  bool matchesRoom({required String? roomId, required String? platform}) {
+    return this.roomId == roomId && this.platform == platform;
+  }
 }
 
 /// Keeps delayed local interactions ordered and makes cancellation explicit

@@ -15,7 +15,7 @@ void main() {
     final delivered = <LocalMessageDelivery>[];
     final queue = LocalMessageDeliveryQueue(onDeliver: delivered.add);
     queue.schedule(
-      LocalMessageDelivery(message: message('hello'), showAsDanmaku: true, roomEpoch: 3),
+      LocalMessageDelivery(message: message('hello'), showAsDanmaku: true, roomId: '100', platform: 'bilibili'),
       delay: const Duration(milliseconds: 20),
     );
 
@@ -24,6 +24,9 @@ void main() {
     await Future<void>.delayed(const Duration(milliseconds: 35));
     expect(delivered.single.message.message, 'hello');
     expect(delivered.single.showAsDanmaku, isTrue);
+    expect(delivered.single.matchesRoom(roomId: '100', platform: 'bilibili'), isTrue);
+    expect(delivered.single.matchesRoom(roomId: '101', platform: 'bilibili'), isFalse);
+    expect(delivered.single.matchesRoom(roomId: '100', platform: 'douyu'), isFalse);
     expect(queue.pendingCount, 0);
     queue.dispose();
   });
@@ -32,7 +35,7 @@ void main() {
     final delivered = <LocalMessageDelivery>[];
     final queue = LocalMessageDeliveryQueue(onDeliver: delivered.add);
     queue.schedule(
-      LocalMessageDelivery(message: message('stale'), showAsDanmaku: true, roomEpoch: 1),
+      LocalMessageDelivery(message: message('stale'), showAsDanmaku: true, roomId: '100', platform: 'bilibili'),
       delay: const Duration(milliseconds: 20),
     );
     queue.cancelAll();

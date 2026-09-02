@@ -16,7 +16,7 @@ on:
         required: true
         type: string
       staged_metadata:
-        description: Temporary BUILD_METADATA asset name
+        description: Temporary build metadata asset name (a unique name is preferred)
         required: true
         type: string
 
@@ -142,6 +142,62 @@ jobs:
           build_tools="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
           aapt="$build_tools/aapt"
           apksigner="$build_tools/apksigner"
+          zipalign="$build_tools/zipalign"
+
+          verify_android_16kb() {
+            local apk="$1"
+            "$zipalign" -c -P 16 4 "$apk"
+            python3 - "$apk" <<'PY'
+          import pathlib
+          import re
+          import shutil
+          import subprocess
+          import sys
+          import tempfile
+          import zipfile
+
+          apk = pathlib.Path(sys.argv[1])
+          readelf = shutil.which("readelf")
+          assert readelf, "readelf is required for Android ELF alignment verification"
+          prefix = "lib/arm64-v8a/"
+          with tempfile.TemporaryDirectory(prefix="pure-live-elf-") as temporary:
+              root = pathlib.Path(temporary)
+              with zipfile.ZipFile(apk) as archive:
+                  entries = sorted(
+                      entry for entry in archive.infolist()
+                      if entry.filename.startswith(prefix)
+                      and entry.filename.endswith(".so")
+                  )
+                  assert entries, "APK contains no arm64-v8a native libraries"
+                  failures = []
+                  for index, entry in enumerate(entries):
+                      path = root / f"{index:03d}-{pathlib.PurePosixPath(entry.filename).name}"
+                      path.write_bytes(archive.read(entry))
+                      output = subprocess.check_output(
+                          [readelf, "-lW", str(path)],
+                          text=True,
+                          errors="replace",
+                      )
+                      alignments = []
+                      for line in output.splitlines():
+                          columns = line.split()
+                          if columns and columns[0] == "LOAD":
+                              assert re.fullmatch(r"0x[0-9a-fA-F]+", columns[-1]), (
+                                  f"unexpected LOAD header for {entry.filename}: {line}"
+                              )
+                              alignments.append(int(columns[-1], 16))
+                      assert alignments, f"ELF contains no LOAD headers: {entry.filename}"
+                      minimum = min(alignments)
+                      if minimum < 0x4000:
+                          failures.append(f"{entry.filename}=0x{minimum:x}")
+                  assert not failures, (
+                      "Android 16 KB ELF alignment failed: " + ", ".join(failures)
+                  )
+                  print(f"Android 16 KB ELF alignment passed: {len(entries)} libraries")
+          PY
+          }
+
+          verify_android_16kb "staged/$STAGED_APK"
           badging="$($aapt dump badging "staged/$STAGED_APK")"
           grep -F "package: name='com.mystyle.purelive'" <<<"$badging"
           grep -F "versionName='$version_name'" <<<"$badging"
@@ -156,6 +212,7 @@ jobs:
             "staged/$STAGED_APK"
           "$apksigner" verify --verbose --print-certs "$final_apk" | tee apksigner.txt
           grep -Fi "certificate SHA-256 digest: $EXPECTED_CERT_SHA256" apksigner.txt
+          verify_android_16kb "$final_apk"
 
           python3 - "staged/$STAGED_METADATA" BUILD_METADATA.json "$TARGET_SHA" <<'PY'
           import datetime
@@ -178,17 +235,28 @@ jobs:
           metadata_hash="$(sha256sum BUILD_METADATA.json | awk '{print $1}')"
           printf '%s *%s\n' "$apk_hash" "$final_apk" > ANDROID_SHA256SUM.txt
           python3 - existing/SHA256SUMS.txt SHA256SUMS.txt \
-            "$final_apk" "$apk_hash" "$metadata_hash" <<'PY'
+            "$final_apk" "$apk_hash" "$metadata_hash" \
+            "$STAGED_APK" "$STAGED_METADATA" <<'PY'
           import re
           import sys
 
-          source, destination, apk_name, apk_hash, metadata_hash = sys.argv[1:]
+          (
+              source,
+              destination,
+              apk_name,
+              apk_hash,
+              metadata_hash,
+              staged_apk,
+              staged_metadata,
+          ) = sys.argv[1:]
           entries = {}
           with open(source, encoding="ascii") as handle:
               for raw in handle:
                   match = re.fullmatch(r"([0-9a-fA-F]{64}) \*(.+)\n?", raw)
                   if match:
                       entries[match.group(2)] = match.group(1).lower()
+          entries.pop(staged_apk, None)
+          entries.pop(staged_metadata, None)
           entries[apk_name] = apk_hash.lower()
           entries["BUILD_METADATA.json"] = metadata_hash.lower()
           with open(destination, "w", encoding="ascii", newline="\n") as handle:
@@ -209,6 +277,14 @@ jobs:
             SHA256SUMS.txt ANDROID_SHA256SUM.txt --clobber --repo "$GITHUB_REPOSITORY"
 
           for name in "$STAGED_APK" "$STAGED_METADATA"; do
+            # A caller may use BUILD_METADATA.json as the staging name. The
+            # final signed metadata is uploaded under that same canonical
+            # name, so deleting it here would remove the verified result.
+            case "$name" in
+              "$FINAL_APK"|BUILD_METADATA.json|SHA256SUMS.txt|ANDROID_SHA256SUM.txt)
+                continue
+                ;;
+            esac
             # The releases/tags REST endpoint omits draft releases. The gh
             # release command resolves drafts by tag and removes the staging
             # asset without depending on that endpoint.

@@ -1,4 +1,5 @@
 import 'dart:developer';
+
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/db_service.dart';
 import 'package:pure_live/core/iptv/local/database.dart';
@@ -11,6 +12,9 @@ import 'package:pure_live/core/iptv/services/iptv_import_manager.dart';
 class AutoSyncScheduler {
   static final AutoSyncScheduler instance = AutoSyncScheduler._internal();
   AutoSyncScheduler._internal();
+
+  final IptvResourceLoadGate _hotResourcesGate = IptvResourceLoadGate();
+  final IptvResourceLoadGate _defaultEpgResourcesGate = IptvResourceLoadGate();
 
   Future<void> checkAndExecuteAutoSync() async {
     if (!SettingsService.to.iptv.isAutoSyncEnabled.v) return;
@@ -33,9 +37,11 @@ class AutoSyncScheduler {
     }
   }
 
-  Future<void> loadHotResources() async {
+  Future<void> loadHotResources() => _hotResourcesGate.run(_loadHotResources);
+
+  Future<void> _loadHotResources() async {
     final iptvUrl = 'https://iptv-org.github.io/iptv/countries/cn.m3u';
-    IptvImportManager().importFromNetworkUrl(
+    await IptvImportManager().importFromNetworkUrl(
       iptvUrl,
       AppPathManager.iptvHotFile,
       forceUpdate: true,
@@ -44,7 +50,9 @@ class AutoSyncScheduler {
     );
   }
 
-  Future<void> loadDefaultEpgResources() async {
+  Future<void> loadDefaultEpgResources() => _defaultEpgResourcesGate.run(_loadDefaultEpgResources);
+
+  Future<void> _loadDefaultEpgResources() async {
     final epgSource = 'https://epg.zsdc.eu.org/t.xml.gz';
     await EpgImportManager().importFromNetworkUrl(
       epgSource,
@@ -61,5 +69,24 @@ class AutoSyncScheduler {
         SettingsService.to.iptv.selectedSourceName.v = activeSource.name;
       }
     }
+  }
+}
+
+/// Coalesces simultaneous feature-entry requests into one import without
+/// caching a failure or a completed operation forever.
+@visibleForTesting
+class IptvResourceLoadGate {
+  Future<void>? _inFlight;
+
+  Future<void> run(Future<void> Function() operation) {
+    final inFlight = _inFlight;
+    if (inFlight != null) return inFlight;
+
+    late final Future<void> tracked;
+    tracked = Future<void>.sync(operation).whenComplete(() {
+      if (identical(_inFlight, tracked)) _inFlight = null;
+    });
+    _inFlight = tracked;
+    return tracked;
   }
 }
