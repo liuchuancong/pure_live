@@ -1,5 +1,6 @@
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
+import 'package:pure_live/modules/account/web_cookie_capture.dart';
 import 'package:pure_live/modules/account/kuaishou/kuaishou_cookie_controller.dart';
 
 class KuaishouCookiePage extends GetView<KuaishouCookieController> {
@@ -51,24 +52,47 @@ class KuaishouCookiePage extends GetView<KuaishouCookieController> {
                     onSubmitted: controller.setCookie,
                   ),
                   const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 44,
-                    child: FilledButton.icon(
-                      onPressed: () => controller.setCookie(controller.cookieController.text),
-                      style: FilledButton.styleFrom(
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                      icon: const Icon(Remix.settings_line, size: 18),
-                      label: Text(
-                        i18n("set"),
-                        style: AppTextStyles.t14.copyWith(
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 1,
-                          color: Colors.white,
+                  Row(
+                    children: [
+                      Expanded(
+                        child: SizedBox(
+                          height: 44,
+                          child: OutlinedButton.icon(
+                            onPressed: _autoCaptureCookie,
+                            style: OutlinedButton.styleFrom(
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                            icon: const Icon(Remix.global_line, size: 18),
+                            label: Text(
+                              i18n("cookie_auto_capture"),
+                              style: AppTextStyles.t14.copyWith(fontWeight: FontWeight.w600),
+                            ),
+                          ),
                         ),
                       ),
-                    ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: SizedBox(
+                          width: double.infinity,
+                          height: 44,
+                          child: FilledButton.icon(
+                            onPressed: () => controller.setCookie(controller.cookieController.text),
+                            style: FilledButton.styleFrom(
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                            icon: const Icon(Remix.settings_line, size: 18),
+                            label: Text(
+                              i18n("set"),
+                              style: AppTextStyles.t14.copyWith(
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 1,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -78,6 +102,16 @@ class KuaishouCookiePage extends GetView<KuaishouCookieController> {
         ],
       ),
     );
+  }
+
+  /// 启动内置浏览器自动抓取流程：捕获成功后自动走保存校验链路。
+  Future<void> _autoCaptureCookie() async {
+    final target = kCookieCaptureTargets['kuaishou'];
+    if (target == null) return;
+    final cookie = await WebCookieCapturePage.capture(target);
+    if (cookie == null || cookie.isEmpty) return;
+    controller.cookieController.text = cookie;
+    await controller.setCookie(cookie);
   }
 
   Widget _buildTipBanner(ThemeData theme) {

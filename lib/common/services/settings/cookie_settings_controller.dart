@@ -11,6 +11,29 @@ class CookieSettingsController extends GetxController {
   final RxString twitchCookie = hiveString('twitchCookie', '');
   final RxString soopCookie = hiveString('soopCookie', '');
   final RxString yyCookie = hiveString('yyCookie', '');
+
+  /// 按平台标识取已配置的 Cookie；未知平台或未配置时返回空串。
+  String cookieForPlatform(String platform) {
+    switch (platform.toLowerCase()) {
+      case 'bilibili':
+        return bilibiliCookie.v;
+      case 'huya':
+        return huyaCookie.v;
+      case 'douyin':
+        return douyinCookie.v;
+      case 'kuaishou':
+        return kuaishouCookie.v;
+      case 'twitch':
+        return twitchCookie.v;
+      case 'soop':
+        return soopCookie.v;
+      case 'yy':
+        return yyCookie.v;
+      default:
+        return '';
+    }
+  }
+
   void clearAllCookies() {
     bilibiliCookie.v = '';
     huyaCookie.v = '';
