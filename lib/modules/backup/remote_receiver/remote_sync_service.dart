@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:bonsoir/bonsoir.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/common/services/settings/backup_controller.dart';
@@ -24,12 +25,17 @@ class RemoteSyncService extends GetxService {
   final RxList<RemoteSyncDevice> devices = <RemoteSyncDevice>[].obs;
 
   HttpServer? _server;
-  RawDatagramSocket? _discoverySocket;
+
+  BonsoirBroadcast? _broadcast;
+  BonsoirDiscovery? _discovery;
+  StreamSubscription<BonsoirDiscoveryEvent>? _discoverySubscription;
 
   Timer? _broadcastTimer;
   Timer? _cleanupTimer;
 
   final String _deviceId = '${Platform.operatingSystem}-${DateTime.now().microsecondsSinceEpoch}';
+
+  static const String _mdnsServiceType = '_purelive._tcp';
 
   String get deviceName {
     switch (Platform.operatingSystem) {
@@ -104,8 +110,24 @@ class RemoteSyncService extends GetxService {
     _cleanupTimer?.cancel();
     _cleanupTimer = null;
 
-    _discoverySocket?.close();
-    _discoverySocket = null;
+    await _discoverySubscription?.cancel();
+    _discoverySubscription = null;
+
+    if (_discovery != null) {
+      try {
+        await _discovery!.stop();
+      } catch (_) {}
+    }
+
+    _discovery = null;
+
+    if (_broadcast != null) {
+      try {
+        await _broadcast!.stop();
+      } catch (_) {}
+    }
+
+    _broadcast = null;
 
     await _server?.close(force: true);
     _server = null;
@@ -185,33 +207,6 @@ class RemoteSyncService extends GetxService {
     }
 
     if (a == 192 && b == 168) {
-      return true;
-    }
-
-    return false;
-  }
-
-  bool _isLocalDevice(RemoteSyncDevice device, {String? senderIp}) {
-    if (device.id == _deviceId) {
-      return true;
-    }
-
-    final deviceIp = device.ip.trim();
-    final sourceIp = senderIp?.trim() ?? '';
-
-    if (deviceIp.isNotEmpty && _localIps.contains(deviceIp)) {
-      return true;
-    }
-
-    if (sourceIp.isNotEmpty && _localIps.contains(sourceIp)) {
-      return true;
-    }
-
-    if (deviceIp.isNotEmpty && deviceIp == localIp.value) {
-      return true;
-    }
-
-    if (sourceIp.isNotEmpty && sourceIp == localIp.value) {
       return true;
     }
 
@@ -405,29 +400,44 @@ class RemoteSyncService extends GetxService {
     }
 
     try {
-      _discoverySocket = await RawDatagramSocket.bind(
-        InternetAddress.anyIPv4,
-        RemoteSyncProtocol.discoveryPort,
-        reuseAddress: true,
-        reusePort: false,
-      );
+      await _discoverySubscription?.cancel();
+      _discoverySubscription = null;
 
-      _discoverySocket!.broadcastEnabled = true;
+      if (_discovery != null) {
+        try {
+          await _discovery!.stop();
+        } catch (_) {}
+      }
 
-      _discoverySocket!.listen(
-        _handleDiscoveryPacket,
+      _discovery = null;
+
+      final discovery = BonsoirDiscovery(type: _mdnsServiceType);
+
+      _discovery = discovery;
+
+      await discovery.initialize();
+
+      final eventStream = discovery.eventStream;
+
+      if (eventStream == null) {
+        isDiscovering.value = false;
+        return false;
+      }
+
+      _discoverySubscription = eventStream.listen(
+        (event) {
+          unawaited(_handleDiscoveryEvent(event, discovery));
+        },
         onError: (_) {
           isDiscovering.value = false;
         },
       );
 
+      await discovery.start();
+
       isDiscovering.value = true;
 
-      _broadcastDiscovery();
-
-      _broadcastTimer?.cancel();
-
-      _broadcastTimer = Timer.periodic(const Duration(seconds: 2), (_) => _broadcastDiscovery());
+      await _startBroadcast();
 
       return true;
     } catch (_) {
@@ -436,103 +446,209 @@ class RemoteSyncService extends GetxService {
     }
   }
 
-  void _broadcastDiscovery() {
-    final socket = _discoverySocket;
-
-    if (socket == null || localIp.value.isEmpty) {
-      return;
+  Future<void> _handleDiscoveryEvent(BonsoirDiscoveryEvent event, BonsoirDiscovery discovery) async {
+    switch (event) {
+      case BonsoirDiscoveryServiceFoundEvent():
+        final service = event.service;
+        if (_isSelfService(service)) {
+          return;
+        }
+        try {
+          await service.resolve(discovery.serviceResolver);
+        } catch (_) {}
+      case BonsoirDiscoveryServiceResolvedEvent():
+        final service = event.service;
+        if (_isSelfService(service)) {
+          return;
+        }
+        _addOrUpdateDevice(service);
+      case BonsoirDiscoveryServiceUpdatedEvent():
+        final service = event.service;
+        if (_isSelfService(service)) {
+          return;
+        }
+        _addOrUpdateDevice(service);
+      case BonsoirDiscoveryServiceLostEvent():
+        final service = event.service;
+        _removeDevice(service);
+      default:
+        break;
     }
-
-    final data = RemoteSyncProtocol.discoveryPacket(
-      id: _deviceId,
-      name: deviceName,
-      ip: localIp.value,
-      port: localPort.value,
-      platform: platform,
-      version: version,
-    );
-
-    final bytes = utf8.encode(jsonEncode(data));
-
-    try {
-      socket.send(bytes, InternetAddress('255.255.255.255'), RemoteSyncProtocol.discoveryPort);
-    } catch (_) {}
   }
 
-  void _handleDiscoveryPacket(RawSocketEvent event) {
-    if (event != RawSocketEvent.read) {
+  bool _isSelfService(BonsoirService service) {
+    final attributes = service.attributes;
+
+    final id = attributes['id'];
+
+    if (id != null && id == _deviceId) {
+      return true;
+    }
+
+    for (final address in service.hostAddresses) {
+      if (_localIps.contains(address)) {
+        return true;
+      }
+
+      if (address == localIp.value) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  void _addOrUpdateDevice(BonsoirService service) {
+    final attributes = service.attributes;
+
+    final id = attributes['id']?.trim() ?? '';
+
+    if (id.isEmpty) {
       return;
     }
 
-    final socket = _discoverySocket;
-
-    if (socket == null) {
+    if (id == _deviceId) {
       return;
     }
 
-    Datagram? datagram;
+    final name = attributes['name']?.trim().isNotEmpty == true ? attributes['name']!.trim() : service.name;
 
-    while ((datagram = socket.receive()) != null) {
+    final devicePlatform = attributes['platform'] ?? '';
+    final deviceVersion = attributes['version'] ?? '';
+
+    final ip = _resolveServiceIp(service);
+
+    if (ip == null || ip.isEmpty) {
+      return;
+    }
+
+    final port = service.port;
+
+    if (port <= 0) {
+      return;
+    }
+
+    final device = RemoteSyncDevice(
+      id: id,
+      name: name,
+      platform: devicePlatform,
+      version: deviceVersion,
+      ip: ip,
+      port: port,
+      lastSeen: DateTime.now(),
+    );
+
+    final indexById = devices.indexWhere((item) => item.id == device.id);
+
+    if (indexById >= 0) {
+      devices[indexById] = device;
+      return;
+    }
+
+    final indexByIp = devices.indexWhere((item) => item.ip.trim() == device.ip.trim());
+
+    if (indexByIp >= 0) {
+      devices[indexByIp] = device;
+      return;
+    }
+
+    devices.add(device);
+  }
+
+  void _removeDevice(BonsoirService service) {
+    final id = service.attributes['id'];
+
+    if (id == null || id.isEmpty) {
+      return;
+    }
+
+    devices.removeWhere((device) => device.id == id);
+  }
+
+  String? _resolveServiceIp(BonsoirService service) {
+    final addresses = service.hostAddresses;
+
+    final ipv4 = addresses.where(_isValidIpv4).toList();
+
+    if (ipv4.isEmpty) {
+      return null;
+    }
+
+    if (localIp.value.isNotEmpty) {
+      final localPrefix = _ipv4Prefix(localIp.value);
+
+      if (localPrefix != null) {
+        for (final ip in ipv4) {
+          if (_ipv4Prefix(ip) == localPrefix) {
+            return ip;
+          }
+        }
+      }
+    }
+
+    for (final ip in ipv4) {
+      if (_isPrivateIpv4(ip)) {
+        return ip;
+      }
+    }
+
+    return ipv4.first;
+  }
+
+  bool _isValidIpv4(String ip) {
+    final parts = ip.split('.');
+
+    if (parts.length != 4) {
+      return false;
+    }
+
+    for (final part in parts) {
+      final value = int.tryParse(part);
+
+      if (value == null || value < 0 || value > 255) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  String? _ipv4Prefix(String ip) {
+    final parts = ip.split('.');
+
+    if (parts.length != 4) {
+      return null;
+    }
+
+    return '${parts[0]}.${parts[1]}.${parts[2]}';
+  }
+
+  Future<void> _startBroadcast() async {
+    if (localPort.value <= 0) {
+      return;
+    }
+
+    if (_broadcast != null) {
       try {
-        final packet = datagram!;
-
-        final senderIp = packet.address.address.trim();
-
-        final json = jsonDecode(utf8.decode(packet.data));
-
-        if (json is! Map) {
-          continue;
-        }
-
-        final data = Map<String, dynamic>.from(json);
-
-        if (data['type'] != RemoteSyncProtocol.discoveryType) {
-          continue;
-        }
-
-        final id = data['id']?.toString().trim() ?? '';
-
-        if (id.isEmpty) {
-          continue;
-        }
-
-        if (id == _deviceId) {
-          continue;
-        }
-
-        final device = RemoteSyncDevice.fromJson(data);
-
-        final advertisedIp = device.ip.trim();
-
-        final ip = advertisedIp.isNotEmpty ? advertisedIp : senderIp;
-
-        if (ip.isEmpty) {
-          continue;
-        }
-
-        if (_isLocalDevice(device, senderIp: senderIp)) {
-          continue;
-        }
-
-        final actual = device.copyWith(ip: ip, lastSeen: DateTime.now());
-
-        final indexById = devices.indexWhere((item) => item.id == actual.id);
-
-        if (indexById >= 0) {
-          devices[indexById] = actual;
-          continue;
-        }
-
-        final indexByIp = devices.indexWhere((item) => item.ip.trim() == actual.ip.trim());
-
-        if (indexByIp >= 0) {
-          devices[indexByIp] = actual;
-          continue;
-        }
-
-        devices.add(actual);
+        await _broadcast!.stop();
       } catch (_) {}
+
+      _broadcast = null;
     }
+
+    final service = BonsoirService(
+      name: 'PureLive-${_deviceId.hashCode.abs()}',
+      type: _mdnsServiceType,
+      port: localPort.value,
+      attributes: {'id': _deviceId, 'name': deviceName, 'platform': platform, 'version': version, 'ip': localIp.value},
+    );
+
+    final broadcast = BonsoirBroadcast(service: service);
+
+    _broadcast = broadcast;
+
+    await broadcast.initialize();
+    await broadcast.start();
   }
 
   void _startCleanupTimer() {
@@ -541,7 +657,9 @@ class RemoteSyncService extends GetxService {
     _cleanupTimer = Timer.periodic(const Duration(seconds: 5), (_) {
       final now = DateTime.now();
 
-      devices.removeWhere((device) => now.difference(device.lastSeen).inSeconds > 8);
+      devices.removeWhere((device) {
+        return now.difference(device.lastSeen).inSeconds > 8;
+      });
     });
   }
 
@@ -710,8 +828,14 @@ class RemoteSyncService extends GetxService {
     _cleanupTimer?.cancel();
     _cleanupTimer = null;
 
-    _discoverySocket?.close();
-    _discoverySocket = null;
+    _discoverySubscription?.cancel();
+    _discoverySubscription = null;
+
+    _discovery?.stop();
+    _discovery = null;
+
+    _broadcast?.stop();
+    _broadcast = null;
 
     _server?.close(force: true);
     _server = null;

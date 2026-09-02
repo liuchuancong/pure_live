@@ -6,6 +6,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   app_links
   audio_service_win
   battery_plus
+  bonsoir_windows
   charset_converter
   cloud_firestore
   connectivity_plus

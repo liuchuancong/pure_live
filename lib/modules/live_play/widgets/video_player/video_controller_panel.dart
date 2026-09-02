@@ -24,7 +24,6 @@ import 'package:pure_live/modules/live_play/widgets/video_player/volume_control.
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/danmaku/danmaku_settings_binding.dart';
 import 'package:pure_live/modules/live_play/widgets/local_interaction/local_danmaku_style_editor.dart';
-import 'package:pure_live/modules/live_play/widgets/local_interaction/local_interaction_controller.dart';
 
 @visibleForTesting
 enum TopActionLeadingSlot { back, datetime, battery }
