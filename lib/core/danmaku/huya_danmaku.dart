@@ -475,7 +475,7 @@ class HuyaDanmaku implements LiveDanmaku {
             return;
           }
 
-          if (item.iUri == 2001314) {
+          if (item.iUri == 2001314 || item.iUri == 1400 || item.iUri == 8006) {
             final sc = await getHuyaSuperChatMessageList(lPid: danmakuArgs.topSid);
             if (generation != _generation) {
               return;
