@@ -194,18 +194,11 @@ public class TextureHW: NSObject, FlutterTexture, ResizableTextureProtocol {
     _ ctx: UnsafeMutableRawPointer?,
     _ name: UnsafePointer<Int8>?
   ) -> UnsafeMutableRawPointer? {
-    let symbol: CFString = CFStringCreateWithCString(
-      kCFAllocatorDefault,
-      name,
-      kCFStringEncodingASCII
-    )
-    let indentifier = CFBundleGetBundleWithIdentifier(
-      "com.apple.opengl" as CFString
-    )
-    let addr = CFBundleGetFunctionPointerForName(indentifier, symbol)
+    let addr = OpenGLSymbolLoader.load(name)
 
     if addr == nil {
-      NSLog("Cannot get OpenGL function pointer!")
+      let symbol = name.map { String(cString: $0) } ?? "<nil>"
+      NSLog("Cannot get OpenGL function pointer: \(symbol)")
     }
     return addr
   }
