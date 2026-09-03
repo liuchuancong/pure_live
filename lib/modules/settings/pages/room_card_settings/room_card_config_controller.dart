@@ -524,6 +524,57 @@ class RoomCardConfigController extends GetxController {
   Color get desktopDeleteButtonBackground => _desktop.deleteButtonBackgroundColor ?? Colors.black54;
   Color get desktopDeleteButtonIconColor => _desktop.deleteButtonIconColor;
 
+  RoomCardModel resolveCurrentConfig({bool dense = false, bool showDelete = false}) {
+    final config = isMobileViewport ? getMobileConfig() : getDesktopConfig();
+
+    return resolveThemeColors(config: config, dense: dense, showDelete: showDelete);
+  }
+
+  RoomCardModel resolveThemeColors({
+    required RoomCardModel config,
+    required bool dense,
+    required bool showDelete,
+  }) {
+    if (config.preset == RoomCardPreset.custom) {
+      return config.copyWith(
+        denseMode: config.denseMode || dense,
+        showDelete: config.showDelete && showDelete,
+      );
+    }
+
+    final colorScheme = Get.theme.colorScheme;
+    final isDark = colorScheme.brightness == Brightness.dark;
+
+    return config.copyWith(
+      denseMode: config.denseMode || dense,
+      showDelete: config.showDelete && showDelete,
+      cardBackground: isDark
+          ? colorScheme.surfaceContainerHigh
+          : colorScheme.surfaceContainerLowest,
+      titleColor: colorScheme.onSurface,
+      subtitleColor: colorScheme.onSurfaceVariant,
+      platformBackgroundColor: isDark
+          ? colorScheme.primary.withValues(alpha: 0.18)
+          : colorScheme.primaryContainer,
+      platformTextColor: colorScheme.onPrimaryContainer,
+      chipBackgroundColor: isDark
+          ? colorScheme.tertiary.withValues(alpha: 0.25)
+          : colorScheme.tertiaryContainer,
+      chipTextColor: isDark ? colorScheme.tertiary : colorScheme.onTertiaryContainer,
+      metricBackgroundColor: isDark
+          ? colorScheme.surfaceContainerLow
+          : colorScheme.surfaceContainerLowest,
+      metricTextColor: colorScheme.onSurfaceVariant,
+      metricBorderColor: isDark
+          ? colorScheme.outlineVariant.withValues(alpha: 0.25)
+          : colorScheme.outlineVariant.withValues(alpha: 0.45),
+      deleteButtonBackgroundColor: isDark
+          ? colorScheme.error.withValues(alpha: 0.22)
+          : colorScheme.errorContainer,
+      deleteButtonIconColor: isDark ? colorScheme.error : colorScheme.onErrorContainer,
+    );
+  }
+
   // ============================================================
   // Serialization
   // ============================================================

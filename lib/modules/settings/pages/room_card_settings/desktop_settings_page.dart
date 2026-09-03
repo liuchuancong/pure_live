@@ -119,7 +119,7 @@ class DesktopSettingsPage extends GetView<RoomCardConfigController> {
         config: config,
         dense: config.denseMode,
         debug: true,
-        key: ValueKey('desktop_preview_${DateTime.now().millisecondsSinceEpoch}'),
+        key: ValueKey('desktop_preview_${controller.desktopPreset.value}_${config.hashCode}'),
       );
     });
   }

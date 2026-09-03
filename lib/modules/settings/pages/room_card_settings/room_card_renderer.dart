@@ -262,38 +262,6 @@ class RoomCardRenderer {
       );
     } else if (showAudienceBadge) {
       children.add(_buildAudienceBadge(context, effectiveDense));
-    } else if (showLiveBadge && !debug) {
-      children.add(
-        Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: effectiveDense ? 8 : 10,
-            vertical: effectiveDense ? 4 : 6,
-          ),
-          decoration: BoxDecoration(
-            color: Colors.green.withValues(alpha: 0.2),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 8,
-                height: 8,
-                decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle),
-              ),
-              const SizedBox(width: 6),
-              Text(
-                i18n('live'),
-                style: TextStyle(
-                  fontSize: effectiveDense ? 10 : 12,
-                  color: Colors.green,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
     }
 
     if (showDeleteButton) {

@@ -119,7 +119,7 @@ class MobileSettingsPage extends GetView<RoomCardConfigController> {
         config: config,
         dense: config.denseMode,
         debug: true,
-        key: ValueKey('mobile_preview_${DateTime.now().millisecondsSinceEpoch}'),
+        key: ValueKey('mobile_preview_${controller.mobilePreset.value}_${config.hashCode}'),
       );
     });
   }
