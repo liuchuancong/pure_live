@@ -72,7 +72,7 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
       'protocol_whitelist',
       'httpproxy,udp,rtp,tcp,tls,data,file,http,https,crypto,rtmp,rtmps,rtsp,srt',
     );
-    await native.setProperty("demuxer-cache-dir", await FileUtils().getTempPath());
+    await native.setProperty('demuxer-cache-dir', await FileUtils().getTempPath());
 
     await native.setProperty('demuxer-lavf-probesize', '2097152');
 
@@ -99,7 +99,10 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
       return;
     }
     if (settings.audioOutputDriver.v != 'auto') {
-      await native.setProperty('ao', settings.androidEnableOpenSLES.v ? 'opensles' : settings.audioOutputDriver.v);
+      await native.setProperty(
+        'ao',
+        settings.androidEnableOpenSLES.v ? 'opensles' : settings.audioOutputDriver.v,
+      );
     }
 
     await native.setProperty('volume-max', '100');
@@ -328,7 +331,8 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
     String? vo;
     String? hwdec;
     if (PlatformUtils.isAndroid) {
-      final renderer = settings.videoOutputDriver.v.isEmpty || settings.videoOutputDriver.v == 'auto'
+      final renderer =
+          settings.videoOutputDriver.v.isEmpty || settings.videoOutputDriver.v == 'auto'
           ? 'gpu'
           : settings.videoOutputDriver.v;
 
@@ -379,7 +383,11 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
       'enableRtxVsr=${settings.enableRtxVsr.v}, '
       'videoHardwareDecoder=${settings.videoHardwareDecoder.v}',
     );
-    return VideoControllerConfiguration(vo: vo, hwdec: hwdec, enableHardwareAcceleration: enableHardwareAcceleration);
+    return VideoControllerConfiguration(
+      vo: vo,
+      hwdec: hwdec,
+      enableHardwareAcceleration: enableHardwareAcceleration,
+    );
   }
 
   @override
@@ -397,7 +405,10 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
 
     try {
       _stateSubject.add(PlayerState.initializing);
-      _cachePolicy = PlaybackCachePolicy(isLocalPlayback: () => false, currentPlayer: () => _player);
+      _cachePolicy = PlaybackCachePolicy(
+        isLocalPlayback: () => false,
+        currentPlayer: () => _player,
+      );
       final settings = SettingsService.to.player;
 
       _player = Player(configuration: const PlayerConfiguration(osc: false));
@@ -425,7 +436,10 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
         }
       }
 
-      _controller = VideoController(_player, configuration: await _buildVideoControllerConfiguration());
+      _controller = VideoController(
+        _player,
+        configuration: await _buildVideoControllerConfiguration(),
+      );
 
       await _bindListeners();
 
@@ -637,7 +651,13 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
       },
     );
 
-    _subscriptions.addAll([_playingSub!, _bufferingSub!, _completeSub!, _errorSub!, _videoParamsSub!]);
+    _subscriptions.addAll([
+      _playingSub!,
+      _bufferingSub!,
+      _completeSub!,
+      _errorSub!,
+      _videoParamsSub!,
+    ]);
   }
 
   Future<void> _cancelAllSubscriptions() async {
@@ -659,7 +679,9 @@ class MediaKitAdapter implements UnifiedPlayer, MediaKitPlayerAccessor {
       return;
     }
 
-    _safeAddError(PlayerException(message: error.toString(), type: type, error: error, stackTrace: stackTrace));
+    _safeAddError(
+      PlayerException(message: error.toString(), type: type, error: error, stackTrace: stackTrace),
+    );
 
     _stateSubject.add(PlayerState.error);
   }

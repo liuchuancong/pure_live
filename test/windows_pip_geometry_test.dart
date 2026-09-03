@@ -90,7 +90,10 @@ void main() {
       },
     };
 
-    final merged = WindowSizeController.mergeConfig(root, {'windowsPipWidth': 640, 'windowsPipX': 100});
+    final merged = WindowSizeController.mergeConfig(root, {
+      'windowsPipWidth': 640,
+      'windowsPipX': 100,
+    });
     final pip = merged['windowSize']['windowsPip'] as Map<String, dynamic>;
 
     expect(pip['displayId'], 'display-1');

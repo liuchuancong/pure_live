@@ -15,7 +15,9 @@ class FontDownloadManager {
 
   Future<String> get _fontRootPath async {
     final directory = await AppPathManager().getDir(AppPathManager.dirDownload);
-    final fontRoot = Directory("${directory.path}${Platform.pathSeparator}${AppPathManager.fontDirectoryName}");
+    final fontRoot = Directory(
+      '${directory.path}${Platform.pathSeparator}${AppPathManager.fontDirectoryName}',
+    );
     if (!await fontRoot.exists()) {
       await fontRoot.create(recursive: true);
     }
@@ -24,13 +26,15 @@ class FontDownloadManager {
 
   Future<bool> checkFontDownloaded(String fontId) async {
     final root = await _fontRootPath;
-    final fontDir = Directory("$root/$fontId");
+    final fontDir = Directory('$root/$fontId');
     if (!await fontDir.exists()) return false;
 
     int validFileCount = 0;
     await for (final entity in fontDir.list()) {
       final lowerPath = entity.path.toLowerCase();
-      if (entity is File && (lowerPath.endsWith('.ttf') || lowerPath.endsWith('.otf')) && await entity.length() > 0) {
+      if (entity is File &&
+          (lowerPath.endsWith('.ttf') || lowerPath.endsWith('.otf')) &&
+          await entity.length() > 0) {
         validFileCount++;
       }
     }
@@ -40,7 +44,7 @@ class FontDownloadManager {
   Future<bool> loadFont(String fontId, {String fileName = ''}) async {
     try {
       final root = await _fontRootPath;
-      final fontDir = Directory("$root/$fontId");
+      final fontDir = Directory('$root/$fontId');
       if (!await fontDir.exists()) return false;
 
       final loader = FontLoader(fontId);
@@ -49,7 +53,8 @@ class FontDownloadManager {
       await for (final entity in fontDir.list()) {
         if (entity is File) {
           final lowerPath = entity.path.toLowerCase();
-          if ((lowerPath.endsWith('.ttf') || lowerPath.endsWith('.otf')) && await entity.length() > 0) {
+          if ((lowerPath.endsWith('.ttf') || lowerPath.endsWith('.otf')) &&
+              await entity.length() > 0) {
             files.add(entity);
           }
         }
@@ -76,7 +81,7 @@ class FontDownloadManager {
       }
       return false;
     } catch (e) {
-      log("Font registration sequence failed: $e");
+      log('Font registration sequence failed: $e');
       return false;
     }
   }
@@ -87,21 +92,21 @@ class FontDownloadManager {
   }) async {
     final root = await _fontRootPath;
     final fontId = fontModel.id;
-    final fontDir = Directory("$root/$fontId");
+    final fontDir = Directory('$root/$fontId');
 
     if (!await fontDir.exists()) {
       await fontDir.create(recursive: true);
     }
 
     onStateChanged(DownloadState.downloading);
-    log("Starting block download pipeline for font family: $fontId");
+    log('Starting block download pipeline for font family: $fontId');
 
     try {
       final mirror = GitHubMirror(owner: 'liuchuancong', repo: 'fonts', branch: 'master');
 
       for (final filePath in fontModel.files) {
         final fileName = filePath.split('/').last;
-        final file = File("${fontDir.path}/$fileName");
+        final file = File('${fontDir.path}/$fileName');
 
         if (await file.exists()) {
           final length = await file.length();
@@ -130,7 +135,7 @@ class FontDownloadManager {
             if (await file.exists() && await file.length() > 0) {
               break;
             }
-            throw Exception("File is empty or corrupted");
+            throw Exception('File is empty or corrupted');
           } catch (e) {
             retryCount++;
             if (file.existsSync()) {
@@ -139,7 +144,7 @@ class FontDownloadManager {
               } catch (_) {}
             }
             if (retryCount >= maxRetries) {
-              throw Exception("Failed to sync file slice: $fileName");
+              throw Exception('Failed to sync file slice: $fileName');
             }
             await Future.delayed(const Duration(seconds: 1));
           }
@@ -149,7 +154,7 @@ class FontDownloadManager {
       onStateChanged(DownloadState.downloaded);
       return true;
     } catch (e, s) {
-      log("Font bundle sync sequence aborted: $e, retry count exceeded $s");
+      log('Font bundle sync sequence aborted: $e, retry count exceeded $s');
       onStateChanged(DownloadState.notDownloaded);
 
       if (await fontDir.exists()) {
@@ -164,13 +169,13 @@ class FontDownloadManager {
   Future<void> deleteFontFamily(FontModel fontModel, Function(DownloadState) onStateChanged) async {
     try {
       final root = await _fontRootPath;
-      final fontDir = Directory("$root/${fontModel.id}");
+      final fontDir = Directory('$root/${fontModel.id}');
       if (await fontDir.exists()) {
         await fontDir.delete(recursive: true);
       }
       onStateChanged(DownloadState.notDownloaded);
     } catch (e) {
-      log("Failed to delete font family: $e");
+      log('Failed to delete font family: $e');
     }
   }
 }

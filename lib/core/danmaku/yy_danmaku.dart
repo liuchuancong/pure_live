@@ -275,7 +275,12 @@ class YyDanmaku implements LiveDanmaku {
       final msg = parser.getUTF8();
 
       onMessage?.call(
-        LiveMessage(type: LiveMessageType.chat, message: msg, userName: nick, color: LiveMessageColor.white),
+        LiveMessage(
+          type: LiveMessageType.chat,
+          message: msg,
+          userName: nick,
+          color: LiveMessageColor.white,
+        ),
       );
     } catch (e) {
       CoreLog.error('YY parse danmaku error: $e');

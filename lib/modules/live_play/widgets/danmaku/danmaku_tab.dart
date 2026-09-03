@@ -13,7 +13,7 @@ class DanmakuTabView extends GetView<LivePlayController> {
     return Obx(() {
       final state = controller.state.value;
       if (state.room.detail == null || state.player.videoController == null) {
-        return AppStatusView(type: AppStatusType.loading, title: "", subtitle: "");
+        return const AppStatusView(type: AppStatusType.loading, title: '', subtitle: '');
       }
       return ColoredBox(
         color: Theme.of(context).colorScheme.surface,
@@ -30,7 +30,10 @@ class DanmakuTabView extends GetView<LivePlayController> {
                       : Center(
                           child: Padding(
                             padding: const EdgeInsets.all(24),
-                            child: Text(i18n('danmaku_display_disabled_hint'), textAlign: TextAlign.center),
+                            child: Text(
+                              i18n('danmaku_display_disabled_hint'),
+                              textAlign: TextAlign.center,
+                            ),
                           ),
                         ),
                   // RxList mutations do not invalidate this outer Obx unless

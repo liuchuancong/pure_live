@@ -71,27 +71,27 @@ class SettingsService extends GetxService {
       return instance;
     }
 
-    Get.lazyPut(() => lockInject(() => StartupController()), fenix: true);
-    Get.lazyPut(() => lockInject(() => AppSettingsController()), fenix: true);
-    Get.lazyPut(() => lockInject(() => ThemeSettingsController()), fenix: true);
-    Get.lazyPut(() => lockInject(() => WindowSizeController()), fenix: true);
-    Get.lazyPut(() => lockInject(() => ProxySettingsController()), fenix: true);
-    Get.lazyPut(() => lockInject(() => PlayerSettingsController()), fenix: true);
-    Get.lazyPut(() => lockInject(() => DanmakuSettingsController()), fenix: true);
-    Get.lazyPut(() => lockInject(() => VolumeSettingsController()), fenix: true);
-    Get.lazyPut(() => lockInject(() => HistoryController()), fenix: true);
-    Get.lazyPut(() => lockInject(() => RefreshConfigController()), fenix: true);
-    Get.lazyPut(() => lockInject(() => FavoriteRoomController()), fenix: true);
-    Get.lazyPut(() => lockInject(() => RoomCardConfigController()), fenix: true);
-    Get.lazyPut(() => lockInject(() => IptvSettingsController()), fenix: true);
-    Get.lazyPut(() => lockInject(() => CacheController()), fenix: true);
-    Get.lazyPut(() => lockInject(() => CookieSettingsController()), fenix: true);
-    Get.lazyPut(() => lockInject(() => PageSettingsController()), fenix: true);
-    Get.lazyPut(() => lockInject(() => WebDavController()), fenix: true);
-    Get.lazyPut(() => lockInject(() => TagManagementController()), fenix: true);
-    Get.lazyPut(() => lockInject(() => BiliBiliAccountService()), fenix: true);
-    Get.lazyPut(() => lockInject(() => FontSettingsController()), fenix: true);
-    Get.lazyPut(() => lockInject(() => LogController()), fenix: true);
+    Get.lazyPut(() => lockInject(StartupController.new), fenix: true);
+    Get.lazyPut(() => lockInject(AppSettingsController.new), fenix: true);
+    Get.lazyPut(() => lockInject(ThemeSettingsController.new), fenix: true);
+    Get.lazyPut(() => lockInject(WindowSizeController.new), fenix: true);
+    Get.lazyPut(() => lockInject(ProxySettingsController.new), fenix: true);
+    Get.lazyPut(() => lockInject(PlayerSettingsController.new), fenix: true);
+    Get.lazyPut(() => lockInject(DanmakuSettingsController.new), fenix: true);
+    Get.lazyPut(() => lockInject(VolumeSettingsController.new), fenix: true);
+    Get.lazyPut(() => lockInject(HistoryController.new), fenix: true);
+    Get.lazyPut(() => lockInject(RefreshConfigController.new), fenix: true);
+    Get.lazyPut(() => lockInject(FavoriteRoomController.new), fenix: true);
+    Get.lazyPut(() => lockInject(RoomCardConfigController.new), fenix: true);
+    Get.lazyPut(() => lockInject(IptvSettingsController.new), fenix: true);
+    Get.lazyPut(() => lockInject(CacheController.new), fenix: true);
+    Get.lazyPut(() => lockInject(CookieSettingsController.new), fenix: true);
+    Get.lazyPut(() => lockInject(PageSettingsController.new), fenix: true);
+    Get.lazyPut(() => lockInject(WebDavController.new), fenix: true);
+    Get.lazyPut(() => lockInject(TagManagementController.new), fenix: true);
+    Get.lazyPut(() => lockInject(BiliBiliAccountService.new), fenix: true);
+    Get.lazyPut(() => lockInject(FontSettingsController.new), fenix: true);
+    Get.lazyPut(() => lockInject(LogController.new), fenix: true);
 
     Get.put(ExitSettingsController(), permanent: true);
     Get.put(IptvSettingsController(), permanent: true);

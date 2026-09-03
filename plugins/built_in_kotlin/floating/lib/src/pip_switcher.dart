@@ -39,15 +39,15 @@ class _PipAwareState extends State<PiPSwitcher> {
 
   @override
   Widget build(BuildContext context) => StreamBuilder(
-        stream: _floating.pipStatusStream,
-        initialData: PiPStatus.disabled,
-        builder: (context, snapshot) => AnimatedSwitcher(
-          duration: widget.duration,
-          switchInCurve: widget.curve,
-          switchOutCurve: widget.curve,
-          child: snapshot.data == PiPStatus.enabled
-              ? widget.childWhenEnabled
-              : widget.childWhenDisabled,
-        ),
-      );
+    stream: _floating.pipStatusStream,
+    initialData: PiPStatus.disabled,
+    builder: (context, snapshot) => AnimatedSwitcher(
+      duration: widget.duration,
+      switchInCurve: widget.curve,
+      switchOutCurve: widget.curve,
+      child: snapshot.data == PiPStatus.enabled
+          ? widget.childWhenEnabled
+          : widget.childWhenDisabled,
+    ),
+  );
 }

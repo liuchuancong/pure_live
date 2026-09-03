@@ -9,12 +9,12 @@ class ToolBoxController extends GetxController {
 
   Future<void> jumpToRoom(String e) async {
     if (e.isEmpty) {
-      ToastUtil.show(i18n("toolbox_empty_link"));
+      ToastUtil.show(i18n('toolbox_empty_link'));
       return;
     }
     var parseResult = await LiveUrlTool.parseLiveUrl(e);
-    if (parseResult.isEmpty || parseResult.first == "") {
-      ToastUtil.show(i18n("toolbox_parse_failed"));
+    if (parseResult.isEmpty || parseResult.first == '') {
+      ToastUtil.show(i18n('toolbox_parse_failed'));
       return;
     }
     FocusManager.instance.primaryFocus?.unfocus();
@@ -24,11 +24,11 @@ class ToolBoxController extends GetxController {
       liveRoom: LiveRoom(
         roomId: parseResult.first,
         platform: platform,
-        title: "",
+        title: '',
         cover: '',
-        nick: "",
+        nick: '',
         watching: '',
-        avatar: "",
+        avatar: '',
         area: '',
         liveStatus: LiveStatus.live,
         status: true,
@@ -47,13 +47,13 @@ class ToolBoxController extends GetxController {
     String? text = data?.text;
     if (text == null || text.isEmpty) return;
 
-    final bool isLiveUrl = RegExp(r"bilibili|huya|douyu|douyin|kuaishou|163").hasMatch(text);
+    final bool isLiveUrl = RegExp(r'bilibili|huya|douyu|douyin|kuaishou|163').hasMatch(text);
     if (isLiveUrl) {
       roomJumpToController.text = text;
       getUrlController.text = text;
       Get.snackbar(
-        i18n("toolbox_detect_link"),
-        i18n("toolbox_auto_fill"),
+        i18n('toolbox_detect_link'),
+        i18n('toolbox_auto_fill'),
         snackPosition: SnackPosition.bottom,
         duration: const Duration(seconds: 2),
         margin: const EdgeInsets.all(15),

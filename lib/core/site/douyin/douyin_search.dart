@@ -89,7 +89,8 @@ class DouyinSearch {
 
     return {
       ...defaultHeaders,
-      'Referer': 'https://www.douyin.com/search/${Uri.encodeComponent(keyword)}?source=switch_tab&type=live',
+      'Referer':
+          'https://www.douyin.com/search/${Uri.encodeComponent(keyword)}?source=switch_tab&type=live',
       'Origin': 'https://www.douyin.com',
       'Sec-Fetch-Dest': 'empty',
       'Sec-Fetch-Mode': 'cors',
@@ -174,7 +175,10 @@ class DouyinSearch {
     return null;
   }
 
-  static LiveRoom? _normalizeSearchItem(Map<String, dynamic>? raw, {Map<String, dynamic>? fallback}) {
+  static LiveRoom? _normalizeSearchItem(
+    Map<String, dynamic>? raw, {
+    Map<String, dynamic>? fallback,
+  }) {
     if (raw == null) {
       return null;
     }
@@ -200,7 +204,12 @@ class DouyinSearch {
 
     final webRid = _firstNonEmpty([owner['web_rid'], raw['web_rid'], roomOwner['web_rid']]);
 
-    final nickname = _firstNonEmpty([owner['nickname'], raw['nickname'], roomOwner['nickname'], fallback['nickname']]);
+    final nickname = _firstNonEmpty([
+      owner['nickname'],
+      raw['nickname'],
+      roomOwner['nickname'],
+      fallback['nickname'],
+    ]);
 
     final title = _firstNonEmpty([raw['title'], room['title'], fallback['title'], nickname]);
 
@@ -245,10 +254,17 @@ class DouyinSearch {
       tagText = firstPartition?['title']?.toString();
     }
 
-    tagText = _firstNonEmpty([raw['video_feed_tag'], tagText, _mapValue(raw['partition'], 'title'), fallback['tag']]);
+    tagText = _firstNonEmpty([
+      raw['video_feed_tag'],
+      tagText,
+      _mapValue(raw['partition'], 'title'),
+      fallback['tag'],
+    ]);
 
     final status =
-        (raw['status'] is num ? (raw['status'] as num).toInt() : int.tryParse(raw['status']?.toString() ?? '') ?? 0) ==
+        (raw['status'] is num
+            ? (raw['status'] as num).toInt()
+            : int.tryParse(raw['status']?.toString() ?? '') ?? 0) ==
         2;
 
     // Keep a deterministic identity. A millisecond timestamp produced invalid
@@ -271,7 +287,9 @@ class DouyinSearch {
       watching: nativeAudience,
       totalViewers: totalViewers,
       onlineViewers: onlineViewers,
-      audienceMetricType: totalViewers.isNotEmpty ? AudienceMetricType.totalViewers : AudienceMetricType.onlineViewers,
+      audienceMetricType: totalViewers.isNotEmpty
+          ? AudienceMetricType.totalViewers
+          : AudienceMetricType.onlineViewers,
       link: 'https://live.douyin.com/$realWebRid',
     );
   }
@@ -314,7 +332,8 @@ class DouyinSearch {
   }
 
   @visibleForTesting
-  static List<LiveRoom> parseSearchPayloadForTesting(dynamic payload) => _extractSearchVideos(payload);
+  static List<LiveRoom> parseSearchPayloadForTesting(dynamic payload) =>
+      _extractSearchVideos(payload);
 
   static Future<List<LiveRoom>> _searchByLiveApi(String keyword, int page, int pageSize) async {
     final count = pageSize.clamp(1, 50).toInt();
@@ -415,7 +434,12 @@ class DouyinSearch {
       }
 
       try {
-        final rooms = await _getPartitionRooms(partitionId, partitionType.toString(), page: page, pageSize: pageSize);
+        final rooms = await _getPartitionRooms(
+          partitionId,
+          partitionType.toString(),
+          page: page,
+          pageSize: pageSize,
+        );
 
         for (final room in rooms) {
           if (seen.contains(room.roomId)) {
@@ -477,7 +501,11 @@ class DouyinSearch {
 
     for (final url in urls) {
       try {
-        final result = await HttpClient.instance.getJson(url, queryParameters: params, header: headers);
+        final result = await HttpClient.instance.getJson(
+          url,
+          queryParameters: params,
+          header: headers,
+        );
 
         if (result['status_code'] != 0) {
           continue;
@@ -511,9 +539,13 @@ class DouyinSearch {
           final coverList = cover['url_list'];
           final avatarList = avatar['url_list'];
 
-          final coverUrl = coverList is List && coverList.isNotEmpty ? coverList.first.toString() : '';
+          final coverUrl = coverList is List && coverList.isNotEmpty
+              ? coverList.first.toString()
+              : '';
 
-          final avatarUrl = avatarList is List && avatarList.isNotEmpty ? avatarList.first.toString() : '';
+          final avatarUrl = avatarList is List && avatarList.isNotEmpty
+              ? avatarList.first.toString()
+              : '';
 
           final webRid = _firstNonEmpty([itemMap['web_rid'], owner['web_rid']]);
 

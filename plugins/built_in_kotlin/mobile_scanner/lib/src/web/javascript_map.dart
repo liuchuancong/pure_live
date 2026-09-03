@@ -9,8 +9,7 @@ import 'dart:js_interop';
 ///
 /// Object literals can be made using [jsify].
 @JS('Map')
-extension type JSMap<K extends JSAny, V extends JSAny>._(JSObject _)
-    implements JSObject {
+extension type JSMap<K extends JSAny, V extends JSAny>._(JSObject _) implements JSObject {
   /// Construct a new Javascript `Map`.
   external factory JSMap();
 

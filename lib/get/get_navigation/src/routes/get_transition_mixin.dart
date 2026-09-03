@@ -1,7 +1,9 @@
 import 'dart:ui';
 import 'dart:math';
+
 import '../../../get.dart';
 import '../root/get_root.dart';
+
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
@@ -54,13 +56,17 @@ class GetBackGestureDetectorState<T> extends State<GetBackGestureDetector<T>> {
   void _handleDragUpdate(DragUpdateDetails details) {
     assert(mounted);
     assert(_backGestureController != null);
-    _backGestureController!.dragUpdate(_convertToLogical(details.primaryDelta! / context.size!.width));
+    _backGestureController!.dragUpdate(
+      _convertToLogical(details.primaryDelta! / context.size!.width),
+    );
   }
 
   void _handleDragEnd(DragEndDetails details) {
     assert(mounted);
     assert(_backGestureController != null);
-    _backGestureController!.dragEnd(_convertToLogical(details.velocity.pixelsPerSecond.dx / context.size!.width));
+    _backGestureController!.dragEnd(
+      _convertToLogical(details.velocity.pixelsPerSecond.dx / context.size!.width),
+    );
     _backGestureController = null;
   }
 
@@ -287,7 +293,11 @@ Cannot read the previousTitle for a route that has not yet been installed''');
   Widget buildContent(BuildContext context);
 
   @override
-  Widget buildPage(BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation) {
+  Widget buildPage(
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+  ) {
     final child = buildContent(context);
     final Widget result = Semantics(scopesRoute: true, explicitChildNodes: true, child: child);
     return result;
@@ -315,7 +325,9 @@ Cannot read the previousTitle for a route that has not yet been installed''');
 
   @override
   void didChangePrevious(Route<dynamic>? previousRoute) {
-    final previousTitleString = previousRoute is CupertinoRouteTransitionMixin ? previousRoute.title : null;
+    final previousTitleString = previousRoute is CupertinoRouteTransitionMixin
+        ? previousRoute.title
+        : null;
     if (_previousTitle == null) {
       _previousTitle = ValueNotifier<String?>(previousTitleString);
     } else {
@@ -360,7 +372,9 @@ Cannot read the previousTitle for a route that has not yet been installed''');
     final hasCurve = route.curve != null;
     if (route.fullscreenDialog && route.transition == null) {
       return CupertinoFullscreenDialogTransition(
-        primaryRouteAnimation: hasCurve ? CurvedAnimation(parent: animation, curve: finalCurve) : animation,
+        primaryRouteAnimation: hasCurve
+            ? CurvedAnimation(parent: animation, curve: finalCurve)
+            : animation,
         secondaryRouteAnimation: secondaryAnimation,
         linearTransition: linearTransition,
         child: child,
@@ -791,7 +805,8 @@ class _DirectionalityDragGestureRecognizer extends HorizontalDragGestureRecogniz
   @override
   void handleEvent(PointerEvent event) {
     final dx = event.delta.dx;
-    if (hasbackGestureController() || popGestureEnable() && (isRTL && dx < 0 || isLTR && dx > 0 || dx == 0)) {
+    if (hasbackGestureController() ||
+        popGestureEnable() && (isRTL && dx < 0 || isLTR && dx > 0 || dx == 0)) {
       super.handleEvent(event);
     } else {
       stopTrackingPointer(event.pointer);

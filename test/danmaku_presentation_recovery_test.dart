@@ -20,7 +20,11 @@ void main() {
 
     coordinator.request();
     await Future<void>.delayed(const Duration(milliseconds: 8));
-    expect(recoveries, 0, reason: 'a native PiP transition must not consume and lose the recovery request');
+    expect(
+      recoveries,
+      0,
+      reason: 'a native PiP transition must not consume and lose the recovery request',
+    );
 
     blocked = false;
     await Future<void>.delayed(const Duration(milliseconds: 10));

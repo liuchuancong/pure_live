@@ -83,7 +83,10 @@ class EmojiAtlas {
       );
 
       final rects = sheet.generateAllRects();
-      final flameSpriteSheet = SpriteSheet(image: img, srcSize: Vector2(sheet.srcWidth, sheet.srcHeight));
+      final flameSpriteSheet = SpriteSheet(
+        image: img,
+        srcSize: Vector2(sheet.srcWidth, sheet.srcHeight),
+      );
 
       final animation = flameSpriteSheet.createAnimation(row: 0, stepTime: 0.1, to: finalCount);
 

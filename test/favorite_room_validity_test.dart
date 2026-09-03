@@ -1,7 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pure_live/common/services/settings/favorite_room_controller.dart';
 
-Map<String, dynamic> _room(String? platform, String? roomId) => {'platform': platform, 'roomId': roomId};
+Map<String, dynamic> _room(String? platform, String? roomId) => {
+  'platform': platform,
+  'roomId': roomId,
+};
 
 void main() {
   test('backup extraction drops invalid favourite room identities', () {

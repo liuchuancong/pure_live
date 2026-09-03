@@ -21,7 +21,10 @@ void main() {
         // Deliberately reverse insertion order. Positional pairing used to
         // attach these URLs to the opposite quality.
         'flv_pull_url': {'SD2': 'https://cdn.test/sd2.flv', 'HD1': 'https://cdn.test/hd1.flv'},
-        'hls_pull_url_map': {'HD1': 'https://cdn.test/hd1.m3u8', 'SD2': 'https://cdn.test/sd2.m3u8'},
+        'hls_pull_url_map': {
+          'HD1': 'https://cdn.test/hd1.m3u8',
+          'SD2': 'https://cdn.test/sd2.m3u8',
+        },
       });
 
       expect(qualities.map((quality) => quality.quality), ['高清', '流畅']);
@@ -137,7 +140,14 @@ void main() {
       });
 
       expect(qualities.map((quality) => quality.quality), ['原画', '蓝光', '超清', '高清', '标清', '流畅']);
-      expect(qualities.map((quality) => quality.selectionId), ['origin', 'full_hd1', 'hd1', 'sd2', 'sd1', 'md']);
+      expect(qualities.map((quality) => quality.selectionId), [
+        'origin',
+        'full_hd1',
+        'hd1',
+        'sd2',
+        'sd1',
+        'md',
+      ]);
       expect(qualities.last.sort, 1000000);
     });
 

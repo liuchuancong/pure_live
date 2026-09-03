@@ -88,7 +88,10 @@ class LocalInteractionController extends GetxController {
   final RxBool showPlatformBadge = hiveBool('localInteraction.showPlatformBadge', true);
   final RxBool showLevelBadge = hiveBool('localInteraction.showLevelBadge', true);
   final RxBool enableGiftEffects = hiveBool('localInteraction.enableGiftEffects', true);
-  final RxString previewPlatform = hiveString('localInteraction.previewPlatform', Sites.bilibiliSite);
+  final RxString previewPlatform = hiveString(
+    'localInteraction.previewPlatform',
+    Sites.bilibiliSite,
+  );
   final RxInt coins = hiveInt('localInteraction.coins', 1000);
   final RxInt experience = hiveInt('localInteraction.experience', 0);
   final RxList<String> history = hiveStringList('localInteraction.history', const []);
@@ -204,13 +207,27 @@ class LocalInteractionController extends GetxController {
     0xFFB8FF67,
   ];
 
-  static const effectColors = <int>[0xFF000000, 0xFFFFFFFF, 0xFF173A5E, 0xFF6D1F45, 0xFF00C8FF, 0xFFFF2DC6, 0xFFFF8A00];
+  static const effectColors = <int>[
+    0xFF000000,
+    0xFFFFFFFF,
+    0xFF173A5E,
+    0xFF6D1F45,
+    0xFF00C8FF,
+    0xFFFF2DC6,
+    0xFFFF8A00,
+  ];
 
   static const fontFamilyIds = <String>['system', 'rounded', 'serif', 'mono'];
   static const placementIds = <String>['scroll', 'top', 'bottom'];
 
   static const gifts = <LocalGift>[
-    LocalGift(id: 'heart', nameKey: 'local_gift_heart', emoji: '💗', price: 10, color: LiveMessageColor(255, 105, 180)),
+    LocalGift(
+      id: 'heart',
+      nameKey: 'local_gift_heart',
+      emoji: '💗',
+      price: 10,
+      color: LiveMessageColor(255, 105, 180),
+    ),
     LocalGift(
       id: 'flower',
       nameKey: 'local_gift_flower',
@@ -635,7 +652,9 @@ class LocalInteractionController extends GetxController {
 
   String profileLabel(String platform) {
     final parts = <String>[];
-    if (showPlatformBadge.v) parts.add('${packForPlatform(platform).badge} ${i18n(platformBadgeKey(platform))}');
+    if (showPlatformBadge.v) {
+      parts.add('${packForPlatform(platform).badge} ${i18n(platformBadgeKey(platform))}');
+    }
     parts.add(titleLabel);
     return parts.join(' · ');
   }

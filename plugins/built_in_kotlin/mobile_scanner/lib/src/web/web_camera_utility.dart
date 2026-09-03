@@ -24,10 +24,7 @@ bool shouldMirrorStream(web.MediaStream? videoStream) {
 
 /// Apply a horizontal CSS mirror transform to [videoElement] if the camera
 /// is facing the user.
-void maybeFlipVideoPreview(
-  web.HTMLVideoElement videoElement,
-  web.MediaStream videoStream,
-) {
+void maybeFlipVideoPreview(web.HTMLVideoElement videoElement, web.MediaStream videoStream) {
   if (shouldMirrorStream(videoStream)) {
     videoElement.style.transform = 'scaleX(-1)';
   }

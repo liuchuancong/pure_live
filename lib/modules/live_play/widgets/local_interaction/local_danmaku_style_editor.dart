@@ -2,11 +2,17 @@ import 'package:pure_live/common/index.dart';
 import 'package:pure_live/modules/live_play/widgets/content_first_panel_layout.dart';
 import 'package:pure_live/modules/live_play/widgets/local_interaction/local_interaction_controller.dart';
 
-Future<void> showLocalDanmakuStyleEditor(BuildContext context, {required LocalInteractionController controller}) {
+Future<void> showLocalDanmakuStyleEditor(
+  BuildContext context, {
+  required LocalInteractionController controller,
+}) {
   final viewport = MediaQuery.sizeOf(context);
   final landscape = viewport.width > viewport.height;
   if (landscape) {
-    final layout = resolveContentFirstPanelLayout(viewport, ContentFirstPanelKind.localDanmakuStyle);
+    final layout = resolveContentFirstPanelLayout(
+      viewport,
+      ContentFirstPanelKind.localDanmakuStyle,
+    );
     return showDialog<void>(
       context: context,
       builder: (dialogContext) => Dialog(
@@ -82,7 +88,10 @@ class _StyleSurface extends StatelessWidget {
                 IconButton(
                   tooltip: i18n('restore_default'),
                   visualDensity: VisualDensity.compact,
-                  constraints: BoxConstraints.tightFor(width: panelCompact ? 34 : 40, height: panelCompact ? 34 : 40),
+                  constraints: BoxConstraints.tightFor(
+                    width: panelCompact ? 34 : 40,
+                    height: panelCompact ? 34 : 40,
+                  ),
                   padding: EdgeInsets.zero,
                   onPressed: controller.resetDanmakuStyle,
                   icon: Icon(Icons.restart_alt_rounded, size: panelCompact ? 19 : 20),
@@ -90,7 +99,10 @@ class _StyleSurface extends StatelessWidget {
                 IconButton(
                   tooltip: i18n('close'),
                   visualDensity: VisualDensity.compact,
-                  constraints: BoxConstraints.tightFor(width: panelCompact ? 34 : 40, height: panelCompact ? 34 : 40),
+                  constraints: BoxConstraints.tightFor(
+                    width: panelCompact ? 34 : 40,
+                    height: panelCompact ? 34 : 40,
+                  ),
                   padding: EdgeInsets.zero,
                   onPressed: close,
                   icon: Icon(Icons.close_rounded, size: panelCompact ? 19 : 20),
@@ -175,10 +187,22 @@ class _DanmakuPreview extends StatelessWidget {
             offset: Offset(previewStyle.shadowOffset, previewStyle.shadowOffset),
           ),
         if (previewStyle.showStroke) ...[
-          Shadow(color: Color(previewStyle.strokeColor), offset: Offset(previewStyle.strokeWidth, 0)),
-          Shadow(color: Color(previewStyle.strokeColor), offset: Offset(-previewStyle.strokeWidth, 0)),
-          Shadow(color: Color(previewStyle.strokeColor), offset: Offset(0, previewStyle.strokeWidth)),
-          Shadow(color: Color(previewStyle.strokeColor), offset: Offset(0, -previewStyle.strokeWidth)),
+          Shadow(
+            color: Color(previewStyle.strokeColor),
+            offset: Offset(previewStyle.strokeWidth, 0),
+          ),
+          Shadow(
+            color: Color(previewStyle.strokeColor),
+            offset: Offset(-previewStyle.strokeWidth, 0),
+          ),
+          Shadow(
+            color: Color(previewStyle.strokeColor),
+            offset: Offset(0, previewStyle.strokeWidth),
+          ),
+          Shadow(
+            color: Color(previewStyle.strokeColor),
+            offset: Offset(0, -previewStyle.strokeWidth),
+          ),
         ],
       ];
       final textStyle = TextStyle(
@@ -215,7 +239,10 @@ class _DanmakuPreview extends StatelessWidget {
                 left: 9,
                 top: 8,
                 child: DecoratedBox(
-                  decoration: BoxDecoration(color: Colors.black38, borderRadius: BorderRadius.circular(10)),
+                  decoration: BoxDecoration(
+                    color: Colors.black38,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                     child: Row(
@@ -225,7 +252,8 @@ class _DanmakuPreview extends StatelessWidget {
                         const SizedBox(width: 4),
                         Text(
                           i18n('local_danmaku_live_preview'),
-                          style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Colors.white70),
+                          style: Theme.of(context).textTheme.labelSmall
+                              ?.copyWith(color: Colors.white70),
                         ),
                       ],
                     ),
@@ -236,7 +264,11 @@ class _DanmakuPreview extends StatelessWidget {
               Positioned.fill(
                 child: Padding(
                   padding: EdgeInsets.only(top: expanded ? 22 : 0),
-                  child: _ScrollingDanmakuPreview(text: previewText, style: textStyle, speed: previewStyle.baseSpeed),
+                  child: _ScrollingDanmakuPreview(
+                    text: previewText,
+                    style: textStyle,
+                    speed: previewStyle.baseSpeed,
+                  ),
                 ),
               )
             else
@@ -248,7 +280,12 @@ class _DanmakuPreview extends StatelessWidget {
                     : Alignment.bottomCenter,
                 child: Padding(
                   padding: EdgeInsets.symmetric(horizontal: 10, vertical: expanded ? 38 : 12),
-                  child: Text(previewText, maxLines: 1, overflow: TextOverflow.ellipsis, style: textStyle),
+                  child: Text(
+                    previewText,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: textStyle,
+                  ),
                 ),
               ),
             if (expanded && previewStyle.placement == LiveMessagePlacement.scroll)
@@ -258,7 +295,12 @@ class _DanmakuPreview extends StatelessWidget {
                 bottom: 38,
                 child: Opacity(
                   opacity: .45,
-                  child: Text(previewText, maxLines: 1, overflow: TextOverflow.ellipsis, style: textStyle),
+                  child: Text(
+                    previewText,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: textStyle,
+                  ),
                 ),
               ),
           ],
@@ -282,7 +324,8 @@ class _ScrollingDanmakuPreview extends StatefulWidget {
   State<_ScrollingDanmakuPreview> createState() => _ScrollingDanmakuPreviewState();
 }
 
-class _ScrollingDanmakuPreviewState extends State<_ScrollingDanmakuPreview> with SingleTickerProviderStateMixin {
+class _ScrollingDanmakuPreviewState extends State<_ScrollingDanmakuPreview>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _animation;
   double _travelDistance = 360;
   bool _durationUpdateScheduled = false;
@@ -290,7 +333,8 @@ class _ScrollingDanmakuPreviewState extends State<_ScrollingDanmakuPreview> with
   @override
   void initState() {
     super.initState();
-    _animation = AnimationController(vsync: this, duration: _durationFor(_travelDistance))..repeat();
+    _animation = AnimationController(vsync: this, duration: _durationFor(_travelDistance))
+      ..repeat();
   }
 
   @override
@@ -388,7 +432,10 @@ class _StyleControls extends StatelessWidget {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _StyleSectionTitle(icon: Icons.auto_awesome_rounded, label: i18n('local_danmaku_presets')),
+          _StyleSectionTitle(
+            icon: Icons.auto_awesome_rounded,
+            label: i18n('local_danmaku_presets'),
+          ),
           SizedBox(height: compactUi ? 5 : 8),
           Wrap(
             spacing: compactUi ? 5 : 8,
@@ -402,14 +449,19 @@ class _StyleControls extends StatelessWidget {
                     label: Text(i18n(preset.labelKey)),
                     labelPadding: const EdgeInsets.symmetric(horizontal: 2),
                     visualDensity: compactUi ? VisualDensity.compact : VisualDensity.standard,
-                    materialTapTargetSize: compactUi ? MaterialTapTargetSize.shrinkWrap : MaterialTapTargetSize.padded,
+                    materialTapTargetSize: compactUi
+                        ? MaterialTapTargetSize.shrinkWrap
+                        : MaterialTapTargetSize.padded,
                     onSelected: (_) => controller.applyDanmakuPreset(preset),
                   ),
                 )
                 .toList(growable: false),
           ),
           SizedBox(height: sectionGap),
-          _StyleSectionTitle(icon: Icons.vertical_align_center_rounded, label: i18n('local_danmaku_placement')),
+          _StyleSectionTitle(
+            icon: Icons.vertical_align_center_rounded,
+            label: i18n('local_danmaku_placement'),
+          ),
           SizedBox(height: compactUi ? 5 : 8),
           Wrap(
             spacing: 6,
@@ -426,14 +478,19 @@ class _StyleControls extends StatelessWidget {
                     }, size: 17),
                     label: Text(i18n('local_danmaku_placement_$id')),
                     visualDensity: compactUi ? VisualDensity.compact : VisualDensity.standard,
-                    materialTapTargetSize: compactUi ? MaterialTapTargetSize.shrinkWrap : MaterialTapTargetSize.padded,
+                    materialTapTargetSize: compactUi
+                        ? MaterialTapTargetSize.shrinkWrap
+                        : MaterialTapTargetSize.padded,
                     onSelected: (_) => custom(() => controller.danmakuPlacement.v = id),
                   ),
                 )
                 .toList(growable: false),
           ),
           SizedBox(height: sectionGap),
-          _StyleSectionTitle(icon: Icons.text_fields_rounded, label: i18n('local_danmaku_typography')),
+          _StyleSectionTitle(
+            icon: Icons.text_fields_rounded,
+            label: i18n('local_danmaku_typography'),
+          ),
           SizedBox(height: compactUi ? 5 : 8),
           Wrap(
             spacing: 6,
@@ -445,10 +502,14 @@ class _StyleControls extends StatelessWidget {
                     selected: controller.danmakuFontFamily.v == id,
                     label: Text(
                       i18n('local_danmaku_font_$id'),
-                      style: TextStyle(fontFamily: LocalInteractionController.normalizeFontFamily(id)),
+                      style: TextStyle(
+                        fontFamily: LocalInteractionController.normalizeFontFamily(id),
+                      ),
                     ),
                     visualDensity: compactUi ? VisualDensity.compact : VisualDensity.standard,
-                    materialTapTargetSize: compactUi ? MaterialTapTargetSize.shrinkWrap : MaterialTapTargetSize.padded,
+                    materialTapTargetSize: compactUi
+                        ? MaterialTapTargetSize.shrinkWrap
+                        : MaterialTapTargetSize.padded,
                     onSelected: (_) => custom(() => controller.danmakuFontFamily.v = id),
                   ),
                 )
@@ -521,7 +582,10 @@ class _StyleControls extends StatelessWidget {
             },
           ),
           SizedBox(height: compactUi ? 3 : 8),
-          _StyleSectionTitle(icon: Icons.auto_fix_high_rounded, label: i18n('local_danmaku_effects')),
+          _StyleSectionTitle(
+            icon: Icons.auto_fix_high_rounded,
+            label: i18n('local_danmaku_effects'),
+          ),
           SizedBox(height: compactUi ? 5 : 8),
           Wrap(
             spacing: 6,
@@ -533,15 +597,20 @@ class _StyleControls extends StatelessWidget {
                 avatar: const Icon(Icons.format_bold_rounded, size: 18),
                 label: Text(i18n('local_danmaku_bold')),
                 visualDensity: compactUi ? VisualDensity.compact : VisualDensity.standard,
-                materialTapTargetSize: compactUi ? MaterialTapTargetSize.shrinkWrap : MaterialTapTargetSize.padded,
-                onSelected: (value) => custom(() => controller.danmakuFontWeight.v = value ? 800 : 500),
+                materialTapTargetSize: compactUi
+                    ? MaterialTapTargetSize.shrinkWrap
+                    : MaterialTapTargetSize.padded,
+                onSelected: (value) =>
+                    custom(() => controller.danmakuFontWeight.v = value ? 800 : 500),
               ),
               FilterChip(
                 selected: controller.danmakuItalic.v,
                 avatar: const Icon(Icons.format_italic_rounded, size: 18),
                 label: Text(i18n('local_danmaku_italic')),
                 visualDensity: compactUi ? VisualDensity.compact : VisualDensity.standard,
-                materialTapTargetSize: compactUi ? MaterialTapTargetSize.shrinkWrap : MaterialTapTargetSize.padded,
+                materialTapTargetSize: compactUi
+                    ? MaterialTapTargetSize.shrinkWrap
+                    : MaterialTapTargetSize.padded,
                 onSelected: (value) => custom(() => controller.danmakuItalic.v = value),
               ),
               FilterChip(
@@ -549,7 +618,9 @@ class _StyleControls extends StatelessWidget {
                 avatar: const Icon(Icons.border_color_rounded, size: 18),
                 label: Text(i18n('local_danmaku_stroke')),
                 visualDensity: compactUi ? VisualDensity.compact : VisualDensity.standard,
-                materialTapTargetSize: compactUi ? MaterialTapTargetSize.shrinkWrap : MaterialTapTargetSize.padded,
+                materialTapTargetSize: compactUi
+                    ? MaterialTapTargetSize.shrinkWrap
+                    : MaterialTapTargetSize.padded,
                 onSelected: (value) => custom(() => controller.danmakuShowStroke.v = value),
               ),
               FilterChip(
@@ -557,7 +628,9 @@ class _StyleControls extends StatelessWidget {
                 avatar: const Icon(Icons.blur_on_rounded, size: 18),
                 label: Text(i18n('local_danmaku_shadow')),
                 visualDensity: compactUi ? VisualDensity.compact : VisualDensity.standard,
-                materialTapTargetSize: compactUi ? MaterialTapTargetSize.shrinkWrap : MaterialTapTargetSize.padded,
+                materialTapTargetSize: compactUi
+                    ? MaterialTapTargetSize.shrinkWrap
+                    : MaterialTapTargetSize.padded,
                 onSelected: (value) => custom(() => controller.danmakuShowShadow.v = value),
               ),
             ],
@@ -633,7 +706,8 @@ class _StyleControls extends StatelessWidget {
               max: 10000,
               divisions: 16,
               dense: compactUi,
-              onChanged: (value) => custom(() => controller.danmakuFixedDurationMs.v = value.round()),
+              onChanged: (value) =>
+                  custom(() => controller.danmakuFixedDurationMs.v = value.round()),
             ),
           ],
           if (showDescription) ...[
@@ -643,7 +717,12 @@ class _StyleControls extends StatelessWidget {
               children: [
                 Icon(Icons.sync_rounded, size: 16, color: theme.colorScheme.primary),
                 const SizedBox(width: 6),
-                Expanded(child: Text(i18n('local_danmaku_style_sync_desc'), style: theme.textTheme.bodySmall)),
+                Expanded(
+                  child: Text(
+                    i18n('local_danmaku_style_sync_desc'),
+                    style: theme.textTheme.bodySmall,
+                  ),
+                ),
               ],
             ),
           ],
@@ -713,14 +792,23 @@ class _StyleColorPalette extends StatelessWidget {
                   color: color,
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: isSelected ? theme.colorScheme.primary : theme.colorScheme.outlineVariant,
+                    color: isSelected
+                        ? theme.colorScheme.primary
+                        : theme.colorScheme.outlineVariant,
                     width: isSelected ? 2.5 : 1,
                   ),
                   boxShadow: isSelected
-                      ? [BoxShadow(color: theme.colorScheme.primary.withValues(alpha: .22), blurRadius: 5)]
+                      ? [
+                          BoxShadow(
+                            color: theme.colorScheme.primary.withValues(alpha: .22),
+                            blurRadius: 5,
+                          ),
+                        ]
                       : null,
                 ),
-                child: isSelected ? Icon(Icons.check_rounded, size: compact ? 16 : 19, color: foreground) : null,
+                child: isSelected
+                    ? Icon(Icons.check_rounded, size: compact ? 16 : 19, color: foreground)
+                    : null,
               ),
             );
           })

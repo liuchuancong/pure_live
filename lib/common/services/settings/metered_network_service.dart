@@ -88,7 +88,8 @@ class MeteredNetworkService extends GetxService {
   ///
   /// 此时认为是非计费网络。
   bool? _resolveMetered(List<ConnectivityResult> results) {
-    if (results.contains(ConnectivityResult.wifi) || results.contains(ConnectivityResult.ethernet)) {
+    if (results.contains(ConnectivityResult.wifi) ||
+        results.contains(ConnectivityResult.ethernet)) {
       return false;
     }
 

@@ -30,10 +30,17 @@ bool canEnterPortraitPanelFullscreen({
   required bool compatibilityLayout,
   required bool mobilePlatform,
 }) {
-  return mobilePlatform && isPortraitSource && adaptationEnabled && adaptiveHeightEnabled && !compatibilityLayout;
+  return mobilePlatform &&
+      isPortraitSource &&
+      adaptationEnabled &&
+      adaptiveHeightEnabled &&
+      !compatibilityLayout;
 }
 
-bool shouldRestorePortraitPanelFromSwipe({required double upwardDistance, required double velocity}) {
+bool shouldRestorePortraitPanelFromSwipe({
+  required double upwardDistance,
+  required double velocity,
+}) {
   return upwardDistance >= 64 || (velocity <= -850 && upwardDistance >= 24);
 }
 
@@ -108,7 +115,11 @@ class _PortraitFullscreenEntryHintState extends State<PortraitFullscreenEntryHin
                     Text(
                       i18n('portrait_fullscreen_restore_hint'),
                       key: const ValueKey('portrait-fullscreen-entry-hint'),
-                      style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ],
                 ),

@@ -2,7 +2,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:pure_live/common/models/live_message.dart';
 import 'package:pure_live/modules/live_play/controllers/danmaku_message_gate.dart';
 
-LiveMessage _message({String text = 'hello', String userId = '1', String messageId = '', DateTime? sentAt}) {
+LiveMessage _message({
+  String text = 'hello',
+  String userId = '1',
+  String messageId = '',
+  DateTime? sentAt,
+}) {
   return LiveMessage(
     type: LiveMessageType.chat,
     userName: 'viewer',
@@ -37,7 +42,10 @@ void main() {
 
     test('rejects platform backlog older than the live freshness window', () {
       final gate = DanmakuMessageGate();
-      expect(gate.accepts(_message(sentAt: now.subtract(const Duration(minutes: 2))), now: now), isFalse);
+      expect(
+        gate.accepts(_message(sentAt: now.subtract(const Duration(minutes: 2))), now: now),
+        isFalse,
+      );
     });
 
     test('bounds retained fingerprints', () {

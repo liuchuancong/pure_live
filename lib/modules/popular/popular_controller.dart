@@ -27,8 +27,14 @@ class PopularController extends GetxController with GetTickerProviderStateMixin 
       if (_isClosing) return;
       _initTabController(isFirstLoad: false);
     }, time: const Duration(milliseconds: 150));
-    _audienceModeWorker = ever(SettingsService.to.app.preferRealOnlineCounts, (_) => _scheduleAudienceRefresh());
-    _audiencePlatformsWorker = ever(SettingsService.to.app.realOnlinePlatforms, (_) => _scheduleAudienceRefresh());
+    _audienceModeWorker = ever(
+      SettingsService.to.app.preferRealOnlineCounts,
+      (_) => _scheduleAudienceRefresh(),
+    );
+    _audiencePlatformsWorker = ever(
+      SettingsService.to.app.realOnlinePlatforms,
+      (_) => _scheduleAudienceRefresh(),
+    );
   }
 
   void initControllers(List<Site> sites) {
@@ -132,7 +138,8 @@ class PopularController extends GetxController with GetTickerProviderStateMixin 
     }
 
     final oldIndex = index;
-    final oldSiteId = _isTabControllerInitialized && sites.isNotEmpty && index >= 0 && index < sites.length
+    final oldSiteId =
+        _isTabControllerInitialized && sites.isNotEmpty && index >= 0 && index < sites.length
         ? sites[index].id
         : null;
 
@@ -218,11 +225,16 @@ class PopularController extends GetxController with GetTickerProviderStateMixin 
     });
   }
 
-  void _warmNextPlatform(int currentIndex, BasePageScrollAndStateBone<LiveRoom> current, int generation) {
+  void _warmNextPlatform(
+    int currentIndex,
+    BasePageScrollAndStateBone<LiveRoom> current,
+    int generation,
+  ) {
     if (_isClosing || generation != _generation) return;
     if (currentIndex != index || sites.length < 2) return;
 
-    if (current.scrollController.hasClients && current.scrollController.position.isScrollingNotifier.value) {
+    if (current.scrollController.hasClients &&
+        current.scrollController.position.isScrollingNotifier.value) {
       _adjacentWarmTimer?.cancel();
       _adjacentWarmTimer = Timer(const Duration(milliseconds: 450), () {
         if (_isClosing || generation != _generation) return;

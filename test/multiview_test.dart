@@ -204,7 +204,9 @@ class _Harness {
   Future<MultiviewStreamSource> _resolver(LiveRoom room, {required bool preferLowest}) async {
     final id = room.roomId!;
     if (resolvedOfflineRooms.contains(id)) {
-      throw MultiviewRoomOffline(room.copyWith(status: false, liveStatus: LiveStatus.offline, isRecord: false));
+      throw MultiviewRoomOffline(
+        room.copyWith(status: false, liveStatus: LiveStatus.offline, isRecord: false),
+      );
     }
     if (resolveFailures.contains(id)) {
       throw StateError('resolver boom for $id');
@@ -235,8 +237,15 @@ class _Harness {
         if (loadGate != null) {
           await loadGate.future;
         }
-        final nextLines = ['https://stream/$id/${quality.quality}', 'https://stream/$id/${quality.quality}?line=1'];
-        return MultiviewStreamSource(url: nextLines[0], headers: const {'user-agent': 'test'}, lines: nextLines);
+        final nextLines = [
+          'https://stream/$id/${quality.quality}',
+          'https://stream/$id/${quality.quality}?line=1',
+        ];
+        return MultiviewStreamSource(
+          url: nextLines[0],
+          headers: const {'user-agent': 'test'},
+          lines: nextLines,
+        );
       },
       lines: lines,
     );

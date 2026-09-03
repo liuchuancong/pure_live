@@ -62,7 +62,7 @@ class IptvSyncEngine {
       }
       return success;
     } catch (e) {
-      debugPrint("❌ IPTV Sync Process Error (Network or IO Fails): $e");
+      debugPrint('❌ IPTV Sync Process Error (Network or IO Fails): $e');
       if (tempFile != null && await tempFile.exists()) {
         await tempFile.delete();
       }
@@ -77,7 +77,9 @@ class IptvSyncEngine {
       final dir = await AppPathManager().getDir(AppPathManager.dirIptvCache);
 
       final List<database.Provider> existingProviders = await db.getAllProviders();
-      final matchedItems = existingProviders.where((p) => p.name.trim().toLowerCase() == cleanName).toList();
+      final matchedItems = existingProviders
+          .where((p) => p.name.trim().toLowerCase() == cleanName)
+          .toList();
 
       if (matchedItems.isNotEmpty) {
         for (final item in matchedItems) {
@@ -93,7 +95,7 @@ class IptvSyncEngine {
       }
       return true;
     } catch (e) {
-      debugPrint("Delete playlists by name crashed: $e");
+      debugPrint('Delete playlists by name crashed: $e');
       return false;
     }
   }

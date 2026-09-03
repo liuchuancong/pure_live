@@ -5,7 +5,8 @@ import 'package:pure_live/player/utils/player_consts.dart';
 import 'package:pure_live/player/core/portrait_stream_support.dart';
 
 @visibleForTesting
-String defaultVideoPlayerKeyForPlatform(TargetPlatform platform) => platform == TargetPlatform.iOS ? 'ijk' : 'mpv';
+String defaultVideoPlayerKeyForPlatform(TargetPlatform platform) =>
+    platform == TargetPlatform.iOS ? 'ijk' : 'mpv';
 
 String get _defaultVideoPlayerKey => defaultVideoPlayerKeyForPlatform(defaultTargetPlatform);
 
@@ -18,7 +19,10 @@ class PlayerSettingsController extends GetxController {
 
   final RxString preferResolution = hiveString('preferResolution', PlayerConsts.resolutions.first);
 
-  final RxString preferResolutionCellular = hiveString('preferResolutionCellular', PlayerConsts.resolutions.first);
+  final RxString preferResolutionCellular = hiveString(
+    'preferResolutionCellular',
+    PlayerConsts.resolutions.first,
+  );
 
   final RxBool enableCodec = hiveBool('enableCodec', true);
 
@@ -54,7 +58,10 @@ class PlayerSettingsController extends GetxController {
   // Portrait live settings
   // ---------------------------------------------------------------------------
 
-  final RxString portraitLayoutModeName = hiveString('portraitLayoutMode', PortraitLayoutMode.balanced.name);
+  final RxString portraitLayoutModeName = hiveString(
+    'portraitLayoutMode',
+    PortraitLayoutMode.balanced.name,
+  );
 
   PortraitLayoutMode get portraitLayoutMode =>
       _enumByName(PortraitLayoutMode.values, portraitLayoutModeName.v, PortraitLayoutMode.balanced);
@@ -67,10 +74,16 @@ class PlayerSettingsController extends GetxController {
     portraitLayoutModeName.v = PortraitLayoutMode.balanced.name;
   }
 
-  final RxString portraitDanmakuModeName = hiveString('portraitDanmakuMode', PortraitDanmakuMode.followGlobal.name);
+  final RxString portraitDanmakuModeName = hiveString(
+    'portraitDanmakuMode',
+    PortraitDanmakuMode.followGlobal.name,
+  );
 
-  PortraitDanmakuMode get portraitDanmakuMode =>
-      _enumByName(PortraitDanmakuMode.values, portraitDanmakuModeName.v, PortraitDanmakuMode.followGlobal);
+  PortraitDanmakuMode get portraitDanmakuMode => _enumByName(
+    PortraitDanmakuMode.values,
+    portraitDanmakuModeName.v,
+    PortraitDanmakuMode.followGlobal,
+  );
 
   void changePortraitDanmakuMode(PortraitDanmakuMode mode) {
     portraitDanmakuModeName.v = mode.name;
@@ -85,8 +98,11 @@ class PlayerSettingsController extends GetxController {
     PortraitVideoHeightMode.adaptive.name,
   );
 
-  PortraitVideoHeightMode get portraitVideoHeightMode =>
-      _enumByName(PortraitVideoHeightMode.values, portraitVideoHeightModeName.v, PortraitVideoHeightMode.adaptive);
+  PortraitVideoHeightMode get portraitVideoHeightMode => _enumByName(
+    PortraitVideoHeightMode.values,
+    portraitVideoHeightModeName.v,
+    PortraitVideoHeightMode.adaptive,
+  );
 
   void changePortraitVideoHeightMode(PortraitVideoHeightMode mode) {
     portraitVideoHeightModeName.v = mode.name;
@@ -256,7 +272,8 @@ class PlayerSettingsController extends GetxController {
 
       'preferResolution': player['preferResolution'] ?? PlayerConsts.resolutions.first,
 
-      'preferResolutionCellular': player['preferResolutionCellular'] ?? PlayerConsts.resolutions.first,
+      'preferResolutionCellular':
+          player['preferResolutionCellular'] ?? PlayerConsts.resolutions.first,
 
       'enableCodec': player['enableCodec'] ?? true,
 
@@ -316,7 +333,10 @@ class PlayerSettingsController extends GetxController {
   // Config merge
   // ---------------------------------------------------------------------------
 
-  static Map<String, dynamic> mergeConfig(Map<String, dynamic> rootConfig, Map<String, dynamic> updateFields) {
+  static Map<String, dynamic> mergeConfig(
+    Map<String, dynamic> rootConfig,
+    Map<String, dynamic> updateFields,
+  ) {
     final player = Map<String, dynamic>.from(rootConfig['player'] ?? {});
 
     updateFields.forEach((key, value) {

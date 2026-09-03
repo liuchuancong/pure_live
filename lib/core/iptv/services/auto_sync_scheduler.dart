@@ -33,7 +33,7 @@ class AutoSyncScheduler {
         await EpgSyncEngine.instance.updateEpgCache(epg, forceUpdate: true, showTips: false);
       }
     } catch (e) {
-      log("Auto sync background task working failed: $e");
+      log('Auto sync background task working failed: $e');
     }
   }
 

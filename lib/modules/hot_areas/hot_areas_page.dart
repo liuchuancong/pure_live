@@ -43,7 +43,10 @@ class HotAreasPage extends GetView<HotAreasController> {
                     color: Colors.transparent,
                     child: ListTile(
                       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-                      title: Text(item.name, style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600)),
+                      title: Text(
+                        item.name,
+                        style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600),
+                      ),
                       leading: Image.asset(item.logo, width: 24, height: 24),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -56,8 +59,8 @@ class HotAreasPage extends GetView<HotAreasController> {
                           const SizedBox(width: 8),
                           ReorderableDragStartListener(
                             index: index,
-                            child: Padding(
-                              padding: const EdgeInsets.all(4.0),
+                            child: const Padding(
+                              padding: EdgeInsets.all(4.0),
                               child: Icon(RemixIcons.sort_asc, size: 20),
                             ),
                           ),
@@ -85,7 +88,11 @@ class HotAreasPage extends GetView<HotAreasController> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Remix.information_line, size: 18, color: theme.colorScheme.primary.withValues(alpha: 0.8)),
+          Icon(
+            Remix.information_line,
+            size: 18,
+            color: theme.colorScheme.primary.withValues(alpha: 0.8),
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Text(

@@ -1,4 +1,5 @@
 import 'dart:developer' as dev;
+
 import 'package:pure_live/get/get.dart';
 import 'package:pure_live/core/site/huya/huya_site.dart';
 import 'package:pure_live/common/global/win_auto_start.dart';
@@ -24,13 +25,13 @@ class StartupController extends GetxController {
 
       if (enableStartUp.v && !isEnabled) {
         final result = WindowsAutoStart.enable();
-        dev.log("Enable startup result: $result");
+        dev.log('Enable startup result: $result');
       } else if (!enableStartUp.v && isEnabled) {
         final result = WindowsAutoStart.disable();
-        dev.log("Disable startup result: $result");
+        dev.log('Disable startup result: $result');
       }
     } catch (e) {
-      dev.log("Auto-start error: $e");
+      dev.log('Auto-start error: $e');
     }
   }
 
@@ -59,7 +60,10 @@ class StartupController extends GetxController {
     return {'enableStartUp': startup['enableStartUp'] ?? true};
   }
 
-  static Map<String, dynamic> mergeConfig(Map<String, dynamic> rootConfig, Map<String, dynamic> updateFields) {
+  static Map<String, dynamic> mergeConfig(
+    Map<String, dynamic> rootConfig,
+    Map<String, dynamic> updateFields,
+  ) {
     final startup = Map<String, dynamic>.from(rootConfig['startup'] ?? {});
     updateFields.forEach((k, v) => startup[k] = v);
     rootConfig['startup'] = startup;

@@ -1,4 +1,5 @@
 import 'dart:developer';
+
 import 'package:pure_live/get/get.dart' hide Value;
 import 'package:pure_live/plugins/db_service.dart';
 import 'package:pure_live/core/iptv/models/channel.dart' as models;
@@ -26,7 +27,7 @@ class IptvRepository extends GetxService {
         );
       }).toList();
     } catch (e) {
-      log("Repository getChannels Execution Error: $e");
+      log('Repository getChannels Execution Error: $e');
       return [];
     }
   }

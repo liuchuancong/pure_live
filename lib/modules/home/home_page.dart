@@ -24,7 +24,8 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin, WidgetsBindingObserver {
+class _HomePageState extends State<HomePage>
+    with AutomaticKeepAliveClientMixin, WidgetsBindingObserver {
   Timer? _debounceTimer;
   Timer? _resumeRefreshTimer;
   Timer? _updateCheckTimer;
@@ -131,7 +132,10 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin,
     }
     final backgroundedAt = _backgroundedAt;
     _backgroundedAt = null;
-    if (backgroundedAt == null || DateTime.now().difference(backgroundedAt) < const Duration(seconds: 15)) return;
+    if (backgroundedAt == null ||
+        DateTime.now().difference(backgroundedAt) < const Duration(seconds: 15)) {
+      return;
+    }
 
     if (_selectedIndex < 0 || _selectedIndex >= HomeMenu.values.length) return;
     final menu = HomeMenu.values[_selectedIndex];
@@ -195,7 +199,8 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin,
     );
     await VersionUtil.initPackageInfo();
     await VersionUtil().checkUpdate();
-    bool isHasNerVersion = SettingsService.to.app.enableAutoCheckUpdate.v && VersionUtil.hasNewVersion();
+    bool isHasNerVersion =
+        SettingsService.to.app.enableAutoCheckUpdate.v && VersionUtil.hasNewVersion();
     if (mounted) {
       if (overlay != null && isHasNerVersion) {
         WidgetsBinding.instance.addPostFrameCallback((_) => overlay.insert(entry));

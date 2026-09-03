@@ -59,33 +59,33 @@ class HuyaDanmaku implements LiveDanmaku {
   String serverUrl = 'wss://cdnws.api.huya.com:443';
 
   String defaultCookie =
-      "__yamid_new=CB839821F9D0000153B312C11F40C3A0; "
-      "game_did=c2NmeJsovdYnQ--7ekVF9JDx9YgQBaX9Xb4; "
-      "SoundValue=0.50; "
-      "guid=0a7d4b0826af6c69380199dc9adc6b50; "
-      "__yamid_tt1=0.6713380860053619; "
-      "alphaValue=0.80; "
-      "_qimei_fingerprint=f573835586d8fec5ce3c6cc8a9ae286e; "
-      "guid=0a7d4b0826af6c69380199dc9adc6b50; "
-      "udb_guiddata=1a85f8398bc4400eb85f02564f4f321f; "
-      "udb_appid=5002; "
-      "udb_deviceid=w_1143239981674745856; "
-      "isInLiveRoom=true; "
-      "__yasmid=0.6713380860053619; "
-      "_yasids=__rootsid%3DCBC935D812800001D2591C504BA0A320; "
-      "udb_passdata=3; "
-      "rep_cnt=38; "
-      "_rep_cnt=3; "
-      "sdid=csid_beac615f0cf34135b6ea6e1530a0853f; "
-      "huya_flash_rep_cnt=60; "
-      "huya_web_rep_cnt=214; "
-      "huya_ua=webh5&0.1.0&websocket";
+      '__yamid_new=CB839821F9D0000153B312C11F40C3A0; '
+      'game_did=c2NmeJsovdYnQ--7ekVF9JDx9YgQBaX9Xb4; '
+      'SoundValue=0.50; '
+      'guid=0a7d4b0826af6c69380199dc9adc6b50; '
+      '__yamid_tt1=0.6713380860053619; '
+      'alphaValue=0.80; '
+      '_qimei_fingerprint=f573835586d8fec5ce3c6cc8a9ae286e; '
+      'guid=0a7d4b0826af6c69380199dc9adc6b50; '
+      'udb_guiddata=1a85f8398bc4400eb85f02564f4f321f; '
+      'udb_appid=5002; '
+      'udb_deviceid=w_1143239981674745856; '
+      'isInLiveRoom=true; '
+      '__yasmid=0.6713380860053619; '
+      '_yasids=__rootsid%3DCBC935D812800001D2591C504BA0A320; '
+      'udb_passdata=3; '
+      'rep_cnt=38; '
+      '_rep_cnt=3; '
+      'sdid=csid_beac615f0cf34135b6ea6e1530a0853f; '
+      'huya_flash_rep_cnt=60; '
+      'huya_web_rep_cnt=214; '
+      'huya_ua=webh5&0.1.0&websocket';
 
   String get cookie => SettingsService.to.cookieManager.huyaCookie.value.isNotEmpty
       ? SettingsService.to.cookieManager.huyaCookie.value
       : defaultCookie;
 
-  String device = "chrome";
+  String device = 'chrome';
 
   WebScoketUtils? webScoketUtils;
 

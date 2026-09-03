@@ -26,11 +26,17 @@ class WindowPipGeometry {
   }
 
   bool get hasValidBounds {
-    return windowsPipWidth.v > 0 && windowsPipHeight.v > 0 && windowsPipX.v.isFinite && windowsPipY.v.isFinite;
+    return windowsPipWidth.v > 0 &&
+        windowsPipHeight.v > 0 &&
+        windowsPipX.v.isFinite &&
+        windowsPipY.v.isFinite;
   }
 
   bool get portraitHasValidBounds {
-    return portraitWidth.v > 0 && portraitHeight.v > 0 && portraitX.v.isFinite && portraitY.v.isFinite;
+    return portraitWidth.v > 0 &&
+        portraitHeight.v > 0 &&
+        portraitX.v.isFinite &&
+        portraitY.v.isFinite;
   }
 
   Size get size => Size(windowsPipWidth.v, windowsPipHeight.v);
@@ -203,7 +209,8 @@ class WindowSizeController extends GetxController {
     return {
       'storedWidth': (windowSize['storedWidth'] ?? 1280.0).toDouble(),
       'storedHeight': (windowSize['storedHeight'] ?? 720.0).toDouble(),
-      'rememberPipPosition': windowSize['rememberPipPosition'] ?? player['rememberPipPosition'] ?? true,
+      'rememberPipPosition':
+          windowSize['rememberPipPosition'] ?? player['rememberPipPosition'] ?? true,
       'windowsPip': pip,
       'windowsPipDisplayId': pip['displayId'],
       'windowsPipWidth': pip['windowsPipWidth'],
@@ -218,7 +225,10 @@ class WindowSizeController extends GetxController {
     };
   }
 
-  static Map<String, dynamic> mergeConfig(Map<String, dynamic> rootConfig, Map<String, dynamic> updateFields) {
+  static Map<String, dynamic> mergeConfig(
+    Map<String, dynamic> rootConfig,
+    Map<String, dynamic> updateFields,
+  ) {
     final windowSize = Map<String, dynamic>.from(rootConfig['windowSize'] ?? {});
 
     updateFields.forEach((key, value) {
@@ -283,7 +293,8 @@ class WindowSizeController extends GetxController {
       'windowsPipHeight': number('windowsPipHeight'),
       'windowsPipX': number('windowsPipX'),
       'windowsPipY': number('windowsPipY'),
-      'portraitDisplayId': (pip['portraitDisplayId'] ?? windowSize['windowsPipPortraitDisplayId'] ?? '').toString(),
+      'portraitDisplayId':
+          (pip['portraitDisplayId'] ?? windowSize['windowsPipPortraitDisplayId'] ?? '').toString(),
       'portraitWidth': number('portraitWidth'),
       'portraitHeight': number('portraitHeight'),
       'portraitX': number('portraitX'),

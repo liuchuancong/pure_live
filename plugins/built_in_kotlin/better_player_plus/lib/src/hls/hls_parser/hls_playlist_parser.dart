@@ -88,7 +88,8 @@ class HlsPlaylistParser {
   static const String regexpKeyFormatVersions = 'KEYFORMATVERSIONS="(.+?)"';
   static const String regexpUri = 'URI="(.+?)"';
   static const String regexpIv = 'IV=([^,.*]+)';
-  static const String regexpType = 'TYPE=($typeAudio|$typeVideo|$typeSubtitles|$typeClosedCaptions)';
+  static const String regexpType =
+      'TYPE=($typeAudio|$typeVideo|$typeSubtitles|$typeClosedCaptions)';
   static const String regexpLanguage = 'LANGUAGE="(.+?)"';
   static const String regexpName = 'NAME="(.+?)"';
   static const String regexpGroupId = 'GROUP-ID="(.+?)"';
@@ -111,9 +112,7 @@ class HlsPlaylistParser {
   }
 
   Future<HlsPlaylist> parse(Uri? uri, List<String> inputLineList) async {
-    final List<String> lineList = inputLineList
-        .where((line) => line.trim().isNotEmpty)
-        .toList();
+    final List<String> lineList = inputLineList.where((line) => line.trim().isNotEmpty).toList();
 
     if (!_checkPlaylistHeader(lineList[0])) {
       throw UnrecognizedInputFormatException('Input does not start with the #EXTM3U header.', uri);
@@ -146,7 +145,8 @@ class HlsPlaylistParser {
         : _parseMediaPlaylist(masterPlaylist, extraLines, uri.toString());
   }
 
-  static String _compileBooleanAttrPattern(String attribute) => '$attribute=($booleanFalse|$booleanTrue)';
+  static String _compileBooleanAttrPattern(String attribute) =>
+      '$attribute=($booleanFalse|$booleanTrue)';
 
   static bool _checkPlaylistHeader(String string) {
     List<int> codeUnits = LibUtil.excludeWhiteSpace(string).codeUnits;
@@ -227,10 +227,7 @@ class HlsPlaylistParser {
             variableDefinitions: variableDefinitions,
           );
           final String scheme = _parseEncryptionScheme(method);
-          final DrmInitData drmInitData = DrmInitData(
-            schemeType: scheme,
-            schemeData: [schemeData],
-          );
+          final DrmInitData drmInitData = DrmInitData(schemeType: scheme, schemeData: [schemeData]);
           sessionKeyDrmInitData.add(drmInitData);
         }
       } else if (line.startsWith(tagStreamInf)) {
@@ -398,7 +395,11 @@ class HlsPlaylistParser {
       );
       final Metadata metadata = Metadata([entry]);
 
-      switch (_parseStringAttr(source: line, pattern: regexpType, variableDefinitions: variableDefinitions)) {
+      switch (_parseStringAttr(
+        source: line,
+        pattern: regexpType,
+        variableDefinitions: variableDefinitions,
+      )) {
         case typeVideo:
           {
             final Variant? variant = variants.firstWhereOrNull((it) => it.videoGroupId == groupId);
@@ -413,7 +414,9 @@ class HlsPlaylistParser {
               height = variantFormat.height;
               frameRate = variantFormat.frameRate;
             }
-            final String? sampleMimeType = codecs != null ? MimeTypes.getMediaMimeType(codecs) : null;
+            final String? sampleMimeType = codecs != null
+                ? MimeTypes.getMediaMimeType(codecs)
+                : null;
 
             format = Format.createVideoContainerFormat(
               id: formatId,
@@ -438,7 +441,9 @@ class HlsPlaylistParser {
                 ? LibUtil.getCodecsOfType(variant.format.codecs, Util.trackTypeAudio)
                 : null;
             final int? channelCount = _parseChannelsAttribute(line, variableDefinitions);
-            final String? sampleMimeType = codecs != null ? MimeTypes.getMediaMimeType(codecs) : null;
+            final String? sampleMimeType = codecs != null
+                ? MimeTypes.getMediaMimeType(codecs)
+                : null;
             final Format format = Format(
               id: formatId,
               label: name,
@@ -451,7 +456,14 @@ class HlsPlaylistParser {
               language: language,
             );
 
-            audios.add(Rendition(url: uri, format: format.copyWithMetadata(metadata), groupId: groupId, name: name));
+            audios.add(
+              Rendition(
+                url: uri,
+                format: format.copyWithMetadata(metadata),
+                groupId: groupId,
+                name: name,
+              ),
+            );
 
             break;
           }
@@ -541,7 +553,8 @@ class HlsPlaylistParser {
 
     return value?.replaceAllMapped(
       RegExp(regexpVariableReference),
-      (Match match) => variableDefinitions![match.group(1)] ??= value!.substring(match.start, match.end),
+      (Match match) =>
+          variableDefinitions![match.group(1)] ??= value!.substring(match.start, match.end),
     );
   }
 
@@ -611,7 +624,9 @@ class HlsPlaylistParser {
   }) {
     final regExp = RegExp(pattern);
     final List<Match> list = regExp.allMatches(line).toList();
-    final ret = list.isEmpty ? defaultValue : line.substring(list.first.start, list.first.end).contains(booleanTrue);
+    final ret = list.isEmpty
+        ? defaultValue
+        : line.substring(list.first.start, list.first.end).contains(booleanTrue);
     return ret;
   }
 
@@ -765,7 +780,8 @@ class HlsPlaylistParser {
         segmentByteRangeOffset = null;
         segmentByteRangeLength = null;
       } else if (line.startsWith(tagTargetDuration)) {
-        targetDurationUs = int.parse(_parseStringAttr(source: line, pattern: regexpTargetDuration)!) * 1000000;
+        targetDurationUs =
+            int.parse(_parseStringAttr(source: line, pattern: regexpTargetDuration)!) * 1000000;
       } else if (line.startsWith(tagMediaSequence)) {
         mediaSequence = int.parse(_parseStringAttr(source: line, pattern: regexpMediaSequence)!);
         segmentMediaSequence = mediaSequence;
@@ -874,7 +890,9 @@ class HlsPlaylistParser {
         relativeDiscontinuitySequence++;
       } else if (line.startsWith(tagProgramDateTime)) {
         if (playlistStartTimeUs == null) {
-          final int programDatetimeUs = LibUtil.parseXsDateTime(line.substring(line.indexOf(':') + 1));
+          final int programDatetimeUs = LibUtil.parseXsDateTime(
+            line.substring(line.indexOf(':') + 1),
+          );
           playlistStartTimeUs = programDatetimeUs - (segmentStartTimeUs ?? 0);
         }
       } else if (line == tagGap) {
@@ -902,12 +920,20 @@ class HlsPlaylistParser {
           final List<SchemeData> schemeDatas = currentSchemeDatas.values.toList();
           cachedDrmInitData = DrmInitData(schemeType: encryptionScheme, schemeData: schemeDatas);
           if (playlistProtectionSchemes == null) {
-            final List<SchemeData> playlistSchemeDatas = schemeDatas.map((it) => it.copyWithData(null)).toList();
-            playlistProtectionSchemes = DrmInitData(schemeType: encryptionScheme, schemeData: playlistSchemeDatas);
+            final List<SchemeData> playlistSchemeDatas = schemeDatas
+                .map((it) => it.copyWithData(null))
+                .toList();
+            playlistProtectionSchemes = DrmInitData(
+              schemeType: encryptionScheme,
+              schemeData: playlistSchemeDatas,
+            );
           }
         }
 
-        final String? url = _parseStringAttr(source: line, variableDefinitions: variableDefinitions);
+        final String? url = _parseStringAttr(
+          source: line,
+          variableDefinitions: variableDefinitions,
+        );
         segments.add(
           Segment(
             url: url,

@@ -1,7 +1,12 @@
 import 'dart:ui';
 
 class SpriteSheet {
-  const SpriteSheet({required this.imageWidth, required this.imageHeight, required this.rows, required this.columns});
+  const SpriteSheet({
+    required this.imageWidth,
+    required this.imageHeight,
+    required this.rows,
+    required this.columns,
+  });
 
   final double imageWidth;
   final double imageHeight;

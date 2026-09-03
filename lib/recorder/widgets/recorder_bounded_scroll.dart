@@ -116,7 +116,9 @@ class _RecorderBoundedTaskListState extends State<RecorderBoundedTaskList> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !_controller.hasClients) return;
       final position = _controller.position;
-      final bounded = position.pixels.clamp(position.minScrollExtent, position.maxScrollExtent).toDouble();
+      final bounded = position.pixels
+          .clamp(position.minScrollExtent, position.maxScrollExtent)
+          .toDouble();
       if ((bounded - position.pixels).abs() > 0.01) _controller.jumpTo(bounded);
     });
   }
@@ -157,5 +159,6 @@ class _RecorderScrollBehavior extends MaterialScrollBehavior {
   ScrollPhysics getScrollPhysics(BuildContext context) => const PureLiveBoundedScrollPhysics();
 
   @override
-  Widget buildOverscrollIndicator(BuildContext context, Widget child, ScrollableDetails details) => child;
+  Widget buildOverscrollIndicator(BuildContext context, Widget child, ScrollableDetails details) =>
+      child;
 }

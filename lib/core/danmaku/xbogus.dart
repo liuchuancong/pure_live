@@ -1,19 +1,17 @@
 import 'dart:math';
+
 import 'package:crypto/crypto.dart';
 
-const String xbogusAlphabet =
-    'Dkdpgh4ZKsQB80/Mfvw36XI1R25+WUAlEi7NLboqYTOPuzmFjJnryx9HVGcaStCe';
+const String xbogusAlphabet = 'Dkdpgh4ZKsQB80/Mfvw36XI1R25+WUAlEi7NLboqYTOPuzmFjJnryx9HVGcaStCe';
 
-const String standardAlphabet =
-    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+const String standardAlphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 
 const List<int> emptyMd5Bytes = [0x45, 0x3f];
 
 final List<int> alphabetLookup = (() {
   final table = List<int>.filled(128, 0);
   for (int i = 0; i < 64; i++) {
-    table[standardAlphabet.codeUnitAt(i)] =
-        xbogusAlphabet.codeUnitAt(i);
+    table[standardAlphabet.codeUnitAt(i)] = xbogusAlphabet.codeUnitAt(i);
   }
   return table;
 })();
@@ -55,17 +53,13 @@ String encodeBase64(List<int> data) {
     final b1 = data[i + 1];
     final b2 = data[i + 2];
 
-    out.writeCharCode(
-        alphabetLookup[standardAlphabet.codeUnitAt((b0 >> 2) & 0x3f)]);
+    out.writeCharCode(alphabetLookup[standardAlphabet.codeUnitAt((b0 >> 2) & 0x3f)]);
 
-    out.writeCharCode(
-        alphabetLookup[standardAlphabet.codeUnitAt(((b0 << 4) | (b1 >> 4)) & 0x3f)]);
+    out.writeCharCode(alphabetLookup[standardAlphabet.codeUnitAt(((b0 << 4) | (b1 >> 4)) & 0x3f)]);
 
-    out.writeCharCode(
-        alphabetLookup[standardAlphabet.codeUnitAt(((b1 << 2) | (b2 >> 6)) & 0x3f)]);
+    out.writeCharCode(alphabetLookup[standardAlphabet.codeUnitAt(((b1 << 2) | (b2 >> 6)) & 0x3f)]);
 
-    out.writeCharCode(
-        alphabetLookup[standardAlphabet.codeUnitAt(b2 & 0x3f)]);
+    out.writeCharCode(alphabetLookup[standardAlphabet.codeUnitAt(b2 & 0x3f)]);
   }
 
   return out.toString();
@@ -77,10 +71,7 @@ int hexByte(String hex) {
 
 /// md5(decode(hexString)) 最后两个字节
 List<int> md5Last2(String hexStr) {
-  final bytes = List<int>.generate(
-    16,
-        (i) => hexByte(hexStr.substring(i * 2, i * 2 + 2)),
-  );
+  final bytes = List<int>.generate(16, (i) => hexByte(hexStr.substring(i * 2, i * 2 + 2)));
 
   final digest = md5.convert(bytes).bytes;
 
@@ -88,10 +79,7 @@ List<int> md5Last2(String hexStr) {
 }
 
 /// 生成 X-Bogus
-String generateXBogus(
-    String msStub,
-    int counter,
-    ) {
+String generateXBogus(String msStub, int counter) {
   if (msStub.length != 32) {
     throw ArgumentError('msStub must be 32-char md5 hex string');
   }

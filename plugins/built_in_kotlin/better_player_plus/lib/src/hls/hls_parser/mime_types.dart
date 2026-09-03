@@ -136,7 +136,10 @@ class MimeTypes {
       return MimeTypes.videoH265;
     }
 
-    if (codec.startsWith('dvav') || codec.startsWith('dva1') || codec.startsWith('dvhe') || codec.startsWith('dvh1')) {
+    if (codec.startsWith('dvav') ||
+        codec.startsWith('dva1') ||
+        codec.startsWith('dvhe') ||
+        codec.startsWith('dvh1')) {
       return MimeTypes.videoDolbyVision;
     }
 
@@ -236,7 +239,9 @@ class MimeTypes {
         applicationPgs == mimeType ||
         applicationDvbsubs == mimeType) {
       return Util.trackTypeText;
-    } else if ((applicationId3 == mimeType) || (applicationEmsg == mimeType) || (applicationScte35 == mimeType)) {
+    } else if ((applicationId3 == mimeType) ||
+        (applicationEmsg == mimeType) ||
+        (applicationScte35 == mimeType)) {
       return Util.trackTypeMetadata;
     } else if (applicationCameraMotion == mimeType) {
       return Util.trackTypeCameraMotion;

@@ -27,12 +27,20 @@ class FontModel {
   }
 
   Map<String, dynamic> toJson() {
-    return {'id': id, 'name': name, 'files': files, 'desc': desc, 'official': official, 'license': license};
+    return {
+      'id': id,
+      'name': name,
+      'files': files,
+      'desc': desc,
+      'official': official,
+      'license': license,
+    };
   }
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) || other is FontModel && runtimeType == other.runtimeType && id == other.id;
+      identical(this, other) ||
+      other is FontModel && runtimeType == other.runtimeType && id == other.id;
 
   @override
   int get hashCode => id.hashCode;

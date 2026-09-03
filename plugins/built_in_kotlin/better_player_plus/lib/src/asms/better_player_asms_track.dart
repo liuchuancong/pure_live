@@ -13,7 +13,8 @@ class BetterPlayerAsmsTrack {
     this.mimeType,
   );
 
-  factory BetterPlayerAsmsTrack.defaultTrack() => const BetterPlayerAsmsTrack('', 0, 0, 0, 0, '', '');
+  factory BetterPlayerAsmsTrack.defaultTrack() =>
+      const BetterPlayerAsmsTrack('', 0, 0, 0, 0, '', '');
 
   ///Id of the track
   final String? id;

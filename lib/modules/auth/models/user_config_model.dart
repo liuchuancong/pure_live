@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class UserFullModel {
@@ -8,7 +9,13 @@ class UserFullModel {
   final String? version;
   final UserConfigModel? config;
 
-  UserFullModel({required this.email, required this.createdAt, this.updateAt, this.version, this.config});
+  UserFullModel({
+    required this.email,
+    required this.createdAt,
+    this.updateAt,
+    this.version,
+    this.config,
+  });
 
   factory UserFullModel.fromFirestore(Map<String, dynamic> data) {
     UserConfigModel? parsedConfig;

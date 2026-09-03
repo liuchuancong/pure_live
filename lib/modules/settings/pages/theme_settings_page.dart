@@ -17,23 +17,23 @@ class ThemeSettingsPage extends GetView<SettingsService> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: Text(i18n("theme_customization"))),
+      appBar: AppBar(title: Text(i18n('theme_customization'))),
       body: ListView(
         physics: const PureLiveScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
-          context.buildGroupTitle(i18n("theme_customization")),
+          context.buildGroupTitle(i18n('theme_customization')),
           context.buildModernCard([
             context.buildTile(
               icon: Remix.moon_clear_line,
-              title: i18n("change_theme_mode"),
-              subtitle: i18n("change_theme_mode_subtitle"),
+              title: i18n('change_theme_mode'),
+              subtitle: i18n('change_theme_mode_subtitle'),
               onTap: showThemeModeSelectorDialog,
             ),
             context.buildTile(
               icon: Remix.palette_line,
-              title: i18n("change_theme_color"),
-              subtitle: i18n("change_theme_color_subtitle"),
+              title: i18n('change_theme_color'),
+              subtitle: i18n('change_theme_color_subtitle'),
               onTap: colorPickerDialog,
               trailing: Obx(
                 () => ColorIndicator(
@@ -46,8 +46,8 @@ class ThemeSettingsPage extends GetView<SettingsService> {
               ),
             ),
             context.buildSwitchTile(
-              title: i18n("enable_dynamic_color"),
-              subtitle: i18n("enable_dynamic_color_subtitle"),
+              title: i18n('enable_dynamic_color'),
+              subtitle: i18n('enable_dynamic_color_subtitle'),
               value: SettingsService.to.theme.enableDynamicTheme,
               icon: Remix.magic_line,
             ),
@@ -63,8 +63,8 @@ class ThemeSettingsPage extends GetView<SettingsService> {
                     isMini: true,
                   ),
                 ),
-                title: i18n("change_loading_style"),
-                subtitle: i18n("change_loading_style_subtitle"),
+                title: i18n('change_loading_style'),
+                subtitle: i18n('change_loading_style_subtitle'),
                 onTap: () => Get.to(() => const LoadingStyleSettingsPage()),
                 trailing: Obx(() {
                   final String currentKey = SettingsService.to.theme.loadingStyle.v;
@@ -84,40 +84,42 @@ class ThemeSettingsPage extends GetView<SettingsService> {
             ),
           ]),
           const SizedBox(height: 20),
-          context.buildGroupTitle(i18n("room_card_settings")),
+          context.buildGroupTitle(i18n('room_card_settings')),
           context.buildModernCard([
             context.buildTile(
               icon: Remix.layout_grid_line,
-              title: i18n("room_card_settings"),
-              subtitle: i18n("room_card_settings_subtitle"),
+              title: i18n('room_card_settings'),
+              subtitle: i18n('room_card_settings_subtitle'),
               trailing: const Icon(Icons.chevron_right_rounded),
               onTap: () => Get.to(() => const RoomCardSettingsPage()),
             ),
           ]),
           const SizedBox(height: 20),
-          context.buildGroupTitle(i18n("grid_spacing_settings")),
+          context.buildGroupTitle(i18n('grid_spacing_settings')),
           context.buildModernCard([
             context.buildTile(
               icon: Remix.arrow_left_right_line,
-              title: i18n("cross_axis_spacing"),
-              subtitle: i18n("cross_axis_spacing_subtitle"),
+              title: i18n('cross_axis_spacing'),
+              subtitle: i18n('cross_axis_spacing_subtitle'),
               onTap: showCrossAxisSpacingDialog,
             ),
             context.buildTile(
               icon: Remix.arrow_up_down_line,
-              title: i18n("main_axis_spacing"),
-              subtitle: i18n("main_axis_spacing_subtitle"),
+              title: i18n('main_axis_spacing'),
+              subtitle: i18n('main_axis_spacing_subtitle'),
               onTap: showMainAxisSpacingDialog,
             ),
             Obx(
               () => context.buildSliderTile(
                 context,
                 icon: Remix.text_spacing,
-                title: i18n("room_card_height_threshold"),
+                title: i18n('room_card_height_threshold'),
                 value: RoomCardConfigController.to.cardHeightThreshold.value,
                 min: -100.0,
                 max: 100.0,
-                displayValue: RoomCardConfigController.to.cardHeightThreshold.value.toStringAsFixed(0),
+                displayValue: RoomCardConfigController.to.cardHeightThreshold.value.toStringAsFixed(
+                  0,
+                ),
                 onChanged: (val) {
                   RoomCardConfigController.to.cardHeightThreshold.value = val;
                 },
@@ -126,7 +128,7 @@ class ThemeSettingsPage extends GetView<SettingsService> {
           ]),
           if (Get.width > 680) ...[
             const SizedBox(height: 20),
-            context.buildGroupTitle(i18n("page_settings")),
+            context.buildGroupTitle(i18n('page_settings')),
             context.buildModernCard([
               context.buildTile(
                 icon: Remix.pages_line,
@@ -139,22 +141,22 @@ class ThemeSettingsPage extends GetView<SettingsService> {
           ],
 
           const SizedBox(height: 20),
-          context.buildGroupTitle(i18n("localization_settings")),
+          context.buildGroupTitle(i18n('localization_settings')),
           context.buildModernCard([
             context.buildTile(
               icon: Remix.global_line,
-              title: i18n("change_language"),
-              subtitle: i18n("change_language_subtitle"),
+              title: i18n('change_language'),
+              subtitle: i18n('change_language_subtitle'),
               onTap: showLanguageSelecterDialog,
             ),
           ]),
           const SizedBox(height: 20),
-          context.buildGroupTitle(i18n("font_family_settings")),
+          context.buildGroupTitle(i18n('font_family_settings')),
           context.buildModernCard([
             Obx(
               () => context.buildTile(
                 icon: Remix.font_color,
-                title: i18n("change_font_family"),
+                title: i18n('change_font_family'),
                 subtitle:
                     "${i18n("current_font_prefix")}: ${SettingsService.to.font.fontFamilyFileName.v.isNotEmpty ? SettingsService.to.font.fontFamilyFileName.v : SettingsService.to.font.fontFamilyName.v}",
                 onTap: () => Get.to(() => const FontFamilyManagerPage()),
@@ -162,12 +164,12 @@ class ThemeSettingsPage extends GetView<SettingsService> {
             ),
           ]),
           const SizedBox(height: 20),
-          context.buildGroupTitle(i18n("text_size_settings")),
+          context.buildGroupTitle(i18n('text_size_settings')),
           context.buildModernCard([
             context.buildTile(
               icon: Remix.font_size,
-              title: i18n("font_settings_title"),
-              subtitle: i18n("font_settings_desc"),
+              title: i18n('font_settings_title'),
+              subtitle: i18n('font_settings_desc'),
               onTap: () => Get.to(() => const FontSettingsPage()),
             ),
             const SizedBox(height: 20),
@@ -176,7 +178,7 @@ class ThemeSettingsPage extends GetView<SettingsService> {
               () => context.buildSliderTile(
                 context,
                 icon: Remix.text_spacing,
-                title: i18n("text_size_title"),
+                title: i18n('text_size_title'),
                 value: SettingsService.to.font.textScaleFactor.v,
                 min: 0.5,
                 max: 2.0,
@@ -190,7 +192,10 @@ class ThemeSettingsPage extends GetView<SettingsService> {
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
               child: Align(
                 alignment: Alignment.center,
-                child: Text(i18n("text_size_preview"), style: TextStyle(color: theme.colorScheme.outline)),
+                child: Text(
+                  i18n('text_size_preview'),
+                  style: TextStyle(color: theme.colorScheme.outline),
+                ),
               ),
             ),
           ]),
@@ -253,9 +258,12 @@ class ThemeSettingsPage extends GetView<SettingsService> {
       spacing: 5,
       runSpacing: 5,
       wheelDiameter: 155,
-      heading: Text(i18n("theme_color"), style: Theme.of(Get.context!).textTheme.titleMedium),
-      subheading: Text(i18n("select_opacity"), style: Theme.of(Get.context!).textTheme.titleMedium),
-      wheelSubheading: Text(i18n("theme_color_opacity"), style: Theme.of(Get.context!).textTheme.titleMedium),
+      heading: Text(i18n('theme_color'), style: Theme.of(Get.context!).textTheme.titleMedium),
+      subheading: Text(i18n('select_opacity'), style: Theme.of(Get.context!).textTheme.titleMedium),
+      wheelSubheading: Text(
+        i18n('theme_color_opacity'),
+        style: Theme.of(Get.context!).textTheme.titleMedium,
+      ),
       showMaterialName: false,
       showColorName: false,
       showColorCode: true,
@@ -267,10 +275,10 @@ class ThemeSettingsPage extends GetView<SettingsService> {
       selectedPickerTypeColor: Theme.of(Get.context!).colorScheme.primary,
       customColorSwatchesAndNames: AppConsts.colorsNameMap,
       pickerTypeLabels: <ColorPickerType, String>{
-        ColorPickerType.primary: isZh ? "常用色" : "Primary",
-        ColorPickerType.accent: isZh ? "鲜艳色" : "Accent",
-        ColorPickerType.custom: isZh ? "自定义" : "Custom",
-        ColorPickerType.wheel: isZh ? "调色盘" : "Wheel",
+        ColorPickerType.primary: isZh ? '常用色' : 'Primary',
+        ColorPickerType.accent: isZh ? '鲜艳色' : 'Accent',
+        ColorPickerType.custom: isZh ? '自定义' : 'Custom',
+        ColorPickerType.wheel: isZh ? '调色盘' : 'Wheel',
       },
       pickersEnabled: const <ColorPickerType, bool>{
         ColorPickerType.both: false,
@@ -292,7 +300,7 @@ class ThemeSettingsPage extends GetView<SettingsService> {
       context: Get.context!,
       builder: (BuildContext context) {
         return SimpleDialog(
-          title: Text(i18n("change_language")),
+          title: Text(i18n('change_language')),
           children: [
             RadioGroup<String>(
               groupValue: SettingsService.to.theme.languageName.v,
@@ -311,7 +319,10 @@ class ThemeSettingsPage extends GetView<SettingsService> {
                     return Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Radio<String>(value: name, activeColor: Theme.of(context).colorScheme.primary),
+                        Radio<String>(
+                          value: name,
+                          activeColor: Theme.of(context).colorScheme.primary,
+                        ),
                         GestureDetector(
                           onTap: () async {
                             await SettingsService.to.theme.changeLanguage(name, context);
@@ -333,8 +344,8 @@ class ThemeSettingsPage extends GetView<SettingsService> {
 
   void showCrossAxisSpacingDialog() {
     showCustomSpacingDialog(
-      title: i18n("cross_axis_spacing"),
-      hintText: i18n("cross_axis_spacing_subtitle"),
+      title: i18n('cross_axis_spacing'),
+      hintText: i18n('cross_axis_spacing_subtitle'),
       currentValue: SettingsService.to.theme.crossAxisSpacing.v,
       onSelected: (value) => SettingsService.to.theme.crossAxisSpacing.v = value,
     );
@@ -342,8 +353,8 @@ class ThemeSettingsPage extends GetView<SettingsService> {
 
   void showMainAxisSpacingDialog() {
     showCustomSpacingDialog(
-      title: i18n("main_axis_spacing"),
-      hintText: i18n("main_axis_spacing_subtitle"),
+      title: i18n('main_axis_spacing'),
+      hintText: i18n('main_axis_spacing_subtitle'),
       currentValue: SettingsService.to.theme.mainAxisSpacing.v,
       onSelected: (value) => SettingsService.to.theme.mainAxisSpacing.v = value,
     );
@@ -373,7 +384,10 @@ class ThemeSettingsPage extends GetView<SettingsService> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+                  Text(
+                    title,
+                    style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                  ),
                   const SizedBox(height: 16),
                   Wrap(
                     spacing: 8,
@@ -381,7 +395,7 @@ class ThemeSettingsPage extends GetView<SettingsService> {
                     children: quickOptions.map((value) {
                       final isSelected = value == selectedValue;
                       return ChoiceChip(
-                        label: Text("${value.toInt()} px"),
+                        label: Text('${value.toInt()} px'),
                         selected: isSelected,
                         showCheckmark: false,
                         side: BorderSide.none,
@@ -398,7 +412,10 @@ class ThemeSettingsPage extends GetView<SettingsService> {
                     }).toList(),
                   ),
                   const SizedBox(height: 20),
-                  Text(hintText, style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500)),
+                  Text(
+                    hintText,
+                    style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+                  ),
                   const SizedBox(height: 8),
                   TextField(
                     controller: textController,
@@ -419,7 +436,8 @@ class ThemeSettingsPage extends GetView<SettingsService> {
                                 borderRadius: const BorderRadius.only(topRight: Radius.circular(8)),
                                 onTap: () {
                                   setDialogState(() {
-                                    selectedValue = (double.tryParse(textController.text) ?? 0.0) + 1.0;
+                                    selectedValue =
+                                        (double.tryParse(textController.text) ?? 0.0) + 1.0;
                                     textController.text = selectedValue.toStringAsFixed(0);
                                   });
                                 },
@@ -430,7 +448,9 @@ class ThemeSettingsPage extends GetView<SettingsService> {
                               height: 22,
                               width: 32,
                               child: InkWell(
-                                borderRadius: const BorderRadius.only(bottomRight: Radius.circular(8)),
+                                borderRadius: const BorderRadius.only(
+                                  bottomRight: Radius.circular(8),
+                                ),
                                 onTap: () {
                                   setDialogState(() {
                                     double current = double.tryParse(textController.text) ?? 0.0;
@@ -456,14 +476,17 @@ class ThemeSettingsPage extends GetView<SettingsService> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(i18n("cancel"))),
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: Text(i18n('cancel')),
+                      ),
                       const SizedBox(width: 12),
                       ElevatedButton(
                         onPressed: () {
                           onSelected(selectedValue);
                           Navigator.of(context).pop();
                         },
-                        child: Text(i18n("confirm")),
+                        child: Text(i18n('confirm')),
                       ),
                     ],
                   ),

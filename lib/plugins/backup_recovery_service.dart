@@ -14,7 +14,7 @@ class BackupRecoveryService {
     final backup = Get.find<BackupController>();
     final granted = await FileUtils.requestStoragePermission();
     if (!granted) {
-      ToastUtil.show(i18n("grant_storage_permission_first"));
+      ToastUtil.show(i18n('grant_storage_permission_first'));
       return null;
     }
 
@@ -27,13 +27,13 @@ class BackupRecoveryService {
     final file = File('$selectedDirectory/purelive_$dateStr.txt');
 
     if (backup.backup(file)) {
-      ToastUtil.show(i18n("create_backup_success"));
+      ToastUtil.show(i18n('create_backup_success'));
       if (backup.backupDirectory.v.isEmpty) {
         backup.backupDirectory.v = selectedDirectory;
       }
       return selectedDirectory;
     } else {
-      ToastUtil.show(i18n("create_backup_failed"));
+      ToastUtil.show(i18n('create_backup_failed'));
       return null;
     }
   }
@@ -41,7 +41,7 @@ class BackupRecoveryService {
   Future<void> recoverSettingsFromFile() async {
     final backup = Get.find<BackupController>();
     final result = await FilePicker.pickFile(
-      dialogTitle: i18n("select_recover_file"),
+      dialogTitle: i18n('select_recover_file'),
       type: FileType.custom,
       allowedExtensions: ['txt'],
     );
@@ -50,9 +50,9 @@ class BackupRecoveryService {
 
     final file = File(result!.path!);
     if (backup.recover(file)) {
-      ToastUtil.show(i18n("recover_backup_success"));
+      ToastUtil.show(i18n('recover_backup_success'));
     } else {
-      ToastUtil.show(i18n("recover_backup_failed"));
+      ToastUtil.show(i18n('recover_backup_failed'));
     }
   }
 
@@ -70,7 +70,7 @@ class BackupRecoveryService {
     try {
       final response = await HttpClient.instance.postJson(
         '$httpAddress/api/setSettings',
-        queryParameters: {"settings": jsonEncode(backup.exportToTVSettings())},
+        queryParameters: {'settings': jsonEncode(backup.exportToTVSettings())},
       );
       return jsonDecode(response)['data'] ?? false;
     } catch (e) {

@@ -26,7 +26,7 @@ class TwitchDanmaku implements LiveDanmaku {
   @override
   int heartbeatTime = 40 * 1000; //默认是40s
 
-  var serverUrl = "wss://irc-ws.chat.twitch.tv";
+  var serverUrl = 'wss://irc-ws.chat.twitch.tv';
 
   @override
   Function(String msg)? onClose;
@@ -39,7 +39,7 @@ class TwitchDanmaku implements LiveDanmaku {
 
   @override
   void heartbeat() {
-    webScoketUtils?.sendMessage("PING :tmi.twitch.tv");
+    webScoketUtils?.sendMessage('PING :tmi.twitch.tv');
   }
 
   @override
@@ -60,11 +60,11 @@ class TwitchDanmaku implements LiveDanmaku {
       },
       onReconnect: () {
         markDisconnected();
-        onClose?.call("与服务器断开连接，正在尝试重连");
+        onClose?.call('与服务器断开连接，正在尝试重连');
       },
       onClose: (e) {
         markDisconnected();
-        onClose?.call("服务器连接失败$e");
+        onClose?.call('服务器连接失败$e');
       },
     );
     await webScoketUtils?.connect();
@@ -76,12 +76,12 @@ class TwitchDanmaku implements LiveDanmaku {
     final token = cookieValues['auth-token']?.trim() ?? '';
     final login = cookieValues['login']?.trim().toLowerCase() ?? '';
     final authenticated = token.isNotEmpty && login.isNotEmpty;
-    final user = authenticated ? login : "justinfan${1000 + Random.secure().nextInt(99000)}";
+    final user = authenticated ? login : 'justinfan${1000 + Random.secure().nextInt(99000)}';
     webScoketUtils
-      ?..sendMessage(authenticated ? "PASS oauth:$token" : "PASS SCHMOOPIIE")
-      ..sendMessage("NICK $user")
-      ..sendMessage("CAP REQ :twitch.tv/tags twitch.tv/commands twitch.tv/membership")
-      ..sendMessage("JOIN #${roomId.trim().toLowerCase()}");
+      ?..sendMessage(authenticated ? 'PASS oauth:$token' : 'PASS SCHMOOPIIE')
+      ..sendMessage('NICK $user')
+      ..sendMessage('CAP REQ :twitch.tv/tags twitch.tv/commands twitch.tv/membership')
+      ..sendMessage('JOIN #${roomId.trim().toLowerCase()}');
   }
 
   static Map<String, String> _parseCookie(String cookie) {
@@ -105,9 +105,9 @@ class TwitchDanmaku implements LiveDanmaku {
 
   void decodeMessage(String data) {
     try {
-      if (data.startsWith("PING")) {
+      if (data.startsWith('PING')) {
         // respond to PING according to https://dev.twitch.tv/docs/irc/#keepalive-messages
-        webScoketUtils?.sendMessage(data.replaceFirst("PING", "PONG").trim());
+        webScoketUtils?.sendMessage(data.replaceFirst('PING', 'PONG').trim());
       }
       for (final message in parseMessages(data)) {
         onMessage?.call(message);

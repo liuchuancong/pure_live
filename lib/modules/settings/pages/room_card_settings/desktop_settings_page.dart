@@ -49,7 +49,11 @@ class DesktopSettingsPage extends GetView<RoomCardConfigController> {
       padding: EdgeInsets.all(compact ? 10 : 16),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerLowest,
-        border: Border(left: compact ? BorderSide.none : BorderSide(color: theme.dividerColor.withValues(alpha: 0.1))),
+        border: Border(
+          left: compact
+              ? BorderSide.none
+              : BorderSide(color: theme.dividerColor.withValues(alpha: 0.1)),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -61,13 +65,21 @@ class DesktopSettingsPage extends GetView<RoomCardConfigController> {
             ],
           ),
           if (!compact) ...[
-            Text(i18n('preview_subtitle'), style: AppTextStyles.t12.copyWith(color: theme.colorScheme.outline)),
+            Text(
+              i18n('preview_subtitle'),
+              style: AppTextStyles.t12.copyWith(color: theme.colorScheme.outline),
+            ),
           ],
           Expanded(
             child: Center(
               child: ConstrainedBox(
-                constraints: BoxConstraints(maxWidth: compact ? 280 : 360, maxHeight: compact ? 220 : double.infinity),
-                child: GetBuilder<RoomCardConfigController>(builder: (_) => _buildPreviewCard(context)),
+                constraints: BoxConstraints(
+                  maxWidth: compact ? 280 : 360,
+                  maxHeight: compact ? 220 : double.infinity,
+                ),
+                child: GetBuilder<RoomCardConfigController>(
+                  builder: (_) => _buildPreviewCard(context),
+                ),
               ),
             ),
           ),
@@ -222,21 +234,24 @@ class DesktopSettingsPage extends GetView<RoomCardConfigController> {
         min: 0,
         max: 24,
         displayValue: '${controller.desktopCardMargin.round()} px',
-        onChanged: (v) => controller.updateDesktop((m) => m.copyWith(cardMargin: EdgeInsets.all(v))),
+        onChanged: (v) =>
+            controller.updateDesktop((m) => m.copyWith(cardMargin: EdgeInsets.all(v))),
       ),
       _colorTile(
         context,
         icon: Remix.paint_brush_line,
         title: i18n('card_background_light'),
         color: () => controller.desktopLightCardColor,
-        onColorSelected: (color) => controller.updateDesktop((m) => m.copyWith(cardBackground: color)),
+        onColorSelected: (color) =>
+            controller.updateDesktop((m) => m.copyWith(cardBackground: color)),
       ),
       _colorTile(
         context,
         icon: Remix.moon_line,
         title: i18n('card_background_dark'),
         color: () => controller.desktopDarkCardColor,
-        onColorSelected: (color) => controller.updateDesktop((m) => m.copyWith(cardBackground: color)),
+        onColorSelected: (color) =>
+            controller.updateDesktop((m) => m.copyWith(cardBackground: color)),
       ),
     ]);
   }
@@ -292,7 +307,8 @@ class DesktopSettingsPage extends GetView<RoomCardConfigController> {
         max: 480,
         step: 10,
         displayValue: '${controller.desktopCoverCacheMinWidth} px',
-        onChanged: (v) => controller.updateDesktop((m) => m.copyWith(coverCacheMinWidth: v.round())),
+        onChanged: (v) =>
+            controller.updateDesktop((m) => m.copyWith(coverCacheMinWidth: v.round())),
       ),
       _sliderTile(
         context,
@@ -303,7 +319,8 @@ class DesktopSettingsPage extends GetView<RoomCardConfigController> {
         max: 1200,
         step: 10,
         displayValue: '${controller.desktopCoverCacheMaxWidth} px',
-        onChanged: (v) => controller.updateDesktop((m) => m.copyWith(coverCacheMaxWidth: v.round())),
+        onChanged: (v) =>
+            controller.updateDesktop((m) => m.copyWith(coverCacheMaxWidth: v.round())),
       ),
       _tile(
         context,
@@ -326,7 +343,8 @@ class DesktopSettingsPage extends GetView<RoomCardConfigController> {
         onTap: () => _showFilterQualityDialog(
           context,
           currentQuality: controller.desktopCoverFilterQuality,
-          onSelected: (quality) => controller.updateDesktop((m) => m.copyWith(coverFilterQuality: quality)),
+          onSelected: (quality) =>
+              controller.updateDesktop((m) => m.copyWith(coverFilterQuality: quality)),
         ),
       ),
       _colorTile(
@@ -334,14 +352,16 @@ class DesktopSettingsPage extends GetView<RoomCardConfigController> {
         icon: Remix.image_add_line,
         title: i18n('cover_placeholder_color'),
         color: () => controller.desktopCoverPlaceholderColor,
-        onColorSelected: (color) => controller.updateDesktop((m) => m.copyWith(coverPlaceholderColor: color)),
+        onColorSelected: (color) =>
+            controller.updateDesktop((m) => m.copyWith(coverPlaceholderColor: color)),
       ),
       _colorTile(
         context,
         icon: Remix.image_edit_line,
         title: i18n('cover_fallback_color'),
         color: () => controller.desktopCoverFallbackColor,
-        onColorSelected: (color) => controller.updateDesktop((m) => m.copyWith(coverFallbackColor: color)),
+        onColorSelected: (color) =>
+            controller.updateDesktop((m) => m.copyWith(coverFallbackColor: color)),
       ),
     ]);
   }
@@ -409,7 +429,10 @@ class DesktopSettingsPage extends GetView<RoomCardConfigController> {
       const Divider(height: 1),
       Text(
         i18n('dense_mode_settings'),
-        style: AppTextStyles.t13.copyWith(color: Theme.of(context).colorScheme.outline, fontWeight: FontWeight.w600),
+        style: AppTextStyles.t13.copyWith(
+          color: Theme.of(context).colorScheme.outline,
+          fontWeight: FontWeight.w600,
+        ),
       ),
       const SizedBox(height: 4),
       _sliderTile(
@@ -430,7 +453,8 @@ class DesktopSettingsPage extends GetView<RoomCardConfigController> {
         min: 0,
         max: 20,
         displayValue: '${controller.desktopDenseContentHorizontalPadding.round()} px',
-        onChanged: (v) => controller.updateDesktop((m) => m.copyWith(denseContentHorizontalPadding: v)),
+        onChanged: (v) =>
+            controller.updateDesktop((m) => m.copyWith(denseContentHorizontalPadding: v)),
       ),
       _sliderTile(
         context,
@@ -440,7 +464,8 @@ class DesktopSettingsPage extends GetView<RoomCardConfigController> {
         min: 0,
         max: 12,
         displayValue: '${controller.desktopDenseContentVerticalPadding.round()} px',
-        onChanged: (v) => controller.updateDesktop((m) => m.copyWith(denseContentVerticalPadding: v)),
+        onChanged: (v) =>
+            controller.updateDesktop((m) => m.copyWith(denseContentVerticalPadding: v)),
       ),
       _sliderTile(
         context,
@@ -468,7 +493,10 @@ class DesktopSettingsPage extends GetView<RoomCardConfigController> {
     return _section(context, i18n('typography'), [
       Text(
         i18n('title_typography'),
-        style: AppTextStyles.t13.copyWith(color: Theme.of(context).colorScheme.outline, fontWeight: FontWeight.w600),
+        style: AppTextStyles.t13.copyWith(
+          color: Theme.of(context).colorScheme.outline,
+          fontWeight: FontWeight.w600,
+        ),
       ),
       const SizedBox(height: 4),
       _sliderTile(
@@ -495,7 +523,8 @@ class DesktopSettingsPage extends GetView<RoomCardConfigController> {
         context,
         title: i18n('title_font_weight'),
         currentWeight: controller.desktopTitleFontWeight,
-        onSelected: (weight) => controller.updateDesktop((m) => m.copyWith(titleFontWeight: weight)),
+        onSelected: (weight) =>
+            controller.updateDesktop((m) => m.copyWith(titleFontWeight: weight)),
       ),
       _sliderTile(
         context,
@@ -525,7 +554,10 @@ class DesktopSettingsPage extends GetView<RoomCardConfigController> {
       const Divider(height: 1),
       Text(
         i18n('subtitle_typography'),
-        style: AppTextStyles.t13.copyWith(color: Theme.of(context).colorScheme.outline, fontWeight: FontWeight.w600),
+        style: AppTextStyles.t13.copyWith(
+          color: Theme.of(context).colorScheme.outline,
+          fontWeight: FontWeight.w600,
+        ),
       ),
       const SizedBox(height: 4),
       _sliderTile(
@@ -552,7 +584,8 @@ class DesktopSettingsPage extends GetView<RoomCardConfigController> {
         context,
         title: i18n('subtitle_font_weight'),
         currentWeight: controller.desktopSubtitleFontWeight,
-        onSelected: (weight) => controller.updateDesktop((m) => m.copyWith(subtitleFontWeight: weight)),
+        onSelected: (weight) =>
+            controller.updateDesktop((m) => m.copyWith(subtitleFontWeight: weight)),
       ),
       _sliderTile(
         context,
@@ -570,14 +603,16 @@ class DesktopSettingsPage extends GetView<RoomCardConfigController> {
         icon: Remix.palette_line,
         title: i18n('subtitle_color_light'),
         color: () => controller.desktopLightSubtitleColor,
-        onColorSelected: (color) => controller.updateDesktop((m) => m.copyWith(subtitleColor: color)),
+        onColorSelected: (color) =>
+            controller.updateDesktop((m) => m.copyWith(subtitleColor: color)),
       ),
       _colorTile(
         context,
         icon: Remix.palette_line,
         title: i18n('subtitle_color_dark'),
         color: () => controller.desktopDarkSubtitleColor,
-        onColorSelected: (color) => controller.updateDesktop((m) => m.copyWith(subtitleColor: color)),
+        onColorSelected: (color) =>
+            controller.updateDesktop((m) => m.copyWith(subtitleColor: color)),
       ),
     ]);
   }
@@ -617,7 +652,8 @@ class DesktopSettingsPage extends GetView<RoomCardConfigController> {
         context,
         title: i18n('platform_font_weight'),
         currentWeight: controller.desktopPlatformFontWeight,
-        onSelected: (weight) => controller.updateDesktop((m) => m.copyWith(platformFontWeight: weight)),
+        onSelected: (weight) =>
+            controller.updateDesktop((m) => m.copyWith(platformFontWeight: weight)),
       ),
       _sliderTile(
         context,
@@ -654,28 +690,32 @@ class DesktopSettingsPage extends GetView<RoomCardConfigController> {
         icon: Remix.paint_brush_line,
         title: i18n('platform_background_light'),
         color: () => controller.desktopPlatformBackgroundLight,
-        onColorSelected: (color) => controller.updateDesktop((m) => m.copyWith(platformBackgroundColor: color)),
+        onColorSelected: (color) =>
+            controller.updateDesktop((m) => m.copyWith(platformBackgroundColor: color)),
       ),
       _colorTile(
         context,
         icon: Remix.moon_clear_line,
         title: i18n('platform_background_dark'),
         color: () => controller.desktopPlatformBackgroundDark,
-        onColorSelected: (color) => controller.updateDesktop((m) => m.copyWith(platformBackgroundColor: color)),
+        onColorSelected: (color) =>
+            controller.updateDesktop((m) => m.copyWith(platformBackgroundColor: color)),
       ),
       _colorTile(
         context,
         icon: Remix.font_color,
         title: i18n('platform_text_light'),
         color: () => controller.desktopPlatformTextLight,
-        onColorSelected: (color) => controller.updateDesktop((m) => m.copyWith(platformTextColor: color)),
+        onColorSelected: (color) =>
+            controller.updateDesktop((m) => m.copyWith(platformTextColor: color)),
       ),
       _colorTile(
         context,
         icon: Remix.font_color,
         title: i18n('platform_text_dark'),
         color: () => controller.desktopPlatformTextDark,
-        onColorSelected: (color) => controller.updateDesktop((m) => m.copyWith(platformTextColor: color)),
+        onColorSelected: (color) =>
+            controller.updateDesktop((m) => m.copyWith(platformTextColor: color)),
       ),
     ]);
   }
@@ -771,7 +811,8 @@ class DesktopSettingsPage extends GetView<RoomCardConfigController> {
         min: 0,
         max: 16,
         displayValue: '${controller.desktopDenseChipHorizontalPadding.round()} px',
-        onChanged: (v) => controller.updateDesktop((m) => m.copyWith(denseChipHorizontalPadding: v)),
+        onChanged: (v) =>
+            controller.updateDesktop((m) => m.copyWith(denseChipHorizontalPadding: v)),
       ),
       _sliderTile(
         context,
@@ -788,14 +829,16 @@ class DesktopSettingsPage extends GetView<RoomCardConfigController> {
         icon: Remix.price_tag_3_line,
         title: i18n('chip_background'),
         color: () => controller.desktopChipBackgroundColor,
-        onColorSelected: (color) => controller.updateDesktop((m) => m.copyWith(chipBackgroundColor: color)),
+        onColorSelected: (color) =>
+            controller.updateDesktop((m) => m.copyWith(chipBackgroundColor: color)),
       ),
       _colorTile(
         context,
         icon: Remix.font_color,
         title: i18n('chip_text'),
         color: () => controller.desktopChipTextColor,
-        onColorSelected: (color) => controller.updateDesktop((m) => m.copyWith(chipTextColor: color)),
+        onColorSelected: (color) =>
+            controller.updateDesktop((m) => m.copyWith(chipTextColor: color)),
       ),
     ]);
   }
@@ -827,7 +870,8 @@ class DesktopSettingsPage extends GetView<RoomCardConfigController> {
         context,
         title: i18n('metric_font_weight'),
         currentWeight: controller.desktopMetricFontWeight,
-        onSelected: (weight) => controller.updateDesktop((m) => m.copyWith(metricFontWeight: weight)),
+        onSelected: (weight) =>
+            controller.updateDesktop((m) => m.copyWith(metricFontWeight: weight)),
       ),
       _sliderTile(
         context,
@@ -888,7 +932,8 @@ class DesktopSettingsPage extends GetView<RoomCardConfigController> {
         min: 1,
         max: 12,
         displayValue: '${controller.desktopDenseMetricHorizontalPadding.round()} px',
-        onChanged: (v) => controller.updateDesktop((m) => m.copyWith(denseMetricHorizontalPadding: v)),
+        onChanged: (v) =>
+            controller.updateDesktop((m) => m.copyWith(denseMetricHorizontalPadding: v)),
       ),
       _sliderTile(
         context,
@@ -898,28 +943,32 @@ class DesktopSettingsPage extends GetView<RoomCardConfigController> {
         min: 1,
         max: 10,
         displayValue: '${controller.desktopDenseMetricVerticalPadding.round()} px',
-        onChanged: (v) => controller.updateDesktop((m) => m.copyWith(denseMetricVerticalPadding: v)),
+        onChanged: (v) =>
+            controller.updateDesktop((m) => m.copyWith(denseMetricVerticalPadding: v)),
       ),
       _colorTile(
         context,
         icon: Remix.paint_brush_line,
         title: i18n('metric_background'),
         color: () => controller.desktopBadgeBackground,
-        onColorSelected: (color) => controller.updateDesktop((m) => m.copyWith(metricBackgroundColor: color)),
+        onColorSelected: (color) =>
+            controller.updateDesktop((m) => m.copyWith(metricBackgroundColor: color)),
       ),
       _colorTile(
         context,
         icon: Remix.font_color,
         title: i18n('metric_text'),
         color: () => controller.desktopBadgeForeground,
-        onColorSelected: (color) => controller.updateDesktop((m) => m.copyWith(metricTextColor: color)),
+        onColorSelected: (color) =>
+            controller.updateDesktop((m) => m.copyWith(metricTextColor: color)),
       ),
       _colorTile(
         context,
         icon: Remix.focus_line,
         title: i18n('metric_border_color'),
         color: () => controller.desktopMetricBorderColor,
-        onColorSelected: (color) => controller.updateDesktop((m) => m.copyWith(metricBorderColor: color)),
+        onColorSelected: (color) =>
+            controller.updateDesktop((m) => m.copyWith(metricBorderColor: color)),
       ),
       _sliderTile(
         context,
@@ -993,14 +1042,16 @@ class DesktopSettingsPage extends GetView<RoomCardConfigController> {
         icon: Remix.paint_brush_line,
         title: i18n('delete_button_background'),
         color: () => controller.desktopDeleteButtonBackground,
-        onColorSelected: (color) => controller.updateDesktop((m) => m.copyWith(deleteButtonBackgroundColor: color)),
+        onColorSelected: (color) =>
+            controller.updateDesktop((m) => m.copyWith(deleteButtonBackgroundColor: color)),
       ),
       _colorTile(
         context,
         icon: Remix.font_color,
         title: i18n('delete_button_icon_color'),
         color: () => controller.desktopDeleteButtonIconColor,
-        onColorSelected: (color) => controller.updateDesktop((m) => m.copyWith(deleteButtonIconColor: color)),
+        onColorSelected: (color) =>
+            controller.updateDesktop((m) => m.copyWith(deleteButtonIconColor: color)),
       ),
     ]);
   }
@@ -1036,7 +1087,13 @@ class DesktopSettingsPage extends GetView<RoomCardConfigController> {
     VoidCallback? onTap,
   }) {
     return GetBuilder<RoomCardConfigController>(
-      builder: (_) => context.buildTile(icon: icon, title: title, subtitle: subtitle, trailing: trailing, onTap: onTap),
+      builder: (_) => context.buildTile(
+        icon: icon,
+        title: title,
+        subtitle: subtitle,
+        trailing: trailing,
+        onTap: onTap,
+      ),
     );
   }
 
@@ -1116,7 +1173,13 @@ class DesktopSettingsPage extends GetView<RoomCardConfigController> {
       builder: (_) => context.buildTile(
         icon: icon,
         title: title,
-        trailing: ColorIndicator(width: 28, height: 28, borderRadius: 6, color: color(), onSelectFocus: false),
+        trailing: ColorIndicator(
+          width: 28,
+          height: 28,
+          borderRadius: 6,
+          color: color(),
+          onSelectFocus: false,
+        ),
         onTap: () => _showColorPickerDialog(
           context,
           title: title,
@@ -1164,7 +1227,10 @@ class DesktopSettingsPage extends GetView<RoomCardConfigController> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(value, style: AppTextStyles.t13.copyWith(color: Theme.of(context).colorScheme.outline)),
+        Text(
+          value,
+          style: AppTextStyles.t13.copyWith(color: Theme.of(context).colorScheme.outline),
+        ),
         const SizedBox(width: 2),
         _arrow(context),
       ],
@@ -1208,11 +1274,15 @@ class DesktopSettingsPage extends GetView<RoomCardConfigController> {
                       subtitle: preset != RoomCardPreset.custom
                           ? Text(
                               _getPresetDescription(preset),
-                              style: AppTextStyles.t12.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                              style: AppTextStyles.t12.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
                             )
                           : Text(
                               i18n('preset_custom_description'),
-                              style: AppTextStyles.t12.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                              style: AppTextStyles.t12.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
                             ),
                       value: preset,
                       selected: currentPreset == preset,
@@ -1222,7 +1292,9 @@ class DesktopSettingsPage extends GetView<RoomCardConfigController> {
               );
             },
           ),
-          actions: [TextButton(onPressed: () => Navigator.pop(context), child: Text(i18n('close')))],
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: Text(i18n('close'))),
+          ],
         );
       },
     );
@@ -1279,7 +1351,9 @@ class DesktopSettingsPage extends GetView<RoomCardConfigController> {
               ),
             ),
           ),
-          actions: [TextButton(onPressed: () => Navigator.pop(context), child: Text(i18n('close')))],
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: Text(i18n('close'))),
+          ],
         );
       },
     );
@@ -1315,7 +1389,11 @@ class DesktopSettingsPage extends GetView<RoomCardConfigController> {
     return 'low';
   }
 
-  void _showBoxFitDialog(BuildContext context, {required BoxFit currentFit, required ValueChanged<BoxFit> onSelected}) {
+  void _showBoxFitDialog(
+    BuildContext context, {
+    required BoxFit currentFit,
+    required ValueChanged<BoxFit> onSelected,
+  }) {
     final fitList = AppConsts.videoFitType;
     showDialog(
       context: context,
@@ -1346,7 +1424,9 @@ class DesktopSettingsPage extends GetView<RoomCardConfigController> {
               ),
             ),
           ),
-          actions: [TextButton(onPressed: () => Navigator.pop(context), child: Text(i18n('close')))],
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: Text(i18n('close'))),
+          ],
         );
       },
     );
@@ -1389,7 +1469,9 @@ class DesktopSettingsPage extends GetView<RoomCardConfigController> {
               ),
             ),
           ),
-          actions: [TextButton(onPressed: () => Navigator.pop(context), child: Text(i18n('close')))],
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: Text(i18n('close'))),
+          ],
         );
       },
     );
@@ -1414,7 +1496,10 @@ class DesktopSettingsPage extends GetView<RoomCardConfigController> {
       wheelDiameter: 155,
       heading: Text(title, style: Theme.of(context).textTheme.titleMedium),
       subheading: Text(i18n('select_opacity'), style: Theme.of(context).textTheme.titleMedium),
-      wheelSubheading: Text(i18n('theme_color_opacity'), style: Theme.of(context).textTheme.titleMedium),
+      wheelSubheading: Text(
+        i18n('theme_color_opacity'),
+        style: Theme.of(context).textTheme.titleMedium,
+      ),
       showMaterialName: false,
       showColorName: false,
       showColorCode: true,
@@ -1452,7 +1537,9 @@ class DesktopSettingsPage extends GetView<RoomCardConfigController> {
         return AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Text(i18n('reset_all_settings')),
-          content: Text('${i18n('reset_all_settings_confirm')}\n\n${i18n('current_editing')}: 🖥️ 桌面端'),
+          content: Text(
+            '${i18n('reset_all_settings_confirm')}\n\n${i18n('current_editing')}: 🖥️ 桌面端',
+          ),
           actions: [
             TextButton(onPressed: () => Navigator.pop(context), child: Text(i18n('cancel'))),
             FilledButton(

@@ -30,9 +30,19 @@ class SettingsUpgradeMigration {
   static const String _schemaKey = 'settingsUpgradeSchema';
   static const String _sourceLedgerKey = 'settingsUpgradeImportedSources';
 
-  static const Set<String> _objectListKeys = {'favoriteRooms', 'favoriteAreas', 'historyRooms', 'webDavConfigs'};
+  static const Set<String> _objectListKeys = {
+    'favoriteRooms',
+    'favoriteAreas',
+    'historyRooms',
+    'webDavConfigs',
+  };
 
-  static const Set<String> _stringListKeys = {'shieldList', 'blockedDanmakuUsers', 'hotAreasList', 'savedMenuIds'};
+  static const Set<String> _stringListKeys = {
+    'shieldList',
+    'blockedDanmakuUsers',
+    'hotAreasList',
+    'savedMenuIds',
+  };
 
   static Future<SettingsUpgradeReport> migrate({
     required Box<dynamic> target,
@@ -41,7 +51,9 @@ class SettingsUpgradeMigration {
   }) async {
     await workingDirectory.create(recursive: true);
 
-    final targetData = <String, dynamic>{for (final key in target.keys.whereType<String>()) key: target.get(key)};
+    final targetData = <String, dynamic>{
+      for (final key in target.keys.whereType<String>()) key: target.get(key),
+    };
     final hadLegacyShape = _objectListKeys.any((key) => targetData[key] is List);
     final importedFingerprints = _readLedger(targetData[_sourceLedgerKey]);
     final sources = <_SettingsSource>[];
@@ -59,8 +71,12 @@ class SettingsUpgradeMigration {
       try {
         await source.copy(copiedFile.path);
         sourceBox = await Hive.openBox<dynamic>(boxName, path: workingDirectory.path);
-        final data = <String, dynamic>{for (final key in sourceBox.keys.whereType<String>()) key: sourceBox.get(key)};
-        sources.add(_SettingsSource(fingerprint: fingerprint, data: data, score: _sourceScore(data)));
+        final data = <String, dynamic>{
+          for (final key in sourceBox.keys.whereType<String>()) key: sourceBox.get(key),
+        };
+        sources.add(
+          _SettingsSource(fingerprint: fingerprint, data: data, score: _sourceScore(data)),
+        );
       } catch (_) {
         // A damaged or currently locked legacy box must not block startup. Its
         // fingerprint is intentionally omitted so a later launch retries it.
@@ -109,7 +125,9 @@ class SettingsUpgradeMigration {
     if (preferRichestSourceScalars && sourceList.isNotEmpty) {
       final richest = sourceList.reduce((a, b) => _sourceScore(a) >= _sourceScore(b) ? a : b);
       for (final entry in richest.entries) {
-        if (_isMigrationKey(entry.key) || _objectListKeys.contains(entry.key) || _stringListKeys.contains(entry.key)) {
+        if (_isMigrationKey(entry.key) ||
+            _objectListKeys.contains(entry.key) ||
+            _stringListKeys.contains(entry.key)) {
           continue;
         }
         result[entry.key] = entry.value;
@@ -146,7 +164,9 @@ class SettingsUpgradeMigration {
           if (text.isNotEmpty && seen.add(text)) values.add(text);
         }
       }
-      if (values.isNotEmpty || current.containsKey(key) || sourceList.any((source) => source.containsKey(key))) {
+      if (values.isNotEmpty ||
+          current.containsKey(key) ||
+          sourceList.any((source) => source.containsKey(key))) {
         result[key] = values;
       }
     }
@@ -154,7 +174,10 @@ class SettingsUpgradeMigration {
     return result;
   }
 
-  static List<Map<String, dynamic>> _mergeObjectLists(String key, Iterable<List<Map<String, dynamic>>> lists) {
+  static List<Map<String, dynamic>> _mergeObjectLists(
+    String key,
+    Iterable<List<Map<String, dynamic>>> lists,
+  ) {
     final merged = <String, Map<String, dynamic>>{};
     final order = <String>[];
     for (final list in lists) {
@@ -173,7 +196,10 @@ class SettingsUpgradeMigration {
           }
         }
         if (key == 'favoriteRooms') {
-          final tags = <String>{..._stringValues(existing['tagIds']), ..._stringValues(item['tagIds'])};
+          final tags = <String>{
+            ..._stringValues(existing['tagIds']),
+            ..._stringValues(item['tagIds']),
+          };
           existing['tagIds'] = tags.toList();
         }
       }
@@ -209,7 +235,8 @@ class SettingsUpgradeMigration {
   }
 
   static String _itemIdentity(String key, Map<String, dynamic> item) {
-    String fields(List<String> names) => names.map((name) => item[name]?.toString().trim() ?? '').join('|');
+    String fields(List<String> names) =>
+        names.map((name) => item[name]?.toString().trim() ?? '').join('|');
     final identity = switch (key) {
       'favoriteRooms' || 'historyRooms' => fields(['platform', 'roomId']),
       'favoriteAreas' => fields(['platform', 'areaId']),
@@ -222,7 +249,8 @@ class SettingsUpgradeMigration {
   static Iterable<String> _stringValues(dynamic value) =>
       value is List ? value.map((item) => item.toString()) : const <String>[];
 
-  static bool _isEmpty(dynamic value) => value == null || value == '' || (value is List && value.isEmpty);
+  static bool _isEmpty(dynamic value) =>
+      value == null || value == '' || (value is List && value.isEmpty);
 
   static bool _isMigrationKey(String key) => key == _schemaKey || key == _sourceLedgerKey;
 

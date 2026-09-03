@@ -16,9 +16,12 @@ void main() {
     expect(Sites.of(' HuYa ').id, Sites.huyaSite);
   });
 
-  test('failure-prone adapters expose a refresh path that preserves unknown state on transport errors', () {
-    for (final siteId in [Sites.ccSite, Sites.twitchSite, Sites.soopSite]) {
-      expect(Sites.of(siteId).liveSite, isA<LiveSiteRoomRefresher>(), reason: siteId);
-    }
-  });
+  test(
+    'failure-prone adapters expose a refresh path that preserves unknown state on transport errors',
+    () {
+      for (final siteId in [Sites.ccSite, Sites.twitchSite, Sites.soopSite]) {
+        expect(Sites.of(siteId).liveSite, isA<LiveSiteRoomRefresher>(), reason: siteId);
+      }
+    },
+  );
 }

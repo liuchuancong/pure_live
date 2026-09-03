@@ -32,8 +32,7 @@ class QuickJsService extends JavascriptRuntime {
 
   QuickJsService(this._flutterJs) {
     _startServer();
-    IsolateNameServer.registerPortWithName(
-        _receivePort.sendPort, 'QuickJsService');
+    IsolateNameServer.registerPortWithName(_receivePort.sendPort, 'QuickJsService');
     initChannelFunctions();
   }
 
@@ -58,14 +57,12 @@ class QuickJsService extends JavascriptRuntime {
   }
 
   JsEvalResult evaluate(String code, {String? sourceUrl}) {
-    var request = SyncHttpClient.postUrl(new Uri.http(
-      "localhost:${FlutterJs.httpPort}",
-      "",
-      {
+    var request = SyncHttpClient.postUrl(
+      new Uri.http("localhost:${FlutterJs.httpPort}", "", {
         "id": _flutterJs.id.toString(),
         "password": FlutterJs.httpPassword,
-      },
-    ));
+      }),
+    );
     request..write(code);
     var response = request.close();
 
@@ -86,7 +83,8 @@ class QuickJsService extends JavascriptRuntime {
   @override
   JsEvalResult callFunction(dynamic fn, dynamic obj) {
     throw UnimplementedError(
-        'Call function yet not implemented in FlutterJS through Platform Channel');
+      'Call function yet not implemented in FlutterJS through Platform Channel',
+    );
     // _flutterJs.callFunction(fn, obj);
   }
 
@@ -140,10 +138,12 @@ class QuickJsService extends JavascriptRuntime {
     _flutterJs.addChannel(channelName, (args) {
       final mapArgs = json.decode(args!);
       final res = fn(mapArgs);
-      this.evaluate("""
+      this.evaluate(
+        """
          FLUTTERJS_pendingMessages['${mapArgs['id']}'].resolve(${json.encode(res)});
       """
-          .trim());
+            .trim(),
+      );
       return Future.value(res);
     }, dartChannelAddress: 'http://$_dartAddress');
 
@@ -227,11 +227,9 @@ class QuickJsSyncServer {
         String? idEngine = request.uri.queryParameters['id'];
         String? channel = request.uri.queryParameters['channel'];
 
-        final callDartPort =
-            IsolateNameServer.lookupPortByName('QuickJsServiceCallDart')!;
+        final callDartPort = IsolateNameServer.lookupPortByName('QuickJsServiceCallDart')!;
 
-        callDartPort
-            .send("$idEngine:$channel:${base64.encode(utf8.encode(message))}");
+        callDartPort.send("$idEngine:$channel:${base64.encode(utf8.encode(message))}");
 
         final result = await _receiveCallDartResponsePort.take(1).first;
 

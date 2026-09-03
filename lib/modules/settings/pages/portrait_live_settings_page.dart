@@ -71,7 +71,10 @@ class PortraitLiveSettingsPage extends StatelessWidget {
                     children: [
                       Text(
                         '${settings.portraitCustomHeight.v.toStringAsFixed(0)}px',
-                        style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w600),
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ],
                   ),
@@ -126,7 +129,9 @@ class PortraitLiveSettingsPage extends StatelessWidget {
                         item == settings.portraitLayoutMode
                             ? Icons.radio_button_checked_rounded
                             : Icons.radio_button_off_rounded,
-                        color: item == settings.portraitLayoutMode ? Theme.of(dialogContext).colorScheme.primary : null,
+                        color: item == settings.portraitLayoutMode
+                            ? Theme.of(dialogContext).colorScheme.primary
+                            : null,
                       ),
                       const SizedBox(width: 12),
                       Expanded(child: Text(_layoutModeLabel(item))),
@@ -203,7 +208,10 @@ class PortraitLiveSettingsPage extends StatelessWidget {
     };
   }
 
-  Future<void> _selectVideoHeightMode(BuildContext context, PlayerSettingsController settings) async {
+  Future<void> _selectVideoHeightMode(
+    BuildContext context,
+    PlayerSettingsController settings,
+  ) async {
     final value = await showDialog<PortraitVideoHeightMode>(
       context: context,
       builder: (dialogContext) {

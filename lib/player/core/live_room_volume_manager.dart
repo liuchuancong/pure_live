@@ -1,10 +1,11 @@
 import 'dart:io';
+
 import 'package:pure_live/common/services/utils/hive_rx.dart';
 import 'package:pure_live/common/services/settings_service.dart';
 
 class LiveRoomVolumeManager {
   static String _getVolumeKey(String platform, String roomId) {
-    return "room_vol_${platform.toLowerCase().trim()}_${roomId.trim()}";
+    return 'room_vol_${platform.toLowerCase().trim()}_${roomId.trim()}';
   }
 
   static double getRoomVolume(String platform, String roomId) {

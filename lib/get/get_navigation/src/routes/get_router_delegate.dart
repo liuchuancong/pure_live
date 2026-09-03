@@ -1,7 +1,10 @@
 import 'dart:async';
+
 import '../../../route_manager.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+
 import '../../../get_utils/src/platform/platform.dart';
 import '../../../get_instance/src/bindings_interface.dart';
 
@@ -13,7 +16,8 @@ class GetDelegate extends RouterDelegate<RouteDecoder>
     List<NavigatorObserver>? navigatorObservers,
     TransitionDelegate<dynamic>? transitionDelegate,
     PopMode backButtonPopMode = PopMode.history,
-    PreventDuplicateHandlingMode preventDuplicateHandlingMode = PreventDuplicateHandlingMode.reorderRoutes,
+    PreventDuplicateHandlingMode preventDuplicateHandlingMode =
+        PreventDuplicateHandlingMode.reorderRoutes,
     GlobalKey<NavigatorState>? navigatorKey,
   }) {
     return GetDelegate(
@@ -209,7 +213,9 @@ class GetDelegate extends RouterDelegate<RouteDecoder>
     if (currentBranch != null && currentBranch.length > 1) {
       //remove last part only
       final remaining = currentBranch.take(currentBranch.length - 1);
-      final prevHistoryEntry = _activePages.length > 1 ? _activePages[_activePages.length - 2] : null;
+      final prevHistoryEntry = _activePages.length > 1
+          ? _activePages[_activePages.length - 2]
+          : null;
 
       //check if current route is the same as the previous route
       if (prevHistoryEntry != null) {
@@ -282,7 +288,9 @@ class GetDelegate extends RouterDelegate<RouteDecoder>
   ///
   /// visual pages must have [GetPage.participatesInRootNavigator] set to true
   Iterable<GetPage> getVisualPages(RouteDecoder? currentHistory) {
-    final res = currentHistory!.currentTreeBranch.where((r) => r.participatesInRootNavigator != null);
+    final res = currentHistory!.currentTreeBranch.where(
+      (r) => r.participatesInRootNavigator != null,
+    );
     if (res.isEmpty) {
       //default behavior, all routes participate in root navigator
       return _activePages.map((e) => e.route!);
@@ -297,7 +305,8 @@ class GetDelegate extends RouterDelegate<RouteDecoder>
     final currentHistory = currentConfiguration;
     final pages = currentHistory == null
         ? <GetPage>[]
-        : pickPagesForRootNavigator?.call(currentHistory).toList() ?? getVisualPages(currentHistory).toList();
+        : pickPagesForRootNavigator?.call(currentHistory).toList() ??
+              getVisualPages(currentHistory).toList();
     if (pages.isEmpty) {
       return ColoredBox(color: Theme.of(context).scaffoldBackgroundColor);
     }
@@ -361,9 +370,10 @@ class GetDelegate extends RouterDelegate<RouteDecoder>
     bool showCupertinoParallax = true,
     double Function(BuildContext context)? gestureWidth,
     bool rebuildStack = true,
-    PreventDuplicateHandlingMode preventDuplicateHandlingMode = PreventDuplicateHandlingMode.reorderRoutes,
+    PreventDuplicateHandlingMode preventDuplicateHandlingMode =
+        PreventDuplicateHandlingMode.reorderRoutes,
   }) async {
-    routeName ??= _cleanRouteName("/${page.runtimeType}");
+    routeName ??= _cleanRouteName('/${page.runtimeType}');
     // if (preventDuplicateHandlingMode ==
     //PreventDuplicateHandlingMode.Recreate) {
     //   routeName = routeName + page.hashCode.toString();
@@ -409,7 +419,7 @@ class GetDelegate extends RouterDelegate<RouteDecoder>
     bool showCupertinoParallax = true,
     double Function(BuildContext context)? gestureWidth,
   }) async {
-    routeName ??= _cleanRouteName("/${page.runtimeType}");
+    routeName ??= _cleanRouteName('/${page.runtimeType}');
     final route = GetPage<T>(
       name: routeName,
       opaque: opaque ?? true,
@@ -445,7 +455,7 @@ class GetDelegate extends RouterDelegate<RouteDecoder>
     bool showCupertinoParallax = true,
     double Function(BuildContext context)? gestureWidth,
   }) async {
-    routeName ??= _cleanRouteName("/${page.runtimeType}");
+    routeName ??= _cleanRouteName('/${page.runtimeType}');
     final route = GetPage<T>(
       name: routeName,
       opaque: opaque,
@@ -512,7 +522,12 @@ class GetDelegate extends RouterDelegate<RouteDecoder>
   }
 
   @override
-  Future<T?> offNamed<T>(String page, {dynamic arguments, String? id, Map<String, String>? parameters}) async {
+  Future<T?> offNamed<T>(
+    String page, {
+    dynamic arguments,
+    String? id,
+    Map<String, String>? parameters,
+  }) async {
     final args = _buildPageSettings(page, arguments);
     final route = _getRouteDecoder<T>(args);
     if (route == null) return null;
@@ -521,7 +536,11 @@ class GetDelegate extends RouterDelegate<RouteDecoder>
   }
 
   @override
-  Future<T?> toNamedAndOffUntil<T>(String page, bool Function(GetPage) predicate, [Object? data]) async {
+  Future<T?> toNamedAndOffUntil<T>(
+    String page,
+    bool Function(GetPage) predicate, [
+    Object? data,
+  ]) async {
     final arguments = _buildPageSettings(page, data);
 
     final route = _getRouteDecoder<T>(arguments);
@@ -536,7 +555,11 @@ class GetDelegate extends RouterDelegate<RouteDecoder>
   }
 
   @override
-  Future<T?> offUntil<T>(Widget Function() page, bool Function(GetPage) predicate, [Object? arguments]) async {
+  Future<T?> offUntil<T>(
+    Widget Function() page,
+    bool Function(GetPage) predicate, [
+    Object? arguments,
+  ]) async {
     while (_activePages.isNotEmpty && !predicate(_activePages.last.route!)) {
       _popWithResult();
     }
@@ -628,6 +651,7 @@ class GetDelegate extends RouterDelegate<RouteDecoder>
     final result = await activePage.route?.completer?.future as Future<T?>?;
     return result;
   }
+
   String _cleanRouteName(String name) {
     name = name.replaceAll('() => ', '');
     if (!name.startsWith('/')) {
@@ -684,7 +708,9 @@ class GetDelegate extends RouterDelegate<RouteDecoder>
     final preventDuplicateHandlingMode =
         res.route?.preventDuplicateHandlingMode ?? PreventDuplicateHandlingMode.reorderRoutes;
 
-    final onStackPage = _activePages.firstWhereOrNull((element) => element.route?.key == res.route?.key);
+    final onStackPage = _activePages.firstWhereOrNull(
+      (element) => element.route?.key == res.route?.key,
+    );
 
     /// There are no duplicate routes in the stack
     if (onStackPage == null) {

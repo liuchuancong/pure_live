@@ -38,7 +38,11 @@ class _MinePageState extends State<MinePage> {
             },
             child: Row(
               mainAxisSize: MainAxisSize.min,
-              children: [Icon(Remix.file_text_line, size: 18), const SizedBox(width: 4), Text(i18n("config_preview"))],
+              children: [
+                const Icon(Remix.file_text_line, size: 18),
+                const SizedBox(width: 4),
+                Text(i18n('config_preview')),
+              ],
             ),
           ),
           const SizedBox(width: 8),
@@ -72,7 +76,7 @@ class _MinePageState extends State<MinePage> {
             context.buildTile(
               icon: Remix.logout_box_r_line,
               title: i18n('firebase_log_out'),
-              subtitle: "",
+              subtitle: '',
               iconColor: theme.colorScheme.error.withValues(alpha: 0.8),
               onTap: signOut,
             ),

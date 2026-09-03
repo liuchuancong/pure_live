@@ -58,73 +58,64 @@ class QuickJsRuntime2 extends JavascriptRuntime {
 
   _ensureEngine() {
     if (_rt != null) return;
-    final rt = jsNewRuntime((ctx, type, ptr) {
-      try {
-        switch (type) {
-          case JSChannelType.METHON:
-            final pdata = ptr.cast<Pointer<JSValue>>();
-            final argc = pdata[1].cast<Int32>().value;
-            final pargs = [];
-            for (var i = 0; i < argc; ++i) {
-              pargs.add(_jsToDart(
-                ctx,
-                Pointer.fromAddress(
-                  pdata[2].address + sizeOfJSValue * i,
-                ),
-              ));
-            }
-            final JSInvokable func = _jsToDart(
-              ctx,
-              pdata[3],
-            );
-            return _dartToJs(
-                ctx,
-                func.invoke(
-                  pargs,
-                  _jsToDart(ctx, pdata[0]),
-                ));
-          case JSChannelType.MODULE:
-            if (moduleHandler == null) throw JSError('No ModuleHandler');
-            final ret = moduleHandler!(
-              ptr.cast<Utf8>().toDartString(),
-            ).toNativeUtf8();
-            Future.microtask(() {
-              malloc.free(ret);
-            });
-            return ret.cast();
-          case JSChannelType.PROMISE_TRACK:
-            final err = _parseJSException(ctx, ptr);
-            if (hostPromiseRejectionHandler != null) {
-              hostPromiseRejectionHandler!(err);
-            } else {
-              print('unhandled promise rejection: $err');
-            }
+    final rt = jsNewRuntime(
+      (ctx, type, ptr) {
+        try {
+          switch (type) {
+            case JSChannelType.METHON:
+              final pdata = ptr.cast<Pointer<JSValue>>();
+              final argc = pdata[1].cast<Int32>().value;
+              final pargs = [];
+              for (var i = 0; i < argc; ++i) {
+                pargs.add(
+                  _jsToDart(ctx, Pointer.fromAddress(pdata[2].address + sizeOfJSValue * i)),
+                );
+              }
+              final JSInvokable func = _jsToDart(ctx, pdata[3]);
+              return _dartToJs(ctx, func.invoke(pargs, _jsToDart(ctx, pdata[0])));
+            case JSChannelType.MODULE:
+              if (moduleHandler == null) throw JSError('No ModuleHandler');
+              final ret = moduleHandler!(ptr.cast<Utf8>().toDartString()).toNativeUtf8();
+              Future.microtask(() {
+                malloc.free(ret);
+              });
+              return ret.cast();
+            case JSChannelType.PROMISE_TRACK:
+              final err = _parseJSException(ctx, ptr);
+              if (hostPromiseRejectionHandler != null) {
+                hostPromiseRejectionHandler!(err);
+              } else {
+                print('unhandled promise rejection: $err');
+              }
+              return nullptr;
+            case JSChannelType.FREE_OBJECT:
+              final rt = ctx.cast<JSRuntime>();
+              _DartObject.fromAddress(rt, ptr.address)?.free();
+              return nullptr;
+          }
+          throw JSError('call channel with wrong type');
+        } catch (e) {
+          if (type == JSChannelType.FREE_OBJECT) {
+            print('DartObject release error: $e');
             return nullptr;
-          case JSChannelType.FREE_OBJECT:
-            final rt = ctx.cast<JSRuntime>();
-            _DartObject.fromAddress(rt, ptr.address)?.free();
+          }
+          if (type == JSChannelType.MODULE) {
+            print('host Promise Rejection Handler error: $e');
             return nullptr;
+          }
+          final throwObj = _dartToJs(ctx, e);
+          final err = jsThrow(ctx, throwObj);
+          jsFreeValue(ctx, throwObj);
+          if (type == JSChannelType.MODULE) {
+            jsFreeValue(ctx, err);
+            return nullptr;
+          }
+          return err;
         }
-        throw JSError('call channel with wrong type');
-      } catch (e) {
-        if (type == JSChannelType.FREE_OBJECT) {
-          print('DartObject release error: $e');
-          return nullptr;
-        }
-        if (type == JSChannelType.MODULE) {
-          print('host Promise Rejection Handler error: $e');
-          return nullptr;
-        }
-        final throwObj = _dartToJs(ctx, e);
-        final err = jsThrow(ctx, throwObj);
-        jsFreeValue(ctx, throwObj);
-        if (type == JSChannelType.MODULE) {
-          jsFreeValue(ctx, err);
-          return nullptr;
-        }
-        return err;
-      }
-    }, timeout ?? 0, port);
+      },
+      timeout ?? 0,
+      port,
+    );
     final stackSize = this.stackSize;
     if (stackSize > 0) jsSetMaxStackSize(rt, stackSize);
     final memoryLimit = this.memoryLimit ?? 0;
@@ -178,20 +169,10 @@ class QuickJsRuntime2 extends JavascriptRuntime {
   }
 
   /// Evaluate js script.
-  JsEvalResult evaluate(
-    String command, {
-    String? name,
-    int? evalFlags,
-    String? sourceUrl,
-  }) {
+  JsEvalResult evaluate(String command, {String? name, int? evalFlags, String? sourceUrl}) {
     _ensureEngine();
     final ctx = _ctx!;
-    final jsval = jsEval(
-      ctx,
-      command,
-      name ?? '<eval>',
-      evalFlags ?? JSEvalFlag.GLOBAL,
-    );
+    final jsval = jsEval(ctx, command, name ?? '<eval>', evalFlags ?? JSEvalFlag.GLOBAL);
 
     if (jsIsException(jsval) != 0) {
       jsFreeValue(ctx, jsval);
@@ -242,14 +223,13 @@ class QuickJsRuntime2 extends JavascriptRuntime {
   @override
   void initChannelFunctions() {
     JavascriptRuntime.channelFunctionsRegistered[getEngineInstanceId()] = {};
-    final setToGlobalObject =
-        evaluate("(key, val) => { this[key] = val; }").rawResult;
+    final setToGlobalObject = evaluate("(key, val) => { this[key] = val; }").rawResult;
     localContext['setToGlobalObject'] = setToGlobalObject;
     (setToGlobalObject as JSInvokable).invoke([
       'sendMessage',
       (String channelName, String message) {
-        final channelFunctions = JavascriptRuntime
-            .channelFunctionsRegistered[getEngineInstanceId()]!;
+        final channelFunctions =
+            JavascriptRuntime.channelFunctionsRegistered[getEngineInstanceId()]!;
 
         if (channelFunctions.containsKey(channelName)) {
           return channelFunctions[channelName]!.call(jsonDecode(message));
@@ -259,7 +239,7 @@ class QuickJsRuntime2 extends JavascriptRuntime {
         if (JavascriptRuntime.debugEnabled) {
           print('CHANNEL: $channelName - Message: $message');
         }
-      }
+      },
     ]);
   }
 

@@ -23,7 +23,7 @@ class SearchPage extends GetView<pure_live.SearchController> {
           controller: controller.searchController,
           autofocus: true,
           decoration: InputDecoration(
-            hintText: i18n("search_input_hint"),
+            hintText: i18n('search_input_hint'),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(24)),
             contentPadding: const EdgeInsets.symmetric(horizontal: 12.0),
             prefixIcon: IconButton(
@@ -55,7 +55,8 @@ class SearchPage extends GetView<pure_live.SearchController> {
         return Column(
           children: [
             _SearchOptions(controller: controller),
-            if (controller.pendingSiteCount.v > 0 && !controller.loading.v) const LinearProgressIndicator(minHeight: 2),
+            if (controller.pendingSiteCount.v > 0 && !controller.loading.v)
+              const LinearProgressIndicator(minHeight: 2),
             Expanded(child: _buildContent(context)),
           ],
         );
@@ -111,7 +112,10 @@ class SearchPage extends GetView<pure_live.SearchController> {
                 content: Text(controller.errorMessage.v),
                 actions: [
                   if (controller.canOpenWebSearch)
-                    TextButton(onPressed: controller.openWebSearch, child: Text(i18n('continue_web_search'))),
+                    TextButton(
+                      onPressed: controller.openWebSearch,
+                      child: Text(i18n('continue_web_search')),
+                    ),
                   TextButton(
                     onPressed: () => controller.errorMessage.v = '',
                     child: Text(MaterialLocalizations.of(context).closeButtonLabel),
@@ -137,7 +141,11 @@ class SearchPage extends GetView<pure_live.SearchController> {
                       delegate: SliverChildBuilderDelegate(
                         (context, index) {
                           final room = controller.results[index];
-                          return RoomCard(key: ValueKey('${room.platform}:${room.roomId}'), room: room, dense: true);
+                          return RoomCard(
+                            key: ValueKey('${room.platform}:${room.roomId}'),
+                            room: room,
+                            dense: true,
+                          );
                         },
                         childCount: controller.results.length,
                         addAutomaticKeepAlives: false,
@@ -152,7 +160,10 @@ class SearchPage extends GetView<pure_live.SearchController> {
                         padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
                         child: Center(
                           child: controller.loadingMore.v
-                              ? const SizedBox.square(dimension: 28, child: CircularProgressIndicator(strokeWidth: 2.5))
+                              ? const SizedBox.square(
+                                  dimension: 28,
+                                  child: CircularProgressIndicator(strokeWidth: 2.5),
+                                )
                               : controller.hasMore.v
                               ? TextButton.icon(
                                   onPressed: controller.loadMore,
@@ -161,8 +172,9 @@ class SearchPage extends GetView<pure_live.SearchController> {
                                 )
                               : Text(
                                   i18n('all_results_loaded'),
-                                  style: Theme.of(context).textTheme.bodySmall
-                                      ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                  ),
                                 ),
                         ),
                       ),
@@ -245,7 +257,10 @@ class _SearchOptions extends StatelessWidget {
                 Expanded(
                   child: Text(
                     controller.capabilityText,
-                    style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant, height: 1.3),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                      height: 1.3,
+                    ),
                   ),
                 ),
               ],

@@ -7,7 +7,8 @@ class PopularGridView extends StatelessWidget {
   final String tag;
   const PopularGridView(this.tag, {super.key});
 
-  BasePageScrollAndStateBone<LiveRoom> get controller => Get.find<BasePageScrollAndStateBone<LiveRoom>>(tag: tag);
+  BasePageScrollAndStateBone<LiveRoom> get controller =>
+      Get.find<BasePageScrollAndStateBone<LiveRoom>>(tag: tag);
 
   @override
   Widget build(BuildContext context) {
@@ -23,8 +24,8 @@ class PopularGridView extends StatelessWidget {
           emptyBuilder: (c) => AppStatusView(
             type: AppStatusType.empty,
             icon: RemixIcons.fire_fill,
-            title: i18n("empty_live_title"),
-            subtitle: i18n("empty_live_subtitle"),
+            title: i18n('empty_live_title'),
+            subtitle: i18n('empty_live_subtitle'),
             buttonText: i18n('refresh'),
             onButtonPressed: () => controller.refreshData(),
           ),
@@ -42,12 +43,18 @@ class PopularGridView extends StatelessWidget {
                 crossAxisCount: crossAxisCount,
                 crossAxisSpacing: spacing,
                 mainAxisSpacing: SettingsService.to.theme.mainAxisSpacing.v,
-                mainAxisExtent: RoomCardConfigController.to.calculateCardHeight(itemWidth: itemWidth),
+                mainAxisExtent: RoomCardConfigController.to.calculateCardHeight(
+                  itemWidth: itemWidth,
+                ),
               ),
               itemCount: list.length,
               itemBuilder: (context, index) {
                 final room = list[index];
-                return RoomCard(key: ValueKey('${room.platform}:${room.roomId}'), room: room, dense: true);
+                return RoomCard(
+                  key: ValueKey('${room.platform}:${room.roomId}'),
+                  room: room,
+                  dense: true,
+                );
               },
             );
           },

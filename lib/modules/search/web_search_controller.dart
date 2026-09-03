@@ -27,11 +27,11 @@ class WebSearchController extends GetxController {
     final Map args = Get.arguments;
     url = args['url'];
     platform = args['platform'];
-    Log.i("🌐 页面初始化，目标 URL: $url, 平台: $platform");
+    Log.i('🌐 页面初始化，目标 URL: $url, 平台: $platform');
   }
 
   String getDynamicUserAgent() {
-    return "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36";
+    return 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36';
   }
 
   bool get usesExternalBrowser => Platform.isLinux;
@@ -43,20 +43,20 @@ class WebSearchController extends GetxController {
 
   void onWebViewCreated(InAppWebViewController controller) {
     webViewController = controller;
-    Log.i("🛠️ WebView 实例创建成功，开始加载 URL");
+    Log.i('🛠️ WebView 实例创建成功，开始加载 URL');
     webViewController!.loadUrl(urlRequest: URLRequest(url: WebUri(url)));
   }
 
   void onLoadStart(InAppWebViewController controller, WebUri? uri) {
     if (uri != null) {
-      Log.i("🚀 页面开始加载/跳转: ${uri.toString()}");
+      Log.i('🚀 页面开始加载/跳转: ${uri.toString()}');
       _parseRoomId(uri.toString());
     }
   }
 
   void onUpdateVisitedHistory(InAppWebViewController controller, WebUri? uri, bool? isReload) {
     if (uri != null) {
-      Log.i("📜 历史记录变更（SPA跳转）: ${uri.toString()}");
+      Log.i('📜 历史记录变更（SPA跳转）: ${uri.toString()}');
       _parseRoomId(uri.toString());
     }
   }
@@ -65,30 +65,38 @@ class WebSearchController extends GetxController {
     try {
       final cookieManager = CookieManager.instance();
       await cookieManager.flush();
-      Log.i("🍪 网页登录状态和本地 Cookies 已成功强行保存到磁盘。");
+      Log.i('🍪 网页登录状态和本地 Cookies 已成功强行保存到磁盘。');
     } catch (e, stackTrace) {
-      Log.e("⚠️ 强行保存凭证时遇到小警告: $e", stackTrace);
+      Log.e('⚠️ 强行保存凭证时遇到小警告: $e', stackTrace);
     }
     if (uri != null) {
-      Log.i("🏁 页面加载完成: ${uri.toString()}");
+      Log.i('🏁 页面加载完成: ${uri.toString()}');
       _parseRoomId(uri.toString());
     }
   }
 
-  void onReceivedHttpError(InAppWebViewController controller, URLRequest request, URLResponse response) {
+  void onReceivedHttpError(
+    InAppWebViewController controller,
+    URLRequest request,
+    URLResponse response,
+  ) {
     Log.w(
-      "❌ 网页 HTTP 请求发生错误! \n"
-      "URL: ${request.url.toString()}\n"
-      "状态码: ${response.statusCode}\n"
-      "Headers: ${response.headers}",
+      '❌ 网页 HTTP 请求发生错误! \n'
+      'URL: ${request.url.toString()}\n'
+      '状态码: ${response.statusCode}\n'
+      'Headers: ${response.headers}',
     );
   }
 
-  void onReceivedError(InAppWebViewController controller, WebResourceRequest request, WebResourceError error) {
+  void onReceivedError(
+    InAppWebViewController controller,
+    WebResourceRequest request,
+    WebResourceError error,
+  ) {
     Log.e(
-      "🔥 WebView 核心加载失败！\n"
-      "触发 URL: ${request.url.toString()}\n"
-      "错误描述: ${error.description}",
+      '🔥 WebView 核心加载失败！\n'
+      '触发 URL: ${request.url.toString()}\n'
+      '错误描述: ${error.description}',
       StackTrace.current,
     );
   }
@@ -98,14 +106,14 @@ class WebSearchController extends GetxController {
     URLAuthenticationChallenge challenge,
   ) async {
     Log.w(
-      "🔒 遇到 SSL 证书认证请求! 主机名: ${challenge.protectionSpace.host}, 错误类型: ${challenge.protectionSpace.authenticationMethod}",
+      '🔒 遇到 SSL 证书认证请求! 主机名: ${challenge.protectionSpace.host}, 错误类型: ${challenge.protectionSpace.authenticationMethod}',
     );
     return ServerTrustAuthResponse(action: ServerTrustAuthResponseAction.CANCEL);
   }
 
   void onConsoleMessage(InAppWebViewController controller, ConsoleMessage consoleMessage) {
     if (consoleMessage.messageLevel == ConsoleMessageLevel.ERROR) {
-      Log.w("?? 网页内部 JS 报错: ${consoleMessage.message} (Level: ${consoleMessage.messageLevel})");
+      Log.w('?? 网页内部 JS 报错: ${consoleMessage.message} (Level: ${consoleMessage.messageLevel})');
     }
   }
 
@@ -116,7 +124,7 @@ class WebSearchController extends GetxController {
     final uri = action.request.url;
     if (uri != null) {
       final link = uri.toString();
-      Log.i("点按链接跳转: $link");
+      Log.i('点按链接跳转: $link');
       _parseRoomId(link);
     }
     return NavigationActionPolicy.ALLOW;
@@ -133,7 +141,7 @@ class WebSearchController extends GetxController {
       final target = WebSearchRoomParser.parse(cleanUrl);
       if (target == null) {
         _dismissedTarget = null;
-        developer.log("⚠️ 非支持平台，跳过");
+        developer.log('⚠️ 非支持平台，跳过');
         return;
       }
       if (_dismissedTarget == target.key) return;
@@ -146,7 +154,7 @@ class WebSearchController extends GetxController {
       }
 
       if (_isShowingDialog) {
-        developer.log("⏳ 弹窗处理中，拦截重复调用");
+        developer.log('⏳ 弹窗处理中，拦截重复调用');
         return;
       }
       _isShowingDialog = true;
@@ -154,13 +162,13 @@ class WebSearchController extends GetxController {
       _lastPromptedAt = now;
 
       roomId.value = target.roomId;
-      developer.log("🎯 捕获到 ${target.platform} roomId: ${target.roomId}");
+      developer.log('🎯 捕获到 ${target.platform} roomId: ${target.roomId}');
 
       bool? confirm = await Utils.showAlertDialog(
-        i18n("detected_room_id_open"),
-        title: i18n("tip"),
-        confirm: i18n("confirm"),
-        cancel: i18n("cancel"),
+        i18n('detected_room_id_open'),
+        title: i18n('tip'),
+        confirm: i18n('confirm'),
+        cancel: i18n('cancel'),
       );
 
       if (confirm == true) {
@@ -176,7 +184,7 @@ class WebSearchController extends GetxController {
         _isShowingDialog = false;
       }
     } catch (e) {
-      developer.log("🔥 解析异常: $e");
+      developer.log('🔥 解析异常: $e');
       _isShowingDialog = false;
     }
   }

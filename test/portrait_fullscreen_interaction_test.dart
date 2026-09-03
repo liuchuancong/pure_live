@@ -16,13 +16,14 @@ void main() {
         isTrue,
       );
 
-      for (final blocked in <({bool portrait, bool adaptation, bool height, bool compatibility, bool mobile})>[
-        (portrait: false, adaptation: true, height: true, compatibility: false, mobile: true),
-        (portrait: true, adaptation: false, height: true, compatibility: false, mobile: true),
-        (portrait: true, adaptation: true, height: false, compatibility: false, mobile: true),
-        (portrait: true, adaptation: true, height: true, compatibility: true, mobile: true),
-        (portrait: true, adaptation: true, height: true, compatibility: false, mobile: false),
-      ]) {
+      for (final blocked
+          in <({bool portrait, bool adaptation, bool height, bool compatibility, bool mobile})>[
+            (portrait: false, adaptation: true, height: true, compatibility: false, mobile: true),
+            (portrait: true, adaptation: false, height: true, compatibility: false, mobile: true),
+            (portrait: true, adaptation: true, height: false, compatibility: false, mobile: true),
+            (portrait: true, adaptation: true, height: true, compatibility: true, mobile: true),
+            (portrait: true, adaptation: true, height: true, compatibility: false, mobile: false),
+          ]) {
         expect(
           canEnterPortraitPanelFullscreen(
             isPortraitSource: blocked.portrait,
@@ -38,19 +39,39 @@ void main() {
 
     test('commits only a deliberate distance or downward fling', () {
       expect(
-        resolvePortraitPanelDragEnd(entryEnabled: true, dismissOffset: 96, panelHeight: 240, velocity: 0),
+        resolvePortraitPanelDragEnd(
+          entryEnabled: true,
+          dismissOffset: 96,
+          panelHeight: 240,
+          velocity: 0,
+        ),
         PortraitPanelDragDisposition.enterFullscreen,
       );
       expect(
-        resolvePortraitPanelDragEnd(entryEnabled: true, dismissOffset: 32, panelHeight: 240, velocity: 1100),
+        resolvePortraitPanelDragEnd(
+          entryEnabled: true,
+          dismissOffset: 32,
+          panelHeight: 240,
+          velocity: 1100,
+        ),
         PortraitPanelDragDisposition.enterFullscreen,
       );
       expect(
-        resolvePortraitPanelDragEnd(entryEnabled: true, dismissOffset: 24, panelHeight: 240, velocity: 0),
+        resolvePortraitPanelDragEnd(
+          entryEnabled: true,
+          dismissOffset: 24,
+          panelHeight: 240,
+          velocity: 0,
+        ),
         PortraitPanelDragDisposition.restorePanel,
       );
       expect(
-        resolvePortraitPanelDragEnd(entryEnabled: false, dismissOffset: 240, panelHeight: 240, velocity: 1600),
+        resolvePortraitPanelDragEnd(
+          entryEnabled: false,
+          dismissOffset: 240,
+          panelHeight: 240,
+          velocity: 1600,
+        ),
         PortraitPanelDragDisposition.restorePanel,
       );
     });
@@ -73,7 +94,8 @@ void main() {
       ),
     );
 
-    AnimatedOpacity opacity() => tester.widget(find.byKey(const ValueKey('portrait-fullscreen-entry-hint-opacity')));
+    AnimatedOpacity opacity() =>
+        tester.widget(find.byKey(const ValueKey('portrait-fullscreen-entry-hint-opacity')));
     expect(find.byKey(const ValueKey('portrait-fullscreen-entry-hint')), findsOneWidget);
     expect(opacity().opacity, 1);
 

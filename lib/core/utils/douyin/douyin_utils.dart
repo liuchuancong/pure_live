@@ -43,9 +43,9 @@ class DouyinUtils {
   Future<Map<String, String>> getTtwidWebid({required String reqUrl}) async {
     // 先请求以获取 ttwid 等 Cookie，再解析页面的 RENDER_DATA 获取 user_unique_id
     final headers = <String, String>{
-      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36 Edg/125.0.0.0",
-      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-      "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36 Edg/125.0.0.0',
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+      'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
     };
 
     String? ttwid;
@@ -54,12 +54,12 @@ class DouyinUtils {
     try {
       // 先用 HEAD 获取 Set-Cookie（包含 ttwid）
       final headResp = await HttpClient.instance.head(reqUrl, header: headers);
-      final setCookies = headResp.headers["set-cookie"];
+      final setCookies = headResp.headers['set-cookie'];
       if (setCookies != null) {
         for (final cookieLine in setCookies) {
-          final cookie = cookieLine.split(";").first;
-          if (cookie.startsWith("ttwid=")) {
-            ttwid = cookie.substring("ttwid=".length);
+          final cookie = cookieLine.split(';').first;
+          if (cookie.startsWith('ttwid=')) {
+            ttwid = cookie.substring('ttwid='.length);
             break;
           }
         }
@@ -74,7 +74,7 @@ class DouyinUtils {
         dotAll: true,
       ).allMatches(html);
       if (renderMatches.isNotEmpty) {
-        var renderDataText = renderMatches.first.group(1) ?? "";
+        var renderDataText = renderMatches.first.group(1) ?? '';
         // URL 解码
         try {
           renderDataText = Uri.decodeComponent(renderDataText);

@@ -40,8 +40,7 @@ final void Function(Pointer group) jSContextGroupRelease = JscFfi.lib
 /// However, you may not use values created in the context in other contexts.
 /// [globalObjectClass] (JSClassRef) The class to use when creating the global object. Pass NULL to use the default object class.
 /// [@result] (JSGlobalContextRef) A JSGlobalContext with a global object of class globalObjectClass.
-final Pointer Function(Pointer globalObjectClass) jSGlobalContextCreate = JscFfi
-    .lib
+final Pointer Function(Pointer globalObjectClass) jSGlobalContextCreate = JscFfi.lib
     .lookup<NativeFunction<Pointer Function(Pointer)>>('JSGlobalContextCreate')
     .asFunction();
 
@@ -51,10 +50,9 @@ final Pointer Function(Pointer globalObjectClass) jSGlobalContextCreate = JscFfi
 /// [group] (JSContextGroupRef) The context group to use. The created global context retains the group. Pass NULL to create a unique group for the context.
 /// [globalObjectClass] (JSClassRef) The class to use when creating the global object. Pass NULL to use the default object class.
 /// [@result] (JSGlobalContextRef) A JSGlobalContext with a global object of class globalObjectClass and a context group equal to group.
-final Pointer Function(Pointer group, Pointer globalObjectClass)
-    jSGlobalContextCreateInGroup = JscFfi.lib
-        .lookup<NativeFunction<Pointer Function(Pointer, Pointer)>>(
-            'JSGlobalContextCreateInGroup')
+final Pointer Function(Pointer group, Pointer globalObjectClass) jSGlobalContextCreateInGroup =
+    JscFfi.lib
+        .lookup<NativeFunction<Pointer Function(Pointer, Pointer)>>('JSGlobalContextCreateInGroup')
         .asFunction();
 
 /// Retains a global JavaScript execution context.
@@ -74,8 +72,7 @@ final void Function(Pointer ctx) jSGlobalContextRelease = JscFfi.lib
 /// [ctx] (JSContextRef) The JSContext whose global object you want to get.
 /// [@result] (JSObjectRef) ctx's global object.
 final Pointer Function(Pointer ctx) jSContextGetGlobalObject = JscFfi.lib
-    .lookup<NativeFunction<Pointer Function(Pointer)>>(
-        'JSContextGetGlobalObject')
+    .lookup<NativeFunction<Pointer Function(Pointer)>>('JSContextGetGlobalObject')
     .asFunction();
 
 /// Gets the context group to which a JavaScript execution context belongs.
@@ -89,8 +86,7 @@ final Pointer Function(Pointer ctx) jSContextGetGroup = JscFfi.lib
 /// [ctx] (JSContextRef) The JSContext whose global context you want to get.
 /// [@result] (JSGlobalContextRef) ctx's global context.
 final Pointer Function(Pointer ctx) jSContextGetGlobalContext = JscFfi.lib
-    .lookup<NativeFunction<Pointer Function(Pointer)>>(
-        'JSContextGetGlobalContext')
+    .lookup<NativeFunction<Pointer Function(Pointer)>>('JSContextGetGlobalContext')
     .asFunction();
 
 /// Gets a copy of the name of a context.
@@ -99,15 +95,12 @@ final Pointer Function(Pointer ctx) jSContextGetGlobalContext = JscFfi.lib
 /// [ctx] (JSGlobalContextRef) The JSGlobalContext whose name you want to get.
 /// [@result] (JSStringRef) The name for ctx.
 final Pointer Function(Pointer ctx) jSGlobalContextCopyName = JscFfi.lib
-    .lookup<NativeFunction<Pointer Function(Pointer)>>(
-        'JSGlobalContextCopyName')
+    .lookup<NativeFunction<Pointer Function(Pointer)>>('JSGlobalContextCopyName')
     .asFunction();
 
 /// Sets the remote debugging name for a context.
 /// [ctx] (JSGlobalContextRef) The JSGlobalContext that you want to name.
 /// [name] (JSStringRef) The remote debugging name to set on ctx.
-final void Function(Pointer ctx, Pointer name) jSGlobalContextSetName = JscFfi
-    .lib
-    .lookup<NativeFunction<Void Function(Pointer, Pointer)>>(
-        'JSGlobalContextSetName')
+final void Function(Pointer ctx, Pointer name) jSGlobalContextSetName = JscFfi.lib
+    .lookup<NativeFunction<Void Function(Pointer, Pointer)>>('JSGlobalContextSetName')
     .asFunction();

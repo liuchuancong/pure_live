@@ -9,7 +9,10 @@ class DanmakuState {
 
   const DanmakuState({this.messages = const [], this.currentDanmakuRoomId});
 
-  DanmakuState copyWith({List<LiveMessage>? messages, Object? currentDanmakuRoomId = _notProvided}) {
+  DanmakuState copyWith({
+    List<LiveMessage>? messages,
+    Object? currentDanmakuRoomId = _notProvided,
+  }) {
     return DanmakuState(
       messages: messages ?? this.messages,
       currentDanmakuRoomId: identical(currentDanmakuRoomId, _notProvided)

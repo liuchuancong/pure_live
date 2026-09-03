@@ -48,6 +48,8 @@ class HuyaEmojiModel {
 
   static Map<String, HuyaEmojiModel> parseEmojiRegistry(String rawJsonStr) {
     final Map<String, dynamic> decoded = jsonDecode(rawJsonStr);
-    return decoded.map((key, value) => MapEntry(key, HuyaEmojiModel.fromJson(value as Map<String, dynamic>)));
+    return decoded.map(
+      (key, value) => MapEntry(key, HuyaEmojiModel.fromJson(value as Map<String, dynamic>)),
+    );
   }
 }

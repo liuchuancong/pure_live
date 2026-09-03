@@ -51,10 +51,9 @@ class JSString {
       return null;
     }
     int cStringLength = JSStringRef.jSStringGetLength(_pointer);
-    return String.fromCharCodes(Uint16List.view(
-        cString.cast<Uint16>().asTypedList(cStringLength).buffer,
-        0,
-        cStringLength));
+    return String.fromCharCodes(
+      Uint16List.view(cString.cast<Uint16>().asTypedList(cStringLength).buffer, 0, cStringLength),
+    );
   }
 
   @override
@@ -77,16 +76,14 @@ class JSStringPointer {
   /// Pointer array count
   final int count;
 
-  JSStringPointer([Pointer? value])
-      : this.count = 1,
-        this.pointer = malloc.call<Pointer>(1) {
+  JSStringPointer([Pointer? value]) : this.count = 1, this.pointer = malloc.call<Pointer>(1) {
     pointer.value = value ?? nullptr;
   }
 
   /// JSStringRef array
   JSStringPointer.array(List<String> array)
-      : this.count = array.length,
-        this.pointer = malloc.call<Pointer>(array.length) {
+    : this.count = array.length,
+      this.pointer = malloc.call<Pointer>(array.length) {
     for (int i = 0; i < array.length; i++) {
       this.pointer[i] = JSString.fromString(array[i]).pointer;
     }

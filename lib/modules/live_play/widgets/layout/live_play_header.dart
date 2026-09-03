@@ -32,7 +32,9 @@ class LivePlayHeader extends StatelessWidget implements PreferredSizeWidget {
           final avatar = controller.state.value.room.detail?.avatar;
           return CircleAvatar(
             radius: 16,
-            foregroundImage: avatar != null && avatar.isNotEmpty ? CachedNetworkImageProvider(avatar) : null,
+            foregroundImage: avatar != null && avatar.isNotEmpty
+                ? CachedNetworkImageProvider(avatar)
+                : null,
             backgroundColor: Theme.of(context).disabledColor,
           );
         }),
@@ -56,7 +58,9 @@ class LivePlayHeader extends StatelessWidget implements PreferredSizeWidget {
                   style: Theme.of(context).textTheme.labelSmall,
                 ),
                 Text(
-                  area == null || area.isEmpty ? i18n('site_$platform') : '${i18n("site_$platform")} / $area',
+                  area == null || area.isEmpty
+                      ? i18n('site_$platform')
+                      : '${i18n("site_$platform")} / $area',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.labelSmall,
@@ -77,11 +81,15 @@ class LivePlayHeader extends StatelessWidget implements PreferredSizeWidget {
         return const SizedBox.shrink();
       }
       final awaitingCanonicalIdentity =
-          roomState.isLoading && (detail.nick?.trim().isEmpty ?? true) && (detail.title?.trim().isEmpty ?? true);
+          roomState.isLoading &&
+          (detail.nick?.trim().isEmpty ?? true) &&
+          (detail.title?.trim().isEmpty ?? true);
       if (awaitingCanonicalIdentity) {
         return const SizedBox(
           width: 47,
-          child: Center(child: SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2))),
+          child: Center(
+            child: SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2)),
+          ),
         );
       }
       return Padding(

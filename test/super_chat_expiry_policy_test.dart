@@ -17,7 +17,10 @@ void main() {
   }
 
   test('empty super-chat state schedules no periodic wake-up', () {
-    final delay = LivePlayController.nextSuperChatExpiryDelay(const <LiveSuperChatMessage>[], DateTime(2026));
+    final delay = LivePlayController.nextSuperChatExpiryDelay(
+      const <LiveSuperChatMessage>[],
+      DateTime(2026),
+    );
 
     expect(delay, isNull);
   });

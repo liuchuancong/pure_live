@@ -4,8 +4,14 @@ import 'package:pure_live/modules/live_play/widgets/content_first_panel_layout.d
 
 void main() {
   test('room history keeps two columns in a landscape phone half-panel', () {
-    final widePhone = resolveContentFirstPanelLayout(const Size(844, 390), ContentFirstPanelKind.roomHistory);
-    final compactPhone = resolveContentFirstPanelLayout(const Size(740, 360), ContentFirstPanelKind.roomHistory);
+    final widePhone = resolveContentFirstPanelLayout(
+      const Size(844, 390),
+      ContentFirstPanelKind.roomHistory,
+    );
+    final compactPhone = resolveContentFirstPanelLayout(
+      const Size(740, 360),
+      ContentFirstPanelKind.roomHistory,
+    );
 
     expect(resolveRoomHistoryColumns(widePhone.size.width), 2);
     expect(resolveRoomHistoryColumns(compactPhone.size.width), 2);

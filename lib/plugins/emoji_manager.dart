@@ -81,7 +81,9 @@ class EmojiManager {
         if (img == null) continue;
         final keys = <String>[];
         if (model.primaryKey.isNotEmpty) keys.add(model.primaryKey);
-        if (model.secondaryKey != null && model.secondaryKey!.isNotEmpty) keys.add(model.secondaryKey!);
+        if (model.secondaryKey != null && model.secondaryKey!.isNotEmpty) {
+          keys.add(model.secondaryKey!);
+        }
         infoList.add(
           EmojiInfo(
             id: model.localFile,

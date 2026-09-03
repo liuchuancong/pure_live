@@ -1,14 +1,19 @@
 import 'dart:io';
+
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/modules/auth/auth_controller.dart';
 import 'package:pure_live/common/utils/windows_multi_instance_launcher.dart';
 
-
 class MenuButton extends GetView<AuthController> {
   const MenuButton({super.key});
 
-  final menuRoutes = const [RoutePath.kSettings, RoutePath.kAbout, RoutePath.kHistory, RoutePath.kBackup];
+  final menuRoutes = const [
+    RoutePath.kSettings,
+    RoutePath.kAbout,
+    RoutePath.kHistory,
+    RoutePath.kBackup,
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -33,28 +38,34 @@ class MenuButton extends GetView<AuthController> {
         PopupMenuItem(
           value: 0,
           padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: MenuListTile(leading: const Icon(Remix.settings_5_line), text: i18n("settings_title")),
+          child: MenuListTile(
+            leading: const Icon(Remix.settings_5_line),
+            text: i18n('settings_title'),
+          ),
         ),
         PopupMenuItem(
           value: 1,
           padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: MenuListTile(leading: const Icon(Remix.information_line), text: i18n("about")),
+          child: MenuListTile(leading: const Icon(Remix.information_line), text: i18n('about')),
         ),
         PopupMenuItem(
           value: 2,
           padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: MenuListTile(leading: const Icon(Remix.history_line), text: i18n("history")),
+          child: MenuListTile(leading: const Icon(Remix.history_line), text: i18n('history')),
         ),
         PopupMenuItem(
           value: 3,
           padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: MenuListTile(leading: const Icon(Remix.cloud_line), text: i18n("backup_recover")),
+          child: MenuListTile(leading: const Icon(Remix.cloud_line), text: i18n('backup_recover')),
         ),
         if (Platform.isWindows && SettingsService.to.app.enableNewWindowPlay.v)
           PopupMenuItem(
             value: 4,
             padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: MenuListTile(leading: const Icon(Icons.add_to_photos_outlined), text: i18n('open_new_window')),
+            child: MenuListTile(
+              leading: const Icon(Icons.add_to_photos_outlined),
+              text: i18n('open_new_window'),
+            ),
           ),
       ],
     );

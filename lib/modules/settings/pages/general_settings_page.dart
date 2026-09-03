@@ -10,12 +10,12 @@ class GeneralSettingsPage extends GetView<SettingsService> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(i18n("general"))),
+      appBar: AppBar(title: Text(i18n('general'))),
       body: ListView(
         physics: const PureLiveScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
-          context.buildGroupTitle(i18n("general")),
+          context.buildGroupTitle(i18n('general')),
           context.buildModernCard([
             if (Platform.isAndroid || Platform.isWindows)
               Obx(() {
@@ -26,7 +26,8 @@ class GeneralSettingsPage extends GetView<SettingsService> {
                     : ' · ${info.currentRefreshRate.toStringAsFixed(0)} / ${info.maxRefreshRate.toStringAsFixed(0)} Hz';
                 return context.buildTile(
                   title: i18n('refresh_rate_mode'),
-                  subtitle: '${_refreshRateModeLabel(mode)} · ${_refreshRateModeDescription(mode)}$suffix',
+                  subtitle:
+                      '${_refreshRateModeLabel(mode)} · ${_refreshRateModeDescription(mode)}$suffix',
                   icon: Remix.speed_up_line,
                   isLong: true,
                   trailing: const Icon(Icons.chevron_right_rounded),
@@ -47,25 +48,25 @@ class GeneralSettingsPage extends GetView<SettingsService> {
                   icon: Remix.speed_up_line,
                   isLong: true,
                   trailing: const Icon(Icons.refresh_rounded),
-                  onTap: () => DisplayModeService.refreshInfo(),
+                  onTap: DisplayModeService.refreshInfo,
                 );
               }),
             if (Platform.isWindows)
               context.buildSwitchTile(
                 title: i18n('open_new_window'),
-                subtitle: i18n("open_new_window_subtitle"),
+                subtitle: i18n('open_new_window_subtitle'),
                 value: SettingsService.to.app.enableNewWindowPlay,
                 icon: Icons.add_to_photos_outlined,
               ),
             context.buildSwitchTile(
               title: i18n('splash_animation'),
-              subtitle: i18n("splash_animation_subtitle"),
+              subtitle: i18n('splash_animation_subtitle'),
               value: SettingsService.to.app.showSplashPage,
               icon: Remix.rocket_2_line,
             ),
             context.buildSwitchTile(
               title: i18n('enable_auto_check_update'),
-              subtitle: "",
+              subtitle: '',
               value: SettingsService.to.app.enableAutoCheckUpdate,
               icon: Remix.refresh_line,
             ),
@@ -91,17 +92,25 @@ class GeneralSettingsPage extends GetView<SettingsService> {
                 stream: SettingsService.to.exit.stopWatchTimer.rawTime,
                 builder: (context, snapshot) {
                   final int value = snapshot.data ?? 0;
-                  String subtitleText = "";
+                  String subtitleText = '';
 
                   if (!isEnabled || value == 0) {
                     subtitleText = "$configMinutes ${i18n('minutes')}";
                   } else {
-                    final displayTime = StopWatchTimer.getDisplayTime(value, hours: true, milliSecond: false);
+                    final displayTime = StopWatchTimer.getDisplayTime(
+                      value,
+                      hours: true,
+                      milliSecond: false,
+                    );
                     subtitleText = "${i18n('remaining_time')}: $displayTime";
                   }
 
                   return context.buildTile(
-                    iconWidget: AnimatedTimerIcon(enabled: isEnabled, remainingMs: value, totalMinutes: configMinutes),
+                    iconWidget: AnimatedTimerIcon(
+                      enabled: isEnabled,
+                      remainingMs: value,
+                      totalMinutes: configMinutes,
+                    ),
 
                     title: i18n('countdown_duration'),
                     subtitle: subtitleText,
@@ -114,22 +123,22 @@ class GeneralSettingsPage extends GetView<SettingsService> {
 
             if (Platform.isWindows) ...[
               context.buildSwitchTile(
-                title: i18n("startup"),
-                subtitle: "",
+                title: i18n('startup'),
+                subtitle: '',
                 value: SettingsService.to.startup.enableStartUp,
                 icon: Remix.windows_line,
               ),
               context.buildTile(
                 icon: Remix.aspect_ratio_line,
-                title: i18n("window_size"),
+                title: i18n('window_size'),
                 subtitle:
-                    "${SettingsService.to.window.storedWidth.v.toInt()} × ${SettingsService.to.window.storedHeight.v.toInt()}",
+                    '${SettingsService.to.window.storedWidth.v.toInt()} × ${SettingsService.to.window.storedHeight.v.toInt()}',
                 trailing: const Icon(Icons.chevron_right_rounded),
                 onTap: () => _showWindowSizeDialog(context),
               ),
               context.buildSwitchTile(
-                title: i18n("no_exit_confirm"),
-                subtitle: "",
+                title: i18n('no_exit_confirm'),
+                subtitle: '',
                 value: SettingsService.to.exit.dontAskExit,
                 icon: Remix.error_warning_line,
               ),
@@ -173,7 +182,10 @@ class GeneralSettingsPage extends GetView<SettingsService> {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(24, 0, 24, 10),
-            child: Text(i18n('refresh_rate_mode_hint'), style: Theme.of(dialogContext).textTheme.bodySmall),
+            child: Text(
+              i18n('refresh_rate_mode_hint'),
+              style: Theme.of(dialogContext).textTheme.bodySmall,
+            ),
           ),
           Obx(
             () => RadioGroup<AppRefreshRateMode>(
@@ -221,8 +233,12 @@ class GeneralSettingsPage extends GetView<SettingsService> {
   }
 
   void _showWindowSizeDialog(BuildContext context) {
-    final widthController = TextEditingController(text: SettingsService.to.window.storedWidth.v.toInt().toString());
-    final heightController = TextEditingController(text: SettingsService.to.window.storedHeight.v.toInt().toString());
+    final widthController = TextEditingController(
+      text: SettingsService.to.window.storedWidth.v.toInt().toString(),
+    );
+    final heightController = TextEditingController(
+      text: SettingsService.to.window.storedHeight.v.toInt().toString(),
+    );
 
     final presets = [
       {'name': '1080 × 720 (默认)', 'w': 1080.0, 'h': 720.0},
@@ -237,7 +253,7 @@ class GeneralSettingsPage extends GetView<SettingsService> {
       builder: (context) {
         final theme = Theme.of(context);
         return AlertDialog(
-          title: Text(i18n("window_size")),
+          title: Text(i18n('window_size')),
           content: SizedBox(
             width: 320,
             child: SingleChildScrollView(
@@ -245,7 +261,10 @@ class GeneralSettingsPage extends GetView<SettingsService> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(i18n("preset_options"), style: AppTextStyles.t13.copyWith(color: theme.hintColor)),
+                  Text(
+                    i18n('preset_options'),
+                    style: AppTextStyles.t13.copyWith(color: theme.hintColor),
+                  ),
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 8,
@@ -261,7 +280,10 @@ class GeneralSettingsPage extends GetView<SettingsService> {
                     }).toList(),
                   ),
                   const SizedBox(height: 20),
-                  Text(i18n("custom_input"), style: AppTextStyles.t13.copyWith(color: theme.hintColor)),
+                  Text(
+                    i18n('custom_input'),
+                    style: AppTextStyles.t13.copyWith(color: theme.hintColor),
+                  ),
                   const SizedBox(height: 12),
                   Row(
                     children: [
@@ -270,24 +292,24 @@ class GeneralSettingsPage extends GetView<SettingsService> {
                           controller: widthController,
                           keyboardType: TextInputType.number,
                           decoration: InputDecoration(
-                            labelText: i18n("width"),
-                            hintText: "1080",
+                            labelText: i18n('width'),
+                            hintText: '1080',
                             border: const OutlineInputBorder(),
                             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                           ),
                         ),
                       ),
                       Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 8),
-                        child: Text("×", style: AppTextStyles.t18),
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: Text('×', style: AppTextStyles.t18),
                       ),
                       Expanded(
                         child: TextField(
                           controller: heightController,
                           keyboardType: TextInputType.number,
                           decoration: InputDecoration(
-                            labelText: i18n("height"),
-                            hintText: "720",
+                            labelText: i18n('height'),
+                            hintText: '720',
                             border: const OutlineInputBorder(),
                             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                           ),
@@ -300,7 +322,7 @@ class GeneralSettingsPage extends GetView<SettingsService> {
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: Text(i18n("cancel"))),
+            TextButton(onPressed: () => Navigator.pop(context), child: Text(i18n('cancel'))),
             TextButton(
               onPressed: () async {
                 final double? w = double.tryParse(widthController.text);
@@ -316,13 +338,13 @@ class GeneralSettingsPage extends GetView<SettingsService> {
                   });
 
                   Navigator.pop(Get.context!);
-                  ToastUtil.show(i18n("save_success"));
+                  ToastUtil.show(i18n('save_success'));
                 } else {
-                  ToastUtil.show(i18n("invalid_input"));
+                  ToastUtil.show(i18n('invalid_input'));
                 }
               },
               child: Text(
-                i18n("confirm"),
+                i18n('confirm'),
                 style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.bold),
               ),
             ),
@@ -340,7 +362,9 @@ class GeneralSettingsPage extends GetView<SettingsService> {
     final int currentValue = SettingsService.to.exit.autoShutDownTime.v;
     final bool isCustom = !minutesOptions.contains(currentValue);
 
-    final TextEditingController inputController = TextEditingController(text: isCustom ? currentValue.toString() : "");
+    final TextEditingController inputController = TextEditingController(
+      text: isCustom ? currentValue.toString() : '',
+    );
 
     showDialog(
       context: context,
@@ -355,7 +379,10 @@ class GeneralSettingsPage extends GetView<SettingsService> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(i18n('app_exit_timer_explain'), style: Theme.of(context).textTheme.bodySmall),
+                  Text(
+                    i18n('app_exit_timer_explain'),
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
                   const SizedBox(height: 12),
                   Obx(() {
                     final selectedValue = SettingsService.to.exit.autoShutDownTime.v;
@@ -427,7 +454,12 @@ class AnimatedTimerIcon extends StatelessWidget {
   final int remainingMs;
   final int totalMinutes;
 
-  const AnimatedTimerIcon({super.key, required this.enabled, required this.remainingMs, required this.totalMinutes});
+  const AnimatedTimerIcon({
+    super.key,
+    required this.enabled,
+    required this.remainingMs,
+    required this.totalMinutes,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -463,7 +495,10 @@ class AnimatedTimerIcon extends StatelessWidget {
                 Container(
                   width: 2,
                   height: 7,
-                  decoration: BoxDecoration(color: iconColor, borderRadius: BorderRadius.circular(1)),
+                  decoration: BoxDecoration(
+                    color: iconColor,
+                    borderRadius: BorderRadius.circular(1),
+                  ),
                 ),
                 const SizedBox(height: 7),
               ],

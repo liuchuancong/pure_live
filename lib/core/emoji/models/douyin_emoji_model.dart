@@ -38,6 +38,9 @@ class DouyinEmojiUrl {
   DouyinEmojiUrl({required this.uri, required this.urlList});
 
   factory DouyinEmojiUrl.fromJson(Map<String, dynamic> json) {
-    return DouyinEmojiUrl(uri: json['uri'] ?? '', urlList: List<String>.from(json['url_list'] ?? []));
+    return DouyinEmojiUrl(
+      uri: json['uri'] ?? '',
+      urlList: List<String>.from(json['url_list'] ?? []),
+    );
   }
 }

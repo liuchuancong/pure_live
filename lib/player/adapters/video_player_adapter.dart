@@ -1,18 +1,18 @@
 import 'dart:async';
+
 import 'package:rxdart/rxdart.dart';
+
 import '../models/player_state.dart';
 import '../models/player_exception.dart';
 import '../models/player_error_type.dart';
+
 import 'package:pure_live/common/index.dart';
+
 import '../interface/unified_player_interface.dart';
+
 import 'package:pure_live/player/models/player_engine.dart';
 import 'package:better_player_plus/better_player_plus.dart';
 import 'package:pure_live/player/interface/video_player_accessor.dart';
-
-
-
-
-
 
 class BetterPlayerAdapter implements UnifiedPlayer, BetterPlayerAccessor {
   BetterPlayerController? _controller;
@@ -38,7 +38,7 @@ class BetterPlayerAdapter implements UnifiedPlayer, BetterPlayerAccessor {
     if (_initialized) return;
     _isAudioOnly = audioOnly;
 
-    BetterPlayerConfiguration betterPlayerConfiguration = BetterPlayerConfiguration(
+    BetterPlayerConfiguration betterPlayerConfiguration = const BetterPlayerConfiguration(
       autoPlay: true,
       handleLifecycle: false,
       fullScreenByDefault: false,
@@ -211,7 +211,7 @@ class BetterPlayerAdapter implements UnifiedPlayer, BetterPlayerAccessor {
         _controller!.dispose();
         _controller = null;
       } catch (e) {
-        debugPrint("BetterPlayer dispose error: $e");
+        debugPrint('BetterPlayer dispose error: $e');
       }
     }
 

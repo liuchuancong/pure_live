@@ -21,7 +21,9 @@ class LivePlayPage extends GetView<LivePlayController> {
       final globalState = GlobalPlayerState.to;
       final presentationActive =
           !isInPip &&
-          (mode != VideoMode.normal || globalState.isFullscreen.value || globalState.isWindowFullscreen.value);
+          (mode != VideoMode.normal ||
+              globalState.isFullscreen.value ||
+              globalState.isWindowFullscreen.value);
 
       final child = LivePlayContent(controller: controller, isInPip: isInPip, mode: mode);
 
@@ -33,7 +35,12 @@ class LivePlayPage extends GetView<LivePlayController> {
       // nothing on exactly those failure states.
       final page = VideoKeyboardShortcuts(
         controller: videoController,
-        child: Container(color: Colors.black, width: double.infinity, height: double.infinity, child: content),
+        child: Container(
+          color: Colors.black,
+          width: double.infinity,
+          height: double.infinity,
+          child: content,
+        ),
       );
 
       return LivePlayBackScope(
@@ -71,17 +78,31 @@ class LivePlayPage extends GetView<LivePlayController> {
               },
               child: Container(
                 constraints: BoxConstraints(maxWidth: fullEffect ? 440 : 320),
-                padding: EdgeInsets.symmetric(horizontal: fullEffect ? 28 : 20, vertical: fullEffect ? 24 : 14),
+                padding: EdgeInsets.symmetric(
+                  horizontal: fullEffect ? 28 : 20,
+                  vertical: fullEffect ? 24 : 14,
+                ),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(colors: [color.withValues(alpha: .94), Colors.black.withValues(alpha: .78)]),
+                  gradient: LinearGradient(
+                    colors: [color.withValues(alpha: .94), Colors.black.withValues(alpha: .78)],
+                  ),
                   borderRadius: BorderRadius.circular(24),
                   border: Border.all(color: Colors.white.withValues(alpha: .45)),
-                  boxShadow: [BoxShadow(color: color.withValues(alpha: .55), blurRadius: fullEffect ? 42 : 24)],
+                  boxShadow: [
+                    BoxShadow(
+                      color: color.withValues(alpha: .55),
+                      blurRadius: fullEffect ? 42 : 24,
+                    ),
+                  ],
                 ),
                 child: Text(
                   message.message,
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.white, fontSize: fullEffect ? 20 : 16, fontWeight: FontWeight.w700),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: fullEffect ? 20 : 16,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ),

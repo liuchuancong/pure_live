@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+
 import 'package:pure_live/common/index.dart';
 import 'package:date_format/date_format.dart';
 import 'package:pure_live/plugins/utils.dart';
@@ -32,7 +33,9 @@ class WebDavPageController extends GetxController {
     // 从全局 WebDavController 读取配置
     configs.assignAll(_webDavController.webDavConfigs.v);
     if (_webDavController.currentWebDavConfig.v.isNotEmpty) {
-      currentConfig.value = WebDAVConfig.fromJson(jsonDecode(_webDavController.currentWebDavConfig.v));
+      currentConfig.value = WebDAVConfig.fromJson(
+        jsonDecode(_webDavController.currentWebDavConfig.v),
+      );
       initializeWebDAV();
     }
 
@@ -166,7 +169,19 @@ class WebDavPageController extends GetxController {
   /// 上传配置到 WebDAV（走新备份系统）
   void uploadConfigSettings() async {
     try {
-      final dateStr = formatDate(DateTime.now(), [yyyy, '-', mm, '-', dd, 'T', HH, '_', nn, '_', ss]);
+      final dateStr = formatDate(DateTime.now(), [
+        yyyy,
+        '-',
+        mm,
+        '-',
+        dd,
+        'T',
+        HH,
+        '_',
+        nn,
+        '_',
+        ss,
+      ]);
       final fileName = 'purelive_$dateStr.txt';
 
       // 备份所有配置
@@ -175,14 +190,14 @@ class WebDavPageController extends GetxController {
       final bytes = utf8.encode(content);
 
       if (dirPath.value == '/') {
-        SnackBarUtil.error(i18n("webdav_select_dir_first"));
+        SnackBarUtil.error(i18n('webdav_select_dir_first'));
         return;
       }
 
       final remotePath = '${dirPath.value}$fileName';
       await _webdavService.client.write(remotePath, bytes);
 
-      SnackBarUtil.success(i18n("webdav_upload_success"));
+      SnackBarUtil.success(i18n('webdav_upload_success'));
       loadFiles();
     } catch (e) {
       SnackBarUtil.error('${i18n("webdav_upload_failed")}: $e');
@@ -190,12 +205,15 @@ class WebDavPageController extends GetxController {
   }
 
   void deleteFile(webdav.File file) async {
-    final result = await Utils.showAlertDialog(i18n("webdav_confirm_delete"), title: i18n("webdav_delete"));
+    final result = await Utils.showAlertDialog(
+      i18n('webdav_confirm_delete'),
+      title: i18n('webdav_delete'),
+    );
     if (result) {
       try {
         await _webdavService.client.remove(file.path!);
         loadFiles();
-        SnackBarUtil.success(i18n("webdav_delete_success"));
+        SnackBarUtil.success(i18n('webdav_delete_success'));
       } catch (e) {
         SnackBarUtil.error('${i18n("webdav_delete_failed")}: $e');
       }
@@ -208,7 +226,7 @@ class WebDavPageController extends GetxController {
       final bytes = await _webdavService.client.read(file.path!);
       final data = jsonDecode(utf8.decode(bytes));
       _backupController.importAllSettings(data);
-      SnackBarUtil.success(i18n("webdav_sync_success"));
+      SnackBarUtil.success(i18n('webdav_sync_success'));
     } catch (e) {
       SnackBarUtil.error('${i18n("webdav_download_failed")}: $e');
     }

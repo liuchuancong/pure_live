@@ -40,7 +40,11 @@ class AppNavigator {
       } else {
         manager.cancelRoomSessionReentry();
       }
-      await Get.toNamed(RoutePath.kLivePlay, arguments: normalizedRoom, parameters: {"site": platform});
+      await Get.toNamed(
+        RoutePath.kLivePlay,
+        arguments: normalizedRoom,
+        parameters: {'site': platform},
+      );
     } finally {
       _openingLiveRoom = false;
     }
@@ -56,7 +60,11 @@ class AppNavigator {
     final normalizedRoom = liveRoom.platform == platform && liveRoom.roomId == roomId
         ? liveRoom
         : liveRoom.copyWith(platform: platform, roomId: roomId);
-    await Get.offAndToNamed(RoutePath.kLivePlay, arguments: normalizedRoom, parameters: {"site": platform});
+    await Get.offAndToNamed(
+      RoutePath.kLivePlay,
+      arguments: normalizedRoom,
+      parameters: {'site': platform},
+    );
   }
 
   /// 跳转至多画面同看页面。
@@ -68,12 +76,12 @@ class AppNavigator {
 
   /// 跳转至哔哩哔哩登录
   static Future toBiliBiliLogin() async {
-    var contents = [i18n("sms_login"), i18n("qrcode_login")];
+    var contents = [i18n('sms_login'), i18n('qrcode_login')];
     if (Platform.isAndroid || Platform.isIOS) {
-      var result = await Utils.showOptionDialog(contents, '', title: i18n("select_login_method"));
-      if (result == i18n("sms_login")) {
+      var result = await Utils.showOptionDialog(contents, '', title: i18n('select_login_method'));
+      if (result == i18n('sms_login')) {
         await Get.toNamed(RoutePath.kBiliBiliWebLogin);
-      } else if (result == i18n("qrcode_login")) {
+      } else if (result == i18n('qrcode_login')) {
         await Get.toNamed(RoutePath.kBiliBiliQRLogin);
       }
     } else {

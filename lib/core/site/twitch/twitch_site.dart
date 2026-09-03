@@ -21,10 +21,10 @@ class TwitchSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomR
   String name = 'Twitch';
 
   static const defaultUa =
-      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36";
-  static const gplApiUrl = "https://gql.twitch.tv/gql";
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36';
+  static const gplApiUrl = 'https://gql.twitch.tv/gql';
 
-  static const baseUrl = "https://www.twitch.tv";
+  static const baseUrl = 'https://www.twitch.tv';
 
   Map<String, String> cursorMap = {};
   late final String _deviceId = getDeviceId();
@@ -37,12 +37,12 @@ class TwitchSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomR
     'client-id': 'kimne78kx3ncx6brgo4mv6wki5h1ko',
   };
 
-  final playSessionIds = ["bdd22331a986c7f1073628f2fc5b19da", "064bc3ff1722b6f53b0b5b8c01e46ca5"];
+  final playSessionIds = ['bdd22331a986c7f1073628f2fc5b19da', '064bc3ff1722b6f53b0b5b8c01e46ca5'];
 
   void getRequestHeaders() {
     headers['device-id'] = _deviceId;
     if (SettingsService.to.cookieManager.twitchCookie.v.isNotEmpty) {
-      headers["Cookie"] = SettingsService.to.cookieManager.twitchCookie.v;
+      headers['Cookie'] = SettingsService.to.cookieManager.twitchCookie.v;
     }
   }
 
@@ -52,7 +52,11 @@ class TwitchSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomR
     return deviceId.toString();
   }
 
-  String buildPersistedRequest(String operationName, String sha265Hash, Map<String, dynamic> variables) {
+  String buildPersistedRequest(
+    String operationName,
+    String sha265Hash,
+    Map<String, dynamic> variables,
+  ) {
     return jsonEncode({
       'operationName': operationName,
       'extensions': {
@@ -68,7 +72,7 @@ class TwitchSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomR
   }
 
   String buildCursorKey(String type, String id, int page) {
-    return "${type}_${id}_$page";
+    return '${type}_${id}_$page';
   }
 
   void saveCursor(String type, String id, int page, String value) {
@@ -78,16 +82,16 @@ class TwitchSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomR
 
   String getCursor(String type, String id, int page) {
     var key = buildCursorKey(type, id, page);
-    return cursorMap[key] ?? "";
+    return cursorMap[key] ?? '';
   }
 
   @override
   Future<List<LiveCategory>> getCategores(int page, int pageSize) async {
     try {
       var liveGpl = buildPersistedRequest(
-        "SearchCategoryTags",
-        "b4cb189d8d17aadf29c61e9d7c7e7dcfc932e93b77b3209af5661bffb484195f",
-        {"userQuery": "", "limit": 100},
+        'SearchCategoryTags',
+        'b4cb189d8d17aadf29c61e9d7c7e7dcfc932e93b77b3209af5661bffb484195f',
+        {'userQuery': '', 'limit': 100},
       );
 
       var response = await getGplResponse(liveGpl);
@@ -96,7 +100,7 @@ class TwitchSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomR
       var data = response['data'];
       var searchCategoryTags = data['searchCategoryTags'];
       for (var item in searchCategoryTags) {
-        categories.add(LiveCategory(id: item["id"], name: item["tagName"], children: []));
+        categories.add(LiveCategory(id: item['id'], name: item['tagName'], children: []));
       }
 
       List<Future> futures = [];
@@ -138,24 +142,24 @@ class TwitchSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomR
   }
 
   Future<List<LiveArea>> getSubCategores(LiveCategory liveCategory, int page, int pageSize) async {
-    var cursorType = "getSubCategores";
+    var cursorType = 'getSubCategores';
     var cursorId = liveCategory.id;
     String cursor = getCursor(cursorType, cursorId, page);
     if (cursor.isEmpty && page > 1) {
       return <LiveArea>[];
     }
     var liveGpl = buildPersistedRequest(
-      "BrowsePage_AllDirectories",
-      "2f67f71ba89f3c0ed26a141ec00da1defecb2303595f5cda4298169549783d9e",
+      'BrowsePage_AllDirectories',
+      '2f67f71ba89f3c0ed26a141ec00da1defecb2303595f5cda4298169549783d9e',
       {
-        "limit": pageSize.clamp(1, 100),
-        "options": {
-          "recommendationsContext": {"platform": "web"},
-          "requestID": "JIRA-VXP-2397",
-          "sort": "VIEWER_COUNT",
-          "tags": [liveCategory.id],
+        'limit': pageSize.clamp(1, 100),
+        'options': {
+          'recommendationsContext': {'platform': 'web'},
+          'requestID': 'JIRA-VXP-2397',
+          'sort': 'VIEWER_COUNT',
+          'tags': [liveCategory.id],
         },
-        if (cursor.isNotEmpty) "cursor": cursor,
+        if (cursor.isNotEmpty) 'cursor': cursor,
       },
     );
     var response = await getGplResponse(liveGpl);
@@ -164,19 +168,22 @@ class TwitchSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomR
     var edges = (directoriesWithTags['edges'] ?? []) as List;
     var pageInfo = directoriesWithTags['pageInfo'];
     var hasNextPage = pageInfo['hasNextPage'];
-    cursor = edges.isEmpty ? "" : (edges.last["cursor"] ?? "");
-    if (!hasNextPage) cursor = "";
+    cursor = edges.isEmpty ? '' : (edges.last['cursor'] ?? '');
+    if (!hasNextPage) cursor = '';
     saveCursor(cursorType, cursorId, page, cursor);
     List<LiveArea> subs = [];
     for (var item in edges) {
       var node = item['node'];
       var subCategory = LiveArea(
-        areaId: node["id"],
-        areaName: node["displayName"],
-        shortName: node["slug"],
+        areaId: node['id'],
+        areaName: node['displayName'],
+        shortName: node['slug'],
         areaType: liveCategory.id,
         platform: id,
-        areaPic: (node["avatarURL"] ?? "").toString().replaceFirst("https://", "https://i2.wp.com/"),
+        areaPic: (node['avatarURL'] ?? '').toString().replaceFirst(
+          'https://',
+          'https://i2.wp.com/',
+        ),
         typeName: liveCategory.name,
       );
       subs.add(subCategory);
@@ -203,17 +210,17 @@ class TwitchSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomR
     if (!detail.isLiveNow) return qualities;
 
     var liveGpl = buildPersistedRequest(
-      "PlaybackAccessToken",
-      "ed230aa1e33e07eebb8928504583da78a5173989fadfb1ac94be06a04f3cdbe9",
+      'PlaybackAccessToken',
+      'ed230aa1e33e07eebb8928504583da78a5173989fadfb1ac94be06a04f3cdbe9',
       {
-        "isLive": true,
-        "login": detail.roomId,
-        "isVod": false,
-        "vodID": "",
-        "playerType": "site",
-        "isClip": false,
-        "clipID": "",
-        "platform": "site",
+        'isLive': true,
+        'login': detail.roomId,
+        'isVod': false,
+        'vodID': '',
+        'playerType': 'site',
+        'isClip': false,
+        'clipID': '',
+        'platform': 'site',
       },
     );
     getRequestHeaders();
@@ -224,23 +231,27 @@ class TwitchSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomR
     var random = Random.secure();
     var playSessionId = playSessionIds[random.nextInt(playSessionIds.length)];
     var params = {
-      "acmb": "e30=",
-      "allow_source": "true",
-      "cdm": "wv",
-      "fast_bread": "true",
-      "p": random.nextInt(10000000).toString(),
-      "platform": "web",
-      "play_session_id": playSessionId,
-      "player_backend": "mediaplayer",
-      "player_version": "1.28.0-rc.1",
-      "playlist_include_framerate": "true",
-      "reassignments_supported": "true",
-      "sig": sign,
-      "token": token,
-      "transcode_mode": "cbr_v1",
+      'acmb': 'e30=',
+      'allow_source': 'true',
+      'cdm': 'wv',
+      'fast_bread': 'true',
+      'p': random.nextInt(10000000).toString(),
+      'platform': 'web',
+      'play_session_id': playSessionId,
+      'player_backend': 'mediaplayer',
+      'player_version': '1.28.0-rc.1',
+      'playlist_include_framerate': 'true',
+      'reassignments_supported': 'true',
+      'sig': sign,
+      'token': token,
+      'transcode_mode': 'cbr_v1',
     };
-    var m3u8Url = "https://usher.ttvnw.net/api/channel/hls/${detail.roomId}.m3u8";
-    var content = await HttpClient.instance.getText(m3u8Url, queryParameters: params, header: headers);
+    var m3u8Url = 'https://usher.ttvnw.net/api/channel/hls/${detail.roomId}.m3u8';
+    var content = await HttpClient.instance.getText(
+      m3u8Url,
+      queryParameters: params,
+      header: headers,
+    );
 
     return parseMasterPlaylist(content, masterUri: Uri.parse(m3u8Url));
   }
@@ -320,7 +331,12 @@ class TwitchSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomR
     return attributes;
   }
 
-  static String _qualityName(int bandwidth, {int height = 0, double frameRate = 0, bool source = false}) {
+  static String _qualityName(
+    int bandwidth, {
+    int height = 0,
+    double frameRate = 0,
+    bool source = false,
+  }) {
     if (height > 0) {
       final fps = frameRate >= 45 ? frameRate.round().toString() : '';
       return LiveQualityLabel.normalize(
@@ -339,16 +355,22 @@ class TwitchSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomR
   }
 
   @override
-  Future<List<String>> getPlayUrls({required LiveRoom detail, required LivePlayQuality quality}) async {
+  Future<List<String>> getPlayUrls({
+    required LiveRoom detail,
+    required LivePlayQuality quality,
+  }) async {
     final data = quality.data;
     if (data is! List) return const <String>[];
-    return data.map((item) => item.toString().trim()).where((url) => url.isNotEmpty).toList(growable: false);
+    return data
+        .map((item) => item.toString().trim())
+        .where((url) => url.isNotEmpty)
+        .toList(growable: false);
   }
 
   @override
   Future<List<LiveRoom>> getRecommendRooms({int page = 1, int pageSize = 30}) async {
     var items = <LiveRoom>[];
-    var liveArea = LiveArea(platform: id, shortName: "just-chatting", areaName: "Just Chatting");
+    var liveArea = LiveArea(platform: id, shortName: 'just-chatting', areaName: 'Just Chatting');
     var liveCategoryResult = await getCategoryRooms(liveArea, page: page, pageSize: pageSize);
     items.addAll(liveCategoryResult);
     return items;
@@ -399,24 +421,24 @@ class TwitchSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomR
       Stream stream when stream.streamType == 'live' => true,
       _ => false,
     };
-    final title = user.lastBroadcast?.title ?? "";
+    final title = user.lastBroadcast?.title ?? '';
     return LiveRoom(
       roomId: roomId,
       title: title,
       cover: user.profileImageUrl,
       nick: userOrError.displayName,
       avatar: user.profileImageUrl,
-      watching: online ? user.stream!.viewersCount.toString() : "0",
-      onlineViewers: online ? user.stream!.viewersCount.toString() : "0",
+      watching: online ? user.stream!.viewersCount.toString() : '0',
+      onlineViewers: online ? user.stream!.viewersCount.toString() : '0',
       audienceMetricType: AudienceMetricType.onlineViewers,
       area: user.stream?.game?.name ?? user.stream?.game?.displayName,
       status: online,
       liveStatus: online ? LiveStatus.live : LiveStatus.offline,
       platform: Sites.twitchSite,
-      link: "$baseUrl/$roomId",
+      link: '$baseUrl/$roomId',
       danmakuData: roomId,
-      introduction: "",
-      notice: "",
+      introduction: '',
+      notice: '',
       userId: roomId,
       data: roomId,
     );
@@ -424,20 +446,29 @@ class TwitchSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomR
 
   Future<List<TwitchResponse>> _getRoomInfo(String roomId) async {
     var queries = [
-      buildPersistedRequest("ChannelShell", "fea4573a7bf2644f5b3f2cbbdcbee0d17312e48d2e55f080589d053aad353f11", {
-        "login": roomId,
-      }),
-      buildPersistedRequest("StreamMetadata", "b57f9b910f8cd1a4659d894fe7550ccc81ec9052c01e438b290fd66a040b9b93", {
-        "channelLogin": roomId,
-        "includeIsDJ": true,
-      }),
+      buildPersistedRequest(
+        'ChannelShell',
+        'fea4573a7bf2644f5b3f2cbbdcbee0d17312e48d2e55f080589d053aad353f11',
+        {'login': roomId},
+      ),
+      buildPersistedRequest(
+        'StreamMetadata',
+        'b57f9b910f8cd1a4659d894fe7550ccc81ec9052c01e438b290fd66a040b9b93',
+        {'channelLogin': roomId, 'includeIsDJ': true},
+      ),
     ];
     String requestQuery = "[${queries.map((q) => q.toString()).join(',')}]";
     getRequestHeaders();
-    var response = await HttpClient.instance.postJson(gplApiUrl, header: headers, data: requestQuery);
+    var response = await HttpClient.instance.postJson(
+      gplApiUrl,
+      header: headers,
+      data: requestQuery,
+    );
 
     final decoded = response is List ? response : const <dynamic>[];
-    final responses = decoded.map((item) => TwitchResponse.fromJson(item as Map<String, dynamic>)).toList();
+    final responses = decoded
+        .map((item) => TwitchResponse.fromJson(item as Map<String, dynamic>))
+        .toList();
     if (responses.length < 2) {
       throw StateError('Invalid response from Twitch API');
     }
@@ -445,9 +476,13 @@ class TwitchSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomR
   }
 
   @override
-  Future<List<LiveRoom>> getCategoryRooms(LiveArea category, {int page = 1, int pageSize = 30}) async {
+  Future<List<LiveRoom>> getCategoryRooms(
+    LiveArea category, {
+    int page = 1,
+    int pageSize = 30,
+  }) async {
     try {
-      var cursorType = "getCategoryRooms";
+      var cursorType = 'getCategoryRooms';
       var cursorId = category.shortName!;
       String cursor = getCursor(cursorType, cursorId, page);
       if (cursor.isEmpty && page > 1) {
@@ -455,28 +490,28 @@ class TwitchSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomR
       }
       var params = [
         {
-          "operationName": "DirectoryPage_Game",
-          "variables": {
-            "imageWidth": 50,
-            "slug": category.shortName,
-            "options": {
-              "sort": "VIEWER_COUNT",
-              "recommendationsContext": {"platform": "web"},
-              "requestID": "JIRA-VXP-2397",
-              "freeformTags": null,
-              "tags": [],
-              "broadcasterLanguages": ["ZH", "KO"],
-              "systemFilters": [],
+          'operationName': 'DirectoryPage_Game',
+          'variables': {
+            'imageWidth': 50,
+            'slug': category.shortName,
+            'options': {
+              'sort': 'VIEWER_COUNT',
+              'recommendationsContext': {'platform': 'web'},
+              'requestID': 'JIRA-VXP-2397',
+              'freeformTags': null,
+              'tags': [],
+              'broadcasterLanguages': ['ZH', 'KO'],
+              'systemFilters': [],
             },
-            "sortTypeIsRecency": false,
-            "limit": pageSize.clamp(1, 100),
-            "includeCostreaming": true,
-            if (cursor.isNotEmpty) "cursor": cursor,
+            'sortTypeIsRecency': false,
+            'limit': pageSize.clamp(1, 100),
+            'includeCostreaming': true,
+            if (cursor.isNotEmpty) 'cursor': cursor,
           },
-          "extensions": {
-            "persistedQuery": {
-              "version": 1,
-              "sha256Hash": "76cb069d835b8a02914c08dc42c421d0dafda8af5b113a3f19141824b901402f",
+          'extensions': {
+            'persistedQuery': {
+              'version': 1,
+              'sha256Hash': '76cb069d835b8a02914c08dc42c421d0dafda8af5b113a3f19141824b901402f',
             },
           },
         },
@@ -491,31 +526,34 @@ class TwitchSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomR
       if (edges.isEmpty) {
         return <LiveRoom>[];
       }
-      cursor = edges.last["cursor"] ?? "";
-      if (!hasNextPage) cursor = "";
+      cursor = edges.last['cursor'] ?? '';
+      if (!hasNextPage) cursor = '';
       saveCursor(cursorType, cursorId, page, cursor);
       List<LiveRoom> subs = [];
       for (var item in edges) {
         var node = item['node'];
         var subItem = LiveRoom(
-          roomId: node["broadcaster"]["login"],
-          title: node["title"],
-          cover: (node["previewImageURL"] ?? "")
+          roomId: node['broadcaster']['login'],
+          title: node['title'],
+          cover: (node['previewImageURL'] ?? '')
               .toString()
-              .replaceFirst("https://", "https://i2.wp.com/")
-              .appendTxt("?&t=${DateTime.now().millisecondsSinceEpoch ~/ 1000}"),
-          nick: node["broadcaster"]["displayName"],
-          avatar: node["broadcaster"]["profileImageURL"].replaceFirst("https://", "https://i2.wp.com/"),
-          watching: (node["viewersCount"] ?? 0).toString(),
-          onlineViewers: (node["viewersCount"] ?? 0).toString(),
+              .replaceFirst('https://', 'https://i2.wp.com/')
+              .appendTxt('?&t=${DateTime.now().millisecondsSinceEpoch ~/ 1000}'),
+          nick: node['broadcaster']['displayName'],
+          avatar: node['broadcaster']['profileImageURL'].replaceFirst(
+            'https://',
+            'https://i2.wp.com/',
+          ),
+          watching: (node['viewersCount'] ?? 0).toString(),
+          onlineViewers: (node['viewersCount'] ?? 0).toString(),
           audienceMetricType: AudienceMetricType.onlineViewers,
           status: true,
-          introduction: "",
-          notice: "",
-          danmakuData: node["broadcaster"]["id"],
+          introduction: '',
+          notice: '',
+          danmakuData: node['broadcaster']['id'],
           platform: id,
           liveStatus: LiveStatus.live,
-          area: node["game"]["displayName"],
+          area: node['game']['displayName'],
           data: null,
         );
         subs.add(subItem);
@@ -529,54 +567,54 @@ class TwitchSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomR
 
   @override
   Future<List<LiveRoom>> searchRooms(String keyword, {int page = 1, int pageSize = 30}) async {
-    var cursorType = "searchRooms";
+    var cursorType = 'searchRooms';
     var cursorId = keyword;
     String cursor = getCursor(cursorType, cursorId, page);
     if (cursor.isEmpty && page > 1) {
       return <LiveRoom>[];
     }
     var liveGpl = buildPersistedRequest(
-      "SearchResultsPage_SearchResults",
-      "7f3580f6ac6cd8aa1424cff7c974a07143827d6fa36bba1b54318fe7f0b68dc5",
+      'SearchResultsPage_SearchResults',
+      '7f3580f6ac6cd8aa1424cff7c974a07143827d6fa36bba1b54318fe7f0b68dc5',
       {
-        "platform": "web",
-        "query": keyword,
-        "options": {"targets": null, "shouldSkipDiscoveryControl": false},
-        "requestID": "808c9f2e-f52e-431c-8dc7-d2e3c1831d77",
-        "includeIsDJ": true,
-        if (cursor.isNotEmpty) "cursor": cursor,
+        'platform': 'web',
+        'query': keyword,
+        'options': {'targets': null, 'shouldSkipDiscoveryControl': false},
+        'requestID': '808c9f2e-f52e-431c-8dc7-d2e3c1831d77',
+        'includeIsDJ': true,
+        if (cursor.isNotEmpty) 'cursor': cursor,
       },
     );
     var response = await getGplResponse(liveGpl);
 
     var directoriesWithTags = response['data']['searchFor']['channels'] ?? {};
-    cursor = directoriesWithTags["cursor"] ?? "";
+    cursor = directoriesWithTags['cursor'] ?? '';
     saveCursor(cursorType, cursorId, page, cursor);
     var edges = (directoriesWithTags['edges'] ?? []) as List;
     List<LiveRoom> subs = [];
     for (var item in edges) {
       var node = item['item'];
-      var stream = node["stream"];
+      var stream = node['stream'];
       var status = stream != null;
       var subItem = LiveRoom(
-        roomId: node["login"],
-        title: node["broadcastSettings"]["title"],
-        cover: (node["stream"]?["previewImageURL"] ?? "")
+        roomId: node['login'],
+        title: node['broadcastSettings']['title'],
+        cover: (node['stream']?['previewImageURL'] ?? '')
             .toString()
-            .replaceFirst("https://", "https://i2.wp.com/")
-            .appendTxt("?&t=${DateTime.now().millisecondsSinceEpoch ~/ 1000}"),
-        nick: node["displayName"],
-        avatar: node["profileImageURL"].replaceFirst("https://", "https://i2.wp.com/"),
-        watching: (node["stream"]?["viewersCount"] ?? 0).toString(),
-        onlineViewers: (node["stream"]?["viewersCount"] ?? 0).toString(),
+            .replaceFirst('https://', 'https://i2.wp.com/')
+            .appendTxt('?&t=${DateTime.now().millisecondsSinceEpoch ~/ 1000}'),
+        nick: node['displayName'],
+        avatar: node['profileImageURL'].replaceFirst('https://', 'https://i2.wp.com/'),
+        watching: (node['stream']?['viewersCount'] ?? 0).toString(),
+        onlineViewers: (node['stream']?['viewersCount'] ?? 0).toString(),
         audienceMetricType: AudienceMetricType.onlineViewers,
         status: status,
-        introduction: "",
-        notice: "",
-        danmakuData: node["login"],
+        introduction: '',
+        notice: '',
+        danmakuData: node['login'],
         platform: id,
         liveStatus: status ? LiveStatus.live : LiveStatus.offline,
-        area: node["stream"]?["game"]?["displayName"] ?? "",
+        area: node['stream']?['game']?['displayName'] ?? '',
         data: null,
       );
       subs.add(subItem);
@@ -585,7 +623,11 @@ class TwitchSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomR
   }
 
   @override
-  Future<List<LiveAnchorItem>> searchAnchors(String keyword, {int page = 1, int pageSize = 30}) async {
+  Future<List<LiveAnchorItem>> searchAnchors(
+    String keyword, {
+    int page = 1,
+    int pageSize = 30,
+  }) async {
     return [];
   }
 
@@ -617,13 +659,16 @@ class TwitchSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomR
     var allPersistedRequestList = <String>[];
     for (var room in list) {
       allPersistedRequestList.addAll([
-        buildPersistedRequest("ChannelShell", "fea4573a7bf2644f5b3f2cbbdcbee0d17312e48d2e55f080589d053aad353f11", {
-          "login": room.roomId!,
-        }),
-        buildPersistedRequest("StreamMetadata", "b57f9b910f8cd1a4659d894fe7550ccc81ec9052c01e438b290fd66a040b9b93", {
-          "channelLogin": room.roomId!,
-          "includeIsDJ": true,
-        }),
+        buildPersistedRequest(
+          'ChannelShell',
+          'fea4573a7bf2644f5b3f2cbbdcbee0d17312e48d2e55f080589d053aad353f11',
+          {'login': room.roomId!},
+        ),
+        buildPersistedRequest(
+          'StreamMetadata',
+          'b57f9b910f8cd1a4659d894fe7550ccc81ec9052c01e438b290fd66a040b9b93',
+          {'channelLogin': room.roomId!, 'includeIsDJ': true},
+        ),
       ]);
     }
 
@@ -640,7 +685,9 @@ class TwitchSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomR
     List<LiveRoom> roomList = [];
     for (var itemList in subList) {
       try {
-        final responses = itemList.map((item) => TwitchResponse.fromJson(item as Map<String, dynamic>)).toList();
+        final responses = itemList
+            .map((item) => TwitchResponse.fromJson(item as Map<String, dynamic>))
+            .toList();
         var channelShell = responses.first;
         var streamMetaData = responses[1];
         final userOrError = channelShell.data.userOrError;
@@ -649,30 +696,30 @@ class TwitchSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomR
           Stream stream when stream.streamType == 'live' => true,
           _ => false,
         };
-        var title = user?.lastBroadcast?.title ?? "";
+        var title = user?.lastBroadcast?.title ?? '';
         var liveRoom = LiveRoom(
           roomId: list[index].roomId,
           title: title,
-          cover: user?.profileImageUrl ?? "",
-          nick: userOrError?.displayName ?? "",
-          avatar: user?.profileImageUrl ?? "",
-          watching: online ? user!.stream!.viewersCount.toString() : "0",
-          onlineViewers: online ? user!.stream!.viewersCount.toString() : "0",
+          cover: user?.profileImageUrl ?? '',
+          nick: userOrError?.displayName ?? '',
+          avatar: user?.profileImageUrl ?? '',
+          watching: online ? user!.stream!.viewersCount.toString() : '0',
+          onlineViewers: online ? user!.stream!.viewersCount.toString() : '0',
           audienceMetricType: AudienceMetricType.onlineViewers,
-          area: "",
+          area: '',
           status: online,
           liveStatus: online ? LiveStatus.live : LiveStatus.offline,
           platform: Sites.twitchSite,
-          link: "$baseUrl/${list[index].roomId}",
+          link: '$baseUrl/${list[index].roomId}',
           danmakuData: list[index].roomId,
-          introduction: "",
-          notice: "",
+          introduction: '',
+          notice: '',
           userId: list[index].roomId,
           data: list[index].roomId,
         );
         roomList.add(liveRoom);
       } catch (e) {
-        CoreLog.w("$e");
+        CoreLog.w('$e');
       }
       index++;
     }

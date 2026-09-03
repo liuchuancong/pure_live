@@ -147,7 +147,8 @@ class M3uParser {
   bool _isValidStreamUrl(String url) {
     try {
       final uri = Uri.parse(url);
-      return uri.hasScheme && const {'http', 'https', 'rtmp', 'rtsp', 'udp', 'mms'}.contains(uri.scheme);
+      return uri.hasScheme &&
+          const {'http', 'https', 'rtmp', 'rtsp', 'udp', 'mms'}.contains(uri.scheme);
     } catch (_) {
       return false;
     }

@@ -28,7 +28,11 @@ void main() {
     });
 
     test('bounds retained cache and fuzzy comparisons independently', () {
-      final filter = DanmakuSimilarityFilter(similarityThreshold: 100, maxCacheSize: 10, maxComparisons: 3);
+      final filter = DanmakuSimilarityFilter(
+        similarityThreshold: 100,
+        maxCacheSize: 10,
+        maxComparisons: 3,
+      );
 
       for (final text in const [
         'ax0qz',

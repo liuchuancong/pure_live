@@ -104,7 +104,9 @@ class BackupController extends GetxController {
 
     Get.find<PlayerSettingsController>().fromJson(Map<String, dynamic>.from(data['player'] ?? {}));
 
-    Get.find<DanmakuSettingsController>().fromJson(Map<String, dynamic>.from(data['danmaku'] ?? {}));
+    Get.find<DanmakuSettingsController>().fromJson(
+      Map<String, dynamic>.from(data['danmaku'] ?? {}),
+    );
 
     Get.find<VolumeSettingsController>().fromJson(Map<String, dynamic>.from(data['volume'] ?? {}));
 
@@ -119,7 +121,9 @@ class BackupController extends GetxController {
     Get.find<IptvSettingsController>().fromJson(Map<String, dynamic>.from(data['iptv'] ?? {}));
 
     if (data.containsKey('cookie')) {
-      Get.find<CookieSettingsController>().fromJson(Map<String, dynamic>.from(data['cookie'] ?? {}));
+      Get.find<CookieSettingsController>().fromJson(
+        Map<String, dynamic>.from(data['cookie'] ?? {}),
+      );
     }
 
     Get.find<ProxySettingsController>().fromJson(Map<String, dynamic>.from(data['proxy'] ?? {}));

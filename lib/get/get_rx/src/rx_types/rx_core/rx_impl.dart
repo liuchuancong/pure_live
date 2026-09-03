@@ -116,7 +116,12 @@ mixin RxObjectMixin<T> on GetListenable<T> {
     void Function()? onDone,
     bool? cancelOnError,
   }) {
-    final subscription = listen(onData, onError: onError, onDone: onDone, cancelOnError: cancelOnError);
+    final subscription = listen(
+      onData,
+      onError: onError,
+      onDone: onDone,
+      cancelOnError: cancelOnError,
+    );
 
     subject.add(value);
 
@@ -211,7 +216,7 @@ class RxBool extends Rx<bool> {
   RxBool(super.initial);
   @override
   String toString() {
-    return value ? "true" : "false";
+    return value ? 'true' : 'false';
   }
 }
 
@@ -219,7 +224,7 @@ class RxnBool extends Rx<bool?> {
   RxnBool([super.initial]);
   @override
   String toString() {
-    return "$value";
+    return '$value';
   }
 }
 

@@ -23,8 +23,19 @@
 part of fijkplayer;
 
 /// Default builder generate default [FijkPanel] UI
-Widget defaultFijkPanelBuilder(FijkPlayer player, FijkData data, BuildContext context, Size viewSize, Rect texturePos) {
-  return _DefaultFijkPanel(player: player, buildContext: context, viewSize: viewSize, texturePos: texturePos);
+Widget defaultFijkPanelBuilder(
+  FijkPlayer player,
+  FijkData data,
+  BuildContext context,
+  Size viewSize,
+  Rect texturePos,
+) {
+  return _DefaultFijkPanel(
+    player: player,
+    buildContext: context,
+    viewSize: viewSize,
+    texturePos: texturePos,
+  );
 }
 
 /// Default Panel Widget
@@ -56,7 +67,9 @@ String _duration2String(Duration duration) {
   String twoDigitMinutes = twoDigits(duration.inMinutes.remainder(60));
   String twoDigitSeconds = twoDigits(duration.inSeconds.remainder(60));
   int inHours = duration.inHours;
-  return inHours > 0 ? "$inHours:$twoDigitMinutes:$twoDigitSeconds" : "$twoDigitMinutes:$twoDigitSeconds";
+  return inHours > 0
+      ? "$inHours:$twoDigitMinutes:$twoDigitSeconds"
+      : "$twoDigitMinutes:$twoDigitSeconds";
 }
 
 class _DefaultFijkPanelState extends State<_DefaultFijkPanel> {
@@ -295,7 +308,10 @@ class _DefaultFijkPanelState extends State<_DefaultFijkPanel> {
                               duration: Duration(milliseconds: 400),
                               child: IconButton(
                                 iconSize: barHeight * 2,
-                                icon: Icon(_playing ? Icons.pause : Icons.play_arrow, color: Colors.white),
+                                icon: Icon(
+                                  _playing ? Icons.pause : Icons.play_arrow,
+                                  color: Colors.white,
+                                ),
                                 padding: EdgeInsets.only(left: 10.0, right: 10.0),
                                 onPressed: _playOrPause,
                               ),
@@ -303,7 +319,9 @@ class _DefaultFijkPanelState extends State<_DefaultFijkPanel> {
                           : SizedBox(
                               width: barHeight * 1.5,
                               height: barHeight * 1.5,
-                              child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation(Colors.white)),
+                              child: CircularProgressIndicator(
+                                valueColor: AlwaysStoppedAnimation(Colors.white),
+                              ),
                             ),
                     ),
                   ),

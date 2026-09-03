@@ -37,7 +37,8 @@ class AppPathManager {
   static const String fontCacheDir = fontDirectoryName;
   static const String iptvCategoryFile = 'categories.json';
   static const String iptvHotFile = 'hot.m3u';
-  static const String iptvHotRemoteFile = 'https://raw.githubusercontent.com/YueChan/Live/main/GNTV.m3u';
+  static const String iptvHotRemoteFile =
+      'https://raw.githubusercontent.com/YueChan/Live/main/GNTV.m3u';
 
   String? _basePath;
   List<String> _legacyHiveFiles = const [];
@@ -86,7 +87,10 @@ class AppPathManager {
       // beside the executable. MSIX already receives a writable package data
       // root from the system path provider and must retain that provider.
       if (!_isWindowsMsix) {
-        PathProviderPlatform.instance = WindowsPortablePathProvider(delegate: originalPathProvider, dataRoot: rootPath);
+        PathProviderPlatform.instance = WindowsPortablePathProvider(
+          delegate: originalPathProvider,
+          dataRoot: rootPath,
+        );
         configureWindowsPortableSharedPreferences(rootPath);
       }
     }
@@ -193,7 +197,10 @@ class AppPathManager {
               var location = (child.getString('InstallLocation') ?? '').trim();
               if (location.isEmpty) {
                 final uninstall = child.getString('UninstallString') ?? '';
-                final match = RegExp(r'^"?([^\"]+\\)unins\d*\.exe', caseSensitive: false).firstMatch(uninstall);
+                final match = RegExp(
+                  r'^"?([^\"]+\\)unins\d*\.exe',
+                  caseSensitive: false,
+                ).firstMatch(uninstall);
                 location = match?.group(1) ?? '';
               }
               if (location.isNotEmpty) {
@@ -215,11 +222,17 @@ class AppPathManager {
     return locations.toList();
   }
 
-  Future<List<String>> _findLegacyHiveFiles({required Iterable<String> roots, required String targetRoot}) async {
+  Future<List<String>> _findLegacyHiveFiles({
+    required Iterable<String> roots,
+    required String targetRoot,
+  }) async {
     final targetFile = File(p.join(targetRoot, dirHiveDB, 'app_settings.hive'));
     final candidates = <String, String>{};
     for (final root in roots) {
-      for (final path in [p.join(root, 'app_settings.hive'), p.join(root, dirHiveDB, 'app_settings.hive')]) {
+      for (final path in [
+        p.join(root, 'app_settings.hive'),
+        p.join(root, dirHiveDB, 'app_settings.hive'),
+      ]) {
         final file = File(path);
         if (!await file.exists()) continue;
         if (await _sameFile(file, targetFile)) continue;
@@ -343,7 +356,9 @@ class AppPathManager {
     try {
       final testDir = Directory(path);
       await testDir.create(recursive: true);
-      final testFile = File(p.join(path, '.permission_test_${DateTime.now().microsecondsSinceEpoch}'));
+      final testFile = File(
+        p.join(path, '.permission_test_${DateTime.now().microsecondsSinceEpoch}'),
+      );
       await testFile.writeAsString('test', flush: true);
       await testFile.delete();
       return true;

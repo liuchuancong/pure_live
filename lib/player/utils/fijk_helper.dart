@@ -7,7 +7,11 @@ class FijkHelper {
     Map<String, String>? headers,
   }) async {
     await player.setOption(FijkOption.playerCategory, 'mediacodec', enableHardwareCodec ? 1 : 0);
-    await player.setOption(FijkOption.playerCategory, 'mediacodec-hevc', enableHardwareCodec ? 1 : 0);
+    await player.setOption(
+      FijkOption.playerCategory,
+      'mediacodec-hevc',
+      enableHardwareCodec ? 1 : 0,
+    );
     await player.setOption(FijkOption.playerCategory, 'videotoolbox', enableHardwareCodec ? 1 : 0);
     await player.setOption(FijkOption.playerCategory, 'start-on-prepared', 0);
     await player.setOption(FijkOption.playerCategory, 'overlay-format', 0x52474238);
@@ -16,8 +20,8 @@ class FijkHelper {
     await player.setOption(FijkOption.playerCategory, 'enable-accurate-seek', 1);
     await player.setOption(FijkOption.playerCategory, 'soundtouch', 1);
     await player.setOption(FijkOption.playerCategory, 'subtitle', 1);
-    await player.setOption(FijkOption.hostCategory, "request-screen-on", 1);
-    await player.setOption(FijkOption.hostCategory, "request-audio-focus", 0);
+    await player.setOption(FijkOption.hostCategory, 'request-screen-on', 1);
+    await player.setOption(FijkOption.hostCategory, 'request-audio-focus', 0);
     await player.setOption(FijkOption.formatCategory, 'reconnect', 1);
     await player.setOption(FijkOption.formatCategory, 'reconnect_delay_max', 5);
     await player.setOption(FijkOption.formatCategory, 'timeout', 15 * 1000 * 1000);
@@ -40,7 +44,7 @@ class FijkHelper {
   }
 
   static String formatDuration(Duration duration) {
-    if (duration.inMilliseconds < 0) return "-: negtive";
+    if (duration.inMilliseconds < 0) return '-: negtive';
     String twoDigits(int n) {
       if (n >= 10) return '$n';
       return '0$n';
@@ -49,7 +53,9 @@ class FijkHelper {
     String twoDigitMinutes = twoDigits(duration.inMinutes.remainder(60));
     String twoDigitSeconds = twoDigits(duration.inSeconds.remainder(60));
     int inHours = duration.inHours;
-    return inHours > 0 ? '$inHours:$twoDigitMinutes:$twoDigitSeconds' : '$twoDigitMinutes:$twoDigitSeconds';
+    return inHours > 0
+        ? '$inHours:$twoDigitMinutes:$twoDigitSeconds'
+        : '$twoDigitMinutes:$twoDigitSeconds';
   }
 
   static FijkFit getIjkBoxFit(BoxFit videoFit) {

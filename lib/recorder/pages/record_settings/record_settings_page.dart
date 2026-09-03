@@ -12,13 +12,13 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
 
   String _formatDuration(int seconds) {
     if (seconds < 60) {
-      return "${seconds}s";
+      return '${seconds}s';
     } else if (seconds < 3600) {
       final minutes = seconds / 60;
-      return "${minutes.toStringAsFixed(minutes.truncateToDouble() == minutes ? 0 : 1)}m";
+      return '${minutes.toStringAsFixed(minutes.truncateToDouble() == minutes ? 0 : 1)}m';
     } else {
       final hours = seconds / 3600;
-      return "${hours.toStringAsFixed(hours.truncateToDouble() == hours ? 0 : 1)}h";
+      return '${hours.toStringAsFixed(hours.truncateToDouble() == hours ? 0 : 1)}h';
     }
   }
 
@@ -27,24 +27,24 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: Text(i18n("record_settings"))),
+      appBar: AppBar(title: Text(i18n('record_settings'))),
       body: Obx(
         () => ListView(
           physics: const PureLiveScrollPhysics(),
           padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
           children: [
-            context.buildGroupTitle(i18n("basic_config")),
+            context.buildGroupTitle(i18n('basic_config')),
             context.buildModernCard([
               context.buildTile(
                 icon: Remix.hd_line,
-                title: i18n("default_record_quality"),
+                title: i18n('default_record_quality'),
                 subtitle: controller.defaultQuality.value,
                 onTap: _showQualityDialog,
               ),
               context.buildSwitchTile(
                 icon: Remix.translate_2,
-                title: i18n("use_pinyin_folder"),
-                subtitle: i18n("use_pinyin_folder_desc"),
+                title: i18n('use_pinyin_folder'),
+                subtitle: i18n('use_pinyin_folder_desc'),
                 value: controller.usePinyinForFolder,
               ),
             ]),
@@ -53,7 +53,7 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
               crossAxisAlignment: CrossAxisAlignment.center,
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                context.buildGroupTitle(i18n("cache_management")),
+                context.buildGroupTitle(i18n('cache_management')),
                 Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: TextButton.icon(
@@ -66,7 +66,7 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
                     ),
                     icon: const Icon(Remix.folder_open_line, size: 18),
                     label: Text(
-                      i18n("recorder_open_folder"),
+                      i18n('recorder_open_folder'),
                       style: AppTextStyles.t14.copyWith(fontWeight: FontWeight.w600),
                     ),
                   ),
@@ -76,7 +76,7 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
             context.buildModernCard([
               context.buildTile(
                 icon: Remix.folder_video_line,
-                title: i18n("storage_directory"),
+                title: i18n('storage_directory'),
                 subtitle: controller.managedRecordPath.value.isEmpty
                     ? controller.recordSavePath.value
                     : controller.managedRecordPath.value,
@@ -84,40 +84,46 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
               ),
               context.buildSwitchTile(
                 icon: Remix.exchange_box_line,
-                title: i18n("enable_cache_limit"),
-                subtitle: i18n("enable_cache_limit_desc"),
+                title: i18n('enable_cache_limit'),
+                subtitle: i18n('enable_cache_limit_desc'),
                 value: controller.enableCacheLimit,
               ),
               if (controller.enableCacheLimit.value)
                 context.buildTile(
                   icon: Remix.database_2_line,
-                  title: i18n("cache_limit"),
-                  subtitle: "${controller.maxCacheMB.value} MB",
+                  title: i18n('cache_limit'),
+                  subtitle: '${controller.maxCacheMB.value} MB',
                   onTap: _showCacheDialog,
                 ),
               Obx(() {
                 final size = controller.cacheSizeMB.value;
                 return context.buildTile(
                   icon: Remix.custom_size,
-                  title: i18n("current_cache_size"),
-                  subtitle: "${size.toStringAsFixed(2)} MB",
+                  title: i18n('current_cache_size'),
+                  subtitle: '${size.toStringAsFixed(2)} MB',
                 );
               }),
               context.buildTile(
                 icon: Remix.delete_bin_4_line,
-                title: i18n("clear_all_cache"),
-                subtitle: i18n("clear_all_cache_desc"),
+                title: i18n('clear_all_cache'),
+                subtitle: i18n('clear_all_cache_desc'),
                 onTap: () async {
                   final ok = await Get.dialog<bool>(
                     AlertDialog(
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                      title: Text(i18n("confirm_clear_cache"), style: const TextStyle(fontWeight: FontWeight.bold)),
-                      content: Text(i18n("confirm_clear_cache_desc")),
+                      title: Text(
+                        i18n('confirm_clear_cache'),
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      content: Text(i18n('confirm_clear_cache_desc')),
                       actions: [
-                        TextButton(onPressed: () => Navigator.of(Get.context!).pop(false), child: Text(i18n("cancel"))),
+                        TextButton(
+                          onPressed: () => Navigator.of(Get.context!).pop(false),
+                          child: Text(i18n('cancel')),
+                        ),
                         ElevatedButton(
                           onPressed: () => Navigator.of(Get.context!).pop(true),
-                          child: Text(i18n("clear")),
+                          child: Text(i18n('clear')),
                         ),
                       ],
                     ),
@@ -125,36 +131,40 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
 
                   if (ok == true) {
                     await controller.clearCache();
-                    Get.snackbar(i18n("done"), i18n("cache_cleared"), snackPosition: SnackPosition.bottom);
+                    Get.snackbar(
+                      i18n('done'),
+                      i18n('cache_cleared'),
+                      snackPosition: SnackPosition.bottom,
+                    );
                   }
                 },
               ),
             ]),
             const SizedBox(height: 20),
-            context.buildGroupTitle(i18n("record_performance_quality")),
+            context.buildGroupTitle(i18n('record_performance_quality')),
             context.buildModernCard([
               context.buildSwitchTile(
                 icon: Remix.video_download_line,
-                title: i18n("prefer_best_stream"),
-                subtitle: i18n("prefer_best_stream_desc"),
+                title: i18n('prefer_best_stream'),
+                subtitle: i18n('prefer_best_stream_desc'),
                 value: controller.preferBestStream,
               ),
               context.buildTile(
                 icon: Remix.timer_flash_line,
-                title: i18n("rw_timeout"),
-                subtitle: "${controller.rwTimeout.value}s",
+                title: i18n('rw_timeout'),
+                subtitle: '${controller.rwTimeout.value}s',
                 onTap: _showRwTimeoutDialog,
               ),
               context.buildTile(
                 icon: Remix.speed_mini_line,
-                title: i18n("queue_size"),
-                subtitle: "${controller.threadQueueSize.value}",
+                title: i18n('queue_size'),
+                subtitle: '${controller.threadQueueSize.value}',
                 onTap: _showQueueSizeDialog,
               ),
               context.buildSliderTile(
                 context,
                 icon: Remix.film_line,
-                title: i18n("segment_duration"),
+                title: i18n('segment_duration'),
                 value: controller.segmentTime.value.toDouble(),
                 min: 60,
                 max: 3600,
@@ -163,73 +173,73 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
               ),
               context.buildTile(
                 icon: Remix.task_line,
-                title: i18n("max_record_tasks"),
-                subtitle: "${controller.maxTaskCount.value}",
+                title: i18n('max_record_tasks'),
+                subtitle: '${controller.maxTaskCount.value}',
                 onTap: _showMaxTaskDialog,
               ),
             ]),
             const SizedBox(height: 20),
-            context.buildGroupTitle(i18n("auto_reconnect")),
+            context.buildGroupTitle(i18n('auto_reconnect')),
             context.buildModernCard([
               context.buildSwitchTile(
                 icon: Remix.refresh_line,
-                title: i18n("auto_reconnect_switch"),
-                subtitle: i18n("auto_reconnect_desc"),
+                title: i18n('auto_reconnect_switch'),
+                subtitle: i18n('auto_reconnect_desc'),
                 value: controller.autoReconnect,
               ),
               if (controller.autoReconnect.value)
                 context.buildSliderTile(
                   context,
                   icon: Remix.loop_left_line,
-                  title: i18n("max_retry_count"),
+                  title: i18n('max_retry_count'),
                   value: controller.maxRetryCount.value.toDouble(),
                   min: 1,
                   max: 20,
-                  displayValue: "${controller.maxRetryCount.value}",
+                  displayValue: '${controller.maxRetryCount.value}',
                   onChanged: (v) => controller.updateMaxRetryCount(v.toInt()),
                 ),
               context.buildSliderTile(
                 context,
                 icon: Remix.time_line,
-                title: i18n("retry_delay"),
+                title: i18n('retry_delay'),
                 value: controller.retryDelay.value.toDouble(),
                 min: 5,
                 max: 120,
-                displayValue: "${controller.retryDelay.value}s",
+                displayValue: '${controller.retryDelay.value}s',
                 onChanged: (v) => controller.updateRetryDelay(v.toInt()),
               ),
             ]),
             const SizedBox(height: 20),
-            context.buildGroupTitle(i18n("polling_detection")),
+            context.buildGroupTitle(i18n('polling_detection')),
             context.buildModernCard([
               context.buildSwitchTile(
                 icon: Remix.radar_line,
-                title: i18n("enable_polling"),
-                subtitle: i18n("enable_polling_desc"),
+                title: i18n('enable_polling'),
+                subtitle: i18n('enable_polling_desc'),
                 value: controller.enablePolling,
               ),
               if (controller.enablePolling.value) ...[
                 context.buildSliderTile(
                   context,
                   icon: Remix.time_line,
-                  title: i18n("check_interval"),
+                  title: i18n('check_interval'),
                   value: controller.liveCheckInterval.value.toDouble(),
                   min: 10,
                   max: 300,
-                  displayValue: "${controller.liveCheckInterval.value}s",
+                  displayValue: '${controller.liveCheckInterval.value}s',
                   onChanged: (v) => controller.updateLiveCheckInterval(v.toInt()),
                 ),
                 context.buildSwitchTile(
                   icon: Remix.line_chart_line,
-                  title: i18n("enable_backoff"),
-                  subtitle: i18n("enable_backoff_desc"),
+                  title: i18n('enable_backoff'),
+                  subtitle: i18n('enable_backoff_desc'),
                   value: controller.enableBackoff,
                 ),
                 if (controller.enableBackoff.value)
                   context.buildSliderTile(
                     context,
                     icon: Remix.hourglass_2_line,
-                    title: i18n("max_check_interval"),
+                    title: i18n('max_check_interval'),
                     value: controller.maxCheckInterval.value.toDouble(),
                     min: 300,
                     max: 3600,
@@ -238,8 +248,8 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
                   ),
                 context.buildSwitchTile(
                   icon: Remix.shut_down_line,
-                  title: i18n("auto_start_boot"),
-                  subtitle: i18n("auto_start_boot_desc"),
+                  title: i18n('auto_start_boot'),
+                  subtitle: i18n('auto_start_boot_desc'),
                   value: controller.autoStartOnBoot,
                 ),
               ],
@@ -255,15 +265,15 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
     final theme = Get.theme;
 
     final Map<int, String> timeoutOptions = {
-      15: i18n("timeout_fast"),
-      30: i18n("timeout_balanced"),
-      60: i18n("timeout_safe"),
+      15: i18n('timeout_fast'),
+      30: i18n('timeout_balanced'),
+      60: i18n('timeout_safe'),
     };
 
     Get.dialog(
       AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: Text(i18n("rw_timeout"), style: const TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(i18n('rw_timeout'), style: const TextStyle(fontWeight: FontWeight.bold)),
         content: RadioGroup<int>(
           groupValue: controller.rwTimeout.value,
           onChanged: (v) {
@@ -277,7 +287,10 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
             mainAxisSize: MainAxisSize.min,
             children: timeoutOptions.entries.map((entry) {
               return RadioListTile<int>(
-                title: Text("${entry.key}s", style: AppTextStyles.t16.copyWith(fontWeight: FontWeight.w600)),
+                title: Text(
+                  '${entry.key}s',
+                  style: AppTextStyles.t16.copyWith(fontWeight: FontWeight.w600),
+                ),
                 subtitle: Text(entry.value, style: AppTextStyles.t12),
                 value: entry.key,
                 activeColor: theme.colorScheme.primary,
@@ -300,7 +313,7 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
     Get.dialog(
       AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: Text(i18n("queue_size"), style: const TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(i18n('queue_size'), style: const TextStyle(fontWeight: FontWeight.bold)),
         content: RadioGroup<int>(
           groupValue: controller.threadQueueSize.value,
           onChanged: (v) {
@@ -313,20 +326,23 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: queueOptions.map((value) {
-              String subTitle = "";
+              String subTitle = '';
 
               if (value <= 512) {
-                subTitle = i18n("power_saving_mode");
+                subTitle = i18n('power_saving_mode');
               } else if (value == 1024) {
-                subTitle = i18n("hd_recommend");
+                subTitle = i18n('hd_recommend');
               } else if (value == 2048) {
-                subTitle = i18n("fhd_recommend");
+                subTitle = i18n('fhd_recommend');
               } else {
-                subTitle = i18n("extreme_performance");
+                subTitle = i18n('extreme_performance');
               }
 
               return RadioListTile<int>(
-                title: Text("$value", style: AppTextStyles.t16.copyWith(fontWeight: FontWeight.w600)),
+                title: Text(
+                  '$value',
+                  style: AppTextStyles.t16.copyWith(fontWeight: FontWeight.w600),
+                ),
                 subtitle: Text(subTitle, style: AppTextStyles.t12),
                 value: value,
                 activeColor: theme.colorScheme.primary,
@@ -353,7 +369,10 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
         builder: (context, setState) {
           return AlertDialog(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-            title: Text(i18n("max_record_tasks"), style: const TextStyle(fontWeight: FontWeight.bold)),
+            title: Text(
+              i18n('max_record_tasks'),
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -361,8 +380,8 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
                   controller: textController,
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
-                    labelText: i18n("manual_input"),
-                    hintText: i18n("input_range"),
+                    labelText: i18n('manual_input'),
+                    hintText: i18n('input_range'),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -375,7 +394,10 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
 
                 Align(
                   alignment: Alignment.centerLeft,
-                  child: Text(i18n("quick_select"), style: const TextStyle(fontWeight: FontWeight.w600)),
+                  child: Text(
+                    i18n('quick_select'),
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
                 ),
 
                 const SizedBox(height: 8),
@@ -389,10 +411,10 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
                       final selected = int.tryParse(textController.text) == v;
 
                       return ChoiceChip(
-                        label: Text("$v"),
+                        label: Text('$v'),
                         selected: selected,
                         onSelected: (_) {
-                          textController.text = "$v";
+                          textController.text = '$v';
                           setState(() {});
                         },
                         selectedColor: theme.colorScheme.primary.withValues(alpha: 0.2),
@@ -403,7 +425,10 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
               ],
             ),
             actions: [
-              TextButton(onPressed: () => Navigator.of(Get.context!).pop(), child: Text(i18n("cancel"))),
+              TextButton(
+                onPressed: () => Navigator.of(Get.context!).pop(),
+                child: Text(i18n('cancel')),
+              ),
               ElevatedButton(
                 onPressed: () {
                   final val = int.tryParse(textController.text);
@@ -414,7 +439,7 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
 
                   Navigator.of(Get.context!).pop();
                 },
-                child: Text(i18n("confirm")),
+                child: Text(i18n('confirm')),
               ),
             ],
           );
@@ -429,7 +454,10 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
     Get.dialog(
       AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: Text(i18n("default_record_quality"), style: const TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(
+          i18n('default_record_quality'),
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
         content: RadioGroup<String>(
           groupValue: controller.defaultQuality.value,
           onChanged: (v) {
@@ -462,13 +490,13 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
     Get.dialog(
       AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: Text(i18n("set_max_cache"), style: const TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(i18n('set_max_cache'), style: const TextStyle(fontWeight: FontWeight.bold)),
         content: TextField(
           controller: textController,
           keyboardType: TextInputType.number,
           style: AppTextStyles.t18,
           decoration: InputDecoration(
-            hintText: i18n("please_input_number"),
+            hintText: i18n('please_input_number'),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -479,7 +507,7 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(Get.context!),
-            child: Text(i18n("cancel"), style: AppTextStyles.t16),
+            child: Text(i18n('cancel'), style: AppTextStyles.t16),
           ),
           ElevatedButton(
             onPressed: () {
@@ -491,7 +519,7 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
 
               Navigator.pop(Get.context!);
             },
-            child: Text(i18n("confirm"), style: AppTextStyles.t16),
+            child: Text(i18n('confirm'), style: AppTextStyles.t16),
           ),
         ],
       ),

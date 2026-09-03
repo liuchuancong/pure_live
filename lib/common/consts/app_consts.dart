@@ -23,18 +23,18 @@ class AppConsts {
   static const Set<String> supportAndroidAbis = {'arm64-v8a', 'armeabi-v7a', 'x86_64'};
   // 主题模式映射
   static const Map<String, ThemeMode> themeModes = {
-    "System": ThemeMode.system,
-    "Dark": ThemeMode.dark,
-    "Light": ThemeMode.light,
+    'System': ThemeMode.system,
+    'Dark': ThemeMode.dark,
+    'Light': ThemeMode.light,
   };
   static const Map<String, String> themeModeI18n = {
-    "System": "theme_mode_system",
-    "Dark": "theme_mode_dark",
-    "Light": "theme_mode_light",
+    'System': 'theme_mode_system',
+    'Dark': 'theme_mode_dark',
+    'Light': 'theme_mode_light',
   };
 
   // 语言映射
-  static const Map<String, Locale> languages = {"English": Locale('en'), "简体中文": Locale('zh')};
+  static const Map<String, Locale> languages = {'English': Locale('en'), '简体中文': Locale('zh')};
 
   // 视频 Fit 模式
   static final List<BoxFit> videoFitList = [
@@ -64,20 +64,20 @@ class AppConsts {
   ];
 
   static Map<String, Color> themeColors = {
-    "Crimson": const Color.fromARGB(255, 220, 20, 60),
-    "Orange": Colors.orange,
-    "Chrome": const Color.fromARGB(255, 230, 184, 0),
-    "Grass": Colors.lightGreen,
-    "Teal": Colors.teal,
-    "SeaFoam": const Color.fromARGB(255, 112, 193, 207),
-    "Ice": const Color.fromARGB(255, 115, 155, 208),
-    "Blue": Colors.blue,
-    "Indigo": Colors.indigo,
-    "Violet": Colors.deepPurple,
-    "Primary": const Color(0xFF6200EE),
-    "Orchid": const Color.fromARGB(255, 218, 112, 214),
-    "Variant": const Color(0xFF3700B3),
-    "Secondary": const Color(0xFF03DAC6),
+    'Crimson': const Color.fromARGB(255, 220, 20, 60),
+    'Orange': Colors.orange,
+    'Chrome': const Color.fromARGB(255, 230, 184, 0),
+    'Grass': Colors.lightGreen,
+    'Teal': Colors.teal,
+    'SeaFoam': const Color.fromARGB(255, 112, 193, 207),
+    'Ice': const Color.fromARGB(255, 115, 155, 208),
+    'Blue': Colors.blue,
+    'Indigo': Colors.indigo,
+    'Violet': Colors.deepPurple,
+    'Primary': const Color(0xFF6200EE),
+    'Orchid': const Color.fromARGB(255, 218, 112, 214),
+    'Variant': const Color(0xFF3700B3),
+    'Secondary': const Color(0xFF03DAC6),
   };
   static Map<ColorSwatch<Object>, String> colorsNameMap = AppConsts.themeColors.map(
     (key, value) => MapEntry(ColorTools.createPrimarySwatch(value), key),
@@ -170,8 +170,16 @@ class AppConsts {
     {'key': 'ballZigZag', 'nameEn': 'Ball ZigZag', 'nameZh': '双球Z字错位'},
     {'key': 'ballZigZagDeflect', 'nameEn': 'Ball ZigZag Deflect', 'nameZh': '双球曲线反弹'},
     {'key': 'ballTrianglePath', 'nameEn': 'Ball Triangle Path', 'nameZh': '三角轨迹循环'},
-    {'key': 'ballTrianglePathColored', 'nameEn': 'Ball Triangle Path Colored', 'nameZh': '三角彩轨循环'}, // 补齐
-    {'key': 'ballTrianglePathColoredFilled', 'nameEn': 'Ball Triangle Filled', 'nameZh': '三角实心循环'}, // 补齐
+    {
+      'key': 'ballTrianglePathColored',
+      'nameEn': 'Ball Triangle Path Colored',
+      'nameZh': '三角彩轨循环',
+    }, // 补齐
+    {
+      'key': 'ballTrianglePathColoredFilled',
+      'nameEn': 'Ball Triangle Filled',
+      'nameZh': '三角实心循环',
+    }, // 补齐
     {'key': 'ballScale', 'nameEn': 'Ball Scale', 'nameZh': '单圆水波脉冲'},
     {'key': 'lineScale', 'nameEn': 'Line Scale', 'nameZh': '五线谱律动'},
     {'key': 'lineScaleParty', 'nameEn': 'Line Scale Party', 'nameZh': '律动线条'},

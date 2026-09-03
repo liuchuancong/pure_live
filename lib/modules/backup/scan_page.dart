@@ -19,7 +19,7 @@ class _ScanCodePageState extends State<ScanCodePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(i18n("scan_qr_code")),
+        title: Text(i18n('scan_qr_code')),
         actions: [
           hasFound
               ? Container()
@@ -73,16 +73,19 @@ class _ScanCodePageState extends State<ScanCodePage> {
                   ? Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        AppStatusView(type: AppStatusType.loading, title: "", subtitle: ""),
-                        SizedBox(height: 20),
-                        Text(i18n("syncing"), style: AppTextStyles.t16.copyWith(fontWeight: FontWeight.bold)),
+                        const AppStatusView(type: AppStatusType.loading, title: '', subtitle: ''),
+                        const SizedBox(height: 20),
+                        Text(
+                          i18n('syncing'),
+                          style: AppTextStyles.t16.copyWith(fontWeight: FontWeight.bold),
+                        ),
                       ],
                     )
                   : Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          isSuccess ? i18n("sync_success") : i18n("sync_failed"),
+                          isSuccess ? i18n('sync_success') : i18n('sync_failed'),
                           style: AppTextStyles.t16.copyWith(fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 20),
@@ -95,7 +98,7 @@ class _ScanCodePageState extends State<ScanCodePage> {
                             });
                             cameraController = MobileScannerController();
                           },
-                          child: Text(i18n("tap_to_sync")),
+                          child: Text(i18n('tap_to_sync')),
                         ),
                       ],
                     ),
@@ -110,8 +113,10 @@ class _ScanCodePageState extends State<ScanCodePage> {
                     hasFound = true;
                     syncResult = true;
                   });
-                  final result = await BackupRecoveryService().pushSettingsToRemoteServer(barcodes[0].rawValue!);
-                  ToastUtil.show(result ? i18n("sync_success") : i18n("sync_failed"));
+                  final result = await BackupRecoveryService().pushSettingsToRemoteServer(
+                    barcodes[0].rawValue!,
+                  );
+                  ToastUtil.show(result ? i18n('sync_success') : i18n('sync_failed'));
                   setState(() {
                     isSuccess = result;
                     syncResult = false;

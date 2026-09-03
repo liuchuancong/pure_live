@@ -157,7 +157,10 @@ class DesktopManager {
                 : i18nOr('show_window', useChineseFallback ? '显示窗口' : 'Show Window'),
           ),
           MenuItem.separator(),
-          MenuItem(key: 'exit_app', label: i18nOr('exit_app', useChineseFallback ? '退出应用' : 'Exit')),
+          MenuItem(
+            key: 'exit_app',
+            label: i18nOr('exit_app', useChineseFallback ? '退出应用' : 'Exit'),
+          ),
         ],
       );
 
@@ -278,7 +281,9 @@ class CustomTitleBar extends StatelessWidget {
     return Obx(() {
       final isFullscreen = GlobalPlayerState.to.isWindowFullscreen.value;
       final bgColor = isFullscreen || isDark ? Colors.black : theme.scaffoldBackgroundColor;
-      final iconColor = isFullscreen || isDark ? Colors.white.withValues(alpha: 0.75) : Colors.black;
+      final iconColor = isFullscreen || isDark
+          ? Colors.white.withValues(alpha: 0.75)
+          : Colors.black;
       final currentRoute = RouteObserverController.to.currentRoute.value;
       final currentRouteIskSplash = currentRoute == RoutePath.kSplash;
       final currentSize = SettingsService.to.window.windowSize.value;
@@ -326,7 +331,9 @@ class CustomTitleBar extends StatelessWidget {
                                   IgnorePointer(
                                     child: Text(
                                       '[${currentSize.width.toInt()} × ${currentSize.height.toInt()}]',
-                                      style: AppTextStyles.t12.copyWith(color: iconColor.withValues(alpha: 0.6)),
+                                      style: AppTextStyles.t12.copyWith(
+                                        color: iconColor.withValues(alpha: 0.6),
+                                      ),
                                     ),
                                   ),
                               ],
@@ -453,7 +460,9 @@ class _WindowControlButtonState extends State<WindowControlButton> {
           child: Icon(
             widget.icon,
             size: 16,
-            color: (hover || pressed) ? (widget.hoverIconColor ?? widget.iconColor) : widget.iconColor,
+            color: (hover || pressed)
+                ? (widget.hoverIconColor ?? widget.iconColor)
+                : widget.iconColor,
           ),
         ),
       ),
@@ -485,9 +494,7 @@ mixin DesktopWindowMixin<T extends StatefulWidget> on State<T>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      Future.delayed(const Duration(seconds: 1), () {
-        _checkShareCommand();
-      });
+      Future.delayed(const Duration(seconds: 1), _checkShareCommand);
     }
   }
 
@@ -561,7 +568,9 @@ mixin DesktopWindowMixin<T extends StatefulWidget> on State<T>
                   decoration: BoxDecoration(
                     color: Theme.of(context).cardColor,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: 0.5)),
+                    border: Border.all(
+                      color: Theme.of(context).dividerColor.withValues(alpha: 0.5),
+                    ),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -570,14 +579,20 @@ mixin DesktopWindowMixin<T extends StatefulWidget> on State<T>
                       Row(
                         children: [
                           Text('${i18n('platform')}：', style: const TextStyle(color: Colors.grey)),
-                          Text(room.platform ?? 'UNKNOWN', style: const TextStyle(fontWeight: FontWeight.w500)),
+                          Text(
+                            room.platform ?? 'UNKNOWN',
+                            style: const TextStyle(fontWeight: FontWeight.w500),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 6),
                       Row(
                         children: [
                           Text('${i18n('room_id')}：', style: const TextStyle(color: Colors.grey)),
-                          Text(room.roomId ?? '', style: const TextStyle(fontWeight: FontWeight.w500)),
+                          Text(
+                            room.roomId ?? '',
+                            style: const TextStyle(fontWeight: FontWeight.w500),
+                          ),
                         ],
                       ),
                     ],
@@ -587,7 +602,10 @@ mixin DesktopWindowMixin<T extends StatefulWidget> on State<T>
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    TextButton(onPressed: () => Navigator.pop(context), child: Text(i18n('cancel'))),
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text(i18n('cancel')),
+                    ),
                     const SizedBox(width: 8),
                     ElevatedButton(
                       onPressed: () {

@@ -43,8 +43,14 @@ class CacheController extends GetxController {
   void onInit() {
     super.onInit();
     final refreshConfig = Get.find<RefreshConfigController>();
-    _thumbnailEnabledWorker = ever(refreshConfig.autoRefreshThumbnails, (_) => _scheduleThumbnailRefresh());
-    _thumbnailIntervalWorker = ever(refreshConfig.thumbnailRefreshInterval, (_) => _scheduleThumbnailRefresh());
+    _thumbnailEnabledWorker = ever(
+      refreshConfig.autoRefreshThumbnails,
+      (_) => _scheduleThumbnailRefresh(),
+    );
+    _thumbnailIntervalWorker = ever(
+      refreshConfig.thumbnailRefreshInterval,
+      (_) => _scheduleThumbnailRefresh(),
+    );
     _scheduleThumbnailRefresh();
   }
 
@@ -77,9 +83,18 @@ class CacheController extends GetxController {
     final managedImageCacheDir = await CustomImageCacheManager.cacheDirectory();
     final downloadDir = await AppPathManager().downloadDir;
     final iptvCacheDir = await AppPathManager().iptvCacheDir;
-    final List<Directory> targetDirs = [recordsDir, imageCacheDir, managedImageCacheDir, downloadDir, iptvCacheDir];
+    final List<Directory> targetDirs = [
+      recordsDir,
+      imageCacheDir,
+      managedImageCacheDir,
+      downloadDir,
+      iptvCacheDir,
+    ];
 
-    final paths = targetDirs.map((directory) => directory.absolute.path).toSet().toList(growable: false);
+    final paths = targetDirs
+        .map((directory) => directory.absolute.path)
+        .toSet()
+        .toList(growable: false);
     final totalSizeBytes = await compute(_measureDirectoryBytes, paths);
     if (isClosed) return totalSizeBytes / 1024 / 1024;
     cacheSizeMB.value = totalSizeBytes / 1024 / 1024;

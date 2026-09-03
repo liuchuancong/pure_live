@@ -11,7 +11,12 @@ const ScrollPhysics searchPlatformStripPhysics = PureLiveBoundedScrollPhysics();
 /// have a matching TabBarView, so a small horizontal list is both simpler and
 /// prevents the platform row from drifting beyond its first/last item.
 class SearchPlatformStrip extends StatefulWidget {
-  const SearchPlatformStrip({super.key, required this.labels, required this.selectedIndex, required this.onSelected});
+  const SearchPlatformStrip({
+    super.key,
+    required this.labels,
+    required this.selectedIndex,
+    required this.onSelected,
+  });
 
   final List<String> labels;
   final int selectedIndex;
@@ -87,7 +92,9 @@ class _SearchPlatformStripState extends State<SearchPlatformStrip> {
                 selected: selected,
                 showCheckmark: false,
                 visualDensity: VisualDensity.compact,
-                side: BorderSide(color: selected ? theme.colorScheme.primary : theme.colorScheme.outlineVariant),
+                side: BorderSide(
+                  color: selected ? theme.colorScheme.primary : theme.colorScheme.outlineVariant,
+                ),
                 onSelected: (_) => widget.onSelected(itemIndex),
               ),
             );

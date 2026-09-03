@@ -48,7 +48,8 @@ void main() {
           builder: (context) => TextButton(
             onPressed: () => Navigator.of(context).push<void>(
               MaterialPageRoute<void>(
-                builder: (_) => const VideoKeyboardShortcuts(controller: null, child: Text('offline-room')),
+                builder: (_) =>
+                    const VideoKeyboardShortcuts(controller: null, child: Text('offline-room')),
               ),
             ),
             child: const Text('open'),

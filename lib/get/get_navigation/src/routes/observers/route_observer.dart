@@ -1,10 +1,11 @@
 import '../../router_report.dart';
+
 import 'package:flutter/widgets.dart';
+
 import '../../../get_navigation.dart';
 import '../../dialog/dialog_route.dart';
 import '../../../../instance_manager.dart';
 import '../../../../get_core/get_core.dart';
-
 
 /// Extracts the name of a route based on it's instance type
 /// or null if not possible.
@@ -42,9 +43,9 @@ class GetObserver extends NavigatorObserver {
     final newRoute = _RouteData.ofRoute(previousRoute);
 
     if (currentRoute.isBottomSheet || currentRoute.isDialog) {
-      Get.log("CLOSE ${currentRoute.name}");
+      Get.log('CLOSE ${currentRoute.name}');
     } else if (currentRoute.isGetPageRoute) {
-      Get.log("CLOSE TO ROUTE ${currentRoute.name}");
+      Get.log('CLOSE TO ROUTE ${currentRoute.name}');
     }
     if (previousRoute != null) {
       RouterReportManager.instance.reportCurrentRoute(previousRoute);
@@ -79,9 +80,9 @@ class GetObserver extends NavigatorObserver {
     final newRoute = _RouteData.ofRoute(route);
 
     if (newRoute.isBottomSheet || newRoute.isDialog) {
-      Get.log("OPEN ${newRoute.name}");
+      Get.log('OPEN ${newRoute.name}');
     } else if (newRoute.isGetPageRoute) {
-      Get.log("GOING TO ROUTE ${newRoute.name}");
+      Get.log('GOING TO ROUTE ${newRoute.name}');
     }
 
     RouterReportManager.instance.reportCurrentRoute(route);
@@ -98,8 +99,7 @@ class GetObserver extends NavigatorObserver {
       value.route = route;
       value.isBack = false;
       value.removed = '';
-      value.isBottomSheet =
-          newRoute.isBottomSheet ? true : value.isBottomSheet ?? false;
+      value.isBottomSheet = newRoute.isBottomSheet ? true : value.isBottomSheet ?? false;
       value.isDialog = newRoute.isDialog ? true : value.isDialog ?? false;
     });
 
@@ -115,16 +115,15 @@ class GetObserver extends NavigatorObserver {
     final currentRoute = _RouteData.ofRoute(route);
     final previousRouteName = _extractRouteName(previousRoute);
 
-    Get.log("REMOVING ROUTE $routeName");
-    Get.log("PREVIOUS ROUTE $previousRouteName");
+    Get.log('REMOVING ROUTE $routeName');
+    Get.log('PREVIOUS ROUTE $previousRouteName');
 
     _routeSend?.update((value) {
       value.route = previousRoute;
       value.isBack = false;
       value.removed = routeName ?? '';
       value.previous = previousRouteName ?? '';
-      value.isBottomSheet =
-          currentRoute.isBottomSheet ? false : value.isBottomSheet;
+      value.isBottomSheet = currentRoute.isBottomSheet ? false : value.isBottomSheet;
       value.isDialog = currentRoute.isDialog ? false : value.isDialog;
     });
 
@@ -141,8 +140,8 @@ class GetObserver extends NavigatorObserver {
     final oldName = _extractRouteName(oldRoute);
     final currentRoute = _RouteData.ofRoute(oldRoute);
 
-    Get.log("REPLACE ROUTE $oldName");
-    Get.log("NEW ROUTE $newName");
+    Get.log('REPLACE ROUTE $oldName');
+    Get.log('NEW ROUTE $newName');
 
     if (newRoute != null) {
       RouterReportManager.instance.reportCurrentRoute(newRoute);
@@ -159,8 +158,7 @@ class GetObserver extends NavigatorObserver {
       value.isBack = false;
       value.removed = '';
       value.previous = '$oldName';
-      value.isBottomSheet =
-          currentRoute.isBottomSheet ? false : value.isBottomSheet;
+      value.isBottomSheet = currentRoute.isBottomSheet ? false : value.isBottomSheet;
       value.isDialog = currentRoute.isDialog ? false : value.isDialog;
     });
     if (oldRoute is GetPageRoute) {

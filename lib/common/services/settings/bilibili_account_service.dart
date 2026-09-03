@@ -36,21 +36,21 @@ class BiliBiliAccountService extends GetxController {
 
     try {
       final result = await HttpClient.instance.getJson(
-        "https://api.bilibili.com/x/member/web/account",
-        header: {"Cookie": currentCookie},
+        'https://api.bilibili.com/x/member/web/account',
+        header: {'Cookie': currentCookie},
       );
-      if (result == null || result["code"] != 0) {
-        ToastUtil.show(i18n("bilibili_login_expired"));
+      if (result == null || result['code'] != 0) {
+        ToastUtil.show(i18n('bilibili_login_expired'));
         logout();
         return;
       }
 
-      final info = BiliBiliUserInfoModel.fromJson(result["data"]);
+      final info = BiliBiliUserInfoModel.fromJson(result['data']);
 
-      name.value = info.uname ?? i18n("not_logged_in");
+      name.value = info.uname ?? i18n('not_logged_in');
       SettingsService.to.cookieManager.bilibiliUid.value = info.mid ?? 0;
     } catch (_) {
-      ToastUtil.show(i18n("bilibili_user_info_failed"));
+      ToastUtil.show(i18n('bilibili_user_info_failed'));
     }
   }
 
@@ -59,12 +59,12 @@ class BiliBiliAccountService extends GetxController {
   }
 
   void _clearLocalAccountState() {
-    name.value = i18n("not_logged_in");
+    name.value = i18n('not_logged_in');
     SettingsService.to.cookieManager.bilibiliUid.value = 0;
   }
 
   void logout() async {
-    SettingsService.to.cookieManager.bilibiliCookie.value = "";
+    SettingsService.to.cookieManager.bilibiliCookie.value = '';
     SettingsService.to.cookieManager.bilibiliUid.value = 0;
     await CookieManager.instance().deleteAllCookies();
   }

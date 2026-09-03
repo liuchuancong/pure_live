@@ -9,8 +9,7 @@ import 'package:flutter_inappwebview_platform_interface/flutter_inappwebview_pla
 /// value to avoid breaking changes. See [PlatformTracingControllerCreationParams] for
 /// more information.
 @immutable
-class AndroidTracingControllerCreationParams
-    extends PlatformTracingControllerCreationParams {
+class AndroidTracingControllerCreationParams extends PlatformTracingControllerCreationParams {
   /// Creates a new [AndroidTracingControllerCreationParams] instance.
   const AndroidTracingControllerCreationParams(
     // This parameter prevents breaking changes later.
@@ -26,18 +25,16 @@ class AndroidTracingControllerCreationParams
 }
 
 ///{@macro flutter_inappwebview_platform_interface.PlatformTracingController}
-class AndroidTracingController extends PlatformTracingController
-    with ChannelController {
+class AndroidTracingController extends PlatformTracingController with ChannelController {
   /// Creates a new [AndroidTracingController].
   AndroidTracingController(PlatformTracingControllerCreationParams params)
       : super.implementation(
           params is AndroidTracingControllerCreationParams
               ? params
-              : AndroidTracingControllerCreationParams
-                  .fromPlatformTracingControllerCreationParams(params),
+              : AndroidTracingControllerCreationParams.fromPlatformTracingControllerCreationParams(
+                  params),
         ) {
-    channel = const MethodChannel(
-        'com.pichillilorenzo/flutter_inappwebview_tracingcontroller');
+    channel = const MethodChannel('com.pichillilorenzo/flutter_inappwebview_tracingcontroller');
     handler = handleMethod;
     initMethodCallHandler();
   }
@@ -50,8 +47,8 @@ class AndroidTracingController extends PlatformTracingController
   }
 
   static AndroidTracingController _init() {
-    _instance = AndroidTracingController(AndroidTracingControllerCreationParams(
-        const PlatformTracingControllerCreationParams()));
+    _instance = AndroidTracingController(
+        AndroidTracingControllerCreationParams(const PlatformTracingControllerCreationParams()));
     return _instance!;
   }
 

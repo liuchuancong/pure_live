@@ -14,7 +14,9 @@ enum RoomCardViewportPreset {
   final String label;
 
   static RoomCardViewportPreset fromWidth(double width) {
-    return width < 680 && PlatformUtils.isMobile ? RoomCardViewportPreset.mobile : RoomCardViewportPreset.desktop;
+    return width < 680 && PlatformUtils.isMobile
+        ? RoomCardViewportPreset.mobile
+        : RoomCardViewportPreset.desktop;
   }
 
   static RoomCardViewportPreset fromKey(String key) {
@@ -205,7 +207,11 @@ class RoomCardModel {
   final bool denseMode;
   final bool showAsListTile;
 
-  double calculateCardHeight(double itemWidth, {bool denseOverride = false, bool smallScreen = false}) {
+  double calculateCardHeight(
+    double itemWidth, {
+    bool denseOverride = false,
+    bool smallScreen = false,
+  }) {
     final actualDense = denseOverride || denseMode || smallScreen;
 
     final aspectRatio = coverAspectRatio > 0 ? coverAspectRatio : 16 / 9;
@@ -258,7 +264,10 @@ class RoomCardModel {
 
     final rowHeight = showAvatar ? max(avatar, textHeight) : textHeight;
     if (preset == RoomCardPreset.custom) {
-      return coverHeight + vp * 2 + rowHeight + RoomCardConfigController.to.cardHeightThreshold.value;
+      return coverHeight +
+          vp * 2 +
+          rowHeight +
+          RoomCardConfigController.to.cardHeightThreshold.value;
     }
     return coverHeight + vp * 2 + rowHeight;
   }
@@ -636,7 +645,8 @@ class RoomCardModel {
       denseAvatarSize: denseAvatarSize ?? this.denseAvatarSize,
       showAvatar: showAvatar ?? this.showAvatar,
       contentHorizontalPadding: contentHorizontalPadding ?? this.contentHorizontalPadding,
-      denseContentHorizontalPadding: denseContentHorizontalPadding ?? this.denseContentHorizontalPadding,
+      denseContentHorizontalPadding:
+          denseContentHorizontalPadding ?? this.denseContentHorizontalPadding,
       contentVerticalPadding: contentVerticalPadding ?? this.contentVerticalPadding,
       denseContentVerticalPadding: denseContentVerticalPadding ?? this.denseContentVerticalPadding,
       horizontalTitleGap: horizontalTitleGap ?? this.horizontalTitleGap,
@@ -678,7 +688,8 @@ class RoomCardModel {
       denseMetricFontSize: denseMetricFontSize ?? this.denseMetricFontSize,
       metricFontWeight: metricFontWeight ?? this.metricFontWeight,
       metricHorizontalPadding: metricHorizontalPadding ?? this.metricHorizontalPadding,
-      denseMetricHorizontalPadding: denseMetricHorizontalPadding ?? this.denseMetricHorizontalPadding,
+      denseMetricHorizontalPadding:
+          denseMetricHorizontalPadding ?? this.denseMetricHorizontalPadding,
       metricVerticalPadding: metricVerticalPadding ?? this.metricVerticalPadding,
       denseMetricVerticalPadding: denseMetricVerticalPadding ?? this.denseMetricVerticalPadding,
       metricBorderRadius: metricBorderRadius ?? this.metricBorderRadius,
@@ -708,7 +719,9 @@ class RoomCardModel {
   }) {
     return RoomCardModel(
       // ===== Card Style =====
-      cardBackground: isDark ? config.cardBackground ?? Colors.grey.shade900 : config.cardBackground ?? Colors.white,
+      cardBackground: isDark
+          ? config.cardBackground ?? Colors.grey.shade900
+          : config.cardBackground ?? Colors.white,
       cardBorderRadius: config.cardBorderRadius,
       cardElevation: config.cardElevation,
       enableShadow: config.enableShadow,
@@ -914,7 +927,8 @@ class RoomCardModel {
       denseAvatarSize: (json['denseAvatarSize'] as num? ?? 40).toDouble(),
       showAvatar: json['showAvatar'] as bool? ?? true,
       contentHorizontalPadding: (json['contentHorizontalPadding'] as num? ?? 12).toDouble(),
-      denseContentHorizontalPadding: (json['denseContentHorizontalPadding'] as num? ?? 10).toDouble(),
+      denseContentHorizontalPadding: (json['denseContentHorizontalPadding'] as num? ?? 10)
+          .toDouble(),
       contentVerticalPadding: (json['contentVerticalPadding'] as num? ?? 6).toDouble(),
       denseContentVerticalPadding: (json['denseContentVerticalPadding'] as num? ?? 4).toDouble(),
       horizontalTitleGap: (json['horizontalTitleGap'] as num? ?? 12).toDouble(),

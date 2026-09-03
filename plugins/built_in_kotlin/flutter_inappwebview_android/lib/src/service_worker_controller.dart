@@ -29,16 +29,15 @@ class AndroidServiceWorkerControllerCreationParams
 class AndroidServiceWorkerController extends PlatformServiceWorkerController
     with ChannelController {
   /// Creates a new [AndroidServiceWorkerController].
-  AndroidServiceWorkerController(
-      PlatformServiceWorkerControllerCreationParams params)
+  AndroidServiceWorkerController(PlatformServiceWorkerControllerCreationParams params)
       : super.implementation(
           params is AndroidServiceWorkerControllerCreationParams
               ? params
               : AndroidServiceWorkerControllerCreationParams
                   .fromPlatformServiceWorkerControllerCreationParams(params),
         ) {
-    channel = const MethodChannel(
-        'com.pichillilorenzo/flutter_inappwebview_serviceworkercontroller');
+    channel =
+        const MethodChannel('com.pichillilorenzo/flutter_inappwebview_serviceworkercontroller');
     handler = handleMethod;
     initMethodCallHandler();
   }
@@ -55,9 +54,8 @@ class AndroidServiceWorkerController extends PlatformServiceWorkerController
   }
 
   static AndroidServiceWorkerController _init() {
-    _instance = AndroidServiceWorkerController(
-        AndroidServiceWorkerControllerCreationParams(
-            const PlatformServiceWorkerControllerCreationParams()));
+    _instance = AndroidServiceWorkerController(AndroidServiceWorkerControllerCreationParams(
+        const PlatformServiceWorkerControllerCreationParams()));
     return _instance!;
   }
 
@@ -77,14 +75,11 @@ class AndroidServiceWorkerController extends PlatformServiceWorkerController
   Future<dynamic> _handleMethod(MethodCall call) async {
     switch (call.method) {
       case "shouldInterceptRequest":
-        if (serviceWorkerClient != null &&
-            serviceWorkerClient!.shouldInterceptRequest != null) {
-          Map<String, dynamic> arguments =
-              call.arguments.cast<String, dynamic>();
+        if (serviceWorkerClient != null && serviceWorkerClient!.shouldInterceptRequest != null) {
+          Map<String, dynamic> arguments = call.arguments.cast<String, dynamic>();
           WebResourceRequest request = WebResourceRequest.fromMap(arguments)!;
 
-          return (await serviceWorkerClient!.shouldInterceptRequest!(request))
-              ?.toMap();
+          return (await serviceWorkerClient!.shouldInterceptRequest!(request))?.toMap();
         }
         break;
       default:
@@ -97,29 +92,25 @@ class AndroidServiceWorkerController extends PlatformServiceWorkerController
   @override
   Future<bool> getAllowContentAccess() async {
     Map<String, dynamic> args = <String, dynamic>{};
-    return await channel?.invokeMethod<bool>('getAllowContentAccess', args) ??
-        false;
+    return await channel?.invokeMethod<bool>('getAllowContentAccess', args) ?? false;
   }
 
   @override
   Future<bool> getAllowFileAccess() async {
     Map<String, dynamic> args = <String, dynamic>{};
-    return await channel?.invokeMethod<bool>('getAllowFileAccess', args) ??
-        false;
+    return await channel?.invokeMethod<bool>('getAllowFileAccess', args) ?? false;
   }
 
   @override
   Future<bool> getBlockNetworkLoads() async {
     Map<String, dynamic> args = <String, dynamic>{};
-    return await channel?.invokeMethod<bool>('getBlockNetworkLoads', args) ??
-        false;
+    return await channel?.invokeMethod<bool>('getBlockNetworkLoads', args) ?? false;
   }
 
   @override
   Future<CacheMode?> getCacheMode() async {
     Map<String, dynamic> args = <String, dynamic>{};
-    return CacheMode.fromNativeValue(
-        await channel?.invokeMethod<int?>('getCacheMode', args));
+    return CacheMode.fromNativeValue(await channel?.invokeMethod<int?>('getCacheMode', args));
   }
 
   @override

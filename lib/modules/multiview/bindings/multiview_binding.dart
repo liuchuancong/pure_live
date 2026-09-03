@@ -8,6 +8,6 @@ import 'package:pure_live/modules/multiview/multiview_controller.dart';
 class MultiviewBinding extends Binding {
   @override
   List<Bind> dependencies() {
-    return [Bind.lazyPut(() => MultiviewController())];
+    return [Bind.lazyPut(MultiviewController.new)];
   }
 }

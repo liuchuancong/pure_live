@@ -72,9 +72,7 @@ class BarcodePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (barcodeCorners.length < 4 ||
-        barcodeSize.isEmpty ||
-        cameraPreviewSize.isEmpty) {
+    if (barcodeCorners.length < 4 || barcodeSize.isEmpty || cameraPreviewSize.isEmpty) {
       return;
     }
 
@@ -82,8 +80,7 @@ class BarcodePainter extends CustomPainter {
         deviceOrientation == DeviceOrientation.landscapeLeft ||
         deviceOrientation == DeviceOrientation.landscapeRight;
 
-    final adjustedCameraPreviewSize =
-        isLandscape ? cameraPreviewSize.flipped : cameraPreviewSize;
+    final adjustedCameraPreviewSize = isLandscape ? cameraPreviewSize.flipped : cameraPreviewSize;
 
     final ratios = ScanWindowUtils.calculateBoxFitRatio(
       boxFit: boxFit,
@@ -94,8 +91,7 @@ class BarcodePainter extends CustomPainter {
     final horizontalPadding =
         (adjustedCameraPreviewSize.width * ratios.widthRatio - size.width) / 2;
     final verticalPadding =
-        (adjustedCameraPreviewSize.height * ratios.heightRatio - size.height) /
-        2;
+        (adjustedCameraPreviewSize.height * ratios.heightRatio - size.height) / 2;
 
     final adjustedOffset = <Offset>[
       for (final offset in barcodeCorners)
@@ -110,11 +106,10 @@ class BarcodePainter extends CustomPainter {
     // Draw the rotated rectangle
     final path = Path()..addPolygon(adjustedOffset, true);
 
-    final paint =
-        Paint()
-          ..color = color
-          ..style = style
-          ..strokeWidth = strokeWidth;
+    final paint = Paint()
+      ..color = color
+      ..style = style
+      ..strokeWidth = strokeWidth;
 
     canvas.drawPath(path, paint);
 
@@ -130,9 +125,7 @@ class BarcodePainter extends CustomPainter {
     );
 
     // Set a smaller font size with auto-resizing logic
-    final textSize =
-        (barcodeSize.width * ratios.widthRatio) *
-        0.08; // Scales with barcode size
+    final textSize = (barcodeSize.width * ratios.widthRatio) * 0.08; // Scales with barcode size
     const double minTextSize = 6; // Minimum readable size
     const double maxTextSize = 12; // Maximum size
     final finalTextSize = textSize.clamp(minTextSize, maxTextSize);
@@ -165,18 +158,12 @@ class BarcodePainter extends CustomPainter {
       height: textHeight * 1.1,
     );
 
-    final textBackground = RRect.fromRectAndRadius(
-      textRect,
-      const Radius.circular(6),
-    );
+    final textBackground = RRect.fromRectAndRadius(textRect, const Radius.circular(6));
 
     final textBgPaint = Paint()..color = Colors.white.withValues(alpha: 0.8);
     canvas.drawRRect(textBackground, textBgPaint);
 
-    textPainter.paint(
-      canvas,
-      Offset(center.dx - textWidth / 2, center.dy - textHeight / 2),
-    );
+    textPainter.paint(canvas, Offset(center.dx - textWidth / 2, center.dy - textHeight / 2));
 
     canvas.restore();
   }

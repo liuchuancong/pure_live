@@ -176,7 +176,9 @@ void main() {
   });
 
   test('recorder retry keeps the user session start while rotating attempt prefixes', () {
-    final task = LiveRecordTask.fromRoom(LiveRoom(roomId: '1', platform: 'huya', title: 'title', nick: 'nick'));
+    final task = LiveRecordTask.fromRoom(
+      LiveRoom(roomId: '1', platform: 'huya', title: 'title', nick: 'nick'),
+    );
     final sessionStart = DateTime.parse('2026-09-01T08:42:24.483');
     final retryStart = DateTime.parse('2026-09-01T08:44:07.901');
 
@@ -198,8 +200,9 @@ void main() {
   test('recording session start survives persistence and resets on explicit restart', () {
     final firstStart = DateTime.parse('2026-09-01T08:42:24.483');
     final secondStart = DateTime.parse('2026-09-01T09:00:00.001');
-    final task = LiveRecordTask.fromRoom(LiveRoom(roomId: '1', platform: 'huya', title: 'title', nick: 'nick'))
-      ..beginNewRecording(now: firstStart);
+    final task = LiveRecordTask.fromRoom(
+      LiveRoom(roomId: '1', platform: 'huya', title: 'title', nick: 'nick'),
+    )..beginNewRecording(now: firstStart);
 
     final restored = LiveRecordTask.fromJson(task.toJson());
     expect(restored.recordingStartedAt, firstStart);
@@ -222,7 +225,10 @@ void main() {
     );
 
     expect(task.audienceMetricType, AudienceMetricType.popularity);
-    expect(LiveRecordTask.fromJson(task.toJson()).audienceMetricType, AudienceMetricType.popularity);
+    expect(
+      LiveRecordTask.fromJson(task.toJson()).audienceMetricType,
+      AudienceMetricType.popularity,
+    );
 
     final onlineTask = LiveRecordTask.fromRoom(
       LiveRoom(

@@ -6,10 +6,10 @@ import 'package:pure_live/common/services/settings/font_settings_controller.dart
 
 class ThemeSettingsController extends GetxController {
   Worker? _spacingWorker;
-  final RxString themeModeName = hiveString('themeMode', "System");
+  final RxString themeModeName = hiveString('themeMode', 'System');
   final RxBool enableDynamicTheme = hiveBool('enableDynamicTheme', false);
   final RxString themeColorSwitch = hiveString('themeColorSwitch', Colors.blue.hex);
-  final RxString languageName = hiveString('language', "简体中文");
+  final RxString languageName = hiveString('language', '简体中文');
   final RxDouble crossAxisSpacing = hiveDouble('crossAxisSpacing', 6.0);
   final RxDouble mainAxisSpacing = hiveDouble('mainAxisSpacing', 6.0);
   final RxString loadingStyle = hiveString('loadingStyle', AppConsts.defaultLoadingStyleKey);
@@ -69,10 +69,10 @@ class ThemeSettingsController extends GetxController {
   }
 
   void fromJson(Map<String, dynamic> json) {
-    themeModeName.v = json['themeMode'] ?? "System";
+    themeModeName.v = json['themeMode'] ?? 'System';
     enableDynamicTheme.v = json['enableDynamicTheme'] ?? false;
     themeColorSwitch.v = json['themeColorSwitch'] ?? const Color.fromARGB(255, 218, 70, 12).hex;
-    languageName.v = json['language'] ?? "简体中文";
+    languageName.v = json['language'] ?? '简体中文';
     crossAxisSpacing.v = json['crossAxisSpacing'] ?? 6.0;
     mainAxisSpacing.v = json['mainAxisSpacing'] ?? 6.0;
     loadingStyle.v = json['loadingStyle'] ?? AppConsts.defaultLoadingStyleKey;
@@ -82,10 +82,10 @@ class ThemeSettingsController extends GetxController {
   static Map<String, dynamic> extractConfig(Map<String, dynamic>? rootConfig) {
     final theme = rootConfig?['theme'] as Map<String, dynamic>? ?? {};
     return {
-      'themeMode': theme['themeMode'] ?? "System",
+      'themeMode': theme['themeMode'] ?? 'System',
       'enableDynamicTheme': theme['enableDynamicTheme'] ?? false,
       'themeColorSwitch': theme['themeColorSwitch'] ?? Colors.blue.hex,
-      'language': theme['language'] ?? "简体中文",
+      'language': theme['language'] ?? '简体中文',
       'crossAxisSpacing': (theme['crossAxisSpacing'] ?? 6.0).toDouble(),
       'mainAxisSpacing': (theme['mainAxisSpacing'] ?? 6.0).toDouble(),
       'loadingStyle': theme['loadingStyle'] ?? AppConsts.defaultLoadingStyleKey,
@@ -93,7 +93,10 @@ class ThemeSettingsController extends GetxController {
     };
   }
 
-  static Map<String, dynamic> mergeConfig(Map<String, dynamic> rootConfig, Map<String, dynamic> updateFields) {
+  static Map<String, dynamic> mergeConfig(
+    Map<String, dynamic> rootConfig,
+    Map<String, dynamic> updateFields,
+  ) {
     final theme = Map<String, dynamic>.from(rootConfig['theme'] ?? {});
     updateFields.forEach((k, v) => theme[k] = v);
     rootConfig['theme'] = theme;

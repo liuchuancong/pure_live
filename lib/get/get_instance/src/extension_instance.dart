@@ -70,16 +70,8 @@ extension Inst on GetInterface {
   //   );
   // }
 
-  S put<S>(
-    S dependency, {
-    String? tag,
-    bool permanent = false,
-  }) {
-    _insert(
-        isSingleton: true,
-        name: tag,
-        permanent: permanent,
-        builder: (() => dependency));
+  S put<S>(S dependency, {String? tag, bool permanent = false}) {
+    _insert(isSingleton: true, name: tag, permanent: permanent, builder: (() => dependency));
     return find<S>(tag: tag);
   }
 
@@ -136,17 +128,8 @@ extension Inst on GetInterface {
   /// Repl a = find();
   /// Repl b = find();
   /// print(a==b); (false)```
-  void spawn<S>(
-    InstanceBuilderCallback<S> builder, {
-    String? tag,
-    bool permanent = true,
-  }) {
-    _insert(
-      isSingleton: false,
-      name: tag,
-      builder: builder,
-      permanent: permanent,
-    );
+  void spawn<S>(InstanceBuilderCallback<S> builder, {String? tag, bool permanent = true}) {
+    _insert(isSingleton: false, name: tag, builder: builder, permanent: permanent);
   }
 
   /// Injects the Instance [S] builder into the `_singleton` HashMap.
@@ -201,8 +184,7 @@ extension Inst on GetInterface {
 
       if (isSingleton) {
         if (Get.smartManagement != SmartManagement.onlyBuilder) {
-          RouterReportManager.instance
-              .reportDependencyLinkedToRoute(_getKey(S, name));
+          RouterReportManager.instance.reportDependencyLinkedToRoute(_getKey(S, name));
         }
       }
     }
@@ -324,8 +306,7 @@ extension Inst on GetInterface {
   ///
   ///  Note: if fenix is not provided it will be set to true if
   /// the parent instance was permanent
-  void lazyReplace<P>(InstanceBuilderCallback<P> builder,
-      {String? tag, bool? fenix}) {
+  void lazyReplace<P>(InstanceBuilderCallback<P> builder, {String? tag, bool? fenix}) {
     final info = getInstanceInfo<P>(tag: tag);
     final permanent = (info.isPermanent ?? false);
     delete<P>(tag: tag, force: permanent);
@@ -436,11 +417,7 @@ extension Inst on GetInterface {
     });
   }
 
-  void reload<S>({
-    String? tag,
-    String? key,
-    bool force = false,
-  }) {
+  void reload<S>({String? tag, String? key, bool force = false}) {
     final newKey = key ?? _getKey(S, tag);
 
     final builder = _getDependency<S>(tag: tag, key: newKey);

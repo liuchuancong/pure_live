@@ -27,7 +27,16 @@ int normalizeLiveRecordedSeconds({required int rawMilliseconds, required int wal
   return rawSeconds;
 }
 
-enum FFmpegFailureKind { outputPath, command, httpAccess, transport, inputOpen, inputFormat, decoder, native }
+enum FFmpegFailureKind {
+  outputPath,
+  command,
+  httpAccess,
+  transport,
+  inputOpen,
+  inputFormat,
+  decoder,
+  native,
+}
 
 class FFmpegFailureDiagnosis {
   const FFmpegFailureDiagnosis({required this.kind, required this.retryable});
@@ -125,7 +134,11 @@ class FFmpegFailureClassifier {
 /// means the CDN response ended and the controller must refresh the signed URL
 /// instead of reporting that the room went offline.
 class FFmpegTerminalDecision {
-  const FFmpegTerminalDecision({required this.isComplete, required this.retryable, required this.unexpectedEof});
+  const FFmpegTerminalDecision({
+    required this.isComplete,
+    required this.retryable,
+    required this.unexpectedEof,
+  });
 
   final bool isComplete;
   final bool retryable;
@@ -222,7 +235,9 @@ class FFmpegService {
       throw StateError('FFmpeg task is already active: $taskId');
     }
 
-    if (arguments.isEmpty) throw ArgumentError.value(arguments, 'arguments', 'FFmpeg arguments must not be empty');
+    if (arguments.isEmpty) {
+      throw ArgumentError.value(arguments, 'arguments', 'FFmpeg arguments must not be empty');
+    }
     // Pass the exact argument vector to FFI. Re-parsing a shell-like command
     // string was platform-dependent and could corrupt signed URLs, header CRLF
     // blocks or Android storage paths before FFmpeg saw them.
@@ -248,18 +263,25 @@ class FFmpegService {
           : math.max(0, statistics.time ~/ 1000);
       final fileSize = statistics.size;
       session
-        ..recordedSeconds = recordedSeconds > session.recordedSeconds ? recordedSeconds : session.recordedSeconds
+        ..recordedSeconds = recordedSeconds > session.recordedSeconds
+            ? recordedSeconds
+            : session.recordedSeconds
         ..fileSize = fileSize > session.fileSize ? fileSize : session.fileSize
         ..bitrate = statistics.bitrate > 0 ? statistics.bitrate : session.bitrate
         ..speed = statistics.speed > 0 ? statistics.speed : session.speed
         ..fps = statistics.videoFps > 0 ? statistics.videoFps : session.fps
         ..lastUpdate = DateTime.now();
 
-      if (!session.mediaStarted && (statistics.time > 0 || statistics.size > 0 || statistics.videoFrameNumber > 0)) {
+      if (!session.mediaStarted &&
+          (statistics.time > 0 || statistics.size > 0 || statistics.videoFrameNumber > 0)) {
         session.mediaStarted = true;
         _safeEmit(
           onEvent,
-          FFmpegEvent(taskId: taskId, type: FFmpegEventType.started, data: {'sessionId': session.sessionId}),
+          FFmpegEvent(
+            taskId: taskId,
+            type: FFmpegEventType.started,
+            data: {'sessionId': session.sessionId},
+          ),
         );
       }
 
@@ -295,7 +317,9 @@ class FFmpegService {
           leaseRefresh: leaseRefresh,
         );
 
-        final rawLogs = session.diagnosticTail.isNotEmpty ? session.diagnosticTail : (completedSession.getLogs() ?? '');
+        final rawLogs = session.diagnosticTail.isNotEmpty
+            ? session.diagnosticTail
+            : (completedSession.getLogs() ?? '');
         final diagnosticLogs = _sanitizeLogs(rawLogs).toLowerCase();
         final logTail = _diagnosticTail(diagnosticLogs, maxCharacters: 1600);
         Log.i(
@@ -335,7 +359,9 @@ class FFmpegService {
                 ? 'unexpectedEof'
                 : diagnosis.kind.name,
           if (!isComplete)
-            'retryable': leaseRefresh || terminal.unexpectedEof ? terminal.retryable : diagnosis.retryable,
+            'retryable': leaseRefresh || terminal.unexpectedEof
+                ? terminal.retryable
+                : diagnosis.retryable,
           if (terminal.unexpectedEof || leaseRefresh) 'silent': true,
         };
         if (!isComplete) {
@@ -360,7 +386,11 @@ class FFmpegService {
 
     _safeEmit(
       onEvent,
-      FFmpegEvent(taskId: taskId, type: FFmpegEventType.startAck, data: {'sessionId': session.sessionId}),
+      FFmpegEvent(
+        taskId: taskId,
+        type: FFmpegEventType.startAck,
+        data: {'sessionId': session.sessionId},
+      ),
     );
 
     try {
@@ -478,13 +508,19 @@ class FFmpegService {
 
   static String _sanitizeLogs(String logs) {
     return logs
-        .replaceAll(RegExp(r'(?:https?|rtmps?|rtsp|srt|udp|rtp)://[^\s]+', caseSensitive: false), '[stream-url]')
+        .replaceAll(
+          RegExp(r'(?:https?|rtmps?|rtsp|srt|udp|rtp)://[^\s]+', caseSensitive: false),
+          '[stream-url]',
+        )
         .replaceAllMapped(
           RegExp(r'^(cookie|authorization):.*$', caseSensitive: false, multiLine: true),
           (match) => '${match.group(1)}: [redacted]',
         )
         .replaceAllMapped(
-          RegExp(r'((?:access_)?token|sign|auth|key|wssecret|txsecret)=([^&\s]+)', caseSensitive: false),
+          RegExp(
+            r'((?:access_)?token|sign|auth|key|wssecret|txsecret)=([^&\s]+)',
+            caseSensitive: false,
+          ),
           (match) => '${match.group(1)}=[redacted]',
         );
   }

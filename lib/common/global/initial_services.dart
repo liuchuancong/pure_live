@@ -34,21 +34,21 @@ class InitialServices {
   }
 
   static void initLazyControllers() {
-    Get.lazyPut(() => FavoriteController(), fenix: true);
-    Get.lazyPut(() => ChannelDetailController(), fenix: true);
-    Get.lazyPut(() => PopularController(), fenix: true);
-    Get.lazyPut(() => AreasController(), fenix: true);
-    Get.lazyPut(() => GlobalPlayerState(), fenix: true);
+    Get.lazyPut(FavoriteController.new, fenix: true);
+    Get.lazyPut(ChannelDetailController.new, fenix: true);
+    Get.lazyPut(PopularController.new, fenix: true);
+    Get.lazyPut(AreasController.new, fenix: true);
+    Get.lazyPut(GlobalPlayerState.new, fenix: true);
 
     // LivePlayController exposes recording actions in the room app bar.  It
     // can therefore be opened before the delayed heavy-service warm-up runs
     // (notably from a fast search result tap).  Register the dependency chain
     // lazily now so Get.find never races the three-second warm-up.
-    Get.lazyPut(() => CacheService(), fenix: true);
-    Get.lazyPut(() => RecordSettingsController(), fenix: true);
-    Get.lazyPut(() => RecorderController(), fenix: true);
-    Get.lazyPut(() => StreamResolverService(), fenix: true);
-    Get.lazyPut(() => AuthController(), fenix: true);
+    Get.lazyPut(CacheService.new, fenix: true);
+    Get.lazyPut(RecordSettingsController.new, fenix: true);
+    Get.lazyPut(RecorderController.new, fenix: true);
+    Get.lazyPut(StreamResolverService.new, fenix: true);
+    Get.lazyPut(AuthController.new, fenix: true);
   }
 
   static Future<void> initDb() async {
@@ -96,7 +96,10 @@ class InitialServices {
   }
 
   @visibleForTesting
-  static bool shouldWarmRecorderOnStartup({required bool autoStartOnBoot, required String? serializedTasks}) {
+  static bool shouldWarmRecorderOnStartup({
+    required bool autoStartOnBoot,
+    required String? serializedTasks,
+  }) {
     if (!autoStartOnBoot) return false;
     final value = serializedTasks?.trim();
     return value != null && value.isNotEmpty && value != '[]';

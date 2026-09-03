@@ -152,16 +152,17 @@ class LivePlayMenuButton extends StatelessWidget {
       return;
     }
 
-    WindowsMultiInstanceLauncher.launch(room: detail).catchError((Object error, StackTrace stackTrace) {
-      developer.log(
-        'Open live room in a new Windows instance failed',
-        name: 'LivePlayPage',
-        error: error,
-        stackTrace: stackTrace,
-      );
+    WindowsMultiInstanceLauncher.launch(room: detail)
+        .catchError((Object error, StackTrace stackTrace) {
+          developer.log(
+            'Open live room in a new Windows instance failed',
+            name: 'LivePlayPage',
+            error: error,
+            stackTrace: stackTrace,
+          );
 
-      ToastUtil.show(i18n('open_new_window_failed'));
-    });
+          ToastUtil.show(i18n('open_new_window_failed'));
+        });
   }
 
   List<PopupMenuEntry<int>> _buildItems(BuildContext context) {
@@ -183,7 +184,8 @@ class LivePlayMenuButton extends StatelessWidget {
       if (controller.localInteractionController.enabled.v)
         _item(value: 7, icon: Icons.auto_awesome_rounded, text: i18n('local_interaction_title')),
 
-      if (Platform.isWindows) _item(value: 8, icon: Icons.open_in_new_rounded, text: i18n('open_room_in_new_window')),
+      if (Platform.isWindows)
+        _item(value: 8, icon: Icons.open_in_new_rounded, text: i18n('open_room_in_new_window')),
     ];
   }
 

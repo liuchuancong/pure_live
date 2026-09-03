@@ -7,7 +7,12 @@ SizedBox spacer(double height) {
 /// Set of extension methods to easily display a snackbar
 extension ShowSnackBar on BuildContext {
   /// Displays a basic snackbar
-  void showSnackBar(String message, {Color? textColor, Color? backgroundColor, String? actionLabel}) {
+  void showSnackBar(
+    String message, {
+    Color? textColor,
+    Color? backgroundColor,
+    String? actionLabel,
+  }) {
     ScaffoldMessenger.of(this).showSnackBar(
       SnackBar(
         content: Text(message, style: textColor == null ? null : TextStyle(color: textColor)),

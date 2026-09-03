@@ -10,8 +10,10 @@ class _Data {
 }
 
 class LZString {
-  static const String _keyStrBase64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
-  static const String _keyStrUriSafe = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+-\$";
+  static const String _keyStrBase64 =
+      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
+  static const String _keyStrUriSafe =
+      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+-\$';
   static final Map<String, Map<String, int>> _baseReverseDic = <String, Map<String, int>>{};
 
   static int _getBaseValue(String alphabet, String character) {
@@ -45,17 +47,18 @@ class LZString {
       case 0:
         return res;
       case 1:
-        return "$res===";
+        return '$res===';
       case 2:
-        return "$res==";
+        return '$res==';
       case 3:
-        return "$res=";
+        return '$res=';
     }
     return null;
   }
 
   /// Decompress base64 [input] which produces by [compressToBase64].
-  static Future<String?> decompressFromBase64(String? input) async => decompressFromBase64Sync(input);
+  static Future<String?> decompressFromBase64(String? input) async =>
+      decompressFromBase64Sync(input);
 
   /// Synchronously decompress base64 [input] which produces by
   /// [compressToBase64].
@@ -81,11 +84,12 @@ class LZString {
   static String? compressToUTF16Sync(String? input) {
     final compressed = _compress(input, 15, (a) => String.fromCharCode(a + 32));
     if (compressed == null) return null;
-    return "$compressed ";
+    return '$compressed ';
   }
 
   /// Decompress "valid" UTF-16 string which produces by [compressToUTF16].
-  static Future<String?> decompressFromUTF16(String? compressed) async => decompressFromUTF16Sync(compressed);
+  static Future<String?> decompressFromUTF16(String? compressed) async =>
+      decompressFromUTF16Sync(compressed);
 
   /// Synchronously decompress "valid" UTF-16 string which produces by
   /// [compressToUTF16].
@@ -97,7 +101,8 @@ class LZString {
   /// Produces an uint8Array.
   ///
   /// Can be decompressed with [decompressFromUint8Array].
-  static Future<Uint8List?> compressToUint8Array(String? uncompressed) async => compressToUint8ArraySync(uncompressed);
+  static Future<Uint8List?> compressToUint8Array(String? uncompressed) async =>
+      compressToUint8ArraySync(uncompressed);
 
   /// Synchronously produces an uint8Array.
   ///
@@ -122,7 +127,10 @@ class LZString {
   /// [compressToUint8Array].
   static String? decompressFromUint8ArraySync(Uint8List? compressed) {
     if (compressed == null) return null;
-    final buf = List<int>.generate(compressed.length ~/ 2, (i) => compressed[i * 2] * 256 + compressed[i * 2 + 1]);
+    final buf = List<int>.generate(
+      compressed.length ~/ 2,
+      (i) => compressed[i * 2] * 256 + compressed[i * 2 + 1],
+    );
     final result = <String>[];
     for (var c in buf) {
       result.add(String.fromCharCode(c));
@@ -147,13 +155,15 @@ class LZString {
   /// with a few tweaks to make these URI safe.
   ///
   /// Can be decompressed with [decompressFromEncodedURIComponent]
-  static Future<String?> compressToEncodedURIComponent(String? input) async => compressToEncodedURIComponentSync(input);
+  static Future<String?> compressToEncodedURIComponent(String? input) async =>
+      compressToEncodedURIComponentSync(input);
 
   /// Synchronously produces ASCII strings representing the original string
   /// encoded in Base64 with a few tweaks to make these URI safe.
   ///
   /// Can be decompressed with [decompressFromEncodedURIComponent].
-  static String? compressToEncodedURIComponentSync(String? input) => _compress(input, 6, (a) => _keyStrUriSafe[a]);
+  static String? compressToEncodedURIComponentSync(String? input) =>
+      _compress(input, 6, (a) => _keyStrUriSafe[a]);
 
   /// Produces invalid UTF-16 strings from [uncompressed].
   ///
@@ -163,16 +173,17 @@ class LZString {
   /// Synchronously produces invalid UTF-16 strings from [uncompressed].
   ///
   /// Can be decompressed with [decompress].
-  static String? compressSync(String? uncompressed) => _compress(uncompressed, 16, (a) => String.fromCharCode(a));
+  static String? compressSync(String? uncompressed) =>
+      _compress(uncompressed, 16, String.fromCharCode);
 
   static String? _compress(String? uncompressed, int bitsPerChar, GetCharFromInt getCharFromInt) {
     if (uncompressed == null) return null;
     int? value;
     Map<String, int> contextDictionary = <String, int>{};
     Map<String, bool> contextDictionaryToCreate = <String, bool>{};
-    String contextC = "";
-    String contextWC = "";
-    String contextW = "";
+    String contextC = '';
+    String contextWC = '';
+    String contextW = '';
     int contextEnlargeIn = 2; // Compensate for the first entry which should not count.
     int contextDictSize = 3;
     int contextNumBits = 2;
@@ -274,7 +285,7 @@ class LZString {
     }
 
     // Output the code for w.
-    if (contextW != "") {
+    if (contextW != '') {
       if (contextDictionaryToCreate.containsKey(contextW)) {
         if (contextW.codeUnitAt(0) < 256) {
           for (var i = 0; i < contextNumBits; i++) {
@@ -391,7 +402,7 @@ class LZString {
   static String? _decompress(int length, int resetValue, GetNextValue getNextValue) {
     final dictionary = <int, String>{};
     int enLargeIn = 4, dictSize = 4, numBits = 3, i, bits, maxpower, power, resb;
-    String? entry = "", c, w;
+    String? entry = '', c, w;
     final result = StringBuffer();
     final data = _Data(getNextValue(0), resetValue, 1);
 
@@ -448,13 +459,13 @@ class LZString {
         c = String.fromCharCode(bits);
         break;
       case 2:
-        return "";
+        return '';
     }
     dictionary[3] = c!;
     w = c;
     result.write(c);
     while (true) {
-      if (data.index > length) return "";
+      if (data.index > length) return '';
       bits = 0;
       maxpower = pow(2, numBits).toInt();
       power = 1;

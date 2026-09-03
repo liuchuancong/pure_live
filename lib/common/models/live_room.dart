@@ -345,7 +345,8 @@ class LiveRoom {
 
   bool get isLiveNow => effectiveLiveStatus == LiveStatus.live;
 
-  bool get isPlayableNow => effectiveLiveStatus == LiveStatus.live || effectiveLiveStatus == LiveStatus.replay;
+  bool get isPlayableNow =>
+      effectiveLiveStatus == LiveStatus.live || effectiveLiveStatus == LiveStatus.replay;
 
   bool get isExplicitlyOfflineNow =>
       effectiveLiveStatus == LiveStatus.offline || effectiveLiveStatus == LiveStatus.banned;
@@ -359,7 +360,8 @@ class LiveRoom {
   bool hasSameIdentity(LiveRoom other) => identityKey == other.identityKey;
 
   bool hasIdentity({required String platform, required String roomId}) {
-    return normalizedPlatformId == platform.trim().toLowerCase() && normalizedRoomId == roomId.trim();
+    return normalizedPlatformId == platform.trim().toLowerCase() &&
+        normalizedRoomId == roomId.trim();
   }
 
   LiveRoom normalizedIdentityCopy() {
@@ -466,7 +468,9 @@ class LiveRoom {
 
   String get effectivePopularity {
     if (_hasAudienceValue(popularity)) return popularity!.trim();
-    return effectiveAudienceMetricType == AudienceMetricType.popularity ? (watching ?? '').trim() : '';
+    return effectiveAudienceMetricType == AudienceMetricType.popularity
+        ? (watching ?? '').trim()
+        : '';
   }
 
   String get effectiveOnlineViewers {
@@ -474,14 +478,17 @@ class LiveRoom {
     // `watching` defaults to the legacy sentinel "0". Treat only a positive
     // legacy value as a populated concurrent count; an adapter that really
     // reports zero writes it to [onlineViewers] explicitly and remains valid.
-    return effectiveAudienceMetricType == AudienceMetricType.onlineViewers && _hasAudienceValue(watching)
+    return effectiveAudienceMetricType == AudienceMetricType.onlineViewers &&
+            _hasAudienceValue(watching)
         ? (watching ?? '').trim()
         : '';
   }
 
   String get effectiveTotalViewers {
     if (_hasAudienceValue(totalViewers)) return totalViewers!.trim();
-    return effectiveAudienceMetricType == AudienceMetricType.totalViewers ? (watching ?? '').trim() : '';
+    return effectiveAudienceMetricType == AudienceMetricType.totalViewers
+        ? (watching ?? '').trim()
+        : '';
   }
 
   AudiencePlatformCapability get audienceCapability => audienceCapabilityFor(platform);
@@ -503,7 +510,9 @@ class LiveRoom {
   }
 
   AudienceMetricType audienceType({required bool preferRealOnline, required bool platformEnabled}) {
-    if (preferRealOnline && platformEnabled && supportsRealOnlineCount) return AudienceMetricType.onlineViewers;
+    if (preferRealOnline && platformEnabled && supportsRealOnlineCount) {
+      return AudienceMetricType.onlineViewers;
+    }
     if (_hasAudienceValue(effectivePopularity)) return AudienceMetricType.popularity;
     if (_hasAudienceValue(effectiveTotalViewers)) return AudienceMetricType.totalViewers;
     if (hasRealOnlineCount) return AudienceMetricType.onlineViewers;
@@ -514,7 +523,9 @@ class LiveRoom {
     // In concurrent mode, native heat/cumulative values must not outrank an
     // actual viewer count merely because their numeric scale is much larger.
     if (preferRealOnline && (!platformEnabled || !supportsRealOnlineCount)) return -1;
-    return parseAudienceNumber(audienceValue(preferRealOnline: preferRealOnline, platformEnabled: platformEnabled));
+    return parseAudienceNumber(
+      audienceValue(preferRealOnline: preferRealOnline, platformEnabled: platformEnabled),
+    );
   }
 
   AudienceRankKey audienceRankKey({required bool preferRealOnline, required bool platformEnabled}) {
@@ -576,10 +587,17 @@ class LiveRoom {
     final useFallbackPopularity = !_hasAudienceValue(currentPopularity) || hasTransientBilibiliDrop;
 
     final mergedPopularity = useFallbackPopularity ? fallbackPopularity : currentPopularity;
-    final mergedOnlineViewers = _hasExplicitAudienceValue(onlineViewers) ? onlineViewers : fallback.onlineViewers;
-    final mergedTotalViewers = _hasAudienceValue(totalViewers) ? totalViewers : fallback.totalViewers;
-    final mergedMetricType = useFallbackPopularity ? fallback.effectiveAudienceMetricType : effectiveAudienceMetricType;
-    final mergedWatching = mergedMetricType == AudienceMetricType.popularity && _hasAudienceValue(mergedPopularity)
+    final mergedOnlineViewers = _hasExplicitAudienceValue(onlineViewers)
+        ? onlineViewers
+        : fallback.onlineViewers;
+    final mergedTotalViewers = _hasAudienceValue(totalViewers)
+        ? totalViewers
+        : fallback.totalViewers;
+    final mergedMetricType = useFallbackPopularity
+        ? fallback.effectiveAudienceMetricType
+        : effectiveAudienceMetricType;
+    final mergedWatching =
+        mergedMetricType == AudienceMetricType.popularity && _hasAudienceValue(mergedPopularity)
         ? mergedPopularity
         : watching;
 
@@ -642,7 +660,8 @@ extension LiveRoomExtension on LiveRoom {
 
       watching: _preferValue(incoming.watching, watching),
       audienceMetricType:
-          incoming.audienceMetricType != null && incoming.audienceMetricType != AudienceMetricType.unknown
+          incoming.audienceMetricType != null &&
+              incoming.audienceMetricType != AudienceMetricType.unknown
           ? incoming.audienceMetricType
           : audienceMetricType,
       popularity: _preferValue(incoming.popularity, popularity),
@@ -664,7 +683,10 @@ extension LiveRoomExtension on LiveRoom {
 
       epgId: _preferValue(incoming.epgId, epgId),
       currentProgramme: _preferValue(incoming.currentProgramme, currentProgramme),
-      currentProgrammeDescription: _preferValue(incoming.currentProgrammeDescription, currentProgrammeDescription),
+      currentProgrammeDescription: _preferValue(
+        incoming.currentProgrammeDescription,
+        currentProgrammeDescription,
+      ),
 
       catchUpUrl: _preferValue(incoming.catchUpUrl, catchUpUrl),
       isCatchUp: incoming.isCatchUp ?? isCatchUp,

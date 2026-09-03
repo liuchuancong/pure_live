@@ -35,7 +35,9 @@ class ShaderAssetService {
 
       final applicationSupportDirectory = await getApplicationSupportDirectory();
 
-      final shadersDirectory = Directory(path.join(applicationSupportDirectory.path, 'anime_shaders'));
+      final shadersDirectory = Directory(
+        path.join(applicationSupportDirectory.path, 'anime_shaders'),
+      );
 
       if (!await shadersDirectory.exists()) {
         await shadersDirectory.create(recursive: true);
@@ -46,7 +48,9 @@ class ShaderAssetService {
         );
       }
 
-      final shaderFiles = assets.where((asset) => asset.startsWith('assets/shaders/') && asset.endsWith('.glsl'));
+      final shaderFiles = assets.where(
+        (asset) => asset.startsWith('assets/shaders/') && asset.endsWith('.glsl'),
+      );
 
       int copiedFilesCount = 0;
       int skippedFilesCount = 0;

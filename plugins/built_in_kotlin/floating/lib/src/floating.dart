@@ -124,11 +124,7 @@ class Floating {
         sourceRectHint,
         false,
       ),
-      OnLeavePiP(:final aspectRatio, :final sourceRectHint) => (
-        aspectRatio,
-        sourceRectHint,
-        true,
-      ),
+      OnLeavePiP(:final aspectRatio, :final sourceRectHint) => (aspectRatio, sourceRectHint, true),
     };
 
     if (!aspectRatio.fitsInAndroidRequirements) {
@@ -150,9 +146,7 @@ class Floating {
         ],
       'autoEnable': autoEnable,
     });
-    return enabledSuccessfully ?? false
-        ? PiPStatus.enabled
-        : PiPStatus.unavailable;
+    return enabledSuccessfully ?? false ? PiPStatus.enabled : PiPStatus.unavailable;
   }
 
   /// Updates an active PiP window after the decoded programme geometry changes.
@@ -196,13 +190,9 @@ class Rational {
   const Rational.vertical() : numerator = 9, denominator = 16;
 
   @override
-  String toString() =>
-      'Rational(numerator: $numerator, denominator: $denominator)';
+  String toString() => 'Rational(numerator: $numerator, denominator: $denominator)';
 
-  Map<String, dynamic> toMap() => {
-    'numerator': numerator,
-    'denominator': denominator,
-  };
+  Map<String, dynamic> toMap() => {'numerator': numerator, 'denominator': denominator};
 }
 
 /// Extension for [Rational] to confirm whether Android aspect ration

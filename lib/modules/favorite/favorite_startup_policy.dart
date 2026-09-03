@@ -31,7 +31,9 @@ class FavoriteVerificationPreview {
 /// stream can no longer be painted as live while the first refresh is still in
 /// flight or when that refresh fails.
 List<LiveRoom> markFavoriteRoomsPendingVerification(Iterable<LiveRoom> rooms) {
-  return rooms.map((room) => room.copyWith(status: false, liveStatus: LiveStatus.unknown)).toList(growable: false);
+  return rooms
+      .map((room) => room.copyWith(status: false, liveStatus: LiveStatus.unknown))
+      .toList(growable: false);
 }
 
 FavoriteVerificationPreview buildFavoriteVerificationPreview(Iterable<LiveRoom> rooms) {
@@ -53,7 +55,12 @@ FavoriteVerificationPreview buildFavoriteVerificationPreview(Iterable<LiveRoom> 
     }
   }
 
-  return FavoriteVerificationPreview._(rooms: pending, onlineRooms: online, replayRooms: replay, offlineRooms: offline);
+  return FavoriteVerificationPreview._(
+    rooms: pending,
+    onlineRooms: online,
+    replayRooms: replay,
+    offlineRooms: offline,
+  );
 }
 
 String favoriteRoomIdentity(LiveRoom room) => room.identityKey;
@@ -63,7 +70,10 @@ String favoriteRoomIdentity(LiveRoom room) => room.identityKey;
 /// room detail, but replacing the persisted key would detach local tags and
 /// make the in-flight result miss its merge target.
 LiveRoom bindFavoriteRefreshResultToRequest(LiveRoom requested, LiveRoom refreshed) {
-  return refreshed.copyWith(roomId: requested.normalizedRoomId, platform: requested.normalizedPlatformId);
+  return refreshed.copyWith(
+    roomId: requested.normalizedRoomId,
+    platform: requested.normalizedPlatformId,
+  );
 }
 
 /// Merges room-detail responses into the latest user-owned favourites
@@ -79,7 +89,9 @@ LiveRoom bindFavoriteRefreshResultToRequest(LiveRoom requested, LiveRoom refresh
         final updated = updates[favoriteRoomIdentity(previous)];
         if (updated == null) return previous;
         changed = true;
-        return updated.copyWith(tagIds: List<String>.from(previous.tagIds)).withAudienceFallbackFrom(previous);
+        return updated
+            .copyWith(tagIds: List<String>.from(previous.tagIds))
+            .withAudienceFallbackFrom(previous);
       })
       .toList(growable: false);
   return (rooms: rooms, changed: changed);
@@ -89,9 +101,16 @@ LiveRoom bindFavoriteRefreshResultToRequest(LiveRoom requested, LiveRoom refresh
 /// Failed rooms become unknown, successful rooms use fresh server data, and
 /// local tags/audience fallbacks continue to come from the latest user-owned
 /// favourites list.
-List<LiveRoom> buildVerifiedFavoriteSnapshot(Iterable<LiveRoom> currentRooms, Map<String, LiveRoom> successfulUpdates) {
+List<LiveRoom> buildVerifiedFavoriteSnapshot(
+  Iterable<LiveRoom> currentRooms,
+  Map<String, LiveRoom> successfulUpdates,
+) {
   final current = List<LiveRoom>.from(currentRooms);
-  return mergeAuthoritativeFavoriteRefresh(current, current.map(favoriteRoomIdentity), successfulUpdates).rooms;
+  return mergeAuthoritativeFavoriteRefresh(
+    current,
+    current.map(favoriteRoomIdentity),
+    successfulUpdates,
+  ).rooms;
 }
 
 /// Applies one authoritative refresh without carrying a stale live flag across
@@ -118,7 +137,9 @@ List<LiveRoom> buildVerifiedFavoriteSnapshot(Iterable<LiveRoom> currentRooms, Ma
         changed = true;
         final updated = successfulUpdates[key];
         if (updated != null) {
-          return updated.copyWith(tagIds: List<String>.from(previous.tagIds)).withAudienceFallbackFrom(previous);
+          return updated
+              .copyWith(tagIds: List<String>.from(previous.tagIds))
+              .withAudienceFallbackFrom(previous);
         }
         return previous.copyWith(status: false, liveStatus: LiveStatus.unknown);
       })

@@ -77,9 +77,7 @@ abstract base class PollingBarcodeReader extends BarcodeReader {
   void updateScanWindow(Rect? window) => _scanWindow = window;
 
   @override
-  void setMediaTrackSettingsListener(
-    void Function(web.MediaTrackSettings) listener,
-  ) {
+  void setMediaTrackSettingsListener(void Function(web.MediaTrackSettings) listener) {
     _onMediaTrackSettingsChanged ??= listener;
   }
 
@@ -163,9 +161,7 @@ abstract base class PollingBarcodeReader extends BarcodeReader {
 
     // For unrestricted / zero-timeout mode, clamp to ~60 fps so we don't spin
     // the timer as fast as the event loop allows.
-    final interval = Duration(
-      milliseconds: _timeBetweenScansMs > 0 ? _timeBetweenScansMs : 16,
-    );
+    final interval = Duration(milliseconds: _timeBetweenScansMs > 0 ? _timeBetweenScansMs : 16);
 
     _decodeTimer = Timer.periodic(interval, (_) async {
       if (_isDecoding) return;
@@ -185,9 +181,7 @@ abstract base class PollingBarcodeReader extends BarcodeReader {
     _decodeTimer = null;
   }
 
-  Future<void> _decodeAndEmit(
-    StreamController<BarcodeCapture> controller,
-  ) async {
+  Future<void> _decodeAndEmit(StreamController<BarcodeCapture> controller) async {
     final video = _videoElement;
 
     if (video == null || controller.isClosed || video.paused) return;

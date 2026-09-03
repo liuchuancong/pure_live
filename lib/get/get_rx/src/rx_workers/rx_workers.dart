@@ -226,8 +226,7 @@ Worker debounce<T>(
   void Function()? onDone,
   bool? cancelOnError,
 }) {
-  final newDebouncer =
-      Debouncer(delay: time ?? const Duration(milliseconds: 800));
+  final newDebouncer = Debouncer(delay: time ?? const Duration(milliseconds: 800));
   StreamSubscription sub = listener.listen(
     (event) {
       newDebouncer(() {

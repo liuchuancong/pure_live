@@ -159,8 +159,9 @@ class VideoControllerConfiguration {
         width: width ?? this.width,
         height: height ?? this.height,
         enableHardwareAcceleration: enableHardwareAcceleration ?? this.enableHardwareAcceleration,
-        enableAndroidSurfaceProducer: enableAndroidSurfaceProducer ?? this.enableAndroidSurfaceProducer,
-        androidAttachSurfaceAfterVideoParameters:
-            androidAttachSurfaceAfterVideoParameters ?? this.androidAttachSurfaceAfterVideoParameters,
+        enableAndroidSurfaceProducer:
+            enableAndroidSurfaceProducer ?? this.enableAndroidSurfaceProducer,
+        androidAttachSurfaceAfterVideoParameters: androidAttachSurfaceAfterVideoParameters ??
+            this.androidAttachSurfaceAfterVideoParameters,
       );
 }

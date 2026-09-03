@@ -86,7 +86,10 @@ class CookieSettingsController extends GetxController {
     };
   }
 
-  static Map<String, dynamic> mergeConfig(Map<String, dynamic> rootConfig, Map<String, dynamic> updateFields) {
+  static Map<String, dynamic> mergeConfig(
+    Map<String, dynamic> rootConfig,
+    Map<String, dynamic> updateFields,
+  ) {
     final cookie = Map<String, dynamic>.from(rootConfig['cookie'] ?? {});
     updateFields.forEach((k, v) => cookie[k] = v);
     rootConfig['cookie'] = cookie;

@@ -41,7 +41,10 @@ class _DeferredLiveSite extends LiveSite {
   Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom detail}) => qualities.future;
 
   @override
-  Future<List<String>> getPlayUrls({required LiveRoom detail, required LivePlayQuality quality}) async {
+  Future<List<String>> getPlayUrls({
+    required LiveRoom detail,
+    required LivePlayQuality quality,
+  }) async {
     playUrlCalls++;
     return const ['https://example.invalid/live.flv'];
   }
@@ -81,7 +84,13 @@ class _TestPlayerHost implements PlayerSessionHost {
   }
 
   @override
-  void updateRoom({LiveRoom? detail, bool? isLiving, bool? success, bool? isLoading, String? loadError}) {
+  void updateRoom({
+    LiveRoom? detail,
+    bool? isLiving,
+    bool? success,
+    bool? isLoading,
+    String? loadError,
+  }) {
     roomUpdateCount++;
   }
 }

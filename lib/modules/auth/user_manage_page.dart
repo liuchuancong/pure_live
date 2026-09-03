@@ -120,15 +120,23 @@ class _UserManagerState extends State<UserManager> {
   }
 
   Future<bool> _showConfirm(String actionName, String targetEmail) async {
-    String formattedContent = i18n('confirm_content').replaceAll('{}', targetEmail).replaceAll('[{}]', '[$actionName]');
+    String formattedContent = i18n('confirm_content')
+        .replaceAll('{}', targetEmail)
+        .replaceAll('[{}]', '[$actionName]');
     return await Get.dialog<bool>(
           AlertDialog(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             title: Text(i18n('confirm_title')),
             content: Text(formattedContent),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(Get.context!, false), child: Text(i18n('cancel'))),
-              TextButton(onPressed: () => Navigator.pop(Get.context!, true), child: Text(i18n('confirm'))),
+              TextButton(
+                onPressed: () => Navigator.pop(Get.context!, false),
+                child: Text(i18n('cancel')),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(Get.context!, true),
+                child: Text(i18n('confirm')),
+              ),
             ],
           ),
         ) ??
@@ -174,14 +182,20 @@ class _UserManagerState extends State<UserManager> {
               ),
             ),
           ),
-          Padding(padding: const EdgeInsets.fromLTRB(16, 20, 16, 12), child: _buildSearchField(theme)),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
+            child: _buildSearchField(theme),
+          ),
           Expanded(
             child: BasePageView<UserServerRemoteController, UserItem>(
               controller: controller,
               enableRefresh: true,
               enableLoadMore: true,
-              emptyBuilder: (ctx) =>
-                  AppStatusView(type: AppStatusType.empty, icon: Remix.user_3_line, title: i18n('no_data')),
+              emptyBuilder: (ctx) => AppStatusView(
+                type: AppStatusType.empty,
+                icon: Remix.user_3_line,
+                title: i18n('no_data'),
+              ),
               showScrollToTopBtn: SettingsService.to.page.showScrollToTopBtn.v,
               showPageSizeSelector: SettingsService.to.page.showPageSizeSelector.v,
               pageSizeOptions: SettingsService.to.page.pageSizeOptions,
@@ -213,8 +227,20 @@ class _UserManagerState extends State<UserManager> {
             Remix.shield_user_fill,
             theme.colorScheme.primary,
           ),
-          _buildStatItem(theme, i18n('role_manager'), manager.toString(), Remix.user_star_fill, Colors.amber.shade700),
-          _buildStatItem(theme, i18n('role_user'), user.toString(), Remix.user_3_fill, theme.colorScheme.outline),
+          _buildStatItem(
+            theme,
+            i18n('role_manager'),
+            manager.toString(),
+            Remix.user_star_fill,
+            Colors.amber.shade700,
+          ),
+          _buildStatItem(
+            theme,
+            i18n('role_user'),
+            user.toString(),
+            Remix.user_3_fill,
+            theme.colorScheme.outline,
+          ),
         ],
       ),
     );
@@ -227,7 +253,10 @@ class _UserManagerState extends State<UserManager> {
         Container(
           width: 42,
           height: 42,
-          decoration: BoxDecoration(color: color.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(12)),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(12),
+          ),
           child: Icon(icon, size: 20, color: color),
         ),
         const SizedBox(height: 8),
@@ -236,7 +265,10 @@ class _UserManagerState extends State<UserManager> {
             children: [
               TextSpan(
                 text: value,
-                style: AppTextStyles.t12.copyWith(fontWeight: FontWeight.w900, color: theme.colorScheme.onSurface),
+                style: AppTextStyles.t12.copyWith(
+                  fontWeight: FontWeight.w900,
+                  color: theme.colorScheme.onSurface,
+                ),
               ),
             ],
           ),
@@ -262,7 +294,10 @@ class _UserManagerState extends State<UserManager> {
         prefixIcon: const Icon(Remix.search_line, size: 18),
         filled: true,
         fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide.none,
+        ),
         contentPadding: const EdgeInsets.symmetric(vertical: 14),
       ),
       onChanged: (val) => controller.refreshByKeyword(val),
@@ -293,7 +328,11 @@ class _UserManagerState extends State<UserManager> {
         borderRadius: BorderRadius.circular(22),
         border: Border.all(color: theme.dividerColor.withValues(alpha: 0.08)),
         boxShadow: [
-          BoxShadow(color: theme.shadowColor.withValues(alpha: 0.03), blurRadius: 12, offset: const Offset(0, 4)),
+          BoxShadow(
+            color: theme.shadowColor.withValues(alpha: 0.03),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
       child: ClipRRect(
@@ -344,7 +383,9 @@ class _UserManagerState extends State<UserManager> {
                     builder: (ctx, constraints) {
                       bool compact = constraints.maxWidth <= 680;
                       List<Widget> btns = _buildActionButtons(user, theme);
-                      return compact ? Column(children: [Row(children: btns)]) : Row(children: btns);
+                      return compact
+                          ? Column(children: [Row(children: btns)])
+                          : Row(children: btns);
                     },
                   ),
                 ],
@@ -356,14 +397,23 @@ class _UserManagerState extends State<UserManager> {
     );
   }
 
-  Widget _buildLeadingIconWithBadge(ThemeData theme, UserItem user, Color color, IconData icon, int index) {
+  Widget _buildLeadingIconWithBadge(
+    ThemeData theme,
+    UserItem user,
+    Color color,
+    IconData icon,
+    int index,
+  ) {
     return Stack(
       clipBehavior: Clip.none,
       children: [
         Container(
           width: 52,
           height: 52,
-          decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(16)),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(16),
+          ),
           child: Icon(icon, color: color),
         ),
         Positioned(
@@ -373,7 +423,10 @@ class _UserManagerState extends State<UserManager> {
             constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
             alignment: Alignment.center,
-            decoration: BoxDecoration(color: theme.colorScheme.primary, borderRadius: BorderRadius.circular(10)),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary,
+              borderRadius: BorderRadius.circular(10),
+            ),
             child: Text(
               '${index + 1}',
               style: AppTextStyles.t11Bold.copyWith(color: Colors.white, fontSize: 10, height: 1.1),
@@ -387,7 +440,10 @@ class _UserManagerState extends State<UserManager> {
   Widget _buildBadge(String text, Color color) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(6)),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(6),
+      ),
       child: Text(text, style: AppTextStyles.t11Medium.copyWith(color: color)),
     );
   }
@@ -444,8 +500,14 @@ class _UserManagerState extends State<UserManager> {
                       title: Text(i18n('confirm_title')),
                       content: Text(i18n('delete_confirm_content').replaceAll('{}', user.email)),
                       actions: [
-                        TextButton(onPressed: () => Navigator.pop(Get.context!, false), child: Text(i18n('cancel'))),
-                        TextButton(onPressed: () => Navigator.pop(Get.context!, true), child: Text(i18n('confirm'))),
+                        TextButton(
+                          onPressed: () => Navigator.pop(Get.context!, false),
+                          child: Text(i18n('cancel')),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(Get.context!, true),
+                          child: Text(i18n('confirm')),
+                        ),
                       ],
                     ),
                   ) ??

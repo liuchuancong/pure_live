@@ -1,9 +1,9 @@
-﻿import 'game_event_message_board_info.dart';
+import 'game_event_message_board_info.dart';
+
 import 'package:pure_live/pkg/tars/codec/tars_struct.dart';
 import 'package:pure_live/pkg/tars/codec/tars_displayer.dart';
 import 'package:pure_live/pkg/tars/codec/tars_input_stream.dart';
 import 'package:pure_live/pkg/tars/codec/tars_output_stream.dart';
-
 
 class GameEventMessageBoardPanel extends TarsStruct {
   List<GameEventMessageBoardInfo> vGameEventMessageBoardInfo = [GameEventMessageBoardInfo()];
@@ -31,6 +31,6 @@ class GameEventMessageBoardPanel extends TarsStruct {
   @override
   void displayAsString(StringBuffer sb, int level) {
     final ds = TarsDisplayer(sb, level: level);
-    ds.display(vGameEventMessageBoardInfo, "vGameEventMessageBoardInfo");
+    ds.display(vGameEventMessageBoardInfo, 'vGameEventMessageBoardInfo');
   }
 }

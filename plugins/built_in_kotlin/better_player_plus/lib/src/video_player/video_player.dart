@@ -41,7 +41,8 @@ class VideoPlayerValue {
 
   /// Returns an instance with a `null` [Duration] and the given
   /// [errorDescription].
-  VideoPlayerValue.erroneous(String errorDescription) : this(duration: null, errorDescription: errorDescription);
+  VideoPlayerValue.erroneous(String errorDescription)
+    : this(duration: null, errorDescription: errorDescription);
 
   /// The total duration of the video.
   ///
@@ -256,7 +257,9 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
       }
     }
 
-    _eventSubscription = _videoPlayerPlatform.videoEventsFor(_textureId).listen(eventListener, onError: errorListener);
+    _eventSubscription = _videoPlayerPlatform
+        .videoEventsFor(_textureId)
+        .listen(eventListener, onError: errorListener);
   }
 
   /// Set data source for playing a video from an asset.
@@ -576,7 +579,12 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
     await _videoPlayerPlatform.setTrackParameters(_textureId, width, height, bitrate);
   }
 
-  Future<void> enablePictureInPicture({double? top, double? left, double? width, double? height}) async {
+  Future<void> enablePictureInPicture({
+    double? top,
+    double? left,
+    double? width,
+    double? height,
+  }) async {
     await _videoPlayerPlatform.enablePictureInPicture(textureId, top, left, width, height);
   }
 
@@ -615,7 +623,8 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   static Future<void> preCache(DataSource dataSource, int preCacheSize) =>
       _videoPlayerPlatform.preCache(dataSource, preCacheSize);
 
-  static Future<void> stopPreCache(String url, String? cacheKey) => _videoPlayerPlatform.stopPreCache(url, cacheKey);
+  static Future<void> stopPreCache(String url, String? cacheKey) =>
+      _videoPlayerPlatform.stopPreCache(url, cacheKey);
 }
 
 /// Widget that displays the video controlled by [controller].
@@ -670,7 +679,8 @@ class _VideoPlayerState extends State<VideoPlayer> {
   }
 
   @override
-  Widget build(BuildContext context) => _textureId == null ? Container() : _videoPlayerPlatform.buildView(_textureId);
+  Widget build(BuildContext context) =>
+      _textureId == null ? Container() : _videoPlayerPlatform.buildView(_textureId);
 }
 
 /// Used to configure the [VideoProgressIndicator] widget's colors for how it
@@ -885,7 +895,10 @@ class _VideoProgressIndicatorState extends State<VideoProgressIndicator> {
         backgroundColor: colors.backgroundColor,
       );
     }
-    final Widget paddedProgressIndicator = Padding(padding: widget.padding, child: progressIndicator);
+    final Widget paddedProgressIndicator = Padding(
+      padding: widget.padding,
+      child: progressIndicator,
+    );
     if (widget.allowScrubbing!) {
       return _VideoScrubber(controller: controller, child: paddedProgressIndicator);
     } else {
@@ -943,7 +956,10 @@ class ClosedCaption extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.only(bottom: 24),
         child: DecoratedBox(
-          decoration: BoxDecoration(color: const Color(0xB8000000), borderRadius: BorderRadius.circular(2)),
+          decoration: BoxDecoration(
+            color: const Color(0xB8000000),
+            borderRadius: BorderRadius.circular(2),
+          ),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 2),
             child: Text(text!, style: effectiveTextStyle),

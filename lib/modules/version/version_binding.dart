@@ -4,6 +4,6 @@ import 'package:pure_live/modules/version/version_controller.dart';
 class VersionBinding extends Binding {
   @override
   List<Bind> dependencies() {
-    return [Bind.lazyPut(() => VersionController())];
+    return [Bind.lazyPut(VersionController.new)];
   }
 }

@@ -22,7 +22,8 @@ void main() {
   }
 
   int audienceCompare(LiveRoom left, LiveRoom right) =>
-      LiveRoom.parseAudienceNumber(right.onlineViewers).compareTo(LiveRoom.parseAudienceNumber(left.onlineViewers));
+      LiveRoom.parseAudienceNumber(right.onlineViewers)
+          .compareTo(LiveRoom.parseAudienceNumber(left.onlineViewers));
 
   group('search ranking', () {
     test('keeps live rooms before a larger offline channel', () {
@@ -57,8 +58,20 @@ void main() {
 
     test('audience and follower modes use their respective values', () {
       final rooms = [
-        room(id: 'audience', platform: 'huya', status: LiveStatus.live, audience: '2万', followers: '10'),
-        room(id: 'followers', platform: 'bilibili', status: LiveStatus.live, audience: '100', followers: '30万'),
+        room(
+          id: 'audience',
+          platform: 'huya',
+          status: LiveStatus.live,
+          audience: '2万',
+          followers: '10',
+        ),
+        room(
+          id: 'followers',
+          platform: 'bilibili',
+          status: LiveStatus.live,
+          audience: '100',
+          followers: '30万',
+        ),
       ];
 
       final byAudience = LiveSearchRanking.apply(
@@ -96,15 +109,29 @@ void main() {
     });
 
     test('concurrent mode does not let platform heat overwhelm real viewers', () {
-      final online = LiveRoom(roomId: 'online', platform: 'soop', liveStatus: LiveStatus.live, onlineViewers: '120');
-      final heat = LiveRoom(roomId: 'heat', platform: 'bilibili', liveStatus: LiveStatus.live, popularity: '900万');
+      final online = LiveRoom(
+        roomId: 'online',
+        platform: 'soop',
+        liveStatus: LiveStatus.live,
+        onlineViewers: '120',
+      );
+      final heat = LiveRoom(
+        roomId: 'heat',
+        platform: 'bilibili',
+        liveStatus: LiveStatus.live,
+        popularity: '900万',
+      );
       final ranked = LiveSearchRanking.apply(
         rooms: [heat, online],
         mode: LiveSearchSortMode.audience,
         includeOffline: true,
         platformOrder: const ['bilibili', 'soop'],
-        audienceCompare: (left, right) =>
-            LiveRoom.compareAudienceRanking(left, right, preferRealOnline: true, platformEnabled: (_) => true),
+        audienceCompare: (left, right) => LiveRoom.compareAudienceRanking(
+          left,
+          right,
+          preferRealOnline: true,
+          platformEnabled: (_) => true,
+        ),
       );
 
       expect(ranked.map((item) => item.roomId), ['online', 'heat']);

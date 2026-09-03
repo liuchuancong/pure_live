@@ -29,7 +29,10 @@ String buildProxyDirective({required bool enabled, required String host, require
     return 'DIRECT';
   }
 
-  final endpointHost = normalizedHost.contains(':') && !normalizedHost.startsWith('[') && !normalizedHost.endsWith(']')
+  final endpointHost =
+      normalizedHost.contains(':') &&
+          !normalizedHost.startsWith('[') &&
+          !normalizedHost.endsWith(']')
       ? '[$normalizedHost]'
       : normalizedHost;
   return 'PROXY $endpointHost:$port';

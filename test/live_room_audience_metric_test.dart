@@ -4,15 +4,33 @@ import 'package:pure_live/common/models/live_room.dart';
 void main() {
   group('audience metric semantics', () {
     test('maps platform fields without calling every value online viewers', () {
-      expect(LiveRoom(platform: 'bilibili').effectiveAudienceMetricType, AudienceMetricType.popularity);
-      expect(LiveRoom(platform: 'douyu').effectiveAudienceMetricType, AudienceMetricType.popularity);
+      expect(
+        LiveRoom(platform: 'bilibili').effectiveAudienceMetricType,
+        AudienceMetricType.popularity,
+      );
+      expect(
+        LiveRoom(platform: 'douyu').effectiveAudienceMetricType,
+        AudienceMetricType.popularity,
+      );
       expect(LiveRoom(platform: 'huya').effectiveAudienceMetricType, AudienceMetricType.popularity);
-      expect(LiveRoom(platform: 'kuaishou').effectiveAudienceMetricType, AudienceMetricType.onlineViewers);
-      expect(LiveRoom(platform: 'twitch').effectiveAudienceMetricType, AudienceMetricType.onlineViewers);
+      expect(
+        LiveRoom(platform: 'kuaishou').effectiveAudienceMetricType,
+        AudienceMetricType.onlineViewers,
+      );
+      expect(
+        LiveRoom(platform: 'twitch').effectiveAudienceMetricType,
+        AudienceMetricType.onlineViewers,
+      );
       expect(LiveRoom(platform: 'twitch').supportsRealOnlineCount, isTrue);
-      expect(LiveRoom(platform: 'soop').effectiveAudienceMetricType, AudienceMetricType.onlineViewers);
+      expect(
+        LiveRoom(platform: 'soop').effectiveAudienceMetricType,
+        AudienceMetricType.onlineViewers,
+      );
       expect(LiveRoom(platform: 'soop').supportsRealOnlineCount, isTrue);
-      expect(LiveRoom(platform: 'douyin').effectiveAudienceMetricType, AudienceMetricType.totalViewers);
+      expect(
+        LiveRoom(platform: 'douyin').effectiveAudienceMetricType,
+        AudienceMetricType.totalViewers,
+      );
       expect(LiveRoom(platform: 'cc').effectiveAudienceMetricType, AudienceMetricType.popularity);
       expect(LiveRoom(platform: 'yy').effectiveAudienceMetricType, AudienceMetricType.popularity);
       expect(LiveRoom(platform: 'huya', onlineViewers: '3210').supportsRealOnlineCount, isFalse);
@@ -33,7 +51,10 @@ void main() {
 
       expect(room.audienceValue(preferRealOnline: false, platformEnabled: true), '5600000');
       expect(room.audienceValue(preferRealOnline: true, platformEnabled: true), '18342');
-      expect(room.audienceType(preferRealOnline: true, platformEnabled: true), AudienceMetricType.onlineViewers);
+      expect(
+        room.audienceType(preferRealOnline: true, platformEnabled: true),
+        AudienceMetricType.onlineViewers,
+      );
       expect(room.audienceSortValue(preferRealOnline: true, platformEnabled: true), 18342);
     });
 
@@ -51,16 +72,25 @@ void main() {
 
       expect(room.supportsRealOnlineCount, isTrue);
       expect(room.audienceValue(preferRealOnline: true, platformEnabled: true), '0');
-      expect(room.audienceType(preferRealOnline: true, platformEnabled: true), AudienceMetricType.onlineViewers);
+      expect(
+        room.audienceType(preferRealOnline: true, platformEnabled: true),
+        AudienceMetricType.onlineViewers,
+      );
     });
 
-    test('shows a pending online value instead of relabelling heat while waiting for a platform value', () {
-      final room = LiveRoom(platform: 'douyin', popularity: '500万');
+    test(
+      'shows a pending online value instead of relabelling heat while waiting for a platform value',
+      () {
+        final room = LiveRoom(platform: 'douyin', popularity: '500万');
 
-      expect(room.audienceValue(preferRealOnline: true, platformEnabled: true), isEmpty);
-      expect(room.audienceType(preferRealOnline: true, platformEnabled: true), AudienceMetricType.onlineViewers);
-      expect(room.audienceSortValue(preferRealOnline: true, platformEnabled: true), 0);
-    });
+        expect(room.audienceValue(preferRealOnline: true, platformEnabled: true), isEmpty);
+        expect(
+          room.audienceType(preferRealOnline: true, platformEnabled: true),
+          AudienceMetricType.onlineViewers,
+        );
+        expect(room.audienceSortValue(preferRealOnline: true, platformEnabled: true), 0);
+      },
+    );
 
     test('puts unsupported heat values behind supported platforms in concurrent mode', () {
       final bilibili = LiveRoom(platform: 'bilibili', popularity: '500万');
@@ -76,13 +106,23 @@ void main() {
       final heat = LiveRoom(roomId: 'heat', platform: 'bilibili', popularity: '900万');
       final rooms = [heat, pending, explicit]
         ..sort(
-          (left, right) =>
-              LiveRoom.compareAudienceRanking(left, right, preferRealOnline: true, platformEnabled: (_) => true),
+          (left, right) => LiveRoom.compareAudienceRanking(
+            left,
+            right,
+            preferRealOnline: true,
+            platformEnabled: (_) => true,
+          ),
         );
 
       expect(rooms.map((room) => room.roomId), ['explicit', 'pending', 'heat']);
-      expect(explicit.audienceRankKey(preferRealOnline: true, platformEnabled: true).metricPriority, 3);
-      expect(pending.audienceRankKey(preferRealOnline: true, platformEnabled: true).metricPriority, 2);
+      expect(
+        explicit.audienceRankKey(preferRealOnline: true, platformEnabled: true).metricPriority,
+        3,
+      );
+      expect(
+        pending.audienceRankKey(preferRealOnline: true, platformEnabled: true).metricPriority,
+        2,
+      );
       expect(heat.audienceRankKey(preferRealOnline: true, platformEnabled: true).metricPriority, 1);
     });
 
@@ -92,15 +132,23 @@ void main() {
             LiveRoom(roomId: '2', platform: 'twitch', onlineViewers: '50'),
             LiveRoom(roomId: '1', platform: 'twitch', onlineViewers: '50'),
           ]..sort(
-            (left, right) =>
-                LiveRoom.compareAudienceRanking(left, right, preferRealOnline: true, platformEnabled: (_) => true),
+            (left, right) => LiveRoom.compareAudienceRanking(
+              left,
+              right,
+              preferRealOnline: true,
+              platformEnabled: (_) => true,
+            ),
           );
 
       expect(rooms.map((room) => room.roomId), ['1', '2']);
     });
 
     test('round-trips an explicit metric and migrates older records', () {
-      final room = LiveRoom.fromJson({'roomId': '1', 'platform': 'cc', 'audienceMetricType': 'followers'});
+      final room = LiveRoom.fromJson({
+        'roomId': '1',
+        'platform': 'cc',
+        'audienceMetricType': 'followers',
+      });
       expect(room.effectiveAudienceMetricType, AudienceMetricType.followers);
       expect(room.toJson()['audienceMetricType'], 'followers');
 
@@ -111,7 +159,13 @@ void main() {
     test('copyWith keeps playback and danmaku payloads while updating audience data', () {
       final playback = {'url': 'fixture'};
       final danmaku = {'token': 'fixture'};
-      final room = LiveRoom(roomId: '3', platform: 'huya', data: playback, danmakuData: danmaku, popularity: '500万');
+      final room = LiveRoom(
+        roomId: '3',
+        platform: 'huya',
+        data: playback,
+        danmakuData: danmaku,
+        popularity: '500万',
+      );
 
       final updated = room.copyWith(onlineViewers: '3200');
 

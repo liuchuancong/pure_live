@@ -1,14 +1,17 @@
 import 'dart:async';
+
 import '../../get_state_manager.dart';
 import '../simple/list_notifier.dart';
+
 import 'package:flutter/material.dart';
+
 import '../../../instance_manager.dart';
+
 import 'package:flutter/foundation.dart';
+
 import '../../../get_rx/src/rx_types/rx_types.dart';
+
 import 'package:pure_live/get/get_utils/src/equality/equality.dart';
-
-
-
 
 extension _Empty on Object {
   bool _isEmpty() {
@@ -88,24 +91,32 @@ mixin StateMixin<T> on ListNotifier {
     change(GetStatus<T>.empty());
   }
 
-  void futurize(Future<T> Function() body,
-      {T? initialData, String? errorMessage, bool useEmpty = true}) {
+  void futurize(
+    Future<T> Function() body, {
+    T? initialData,
+    String? errorMessage,
+    bool useEmpty = true,
+  }) {
     final compute = body;
     _value ??= initialData;
     status = GetStatus<T>.loading();
-    compute().then((newValue) {
-      if ((newValue == null || newValue._isEmpty()) && useEmpty) {
-        status = GetStatus<T>.empty();
-      } else {
-        status = GetStatus<T>.success(newValue);
-      }
+    compute().then(
+      (newValue) {
+        if ((newValue == null || newValue._isEmpty()) && useEmpty) {
+          status = GetStatus<T>.empty();
+        } else {
+          status = GetStatus<T>.success(newValue);
+        }
 
-      refresh();
-    }, onError: (err) {
-      status = GetStatus.error(
-          err is Exception ? err : Exception(errorMessage ?? err.toString()));
-      refresh();
-    });
+        refresh();
+      },
+      onError: (err) {
+        status = GetStatus.error(
+          err is Exception ? err : Exception(errorMessage ?? err.toString()),
+        );
+        refresh();
+      },
+    );
   }
 }
 
@@ -195,21 +206,18 @@ class GetListenable<T> extends ListNotifierSingle implements RxInterface<T> {
     Function? onError,
     void Function()? onDone,
     bool? cancelOnError,
-  }) =>
-      stream.listen(
-        onData,
-        onError: onError,
-        onDone: onDone,
-        cancelOnError: cancelOnError ?? false,
-      );
+  }) => stream.listen(
+    onData,
+    onError: onError,
+    onDone: onDone,
+    cancelOnError: cancelOnError ?? false,
+  );
 
   @override
   String toString() => value.toString();
 }
 
-class Value<T> extends ListNotifier
-    with StateMixin<T>
-    implements ValueListenable<T?> {
+class Value<T> extends ListNotifier with StateMixin<T> implements ValueListenable<T?> {
   Value(T val) {
     _value = val;
     _fillInitialStatus();
@@ -260,24 +268,25 @@ extension StateExt<T> on StateMixin<T> {
     Widget? onEmpty,
     WidgetBuilder? onCustom,
   }) {
-    return Observer(builder: (context) {
-      if (status.isLoading) {
-        return onLoading ?? const Center(child: CircularProgressIndicator());
-      } else if (status.isError) {
-        return onError != null
-            ? onError(status.errorMessage)
-            : Center(child: Text('A error occurred: ${status.errorMessage}'));
-      } else if (status.isEmpty) {
-        return onEmpty ??
-            const SizedBox.shrink(); // Also can be widget(null); but is risky
-      } else if (status.isSuccess) {
+    return Observer(
+      builder: (context) {
+        if (status.isLoading) {
+          return onLoading ?? const Center(child: CircularProgressIndicator());
+        } else if (status.isError) {
+          return onError != null
+              ? onError(status.errorMessage)
+              : Center(child: Text('A error occurred: ${status.errorMessage}'));
+        } else if (status.isEmpty) {
+          return onEmpty ?? const SizedBox.shrink(); // Also can be widget(null); but is risky
+        } else if (status.isSuccess) {
+          return widget(value);
+        } else if (status.isCustom) {
+          return onCustom?.call(context) ??
+              const SizedBox.shrink(); // Also can be widget(null); but is risky
+        }
         return widget(value);
-      } else if (status.isCustom) {
-        return onCustom?.call(context) ??
-            const SizedBox.shrink(); // Also can be widget(null); but is risky
-      }
-      return widget(value);
-    });
+      },
+    );
   }
 }
 

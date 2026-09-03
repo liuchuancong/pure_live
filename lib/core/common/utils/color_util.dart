@@ -17,7 +17,7 @@ class ColorUtil {
 
   /// 16进制颜色转换 #FFFFFF
   static Color hexToColor(String colorTxt) {
-    var replaceText = colorTxt.replaceAll("#", "");
+    var replaceText = colorTxt.replaceAll('#', '');
     var colorValue = int.tryParse(replaceText, radix: 16);
     if (colorValue == null) {
       return Colors.white;
@@ -26,10 +26,8 @@ class ColorUtil {
   }
 
   static Color fromARGB(int a, int r, int g, int b) {
-    var colorValue = (((a & 0xff) << 24) |
-            ((r & 0xff) << 16) |
-            ((g & 0xff) << 8) |
-            ((b & 0xff) << 0)) &
+    var colorValue =
+        (((a & 0xff) << 24) | ((r & 0xff) << 16) | ((g & 0xff) << 8) | ((b & 0xff) << 0)) &
         0xFFFFFFFF;
     return numberToColor(colorValue);
   }

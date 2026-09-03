@@ -4,7 +4,8 @@ import 'package:pure_live/common/global/platform_utils.dart';
 
 class BasePageView<C extends BasePageScrollAndStateBone<T>, T> extends StatelessWidget {
   final C controller;
-  final Widget Function(BuildContext context, List<T> list, ScrollController scrollController) contentBuilder;
+  final Widget Function(BuildContext context, List<T> list, ScrollController scrollController)
+  contentBuilder;
   final bool enableRefresh;
   final bool enableLoadMore;
 
@@ -52,7 +53,9 @@ class BasePageView<C extends BasePageScrollAndStateBone<T>, T> extends Stateless
     final double currentWidth = context.width;
     final bool isDesktop = currentWidth > 680 && !PlatformUtils.isMobile;
 
-    double bottomPadding = isDesktop ? (customDesktopBottomPadding ?? 70) : (customMobileBottomPadding ?? 20);
+    double bottomPadding = isDesktop
+        ? (customDesktopBottomPadding ?? 70)
+        : (customMobileBottomPadding ?? 20);
 
     return Stack(
       children: [
@@ -65,7 +68,10 @@ class BasePageView<C extends BasePageScrollAndStateBone<T>, T> extends Stateless
                   decoration: BoxDecoration(
                     color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.25),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15), width: 1),
+                    border: Border.all(
+                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
+                      width: 1,
+                    ),
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(12),
@@ -88,7 +94,7 @@ class BasePageView<C extends BasePageScrollAndStateBone<T>, T> extends Stateless
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
-                              i18n("cellular_warning_msg"),
+                              i18n('cellular_warning_msg'),
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w500,
@@ -109,7 +115,7 @@ class BasePageView<C extends BasePageScrollAndStateBone<T>, T> extends Stateless
                               controller.showCellularBanner.value = false;
                             },
                             child: Text(
-                              i18n("never_show"),
+                              i18n('never_show'),
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.bold,
@@ -137,9 +143,9 @@ class BasePageView<C extends BasePageScrollAndStateBone<T>, T> extends Stateless
                             : AppStatusView(
                                 type: AppStatusType.error,
                                 icon: Icons.account_circle_outlined,
-                                title: i18n("login_required_title"),
-                                subtitle: i18n("login_required_subtitle"),
-                                buttonText: i18n("go_to_login"),
+                                title: i18n('login_required_title'),
+                                subtitle: i18n('login_required_subtitle'),
+                                buttonText: i18n('go_to_login'),
                                 onButtonPressed: () => Get.toNamed(RoutePath.kSettingsAccount),
                               );
                         return _buildScrollableStatus(isDesktop, constraint, controller, view);
@@ -150,23 +156,31 @@ class BasePageView<C extends BasePageScrollAndStateBone<T>, T> extends Stateless
                             : AppStatusView(
                                 type: AppStatusType.error,
                                 icon: Icons.wifi_off_rounded,
-                                title: i18n("network_error_title"),
+                                title: i18n('network_error_title'),
                                 subtitle: controller.errorMsg.value,
-                                buttonText: i18n("retry"),
-                                onButtonPressed: () => controller.refreshData(),
+                                buttonText: i18n('retry'),
+                                onButtonPressed: controller.refreshData,
                               );
                         return _buildScrollableStatus(isDesktop, constraint, controller, view);
                       }
                       if (controller.pageEmpty.value && !preserveContentWhenEmpty) {
                         final view = emptyBuilder != null
                             ? emptyBuilder!(context)
-                            : AppStatusView(type: AppStatusType.empty, title: i18n('no_data'), subtitle: '');
+                            : AppStatusView(
+                                type: AppStatusType.empty,
+                                title: i18n('no_data'),
+                                subtitle: '',
+                              );
                         return _buildScrollableStatus(isDesktop, constraint, controller, view);
                       }
                       if (preserveContentWhenEmpty && controller.totalCount.value != null) {
                         return buildActualContent(context, isDesktop);
                       }
-                      return AppStatusView(type: AppStatusType.loading, title: i18n('refresh_loading'), subtitle: '');
+                      return AppStatusView(
+                        type: AppStatusType.loading,
+                        title: i18n('refresh_loading'),
+                        subtitle: '',
+                      );
                     }
                     return buildActualContent(context, isDesktop);
                   });
@@ -175,7 +189,8 @@ class BasePageView<C extends BasePageScrollAndStateBone<T>, T> extends Stateless
             ),
           ],
         ),
-        if (showBtn) Positioned(right: 16, bottom: bottomPadding, child: buildFloatingButtons(context)),
+        if (showBtn)
+          Positioned(right: 16, bottom: bottomPadding, child: buildFloatingButtons(context)),
         Positioned(
           top: 0,
           left: 0,
@@ -197,7 +212,12 @@ class BasePageView<C extends BasePageScrollAndStateBone<T>, T> extends Stateless
     );
   }
 
-  Widget _buildScrollableStatus(bool isDesktop, BoxConstraints constraint, C controller, Widget statusView) {
+  Widget _buildScrollableStatus(
+    bool isDesktop,
+    BoxConstraints constraint,
+    C controller,
+    Widget statusView,
+  ) {
     if (isDesktop || !enableRefresh) {
       return Center(child: statusView);
     }

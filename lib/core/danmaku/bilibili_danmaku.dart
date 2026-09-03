@@ -35,12 +35,12 @@ class BiliBiliDanmakuArgs {
   @override
   String toString() {
     return json.encode({
-      "roomId": roomId,
-      "hasToken": token.isNotEmpty,
-      "serverUrls": serverUrls,
-      "hasBuvid": buvid.isNotEmpty,
-      "uid": uid,
-      "hasCookie": cookie.isNotEmpty,
+      'roomId': roomId,
+      'hasToken': token.isNotEmpty,
+      'serverUrls': serverUrls,
+      'hasBuvid': buvid.isNotEmpty,
+      'uid': uid,
+      'hasCookie': cookie.isNotEmpty,
     });
   }
 }
@@ -107,7 +107,7 @@ class BiliBiliDanmaku implements LiveDanmaku {
         if (attempt < 2) await Future<void>.delayed(Duration(milliseconds: 500 * (attempt + 1)));
       }
       if (_stopped || danmakuArgs.token.isEmpty) {
-        onClose?.call("弹幕连接信息仍在更新，请稍后刷新房间");
+        onClose?.call('弹幕连接信息仍在更新，请稍后刷新房间');
         return;
       }
     }
@@ -116,11 +116,15 @@ class BiliBiliDanmaku implements LiveDanmaku {
 
   Future<void> _connect(BiliBiliDanmakuArgs args) async {
     if (_stopped) return;
-    final endpoints = args.serverUrls.isEmpty ? const ['wss://broadcastlv.chat.bilibili.com/sub'] : args.serverUrls;
+    final endpoints = args.serverUrls.isEmpty
+        ? const ['wss://broadcastlv.chat.bilibili.com/sub']
+        : args.serverUrls;
     webScoketUtils = WebScoketUtils(
       url: endpoints.first,
       serverUrls: endpoints,
-      headers: args.headers.isNotEmpty ? args.headers : (args.cookie.isEmpty ? null : {"cookie": args.cookie}),
+      headers: args.headers.isNotEmpty
+          ? args.headers
+          : (args.cookie.isEmpty ? null : {'cookie': args.cookie}),
       heartBeatTime: heartbeatTime,
       onMessage: (e) {
         decodeMessage(e);
@@ -138,12 +142,12 @@ class BiliBiliDanmaku implements LiveDanmaku {
       onReconnect: () {
         _authTimer?.cancel();
         markDisconnected();
-        onClose?.call("与服务器断开连接，正在尝试重连");
+        onClose?.call('与服务器断开连接，正在尝试重连');
       },
       onClose: (e) {
         _authTimer?.cancel();
         markDisconnected();
-        onClose?.call("服务器连接失败$e");
+        onClose?.call('服务器连接失败$e');
       },
     );
     await webScoketUtils?.connect();
@@ -170,13 +174,13 @@ class BiliBiliDanmaku implements LiveDanmaku {
   void joinRoom(BiliBiliDanmakuArgs args) {
     var joinData = encodeData(
       json.encode({
-        "uid": args.uid,
-        "roomid": args.roomId,
-        "protover": 3,
-        "buvid": args.buvid,
-        "platform": "web",
-        "type": 2,
-        "key": args.token,
+        'uid': args.uid,
+        'roomid': args.roomId,
+        'protover': 3,
+        'buvid': args.buvid,
+        'platform': 'web',
+        'type': 2,
+        'key': args.token,
       }),
       7,
     );
@@ -185,7 +189,7 @@ class BiliBiliDanmaku implements LiveDanmaku {
 
   @override
   void heartbeat() {
-    webScoketUtils?.sendMessage(encodeData("", 2));
+    webScoketUtils?.sendMessage(encodeData('', 2));
   }
 
   @override
@@ -279,7 +283,9 @@ class BiliBiliDanmaku implements LiveDanmaku {
     }
 
     if (offset != data.length) {
-      throw FormatException('Incomplete Bilibili danmaku frame: parsed=$offset, total=${data.length}');
+      throw FormatException(
+        'Incomplete Bilibili danmaku frame: parsed=$offset, total=${data.length}',
+      );
     }
   }
 
@@ -292,8 +298,8 @@ class BiliBiliDanmaku implements LiveDanmaku {
           type: LiveMessageType.online,
           data: LiveAudienceUpdate(kind: LiveAudienceMetricKind.popularity, value: online),
           color: LiveMessageColor.white,
-          message: "",
-          userName: "",
+          message: '',
+          userName: '',
         ),
       );
       return;
@@ -341,23 +347,31 @@ class BiliBiliDanmaku implements LiveDanmaku {
   void parseMessage(String jsonMessage) {
     try {
       var obj = json.decode(jsonMessage);
-      var cmd = obj["cmd"].toString();
-      if (cmd.contains("DANMU_MSG")) {
-        if (obj["info"] != null && obj["info"].length != 0) {
-          var message = obj["info"][1].toString();
-          var color = asT<int?>(obj["info"][0][3]) ?? 0;
-          if (obj["info"][2] != null && obj["info"][2].length != 0) {
-            final metadata = obj["info"][0] is List ? obj["info"][0] as List : const <dynamic>[];
-            final username = _preferredBilibiliUserName(obj, metadata, obj["info"][2][1]?.toString() ?? '');
-            final rawTimestamp = metadata.length > 4 ? int.tryParse(metadata[4]?.toString() ?? '') : null;
+      var cmd = obj['cmd'].toString();
+      if (cmd.contains('DANMU_MSG')) {
+        if (obj['info'] != null && obj['info'].length != 0) {
+          var message = obj['info'][1].toString();
+          var color = asT<int?>(obj['info'][0][3]) ?? 0;
+          if (obj['info'][2] != null && obj['info'][2].length != 0) {
+            final metadata = obj['info'][0] is List ? obj['info'][0] as List : const <dynamic>[];
+            final username = _preferredBilibiliUserName(
+              obj,
+              metadata,
+              obj['info'][2][1]?.toString() ?? '',
+            );
+            final rawTimestamp = metadata.length > 4
+                ? int.tryParse(metadata[4]?.toString() ?? '')
+                : null;
             final rawNonce = metadata.length > 5 ? metadata[5]?.toString() ?? '' : '';
             final sentAt = rawTimestamp == null
                 ? null
-                : DateTime.fromMillisecondsSinceEpoch(rawTimestamp > 100000000000 ? rawTimestamp : rawTimestamp * 1000);
+                : DateTime.fromMillisecondsSinceEpoch(
+                    rawTimestamp > 100000000000 ? rawTimestamp : rawTimestamp * 1000,
+                  );
             var liveMsg = LiveMessage(
               type: LiveMessageType.chat,
               userName: username,
-              userId: obj["info"][2][0]?.toString() ?? '',
+              userId: obj['info'][2][0]?.toString() ?? '',
               message: message,
               color: color == 0 ? LiveMessageColor.white : LiveMessageColor.numberToColor(color),
               messageId: rawNonce.isEmpty ? '' : 'bilibili:$rawNonce',
@@ -366,37 +380,37 @@ class BiliBiliDanmaku implements LiveDanmaku {
             onMessage?.call(liveMsg);
           }
         }
-      } else if (cmd == "WATCHED_CHANGE") {
-        final value = int.tryParse(obj["data"]?["num"]?.toString() ?? '');
+      } else if (cmd == 'WATCHED_CHANGE') {
+        final value = int.tryParse(obj['data']?['num']?.toString() ?? '');
         if (value != null && value >= 0) {
           onMessage?.call(
             LiveMessage(
               type: LiveMessageType.online,
               data: LiveAudienceUpdate(kind: LiveAudienceMetricKind.totalViewers, value: value),
               color: LiveMessageColor.white,
-              message: "",
-              userName: "",
+              message: '',
+              userName: '',
             ),
           );
         }
-      } else if (cmd == "SUPER_CHAT_MESSAGE") {
-        if (obj["data"] == null) {
+      } else if (cmd == 'SUPER_CHAT_MESSAGE') {
+        if (obj['data'] == null) {
           return;
         }
         LiveSuperChatMessage sc = LiveSuperChatMessage(
-          backgroundBottomColor: obj["data"]["background_bottom_color"].toString(),
-          backgroundColor: obj["data"]["background_color"].toString(),
-          endTime: DateTime.fromMillisecondsSinceEpoch(obj["data"]["end_time"] * 1000),
+          backgroundBottomColor: obj['data']['background_bottom_color'].toString(),
+          backgroundColor: obj['data']['background_color'].toString(),
+          endTime: DateTime.fromMillisecondsSinceEpoch(obj['data']['end_time'] * 1000),
           face: "${obj["data"]["user_info"]["face"]}@200w.jpg",
-          message: obj["data"]["message"].toString(),
-          price: obj["data"]["price"],
-          startTime: DateTime.fromMillisecondsSinceEpoch(obj["data"]["start_time"] * 1000),
-          userName: obj["data"]["user_info"]["uname"].toString(),
+          message: obj['data']['message'].toString(),
+          price: obj['data']['price'],
+          startTime: DateTime.fromMillisecondsSinceEpoch(obj['data']['start_time'] * 1000),
+          userName: obj['data']['user_info']['uname'].toString(),
         );
         var liveMsg = LiveMessage(
           type: LiveMessageType.superChat,
-          userName: "SUPER_CHAT_MESSAGE",
-          message: "SUPER_CHAT_MESSAGE",
+          userName: 'SUPER_CHAT_MESSAGE',
+          message: 'SUPER_CHAT_MESSAGE',
           color: LiveMessageColor.white,
           data: sc,
         );

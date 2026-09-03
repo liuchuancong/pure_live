@@ -7,7 +7,10 @@ class BetterPlayerPlaylistController {
     this._betterPlayerDataSourceList, {
     this.betterPlayerConfiguration = const BetterPlayerConfiguration(),
     this.betterPlayerPlaylistConfiguration = const BetterPlayerPlaylistConfiguration(),
-  }) : assert(_betterPlayerDataSourceList.isNotEmpty, "Better Player data source list can't be empty") {
+  }) : assert(
+         _betterPlayerDataSourceList.isNotEmpty,
+         "Better Player data source list can't be empty",
+       ) {
     _setup();
   }
 

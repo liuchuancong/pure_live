@@ -23,6 +23,6 @@ class LivePlayQuality {
 
   @override
   String toString() {
-    return json.encode({"quality": quality, "id": id?.toString(), "data": data?.toString()});
+    return json.encode({'quality': quality, 'id': id?.toString(), 'data': data?.toString()});
   }
 }

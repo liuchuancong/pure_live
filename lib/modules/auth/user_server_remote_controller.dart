@@ -6,8 +6,8 @@ import 'package:pure_live/modules/auth/models/user_item.dart';
 import 'package:pure_live/modules/auth/utils/firebase_manager.dart';
 
 class UserServerRemoteController extends ServerRemotePageController<UserItem> {
-  final rxSearchKeyword = "".obs;
-  String searchKeyword = "";
+  final rxSearchKeyword = ''.obs;
+  String searchKeyword = '';
   late bool isSuperAdmin;
   DocumentSnapshot? lastDocument;
 
@@ -38,7 +38,9 @@ class UserServerRemoteController extends ServerRemotePageController<UserItem> {
     try {
       final usersSnapshot = await FirebaseFirestore.instance.collection('users').get();
       final permissionsSnapshot = await FirebaseFirestore.instance.collection('permissions').get();
-      final permissionRoleMap = {for (var doc in permissionsSnapshot.docs) doc.id: doc.data()['role'] ?? 'user'};
+      final permissionRoleMap = {
+        for (var doc in permissionsSnapshot.docs) doc.id: doc.data()['role'] ?? 'user',
+      };
 
       int admins = 0;
       int managers = 0;
@@ -56,7 +58,7 @@ class UserServerRemoteController extends ServerRemotePageController<UserItem> {
       managerCount.value = managers;
       userCount.value = users;
     } catch (e) {
-      Log.d("获取全局统计失败: $e");
+      Log.d('获取全局统计失败: $e');
     }
   }
 
@@ -65,8 +67,12 @@ class UserServerRemoteController extends ServerRemotePageController<UserItem> {
 
     if (searchKeyword.isNotEmpty) {
       String start = searchKeyword.toLowerCase();
-      String end = start.substring(0, start.length - 1) + String.fromCharCode(start.codeUnitAt(start.length - 1) + 1);
-      baseQuery = baseQuery.where('email', isGreaterThanOrEqualTo: start).where('email', isLessThan: end);
+      String end =
+          start.substring(0, start.length - 1) +
+          String.fromCharCode(start.codeUnitAt(start.length - 1) + 1);
+      baseQuery = baseQuery
+          .where('email', isGreaterThanOrEqualTo: start)
+          .where('email', isLessThan: end);
     }
 
     baseQuery = baseQuery.orderBy('email').limit(limitCount);
@@ -156,7 +162,7 @@ class UserServerRemoteController extends ServerRemotePageController<UserItem> {
       }
     }
 
-    Log.d("获取用户列表成功: ${finalCleanList.length}");
+    Log.d('获取用户列表成功: ${finalCleanList.length}');
     return finalCleanList;
   }
 

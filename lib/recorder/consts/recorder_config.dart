@@ -57,23 +57,28 @@ class RecorderConfig {
 
   static int get segmentTime => HivePrefUtil.getInt(RecorderKeys.segmentTime) ?? defaultSegmentTime;
 
-  static Future<void> setSegmentTime(int value) => HivePrefUtil.setInt(RecorderKeys.segmentTime, value);
+  static Future<void> setSegmentTime(int value) =>
+      HivePrefUtil.setInt(RecorderKeys.segmentTime, value);
 
   /// =========================
   /// 最大并发
   /// =========================
 
-  static int get maxTaskCount => HivePrefUtil.getInt(RecorderKeys.maxTaskCount) ?? defaultMaxTaskCount;
+  static int get maxTaskCount =>
+      HivePrefUtil.getInt(RecorderKeys.maxTaskCount) ?? defaultMaxTaskCount;
 
-  static Future<void> setMaxTaskCount(int value) => HivePrefUtil.setInt(RecorderKeys.maxTaskCount, value);
+  static Future<void> setMaxTaskCount(int value) =>
+      HivePrefUtil.setInt(RecorderKeys.maxTaskCount, value);
 
   /// =========================
   /// 自动重连
   /// =========================
 
-  static bool get autoReconnect => HivePrefUtil.getBool(RecorderKeys.autoReconnect) ?? defaultAutoReconnect;
+  static bool get autoReconnect =>
+      HivePrefUtil.getBool(RecorderKeys.autoReconnect) ?? defaultAutoReconnect;
 
-  static Future<void> setAutoReconnect(bool value) => HivePrefUtil.setBool(RecorderKeys.autoReconnect, value);
+  static Future<void> setAutoReconnect(bool value) =>
+      HivePrefUtil.setBool(RecorderKeys.autoReconnect, value);
 
   /// =========================
   /// 最大缓存
@@ -81,15 +86,18 @@ class RecorderConfig {
 
   static int get maxCacheMB => HivePrefUtil.getInt(RecorderKeys.maxCacheMB) ?? defaultMaxCacheMB;
 
-  static Future<void> setMaxCacheMB(int value) => HivePrefUtil.setInt(RecorderKeys.maxCacheMB, value);
+  static Future<void> setMaxCacheMB(int value) =>
+      HivePrefUtil.setInt(RecorderKeys.maxCacheMB, value);
 
   /// =========================
   /// 缓存限制
   /// =========================
 
-  static bool get enableCacheLimit => HivePrefUtil.getBool(RecorderKeys.enableCacheLimit) ?? defaultEnableCacheLimit;
+  static bool get enableCacheLimit =>
+      HivePrefUtil.getBool(RecorderKeys.enableCacheLimit) ?? defaultEnableCacheLimit;
 
-  static Future<void> setEnableCacheLimit(bool value) => HivePrefUtil.setBool(RecorderKeys.enableCacheLimit, value);
+  static Future<void> setEnableCacheLimit(bool value) =>
+      HivePrefUtil.setBool(RecorderKeys.enableCacheLimit, value);
 
   /// =========================
   /// 保存目录
@@ -97,7 +105,8 @@ class RecorderConfig {
 
   static String get recordSavePath => HivePrefUtil.getString(RecorderKeys.recordSavePath) ?? '';
 
-  static Future<void> setRecordSavePath(String value) => HivePrefUtil.setString(RecorderKeys.recordSavePath, value);
+  static Future<void> setRecordSavePath(String value) =>
+      HivePrefUtil.setString(RecorderKeys.recordSavePath, value);
 
   /// =========================
   /// 默认画质
@@ -105,15 +114,18 @@ class RecorderConfig {
 
   static String get defaultQuality => HivePrefUtil.getString(RecorderKeys.defaultQuality) ?? '原画';
 
-  static Future<void> setDefaultQuality(String value) => HivePrefUtil.setString(RecorderKeys.defaultQuality, value);
+  static Future<void> setDefaultQuality(String value) =>
+      HivePrefUtil.setString(RecorderKeys.defaultQuality, value);
 
   /// =========================
   /// 最大重试次数
   /// =========================
 
-  static int get maxRetryCount => HivePrefUtil.getInt(RecorderKeys.maxRetryCount) ?? defaultMaxRetryCount;
+  static int get maxRetryCount =>
+      HivePrefUtil.getInt(RecorderKeys.maxRetryCount) ?? defaultMaxRetryCount;
 
-  static Future<void> setMaxRetryCount(int value) => HivePrefUtil.setInt(RecorderKeys.maxRetryCount, value);
+  static Future<void> setMaxRetryCount(int value) =>
+      HivePrefUtil.setInt(RecorderKeys.maxRetryCount, value);
 
   /// =========================
   /// 重试延迟
@@ -121,54 +133,68 @@ class RecorderConfig {
 
   static int get retryDelay => HivePrefUtil.getInt(RecorderKeys.retryDelay) ?? defaultRetryDelay;
 
-  static Future<void> setRetryDelay(int value) => HivePrefUtil.setInt(RecorderKeys.retryDelay, value);
+  static Future<void> setRetryDelay(int value) =>
+      HivePrefUtil.setInt(RecorderKeys.retryDelay, value);
 
   /// =========================
   /// 是否启用轮询
   /// =========================
 
-  static bool get enablePolling => HivePrefUtil.getBool(RecorderKeys.enablePolling) ?? defaultEnablePolling;
+  static bool get enablePolling =>
+      HivePrefUtil.getBool(RecorderKeys.enablePolling) ?? defaultEnablePolling;
 
-  static Future<void> setEnablePolling(bool value) => HivePrefUtil.setBool(RecorderKeys.enablePolling, value);
+  static Future<void> setEnablePolling(bool value) =>
+      HivePrefUtil.setBool(RecorderKeys.enablePolling, value);
 
   /// =========================
   /// 开播检测间隔
   /// =========================
 
-  static int get liveCheckInterval => HivePrefUtil.getInt(RecorderKeys.liveCheckInterval) ?? defaultLiveCheckInterval;
+  static int get liveCheckInterval =>
+      HivePrefUtil.getInt(RecorderKeys.liveCheckInterval) ?? defaultLiveCheckInterval;
 
-  static Future<void> setLiveCheckInterval(int value) => HivePrefUtil.setInt(RecorderKeys.liveCheckInterval, value);
+  static Future<void> setLiveCheckInterval(int value) =>
+      HivePrefUtil.setInt(RecorderKeys.liveCheckInterval, value);
 
   /// =========================
   /// 指数退避
   /// =========================
 
-  static bool get enableBackoff => HivePrefUtil.getBool(RecorderKeys.enableBackoff) ?? defaultEnableBackoff;
+  static bool get enableBackoff =>
+      HivePrefUtil.getBool(RecorderKeys.enableBackoff) ?? defaultEnableBackoff;
 
-  static Future<void> setEnableBackoff(bool value) => HivePrefUtil.setBool(RecorderKeys.enableBackoff, value);
+  static Future<void> setEnableBackoff(bool value) =>
+      HivePrefUtil.setBool(RecorderKeys.enableBackoff, value);
 
   /// =========================
   /// 最大轮询间隔
   /// =========================
 
-  static int get maxCheckInterval => HivePrefUtil.getInt(RecorderKeys.maxCheckInterval) ?? defaultMaxCheckInterval;
+  static int get maxCheckInterval =>
+      HivePrefUtil.getInt(RecorderKeys.maxCheckInterval) ?? defaultMaxCheckInterval;
 
-  static Future<void> setMaxCheckInterval(int value) => HivePrefUtil.setInt(RecorderKeys.maxCheckInterval, value);
+  static Future<void> setMaxCheckInterval(int value) =>
+      HivePrefUtil.setInt(RecorderKeys.maxCheckInterval, value);
 
   /// =========================
   /// 后台轮询
   /// =========================
 
-  static bool get autoStartOnBoot => HivePrefUtil.getBool(RecorderKeys.autoStartOnBoot) ?? defaultAutoStartOnBoot;
+  static bool get autoStartOnBoot =>
+      HivePrefUtil.getBool(RecorderKeys.autoStartOnBoot) ?? defaultAutoStartOnBoot;
 
-  static Future<void> setAutoStartOnBoot(bool value) => HivePrefUtil.setBool(RecorderKeys.autoStartOnBoot, value);
+  static Future<void> setAutoStartOnBoot(bool value) =>
+      HivePrefUtil.setBool(RecorderKeys.autoStartOnBoot, value);
 
   /// =========================
   /// 录制历史
   /// =========================
 
   static Future<void> saveRecordHistory(List<RecordFileItem> history) async {
-    await HivePrefUtil.setAnyPref(RecorderKeys.recordHistory, history.map((e) => e.toJson()).toList());
+    await HivePrefUtil.setAnyPref(
+      RecorderKeys.recordHistory,
+      history.map((e) => e.toJson()).toList(),
+    );
   }
 
   static List<dynamic> getRecordHistory() {
@@ -186,9 +212,11 @@ class RecorderConfig {
   }
 
   /// 优先选择最高画质轨道 (对应 FFmpeg 的 -map 0:v:0)
-  static bool get preferBestStream => HivePrefUtil.getBool(RecorderKeys.preferBestStream) ?? defaultPreferBestStream;
+  static bool get preferBestStream =>
+      HivePrefUtil.getBool(RecorderKeys.preferBestStream) ?? defaultPreferBestStream;
 
-  static Future<void> setPreferBestStream(bool value) => HivePrefUtil.setBool(RecorderKeys.preferBestStream, value);
+  static Future<void> setPreferBestStream(bool value) =>
+      HivePrefUtil.setBool(RecorderKeys.preferBestStream, value);
 
   /// 网络读写超时 (对应 FFmpeg 的 -rw_timeout，单位为秒)
   static int get rwTimeout => HivePrefUtil.getInt(RecorderKeys.rwTimeout) ?? defaultRwTimeout;
@@ -197,9 +225,11 @@ class RecorderConfig {
 
   /// 线程队列大小 (对应 FFmpeg 的 -thread_queue_size)
   /// 录制原画建议 2048 或更高，防止由于写入慢导致的丢帧
-  static int get threadQueueSize => HivePrefUtil.getInt(RecorderKeys.threadQueueSize) ?? defaultThreadQueueSize;
+  static int get threadQueueSize =>
+      HivePrefUtil.getInt(RecorderKeys.threadQueueSize) ?? defaultThreadQueueSize;
 
-  static Future<void> setThreadQueueSize(int value) => HivePrefUtil.setInt(RecorderKeys.threadQueueSize, value);
+  static Future<void> setThreadQueueSize(int value) =>
+      HivePrefUtil.setInt(RecorderKeys.threadQueueSize, value);
 
   /// =========================
   /// Folder Naming Strategy

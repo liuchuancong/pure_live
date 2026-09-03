@@ -139,8 +139,7 @@ extension ZXingWasmReadResultToBarcode on ZXingWasmReadResult {
       // Populate deprecated rawBytes for backward compatibility.
       // ignore: deprecated_member_use_from_same_package
       rawBytes: rawBytes,
-      rawDecodedBytes:
-          rawBytes != null ? DecodedBarcodeBytes(bytes: rawBytes) : null,
+      rawDecodedBytes: rawBytes != null ? DecodedBarcodeBytes(bytes: rawBytes) : null,
       rawValue: text,
       size: computeBoundingBoxSize(corners),
       type: BarcodeType.text,

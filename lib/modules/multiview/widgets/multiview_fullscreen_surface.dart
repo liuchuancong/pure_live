@@ -7,7 +7,12 @@ import 'package:remixicon/remixicon.dart';
 /// 可发现、可点击的退出路径。按钮之外的透明区域不拦截格子点击，因此
 /// 原有的音源焦点切换手势保持不变。
 class MultiviewFullscreenSurface extends StatelessWidget {
-  const MultiviewFullscreenSurface({super.key, required this.child, required this.onExit, required this.exitTooltip});
+  const MultiviewFullscreenSurface({
+    super.key,
+    required this.child,
+    required this.onExit,
+    required this.exitTooltip,
+  });
 
   static const exitButtonKey = ValueKey<String>('multiview-fullscreen-exit');
 
@@ -20,7 +25,12 @@ class MultiviewFullscreenSurface extends StatelessWidget {
     return Stack(
       fit: StackFit.expand,
       children: [
-        MediaQuery.removePadding(context: context, removeTop: true, removeBottom: true, child: child),
+        MediaQuery.removePadding(
+          context: context,
+          removeTop: true,
+          removeBottom: true,
+          child: child,
+        ),
         Positioned(
           left: 0,
           top: 0,

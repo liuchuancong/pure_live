@@ -63,7 +63,10 @@ class ProxySettingsController extends GetxController {
     };
   }
 
-  static Map<String, dynamic> mergeConfig(Map<String, dynamic> rootConfig, Map<String, dynamic> updateFields) {
+  static Map<String, dynamic> mergeConfig(
+    Map<String, dynamic> rootConfig,
+    Map<String, dynamic> updateFields,
+  ) {
     final proxy = Map<String, dynamic>.from(rootConfig['proxy'] ?? {});
     updateFields.forEach((k, v) => proxy[k] = v);
     rootConfig['proxy'] = proxy;

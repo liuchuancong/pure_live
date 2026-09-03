@@ -21,10 +21,7 @@ class CameraPreview extends StatelessWidget {
       valueListenable: controller,
       builder: (context, value, child) {
         return SizedBox.fromSize(
-          size:
-              value.deviceOrientation.isLandscape
-                  ? value.size.flipped
-                  : value.size,
+          size: value.deviceOrientation.isLandscape ? value.size.flipped : value.size,
           child: _wrapInRotatedBox(child: controller.buildCameraView()),
         );
       },
@@ -35,10 +32,7 @@ class CameraPreview extends StatelessWidget {
     if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) {
       return child;
     }
-    return RotatedBox(
-      quarterTurns: controller.value.deviceOrientation.turns,
-      child: child,
-    );
+    return RotatedBox(quarterTurns: controller.value.deviceOrientation.turns, child: child);
   }
 }
 
@@ -47,8 +41,7 @@ class CameraPreview extends StatelessWidget {
 extension on DeviceOrientation {
   /// Returns `true` if the device orientation is landscape (horizontal).
   bool get isLandscape =>
-      this == DeviceOrientation.landscapeLeft ||
-      this == DeviceOrientation.landscapeRight;
+      this == DeviceOrientation.landscapeLeft || this == DeviceOrientation.landscapeRight;
 
   /// Maps the different device orientations to quarter turns that the
   /// preview should take in account.

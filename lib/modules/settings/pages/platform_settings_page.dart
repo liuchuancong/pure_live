@@ -7,23 +7,23 @@ class PlatformSettingsPage extends GetView<SettingsService> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(i18n("platform_settings"))),
+      appBar: AppBar(title: Text(i18n('platform_settings'))),
       body: ListView(
         physics: const PureLiveScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
-          context.buildGroupTitle(i18n("platform_settings")),
+          context.buildGroupTitle(i18n('platform_settings')),
           context.buildModernCard([
             context.buildTile(
               icon: Remix.apps_2_line,
-              title: i18n("platform_display"),
-              subtitle: i18n("platform_display_subtitle"),
+              title: i18n('platform_display'),
+              subtitle: i18n('platform_display_subtitle'),
               onTap: () => Get.toNamed(RoutePath.kSettingsHotAreas),
             ),
             Obx(
               () => context.buildTile(
                 icon: Remix.heart_3_line,
-                title: i18n("prefer_platform"),
+                title: i18n('prefer_platform'),
                 subtitle: Sites.of(SettingsService.to.fav.preferPlatform.value).name,
                 onTap: showPreferPlatformSelectorDialog,
               ),

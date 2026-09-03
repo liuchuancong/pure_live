@@ -27,7 +27,11 @@ class Extensions {
   final String operationName;
   final String requestId;
 
-  Extensions({required this.durationMilliseconds, required this.operationName, required this.requestId});
+  Extensions({
+    required this.durationMilliseconds,
+    required this.operationName,
+    required this.requestId,
+  });
 
   factory Extensions.fromJson(Map<String, dynamic> json) {
     return Extensions(
@@ -104,7 +108,9 @@ class User {
       profileImageUrl: json['profileImageURL'] ?? '',
       primaryTeam: json['primaryTeam'] != null ? PrimaryTeam.fromJson(json['primaryTeam']) : null,
       channel: Channel.fromJson(json['channel'] ?? {}),
-      lastBroadcast: json['lastBroadcast'] != null ? LastBroadcast.fromJson(json['lastBroadcast']) : null,
+      lastBroadcast: json['lastBroadcast'] != null
+          ? LastBroadcast.fromJson(json['lastBroadcast'])
+          : null,
       stream: json['stream'] != null ? Stream.fromJson(json['stream']) : null,
       typename: json['__typename'] ?? '',
     );
@@ -211,7 +217,12 @@ class PrimaryTeam {
   final String displayName;
   final String typename;
 
-  PrimaryTeam({required this.id, required this.name, required this.displayName, required this.typename});
+  PrimaryTeam({
+    required this.id,
+    required this.name,
+    required this.displayName,
+    required this.typename,
+  });
 
   factory PrimaryTeam.fromJson(Map<String, dynamic> json) {
     return PrimaryTeam(
@@ -231,6 +242,10 @@ class LastBroadcast {
   LastBroadcast({required this.id, required this.title, required this.typename});
 
   factory LastBroadcast.fromJson(Map<String, dynamic> json) {
-    return LastBroadcast(id: json['id'] ?? '', title: json['title'] ?? '', typename: json['__typename'] ?? '');
+    return LastBroadcast(
+      id: json['id'] ?? '',
+      title: json['title'] ?? '',
+      typename: json['__typename'] ?? '',
+    );
   }
 }

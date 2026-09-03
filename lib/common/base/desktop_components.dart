@@ -6,7 +6,12 @@ class DesktopPaginationBar extends StatefulWidget {
   final bool showSelector;
   final List<int> options;
 
-  const DesktopPaginationBar({super.key, required this.controller, required this.showSelector, required this.options});
+  const DesktopPaginationBar({
+    super.key,
+    required this.controller,
+    required this.showSelector,
+    required this.options,
+  });
 
   @override
   State<DesktopPaginationBar> createState() => _DesktopPaginationBarState();
@@ -55,8 +60,8 @@ class _DesktopPaginationBarState extends State<DesktopPaginationBar> {
       if (current > 3) {
         pageNodes.add(
           Padding(
-            padding: EdgeInsets.symmetric(horizontal: 4),
-            child: Text("...", style: AppTextStyles.t13Muted),
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Text('...', style: AppTextStyles.t13Muted),
           ),
         );
       }
@@ -76,8 +81,8 @@ class _DesktopPaginationBarState extends State<DesktopPaginationBar> {
         if (end < maxPage - 1) {
           pageNodes.add(
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: 4),
-              child: Text("...", style: AppTextStyles.t13Muted),
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Text('...', style: AppTextStyles.t13Muted),
             ),
           );
         }
@@ -85,8 +90,8 @@ class _DesktopPaginationBarState extends State<DesktopPaginationBar> {
       } else if (total == null && hasNext) {
         pageNodes.add(
           Padding(
-            padding: EdgeInsets.symmetric(horizontal: 4),
-            child: Text("...", style: AppTextStyles.t13Muted),
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Text('...', style: AppTextStyles.t13Muted),
           ),
         );
       }
@@ -96,7 +101,9 @@ class _DesktopPaginationBarState extends State<DesktopPaginationBar> {
         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 24),
         decoration: BoxDecoration(
           color: Theme.of(context).cardColor,
-          border: Border(top: BorderSide(color: Theme.of(context).dividerColor.withValues(alpha: 0.15))),
+          border: Border(
+            top: BorderSide(color: Theme.of(context).dividerColor.withValues(alpha: 0.15)),
+          ),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -108,28 +115,36 @@ class _DesktopPaginationBarState extends State<DesktopPaginationBar> {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
               ),
               icon: const Icon(Icons.refresh_rounded, size: 16),
-              label: Text(i18n("refresh")),
+              label: Text(i18n('refresh')),
             ),
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 TextButton.icon(
-                  onPressed: (hasPrev && !controller.loadding.value) ? () => controller.goToPage(current - 1) : null,
+                  onPressed: (hasPrev && !controller.loadding.value)
+                      ? () => controller.goToPage(current - 1)
+                      : null,
                   icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 12),
-                  label: Text(i18n("prev_page")),
+                  label: Text(i18n('prev_page')),
                 ),
                 const SizedBox(width: 8),
                 ...pageNodes,
                 const SizedBox(width: 8),
                 TextButton(
-                  onPressed: (hasNext && !controller.loadding.value) ? () => controller.goToPage(current + 1) : null,
+                  onPressed: (hasNext && !controller.loadding.value)
+                      ? () => controller.goToPage(current + 1)
+                      : null,
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(i18n("next_page")),
+                      Text(i18n('next_page')),
                       const SizedBox(width: 4),
                       if (controller.loadding.value)
-                        const SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2))
+                        const SizedBox(
+                          width: 12,
+                          height: 12,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
                       else
                         const Icon(Icons.arrow_forward_ios_rounded, size: 12),
                     ],
@@ -146,7 +161,7 @@ class _DesktopPaginationBarState extends State<DesktopPaginationBar> {
                   CompactPageSizeSelector(controller: controller, options: options),
                   const SizedBox(width: 24),
                 ],
-                Text(i18n("go_to"), style: AppTextStyles.t13Muted),
+                Text(i18n('go_to'), style: AppTextStyles.t13Muted),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 6),
                   child: SizedBox(
@@ -166,7 +181,7 @@ class _DesktopPaginationBarState extends State<DesktopPaginationBar> {
                     ),
                   ),
                 ),
-                Text(i18n("page_unit"), style: AppTextStyles.t13Muted),
+                Text(i18n('page_unit'), style: AppTextStyles.t13Muted),
               ],
             ),
           ],
@@ -191,12 +206,14 @@ class _DesktopPaginationBarState extends State<DesktopPaginationBar> {
             color: isCurrent ? theme.colorScheme.primary : Colors.transparent,
             borderRadius: BorderRadius.circular(6),
             border: Border.all(
-              color: isCurrent ? theme.colorScheme.primary : theme.dividerColor.withValues(alpha: 0.1),
+              color: isCurrent
+                  ? theme.colorScheme.primary
+                  : theme.dividerColor.withValues(alpha: 0.1),
               width: 1,
             ),
           ),
           child: Text(
-            "$pageNum",
+            '$pageNum',
             style: isCurrent
                 ? AppTextStyles.t13Bold.copyWith(color: theme.colorScheme.onPrimary)
                 : AppTextStyles.t13.copyWith(color: theme.colorScheme.onSurface),
@@ -216,16 +233,16 @@ class CompactPageSizeSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final int currentSize = options.contains(controller.pageSize.value) ? controller.pageSize.value : options.first;
+      final int currentSize = options.contains(controller.pageSize.value)
+          ? controller.pageSize.value
+          : options.first;
 
       return PopupMenuButton<int>(
         initialValue: currentSize,
-        tooltip: i18n("per_page"),
+        tooltip: i18n('per_page'),
         position: PopupMenuPosition.under,
         offset: const Offset(0, 170),
-        onSelected: (int newValue) {
-          controller.setPageSize(newValue);
-        },
+        onSelected: controller.setPageSize,
         itemBuilder: (BuildContext context) {
           return options.map((int value) {
             return PopupMenuItem<int>(

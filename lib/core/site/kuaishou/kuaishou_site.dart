@@ -21,7 +21,7 @@ class KuaishowSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoo
   String id = Sites.kuaishouSite;
 
   @override
-  String name = "快手直播";
+  String name = '快手直播';
 
   String cookie = '';
   Map<String, String> cookieObj = {};
@@ -52,14 +52,14 @@ class KuaishowSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoo
   @override
   Future<List<LiveCategory>> getCategores(int page, int pageSize) async {
     List<LiveCategory> categories = [
-      LiveCategory(id: "1", name: "热门", children: []),
-      LiveCategory(id: "2", name: "网游", children: []),
-      LiveCategory(id: "3", name: "单机", children: []),
-      LiveCategory(id: "4", name: "手游", children: []),
-      LiveCategory(id: "5", name: "棋牌", children: []),
-      LiveCategory(id: "6", name: "娱乐", children: []),
-      LiveCategory(id: "7", name: "综合", children: []),
-      LiveCategory(id: "8", name: "文化", children: []),
+      LiveCategory(id: '1', name: '热门', children: []),
+      LiveCategory(id: '2', name: '网游', children: []),
+      LiveCategory(id: '3', name: '单机', children: []),
+      LiveCategory(id: '4', name: '手游', children: []),
+      LiveCategory(id: '5', name: '棋牌', children: []),
+      LiveCategory(id: '6', name: '娱乐', children: []),
+      LiveCategory(id: '7', name: '综合', children: []),
+      LiveCategory(id: '8', name: '文化', children: []),
     ];
 
     for (var item in categories) {
@@ -103,19 +103,19 @@ class KuaishowSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoo
 
   Future<List<LiveArea>> getSubCategores(LiveCategory liveCategory, int page, int pageSize) async {
     var result = await HttpClient.instance.getJson(
-      "https://live.kuaishou.com/live_api/category/data",
-      queryParameters: {"type": liveCategory.id, "page": page, "size": pageSize},
+      'https://live.kuaishou.com/live_api/category/data',
+      queryParameters: {'type': liveCategory.id, 'page': page, 'size': pageSize},
       header: headers,
     );
 
     List<LiveArea> subs = [];
-    for (var item in result["data"]["list"] ?? []) {
+    for (var item in result['data']['list'] ?? []) {
       var subCategory = LiveArea(
-        areaId: item["id"],
-        areaName: item["name"],
+        areaId: item['id'],
+        areaName: item['name'],
         areaType: liveCategory.id,
         platform: Sites.kuaishouSite,
-        areaPic: item["poster"],
+        areaPic: item['poster'],
         typeName: liveCategory.name,
       );
       subs.add(subCategory);
@@ -133,28 +133,34 @@ class KuaishowSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoo
   }
 
   @override
-  Future<List<LiveRoom>> getCategoryRooms(LiveArea category, {int page = 1, int pageSize = 30}) async {
+  Future<List<LiveRoom>> getCategoryRooms(
+    LiveArea category, {
+    int page = 1,
+    int pageSize = 30,
+  }) async {
     var api = category.areaId!.length < 7
-        ? "https://live.kuaishou.com/live_api/gameboard/list"
-        : "https://live.kuaishou.com/live_api/non-gameboard/list";
+        ? 'https://live.kuaishou.com/live_api/gameboard/list'
+        : 'https://live.kuaishou.com/live_api/non-gameboard/list';
     var result = await HttpClient.instance.getJson(
       api,
-      queryParameters: {"filterType": 0, "pageSize": 20, "gameId": category.areaId, "page": page},
+      queryParameters: {'filterType': 0, 'pageSize': 20, 'gameId': category.areaId, 'page': page},
       header: headers,
     );
     var items = <LiveRoom>[];
-    for (var item in result["data"]["list"]) {
+    for (var item in result['data']['list']) {
       final liveStreamId = item['id']?.toString() ?? '';
       var roomItem = LiveRoom(
-        roomId: item["author"]["id"] ?? '',
+        roomId: item['author']['id'] ?? '',
         title: item['caption'] ?? '',
-        cover: isImage(item['poster']) ? item['poster'].toString() : '${item['poster'].toString()}.jpg',
-        nick: item["author"]["name"].toString(),
-        watching: item["watchingCount"].toString(),
-        onlineViewers: item["watchingCount"].toString(),
+        cover: isImage(item['poster'])
+            ? item['poster'].toString()
+            : '${item['poster'].toString()}.jpg',
+        nick: item['author']['name'].toString(),
+        watching: item['watchingCount'].toString(),
+        onlineViewers: item['watchingCount'].toString(),
         audienceMetricType: AudienceMetricType.onlineViewers,
-        avatar: item["author"]["avatar"],
-        area: item["gameInfo"]["name"].toString(),
+        avatar: item['author']['avatar'],
+        area: item['gameInfo']['name'].toString(),
         liveStatus: LiveStatus.live,
         status: true,
         platform: Sites.kuaishouSite,
@@ -162,7 +168,7 @@ class KuaishowSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoo
         danmakuData: liveStreamId.isEmpty
             ? null
             : KuaishouDanmakuArgs(liveStreamId: liveStreamId, cookie: _effectiveCookie),
-        data: item["playUrls"],
+        data: item['playUrls'],
       );
       items.add(roomItem);
     }
@@ -204,7 +210,8 @@ class KuaishowSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoo
       for (final item in _representationsOf(descriptor)) {
         if (item is! Map) continue;
         final url = item['url']?.toString().trim() ?? '';
-        if (Uri.tryParse(url)?.isAbsolute != true || (!url.startsWith('http://') && !url.startsWith('https://'))) {
+        if (Uri.tryParse(url)?.isAbsolute != true ||
+            (!url.startsWith('http://') && !url.startsWith('https://'))) {
           continue;
         }
         final sort = _asInt(item['level']) ?? _asInt(item['bitrate']) ?? 0;
@@ -246,7 +253,9 @@ class KuaishowSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoo
   static List<dynamic> _representationsOf(dynamic descriptor) {
     if (descriptor is! Map) return const [];
     final adaptationSet = descriptor['adaptationSet'];
-    final representations = adaptationSet is Map ? adaptationSet['representation'] : descriptor['representation'];
+    final representations = adaptationSet is Map
+        ? adaptationSet['representation']
+        : descriptor['representation'];
     if (representations is List) return representations;
     return const [];
   }
@@ -257,11 +266,17 @@ class KuaishowSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoo
   }
 
   @override
-  Future<List<String>> getPlayUrls({required LiveRoom detail, required LivePlayQuality quality}) async {
+  Future<List<String>> getPlayUrls({
+    required LiveRoom detail,
+    required LivePlayQuality quality,
+  }) async {
     final data = quality.data;
     if (data is String && data.isNotEmpty) return <String>[data];
     if (data is List) {
-      return data.map((item) => item.toString()).where((url) => url.isNotEmpty).toList(growable: false);
+      return data
+          .map((item) => item.toString())
+          .where((url) => url.isNotEmpty)
+          .toList(growable: false);
     }
     return const <String>[];
   }
@@ -270,30 +285,34 @@ class KuaishowSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoo
   Future<List<LiveRoom>> getRecommendRooms({int page = 1, int pageSize = 30}) async {
     try {
       var resultText = await HttpClient.instance.getJson(
-        "https://live.kuaishou.com/live_api/home/list",
+        'https://live.kuaishou.com/live_api/home/list',
         header: headers,
       );
 
       var result = resultText['data']['list'] ?? [];
       var items = <LiveRoom>[];
       for (var item in result) {
-        for (var sitem in item["gameLiveInfo"]) {
-          for (var titem in sitem["liveInfo"]) {
-            var author = titem["author"];
-            var gameInfo = titem["gameInfo"];
+        for (var sitem in item['gameLiveInfo']) {
+          for (var titem in sitem['liveInfo']) {
+            var author = titem['author'];
+            var gameInfo = titem['gameInfo'];
             final liveStreamId = titem['id']?.toString() ?? '';
             var roomItems = LiveRoom(
               cover: gameInfo['poster'].toString(),
-              watching: titem["watchingCount"].toString(),
-              onlineViewers: titem["watchingCount"].toString(),
+              watching: titem['watchingCount'].toString(),
+              onlineViewers: titem['watchingCount'].toString(),
               audienceMetricType: AudienceMetricType.onlineViewers,
-              roomId: author["id"],
-              area: gameInfo["name"],
-              title: author["description"] != null ? author["description"].replaceAll("\n", " ") : '',
-              nick: author["name"].toString(),
-              avatar: author["avatar"].toString(),
-              introduction: author["description"] != null ? author["description"].replaceAll("\n", " ") : '',
-              notice: author["description"],
+              roomId: author['id'],
+              area: gameInfo['name'],
+              title: author['description'] != null
+                  ? author['description'].replaceAll('\n', ' ')
+                  : '',
+              nick: author['name'].toString(),
+              avatar: author['avatar'].toString(),
+              introduction: author['description'] != null
+                  ? author['description'].replaceAll('\n', ' ')
+                  : '',
+              notice: author['description'],
               status: true,
               liveStatus: LiveStatus.live,
               platform: Sites.kuaishouSite,
@@ -301,7 +320,7 @@ class KuaishowSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoo
               danmakuData: liveStreamId.isEmpty
                   ? null
                   : KuaishouDanmakuArgs(liveStreamId: liveStreamId, cookie: _effectiveCookie),
-              data: titem["playUrls"],
+              data: titem['playUrls'],
             );
             items.add(roomItems);
           }
@@ -328,7 +347,12 @@ class KuaishowSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoo
     var map = {
       'common': {
         'identity_package': {'device_id': did, 'global_id': ''},
-        'app_package': {'language': 'zh-CN', 'platform': 10, 'container': 'WEB', 'product_name': 'KS_GAME_LIVE_PC'},
+        'app_package': {
+          'language': 'zh-CN',
+          'platform': 10,
+          'container': 'WEB',
+          'product_name': 'KS_GAME_LIVE_PC',
+        },
         'device_package': {
           'os_version': 'NT 6.1',
           'model': 'Windows',
@@ -377,9 +401,9 @@ class KuaishowSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoo
     cookieObj.clear();
     for (var i = 0; i < cookies.length; i++) {
       if (i != cookies.length - 1) {
-        cookie += "${cookies[i].name}=${cookies[i].value};";
+        cookie += '${cookies[i].name}=${cookies[i].value};';
       } else {
-        cookie += "${cookies[i].name}=${cookies[i].value}";
+        cookie += '${cookies[i].name}=${cookies[i].value}';
       }
       cookieObj[cookies[i].name] = cookies[i].value;
     }
@@ -414,7 +438,10 @@ class KuaishowSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoo
   }
 
   @override
-  Future<LiveRoom> getRoomDetailForRefresh({required String platform, required String roomId}) async {
+  Future<LiveRoom> getRoomDetailForRefresh({
+    required String platform,
+    required String roomId,
+  }) async {
     try {
       // The room page is normally available anonymously. Start with that one
       // request; bootstrap/register a device once and retry only when the site
@@ -426,7 +453,10 @@ class KuaishowSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoo
   }
 
   @override
-  Future<LiveRoom> getRoomDetailForRecording({required String platform, required String roomId}) async {
+  Future<LiveRoom> getRoomDetailForRecording({
+    required String platform,
+    required String roomId,
+  }) async {
     final loaded = await _loadRoom(roomId, includePlaybackData: true, ensureSession: true);
     if (loaded.isLiveNow) return loaded;
 
@@ -441,34 +471,56 @@ class KuaishowSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoo
     return loaded;
   }
 
-  Future<LiveRoom> _loadRoom(String roomId, {required bool includePlaybackData, required bool ensureSession}) async {
-    final url = "https://live.kuaishou.com/u/$roomId";
+  Future<LiveRoom> _loadRoom(
+    String roomId, {
+    required bool includePlaybackData,
+    required bool ensureSession,
+  }) async {
+    final url = 'https://live.kuaishou.com/u/$roomId';
     if (ensureSession) await _ensureSession(url);
-    final resultText = await HttpClient.instance.getText(url, queryParameters: const {}, header: _roomHeaders());
-    final text = RegExp(r"window\.__INITIAL_STATE__=(.*?);", multiLine: false).firstMatch(resultText)?.group(1);
-    if (text == null || text.isEmpty) throw const FormatException('Kuaishou initial state is missing');
-    final jsonObj = jsonDecode(text.replaceAll("undefined", "null"));
-    final playList = jsonObj["liveroom"]?["playList"];
-    if (playList is! List || playList.isEmpty) throw const FormatException('Kuaishou room metadata is missing');
+    final resultText = await HttpClient.instance.getText(
+      url,
+      queryParameters: const {},
+      header: _roomHeaders(),
+    );
+    final text = RegExp(
+      r'window\.__INITIAL_STATE__=(.*?);',
+      multiLine: false,
+    ).firstMatch(resultText)?.group(1);
+    if (text == null || text.isEmpty) {
+      throw const FormatException('Kuaishou initial state is missing');
+    }
+    final jsonObj = jsonDecode(text.replaceAll('undefined', 'null'));
+    final playList = jsonObj['liveroom']?['playList'];
+    if (playList is! List || playList.isEmpty) {
+      throw const FormatException('Kuaishou room metadata is missing');
+    }
     final room = playList.first;
     if (room is! Map) throw const FormatException('Kuaishou room metadata has an invalid shape');
-    final liveStream = room["liveStream"] is Map ? room["liveStream"] as Map : const <dynamic, dynamic>{};
-    final author = room["author"] is Map ? room["author"] as Map : const <dynamic, dynamic>{};
-    final gameInfo = room["gameInfo"] is Map ? room["gameInfo"] as Map : const <dynamic, dynamic>{};
+    final liveStream = room['liveStream'] is Map
+        ? room['liveStream'] as Map
+        : const <dynamic, dynamic>{};
+    final author = room['author'] is Map ? room['author'] as Map : const <dynamic, dynamic>{};
+    final gameInfo = room['gameInfo'] is Map ? room['gameInfo'] as Map : const <dynamic, dynamic>{};
     final rawLiveState = room['isLiving'];
-    final live = rawLiveState == true || rawLiveState == 1 || rawLiveState?.toString().toLowerCase() == 'true';
-    final description = author["description"]?.toString() ?? '';
-    final liveStreamId = liveStream["id"]?.toString() ?? '';
+    final live =
+        rawLiveState == true ||
+        rawLiveState == 1 ||
+        rawLiveState?.toString().toLowerCase() == 'true';
+    final description = author['description']?.toString() ?? '';
+    final liveStreamId = liveStream['id']?.toString() ?? '';
     return LiveRoom(
-      cover: isImage(liveStream['poster']) ? liveStream['poster'].toString() : '${liveStream['poster'].toString()}.jpg',
-      watching: live ? gameInfo["watchingCount"].toString() : '0',
-      onlineViewers: live ? gameInfo["watchingCount"].toString() : '0',
+      cover: isImage(liveStream['poster'])
+          ? liveStream['poster'].toString()
+          : '${liveStream['poster'].toString()}.jpg',
+      watching: live ? gameInfo['watchingCount'].toString() : '0',
+      onlineViewers: live ? gameInfo['watchingCount'].toString() : '0',
       audienceMetricType: AudienceMetricType.onlineViewers,
-      roomId: author["id"]?.toString() ?? roomId,
-      area: gameInfo["name"]?.toString() ?? '',
-      title: description.replaceAll("\n", " "),
-      nick: author["name"]?.toString() ?? '',
-      avatar: author["avatar"]?.toString() ?? '',
+      roomId: author['id']?.toString() ?? roomId,
+      area: gameInfo['name']?.toString() ?? '',
+      title: description.replaceAll('\n', ' '),
+      nick: author['name']?.toString() ?? '',
+      avatar: author['avatar']?.toString() ?? '',
       introduction: description,
       notice: description,
       status: live,
@@ -478,7 +530,7 @@ class KuaishowSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoo
       danmakuData: liveStreamId.isEmpty
           ? null
           : KuaishouDanmakuArgs(liveStreamId: liveStreamId, cookie: _effectiveCookie),
-      data: includePlaybackData ? liveStream["playUrls"] : null,
+      data: includePlaybackData ? liveStream['playUrls'] : null,
     );
   }
 
@@ -486,7 +538,8 @@ class KuaishowSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoo
     final result = Map<String, dynamic>.from(headers);
     final fakeUseragent = FakeUserAgent.getRandomUserAgent();
     result['User-Agent'] = fakeUseragent['userAgent'];
-    result['sec-ch-ua'] = 'Google Chrome;v=${fakeUseragent['v']}, Chromium;v=${fakeUseragent['v']}, Not=A?Brand;v=24';
+    result['sec-ch-ua'] =
+        'Google Chrome;v=${fakeUseragent['v']}, Chromium;v=${fakeUseragent['v']}, Not=A?Brand;v=24';
     result['sec-ch-ua-platform'] = fakeUseragent['device'];
     result['sec-fetch-dest'] = 'document';
     result['sec-fetch-mode'] = 'navigate';
@@ -505,7 +558,11 @@ class KuaishowSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoo
   Future<void> _ensureSession(String url) async {
     if (SettingsService.to.cookieManager.kuaishouCookie.v.trim().isNotEmpty) return;
     final updatedAt = _sessionUpdatedAt;
-    if (cookie.isNotEmpty && updatedAt != null && DateTime.now().difference(updatedAt) < _sessionLifetime) return;
+    if (cookie.isNotEmpty &&
+        updatedAt != null &&
+        DateTime.now().difference(updatedAt) < _sessionLifetime) {
+      return;
+    }
     final pending = _sessionBootstrap;
     if (pending != null) return pending;
 
@@ -533,7 +590,11 @@ class KuaishowSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoo
   }
 
   @override
-  Future<List<LiveAnchorItem>> searchAnchors(String keyword, {int page = 1, int pageSize = 30}) async {
+  Future<List<LiveAnchorItem>> searchAnchors(
+    String keyword, {
+    int page = 1,
+    int pageSize = 30,
+  }) async {
     return [];
   }
 

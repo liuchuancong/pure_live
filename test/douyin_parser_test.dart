@@ -103,7 +103,10 @@ void main() {
     });
 
     test('surfaces a platform rejection without a dynamic index exception', () {
-      expect(() => DouyinSite.parseRecommendRooms({'status_code': 10001, 'data': []}), throwsStateError);
+      expect(
+        () => DouyinSite.parseRecommendRooms({'status_code': 10001, 'data': []}),
+        throwsStateError,
+      );
     });
   });
 }

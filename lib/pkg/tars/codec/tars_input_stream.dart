@@ -1,8 +1,10 @@
 import 'dart:core';
 import 'dart:convert';
 import 'dart:typed_data';
+
 import 'tars_struct.dart';
 import 'tars_decode_exception.dart';
+
 import 'package:pure_live/core/common/log.dart';
 
 class HeadData {
@@ -409,7 +411,9 @@ class TarsInputStream {
             }
             var size = readInt(0, true);
             if (size < 0) {
-              throw TarsDecodeException('invalid size, tag: $tag, type: ${hd.type}, ${hh.type}  size:$size');
+              throw TarsDecodeException(
+                'invalid size, tag: $tag, type: ${hd.type}, ${hh.type}  size:$size',
+              );
             }
 
             lr = Uint8List(size);
@@ -598,7 +602,7 @@ class TarsInputStream {
     return ts;
   }
 
-  String sServerEncoding = "UTF-8";
+  String sServerEncoding = 'UTF-8';
 
   int setServerEncoding(String se) {
     sServerEncoding = se;

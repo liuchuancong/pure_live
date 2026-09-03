@@ -24,7 +24,10 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
 
   Future<void> _activateFont(FontModel model, {String? targetFileName}) async {
     if (isDanmakuSettings) {
-      await SettingsService.to.font.activateDanmakuFontFamily(model, targetFileName: targetFileName);
+      await SettingsService.to.font.activateDanmakuFontFamily(
+        model,
+        targetFileName: targetFileName,
+      );
       Get.updateLocale(Get.locale ?? const Locale('zh', 'CN'));
     } else {
       await SettingsService.to.font.activateFontFamily(model, targetFileName: targetFileName);
@@ -57,7 +60,7 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          isDanmakuSettings ? i18n("change_danmaku_font_family") : i18n("font_family_settings"),
+          isDanmakuSettings ? i18n('change_danmaku_font_family') : i18n('font_family_settings'),
           style: const TextStyle(fontWeight: FontWeight.w700, letterSpacing: 0.3),
         ),
         actions: [
@@ -75,7 +78,10 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
                 foregroundColor: theme.colorScheme.primary,
               ),
               icon: const Icon(Remix.folder_open_line, size: 18),
-              label: Text(i18n("recorder_open_folder"), style: AppTextStyles.t14.copyWith(fontWeight: FontWeight.w600)),
+              label: Text(
+                i18n('recorder_open_folder'),
+                style: AppTextStyles.t14.copyWith(fontWeight: FontWeight.w600),
+              ),
             ),
           ),
         ],
@@ -87,18 +93,18 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
           physics: const PureLiveScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
           children: [
-            context.buildGroupTitle(i18n("factory_default_group")),
+            context.buildGroupTitle(i18n('factory_default_group')),
 
             _buildPresetEnvironmentCard(theme),
 
             const SizedBox(height: 28),
 
-            context.buildGroupTitle(i18n("cloud_font_group")),
+            context.buildGroupTitle(i18n('cloud_font_group')),
 
             if (fontModels.isEmpty)
-              SizedBox(
+              const SizedBox(
                 height: 200,
-                child: AppStatusView(type: AppStatusType.loading, title: "", subtitle: ""),
+                child: AppStatusView(type: AppStatusType.loading, title: '', subtitle: ''),
               )
             else
               ListView.builder(
@@ -113,7 +119,8 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
 
                     final bool isCurrentActive = currentValue == fontModel.id;
 
-                    final bool isSelectedModel = SettingsService.to.font.curFontModel.value == fontModel;
+                    final bool isSelectedModel =
+                        SettingsService.to.font.curFontModel.value == fontModel;
 
                     final String? diskSize = SettingsService.to.font.fontFolderSizes[fontModel.id];
 
@@ -149,7 +156,9 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
                       child: GestureDetector(
                         onTap: () async {
                           if (localExists) {
-                            final path = await AppPathManager().getFontFamilyFolderPath(fontModel.id);
+                            final path = await AppPathManager().getFontFamilyFolderPath(
+                              fontModel.id,
+                            );
                             FileUtils.openFileOrUrl(path);
                           }
                         },
@@ -248,7 +257,9 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDefaultActive ? theme.colorScheme.primary : theme.dividerColor.withValues(alpha: 0.05),
+          color: isDefaultActive
+              ? theme.colorScheme.primary
+              : theme.dividerColor.withValues(alpha: 0.05),
           width: isDefaultActive ? 1.5 : 1.0,
         ),
       ),
@@ -275,16 +286,18 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
             ),
           ),
           title: Text(
-            PlatformUtils.isWindows ? "Microsoft YaHei" : "System Default",
+            PlatformUtils.isWindows ? 'Microsoft YaHei' : 'System Default',
             style: isDefaultActive
                 ? AppTextStyles.t14Bold.copyWith(color: theme.colorScheme.primary)
                 : AppTextStyles.t14SemiBold,
           ),
           subtitle: Text(
-            i18n("factory_default_desc"),
+            i18n('factory_default_desc'),
             style: AppTextStyles.t11.copyWith(color: theme.hintColor.withValues(alpha: 0.7)),
           ),
-          trailing: isDefaultActive ? Icon(Icons.check_circle, color: theme.colorScheme.primary, size: 18) : null,
+          trailing: isDefaultActive
+              ? Icon(Icons.check_circle, color: theme.colorScheme.primary, size: 18)
+              : null,
           onTap: _setDefaultFont,
         ),
       ),
@@ -311,7 +324,7 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              i18n("font_currently_active"),
+              i18n('font_currently_active'),
               style: AppTextStyles.t12Bold.copyWith(color: theme.colorScheme.primary),
             ),
 
@@ -337,7 +350,7 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
                 }
               },
               child: Text(
-                i18n("apply"),
+                i18n('apply'),
                 style: AppTextStyles.t13Bold.copyWith(color: theme.colorScheme.onPrimaryContainer),
               ),
             ),
@@ -347,7 +360,7 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
     }
 
     if (isSelectedModel && SettingsService.to.font.fontState.value == DownloadState.downloading) {
-      return AppStatusView(type: AppStatusType.loading, title: "", subtitle: "", isMini: true);
+      return const AppStatusView(type: AppStatusType.loading, title: '', subtitle: '', isMini: true);
     }
 
     return Row(
@@ -355,8 +368,12 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
       children: [
         if (localExists) ...[
           IconButton(
-            icon: Icon(Remix.delete_bin_6_line, size: 18, color: theme.colorScheme.error.withValues(alpha: 0.8)),
-            tooltip: i18n("delete"),
+            icon: Icon(
+              Remix.delete_bin_6_line,
+              size: 18,
+              color: theme.colorScheme.error.withValues(alpha: 0.8),
+            ),
+            tooltip: i18n('delete'),
             style: IconButton.styleFrom(
               padding: const EdgeInsets.all(10),
               backgroundColor: theme.colorScheme.error.withValues(alpha: 0.05),
@@ -381,14 +398,14 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
               }
             },
             child: Text(
-              i18n("apply"),
+              i18n('apply'),
               style: AppTextStyles.t13Bold.copyWith(color: theme.colorScheme.onPrimaryContainer),
             ),
           ),
         ] else
           ElevatedButton.icon(
             icon: const Icon(Remix.download_cloud_2_line, size: 15),
-            label: Text(i18n("download"), style: AppTextStyles.t13Bold),
+            label: Text(i18n('download'), style: AppTextStyles.t13Bold),
             style: ElevatedButton.styleFrom(
               backgroundColor: theme.colorScheme.primaryContainer,
               foregroundColor: theme.colorScheme.onPrimaryContainer,
@@ -411,7 +428,7 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
                   await _showFontWeightSelector(context, fontModel);
                 }
               } else {
-                ToastUtil.show(i18n("font_load_failed"));
+                ToastUtil.show(i18n('font_load_failed'));
               }
             },
           ),
@@ -455,19 +472,26 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(i18n('font_selector_title', args: {"name": fontModel.name}), style: AppTextStyles.t18Bold),
+              Text(
+                i18n('font_selector_title', args: {'name': fontModel.name}),
+                style: AppTextStyles.t18Bold,
+              ),
 
               const SizedBox(height: 8),
 
               Text(
                 i18n('font_selector_subtitle'),
-                style: AppTextStyles.t13.copyWith(color: Theme.of(Get.context!).colorScheme.onSurfaceVariant),
+                style: AppTextStyles.t13.copyWith(
+                  color: Theme.of(Get.context!).colorScheme.onSurfaceVariant,
+                ),
               ),
 
               const SizedBox(height: 16),
 
               ConstrainedBox(
-                constraints: BoxConstraints(maxHeight: MediaQuery.of(Get.context!).size.height * 0.45),
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(Get.context!).size.height * 0.45,
+                ),
                 child: ListView(
                   shrinkWrap: true,
                   children: [
@@ -487,7 +511,11 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
                     const Divider(height: 16),
 
                     ...downloadedFiles.map((file) {
-                      final fileName = file.path.split(Platform.pathSeparator).last.split('.').first;
+                      final fileName = file.path
+                          .split(Platform.pathSeparator)
+                          .last
+                          .split('.')
+                          .first;
 
                       final fileNameWithExt = file.path.split(Platform.pathSeparator).last;
 
@@ -496,7 +524,7 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
                       return ListTile(
                         contentPadding: const EdgeInsets.symmetric(horizontal: 8),
                         leading: const Icon(Icons.font_download_outlined),
-                        title: Text(i18n('font_lock_weight', args: {"label": label})),
+                        title: Text(i18n('font_lock_weight', args: {'label': label})),
                         subtitle: Text(i18n('font_lock_weight_desc')),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         onTap: () async {
@@ -504,8 +532,8 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
 
                           final modifiedModel = FontModel(
                             id: fontModel.id,
-                            name: "${fontModel.name} ($label)",
-                            files: ["${fontModel.id}/$fileNameWithExt"],
+                            name: '${fontModel.name} ($label)',
+                            files: ['${fontModel.id}/$fileNameWithExt'],
                             desc: fontModel.desc,
                             official: fontModel.official,
                             license: fontModel.license,
@@ -523,7 +551,12 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
 
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
-                children: [TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(i18n('cancel')))],
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: Text(i18n('cancel')),
+                  ),
+                ],
               ),
             ],
           ),
@@ -561,7 +594,7 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
             borderRadius: BorderRadius.circular(8),
           ),
           child: Text(
-            fontModel.license['name'] ?? "OFL",
+            fontModel.license['name'] ?? 'OFL',
             style: AppTextStyles.t11Bold.copyWith(color: theme.colorScheme.onSurfaceVariant),
           ),
         ),

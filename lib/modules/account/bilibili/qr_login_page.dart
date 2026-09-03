@@ -11,7 +11,7 @@ class BiliBiliQRLoginPage extends GetView<BiliBiliQRLoginController> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: Text(i18n("bilibili_login"))),
+      appBar: AppBar(title: Text(i18n('bilibili_login'))),
       body: ListView(
         physics: const PureLiveScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -21,17 +21,17 @@ class BiliBiliQRLoginPage extends GetView<BiliBiliQRLoginController> {
           Center(
             child: Obx(() {
               if (controller.qrStatus.value == QRStatus.loading) {
-                return SizedBox(
+                return const SizedBox(
                   height: 200,
-                  child: AppStatusView(type: AppStatusType.loading, title: "", subtitle: ""),
+                  child: AppStatusView(type: AppStatusType.loading, title: '', subtitle: ''),
                 );
               }
 
               if (controller.qrStatus.value == QRStatus.failed) {
                 return _buildErrorState(
                   theme,
-                  message: i18n("qr_load_failed"),
-                  buttonText: i18n("retry"),
+                  message: i18n('qr_load_failed'),
+                  buttonText: i18n('retry'),
                   onPressed: controller.loadQRCode,
                 );
               }
@@ -39,8 +39,8 @@ class BiliBiliQRLoginPage extends GetView<BiliBiliQRLoginController> {
               if (controller.qrStatus.value == QRStatus.expired) {
                 return _buildErrorState(
                   theme,
-                  message: i18n("qr_expired"),
-                  buttonText: i18n("refresh_qr"),
+                  message: i18n('qr_expired'),
+                  buttonText: i18n('refresh_qr'),
                   onPressed: controller.loadQRCode,
                 );
               }
@@ -76,10 +76,14 @@ class BiliBiliQRLoginPage extends GetView<BiliBiliQRLoginController> {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Remix.checkbox_circle_line, size: 16, color: theme.colorScheme.primary),
+                                Icon(
+                                  Remix.checkbox_circle_line,
+                                  size: 16,
+                                  color: theme.colorScheme.primary,
+                                ),
                                 const SizedBox(width: 6),
                                 Text(
-                                  i18n("qr_scanned_confirm"),
+                                  i18n('qr_scanned_confirm'),
                                   style: AppTextStyles.t13.copyWith(
                                     color: theme.colorScheme.primary,
                                     fontWeight: FontWeight.w600,
@@ -88,7 +92,10 @@ class BiliBiliQRLoginPage extends GetView<BiliBiliQRLoginController> {
                               ],
                             ),
                           )
-                        : Text(i18n("qr_waiting_scan"), style: AppTextStyles.t13.copyWith(color: theme.hintColor)),
+                        : Text(
+                            i18n('qr_waiting_scan'),
+                            style: AppTextStyles.t13.copyWith(color: theme.hintColor),
+                          ),
                   ),
                 ],
               );
@@ -110,11 +117,15 @@ class BiliBiliQRLoginPage extends GetView<BiliBiliQRLoginController> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Remix.information_line, size: 18, color: theme.colorScheme.primary.withValues(alpha: 0.8)),
+          Icon(
+            Remix.information_line,
+            size: 18,
+            color: theme.colorScheme.primary.withValues(alpha: 0.8),
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              i18n("qr_login_tip"),
+              i18n('qr_login_tip'),
               style: AppTextStyles.t13.copyWith(
                 color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
                 height: 1.4,

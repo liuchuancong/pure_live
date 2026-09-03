@@ -27,6 +27,8 @@ class DouyuEmojiModel {
 
   static Map<String, DouyuEmojiModel> parseEmojiRegistry(String rawJsonStr) {
     final Map<String, dynamic> decoded = jsonDecode(rawJsonStr);
-    return decoded.map((key, value) => MapEntry(key, DouyuEmojiModel.fromJson(value as Map<String, dynamic>)));
+    return decoded.map(
+      (key, value) => MapEntry(key, DouyuEmojiModel.fromJson(value as Map<String, dynamic>)),
+    );
   }
 }

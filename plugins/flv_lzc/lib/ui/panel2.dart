@@ -22,15 +22,15 @@
 
 part of fijkplayer;
 
-FijkPanelWidgetBuilder fijkPanel2Builder(
-    {Key? key,
-    final bool fill = false,
-    final int duration = 4000,
-    final bool doubleTap = true,
-    final bool snapShot = false,
-    final VoidCallback? onBack}) {
-  return (FijkPlayer player, FijkData data, BuildContext context, Size viewSize,
-      Rect texturePos) {
+FijkPanelWidgetBuilder fijkPanel2Builder({
+  Key? key,
+  final bool fill = false,
+  final int duration = 4000,
+  final bool doubleTap = true,
+  final bool snapShot = false,
+  final VoidCallback? onBack,
+}) {
+  return (FijkPlayer player, FijkData data, BuildContext context, Size viewSize, Rect texturePos) {
     return _FijkPanel2(
       key: key,
       player: player,
@@ -57,19 +57,19 @@ class _FijkPanel2 extends StatefulWidget {
   final bool snapShot;
   final int hideDuration;
 
-  const _FijkPanel2(
-      {Key? key,
-      required this.player,
-      required this.data,
-      this.fill = false,
-      this.onBack,
-      required this.viewSize,
-      this.hideDuration = 4000,
-      this.doubleTap = false,
-      this.snapShot = false,
-      required this.texPos})
-      : assert(hideDuration > 0 && hideDuration < 10000),
-        super(key: key);
+  const _FijkPanel2({
+    Key? key,
+    required this.player,
+    required this.data,
+    this.fill = false,
+    this.onBack,
+    required this.viewSize,
+    this.hideDuration = 4000,
+    this.doubleTap = false,
+    this.snapShot = false,
+    required this.texPos,
+  }) : assert(hideDuration > 0 && hideDuration < 10000),
+       super(key: key);
 
   @override
   __FijkPanel2State createState() => __FijkPanel2State();
@@ -106,10 +106,11 @@ class __FijkPanel2State extends State<_FijkPanel2> {
   bool _needClearSeekData = true;
 
   static const FijkSliderColors sliderColors = FijkSliderColors(
-      cursorColor: Color.fromARGB(240, 250, 100, 10),
-      playedColor: Color.fromARGB(200, 240, 90, 50),
-      baselineColor: Color.fromARGB(100, 20, 20, 20),
-      bufferedColor: Color.fromARGB(180, 200, 200, 200));
+    cursorColor: Color.fromARGB(240, 250, 100, 10),
+    playedColor: Color.fromARGB(200, 240, 90, 50),
+    baselineColor: Color.fromARGB(100, 20, 20, 20),
+    bufferedColor: Color.fromARGB(180, 200, 200, 200),
+  );
 
   @override
   void initState() {
@@ -184,9 +185,7 @@ class __FijkPanel2State extends State<_FijkPanel2> {
     }
     bool playing = (value.state == FijkState.started);
     bool prepared = value.prepared;
-    if (playing != _playing ||
-        prepared != _prepared ||
-        value.state == FijkState.asyncPreparing) {
+    if (playing != _playing || prepared != _prepared || value.state == FijkState.asyncPreparing) {
       setState(() {
         _playing = playing;
         _prepared = prepared;
@@ -296,9 +295,7 @@ class __FijkPanel2State extends State<_FijkPanel2> {
   }
 
   Widget buildPlayButton(BuildContext context, double height) {
-    Icon icon = (player.state == FijkState.started)
-        ? Icon(Icons.pause)
-        : Icon(Icons.play_arrow);
+    Icon icon = (player.state == FijkState.started) ? Icon(Icons.pause) : Icon(Icons.play_arrow);
     bool fullScreen = player.value.fullScreen;
     return IconButton(
       padding: EdgeInsets.all(0),
@@ -310,9 +307,7 @@ class __FijkPanel2State extends State<_FijkPanel2> {
   }
 
   Widget buildFullScreenButton(BuildContext context, double height) {
-    Icon icon = player.value.fullScreen
-        ? Icon(Icons.fullscreen_exit)
-        : Icon(Icons.fullscreen);
+    Icon icon = player.value.fullScreen ? Icon(Icons.fullscreen_exit) : Icon(Icons.fullscreen);
     bool fullScreen = player.value.fullScreen;
     return IconButton(
       padding: EdgeInsets.all(0),
@@ -320,16 +315,13 @@ class __FijkPanel2State extends State<_FijkPanel2> {
       color: Color(0xFFFFFFFF),
       icon: icon,
       onPressed: () {
-        player.value.fullScreen
-            ? player.exitFullScreen()
-            : player.enterFullScreen();
+        player.value.fullScreen ? player.exitFullScreen() : player.enterFullScreen();
       },
     );
   }
 
   Widget buildTimeText(BuildContext context, double height) {
-    String text =
-        "${_duration2String(_currentPos)}" + "/${_duration2String(_duration)}";
+    String text = "${_duration2String(_currentPos)}" + "/${_duration2String(_duration)}";
     return Text(text, style: TextStyle(fontSize: 12, color: Color(0xFFFFFFFF)));
   }
 
@@ -391,30 +383,29 @@ class __FijkPanel2State extends State<_FijkPanel2> {
   }
 
   void takeSnapshot() {
-    player.takeSnapShot().then((v) {
-      var provider = MemoryImage(v);
-      precacheImage(provider, context).then((_) {
-        setState(() {
-          _imageProvider = provider;
+    player
+        .takeSnapShot()
+        .then((v) {
+          var provider = MemoryImage(v);
+          precacheImage(provider, context).then((_) {
+            setState(() {
+              _imageProvider = provider;
+            });
+          });
+          FijkLog.d("get snapshot succeed");
+        })
+        .catchError((e) {
+          FijkLog.d("get snapshot failed");
         });
-      });
-      FijkLog.d("get snapshot succeed");
-    }).catchError((e) {
-      FijkLog.d("get snapshot failed");
-    });
   }
 
   Widget buildPanel(BuildContext context) {
     double height = panelHeight();
 
     bool fullScreen = player.value.fullScreen;
-    Widget centerWidget = Container(
-      color: Color(0x00000000),
-    );
+    Widget centerWidget = Container(color: Color(0x00000000));
 
-    Widget centerChild = Container(
-      color: Color(0x00000000),
-    );
+    Widget centerChild = Container(color: Color(0x00000000));
 
     if (fullScreen && widget.snapShot) {
       centerWidget = Row(
@@ -435,7 +426,7 @@ class __FijkPanel2State extends State<_FijkPanel2> {
                 ),
               ],
             ),
-          )
+          ),
         ],
       );
     }
@@ -452,9 +443,7 @@ class __FijkPanel2State extends State<_FijkPanel2> {
             ),
           ),
         ),
-        Expanded(
-          child: centerWidget,
-        ),
+        Expanded(child: centerWidget),
         Container(
           height: height > 80 ? 80 : height / 2,
           decoration: BoxDecoration(
@@ -470,7 +459,7 @@ class __FijkPanel2State extends State<_FijkPanel2> {
             padding: EdgeInsets.only(left: 8, right: 8, bottom: 5),
             child: buildBottom(context, height > 80 ? 40 : height / 2),
           ),
-        )
+        ),
       ],
     );
   }
@@ -501,7 +490,8 @@ class __FijkPanel2State extends State<_FijkPanel2> {
             max(0.0, widget.texPos.left),
             max(0.0, widget.texPos.top),
             min(widget.viewSize.width, widget.texPos.right),
-            min(widget.viewSize.height, widget.texPos.bottom));
+            min(widget.viewSize.height, widget.texPos.bottom),
+          );
     return rect;
   }
 
@@ -509,8 +499,7 @@ class __FijkPanel2State extends State<_FijkPanel2> {
     if (player.value.fullScreen || (true == widget.fill)) {
       return widget.viewSize.height;
     } else {
-      return min(widget.viewSize.height, widget.texPos.bottom) -
-          max(0.0, widget.texPos.top);
+      return min(widget.viewSize.height, widget.texPos.bottom) - max(0.0, widget.texPos.top);
     }
   }
 
@@ -518,18 +507,14 @@ class __FijkPanel2State extends State<_FijkPanel2> {
     if (player.value.fullScreen || (true == widget.fill)) {
       return widget.viewSize.width;
     } else {
-      return min(widget.viewSize.width, widget.texPos.right) -
-          max(0.0, widget.texPos.left);
+      return min(widget.viewSize.width, widget.texPos.right) - max(0.0, widget.texPos.left);
     }
   }
 
   Widget buildBack(BuildContext context) {
     return IconButton(
       padding: EdgeInsets.only(left: 5),
-      icon: Icon(
-        Icons.arrow_back_ios,
-        color: Color(0xDDFFFFFF),
-      ),
+      icon: Icon(Icons.arrow_back_ios, color: Color(0xDDFFFFFF)),
       onPressed: widget.onBack,
     );
   }
@@ -542,11 +527,7 @@ class __FijkPanel2State extends State<_FijkPanel2> {
           ? defaultFijkBrightnessToast(brightness!, _valController.stream)
           : defaultFijkVolumeToast(volume, _valController.stream);
       return IgnorePointer(
-        child: AnimatedOpacity(
-          opacity: 1,
-          duration: Duration(milliseconds: 500),
-          child: toast,
-        ),
+        child: AnimatedOpacity(opacity: 1, duration: Duration(milliseconds: 500), child: toast),
       );
     } else if (player.state == FijkState.asyncPreparing) {
       return Container(
@@ -554,18 +535,13 @@ class __FijkPanel2State extends State<_FijkPanel2> {
         child: SizedBox(
           width: 30,
           height: 30,
-          child: CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation(Colors.white)),
+          child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation(Colors.white)),
         ),
       );
     } else if (player.state == FijkState.error) {
       return Container(
         alignment: Alignment.center,
-        child: Icon(
-          Icons.error,
-          size: 30,
-          color: Color(0x99FFFFFF),
-        ),
+        child: Icon(Icons.error, size: 30, color: Color(0x99FFFFFF)),
       );
     } else if (_imageProvider != null) {
       _snapshotTimer?.cancel();
@@ -579,10 +555,8 @@ class __FijkPanel2State extends State<_FijkPanel2> {
       return Center(
         child: IgnorePointer(
           child: Container(
-            decoration: BoxDecoration(
-                border: Border.all(color: Colors.yellowAccent, width: 3)),
-            child:
-                Image(height: 200, fit: BoxFit.contain, image: _imageProvider!),
+            decoration: BoxDecoration(border: Border.all(color: Colors.yellowAccent, width: 3)),
+            child: Image(height: 200, fit: BoxFit.contain, image: _imageProvider!),
           ),
         ),
       );

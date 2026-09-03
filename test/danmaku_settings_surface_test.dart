@@ -45,7 +45,9 @@ void main() {
 
   testWidgets('portrait uses the canonical reactive settings surface', (tester) async {
     final portrait = _TestDanmakuSettingsBinding();
-    await tester.pumpWidget(_testApp(DanmakuSettingsContent(controller: portrait, includePipSettings: false)));
+    await tester.pumpWidget(
+      _testApp(DanmakuSettingsContent(controller: portrait, includePipSettings: false)),
+    );
     await tester.pumpAndSettle();
 
     expect(find.byKey(const ValueKey('danmaku-settings-content-page')), findsOneWidget);
@@ -69,13 +71,19 @@ void main() {
     expect(find.byKey(const ValueKey('fullscreen-danmaku-settings-panel')), findsOneWidget);
     expect(find.byKey(const ValueKey('danmaku-settings-content-embedded')), findsOneWidget);
     expect(find.byKey(const ValueKey('danmaku-template-best')), findsOneWidget);
-    expect(find.text('PiP danmaku'), findsNothing, reason: 'fullscreen keeps PiP controls on their dedicated page');
+    expect(
+      find.text('PiP danmaku'),
+      findsNothing,
+      reason: 'fullscreen keeps PiP controls on their dedicated page',
+    );
     await tester.tap(find.byKey(const ValueKey('danmaku-template-best')));
     await tester.pump();
     _expectBestPreset(fullscreen);
     await _finishToast(tester);
 
-    final panelRect = tester.getRect(find.byKey(const ValueKey('fullscreen-danmaku-settings-panel')));
+    final panelRect = tester.getRect(
+      find.byKey(const ValueKey('fullscreen-danmaku-settings-panel')),
+    );
     expect(panelRect.width, inInclusiveRange(340, 460));
     expect(panelRect.right, greaterThan(990));
   });
@@ -89,19 +97,24 @@ void main() {
     await tester.pumpWidget(_testApp(SettingsPanel(controller: fullscreen), theme: lightTheme));
     await tester.pumpAndSettle();
 
-    final panel = tester.widget<Container>(find.byKey(const ValueKey('fullscreen-danmaku-settings-panel')));
+    final panel = tester.widget<Container>(
+      find.byKey(const ValueKey('fullscreen-danmaku-settings-panel')),
+    );
     final decoration = panel.decoration! as BoxDecoration;
     final title = tester.widget<Text>(find.text('Danmaku settings'));
 
     expect(decoration.color, lightTheme.colorScheme.surface);
     expect(title.style?.color, lightTheme.colorScheme.onSurface);
     expect(
-      Theme.of(tester.element(find.byKey(const ValueKey('danmaku-settings-content-embedded')))).brightness,
+      Theme.of(tester.element(find.byKey(const ValueKey('danmaku-settings-content-embedded'))))
+          .brightness,
       Brightness.light,
     );
   });
 
-  testWidgets('portrait and compact landscape keep one preset state without overflow', (tester) async {
+  testWidgets('portrait and compact landscape keep one preset state without overflow', (
+    tester,
+  ) async {
     final shared = _TestDanmakuSettingsBinding();
     final showLandscapePanel = ValueNotifier<bool>(false);
     addTearDown(showLandscapePanel.dispose);
@@ -109,8 +122,9 @@ void main() {
       _testApp(
         ValueListenableBuilder<bool>(
           valueListenable: showLandscapePanel,
-          builder: (context, landscape, _) =>
-              landscape ? SettingsPanel(controller: shared) : DanmakuSettingsPage(controller: shared),
+          builder: (context, landscape, _) => landscape
+              ? SettingsPanel(controller: shared)
+              : DanmakuSettingsPage(controller: shared),
         ),
       ),
     );
@@ -123,7 +137,11 @@ void main() {
     final densityAfter = tester.getRect(find.byKey(const ValueKey('danmaku-template-dense')));
     final comfort = DanmakuViewingPreset.values.firstWhere((preset) => preset.id == 'comfort');
     expect(shared.danmakuArea.value, comfort.area);
-    expect(densityAfter, densityBefore, reason: 'selecting a preset must not reflow the fullscreen controls');
+    expect(
+      densityAfter,
+      densityBefore,
+      reason: 'selecting a preset must not reflow the fullscreen controls',
+    );
 
     tester.view.physicalSize = const Size(800, 360);
     tester.view.devicePixelRatio = 1;
@@ -132,11 +150,16 @@ void main() {
     showLandscapePanel.value = true;
     await tester.pumpAndSettle();
 
-    final selected = tester.widget<ChoiceChip>(find.byKey(const ValueKey('danmaku-template-comfort')));
+    final selected = tester.widget<ChoiceChip>(
+      find.byKey(const ValueKey('danmaku-template-comfort')),
+    );
     expect(selected.selected, isTrue);
     expect(tester.takeException(), isNull);
 
-    await tester.drag(find.byKey(const ValueKey('danmaku-settings-content-embedded')), const Offset(0, -500));
+    await tester.drag(
+      find.byKey(const ValueKey('danmaku-settings-content-embedded')),
+      const Offset(0, -500),
+    );
     await tester.pumpAndSettle();
     expect(find.text('PiP danmaku'), findsNothing);
     expect(tester.takeException(), isNull);
@@ -258,7 +281,9 @@ class _TestAssetLoader extends AssetLoader {
 }
 
 class _TestSettingsService extends SettingsService {
-  _TestSettingsService(this._danmaku) : _app = AppSettingsController(), _font = FontSettingsController();
+  _TestSettingsService(this._danmaku)
+    : _app = AppSettingsController(),
+      _font = FontSettingsController();
 
   final DanmakuSettingsController _danmaku;
   final AppSettingsController _app;

@@ -35,10 +35,16 @@ sealed class BetterPlayerHlsUtils {
     return BetterPlayerAsmsDataHolder(tracks: tracks, audios: audios, subtitles: subtitles);
   }
 
-  static Future<List<BetterPlayerAsmsTrack>> parseTracks(String data, String masterPlaylistUrl) async {
+  static Future<List<BetterPlayerAsmsTrack>> parseTracks(
+    String data,
+    String masterPlaylistUrl,
+  ) async {
     final List<BetterPlayerAsmsTrack> tracks = [];
     try {
-      final parsedPlaylist = await HlsPlaylistParser.create().parseString(Uri.parse(masterPlaylistUrl), data);
+      final parsedPlaylist = await HlsPlaylistParser.create().parseString(
+        Uri.parse(masterPlaylistUrl),
+        data,
+      );
       if (parsedPlaylist is HlsMasterPlaylist) {
         for (final variant in parsedPlaylist.variants) {
           tracks.add(
@@ -65,10 +71,16 @@ sealed class BetterPlayerHlsUtils {
   }
 
   ///Parse subtitles from provided m3u8 url
-  static Future<List<BetterPlayerAsmsSubtitle>> parseSubtitles(String data, String masterPlaylistUrl) async {
+  static Future<List<BetterPlayerAsmsSubtitle>> parseSubtitles(
+    String data,
+    String masterPlaylistUrl,
+  ) async {
     final List<BetterPlayerAsmsSubtitle> subtitles = [];
     try {
-      final parsedPlaylist = await HlsPlaylistParser.create().parseString(Uri.parse(masterPlaylistUrl), data);
+      final parsedPlaylist = await HlsPlaylistParser.create().parseString(
+        Uri.parse(masterPlaylistUrl),
+        data,
+      );
 
       if (parsedPlaylist is HlsMasterPlaylist) {
         for (final Rendition element in parsedPlaylist.subtitles) {
@@ -142,7 +154,10 @@ sealed class BetterPlayerHlsUtils {
       bool isDefault = false;
 
       if (rendition.format.selectionFlags != null) {
-        isDefault = Util.checkBitPositionIsSet(rendition.format.selectionFlags!, Util.selectionFlagDefault);
+        isDefault = Util.checkBitPositionIsSet(
+          rendition.format.selectionFlags!,
+          Util.selectionFlagDefault,
+        );
       }
 
       return BetterPlayerAsmsSubtitle(
@@ -162,9 +177,15 @@ sealed class BetterPlayerHlsUtils {
     }
   }
 
-  static Future<List<BetterPlayerAsmsAudioTrack>> parseLanguages(String data, String masterPlaylistUrl) async {
+  static Future<List<BetterPlayerAsmsAudioTrack>> parseLanguages(
+    String data,
+    String masterPlaylistUrl,
+  ) async {
     final List<BetterPlayerAsmsAudioTrack> audios = [];
-    final parsedPlaylist = await HlsPlaylistParser.create().parseString(Uri.parse(masterPlaylistUrl), data);
+    final parsedPlaylist = await HlsPlaylistParser.create().parseString(
+      Uri.parse(masterPlaylistUrl),
+      data,
+    );
     if (parsedPlaylist is HlsMasterPlaylist) {
       for (int index = 0; index < parsedPlaylist.audios.length; index++) {
         final Rendition audio = parsedPlaylist.audios[index];
@@ -175,7 +196,10 @@ sealed class BetterPlayerHlsUtils {
             language: audio.format.language,
             url: audio.url.toString(),
             mimeType: audio.format.containerMimeType,
-            isDefault: Util.checkBitPositionIsSet(audio.format.selectionFlags!, Util.selectionFlagDefault),
+            isDefault: Util.checkBitPositionIsSet(
+              audio.format.selectionFlags!,
+              Util.selectionFlagDefault,
+            ),
           ),
         );
       }

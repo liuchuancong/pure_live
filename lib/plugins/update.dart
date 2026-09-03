@@ -37,7 +37,7 @@ Future<void> downloadAndInstallApk(String apkUrl, {String? fileName}) async {
     try {
       final hasInstallPermission = await requestStorageInstallPermission();
       if (!hasInstallPermission) {
-        ToastUtil.show(i18n("grant_install_permission"));
+        ToastUtil.show(i18n('grant_install_permission'));
         openAppSettings();
         return;
       }
@@ -45,7 +45,7 @@ Future<void> downloadAndInstallApk(String apkUrl, {String? fileName}) async {
       ToastUtil.show('${i18n("request_install_permission_failed")}${e.toString()}');
     }
   }
-  ToastUtil.show(i18n("downloading_apk", args: {"version": VersionUtil.latestVersion}));
+  ToastUtil.show(i18n('downloading_apk', args: {'version': VersionUtil.latestVersion}));
   Get.dialog(
     DownloadApkDialog(apkUrl: apkUrl, version: VersionUtil.latestVersion, fileName: fileName),
     barrierDismissible: false,

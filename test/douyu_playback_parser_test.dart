@@ -6,11 +6,19 @@ import 'package:pure_live/model/live_play_quality.dart';
 void main() {
   test('Douyu room state accepts numeric strings without misclassifying a live room', () {
     expect(
-      DouyuSite.isLiveRoomPayload(<String, dynamic>{'show_status': '1', 'videoLoop': '0', 'room_name': '直播中'}),
+      DouyuSite.isLiveRoomPayload(<String, dynamic>{
+        'show_status': '1',
+        'videoLoop': '0',
+        'room_name': '直播中',
+      }),
       isTrue,
     );
     expect(
-      DouyuSite.isLiveRoomPayload(<String, dynamic>{'show_status': 1, 'videoLoop': 1, 'room_name': '【回放】上一场'}),
+      DouyuSite.isLiveRoomPayload(<String, dynamic>{
+        'show_status': 1,
+        'videoLoop': 1,
+        'room_name': '【回放】上一场',
+      }),
       isFalse,
     );
   });
@@ -30,7 +38,10 @@ void main() {
         () => DouyuSite.parsePlayResponse(<String, dynamic>{'error': 102, 'msg': 'expired'}),
         throwsA(isA<DouyuPlayApiException>()),
       );
-      expect(() => DouyuSite.parsePlayResponse(<String, dynamic>{'error': 0}), throwsA(isA<DouyuPlayApiException>()));
+      expect(
+        () => DouyuSite.parsePlayResponse(<String, dynamic>{'error': 0}),
+        throwsA(isA<DouyuPlayApiException>()),
+      );
     });
 
     test('deduplicates CDN codes and always provides a fallback line', () {
@@ -84,7 +95,9 @@ void main() {
         throwsA(isA<DouyuPlayApiException>()),
       );
       expect(
-        DouyuSite.parsePlayUrl(<String, dynamic>{'flv_url': 'https://cdn.example.test/live/room.flv'}),
+        DouyuSite.parsePlayUrl(<String, dynamic>{
+          'flv_url': 'https://cdn.example.test/live/room.flv',
+        }),
         'https://cdn.example.test/live/room.flv',
       );
     });
@@ -109,7 +122,11 @@ void main() {
 
     test('recording cursor signs only the requested CDN line', () async {
       final site = _FakeDouyuCursorSite();
-      final quality = LivePlayQuality(quality: '原画', id: 0, data: DouyuPlayData(0, const <String>['main', 'backup']));
+      final quality = LivePlayQuality(
+        quality: '原画',
+        id: 0,
+        data: DouyuPlayData(0, const <String>['main', 'backup']),
+      );
 
       final resolved = await site.resolvePlayUrlAtRaw(
         detail: LiveRoom(roomId: '123'),

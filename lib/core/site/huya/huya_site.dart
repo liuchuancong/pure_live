@@ -25,14 +25,19 @@ import 'package:pure_live/core/tars/get_game_event_message_board_req.dart';
 import 'package:pure_live/core/tars/get_game_event_message_board_rsp.dart';
 import 'package:pure_live/modules/live_play/controllers/player_controller.dart';
 
-class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResolver, LivePlayUrlCursorResolver {
+class HuyaSite
+    implements
+        LiveSite,
+        LiveSiteRoomRefresher,
+        LiveSiteRecordRoomResolver,
+        LivePlayUrlCursorResolver {
   @override
   String id = Sites.huyaSite;
 
   static const baseUrl = HuyaRequestParams.baseUrl;
 
   @override
-  String name = "虎牙直播";
+  String name = '虎牙直播';
 
   @override
   LiveDanmaku getDanmaku() => HuyaDanmaku();
@@ -49,11 +54,21 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
 
   static const String fallbackPlayUserAgent = HuyaRequestParams.kUserAgent;
 
-  static Map<String, String> requestHeaders = {'Origin': baseUrl, 'Referer': baseUrl, 'User-Agent': huyaSdkUa};
+  static Map<String, String> requestHeaders = {
+    'Origin': baseUrl,
+    'Referer': baseUrl,
+    'User-Agent': huyaSdkUa,
+  };
 
-  final BaseTarsHttp tupClient = BaseTarsHttp("http://wup.huya.com", "liveui", headers: requestHeaders);
+  final BaseTarsHttp tupClient = BaseTarsHttp(
+    'http://wup.huya.com',
+    'liveui',
+    headers: requestHeaders,
+  );
 
-  static ({String popularity, String onlineViewers}) parseRoomAudience(Map<String, dynamic>? liveData) {
+  static ({String popularity, String onlineViewers}) parseRoomAudience(
+    Map<String, dynamic>? liveData,
+  ) {
     final totalCount = liveData?['totalCount']?.toString().trim() ?? '';
     final userCount = liveData?['userCount']?.toString().trim() ?? '';
 
@@ -63,10 +78,10 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
   @override
   Future<List<LiveCategory>> getCategores(int page, int pageSize) async {
     final categories = <LiveCategory>[
-      LiveCategory(id: "1", name: "网游", children: []),
-      LiveCategory(id: "2", name: "单机", children: []),
-      LiveCategory(id: "8", name: "娱乐", children: []),
-      LiveCategory(id: "3", name: "手游", children: []),
+      LiveCategory(id: '1', name: '网游', children: []),
+      LiveCategory(id: '2', name: '单机', children: []),
+      LiveCategory(id: '8', name: '娱乐', children: []),
+      LiveCategory(id: '3', name: '手游', children: []),
     ];
 
     for (final item in categories) {
@@ -78,39 +93,39 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
   }
 
   final String kUserAgent =
-      "Mozilla/5.0 (Linux; Android 11; Pixel 5) "
-      "AppleWebKit/537.36 (KHTML, like Gecko) "
-      "Chrome/90.0.4430.91 "
-      "Mobile Safari/537.36 "
-      "Edg/117.0.0.0";
+      'Mozilla/5.0 (Linux; Android 11; Pixel 5) '
+      'AppleWebKit/537.36 (KHTML, like Gecko) '
+      'Chrome/90.0.4430.91 '
+      'Mobile Safari/537.36 '
+      'Edg/117.0.0.0';
 
   Future<List<LiveArea>> getSubCategores(LiveCategory liveCategory) async {
     final result = await HttpClient.instance.getJson(
-      "https://live.cdn.huya.com/liveconfig/game/bussLive",
-      queryParameters: {"bussType": liveCategory.id},
+      'https://live.cdn.huya.com/liveconfig/game/bussLive',
+      queryParameters: {'bussType': liveCategory.id},
     );
 
     final subs = <LiveArea>[];
 
-    for (final item in result["data"]) {
-      var gid = "";
+    for (final item in result['data']) {
+      var gid = '';
 
-      if (item["gid"] is Map) {
-        gid = item["gid"]["value"].toString().split(",").first;
-      } else if (item["gid"] is double) {
-        gid = item["gid"].toInt().toString();
-      } else if (item["gid"] is int) {
-        gid = item["gid"].toString();
+      if (item['gid'] is Map) {
+        gid = item['gid']['value'].toString().split(',').first;
+      } else if (item['gid'] is double) {
+        gid = item['gid'].toInt().toString();
+      } else if (item['gid'] is int) {
+        gid = item['gid'].toString();
       } else {
-        gid = item["gid"].toString();
+        gid = item['gid'].toString();
       }
 
       final subCategory = LiveArea(
         areaId: gid,
-        areaName: item["gameFullName"].toString(),
+        areaName: item['gameFullName'].toString(),
         areaType: liveCategory.id,
         platform: Sites.huyaSite,
-        areaPic: "https://huyaimg.msstatic.com/cdnimage/game/$gid-MS.jpg",
+        areaPic: 'https://huyaimg.msstatic.com/cdnimage/game/$gid-MS.jpg',
         typeName: liveCategory.name,
       );
 
@@ -121,46 +136,50 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
   }
 
   @override
-  Future<List<LiveRoom>> getCategoryRooms(LiveArea category, {int page = 1, int pageSize = 30}) async {
+  Future<List<LiveRoom>> getCategoryRooms(
+    LiveArea category, {
+    int page = 1,
+    int pageSize = 30,
+  }) async {
     final resultText = await HttpClient.instance.getJson(
-      "https://www.huya.com/cache.php",
+      'https://www.huya.com/cache.php',
       queryParameters: {
-        "m": "LiveList",
-        "do": "getLiveListByPage",
-        "tagAll": 0,
-        "gameId": category.areaId,
-        "page": page,
+        'm': 'LiveList',
+        'do': 'getLiveListByPage',
+        'tagAll': 0,
+        'gameId': category.areaId,
+        'page': page,
       },
-      header: {"user-agent": kUserAgent, "Cookie": SettingsService.to.cookieManager.huyaCookie.v},
+      header: {'user-agent': kUserAgent, 'Cookie': SettingsService.to.cookieManager.huyaCookie.v},
     );
 
     final result = json.decode(resultText);
 
     final items = <LiveRoom>[];
 
-    for (final item in result["data"]["datas"]) {
-      var cover = item["screenshot"].toString();
+    for (final item in result['data']['datas']) {
+      var cover = item['screenshot'].toString();
 
-      if (!cover.contains("?")) {
-        cover += "?x-oss-process=style/w338_h190&";
+      if (!cover.contains('?')) {
+        cover += '?x-oss-process=style/w338_h190&';
       }
 
-      var title = item["introduction"]?.toString() ?? "";
+      var title = item['introduction']?.toString() ?? '';
 
       if (title.isEmpty) {
-        title = item["roomName"]?.toString() ?? "";
+        title = item['roomName']?.toString() ?? '';
       }
 
       final roomItem = LiveRoom(
-        roomId: item["profileRoom"].toString(),
+        roomId: item['profileRoom'].toString(),
         title: title,
         cover: cover,
-        nick: item["nick"].toString(),
-        watching: item["totalCount"].toString(),
-        popularity: item["totalCount"].toString(),
+        nick: item['nick'].toString(),
+        watching: item['totalCount'].toString(),
+        popularity: item['totalCount'].toString(),
         audienceMetricType: AudienceMetricType.popularity,
-        avatar: item["avatar180"],
-        area: item["gameFullName"].toString(),
+        avatar: item['avatar180'],
+        area: item['gameFullName'].toString(),
         liveStatus: LiveStatus.live,
         status: true,
         platform: Sites.huyaSite,
@@ -185,7 +204,9 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
 
   @visibleForTesting
   static List<LivePlayQuality> parsePlayQualities(HuyaUrlDataModel data) {
-    final rates = data.bitRates.isEmpty ? <HuyaBitRateModel>[HuyaBitRateModel(name: '原画', bitRate: 0)] : data.bitRates;
+    final rates = data.bitRates.isEmpty
+        ? <HuyaBitRateModel>[HuyaBitRateModel(name: '原画', bitRate: 0)]
+        : data.bitRates;
 
     final unique = <int, HuyaBitRateModel>{};
 
@@ -208,7 +229,10 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
             ),
             id: rate.bitRate,
             sort: rate.bitRate == 0 ? 1 << 30 : rate.bitRate,
-            data: <String, Object>{'urls': List<HuyaLineModel>.unmodifiable(data.lines), 'bitRate': rate.bitRate},
+            data: <String, Object>{
+              'urls': List<HuyaLineModel>.unmodifiable(data.lines),
+              'bitRate': rate.bitRate,
+            },
           ),
         )
         .toList(growable: false);
@@ -219,7 +243,10 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
   }
 
   @override
-  Future<List<String>> getPlayUrls({required LiveRoom detail, required LivePlayQuality quality}) async {
+  Future<List<String>> getPlayUrls({
+    required LiveRoom detail,
+    required LivePlayQuality quality,
+  }) async {
     final data = quality.data;
 
     if (data is! Map) {
@@ -304,13 +331,13 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
 
     playUserAgent = ua == null || ua.isEmpty ? fallbackPlayUserAgent : ua;
 
-    Log.d("HuyaSite: getHuYaUA: $playUserAgent");
+    Log.d('HuyaSite: getHuYaUA: $playUserAgent');
 
     return playUserAgent!;
   }
 
   Future<String> getPlayUrl(HuyaLineModel line, int bitRate) async {
-    final suffix = line.lineType == HuyaLineType.hls ? "m3u8" : "flv";
+    final suffix = line.lineType == HuyaLineType.hls ? 'm3u8' : 'flv';
 
     var antiCode = await getCndTokenInfoEx(line.streamName);
 
@@ -364,7 +391,9 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
   static String secureHuyaCdnBase(String base) {
     final uri = Uri.tryParse(base);
 
-    if (uri == null || uri.scheme != 'http' || !(uri.host == 'huya.com' || uri.host.endsWith('.huya.com'))) {
+    if (uri == null ||
+        uri.scheme != 'http' ||
+        !(uri.host == 'huya.com' || uri.host.endsWith('.huya.com'))) {
       return base;
     }
 
@@ -375,13 +404,13 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
   Future<List<LiveRoom>> getRecommendRooms({int page = 1, int pageSize = 30}) async {
     try {
       final resultText = await HttpClient.instance.getJson(
-        "https://www.huya.com/cache.php",
-        queryParameters: {"m": "LiveList", "do": "getLiveListByPage", "tagAll": 0, "page": page},
+        'https://www.huya.com/cache.php',
+        queryParameters: {'m': 'LiveList', 'do': 'getLiveListByPage', 'tagAll': 0, 'page': page},
         header: {
-          "user-agent": kUserAgent,
-          "Cookie": SettingsService.to.cookieManager.huyaCookie.v,
-          "Origin": "https://www.huya.com",
-          "Referer": "https://www.huya.com/",
+          'user-agent': kUserAgent,
+          'Cookie': SettingsService.to.cookieManager.huyaCookie.v,
+          'Origin': 'https://www.huya.com',
+          'Referer': 'https://www.huya.com/',
         },
       );
 
@@ -389,28 +418,28 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
 
       final items = <LiveRoom>[];
 
-      for (final item in result["data"]["datas"]) {
-        var cover = item["screenshot"].toString();
+      for (final item in result['data']['datas']) {
+        var cover = item['screenshot'].toString();
 
-        if (!cover.contains("?")) {
-          cover += "?x-oss-process=style/w338_h190&";
+        if (!cover.contains('?')) {
+          cover += '?x-oss-process=style/w338_h190&';
         }
 
-        var title = item["introduction"]?.toString() ?? "";
+        var title = item['introduction']?.toString() ?? '';
 
         if (title.isEmpty) {
-          title = item["roomName"]?.toString() ?? "";
+          title = item['roomName']?.toString() ?? '';
         }
 
         final roomItem = LiveRoom(
-          roomId: item["profileRoom"].toString(),
+          roomId: item['profileRoom'].toString(),
           title: title,
           cover: cover,
-          area: item["gameFullName"].toString(),
-          nick: item["nick"].toString(),
-          avatar: item["avatar180"],
-          watching: item["totalCount"].toString(),
-          popularity: item["totalCount"].toString(),
+          area: item['gameFullName'].toString(),
+          nick: item['nick'].toString(),
+          avatar: item['avatar180'],
+          watching: item['totalCount'].toString(),
+          popularity: item['totalCount'].toString(),
           audienceMetricType: AudienceMetricType.popularity,
           platform: Sites.huyaSite,
           liveStatus: LiveStatus.live,
@@ -657,7 +686,11 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
 
       final bitRate = int.tryParse(item['iBitRate']?.toString() ?? '');
 
-      if (name.isEmpty || bitRate == null || bitRate < 0 || name.contains('HDR') || !seen.add(bitRate)) {
+      if (name.isEmpty ||
+          bitRate == null ||
+          bitRate < 0 ||
+          name.contains('HDR') ||
+          !seen.add(bitRate)) {
         continue;
       }
 
@@ -668,7 +701,10 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
   }
 
   @override
-  Future<LiveRoom> getRoomDetailForRefresh({required String platform, required String roomId}) async {
+  Future<LiveRoom> getRoomDetailForRefresh({
+    required String platform,
+    required String roomId,
+  }) async {
     final resultText = await HttpClient.instance.getText(
       'https://mp.huya.com/cache.php?'
       'm=Live&do=profileRoom'
@@ -696,9 +732,13 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
 
     final data = decoded['data'] as Map;
 
-    final liveData = data['liveData'] is Map ? Map<String, dynamic>.from(data['liveData'] as Map) : <String, dynamic>{};
+    final liveData = data['liveData'] is Map
+        ? Map<String, dynamic>.from(data['liveData'] as Map)
+        : <String, dynamic>{};
 
-    final profile = data['profileInfo'] is Map ? data['profileInfo'] as Map : const <dynamic, dynamic>{};
+    final profile = data['profileInfo'] is Map
+        ? data['profileInfo'] as Map
+        : const <dynamic, dynamic>{};
 
     final audience = parseRoomAudience(liveData);
 
@@ -731,10 +771,10 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
     try {
       final matchingObject = list.firstWhere(
         (item) => item['uid'] == targetUid && item['yyid'] == targetYyid,
-        orElse: () => throw StateError("No matching object found"),
+        orElse: () => throw StateError('No matching object found'),
       );
 
-      return matchingObject["room_id"].toString();
+      return matchingObject['room_id'].toString();
     } catch (_) {
       return null;
     }
@@ -745,17 +785,17 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
     final effectivePageSize = pageSize.clamp(1, 50);
 
     final resultText = await HttpClient.instance.getJson(
-      "https://search.cdn.huya.com/",
+      'https://search.cdn.huya.com/',
       queryParameters: {
-        "m": "Search",
-        "do": "getSearchContent",
-        "q": keyword,
-        "uid": 0,
-        "v": 4,
-        "typ": -5,
-        "livestate": 0,
-        "rows": effectivePageSize,
-        "start": (page - 1) * effectivePageSize,
+        'm': 'Search',
+        'do': 'getSearchContent',
+        'q': keyword,
+        'uid': 0,
+        'v': 4,
+        'typ': -5,
+        'livestate': 0,
+        'rows': effectivePageSize,
+        'start': (page - 1) * effectivePageSize,
       },
     );
 
@@ -763,37 +803,37 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
 
     final items = <LiveRoom>[];
 
-    final queryList = result["response"]["3"]["docs"] ?? [];
+    final queryList = result['response']['3']['docs'] ?? [];
 
-    final responseList = result["response"]["1"]["docs"] ?? [];
+    final responseList = result['response']['1']['docs'] ?? [];
 
     for (final item in queryList) {
-      var cover = item["game_screenshot"].toString();
+      var cover = item['game_screenshot'].toString();
 
-      if (!cover.contains("?")) {
-        cover += "?x-oss-process=style/w338_h190&";
+      if (!cover.contains('?')) {
+        cover += '?x-oss-process=style/w338_h190&';
       }
 
-      var title = item["game_introduction"]?.toString() ?? "";
+      var title = item['game_introduction']?.toString() ?? '';
 
       if (title.isEmpty) {
-        title = item["game_roomName"]?.toString() ?? "";
+        title = item['game_roomName']?.toString() ?? '';
       }
 
       final roomId = findRoomId(responseList, item['uid'], item['yyid']);
 
       final roomItem = LiveRoom(
-        roomId: roomId ?? item["room_id"].toString(),
+        roomId: roomId ?? item['room_id'].toString(),
         title: title,
         cover: cover,
-        userId: item["yyid"].toString(),
-        nick: item["game_nick"].toString(),
-        area: item["gameName"].toString(),
+        userId: item['yyid'].toString(),
+        nick: item['game_nick'].toString(),
+        area: item['gameName'].toString(),
         status: true,
         liveStatus: LiveStatus.live,
-        avatar: item["game_imgUrl"].toString(),
-        watching: item["game_total_count"].toString(),
-        popularity: item["game_total_count"].toString(),
+        avatar: item['game_imgUrl'].toString(),
+        watching: item['game_total_count'].toString(),
+        popularity: item['game_total_count'].toString(),
         audienceMetricType: AudienceMetricType.popularity,
         platform: Sites.huyaSite,
       );
@@ -805,19 +845,23 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
   }
 
   @override
-  Future<List<LiveAnchorItem>> searchAnchors(String keyword, {int page = 1, int pageSize = 30}) async {
+  Future<List<LiveAnchorItem>> searchAnchors(
+    String keyword, {
+    int page = 1,
+    int pageSize = 30,
+  }) async {
     final resultText = await HttpClient.instance.getJson(
-      "https://search.cdn.huya.com/",
+      'https://search.cdn.huya.com/',
       queryParameters: {
-        "m": "Search",
-        "do": "getSearchContent",
-        "q": keyword,
-        "uid": 0,
-        "v": 1,
-        "typ": -5,
-        "livestate": 0,
-        "rows": pageSize,
-        "start": (page - 1) * pageSize,
+        'm': 'Search',
+        'do': 'getSearchContent',
+        'q': keyword,
+        'uid': 0,
+        'v': 1,
+        'typ': -5,
+        'livestate': 0,
+        'rows': pageSize,
+        'start': (page - 1) * pageSize,
       },
     );
 
@@ -825,12 +869,12 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
 
     final items = <LiveAnchorItem>[];
 
-    for (final item in result["response"]["1"]["docs"]) {
+    for (final item in result['response']['1']['docs']) {
       final anchorItem = LiveAnchorItem(
-        roomId: item["room_id"].toString(),
-        avatar: item["game_avatarUrl180"].toString(),
-        userName: item["game_nick"].toString(),
-        liveStatus: item["gameLiveOn"],
+        roomId: item['room_id'].toString(),
+        avatar: item['game_avatarUrl180'].toString(),
+        userName: item['game_nick'].toString(),
+        liveStatus: item['gameLiveOn'],
       );
 
       items.add(anchorItem);
@@ -876,10 +920,10 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
 
   Future<String> getAnonymousUid() async {
     final result = await HttpClient.instance.postJson(
-      "https://udblgn.huya.com/web/anonymousLogin",
-      data: {"appId": 5002, "byPass": 3, "context": "", "version": "2.4", "data": {}},
+      'https://udblgn.huya.com/web/anonymousLogin',
+      data: {'appId': 5002, 'byPass': 3, 'context': '', 'version': '2.4', 'data': {}},
       header: {
-        "user-agent": kUserAgent,
+        'user-agent': kUserAgent,
         'Accept': '*/*',
         'Origin': 'https://www.huya.com',
         'Referer': 'https://www.huya.com/',
@@ -889,11 +933,11 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
       },
     );
 
-    return result["data"]["uid"].toString();
+    return result['data']['uid'].toString();
   }
 
   String getUidString({int? t, int? e}) {
-    final n = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".split("");
+    final n = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'.split('');
 
     final o = List.filled(36, '');
 
@@ -902,8 +946,8 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
         o[i] = n[Random().nextInt(e ?? n.length)];
       }
     } else {
-      o[8] = o[13] = o[18] = o[23] = "-";
-      o[14] = "4";
+      o[8] = o[13] = o[18] = o[23] = '-';
+      o[14] = '4';
 
       for (var i = 0; i < 36; i++) {
         if (o[i].isEmpty) {
@@ -914,7 +958,7 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
       }
     }
 
-    return o.join("");
+    return o.join('');
   }
 
   String buildAntiCode(String stream, int presenterUid, String antiCode) {
@@ -1003,9 +1047,9 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
   }
 
   Future<String> _requestHuyaToken(String stream) async {
-    final func = "getCdnTokenInfoEx";
+    final func = 'getCdnTokenInfoEx';
 
-    final tid = HuyaUserId()..sHuYaUA = "pc_exe&7060000&official";
+    final tid = HuyaUserId()..sHuYaUA = 'pc_exe&7060000&official';
 
     final req = GetCdnTokenExReq()
       ..tId = tid
@@ -1019,7 +1063,10 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
       throw StateError('Huya CDN token is empty');
     }
 
-    _tokenCache[stream] = _HuyaTokenCacheEntry(token: token, expiresAt: DateTime.now().add(_tokenCacheDuration));
+    _tokenCache[stream] = _HuyaTokenCacheEntry(
+      token: token,
+      expiresAt: DateTime.now().add(_tokenCacheDuration),
+    );
 
     return token;
   }
@@ -1063,8 +1110,15 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
     return ls;
   }
 
-  Future<List<LiveSuperChatMessage>> getHuyaSuperChatMessageList({required int lPid, bool first = false}) async {
-    final messageBoardClient = BaseTarsHttp("http://wup.huya.com", "wupui", headers: HuyaRequestParams.requestHeaders);
+  Future<List<LiveSuperChatMessage>> getHuyaSuperChatMessageList({
+    required int lPid,
+    bool first = false,
+  }) async {
+    final messageBoardClient = BaseTarsHttp(
+      'http://wup.huya.com',
+      'wupui',
+      headers: HuyaRequestParams.requestHeaders,
+    );
 
     final userId = HuyaUserId()..sHuYaUA = HuyaRequestParams.hysdkUa;
 
@@ -1074,7 +1128,11 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
       ..iMessageBoardScope = 0
       ..iPageSize = 50;
 
-    final rsp = await messageBoardClient.tupRequest("getHeadLineMessageBoard", req, GetGameEventMessageBoardRsp());
+    final rsp = await messageBoardClient.tupRequest(
+      'getHeadLineMessageBoard',
+      req,
+      GetGameEventMessageBoardRsp(),
+    );
 
     final now = DateTime.now();
 
@@ -1106,8 +1164,8 @@ class HuyaSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomRes
       final startTime = endTime.subtract(Duration(seconds: totalSeconds));
 
       final message = LiveSuperChatMessage(
-        backgroundBottomColor: "#246488",
-        backgroundColor: "#ffffff",
+        backgroundBottomColor: '#246488',
+        backgroundColor: '#ffffff',
         endTime: endTime,
         face: item.tMessageUser.sAvatar,
         message: content,

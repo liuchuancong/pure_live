@@ -37,7 +37,10 @@ void main() {
 
     test('prefers an explicit refresh-rate mode over the legacy switch', () {
       final config = AppSettingsController.extractConfig({
-        'app': {'refreshRateMode': AppRefreshRateMode.performance.storageValue, 'enableHighRefreshRate': false},
+        'app': {
+          'refreshRateMode': AppRefreshRateMode.performance.storageValue,
+          'enableHighRefreshRate': false,
+        },
       });
 
       expect(config['refreshRateMode'], AppRefreshRateMode.performance.storageValue);
@@ -81,10 +84,10 @@ void main() {
 
     test('normalizes concurrent platform ids and includes SOOP for new installs', () {
       expect(AppSettingsController.defaultRealOnlinePlatforms, contains('soop'));
-      expect(AppSettingsController.normalizeRealOnlinePlatforms(['DOUYIN', ' soop ', 'YY', 'SOOP']), [
-        'douyin',
-        'soop',
-      ]);
+      expect(
+        AppSettingsController.normalizeRealOnlinePlatforms(['DOUYIN', ' soop ', 'YY', 'SOOP']),
+        ['douyin', 'soop'],
+      );
     });
   });
 }

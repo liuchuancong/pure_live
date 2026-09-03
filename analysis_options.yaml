@@ -1,6 +1,6 @@
 include: package:flutter_lints/flutter.yaml
 formatter:
-  page_width: 120
+  page_width: 100
 analyzer:
   exclude:
     - "**/*.g.dart"
@@ -26,3 +26,8 @@ analyzer:
     - third_party/media_kit_video/**
 linter:
   rules:
+    prefer_single_quotes: true
+    always_declare_return_types: true
+    avoid_print: true
+    unnecessary_lambdas: true
+    prefer_const_constructors: true

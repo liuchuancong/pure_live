@@ -1,4 +1,4 @@
-﻿import 'dart:io';
+import 'dart:io';
 
 // 需要所有字段有 //tag n 注释方便定位-多行编辑生成
 // 可以自动生成这个tag,懒得弄了
@@ -27,7 +27,9 @@ void main(List<String> args) {
   for (final line in lines) {
     final match = fieldRegex.firstMatch(line);
     if (match != null) {
-      fields.add(Field(type: match.group(1)!, name: match.group(2)!, tag: int.parse(match.group(3)!)));
+      fields.add(
+        Field(type: match.group(1)!, name: match.group(2)!, tag: int.parse(match.group(3)!)),
+      );
     }
   }
 

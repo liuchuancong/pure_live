@@ -42,20 +42,29 @@ class ResolutionSelector extends StatelessWidget {
                 SizedBox(
                   width: 12,
                   height: 12,
-                  child: CircularProgressIndicator(strokeWidth: 1.8, color: Get.theme.colorScheme.primary),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 1.8,
+                    color: Get.theme.colorScheme.primary,
+                  ),
                 ),
                 const SizedBox(width: 5),
               ],
               Text(
                 currentQualityName,
-                style: Get.theme.textTheme.labelSmall?.copyWith(color: Get.theme.colorScheme.primary),
+                style: Get.theme.textTheme.labelSmall?.copyWith(
+                  color: Get.theme.colorScheme.primary,
+                ),
               ),
             ],
           ),
         ),
         onSelected: (newQualityIndex) async {
           controller.updateUI(isMenuOpen: false);
-          await controller.setResolution(ReloadDataType.changeQuality, newQualityIndex, state.player.currentLineIndex);
+          await controller.setResolution(
+            ReloadDataType.changeQuality,
+            newQualityIndex,
+            state.player.currentLineIndex,
+          );
         },
         itemBuilder: (context) {
           return List.generate(state.player.qualites.length, (index) {

@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:async';
 import 'dart:convert';
+
 import 'package:path/path.dart' as p;
 import 'package:drift/drift.dart' as drift;
 import 'package:pure_live/common/index.dart';
@@ -22,7 +23,7 @@ class IptvImportManager {
   /// 1. 本地文件浏览器选择导入
   Future<bool> importFromLocalPicker() async {
     final result = await FilePicker.pickFile(
-      dialogTitle: i18n("select_recover_file"),
+      dialogTitle: i18n('select_recover_file'),
       type: FileType.custom,
       allowedExtensions: ['m3u', 'txt'],
     );
@@ -50,12 +51,15 @@ class IptvImportManager {
         detectedExtension = '.txt';
       }
 
-      final initialFilePath = p.join(dir.path, 'download_iptv_${FileUtils.generateUuid()}$detectedExtension');
+      final initialFilePath = p.join(
+        dir.path,
+        'download_iptv_${FileUtils.generateUuid()}$detectedExtension',
+      );
       tempFile = File(initialFilePath);
       await HttpClient.instance.download(url, tempFile.path);
       Log.d('Downloaded file: ${tempFile.path}');
       if (!await tempFile.exists() || await tempFile.length() == 0) {
-        if (showTips) ToastUtil.show(i18n("unsupported_file_format"));
+        if (showTips) ToastUtil.show(i18n('unsupported_file_format'));
         if (await tempFile.exists()) await tempFile.delete();
         return false;
       }
@@ -68,7 +72,7 @@ class IptvImportManager {
 
       final headerSample = lines.join('\n').trim();
       if (headerSample.isEmpty) {
-        if (showTips) ToastUtil.show(i18n("unsupported_file_format"));
+        if (showTips) ToastUtil.show(i18n('unsupported_file_format'));
         if (await tempFile.exists()) await tempFile.delete();
         return false;
       }
@@ -84,7 +88,7 @@ class IptvImportManager {
       } else if (lowercaseUrl.endsWith('.m3u') || lowercaseUrl.endsWith('.m3u8')) {
         finalExtension = '.m3u';
       } else {
-        if (showTips) ToastUtil.show(i18n("unsupported_file_format"));
+        if (showTips) ToastUtil.show(i18n('unsupported_file_format'));
         if (await tempFile.exists()) await tempFile.delete();
         return false;
       }
@@ -110,7 +114,7 @@ class IptvImportManager {
       if (await tempFile.exists()) await tempFile.delete();
       return success;
     } catch (e) {
-      debugPrint("Network IPTV Download Failure: $e");
+      debugPrint('Network IPTV Download Failure: $e');
       if (tempFile != null && await tempFile.exists()) {
         try {
           await tempFile.delete();
@@ -176,11 +180,15 @@ class IptvImportManager {
     }
   }
 
-  Future<bool> importFromSharedMedia(dynamic media, {bool forceUpdate = false, bool showTips = true}) async {
+  Future<bool> importFromSharedMedia(
+    dynamic media, {
+    bool forceUpdate = false,
+    bool showTips = true,
+  }) async {
     try {
       if (media.content == null || media.content!.isEmpty) {
         if (showTips) {
-          ToastUtil.show(i18n("local_import_failed"));
+          ToastUtil.show(i18n('local_import_failed'));
         }
         return false;
       }
@@ -189,7 +197,7 @@ class IptvImportManager {
       final ext = p.extension(file.path).toLowerCase();
       if (ext != '.m3u' && ext != '.txt') {
         if (showTips) {
-          ToastUtil.show(i18n("unsupported_file_format"));
+          ToastUtil.show(i18n('unsupported_file_format'));
         }
         return false;
       }
@@ -202,9 +210,9 @@ class IptvImportManager {
       );
       return success;
     } catch (e) {
-      debugPrint("Shared IPTV Import Process Crash: $e");
+      debugPrint('Shared IPTV Import Process Crash: $e');
       if (showTips) {
-        ToastUtil.show(i18n("local_import_failed"));
+        ToastUtil.show(i18n('local_import_failed'));
       }
       return false;
     }
@@ -233,7 +241,7 @@ class IptvImportManager {
         }
       } catch (_) {
         final bytes = await file.readAsBytes();
-        content = await CharsetConverter.decode("gbk", bytes);
+        content = await CharsetConverter.decode('gbk', bytes);
       }
 
       String finalProviderId = isHot || providerName == 'hot'
@@ -245,28 +253,32 @@ class IptvImportManager {
 
       if (parsedResult.channels.isEmpty) {
         if (showTips) {
-          ToastUtil.show(i18n("unsupported_file_format"));
+          ToastUtil.show(i18n('unsupported_file_format'));
         }
         return false;
       }
       final db = Get.find<DbService>().db;
       if (!isHot && !forceUpdate) {
         final existing = await db.getAllProviders();
-        final matchedList = existing.where((p) => p.name.trim().toLowerCase() == cleanName).toList();
+        final matchedList = existing
+            .where((p) => p.name.trim().toLowerCase() == cleanName)
+            .toList();
         if (matchedList.isNotEmpty) {
           final completer = Completer<bool>();
           Get.dialog(
             AlertDialog(
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              title: Text(i18n("provider_name_exists_tip")),
-              content: Text('"$providerName"\n\n${i18n("replace_confirm_message").replaceAll("{}", typeName)}'),
+              title: Text(i18n('provider_name_exists_tip')),
+              content: Text(
+                '"$providerName"\n\n${i18n("replace_confirm_message").replaceAll("{}", typeName)}',
+              ),
               actions: [
                 TextButton(
                   onPressed: () {
                     Navigator.of(Get.context!).pop();
                     completer.complete(false);
                   },
-                  child: Text(i18n("cancel")),
+                  child: Text(i18n('cancel')),
                 ),
                 TextButton(
                   onPressed: () async {
@@ -290,7 +302,7 @@ class IptvImportManager {
                     );
                     completer.complete(success);
                   },
-                  child: Text(i18n("confirm")),
+                  child: Text(i18n('confirm')),
                 ),
               ],
             ),
@@ -311,13 +323,13 @@ class IptvImportManager {
       );
 
       if (success) {
-        if (showTips) ToastUtil.show(i18n("sync_success"));
+        if (showTips) ToastUtil.show(i18n('sync_success'));
       } else {
-        if (showTips) ToastUtil.show(i18n("sync_failed"));
+        if (showTips) ToastUtil.show(i18n('sync_failed'));
       }
       return success;
     } catch (e) {
-      debugPrint("IPTV Import Error: $e");
+      debugPrint('IPTV Import Error: $e');
       if (showTips) {
         ToastUtil.show('${i18n("sync_failed")}: ${e.toString()}');
       }
@@ -347,7 +359,9 @@ class IptvImportManager {
           id: providerId,
           name: providerName.trim(),
           type: ext.replaceAll('.', ''),
-          isAutoUpdate: drift.Value(url.isNotEmpty ? SettingsService.to.iptv.isAutoSyncEnabled.v : false),
+          isAutoUpdate: drift.Value(
+            url.isNotEmpty ? SettingsService.to.iptv.isAutoSyncEnabled.v : false,
+          ),
           url: drift.Value<String?>(url.isNotEmpty ? url : savedFile.path),
         ),
       );
@@ -369,7 +383,7 @@ class IptvImportManager {
       await runAutoEpgMapping(providerId: providerId);
       return true;
     } catch (e) {
-      debugPrint("Database Write Error: $e");
+      debugPrint('Database Write Error: $e');
       return false;
     }
   }
@@ -433,10 +447,10 @@ class IptvImportManager {
           await db.transaction(() async {
             await db.upsertMappings(mappingBatch);
           });
-          debugPrint("📊 [Auto Mapping] 成功在后台为该直播源生成了 ${mappingBatch.length} 条 EPG 映射记录！");
+          debugPrint('📊 [Auto Mapping] 成功在后台为该直播源生成了 ${mappingBatch.length} 条 EPG 映射记录！');
         }
       } catch (e) {
-        debugPrint("Auto Mapping runner process crashed: $e");
+        debugPrint('Auto Mapping runner process crashed: $e');
       }
     });
   }

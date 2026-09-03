@@ -41,7 +41,12 @@ class TxtParser {
           final trimmedUrl = url.trim();
           if (trimmedUrl.isEmpty || !_isValidStreamUrl(trimmedUrl)) continue;
           final finalName = urlList.length > 1 ? '$name (线路$sourceIndex)' : name;
-          final channel = _createChannel(name: finalName, url: trimmedUrl, group: currentGroup, providerId: providerId);
+          final channel = _createChannel(
+            name: finalName,
+            url: trimmedUrl,
+            group: currentGroup,
+            providerId: providerId,
+          );
           channels.add(channel);
           sourceIndex++;
         }

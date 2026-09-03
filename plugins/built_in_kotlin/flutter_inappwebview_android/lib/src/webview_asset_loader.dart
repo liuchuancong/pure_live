@@ -8,8 +8,7 @@ import 'package:flutter_inappwebview_platform_interface/flutter_inappwebview_pla
 /// value to avoid breaking changes. See [PlatformPathHandlerCreationParams] for
 /// more information.
 @immutable
-class AndroidPathHandlerCreationParams
-    extends PlatformPathHandlerCreationParams {
+class AndroidPathHandlerCreationParams extends PlatformPathHandlerCreationParams {
   /// Creates a new [AndroidPathHandlerCreationParams] instance.
   AndroidPathHandlerCreationParams(
     // This parameter prevents breaking changes later.
@@ -25,8 +24,7 @@ class AndroidPathHandlerCreationParams
 }
 
 ///{@macro flutter_inappwebview_platform_interface.PlatformPathHandler}
-abstract mixin class AndroidPathHandler
-    implements ChannelController, PlatformPathHandler {
+abstract mixin class AndroidPathHandler implements ChannelController, PlatformPathHandler {
   final String _id = IdGenerator.generate();
 
   @override
@@ -37,8 +35,7 @@ abstract mixin class AndroidPathHandler
 
   void _init(PlatformPathHandlerCreationParams params) {
     this.path = params.path;
-    channel = MethodChannel(
-        'com.pichillilorenzo/flutter_inappwebview_custompathhandler_${_id}');
+    channel = MethodChannel('com.pichillilorenzo/flutter_inappwebview_custompathhandler_${_id}');
     handler = _handleMethod;
     initMethodCallHandler();
   }
@@ -81,8 +78,7 @@ abstract mixin class AndroidPathHandler
 /// value to avoid breaking changes. See [PlatformAssetsPathHandlerCreationParams] for
 /// more information.
 @immutable
-class AndroidAssetsPathHandlerCreationParams
-    extends PlatformAssetsPathHandlerCreationParams {
+class AndroidAssetsPathHandlerCreationParams extends PlatformAssetsPathHandlerCreationParams {
   /// Creates a new [AndroidAssetsPathHandlerCreationParams] instance.
   AndroidAssetsPathHandlerCreationParams(
     // This parameter prevents breaking changes later.
@@ -105,8 +101,8 @@ class AndroidAssetsPathHandler extends PlatformAssetsPathHandler
       : super.implementation(
           params is AndroidAssetsPathHandlerCreationParams
               ? params
-              : AndroidAssetsPathHandlerCreationParams
-                  .fromPlatformAssetsPathHandlerCreationParams(params),
+              : AndroidAssetsPathHandlerCreationParams.fromPlatformAssetsPathHandlerCreationParams(
+                  params),
         ) {
     _init(params);
   }
@@ -118,8 +114,7 @@ class AndroidAssetsPathHandler extends PlatformAssetsPathHandler
 /// value to avoid breaking changes. See [PlatformResourcesPathHandlerCreationParams] for
 /// more information.
 @immutable
-class AndroidResourcesPathHandlerCreationParams
-    extends PlatformResourcesPathHandlerCreationParams {
+class AndroidResourcesPathHandlerCreationParams extends PlatformResourcesPathHandlerCreationParams {
   /// Creates a new [AndroidResourcesPathHandlerCreationParams] instance.
   AndroidResourcesPathHandlerCreationParams(
     // This parameter prevents breaking changes later.
@@ -172,12 +167,10 @@ class AndroidInternalStoragePathHandlerCreationParams
 }
 
 ///{@macro flutter_inappwebview_platform_interface.PlatformInternalStoragePathHandler}
-class AndroidInternalStoragePathHandler
-    extends PlatformInternalStoragePathHandler
+class AndroidInternalStoragePathHandler extends PlatformInternalStoragePathHandler
     with AndroidPathHandler, ChannelController {
   /// Constructs a [AndroidInternalStoragePathHandler].
-  AndroidInternalStoragePathHandler(
-      PlatformInternalStoragePathHandlerCreationParams params)
+  AndroidInternalStoragePathHandler(PlatformInternalStoragePathHandlerCreationParams params)
       : super.implementation(
           params is AndroidInternalStoragePathHandlerCreationParams
               ? params
@@ -205,8 +198,7 @@ class AndroidInternalStoragePathHandler
 /// value to avoid breaking changes. See [PlatformCustomPathHandlerCreationParams] for
 /// more information.
 @immutable
-class AndroidCustomPathHandlerCreationParams
-    extends PlatformCustomPathHandlerCreationParams {
+class AndroidCustomPathHandlerCreationParams extends PlatformCustomPathHandlerCreationParams {
   /// Creates a new [AndroidCustomPathHandlerCreationParams] instance.
   AndroidCustomPathHandlerCreationParams(
     // This parameter prevents breaking changes later.
@@ -229,8 +221,8 @@ class AndroidCustomPathHandler extends PlatformCustomPathHandler
       : super.implementation(
           params is AndroidCustomPathHandlerCreationParams
               ? params
-              : AndroidCustomPathHandlerCreationParams
-                  .fromPlatformCustomPathHandlerCreationParams(params),
+              : AndroidCustomPathHandlerCreationParams.fromPlatformCustomPathHandlerCreationParams(
+                  params),
         ) {
     _init(params);
   }

@@ -98,10 +98,11 @@ class ResponsiveScreenSettings {
   /// the display will be [ScreenType.Phone]
   final double watchChangePoint;
 
-  const ResponsiveScreenSettings(
-      {this.desktopChangePoint = 1200,
-      this.tabletChangePoint = 600,
-      this.watchChangePoint = 300});
+  const ResponsiveScreenSettings({
+    this.desktopChangePoint = 1200,
+    this.tabletChangePoint = 600,
+    this.watchChangePoint = 300,
+  });
 }
 
 class ResponsiveScreen {
@@ -149,12 +150,7 @@ class ResponsiveScreen {
   /// and if `tablet` object is null the `mobile` object will be returned
   /// and if `mobile` object is null the `watch` object will be returned
   ///  also when it is null.
-  T? responsiveValue<T>({
-    T? mobile,
-    T? tablet,
-    T? desktop,
-    T? watch,
-  }) {
+  T? responsiveValue<T>({T? mobile, T? tablet, T? desktop, T? watch}) {
     if (isDesktop && desktop != null) return desktop;
     if (isTablet && tablet != null) return tablet;
     if (isPhone && mobile != null) return mobile;
@@ -162,9 +158,4 @@ class ResponsiveScreen {
   }
 }
 
-enum ScreenType {
-  watch,
-  phone,
-  tablet,
-  desktop,
-}
+enum ScreenType { watch, phone, tablet, desktop }

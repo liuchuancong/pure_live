@@ -80,10 +80,11 @@ class BetterPlayerControlsConfiguration {
   );
 
   ///Setup BetterPlayerControlsConfiguration based on Theme options.
-  factory BetterPlayerControlsConfiguration.theme(ThemeData theme) => BetterPlayerControlsConfiguration(
-    textColor: theme.textTheme.bodyMedium?.color ?? Colors.white,
-    iconsColor: theme.textTheme.bodyMedium?.color ?? Colors.white,
-  );
+  factory BetterPlayerControlsConfiguration.theme(ThemeData theme) =>
+      BetterPlayerControlsConfiguration(
+        textColor: theme.textTheme.bodyMedium?.color ?? Colors.white,
+        iconsColor: theme.textTheme.bodyMedium?.color ?? Colors.white,
+      );
 
   ///Color of the control bars
   final Color controlBarColor;

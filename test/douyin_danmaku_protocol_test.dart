@@ -8,7 +8,12 @@ void main() {
   group('Douyin danmaku protocol', () {
     DouyinDanmaku createDanmaku(List<LiveMessage> received) {
       final danmaku = DouyinDanmaku();
-      danmaku.danmakuArgs = DouyinDanmakuArgs(webRid: 'web', roomId: '100', userId: 'guest', cookie: '');
+      danmaku.danmakuArgs = DouyinDanmakuArgs(
+        webRid: 'web',
+        roomId: '100',
+        userId: 'guest',
+        cookie: '',
+      );
       danmaku.onMessage = received.add;
       return danmaku;
     }

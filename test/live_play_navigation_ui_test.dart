@@ -5,7 +5,9 @@ import 'package:pure_live/modules/live_play/widgets/content_first_panel_layout.d
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller_panel.dart';
 
 void main() {
-  testWidgets('portrait danmaku section tabs fill the row and stay horizontally fixed', (tester) async {
+  testWidgets('portrait danmaku section tabs fill the row and stay horizontally fixed', (
+    tester,
+  ) async {
     const tabs = <String>['弹幕列表', '醒目留言', '弹幕设置', '屏蔽管理'];
     await tester.pumpWidget(
       const MaterialApp(
@@ -29,24 +31,36 @@ void main() {
     final before = tester.getRect(finder);
     await tester.drag(finder, const Offset(220, 0));
     await tester.pumpAndSettle();
-    expect(tester.getRect(finder), before, reason: 'the section row itself must not pan horizontally');
+    expect(
+      tester.getRect(finder),
+      before,
+      reason: 'the section row itself must not pan horizontally',
+    );
   });
 
   test('Android fullscreen places time and battery beside Back after swapping PiP', () {
-    expect(resolveTopActionLeadingSlots(fullscreen: true, android: true), const <TopActionLeadingSlot>[
-      TopActionLeadingSlot.back,
-      TopActionLeadingSlot.datetime,
-      TopActionLeadingSlot.battery,
-    ]);
-    expect(resolveTopActionLeadingSlots(fullscreen: true, android: false), const <TopActionLeadingSlot>[
-      TopActionLeadingSlot.back,
-    ]);
+    expect(
+      resolveTopActionLeadingSlots(fullscreen: true, android: true),
+      const <TopActionLeadingSlot>[
+        TopActionLeadingSlot.back,
+        TopActionLeadingSlot.datetime,
+        TopActionLeadingSlot.battery,
+      ],
+    );
+    expect(
+      resolveTopActionLeadingSlots(fullscreen: true, android: false),
+      const <TopActionLeadingSlot>[TopActionLeadingSlot.back],
+    );
     expect(resolveTopActionLeadingSlots(fullscreen: false, android: true), isEmpty);
   });
 
   test('Android keeps audio, cast and PiP in the same trailing order in every orientation', () {
     for (final fullscreen in <bool>[false, true]) {
-      final slots = resolveTopActionTrailingSlots(fullscreen: fullscreen, android: true, windows: false);
+      final slots = resolveTopActionTrailingSlots(
+        fullscreen: fullscreen,
+        android: true,
+        windows: false,
+      );
       expect(slots.sublist(slots.length - 3), const <TopActionTrailingSlot>[
         TopActionTrailingSlot.audioOnly,
         TopActionTrailingSlot.cast,
@@ -67,7 +81,11 @@ void main() {
     expect(style.size.width / viewport.width, inInclusiveRange(.47, .51));
     expect(style.size.height / viewport.height, greaterThan(.9));
     expect(streams.splitContent, isFalse);
-    expect(style.splitContent, isTrue, reason: 'phone landscape keeps preview left and controls right');
+    expect(
+      style.splitContent,
+      isTrue,
+      reason: 'phone landscape keeps preview left and controls right',
+    );
     expect(resolveStreamChoiceColumns(streams.size.width - 24), 3);
 
     final roomGridSize = Size(rooms.size.width, rooms.size.height - 36 - 30 - 1);
@@ -79,7 +97,11 @@ void main() {
     expect(resolveStreamChoiceColumns(420), 3);
     expect(resolveStreamChoiceColumns(260), 2);
     expect(resolveStreamChoiceColumns(180), 1);
-    expect(resolveStreamChoiceColumns(420, itemCount: 4), 2, reason: 'four qualities form a balanced 2 x 2');
+    expect(
+      resolveStreamChoiceColumns(420, itemCount: 4),
+      2,
+      reason: 'four qualities form a balanced 2 x 2',
+    );
     expect(resolveStreamChoiceColumns(420, itemCount: 6), 3);
     expect(resolveStreamChoiceColumns(420, itemCount: 1), 1);
   });
@@ -101,7 +123,11 @@ void main() {
       lineCount: 1,
       splitContent: false,
     );
-    expect(shortLists.dialogHeight, 211, reason: 'one quality and one line must not leave a full-height blank dialog');
+    expect(
+      shortLists.dialogHeight,
+      211,
+      reason: 'one quality and one line must not leave a full-height blank dialog',
+    );
 
     final manyChoices = resolveStreamSelectorPanelLayout(
       maximumDialogSize: const Size(449.5, 396),

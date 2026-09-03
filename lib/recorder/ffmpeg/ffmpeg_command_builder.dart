@@ -1,7 +1,8 @@
 import 'dart:io';
 
 class FFmpegCommandBuilder {
-  static const String _protocolWhitelist = 'httpproxy,udp,rtp,rtsp,rtmp,rtmps,srt,tcp,tls,data,file,http,https,crypto';
+  static const String _protocolWhitelist =
+      'httpproxy,udp,rtp,rtsp,rtmp,rtmps,srt,tcp,tls,data,file,http,https,crypto';
 
   static String quoteArgument(String value) {
     final escaped = value.replaceAll('\r', '').replaceAll('\n', '').replaceAll('"', r'\"');
@@ -177,9 +178,14 @@ class FFmpegCommandBuilder {
 
   /// Human-readable representation for logs and deterministic tests only.
   /// Native execution always receives the original argument list.
-  static String formatArguments(Iterable<String> arguments) => arguments.map(quoteArgument).join(' ');
+  static String formatArguments(Iterable<String> arguments) =>
+      arguments.map(quoteArgument).join(' ');
 
-  static List<String> _inputProtocolOptions(String rawUrl, {required int rwTimeout, String? caFile}) {
+  static List<String> _inputProtocolOptions(
+    String rawUrl, {
+    required int rwTimeout,
+    String? caFile,
+  }) {
     final scheme = Uri.tryParse(rawUrl.trim())?.scheme.toLowerCase() ?? '';
     final timeoutMicros = (rwTimeout.clamp(1, 3600) * 1000000).clamp(1, 2147483647).toString();
     final options = <String>[];
@@ -200,7 +206,10 @@ class FFmpegCommandBuilder {
         '5',
         '-rw_timeout',
         timeoutMicros,
-        if (Platform.isAndroid && scheme == 'https' && caFile != null && caFile.isNotEmpty) ...['-ca_file', caFile],
+        if (Platform.isAndroid && scheme == 'https' && caFile != null && caFile.isNotEmpty) ...[
+          '-ca_file',
+          caFile,
+        ],
       ]);
     } else if (scheme == 'rtsp') {
       options.addAll(['-rtsp_transport', 'tcp', '-rw_timeout', timeoutMicros]);
@@ -215,7 +224,16 @@ class FFmpegCommandBuilder {
 
   static bool _usesNetworkInput(String rawUrl) {
     final scheme = Uri.tryParse(rawUrl.trim())?.scheme.toLowerCase() ?? '';
-    return const <String>{'http', 'https', 'rtmp', 'rtmps', 'rtsp', 'rtp', 'udp', 'srt'}.contains(scheme);
+    return const <String>{
+      'http',
+      'https',
+      'rtmp',
+      'rtmps',
+      'rtsp',
+      'rtp',
+      'udp',
+      'srt',
+    }.contains(scheme);
   }
 
   static Map<String, String> _normalizeHeaders(Map<String, String>? headers) {
@@ -237,7 +255,9 @@ class FFmpegCommandBuilder {
   }
 
   static String _safeFilePrefix(String value) {
-    final normalized = value.replaceAll(RegExp(r'[^A-Za-z0-9_-]+'), '_').replaceAll(RegExp(r'_+'), '_');
+    final normalized = value
+        .replaceAll(RegExp(r'[^A-Za-z0-9_-]+'), '_')
+        .replaceAll(RegExp(r'_+'), '_');
     final trimmed = normalized.replaceAll(RegExp(r'^_+|_+$'), '');
     return trimmed.isEmpty ? _timestampPrefix(DateTime.now()) : trimmed;
   }

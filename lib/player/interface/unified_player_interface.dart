@@ -1,11 +1,11 @@
 import '../models/player_state.dart';
+
 import 'package:flutter/material.dart';
+
 import '../models/player_exception.dart';
+
 import 'package:pure_live/common/models/live_room.dart';
 import 'package:pure_live/player/models/player_engine.dart';
-
-
-
 
 abstract class UnifiedPlayer {
   Future<void> init({bool audioOnly = false});

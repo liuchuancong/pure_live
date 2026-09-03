@@ -11,7 +11,9 @@ class BackgroundPlaybackService {
   static bool sleepSessionActive = false;
   static bool audioOnlySessionActive = false;
   static bool? _appliedKeepAlive;
-  static final LatestAsyncValueQueue<bool> _keepAliveTransitions = LatestAsyncValueQueue<bool>(_applyKeepAlive);
+  static final LatestAsyncValueQueue<bool> _keepAliveTransitions = LatestAsyncValueQueue<bool>(
+    _applyKeepAlive,
+  );
 
   static Future<void> setKeepAlive(bool enabled) async {
     if (!Platform.isAndroid) return;

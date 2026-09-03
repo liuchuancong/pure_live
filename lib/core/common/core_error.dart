@@ -17,21 +17,21 @@ class HttpError extends Error {
   String statusCodeToString(int statusCode) {
     switch (statusCode) {
       case 400:
-        return i18n("http_error_400");
+        return i18n('http_error_400');
       case 401:
-        return i18n("http_error_401");
+        return i18n('http_error_401');
       case 403:
-        return i18n("http_error_403");
+        return i18n('http_error_403');
       case 404:
-        return i18n("http_error_404");
+        return i18n('http_error_404');
       case 500:
-        return i18n("http_error_500");
+        return i18n('http_error_500');
       case 502:
-        return i18n("http_error_502");
+        return i18n('http_error_502');
       case 503:
-        return i18n("http_error_503");
+        return i18n('http_error_503');
       default:
-        return i18n("http_error_default", args: {"statusCode": statusCode.toString()});
+        return i18n('http_error_default', args: {'statusCode': statusCode.toString()});
     }
   }
 }

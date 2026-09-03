@@ -34,7 +34,9 @@ void main() {
     expect(disposed, 1);
   });
 
-  testWidgets('Windows-style hiding disposes and recreates the native texture subtree', (tester) async {
+  testWidgets('Windows-style hiding disposes and recreates the native texture subtree', (
+    tester,
+  ) async {
     var mounted = 0;
     var disposed = 0;
 

@@ -30,9 +30,14 @@ class _DownloadApkDialogState extends State<DownloadApkDialog> {
   @override
   void initState() {
     super.initState();
-    _statusText = i18n("download_preparing");
+    _statusText = i18n('download_preparing');
     _cancelToken = CancelToken();
-    _dio = Dio(BaseOptions(connectTimeout: const Duration(seconds: 15), receiveTimeout: const Duration(seconds: 120)));
+    _dio = Dio(
+      BaseOptions(
+        connectTimeout: const Duration(seconds: 15),
+        receiveTimeout: const Duration(seconds: 120),
+      ),
+    );
     WidgetsBinding.instance.addPostFrameCallback((_) => _startDownload());
   }
 
@@ -71,12 +76,13 @@ class _DownloadApkDialogState extends State<DownloadApkDialog> {
 
             setState(() {
               _progress = progress;
-              _statusText = "${receivedMb.toStringAsFixed(1)} MB / ${totalMb.toStringAsFixed(1)} MB";
+              _statusText =
+                  '${receivedMb.toStringAsFixed(1)} MB / ${totalMb.toStringAsFixed(1)} MB';
             });
           } else {
             final mb = received ~/ (1024 * 1024);
             setState(() {
-              _statusText = i18n("downloaded_mb", args: {"mb": "$mb"});
+              _statusText = i18n('downloaded_mb', args: {'mb': '$mb'});
             });
           }
         },
@@ -87,13 +93,13 @@ class _DownloadApkDialogState extends State<DownloadApkDialog> {
 
       setState(() {
         _isDownloading = false;
-        _statusText = i18n("download_complete_installing");
+        _statusText = i18n('download_complete_installing');
       });
 
       if (Platform.isAndroid) {
         Get.showSnackbar(
           GetSnackBar(
-            message: i18n("install_tip"),
+            message: i18n('install_tip'),
             snackPosition: SnackPosition.top,
             duration: const Duration(seconds: 2),
             backgroundColor: Get.theme.colorScheme.primary,
@@ -131,7 +137,7 @@ class _DownloadApkDialogState extends State<DownloadApkDialog> {
     } catch (e) {
       log(e.toString(), name: 'DownloadApkDialog');
       if (mounted && !_cancelToken.isCancelled) {
-        _showErrorAndClose(i18n("download_failed", args: {"error": "$e"}));
+        _showErrorAndClose(i18n('download_failed', args: {'error': '$e'}));
       }
     }
   }
@@ -156,7 +162,7 @@ class _DownloadApkDialogState extends State<DownloadApkDialog> {
       Navigator.pop(context, false);
     }
     Get.snackbar(
-      i18n("error"),
+      i18n('error'),
       message,
       snackPosition: SnackPosition.bottom,
       animationDuration: const Duration(milliseconds: 300),
@@ -193,7 +199,11 @@ class _DownloadApkDialogState extends State<DownloadApkDialog> {
                       child: Center(
                         child: _isDownloading
                             ? const AppStatusView(type: AppStatusType.loading, isMini: true)
-                            : Icon(Icons.check_circle_rounded, color: theme.colorScheme.primary, size: 24),
+                            : Icon(
+                                Icons.check_circle_rounded,
+                                color: theme.colorScheme.primary,
+                                size: 24,
+                              ),
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -203,11 +213,13 @@ class _DownloadApkDialogState extends State<DownloadApkDialog> {
                         children: [
                           Text(
                             fileName != null
-                                ? i18n("downloading_app", args: {"app": fileName!})
-                                : i18n("downloading_version", args: {"version": widget.version}),
+                                ? i18n('downloading_app', args: {'app': fileName!})
+                                : i18n('downloading_version', args: {'version': widget.version}),
                             maxLines: 5,
                             overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                           const SizedBox(height: 2),
                           Text(
@@ -269,11 +281,11 @@ class _DownloadApkDialogState extends State<DownloadApkDialog> {
                       ),
                       onPressed: _isDownloading
                           ? () {
-                              _cancelToken.cancel(i18n("cancel"));
+                              _cancelToken.cancel(i18n('cancel'));
                               if (Navigator.canPop(context)) Navigator.pop(context, false);
                             }
                           : null,
-                      child: Text(i18n("cancel")),
+                      child: Text(i18n('cancel')),
                     ),
                   ],
                 ),

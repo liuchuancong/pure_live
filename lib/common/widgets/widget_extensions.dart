@@ -41,7 +41,10 @@ extension AppLayoutFactory on BuildContext {
             width: mini ? 13 : 16,
             height: mini ? 13 : 16,
             padding: EdgeInsets.all(mini ? 1.8 : 2),
-            decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.9), shape: BoxShape.circle),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.9),
+              shape: BoxShape.circle,
+            ),
             child: Image.asset(site.logo, fit: BoxFit.contain),
           ),
           SizedBox(width: mini ? 3 : 4),
@@ -89,9 +92,13 @@ extension AppLayoutFactory on BuildContext {
         ShapeBorder effectiveShape;
 
         if (validChildren.length == 1) {
-          effectiveShape = const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(20)));
+          effectiveShape = const RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(20)),
+          );
         } else if (i == 0) {
-          effectiveShape = const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20)));
+          effectiveShape = const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          );
         } else if (i == validChildren.length - 1) {
           effectiveShape = const RoundedRectangleBorder(
             borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
@@ -164,11 +171,18 @@ extension AppLayoutFactory on BuildContext {
     return Obx(
       () => SwitchListTile(
         secondary: icon != null
-            ? Icon(icon, color: enabled ? (iconColor ?? theme.colorScheme.primary) : theme.disabledColor, size: 22)
+            ? Icon(
+                icon,
+                color: enabled ? (iconColor ?? theme.colorScheme.primary) : theme.disabledColor,
+                size: 22,
+              )
             : null,
         title: Text(
           title,
-          style: AppTextStyles.t15.copyWith(color: enabled ? null : theme.disabledColor, fontWeight: FontWeight.w600),
+          style: AppTextStyles.t15.copyWith(
+            color: enabled ? null : theme.disabledColor,
+            fontWeight: FontWeight.w600,
+          ),
         ),
         subtitle: subtitle != null && subtitle.isNotEmpty
             ? Padding(
@@ -176,7 +190,9 @@ extension AppLayoutFactory on BuildContext {
                 child: Text(
                   subtitle,
                   style: AppTextStyles.t12.copyWith(
-                    color: enabled ? (subtitleColor ?? theme.hintColor.withValues(alpha: 0.75)) : theme.disabledColor,
+                    color: enabled
+                        ? (subtitleColor ?? theme.hintColor.withValues(alpha: 0.75))
+                        : theme.disabledColor,
                   ),
                   maxLines: isLong ? null : 1,
                   overflow: isLong ? TextOverflow.visible : TextOverflow.ellipsis,
@@ -258,7 +274,9 @@ extension AppLayoutFactory on BuildContext {
                 style: AppTextStyles.t12.copyWith(
                   color:
                       subtitleColor ??
-                      (enabled ? theme.hintColor.withValues(alpha: 0.75) : theme.hintColor.withValues(alpha: 0.25)),
+                      (enabled
+                          ? theme.hintColor.withValues(alpha: 0.75)
+                          : theme.hintColor.withValues(alpha: 0.25)),
                 ),
                 maxLines: isLong ? null : 1,
                 overflow: isLong ? TextOverflow.visible : TextOverflow.ellipsis,
@@ -302,7 +320,7 @@ extension AppLayoutFactory on BuildContext {
     bool isLong = false,
   }) {
     final theme = Theme.of(this);
-    final rawValueString = valueMap[value] ?? "$value";
+    final rawValueString = valueMap[value] ?? '$value';
     final displayValue = rawValueString.tr;
 
     return buildTile(
@@ -324,10 +342,15 @@ extension AppLayoutFactory on BuildContext {
             ),
           ),
           const SizedBox(width: 4),
-          Icon(Icons.chevron_right_rounded, color: theme.hintColor.withValues(alpha: 0.4), size: 20),
+          Icon(
+            Icons.chevron_right_rounded,
+            color: theme.hintColor.withValues(alpha: 0.4),
+            size: 20,
+          ),
         ],
       ),
-      onTap: () => _openMenuDialog<T>(title: title, value: value, valueMap: valueMap, onChanged: onChanged),
+      onTap: () =>
+          _openMenuDialog<T>(title: title, value: value, valueMap: valueMap, onChanged: onChanged),
     );
   }
 
@@ -361,7 +384,7 @@ extension AppLayoutFactory on BuildContext {
                 },
                 child: buildModernCard(
                   valueMap.keys.map<Widget>((e) {
-                    final itemRawText = valueMap[e] ?? "$e";
+                    final itemRawText = valueMap[e] ?? '$e';
                     final itemDisplayText = itemRawText.tr;
                     final bool isSelected = (e == value);
 
@@ -425,7 +448,10 @@ extension AppLayoutFactory on BuildContext {
         children: [
           Padding(
             padding: const EdgeInsets.only(top: 2),
-            child: SizedBox(width: 24, child: Icon(icon, size: 22, color: theme.colorScheme.primary)),
+            child: SizedBox(
+              width: 24,
+              child: Icon(icon, size: 22, color: theme.colorScheme.primary),
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(

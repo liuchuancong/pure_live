@@ -44,7 +44,10 @@ void main() {
   });
 
   test('rejects unsuccessful response instead of presenting a false connection', () {
-    expect(() => KuaishouDanmaku.parseFeedPayload({'result': 2, 'liveStreamFeeds': []}), throwsStateError);
+    expect(
+      () => KuaishouDanmaku.parseFeedPayload({'result': 2, 'liveStreamFeeds': []}),
+      throwsStateError,
+    );
   });
 
   test('initial poll marks ready and emits chat plus typed audience update', () async {
@@ -79,8 +82,14 @@ void main() {
     expect(cursors, ['']);
     expect(engine.isConnected, isTrue);
     expect(readyCount, 1);
-    expect(messages.where((message) => message.type == LiveMessageType.chat).single.message, 'hello');
-    final audience = messages.where((message) => message.type == LiveMessageType.online).single.data;
+    expect(
+      messages.where((message) => message.type == LiveMessageType.chat).single.message,
+      'hello',
+    );
+    final audience = messages
+        .where((message) => message.type == LiveMessageType.online)
+        .single
+        .data;
     expect(audience, isA<LiveAudienceUpdate>());
     expect((audience as LiveAudienceUpdate).kind, LiveAudienceMetricKind.onlineViewers);
     expect(audience.value, 36);
@@ -101,7 +110,9 @@ void main() {
     final started = engine.start(const KuaishouDanmakuArgs(liveStreamId: 'live-id'));
     await Future<void>.delayed(Duration.zero);
     await engine.stop();
-    request.completeError(DioException(requestOptions: RequestOptions(), type: DioExceptionType.cancel));
+    request.completeError(
+      DioException(requestOptions: RequestOptions(), type: DioExceptionType.cancel),
+    );
     await started;
 
     expect(observedToken?.isCancelled, isTrue);

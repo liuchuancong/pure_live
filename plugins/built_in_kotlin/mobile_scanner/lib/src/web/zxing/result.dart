@@ -68,10 +68,9 @@ extension type Result(JSObject _) implements JSObject {
       return const [];
     }
 
-    final pointList =
-        points.toDart.map((point) {
-          return Offset(point.x, point.y);
-        }).toList();
+    final pointList = points.toDart.map((point) {
+      return Offset(point.x, point.y);
+    }).toList();
 
     return processBarcodeCorners(pointList);
   }
@@ -153,10 +152,7 @@ extension type Result(JSObject _) implements JSObject {
       // Populate deprecated rawBytes for backward compatibility.
       // ignore: deprecated_member_use_from_same_package
       rawBytes: rawBytesData,
-      rawDecodedBytes:
-          rawBytesData != null
-              ? DecodedBarcodeBytes(bytes: rawBytesData)
-              : null,
+      rawDecodedBytes: rawBytesData != null ? DecodedBarcodeBytes(bytes: rawBytesData) : null,
       rawValue: text,
       size: _computeSize(corners),
       type: BarcodeType.text,

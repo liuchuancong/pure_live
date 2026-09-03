@@ -33,10 +33,10 @@ class RecordActionButton extends StatelessWidget {
       final theme = Theme.of(context);
 
       final label = isRunning
-          ? i18n("recording")
+          ? i18n('recording')
           : exists
-          ? i18n("monitored")
-          : i18n("record");
+          ? i18n('monitored')
+          : i18n('record');
 
       final icon = isRunning
           ? Remix.record_circle_fill
@@ -133,23 +133,23 @@ class RecordActionButton extends StatelessWidget {
     }
 
     switch (action) {
-      case "start":
+      case 'start':
         await _startRecording(task: task, exists: exists, isRunning: isRunning);
         break;
 
-      case "monitor":
+      case 'monitor':
         await _addMonitor(exists: exists);
         break;
 
-      case "stop":
+      case 'stop':
         _stopRecording(task: task, exists: exists, isRunning: isRunning);
         break;
 
-      case "delete":
+      case 'delete':
         _removeMonitor(task: task, exists: exists, isRunning: isRunning);
         break;
 
-      case "page":
+      case 'page':
         // Let the dialog reverse transition finish before the native video
         // route starts another transition. Starting both animations in the
         // same frame can race the platform video surface on Windows/Android.
@@ -158,7 +158,11 @@ class RecordActionButton extends StatelessWidget {
     }
   }
 
-  Future<void> _startRecording({required dynamic task, required bool exists, required bool isRunning}) async {
+  Future<void> _startRecording({
+    required dynamic task,
+    required bool exists,
+    required bool isRunning,
+  }) async {
     if (isRunning) {
       return;
     }
@@ -181,7 +185,7 @@ class RecordActionButton extends StatelessWidget {
 
     await recorderController.addTask(room: room, startImmediately: false);
 
-    ToastUtil.show(i18n("record_task_added"));
+    ToastUtil.show(i18n('record_task_added'));
   }
 
   void _stopRecording({required dynamic task, required bool exists, required bool isRunning}) {
@@ -200,7 +204,11 @@ class RecordActionButton extends StatelessWidget {
     recorderController.unRecorder(task);
   }
 
-  Future<String?> _showActionDialog(BuildContext context, {required bool exists, required bool isRunning}) {
+  Future<String?> _showActionDialog(
+    BuildContext context, {
+    required bool exists,
+    required bool isRunning,
+  }) {
     final theme = Theme.of(context);
 
     return showDialog<String>(
@@ -225,10 +233,10 @@ class RecordActionButton extends StatelessWidget {
                       : Remix.record_circle_line,
                   key: ValueKey(
                     isRunning
-                        ? "running"
+                        ? 'running'
                         : exists
-                        ? "exists"
-                        : "empty",
+                        ? 'exists'
+                        : 'empty',
                   ),
                   color: isRunning ? Colors.redAccent : theme.colorScheme.primary,
                   size: 22,
@@ -238,10 +246,10 @@ class RecordActionButton extends StatelessWidget {
               Expanded(
                 child: Text(
                   isRunning
-                      ? i18n("recording")
+                      ? i18n('recording')
                       : exists
-                      ? i18n("record_task")
-                      : i18n("record"),
+                      ? i18n('record_task')
+                      : i18n('record'),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -253,49 +261,49 @@ class RecordActionButton extends StatelessWidget {
             children: [
               _ActionTile(
                 icon: Icons.play_arrow_rounded,
-                title: i18n("start_record_now"),
+                title: i18n('start_record_now'),
                 color: Colors.green,
                 enabled: !isRunning,
                 onTap: () {
-                  Navigator.pop(dialogContext, "start");
+                  Navigator.pop(dialogContext, 'start');
                 },
               ),
               _ActionTile(
                 icon: Icons.video_library_rounded,
-                title: i18n("go_record_center"),
+                title: i18n('go_record_center'),
                 color: theme.colorScheme.primary,
                 enabled: true,
                 onTap: () {
                   // 貌似Video有问题无法进行页面跳转 否则会崩溃 但是注释掉就可以 待解决
-                  Navigator.pop(dialogContext, "page");
+                  Navigator.pop(dialogContext, 'page');
                   // Get.toNamed(RoutePath.kRecordPage);
                 },
               ),
               _ActionTile(
                 icon: Remix.checkbox_circle_line,
-                title: i18n("add_monitor"),
+                title: i18n('add_monitor'),
                 color: theme.colorScheme.primary,
                 enabled: !exists,
                 onTap: () {
-                  Navigator.pop(dialogContext, "monitor");
+                  Navigator.pop(dialogContext, 'monitor');
                 },
               ),
               _ActionTile(
                 icon: Icons.stop_circle_outlined,
-                title: i18n("stop_record"),
+                title: i18n('stop_record'),
                 color: Colors.orange,
                 enabled: isRunning,
                 onTap: () {
-                  Navigator.pop(dialogContext, "stop");
+                  Navigator.pop(dialogContext, 'stop');
                 },
               ),
               _ActionTile(
                 icon: Icons.delete_outline_rounded,
-                title: i18n("remove_monitor"),
+                title: i18n('remove_monitor'),
                 color: Colors.redAccent,
                 enabled: exists && !isRunning,
                 onTap: () {
-                  Navigator.pop(dialogContext, "delete");
+                  Navigator.pop(dialogContext, 'delete');
                 },
               ),
             ],

@@ -5,7 +5,13 @@ class SettingsSwitch extends StatelessWidget {
   final String title;
   final String? subtitle;
   final Function(bool) onChanged;
-  const SettingsSwitch({required this.value, required this.title, this.subtitle, required this.onChanged, super.key});
+  const SettingsSwitch({
+    required this.value,
+    required this.title,
+    this.subtitle,
+    required this.onChanged,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -16,7 +22,10 @@ class SettingsSwitch extends StatelessWidget {
       //visualDensity: VisualDensity.compact,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16),
       subtitle: subtitle != null
-          ? Text(subtitle!, style: Theme.of(context).textTheme.bodySmall!.copyWith(color: Colors.grey))
+          ? Text(
+              subtitle!,
+              style: Theme.of(context).textTheme.bodySmall!.copyWith(color: Colors.grey),
+            )
           : null,
       value: value,
       onChanged: onChanged,

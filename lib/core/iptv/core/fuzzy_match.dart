@@ -2,11 +2,7 @@ import 'package:string_similarity/string_similarity.dart';
 
 /// Tokenize a query string by splitting on spaces, commas, and pipes.
 List<String> tokenizeQuery(String query) {
-  return query
-      .toLowerCase()
-      .split(RegExp(r'[\s,|]+'))
-      .where((t) => t.isNotEmpty)
-      .toList();
+  return query.toLowerCase().split(RegExp(r'[\s,|]+')).where((t) => t.isNotEmpty).toList();
 }
 
 /// Build a single lowercase searchable blob from nullable fields.
@@ -27,10 +23,7 @@ double fuzzyMatch(String query, List<String?> fields) {
   if (tokens.isEmpty) return 0.0;
 
   final blob = buildSearchBlob(fields);
-  final blobWords =
-      blob.split(RegExp(r'[\s,|]+'))
-          .where((w) => w.isNotEmpty)
-          .toList();
+  final blobWords = blob.split(RegExp(r'[\s,|]+')).where((w) => w.isNotEmpty).toList();
 
   var score = 0.0;
   for (final token in tokens) {

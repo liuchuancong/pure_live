@@ -9,8 +9,7 @@ import 'package:flutter_inappwebview_platform_interface/flutter_inappwebview_pla
 /// value to avoid breaking changes. See [PlatformWebViewFeatureCreationParams] for
 /// more information.
 @immutable
-class AndroidWebViewFeatureCreationParams
-    extends PlatformWebViewFeatureCreationParams {
+class AndroidWebViewFeatureCreationParams extends PlatformWebViewFeatureCreationParams {
   /// Creates a new [AndroidWebViewFeatureCreationParams] instance.
   const AndroidWebViewFeatureCreationParams(
     // This parameter prevents breaking changes later.
@@ -26,18 +25,16 @@ class AndroidWebViewFeatureCreationParams
 }
 
 ///{@macro flutter_inappwebview_platform_interface.PlatformWebViewFeature}
-class AndroidWebViewFeature extends PlatformWebViewFeature
-    with ChannelController {
+class AndroidWebViewFeature extends PlatformWebViewFeature with ChannelController {
   /// Creates a new [AndroidWebViewFeature].
   AndroidWebViewFeature(PlatformWebViewFeatureCreationParams params)
       : super.implementation(
           params is AndroidWebViewFeatureCreationParams
               ? params
-              : AndroidWebViewFeatureCreationParams
-                  .fromPlatformWebViewFeatureCreationParams(params),
+              : AndroidWebViewFeatureCreationParams.fromPlatformWebViewFeatureCreationParams(
+                  params),
         ) {
-    channel = const MethodChannel(
-        'com.pichillilorenzo/flutter_inappwebview_webviewfeature');
+    channel = const MethodChannel('com.pichillilorenzo/flutter_inappwebview_webviewfeature');
     handler = handleMethod;
     initMethodCallHandler();
   }
@@ -54,8 +51,8 @@ class AndroidWebViewFeature extends PlatformWebViewFeature
   }
 
   static AndroidWebViewFeature _init() {
-    _instance = AndroidWebViewFeature(AndroidWebViewFeatureCreationParams(
-        const PlatformWebViewFeatureCreationParams()));
+    _instance = AndroidWebViewFeature(
+        AndroidWebViewFeatureCreationParams(const PlatformWebViewFeatureCreationParams()));
     return _instance!;
   }
 
@@ -65,17 +62,14 @@ class AndroidWebViewFeature extends PlatformWebViewFeature
   Future<bool> isFeatureSupported(WebViewFeature feature) async {
     Map<String, dynamic> args = <String, dynamic>{};
     args.putIfAbsent("feature", () => feature.toNativeValue());
-    return await channel?.invokeMethod<bool>('isFeatureSupported', args) ??
-        false;
+    return await channel?.invokeMethod<bool>('isFeatureSupported', args) ?? false;
   }
 
   @override
   Future<bool> isStartupFeatureSupported(WebViewFeature startupFeature) async {
     Map<String, dynamic> args = <String, dynamic>{};
     args.putIfAbsent("startupFeature", () => startupFeature.toNativeValue());
-    return await channel?.invokeMethod<bool>(
-            'isStartupFeatureSupported', args) ??
-        false;
+    return await channel?.invokeMethod<bool>('isStartupFeatureSupported', args) ?? false;
   }
 
   @override

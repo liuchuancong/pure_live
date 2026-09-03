@@ -23,7 +23,9 @@ class BetterPlayerDataSource {
     this.asmsTrackNames,
     this.resolutions,
     this.cacheConfiguration,
-    this.notificationConfiguration = const BetterPlayerNotificationConfiguration(showNotification: false),
+    this.notificationConfiguration = const BetterPlayerNotificationConfiguration(
+      showNotification: false,
+    ),
     this.overriddenDuration,
     this.videoFormat,
     this.videoExtension,
@@ -48,14 +50,14 @@ class BetterPlayerDataSource {
     bool? useAsmsAudioTracks,
     Map<String, String>? qualities,
     BetterPlayerCacheConfiguration? cacheConfiguration,
-    BetterPlayerNotificationConfiguration notificationConfiguration = const BetterPlayerNotificationConfiguration(
-      showNotification: false,
-    ),
+    BetterPlayerNotificationConfiguration notificationConfiguration =
+        const BetterPlayerNotificationConfiguration(showNotification: false),
     Duration? overriddenDuration,
     BetterPlayerVideoFormat? videoFormat,
     BetterPlayerDrmConfiguration? drmConfiguration,
     Widget? placeholder,
-    BetterPlayerBufferingConfiguration bufferingConfiguration = const BetterPlayerBufferingConfiguration(),
+    BetterPlayerBufferingConfiguration bufferingConfiguration =
+        const BetterPlayerBufferingConfiguration(),
   }) => BetterPlayerDataSource(
     BetterPlayerDataSourceType.network,
     url,
@@ -95,9 +97,9 @@ class BetterPlayerDataSource {
     useAsmsTracks: useAsmsTracks,
     resolutions: qualities,
     cacheConfiguration: cacheConfiguration,
-    notificationConfiguration: notificationConfiguration ?? const BetterPlayerNotificationConfiguration(
-      showNotification: false,
-    ),
+    notificationConfiguration:
+        notificationConfiguration ??
+        const BetterPlayerNotificationConfiguration(showNotification: false),
     overriddenDuration: overriddenDuration,
     placeholder: placeholder,
   );
@@ -125,9 +127,9 @@ class BetterPlayerDataSource {
     useAsmsTracks: useAsmsTracks,
     resolutions: qualities,
     cacheConfiguration: cacheConfiguration,
-    notificationConfiguration: notificationConfiguration ?? const BetterPlayerNotificationConfiguration(
-      showNotification: false,
-    ),
+    notificationConfiguration:
+        notificationConfiguration ??
+        const BetterPlayerNotificationConfiguration(showNotification: false),
     overriddenDuration: overriddenDuration,
     placeholder: placeholder,
   );
@@ -209,15 +211,15 @@ class BetterPlayerDataSource {
     bool? useAsmsAudioTracks,
     Map<String, String>? resolutions,
     BetterPlayerCacheConfiguration? cacheConfiguration,
-    BetterPlayerNotificationConfiguration? notificationConfiguration = const BetterPlayerNotificationConfiguration(
-      showNotification: false,
-    ),
+    BetterPlayerNotificationConfiguration? notificationConfiguration =
+        const BetterPlayerNotificationConfiguration(showNotification: false),
     Duration? overriddenDuration,
     BetterPlayerVideoFormat? videoFormat,
     String? videoExtension,
     BetterPlayerDrmConfiguration? drmConfiguration,
     Widget? placeholder,
-    BetterPlayerBufferingConfiguration? bufferingConfiguration = const BetterPlayerBufferingConfiguration(),
+    BetterPlayerBufferingConfiguration? bufferingConfiguration =
+        const BetterPlayerBufferingConfiguration(),
   }) => BetterPlayerDataSource(
     type ?? this.type,
     url ?? this.url,

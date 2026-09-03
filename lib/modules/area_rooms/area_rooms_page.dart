@@ -17,7 +17,9 @@ class AreasRoomPage extends StatefulWidget {
 
 class _AreasRoomPageState extends State<AreasRoomPage> {
   BasePageScrollAndStateBone<LiveRoom> get controller =>
-      Get.find<BasePageScrollAndStateBone<LiveRoom>>(tag: "${widget.site.id}_${widget.subCategory.areaId}");
+      Get.find<BasePageScrollAndStateBone<LiveRoom>>(
+        tag: '${widget.site.id}_${widget.subCategory.areaId}',
+      );
 
   @override
   void initState() {
@@ -39,7 +41,8 @@ class _AreasRoomPageState extends State<AreasRoomPage> {
           showScrollToTopBtn: SettingsService.to.page.showScrollToTopBtn.v,
           showPageSizeSelector: SettingsService.to.page.showPageSizeSelector.v,
           pageSizeOptions: SettingsService.to.page.pageSizeOptions,
-          emptyBuilder: (context) => EmptyView(icon: Icons.live_tv_rounded, title: i18n('no_data'), subtitle: ''),
+          emptyBuilder: (context) =>
+              EmptyView(icon: Icons.live_tv_rounded, title: i18n('no_data'), subtitle: ''),
           contentBuilder: (context, list, scrollController) {
             return LayoutBuilder(
               builder: (context, constraint) {
@@ -56,14 +59,20 @@ class _AreasRoomPageState extends State<AreasRoomPage> {
                     crossAxisCount: crossAxisCount,
                     crossAxisSpacing: spacing,
                     mainAxisSpacing: SettingsService.to.theme.mainAxisSpacing.v,
-                    mainAxisExtent: RoomCardConfigController.to.calculateCardHeight(itemWidth: itemWidth),
+                    mainAxisExtent: RoomCardConfigController.to.calculateCardHeight(
+                      itemWidth: itemWidth,
+                    ),
                   ),
                   padding: const EdgeInsets.fromLTRB(6, 6, 6, 80),
                   controller: scrollController,
                   itemCount: list.length,
                   itemBuilder: (context, index) {
                     final room = list[index];
-                    return RoomCard(key: ValueKey('${room.platform}:${room.roomId}'), room: room, dense: true);
+                    return RoomCard(
+                      key: ValueKey('${room.platform}:${room.roomId}'),
+                      room: room,
+                      dense: true,
+                    );
                   },
                 );
               },
@@ -83,7 +92,9 @@ class FavoriteAreaFloatingButton extends StatelessWidget {
 
   Widget _buildAvatar(BuildContext context) {
     final theme = Theme.of(context);
-    final String firstChar = (area.areaName?.isNotEmpty ?? false) ? area.areaName!.substring(0, 1) : "";
+    final String firstChar = (area.areaName?.isNotEmpty ?? false)
+        ? area.areaName!.substring(0, 1)
+        : '';
     final pictureUrl = normalizeNetworkImageUrl(area.areaPic);
     final bool hasPic = pictureUrl.isNotEmpty;
 
@@ -109,7 +120,9 @@ class FavoriteAreaFloatingButton extends StatelessWidget {
                   return Center(
                     child: Text(
                       firstChar,
-                      style: AppTextStyles.t12Bold.copyWith(color: theme.colorScheme.onPrimaryContainer),
+                      style: AppTextStyles.t12Bold.copyWith(
+                        color: theme.colorScheme.onPrimaryContainer,
+                      ),
                     ),
                   );
                 },
@@ -117,7 +130,9 @@ class FavoriteAreaFloatingButton extends StatelessWidget {
             : Center(
                 child: Text(
                   firstChar,
-                  style: AppTextStyles.t12Bold.copyWith(color: theme.colorScheme.onPrimaryContainer),
+                  style: AppTextStyles.t12Bold.copyWith(
+                    color: theme.colorScheme.onPrimaryContainer,
+                  ),
                 ),
               ),
       ),
@@ -133,7 +148,9 @@ class FavoriteAreaFloatingButton extends StatelessWidget {
         padding: EdgeInsets.only(
           bottom: Get.width > 680
               ? 24
-              : (MediaQuery.paddingOf(context).bottom > 0 ? MediaQuery.paddingOf(context).bottom : 12),
+              : (MediaQuery.paddingOf(context).bottom > 0
+                    ? MediaQuery.paddingOf(context).bottom
+                    : 12),
           right: 0,
         ),
         child: AnimatedContainer(
@@ -150,7 +167,11 @@ class FavoriteAreaFloatingButton extends StatelessWidget {
               width: 1,
             ),
             boxShadow: [
-              BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 12, offset: const Offset(0, 4)),
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
             ],
           ),
           child: ClipRRect(
@@ -164,13 +185,16 @@ class FavoriteAreaFloatingButton extends StatelessWidget {
                     showDialog<bool>(
                       context: context,
                       builder: (context) => AlertDialog(
-                        title: Text(i18n("unfollow")),
-                        content: Text(i18n("unfollow_message", args: {"name": area.areaName!})),
+                        title: Text(i18n('unfollow')),
+                        content: Text(i18n('unfollow_message', args: {'name': area.areaName!})),
                         actions: [
-                          TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(i18n("cancel"))),
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(false),
+                            child: Text(i18n('cancel')),
+                          ),
                           ElevatedButton(
                             onPressed: () => Navigator.of(context).pop(true),
-                            child: Text(i18n("confirm")),
+                            child: Text(i18n('confirm')),
                           ),
                         ],
                       ),
@@ -182,7 +206,8 @@ class FavoriteAreaFloatingButton extends StatelessWidget {
                       }
                     });
                   } else {
-                    final list = List<LiveArea>.from(SettingsService.to.fav.favoriteAreas.v)..add(area);
+                    final list = List<LiveArea>.from(SettingsService.to.fav.favoriteAreas.v)
+                      ..add(area);
                     SettingsService.to.fav.favoriteAreas.v = list;
                   }
                 },
@@ -207,13 +232,17 @@ class FavoriteAreaFloatingButton extends StatelessWidget {
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Text(
-                                        i18n("follow"),
-                                        style: Theme.of(context).textTheme.bodySmall
-                                            ?.copyWith(color: Theme.of(context).hintColor, height: 1.1),
+                                        i18n('follow'),
+                                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                          color: Theme.of(context).hintColor,
+                                          height: 1.1,
+                                        ),
                                       ),
                                       const SizedBox(height: 1),
                                       ConstrainedBox(
-                                        constraints: BoxConstraints(maxWidth: Get.width > 680 ? 120 : 80),
+                                        constraints: BoxConstraints(
+                                          maxWidth: Get.width > 680 ? 120 : 80,
+                                        ),
                                         child: Text(
                                           area.areaName!,
                                           maxLines: 1,

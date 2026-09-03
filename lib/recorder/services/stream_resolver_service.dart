@@ -3,7 +3,16 @@ import 'package:pure_live/model/live_play_quality.dart';
 import 'package:pure_live/core/interface/live_site.dart';
 import 'package:pure_live/player/utils/player_consts.dart';
 
-enum StreamErrorType { roomNotFound, notLive, noQuality, cdnFailed, networkError, loginExpired, banned, unknown }
+enum StreamErrorType {
+  roomNotFound,
+  notLive,
+  noQuality,
+  cdnFailed,
+  networkError,
+  loginExpired,
+  banned,
+  unknown,
+}
 
 class StreamException implements Exception {
   final StreamErrorType type;
@@ -92,7 +101,11 @@ class StreamResolverService extends GetxService {
     final normalizedPlatform = platform.trim().toLowerCase();
     final normalizedRoomId = roomId.trim();
     if (normalizedRoomId.isEmpty) {
-      throw const StreamException(type: StreamErrorType.roomNotFound, message: 'Room id is empty', retryable: false);
+      throw const StreamException(
+        type: StreamErrorType.roomNotFound,
+        message: 'Room id is empty',
+        retryable: false,
+      );
     }
     if (!Sites.isSupported(normalizedPlatform)) {
       throw StreamException(
@@ -116,18 +129,32 @@ class StreamResolverService extends GetxService {
         // UI room loaders commonly preserve the previous card on request
         // failure. Recording uses a strict capability so a transient metadata
         // error enters bounded retry instead of becoming a false offline stop.
-        throw StreamException(type: StreamErrorType.networkError, message: '${i18n('stream_get_room_failed')}: $error');
+        throw StreamException(
+          type: StreamErrorType.networkError,
+          message: '${i18n('stream_get_room_failed')}: $error',
+        );
       }
 
       if (detail.effectiveLiveStatus == LiveStatus.banned) {
-        throw StreamException(type: StreamErrorType.banned, message: i18n('stream_room_banned'), retryable: false);
+        throw StreamException(
+          type: StreamErrorType.banned,
+          message: i18n('stream_room_banned'),
+          retryable: false,
+        );
       }
       final explicitlyPlayable = detail.isPlayableNow;
       if (!explicitlyPlayable && detail.isExplicitlyOfflineNow) {
-        throw StreamException(type: StreamErrorType.notLive, message: i18n('stream_not_live'), retryable: false);
+        throw StreamException(
+          type: StreamErrorType.notLive,
+          message: i18n('stream_not_live'),
+          retryable: false,
+        );
       }
       if (!explicitlyPlayable) {
-        throw StreamException(type: StreamErrorType.networkError, message: i18n('stream_room_state_unknown'));
+        throw StreamException(
+          type: StreamErrorType.networkError,
+          message: i18n('stream_room_state_unknown'),
+        );
       }
 
       late final List<LivePlayQuality> qualities;
@@ -146,7 +173,10 @@ class StreamResolverService extends GetxService {
         // A live room can temporarily return an empty quality envelope while
         // its CDN is being assigned. Use the bounded recorder retry policy
         // instead of turning that transient state into a permanent stop.
-        throw StreamException(type: StreamErrorType.noQuality, message: i18n('stream_no_available_quality'));
+        throw StreamException(
+          type: StreamErrorType.noQuality,
+          message: i18n('stream_no_available_quality'),
+        );
       }
 
       final orderedQualities = orderQualities(qualities, preferredQuality);
@@ -160,7 +190,9 @@ class StreamResolverService extends GetxService {
       final usesLineCursor = site is LivePlayUrlCursorResolver;
       final previousQualityIndex = previousQualityId == null
           ? -1
-          : orderedQualities.indexWhere((quality) => quality.selectionId.toString() == previousQualityId);
+          : orderedQualities.indexWhere(
+              (quality) => quality.selectionId.toString() == previousQualityId,
+            );
       _ResolvedQuality? previousResolution;
 
       if (previousQualityIndex >= 0) {
@@ -207,7 +239,9 @@ class StreamResolverService extends GetxService {
       }
 
       final startQualityIndex = previousQualityIndex < 0 ? 0 : previousQualityIndex + 1;
-      final qualitiesToTry = previousQualityIndex < 0 ? orderedQualities.length : orderedQualities.length - 1;
+      final qualitiesToTry = previousQualityIndex < 0
+          ? orderedQualities.length
+          : orderedQualities.length - 1;
       for (var offset = 0; offset < qualitiesToTry; offset++) {
         final qualityIndex = (startQualityIndex + offset) % orderedQualities.length;
         try {
@@ -243,7 +277,9 @@ class StreamResolverService extends GetxService {
 
       throw StreamException(
         type: StreamErrorType.cdnFailed,
-        message: lastError == null ? i18n('stream_all_cdn_failed') : '${i18n('stream_all_cdn_failed')}: $lastError',
+        message: lastError == null
+            ? i18n('stream_all_cdn_failed')
+            : '${i18n('stream_all_cdn_failed')}: $lastError',
       );
     } on StreamException {
       rethrow;
@@ -256,7 +292,10 @@ class StreamResolverService extends GetxService {
   /// closest to the user's five-level preference to the front. Platform
   /// adapters expose incomparable identifiers (qn, bitrate, sdk_key, gear),
   /// so recorder selection must never compare those identifiers directly.
-  static List<LivePlayQuality> orderQualities(List<LivePlayQuality> source, String preferredQuality) {
+  static List<LivePlayQuality> orderQualities(
+    List<LivePlayQuality> source,
+    String preferredQuality,
+  ) {
     final seenIds = <String>{};
     final indexed = source.indexed
         .where((entry) => seenIds.add(entry.$2.selectionId.toString()))
@@ -304,7 +343,8 @@ class StreamResolverService extends GetxService {
     ]);
   }
 
-  static String _normalizeQualityLabel(String value) => value.toLowerCase().replaceAll(RegExp(r'[\s_-]+'), '');
+  static String _normalizeQualityLabel(String value) =>
+      value.toLowerCase().replaceAll(RegExp(r'[\s_-]+'), '');
 
   static LivePlayQuality _appliedQuality(
     List<LivePlayQuality> qualities,
@@ -313,7 +353,10 @@ class StreamResolverService extends GetxService {
   ) {
     if (appliedId == null) return requested;
     final normalized = appliedId.toString();
-    return qualities.firstWhere((quality) => quality.selectionId.toString() == normalized, orElse: () => requested);
+    return qualities.firstWhere(
+      (quality) => quality.selectionId.toString() == normalized,
+      orElse: () => requested,
+    );
   }
 
   static Future<_ResolvedQuality> _resolveQuality({
@@ -336,14 +379,22 @@ class StreamResolverService extends GetxService {
         .where(_isRecordableUrl)
         .where((url) => seen.add(_streamIdentity(url)))
         .toList(growable: false);
-    final appliedQuality = _appliedQuality(orderedQualities, requestedQuality, resolution.appliedQualityData);
+    final appliedQuality = _appliedQuality(
+      orderedQualities,
+      requestedQuality,
+      resolution.appliedQualityData,
+    );
     final leaseMetadata = site is LivePlayLeaseMetadata ? site as LivePlayLeaseMetadata : null;
     return _ResolvedQuality(
       requestedQualityId: requestedQuality.selectionId.toString(),
       appliedQuality: appliedQuality,
       urls: validUrls,
-      refreshTimes: validUrls.map((url) => leaseMetadata?.getPlayUrlRefreshAt(url)?.toUtc()).toList(growable: false),
-      invalidTimes: validUrls.map((url) => leaseMetadata?.getPlayUrlInvalidAt(url)?.toUtc()).toList(growable: false),
+      refreshTimes: validUrls
+          .map((url) => leaseMetadata?.getPlayUrlRefreshAt(url)?.toUtc())
+          .toList(growable: false),
+      invalidTimes: validUrls
+          .map((url) => leaseMetadata?.getPlayUrlInvalidAt(url)?.toUtc())
+          .toList(growable: false),
       lineIndexes: lineIndex == null
           ? List<int>.generate(validUrls.length, (index) => index, growable: false)
           : List<int>.filled(validUrls.length, lineIndex, growable: false),
@@ -391,7 +442,10 @@ class _ResolvedQuality {
       quality: appliedQuality,
       qualityCursorId: requestedQualityId,
       lineIndex: lineIndexes[normalizedPosition],
-      candidateUrls: List<String>.unmodifiable([...urls.skip(normalizedPosition), ...urls.take(normalizedPosition)]),
+      candidateUrls: List<String>.unmodifiable([
+        ...urls.skip(normalizedPosition),
+        ...urls.take(normalizedPosition),
+      ]),
       refreshAt: refreshTimes[normalizedPosition],
       invalidAt: invalidTimes[normalizedPosition],
     );

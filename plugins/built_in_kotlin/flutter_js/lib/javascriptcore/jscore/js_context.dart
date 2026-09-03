@@ -30,10 +30,10 @@ class JSContext {
   /// However, you may not use values created in the context in other contexts.
   /// [globalObjectClass] (JSClass) The class to use when creating the global object. Pass NULL to use the default object class.
   /// [@result] (JSGlobalContext) A JSGlobalContext with a global object of class globalObjectClass.
-  JSContext.create({
-    JSClass? globalObjectClass,
-  }) : this._pointer = JSContextRef.jSGlobalContextCreate(
-            globalObjectClass == null ? nullptr : globalObjectClass.pointer);
+  JSContext.create({JSClass? globalObjectClass})
+    : this._pointer = JSContextRef.jSGlobalContextCreate(
+        globalObjectClass == null ? nullptr : globalObjectClass.pointer,
+      );
 
   /// Creates a global JavaScript execution context in the context group provided.
   /// JSGlobalContextCreateInGroup allocates a global object and populates it with
@@ -41,12 +41,11 @@ class JSContext {
   /// [group] (JSContextGroup) The context group to use. The created global context retains the group. Pass NULL to create a unique group for the context.
   /// [globalObjectClass] (JSClass) The class to use when creating the global object. Pass NULL to use the default object class.
   /// [@result] (JSGlobalContext) A JSGlobalContext with a global object of class globalObjectClass and a context group equal to group.
-  JSContext.createInGroup({
-    JSContextGroup? group,
-    JSClass? globalObjectClass,
-  }) : this._pointer = JSContextRef.jSGlobalContextCreateInGroup(
-            group == null ? JSContextRef.jSContextGroupCreate() : group.pointer,
-            globalObjectClass == null ? nullptr : globalObjectClass.pointer);
+  JSContext.createInGroup({JSContextGroup? group, JSClass? globalObjectClass})
+    : this._pointer = JSContextRef.jSGlobalContextCreateInGroup(
+        group == null ? JSContextRef.jSContextGroupCreate() : group.pointer,
+        globalObjectClass == null ? nullptr : globalObjectClass.pointer,
+      );
 
   /// Retains a global JavaScript execution context.
   /// [@result] (JSGlobalContext) A JSGlobalContext that is the same as ctx.
@@ -105,15 +104,16 @@ class JSContext {
     int startingLineNumber = 1,
   }) {
     return JSValue(
-        this,
-        JSBase.jSEvaluateScript(
-          pointer,
-          JSString.fromString(script).pointer,
-          thisObject == null ? nullptr : thisObject.pointer,
-          sourceURL == null ? nullptr : JSString.fromString(sourceURL).pointer,
-          startingLineNumber,
-          exception.pointer,
-        ));
+      this,
+      JSBase.jSEvaluateScript(
+        pointer,
+        JSString.fromString(script).pointer,
+        thisObject == null ? nullptr : thisObject.pointer,
+        sourceURL == null ? nullptr : JSString.fromString(sourceURL).pointer,
+        startingLineNumber,
+        exception.pointer,
+      ),
+    );
   }
 
   void setInspectable(bool inspectable) {

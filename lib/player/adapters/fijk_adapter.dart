@@ -100,7 +100,10 @@ class FijkAdapter implements UnifiedPlayer, FijkPlayerAccessor {
           break;
         case FijkState.error:
           _loadingSubject.add(false);
-          final exception = PlayerException(message: 'Fijk native error', type: PlayerErrorType.native);
+          final exception = PlayerException(
+            message: 'Fijk native error',
+            type: PlayerErrorType.native,
+          );
           _safeAddError(exception);
           _player.reset();
           break;
@@ -135,10 +138,11 @@ class FijkAdapter implements UnifiedPlayer, FijkPlayerAccessor {
 
   Future<void> _setupProxy() async {
     if (SettingsService.to.proxy.enableProxy.v) {
-      final String proxyUrl = "http://${SettingsService.to.proxy.proxyHost.v}:${SettingsService.to.proxy.proxyPort.v}";
-      await _player.setOption(FijkOption.formatCategory, "http_proxy", proxyUrl);
+      final String proxyUrl =
+          'http://${SettingsService.to.proxy.proxyHost.v}:${SettingsService.to.proxy.proxyPort.v}';
+      await _player.setOption(FijkOption.formatCategory, 'http_proxy', proxyUrl);
     } else {
-      await _player.setOption(FijkOption.formatCategory, "http_proxy", "");
+      await _player.setOption(FijkOption.formatCategory, 'http_proxy', '');
     }
   }
 
@@ -189,9 +193,16 @@ class FijkAdapter implements UnifiedPlayer, FijkPlayerAccessor {
       player: _player,
       fs: false,
       color: Colors.black,
-      panelBuilder: (FijkPlayer fijkPlayer, FijkData fijkData, BuildContext context, Size viewSize, Rect texturePos) {
-        return const SizedBox();
-      },
+      panelBuilder:
+          (
+            FijkPlayer fijkPlayer,
+            FijkData fijkData,
+            BuildContext context,
+            Size viewSize,
+            Rect texturePos,
+          ) {
+            return const SizedBox();
+          },
     );
   }
 
@@ -214,12 +225,12 @@ class FijkAdapter implements UnifiedPlayer, FijkPlayerAccessor {
   @override
   Future<void> setAudioOnly(bool audioOnly) async {
     if (_disposed || _isAudioOnly == audioOnly) return;
-    await _player.setOption(FijkOption.playerCategory, "disable-vid", audioOnly ? "1" : "0");
+    await _player.setOption(FijkOption.playerCategory, 'disable-vid', audioOnly ? '1' : '0');
     _isAudioOnly = audioOnly;
   }
 
   Future<void> applyAudioOnlySettings() async {
-    await _player.setOption(FijkOption.playerCategory, "disable-vid", "1");
+    await _player.setOption(FijkOption.playerCategory, 'disable-vid', '1');
   }
 
   @override

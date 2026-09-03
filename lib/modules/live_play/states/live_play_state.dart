@@ -2,6 +2,7 @@ import 'ui_state.dart';
 import 'room_state.dart';
 import 'player_state.dart';
 import 'danmaku_state.dart';
+
 import 'package:flutter/foundation.dart';
 
 @immutable
@@ -18,7 +19,12 @@ class LivePlayState {
     this.ui = const UIState(),
   });
 
-  LivePlayState copyWith({RoomState? room, PlayerState? player, DanmakuState? danmaku, UIState? ui}) {
+  LivePlayState copyWith({
+    RoomState? room,
+    PlayerState? player,
+    DanmakuState? danmaku,
+    UIState? ui,
+  }) {
     return LivePlayState(
       room: room ?? this.room,
       player: player ?? this.player,

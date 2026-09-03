@@ -21,7 +21,10 @@ void main() {
   test('history timestamp survives JSON and detail refresh', () {
     final stored = LiveRoom(roomId: '1', platform: 'test', title: 'Old', lastWatchedAt: 123456);
     final decoded = LiveRoom.fromJson(stored.toJson());
-    final refreshed = preserveHistoryMetadata(LiveRoom(roomId: '1', platform: 'test', title: 'Fresh'), decoded);
+    final refreshed = preserveHistoryMetadata(
+      LiveRoom(roomId: '1', platform: 'test', title: 'Fresh'),
+      decoded,
+    );
 
     expect(decoded.lastWatchedAt, 123456);
     expect(refreshed.title, 'Fresh');
@@ -71,7 +74,10 @@ void main() {
   });
 
   test('history backup extraction preserves and enforces the configured limit', () {
-    final rooms = List.generate(4, (index) => LiveRoom(roomId: '$index', platform: 'test').toJson());
+    final rooms = List.generate(
+      4,
+      (index) => LiveRoom(roomId: '$index', platform: 'test').toJson(),
+    );
     final extracted = HistoryController.extractConfig({
       'history': {'historyLimit': 2, 'historyRooms': rooms},
     });
@@ -81,7 +87,10 @@ void main() {
   });
 
   test('unlimited backup extraction preserves every history entry', () {
-    final rooms = List.generate(620, (index) => LiveRoom(roomId: '$index', platform: 'test').toJson());
+    final rooms = List.generate(
+      620,
+      (index) => LiveRoom(roomId: '$index', platform: 'test').toJson(),
+    );
     final extracted = HistoryController.extractConfig({
       'history': {'historyLimit': unlimitedHistoryLimit, 'historyRooms': rooms},
     });

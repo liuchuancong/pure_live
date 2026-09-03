@@ -138,7 +138,9 @@ class _KeywordBlockPageState extends State<KeywordBlockPage> {
   }
 
   Widget _buildBlockedSliver(ThemeData theme, {required bool users}) {
-    final values = List<String>.from(users ? settingsService.fav.blockedDanmakuUsers : settingsService.fav.shieldList);
+    final values = List<String>.from(
+      users ? settingsService.fav.blockedDanmakuUsers : settingsService.fav.shieldList,
+    );
     if (values.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
     final title = users
         ? i18n('blocked_danmaku_users', args: {'count': '${values.length}'})
@@ -191,7 +193,11 @@ class _KeywordBlockPageState extends State<KeywordBlockPage> {
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide(color: theme.colorScheme.primary, width: 2),
           ),
-          suffixIcon: IconButton(tooltip: i18n('add'), onPressed: addKeyword, icon: const Icon(Remix.add_circle_line)),
+          suffixIcon: IconButton(
+            tooltip: i18n('add'),
+            onPressed: addKeyword,
+            icon: const Icon(Remix.add_circle_line),
+          ),
         ),
       ),
     );
@@ -206,7 +212,10 @@ class _KeywordBlockPageState extends State<KeywordBlockPage> {
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 6),
       child: Text(
         title,
-        style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600, color: theme.colorScheme.onSurfaceVariant),
+        style: AppTextStyles.t15.copyWith(
+          fontWeight: FontWeight.w600,
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
       ),
     );
   }
@@ -215,7 +224,12 @@ class _KeywordBlockPageState extends State<KeywordBlockPage> {
   // Block item
   // ================================================================
 
-  Widget _buildItem(ThemeData theme, {required String text, required IconData icon, required VoidCallback onRemove}) {
+  Widget _buildItem(
+    ThemeData theme, {
+    required String text,
+    required IconData icon,
+    required VoidCallback onRemove,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
       child: RepaintBoundary(

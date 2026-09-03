@@ -66,8 +66,10 @@ class _VideoProgressBarState extends State<BetterPlayerMaterialVideoProgressBar>
 
   @override
   Widget build(BuildContext context) {
-    final bool enableProgressBarDrag =
-        betterPlayerController!.betterPlayerConfiguration.controlsConfiguration.enableProgressBarDrag;
+    final bool enableProgressBarDrag = betterPlayerController!
+        .betterPlayerConfiguration
+        .controlsConfiguration
+        .enableProgressBarDrag;
 
     return GestureDetector(
       onHorizontalDragStart: (DragStartDetails details) {
@@ -200,7 +202,11 @@ class _ProgressBarPainter extends CustomPainter {
       colors.backgroundPaint,
     );
     final duration = value.duration;
-    if (!value.initialized || duration == null || duration.inMilliseconds <= 0 || !size.width.isFinite || size.width <= 0) {
+    if (!value.initialized ||
+        duration == null ||
+        duration.inMilliseconds <= 0 ||
+        !size.width.isFinite ||
+        size.width <= 0) {
       return;
     }
     final double playedPartPercent = _safeFraction(value.position, duration);
@@ -228,7 +234,11 @@ class _ProgressBarPainter extends CustomPainter {
       ),
       colors.playedPaint,
     );
-    canvas.drawCircle(Offset(playedPart, size.height / 2 + height / 2), height * 3, colors.handlePaint);
+    canvas.drawCircle(
+      Offset(playedPart, size.height / 2 + height / 2),
+      height * 3,
+      colors.handlePaint,
+    );
   }
 
   double _safeFraction(Duration part, Duration total) {

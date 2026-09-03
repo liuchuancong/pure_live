@@ -14,7 +14,7 @@ class JSClass {
   /// Creates a JavaScript class suitable for use with JSObjectMake.
   /// [definition] (JSClassDefinition*) A JSClassDefinition that defines the class.
   JSClass.create(JSClassDefinition definition)
-      : this.pointer = JSObjectRef.jSClassCreate(definition.create());
+    : this.pointer = JSObjectRef.jSClassCreate(definition.create());
 
   /// Retains a JavaScript class.
   void retain() {

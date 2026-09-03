@@ -10,7 +10,10 @@ class HistoryPage extends StatefulWidget {
 }
 
 class _HistoryPageState extends State<HistoryPage> {
-  final refreshController = EasyRefreshController(controlFinishRefresh: true, controlFinishLoad: true);
+  final refreshController = EasyRefreshController(
+    controlFinishRefresh: true,
+    controlFinishLoad: true,
+  );
 
   @override
   void dispose() {
@@ -47,7 +50,9 @@ class _HistoryPageState extends State<HistoryPage> {
       shouldCancel: () => !mounted,
     );
     if (!mounted) return;
-    SettingsService.to.history.historyRooms.v = refreshed.whereType<LiveRoom>().toList(growable: true);
+    SettingsService.to.history.historyRooms.v = refreshed.whereType<LiveRoom>().toList(
+      growable: true,
+    );
     if (result) {
       refreshController.finishRefresh(IndicatorResult.success);
       refreshController.resetFooter();
@@ -66,7 +71,7 @@ class _HistoryPageState extends State<HistoryPage> {
       builder: (context) {
         final theme = Theme.of(context);
         return AlertDialog(
-          title: Text(i18n("history_limit"), style: AppTextStyles.t16Bold),
+          title: Text(i18n('history_limit'), style: AppTextStyles.t16Bold),
           content: SizedBox(
             width: 320,
             child: StatefulBuilder(
@@ -76,7 +81,7 @@ class _HistoryPageState extends State<HistoryPage> {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(i18n("current_options"), style: AppTextStyles.t12Muted),
+                      Text(i18n('current_options'), style: AppTextStyles.t12Muted),
                       const SizedBox(height: 12),
                       Wrap(
                         spacing: 8,
@@ -92,9 +97,11 @@ class _HistoryPageState extends State<HistoryPage> {
                           ChoiceChip(
                             label: Text(i18n('history_unlimited'), style: AppTextStyles.t12),
                             selected: draftLimit == unlimitedHistoryLimit,
-                            onSelected: (_) => setDialogState(() => draftLimit = unlimitedHistoryLimit),
+                            onSelected: (_) =>
+                                setDialogState(() => draftLimit = unlimitedHistoryLimit),
                           ),
-                          if (!presetOptions.contains(draftLimit) && draftLimit != unlimitedHistoryLimit)
+                          if (!presetOptions.contains(draftLimit) &&
+                              draftLimit != unlimitedHistoryLimit)
                             ChoiceChip(
                               label: Text('$draftLimit', style: AppTextStyles.t12),
                               selected: true,
@@ -103,7 +110,7 @@ class _HistoryPageState extends State<HistoryPage> {
                         ],
                       ),
                       const SizedBox(height: 24),
-                      Text(i18n("custom_input"), style: AppTextStyles.t13Medium),
+                      Text(i18n('custom_input'), style: AppTextStyles.t13Medium),
                       const SizedBox(height: 12),
                       Row(
                         children: [
@@ -114,10 +121,13 @@ class _HistoryPageState extends State<HistoryPage> {
                               style: AppTextStyles.t14,
                               decoration: InputDecoration(
                                 hintText: '50',
-                                suffixText: i18n("items"),
+                                suffixText: i18n('items'),
                                 suffixStyle: AppTextStyles.t12Muted,
                                 border: const OutlineInputBorder(),
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 8,
+                                ),
                               ),
                             ),
                           ),
@@ -130,8 +140,10 @@ class _HistoryPageState extends State<HistoryPage> {
                               customController.clear();
                             },
                             child: Text(
-                              i18n("apply"),
-                              style: AppTextStyles.t13Medium.copyWith(color: theme.colorScheme.primary),
+                              i18n('apply'),
+                              style: AppTextStyles.t13Medium.copyWith(
+                                color: theme.colorScheme.primary,
+                              ),
                             ),
                           ),
                         ],
@@ -152,14 +164,14 @@ class _HistoryPageState extends State<HistoryPage> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: Text(i18n("cancel"), style: AppTextStyles.t14Muted),
+              child: Text(i18n('cancel'), style: AppTextStyles.t14Muted),
             ),
             TextButton(
               onPressed: () {
                 controller.setHistoryLimit(draftLimit);
                 if (context.mounted) Navigator.pop(context);
               },
-              child: Text(i18n("confirm"), style: AppTextStyles.t14Primary),
+              child: Text(i18n('confirm'), style: AppTextStyles.t14Primary),
             ),
           ],
         );
@@ -172,16 +184,16 @@ class _HistoryPageState extends State<HistoryPage> {
     if (controller.historyRooms.v.isEmpty) return;
     final result = await Get.dialog<bool>(
       AlertDialog(
-        title: Text(i18n("clear_history"), style: AppTextStyles.t16Bold),
-        content: Text(i18n("clear_history_confirm"), style: AppTextStyles.t14),
+        title: Text(i18n('clear_history'), style: AppTextStyles.t16Bold),
+        content: Text(i18n('clear_history_confirm'), style: AppTextStyles.t14),
         actions: [
           TextButton(
             onPressed: () => Get.back(result: false),
-            child: Text(i18n("cancel"), style: AppTextStyles.t14Muted),
+            child: Text(i18n('cancel'), style: AppTextStyles.t14Muted),
           ),
           TextButton(
             onPressed: () => Get.back(result: true),
-            child: Text(i18n("confirm"), style: AppTextStyles.t14Primary),
+            child: Text(i18n('confirm'), style: AppTextStyles.t14Primary),
           ),
         ],
       ),
@@ -203,14 +215,14 @@ class _HistoryPageState extends State<HistoryPage> {
         }),
         actions: [
           IconButton(
-            tooltip: i18n("history_limit"),
+            tooltip: i18n('history_limit'),
             icon: const Icon(Icons.settings_rounded),
             onPressed: () => _showHistoryLimitDialog(context),
           ),
           Obx(() {
             if (SettingsService.to.history.historyRooms.v.isEmpty) return const SizedBox.shrink();
             return IconButton(
-              tooltip: i18n("clear_history"),
+              tooltip: i18n('clear_history'),
               icon: const Icon(Icons.delete_forever),
               onPressed: _clearHistory,
             );
@@ -224,13 +236,19 @@ class _HistoryPageState extends State<HistoryPage> {
           builder: (context, constraint) {
             final width = constraint.maxWidth;
             int crossAxisCount = width > 1280 ? 4 : (width > 960 ? 3 : (width > 640 ? 2 : 1));
-            if (dense) crossAxisCount = width > 1280 ? 5 : (width > 960 ? 4 : (width > 640 ? 3 : 2));
+            if (dense) {
+              crossAxisCount = width > 1280 ? 5 : (width > 960 ? 4 : (width > 640 ? 3 : 2));
+            }
             return EasyRefresh(
               controller: refreshController,
               onRefresh: onRefresh,
               onLoad: () => refreshController.finishLoad(IndicatorResult.noMore),
               child: rooms.isEmpty
-                  ? EmptyView(icon: Icons.history_rounded, title: i18n("empty_history"), subtitle: '')
+                  ? EmptyView(
+                      icon: Icons.history_rounded,
+                      title: i18n('empty_history'),
+                      subtitle: '',
+                    )
                   : WaterfallFlow.builder(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
                       gridDelegate: SliverWaterfallFlowDelegateWithFixedCrossAxisCount(

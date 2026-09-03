@@ -10,7 +10,7 @@ import 'package:pure_live/pkg/tars/codec/tars_output_stream.dart';
 
 class TarsMessage extends TarsStruct {
   String className() {
-    return "TarsMessage";
+    return 'TarsMessage';
   }
 
   RequestPacket header = RequestPacket();
@@ -38,7 +38,7 @@ class TarsMessage extends TarsStruct {
   @override
   void displayAsString(StringBuffer sb, int level) {
     TarsDisplayer _ds = TarsDisplayer(sb, level: level);
-    _ds.display(header, "header");
-    _ds.display(body, "body");
+    _ds.display(header, 'header');
+    _ds.display(body, 'body');
   }
 }

@@ -15,10 +15,7 @@ sealed class EnableArguments {
   /// a nicer animation.
   final Rectangle<int>? sourceRectHint;
 
-  const EnableArguments({
-    this.aspectRatio = const Rational.landscape(),
-    this.sourceRectHint,
-  });
+  const EnableArguments({this.aspectRatio = const Rational.landscape(), this.sourceRectHint});
 }
 
 /// Configuration data for manual PiP mode launch.
@@ -29,10 +26,7 @@ sealed class EnableArguments {
 /// See [OnLeavePiP], shall the app should enter the PiP mode automatically
 /// upon system-side action, e.g. on Home navigation gesture.
 class ImmediatePiP extends EnableArguments {
-  const ImmediatePiP({
-    super.aspectRatio = const Rational.landscape(),
-    super.sourceRectHint,
-  });
+  const ImmediatePiP({super.aspectRatio = const Rational.landscape(), super.sourceRectHint});
 }
 
 /// Configuration data for automatic PiP mode launch
@@ -44,8 +38,5 @@ class ImmediatePiP extends EnableArguments {
 ///
 ///
 class OnLeavePiP extends EnableArguments {
-  const OnLeavePiP({
-    super.aspectRatio = const Rational.landscape(),
-    super.sourceRectHint,
-  });
+  const OnLeavePiP({super.aspectRatio = const Rational.landscape(), super.sourceRectHint});
 }

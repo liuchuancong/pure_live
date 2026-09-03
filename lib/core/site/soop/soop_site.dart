@@ -16,7 +16,7 @@ class SoopSite extends LiveSite implements LiveSiteRoomRefresher, LiveSiteRecord
   String get id => Sites.soopSite;
 
   @override
-  String get name => "SOOP直播";
+  String get name => 'SOOP直播';
 
   List<String> imageExtensions = [
     'svgz',
@@ -42,7 +42,7 @@ class SoopSite extends LiveSite implements LiveSiteRoomRefresher, LiveSiteRecord
 
   @override
   Future<List<LiveCategory>> getCategores(int page, int pageSize) async {
-    List<LiveCategory> categories = [LiveCategory(id: "1", name: "热门", children: [])];
+    List<LiveCategory> categories = [LiveCategory(id: '1', name: '热门', children: [])];
 
     List<Future> futures = [];
     for (var item in categories) {
@@ -127,7 +127,7 @@ class SoopSite extends LiveSite implements LiveSiteRoomRefresher, LiveSiteRecord
   ) async {
     try {
       var subsArea = await getSubCategores(liveCategory, page, pageSize);
-      CoreLog.d("getAllSubCategores: $subsArea");
+      CoreLog.d('getAllSubCategores: $subsArea');
       allSubCategores.addAll(subsArea);
       var hasMore = subsArea.length >= pageSize;
       if (hasMore) {
@@ -143,28 +143,28 @@ class SoopSite extends LiveSite implements LiveSiteRoomRefresher, LiveSiteRecord
 
   Future<List<LiveArea>> getSubCategores(LiveCategory liveCategory, int page, int pageSize) async {
     var resultText = await HttpClient.instance.getJson(
-      "https://sch.sooplive.co.kr/api.php",
+      'https://sch.sooplive.co.kr/api.php',
       queryParameters: {
-        "m": "categoryList",
-        "szKeyword": "",
-        "szOrder": "view_cnt",
-        "nPageNo": page,
-        "nListCnt": pageSize,
-        "nOffset": "0",
-        "szPlatform": "pc",
+        'm': 'categoryList',
+        'szKeyword': '',
+        'szOrder': 'view_cnt',
+        'nPageNo': page,
+        'nListCnt': pageSize,
+        'nOffset': '0',
+        'szPlatform': 'pc',
       },
       header: getHeaders(),
     );
     var result = decode(resultText);
 
     List<LiveArea> subs = [];
-    for (var item in result["data"]["list"] ?? []) {
+    for (var item in result['data']['list'] ?? []) {
       var subCategory = LiveArea(
-        areaId: item["category_no"],
-        areaName: item["category_name"],
+        areaId: item['category_no'],
+        areaName: item['category_name'],
         areaType: liveCategory.id,
         platform: Sites.soopSite,
-        areaPic: item["cate_img"],
+        areaPic: item['cate_img'],
         typeName: liveCategory.name,
       );
       subs.add(subCategory);
@@ -189,40 +189,44 @@ class SoopSite extends LiveSite implements LiveSiteRoomRefresher, LiveSiteRecord
       'Sec-Fetch-Dest': 'empty',
       'Sec-Fetch-Mode': 'cors',
       'Sec-Fetch-Site': 'same-site',
-      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
-      "Cookie": SettingsService.to.cookieManager.soopCookie.value,
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
+      'Cookie': SettingsService.to.cookieManager.soopCookie.value,
     };
   }
 
   @override
-  Future<List<LiveRoom>> getCategoryRooms(LiveArea category, {int page = 1, int pageSize = 10}) async {
+  Future<List<LiveRoom>> getCategoryRooms(
+    LiveArea category, {
+    int page = 1,
+    int pageSize = 10,
+  }) async {
     final effectivePageSize = pageSize.clamp(1, 60);
     var result = await HttpClient.instance.getJson(
-      "https://sch.sooplive.co.kr/api.php",
+      'https://sch.sooplive.co.kr/api.php',
       queryParameters: {
-        "m": "categoryContentsList",
-        "szType": "live",
-        "nPageNo": page,
-        "nListCnt": effectivePageSize,
-        "szPlatform": "pc",
-        "szOrder": "view_cnt_desc",
-        "szCateNo": category.areaId,
+        'm': 'categoryContentsList',
+        'szType': 'live',
+        'nPageNo': page,
+        'nListCnt': effectivePageSize,
+        'szPlatform': 'pc',
+        'szOrder': 'view_cnt_desc',
+        'szCateNo': category.areaId,
       },
       header: getHeaders(),
     );
     result = decode(result);
     var items = <LiveRoom>[];
-    for (var item in result["data"]["list"]) {
+    for (var item in result['data']['list']) {
       final viewerCount = parseOnlineViewers(Map<dynamic, dynamic>.from(item as Map));
       var roomItem = LiveRoom(
-        roomId: item["user_id"] ?? '',
+        roomId: item['user_id'] ?? '',
         title: item['broad_title'] ?? '',
         cover: validImgUrl(item['thumbnail'] ?? ''),
-        nick: item["user_nick"].toString(),
+        nick: item['user_nick'].toString(),
         watching: viewerCount,
         onlineViewers: viewerCount,
         audienceMetricType: AudienceMetricType.onlineViewers,
-        avatar: validImgUrl(item["user_profile_img"]),
+        avatar: validImgUrl(item['user_profile_img']),
         area: category.areaName,
         liveStatus: LiveStatus.live,
         status: true,
@@ -238,10 +242,10 @@ class SoopSite extends LiveSite implements LiveSiteRoomRefresher, LiveSiteRecord
     List<LivePlayQuality> qualities = <LivePlayQuality>[];
     final qualityMap = <String, LivePlayQuality>{};
     final data = detail.data;
-    final presets = data is Map ? data["viewpreset"] : null;
+    final presets = data is Map ? data['viewpreset'] : null;
     if (presets is! List) return Future.value(qualities);
     for (final quality in presets.whereType<Map>()) {
-      final key = quality["name"]?.toString().trim() ?? '';
+      final key = quality['name']?.toString().trim() ?? '';
       if (key.isEmpty || key.toLowerCase() == 'auto') continue;
       final identity = key.toLowerCase();
       final bitrate = int.tryParse(quality['bps']?.toString() ?? '') ?? 0;
@@ -282,13 +286,16 @@ class SoopSite extends LiveSite implements LiveSiteRoomRefresher, LiveSiteRecord
   }
 
   @override
-  Future<List<String>> getPlayUrls({required LiveRoom detail, required LivePlayQuality quality}) async {
+  Future<List<String>> getPlayUrls({
+    required LiveRoom detail,
+    required LivePlayQuality quality,
+  }) async {
     final data = detail.data;
     if (data is! Map) return const [];
 
-    final bno = data["bno"] ?? "";
-    final rmd = data["rmd"] ?? "";
-    final cdn = data["cdn"] ?? "";
+    final bno = data['bno'] ?? '';
+    final rmd = data['rmd'] ?? '';
+    final cdn = data['cdn'] ?? '';
     if (bno.isEmpty || rmd.isEmpty) {
       return const [];
     }
@@ -296,7 +303,7 @@ class SoopSite extends LiveSite implements LiveSiteRoomRefresher, LiveSiteRecord
     try {
       final qualityId = quality.selectionId.toString();
       final cdnUrl = await getCdnUrl(rmd: rmd, cdn: cdn, bno: bno, quality: qualityId);
-      final aid = await getStreamAid(roomId: detail.roomId ?? "", bno: bno, quality: qualityId);
+      final aid = await getStreamAid(roomId: detail.roomId ?? '', bno: bno, quality: qualityId);
 
       if (cdnUrl.isEmpty || aid.isEmpty) return const [];
       return ['$cdnUrl?aid=$aid'];
@@ -309,32 +316,32 @@ class SoopSite extends LiveSite implements LiveSiteRoomRefresher, LiveSiteRecord
   @override
   Future<List<LiveRoom>> getRecommendRooms({int page = 1, int pageSize = 30}) async {
     var result = await HttpClient.instance.getJson(
-      "https://live.sooplive.co.kr/api/main_broad_list_api.php",
+      'https://live.sooplive.co.kr/api/main_broad_list_api.php',
       queryParameters: {
-        "selectType": "action",
-        "selectValue": "all",
-        "orderType": "view_cnt",
-        "pageNo": page,
-        "lang": "ko_KR",
+        'selectType': 'action',
+        'selectValue': 'all',
+        'orderType': 'view_cnt',
+        'pageNo': page,
+        'lang': 'ko_KR',
       },
       header: getHeaders(),
     );
     var items = <LiveRoom>[];
-    CoreLog.d("$result");
+    CoreLog.d('$result');
     result = decode(result);
-    for (var item in result["broad"]) {
-      var roomId = item["user_id"] ?? '';
+    for (var item in result['broad']) {
+      var roomId = item['user_id'] ?? '';
       final viewerCount = parseOnlineViewers(Map<dynamic, dynamic>.from(item as Map));
       var roomItem = LiveRoom(
         roomId: roomId,
         title: item['broad_title'] ?? '',
         cover: validImgUrl(item['broad_thumb'] ?? ''),
-        nick: item["user_nick"].toString(),
+        nick: item['user_nick'].toString(),
         watching: viewerCount,
         onlineViewers: viewerCount,
         audienceMetricType: AudienceMetricType.onlineViewers,
         avatar: getAvatarUrlByRoomId(roomId),
-        area: item["category_name"],
+        area: item['category_name'],
         liveStatus: LiveStatus.live,
         status: true,
         platform: Sites.soopSite,
@@ -371,23 +378,38 @@ class SoopSite extends LiveSite implements LiveSiteRoomRefresher, LiveSiteRecord
   }
 
   @override
-  Future<LiveRoom> getRoomDetailForRefresh({required String platform, required String roomId}) async {
+  Future<LiveRoom> getRoomDetailForRefresh({
+    required String platform,
+    required String roomId,
+  }) async {
     final data = await getPlayerLiveApiData(roomId: roomId);
     final channel = data['CHANNEL'];
     if (channel is! Map) {
       throw const FormatException('SOOP channel metadata is missing');
     }
     final rawResultCode = channel['RESULT'];
-    final resultCode = rawResultCode is num ? rawResultCode.toInt() : int.tryParse(rawResultCode?.toString() ?? '');
+    final resultCode = rawResultCode is num
+        ? rawResultCode.toInt()
+        : int.tryParse(rawResultCode?.toString() ?? '');
     if (resultCode == null) {
       throw const FormatException('SOOP channel result code is missing');
     }
     if (resultCode == 0) {
       // SOOP documents zero as an explicit no-live response.
-      return LiveRoom(roomId: roomId, platform: Sites.soopSite, status: false, liveStatus: LiveStatus.offline);
+      return LiveRoom(
+        roomId: roomId,
+        platform: Sites.soopSite,
+        status: false,
+        liveStatus: LiveStatus.offline,
+      );
     }
     if (resultCode == -2) {
-      return LiveRoom(roomId: roomId, platform: Sites.soopSite, status: false, liveStatus: LiveStatus.banned);
+      return LiveRoom(
+        roomId: roomId,
+        platform: Sites.soopSite,
+        status: false,
+        liveStatus: LiveStatus.banned,
+      );
     }
     if (resultCode != 1) {
       // Login/session and malformed business responses are not proof that the
@@ -399,7 +421,10 @@ class SoopSite extends LiveSite implements LiveSiteRoomRefresher, LiveSiteRecord
   }
 
   @override
-  Future<LiveRoom> getRoomDetailForRecording({required String platform, required String roomId}) async {
+  Future<LiveRoom> getRoomDetailForRecording({
+    required String platform,
+    required String roomId,
+  }) async {
     // The player API response contains viewpreset/rmd/cdn/bno, all of which
     // are required later to sign the selected recording URL. Skip websocket
     // credentials but keep the complete playback envelope.
@@ -409,10 +434,20 @@ class SoopSite extends LiveSite implements LiveSiteRoomRefresher, LiveSiteRecord
     final rawCode = channel['RESULT'];
     final resultCode = rawCode is num ? rawCode.toInt() : int.tryParse(rawCode?.toString() ?? '');
     if (resultCode == 0) {
-      return LiveRoom(roomId: roomId, platform: Sites.soopSite, status: false, liveStatus: LiveStatus.offline);
+      return LiveRoom(
+        roomId: roomId,
+        platform: Sites.soopSite,
+        status: false,
+        liveStatus: LiveStatus.offline,
+      );
     }
     if (resultCode == -2) {
-      return LiveRoom(roomId: roomId, platform: Sites.soopSite, status: false, liveStatus: LiveStatus.banned);
+      return LiveRoom(
+        roomId: roomId,
+        platform: Sites.soopSite,
+        status: false,
+        liveStatus: LiveStatus.banned,
+      );
     }
     if (resultCode != 1) throw StateError('SOOP recording metadata returned code $resultCode');
     return getLiveRoomByApi(data, null, roomId);
@@ -424,7 +459,7 @@ class SoopSite extends LiveSite implements LiveSiteRoomRefresher, LiveSiteRecord
     String roomId,
   ) async {
     var playerLiveApi = playerLiveApiData;
-    var jsonObj = playerLiveApi["CHANNEL"];
+    var jsonObj = playerLiveApi['CHANNEL'];
 
     final rawResultCode = jsonObj is Map ? jsonObj['RESULT'] : null;
     final resultCode = rawResultCode is num
@@ -432,7 +467,7 @@ class SoopSite extends LiveSite implements LiveSiteRoomRefresher, LiveSiteRecord
         : int.tryParse(rawResultCode?.toString() ?? '') ?? 0;
     // 业务码：1成功，-6需要登录，0无直播，‑2屏蔽
     if (resultCode != 1) {
-      CoreLog.w("soop channel result code=$resultCode");
+      CoreLog.w('soop channel result code=$resultCode');
       if (Get.isRegistered<PlayerController>()) {
         final PlayerController playerController = Get.find<PlayerController>();
         final currentRoom = playerController.currentRoom;
@@ -443,37 +478,39 @@ class SoopSite extends LiveSite implements LiveSiteRoomRefresher, LiveSiteRecord
       return LiveRoom(roomId: roomId, platform: Sites.soopSite).getLiveRoomWithError();
     }
 
-    var bno = jsonObj["BNO"].toString();
-    var nick = jsonObj["BJNICK"];
-    var rmd = jsonObj["RMD"]?.toString() ?? "";
-    var cdn = jsonObj["CDN"]?.toString() ?? "";
+    var bno = jsonObj['BNO'].toString();
+    var nick = jsonObj['BJNICK'];
+    var rmd = jsonObj['RMD']?.toString() ?? '';
+    var cdn = jsonObj['CDN']?.toString() ?? '';
 
-    var jsonObj2 = jsonObj["CATEGORY_TAGS"];
-    var area = "";
+    var jsonObj2 = jsonObj['CATEGORY_TAGS'];
+    var area = '';
     if (jsonObj2 != null) {
       var sList = (jsonObj2 as List);
       if (sList.isNotEmpty) {
         area = sList[0];
       }
     }
-    var sRoomId = jsonObj["BJID"].toString();
+    var sRoomId = jsonObj['BJID'].toString();
     var millisecondsSinceEpoch2 = DateTime.now().millisecondsSinceEpoch;
-    var cover = validImgUrl("https://liveimg.sooplive.co.kr/m/$bno?_t=$millisecondsSinceEpoch2");
-    var avatar = validImgUrl("https://stimg.sooplive.co.kr/LOGO/${sRoomId.substring(0, 2)}/$sRoomId/$sRoomId.jpg");
+    var cover = validImgUrl('https://liveimg.sooplive.co.kr/m/$bno?_t=$millisecondsSinceEpoch2');
+    var avatar = validImgUrl(
+      'https://stimg.sooplive.co.kr/LOGO/${sRoomId.substring(0, 2)}/$sRoomId/$sRoomId.jpg',
+    );
 
-    var isLiving = jsonObj["VIEWPRESET"] != null;
+    var isLiving = jsonObj['VIEWPRESET'] != null;
     final viewerCount = parseOnlineViewers(Map<dynamic, dynamic>.from(jsonObj as Map));
 
-    var data = {"viewpreset": jsonObj["VIEWPRESET"], "bno": bno, "rmd": rmd, "cdn": cdn};
+    var data = {'viewpreset': jsonObj['VIEWPRESET'], 'bno': bno, 'rmd': rmd, 'cdn': cdn};
     return LiveRoom(
       cover: cover,
       watching: viewerCount,
       onlineViewers: viewerCount,
       audienceMetricType: AudienceMetricType.onlineViewers,
-      roomId: jsonObj["BJID"].toString(),
+      roomId: jsonObj['BJID'].toString(),
       userId: bno,
       area: area,
-      title: jsonObj["TITLE"].toString(),
+      title: jsonObj['TITLE'].toString(),
       nick: nick,
       avatar: avatar,
       introduction: '',
@@ -493,10 +530,10 @@ class SoopSite extends LiveSite implements LiveSiteRoomRefresher, LiveSiteRecord
     required String quality,
   }) async {
     String returnType;
-    if (cdn.contains("gs_cdn")) {
-      returnType = "gs_cdn_pc_web";
-    } else if (cdn.contains("lg_cdn")) {
-      returnType = "lg_cdn_pc_web";
+    if (cdn.contains('gs_cdn')) {
+      returnType = 'gs_cdn_pc_web';
+    } else if (cdn.contains('lg_cdn')) {
+      returnType = 'lg_cdn_pc_web';
     } else {
       returnType = cdn;
     }
@@ -513,49 +550,53 @@ class SoopSite extends LiveSite implements LiveSiteRoomRefresher, LiveSiteRecord
     return viewUrl.toString();
   }
 
-  Future<String> getStreamAid({required String roomId, required String bno, required String quality}) async {
-    var url = "https://live.sooplive.co.kr/afreeca/player_live_api.php";
+  Future<String> getStreamAid({
+    required String roomId,
+    required String bno,
+    required String quality,
+  }) async {
+    var url = 'https://live.sooplive.co.kr/afreeca/player_live_api.php';
     var resultText = await HttpClient.instance.postJson(
       url,
       formUrlEncoded: true,
       queryParameters: {'bjid': roomId},
       data: {
-        "bid": roomId,
-        "bno": bno,
-        "type": "aid",
-        "pwd": "",
-        "player_type": "html5",
-        "stream_type": "common",
-        "quality": quality,
-        "mode": "landing",
-        "from_api": "0",
-        "is_revive": "false",
+        'bid': roomId,
+        'bno': bno,
+        'type': 'aid',
+        'pwd': '',
+        'player_type': 'html5',
+        'stream_type': 'common',
+        'quality': quality,
+        'mode': 'landing',
+        'from_api': '0',
+        'is_revive': 'false',
       },
       header: getHeaders(),
     );
     resultText = decode(resultText);
     var jsonObj = resultText['CHANNEL'];
-    var aid = jsonObj["AID"] ?? "";
+    var aid = jsonObj['AID'] ?? '';
     return aid;
   }
 
   Future<Map> getPlayerLiveApiData({required String roomId}) async {
-    var url = "https://live.sooplive.co.kr/afreeca/player_live_api.php";
+    var url = 'https://live.sooplive.co.kr/afreeca/player_live_api.php';
     var resultText = await HttpClient.instance.postJson(
       url,
       formUrlEncoded: true,
       queryParameters: {'bjid': roomId},
       data: {
-        "bid": roomId,
-        "bno": "",
-        "type": "live",
-        "pwd": "",
-        "player_type": "html5",
-        "stream_type": "common",
-        "quality": "HD",
-        "mode": "landing",
-        "from_api": "0",
-        "is_revive": "false",
+        'bid': roomId,
+        'bno': '',
+        'type': 'live',
+        'pwd': '',
+        'player_type': 'html5',
+        'stream_type': 'common',
+        'quality': 'HD',
+        'mode': 'landing',
+        'from_api': '0',
+        'is_revive': 'false',
       },
       header: getHeaders(),
     );
@@ -567,13 +608,13 @@ class SoopSite extends LiveSite implements LiveSiteRoomRefresher, LiveSiteRecord
     try {
       var resultText = resultTextFuture;
       var jsonObj = resultText['CHANNEL'];
-      var chatNo = jsonObj["CHATNO"];
-      var chatDomain = jsonObj["CHDOMAIN"];
-      var chpt = jsonObj["CHPT"];
+      var chatNo = jsonObj['CHATNO'];
+      var chatDomain = jsonObj['CHDOMAIN'];
+      var chpt = jsonObj['CHPT'];
       final wsUrl = 'wss://$chatDomain:$chpt/Websocket/$roomId';
       return SoopDanmakuArgs(url: wsUrl, chatNo: chatNo);
     } catch (e) {
-      CoreLog.w("$e");
+      CoreLog.w('$e');
       return null;
     }
   }
@@ -582,41 +623,41 @@ class SoopSite extends LiveSite implements LiveSiteRoomRefresher, LiveSiteRecord
   Future<List<LiveRoom>> searchRooms(String keyword, {int page = 1, int pageSize = 30}) async {
     final effectivePageSize = pageSize.clamp(1, 50);
     var resultText = await HttpClient.instance.getJson(
-      "https://sch.sooplive.co.kr/api.php",
+      'https://sch.sooplive.co.kr/api.php',
       queryParameters: {
-        "l": "DF",
-        "m": "liveSearch",
-        "c": "UTF-8",
-        "w": "webk",
-        "isMobile": "0",
-        "onlyParent": "1",
-        "szType": "json",
-        "szOrder": "score",
-        "szKeyword": keyword,
-        "nPageNo": page,
-        "nListCnt": effectivePageSize,
-        "tab": "live",
-        "location": "total_search",
-        "isHashSearch": "0",
-        "v": "2.0",
+        'l': 'DF',
+        'm': 'liveSearch',
+        'c': 'UTF-8',
+        'w': 'webk',
+        'isMobile': '0',
+        'onlyParent': '1',
+        'szType': 'json',
+        'szOrder': 'score',
+        'szKeyword': keyword,
+        'nPageNo': page,
+        'nListCnt': effectivePageSize,
+        'tab': 'live',
+        'location': 'total_search',
+        'isHashSearch': '0',
+        'v': '2.0',
       },
       header: getHeaders(),
     );
     var result = decode(resultText);
     var items = <LiveRoom>[];
-    var queryList = result["REAL_BROAD"] ?? [];
+    var queryList = result['REAL_BROAD'] ?? [];
     for (var item in queryList) {
-      var cover = item["broad_img"].toString();
-      var userId = item["user_id"].toString();
-      var title = item["broad_title"]?.toString() ?? "";
-      var area = item["standard_broad_cate_name"]?.toString() ?? "";
+      var cover = item['broad_img'].toString();
+      var userId = item['user_id'].toString();
+      var title = item['broad_title']?.toString() ?? '';
+      var area = item['standard_broad_cate_name']?.toString() ?? '';
       final viewerCount = parseOnlineViewers(Map<dynamic, dynamic>.from(item as Map));
 
       var roomItem = LiveRoom(
         roomId: userId,
         title: title,
         cover: validImgUrl(cover),
-        nick: item["user_nick"].toString(),
+        nick: item['user_nick'].toString(),
         area: area,
         status: true,
         liveStatus: LiveStatus.live,
@@ -633,18 +674,18 @@ class SoopSite extends LiveSite implements LiveSiteRoomRefresher, LiveSiteRecord
 
   String getAvatarUrlByRoomId(String roomId) {
     if (roomId.isEmpty || roomId.length < 2) {
-      return "";
+      return '';
     }
     var part = roomId.substring(0, 2);
-    return "https://stimg.sooplive.co.kr/LOGO/$part/$roomId/m/$roomId.webp";
+    return 'https://stimg.sooplive.co.kr/LOGO/$part/$roomId/m/$roomId.webp';
   }
 
   String validImgUrl(String imgUrl) {
     if (imgUrl.isEmpty) {
-      return "";
+      return '';
     }
-    if (imgUrl.startsWith("//")) {
-      return "https:$imgUrl";
+    if (imgUrl.startsWith('//')) {
+      return 'https:$imgUrl';
     }
     return imgUrl;
   }

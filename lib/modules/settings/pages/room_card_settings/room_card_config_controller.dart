@@ -33,13 +33,17 @@ class RoomCardConfigController extends GetxController {
     // Initialize mobile config if empty
     if (mobileConfigJson.value.isEmpty) {
       final preset = RoomCardPreset.fromKey(mobilePreset.value);
-      final model = preset == RoomCardPreset.custom ? RoomCardModel.custom() : RoomCardModel.fromPreset(preset);
+      final model = preset == RoomCardPreset.custom
+          ? RoomCardModel.custom()
+          : RoomCardModel.fromPreset(preset);
       mobileConfigJson.value = model.toJson();
     }
     // Initialize desktop config if empty
     if (desktopConfigJson.value.isEmpty) {
       final preset = RoomCardPreset.fromKey(desktopPreset.value);
-      final model = preset == RoomCardPreset.custom ? RoomCardModel.custom() : RoomCardModel.fromPreset(preset);
+      final model = preset == RoomCardPreset.custom
+          ? RoomCardModel.custom()
+          : RoomCardModel.fromPreset(preset);
       desktopConfigJson.value = model.toJson();
     }
   }
@@ -64,9 +68,17 @@ class RoomCardConfigController extends GetxController {
   }
 
   // ===== Calculate card height =====
-  double calculateCardHeight({required double itemWidth, bool denseOverride = false, bool smallScreen = false}) {
+  double calculateCardHeight({
+    required double itemWidth,
+    bool denseOverride = false,
+    bool smallScreen = false,
+  }) {
     final config = isMobileViewport ? getMobileConfig() : getDesktopConfig();
-    return config.calculateCardHeight(itemWidth, denseOverride: denseOverride, smallScreen: smallScreen);
+    return config.calculateCardHeight(
+      itemWidth,
+      denseOverride: denseOverride,
+      smallScreen: smallScreen,
+    );
   }
 
   void updateMobile(RoomCardModel Function(RoomCardModel) updater) {
@@ -76,7 +88,9 @@ class RoomCardConfigController extends GetxController {
   }
 
   void applyMobilePreset(RoomCardPreset preset) {
-    final model = preset == RoomCardPreset.custom ? RoomCardModel.custom() : RoomCardModel.fromPreset(preset);
+    final model = preset == RoomCardPreset.custom
+        ? RoomCardModel.custom()
+        : RoomCardModel.fromPreset(preset);
     mobilePreset.value = preset.key;
     mobileConfigJson.value = model.toJson();
     update();
@@ -268,15 +282,18 @@ class RoomCardConfigController extends GetxController {
   Color get mobileDarkTitleColor => _mobile.titleColor ?? Colors.white;
   Color get mobileLightSubtitleColor => _mobile.subtitleColor ?? Colors.grey.shade700;
   Color get mobileDarkSubtitleColor => _mobile.subtitleColor ?? Colors.grey.shade400;
-  Color get mobilePlatformBackgroundLight => _mobile.platformBackgroundColor ?? Colors.grey.shade200;
+  Color get mobilePlatformBackgroundLight =>
+      _mobile.platformBackgroundColor ?? Colors.grey.shade200;
   Color get mobilePlatformBackgroundDark => _mobile.platformBackgroundColor ?? Colors.grey.shade800;
   Color get mobilePlatformTextLight => _mobile.platformTextColor ?? Colors.black87;
   Color get mobilePlatformTextDark => _mobile.platformTextColor ?? Colors.white;
   Color get mobileChipBackgroundColor => _mobile.chipBackgroundColor ?? Get.theme.primaryColor;
   Color get mobileChipTextColor => _mobile.chipTextColor;
-  Color get mobileBadgeBackground => _mobile.metricBackgroundColor ?? Colors.black.withValues(alpha: 0.48);
+  Color get mobileBadgeBackground =>
+      _mobile.metricBackgroundColor ?? Colors.black.withValues(alpha: 0.48);
   Color get mobileBadgeForeground => _mobile.metricTextColor;
-  Color get mobileMetricBorderColor => _mobile.metricBorderColor ?? Get.theme.primaryColor.withValues(alpha: 0.12);
+  Color get mobileMetricBorderColor =>
+      _mobile.metricBorderColor ?? Get.theme.primaryColor.withValues(alpha: 0.12);
   Color get mobileDeleteButtonBackground => _mobile.deleteButtonBackgroundColor ?? Colors.black54;
   Color get mobileDeleteButtonIconColor => _mobile.deleteButtonIconColor;
 
@@ -297,7 +314,9 @@ class RoomCardConfigController extends GetxController {
   }
 
   void applyDesktopPreset(RoomCardPreset preset) {
-    final model = preset == RoomCardPreset.custom ? RoomCardModel.custom() : RoomCardModel.fromPreset(preset);
+    final model = preset == RoomCardPreset.custom
+        ? RoomCardModel.custom()
+        : RoomCardModel.fromPreset(preset);
     desktopPreset.value = preset.key;
     desktopConfigJson.value = model.toJson();
     update();
@@ -489,15 +508,19 @@ class RoomCardConfigController extends GetxController {
   Color get desktopDarkTitleColor => _desktop.titleColor ?? Colors.white;
   Color get desktopLightSubtitleColor => _desktop.subtitleColor ?? Colors.grey.shade700;
   Color get desktopDarkSubtitleColor => _desktop.subtitleColor ?? Colors.grey.shade400;
-  Color get desktopPlatformBackgroundLight => _desktop.platformBackgroundColor ?? Colors.grey.shade200;
-  Color get desktopPlatformBackgroundDark => _desktop.platformBackgroundColor ?? Colors.grey.shade800;
+  Color get desktopPlatformBackgroundLight =>
+      _desktop.platformBackgroundColor ?? Colors.grey.shade200;
+  Color get desktopPlatformBackgroundDark =>
+      _desktop.platformBackgroundColor ?? Colors.grey.shade800;
   Color get desktopPlatformTextLight => _desktop.platformTextColor ?? Colors.black87;
   Color get desktopPlatformTextDark => _desktop.platformTextColor ?? Colors.white;
   Color get desktopChipBackgroundColor => _desktop.chipBackgroundColor ?? Get.theme.primaryColor;
   Color get desktopChipTextColor => _desktop.chipTextColor;
-  Color get desktopBadgeBackground => _desktop.metricBackgroundColor ?? Colors.black.withValues(alpha: 0.48);
+  Color get desktopBadgeBackground =>
+      _desktop.metricBackgroundColor ?? Colors.black.withValues(alpha: 0.48);
   Color get desktopBadgeForeground => _desktop.metricTextColor;
-  Color get desktopMetricBorderColor => _desktop.metricBorderColor ?? Get.theme.primaryColor.withValues(alpha: 0.12);
+  Color get desktopMetricBorderColor =>
+      _desktop.metricBorderColor ?? Get.theme.primaryColor.withValues(alpha: 0.12);
   Color get desktopDeleteButtonBackground => _desktop.deleteButtonBackgroundColor ?? Colors.black54;
   Color get desktopDeleteButtonIconColor => _desktop.deleteButtonIconColor;
 

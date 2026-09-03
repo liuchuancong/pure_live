@@ -63,8 +63,8 @@ class GetPageRoute<T> extends PageRoute<T>
     this.maintainState = true,
     super.fullscreenDialog,
     this.middlewares,
-  })  : bindings = (binding == null) ? bindings : [...bindings, binding],
-        _middlewareRunner = MiddlewareRunner(middlewares);
+  }) : bindings = (binding == null) ? bindings : [...bindings, binding],
+       _middlewareRunner = MiddlewareRunner(middlewares);
 
   @override
   final Duration transitionDuration;
@@ -118,8 +118,9 @@ class GetPageRoute<T> extends PageRoute<T>
 
     final localBinds = [...?binds];
 
-    final bindingsToBind = _middlewareRunner
-        .runOnBindingsStart(bindings.isNotEmpty ? bindings : localBinds);
+    final bindingsToBind = _middlewareRunner.runOnBindingsStart(
+      bindings.isNotEmpty ? bindings : localBinds,
+    );
 
     final pageToBuild = _middlewareRunner.runOnPageBuildStart(page)!;
 
@@ -128,10 +129,7 @@ class GetPageRoute<T> extends PageRoute<T>
         for (final item in bindingsToBind) {
           final dep = item.dependencies();
           if (dep is List<Bind>) {
-            _child = Binds(
-              binds: dep,
-              child: _middlewareRunner.runOnPageBuilt(pageToBuild()),
-            );
+            _child = Binds(binds: dep, child: _middlewareRunner.runOnPageBuilt(pageToBuild()));
           }
         }
       } else if (bindingsToBind is List<Bind>) {

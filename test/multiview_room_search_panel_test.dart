@@ -17,7 +17,7 @@ import 'package:pure_live/modules/multiview/widgets/multiview_room_search_panel.
 /// lookup path is observable, so nothing in these tests touches the network.
 class _FakeLiveSite extends LiveSite {
   // ignore: prefer_initializing_formals
-  _FakeLiveSite({List<LiveRoom> rooms = const <LiveRoom>[], this.detail, this.fail = false}) : _rooms = rooms;
+  _FakeLiveSite({this._rooms = const <LiveRoom>[], this.detail, this.fail = false});
 
   final List<LiveRoom> _rooms;
   final LiveRoom? detail;
@@ -41,7 +41,8 @@ class _FakeLiveSite extends LiveSite {
   }
 }
 
-Site _site(String id, _FakeLiveSite liveSite) => Site(id: id, name: id, logo: '', liveSite: liveSite);
+Site _site(String id, _FakeLiveSite liveSite) =>
+    Site(id: id, name: id, logo: '', liveSite: liveSite);
 
 int _byNick(LiveRoom left, LiveRoom right) => (left.nick ?? '').compareTo(right.nick ?? '');
 
@@ -165,7 +166,10 @@ void main() {
       audienceCompare: _byNick,
     );
 
-    await _pumpPanel(tester, MultiviewRoomSearchPanel(cellIndex: 2, onPicked: picked.add, search: controller));
+    await _pumpPanel(
+      tester,
+      MultiviewRoomSearchPanel(cellIndex: 2, onPicked: picked.add, search: controller),
+    );
 
     await tester.enterText(find.byType(TextField).first, 'anchor');
     await tester.tap(find.text('搜索'));
@@ -192,7 +196,10 @@ void main() {
       audienceCompare: _byNick,
     );
 
-    await _pumpPanel(tester, MultiviewRoomSearchPanel(cellIndex: 0, onPicked: (_) {}, search: controller));
+    await _pumpPanel(
+      tester,
+      MultiviewRoomSearchPanel(cellIndex: 0, onPicked: (_) {}, search: controller),
+    );
     await tester.enterText(find.byType(TextField).first, 'x');
     await tester.tap(find.text('搜索'));
     await _settle(tester);
@@ -205,12 +212,18 @@ void main() {
     final controller = MultiviewRoomSearchController(
       sites: <Site>[
         _site(Sites.huyaSite, _FakeLiveSite(fail: true)),
-        _site(Sites.douyuSite, _FakeLiveSite(rooms: <LiveRoom>[room(Sites.douyuSite, '42', 'still-shown')])),
+        _site(
+          Sites.douyuSite,
+          _FakeLiveSite(rooms: <LiveRoom>[room(Sites.douyuSite, '42', 'still-shown')]),
+        ),
       ],
       audienceCompare: _byNick,
     );
 
-    await _pumpPanel(tester, MultiviewRoomSearchPanel(cellIndex: 1, onPicked: (_) {}, search: controller));
+    await _pumpPanel(
+      tester,
+      MultiviewRoomSearchPanel(cellIndex: 1, onPicked: (_) {}, search: controller),
+    );
     await tester.enterText(find.byType(TextField).first, 'q');
     await tester.tap(find.text('搜索'));
     await _settle(tester);
@@ -227,7 +240,10 @@ void main() {
       audienceCompare: _byNick,
     );
 
-    await _pumpPanel(tester, MultiviewRoomSearchPanel(cellIndex: 0, onPicked: picked.add, search: controller));
+    await _pumpPanel(
+      tester,
+      MultiviewRoomSearchPanel(cellIndex: 0, onPicked: picked.add, search: controller),
+    );
     await tester.enterText(find.byType(TextField).last, 'https://www.huya.com/9527');
     await tester.tap(find.byIcon(Remix.add_line));
     await _settle(tester);
@@ -244,7 +260,10 @@ void main() {
       audienceCompare: _byNick,
     );
 
-    await _pumpPanel(tester, MultiviewRoomSearchPanel(cellIndex: 0, onPicked: picked.add, search: controller));
+    await _pumpPanel(
+      tester,
+      MultiviewRoomSearchPanel(cellIndex: 0, onPicked: picked.add, search: controller),
+    );
     // `nosuchsite/123` parses to a platform this app has no adapter for.
     await tester.enterText(find.byType(TextField).last, 'nosuchsite/123');
     await tester.tap(find.byIcon(Remix.add_line));
@@ -254,7 +273,9 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testPanel('the panel is non-modal: taps outside its rectangle reach what is behind it', (tester) async {
+  testPanel('the panel is non-modal: taps outside its rectangle reach what is behind it', (
+    tester,
+  ) async {
     var behindTaps = 0;
     final controller = MultiviewRoomSearchController(sites: <Site>[], audienceCompare: _byNick);
 
@@ -301,7 +322,12 @@ void main() {
         child: SizedBox(
           width: 320,
           height: 380,
-          child: MultiviewRoomSearchPanel(cellIndex: 0, onPicked: (_) {}, search: controller, onDragUpdate: moves.add),
+          child: MultiviewRoomSearchPanel(
+            cellIndex: 0,
+            onPicked: (_) {},
+            search: controller,
+            onDragUpdate: moves.add,
+          ),
         ),
       ),
     );

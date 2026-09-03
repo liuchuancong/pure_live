@@ -71,12 +71,22 @@ class _LivePlayShellState extends State<LivePlayShell> with SingleTickerProvider
   Widget _buildDesktopLayout(double progress) {
     return Stack(
       fit: StackFit.expand,
-      children: [_buildDesktopVideo(progress), _buildDesktopPanel(progress), _buildToggleButton(progress)],
+      children: [
+        _buildDesktopVideo(progress),
+        _buildDesktopPanel(progress),
+        _buildToggleButton(progress),
+      ],
     );
   }
 
   Widget _buildDesktopVideo(double progress) {
-    return Positioned(left: 0, top: 0, bottom: 0, right: _desktopPanelWidth * progress, child: const _VideoHost());
+    return Positioned(
+      left: 0,
+      top: 0,
+      bottom: 0,
+      right: _desktopPanelWidth * progress,
+      child: const _VideoHost(),
+    );
   }
 
   Widget _buildDesktopPanel(double progress) {
@@ -93,7 +103,10 @@ class _LivePlayShellState extends State<LivePlayShell> with SingleTickerProvider
   }
 
   Widget _buildMobileLayout(double progress) {
-    return Stack(fit: StackFit.expand, children: [_buildMobileFlip(progress), _buildToggleButton(progress)]);
+    return Stack(
+      fit: StackFit.expand,
+      children: [_buildMobileFlip(progress), _buildToggleButton(progress)],
+    );
   }
 
   Widget _buildMobileFlip(double progress) {
@@ -134,7 +147,11 @@ class _LivePlayShellState extends State<LivePlayShell> with SingleTickerProvider
       ignoring: progress < 0.5,
       child: Opacity(
         opacity: opacity,
-        child: Transform(alignment: Alignment.center, transform: matrix, child: _buildPanelContent()),
+        child: Transform(
+          alignment: Alignment.center,
+          transform: matrix,
+          child: _buildPanelContent(),
+        ),
       ),
     );
   }
@@ -196,7 +213,10 @@ class _LivePlayShellState extends State<LivePlayShell> with SingleTickerProvider
         return const SizedBox.shrink();
       }
 
-      return const Padding(padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8), child: ResolutionsRow());
+      return const Padding(
+        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: ResolutionsRow(),
+      );
     });
   }
 

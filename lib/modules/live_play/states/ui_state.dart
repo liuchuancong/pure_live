@@ -65,5 +65,6 @@ class UIState {
   }
 
   @override
-  int get hashCode => Object.hash(screenMode, refreshKey, isMenuOpen, closeTimes, closeTimeFlag, displayVideoLayer);
+  int get hashCode =>
+      Object.hash(screenMode, refreshKey, isMenuOpen, closeTimes, closeTimeFlag, displayVideoLayer);
 }

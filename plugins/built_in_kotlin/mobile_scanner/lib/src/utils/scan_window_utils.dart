@@ -139,15 +139,9 @@ final class ScanWindowUtils {
     final percentageLeft = clippedScanWndInTexSpace.left / textureSize.width;
     final percentageTop = clippedScanWndInTexSpace.top / textureSize.height;
     final percentageRight = clippedScanWndInTexSpace.right / textureSize.width;
-    final percentageBottom =
-        clippedScanWndInTexSpace.bottom / textureSize.height;
+    final percentageBottom = clippedScanWndInTexSpace.bottom / textureSize.height;
 
     // This rectangle can be used to cut out a rectangle of the scan image.
-    return Rect.fromLTRB(
-      percentageLeft,
-      percentageTop,
-      percentageRight,
-      percentageBottom,
-    );
+    return Rect.fromLTRB(percentageLeft, percentageTop, percentageRight, percentageBottom);
   }
 }

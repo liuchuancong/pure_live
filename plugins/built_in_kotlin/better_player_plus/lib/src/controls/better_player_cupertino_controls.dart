@@ -27,7 +27,8 @@ class BetterPlayerCupertinoControls extends StatefulWidget {
   State<StatefulWidget> createState() => _BetterPlayerCupertinoControlsState();
 }
 
-class _BetterPlayerCupertinoControlsState extends BetterPlayerControlsState<BetterPlayerCupertinoControls> {
+class _BetterPlayerCupertinoControlsState
+    extends BetterPlayerControlsState<BetterPlayerCupertinoControls> {
   final marginSize = 5.0;
   VideoPlayerValue? _latestValue;
   double? _latestVolume;
@@ -179,9 +180,18 @@ class _BetterPlayerCupertinoControlsState extends BetterPlayerControlsState<Bett
                         _buildSkipForward(iconColor, barHeight)
                       else
                         const SizedBox(),
-                      if (_controlsConfiguration.enableProgressText) _buildPosition() else const SizedBox(),
-                      if (_controlsConfiguration.enableProgressBar) _buildProgressBar() else const SizedBox(),
-                      if (_controlsConfiguration.enableProgressText) _buildRemaining() else const SizedBox(),
+                      if (_controlsConfiguration.enableProgressText)
+                        _buildPosition()
+                      else
+                        const SizedBox(),
+                      if (_controlsConfiguration.enableProgressBar)
+                        _buildProgressBar()
+                      else
+                        const SizedBox(),
+                      if (_controlsConfiguration.enableProgressText)
+                        _buildRemaining()
+                      else
+                        const SizedBox(),
                     ],
                   ),
           ),
@@ -314,20 +324,25 @@ class _BetterPlayerCupertinoControlsState extends BetterPlayerControlsState<Bett
     ),
   );
 
-  GestureDetector _buildPlayPause(VideoPlayerController controller, Color iconColor, double barHeight) =>
-      GestureDetector(
-        onTap: _onPlayPause,
-        child: Container(
-          height: barHeight,
-          color: Colors.transparent,
-          padding: const EdgeInsets.symmetric(horizontal: 6),
-          child: Icon(
-            controller.value.isPlaying ? _controlsConfiguration.pauseIcon : _controlsConfiguration.playIcon,
-            color: iconColor,
-            size: barHeight * 0.6,
-          ),
-        ),
-      );
+  GestureDetector _buildPlayPause(
+    VideoPlayerController controller,
+    Color iconColor,
+    double barHeight,
+  ) => GestureDetector(
+    onTap: _onPlayPause,
+    child: Container(
+      height: barHeight,
+      color: Colors.transparent,
+      padding: const EdgeInsets.symmetric(horizontal: 6),
+      child: Icon(
+        controller.value.isPlaying
+            ? _controlsConfiguration.pauseIcon
+            : _controlsConfiguration.playIcon,
+        color: iconColor,
+        size: barHeight * 0.6,
+      ),
+    ),
+  );
 
   Widget _buildPosition() {
     final position = _latestValue != null ? _latestValue!.position : Duration.zero;
@@ -377,7 +392,12 @@ class _BetterPlayerCupertinoControlsState extends BetterPlayerControlsState<Bett
     ),
   );
 
-  Widget _buildTopBar(Color backgroundColor, Color iconColor, double topBarHeight, double buttonPadding) {
+  Widget _buildTopBar(
+    Color backgroundColor,
+    Color iconColor,
+    double topBarHeight,
+    double buttonPadding,
+  ) {
     if (!betterPlayerController!.controlsEnabled) {
       return const SizedBox();
     }
@@ -399,12 +419,26 @@ class _BetterPlayerCupertinoControlsState extends BetterPlayerControlsState<Bett
             const SizedBox(),
           const Spacer(),
           if (_controlsConfiguration.enableMute)
-            _buildMuteButton(_controller, backgroundColor, iconColor, barHeight, iconSize, buttonPadding)
+            _buildMuteButton(
+              _controller,
+              backgroundColor,
+              iconColor,
+              barHeight,
+              iconSize,
+              buttonPadding,
+            )
           else
             const SizedBox(),
           const SizedBox(width: 4),
           if (_controlsConfiguration.enableOverflowMenu)
-            _buildMoreButton(_controller, backgroundColor, iconColor, barHeight, iconSize, buttonPadding)
+            _buildMoreButton(
+              _controller,
+              backgroundColor,
+              iconColor,
+              barHeight,
+              iconSize,
+              buttonPadding,
+            )
           else
             const SizedBox(),
         ],
@@ -457,7 +491,8 @@ class _BetterPlayerCupertinoControlsState extends BetterPlayerControlsState<Bett
 
     _updateState();
 
-    if ((_controller!.value.isPlaying) || _betterPlayerController!.betterPlayerConfiguration.autoPlay) {
+    if ((_controller!.value.isPlaying) ||
+        _betterPlayerController!.betterPlayerConfiguration.autoPlay) {
       _startHideTimer();
     }
 
@@ -466,16 +501,17 @@ class _BetterPlayerCupertinoControlsState extends BetterPlayerControlsState<Bett
         changePlayerControlsNotVisible(false);
       });
     }
-    _controlsVisibilityStreamSubscription = _betterPlayerController!.controlsVisibilityStream.listen((state) {
-      if (controlsNotVisible == !state) {
-        return;
-      }
-      changePlayerControlsNotVisible(!state);
+    _controlsVisibilityStreamSubscription = _betterPlayerController!.controlsVisibilityStream
+        .listen((state) {
+          if (controlsNotVisible == !state) {
+            return;
+          }
+          changePlayerControlsNotVisible(!state);
 
-      if (!controlsNotVisible) {
-        cancelAndRestartTimer();
-      }
-    });
+          if (!controlsNotVisible) {
+            cancelAndRestartTimer();
+          }
+        });
   }
 
   void _onExpandCollapse() {
@@ -547,7 +583,10 @@ class _BetterPlayerCupertinoControlsState extends BetterPlayerControlsState<Bett
 
   void _updateState() {
     if (mounted) {
-      if (!controlsNotVisible || isVideoFinished(_controller!.value) || _wasLoading || isLoading(_controller!.value)) {
+      if (!controlsNotVisible ||
+          isVideoFinished(_controller!.value) ||
+          _wasLoading ||
+          isLoading(_controller!.value)) {
         setState(() {
           _latestValue = _controller!.value;
           if (isVideoFinished(_latestValue)) {
@@ -567,14 +606,21 @@ class _BetterPlayerCupertinoControlsState extends BetterPlayerControlsState<Bett
   Widget _buildErrorWidget() {
     final errorBuilder = _betterPlayerController!.betterPlayerConfiguration.errorBuilder;
     if (errorBuilder != null) {
-      return errorBuilder(context, _betterPlayerController!.videoPlayerController!.value.errorDescription);
+      return errorBuilder(
+        context,
+        _betterPlayerController!.videoPlayerController!.value.errorDescription,
+      );
     } else {
       final textStyle = TextStyle(color: _controlsConfiguration.textColor);
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(CupertinoIcons.exclamationmark_triangle, color: _controlsConfiguration.iconsColor, size: 42),
+            Icon(
+              CupertinoIcons.exclamationmark_triangle,
+              color: _controlsConfiguration.iconsColor,
+              size: 42,
+            ),
             Text(_betterPlayerController!.translations.generalDefaultError, style: textStyle),
             if (_controlsConfiguration.enableRetry)
               TextButton(
@@ -597,7 +643,9 @@ class _BetterPlayerCupertinoControlsState extends BetterPlayerControlsState<Bett
       return _controlsConfiguration.loadingWidget;
     }
 
-    return CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(_controlsConfiguration.loadingColor));
+    return CircularProgressIndicator(
+      valueColor: AlwaysStoppedAnimation<Color>(_controlsConfiguration.loadingColor),
+    );
   }
 
   Widget _buildPipButton(
@@ -613,7 +661,9 @@ class _BetterPlayerCupertinoControlsState extends BetterPlayerControlsState<Bett
       if (isPipSupported && _betterPlayerController!.betterPlayerGlobalKey != null) {
         return GestureDetector(
           onTap: () {
-            betterPlayerController!.enablePictureInPicture(betterPlayerController!.betterPlayerGlobalKey!);
+            betterPlayerController!.enablePictureInPicture(
+              betterPlayerController!.betterPlayerGlobalKey!,
+            );
           },
           child: AnimatedOpacity(
             opacity: controlsNotVisible ? 0.0 : 1.0,

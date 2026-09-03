@@ -31,12 +31,15 @@ class HomeMobileView extends StatelessWidget {
               case HomeMenu.favorites:
                 destinations.add(
                   NavigationDestination(
-                    icon: GestureDetector(onDoubleTap: onFavoriteDoubleTap, child: const Icon(Remix.heart_3_line)),
+                    icon: GestureDetector(
+                      onDoubleTap: onFavoriteDoubleTap,
+                      child: const Icon(Remix.heart_3_line),
+                    ),
                     selectedIcon: GestureDetector(
                       onDoubleTap: onFavoriteDoubleTap,
                       child: const Icon(Remix.heart_3_fill),
                     ),
-                    label: i18n("favorites_title"),
+                    label: i18n('favorites_title'),
                   ),
                 );
                 break;
@@ -45,7 +48,7 @@ class HomeMobileView extends StatelessWidget {
                   NavigationDestination(
                     icon: const Icon(Remix.fire_line),
                     selectedIcon: const Icon(Remix.fire_fill),
-                    label: i18n("popular_title"),
+                    label: i18n('popular_title'),
                   ),
                 );
                 break;
@@ -54,7 +57,7 @@ class HomeMobileView extends StatelessWidget {
                   NavigationDestination(
                     icon: const Icon(Remix.apps_2_line),
                     selectedIcon: const Icon(Remix.apps_2_fill),
-                    label: i18n("areas_title"),
+                    label: i18n('areas_title'),
                   ),
                 );
                 break;
@@ -63,7 +66,7 @@ class HomeMobileView extends StatelessWidget {
                   NavigationDestination(
                     icon: const Icon(Remix.download_2_line),
                     selectedIcon: const Icon(Remix.download_2_fill),
-                    label: i18n("record_center"),
+                    label: i18n('record_center'),
                   ),
                 );
                 break;

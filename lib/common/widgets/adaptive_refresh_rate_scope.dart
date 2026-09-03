@@ -54,7 +54,9 @@ class AdaptiveRefreshRateController {
 
   static void endPointer() {
     if (_activePointers > 0) _activePointers--;
-    if (_mode == AppRefreshRateMode.balanced && _isResumed && _activePointers == 0) _scheduleSettle();
+    if (_mode == AppRefreshRateMode.balanced && _isResumed && _activePointers == 0) {
+      _scheduleSettle();
+    }
   }
 
   static void pause() {
@@ -78,7 +80,8 @@ class AdaptiveRefreshRateController {
 
   static void _requestHigh(bool high) {
     final target =
-        _isResumed && (_mode == AppRefreshRateMode.performance || (_mode == AppRefreshRateMode.balanced && high));
+        _isResumed &&
+        (_mode == AppRefreshRateMode.performance || (_mode == AppRefreshRateMode.balanced && high));
     if (_requestedHigh == target) return;
     _requestedHigh = target;
     unawaited(_transitions.submit(target));
@@ -95,7 +98,8 @@ class AdaptiveRefreshRateScope extends StatefulWidget {
   State<AdaptiveRefreshRateScope> createState() => _AdaptiveRefreshRateScopeState();
 }
 
-class _AdaptiveRefreshRateScopeState extends State<AdaptiveRefreshRateScope> with WidgetsBindingObserver {
+class _AdaptiveRefreshRateScopeState extends State<AdaptiveRefreshRateScope>
+    with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
@@ -150,7 +154,10 @@ class _AdaptiveRefreshRateScopeState extends State<AdaptiveRefreshRateScope> wit
       onPointerMove: (_) => AdaptiveRefreshRateController.keepInteractive(),
       onPointerUp: (_) => AdaptiveRefreshRateController.endPointer(),
       onPointerCancel: (_) => AdaptiveRefreshRateController.endPointer(),
-      child: NotificationListener<ScrollNotification>(onNotification: _onScroll, child: widget.child),
+      child: NotificationListener<ScrollNotification>(
+        onNotification: _onScroll,
+        child: widget.child,
+      ),
     );
   }
 }

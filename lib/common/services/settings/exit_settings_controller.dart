@@ -140,7 +140,10 @@ class ExitSettingsController extends GetxController {
     };
   }
 
-  static Map<String, dynamic> mergeConfig(Map<String, dynamic> rootConfig, Map<String, dynamic> updateFields) {
+  static Map<String, dynamic> mergeConfig(
+    Map<String, dynamic> rootConfig,
+    Map<String, dynamic> updateFields,
+  ) {
     final exit = Map<String, dynamic>.from(rootConfig['exit'] ?? {});
     updateFields.forEach((k, v) => exit[k] = v);
     rootConfig['exit'] = exit;

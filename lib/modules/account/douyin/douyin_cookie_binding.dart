@@ -4,6 +4,6 @@ import 'package:pure_live/modules/account/douyin/douyin_cookie_controller.dart';
 class DouyinCookieBinding extends Binding {
   @override
   List<Bind> dependencies() {
-    return [Bind.lazyPut(() => DouyinCookieController())];
+    return [Bind.lazyPut(DouyinCookieController.new)];
   }
 }

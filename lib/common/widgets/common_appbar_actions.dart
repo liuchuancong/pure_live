@@ -11,7 +11,7 @@ class CommonAppBarActions extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         PopupMenuButton<int>(
-          tooltip: i18n("more"),
+          tooltip: i18n('more'),
           icon: const Icon(Remix.menu_search_line, size: 24),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           offset: const Offset(0, 10),
@@ -38,7 +38,7 @@ class CommonAppBarActions extends StatelessWidget {
                 children: [
                   Icon(Remix.search_line, size: 20, color: Theme.of(context).colorScheme.primary),
                   const SizedBox(width: 12),
-                  Text(i18n("search_live"), style: AppTextStyles.t14),
+                  Text(i18n('search_live'), style: AppTextStyles.t14),
                 ],
               ),
             ),
@@ -50,7 +50,7 @@ class CommonAppBarActions extends StatelessWidget {
                 children: [
                   Icon(Remix.link, size: 20, color: Theme.of(context).colorScheme.primary),
                   const SizedBox(width: 12),
-                  Text(i18n("open_link"), style: AppTextStyles.t14),
+                  Text(i18n('open_link'), style: AppTextStyles.t14),
                 ],
               ),
             ),
@@ -60,9 +60,13 @@ class CommonAppBarActions extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 14),
                 child: Row(
                   children: [
-                    Icon(Remix.layout_grid_line, size: 20, color: Theme.of(context).colorScheme.primary),
+                    Icon(
+                      Remix.layout_grid_line,
+                      size: 20,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
                     const SizedBox(width: 12),
-                    Text(i18n("multiview_title"), style: AppTextStyles.t14),
+                    Text(i18n('multiview_title'), style: AppTextStyles.t14),
                   ],
                 ),
               ),

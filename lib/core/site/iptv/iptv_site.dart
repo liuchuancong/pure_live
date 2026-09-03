@@ -22,7 +22,7 @@ class IptvSite implements LiveSite, LiveSiteRecordRoomResolver {
   String name = '网络';
 
   String defaultAvatar =
-      "https://img95.699pic.com/xsj/0q/x6/7p.jpg%21/fw/700/watermark/url/L3hzai93YXRlcl9kZXRhaWwyLnBuZw/align/southeast";
+      'https://img95.699pic.com/xsj/0q/x6/7p.jpg%21/fw/700/watermark/url/L3hzai93YXRlcl9kZXRhaWwyLnBuZw/align/southeast';
 
   @override
   Future<List<LiveCategory>> getCategores(int page, int pageSize) async {
@@ -62,7 +62,11 @@ class IptvSite implements LiveSite, LiveSiteRecordRoomResolver {
   // =========================================================
 
   @override
-  Future<List<LiveRoom>> getCategoryRooms(LiveArea category, {int page = 1, int pageSize = 30}) async {
+  Future<List<LiveRoom>> getCategoryRooms(
+    LiveArea category, {
+    int page = 1,
+    int pageSize = 30,
+  }) async {
     final db = Get.find<DbService>().db;
     final items = <LiveRoom>[];
 
@@ -298,10 +302,16 @@ class IptvSite implements LiveSite, LiveSiteRecordRoomResolver {
   // =========================================================
 
   @override
-  Future<List<String>> getPlayUrls({required LiveRoom detail, required LivePlayQuality quality}) async {
+  Future<List<String>> getPlayUrls({
+    required LiveRoom detail,
+    required LivePlayQuality quality,
+  }) async {
     final data = quality.data;
     if (data is! List) return const <String>[];
-    return data.map((item) => item.toString().trim()).where((url) => url.isNotEmpty).toList(growable: false);
+    return data
+        .map((item) => item.toString().trim())
+        .where((url) => url.isNotEmpty)
+        .toList(growable: false);
   }
 
   // =========================================================
@@ -334,7 +344,11 @@ class IptvSite implements LiveSite, LiveSiteRecordRoomResolver {
   // =========================================================
 
   @override
-  Future<List<LiveAnchorItem>> searchAnchors(String keyword, {int page = 1, int pageSize = 30}) async {
+  Future<List<LiveAnchorItem>> searchAnchors(
+    String keyword, {
+    int page = 1,
+    int pageSize = 30,
+  }) async {
     return [];
   }
 

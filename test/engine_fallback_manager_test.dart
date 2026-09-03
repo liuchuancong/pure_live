@@ -34,7 +34,11 @@ void main() {
   test('fallback priority starts from the configured user engine', () async {
     final manager = EngineFallbackManager(
       defaultEngine: PlayerEngine.fijk,
-      supportedEngines: const <PlayerEngine>[PlayerEngine.mediaKit, PlayerEngine.fijk, PlayerEngine.exo],
+      supportedEngines: const <PlayerEngine>[
+        PlayerEngine.mediaKit,
+        PlayerEngine.fijk,
+        PlayerEngine.exo,
+      ],
     );
     final error = PlayerException(message: 'decoder failed', type: PlayerErrorType.codec);
 

@@ -22,12 +22,12 @@ class ResolutionsRow extends StatelessWidget {
       return Container(
         height: 55,
         padding: const EdgeInsets.all(4.0),
-        child: Row(
+        child: const Row(
           children: [
-            const Padding(padding: EdgeInsets.all(8), child: AudienceInfo()),
-            const Spacer(),
-            const ResolutionSelector(),
-            const LineSelector(),
+            Padding(padding: EdgeInsets.all(8), child: AudienceInfo()),
+            Spacer(),
+            ResolutionSelector(),
+            LineSelector(),
           ],
         ),
       );

@@ -5,8 +5,13 @@ import 'package:pure_live/modules/live_play/controllers/live_play_controller.dar
 class RoomTimerDialog {
   const RoomTimerDialog._();
 
-  static Future<void> show({required BuildContext context, required LivePlayController controller}) async {
-    final durationController = TextEditingController(text: controller.state.value.ui.closeTimes.toString());
+  static Future<void> show({
+    required BuildContext context,
+    required LivePlayController controller,
+  }) async {
+    final durationController = TextEditingController(
+      text: controller.state.value.ui.closeTimes.toString(),
+    );
 
     await showDialog<void>(
       context: context,
@@ -63,7 +68,9 @@ class RoomTimerDialog {
               onPressed: () {
                 final minutes = int.tryParse(durationController.text.trim());
 
-                if (minutes == null || minutes < 1 || minutes > AppSettingsController.maxSleepMinutes) {
+                if (minutes == null ||
+                    minutes < 1 ||
+                    minutes > AppSettingsController.maxSleepMinutes) {
                   ToastUtil.show(i18n('room_playback_timer_custom_hint'));
                   return;
                 }

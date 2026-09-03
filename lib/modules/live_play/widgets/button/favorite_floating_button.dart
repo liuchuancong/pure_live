@@ -25,8 +25,14 @@ class FavoriteFloatingButton extends StatelessWidget {
           title: Text(i18n('unfollow')),
           content: Text(i18n('unfollow_message', args: {'name': room.nick ?? ''})),
           actions: [
-            TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: Text(i18n('cancel'))),
-            TextButton(onPressed: () => Navigator.of(dialogContext).pop(true), child: Text(i18n('confirm'))),
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: Text(i18n('cancel')),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: Text(i18n('confirm')),
+            ),
           ],
         ),
       ),
@@ -59,11 +65,17 @@ class FavoriteFloatingButton extends StatelessWidget {
       }
       return FilledButton(
         style: ButtonStyle(
-          padding: WidgetStateProperty.all(Platform.isWindows ? const EdgeInsets.all(12) : const EdgeInsets.all(5)),
-          backgroundColor: WidgetStateProperty.all(
-            isFavorite ? Get.theme.colorScheme.primary.withAlpha(125) : Get.theme.colorScheme.primary,
+          padding: WidgetStateProperty.all(
+            Platform.isWindows ? const EdgeInsets.all(12) : const EdgeInsets.all(5),
           ),
-          shape: WidgetStateProperty.all(RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))),
+          backgroundColor: WidgetStateProperty.all(
+            isFavorite
+                ? Get.theme.colorScheme.primary.withAlpha(125)
+                : Get.theme.colorScheme.primary,
+          ),
+          shape: WidgetStateProperty.all(
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+          ),
           textStyle: WidgetStateProperty.all(AppTextStyles.t12),
           minimumSize: WidgetStateProperty.all(Size.zero),
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,

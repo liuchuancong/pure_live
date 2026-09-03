@@ -1,6 +1,6 @@
 import 'dart:async';
-import '../get_utils/get_utils.dart';
 
+import '../get_utils/get_utils.dart';
 
 extension GetNumUtils on num {
   bool isLowerThan(num b) => GetUtils.isLowerThan(this, b);
@@ -9,8 +9,6 @@ extension GetNumUtils on num {
 
   bool isEqual(num b) => GetUtils.isEqual(this, b);
 
-  Future delay([FutureOr Function()? callback]) async => Future.delayed(
-        Duration(milliseconds: (this * 1000).round()),
-        callback,
-      );
+  Future delay([FutureOr Function()? callback]) async =>
+      Future.delayed(Duration(milliseconds: (this * 1000).round()), callback);
 }

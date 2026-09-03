@@ -1,14 +1,14 @@
 import 'dart:io';
 import 'dart:math';
+
 import 'package:path/path.dart' as p;
 import 'package:open_filex/open_filex.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:android_intent_plus/android_intent.dart';
 
-
 class FileUtils {
-  static const String systemHotProviderId = "88888";
+  static const String systemHotProviderId = '88888';
 
   /// 获取文件路径中的纯文件名
   static String getFileName(String fullPath) {
@@ -31,7 +31,7 @@ class FileUtils {
   /// 验证是否为合法 URL 链接
   static bool isValidUrl(String value) {
     final urlRegExp = RegExp(
-      r"((https?:www\.)|(https?:\/\/)|(www\.))[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9]{1,6}(\/[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)?",
+      r'((https?:www\.)|(https?:\/\/)|(www\.))[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9]{1,6}(\/[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)?',
     );
     return urlRegExp.allMatches(value).isNotEmpty;
   }
@@ -39,14 +39,14 @@ class FileUtils {
   /// 验证是否包含 Host 域名的 URL 链接
   static bool isHostUrl(String value) {
     final urlRegExp = RegExp(
-      r"((https?:www\.)|(https?:\/\/))[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9]{1,6}(\/[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)?",
+      r'((https?:www\.)|(https?:\/\/))[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9]{1,6}(\/[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)?',
     );
     return urlRegExp.allMatches(value).isNotEmpty;
   }
 
   /// 验证字符串是否为纯数字（端口号校验）
   static bool isNumericPort(String value) {
-    return RegExp(r"^\d+$").hasMatch(value);
+    return RegExp(r'^\d+$').hasMatch(value);
   }
 
   /// 请求外部存储管理权限
@@ -62,7 +62,7 @@ class FileUtils {
 
   static Future<File> convertPhysicalFile(String shareContent) async {
     if (shareContent.isEmpty) {
-      throw const FileSystemException("Shared data string content stream is fully empty");
+      throw const FileSystemException('Shared data string content stream is fully empty');
     }
     if (shareContent.startsWith('file://')) {
       return File(Uri.parse(shareContent).toFilePath());
@@ -72,7 +72,10 @@ class FileUtils {
     if (await fileRef.exists()) {
       return fileRef;
     }
-    throw FileSystemException("Shared media target path cannot be verified on flash drive storage", shareContent);
+    throw FileSystemException(
+      'Shared media target path cannot be verified on flash drive storage',
+      shareContent,
+    );
   }
 
   static Future<bool> openFileOrUrl(String pathOrUrl) async {
@@ -101,7 +104,9 @@ class FileUtils {
     if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
       try {
         if (Platform.isWindows) {
-          await Process.start('explorer.exe', [p.context.canonicalize(trimmedPath)], mode: ProcessStartMode.detached);
+          await Process.start('explorer.exe', [
+            p.context.canonicalize(trimmedPath),
+          ], mode: ProcessStartMode.detached);
         } else if (Platform.isMacOS) {
           final result = await Process.run('open', [trimmedPath]);
           if (result.exitCode != 0) return false;
@@ -134,7 +139,9 @@ class FileUtils {
     } catch (_) {
       if (!Platform.isAndroid) {
         try {
-          final String cleanPath = trimmedPath.startsWith('file://') ? trimmedPath : 'file://$trimmedPath';
+          final String cleanPath = trimmedPath.startsWith('file://')
+              ? trimmedPath
+              : 'file://$trimmedPath';
           final Uri fileUri = Uri.parse(cleanPath);
           if (await canLaunchUrl(fileUri)) {
             return await launchUrl(fileUri);

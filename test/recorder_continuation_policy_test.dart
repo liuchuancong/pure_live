@@ -5,15 +5,45 @@ import 'package:pure_live/recorder/services/recorder_continuation_policy.dart';
 
 void main() {
   test('unexpected stream exit resumes monitoring when auto reconnect is enabled', () {
-    expect(RecorderContinuationPolicy.shouldMonitorAfterExit(manuallyStopped: false, autoReconnect: true), isTrue);
-    expect(RecorderContinuationPolicy.shouldMonitorAfterExit(manuallyStopped: true, autoReconnect: true), isFalse);
-    expect(RecorderContinuationPolicy.shouldMonitorAfterExit(manuallyStopped: false, autoReconnect: false), isFalse);
+    expect(
+      RecorderContinuationPolicy.shouldMonitorAfterExit(
+        manuallyStopped: false,
+        autoReconnect: true,
+      ),
+      isTrue,
+    );
+    expect(
+      RecorderContinuationPolicy.shouldMonitorAfterExit(manuallyStopped: true, autoReconnect: true),
+      isFalse,
+    );
+    expect(
+      RecorderContinuationPolicy.shouldMonitorAfterExit(
+        manuallyStopped: false,
+        autoReconnect: false,
+      ),
+      isFalse,
+    );
   });
 
   test('expired CDN and I/O failures resolve a fresh stream before retrying', () {
-    expect(RecorderContinuationPolicy.shouldRetryFailure(errorCode: -5, rawLogs: 'Input/output error'), isTrue);
-    expect(RecorderContinuationPolicy.shouldRetryFailure(errorCode: 1, rawLogs: 'HTTP error 403 Forbidden'), isTrue);
-    expect(RecorderContinuationPolicy.shouldRetryFailure(errorCode: 1, rawLogs: 'HTTP error 404 Not Found'), isTrue);
+    expect(
+      RecorderContinuationPolicy.shouldRetryFailure(errorCode: -5, rawLogs: 'Input/output error'),
+      isTrue,
+    );
+    expect(
+      RecorderContinuationPolicy.shouldRetryFailure(
+        errorCode: 1,
+        rawLogs: 'HTTP error 403 Forbidden',
+      ),
+      isTrue,
+    );
+    expect(
+      RecorderContinuationPolicy.shouldRetryFailure(
+        errorCode: 1,
+        rawLogs: 'HTTP error 404 Not Found',
+      ),
+      isTrue,
+    );
     expect(
       RecorderContinuationPolicy.shouldRetryFailure(
         errorCode: 1,
@@ -25,13 +55,28 @@ void main() {
 
   test('local path and malformed output failures do not loop', () {
     expect(RecorderContinuationPolicy.shouldRetryFailure(errorCode: -2, rawLogs: ''), isFalse);
-    expect(RecorderContinuationPolicy.shouldRetryFailure(errorCode: 1, rawLogs: 'Permission denied'), isFalse);
-    expect(RecorderContinuationPolicy.shouldRetryFailure(errorCode: 1, rawLogs: 'Error opening output file'), isFalse);
     expect(
-      RecorderContinuationPolicy.shouldRetryFailure(errorCode: 1, rawLogs: 'Unrecognized option reconnect'),
+      RecorderContinuationPolicy.shouldRetryFailure(errorCode: 1, rawLogs: 'Permission denied'),
       isFalse,
     );
-    expect(RecorderContinuationPolicy.shouldRetryFailure(errorCode: 1, rawLogs: 'Protocol not found'), isFalse);
+    expect(
+      RecorderContinuationPolicy.shouldRetryFailure(
+        errorCode: 1,
+        rawLogs: 'Error opening output file',
+      ),
+      isFalse,
+    );
+    expect(
+      RecorderContinuationPolicy.shouldRetryFailure(
+        errorCode: 1,
+        rawLogs: 'Unrecognized option reconnect',
+      ),
+      isFalse,
+    );
+    expect(
+      RecorderContinuationPolicy.shouldRetryFailure(errorCode: 1, rawLogs: 'Protocol not found'),
+      isFalse,
+    );
   });
 
   test('polling backoff is bounded and can be disabled', () {
@@ -120,8 +165,14 @@ void main() {
     final now = DateTime.utc(2026, 8, 30, 7);
     final refreshAt = now.add(const Duration(seconds: 100));
 
-    expect(RecorderContinuationPolicy.leasePrefetchDelay(now: now, refreshAt: refreshAt), const Duration(seconds: 95));
-    expect(RecorderContinuationPolicy.leaseRotationDelay(now: now, refreshAt: refreshAt), const Duration(seconds: 100));
+    expect(
+      RecorderContinuationPolicy.leasePrefetchDelay(now: now, refreshAt: refreshAt),
+      const Duration(seconds: 95),
+    );
+    expect(
+      RecorderContinuationPolicy.leaseRotationDelay(now: now, refreshAt: refreshAt),
+      const Duration(seconds: 100),
+    );
     expect(
       RecorderContinuationPolicy.leasePrefetchDelay(
         now: refreshAt.add(const Duration(seconds: 1)),
@@ -139,10 +190,13 @@ void main() {
   });
 
   test('a restarted recording gets a fresh timestamp and zeroed progress', () {
-    final task = LiveRecordTask.fromRoom(LiveRoom(roomId: '1', platform: 'bilibili', title: 'title', nick: 'nick'))
-      ..recordedSeconds = 120
-      ..fileSize = 1024
-      ..lastUpdate = DateTime(2026, 1, 1);
+    final task =
+        LiveRecordTask.fromRoom(
+            LiveRoom(roomId: '1', platform: 'bilibili', title: 'title', nick: 'nick'),
+          )
+          ..recordedSeconds = 120
+          ..fileSize = 1024
+          ..lastUpdate = DateTime(2026, 1, 1);
     final nextStart = DateTime(2026, 8, 19, 4, 30);
 
     task.beginNewRecording(now: nextStart);

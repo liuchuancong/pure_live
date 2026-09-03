@@ -32,7 +32,7 @@ void main(List<String> args) async {
       path: 'assets/translations',
       fallbackLocale: const Locale('zh'),
       assetLoader: const RootBundleAssetLoader(),
-      child: MyApp(),
+      child: const MyApp(),
     ),
   );
 }
@@ -73,7 +73,9 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
 
   Future<void> initGlobalPlayer() async {
     final String savedKey = SettingsService.to.player.videoPlayerKey.v;
-    final String validKey = PlayerConsts.engines.containsKey(savedKey) ? savedKey : PlayerConsts.defaultKey;
+    final String validKey = PlayerConsts.engines.containsKey(savedKey)
+        ? savedKey
+        : PlayerConsts.defaultKey;
     final PlayerEngine targetEngine = PlayerConsts.engines[validKey]!;
     final PlayerEngine defaultEngine;
 
@@ -108,7 +110,7 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
         } else if (path.endsWith('.xml') || path.endsWith('.gz') || path.endsWith('.json')) {
           await EpgImportManager().importFromSharedMedia(media);
         } else {
-          ToastUtil.show(i18n("unsupported_file_format"));
+          ToastUtil.show(i18n('unsupported_file_format'));
         }
       });
     }
@@ -126,7 +128,9 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
           ThemeData lightTheme;
           ThemeData darkTheme;
 
-          if (SettingsService.to.theme.enableDynamicTheme.v && lightDynamic != null && darkDynamic != null) {
+          if (SettingsService.to.theme.enableDynamicTheme.v &&
+              lightDynamic != null &&
+              darkDynamic != null) {
             lightTheme = MyTheme(colorScheme: lightDynamic.harmonized()).lightThemeData;
             darkTheme = MyTheme(colorScheme: darkDynamic.harmonized()).darkThemeData;
           } else {
@@ -144,7 +148,7 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
             themeMode: AppConsts.themeModes[SettingsService.to.theme.themeModeName.v]!,
             theme: lightTheme.copyWith(
               appBarTheme: const AppBarTheme(surfaceTintColor: Colors.transparent),
-              pageTransitionsTheme: PageTransitionsTheme(
+              pageTransitionsTheme: const PageTransitionsTheme(
                 builders: <TargetPlatform, PageTransitionsBuilder>{
                   TargetPlatform.android: AndroidMaterialPageTransitionsBuilder(),
                   TargetPlatform.windows: FadeForwardsPageTransitionsBuilder(),
@@ -174,7 +178,8 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
                   );
                 }
                 return MediaQuery(
-                  data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(currentFactor)),
+                  data: MediaQuery.of(context)
+                      .copyWith(textScaler: TextScaler.linear(currentFactor)),
                   child: resultWidget,
                 );
               },

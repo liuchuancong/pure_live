@@ -42,7 +42,9 @@ class DisplayModeInfo {
       maxRefreshRate: number('maxRefreshRate'),
       preferredRefreshRate: number('preferredRefreshRate'),
       supportedRefreshRates: rates,
-      requestedRefreshRate: map['requestedRefreshRate'] is num ? number('requestedRefreshRate') : null,
+      requestedRefreshRate: map['requestedRefreshRate'] is num
+          ? number('requestedRefreshRate')
+          : null,
       displayId: (map['displayId'] as num?)?.toInt(),
       width: (map['width'] as num?)?.toInt(),
       height: (map['height'] as num?)?.toInt(),
@@ -101,7 +103,9 @@ class DisplayModeService {
   static Future<DisplayModeInfo?> setHighRefreshRate(bool enabled) async {
     _ensureHandler();
     try {
-      final result = await _channel.invokeMapMethod<dynamic, dynamic>('setHighRefreshRate', {'enabled': enabled});
+      final result = await _channel.invokeMapMethod<dynamic, dynamic>('setHighRefreshRate', {
+        'enabled': enabled,
+      });
       if (result == null) return null;
       final parsed = DisplayModeInfo.fromMap(result);
       _publish(parsed);

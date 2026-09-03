@@ -35,10 +35,10 @@ class AudioStreamLoader {
       stop();
     }
 
-    _currentTaskId = "audio_only_$uniqueId";
+    _currentTaskId = 'audio_only_$uniqueId';
 
     int port = await _getAvailablePort();
-    _currentAudioUrl = "http://localhost:$port/live.ts";
+    _currentAudioUrl = 'http://localhost:$port/live.ts';
 
     log('AudioStreamLoader: 分配空闲端口 -> $port, URL -> $_currentAudioUrl');
 

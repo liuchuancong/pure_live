@@ -18,7 +18,11 @@ void main() {
       startTimeout: const Duration(milliseconds: 20),
       stopTimeout: const Duration(milliseconds: 20),
     );
-    final room = LiveRoom(roomId: 'room-a', platform: 'test', danmakuData: const <String, dynamic>{});
+    final room = LiveRoom(
+      roomId: 'room-a',
+      platform: 'test',
+      danmakuData: const <String, dynamic>{},
+    );
     controller.initDanmaku(engine);
 
     await controller.connectRoom(room).timeout(const Duration(milliseconds: 200));
@@ -37,7 +41,11 @@ void main() {
       startTimeout: const Duration(milliseconds: 20),
       stopTimeout: const Duration(milliseconds: 20),
     );
-    final room = LiveRoom(roomId: 'room-b', platform: 'test', danmakuData: const <String, dynamic>{});
+    final room = LiveRoom(
+      roomId: 'room-b',
+      platform: 'test',
+      danmakuData: const <String, dynamic>{},
+    );
     controller.initDanmaku(engine);
     await controller.connectRoom(room);
     expect(host.currentRoomId, 'room-b');
@@ -53,7 +61,11 @@ void main() {
     final host = _TestDanmakuHost();
     final engine = _CountingDanmaku();
     final controller = DanmakuController(host, recoveryAllowed: (_) => true);
-    final room = LiveRoom(roomId: 'room-pip', platform: 'test', danmakuData: const <String, dynamic>{});
+    final room = LiveRoom(
+      roomId: 'room-pip',
+      platform: 'test',
+      danmakuData: const <String, dynamic>{},
+    );
     controller.initDanmaku(engine);
 
     await controller.connectRoom(room);
@@ -70,7 +82,11 @@ void main() {
     final host = _TestDanmakuHost();
     final engine = _CountingDanmaku();
     final controller = DanmakuController(host, recoveryAllowed: (_) => true);
-    final room = LiveRoom(roomId: 'room-pip-dead', platform: 'test', danmakuData: const <String, dynamic>{});
+    final room = LiveRoom(
+      roomId: 'room-pip-dead',
+      platform: 'test',
+      danmakuData: const <String, dynamic>{},
+    );
     controller.initDanmaku(engine);
 
     await controller.connectRoom(room);
@@ -82,7 +98,11 @@ void main() {
     expect(engine.startCalls, 2);
     expect(engine.stopCalls, 2, reason: 'initial cleanup plus replacement of the dead socket');
     expect(host.currentRoomId, 'room-pip-dead');
-    expect(host.rendererClearCount, 0, reason: 'same-room recovery keeps the visible history intact');
+    expect(
+      host.rendererClearCount,
+      0,
+      reason: 'same-room recovery keeps the visible history intact',
+    );
     expect(controller.needReconnect(room), isFalse);
   });
 
@@ -90,7 +110,11 @@ void main() {
     final host = _TestDanmakuHost();
     final engine = _ConnectingDanmaku();
     final controller = DanmakuController(host, recoveryAllowed: (_) => true);
-    final room = LiveRoom(roomId: 'room-pip-connecting', platform: 'test', danmakuData: const <String, dynamic>{});
+    final room = LiveRoom(
+      roomId: 'room-pip-connecting',
+      platform: 'test',
+      danmakuData: const <String, dynamic>{},
+    );
     controller.initDanmaku(engine);
 
     final connection = controller.connectRoom(room);

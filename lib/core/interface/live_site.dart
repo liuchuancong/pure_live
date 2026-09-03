@@ -55,7 +55,10 @@ List<String> normalizeResolvedPlayUrls(Iterable<String> urls) {
 /// Bilibili can implement this contract because guest requests may be
 /// downgraded even when a higher `qn` was requested.
 abstract interface class LivePlayUrlResolver {
-  Future<LivePlayUrlResolution> resolvePlayUrlsRaw({required LiveRoom detail, required LivePlayQuality quality});
+  Future<LivePlayUrlResolution> resolvePlayUrlsRaw({
+    required LiveRoom detail,
+    required LivePlayQuality quality,
+  });
 }
 
 /// Optional cursor contract for adapters that must make a separate network
@@ -106,8 +109,8 @@ abstract interface class LivePlayLeaseMetadata {
 }
 
 class LiveSite {
-  String id = "";
-  String name = "";
+  String id = '';
+  String name = '';
 
   LiveDanmaku getDanmaku() {
     throw UnimplementedError();
@@ -121,11 +124,19 @@ class LiveSite {
     return Future.value(<LiveRoom>[]);
   }
 
-  Future<List<LiveAnchorItem>> searchAnchors(String keyword, {int page = 1, int pageSize = 30}) async {
+  Future<List<LiveAnchorItem>> searchAnchors(
+    String keyword, {
+    int page = 1,
+    int pageSize = 30,
+  }) async {
     return Future.value(<LiveAnchorItem>[]);
   }
 
-  Future<List<LiveRoom>> getCategoryRooms(LiveArea category, {int page = 1, int pageSize = 30}) async {
+  Future<List<LiveRoom>> getCategoryRooms(
+    LiveArea category, {
+    int page = 1,
+    int pageSize = 30,
+  }) async {
     return Future.value(<LiveRoom>[]);
   }
 
@@ -158,7 +169,10 @@ class LiveSite {
     return Future.value(<LivePlayQuality>[]);
   }
 
-  Future<List<String>> getPlayUrls({required LiveRoom detail, required LivePlayQuality quality}) async {
+  Future<List<String>> getPlayUrls({
+    required LiveRoom detail,
+    required LivePlayQuality quality,
+  }) async {
     return Future.value(<String>[]);
   }
 
@@ -179,7 +193,10 @@ class LiveSite {
 /// Other adapters continue using [LiveSite.getPlayUrls] and assume that
 /// the requested quality was applied.
 extension LiveSitePlayUrlResolution on LiveSite {
-  Future<LivePlayUrlResolution> resolvePlayUrls({required LiveRoom detail, required LivePlayQuality quality}) async {
+  Future<LivePlayUrlResolution> resolvePlayUrls({
+    required LiveRoom detail,
+    required LivePlayQuality quality,
+  }) async {
     final site = this;
 
     if (site is LivePlayUrlResolver) {

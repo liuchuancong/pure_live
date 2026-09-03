@@ -38,7 +38,8 @@ class LibUtil {
   static String excludeWhiteSpace(String string) =>
       string.split('').where((it) => !isWhitespace(it.codeUnitAt(0))).join();
 
-  static bool isLineBreak(int codeUnit) => (codeUnit == '\n'.codeUnitAt(0)) || (codeUnit == '\r'.codeUnitAt(0));
+  static bool isLineBreak(int codeUnit) =>
+      (codeUnit == '\n'.codeUnitAt(0)) || (codeUnit == '\r'.codeUnitAt(0));
 
   static String? getCodecsOfType(String? codecs, int trackType) {
     final output = Util.splitCodecs(

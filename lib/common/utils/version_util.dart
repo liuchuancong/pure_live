@@ -29,9 +29,14 @@ class VersionUtil {
   static const String telegramGroup = 't.me/pure_live_channel';
   static const String telegramGroupUrl = 'https://t.me/pure_live_channel';
 
-  static final String releaseUrl = 'https://api.github.com/repos/$updateOwner/$updateRepository/releases?per_page=30';
+  static final String releaseUrl =
+      'https://api.github.com/repos/$updateOwner/$updateRepository/releases?per_page=30';
 
-  static final GitHubMirror mirror = GitHubMirror(owner: updateOwner, repo: updateRepository, branch: 'master');
+  static final GitHubMirror mirror = GitHubMirror(
+    owner: updateOwner,
+    repo: updateRepository,
+    branch: 'master',
+  );
 
   static List<String> get _versionUrls => SettingsService.to.app.useGitHubOriginForUpdates.v
       ? [mirror.rawUrl('assets/version.json')]
@@ -95,9 +100,9 @@ class VersionUtil {
       _cachedVersionJson = data;
       _applyVersionData(data);
       isHasNewVersion.value = hasNewVersion();
-      debugPrint("🏁 更新线路成功");
+      debugPrint('🏁 更新线路成功');
     } catch (e) {
-      debugPrint("⚠️ 更新检查失败: $e");
+      debugPrint('⚠️ 更新检查失败: $e');
       latestVersion = version;
       latestUpdateLog = '更新检查失败';
     }
@@ -127,7 +132,10 @@ class VersionUtil {
   /// Keeps update announcements aligned with the artifacts that were really
   /// published for each platform. The top-level object remains the fallback
   /// for older feeds and older clients.
-  static Map<String, dynamic> selectPlatformVersionData(Map<String, dynamic> data, {required String platform}) {
+  static Map<String, dynamic> selectPlatformVersionData(
+    Map<String, dynamic> data, {
+    required String platform,
+  }) {
     final platforms = data['platforms'];
     final platformData = platforms is Map ? platforms[platform] : null;
     if (platformData is! Map) return data;
@@ -151,7 +159,9 @@ class VersionUtil {
       final latestParts = latestClean.split('.').map(int.parse).toList();
       final currentParts = currentClean.split('.').map(int.parse).toList();
 
-      final maxLength = latestParts.length > currentParts.length ? latestParts.length : currentParts.length;
+      final maxLength = latestParts.length > currentParts.length
+          ? latestParts.length
+          : currentParts.length;
 
       while (latestParts.length < maxLength) {
         latestParts.add(0);

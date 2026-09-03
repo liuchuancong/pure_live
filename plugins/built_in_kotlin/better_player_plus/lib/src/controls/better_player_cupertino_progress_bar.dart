@@ -67,7 +67,8 @@ class _VideoProgressBarState extends State<BetterPlayerCupertinoVideoProgressBar
 
   @override
   Widget build(BuildContext context) {
-    final bool enableProgressBarDrag = betterPlayerController!.betterPlayerControlsConfiguration.enableProgressBarDrag;
+    final bool enableProgressBarDrag =
+        betterPlayerController!.betterPlayerControlsConfiguration.enableProgressBarDrag;
     return GestureDetector(
       onHorizontalDragStart: (DragStartDetails details) {
         if (!controller!.value.initialized || !enableProgressBarDrag) {
@@ -203,7 +204,11 @@ class _ProgressBarPainter extends CustomPainter {
       colors.backgroundPaint,
     );
     final duration = value.duration;
-    if (!value.initialized || duration == null || duration.inMilliseconds <= 0 || !size.width.isFinite || size.width <= 0) {
+    if (!value.initialized ||
+        duration == null ||
+        duration.inMilliseconds <= 0 ||
+        !size.width.isFinite ||
+        size.width <= 0) {
       return;
     }
     final double playedPartPercent = _safeFraction(value.position, duration);
@@ -233,10 +238,19 @@ class _ProgressBarPainter extends CustomPainter {
     );
 
     final shadowPath = Path()
-      ..addOval(Rect.fromCircle(center: Offset(playedPart, baseOffset + barHeight / 2), radius: handleHeight));
+      ..addOval(
+        Rect.fromCircle(
+          center: Offset(playedPart, baseOffset + barHeight / 2),
+          radius: handleHeight,
+        ),
+      );
 
     canvas.drawShadow(shadowPath, Colors.black, 0.2, false);
-    canvas.drawCircle(Offset(playedPart, baseOffset + barHeight / 2), handleHeight, colors.handlePaint);
+    canvas.drawCircle(
+      Offset(playedPart, baseOffset + barHeight / 2),
+      handleHeight,
+      colors.handlePaint,
+    );
   }
 
   double _safeFraction(Duration part, Duration total) {

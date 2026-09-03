@@ -15,8 +15,4 @@
 /// it will remove it's dependencies when it's not being used anymore.
 /// However, it will keep their factory, which means it will recreate
 /// the dependency if you need that instance again.
-enum SmartManagement {
-  full,
-  onlyBuilder,
-  keepFactory,
-}
+enum SmartManagement { full, onlyBuilder, keepFactory }

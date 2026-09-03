@@ -7,9 +7,9 @@ import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:pure_live/modules/account/bilibili/web_login_controller.dart';
 
 class Utils {
-  static DateFormat dateFormat = DateFormat("MM-dd HH:mm");
-  static DateFormat dateFormatWithYear = DateFormat("yyyy-MM-dd HH:mm");
-  static DateFormat timeFormat = DateFormat("HH:mm:ss");
+  static DateFormat dateFormat = DateFormat('MM-dd HH:mm');
+  static DateFormat dateFormatWithYear = DateFormat('yyyy-MM-dd HH:mm');
+  static DateFormat timeFormat = DateFormat('HH:mm:ss');
 
   static Future<void> exitDesktopApplication() async {
     if (!Platform.isWindows && !Platform.isLinux && !Platform.isMacOS) return;
@@ -43,7 +43,7 @@ class Utils {
   /// 处理时间
   static String parseTime(DateTime? dt) {
     if (dt == null) {
-      return "";
+      return '';
     }
 
     var dtNow = DateTime.now();
@@ -94,11 +94,11 @@ class Utils {
         actions: [
           TextButton(
             onPressed: (() => Navigator.of(Get.context!).pop(false)),
-            child: Text(cancel.isEmpty ? i18n("cancel") : cancel),
+            child: Text(cancel.isEmpty ? i18n('cancel') : cancel),
           ),
           TextButton(
             onPressed: (() => Navigator.of(Get.context!).pop(true)),
-            child: Text(confirm.isEmpty ? i18n("confirm") : confirm),
+            child: Text(confirm.isEmpty ? i18n('confirm') : confirm),
           ),
           ...?actions,
         ],
@@ -130,7 +130,7 @@ class Utils {
             onPressed: () {
               Navigator.of(Get.context!).pop(true);
             },
-            child: Text(confirm.isEmpty ? i18n("confirm") : confirm),
+            child: Text(confirm.isEmpty ? i18n('confirm') : confirm),
           ),
         ],
       ),
@@ -150,7 +150,10 @@ class Utils {
       animationBuilder: (controller, child, animationParam) {
         //从右到左
         return SlideTransition(
-          position: Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero).animate(controller.view),
+          position: Tween<Offset>(
+            begin: const Offset(1, 0),
+            end: Offset.zero,
+          ).animate(controller.view),
           child: child,
         );
       },
@@ -162,7 +165,10 @@ class Utils {
         padding: EdgeInsets.only(right: MediaQuery.of(context).padding.right),
         decoration: BoxDecoration(
           color: Get.theme.cardColor,
-          borderRadius: const BorderRadius.only(topLeft: Radius.circular(4), bottomLeft: Radius.circular(4)),
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(4),
+            bottomLeft: Radius.circular(4),
+          ),
         ),
         child: SafeArea(
           left: false,
@@ -176,7 +182,8 @@ class Utils {
                   contentPadding: EdgeInsets.zero,
                   leading: IconButton(
                     onPressed: () {
-                      SmartDialog.dismiss(status: SmartStatus.allCustom).then((value) => onDismiss?.call());
+                      SmartDialog.dismiss(status: SmartStatus.allCustom)
+                          .then((value) => onDismiss?.call());
                     },
                     icon: const Icon(Icons.arrow_back),
                   ),
@@ -212,7 +219,10 @@ class Utils {
     final res = await Get.dialog(
       AlertDialog(
         title: Text(title),
-        titleTextStyle: Get.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600, fontSize: 18),
+        titleTextStyle: Get.textTheme.titleMedium?.copyWith(
+          fontWeight: FontWeight.w600,
+          fontSize: 18,
+        ),
         contentPadding: const EdgeInsets.fromLTRB(24, 16, 24, 12),
         content: SizedBox(
           width: 420,
@@ -221,7 +231,11 @@ class Utils {
             autofocus: true,
             maxLines: 5,
             minLines: 4,
-            style: Get.textTheme.bodyMedium?.copyWith(fontFamily: 'monospace', fontSize: 13, height: 1.5),
+            style: Get.textTheme.bodyMedium?.copyWith(
+              fontFamily: 'monospace',
+              fontSize: 13,
+              height: 1.5,
+            ),
             decoration: InputDecoration(
               hintText: hintText ?? title,
               hintStyle: Get.textTheme.bodyMedium?.copyWith(
@@ -230,8 +244,14 @@ class Utils {
               filled: true,
               fillColor: Get.theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
               contentPadding: const EdgeInsets.all(16),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
-              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide.none,
+              ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
                 borderSide: BorderSide(color: Get.theme.colorScheme.primary, width: 1.5),
@@ -249,7 +269,7 @@ class Utils {
             onPressed: () {
               Navigator.of(Get.context!).pop();
             },
-            child: Text(cancel.isNotEmpty ? cancel : i18n("cancel")),
+            child: Text(cancel.isNotEmpty ? cancel : i18n('cancel')),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
@@ -261,7 +281,7 @@ class Utils {
             onPressed: () {
               Navigator.of(Get.context!).pop(textEditingController.text);
             },
-            child: Text(confirm.isNotEmpty ? confirm : i18n("confirm")),
+            child: Text(confirm.isNotEmpty ? confirm : i18n('confirm')),
           ),
         ],
       ),
@@ -296,7 +316,10 @@ class Utils {
                         onTap: () {
                           Navigator.of(Get.context!).pop(e);
                         },
-                        child: Text(e.toString(), style: Theme.of(Get.context!).textTheme.bodyLarge),
+                        child: Text(
+                          e.toString(),
+                          style: Theme.of(Get.context!).textTheme.bodyLarge,
+                        ),
                       ),
                     ],
                   );
@@ -331,7 +354,7 @@ class Utils {
       StatefulBuilder(
         builder: (context, setState) {
           return AlertDialog(
-            title: Text(i18n("tip"), style: Get.textTheme.titleLarge),
+            title: Text(i18n('tip'), style: Get.textTheme.titleLarge),
             content: Container(
               constraints: const BoxConstraints(maxHeight: 400),
               child: SingleChildScrollView(
@@ -341,11 +364,11 @@ class Utils {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(i18n("confirm_exit"), style: Get.textTheme.titleMedium),
-                      SizedBox(height: 12),
+                      Text(i18n('confirm_exit'), style: Get.textTheme.titleMedium),
+                      const SizedBox(height: 12),
                       const Divider(height: 1),
                       CheckboxListTile(
-                        title: Text(i18n("dont_ask_again"), style: Get.textTheme.titleSmall),
+                        title: Text(i18n('dont_ask_again'), style: Get.textTheme.titleSmall),
                         value: shouldNotAskAgain,
                         onChanged: (bool? value) {
                           setState(() {
@@ -369,17 +392,20 @@ class Utils {
                     await _minimizeOrHideDesktopWindow();
                   });
                 },
-                child: Text(i18n("minimize")),
+                child: Text(i18n('minimize')),
               ),
               ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.redAccent,
+                  foregroundColor: Colors.white,
+                ),
                 onPressed: () async {
                   SettingsService.to.exit.dontAskExit.v = shouldNotAskAgain;
                   SettingsService.to.exit.exitChoose.v = 'exit';
                   Navigator.of(context).pop();
                   await exitDesktopApplication();
                 },
-                child: Text(i18n("exit_app")),
+                child: Text(i18n('exit_app')),
               ),
             ],
           );

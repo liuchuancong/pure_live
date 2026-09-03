@@ -49,9 +49,9 @@ class FijkSlider extends StatefulWidget {
     this.min = 0.0,
     this.max = 1.0,
     this.colors = const FijkSliderColors(),
-  })  : assert(min <= max),
-        assert(value >= min && value <= max),
-        super(key: key);
+  }) : assert(min <= max),
+       assert(value >= min && value <= max),
+       super(key: key);
 
   @override
   State<StatefulWidget> createState() {
@@ -77,9 +77,7 @@ class _FijkSliderState extends State<FijkSlider> {
         height: double.infinity,
         width: double.infinity,
         color: Colors.transparent,
-        child: CustomPaint(
-          painter: _SliderPainter(v, cv, dragging, colors: widget.colors),
-        ),
+        child: CustomPaint(painter: _SliderPainter(v, cv, dragging, colors: widget.colors)),
       ),
       onHorizontalDragStart: (DragStartDetails details) {
         setState(() {
@@ -123,13 +121,10 @@ class FijkSliderColors {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is FijkSliderColors &&
-          runtimeType == other.runtimeType &&
-          hashCode == other.hashCode;
+      other is FijkSliderColors && runtimeType == other.runtimeType && hashCode == other.hashCode;
 
   @override
-  int get hashCode =>
-      Object.hash(playedColor, bufferedColor, cursorColor, baselineColor);
+  int get hashCode => Object.hash(playedColor, bufferedColor, cursorColor, baselineColor);
 }
 
 class _SliderPainter extends CustomPainter {
@@ -141,8 +136,7 @@ class _SliderPainter extends CustomPainter {
 
   final FijkSliderColors colors;
 
-  _SliderPainter(this.v, this.cv, this.dragging,
-      {this.colors = const FijkSliderColors()});
+  _SliderPainter(this.v, this.cv, this.dragging, {this.colors = const FijkSliderColors()});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -205,8 +199,7 @@ class _SliderPainter extends CustomPainter {
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is _SliderPainter && hashCode == other.hashCode;
+      identical(this, other) || other is _SliderPainter && hashCode == other.hashCode;
 
   @override
   int get hashCode => Object.hash(v, cv, dragging, colors);

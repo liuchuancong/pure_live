@@ -13,7 +13,13 @@ class PlayerException implements Exception {
 
   final PlayerErrorType type;
 
-  PlayerException({required this.message, required this.type, this.code, this.error, this.stackTrace});
+  PlayerException({
+    required this.message,
+    required this.type,
+    this.code,
+    this.error,
+    this.stackTrace,
+  });
 
   @override
   String toString() {

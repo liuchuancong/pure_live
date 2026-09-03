@@ -11,14 +11,14 @@ class HuyaCookiePage extends GetView<HuyaCookieController> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: Text(i18n("set_cookie"))),
+      appBar: AppBar(title: Text(i18n('set_cookie'))),
       body: ListView(
         physics: const PureLiveScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
           _buildTipBanner(theme),
           const SizedBox(height: 20),
-          context.buildGroupTitle(i18n("cookie")),
+          context.buildGroupTitle(i18n('cookie')),
           context.buildModernCard([
             Padding(
               padding: const EdgeInsets.all(16.0),
@@ -31,7 +31,7 @@ class HuyaCookiePage extends GetView<HuyaCookieController> {
                     controller: controller.cookieController,
                     style: AppTextStyles.t14,
                     decoration: InputDecoration(
-                      hintText: i18n("huya_cookie_hint"),
+                      hintText: i18n('huya_cookie_hint'),
                       hintStyle: TextStyle(color: theme.hintColor.withValues(alpha: 0.5)),
                       contentPadding: const EdgeInsets.all(14.0),
                       filled: true,
@@ -60,11 +60,13 @@ class HuyaCookiePage extends GetView<HuyaCookieController> {
                           child: OutlinedButton.icon(
                             onPressed: _autoCaptureCookie,
                             style: OutlinedButton.styleFrom(
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                             ),
                             icon: const Icon(Remix.global_line, size: 18),
                             label: Text(
-                              i18n("cookie_auto_capture"),
+                              i18n('cookie_auto_capture'),
                               style: AppTextStyles.t14.copyWith(fontWeight: FontWeight.w600),
                             ),
                           ),
@@ -78,11 +80,13 @@ class HuyaCookiePage extends GetView<HuyaCookieController> {
                           child: FilledButton.icon(
                             onPressed: () => controller.setCookie(controller.cookieController.text),
                             style: FilledButton.styleFrom(
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                             ),
                             icon: const Icon(Remix.settings_line, size: 18),
                             label: Text(
-                              i18n("set"),
+                              i18n('set'),
                               style: AppTextStyles.t14.copyWith(
                                 fontWeight: FontWeight.w600,
                                 letterSpacing: 1,
@@ -124,11 +128,15 @@ class HuyaCookiePage extends GetView<HuyaCookieController> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Remix.information_line, size: 18, color: theme.colorScheme.primary.withValues(alpha: 0.8)),
+          Icon(
+            Remix.information_line,
+            size: 18,
+            color: theme.colorScheme.primary.withValues(alpha: 0.8),
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              i18n("huya_cookie_tip"),
+              i18n('huya_cookie_tip'),
               style: AppTextStyles.t13.copyWith(
                 color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
                 height: 1.4,

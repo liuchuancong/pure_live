@@ -51,7 +51,9 @@ class CookieValidator {
         },
       );
       final data = result is Map ? result['data'] : null;
-      return data is Map && data.isNotEmpty ? CookieValidationStatus.valid : CookieValidationStatus.invalid;
+      return data is Map && data.isNotEmpty
+          ? CookieValidationStatus.valid
+          : CookieValidationStatus.invalid;
     } catch (_) {
       return CookieValidationStatus.error;
     }

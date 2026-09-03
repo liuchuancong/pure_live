@@ -82,7 +82,8 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
     return Obx(() {
       final activeKey = settings.player.videoPlayerKey.v;
 
-      final i18nKey = PlayerConsts.names[activeKey] ?? PlayerConsts.names[PlayerConsts.defaultKey] ?? '';
+      final i18nKey =
+          PlayerConsts.names[activeKey] ?? PlayerConsts.names[PlayerConsts.defaultKey] ?? '';
 
       return context.buildTile(
         icon: Remix.toggle_line,
@@ -164,7 +165,9 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
               context.buildSwitchTile(
                 icon: Remix.shield_check_line,
                 title: i18n('compat_mode'),
-                subtitle: compatMode ? i18n('compat_mode_enabled_subtitle') : i18n('compat_mode_subtitle'),
+                subtitle: compatMode
+                    ? i18n('compat_mode_enabled_subtitle')
+                    : i18n('compat_mode_subtitle'),
                 value: settings.player.playerCompatMode,
                 enabled: customOutput,
               ),
@@ -209,7 +212,11 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
     });
   }
 
-  Widget _buildSuperResolutionTile(BuildContext context, {required bool enabled, required bool rtxVsr}) {
+  Widget _buildSuperResolutionTile(
+    BuildContext context, {
+    required bool enabled,
+    required bool rtxVsr,
+  }) {
     return Obx(() {
       final value = settings.player.defaultSuperResolutionMode.v;
 
@@ -307,7 +314,9 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
             context.buildSwitchTile(
               icon: Remix.database_2_line,
               title: i18n('low_memory_mode'),
-              subtitle: metered ? i18n('low_memory_mode_metered') : i18n('low_memory_mode_subtitle'),
+              subtitle: metered
+                  ? i18n('low_memory_mode_metered')
+                  : i18n('low_memory_mode_subtitle'),
               value: settings.player.lowMemoryMode,
               enabled: !metered,
             ),
@@ -340,7 +349,9 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
                       children: [
                         Text(
                           i18n('mpv_warning_text'),
-                          style: AppTextStyles.t12.copyWith(color: theme.hintColor.withValues(alpha: 0.65)),
+                          style: AppTextStyles.t12.copyWith(
+                            color: theme.hintColor.withValues(alpha: 0.65),
+                          ),
                         ),
                         InkWell(
                           borderRadius: BorderRadius.circular(4),
@@ -466,7 +477,10 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
                     }
 
                     return ListTile(
-                      leading: Radio<String>(value: key, activeColor: Theme.of(context).colorScheme.primary),
+                      leading: Radio<String>(
+                        value: key,
+                        activeColor: Theme.of(context).colorScheme.primary,
+                      ),
                       title: Text(i18n(i18nKey), style: AppTextStyles.t15),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 16),
                       onTap: () => _switchPlayer(key, context),
@@ -522,7 +536,9 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
                     decoration: InputDecoration(
                       labelText: i18n('proxy_host'),
                       prefixIcon: const Icon(Remix.global_line, size: 20),
-                      border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+                      border: const OutlineInputBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(12)),
+                      ),
                     ),
                     onChanged: (value) => settings.proxy.proxyHost.v = value,
                   ),
@@ -534,7 +550,9 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
                     decoration: InputDecoration(
                       labelText: i18n('proxy_port'),
                       prefixIcon: const Icon(Remix.links_line, size: 20),
-                      border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+                      border: const OutlineInputBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(12)),
+                      ),
                     ),
                     onChanged: (value) {
                       final port = int.tryParse(value);
@@ -548,7 +566,9 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
               ),
             ),
           ),
-          actions: [TextButton(onPressed: () => Navigator.pop(context), child: Text(i18n('confirm')))],
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: Text(i18n('confirm'))),
+          ],
         );
       },
     ).whenComplete(() {

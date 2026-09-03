@@ -32,7 +32,11 @@ void main() {
       LiveRoom(roomId: 'offline', platform: 'douyu', status: false, watching: '100万'),
     ]..sort(compareMultiviewRooms);
 
-    expect(rooms.map((room) => room.roomId), <String?>['offline', 'explicit-unknown', 'stale-offline-enum']);
+    expect(rooms.map((room) => room.roomId), <String?>[
+      'offline',
+      'explicit-unknown',
+      'stale-offline-enum',
+    ]);
     expect(rooms.last.isLiveNow, isFalse);
   });
 }

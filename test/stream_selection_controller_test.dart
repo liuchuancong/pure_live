@@ -16,14 +16,24 @@ import 'package:pure_live/modules/live_play/widgets/video_player/video_controlle
 void main() {
   test('selection policy clamps stale quality and line indices', () {
     expect(
-      resolveStreamSelection(qualityCount: 3, playUrlCount: 2, requestedQualityIndex: 9, requestedLineIndex: 7),
+      resolveStreamSelection(
+        qualityCount: 3,
+        playUrlCount: 2,
+        requestedQualityIndex: 9,
+        requestedLineIndex: 7,
+      ),
       isA<StreamSelection>()
           .having((value) => value.isValid, 'isValid', isTrue)
           .having((value) => value.qualityIndex, 'quality', 2)
           .having((value) => value.lineIndex, 'line', 1),
     );
     expect(
-      resolveStreamSelection(qualityCount: 0, playUrlCount: 2, requestedQualityIndex: 0, requestedLineIndex: 0).isValid,
+      resolveStreamSelection(
+        qualityCount: 0,
+        playUrlCount: 2,
+        requestedQualityIndex: 0,
+        requestedLineIndex: 0,
+      ).isValid,
       isFalse,
     );
   });
@@ -35,8 +45,14 @@ void main() {
       LivePlayQuality(quality: '超清', id: 250, data: 250),
     ];
 
-    expect(resolveAppliedQualityIndex(qualities: qualities, requestedIndex: 0, appliedQualityData: 250), 2);
-    expect(resolveAppliedQualityIndex(qualities: qualities, requestedIndex: 1, appliedQualityData: null), 1);
+    expect(
+      resolveAppliedQualityIndex(qualities: qualities, requestedIndex: 0, appliedQualityData: 250),
+      2,
+    );
+    expect(
+      resolveAppliedQualityIndex(qualities: qualities, requestedIndex: 1, appliedQualityData: null),
+      1,
+    );
   });
 
   test('quality metadata uses stable ids and drops duplicate choices', () {
@@ -81,7 +97,11 @@ void main() {
       qualityIndex: 1,
       lineIndex: 8,
     );
-    expect(host.state.value.player.currentQuality, 0, reason: 'the old source stays active while the URL resolves');
+    expect(
+      host.state.value.player.currentQuality,
+      0,
+      reason: 'the old source stays active while the URL resolves',
+    );
     expect(controller.isStreamSwitching.value, isTrue);
 
     siteImpl.qualityUrls.complete(const ['https://new/one', 'https://new/two']);
@@ -110,7 +130,11 @@ void main() {
     )..initSite(Site(id: 'test', name: 'Test', logo: '', liveSite: siteImpl));
 
     expect(
-      await controller.switchStreamSelection(type: ReloadDataType.changeLine, qualityIndex: 0, lineIndex: 1),
+      await controller.switchStreamSelection(
+        type: ReloadDataType.changeLine,
+        qualityIndex: 0,
+        lineIndex: 1,
+      ),
       isTrue,
     );
 
@@ -233,7 +257,13 @@ class _SelectionHost implements PlayerSessionHost {
   }
 
   @override
-  void updateRoom({LiveRoom? detail, bool? isLiving, bool? success, bool? isLoading, String? loadError}) {
+  void updateRoom({
+    LiveRoom? detail,
+    bool? isLiving,
+    bool? success,
+    bool? isLoading,
+    String? loadError,
+  }) {
     state.value = state.value.copyWith(
       room: state.value.room.copyWith(
         detail: detail,

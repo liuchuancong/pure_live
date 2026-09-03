@@ -1,7 +1,6 @@
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
 
-
 class AudienceInfo extends StatelessWidget {
   const AudienceInfo({super.key});
 
@@ -33,24 +32,19 @@ class AudienceInfo extends StatelessWidget {
       );
 
       final icon = switch (type) {
-        AudienceMetricType.onlineViewers =>
-          Icons.people_alt_rounded,
-        AudienceMetricType.totalViewers =>
-          Icons.visibility_rounded,
-        AudienceMetricType.followers =>
-          Icons.favorite_rounded,
+        AudienceMetricType.onlineViewers => Icons.people_alt_rounded,
+        AudienceMetricType.totalViewers => Icons.visibility_rounded,
+        AudienceMetricType.followers => Icons.favorite_rounded,
         _ => Icons.whatshot_rounded,
       };
 
-      final label = i18n(
-        switch (type) {
-          AudienceMetricType.onlineViewers => 'audience_online',
-          AudienceMetricType.totalViewers => 'audience_total',
-          AudienceMetricType.followers => 'audience_followers',
-          AudienceMetricType.popularity => 'audience_popularity',
-          AudienceMetricType.unknown => 'audience_count',
-        },
-      );
+      final label = i18n(switch (type) {
+        AudienceMetricType.onlineViewers => 'audience_online',
+        AudienceMetricType.totalViewers => 'audience_total',
+        AudienceMetricType.followers => 'audience_followers',
+        AudienceMetricType.popularity => 'audience_popularity',
+        AudienceMetricType.unknown => 'audience_count',
+      });
 
       return Row(
         mainAxisSize: MainAxisSize.min,

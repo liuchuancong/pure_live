@@ -14,7 +14,7 @@ class FavoriteAreasPage extends GetView<FavoriteAreasController> {
         final width = constraint.maxWidth;
         final crossAxisCount = width > 1280 ? 9 : (width > 960 ? 7 : (width > 640 ? 5 : 3));
         return Scaffold(
-          appBar: AppBar(title: Text(i18n("favorite_areas"))),
+          appBar: AppBar(title: Text(i18n('favorite_areas'))),
           body: Column(
             children: [
               TabBar(
@@ -22,7 +22,10 @@ class FavoriteAreasPage extends GetView<FavoriteAreasController> {
                 controller: controller.tabSiteController,
                 isScrollable: true,
                 physics: const PureLiveBoundedScrollPhysics(),
-                tabs: Sites().availableSites(containsAll: true).map<Widget>((e) => Tab(text: e.name)).toList(),
+                tabs: Sites()
+                    .availableSites(containsAll: true)
+                    .map<Widget>((e) => Tab(text: e.name))
+                    .toList(),
               ),
               Expanded(
                 child: Obx(() {
@@ -49,7 +52,9 @@ class FavoriteAreasPage extends GetView<FavoriteAreasController> {
     return Obx(() {
       final areas = siteId == Sites.allSite
           ? controller.favoriteAreas.toList(growable: false)
-          : controller.favoriteAreas.where((area) => area.platform == siteId).toList(growable: false);
+          : controller.favoriteAreas
+                .where((area) => area.platform == siteId)
+                .toList(growable: false);
       return areas.isNotEmpty
           ? WaterfallFlow.builder(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
@@ -63,7 +68,7 @@ class FavoriteAreasPage extends GetView<FavoriteAreasController> {
               itemCount: areas.length,
               itemBuilder: (context, index) => AreaCard(category: areas[index]),
             )
-          : EmptyView(icon: Remix.apps_2_line, title: i18n("empty_areas_title"), subtitle: '');
+          : EmptyView(icon: Remix.apps_2_line, title: i18n('empty_areas_title'), subtitle: '');
     });
   }
 }

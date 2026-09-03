@@ -9,14 +9,11 @@ import 'jsc_ffi.dart';
 /// [length] (size_t) The number of elements to be in the new Typed Array.
 /// [exception] (JSValueRef*) A pointer to a JSValueRef in which to store an exception, if any. Pass NULL if you do not care to store an exception.
 /// [@result] (JSObjectRef) A JSObjectRef that is a Typed Array with all elements set to zero or NULL if there was an error.
-final Pointer Function(
-    Pointer ctx,
-    int arrayType,
-    int length,
-    Pointer<Pointer>
-        exception) jSObjectMakeTypedArray = JscFfi.lib
+final Pointer Function(Pointer ctx, int arrayType, int length, Pointer<Pointer> exception)
+jSObjectMakeTypedArray = JscFfi.lib
     .lookup<NativeFunction<Pointer Function(Pointer, Int8, Uint32, Pointer)>>(
-        'JSObjectMakeTypedArray')
+      'JSObjectMakeTypedArray',
+    )
     .asFunction();
 
 /// Creates a JavaScript Typed Array object from an existing pointer.
@@ -30,19 +27,19 @@ final Pointer Function(
 /// [exception] (JSValueRef*) A pointer to a JSValueRef in which to store an exception, if any. Pass NULL if you do not care to store an exception.
 /// [@result] (JSObjectRef) A JSObjectRef Typed Array whose backing store is the same as the one pointed to by bytes or NULL if there was an error.
 final Pointer Function(
-        Pointer ctx,
-        int arrayType,
-        Pointer bytes,
-        int byteLength,
-        Pointer<NativeFunction<JSTypedArrayBytesDeallocator>> bytesDeallocator,
-        Pointer deallocatorContext,
-        Pointer<Pointer> exception) jSObjectMakeTypedArrayWithBytesNoCopy =
-    JscFfi.lib
-        .lookup<
-            NativeFunction<
-                Pointer Function(Pointer, Int8, Pointer, Uint32, Pointer,
-                    Pointer, Pointer)>>('JSObjectMakeTypedArrayWithBytesNoCopy')
-        .asFunction();
+  Pointer ctx,
+  int arrayType,
+  Pointer bytes,
+  int byteLength,
+  Pointer<NativeFunction<JSTypedArrayBytesDeallocator>> bytesDeallocator,
+  Pointer deallocatorContext,
+  Pointer<Pointer> exception,
+)
+jSObjectMakeTypedArrayWithBytesNoCopy = JscFfi.lib
+    .lookup<
+      NativeFunction<Pointer Function(Pointer, Int8, Pointer, Uint32, Pointer, Pointer, Pointer)>
+    >('JSObjectMakeTypedArrayWithBytesNoCopy')
+    .asFunction();
 
 /// Creates a JavaScript Typed Array object from an existing JavaScript Array Buffer object.
 /// [ctx] (JSContextRef) The execution context to use.
@@ -50,14 +47,11 @@ final Pointer Function(
 /// [buffer] (JSObjectRef) An Array Buffer object that should be used as the backing store for the created JavaScript Typed Array object.
 /// [exception] (JSValueRef*) A pointer to a JSValueRef in which to store an exception, if any. Pass NULL if you do not care to store an exception.
 /// [@result] (JSObjectRef) A JSObjectRef that is a Typed Array or NULL if there was an error. The backing store of the Typed Array will be buffer.
-final Pointer Function(
-    Pointer ctx,
-    int arrayType,
-    Pointer buffer,
-    Pointer<Pointer>
-        exception) jSObjectMakeTypedArrayWithArrayBuffer = JscFfi.lib
+final Pointer Function(Pointer ctx, int arrayType, Pointer buffer, Pointer<Pointer> exception)
+jSObjectMakeTypedArrayWithArrayBuffer = JscFfi.lib
     .lookup<NativeFunction<Pointer Function(Pointer, Int8, Pointer, Pointer)>>(
-        'JSObjectMakeTypedArrayWithArrayBuffer')
+      'JSObjectMakeTypedArrayWithArrayBuffer',
+    )
     .asFunction();
 
 /// Creates a JavaScript Typed Array object from an existing JavaScript Array Buffer object with the given offset and length.
@@ -68,14 +62,19 @@ final Pointer Function(
 /// [length] (size_t) The number of elements to include in the Typed Array.
 /// [exception] (JSValueRef*) A pointer to a JSValueRef in which to store an exception, if any. Pass NULL if you do not care to store an exception.
 /// [@result] (JSObjectRef) A JSObjectRef that is a Typed Array or NULL if there was an error. The backing store of the Typed Array will be buffer.
-final Pointer Function(Pointer ctx, int arrayType, Pointer buffer,
-        int byteOffset, int length, Pointer<Pointer> exception)
-    jSObjectMakeTypedArrayWithArrayBufferAndOffset = JscFfi.lib
-        .lookup<
-            NativeFunction<
-                Pointer Function(Pointer, Int8, Pointer, Uint32, Uint32,
-                    Pointer)>>('JSObjectMakeTypedArrayWithArrayBufferAndOffset')
-        .asFunction();
+final Pointer Function(
+  Pointer ctx,
+  int arrayType,
+  Pointer buffer,
+  int byteOffset,
+  int length,
+  Pointer<Pointer> exception,
+)
+jSObjectMakeTypedArrayWithArrayBufferAndOffset = JscFfi.lib
+    .lookup<NativeFunction<Pointer Function(Pointer, Int8, Pointer, Uint32, Uint32, Pointer)>>(
+      'JSObjectMakeTypedArrayWithArrayBufferAndOffset',
+    )
+    .asFunction();
 
 /// Returns a temporary pointer to the backing store of a JavaScript Typed Array object.
 /// The pointer returned by this function is temporary and is not guaranteed to remain valid across JavaScriptCore API calls.
@@ -84,10 +83,11 @@ final Pointer Function(Pointer ctx, int arrayType, Pointer buffer,
 /// [exception] (JSValueRef*) A pointer to a JSValueRef in which to store an exception, if any. Pass NULL if you do not care to store an exception.
 /// [@result] (void*) A pointer to the raw data buffer that serves as object's backing store or NULL if object is not a Typed Array object.
 final Pointer Function(Pointer ctx, Pointer object, Pointer<Pointer> exception)
-    jSObjectGetTypedArrayBytesPtr = JscFfi.lib
-        .lookup<NativeFunction<Pointer Function(Pointer, Pointer, Pointer)>>(
-            'JSObjectGetTypedArrayBytesPtr')
-        .asFunction();
+jSObjectGetTypedArrayBytesPtr = JscFfi.lib
+    .lookup<NativeFunction<Pointer Function(Pointer, Pointer, Pointer)>>(
+      'JSObjectGetTypedArrayBytesPtr',
+    )
+    .asFunction();
 
 /// Returns the length of a JavaScript Typed Array object.
 /// [ctx] (JSContextRef) The execution context to use.
@@ -95,10 +95,11 @@ final Pointer Function(Pointer ctx, Pointer object, Pointer<Pointer> exception)
 /// [exception] (JSValueRef*) A pointer to a JSValueRef in which to store an exception, if any. Pass NULL if you do not care to store an exception.
 /// [@result] (size_t) The length of the Typed Array object or 0 if the object is not a Typed Array object.
 final int Function(Pointer ctx, Pointer object, Pointer<Pointer> exception)
-    jSObjectGetTypedArrayLength = JscFfi.lib
-        .lookup<NativeFunction<Uint32 Function(Pointer, Pointer, Pointer)>>(
-            'JSObjectGetTypedArrayLength')
-        .asFunction();
+jSObjectGetTypedArrayLength = JscFfi.lib
+    .lookup<NativeFunction<Uint32 Function(Pointer, Pointer, Pointer)>>(
+      'JSObjectGetTypedArrayLength',
+    )
+    .asFunction();
 
 /// Returns the byte length of a JavaScript Typed Array object.
 /// [ctx] (JSContextRef) The execution context to use.
@@ -106,10 +107,11 @@ final int Function(Pointer ctx, Pointer object, Pointer<Pointer> exception)
 /// [exception] (JSValueRef*) A pointer to a JSValueRef in which to store an exception, if any. Pass NULL if you do not care to store an exception.
 /// [@result] (size_t) The byte length of the Typed Array object or 0 if the object is not a Typed Array object.
 final int Function(Pointer ctx, Pointer object, Pointer<Pointer> exception)
-    jSObjectGetTypedArrayByteLength = JscFfi.lib
-        .lookup<NativeFunction<Uint32 Function(Pointer, Pointer, Pointer)>>(
-            'JSObjectGetTypedArrayByteLength')
-        .asFunction();
+jSObjectGetTypedArrayByteLength = JscFfi.lib
+    .lookup<NativeFunction<Uint32 Function(Pointer, Pointer, Pointer)>>(
+      'JSObjectGetTypedArrayByteLength',
+    )
+    .asFunction();
 
 /// Returns the byte offset of a JavaScript Typed Array object.
 /// [ctx] (JSContextRef) The execution context to use.
@@ -117,10 +119,11 @@ final int Function(Pointer ctx, Pointer object, Pointer<Pointer> exception)
 /// [exception] (JSValueRef*) A pointer to a JSValueRef in which to store an exception, if any. Pass NULL if you do not care to store an exception.
 /// [@result] (size_t) The byte offset of the Typed Array object or 0 if the object is not a Typed Array object.
 final int Function(Pointer ctx, Pointer object, Pointer<Pointer> exception)
-    jSObjectGetTypedArrayByteOffset = JscFfi.lib
-        .lookup<NativeFunction<Uint32 Function(Pointer, Pointer, Pointer)>>(
-            'JSObjectGetTypedArrayByteOffset')
-        .asFunction();
+jSObjectGetTypedArrayByteOffset = JscFfi.lib
+    .lookup<NativeFunction<Uint32 Function(Pointer, Pointer, Pointer)>>(
+      'JSObjectGetTypedArrayByteOffset',
+    )
+    .asFunction();
 
 /// Returns the JavaScript Array Buffer object that is used as the backing of a JavaScript Typed Array object.
 /// [ctx] (JSContextRef) The execution context to use.
@@ -128,10 +131,11 @@ final int Function(Pointer ctx, Pointer object, Pointer<Pointer> exception)
 /// [exception] (JSValueRef*) A pointer to a JSValueRef in which to store an exception, if any. Pass NULL if you do not care to store an exception.
 /// [@result] (JSObjectRef) A JSObjectRef with a JSTypedArrayType of kJSTypedArrayTypeArrayBuffer or NULL if object is not a Typed Array.
 final Pointer Function(Pointer ctx, Pointer object, Pointer<Pointer> exception)
-    jSObjectGetTypedArrayBuffer = JscFfi.lib
-        .lookup<NativeFunction<Pointer Function(Pointer, Pointer, Pointer)>>(
-            'JSObjectGetTypedArrayBuffer')
-        .asFunction();
+jSObjectGetTypedArrayBuffer = JscFfi.lib
+    .lookup<NativeFunction<Pointer Function(Pointer, Pointer, Pointer)>>(
+      'JSObjectGetTypedArrayBuffer',
+    )
+    .asFunction();
 
 /// Creates a JavaScript Array Buffer object from an existing pointer.
 /// If an exception is thrown during this function the bytesDeallocator will always be called.
@@ -143,18 +147,18 @@ final Pointer Function(Pointer ctx, Pointer object, Pointer<Pointer> exception)
 /// [exception] (JSValueRef*) A pointer to a JSValueRef in which to store an exception, if any. Pass NULL if you do not care to store an exception.
 /// [@result] (JSObjectRef) A JSObjectRef Array Buffer whose backing store is the same as the one pointed to by bytes or NULL if there was an error.
 final Pointer Function(
-        Pointer ctx,
-        Pointer bytes,
-        int byteLength,
-        Pointer<NativeFunction<JSTypedArrayBytesDeallocator>> bytesDeallocator,
-        Pointer deallocatorContext,
-        Pointer<Pointer> exception) jSObjectMakeArrayBufferWithBytesNoCopy =
-    JscFfi.lib
-        .lookup<
-            NativeFunction<
-                Pointer Function(Pointer, Pointer, Uint32, Pointer, Pointer,
-                    Pointer)>>('JSObjectMakeArrayBufferWithBytesNoCopy')
-        .asFunction();
+  Pointer ctx,
+  Pointer bytes,
+  int byteLength,
+  Pointer<NativeFunction<JSTypedArrayBytesDeallocator>> bytesDeallocator,
+  Pointer deallocatorContext,
+  Pointer<Pointer> exception,
+)
+jSObjectMakeArrayBufferWithBytesNoCopy = JscFfi.lib
+    .lookup<NativeFunction<Pointer Function(Pointer, Pointer, Uint32, Pointer, Pointer, Pointer)>>(
+      'JSObjectMakeArrayBufferWithBytesNoCopy',
+    )
+    .asFunction();
 
 /// Returns a pointer to the data buffer that serves as the backing store for a JavaScript Typed Array object.
 /// The pointer returned by this function is temporary and is not guaranteed to remain valid across JavaScriptCore API calls.
@@ -163,10 +167,11 @@ final Pointer Function(
 /// [exception] (JSValueRef*) A pointer to a JSValueRef in which to store an exception, if any. Pass NULL if you do not care to store an exception.
 /// [@result] (void*) A pointer to the raw data buffer that serves as object's backing store or NULL if object is not an Array Buffer object.
 final Pointer Function(Pointer ctx, Pointer object, Pointer<Pointer> exception)
-    jSObjectGetArrayBufferBytesPtr = JscFfi.lib
-        .lookup<NativeFunction<Pointer Function(Pointer, Pointer, Pointer)>>(
-            'JSObjectGetArrayBufferBytesPtr')
-        .asFunction();
+jSObjectGetArrayBufferBytesPtr = JscFfi.lib
+    .lookup<NativeFunction<Pointer Function(Pointer, Pointer, Pointer)>>(
+      'JSObjectGetArrayBufferBytesPtr',
+    )
+    .asFunction();
 
 /// Returns the number of bytes in a JavaScript data object.
 /// [ctx] (JSContextRef) The execution context to use.
@@ -174,7 +179,8 @@ final Pointer Function(Pointer ctx, Pointer object, Pointer<Pointer> exception)
 /// [exception] (JSValueRef*) A pointer to a JSValueRef in which to store an exception, if any. Pass NULL if you do not care to store an exception.
 /// [@result] (size_t) The number of bytes stored in the data object.
 final int Function(Pointer ctx, Pointer object, Pointer<Pointer> exception)
-    jSObjectGetArrayBufferByteLength = JscFfi.lib
-        .lookup<NativeFunction<Uint32 Function(Pointer, Pointer, Pointer)>>(
-            'JSObjectGetArrayBufferByteLength')
-        .asFunction();
+jSObjectGetArrayBufferByteLength = JscFfi.lib
+    .lookup<NativeFunction<Uint32 Function(Pointer, Pointer, Pointer)>>(
+      'JSObjectGetArrayBufferByteLength',
+    )
+    .asFunction();

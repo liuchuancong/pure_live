@@ -12,7 +12,10 @@ enum AppRefreshRateMode {
 
   final String storageValue;
 
-  static AppRefreshRateMode parse(Object? value, {AppRefreshRateMode fallback = AppRefreshRateMode.powerSaving}) {
+  static AppRefreshRateMode parse(
+    Object? value, {
+    AppRefreshRateMode fallback = AppRefreshRateMode.powerSaving,
+  }) {
     final normalized = value?.toString().trim();
     for (final mode in values) {
       if (mode.storageValue == normalized) return mode;

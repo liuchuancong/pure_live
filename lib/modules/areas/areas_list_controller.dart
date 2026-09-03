@@ -20,7 +20,7 @@ class AreasListController extends ServerAllPageController<LiveArea> {
   @override
   Future<List<LiveArea>> fetchAllServerData() async {
     var result = await site.liveSite.getCategores(1, 1000);
-    var channels = result.map((e) => AppLiveCategory.fromLiveCategory(e)).toList();
+    var channels = result.map(AppLiveCategory.fromLiveCategory).toList();
     AreaPicMapper.updateAreaListMaps(channels);
 
     _serverRawBackup.clear();
@@ -91,7 +91,9 @@ class AreasListController extends ServerAllPageController<LiveArea> {
         list.assignAll(newData);
         canLoadMore.value = endIndex < allItems.length;
         pageEmpty.value = list.isEmpty;
-        finishRefreshControllers(canLoadMore.value ? IndicatorResult.success : IndicatorResult.noMore);
+        finishRefreshControllers(
+          canLoadMore.value ? IndicatorResult.success : IndicatorResult.noMore,
+        );
         if (currentPage == 1) {
           scrollToTopImmediate();
         }
@@ -147,7 +149,9 @@ class AreasListController extends ServerAllPageController<LiveArea> {
       if (currentPage == 1) {
         scrollToTopImmediate();
       }
-      finishRefreshControllers(canLoadMore.value ? IndicatorResult.success : IndicatorResult.noMore);
+      finishRefreshControllers(
+        canLoadMore.value ? IndicatorResult.success : IndicatorResult.noMore,
+      );
       categories.refresh();
     } else {
       list.assignAll(allItems);

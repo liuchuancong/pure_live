@@ -1,17 +1,17 @@
-﻿import 'package:pure_live/pkg/tars/codec/tars_struct.dart';
+import 'package:pure_live/pkg/tars/codec/tars_struct.dart';
 import 'package:pure_live/pkg/tars/codec/tars_displayer.dart';
 import 'package:pure_live/pkg/tars/codec/tars_input_stream.dart';
 import 'package:pure_live/pkg/tars/codec/tars_output_stream.dart';
 
 class HuyaUserId extends TarsStruct {
   int lUid = 0;
-  String sGuid = "";
-  String sToken = "";
-  String sHuYaUA = "";
-  String sCookie = "";
+  String sGuid = '';
+  String sToken = '';
+  String sHuYaUA = '';
+  String sCookie = '';
   int iTokenType = 0;
-  String sDeviceInfo = "";
-  String sQIMEI = "";
+  String sDeviceInfo = '';
+  String sQIMEI = '';
 
   @override
   void readFrom(TarsInputStream tarsInputStream) {
@@ -53,14 +53,14 @@ class HuyaUserId extends TarsStruct {
   @override
   void displayAsString(StringBuffer sb, int level) {
     TarsDisplayer tarsDisplayer = TarsDisplayer(sb, level: level);
-    tarsDisplayer.DisplayInt(lUid, "lUid");
-    tarsDisplayer.DisplayString(sGuid, "sGuid");
-    tarsDisplayer.DisplayString(sToken, "sToken");
-    tarsDisplayer.DisplayString(sHuYaUA, "sHuYaUA");
-    tarsDisplayer.DisplayString(sCookie, "sCookie");
-    tarsDisplayer.DisplayInt(iTokenType, "iTokenType");
-    tarsDisplayer.DisplayString(sDeviceInfo, "sDeviceInfo");
-    tarsDisplayer.DisplayString(sQIMEI, "sQIMEI");
+    tarsDisplayer.DisplayInt(lUid, 'lUid');
+    tarsDisplayer.DisplayString(sGuid, 'sGuid');
+    tarsDisplayer.DisplayString(sToken, 'sToken');
+    tarsDisplayer.DisplayString(sHuYaUA, 'sHuYaUA');
+    tarsDisplayer.DisplayString(sCookie, 'sCookie');
+    tarsDisplayer.DisplayInt(iTokenType, 'iTokenType');
+    tarsDisplayer.DisplayString(sDeviceInfo, 'sDeviceInfo');
+    tarsDisplayer.DisplayString(sQIMEI, 'sQIMEI');
   }
 }
 
@@ -70,8 +70,8 @@ class GetLivingInfoReq extends TarsStruct {
   int lSubSid = 0;
   int lPresenterUid = 0;
   int lRoomId = 0;
-  String sTraceSource = "";
-  String sPassword = "";
+  String sTraceSource = '';
+  String sPassword = '';
   int iRoomId = 0;
   int iFreeFlowFlag = 0;
   int iIpStack = 0;
@@ -122,22 +122,22 @@ class GetLivingInfoReq extends TarsStruct {
   @override
   void displayAsString(StringBuffer sb, int level) {
     TarsDisplayer tarsDisplayer = TarsDisplayer(sb, level: level);
-    tarsDisplayer.DisplayTarsStruct(tId, "tId");
-    tarsDisplayer.DisplayInt(lTopSid, "lTopSid");
-    tarsDisplayer.DisplayInt(lSubSid, "lSubSid");
-    tarsDisplayer.DisplayInt(lPresenterUid, "lPresenterUid");
-    tarsDisplayer.DisplayInt(lRoomId, "lRoomId");
-    tarsDisplayer.DisplayString(sTraceSource, "sTraceSource");
-    tarsDisplayer.DisplayString(sPassword, "sPassword");
-    tarsDisplayer.DisplayInt(iRoomId, "iRoomId");
-    tarsDisplayer.DisplayInt(iFreeFlowFlag, "iFreeFlowFlag");
-    tarsDisplayer.DisplayInt(iIpStack, "iIpStack");
+    tarsDisplayer.DisplayTarsStruct(tId, 'tId');
+    tarsDisplayer.DisplayInt(lTopSid, 'lTopSid');
+    tarsDisplayer.DisplayInt(lSubSid, 'lSubSid');
+    tarsDisplayer.DisplayInt(lPresenterUid, 'lPresenterUid');
+    tarsDisplayer.DisplayInt(lRoomId, 'lRoomId');
+    tarsDisplayer.DisplayString(sTraceSource, 'sTraceSource');
+    tarsDisplayer.DisplayString(sPassword, 'sPassword');
+    tarsDisplayer.DisplayInt(iRoomId, 'iRoomId');
+    tarsDisplayer.DisplayInt(iFreeFlowFlag, 'iFreeFlowFlag');
+    tarsDisplayer.DisplayInt(iIpStack, 'iIpStack');
   }
 }
 
 class MessageUser extends TarsStruct {
-  String sNick = "";
-  String sAvatar = "";
+  String sNick = '';
+  String sAvatar = '';
 
   @override
   void readFrom(TarsInputStream tarsInputStream) {
@@ -161,7 +161,7 @@ class MessageUser extends TarsStruct {
   @override
   void displayAsString(StringBuffer sb, int level) {
     final ds = TarsDisplayer(sb, level: level);
-    ds.DisplayString(sNick, "sNick");
-    ds.DisplayString(sAvatar, "sAvatar");
+    ds.DisplayString(sNick, 'sNick');
+    ds.DisplayString(sAvatar, 'sAvatar');
   }
 }

@@ -74,7 +74,9 @@ abstract class ServerFixedPageController<T> extends BasePageScrollAndStateBone<T
       list.assignAll(cachedData);
       canLoadMore.value = cachedData.length >= pageSize.value;
       pageEmpty.value = list.isEmpty;
-      finishRefreshControllers(canLoadMore.value ? IndicatorResult.success : IndicatorResult.noMore);
+      finishRefreshControllers(
+        canLoadMore.value ? IndicatorResult.success : IndicatorResult.noMore,
+      );
       scrollToTopImmediate();
       return;
     }
@@ -137,7 +139,9 @@ abstract class ServerFixedPageController<T> extends BasePageScrollAndStateBone<T
         _slicedSmallCache[currentPage] = combinedData;
         list.assignAll(combinedData);
         pageEmpty.value = list.isEmpty;
-        finishRefreshControllers(canLoadMore.value ? IndicatorResult.success : IndicatorResult.noMore);
+        finishRefreshControllers(
+          canLoadMore.value ? IndicatorResult.success : IndicatorResult.noMore,
+        );
         scrollToTopImmediate();
       } else {
         canLoadMore.value = combinedData.length >= pageSize.value;
@@ -147,7 +151,9 @@ abstract class ServerFixedPageController<T> extends BasePageScrollAndStateBone<T
           list.addAll(combinedData);
         }
         pageEmpty.value = list.isEmpty;
-        finishRefreshControllers(canLoadMore.value ? IndicatorResult.success : IndicatorResult.noMore);
+        finishRefreshControllers(
+          canLoadMore.value ? IndicatorResult.success : IndicatorResult.noMore,
+        );
       }
     } catch (e) {
       currentPage = previousPageSnapshot;

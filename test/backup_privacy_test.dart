@@ -20,10 +20,6 @@ void main() {
     expect(redacted, isNot(contains('webdav')));
     expect(redacted['sensitiveDataIncluded'], isFalse);
     expect(redacted['player'], {'engine': 'mediaKit'});
-    expect(
-      source,
-      contains('cookie'),
-      reason: 'the caller-owned map must not be mutated',
-    );
+    expect(source, contains('cookie'), reason: 'the caller-owned map must not be mutated');
   });
 }

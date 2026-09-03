@@ -9,8 +9,14 @@ class RecorderDiagnostics {
   static String sanitize(Object? value, {int maxLength = 320}) {
     var text = value?.toString() ?? '';
     text = text
-        .replaceAll(RegExp(r'(?:https?|rtmps?|rtsp|srt|udp|rtp)://[^\s\]\)\}]+', caseSensitive: false), '[stream-url]')
-        .replaceAll(RegExp(r'(?:(?:cookie|authorization)\s*[:=]\s*)[^\r\n]+', caseSensitive: false), '[credential]')
+        .replaceAll(
+          RegExp(r'(?:https?|rtmps?|rtsp|srt|udp|rtp)://[^\s\]\)\}]+', caseSensitive: false),
+          '[stream-url]',
+        )
+        .replaceAll(
+          RegExp(r'(?:(?:cookie|authorization)\s*[:=]\s*)[^\r\n]+', caseSensitive: false),
+          '[credential]',
+        )
         .replaceAllMapped(
           RegExp(
             r'(^|[?&\s])((?:access_)?token|sign|auth|key|wssecret|txsecret)=([^&\s]+)',

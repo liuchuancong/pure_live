@@ -6,7 +6,8 @@ class MyTheme {
   final Color? primaryColor;
   final ColorScheme? colorScheme;
 
-  MyTheme({this.primaryColor, this.colorScheme}) : assert(colorScheme == null || primaryColor == null);
+  MyTheme({this.primaryColor, this.colorScheme})
+    : assert(colorScheme == null || primaryColor == null);
 
   static const FontWeight regular = FontWeight.w400;
   static const FontWeight medium = FontWeight.w500;
@@ -50,15 +51,27 @@ class MyTheme {
       headlineMedium: scale(localized.headlineMedium, font.fontSizeTitleLarge.v * 1.4),
       headlineSmall: scale(localized.headlineSmall, font.fontSizeTitleLarge.v * 1.2),
 
-      titleLarge: scale(localized.titleLarge, font.fontSizeTitleLarge.v).copyWith(fontWeight: semiBold),
-      titleMedium: scale(localized.titleMedium, font.fontSizeTitleMedium.v).copyWith(fontWeight: medium),
-      titleSmall: scale(localized.titleSmall, font.fontSizeBodyLarge.v).copyWith(fontWeight: medium),
+      titleLarge: scale(
+        localized.titleLarge,
+        font.fontSizeTitleLarge.v,
+      ).copyWith(fontWeight: semiBold),
+      titleMedium: scale(
+        localized.titleMedium,
+        font.fontSizeTitleMedium.v,
+      ).copyWith(fontWeight: medium),
+      titleSmall: scale(
+        localized.titleSmall,
+        font.fontSizeBodyLarge.v,
+      ).copyWith(fontWeight: medium),
 
       bodyLarge: scale(localized.bodyLarge, font.fontSizeBodyLarge.v),
       bodyMedium: scale(localized.bodyMedium, font.fontSizeBodyMedium.v),
       bodySmall: scale(localized.bodySmall, font.fontSizeBodySmall.v),
 
-      labelLarge: scale(localized.labelLarge, font.fontSizeBodyMedium.v).copyWith(fontWeight: medium),
+      labelLarge: scale(
+        localized.labelLarge,
+        font.fontSizeBodyMedium.v,
+      ).copyWith(fontWeight: medium),
       labelMedium: scale(localized.labelMedium, font.fontSizeBodySmall.v),
       labelSmall: scale(localized.labelSmall, font.fontSizeBodySmall.v - 1),
     );
@@ -129,7 +142,9 @@ class MyTheme {
       listTileTheme: ListTileThemeData(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         titleTextStyle: textTheme.bodyLarge?.copyWith(fontWeight: medium),
-        subtitleTextStyle: textTheme.bodyMedium?.copyWith(color: baseTheme.colorScheme.onSurfaceVariant),
+        subtitleTextStyle: textTheme.bodyMedium?.copyWith(
+          color: baseTheme.colorScheme.onSurfaceVariant,
+        ),
         leadingAndTrailingTextStyle: textTheme.labelMedium,
         selectedColor: baseTheme.colorScheme.primary,
         selectedTileColor: baseTheme.colorScheme.primary.withValues(alpha: 0.06),
@@ -139,7 +154,9 @@ class MyTheme {
         fillColor: baseTheme.colorScheme.surfaceContainerLow,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         labelStyle: textTheme.bodyMedium,
-        hintStyle: textTheme.bodyMedium?.copyWith(color: baseTheme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6)),
+        hintStyle: textTheme.bodyMedium?.copyWith(
+          color: baseTheme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+        ),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -150,7 +167,9 @@ class MyTheme {
         elevation: 0,
         showDragHandle: true,
         backgroundColor: baseTheme.colorScheme.surfaceContainer,
-        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
       ),
       dialogTheme: DialogThemeData(
         elevation: 0,

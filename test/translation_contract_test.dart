@@ -5,8 +5,10 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('recording private-path messages use the keys consumed by the UI', () {
-    final english = jsonDecode(File('assets/translations/en.json').readAsStringSync()) as Map<String, dynamic>;
-    final chinese = jsonDecode(File('assets/translations/zh.json').readAsStringSync()) as Map<String, dynamic>;
+    final english =
+        jsonDecode(File('assets/translations/en.json').readAsStringSync()) as Map<String, dynamic>;
+    final chinese =
+        jsonDecode(File('assets/translations/zh.json').readAsStringSync()) as Map<String, dynamic>;
 
     for (final key in ['record_private_path_title', 'record_private_path_message']) {
       expect(english[key], isA<String>().having((value) => value.trim(), key, isNotEmpty));

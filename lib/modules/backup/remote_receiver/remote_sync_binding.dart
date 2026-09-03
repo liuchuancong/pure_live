@@ -4,6 +4,6 @@ import 'package:pure_live/modules/backup/remote_receiver/remote_sync_service.dar
 class RemoteSyncBinding extends Binding {
   @override
   List<Bind> dependencies() {
-    return [Bind.lazyPut(() => RemoteSyncService())];
+    return [Bind.lazyPut(RemoteSyncService.new)];
   }
 }

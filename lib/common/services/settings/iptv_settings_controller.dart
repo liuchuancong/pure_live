@@ -21,7 +21,12 @@ class IptvSettingsController extends GetxController {
     if (!isAutoSyncEnabled.v) return;
     _startupSyncTimer = Timer(3.seconds, () {
       final iptvEnabled = SettingsService.to.fav.hotAreasList.v.contains(Sites.iptvSite);
-      if (!shouldRunBackgroundStartupSync(iptvEnabled: iptvEnabled, autoSyncEnabled: isAutoSyncEnabled.v)) return;
+      if (!shouldRunBackgroundStartupSync(
+        iptvEnabled: iptvEnabled,
+        autoSyncEnabled: isAutoSyncEnabled.v,
+      )) {
+        return;
+      }
       unawaited(AutoSyncScheduler.instance.checkAndExecuteAutoSync());
     });
   }
@@ -37,8 +42,10 @@ class IptvSettingsController extends GetxController {
   /// may schedule maintenance, and built-in IPTV/EPG resources are loaded by
   /// their feature entry points instead of by application startup.
   @visibleForTesting
-  static bool shouldRunBackgroundStartupSync({required bool iptvEnabled, required bool autoSyncEnabled}) =>
-      iptvEnabled && autoSyncEnabled;
+  static bool shouldRunBackgroundStartupSync({
+    required bool iptvEnabled,
+    required bool autoSyncEnabled,
+  }) => iptvEnabled && autoSyncEnabled;
 
   Map<String, dynamic> toJson() {
     return {
@@ -72,7 +79,10 @@ class IptvSettingsController extends GetxController {
     };
   }
 
-  static Map<String, dynamic> mergeConfig(Map<String, dynamic> rootConfig, Map<String, dynamic> updateFields) {
+  static Map<String, dynamic> mergeConfig(
+    Map<String, dynamic> rootConfig,
+    Map<String, dynamic> updateFields,
+  ) {
     final iptv = Map<String, dynamic>.from(rootConfig['iptv'] ?? {});
     updateFields.forEach((k, v) => iptv[k] = v);
     rootConfig['iptv'] = iptv;

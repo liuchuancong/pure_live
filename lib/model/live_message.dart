@@ -41,11 +41,11 @@ class LiveMessage {
   @override
   String toString() {
     return json.encode({
-      "type": type.index,
-      "userName": userName,
-      "message": message,
-      "data": data.toString(),
-      "color": color.toString(),
+      'type': type.index,
+      'userName': userName,
+      'message': message,
+      'data': data.toString(),
+      'color': color.toString(),
     });
   }
 }
@@ -59,7 +59,7 @@ class LiveMessageColor {
 
     LiveMessageColor color = LiveMessageColor.white;
     if (obj.length == 4) {
-      obj = "00$obj";
+      obj = '00$obj';
     }
     if (obj.length == 6) {
       var R = int.parse(obj.substring(0, 2), radix: 16);
@@ -108,14 +108,14 @@ class LiveSuperChatMessage {
   @override
   String toString() {
     return json.encode({
-      "userName": userName,
-      "face": face,
-      "message": message,
-      "price": price,
-      "startTime": startTime,
-      "endTime": endTime,
-      "backgroundColor": backgroundColor,
-      "backgroundBottomColor": backgroundBottomColor,
+      'userName': userName,
+      'face': face,
+      'message': message,
+      'price': price,
+      'startTime': startTime,
+      'endTime': endTime,
+      'backgroundColor': backgroundColor,
+      'backgroundBottomColor': backgroundBottomColor,
     });
   }
 }

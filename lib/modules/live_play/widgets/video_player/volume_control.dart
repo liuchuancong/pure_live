@@ -68,7 +68,9 @@ class _OverlayVolumeControlState extends State<OverlayVolumeControl> {
   void _updateVolumeFromGlobal() {
     final v = SettingsService.to.vol;
     setState(() {
-      double platformVolume = PlatformUtils.isMobile ? v.defaultMobileVolume.v : v.defaultDesktopVolume.v;
+      double platformVolume = PlatformUtils.isMobile
+          ? v.defaultMobileVolume.v
+          : v.defaultDesktopVolume.v;
 
       if (v.globalVolumeMute.v) {
         _lastVolume = _volume;
@@ -170,8 +172,12 @@ class _OverlayVolumeControlState extends State<OverlayVolumeControl> {
                 children: [
                   const SizedBox(height: 12),
                   Text(
-                    "$percentage%",
-                    style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                    '$percentage%',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   Expanded(
                     child: GestureDetector(
@@ -182,14 +188,20 @@ class _OverlayVolumeControlState extends State<OverlayVolumeControl> {
                           Container(
                             width: 4,
                             margin: const EdgeInsets.only(top: 10, bottom: 20),
-                            decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2)),
+                            decoration: BoxDecoration(
+                              color: Colors.white24,
+                              borderRadius: BorderRadius.circular(2),
+                            ),
                           ),
                           Positioned(
                             bottom: 20,
                             child: Container(
                               width: 4,
                               height: _volume * trackHeight,
-                              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(2)),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(2),
+                              ),
                             ),
                           ),
                           Positioned(
@@ -197,7 +209,10 @@ class _OverlayVolumeControlState extends State<OverlayVolumeControl> {
                             child: Container(
                               width: 12,
                               height: 12,
-                              decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                              decoration: const BoxDecoration(
+                                color: Colors.white,
+                                shape: BoxShape.circle,
+                              ),
                             ),
                           ),
                         ],
@@ -229,7 +244,9 @@ class _OverlayVolumeControlState extends State<OverlayVolumeControl> {
 
   @override
   Widget build(BuildContext context) {
-    IconData icon = _volume == 0 ? Icons.volume_off : (_volume < 0.5 ? Icons.volume_down : Icons.volume_up);
+    IconData icon = _volume == 0
+        ? Icons.volume_off
+        : (_volume < 0.5 ? Icons.volume_down : Icons.volume_up);
 
     return CompositedTransformTarget(
       link: _layerLink,

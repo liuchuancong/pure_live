@@ -10,7 +10,7 @@ class DanmuShieldPage extends GetView<DanmuShieldController> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: Text(i18n("danmaku_keyword_block"))),
+      appBar: AppBar(title: Text(i18n('danmaku_keyword_block'))),
       body: ListView(
         physics: const PureLiveScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
@@ -23,7 +23,10 @@ class DanmuShieldPage extends GetView<DanmuShieldController> {
               filled: true,
               fillColor: theme.colorScheme.surfaceContainerLow,
               contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide.none,
+              ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
                 borderSide: BorderSide(color: theme.colorScheme.primary, width: 1.5),
@@ -49,7 +52,7 @@ class DanmuShieldPage extends GetView<DanmuShieldController> {
             return Padding(
               padding: const EdgeInsets.only(left: 4, bottom: 12),
               child: Text(
-                i18n("shield_count_title", args: {"count": "$count"}),
+                i18n('shield_count_title', args: {'count': '$count'}),
                 style: theme.textTheme.titleSmall?.copyWith(
                   color: theme.colorScheme.primary,
                   fontWeight: FontWeight.bold,
@@ -65,8 +68,8 @@ class DanmuShieldPage extends GetView<DanmuShieldController> {
                 padding: const EdgeInsets.only(top: 40),
                 child: EmptyView(
                   icon: Remix.discuss_line,
-                  title: i18n("empty_shield_title"),
-                  subtitle: i18n("empty_shield_subtitle"),
+                  title: i18n('empty_shield_title'),
+                  subtitle: i18n('empty_shield_subtitle'),
                 ),
               );
             }
@@ -88,14 +91,25 @@ class DanmuShieldPage extends GetView<DanmuShieldController> {
                       decoration: BoxDecoration(
                         color: theme.colorScheme.primary.withValues(alpha: 0.06),
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.15)),
+                        border: Border.all(
+                          color: theme.colorScheme.primary.withValues(alpha: 0.15),
+                        ),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(item, style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500)),
+                          Text(
+                            item,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
                           const SizedBox(width: 6),
-                          Icon(Remix.close_line, size: 14, color: theme.colorScheme.primary.withValues(alpha: 0.6)),
+                          Icon(
+                            Remix.close_line,
+                            size: 14,
+                            color: theme.colorScheme.primary.withValues(alpha: 0.6),
+                          ),
                         ],
                       ),
                     ),

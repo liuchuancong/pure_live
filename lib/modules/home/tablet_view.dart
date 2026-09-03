@@ -39,7 +39,7 @@ class HomeTabletView extends StatelessWidget {
                       NavigationRailDestination(
                         icon: const Icon(Remix.heart_3_line),
                         selectedIcon: const Icon(Remix.heart_3_fill),
-                        label: Text(i18n("favorites_title")),
+                        label: Text(i18n('favorites_title')),
                       ),
                     );
                     break;
@@ -48,7 +48,7 @@ class HomeTabletView extends StatelessWidget {
                       NavigationRailDestination(
                         icon: const Icon(Remix.fire_line),
                         selectedIcon: const Icon(Remix.fire_fill),
-                        label: Text(i18n("popular_title")),
+                        label: Text(i18n('popular_title')),
                       ),
                     );
                     break;
@@ -57,7 +57,7 @@ class HomeTabletView extends StatelessWidget {
                       NavigationRailDestination(
                         icon: const Icon(Remix.apps_2_line),
                         selectedIcon: const Icon(Remix.apps_2_fill),
-                        label: Text(i18n("areas_title")),
+                        label: Text(i18n('areas_title')),
                       ),
                     );
                     break;
@@ -66,7 +66,7 @@ class HomeTabletView extends StatelessWidget {
                       NavigationRailDestination(
                         icon: const Icon(Remix.download_2_line),
                         selectedIcon: const Icon(Remix.download_2_fill),
-                        label: Text(i18n("record_center")),
+                        label: Text(i18n('record_center')),
                       ),
                     );
                     break;
@@ -94,10 +94,15 @@ class HomeTabletView extends StatelessWidget {
                       Obx(
                         () => SettingsService.to.app.enableMultiView.v
                             ? Padding(
-                                padding: const EdgeInsets.only(top: 0, bottom: 12, left: 12, right: 12),
+                                padding: const EdgeInsets.only(
+                                  top: 0,
+                                  bottom: 12,
+                                  left: 12,
+                                  right: 12,
+                                ),
                                 child: IconButton(
-                                  onPressed: () => AppNavigator.toMultiview(),
-                                  tooltip: i18n("multiview_title"),
+                                  onPressed: AppNavigator.toMultiview,
+                                  tooltip: i18n('multiview_title'),
                                   icon: const Icon(Remix.layout_grid_line),
                                 ),
                               )
@@ -141,8 +146,8 @@ class HomeTabletView extends StatelessWidget {
                       ? AppStatusView(
                           type: AppStatusType.empty,
                           icon: Remix.menu_2_fill,
-                          title: i18n("no_menu_title"),
-                          subtitle: i18n("no_menu_subtitle"),
+                          title: i18n('no_menu_title'),
+                          subtitle: i18n('no_menu_subtitle'),
                         )
                       : body,
                 ),

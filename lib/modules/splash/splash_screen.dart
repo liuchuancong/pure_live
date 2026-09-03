@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:pure_live/common/index.dart';
 
 enum LoaderType { spinner, dots, progressBar }
@@ -100,14 +101,19 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                     widget.logoText!,
                     style:
                         widget.textStyle ??
-                        const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white),
+                        const TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
                   ),
                 ),
               ),
             const SizedBox(height: 30),
             if (widget.showLoader) _buildLoader(),
             const SizedBox(height: 30),
-            if (widget.nextButton != null) GestureDetector(onTap: widget.onNextPressed, child: widget.nextButton),
+            if (widget.nextButton != null)
+              GestureDetector(onTap: widget.onNextPressed, child: widget.nextButton),
           ],
         ),
       ),
@@ -117,13 +123,16 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   Widget _buildLoader() {
     switch (widget.loaderType) {
       case LoaderType.spinner:
-        return const AppStatusView(type: AppStatusType.loading, title: "", subtitle: "");
+        return const AppStatusView(type: AppStatusType.loading, title: '', subtitle: '');
       case LoaderType.dots:
         return const AnimatedDots();
       case LoaderType.progressBar:
         return SizedBox(
           width: 200,
-          child: LinearProgressIndicator(backgroundColor: Colors.white.withValues(alpha: 0.3), color: Colors.white),
+          child: LinearProgressIndicator(
+            backgroundColor: Colors.white.withValues(alpha: 0.3),
+            color: Colors.white,
+          ),
         );
     }
   }
@@ -144,7 +153,8 @@ class _AnimatedDotsState extends State<AnimatedDots> with SingleTickerProviderSt
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 600))..repeat(reverse: true);
+    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 600))
+      ..repeat(reverse: true);
     _animation = Tween<double>(begin: 0.3, end: 1.0).animate(_controller);
   }
 
@@ -161,9 +171,9 @@ class _AnimatedDotsState extends State<AnimatedDots> with SingleTickerProviderSt
       children: List.generate(dotCount, (index) {
         return FadeTransition(
           opacity: _animation,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: const Icon(Icons.circle, size: 12, color: Colors.white),
+          child: const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 4),
+            child: Icon(Icons.circle, size: 12, color: Colors.white),
           ),
         );
       }),

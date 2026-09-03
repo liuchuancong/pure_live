@@ -47,8 +47,12 @@ class _AppStatusViewState extends State<AppStatusView> with SingleTickerProvider
   @override
   void initState() {
     super.initState();
-    _rotateController = AnimationController(duration: const Duration(milliseconds: 1000), vsync: this);
-    if (widget.type == AppStatusType.loading && SettingsService.to.theme.loadingStyle.v == 'default') {
+    _rotateController = AnimationController(
+      duration: const Duration(milliseconds: 1000),
+      vsync: this,
+    );
+    if (widget.type == AppStatusType.loading &&
+        SettingsService.to.theme.loadingStyle.v == 'default') {
       _rotateController.repeat();
     }
   }
@@ -60,7 +64,8 @@ class _AppStatusViewState extends State<AppStatusView> with SingleTickerProvider
         SettingsService.to.theme.loadingStyle.v == 'default' &&
         !_rotateController.isAnimating) {
       _rotateController.repeat();
-    } else if ((widget.type != AppStatusType.loading || SettingsService.to.theme.loadingStyle.v != 'default') &&
+    } else if ((widget.type != AppStatusType.loading ||
+            SettingsService.to.theme.loadingStyle.v != 'default') &&
         _rotateController.isAnimating) {
       _rotateController.stop();
     }
@@ -361,7 +366,10 @@ class _AppStatusViewState extends State<AppStatusView> with SingleTickerProvider
         return SizedBox(
           width: size,
           height: size,
-          child: LoadingIndicator(indicatorType: Indicator.ballScaleRippleMultiple, colors: [color]),
+          child: LoadingIndicator(
+            indicatorType: Indicator.ballScaleRippleMultiple,
+            colors: [color],
+          ),
         );
       case 'ballSpinFadeLoader':
         return SizedBox(
@@ -490,10 +498,15 @@ class _AppStatusViewState extends State<AppStatusView> with SingleTickerProvider
     }
 
     final String finalTitle =
-        widget.title ?? (widget.type == AppStatusType.error ? i18n('status_error_title') : i18n('status_empty_title'));
+        widget.title ??
+        (widget.type == AppStatusType.error
+            ? i18n('status_error_title')
+            : i18n('status_empty_title'));
     final String finalSubtitle =
         widget.subtitle ??
-        (widget.type == AppStatusType.error ? i18n('status_error_subtitle') : i18n('status_empty_subtitle'));
+        (widget.type == AppStatusType.error
+            ? i18n('status_error_subtitle')
+            : i18n('status_empty_subtitle'));
     final String finalButtonText = widget.buttonText ?? i18n('status_retry_button');
 
     return Center(
@@ -515,7 +528,10 @@ class _AppStatusViewState extends State<AppStatusView> with SingleTickerProvider
                 border: Border.all(color: effectiveIconColor.withValues(alpha: 0.05), width: 1),
               ),
               child: Icon(
-                widget.icon ?? (widget.type == AppStatusType.error ? Icons.wifi_off_rounded : Icons.live_tv_rounded),
+                widget.icon ??
+                    (widget.type == AppStatusType.error
+                        ? Icons.wifi_off_rounded
+                        : Icons.live_tv_rounded),
                 size: widget.isMini ? 16 : 42,
                 color: widget.iconColor ?? theme.colorScheme.primary.withValues(alpha: 0.6),
               ),
@@ -539,7 +555,10 @@ class _AppStatusViewState extends State<AppStatusView> with SingleTickerProvider
                 child: Text(
                   finalSubtitle,
                   textAlign: TextAlign.center,
-                  style: AppTextStyles.t13.copyWith(color: widget.subtitleColor ?? theme.hintColor, height: 1.5),
+                  style: AppTextStyles.t13.copyWith(
+                    color: widget.subtitleColor ?? theme.hintColor,
+                    height: 1.5,
+                  ),
                 ),
               ),
             ),

@@ -4,8 +4,7 @@ class JsEvalResult {
   final bool isPromise;
   final bool isError;
 
-  JsEvalResult(this.stringResult, this.rawResult,
-      {this.isError = false, this.isPromise = false});
+  JsEvalResult(this.stringResult, this.rawResult, {this.isError = false, this.isPromise = false});
 
   toString() => stringResult;
 }

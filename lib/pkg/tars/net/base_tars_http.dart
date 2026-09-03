@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:typed_data';
+
 import 'package:dio/dio.dart';
 import 'package:logger/logger.dart';
 import 'package:pure_live/pkg/tars/tup/const.dart';
@@ -24,7 +25,7 @@ class BaseTarsHttp {
   BaseTarsHttp(
     this.baseUrl,
     this.servantName, {
-    this.path = "",
+    this.path = '',
     this.timeOut = 60000,
     this.debugLog = false,
     this.headers = const {},
@@ -34,7 +35,7 @@ class BaseTarsHttp {
         connectTimeout: Duration(seconds: timeOut),
         baseUrl: baseUrl,
         responseType: ResponseType.bytes,
-        headers: {HttpHeaders.contentTypeHeader: "application/x-wup", ...headers},
+        headers: {HttpHeaders.contentTypeHeader: 'application/x-wup', ...headers},
       ),
     );
     if (debugLog) {
@@ -48,13 +49,17 @@ class BaseTarsHttp {
     if (response.code == 0) {
       return response.response!;
     } else {
-      logger.e("tupDecode decode error:${response.code}");
+      logger.e('tupDecode decode error:${response.code}');
       throw TupResultException(response.code);
     }
   }
 
   //发送http请求,返回状态码及response
-  Future<TupResponse<RSP>> tupRequestWithRspCode<REQ, RSP>(String methodName, REQ tReq, RSP tRsp) async {
+  Future<TupResponse<RSP>> tupRequestWithRspCode<REQ, RSP>(
+    String methodName,
+    REQ tReq,
+    RSP tRsp,
+  ) async {
     final data = buildRequest(methodName, tReq);
     dio.options.headers[HttpHeaders.contentLengthHeader] = data.lengthInBytes;
     final result = await dio.post<List<int>>(path, data: Stream.fromIterable(data.map((e) => [e])));
@@ -66,7 +71,7 @@ class BaseTarsHttp {
   Future<TupResponse<void>> tupRequestWithRspCodeNoRsp<REQ>(String methodName, REQ tReq) async {
     final data = buildRequest(methodName, tReq);
     dio.options.headers[HttpHeaders.contentLengthHeader] = data.lengthInBytes;
-    logger.d("send tupRequestNoRsp, methodName:$methodName");
+    logger.d('send tupRequestNoRsp, methodName:$methodName');
     final result = await dio.post<List<int>>(path, data: Stream.fromIterable(data.map((e) => [e])));
     final value = result.data;
     return tupEmptyResponseDecode(methodName, value!);
@@ -78,7 +83,7 @@ class BaseTarsHttp {
     if (response.code == 0) {
       return;
     } else {
-      logger.e("tupDecode decode error:${response.code}");
+      logger.e('tupDecode decode error:${response.code}');
       throw TupResultException(response.code);
     }
   }
@@ -91,7 +96,7 @@ class BaseTarsHttp {
     encodePack.setTarsPacketType(Const.PACKET_TYPE_TARSNORMAL);
     encodePack.servantName = servantName;
     encodePack.funcName = methodName;
-    encodePack.put("tReq", tReq);
+    encodePack.put('tReq', tReq);
     Uint8List bytes = encodePack.encode();
     return bytes;
   }
@@ -101,8 +106,8 @@ class BaseTarsHttp {
     var bytes = Uint8List.fromList(list);
     TarsUniPacket respPack = TarsUniPacket();
     respPack.decode(bytes);
-    var code = respPack.get("", 0);
-    RSP rsp = respPack.get<RSP>("tRsp", tRsp);
+    var code = respPack.get('', 0);
+    RSP rsp = respPack.get<RSP>('tRsp', tRsp);
     return TupResponse<RSP>(code: code, response: rsp);
   }
 
@@ -111,11 +116,11 @@ class BaseTarsHttp {
     var bytes = Uint8List.fromList(list);
     BinaryReader br = BinaryReader(bytes);
     int size = br.readInt(4);
-    logger.d("size:$size");
+    logger.d('size:$size');
     TarsUniPacket respPack = TarsUniPacket();
     respPack.decode(bytes);
-    var code = respPack.get("", 0);
-    logger.d("get tupRequest response, methodName:$methodName, code:$code");
+    var code = respPack.get('', 0);
+    logger.d('get tupRequest response, methodName:$methodName, code:$code');
     return TupResponse<void>(code: code);
   }
 }

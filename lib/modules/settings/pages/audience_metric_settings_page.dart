@@ -53,18 +53,29 @@ class AudienceMetricSettingsPage extends StatelessWidget {
           const SizedBox(height: 8),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: Text(i18n('audience_ranking_rule_desc'), style: Theme.of(context).textTheme.bodySmall),
+            child: Text(
+              i18n('audience_ranking_rule_desc'),
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
           ),
           const SizedBox(height: 20),
           context.buildGroupTitle(i18n('audience_online_platforms')),
           context.buildModernCard([
             for (final platform in _platforms)
-              _AudiencePlatformTile(id: platform.id, name: platform.name, detailKey: platform.detailKey, app: app),
+              _AudiencePlatformTile(
+                id: platform.id,
+                name: platform.name,
+                detailKey: platform.detailKey,
+                app: app,
+              ),
           ]),
           const SizedBox(height: 12),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: Text(i18n('audience_metric_fallback_desc'), style: Theme.of(context).textTheme.bodySmall),
+            child: Text(
+              i18n('audience_metric_fallback_desc'),
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
           ),
           const SizedBox(height: 32),
         ],
@@ -74,7 +85,12 @@ class AudienceMetricSettingsPage extends StatelessWidget {
 }
 
 class _AudiencePlatformTile extends StatelessWidget {
-  const _AudiencePlatformTile({required this.id, required this.name, required this.detailKey, required this.app});
+  const _AudiencePlatformTile({
+    required this.id,
+    required this.name,
+    required this.detailKey,
+    required this.app,
+  });
 
   final String id;
   final String name;
@@ -86,7 +102,11 @@ class _AudiencePlatformTile extends StatelessWidget {
     final capability = LiveRoom.audienceCapabilityFor(id);
     final supported = capability.supportsConcurrentOnline;
     final sourceLabel = supported
-        ? i18n(capability.onlineAvailableInRoomLists ? 'audience_source_room_list' : 'audience_source_room_realtime')
+        ? i18n(
+            capability.onlineAvailableInRoomLists
+                ? 'audience_source_room_list'
+                : 'audience_source_room_realtime',
+          )
         : i18n('audience_source_not_exposed');
 
     Widget tile({required bool value, ValueChanged<bool>? onChanged}) {
@@ -106,7 +126,10 @@ class _AudiencePlatformTile extends StatelessWidget {
     // card looking like a large empty grey block.
     if (!supported) return tile(value: false);
     return Obx(
-      () => tile(value: app.isRealOnlineEnabledFor(id), onChanged: (value) => app.setRealOnlineEnabledFor(id, value)),
+      () => tile(
+        value: app.isRealOnlineEnabledFor(id),
+        onChanged: (value) => app.setRealOnlineEnabledFor(id, value),
+      ),
     );
   }
 }

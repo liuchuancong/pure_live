@@ -67,7 +67,13 @@ class LivePlayVideoFrame extends StatelessWidget {
     final customHeight = settings.portraitCustomHeight.v;
     switch (mode) {
       case PortraitVideoHeightMode.adaptive:
-        return SafeArea(top: true, bottom: false, left: false, right: false, child: SizedBox.expand(child: child));
+        return SafeArea(
+          top: true,
+          bottom: false,
+          left: false,
+          right: false,
+          child: SizedBox.expand(child: child),
+        );
       case PortraitVideoHeightMode.custom:
         return Padding(
           padding: EdgeInsets.only(top: customHeight),

@@ -8,14 +8,17 @@ String normalizeNetworkImageUrl(String? source) {
   if (value.isEmpty || value.toLowerCase() == 'null') return '';
 
   if (value.length >= 2 &&
-      ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'")))) {
+      ((value.startsWith('"') && value.endsWith('"')) ||
+          (value.startsWith("'") && value.endsWith("'")))) {
     value = value.substring(1, value.length - 1).trim();
   }
   if (value.isEmpty) return '';
   if (value.startsWith('//')) return 'https:$value';
 
   final uri = Uri.tryParse(value);
-  if (uri != null && (uri.scheme == 'http' || uri.scheme == 'https') && uri.host.isNotEmpty) return value;
+  if (uri != null && (uri.scheme == 'http' || uri.scheme == 'https') && uri.host.isNotEmpty) {
+    return value;
+  }
   if (!value.contains(' ') && RegExp(r'^[\w.-]+\.[a-zA-Z]{2,}([/:?#]|$)').hasMatch(value)) {
     return 'https://$value';
   }
@@ -38,6 +41,6 @@ Map<String, String>? networkImageHeaders(String source) {
     };
   }
   return {
-    'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36",
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36',
   };
 }

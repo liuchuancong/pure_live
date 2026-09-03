@@ -10,7 +10,7 @@ class WebSearchPage extends GetView<WebSearchController> {
   Widget build(BuildContext context) {
     if (controller.usesExternalBrowser) {
       return Scaffold(
-        appBar: AppBar(title: Text(i18n("web_search"))),
+        appBar: AppBar(title: Text(i18n('web_search'))),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -34,7 +34,7 @@ class WebSearchPage extends GetView<WebSearchController> {
     }
     return Scaffold(
       appBar: AppBar(
-        title: Text(i18n("web_search")),
+        title: Text(i18n('web_search')),
         leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: controller.goBack),
         actions: [
           Padding(

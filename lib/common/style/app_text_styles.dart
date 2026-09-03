@@ -10,17 +10,21 @@ class AppTextStyles {
   static FontSettingsController get _settings => SettingsService.to.font;
 
   // 🌟 1. 微型辅助文本 (Body Small)
-  static TextStyle get t11 => (_base.bodySmall ?? const TextStyle()).copyWith(fontSize: _settings.fontSizeBodySmall.v);
+  static TextStyle get t11 =>
+      (_base.bodySmall ?? const TextStyle()).copyWith(fontSize: _settings.fontSizeBodySmall.v);
   static TextStyle get t11Medium => t11.copyWith(fontWeight: FontWeight.w500);
   static TextStyle get t11Bold => t11.copyWith(fontWeight: FontWeight.w700);
   static TextStyle get t11Muted => t11.copyWith(color: Get.theme.hintColor.withValues(alpha: 0.6));
-  static TextStyle get t11Primary => t11.copyWith(color: _colors.primary, fontWeight: FontWeight.w600);
+  static TextStyle get t11Primary =>
+      t11.copyWith(color: _colors.primary, fontWeight: FontWeight.w600);
 
-  static TextStyle get t12 => (_base.bodySmall ?? const TextStyle()).copyWith(fontSize: _settings.fontSizeBodySmall.v);
+  static TextStyle get t12 =>
+      (_base.bodySmall ?? const TextStyle()).copyWith(fontSize: _settings.fontSizeBodySmall.v);
   static TextStyle get t12Medium => t12.copyWith(fontWeight: FontWeight.w500);
   static TextStyle get t12Bold => t12.copyWith(fontWeight: FontWeight.w700);
   static TextStyle get t12Muted => t12.copyWith(color: Get.theme.hintColor);
-  static TextStyle get t12Primary => t12.copyWith(color: _colors.primary, fontWeight: FontWeight.w600);
+  static TextStyle get t12Primary =>
+      t12.copyWith(color: _colors.primary, fontWeight: FontWeight.w600);
   static TextStyle get t12Error => t12.copyWith(color: _colors.error);
 
   // 🌟 2. 标准正文大小 (Body Medium)：直接动态绑定你设置的 fontSizeBodyMedium 变量
@@ -33,7 +37,8 @@ class AppTextStyles {
   static TextStyle get t13Primary => t13.copyWith(color: _colors.primary);
 
   // 🌟 3. 加粗段落正文 (Body Large)：直接动态绑定你设置的 fontSizeBodyLarge 变量
-  static TextStyle get t14 => (_base.bodyLarge ?? const TextStyle()).copyWith(fontSize: _settings.fontSizeBodyLarge.v);
+  static TextStyle get t14 =>
+      (_base.bodyLarge ?? const TextStyle()).copyWith(fontSize: _settings.fontSizeBodyLarge.v);
   static TextStyle get t14Medium => t14.copyWith(fontWeight: FontWeight.w500);
   static TextStyle get t14SemiBold => t14.copyWith(fontWeight: FontWeight.w600);
   static TextStyle get t14Bold => t14.copyWith(fontWeight: FontWeight.w700);
@@ -46,7 +51,8 @@ class AppTextStyles {
   static TextStyle get t15Medium => t15.copyWith(fontWeight: FontWeight.w500);
   static TextStyle get t15SemiBold => t15.copyWith(fontWeight: FontWeight.w600);
   static TextStyle get t15Bold => t15.copyWith(fontWeight: FontWeight.w700);
-  static TextStyle get t15Primary => t15.copyWith(color: _colors.primary, fontWeight: FontWeight.w600);
+  static TextStyle get t15Primary =>
+      t15.copyWith(color: _colors.primary, fontWeight: FontWeight.w600);
 
   static TextStyle get t16 =>
       (_base.titleMedium ?? const TextStyle()).copyWith(fontSize: _settings.fontSizeTitleMedium.v);

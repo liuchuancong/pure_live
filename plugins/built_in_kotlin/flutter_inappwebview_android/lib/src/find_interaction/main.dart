@@ -1,2 +1,1 @@
-export 'find_interaction_controller.dart'
-    hide InternalFindInteractionController;
+export 'find_interaction_controller.dart' hide InternalFindInteractionController;

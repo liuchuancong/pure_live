@@ -15,18 +15,24 @@ class HttpClient {
   static const int _downloadSuccessCode1 = 200;
   static const int _downloadSuccessCode2 = 206;
 
-  static const String _errorGet = "发送GET请求失败";
-  static const String _errorPost = "发送POST请求失败";
-  static const String _errorHead = "发送HEAD请求失败";
-  static const String _errorDownload = "下载请求失败";
-  static const String _errorDownloadFailed = "下载失败";
-  static const String _errorDownloadCancel = "下载已取消";
+  static const String _errorGet = '发送GET请求失败';
+  static const String _errorPost = '发送POST请求失败';
+  static const String _errorHead = '发送HEAD请求失败';
+  static const String _errorDownload = '下载请求失败';
+  static const String _errorDownloadFailed = '下载失败';
+  static const String _errorDownloadCancel = '下载已取消';
 
   HttpClient._();
   static final HttpClient instance = HttpClient._();
   late Dio dio = _createDio();
   Dio _createDio() {
-    return Dio(BaseOptions(connectTimeout: _connectTimeout, receiveTimeout: _receiveTimeout, sendTimeout: _sendTimeout))
+    return Dio(
+        BaseOptions(
+          connectTimeout: _connectTimeout,
+          receiveTimeout: _receiveTimeout,
+          sendTimeout: _sendTimeout,
+        ),
+      )
       ..transformer = CustomTransformer()
       ..httpClientAdapter = IOHttpClientAdapter(
         createHttpClient: () {
@@ -164,7 +170,7 @@ class HttpClient {
     CancelToken? cancel,
     Function(int value, int progress)? onReceiveProgress,
   }) async {
-    final tempPath = "$savePath.part";
+    final tempPath = '$savePath.part';
     final tempFile = io.File(tempPath);
 
     try {
@@ -179,7 +185,8 @@ class HttpClient {
         options: Options(headers: header),
       );
 
-      if (response.statusCode == _downloadSuccessCode1 || response.statusCode == _downloadSuccessCode2) {
+      if (response.statusCode == _downloadSuccessCode1 ||
+          response.statusCode == _downloadSuccessCode2) {
         return await tempFile.rename(savePath);
       } else {
         throw HttpError(_errorDownloadFailed, statusCode: response.statusCode ?? 0);
@@ -188,7 +195,7 @@ class HttpClient {
       if (CancelToken.isCancel(e)) {
         throw HttpError(_errorDownloadCancel);
       } else if (e.type == DioExceptionType.badResponse) {
-        throw HttpError(e.message ?? "", statusCode: e.response?.statusCode ?? 0);
+        throw HttpError(e.message ?? '', statusCode: e.response?.statusCode ?? 0);
       } else {
         throw HttpError(_errorDownload);
       }

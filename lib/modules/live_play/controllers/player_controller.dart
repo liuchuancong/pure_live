@@ -24,7 +24,11 @@ typedef StreamSourceOpener = Future<void> Function(
 
 @immutable
 class StreamSelection {
-  const StreamSelection({required this.qualityIndex, required this.lineIndex, required this.isValid});
+  const StreamSelection({
+    required this.qualityIndex,
+    required this.lineIndex,
+    required this.isValid,
+  });
 
   final int qualityIndex;
   final int lineIndex;
@@ -85,7 +89,12 @@ List<LivePlayQuality> normalizePlayQualities(Iterable<LivePlayQuality> qualities
     final label = quality.quality.trim();
     if (labelCounts[label] == 1) return quality;
     final ordinal = labelOrdinals.update(label, (value) => value + 1, ifAbsent: () => 1);
-    return LivePlayQuality(quality: '$label $ordinal', id: quality.id, data: quality.data, sort: quality.sort);
+    return LivePlayQuality(
+      quality: '$label $ordinal',
+      id: quality.id,
+      data: quality.data,
+      sort: quality.sort,
+    );
   });
   return List<LivePlayQuality>.unmodifiable(result);
 }
@@ -94,7 +103,9 @@ List<LivePlayQuality> normalizePlayQualities(Iterable<LivePlayQuality> qualities
 bool hasSameStreamChoices(Iterable<String> current, Iterable<String> next) {
   final currentSet = current.map((url) => url.trim()).where((url) => url.isNotEmpty).toSet();
   final nextSet = next.map((url) => url.trim()).where((url) => url.isNotEmpty).toSet();
-  return currentSet.isNotEmpty && currentSet.length == nextSet.length && currentSet.containsAll(nextSet);
+  return currentSet.isNotEmpty &&
+      currentSet.length == nextSet.length &&
+      currentSet.containsAll(nextSet);
 }
 
 abstract interface class PlayerSessionHost {
@@ -102,7 +113,13 @@ abstract interface class PlayerSessionHost {
 
   bool get isClosed;
 
-  void updateRoom({LiveRoom? detail, bool? isLiving, bool? success, bool? isLoading, String? loadError});
+  void updateRoom({
+    LiveRoom? detail,
+    bool? isLiving,
+    bool? success,
+    bool? isLoading,
+    String? loadError,
+  });
 
   void updatePlayer({
     VideoController? videoController,
@@ -142,7 +159,10 @@ class PlayerController extends GetxController {
     final manager = GlobalPlayerService.instance.player;
     return manager.play(url, playUrls, headers, room: room, audioOnly: audioOnly).then((_) {
       if (manager.hasError.value) {
-        throw PlayerException(message: 'Selected stream failed to open', type: PlayerErrorType.source);
+        throw PlayerException(
+          message: 'Selected stream failed to open',
+          type: PlayerErrorType.source,
+        );
       }
     });
   }
@@ -169,12 +189,18 @@ class PlayerController extends GetxController {
   ///
   /// 主房间路径（[getHeaders]）与 multiview 每格解析器共用此入口，
   /// 保证 Cookie/UA/Referer 等鉴权头逻辑不发生漂移。
-  static Future<Map<String, String>> resolvePlaybackHeaders({required Site site, required LiveRoom? room}) async {
+  static Future<Map<String, String>> resolvePlaybackHeaders({
+    required Site site,
+    required LiveRoom? room,
+  }) async {
     return PlaybackHeaderResolver.resolve(platform: site.id, roomId: room?.roomId ?? '');
   }
 
   Future<Map<String, String>> getHeaders({Site? expectedSite, LiveRoom? expectedRoom}) {
-    return resolvePlaybackHeaders(site: expectedSite ?? currentSite, room: expectedRoom ?? currentRoom);
+    return resolvePlaybackHeaders(
+      site: expectedSite ?? currentSite,
+      room: expectedRoom ?? currentRoom,
+    );
   }
 
   Future<VideoController?> setPlayer({
@@ -227,7 +253,9 @@ class PlayerController extends GetxController {
   /// immutable session metadata cross the route boundary.
   Future<VideoController?> attachCurrentSession(RoomSessionSnapshot session) async {
     final manager = GlobalPlayerService.instance.player;
-    if (_main.isClosed || manager.currentPlayer == null || manager.currentFloatRoom != session.room) return null;
+    if (_main.isClosed || manager.currentPlayer == null || manager.currentFloatRoom != session.room) {
+      return null;
+    }
 
     final qualities = session.qualities.isEmpty
         ? <LivePlayQuality>[LivePlayQuality(quality: '原画')]
@@ -236,7 +264,9 @@ class PlayerController extends GetxController {
         ? <String>[session.dataSource]
         : List<String>.unmodifiable(session.playUrls);
     final currentQuality = session.currentQuality.clamp(0, qualities.length - 1);
-    final currentLineIndex = playUrls.isEmpty ? 0 : session.currentLineIndex.clamp(0, playUrls.length - 1);
+    final currentLineIndex = playUrls.isEmpty
+        ? 0
+        : session.currentLineIndex.clamp(0, playUrls.length - 1);
 
     _main.updatePlayer(
       qualites: qualities,
@@ -273,7 +303,9 @@ class PlayerController extends GetxController {
     if (room == null) return;
 
     try {
-      final playQualites = normalizePlayQualities(await site.liveSite.getPlayQualites(detail: room));
+      final playQualites = normalizePlayQualities(
+        await site.liveSite.getPlayQualites(detail: room),
+      );
       if (!_isLoadCurrent(loadEpoch, room, site)) return;
 
       if (playQualites.isEmpty) {
@@ -285,7 +317,10 @@ class PlayerController extends GetxController {
       _main.updatePlayer(qualites: playQualites);
 
       if (!_state.player.hasUseDefaultResolution) {
-        await _setDefaultResolution(playQualites, isCurrent: () => _isLoadCurrent(loadEpoch, room, site));
+        await _setDefaultResolution(
+          playQualites,
+          isCurrent: () => _isLoadCurrent(loadEpoch, room, site),
+        );
       }
       if (!_isLoadCurrent(loadEpoch, room, site)) return;
 
@@ -302,7 +337,10 @@ class PlayerController extends GetxController {
     }
   }
 
-  Future<void> _setDefaultResolution(List<LivePlayQuality> playQualites, {required bool Function() isCurrent}) async {
+  Future<void> _setDefaultResolution(
+    List<LivePlayQuality> playQualites, {
+    required bool Function() isCurrent,
+  }) async {
     String userPrefer;
     final List<ConnectivityResult> connectivityResult = await (Connectivity().checkConnectivity());
     if (!isCurrent()) return;
@@ -324,15 +362,24 @@ class PlayerController extends GetxController {
     final systemResolutions = PlayerConsts.resolutions;
     final preferLevel = systemResolutions.indexOf(userPrefer);
     final preferRatio = preferLevel / (systemResolutions.length - 1);
-    final targetIndex = (preferRatio * (availableQualities.length - 1)).round().clamp(0, availableQualities.length - 1);
+    final targetIndex = (preferRatio * (availableQualities.length - 1)).round().clamp(
+      0,
+      availableQualities.length - 1,
+    );
 
     _main.updatePlayer(currentQuality: targetIndex, hasUseDefaultResolution: true);
   }
 
-  Future<void> _getPlayUrl({required int loadEpoch, required LiveRoom room, required Site site}) async {
+  Future<void> _getPlayUrl({
+    required int loadEpoch,
+    required LiveRoom room,
+    required Site site,
+  }) async {
     if (!_isLoadCurrent(loadEpoch, room, site)) return;
     final playerState = _state.player;
-    if (playerState.qualites.isEmpty || playerState.currentQuality >= playerState.qualites.length) return;
+    if (playerState.qualites.isEmpty || playerState.currentQuality >= playerState.qualites.length) {
+      return;
+    }
 
     final resolution = await site.liveSite.resolvePlayUrls(
       detail: room,
@@ -388,7 +435,9 @@ class PlayerController extends GetxController {
     final requestedQuality = type == ReloadDataType.changeLine
         ? before.currentQuality.clamp(0, before.qualites.length - 1)
         : qualityIndex.clamp(0, before.qualites.length - 1);
-    if (requestedQuality == before.currentQuality && lineIndex == before.currentLineIndex) return true;
+    if (requestedQuality == before.currentQuality && lineIndex == before.currentLineIndex) {
+      return true;
+    }
 
     final selectionEpoch = ++_streamSelectionEpoch;
     final loadEpoch = ++_loadEpoch;
@@ -396,12 +445,17 @@ class PlayerController extends GetxController {
 
     try {
       final resolution = type == ReloadDataType.changeQuality
-          ? await site.liveSite.resolvePlayUrls(detail: room, quality: before.qualites[requestedQuality])
+          ? await site.liveSite.resolvePlayUrls(
+              detail: room,
+              quality: before.qualites[requestedQuality],
+            )
           : LivePlayUrlResolution(
               urls: List<String>.from(before.playUrls),
               appliedQualityData: before.qualites[before.currentQuality].selectionId,
             );
-      if (!_isLoadCurrent(loadEpoch, room, site) || selectionEpoch != _streamSelectionEpoch) return false;
+      if (!_isLoadCurrent(loadEpoch, room, site) || selectionEpoch != _streamSelectionEpoch) {
+        return false;
+      }
       final urls = resolution.urls;
       if (urls.isEmpty) {
         ToastUtil.show(i18n('cannot_read_play_url'));
@@ -413,9 +467,12 @@ class PlayerController extends GetxController {
         requestedIndex: requestedQuality,
         appliedQualityData: resolution.appliedQualityData,
       );
-      final qualityAdjusted = type == ReloadDataType.changeQuality && appliedQuality != requestedQuality;
+      final qualityAdjusted =
+          type == ReloadDataType.changeQuality && appliedQuality != requestedQuality;
       if (qualityAdjusted && appliedQuality == before.currentQuality) {
-        ToastUtil.show(i18n('quality_limited_to', args: {'quality': before.qualites[appliedQuality].quality}));
+        ToastUtil.show(
+          i18n('quality_limited_to', args: {'quality': before.qualites[appliedQuality].quality}),
+        );
         return false;
       }
 
@@ -437,7 +494,9 @@ class PlayerController extends GetxController {
       final headers = cachedHeaders == null || cachedHeaders.isEmpty
           ? await getHeaders(expectedSite: site, expectedRoom: room)
           : Map<String, String>.from(cachedHeaders);
-      if (!_isLoadCurrent(loadEpoch, room, site) || selectionEpoch != _streamSelectionEpoch) return false;
+      if (!_isLoadCurrent(loadEpoch, room, site) || selectionEpoch != _streamSelectionEpoch) {
+        return false;
+      }
 
       final immutableUrls = List<String>.unmodifiable(urls);
       await _streamSourceOpener(
@@ -447,7 +506,9 @@ class PlayerController extends GetxController {
         room,
         _state.player.isCurrentRoomAudioOnly,
       );
-      if (!_isLoadCurrent(loadEpoch, room, site) || selectionEpoch != _streamSelectionEpoch) return false;
+      if (!_isLoadCurrent(loadEpoch, room, site) || selectionEpoch != _streamSelectionEpoch) {
+        return false;
+      }
       _main.updatePlayer(
         currentQuality: selection.qualityIndex,
         playUrls: immutableUrls,
@@ -456,7 +517,12 @@ class PlayerController extends GetxController {
       );
       _main.updateRoom(success: true, isLoading: false, loadError: null);
       if (qualityAdjusted) {
-        ToastUtil.show(i18n('quality_limited_to', args: {'quality': before.qualites[selection.qualityIndex].quality}));
+        ToastUtil.show(
+          i18n(
+            'quality_limited_to',
+            args: {'quality': before.qualites[selection.qualityIndex].quality},
+          ),
+        );
       }
       return true;
     } catch (error, stackTrace) {
@@ -493,17 +559,31 @@ class PlayerController extends GetxController {
 
     try {
       if (controller == null) {
-        throw PlayerException(message: 'Room video controller is null', type: PlayerErrorType.lifecycle);
+        throw PlayerException(
+          message: 'Room video controller is null',
+          type: PlayerErrorType.lifecycle,
+        );
       }
       await controller.changeAudioOnlyMode(value);
 
       // The route may have been popped while the native call was pending.
-      if (_main.isClosed || !identical(_state.player.videoController, controller) || currentRoom != room) return;
+      if (_main.isClosed ||
+          !identical(_state.player.videoController, controller) ||
+          currentRoom != room) {
+        return;
+      }
       _main.updatePlayer(isCurrentRoomAudioOnly: controller.isAudioOnly);
       _main.updateRoom(success: true, isLoading: false);
     } catch (error, stackTrace) {
-      developer.log('Audio mode switch failed', name: 'PlayerController', error: error, stackTrace: stackTrace);
-      if (!_main.isClosed && identical(_state.player.videoController, controller) && currentRoom == room) {
+      developer.log(
+        'Audio mode switch failed',
+        name: 'PlayerController',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      if (!_main.isClosed &&
+          identical(_state.player.videoController, controller) &&
+          currentRoom == room) {
         _main.updatePlayer(isCurrentRoomAudioOnly: previous);
         _main.updateRoom(success: true, isLoading: false);
         ToastUtil.show(i18n('error_lifecycle'));

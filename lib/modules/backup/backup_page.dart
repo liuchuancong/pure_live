@@ -40,20 +40,24 @@ class _BackupPageState extends State<BackupPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(i18n("backup_recover"))),
+      appBar: AppBar(title: Text(i18n('backup_recover'))),
       body: Obx(() {
         final auth = Get.find<AuthController>();
         return ListView(
           physics: const PureLiveScrollPhysics(),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           children: [
-            context.buildGroupTitle(i18n("cloud_backup")),
+            context.buildGroupTitle(i18n('cloud_backup')),
             context.buildModernCard([
               context.buildTile(
                 iconWidget: auth.isConnecting
                     ? RotationTransition(
                         turns: const AlwaysStoppedAnimation(0.5),
-                        child: Icon(Remix.refresh_line, color: Theme.of(context).colorScheme.primary, size: 22),
+                        child: Icon(
+                          Remix.refresh_line,
+                          color: Theme.of(context).colorScheme.primary,
+                          size: 22,
+                        ),
                       )
                     : Icon(
                         Remix.account_circle_line,
@@ -61,7 +65,9 @@ class _BackupPageState extends State<BackupPage> {
                         size: 22,
                       ),
                 isLong: !auth.isInitSuccess,
-                subtitleColor: auth.isInitSuccess ? null : Theme.of(context).colorScheme.error.withValues(alpha: 0.8),
+                subtitleColor: auth.isInitSuccess
+                    ? null
+                    : Theme.of(context).colorScheme.error.withValues(alpha: 0.8),
                 title: auth.isConnecting
                     ? i18n('firebase_connecting_title')
                     : (auth.isInitSuccess
@@ -70,7 +76,9 @@ class _BackupPageState extends State<BackupPage> {
                 subtitle: auth.isConnecting
                     ? i18n('firebase_connecting_desc')
                     : (auth.isInitSuccess
-                          ? (auth.isLogin ? i18n('firebase_logged_in_desc') : i18n('firebase_login_desc'))
+                          ? (auth.isLogin
+                                ? i18n('firebase_logged_in_desc')
+                                : i18n('firebase_login_desc'))
                           : i18n('firebase_init_failed_desc')),
                 trailing: auth.isConnecting
                     ? SizedBox(
@@ -78,7 +86,9 @@ class _BackupPageState extends State<BackupPage> {
                         height: 16,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Theme.of(context).colorScheme.primary,
+                          ),
                         ),
                       )
                     : null,
@@ -110,31 +120,31 @@ class _BackupPageState extends State<BackupPage> {
 
               context.buildTile(
                 icon: Remix.cloud_line,
-                title: i18n("webdav"),
-                subtitle: i18n("backup_to_webdav"),
+                title: i18n('webdav'),
+                subtitle: i18n('backup_to_webdav'),
                 onTap: () => Get.toNamed(RoutePath.kWebDavPage),
               ),
               context.buildTile(
                 icon: Remix.qr_scan_2_line,
-                title: i18n("remote_sync"),
-                subtitle: i18n("remote_sync_subtitle"),
+                title: i18n('remote_sync'),
+                subtitle: i18n('remote_sync_subtitle'),
                 onTap: () => Get.toNamed(RoutePath.kRemoteSync),
               ),
               if (Platform.isAndroid || Platform.isIOS)
                 context.buildTile(
                   icon: Remix.qr_code_line,
-                  title: i18n("sync_tv_data"),
-                  subtitle: i18n("sync_tv_data_subtitle"),
+                  title: i18n('sync_tv_data'),
+                  subtitle: i18n('sync_tv_data_subtitle'),
                   onTap: () => Get.to(() => const ScanCodePage()),
                 ),
             ]),
             const SizedBox(height: 20),
-            context.buildGroupTitle(i18n("local_backup")),
+            context.buildGroupTitle(i18n('local_backup')),
             context.buildModernCard([
               context.buildTile(
                 icon: Remix.file_download_line,
-                title: i18n("create_backup"),
-                subtitle: i18n("create_backup_subtitle"),
+                title: i18n('create_backup'),
+                subtitle: i18n('create_backup_subtitle'),
                 onTap: () async {
                   if (backupDirectory.isEmpty) {
                     ToastUtil.show(i18n('please_set_backup_directory'));
@@ -145,30 +155,32 @@ class _BackupPageState extends State<BackupPage> {
               ),
               context.buildTile(
                 icon: Remix.file_upload_line,
-                title: i18n("recover_backup"),
-                subtitle: i18n("recover_backup_subtitle"),
+                title: i18n('recover_backup'),
+                subtitle: i18n('recover_backup_subtitle'),
                 onTap: () => BackupRecoveryService().recoverSettingsFromFile(),
               ),
             ]),
             const SizedBox(height: 20),
-            context.buildGroupTitle(i18n("backup_settings")),
+            context.buildGroupTitle(i18n('backup_settings')),
             context.buildModernCard([
               context.buildTile(
                 icon: Remix.folder_open_line,
-                title: i18n("backup_directory"),
-                subtitle: backupDirectory.isEmpty ? i18n('please_set_backup_directory') : backupDirectory,
+                title: i18n('backup_directory'),
+                subtitle: backupDirectory.isEmpty
+                    ? i18n('please_set_backup_directory')
+                    : backupDirectory,
                 onTap: () async {
                   await BackupRecoveryService().updateBackupDirectory();
                 },
               ),
             ]),
             const SizedBox(height: 20),
-            context.buildGroupTitle(i18n("log_manage")),
+            context.buildGroupTitle(i18n('log_manage')),
             context.buildModernCard([
               context.buildTile(
                 icon: Remix.file_text_line,
-                title: i18n("enable_local_log"),
-                subtitle: i18n("enable_local_log_desc"),
+                title: i18n('enable_local_log'),
+                subtitle: i18n('enable_local_log_desc'),
                 trailing: Switch(
                   value: logController.storedEnableLog.v,
                   onChanged: (val) => logController.storedEnableLog.v = val,
@@ -183,7 +195,7 @@ class _BackupPageState extends State<BackupPage> {
                 final String urlStr = 'http://$displayAddress:${logController.serverPort.value}';
                 return context.buildTile(
                   icon: Remix.global_line,
-                  title: i18n("view_logs_in_browser"),
+                  title: i18n('view_logs_in_browser'),
                   subtitle: urlStr,
                   trailing: const Icon(Remix.arrow_right_s_line),
                   onTap: () async {
@@ -197,8 +209,8 @@ class _BackupPageState extends State<BackupPage> {
 
               context.buildTile(
                 icon: Remix.folder_open_line,
-                title: i18n("open_log_dir"),
-                subtitle: i18n("open_log_dir_desc"),
+                title: i18n('open_log_dir'),
+                subtitle: i18n('open_log_dir_desc'),
                 onTap: _openLogDirectory,
               ),
             ]),

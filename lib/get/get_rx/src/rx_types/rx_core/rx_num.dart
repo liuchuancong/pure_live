@@ -184,8 +184,7 @@ extension RxNumExt<T extends num> on Rx<T> {
   ///
   /// The arguments [lowerLimit] and [upperLimit] must form a valid range where
   /// `lowerLimit.compareTo(upperLimit) <= 0`.
-  num clamp(num lowerLimit, num upperLimit) =>
-      value.clamp(lowerLimit, upperLimit);
+  num clamp(num lowerLimit, num upperLimit) => value.clamp(lowerLimit, upperLimit);
 
   /// Truncates this [num] to an integer and returns the result as an [int]. */
   int toInt() => value.toInt();
@@ -219,8 +218,7 @@ extension RxNumExt<T extends num> on Rx<T> {
   ///     123456789012345.toStringAsFixed(3);  // 123456789012345.000
   ///     10000000000000000.toStringAsFixed(4); // 10000000000000000.0000
   ///     5.25.toStringAsFixed(0); // 5
-  String toStringAsFixed(int fractionDigits) =>
-      value.toStringAsFixed(fractionDigits);
+  String toStringAsFixed(int fractionDigits) => value.toStringAsFixed(fractionDigits);
 
   /// Returns an exponential string-representation of `this`.
   ///
@@ -259,8 +257,7 @@ extension RxNumExt<T extends num> on Rx<T> {
   ///     12345678901234567890.toStringAsPrecision(14); // 1.2345678901235e+19
   ///     0.00000012345.toStringAsPrecision(15); // 1.23450000000000e-7
   ///     0.0000012345.toStringAsPrecision(15);  // 0.00000123450000000000
-  String toStringAsPrecision(int precision) =>
-      value.toStringAsPrecision(precision);
+  String toStringAsPrecision(int precision) => value.toStringAsPrecision(precision);
 }
 
 extension RxnNumExt<T extends num> on Rx<T?> {
@@ -492,8 +489,7 @@ extension RxnNumExt<T extends num> on Rx<T?> {
   ///
   /// The arguments [lowerLimit] and [upperLimit] must form a valid range where
   /// `lowerLimit.compareTo(upperLimit) <= 0`.
-  num? clamp(num lowerLimit, num upperLimit) =>
-      value?.clamp(lowerLimit, upperLimit);
+  num? clamp(num lowerLimit, num upperLimit) => value?.clamp(lowerLimit, upperLimit);
 
   /// Truncates this [num] to an integer and returns the result as an [int]. */
   int? toInt() => value?.toInt();
@@ -527,8 +523,7 @@ extension RxnNumExt<T extends num> on Rx<T?> {
   ///     123456789012345.toStringAsFixed(3);  // 123456789012345.000
   ///     10000000000000000.toStringAsFixed(4); // 10000000000000000.0000
   ///     5.25.toStringAsFixed(0); // 5
-  String? toStringAsFixed(int fractionDigits) =>
-      value?.toStringAsFixed(fractionDigits);
+  String? toStringAsFixed(int fractionDigits) => value?.toStringAsFixed(fractionDigits);
 
   /// Returns an exponential string-representation of `this`.
   ///
@@ -567,8 +562,7 @@ extension RxnNumExt<T extends num> on Rx<T?> {
   ///     12345678901234567890.toStringAsPrecision(14); // 1.2345678901235e+19
   ///     0.00000012345.toStringAsPrecision(15); // 1.23450000000000e-7
   ///     0.0000012345.toStringAsPrecision(15);  // 0.00000123450000000000
-  String? toStringAsPrecision(int precision) =>
-      value?.toStringAsPrecision(precision);
+  String? toStringAsPrecision(int precision) => value?.toStringAsPrecision(precision);
 }
 
 class RxNum extends Rx<num> {

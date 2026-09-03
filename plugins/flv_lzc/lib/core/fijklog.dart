@@ -28,9 +28,7 @@ class FijkLogLevel {
   final int level;
   final String name;
 
-  const FijkLogLevel._(int l, String n)
-      : level = l,
-        name = n;
+  const FijkLogLevel._(int l, String n) : level = l, name = n;
 
   /// Priority constant for the [FijkLog.log] method;
   static const FijkLogLevel All = FijkLogLevel._(000, 'all');

@@ -3,7 +3,12 @@ import 'package:pure_live/modules/live_play/widgets/local_interaction/local_inte
 import 'package:pure_live/modules/live_play/widgets/local_interaction/local_danmaku_style_editor.dart';
 
 class LocalInteractionSheet extends StatefulWidget {
-  const LocalInteractionSheet({super.key, required this.controller, required this.platform, required this.onMessage});
+  const LocalInteractionSheet({
+    super.key,
+    required this.controller,
+    required this.platform,
+    required this.onMessage,
+  });
 
   final LocalInteractionController controller;
   final String platform;
@@ -33,7 +38,10 @@ class _LocalInteractionSheetState extends State<LocalInteractionSheet> {
   void _sendChat() {
     final text = _messageController.text.trim();
     if (text.isEmpty) return;
-    widget.onMessage(widget.controller.createChat(text, platform: widget.platform), widget.controller.showAsDanmaku.v);
+    widget.onMessage(
+      widget.controller.createChat(text, platform: widget.platform),
+      widget.controller.showAsDanmaku.v,
+    );
     _messageController.clear();
   }
 
@@ -53,8 +61,16 @@ class _LocalInteractionSheetState extends State<LocalInteractionSheet> {
             children: [
               Row(
                 children: [
-                  Expanded(child: Text(i18n('local_interaction_title'), style: Theme.of(context).textTheme.titleLarge)),
-                  IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close)),
+                  Expanded(
+                    child: Text(
+                      i18n('local_interaction_title'),
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close),
+                  ),
                 ],
               ),
               Text(i18n('local_interaction_desc'), style: Theme.of(context).textTheme.bodySmall),
@@ -65,7 +81,10 @@ class _LocalInteractionSheetState extends State<LocalInteractionSheet> {
                     child: TextField(
                       controller: _nameController,
                       maxLength: 20,
-                      decoration: InputDecoration(labelText: i18n('local_user_name'), counterText: ''),
+                      decoration: InputDecoration(
+                        labelText: i18n('local_user_name'),
+                        counterText: '',
+                      ),
                       onSubmitted: local.updateName,
                       onChanged: local.updateName,
                     ),
@@ -74,7 +93,9 @@ class _LocalInteractionSheetState extends State<LocalInteractionSheet> {
                   Obx(
                     () => Chip(
                       avatar: const Icon(Icons.toll_rounded, size: 18),
-                      label: Text('${local.coins.v} ${i18n(pack.currencyKey)} · ${i18n(pack.levelKey)} ${local.level}'),
+                      label: Text(
+                        '${local.coins.v} ${i18n(pack.currencyKey)} · ${i18n(pack.levelKey)} ${local.level}',
+                      ),
                     ),
                   ),
                 ],
@@ -177,7 +198,10 @@ class _LocalInteractionSheetState extends State<LocalInteractionSheet> {
               const SizedBox(height: 12),
               Row(
                 children: [
-                  Text(i18n('local_experience_coins'), style: Theme.of(context).textTheme.titleSmall),
+                  Text(
+                    i18n('local_experience_coins'),
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
                   const Spacer(),
                   for (final value in const [500, 2000, 10000])
                     Padding(
@@ -197,10 +221,21 @@ class _LocalInteractionSheetState extends State<LocalInteractionSheet> {
                   tilePadding: EdgeInsets.zero,
                   title: Text(i18n('local_history')),
                   children: local.history.isEmpty
-                      ? [ListTile(contentPadding: EdgeInsets.zero, title: Text(i18n('local_history_empty')))]
+                      ? [
+                          ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: Text(i18n('local_history_empty')),
+                          ),
+                        ]
                       : local.history
                             .take(10)
-                            .map((entry) => ListTile(contentPadding: EdgeInsets.zero, dense: true, title: Text(entry)))
+                            .map(
+                              (entry) => ListTile(
+                                contentPadding: EdgeInsets.zero,
+                                dense: true,
+                                title: Text(entry),
+                              ),
+                            )
                             .toList(),
                 ),
               ),

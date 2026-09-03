@@ -55,7 +55,7 @@ class _IptvManagePageState extends State<IptvManagePage> {
   }
 
   bool _isNetwork(String url) {
-    return url.startsWith("http://") || url.startsWith("https://");
+    return url.startsWith('http://') || url.startsWith('https://');
   }
 
   Future<void> _refreshData() async {
@@ -75,8 +75,8 @@ class _IptvManagePageState extends State<IptvManagePage> {
           ManageItem(
             id: item.id,
             name: item.name,
-            url: item.url ?? "",
-            isNetwork: _isNetwork(item.url ?? ""),
+            url: item.url ?? '',
+            isNetwork: _isNetwork(item.url ?? ''),
             isAutoSync: item.isAutoUpdate,
             type: ManageItemType.iptv,
             raw: item,
@@ -118,13 +118,13 @@ class _IptvManagePageState extends State<IptvManagePage> {
     final syncItems = allItems.where((e) => e.isNetwork && e.isAutoSync).toList();
 
     if (syncItems.isEmpty) {
-      ToastUtil.show(i18n("manage_page_empty_tip"));
+      ToastUtil.show(i18n('manage_page_empty_tip'));
       return;
     }
 
     isSyncingAll.value = true;
 
-    ToastUtil.show(i18n("manage_page_syncing"));
+    ToastUtil.show(i18n('manage_page_syncing'));
 
     try {
       for (final item in syncItems) {
@@ -137,11 +137,11 @@ class _IptvManagePageState extends State<IptvManagePage> {
 
       await _refreshData();
 
-      ToastUtil.show(i18n("manage_page_success"));
+      ToastUtil.show(i18n('manage_page_success'));
     } catch (e) {
-      debugPrint("$e");
+      debugPrint('$e');
 
-      ToastUtil.show(i18n("manage_page_failed"));
+      ToastUtil.show(i18n('manage_page_failed'));
     } finally {
       isSyncingAll.value = false;
     }
@@ -153,13 +153,18 @@ class _IptvManagePageState extends State<IptvManagePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(i18n("manage_page_title")),
+        title: Text(i18n('manage_page_title')),
         actions: [
           Obx(
             () => IconButton(
               onPressed: isSyncingAll.value ? null : _syncAll,
               icon: isSyncingAll.value
-                  ? AppStatusView(type: AppStatusType.loading, title: "", subtitle: "", isMini: true)
+                  ? const AppStatusView(
+                      type: AppStatusType.loading,
+                      title: '',
+                      subtitle: '',
+                      isMini: true,
+                    )
                   : const Icon(Remix.refresh_line),
             ),
           ),
@@ -180,7 +185,7 @@ class _IptvManagePageState extends State<IptvManagePage> {
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
                 sliver: SliverToBoxAdapter(
-                  child: _buildSectionTitle(theme, i18n("network_resource"), Remix.global_line),
+                  child: _buildSectionTitle(theme, i18n('network_resource'), Remix.global_line),
                 ),
               ),
 
@@ -199,7 +204,7 @@ class _IptvManagePageState extends State<IptvManagePage> {
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
                 sliver: SliverToBoxAdapter(
-                  child: _buildSectionTitle(theme, i18n("local_resource"), Remix.folder_2_line),
+                  child: _buildSectionTitle(theme, i18n('local_resource'), Remix.folder_2_line),
                 ),
               ),
 
@@ -232,14 +237,16 @@ class _IptvManagePageState extends State<IptvManagePage> {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
-        gradient: LinearGradient(colors: [theme.colorScheme.primary.withValues(alpha: 0.12), theme.cardColor]),
+        gradient: LinearGradient(
+          colors: [theme.colorScheme.primary.withValues(alpha: 0.12), theme.cardColor],
+        ),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildStatItem(theme, "IPTV", playlistCount.toString(), Remix.play_list_2_line),
-          _buildStatItem(theme, "EPG", epgCount.toString(), Remix.tv_2_line),
-          _buildStatItem(theme, i18n("network_tag"), networkCount.toString(), Remix.global_line),
+          _buildStatItem(theme, 'IPTV', playlistCount.toString(), Remix.play_list_2_line),
+          _buildStatItem(theme, 'EPG', epgCount.toString(), Remix.tv_2_line),
+          _buildStatItem(theme, i18n('network_tag'), networkCount.toString(), Remix.global_line),
         ],
       ),
     );
@@ -296,7 +303,11 @@ class _IptvManagePageState extends State<IptvManagePage> {
         borderRadius: BorderRadius.circular(22),
         border: Border.all(color: theme.dividerColor.withValues(alpha: 0.08)),
         boxShadow: [
-          BoxShadow(color: theme.shadowColor.withValues(alpha: 0.03), blurRadius: 12, offset: const Offset(0, 4)),
+          BoxShadow(
+            color: theme.shadowColor.withValues(alpha: 0.03),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
       child: Material(
@@ -361,13 +372,19 @@ class _IptvManagePageState extends State<IptvManagePage> {
                                   child: _buildActionButton(
                                     theme,
                                     icon: Remix.download_cloud_2_line,
-                                    label: i18n("sync"),
+                                    label: i18n('sync'),
                                     onTap: () async {
-                                      ToastUtil.show(i18n("manage_page_single_syncing"));
+                                      ToastUtil.show(i18n('manage_page_single_syncing'));
                                       if (item.type == ManageItemType.iptv) {
-                                        await IptvSyncEngine.instance.syncPlaylist(item.raw, showTips: true);
+                                        await IptvSyncEngine.instance.syncPlaylist(
+                                          item.raw,
+                                          showTips: true,
+                                        );
                                       } else {
-                                        await EpgSyncEngine.instance.updateEpgCache(item.raw, forceUpdate: true);
+                                        await EpgSyncEngine.instance.updateEpgCache(
+                                          item.raw,
+                                          forceUpdate: true,
+                                        );
                                       }
 
                                       await _refreshData();
@@ -382,7 +399,7 @@ class _IptvManagePageState extends State<IptvManagePage> {
                                 child: _buildActionButton(
                                   theme,
                                   icon: Remix.delete_bin_6_line,
-                                  label: i18n("webdav_delete"),
+                                  label: i18n('webdav_delete'),
                                   danger: true,
                                   onTap: () {
                                     _showDeleteDialog(item);
@@ -391,7 +408,10 @@ class _IptvManagePageState extends State<IptvManagePage> {
                               ),
                             ],
                           ),
-                          if (item.isNetwork) ...[const SizedBox(height: 10), _buildSwitchButton(theme, item)],
+                          if (item.isNetwork) ...[
+                            const SizedBox(height: 10),
+                            _buildSwitchButton(theme, item),
+                          ],
                         ],
                       );
                     }
@@ -403,14 +423,20 @@ class _IptvManagePageState extends State<IptvManagePage> {
                             child: _buildActionButton(
                               theme,
                               icon: Remix.download_cloud_2_line,
-                              label: i18n("sync"),
+                              label: i18n('sync'),
                               onTap: () async {
-                                ToastUtil.show(i18n("manage_page_single_syncing"));
+                                ToastUtil.show(i18n('manage_page_single_syncing'));
 
                                 if (item.type == ManageItemType.iptv) {
-                                  await IptvSyncEngine.instance.syncPlaylist(item.raw, showTips: true);
+                                  await IptvSyncEngine.instance.syncPlaylist(
+                                    item.raw,
+                                    showTips: true,
+                                  );
                                 } else {
-                                  await EpgSyncEngine.instance.updateEpgCache(item.raw, forceUpdate: true);
+                                  await EpgSyncEngine.instance.updateEpgCache(
+                                    item.raw,
+                                    forceUpdate: true,
+                                  );
                                 }
 
                                 await _refreshData();
@@ -428,7 +454,7 @@ class _IptvManagePageState extends State<IptvManagePage> {
                           child: _buildActionButton(
                             theme,
                             icon: Remix.delete_bin_6_line,
-                            label: i18n("webdav_delete"),
+                            label: i18n('webdav_delete'),
                             danger: true,
                             onTap: () {
                               _showDeleteDialog(item);
@@ -453,7 +479,9 @@ class _IptvManagePageState extends State<IptvManagePage> {
     if (formatText == 'EPG') badgeColor = Colors.teal; // Epg/Xml 薄荷绿
     if (formatText == 'JSON') badgeColor = Colors.purple; // JSON 高级紫
     if (formatText == 'GZ' || formatText == 'XML.GZ') {
-      badgeColor = theme.brightness == Brightness.dark ? Colors.blueGrey[400]! : Colors.blueGrey[600]!;
+      badgeColor = theme.brightness == Brightness.dark
+          ? Colors.blueGrey[400]!
+          : Colors.blueGrey[600]!;
     }
 
     return Stack(
@@ -470,12 +498,20 @@ class _IptvManagePageState extends State<IptvManagePage> {
               borderRadius: BorderRadius.circular(6),
               border: Border.all(color: theme.cardColor, width: 2), // 白色/暗色描边切断视觉背景
               boxShadow: [
-                BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 4, offset: const Offset(0, 2)),
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.1),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
               ],
             ),
             child: Text(
               formatText,
-              style: AppTextStyles.t12.copyWith(fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: 0.2),
+              style: AppTextStyles.t12.copyWith(
+                fontWeight: FontWeight.w900,
+                color: Colors.white,
+                letterSpacing: 0.2,
+              ),
             ),
           ),
         ),
@@ -490,7 +526,9 @@ class _IptvManagePageState extends State<IptvManagePage> {
       width: 52,
       height: 52,
       decoration: BoxDecoration(
-        color: isPlaylist ? theme.colorScheme.primary.withValues(alpha: 0.1) : Colors.orange.withValues(alpha: 0.12),
+        color: isPlaylist
+            ? theme.colorScheme.primary.withValues(alpha: 0.1)
+            : Colors.orange.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Icon(
@@ -504,12 +542,17 @@ class _IptvManagePageState extends State<IptvManagePage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: item.isNetwork ? Colors.green.withValues(alpha: 0.12) : Colors.orange.withValues(alpha: 0.12),
+        color: item.isNetwork
+            ? Colors.green.withValues(alpha: 0.12)
+            : Colors.orange.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
-        item.isNetwork ? i18n("network_tag") : i18n("local_tag"),
-        style: TextStyle(color: item.isNetwork ? Colors.green : Colors.orange, fontWeight: FontWeight.bold),
+        item.isNetwork ? i18n('network_tag') : i18n('local_tag'),
+        style: TextStyle(
+          color: item.isNetwork ? Colors.green : Colors.orange,
+          fontWeight: FontWeight.bold,
+        ),
       ),
     );
   }
@@ -571,8 +614,11 @@ class _IptvManagePageState extends State<IptvManagePage> {
               const SizedBox(width: 6),
 
               Text(
-                i18n("auto_sync"),
-                style: AppTextStyles.t12.copyWith(fontWeight: FontWeight.w600, color: theme.colorScheme.primary),
+                i18n('auto_sync'),
+                style: AppTextStyles.t12.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.primary,
+                ),
               ),
             ],
           ),
@@ -605,7 +651,7 @@ class _IptvManagePageState extends State<IptvManagePage> {
 
               allItems.value = [...allItems];
 
-              ToastUtil.show(value ? i18n("auto_sync_tag") : i18n("auto_sync_disabled"));
+              ToastUtil.show(value ? i18n('auto_sync_tag') : i18n('auto_sync_disabled'));
             },
           ),
         ],
@@ -619,10 +665,13 @@ class _IptvManagePageState extends State<IptvManagePage> {
     Get.dialog(
       AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        title: Text(i18n("delete_confirm_title")),
-        content: Text(i18n("delete_confirm_message")),
+        title: Text(i18n('delete_confirm_title')),
+        content: Text(i18n('delete_confirm_message')),
         actions: [
-          TextButton(onPressed: () => Navigator.of(Get.context!).pop(), child: Text(i18n("cancel"))),
+          TextButton(
+            onPressed: () => Navigator.of(Get.context!).pop(),
+            child: Text(i18n('cancel')),
+          ),
           TextButton(
             onPressed: () async {
               final db = Get.find<DbService>().db;
@@ -633,9 +682,9 @@ class _IptvManagePageState extends State<IptvManagePage> {
               }
               allItems.remove(item);
               Navigator.of(Get.context!).pop();
-              ToastUtil.show(i18n("manage_page_delete_success"));
+              ToastUtil.show(i18n('manage_page_delete_success'));
             },
-            child: Text(i18n("confirm"), style: TextStyle(color: theme.colorScheme.error)),
+            child: Text(i18n('confirm'), style: TextStyle(color: theme.colorScheme.error)),
           ),
         ],
       ),

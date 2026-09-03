@@ -10,7 +10,13 @@ class VideoLoading extends StatelessWidget {
         fit: StackFit.passthrough,
         children: [
           ColoredBox(color: Colors.black),
-          AppStatusView(type: AppStatusType.loading, title: '', subtitle: '', iconColor: Colors.white, isMini: true),
+          AppStatusView(
+            type: AppStatusType.loading,
+            title: '',
+            subtitle: '',
+            iconColor: Colors.white,
+            isMini: true,
+          ),
         ],
       ),
     );

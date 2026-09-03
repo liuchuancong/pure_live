@@ -28,7 +28,10 @@ void main() {
   }
 
   test('Huya FLV URL uses the FLV token and extension', () async {
-    final url = await HuyaSite().getPlayUrl(line(HuyaLineType.flv, 'http://al.flv.huya.com/src'), 8000);
+    final url = await HuyaSite().getPlayUrl(
+      line(HuyaLineType.flv, 'http://al.flv.huya.com/src'),
+      8000,
+    );
 
     expect(url, startsWith('https://al.flv.huya.com/src/stream-name.flv?'));
     expect(url, contains('wsSecret=flv-token'));
@@ -38,7 +41,10 @@ void main() {
   });
 
   test('Huya HLS URL uses the HLS token and extension', () async {
-    final url = await HuyaSite().getPlayUrl(line(HuyaLineType.hls, 'http://al.hls.huya.com/src'), 2000);
+    final url = await HuyaSite().getPlayUrl(
+      line(HuyaLineType.hls, 'http://al.hls.huya.com/src'),
+      2000,
+    );
 
     expect(url, startsWith('https://al.hls.huya.com/src/stream-name.m3u8?'));
     expect(url, contains('wsSecret=hls-token'));
@@ -52,22 +58,25 @@ void main() {
     expect(HuyaSite.secureHuyaCdnBase('http://example.com/src'), 'http://example.com/src');
   });
 
-  test('Huya quality selection replaces a captured ratio instead of keeping stale quality', () async {
-    final url = await HuyaSite().getPlayUrl(
-      line(
-        HuyaLineType.hls,
-        'https://al.hls.huya.com/src',
-        hlsAntiCode: 'wsSecret=hls-token&wsTime=6a87f351&codec=265&ratio=4000',
-      ),
-      2000,
-    );
+  test(
+    'Huya quality selection replaces a captured ratio instead of keeping stale quality',
+    () async {
+      final url = await HuyaSite().getPlayUrl(
+        line(
+          HuyaLineType.hls,
+          'https://al.hls.huya.com/src',
+          hlsAntiCode: 'wsSecret=hls-token&wsTime=6a87f351&codec=265&ratio=4000',
+        ),
+        2000,
+      );
 
-    expect(RegExp(r'(^|&)codec=').allMatches(Uri.parse(url).query).length, 1);
-    expect(RegExp(r'(^|&)ratio=').allMatches(Uri.parse(url).query).length, 1);
-    expect(url, contains('&codec=265'));
-    expect(url, contains('&ratio=2000'));
-    expect(url, isNot(contains('&ratio=4000')));
-  });
+      expect(RegExp(r'(^|&)codec=').allMatches(Uri.parse(url).query).length, 1);
+      expect(RegExp(r'(^|&)ratio=').allMatches(Uri.parse(url).query).length, 1);
+      expect(url, contains('&codec=265'));
+      expect(url, contains('&ratio=2000'));
+      expect(url, isNot(contains('&ratio=4000')));
+    },
+  );
 
   test('Huya source quality removes a captured transcode ratio', () async {
     final url = await HuyaSite().getPlayUrl(

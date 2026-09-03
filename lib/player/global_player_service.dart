@@ -53,7 +53,7 @@ class GlobalPlayerService {
     // CPU merely for browsing the home/settings UI.
     playerManager.configureDefaultEngine(defaultEngine);
     _initialized = true;
-    log("GlobalPlayerService: Player initialized.", name: "GlobalPlayerService");
+    log('GlobalPlayerService: Player initialized.', name: 'GlobalPlayerService');
   }
 
   /// Global dispose - Call this only when the app is being destroyed
@@ -61,6 +61,6 @@ class GlobalPlayerService {
     if (!_initialized) return;
     await playerManager.dispose();
     _initialized = false;
-    log("GlobalPlayerService: Disposed.", name: "GlobalPlayerService");
+    log('GlobalPlayerService: Disposed.', name: 'GlobalPlayerService');
   }
 }

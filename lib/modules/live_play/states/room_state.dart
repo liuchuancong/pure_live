@@ -10,7 +10,13 @@ class RoomState {
   final bool isLoading;
   final String? loadError;
 
-  const RoomState({this.detail, this.isLiving = true, this.success = false, this.isLoading = false, this.loadError});
+  const RoomState({
+    this.detail,
+    this.isLiving = true,
+    this.success = false,
+    this.isLoading = false,
+    this.loadError,
+  });
 
   bool get hasRoom => detail != null;
 
@@ -31,6 +37,12 @@ class RoomState {
   }
 
   RoomState clearError() {
-    return RoomState(detail: detail, isLiving: isLiving, success: success, isLoading: isLoading, loadError: null);
+    return RoomState(
+      detail: detail,
+      isLiving: isLiving,
+      success: success,
+      isLoading: isLoading,
+      loadError: null,
+    );
   }
 }

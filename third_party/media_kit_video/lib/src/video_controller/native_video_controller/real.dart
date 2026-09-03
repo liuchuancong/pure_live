@@ -28,7 +28,8 @@ import 'package:media_kit_video/src/video_controller/platform_video_controller.d
 /// {@endtemplate}
 class NativeVideoController extends PlatformVideoController {
   /// Whether [NativeVideoController] is supported on the current platform or not.
-  static bool get supported => Platform.isWindows || Platform.isLinux || Platform.isMacOS || Platform.isIOS;
+  static bool get supported =>
+      Platform.isWindows || Platform.isLinux || Platform.isMacOS || Platform.isIOS;
 
   /// Fixed width of the video output.
   int? width;

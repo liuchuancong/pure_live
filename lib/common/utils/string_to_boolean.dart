@@ -7,7 +7,7 @@ extension TextUtilsNullableStringExtension on String? {
 
   bool toBoolean() {
     if (isNullOrEmpty) return false;
-    return this!.toLowerCase() == "true";
+    return this!.toLowerCase() == 'true';
   }
 
   String getNotNullOrEmptyByDefault(String defaultTxt) {
@@ -19,7 +19,7 @@ extension TextUtilsNullableStringExtension on String? {
 
   String appendTxt(String? txt) {
     if (isNullOrEmpty) {
-      return "";
+      return '';
     }
     final tmp = this!;
     if (txt.isNull) {
@@ -30,7 +30,7 @@ extension TextUtilsNullableStringExtension on String? {
 
   String appendLeftTxt(String? txt) {
     if (isNullOrEmpty) {
-      return "";
+      return '';
     }
     final tmp = this!;
     if (txt.isNull) {
@@ -42,7 +42,7 @@ extension TextUtilsNullableStringExtension on String? {
 
 extension TextUtilsStringExtension on String {
   bool toBoolean() {
-    return toLowerCase() == "true";
+    return toLowerCase() == 'true';
   }
 
   String getNotNullOrEmptyByDefault(String defaultTxt) {
@@ -53,13 +53,13 @@ extension TextUtilsStringExtension on String {
   }
 
   String appendTxt(String? txt) {
-    if (trim().isEmpty) return "";
+    if (trim().isEmpty) return '';
     if (txt == null) return this;
     return this + txt;
   }
 
   String appendLeftTxt(String? txt) {
-    if (trim().isEmpty) return "";
+    if (trim().isEmpty) return '';
     if (txt == null) return this;
     return txt + this;
   }

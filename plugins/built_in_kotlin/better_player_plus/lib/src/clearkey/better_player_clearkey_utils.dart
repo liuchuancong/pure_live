@@ -15,7 +15,9 @@ class BetterPlayerClearKeyUtils {
   static String generateKey(Map<String, String> keys, {String type = 'temporary'}) {
     final Map<String, dynamic> keyMap = <String, dynamic>{'type': type};
     keyMap['keys'] = <Map<String, String>>[];
-    keys.forEach((key, value) => keyMap['keys'].add({'kty': 'oct', 'kid': _base64(key), 'k': _base64(value)}));
+    keys.forEach(
+      (key, value) => keyMap['keys'].add({'kty': 'oct', 'kid': _base64(key), 'k': _base64(value)}),
+    );
 
     return jsonEncode(keyMap);
   }

@@ -37,7 +37,9 @@ void main() {
     }
   });
 
-  testWidgets('an explicitly controlled list does not attach to the route controller', (tester) async {
+  testWidgets('an explicitly controlled list does not attach to the route controller', (
+    tester,
+  ) async {
     debugDefaultTargetPlatformOverride = TargetPlatform.windows;
     try {
       final explicit = ScrollController();

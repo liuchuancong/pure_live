@@ -2,7 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:pure_live/core/common/log.dart';
 
 class CustomLogInterceptor extends Interceptor {
-  static const String _keyTimestamp = "ts";
+  static const String _keyTimestamp = 'ts';
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
@@ -32,8 +32,8 @@ Response Data：${err.response?.data}''', err.stackTrace);
     var result = <String, dynamic>{};
     header.forEach((key, value) {
       var k = key.toLowerCase();
-      if (k == "cookie" || k == "authorization") {
-        result[key] = "******";
+      if (k == 'cookie' || k == 'authorization') {
+        result[key] = '******';
       } else {
         result[key] = value;
       }

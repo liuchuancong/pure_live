@@ -1,15 +1,17 @@
 import 'dart:core';
 import 'dart:typed_data';
+
 import 'package:pure_live/pkg/tars/codec/tars_struct.dart';
 import 'package:pure_live/pkg/tars/codec/tars_displayer.dart';
 import 'package:pure_live/pkg/tars/codec/tars_input_stream.dart';
 import 'package:pure_live/pkg/tars/codec/tars_output_stream.dart';
 import 'package:pure_live/pkg/tars/codec/tars_deep_copyable.dart';
+
 // ignore_for_file: non_constant_identifier_names, avoid_renaming_method_parameters, no_leading_underscores_for_local_identifiers
 
 class RequestPacket extends TarsStruct {
   String className() {
-    return "RequestPacket";
+    return 'RequestPacket';
   }
 
   int iVersion = 0;
@@ -20,9 +22,9 @@ class RequestPacket extends TarsStruct {
 
   int iRequestId = 0;
 
-  String sServantName = "";
+  String sServantName = '';
 
-  String sFuncName = "";
+  String sFuncName = '';
 
   Uint8List? sBuffer;
 
@@ -37,8 +39,8 @@ class RequestPacket extends TarsStruct {
     this.cPacketType = 0,
     this.iMessageType = 0,
     this.iRequestId = 0,
-    this.sServantName = "",
-    this.sFuncName = "",
+    this.sServantName = '',
+    this.sFuncName = '',
     this.sBuffer,
     this.iTimeout = 0,
     this.context,
@@ -60,8 +62,8 @@ class RequestPacket extends TarsStruct {
   }
 
   static Uint8List cache_sBuffer = Uint8List.fromList([0x0]);
-  static Map<String, String> cache_context = {"": ""};
-  static Map<String, String> cache_status = {"": ""};
+  static Map<String, String> cache_context = {'': ''};
+  static Map<String, String> cache_status = {'': ''};
 
   @override
   void readFrom(TarsInputStream inputStream) {
@@ -80,16 +82,16 @@ class RequestPacket extends TarsStruct {
   @override
   void displayAsString(StringBuffer outputStream, int _level) {
     TarsDisplayer ds = TarsDisplayer(outputStream, level: _level);
-    ds.display(iVersion, "iVersion");
-    ds.display(cPacketType, "cPacketType");
-    ds.display(iMessageType, "iMessageType");
-    ds.display(iRequestId, "iRequestId");
-    ds.display(sServantName, "sServantName");
-    ds.display(sFuncName, "sFuncName");
-    ds.display(sBuffer, "sBuffer");
-    ds.display(iTimeout, "iTimeout");
-    ds.display(context, "context");
-    ds.display(status, "status");
+    ds.display(iVersion, 'iVersion');
+    ds.display(cPacketType, 'cPacketType');
+    ds.display(iMessageType, 'iMessageType');
+    ds.display(iRequestId, 'iRequestId');
+    ds.display(sServantName, 'sServantName');
+    ds.display(sFuncName, 'sFuncName');
+    ds.display(sBuffer, 'sBuffer');
+    ds.display(iTimeout, 'iTimeout');
+    ds.display(context, 'context');
+    ds.display(status, 'status');
   }
 
   @override

@@ -9,11 +9,11 @@ class NoNewVersionDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(i18n("check_update")),
-      content: Text(i18n("no_new_version_info")),
+      title: Text(i18n('check_update')),
+      content: Text(i18n('no_new_version_info')),
       actions: <Widget>[
         TextButton(
-          child: Text(i18n("confirm")),
+          child: Text(i18n('confirm')),
           onPressed: () {
             Navigator.pop(context);
           },
@@ -35,7 +35,7 @@ class NewVersionDialog extends StatelessWidget {
     final maxHeight = mediaQuery.size.height * 0.7;
     final config = Get.isDarkMode ? MarkdownConfig.darkConfig : MarkdownConfig.defaultConfig;
     return AlertDialog(
-      title: Text(i18n("check_update")),
+      title: Text(i18n('check_update')),
       content: ConstrainedBox(
         constraints: BoxConstraints(maxWidth: maxWidth, maxHeight: maxHeight),
         child: SingleChildScrollView(
@@ -70,7 +70,7 @@ class NewVersionDialog extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             TextButton(
-              child: Text(i18n("cancel")),
+              child: Text(i18n('cancel')),
               onPressed: () {
                 if (entry != null) {
                   entry!.remove();
@@ -80,7 +80,7 @@ class NewVersionDialog extends StatelessWidget {
               },
             ),
             ElevatedButton(
-              child: Text(i18n("update")),
+              child: Text(i18n('update')),
               onPressed: () {
                 if (entry != null) {
                   entry!.remove();

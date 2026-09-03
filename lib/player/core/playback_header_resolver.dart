@@ -42,7 +42,10 @@ class PlaybackHeaderResolver {
           'referer': normalizedRoomId.isEmpty
               ? BiliBiliSite.kDefaultReferer
               : 'https://live.bilibili.com/$normalizedRoomId',
-          if (cookie.isNotEmpty) 'cookie': cookie else if (anonymousCookie.isNotEmpty) 'cookie': anonymousCookie,
+          if (cookie.isNotEmpty)
+            'cookie': cookie
+          else if (anonymousCookie.isNotEmpty)
+            'cookie': anonymousCookie,
         };
         break;
       case Sites.douyuSite:
@@ -57,12 +60,16 @@ class PlaybackHeaderResolver {
         headers = <String, String>{
           'user-agent': userAgent,
           'origin': 'https://www.huya.com',
-          'referer': normalizedRoomId.isEmpty ? 'https://www.huya.com/' : 'https://www.huya.com/$normalizedRoomId',
+          'referer': normalizedRoomId.isEmpty
+              ? 'https://www.huya.com/'
+              : 'https://www.huya.com/$normalizedRoomId',
           if (cookie.isNotEmpty) 'cookie': cookie,
         };
         break;
       case Sites.douyinSite:
-        final configuredCookie = _configuredCookie((settings) => settings.cookieManager.douyinCookie.value);
+        final configuredCookie = _configuredCookie(
+          (settings) => settings.cookieManager.douyinCookie.value,
+        );
         final cookie = configuredCookie.isNotEmpty ? configuredCookie : DouyinSite.cookie.trim();
         headers = <String, String>{
           'user-agent': _desktopUserAgent,
@@ -88,7 +95,9 @@ class PlaybackHeaderResolver {
         headers = <String, String>{
           'user-agent': _desktopUserAgent,
           'origin': 'https://cc.163.com',
-          'referer': normalizedRoomId.isEmpty ? 'https://cc.163.com/' : 'https://cc.163.com/$normalizedRoomId/',
+          'referer': normalizedRoomId.isEmpty
+              ? 'https://cc.163.com/'
+              : 'https://cc.163.com/$normalizedRoomId/',
         };
         break;
       case Sites.twitchSite:
@@ -96,7 +105,9 @@ class PlaybackHeaderResolver {
         headers = <String, String>{
           'user-agent': TwitchSite.defaultUa,
           'origin': TwitchSite.baseUrl,
-          'referer': normalizedRoomId.isEmpty ? '${TwitchSite.baseUrl}/' : '${TwitchSite.baseUrl}/$normalizedRoomId',
+          'referer': normalizedRoomId.isEmpty
+              ? '${TwitchSite.baseUrl}/'
+              : '${TwitchSite.baseUrl}/$normalizedRoomId',
           if (cookie.isNotEmpty) 'cookie': cookie,
         };
         break;
@@ -122,7 +133,9 @@ class PlaybackHeaderResolver {
         break;
       case Sites.iptvSite:
         final userAgent = _configuredValue((settings) => settings.iptv.customIptvUserAgent.value);
-        headers = userAgent.isEmpty ? const <String, String>{} : <String, String>{'user-agent': userAgent};
+        headers = userAgent.isEmpty
+            ? const <String, String>{}
+            : <String, String>{'user-agent': userAgent};
         break;
       default:
         headers = const <String, String>{};
@@ -131,7 +144,8 @@ class PlaybackHeaderResolver {
     return _sanitize(headers);
   }
 
-  static String _configuredCookie(String Function(SettingsService settings) read) => _configuredValue(read);
+  static String _configuredCookie(String Function(SettingsService settings) read) =>
+      _configuredValue(read);
 
   static String _configuredValue(String Function(SettingsService settings) read) {
     try {

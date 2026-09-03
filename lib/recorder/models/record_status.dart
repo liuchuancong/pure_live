@@ -35,26 +35,27 @@ extension RecordStatusExt on RecordStatus {
         return 8;
     }
   }
+
   String get label {
     switch (this) {
       case RecordStatus.queued:
-        return i18n("record_queued");
+        return i18n('record_queued');
       case RecordStatus.preparing:
-        return i18n("record_preparing");
+        return i18n('record_preparing');
       case RecordStatus.running:
-        return i18n("record_running");
+        return i18n('record_running');
       case RecordStatus.reconnecting:
-        return i18n("record_reconnecting");
+        return i18n('record_reconnecting');
       case RecordStatus.processing:
-        return i18n("record_processing");
+        return i18n('record_processing');
       case RecordStatus.completed:
-        return i18n("record_completed");
+        return i18n('record_completed');
       case RecordStatus.failed:
-        return i18n("record_failed");
+        return i18n('record_failed');
       case RecordStatus.waitingLive:
-        return i18n("record_waiting_live");
+        return i18n('record_waiting_live');
       case RecordStatus.stopped:
-        return i18n("record_stopped");
+        return i18n('record_stopped');
     }
   }
 

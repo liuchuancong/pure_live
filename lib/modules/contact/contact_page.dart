@@ -11,7 +11,8 @@ class ContactPage extends StatefulWidget {
 
 class _ContactPageState extends State<ContactPage> {
   void clipboard(String text) {
-    Clipboard.setData(ClipboardData(text: text)).then((value) => SnackBarUtil.success(i18n('copied_to_clipboard')));
+    Clipboard.setData(ClipboardData(text: text))
+        .then((value) => SnackBarUtil.success(i18n('copied_to_clipboard')));
   }
 
   @override
@@ -21,10 +22,10 @@ class _ContactPageState extends State<ContactPage> {
       body: ListView(
         physics: const PureLiveScrollPhysics(),
         children: [
-          SectionTitle(title: i18n("contact")),
+          SectionTitle(title: i18n('contact')),
           ListTile(
             leading: const Icon(CustomIcons.mail_squared, size: 34),
-            title: Text(i18n("email")),
+            title: Text(i18n('email')),
             subtitle: const Text(VersionUtil.email),
             onLongPress: () => clipboard(VersionUtil.email),
             onTap: () {
@@ -33,7 +34,7 @@ class _ContactPageState extends State<ContactPage> {
           ),
           ListTile(
             leading: const Icon(CustomIcons.github_circled, size: 32),
-            title: Text(i18n("github")),
+            title: Text(i18n('github')),
             subtitle: const Text(VersionUtil.githubUrl),
             onTap: () {
               launchUrl(Uri.parse(VersionUtil.githubUrl), mode: LaunchMode.externalApplication);

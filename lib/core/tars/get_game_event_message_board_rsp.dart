@@ -1,4 +1,4 @@
-﻿import 'game_event_message_board_panel.dart';
+import 'game_event_message_board_panel.dart';
 
 import 'package:pure_live/pkg/tars/codec/tars_struct.dart';
 import 'package:pure_live/pkg/tars/codec/tars_displayer.dart';
@@ -27,6 +27,6 @@ class GetGameEventMessageBoardRsp extends TarsStruct {
   @override
   void displayAsString(StringBuffer sb, int level) {
     final ds = TarsDisplayer(sb, level: level);
-    ds.display(tMessageBoardPanel, "tMessageBoardPanel");
+    ds.display(tMessageBoardPanel, 'tMessageBoardPanel');
   }
 }

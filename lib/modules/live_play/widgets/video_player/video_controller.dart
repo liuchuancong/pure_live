@@ -109,16 +109,27 @@ class DanmakuManager {
       }),
     );
     workers.add(
-      debounce<int>(_visualSettingsRevision, (_) => _persistVisualSettings(), time: const Duration(milliseconds: 160)),
+      debounce<int>(
+        _visualSettingsRevision,
+        (_) => _persistVisualSettings(),
+        time: const Duration(milliseconds: 160),
+      ),
     );
-    var resolvedAutoFps = dm.resolvedDanmakuFps(refreshRateMode: SettingsService.to.app.refreshRateMode);
+    var resolvedAutoFps = dm.resolvedDanmakuFps(
+      refreshRateMode: SettingsService.to.app.refreshRateMode,
+    );
     workers.add(
-      everAll([dm.danmakuAutoFps, DisplayModeService.info, SettingsService.to.app.refreshRateModeName], (_) {
-        final nextFps = dm.resolvedDanmakuFps(refreshRateMode: SettingsService.to.app.refreshRateMode);
-        if (nextFps == resolvedAutoFps) return;
-        resolvedAutoFps = nextFps;
-        _scheduleConfigUpdate();
-      }),
+      everAll(
+        [dm.danmakuAutoFps, DisplayModeService.info, SettingsService.to.app.refreshRateModeName],
+        (_) {
+          final nextFps = dm.resolvedDanmakuFps(
+            refreshRateMode: SettingsService.to.app.refreshRateMode,
+          );
+          if (nextFps == resolvedAutoFps) return;
+          resolvedAutoFps = nextFps;
+          _scheduleConfigUpdate();
+        },
+      ),
     );
   }
 
@@ -126,7 +137,8 @@ class DanmakuManager {
     final now = DateTime.now();
     if (fromLongPress) {
       _lastLongPressAction = now;
-    } else if (_lastLongPressAction != null && now.difference(_lastLongPressAction!) < const Duration(seconds: 1)) {
+    } else if (_lastLongPressAction != null &&
+        now.difference(_lastLongPressAction!) < const Duration(seconds: 1)) {
       return;
     }
     final context = Get.context;
@@ -196,12 +208,18 @@ class DanmakuManager {
           showShadow: localStyle?.showShadow,
           shadowColor: localStyle == null ? null : Color(localStyle.shadowColor),
           shadowBlur: localStyle?.shadowBlur,
-          shadowOffset: localStyle == null ? null : Offset(localStyle.shadowOffset, localStyle.shadowOffset),
-          fixedDuration: localStyle == null ? null : Duration(milliseconds: localStyle.fixedDurationMs),
+          shadowOffset: localStyle == null
+              ? null
+              : Offset(localStyle.shadowOffset, localStyle.shadowOffset),
+          fixedDuration: localStyle == null
+              ? null
+              : Duration(milliseconds: localStyle.fixedDurationMs),
           // A single px/s value keeps portrait, landscape and desktop motion
           // consistent. Lane collision avoidance is handled by the engine.
           baseSpeed: localStyle?.baseSpeed ?? videoController.danmakuSpeed.value,
-          onTapUp: settings.enableDanmakuTapInteraction.v ? () => _openMessageActions(msg, fromLongPress: false) : null,
+          onTapUp: settings.enableDanmakuTapInteraction.v
+              ? () => _openMessageActions(msg, fromLongPress: false)
+              : null,
           onLongTapDown: settings.enableDanmakuLongPressInteraction.v
               ? () => _openMessageActions(msg, fromLongPress: true)
               : null,
@@ -234,8 +252,12 @@ class DanmakuManager {
           showShadow: localStyle?.showShadow,
           shadowColor: localStyle == null ? null : Color(localStyle.shadowColor),
           shadowBlur: localStyle?.shadowBlur,
-          shadowOffset: localStyle == null ? null : Offset(localStyle.shadowOffset, localStyle.shadowOffset),
-          fixedDuration: localStyle == null ? null : Duration(milliseconds: localStyle.fixedDurationMs),
+          shadowOffset: localStyle == null
+              ? null
+              : Offset(localStyle.shadowOffset, localStyle.shadowOffset),
+          fixedDuration: localStyle == null
+              ? null
+              : Duration(milliseconds: localStyle.fixedDurationMs),
           baseSpeed: localStyle?.baseSpeed,
         ),
       );
@@ -244,7 +266,9 @@ class DanmakuManager {
 
   bool handlePointer(Offset position, {required bool longPress}) {
     final settings = settingsService.danmaku;
-    final enabled = longPress ? settings.enableDanmakuLongPressInteraction.v : settings.enableDanmakuTapInteraction.v;
+    final enabled = longPress
+        ? settings.enableDanmakuLongPressInteraction.v
+        : settings.enableDanmakuTapInteraction.v;
     if (!enabled) return false;
     return controller.triggerItemAt(position.dx, position.dy, longPress: longPress);
   }
@@ -347,7 +371,8 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
   late final DanmakuManager _danmakuManager;
 
   // Keys
-  GlobalKey<BrightnessVolumnDargAreaState> brightnessKey = GlobalKey<BrightnessVolumnDargAreaState>();
+  GlobalKey<BrightnessVolumnDargAreaState> brightnessKey =
+      GlobalKey<BrightnessVolumnDargAreaState>();
   final danmuKey = GlobalKey();
   GlobalKey playerKey = GlobalKey();
 
@@ -435,7 +460,10 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
 
     if (reuseCurrentSession) {
       if (_playerManager.currentPlayer == null || _playerManager.currentFloatRoom != room) {
-        throw PlayerException(message: 'Retained room session is no longer available', type: PlayerErrorType.lifecycle);
+        throw PlayerException(
+          message: 'Retained room session is no longer available',
+          type: PlayerErrorType.lifecycle,
+        );
       }
       audioOnlyState.value = _playerManager.desiredAudioOnlyMode;
     } else {
@@ -600,14 +628,14 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
     _lastPlayerErrorAt = now;
 
     final errorMessage = switch (error.type) {
-      PlayerErrorType.network => i18n("error_network"),
-      PlayerErrorType.source => i18n("error_source"),
-      PlayerErrorType.codec => i18n("error_codec"),
-      PlayerErrorType.native => i18n("error_native"),
-      PlayerErrorType.initialization => i18n("error_initialization"),
-      PlayerErrorType.texture => i18n("error_texture"),
-      PlayerErrorType.lifecycle => i18n("error_lifecycle"),
-      PlayerErrorType.unknown => i18n("error_unknown"),
+      PlayerErrorType.network => i18n('error_network'),
+      PlayerErrorType.source => i18n('error_source'),
+      PlayerErrorType.codec => i18n('error_codec'),
+      PlayerErrorType.native => i18n('error_native'),
+      PlayerErrorType.initialization => i18n('error_initialization'),
+      PlayerErrorType.texture => i18n('error_texture'),
+      PlayerErrorType.lifecycle => i18n('error_lifecycle'),
+      PlayerErrorType.unknown => i18n('error_unknown'),
     };
 
     ToastUtil.show(errorMessage);
@@ -630,9 +658,7 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
 
   // 音量管理
   void registerVolumeListener() {
-    final volumeSub = _volumeController.addListener((volume) {
-      room.saveCurrentVolume(volume);
-    }, fetchInitialVolume: true);
+    final volumeSub = _volumeController.addListener(room.saveCurrentVolume, fetchInitialVolume: true);
     _addSubscription(volumeSub);
   }
 
@@ -684,7 +710,8 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
 
     if (!_isMouseOverController && !_isMouseOverPlayer) {
       _controllerIdleClock.start();
-      _controllerHideDeadlineMs = _controllerIdleClock.elapsedMilliseconds + _controllerHideDelay.inMilliseconds;
+      _controllerHideDeadlineMs =
+          _controllerIdleClock.elapsedMilliseconds + _controllerHideDelay.inMilliseconds;
       showControllerTimer ??= Timer(_controllerHideDelay, _handleControllerHideDeadline);
     }
   }
@@ -696,7 +723,10 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
     if (deadline == null) return;
     final remainingMs = deadline - _controllerIdleClock.elapsedMilliseconds;
     if (remainingMs > 0) {
-      showControllerTimer = Timer(Duration(milliseconds: remainingMs), _handleControllerHideDeadline);
+      showControllerTimer = Timer(
+        Duration(milliseconds: remainingMs),
+        _handleControllerHideDeadline,
+      );
       return;
     }
     _controllerHideDeadlineMs = null;
@@ -789,7 +819,11 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
   }
 
   void sendDanmaku(LiveMessage msg) {
-    _danmakuManager.sendDanmaku(msg, _playerManager.isPlayingNow, _playerManager.isCompactModeActive);
+    _danmakuManager.sendDanmaku(
+      msg,
+      _playerManager.isPlayingNow,
+      _playerManager.isCompactModeActive,
+    );
   }
 
   bool handleDanmakuPointer(Offset globalPosition, {required bool longPress}) {
@@ -839,12 +873,12 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
 
   void _logEpgLoadSuccess(int count) {
     debugPrint(
-      "📅 [EPG Matrix] Loaded $count total program rows spanning the (-${_epgLookBackDays}h to +${_epgLookForwardDays}h) timeline.",
+      '📅 [EPG Matrix] Loaded $count total program rows spanning the (-${_epgLookBackDays}h to +${_epgLookForwardDays}h) timeline.',
     );
   }
 
   void _logEpgLoadError(Object error, StackTrace stackTrace) {
-    debugPrint("❌ EPG Schedule Loading Failure: $error");
+    debugPrint('❌ EPG Schedule Loading Failure: $error');
     log('EPG load error', error: error, stackTrace: stackTrace);
   }
 
@@ -873,7 +907,9 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
         return uri.replace(queryParameters: newParams).toString();
 
       case CatchupUrlType.default_:
-        return originalUrl.contains('?') ? '$originalUrl&timeshift=$startStr' : '$originalUrl?timeshift=$startStr';
+        return originalUrl.contains('?')
+            ? '$originalUrl&timeshift=$startStr'
+            : '$originalUrl?timeshift=$startStr';
     }
   }
 
@@ -906,7 +942,10 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
     clearListener();
     await _playerManager.close();
     await destory();
-    _livePlayController.startCatchUp(catchUpUrl: catchupUrl, startTime: programme.start.millisecondsSinceEpoch);
+    _livePlayController.startCatchUp(
+      catchUpUrl: catchupUrl,
+      startTime: programme.start.millisecondsSinceEpoch,
+    );
   }
 
   // 播放控制
@@ -924,7 +963,12 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
       if (_isDisposed) return;
       await onAudioOnlyChanged?.call(!isAudioOnly);
     } catch (error, stackTrace) {
-      log('Audio mode action failed: $error', name: 'VideoController', error: error, stackTrace: stackTrace);
+      log(
+        'Audio mode action failed: $error',
+        name: 'VideoController',
+        error: error,
+        stackTrace: stackTrace,
+      );
       if (!_isDisposed) {
         ToastUtil.show(i18n('error_lifecycle'));
       }
@@ -939,7 +983,7 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
 
     if (liveRoom.liveStatus == LiveStatus.offline) {
       _livePlayController.setNormalScreen();
-      ToastUtil.show(i18n("room_offline"));
+      ToastUtil.show(i18n('room_offline'));
     } else {
       changeLine();
     }
@@ -958,7 +1002,10 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
     clearListener();
     await _playerManager.close();
     await destory();
-    await _livePlayController.onInitPlayerState(reloadDataType: ReloadDataType.changeLine, line: currentLineIndex);
+    await _livePlayController.onInitPlayerState(
+      reloadDataType: ReloadDataType.changeLine,
+      line: currentLineIndex,
+    );
   }
 
   void clearListener() {
@@ -1054,7 +1101,11 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
   }
 
   Future<void> applyFullscreenOrientationPolicy() async {
-    if (_isDisposed || !GlobalPlayerState.to.isFullscreen.value || !(Platform.isAndroid || Platform.isIOS)) return;
+    if (_isDisposed ||
+        !GlobalPlayerState.to.isFullscreen.value ||
+        !(Platform.isAndroid || Platform.isIOS)) {
+      return;
+    }
     if (_playerManager.isVerticalVideo.value) {
       await WindowService().verticalScreen();
     } else {

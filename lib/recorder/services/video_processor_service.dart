@@ -16,7 +16,8 @@ class VideoProcessorService extends GetxService {
   static VideoProcessorService get to => _instance;
 
   final FFmpegManager _ffmpeg = FFmpegManager.to;
-  final StreamController<VideoProcessEvent> _controller = StreamController<VideoProcessEvent>.broadcast();
+  final StreamController<VideoProcessEvent> _controller =
+      StreamController<VideoProcessEvent>.broadcast();
   final Set<String> _processingTasks = <String>{};
   final Set<String> _cancelledTasks = <String>{};
   final Map<String, String> _ffmpegTaskIds = <String, String>{};
@@ -49,7 +50,9 @@ class VideoProcessorService extends GetxService {
       final resolvedDirectoryPath = directoryPath?.trim().isNotEmpty == true
           ? directoryPath!.trim()
           : (task.outputDir?.trim() ?? '');
-      final resolvedFilePrefix = filePrefix?.trim().isNotEmpty == true ? filePrefix!.trim() : task.recordingFilePrefix;
+      final resolvedFilePrefix = filePrefix?.trim().isNotEmpty == true
+          ? filePrefix!.trim()
+          : task.recordingFilePrefix;
       if (resolvedDirectoryPath.isEmpty) {
         _emitFailed(taskId, i18n('video_dir_not_exist'));
         return false;
@@ -173,7 +176,13 @@ class VideoProcessorService extends GetxService {
       partialFile = null;
       if (deleteSourceTs) await _deleteFiles(segments, taskId);
 
-      _emit(VideoProcessEvent(taskId: taskId, type: VideoProcessEventType.completed, outputPath: outputFile.path));
+      _emit(
+        VideoProcessEvent(
+          taskId: taskId,
+          type: VideoProcessEventType.completed,
+          outputPath: outputFile.path,
+        ),
+      );
       return true;
     } on TimeoutException {
       _emitFailed(taskId, i18n('video_ffmpeg_failed'));
@@ -214,7 +223,8 @@ class VideoProcessorService extends GetxService {
     return candidate;
   }
 
-  static String _escapeConcatPath(String value) => value.replaceAll('\\', '/').replaceAll("'", r"'\''");
+  static String _escapeConcatPath(String value) =>
+      value.replaceAll('\\', '/').replaceAll("'", r"'\''");
 
   /// Keeps retries isolated: an attempt may merge only its own prefixed TS
   /// files. Legacy strftime segments are admitted solely during explicit
@@ -226,7 +236,9 @@ class VideoProcessorService extends GetxService {
   }) {
     final all = candidates.toList(growable: false);
     final prefix = '${filePrefix}_';
-    final matching = all.where((file) => p.basename(file.path).startsWith(prefix)).toList(growable: false);
+    final matching = all
+        .where((file) => p.basename(file.path).startsWith(prefix))
+        .toList(growable: false);
     return matching.isNotEmpty ? matching : (allowLegacySegments ? all : const <File>[]);
   }
 
@@ -288,7 +300,13 @@ class VideoProcessEvent {
   final String? outputPath;
   final String? error;
 
-  const VideoProcessEvent({required this.taskId, required this.type, this.progress = 0, this.outputPath, this.error});
+  const VideoProcessEvent({
+    required this.taskId,
+    required this.type,
+    this.progress = 0,
+    this.outputPath,
+    this.error,
+  });
 }
 
 enum VideoProcessEventType { started, progress, completed, failed }

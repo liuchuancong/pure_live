@@ -24,11 +24,17 @@ class LiveAudioService {
   static int _sleepMinutes = 60;
 
   static bool get isSupportedPlatform {
-    return PlatformUtils.isMobile || PlatformUtils.isMacOS || PlatformUtils.isWindows || PlatformUtils.isLinux;
+    return PlatformUtils.isMobile ||
+        PlatformUtils.isMacOS ||
+        PlatformUtils.isWindows ||
+        PlatformUtils.isLinux;
   }
 
   static bool get isSystemMediaControlSupported {
-    return PlatformUtils.isMobile || PlatformUtils.isMacOS || PlatformUtils.isWindows || PlatformUtils.isLinux;
+    return PlatformUtils.isMobile ||
+        PlatformUtils.isMacOS ||
+        PlatformUtils.isWindows ||
+        PlatformUtils.isLinux;
   }
 
   static bool get isSleepSessionActive {
@@ -74,7 +80,7 @@ class LiveAudioService {
       }
 
       final handler = await AudioService.init(
-        builder: () => LiveAudioHandler(),
+        builder: LiveAudioHandler.new,
         config: AudioServiceConfig(
           androidNotificationChannelId: 'com.mystyle.purelive.audio',
           androidNotificationChannelName: i18n('audio_channel_name'),
@@ -141,7 +147,9 @@ class LiveAudioService {
 
     await handler.playMediaItem(item);
 
-    handler.configureSleepTimer(BackgroundPlaybackService.sleepSessionActive ? Duration(minutes: _sleepMinutes) : null);
+    handler.configureSleepTimer(
+      BackgroundPlaybackService.sleepSessionActive ? Duration(minutes: _sleepMinutes) : null,
+    );
 
     await syncKeepAlive();
   }
@@ -162,7 +170,13 @@ class LiveAudioService {
       }
     }
 
-    return MediaItem(id: roomId, album: i18nOr('app_name', 'PureLive'), title: title, artist: author, artUri: artUri);
+    return MediaItem(
+      id: roomId,
+      album: i18nOr('app_name', 'PureLive'),
+      title: title,
+      artist: author,
+      artUri: artUri,
+    );
   }
 
   static Future<void> stop() async {
@@ -266,7 +280,10 @@ class LiveAudioService {
         return Container(
           width: 300,
           padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(color: Theme.of(context).cardColor, borderRadius: BorderRadius.circular(15)),
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            borderRadius: BorderRadius.circular(15),
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -278,9 +295,7 @@ class LiveAudioService {
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   TextButton(
-                    onPressed: () {
-                      SmartDialog.dismiss();
-                    },
+                    onPressed: SmartDialog.dismiss,
                     child: Text(i18n('permission_cancel')),
                   ),
                   ElevatedButton(

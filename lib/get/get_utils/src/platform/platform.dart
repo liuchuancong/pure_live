@@ -20,6 +20,5 @@ class GetPlatform {
 
   static bool get isMobile => GetPlatform.isIOS || GetPlatform.isAndroid;
 
-  static bool get isDesktop =>
-      GetPlatform.isMacOS || GetPlatform.isWindows || GetPlatform.isLinux;
+  static bool get isDesktop => GetPlatform.isMacOS || GetPlatform.isWindows || GetPlatform.isLinux;
 }

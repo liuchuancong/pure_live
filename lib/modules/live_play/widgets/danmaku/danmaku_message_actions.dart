@@ -21,7 +21,9 @@ class DanmakuMessageActions {
               title: Text(i18n('copy')),
               onTap: () async {
                 Navigator.of(sheetContext).pop();
-                await Clipboard.setData(ClipboardData(text: '${message.userName}: ${message.message}'));
+                await Clipboard.setData(
+                  ClipboardData(text: '${message.userName}: ${message.message}'),
+                );
                 ToastUtil.show(i18n('copied_to_clipboard'));
               },
             ),
@@ -34,7 +36,9 @@ class DanmakuMessageActions {
                   SettingsService.to.fav.addBlockedDanmakuUser(message.userName);
                   if (Get.isRegistered<LivePlayController>()) {
                     Get.find<LivePlayController>().removeDanmakuWhere(
-                      (item) => item.userName.trim().toLowerCase() == message.userName.trim().toLowerCase(),
+                      (item) =>
+                          item.userName.trim().toLowerCase() ==
+                          message.userName.trim().toLowerCase(),
                     );
                   }
                   Navigator.of(sheetContext).pop();
@@ -69,7 +73,10 @@ class DanmakuMessageActions {
           decoration: InputDecoration(hintText: i18n('please_enter_keyword')),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: Text(i18n('cancel'))),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text(i18n('cancel')),
+          ),
           FilledButton(
             onPressed: () => Navigator.of(dialogContext).pop(textController.text.trim()),
             child: Text(i18n('confirm')),

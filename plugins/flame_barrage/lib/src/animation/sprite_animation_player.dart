@@ -21,7 +21,12 @@ class SpriteAnimationPlayer {
     final sprite = _ticker.getSprite();
     final image = sprite.image;
 
-    final srcRect = Rect.fromLTWH(sprite.srcPosition.x, sprite.srcPosition.y, sprite.srcSize.x, sprite.srcSize.y);
+    final srcRect = Rect.fromLTWH(
+      sprite.srcPosition.x,
+      sprite.srcPosition.y,
+      sprite.srcSize.x,
+      sprite.srcSize.y,
+    );
 
     canvas.drawImageRect(image, srcRect, dstRect, paint);
   }

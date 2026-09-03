@@ -26,31 +26,19 @@ class ContactInfo {
     final name = data['name'] as Map<Object?, Object?>?;
 
     return ContactInfo(
-      addresses:
-          addresses == null
-              ? const <Address>[]
-              : List.unmodifiable(
-                addresses.cast<Map<Object?, Object?>>().map(Address.fromNative),
-              ),
-      emails:
-          emails == null
-              ? const <Email>[]
-              : List.unmodifiable(
-                emails.cast<Map<Object?, Object?>>().map(Email.fromNative),
-              ),
+      addresses: addresses == null
+          ? const <Address>[]
+          : List.unmodifiable(addresses.cast<Map<Object?, Object?>>().map(Address.fromNative)),
+      emails: emails == null
+          ? const <Email>[]
+          : List.unmodifiable(emails.cast<Map<Object?, Object?>>().map(Email.fromNative)),
       name: name == null ? null : PersonName.fromNative(name),
       organization: data['organization'] as String?,
-      phones:
-          phones == null
-              ? const <Phone>[]
-              : List.unmodifiable(
-                phones.cast<Map<Object?, Object?>>().map(Phone.fromNative),
-              ),
+      phones: phones == null
+          ? const <Phone>[]
+          : List.unmodifiable(phones.cast<Map<Object?, Object?>>().map(Phone.fromNative)),
       title: data['title'] as String?,
-      urls:
-          urls == null
-              ? const <String>[]
-              : List.unmodifiable(urls.cast<String>()),
+      urls: urls == null ? const <String>[] : List.unmodifiable(urls.cast<String>()),
     );
   }
 

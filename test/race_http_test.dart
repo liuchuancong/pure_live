@@ -26,7 +26,10 @@ void main() {
     test('uses a ranged GET and returns the first healthy mirror', () async {
       final base = 'http://${server.address.address}:${server.port}';
 
-      final winner = await RaceHttp.findFastestUrl(['$base/bad', '$base/ok'], timeout: const Duration(seconds: 1));
+      final winner = await RaceHttp.findFastestUrl([
+        '$base/bad',
+        '$base/ok',
+      ], timeout: const Duration(seconds: 1));
 
       expect(winner, '$base/ok');
     });

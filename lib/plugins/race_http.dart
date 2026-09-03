@@ -92,7 +92,7 @@ class RaceHttp {
           return utf8.decode(bytes);
         } catch (_) {
           // 🔥 fallback GBK
-          return await CharsetConverter.decode("gbk", bytes);
+          return await CharsetConverter.decode('gbk', bytes);
         }
       },
     );
@@ -113,7 +113,7 @@ class RaceHttp {
 
             if (!completer.isCompleted) {
               completer.complete(result);
-              debugPrint("🏁 Race winner: $url");
+              debugPrint('🏁 Race winner: $url');
             }
           } catch (_) {}
         }),

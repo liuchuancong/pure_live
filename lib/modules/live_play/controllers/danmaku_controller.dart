@@ -60,7 +60,10 @@ class DanmakuController extends GetxController {
       settings.danmaku.enableDanmakuDisplay,
       settings.danmaku.enablePipDanmaku,
     ], (_) => unawaited(_syncConnectionForSettings()));
-    _filterWorker = everAll([settings.fav.blockedDanmakuUsers, settings.fav.shieldList], (_) => _refreshFilters());
+    _filterWorker = everAll([
+      settings.fav.blockedDanmakuUsers,
+      settings.fav.shieldList,
+    ], (_) => _refreshFilters());
     final dm = settings.danmaku;
     _similarityFilterWorker = everAll([
       dm.enableDanmakuSimilarityFilter,
@@ -232,7 +235,9 @@ class DanmakuController extends GetxController {
   }
 
   bool _acceptsCallback(LiveDanmaku engine, String key, int token) {
-    return token == _sessionToken && identical(_liveDanmaku, engine) && (_sessionKey == key || _connectingKey == key);
+    return token == _sessionToken &&
+        identical(_liveDanmaku, engine) &&
+        (_sessionKey == key || _connectingKey == key);
   }
 
   bool _isBlocked(LiveMessage message) {
@@ -312,7 +317,8 @@ class DanmakuController extends GetxController {
     const except = [Sites.iptvSite, Sites.ccSite];
     final settings = SettingsService.to.danmaku;
     try {
-      if (except.contains(room.platform) || (!settings.enableDanmakuDisplay.v && !settings.enablePipDanmaku.v)) {
+      if (except.contains(room.platform) ||
+          (!settings.enableDanmakuDisplay.v && !settings.enablePipDanmaku.v)) {
         await stopDanmaku();
       } else {
         await connectRoom(room);
@@ -339,7 +345,8 @@ class DanmakuController extends GetxController {
     if (override != null) return override(room);
     const except = [Sites.iptvSite, Sites.ccSite];
     final settings = SettingsService.to.danmaku;
-    return !except.contains(room.platform) && (settings.enableDanmakuDisplay.v || settings.enablePipDanmaku.v);
+    return !except.contains(room.platform) &&
+        (settings.enableDanmakuDisplay.v || settings.enablePipDanmaku.v);
   }
 
   String _roomKey(LiveRoom room) => '${room.platform ?? ''}:${room.roomId ?? ''}';

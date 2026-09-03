@@ -23,7 +23,8 @@ class _BetterPlayerWithControlsState extends State<BetterPlayerWithControls> {
   BetterPlayerSubtitlesConfiguration get subtitlesConfiguration =>
       widget.controller!.betterPlayerConfiguration.subtitlesConfiguration;
 
-  BetterPlayerControlsConfiguration get controlsConfiguration => widget.controller!.betterPlayerControlsConfiguration;
+  BetterPlayerControlsConfiguration get controlsConfiguration =>
+      widget.controller!.betterPlayerControlsConfiguration;
 
   final StreamController<bool> playerVisibilityStreamController = StreamController();
 
@@ -34,7 +35,9 @@ class _BetterPlayerWithControlsState extends State<BetterPlayerWithControls> {
   @override
   void initState() {
     playerVisibilityStreamController.add(true);
-    _controllerEventSubscription = widget.controller?.controllerEventStream.listen(_onControllerChanged);
+    _controllerEventSubscription = widget.controller?.controllerEventStream.listen(
+      _onControllerChanged,
+    );
     super.initState();
   }
 
@@ -42,7 +45,9 @@ class _BetterPlayerWithControlsState extends State<BetterPlayerWithControls> {
   void didUpdateWidget(BetterPlayerWithControls oldWidget) {
     if (oldWidget.controller != widget.controller) {
       _controllerEventSubscription?.cancel();
-      _controllerEventSubscription = widget.controller?.controllerEventStream.listen(_onControllerChanged);
+      _controllerEventSubscription = widget.controller?.controllerEventStream.listen(
+        _onControllerChanged,
+      );
     }
     super.didUpdateWidget(oldWidget);
   }
@@ -68,7 +73,10 @@ class _BetterPlayerWithControlsState extends State<BetterPlayerWithControls> {
     return _buildPlayerWithControls(betterPlayerController, context);
   }
 
-  Container _buildPlayerWithControls(BetterPlayerController betterPlayerController, BuildContext context) {
+  Container _buildPlayerWithControls(
+    BetterPlayerController betterPlayerController,
+    BuildContext context,
+  ) {
     final configuration = betterPlayerController.betterPlayerConfiguration;
     var rotation = configuration.rotation;
 
@@ -91,7 +99,10 @@ class _BetterPlayerWithControlsState extends State<BetterPlayerWithControls> {
           if (placeholderOnTop) _buildPlaceholder(betterPlayerController),
           Transform.rotate(
             angle: rotation * pi / 180,
-            child: _BetterPlayerVideoFitWidget(betterPlayerController, betterPlayerController.getFit()),
+            child: _BetterPlayerVideoFitWidget(
+              betterPlayerController,
+              betterPlayerController.getFit(),
+            ),
           ),
           betterPlayerController.betterPlayerConfiguration.overlay ?? Container(),
           BetterPlayerSubtitlesDrawer(
@@ -123,7 +134,8 @@ class _BetterPlayerWithControlsState extends State<BetterPlayerWithControls> {
         }
       }
 
-      if (controlsConfiguration.customControlsBuilder != null && playerTheme == BetterPlayerTheme.custom) {
+      if (controlsConfiguration.customControlsBuilder != null &&
+          playerTheme == BetterPlayerTheme.custom) {
         return controlsConfiguration.customControlsBuilder!(
           betterPlayerController,
           onControlsVisibilityChanged,
@@ -196,7 +208,9 @@ class _BetterPlayerVideoFitWidgetState extends State<_BetterPlayerVideoFitWidget
     super.didUpdateWidget(oldWidget);
     if (oldWidget.betterPlayerController.videoPlayerController != controller) {
       if (_initializedListener != null) {
-        oldWidget.betterPlayerController.videoPlayerController?.removeListener(_initializedListener!);
+        oldWidget.betterPlayerController.videoPlayerController?.removeListener(
+          _initializedListener!,
+        );
       }
       _initialized = false;
       _initialize();
@@ -220,7 +234,9 @@ class _BetterPlayerVideoFitWidgetState extends State<_BetterPlayerVideoFitWidget
       _initialized = true;
     }
 
-    _controllerEventSubscription = widget.betterPlayerController.controllerEventStream.listen((event) {
+    _controllerEventSubscription = widget.betterPlayerController.controllerEventStream.listen((
+      event,
+    ) {
       if (event == BetterPlayerControllerEvent.play) {
         if (!_started) {
           setState(() {

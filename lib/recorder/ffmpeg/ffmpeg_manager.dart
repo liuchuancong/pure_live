@@ -1,10 +1,10 @@
 import 'dart:async';
+
 import 'android_ca_certificate_manager.dart';
+
 import 'package:pure_live/core/common/log.dart';
 import 'package:pure_live/recorder/ffmpeg/ffmpeg_event.dart';
 import 'package:pure_live/recorder/services/ffmpeg_service.dart';
-
-
 
 class FFmpegManager {
   FFmpegManager._internal();
@@ -50,7 +50,11 @@ class FFmpegManager {
     Log.d('[FFmpegManager] CA file: $_caFilePath');
   }
 
-  Future<void> start({required String taskId, required List<String> arguments, bool liveRecording = false}) async {
+  Future<void> start({
+    required String taskId,
+    required List<String> arguments,
+    bool liveRecording = false,
+  }) async {
     await _ffmpeg.start(
       taskId: taskId,
       arguments: arguments,

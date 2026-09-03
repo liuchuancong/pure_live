@@ -17,10 +17,26 @@ class ShadowEffect {
 
   List<ui.Shadow> createMultiShadows() {
     return [
-      ui.Shadow(color: shadowColor, offset: ui.Offset(-offset.dx, -offset.dy), blurRadius: blurRadius),
-      ui.Shadow(color: shadowColor, offset: ui.Offset(offset.dx, -offset.dy), blurRadius: blurRadius),
-      ui.Shadow(color: shadowColor, offset: ui.Offset(-offset.dx, offset.dy), blurRadius: blurRadius),
-      ui.Shadow(color: shadowColor, offset: ui.Offset(offset.dx, offset.dy), blurRadius: blurRadius),
+      ui.Shadow(
+        color: shadowColor,
+        offset: ui.Offset(-offset.dx, -offset.dy),
+        blurRadius: blurRadius,
+      ),
+      ui.Shadow(
+        color: shadowColor,
+        offset: ui.Offset(offset.dx, -offset.dy),
+        blurRadius: blurRadius,
+      ),
+      ui.Shadow(
+        color: shadowColor,
+        offset: ui.Offset(-offset.dx, offset.dy),
+        blurRadius: blurRadius,
+      ),
+      ui.Shadow(
+        color: shadowColor,
+        offset: ui.Offset(offset.dx, offset.dy),
+        blurRadius: blurRadius,
+      ),
     ];
   }
 }

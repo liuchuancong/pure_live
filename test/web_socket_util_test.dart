@@ -35,7 +35,11 @@ void main() {
     await socket.close();
     final connectionCount = endpoints.length;
     await Future<void>.delayed(const Duration(milliseconds: 50));
-    expect(endpoints.length, connectionCount, reason: 'manual close must cancel watchdog reconnects');
+    expect(
+      endpoints.length,
+      connectionCount,
+      reason: 'manual close must cancel watchdog reconnects',
+    );
   });
 
   test('incoming heartbeat traffic keeps one connection alive', () async {
@@ -81,7 +85,10 @@ void main() {
 
     await socket.connect();
     expect(capturedClient, isNotNull);
-    expect(resolveWebSocketProxyDirective(Uri.parse('wss://primary.example/ws')), 'PROXY localhost:7897');
+    expect(
+      resolveWebSocketProxyDirective(Uri.parse('wss://primary.example/ws')),
+      'PROXY localhost:7897',
+    );
     await socket.close();
   });
 }

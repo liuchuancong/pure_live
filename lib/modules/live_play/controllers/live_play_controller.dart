@@ -45,7 +45,8 @@ class LivePlayController extends GetxController
   late final PlayerController playerController;
 
   final RecorderController recorderController = Get.find<RecorderController>();
-  final LocalInteractionController localInteractionController = Get.find<LocalInteractionController>();
+  final LocalInteractionController localInteractionController =
+      Get.find<LocalInteractionController>();
 
   @override
   final Rx<LivePlayState> state = const LivePlayState().obs;
@@ -56,7 +57,12 @@ class LivePlayController extends GetxController
   late Site currentSite;
   late TabController tabController;
 
-  final List<String> tabs = [i18n('danmaku_list'), i18n('super_chat'), i18n('danmaku_settings'), i18n('block_list')];
+  final List<String> tabs = [
+    i18n('danmaku_list'),
+    i18n('super_chat'),
+    i18n('danmaku_settings'),
+    i18n('block_list'),
+  ];
 
   bool _floatingResourcesReleased = false;
   bool _ownerClosed = false;
@@ -101,7 +107,9 @@ class LivePlayController extends GetxController
     final resumesCurrentSession = _reentrySession != null;
     final autoStartAsmr = Platform.isAndroid && SettingsService.to.app.enableAsmrSleepMode.v;
     final initialAudioOnly = resumesCurrentSession ? manager.desiredAudioOnlyMode : autoStartAsmr;
-    _asmrSessionActive = resumesCurrentSession ? LiveAudioService.isSleepSessionActive : autoStartAsmr;
+    _asmrSessionActive = resumesCurrentSession
+        ? LiveAudioService.isSleepSessionActive
+        : autoStartAsmr;
     final restored = _reentrySession;
     state.value = LivePlayState(
       room: RoomState(
@@ -119,7 +127,7 @@ class LivePlayController extends GetxController
         isCurrentRoomAudioOnly: initialAudioOnly,
         hasUseDefaultResolution: restored?.hasUseDefaultResolution ?? false,
       ),
-      ui: UIState(closeTimes: 60, closeTimeFlag: false, displayVideoLayer: true),
+      ui: const UIState(closeTimes: 60, closeTimeFlag: false, displayVideoLayer: true),
     );
     // Re-entering from the app floating window continues the same room session.
     // Resetting the timer here extended an existing sleep session and also
@@ -163,7 +171,9 @@ class LivePlayController extends GetxController
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused || state == AppLifecycleState.hidden || state == AppLifecycleState.detached) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.hidden ||
+        state == AppLifecycleState.detached) {
       _wasBackgrounded = true;
       return;
     }
@@ -202,7 +212,10 @@ class LivePlayController extends GetxController
   }
 
   void _initControllers() {
-    timerController = Get.put(TimerController(onEnded: _onRoomPlaybackTimerEnded), tag: 'timer-$_controllerTag');
+    timerController = Get.put(
+      TimerController(onEnded: _onRoomPlaybackTimerEnded),
+      tag: 'timer-$_controllerTag',
+    );
     danmakuController = Get.put(DanmakuController(this), tag: 'danmaku-$_controllerTag');
     playerController = Get.put(PlayerController(this), tag: 'player-$_controllerTag');
 
@@ -212,7 +225,11 @@ class LivePlayController extends GetxController
   }
 
   void _initTab() {
-    tabController = TabController(length: tabs.length, vsync: this, animationDuration: pureLiveTabTransitionDuration);
+    tabController = TabController(
+      length: tabs.length,
+      vsync: this,
+      animationDuration: pureLiveTabTransitionDuration,
+    );
   }
 
   Future<void> _initCore() async {
@@ -244,7 +261,12 @@ class LivePlayController extends GetxController
   void _preloadEmojiInBackground() {
     unawaited(
       _preloadEmoji().catchError((Object error, StackTrace stackTrace) {
-        developer.log('Emoji preload failed', name: 'LivePlayController', error: error, stackTrace: stackTrace);
+        developer.log(
+          'Emoji preload failed',
+          name: 'LivePlayController',
+          error: error,
+          stackTrace: stackTrace,
+        );
       }),
     );
   }
@@ -263,7 +285,13 @@ class LivePlayController extends GetxController
       return;
     }
 
-    updateRoom(detail: session.room, isLiving: session.isLiving, success: true, isLoading: false, loadError: null);
+    updateRoom(
+      detail: session.room,
+      isLiving: session.isLiving,
+      success: true,
+      isLoading: false,
+      loadError: null,
+    );
     await _syncDanmakuConnection(session.room);
     unawaited(_refreshResumedRoomMetadata(session.room));
   }
@@ -291,7 +319,11 @@ class LivePlayController extends GetxController
     }
   }
 
-  Future<void> getSuperChatMessage(String roomId, {required String? platform, required int loadEpoch}) async {
+  Future<void> getSuperChatMessage(
+    String roomId, {
+    required String? platform,
+    required int loadEpoch,
+  }) async {
     if (!_isRoomLoadCurrent(loadEpoch, roomId, platform)) return;
     final liveSite = currentSite.liveSite;
     try {
@@ -300,7 +332,7 @@ class LivePlayController extends GetxController
       addBatchSuperChat(sc);
     } catch (e) {
       if (!isClosed && !_ownerClosed && _isRoomLoadCurrent(loadEpoch, roomId, platform)) {
-        addSystemMessage("SC读取失败");
+        addSystemMessage('SC读取失败');
       }
     }
   }
@@ -312,7 +344,9 @@ class LivePlayController extends GetxController
 
   void _removeExpiredSuperChats() {
     final now = DateTime.now().millisecondsSinceEpoch;
-    final filtered = superChats.where((x) => x.endTime.millisecondsSinceEpoch > now).toList(growable: false);
+    final filtered = superChats
+        .where((x) => x.endTime.millisecondsSinceEpoch > now)
+        .toList(growable: false);
     if (filtered.length != superChats.length) {
       superChats.assignAll(filtered);
     }
@@ -338,7 +372,9 @@ class LivePlayController extends GetxController
       if (candidate.isBefore(nextExpiry)) nextExpiry = candidate;
     }
     final remaining = nextExpiry.difference(now);
-    return remaining.isNegative || remaining == Duration.zero ? const Duration(milliseconds: 1) : remaining;
+    return remaining.isNegative || remaining == Duration.zero
+        ? const Duration(milliseconds: 1)
+        : remaining;
   }
 
   void addSingleSuperChat(LiveSuperChatMessage item) {
@@ -394,7 +430,13 @@ class LivePlayController extends GetxController
   }
 
   @override
-  void updateRoom({LiveRoom? detail, bool? isLiving, bool? success, bool? isLoading, String? loadError}) {
+  void updateRoom({
+    LiveRoom? detail,
+    bool? isLiving,
+    bool? success,
+    bool? isLoading,
+    String? loadError,
+  }) {
     state.value = state.value.copyWith(
       room: state.value.room.copyWith(
         detail: detail,
@@ -532,7 +574,11 @@ class LivePlayController extends GetxController
     updateRoom(detail: candidate.withAudienceFallbackFrom(detail));
   }
 
-  void emitLocalMessage(LiveMessage msg, {required bool showAsDanmaku, Duration delay = Duration.zero}) {
+  void emitLocalMessage(
+    LiveMessage msg, {
+    required bool showAsDanmaku,
+    Duration delay = Duration.zero,
+  }) {
     if (!localInteractionController.enabled.v) return;
     final targetRoom = state.value.room.detail;
     if (targetRoom == null) return;
@@ -615,7 +661,9 @@ class LivePlayController extends GetxController
   @override
   void updateDanmakuRoomId(String? roomId) {
     if (state.value.danmaku.currentDanmakuRoomId == roomId) return;
-    state.value = state.value.copyWith(danmaku: state.value.danmaku.copyWith(currentDanmakuRoomId: roomId));
+    state.value = state.value.copyWith(
+      danmaku: state.value.danmaku.copyWith(currentDanmakuRoomId: roomId),
+    );
   }
 
   @override
@@ -653,7 +701,10 @@ class LivePlayController extends GetxController
     updateRoom(isLoading: true, loadError: null);
 
     try {
-      final fetchedRoom = await currentSite.liveSite.getRoomDetail(roomId: roomId, platform: requestedPlatform);
+      final fetchedRoom = await currentSite.liveSite.getRoomDetail(
+        roomId: roomId,
+        platform: requestedPlatform,
+      );
       var liveRoom = fetchedRoom.withAudienceFallbackFrom(requestedRoom);
       liveRoom = liveRoom.fillFromDetail(requestedRoom);
       if (!_isRoomLoadCurrent(loadEpoch, roomId, requestedPlatform)) return liveRoom;
@@ -724,7 +775,8 @@ class LivePlayController extends GetxController
   Future<void> _syncDanmakuConnection(LiveRoom liveRoom) async {
     const except = [Sites.kuaishouSite, Sites.iptvSite, Sites.ccSite];
     final danmakuSettings = SettingsService.to.danmaku;
-    final shouldConnectDanmaku = danmakuSettings.enableDanmakuDisplay.v || danmakuSettings.enablePipDanmaku.v;
+    final shouldConnectDanmaku =
+        danmakuSettings.enableDanmakuDisplay.v || danmakuSettings.enablePipDanmaku.v;
     if (!except.contains(liveRoom.platform) && shouldConnectDanmaku) {
       await danmakuController.connectRoom(liveRoom);
     } else {
@@ -743,7 +795,9 @@ class LivePlayController extends GetxController
       EventBus.instance.emit('refresh_room_changed', true);
     }
     ToastUtil.show(
-      liveRoom.effectiveLiveStatus == LiveStatus.banned ? i18n('server_error_retry_later') : i18n('stream_not_live'),
+      liveRoom.effectiveLiveStatus == LiveStatus.banned
+          ? i18n('server_error_retry_later')
+          : i18n('stream_not_live'),
     );
     _restoreQualityAndLines();
   }
@@ -759,8 +813,11 @@ class LivePlayController extends GetxController
   }
 
   void _handleCurrentLineAndQuality(ReloadDataType reloadDataType, int line, bool isReCalculate) {
-    if (reloadDataType == ReloadDataType.changeLine && isReCalculate && state.value.player.playUrls.isNotEmpty) {
-      final newLineIndex = (state.value.player.currentLineIndex + 1) % state.value.player.playUrls.length;
+    if (reloadDataType == ReloadDataType.changeLine &&
+        isReCalculate &&
+        state.value.player.playUrls.isNotEmpty) {
+      final newLineIndex =
+          (state.value.player.currentLineIndex + 1) % state.value.player.playUrls.length;
       updatePlayer(currentLineIndex: newLineIndex);
     }
   }
@@ -796,7 +853,8 @@ class LivePlayController extends GetxController
     playerController.invalidateLoad();
     _localMessageDeliveryQueue.cancelAll();
     final sameRoom =
-        state.value.room.detail?.roomId == newRoom.roomId && state.value.room.detail?.platform == newRoom.platform;
+        state.value.room.detail?.roomId == newRoom.roomId &&
+        state.value.room.detail?.platform == newRoom.platform;
 
     if (!sameRoom) {
       clearDanmakuMessages();
@@ -831,7 +889,9 @@ class LivePlayController extends GetxController
     await EmojiManager.instance.preload(newRoom.platform!);
 
     await onInitPlayerState(
-      reloadDataType: newRoom.platform == Sites.bilibiliSite ? ReloadDataType.changeLine : ReloadDataType.refreash,
+      reloadDataType: newRoom.platform == Sites.bilibiliSite
+          ? ReloadDataType.changeLine
+          : ReloadDataType.refreash,
     );
   }
 
@@ -844,47 +904,48 @@ class LivePlayController extends GetxController
   }
 
   Future<void> openNaviteAPP() async {
-    var nativeUrl = "";
-    var webUrl = "";
+    var nativeUrl = '';
+    var webUrl = '';
     final detail = state.value.room.detail;
     if (detail == null) return;
 
     switch (site) {
       case Sites.bilibiliSite:
-        nativeUrl = "bilibili://live/${detail.roomId}";
-        webUrl = "https://live.bilibili.com/${detail.roomId}";
+        nativeUrl = 'bilibili://live/${detail.roomId}';
+        webUrl = 'https://live.bilibili.com/${detail.roomId}';
         break;
       case Sites.douyinSite:
         final args = detail.danmakuData as DouyinDanmakuArgs;
-        nativeUrl = "snssdk1128://webcast_room?room_id=${args.roomId}";
-        webUrl = "https://live.douyin.com/${args.webRid}";
+        nativeUrl = 'snssdk1128://webcast_room?room_id=${args.roomId}';
+        webUrl = 'https://live.douyin.com/${args.webRid}';
         break;
       case Sites.huyaSite:
         final args = detail.danmakuData as HuyaDanmakuArgs;
         nativeUrl =
-            "yykiwi://homepage/index.html?banneraction=https%3A%2F%2Fdiy-front.cdn.huya.com%2Fzt%2Ffrontpage%2Fcc%2Fupdate.html%3Fhyaction%3Dlive%26channelid%3D${args.subSid}%26subid%3D${args.subSid}%26liveuid%3D${args.subSid}%26screentype%3D1%26sourcetype%3D0%26fromapp%3Dhuya_wap%252Fclick%252Fopen_app_guide%26&fromapp=huya_wap/click/open_app_guide";
-        webUrl = "https://www.huya.com/${detail.roomId}";
+            'yykiwi://homepage/index.html?banneraction=https%3A%2F%2Fdiy-front.cdn.huya.com%2Fzt%2Ffrontpage%2Fcc%2Fupdate.html%3Fhyaction%3Dlive%26channelid%3D${args.subSid}%26subid%3D${args.subSid}%26liveuid%3D${args.subSid}%26screentype%3D1%26sourcetype%3D0%26fromapp%3Dhuya_wap%252Fclick%252Fopen_app_guide%26&fromapp=huya_wap/click/open_app_guide';
+        webUrl = 'https://www.huya.com/${detail.roomId}';
         break;
       case Sites.douyuSite:
-        nativeUrl = "douyulink://?type=90001&schemeUrl=douyuapp%3A%2F%2Froom%3FliveType%3D0%26rid%3D${detail.roomId}";
-        webUrl = "https://www.douyu.com/${detail.roomId}";
+        nativeUrl =
+            'douyulink://?type=90001&schemeUrl=douyuapp%3A%2F%2Froom%3FliveType%3D0%26rid%3D${detail.roomId}';
+        webUrl = 'https://www.douyu.com/${detail.roomId}';
         break;
       case Sites.ccSite:
-        nativeUrl = "cc://join-room/${detail.roomId}/${detail.userId}/";
-        webUrl = "https://cc.163.com/${detail.roomId}";
+        nativeUrl = 'cc://join-room/${detail.roomId}/${detail.userId}/';
+        webUrl = 'https://cc.163.com/${detail.roomId}';
         break;
       case Sites.twitchSite:
-        nativeUrl = "https://www.twitch.tv/${detail.roomId}";
-        webUrl = "https://www.twitch.tv/${detail.roomId}";
+        nativeUrl = 'https://www.twitch.tv/${detail.roomId}';
+        webUrl = 'https://www.twitch.tv/${detail.roomId}';
         break;
       case Sites.soopSite:
-        nativeUrl = "https://play.sooplive.co.kr/${detail.roomId}";
+        nativeUrl = 'https://play.sooplive.co.kr/${detail.roomId}';
         webUrl = nativeUrl;
         break;
       case Sites.kuaishouSite:
         nativeUrl =
-            "kwai://liveaggregatesquare?liveStreamId=${detail.link}&recoStreamId=${detail.link}&recoLiveStreamId=${detail.link}&liveSquareSource=28&path=/rest/n/live/feed/sharePage/slide/more&mt_product=H5_OUTSIDE_CLIENT_SHARE";
-        webUrl = "https://live.kuaishou.com/u/${detail.roomId}";
+            'kwai://liveaggregatesquare?liveStreamId=${detail.link}&recoStreamId=${detail.link}&recoLiveStreamId=${detail.link}&liveSquareSource=28&path=/rest/n/live/feed/sharePage/slide/more&mt_product=H5_OUTSIDE_CLIENT_SHARE';
+        webUrl = 'https://live.kuaishou.com/u/${detail.roomId}';
         break;
     }
 
@@ -973,7 +1034,9 @@ class LivePlayController extends GetxController
               currentQuality: current.player.currentQuality,
               playUrls: List<String>.unmodifiable(current.player.playUrls),
               currentLineIndex: current.player.currentLineIndex,
-              headers: Map<String, String>.unmodifiable(current.player.videoController?.headers ?? const {}),
+              headers: Map<String, String>.unmodifiable(
+                current.player.videoController?.headers ?? const {},
+              ),
               isAudioOnly: manager.desiredAudioOnlyMode,
               isLiving: current.room.isLiving,
               dataSource: current.player.playUrlSafe,

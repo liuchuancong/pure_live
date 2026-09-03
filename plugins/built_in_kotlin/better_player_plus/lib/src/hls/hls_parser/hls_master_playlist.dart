@@ -18,7 +18,12 @@ class HlsMasterPlaylist extends HlsPlaylist {
     super.hasIndependentSegments = false,
     this.variableDefinitions = const {},
     this.sessionKeyDrmInitData = const [],
-  }) : mediaPlaylistUrls = _getMediaPlaylistUrls(variants, [videos, audios, subtitles, closedCaptions]);
+  }) : mediaPlaylistUrls = _getMediaPlaylistUrls(variants, [
+         videos,
+         audios,
+         subtitles,
+         closedCaptions,
+       ]);
 
   /// All of the media playlist URLs referenced by the playlist.
   final List<Uri?> mediaPlaylistUrls;
@@ -52,7 +57,10 @@ class HlsMasterPlaylist extends HlsPlaylist {
   /// DRM initialization data derived from #EXT-X-SESSION-KEY tags.
   final List<DrmInitData> sessionKeyDrmInitData;
 
-  static List<Uri?> _getMediaPlaylistUrls(List<Variant> variants, List<List<Rendition>> renditionList) {
+  static List<Uri?> _getMediaPlaylistUrls(
+    List<Variant> variants,
+    List<List<Rendition>> renditionList,
+  ) {
     final uriList = <Uri?>[];
     for (final element in variants) {
       uriList.add(element.url);

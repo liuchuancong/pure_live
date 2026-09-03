@@ -127,7 +127,10 @@ enum EWebSocketCommandType {
   // 判断是否为心跳相关
   bool get isHeartBeat {
     return switch (this) {
-      EWSCmdC2S_HeartBeat || EWSCmdS2C_HeartBeatAck || EWSCmdC2S_HeartBeatReq || EWSCmdS2C_HeartBeatRsp => true,
+      EWSCmdC2S_HeartBeat ||
+      EWSCmdS2C_HeartBeatAck ||
+      EWSCmdC2S_HeartBeatReq ||
+      EWSCmdS2C_HeartBeatRsp => true,
       _ => false,
     };
   }
@@ -135,7 +138,10 @@ enum EWebSocketCommandType {
   // 判断是否为 P2P 相关
   bool get isP2P {
     return switch (this) {
-      EWSCmdS2C_EnterP2P || EWSCmdS2C_EnterP2PAck || EWSCmdS2C_ExitP2P || EWSCmdS2C_ExitP2PAck => true,
+      EWSCmdS2C_EnterP2P ||
+      EWSCmdS2C_EnterP2PAck ||
+      EWSCmdS2C_ExitP2P ||
+      EWSCmdS2C_ExitP2PAck => true,
       _ => false,
     };
   }
@@ -159,7 +165,10 @@ enum EWebSocketCommandType {
       EWSCmd_NULL => 'NULL',
       EWSCmd_RegisterReq || EWSCmd_RegisterRsp => '注册',
       EWSCmd_WupReq || EWSCmd_WupRsp => 'WUP',
-      EWSCmdC2S_HeartBeat || EWSCmdS2C_HeartBeatAck || EWSCmdC2S_HeartBeatReq || EWSCmdS2C_HeartBeatRsp => '心跳',
+      EWSCmdC2S_HeartBeat ||
+      EWSCmdS2C_HeartBeatAck ||
+      EWSCmdC2S_HeartBeatReq ||
+      EWSCmdS2C_HeartBeatRsp => '心跳',
       EWSCmdS2C_MsgPushReq || EWSCmdS2C_MsgPushReq_V2 => '消息推送',
       EWSCmdC2S_DeregisterReq || EWSCmdS2C_DeRegisterRsp => '注销',
       EWSCmdC2S_VerifyCookieReq || EWSCmdS2C_VerifyCookieRsp => 'Cookie验证',
@@ -169,7 +178,10 @@ enum EWebSocketCommandType {
       EWSCmdC2S_UnRegisterGroupReq || EWSCmdS2C_UnRegisterGroupRsp => '取消注册群组',
       EWSCmdC2S_UpdateUserExpsReq || EWSCmdS2C_UpdateUserExpsRsp => '更新用户经验',
       EWSCmdC2S_WSHistoryMsgReq || EWSCmdS2C_WSHistoryMsgRsp => '历史消息',
-      EWSCmdS2C_EnterP2P || EWSCmdS2C_EnterP2PAck || EWSCmdS2C_ExitP2P || EWSCmdS2C_ExitP2PAck => 'P2P',
+      EWSCmdS2C_EnterP2P ||
+      EWSCmdS2C_EnterP2PAck ||
+      EWSCmdS2C_ExitP2P ||
+      EWSCmdS2C_ExitP2PAck => 'P2P',
       EWSCmdC2S_SyncGroupReq || EWSCmdS2C_SyncGroupRsp => '同步群组',
       EWSCmdC2S_UpdateUserInfoReq || EWSCmdS2C_UpdateUserInfoRsp => '更新用户信息',
       EWSCmdC2S_MsgAckReq || EWSCmdS2C_MsgAckRsp => '消息确认',

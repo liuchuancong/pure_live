@@ -51,7 +51,8 @@ String douyinTotalViewers(dynamic room) {
     final text = value?.toString().trim() ?? '';
     if (text.isEmpty || text == 'null' || !RegExp(r'[0-9]').hasMatch(text)) continue;
     final normalized = text.replaceAll(',', '').replaceAll('，', '');
-    final number = double.tryParse(RegExp(r'[0-9]+(?:\.[0-9]+)?').firstMatch(normalized)?.group(0) ?? '') ?? 0;
+    final number =
+        double.tryParse(RegExp(r'[0-9]+(?:\.[0-9]+)?').firstMatch(normalized)?.group(0) ?? '') ?? 0;
     if (number > 0) return text;
   }
   return '';

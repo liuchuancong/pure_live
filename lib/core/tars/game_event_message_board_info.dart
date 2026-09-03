@@ -1,4 +1,4 @@
-﻿import 'package:pure_live/core/tars/types.dart';
+import 'package:pure_live/core/tars/types.dart';
 import 'package:pure_live/pkg/tars/codec/tars_struct.dart';
 import 'package:pure_live/pkg/tars/codec/tars_displayer.dart';
 import 'package:pure_live/pkg/tars/codec/tars_input_stream.dart';
@@ -6,7 +6,7 @@ import 'package:pure_live/pkg/tars/codec/tars_output_stream.dart';
 
 class GameEventMessageBoardInfo extends TarsStruct {
   MessageUser tMessageUser = MessageUser(); //tag 0
-  String sContent = ""; //tag 1
+  String sContent = ''; //tag 1
   int iCost = 0; //tag 2
   int iTotalSec = 0; //tag 4
   int iCountDown = 0; //tag 5
@@ -48,14 +48,14 @@ class GameEventMessageBoardInfo extends TarsStruct {
   }
 
   @override
-  displayAsString(StringBuffer sb, int level) {
+  void displayAsString(StringBuffer sb, int level) {
     TarsDisplayer tarsDisplayer = TarsDisplayer(sb, level: level);
-    tarsDisplayer.DisplayTarsStruct(tMessageUser, "tMessageUser");
-    tarsDisplayer.DisplayString(sContent, "sContent");
-    tarsDisplayer.DisplayInt(iCost, "iCost");
-    tarsDisplayer.DisplayInt(iTotalSec, "iTotalSec");
-    tarsDisplayer.DisplayInt(iCountDown, "iCountDown");
-    tarsDisplayer.DisplayInt(lMessageId, "lMessageId");
-    tarsDisplayer.DisplayInt(iCostPay, "iCostPay");
+    tarsDisplayer.DisplayTarsStruct(tMessageUser, 'tMessageUser');
+    tarsDisplayer.DisplayString(sContent, 'sContent');
+    tarsDisplayer.DisplayInt(iCost, 'iCost');
+    tarsDisplayer.DisplayInt(iTotalSec, 'iTotalSec');
+    tarsDisplayer.DisplayInt(iCountDown, 'iCountDown');
+    tarsDisplayer.DisplayInt(lMessageId, 'lMessageId');
+    tarsDisplayer.DisplayInt(iCostPay, 'iCostPay');
   }
 }

@@ -13,20 +13,11 @@ extension ZXingWasmFormatStringToBarcodeFormat on String {
   BarcodeFormat get toBarcodeFormat => switch (this) {
     'Aztec' || 'AztecCode' || 'AztecRune' => BarcodeFormat.aztec,
     'Codabar' => BarcodeFormat.codabar,
-    'Code39' ||
-    'Code39Std' ||
-    'Code39Ext' ||
-    'Code32' ||
-    'PZN' => BarcodeFormat.code39,
+    'Code39' || 'Code39Std' || 'Code39Ext' || 'Code32' || 'PZN' => BarcodeFormat.code39,
     'Code93' => BarcodeFormat.code93,
     'Code128' => BarcodeFormat.code128,
-    'DataBar' ||
-    'DataBarOmni' ||
-    'DataBarStk' ||
-    'DataBarStkOmni' => BarcodeFormat.dataBar,
-    'DataBarExp' ||
-    'DataBarExpanded' ||
-    'DataBarExpStk' => BarcodeFormat.dataBarExpanded,
+    'DataBar' || 'DataBarOmni' || 'DataBarStk' || 'DataBarStkOmni' => BarcodeFormat.dataBar,
+    'DataBarExp' || 'DataBarExpanded' || 'DataBarExpStk' => BarcodeFormat.dataBarExpanded,
     'DataBarLtd' || 'DataBarLimited' => BarcodeFormat.dataBarLimited,
     'DataMatrix' => BarcodeFormat.dataMatrix,
     'EAN8' || 'EAN-8' => BarcodeFormat.ean8,
@@ -60,9 +51,7 @@ extension BarcodeFormatToZXingWasmString on BarcodeFormat {
     BarcodeFormat.dataMatrix => 'DataMatrix',
     BarcodeFormat.ean8 => 'EAN8',
     BarcodeFormat.ean13 => 'EAN13',
-    BarcodeFormat.itf ||
-    BarcodeFormat.itf2of5 ||
-    BarcodeFormat.itf2of5WithChecksum => 'ITF',
+    BarcodeFormat.itf || BarcodeFormat.itf2of5 || BarcodeFormat.itf2of5WithChecksum => 'ITF',
     BarcodeFormat.itf14 => 'ITF14',
     BarcodeFormat.maxiCode => 'MaxiCode',
     BarcodeFormat.pdf417 => 'PDF417',

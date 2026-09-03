@@ -58,7 +58,10 @@ void main() {
     };
 
     expect(VersionUtil.selectPlatformVersionData(feed, platform: 'windows')['version'], '2.1.2');
-    expect(VersionUtil.selectPlatformVersionData(feed, platform: 'windows')['windows_msix_available'], isFalse);
+    expect(
+      VersionUtil.selectPlatformVersionData(feed, platform: 'windows')['windows_msix_available'],
+      isFalse,
+    );
     expect(VersionUtil.selectPlatformVersionData(feed, platform: 'android')['version'], '2.1.1');
   });
 }

@@ -11,7 +11,7 @@ class LiveTag {
       id: json['id'] ?? '',
       name: json['name'] ?? '',
       description: json['description'] ?? '',
-      order: json['order'] ?? 0
+      order: json['order'] ?? 0,
     );
   }
 
@@ -19,6 +19,6 @@ class LiveTag {
     'id': id,
     'name': name,
     'description': description,
-    'order': order
+    'order': order,
   };
 }

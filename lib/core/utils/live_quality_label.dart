@@ -97,7 +97,10 @@ class LiveQualityLabel {
   static bool _containsCjk(String value) => RegExp(r'[\u3400-\u9fff]').hasMatch(value);
 
   static String? _resolutionLabel(String? value) {
-    final match = RegExp(r'(\d{3,5})\s*[x×]\s*(\d{3,5})', caseSensitive: false).firstMatch(value ?? '');
+    final match = RegExp(
+      r'(\d{3,5})\s*[x×]\s*(\d{3,5})',
+      caseSensitive: false,
+    ).firstMatch(value ?? '');
     if (match == null) return null;
     final width = int.tryParse(match.group(1) ?? '') ?? 0;
     final height = int.tryParse(match.group(2) ?? '') ?? 0;

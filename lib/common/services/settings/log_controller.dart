@@ -46,7 +46,10 @@ class LogController extends GetxController {
     };
   }
 
-  static Map<String, dynamic> mergeConfig(Map<String, dynamic> rootConfig, Map<String, dynamic> updateFields) {
+  static Map<String, dynamic> mergeConfig(
+    Map<String, dynamic> rootConfig,
+    Map<String, dynamic> updateFields,
+  ) {
     final refresh = Map<String, dynamic>.from(rootConfig['refresh'] ?? {});
     updateFields.forEach((k, v) => refresh[k] = v);
     rootConfig['refresh'] = refresh;

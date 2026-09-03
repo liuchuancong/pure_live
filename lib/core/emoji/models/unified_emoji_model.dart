@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:pure_live/core/sites.dart';
 
 class UnifiedEmojiModel {
@@ -16,7 +17,11 @@ class UnifiedEmojiModel {
     required this.localFile,
   });
 
-  factory UnifiedEmojiModel.fromPlatform(Map<String, dynamic> json, String platform, String fallbackKey) {
+  factory UnifiedEmojiModel.fromPlatform(
+    Map<String, dynamic> json,
+    String platform,
+    String fallbackKey,
+  ) {
     String pKey = '';
     String? sKey;
     String txt = '';
@@ -37,7 +42,9 @@ class UnifiedEmojiModel {
       imgUrl = (urlList != null && urlList.isNotEmpty) ? urlList.first.toString() : '';
       filename = json['local_file'] ?? '';
     } else if (platform == Sites.douyuSite) {
-      pKey = fallbackKey.startsWith('[') && fallbackKey.endsWith(']') ? fallbackKey : "[$fallbackKey]";
+      pKey = fallbackKey.startsWith('[') && fallbackKey.endsWith(']')
+          ? fallbackKey
+          : '[$fallbackKey]';
       txt = pKey;
       imgUrl = json['img_url'] ?? '';
       filename = json['local_file'] ?? '';
@@ -54,7 +61,13 @@ class UnifiedEmojiModel {
       filename = json['local_file'] ?? '';
     }
 
-    return UnifiedEmojiModel(primaryKey: pKey, secondaryKey: sKey, text: txt, url: imgUrl, localFile: filename);
+    return UnifiedEmojiModel(
+      primaryKey: pKey,
+      secondaryKey: sKey,
+      text: txt,
+      url: imgUrl,
+      localFile: filename,
+    );
   }
 
   static List<UnifiedEmojiModel> parseToUnifiedList(String rawJsonStr, String platform) {

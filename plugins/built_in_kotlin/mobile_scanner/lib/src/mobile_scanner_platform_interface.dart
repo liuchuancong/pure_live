@@ -140,9 +140,7 @@ abstract class MobileScannerPlatform extends PlatformInterface {
   /// containing only [CameraLensType.any] if cameras are available.
   ///
   /// This method can be called before starting the scanner.
-  Future<Set<CameraLensType>> getSupportedLenses({
-    CameraFacing? facing,
-  }) {
+  Future<Set<CameraLensType>> getSupportedLenses({CameraFacing? facing}) {
     throw UnimplementedError('getSupportedLenses() has not been implemented.');
   }
 
@@ -155,12 +153,8 @@ abstract class MobileScannerPlatform extends PlatformInterface {
   ///
   /// Returns `null` if the device has no camera for the given [facing]
   /// direction.
-  Future<CameraLensType?> getBestCloseRangeScanningLens({
-    CameraFacing facing = CameraFacing.back,
-  }) {
-    throw UnimplementedError(
-      'getBestCloseRangeScanningLens() has not been implemented.',
-    );
+  Future<CameraLensType?> getBestCloseRangeScanningLens({CameraFacing facing = CameraFacing.back}) {
+    throw UnimplementedError('getBestCloseRangeScanningLens() has not been implemented.');
   }
 
   /// Update the scan window to the given [window] rectangle.

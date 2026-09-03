@@ -31,7 +31,10 @@ class FFmpegScheduler {
   Timer? _scheduleTimer;
 
   /// 添加任务
-  void enqueue({required String taskId, required Future<void> Function(TaskCancelToken token) taskRunner}) {
+  void enqueue({
+    required String taskId,
+    required Future<void> Function(TaskCancelToken token) taskRunner,
+  }) {
     /// 已运行
     if (_runningTasks.containsKey(taskId)) {
       log('Task already running: $taskId', name: 'FFmpegScheduler');
@@ -64,7 +67,10 @@ class FFmpegScheduler {
 
     if (runningTask != null) {
       if (runningTask.cancelToken.isCancelled) {
-        log('Task $taskId is already being cancelled; waiting for its lifecycle fence.', name: 'FFmpegScheduler');
+        log(
+          'Task $taskId is already being cancelled; waiting for its lifecycle fence.',
+          name: 'FFmpegScheduler',
+        );
         try {
           await runningTask.future.timeout(const Duration(seconds: 20));
         } catch (e) {
@@ -150,7 +156,11 @@ class FFmpegScheduler {
       }
     })();
 
-    _runningTasks[task.taskId] = _RunningTask(taskId: task.taskId, future: future, cancelToken: cancelToken);
+    _runningTasks[task.taskId] = _RunningTask(
+      taskId: task.taskId,
+      future: future,
+      cancelToken: cancelToken,
+    );
   }
 
   /// 是否运行中

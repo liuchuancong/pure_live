@@ -13,10 +13,14 @@ class LiveSearchRanking {
     required int Function(LiveRoom left, LiveRoom right) audienceCompare,
   }) {
     final platformRanks = <String, int>{
-      for (var index = 0; index < platformOrder.length; index++) platformOrder[index].trim().toLowerCase(): index,
+      for (var index = 0; index < platformOrder.length; index++)
+        platformOrder[index].trim().toLowerCase(): index,
     };
     final ranked = rooms.where((room) => includeOffline || room.isLiveNow).toList();
-    ranked.sort((a, b) => compare(a, b, mode: mode, platformRanks: platformRanks, audienceCompare: audienceCompare));
+    ranked.sort(
+      (a, b) =>
+          compare(a, b, mode: mode, platformRanks: platformRanks, audienceCompare: audienceCompare),
+    );
     return ranked;
   }
 
@@ -30,7 +34,10 @@ class LiveSearchRanking {
     final liveOrder = _descending(_isLive(a), _isLive(b));
     if (liveOrder != 0) return liveOrder;
 
-    final platformOrder = _ascending(_platformRank(a, platformRanks), _platformRank(b, platformRanks));
+    final platformOrder = _ascending(
+      _platformRank(a, platformRanks),
+      _platformRank(b, platformRanks),
+    );
     final audienceOrder = audienceCompare(a, b);
     final followerOrder = _descending(_followers(a), _followers(b));
 

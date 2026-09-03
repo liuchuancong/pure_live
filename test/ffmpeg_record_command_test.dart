@@ -14,7 +14,10 @@ void main() {
       rwTimeout: 15,
       threadQueueSize: 1024,
       filePrefix: 'session-001',
-      headers: const <String, String>{'user-agent': 'Pure Live Test UA', 'referer': 'https://example.test/room/1'},
+      headers: const <String, String>{
+        'user-agent': 'Pure Live Test UA',
+        'referer': 'https://example.test/room/1',
+      },
     );
 
     expect(_valueAfter(arguments, '-i'), 'https://cdn.example/live.flv?token=a&expires=2');
@@ -32,7 +35,10 @@ void main() {
     expect(arguments, isNot(contains('-seekable')));
     expect(arguments, isNot(contains('-reconnect_at_eof')));
     expect(arguments, isNot(contains('-tls_verify')));
-    expect(arguments.any((argument) => argument.startsWith('"') || argument.endsWith('"')), isFalse);
+    expect(
+      arguments.any((argument) => argument.startsWith('"') || argument.endsWith('"')),
+      isFalse,
+    );
   });
 
   test('recording applies protocol-specific options and clamps native values', () {
@@ -95,7 +101,10 @@ void main() {
     );
 
     expect(_valueAfter(arguments, '-user_agent'), 'Recorder UA');
-    expect(_valueAfter(arguments, '-headers'), 'referer: https://example.test/ Cookie: injected\r\n');
+    expect(
+      _valueAfter(arguments, '-headers'),
+      'referer: https://example.test/ Cookie: injected\r\n',
+    );
     expect(arguments.where((argument) => argument == '-user_agent'), hasLength(1));
     expect(arguments.join('\n').toLowerCase(), isNot(contains('bad header')));
   });
@@ -111,11 +120,19 @@ void main() {
   });
 
   test('display formatting does not alter the native argument vector', () {
-    final arguments = <String>['-i', 'https://cdn.example/live.flv?a=1&b=2', 'C:\\Pure Live\\out.ts'];
+    final arguments = <String>[
+      '-i',
+      'https://cdn.example/live.flv?a=1&b=2',
+      'C:\\Pure Live\\out.ts',
+    ];
     final formatted = FFmpegCommandBuilder.formatArguments(arguments);
 
     expect(formatted, contains('"https://cdn.example/live.flv?a=1&b=2"'));
-    expect(arguments, <String>['-i', 'https://cdn.example/live.flv?a=1&b=2', 'C:\\Pure Live\\out.ts']);
+    expect(arguments, <String>[
+      '-i',
+      'https://cdn.example/live.flv?a=1&b=2',
+      'C:\\Pure Live\\out.ts',
+    ]);
   });
 }
 

@@ -6,7 +6,8 @@ import 'package:pure_live/core/common/http_client.dart';
 
 class DouyuUtils {
   static const String defaultDeviceId = '10000000000000000000000000001501';
-  static const String _apiDouyuEnc = 'https://www.douyu.com/wgapi/livenc/liveweb/websec/getEncryption';
+  static const String _apiDouyuEnc =
+      'https://www.douyu.com/wgapi/livenc/liveweb/websec/getEncryption';
   static const int _expirySafetySeconds = 30;
   static const int _maximumCacheAgeSeconds = 5 * 60;
   static const String userAgent =
@@ -150,7 +151,12 @@ class DouyuUtils {
     ).query;
   }
 
-  static Future<String> sign(String roomId, {int rate = -1, String cdn = '', bool forceRefresh = false}) async {
+  static Future<String> sign(
+    String roomId, {
+    int rate = -1,
+    String cdn = '',
+    bool forceRefresh = false,
+  }) async {
     await _encKeyUpdate(forceRefresh: forceRefresh);
     return buildSignedData(
       encryptionKey: _encKey,

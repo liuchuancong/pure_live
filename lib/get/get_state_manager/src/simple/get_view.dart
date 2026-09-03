@@ -102,9 +102,6 @@ class _GetCache<S extends GetLifeCycleMixin> extends WidgetCache<GetWidget<S>> {
 
   @override
   Widget build(BuildContext context) {
-    return Binder(
-      init: () => _controller,
-      child: widget!.build(context),
-    );
+    return Binder(init: () => _controller, child: widget!.build(context));
   }
 }

@@ -45,8 +45,8 @@ class _WebDavPageState extends State<WebDavPage> {
             Expanded(
               child: Text(
                 isEditing
-                    ? i18n("webdav_edit_config", args: {"name": existingConfig.name})
-                    : i18n("webdav_add_new_config"),
+                    ? i18n('webdav_edit_config', args: {'name': existingConfig.name})
+                    : i18n('webdav_add_new_config'),
                 style: AppTextStyles.t18Bold,
               ),
             ),
@@ -65,16 +65,18 @@ class _WebDavPageState extends State<WebDavPage> {
                     TextFormField(
                       controller: nameController,
                       decoration: InputDecoration(
-                        labelText: i18n("webdav_config_name"),
+                        labelText: i18n('webdav_config_name'),
                         prefixIcon: const Icon(Remix.bookmark_line, size: 20),
                         border: const OutlineInputBorder(),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                       ),
                       enabled: !isEditing,
                       validator: (value) {
-                        if (value == null || value.trim().isEmpty) return i18n("webdav_config_name_empty");
+                        if (value == null || value.trim().isEmpty) {
+                          return i18n('webdav_config_name_empty');
+                        }
                         if (!isEditing && controller.configs.any((c) => c.name == value.trim())) {
-                          return i18n("webdav_config_name_exists");
+                          return i18n('webdav_config_name_exists');
                         }
                         return null;
                       },
@@ -83,36 +85,40 @@ class _WebDavPageState extends State<WebDavPage> {
                     TextFormField(
                       controller: addressController,
                       decoration: InputDecoration(
-                        labelText: i18n("webdav_address"),
+                        labelText: i18n('webdav_address'),
                         prefixIcon: const Icon(Remix.global_line, size: 20),
                         border: const OutlineInputBorder(),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                       ),
-                      validator: (value) => value == null || value.trim().isEmpty ? i18n("webdav_address_empty") : null,
+                      validator: (value) => value == null || value.trim().isEmpty
+                          ? i18n('webdav_address_empty')
+                          : null,
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: userController,
                       decoration: InputDecoration(
-                        labelText: i18n("webdav_username"),
+                        labelText: i18n('webdav_username'),
                         prefixIcon: const Icon(Remix.user_3_line, size: 20),
                         border: const OutlineInputBorder(),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                       ),
-                      validator: (value) =>
-                          value == null || value.trim().isEmpty ? i18n("webdav_username_empty") : null,
+                      validator: (value) => value == null || value.trim().isEmpty
+                          ? i18n('webdav_username_empty')
+                          : null,
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: pwdController,
                       decoration: InputDecoration(
-                        labelText: i18n("webdav_password"),
+                        labelText: i18n('webdav_password'),
                         prefixIcon: const Icon(Remix.lock_password_line, size: 20),
                         border: const OutlineInputBorder(),
                         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                       ),
                       obscureText: true,
-                      validator: (value) => value == null || value.isEmpty ? i18n("webdav_password_empty") : null,
+                      validator: (value) =>
+                          value == null || value.isEmpty ? i18n('webdav_password_empty') : null,
                     ),
                   ],
                 ),
@@ -127,7 +133,7 @@ class _WebDavPageState extends State<WebDavPage> {
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
-            child: Text(i18n("webdav_cancel")),
+            child: Text(i18n('webdav_cancel')),
           ),
           const SizedBox(width: 8),
           ElevatedButton(
@@ -160,7 +166,7 @@ class _WebDavPageState extends State<WebDavPage> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               elevation: 0,
             ),
-            child: Text(isEditing ? i18n("webdav_update") : i18n("webdav_add")),
+            child: Text(isEditing ? i18n('webdav_update') : i18n('webdav_add')),
           ),
         ],
       ),
@@ -198,13 +204,16 @@ class _WebDavPageState extends State<WebDavPage> {
   Widget _buildDrawer() {
     return Drawer(
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.only(topLeft: Radius.circular(0), bottomLeft: Radius.circular(0)),
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(0),
+          bottomLeft: Radius.circular(0),
+        ),
       ),
       backgroundColor: Theme.of(Get.context!).colorScheme.surfaceContainer,
       child: ListView(
         padding: EdgeInsets.zero,
         children: [
-          SizedBox(height: kToolbarHeight),
+          const SizedBox(height: kToolbarHeight),
           Obx(
             () => Column(
               children: [
@@ -218,16 +227,19 @@ class _WebDavPageState extends State<WebDavPage> {
                           icon: const Icon(Icons.edit),
                           onPressed: () => _showConfigDialog(existingConfig: config),
                         ),
-                        IconButton(icon: const Icon(Icons.delete), onPressed: () => _showDeleteDialog(config)),
+                        IconButton(
+                          icon: const Icon(Icons.delete),
+                          onPressed: () => _showDeleteDialog(config),
+                        ),
                       ],
                     ),
                     selected: controller.currentConfig.value?.name == config.name,
                     onTap: () => controller.onConfigSelected(config),
                   ),
                 ListTile(
-                  title: Text(i18n("webdav_add_new_config")),
+                  title: Text(i18n('webdav_add_new_config')),
                   leading: const Icon(Icons.add),
-                  onTap: () => _showConfigDialog(),
+                  onTap: _showConfigDialog,
                 ),
               ],
             ),
@@ -240,19 +252,19 @@ class _WebDavPageState extends State<WebDavPage> {
   void _showDeleteDialog(WebDAVConfig config) {
     Get.dialog(
       AlertDialog(
-        title: Text(i18n("webdav_confirm_delete")),
-        content: Text(i18n("webdav_confirm_delete_config", args: {"name": config.name})),
+        title: Text(i18n('webdav_confirm_delete')),
+        content: Text(i18n('webdav_confirm_delete_config', args: {'name': config.name})),
         actions: [
           TextButton(
             onPressed: () {
               Navigator.pop(Get.context!);
             },
-            child: Text(i18n("webdav_cancel")),
+            child: Text(i18n('webdav_cancel')),
           ),
           TextButton(
             onPressed: () => controller.deleteConfig(config),
             child: Text(
-              i18n("webdav_delete"),
+              i18n('webdav_delete'),
               style: AppTextStyles.t14.copyWith(color: Theme.of(Get.context!).colorScheme.error),
             ),
           ),
@@ -268,11 +280,11 @@ class _WebDavPageState extends State<WebDavPage> {
       snap: false,
       backgroundColor: Theme.of(Get.context!).colorScheme.surface,
       surfaceTintColor: Colors.transparent,
-      title: Text(i18n("webdav"), style: const TextStyle(fontWeight: FontWeight.w400)),
+      title: Text(i18n('webdav'), style: const TextStyle(fontWeight: FontWeight.w400)),
       actions: [
         PopupMenuButton<int>(
           icon: Icon(Icons.more_vert, color: Theme.of(Get.context!).colorScheme.onPrimaryContainer),
-          tooltip: i18n("webdav_more_actions"),
+          tooltip: i18n('webdav_more_actions'),
           onSelected: (int value) {
             if (value == 1) {
               controller.loadFiles();
@@ -285,15 +297,21 @@ class _WebDavPageState extends State<WebDavPage> {
           itemBuilder: (BuildContext context) => [
             PopupMenuItem(
               value: 1,
-              child: MenuListTile(leading: const Icon(Icons.refresh), text: i18n("webdav_refresh")),
+              child: MenuListTile(leading: const Icon(Icons.refresh), text: i18n('webdav_refresh')),
             ),
             PopupMenuItem(
               value: 2,
-              child: MenuListTile(leading: const Icon(Icons.menu), text: i18n("webdav_open_config_list")),
+              child: MenuListTile(
+                leading: const Icon(Icons.menu),
+                text: i18n('webdav_open_config_list'),
+              ),
             ),
             PopupMenuItem(
               value: 3,
-              child: MenuListTile(leading: const Icon(Remix.question_line), text: i18n("webdav_help_tutorial")),
+              child: MenuListTile(
+                leading: const Icon(Remix.question_line),
+                text: i18n('webdav_help_tutorial'),
+              ),
             ),
           ],
         ),
@@ -330,10 +348,15 @@ class _WebDavPageState extends State<WebDavPage> {
     String accumulatedPath = '/';
 
     buttons.add(const SizedBox(width: 48));
-    buttons.add(_buildCrumbButton(label: i18n("webdav_my_files"), targetPath: accumulatedPath));
+    buttons.add(_buildCrumbButton(label: i18n('webdav_my_files'), targetPath: accumulatedPath));
 
     for (String part in controller.breadcrumbParts) {
-      buttons.add(Padding(padding: const EdgeInsets.symmetric(horizontal: 4), child: const Icon(Icons.navigate_next)));
+      buttons.add(
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 4),
+          child: Icon(Icons.navigate_next),
+        ),
+      );
       accumulatedPath += '$part/';
       buttons.add(_buildCrumbButton(label: part, targetPath: accumulatedPath));
     }
@@ -362,7 +385,9 @@ class _WebDavPageState extends State<WebDavPage> {
       child: Text(
         label,
         style: TextStyle(
-          color: isCurrent ? Theme.of(Get.context!).colorScheme.primary : Theme.of(Get.context!).colorScheme.onSurface,
+          color: isCurrent
+              ? Theme.of(Get.context!).colorScheme.primary
+              : Theme.of(Get.context!).colorScheme.onSurface,
           fontWeight: FontWeight.w500,
         ),
       ),
@@ -383,8 +408,11 @@ class _WebDavPageState extends State<WebDavPage> {
               children: [
                 const Icon(Icons.add_circle_outline, size: 48),
                 const SizedBox(height: 16),
-                Text(i18n("webdav_no_config_create_first")),
-                TextButton(onPressed: () => _showConfigDialog(), child: Text(i18n("webdav_create_new_config"))),
+                Text(i18n('webdav_no_config_create_first')),
+                TextButton(
+                  onPressed: _showConfigDialog,
+                  child: Text(i18n('webdav_create_new_config')),
+                ),
               ],
             ),
           ),
@@ -399,10 +427,10 @@ class _WebDavPageState extends State<WebDavPage> {
               children: [
                 const Icon(Icons.cloud_queue, size: 48),
                 const SizedBox(height: 16),
-                Text(i18n("webdav_select_config_from_sidebar")),
+                Text(i18n('webdav_select_config_from_sidebar')),
                 TextButton(
                   onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
-                  child: Text(i18n("webdav_open_config_list")),
+                  child: Text(i18n('webdav_open_config_list')),
                 ),
               ],
             ),
@@ -412,7 +440,7 @@ class _WebDavPageState extends State<WebDavPage> {
 
       if (controller.isLoading.value) {
         return const SliverFillRemaining(
-          child: AppStatusView(type: AppStatusType.loading, title: "", subtitle: ""),
+          child: AppStatusView(type: AppStatusType.loading, title: '', subtitle: ''),
         );
       }
 
@@ -444,18 +472,18 @@ class _WebDavPageState extends State<WebDavPage> {
         size: 28,
       ),
       title: Text(
-        file.name ?? i18n("webdav_unnamed_file"),
+        file.name ?? i18n('webdav_unnamed_file'),
         style: AppTextStyles.t16.copyWith(fontWeight: FontWeight.w500),
       ),
       subtitle: Text(
-        file.mTime?.toString() ?? i18n("webdav_unknown_time"),
+        file.mTime?.toString() ?? i18n('webdav_unknown_time'),
         style: TextStyle(color: Theme.of(Get.context!).colorScheme.onSurfaceVariant),
       ),
       trailing: PopupMenuButton<String>(
         icon: Icon(Icons.more_vert, color: Theme.of(Get.context!).colorScheme.onSurface),
         itemBuilder: (context) => [
-          PopupMenuItem(value: 'Download', child: Text(i18n("webdav_sync_to_local"))),
-          PopupMenuItem(value: 'Delete', child: Text(i18n("webdav_delete"))),
+          PopupMenuItem(value: 'Download', child: Text(i18n('webdav_sync_to_local'))),
+          PopupMenuItem(value: 'Delete', child: Text(i18n('webdav_delete'))),
         ],
         onSelected: (value) {
           if (value == 'Download') {
@@ -475,7 +503,11 @@ class _WebDavPageState extends State<WebDavPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error, size: 64, color: Theme.of(Get.context!).colorScheme.onPrimaryContainer),
+            Icon(
+              Icons.error,
+              size: 64,
+              color: Theme.of(Get.context!).colorScheme.onPrimaryContainer,
+            ),
             const SizedBox(height: 16),
             Text(message, style: AppTextStyles.t12),
           ],

@@ -52,10 +52,7 @@ final class SelectCamera extends SwitchCameraOption {
   ///
   /// The [lensType] defaults to [CameraLensType.any], which allows
   /// selecting any available lens for the given facing direction.
-  const SelectCamera({
-    this.facingDirection,
-    this.lensType = CameraLensType.any,
-  });
+  const SelectCamera({this.facingDirection, this.lensType = CameraLensType.any});
 
   /// The desired facing direction to switch to.
   ///

@@ -1,5 +1,7 @@
 import 'dart:core' as $core;
+
 import 'douyin.pbenum.dart';
+
 import 'package:fixnum/fixnum.dart' as $fixnum;
 import 'package:protobuf/protobuf.dart' as $pb;
 // This is a generated file - do not edit.
@@ -56,8 +58,10 @@ class Response extends $pb.GeneratedMessage {
     $core.List<$core.int> data, [
     $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
   ]) => create()..mergeFromBuffer(data, registry);
-  factory Response.fromJson($core.String json, [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
-      create()..mergeFromJson(json, registry);
+  factory Response.fromJson(
+    $core.String json, [
+    $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
+  ]) => create()..mergeFromJson(json, registry);
 
   static final $pb.BuilderInfo _i =
       $pb.BuilderInfo(
@@ -65,7 +69,12 @@ class Response extends $pb.GeneratedMessage {
           package: const $pb.PackageName(_omitMessageNames ? '' : 'douyin'),
           createEmptyInstance: create,
         )
-        ..pPM<Message>(1, _omitFieldNames ? '' : 'messagesList', protoName: 'messagesList', subBuilder: Message.create)
+        ..pPM<Message>(
+          1,
+          _omitFieldNames ? '' : 'messagesList',
+          protoName: 'messagesList',
+          subBuilder: Message.create,
+        )
         ..aOS(2, _omitFieldNames ? '' : 'cursor')
         ..a<$fixnum.Int64>(
           3,
@@ -74,9 +83,19 @@ class Response extends $pb.GeneratedMessage {
           protoName: 'fetchInterval',
           defaultOrMaker: $fixnum.Int64.ZERO,
         )
-        ..a<$fixnum.Int64>(4, _omitFieldNames ? '' : 'now', $pb.PbFieldType.OU6, defaultOrMaker: $fixnum.Int64.ZERO)
+        ..a<$fixnum.Int64>(
+          4,
+          _omitFieldNames ? '' : 'now',
+          $pb.PbFieldType.OU6,
+          defaultOrMaker: $fixnum.Int64.ZERO,
+        )
         ..aOS(5, _omitFieldNames ? '' : 'internalExt', protoName: 'internalExt')
-        ..aI(6, _omitFieldNames ? '' : 'fetchType', protoName: 'fetchType', fieldType: $pb.PbFieldType.OU3)
+        ..aI(
+          6,
+          _omitFieldNames ? '' : 'fetchType',
+          protoName: 'fetchType',
+          fieldType: $pb.PbFieldType.OU3,
+        )
         ..m<$core.String, $core.String>(
           7,
           _omitFieldNames ? '' : 'routeParams',
@@ -113,7 +132,8 @@ class Response extends $pb.GeneratedMessage {
   @$core.override
   Response createEmptyInstance() => create();
   @$core.pragma('dart2js:noInline')
-  static Response getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<Response>(create);
+  static Response getDefault() =>
+      _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<Response>(create);
   static Response? _defaultInstance;
 
   @$pb.TagNumber(1)
@@ -242,8 +262,10 @@ class Message extends $pb.GeneratedMessage {
     $core.List<$core.int> data, [
     $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
   ]) => create()..mergeFromBuffer(data, registry);
-  factory Message.fromJson($core.String json, [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
-      create()..mergeFromJson(json, registry);
+  factory Message.fromJson(
+    $core.String json, [
+    $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
+  ]) => create()..mergeFromJson(json, registry);
 
   static final $pb.BuilderInfo _i =
       $pb.BuilderInfo(
@@ -275,7 +297,8 @@ class Message extends $pb.GeneratedMessage {
   @$core.override
   Message createEmptyInstance() => create();
   @$core.pragma('dart2js:noInline')
-  static Message getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<Message>(create);
+  static Message getDefault() =>
+      _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<Message>(create);
   static Message? _defaultInstance;
 
   @$pb.TagNumber(1)
@@ -403,8 +426,10 @@ class ChatMessage extends $pb.GeneratedMessage {
     $core.List<$core.int> data, [
     $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
   ]) => create()..mergeFromBuffer(data, registry);
-  factory ChatMessage.fromJson($core.String json, [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
-      create()..mergeFromJson(json, registry);
+  factory ChatMessage.fromJson(
+    $core.String json, [
+    $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
+  ]) => create()..mergeFromJson(json, registry);
 
   static final $pb.BuilderInfo _i =
       $pb.BuilderInfo(
@@ -435,7 +460,12 @@ class ChatMessage extends $pb.GeneratedMessage {
           protoName: 'publicAreaCommon',
           subBuilder: PublicAreaCommon.create,
         )
-        ..aOM<Image>(9, _omitFieldNames ? '' : 'giftImage', protoName: 'giftImage', subBuilder: Image.create)
+        ..aOM<Image>(
+          9,
+          _omitFieldNames ? '' : 'giftImage',
+          protoName: 'giftImage',
+          subBuilder: Image.create,
+        )
         ..a<$fixnum.Int64>(
           11,
           _omitFieldNames ? '' : 'agreeMsgId',
@@ -443,7 +473,12 @@ class ChatMessage extends $pb.GeneratedMessage {
           protoName: 'agreeMsgId',
           defaultOrMaker: $fixnum.Int64.ZERO,
         )
-        ..aI(12, _omitFieldNames ? '' : 'priorityLevel', protoName: 'priorityLevel', fieldType: $pb.PbFieldType.OU3)
+        ..aI(
+          12,
+          _omitFieldNames ? '' : 'priorityLevel',
+          protoName: 'priorityLevel',
+          fieldType: $pb.PbFieldType.OU3,
+        )
         ..aOM<LandscapeAreaCommon>(
           13,
           _omitFieldNames ? '' : 'landscapeAreaCommon',
@@ -467,7 +502,12 @@ class ChatMessage extends $pb.GeneratedMessage {
           protoName: 'individualChatPriority',
           fieldType: $pb.PbFieldType.OU3,
         )
-        ..aOM<Text>(22, _omitFieldNames ? '' : 'rtfContent', protoName: 'rtfContent', subBuilder: Text.create)
+        ..aOM<Text>(
+          22,
+          _omitFieldNames ? '' : 'rtfContent',
+          protoName: 'rtfContent',
+          subBuilder: Text.create,
+        )
         ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -484,7 +524,8 @@ class ChatMessage extends $pb.GeneratedMessage {
   @$core.override
   ChatMessage createEmptyInstance() => create();
   @$core.pragma('dart2js:noInline')
-  static ChatMessage getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<ChatMessage>(create);
+  static ChatMessage getDefault() =>
+      _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<ChatMessage>(create);
   static ChatMessage? _defaultInstance;
 
   @$pb.TagNumber(1)
@@ -849,7 +890,11 @@ class RoomUserSeqMessage extends $pb.GeneratedMessage {
         ..aOS(10, _omitFieldNames ? '' : 'onlineUserForAnchor', protoName: 'onlineUserForAnchor')
         ..aOS(11, _omitFieldNames ? '' : 'totalPvForAnchor', protoName: 'totalPvForAnchor')
         ..aOS(12, _omitFieldNames ? '' : 'upRightStatsStr', protoName: 'upRightStatsStr')
-        ..aOS(13, _omitFieldNames ? '' : 'upRightStatsStrComplete', protoName: 'upRightStatsStrComplete')
+        ..aOS(
+          13,
+          _omitFieldNames ? '' : 'upRightStatsStrComplete',
+          protoName: 'upRightStatsStrComplete',
+        )
         ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -1092,7 +1137,11 @@ class UpdateFanTicketMessage extends $pb.GeneratedMessage {
           createEmptyInstance: create,
         )
         ..aOM<Common>(1, _omitFieldNames ? '' : 'common', subBuilder: Common.create)
-        ..aOS(2, _omitFieldNames ? '' : 'roomFanTicketCountText', protoName: 'roomFanTicketCountText')
+        ..aOS(
+          2,
+          _omitFieldNames ? '' : 'roomFanTicketCountText',
+          protoName: 'roomFanTicketCountText',
+        )
         ..a<$fixnum.Int64>(
           3,
           _omitFieldNames ? '' : 'roomFanTicketCount',
@@ -1107,7 +1156,8 @@ class UpdateFanTicketMessage extends $pb.GeneratedMessage {
   UpdateFanTicketMessage clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   UpdateFanTicketMessage copyWith(void Function(UpdateFanTicketMessage) updates) =>
-      super.copyWith((message) => updates(message as UpdateFanTicketMessage)) as UpdateFanTicketMessage;
+      super.copyWith((message) => updates(message as UpdateFanTicketMessage))
+          as UpdateFanTicketMessage;
 
   @$core.override
   $pb.BuilderInfo get info_ => _i;
@@ -1198,10 +1248,25 @@ class RoomUserSeqMessageContributor extends $pb.GeneratedMessage {
           package: const $pb.PackageName(_omitMessageNames ? '' : 'douyin'),
           createEmptyInstance: create,
         )
-        ..a<$fixnum.Int64>(1, _omitFieldNames ? '' : 'score', $pb.PbFieldType.OU6, defaultOrMaker: $fixnum.Int64.ZERO)
+        ..a<$fixnum.Int64>(
+          1,
+          _omitFieldNames ? '' : 'score',
+          $pb.PbFieldType.OU6,
+          defaultOrMaker: $fixnum.Int64.ZERO,
+        )
         ..aOM<User>(2, _omitFieldNames ? '' : 'user', subBuilder: User.create)
-        ..a<$fixnum.Int64>(3, _omitFieldNames ? '' : 'rank', $pb.PbFieldType.OU6, defaultOrMaker: $fixnum.Int64.ZERO)
-        ..a<$fixnum.Int64>(4, _omitFieldNames ? '' : 'delta', $pb.PbFieldType.OU6, defaultOrMaker: $fixnum.Int64.ZERO)
+        ..a<$fixnum.Int64>(
+          3,
+          _omitFieldNames ? '' : 'rank',
+          $pb.PbFieldType.OU6,
+          defaultOrMaker: $fixnum.Int64.ZERO,
+        )
+        ..a<$fixnum.Int64>(
+          4,
+          _omitFieldNames ? '' : 'delta',
+          $pb.PbFieldType.OU6,
+          defaultOrMaker: $fixnum.Int64.ZERO,
+        )
         ..aOB(5, _omitFieldNames ? '' : 'isHidden', protoName: 'isHidden')
         ..aOS(6, _omitFieldNames ? '' : 'scoreDescription', protoName: 'scoreDescription')
         ..aOS(7, _omitFieldNames ? '' : 'exactlyScore', protoName: 'exactlyScore')
@@ -1211,7 +1276,8 @@ class RoomUserSeqMessageContributor extends $pb.GeneratedMessage {
   RoomUserSeqMessageContributor clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   RoomUserSeqMessageContributor copyWith(void Function(RoomUserSeqMessageContributor) updates) =>
-      super.copyWith((message) => updates(message as RoomUserSeqMessageContributor)) as RoomUserSeqMessageContributor;
+      super.copyWith((message) => updates(message as RoomUserSeqMessageContributor))
+          as RoomUserSeqMessageContributor;
 
   @$core.override
   $pb.BuilderInfo get info_ => _i;
@@ -1367,8 +1433,10 @@ class GiftMessage extends $pb.GeneratedMessage {
     $core.List<$core.int> data, [
     $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
   ]) => create()..mergeFromBuffer(data, registry);
-  factory GiftMessage.fromJson($core.String json, [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
-      create()..mergeFromJson(json, registry);
+  factory GiftMessage.fromJson(
+    $core.String json, [
+    $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
+  ]) => create()..mergeFromJson(json, registry);
 
   static final $pb.BuilderInfo _i =
       $pb.BuilderInfo(
@@ -1413,8 +1481,18 @@ class GiftMessage extends $pb.GeneratedMessage {
           defaultOrMaker: $fixnum.Int64.ZERO,
         )
         ..aOM<User>(7, _omitFieldNames ? '' : 'user', subBuilder: User.create)
-        ..aOM<User>(8, _omitFieldNames ? '' : 'toUser', protoName: 'toUser', subBuilder: User.create)
-        ..aI(9, _omitFieldNames ? '' : 'repeatEnd', protoName: 'repeatEnd', fieldType: $pb.PbFieldType.OU3)
+        ..aOM<User>(
+          8,
+          _omitFieldNames ? '' : 'toUser',
+          protoName: 'toUser',
+          subBuilder: User.create,
+        )
+        ..aI(
+          9,
+          _omitFieldNames ? '' : 'repeatEnd',
+          protoName: 'repeatEnd',
+          fieldType: $pb.PbFieldType.OU3,
+        )
         ..aOM<TextEffect>(
           10,
           _omitFieldNames ? '' : 'textEffect',
@@ -1442,7 +1520,11 @@ class GiftMessage extends $pb.GeneratedMessage {
           protoName: 'roomFanTicketCount',
           defaultOrMaker: $fixnum.Int64.ZERO,
         )
-        ..aOM<GiftIMPriority>(14, _omitFieldNames ? '' : 'priority', subBuilder: GiftIMPriority.create)
+        ..aOM<GiftIMPriority>(
+          14,
+          _omitFieldNames ? '' : 'priority',
+          subBuilder: GiftIMPriority.create,
+        )
         ..aOM<GiftStruct>(15, _omitFieldNames ? '' : 'gift', subBuilder: GiftStruct.create)
         ..aOS(16, _omitFieldNames ? '' : 'logId', protoName: 'logId')
         ..a<$fixnum.Int64>(
@@ -1458,7 +1540,12 @@ class GiftMessage extends $pb.GeneratedMessage {
           protoName: 'publicAreaCommon',
           subBuilder: PublicAreaCommon.create,
         )
-        ..aOM<Text>(19, _omitFieldNames ? '' : 'trayDisplayText', protoName: 'trayDisplayText', subBuilder: Text.create)
+        ..aOM<Text>(
+          19,
+          _omitFieldNames ? '' : 'trayDisplayText',
+          protoName: 'trayDisplayText',
+          subBuilder: Text.create,
+        )
         ..a<$fixnum.Int64>(
           20,
           _omitFieldNames ? '' : 'bannedDisplayEffects',
@@ -1488,7 +1575,12 @@ class GiftMessage extends $pb.GeneratedMessage {
           protoName: 'clientGiftSource',
           fieldType: $pb.PbFieldType.OU3,
         )
-        ..p<$fixnum.Int64>(32, _omitFieldNames ? '' : 'toUserIdsList', $pb.PbFieldType.KU6, protoName: 'toUserIdsList')
+        ..p<$fixnum.Int64>(
+          32,
+          _omitFieldNames ? '' : 'toUserIdsList',
+          $pb.PbFieldType.KU6,
+          protoName: 'toUserIdsList',
+        )
         ..a<$fixnum.Int64>(
           33,
           _omitFieldNames ? '' : 'sendTime',
@@ -1527,7 +1619,8 @@ class GiftMessage extends $pb.GeneratedMessage {
   @$core.override
   GiftMessage createEmptyInstance() => create();
   @$core.pragma('dart2js:noInline')
-  static GiftMessage getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<GiftMessage>(create);
+  static GiftMessage getDefault() =>
+      _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<GiftMessage>(create);
   static GiftMessage? _defaultInstance;
 
   @$pb.TagNumber(1)
@@ -1870,8 +1963,10 @@ class GiftStruct extends $pb.GeneratedMessage {
     $core.List<$core.int> data, [
     $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
   ]) => create()..mergeFromBuffer(data, registry);
-  factory GiftStruct.fromJson($core.String json, [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
-      create()..mergeFromJson(json, registry);
+  factory GiftStruct.fromJson(
+    $core.String json, [
+    $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
+  ]) => create()..mergeFromJson(json, registry);
 
   static final $pb.BuilderInfo _i =
       $pb.BuilderInfo(
@@ -1888,13 +1983,23 @@ class GiftStruct extends $pb.GeneratedMessage {
           $pb.PbFieldType.OU6,
           defaultOrMaker: $fixnum.Int64.ZERO,
         )
-        ..a<$fixnum.Int64>(5, _omitFieldNames ? '' : 'id', $pb.PbFieldType.OU6, defaultOrMaker: $fixnum.Int64.ZERO)
+        ..a<$fixnum.Int64>(
+          5,
+          _omitFieldNames ? '' : 'id',
+          $pb.PbFieldType.OU6,
+          defaultOrMaker: $fixnum.Int64.ZERO,
+        )
         ..aOB(7, _omitFieldNames ? '' : 'forLinkmic', protoName: 'forLinkmic')
         ..aOB(8, _omitFieldNames ? '' : 'doodle')
         ..aOB(9, _omitFieldNames ? '' : 'forFansclub', protoName: 'forFansclub')
         ..aOB(10, _omitFieldNames ? '' : 'combo')
         ..aI(11, _omitFieldNames ? '' : 'type', fieldType: $pb.PbFieldType.OU3)
-        ..aI(12, _omitFieldNames ? '' : 'diamondCount', protoName: 'diamondCount', fieldType: $pb.PbFieldType.OU3)
+        ..aI(
+          12,
+          _omitFieldNames ? '' : 'diamondCount',
+          protoName: 'diamondCount',
+          fieldType: $pb.PbFieldType.OU3,
+        )
         ..aOB(13, _omitFieldNames ? '' : 'isDisplayedOnPanel', protoName: 'isDisplayedOnPanel')
         ..a<$fixnum.Int64>(
           14,
@@ -1903,13 +2008,23 @@ class GiftStruct extends $pb.GeneratedMessage {
           protoName: 'primaryEffectId',
           defaultOrMaker: $fixnum.Int64.ZERO,
         )
-        ..aOM<Image>(15, _omitFieldNames ? '' : 'giftLabelIcon', protoName: 'giftLabelIcon', subBuilder: Image.create)
+        ..aOM<Image>(
+          15,
+          _omitFieldNames ? '' : 'giftLabelIcon',
+          protoName: 'giftLabelIcon',
+          subBuilder: Image.create,
+        )
         ..aOS(16, _omitFieldNames ? '' : 'name')
         ..aOS(17, _omitFieldNames ? '' : 'region')
         ..aOS(18, _omitFieldNames ? '' : 'manual')
         ..aOB(19, _omitFieldNames ? '' : 'forCustom', protoName: 'forCustom')
         ..aOM<Image>(21, _omitFieldNames ? '' : 'icon', subBuilder: Image.create)
-        ..aI(22, _omitFieldNames ? '' : 'actionType', protoName: 'actionType', fieldType: $pb.PbFieldType.OU3)
+        ..aI(
+          22,
+          _omitFieldNames ? '' : 'actionType',
+          protoName: 'actionType',
+          fieldType: $pb.PbFieldType.OU3,
+        )
         ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -1926,7 +2041,8 @@ class GiftStruct extends $pb.GeneratedMessage {
   @$core.override
   GiftStruct createEmptyInstance() => create();
   @$core.pragma('dart2js:noInline')
-  static GiftStruct getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<GiftStruct>(create);
+  static GiftStruct getDefault() =>
+      _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<GiftStruct>(create);
   static GiftStruct? _defaultInstance;
 
   @$pb.TagNumber(1)
@@ -2137,8 +2253,10 @@ class GiftIMPriority extends $pb.GeneratedMessage {
     $core.List<$core.int> data, [
     $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
   ]) => create()..mergeFromBuffer(data, registry);
-  factory GiftIMPriority.fromJson($core.String json, [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
-      create()..mergeFromJson(json, registry);
+  factory GiftIMPriority.fromJson(
+    $core.String json, [
+    $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
+  ]) => create()..mergeFromJson(json, registry);
 
   static final $pb.BuilderInfo _i =
       $pb.BuilderInfo(
@@ -2146,7 +2264,12 @@ class GiftIMPriority extends $pb.GeneratedMessage {
           package: const $pb.PackageName(_omitMessageNames ? '' : 'douyin'),
           createEmptyInstance: create,
         )
-        ..p<$fixnum.Int64>(1, _omitFieldNames ? '' : 'queueSizesList', $pb.PbFieldType.KU6, protoName: 'queueSizesList')
+        ..p<$fixnum.Int64>(
+          1,
+          _omitFieldNames ? '' : 'queueSizesList',
+          $pb.PbFieldType.KU6,
+          protoName: 'queueSizesList',
+        )
         ..a<$fixnum.Int64>(
           2,
           _omitFieldNames ? '' : 'selfQueuePriority',
@@ -2176,7 +2299,8 @@ class GiftIMPriority extends $pb.GeneratedMessage {
   @$core.override
   GiftIMPriority createEmptyInstance() => create();
   @$core.pragma('dart2js:noInline')
-  static GiftIMPriority getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<GiftIMPriority>(create);
+  static GiftIMPriority getDefault() =>
+      _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<GiftIMPriority>(create);
   static GiftIMPriority? _defaultInstance;
 
   @$pb.TagNumber(1)
@@ -2215,8 +2339,10 @@ class TextEffect extends $pb.GeneratedMessage {
     $core.List<$core.int> data, [
     $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
   ]) => create()..mergeFromBuffer(data, registry);
-  factory TextEffect.fromJson($core.String json, [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
-      create()..mergeFromJson(json, registry);
+  factory TextEffect.fromJson(
+    $core.String json, [
+    $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
+  ]) => create()..mergeFromJson(json, registry);
 
   static final $pb.BuilderInfo _i =
       $pb.BuilderInfo(
@@ -2224,8 +2350,16 @@ class TextEffect extends $pb.GeneratedMessage {
           package: const $pb.PackageName(_omitMessageNames ? '' : 'douyin'),
           createEmptyInstance: create,
         )
-        ..aOM<TextEffectDetail>(1, _omitFieldNames ? '' : 'portrait', subBuilder: TextEffectDetail.create)
-        ..aOM<TextEffectDetail>(2, _omitFieldNames ? '' : 'landscape', subBuilder: TextEffectDetail.create)
+        ..aOM<TextEffectDetail>(
+          1,
+          _omitFieldNames ? '' : 'portrait',
+          subBuilder: TextEffectDetail.create,
+        )
+        ..aOM<TextEffectDetail>(
+          2,
+          _omitFieldNames ? '' : 'landscape',
+          subBuilder: TextEffectDetail.create,
+        )
         ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -2242,7 +2376,8 @@ class TextEffect extends $pb.GeneratedMessage {
   @$core.override
   TextEffect createEmptyInstance() => create();
   @$core.pragma('dart2js:noInline')
-  static TextEffect getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<TextEffect>(create);
+  static TextEffect getDefault() =>
+      _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<TextEffect>(create);
   static TextEffect? _defaultInstance;
 
   @$pb.TagNumber(1)
@@ -2323,7 +2458,12 @@ class TextEffectDetail extends $pb.GeneratedMessage {
           createEmptyInstance: create,
         )
         ..aOM<Text>(1, _omitFieldNames ? '' : 'text', subBuilder: Text.create)
-        ..aI(2, _omitFieldNames ? '' : 'textFontSize', protoName: 'textFontSize', fieldType: $pb.PbFieldType.OU3)
+        ..aI(
+          2,
+          _omitFieldNames ? '' : 'textFontSize',
+          protoName: 'textFontSize',
+          fieldType: $pb.PbFieldType.OU3,
+        )
         ..aOM<Image>(3, _omitFieldNames ? '' : 'background', subBuilder: Image.create)
         ..aI(4, _omitFieldNames ? '' : 'start', fieldType: $pb.PbFieldType.OU3)
         ..aI(5, _omitFieldNames ? '' : 'duration', fieldType: $pb.PbFieldType.OU3)
@@ -2331,12 +2471,32 @@ class TextEffectDetail extends $pb.GeneratedMessage {
         ..aI(7, _omitFieldNames ? '' : 'y', fieldType: $pb.PbFieldType.OU3)
         ..aI(8, _omitFieldNames ? '' : 'width', fieldType: $pb.PbFieldType.OU3)
         ..aI(9, _omitFieldNames ? '' : 'height', fieldType: $pb.PbFieldType.OU3)
-        ..aI(10, _omitFieldNames ? '' : 'shadowDx', protoName: 'shadowDx', fieldType: $pb.PbFieldType.OU3)
-        ..aI(11, _omitFieldNames ? '' : 'shadowDy', protoName: 'shadowDy', fieldType: $pb.PbFieldType.OU3)
-        ..aI(12, _omitFieldNames ? '' : 'shadowRadius', protoName: 'shadowRadius', fieldType: $pb.PbFieldType.OU3)
+        ..aI(
+          10,
+          _omitFieldNames ? '' : 'shadowDx',
+          protoName: 'shadowDx',
+          fieldType: $pb.PbFieldType.OU3,
+        )
+        ..aI(
+          11,
+          _omitFieldNames ? '' : 'shadowDy',
+          protoName: 'shadowDy',
+          fieldType: $pb.PbFieldType.OU3,
+        )
+        ..aI(
+          12,
+          _omitFieldNames ? '' : 'shadowRadius',
+          protoName: 'shadowRadius',
+          fieldType: $pb.PbFieldType.OU3,
+        )
         ..aOS(13, _omitFieldNames ? '' : 'shadowColor', protoName: 'shadowColor')
         ..aOS(14, _omitFieldNames ? '' : 'strokeColor', protoName: 'strokeColor')
-        ..aI(15, _omitFieldNames ? '' : 'strokeWidth', protoName: 'strokeWidth', fieldType: $pb.PbFieldType.OU3)
+        ..aI(
+          15,
+          _omitFieldNames ? '' : 'strokeWidth',
+          protoName: 'strokeWidth',
+          fieldType: $pb.PbFieldType.OU3,
+        )
         ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -2553,8 +2713,10 @@ class MemberMessage extends $pb.GeneratedMessage {
     $core.List<$core.int> data, [
     $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
   ]) => create()..mergeFromBuffer(data, registry);
-  factory MemberMessage.fromJson($core.String json, [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
-      create()..mergeFromJson(json, registry);
+  factory MemberMessage.fromJson(
+    $core.String json, [
+    $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
+  ]) => create()..mergeFromJson(json, registry);
 
   static final $pb.BuilderInfo _i =
       $pb.BuilderInfo(
@@ -2595,7 +2757,12 @@ class MemberMessage extends $pb.GeneratedMessage {
           protoName: 'enterType',
           defaultOrMaker: $fixnum.Int64.ZERO,
         )
-        ..a<$fixnum.Int64>(10, _omitFieldNames ? '' : 'action', $pb.PbFieldType.OU6, defaultOrMaker: $fixnum.Int64.ZERO)
+        ..a<$fixnum.Int64>(
+          10,
+          _omitFieldNames ? '' : 'action',
+          $pb.PbFieldType.OU6,
+          defaultOrMaker: $fixnum.Int64.ZERO,
+        )
         ..aOS(11, _omitFieldNames ? '' : 'actionDescription', protoName: 'actionDescription')
         ..a<$fixnum.Int64>(
           12,
@@ -2671,7 +2838,8 @@ class MemberMessage extends $pb.GeneratedMessage {
   @$core.override
   MemberMessage createEmptyInstance() => create();
   @$core.pragma('dart2js:noInline')
-  static MemberMessage getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<MemberMessage>(create);
+  static MemberMessage getDefault() =>
+      _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<MemberMessage>(create);
   static MemberMessage? _defaultInstance;
 
   @$pb.TagNumber(1)
@@ -2883,7 +3051,11 @@ class MemberMessage extends $pb.GeneratedMessage {
 }
 
 class PublicAreaCommon extends $pb.GeneratedMessage {
-  factory PublicAreaCommon({Image? userLabel, $fixnum.Int64? userConsumeInRoom, $fixnum.Int64? userSendGiftCntInRoom}) {
+  factory PublicAreaCommon({
+    Image? userLabel,
+    $fixnum.Int64? userConsumeInRoom,
+    $fixnum.Int64? userSendGiftCntInRoom,
+  }) {
     final result = create();
     if (userLabel != null) result.userLabel = userLabel;
     if (userConsumeInRoom != null) result.userConsumeInRoom = userConsumeInRoom;
@@ -2908,7 +3080,12 @@ class PublicAreaCommon extends $pb.GeneratedMessage {
           package: const $pb.PackageName(_omitMessageNames ? '' : 'douyin'),
           createEmptyInstance: create,
         )
-        ..aOM<Image>(1, _omitFieldNames ? '' : 'userLabel', protoName: 'userLabel', subBuilder: Image.create)
+        ..aOM<Image>(
+          1,
+          _omitFieldNames ? '' : 'userLabel',
+          protoName: 'userLabel',
+          subBuilder: Image.create,
+        )
         ..a<$fixnum.Int64>(
           2,
           _omitFieldNames ? '' : 'userConsumeInRoom',
@@ -3011,7 +3188,8 @@ class EffectConfig extends $pb.GeneratedMessage {
     if (textIconOverlay != null) result.textIconOverlay = textIconOverlay;
     if (animatedBadge != null) result.animatedBadge = animatedBadge;
     if (hasSweepLight != null) result.hasSweepLight = hasSweepLight;
-    if (textFlexSettingArrayList != null) result.textFlexSettingArrayList.addAll(textFlexSettingArrayList);
+    if (textFlexSettingArrayList != null)
+      result.textFlexSettingArrayList.addAll(textFlexSettingArrayList);
     if (centerAnimAssetId != null) result.centerAnimAssetId = centerAnimAssetId;
     if (dynamicImage != null) result.dynamicImage = dynamicImage;
     if (extraMap != null) result.extraMap.addEntries(extraMap);
@@ -3030,8 +3208,10 @@ class EffectConfig extends $pb.GeneratedMessage {
     $core.List<$core.int> data, [
     $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
   ]) => create()..mergeFromBuffer(data, registry);
-  factory EffectConfig.fromJson($core.String json, [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
-      create()..mergeFromJson(json, registry);
+  factory EffectConfig.fromJson(
+    $core.String json, [
+    $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
+  ]) => create()..mergeFromJson(json, registry);
 
   static final $pb.BuilderInfo _i =
       $pb.BuilderInfo(
@@ -3039,7 +3219,12 @@ class EffectConfig extends $pb.GeneratedMessage {
           package: const $pb.PackageName(_omitMessageNames ? '' : 'douyin'),
           createEmptyInstance: create,
         )
-        ..a<$fixnum.Int64>(1, _omitFieldNames ? '' : 'type', $pb.PbFieldType.OU6, defaultOrMaker: $fixnum.Int64.ZERO)
+        ..a<$fixnum.Int64>(
+          1,
+          _omitFieldNames ? '' : 'type',
+          $pb.PbFieldType.OU6,
+          defaultOrMaker: $fixnum.Int64.ZERO,
+        )
         ..aOM<Image>(2, _omitFieldNames ? '' : 'icon', subBuilder: Image.create)
         ..a<$fixnum.Int64>(
           3,
@@ -3049,8 +3234,18 @@ class EffectConfig extends $pb.GeneratedMessage {
           defaultOrMaker: $fixnum.Int64.ZERO,
         )
         ..aOM<Text>(4, _omitFieldNames ? '' : 'text', subBuilder: Text.create)
-        ..aOM<Image>(5, _omitFieldNames ? '' : 'textIcon', protoName: 'textIcon', subBuilder: Image.create)
-        ..aI(6, _omitFieldNames ? '' : 'stayTime', protoName: 'stayTime', fieldType: $pb.PbFieldType.OU3)
+        ..aOM<Image>(
+          5,
+          _omitFieldNames ? '' : 'textIcon',
+          protoName: 'textIcon',
+          subBuilder: Image.create,
+        )
+        ..aI(
+          6,
+          _omitFieldNames ? '' : 'stayTime',
+          protoName: 'stayTime',
+          fieldType: $pb.PbFieldType.OU3,
+        )
         ..a<$fixnum.Int64>(
           7,
           _omitFieldNames ? '' : 'animAssetId',
@@ -3071,7 +3266,12 @@ class EffectConfig extends $pb.GeneratedMessage {
           protoName: 'textIconOverlay',
           subBuilder: Image.create,
         )
-        ..aOM<Image>(11, _omitFieldNames ? '' : 'animatedBadge', protoName: 'animatedBadge', subBuilder: Image.create)
+        ..aOM<Image>(
+          11,
+          _omitFieldNames ? '' : 'animatedBadge',
+          protoName: 'animatedBadge',
+          subBuilder: Image.create,
+        )
         ..aOB(12, _omitFieldNames ? '' : 'hasSweepLight', protoName: 'hasSweepLight')
         ..p<$fixnum.Int64>(
           13,
@@ -3086,7 +3286,12 @@ class EffectConfig extends $pb.GeneratedMessage {
           protoName: 'centerAnimAssetId',
           defaultOrMaker: $fixnum.Int64.ZERO,
         )
-        ..aOM<Image>(15, _omitFieldNames ? '' : 'dynamicImage', protoName: 'dynamicImage', subBuilder: Image.create)
+        ..aOM<Image>(
+          15,
+          _omitFieldNames ? '' : 'dynamicImage',
+          protoName: 'dynamicImage',
+          subBuilder: Image.create,
+        )
         ..m<$core.String, $core.String>(
           16,
           _omitFieldNames ? '' : 'extraMap',
@@ -3146,7 +3351,8 @@ class EffectConfig extends $pb.GeneratedMessage {
   @$core.override
   EffectConfig createEmptyInstance() => create();
   @$core.pragma('dart2js:noInline')
-  static EffectConfig getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<EffectConfig>(create);
+  static EffectConfig getDefault() =>
+      _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<EffectConfig>(create);
   static EffectConfig? _defaultInstance;
 
   @$pb.TagNumber(1)
@@ -3361,10 +3567,14 @@ class Text extends $pb.GeneratedMessage {
 
   Text._();
 
-  factory Text.fromBuffer($core.List<$core.int> data, [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
-      create()..mergeFromBuffer(data, registry);
-  factory Text.fromJson($core.String json, [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
-      create()..mergeFromJson(json, registry);
+  factory Text.fromBuffer(
+    $core.List<$core.int> data, [
+    $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
+  ]) => create()..mergeFromBuffer(data, registry);
+  factory Text.fromJson(
+    $core.String json, [
+    $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
+  ]) => create()..mergeFromJson(json, registry);
 
   static final $pb.BuilderInfo _i =
       $pb.BuilderInfo(
@@ -3380,13 +3590,19 @@ class Text extends $pb.GeneratedMessage {
           protoName: 'defaultFormat',
           subBuilder: TextFormat.create,
         )
-        ..pPM<TextPiece>(4, _omitFieldNames ? '' : 'piecesList', protoName: 'piecesList', subBuilder: TextPiece.create)
+        ..pPM<TextPiece>(
+          4,
+          _omitFieldNames ? '' : 'piecesList',
+          protoName: 'piecesList',
+          subBuilder: TextPiece.create,
+        )
         ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   Text clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  Text copyWith(void Function(Text) updates) => super.copyWith((message) => updates(message as Text)) as Text;
+  Text copyWith(void Function(Text) updates) =>
+      super.copyWith((message) => updates(message as Text)) as Text;
 
   @$core.override
   $pb.BuilderInfo get info_ => _i;
@@ -3461,8 +3677,10 @@ class TextPiece extends $pb.GeneratedMessage {
     $core.List<$core.int> data, [
     $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
   ]) => create()..mergeFromBuffer(data, registry);
-  factory TextPiece.fromJson($core.String json, [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
-      create()..mergeFromJson(json, registry);
+  factory TextPiece.fromJson(
+    $core.String json, [
+    $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
+  ]) => create()..mergeFromJson(json, registry);
 
   static final $pb.BuilderInfo _i =
       $pb.BuilderInfo(
@@ -3519,7 +3737,8 @@ class TextPiece extends $pb.GeneratedMessage {
   @$core.override
   TextPiece createEmptyInstance() => create();
   @$core.pragma('dart2js:noInline')
-  static TextPiece getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<TextPiece>(create);
+  static TextPiece getDefault() =>
+      _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<TextPiece>(create);
   static TextPiece? _defaultInstance;
 
   @$pb.TagNumber(1)
@@ -3621,8 +3840,10 @@ class TextPieceImage extends $pb.GeneratedMessage {
     $core.List<$core.int> data, [
     $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
   ]) => create()..mergeFromBuffer(data, registry);
-  factory TextPieceImage.fromJson($core.String json, [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
-      create()..mergeFromJson(json, registry);
+  factory TextPieceImage.fromJson(
+    $core.String json, [
+    $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
+  ]) => create()..mergeFromJson(json, registry);
 
   static final $pb.BuilderInfo _i =
       $pb.BuilderInfo(
@@ -3631,7 +3852,12 @@ class TextPieceImage extends $pb.GeneratedMessage {
           createEmptyInstance: create,
         )
         ..aOM<Image>(1, _omitFieldNames ? '' : 'image', subBuilder: Image.create)
-        ..aD(2, _omitFieldNames ? '' : 'scalingRate', protoName: 'scalingRate', fieldType: $pb.PbFieldType.OF)
+        ..aD(
+          2,
+          _omitFieldNames ? '' : 'scalingRate',
+          protoName: 'scalingRate',
+          fieldType: $pb.PbFieldType.OF,
+        )
         ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -3648,7 +3874,8 @@ class TextPieceImage extends $pb.GeneratedMessage {
   @$core.override
   TextPieceImage createEmptyInstance() => create();
   @$core.pragma('dart2js:noInline')
-  static TextPieceImage getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<TextPieceImage>(create);
+  static TextPieceImage getDefault() =>
+      _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<TextPieceImage>(create);
   static TextPieceImage? _defaultInstance;
 
   @$pb.TagNumber(1)
@@ -3751,8 +3978,10 @@ class TextPieceHeart extends $pb.GeneratedMessage {
     $core.List<$core.int> data, [
     $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
   ]) => create()..mergeFromBuffer(data, registry);
-  factory TextPieceHeart.fromJson($core.String json, [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
-      create()..mergeFromJson(json, registry);
+  factory TextPieceHeart.fromJson(
+    $core.String json, [
+    $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
+  ]) => create()..mergeFromJson(json, registry);
 
   static final $pb.BuilderInfo _i =
       $pb.BuilderInfo(
@@ -3777,7 +4006,8 @@ class TextPieceHeart extends $pb.GeneratedMessage {
   @$core.override
   TextPieceHeart createEmptyInstance() => create();
   @$core.pragma('dart2js:noInline')
-  static TextPieceHeart getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<TextPieceHeart>(create);
+  static TextPieceHeart getDefault() =>
+      _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<TextPieceHeart>(create);
   static TextPieceHeart? _defaultInstance;
 
   @$pb.TagNumber(1)
@@ -3804,8 +4034,10 @@ class TextPieceGift extends $pb.GeneratedMessage {
     $core.List<$core.int> data, [
     $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
   ]) => create()..mergeFromBuffer(data, registry);
-  factory TextPieceGift.fromJson($core.String json, [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
-      create()..mergeFromJson(json, registry);
+  factory TextPieceGift.fromJson(
+    $core.String json, [
+    $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
+  ]) => create()..mergeFromJson(json, registry);
 
   static final $pb.BuilderInfo _i =
       $pb.BuilderInfo(
@@ -3820,7 +4052,12 @@ class TextPieceGift extends $pb.GeneratedMessage {
           protoName: 'giftId',
           defaultOrMaker: $fixnum.Int64.ZERO,
         )
-        ..aOM<PatternRef>(2, _omitFieldNames ? '' : 'nameRef', protoName: 'nameRef', subBuilder: PatternRef.create)
+        ..aOM<PatternRef>(
+          2,
+          _omitFieldNames ? '' : 'nameRef',
+          protoName: 'nameRef',
+          subBuilder: PatternRef.create,
+        )
         ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -3837,7 +4074,8 @@ class TextPieceGift extends $pb.GeneratedMessage {
   @$core.override
   TextPieceGift createEmptyInstance() => create();
   @$core.pragma('dart2js:noInline')
-  static TextPieceGift getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<TextPieceGift>(create);
+  static TextPieceGift getDefault() =>
+      _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<TextPieceGift>(create);
   static TextPieceGift? _defaultInstance;
 
   @$pb.TagNumber(1)
@@ -3875,8 +4113,10 @@ class PatternRef extends $pb.GeneratedMessage {
     $core.List<$core.int> data, [
     $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
   ]) => create()..mergeFromBuffer(data, registry);
-  factory PatternRef.fromJson($core.String json, [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
-      create()..mergeFromJson(json, registry);
+  factory PatternRef.fromJson(
+    $core.String json, [
+    $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
+  ]) => create()..mergeFromJson(json, registry);
 
   static final $pb.BuilderInfo _i =
       $pb.BuilderInfo(
@@ -3902,7 +4142,8 @@ class PatternRef extends $pb.GeneratedMessage {
   @$core.override
   PatternRef createEmptyInstance() => create();
   @$core.pragma('dart2js:noInline')
-  static PatternRef getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<PatternRef>(create);
+  static PatternRef getDefault() =>
+      _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<PatternRef>(create);
   static PatternRef? _defaultInstance;
 
   @$pb.TagNumber(1)
@@ -3938,8 +4179,10 @@ class TextPieceUser extends $pb.GeneratedMessage {
     $core.List<$core.int> data, [
     $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
   ]) => create()..mergeFromBuffer(data, registry);
-  factory TextPieceUser.fromJson($core.String json, [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
-      create()..mergeFromJson(json, registry);
+  factory TextPieceUser.fromJson(
+    $core.String json, [
+    $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
+  ]) => create()..mergeFromJson(json, registry);
 
   static final $pb.BuilderInfo _i =
       $pb.BuilderInfo(
@@ -3965,7 +4208,8 @@ class TextPieceUser extends $pb.GeneratedMessage {
   @$core.override
   TextPieceUser createEmptyInstance() => create();
   @$core.pragma('dart2js:noInline')
-  static TextPieceUser getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<TextPieceUser>(create);
+  static TextPieceUser getDefault() =>
+      _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<TextPieceUser>(create);
   static TextPieceUser? _defaultInstance;
 
   @$pb.TagNumber(1)
@@ -4018,8 +4262,10 @@ class TextFormat extends $pb.GeneratedMessage {
     $core.List<$core.int> data, [
     $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
   ]) => create()..mergeFromBuffer(data, registry);
-  factory TextFormat.fromJson($core.String json, [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
-      create()..mergeFromJson(json, registry);
+  factory TextFormat.fromJson(
+    $core.String json, [
+    $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
+  ]) => create()..mergeFromJson(json, registry);
 
   static final $pb.BuilderInfo _i =
       $pb.BuilderInfo(
@@ -4031,8 +4277,18 @@ class TextFormat extends $pb.GeneratedMessage {
         ..aOB(2, _omitFieldNames ? '' : 'bold')
         ..aOB(3, _omitFieldNames ? '' : 'italic')
         ..aI(4, _omitFieldNames ? '' : 'weight', fieldType: $pb.PbFieldType.OU3)
-        ..aI(5, _omitFieldNames ? '' : 'italicAngle', protoName: 'italicAngle', fieldType: $pb.PbFieldType.OU3)
-        ..aI(6, _omitFieldNames ? '' : 'fontSize', protoName: 'fontSize', fieldType: $pb.PbFieldType.OU3)
+        ..aI(
+          5,
+          _omitFieldNames ? '' : 'italicAngle',
+          protoName: 'italicAngle',
+          fieldType: $pb.PbFieldType.OU3,
+        )
+        ..aI(
+          6,
+          _omitFieldNames ? '' : 'fontSize',
+          protoName: 'fontSize',
+          fieldType: $pb.PbFieldType.OU3,
+        )
         ..aOB(7, _omitFieldNames ? '' : 'useHeighLightColor', protoName: 'useHeighLightColor')
         ..aOB(8, _omitFieldNames ? '' : 'useRemoteClor', protoName: 'useRemoteClor')
         ..hasRequiredFields = false;
@@ -4051,7 +4307,8 @@ class TextFormat extends $pb.GeneratedMessage {
   @$core.override
   TextFormat createEmptyInstance() => create();
   @$core.pragma('dart2js:noInline')
-  static TextFormat getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<TextFormat>(create);
+  static TextFormat getDefault() =>
+      _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<TextFormat>(create);
   static TextFormat? _defaultInstance;
 
   @$pb.TagNumber(1)
@@ -4163,8 +4420,10 @@ class LikeMessage extends $pb.GeneratedMessage {
     $core.List<$core.int> data, [
     $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
   ]) => create()..mergeFromBuffer(data, registry);
-  factory LikeMessage.fromJson($core.String json, [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
-      create()..mergeFromJson(json, registry);
+  factory LikeMessage.fromJson(
+    $core.String json, [
+    $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
+  ]) => create()..mergeFromJson(json, registry);
 
   static final $pb.BuilderInfo _i =
       $pb.BuilderInfo(
@@ -4173,9 +4432,24 @@ class LikeMessage extends $pb.GeneratedMessage {
           createEmptyInstance: create,
         )
         ..aOM<Common>(1, _omitFieldNames ? '' : 'common', subBuilder: Common.create)
-        ..a<$fixnum.Int64>(2, _omitFieldNames ? '' : 'count', $pb.PbFieldType.OU6, defaultOrMaker: $fixnum.Int64.ZERO)
-        ..a<$fixnum.Int64>(3, _omitFieldNames ? '' : 'total', $pb.PbFieldType.OU6, defaultOrMaker: $fixnum.Int64.ZERO)
-        ..a<$fixnum.Int64>(4, _omitFieldNames ? '' : 'color', $pb.PbFieldType.OU6, defaultOrMaker: $fixnum.Int64.ZERO)
+        ..a<$fixnum.Int64>(
+          2,
+          _omitFieldNames ? '' : 'count',
+          $pb.PbFieldType.OU6,
+          defaultOrMaker: $fixnum.Int64.ZERO,
+        )
+        ..a<$fixnum.Int64>(
+          3,
+          _omitFieldNames ? '' : 'total',
+          $pb.PbFieldType.OU6,
+          defaultOrMaker: $fixnum.Int64.ZERO,
+        )
+        ..a<$fixnum.Int64>(
+          4,
+          _omitFieldNames ? '' : 'color',
+          $pb.PbFieldType.OU6,
+          defaultOrMaker: $fixnum.Int64.ZERO,
+        )
         ..aOM<User>(5, _omitFieldNames ? '' : 'user', subBuilder: User.create)
         ..aOS(6, _omitFieldNames ? '' : 'icon')
         ..aOM<DoubleLikeDetail>(
@@ -4220,7 +4494,8 @@ class LikeMessage extends $pb.GeneratedMessage {
   @$core.override
   LikeMessage createEmptyInstance() => create();
   @$core.pragma('dart2js:noInline')
-  static LikeMessage getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<LikeMessage>(create);
+  static LikeMessage getDefault() =>
+      _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<LikeMessage>(create);
   static LikeMessage? _defaultInstance;
 
   @$pb.TagNumber(1)
@@ -4360,8 +4635,10 @@ class SocialMessage extends $pb.GeneratedMessage {
     $core.List<$core.int> data, [
     $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
   ]) => create()..mergeFromBuffer(data, registry);
-  factory SocialMessage.fromJson($core.String json, [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
-      create()..mergeFromJson(json, registry);
+  factory SocialMessage.fromJson(
+    $core.String json, [
+    $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
+  ]) => create()..mergeFromJson(json, registry);
 
   static final $pb.BuilderInfo _i =
       $pb.BuilderInfo(
@@ -4378,7 +4655,12 @@ class SocialMessage extends $pb.GeneratedMessage {
           protoName: 'shareType',
           defaultOrMaker: $fixnum.Int64.ZERO,
         )
-        ..a<$fixnum.Int64>(4, _omitFieldNames ? '' : 'action', $pb.PbFieldType.OU6, defaultOrMaker: $fixnum.Int64.ZERO)
+        ..a<$fixnum.Int64>(
+          4,
+          _omitFieldNames ? '' : 'action',
+          $pb.PbFieldType.OU6,
+          defaultOrMaker: $fixnum.Int64.ZERO,
+        )
         ..aOS(5, _omitFieldNames ? '' : 'shareTarget', protoName: 'shareTarget')
         ..a<$fixnum.Int64>(
           6,
@@ -4409,7 +4691,8 @@ class SocialMessage extends $pb.GeneratedMessage {
   @$core.override
   SocialMessage createEmptyInstance() => create();
   @$core.pragma('dart2js:noInline')
-  static SocialMessage getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<SocialMessage>(create);
+  static SocialMessage getDefault() =>
+      _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<SocialMessage>(create);
   static SocialMessage? _defaultInstance;
 
   @$pb.TagNumber(1)
@@ -4503,8 +4786,10 @@ class PicoDisplayInfo extends $pb.GeneratedMessage {
     $core.List<$core.int> data, [
     $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
   ]) => create()..mergeFromBuffer(data, registry);
-  factory PicoDisplayInfo.fromJson($core.String json, [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
-      create()..mergeFromJson(json, registry);
+  factory PicoDisplayInfo.fromJson(
+    $core.String json, [
+    $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
+  ]) => create()..mergeFromJson(json, registry);
 
   static final $pb.BuilderInfo _i =
       $pb.BuilderInfo(
@@ -4520,7 +4805,12 @@ class PicoDisplayInfo extends $pb.GeneratedMessage {
           defaultOrMaker: $fixnum.Int64.ZERO,
         )
         ..aOS(2, _omitFieldNames ? '' : 'emoji')
-        ..aOM<Image>(3, _omitFieldNames ? '' : 'emojiIcon', protoName: 'emojiIcon', subBuilder: Image.create)
+        ..aOM<Image>(
+          3,
+          _omitFieldNames ? '' : 'emojiIcon',
+          protoName: 'emojiIcon',
+          subBuilder: Image.create,
+        )
         ..aOS(4, _omitFieldNames ? '' : 'emojiText', protoName: 'emojiText')
         ..hasRequiredFields = false;
 
@@ -4582,7 +4872,12 @@ class PicoDisplayInfo extends $pb.GeneratedMessage {
 }
 
 class DoubleLikeDetail extends $pb.GeneratedMessage {
-  factory DoubleLikeDetail({$core.bool? doubleFlag, $core.int? seqId, $core.int? renewalsNum, $core.int? triggersNum}) {
+  factory DoubleLikeDetail({
+    $core.bool? doubleFlag,
+    $core.int? seqId,
+    $core.int? renewalsNum,
+    $core.int? triggersNum,
+  }) {
     final result = create();
     if (doubleFlag != null) result.doubleFlag = doubleFlag;
     if (seqId != null) result.seqId = seqId;
@@ -4610,8 +4905,18 @@ class DoubleLikeDetail extends $pb.GeneratedMessage {
         )
         ..aOB(1, _omitFieldNames ? '' : 'doubleFlag', protoName: 'doubleFlag')
         ..aI(2, _omitFieldNames ? '' : 'seqId', protoName: 'seqId', fieldType: $pb.PbFieldType.OU3)
-        ..aI(3, _omitFieldNames ? '' : 'renewalsNum', protoName: 'renewalsNum', fieldType: $pb.PbFieldType.OU3)
-        ..aI(4, _omitFieldNames ? '' : 'triggersNum', protoName: 'triggersNum', fieldType: $pb.PbFieldType.OU3)
+        ..aI(
+          3,
+          _omitFieldNames ? '' : 'renewalsNum',
+          protoName: 'renewalsNum',
+          fieldType: $pb.PbFieldType.OU3,
+        )
+        ..aI(
+          4,
+          _omitFieldNames ? '' : 'triggersNum',
+          protoName: 'triggersNum',
+          fieldType: $pb.PbFieldType.OU3,
+        )
         ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -4777,7 +5082,12 @@ class EpisodeChatMessage extends $pb.GeneratedMessage {
         ..aOM<User>(2, _omitFieldNames ? '' : 'user', subBuilder: User.create)
         ..aOS(3, _omitFieldNames ? '' : 'content')
         ..aOB(4, _omitFieldNames ? '' : 'visibleToSende', protoName: 'visibleToSende')
-        ..aOM<Image>(7, _omitFieldNames ? '' : 'giftImage', protoName: 'giftImage', subBuilder: Image.create)
+        ..aOM<Image>(
+          7,
+          _omitFieldNames ? '' : 'giftImage',
+          protoName: 'giftImage',
+          subBuilder: Image.create,
+        )
         ..a<$fixnum.Int64>(
           8,
           _omitFieldNames ? '' : 'agreeMsgId',
@@ -4906,15 +5216,26 @@ class MatchAgainstScoreMessage extends $pb.GeneratedMessage {
         )
         ..aOM<Common>(1, _omitFieldNames ? '' : 'common', subBuilder: Common.create)
         ..aOM<Against>(2, _omitFieldNames ? '' : 'against', subBuilder: Against.create)
-        ..aI(3, _omitFieldNames ? '' : 'matchStatus', protoName: 'matchStatus', fieldType: $pb.PbFieldType.OU3)
-        ..aI(4, _omitFieldNames ? '' : 'displayStatus', protoName: 'displayStatus', fieldType: $pb.PbFieldType.OU3)
+        ..aI(
+          3,
+          _omitFieldNames ? '' : 'matchStatus',
+          protoName: 'matchStatus',
+          fieldType: $pb.PbFieldType.OU3,
+        )
+        ..aI(
+          4,
+          _omitFieldNames ? '' : 'displayStatus',
+          protoName: 'displayStatus',
+          fieldType: $pb.PbFieldType.OU3,
+        )
         ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   MatchAgainstScoreMessage clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   MatchAgainstScoreMessage copyWith(void Function(MatchAgainstScoreMessage) updates) =>
-      super.copyWith((message) => updates(message as MatchAgainstScoreMessage)) as MatchAgainstScoreMessage;
+      super.copyWith((message) => updates(message as MatchAgainstScoreMessage))
+          as MatchAgainstScoreMessage;
 
   @$core.override
   $pb.BuilderInfo get info_ => _i;
@@ -5016,8 +5337,10 @@ class Against extends $pb.GeneratedMessage {
     $core.List<$core.int> data, [
     $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
   ]) => create()..mergeFromBuffer(data, registry);
-  factory Against.fromJson($core.String json, [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
-      create()..mergeFromJson(json, registry);
+  factory Against.fromJson(
+    $core.String json, [
+    $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
+  ]) => create()..mergeFromJson(json, registry);
 
   static final $pb.BuilderInfo _i =
       $pb.BuilderInfo(
@@ -5026,10 +5349,20 @@ class Against extends $pb.GeneratedMessage {
           createEmptyInstance: create,
         )
         ..aOS(1, _omitFieldNames ? '' : 'leftName', protoName: 'leftName')
-        ..aOM<Image>(2, _omitFieldNames ? '' : 'leftLogo', protoName: 'leftLogo', subBuilder: Image.create)
+        ..aOM<Image>(
+          2,
+          _omitFieldNames ? '' : 'leftLogo',
+          protoName: 'leftLogo',
+          subBuilder: Image.create,
+        )
         ..aOS(3, _omitFieldNames ? '' : 'leftGoal', protoName: 'leftGoal')
         ..aOS(6, _omitFieldNames ? '' : 'rightName', protoName: 'rightName')
-        ..aOM<Image>(7, _omitFieldNames ? '' : 'rightLogo', protoName: 'rightLogo', subBuilder: Image.create)
+        ..aOM<Image>(
+          7,
+          _omitFieldNames ? '' : 'rightLogo',
+          protoName: 'rightLogo',
+          subBuilder: Image.create,
+        )
         ..aOS(8, _omitFieldNames ? '' : 'rightGoal', protoName: 'rightGoal')
         ..a<$fixnum.Int64>(
           11,
@@ -5064,7 +5397,12 @@ class Against extends $pb.GeneratedMessage {
           protoName: 'diffSei2absSecond',
           defaultOrMaker: $fixnum.Int64.ZERO,
         )
-        ..aI(16, _omitFieldNames ? '' : 'finalGoalStage', protoName: 'finalGoalStage', fieldType: $pb.PbFieldType.OU3)
+        ..aI(
+          16,
+          _omitFieldNames ? '' : 'finalGoalStage',
+          protoName: 'finalGoalStage',
+          fieldType: $pb.PbFieldType.OU3,
+        )
         ..aI(
           17,
           _omitFieldNames ? '' : 'currentGoalStage',
@@ -5113,7 +5451,8 @@ class Against extends $pb.GeneratedMessage {
   @$core.override
   Against createEmptyInstance() => create();
   @$core.pragma('dart2js:noInline')
-  static Against getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<Against>(create);
+  static Against getDefault() =>
+      _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<Against>(create);
   static Against? _defaultInstance;
 
   @$pb.TagNumber(1)
@@ -5333,8 +5672,10 @@ class Common extends $pb.GeneratedMessage {
     $core.List<$core.int> data, [
     $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
   ]) => create()..mergeFromBuffer(data, registry);
-  factory Common.fromJson($core.String json, [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
-      create()..mergeFromJson(json, registry);
+  factory Common.fromJson(
+    $core.String json, [
+    $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
+  ]) => create()..mergeFromJson(json, registry);
 
   static final $pb.BuilderInfo _i =
       $pb.BuilderInfo(
@@ -5440,7 +5781,8 @@ class Common extends $pb.GeneratedMessage {
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   Common clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  Common copyWith(void Function(Common) updates) => super.copyWith((message) => updates(message as Common)) as Common;
+  Common copyWith(void Function(Common) updates) =>
+      super.copyWith((message) => updates(message as Common)) as Common;
 
   @$core.override
   $pb.BuilderInfo get info_ => _i;
@@ -5450,7 +5792,8 @@ class Common extends $pb.GeneratedMessage {
   @$core.override
   Common createEmptyInstance() => create();
   @$core.pragma('dart2js:noInline')
-  static Common getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<Common>(create);
+  static Common getDefault() =>
+      _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<Common>(create);
   static Common? _defaultInstance;
 
   @$pb.TagNumber(1)
@@ -5718,10 +6061,14 @@ class User extends $pb.GeneratedMessage {
 
   User._();
 
-  factory User.fromBuffer($core.List<$core.int> data, [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
-      create()..mergeFromBuffer(data, registry);
-  factory User.fromJson($core.String json, [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
-      create()..mergeFromJson(json, registry);
+  factory User.fromBuffer(
+    $core.List<$core.int> data, [
+    $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
+  ]) => create()..mergeFromBuffer(data, registry);
+  factory User.fromJson(
+    $core.String json, [
+    $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
+  ]) => create()..mergeFromJson(json, registry);
 
   static final $pb.BuilderInfo _i =
       $pb.BuilderInfo(
@@ -5729,7 +6076,12 @@ class User extends $pb.GeneratedMessage {
           package: const $pb.PackageName(_omitMessageNames ? '' : 'douyin'),
           createEmptyInstance: create,
         )
-        ..a<$fixnum.Int64>(1, _omitFieldNames ? '' : 'id', $pb.PbFieldType.OU6, defaultOrMaker: $fixnum.Int64.ZERO)
+        ..a<$fixnum.Int64>(
+          1,
+          _omitFieldNames ? '' : 'id',
+          $pb.PbFieldType.OU6,
+          defaultOrMaker: $fixnum.Int64.ZERO,
+        )
         ..a<$fixnum.Int64>(
           2,
           _omitFieldNames ? '' : 'shortId',
@@ -5749,11 +6101,31 @@ class User extends $pb.GeneratedMessage {
           defaultOrMaker: $fixnum.Int64.ZERO,
         )
         ..aOS(8, _omitFieldNames ? '' : 'Telephone', protoName: 'Telephone')
-        ..aOM<Image>(9, _omitFieldNames ? '' : 'AvatarThumb', protoName: 'AvatarThumb', subBuilder: Image.create)
-        ..aOM<Image>(10, _omitFieldNames ? '' : 'AvatarMedium', protoName: 'AvatarMedium', subBuilder: Image.create)
-        ..aOM<Image>(11, _omitFieldNames ? '' : 'AvatarLarge', protoName: 'AvatarLarge', subBuilder: Image.create)
+        ..aOM<Image>(
+          9,
+          _omitFieldNames ? '' : 'AvatarThumb',
+          protoName: 'AvatarThumb',
+          subBuilder: Image.create,
+        )
+        ..aOM<Image>(
+          10,
+          _omitFieldNames ? '' : 'AvatarMedium',
+          protoName: 'AvatarMedium',
+          subBuilder: Image.create,
+        )
+        ..aOM<Image>(
+          11,
+          _omitFieldNames ? '' : 'AvatarLarge',
+          protoName: 'AvatarLarge',
+          subBuilder: Image.create,
+        )
         ..aOB(12, _omitFieldNames ? '' : 'Verified', protoName: 'Verified')
-        ..aI(13, _omitFieldNames ? '' : 'Experience', protoName: 'Experience', fieldType: $pb.PbFieldType.OU3)
+        ..aI(
+          13,
+          _omitFieldNames ? '' : 'Experience',
+          protoName: 'Experience',
+          fieldType: $pb.PbFieldType.OU3,
+        )
         ..aOS(14, _omitFieldNames ? '' : 'city')
         ..aI(15, _omitFieldNames ? '' : 'Status', protoName: 'Status')
         ..a<$fixnum.Int64>(
@@ -5770,7 +6142,12 @@ class User extends $pb.GeneratedMessage {
           protoName: 'ModifyTime',
           defaultOrMaker: $fixnum.Int64.ZERO,
         )
-        ..aI(18, _omitFieldNames ? '' : 'Secret', protoName: 'Secret', fieldType: $pb.PbFieldType.OU3)
+        ..aI(
+          18,
+          _omitFieldNames ? '' : 'Secret',
+          protoName: 'Secret',
+          fieldType: $pb.PbFieldType.OU3,
+        )
         ..aOS(19, _omitFieldNames ? '' : 'ShareQrcodeUri', protoName: 'ShareQrcodeUri')
         ..aI(
           20,
@@ -5778,7 +6155,12 @@ class User extends $pb.GeneratedMessage {
           protoName: 'IncomeSharePercent',
           fieldType: $pb.PbFieldType.OU3,
         )
-        ..pPM<Image>(21, _omitFieldNames ? '' : 'BadgeImageList', protoName: 'BadgeImageList', subBuilder: Image.create)
+        ..pPM<Image>(
+          21,
+          _omitFieldNames ? '' : 'BadgeImageList',
+          protoName: 'BadgeImageList',
+          subBuilder: Image.create,
+        )
         ..aOM<FollowInfo>(
           22,
           _omitFieldNames ? '' : 'FollowInfo',
@@ -5786,8 +6168,18 @@ class User extends $pb.GeneratedMessage {
           subBuilder: FollowInfo.create,
         )
         ..aOS(26, _omitFieldNames ? '' : 'SpecialId', protoName: 'SpecialId')
-        ..aOM<Image>(27, _omitFieldNames ? '' : 'AvatarBorder', protoName: 'AvatarBorder', subBuilder: Image.create)
-        ..aOM<Image>(28, _omitFieldNames ? '' : 'Medal', protoName: 'Medal', subBuilder: Image.create)
+        ..aOM<Image>(
+          27,
+          _omitFieldNames ? '' : 'AvatarBorder',
+          protoName: 'AvatarBorder',
+          subBuilder: Image.create,
+        )
+        ..aOM<Image>(
+          28,
+          _omitFieldNames ? '' : 'Medal',
+          protoName: 'Medal',
+          subBuilder: Image.create,
+        )
         ..pPM<Image>(
           29,
           _omitFieldNames ? '' : 'RealTimeIconsList',
@@ -5804,13 +6196,19 @@ class User extends $pb.GeneratedMessage {
           defaultOrMaker: $fixnum.Int64.ZERO,
         )
         ..aOS(1028, _omitFieldNames ? '' : 'idStr', protoName: 'idStr')
-        ..aI(1045, _omitFieldNames ? '' : 'ageRange', protoName: 'ageRange', fieldType: $pb.PbFieldType.OU3)
+        ..aI(
+          1045,
+          _omitFieldNames ? '' : 'ageRange',
+          protoName: 'ageRange',
+          fieldType: $pb.PbFieldType.OU3,
+        )
         ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   User clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  User copyWith(void Function(User) updates) => super.copyWith((message) => updates(message as User)) as User;
+  User copyWith(void Function(User) updates) =>
+      super.copyWith((message) => updates(message as User)) as User;
 
   @$core.override
   $pb.BuilderInfo get info_ => _i;
@@ -6133,8 +6531,10 @@ class FollowInfo extends $pb.GeneratedMessage {
     $core.List<$core.int> data, [
     $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
   ]) => create()..mergeFromBuffer(data, registry);
-  factory FollowInfo.fromJson($core.String json, [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
-      create()..mergeFromJson(json, registry);
+  factory FollowInfo.fromJson(
+    $core.String json, [
+    $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
+  ]) => create()..mergeFromJson(json, registry);
 
   static final $pb.BuilderInfo _i =
       $pb.BuilderInfo(
@@ -6189,7 +6589,8 @@ class FollowInfo extends $pb.GeneratedMessage {
   @$core.override
   FollowInfo createEmptyInstance() => create();
   @$core.pragma('dart2js:noInline')
-  static FollowInfo getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<FollowInfo>(create);
+  static FollowInfo getDefault() =>
+      _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<FollowInfo>(create);
   static FollowInfo? _defaultInstance;
 
   @$pb.TagNumber(1)
@@ -6291,8 +6692,10 @@ class Image extends $pb.GeneratedMessage {
     $core.List<$core.int> data, [
     $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
   ]) => create()..mergeFromBuffer(data, registry);
-  factory Image.fromJson($core.String json, [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
-      create()..mergeFromJson(json, registry);
+  factory Image.fromJson(
+    $core.String json, [
+    $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
+  ]) => create()..mergeFromJson(json, registry);
 
   static final $pb.BuilderInfo _i =
       $pb.BuilderInfo(
@@ -6302,10 +6705,25 @@ class Image extends $pb.GeneratedMessage {
         )
         ..pPS(1, _omitFieldNames ? '' : 'urlListList', protoName: 'urlListList')
         ..aOS(2, _omitFieldNames ? '' : 'uri')
-        ..a<$fixnum.Int64>(3, _omitFieldNames ? '' : 'height', $pb.PbFieldType.OU6, defaultOrMaker: $fixnum.Int64.ZERO)
-        ..a<$fixnum.Int64>(4, _omitFieldNames ? '' : 'width', $pb.PbFieldType.OU6, defaultOrMaker: $fixnum.Int64.ZERO)
+        ..a<$fixnum.Int64>(
+          3,
+          _omitFieldNames ? '' : 'height',
+          $pb.PbFieldType.OU6,
+          defaultOrMaker: $fixnum.Int64.ZERO,
+        )
+        ..a<$fixnum.Int64>(
+          4,
+          _omitFieldNames ? '' : 'width',
+          $pb.PbFieldType.OU6,
+          defaultOrMaker: $fixnum.Int64.ZERO,
+        )
         ..aOS(5, _omitFieldNames ? '' : 'avgColor', protoName: 'avgColor')
-        ..aI(6, _omitFieldNames ? '' : 'imageType', protoName: 'imageType', fieldType: $pb.PbFieldType.OU3)
+        ..aI(
+          6,
+          _omitFieldNames ? '' : 'imageType',
+          protoName: 'imageType',
+          fieldType: $pb.PbFieldType.OU3,
+        )
         ..aOS(7, _omitFieldNames ? '' : 'openWebUrl', protoName: 'openWebUrl')
         ..aOM<ImageContent>(8, _omitFieldNames ? '' : 'content', subBuilder: ImageContent.create)
         ..aOB(9, _omitFieldNames ? '' : 'isAnimated', protoName: 'isAnimated')
@@ -6326,7 +6744,8 @@ class Image extends $pb.GeneratedMessage {
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   Image clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  Image copyWith(void Function(Image) updates) => super.copyWith((message) => updates(message as Image)) as Image;
+  Image copyWith(void Function(Image) updates) =>
+      super.copyWith((message) => updates(message as Image)) as Image;
 
   @$core.override
   $pb.BuilderInfo get info_ => _i;
@@ -6336,7 +6755,8 @@ class Image extends $pb.GeneratedMessage {
   @$core.override
   Image createEmptyInstance() => create();
   @$core.pragma('dart2js:noInline')
-  static Image getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<Image>(create);
+  static Image getDefault() =>
+      _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<Image>(create);
   static Image? _defaultInstance;
 
   @$pb.TagNumber(1)
@@ -6509,8 +6929,10 @@ class ImageContent extends $pb.GeneratedMessage {
     $core.List<$core.int> data, [
     $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
   ]) => create()..mergeFromBuffer(data, registry);
-  factory ImageContent.fromJson($core.String json, [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
-      create()..mergeFromJson(json, registry);
+  factory ImageContent.fromJson(
+    $core.String json, [
+    $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
+  ]) => create()..mergeFromJson(json, registry);
 
   static final $pb.BuilderInfo _i =
       $pb.BuilderInfo(
@@ -6520,7 +6942,12 @@ class ImageContent extends $pb.GeneratedMessage {
         )
         ..aOS(1, _omitFieldNames ? '' : 'name')
         ..aOS(2, _omitFieldNames ? '' : 'fontColor', protoName: 'fontColor')
-        ..a<$fixnum.Int64>(3, _omitFieldNames ? '' : 'level', $pb.PbFieldType.OU6, defaultOrMaker: $fixnum.Int64.ZERO)
+        ..a<$fixnum.Int64>(
+          3,
+          _omitFieldNames ? '' : 'level',
+          $pb.PbFieldType.OU6,
+          defaultOrMaker: $fixnum.Int64.ZERO,
+        )
         ..aOS(4, _omitFieldNames ? '' : 'alternativeText', protoName: 'alternativeText')
         ..hasRequiredFields = false;
 
@@ -6538,7 +6965,8 @@ class ImageContent extends $pb.GeneratedMessage {
   @$core.override
   ImageContent createEmptyInstance() => create();
   @$core.pragma('dart2js:noInline')
-  static ImageContent getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<ImageContent>(create);
+  static ImageContent getDefault() =>
+      _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<ImageContent>(create);
   static ImageContent? _defaultInstance;
 
   @$pb.TagNumber(1)
@@ -6607,8 +7035,10 @@ class PushFrame extends $pb.GeneratedMessage {
     $core.List<$core.int> data, [
     $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
   ]) => create()..mergeFromBuffer(data, registry);
-  factory PushFrame.fromJson($core.String json, [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
-      create()..mergeFromJson(json, registry);
+  factory PushFrame.fromJson(
+    $core.String json, [
+    $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
+  ]) => create()..mergeFromJson(json, registry);
 
   static final $pb.BuilderInfo _i =
       $pb.BuilderInfo(
@@ -6630,8 +7060,18 @@ class PushFrame extends $pb.GeneratedMessage {
           protoName: 'logId',
           defaultOrMaker: $fixnum.Int64.ZERO,
         )
-        ..a<$fixnum.Int64>(3, _omitFieldNames ? '' : 'service', $pb.PbFieldType.OU6, defaultOrMaker: $fixnum.Int64.ZERO)
-        ..a<$fixnum.Int64>(4, _omitFieldNames ? '' : 'method', $pb.PbFieldType.OU6, defaultOrMaker: $fixnum.Int64.ZERO)
+        ..a<$fixnum.Int64>(
+          3,
+          _omitFieldNames ? '' : 'service',
+          $pb.PbFieldType.OU6,
+          defaultOrMaker: $fixnum.Int64.ZERO,
+        )
+        ..a<$fixnum.Int64>(
+          4,
+          _omitFieldNames ? '' : 'method',
+          $pb.PbFieldType.OU6,
+          defaultOrMaker: $fixnum.Int64.ZERO,
+        )
         ..pPM<HeadersList>(
           5,
           _omitFieldNames ? '' : 'headersList',
@@ -6657,7 +7097,8 @@ class PushFrame extends $pb.GeneratedMessage {
   @$core.override
   PushFrame createEmptyInstance() => create();
   @$core.pragma('dart2js:noInline')
-  static PushFrame getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<PushFrame>(create);
+  static PushFrame getDefault() =>
+      _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<PushFrame>(create);
   static PushFrame? _defaultInstance;
 
   @$pb.TagNumber(1)
@@ -6736,10 +7177,14 @@ class kk extends $pb.GeneratedMessage {
 
   kk._();
 
-  factory kk.fromBuffer($core.List<$core.int> data, [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
-      create()..mergeFromBuffer(data, registry);
-  factory kk.fromJson($core.String json, [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
-      create()..mergeFromJson(json, registry);
+  factory kk.fromBuffer(
+    $core.List<$core.int> data, [
+    $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
+  ]) => create()..mergeFromBuffer(data, registry);
+  factory kk.fromJson(
+    $core.String json, [
+    $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
+  ]) => create()..mergeFromJson(json, registry);
 
   static final $pb.BuilderInfo _i =
       $pb.BuilderInfo(
@@ -6753,7 +7198,8 @@ class kk extends $pb.GeneratedMessage {
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   kk clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  kk copyWith(void Function(kk) updates) => super.copyWith((message) => updates(message as kk)) as kk;
+  kk copyWith(void Function(kk) updates) =>
+      super.copyWith((message) => updates(message as kk)) as kk;
 
   @$core.override
   $pb.BuilderInfo get info_ => _i;
@@ -6805,8 +7251,10 @@ class SendMessageBody extends $pb.GeneratedMessage {
     $core.List<$core.int> data, [
     $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
   ]) => create()..mergeFromBuffer(data, registry);
-  factory SendMessageBody.fromJson($core.String json, [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
-      create()..mergeFromJson(json, registry);
+  factory SendMessageBody.fromJson(
+    $core.String json, [
+    $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
+  ]) => create()..mergeFromJson(json, registry);
 
   static final $pb.BuilderInfo _i =
       $pb.BuilderInfo(
@@ -6830,7 +7278,12 @@ class SendMessageBody extends $pb.GeneratedMessage {
         )
         ..aOS(4, _omitFieldNames ? '' : 'content')
         ..pPM<ExtList>(5, _omitFieldNames ? '' : 'ext', subBuilder: ExtList.create)
-        ..aI(6, _omitFieldNames ? '' : 'messageType', protoName: 'messageType', fieldType: $pb.PbFieldType.OU3)
+        ..aI(
+          6,
+          _omitFieldNames ? '' : 'messageType',
+          protoName: 'messageType',
+          fieldType: $pb.PbFieldType.OU3,
+        )
         ..aOS(7, _omitFieldNames ? '' : 'ticket')
         ..aOS(8, _omitFieldNames ? '' : 'clientMessageId', protoName: 'clientMessageId')
         ..hasRequiredFields = false;
@@ -6934,8 +7387,10 @@ class ExtList extends $pb.GeneratedMessage {
     $core.List<$core.int> data, [
     $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
   ]) => create()..mergeFromBuffer(data, registry);
-  factory ExtList.fromJson($core.String json, [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
-      create()..mergeFromJson(json, registry);
+  factory ExtList.fromJson(
+    $core.String json, [
+    $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
+  ]) => create()..mergeFromJson(json, registry);
 
   static final $pb.BuilderInfo _i =
       $pb.BuilderInfo(
@@ -6961,7 +7416,8 @@ class ExtList extends $pb.GeneratedMessage {
   @$core.override
   ExtList createEmptyInstance() => create();
   @$core.pragma('dart2js:noInline')
-  static ExtList getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<ExtList>(create);
+  static ExtList getDefault() =>
+      _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<ExtList>(create);
   static ExtList? _defaultInstance;
 
   @$pb.TagNumber(1)
@@ -6999,8 +7455,10 @@ class Rsp_F extends $pb.GeneratedMessage {
     $core.List<$core.int> data, [
     $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
   ]) => create()..mergeFromBuffer(data, registry);
-  factory Rsp_F.fromJson($core.String json, [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
-      create()..mergeFromJson(json, registry);
+  factory Rsp_F.fromJson(
+    $core.String json, [
+    $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
+  ]) => create()..mergeFromJson(json, registry);
 
   static final $pb.BuilderInfo _i =
       $pb.BuilderInfo(
@@ -7008,16 +7466,32 @@ class Rsp_F extends $pb.GeneratedMessage {
           package: const $pb.PackageName(_omitMessageNames ? '' : 'douyin'),
           createEmptyInstance: create,
         )
-        ..a<$fixnum.Int64>(1, _omitFieldNames ? '' : 'q1', $pb.PbFieldType.OU6, defaultOrMaker: $fixnum.Int64.ZERO)
-        ..a<$fixnum.Int64>(3, _omitFieldNames ? '' : 'q3', $pb.PbFieldType.OU6, defaultOrMaker: $fixnum.Int64.ZERO)
+        ..a<$fixnum.Int64>(
+          1,
+          _omitFieldNames ? '' : 'q1',
+          $pb.PbFieldType.OU6,
+          defaultOrMaker: $fixnum.Int64.ZERO,
+        )
+        ..a<$fixnum.Int64>(
+          3,
+          _omitFieldNames ? '' : 'q3',
+          $pb.PbFieldType.OU6,
+          defaultOrMaker: $fixnum.Int64.ZERO,
+        )
         ..aOS(4, _omitFieldNames ? '' : 'q4')
-        ..a<$fixnum.Int64>(5, _omitFieldNames ? '' : 'q5', $pb.PbFieldType.OU6, defaultOrMaker: $fixnum.Int64.ZERO)
+        ..a<$fixnum.Int64>(
+          5,
+          _omitFieldNames ? '' : 'q5',
+          $pb.PbFieldType.OU6,
+          defaultOrMaker: $fixnum.Int64.ZERO,
+        )
         ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   Rsp_F clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  Rsp_F copyWith(void Function(Rsp_F) updates) => super.copyWith((message) => updates(message as Rsp_F)) as Rsp_F;
+  Rsp_F copyWith(void Function(Rsp_F) updates) =>
+      super.copyWith((message) => updates(message as Rsp_F)) as Rsp_F;
 
   @$core.override
   $pb.BuilderInfo get info_ => _i;
@@ -7027,7 +7501,8 @@ class Rsp_F extends $pb.GeneratedMessage {
   @$core.override
   Rsp_F createEmptyInstance() => create();
   @$core.pragma('dart2js:noInline')
-  static Rsp_F getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<Rsp_F>(create);
+  static Rsp_F getDefault() =>
+      _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<Rsp_F>(create);
   static Rsp_F? _defaultInstance;
 
   @$pb.TagNumber(1)
@@ -7096,10 +7571,14 @@ class Rsp extends $pb.GeneratedMessage {
 
   Rsp._();
 
-  factory Rsp.fromBuffer($core.List<$core.int> data, [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
-      create()..mergeFromBuffer(data, registry);
-  factory Rsp.fromJson($core.String json, [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
-      create()..mergeFromJson(json, registry);
+  factory Rsp.fromBuffer(
+    $core.List<$core.int> data, [
+    $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
+  ]) => create()..mergeFromBuffer(data, registry);
+  factory Rsp.fromJson(
+    $core.String json, [
+    $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
+  ]) => create()..mergeFromJson(json, registry);
 
   static final $pb.BuilderInfo _i =
       $pb.BuilderInfo(
@@ -7114,15 +7593,31 @@ class Rsp extends $pb.GeneratedMessage {
         ..aI(5, _omitFieldNames ? '' : 'e')
         ..aOM<Rsp_F>(6, _omitFieldNames ? '' : 'f', subBuilder: Rsp_F.create)
         ..aOS(7, _omitFieldNames ? '' : 'g')
-        ..a<$fixnum.Int64>(10, _omitFieldNames ? '' : 'h', $pb.PbFieldType.OU6, defaultOrMaker: $fixnum.Int64.ZERO)
-        ..a<$fixnum.Int64>(11, _omitFieldNames ? '' : 'i', $pb.PbFieldType.OU6, defaultOrMaker: $fixnum.Int64.ZERO)
-        ..a<$fixnum.Int64>(13, _omitFieldNames ? '' : 'j', $pb.PbFieldType.OU6, defaultOrMaker: $fixnum.Int64.ZERO)
+        ..a<$fixnum.Int64>(
+          10,
+          _omitFieldNames ? '' : 'h',
+          $pb.PbFieldType.OU6,
+          defaultOrMaker: $fixnum.Int64.ZERO,
+        )
+        ..a<$fixnum.Int64>(
+          11,
+          _omitFieldNames ? '' : 'i',
+          $pb.PbFieldType.OU6,
+          defaultOrMaker: $fixnum.Int64.ZERO,
+        )
+        ..a<$fixnum.Int64>(
+          13,
+          _omitFieldNames ? '' : 'j',
+          $pb.PbFieldType.OU6,
+          defaultOrMaker: $fixnum.Int64.ZERO,
+        )
         ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
   Rsp clone() => deepCopy();
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
-  Rsp copyWith(void Function(Rsp) updates) => super.copyWith((message) => updates(message as Rsp)) as Rsp;
+  Rsp copyWith(void Function(Rsp) updates) =>
+      super.copyWith((message) => updates(message as Rsp)) as Rsp;
 
   @$core.override
   $pb.BuilderInfo get info_ => _i;
@@ -7269,8 +7764,10 @@ class PreMessage extends $pb.GeneratedMessage {
     $core.List<$core.int> data, [
     $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
   ]) => create()..mergeFromBuffer(data, registry);
-  factory PreMessage.fromJson($core.String json, [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
-      create()..mergeFromJson(json, registry);
+  factory PreMessage.fromJson(
+    $core.String json, [
+    $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
+  ]) => create()..mergeFromJson(json, registry);
 
   static final $pb.BuilderInfo _i =
       $pb.BuilderInfo(
@@ -7279,11 +7776,21 @@ class PreMessage extends $pb.GeneratedMessage {
           createEmptyInstance: create,
         )
         ..aI(1, _omitFieldNames ? '' : 'cmd', fieldType: $pb.PbFieldType.OU3)
-        ..aI(2, _omitFieldNames ? '' : 'sequenceId', protoName: 'sequenceId', fieldType: $pb.PbFieldType.OU3)
+        ..aI(
+          2,
+          _omitFieldNames ? '' : 'sequenceId',
+          protoName: 'sequenceId',
+          fieldType: $pb.PbFieldType.OU3,
+        )
         ..aOS(3, _omitFieldNames ? '' : 'sdkVersion', protoName: 'sdkVersion')
         ..aOS(4, _omitFieldNames ? '' : 'token')
         ..aI(5, _omitFieldNames ? '' : 'refer', fieldType: $pb.PbFieldType.OU3)
-        ..aI(6, _omitFieldNames ? '' : 'inboxType', protoName: 'inboxType', fieldType: $pb.PbFieldType.OU3)
+        ..aI(
+          6,
+          _omitFieldNames ? '' : 'inboxType',
+          protoName: 'inboxType',
+          fieldType: $pb.PbFieldType.OU3,
+        )
         ..aOS(7, _omitFieldNames ? '' : 'buildNumber', protoName: 'buildNumber')
         ..aOM<SendMessageBody>(
           8,
@@ -7294,7 +7801,12 @@ class PreMessage extends $pb.GeneratedMessage {
         ..aOS(9, _omitFieldNames ? '' : 'aa')
         ..aOS(11, _omitFieldNames ? '' : 'devicePlatform', protoName: 'devicePlatform')
         ..pPM<HeadersList>(15, _omitFieldNames ? '' : 'headers', subBuilder: HeadersList.create)
-        ..aI(18, _omitFieldNames ? '' : 'authType', protoName: 'authType', fieldType: $pb.PbFieldType.OU3)
+        ..aI(
+          18,
+          _omitFieldNames ? '' : 'authType',
+          protoName: 'authType',
+          fieldType: $pb.PbFieldType.OU3,
+        )
         ..aOS(21, _omitFieldNames ? '' : 'biz')
         ..aOS(22, _omitFieldNames ? '' : 'access')
         ..hasRequiredFields = false;
@@ -7313,7 +7825,8 @@ class PreMessage extends $pb.GeneratedMessage {
   @$core.override
   PreMessage createEmptyInstance() => create();
   @$core.pragma('dart2js:noInline')
-  static PreMessage getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<PreMessage>(create);
+  static PreMessage getDefault() =>
+      _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<PreMessage>(create);
   static PreMessage? _defaultInstance;
 
   @$pb.TagNumber(1)
@@ -7454,8 +7967,10 @@ class HeadersList extends $pb.GeneratedMessage {
     $core.List<$core.int> data, [
     $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
   ]) => create()..mergeFromBuffer(data, registry);
-  factory HeadersList.fromJson($core.String json, [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
-      create()..mergeFromJson(json, registry);
+  factory HeadersList.fromJson(
+    $core.String json, [
+    $pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY,
+  ]) => create()..mergeFromJson(json, registry);
 
   static final $pb.BuilderInfo _i =
       $pb.BuilderInfo(
@@ -7481,7 +7996,8 @@ class HeadersList extends $pb.GeneratedMessage {
   @$core.override
   HeadersList createEmptyInstance() => create();
   @$core.pragma('dart2js:noInline')
-  static HeadersList getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<HeadersList>(create);
+  static HeadersList getDefault() =>
+      _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<HeadersList>(create);
   static HeadersList? _defaultInstance;
 
   @$pb.TagNumber(1)

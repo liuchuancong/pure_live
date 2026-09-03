@@ -18,7 +18,8 @@ class WebDavController extends GetxController {
 
   bool isWebDavConfigExist(String name) => webDavConfigs.v.any((e) => e.name == name);
 
-  WebDAVConfig? getWebDavConfigByName(String name) => webDavConfigs.v.firstWhereOrNull((e) => e.name == name);
+  WebDAVConfig? getWebDavConfigByName(String name) =>
+      webDavConfigs.v.firstWhereOrNull((e) => e.name == name);
 
   bool addWebDavConfig(WebDAVConfig config) {
     if (isWebDavConfigExist(config.name)) return false;
@@ -50,19 +51,28 @@ class WebDavController extends GetxController {
 
   void fromJson(Map<String, dynamic> json) {
     currentWebDavConfig.v = json['currentWebDavConfig'] ?? '';
-    webDavConfigs.v = BackupMigrationUtil.parseObjectList(json['webDavConfigs'], (m) => WebDAVConfig.fromJson(m));
+    webDavConfigs.v = BackupMigrationUtil.parseObjectList(
+      json['webDavConfigs'],
+      WebDAVConfig.fromJson,
+    );
   }
 
   static Map<String, dynamic> extractConfig(Map<String, dynamic>? rootConfig) {
     final webdav = rootConfig?['webdav'] as Map<String, dynamic>? ?? {};
-    final list = BackupMigrationUtil.parseObjectList(webdav['webDavConfigs'], WebDAVConfig.fromJson);
+    final list = BackupMigrationUtil.parseObjectList(
+      webdav['webDavConfigs'],
+      WebDAVConfig.fromJson,
+    );
     return {
       'currentWebDavConfig': webdav['currentWebDavConfig'] ?? '',
       'webDavConfigs': list.map((e) => e.toJson()).toList(),
     };
   }
 
-  static Map<String, dynamic> mergeConfig(Map<String, dynamic> rootConfig, Map<String, dynamic> updateFields) {
+  static Map<String, dynamic> mergeConfig(
+    Map<String, dynamic> rootConfig,
+    Map<String, dynamic> updateFields,
+  ) {
     final webdav = Map<String, dynamic>.from(rootConfig['webdav'] ?? {});
     updateFields.forEach((k, v) => webdav[k] = v);
     rootConfig['webdav'] = webdav;

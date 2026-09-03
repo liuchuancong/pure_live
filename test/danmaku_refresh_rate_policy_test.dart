@@ -14,7 +14,10 @@ void main() {
 
   test('highest policy synchronizes room and PiP danmaku to the device maximum', () {
     expect(
-      DanmakuSettingsController.resolveAdaptiveDanmakuFps(display120, refreshRateMode: AppRefreshRateMode.performance),
+      DanmakuSettingsController.resolveAdaptiveDanmakuFps(
+        display120,
+        refreshRateMode: AppRefreshRateMode.performance,
+      ),
       120,
     );
     expect(
@@ -29,7 +32,10 @@ void main() {
 
   test('power-saving and balanced policies retain bounded renderer budgets', () {
     expect(
-      DanmakuSettingsController.resolveAdaptiveDanmakuFps(display120, refreshRateMode: AppRefreshRateMode.powerSaving),
+      DanmakuSettingsController.resolveAdaptiveDanmakuFps(
+        display120,
+        refreshRateMode: AppRefreshRateMode.powerSaving,
+      ),
       60,
     );
     expect(
@@ -59,7 +65,10 @@ void main() {
       supportedRefreshRates: [60, 144],
     );
     expect(
-      DanmakuSettingsController.resolveAdaptiveDanmakuFps(display144, refreshRateMode: AppRefreshRateMode.performance),
+      DanmakuSettingsController.resolveAdaptiveDanmakuFps(
+        display144,
+        refreshRateMode: AppRefreshRateMode.performance,
+      ),
       144,
     );
   });

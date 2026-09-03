@@ -12,15 +12,15 @@ class RecorderPage extends GetView<RecorderController> {
   const RecorderPage({super.key});
 
   static const tabs = [
-    "recorder_tab_all",
-    "recorder_tab_recording",
-    "recorder_tab_waiting",
-    "recorder_tab_queue",
-    "recorder_tab_reconnecting",
-    "recorder_tab_processing",
-    "recorder_tab_completed",
-    "recorder_tab_failed",
-    "recorder_tab_stopped",
+    'recorder_tab_all',
+    'recorder_tab_recording',
+    'recorder_tab_waiting',
+    'recorder_tab_queue',
+    'recorder_tab_reconnecting',
+    'recorder_tab_processing',
+    'recorder_tab_completed',
+    'recorder_tab_failed',
+    'recorder_tab_stopped',
   ];
 
   @override
@@ -32,18 +32,18 @@ class RecorderPage extends GetView<RecorderController> {
       length: tabs.length,
       child: Scaffold(
         appBar: AppBar(
-          title: Text(i18n("recorder_title")),
+          title: Text(i18n('recorder_title')),
           centerTitle: true,
           leading: canGoBack ? const BackButton() : (showAction ? const MenuButton() : null),
 
           actions: [
             IconButton(
-              tooltip: i18n("recorder_open_folder"),
+              tooltip: i18n('recorder_open_folder'),
               icon: const Icon(Remix.folder_video_line, size: 22),
               onPressed: controller.openFileDir,
             ),
             IconButton(
-              tooltip: i18n("settings_title"),
+              tooltip: i18n('settings_title'),
               icon: const Icon(Remix.settings_5_line, size: 22),
               onPressed: () => Get.toNamed(RoutePath.kRecordSettings),
             ),
@@ -58,7 +58,7 @@ class RecorderPage extends GetView<RecorderController> {
               child: TabBarView(
                 physics: const NeverScrollableScrollPhysics(),
                 children: [
-                  _TaskList(filter: null),
+                  const _TaskList(filter: null),
                   _TaskList(filter: (e) => e.status == RecordStatus.running),
                   _TaskList(filter: (e) => e.status == RecordStatus.waitingLive),
                   _TaskList(filter: (e) => e.status == RecordStatus.queued),
@@ -175,31 +175,31 @@ class _TaskCard extends GetView<RecorderController> {
   String _statusText() {
     switch (task.status) {
       case RecordStatus.running:
-        return i18n("recorder_status_recording");
+        return i18n('recorder_status_recording');
 
       case RecordStatus.preparing:
-        return i18n("recorder_status_preparing");
+        return i18n('recorder_status_preparing');
 
       case RecordStatus.queued:
-        return i18n("recorder_status_queue");
+        return i18n('recorder_status_queue');
 
       case RecordStatus.waitingLive:
-        return i18n("recorder_status_waiting");
+        return i18n('recorder_status_waiting');
 
       case RecordStatus.reconnecting:
-        return i18n("recorder_status_reconnecting");
+        return i18n('recorder_status_reconnecting');
 
       case RecordStatus.processing:
-        return i18n("recorder_status_processing");
+        return i18n('recorder_status_processing');
 
       case RecordStatus.completed:
-        return i18n("recorder_status_completed");
+        return i18n('recorder_status_completed');
 
       case RecordStatus.failed:
-        return i18n("recorder_status_failed");
+        return i18n('recorder_status_failed');
 
       case RecordStatus.stopped:
-        return i18n("recorder_status_stopped");
+        return i18n('recorder_status_stopped');
     }
   }
 
@@ -208,7 +208,7 @@ class _TaskCard extends GetView<RecorderController> {
 
     String two(int n) => n.toString().padLeft(2, '0');
 
-    return "${two(d.inHours)}:${two(d.inMinutes.remainder(60))}:${two(d.inSeconds.remainder(60))}";
+    return '${two(d.inHours)}:${two(d.inMinutes.remainder(60))}:${two(d.inSeconds.remainder(60))}';
   }
 
   String _formatFileSize(int bytes) {
@@ -295,7 +295,10 @@ class _TaskCard extends GetView<RecorderController> {
                   ),
                   child: Text(
                     _statusText(),
-                    style: AppTextStyles.t12.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
+                    style: AppTextStyles.t12.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
@@ -314,7 +317,10 @@ class _TaskCard extends GetView<RecorderController> {
         const SizedBox(width: 4),
         Text(
           label,
-          style: AppTextStyles.t11.copyWith(color: theme.colorScheme.onSurfaceVariant, fontWeight: FontWeight.w500),
+          style: AppTextStyles.t11.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+            fontWeight: FontWeight.w500,
+          ),
         ),
       ],
     );
@@ -325,7 +331,10 @@ class _TaskCard extends GetView<RecorderController> {
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-      decoration: BoxDecoration(color: c.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(10)),
+      decoration: BoxDecoration(
+        color: c.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(10),
+      ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -373,14 +382,17 @@ class _TaskCard extends GetView<RecorderController> {
             context: Get.context!,
             builder: (context) {
               return AlertDialog(
-                title: Text(i18n("recorder_cancel_monitor")),
-                content: Text(i18n("recorder_cancel_monitor_confirm")),
+                title: Text(i18n('recorder_cancel_monitor')),
+                content: Text(i18n('recorder_cancel_monitor_confirm')),
                 actions: [
-                  TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(i18n("cancel"))),
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(false),
+                    child: Text(i18n('cancel')),
+                  ),
                   FilledButton(
                     style: FilledButton.styleFrom(backgroundColor: Colors.red),
                     onPressed: () => Navigator.of(context).pop(true),
-                    child: Text(i18n("confirm")),
+                    child: Text(i18n('confirm')),
                   ),
                 ],
               );
@@ -391,7 +403,7 @@ class _TaskCard extends GetView<RecorderController> {
             await controller.unRecorder(task);
           }
         },
-        child: Text(i18n("remove"), style: AppTextStyles.t15.copyWith(color: Colors.red)),
+        child: Text(i18n('remove'), style: AppTextStyles.t15.copyWith(color: Colors.red)),
       );
     }
 
@@ -414,7 +426,7 @@ class _TaskCard extends GetView<RecorderController> {
           FilledButton(
             style: dangerStyle,
             onPressed: () => controller.stopTask(task),
-            child: Text(i18n("recorder_stop")),
+            child: Text(i18n('recorder_stop')),
           ),
         ],
       );
@@ -429,28 +441,32 @@ class _TaskCard extends GetView<RecorderController> {
           FilledButton(
             style: primaryStyle,
             onPressed: () => controller.forceStartTask(task),
-            child: Text(i18n("recorder_start")),
+            child: Text(i18n('recorder_start')),
           ),
           const SizedBox(width: 6),
-          OutlinedButton(style: outlineStyle, onPressed: () => controller.stopTask(task), child: Text(i18n("cancel"))),
+          OutlinedButton(
+            style: outlineStyle,
+            onPressed: () => controller.stopTask(task),
+            child: Text(i18n('cancel')),
+          ),
         ],
       );
     }
 
     if (canRestart.contains(task.status)) {
-      String text = i18n("recorder_start");
+      String text = i18n('recorder_start');
 
       switch (task.status) {
         case RecordStatus.failed:
-          text = i18n("retry");
+          text = i18n('retry');
           break;
 
         case RecordStatus.waitingLive:
-          text = i18n("recorder_check_now");
+          text = i18n('recorder_check_now');
           break;
 
         case RecordStatus.completed:
-          text = i18n("recorder_restart_record");
+          text = i18n('recorder_restart_record');
           break;
 
         default:
@@ -462,7 +478,11 @@ class _TaskCard extends GetView<RecorderController> {
         children: [
           deleteButton(),
           const SizedBox(width: 6),
-          FilledButton(style: primaryStyle, onPressed: () => controller.forceStartTask(task), child: Text(text)),
+          FilledButton(
+            style: primaryStyle,
+            onPressed: () => controller.forceStartTask(task),
+            child: Text(text),
+          ),
         ],
       );
     }
@@ -500,7 +520,10 @@ class _TaskCard extends GetView<RecorderController> {
         }.contains(task.status) ||
         task.recordedSeconds > 0 ||
         task.fileSize > 0;
-    final isTransitioning = {RecordStatus.reconnecting, RecordStatus.preparing}.contains(task.status);
+    final isTransitioning = {
+      RecordStatus.reconnecting,
+      RecordStatus.preparing,
+    }.contains(task.status);
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 250),
@@ -509,7 +532,13 @@ class _TaskCard extends GetView<RecorderController> {
         color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.08)),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 18, offset: const Offset(0, 6))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 18,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(18),
@@ -582,7 +611,11 @@ class _TaskCard extends GetView<RecorderController> {
                           spacing: 14,
                           runSpacing: 6,
                           children: [
-                            _miniInfo(Icons.high_quality_rounded, task.selectedQuality ?? i18n("recorder_auto"), theme),
+                            _miniInfo(
+                              Icons.high_quality_rounded,
+                              task.selectedQuality ?? i18n('recorder_auto'),
+                              theme,
+                            ),
                             if (task.selectedLine?.isNotEmpty == true)
                               _miniInfo(Icons.alt_route_rounded, task.selectedLine!, theme),
                             _miniInfo(audienceIcon, audienceText, theme),
@@ -608,9 +641,17 @@ class _TaskCard extends GetView<RecorderController> {
                         spacing: 16,
                         runSpacing: 10,
                         children: [
-                          _statItem(theme, Icons.timer_outlined, _formatDuration(task.recordedSeconds)),
+                          _statItem(
+                            theme,
+                            Icons.timer_outlined,
+                            _formatDuration(task.recordedSeconds),
+                          ),
                           _statItem(theme, Icons.storage_rounded, _formatFileSize(task.fileSize)),
-                          _statItem(theme, Icons.speed_rounded, "${task.recordSpeed.toStringAsFixed(1)}x"),
+                          _statItem(
+                            theme,
+                            Icons.speed_rounded,
+                            '${task.recordSpeed.toStringAsFixed(1)}x',
+                          ),
                           _statItem(theme, Icons.graphic_eq_rounded, _formatBitrate(task.bitrate)),
                         ],
                       ),
@@ -643,7 +684,10 @@ class _TaskCard extends GetView<RecorderController> {
                       Expanded(
                         child: Text(
                           _statusText(),
-                          style: AppTextStyles.t12.copyWith(color: color, fontWeight: FontWeight.w700),
+                          style: AppTextStyles.t12.copyWith(
+                            color: color,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ),
                     ],
@@ -666,10 +710,16 @@ class _TaskCard extends GetView<RecorderController> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          i18n('recorder_last_error', args: {'stage': _failureStageText(), 'error': task.lastError!}),
+                          i18n(
+                            'recorder_last_error',
+                            args: {'stage': _failureStageText(), 'error': task.lastError!},
+                          ),
                           maxLines: 3,
                           overflow: TextOverflow.ellipsis,
-                          style: AppTextStyles.t12.copyWith(color: theme.colorScheme.onErrorContainer, height: 1.3),
+                          style: AppTextStyles.t12.copyWith(
+                            color: theme.colorScheme.onErrorContainer,
+                            height: 1.3,
+                          ),
                         ),
                       ),
                     ],
@@ -714,17 +764,27 @@ class _EmptyView extends StatelessWidget {
           Container(
             width: 92,
             height: 92,
-            decoration: BoxDecoration(color: theme.colorScheme.primary.withValues(alpha: 0.08), shape: BoxShape.circle),
-            child: Icon(Icons.video_collection_outlined, size: 42, color: theme.colorScheme.primary),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary.withValues(alpha: 0.08),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.video_collection_outlined,
+              size: 42,
+              color: theme.colorScheme.primary,
+            ),
           ),
           const SizedBox(height: 24),
           Text(
-            i18n("recorder_empty_title"),
-            style: AppTextStyles.t16.copyWith(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
+            i18n('recorder_empty_title'),
+            style: AppTextStyles.t16.copyWith(
+              fontWeight: FontWeight.bold,
+              color: theme.colorScheme.onSurface,
+            ),
           ),
           const SizedBox(height: 8),
           Text(
-            i18n("recorder_empty_subtitle"),
+            i18n('recorder_empty_subtitle'),
             style: AppTextStyles.t13.copyWith(color: theme.colorScheme.onSurfaceVariant),
           ),
         ],

@@ -1,4 +1,5 @@
 import 'dart:developer' as developer;
+
 import 'package:pure_live/common/index.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:pure_live/modules/auth/auth_controller.dart';
@@ -16,10 +17,10 @@ class _SignInPageState extends State<SignInPage> {
   void _handleSignInComplete(UserCredential credential) async {
     final user = credential.user;
     if (user == null) return;
-    final String email = user.email ?? "未公开邮箱";
-    String providerStr = "Email";
+    final String email = user.email ?? '未公开邮箱';
+    String providerStr = 'Email';
     if (user.providerData.any((info) => info.providerId == 'github.com')) {
-      providerStr = "GitHub";
+      providerStr = 'GitHub';
     }
     developer.log('🎉 登录成功! 渠道: $providerStr, 邮箱: $email, UID: ${user.uid}');
     try {
@@ -57,12 +58,8 @@ class _SignInPageState extends State<SignInPage> {
                   authController.shouldGoReset = true;
                   ToastUtil.show(i18n('reset_password_email'));
                 },
-                onSignInComplete: (UserCredential credential) {
-                  _handleSignInComplete(credential);
-                },
-                onSignUpComplete: (UserCredential credential) {
-                  _handleSignInComplete(credential);
-                },
+                onSignInComplete: _handleSignInComplete,
+                onSignUpComplete: _handleSignInComplete,
               ),
             ],
           ),

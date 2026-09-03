@@ -8,7 +8,9 @@ class BiliBiliWebLoginController extends GetxController {
   final showWebView = true.obs;
   void onWebViewCreated(InAppWebViewController controller) {
     webViewController = controller;
-    webViewController!.loadUrl(urlRequest: URLRequest(url: WebUri("https://passport.bilibili.com/login")));
+    webViewController!.loadUrl(
+      urlRequest: URLRequest(url: WebUri('https://passport.bilibili.com/login')),
+    );
   }
 
   void toQRLogin() async {
@@ -21,9 +23,9 @@ class BiliBiliWebLoginController extends GetxController {
     if (uri == null) {
       return;
     }
-    if (uri.host == "m.bilibili.com") {
+    if (uri.host == 'm.bilibili.com') {
       var cookies = await cookieManager.getCookies(url: uri);
-      var cookieStr = cookies.map((e) => "${e.name}=${e.value}").join(";");
+      var cookieStr = cookies.map((e) => '${e.name}=${e.value}').join(';');
       BiliBiliAccountService.instance.setCookie(cookieStr);
       await BiliBiliAccountService.instance.loadUserInfo();
       showWebView.value = false;

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:developer';
+
 import 'package:crypto/crypto.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
@@ -13,14 +14,14 @@ class ShareCommandHandler {
   ShareCommandHandler._internal();
 
   final Set<String> _blacklistHashes = {};
-  String _lastProcessedHashInLifecycle = "";
+  String _lastProcessedHashInLifecycle = '';
 
   String _getMd5(String text) {
     return md5.convert(utf8.encode(text.trim())).toString();
   }
 
   void resetLifecycleCache() {
-    _lastProcessedHashInLifecycle = "";
+    _lastProcessedHashInLifecycle = '';
   }
 
   Future<void> checkClipboard(Function(String roomInfo) onMatchFound) async {
@@ -64,8 +65,8 @@ class ShareCommandHandler {
     final String secret = ShareCommandCodec.encodeShort(shareMap);
 
     _blacklistHashes.add(_getMd5(secret));
-    _blacklistHashes.add(_getMd5("$secret "));
-    _blacklistHashes.add(_getMd5("\n$secret"));
+    _blacklistHashes.add(_getMd5('$secret '));
+    _blacklistHashes.add(_getMd5('\n$secret'));
 
     if (PlatformUtils.isDesktop) {
       await Clipboard.setData(ClipboardData(text: secret));

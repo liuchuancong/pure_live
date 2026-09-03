@@ -119,7 +119,9 @@ abstract class ServerAllPageController<T> extends BasePageScrollAndStateBone<T> 
       list.assignAll(newData);
       canLoadMore.value = endIndex < allItems.length;
       pageEmpty.value = list.isEmpty;
-      finishRefreshControllers(canLoadMore.value ? IndicatorResult.success : IndicatorResult.noMore);
+      finishRefreshControllers(
+        canLoadMore.value ? IndicatorResult.success : IndicatorResult.noMore,
+      );
       scrollToTopImmediate();
     } else {
       list.assignAll(allItems);

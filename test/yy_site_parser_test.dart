@@ -13,7 +13,11 @@ void main() {
         </script>
       ''';
 
-      expect(YYSite.parseCategoryPageInfo(html), <String, dynamic>{'moduleId': 308, 'biz': 'sing', 'subBiz': 'idx'});
+      expect(YYSite.parseCategoryPageInfo(html), <String, dynamic>{
+        'moduleId': 308,
+        'biz': 'sing',
+        'subBiz': 'idx',
+      });
     });
 
     test('rejects incomplete metadata and upgrades public URLs to HTTPS', () {
@@ -35,7 +39,10 @@ void main() {
           'streams': [
             {'stream_key': 'a', 'json': '{"gear_info":{"name":"高清","gear":"4"},"rate":"4000"}'},
             {'stream_key': 'b', 'json': '{"gear_info":{"name":"高清","gear":"2"},"rate":2000}'},
-            {'stream_key': 'duplicate', 'json': '{"gear_info":{"name":"重复","gear":"2"},"rate":1000}'},
+            {
+              'stream_key': 'duplicate',
+              'json': '{"gear_info":{"name":"重复","gear":"2"},"rate":1000}',
+            },
           ],
         },
       });

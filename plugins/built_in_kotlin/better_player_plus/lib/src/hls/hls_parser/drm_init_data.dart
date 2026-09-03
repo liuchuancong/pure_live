@@ -12,7 +12,8 @@ class DrmInitData {
   @override
   bool operator ==(Object other) {
     if (other is DrmInitData) {
-      return schemeType == other.schemeType && const ListEquality<SchemeData>().equals(other.schemeData, schemeData);
+      return schemeType == other.schemeType &&
+          const ListEquality<SchemeData>().equals(other.schemeData, schemeData);
     }
     return false;
   }

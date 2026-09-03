@@ -45,7 +45,10 @@ class AndroidCaCertificateManager {
     final temp = File('${target.path}.tmp');
 
     try {
-      await temp.writeAsBytes(data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes), flush: true);
+      await temp.writeAsBytes(
+        data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes),
+        flush: true,
+      );
 
       if (await target.exists()) {
         await target.delete();
@@ -84,7 +87,8 @@ class AndroidCaCertificateManager {
 
       final content = await file.readAsString();
 
-      return content.contains('-----BEGIN CERTIFICATE-----') && content.contains('-----END CERTIFICATE-----');
+      return content.contains('-----BEGIN CERTIFICATE-----') &&
+          content.contains('-----END CERTIFICATE-----');
     } catch (_) {
       return false;
     }

@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:async';
 import 'dart:convert';
+
 import 'package:path/path.dart' as p;
 import 'package:archive/archive.dart';
 import 'package:drift/drift.dart' as drift;
@@ -18,7 +19,7 @@ class EpgImportManager {
   /// 1. 本地文件浏览器选择导入
   Future<bool> importFromLocalPicker() async {
     final result = await FilePicker.pickFile(
-      dialogTitle: i18n("select_recover_file"),
+      dialogTitle: i18n('select_recover_file'),
       type: FileType.custom,
       allowedExtensions: ['xml', 'gz', 'json'],
     );
@@ -46,7 +47,9 @@ class EpgImportManager {
     sourceName = cleanName;
 
     final lowercaseUrl = url.toLowerCase().trim();
-    final String ext = lowercaseUrl.endsWith('.json') ? '.json' : (lowercaseUrl.endsWith('.gz') ? '.gz' : '.xml');
+    final String ext = lowercaseUrl.endsWith('.json')
+        ? '.json'
+        : (lowercaseUrl.endsWith('.gz') ? '.gz' : '.xml');
     final file = File(p.join(dir.path, 'download_epg_${FileUtils.generateUuid()}$ext'));
 
     try {
@@ -54,8 +57,7 @@ class EpgImportManager {
         url,
         file.path,
         header: {
-          "user-agent":
-              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
+          'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36',
         },
       );
 
@@ -70,9 +72,9 @@ class EpgImportManager {
       if (await file.exists()) await file.delete();
       return success;
     } catch (e) {
-      debugPrint("Network EPG Download Failure: $e");
+      debugPrint('Network EPG Download Failure: $e');
       if (showTips) {
-        ToastUtil.show(i18n("epg_import_failed"));
+        ToastUtil.show(i18n('epg_import_failed'));
       }
       if (await file.exists()) await file.delete();
       return false;
@@ -91,7 +93,7 @@ class EpgImportManager {
       if (await file.exists()) await file.delete();
       return success;
     } catch (e) {
-      ToastUtil.show(i18n("epg_import_failed"));
+      ToastUtil.show(i18n('epg_import_failed'));
       return false;
     }
   }
@@ -101,21 +103,21 @@ class EpgImportManager {
   Future<bool> importFromSharedMedia(dynamic media) async {
     try {
       if (media.content == null || media.content!.isEmpty) {
-        ToastUtil.show(i18n("epg_import_failed"));
+        ToastUtil.show(i18n('epg_import_failed'));
         return false;
       }
 
       File file = await FileUtils.convertPhysicalFile(media.content!);
       final ext = p.extension(file.path).toLowerCase();
       if (ext != '.xml' && ext != '.gz' && ext != '.json') {
-        ToastUtil.show(i18n("unsupported_file_format"));
+        ToastUtil.show(i18n('unsupported_file_format'));
         return false;
       }
       final success = await importEpgFile(file: file, sourceName: FileUtils.getBaseName(file.path));
       return success;
     } catch (e) {
-      debugPrint("Shared EPG Import Process Crash: $e");
-      ToastUtil.show(i18n("epg_import_failed"));
+      debugPrint('Shared EPG Import Process Crash: $e');
+      ToastUtil.show(i18n('epg_import_failed'));
       return false;
     }
   }
@@ -135,7 +137,7 @@ class EpgImportManager {
       String content;
       if (ext == '.gz') {
         final bytes = await file.readAsBytes();
-        final decoded = GZipDecoder().decodeBytes(bytes);
+        final decoded = const GZipDecoder().decodeBytes(bytes);
         content = utf8.decode(decoded);
       } else {
         content = await file.readAsString(encoding: latin1);
@@ -145,19 +147,22 @@ class EpgImportManager {
       if (ext == '.xml' || ext == '.gz') {
         parsedResult = XmltvParser().parse(content, sourceId: '');
       } else if (ext == '.json') {
-        parsedResult = JsonEpgParser().parse(content, sourceId: '');
+        parsedResult = const JsonEpgParser().parse(content, sourceId: '');
       } else {
-        if (showTips) ToastUtil.show(i18n("unsupported_file_format"));
+        if (showTips) ToastUtil.show(i18n('unsupported_file_format'));
         return false;
       }
 
-      if (parsedResult == null || (parsedResult.channels.isEmpty && parsedResult.programmes.isEmpty)) {
-        if (showTips) ToastUtil.show(i18n("unsupported_file_format"));
+      if (parsedResult == null ||
+          (parsedResult.channels.isEmpty && parsedResult.programmes.isEmpty)) {
+        if (showTips) ToastUtil.show(i18n('unsupported_file_format'));
         return false;
       }
 
       final existing = await db.getAllEpgSources();
-      final matchedList = existing.where((e) => (e.name).trim().toLowerCase() == cleanName).toList();
+      final matchedList = existing
+          .where((e) => (e.name).trim().toLowerCase() == cleanName)
+          .toList();
 
       String finalSourceId = FileUtils.generateUuid();
 
@@ -171,15 +176,17 @@ class EpgImportManager {
           Get.dialog(
             AlertDialog(
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              title: Text(i18n("provider_name_exists_tip")),
-              content: Text('"$sourceName"\n\n${i18n("replace_confirm_message").replaceAll("{}", typeName)}'),
+              title: Text(i18n('provider_name_exists_tip')),
+              content: Text(
+                '"$sourceName"\n\n${i18n("replace_confirm_message").replaceAll("{}", typeName)}',
+              ),
               actions: [
                 TextButton(
                   onPressed: () {
                     Navigator.of(Get.context!).pop();
                     completer.complete(false);
                   },
-                  child: Text(i18n("cancel")),
+                  child: Text(i18n('cancel')),
                 ),
                 TextButton(
                   onPressed: () async {
@@ -205,7 +212,7 @@ class EpgImportManager {
                     );
                     completer.complete(success);
                   },
-                  child: Text(i18n("confirm")),
+                  child: Text(i18n('confirm')),
                 ),
               ],
             ),
@@ -236,14 +243,14 @@ class EpgImportManager {
       );
 
       if (success) {
-        if (showTips) ToastUtil.show(i18n("epg_import_success"));
+        if (showTips) ToastUtil.show(i18n('epg_import_success'));
       } else {
-        if (showTips) ToastUtil.show(i18n("epg_import_failed"));
+        if (showTips) ToastUtil.show(i18n('epg_import_failed'));
       }
       return success;
     } catch (e) {
-      debugPrint("EPG Import Failure: $e");
-      if (showTips) ToastUtil.show(i18n("epg_import_failed"));
+      debugPrint('EPG Import Failure: $e');
+      if (showTips) ToastUtil.show(i18n('epg_import_failed'));
       return false;
     }
   }
@@ -318,7 +325,7 @@ class EpgImportManager {
       await db.pruneOldProgrammes(maxAge: const Duration(days: 2));
       return true;
     } catch (e) {
-      debugPrint("EPG Database Exec Commit Crash: $e");
+      debugPrint('EPG Database Exec Commit Crash: $e');
       return false;
     }
   }

@@ -14,7 +14,12 @@ class RepeatedDanmakuFilter {
   final int maxEntries;
   final LinkedHashMap<String, DateTime> _lastSeen = LinkedHashMap<String, DateTime>();
 
-  bool accepts(LiveMessage message, {required bool enabled, required Duration window, DateTime? now}) {
+  bool accepts(
+    LiveMessage message, {
+    required bool enabled,
+    required Duration window,
+    DateTime? now,
+  }) {
     if (!enabled) {
       if (_lastSeen.isNotEmpty) _lastSeen.clear();
       return true;

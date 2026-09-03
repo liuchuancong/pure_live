@@ -23,10 +23,10 @@ class LiveAnchorItem {
   @override
   String toString() {
     return json.encode({
-      "roomId": roomId,
-      "avatar": avatar,
-      "userName": userName,
-      "liveStatus": liveStatus,
+      'roomId': roomId,
+      'avatar': avatar,
+      'userName': userName,
+      'liveStatus': liveStatus,
     });
   }
 }

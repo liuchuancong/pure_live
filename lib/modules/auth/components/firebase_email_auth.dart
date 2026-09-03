@@ -60,7 +60,9 @@ class _FirebaseEmailAuthState extends State<FirebaseEmailAuth> {
   void initState() {
     super.initState();
     _metadataControllers = Map.fromEntries(
-      (widget.metadataFields ?? []).map((metadataField) => MapEntry(metadataField, TextEditingController())),
+      (widget.metadataFields ?? []).map(
+        (metadataField) => MapEntry(metadataField, TextEditingController()),
+      ),
     );
   }
 
@@ -158,10 +160,17 @@ class _FirebaseEmailAuthState extends State<FirebaseEmailAuth> {
             SizedBox(
               height: 46,
               child: FilledButton(
-                style: FilledButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
+                style: FilledButton.styleFrom(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
                 onPressed: _isLoading ? null : _handleSubmit,
                 child: _isLoading
-                    ? AppStatusView(type: AppStatusType.loading, title: "", subtitle: "", isMini: true)
+                    ? const AppStatusView(
+                        type: AppStatusType.loading,
+                        title: '',
+                        subtitle: '',
+                        isMini: true,
+                      )
                     : Text(
                         _isSigningIn ? i18n('firebase_sign_in') : i18n('firebase_sign_up'),
                         style: AppTextStyles.t15.copyWith(
@@ -179,7 +188,10 @@ class _FirebaseEmailAuthState extends State<FirebaseEmailAuth> {
                   Expanded(child: Divider(color: theme.dividerColor.withValues(alpha: 0.1))),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Text(i18n('or'), style: AppTextStyles.t12.copyWith(color: theme.hintColor)),
+                    child: Text(
+                      i18n('or'),
+                      style: AppTextStyles.t12.copyWith(color: theme.hintColor),
+                    ),
                   ),
                   Expanded(child: Divider(color: theme.dividerColor.withValues(alpha: 0.1))),
                 ],
@@ -194,7 +206,10 @@ class _FirebaseEmailAuthState extends State<FirebaseEmailAuth> {
                   ),
                   onPressed: _isLoading ? null : _handleGitHubSignIn,
                   icon: const Icon(Remix.github_fill, size: 20),
-                  label: Text(i18n('github_sign_in'), style: AppTextStyles.t14.copyWith(fontWeight: FontWeight.w500)),
+                  label: Text(
+                    i18n('github_sign_in'),
+                    style: AppTextStyles.t14.copyWith(fontWeight: FontWeight.w500),
+                  ),
                 ),
               ),
             ],
@@ -212,7 +227,9 @@ class _FirebaseEmailAuthState extends State<FirebaseEmailAuth> {
                   _isSigningIn = !_isSigningIn;
                 });
               },
-              child: Text(_isSigningIn ? i18n('firebase_no_account') : i18n('firebase_has_account')),
+              child: Text(
+                _isSigningIn ? i18n('firebase_no_account') : i18n('firebase_has_account'),
+              ),
             ),
           ],
           if (_isSigningIn && _forgotPassword && Platform.isAndroid) ...[
@@ -225,7 +242,12 @@ class _FirebaseEmailAuthState extends State<FirebaseEmailAuth> {
                 ),
                 onPressed: _isLoading ? null : _handleResetPassword,
                 child: _isLoading
-                    ? AppStatusView(type: AppStatusType.loading, title: "", subtitle: "", isMini: true)
+                    ? const AppStatusView(
+                        type: AppStatusType.loading,
+                        title: '',
+                        subtitle: '',
+                        isMini: true,
+                      )
                     : Text(
                         i18n('firebase_reset_password'),
                         style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600),
@@ -235,7 +257,10 @@ class _FirebaseEmailAuthState extends State<FirebaseEmailAuth> {
             const SizedBox(height: 12),
             TextButton(
               onPressed: () => setState(() => _forgotPassword = false),
-              child: Text(i18n('firebase_back_sign_in'), style: const TextStyle(fontWeight: FontWeight.bold)),
+              child: Text(
+                i18n('firebase_back_sign_in'),
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
           ],
         ],
@@ -263,9 +288,9 @@ class _FirebaseEmailAuthState extends State<FirebaseEmailAuth> {
         }
 
         final pasteText = await Utils.showEditTextDialog(
-          "",
-          title: i18n("github_login"),
-          hintText: i18n("paste_auth_link"),
+          '',
+          title: i18n('github_login'),
+          hintText: i18n('paste_auth_link'),
         );
 
         if (pasteText == null || pasteText.trim().isEmpty) {
@@ -358,7 +383,10 @@ class _FirebaseEmailAuthState extends State<FirebaseEmailAuth> {
     } on FirebaseAuthException catch (error) {
       if (widget.onError == null) {
         Get.showSnackbar(
-          GetSnackBar(message: error.message ?? 'Authentication failed', backgroundColor: Get.theme.colorScheme.error),
+          GetSnackBar(
+            message: error.message ?? 'Authentication failed',
+            backgroundColor: Get.theme.colorScheme.error,
+          ),
         );
       } else {
         widget.onError?.call(error);

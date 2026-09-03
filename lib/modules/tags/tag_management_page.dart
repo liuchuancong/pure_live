@@ -17,7 +17,10 @@ class TagManagementPage extends GetView<TagManagementController> {
         actions: [
           Padding(
             padding: const EdgeInsets.all(8.0),
-            child: IconButton(icon: const Icon(Remix.add_line), onPressed: () => _showTagDialog(context)),
+            child: IconButton(
+              icon: const Icon(Remix.add_line),
+              onPressed: () => _showTagDialog(context),
+            ),
           ),
         ],
       ),
@@ -39,7 +42,11 @@ class TagManagementPage extends GetView<TagManagementController> {
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Remix.price_tag_3_line, size: 48, color: theme.disabledColor.withAlpha(100)),
+                            Icon(
+                              Remix.price_tag_3_line,
+                              size: 48,
+                              color: theme.disabledColor.withAlpha(100),
+                            ),
                             const SizedBox(height: 16),
                             Text(
                               i18n('no_tags_tip'),
@@ -61,7 +68,10 @@ class TagManagementPage extends GetView<TagManagementController> {
                         decoration: BoxDecoration(
                           color: theme.colorScheme.secondary.withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: theme.colorScheme.secondary.withValues(alpha: 0.3), width: 1.0),
+                          border: Border.all(
+                            color: theme.colorScheme.secondary.withValues(alpha: 0.3),
+                            width: 1.0,
+                          ),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -79,13 +89,17 @@ class TagManagementPage extends GetView<TagManagementController> {
                                               const SizedBox(width: 8),
                                               Text(
                                                 i18n('tag_detail'),
-                                                style: AppTextStyles.t16.copyWith(fontWeight: FontWeight.bold),
+                                                style: AppTextStyles.t16.copyWith(
+                                                  fontWeight: FontWeight.bold,
+                                                ),
                                               ),
                                             ],
                                           ),
                                           titlePadding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
                                           contentPadding: const EdgeInsets.fromLTRB(24, 16, 24, 12),
-                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(20),
+                                          ),
                                           content: Column(
                                             mainAxisSize: MainAxisSize.min,
                                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -111,7 +125,8 @@ class TagManagementPage extends GetView<TagManagementController> {
                                                 Text(
                                                   i18n('tag_desc_label'),
                                                   style: AppTextStyles.t12.copyWith(
-                                                    color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                                                    color: theme.colorScheme.onSurfaceVariant
+                                                        .withValues(alpha: 0.6),
                                                   ),
                                                 ),
                                                 const SizedBox(height: 6),
@@ -119,12 +134,13 @@ class TagManagementPage extends GetView<TagManagementController> {
                                                   width: double.infinity,
                                                   padding: const EdgeInsets.all(12),
                                                   decoration: BoxDecoration(
-                                                    color: theme.colorScheme.surfaceContainerHighest.withValues(
-                                                      alpha: 0.2,
-                                                    ),
+                                                    color: theme.colorScheme.surfaceContainerHighest
+                                                        .withValues(alpha: 0.2),
                                                     borderRadius: BorderRadius.circular(12),
                                                     border: Border.all(
-                                                      color: theme.dividerColor.withValues(alpha: 0.05),
+                                                      color: theme.dividerColor.withValues(
+                                                        alpha: 0.05,
+                                                      ),
                                                       width: 0.5,
                                                     ),
                                                   ),
@@ -146,8 +162,13 @@ class TagManagementPage extends GetView<TagManagementController> {
                                                 elevation: 0,
                                                 backgroundColor: theme.colorScheme.primary,
                                                 foregroundColor: theme.colorScheme.onPrimary,
-                                                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-                                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                                padding: const EdgeInsets.symmetric(
+                                                  horizontal: 24,
+                                                  vertical: 10,
+                                                ),
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius: BorderRadius.circular(10),
+                                                ),
                                               ),
                                               onPressed: () => Navigator.pop(context),
                                               child: Text(
@@ -161,7 +182,9 @@ class TagManagementPage extends GetView<TagManagementController> {
                                     },
                                     child: Text(
                                       tag.name,
-                                      style: AppTextStyles.t14.copyWith(fontWeight: FontWeight.w600),
+                                      style: AppTextStyles.t14.copyWith(
+                                        fontWeight: FontWeight.w600,
+                                      ),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                     ),
@@ -173,12 +196,16 @@ class TagManagementPage extends GetView<TagManagementController> {
                             const SizedBox(height: 4),
                             Expanded(
                               child: Text(
-                                tag.description.isNotEmpty ? tag.description : i18n('no_description_placeholder'),
+                                tag.description.isNotEmpty
+                                    ? tag.description
+                                    : i18n('no_description_placeholder'),
                                 style: AppTextStyles.t11.copyWith(
                                   color: tag.description.isNotEmpty
                                       ? theme.disabledColor
                                       : theme.disabledColor.withValues(alpha: 0.4),
-                                  fontStyle: tag.description.isNotEmpty ? FontStyle.normal : FontStyle.italic,
+                                  fontStyle: tag.description.isNotEmpty
+                                      ? FontStyle.normal
+                                      : FontStyle.italic,
                                 ),
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
@@ -213,7 +240,11 @@ class TagManagementPage extends GetView<TagManagementController> {
                                     ),
                                   ),
                                   // 分割线
-                                  Container(width: 1, height: 14, color: theme.dividerColor.withValues(alpha: 0.1)),
+                                  Container(
+                                    width: 1,
+                                    height: 14,
+                                    color: theme.dividerColor.withValues(alpha: 0.1),
+                                  ),
                                   // 2. 编辑按钮
                                   Expanded(
                                     child: InkWell(
@@ -230,7 +261,11 @@ class TagManagementPage extends GetView<TagManagementController> {
                                     ),
                                   ),
                                   // 分割线
-                                  Container(width: 1, height: 14, color: theme.dividerColor.withValues(alpha: 0.1)),
+                                  Container(
+                                    width: 1,
+                                    height: 14,
+                                    color: theme.dividerColor.withValues(alpha: 0.1),
+                                  ),
                                   // 3. 删除按钮
                                   Expanded(
                                     child: InkWell(
@@ -308,7 +343,11 @@ class TagManagementPage extends GetView<TagManagementController> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Remix.information_line, size: 18, color: theme.colorScheme.primary.withValues(alpha: 0.8)),
+          Icon(
+            Remix.information_line,
+            size: 18,
+            color: theme.colorScheme.primary.withValues(alpha: 0.8),
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
@@ -341,7 +380,10 @@ class TagManagementPage extends GetView<TagManagementController> {
           children: [
             Text(
               i18n('tag_name_label'),
-              style: AppTextStyles.t12.copyWith(color: theme.colorScheme.primary, fontWeight: FontWeight.bold),
+              style: AppTextStyles.t12.copyWith(
+                color: theme.colorScheme.primary,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: 6),
             TextField(
@@ -358,7 +400,10 @@ class TagManagementPage extends GetView<TagManagementController> {
                 suffixIcon: ValueListenableBuilder<TextEditingValue>(
                   valueListenable: nameController,
                   builder: (context, value, _) => value.text.isNotEmpty
-                      ? IconButton(icon: const Icon(Icons.clear, size: 18), onPressed: () => nameController.clear())
+                      ? IconButton(
+                          icon: const Icon(Icons.clear, size: 18),
+                          onPressed: nameController.clear,
+                        )
                       : const SizedBox.shrink(),
                 ),
               ),
@@ -366,7 +411,9 @@ class TagManagementPage extends GetView<TagManagementController> {
             const SizedBox(height: 16),
             Text(
               i18n('tag_desc_label'),
-              style: AppTextStyles.t12.copyWith(color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6)),
+              style: AppTextStyles.t12.copyWith(
+                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+              ),
             ),
             const SizedBox(height: 6),
             TextField(
@@ -385,7 +432,10 @@ class TagManagementPage extends GetView<TagManagementController> {
                 suffixIcon: ValueListenableBuilder<TextEditingValue>(
                   valueListenable: descController,
                   builder: (context, value, _) => value.text.isNotEmpty
-                      ? IconButton(icon: const Icon(Icons.clear, size: 18), onPressed: () => descController.clear())
+                      ? IconButton(
+                          icon: const Icon(Icons.clear, size: 18),
+                          onPressed: descController.clear,
+                        )
                       : const SizedBox.shrink(),
                 ),
               ),
@@ -396,7 +446,10 @@ class TagManagementPage extends GetView<TagManagementController> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(i18n('cancel'), style: TextStyle(color: theme.colorScheme.onSurfaceVariant)),
+            child: Text(
+              i18n('cancel'),
+              style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+            ),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -448,7 +501,10 @@ class TagManagementPage extends GetView<TagManagementController> {
               controller.deleteTag(index);
               Navigator.pop(context);
             },
-            child: Text(i18n('delete'), style: TextStyle(color: Theme.of(context).colorScheme.error)),
+            child: Text(
+              i18n('delete'),
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
           ),
         ],
       ),

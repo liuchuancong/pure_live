@@ -18,10 +18,7 @@ extension type ZXingBrowserMultiFormatReader._(JSObject _) implements JSObject {
   /// milliseconds.
   ///
   /// See also: https://github.com/zxing-js/library/blob/master/src/core/DecodeHintType.ts
-  external factory ZXingBrowserMultiFormatReader(
-    JSMap? hints,
-    int timeBetweenScansMillis,
-  );
+  external factory ZXingBrowserMultiFormatReader(JSMap? hints, int timeBetweenScansMillis);
 
   /// Attach a [MediaStream] to a [HTMLVideoElement].
   ///

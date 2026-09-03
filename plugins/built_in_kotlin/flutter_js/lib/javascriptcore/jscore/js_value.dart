@@ -27,7 +27,7 @@ enum JSType {
   kJSTypeObject,
 
   /// A primitive symbol value.
-  kJSTypeSymbol
+  kJSTypeSymbol,
 }
 
 /// enum JSTypedArrayType
@@ -175,40 +175,44 @@ class JSValue {
 
   /// Creates a JavaScript value of the undefined type.
   JSValue.makeUndefined(this.context)
-      : this.pointer = JSValueRef.jSValueMakeUndefined(context.pointer);
+    : this.pointer = JSValueRef.jSValueMakeUndefined(context.pointer);
 
   /// Creates a JavaScript value of the null type.
-  JSValue.makeNull(this.context)
-      : this.pointer = JSValueRef.jSValueMakeNull(context.pointer);
+  JSValue.makeNull(this.context) : this.pointer = JSValueRef.jSValueMakeNull(context.pointer);
 
   /// Creates a JavaScript value of the boolean type.
   /// [boolean] The bool to assign to the newly created JSValue.
   JSValue.makeBoolean(this.context, bool boolean)
-      : this.pointer = JSValueRef.jSValueMakeBoolean(
-            context.pointer, boolean == true ? 1 : 0);
+    : this.pointer = JSValueRef.jSValueMakeBoolean(context.pointer, boolean == true ? 1 : 0);
 
   /// Creates a JavaScript value of the number type.
   /// [number] The double to assign to the newly created JSValue.
   JSValue.makeNumber(this.context, double number)
-      : this.pointer = JSValueRef.jSValueMakeNumber(context.pointer, number);
+    : this.pointer = JSValueRef.jSValueMakeNumber(context.pointer, number);
 
   /// Creates a JavaScript value of the string type.
   /// [string] The double to assign to the newly created JSValue.
   JSValue.makeString(this.context, String string)
-      : this.pointer = JSValueRef.jSValueMakeString(
-            context.pointer, JSString.fromString(string).pointer);
+    : this.pointer = JSValueRef.jSValueMakeString(
+        context.pointer,
+        JSString.fromString(string).pointer,
+      );
 
   /// Creates a JavaScript value of the symbol type.
   /// [description] A description of the newly created symbol value.
   JSValue.makeSymbol(this.context, String description)
-      : this.pointer = JSValueRef.jSValueMakeSymbol(
-            context.pointer, JSString.fromString(description).pointer);
+    : this.pointer = JSValueRef.jSValueMakeSymbol(
+        context.pointer,
+        JSString.fromString(description).pointer,
+      );
 
   /// Creates a JavaScript value from a JSON formatted string.
   /// [string] The JSString containing the JSON string to be parsed.
   JSValue.makeFromJSONString(this.context, String string)
-      : this.pointer = JSValueRef.jSValueMakeFromJSONString(
-            context.pointer, JSString.fromString(string).pointer);
+    : this.pointer = JSValueRef.jSValueMakeFromJSONString(
+        context.pointer,
+        JSString.fromString(string).pointer,
+      );
 
   /// Value type
   JSType get type {
@@ -264,52 +268,53 @@ class JSValue {
   /// Tests whether a JavaScript value's type is the symbol type.
   /// [jsClass] The JSClass to test against.
   bool isObjectOfClass(JSClass jsClass) {
-    return JSValueRef.jSValueIsObjectOfClass(
-            context.pointer, pointer, jsClass.pointer) ==
-        1;
+    return JSValueRef.jSValueIsObjectOfClass(context.pointer, pointer, jsClass.pointer) == 1;
   }
 
   /// Returns a JavaScript value's Typed Array type.
-  JSTypedArrayType getTypedArrayType({
-    JSValuePointer? exception,
-  }) {
-    int typeCode = JSValueRef.jSValueGetTypedArrayType(context.pointer, pointer,
-        (exception ?? JSValuePointer(nullptr)).pointer);
+  JSTypedArrayType getTypedArrayType({JSValuePointer? exception}) {
+    int typeCode = JSValueRef.jSValueGetTypedArrayType(
+      context.pointer,
+      pointer,
+      (exception ?? JSValuePointer(nullptr)).pointer,
+    );
     return cEnumToJSTypedArrayType(typeCode);
   }
 
   /// Tests whether two JavaScript values are equal, as compared by the JS == operator.
-  bool isEqual(
-    JSValue other, {
-    JSValuePointer? exception,
-  }) {
-    return JSValueRef.jSValueIsEqual(context.pointer, pointer, other.pointer,
-            (exception ?? JSValuePointer(nullptr)).pointer) ==
+  bool isEqual(JSValue other, {JSValuePointer? exception}) {
+    return JSValueRef.jSValueIsEqual(
+          context.pointer,
+          pointer,
+          other.pointer,
+          (exception ?? JSValuePointer(nullptr)).pointer,
+        ) ==
         1;
   }
 
   /// Tests whether a JavaScript value is an object constructed by a given constructor, as compared by the JS instanceof operator.
-  bool isInstanceOfConstructor(
-    JSObject constructor, {
-    JSValuePointer? exception,
-  }) {
+  bool isInstanceOfConstructor(JSObject constructor, {JSValuePointer? exception}) {
     return JSValueRef.jSValueIsInstanceOfConstructor(
-            context.pointer,
-            pointer,
-            constructor.pointer,
-            (exception ?? JSValuePointer(nullptr)).pointer) ==
+          context.pointer,
+          pointer,
+          constructor.pointer,
+          (exception ?? JSValuePointer(nullptr)).pointer,
+        ) ==
         1;
   }
 
   /// Creates a JavaScript string containing the JSON serialized representation of a JS value.
   /// [indent] The number of spaces to indent when nesting.  If 0, the resulting JSON will not contains newlines.  The size of the indent is clamped to 10 spaces.
   /// [exception] A pointer to a JSValueRef in which to store an exception, if any. Pass NULL if you do not care to store an exception.
-  JSString createJSONString({
-    int indent = 4,
-    JSValuePointer? exception,
-  }) {
-    return JSString(JSValueRef.jSValueCreateJSONString(context.pointer, pointer,
-        indent, (exception ?? JSValuePointer(nullptr)).pointer));
+  JSString createJSONString({int indent = 4, JSValuePointer? exception}) {
+    return JSString(
+      JSValueRef.jSValueCreateJSONString(
+        context.pointer,
+        pointer,
+        indent,
+        (exception ?? JSValuePointer(nullptr)).pointer,
+      ),
+    );
   }
 
   /// Converts a JavaScript value to boolean and returns the resulting boolean.
@@ -319,11 +324,12 @@ class JSValue {
 
   /// Converts a JavaScript value to number and returns the resulting number.
   /// [exception] A pointer to a JSValueRef in which to store an exception, if any. Pass NULL if you do not care to store an exception.
-  double toNumber({
-    JSValuePointer? exception,
-  }) {
-    return JSValueRef.jSValueToNumber(context.pointer, pointer,
-        (exception ?? JSValuePointer(nullptr)).pointer);
+  double toNumber({JSValuePointer? exception}) {
+    return JSValueRef.jSValueToNumber(
+      context.pointer,
+      pointer,
+      (exception ?? JSValuePointer(nullptr)).pointer,
+    );
   }
 
   /// Converts a JavaScript value to number and returns the resulting string.
@@ -336,22 +342,27 @@ class JSValue {
 
   /// Converts a JavaScript value to string and copies the result into a JavaScript string.
   /// [exception] A pointer to a JSValueRef in which to store an exception, if any. Pass NULL if you do not care to store an exception.
-  JSString toStringCopy({
-    JSValuePointer? exception,
-  }) {
-    return JSString(JSValueRef.jSValueToStringCopy(context.pointer, pointer,
-        (exception ?? JSValuePointer(nullptr)).pointer));
+  JSString toStringCopy({JSValuePointer? exception}) {
+    return JSString(
+      JSValueRef.jSValueToStringCopy(
+        context.pointer,
+        pointer,
+        (exception ?? JSValuePointer(nullptr)).pointer,
+      ),
+    );
   }
 
   /// Converts a JavaScript value to object and returns the resulting object.
   /// [exception] A pointer to a JSValueRef in which to store an exception, if any. Pass NULL if you do not care to store an exception.
-  JSObject toObject({
-    JSValuePointer? exception,
-  }) {
+  JSObject toObject({JSValuePointer? exception}) {
     return JSObject(
-        context,
-        JSValueRef.jSValueToObject(context.pointer, pointer,
-            (exception ?? JSValuePointer(nullptr)).pointer));
+      context,
+      JSValueRef.jSValueToObject(
+        context.pointer,
+        pointer,
+        (exception ?? JSValuePointer(nullptr)).pointer,
+      ),
+    );
   }
 
   /// Protects a JavaScript value from garbage collection.
@@ -376,9 +387,7 @@ class JSValue {
       identical(this, other) ||
       other is JSValue &&
           runtimeType == other.runtimeType &&
-          JSValueRef.jSValueIsStrictEqual(
-                  context.pointer, pointer, other.pointer) ==
-              1;
+          JSValueRef.jSValueIsStrictEqual(context.pointer, pointer, other.pointer) == 1;
 
   @override
   int get hashCode => context.hashCode ^ pointer.hashCode;
@@ -392,16 +401,14 @@ class JSValuePointer {
   /// Pointer array count
   final int count;
 
-  JSValuePointer([Pointer? value])
-      : this.count = 1,
-        this.pointer = malloc.call<Pointer>(1) {
+  JSValuePointer([Pointer? value]) : this.count = 1, this.pointer = malloc.call<Pointer>(1) {
     pointer.value = value ?? nullptr;
   }
 
   /// JSValueRef array
   JSValuePointer.array(List<JSValue> array)
-      : this.count = array.length,
-        this.pointer = malloc.call<Pointer>(array.length) {
+    : this.count = array.length,
+      this.pointer = malloc.call<Pointer>(array.length) {
     for (int i = 0; i < array.length; i++) {
       this.pointer[i] = array[i].pointer;
     }

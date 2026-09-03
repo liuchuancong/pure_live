@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/core/common/http_client.dart';
 import 'package:pure_live/common/services/settings/bilibili_account_service.dart';
@@ -14,8 +15,8 @@ class BiliBiliQRLoginController extends GetxController {
 
   Timer? timer;
 
-  var qrcodeUrl = "".obs;
-  var qrcodeKey = "";
+  var qrcodeUrl = ''.obs;
+  var qrcodeKey = '';
 
   /// 二维码状态
   /// - [0] 加载中
@@ -30,13 +31,13 @@ class BiliBiliQRLoginController extends GetxController {
       qrStatus.value = QRStatus.loading;
 
       var result = await HttpClient.instance.getJson(
-        "https://passport.bilibili.com/x/passport-login/web/qrcode/generate",
+        'https://passport.bilibili.com/x/passport-login/web/qrcode/generate',
       );
-      if (result["code"] != 0) {
-        throw result["message"];
+      if (result['code'] != 0) {
+        throw result['message'];
       }
-      qrcodeKey = result["data"]["qrcode_key"];
-      qrcodeUrl.value = result["data"]["url"];
+      qrcodeKey = result['data']['qrcode_key'];
+      qrcodeUrl.value = result['data']['url'];
       qrStatus.value = QRStatus.unscanned;
       startPoll();
     } catch (e) {
@@ -54,29 +55,29 @@ class BiliBiliQRLoginController extends GetxController {
   void pollQRStatus() async {
     try {
       var response = await HttpClient.instance.get(
-        "https://passport.bilibili.com/x/passport-login/web/qrcode/poll",
-        queryParameters: {"qrcode_key": qrcodeKey},
+        'https://passport.bilibili.com/x/passport-login/web/qrcode/poll',
+        queryParameters: {'qrcode_key': qrcodeKey},
       );
-      if (response.data["code"] != 0) {
-        throw response.data["message"];
+      if (response.data['code'] != 0) {
+        throw response.data['message'];
       }
-      var data = response.data["data"];
-      var code = data["code"];
+      var data = response.data['data'];
+      var code = data['code'];
       if (code == 0) {
         var cookies = <String>[];
-        response.headers["set-cookie"]?.forEach((element) {
-          var cookie = element.split(";")[0];
+        response.headers['set-cookie']?.forEach((element) {
+          var cookie = element.split(';')[0];
           cookies.add(cookie);
         });
         if (cookies.isNotEmpty) {
-          var cookieStr = cookies.join(";");
+          var cookieStr = cookies.join(';');
           BiliBiliAccountService.instance.setCookie(cookieStr);
           await BiliBiliAccountService.instance.loadUserInfo();
           Navigator.of(Get.context!).pop();
         }
       } else if (code == 86038) {
         qrStatus.value = QRStatus.expired;
-        qrcodeKey = "";
+        qrcodeKey = '';
         timer?.cancel();
       } else if (code == 86090) {
         qrStatus.value = QRStatus.scanned;

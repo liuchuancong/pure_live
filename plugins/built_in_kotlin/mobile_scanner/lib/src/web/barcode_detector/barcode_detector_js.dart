@@ -25,9 +25,7 @@ extension type NativeBarcodeDetector._(JSObject _) implements JSObject {
 
   /// Constructs a detector restricted to the given [options].
   @JS('BarcodeDetector')
-  external factory NativeBarcodeDetector.withOptions(
-    BarcodeDetectorInit options,
-  );
+  external factory NativeBarcodeDetector.withOptions(BarcodeDetectorInit options);
 
   /// Returns the list of barcode formats supported by the current browser.
   external static JSPromise<JSArray<JSString>> getSupportedFormats();
@@ -37,9 +35,7 @@ extension type NativeBarcodeDetector._(JSObject _) implements JSObject {
   /// Returns a [JSPromise] that resolves to a list of [DetectedBarcode]s.
   /// Corner points are in the intrinsic coordinate space of the video
   /// frame (i.e. `[0, videoWidth] × [0, videoHeight]`).
-  external JSPromise<JSArray<DetectedBarcode>> detect(
-    web.HTMLVideoElement videoElement,
-  );
+  external JSPromise<JSArray<DetectedBarcode>> detect(web.HTMLVideoElement videoElement);
 }
 
 /// Options object for [NativeBarcodeDetector.withOptions].

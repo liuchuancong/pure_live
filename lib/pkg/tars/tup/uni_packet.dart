@@ -1,6 +1,7 @@
 import 'const.dart';
 import 'uni_attribute.dart';
 import 'request_packet.dart';
+
 import 'package:pure_live/core/common/log.dart';
 import 'package:pure_live/pkg/tars/tup/write_buffer.dart';
 import 'package:pure_live/pkg/tars/codec/tars_input_stream.dart';
@@ -60,11 +61,11 @@ class UniPacket extends UniAttribute {
   /// 将put的对象进行编码
   @override
   Uint8List encode() {
-    if (package.sServantName.compareTo("") == 0) {
-      throw ArgumentError("servantName can not is null");
+    if (package.sServantName.compareTo('') == 0) {
+      throw ArgumentError('servantName can not is null');
     }
-    if (package.sFuncName.compareTo("") == 0) {
-      throw ArgumentError("funcName can not is null");
+    if (package.sFuncName.compareTo('') == 0) {
+      throw ArgumentError('funcName can not is null');
     }
 
     TarsOutputStream outputStream = TarsOutputStream();
@@ -93,7 +94,7 @@ class UniPacket extends UniAttribute {
   @override
   void decode(Uint8List buffer, {int index = 0}) {
     if (buffer.lengthInBytes < kUniPacketHeadSize) {
-      throw ArgumentError("Decode namespace must include size head");
+      throw ArgumentError('Decode namespace must include size head');
     }
     try {
       TarsInputStream inputStream = TarsInputStream(buffer, pos: kUniPacketHeadSize + index);
@@ -110,8 +111,8 @@ class UniPacket extends UniAttribute {
       if (package.iVersion == Const.PACKET_TYPE_TUP) {
         oldData = inputStream.readMapMap<String, String, Uint8List>(
           <String, Map<String, Uint8List>>{
-            "": {
-              "": Uint8List.fromList([0x0]),
+            '': {
+              '': Uint8List.fromList([0x0]),
             },
           },
           0,
@@ -120,7 +121,7 @@ class UniPacket extends UniAttribute {
       } else {
         newData = inputStream.readMap<String, Uint8List>(
           {
-            "": Uint8List.fromList([0x0]),
+            '': Uint8List.fromList([0x0]),
           },
           0,
           false,

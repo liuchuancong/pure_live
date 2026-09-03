@@ -66,13 +66,13 @@ mixin GetLifeCycleMixin {
     onClose();
   }
 
-//   void _checkIfAlreadyConfigured() {
-//     if (_initialized) {
-//       throw """You can only call configureLifeCycle once.
-// The proper place to insert it is in your class's constructor
-// that inherits GetLifeCycle.""";
-//     }
-//   }
+  //   void _checkIfAlreadyConfigured() {
+  //     if (_initialized) {
+  //       throw """You can only call configureLifeCycle once.
+  // The proper place to insert it is in your class's constructor
+  // that inherits GetLifeCycle.""";
+  //     }
+  //   }
 }
 
 /// Allow track difference between GetxServices and GetxControllers

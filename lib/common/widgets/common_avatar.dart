@@ -27,7 +27,9 @@ class CommonAvatar extends StatelessWidget {
     final value = avatarUrl?.trim() ?? '';
 
     Widget fallback() {
-      final text = fallbackName != null && fallbackName!.isNotEmpty ? fallbackName!.characters.first.toUpperCase() : '';
+      final text = fallbackName != null && fallbackName!.isNotEmpty
+          ? fallbackName!.characters.first.toUpperCase()
+          : '';
 
       return Container(
         alignment: Alignment.center,
@@ -55,11 +57,15 @@ class CommonAvatar extends StatelessWidget {
           cacheManager: CustomImageCacheManager.instance,
           fit: BoxFit.cover,
           filterQuality: FilterQuality.low,
-          memCacheWidth: (avatarSize * MediaQuery.devicePixelRatioOf(context)).round().clamp(48, 256).toInt(),
+          memCacheWidth: (avatarSize * MediaQuery.devicePixelRatioOf(context))
+              .round()
+              .clamp(48, 256)
+              .toInt(),
           fadeInDuration: Duration.zero,
           fadeOutDuration: Duration.zero,
           useOldImageOnUrlChange: true,
-          placeholder: (_, _) => Container(color: Theme.of(context).disabledColor.withValues(alpha: 0.2)),
+          placeholder: (_, _) =>
+              Container(color: Theme.of(context).disabledColor.withValues(alpha: 0.2)),
           errorWidget: (_, _, _) => fallback(),
         );
       });

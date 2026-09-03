@@ -24,7 +24,10 @@ class RecordSettingsController extends GetxController {
   /// =====================================
   final segmentTime = RecorderConfig.segmentTime.obs;
   final maxTaskCount = RecorderConfig.maxTaskCount.obs;
-  final preferBestStream = hiveBool(RecorderKeys.preferBestStream, RecorderConfig.defaultPreferBestStream);
+  final preferBestStream = hiveBool(
+    RecorderKeys.preferBestStream,
+    RecorderConfig.defaultPreferBestStream,
+  );
   final rwTimeout = RecorderConfig.rwTimeout.obs;
   final threadQueueSize = RecorderConfig.threadQueueSize.obs;
 
@@ -43,11 +46,20 @@ class RecordSettingsController extends GetxController {
   final enableBackoff = hiveBool(RecorderKeys.enableBackoff, RecorderConfig.defaultEnableBackoff);
   final maxCheckInterval = RecorderConfig.maxCheckInterval.obs;
 
-  final autoStartOnBoot = hiveBool(RecorderKeys.autoStartOnBoot, RecorderConfig.defaultAutoStartOnBoot);
-  final usePinyinForFolder = hiveBool(RecorderKeys.folderNamingStrategy, RecorderConfig.defaultUsePinyinForFolder);
+  final autoStartOnBoot = hiveBool(
+    RecorderKeys.autoStartOnBoot,
+    RecorderConfig.defaultAutoStartOnBoot,
+  );
+  final usePinyinForFolder = hiveBool(
+    RecorderKeys.folderNamingStrategy,
+    RecorderConfig.defaultUsePinyinForFolder,
+  );
 
   /// 缓存限制开关
-  final enableCacheLimit = hiveBool(RecorderKeys.enableCacheLimit, RecorderConfig.defaultEnableCacheLimit);
+  final enableCacheLimit = hiveBool(
+    RecorderKeys.enableCacheLimit,
+    RecorderConfig.defaultEnableCacheLimit,
+  );
 
   @override
   void onInit() {
@@ -190,7 +202,9 @@ class RecordSettingsController extends GetxController {
   }
 
   Future<void> openRecordDir() async {
-    final path = managedRecordPath.value.isNotEmpty ? managedRecordPath.value : await CacheService.to.getDisplayPath();
+    final path = managedRecordPath.value.isNotEmpty
+        ? managedRecordPath.value
+        : await CacheService.to.getDisplayPath();
 
     if (path.isEmpty) {
       return;

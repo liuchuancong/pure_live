@@ -33,7 +33,12 @@ class SpriteLayoutSpan extends LayoutSpan {
     if (player != null) {
       player!.paint(canvas, dstRect, paint);
     } else {
-      sprite.render(canvas, position: Vector2(x, y), size: Vector2(width, height), overridePaint: paint);
+      sprite.render(
+        canvas,
+        position: Vector2(x, y),
+        size: Vector2(width, height),
+        overridePaint: paint,
+      );
     }
   }
 }

@@ -55,10 +55,7 @@ Size computeBoundingBoxSize(List<Offset> corners) {
   final xs = corners.map((c) => c.dx);
   final ys = corners.map((c) => c.dy);
 
-  return Size(
-    xs.reduce(math.max) - xs.reduce(math.min),
-    ys.reduce(math.max) - ys.reduce(math.min),
-  );
+  return Size(xs.reduce(math.max) - xs.reduce(math.min), ys.reduce(math.max) - ys.reduce(math.min));
 }
 
 /// Returns a copy of [barcode] with all corner x-coordinates mirrored
@@ -76,10 +73,9 @@ Barcode mirrorBarcodeX(Barcode barcode, double videoWidth) {
   // Mirroring x reverses the clockwise winding order from
   // [TL, TR, BR, BL] to [TR_m, TL_m, BL_m, BR_m].
   // Swap TL↔TR and BL↔BR to restore [TL_m, TR_m, BR_m, BL_m].
-  final reordered =
-      mirrored.length == 4
-          ? [mirrored[1], mirrored[0], mirrored[3], mirrored[2]]
-          : mirrored;
+  final reordered = mirrored.length == 4
+      ? [mirrored[1], mirrored[0], mirrored[3], mirrored[2]]
+      : mirrored;
 
   return Barcode(
     corners: reordered,

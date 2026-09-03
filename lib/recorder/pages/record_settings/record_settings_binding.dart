@@ -4,6 +4,6 @@ import 'package:pure_live/recorder/pages/record_settings/record_settings_control
 class RecordSettingsBinding extends Binding {
   @override
   List<Bind> dependencies() {
-    return [Bind.lazyPut(() => RecordSettingsController())];
+    return [Bind.lazyPut(RecordSettingsController.new)];
   }
 }

@@ -3,7 +3,10 @@ import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/core/common/proxy_routing.dart';
 
-final TextInputFormatter _proxyHostInputFormatter = TextInputFormatter.withFunction((oldValue, newValue) {
+final TextInputFormatter _proxyHostInputFormatter = TextInputFormatter.withFunction((
+  oldValue,
+  newValue,
+) {
   final normalized = normalizeProxyHost(newValue.text);
   if (normalized == newValue.text) return newValue;
   return TextEditingValue(
@@ -51,18 +54,18 @@ class _NetworkProxySettingsPageState extends State<NetworkProxySettingsPage> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: Text(i18n("network_proxy_settings"))),
+      appBar: AppBar(title: Text(i18n('network_proxy_settings'))),
       body: Obx(() {
         return ListView(
           physics: const PureLiveScrollPhysics(),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           children: [
-            context.buildGroupTitle(i18n("app_proxy_group_title")),
+            context.buildGroupTitle(i18n('app_proxy_group_title')),
             context.buildModernCard([
               SwitchListTile(
                 secondary: Icon(Remix.apps_line, color: theme.colorScheme.primary),
-                title: Text(i18n("enable_app_proxy")),
-                subtitle: Text(i18n("enable_app_proxy_desc")),
+                title: Text(i18n('enable_app_proxy')),
+                subtitle: Text(i18n('enable_app_proxy_desc')),
                 value: proxyCtrl.enableAppProxy.v,
                 onChanged: (val) => proxyCtrl.enableAppProxy.v = val,
               ),
@@ -80,8 +83,8 @@ class _NetworkProxySettingsPageState extends State<NetworkProxySettingsPage> {
                           enableSuggestions: false,
                           inputFormatters: [_proxyHostInputFormatter],
                           decoration: InputDecoration(
-                            labelText: i18n("proxy_address_label"),
-                            hintText: "127.0.0.1",
+                            labelText: i18n('proxy_address_label'),
+                            hintText: '127.0.0.1',
                             border: const OutlineInputBorder(),
                             isDense: true,
                           ),
@@ -96,8 +99,8 @@ class _NetworkProxySettingsPageState extends State<NetworkProxySettingsPage> {
                           keyboardType: TextInputType.number,
                           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                           decoration: InputDecoration(
-                            labelText: i18n("proxy_port_label"),
-                            hintText: "7890",
+                            labelText: i18n('proxy_port_label'),
+                            hintText: '7890',
                             border: const OutlineInputBorder(),
                             isDense: true,
                           ),
@@ -114,12 +117,12 @@ class _NetworkProxySettingsPageState extends State<NetworkProxySettingsPage> {
             ]),
 
             const SizedBox(height: 24),
-            context.buildGroupTitle(i18n("player_proxy_group_title")),
+            context.buildGroupTitle(i18n('player_proxy_group_title')),
             context.buildModernCard([
               SwitchListTile(
                 secondary: Icon(Remix.video_line, color: theme.colorScheme.primary),
-                title: Text(i18n("enable_player_proxy")),
-                subtitle: Text(i18n("enable_player_proxy_desc")),
+                title: Text(i18n('enable_player_proxy')),
+                subtitle: Text(i18n('enable_player_proxy_desc')),
                 value: proxyCtrl.enableProxy.v,
                 onChanged: (val) => proxyCtrl.enableProxy.v = val,
               ),
@@ -137,8 +140,8 @@ class _NetworkProxySettingsPageState extends State<NetworkProxySettingsPage> {
                           enableSuggestions: false,
                           inputFormatters: [_proxyHostInputFormatter],
                           decoration: InputDecoration(
-                            labelText: i18n("proxy_address_label"),
-                            hintText: "127.0.0.1",
+                            labelText: i18n('proxy_address_label'),
+                            hintText: '127.0.0.1',
                             border: const OutlineInputBorder(),
                             isDense: true,
                           ),
@@ -153,8 +156,8 @@ class _NetworkProxySettingsPageState extends State<NetworkProxySettingsPage> {
                           keyboardType: TextInputType.number,
                           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                           decoration: InputDecoration(
-                            labelText: i18n("proxy_port_label"),
-                            hintText: "1080",
+                            labelText: i18n('proxy_port_label'),
+                            hintText: '1080',
                             border: const OutlineInputBorder(),
                             isDense: true,
                           ),

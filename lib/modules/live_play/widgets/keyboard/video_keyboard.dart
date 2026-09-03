@@ -66,12 +66,16 @@ class _VideoKeyboardShortcutsState extends State<VideoKeyboardShortcuts> {
     final controller = widget.controller;
     return CallbackShortcuts(
       bindings: {
-        const SingleActivator(LogicalKeyboardKey.mediaPlay): () => GlobalPlayerService.instance.player.resume(),
-        const SingleActivator(LogicalKeyboardKey.mediaPause): () => GlobalPlayerService.instance.player.pause(),
+        const SingleActivator(LogicalKeyboardKey.mediaPlay): () =>
+            GlobalPlayerService.instance.player.resume(),
+        const SingleActivator(LogicalKeyboardKey.mediaPause): () =>
+            GlobalPlayerService.instance.player.pause(),
         const SingleActivator(LogicalKeyboardKey.mediaPlayPause): () =>
             GlobalPlayerService.instance.player.togglePlayPause(),
-        const SingleActivator(LogicalKeyboardKey.space): () => GlobalPlayerService.instance.player.togglePlayPause(),
-        if (controller != null) const SingleActivator(LogicalKeyboardKey.keyR): () => controller.refresh(),
+        const SingleActivator(LogicalKeyboardKey.space): () =>
+            GlobalPlayerService.instance.player.togglePlayPause(),
+        if (controller != null)
+          const SingleActivator(LogicalKeyboardKey.keyR): controller.refresh,
         if (controller != null)
           const SingleActivator(LogicalKeyboardKey.arrowUp): () async {
             double? volume = await controller.volume();

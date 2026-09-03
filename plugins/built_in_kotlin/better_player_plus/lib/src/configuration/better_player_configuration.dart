@@ -21,7 +21,10 @@ class BetterPlayerConfiguration {
     this.errorBuilder,
     this.allowedScreenSleep = true,
     this.fullScreenAspectRatio,
-    this.deviceOrientationsOnFullScreen = const [DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight],
+    this.deviceOrientationsOnFullScreen = const [
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ],
     this.systemOverlaysAfterFullScreen = SystemUiOverlay.values,
     this.deviceOrientationsAfterFullScreen = const [
       DeviceOrientation.portraitUp,
@@ -202,16 +205,20 @@ class BetterPlayerConfiguration {
     errorBuilder: errorBuilder ?? this.errorBuilder,
     allowedScreenSleep: allowedScreenSleep ?? this.allowedScreenSleep,
     fullScreenAspectRatio: fullScreenAspectRatio ?? this.fullScreenAspectRatio,
-    deviceOrientationsOnFullScreen: deviceOrientationsOnFullScreen ?? this.deviceOrientationsOnFullScreen,
-    systemOverlaysAfterFullScreen: systemOverlaysAfterFullScreen ?? this.systemOverlaysAfterFullScreen,
-    deviceOrientationsAfterFullScreen: deviceOrientationsAfterFullScreen ?? this.deviceOrientationsAfterFullScreen,
+    deviceOrientationsOnFullScreen:
+        deviceOrientationsOnFullScreen ?? this.deviceOrientationsOnFullScreen,
+    systemOverlaysAfterFullScreen:
+        systemOverlaysAfterFullScreen ?? this.systemOverlaysAfterFullScreen,
+    deviceOrientationsAfterFullScreen:
+        deviceOrientationsAfterFullScreen ?? this.deviceOrientationsAfterFullScreen,
     routePageBuilder: routePageBuilder ?? this.routePageBuilder,
     eventListener: eventListener ?? this.eventListener,
     subtitlesConfiguration: subtitlesConfiguration ?? this.subtitlesConfiguration,
     controlsConfiguration: controlsConfiguration ?? this.controlsConfiguration,
     fit: fit ?? this.fit,
     rotation: rotation ?? this.rotation,
-    playerVisibilityChangedBehavior: playerVisibilityChangedBehavior ?? this.playerVisibilityChangedBehavior,
+    playerVisibilityChangedBehavior:
+        playerVisibilityChangedBehavior ?? this.playerVisibilityChangedBehavior,
     translations: translations ?? this.translations,
     autoDetectFullscreenDeviceOrientation:
         autoDetectFullscreenDeviceOrientation ?? this.autoDetectFullscreenDeviceOrientation,

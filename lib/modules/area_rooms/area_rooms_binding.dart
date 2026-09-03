@@ -6,7 +6,7 @@ class AreaRoomsBinding extends Binding {
   List<Bind> dependencies() {
     final Site site = Get.arguments[0];
     final LiveArea subCategory = Get.arguments[1];
-    final String tag = "${site.id}_${subCategory.areaId}";
+    final String tag = '${site.id}_${subCategory.areaId}';
 
     return [
       Bind.lazyPut<BasePageScrollAndStateBone<LiveRoom>>(() {

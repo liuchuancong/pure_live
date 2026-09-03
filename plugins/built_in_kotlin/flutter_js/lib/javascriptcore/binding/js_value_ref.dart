@@ -77,8 +77,7 @@ final int Function(Pointer ctx, Pointer value) jSValueGetType = JscFfi.lib
 /// [value] (JSValueRef) The JSValue to test.
 /// [@result] (bool) true if value's type is the undefined type, otherwise false.
 final int Function(Pointer ctx, Pointer value) jSValueIsUndefined = JscFfi.lib
-    .lookup<NativeFunction<Int8 Function(Pointer, Pointer)>>(
-        'JSValueIsUndefined')
+    .lookup<NativeFunction<Int8 Function(Pointer, Pointer)>>('JSValueIsUndefined')
     .asFunction();
 
 /// Tests whether a JavaScript value's type is the null type.
@@ -134,11 +133,9 @@ final int Function(Pointer ctx, Pointer value) jSValueIsObject = JscFfi.lib
 /// [value] (JSValueRef) The JSValue to test.
 /// [jsClass] (JSClassRef) The JSClass to test against.
 /// [@result] (bool) true if value is an object and has jsClass in its class chain, otherwise false.
-final int Function(Pointer ctx, Pointer value, Pointer jsClass)
-    jSValueIsObjectOfClass = JscFfi.lib
-        .lookup<NativeFunction<Int8 Function(Pointer, Pointer, Pointer)>>(
-            'JSValueIsObjectOfClass')
-        .asFunction();
+final int Function(Pointer ctx, Pointer value, Pointer jsClass) jSValueIsObjectOfClass = JscFfi.lib
+    .lookup<NativeFunction<Int8 Function(Pointer, Pointer, Pointer)>>('JSValueIsObjectOfClass')
+    .asFunction();
 
 /// Tests whether a JavaScript value is an array.
 /// [ctx] (JSContextRef) The execution context to use.
@@ -161,11 +158,10 @@ final int Function(Pointer ctx, Pointer value) jSValueIsDate = JscFfi.lib
 /// [value] (JSValueRef) The JSValue whose Typed Array type to return.
 /// [exception] (JSValueRef*) A pointer to a JSValueRef in which to store an exception, if any. Pass NULL if you do not care to store an exception.
 /// [@result] (JSTypedArrayType) A value of type JSTypedArrayType that identifies value's Typed Array type, or kJSTypedArrayTypeNone if the value is not a Typed Array object.
-final int Function(Pointer ctx, Pointer value, Pointer exception)
-    jSValueGetTypedArrayType = JscFfi.lib
-        .lookup<NativeFunction<Int8 Function(Pointer, Pointer, Pointer)>>(
-            'JSValueGetTypedArrayType')
-        .asFunction();
+final int Function(Pointer ctx, Pointer value, Pointer exception) jSValueGetTypedArrayType = JscFfi
+    .lib
+    .lookup<NativeFunction<Int8 Function(Pointer, Pointer, Pointer)>>('JSValueGetTypedArrayType')
+    .asFunction();
 
 /// Tests whether two JavaScript values are equal, as compared by the JS == operator.
 /// [ctx] (JSContextRef) The execution context to use.
@@ -173,14 +169,8 @@ final int Function(Pointer ctx, Pointer value, Pointer exception)
 /// [b] (JSValueRef) The second value to test.
 /// [exception] (JSValueRef*) A pointer to a JSValueRef in which to store an exception, if any. Pass NULL if you do not care to store an exception.
 /// [@result] (bool) true if the two values are equal, false if they are not equal or an exception is thrown.
-final int Function(
-    Pointer ctx,
-    Pointer a,
-    Pointer b,
-    Pointer
-        exception) jSValueIsEqual = JscFfi.lib
-    .lookup<NativeFunction<Int8 Function(Pointer, Pointer, Pointer, Pointer)>>(
-        'JSValueIsEqual')
+final int Function(Pointer ctx, Pointer a, Pointer b, Pointer exception) jSValueIsEqual = JscFfi.lib
+    .lookup<NativeFunction<Int8 Function(Pointer, Pointer, Pointer, Pointer)>>('JSValueIsEqual')
     .asFunction();
 
 /// Tests whether two JavaScript values are strict equal, as compared by the JS === operator.
@@ -188,11 +178,9 @@ final int Function(
 /// [a] (JSValueRef) The first value to test.
 /// [b] (JSValueRef) The second value to test.
 /// [@result] (bool) true if the two values are strict equal, otherwise false.
-final int Function(Pointer ctx, Pointer a, Pointer b) jSValueIsStrictEqual =
-    JscFfi.lib
-        .lookup<NativeFunction<Int8 Function(Pointer, Pointer, Pointer)>>(
-            'JSValueIsStrictEqual')
-        .asFunction();
+final int Function(Pointer ctx, Pointer a, Pointer b) jSValueIsStrictEqual = JscFfi.lib
+    .lookup<NativeFunction<Int8 Function(Pointer, Pointer, Pointer)>>('JSValueIsStrictEqual')
+    .asFunction();
 
 /// Tests whether a JavaScript value is an object constructed by a given constructor, as compared by the JS instanceof operator.
 /// [ctx] (JSContextRef) The execution context to use.
@@ -200,14 +188,11 @@ final int Function(Pointer ctx, Pointer a, Pointer b) jSValueIsStrictEqual =
 /// [constructor] (JSObjectRef) The constructor to test against.
 /// [exception] (JSValueRef*) A pointer to a JSValueRef in which to store an exception, if any. Pass NULL if you do not care to store an exception.
 /// [@result] (bool) true if value is an object constructed by constructor, as compared by the JS instanceof operator, otherwise false.
-final int Function(
-    Pointer ctx,
-    Pointer value,
-    Pointer constructor,
-    Pointer
-        exception) jSValueIsInstanceOfConstructor = JscFfi.lib
+final int Function(Pointer ctx, Pointer value, Pointer constructor, Pointer exception)
+jSValueIsInstanceOfConstructor = JscFfi.lib
     .lookup<NativeFunction<Int8 Function(Pointer, Pointer, Pointer, Pointer)>>(
-        'JSValueIsInstanceOfConstructor')
+      'JSValueIsInstanceOfConstructor',
+    )
     .asFunction();
 
 /// Creates a JavaScript value of the undefined type.
@@ -229,49 +214,40 @@ final Pointer Function(Pointer ctx) jSValueMakeNull = JscFfi.lib
 /// [boolean] (bool) The bool to assign to the newly created JSValue.
 /// [@result] (JSValueRef) A JSValue of the boolean type, representing the value of boolean.
 final Pointer Function(Pointer ctx, int boolean) jSValueMakeBoolean = JscFfi.lib
-    .lookup<NativeFunction<Pointer Function(Pointer, Int8)>>(
-        'JSValueMakeBoolean')
+    .lookup<NativeFunction<Pointer Function(Pointer, Int8)>>('JSValueMakeBoolean')
     .asFunction();
 
 /// Creates a JavaScript value of the number type.
 /// [ctx] (JSContextRef) The execution context to use.
 /// [number] (double) The double to assign to the newly created JSValue.
 /// [@result] (JSValueRef) A JSValue of the number type, representing the value of number.
-final Pointer Function(Pointer ctx, double number) jSValueMakeNumber = JscFfi
-    .lib
-    .lookup<NativeFunction<Pointer Function(Pointer, Double)>>(
-        'JSValueMakeNumber')
+final Pointer Function(Pointer ctx, double number) jSValueMakeNumber = JscFfi.lib
+    .lookup<NativeFunction<Pointer Function(Pointer, Double)>>('JSValueMakeNumber')
     .asFunction();
 
 /// Creates a JavaScript value of the string type.
 /// [ctx] (JSContextRef) The execution context to use.
 /// [string] (JSStringRef) The JSString to assign to the newly created JSValue. The newly created JSValue retains string, and releases it upon garbage collection.
 /// [@result] (JSValueRef) A JSValue of the string type, representing the value of string.
-final Pointer Function(Pointer ctx, Pointer string) jSValueMakeString = JscFfi
-    .lib
-    .lookup<NativeFunction<Pointer Function(Pointer, Pointer)>>(
-        'JSValueMakeString')
+final Pointer Function(Pointer ctx, Pointer string) jSValueMakeString = JscFfi.lib
+    .lookup<NativeFunction<Pointer Function(Pointer, Pointer)>>('JSValueMakeString')
     .asFunction();
 
 /// Creates a JavaScript value of the symbol type.
 /// [ctx] (JSContextRef) The execution context to use.
 /// [description] (JSStringRef) A description of the newly created symbol value.
 /// [@result] (JSValueRef) A unique JSValue of the symbol type, whose description matches the one provided.
-final Pointer Function(Pointer ctx, Pointer description) jSValueMakeSymbol =
-    JscFfi.lib
-        .lookup<NativeFunction<Pointer Function(Pointer, Pointer)>>(
-            'JSValueMakeSymbol')
-        .asFunction();
+final Pointer Function(Pointer ctx, Pointer description) jSValueMakeSymbol = JscFfi.lib
+    .lookup<NativeFunction<Pointer Function(Pointer, Pointer)>>('JSValueMakeSymbol')
+    .asFunction();
 
 /// Creates a JavaScript value from a JSON formatted string.
 /// [ctx] (JSContextRef) The execution context to use.
 /// [string] (JSStringRef) The JSString containing the JSON string to be parsed.
 /// [@result] (JSValueRef) A JSValue containing the parsed value, or NULL if the input is invalid.
-final Pointer Function(Pointer ctx, Pointer string) jSValueMakeFromJSONString =
-    JscFfi.lib
-        .lookup<NativeFunction<Pointer Function(Pointer, Pointer)>>(
-            'JSValueMakeFromJSONString')
-        .asFunction();
+final Pointer Function(Pointer ctx, Pointer string) jSValueMakeFromJSONString = JscFfi.lib
+    .lookup<NativeFunction<Pointer Function(Pointer, Pointer)>>('JSValueMakeFromJSONString')
+    .asFunction();
 
 /// Creates a JavaScript string containing the JSON serialized representation of a JS value.
 /// [ctx] (JSContextRef) The execution context to use.
@@ -279,14 +255,11 @@ final Pointer Function(Pointer ctx, Pointer string) jSValueMakeFromJSONString =
 /// [indent] (unsigned) The number of spaces to indent when nesting.  If 0, the resulting JSON will not contains newlines.  The size of the indent is clamped to 10 spaces.
 /// [exception] (JSValueRef*) A pointer to a JSValueRef in which to store an exception, if any. Pass NULL if you do not care to store an exception.
 /// [@result] (JSStringRef) A JSString with the result of serialization, or NULL if an exception is thrown.
-final Pointer Function(
-    Pointer ctx,
-    Pointer value,
-    int indent,
-    Pointer
-        exception) jSValueCreateJSONString = JscFfi.lib
+final Pointer Function(Pointer ctx, Pointer value, int indent, Pointer exception)
+jSValueCreateJSONString = JscFfi.lib
     .lookup<NativeFunction<Pointer Function(Pointer, Pointer, Int32, Pointer)>>(
-        'JSValueCreateJSONString')
+      'JSValueCreateJSONString',
+    )
     .asFunction();
 
 /// Converts a JavaScript value to boolean and returns the resulting boolean.
@@ -302,33 +275,28 @@ final int Function(Pointer ctx, Pointer value) jSValueToBoolean = JscFfi.lib
 /// [value] (JSValueRef) The JSValue to convert.
 /// [exception] (JSValueRef*) A pointer to a JSValueRef in which to store an exception, if any. Pass NULL if you do not care to store an exception.
 /// [@result] (double) The numeric result of conversion, or NaN if an exception is thrown.
-final double Function(Pointer ctx, Pointer value, Pointer exception)
-    jSValueToNumber = JscFfi.lib
-        .lookup<NativeFunction<Double Function(Pointer, Pointer, Pointer)>>(
-            'JSValueToNumber')
-        .asFunction();
+final double Function(Pointer ctx, Pointer value, Pointer exception) jSValueToNumber = JscFfi.lib
+    .lookup<NativeFunction<Double Function(Pointer, Pointer, Pointer)>>('JSValueToNumber')
+    .asFunction();
 
 /// Converts a JavaScript value to string and copies the result into a JavaScript string.
 /// [ctx] (JSContextRef) The execution context to use.
 /// [value] (JSValueRef) The JSValue to convert.
 /// [exception] (JSValueRef*) A pointer to a JSValueRef in which to store an exception, if any. Pass NULL if you do not care to store an exception.
 /// [@result] (JSStringRef) A JSString with the result of conversion, or NULL if an exception is thrown. Ownership follows the Create Rule.
-final Pointer Function(Pointer ctx, Pointer value, Pointer exception)
-    jSValueToStringCopy = JscFfi.lib
-        .lookup<NativeFunction<Pointer Function(Pointer, Pointer, Pointer)>>(
-            'JSValueToStringCopy')
-        .asFunction();
+final Pointer Function(Pointer ctx, Pointer value, Pointer exception) jSValueToStringCopy = JscFfi
+    .lib
+    .lookup<NativeFunction<Pointer Function(Pointer, Pointer, Pointer)>>('JSValueToStringCopy')
+    .asFunction();
 
 /// Converts a JavaScript value to object and returns the resulting object.
 /// [ctx] (JSContextRef) The execution context to use.
 /// [value] (JSValueRef) The JSValue to convert.
 /// [exception] (JSValueRef*) A pointer to a JSValueRef in which to store an exception, if any. Pass NULL if you do not care to store an exception.
 /// [@result] (JSObjectRef) The JSObject result of conversion, or NULL if an exception is thrown.
-final Pointer Function(Pointer ctx, Pointer value, Pointer exception)
-    jSValueToObject = JscFfi.lib
-        .lookup<NativeFunction<Pointer Function(Pointer, Pointer, Pointer)>>(
-            'JSValueToObject')
-        .asFunction();
+final Pointer Function(Pointer ctx, Pointer value, Pointer exception) jSValueToObject = JscFfi.lib
+    .lookup<NativeFunction<Pointer Function(Pointer, Pointer, Pointer)>>('JSValueToObject')
+    .asFunction();
 
 /// Protects a JavaScript value from garbage collection.
 /// Use this method when you want to store a JSValue in a global or on the heap, where the garbage collector will not be able to discover your reference to it.

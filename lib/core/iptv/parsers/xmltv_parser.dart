@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:convert';
+
 import 'package:xml/xml.dart';
 import 'package:archive/archive.dart';
 import 'package:pure_live/core/iptv/models/epg.dart';
@@ -32,7 +33,7 @@ class XmltvParser {
   XmltvResult parseBytes(List<int> bytes, {required String sourceId}) {
     List<int> decompressed;
     try {
-      decompressed = GZipDecoder().decodeBytes(bytes);
+      decompressed = const GZipDecoder().decodeBytes(bytes);
     } catch (_) {
       // Not gzipped, use as-is
       decompressed = bytes;
@@ -69,7 +70,13 @@ class XmltvParser {
       }
     }
 
-    return EpgChannel(id: id, sourceId: sourceId, displayNames: displayNames, iconUrl: iconUrl, number: number);
+    return EpgChannel(
+      id: id,
+      sourceId: sourceId,
+      displayNames: displayNames,
+      iconUrl: iconUrl,
+      number: number,
+    );
   }
 
   EpgProgramme? _parseProgramme(XmlElement element, String sourceId) {
@@ -95,7 +102,13 @@ class XmltvParser {
 
     final episodeNum = element.findElements('episode-num').firstOrNull?.innerText.trim();
 
-    final rating = element.findElements('rating').firstOrNull?.findElements('value').firstOrNull?.innerText.trim();
+    final rating = element
+        .findElements('rating')
+        .firstOrNull
+        ?.findElements('value')
+        .firstOrNull
+        ?.innerText
+        .trim();
 
     final isNew = element.findElements('new').isNotEmpty;
 

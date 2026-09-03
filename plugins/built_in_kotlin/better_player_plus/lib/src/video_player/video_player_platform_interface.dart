@@ -139,7 +139,13 @@ abstract class VideoPlayerPlatform {
   }
 
   ///Enables PiP mode.
-  Future<void> enablePictureInPicture(int? textureId, double? top, double? left, double? width, double? height) {
+  Future<void> enablePictureInPicture(
+    int? textureId,
+    double? top,
+    double? left,
+    double? width,
+    double? height,
+  ) {
     throw UnimplementedError('enablePictureInPicture() has not been implemented.');
   }
 
@@ -505,7 +511,10 @@ class DurationRange {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is DurationRange && runtimeType == other.runtimeType && start == other.start && end == other.end;
+      other is DurationRange &&
+          runtimeType == other.runtimeType &&
+          start == other.start &&
+          end == other.end;
 
   @override
   int get hashCode => start.hashCode ^ end.hashCode;

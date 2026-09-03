@@ -17,7 +17,10 @@ class WindowPresentationSnapshot {
   const WindowPresentationSnapshot({required this.fullscreen, required this.widescreen});
 
   factory WindowPresentationSnapshot.capture(GlobalPlayerState state) {
-    return WindowPresentationSnapshot(fullscreen: state.isFullscreen.value, widescreen: state.isWindowFullscreen.value);
+    return WindowPresentationSnapshot(
+      fullscreen: state.isFullscreen.value,
+      widescreen: state.isWindowFullscreen.value,
+    );
   }
 
   final bool fullscreen;
@@ -140,10 +143,16 @@ class WindowService {
       if (kIsWeb) {
         document.exitFullscreen();
       } else if (Platform.isAndroid || Platform.isIOS) {
-        await SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: SystemUiOverlay.values);
+        await SystemChrome.setEnabledSystemUIMode(
+          SystemUiMode.manual,
+          overlays: SystemUiOverlay.values,
+        );
         await Future.microtask(() {});
         SystemChrome.setSystemUIOverlayStyle(
-          const SystemUiOverlayStyle(statusBarIconBrightness: Brightness.dark, statusBarBrightness: Brightness.light),
+          const SystemUiOverlayStyle(
+            statusBarIconBrightness: Brightness.dark,
+            statusBarBrightness: Brightness.light,
+          ),
         );
         await SystemChrome.setPreferredOrientations(const <DeviceOrientation>[]);
       } else if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {

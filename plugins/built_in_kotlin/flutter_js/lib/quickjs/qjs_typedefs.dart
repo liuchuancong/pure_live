@@ -26,12 +26,13 @@ enum QuickJSTypeModule {
   JS_EVAL_TYPE_GLOBAL,
   JS_EVAL_TYPE_MODULE,
   JS_EVAL_TYPE_DIRECT,
-  JS_EVAL_TYPE_INDIRECT
+  JS_EVAL_TYPE_INDIRECT,
 }
 
 const JS_TAG_FIRST = -11,
-    /* first negative tag */
-    JS_TAG_BIG_DECIMAL = -11,
+        /* first negative tag */
+        JS_TAG_BIG_DECIMAL =
+        -11,
     JS_TAG_BIG_INT = -10,
     JS_TAG_BIG_FLOAT = -9,
     JS_TAG_SYMBOL = -8,
@@ -64,40 +65,33 @@ typedef JS_NewContextFn = Pointer<JSContext> Function(
 );
 
 typedef JSEvalWrapper = Pointer Function(
-    Pointer<JSContext> ctx,
-    Pointer<Utf8NullTerminated> input,
-    int inputLength,
-    Pointer<Utf8NullTerminated> filename,
-    int evalFlags,
-    Pointer<Int32> errors,
-    Pointer<JSValueConst> result,
-    Pointer<Pointer<Utf8NullTerminated>> stringResult);
+  Pointer<JSContext> ctx,
+  Pointer<Utf8NullTerminated> input,
+  int inputLength,
+  Pointer<Utf8NullTerminated> filename,
+  int evalFlags,
+  Pointer<Int32> errors,
+  Pointer<JSValueConst> result,
+  Pointer<Pointer<Utf8NullTerminated>> stringResult,
+);
 
 // ignore: camel_case_types
-typedef JS_GetNullValue = Pointer Function(
-  Pointer<JSContext> ctx,
-  Pointer<JSValueConst> v,
-);
+typedef JS_GetNullValue = Pointer Function(Pointer<JSContext> ctx, Pointer<JSValueConst> v);
 
 typedef JSEvalWrapperNative = Pointer Function(
-    Pointer<JSContext> ctx,
-    Pointer<Utf8NullTerminated> input,
-    Int32 inputLength,
-    Pointer<Utf8NullTerminated> filename,
-    Int32 evalFlags,
-    Pointer<Int32> errors,
-    Pointer<JSValueConst> result,
-    Pointer<Pointer<Utf8NullTerminated>> stringResult);
-
-typedef JSExecutePendingJob = int Function(
-  Pointer<JSRuntime> rt,
   Pointer<JSContext> ctx,
+  Pointer<Utf8NullTerminated> input,
+  Int32 inputLength,
+  Pointer<Utf8NullTerminated> filename,
+  Int32 evalFlags,
+  Pointer<Int32> errors,
+  Pointer<JSValueConst> result,
+  Pointer<Pointer<Utf8NullTerminated>> stringResult,
 );
 
-typedef JSExecutePendingJobNative = Uint32 Function(
-  Pointer<JSRuntime> rt,
-  Pointer<JSContext> ctx,
-);
+typedef JSExecutePendingJob = int Function(Pointer<JSRuntime> rt, Pointer<JSContext> ctx);
+
+typedef JSExecutePendingJobNative = Uint32 Function(Pointer<JSRuntime> rt, Pointer<JSContext> ctx);
 
 typedef JSCallFunction1ArgNative = Uint32 Function(
   Pointer<JSContext> ctx,
@@ -118,10 +112,8 @@ typedef JSCallFunction1Arg = int Function(
 typedef JSGetTypeTagNative = Int32 Function(Pointer<JSValueConst> jsValue);
 typedef JSGetTypeTag = int Function(Pointer<JSValueConst> jsValue);
 
-typedef JSIsArrayNative = Int32 Function(
-    Pointer<JSContext> ctx, Pointer<JSValueConst> jsValue);
-typedef JSIsArray = int Function(
-    Pointer<JSContext> ctx, Pointer<JSValueConst> jsValue);
+typedef JSIsArrayNative = Int32 Function(Pointer<JSContext> ctx, Pointer<JSValueConst> jsValue);
+typedef JSIsArray = int Function(Pointer<JSContext> ctx, Pointer<JSValueConst> jsValue);
 
 typedef int JSJSONStringify(
   Pointer<JSContext> ctx,

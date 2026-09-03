@@ -73,7 +73,10 @@ void main() {
     await tester.pump();
     expect(find.byKey(const ValueKey('persistent-empty-tab-view')), findsOneWidget);
 
-    await tester.drag(find.byKey(const ValueKey('persistent-empty-tab-view')), const Offset(-600, 0));
+    await tester.drag(
+      find.byKey(const ValueKey('persistent-empty-tab-view')),
+      const Offset(-600, 0),
+    );
     await tester.pumpAndSettle();
     expect(pageController.page, closeTo(1, 0.001));
 

@@ -38,15 +38,11 @@ class FijkPlugin {
   }
 
   static Future<void> _releasePlayer(int pid) {
-    return _channel
-        .invokeMethod("releasePlayer", <String, dynamic>{'pid': pid});
+    return _channel.invokeMethod("releasePlayer", <String, dynamic>{'pid': pid});
   }
 
   static bool isDesktop() {
-    return Platform.isWindows ||
-        Platform.isMacOS ||
-        Platform.isLinux ||
-        Platform.isFuchsia;
+    return Platform.isWindows || Platform.isMacOS || Platform.isLinux || Platform.isFuchsia;
   }
 
   /// Only works on Android and iOS
@@ -54,8 +50,10 @@ class FijkPlugin {
     if (isDesktop()) return Future.value(false);
     // ios crash Supported orientations has no common orientation with the application
     bool? changed = await _channel.invokeMethod("setOrientationPortrait");
-    SystemChrome.setPreferredOrientations(
-        [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
     return Future.value(changed);
   }
 
@@ -67,8 +65,10 @@ class FijkPlugin {
   static Future<bool> setOrientationLandscape() async {
     if (isDesktop()) return Future.value(false);
     bool? changed = await _channel.invokeMethod("setOrientationLandscape");
-    SystemChrome.setPreferredOrientations(
-        [DeviceOrientation.landscapeRight, DeviceOrientation.landscapeLeft]);
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.landscapeRight,
+      DeviceOrientation.landscapeLeft,
+    ]);
     return Future.value(changed);
   }
 
@@ -104,11 +104,11 @@ class FijkPlugin {
   /// The range of [value] is [0.0, 1.0]
   static Future<void> setScreenBrightness(double value) {
     if (value < 0.0 || value > 1.0) {
-      return Future.error(ArgumentError.value(
-          value, "brightness value must be not null and in range [0.0, 1.0]"));
+      return Future.error(
+        ArgumentError.value(value, "brightness value must be not null and in range [0.0, 1.0]"),
+      );
     } else if (Platform.isAndroid || Platform.isIOS) {
-      return _channel.invokeMethod(
-          "setBrightness", <String, dynamic>{'brightness': value});
+      return _channel.invokeMethod("setBrightness", <String, dynamic>{'brightness': value});
     }
     return Future.value();
   }
@@ -150,10 +150,10 @@ class FijkPlugin {
   static void _onLoad(String type) {
     if (_eventSubs == null) {
       FijkLog.i("_onLoad $type");
-      _eventSubs = EventChannel("befovy.com/fijk/event")
-          .receiveBroadcastStream()
-          .listen(FijkPlugin._eventListener,
-              onError: FijkPlugin._errorListener);
+      _eventSubs = EventChannel("befovy.com/fijk/event").receiveBroadcastStream().listen(
+        FijkPlugin._eventListener,
+        onError: FijkPlugin._errorListener,
+      );
     }
     _channel.invokeMethod("onLoad");
   }

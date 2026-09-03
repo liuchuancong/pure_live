@@ -44,7 +44,8 @@ final class BetterPlayerUtils {
         ? '00'
         : '0$seconds';
 
-    final formattedTime = '${hoursString == '00' ? '' : '$hoursString:'}$minutesString:$secondsString';
+    final formattedTime =
+        '${hoursString == '00' ? '' : '$hoursString:'}$minutesString:$secondsString';
 
     return formattedTime;
   }

@@ -10,16 +10,17 @@ class AccountController extends GetxController {
 
   final douyinNickName = ''.obs;
   @override
-  onInit() {
+  void onInit() {
     super.onInit();
-    Future.delayed(const Duration(milliseconds: 300), () {
-      loadDouyinAccount();
-    });
+    Future.delayed(const Duration(milliseconds: 300), loadDouyinAccount);
   }
 
   void bilibiliTap() async {
     if (BiliBiliAccountService.instance.logined.value) {
-      var result = await Utils.showAlertDialog(i18n("logout_bilibili_confirm"), title: i18n("logout"));
+      var result = await Utils.showAlertDialog(
+        i18n('logout_bilibili_confirm'),
+        title: i18n('logout'),
+      );
       if (result) {
         BiliBiliAccountService.instance.logout();
       }
@@ -38,7 +39,7 @@ class AccountController extends GetxController {
         }
       }
     } catch (e, stack) {
-      Log.e("Load Douyin account failed: $e", stack);
+      Log.e('Load Douyin account failed: $e', stack);
     }
   }
 }

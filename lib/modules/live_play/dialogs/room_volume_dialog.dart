@@ -5,7 +5,10 @@ import 'package:pure_live/modules/live_play/controllers/live_play_controller.dar
 class RoomVolumeDialog {
   const RoomVolumeDialog._();
 
-  static Future<void> show({required BuildContext context, required LivePlayController controller}) async {
+  static Future<void> show({
+    required BuildContext context,
+    required LivePlayController controller,
+  }) async {
     final tempMute = SettingsService.to.vol.globalVolumeMute.v.obs;
 
     final tempMobileVol = SettingsService.to.vol.defaultMobileVolume.v.obs;
@@ -20,7 +23,9 @@ class RoomVolumeDialog {
         return AlertDialog(
           title: Text(i18n('room_volume')),
           content: Container(
-            constraints: BoxConstraints(minWidth: PlatformUtils.isMobile ? Get.mediaQuery.size.width * 0.8 : 500),
+            constraints: BoxConstraints(
+              minWidth: PlatformUtils.isMobile ? Get.mediaQuery.size.width * 0.8 : 500,
+            ),
             child: Obx(
               () => SingleChildScrollView(
                 child: Column(

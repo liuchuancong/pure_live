@@ -63,12 +63,14 @@ class _DanmakuSettingsContentState extends State<DanmakuSettingsContent> {
 
   Color get labelColor => isEmbedded ? theme.colorScheme.onSurface : theme.colorScheme.onSurface;
 
-  Color get secondaryColor => isEmbedded ? theme.colorScheme.onSurfaceVariant : theme.colorScheme.onSurfaceVariant;
+  Color get secondaryColor =>
+      isEmbedded ? theme.colorScheme.onSurfaceVariant : theme.colorScheme.onSurfaceVariant;
 
   Color get primaryColor => theme.colorScheme.primary;
 
-  Color get cardColor =>
-      isEmbedded ? theme.colorScheme.surfaceContainerLowest : theme.colorScheme.surfaceContainerHighest;
+  Color get cardColor => isEmbedded
+      ? theme.colorScheme.surfaceContainerLowest
+      : theme.colorScheme.surfaceContainerHighest;
   Widget reactiveCard(List<Widget> Function() builder) {
     return Obx(() {
       final children = builder();
@@ -106,20 +108,30 @@ class _DanmakuSettingsContentState extends State<DanmakuSettingsContent> {
                     key: ValueKey('danmaku-template-${preset.id}'),
                     selected: activePreset?.id == preset.id,
                     showCheckmark: false,
-                    backgroundColor: isEmbedded ? theme.colorScheme.surface : theme.colorScheme.surfaceContainerHighest,
+                    backgroundColor: isEmbedded
+                        ? theme.colorScheme.surface
+                        : theme.colorScheme.surfaceContainerHighest,
                     selectedColor: theme.colorScheme.primary,
                     side: BorderSide(color: theme.colorScheme.outline.withValues(alpha: 0.35)),
                     labelStyle: TextStyle(
-                      color: activePreset?.id == preset.id ? theme.colorScheme.onPrimary : theme.colorScheme.onSurface,
+                      color: activePreset?.id == preset.id
+                          ? theme.colorScheme.onPrimary
+                          : theme.colorScheme.onSurface,
                       fontWeight: FontWeight.w600,
                       fontSize: isEmbedded ? 12 : null,
                     ),
                     visualDensity: isEmbedded ? VisualDensity.compact : VisualDensity.standard,
-                    materialTapTargetSize: isEmbedded ? MaterialTapTargetSize.shrinkWrap : MaterialTapTargetSize.padded,
+                    materialTapTargetSize: isEmbedded
+                        ? MaterialTapTargetSize.shrinkWrap
+                        : MaterialTapTargetSize.padded,
                     avatar: SizedBox(
                       width: isEmbedded ? 16 : 18,
                       child: activePreset?.id == preset.id
-                          ? Icon(Icons.check_rounded, size: isEmbedded ? 16 : 18, color: theme.colorScheme.onPrimary)
+                          ? Icon(
+                              Icons.check_rounded,
+                              size: isEmbedded ? 16 : 18,
+                              color: theme.colorScheme.onPrimary,
+                            )
                           : preset.id == 'best'
                           ? Icon(
                               Icons.auto_awesome_rounded,
@@ -137,11 +149,16 @@ class _DanmakuSettingsContentState extends State<DanmakuSettingsContent> {
                     foregroundColor: theme.colorScheme.primary,
                     side: BorderSide(color: theme.colorScheme.primary.withValues(alpha: 0.45)),
                     visualDensity: isEmbedded ? VisualDensity.compact : VisualDensity.standard,
-                    tapTargetSize: isEmbedded ? MaterialTapTargetSize.shrinkWrap : MaterialTapTargetSize.padded,
+                    tapTargetSize: isEmbedded
+                        ? MaterialTapTargetSize.shrinkWrap
+                        : MaterialTapTargetSize.padded,
                     padding: EdgeInsets.symmetric(horizontal: isEmbedded ? 10 : 12),
                   ),
                   icon: Icon(Icons.save_outlined, size: isEmbedded ? 16 : 18),
-                  label: Text(i18n('save_current_template'), style: TextStyle(fontSize: isEmbedded ? 12 : null)),
+                  label: Text(
+                    i18n('save_current_template'),
+                    style: TextStyle(fontSize: isEmbedded ? 12 : null),
+                  ),
                 ),
                 if (!isEmbedded)
                   OutlinedButton.icon(
@@ -193,7 +210,9 @@ class _DanmakuSettingsContentState extends State<DanmakuSettingsContent> {
     final Color digitColor = theme.colorScheme.primary;
 
     return SingleChildScrollView(
-      key: ValueKey(widget.embedded ? 'danmaku-settings-content-embedded' : 'danmaku-settings-content-page'),
+      key: ValueKey(
+        widget.embedded ? 'danmaku-settings-content-embedded' : 'danmaku-settings-content-page',
+      ),
       controller: _scrollController,
       physics: const PureLiveScrollPhysics(),
       padding: EdgeInsets.symmetric(horizontal: widget.embedded ? 12 : 16, vertical: 12),
@@ -215,7 +234,7 @@ class _DanmakuSettingsContentState extends State<DanmakuSettingsContent> {
           const SizedBox(height: 8),
           _buildTemplateSection(theme),
           const SizedBox(height: 20),
-          context.buildGroupTitle(i18n("danmaku_area")),
+          context.buildGroupTitle(i18n('danmaku_area')),
           const SizedBox(height: 8),
           reactiveCard(
             () => [
@@ -228,11 +247,11 @@ class _DanmakuSettingsContentState extends State<DanmakuSettingsContent> {
               ),
               _slider(
                 theme,
-                title: i18n("danmaku_area"),
+                title: i18n('danmaku_area'),
                 value: controller.danmakuArea.value,
                 min: 0,
                 max: 1,
-                display: "${(controller.danmakuArea.value * 100).toInt()}%",
+                display: '${(controller.danmakuArea.value * 100).toInt()}%',
                 onChanged: (v) => controller.danmakuArea.value = v,
                 labelColor: labelColor,
                 digitColor: digitColor,
@@ -242,13 +261,13 @@ class _DanmakuSettingsContentState extends State<DanmakuSettingsContent> {
 
           const SizedBox(height: 20),
 
-          context.buildGroupTitle(i18n("position")),
+          context.buildGroupTitle(i18n('position')),
           const SizedBox(height: 8),
           reactiveCard(
             () => [
               _counter(
                 theme,
-                title: i18n("margin_top"),
+                title: i18n('margin_top'),
                 value: controller.danmakuTopArea.value.toInt(),
                 max: 300,
                 onChanged: (v) => controller.danmakuTopArea.value = v.toDouble(),
@@ -257,7 +276,7 @@ class _DanmakuSettingsContentState extends State<DanmakuSettingsContent> {
               ),
               _counter(
                 theme,
-                title: i18n("margin_bottom"),
+                title: i18n('margin_bottom'),
                 value: controller.danmakuBottomArea.value.toInt(),
                 max: 300,
                 onChanged: (v) => controller.danmakuBottomArea.value = v.toDouble(),
@@ -269,24 +288,24 @@ class _DanmakuSettingsContentState extends State<DanmakuSettingsContent> {
 
           const SizedBox(height: 20),
 
-          context.buildGroupTitle(i18n("style")),
+          context.buildGroupTitle(i18n('style')),
           const SizedBox(height: 8),
           reactiveCard(
             () => [
               _slider(
                 theme,
-                title: i18n("opacity"),
+                title: i18n('opacity'),
                 value: controller.danmakuOpacity.value,
                 min: 0,
                 max: 1,
-                display: "${(controller.danmakuOpacity.value * 100).toInt()}%",
+                display: '${(controller.danmakuOpacity.value * 100).toInt()}%',
                 onChanged: (v) => controller.danmakuOpacity.value = v,
                 labelColor: labelColor,
                 digitColor: digitColor,
               ),
               _slider(
                 theme,
-                title: i18n("speed"),
+                title: i18n('speed'),
                 value: controller.danmakuSpeed.value.toDouble(),
                 min: 20,
                 max: 400,
@@ -297,7 +316,7 @@ class _DanmakuSettingsContentState extends State<DanmakuSettingsContent> {
               ),
               _slider(
                 theme,
-                title: i18n("font_size"),
+                title: i18n('font_size'),
                 value: controller.danmakuFontSize.value.toDouble(),
                 min: 10,
                 max: 30,
@@ -313,21 +332,24 @@ class _DanmakuSettingsContentState extends State<DanmakuSettingsContent> {
                 min: 100,
                 max: 900,
                 stepSize: 100,
-                display: i18n(AppConsts.fontWeightLabels[controller.danmakuFontWeight.value] ?? 'font_weight_medium'),
+                display: i18n(
+                  AppConsts.fontWeightLabels[controller.danmakuFontWeight.value] ??
+                      'font_weight_medium',
+                ),
                 onChanged: (v) => controller.danmakuFontWeight.value = (v / 100).round() * 100,
                 labelColor: labelColor,
                 digitColor: digitColor,
               ),
               _switch(
                 theme,
-                title: i18n("danmaku_stroke"),
+                title: i18n('danmaku_stroke'),
                 value: controller.enableDanmakuStroke.value,
                 onChanged: (v) => controller.enableDanmakuStroke.value = v,
                 labelColor: labelColor,
               ),
               _slider(
                 theme,
-                title: i18n("stroke"),
+                title: i18n('stroke'),
                 value: controller.danmakuFontBorder.value.toDouble(),
                 min: 0,
                 max: 4,
@@ -348,21 +370,30 @@ class _DanmakuSettingsContentState extends State<DanmakuSettingsContent> {
               if (!SettingsService.to.danmaku.danmakuAutoFps.v)
                 _slider(
                   theme,
-                  title: i18n("danmaku_fps"),
+                  title: i18n('danmaku_fps'),
                   value: controller.danmakuFps.value.toDouble(),
                   min: 30,
                   max: 240,
-                  display: "${controller.danmakuFps.value.toInt()} FPS",
+                  display: '${controller.danmakuFps.value.toInt()} FPS',
                   onChanged: (v) => controller.danmakuFps.value = v.toInt(),
                   labelColor: labelColor,
                   digitColor: digitColor,
                 )
               else
                 Padding(
-                  padding: EdgeInsets.fromLTRB(isEmbedded ? 14 : 16, 0, isEmbedded ? 14 : 16, isEmbedded ? 10 : 12),
+                  padding: EdgeInsets.fromLTRB(
+                    isEmbedded ? 14 : 16,
+                    0,
+                    isEmbedded ? 14 : 16,
+                    isEmbedded ? 10 : 12,
+                  ),
                   child: Text(
                     '${SettingsService.to.danmaku.resolvedDanmakuFps(refreshRateMode: SettingsService.to.app.refreshRateMode)} FPS',
-                    style: TextStyle(color: digitColor, fontWeight: FontWeight.w600, fontSize: isEmbedded ? 13 : null),
+                    style: TextStyle(
+                      color: digitColor,
+                      fontWeight: FontWeight.w600,
+                      fontSize: isEmbedded ? 13 : null,
+                    ),
                   ),
                 ),
             ],
@@ -410,7 +441,8 @@ class _DanmakuSettingsContentState extends State<DanmakuSettingsContent> {
                 theme,
                 title: i18n('danmaku_long_press_action'),
                 value: SettingsService.to.danmaku.enableDanmakuLongPressInteraction.v,
-                onChanged: (v) => SettingsService.to.danmaku.enableDanmakuLongPressInteraction.v = v,
+                onChanged: (v) =>
+                    SettingsService.to.danmaku.enableDanmakuLongPressInteraction.v = v,
                 labelColor: labelColor,
               ),
             ],
@@ -492,7 +524,9 @@ class _DanmakuSettingsContentState extends State<DanmakuSettingsContent> {
       controller.danmakuBottomArea.v = (value['bottom'] as num).toDouble();
       controller.danmakuSpeed.v = (value['speed'] as num).toDouble();
       controller.danmakuFontSize.v = (value['fontSize'] as num).toDouble();
-      controller.danmakuFontWeight.v = _normalizeFontWeight((value['fontWeight'] as num?)?.toInt() ?? 500);
+      controller.danmakuFontWeight.v = _normalizeFontWeight(
+        (value['fontWeight'] as num?)?.toInt() ?? 500,
+      );
       controller.danmakuFontBorder.v = (value['fontBorder'] as num).toDouble();
       controller.danmakuOpacity.v = (value['opacity'] as num).toDouble();
       controller.enableDanmakuStroke.v = value['stroke'] == true;
@@ -565,7 +599,8 @@ class _DanmakuSettingsContentState extends State<DanmakuSettingsContent> {
     );
   }
 
-  int _normalizeFontWeight(int value) => ((value.clamp(100, 900) / 100).round() * 100).clamp(100, 900).toInt();
+  int _normalizeFontWeight(int value) =>
+      ((value.clamp(100, 900) / 100).round() * 100).clamp(100, 900).toInt();
 
   Widget _counter(
     ThemeData theme, {

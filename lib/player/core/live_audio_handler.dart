@@ -145,13 +145,15 @@ class LiveAudioHandler extends BaseAudioHandler {
     try {
       await _currentPlayer!.stop();
     } catch (e) {
-      developer.log("Player already disposed or failed to stop: $e");
+      developer.log('Player already disposed or failed to stop: $e');
     } finally {
       await _sessionReady;
       await _session.setActive(false);
       await BackgroundPlaybackService.setKeepAlive(false);
 
-      playbackState.add(playbackState.value.copyWith(playing: false, processingState: AudioProcessingState.idle));
+      playbackState.add(
+        playbackState.value.copyWith(playing: false, processingState: AudioProcessingState.idle),
+      );
     }
   }
 }

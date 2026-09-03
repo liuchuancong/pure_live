@@ -5,10 +5,7 @@ class UrlBookmark {
 
   /// Construct a new [UrlBookmark] instance from the given [data].
   factory UrlBookmark.fromNative(Map<Object?, Object?> data) {
-    return UrlBookmark(
-      title: data['title'] as String?,
-      url: data['url'] as String? ?? '',
-    );
+    return UrlBookmark(title: data['title'] as String?, url: data['url'] as String? ?? '');
   }
 
   /// The title of the bookmark.

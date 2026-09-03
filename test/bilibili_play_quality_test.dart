@@ -11,9 +11,16 @@ void main() {
     });
 
     test('returns the actual server qn and prioritizes direct FLV lines', () {
-      final result = BiliBiliSite.parsePlayUrlResolution(_playResponse(currentQn: 250), requestedQualityData: 10000);
+      final result = BiliBiliSite.parsePlayUrlResolution(
+        _playResponse(currentQn: 250),
+        requestedQualityData: 10000,
+      );
 
-      expect(result.appliedQualityData, 250, reason: 'an anonymous downgrade must not leave the UI on 原画');
+      expect(
+        result.appliedQualityData,
+        250,
+        reason: 'an anonymous downgrade must not leave the UI on 原画',
+      );
       expect(result.urls, [
         'https://direct.example/live_250.flv?qn=250',
         'https://mcdn.example/live_250.flv?qn=250',

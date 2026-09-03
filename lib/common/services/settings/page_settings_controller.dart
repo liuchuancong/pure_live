@@ -18,8 +18,10 @@ class PageSettingsController extends GetxController {
 
   static int _getInitPageSize() {
     try {
-      final double width = WidgetsBinding.instance.platformDispatcher.views.first.physicalSize.width;
-      final double devicePixelRatio = WidgetsBinding.instance.platformDispatcher.views.first.devicePixelRatio;
+      final double width =
+          WidgetsBinding.instance.platformDispatcher.views.first.physicalSize.width;
+      final double devicePixelRatio =
+          WidgetsBinding.instance.platformDispatcher.views.first.devicePixelRatio;
       final double logicalWidth = width / (devicePixelRatio > 0 ? devicePixelRatio : 1);
 
       if (logicalWidth > 960) return 20;
@@ -31,8 +33,10 @@ class PageSettingsController extends GetxController {
 
   static List<int> getInitPageSizeOptions() {
     try {
-      final double width = WidgetsBinding.instance.platformDispatcher.views.first.physicalSize.width;
-      final double devicePixelRatio = WidgetsBinding.instance.platformDispatcher.views.first.devicePixelRatio;
+      final double width =
+          WidgetsBinding.instance.platformDispatcher.views.first.physicalSize.width;
+      final double devicePixelRatio =
+          WidgetsBinding.instance.platformDispatcher.views.first.devicePixelRatio;
       final double logicalWidth = width / (devicePixelRatio > 0 ? devicePixelRatio : 1);
 
       if (logicalWidth > 960) {
@@ -132,7 +136,10 @@ class PageSettingsController extends GetxController {
     };
   }
 
-  static Map<String, dynamic> mergeConfig(Map<String, dynamic> rootConfig, Map<String, dynamic> updateFields) {
+  static Map<String, dynamic> mergeConfig(
+    Map<String, dynamic> rootConfig,
+    Map<String, dynamic> updateFields,
+  ) {
     final page = Map<String, dynamic>.from(rootConfig['page'] ?? {});
     updateFields.forEach((k, v) => page[k] = v);
     rootConfig['page'] = page;

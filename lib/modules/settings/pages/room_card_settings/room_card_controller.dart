@@ -67,7 +67,9 @@ class RoomCardController {
               icon: Icon(
                 Remix.price_tag_3_line,
                 size: 20,
-                color: isFollowed ? theme.colorScheme.primary : theme.disabledColor.withValues(alpha: 0.6),
+                color: isFollowed
+                    ? theme.colorScheme.primary
+                    : theme.disabledColor.withValues(alpha: 0.6),
               ),
               onPressed: () {
                 Navigator.pop(context);
@@ -146,7 +148,10 @@ class RoomCardController {
                   onPressed: () => Navigator.pop(context),
                   child: Text(
                     i18n('close'),
-                    style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontWeight: FontWeight.w600),
+                    style: TextStyle(
+                      color: theme.colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ],
@@ -172,7 +177,10 @@ class RoomCardController {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: Text(
             i18n('follow'),
-            style: AppTextStyles.t16.copyWith(fontWeight: FontWeight.bold, color: theme.colorScheme.onSurface),
+            style: AppTextStyles.t16.copyWith(
+              fontWeight: FontWeight.bold,
+              color: theme.colorScheme.onSurface,
+            ),
           ),
           content: Text(
             i18n('dialog_follow_anchor_ask').replaceAll('{name}', anchorName),
@@ -181,7 +189,10 @@ class RoomCardController {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: Text(i18n('cancel'), style: AppTextStyles.t14.copyWith(color: theme.colorScheme.secondary)),
+              child: Text(
+                i18n('cancel'),
+                style: AppTextStyles.t14.copyWith(color: theme.colorScheme.secondary),
+              ),
             ),
             Theme(
               data: ThemeData(useMaterial3: true),
@@ -197,7 +208,10 @@ class RoomCardController {
                 },
                 child: Text(
                   i18n('follow'),
-                  style: AppTextStyles.t14.copyWith(color: theme.colorScheme.onPrimary, fontWeight: FontWeight.bold),
+                  style: AppTextStyles.t14.copyWith(
+                    color: theme.colorScheme.onPrimary,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ),
@@ -244,7 +258,10 @@ class RoomCardController {
                   padding: EdgeInsets.only(left: showAddSection ? 4 : 12),
                   child: Text(
                     i18n('set_room_tags'),
-                    style: AppTextStyles.t16.copyWith(fontWeight: FontWeight.w800, letterSpacing: 0.4),
+                    style: AppTextStyles.t16.copyWith(
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.4,
+                    ),
                   ),
                 ),
                 showAddSection
@@ -312,7 +329,11 @@ class RoomCardController {
                     : IconButton(
                         constraints: const BoxConstraints(),
                         padding: const EdgeInsets.symmetric(horizontal: 12),
-                        icon: Icon(Remix.add_circle_line, size: 20, color: theme.colorScheme.primary),
+                        icon: Icon(
+                          Remix.add_circle_line,
+                          size: 20,
+                          color: theme.colorScheme.primary,
+                        ),
                         onPressed: () {
                           setModalState(() {
                             showAddSection = true;
@@ -334,7 +355,10 @@ class RoomCardController {
                       decoration: BoxDecoration(
                         color: theme.colorScheme.surfaceContainerLow.withValues(alpha: 0.7),
                         borderRadius: BorderRadius.circular(18),
-                        border: Border.all(color: theme.dividerColor.withValues(alpha: 0.03), width: 0.5),
+                        border: Border.all(
+                          color: theme.dividerColor.withValues(alpha: 0.03),
+                          width: 0.5,
+                        ),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -419,11 +443,16 @@ class RoomCardController {
                                     },
                                     borderRadius: BorderRadius.circular(14),
                                     child: Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 14,
+                                        vertical: 10,
+                                      ),
                                       decoration: BoxDecoration(
                                         color: selected
                                             ? theme.colorScheme.primary.withValues(alpha: 0.06)
-                                            : theme.colorScheme.surfaceContainerLow.withValues(alpha: 0.6),
+                                            : theme.colorScheme.surfaceContainerLow.withValues(
+                                                alpha: 0.6,
+                                              ),
                                         borderRadius: BorderRadius.circular(14),
                                         border: Border.all(
                                           color: selected
@@ -434,7 +463,9 @@ class RoomCardController {
                                         boxShadow: selected
                                             ? [
                                                 BoxShadow(
-                                                  color: theme.colorScheme.primary.withValues(alpha: 0.04),
+                                                  color: theme.colorScheme.primary.withValues(
+                                                    alpha: 0.04,
+                                                  ),
                                                   blurRadius: 8,
                                                   offset: const Offset(0, 2),
                                                 ),
@@ -453,7 +484,9 @@ class RoomCardController {
                                                   maxLines: 1,
                                                   overflow: TextOverflow.ellipsis,
                                                   style: AppTextStyles.t13.copyWith(
-                                                    fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                                                    fontWeight: selected
+                                                        ? FontWeight.w700
+                                                        : FontWeight.w600,
                                                     color: selected
                                                         ? theme.colorScheme.primary
                                                         : theme.colorScheme.onSurface,
@@ -467,9 +500,8 @@ class RoomCardController {
                                                       maxLines: 1,
                                                       overflow: TextOverflow.ellipsis,
                                                       style: AppTextStyles.t11.copyWith(
-                                                        color: theme.colorScheme.onSurfaceVariant.withValues(
-                                                          alpha: 0.5,
-                                                        ),
+                                                        color: theme.colorScheme.onSurfaceVariant
+                                                            .withValues(alpha: 0.5),
                                                         fontWeight: FontWeight.w500,
                                                       ),
                                                     ),
@@ -484,11 +516,15 @@ class RoomCardController {
                                             height: 18,
                                             decoration: BoxDecoration(
                                               shape: BoxShape.circle,
-                                              color: selected ? theme.colorScheme.primary : Colors.transparent,
+                                              color: selected
+                                                  ? theme.colorScheme.primary
+                                                  : Colors.transparent,
                                               border: Border.all(
                                                 color: selected
                                                     ? Colors.transparent
-                                                    : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.25),
+                                                    : theme.colorScheme.onSurfaceVariant.withValues(
+                                                        alpha: 0.25,
+                                                      ),
                                                 width: selected ? 0 : 1.5,
                                               ),
                                             ),
@@ -521,7 +557,10 @@ class RoomCardController {
                 onPressed: () => Navigator.pop(context),
                 child: Text(
                   i18n('cancel'),
-                  style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
               const SizedBox(width: 6),
@@ -622,7 +661,10 @@ class _FollowButtonState extends State<FollowButton> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
       ),
-      child: Text(isFavorite ? i18n('unfollow') : i18n('follow'), style: const TextStyle(fontWeight: FontWeight.w600)),
+      child: Text(
+        isFavorite ? i18n('unfollow') : i18n('follow'),
+        style: const TextStyle(fontWeight: FontWeight.w600),
+      ),
     );
   }
 }

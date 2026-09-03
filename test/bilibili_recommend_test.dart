@@ -56,7 +56,10 @@ void main() {
     });
 
     test('surfaces platform rejection instead of a null-index error', () {
-      expect(() => BiliBiliSite.parseRecommendRooms({'code': -352, 'message': '-352'}), throwsStateError);
+      expect(
+        () => BiliBiliSite.parseRecommendRooms({'code': -352, 'message': '-352'}),
+        throwsStateError,
+      );
     });
 
     test('sorts equal popularity by stable room identity', () {
@@ -88,7 +91,10 @@ void main() {
     });
 
     test('rejects expired WBI and incomplete payloads before dynamic indexing', () {
-      expect(() => BiliBiliSite.parseRoomInfoResponse({'code': -352, 'data': null}), throwsStateError);
+      expect(
+        () => BiliBiliSite.parseRoomInfoResponse({'code': -352, 'data': null}),
+        throwsStateError,
+      );
       expect(
         () => BiliBiliSite.parseRoomInfoResponse({
           'code': 0,

@@ -12,8 +12,14 @@ void main() {
       expect(buildProxyDirective(enabled: false, host: '127.0.0.1', port: 7897), 'DIRECT');
       expect(buildProxyDirective(enabled: true, host: '', port: 7897), 'DIRECT');
       expect(buildProxyDirective(enabled: true, host: 'localhost', port: 0), 'DIRECT');
-      expect(buildProxyDirective(enabled: true, host: 'localhost', port: 7897), 'PROXY localhost:7897');
-      expect(buildProxyDirective(enabled: true, host: '127。0。0。1', port: 7897), 'PROXY 127.0.0.1:7897');
+      expect(
+        buildProxyDirective(enabled: true, host: 'localhost', port: 7897),
+        'PROXY localhost:7897',
+      );
+      expect(
+        buildProxyDirective(enabled: true, host: '127。0。0。1', port: 7897),
+        'PROXY 127.0.0.1:7897',
+      );
       expect(buildProxyDirective(enabled: true, host: '::1', port: 7897), 'PROXY [::1]:7897');
     });
 

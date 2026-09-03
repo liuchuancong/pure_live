@@ -30,12 +30,13 @@ class MultiviewRoomSearchController {
   /// reads Hive-backed settings that a widget test cannot boot.
   final int Function(LiveRoom left, LiveRoom right) audienceCompare;
 
-  static int _settingsAudienceCompare(LiveRoom left, LiveRoom right) => LiveRoom.compareAudienceRanking(
-    left,
-    right,
-    preferRealOnline: SettingsService.to.app.preferRealOnlineCounts.v,
-    platformEnabled: SettingsService.to.app.isRealOnlineEnabledFor,
-  );
+  static int _settingsAudienceCompare(LiveRoom left, LiveRoom right) =>
+      LiveRoom.compareAudienceRanking(
+        left,
+        right,
+        preferRealOnline: SettingsService.to.app.preferRealOnlineCounts.v,
+        platformEnabled: SettingsService.to.app.isRealOnlineEnabledFor,
+      );
 
   final results = <LiveRoom>[].obs;
   final loading = false.obs;
@@ -51,8 +52,9 @@ class MultiviewRoomSearchController {
 
   /// Platforms the panel may target. IPTV is excluded because its "search" is a
   /// local channel list rather than a keyword lookup.
-  List<Site> get selectablePlatforms =>
-      sites.where((site) => LiveSearchCapabilities.forPlatform(site.id).supportsNativeSearch).toList(growable: false);
+  List<Site> get selectablePlatforms => sites
+      .where((site) => LiveSearchCapabilities.forPlatform(site.id).supportsNativeSearch)
+      .toList(growable: false);
 
   void clear() {
     _generation++;
@@ -76,7 +78,9 @@ class MultiviewRoomSearchController {
 
     final targets = <Site>[];
     if (platformId.trim().isEmpty) {
-      targets.addAll(sites.where((site) => LiveSearchCapabilities.forPlatform(site.id).supportsNativeSearch));
+      targets.addAll(
+        sites.where((site) => LiveSearchCapabilities.forPlatform(site.id).supportsNativeSearch),
+      );
     } else {
       final site = sites
           .where((element) => element.id.trim().toLowerCase() == platformId.trim().toLowerCase())
@@ -111,7 +115,9 @@ class MultiviewRoomSearchController {
       shouldCancel: () => generation != _generation,
       task: (site) async {
         try {
-          final rooms = await site.liveSite.searchRooms(term, page: 1, pageSize: 20).timeout(liveSearchRequestTimeout);
+          final rooms = await site.liveSite
+              .searchRooms(term, page: 1, pageSize: 20)
+              .timeout(liveSearchRequestTimeout);
           return _MultiviewSearchBatch(site: site, rooms: rooms);
         } on TimeoutException {
           return _MultiviewSearchBatch(site: site, rooms: const <LiveRoom>[], failed: true);

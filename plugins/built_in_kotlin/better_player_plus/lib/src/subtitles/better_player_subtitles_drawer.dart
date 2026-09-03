@@ -96,7 +96,9 @@ class _BetterPlayerSubtitlesDrawerState extends State<BetterPlayerSubtitlesDrawe
     return SizedBox.expand(
       child: Padding(
         padding: EdgeInsets.only(
-          bottom: _playerVisible ? _configuration!.bottomPadding + 30 : _configuration!.bottomPadding,
+          bottom: _playerVisible
+              ? _configuration!.bottomPadding + 30
+              : _configuration!.bottomPadding,
           left: _configuration!.leftPadding,
           right: _configuration!.rightPadding,
         ),
@@ -131,13 +133,18 @@ class _BetterPlayerSubtitlesDrawerState extends State<BetterPlayerSubtitlesDrawe
     color: _configuration!.backgroundColor,
     child: Stack(
       children: [
-        if (_configuration!.outlineEnabled) _buildHtmlWidget(subtitleText, _outerTextStyle) else const SizedBox(),
+        if (_configuration!.outlineEnabled)
+          _buildHtmlWidget(subtitleText, _outerTextStyle)
+        else
+          const SizedBox(),
         _buildHtmlWidget(subtitleText, _innerTextStyle),
       ],
     ),
   );
 
-  Widget _buildHtmlWidget(String text, TextStyle textStyle) => HtmlWidget(text, textStyle: textStyle);
+  Widget _buildHtmlWidget(String text, TextStyle textStyle) =>
+      HtmlWidget(text, textStyle: textStyle);
 
-  BetterPlayerSubtitlesConfiguration setupDefaultConfiguration() => const BetterPlayerSubtitlesConfiguration();
+  BetterPlayerSubtitlesConfiguration setupDefaultConfiguration() =>
+      const BetterPlayerSubtitlesConfiguration();
 }

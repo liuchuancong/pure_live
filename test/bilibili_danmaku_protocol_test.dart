@@ -64,7 +64,10 @@ void main() {
       danmaku.decodeMessage(stream.takeBytes());
       danmaku.decodeMessage(_chatPacket('next websocket message', 'bob'));
 
-      expect(received.map((message) => message.message), ['before malformed frame', 'next websocket message']);
+      expect(received.map((message) => message.message), [
+        'before malformed frame',
+        'next websocket message',
+      ]);
     });
 
     test('compressed packet recursion is bounded and a later message still parses', () {

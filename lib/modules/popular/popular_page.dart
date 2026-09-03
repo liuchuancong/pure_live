@@ -23,7 +23,7 @@ class PopularPage extends GetView<PopularController> {
             appBar: AppBar(
               centerTitle: true,
               leading: showAction ? const MenuButton() : null,
-              actions: showAction ? [CommonAppBarActions()] : null,
+              actions: showAction ? [const CommonAppBarActions()] : null,
               title: TabBar(
                 key: const ValueKey('popular-platform-tabs'),
                 controller: controller.tabController,

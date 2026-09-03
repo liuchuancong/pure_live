@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
@@ -11,7 +12,10 @@ class MobileManager {
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
       SystemChrome.setSystemUIOverlayStyle(
-        const SystemUiOverlayStyle(statusBarColor: Colors.transparent, systemNavigationBarColor: Colors.transparent),
+        const SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          systemNavigationBarColor: Colors.transparent,
+        ),
       );
 
       if (Platform.isIOS) {

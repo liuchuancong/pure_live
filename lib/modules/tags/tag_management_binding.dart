@@ -4,6 +4,6 @@ import 'package:pure_live/modules/tags/tag_management_controller.dart';
 class TagManagementBinding extends Binding {
   @override
   List<Bind> dependencies() {
-    return [Bind.lazyPut(() => TagManagementController())];
+    return [Bind.lazyPut(TagManagementController.new)];
   }
 }

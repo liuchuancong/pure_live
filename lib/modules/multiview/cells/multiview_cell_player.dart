@@ -131,7 +131,9 @@ class MultiviewCellPlayer implements MultiviewCellPlayerHandle {
     final controller = VideoController(
       player,
       configuration: VideoControllerConfiguration(
-        enableHardwareAcceleration: PlatformUtils.isMacOS ? false : SettingsService.to.player.enableCodec.v,
+        enableHardwareAcceleration: PlatformUtils.isMacOS
+            ? false
+            : SettingsService.to.player.enableCodec.v,
         hwdec: PlatformUtils.isMacOS ? 'no' : null,
         androidAttachSurfaceAfterVideoParameters: false,
         width: renderWidth,

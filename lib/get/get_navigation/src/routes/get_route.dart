@@ -90,7 +90,10 @@ class GetPage<T> extends Page<T> {
     super.onPopInvoked = _defaultPopInvokedHandler,
     super.restorationId,
   }) : path = _nameToRegex(name),
-       assert(name.startsWith('/'), 'It is necessary to start route name [$name] with a slash: /$name'),
+       assert(
+         name.startsWith('/'),
+         'It is necessary to start route name [$name] with a slash: /$name',
+       ),
        super(
          key: key ?? ValueKey(name),
          name: name,
@@ -190,10 +193,12 @@ class GetPage<T> extends Page<T> {
       if (pattern[3] != null) buffer.write('?');
 
       keys.add(pattern[2]);
-      return "$buffer";
+      return '$buffer';
     }
 
-    var stringPath = '$path/?'.replaceAllMapped(RegExp(r'(\.)?:(\w+)(\?)?'), recursiveReplace).replaceAll('//', '/');
+    var stringPath = '$path/?'
+        .replaceAllMapped(RegExp(r'(\.)?:(\w+)(\?)?'), recursiveReplace)
+        .replaceAll('//', '/');
 
     return PathDecoded(RegExp('^$stringPath\$'), keys);
   }

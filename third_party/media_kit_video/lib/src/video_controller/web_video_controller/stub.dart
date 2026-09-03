@@ -24,6 +24,5 @@ class WebVideoController extends PlatformVideoController {
       throw UnimplementedError();
 
   @override
-  Future<void> setSize({int? width, int? height, bool force = false}) =>
-      throw UnimplementedError();
+  Future<void> setSize({int? width, int? height, bool force = false}) => throw UnimplementedError();
 }

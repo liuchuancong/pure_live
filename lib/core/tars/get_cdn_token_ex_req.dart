@@ -1,12 +1,12 @@
-﻿import 'package:pure_live/core/tars/types.dart';
+import 'package:pure_live/core/tars/types.dart';
 import 'package:pure_live/pkg/tars/codec/tars_struct.dart';
 import 'package:pure_live/pkg/tars/codec/tars_displayer.dart';
 import 'package:pure_live/pkg/tars/codec/tars_input_stream.dart';
 import 'package:pure_live/pkg/tars/codec/tars_output_stream.dart';
 
 class GetCdnTokenExReq extends TarsStruct {
-  String sFlvUrl = ""; //tag 0
-  String sStreamName = ""; //tag 1
+  String sFlvUrl = ''; //tag 0
+  String sStreamName = ''; //tag 1
   int iLoopTime = 0; //tag 2
   HuyaUserId tId = HuyaUserId(); //tag 3
   int iAppId = 66; //tag 4
@@ -40,12 +40,12 @@ class GetCdnTokenExReq extends TarsStruct {
   }
 
   @override
-  displayAsString(StringBuffer sb, int level) {
+  void displayAsString(StringBuffer sb, int level) {
     TarsDisplayer tarsDisplayer = TarsDisplayer(sb, level: level);
-    tarsDisplayer.DisplayString(sFlvUrl, "sFlvUrl");
-    tarsDisplayer.DisplayString(sStreamName, "sStreamName");
-    tarsDisplayer.DisplayInt(iLoopTime, "iLoopTime");
-    tarsDisplayer.DisplayTarsStruct(tId, "tId");
-    tarsDisplayer.DisplayInt(iAppId, "iAppId");
+    tarsDisplayer.DisplayString(sFlvUrl, 'sFlvUrl');
+    tarsDisplayer.DisplayString(sStreamName, 'sStreamName');
+    tarsDisplayer.DisplayInt(iLoopTime, 'iLoopTime');
+    tarsDisplayer.DisplayTarsStruct(tId, 'tId');
+    tarsDisplayer.DisplayInt(iAppId, 'iAppId');
   }
 }

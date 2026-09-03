@@ -88,10 +88,7 @@ class _FijkSliderToastState extends State<_FijkSliderToast> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              Icon(
-                iconData,
-                color: Colors.white,
-              ),
+              Icon(iconData, color: Colors.white),
               Container(
                 width: 100,
                 height: 1.5,

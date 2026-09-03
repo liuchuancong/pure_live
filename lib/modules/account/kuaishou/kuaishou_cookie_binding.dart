@@ -4,6 +4,6 @@ import 'package:pure_live/modules/account/kuaishou/kuaishou_cookie_controller.da
 class KuaishouCookieBinding extends Binding {
   @override
   List<Bind> dependencies() {
-    return [Bind.lazyPut(() => KuaishouCookieController())];
+    return [Bind.lazyPut(KuaishouCookieController.new)];
   }
 }

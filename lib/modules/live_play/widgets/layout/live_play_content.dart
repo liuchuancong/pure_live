@@ -174,7 +174,12 @@ class LivePlayLayout extends StatelessWidget {
 }
 
 class LivePlayContent extends StatelessWidget {
-  const LivePlayContent({super.key, required this.controller, required this.isInPip, required this.mode});
+  const LivePlayContent({
+    super.key,
+    required this.controller,
+    required this.isInPip,
+    required this.mode,
+  });
 
   final LivePlayController controller;
   final bool isInPip;
@@ -187,7 +192,11 @@ class LivePlayContent extends StatelessWidget {
     if (isInPip) {
       return Theme(
         data: ThemeData.dark(),
-        child: Container(key: const ValueKey('pip'), color: Colors.transparent, child: player.buildPiPOverlay()),
+        child: Container(
+          key: const ValueKey('pip'),
+          color: Colors.transparent,
+          child: player.buildPiPOverlay(),
+        ),
       );
     }
 
@@ -219,7 +228,10 @@ class LivePlayContent extends StatelessWidget {
       appBar: LivePlayHeader(controller: controller, compactHeader: compactHeader),
       body: LivePlayLayout(
         layoutMode: layoutMode,
-        video: LivePlayVideo(controller: controller, expandToParent: controller.site == Sites.iptvSite),
+        video: LivePlayVideo(
+          controller: controller,
+          expandToParent: controller.site == Sites.iptvSite,
+        ),
         resolution: const ResolutionsRow(),
         danmaku: _buildDanmakuContent(),
         showPanel: controller.site != Sites.iptvSite,

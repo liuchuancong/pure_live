@@ -25,9 +25,14 @@ class PipDanmakuSettingsPage extends StatelessWidget {
       body: LayoutBuilder(
         builder: (context, constraints) {
           if (constraints.maxWidth >= 840) {
-            return _DesktopPipDanmakuLayout(maxPreviewWidth: math.min(520, constraints.maxWidth * 0.43));
+            return _DesktopPipDanmakuLayout(
+              maxPreviewWidth: math.min(520, constraints.maxWidth * 0.43),
+            );
           }
-          return _MobilePipDanmakuLayout(availableHeight: constraints.maxHeight, availableWidth: constraints.maxWidth);
+          return _MobilePipDanmakuLayout(
+            availableHeight: constraints.maxHeight,
+            availableWidth: constraints.maxWidth,
+          );
         },
       ),
     );
@@ -40,8 +45,14 @@ class PipDanmakuSettingsPage extends StatelessWidget {
         title: Text(i18n('pip_danmaku_reset')),
         content: Text(i18n('pip_danmaku_reset_confirm')),
         actions: [
-          TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: Text(i18n('cancel'))),
-          FilledButton(onPressed: () => Navigator.of(dialogContext).pop(true), child: Text(i18n('reset'))),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(i18n('cancel')),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(i18n('reset')),
+          ),
         ],
       ),
     );
@@ -63,7 +74,9 @@ class _MobilePipDanmakuLayout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final naturalHeight = math.max(0, availableWidth - 32) * 9 / 16;
-    final previewHeight = math.min(naturalHeight, math.max(96.0, availableHeight * 0.31)).toDouble();
+    final previewHeight = math
+        .min(naturalHeight, math.max(96.0, availableHeight * 0.31))
+        .toDouble();
     return Column(
       children: [
         Padding(
@@ -208,12 +221,15 @@ class PipDanmakuSettingsSection extends StatelessWidget {
               ),
               _slider(
                 theme,
-                title: i18n("font_weight"),
+                title: i18n('font_weight'),
                 value: settings.pipDanmakuFontWeight.value.toDouble(),
                 min: 100,
                 max: 900,
                 stepSize: 100,
-                display: i18n(AppConsts.fontWeightLabels[settings.pipDanmakuFontWeight.value] ?? 'font_weight_normal'),
+                display: i18n(
+                  AppConsts.fontWeightLabels[settings.pipDanmakuFontWeight.value] ??
+                      'font_weight_normal',
+                ),
                 onChanged: (v) {
                   settings.pipDanmakuFontWeight.value = v.round();
                 },
@@ -425,7 +441,10 @@ class PipDanmakuSettingsSection extends StatelessWidget {
                   title,
                   style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600, color: labelColor),
                 ),
-                if (subtitle != null) ...[const SizedBox(height: 3), Text(subtitle, style: theme.textTheme.bodySmall)],
+                if (subtitle != null) ...[
+                  const SizedBox(height: 3),
+                  Text(subtitle, style: theme.textTheme.bodySmall),
+                ],
               ],
             ),
           ),
@@ -436,7 +455,11 @@ class PipDanmakuSettingsSection extends StatelessWidget {
     );
   }
 
-  Widget _colorPickerRow(BuildContext context, {required Color labelColor, required Color digitColor}) {
+  Widget _colorPickerRow(
+    BuildContext context, {
+    required Color labelColor,
+    required Color digitColor,
+  }) {
     final color = Color(SettingsService.to.danmaku.pipDanmakuColor.v);
     return InkWell(
       onTap: () => _showColorPicker(context, color),
@@ -535,7 +558,10 @@ class _PipDanmakuPreviewState extends State<PipDanmakuPreview> with SingleTicker
       final area = settings.pipDanmakuArea.v;
       final maxVisibleCount = settings.pipDanmakuMaxVisibleCount.v;
       final emitInterval = settings.pipDanmakuEmitInterval.v;
-      final fps = settings.resolvedDanmakuFps(pip: true, refreshRateMode: SettingsService.to.app.refreshRateMode);
+      final fps = settings.resolvedDanmakuFps(
+        pip: true,
+        refreshRateMode: SettingsService.to.app.refreshRateMode,
+      );
       final colors = useOriginalColor
           ? const [Color(0xFFFFFFFF), Color(0xFF64B5F6), Color(0xFFFFD54F), Color(0xFF81C784)]
           : [unifiedColor];
@@ -555,7 +581,9 @@ class _PipDanmakuPreviewState extends State<PipDanmakuPreview> with SingleTicker
               ),
               child: LayoutBuilder(
                 builder: (context, constraints) {
-                  final scale = autoScale ? (constraints.maxWidth / 350).clamp(0.65, 1.0).toDouble() : 1.0;
+                  final scale = autoScale
+                      ? (constraints.maxWidth / 350).clamp(0.65, 1.0).toDouble()
+                      : 1.0;
                   final fontSize = configuredFontSize * scale;
                   final areaHeight = constraints.maxHeight * area;
                   final previewText = i18n('pip_danmaku_preview_text');
@@ -568,7 +596,9 @@ class _PipDanmakuPreviewState extends State<PipDanmakuPreview> with SingleTicker
                           color: colors[index % colors.length].withValues(alpha: opacity),
                           fontSize: fontSize,
                           fontWeight: FontWeight(fontWeight),
-                          shadows: const [Shadow(color: Colors.black, blurRadius: 2, offset: Offset(0.5, 0.5))],
+                          shadows: const [
+                            Shadow(color: Colors.black, blurRadius: 2, offset: Offset(0.5, 0.5)),
+                          ],
                         ),
                       ),
                       maxLines: 1,
@@ -607,10 +637,16 @@ class _PipDanmakuPreviewState extends State<PipDanmakuPreview> with SingleTicker
                       if (!enabled)
                         Center(
                           child: DecoratedBox(
-                            decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(20)),
+                            decoration: BoxDecoration(
+                              color: Colors.black54,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
                             child: Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                              child: Text(i18n('pip_danmaku_disabled'), style: const TextStyle(color: Colors.white)),
+                              child: Text(
+                                i18n('pip_danmaku_disabled'),
+                                style: const TextStyle(color: Colors.white),
+                              ),
                             ),
                           ),
                         ),

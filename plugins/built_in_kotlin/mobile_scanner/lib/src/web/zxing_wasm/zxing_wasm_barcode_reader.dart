@@ -58,10 +58,7 @@ final class ZXingWasmBarcodeReader extends PollingBarcodeReader {
     // getImageData calls, avoiding the GPU-readback warning.
     _canvas = web.HTMLCanvasElement();
     _ctx =
-        _canvas!.getContext(
-              '2d',
-              _CanvasContextAttributes(willReadFrequently: true),
-            )
+        _canvas!.getContext('2d', _CanvasContextAttributes(willReadFrequently: true))
             as web.CanvasRenderingContext2D?;
   }
 
@@ -88,10 +85,7 @@ final class ZXingWasmBarcodeReader extends PollingBarcodeReader {
     ctx.drawImage(video, 0, 0);
     final imageData = ctx.getImageData(0, 0, vw, vh);
 
-    final jsResults =
-        await zxingWasmModule
-            .readBarcodes(imageData, _buildReaderOptions())
-            .toDart;
+    final jsResults = await zxingWasmModule.readBarcodes(imageData, _buildReaderOptions()).toDart;
 
     return [
       for (final result in jsResults.toDart)
@@ -130,10 +124,6 @@ final class ZXingWasmBarcodeReader extends PollingBarcodeReader {
 
     // Omit the formats key entirely so zxing-wasm detects all formats.
     // Passing formats: null causes a crash inside the WASM module.
-    return ZXingWasmReaderOptions(
-      tryHarder: true,
-      tryRotate: true,
-      tryInvert: false,
-    );
+    return ZXingWasmReaderOptions(tryHarder: true, tryRotate: true, tryInvert: false);
   }
 }

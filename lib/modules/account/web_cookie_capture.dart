@@ -5,7 +5,11 @@ import 'package:pure_live/modules/account/cookie_validator.dart';
 
 /// 平台抓取配置：登录页地址与 Cookie 归属域名。
 class CookieCaptureTarget {
-  const CookieCaptureTarget({required this.platform, required this.loginUrl, required this.domains});
+  const CookieCaptureTarget({
+    required this.platform,
+    required this.loginUrl,
+    required this.domains,
+  });
 
   /// 平台标识（与账户模块一致），用于抓取后经平台接口校验登录态。
   final String platform;
@@ -19,15 +23,31 @@ class CookieCaptureTarget {
 
 /// 各平台抓取配置（key 与账户模块的平台标识一致）。
 const Map<String, CookieCaptureTarget> kCookieCaptureTargets = {
-  'douyin': CookieCaptureTarget(platform: 'douyin', loginUrl: 'https://www.douyin.com/', domains: ['douyin.com']),
-  'huya': CookieCaptureTarget(platform: 'huya', loginUrl: 'https://www.huya.com/', domains: ['huya.com']),
+  'douyin': CookieCaptureTarget(
+    platform: 'douyin',
+    loginUrl: 'https://www.douyin.com/',
+    domains: ['douyin.com'],
+  ),
+  'huya': CookieCaptureTarget(
+    platform: 'huya',
+    loginUrl: 'https://www.huya.com/',
+    domains: ['huya.com'],
+  ),
   'kuaishou': CookieCaptureTarget(
     platform: 'kuaishou',
     loginUrl: 'https://www.kuaishou.com/',
     domains: ['kuaishou.com'],
   ),
-  'soop': CookieCaptureTarget(platform: 'soop', loginUrl: 'https://www.sooplive.co.kr/', domains: ['sooplive.co.kr']),
-  'twitch': CookieCaptureTarget(platform: 'twitch', loginUrl: 'https://www.twitch.tv/login', domains: ['twitch.tv']),
+  'soop': CookieCaptureTarget(
+    platform: 'soop',
+    loginUrl: 'https://www.sooplive.co.kr/',
+    domains: ['sooplive.co.kr'],
+  ),
+  'twitch': CookieCaptureTarget(
+    platform: 'twitch',
+    loginUrl: 'https://www.twitch.tv/login',
+    domains: ['twitch.tv'],
+  ),
 };
 
 /// 按 [domains] 过滤并组装 `name=value; ...`；同名 Cookie 后值覆盖前值。
@@ -136,16 +156,20 @@ class _WebCookieCapturePageState extends State<WebCookieCapturePage> {
             color: theme.colorScheme.primary.withValues(alpha: 0.06),
             child: Text(
               '${i18n('cookie_capture_waiting')}\n${i18n('cookie_capture_waiting_hint')}',
-              style: AppTextStyles.t12.copyWith(color: theme.colorScheme.onSurfaceVariant, height: 1.5),
+              style: AppTextStyles.t12.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                height: 1.5,
+              ),
             ),
           ),
           Expanded(
             child: _showWebView
                 ? InAppWebView(
                     initialUrlRequest: URLRequest(url: WebUri(target.loginUrl)),
-                    onWebViewCreated: (controller) => setState(() => _webViewController = controller),
+                    onWebViewCreated: (controller) =>
+                        setState(() => _webViewController = controller),
                     initialSettings: InAppWebViewSettings(
-                      userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
+                      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
                       javaScriptEnabled: true,
                       useWideViewPort: true,
                       loadWithOverviewMode: true,

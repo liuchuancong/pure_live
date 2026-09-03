@@ -169,7 +169,8 @@ class ScheduledRecordings extends Table {
   TextColumn get programmeTitle => text()();
   DateTimeColumn get programmeStart => dateTime()();
   DateTimeColumn get programmeStop => dateTime()();
-  TextColumn get status => text().withDefault(const Constant('scheduled'))(); // scheduled, recording, completed, failed
+  TextColumn get status =>
+      text().withDefault(const Constant('scheduled'))(); // scheduled, recording, completed, failed
   TextColumn get outputPath => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 

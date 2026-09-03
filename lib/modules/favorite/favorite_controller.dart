@@ -58,7 +58,11 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
   void onInit() {
     super.onInit();
 
-    tabController = TabController(length: 3, vsync: this, animationDuration: pureLiveTabTransitionDuration);
+    tabController = TabController(
+      length: 3,
+      vsync: this,
+      animationDuration: pureLiveTabTransitionDuration,
+    );
     WidgetsBinding.instance.addObserver(this);
     tagController.migrateLegacyRoomTagKeys(SettingsService.to.fav.favoriteRooms.v);
 
@@ -150,7 +154,9 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
       _resumeRefreshTimer?.cancel();
       _resumeRefreshTimer = Timer(
         const Duration(milliseconds: 450),
-        () => unawaited(_fullRefreshRooms(showLoading: true, emitFinish: false, bypassFailureCooldown: true)),
+        () => unawaited(
+          _fullRefreshRooms(showLoading: true, emitFinish: false, bypassFailureCooldown: true),
+        ),
       );
     }
   }
@@ -225,7 +231,11 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
       selectStatusIndex(index);
       return;
     }
-    tabController.animateTo(index, duration: const Duration(milliseconds: 220), curve: Curves.easeOutCubic);
+    tabController.animateTo(
+      index,
+      duration: const Duration(milliseconds: 220),
+      curve: Curves.easeOutCubic,
+    );
   }
 
   void changeSelectedTag(String tagId) {
@@ -419,7 +429,8 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
   }
 
   bool _isCurrentFavoriteSnapshotSynced() {
-    return _lastSyncedFavoriteSnapshot == _favoriteSnapshotSignature(SettingsService.to.fav.favoriteRooms.v);
+    return _lastSyncedFavoriteSnapshot ==
+        _favoriteSnapshotSignature(SettingsService.to.fav.favoriteRooms.v);
   }
 
   int _favoriteSnapshotSignature(Iterable<LiveRoom> rooms) {
@@ -531,7 +542,10 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
     await _fullRefreshFilterRooms(showLoading: true, bypassFailureCooldown: true);
   }
 
-  Future<void> _fullRefreshFilterRooms({required bool showLoading, bool bypassFailureCooldown = false}) async {
+  Future<void> _fullRefreshFilterRooms({
+    required bool showLoading,
+    bool bypassFailureCooldown = false,
+  }) async {
     final roomsToRefresh = getFilteredRoomsIgnoringLiveStatus();
     await _runRoomRefresh(
       roomsToRefresh,
@@ -674,7 +688,11 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
       valid,
       maxConcurrent: concurrency,
       task: (room) async {
-        final updated = await _refreshOneRoom(room, siteCache, bypassFailureCooldown: bypassFailureCooldown);
+        final updated = await _refreshOneRoom(
+          room,
+          siteCache,
+          bypassFailureCooldown: bypassFailureCooldown,
+        );
         if (updated == null) return null;
         // Match by the requested favourite identity, not a canonical id that a
         // platform may return (Douyin room ids, for example, can change to the
@@ -698,7 +716,9 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
     final key = _roomKey(room);
 
     final failedAt = _refreshFailureCooldown[key];
-    if (!bypassFailureCooldown && failedAt != null && DateTime.now().difference(failedAt) < _refreshFailureRetryAfter) {
+    if (!bypassFailureCooldown &&
+        failedAt != null &&
+        DateTime.now().difference(failedAt) < _refreshFailureRetryAfter) {
       return null;
     }
 
@@ -709,7 +729,10 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
       final liveSite = siteCache.putIfAbsent(platform, () => Sites.of(platform).liveSite);
 
       final operation = liveSite is LiveSiteRoomRefresher
-          ? (liveSite as LiveSiteRoomRefresher).getRoomDetailForRefresh(roomId: roomId, platform: platform)
+          ? (liveSite as LiveSiteRoomRefresher).getRoomDetailForRefresh(
+              roomId: roomId,
+              platform: platform,
+            )
           : liveSite.getRoomDetail(roomId: roomId, platform: platform);
 
       final result = await operation.timeout(_roomRefreshTimeout);
@@ -726,7 +749,10 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
     } catch (error) {
       _refreshFailureCooldown[key] = DateTime.now();
 
-      developer.log('Favorite room refresh failed: $key (${error.runtimeType})', name: 'FavoriteController');
+      developer.log(
+        'Favorite room refresh failed: $key (${error.runtimeType})',
+        name: 'FavoriteController',
+      );
 
       return null;
     }

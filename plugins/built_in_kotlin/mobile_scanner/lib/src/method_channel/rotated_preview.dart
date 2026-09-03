@@ -110,9 +110,7 @@ final class _RotatedPreviewState extends State<RotatedPreview> {
 
     // Rotate the camera preview according to
     // https://developer.android.com/media/camera/camera2/camera-preview#orientation_calculation.
-    var rotationDegrees =
-        (sensorOrientationDegrees - deviceOrientationDegrees * sign + 360) %
-        360;
+    var rotationDegrees = (sensorOrientationDegrees - deviceOrientationDegrees * sign + 360) % 360;
 
     // Then, subtract the rotation already applied in the CameraPreview widget
     return rotationDegrees -= deviceOrientationDegrees;

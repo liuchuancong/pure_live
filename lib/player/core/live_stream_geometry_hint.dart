@@ -57,10 +57,13 @@ class LiveStreamGeometryHintResolver {
         ? _mapValue(defaultQuality, 'sdk_key')?.toString().trim().toLowerCase() ?? ''
         : '';
     if (defaultKey.isEmpty) {
-      defaultKey = _mapValue(rawStreamUrl, 'default_resolution')?.toString().trim().toLowerCase() ?? '';
+      defaultKey =
+          _mapValue(rawStreamUrl, 'default_resolution')?.toString().trim().toLowerCase() ?? '';
     }
     final rawQualities = options is Map ? _mapValue(options, 'qualities') : null;
-    final qualities = rawQualities is List ? rawQualities.whereType<Map>().toList(growable: false) : const <Map>[];
+    final qualities = rawQualities is List
+        ? rawQualities.whereType<Map>().toList(growable: false)
+        : const <Map>[];
 
     Map<dynamic, dynamic> streams = const <dynamic, dynamic>{};
     final streamData = pullData is Map ? _mapValue(pullData, 'stream_data') : null;
@@ -68,11 +71,19 @@ class LiveStreamGeometryHintResolver {
     final decodedData = decodedStreamData == null ? null : _mapValue(decodedStreamData, 'data');
     if (decodedData is Map) streams = decodedData;
 
-    final selectedKey = _findSelectedStreamKey(rawStreamUrl: rawStreamUrl, streams: streams, selectedUrl: selectedUrl);
+    final selectedKey = _findSelectedStreamKey(
+      rawStreamUrl: rawStreamUrl,
+      streams: streams,
+      selectedUrl: selectedUrl,
+    );
     final hasSelectedUrl = selectedUrl?.trim().isNotEmpty == true;
     if (selectedKey.isNotEmpty) {
       final selectedStream = _caseInsensitiveValue(streams, selectedKey);
-      final sdkHint = _dimensionsFromStream(selectedStream, confidence: 0.995, source: 'douyin.selected_sdk_params');
+      final sdkHint = _dimensionsFromStream(
+        selectedStream,
+        confidence: 0.995,
+        source: 'douyin.selected_sdk_params',
+      );
       if (sdkHint != null) return sdkHint;
 
       final qualityHint = _qualityResolutionForKey(
@@ -117,7 +128,11 @@ class LiveStreamGeometryHintResolver {
 
     if (defaultKey.isNotEmpty && !hasSelectedUrl) {
       final defaultStream = _caseInsensitiveValue(streams, defaultKey);
-      final sdkHint = _dimensionsFromStream(defaultStream, confidence: 0.96, source: 'douyin.default_sdk_params');
+      final sdkHint = _dimensionsFromStream(
+        defaultStream,
+        confidence: 0.96,
+        source: 'douyin.default_sdk_params',
+      );
       if (sdkHint != null) return sdkHint;
     }
 
@@ -145,7 +160,11 @@ class LiveStreamGeometryHintResolver {
     final candidateResolution = _mapValue(rawStreamUrl, 'candidate_resolution');
     if (candidateResolution is List) {
       for (final value in candidateResolution) {
-        final hint = _parseResolution(value, confidence: 0.92, source: 'douyin.candidate_resolution');
+        final hint = _parseResolution(
+          value,
+          confidence: 0.92,
+          source: 'douyin.candidate_resolution',
+        );
         if (hint != null) candidates.add(hint);
       }
     }
@@ -165,7 +184,11 @@ class LiveStreamGeometryHintResolver {
     for (final quality in qualities) {
       final key = _mapValue(quality, 'sdk_key')?.toString().trim().toLowerCase() ?? '';
       if (key != normalizedKey) continue;
-      return _parseResolution(_mapValue(quality, 'resolution'), confidence: confidence, source: source);
+      return _parseResolution(
+        _mapValue(quality, 'resolution'),
+        confidence: confidence,
+        source: source,
+      );
     }
     return null;
   }
@@ -181,7 +204,8 @@ class LiveStreamGeometryHintResolver {
     for (final entry in streams.entries) {
       final main = entry.value is Map ? _mapValue(entry.value as Map, 'main') : null;
       if (main is! Map) continue;
-      if (_samePlayableUrl(target, _mapValue(main, 'flv')) || _samePlayableUrl(target, _mapValue(main, 'hls'))) {
+      if (_samePlayableUrl(target, _mapValue(main, 'flv')) ||
+          _samePlayableUrl(target, _mapValue(main, 'hls'))) {
         return entry.key?.toString().trim().toLowerCase() ?? '';
       }
     }
@@ -236,7 +260,11 @@ class LiveStreamGeometryHintResolver {
     final sdkParams = _decodeMap(_mapValue(main, 'sdk_params'));
     if (sdkParams == null) return null;
     return _dimensionsFromMap(sdkParams, confidence: confidence, source: source) ??
-        _parseResolution(_mapValue(sdkParams, 'resolution'), confidence: confidence, source: source);
+        _parseResolution(
+          _mapValue(sdkParams, 'resolution'),
+          confidence: confidence,
+          source: source,
+        );
   }
 
   static LiveStreamGeometryHint? _dimensionsFromMap(
@@ -250,7 +278,11 @@ class LiveStreamGeometryHintResolver {
     return _validatedHint(width, height, confidence: confidence, source: source);
   }
 
-  static LiveStreamGeometryHint? _parseResolution(dynamic value, {required double confidence, required String source}) {
+  static LiveStreamGeometryHint? _parseResolution(
+    dynamic value, {
+    required double confidence,
+    required String source,
+  }) {
     final text = value?.toString().trim() ?? '';
     final match = RegExp(r'(\d{2,5})\s*[xX×*]\s*(\d{2,5})').firstMatch(text);
     if (match == null) return null;
@@ -268,20 +300,35 @@ class LiveStreamGeometryHintResolver {
     required double confidence,
     required String source,
   }) {
-    if (width == null || height == null || width < 120 || height < 120 || width > 16384 || height > 16384) {
+    if (width == null ||
+        height == null ||
+        width < 120 ||
+        height < 120 ||
+        width > 16384 ||
+        height > 16384) {
       return null;
     }
     final ratio = width / height;
     if (!ratio.isFinite || ratio < 0.30 || ratio > 3.50) return null;
-    return LiveStreamGeometryHint(width: width, height: height, confidence: confidence, source: source);
+    return LiveStreamGeometryHint(
+      width: width,
+      height: height,
+      confidence: confidence,
+      source: source,
+    );
   }
 
   static LiveStreamGeometryHint? _selectAspectConsensus(List<LiveStreamGeometryHint> candidates) {
     if (candidates.isEmpty) return null;
-    candidates.sort((left, right) => (right.width * right.height).compareTo(left.width * left.height));
+    candidates.sort(
+      (left, right) => (right.width * right.height).compareTo(left.width * left.height),
+    );
     final reference = candidates.first;
     final matching = candidates
-        .where((candidate) => (candidate.aspectRatio - reference.aspectRatio).abs() / reference.aspectRatio <= 0.08)
+        .where(
+          (candidate) =>
+              (candidate.aspectRatio - reference.aspectRatio).abs() / reference.aspectRatio <= 0.08,
+        )
         .length;
     if (candidates.length > 1 && matching * 2 <= candidates.length) return null;
     return LiveStreamGeometryHint(

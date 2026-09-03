@@ -3,7 +3,8 @@ import 'dart:collection';
 import 'package:flame_barrage/flame_barrage.dart';
 
 class RichParser {
-  RichParser({required this.atlas, int maxCacheSize = 1000}) : _maxCacheSize = maxCacheSize.clamp(1, 10000).toInt();
+  RichParser({required this.atlas, int maxCacheSize = 1000})
+    : _maxCacheSize = maxCacheSize.clamp(1, 10000).toInt();
 
   final EmojiAtlas atlas;
   final LinkedHashMap<String, List<Fragment>> _cache = LinkedHashMap<String, List<Fragment>>();

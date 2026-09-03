@@ -67,10 +67,7 @@ MethodChannel _methodChannel = const MethodChannel('io.abner.flutter_js')
       final message = call.arguments[2] as String?;
 
       if (_engineMap[engineId] != null) {
-        return _engineMap[engineId]!.onMessageReceived(
-          channel,
-          message,
-        );
+        return _engineMap[engineId]!.onMessageReceived(channel, message);
       } else {
         return Future.value('Error: no engine found with id: $engineId');
       }
@@ -80,9 +77,7 @@ MethodChannel _methodChannel = const MethodChannel('io.abner.flutter_js')
 
 bool messageHandlerRegistered = false;
 
-typedef FlutterJsChannelCallbak = Future<String> Function(
-  String? args,
-);
+typedef FlutterJsChannelCallbak = Future<String> Function(String? args);
 
 class FlutterJs {
   int? _engineId;
@@ -111,17 +106,13 @@ class FlutterJs {
     FlutterJs.close(_engineId);
   }
 
-  addChannel(String name, FlutterJsChannelCallbak fn,
-      {String? dartChannelAddress}) {
+  addChannel(String name, FlutterJsChannelCallbak fn, {String? dartChannelAddress}) {
     _channels[name] = fn;
-    _methodChannel.invokeMethod(
-      "registerChannel",
-      {
-        "engineId": id,
-        "channelName": name,
-        "dartChannelAddress": dartChannelAddress
-      },
-    );
+    _methodChannel.invokeMethod("registerChannel", {
+      "engineId": id,
+      "channelName": name,
+      "dartChannelAddress": dartChannelAddress,
+    });
   }
 
   Future<String> onMessageReceived(String? channel, String? message) {
@@ -142,14 +133,15 @@ class FlutterJs {
   }
 
   static Future<String?> get platformVersion async {
-    final String? version =
-        await _methodChannel.invokeMethod('getPlatformVersion');
+    final String? version = await _methodChannel.invokeMethod('getPlatformVersion');
     return version;
   }
 
   static Future<int?> initEngine(int? engineId) async {
     Map<dynamic, dynamic> mapResult = await (_methodChannel.invokeMethod(
-        "initEngine", engineId) as Future<Map<dynamic, dynamic>>);
+      "initEngine",
+      engineId,
+    ) as Future<Map<dynamic, dynamic>>);
     _httpPort = mapResult['httpPort'] as int?;
     _httpPassword = mapResult['httpPassword'] as String?;
     return engineId;
@@ -160,13 +152,8 @@ class FlutterJs {
     return engineId;
   }
 
-  static Future<String> evaluate(String command, int? id,
-      {String convertTo = ""}) async {
-    var arguments = {
-      "engineId": id,
-      "command": command,
-      "convertTo": convertTo
-    };
+  static Future<String> evaluate(String command, int? id, {String convertTo = ""}) async {
+    var arguments = {"engineId": id, "command": command, "convertTo": convertTo};
     final rs = await _methodChannel.invokeMethod("evaluate", arguments);
     final String? jsResult = rs is Map || rs is List ? json.encode(rs) : rs;
     if (DEBUG) {

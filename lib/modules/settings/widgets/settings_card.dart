@@ -7,7 +7,9 @@ class SettingsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Theme.of(context).brightness == Brightness.dark ? Colors.grey.withAlpha(50) : Colors.white70,
+      color: Theme.of(context).brightness == Brightness.dark
+          ? Colors.grey.withAlpha(50)
+          : Colors.white70,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(8),
         side: BorderSide(color: Colors.grey.withAlpha(25)),

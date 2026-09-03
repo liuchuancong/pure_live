@@ -12,7 +12,8 @@ class BetterPlayerAsmsUtils {
   static const String _hlsExtension = 'm3u8';
   static const String _dashExtension = 'mpd';
 
-  static final HttpClient _httpClient = HttpClient()..connectionTimeout = const Duration(seconds: 5);
+  static final HttpClient _httpClient = HttpClient()
+    ..connectionTimeout = const Duration(seconds: 5);
 
   ///Check if given url is HLS / DASH-type data source.
   static bool isDataSourceAsms(String url) => isDataSourceHls(url) || isDataSourceDash(url);

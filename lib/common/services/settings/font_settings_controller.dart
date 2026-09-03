@@ -84,7 +84,10 @@ class FontSettingsController extends GetxController {
       final downloaded = await FontDownloadManager.instance.checkFontDownloaded(id);
       fontState.value = downloaded ? DownloadState.downloaded : DownloadState.notDownloaded;
       if (downloaded) {
-        var loaded = await FontDownloadManager.instance.loadFont(id, fileName: fontFamilyFileName.v);
+        var loaded = await FontDownloadManager.instance.loadFont(
+          id,
+          fileName: fontFamilyFileName.v,
+        );
         if (!loaded && fontFamilyFileName.v.isNotEmpty) {
           loaded = await FontDownloadManager.instance.loadFont(id);
           if (loaded) {
@@ -102,7 +105,10 @@ class FontSettingsController extends GetxController {
     if (danmakuId != 'Default' && danmakuId != id) {
       final danmakuDownloaded = await FontDownloadManager.instance.checkFontDownloaded(danmakuId);
       if (danmakuDownloaded) {
-        var loaded = await FontDownloadManager.instance.loadFont(danmakuId, fileName: danmakuFontFamilyFileName.v);
+        var loaded = await FontDownloadManager.instance.loadFont(
+          danmakuId,
+          fileName: danmakuFontFamilyFileName.v,
+        );
         if (!loaded && danmakuFontFamilyFileName.v.isNotEmpty) {
           loaded = await FontDownloadManager.instance.loadFont(danmakuId);
           if (loaded) {
@@ -115,7 +121,10 @@ class FontSettingsController extends GetxController {
   }
 
   Future<void> activateFontFamily(FontModel fontModel, {String? targetFileName}) async {
-    final loaded = await FontDownloadManager.instance.loadFont(fontModel.id, fileName: targetFileName ?? '');
+    final loaded = await FontDownloadManager.instance.loadFont(
+      fontModel.id,
+      fileName: targetFileName ?? '',
+    );
     if (!loaded) {
       ToastUtil.show(i18n('font_not_downloaded_or_corrupted'));
       return;
@@ -130,14 +139,19 @@ class FontSettingsController extends GetxController {
     Get.updateLocale(Get.locale ?? const Locale('zh', 'CN'));
     if (targetFileName != null) {
       final subName = targetFileName.split('-').last;
-      ToastUtil.show(i18n('font_toast_exclusive', args: {"name": fontModel.name, "subName": subName}));
+      ToastUtil.show(
+        i18n('font_toast_exclusive', args: {'name': fontModel.name, 'subName': subName}),
+      );
     } else {
-      ToastUtil.show(i18n('font_toast_global', args: {"name": fontModel.name}));
+      ToastUtil.show(i18n('font_toast_global', args: {'name': fontModel.name}));
     }
   }
 
   Future<void> activateDanmakuFontFamily(FontModel font, {String? targetFileName}) async {
-    final loaded = await FontDownloadManager.instance.loadFont(font.id, fileName: targetFileName ?? '');
+    final loaded = await FontDownloadManager.instance.loadFont(
+      font.id,
+      fileName: targetFileName ?? '',
+    );
     if (!loaded) {
       ToastUtil.show(i18n('font_not_downloaded_or_corrupted'));
       return;
@@ -152,7 +166,9 @@ class FontSettingsController extends GetxController {
     final inFlight = _fontDiskSizeRefresh;
     if (inFlight != null) return inFlight;
     final lastRefresh = _lastFontDiskSizeRefresh;
-    if (!force && lastRefresh != null && DateTime.now().difference(lastRefresh) < const Duration(seconds: 30)) {
+    if (!force &&
+        lastRefresh != null &&
+        DateTime.now().difference(lastRefresh) < const Duration(seconds: 30)) {
       return Future.value();
     }
     final refresh = _refreshFontDiskSizes();
@@ -164,7 +180,9 @@ class FontSettingsController extends GetxController {
 
   Future<void> _refreshFontDiskSizes() async {
     final dir = await AppPathManager().getDir(AppPathManager.dirDownload);
-    final fontDir = Directory('${dir.path}${Platform.pathSeparator}${AppPathManager.fontDirectoryName}');
+    final fontDir = Directory(
+      '${dir.path}${Platform.pathSeparator}${AppPathManager.fontDirectoryName}',
+    );
     if (!await fontDir.exists()) {
       fontFolderSizes.clear();
       _lastFontDiskSizeRefresh = DateTime.now();
@@ -187,7 +205,7 @@ class FontSettingsController extends GetxController {
   Future<void> uninstallFontFamily(FontModel font) async {
     await FontDownloadManager.instance.deleteFontFamily(font, (s) {});
     if (fontFamilyName.v == font.id) {
-      fontFamilyName.v = Platform.isWindows ? "Microsoft YaHei" : 'Default';
+      fontFamilyName.v = Platform.isWindows ? 'Microsoft YaHei' : 'Default';
       fontFamilyFileName.v = '';
       await HivePrefUtil.setString('fontFamilyName', fontFamilyName.v);
       await HivePrefUtil.setString('fontFamilyFileName', '');
@@ -249,7 +267,10 @@ class FontSettingsController extends GetxController {
     };
   }
 
-  static Map<String, dynamic> mergeConfig(Map<String, dynamic> rootConfig, Map<String, dynamic> updateFields) {
+  static Map<String, dynamic> mergeConfig(
+    Map<String, dynamic> rootConfig,
+    Map<String, dynamic> updateFields,
+  ) {
     final font = Map<String, dynamic>.from(rootConfig['font'] ?? {});
     updateFields.forEach((k, v) => font[k] = v);
     rootConfig['font'] = font;

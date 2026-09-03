@@ -30,7 +30,8 @@ class PlaybackCachePolicy {
 
   bool get userEnabled => SettingsService.to.player.lowMemoryMode.v;
 
-  bool get networkForced => !userEnabled && !isLocalPlayback() && MeteredNetworkService.to.isMetered;
+  bool get networkForced =>
+      !userEnabled && !isLocalPlayback() && MeteredNetworkService.to.isMetered;
 
   bool get enabled => userEnabled || networkForced;
 

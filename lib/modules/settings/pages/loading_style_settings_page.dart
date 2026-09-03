@@ -13,13 +13,17 @@ class LoadingStyleSettingsPage extends StatefulWidget {
   State<LoadingStyleSettingsPage> createState() => _LoadingStyleSettingsPageState();
 }
 
-class _LoadingStyleSettingsPageState extends State<LoadingStyleSettingsPage> with SingleTickerProviderStateMixin {
+class _LoadingStyleSettingsPageState extends State<LoadingStyleSettingsPage>
+    with SingleTickerProviderStateMixin {
   late AnimationController _rotateController;
 
   @override
   void initState() {
     super.initState();
-    _rotateController = AnimationController(duration: const Duration(milliseconds: 1000), vsync: this)..repeat();
+    _rotateController = AnimationController(
+      duration: const Duration(milliseconds: 1000),
+      vsync: this,
+    )..repeat();
   }
 
   Future<bool> colorPickerDialog() async {
@@ -40,9 +44,12 @@ class _LoadingStyleSettingsPageState extends State<LoadingStyleSettingsPage> wit
       spacing: 5,
       runSpacing: 5,
       wheelDiameter: 155,
-      heading: Text(i18n("theme_color"), style: Theme.of(Get.context!).textTheme.titleMedium),
-      subheading: Text(i18n("select_opacity"), style: Theme.of(Get.context!).textTheme.titleMedium),
-      wheelSubheading: Text(i18n("theme_color_opacity"), style: Theme.of(Get.context!).textTheme.titleMedium),
+      heading: Text(i18n('theme_color'), style: Theme.of(Get.context!).textTheme.titleMedium),
+      subheading: Text(i18n('select_opacity'), style: Theme.of(Get.context!).textTheme.titleMedium),
+      wheelSubheading: Text(
+        i18n('theme_color_opacity'),
+        style: Theme.of(Get.context!).textTheme.titleMedium,
+      ),
       showMaterialName: false,
       showColorName: false,
       showColorCode: true,
@@ -55,10 +62,10 @@ class _LoadingStyleSettingsPageState extends State<LoadingStyleSettingsPage> wit
       customColorSwatchesAndNames: AppConsts.colorsNameMap,
 
       pickerTypeLabels: <ColorPickerType, String>{
-        ColorPickerType.primary: isZh ? "常用色" : "Primary",
-        ColorPickerType.accent: isZh ? "鲜艳色" : "Accent",
-        ColorPickerType.custom: isZh ? "自定义" : "Custom",
-        ColorPickerType.wheel: isZh ? "调色盘" : "Wheel",
+        ColorPickerType.primary: isZh ? '常用色' : 'Primary',
+        ColorPickerType.accent: isZh ? '鲜艳色' : 'Accent',
+        ColorPickerType.custom: isZh ? '自定义' : 'Custom',
+        ColorPickerType.wheel: isZh ? '调色盘' : 'Wheel',
       },
       pickersEnabled: const <ColorPickerType, bool>{
         ColorPickerType.both: false,
@@ -406,8 +413,10 @@ class _LoadingStyleSettingsPageState extends State<LoadingStyleSettingsPage> wit
       animWidget = RotationTransition(
         turns: _rotateController,
         child: ShaderMask(
-          shaderCallback: (rect) =>
-              SweepGradient(colors: [color, color.withValues(alpha: 0.1)], stops: const [0.0, 0.85]).createShader(rect),
+          shaderCallback: (rect) => SweepGradient(
+            colors: [color, color.withValues(alpha: 0.1)],
+            stops: const [0.0, 0.85],
+          ).createShader(rect),
           child: Container(
             width: 28,
             height: 28,
@@ -444,13 +453,13 @@ class _LoadingStyleSettingsPageState extends State<LoadingStyleSettingsPage> wit
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(i18n("change_loading_style")),
+        title: Text(i18n('change_loading_style')),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 8.0),
             child: IconButton(
               icon: const Icon(Remix.arrow_go_back_line),
-              tooltip: i18n("restore_default"),
+              tooltip: i18n('restore_default'),
               onPressed: () {
                 SettingsService.to.theme.loadingStyle.v = AppConsts.defaultLoadingStyleKey;
                 SettingsService.to.theme.loadingStyleColorSwitch.v = '';
@@ -466,12 +475,12 @@ class _LoadingStyleSettingsPageState extends State<LoadingStyleSettingsPage> wit
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                context.buildGroupTitle(i18n("change_loading_color")),
+                context.buildGroupTitle(i18n('change_loading_color')),
                 context.buildModernCard([
                   context.buildTile(
                     icon: Remix.palette_line,
-                    title: i18n("change_loading_color"),
-                    subtitle: i18n("change_loading_color_subtitle"),
+                    title: i18n('change_loading_color'),
+                    subtitle: i18n('change_loading_color_subtitle'),
                     onTap: colorPickerDialog,
                     trailing: Obx(
                       () => ColorIndicator(
@@ -509,7 +518,9 @@ class _LoadingStyleSettingsPageState extends State<LoadingStyleSettingsPage> wit
                 return Obx(() {
                   final bool isSelected = SettingsService.to.theme.loadingStyle.v == key;
                   final String currentHex = SettingsService.to.theme.loadingStyleColorSwitch.v;
-                  final Color liveColor = currentHex.isEmpty ? theme.colorScheme.primary : HexColor(currentHex);
+                  final Color liveColor = currentHex.isEmpty
+                      ? theme.colorScheme.primary
+                      : HexColor(currentHex);
 
                   return InkWell(
                     onTap: () => SettingsService.to.theme.loadingStyle.v = key,
@@ -533,7 +544,11 @@ class _LoadingStyleSettingsPageState extends State<LoadingStyleSettingsPage> wit
                             children: [
                               Expanded(
                                 child: Center(
-                                  child: SizedBox(width: 36, height: 36, child: _buildAnim(key, liveColor, 36, theme)),
+                                  child: SizedBox(
+                                    width: 36,
+                                    height: 36,
+                                    child: _buildAnim(key, liveColor, 36, theme),
+                                  ),
                                 ),
                               ),
                               Padding(
@@ -544,7 +559,9 @@ class _LoadingStyleSettingsPageState extends State<LoadingStyleSettingsPage> wit
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: AppTextStyles.t11Bold.copyWith(
-                                    color: isSelected ? theme.colorScheme.primary : theme.colorScheme.onSurface,
+                                    color: isSelected
+                                        ? theme.colorScheme.primary
+                                        : theme.colorScheme.onSurface,
                                   ),
                                 ),
                               ),
@@ -554,7 +571,11 @@ class _LoadingStyleSettingsPageState extends State<LoadingStyleSettingsPage> wit
                             Positioned(
                               top: 8,
                               right: 8,
-                              child: Icon(Icons.check_circle, size: 16, color: theme.colorScheme.primary),
+                              child: Icon(
+                                Icons.check_circle,
+                                size: 16,
+                                color: theme.colorScheme.primary,
+                              ),
                             ),
                         ],
                       ),

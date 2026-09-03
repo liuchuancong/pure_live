@@ -76,7 +76,9 @@ abstract class ServerRemotePageController<T> extends BasePageScrollAndStateBone<
         final seen = historyPool.toSet();
         var requestCount = 0;
         var noProgressCount = 0;
-        while (historyPool.length < targetTotalItemsNeeded && requestCount < 20 && noProgressCount < 2) {
+        while (historyPool.length < targetTotalItemsNeeded &&
+            requestCount < 20 &&
+            noProgressCount < 2) {
           final int missingCount = targetTotalItemsNeeded - historyPool.length;
           final result = await fetchNetworkData(_virtualNetworkPage, missingCount);
           requestCount++;
@@ -141,7 +143,9 @@ abstract class ServerRemotePageController<T> extends BasePageScrollAndStateBone<
       list.assignAll(cachedData);
       canLoadMore.value = cachedData.length >= pageSize.value;
       pageEmpty.value = list.isEmpty;
-      finishRefreshControllers(canLoadMore.value ? IndicatorResult.success : IndicatorResult.noMore);
+      finishRefreshControllers(
+        canLoadMore.value ? IndicatorResult.success : IndicatorResult.noMore,
+      );
       scrollToTopImmediate();
       return;
     }
@@ -192,7 +196,9 @@ abstract class ServerRemotePageController<T> extends BasePageScrollAndStateBone<
         _pageCache[currentPage] = combinedResult;
         list.assignAll(combinedResult);
         pageEmpty.value = list.isEmpty;
-        finishRefreshControllers(canLoadMore.value ? IndicatorResult.success : IndicatorResult.noMore);
+        finishRefreshControllers(
+          canLoadMore.value ? IndicatorResult.success : IndicatorResult.noMore,
+        );
         scrollToTopImmediate();
       } else {
         canLoadMore.value = combinedResult.length >= pageSize.value;
@@ -202,7 +208,9 @@ abstract class ServerRemotePageController<T> extends BasePageScrollAndStateBone<
           list.addAll(combinedResult);
         }
         pageEmpty.value = list.isEmpty;
-        finishRefreshControllers(canLoadMore.value ? IndicatorResult.success : IndicatorResult.noMore);
+        finishRefreshControllers(
+          canLoadMore.value ? IndicatorResult.success : IndicatorResult.noMore,
+        );
       }
     } catch (e) {
       currentPage = previousPageSnapshot;

@@ -21,7 +21,7 @@ class AreasPage extends GetView<AreasController> {
             appBar: AppBar(
               centerTitle: true,
               leading: showAction ? const MenuButton() : null,
-              actions: showAction ? [CommonAppBarActions()] : null,
+              actions: showAction ? [const CommonAppBarActions()] : null,
               title: TabBar(
                 key: const ValueKey('areas-platform-tabs'),
                 controller: controller.tabController,
@@ -45,9 +45,16 @@ class AreasPage extends GetView<AreasController> {
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.95),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15), width: 1),
+                  border: Border.all(
+                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
+                    width: 1,
+                  ),
                   boxShadow: [
-                    BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 12, offset: const Offset(0, 4)),
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.04),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
                   ],
                 ),
                 child: ClipRRect(
@@ -60,10 +67,14 @@ class AreasPage extends GetView<AreasController> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Remix.heart_add_2_line, size: 16, color: Theme.of(context).colorScheme.primary),
+                          Icon(
+                            Remix.heart_add_2_line,
+                            size: 16,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
                           const SizedBox(width: 8),
                           Text(
-                            i18n("favorite_areas"),
+                            i18n('favorite_areas'),
                             style: AppTextStyles.t12Bold.copyWith(
                               color: Theme.of(context).colorScheme.primary,
                               letterSpacing: 0.5,

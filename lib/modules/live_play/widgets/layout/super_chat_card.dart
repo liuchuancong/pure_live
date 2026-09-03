@@ -53,7 +53,9 @@ class _SuperChatCardState extends State<SuperChatCard> {
   void _updateRemainSeconds() {
     final duration = widget.message.endTime.difference(DateTime.now());
 
-    final remain = duration.inMilliseconds <= 0 ? 0 : (duration.inMilliseconds / 1000).ceil().clamp(0, 7200);
+    final remain = duration.inMilliseconds <= 0
+        ? 0
+        : (duration.inMilliseconds / 1000).ceil().clamp(0, 7200);
 
     if (!mounted) {
       return;
@@ -82,7 +84,9 @@ class _SuperChatCardState extends State<SuperChatCard> {
   }
 
   Color _secondaryText(Color background) {
-    return background.computeLuminance() > 0.55 ? const Color(0x8A18181A) : Colors.white.withValues(alpha: 0.70);
+    return background.computeLuminance() > 0.55
+        ? const Color(0x8A18181A)
+        : Colors.white.withValues(alpha: 0.70);
   }
 
   Color _overlay(Color background, double opacity) {
@@ -124,7 +128,11 @@ class _SuperChatCardState extends State<SuperChatCard> {
             primaryText: headerText,
             secondaryText: headerSubText,
           ),
-          _buildMessageBody(message: message, backgroundColor: messageColor, textColor: messageText),
+          _buildMessageBody(
+            message: message,
+            backgroundColor: messageColor,
+            textColor: messageText,
+          ),
         ],
       ),
     );
@@ -153,13 +161,18 @@ class _SuperChatCardState extends State<SuperChatCard> {
                   message.userName,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: primaryText, fontSize: 14, height: 1.2, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    color: primaryText,
+                    fontSize: 14,
+                    height: 1.2,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 const SizedBox(height: 5),
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Remix.money_cny_circle_fill, size: 16, color: const Color(0xFFFFC107)),
+                    const Icon(Remix.money_cny_circle_fill, size: 16, color: Color(0xFFFFC107)),
                     const SizedBox(width: 1),
                     Text(
                       '￥${message.price}',
@@ -176,7 +189,11 @@ class _SuperChatCardState extends State<SuperChatCard> {
             ),
           ),
           const SizedBox(width: 8),
-          _buildInfoArea(backgroundColor: backgroundColor, primaryText: primaryText, secondaryText: secondaryText),
+          _buildInfoArea(
+            backgroundColor: backgroundColor,
+            primaryText: primaryText,
+            secondaryText: secondaryText,
+          ),
         ],
       ),
     );
@@ -207,18 +224,25 @@ class _SuperChatCardState extends State<SuperChatCard> {
     );
   }
 
-  Widget _buildInfoArea({required Color backgroundColor, required Color primaryText, required Color secondaryText}) {
+  Widget _buildInfoArea({
+    required Color backgroundColor,
+    required Color primaryText,
+    required Color secondaryText,
+  }) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-          decoration: BoxDecoration(color: _overlay(backgroundColor, 0.10), borderRadius: BorderRadius.circular(6)),
+          decoration: BoxDecoration(
+            color: _overlay(backgroundColor, 0.10),
+            borderRadius: BorderRadius.circular(6),
+          ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Remix.vip_diamond_fill, size: 11, color: const Color(0xFFFFC107)),
+              const Icon(Remix.vip_diamond_fill, size: 11, color: Color(0xFFFFC107)),
               const SizedBox(width: 3),
               Text(
                 'SC',
@@ -273,7 +297,12 @@ class _SuperChatCardState extends State<SuperChatCard> {
         onDoubleTap: () => clipboard(message.message),
         child: SelectableText(
           message.message,
-          style: TextStyle(color: textColor, fontSize: 14, height: 1.5, fontWeight: FontWeight.w400),
+          style: TextStyle(
+            color: textColor,
+            fontSize: 14,
+            height: 1.5,
+            fontWeight: FontWeight.w400,
+          ),
         ),
       ),
     );

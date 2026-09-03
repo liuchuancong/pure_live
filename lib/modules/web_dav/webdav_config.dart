@@ -4,7 +4,12 @@ class WebDAVConfig {
   final String username;
   final String password;
 
-  const WebDAVConfig({required this.name, required this.address, required this.username, required this.password});
+  const WebDAVConfig({
+    required this.name,
+    required this.address,
+    required this.username,
+    required this.password,
+  });
 
   String get fullUrl => address;
 

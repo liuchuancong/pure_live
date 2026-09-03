@@ -1,112 +1,112 @@
 /// 路由路径
 class RoutePath {
   /// 首页
-  static const kSplash = "/splash";
+  static const kSplash = '/splash';
 
   /// 首页
-  static const kInitial = "/home";
+  static const kInitial = '/home';
 
   /// 关注
-  static const kFavorite = "/favorite";
+  static const kFavorite = '/favorite';
 
   /// 关注
-  static const kFavoriteAreas = "/favorite_areas";
+  static const kFavoriteAreas = '/favorite_areas';
 
   /// 热门
-  static const kPopular = "/popular";
+  static const kPopular = '/popular';
 
   /// 分类
-  static const kAreas = "/areas";
+  static const kAreas = '/areas';
 
   /// 分类房间
-  static const kAreaRooms = "/area_rooms";
+  static const kAreaRooms = '/area_rooms';
 
   /// 播放页面
-  static const kLivePlay = "/live_play";
+  static const kLivePlay = '/live_play';
 
   /// 多画面同看页面
-  static const kMultiview = "/multiview";
+  static const kMultiview = '/multiview';
 
   /// 搜索
-  static const kSearch = "/search";
+  static const kSearch = '/search';
 
   /// 设置
-  static const kSettings = "/settings";
+  static const kSettings = '/settings';
 
   /// 本地恢复
-  static const kBackup = "/backup";
+  static const kBackup = '/backup';
 
   /// 关于
-  static const kAbout = "/about";
+  static const kAbout = '/about';
 
   /// 版本历史记录
-  static const kVersionHistory = "/version_history";
+  static const kVersionHistory = '/version_history';
 
   /// 历史记录
-  static const kHistory = "/history";
+  static const kHistory = '/history';
 
   /// 捐赠
-  static const kDonate = "/donate";
+  static const kDonate = '/donate';
 
   /// 我的
-  static const kMine = "/mine";
+  static const kMine = '/mine';
 
   /// 登陆
-  static const kSignIn = "/sign_in";
+  static const kSignIn = '/sign_in';
 
   /// 登陆
-  static const kUserManage = "/user_manage";
+  static const kUserManage = '/user_manage';
 
   /// 登陆
-  static const kUpdatePassword = "/update_password";
+  static const kUpdatePassword = '/update_password';
 
   /// 弹幕过滤
 
-  static const kSettingsDanmuShield = "/shield";
+  static const kSettingsDanmuShield = '/shield';
 
-  static const kSettingsHotAreas = "/hot_areas";
+  static const kSettingsHotAreas = '/hot_areas';
 
   /// kBiliBiliQRLogin
-  static const kSettingsAccount = "/settings_account";
+  static const kSettingsAccount = '/settings_account';
 
-  static const kBiliBiliQRLogin = "/bilibili_qr_login";
+  static const kBiliBiliQRLogin = '/bilibili_qr_login';
 
-  static const kBiliBiliWebLogin = "/bilibili_web_login";
+  static const kBiliBiliWebLogin = '/bilibili_web_login';
 
   /// webview
-  static const kWebview = "/webview_all";
+  static const kWebview = '/webview_all';
 
   /// kToolbox
-  static const kToolbox = "/tool_box";
+  static const kToolbox = '/tool_box';
 
-  static const kHuyaCookie = "/huya_cookie";
+  static const kHuyaCookie = '/huya_cookie';
 
-  static const kDouyinCookie = "/douyin_cookie";
+  static const kDouyinCookie = '/douyin_cookie';
 
-  static const kTwitchCookie = "/twitch_cookie";
+  static const kTwitchCookie = '/twitch_cookie';
 
-  static const kYyCookie = "/yy_cookie";
+  static const kYyCookie = '/yy_cookie';
 
-  static const kSoop = "/soop";
+  static const kSoop = '/soop';
 
   // WebDavPage
-  static const kWebDavPage = "/web_dav_page";
+  static const kWebDavPage = '/web_dav_page';
 
-  static const kDouyuCookie = "/douyu_cookie";
+  static const kDouyuCookie = '/douyu_cookie';
 
-  static const kKuaishouCookie = "/kuaishou_cookie";
+  static const kKuaishouCookie = '/kuaishou_cookie';
 
-  static const kVersionPage = "/version_page";
+  static const kVersionPage = '/version_page';
 
-  static const kRecordPage = "/record_mannager";
+  static const kRecordPage = '/record_mannager';
 
-  static const kRecordSettings = "/record_settings";
+  static const kRecordSettings = '/record_settings';
 
-  static const kRecordHistory = "/record_history";
+  static const kRecordHistory = '/record_history';
 
-  static const kWebSearch = "/web_search";
+  static const kWebSearch = '/web_search';
 
-  static const kIptv = "/iptv";
+  static const kIptv = '/iptv';
 
   static const kSettingsTags = '/setting_tags';
 

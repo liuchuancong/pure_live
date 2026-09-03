@@ -1,10 +1,10 @@
 import 'dart:typed_data';
+
 import 'package:pure_live/core/tars/types.dart';
 import 'package:pure_live/pkg/tars/codec/tars_struct.dart';
 import 'package:pure_live/pkg/tars/codec/tars_displayer.dart';
 import 'package:pure_live/pkg/tars/codec/tars_input_stream.dart';
 import 'package:pure_live/pkg/tars/codec/tars_output_stream.dart';
-
 
 // ignore_for_file: no_leading_underscores_for_local_identifiers
 
@@ -91,23 +91,23 @@ class HYSender extends TarsStruct {
   }
 
   @override
-  displayAsString(StringBuffer sb, int level) {
+  void displayAsString(StringBuffer sb, int level) {
     TarsDisplayer _ds = TarsDisplayer(sb, level: level);
-    _ds.DisplayInt(lUid, "lUid");
-    _ds.DisplayInt(lImid, "lImid");
-    _ds.DisplayString(sNickName, "sNickName");
-    _ds.DisplayInt(iGender, "iGender");
-    _ds.DisplayString(sAvatarUrl, "sAvatarUrl");
-    _ds.DisplayInt(iNobleLevel, "iNobleLevel");
-    _ds.DisplayString(sGuid, "sGuid");
-    _ds.DisplayString(sHuyaUa, "sHuyaUa");
-    _ds.DisplayInt(iUserType, "iUserType");
+    _ds.DisplayInt(lUid, 'lUid');
+    _ds.DisplayInt(lImid, 'lImid');
+    _ds.DisplayString(sNickName, 'sNickName');
+    _ds.DisplayInt(iGender, 'iGender');
+    _ds.DisplayString(sAvatarUrl, 'sAvatarUrl');
+    _ds.DisplayInt(iNobleLevel, 'iNobleLevel');
+    _ds.DisplayString(sGuid, 'sGuid');
+    _ds.DisplayString(sHuyaUa, 'sHuyaUa');
+    _ds.DisplayInt(iUserType, 'iUserType');
   }
 }
 
 class HYMessage extends TarsStruct {
   HYSender userInfo = HYSender();
-  String content = "";
+  String content = '';
   HYBulletFormat bulletFormat = HYBulletFormat();
 
   @override
@@ -164,7 +164,7 @@ class HYBulletFormat extends TarsStruct {
 
 // x.WSPushMessage_V2
 class WSPushMessageV2 extends TarsStruct {
-  String sGroupId = ""; //tag 0
+  String sGroupId = ''; //tag 0
   List<WSMsgItem> vMsgItem = <WSMsgItem>[]; //tag 1
 
   @override
@@ -187,10 +187,10 @@ class WSPushMessageV2 extends TarsStruct {
   }
 
   @override
-  displayAsString(StringBuffer sb, int level) {
+  void displayAsString(StringBuffer sb, int level) {
     TarsDisplayer _ds = TarsDisplayer(sb, level: level);
-    _ds.DisplayString(sGroupId, "sGroupId");
-    _ds.DisplayList(vMsgItem, "vMsgItem");
+    _ds.DisplayString(sGroupId, 'sGroupId');
+    _ds.DisplayList(vMsgItem, 'vMsgItem');
   }
 }
 
@@ -267,7 +267,7 @@ class WebSocketCommand extends TarsStruct {
   }
 
   @override
-  displayAsString(StringBuffer sb, int level) {}
+  void displayAsString(StringBuffer sb, int level) {}
 }
 
 class WsRegisterGroupReq extends TarsStruct {
@@ -293,15 +293,15 @@ class WsRegisterGroupReq extends TarsStruct {
   }
 
   @override
-  displayAsString(StringBuffer sb, int level) {}
+  void displayAsString(StringBuffer sb, int level) {}
 }
 
 class LiveAppUAEx extends TarsStruct {
-  String sImei = ""; //tag 1
-  String sApn = ""; //tag 2
-  String sNetType = ""; //tag 3
-  String sDeviceId = ""; //tag 4
-  String sMid = ""; //tag 5
+  String sImei = ''; //tag 1
+  String sApn = ''; //tag 2
+  String sNetType = ''; //tag 3
+  String sDeviceId = ''; //tag 4
+  String sMid = ''; //tag 5
   @override
   void readFrom(TarsInputStream _is) {
     sImei = _is.read(sImei, 1, false);
@@ -331,13 +331,13 @@ class LiveAppUAEx extends TarsStruct {
   }
 
   @override
-  displayAsString(StringBuffer sb, int level) {
+  void displayAsString(StringBuffer sb, int level) {
     TarsDisplayer _ds = TarsDisplayer(sb, level: level);
-    _ds.DisplayString(sImei, "sImei");
-    _ds.DisplayString(sApn, "sApn");
-    _ds.DisplayString(sNetType, "sNetType");
-    _ds.DisplayString(sDeviceId, "sDeviceId");
-    _ds.DisplayString(sMid, "sMid");
+    _ds.DisplayString(sImei, 'sImei');
+    _ds.DisplayString(sApn, 'sApn');
+    _ds.DisplayString(sNetType, 'sNetType');
+    _ds.DisplayString(sDeviceId, 'sDeviceId');
+    _ds.DisplayString(sMid, 'sMid');
   }
 }
 
@@ -369,11 +369,11 @@ class LiveUserBase extends TarsStruct {
   }
 
   @override
-  displayAsString(StringBuffer sb, int level) {
+  void displayAsString(StringBuffer sb, int level) {
     TarsDisplayer _ds = TarsDisplayer(sb, level: level);
-    _ds.DisplayInt(eSource, "eSource");
-    _ds.DisplayInt(eType, "eType");
-    _ds.DisplayTarsStruct(uaEx, "uaEx");
+    _ds.DisplayInt(eSource, 'eSource');
+    _ds.DisplayInt(eType, 'eType');
+    _ds.DisplayTarsStruct(uaEx, 'uaEx');
   }
 }
 
@@ -404,10 +404,10 @@ class LiveLaunchReq extends TarsStruct {
   }
 
   @override
-  displayAsString(StringBuffer sb, int level) {
+  void displayAsString(StringBuffer sb, int level) {
     TarsDisplayer _ds = TarsDisplayer(sb, level: level);
-    _ds.DisplayTarsStruct(id, "id");
-    _ds.DisplayTarsStruct(liveUb, "liveUb");
-    _ds.DisplayBool(supportDomain, "supportDomain");
+    _ds.DisplayTarsStruct(id, 'id');
+    _ds.DisplayTarsStruct(liveUb, 'liveUb');
+    _ds.DisplayBool(supportDomain, 'supportDomain');
   }
 }

@@ -76,9 +76,11 @@ class _LiveDlnaPageState extends State<LiveDlnaPage> {
   Widget build(BuildContext context) {
     Widget cur;
     if (isSearching && _deviceList.isEmpty) {
-      cur = AppStatusView(type: AppStatusType.loading, title: "", subtitle: "");
+      cur = const AppStatusView(type: AppStatusType.loading, title: '', subtitle: '');
     } else if (_deviceList.isEmpty) {
-      cur = Center(child: Text(i18n("dlan_device_not_found"), style: Theme.of(context).textTheme.bodyLarge));
+      cur = Center(
+        child: Text(i18n('dlan_device_not_found'), style: Theme.of(context).textTheme.bodyLarge),
+      );
     } else {
       cur = ListView(
         children: _deviceList.keys
@@ -98,7 +100,7 @@ class _LiveDlnaPageState extends State<LiveDlnaPage> {
       title: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(i18n("dlan_title")),
+          Text(i18n('dlan_title')),
           IconButton(onPressed: startSearch, icon: const Icon(Icons.refresh_rounded)),
         ],
       ),

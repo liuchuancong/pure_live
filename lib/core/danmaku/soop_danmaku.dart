@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
+
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/core/common/core_log.dart';
 import 'package:pure_live/core/site/soop/soop_site.dart';
@@ -8,14 +9,15 @@ import 'package:pure_live/core/common/utils/list_util.dart';
 import 'package:pure_live/core/common/web_socket_util.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
 
-
 class SoopDanmakuArgs {
   String url;
   String chatNo;
 
   SoopDanmakuArgs({required this.url, required this.chatNo});
 
-  SoopDanmakuArgs.fromJson(Map<String, dynamic> json) : url = json['url'] ?? '', chatNo = json['chatNo'] ?? '';
+  SoopDanmakuArgs.fromJson(Map<String, dynamic> json)
+    : url = json['url'] ?? '',
+      chatNo = json['chatNo'] ?? '';
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{'url': url, 'chatNo': chatNo};
@@ -48,17 +50,17 @@ class SoopDanmaku implements LiveDanmaku {
   @override
   Function()? onReady;
 
-  final String f = "\x0c";
-  final String esc = "\x1b\x09";
+  final String f = '\x0c';
+  final String esc = '\x1b\x09';
 
   WebScoketUtils? webScoketUtils;
   late SoopDanmakuArgs danmakuArgs;
 
   @override
   Future<void> start(dynamic args) async {
-    CoreLog.d("SoopDanmaku start");
+    CoreLog.d('SoopDanmaku start');
     if (args == null) {
-      onClose?.call("服务器连接失败");
+      onClose?.call('服务器连接失败');
       return;
     }
     danmakuArgs = args as SoopDanmakuArgs;
@@ -66,11 +68,11 @@ class SoopDanmaku implements LiveDanmaku {
     final liveSite = site.liveSite as SoopSite;
     final mHeaders = liveSite.getHeaders();
     mHeaders.addAll({
-      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
-      "Origin": "https://play.sooplive.co.kr",
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
+      'Origin': 'https://play.sooplive.co.kr',
     });
 
-    CoreLog.d("SoopDanmaku args: ${json.encode(danmakuArgs.toJson())}");
+    CoreLog.d('SoopDanmaku args: ${json.encode(danmakuArgs.toJson())}');
     webScoketUtils = WebScoketUtils(
       url: danmakuArgs.url,
       heartBeatTime: heartbeatTime,
@@ -84,7 +86,7 @@ class SoopDanmaku implements LiveDanmaku {
             decodeMessage(List<int>.from(e));
           }
         } catch (err) {
-          CoreLog.w("SoopDanmaku decode error raw: $e");
+          CoreLog.w('SoopDanmaku decode error raw: $e');
           CoreLog.error(err);
         }
       },
@@ -98,11 +100,11 @@ class SoopDanmaku implements LiveDanmaku {
       },
       onReconnect: () {
         markDisconnected();
-        onClose?.call("与服务器断开连接，正在尝试重连");
+        onClose?.call('与服务器断开连接，正在尝试重连');
       },
       onClose: (e) {
         markDisconnected();
-        onClose?.call("服务器连接失败 $e");
+        onClose?.call('服务器连接失败 $e');
       },
     );
     webScoketUtils?.connect();
@@ -140,7 +142,7 @@ class SoopDanmaku implements LiveDanmaku {
   }
 
   void decodeMessageStr(String data) {
-    CoreLog.w("SoopDanmaku decodeMessageStr: $data");
+    CoreLog.w('SoopDanmaku decodeMessageStr: $data');
   }
 
   void decodeMessage(List<int> data) {
@@ -148,13 +150,18 @@ class SoopDanmaku implements LiveDanmaku {
     final parts = ListUtil.splitList(data, separatorByte);
     final messages = parts.map((part) => utf8.decode(part)).toList();
 
-    CoreLog.d("Soop chat messages : \n $messages");
+    CoreLog.d('Soop chat messages : \n $messages');
 
     if (messages.length > 5 && !['-1', '1'].contains(messages[1]) && !messages[1].contains('|')) {
       final comment = messages[1];
       final userName = messages[6];
       onMessage?.call(
-        LiveMessage(type: LiveMessageType.chat, color: LiveMessageColor.white, message: comment, userName: userName),
+        LiveMessage(
+          type: LiveMessageType.chat,
+          color: LiveMessageColor.white,
+          message: comment,
+          userName: userName,
+        ),
       );
     }
   }

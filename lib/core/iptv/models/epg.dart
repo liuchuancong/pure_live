@@ -8,7 +8,13 @@ class EpgChannel extends Equatable {
   final String? iconUrl;
   final String? number;
 
-  const EpgChannel({required this.id, required this.sourceId, this.displayNames = const [], this.iconUrl, this.number});
+  const EpgChannel({
+    required this.id,
+    required this.sourceId,
+    this.displayNames = const [],
+    this.iconUrl,
+    this.number,
+  });
 
   String get primaryName => displayNames.isNotEmpty ? displayNames.first : id;
 

@@ -9,8 +9,7 @@ import 'web_message_channel.dart';
 /// value to avoid breaking changes. See [PlatformWebMessagePortCreationParams] for
 /// more information.
 @immutable
-class AndroidWebMessagePortCreationParams
-    extends PlatformWebMessagePortCreationParams {
+class AndroidWebMessagePortCreationParams extends PlatformWebMessagePortCreationParams {
   /// Creates a new [AndroidWebMessagePortCreationParams] instance.
   const AndroidWebMessagePortCreationParams({required super.index});
 
@@ -38,16 +37,15 @@ class AndroidWebMessagePort extends PlatformWebMessagePort {
       : super.implementation(
           params is AndroidWebMessagePortCreationParams
               ? params
-              : AndroidWebMessagePortCreationParams
-                  .fromPlatformWebMessagePortCreationParams(params),
+              : AndroidWebMessagePortCreationParams.fromPlatformWebMessagePortCreationParams(
+                  params),
         );
 
   @override
   Future<void> setWebMessageCallback(WebMessageCallback? onMessage) async {
     Map<String, dynamic> args = <String, dynamic>{};
     args.putIfAbsent('index', () => params.index);
-    await _webMessageChannel.internalChannel
-        ?.invokeMethod('setWebMessageCallback', args);
+    await _webMessageChannel.internalChannel?.invokeMethod('setWebMessageCallback', args);
     this._onMessage = onMessage;
   }
 
@@ -68,10 +66,7 @@ class AndroidWebMessagePort extends PlatformWebMessagePort {
 
   @override
   Map<String, dynamic> toMap({EnumMethod? enumMethod}) {
-    return {
-      "index": params.index,
-      "webMessageChannelId": this._webMessageChannel.params.id
-    };
+    return {"index": params.index, "webMessageChannelId": this._webMessageChannel.params.id};
   }
 
   @override
@@ -90,6 +85,5 @@ extension InternalWebMessagePort on AndroidWebMessagePort {
   void set onMessage(WebMessageCallback? value) => _onMessage = value;
 
   AndroidWebMessageChannel get webMessageChannel => _webMessageChannel;
-  void set webMessageChannel(AndroidWebMessageChannel value) =>
-      _webMessageChannel = value;
+  void set webMessageChannel(AndroidWebMessageChannel value) => _webMessageChannel = value;
 }

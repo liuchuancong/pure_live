@@ -20,7 +20,8 @@ class VersionHistoryPage extends StatefulWidget {
   State<VersionHistoryPage> createState() => _VersionHistoryPageState();
 }
 
-class _VersionHistoryPageState extends State<VersionHistoryPage> with SingleTickerProviderStateMixin {
+class _VersionHistoryPageState extends State<VersionHistoryPage>
+    with SingleTickerProviderStateMixin {
   var allReleased = [].obs;
 
   RxBool historyLoading = false.obs;
@@ -96,14 +97,14 @@ class _VersionHistoryPageState extends State<VersionHistoryPage> with SingleTick
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
-        title: Text(i18n("version_history_desc")),
+        title: Text(i18n('version_history_desc')),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 12),
             child: IconButton(
               onPressed: () => loadReleaseHistory(forceRefresh: true),
               icon: const Icon(Remix.refresh_line, size: 20),
-              tooltip: i18n("refresh"),
+              tooltip: i18n('refresh'),
             ),
           ),
         ],
@@ -136,7 +137,10 @@ class _VersionHistoryPageState extends State<VersionHistoryPage> with SingleTick
                 width: 320,
                 decoration: BoxDecoration(
                   border: Border(
-                    right: BorderSide(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4), width: 1),
+                    right: BorderSide(
+                      color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
+                      width: 1,
+                    ),
                   ),
                 ),
                 child: ListView.builder(
@@ -172,7 +176,9 @@ class _VersionHistoryPageState extends State<VersionHistoryPage> with SingleTick
                                   height: 8,
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
-                                    color: isCurrent ? theme.colorScheme.primary : theme.colorScheme.outlineVariant,
+                                    color: isCurrent
+                                        ? theme.colorScheme.primary
+                                        : theme.colorScheme.outlineVariant,
                                   ),
                                 ),
                                 const SizedBox(width: 14),
@@ -184,14 +190,18 @@ class _VersionHistoryPageState extends State<VersionHistoryPage> with SingleTick
                                         'v${item.version}',
                                         style: theme.textTheme.titleMedium?.copyWith(
                                           fontWeight: FontWeight.bold,
-                                          color: isCurrent ? theme.colorScheme.primary : theme.colorScheme.onSurface,
+                                          color: isCurrent
+                                              ? theme.colorScheme.primary
+                                              : theme.colorScheme.onSurface,
                                         ),
                                       ),
                                       const SizedBox(height: 2),
                                       Text(
                                         item.date,
                                         style: theme.textTheme.bodySmall?.copyWith(
-                                          color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                                          color: theme.colorScheme.onSurfaceVariant.withValues(
+                                            alpha: 0.6,
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -200,7 +210,9 @@ class _VersionHistoryPageState extends State<VersionHistoryPage> with SingleTick
                                 Icon(
                                   Remix.arrow_right_s_line,
                                   size: 16,
-                                  color: isCurrent ? theme.colorScheme.primary : theme.colorScheme.outline,
+                                  color: isCurrent
+                                      ? theme.colorScheme.primary
+                                      : theme.colorScheme.outline,
                                 ),
                               ],
                             ),
@@ -234,14 +246,21 @@ class _VersionHistoryPageState extends State<VersionHistoryPage> with SingleTick
             final String fileSize = hasFiles ? item.files.first.size : '--';
 
             return InkWell(
-              onTap: () => _showMobileDetailsDialog(context, item, Theme.of(context).brightness == Brightness.dark),
+              onTap: () => _showMobileDetailsDialog(
+                context,
+                item,
+                Theme.of(context).brightness == Brightness.dark,
+              ),
               borderRadius: BorderRadius.circular(16),
               child: Ink(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: theme.colorScheme.surfaceContainerLow,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3), width: 1),
+                  border: Border.all(
+                    color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+                    width: 1,
+                  ),
                 ),
                 child: Row(
                   children: [
@@ -264,10 +283,15 @@ class _VersionHistoryPageState extends State<VersionHistoryPage> with SingleTick
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(item.date, style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500)),
+                          Text(
+                            item.date,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
                           const SizedBox(height: 3),
                           Text(
-                            i18n("version_file_size", args: {"size": fileSize}),
+                            i18n('version_file_size', args: {'size': fileSize}),
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
                             ),
@@ -327,8 +351,11 @@ class _VersionHistoryPageState extends State<VersionHistoryPage> with SingleTick
                       Navigator.of(Get.context!).pop();
                     },
                     child: Text(
-                      i18n("close"),
-                      style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
+                      i18n('close'),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.primary,
+                      ),
                     ),
                   ),
                 ],
@@ -363,7 +390,10 @@ class _DesktopChangelogDetailPanel extends StatelessWidget {
               decoration: BoxDecoration(
                 color: theme.colorScheme.surfaceContainerLow,
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3), width: 1),
+                border: Border.all(
+                  color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+                  width: 1,
+                ),
               ),
               padding: const EdgeInsets.all(20),
               child: SingleChildScrollView(
@@ -399,11 +429,16 @@ class _VersionAuthorHeaderWidget extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('v${item.version}', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+              Text(
+                'v${item.version}',
+                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              ),
               Text(
                 // 【Core Fix】: Localized published date text template wrapper
-                i18n("version_published_at", args: {"date": item.date}),
-                style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                i18n('version_published_at', args: {'date': item.date}),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
               ),
             ],
           ),
@@ -443,7 +478,10 @@ class _VersionChangelogAndFilesWidget extends StatelessWidget {
               configs: [
                 PConfig(
                   textStyle:
-                      theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant, height: 1.5) ??
+                      theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                        height: 1.5,
+                      ) ??
                       const TextStyle(),
                 ),
               ],
@@ -452,7 +490,10 @@ class _VersionChangelogAndFilesWidget extends StatelessWidget {
         ),
         if (item.files.isNotEmpty) ...[
           const SizedBox(height: 24),
-          Text(i18n("download_files"), style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
+          Text(
+            i18n('download_files'),
+            style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+          ),
           const SizedBox(height: 10),
           ...item.files
               .map<Widget>(
@@ -462,7 +503,10 @@ class _VersionChangelogAndFilesWidget extends StatelessWidget {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(14),
                     color: theme.colorScheme.surfaceContainer,
-                    border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.15), width: 1),
+                    border: Border.all(
+                      color: theme.colorScheme.outlineVariant.withValues(alpha: 0.15),
+                      width: 1,
+                    ),
                   ),
                   child: Row(
                     children: [
@@ -484,14 +528,16 @@ class _VersionChangelogAndFilesWidget extends StatelessWidget {
                               file.name,
                               maxLines: 3,
                               overflow: TextOverflow.ellipsis,
-                              style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                             const SizedBox(height: 2),
                             Text(
                               // 【Core Fix】: Localized dynamic download count template line
                               i18n(
-                                "version_downloads_count",
-                                args: {"size": file.size, "count": file.downloads.toString()},
+                                'version_downloads_count',
+                                args: {'size': file.size, 'count': file.downloads.toString()},
                               ),
                               style: theme.textTheme.bodySmall?.copyWith(
                                 color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
@@ -507,18 +553,21 @@ class _VersionChangelogAndFilesWidget extends StatelessWidget {
                         ),
                         onPressed: () async {
                           Clipboard.setData(ClipboardData(text: file.url));
-                          ToastUtil.show(i18n("copied_to_clipboard"));
+                          ToastUtil.show(i18n('copied_to_clipboard'));
                         },
                         icon: const Icon(Remix.file_copy_2_fill, size: 16),
                       ),
-                      SizedBox(width: 6),
+                      const SizedBox(width: 6),
                       IconButton(
                         style: IconButton.styleFrom(
                           backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.08),
                           foregroundColor: theme.colorScheme.primary,
                         ),
                         onPressed: () async {
-                          bool? result = await Utils.showAlertDialog(i18n('open_download_confirm'), title: i18n('tip'));
+                          bool? result = await Utils.showAlertDialog(
+                            i18n('open_download_confirm'),
+                            title: i18n('tip'),
+                          );
                           if (result) {
                             downloadAndInstallApk(file.url, fileName: file.name);
                           }

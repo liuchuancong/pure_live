@@ -98,7 +98,9 @@ class _MultiviewRoomSearchPanelState extends State<MultiviewRoomSearchPanel> {
   Widget _buildHeader(ThemeData theme) {
     return GestureDetector(
       // 只在标题栏拖动，避免与列表滚动、文本选择冲突。
-      onPanUpdate: widget.onDragUpdate == null ? null : (event) => widget.onDragUpdate!(event.delta),
+      onPanUpdate: widget.onDragUpdate == null
+          ? null
+          : (event) => widget.onDragUpdate!(event.delta),
       child: Container(
         padding: const EdgeInsets.fromLTRB(12, 6, 4, 6),
         color: theme.colorScheme.surfaceContainerHighest,
@@ -117,7 +119,11 @@ class _MultiviewRoomSearchPanelState extends State<MultiviewRoomSearchPanel> {
             if (!widget.embedded)
               Tooltip(
                 message: i18n('multiview_panel_drag_hint'),
-                child: Icon(Remix.drag_move_line, size: 16, color: theme.colorScheme.onSurfaceVariant),
+                child: Icon(
+                  Remix.drag_move_line,
+                  size: 16,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
               ),
             IconButton(
               visualDensity: VisualDensity.compact,
@@ -157,7 +163,9 @@ class _MultiviewRoomSearchPanelState extends State<MultiviewRoomSearchPanel> {
           ),
           const SizedBox(width: 6),
           FilledButton(
-            style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10)),
+            style: FilledButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            ),
             onPressed: () => unawaited(_runSearch()),
             child: Text(i18n('multiview_search_start'), style: AppTextStyles.t13),
           ),
@@ -230,7 +238,12 @@ class _MultiviewRoomSearchPanelState extends State<MultiviewRoomSearchPanel> {
           return ListTile(
             dense: true,
             leading: MultiviewRoomTileLeading(room: room),
-            title: Text(room.nick ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTextStyles.t13Medium),
+            title: Text(
+              room.nick ?? '',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTextStyles.t13Medium,
+            ),
             subtitle: Text(
               room.title ?? '',
               maxLines: 1,

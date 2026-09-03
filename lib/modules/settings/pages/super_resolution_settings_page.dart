@@ -26,7 +26,8 @@ class SuperResolutionSettingsPage extends GetView<SettingsService> {
             Obx(
               () => Column(
                 children: SuperResolutionMode.values.map((mode) {
-                  final selected = controller.player.defaultSuperResolutionMode.v == mode.storageValue;
+                  final selected =
+                      controller.player.defaultSuperResolutionMode.v == mode.storageValue;
 
                   return _SuperResolutionTile(
                     title: isZh ? mode.nameZh : mode.nameEn,

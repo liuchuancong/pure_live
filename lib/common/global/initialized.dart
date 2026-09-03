@@ -126,7 +126,9 @@ class AppInitializer {
     // startup. Deferring it until after the first frame reintroduced the
     // upstream-recorded I/O failure on the first recording attempt. Keep this
     // non-blocking; FFmpegService awaits the same idempotent future at use.
-    if (shouldStartRecorderPrewarmImmediately(mobile: PlatformUtils.isMobile)) _startFFmpegPrewarm();
+    if (shouldStartRecorderPrewarmImmediately(mobile: PlatformUtils.isMobile)) {
+      _startFFmpegPrewarm();
+    }
     _initSmartDialog();
     initRefresh();
 
@@ -158,7 +160,11 @@ class AppInitializer {
     if (!Platform.isWindows) return;
     try {
       final safeId = instanceId.replaceAll(RegExp(r'[^a-zA-Z0-9_]'), '');
-      await WindowsSingleInstance.ensureSingleInstance(args, "PureLive_InstanceID_$safeId", bringWindowToFront: true);
+      await WindowsSingleInstance.ensureSingleInstance(
+        args,
+        'PureLive_InstanceID_$safeId',
+        bringWindowToFront: true,
+      );
     } catch (e) {
       log('WindowsSingleInstance initialization failed: $e');
     }

@@ -5,7 +5,11 @@ import 'package:pure_live/core/site/cc/cc_site.dart';
 void main() {
   group('CC audience fields', () {
     test('separates platform heat from the much smaller concurrent count', () {
-      final audience = CCSite.parseRoomAudience({'webcc_visitor': 534739, 'vision_visitor': 850, 'online_num': 843});
+      final audience = CCSite.parseRoomAudience({
+        'webcc_visitor': 534739,
+        'vision_visitor': 850,
+        'online_num': 843,
+      });
 
       expect(audience.popularity, '534739');
       expect(audience.onlineViewers, '850');
@@ -33,7 +37,10 @@ void main() {
           'resolution': {
             'low': {
               'vbr': '500',
-              'cdn': {'random': 'https://other.test/low.flv', 'hs': 'https://preferred.test/low.flv'},
+              'cdn': {
+                'random': 'https://other.test/low.flv',
+                'hs': 'https://preferred.test/low.flv',
+              },
             },
             'original': {
               'vbr': 8000,

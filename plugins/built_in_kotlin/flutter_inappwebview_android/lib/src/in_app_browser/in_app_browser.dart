@@ -14,8 +14,7 @@ import '../pull_to_refresh/pull_to_refresh_controller.dart';
 /// When adding additional fields make sure they can be null or have a default
 /// value to avoid breaking changes. See [PlatformInAppBrowserCreationParams] for
 /// more information.
-class AndroidInAppBrowserCreationParams
-    extends PlatformInAppBrowserCreationParams {
+class AndroidInAppBrowserCreationParams extends PlatformInAppBrowserCreationParams {
   /// Creates a new [AndroidInAppBrowserCreationParams] instance.
   AndroidInAppBrowserCreationParams(
       {super.contextMenu,
@@ -31,10 +30,9 @@ class AndroidInAppBrowserCreationParams
       PlatformInAppBrowserCreationParams params) {
     return AndroidInAppBrowserCreationParams(
         contextMenu: params.contextMenu,
-        pullToRefreshController:
-            params.pullToRefreshController as AndroidPullToRefreshController?,
-        findInteractionController: params.findInteractionController
-            as AndroidFindInteractionController?,
+        pullToRefreshController: params.pullToRefreshController as AndroidPullToRefreshController?,
+        findInteractionController:
+            params.findInteractionController as AndroidFindInteractionController?,
         initialUserScripts: params.initialUserScripts,
         windowId: params.windowId);
   }
@@ -56,8 +54,7 @@ class AndroidInAppBrowser extends PlatformInAppBrowser with ChannelController {
       : super.implementation(
           params is AndroidInAppBrowserCreationParams
               ? params
-              : AndroidInAppBrowserCreationParams
-                  .fromPlatformInAppBrowserCreationParams(params),
+              : AndroidInAppBrowserCreationParams.fromPlatformInAppBrowserCreationParams(params),
         ) {
     _contextMenu = params.contextMenu;
   }
@@ -147,14 +144,12 @@ class AndroidInAppBrowser extends PlatformInAppBrowser with ChannelController {
     _isOpened = true;
     _init();
 
-    var initialSettings = settings?.toMap() ??
-        options?.toMap() ??
-        InAppBrowserClassSettings().toMap();
+    var initialSettings =
+        settings?.toMap() ?? options?.toMap() ?? InAppBrowserClassSettings().toMap();
 
-    Map<String, dynamic> pullToRefreshSettings =
-        pullToRefreshController?.settings.toMap() ??
-            pullToRefreshController?.options.toMap() ??
-            PullToRefreshSettings(enabled: false).toMap();
+    Map<String, dynamic> pullToRefreshSettings = pullToRefreshController?.settings.toMap() ??
+        pullToRefreshController?.options.toMap() ??
+        PullToRefreshSettings(enabled: false).toMap();
 
     List<Map<String, dynamic>> menuItemList = [];
     _menuItems.forEach((key, value) {
@@ -166,8 +161,8 @@ class AndroidInAppBrowser extends PlatformInAppBrowser with ChannelController {
     args.putIfAbsent('settings', () => initialSettings);
     args.putIfAbsent('contextMenu', () => contextMenu?.toMap() ?? {});
     args.putIfAbsent('windowId', () => windowId);
-    args.putIfAbsent('initialUserScripts',
-        () => initialUserScripts?.map((e) => e.toMap()).toList() ?? []);
+    args.putIfAbsent(
+        'initialUserScripts', () => initialUserScripts?.map((e) => e.toMap()).toList() ?? []);
     args.putIfAbsent('pullToRefreshSettings', () => pullToRefreshSettings);
     args.putIfAbsent('menuItems', () => menuItemList);
     return args;
@@ -181,8 +176,7 @@ class AndroidInAppBrowser extends PlatformInAppBrowser with ChannelController {
       InAppBrowserClassSettings? settings}) async {
     assert(urlRequest.url != null && urlRequest.url.toString().isNotEmpty);
 
-    Map<String, dynamic> args =
-        _prepareOpenRequest(options: options, settings: settings);
+    Map<String, dynamic> args = _prepareOpenRequest(options: options, settings: settings);
     args.putIfAbsent('urlRequest', () => urlRequest.toMap());
     await _staticChannel.invokeMethod('open', args);
   }
@@ -195,8 +189,7 @@ class AndroidInAppBrowser extends PlatformInAppBrowser with ChannelController {
       InAppBrowserClassSettings? settings}) async {
     assert(assetFilePath.isNotEmpty);
 
-    Map<String, dynamic> args =
-        _prepareOpenRequest(options: options, settings: settings);
+    Map<String, dynamic> args = _prepareOpenRequest(options: options, settings: settings);
     args.putIfAbsent('assetFilePath', () => assetFilePath);
     await _staticChannel.invokeMethod('open', args);
   }
@@ -212,14 +205,13 @@ class AndroidInAppBrowser extends PlatformInAppBrowser with ChannelController {
       // ignore: deprecated_member_use_from_same_package
       @Deprecated('Use settings instead') InAppBrowserClassOptions? options,
       InAppBrowserClassSettings? settings}) async {
-    Map<String, dynamic> args =
-        _prepareOpenRequest(options: options, settings: settings);
+    Map<String, dynamic> args = _prepareOpenRequest(options: options, settings: settings);
     args.putIfAbsent('data', () => data);
     args.putIfAbsent('mimeType', () => mimeType);
     args.putIfAbsent('encoding', () => encoding);
     args.putIfAbsent('baseUrl', () => baseUrl?.toString() ?? "about:blank");
-    args.putIfAbsent('historyUrl',
-        () => (historyUrl ?? androidHistoryUrl)?.toString() ?? "about:blank");
+    args.putIfAbsent(
+        'historyUrl', () => (historyUrl ?? androidHistoryUrl)?.toString() ?? "about:blank");
     await _staticChannel.invokeMethod('open', args);
   }
 
@@ -314,8 +306,7 @@ class AndroidInAppBrowser extends PlatformInAppBrowser with ChannelController {
     assert(_isOpened, 'The browser is not opened.');
     Map<String, dynamic> args = <String, dynamic>{};
 
-    Map<dynamic, dynamic>? options =
-        await channel?.invokeMethod('getSettings', args);
+    Map<dynamic, dynamic>? options = await channel?.invokeMethod('getSettings', args);
     if (options != null) {
       options = options.cast<String, dynamic>();
       return InAppBrowserClassOptions.fromMap(options as Map<String, dynamic>);
@@ -325,8 +316,7 @@ class AndroidInAppBrowser extends PlatformInAppBrowser with ChannelController {
   }
 
   @override
-  Future<void> setSettings(
-      {required InAppBrowserClassSettings settings}) async {
+  Future<void> setSettings({required InAppBrowserClassSettings settings}) async {
     assert(_isOpened, 'The browser is not opened.');
 
     Map<String, dynamic> args = <String, dynamic>{};
@@ -340,12 +330,10 @@ class AndroidInAppBrowser extends PlatformInAppBrowser with ChannelController {
 
     Map<String, dynamic> args = <String, dynamic>{};
 
-    Map<dynamic, dynamic>? settings =
-        await channel?.invokeMethod('getSettings', args);
+    Map<dynamic, dynamic>? settings = await channel?.invokeMethod('getSettings', args);
     if (settings != null) {
       settings = settings.cast<String, dynamic>();
-      return InAppBrowserClassSettings.fromMap(
-          settings as Map<String, dynamic>);
+      return InAppBrowserClassSettings.fromMap(settings as Map<String, dynamic>);
     }
 
     return null;

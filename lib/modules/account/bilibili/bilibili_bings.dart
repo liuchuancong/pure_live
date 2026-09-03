@@ -5,13 +5,13 @@ import 'package:pure_live/modules/account/bilibili/web_login_controller.dart';
 class BilibiliWebLoginBinding extends Binding {
   @override
   List<Bind> dependencies() {
-    return [Bind.lazyPut(() => BiliBiliWebLoginController())];
+    return [Bind.lazyPut(BiliBiliWebLoginController.new)];
   }
 }
 
 class BilibiliQrLoginBinding extends Binding {
   @override
   List<Bind> dependencies() {
-    return [Bind.lazyPut(() => BiliBiliQRLoginController())];
+    return [Bind.lazyPut(BiliBiliQRLoginController.new)];
   }
 }

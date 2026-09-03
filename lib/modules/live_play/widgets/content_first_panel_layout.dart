@@ -12,7 +12,11 @@ enum ContentFirstPanelKind { roomHistory, streamSelector, localDanmakuStyle }
 /// most of the safe viewport and caps itself only on large desktop windows.
 @immutable
 class ContentFirstPanelLayout {
-  const ContentFirstPanelLayout({required this.size, required this.insetPadding, required this.splitContent});
+  const ContentFirstPanelLayout({
+    required this.size,
+    required this.insetPadding,
+    required this.splitContent,
+  });
 
   final Size size;
   final EdgeInsets insetPadding;
@@ -23,8 +27,12 @@ ContentFirstPanelLayout resolveContentFirstPanelLayout(Size viewport, ContentFir
   final compactViewport = viewport.width < 720 || viewport.height < 520;
   final horizontalInset = compactViewport ? 8.0 : 20.0;
   final verticalInset = compactViewport ? 8.0 : 20.0;
-  final availableWidth = (viewport.width - horizontalInset * 2).clamp(280.0, double.infinity).toDouble();
-  final availableHeight = (viewport.height - verticalInset * 2).clamp(240.0, double.infinity).toDouble();
+  final availableWidth = (viewport.width - horizontalInset * 2)
+      .clamp(280.0, double.infinity)
+      .toDouble();
+  final availableHeight = (viewport.height - verticalInset * 2)
+      .clamp(240.0, double.infinity)
+      .toDouble();
 
   final (widthFactor, heightFactor, maxHeight, splitThreshold) = switch (kind) {
     // Half of the available width plus center-right alignment makes the left
@@ -103,7 +111,10 @@ StreamSelectorPanelLayout resolveStreamSelectorPanelLayout({
   final paneWidth = splitContent ? math.max(0.0, (innerWidth - gap) / 2) : innerWidth;
   final desiredQuality = _streamChoicePaneHeight(paneWidth, qualityCount);
   final desiredLine = _streamChoicePaneHeight(paneWidth, lineCount);
-  final maximumBodyHeight = math.max(0.0, maximumDialogSize.height - dialogChromeHeight - bodyPadding * 2);
+  final maximumBodyHeight = math.max(
+    0.0,
+    maximumDialogSize.height - dialogChromeHeight - bodyPadding * 2,
+  );
 
   if (splitContent) {
     final paneHeight = math.min(math.max(desiredQuality, desiredLine), maximumBodyHeight);
@@ -175,7 +186,10 @@ double resolveRoomHistoryCardHeight({
 
   final twoRowHeight = (contentSize.height - padding * 2 - spacing) / 2;
   final minimumHeight = math.min(112.0, naturalHeight);
-  return math.max(minimumHeight, math.min(naturalHeight, twoRowHeight)).clamp(96.0, 310.0).toDouble();
+  return math
+      .max(minimumHeight, math.min(naturalHeight, twoRowHeight))
+      .clamp(96.0, 310.0)
+      .toDouble();
 }
 
 /// Selects the room-history grid from the actual panel content width instead

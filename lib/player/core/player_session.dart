@@ -9,13 +9,20 @@ class PlayerSession {
   final bool audioOnly;
 
   PlayerSession copyWith({int? id, PlayerEngine? engine, bool? audioOnly}) {
-    return PlayerSession(id: id ?? this.id, engine: engine ?? this.engine, audioOnly: audioOnly ?? this.audioOnly);
+    return PlayerSession(
+      id: id ?? this.id,
+      engine: engine ?? this.engine,
+      audioOnly: audioOnly ?? this.audioOnly,
+    );
   }
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    return other is PlayerSession && other.id == id && other.engine == engine && other.audioOnly == audioOnly;
+    return other is PlayerSession &&
+        other.id == id &&
+        other.engine == engine &&
+        other.audioOnly == audioOnly;
   }
 
   @override

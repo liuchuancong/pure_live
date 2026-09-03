@@ -140,7 +140,10 @@ class RemoteSyncService extends GetxService {
 
   Future<void> _resolveLocalIp() async {
     try {
-      final interfaces = await NetworkInterface.list(type: InternetAddressType.IPv4, includeLoopback: false);
+      final interfaces = await NetworkInterface.list(
+        type: InternetAddressType.IPv4,
+        includeLoopback: false,
+      );
 
       final ips = <String>{};
 
@@ -305,7 +308,11 @@ class RemoteSyncService extends GetxService {
     if (request.method != 'POST') {
       request.response.statusCode = HttpStatus.methodNotAllowed;
 
-      await _writeResponse(request.response, {'code': 405, 'msg': 'Method Not Allowed', 'data': false});
+      await _writeResponse(request.response, {
+        'code': 405,
+        'msg': 'Method Not Allowed',
+        'data': false,
+      });
 
       return;
     }
@@ -316,7 +323,11 @@ class RemoteSyncService extends GetxService {
       if (content.trim().isEmpty) {
         request.response.statusCode = HttpStatus.badRequest;
 
-        await _writeResponse(request.response, {'code': 400, 'msg': 'Empty request', 'data': false});
+        await _writeResponse(request.response, {
+          'code': 400,
+          'msg': 'Empty request',
+          'data': false,
+        });
 
         return;
       }
@@ -326,7 +337,11 @@ class RemoteSyncService extends GetxService {
       if (body is! Map<String, dynamic>) {
         request.response.statusCode = HttpStatus.badRequest;
 
-        await _writeResponse(request.response, {'code': 400, 'msg': 'Invalid request', 'data': false});
+        await _writeResponse(request.response, {
+          'code': 400,
+          'msg': 'Invalid request',
+          'data': false,
+        });
 
         return;
       }
@@ -336,7 +351,11 @@ class RemoteSyncService extends GetxService {
       if (type != RemoteSyncProtocol.syncType) {
         request.response.statusCode = HttpStatus.badRequest;
 
-        await _writeResponse(request.response, {'code': 400, 'msg': 'Invalid sync type', 'data': false});
+        await _writeResponse(request.response, {
+          'code': 400,
+          'msg': 'Invalid sync type',
+          'data': false,
+        });
 
         return;
       }
@@ -346,7 +365,11 @@ class RemoteSyncService extends GetxService {
       if (settings is! Map) {
         request.response.statusCode = HttpStatus.badRequest;
 
-        await _writeResponse(request.response, {'code': 400, 'msg': 'Settings is empty', 'data': false});
+        await _writeResponse(request.response, {
+          'code': 400,
+          'msg': 'Settings is empty',
+          'data': false,
+        });
 
         return;
       }
@@ -367,7 +390,11 @@ class RemoteSyncService extends GetxService {
 
       request.response.statusCode = HttpStatus.internalServerError;
 
-      await _writeResponse(request.response, {'code': 500, 'msg': 'Internal Server Error', 'data': false});
+      await _writeResponse(request.response, {
+        'code': 500,
+        'msg': 'Internal Server Error',
+        'data': false,
+      });
     }
   }
 
@@ -446,7 +473,10 @@ class RemoteSyncService extends GetxService {
     }
   }
 
-  Future<void> _handleDiscoveryEvent(BonsoirDiscoveryEvent event, BonsoirDiscovery discovery) async {
+  Future<void> _handleDiscoveryEvent(
+    BonsoirDiscoveryEvent event,
+    BonsoirDiscovery discovery,
+  ) async {
     switch (event) {
       case BonsoirDiscoveryServiceFoundEvent():
         final service = event.service;
@@ -511,7 +541,9 @@ class RemoteSyncService extends GetxService {
       return;
     }
 
-    final name = attributes['name']?.trim().isNotEmpty == true ? attributes['name']!.trim() : service.name;
+    final name = attributes['name']?.trim().isNotEmpty == true
+        ? attributes['name']!.trim()
+        : service.name;
 
     final devicePlatform = attributes['platform'] ?? '';
     final deviceVersion = attributes['version'] ?? '';
@@ -642,7 +674,13 @@ class RemoteSyncService extends GetxService {
       name: 'PureLive-${_deviceId.hashCode.abs()}',
       type: _mdnsServiceType,
       port: localPort.value,
-      attributes: {'id': _deviceId, 'name': deviceName, 'platform': platform, 'version': version, 'ip': localIp.value},
+      attributes: {
+        'id': _deviceId,
+        'name': deviceName,
+        'platform': platform,
+        'version': version,
+        'ip': localIp.value,
+      },
     );
 
     final broadcast = BonsoirBroadcast(service: service);

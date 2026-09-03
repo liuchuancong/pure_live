@@ -107,15 +107,15 @@ class LiveMessage {
   LiveMessage({
     required this.type,
     required this.userName,
-    this.userId = "",
+    this.userId = '',
     required this.message,
     this.data,
     required this.color,
-    this.userLevel = "",
-    this.fansLevel = "",
-    this.fansName = "",
+    this.userLevel = '',
+    this.fansLevel = '',
+    this.fansName = '',
     this.isLocal = false,
-    this.messageId = "",
+    this.messageId = '',
     this.sentAt,
     this.style,
   });
@@ -124,13 +124,13 @@ class LiveMessage {
 class LiveMessageColor {
   final int r, g, b;
   const LiveMessageColor(this.r, this.g, this.b);
-  static LiveMessageColor get white => LiveMessageColor(255, 255, 255);
+  static LiveMessageColor get white => const LiveMessageColor(255, 255, 255);
   static LiveMessageColor numberToColor(int intColor) {
     var obj = intColor.toRadixString(16);
 
     LiveMessageColor color = LiveMessageColor.white;
     if (obj.length == 4) {
-      obj = "00$obj";
+      obj = '00$obj';
     }
     if (obj.length == 6) {
       var R = int.parse(obj.substring(0, 2), radix: 16);
@@ -196,5 +196,6 @@ class LiveSuperChatMessage {
   }
 
   @override
-  int get hashCode => messageId.isNotEmpty ? messageId.hashCode : Object.hash(userName, message, price);
+  int get hashCode =>
+      messageId.isNotEmpty ? messageId.hashCode : Object.hash(userName, message, price);
 }

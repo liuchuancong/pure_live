@@ -69,10 +69,7 @@ class ScanWindowOverlay extends StatelessWidget {
       valueListenable: controller,
       builder: (context, value, child) {
         // Not ready.
-        if (!value.isInitialized ||
-            !value.isRunning ||
-            value.error != null ||
-            value.size.isEmpty) {
+        if (!value.isInitialized || !value.isRunning || value.error != null || value.size.isEmpty) {
           return const SizedBox();
         }
 

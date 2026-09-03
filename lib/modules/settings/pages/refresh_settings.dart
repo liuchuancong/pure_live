@@ -8,23 +8,23 @@ class RefreshSettingsPage extends GetView<RefreshConfigController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(i18n("refresh_settings"))),
+      appBar: AppBar(title: Text(i18n('refresh_settings'))),
       body: ListView(
         physics: const PureLiveScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
-          context.buildGroupTitle(i18n("auto_refresh_settings")),
+          context.buildGroupTitle(i18n('auto_refresh_settings')),
           context.buildModernCard([
             context.buildSwitchTile(
               icon: Remix.refresh_line,
-              title: i18n("auto_refresh_follow"),
-              subtitle: i18n("auto_refresh_follow_subtitle"),
+              title: i18n('auto_refresh_follow'),
+              subtitle: i18n('auto_refresh_follow_subtitle'),
               value: controller.autoRefreshFavorite,
             ),
             context.buildSwitchTile(
               icon: Remix.refresh_line,
-              title: i18n("refresh_follow_on_resume"),
-              subtitle: i18n("refresh_follow_on_resume_subtitle"),
+              title: i18n('refresh_follow_on_resume'),
+              subtitle: i18n('refresh_follow_on_resume_subtitle'),
               value: controller.refreshFavoriteOnResume,
             ),
             Obx(() {
@@ -33,7 +33,7 @@ class RefreshSettingsPage extends GetView<RefreshConfigController> {
               }
               return context.buildTile(
                 icon: Remix.time_line,
-                title: i18n("auto_refresh_interval"),
+                title: i18n('auto_refresh_interval'),
                 subtitle: _getIntervalText(controller.autoRefreshInterval.value),
                 onTap: () => showRefreshIntervalDialog(context),
               );
@@ -41,7 +41,7 @@ class RefreshSettingsPage extends GetView<RefreshConfigController> {
             Obx(
               () => context.buildTile(
                 icon: Remix.server_line,
-                title: i18n("max_concurrent_refresh"),
+                title: i18n('max_concurrent_refresh'),
                 subtitle:
                     '${controller.maxConcurrentRefresh.value} ${i18n('concurrent_tasks')} · ${i18n('max_concurrent_refresh_subtitle')}',
                 isLong: true,
@@ -105,7 +105,7 @@ class RefreshSettingsPage extends GetView<RefreshConfigController> {
       context: context,
       builder: (dialogContext) {
         return _RefreshRadioDialog(
-          title: i18n("auto_refresh_interval"),
+          title: i18n('auto_refresh_interval'),
           maxHeightFactor: 0.45,
           value: controller.autoRefreshInterval.value,
           items: intervals,
@@ -121,14 +121,16 @@ class RefreshSettingsPage extends GetView<RefreshConfigController> {
   Future<void> showMaxConcurrentDialog(BuildContext context) async {
     final Map<int, String> values = {
       for (int i = 1; i <= 20; i++)
-        i: i == RefreshConfigController.defaultMaxConcurrentRefresh ? '$i · ${i18n('recommended')}' : i.toString(),
+        i: i == RefreshConfigController.defaultMaxConcurrentRefresh
+            ? '$i · ${i18n('recommended')}'
+            : i.toString(),
     };
 
     final int? value = await showDialog<int>(
       context: context,
       builder: (dialogContext) {
         return _RefreshRadioDialog(
-          title: i18n("max_concurrent_refresh"),
+          title: i18n('max_concurrent_refresh'),
           hint: i18n('max_concurrent_refresh_hint'),
           maxHeightFactor: 0.5,
           value: controller.maxConcurrentRefresh.value,

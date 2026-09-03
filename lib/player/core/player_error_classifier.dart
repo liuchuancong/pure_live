@@ -64,7 +64,11 @@ class PlayerErrorClassifier {
       ).withComponent(decoderComponent);
     }
 
-    if (_containsAny(value, const <String>['no decoder found', 'unsupported codec', 'codec is not supported'])) {
+    if (_containsAny(value, const <String>[
+      'no decoder found',
+      'unsupported codec',
+      'codec is not supported',
+    ])) {
       return const NativePlayerErrorClassification(
         type: PlayerErrorType.codec,
         code: 'decoder_init',

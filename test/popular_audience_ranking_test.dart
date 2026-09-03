@@ -51,7 +51,10 @@ void main() {
 
   test('unsupported heat platforms remain ordered by their native metric', () {
     final ranked = rankPopularRoomsByAudience(
-      [room(id: 'one', platform: 'douyu', popularity: '2.8万'), room(id: 'two', platform: 'douyu', popularity: '350万')],
+      [
+        room(id: 'one', platform: 'douyu', popularity: '2.8万'),
+        room(id: 'two', platform: 'douyu', popularity: '350万'),
+      ],
       preferRealOnline: true,
       realOnlinePlatforms: const ['douyin', 'cc'],
     );

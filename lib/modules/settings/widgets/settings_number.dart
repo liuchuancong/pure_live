@@ -29,16 +29,21 @@ class SettingsNumber extends StatelessWidget {
       visualDensity: VisualDensity.compact,
       title: Text(title, style: Get.textTheme.bodyLarge),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      subtitle: subtitle == null ? null : Text(subtitle!, style: Get.textTheme.bodySmall!.copyWith(color: Colors.grey)),
-      contentPadding: EdgeInsets.only(left: 16).copyWith(right: 8),
+      subtitle: subtitle == null
+          ? null
+          : Text(subtitle!, style: Get.textTheme.bodySmall!.copyWith(color: Colors.grey)),
+      contentPadding: const EdgeInsets.only(left: 16).copyWith(right: 8),
       trailing: Container(
-        decoration: BoxDecoration(color: Colors.grey.withAlpha(25), borderRadius: BorderRadius.circular(24)),
+        decoration: BoxDecoration(
+          color: Colors.grey.withAlpha(25),
+          borderRadius: BorderRadius.circular(24),
+        ),
         height: 36,
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             IconButton(
-              padding: EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               constraints: const BoxConstraints(minHeight: 32),
               onPressed: () {
                 int newValue = value - step;
@@ -50,12 +55,12 @@ class SettingsNumber extends StatelessWidget {
               icon: Icon(Icons.remove, color: Get.textTheme.bodyMedium!.color!.withAlpha(150)),
             ),
             Text(
-              displayValue ?? "$value$unit",
+              displayValue ?? '$value$unit',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Colors.grey),
             ),
             IconButton(
-              padding: EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               constraints: const BoxConstraints(minHeight: 32),
               onPressed: () {
                 int newValue = value + step;
@@ -86,12 +91,12 @@ class SettingsNumber extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(title, style: Get.textTheme.titleMedium),
-                  Obx(() => Text("${newValue.value}$unit", style: Get.textTheme.titleMedium)),
+                  Obx(() => Text('${newValue.value}$unit', style: Get.textTheme.titleMedium)),
                 ],
               ),
             ),
@@ -106,7 +111,7 @@ class SettingsNumber extends StatelessWidget {
               ),
             ),
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               child: TextButton(
                 onPressed: () {
                   onChanged?.call(newValue.value);

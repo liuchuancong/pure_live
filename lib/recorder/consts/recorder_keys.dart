@@ -1,21 +1,21 @@
 class RecorderKeys {
   /// 分段时长
-  static const segmentTime = "segmentTime";
+  static const segmentTime = 'segmentTime';
 
   /// 最大并发
-  static const maxTaskCount = "maxTaskCount";
+  static const maxTaskCount = 'maxTaskCount';
 
   /// 自动重连
-  static const autoReconnect = "autoReconnect";
+  static const autoReconnect = 'autoReconnect';
 
   /// 最大缓存
-  static const maxCacheMB = "maxCacheMB";
+  static const maxCacheMB = 'maxCacheMB';
 
   /// 保存路径
-  static const recordSavePath = "recordSavePath";
+  static const recordSavePath = 'recordSavePath';
 
   /// 默认画质
-  static const defaultQuality = "default_quality";
+  static const defaultQuality = 'default_quality';
 
   /// 录制任务
   static const recorderTasks = 'recorder_tasks';

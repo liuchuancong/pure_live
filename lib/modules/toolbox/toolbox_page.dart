@@ -11,18 +11,18 @@ class ToolBoxPage extends GetView<ToolBoxController> {
     WidgetsBinding.instance.addPostFrameCallback((_) => controller.autoCheckClipboard());
 
     return Scaffold(
-      appBar: AppBar(title: Text(i18n("toolbox_title")), centerTitle: true, elevation: 0),
+      appBar: AppBar(title: Text(i18n('toolbox_title')), centerTitle: true, elevation: 0),
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
         children: [
           // Section 1: Jump to Room
           _buildToolCard(
             context,
-            title: i18n("toolbox_room_jump"),
+            title: i18n('toolbox_room_jump'),
             icon: Remix.external_link_line,
             controller: controller.roomJumpToController,
             btnIcon: Remix.play_circle_line,
-            btnLabel: i18n("toolbox_link_jump"),
+            btnLabel: i18n('toolbox_link_jump'),
             onAction: controller.jumpToRoom,
           ),
 
@@ -31,11 +31,11 @@ class ToolBoxPage extends GetView<ToolBoxController> {
           // Section 2: Get Direct Link (Description is persistent outside the fold)
           _buildToolCard(
             context,
-            title: i18n("toolbox_get_direct_link"),
+            title: i18n('toolbox_get_direct_link'),
             icon: Remix.link_m,
             controller: controller.getUrlController,
             btnIcon: Remix.download_2_line,
-            btnLabel: i18n("toolbox_get_parse"),
+            btnLabel: i18n('toolbox_get_parse'),
             onAction: controller.getPlayUrl,
             extraFooter: _buildDescription(),
           ),
@@ -58,7 +58,9 @@ class ToolBoxPage extends GetView<ToolBoxController> {
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12.0),
-        boxShadow: Get.isDarkMode ? [] : [BoxShadow(blurRadius: 10, color: Colors.black.withValues(alpha: .05))],
+        boxShadow: Get.isDarkMode
+            ? []
+            : [BoxShadow(blurRadius: 10, color: Colors.black.withValues(alpha: .05))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -77,11 +79,14 @@ class ToolBoxPage extends GetView<ToolBoxController> {
                 controller: controller,
                 style: AppTextStyles.t13,
                 decoration: InputDecoration(
-                  hintText: i18n("toolbox_input_hint"),
+                  hintText: i18n('toolbox_input_hint'),
                   hintStyle: AppTextStyles.t13,
                   filled: true,
                   fillColor: Theme.of(context).dividerColor.withValues(alpha: .05),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide.none,
+                  ),
                   suffixIcon: IconButton(
                     icon: const Icon(Remix.close_circle_line, size: 20),
                     onPressed: () => controller.clear(),
@@ -104,7 +109,8 @@ class ToolBoxPage extends GetView<ToolBoxController> {
             ],
           ),
           // extraFooter is placed outside ExpansionTile so it stays visible when folded
-          if (extraFooter != null) Padding(padding: const EdgeInsets.fromLTRB(16, 0, 16, 16), child: extraFooter),
+          if (extraFooter != null)
+            Padding(padding: const EdgeInsets.fromLTRB(16, 0, 16, 16), child: extraFooter),
         ],
       ),
     );
@@ -121,13 +127,16 @@ class ToolBoxPage extends GetView<ToolBoxController> {
             Icon(Remix.information_line, size: 14, color: Colors.grey[600]),
             const SizedBox(width: 6),
             Text(
-              i18n("toolbox_support_list"),
-              style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold),
+              i18n('toolbox_support_list'),
+              style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.bold),
             ),
           ],
         ),
         const SizedBox(height: 12),
-        SelectableText(i18n("toolbox_support_content"), style: TextStyle(color: Colors.grey, height: 1.6)),
+        SelectableText(
+          i18n('toolbox_support_content'),
+          style: const TextStyle(color: Colors.grey, height: 1.6),
+        ),
       ],
     );
   }

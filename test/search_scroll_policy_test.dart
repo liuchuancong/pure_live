@@ -31,7 +31,10 @@ void main() {
 
     await tester.drag(find.byKey(const ValueKey('search-platform-strip')), const Offset(-4000, 0));
     await tester.pumpAndSettle();
-    expect(scrollController.position.pixels, closeTo(scrollController.position.maxScrollExtent, 0.01));
+    expect(
+      scrollController.position.pixels,
+      closeTo(scrollController.position.maxScrollExtent, 0.01),
+    );
 
     final maxExtent = scrollController.position.maxScrollExtent;
     await tester.drag(find.byKey(const ValueKey('search-platform-strip')), const Offset(-4000, 0));
@@ -40,7 +43,10 @@ void main() {
 
     await tester.drag(find.byKey(const ValueKey('search-platform-strip')), const Offset(4000, 0));
     await tester.pumpAndSettle();
-    expect(scrollController.position.pixels, closeTo(scrollController.position.minScrollExtent, 0.01));
+    expect(
+      scrollController.position.pixels,
+      closeTo(scrollController.position.minScrollExtent, 0.01),
+    );
   });
 
   test('search results rebound on touch platforms and retain desktop policy', () {

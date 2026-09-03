@@ -34,13 +34,15 @@ class RoomCardSettingsPage extends GetView<RoomCardConfigController> {
             context.buildTile(
               icon: Icons.phone_android_rounded,
               title: i18n('mobile'),
-              subtitle: '${i18n('mobile_layout')} • ${_getPresetLabel(controller.mobilePreset.value)}',
+              subtitle:
+                  '${i18n('mobile_layout')} • ${_getPresetLabel(controller.mobilePreset.value)}',
               onTap: () => Get.to(() => const MobileSettingsPage()),
             ),
             context.buildTile(
               icon: Icons.computer_rounded,
               title: i18n('desktop'),
-              subtitle: '${i18n('desktop_layout')} • ${_getPresetLabel(controller.desktopPreset.value)}',
+              subtitle:
+                  '${i18n('desktop_layout')} • ${_getPresetLabel(controller.desktopPreset.value)}',
               onTap: () => Get.to(() => const DesktopSettingsPage()),
             ),
           ]),

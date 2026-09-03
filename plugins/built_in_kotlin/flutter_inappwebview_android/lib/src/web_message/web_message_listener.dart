@@ -8,13 +8,10 @@ import 'package:flutter_inappwebview_platform_interface/flutter_inappwebview_pla
 /// value to avoid breaking changes. See [PlatformWebMessageListenerCreationParams] for
 /// more information.
 @immutable
-class AndroidWebMessageListenerCreationParams
-    extends PlatformWebMessageListenerCreationParams {
+class AndroidWebMessageListenerCreationParams extends PlatformWebMessageListenerCreationParams {
   /// Creates a new [AndroidWebMessageListenerCreationParams] instance.
   const AndroidWebMessageListenerCreationParams(
-      {required this.allowedOriginRules,
-      required super.jsObjectName,
-      super.onPostMessage});
+      {required this.allowedOriginRules, required super.jsObjectName, super.onPostMessage});
 
   /// Creates a [AndroidWebMessageListenerCreationParams] instance based on [PlatformWebMessageListenerCreationParams].
   factory AndroidWebMessageListenerCreationParams.fromPlatformWebMessageListenerCreationParams(
@@ -37,8 +34,7 @@ class AndroidWebMessageListenerCreationParams
 }
 
 ///{@macro flutter_inappwebview_platform_interface.PlatformWebMessageListener}
-class AndroidWebMessageListener extends PlatformWebMessageListener
-    with ChannelController {
+class AndroidWebMessageListener extends PlatformWebMessageListener with ChannelController {
   /// Constructs a [AndroidWebMessageListener].
   AndroidWebMessageListener(PlatformWebMessageListenerCreationParams params)
       : super.implementation(
@@ -68,13 +64,11 @@ class AndroidWebMessageListener extends PlatformWebMessageListener
       case "onPostMessage":
         if (_replyProxy == null) {
           _replyProxy = AndroidJavaScriptReplyProxy(
-              PlatformJavaScriptReplyProxyCreationParams(
-                  webMessageListener: this));
+              PlatformJavaScriptReplyProxyCreationParams(webMessageListener: this));
         }
         if (onPostMessage != null) {
           WebMessage? message = call.arguments["message"] != null
-              ? WebMessage.fromMap(
-                  call.arguments["message"].cast<String, dynamic>())
+              ? WebMessage.fromMap(call.arguments["message"].cast<String, dynamic>())
               : null;
           WebUri? sourceOrigin = call.arguments["sourceOrigin"] != null
               ? WebUri(call.arguments["sourceOrigin"])
@@ -120,19 +114,16 @@ class AndroidWebMessageListener extends PlatformWebMessageListener
 /// value to avoid breaking changes. See [PlatformJavaScriptReplyProxyCreationParams] for
 /// more information.
 @immutable
-class AndroidJavaScriptReplyProxyCreationParams
-    extends PlatformJavaScriptReplyProxyCreationParams {
+class AndroidJavaScriptReplyProxyCreationParams extends PlatformJavaScriptReplyProxyCreationParams {
   /// Creates a new [AndroidJavaScriptReplyProxyCreationParams] instance.
-  const AndroidJavaScriptReplyProxyCreationParams(
-      {required super.webMessageListener});
+  const AndroidJavaScriptReplyProxyCreationParams({required super.webMessageListener});
 
   /// Creates a [AndroidJavaScriptReplyProxyCreationParams] instance based on [PlatformJavaScriptReplyProxyCreationParams].
   factory AndroidJavaScriptReplyProxyCreationParams.fromPlatformJavaScriptReplyProxyCreationParams(
       // Recommended placeholder to prevent being broken by platform interface.
       // ignore: avoid_unused_constructor_parameters
       PlatformJavaScriptReplyProxyCreationParams params) {
-    return AndroidJavaScriptReplyProxyCreationParams(
-        webMessageListener: params.webMessageListener);
+    return AndroidJavaScriptReplyProxyCreationParams(webMessageListener: params.webMessageListener);
   }
 }
 

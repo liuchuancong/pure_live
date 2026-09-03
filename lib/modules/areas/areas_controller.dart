@@ -128,7 +128,10 @@ class AreasController extends GetxController with GetTickerProviderStateMixin {
     if (index != tabController.index) {
       index = tabController.index;
       _settledTabLoadTimer?.cancel();
-      _settledTabLoadTimer = Timer(const Duration(milliseconds: 80), () => unawaited(_loadCurrentTabData(index)));
+      _settledTabLoadTimer = Timer(
+        const Duration(milliseconds: 80),
+        () => unawaited(_loadCurrentTabData(index)),
+      );
     }
   }
 
@@ -146,14 +149,21 @@ class AreasController extends GetxController with GetTickerProviderStateMixin {
     }
     if (i != index || listController.list.isEmpty) return;
     _adjacentWarmTimer?.cancel();
-    _adjacentWarmTimer = Timer(const Duration(milliseconds: 800), () => _warmNextPlatform(i, listController));
+    _adjacentWarmTimer = Timer(
+      const Duration(milliseconds: 800),
+      () => _warmNextPlatform(i, listController),
+    );
   }
 
   void _warmNextPlatform(int currentIndex, AreasListController current) {
     if (currentIndex != index || sites.length < 2) return;
-    if (current.scrollController.hasClients && current.scrollController.position.isScrollingNotifier.value) {
+    if (current.scrollController.hasClients &&
+        current.scrollController.position.isScrollingNotifier.value) {
       _adjacentWarmTimer?.cancel();
-      _adjacentWarmTimer = Timer(const Duration(milliseconds: 450), () => _warmNextPlatform(currentIndex, current));
+      _adjacentWarmTimer = Timer(
+        const Duration(milliseconds: 450),
+        () => _warmNextPlatform(currentIndex, current),
+      );
       return;
     }
     final nextIndex = currentIndex + 1 < sites.length ? currentIndex + 1 : currentIndex - 1;

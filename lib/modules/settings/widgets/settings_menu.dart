@@ -22,13 +22,18 @@ class SettingsMenu<T> extends StatelessWidget {
       visualDensity: VisualDensity.compact,
       title: Text(title, style: Theme.of(context).textTheme.bodyLarge),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      contentPadding: EdgeInsets.only(left: 16).copyWith(right: 8),
-      subtitle: subtitle == null ? null : Text(subtitle!, style: Get.textTheme.bodySmall!.copyWith(color: Colors.grey)),
+      contentPadding: const EdgeInsets.only(left: 16).copyWith(right: 8),
+      subtitle: subtitle == null
+          ? null
+          : Text(subtitle!, style: Get.textTheme.bodySmall!.copyWith(color: Colors.grey)),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(valueMap[value]!.tr, style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Colors.grey)),
-          SizedBox(width: 4),
+          Text(
+            valueMap[value]!.tr,
+            style: Theme.of(context).textTheme.bodyMedium!.copyWith(color: Colors.grey),
+          ),
+          const SizedBox(width: 4),
           const Icon(Icons.chevron_right, color: Colors.grey),
         ],
       ),
@@ -72,7 +77,7 @@ class SettingsMenu<T> extends StatelessWidget {
                           Navigator.of(Get.context!).pop();
                           onChanged?.call(e);
                         },
-                        child: Text((valueMap[e]?.tr) ?? "???", style: Get.textTheme.bodyMedium),
+                        child: Text((valueMap[e]?.tr) ?? '???', style: Get.textTheme.bodyMedium),
                       ),
                     ],
                   );

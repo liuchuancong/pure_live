@@ -1,7 +1,9 @@
 import 'dart:typed_data';
+
 import './tars_input_stream.dart';
 import './tars_output_stream.dart';
 import './tars_deep_copyable.dart';
+
 // ignore_for_file: non_constant_identifier_names, constant_identifier_names, no_leading_underscores_for_local_identifiers
 
 enum TarsStructType {

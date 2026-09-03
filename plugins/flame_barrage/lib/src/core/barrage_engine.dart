@@ -119,7 +119,11 @@ class BarrageEngine extends FlameGame with TapCallbacks {
   }
 
   void _resumeLoopIfNeeded() {
-    if (!isPaused && _appActive && _initialized && isAttached && (_waiting.isNotEmpty || _currentAliveCount > 0)) {
+    if (!isPaused &&
+        _appActive &&
+        _initialized &&
+        isAttached &&
+        (_waiting.isNotEmpty || _currentAliveCount > 0)) {
       _startFramePulses();
     }
   }
@@ -150,7 +154,11 @@ class BarrageEngine extends FlameGame with TapCallbacks {
   }
 
   void _onFrameTick(Duration elapsed) {
-    if (isPaused || !_appActive || !_initialized || !isAttached || (_waiting.isEmpty && _currentAliveCount == 0)) {
+    if (isPaused ||
+        !_appActive ||
+        !_initialized ||
+        !isAttached ||
+        (_waiting.isEmpty && _currentAliveCount == 0)) {
       _stopFramePulses();
       return;
     }
@@ -227,7 +235,11 @@ class BarrageEngine extends FlameGame with TapCallbacks {
   bool triggerItemAt(double x, double y, {required bool longPress}) {
     for (var i = _activeEntries.length - 1; i >= 0; i--) {
       final entry = _activeEntries[i];
-      if (!entry.active || x < entry.x || x > entry.x + entry.width || y < entry.y || y > entry.y + entry.height) {
+      if (!entry.active ||
+          x < entry.x ||
+          x > entry.x + entry.width ||
+          y < entry.y ||
+          y > entry.y + entry.height) {
         continue;
       }
       final callback = longPress ? entry.item.onLongTapDown : entry.item.onTapUp;
@@ -477,7 +489,12 @@ class BarrageEngine extends FlameGame with TapCallbacks {
     _waiting.removeFirst();
     final track = _trackManager.tracks[trackIndex];
     if (item.type == BarrageType.scroll) {
-      mockEntry.speed = _speedStrategy.calculate(mockEntry, size.x, resolvedConfig, targetTrack: track);
+      mockEntry.speed = _speedStrategy.calculate(
+        mockEntry,
+        size.x,
+        resolvedConfig,
+        targetTrack: track,
+      );
     }
     track.lastLaunchTime = now;
     final cacheKey = buildCacheKey(item);

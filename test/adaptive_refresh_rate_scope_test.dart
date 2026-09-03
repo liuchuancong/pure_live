@@ -66,7 +66,9 @@ void main() {
     await gesture.up();
   });
 
-  testWidgets('performance mode stays high in foreground and releases in background', (tester) async {
+  testWidgets('performance mode stays high in foreground and releases in background', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       const MaterialApp(
         home: AdaptiveRefreshRateScope(
@@ -80,7 +82,11 @@ void main() {
 
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
     await tester.pump();
-    expect(AdaptiveRefreshRateController.requestedHigh, isTrue, reason: 'PiP remains visible while inactive');
+    expect(
+      AdaptiveRefreshRateController.requestedHigh,
+      isTrue,
+      reason: 'PiP remains visible while inactive',
+    );
 
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
     await tester.pump();

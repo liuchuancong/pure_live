@@ -21,7 +21,7 @@ class FavoritePage extends GetView<FavoriteController> {
             appBar: AppBar(
               centerTitle: true,
               leading: showAction ? const MenuButton() : null,
-              actions: showAction ? [CommonAppBarActions()] : null,
+              actions: showAction ? [const CommonAppBarActions()] : null,
               title: TabBar(
                 key: const ValueKey('favorite-status-tabs'),
                 controller: controller.tabController,
@@ -29,13 +29,17 @@ class FavoritePage extends GetView<FavoriteController> {
                 tabAlignment: TabAlignment.center,
                 physics: const PureLiveBoundedScrollPhysics(),
                 tabs: [
-                  Tab(text: i18n("online_room_title")),
-                  Tab(text: i18n("recording_room_title")),
-                  Tab(text: i18n("offline_room_title")),
+                  Tab(text: i18n('online_room_title')),
+                  Tab(text: i18n('recording_room_title')),
+                  Tab(text: i18n('offline_room_title')),
                 ],
               ),
             ),
-            body: _FavoriteSiteTabs(key: siteKey, controller: controller, availableSitesList: availableSitesList),
+            body: _FavoriteSiteTabs(
+              key: siteKey,
+              controller: controller,
+              availableSitesList: availableSitesList,
+            ),
           );
         });
       },
@@ -44,7 +48,11 @@ class FavoritePage extends GetView<FavoriteController> {
 }
 
 @visibleForTesting
-int resolveFavoriteSiteIndex({required List<String> siteIds, required String selectedSiteId, required int fallback}) {
+int resolveFavoriteSiteIndex({
+  required List<String> siteIds,
+  required String selectedSiteId,
+  required int fallback,
+}) {
   if (siteIds.isEmpty) return 0;
   final selectedIndex = siteIds.indexOf(selectedSiteId);
   return selectedIndex >= 0 ? selectedIndex : fallback.clamp(0, siteIds.length - 1).toInt();
@@ -70,7 +78,7 @@ class _FavoriteSiteTabsState extends State<_FavoriteSiteTabs> with SingleTickerP
   final Map<String, ScrollController> _siteScrollControllers = {};
 
   ScrollController _scrollControllerFor(String siteId) =>
-      _siteScrollControllers.putIfAbsent(siteId, () => createPureLiveScrollController());
+      _siteScrollControllers.putIfAbsent(siteId, createPureLiveScrollController);
 
   @override
   void initState() {
@@ -86,7 +94,9 @@ class _FavoriteSiteTabsState extends State<_FavoriteSiteTabs> with SingleTickerP
       vsync: this,
       animationDuration: pureLiveTabTransitionDuration,
     )..addListener(_handleTabChanged);
-    widget.controller.bindActiveScrollController(_scrollControllerFor(widget.availableSitesList[initialIndex].id));
+    widget.controller.bindActiveScrollController(
+      _scrollControllerFor(widget.availableSitesList[initialIndex].id),
+    );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) widget.controller.selectSiteIndex(initialIndex);
     });
@@ -99,7 +109,9 @@ class _FavoriteSiteTabsState extends State<_FavoriteSiteTabs> with SingleTickerP
     if ((animationValue - tabController.index).abs() > 0.001) return;
     final controller = widget.controller;
     if (tabController.index < 0 || tabController.index >= widget.availableSitesList.length) return;
-    controller.bindActiveScrollController(_scrollControllerFor(widget.availableSitesList[tabController.index].id));
+    controller.bindActiveScrollController(
+      _scrollControllerFor(widget.availableSitesList[tabController.index].id),
+    );
     controller.selectSiteIndex(tabController.index);
   }
 
@@ -159,12 +171,15 @@ class _FavoriteSiteTabsState extends State<_FavoriteSiteTabs> with SingleTickerP
                       // that point rather than doing both for every platform
                       // on each reactive rebuild.
                       final isCurrentSite = entry.key == activeSiteIndex;
-                      final pageList = isCurrentSite ? list : controller.filteredSyncedRoomsForSite(site.id);
+                      final pageList = isCurrentSite
+                          ? list
+                          : controller.filteredSyncedRoomsForSite(site.id);
                       return RoomGridView(
                         siteId: site.id,
                         scrollController: _scrollControllerFor(site.id),
                         displayList: pageList,
-                        emptyBuilder: (context) => _FavoriteEmptyState(controller: controller, siteId: site.id),
+                        emptyBuilder: (context) =>
+                            _FavoriteEmptyState(controller: controller, siteId: site.id),
                       );
                     },
                   );
@@ -229,7 +244,9 @@ class FavoriteTagStrip extends StatelessWidget {
                   tag?.name ?? allLabel,
                   style: (labelStyle ?? AppTextStyles.t12).copyWith(
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                    color: isSelected ? theme.colorScheme.onPrimary : theme.colorScheme.onSurfaceVariant,
+                    color: isSelected
+                        ? theme.colorScheme.onPrimary
+                        : theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
                 selected: isSelected,
@@ -238,7 +255,9 @@ class FavoriteTagStrip extends StatelessWidget {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                   side: BorderSide(
-                    color: isSelected ? Colors.transparent : theme.dividerColor.withValues(alpha: 0.04),
+                    color: isSelected
+                        ? Colors.transparent
+                        : theme.dividerColor.withValues(alpha: 0.04),
                     width: 0.5,
                   ),
                 ),
@@ -282,7 +301,9 @@ class _FavoriteEmptyState extends StatelessWidget {
         2 => i18n('favorite_empty_offline_title'),
         _ => i18n('favorite_empty_online_title'),
       };
-      final subtitleKey = totalForSite == 0 ? 'favorite_empty_platform_subtitle' : 'favorite_empty_filter_subtitle';
+      final subtitleKey = totalForSite == 0
+          ? 'favorite_empty_platform_subtitle'
+          : 'favorite_empty_filter_subtitle';
       final subtitle = i18n(subtitleKey).replaceAll('{count}', totalForSite.toString());
       final canShowOffline = statusIndex != 2 && offlineForSite > 0;
 
@@ -292,7 +313,9 @@ class _FavoriteEmptyState extends StatelessWidget {
         title: title,
         subtitle: subtitle,
         buttonText: canShowOffline ? i18n('favorite_show_offline') : i18n('retry'),
-        onButtonPressed: canShowOffline ? () => controller.animateToStatusIndex(2) : controller.refreshData,
+        onButtonPressed: canShowOffline
+            ? () => controller.animateToStatusIndex(2)
+            : controller.refreshData,
       );
     });
   }

@@ -1,5 +1,6 @@
 import '../models/epg.dart';
 import '../models/channel.dart';
+
 import 'package:string_similarity/string_similarity.dart';
 
 /// Automatically maps provider channels to EPG channels using multiple
@@ -68,7 +69,9 @@ class EpgAutoMapper {
         continue;
       }
 
-      final source = best.confidence >= autoApplyThreshold ? MappingSource.auto : MappingSource.suggested;
+      final source = best.confidence >= autoApplyThreshold
+          ? MappingSource.auto
+          : MappingSource.suggested;
 
       if (source == MappingSource.auto) {
         mapped++;
@@ -181,13 +184,22 @@ class EpgAutoMapper {
     return candidates.take(10).toList();
   }
 
-  void _addScore(Map<String, _CandidateScore> results, EpgChannel epgChannel, double score, String reason) {
+  void _addScore(
+    Map<String, _CandidateScore> results,
+    EpgChannel epgChannel,
+    double score,
+    String reason,
+  ) {
     final existing = results[epgChannel.id];
     if (existing != null) {
       existing.scores.add(score);
       existing.reasons.add(reason);
     } else {
-      results[epgChannel.id] = _CandidateScore(epgChannel: epgChannel, scores: [score], reasons: [reason]);
+      results[epgChannel.id] = _CandidateScore(
+        epgChannel: epgChannel,
+        scores: [score],
+        reasons: [reason],
+      );
     }
   }
 
@@ -216,7 +228,10 @@ class EpgAutoMapper {
       cleaned = callSign;
     } else {
       // Remove quality suffixes
-      cleaned = cleaned.replaceAll(RegExp(r'\s*(HD|FHD|UHD|4K|SD|HEVC|H\.?265|H\.?264)\s*', caseSensitive: false), ' ');
+      cleaned = cleaned.replaceAll(
+        RegExp(r'\s*(HD|FHD|UHD|4K|SD|HEVC|H\.?265|H\.?264)\s*', caseSensitive: false),
+        ' ',
+      );
       // Remove parenthesized content like "(USA)", "(FHD)"
       cleaned = cleaned.replaceAll(RegExp(r'\([^)]*\)'), '');
     }
@@ -237,15 +252,15 @@ class EpgAutoMapper {
     if (parenMatch != null) {
       final callSign = parenMatch.group(1)!;
       // Extract country suffix (.us, .uk, etc.)
-      final suffix = RegExp(r'\.(us|uk|ca|au|nz|de|fr|es|it|mx)$').firstMatch(normalized)?.group(0) ?? '';
+      final suffix =
+          RegExp(r'\.(us|uk|ca|au|nz|de|fr|es|it|mx)$').firstMatch(normalized)?.group(0) ?? '';
       return (callSign + suffix).replaceAll(RegExp(r'[._\-\s]'), '');
     }
 
     // Handle "abcwabc.us" pattern — strip network prefix before call sign
     // Common US networks: abc, cbs, nbc, fox, pbs, cw
-    final prefixMatch = RegExp(
-      r'^(abc|cbs|nbc|fox|pbs|cw)(\w{3,})(.*)$',
-    ).firstMatch(normalized.replaceAll(RegExp(r'[._\-\s]'), ''));
+    final prefixMatch = RegExp(r'^(abc|cbs|nbc|fox|pbs|cw)(\w{3,})(.*)$')
+        .firstMatch(normalized.replaceAll(RegExp(r'[._\-\s]'), ''));
     if (prefixMatch != null) {
       final callSign = prefixMatch.group(2)!;
       final rest = prefixMatch.group(3)!;
@@ -334,7 +349,12 @@ class _EpgIndex {
   final Map<String, EpgChannel> byNumber;
   final Map<String, EpgChannel> byIconUrl;
 
-  _EpgIndex._({required this.byId, required this.byNormalizedId, required this.byNumber, required this.byIconUrl});
+  _EpgIndex._({
+    required this.byId,
+    required this.byNormalizedId,
+    required this.byNumber,
+    required this.byIconUrl,
+  });
 
   factory _EpgIndex.build(List<EpgChannel> channels) {
     final byId = <String, EpgChannel>{};
@@ -354,6 +374,11 @@ class _EpgIndex {
       if (ch.iconUrl != null) byIconUrl[ch.iconUrl!] = ch;
     }
 
-    return _EpgIndex._(byId: byId, byNormalizedId: byNormalizedId, byNumber: byNumber, byIconUrl: byIconUrl);
+    return _EpgIndex._(
+      byId: byId,
+      byNormalizedId: byNormalizedId,
+      byNumber: byNumber,
+      byIconUrl: byIconUrl,
+    );
   }
 }

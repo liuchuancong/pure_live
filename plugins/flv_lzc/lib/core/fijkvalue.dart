@@ -106,7 +106,7 @@ enum FijkState {
   error,
 
   /// * release()        -> self
-  end
+  end,
 }
 
 /// FijkValue include the properties of a [FijkPlayer] which update not frequently.
@@ -178,18 +178,18 @@ class FijkValue {
 
   /// Construct FijkValue with uninitialized value
   const FijkValue.uninitialized()
-      : this(
-          prepared: false,
-          completed: false,
-          videoRenderStart: false,
-          audioRenderStart: false,
-          state: FijkState.idle,
-          size: null,
-          rotate: 0,
-          duration: const Duration(),
-          fullScreen: false,
-          exception: FijkException.noException,
-        );
+    : this(
+        prepared: false,
+        completed: false,
+        videoRenderStart: false,
+        audioRenderStart: false,
+        state: FijkState.idle,
+        size: null,
+        rotate: 0,
+        duration: const Duration(),
+        fullScreen: false,
+        exception: FijkException.noException,
+      );
 
   /// Return new FijkValue which combines the old value and the assigned new value
   FijkValue copyWith({
@@ -221,23 +221,21 @@ class FijkValue {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is FijkValue &&
-          runtimeType == other.runtimeType &&
-          hashCode == other.hashCode;
+      other is FijkValue && runtimeType == other.runtimeType && hashCode == other.hashCode;
 
   @override
   int get hashCode => Object.hash(
-        prepared,
-        completed,
-        state,
-        size,
-        rotate,
-        videoRenderStart,
-        audioRenderStart,
-        duration,
-        fullScreen,
-        exception,
-      );
+    prepared,
+    completed,
+    state,
+    size,
+    rotate,
+    videoRenderStart,
+    audioRenderStart,
+    duration,
+    fullScreen,
+    exception,
+  );
 
   @override
   String toString() {
@@ -334,17 +332,13 @@ class FijkException implements Exception {
 
   static FijkException fromPlatformException(PlatformException e) {
     int? code = int.tryParse(e.code);
-    return code != null
-        ? FijkException(code, e.message)
-        : FijkException(unknown, e.message);
+    return code != null ? FijkException(code, e.message) : FijkException(unknown, e.message);
   }
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is FijkException &&
-          runtimeType == other.runtimeType &&
-          hashCode == other.hashCode;
+      other is FijkException && runtimeType == other.runtimeType && hashCode == other.hashCode;
 
   @override
   int get hashCode => Object.hash(code, message);

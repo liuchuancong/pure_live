@@ -205,7 +205,8 @@ class WebScoketUtils {
     heartBeatTimer = Timer.periodic(Duration(milliseconds: heartBeatTime), (_) {
       if (status != SocketStatus.connected) return;
       final lastMessageAt = _lastMessageAt;
-      if (lastMessageAt != null && DateTime.now().difference(lastMessageAt) >= _resolvedInactivityTimeout) {
+      if (lastMessageAt != null &&
+          DateTime.now().difference(lastMessageAt) >= _resolvedInactivityTimeout) {
         _scheduleReconnect('WebSocket heartbeat timed out');
         return;
       }

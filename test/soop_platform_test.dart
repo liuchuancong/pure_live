@@ -26,17 +26,17 @@ void main() {
         'example_channel',
         Sites.soopSite,
       ]);
-      expect(await LiveUrlTool.parseLiveUrl('https://www.sooplive.co.kr/example_channel?from=share'), [
-        'example_channel',
-        Sites.soopSite,
-      ]);
+      expect(
+        await LiveUrlTool.parseLiveUrl('https://www.sooplive.co.kr/example_channel?from=share'),
+        ['example_channel', Sites.soopSite],
+      );
     });
 
     test('parses the global sooplive.com channel link', () async {
-      expect(await LiveUrlTool.parseLiveUrl('https://www.sooplive.com/example_channel?from=share'), [
-        'example_channel',
-        Sites.soopSite,
-      ]);
+      expect(
+        await LiveUrlTool.parseLiveUrl('https://www.sooplive.com/example_channel?from=share'),
+        ['example_channel', Sites.soopSite],
+      );
     });
 
     test('uses preset names as stable quality request ids', () async {

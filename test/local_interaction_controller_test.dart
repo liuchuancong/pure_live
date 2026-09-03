@@ -8,7 +8,10 @@ void main() {
     test('normalizes nickname length and whitespace', () {
       expect(LocalInteractionController.normalizeUserName('  listener  '), 'listener');
       expect(LocalInteractionController.normalizeUserName('   '), isEmpty);
-      expect(LocalInteractionController.normalizeUserName('12345678901234567890123'), '12345678901234567890');
+      expect(
+        LocalInteractionController.normalizeUserName('12345678901234567890123'),
+        '12345678901234567890',
+      );
     });
 
     test('calculates a stable local level', () {

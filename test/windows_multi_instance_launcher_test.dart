@@ -14,7 +14,11 @@ void main() {
       data: Object(),
       danmakuData: Object(),
     );
-    final args = WindowsMultiInstanceLauncher.buildArguments(room: room, processId: 42, timestampMicros: 123456);
+    final args = WindowsMultiInstanceLauncher.buildArguments(
+      room: room,
+      processId: 42,
+      timestampMicros: 123456,
+    );
 
     expect(args.first, '--instance=window_42_123456');
     expect(args.length, 2);
@@ -29,16 +33,29 @@ void main() {
   });
 
   test('instance ids are sanitized and malformed room payloads are ignored', () {
-    expect(WindowsMultiInstanceLauncher.instanceIdFromArgs(const ['--instance=room ../A-1']), 'room.A-1');
+    expect(
+      WindowsMultiInstanceLauncher.instanceIdFromArgs(const ['--instance=room ../A-1']),
+      'room.A-1',
+    );
     expect(WindowsMultiInstanceLauncher.instanceIdFromArgs(const ['--instance=../../']), isEmpty);
-    expect(WindowsMultiInstanceLauncher.instanceIdFromArgs(const ['--instance=NUL']), 'instance_NUL');
+    expect(
+      WindowsMultiInstanceLauncher.instanceIdFromArgs(const ['--instance=NUL']),
+      'instance_NUL',
+    );
     expect(WindowsMultiInstanceLauncher.roomFromArgs(const ['--open-room=not_base64!']), isNull);
   });
 
   test('room payload carries canonical offline state instead of a stale legacy boolean', () {
-    final room = LiveRoom(roomId: 'ended', platform: 'huya', status: true, liveStatus: LiveStatus.offline);
+    final room = LiveRoom(
+      roomId: 'ended',
+      platform: 'huya',
+      status: true,
+      liveStatus: LiveStatus.offline,
+    );
 
-    final decoded = WindowsMultiInstanceLauncher.roomFromArgs([WindowsMultiInstanceLauncher.encodeRoomArgument(room)]);
+    final decoded = WindowsMultiInstanceLauncher.roomFromArgs([
+      WindowsMultiInstanceLauncher.encodeRoomArgument(room),
+    ]);
 
     expect(decoded, isNotNull);
     expect(decoded!.effectiveLiveStatus, LiveStatus.offline);

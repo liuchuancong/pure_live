@@ -54,25 +54,25 @@ class SearchController extends GetxController {
     final q = Uri.encodeComponent(keyword);
     switch (platform) {
       case Sites.ccSite:
-        return "https://cc.163.com/search/all/?query=$q&only=all";
+        return 'https://cc.163.com/search/all/?query=$q&only=all';
       case Sites.kuaishouSite:
-        return "https://live.kuaishou.com/search?keyword=$q";
+        return 'https://live.kuaishou.com/search?keyword=$q';
       case Sites.huyaSite:
-        return "https://www.huya.com/search?hsk=$q";
+        return 'https://www.huya.com/search?hsk=$q';
       case Sites.bilibiliSite:
-        return "https://search.bilibili.com/live?keyword=$q&from_source=webtop_search&spm_id_from=444.7&search_source=3";
+        return 'https://search.bilibili.com/live?keyword=$q&from_source=webtop_search&spm_id_from=444.7&search_source=3';
       case Sites.douyuSite:
-        return "https://www.douyu.com/search?kw=$q&dyshid=0-ed88b042da9bbc4cf4abc97500021601";
+        return 'https://www.douyu.com/search?kw=$q&dyshid=0-ed88b042da9bbc4cf4abc97500021601';
       case Sites.douyinSite:
-        return "https://www.douyin.com/search/$q?type=live";
+        return 'https://www.douyin.com/search/$q?type=live';
       case Sites.twitchSite:
-        return "https://www.twitch.tv/search?term=$q";
+        return 'https://www.twitch.tv/search?term=$q';
       case Sites.soopSite:
-        return "https://www.sooplive.co.kr/?szKeyword=$q";
+        return 'https://www.sooplive.co.kr/?szKeyword=$q';
       case Sites.yySite:
-        return "https://www.yy.com/search-$q";
+        return 'https://www.yy.com/search-$q';
       default:
-        return "https://www.baidu.com/s?wd=$q&rsv_spt=1&rsv_iqid=0x84b83a1e077a0c1a&issp=1&f=8&rsv_bp=1&rsv_idx=2&ie=utf-8&tn=baiduhome_pg&rsv_dl=tb_click&rsv_enter=1&rsv_sug3=3&rsv_sug1=2&rsv_sug7=100&rsv_btype=i&prefixsug=12&rsp=0&inputT=1112&rsv_sug4=1287";
+        return 'https://www.baidu.com/s?wd=$q&rsv_spt=1&rsv_iqid=0x84b83a1e077a0c1a&issp=1&f=8&rsv_bp=1&rsv_idx=2&ie=utf-8&tn=baiduhome_pg&rsv_dl=tb_click&rsv_enter=1&rsv_sug3=3&rsv_sug1=2&rsv_sug7=100&rsv_btype=i&prefixsug=12&rsp=0&inputT=1112&rsv_sug4=1287';
     }
   }
 
@@ -100,7 +100,7 @@ class SearchController extends GetxController {
         return true;
       }
     } catch (e) {
-      debugPrint("检测 WebView2 失败: $e");
+      debugPrint('检测 WebView2 失败: $e');
     }
     return false;
   }
@@ -108,7 +108,7 @@ class SearchController extends GetxController {
   Future<void> doSearch() async {
     final keyword = searchController.text.trim();
     if (keyword.isEmpty) {
-      ToastUtil.show(i18n("please_input_keyword"));
+      ToastUtil.show(i18n('please_input_keyword'));
       return;
     }
     FocusManager.instance.primaryFocus?.unfocus();
@@ -133,7 +133,12 @@ class SearchController extends GetxController {
     if (loading.v || loadingMore.v || !hasMore.v || _activeKeyword.isEmpty) return;
     final generation = _searchGeneration;
     loadingMore.v = true;
-    await _searchPage(keyword: _activeKeyword, page: _currentPage + 1, generation: generation, append: true);
+    await _searchPage(
+      keyword: _activeKeyword,
+      page: _currentPage + 1,
+      generation: generation,
+      append: true,
+    );
   }
 
   Future<void> _searchPage({
@@ -142,7 +147,9 @@ class SearchController extends GetxController {
     required int generation,
     required bool append,
   }) async {
-    final selectedSites = index.v == 0 ? sites : (index.v <= sites.length ? [sites[index.v - 1]] : <Site>[]);
+    final selectedSites = index.v == 0
+        ? sites
+        : (index.v <= sites.length ? [sites[index.v - 1]] : <Site>[]);
     if (!append) {
       for (final site in selectedSites) {
         final capability = LiveSearchCapabilities.forPlatform(site.id);
@@ -158,7 +165,10 @@ class SearchController extends GetxController {
       if (generation != _searchGeneration) return;
       if (selectedSites.length == 1 &&
           !LiveSearchCapabilities.forPlatform(selectedSites.single.id).supportsNativeSearch) {
-        errorMessage.v = i18n('search_web_only_platform', args: {'site': selectedSites.single.name});
+        errorMessage.v = i18n(
+          'search_web_only_platform',
+          args: {'site': selectedSites.single.name},
+        );
       }
       _applyFiltersAndSort();
       hasMore.v = false;
@@ -200,7 +210,10 @@ class SearchController extends GetxController {
       final addedCount = _rawResults.length - beforeCount;
       if (batch.failed) failures.add(batch.site.name);
       _hasMoreByPlatform[batch.site.id] =
-          !batch.failed && capability.supportsPagination && batch.rooms.isNotEmpty && addedCount > 0;
+          !batch.failed &&
+          capability.supportsPagination &&
+          batch.rooms.isNotEmpty &&
+          addedCount > 0;
       completed++;
       pendingSiteCount.v = searchableSites.length - completed;
       _applyFiltersAndSort();
@@ -229,7 +242,8 @@ class SearchController extends GetxController {
     return '$platform:${room.nick?.trim()}:${room.title?.trim()}';
   }
 
-  bool get hasFilteredOfflineResults => _rawResults.isNotEmpty && results.isEmpty && !includeOffline.v;
+  bool get hasFilteredOfflineResults =>
+      _rawResults.isNotEmpty && results.isEmpty && !includeOffline.v;
 
   void _applyFiltersAndSort() {
     final platformOrder = sites.map((site) => site.id).toList();
@@ -259,14 +273,25 @@ class SearchController extends GetxController {
       final site = sites[index.v - 1];
       final capability = LiveSearchCapabilities.forPlatform(site.id);
       return switch (capability.coverage) {
-        NativeSearchCoverage.liveAndOffline => i18n('search_coverage_live_and_offline', args: {'site': site.name}),
-        NativeSearchCoverage.liveOnly => i18n('search_coverage_live_only', args: {'site': site.name}),
-        NativeSearchCoverage.localChannels => i18n('search_coverage_local', args: {'site': site.name}),
+        NativeSearchCoverage.liveAndOffline => i18n(
+          'search_coverage_live_and_offline',
+          args: {'site': site.name},
+        ),
+        NativeSearchCoverage.liveOnly => i18n(
+          'search_coverage_live_only',
+          args: {'site': site.name},
+        ),
+        NativeSearchCoverage.localChannels => i18n(
+          'search_coverage_local',
+          args: {'site': site.name},
+        ),
         NativeSearchCoverage.webOnly => i18n('search_coverage_web_only', args: {'site': site.name}),
       };
     }
 
-    final nativeCount = sites.where((site) => LiveSearchCapabilities.forPlatform(site.id).supportsNativeSearch).length;
+    final nativeCount = sites
+        .where((site) => LiveSearchCapabilities.forPlatform(site.id).supportsNativeSearch)
+        .length;
     final webOnlySites = sites
         .where((site) => !LiveSearchCapabilities.forPlatform(site.id).supportsNativeSearch)
         .map((site) => site.name)
@@ -328,29 +353,37 @@ class SearchController extends GetxController {
           return AlertDialog(
             title: Row(
               children: [
-                Icon(Icons.report_problem_rounded, color: Theme.of(dialogContext).colorScheme.error),
+                Icon(
+                  Icons.report_problem_rounded,
+                  color: Theme.of(dialogContext).colorScheme.error,
+                ),
                 const SizedBox(width: 8),
-                Text(i18n("webview2_missing_title")),
+                Text(i18n('webview2_missing_title')),
               ],
             ),
-            content: Text(i18n("webview2_missing_content"), style: const TextStyle(height: 1.4)),
+            content: Text(i18n('webview2_missing_content'), style: const TextStyle(height: 1.4)),
             actions: [
-              TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: Text(i18n("cancel"))),
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: Text(i18n('cancel')),
+              ),
               ElevatedButton(
                 onPressed: () async {
                   Navigator.of(dialogContext).pop();
-                  final url = Uri.parse('https://developer.microsoft.com/zh-cn/microsoft-edge/webview2/?form=MA13LH');
+                  final url = Uri.parse(
+                    'https://developer.microsoft.com/zh-cn/microsoft-edge/webview2/?form=MA13LH',
+                  );
                   if (await canLaunchUrl(url)) {
                     await launchUrl(url, mode: LaunchMode.externalApplication);
                   } else {
-                    ToastUtil.show(i18n("webview2_open_error"));
+                    ToastUtil.show(i18n('webview2_open_error'));
                   }
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Theme.of(dialogContext).colorScheme.primary,
                   foregroundColor: Theme.of(dialogContext).colorScheme.onPrimary,
                 ),
-                child: Text(i18n("confirm")),
+                child: Text(i18n('confirm')),
               ),
             ],
           );
@@ -363,8 +396,12 @@ class SearchController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    _audienceWorkers.add(ever(SettingsService.to.app.preferRealOnlineCounts, (_) => _applyFiltersAndSort()));
-    _audienceWorkers.add(ever(SettingsService.to.app.realOnlinePlatforms, (_) => _applyFiltersAndSort()));
+    _audienceWorkers.add(
+      ever(SettingsService.to.app.preferRealOnlineCounts, (_) => _applyFiltersAndSort()),
+    );
+    _audienceWorkers.add(
+      ever(SettingsService.to.app.realOnlinePlatforms, (_) => _applyFiltersAndSort()),
+    );
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (Platform.isWindows) {
         _isWebView2Available = await isWebView2Installed();

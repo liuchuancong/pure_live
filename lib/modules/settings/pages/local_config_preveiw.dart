@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:flutter_json/flutter_json.dart';
@@ -61,7 +62,7 @@ class _LocalConfigPreviewPageState extends State<LocalConfigPreviewPage> {
     if (_isLoading) {
       return Scaffold(
         appBar: AppBar(),
-        body: Center(child: AppStatusView(type: AppStatusType.loading)),
+        body: const Center(child: AppStatusView(type: AppStatusType.loading)),
       );
     }
 
@@ -79,7 +80,10 @@ class _LocalConfigPreviewPageState extends State<LocalConfigPreviewPage> {
     return Scaffold(
       backgroundColor: theme.colorScheme.surfaceContainerLowest,
       appBar: AppBar(
-        title: Text(i18n('local_config_preview'), style: const TextStyle(fontWeight: FontWeight.w600)),
+        title: Text(
+          i18n('local_config_preview'),
+          style: const TextStyle(fontWeight: FontWeight.w600),
+        ),
         elevation: 0,
         scrolledUnderElevation: 1,
       ),
@@ -97,7 +101,10 @@ class _LocalConfigPreviewPageState extends State<LocalConfigPreviewPage> {
                   decoration: BoxDecoration(
                     color: theme.colorScheme.surface,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: theme.dividerColor.withValues(alpha: 0.15), width: 0.5),
+                    border: Border.all(
+                      color: theme.dividerColor.withValues(alpha: 0.15),
+                      width: 0.5,
+                    ),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -107,7 +114,11 @@ class _LocalConfigPreviewPageState extends State<LocalConfigPreviewPage> {
                           CircleAvatar(
                             radius: 20,
                             backgroundColor: theme.colorScheme.primaryContainer,
-                            child: Icon(Remix.settings_3_line, color: theme.colorScheme.onPrimaryContainer, size: 18),
+                            child: Icon(
+                              Remix.settings_3_line,
+                              color: theme.colorScheme.onPrimaryContainer,
+                              size: 18,
+                            ),
                           ),
                           const SizedBox(width: 10),
                           Expanded(
@@ -214,7 +225,11 @@ class _LocalConfigPreviewPageState extends State<LocalConfigPreviewPage> {
                           CircleAvatar(
                             radius: 20,
                             backgroundColor: theme.colorScheme.primaryContainer,
-                            child: Icon(Remix.settings_3_line, color: theme.colorScheme.onPrimaryContainer, size: 18),
+                            child: Icon(
+                              Remix.settings_3_line,
+                              color: theme.colorScheme.onPrimaryContainer,
+                              size: 18,
+                            ),
                           ),
                           const SizedBox(width: 10),
                           Expanded(
@@ -344,10 +359,19 @@ class _LocalConfigPreviewPageState extends State<LocalConfigPreviewPage> {
     );
   }
 
-  Widget _buildCompactMeta(IconData icon, String label, String value, ThemeData theme, {bool isPrimaryColor = false}) {
+  Widget _buildCompactMeta(
+    IconData icon,
+    String label,
+    String value,
+    ThemeData theme, {
+    bool isPrimaryColor = false,
+  }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-      decoration: BoxDecoration(color: theme.colorScheme.surfaceContainerLow, borderRadius: BorderRadius.circular(10)),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(10),
+      ),
       child: Row(
         children: [
           Icon(icon, size: 12, color: isPrimaryColor ? theme.colorScheme.primary : theme.hintColor),

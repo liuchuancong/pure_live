@@ -53,10 +53,9 @@ class FlutterExitApp {
   /// Only use [iosForceExit] when absolutely necessary.
   static Future<bool> exitApp({bool iosForceExit = false}) async {
     try {
-      final String? res = await channel.invokeMethod<String>(
-        ChannelName.exitApp,
-        <String, dynamic>{"killIosProcess": iosForceExit},
-      );
+      final String? res = await channel.invokeMethod<String>(ChannelName.exitApp, <String, dynamic>{
+        "killIosProcess": iosForceExit,
+      });
       return res == "Done";
     } on PlatformException {
       // Log error but return false to indicate failure

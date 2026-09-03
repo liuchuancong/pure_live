@@ -1,7 +1,9 @@
 import 'dart:ui' as ui;
+
 import '../../get.dart';
 import 'root/get_root.dart';
 import 'dialog/dialog_route.dart';
+
 import 'package:flutter/material.dart';
 import 'package:pure_live/common/style/app_text_styles.dart';
 import 'package:pure_live/get/get_navigation/src/routes/test_kit.dart';
@@ -98,7 +100,10 @@ extension ExtensionDialog on GetInterface {
       transitionDuration: transitionDuration ?? defaultDialogTransitionDuration,
       transitionBuilder: (context, animation, secondaryAnimation, child) {
         return FadeTransition(
-          opacity: CurvedAnimation(parent: animation, curve: transitionCurve ?? defaultDialogTransitionCurve),
+          opacity: CurvedAnimation(
+            parent: animation,
+            curve: transitionCurve ?? defaultDialogTransitionCurve,
+          ),
           child: child,
         );
       },
@@ -124,7 +129,10 @@ extension ExtensionDialog on GetInterface {
     final key = navigatorKey ?? Get.nestedKey(id)?.navigatorKey;
     final nav =
         key?.currentState ??
-        Navigator.of(overlayContext!, rootNavigator: true); //overlay context will always return the root navigator
+        Navigator.of(
+          overlayContext!,
+          rootNavigator: true,
+        ); //overlay context will always return the root navigator
     return nav.push<T>(
       GetDialogRoute<T>(
         pageBuilder: pageBuilder,
@@ -140,7 +148,7 @@ extension ExtensionDialog on GetInterface {
 
   /// Custom UI Dialog.
   Future<T?> defaultDialog<T>({
-    String title = "Alert",
+    String title = 'Alert',
     EdgeInsetsGeometry? titlePadding,
     TextStyle? titleStyle,
     Widget? content,
@@ -160,7 +168,7 @@ extension ExtensionDialog on GetInterface {
     Color? backgroundColor,
     bool barrierDismissible = true,
     Color? buttonColor,
-    String middleText = "\n",
+    String middleText = '\n',
     TextStyle? middleTextStyle,
     double radius = 20.0,
     //   ThemeData themeData,
@@ -186,7 +194,11 @@ extension ExtensionDialog on GetInterface {
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
               shape: RoundedRectangleBorder(
-                side: BorderSide(color: buttonColor ?? theme.colorScheme.secondary, width: 2, style: BorderStyle.solid),
+                side: BorderSide(
+                  color: buttonColor ?? theme.colorScheme.secondary,
+                  width: 2,
+                  style: BorderStyle.solid,
+                ),
                 borderRadius: BorderRadius.circular(radius),
               ),
             ),
@@ -198,8 +210,10 @@ extension ExtensionDialog on GetInterface {
               }
             },
             child: Text(
-              textCancel ?? "Cancel",
-              style: AppTextStyles.t14.copyWith(color: cancelTextColor ?? theme.colorScheme.secondary),
+              textCancel ?? 'Cancel',
+              style: AppTextStyles.t14.copyWith(
+                color: cancelTextColor ?? theme.colorScheme.secondary,
+              ),
             ),
           ),
         );
@@ -217,8 +231,10 @@ extension ExtensionDialog on GetInterface {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(radius)),
             ),
             child: Text(
-              textConfirm ?? "Ok",
-              style: AppTextStyles.t16.copyWith(color: confirmTextColor ?? theme.colorScheme.surface),
+              textConfirm ?? 'Ok',
+              style: AppTextStyles.t16.copyWith(
+                color: confirmTextColor ?? theme.colorScheme.surface,
+              ),
             ),
             onPressed: () {
               onConfirm?.call();
@@ -246,7 +262,12 @@ extension ExtensionDialog on GetInterface {
               ButtonTheme(
                 minWidth: 78.0,
                 height: 34.0,
-                child: Wrap(alignment: WrapAlignment.center, spacing: 8, runSpacing: 8, children: actions!),
+                child: Wrap(
+                  alignment: WrapAlignment.center,
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: actions!,
+                ),
               ),
             ],
           ),
@@ -414,13 +435,19 @@ extension ExtensionSnackbar on GetInterface {
           titleText ??
           Text(
             title,
-            style: TextStyle(color: colorText ?? iconColor ?? Colors.black, fontWeight: FontWeight.w800),
+            style: TextStyle(
+              color: colorText ?? iconColor ?? Colors.black,
+              fontWeight: FontWeight.w800,
+            ),
           ),
       messageText:
           messageText ??
           Text(
             message,
-            style: TextStyle(color: colorText ?? iconColor ?? Colors.black, fontWeight: FontWeight.w300),
+            style: TextStyle(
+              color: colorText ?? iconColor ?? Colors.black,
+              fontWeight: FontWeight.w300,
+            ),
           ),
       snackPosition: snackPosition ?? SnackPosition.top,
       borderRadius: borderRadius ?? 15,
@@ -510,7 +537,8 @@ extension GetNavigationExt on GetInterface {
     bool showCupertinoParallax = true,
     double Function(BuildContext context)? gestureWidth,
     bool rebuildStack = true,
-    PreventDuplicateHandlingMode preventDuplicateHandlingMode = PreventDuplicateHandlingMode.reorderRoutes,
+    PreventDuplicateHandlingMode preventDuplicateHandlingMode =
+        PreventDuplicateHandlingMode.reorderRoutes,
   }) {
     return searchDelegate(id).to(
       page,
@@ -584,9 +612,13 @@ extension GetNavigationExt on GetInterface {
       page = uri.toString();
     }
 
-    return searchDelegate(
-      id,
-    ).toNamed(page, arguments: arguments, id: id, preventDuplicates: preventDuplicates, parameters: parameters);
+    return searchDelegate(id).toNamed(
+      page,
+      arguments: arguments,
+      id: id,
+      preventDuplicates: preventDuplicates,
+      parameters: parameters,
+    );
   }
 
   /// **Navigation.pushReplacementNamed()** shortcut.<br><br>
@@ -605,7 +637,12 @@ extension GetNavigationExt on GetInterface {
   /// if you want to push anyway, set [preventDuplicates] to false
   ///
   /// Note: Always put a slash on the route ('/page1'), to avoid unexpected errors
-  Future<T?>? offNamed<T>(String page, {dynamic arguments, String? id, Map<String, String>? parameters}) {
+  Future<T?>? offNamed<T>(
+    String page, {
+    dynamic arguments,
+    String? id,
+    Map<String, String>? parameters,
+  }) {
     // if (preventDuplicates && page == currentRoute) {
     //   return null;
     // }
@@ -672,9 +709,13 @@ extension GetNavigationExt on GetInterface {
       page = uri.toString();
     }
 
-    return searchDelegate(
-      id,
-    ).offNamedUntil<T>(page, predicate: predicate, id: id, arguments: arguments, parameters: parameters);
+    return searchDelegate(id).offNamedUntil<T>(
+      page,
+      predicate: predicate,
+      id: id,
+      arguments: arguments,
+      parameters: parameters,
+    );
   }
 
   /// **Navigation.popAndPushNamed()** shortcut.<br><br>
@@ -800,7 +841,13 @@ extension GetNavigationExt on GetInterface {
   ///
   /// It has the advantage of not needing context, so you can call
   /// from your business logic.
-  void backLegacy<T>({T? result, bool closeOverlays = false, bool canPop = true, int times = 1, String? id}) {
+  void backLegacy<T>({
+    T? result,
+    bool closeOverlays = false,
+    bool canPop = true,
+    int times = 1,
+    String? id,
+  }) {
     if (closeOverlays) {
       closeAllOverlays();
     }
@@ -936,7 +983,7 @@ extension GetNavigationExt on GetInterface {
     Duration? duration,
     double Function(BuildContext context)? gestureWidth,
   }) {
-    routeName ??= "/${page.runtimeType.toString()}";
+    routeName ??= '/${page.runtimeType.toString()}';
     routeName = _cleanRouteName(routeName);
     if (preventDuplicates && routeName == currentRoute) {
       return null;
@@ -958,7 +1005,12 @@ extension GetNavigationExt on GetInterface {
     );
   }
 
-  Future<T?> offUntil<T>(Widget Function() page, bool Function(GetPage) predicate, [Object? arguments, String? id]) {
+  Future<T?> offUntil<T>(
+    Widget Function() page,
+    bool Function(GetPage) predicate, [
+    Object? arguments,
+    String? id,
+  ]) {
     return searchDelegate(id).offUntil(page, predicate, arguments);
   }
 
@@ -1007,7 +1059,7 @@ extension GetNavigationExt on GetInterface {
     Duration? duration,
     double Function(BuildContext context)? gestureWidth,
   }) {
-    routeName ??= "/${page.runtimeType.toString()}";
+    routeName ??= '/${page.runtimeType.toString()}';
     routeName = _cleanRouteName(routeName);
     return searchDelegate(id).offAll<T>(
       page,
@@ -1196,7 +1248,8 @@ extension GetNavigationExt on GetInterface {
   bool get isDarkMode => (theme.brightness == Brightness.dark);
 
   /// Check if dark mode theme is enable on platform on android Q+
-  bool get isPlatformDarkMode => (ui.PlatformDispatcher.instance.platformBrightness == Brightness.dark);
+  bool get isPlatformDarkMode =>
+      (ui.PlatformDispatcher.instance.platformBrightness == Brightness.dark);
 
   /// give access to Theme.of(context).iconTheme.color
   Color? get iconColor => theme.iconTheme.color;
@@ -1272,7 +1325,8 @@ extension GetNavigationExt on GetInterface {
   }
 
   /// Casts the stored router delegate to a desired type
-  TDelegate? delegate<TDelegate extends RouterDelegate<TPage>, TPage>() => _getxController.routerDelegate as TDelegate?;
+  TDelegate? delegate<TDelegate extends RouterDelegate<TPage>, TPage>() =>
+      _getxController.routerDelegate as TDelegate?;
 }
 
 extension OverlayExt on GetInterface {
@@ -1295,7 +1349,8 @@ extension OverlayExt on GetInterface {
     );
     final overlayEntryLoader = OverlayEntry(
       builder: (context) {
-        return loadingWidget ?? const Center(child: SizedBox(height: 90, width: 90, child: Text('Loading...')));
+        return loadingWidget ??
+            const Center(child: SizedBox(height: 90, width: 90, child: Text('Loading...')));
       },
     );
     overlayState.insert(overlayEntryOpacity);

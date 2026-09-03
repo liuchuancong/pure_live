@@ -32,9 +32,7 @@ void main() {
     Get.put<SettingsService>(_TestSettingsService(DanmakuSettingsController()));
   });
 
-  tearDown(() {
-    Get.reset();
-  });
+  tearDown(Get.reset);
 
   tearDownAll(() async {
     await Hive.close();
@@ -170,7 +168,9 @@ class _TestAssetLoader extends AssetLoader {
 }
 
 class _TestSettingsService extends SettingsService {
-  _TestSettingsService(this._danmaku) : _app = AppSettingsController(), _font = FontSettingsController();
+  _TestSettingsService(this._danmaku)
+    : _app = AppSettingsController(),
+      _font = FontSettingsController();
 
   final DanmakuSettingsController _danmaku;
   final AppSettingsController _app;

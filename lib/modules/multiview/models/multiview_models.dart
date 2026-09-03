@@ -90,7 +90,8 @@ class MultiviewRoomOffline implements Exception {
   final LiveRoom room;
 
   @override
-  String toString() => 'MultiviewRoomOffline(${room.identityKey}, ${room.effectiveLiveStatus.name})';
+  String toString() =>
+      'MultiviewRoomOffline(${room.identityKey}, ${room.effectiveLiveStatus.name})';
 }
 
 /// 单格失败种类。

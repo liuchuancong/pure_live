@@ -71,7 +71,8 @@ class RoomCardRenderer {
 
   bool get showDebugFlash => debug;
 
-  bool get showInfoSection => debug || config.showAvatar || config.showSubtitle || config.showPlatform;
+  bool get showInfoSection =>
+      debug || config.showAvatar || config.showSubtitle || config.showPlatform;
 
   bool get showPlatformTag => showPlatform;
 
@@ -209,10 +210,18 @@ class RoomCardRenderer {
       color: config.cardBackground ?? colorScheme.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(config.cardBorderRadius.clamp(10.0, 24.0).toDouble()),
-        side: BorderSide(color: colorScheme.outline.withValues(alpha: isDark ? 0.08 : 0.06), width: 0.6),
+        side: BorderSide(
+          color: colorScheme.outline.withValues(alpha: isDark ? 0.08 : 0.06),
+          width: 0.6,
+        ),
       ),
       clipBehavior: Clip.antiAlias,
-      child: InkWell(onTap: onTap, onLongPress: onLongPress, onSecondaryTap: onLongPress, child: content),
+      child: InkWell(
+        onTap: onTap,
+        onLongPress: onLongPress,
+        onSecondaryTap: onLongPress,
+        child: content,
+      ),
     );
   }
 
@@ -222,7 +231,10 @@ class RoomCardRenderer {
     if (showStatusPending) {
       children.add(
         Container(
-          padding: EdgeInsets.symmetric(horizontal: effectiveDense ? 8 : 10, vertical: effectiveDense ? 4 : 6),
+          padding: EdgeInsets.symmetric(
+            horizontal: effectiveDense ? 8 : 10,
+            vertical: effectiveDense ? 4 : 6,
+          ),
           decoration: BoxDecoration(
             color: Colors.orange.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(8),
@@ -238,7 +250,11 @@ class RoomCardRenderer {
               const SizedBox(width: 6),
               Text(
                 statusPendingLabel ?? i18n('favorite_status_verifying'),
-                style: TextStyle(fontSize: effectiveDense ? 10 : 12, color: Colors.orange, fontWeight: FontWeight.w500),
+                style: TextStyle(
+                  fontSize: effectiveDense ? 10 : 12,
+                  color: Colors.orange,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ],
           ),
@@ -249,8 +265,14 @@ class RoomCardRenderer {
     } else if (showLiveBadge && !debug) {
       children.add(
         Container(
-          padding: EdgeInsets.symmetric(horizontal: effectiveDense ? 8 : 10, vertical: effectiveDense ? 4 : 6),
-          decoration: BoxDecoration(color: Colors.green.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(8)),
+          padding: EdgeInsets.symmetric(
+            horizontal: effectiveDense ? 8 : 10,
+            vertical: effectiveDense ? 4 : 6,
+          ),
+          decoration: BoxDecoration(
+            color: Colors.green.withValues(alpha: 0.2),
+            borderRadius: BorderRadius.circular(8),
+          ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -262,7 +284,11 @@ class RoomCardRenderer {
               const SizedBox(width: 6),
               Text(
                 i18n('live'),
-                style: TextStyle(fontSize: effectiveDense ? 10 : 12, color: Colors.green, fontWeight: FontWeight.w500),
+                style: TextStyle(
+                  fontSize: effectiveDense ? 10 : 12,
+                  color: Colors.green,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ],
           ),
@@ -282,7 +308,9 @@ class RoomCardRenderer {
           child: Container(
             padding: EdgeInsets.all(config.deleteButtonPadding),
             decoration: BoxDecoration(
-              color: config.deleteButtonBackgroundColor ?? Colors.black.withValues(alpha: isDark ? 0.24 : 0.10),
+              color:
+                  config.deleteButtonBackgroundColor ??
+                  Colors.black.withValues(alpha: isDark ? 0.24 : 0.10),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -299,7 +327,11 @@ class RoomCardRenderer {
       return const SizedBox.shrink();
     }
 
-    return Row(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.center, children: children);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: children,
+    );
   }
 
   Widget _buildPlatformTag(BuildContext context) {
@@ -333,7 +365,10 @@ class RoomCardRenderer {
 
     final id = platform.trim().toLowerCase();
 
-    final site = Sites.supportSites.firstWhere((e) => e.id == id, orElse: () => Sites.supportSites.first);
+    final site = Sites.supportSites.firstWhere(
+      (e) => e.id == id,
+      orElse: () => Sites.supportSites.first,
+    );
 
     return Container(
       padding: EdgeInsets.symmetric(
@@ -384,7 +419,9 @@ class RoomCardRenderer {
           fit: StackFit.expand,
           children: [
             ColoredBox(
-              color: config.coverPlaceholderColor ?? (isDark ? Colors.grey[850]! : Colors.grey.shade100),
+              color:
+                  config.coverPlaceholderColor ??
+                  (isDark ? Colors.grey[850]! : Colors.grey.shade100),
               child: _buildCoverImage(context, isDark, effectiveDense),
             ),
 
@@ -397,7 +434,9 @@ class RoomCardRenderer {
 
             if (showRecordBadge)
               Positioned(
-                right: showDeleteButton ? config.coverPositionPadding + 32 : config.coverPositionPadding,
+                right: showDeleteButton
+                    ? config.coverPositionPadding + 32
+                    : config.coverPositionPadding,
                 top: config.coverPositionPadding,
                 child: CountChip(
                   icon: Icons.videocam_rounded,
@@ -407,8 +446,12 @@ class RoomCardRenderer {
                   textColor: config.chipTextColor,
                   fontSize: effectiveDense ? config.denseChipFontSize : config.chipFontSize,
                   fontWeight: config.chipFontWeight,
-                  horizontalPadding: effectiveDense ? config.denseChipHorizontalPadding : config.chipHorizontalPadding,
-                  verticalPadding: effectiveDense ? config.denseChipVerticalPadding : config.chipVerticalPadding,
+                  horizontalPadding: effectiveDense
+                      ? config.denseChipHorizontalPadding
+                      : config.chipHorizontalPadding,
+                  verticalPadding: effectiveDense
+                      ? config.denseChipVerticalPadding
+                      : config.chipVerticalPadding,
                 ),
               ),
 
@@ -441,11 +484,15 @@ class RoomCardRenderer {
                   textColor: config.metricTextColor,
                   fontSize: effectiveDense ? config.denseMetricFontSize : config.metricFontSize,
                   fontWeight: config.metricFontWeight,
-                  borderRadius: effectiveDense ? config.denseMetricBorderRadius : config.metricBorderRadius,
+                  borderRadius: effectiveDense
+                      ? config.denseMetricBorderRadius
+                      : config.metricBorderRadius,
                   horizontalPadding: effectiveDense
                       ? config.denseMetricHorizontalPadding
                       : config.metricHorizontalPadding,
-                  verticalPadding: effectiveDense ? config.denseMetricVerticalPadding : config.metricVerticalPadding,
+                  verticalPadding: effectiveDense
+                      ? config.denseMetricVerticalPadding
+                      : config.metricVerticalPadding,
                 ),
               )
             else if (showAudienceBadge)
@@ -485,7 +532,9 @@ class RoomCardRenderer {
   Widget _buildAssetCover(BuildContext context, String asset, bool isDark, bool effectiveDense) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final width = constraints.maxWidth.isFinite ? constraints.maxWidth : MediaQuery.sizeOf(context).width / 2;
+        final width = constraints.maxWidth.isFinite
+            ? constraints.maxWidth
+            : MediaQuery.sizeOf(context).width / 2;
 
         final cacheWidth = (width * MediaQuery.devicePixelRatioOf(context))
             .round()
@@ -507,13 +556,20 @@ class RoomCardRenderer {
     );
   }
 
-  Widget _buildCachedCover(BuildContext context, String coverUrl, bool isDark, bool effectiveDense) {
+  Widget _buildCachedCover(
+    BuildContext context,
+    String coverUrl,
+    bool isDark,
+    bool effectiveDense,
+  ) {
     return Obx(() {
       final epoch = SettingsService.to.cache.imageCacheEpoch.value;
 
       return LayoutBuilder(
         builder: (context, constraints) {
-          final width = constraints.maxWidth.isFinite ? constraints.maxWidth : MediaQuery.sizeOf(context).width / 2;
+          final width = constraints.maxWidth.isFinite
+              ? constraints.maxWidth
+              : MediaQuery.sizeOf(context).width / 2;
 
           final cacheWidth = (width * MediaQuery.devicePixelRatioOf(context))
               .round()
@@ -544,10 +600,17 @@ class RoomCardRenderer {
     });
   }
 
-  Widget _buildDirectCover(BuildContext context, String coverUrl, bool isDark, bool effectiveDense) {
+  Widget _buildDirectCover(
+    BuildContext context,
+    String coverUrl,
+    bool isDark,
+    bool effectiveDense,
+  ) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final width = constraints.maxWidth.isFinite ? constraints.maxWidth : MediaQuery.sizeOf(context).width / 2;
+        final width = constraints.maxWidth.isFinite
+            ? constraints.maxWidth
+            : MediaQuery.sizeOf(context).width / 2;
 
         final cacheWidth = (width * MediaQuery.devicePixelRatioOf(context))
             .round()
@@ -579,14 +642,20 @@ class RoomCardRenderer {
   Widget _coverPlaceholder(BuildContext context, bool isDark) {
     return Container(
       color: config.coverPlaceholderColor ?? (isDark ? Colors.grey.shade900 : Colors.grey.shade100),
-      child: Center(child: Icon(Icons.live_tv_rounded, size: 24, color: isDark ? Colors.white24 : Colors.black12)),
+      child: Center(
+        child: Icon(
+          Icons.live_tv_rounded,
+          size: 24,
+          color: isDark ? Colors.white24 : Colors.black12,
+        ),
+      ),
     );
   }
 
   Widget _coverFallback(BuildContext context, bool isDark) {
     return Container(
       color: config.coverFallbackColor ?? (isDark ? Colors.grey.shade900 : Colors.grey.shade100),
-      child: AppStatusView(type: AppStatusType.error, title: '', subtitle: '', isMini: true),
+      child: const AppStatusView(type: AppStatusType.error, title: '', subtitle: '', isMini: true),
     );
   }
 
@@ -598,9 +667,15 @@ class RoomCardRenderer {
 
       final platformEnabled = app.isRealOnlineEnabledFor(room.platform);
 
-      final type = room.audienceType(preferRealOnline: preferReal, platformEnabled: platformEnabled);
+      final type = room.audienceType(
+        preferRealOnline: preferReal,
+        platformEnabled: platformEnabled,
+      );
 
-      final value = room.audienceValue(preferRealOnline: preferReal, platformEnabled: platformEnabled);
+      final value = room.audienceValue(
+        preferRealOnline: preferReal,
+        platformEnabled: platformEnabled,
+      );
 
       final labelKey = switch (type) {
         AudienceMetricType.popularity => 'audience_popularity',
@@ -632,8 +707,12 @@ class RoomCardRenderer {
         fontSize: effectiveDense ? config.denseMetricFontSize : config.metricFontSize,
         fontWeight: config.metricFontWeight,
         borderRadius: effectiveDense ? config.denseMetricBorderRadius : config.metricBorderRadius,
-        horizontalPadding: effectiveDense ? config.denseMetricHorizontalPadding : config.metricHorizontalPadding,
-        verticalPadding: effectiveDense ? config.denseMetricVerticalPadding : config.metricVerticalPadding,
+        horizontalPadding: effectiveDense
+            ? config.denseMetricHorizontalPadding
+            : config.metricHorizontalPadding,
+        verticalPadding: effectiveDense
+            ? config.denseMetricVerticalPadding
+            : config.metricVerticalPadding,
       );
     });
   }
@@ -655,7 +734,12 @@ class RoomCardRenderer {
   }
 
   Widget _buildInfo(BuildContext context, bool isDark, bool effectiveDense) {
-    double safeSize(double value, {required double min, required double max, required double fallback}) {
+    double safeSize(
+      double value, {
+      required double min,
+      required double max,
+      required double fallback,
+    }) {
       if (!value.isFinite) {
         return fallback;
       }
@@ -724,7 +808,10 @@ class RoomCardRenderer {
     );
 
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: contentHorizontalPadding, vertical: contentVerticalPadding),
+      padding: EdgeInsets.symmetric(
+        horizontal: contentHorizontalPadding,
+        vertical: contentVerticalPadding,
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -746,10 +833,20 @@ class RoomCardRenderer {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(room.title ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: titleStyle),
+                Text(
+                  room.title ?? '',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: titleStyle,
+                ),
                 if (showSubtitle) ...[
                   SizedBox(height: effectiveDense ? 2 : 3),
-                  Text(room.nick ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: subtitleStyle),
+                  Text(
+                    room.nick ?? '',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: subtitleStyle,
+                  ),
                 ],
               ],
             ),
@@ -864,7 +961,11 @@ class CountChip extends StatelessWidget {
             const SizedBox(width: 4),
             Text(
               count,
-              style: TextStyle(fontSize: fontSize ?? (dense ? 12 : 13), color: textColor, fontWeight: fontWeight),
+              style: TextStyle(
+                fontSize: fontSize ?? (dense ? 12 : 13),
+                color: textColor,
+                fontWeight: fontWeight,
+              ),
             ),
           ],
         ),
@@ -928,7 +1029,10 @@ class CoverMetricBadge extends StatelessWidget {
           decoration: BoxDecoration(
             color: background,
             borderRadius: BorderRadius.circular(borderRadius ?? (dense ? 10 : 12)),
-            border: Border.all(color: borderColor ?? theme.primaryColor.withValues(alpha: 0.12), width: borderWidth),
+            border: Border.all(
+              color: borderColor ?? theme.primaryColor.withValues(alpha: 0.12),
+              width: borderWidth,
+            ),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,

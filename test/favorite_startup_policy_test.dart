@@ -33,12 +33,21 @@ void main() {
     expect(pending.title, original.title);
     expect(pending.cover, original.cover);
     expect(pending.tagIds, original.tagIds);
-    expect(original.liveStatus, LiveStatus.live, reason: 'the persisted input is not mutated in place');
+    expect(
+      original.liveStatus,
+      LiveStatus.live,
+      reason: 'the persisted input is not mutated in place',
+    );
   });
 
   test('verification preview preserves card buckets without claiming cached status is current', () {
     final online = LiveRoom(roomId: '100', platform: 'bilibili', liveStatus: LiveStatus.live);
-    final replay = LiveRoom(roomId: '200', platform: 'huya', liveStatus: LiveStatus.live, isRecord: true);
+    final replay = LiveRoom(
+      roomId: '200',
+      platform: 'huya',
+      liveStatus: LiveStatus.live,
+      isRecord: true,
+    );
     final offline = LiveRoom(roomId: '300', platform: 'douyu', liveStatus: LiveStatus.offline);
 
     final preview = buildFavoriteVerificationPreview([online, replay, offline]);
@@ -74,7 +83,10 @@ void main() {
 
     final result = mergeFavoriteRoomUpdates(
       [kept],
-      {favoriteRoomIdentity(refreshed): refreshed, favoriteRoomIdentity(removedResponse): removedResponse},
+      {
+        favoriteRoomIdentity(refreshed): refreshed,
+        favoriteRoomIdentity(removedResponse): removedResponse,
+      },
     );
 
     expect(result.changed, isTrue);
@@ -104,7 +116,10 @@ void main() {
 
   test('refresh merge keeps object identity when no response matches', () {
     final current = LiveRoom(roomId: '100', platform: 'bilibili');
-    final result = mergeFavoriteRoomUpdates([current], {'huya:200': LiveRoom(roomId: '200', platform: 'huya')});
+    final result = mergeFavoriteRoomUpdates(
+      [current],
+      {'huya:200': LiveRoom(roomId: '200', platform: 'huya')},
+    );
 
     expect(result.changed, isFalse);
     expect(result.rooms.single, same(current));
@@ -118,7 +133,12 @@ void main() {
       liveStatus: LiveStatus.live,
       tagIds: const ['sleep'],
     );
-    final second = LiveRoom(roomId: '200', platform: 'huya', title: 'old second', liveStatus: LiveStatus.live);
+    final second = LiveRoom(
+      roomId: '200',
+      platform: 'huya',
+      title: 'old second',
+      liveStatus: LiveStatus.live,
+    );
     final firstUpdate = LiveRoom(
       roomId: '100',
       platform: 'bilibili',
@@ -126,7 +146,10 @@ void main() {
       liveStatus: LiveStatus.live,
     );
 
-    final verified = buildVerifiedFavoriteSnapshot([first, second], {favoriteRoomIdentity(firstUpdate): firstUpdate});
+    final verified = buildVerifiedFavoriteSnapshot(
+      [first, second],
+      {favoriteRoomIdentity(firstUpdate): firstUpdate},
+    );
 
     expect(verified, hasLength(2));
     expect(verified[0].title, 'fresh first');
@@ -159,7 +182,12 @@ void main() {
       status: true,
       liveStatus: LiveStatus.live,
     );
-    final fresh = LiveRoom(roomId: '100', platform: 'bilibili', title: 'fresh success', liveStatus: LiveStatus.offline);
+    final fresh = LiveRoom(
+      roomId: '100',
+      platform: 'bilibili',
+      title: 'fresh success',
+      liveStatus: LiveStatus.offline,
+    );
 
     final merged = mergeAuthoritativeFavoriteRefresh(
       [requestedSuccess, requestedFailure, unrelated],
@@ -174,6 +202,10 @@ void main() {
     expect(merged.rooms[1].title, 'old failure');
     expect(merged.rooms[1].liveStatus, LiveStatus.unknown);
     expect(merged.rooms[1].status, isFalse);
-    expect(merged.rooms[2], same(unrelated), reason: 'another platform was not part of this refresh');
+    expect(
+      merged.rooms[2],
+      same(unrelated),
+      reason: 'another platform was not part of this refresh',
+    );
   });
 }

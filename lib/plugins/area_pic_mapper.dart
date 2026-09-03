@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:pure_live/model/live_category.dart';
 import 'package:string_similarity/string_similarity.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
@@ -143,7 +144,11 @@ class AreaPicMapper {
   }
 
   static List<String> _tokenizeQuery(String query) {
-    return query.toLowerCase().split(RegExp(r'[\s,;|：:_—\-]+')).where((t) => t.isNotEmpty && t.length > 1).toList();
+    return query
+        .toLowerCase()
+        .split(RegExp(r'[\s,;|：:_—\-]+'))
+        .where((t) => t.isNotEmpty && t.length > 1)
+        .toList();
   }
 
   static String _buildSearchBlob(List<String?> fields) {

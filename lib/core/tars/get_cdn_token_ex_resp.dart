@@ -1,10 +1,10 @@
-﻿import 'package:pure_live/pkg/tars/codec/tars_struct.dart';
+import 'package:pure_live/pkg/tars/codec/tars_struct.dart';
 import 'package:pure_live/pkg/tars/codec/tars_displayer.dart';
 import 'package:pure_live/pkg/tars/codec/tars_input_stream.dart';
 import 'package:pure_live/pkg/tars/codec/tars_output_stream.dart';
 
 class GetCdnTokenExResp extends TarsStruct {
-  String sFlvToken = ""; //tag 0
+  String sFlvToken = ''; //tag 0
   int iExpireTime = 0; //tag 1
 
   @override
@@ -27,9 +27,9 @@ class GetCdnTokenExResp extends TarsStruct {
   }
 
   @override
-  displayAsString(StringBuffer sb, int level) {
+  void displayAsString(StringBuffer sb, int level) {
     TarsDisplayer tarsDisplayer = TarsDisplayer(sb, level: level);
-    tarsDisplayer.DisplayString(sFlvToken, "sFlvToken");
-    tarsDisplayer.DisplayInt(iExpireTime, "iExpireTime");
+    tarsDisplayer.DisplayString(sFlvToken, 'sFlvToken');
+    tarsDisplayer.DisplayInt(iExpireTime, 'iExpireTime');
   }
 }

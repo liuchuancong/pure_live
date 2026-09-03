@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:flutter_json/flutter_json.dart';
@@ -31,7 +32,10 @@ class _UserDetailConfigMainPageState extends State<UserDetailConfigMainPage> {
 
   Future<void> _loadUserData() async {
     try {
-      final docSnap = await FirebaseFirestore.instance.collection('users').doc(widget.documentId).get();
+      final docSnap = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(widget.documentId)
+          .get();
 
       if (!docSnap.exists) {
         throw Exception(i18n('user_not_found'));
@@ -84,7 +88,7 @@ class _UserDetailConfigMainPageState extends State<UserDetailConfigMainPage> {
     if (_isLoading) {
       return Scaffold(
         appBar: AppBar(),
-        body: Center(child: AppStatusView(type: AppStatusType.loading)),
+        body: const Center(child: AppStatusView(type: AppStatusType.loading)),
       );
     }
 
@@ -100,7 +104,9 @@ class _UserDetailConfigMainPageState extends State<UserDetailConfigMainPage> {
     final createDt = _userModel!.createdAt.toDate();
     final createTimeStr = DateFormat('yyyy-MM-dd HH:mm:ss').format(createDt);
     final syncTimeStr = _userModel!.updateAt ?? i18n('never_sync');
-    final verText = _userModel!.version != null ? 'v${_userModel!.version}' : i18n('unknown_version');
+    final verText = _userModel!.version != null
+        ? 'v${_userModel!.version}'
+        : i18n('unknown_version');
 
     return Scaffold(
       backgroundColor: theme.colorScheme.surfaceContainerLowest,
@@ -123,7 +129,10 @@ class _UserDetailConfigMainPageState extends State<UserDetailConfigMainPage> {
                   decoration: BoxDecoration(
                     color: theme.colorScheme.surface,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: theme.dividerColor.withValues(alpha: 0.15), width: 0.5),
+                    border: Border.all(
+                      color: theme.dividerColor.withValues(alpha: 0.15),
+                      width: 0.5,
+                    ),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -155,7 +164,10 @@ class _UserDetailConfigMainPageState extends State<UserDetailConfigMainPage> {
                                 Row(
                                   children: [
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 6,
+                                        vertical: 2,
+                                      ),
                                       decoration: BoxDecoration(
                                         color: theme.colorScheme.secondaryContainer,
                                         borderRadius: BorderRadius.circular(6),
@@ -180,7 +192,12 @@ class _UserDetailConfigMainPageState extends State<UserDetailConfigMainPage> {
                         height: 0.5,
                         color: theme.dividerColor.withValues(alpha: 0.2),
                       ),
-                      _buildCompactMeta(Remix.time_line, i18n('created_time'), createTimeStr, theme),
+                      _buildCompactMeta(
+                        Remix.time_line,
+                        i18n('created_time'),
+                        createTimeStr,
+                        theme,
+                      ),
                       const SizedBox(height: 10),
                       _buildCompactMeta(Remix.refresh_line, i18n('sync_time'), syncTimeStr, theme),
                       const SizedBox(height: 10),
@@ -251,7 +268,10 @@ class _UserDetailConfigMainPageState extends State<UserDetailConfigMainPage> {
                                 Row(
                                   children: [
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 6,
+                                        vertical: 2,
+                                      ),
                                       decoration: BoxDecoration(
                                         color: theme.colorScheme.secondaryContainer,
                                         borderRadius: BorderRadius.circular(6),
@@ -286,7 +306,12 @@ class _UserDetailConfigMainPageState extends State<UserDetailConfigMainPage> {
                           Row(
                             children: [
                               Expanded(
-                                child: _buildCompactMeta(Remix.time_line, i18n('created_time'), createTimeStr, theme),
+                                child: _buildCompactMeta(
+                                  Remix.time_line,
+                                  i18n('created_time'),
+                                  createTimeStr,
+                                  theme,
+                                ),
                               ),
                               const SizedBox(width: 8),
                               Expanded(
@@ -304,7 +329,12 @@ class _UserDetailConfigMainPageState extends State<UserDetailConfigMainPage> {
                           Row(
                             children: [
                               Expanded(
-                                child: _buildCompactMeta(Remix.refresh_line, i18n('sync_time'), syncTimeStr, theme),
+                                child: _buildCompactMeta(
+                                  Remix.refresh_line,
+                                  i18n('sync_time'),
+                                  syncTimeStr,
+                                  theme,
+                                ),
                               ),
                               const SizedBox(width: 8),
                               Expanded(
@@ -348,7 +378,7 @@ class _UserDetailConfigMainPageState extends State<UserDetailConfigMainPage> {
                 border: Border.all(color: theme.dividerColor.withValues(alpha: 0.3), width: 0.5),
               ),
               child: _parsedBackupMap.isEmpty
-                  ? Center(child: AppStatusView(type: AppStatusType.empty))
+                  ? const Center(child: AppStatusView(type: AppStatusType.empty))
                   : JsonWidget(json: _parsedBackupMap, initialExpandDepth: 2),
             ),
           ),
@@ -357,10 +387,19 @@ class _UserDetailConfigMainPageState extends State<UserDetailConfigMainPage> {
     );
   }
 
-  Widget _buildCompactMeta(IconData icon, String label, String value, ThemeData theme, {bool isPrimaryColor = false}) {
+  Widget _buildCompactMeta(
+    IconData icon,
+    String label,
+    String value,
+    ThemeData theme, {
+    bool isPrimaryColor = false,
+  }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-      decoration: BoxDecoration(color: theme.colorScheme.surfaceContainerLow, borderRadius: BorderRadius.circular(10)),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(10),
+      ),
       child: Row(
         children: [
           Icon(icon, size: 12, color: isPrimaryColor ? theme.colorScheme.primary : theme.hintColor),

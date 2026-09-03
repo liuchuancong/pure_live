@@ -13,10 +13,10 @@ class VersionPage extends GetView<VersionController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(i18n("version_update"))),
+      appBar: AppBar(title: Text(i18n('version_update'))),
       body: Obx(() {
         if (controller.loading.value) {
-          return AppStatusView(type: AppStatusType.loading, title: "", subtitle: "");
+          return const AppStatusView(type: AppStatusType.loading, title: '', subtitle: '');
         }
 
         return ListView(
@@ -26,19 +26,27 @@ class VersionPage extends GetView<VersionController> {
             if (PlatformUtils.isAndroid) ...[
               _buildPlatformCard(
                 context,
-                title: "Android",
-                subtitle: i18n("android_desc"),
+                title: 'Android',
+                subtitle: i18n('android_desc'),
                 icon: Remix.android_line,
                 children: [
-                  _buildDownloadSection(context, title: i18n("arch_arm64"), urls: controller.androidArm64Url.value),
+                  _buildDownloadSection(
+                    context,
+                    title: i18n('arch_arm64'),
+                    urls: controller.androidArm64Url.value,
+                  ),
                   const SizedBox(height: 16),
                   _buildDownloadSection(
                     context,
-                    title: i18n("arch_arm32"),
+                    title: i18n('arch_arm32'),
                     urls: controller.androidArmeabiV7aUrl.value,
                   ),
                   const SizedBox(height: 16),
-                  _buildDownloadSection(context, title: i18n("arch_x86_64"), urls: controller.androidX8664Url.value),
+                  _buildDownloadSection(
+                    context,
+                    title: i18n('arch_x86_64'),
+                    urls: controller.androidX8664Url.value,
+                  ),
                 ],
               ),
               const SizedBox(height: 24),
@@ -46,23 +54,27 @@ class VersionPage extends GetView<VersionController> {
             if (PlatformUtils.isWindows) ...[
               _buildPlatformCard(
                 context,
-                title: "Windows",
-                subtitle: i18n("windows_desc"),
+                title: 'Windows',
+                subtitle: i18n('windows_desc'),
                 icon: Remix.windows_line,
                 children: [
-                  _buildDownloadSection(context, title: i18n("exe_installer"), urls: controller.windowsSetupUrl.value),
+                  _buildDownloadSection(
+                    context,
+                    title: i18n('exe_installer'),
+                    urls: controller.windowsSetupUrl.value,
+                  ),
                   const SizedBox(height: 16),
                   if (controller.windowsMsixUrl.value.isNotEmpty) ...[
                     _buildDownloadSection(
                       context,
-                      title: i18n("msix_installer"),
+                      title: i18n('msix_installer'),
                       urls: controller.windowsMsixUrl.value,
                     ),
                     const SizedBox(height: 16),
                   ],
                   _buildDownloadSection(
                     context,
-                    title: i18n("portable_package"),
+                    title: i18n('portable_package'),
                     urls: controller.windowsPortableUrl.value,
                   ),
                 ],
@@ -72,21 +84,25 @@ class VersionPage extends GetView<VersionController> {
             if (PlatformUtils.isMacOS) ...[
               _buildPlatformCard(
                 context,
-                title: "macOS",
-                subtitle: i18n("macos_desc"),
+                title: 'macOS',
+                subtitle: i18n('macos_desc'),
                 icon: Remix.macbook_line,
                 children: [
-                  _buildDownloadSection(context, title: i18n("macos_package"), urls: controller.macosUrl.value),
+                  _buildDownloadSection(
+                    context,
+                    title: i18n('macos_package'),
+                    urls: controller.macosUrl.value,
+                  ),
                 ],
               ),
               const SizedBox(height: 20),
             ],
 
-            context.buildGroupTitle(i18n("update_log")),
+            context.buildGroupTitle(i18n('update_log')),
             const SizedBox(height: 8),
             context.buildModernCard([
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                 child: SizedBox(
                   width: double.infinity,
                   child: Column(
@@ -100,7 +116,9 @@ class VersionPage extends GetView<VersionController> {
                             final textTheme = theme.textTheme;
                             final isDark = theme.brightness == Brightness.dark;
 
-                            final baseConfig = isDark ? MarkdownConfig.darkConfig : MarkdownConfig.defaultConfig;
+                            final baseConfig = isDark
+                                ? MarkdownConfig.darkConfig
+                                : MarkdownConfig.defaultConfig;
 
                             return MarkdownBlock(
                               data: VersionUtil.latestUpdateLog,
@@ -172,7 +190,12 @@ class VersionPage extends GetView<VersionController> {
                     children: [
                       Text(title, style: AppTextStyles.t16.copyWith(fontWeight: FontWeight.bold)),
                       const SizedBox(height: 2),
-                      Text(subtitle, style: AppTextStyles.t12.copyWith(color: theme.hintColor.withValues(alpha: 0.8))),
+                      Text(
+                        subtitle,
+                        style: AppTextStyles.t12.copyWith(
+                          color: theme.hintColor.withValues(alpha: 0.8),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -186,7 +209,11 @@ class VersionPage extends GetView<VersionController> {
     ]);
   }
 
-  Widget _buildDownloadSection(BuildContext context, {required String title, required String urls}) {
+  Widget _buildDownloadSection(
+    BuildContext context, {
+    required String title,
+    required String urls,
+  }) {
     final githubOriginOnly = SettingsService.to.app.useGitHubOriginForUpdates.v;
     final List<String> mirrorUrls = getMirrorUrls(urls, githubOriginOnly: githubOriginOnly);
 
@@ -237,8 +264,13 @@ class VersionPage extends GetView<VersionController> {
                               foregroundColor: theme.colorScheme.onSurfaceVariant,
                               padding: const EdgeInsets.symmetric(horizontal: 8),
                               // Subtle border matching your design specs
-                              side: BorderSide(color: theme.dividerColor.withValues(alpha: 0.08), width: 1),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              side: BorderSide(
+                                color: theme.dividerColor.withValues(alpha: 0.08),
+                                width: 1,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
                             ).copyWith(
                               backgroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
                                 if (states.contains(WidgetState.pressed)) {
@@ -250,16 +282,24 @@ class VersionPage extends GetView<VersionController> {
                                 return theme.colorScheme.surfaceContainerLow;
                               }),
                               foregroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
-                                if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
+                                if (states.contains(WidgetState.hovered) ||
+                                    states.contains(WidgetState.pressed)) {
                                   return theme.colorScheme.primary;
                                 }
                                 return theme.colorScheme.onSurfaceVariant;
                               }),
                               side: WidgetStateProperty.resolveWith<BorderSide?>((states) {
-                                if (states.contains(WidgetState.hovered) || states.contains(WidgetState.pressed)) {
-                                  return BorderSide(color: theme.colorScheme.primary.withValues(alpha: 0.3), width: 1);
+                                if (states.contains(WidgetState.hovered) ||
+                                    states.contains(WidgetState.pressed)) {
+                                  return BorderSide(
+                                    color: theme.colorScheme.primary.withValues(alpha: 0.3),
+                                    width: 1,
+                                  );
                                 }
-                                return BorderSide(color: theme.dividerColor.withValues(alpha: 0.08), width: 1);
+                                return BorderSide(
+                                  color: theme.dividerColor.withValues(alpha: 0.08),
+                                  width: 1,
+                                );
                               }),
                             ),
                         onPressed: () => _showActionDialog(context, title, mirrorUrls[i], i + 1),
@@ -267,7 +307,7 @@ class VersionPage extends GetView<VersionController> {
                         label: Text(
                           githubOriginOnly
                               ? i18n('github_origin_source')
-                              : i18n("download_source", args: {"num": "${i + 1}"}),
+                              : i18n('download_source', args: {'num': '${i + 1}'}),
                           style: AppTextStyles.t12.copyWith(fontWeight: FontWeight.w600),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -283,7 +323,12 @@ class VersionPage extends GetView<VersionController> {
     );
   }
 
-  void _showActionDialog(BuildContext context, String platformName, String targetUrl, int sourceIndex) {
+  void _showActionDialog(
+    BuildContext context,
+    String platformName,
+    String targetUrl,
+    int sourceIndex,
+  ) {
     final theme = Theme.of(context);
     showDialog(
       context: context,
@@ -302,17 +347,24 @@ class VersionPage extends GetView<VersionController> {
                   color: theme.colorScheme.primary.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(Remix.download_cloud_2_line, color: theme.colorScheme.primary, size: 20),
+                child: Icon(
+                  Remix.download_cloud_2_line,
+                  color: theme.colorScheme.primary,
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(platformName, style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.bold)),
+                    Text(
+                      platformName,
+                      style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.bold),
+                    ),
                     const SizedBox(height: 2),
                     Text(
-                      i18n("download_source", args: {"num": "$sourceIndex"}),
+                      i18n('download_source', args: {'num': '$sourceIndex'}),
                       style: AppTextStyles.t11.copyWith(color: theme.hintColor),
                     ),
                   ],
@@ -342,7 +394,10 @@ class VersionPage extends GetView<VersionController> {
               const SizedBox(height: 8),
               ListTile(
                 leading: Icon(Remix.download_2_line, color: theme.colorScheme.primary, size: 20),
-                title: Text(i18n("download"), style: AppTextStyles.t13.copyWith(fontWeight: FontWeight.w600)),
+                title: Text(
+                  i18n('download'),
+                  style: AppTextStyles.t13.copyWith(fontWeight: FontWeight.w600),
+                ),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 onTap: () {
                   Navigator.of(context).pop();
@@ -351,14 +406,17 @@ class VersionPage extends GetView<VersionController> {
               ),
               ListTile(
                 leading: Icon(Remix.clipboard_line, color: theme.colorScheme.secondary, size: 20),
-                title: Text(i18n("copy_link"), style: AppTextStyles.t13.copyWith(fontWeight: FontWeight.w600)),
+                title: Text(
+                  i18n('copy_link'),
+                  style: AppTextStyles.t13.copyWith(fontWeight: FontWeight.w600),
+                ),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 onTap: () {
                   Navigator.of(context).pop();
                   Clipboard.setData(ClipboardData(text: targetUrl));
                   Get.snackbar(
-                    i18n("done"),
-                    i18n("copied_to_clipboard"),
+                    i18n('done'),
+                    i18n('copied_to_clipboard'),
                     snackPosition: SnackPosition.bottom,
                     margin: const EdgeInsets.all(16),
                   );
@@ -366,7 +424,9 @@ class VersionPage extends GetView<VersionController> {
               ),
             ],
           ),
-          actions: [TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(i18n("cancel")))],
+          actions: [
+            TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(i18n('cancel'))),
+          ],
         );
       },
     );

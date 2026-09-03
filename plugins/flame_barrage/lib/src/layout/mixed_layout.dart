@@ -79,7 +79,11 @@ class MixedLayout {
     }
   }
 
-  LayoutResult layout(List<Fragment> fragments, {required BarrageItem item, required BarrageConfig config}) {
+  LayoutResult layout(
+    List<Fragment> fragments, {
+    required BarrageItem item,
+    required BarrageConfig config,
+  }) {
     final int combinedHash = _buildNumericCacheKey(fragments, config, item.priority);
 
     final cached = _cache[combinedHash];
@@ -99,7 +103,12 @@ class MixedLayout {
     return result;
   }
 
-  LayoutResult _layoutInternal(List<Fragment> fragments, BarrageItem item, BarrageConfig config, int combinedHash) {
+  LayoutResult _layoutInternal(
+    List<Fragment> fragments,
+    BarrageItem item,
+    BarrageConfig config,
+    int combinedHash,
+  ) {
     _reusableSpans.clear();
     double currentX = 0.0;
     double maxHeight = 0.0;
@@ -107,8 +116,12 @@ class MixedLayout {
     final opacity = config.opacity.clamp(0.0, 1.0).toDouble();
     final strokeOpacity = resolveBarrageStrokeOpacity(opacity);
     final effectiveTextColor = config.textColor.withValues(alpha: config.textColor.a * opacity);
-    final effectiveStrokeColor = config.strokeColor.withValues(alpha: config.strokeColor.a * strokeOpacity);
-    final effectiveShadowColor = config.shadowColor.withValues(alpha: config.shadowColor.a * opacity);
+    final effectiveStrokeColor = config.strokeColor.withValues(
+      alpha: config.strokeColor.a * strokeOpacity,
+    );
+    final effectiveShadowColor = config.shadowColor.withValues(
+      alpha: config.shadowColor.a * opacity,
+    );
     final int colorValue = effectiveTextColor.toARGB32();
     final double fontSize = config.fontSize;
     final bool showStroke = config.showStroke;
@@ -215,7 +228,14 @@ class MixedLayout {
         if (height > maxHeight) maxHeight = height;
 
         _reusableSpans.add(
-          EmojiLayoutSpan(x: currentX, y: 0.0, width: width, height: height, image: image, opacity: opacity),
+          EmojiLayoutSpan(
+            x: currentX,
+            y: 0.0,
+            width: width,
+            height: height,
+            image: image,
+            opacity: opacity,
+          ),
         );
         currentX += width;
       }
@@ -265,10 +285,20 @@ class MixedLayout {
       }
     });
 
-    return LayoutResult(width: currentX, height: maxHeight, spans: finalSpans, cacheKey: combinedHash.toString());
+    return LayoutResult(
+      width: currentX,
+      height: maxHeight,
+      spans: finalSpans,
+      cacheKey: combinedHash.toString(),
+    );
   }
 
-  ui.Paragraph _buildParagraph(String text, BarrageConfig config, String textCacheKey, {required bool isStroke}) {
+  ui.Paragraph _buildParagraph(
+    String text,
+    BarrageConfig config,
+    String textCacheKey, {
+    required bool isStroke,
+  }) {
     final cached = _textCache.get(textCacheKey);
     if (cached != null) {
       return cached;
@@ -300,7 +330,9 @@ class MixedLayout {
       );
     } else {
       final textPaint = ui.Paint()
-        ..color = config.textColor.withValues(alpha: config.textColor.a * config.opacity.clamp(0.0, 1.0).toDouble())
+        ..color = config.textColor.withValues(
+          alpha: config.textColor.a * config.opacity.clamp(0.0, 1.0).toDouble(),
+        )
         ..isAntiAlias = true;
 
       builder.pushStyle(
@@ -330,7 +362,7 @@ class MixedLayout {
     builder.pop();
 
     final paragraph = builder.build();
-    paragraph.layout(ui.ParagraphConstraints(width: double.infinity));
+    paragraph.layout(const ui.ParagraphConstraints(width: double.infinity));
 
     _textCache.put(textCacheKey, paragraph);
     return paragraph;

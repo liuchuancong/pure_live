@@ -21,7 +21,7 @@ class _AreaGridViewState extends State<AreaGridView> with TickerProviderStateMix
   final Map<String, ScrollController> _categoryScrollControllers = {};
 
   ScrollController _scrollControllerFor(String categoryId) =>
-      _categoryScrollControllers.putIfAbsent(categoryId, () => createPureLiveScrollController());
+      _categoryScrollControllers.putIfAbsent(categoryId, createPureLiveScrollController);
 
   @override
   void initState() {
@@ -119,8 +119,8 @@ class _AreaGridViewState extends State<AreaGridView> with TickerProviderStateMix
         pageSizeOptions: SettingsService.to.page.pageSizeOptions,
         emptyBuilder: (context) => EmptyView(
           icon: Remix.apps_2_line,
-          title: i18n("empty_areas_title"),
-          subtitle: i18n("empty_areas_subtitle"),
+          title: i18n('empty_areas_title'),
+          subtitle: i18n('empty_areas_subtitle'),
         ),
         contentBuilder: (context, displayList, scrollController) {
           return buildFlattenAreasView(displayList, scrollController);
@@ -131,7 +131,9 @@ class _AreaGridViewState extends State<AreaGridView> with TickerProviderStateMix
     return Obx(() {
       final categoriesList = widget.controller.categories;
 
-      if (categoriesList.isEmpty || _tabController == null || _tabController!.length != categoriesList.length) {
+      if (categoriesList.isEmpty ||
+          _tabController == null ||
+          _tabController!.length != categoriesList.length) {
         return BasePageView<AreasListController, LiveArea>(
           controller: widget.controller,
           enableRefresh: true,
@@ -140,8 +142,8 @@ class _AreaGridViewState extends State<AreaGridView> with TickerProviderStateMix
           pageSizeOptions: SettingsService.to.page.pageSizeOptions,
           emptyBuilder: (context) => EmptyView(
             icon: Remix.apps_2_line,
-            title: i18n("empty_areas_title"),
-            subtitle: i18n("empty_areas_subtitle"),
+            title: i18n('empty_areas_title'),
+            subtitle: i18n('empty_areas_subtitle'),
             buttonText: i18n('refresh'),
             onButtonPressed: () => widget.controller.refreshData(),
           ),
@@ -172,8 +174,8 @@ class _AreaGridViewState extends State<AreaGridView> with TickerProviderStateMix
               pageSizeOptions: SettingsService.to.page.pageSizeOptions,
               emptyBuilder: (context) => EmptyView(
                 icon: Remix.apps_2_line,
-                title: i18n("empty_areas_title"),
-                subtitle: i18n("empty_areas_subtitle"),
+                title: i18n('empty_areas_title'),
+                subtitle: i18n('empty_areas_subtitle'),
               ),
               contentBuilder: (context, displayList, _) {
                 final activeIndex = widget.controller.tabIndex.value;
@@ -192,8 +194,8 @@ class _AreaGridViewState extends State<AreaGridView> with TickerProviderStateMix
                         if (finalData.isEmpty) {
                           return EmptyView(
                             icon: Remix.apps_2_line,
-                            title: i18n("empty_areas_title"),
-                            subtitle: i18n("empty_areas_subtitle"),
+                            title: i18n('empty_areas_title'),
+                            subtitle: i18n('empty_areas_subtitle'),
                           );
                         }
                         return buildFlattenAreasView(finalData, _scrollControllerFor(category.id));

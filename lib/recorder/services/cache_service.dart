@@ -20,7 +20,8 @@ class CacheService extends GetxService {
   CacheService({
     RecorderConfiguredPathResolver? configuredPathResolver,
     RecorderDefaultDirectoryResolver? defaultDirectoryResolver,
-  }) : _configuredPathResolver = configuredPathResolver ?? (() => HivePrefUtil.getString(RecorderKeys.recordSavePath)),
+  }) : _configuredPathResolver =
+           configuredPathResolver ?? (() => HivePrefUtil.getString(RecorderKeys.recordSavePath)),
        _defaultDirectoryResolver =
            defaultDirectoryResolver ?? (() => AppPathManager().getDir(AppPathManager.dirRecords));
 
@@ -41,9 +42,12 @@ class CacheService extends GetxService {
     final configuredPath = _configuredPathResolver()?.trim() ?? '';
     final Directory recordDir;
 
-    if (configuredPath.isEmpty || _samePath(configuredPath, defaultDir.path) || isAndroidPrivatePath(configuredPath)) {
+    if (configuredPath.isEmpty ||
+        _samePath(configuredPath, defaultDir.path) ||
+        isAndroidPrivatePath(configuredPath)) {
       recordDir = defaultDir;
-    } else if (p.basename(p.normalize(configuredPath)).toLowerCase() == managedFolderName.toLowerCase() &&
+    } else if (p.basename(p.normalize(configuredPath)).toLowerCase() ==
+            managedFolderName.toLowerCase() &&
         await File(p.join(configuredPath, ownershipMarkerName)).exists()) {
       recordDir = Directory(configuredPath);
     } else {
@@ -100,7 +104,9 @@ class CacheService extends GetxService {
     final dir = await getRecordDir();
     final files = <File>[];
     await for (final entity in dir.list(recursive: true, followLinks: false)) {
-      if (entity is File && !_isMarker(entity) && (!excludeProtected || !_isProtectedPath(entity.path))) {
+      if (entity is File &&
+          !_isMarker(entity) &&
+          (!excludeProtected || !_isProtectedPath(entity.path))) {
         files.add(entity);
       }
     }
@@ -214,7 +220,8 @@ class CacheService extends GetxService {
     return _protectedDirectories.keys.any((root) => _sameOrWithin(root, candidate));
   }
 
-  bool _sameOrWithin(String root, String candidate) => root == candidate || p.isWithin(root, candidate);
+  bool _sameOrWithin(String root, String candidate) =>
+      root == candidate || p.isWithin(root, candidate);
 
   Future<String> getDisplayPath() async => (await getRecordDir()).path;
 
@@ -231,13 +238,18 @@ class CacheService extends GetxService {
   }) async {
     final base = await getRecordDir();
     final now = DateTime.now();
-    final date = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    final date =
+        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
     final time =
         '${now.hour.toString().padLeft(2, '0')}-'
         '${now.minute.toString().padLeft(2, '0')}-'
         '${now.second.toString().padLeft(2, '0')}';
-    final safePlatform = usePinyinForFolder ? PathHelper.toSafePinyin(platform) : PathHelper.toSafeComponent(platform);
-    final safeNick = usePinyinForFolder ? PathHelper.toSafePinyin(nick) : PathHelper.toSafeComponent(nick);
+    final safePlatform = usePinyinForFolder
+        ? PathHelper.toSafePinyin(platform)
+        : PathHelper.toSafeComponent(platform);
+    final safeNick = usePinyinForFolder
+        ? PathHelper.toSafePinyin(nick)
+        : PathHelper.toSafeComponent(nick);
     final dir = Directory(p.join(base.path, safePlatform, safeNick, date, time));
     await dir.create(recursive: true);
     return dir;

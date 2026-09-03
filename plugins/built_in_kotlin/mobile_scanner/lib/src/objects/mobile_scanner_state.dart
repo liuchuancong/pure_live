@@ -85,8 +85,7 @@ class MobileScannerState {
 
   /// Whether permission to access the camera was granted.
   bool get hasCameraPermission {
-    return isInitialized &&
-        error?.errorCode != MobileScannerErrorCode.permissionDenied;
+    return isInitialized && error?.errorCode != MobileScannerErrorCode.permissionDenied;
   }
 
   /// Create a copy of this state with the given parameters.

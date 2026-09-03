@@ -8,12 +8,12 @@ class PageSettingsPage extends GetView<SettingsService> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(i18n("page_settings"))),
+      appBar: AppBar(title: Text(i18n('page_settings'))),
       body: ListView(
         physics: const PureLiveScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
-          context.buildGroupTitle(i18n("paging_controller")),
+          context.buildGroupTitle(i18n('paging_controller')),
           context.buildModernCard([
             context.buildSwitchTile(
               title: i18n('show_page_size_selector'),
@@ -36,7 +36,7 @@ class PageSettingsPage extends GetView<SettingsService> {
             Obx(
               () => context.buildTile(
                 icon: Remix.list_check_2,
-                title: i18n("page_size_options_manage"),
+                title: i18n('page_size_options_manage'),
                 subtitle: SettingsService.to.page.pageSizeOptions.join(', '),
                 trailing: const Icon(Icons.chevron_right_rounded),
                 onTap: () => _showManageOptionsDialog(context),
@@ -58,7 +58,7 @@ class PageSettingsPage extends GetView<SettingsService> {
       builder: (context) {
         final theme = Theme.of(context);
         return AlertDialog(
-          title: Text(i18n("page_size_options_manage"), style: AppTextStyles.t16Bold),
+          title: Text(i18n('page_size_options_manage'), style: AppTextStyles.t16Bold),
           content: SizedBox(
             width: 320,
             child: StatefulBuilder(
@@ -71,16 +71,21 @@ class PageSettingsPage extends GetView<SettingsService> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(i18n("current_options"), style: AppTextStyles.t12Muted),
+                          Text(i18n('current_options'), style: AppTextStyles.t12Muted),
                           TextButton.icon(
                             onPressed: () {
                               setDialogState(() {
                                 draftOptions.clear();
-                                draftOptions.assignAll(PageSettingsController.getInitPageSizeOptions());
+                                draftOptions.assignAll(
+                                  PageSettingsController.getInitPageSizeOptions(),
+                                );
                               });
                             },
                             icon: const Icon(Icons.screen_rotation_rounded, size: 14),
-                            label: Text(i18n("adaptive_recommend"), style: AppTextStyles.t12Primary),
+                            label: Text(
+                              i18n('adaptive_recommend'),
+                              style: AppTextStyles.t12Primary,
+                            ),
                           ),
                         ],
                       ),
@@ -90,7 +95,7 @@ class PageSettingsPage extends GetView<SettingsService> {
                         runSpacing: 8,
                         children: draftOptions.map((size) {
                           return Chip(
-                            label: Text("$size", style: AppTextStyles.t12),
+                            label: Text('$size', style: AppTextStyles.t12),
                             deleteIcon: const Icon(Icons.cancel, size: 16),
                             onDeleted: draftOptions.length > 1
                                 ? () {
@@ -103,7 +108,7 @@ class PageSettingsPage extends GetView<SettingsService> {
                         }).toList(),
                       ),
                       const SizedBox(height: 24),
-                      Text(i18n("custom_input"), style: AppTextStyles.t13Medium),
+                      Text(i18n('custom_input'), style: AppTextStyles.t13Medium),
                       const SizedBox(height: 12),
                       Row(
                         children: [
@@ -113,11 +118,14 @@ class PageSettingsPage extends GetView<SettingsService> {
                               keyboardType: TextInputType.number,
                               style: AppTextStyles.t14,
                               decoration: InputDecoration(
-                                hintText: "20",
-                                suffixText: i18n("items_per_page"),
+                                hintText: '20',
+                                suffixText: i18n('items_per_page'),
                                 suffixStyle: AppTextStyles.t12Muted,
                                 border: const OutlineInputBorder(),
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 8,
+                                ),
                               ),
                             ),
                           ),
@@ -134,8 +142,10 @@ class PageSettingsPage extends GetView<SettingsService> {
                               }
                             },
                             child: Text(
-                              i18n("add"),
-                              style: AppTextStyles.t13Medium.copyWith(color: theme.colorScheme.primary),
+                              i18n('add'),
+                              style: AppTextStyles.t13Medium.copyWith(
+                                color: theme.colorScheme.primary,
+                              ),
                             ),
                           ),
                         ],
@@ -149,14 +159,14 @@ class PageSettingsPage extends GetView<SettingsService> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: Text(i18n("cancel"), style: AppTextStyles.t14Muted),
+              child: Text(i18n('cancel'), style: AppTextStyles.t14Muted),
             ),
             TextButton(
               onPressed: () {
                 SettingsService.to.page.saveAllPageSizeOptions(draftOptions);
                 Navigator.pop(context);
               },
-              child: Text(i18n("confirm"), style: AppTextStyles.t14Primary),
+              child: Text(i18n('confirm'), style: AppTextStyles.t14Primary),
             ),
           ],
         );

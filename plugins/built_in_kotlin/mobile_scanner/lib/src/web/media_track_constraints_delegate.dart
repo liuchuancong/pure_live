@@ -25,9 +25,7 @@ final class MediaTrackConstraintsDelegate {
   /// that is suitable as a MediaTrack constraint.
   String getFacingMode(CameraFacing cameraDirection) {
     return switch (cameraDirection) {
-      CameraFacing.back ||
-      CameraFacing.external ||
-      CameraFacing.unknown => 'environment',
+      CameraFacing.back || CameraFacing.external || CameraFacing.unknown => 'environment',
       CameraFacing.front => 'user',
     };
   }

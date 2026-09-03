@@ -39,7 +39,9 @@ class WebSearchRoomParser {
     final uri = Uri.tryParse(rawUrl.trim());
     if (uri == null || (uri.scheme != 'http' && uri.scheme != 'https')) return null;
     final host = uri.host.toLowerCase();
-    final segments = uri.pathSegments.where((segment) => segment.trim().isNotEmpty).toList(growable: false);
+    final segments = uri.pathSegments
+        .where((segment) => segment.trim().isNotEmpty)
+        .toList(growable: false);
 
     if (_matchesHost(host, 'huya.com')) {
       return _firstSegment(segments, Sites.huyaSite, RegExp(r'^[a-zA-Z0-9_-]+$'));
@@ -74,14 +76,22 @@ class WebSearchRoomParser {
 
   static bool _matchesHost(String host, String root) => host == root || host.endsWith('.$root');
 
-  static WebSearchRoomTarget? _firstSegment(List<String> segments, String platform, RegExp pattern) {
+  static WebSearchRoomTarget? _firstSegment(
+    List<String> segments,
+    String platform,
+    RegExp pattern,
+  ) {
     if (segments.isEmpty) return null;
     return _target(platform, segments.first, pattern);
   }
 
   static WebSearchRoomTarget? _target(String platform, String rawRoomId, RegExp pattern) {
     final roomId = rawRoomId.trim();
-    if (roomId.isEmpty || _reservedSegments.contains(roomId.toLowerCase()) || !pattern.hasMatch(roomId)) return null;
+    if (roomId.isEmpty ||
+        _reservedSegments.contains(roomId.toLowerCase()) ||
+        !pattern.hasMatch(roomId)) {
+      return null;
+    }
     return WebSearchRoomTarget(platform: platform, roomId: roomId);
   }
 }

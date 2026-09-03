@@ -14,13 +14,19 @@ Rect resolveWindowsPipBounds({
   required List<Rect> workAreas,
   Rect? savedBounds,
 }) {
-  final availableAreas = workAreas.where((area) => !area.isEmpty && area.isFinite).toList(growable: false);
+  final availableAreas = workAreas
+      .where((area) => !area.isEmpty && area.isFinite)
+      .toList(growable: false);
 
-  final fallbackArea = primaryWorkArea.isEmpty ? const Rect.fromLTWH(0, 0, 1280, 720) : primaryWorkArea;
+  final fallbackArea = primaryWorkArea.isEmpty
+      ? const Rect.fromLTWH(0, 0, 1280, 720)
+      : primaryWorkArea;
 
   final areas = availableAreas.isEmpty ? <Rect>[fallbackArea] : availableAreas;
 
-  final validSavedBounds = savedBounds != null && savedBounds.isFinite && !savedBounds.isEmpty ? savedBounds : null;
+  final validSavedBounds = savedBounds != null && savedBounds.isFinite && !savedBounds.isEmpty
+      ? savedBounds
+      : null;
 
   Rect? targetArea;
 
@@ -52,9 +58,13 @@ Rect resolveWindowsPipBounds({
   final defaultLeft = targetArea.right - width - 20;
   final defaultTop = targetArea.bottom - height - 20;
 
-  final left = (validSavedBounds?.left ?? defaultLeft).clamp(targetArea.left, targetArea.right - width).toDouble();
+  final left = (validSavedBounds?.left ?? defaultLeft)
+      .clamp(targetArea.left, targetArea.right - width)
+      .toDouble();
 
-  final top = (validSavedBounds?.top ?? defaultTop).clamp(targetArea.top, targetArea.bottom - height).toDouble();
+  final top = (validSavedBounds?.top ?? defaultTop)
+      .clamp(targetArea.top, targetArea.bottom - height)
+      .toDouble();
 
   return Rect.fromLTWH(left, top, width, height);
 }
@@ -223,9 +233,12 @@ class WindowHelper {
 
     final displays = await screenRetriever.getAllDisplays();
 
-    final display = _findDisplayForPosition(displays, position) ?? await screenRetriever.getPrimaryDisplay();
+    final display =
+        _findDisplayForPosition(displays, position) ?? await screenRetriever.getPrimaryDisplay();
 
-    final ratio = videoRatio != null && videoRatio.isFinite && videoRatio > 0 ? videoRatio : size.width / size.height;
+    final ratio = videoRatio != null && videoRatio.isFinite && videoRatio > 0
+        ? videoRatio
+        : size.width / size.height;
 
     final isPortrait = ratio < 0.95;
 
@@ -245,7 +258,10 @@ class WindowHelper {
       final right = offset.dx + size.width;
       final bottom = offset.dy + size.height;
 
-      if (position.dx >= offset.dx && position.dx < right && position.dy >= offset.dy && position.dy < bottom) {
+      if (position.dx >= offset.dx &&
+          position.dx < right &&
+          position.dy >= offset.dy &&
+          position.dy < bottom) {
         return display;
       }
     }
@@ -258,7 +274,10 @@ class WindowHelper {
       final right = offset.dx + size.width;
       final bottom = offset.dy + size.height;
 
-      if (position.dx < right && position.dx + 1 > offset.dx && position.dy < bottom && position.dy + 1 > offset.dy) {
+      if (position.dx < right &&
+          position.dx + 1 > offset.dx &&
+          position.dy < bottom &&
+          position.dy + 1 > offset.dy) {
         return display;
       }
     }

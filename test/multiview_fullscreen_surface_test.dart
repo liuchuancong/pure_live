@@ -3,7 +3,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:pure_live/modules/multiview/widgets/multiview_fullscreen_surface.dart';
 
 void main() {
-  testWidgets('fullscreen always exposes a safe-area exit without stealing grid taps', (tester) async {
+  testWidgets('fullscreen always exposes a safe-area exit without stealing grid taps', (
+    tester,
+  ) async {
     var exitCount = 0;
     var gridTapCount = 0;
     EdgeInsets? contentPadding;
@@ -11,7 +13,10 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: MediaQuery(
-          data: const MediaQueryData(size: Size(800, 450), padding: EdgeInsets.fromLTRB(30, 20, 40, 10)),
+          data: const MediaQueryData(
+            size: Size(800, 450),
+            padding: EdgeInsets.fromLTRB(30, 20, 40, 10),
+          ),
           child: Scaffold(
             body: MultiviewFullscreenSurface(
               exitTooltip: 'Exit fullscreen',

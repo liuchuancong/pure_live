@@ -47,11 +47,14 @@ class ChannelDetailController extends GetxController {
     try {
       final String queryName = channel.displayName;
       final db = Get.find<DbService>().db;
-      final List<database.EpgChannel> dbChannels = await db.getEpgChannelsForSource(currentEpgSourceId);
+      final List<database.EpgChannel> dbChannels = await db.getEpgChannelsForSource(
+        currentEpgSourceId,
+      );
       if (dbChannels.isEmpty) return;
 
       String? matchedEpgChannelId = _channelNameCache.get(currentEpgSourceId, queryName);
-      if (matchedEpgChannelId != null && !dbChannels.any((channel) => channel.id == matchedEpgChannelId)) {
+      if (matchedEpgChannelId != null &&
+          !dbChannels.any((channel) => channel.id == matchedEpgChannelId)) {
         // The selected EPG source was refreshed and the old id disappeared.
         _channelNameCache.remove(currentEpgSourceId, queryName);
         matchedEpgChannelId = null;
@@ -64,7 +67,9 @@ class ChannelDetailController extends GetxController {
 
         if (matchedDbChannels.isNotEmpty) {
           matchedDbChannels.sort(
-            (a, b) => fuzzyMatch(queryName, [b.displayName]).compareTo(fuzzyMatch(queryName, [a.displayName])),
+            (a, b) => fuzzyMatch(queryName, [
+              b.displayName,
+            ]).compareTo(fuzzyMatch(queryName, [a.displayName])),
           );
           final bestMatch = matchedDbChannels.first;
           matchedEpgChannelId = bestMatch.id;
@@ -85,7 +90,7 @@ class ChannelDetailController extends GetxController {
         await _loadProgrammes(matchedEpgChannelId);
       }
     } catch (e) {
-      log("根据频道名和 EPG 频道名进行模糊匹配时发生异常: $e");
+      log('根据频道名和 EPG 频道名进行模糊匹配时发生异常: $e');
     } finally {
       isLoadingEpg.value = false;
     }
@@ -121,7 +126,9 @@ class ChannelDetailController extends GetxController {
     upcomingProgs.value = validProgs;
 
     try {
-      nowPlayingProg.value = validProgs.firstWhere((p) => p.start.isBefore(now) && p.stop.isAfter(now));
+      nowPlayingProg.value = validProgs.firstWhere(
+        (p) => p.start.isBefore(now) && p.stop.isAfter(now),
+      );
     } catch (_) {
       nowPlayingProg.value = null;
     }

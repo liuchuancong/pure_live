@@ -12,11 +12,9 @@ extension DoubleExt on double {
 
   Duration get seconds => Duration(milliseconds: (this * 1000).round());
 
-  Duration get minutes =>
-      Duration(seconds: (this * Duration.secondsPerMinute).round());
+  Duration get minutes => Duration(seconds: (this * Duration.secondsPerMinute).round());
 
-  Duration get hours =>
-      Duration(minutes: (this * Duration.minutesPerHour).round());
+  Duration get hours => Duration(minutes: (this * Duration.minutesPerHour).round());
 
   Duration get days => Duration(hours: (this * Duration.hoursPerDay).round());
 }

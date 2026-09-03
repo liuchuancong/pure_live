@@ -15,7 +15,9 @@ class PathHelper {
     var value = text.trim().replaceAll(_invalidComponentChars, '_').replaceAll(RegExp(r'\s+'), '_');
     if (asciiOnly) value = value.replaceAll(RegExp(r'[^a-zA-Z0-9_]'), '');
     value = value.replaceAll(RegExp(r'_+'), '_').replaceAll(RegExp(r'[. ]+$'), '');
-    if (value.isEmpty || value.replaceAll('_', '').isEmpty || value == '.' || value == '..') return 'unknown';
+    if (value.isEmpty || value.replaceAll('_', '').isEmpty || value == '.' || value == '..') {
+      return 'unknown';
+    }
 
     final runes = value.runes.toList(growable: false);
     if (runes.length > maxRunes) value = String.fromCharCodes(runes.take(maxRunes));

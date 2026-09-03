@@ -340,7 +340,9 @@ class FavoriteRoomController extends GetxController {
   void fromJson(Map<String, dynamic> json) {
     shieldList.assignAll(List<String>.from(json['shieldList'] ?? const <String>[]));
 
-    blockedDanmakuUsers.assignAll(List<String>.from(json['blockedDanmakuUsers'] ?? const <String>[]));
+    blockedDanmakuUsers.assignAll(
+      List<String>.from(json['blockedDanmakuUsers'] ?? const <String>[]),
+    );
 
     hotAreasList.assignAll(List<String>.from(json['hotAreasList'] ?? AppConsts.supportSites));
 
@@ -349,11 +351,11 @@ class FavoriteRoomController extends GetxController {
     preferPlatform.v = preferred?.trim().toLowerCase() ?? Sites.bilibiliSite;
 
     favoriteRooms.v = List<LiveRoom>.from(
-      BackupMigrationUtil.parseObjectList(json['favoriteRooms'], (m) => LiveRoom.fromJson(m)),
+      BackupMigrationUtil.parseObjectList(json['favoriteRooms'], LiveRoom.fromJson),
     );
 
     favoriteAreas.v = List<LiveArea>.from(
-      BackupMigrationUtil.parseObjectList(json['favoriteAreas'], (m) => LiveArea.fromJson(m)),
+      BackupMigrationUtil.parseObjectList(json['favoriteAreas'], LiveArea.fromJson),
     );
 
     _normalizeSiteCatalogIds();
@@ -400,7 +402,10 @@ class FavoriteRoomController extends GetxController {
     return true;
   }
 
-  static Map<String, dynamic> mergeConfig(Map<String, dynamic> rootConfig, Map<String, dynamic> updateFields) {
+  static Map<String, dynamic> mergeConfig(
+    Map<String, dynamic> rootConfig,
+    Map<String, dynamic> updateFields,
+  ) {
     final favorite = Map<String, dynamic>.from(rootConfig['favorite'] ?? {});
 
     updateFields.forEach((key, value) {
