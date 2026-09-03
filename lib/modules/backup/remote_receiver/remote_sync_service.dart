@@ -1,13 +1,14 @@
 import 'dart:io';
 import 'dart:async';
 import 'dart:convert';
+
 import 'package:bonsoir/bonsoir.dart';
 import 'package:pure_live/common/index.dart';
+import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/common/services/settings/backup_controller.dart';
 import 'package:pure_live/modules/backup/remote_receiver/remote_sync_device.dart';
 import 'package:pure_live/modules/backup/remote_receiver/remote_sync_protocol.dart';
-
 
 class RemoteSyncService extends GetxController {
   static RemoteSyncService get to => Get.find<RemoteSyncService>();
@@ -34,7 +35,7 @@ class RemoteSyncService extends GetxController {
 
   final Set<String> _localIps = <String>{};
 
-  final String _deviceId = '${Platform.operatingSystem}-${DateTime.now().microsecondsSinceEpoch}';
+  late final String _deviceId;
 
   HttpServer? _server;
 
@@ -115,8 +116,19 @@ class RemoteSyncService extends GetxController {
   @override
   void onInit() {
     super.onInit();
-
+    _deviceId = _loadDeviceId();
     unawaited(start());
+  }
+
+  String _loadDeviceId() {
+    const key = 'remote_sync_device_id';
+    final existing = HivePrefUtil.getString(key);
+    if (existing != null && existing.isNotEmpty) {
+      return existing;
+    }
+    final id = '${Platform.operatingSystem}-${DateTime.now().microsecondsSinceEpoch}';
+    HivePrefUtil.setString(key, id);
+    return id;
   }
 
   Future<void> start() async {
@@ -231,11 +243,7 @@ class RemoteSyncService extends GetxController {
             continue;
           }
 
-          if (ip.startsWith('127.')) {
-            continue;
-          }
-
-          if (ip.startsWith('169.254.')) {
+          if (ip.startsWith('127.') || ip.startsWith('169.254.')) {
             continue;
           }
 
@@ -248,7 +256,9 @@ class RemoteSyncService extends GetxController {
           fallbackIp ??= ip;
 
           if (_isPrivateIpv4Address(ip)) {
-            privateIp ??= ip;
+            if (privateIp == null || _isPreferredIpv4(ip, privateIp)) {
+              privateIp = ip;
+            }
           }
         }
       }
@@ -262,6 +272,34 @@ class RemoteSyncService extends GetxController {
       _localIps.clear();
       localIp.value = '';
     }
+  }
+
+  bool _isPreferredIpv4(String candidate, String current) {
+    final candidateScore = _ipv4Priority(candidate);
+    final currentScore = _ipv4Priority(current);
+
+    return candidateScore > currentScore;
+  }
+
+  int _ipv4Priority(String ip) {
+    if (ip.startsWith('192.168.')) {
+      return 3;
+    }
+
+    if (ip.startsWith('10.')) {
+      return 2;
+    }
+
+    final parts = ip.split('.');
+    if (parts.length == 4) {
+      final second = int.tryParse(parts[1]);
+
+      if (parts[0] == '172' && second != null && second >= 16 && second <= 31) {
+        return 1;
+      }
+    }
+
+    return 0;
   }
 
   bool _isPrivateIpv4Address(String ip) {
@@ -716,10 +754,14 @@ class RemoteSyncService extends GetxController {
         if (_isSelfService(service)) {
           return;
         }
-
+        // TXT 已经包含 IP，先加入设备。
+        _addOrUpdateDevice(service);
+        // 后台尝试 resolve，成功后再更新。
         try {
-          await service.resolve(discovery.serviceResolver);
-        } catch (_) {}
+          service.resolve(discovery.serviceResolver);
+        } catch (_) {
+          _addOrUpdateDevice(service);
+        }
 
       case BonsoirDiscoveryServiceResolvedEvent():
         final service = event.service;
@@ -750,31 +792,19 @@ class RemoteSyncService extends GetxController {
   }
 
   bool _isSelfService(BonsoirService service) {
-    final attributes = service.attributes;
+    final id = service.attributes['id']?.trim();
 
-    final id = attributes['id'];
-
-    if (id != null && id == _deviceId) {
+    if (id == _deviceId) {
       return true;
     }
 
-    for (final address in service.hostAddresses) {
-      if (_localIps.contains(address)) {
-        return true;
-      }
+    final ip = service.attributes['ip']?.trim();
 
-      if (address == localIp.value) {
-        return true;
-      }
-    }
-
-    return false;
+    return ip != null && ip.isNotEmpty && _localIps.contains(ip);
   }
 
   void _addOrUpdateDevice(BonsoirService service) {
-    if (_disposed) {
-      return;
-    }
+    if (_disposed) return;
 
     final attributes = service.attributes;
 
@@ -791,17 +821,17 @@ class RemoteSyncService extends GetxController {
     final devicePlatform = attributes['platform'] ?? '';
     final deviceVersion = attributes['version'] ?? '';
 
-    final ip = _selectServiceIp(service);
+    // 优先使用 Bonsoir 解析出来的地址，
+    // 解析不到时使用 TXT 中广播的 IP。
+    final ip = _selectServiceIp(service) ?? attributes['ip']?.trim();
 
-    if (ip == null || ip.isEmpty) {
+    if (ip == null || !_isValidIpv4(ip)) {
       return;
     }
 
-    final port = service.port;
-
-    if (port <= 0) {
-      return;
-    }
+    // Bonsoir 尚未 resolve 时 port 可能为 0。
+    // PureLive 使用固定端口，因此直接使用协议默认端口。
+    final port = service.port > 0 ? service.port : RemoteSyncProtocol.defaultHttpPort;
 
     final device = RemoteSyncDevice(
       id: id,
@@ -811,6 +841,7 @@ class RemoteSyncService extends GetxController {
       ip: ip,
       port: port,
       lastSeen: DateTime.now(),
+      bonsoirName: service.name,
     );
 
     final indexById = devices.indexWhere((item) => item.id == device.id);
@@ -831,17 +862,15 @@ class RemoteSyncService extends GetxController {
   }
 
   void _removeDevice(BonsoirService service) {
-    if (_disposed) {
-      return;
+    if (_disposed) return;
+
+    final id = service.attributes['id']?.trim();
+
+    if (id != null && id.isNotEmpty) {
+      devices.removeWhere((device) => device.id == id);
+    } else {
+      devices.removeWhere((device) => device.bonsoirName == service.name);
     }
-
-    final id = service.attributes['id'];
-
-    if (id == null || id.isEmpty) {
-      return;
-    }
-
-    devices.removeWhere((device) => device.id == id);
   }
 
   String? _selectServiceIp(BonsoirService service) {
@@ -849,29 +878,35 @@ class RemoteSyncService extends GetxController {
 
     final ipv4 = addresses.where(_isValidIpv4).toList();
 
-    if (ipv4.isEmpty) {
-      return null;
-    }
+    if (ipv4.isNotEmpty) {
+      if (localIp.value.isNotEmpty) {
+        final localPrefix = _ipv4Prefix(localIp.value);
 
-    if (localIp.value.isNotEmpty) {
-      final localPrefix = _ipv4Prefix(localIp.value);
-
-      if (localPrefix != null) {
-        for (final ip in ipv4) {
-          if (_ipv4Prefix(ip) == localPrefix) {
-            return ip;
+        if (localPrefix != null) {
+          for (final ip in ipv4) {
+            if (_ipv4Prefix(ip) == localPrefix) {
+              return ip;
+            }
           }
         }
       }
-    }
 
-    for (final ip in ipv4) {
-      if (_isPrivateIpv4Address(ip)) {
-        return ip;
+      for (final ip in ipv4) {
+        if (_isPrivateIpv4Address(ip)) {
+          return ip;
+        }
       }
+
+      return ipv4.first;
     }
 
-    return ipv4.first;
+    final advertisedIp = service.attributes['ip']?.trim();
+
+    if (advertisedIp != null && _isValidIpv4(advertisedIp)) {
+      return advertisedIp;
+    }
+
+    return null;
   }
 
   // ---------------------------------------------------------------------------

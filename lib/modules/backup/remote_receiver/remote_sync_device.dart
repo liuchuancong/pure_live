@@ -6,6 +6,7 @@ class RemoteSyncDevice {
   final String ip;
   final int port;
   final DateTime lastSeen;
+  final String? bonsoirName;
 
   const RemoteSyncDevice({
     required this.id,
@@ -15,6 +16,7 @@ class RemoteSyncDevice {
     required this.ip,
     required this.port,
     required this.lastSeen,
+    required this.bonsoirName,
   });
 
   factory RemoteSyncDevice.fromJson(Map<String, dynamic> json) {
@@ -26,6 +28,7 @@ class RemoteSyncDevice {
       ip: json['ip']?.toString() ?? '',
       port: int.tryParse(json['port']?.toString() ?? '') ?? 39888,
       lastSeen: DateTime.now(),
+      bonsoirName: json['bonsoirName']?.toString(),
     );
   }
 
@@ -37,6 +40,7 @@ class RemoteSyncDevice {
     String? ip,
     int? port,
     DateTime? lastSeen,
+    String? bonsoirName,
   }) {
     return RemoteSyncDevice(
       id: id ?? this.id,
@@ -46,6 +50,7 @@ class RemoteSyncDevice {
       ip: ip ?? this.ip,
       port: port ?? this.port,
       lastSeen: lastSeen ?? this.lastSeen,
+      bonsoirName: bonsoirName ?? this.bonsoirName,
     );
   }
 
