@@ -879,7 +879,7 @@ jobs:
           EOF 
           echo "body_path=$(pwd)/release_body.txt" >> "$GITHUB_OUTPUT" 
       - name: Create GitHub Release 
-        uses: softprops/action-gh-release@v2 
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65
         with: 
           tag_name: ${{ inputs.release_tag }} 
           name: ${{ inputs.release_tag }} 
@@ -892,88 +892,88 @@ jobs:
           files: | 
             artifacts/**/* 
             BUILD_METADATA.json 
-  update-json: 
-    name: Update releases.json 
-    if: ${{ always() && inputs.create_release && needs.publish-release.result == 'success' }} 
-    needs: 
-      - publish-release 
-    runs-on: ubuntu-latest 
-    permissions: 
-      contents: write 
-    steps: 
-      - name: Checkout repository 
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7 
-        with: 
-          ref: master 
-          fetch-depth: 0 
-      - name: Setup Python 
-        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5 
-        with: 
-          python-version: "3.10" 
-      - name: Update assets/releases.json 
-        env: 
-          GH_TOKEN: ${{ github.token }} 
-          RELEASE_TAG: ${{ inputs.release_tag }} 
-        shell: bash 
-        run: | 
-          set -euo pipefail 
-          python <<'PY' 
-          import json 
-          import os 
-          import subprocess 
-          from pathlib import Path 
-          tag = os.environ["RELEASE_TAG"] 
-          result = subprocess.run( 
-              [ 
-                  "gh", 
-                  "release", 
-                  "view", 
-                  tag, 
-                  "--json", 
-                  "tagName,name,url,publishedAt,isDraft,isPrerelease,body,author,assets" 
-              ], 
-              check=True, 
-              capture_output=True, 
-              text=True, 
-          ) 
-          release = json.loads(result.stdout) 
-          path = Path("assets/releases.json") 
-          if path.exists(): 
-              data = json.loads(path.read_text(encoding="utf-8")) 
-          else: 
-              data = {} 
-          if isinstance(data, dict) and isinstance(data.get("releases"), list): 
-              releases = data["releases"] 
-          elif isinstance(data, list): 
-              releases = data 
-              data = {"releases": releases} 
-          else: 
-              releases = [] 
-              data = {"releases": releases} 
-          releases[:] = [ 
-              item for item in releases 
-              if not ( 
-                  isinstance(item, dict) 
-                  and item.get("tagName") == tag 
-              ) 
-          ] 
-          releases.insert(0, release) 
-          path.write_text( 
-              json.dumps(data, ensure_ascii=False, indent=2) + "\n", 
-              encoding="utf-8", 
-          ) 
-          PY 
-      - name: Commit and Push releases.json 
-        shell: bash 
-        run: | 
-          set -euo pipefail 
-          git config user.name "github-actions[bot]" 
-          git config user.email "github-actions[bot]@users.noreply.github.com" 
-          if [[ -z "$(git status --porcelain)" ]]; then 
-            echo "assets/releases.json has no changes." 
-            exit 0 
-          fi 
-          git add assets/releases.json 
-          git commit -m "chore: update releases.json for ${{ inputs.release_tag }} [skip ci]" 
-          git pull --rebase origin master 
+  update-json:
+    name: Update releases.json
+    if: ${{ always() && inputs.create_release && needs.publish-release.result == 'success' }}
+    needs:
+      - publish-release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: master
+          fetch-depth: 0
+      - name: Setup Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v6.1.0
+        with:
+          python-version: "3.10"
+      - name: Update assets/releases.json
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python <<'PY'
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+          tag = os.environ["RELEASE_TAG"]
+          result = subprocess.run(
+              [
+                  "gh",
+                  "release",
+                  "view",
+                  tag,
+                  "--json",
+                  "tagName,name,url,publishedAt,isDraft,body,author,isPrerelease,assets"
+              ],
+              check=True,
+              capture_output=True,
+              text=True,
+          )
+          release = json.loads(result.stdout)
+          path = Path("assets/releases.json")
+          if path.exists():
+              data = json.loads(path.read_text(encoding="utf-8"))
+          else:
+              data = {}
+          if isinstance(data, dict) and isinstance(data.get("releases"), list):
+              releases = data["releases"]
+          elif isinstance(data, list):
+              releases = data
+              data = {"releases": releases}
+          else:
+              releases = []
+              data = {"releases": releases}
+          releases[:] = [
+              item for item in releases
+              if not (
+                  isinstance(item, dict)
+                  and item.get("tagName") == tag
+              )
+          ]
+          releases.insert(0, release)
+          path.write_text(
+              json.dumps(data, ensure_ascii=False, indent=2) + "\n",
+              encoding="utf-8",
+          )
+          PY
+      - name: Commit and Push releases.json
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if [[ -z "$(git status --porcelain)" ]]; then
+            echo "assets/releases.json has no changes."
+            exit 0
+          fi
+          git add assets/releases.json
+          git commit -m "chore: update releases.json for ${{ inputs.release_tag }} [skip ci]"
+          git pull --rebase origin master
           git push origin master
