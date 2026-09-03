@@ -194,7 +194,14 @@ class _RemoteSyncPageState extends State<RemoteSyncPage> {
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
-            if (service.qrData.isNotEmpty) QrImageView(data: service.qrData, size: 220),
+            if (service.qrData.isNotEmpty)
+              QrImageView(
+                data: service.qrData,
+                version: QrVersions.auto,
+                backgroundColor: Colors.white,
+                size: 180.0,
+                padding: const EdgeInsets.all(12),
+              ),
             const SizedBox(height: 12),
             SelectableText(
               service.address.isEmpty ? i18n('remote_sync_no_address') : service.address,

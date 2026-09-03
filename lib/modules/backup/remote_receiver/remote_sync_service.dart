@@ -9,7 +9,7 @@ import 'package:pure_live/common/services/settings/backup_controller.dart';
 import 'package:pure_live/modules/backup/remote_receiver/remote_sync_device.dart';
 import 'package:pure_live/modules/backup/remote_receiver/remote_sync_protocol.dart';
 
-class RemoteSyncService extends GetxService {
+class RemoteSyncService extends GetxController {
   static RemoteSyncService get to => Get.find<RemoteSyncService>();
 
   final RxBool isServerRunning = false.obs;
@@ -25,7 +25,7 @@ class RemoteSyncService extends GetxService {
   final RxList<RemoteSyncDevice> devices = <RemoteSyncDevice>[].obs;
 
   HttpServer? _server;
-
+  bool _isStopped = false;
   BonsoirBroadcast? _broadcast;
   BonsoirDiscovery? _discovery;
   StreamSubscription<BonsoirDiscoveryEvent>? _discoverySubscription;
@@ -93,6 +93,7 @@ class RemoteSyncService extends GetxService {
   }
 
   Future<void> start() async {
+    _isStopped = false;
     await _resolveLocalIp();
 
     if (localIp.value.isEmpty) {
@@ -104,36 +105,18 @@ class RemoteSyncService extends GetxService {
   }
 
   Future<void> stop() async {
+    _isStopped = true;
     _broadcastTimer?.cancel();
-    _broadcastTimer = null;
-
     _cleanupTimer?.cancel();
-    _cleanupTimer = null;
-
     await _discoverySubscription?.cancel();
     _discoverySubscription = null;
-
-    if (_discovery != null) {
-      try {
-        await _discovery!.stop();
-      } catch (_) {}
-    }
-
+    await _discovery?.stop();
     _discovery = null;
-
-    if (_broadcast != null) {
-      try {
-        await _broadcast!.stop();
-      } catch (_) {}
-    }
-
+    await _broadcast?.stop();
     _broadcast = null;
-
     await _server?.close(force: true);
     _server = null;
-
     devices.clear();
-
     isServerRunning.value = false;
     isDiscovering.value = false;
   }
@@ -529,6 +512,7 @@ class RemoteSyncService extends GetxService {
   }
 
   void _addOrUpdateDevice(BonsoirService service) {
+    if (_isStopped) return;
     final attributes = service.attributes;
 
     final id = attributes['id']?.trim() ?? '';
@@ -588,15 +572,10 @@ class RemoteSyncService extends GetxService {
   }
 
   void _removeDevice(BonsoirService service) {
+    if (_isStopped) return;
     final id = service.attributes['id'];
     if (id == null || id.isEmpty) return;
-
-    final index = devices.indexWhere((device) => device.id == id);
-    if (index >= 0) {
-      Future.delayed(const Duration(seconds: 30), () {
-        devices.removeWhere((device) => device.id == id);
-      });
-    }
+    devices.removeWhere((device) => device.id == id);
   }
 
   String? _resolveServiceIp(BonsoirService service) {
