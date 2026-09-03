@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'dart:async';
 import 'dart:convert';
-
 import 'package:bonsoir/bonsoir.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
@@ -9,8 +8,13 @@ import 'package:pure_live/common/services/settings/backup_controller.dart';
 import 'package:pure_live/modules/backup/remote_receiver/remote_sync_device.dart';
 import 'package:pure_live/modules/backup/remote_receiver/remote_sync_protocol.dart';
 
+
 class RemoteSyncService extends GetxController {
   static RemoteSyncService get to => Get.find<RemoteSyncService>();
+
+  // ---------------------------------------------------------------------------
+  // State
+  // ---------------------------------------------------------------------------
 
   final RxBool isServerRunning = false.obs;
   final RxBool isDiscovering = false.obs;
@@ -20,22 +24,34 @@ class RemoteSyncService extends GetxController {
   final RxString localIp = ''.obs;
   final RxInt localPort = RemoteSyncProtocol.defaultHttpPort.obs;
 
-  final Set<String> _localIps = <String>{};
-
   final RxList<RemoteSyncDevice> devices = <RemoteSyncDevice>[].obs;
 
+  // ---------------------------------------------------------------------------
+  // Internal
+  // ---------------------------------------------------------------------------
+
+  static const String _mdnsServiceType = '_my-service._tcp';
+
+  final Set<String> _localIps = <String>{};
+
+  final String _deviceId = '${Platform.operatingSystem}-${DateTime.now().microsecondsSinceEpoch}';
+
   HttpServer? _server;
-  bool _isStopped = false;
+
   BonsoirBroadcast? _broadcast;
   BonsoirDiscovery? _discovery;
+
   StreamSubscription<BonsoirDiscoveryEvent>? _discoverySubscription;
 
   Timer? _broadcastTimer;
   Timer? _cleanupTimer;
 
-  final String _deviceId = '${Platform.operatingSystem}-${DateTime.now().microsecondsSinceEpoch}';
+  bool _disposed = false;
+  bool _running = false;
 
-  static const String _mdnsServiceType = '_my-service._tcp';
+  // ---------------------------------------------------------------------------
+  // Device information
+  // ---------------------------------------------------------------------------
 
   String get deviceName {
     switch (Platform.operatingSystem) {
@@ -78,6 +94,12 @@ class RemoteSyncService extends GetxController {
     return RemoteSyncProtocol.createQrUri(ip: localIp.value, port: localPort.value).toString();
   }
 
+  String get broadcastName {
+    final id = _deviceId.length > 6 ? _deviceId.substring(_deviceId.length - 6) : _deviceId;
+
+    return 'PureLive-$id';
+  }
+
   bool get isMobile {
     return Platform.isAndroid || Platform.isIOS;
   }
@@ -86,42 +108,110 @@ class RemoteSyncService extends GetxController {
     return PlatformUtils.isDesktop;
   }
 
+  // ---------------------------------------------------------------------------
+  // Lifecycle
+  // ---------------------------------------------------------------------------
+
   @override
   void onInit() {
     super.onInit();
-    start();
+
+    unawaited(start());
   }
 
   Future<void> start() async {
-    _isStopped = false;
-    await _resolveLocalIp();
-
-    if (localIp.value.isEmpty) {
+    if (_disposed || _running) {
       return;
     }
 
-    await startServer();
-    await startDiscovery();
+    _running = true;
+    _disposed = false;
+
+    try {
+      await _refreshNetworkInfo();
+
+      if (_disposed || localIp.value.isEmpty) {
+        return;
+      }
+
+      await startServer();
+
+      if (_disposed) {
+        return;
+      }
+
+      await startDiscovery();
+    } finally {
+      _running = false;
+    }
   }
 
   Future<void> stop() async {
-    _isStopped = true;
+    _disposed = true;
+    _running = false;
+
     _broadcastTimer?.cancel();
+    _broadcastTimer = null;
+
     _cleanupTimer?.cancel();
-    await _discoverySubscription?.cancel();
+    _cleanupTimer = null;
+
+    final discoverySubscription = _discoverySubscription;
     _discoverySubscription = null;
-    await _discovery?.stop();
+
+    if (discoverySubscription != null) {
+      try {
+        await discoverySubscription.cancel();
+      } catch (_) {}
+    }
+
+    final discovery = _discovery;
     _discovery = null;
-    await _broadcast?.stop();
+
+    if (discovery != null) {
+      try {
+        await discovery.stop();
+      } catch (_) {}
+    }
+
+    final broadcast = _broadcast;
     _broadcast = null;
-    await _server?.close(force: true);
+
+    if (broadcast != null) {
+      try {
+        await broadcast.stop();
+      } catch (_) {}
+    }
+
+    final server = _server;
     _server = null;
+
+    if (server != null) {
+      try {
+        await server.close(force: true);
+      } catch (_) {}
+    }
+
     devices.clear();
+
     isServerRunning.value = false;
     isDiscovering.value = false;
   }
 
-  Future<void> _resolveLocalIp() async {
+  @override
+  void onClose() {
+    _disposed = true;
+
+    unawaited(stop());
+
+    super.onClose();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Network
+  // ---------------------------------------------------------------------------
+
+  Future<void> _refreshNetworkInfo() async {
     try {
       final interfaces = await NetworkInterface.list(
         type: InternetAddressType.IPv4,
@@ -149,11 +239,15 @@ class RemoteSyncService extends GetxController {
             continue;
           }
 
+          if (!_isValidIpv4(ip)) {
+            continue;
+          }
+
           ips.add(ip);
 
           fallbackIp ??= ip;
 
-          if (_isPrivateIpv4(ip)) {
+          if (_isPrivateIpv4Address(ip)) {
             privateIp ??= ip;
           }
         }
@@ -170,7 +264,7 @@ class RemoteSyncService extends GetxController {
     }
   }
 
-  bool _isPrivateIpv4(String ip) {
+  bool _isPrivateIpv4Address(String ip) {
     final parts = ip.split('.');
 
     if (parts.length != 4) {
@@ -199,14 +293,51 @@ class RemoteSyncService extends GetxController {
     return false;
   }
 
+  bool _isValidIpv4(String ip) {
+    final parts = ip.split('.');
+
+    if (parts.length != 4) {
+      return false;
+    }
+
+    for (final part in parts) {
+      final value = int.tryParse(part);
+
+      if (value == null || value < 0 || value > 255) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  String? _ipv4Prefix(String ip) {
+    final parts = ip.split('.');
+
+    if (parts.length != 4) {
+      return null;
+    }
+
+    return '${parts[0]}.${parts[1]}.${parts[2]}';
+  }
+
+  // ---------------------------------------------------------------------------
+  // HTTP Server
+  // ---------------------------------------------------------------------------
+
   Future<void> startServer() async {
-    if (isServerRunning.value) {
+    if (_disposed || isServerRunning.value) {
       return;
     }
 
-    await _resolveLocalIp();
+    await _refreshNetworkInfo();
+
+    if (_disposed) {
+      return;
+    }
 
     HttpServer? server;
+
     var port = RemoteSyncProtocol.defaultHttpPort;
 
     for (var i = 0; i < 100; i++) {
@@ -219,7 +350,11 @@ class RemoteSyncService extends GetxController {
       }
     }
 
-    if (server == null) {
+    if (server == null || _disposed) {
+      try {
+        await server?.close(force: true);
+      } catch (_) {}
+
       isServerRunning.value = false;
       return;
     }
@@ -228,12 +363,27 @@ class RemoteSyncService extends GetxController {
     localPort.value = port;
     isServerRunning.value = true;
 
-    _server!.listen(_handleRequest);
+    server.listen(
+      _handleRequest,
+      onError: (_) {
+        if (!_disposed) {
+          isServerRunning.value = false;
+        }
+      },
+    );
 
     _startCleanupTimer();
   }
 
   Future<void> _handleRequest(HttpRequest request) async {
+    if (_disposed) {
+      try {
+        await request.response.close();
+      } catch (_) {}
+
+      return;
+    }
+
     final response = request.response;
 
     response.headers.contentType = ContentType('application', 'json', charset: 'utf-8');
@@ -266,13 +416,32 @@ class RemoteSyncService extends GetxController {
           await _writeResponse(response, {'code': 404, 'msg': 'Not Found', 'data': false});
       }
     } catch (_) {
-      response.statusCode = HttpStatus.internalServerError;
+      try {
+        response.statusCode = HttpStatus.internalServerError;
 
-      await _writeResponse(response, {'code': 500, 'msg': 'Internal Server Error', 'data': false});
+        await _writeResponse(response, {
+          'code': 500,
+          'msg': 'Internal Server Error',
+          'data': false,
+        });
+      } catch (_) {
+        // Response may already be closed.
+      }
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // GET /status
+  //
+  // Only returns device information.
+  // ---------------------------------------------------------------------------
+
   Future<void> _handleStatus(HttpRequest request) async {
+    if (request.method != 'GET') {
+      await _writeMethodNotAllowed(request.response);
+      return;
+    }
+
     await _writeResponse(request.response, {
       'code': 200,
       'msg': 'ok',
@@ -287,19 +456,59 @@ class RemoteSyncService extends GetxController {
     });
   }
 
+  // ---------------------------------------------------------------------------
+  // /settings
+  //
+  // GET  -> export local settings
+  // POST -> import remote settings
+  // ---------------------------------------------------------------------------
+
   Future<void> _handleSettings(HttpRequest request) async {
-    if (request.method != 'POST') {
-      request.response.statusCode = HttpStatus.methodNotAllowed;
+    switch (request.method) {
+      case 'GET':
+        await _handleGetSettings(request);
+        return;
+
+      case 'POST':
+        await _handlePostSettings(request);
+        return;
+
+      default:
+        await _writeMethodNotAllowed(request.response);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // GET /settings
+  //
+  // Used when this device receives settings from another device.
+  // ---------------------------------------------------------------------------
+
+  Future<void> _handleGetSettings(HttpRequest request) async {
+    try {
+      final backup = Get.find<BackupController>();
+
+      final settings = backup.exportAllSettings(includeSensitiveData: true);
+
+      await _writeResponse(request.response, {'code': 200, 'msg': 'ok', 'data': settings});
+    } catch (_) {
+      request.response.statusCode = HttpStatus.internalServerError;
 
       await _writeResponse(request.response, {
-        'code': 405,
-        'msg': 'Method Not Allowed',
+        'code': 500,
+        'msg': 'Export settings failed',
         'data': false,
       });
-
-      return;
     }
+  }
 
+  // ---------------------------------------------------------------------------
+  // POST /settings
+  //
+  // Used when another device sends settings to this device.
+  // ---------------------------------------------------------------------------
+
+  Future<void> _handlePostSettings(HttpRequest request) async {
     try {
       final content = await utf8.decoder.bind(request).join();
 
@@ -371,13 +580,15 @@ class RemoteSyncService extends GetxController {
     } catch (_) {
       isSyncing.value = false;
 
-      request.response.statusCode = HttpStatus.internalServerError;
+      try {
+        request.response.statusCode = HttpStatus.internalServerError;
 
-      await _writeResponse(request.response, {
-        'code': 500,
-        'msg': 'Internal Server Error',
-        'data': false,
-      });
+        await _writeResponse(request.response, {
+          'code': 500,
+          'msg': 'Internal Server Error',
+          'data': false,
+        });
+      } catch (_) {}
     }
   }
 
@@ -393,19 +604,33 @@ class RemoteSyncService extends GetxController {
     }
   }
 
+  Future<void> _writeMethodNotAllowed(HttpResponse response) async {
+    response.statusCode = HttpStatus.methodNotAllowed;
+
+    await _writeResponse(response, {'code': 405, 'msg': 'Method Not Allowed', 'data': false});
+  }
+
   Future<void> _writeResponse(HttpResponse response, Map<String, dynamic> data) async {
     response.write(jsonEncode(data));
     await response.close();
   }
 
+  // ---------------------------------------------------------------------------
+  // Bonsoir Discovery
+  // ---------------------------------------------------------------------------
+
   Future<bool> startDiscovery() async {
+    if (_disposed) {
+      return false;
+    }
+
     if (isDiscovering.value) {
       return true;
     }
 
-    await _resolveLocalIp();
+    await _refreshNetworkInfo();
 
-    if (localIp.value.isEmpty) {
+    if (_disposed || localIp.value.isEmpty) {
       return false;
     }
 
@@ -413,19 +638,25 @@ class RemoteSyncService extends GetxController {
       await _discoverySubscription?.cancel();
       _discoverySubscription = null;
 
-      if (_discovery != null) {
+      final oldDiscovery = _discovery;
+      _discovery = null;
+
+      if (oldDiscovery != null) {
         try {
-          await _discovery!.stop();
+          await oldDiscovery.stop();
         } catch (_) {}
       }
-
-      _discovery = null;
 
       final discovery = BonsoirDiscovery(type: _mdnsServiceType);
 
       _discovery = discovery;
 
       await discovery.initialize();
+
+      if (_disposed) {
+        await discovery.stop();
+        return false;
+      }
 
       final eventStream = discovery.eventStream;
 
@@ -436,18 +667,32 @@ class RemoteSyncService extends GetxController {
 
       _discoverySubscription = eventStream.listen(
         (event) {
+          if (_disposed) {
+            return;
+          }
+
           unawaited(_handleDiscoveryEvent(event, discovery));
         },
         onError: (_) {
-          isDiscovering.value = false;
+          if (!_disposed) {
+            isDiscovering.value = false;
+          }
         },
       );
 
       await discovery.start();
 
+      if (_disposed) {
+        try {
+          await discovery.stop();
+        } catch (_) {}
+
+        return false;
+      }
+
       isDiscovering.value = true;
 
-      await _startBroadcast();
+      await _startServiceBroadcast();
 
       return true;
     } catch (_) {
@@ -460,30 +705,45 @@ class RemoteSyncService extends GetxController {
     BonsoirDiscoveryEvent event,
     BonsoirDiscovery discovery,
   ) async {
+    if (_disposed) {
+      return;
+    }
+
     switch (event) {
       case BonsoirDiscoveryServiceFoundEvent():
         final service = event.service;
+
         if (_isSelfService(service)) {
           return;
         }
+
         try {
           await service.resolve(discovery.serviceResolver);
         } catch (_) {}
+
       case BonsoirDiscoveryServiceResolvedEvent():
         final service = event.service;
+
         if (_isSelfService(service)) {
           return;
         }
+
         _addOrUpdateDevice(service);
+
       case BonsoirDiscoveryServiceUpdatedEvent():
         final service = event.service;
+
         if (_isSelfService(service)) {
           return;
         }
+
         _addOrUpdateDevice(service);
+
       case BonsoirDiscoveryServiceLostEvent():
         final service = event.service;
+
         _removeDevice(service);
+
       default:
         break;
     }
@@ -512,16 +772,15 @@ class RemoteSyncService extends GetxController {
   }
 
   void _addOrUpdateDevice(BonsoirService service) {
-    if (_isStopped) return;
+    if (_disposed) {
+      return;
+    }
+
     final attributes = service.attributes;
 
     final id = attributes['id']?.trim() ?? '';
 
-    if (id.isEmpty) {
-      return;
-    }
-
-    if (id == _deviceId) {
+    if (id.isEmpty || id == _deviceId) {
       return;
     }
 
@@ -532,7 +791,7 @@ class RemoteSyncService extends GetxController {
     final devicePlatform = attributes['platform'] ?? '';
     final deviceVersion = attributes['version'] ?? '';
 
-    final ip = _resolveServiceIp(service);
+    final ip = _selectServiceIp(service);
 
     if (ip == null || ip.isEmpty) {
       return;
@@ -572,13 +831,20 @@ class RemoteSyncService extends GetxController {
   }
 
   void _removeDevice(BonsoirService service) {
-    if (_isStopped) return;
+    if (_disposed) {
+      return;
+    }
+
     final id = service.attributes['id'];
-    if (id == null || id.isEmpty) return;
+
+    if (id == null || id.isEmpty) {
+      return;
+    }
+
     devices.removeWhere((device) => device.id == id);
   }
 
-  String? _resolveServiceIp(BonsoirService service) {
+  String? _selectServiceIp(BonsoirService service) {
     final addresses = service.hostAddresses;
 
     final ipv4 = addresses.where(_isValidIpv4).toList();
@@ -600,7 +866,7 @@ class RemoteSyncService extends GetxController {
     }
 
     for (final ip in ipv4) {
-      if (_isPrivateIpv4(ip)) {
+      if (_isPrivateIpv4Address(ip)) {
         return ip;
       }
     }
@@ -608,49 +874,30 @@ class RemoteSyncService extends GetxController {
     return ipv4.first;
   }
 
-  bool _isValidIpv4(String ip) {
-    final parts = ip.split('.');
+  // ---------------------------------------------------------------------------
+  // Bonsoir Broadcast
+  // ---------------------------------------------------------------------------
 
-    if (parts.length != 4) {
-      return false;
-    }
-
-    for (final part in parts) {
-      final value = int.tryParse(part);
-
-      if (value == null || value < 0 || value > 255) {
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  String? _ipv4Prefix(String ip) {
-    final parts = ip.split('.');
-
-    if (parts.length != 4) {
-      return null;
-    }
-
-    return '${parts[0]}.${parts[1]}.${parts[2]}';
-  }
-
-  Future<void> _startBroadcast() async {
-    if (localPort.value <= 0) {
+  Future<void> _startServiceBroadcast() async {
+    if (_disposed || localPort.value <= 0) {
       return;
     }
 
-    if (_broadcast != null) {
-      try {
-        await _broadcast!.stop();
-      } catch (_) {}
+    final oldBroadcast = _broadcast;
+    _broadcast = null;
 
-      _broadcast = null;
+    if (oldBroadcast != null) {
+      try {
+        await oldBroadcast.stop();
+      } catch (_) {}
+    }
+
+    if (_disposed) {
+      return;
     }
 
     final service = BonsoirService(
-      name: 'PureLive-${_deviceId.hashCode.abs()}',
+      name: broadcastName,
       type: _mdnsServiceType,
       port: localPort.value,
       attributes: {
@@ -667,13 +914,30 @@ class RemoteSyncService extends GetxController {
     _broadcast = broadcast;
 
     await broadcast.initialize();
+
+    if (_disposed) {
+      try {
+        await broadcast.stop();
+      } catch (_) {}
+
+      return;
+    }
+
     await broadcast.start();
   }
+
+  // ---------------------------------------------------------------------------
+  // Device cleanup
+  // ---------------------------------------------------------------------------
 
   void _startCleanupTimer() {
     _cleanupTimer?.cancel();
 
     _cleanupTimer = Timer.periodic(const Duration(seconds: 15), (_) {
+      if (_disposed) {
+        return;
+      }
+
       final now = DateTime.now();
 
       devices.removeWhere((device) {
@@ -682,12 +946,16 @@ class RemoteSyncService extends GetxController {
     });
   }
 
+  // ---------------------------------------------------------------------------
+  // Send settings
+  // ---------------------------------------------------------------------------
+
   Future<bool> syncToDevice(RemoteSyncDevice device) {
     return syncToAddress(device.ip, device.port);
   }
 
   Future<bool> syncToAddress(String ip, int port) async {
-    if (isSyncing.value) {
+    if (_disposed || isSyncing.value) {
       return false;
     }
 
@@ -733,8 +1001,16 @@ class RemoteSyncService extends GetxController {
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // Check remote device
+  //
+  // NOTE:
+  // This method only checks whether the remote device is reachable.
+  // It does NOT receive settings.
+  // ---------------------------------------------------------------------------
+
   Future<bool> receiveFromAddress(String ip, int port) async {
-    if (isApplying.value) {
+    if (_disposed || isApplying.value) {
       return false;
     }
 
@@ -753,11 +1029,7 @@ class RemoteSyncService extends GetxController {
 
         final response = await request.close();
 
-        if (response.statusCode != HttpStatus.ok) {
-          return false;
-        }
-
-        return true;
+        return response.statusCode == HttpStatus.ok;
       } finally {
         client.close(force: true);
       }
@@ -768,7 +1040,18 @@ class RemoteSyncService extends GetxController {
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // Get remote settings
+  //
+  // IMPORTANT:
+  // This uses GET /settings, not GET /status.
+  // ---------------------------------------------------------------------------
+
   Future<Map<String, dynamic>?> getRemoteSettings(String ip, int port) async {
+    if (_disposed) {
+      return null;
+    }
+
     try {
       final client = HttpClient();
 
@@ -776,21 +1059,25 @@ class RemoteSyncService extends GetxController {
         final request = await client.getUrl(
           Uri.parse(
             'http://$ip:$port'
-            '${RemoteSyncProtocol.apiStatus}',
+            '${RemoteSyncProtocol.apiSettings}',
           ),
         );
 
         final response = await request.close();
 
+        final body = await utf8.decoder.bind(response).join();
+
         if (response.statusCode != HttpStatus.ok) {
           return null;
         }
 
-        final body = await utf8.decoder.bind(response).join();
-
         final result = jsonDecode(body);
 
         if (result is! Map) {
+          return null;
+        }
+
+        if (result['code'] != 200) {
           return null;
         }
 
@@ -808,6 +1095,10 @@ class RemoteSyncService extends GetxController {
       return null;
     }
   }
+
+  // ---------------------------------------------------------------------------
+  // Address / QR
+  // ---------------------------------------------------------------------------
 
   Future<bool> syncByAddress(String value) async {
     final parsed = RemoteSyncProtocol.parseHttpAddress(value);
@@ -836,32 +1127,20 @@ class RemoteSyncService extends GetxController {
       return false;
     }
 
-    return receiveFromAddress(parsed.ip, parsed.port);
-  }
+    final settings = await getRemoteSettings(parsed.ip, parsed.port);
 
-  @override
-  void onClose() {
-    _broadcastTimer?.cancel();
-    _broadcastTimer = null;
+    if (settings == null) {
+      return false;
+    }
 
-    _cleanupTimer?.cancel();
-    _cleanupTimer = null;
+    try {
+      final backup = Get.find<BackupController>();
 
-    _discoverySubscription?.cancel();
-    _discoverySubscription = null;
+      backup.importAllSettings(settings);
 
-    _discovery?.stop();
-    _discovery = null;
-
-    _broadcast?.stop();
-    _broadcast = null;
-
-    _server?.close(force: true);
-    _server = null;
-
-    isServerRunning.value = false;
-    isDiscovering.value = false;
-
-    super.onClose();
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 }
