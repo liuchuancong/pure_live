@@ -24,11 +24,13 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ inputs.release_tag }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
         shell: bash
         run: |
           set -euo pipefail
 
           echo "Release: ${RELEASE_TAG}"
+          echo "Repository: ${GITHUB_REPOSITORY}"
 
           python3 <<'PY'
           import json
@@ -37,6 +39,7 @@ jobs:
           from pathlib import Path
 
           tag = os.environ["RELEASE_TAG"]
+          repository = os.environ["GITHUB_REPOSITORY"]
           version_file = Path("assets/version.json")
 
           if not version_file.is_file():
@@ -110,31 +113,48 @@ jobs:
           print(body)
           print("===================================")
 
+          command = [
+              "gh",
+              "release",
+              "edit",
+              tag,
+              "--repo",
+              repository,
+              "--body-file",
+              str(body_file),
+          ]
+
+          print("========== Execute ==========")
+          print(" ".join(command))
+          print("=============================")
+
           result = subprocess.run(
-              [
-                  "gh",
-                  "release",
-                  "edit",
-                  tag,
-                  "--body-file",
-                  str(body_file),
-              ],
-              check=True,
+              command,
               text=True,
               capture_output=True,
           )
 
           if result.stdout:
+              print("========== gh stdout ==========")
               print(result.stdout)
 
           if result.stderr:
+              print("========== gh stderr ==========")
               print(result.stderr)
+
+          if result.returncode != 0:
+              raise SystemExit(
+                  f"gh release edit failed with exit code {result.returncode}"
+              )
+
+          print("Release Body 更新成功")
           PY
 
       - name: Verify Release Body
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ inputs.release_tag }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
         shell: bash
         run: |
           set -euo pipefail
@@ -142,6 +162,7 @@ jobs:
           echo "===== GitHub Release Body ====="
 
           gh release view "$RELEASE_TAG" \
+            --repo "$GITHUB_REPOSITORY" \
             --json tagName,body \
             --jq '.body'
 
