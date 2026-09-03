@@ -120,7 +120,7 @@ jobs:
               tag,
               "--repo",
               repository,
-              "--body-file",
+              "--notes-file",
               str(body_file),
           ]
 
