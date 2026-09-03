@@ -1,0 +1,148 @@
+name: Fix Release Body
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Release tag，例如 v3.1.1
+        required: true
+        type: string
+
+jobs:
+  fix-body:
+    name: Update Release Body
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Update Release Body
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          echo "Release: ${RELEASE_TAG}"
+
+          python3 <<'PY'
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          tag = os.environ["RELEASE_TAG"]
+          version_file = Path("assets/version.json")
+
+          if not version_file.is_file():
+              raise SystemExit(f"找不到 {version_file}")
+
+          data = json.loads(
+              version_file.read_text(encoding="utf-8")
+          )
+
+          version_desc = data.get("version_desc")
+
+          if not version_desc or not str(version_desc).strip():
+              raise SystemExit(
+                  "assets/version.json 中的 version_desc 为空"
+              )
+
+          version_desc = str(version_desc).strip()
+
+          body = f"""# 纯粹直播 {tag}
+
+          |版本|下载地址|
+          |---|---|
+          |TV版|[pure_live_TV](https://github.com/liuchuancong/pure_live_TV/releases/latest)|
+          |Windows/macOS/Android/iOS版|[pure_live](https://github.com/liuchuancong/pure_live/releases/latest)|
+
+          ### 🖥️ Windows 版
+
+          - **Portable ZIP**：解压即用，无需安装
+          - **EXE 安装包**：适合所有用户
+          - **MSIX 包**：现代应用格式，支持干净卸载
+          - 适配：Windows 10/11 x64
+
+          ### 🍎 macOS 版
+
+          - macOS 桌面版
+          - Universal：Apple Silicon + Intel
+          - ZIP / DMG
+
+          ### 📱 Android 版
+
+          - Android 8.0+（API 26，FFmpegKit 录制依赖要求）
+          - ARM64-v8a
+          - ARMv7
+          - x86_64
+          - 统一 SHA256 校验文件：[**ANDROID_SHA256SUM.txt**](https://github.com/liuchuancong/pure_live/releases/download/{tag}/ANDROID_SHA256SUM.txt)
+
+          ### 🐧 Linux 版
+
+          - Linux x64
+          - Portable tar.gz
+
+          ### 🍎 iOS 版
+
+          - unsigned iOS device application
+          - TrollStore / ad-hoc IPA
+          - ARM64
+
+          ### 🔧 Build Metadata
+
+          [**BUILD_METADATA.json**](https://github.com/liuchuancong/pure_live/releases/download/{tag}/BUILD_METADATA.json)
+
+          ### 📝 本次更新
+
+          {version_desc}
+          """.strip()
+
+          body_file = Path("release_body.txt")
+          body_file.write_text(body + "\n", encoding="utf-8")
+
+          print("========== Release Body ==========")
+          print(body)
+          print("===================================")
+
+          result = subprocess.run(
+              [
+                  "gh",
+                  "release",
+                  "edit",
+                  tag,
+                  "--body-file",
+                  str(body_file),
+              ],
+              check=True,
+              text=True,
+              capture_output=True,
+          )
+
+          if result.stdout:
+              print(result.stdout)
+
+          if result.stderr:
+              print(result.stderr)
+          PY
+
+      - name: Verify Release Body
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          echo "===== GitHub Release Body ====="
+
+          gh release view "$RELEASE_TAG" \
+            --json tagName,body \
+            --jq '.body'
+
+          echo "==============================="
