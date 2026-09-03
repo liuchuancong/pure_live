@@ -18,16 +18,35 @@ class ReleaseModel {
   });
 
   factory ReleaseModel.fromJson(Map<String, dynamic> json) {
+    final version = json['version'] ?? json['tagName'] ?? '';
+
+    final filesData = json['files'] ?? json['assets'] ?? [];
+
+    final authorData = json['author'] ?? {};
+    final authorName = authorData['name'] ?? authorData['login'] ?? '';
+
+    final date = json['date'] ?? json['publishedAt'] ?? '';
+
     return ReleaseModel(
-      version: json['version'] ?? '',
-      title: json['title'] ?? '',
-      date: json['date'] ?? '',
-      github: json['github'] ?? '',
-      author: AuthorModel.fromJson(json['author'] ?? {}),
-      changelog: json['changelog'] ?? '',
-      files: (json['files'] as List<dynamic>? ?? [])
-          .map((e) => ReleaseFileModel.fromJson(e))
-          .toList(),
+      version: version,
+      title: json['title'] ?? json['name'] ?? '',
+      date: date,
+      github: json['github'] ?? json['url'] ?? '',
+      author: AuthorModel(
+        name: authorName,
+        avatar: authorData['avatar'] ?? '',
+        profile: authorData['profile'] ?? authorData['html_url'] ?? '',
+      ),
+      changelog: json['changelog'] ?? json['body'] ?? '',
+      files: filesData.map<ReleaseFileModel>((e) {
+        final downloads = e['downloads'] ?? e['downloadCount'] ?? 0;
+        return ReleaseFileModel(
+          name: e['name'] ?? '',
+          size: e['size'] ?? '0.0mb',
+          downloads: downloads,
+          url: e['url'] ?? '',
+        );
+      }).toList(),
     );
   }
 
