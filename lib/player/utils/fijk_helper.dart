@@ -7,37 +7,55 @@ class FijkHelper {
     Map<String, String>? headers,
   }) async {
     await player.setOption(FijkOption.playerCategory, 'mediacodec', enableHardwareCodec ? 1 : 0);
+
     await player.setOption(
       FijkOption.playerCategory,
       'mediacodec-hevc',
       enableHardwareCodec ? 1 : 0,
     );
-    await player.setOption(FijkOption.playerCategory, 'videotoolbox', enableHardwareCodec ? 1 : 0);
+
     await player.setOption(FijkOption.playerCategory, 'start-on-prepared', 0);
-    await player.setOption(FijkOption.playerCategory, 'overlay-format', 0x52474238);
+
     await player.setOption(FijkOption.playerCategory, 'min-frames', 50);
+
     await player.setOption(FijkOption.playerCategory, 'framedrop', 0);
+
     await player.setOption(FijkOption.playerCategory, 'enable-accurate-seek', 1);
+
     await player.setOption(FijkOption.playerCategory, 'soundtouch', 1);
+
     await player.setOption(FijkOption.playerCategory, 'subtitle', 1);
+
     await player.setOption(FijkOption.hostCategory, 'request-screen-on', 1);
+
     await player.setOption(FijkOption.hostCategory, 'request-audio-focus', 0);
+
     await player.setOption(FijkOption.formatCategory, 'reconnect', 1);
+
     await player.setOption(FijkOption.formatCategory, 'reconnect_delay_max', 5);
+
     await player.setOption(FijkOption.formatCategory, 'timeout', 15 * 1000 * 1000);
+
     await player.setOption(FijkOption.formatCategory, 'fflags', 'fastseek');
+
     await player.setOption(FijkOption.formatCategory, 'rtsp_transport', 'tcp');
+
     await player.setOption(
       FijkOption.formatCategory,
       'protocol_whitelist',
       'async,cache,crypto,file,http,https,ijkhttphook,ijkinject,ijklivehook,ijklongurl,ijksegment,ijktcphook,pipe,rtp,tcp,tls,udp,ijkurlhook,data',
     );
+
     String requestHeaders = '';
+
     headers?.forEach((key, value) {
-      key.toLowerCase() == 'user-agent'
-          ? player.setOption(FijkOption.formatCategory, 'user_agent', value)
-          : requestHeaders += '$key:$value\r\n';
+      if (key.toLowerCase() == 'user-agent') {
+        player.setOption(FijkOption.formatCategory, 'user_agent', value);
+      } else {
+        requestHeaders += '$key:$value\r\n';
+      }
     });
+
     if (requestHeaders.isNotEmpty) {
       await player.setOption(FijkOption.formatCategory, 'headers', requestHeaders);
     }
