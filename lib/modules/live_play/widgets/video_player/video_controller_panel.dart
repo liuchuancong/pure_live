@@ -97,7 +97,8 @@ class _VideoControllerPanelState extends State<VideoControllerPanel> {
         child: Obx(() {
           final double currentVolume = controller.currentVolume.value;
           final int percentage = (currentVolume * 100).round();
-
+          final showLockButton =
+              GlobalPlayerState.to.fullscreenUI && controller.showController.value;
           final IconData iconData = currentVolume <= 0
               ? Icons.volume_mute
               : currentVolume < 0.5
@@ -194,7 +195,20 @@ class _VideoControllerPanelState extends State<VideoControllerPanel> {
                   },
                   child: BrightnessVolumnDargArea(controller: controller),
                 ),
-                LockButton(controller: controller),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      if (showLockButton) ...[
+                        LockButton(controller: controller, showLockButton: showLockButton),
+                        const SizedBox(height: 12),
+                      ],
+                      RotateButton(controller: controller),
+                    ],
+                  ),
+                ),
                 TopActionBar(controller: controller, barHeight: barHeight),
                 BottomActionBar(controller: controller, barHeight: barHeight),
               ],
@@ -929,34 +943,71 @@ class BrightnessVolumnDargAreaState extends State<BrightnessVolumnDargArea> {
 }
 
 class LockButton extends StatelessWidget {
-  const LockButton({super.key, required this.controller});
-
+  const LockButton({super.key, required this.controller, required this.showLockButton});
+  final bool showLockButton;
   final VideoController controller;
 
   @override
   Widget build(BuildContext context) {
     return Obx(
       () => AnimatedOpacity(
-        opacity: (GlobalPlayerState.to.fullscreenUI && controller.showController.value) ? 0.9 : 0.0,
+        opacity: showLockButton ? 0.9 : 0.0,
         duration: const Duration(milliseconds: 300),
-        child: Align(
-          alignment: Alignment.centerRight,
-          child: AbsorbPointer(
-            absorbing: !controller.showController.value,
-            child: Container(
-              margin: const EdgeInsets.only(right: 20.0),
-              child: IconButton(
-                onPressed: () => {controller.showLocked.toggle()},
-                icon: Icon(
-                  controller.showLocked.value ? Icons.lock_rounded : Icons.lock_open_rounded,
-                  size: 28,
-                ),
-                color: Colors.white,
-                style: IconButton.styleFrom(
-                  backgroundColor: Colors.black38,
-                  shape: const StadiumBorder(),
-                  minimumSize: const Size(50, 50),
-                ),
+        child: AbsorbPointer(
+          absorbing: !controller.showController.value,
+          child: Container(
+            margin: const EdgeInsets.only(right: 20.0),
+            child: IconButton(
+              onPressed: () => {controller.showLocked.toggle()},
+              icon: Icon(
+                controller.showLocked.value ? Icons.lock_rounded : Icons.lock_open_rounded,
+                size: 28,
+              ),
+              color: Colors.white,
+              style: IconButton.styleFrom(
+                backgroundColor: Colors.black38,
+                shape: const StadiumBorder(),
+                minimumSize: const Size(50, 50),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class RotateButton extends StatelessWidget {
+  const RotateButton({super.key, required this.controller});
+
+  final VideoController controller;
+
+  void _rotate() {
+    controller.enableController();
+
+    final current = controller.livePlayController.state.value.ui.uiRotation;
+
+    controller.livePlayController.updateUI(uiRotation: (current + 90) % 360);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(
+      () => AnimatedOpacity(
+        opacity: controller.showController.value ? 0.9 : 0.0,
+        duration: const Duration(milliseconds: 300),
+        child: AbsorbPointer(
+          absorbing: !controller.showController.value,
+          child: Container(
+            margin: const EdgeInsets.only(right: 20.0),
+            child: IconButton(
+              onPressed: _rotate,
+              icon: const Icon(Icons.rotate_right_outlined, size: 28),
+              color: Colors.white,
+              style: IconButton.styleFrom(
+                backgroundColor: Colors.black38,
+                shape: const StadiumBorder(),
+                minimumSize: const Size(50, 50),
               ),
             ),
           ),

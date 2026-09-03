@@ -74,17 +74,25 @@ class _VideoPlayerState extends State<VideoPlayer> with WidgetsBindingObserver {
       final audioOnly = controller.audioOnlyState.value;
       final state = controller.livePlayController.state.value;
       final displayVideo = state.ui.displayVideoLayer;
-
       return StableVideoLayer(
         visible: displayVideo,
         preserveMountedVideo: !PlatformUtils.isWindows,
         placeholder: const VideoLoading(),
-        video: GlobalPlayerService.instance.player.getVideoWidget(
-          SettingsService.to.player.videoFitIndex.v,
-          fitList: SettingsService.to.player.videoFitArray,
-          trackPipSource: true,
-          audioOnlyOverride: audioOnly,
-          controls: VideoControllerPanel(controller: controller),
+        video: Stack(
+          fit: StackFit.expand,
+          children: [
+            AnimatedRotation(
+              turns: state.ui.uiRotation / 360,
+              duration: const Duration(milliseconds: 300),
+              child: GlobalPlayerService.instance.player.getVideoWidget(
+                SettingsService.to.player.videoFitIndex.v,
+                fitList: SettingsService.to.player.videoFitArray,
+                trackPipSource: true,
+                audioOnlyOverride: audioOnly,
+              ),
+            ),
+            VideoControllerPanel(controller: controller),
+          ],
         ),
       );
     });

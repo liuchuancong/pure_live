@@ -487,6 +487,7 @@ class LivePlayController extends GetxController
     int? closeTimes,
     bool? closeTimeFlag,
     bool? displayVideoLayer,
+    int? uiRotation,
   }) {
     state.value = state.value.copyWith(
       ui: state.value.ui.copyWith(
@@ -496,6 +497,7 @@ class LivePlayController extends GetxController
         closeTimes: closeTimes,
         closeTimeFlag: closeTimeFlag,
         displayVideoLayer: displayVideoLayer,
+        uiRotation: uiRotation,
       ),
     );
   }
@@ -868,7 +870,7 @@ class LivePlayController extends GetxController
     await playerController.destroyPlayer();
 
     updatePlayer(hasUseDefaultResolution: false);
-    updateUI(refreshKey: 0);
+    updateUI(refreshKey: 0, uiRotation: 0);
 
     final autoStartAsmr = Platform.isAndroid && SettingsService.to.app.enableAsmrSleepMode.v;
     _asmrSessionActive = autoStartAsmr;

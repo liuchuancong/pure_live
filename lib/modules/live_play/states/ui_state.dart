@@ -14,6 +14,7 @@ class UIState {
   final int closeTimes;
   final bool closeTimeFlag;
   final bool displayVideoLayer;
+  final int uiRotation;
   const UIState({
     this.screenMode = VideoMode.normal,
     this.refreshKey = 0,
@@ -21,6 +22,7 @@ class UIState {
     this.closeTimes = 240,
     this.closeTimeFlag = false,
     this.displayVideoLayer = true,
+    this.uiRotation = 0,
   });
   UIState copyWith({
     VideoMode? screenMode,
@@ -29,6 +31,7 @@ class UIState {
     int? closeTimes,
     bool? closeTimeFlag,
     bool? displayVideoLayer,
+    int? uiRotation,
   }) {
     return UIState(
       screenMode: screenMode ?? this.screenMode,
@@ -37,6 +40,7 @@ class UIState {
       closeTimes: closeTimes ?? this.closeTimes,
       closeTimeFlag: closeTimeFlag ?? this.closeTimeFlag,
       displayVideoLayer: displayVideoLayer ?? this.displayVideoLayer,
+      uiRotation: uiRotation ?? this.uiRotation,
     );
   }
 
@@ -49,6 +53,7 @@ class UIState {
         '  closeTimes: $closeTimes,\n'
         '  closeTimeFlag: $closeTimeFlag,\n'
         'displayVideoLayer: $displayVideoLayer,\n'
+        '  uiRotation: $uiRotation,\n'
         ')';
   }
 
@@ -61,10 +66,18 @@ class UIState {
         other.isMenuOpen == isMenuOpen &&
         other.closeTimes == closeTimes &&
         other.closeTimeFlag == closeTimeFlag &&
-        other.displayVideoLayer == displayVideoLayer;
+        other.displayVideoLayer == displayVideoLayer &&
+        other.uiRotation == uiRotation;
   }
 
   @override
-  int get hashCode =>
-      Object.hash(screenMode, refreshKey, isMenuOpen, closeTimes, closeTimeFlag, displayVideoLayer);
+  int get hashCode => Object.hash(
+    screenMode,
+    refreshKey,
+    isMenuOpen,
+    closeTimes,
+    closeTimeFlag,
+    displayVideoLayer,
+    uiRotation,
+  );
 }
