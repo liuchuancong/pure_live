@@ -5,12 +5,12 @@ import 'package:pure_live/modules/backup/backup_page.dart';
 import 'package:pure_live/modules/settings/pages/refresh_settings.dart';
 import 'package:pure_live/modules/settings/pages/theme_settings_page.dart';
 import 'package:pure_live/modules/settings/pages/video_settings_page.dart';
-import 'package:pure_live/modules/settings/pages/pip_danmaku_settings_page.dart';
 import 'package:pure_live/modules/settings/pages/local_config_preveiw.dart';
 import 'package:pure_live/modules/settings/pages/general_settings_page.dart';
 import 'package:pure_live/modules/settings/pages/platform_settings_page.dart';
 import 'package:pure_live/modules/settings/pages/navigation_settings_page.dart';
 import 'package:pure_live/modules/settings/pages/cache_data_settings_page.dart';
+import 'package:pure_live/modules/settings/pages/pip_danmaku_settings_page.dart';
 import 'package:pure_live/modules/settings/pages/network_proxy_settings_page.dart';
 import 'package:pure_live/modules/settings/pages/player_kernel_settings_page.dart';
 import 'package:pure_live/modules/settings/pages/local_interaction_settings_page.dart';
@@ -30,7 +30,7 @@ class SettingsPage extends GetView<SettingsService> {
         title: Text(i18n('settings_title')),
         actions: [
           TextButton(
-            onPressed: () => Get.to(LocalConfigPreviewPage.new),
+            onPressed: () => Get.to(() => const LocalConfigPreviewPage()),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -139,7 +139,7 @@ class SettingsPage extends GetView<SettingsService> {
               icon: Remix.menu_line,
               title: i18n('navigation_display_settings'),
               subtitle: i18n('navigation_display_settings_desc'),
-              onTap: () => Get.to(NavigationSettingsPage.new),
+              onTap: () => Get.to(() => const NavigationSettingsPage()),
             ),
             context.buildTile(
               icon: Remix.apps_2_line,

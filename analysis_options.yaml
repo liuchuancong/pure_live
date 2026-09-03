@@ -29,5 +29,4 @@ linter:
     prefer_single_quotes: true
     always_declare_return_types: true
     avoid_print: true
-    unnecessary_lambdas: true
     prefer_const_constructors: true
