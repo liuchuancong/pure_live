@@ -16,6 +16,8 @@ class LiveRouteObserver extends RouteObserver<PageRoute<dynamic>> {
       case RoutePath.kLivePlay:
         _onLivePlayEnter();
         break;
+      case RoutePath.kMultiview:
+        _onLivePlayEnter();
       case RoutePath.kRecordPage:
         _setVideoLayerVisible(false);
         break;
