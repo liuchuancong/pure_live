@@ -1,23 +1,23 @@
 {
-  "version": "3.1.1",
-  "build_number": 4099,
-  "version_num": 301014099,
+  "version": "3.1.2",
+  "build_number": 4100,
+  "version_num": 301024100,
   "android_abis": [
     "armeabi-v7a",
     "arm64-v8a",
     "x86_64"
   ],
-  "version_desc": "version: 3.1.1\n版本更新：\n- 修复动态取色异常问题。\n- 修复深色模式下房间色彩适配错误。\n- 优化数据同步功能，提升同步稳定性。\n- 添加视频旋转功能。\n- 合并 @js8544 提交的 macOS 闪退修复\n\n",
+  "version_desc": "version: 3.1.2\n版本更新：\n- 修复ijk播放器黑屏。\n- 添加多画面静音。\n- 其他bug。\n\n",
   "prerelease": false,
-  "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.1.1",
+  "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.1.2",
   "platforms": {
     "android": {
-      "version": "3.1.1",
-      "build_number": 4099,
-      "version_num": 301014099,
-      "version_desc": "version: 3.1.1\n版本更新：\n- 优化MPV播放器用戶可自行設置配置。\n- 優化设备同步。\n- 添加自定义房间显示->主题-房间卡片设置。\n- 修复录制任务中保持活跃。\n- 修复多画面返回。\n- 添加本地互动开关。\n\n",
+      "version": "3.1.2",
+      "build_number": 4100,
+      "version_num": 301024100,
+      "version_desc": "version: 3.1.2\n版本更新：\n- 修复ijk播放器黑屏。\n- 添加多画面静音。\n- 其他bug。\n\n",
       "prerelease": false,
-      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.1.1",
+      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.1.2",
       "android_abis": [
         "armeabi-v7a",
         "arm64-v8a",
@@ -25,37 +25,37 @@
       ]
     },
     "windows": {
-      "version": "3.1.1",
-      "build_number": 4099,
-      "version_num": 301014099,
-      "version_desc": "version: 3.1.1\n版本更新：\n- 优化MPV播放器用戶可自行設置配置。\n- 優化设备同步。\n- 添加自定义房间显示->主题-房间卡片设置。\n- 修复录制任务中保持活跃。\n- 修复多画面返回。\n- 添加本地互动开关。\n\n",
+      "version": "3.1.2",
+      "build_number": 4100,
+      "version_num": 301024100,
+      "version_desc": "version: 3.1.2\n版本更新：\n- 修复ijk播放器黑屏。\n- 添加多画面静音。\n- 其他bug。\n\n",
       "prerelease": false,
-      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.1.1",
+      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.1.2",
       "windows_msix_available": true
     },
     "linux": {
-      "version": "3.1.1",
-      "build_number": 4099,
-      "version_num": 301014099,
-      "version_desc": "version: 3.1.1\n版本更新：\n- 优化MPV播放器用戶可自行設置配置。\n- 優化设备同步。\n- 添加自定义房间显示->主题-房间卡片设置。\n- 修复录制任务中保持活跃。\n- 修复多画面返回。\n- 添加本地互动开关。\n\n",
+      "version": "3.1.2",
+      "build_number": 4100,
+      "version_num": 301024100,
+      "version_desc": "version: 3.1.2\n版本更新：\n- 修复ijk播放器黑屏。\n- 添加多画面静音。\n- 其他bug。\n\n",
       "prerelease": false,
-      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.1.1"
+      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.1.2"
     },
     "macos": {
-      "version": "3.1.1",
-      "build_number": 4099,
-      "version_num": 301014099,
-      "version_desc": "version: 3.1.1\n版本更新：\n- 优化MPV播放器用戶可自行設置配置。\n- 優化设备同步。\n- 添加自定义房间显示->主题-房间卡片设置。\n- 修复录制任务中保持活跃。\n- 修复多画面返回。\n- 添加本地互动开关。\n\n",
+      "version": "3.1.2",
+      "build_number": 4100,
+      "version_num": 301024100,
+      "version_desc": "version: 3.1.2\n版本更新：\n- 修复ijk播放器黑屏。\n- 添加多画面静音。\n- 其他bug。\n\n",
       "prerelease": false,
-      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.1.1"
+      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.1.2"
     },
     "ios": {
-      "version": "3.1.1",
-      "build_number": 4099,
-      "version_num": 301014099,
-      "version_desc": "version: 3.1.1\n版本更新：\n- 优化MPV播放器用戶可自行設置配置。\n- 優化设备同步。\n- 添加自定义房间显示->主题-房间卡片设置。\n- 修复录制任务中保持活跃。\n- 修复多画面返回。\n- 添加本地互动开关。\n\n",
+      "version": "3.1.2",
+      "build_number": 4100,
+      "version_num": 301024100,
+      "version_desc": "version: 3.1.2\n版本更新：\n- 修复ijk播放器黑屏。\n- 添加多画面静音。\n- 其他bug。\n\n",
       "prerelease": false,
-      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.1.1"
+      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.1.2"
     }
   }
 }
