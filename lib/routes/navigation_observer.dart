@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'dart:developer';
-
 import 'package:flutter/scheduler.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/player/core/player_manager.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/player/utils/fullscreen.dart' show WindowService;
 import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
+
 
 class LiveRouteObserver extends RouteObserver<PageRoute<dynamic>> {
   @override
@@ -17,7 +17,7 @@ class LiveRouteObserver extends RouteObserver<PageRoute<dynamic>> {
         _onLivePlayEnter();
         break;
       case RoutePath.kMultiview:
-        _onLivePlayEnter();
+        _onMultiviewEnter();
       case RoutePath.kRecordPage:
         _setVideoLayerVisible(false);
         break;
@@ -40,6 +40,16 @@ class LiveRouteObserver extends RouteObserver<PageRoute<dynamic>> {
   void _onLivePlayEnter() {
     final playerManager = GlobalPlayerService.instance.player;
     unawaited(playerManager.closeAppFloating());
+  }
+
+  void _onMultiviewEnter() {
+    final playerManager = GlobalPlayerService.instance.player;
+    unawaited(playerManager.closeAppFloating());
+    unawaited(playerManager.close());
+    final controller = _findLivePlayController();
+    if (controller == null) return;
+    final state = controller.state.value;
+    state.player.videoController?.clearListener();
   }
 
   void _onLivePlayExit(Route<dynamic> route) {
