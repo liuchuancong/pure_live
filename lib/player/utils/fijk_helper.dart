@@ -14,8 +14,6 @@ class FijkHelper {
       enableHardwareCodec ? 1 : 0,
     );
 
-    await player.setOption(FijkOption.playerCategory, 'start-on-prepared', 0);
-
     await player.setOption(FijkOption.playerCategory, 'min-frames', 50);
 
     await player.setOption(FijkOption.playerCategory, 'framedrop', 0);
@@ -62,15 +60,19 @@ class FijkHelper {
   }
 
   static String formatDuration(Duration duration) {
-    if (duration.inMilliseconds < 0) return '-: negtive';
+    if (duration.inMilliseconds < 0) {
+      return '-: negtive';
+    }
+
     String twoDigits(int n) {
       if (n >= 10) return '$n';
       return '0$n';
     }
 
-    String twoDigitMinutes = twoDigits(duration.inMinutes.remainder(60));
-    String twoDigitSeconds = twoDigits(duration.inSeconds.remainder(60));
-    int inHours = duration.inHours;
+    final twoDigitMinutes = twoDigits(duration.inMinutes.remainder(60));
+    final twoDigitSeconds = twoDigits(duration.inSeconds.remainder(60));
+    final inHours = duration.inHours;
+
     return inHours > 0
         ? '$inHours:$twoDigitMinutes:$twoDigitSeconds'
         : '$twoDigitMinutes:$twoDigitSeconds';
@@ -79,16 +81,24 @@ class FijkHelper {
   static FijkFit getIjkBoxFit(BoxFit videoFit) {
     if (videoFit == BoxFit.contain) {
       return FijkFit.contain;
-    } else if (videoFit == BoxFit.cover) {
-      return FijkFit.cover;
-    } else if (videoFit == BoxFit.fill) {
-      return FijkFit.fill;
-    } else if (videoFit == BoxFit.fitHeight) {
-      return FijkFit.fitHeight;
-    } else if (videoFit == BoxFit.fitWidth) {
-      return FijkFit.fitWidth;
-    } else {
-      return FijkFit.contain;
     }
+
+    if (videoFit == BoxFit.cover) {
+      return FijkFit.cover;
+    }
+
+    if (videoFit == BoxFit.fill) {
+      return FijkFit.fill;
+    }
+
+    if (videoFit == BoxFit.fitHeight) {
+      return FijkFit.fitHeight;
+    }
+
+    if (videoFit == BoxFit.fitWidth) {
+      return FijkFit.fitWidth;
+    }
+
+    return FijkFit.contain;
   }
 }

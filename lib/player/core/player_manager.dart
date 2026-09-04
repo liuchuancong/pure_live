@@ -1586,20 +1586,20 @@ class PlayerManager {
     if (currentEngine is MediaKitAdapter) {
       return player.getVideoWidget(boxFit);
     }
+
     return StreamBuilder<List<int?>>(
       stream: CombineLatestStream.list([width, height]),
       builder: (context, snapshot) {
         final data = snapshot.data;
-        if (data == null ||
-            data.length < 2 ||
-            data[0] == null ||
-            data[1] == null ||
-            data[0]! <= 0 ||
-            data[1]! <= 0) {
-          return const SizedBox.shrink();
-        }
-        final videoWidth = data[0]!.toDouble();
-        final videoHeight = data[1]!.toDouble();
+
+        final videoWidth = data != null && data.length >= 2 && data[0] != null && data[0]! > 0
+            ? data[0]!.toDouble()
+            : 16.0;
+
+        final videoHeight = data != null && data.length >= 2 && data[1] != null && data[1]! > 0
+            ? data[1]!.toDouble()
+            : 9.0;
+
         return FittedBox(
           fit: boxFit,
           clipBehavior: Clip.hardEdge,
