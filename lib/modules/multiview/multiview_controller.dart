@@ -238,6 +238,12 @@ class MultiviewController extends GetxController {
   /// 手工 setState，导致页级弹幕按钮在 1×1/1×2/2×2 下没有有效目标。
   final RxInt _audioFocusIndex = 0.obs;
 
+  /// 是否一键静音所有直播间。
+  ///
+  /// 开启后所有播放器保持静音；恢复时仅恢复当前音频焦点格，
+  /// 不会让多个直播间同时出声。
+  final RxBool allMuted = false.obs;
+
   /// Serializes native mute calls and coalesces rapid focus taps to the latest
   /// cell, preventing out-of-order futures from leaving multiple cells audible.
   late final LatestAsyncValueQueue<int> _audioFocusTransitions;
@@ -325,6 +331,27 @@ class MultiviewController extends GetxController {
       final targetIndex = smallCellsLowQuality.value ? cell.qualities.length - 1 : 0;
       if (cell.qualityIndex == targetIndex) continue;
       await setCellQuality(i, targetIndex);
+    }
+  }
+
+  Future<void> toggleMuteAll() => setAllMuted(!allMuted.value);
+  Future<void> setAllMuted(bool muted) async {
+    allMuted.value = muted;
+
+    for (var index = 0; index < _players.length; index++) {
+      final handle = _players[index];
+      if (handle == null) continue;
+
+      try {
+        await handle.setMuted(muted || index != _audioFocusIndex.value);
+      } catch (error, stackTrace) {
+        developer.log(
+          'MultiviewController: failed to set mute for cell $index',
+          name: 'MultiviewController',
+          error: error,
+          stackTrace: stackTrace,
+        );
+      }
     }
   }
 
@@ -561,6 +588,16 @@ class MultiviewController extends GetxController {
       _failCell(cellIndex, epoch, MultiviewCellErrorKind.startFailure, error.toString());
       return;
     }
+    try {
+      await handle.setMuted(allMuted.value || cellIndex != _audioFocusIndex.value);
+    } catch (error, stackTrace) {
+      developer.log(
+        'MultiviewController: initial mute setup failed for cell $cellIndex',
+        name: 'MultiviewController',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
 
     // Restore the same per-room volume used by the normal player before this
     // handle can receive audio focus. All multiview handles start muted, so
@@ -610,6 +647,21 @@ class MultiviewController extends GetxController {
     }
     // 大画面房间可能已变化，同步弹幕会话（幂等）。
     unawaited(_syncDanmakuSession());
+  }
+
+  Future<void> setCellMuted(int cellIndex, bool muted) async {
+    RangeError.checkValidIndex(cellIndex, cells, 'cellIndex');
+
+    final handle = _players[cellIndex];
+    if (handle == null) {
+      throw StateError('multiview: cell $cellIndex is not playing');
+    }
+
+    if (allMuted.value && !muted) {
+      return;
+    }
+
+    await handle.setMuted(muted);
   }
 
   /// 切换指定格的清晰度：同 Player 换流，不重建播放器实例。
@@ -823,14 +875,16 @@ class MultiviewController extends GetxController {
     // Mute every non-target handle, not just the previously remembered one:
     // this also repairs any inconsistent state left by a native call failure.
     for (var index = 0; index < _players.length; index++) {
-      if (index == targetIndex) continue;
       final handle = _players[index];
       if (handle == null) continue;
+
+      final muted = allMuted.value || index != targetIndex;
+
       try {
-        await handle.setMuted(true);
+        await handle.setMuted(muted);
       } catch (error, stackTrace) {
         developer.log(
-          'MultiviewController: failed to mute cell $index',
+          'MultiviewController: failed to update mute for cell $index',
           name: 'MultiviewController',
           error: error,
           stackTrace: stackTrace,
@@ -841,8 +895,11 @@ class MultiviewController extends GetxController {
     // A newer tap arrived while native mute calls were in flight. The queue
     // will apply that pending target next, so never unmute this stale target.
     if (_audioFocusIndex.value != targetIndex || targetIndex >= _players.length) return;
+
     final target = _players[targetIndex];
-    if (target != null) await target.setMuted(false);
+    if (target != null) {
+      await target.setMuted(allMuted.value);
+    }
   }
 
   /// 释放全部格子（页面 onClose 调用），cells 全部回到 empty。

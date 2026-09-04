@@ -523,14 +523,28 @@ class _MultiviewPageState extends State<MultiviewPage> {
           // the cell carrying audio focus.
           Obx(() {
             final selectedIndex = controller.audioFocusIndexState.value;
+
             final canAdjust =
                 selectedIndex >= 0 &&
                 selectedIndex < controller.cells.length &&
                 controller.cells[selectedIndex].status == MultiviewCellStatus.playing;
-            return IconButton(
-              tooltip: i18n('multiview_volume'),
-              icon: const Icon(Remix.volume_up_line, size: 22),
-              onPressed: canAdjust ? () => _showVolumeSheet(selectedIndex) : null,
+
+            final muted = controller.allMuted.value;
+
+            return Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  tooltip: i18n('multiview_mute_all'),
+                  icon: Icon(muted ? Remix.volume_mute_line : Remix.volume_up_line, size: 22),
+                  onPressed: controller.toggleMuteAll,
+                ),
+                IconButton(
+                  tooltip: i18n('multiview_volume'),
+                  icon: const Icon(Remix.equalizer_2_line, size: 22),
+                  onPressed: canAdjust ? () => _showVolumeSheet(selectedIndex) : null,
+                ),
+              ],
             );
           }),
           // 小格自动降质联动：仅 focus 布局生效，非 focus 下置灰防误触。
