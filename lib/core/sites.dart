@@ -110,103 +110,79 @@ class Sites {
 
   static Site of(String id) {
     final normalizedId = id.trim().toLowerCase();
+
     // Do not construct every platform adapter for a single lookup. Favourite
     // verification performs this operation for every saved room; the previous
     // list scan allocated nine adapters per card and also discarded platform
     // session caches immediately afterwards.
     return switch (normalizedId) {
-      weiboSite => Site(id: weiboSite, name: i18n('site_weibo'), logo: 'assets/images/logo.png', liveSite: WeiboSite()),
-      niconicoSite => Site(
-        id: niconicoSite,
-        name: 'niconico',
-        logo: 'assets/images/logo.png',
-        liveSite: NiconicoSite(),
-      ),
+      weiboSite => Site(id: weiboSite, name: i18n('site_weibo'), logo: logoOf(weiboSite), liveSite: WeiboSite()),
+      niconicoSite => Site(id: niconicoSite, name: 'niconico', logo: logoOf(niconicoSite), liveSite: NiconicoSite()),
       bilibiliSite => Site(
         id: bilibiliSite,
         name: i18n("site_bilibili"),
-        logo: "assets/images/bilibili_2.png",
+        logo: logoOf(bilibiliSite),
         liveSite: BiliBiliSite(),
       ),
-      douyuSite => Site(
-        id: douyuSite,
-        name: i18n("site_douyu"),
-        logo: "assets/images/douyu.png",
-        liveSite: DouyuSite(),
-      ),
-      huyaSite => Site(id: huyaSite, name: i18n("site_huya"), logo: "assets/images/huya.png", liveSite: HuyaSite()),
-      douyinSite => Site(
-        id: douyinSite,
-        name: i18n("site_douyin"),
-        logo: "assets/images/douyin.png",
-        liveSite: DouyinSite(),
-      ),
+      douyuSite => Site(id: douyuSite, name: i18n("site_douyu"), logo: logoOf(douyuSite), liveSite: DouyuSite()),
+      huyaSite => Site(id: huyaSite, name: i18n("site_huya"), logo: logoOf(huyaSite), liveSite: HuyaSite()),
+      douyinSite => Site(id: douyinSite, name: i18n("site_douyin"), logo: logoOf(douyinSite), liveSite: DouyinSite()),
       kuaishouSite => Site(
         id: kuaishouSite,
         name: i18n("site_kuaishou"),
-        logo: "assets/images/kuaishou.png",
+        logo: logoOf(kuaishouSite),
         liveSite: KuaishowSite(),
       ),
-      ccSite => Site(id: ccSite, name: i18n("site_cc"), logo: "assets/images/cc.png", liveSite: CCSite()),
-      twitchSite => Site(
-        id: twitchSite,
-        name: i18n("site_twitch"),
-        logo: "assets/images/twitch.png",
-        liveSite: TwitchSite(),
-      ),
-      soopSite => Site(id: soopSite, name: i18n("site_soop"), logo: "assets/images/soop.png", liveSite: SoopSite()),
-      yySite => Site(id: yySite, name: i18n("site_yy"), logo: "assets/images/yy.png", liveSite: YYSite()),
-      acfunSite => Site(id: acfunSite, name: i18n('site_acfun'), logo: 'assets/images/logo.png', liveSite: AcfunSite()),
-      picartoSite => Site(id: picartoSite, name: 'Picarto', logo: 'assets/images/logo.png', liveSite: PicartoSite()),
+      ccSite => Site(id: ccSite, name: i18n("site_cc"), logo: logoOf(ccSite), liveSite: CCSite()),
+      twitchSite => Site(id: twitchSite, name: i18n("site_twitch"), logo: logoOf(twitchSite), liveSite: TwitchSite()),
+      soopSite => Site(id: soopSite, name: i18n("site_soop"), logo: logoOf(soopSite), liveSite: SoopSite()),
+      yySite => Site(id: yySite, name: i18n("site_yy"), logo: logoOf(yySite), liveSite: YYSite()),
+      acfunSite => Site(id: acfunSite, name: i18n('site_acfun'), logo: logoOf(acfunSite), liveSite: AcfunSite()),
+      picartoSite => Site(id: picartoSite, name: 'Picarto', logo: logoOf(picartoSite), liveSite: PicartoSite()),
       twitcastingSite => Site(
         id: twitcastingSite,
         name: 'TwitCasting',
-        logo: 'assets/images/logo.png',
+        logo: logoOf(twitcastingSite),
         liveSite: TwitcastingSite(),
       ),
       missevanSite => Site(
         id: missevanSite,
         name: i18n('site_missevan'),
-        logo: 'assets/images/logo.png',
+        logo: logoOf(missevanSite),
         liveSite: MissevanSite(),
       ),
-      iptvSite => Site(id: iptvSite, name: i18n("site_iptv"), logo: "assets/images/logo.png", liveSite: IptvSite()),
-      inkeSite => Site(id: inkeSite, name: i18n('site_inke'), logo: 'assets/images/logo.png', liveSite: InkeSite()),
+      iptvSite => Site(id: iptvSite, name: i18n("site_iptv"), logo: logoOf(iptvSite), liveSite: IptvSite()),
+      inkeSite => Site(id: inkeSite, name: i18n('site_inke'), logo: logoOf(inkeSite), liveSite: InkeSite()),
       kilakilaSite => Site(
         id: kilakilaSite,
         name: i18n('site_kilakila'),
-        logo: 'assets/images/logo.png',
+        logo: logoOf(kilakilaSite),
         liveSite: KilakilaSite(),
       ),
       huajiaoSite => Site(
         id: huajiaoSite,
         name: i18n('site_huajiao'),
-        logo: 'assets/images/logo.png',
+        logo: logoOf(huajiaoSite),
         liveSite: HuajiaoSite(),
       ),
       openrecSite => Site(
         id: openrecSite,
         name: 'mellow-fan (OPENREC)',
-        logo: 'assets/images/logo.png',
+        logo: logoOf(openrecSite),
         liveSite: OpenrecSite(),
       ),
-      ttingSite => Site(
-        id: ttingSite,
-        name: 'FLEX TV (TTingLive)',
-        logo: 'assets/images/logo.png',
-        liveSite: TtingSite(),
-      ),
+      ttingSite => Site(id: ttingSite, name: 'FLEX TV (TTingLive)', logo: logoOf(ttingSite), liveSite: TtingSite()),
       xiaohongshuSite => Site(
         id: xiaohongshuSite,
         name: i18n('site_xiaohongshu'),
-        logo: 'assets/images/logo.png',
+        logo: logoOf(xiaohongshuSite),
         liveSite: XiaohongshuSite(),
       ),
       _ => throw StateError('Unsupported live site: $normalizedId'),
     };
   }
 
-  static String? logoOf(String id) {
+  static String logoOf(String id) {
     return switch (id.trim().toLowerCase()) {
       bilibiliSite => 'assets/images/bilibili_2.png',
       douyuSite => 'assets/images/douyu.png',
@@ -218,7 +194,7 @@ class Sites {
       twitchSite => 'assets/images/twitch.png',
       soopSite => 'assets/images/soop.png',
       yySite => 'assets/images/yy.png',
-      _ => null,
+      _ => 'assets/images/logo.png',
     };
   }
 
@@ -227,17 +203,25 @@ class Sites {
     final supportedById = {for (final site in supportSites) site.id: site};
     final List<Site> result = [];
     final seen = <String>{};
+
     for (String rawId in savedIds) {
       final id = rawId.trim().toLowerCase();
-      if (!seen.add(id)) continue;
+
+      if (!seen.add(id)) {
+        continue;
+      }
+
       final match = supportedById[id];
+
       if (match != null) {
         result.add(match);
       }
     }
+
     if (containsAll) {
       result.insert(0, Site(id: allSite, name: i18n("site_all"), logo: "assets/images/all.png", liveSite: LiveSite()));
     }
+
     return result;
   }
 }
@@ -257,7 +241,11 @@ class Site {
   /// follow an in-app language change without rebuilding those adapters.
   String get name {
     final normalizedId = id.trim().toLowerCase();
-    if (normalizedId != Sites.allSite && !Sites.isSupported(normalizedId)) return _fallbackName;
+
+    if (normalizedId != Sites.allSite && !Sites.isSupported(normalizedId)) {
+      return _fallbackName;
+    }
+
     return i18nOr('site_$normalizedId', _fallbackName);
   }
 }
