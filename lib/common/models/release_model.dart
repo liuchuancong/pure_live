@@ -18,21 +18,35 @@ class ReleaseModel {
   });
 
   factory ReleaseModel.fromJson(Map<String, dynamic> json) {
-    final rawAuthor = json['author'];
-    final rawFiles = json['files'];
+    final version = json['version'] ?? json['tagName'] ?? '';
+
+    final filesData = json['files'] ?? json['assets'] ?? [];
+
+    final authorData = json['author'] ?? {};
+    final authorName = authorData['name'] ?? authorData['login'] ?? '';
+
+    final date = json['date'] ?? json['publishedAt'] ?? '';
+
     return ReleaseModel(
-      version: _releaseString(json['version']),
-      title: _releaseString(json['title']),
-      date: _releaseString(json['date']),
-      github: _releaseString(json['github']),
-      author: AuthorModel.fromJson(rawAuthor is Map ? Map<String, dynamic>.from(rawAuthor) : const {}),
-      changelog: _releaseString(json['changelog']),
-      files: rawFiles is List
-          ? rawFiles
-                .whereType<Map>()
-                .map((item) => ReleaseFileModel.fromJson(Map<String, dynamic>.from(item)))
-                .toList(growable: false)
-          : const [],
+      version: version,
+      title: json['title'] ?? json['name'] ?? '',
+      date: date,
+      github: json['github'] ?? json['url'] ?? '',
+      author: AuthorModel(
+        name: authorName,
+        avatar: authorData['avatar'] ?? '',
+        profile: authorData['profile'] ?? authorData['html_url'] ?? '',
+      ),
+      changelog: json['changelog'] ?? json['body'] ?? '',
+      files: filesData.map<ReleaseFileModel>((e) {
+        final downloads = e['downloads'] ?? e['downloadCount'] ?? 0;
+        return ReleaseFileModel(
+          name: e['name'] ?? '',
+          size: e['size'] ?? '0.0mb',
+          downloads: downloads,
+          url: e['url'] ?? '',
+        );
+      }).toList(),
     );
   }
 
@@ -57,11 +71,7 @@ class AuthorModel {
   AuthorModel({required this.name, required this.avatar, required this.profile});
 
   factory AuthorModel.fromJson(Map<String, dynamic> json) {
-    return AuthorModel(
-      name: _releaseString(json['name']),
-      avatar: _releaseString(json['avatar']),
-      profile: _releaseString(json['profile']),
-    );
+    return AuthorModel(name: json['name'] ?? '', avatar: json['avatar'] ?? '', profile: json['profile'] ?? '');
   }
 
   Map<String, dynamic> toJson() {
@@ -79,29 +89,14 @@ class ReleaseFileModel {
 
   factory ReleaseFileModel.fromJson(Map<String, dynamic> json) {
     return ReleaseFileModel(
-      name: _releaseString(json['name']),
-      size: _releaseString(json['size']),
-      downloads: _releaseInt(json['downloads']),
-      url: _releaseString(json['url']),
+      name: json['name'] ?? '',
+      size: json['size'] ?? '',
+      downloads: json['downloads'] ?? 0,
+      url: json['url'] ?? '',
     );
   }
 
   Map<String, dynamic> toJson() {
     return {'name': name, 'size': size, 'downloads': downloads, 'url': url};
   }
-}
-
-String _releaseString(Object? value) {
-  if (value == null) return '';
-  return value is String ? value : value.toString();
-}
-
-int _releaseInt(Object? value) {
-  final parsed = switch (value) {
-    int number => number,
-    num number => number.toInt(),
-    String text => int.tryParse(text.trim()) ?? 0,
-    _ => 0,
-  };
-  return parsed < 0 ? 0 : parsed;
 }
