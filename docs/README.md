@@ -4,6 +4,8 @@
 
 ## 开发与发布
 
+- [Windows 窗口尺寸持久化、PiP 几何与弹窗事务审计](WINDOW_SIZE_PERSISTENCE_AND_DIALOG_TRANSACTION_AUDIT_2026_09_13.md)：400×300～16384 单边合同、首帧/Hive/备份修复、瞬态窗口事件、PiP 有限矩形及路由拥有的事务弹窗。
+
 - [主题设置持久化、备份与首帧安全审计](THEME_SETTINGS_PERSISTENCE_AND_FIRST_FRAME_AUDIT_2026_09_13.md)：模式/语言/颜色/加载样式支持项、0～64 有限间距、启动与运行时修复、旧版字段兼容及安全首帧消费。
 
 - [单页数量设置边界与弹窗生命周期审计](PAGE_SIZE_SETTINGS_BOUNDARY_AND_LIFECYCLE_AUDIT_2026_09_13.md)：1～100 持久化/备份合同、默认值归属、无副作用保存、双语输入反馈与路由退出控制器所有权。
