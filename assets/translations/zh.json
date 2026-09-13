@@ -339,6 +339,7 @@
     "local_import": "本地导入",
     "logout": "退出登录",
     "logout_bilibili_confirm": "确定要退出哔哩哔哩账号吗？",
+    "confirm_logout_named": "确定退出“{name}”账号吗？",
     "macos_dmg": "macOS DMG",
     "manual_input": "手动输入",
     "margin_bottom": "区域底部留白（像素）",

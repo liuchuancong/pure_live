@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/modules/account/account_controller.dart';
@@ -31,7 +33,13 @@ class AccountPage extends GetView<AccountController> {
                           : accountName
                     : i18n("not_logged_in"),
                 isLogined: isLogined,
-                onTap: () => isLogined ? _showLogoutDialog(context) : controller.bilibiliTap(),
+                onTap: () => isLogined
+                    ? _showLogoutDialog(
+                        context,
+                        accountName: i18n('site_bilibili'),
+                        onConfirm: BiliBiliAccountService.instance.logout,
+                      )
+                    : controller.bilibiliTap(),
               );
             }),
 
@@ -44,7 +52,11 @@ class AccountPage extends GetView<AccountController> {
                 subtitle: isLogined ? i18n("logined") : i18n("set_cookie"),
                 isLogined: isLogined,
                 onTap: () => isLogined
-                    ? _showPlatformLogoutDialog(context, () => cookie.huyaCookie.v = "")
+                    ? _showLogoutDialog(
+                        context,
+                        accountName: i18n('site_huya'),
+                        onConfirm: () => cookie.huyaCookie.v = "",
+                      )
                     : Get.toNamed(RoutePath.kHuyaCookie),
               );
             }),
@@ -57,7 +69,7 @@ class AccountPage extends GetView<AccountController> {
                 subtitle: isLogined ? i18n("logined") : i18n("set_cookie"),
                 isLogined: isLogined,
                 onTap: () => isLogined
-                    ? _showPlatformLogoutDialog(context, () => cookie.yyCookie.v = "")
+                    ? _showLogoutDialog(context, accountName: i18n('site_yy'), onConfirm: () => cookie.yyCookie.v = "")
                     : Get.toNamed(RoutePath.kYyCookie),
               );
             }),
@@ -74,7 +86,11 @@ class AccountPage extends GetView<AccountController> {
                     : i18n("set_cookie"),
                 isLogined: isLogined,
                 onTap: () => isLogined
-                    ? _showPlatformLogoutDialog(context, () => cookie.douyinCookie.v = "")
+                    ? _showLogoutDialog(
+                        context,
+                        accountName: i18n('site_douyin'),
+                        onConfirm: () => cookie.douyinCookie.v = "",
+                      )
                     : Get.toNamed(RoutePath.kDouyinCookie),
               );
             }),
@@ -88,7 +104,11 @@ class AccountPage extends GetView<AccountController> {
                 subtitle: isLogined ? i18n("logined") : i18n("set_cookie"),
                 isLogined: isLogined,
                 onTap: () => isLogined
-                    ? _showPlatformLogoutDialog(context, () => cookie.kuaishouCookie.v = "")
+                    ? _showLogoutDialog(
+                        context,
+                        accountName: i18n('site_kuaishou'),
+                        onConfirm: () => cookie.kuaishouCookie.v = "",
+                      )
                     : Get.toNamed(RoutePath.kKuaishouCookie),
               );
             }),
@@ -101,7 +121,11 @@ class AccountPage extends GetView<AccountController> {
                 subtitle: isLogined ? i18n("logined") : i18n("set_cookie"),
                 isLogined: isLogined,
                 onTap: () => isLogined
-                    ? _showPlatformLogoutDialog(context, () => cookie.twitchCookie.v = "")
+                    ? _showLogoutDialog(
+                        context,
+                        accountName: i18n('site_twitch'),
+                        onConfirm: () => cookie.twitchCookie.v = "",
+                      )
                     : Get.toNamed(RoutePath.kTwitchCookie),
               );
             }),
@@ -114,7 +138,11 @@ class AccountPage extends GetView<AccountController> {
                 subtitle: isLogined ? i18n("logined") : i18n("set_cookie"),
                 isLogined: isLogined,
                 onTap: () => isLogined
-                    ? _showPlatformLogoutDialog(context, () => cookie.soopCookie.v = "")
+                    ? _showLogoutDialog(
+                        context,
+                        accountName: i18n('site_soop'),
+                        onConfirm: () => cookie.soopCookie.v = "",
+                      )
                     : Get.toNamed(RoutePath.kSoop),
               );
             }),
@@ -191,47 +219,48 @@ class AccountPage extends GetView<AccountController> {
     );
   }
 
-  void _showLogoutDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        scrollable: true,
-        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-        title: Text(i18n("logout")),
-        content: Text(i18n("confirm_logout")),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text(i18n("cancel"))),
-          TextButton(
-            onPressed: () {
-              BiliBiliAccountService.instance.logout();
-              Navigator.pop(context);
-            },
-            child: Text(i18n("confirm"), style: const TextStyle(color: Colors.red)),
+  void _showLogoutDialog(
+    BuildContext context, {
+    required String accountName,
+    required FutureOr<void> Function() onConfirm,
+  }) {
+    unawaited(
+      controller.runLogoutTransaction(() async {
+        if (!context.mounted) return;
+        final confirmed = await showDialog<bool>(
+          context: context,
+          useRootNavigator: true,
+          builder: (dialogContext) => AlertDialog(
+            scrollable: true,
+            insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+            title: Text(i18n('logout')),
+            content: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 420),
+              child: Text(i18n('confirm_logout_named', args: {'name': accountName})),
+            ),
+            actionsOverflowDirection: VerticalDirection.down,
+            actionsOverflowButtonSpacing: 8,
+            actions: [
+              TextButton(
+                style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
+                onPressed: () => Navigator.of(dialogContext, rootNavigator: true).pop(false),
+                child: Text(i18n('cancel')),
+              ),
+              FilledButton(
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size(48, 48),
+                  backgroundColor: Theme.of(dialogContext).colorScheme.error,
+                  foregroundColor: Theme.of(dialogContext).colorScheme.onError,
+                ),
+                onPressed: () => Navigator.of(dialogContext, rootNavigator: true).pop(true),
+                child: Text(i18n('logout')),
+              ),
+            ],
           ),
-        ],
-      ),
-    );
-  }
-
-  void _showPlatformLogoutDialog(BuildContext context, VoidCallback onConfirm) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        scrollable: true,
-        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-        title: Text(i18n("logout")),
-        content: Text(i18n("confirm_logout")),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text(i18n("cancel"))),
-          TextButton(
-            onPressed: () {
-              onConfirm();
-              Navigator.pop(context);
-            },
-            child: Text(i18n("confirm"), style: const TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
+        );
+        if (confirmed != true || !context.mounted) return;
+        await onConfirm();
+      }),
     );
   }
 }

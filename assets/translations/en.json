@@ -338,6 +338,7 @@
     "local_import": "Local import",
     "logout": "Logout",
     "logout_bilibili_confirm": "Are you sure you want to log out of Bilibili account?",
+    "confirm_logout_named": "Log out of \"{name}\"?",
     "macos_dmg": "macOS DMG",
     "manual_input": "Manual Input",
     "margin_bottom": "Bottom inset in area (pixels)",

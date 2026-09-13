@@ -199,6 +199,27 @@ void main() {
     await _flushAsync();
     expect(controller.douyinNickName.value, isEmpty);
   });
+
+  test('account logout transaction coalesces all work until completion and then releases', () async {
+    final controller = AccountController(initialLoadDelay: const Duration(days: 1));
+    Get.put<AccountController>(controller);
+    final release = Completer<void>();
+    var calls = 0;
+
+    final first = controller.runLogoutTransaction(() {
+      calls++;
+      return release.future;
+    });
+    final repeated = controller.runLogoutTransaction(() async => calls++);
+
+    expect(identical(first, repeated), isTrue);
+    expect(calls, 1);
+    release.complete();
+    await Future.wait([first, repeated]);
+
+    await controller.runLogoutTransaction(() async => calls++);
+    expect(calls, 2);
+  });
 }
 
 Future<void> _flushAsync() async {
