@@ -59,6 +59,8 @@ void main() {
     return confirmation.future;
   }
 
+  Future<bool> allowRestore() async => true;
+
   tearDown(() async {
     controller.onClose();
     if (!confirmation.isCompleted) confirmation.complete(false);
@@ -336,7 +338,11 @@ void main() {
   for (final action in ['clear', 'switch', 'close']) {
     test('download completed after $action does not start local restore', () async {
       final service = connect();
-      final download = controller.downloadFile(webdav.File(path: '/backup.txt', isDir: false));
+      final download = controller.downloadFile(
+        webdav.File(path: '/backup.txt', isDir: false),
+        confirmRestore: allowRestore,
+      );
+      await settle();
       expect(service.downloadPaths, ['/backup.txt']);
       if (action == 'close') {
         controller.onClose();
@@ -350,6 +356,23 @@ void main() {
       expect(service.closeCount, 1);
     });
   }
+
+  test('download completed after a directory change does not start local restore', () async {
+    final service = connect();
+    final download = controller.downloadFile(
+      webdav.File(path: '/backup.txt', isDir: false),
+      confirmRestore: allowRestore,
+    );
+    await settle();
+    expect(service.downloadPaths, ['/backup.txt']);
+
+    controller.dirPath.value = '/other/';
+    service.download.complete(utf8.encode('{"backupVersion":3}'));
+    await download;
+
+    expect(backup.restores, isEmpty);
+    expect(feedback, isEmpty);
+  });
 
   test('upload completion after switching service does not refresh the new service', () async {
     controller.dirPath.value = '/backups/';
@@ -407,10 +430,56 @@ void main() {
     expect(service.removals, isEmpty);
   });
 
+  test('restore cancellation leaves the server and local settings unchanged', () async {
+    final service = connect();
+
+    await controller.downloadFile(webdav.File(path: '/backup.txt'), confirmRestore: () async => false);
+
+    expect(service.downloadPaths, isEmpty);
+    expect(backup.restores, isEmpty);
+    expect(controller.fileActionLabelKey.value, isEmpty);
+  });
+
+  test('restore confirmed after service replacement never reads or changes local settings', () async {
+    final service = connect();
+    final restoreConfirmation = Completer<bool>();
+    final restore = controller.downloadFile(
+      webdav.File(path: '/backup.txt'),
+      confirmRestore: () => restoreConfirmation.future,
+    );
+    expect(controller.fileActionLabelKey.value, 'webdav_restoring');
+
+    controller.initializeWebDAV();
+    restoreConfirmation.complete(true);
+    await restore;
+
+    expect(service.downloadPaths, isEmpty);
+    expect(services.last.downloadPaths, isEmpty);
+    expect(backup.restores, isEmpty);
+    expect(controller.fileActionLabelKey.value, isEmpty);
+  });
+
+  test('restore confirmed after changing directory never reads or changes local settings', () async {
+    final service = connect();
+    final restoreConfirmation = Completer<bool>();
+    final restore = controller.downloadFile(
+      webdav.File(path: '/backup.txt'),
+      confirmRestore: () => restoreConfirmation.future,
+    );
+    controller.dirPath.value = '/other/';
+    restoreConfirmation.complete(true);
+    await restore;
+
+    expect(service.downloadPaths, isEmpty);
+    expect(backup.restores, isEmpty);
+    expect(controller.fileActionLabelKey.value, isEmpty);
+  });
+
   test('repeated restore clicks start only one download', () async {
     final service = connect();
-    final first = controller.downloadFile(webdav.File(path: '/backup.txt'));
-    final second = controller.downloadFile(webdav.File(path: '/backup.txt'));
+    final first = controller.downloadFile(webdav.File(path: '/backup.txt'), confirmRestore: allowRestore);
+    final second = controller.downloadFile(webdav.File(path: '/backup.txt'), confirmRestore: allowRestore);
+    await settle();
     final requests = service.downloadPaths.length;
     controller.onClose();
     service.download.complete(utf8.encode('{"backupVersion":3}'));
@@ -442,7 +511,7 @@ void main() {
   test('changing configuration does not allow exporting during a pending local restore', () async {
     final service = connect();
     backup.pendingRestore = Completer<void>();
-    final download = controller.downloadFile(webdav.File(path: '/backup.txt'));
+    final download = controller.downloadFile(webdav.File(path: '/backup.txt'), confirmRestore: allowRestore);
     service.download.complete(utf8.encode('{"backupVersion":3}'));
     await settle();
     expect(backup.restores, hasLength(1));
@@ -458,7 +527,7 @@ void main() {
   test('an in-flight upload prevents a conflicting restore download', () async {
     final service = connect();
     final upload = controller.uploadConfigSettings();
-    final download = controller.downloadFile(webdav.File(path: '/backup.txt'));
+    final download = controller.downloadFile(webdav.File(path: '/backup.txt'), confirmRestore: allowRestore);
     final downloads = service.downloadPaths.length;
     controller.onClose();
     service.upload.complete();
@@ -469,7 +538,7 @@ void main() {
 
   test('an in-flight restore prevents exporting a new backup', () async {
     final service = connect();
-    final download = controller.downloadFile(webdav.File(path: '/backup.txt'));
+    final download = controller.downloadFile(webdav.File(path: '/backup.txt'), confirmRestore: allowRestore);
     final upload = controller.uploadConfigSettings();
     final uploads = service.uploadPaths.length;
     controller.onClose();
@@ -481,7 +550,7 @@ void main() {
 
   test('directory items never start a backup download', () async {
     final service = connect();
-    await controller.downloadFile(webdav.File(path: '/folder/', isDir: true));
+    await controller.downloadFile(webdav.File(path: '/folder/', isDir: true), confirmRestore: allowRestore);
     expect(service.downloadPaths, isEmpty);
     expect(backup.restores, isEmpty);
   });

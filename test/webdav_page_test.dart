@@ -484,7 +484,9 @@ void main() {
     await tester.pumpAndSettle();
     var operationFinished = false;
     unawaited(
-      controller.downloadFile(webdav.File(path: '/backup.txt', isDir: false)).then((_) => operationFinished = true),
+      controller
+          .downloadFile(webdav.File(path: '/backup.txt', isDir: false), confirmRestore: () async => true)
+          .then((_) => operationFinished = true),
     );
     await tester.pump();
     expect(backup.restores, [
@@ -598,8 +600,15 @@ void main() {
     expect(find.text(translations['webdav_restoring']), findsOneWidget);
     expect(tester.widget<PopupMenuButton<String>>(find.byType(PopupMenuButton<String>)).enabled, isFalse);
     expect(tester.widget<FloatingActionButton>(find.byType(FloatingActionButton)).onPressed, isNull);
-    await controller.downloadFile(webdav.File(path: '/backup.txt'));
+    await controller.downloadFile(webdav.File(path: '/backup.txt'), confirmRestore: () async => true);
     await controller.uploadConfigSettings();
+    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(service.downloadPaths, isEmpty);
+    expect(service.uploads, isEmpty);
+    expect(backup.restores, isEmpty);
+
+    await tester.tap(find.widgetWithText(FilledButton, translations['recover_backup']));
+    await tester.pump(const Duration(milliseconds: 350));
     expect(service.downloadPaths, ['/backup.txt']);
     expect(service.uploads, isEmpty);
     expect(backup.restores, hasLength(1));
@@ -608,6 +617,48 @@ void main() {
     expect(find.text(translations['webdav_restoring']), findsNothing);
     expect(tester.widget<PopupMenuButton<String>>(find.byType(PopupMenuButton<String>)).enabled, isTrue);
     await finish(tester);
+  });
+
+  testWidgets('restore menu confirms its long target before reading or changing local settings', (tester) async {
+    final longName = List.filled(5, 'very long WebDAV backup name').join(' · ');
+    await openPage(tester, size: const Size(320, 480), textScale: 3);
+    selectConfig();
+    service.reads.single.complete([webdav.File(name: longName, path: '/backup.txt', isDir: false)]);
+    await tester.pumpAndSettle();
+    await openFileMenu(tester);
+    await tester.tap(find.text(translations['webdav_sync_to_local']));
+    await tester.pump(const Duration(milliseconds: 350));
+
+    final downloadsBeforeDecision = List<String>.from(service.downloadPaths);
+    final restoresBeforeDecision = backup.restores.length;
+    final dialog = find.byType(AlertDialog);
+    final dialogCount = dialog.evaluate().length;
+    final namedTargetCount = dialogCount == 0
+        ? 0
+        : find.descendant(of: dialog, matching: find.textContaining(longName)).evaluate().length;
+    final cancelIsReachable = find.text(translations['cancel']).hitTestable().evaluate().isNotEmpty;
+    final restoreIsReachable =
+        dialogCount != 0 &&
+        find.widgetWithText(FilledButton, translations['recover_backup']).hitTestable().evaluate().isNotEmpty;
+
+    if (dialogCount != 0) {
+      expect(await tester.binding.handlePopRoute(), isTrue);
+      await tester.pumpAndSettle();
+    }
+    if (backup.restores.isNotEmpty && !backup.restore.isCompleted) {
+      backup.restore.complete();
+      await tester.pumpAndSettle();
+    }
+    await finish(tester);
+
+    expect(downloadsBeforeDecision, isEmpty);
+    expect(restoresBeforeDecision, 0);
+    expect(dialogCount, 1);
+    expect(namedTargetCount, 1);
+    expect(cancelIsReachable, isTrue);
+    expect(restoreIsReachable, isTrue);
+    expect(service.downloadPaths, isEmpty);
+    expect(backup.restores, isEmpty);
   });
 
   testWidgets('delete confirmation cancel and network failure both restore a working retry entry', (tester) async {
@@ -683,6 +734,8 @@ void main() {
     await showBackupFile(tester);
     await openFileMenu(tester);
     await tester.tap(find.text(translations['webdav_sync_to_local']));
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.tap(find.widgetWithText(FilledButton, translations['recover_backup']));
     await tester.pumpAndSettle();
     expect(backup.restores, isEmpty);
     expect(controller.canStartFileAction, isTrue);

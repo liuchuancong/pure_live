@@ -172,7 +172,25 @@ class _WebDavPageState extends State<WebDavPage> {
   Future<bool> _showFileDeleteDialog(webdav.File file) =>
       _showDeleteConfirmation(i18n("webdav_confirm_delete_item", args: {"name": _fileDisplayName(file)}));
 
-  Future<bool> _showDeleteConfirmation(String message) async {
+  Future<bool> _showDeleteConfirmation(String message) => _showConfirmation(
+    title: i18n("webdav_confirm_delete"),
+    message: message,
+    confirmLabel: i18n("webdav_delete"),
+    danger: true,
+  );
+
+  Future<bool> _showFileRestoreDialog(webdav.File file) => _showConfirmation(
+    title: i18n("recover_backup"),
+    message: i18n("webdav_confirm_restore_item", args: {"name": _fileDisplayName(file)}),
+    confirmLabel: i18n("recover_backup"),
+  );
+
+  Future<bool> _showConfirmation({
+    required String title,
+    required String message,
+    required String confirmLabel,
+    bool danger = false,
+  }) async {
     if (!mounted) return false;
     final confirmed = await showDialog<bool>(
       context: context,
@@ -181,7 +199,7 @@ class _WebDavPageState extends State<WebDavPage> {
         return AlertDialog(
           scrollable: true,
           insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-          title: Text(i18n("webdav_confirm_delete")),
+          title: Text(title),
           content: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 420), child: Text(message)),
           actionsOverflowDirection: VerticalDirection.down,
           actionsOverflowButtonSpacing: 8,
@@ -192,13 +210,15 @@ class _WebDavPageState extends State<WebDavPage> {
               child: Text(i18n("webdav_cancel")),
             ),
             FilledButton(
-              style: FilledButton.styleFrom(
-                minimumSize: const Size(48, 48),
-                backgroundColor: theme.colorScheme.error,
-                foregroundColor: theme.colorScheme.onError,
-              ),
+              style: danger
+                  ? FilledButton.styleFrom(
+                      minimumSize: const Size(48, 48),
+                      backgroundColor: theme.colorScheme.error,
+                      foregroundColor: theme.colorScheme.onError,
+                    )
+                  : FilledButton.styleFrom(minimumSize: const Size(48, 48)),
               onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: Text(i18n("webdav_delete")),
+              child: Text(confirmLabel),
             ),
           ],
         );
@@ -454,7 +474,7 @@ class _WebDavPageState extends State<WebDavPage> {
           ],
           onSelected: (value) {
             if (value == 'Download') {
-              controller.downloadFile(file);
+              unawaited(controller.downloadFile(file, confirmRestore: () => _showFileRestoreDialog(file)));
             } else if (value == 'Delete') {
               unawaited(controller.deleteFile(file, confirmDelete: () => _showFileDeleteDialog(file)));
             }

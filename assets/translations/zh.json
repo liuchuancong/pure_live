@@ -724,6 +724,7 @@
     "webdav_confirm_delete": "确定要删除吗？",
     "webdav_confirm_delete_config": "确定要删除配置 \"{name}\" 吗？",
     "webdav_confirm_delete_item": "确定要从 WebDAV 删除“{name}”吗？",
+    "webdav_confirm_restore_item": "确定要使用“{name}”恢复并覆盖本机设置吗？恢复将应用备份中的全部配置。",
     "webdav_create_new_config": "创建新配置",
     "webdav_delete": "删除",
     "webdav_delete_failed": "文件删除失败",

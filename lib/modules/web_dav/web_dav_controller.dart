@@ -325,9 +325,10 @@ class WebDavPageController extends GetxController {
   }
 
   /// 下载并恢复配置（走新备份系统）
-  Future<void> downloadFile(webdav.File file) async {
+  Future<void> downloadFile(webdav.File file, {required Future<bool> Function() confirmRestore}) async {
     final service = _webdavService;
     final epoch = _serviceEpoch;
+    final path = dirPath.value;
     final remotePath = file.path;
     if (service == null ||
         !_ownsService(service, epoch) ||
@@ -338,15 +339,17 @@ class WebDavPageController extends GetxController {
     }
     fileActionLabelKey.value = 'webdav_restoring';
     try {
+      final result = await confirmRestore();
+      if (!result || !_ownsService(service, epoch) || dirPath.value != path) return;
       final bytes = await service.readFile(remotePath);
       // Fence before local mutation, not only before its success notification.
-      if (!_ownsService(service, epoch)) return;
+      if (!_ownsService(service, epoch) || dirPath.value != path) return;
       final data = jsonDecode(utf8.decode(bytes));
       await _backupController.restoreAllSettings(Map<String, dynamic>.from(data as Map));
-      if (!_ownsService(service, epoch)) return;
+      if (!_ownsService(service, epoch) || dirPath.value != path) return;
       _feedback(i18n("webdav_sync_success"));
     } catch (e) {
-      if (!_ownsService(service, epoch)) return;
+      if (!_ownsService(service, epoch) || dirPath.value != path) return;
       _feedback('${i18n("webdav_download_failed")}: $e', isError: true);
     } finally {
       if (!_disposed) fileActionLabelKey.value = '';

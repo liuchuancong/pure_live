@@ -723,6 +723,7 @@
     "webdav_confirm_delete": "Are you sure you want to delete?",
     "webdav_confirm_delete_config": "Are you sure you want to delete config \"{name}\"?",
     "webdav_confirm_delete_item": "Delete \"{name}\" from WebDAV?",
+    "webdav_confirm_restore_item": "Restore \"{name}\" and overwrite local settings? All settings in the backup will be applied.",
     "webdav_create_new_config": "Create New Config",
     "webdav_delete": "Delete",
     "webdav_delete_failed": "File deletion failed",
