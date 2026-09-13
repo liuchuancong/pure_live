@@ -84,6 +84,7 @@ class _VersionHistoryPageState extends State<VersionHistoryPage> {
   final RxBool historyLoading = false.obs;
   final RxBool historyError = false.obs;
   final RxInt _selectedHistoryIndex = 0.obs;
+  bool _downloadInProgress = false;
 
   @override
   void initState() {
@@ -440,21 +441,49 @@ class _VersionHistoryPageState extends State<VersionHistoryPage> {
   }
 
   Future<void> _confirmDownload(BuildContext context, ReleaseFileModel file) async {
+    if (_downloadInProgress || !mounted || !context.mounted) return;
     final uri = releaseHistoryWebUri(file.url);
     if (uri == null) return;
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(i18n('tip')),
-        content: Text(i18n('open_download_confirm')),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: Text(i18n('cancel'))),
-          FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: Text(i18n('download'))),
-        ],
-      ),
-    );
-    if (confirmed != true || !context.mounted) return;
+    _downloadInProgress = true;
     try {
+      final declaredName = file.name.trim();
+      final pathName = uri.pathSegments.reversed
+          .map((segment) => segment.trim())
+          .firstWhere((segment) => segment.isNotEmpty, orElse: () => '');
+      final displayName = declaredName.isNotEmpty
+          ? declaredName
+          : pathName.isNotEmpty
+          ? pathName
+          : i18n('version_history_unnamed_file');
+      final confirmed = await showDialog<bool>(
+        context: context,
+        useRootNavigator: true,
+        builder: (dialogContext) => AlertDialog(
+          scrollable: true,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+          title: Text(i18n('download')),
+          content: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: Text(i18n('open_download_confirm_named', args: {'name': displayName})),
+          ),
+          actionsOverflowDirection: VerticalDirection.down,
+          actionsOverflowButtonSpacing: 8,
+          actions: [
+            TextButton(
+              style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: Text(i18n('cancel')),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(minimumSize: const Size(48, 48)),
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: Text(i18n('download'), textAlign: TextAlign.center),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true || !mounted || !context.mounted) return;
+
       final handler = widget.downloadRelease;
       if (handler != null) {
         await handler(uri.toString(), fileName: file.name);
@@ -462,7 +491,9 @@ class _VersionHistoryPageState extends State<VersionHistoryPage> {
         await downloadAndInstallApk(uri.toString(), fileName: file.name);
       }
     } catch (_) {
-      if (context.mounted) _showMessage(context, 'version_history_download_failed');
+      if (mounted && context.mounted) _showMessage(context, 'version_history_download_failed');
+    } finally {
+      _downloadInProgress = false;
     }
   }
 

@@ -99,7 +99,9 @@ void main() {
     await tester.scrollUntilVisible(downloadAction, 120, scrollable: detailsScroll, maxScrolls: 10);
     await tester.tap(downloadAction);
     await tester.pumpAndSettle();
-    expect(find.text('Open this download?'), findsOneWidget);
+    expect(find.text('Download "PureLive-3.2.0-portable.zip"?'), findsOneWidget);
+    expect(find.widgetWithText(TextButton, 'Cancel').hitTestable(), findsOneWidget);
+    expect(find.widgetWithText(FilledButton, 'Download').hitTestable(), findsOneWidget);
     await tester.tap(find.widgetWithText(FilledButton, 'Download'));
     await tester.pumpAndSettle();
     expect(downloads, ['PureLive-3.2.0-portable.zip|https://example.test/PureLive-3.2.0-portable.zip']);
@@ -109,6 +111,53 @@ void main() {
     await tester.tap(close);
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('release-history-detail-scroll')), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('download confirmation coalesces route and active download work', (tester) async {
+    final downloadGate = Completer<void>();
+    var downloadCalls = 0;
+    await _pumpPage(
+      tester,
+      loader: () async => [_release('3.2.0')],
+      downloadRelease: (url, {fileName}) {
+        downloadCalls++;
+        return downloadGate.future;
+      },
+    );
+
+    await tester.tap(find.byKey(const ValueKey('release-history-mobile-3.2.0')));
+    await tester.pumpAndSettle();
+    final detailsScroll = find
+        .descendant(of: find.byKey(const ValueKey('release-history-detail-scroll')), matching: find.byType(Scrollable))
+        .first;
+    final downloadAction = find.byTooltip('Download');
+    await tester.scrollUntilVisible(downloadAction, 120, scrollable: detailsScroll, maxScrolls: 10);
+    final button = tester.widget<IconButton>(find.ancestor(of: downloadAction, matching: find.byType(IconButton)));
+    button.onPressed!();
+    button.onPressed!();
+    await tester.pumpAndSettle();
+    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(find.text('Download "PureLive-3.2.0-portable.zip"?'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(FilledButton, 'Download'));
+    await tester.pumpAndSettle();
+    expect(downloadCalls, 1);
+    expect(find.byType(AlertDialog), findsNothing);
+
+    button.onPressed!();
+    await tester.pumpAndSettle();
+    expect(find.byType(AlertDialog), findsNothing);
+    expect(downloadCalls, 1);
+
+    downloadGate.complete();
+    await tester.pumpAndSettle();
+    button.onPressed!();
+    await tester.pumpAndSettle();
+    expect(find.byType(AlertDialog), findsOneWidget);
+    await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+    await tester.pumpAndSettle();
+    expect(downloadCalls, 1);
     expect(tester.takeException(), isNull);
   });
 
@@ -258,9 +307,11 @@ class _Translations extends AssetLoader {
     'tip': 'Tip',
     'cancel': 'Cancel',
     'open_download_confirm': 'Open this download?',
+    'open_download_confirm_named': 'Download "{name}"?',
     'external_browser_not_opened': 'The system browser did not open.',
     'version_history_download_failed': 'The download could not be started. Please try again.',
     'version_history_load_failed': 'The release history could not be refreshed. Existing entries are still available.',
+    'version_history_unnamed_file': 'Unnamed file',
     'status_error_title': 'Something went wrong',
     'status_error_subtitle': 'Try again.',
     'status_retry_button': 'Retry',
