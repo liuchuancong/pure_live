@@ -4,6 +4,8 @@
 
 ## 开发与发布
 
+- [WebDAV 配置表单响应式布局审计](WEBDAV_CONFIG_FORM_RESPONSIVE_AUDIT_2026_09_14.md)：长编辑标题收束与完整提示、单一纵向滚动面、窄屏大字号字段/动作可达性及 48×48 动作合同。
+
 - [WebDAV 配置抽屉路由与布局审计](WEBDAV_CONFIG_DRAWER_ROUTE_AND_LAYOUT_AUDIT_2026_09_14.md)：长配置名称收束与完整提示、编辑/删除动作可达性、页面所有的配置/删除路由、抽屉精确关闭及控制器导航解耦。
 
 - [桌面退出弹窗与动作事务审计](DESKTOP_EXIT_DIALOG_AND_ACTION_TRANSACTION_AUDIT_2026_09_13.md)：退出动作归一化、窄屏大字号布局、single-flight 路由、偏好落盘、原生失败后的窗口/拦截恢复及备份合同。
