@@ -1,5 +1,7 @@
 # 3.2.0 剩余工作与当前候选（2026-09-14）
 
+- **09-14 观看记录保留数量弹窗已补齐窄屏布局与输入校验**：[专项审计](HISTORY_RETENTION_DIALOG_LAYOUT_AND_VALIDATION_AUDIT_2026_09_14.md)。旧弹窗在 320×480 / 3.0 倍英文文字下稳定向下溢出 260 px，“Apply”命中点落在窗口外；空白、非数字或负数还会静默返回。`0272de8a` 统一标题/正文滚动边界、纵向全宽 48 px 应用动作和可换行底部动作，并以弹窗 State 提供双语行内错误、继续编辑清错、键盘完成与点击共用校验。有效红灯 **19 PASS / 2 FAIL**，最终三文件 **30/30 PASS**、本批唯一一次 analyze 无问题。未构建候选、启动 GUI 或操作设备；AND-HISTORY-01/A1-05/W1-01 保持 RUN，宏观仍为 **20 PASS / 42 RUN / 0 NR，共 42 组未闭环**，Astra Light 使用 0 次。
+
 - **09-14 Windows 视频输出尺寸已纳入实际显示模式**：[专项审计](WINDOWS_VIDEO_OUTPUT_FIT_SIZING_AUDIT_2026_09_14.md)。旧 viewport / DPR 策略始终按 `contain` 的最小轴分配原生纹理；1920×1080 源在 500×500 视口选择 `cover` / `fitHeight` 时仍只分配 500×282，再由 Flutter 放大到约 889×500。`7715e0fa` 将有效 `BoxFit` 传到尺寸策略和尺寸器，按主导轴分配、保持源宽高比与源尺寸上限，并在显示模式变化时重新发布 `setSize`。有效红灯为缺少 `fit` 合同，最终四文件 **26/26 PASS**、本批唯一一次 analyze 无问题；Windows x64 Debug 构建成功，ZIP 为 142,778,353 B / `8B823AC8…5B43`。未启动 GUI、采集 GPU 或操作设备；W3-03/#767 保持 RUN，宏观仍为 **20 PASS / 42 RUN / 0 NR，共 42 组未闭环**，Astra Light 使用 0 次。
 
 - **09-14 Windows 副屏亮度的原生所有权已从构建边界移除**：[专项审计](WINDOWS_SECONDARY_MONITOR_BRIGHTNESS_OWNERSHIP_AUDIT_2026_09_14.md)。Issue #863 的 `screen_brightness_windows` 在没有 Dart 调用时仍会监听窗口大小/激活/关闭消息，并通过 DDC/CI 把捕获值写到当前物理显示器；旧 `6cf42712` 的 CMake 变量没有消费者。`a0bbe074` 改为平台接口与 Android/iOS 直接实现，Windows/macOS 注册器、锁文件和新 ZIP 均移除桌面亮度插件，移动端 MethodChannel 保持。有效红灯 **1/4 PASS**，最终 13 文件 **245/245 PASS**、本批唯一一次 analyze 无问题；Windows x64 Debug 构建成功，日志/安装清单/1,301 项 ZIP 均 0 命中，EXE 依赖表也不含亮度 DLL。未启动 GUI、写显示器亮度或操作设备；W1-01 保持 RUN，宏观仍为 **20 PASS / 42 RUN / 0 NR，共 42 组未闭环**，Astra Light 使用 0 次。

@@ -4,6 +4,8 @@
 
 ## 开发与发布
 
+- [观看记录保留数量弹窗布局与校验审计](HISTORY_RETENTION_DIALOG_LAYOUT_AND_VALIDATION_AUDIT_2026_09_14.md)：320×480 / 3.0 倍文字下的 260 px 溢出、静默非法输入、统一滚动面、草稿提交语义及 30 项回归。
+
 - [Windows 视频输出 fit 尺寸所有权审计](WINDOWS_VIDEO_OUTPUT_FIT_SIZING_AUDIT_2026_09_14.md)：Issue #767 的 viewport / DPR 尺寸策略遗漏显示模式、`cover` 等模式的纹理放大链、26 项回归及 Windows Debug 构建边界。
 
 - [Windows 副屏亮度所有权审计](WINDOWS_SECONDARY_MONITOR_BRIGHTNESS_OWNERSHIP_AUDIT_2026_09_14.md)：Issue #863 的无 Dart 调用原生 DDC/CI 写入链、旧 CMake 开关失效原因、移动端实现保留、245 项回归及 Windows Debug 依赖/打包边界。

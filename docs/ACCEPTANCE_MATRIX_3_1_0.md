@@ -4,6 +4,8 @@
 
 状态：`NR` 未执行、`RUN` 执行中、`PASS` 通过、`FAIL` 失败、`BLOCKED` 缺少当前外部条件。`PASS` 必须附日志、截图、命令记录或确定性测试路径；构建成功不等于功能通过。
 
+> 2026-09-14 观看记录保留数量增量：旧弹窗在 320×480 / 3.0 倍英文文字下稳定向下溢出 260 px，“Apply”命中点落在窗口外；空白、非数字或负数还会静默返回。`0272de8a` 统一标题/正文滚动边界、纵向全宽 48 px 应用动作和可换行底部动作，并以弹窗 State 提供双语行内错误、继续编辑清错、键盘完成与点击共用校验。有效红灯 19 PASS / 2 FAIL，最终三文件 30/30 与本批唯一一次 analyze 通过，见 `docs/HISTORY_RETENTION_DIALOG_LAYOUT_AND_VALIDATION_AUDIT_2026_09_14.md`。未构建候选或操作设备；AND-HISTORY-01/A1-05/W1-01 保持 RUN，账本仍为 20 PASS / 42 RUN / 0 NR，共 42 组未闭环。
+
 > 2026-09-14 Windows 视频输出 fit 尺寸增量：旧 viewport / DPR 策略始终按 `contain` 的最小轴分配原生纹理，1920×1080 源在 500×500 视口选择 `cover` / `fitHeight` 时仍只分配 500×282，再由 Flutter 放大到约 889×500。`7715e0fa` 将有效 `BoxFit` 传到尺寸策略和尺寸器，按主导轴分配、保持源宽高比与源尺寸上限，并在显示模式变化时重新发布 `setSize`。有效红灯为缺少 `fit` 合同，最终四文件 26/26 与本批唯一一次 analyze 通过；Windows x64 Debug ZIP 142,778,353 B / `8B823AC8…5B43` 构建成功，见 `docs/WINDOWS_VIDEO_OUTPUT_FIT_SIZING_AUDIT_2026_09_14.md`。未启动 GUI 或采集 GPU；W3-03/#767 保持 RUN，账本仍为 20 PASS / 42 RUN / 0 NR，共 42 组未闭环。
 
 > 2026-09-14 Windows 副屏亮度增量：Issue #863 的稳定写入链来自仍被生成注册器加载的 `screen_brightness_windows`。该插件注册后监听窗口大小/激活/关闭消息，通过 DDC/CI 把捕获值写到窗口当前所在的物理显示器；旧 `6cf42712` 的 CMake 变量没有被生成逻辑或插件消费。`a0bbe074` 改为平台接口与 Android/iOS 直接实现，Windows/macOS 注册器、锁文件和新 ZIP 均移除桌面亮度插件，移动端实现保留。有效红灯 1/4，最终 13 文件 245/245 与本批唯一一次 analyze 通过；Windows x64 Debug 构建成功，日志/安装清单/1,301 项 ZIP 均 0 命中，EXE 依赖表也不含亮度 DLL，见 `docs/WINDOWS_SECONDARY_MONITOR_BRIGHTNESS_OWNERSHIP_AUDIT_2026_09_14.md`。未启动 GUI 或写亮度；W1-01 保持 RUN，账本仍为 20 PASS / 42 RUN / 0 NR，共 42 组未闭环。
