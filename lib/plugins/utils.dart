@@ -79,29 +79,14 @@ class Utils {
     List<Widget>? actions,
     bool barrierDismissible = true,
   }) async {
-    var result = await Get.dialog<bool>(
-      AlertDialog(
-        title: Text(title),
-        content: Container(
-          constraints: const BoxConstraints(maxHeight: 400),
-          child: SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              child: selectable ? SelectableText(content) : Text(content),
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: (() => Navigator.of(Get.context!).pop(false)),
-            child: Text(cancel.isEmpty ? i18n("cancel") : cancel),
-          ),
-          TextButton(
-            onPressed: (() => Navigator.of(Get.context!).pop(true)),
-            child: Text(confirm.isEmpty ? i18n("confirm") : confirm),
-          ),
-          ...?actions,
-        ],
+    final result = await Get.dialog<bool>(
+      _SharedAlertDialog(
+        title: title,
+        content: content,
+        selectable: selectable,
+        cancel: cancel,
+        confirm: confirm,
+        additionalActions: actions,
       ),
       barrierDismissible: barrierDismissible,
     );
@@ -118,22 +103,8 @@ class Utils {
     String confirm = '',
     bool selectable = false,
   }) async {
-    var result = await Get.dialog(
-      AlertDialog(
-        title: Text(title),
-        content: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          child: selectable ? SelectableText(content) : Text(content),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(Get.context!).pop(true);
-            },
-            child: Text(confirm.isEmpty ? i18n("confirm") : confirm),
-          ),
-        ],
-      ),
+    final result = await Get.dialog<bool>(
+      _SharedAlertDialog(title: title, content: content, selectable: selectable, confirm: confirm),
     );
     return result ?? false;
   }
@@ -330,6 +301,58 @@ class Utils {
       ),
     );
     return result ?? false;
+  }
+}
+
+class _SharedAlertDialog extends StatelessWidget {
+  const _SharedAlertDialog({
+    required this.title,
+    required this.content,
+    required this.selectable,
+    required this.confirm,
+    this.cancel,
+    this.additionalActions,
+  });
+
+  final String title;
+  final String content;
+  final bool selectable;
+  final String confirm;
+  final String? cancel;
+  final List<Widget>? additionalActions;
+
+  @override
+  Widget build(BuildContext context) {
+    final actionWidgets = <Widget>[
+      if (cancel != null)
+        TextButton(
+          style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
+          onPressed: () => Navigator.of(context).pop(false),
+          child: Text(cancel!.isEmpty ? i18n("cancel") : cancel!),
+        ),
+      TextButton(
+        style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
+        onPressed: () => Navigator.of(context).pop(true),
+        child: Text(confirm.isEmpty ? i18n("confirm") : confirm),
+      ),
+      ...?additionalActions,
+    ];
+
+    return AlertDialog(
+      scrollable: true,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+      title: title.isEmpty ? null : Text(title),
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 420),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: selectable ? SelectableText(content) : Text(content),
+        ),
+      ),
+      actionsOverflowDirection: VerticalDirection.down,
+      actionsOverflowButtonSpacing: 8,
+      actions: actionWidgets,
+    );
   }
 }
 
