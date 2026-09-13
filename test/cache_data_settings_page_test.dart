@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -65,18 +66,52 @@ void main() {
     await _pumpRouteTransition(tester);
 
     expect(find.text('Clear Local Cache?'), findsOneWidget);
-    expect(find.text('Cancel').hitTestable(), findsOneWidget);
-    expect(find.text('Clear').hitTestable(), findsOneWidget);
-    await tester.tap(find.text('Cancel').hitTestable());
+    final cancel = find.widgetWithText(TextButton, 'Cancel').hitTestable();
+    final clear = find.widgetWithText(FilledButton, 'Clear').hitTestable();
+    expect(cancel, findsOneWidget);
+    expect(clear, findsOneWidget);
+    expect(tester.getSize(cancel).width, greaterThanOrEqualTo(48));
+    expect(tester.getSize(cancel).height, greaterThanOrEqualTo(48));
+    expect(tester.getSize(clear).width, greaterThanOrEqualTo(48));
+    expect(tester.getSize(clear).height, greaterThanOrEqualTo(48));
+    await tester.tap(cancel);
     await _pumpRouteTransition(tester);
     expect(cache.clearCalls, 0);
 
     await _scrollUntilHitTestable(tester, clearTile);
     await tester.tap(clearTile.hitTestable());
     await _pumpRouteTransition(tester);
-    await tester.tap(find.text('Clear').hitTestable());
+    await tester.tap(find.widgetWithText(FilledButton, 'Clear').hitTestable());
     await _pumpRouteTransition(tester);
     expect(cache.clearCalls, 1);
+    Get.closeAllSnackbars();
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('cache clear confirmation and active clear share one transaction', (tester) async {
+    cache.clearCompleter = Completer<CacheClearResult>();
+    await _pumpPage(tester, english);
+    final tile = find.ancestor(of: find.text('Clear Local Cache'), matching: find.byType(ListTile));
+    final staleOnTap = tester.widget<ListTile>(tile).onTap!;
+
+    staleOnTap();
+    staleOnTap();
+    await _pumpRouteTransition(tester);
+    expect(find.byType(AlertDialog), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(FilledButton, 'Clear'));
+    await _pumpRouteTransition(tester);
+    expect(cache.clearCalls, 1);
+    expect(find.byType(AlertDialog), findsNothing);
+
+    staleOnTap();
+    await tester.pump();
+    expect(find.byType(AlertDialog), findsNothing);
+    expect(cache.clearCalls, 1);
+
+    cache.clearCompleter!.complete(const CacheClearResult(remainingSizeMB: 0, failedOperations: 0));
+    await tester.pump();
     Get.closeAllSnackbars();
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
@@ -147,6 +182,7 @@ class _TestCacheController extends CacheController {
     : super(cacheDirectoryResolver: () async => const <Directory>[], encodedImageCacheClearer: () async {});
 
   int clearCalls = 0;
+  Completer<CacheClearResult>? clearCompleter;
 
   @override
   // Test fixture avoids the production refresh timer registration.
@@ -165,6 +201,8 @@ class _TestCacheController extends CacheController {
   @override
   Future<CacheClearResult> clearCache() async {
     clearCalls++;
+    final pending = clearCompleter;
+    if (pending != null) return pending.future;
     cacheSizeMB.value = 0;
     return const CacheClearResult(remainingSizeMB: 0, failedOperations: 0);
   }
