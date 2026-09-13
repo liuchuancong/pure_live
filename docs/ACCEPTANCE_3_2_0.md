@@ -1,5 +1,7 @@
 # 3.2.0 完整验收入口
 
+- **09-14 Windows 副屏亮度的原生所有权已从构建边界移除**：[专项审计](WINDOWS_SECONDARY_MONITOR_BRIGHTNESS_OWNERSHIP_AUDIT_2026_09_14.md)。Issue #863 的稳定写入链来自 `screen_brightness_windows`：插件注册后即监听窗口大小/激活/关闭消息，并把按窗口显示器捕获的值通过 DDC/CI 写到当前物理显示器；旧 `6cf42712` 只保护 Dart 调用，CMake 变量没有消费者。`a0bbe074` 改为平台接口与 Android/iOS 直接实现，Windows/macOS 注册器、锁文件和新 ZIP 均移除桌面亮度插件，移动端 MethodChannel 保持。有效红灯 **1/4 PASS**，最终 13 文件 **245/245 PASS**、本批唯一一次 analyze 无问题；Windows x64 Debug 构建成功，日志/安装清单/1,301 项 ZIP 均 0 命中，EXE 依赖表也不含亮度 DLL。未启动 GUI、写显示器亮度或操作设备；W1-01 保持 RUN，宏观保持 **20 PASS / 42 RUN / 0 NR**、仍有 42 组未闭环；Astra Light 0 次。
+
 - **09-14 房间卡片设置已按当前架构恢复并兼容 3.1.2 持久值**：[专项审计](ROOM_CARD_SETTINGS_REGRESSION_AND_RESTORATION_AUDIT_2026_09_14.md)。本地标签对照确认 `upstream-v3.1.2` 到 `upstream-v3.1.3` 删除了设置目录九个文件、共 6,736 行，主题入口随之消失，与 Issue #864 的稳定版现象一致。`230ad13d` 恢复移动/桌面独立配置、简洁/标准/详细预设、真实卡片预览、可见字段和 0～32 圆角，兼容旧四键与字段名并纳入 V2/V3/旧版备份。14 个受影响测试文件 **154/154 PASS**，最后一次 Dart 编辑后的最终 analyze 无问题。未构建候选或操作设备；A1-02/A2-01 保持 RUN，宏观保持 **20 PASS / 42 RUN / 0 NR**、仍有 42 组未闭环；Astra Light 0 次。
 
 - **09-14 WebDAV 本机设置恢复已建立具名确认与目录事务合同**：[专项审计](WEBDAV_RESTORE_CONFIRMATION_AND_TRANSACTION_AUDIT_2026_09_14.md)。旧“同步到本地”会立即读取远端文件并覆盖本机全部设置，也只在读取后核对服务身份。`79d8965f` 在任何远端读取或本地变更前显示完整文件名和覆盖说明，共用响应式页面弹窗，并在确认后、读取后和恢复后核对服务代次与目录路径。有效红灯 **0/1 PASS**，页面 **27/27 PASS**、目录状态 **44/44 PASS**、最终七文件 **90/90 PASS**，一次全库 analyze 无问题。未连接真实服务器、构建候选或操作设备；A1-05 保持 RUN，宏观保持 **20 PASS / 42 RUN / 0 NR**、仍有 42 组未闭环；Astra Light 0 次。
