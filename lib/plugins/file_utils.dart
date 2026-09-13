@@ -28,21 +28,28 @@ class FileUtils {
     return result.toString();
   }
 
-  /// 验证是否为合法 URL 链接
-  static bool isValidUrl(String value) {
-    final urlRegExp = RegExp(
-      r"((https?:www\.)|(https?:\/\/)|(www\.))[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9]{1,6}(\/[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)?",
-    );
-    return urlRegExp.allMatches(value).isNotEmpty;
+  static Uri? parseHttpUrl(String value) {
+    final trimmed = value.trim();
+    if (trimmed.isEmpty || RegExp(r'\s').hasMatch(trimmed)) return null;
+
+    final uri = Uri.tryParse(trimmed);
+    if (uri == null) return null;
+    final scheme = uri.scheme.toLowerCase();
+    if ((scheme != 'http' && scheme != 'https') || uri.host.isEmpty) return null;
+
+    try {
+      if (uri.hasPort && (uri.port < 1 || uri.port > 65535)) return null;
+    } on FormatException {
+      return null;
+    }
+    return uri.scheme == scheme ? uri : uri.replace(scheme: scheme);
   }
 
-  /// 验证是否包含 Host 域名的 URL 链接
-  static bool isHostUrl(String value) {
-    final urlRegExp = RegExp(
-      r"((https?:www\.)|(https?:\/\/))[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9]{1,6}(\/[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)?",
-    );
-    return urlRegExp.allMatches(value).isNotEmpty;
-  }
+  /// Only complete HTTP(S) URLs are accepted. Substrings and schemeless host
+  /// names must stay on the local-path branch instead of reaching a launcher.
+  static bool isValidUrl(String value) => parseHttpUrl(value) != null;
+
+  static bool isHostUrl(String value) => parseHttpUrl(value) != null;
 
   /// 验证字符串是否为纯数字（端口号校验）
   static bool isNumericPort(String value) {
@@ -103,11 +110,11 @@ class FileUtils {
     final trimmedPath = pathOrUrl.trim();
     if (trimmedPath.isEmpty) return false;
 
-    if (isValidUrl(trimmedPath)) {
+    final remoteUri = parseHttpUrl(trimmedPath);
+    if (remoteUri != null) {
       try {
-        final Uri uri = Uri.parse(trimmedPath);
-        if (await canLaunchUrl(uri)) {
-          return await launchUrl(uri, mode: LaunchMode.externalApplication);
+        if (await canLaunchUrl(remoteUri)) {
+          return await launchUrl(remoteUri, mode: LaunchMode.externalApplication);
         }
       } catch (_) {
         return false;

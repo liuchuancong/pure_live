@@ -396,6 +396,27 @@ void main() {
     await tap(tester, 'cancel');
     await finish(tester);
   });
+  testWidgets('network import accepts a complete long-TLD URL and rejects an embedded URL substring', (tester) async {
+    await open(tester);
+    await openImport(tester);
+    await tester.enterText(find.byType(TextField).at(0), 'https://example.technology/list.m3u');
+    await tester.enterText(find.byType(TextField).at(1), 'Modern host');
+    await tester.tap(find.text(translations['confirm'] as String));
+    await tester.pump();
+    expect(imports, hasLength(1));
+    expect(imports.single.$2, 'https://example.technology/list.m3u');
+    imports.single.$4.complete(true);
+    await tester.pumpAndSettle();
+
+    await openImport(tester);
+    await tester.enterText(find.byType(TextField).at(0), 'prefix https://example.test/list.m3u');
+    await tester.enterText(find.byType(TextField).at(1), 'Embedded host');
+    await tap(tester, 'confirm');
+    expect(find.text(translations['invalid_download_link'] as String), findsOneWidget);
+    expect(imports, hasLength(1));
+    await tap(tester, 'cancel');
+    await finish(tester);
+  });
   testWidgets('completed import is not relabelled failed when only refreshing the list fails', (tester) async {
     await open(tester);
     await openImport(tester);
