@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -9,6 +8,7 @@ import 'package:pure_live/modules/backup/scan_page.dart';
 import 'package:pure_live/modules/auth/auth_controller.dart';
 import 'package:pure_live/plugins/backup_recovery_service.dart';
 import 'package:pure_live/common/services/settings/log_controller.dart';
+
 
 class BackupPage extends StatefulWidget {
   const BackupPage({super.key});
@@ -116,6 +116,12 @@ class _BackupPageState extends State<BackupPage> {
                 subtitle: i18n("backup_to_webdav"),
                 isLong: true,
                 onTap: () => Get.toNamed(RoutePath.kWebDavPage),
+              ),
+              context.buildTile(
+                icon: Remix.qr_scan_2_line,
+                title: i18n('remote_sync'),
+                subtitle: i18n('remote_sync_subtitle'),
+                onTap: () => Get.toNamed(RoutePath.kRemoteSync),
               ),
               if (Platform.isAndroid || Platform.isIOS)
                 context.buildTile(
