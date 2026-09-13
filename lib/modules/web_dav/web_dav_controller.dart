@@ -240,7 +240,6 @@ class WebDavPageController extends GetxController {
       dirPath.value = '/';
       initializeWebDAV();
     }
-    Navigator.pop(Get.context!);
   }
 
   void rebuildBreadcrumb() {
@@ -262,7 +261,6 @@ class WebDavPageController extends GetxController {
     saveCurrentConfig(config.name);
     initializeWebDAV();
     rebuildBreadcrumb();
-    Navigator.pop(Get.context!);
   }
 
   void onFileTap(webdav.File file) {

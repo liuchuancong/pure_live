@@ -21,7 +21,10 @@ class _WebDavPageState extends State<WebDavPage> {
   final GlobalKey _currentBreadcrumbKey = GlobalKey();
 
   void _showConfigDialog({WebDAVConfig? existingConfig}) {
-    Get.dialog(_WebDavConfigDialog(controller: controller, existingConfig: existingConfig));
+    showDialog<void>(
+      context: context,
+      builder: (_) => _WebDavConfigDialog(controller: controller, existingConfig: existingConfig),
+    );
   }
 
   @override
@@ -52,7 +55,7 @@ class _WebDavPageState extends State<WebDavPage> {
           );
         },
       ),
-      endDrawer: _buildDrawer(),
+      endDrawer: _buildDrawer(context),
       floatingActionButton: Obx(
         () => FloatingActionButton(
           onPressed: controller.canUpload ? () => controller.uploadConfigSettings() : null,
@@ -80,12 +83,12 @@ class _WebDavPageState extends State<WebDavPage> {
     );
   });
 
-  Widget _buildDrawer() {
+  Widget _buildDrawer(BuildContext context) {
     return Drawer(
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.only(topLeft: Radius.circular(0), bottomLeft: Radius.circular(0)),
       ),
-      backgroundColor: Theme.of(Get.context!).colorScheme.surfaceContainer,
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
       child: ListView(
         padding: EdgeInsets.zero,
         children: [
@@ -95,19 +98,30 @@ class _WebDavPageState extends State<WebDavPage> {
               children: [
                 for (final config in controller.configs)
                   ListTile(
-                    title: Text(config.name),
+                    title: Tooltip(
+                      message: config.name,
+                      child: Text(config.name, maxLines: 2, overflow: TextOverflow.ellipsis),
+                    ),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         IconButton(
+                          tooltip: i18n("webdav_edit_config", args: {"name": config.name}),
                           icon: const Icon(Icons.edit),
                           onPressed: () => _showConfigDialog(existingConfig: config),
                         ),
-                        IconButton(icon: const Icon(Icons.delete), onPressed: () => _showDeleteDialog(config)),
+                        IconButton(
+                          tooltip: i18n("webdav_delete"),
+                          icon: const Icon(Icons.delete),
+                          onPressed: () => _showDeleteDialog(config),
+                        ),
                       ],
                     ),
                     selected: controller.currentConfig.value?.name == config.name,
-                    onTap: () => controller.onConfigSelected(config),
+                    onTap: () {
+                      controller.onConfigSelected(config);
+                      _scaffoldKey.currentState?.closeEndDrawer();
+                    },
                   ),
                 ListTile(
                   title: Text(i18n("webdav_add_new_config")),
@@ -122,28 +136,41 @@ class _WebDavPageState extends State<WebDavPage> {
     );
   }
 
-  void _showDeleteDialog(WebDAVConfig config) {
-    Get.dialog(
-      AlertDialog(
-        title: Text(i18n("webdav_confirm_delete")),
-        content: Text(i18n("webdav_confirm_delete_config", args: {"name": config.name})),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(Get.context!);
-            },
-            child: Text(i18n("webdav_cancel")),
+  Future<void> _showDeleteDialog(WebDAVConfig config) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        final theme = Theme.of(dialogContext);
+        return AlertDialog(
+          scrollable: true,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+          title: Text(i18n("webdav_confirm_delete")),
+          content: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: Text(i18n("webdav_confirm_delete_config", args: {"name": config.name})),
           ),
-          TextButton(
-            onPressed: () => controller.deleteConfig(config),
-            child: Text(
-              i18n("webdav_delete"),
-              style: AppTextStyles.t14.copyWith(color: Theme.of(Get.context!).colorScheme.error),
+          actionsOverflowDirection: VerticalDirection.down,
+          actionsOverflowButtonSpacing: 8,
+          actions: [
+            TextButton(
+              style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: Text(i18n("webdav_cancel")),
             ),
-          ),
-        ],
-      ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                minimumSize: const Size(48, 48),
+                backgroundColor: theme.colorScheme.error,
+                foregroundColor: theme.colorScheme.onError,
+              ),
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: Text(i18n("webdav_delete")),
+            ),
+          ],
+        );
+      },
     );
+    if (confirmed == true && mounted) controller.deleteConfig(config);
   }
 
   Widget _buildAppBar() {

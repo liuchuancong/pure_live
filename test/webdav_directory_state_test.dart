@@ -94,6 +94,19 @@ void main() {
     await settle();
   }
 
+  test('configuration mutations do not depend on a global navigation context', () {
+    controller.configs.assignAll([config]);
+
+    expect(() => controller.onConfigSelected(config), returnsNormally);
+    expect(controller.currentConfig.value, same(config));
+    expect(services, hasLength(1));
+
+    expect(() => controller.deleteConfig(config), returnsNormally);
+    expect(controller.configs, isEmpty);
+    expect(controller.currentConfig.value, isNull);
+    expect(controller.dirPath.value, '/');
+  });
+
   for (final raw in ['{broken', 'null', '[]', '42', '{"name":7}', '{}']) {
     test('invalid stored selection $raw preserves data and opens without a connection', () async {
       await seed(raw, [config]);

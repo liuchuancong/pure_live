@@ -183,6 +183,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('fixture').last);
     await completeReads(tester);
+    expect(tester.state<ScaffoldState>(find.byType(Scaffold)).isEndDrawerOpen, isFalse);
     expect(controller.currentConfig.value, same(saved));
     expect(controller.configurationIssueKey.value, isEmpty);
     expect(find.text(translations['webdav_saved_selection_invalid']), findsNothing);
@@ -281,7 +282,7 @@ void main() {
     await completeReads(tester);
     await tester.tap(find.byTooltip('更多操作'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('打开配置列表'));
+    await tester.tap(find.text('打开配置列表').hitTestable());
     await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.edit));
     await tester.pumpAndSettle();
@@ -296,6 +297,46 @@ void main() {
     expect(controller.currentConfig.value!.address, 'https://edited.test/dav/');
     expect(controller.currentConfig.value!.password, ' edited-password ');
     expect(service.reads, hasLength(2));
+    await finish(tester);
+  });
+
+  testWidgets('long config deletion keeps both decisions reachable and closes only its dialog', (tester) async {
+    final longName = List.filled(4, 'very long WebDAV configuration name').join(' · ');
+    controller.configs.add(
+      WebDAVConfig(name: longName, address: 'https://example.test/dav/', username: 'user', password: 'password'),
+    );
+    await openPage(tester, size: const Size(320, 480), textScale: 3);
+
+    await tester.tap(find.byTooltip('更多操作'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('打开配置列表').hitTestable());
+    await tester.pumpAndSettle();
+    expect(find.byType(Drawer), findsOneWidget);
+
+    final deleteIcon = find.byIcon(Icons.delete);
+    final drawerScroll = find.descendant(of: find.byType(Drawer), matching: find.byType(Scrollable));
+    expect(drawerScroll, findsOneWidget);
+    await tester.scrollUntilVisible(deleteIcon, 120, scrollable: drawerScroll);
+    await tester.tap(deleteIcon.hitTestable());
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(find.text('取消').hitTestable(), findsOneWidget);
+    expect(find.text('删除').hitTestable(), findsOneWidget);
+
+    await tester.tap(find.text('取消').hitTestable());
+    await tester.pumpAndSettle();
+    expect(find.byType(AlertDialog), findsNothing);
+    expect(tester.state<ScaffoldState>(find.byType(Scaffold)).isEndDrawerOpen, isTrue);
+    expect(deleteIcon.hitTestable(), findsOneWidget);
+    expect(controller.configs.single.name, longName);
+
+    await tester.tap(deleteIcon.hitTestable());
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('删除').hitTestable());
+    await tester.pumpAndSettle();
+    expect(find.byType(AlertDialog), findsNothing);
+    expect(controller.configs, isEmpty);
+    expect(tester.state<ScaffoldState>(find.byType(Scaffold)).isEndDrawerOpen, isTrue);
     await finish(tester);
   });
 
