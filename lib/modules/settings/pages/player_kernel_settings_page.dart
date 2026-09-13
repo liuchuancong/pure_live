@@ -1,20 +1,23 @@
 import 'dart:io';
-
-import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/common/services/settings/player_settings_controller.dart';
-import 'package:pure_live/core/common/proxy_routing.dart';
 import 'package:url_launcher/url_launcher_string.dart';
-import 'package:pure_live/player/utils/mpv_platform_profile.dart';
+import 'package:pure_live/core/common/proxy_routing.dart';
 import 'package:pure_live/player/utils/player_consts.dart';
 import 'package:pure_live/player/models/player_engine.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
+import 'package:pure_live/player/utils/mpv_platform_profile.dart';
+import 'package:pure_live/modules/settings/pages/decoder_settings.dart';
+import 'package:pure_live/modules/settings/pages/renderer_settings.dart';
+import 'package:pure_live/modules/settings/pages/audio_output_settings_page.dart';
+import 'package:pure_live/common/services/settings/player_settings_controller.dart';
+
 
 class PlayerKernelSettingsPage extends GetView<SettingsService> {
   const PlayerKernelSettingsPage({super.key});
-
+  SettingsService get settings => SettingsService.to;
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -150,102 +153,161 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
             title: i18n("custom_output_hwdec"),
             value: SettingsService.to.player.customPlayerOutput,
           ),
-          Obx(
-            () => context.buildMenuTile<String>(
-              title: i18n("video_output_driver"),
-              icon: Remix.movie_line,
-              value: normalizeMpvVideoOutputDriverForPlatform(SettingsService.to.player.videoOutputDriver.v, platform),
-              valueMap: videoOutputDrivers,
-              onChanged: (e) => SettingsService.to.player.videoOutputDriver.v = e,
-            ),
-          ),
-          Obx(
-            () => context.buildMenuTile<String>(
-              title: i18n("audio_output_driver"),
-              icon: Remix.volume_up_line,
-              value: normalizeMpvAudioOutputDriverForPlatform(SettingsService.to.player.audioOutputDriver.v, platform),
-              valueMap: audioOutputDrivers,
-              onChanged: (e) => SettingsService.to.player.audioOutputDriver.v = e,
-            ),
-          ),
-          Obx(
-            () => context.buildMenuTile<String>(
-              title: i18n("hardware_decoder"),
-              icon: Remix.cpu_line,
-              value: normalizeMpvHardwareDecoderForPlatform(SettingsService.to.player.videoHardwareDecoder.v, platform),
-              valueMap: hardwareDecoders,
-              onChanged: (e) => SettingsService.to.player.videoHardwareDecoder.v = e,
-            ),
+
+          Obx(() => _buildHardwareDecoderTile(context)),
+          Obx(() => _buildRendererTile(context)),
+          Obx(() => _buildAudioSection(context)),
+        ]),
+      ],
+    );
+  }
+
+  Widget _buildHardwareDecoderTile(BuildContext context) {
+    return context.buildTile(
+      icon: Remix.cpu_line,
+      title: i18n('hardware_decoder'),
+      subtitle: _getHardwareDecoderName(),
+      trailing: const Icon(Remix.arrow_right_s_line),
+      onTap: () => Get.to(() => const DecoderSettingsPage()),
+    );
+  }
+
+  Widget _buildRendererTile(BuildContext context) {
+    return context.buildTile(
+      icon: Remix.tv_line,
+      title: i18n('video_output_driver'),
+      subtitle: _getRendererName(),
+      trailing: const Icon(Remix.arrow_right_s_line),
+      onTap: () => Get.to(() => const RendererSettingsPage()),
+    );
+  }
+
+  Widget _buildAudioSection(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 10),
+        context.buildGroupTitle(i18n('audio_settings')),
+        context.buildModernCard([
+          context.buildTile(
+            icon: Remix.volume_up_line,
+            title: i18n('audio_output_driver'),
+            subtitle: _getAudioOutputDriverName(),
+            trailing: const Icon(Remix.arrow_right_s_line),
+            onTap: () => Get.to(() => const AudioOutputSettingsPage()),
           ),
         ]),
       ],
     );
   }
 
-  Widget _buildMpvWarningAndReset(BuildContext context, ThemeData theme) {
-    final warning = Wrap(
-      crossAxisAlignment: WrapCrossAlignment.center,
-      spacing: 4,
-      children: [
-        Text(
-          i18n("mpv_warning_text"),
-          style: AppTextStyles.t12.copyWith(color: theme.hintColor.withValues(alpha: 0.65)),
-        ),
-        InkWell(
-          borderRadius: BorderRadius.circular(4),
-          onTap: () => launchUrlString("https://mpv.io"),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-            child: Text(
-              i18n("mpv_official_docs"),
-              style: AppTextStyles.t12.copyWith(
-                color: theme.colorScheme.primary,
-                fontWeight: FontWeight.w600,
-                decoration: TextDecoration.underline,
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-    final reset = InkWell(
-      borderRadius: BorderRadius.circular(8),
-      onTap: () => SettingsService.to.player.resetMpvPlayerSettings(),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Remix.refresh_line, size: 14, color: Colors.red),
-            const SizedBox(width: 4),
-            Flexible(
-              child: Text(
-                i18n("reset"),
-                style: const TextStyle(color: Colors.red, fontWeight: FontWeight.w600),
-              ),
-            ),
-          ],
-        ),
-      ),
+  String _getAudioOutputDriverName() {
+    final key = settings.player.audioOutputDriver.v;
+
+    final item = PlayerConsts.audioOutputDriversList.firstWhere(
+      (item) => item['key'] == key,
+      orElse: () => PlayerConsts.audioOutputDriversList.first,
     );
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final stack = constraints.maxWidth < 420 || MediaQuery.textScalerOf(context).scale(13) > 18;
-        if (stack) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [warning, const SizedBox(height: 12), reset],
-          );
-        }
-        return Row(
-          children: [
-            Expanded(child: warning),
-            const SizedBox(width: 12),
-            reset,
-          ],
-        );
-      },
+    final isZh = Get.locale?.languageCode == 'zh';
+
+    return isZh ? item['nameZh']! : item['nameEn']!;
+  }
+
+  String _getRendererName() {
+    final key = settings.player.videoOutputDriver.v;
+
+    final item = PlayerConsts.videoRenderersList.firstWhere(
+      (item) => item['key'] == key,
+      orElse: () => PlayerConsts.videoRenderersList.first,
+    );
+
+    final isZh = Get.locale?.languageCode == 'zh';
+
+    return isZh ? item['nameZh']! : item['nameEn']!;
+  }
+
+  String _getHardwareDecoderName() {
+    final key = settings.player.videoHardwareDecoder.v;
+
+    final item = PlayerConsts.hardwareDecodersList.firstWhere(
+      (item) => item['key'] == key,
+      orElse: () => PlayerConsts.hardwareDecodersList.first,
+    );
+
+    final isZh = Get.locale?.languageCode == 'zh';
+
+    return isZh ? item['nameZh']! : item['nameEn']!;
+  }
+
+  Widget _buildMpvWarningAndReset(BuildContext context, ThemeData theme) {
+    final theme = Theme.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        context.buildGroupTitle(i18n('mpv_advanced_settings')),
+        context.buildModernCard([
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 12, 12),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 5),
+                    child: Wrap(
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 4,
+                      runSpacing: 2,
+                      children: [
+                        Text(
+                          i18n('mpv_warning_text'),
+                          style: AppTextStyles.t12.copyWith(color: theme.hintColor.withValues(alpha: 0.65)),
+                        ),
+                        InkWell(
+                          borderRadius: BorderRadius.circular(4),
+                          onTap: () => launchUrlString('https://mpv.io'),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                            child: Text(
+                              i18n('mpv_official_docs'),
+                              style: AppTextStyles.t12.copyWith(
+                                color: theme.colorScheme.primary,
+                                fontWeight: FontWeight.w600,
+                                decoration: TextDecoration.underline,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                InkWell(
+                  borderRadius: BorderRadius.circular(8),
+                  onTap: () => settings.player.resetMpvPlayerSettings(),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Remix.refresh_line, size: 15, color: Colors.red),
+                        const SizedBox(width: 4),
+                        Text(
+                          i18n('reset'),
+                          style: const TextStyle(color: Colors.red, fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ]),
+      ],
     );
   }
 
