@@ -4,6 +4,8 @@
 
 ## 开发与发布
 
+- [录制中心取消监控布局与事务审计](RECORDER_MONITOR_REMOVAL_LAYOUT_AND_TRANSACTION_AUDIT_2026_09_14.md)：具名且明确保留文件的确认、320×480 / 3.0 倍文字布局、单次路由/底层调用及 43 项回归。
+
 - [关注分区取消关注弹窗布局与事务审计](FAVORITE_AREA_UNFOLLOW_LAYOUT_AND_TRANSACTION_AUDIT_2026_09_14.md)：320×480 / 3.0 倍文字下的 128 px 溢出、重复确认路由、捕获目标身份及 24 项回归。
 
 - [观看记录保留数量弹窗布局与校验审计](HISTORY_RETENTION_DIALOG_LAYOUT_AND_VALIDATION_AUDIT_2026_09_14.md)：320×480 / 3.0 倍文字下的 260 px 溢出、静默非法输入、统一滚动面、草稿提交语义及 30 项回归。
