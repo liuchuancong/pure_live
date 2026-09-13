@@ -21,6 +21,7 @@ import 'package:pure_live/common/services/settings/player_settings_controller.da
 import 'package:pure_live/common/services/settings/cookie_settings_controller.dart';
 import 'package:pure_live/common/services/settings/volume_settings_controller.dart';
 import 'package:pure_live/common/services/settings/danmaku_settings_controller.dart';
+import 'package:pure_live/common/services/settings/room_card_settings_controller.dart';
 
 class SettingsService extends GetxService {
   static SettingsService get to => Get.find<SettingsService>();
@@ -40,6 +41,7 @@ class SettingsService extends GetxService {
   IptvSettingsController get iptv => Get.find<IptvSettingsController>();
   VolumeSettingsController get vol => Get.find<VolumeSettingsController>();
   ThemeSettingsController get theme => Get.find<ThemeSettingsController>();
+  RoomCardSettingsController get roomCard => Get.find<RoomCardSettingsController>();
   ProxySettingsController get proxy => Get.find<ProxySettingsController>();
   BackupController get backup => Get.find<BackupController>();
   RefreshConfigController get refreshConfig => Get.find<RefreshConfigController>();
@@ -57,6 +59,7 @@ class SettingsService extends GetxService {
     Get.lazyPut(() => StartupController(), fenix: true);
     Get.lazyPut(() => AppSettingsController(), fenix: true);
     Get.lazyPut(() => ThemeSettingsController(), fenix: true);
+    Get.lazyPut(() => RoomCardSettingsController(), fenix: true);
     Get.lazyPut(() => WindowSizeController(), fenix: true);
     Get.lazyPut(() => ProxySettingsController(), fenix: true);
     Get.lazyPut(() => PlayerSettingsController(), fenix: true);

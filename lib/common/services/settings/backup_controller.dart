@@ -22,6 +22,7 @@ import 'package:pure_live/common/services/settings/player_settings_controller.da
 import 'package:pure_live/common/services/settings/volume_settings_controller.dart';
 import 'package:pure_live/common/services/settings/cookie_settings_controller.dart';
 import 'package:pure_live/common/services/settings/danmaku_settings_controller.dart';
+import 'package:pure_live/common/services/settings/room_card_settings_controller.dart';
 
 class BackupController extends GetxController {
   static BackupController get to => Get.find();
@@ -41,6 +42,7 @@ class BackupController extends GetxController {
       'sensitiveDataIncluded': includeSensitiveData,
       'app': Get.find<AppSettingsController>().toJson(),
       'theme': Get.find<ThemeSettingsController>().toJson(),
+      'roomCard': Get.find<RoomCardSettingsController>().toJson(),
       'font': Get.find<FontSettingsController>().toJson(),
       'player': Get.find<PlayerSettingsController>().toJson(),
       'danmaku': Get.find<DanmakuSettingsController>().toJson(),
@@ -78,6 +80,13 @@ class BackupController extends GetxController {
   static final Map<String, Set<String>> _sectionKeys = {
     'app': AppSettingsController.extractConfig(null).keys.toSet(),
     'theme': ThemeSettingsController.extractConfig(null).keys.toSet()..add('languageName'),
+    'roomCard': RoomCardSettingsController.extractConfig(null).keys.toSet()
+      ..addAll({
+        'room_card_mobile_preset',
+        'room_card_desktop_preset',
+        'room_card_mobile_config',
+        'room_card_desktop_config',
+      }),
     'font': FontSettingsController.extractConfig(null).keys.toSet(),
     'player': PlayerSettingsController.extractConfig(null).keys.toSet(),
     'danmaku': DanmakuSettingsController.extractConfig(null).keys.toSet()..add('pipDanmaNoEmojiMode'),
@@ -137,6 +146,7 @@ class BackupController extends GetxController {
       'danmaku': DanmakuSettingsController.parseConfig,
       'windowSize': WindowSizeController.parseConfig,
       'theme': ThemeSettingsController.parseConfig,
+      'roomCard': RoomCardSettingsController.parseConfig,
       'font': FontSettingsController.parseConfig,
       'exit': ExitSettingsController.parseConfig,
       'iptv': IptvSettingsController.parseConfig,
@@ -195,6 +205,8 @@ class BackupController extends GetxController {
 
     Get.find<ThemeSettingsController>().fromJson(Map<String, dynamic>.from(data['theme'] ?? {}));
 
+    Get.find<RoomCardSettingsController>().fromJson(Map<String, dynamic>.from(data['roomCard'] ?? {}));
+
     Get.find<FontSettingsController>().fromJson(Map<String, dynamic>.from(data['font'] ?? {}));
 
     Get.find<PlayerSettingsController>().fromJson(Map<String, dynamic>.from(data['player'] ?? {}));
@@ -247,6 +259,7 @@ class BackupController extends GetxController {
     const sections = <String>[
       'app',
       'theme',
+      'roomCard',
       'font',
       'player',
       'danmaku',
@@ -276,6 +289,7 @@ class BackupController extends GetxController {
   void _importLegacy(Map<String, dynamic> data) {
     Get.find<AppSettingsController>().fromJson(data);
     Get.find<ThemeSettingsController>().fromJson(data);
+    Get.find<RoomCardSettingsController>().fromJson(data);
     Get.find<FontSettingsController>().fromJson(data);
     Get.find<PlayerSettingsController>().fromJson(data);
     Get.find<DanmakuSettingsController>().fromJson(data);

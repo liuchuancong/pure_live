@@ -11,6 +11,7 @@ import 'package:pure_live/common/models/live_room.dart';
 import 'package:pure_live/common/services/settings/font_settings_controller.dart';
 import 'package:pure_live/common/services/settings/history_controller.dart';
 import 'package:pure_live/common/services/settings/refresh_config_controller.dart';
+import 'package:pure_live/common/services/settings/room_card_settings_controller.dart';
 import 'package:pure_live/common/services/settings/theme_settings_controller.dart';
 import 'package:pure_live/common/services/settings_service.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
@@ -43,6 +44,7 @@ void main() {
     Get.testMode = true;
     Get.put<SettingsService>(_Settings());
     Get.put(ThemeSettingsController());
+    Get.put(RoomCardSettingsController());
     Get.put(RefreshConfigController()).maxConcurrentRefresh.value = 4;
     history = Get.put(HistoryController());
     history.setHistoryLimit(50);

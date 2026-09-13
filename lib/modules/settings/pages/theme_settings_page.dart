@@ -8,6 +8,7 @@ import 'package:pure_live/modules/settings/pages/page_settings.dart';
 import 'package:pure_live/modules/settings/pages/font_settings_page.dart';
 import 'package:pure_live/modules/settings/pages/font_family_manager_page.dart';
 import 'package:pure_live/modules/settings/pages/loading_style_settings_page.dart';
+import 'package:pure_live/modules/settings/pages/room_card_settings_page.dart';
 import 'package:pure_live/modules/settings/widgets/app_color_picker_dialog.dart';
 
 class ThemeSettingsPage extends GetView<SettingsService> {
@@ -82,6 +83,20 @@ class ThemeSettingsPage extends GetView<SettingsService> {
                     style: AppTextStyles.t13.copyWith(color: Theme.of(context).colorScheme.outline),
                   );
                 }),
+              ),
+            ),
+          ]),
+          const SizedBox(height: 20),
+          context.buildGroupTitle(i18n('room_card_settings')),
+          context.buildModernCard([
+            KeyedSubtree(
+              key: const ValueKey('room-card-settings-entry'),
+              child: context.buildTile(
+                icon: Remix.layout_grid_line,
+                title: i18n('room_card_settings'),
+                subtitle: i18n('room_card_settings_subtitle'),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () => Get.to(() => const RoomCardSettingsPage()),
               ),
             ),
           ]),

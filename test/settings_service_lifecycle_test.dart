@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce/hive.dart';
 import 'package:pure_live/common/services/settings/app_settings_controller.dart';
 import 'package:pure_live/common/services/settings/iptv_settings_controller.dart';
+import 'package:pure_live/common/services/settings/room_card_settings_controller.dart';
 import 'package:pure_live/common/services/settings_service.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:pure_live/get/get.dart';
@@ -46,5 +47,6 @@ void main() {
     Get.put(SettingsService(), permanent: true);
 
     expect(Get.isPrepared<AppSettingsController>(), isTrue);
+    expect(Get.isPrepared<RoomCardSettingsController>(), isTrue);
   });
 }
