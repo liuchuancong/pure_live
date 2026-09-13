@@ -4,6 +4,10 @@
 
 ## 开发与发布
 
+- **Windows Computer Use 模型说明**：仅在 Windows 客户端 GUI 验收开始时创建一个 Astra Light 任务，并在同一验收批次内持续复用；源码、测试、构建、文档、Android 与其他非 Computer Use 工作使用常规模型。权威规则见 [`AGENTS.md`](../AGENTS.md#device-and-collaboration-boundaries) 与 [`AGENT_WORKFLOW.md`](AGENT_WORKFLOW.md#model-and-task-handoff)。
+
+- [更新与版本历史 Web 目标归一化审计](UPDATE_AND_RELEASE_WEB_TARGET_AUDIT_2026_09_13.md)：共享 HTTP(S) 解析、用户信息/端口边界、单次 URI 归一化及复制与下载消费一致性。
+
 - [下载文件名 UTF-8 边界与冲突审计](DOWNLOAD_FILENAME_UTF8_AND_COLLISION_AUDIT_2026_09_13.md)：240 字节 basename、暂存/回滚后缀预算、完整 Unicode scalar、扩展名保留及长名称摘要去碰撞。
 
 - [HTTP(S) 目标校验与 IPTV 网络导入审计](HTTP_TARGET_VALIDATION_AND_IPTV_IMPORT_AUDIT_2026_09_13.md)：完整结构化 URI、长顶级域名/回环地址、端口边界、嵌入片段拒绝及外部打开与网络导入共享决策。

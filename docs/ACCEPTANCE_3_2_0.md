@@ -1,5 +1,7 @@
 # 3.2.0 完整验收入口
 
+- **09-13 更新与版本历史 Web 目标已统一归一化合同**：[专项审计](UPDATE_AND_RELEASE_WEB_TARGET_AUDIT_2026_09_13.md)。旧两套局部规则会接受用户信息和越界端口，版本历史还会在校验归一化值后把原始字符串交给剪贴板或下载器。有效红灯为 **13 PASS / 3 FAIL**；`ce051c03` 统一复用结构化 HTTP(S) 解析、拒绝非空 userInfo，并让复制/下载消费同一个 `Uri.toString()`。直接 **16/16 PASS**，最终九文件 **47/47 PASS**、全库 analyze 无问题。未构建或执行原生 Windows/设备操作；A1-05/A2-01 保持 RUN，宏观保持 **20 PASS / 42 RUN / 0 NR**、仍有 42 组未闭环；Astra Light 0 次。
+
 - **09-13 下载文件名已建立 UTF-8 字节、Unicode scalar 与截断去碰撞合同**：[专项审计](DOWNLOAD_FILENAME_UTF8_AND_COLLISION_AUDIT_2026_09_13.md)。旧 160 UTF-16 code unit 截断会让中文 basename 连同 `.part`/`.previous` 超过常见单目录项限制，会切开 emoji 代理项，也会把共享长前缀的不同资产截成同名。稳定红灯为 **8 PASS / 2 FAIL**；`83f38ecc` 改为 240 UTF-8 字节预算，按完整 scalar 截断，保留扩展名并为长名称加入 12 位 SHA-256 摘要。直接 **10/10 PASS**，最终八文件 **39/39 PASS**、全库 analyze 无问题。未构建或执行原生 Windows/设备操作；A1-05/A2-01 保持 RUN，宏观保持 **20 PASS / 42 RUN / 0 NR**、仍有 42 组未闭环；Astra Light 0 次。
 
 - **09-13 HTTP(S) 目标识别与 IPTV 网络导入已统一结构化合同**：[专项审计](HTTP_TARGET_VALIDATION_AND_IPTV_IMPORT_AUDIT_2026_09_13.md)。旧未锚定正则既会拒绝 localhost、IPv6、长顶级域名和大写 scheme，又会把嵌入前后缀或本地路径中的 URL 片段判为有效。稳定行为红灯为 **0/3 PASS**；`e46ffbc4` 新增完整 URI、HTTP/HTTPS、非空 host 和 1～65535 显式端口合同，让校验与外部打开共享同一个已验证 URI，并覆盖 IPTV 设置页的长顶级域名提交与嵌入文本拦截。直接 **3/3 PASS**、页面集成 **45/45 PASS**，最终十文件 **128/128 PASS**、全库 analyze 无问题。未构建或执行原生 Windows/设备操作；A1-05/A2-01 保持 RUN，宏观保持 **20 PASS / 42 RUN / 0 NR**、仍有 42 组未闭环；Astra Light 0 次。

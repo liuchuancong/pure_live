@@ -4,6 +4,8 @@
 
 状态：`NR` 未执行、`RUN` 执行中、`PASS` 通过、`FAIL` 失败、`BLOCKED` 缺少当前外部条件。`PASS` 必须附日志、截图、命令记录或确定性测试路径；构建成功不等于功能通过。
 
+> 2026-09-13 更新与版本历史 Web 目标增量：`ce051c03` 将更新下载和版本历史统一到完整结构化 HTTP(S) URI 合同，拒绝非空 userInfo 与 1～65535 之外的显式端口；复制和下载动作各自只解析一次，并消费同一个规范 `Uri.toString()`，避免校验值与实际传递值分离。稳定红灯 13 PASS / 3 FAIL、直接 16/16 和最终九文件 47/47 均已留档，全库 analyze 无问题，见 `docs/UPDATE_AND_RELEASE_WEB_TARGET_AUDIT_2026_09_13.md`。A1-05/A2-01 保持 RUN，账本仍为 20 PASS / 42 RUN / 0 NR，共 42 组未闭环。
+
 > 2026-09-13 下载文件名增量：`83f38ecc` 把更新页、版本历史与下载弹窗共用的安全文件名从 160 UTF-16 code unit 改为 240 UTF-8 字节 basename，给 `.part`/`.previous` 预留单目录项预算；截断按完整 Unicode scalar 执行，扩展名最多保留 32 字节，超长名称加入 12 位 SHA-256 摘要以隔离共享前缀碰撞。稳定红灯 8 PASS / 2 FAIL、直接 10/10 和最终八文件 39/39 均已留档，全库 analyze 无问题，见 `docs/DOWNLOAD_FILENAME_UTF8_AND_COLLISION_AUDIT_2026_09_13.md`。A1-05/A2-01 保持 RUN，账本仍为 20 PASS / 42 RUN / 0 NR，共 42 组未闭环。
 
 > 2026-09-13 HTTP(S) 目标校验与 IPTV 网络导入增量：`e46ffbc4` 用完整结构化 URI 替换未锚定且限制顶级域名长度的正则，统一 HTTP/HTTPS scheme、非空 host、1～65535 显式端口和内部无空白合同；localhost、IPv4/IPv6、长顶级域名与编码组件保持有效，嵌入文本、无 scheme、非 HTTP 协议和越界端口被拒绝。校验、外部打开和 IPTV 网络导入共享决策。稳定行为红灯 0/3、直接 3/3、页面集成 45/45 和最终十文件 128/128 均已留档，全库 analyze 无问题，见 `docs/HTTP_TARGET_VALIDATION_AND_IPTV_IMPORT_AUDIT_2026_09_13.md`。A1-05/A2-01 保持 RUN，账本仍为 20 PASS / 42 RUN / 0 NR，共 42 组未闭环。
