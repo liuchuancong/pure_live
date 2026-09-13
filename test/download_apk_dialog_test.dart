@@ -40,6 +40,34 @@ void main() {
     expect(safeDownloadFileName('https://example.test/'), 'PureLive-download');
   });
 
+  test('long Unicode download names fit staging limits and remain collision resistant', () {
+    final sharedPrefix = List.filled(80, '直播更新包').join();
+    final first = safeDownloadFileName(
+      'https://example.test/releases/app.apk',
+      suggestedName: '$sharedPrefix-first.apk',
+    );
+    final second = safeDownloadFileName(
+      'https://example.test/releases/app.apk',
+      suggestedName: '$sharedPrefix-second.apk',
+    );
+
+    expect(first, endsWith('.apk'));
+    expect(second, endsWith('.apk'));
+    expect(first, isNot(second));
+    expect(utf8.encode('$first.previous'), hasLength(lessThanOrEqualTo(255)));
+    expect(utf8.encode('$second.previous'), hasLength(lessThanOrEqualTo(255)));
+  });
+
+  test('Unicode truncation keeps complete scalar values', () {
+    final result = safeDownloadFileName(
+      'https://example.test/releases/app.apk',
+      suggestedName: 'a${List.filled(120, '😀').join()}.apk',
+    );
+
+    expect(utf8.decode(utf8.encode(result)), result);
+    expect(result, endsWith('.apk'));
+  });
+
   testWidgets('Android completion stages atomically and opens the downloaded file', (tester) async {
     String? transferPath;
     String? openedPath;

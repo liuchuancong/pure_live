@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
 
+import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:path/path.dart' as path;
@@ -21,6 +23,9 @@ typedef DownloadFileTransfer = Future<void> Function({
 });
 typedef DownloadDirectoryProvider = Future<Directory> Function();
 typedef DownloadFileOpener = Future<DownloadedFileOpenResult> Function(String filePath);
+
+const _maxDownloadBaseNameBytes = 240;
+const _maxDownloadExtensionBytes = 32;
 
 class DownloadedFileOpenResult {
   const DownloadedFileOpenResult.opened() : isOpened = true, message = '';
@@ -48,19 +53,42 @@ String safeDownloadFileName(String url, {String? suggestedName}) {
       .replaceAll(RegExp(r'[\x00-\x1F\x7F<>:"/\\|?*\u202A-\u202E\u2066-\u2069]'), '_')
       .replaceFirst(RegExp(r'^[. ]+'), '')
       .replaceFirst(RegExp(r'[. ]+$'), '');
+  candidate = String.fromCharCodes(candidate.runes);
 
   if (candidate.isEmpty || candidate == '.' || candidate == '..') candidate = 'PureLive-download';
   if (RegExp(r'^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)', caseSensitive: false).hasMatch(candidate)) {
     candidate = '_$candidate';
   }
 
-  const maxLength = 160;
-  if (candidate.length > maxLength) {
-    final extension = path.extension(candidate);
-    final extensionLength = extension.length > 20 ? 20 : extension.length;
-    candidate = '${candidate.substring(0, maxLength - extensionLength)}${extension.substring(0, extensionLength)}';
+  return _fitDownloadBaseName(candidate);
+}
+
+String _fitDownloadBaseName(String candidate) {
+  if (utf8.encode(candidate).length <= _maxDownloadBaseNameBytes) return candidate;
+
+  final rawExtension = path.extension(candidate);
+  final extension = _truncateUtf8(rawExtension, _maxDownloadExtensionBytes);
+  final stem = rawExtension.isEmpty ? candidate : candidate.substring(0, candidate.length - rawExtension.length);
+  final digest = sha256.convert(utf8.encode(candidate)).toString().substring(0, 12);
+  final suffix = '-$digest$extension';
+  final stemBudget = _maxDownloadBaseNameBytes - utf8.encode(suffix).length;
+  var fittedStem = _truncateUtf8(stem, stemBudget);
+  if (fittedStem.isEmpty) fittedStem = _truncateUtf8('PureLive', stemBudget);
+  return '$fittedStem$suffix';
+}
+
+String _truncateUtf8(String value, int maxBytes) {
+  if (maxBytes <= 0 || value.isEmpty) return '';
+  final buffer = StringBuffer();
+  var usedBytes = 0;
+  for (final rune in value.runes) {
+    final scalar = String.fromCharCode(rune);
+    final scalarBytes = utf8.encode(scalar).length;
+    if (usedBytes + scalarBytes > maxBytes) break;
+    buffer.write(scalar);
+    usedBytes += scalarBytes;
   }
-  return candidate;
+  return buffer.toString();
 }
 
 class DownloadApkDialog extends StatefulWidget {
