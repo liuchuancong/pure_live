@@ -1,16 +1,16 @@
-import 'dart:convert';
 import 'dart:io';
-
+import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pure_live/common/utils/version_util.dart';
-import 'package:pure_live/modules/version/version_controller.dart';
 import 'package:pure_live/modules/version/version_page.dart';
+import 'package:pure_live/modules/version/version_controller.dart';
+
 
 void main() {
   test('maintained build reads updates and release assets from the same repository', () {
-    expect(VersionUtil.projectUrl, 'https://github.com/wzgrx/pure_live');
+    expect(VersionUtil.projectUrl, 'https://github.com/liuchuancong/pure_live');
     expect(VersionUtil.issuesUrl, '${VersionUtil.projectUrl}/issues');
-    expect(VersionUtil.releaseUrl, contains('/repos/wzgrx/pure_live/releases'));
+    expect(VersionUtil.releaseUrl, contains('/repos/liuchuancong/pure_live/releases'));
   });
 
   test('release URLs match locally produced artifact names', () {
@@ -31,17 +31,17 @@ void main() {
 
   test('incomplete release identity never produces broken download links', () {
     const missingVersion = ReleaseAssetUrls(
-      projectUrl: 'https://github.com/wzgrx/pure_live',
+      projectUrl: 'https://github.com/liuchuancong/pure_live',
       version: '',
       buildNumber: 52,
     );
     const missingBuild = ReleaseAssetUrls(
-      projectUrl: 'https://github.com/wzgrx/pure_live',
+      projectUrl: 'https://github.com/liuchuancong/pure_live',
       version: '3.2.0',
       buildNumber: 0,
     );
     const unsafeVersion = ReleaseAssetUrls(
-      projectUrl: 'https://github.com/wzgrx/pure_live',
+      projectUrl: 'https://github.com/liuchuancong/pure_live',
       version: '3.2.0/../../fixture',
       buildNumber: 52,
     );

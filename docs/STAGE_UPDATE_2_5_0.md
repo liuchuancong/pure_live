@@ -2,7 +2,7 @@
 
 版本：`2.5.0+4072`  
 上游基线：`liuchuancong/pure_live@b84a847d`  
-维护仓库：`wzgrx/pure_live`
+维护仓库：`liuchuancong/pure_live`
 
 ## 首页刷新
 

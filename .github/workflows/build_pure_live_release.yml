@@ -1,4 +1,4 @@
-# Manual compatibility entrypoint; stage tags belong to feature-build.yml.
+# main 仓库专用请勿修改此文件
 name: PureLive All-Platform Release
 on:
   workflow_dispatch:
@@ -7,27 +7,27 @@ on:
         description: Build Android Release APKs for all ABIs
         required: true
         type: boolean
-        default: false
+        default: true
       build_windows:
         description: Build Windows EXE, MSIX and portable ZIP
         required: true
         type: boolean
-        default: false
+        default: true
       build_linux:
         description: Build Linux x64 portable archive
         required: true
         type: boolean
-        default: false
+        default: true 
       build_macos:
         description: Build macOS universal application archive
         required: true
         type: boolean
-        default: false
+        default: true
       build_ios:
         description: Build unsigned iOS app and TrollStore IPA
         required: true
         type: boolean
-        default: false
+        default: true
       run_quality:
         description: Run analyze, tests and public interface probes first
         required: true
@@ -37,21 +37,25 @@ on:
         description: Create a GitHub Release and update releases.json
         required: true
         type: boolean
-        default: false
+        default: true
       release_tag:
         description: Release tag (e.g. v1.0.0) – required if create_release is true
         required: true
         type: string
-        default: "v3.1.8"
+        default: 'v3.1.3'
+
+  push:
+    tags:
+      - "stage-linux-*"
+      - "stage-macos-*"
+      - "stage-ios-*"
 permissions:
   contents: read
 concurrency:
   group: manual-build-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 env:
-  FLUTTER_VERSION: 3.47.0
-  FLUTTER_LINUX_ARCHIVE: stable/linux/flutter_linux_3.47.0-stable.tar.xz
-  FLUTTER_LINUX_SHA256: 26cd99d3d94b1367e6b50535a18aeef0282c10a535bbe3ec493534dcdab75296
+  FLUTTER_CHANNEL: stable
 jobs:
   quality:
     name: Analyze, test and probe
@@ -61,23 +65,18 @@ jobs:
     timeout-minutes: 35
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
+      - uses: actions/setup-java@v6
         with:
           distribution: zulu
           java-version: "25"
-      - name: Install pinned Flutter SDK from the official archive
-        shell: bash
-        run: |
-          set -euo pipefail
-          archive="$RUNNER_TEMP/flutter-linux.tar.xz"
-          curl --fail --location --retry 3 "https://storage.googleapis.com/flutter_infra_release/releases/$FLUTTER_LINUX_ARCHIVE" --output "$archive"
-          echo "$FLUTTER_LINUX_SHA256  $archive" | sha256sum --check --strict
-          tar --extract --file "$archive" --directory "$RUNNER_TEMP"
-          echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: ${{ env.FLUTTER_CHANNEL }}
+          cache: true
       - name: Verify Flutter SDK
         run: flutter --version
       - name: Resolve packages
-        run: flutter pub get --enforce-lockfile
+        run: flutter pub get
       - name: Generate production AppConfig
         run: |
           dart run enven \
@@ -103,14 +102,14 @@ jobs:
     timeout-minutes: 55
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
+      - uses: actions/setup-java@v6
         with:
           distribution: zulu
           java-version: "25"
           cache: gradle
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: ${{ env.FLUTTER_CHANNEL }}
           cache: true
       - name: Configure Android signing
         shell: bash
@@ -133,7 +132,7 @@ jobs:
           keyAlias=$KEY_ALIAS
           EOF
       - name: Resolve packages
-        run: flutter pub get --enforce-lockfile
+        run: flutter pub get
       - name: Generate production AppConfig
         run: |
           dart run enven \
@@ -194,7 +193,7 @@ jobs:
           set -euo pipefail
           sha256sum --check ANDROID_SHA256SUM.txt
       - name: Upload Android artifacts
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: pure-live-android
           path: |
@@ -210,10 +209,9 @@ jobs:
       ${{ always() &&
         github.event_name == 'workflow_dispatch' &&
         inputs.build_windows &&
-        (needs.quality.result == 'success' || needs.quality.result == 'skipped') &&
-        (!inputs.build_android || needs.android.result == 'success')
+        (needs.quality.result == 'success' || needs.quality.result == 'skipped')
       }}
-    needs: [quality, android]
+    needs: quality
     runs-on: windows-latest
     timeout-minutes: 35
     steps:
@@ -252,27 +250,26 @@ jobs:
           Set-Content -Path $configPath -Value $content
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: ${{ env.FLUTTER_CHANNEL }}
           cache: true
       - name: Enable Flutter Windows
         run: flutter config --enable-windows-desktop
       - name: Resolve packages
-        run: flutter pub get --enforce-lockfile
-
-      - name: Prefetch verified Firebase C++ SDK
-        shell: pwsh
-        run: .\tool\prefetch_windows_native.ps1
+        run: flutter pub get
       - name: Generate production AppConfig
         run: |
           dart run enven `
             --env-files .env,.env.prod `
             --class-name AppConfig
-      - name: Install pinned Windows packagers
+      - name: Install fastforge and Inno Setup
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
-          choco install innosetup --version=6.7.1 -y --no-progress
-          dart pub global activate fastforge 0.6.0
+          git clone https://github.com/SlotSun/fastforge.git
+          Set-Location fastforge
+          dart pub global activate melos
+          melos run activate
+          choco install innosetup -y
       - name: Copy Chinese language pack
         shell: pwsh
         run: |
@@ -281,6 +278,8 @@ jobs:
           if (Test-Path $source) {
             Copy-Item $source $target -Force
           }
+      - name: Install Fastforge
+        run: dart pub global activate fastforge
       - name: Get version
         id: version
         shell: pwsh
@@ -375,7 +374,7 @@ jobs:
           }
           Copy-Item $msixFile.FullName "PureLive-$version-windows-x64.msix" -Force
       - name: Upload Windows artifacts
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: pure-live-windows
           path: |
@@ -387,13 +386,24 @@ jobs:
   linux:
     name: Linux x64 portable
     if: >-
-      ${{ always() &&
-        github.event_name == 'workflow_dispatch' &&
-        inputs.build_linux &&
-        (needs.quality.result == 'success' || needs.quality.result == 'skipped') &&
-        (!inputs.build_android || needs.android.result == 'success') &&
-        (!inputs.build_windows || needs.windows.result == 'success') }}
-    needs: [quality, android, windows]
+      ${{
+        always() &&
+        (
+          (
+            github.event_name == 'workflow_dispatch' &&
+            inputs.build_linux
+          ) ||
+          (
+            github.event_name == 'push' &&
+            startsWith(github.ref_name, 'stage-linux-')
+          )
+        ) &&
+        (
+          needs.quality.result == 'success' ||
+          needs.quality.result == 'skipped'
+        )
+      }}
+    needs: quality
     runs-on: ubuntu-24.04
     timeout-minutes: 35
     steps:
@@ -437,19 +447,14 @@ jobs:
             libxext-dev \
             libxfixes-dev \
             libxcb1-dev
-      - name: Install pinned Flutter SDK from the official archive
-        shell: bash
-        run: |
-          set -euo pipefail
-          archive="$RUNNER_TEMP/flutter-linux.tar.xz"
-          curl --fail --location --retry 3 "https://storage.googleapis.com/flutter_infra_release/releases/$FLUTTER_LINUX_ARCHIVE" --output "$archive"
-          echo "$FLUTTER_LINUX_SHA256  $archive" | sha256sum --check --strict
-          tar --extract --file "$archive" --directory "$RUNNER_TEMP"
-          echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: ${{ env.FLUTTER_CHANNEL }}
+          cache: true
       - name: Verify Flutter SDK
         run: flutter --version
       - name: Resolve packages
-        run: flutter pub get --enforce-lockfile
+        run: flutter pub get
       - name: Generate production AppConfig
         run: |
           dart run enven \
@@ -485,7 +490,7 @@ jobs:
           VERSION="${{ steps.version.outputs.artifact_version }}"
           tar -C build/linux/x64/release/bundle -czf "PureLive-${VERSION}-linux-x64.tar.gz" .
       - name: Upload Linux artifacts
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: pure-live-linux-x64
           path: |
@@ -495,14 +500,27 @@ jobs:
   apple:
     name: Apple platform packages
     if: >-
-      ${{ always() &&
-        github.event_name == 'workflow_dispatch' &&
-        (inputs.build_macos || inputs.build_ios) &&
-        (needs.quality.result == 'success' || needs.quality.result == 'skipped') &&
-        (!inputs.build_android || needs.android.result == 'success') &&
-        (!inputs.build_windows || needs.windows.result == 'success') &&
-        (!inputs.build_linux || needs.linux.result == 'success') }}
-    needs: [quality, android, windows, linux]
+      ${{
+        always() &&
+        (
+          (
+            github.event_name == 'workflow_dispatch' &&
+            (inputs.build_macos || inputs.build_ios)
+          ) ||
+          (
+            github.event_name == 'push' &&
+            (
+              startsWith(github.ref_name, 'stage-macos-') ||
+              startsWith(github.ref_name, 'stage-ios-')
+            )
+          )
+        ) &&
+        (
+          needs.quality.result == 'success' ||
+          needs.quality.result == 'skipped'
+        )
+      }}
+    needs: quality
     runs-on: macos-15
     timeout-minutes: 90
     steps:
@@ -517,10 +535,10 @@ jobs:
           xcodebuild -version
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: ${{ env.FLUTTER_CHANNEL }}
           cache: true
       - name: Resolve packages
-        run: flutter pub get --enforce-lockfile
+        run: flutter pub get
       - name: Generate production AppConfig
         run: |
           dart run enven \
@@ -591,7 +609,7 @@ jobs:
           ls -lh "PureLive-${VERSION}-macos-universal.zip" "PureLive-${VERSION}-macos-universal.dmg"
       - name: Upload macOS artifacts
         if: ${{ (github.event_name == 'push' && !startsWith(github.ref_name, 'stage-ios-')) || inputs.build_macos }}
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: pure-live-macos
           path: |
@@ -692,7 +710,7 @@ jobs:
           codesign --verify --deep --strict "$TMPD/Payload/Runner.app"
       - name: Upload iOS artifacts
         if: ${{ github.event_name == 'push' || inputs.build_ios }}
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: pure-live-ios
           path: |
@@ -701,18 +719,8 @@ jobs:
           if-no-files-found: error
           retention-days: 7
   publish-release:
-    timeout-minutes: 15
     name: Publish GitHub Release
-    if: >-
-      ${{ always() &&
-        github.event_name == 'workflow_dispatch' &&
-        inputs.create_release &&
-        (inputs.build_android || inputs.build_windows || inputs.build_linux || inputs.build_macos || inputs.build_ios) &&
-        (needs.quality.result == 'success' || needs.quality.result == 'skipped') &&
-        (!inputs.build_android || needs.android.result == 'success') &&
-        (!inputs.build_windows || needs.windows.result == 'success') &&
-        (!inputs.build_linux || needs.linux.result == 'success') &&
-        (!(inputs.build_macos || inputs.build_ios) || needs.apple.result == 'success') }}
+    if: ${{ always() && inputs.create_release && (needs.quality.result == 'success' || needs.quality.result == 'skipped') }}
     needs:
       - quality
       - android
@@ -725,10 +733,9 @@ jobs:
     steps:
       - name: Validate release tag
         shell: bash
-        env:
-          TAG: ${{ inputs.release_tag }}
         run: |
           set -euo pipefail
+          TAG="${{ inputs.release_tag }}"
           if [[ -z "$TAG" ]]; then
             echo "release_tag is required when create_release=true."
             exit 1
@@ -739,12 +746,23 @@ jobs:
             exit 1
           fi
       - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: master
           fetch-depth: 0
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: ${{ env.FLUTTER_CHANNEL }}
+          cache: true
+      - name: Get Flutter version
+        shell: bash
+        run: |
+          set -euo pipefail
+          FLUTTER_VERSION=$(flutter --version --machine | python3 -c 'import json,sys; print(json.load(sys.stdin)["frameworkVersion"])')
+          echo "FLUTTER_VERSION=$FLUTTER_VERSION" >> "$GITHUB_ENV"
+          echo "Flutter version: $FLUTTER_VERSION"
       - name: Download all build artifacts
-        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v7.0.1
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
         with:
           path: artifacts
       - name: Show release artifacts
@@ -762,11 +780,6 @@ jobs:
           fi
           cd "$(dirname "$checksum_file")"
           sha256sum --check "$(basename "$checksum_file")"
-      - name: Read version description
-        id: version
-        uses: juliangruber/read-file-action@271ff311a4947af354c6abcd696a306553b9ec18 # v1
-        with:
-          path: assets/version.json
       - name: Generate BUILD_METADATA.json
         shell: bash
         env:
@@ -826,45 +839,92 @@ jobs:
         shell: bash
         env:
           RELEASE_TAG: ${{ inputs.release_tag }}
-          RELEASE_DESCRIPTION: ${{ fromJson(steps.version.outputs.content).version_desc }}
         run: |
           set -euo pipefail
-          cat << EOF > release_body.txt
-          # 纯粹直播 $RELEASE_TAG
+          
+          python3 <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          tag = os.environ["RELEASE_TAG"]
+          version_file = Path("assets/version.json")
+
+          if not version_file.is_file():
+              raise SystemExit(f"找不到 {version_file}")
+
+          data = json.loads(
+              version_file.read_text(encoding="utf-8")
+          )
+
+          version_desc = data.get("version_desc")
+
+          if not version_desc or not str(version_desc).strip():
+              raise SystemExit(
+                  "assets/version.json 中的 version_desc 为空"
+              )
+
+          version_desc = str(version_desc).strip()
+
+          body = f"""# 纯粹直播 {tag}
+
           |版本|下载地址|
           |---|---|
           |TV版|[pure_live_TV](https://github.com/liuchuancong/pure_live_TV/releases/latest)|
-          |Windows/macOS/Android/iOS版|[pure_live](https://github.com/wzgrx/pure_live/releases/latest)|
+          |Windows/macOS/Android/iOS版|[pure_live](https://github.com/liuchuancong/pure_live/releases/latest)|
+
           ### 🖥️ Windows 版
+
           - **Portable ZIP**：解压即用，无需安装
           - **EXE 安装包**：适合所有用户
           - **MSIX 包**：现代应用格式，支持干净卸载
           - 适配：Windows 10/11 x64
+
           ### 🍎 macOS 版
+
           - macOS 桌面版
           - Universal：Apple Silicon + Intel
           - ZIP / DMG
+
           ### 📱 Android 版
+
           - Android 8.0+（API 26，FFmpegKit 录制依赖要求）
           - ARM64-v8a
           - ARMv7
           - x86_64
-          - 统一 SHA256 校验文件：[**ANDROID_SHA256SUM.txt**](https://github.com/wzgrx/pure_live/releases/download/$RELEASE_TAG/ANDROID_SHA256SUM.txt)
+          - 统一 SHA256 校验文件：[**ANDROID_SHA256SUM.txt**](https://github.com/liuchuancong/pure_live/releases/download/{tag}/ANDROID_SHA256SUM.txt)
+
           ### 🐧 Linux 版
+
           - Linux x64
           - Portable tar.gz
+
           ### 🍎 iOS 版
+
           - unsigned iOS device application
           - TrollStore / ad-hoc IPA
           - ARM64
+
           ### 🔧 Build Metadata
-          [**BUILD_METADATA.json**](https://github.com/wzgrx/pure_live/releases/download/$RELEASE_TAG/BUILD_METADATA.json)
+
+          [**BUILD_METADATA.json**](https://github.com/liuchuancong/pure_live/releases/download/{tag}/BUILD_METADATA.json)
+
           ### 📝 本次更新
-          $RELEASE_DESCRIPTION
-          EOF
+
+          {version_desc}
+          """.strip()
+
+          body_file = Path("release_body.txt")
+          body_file.write_text(body + "\n", encoding="utf-8")
+
+          print("========== Release Body ==========")
+          print(body)
+          print("===================================")
+          PY
+          
           echo "body_path=$(pwd)/release_body.txt" >> "$GITHUB_OUTPUT"
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65
         with:
           tag_name: ${{ inputs.release_tag }}
           name: ${{ inputs.release_tag }}
@@ -878,7 +938,6 @@ jobs:
             artifacts/**/*
             BUILD_METADATA.json
   update-json:
-    timeout-minutes: 15
     name: Update releases.json
     if: ${{ always() && inputs.create_release && needs.publish-release.result == 'success' }}
     needs:
@@ -916,7 +975,7 @@ jobs:
                   "view",
                   tag,
                   "--json",
-                  "tagName,name,url,publishedAt,isDraft,isPrerelease,assets"
+                  "tagName,name,url,publishedAt,isDraft,body,author,isPrerelease,assets"
               ],
               check=True,
               capture_output=True,
@@ -951,17 +1010,15 @@ jobs:
           PY
       - name: Commit and Push releases.json
         shell: bash
-        env:
-          RELEASE_TAG: ${{ inputs.release_tag }}
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          if [[ -z "$(git status --porcelain -- assets/releases.json)" ]]; then
+          if [[ -z "$(git status --porcelain)" ]]; then
             echo "assets/releases.json has no changes."
             exit 0
           fi
           git add assets/releases.json
-          git commit -m "chore: update releases.json for $RELEASE_TAG [skip ci]"
+          git commit -m "chore: update releases.json for ${{ inputs.release_tag }} [skip ci]"
           git pull --rebase origin master
           git push origin master

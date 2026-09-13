@@ -4,7 +4,7 @@
 
 2026-09-12 17:08 UTC 使用已登录 GitHub CLI 只读查询：
 
-- 维护仓库 `wzgrx/pure_live`：open Issue **0**；
+- 维护仓库 `liuchuancong/pure_live`：open Issue **0**；
 - 参考仓库 `liuchuancong/pure_live`：open Issue **19**；
 - 查询上限为 100，实际条目低于上限；返回对象均为 Issue 列表条目。
 

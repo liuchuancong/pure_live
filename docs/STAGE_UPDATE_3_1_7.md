@@ -65,7 +65,7 @@ v3.1.6 已经把虎牙 URI `2001314` 的留言板补偿改成非阻塞、有界�
 | Android arm64-v8a | `build_local_release.ps1 -Target AndroidArm64 -Configuration Release -SkipQuality` | 795.991 s | 67.01% | 19,677,376,512 bytes | Windows 阶段启动前守卫确认回落 |
 | Windows x64 | `build_local_release.ps1 -Target WindowsX64 -Configuration Release -SkipQuality` | 1158.972 s | 63.76% | 16,422,981,632 bytes | 活跃重型进程 0 |
 
-GitHub Release：[v3.1.7](https://github.com/wzgrx/pure_live/releases/tag/v3.1.7)。Release 为非草稿、非预发布，共 7 个资产；GitHub 返回的服务端 SHA-256 与本地清单逐项一致。
+GitHub Release：[v3.1.7](https://github.com/liuchuancong/pure_live/releases/tag/v3.1.7)。Release 为非草稿、非预发布，共 7 个资产；GitHub 返回的服务端 SHA-256 与本地清单逐项一致。
 
 | 资产 | 大小 | SHA-256 | 签名状态 |
 |---|---:|---|---|

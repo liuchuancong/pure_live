@@ -62,7 +62,7 @@ Android、Windows 按构建策略串行执行，均复用同一源码完整门�
 | Android arm64-v8a | `build_local_release.ps1 -Target AndroidArm64 -Configuration Release -SkipQuality` | 932.682 s | 58.36% | 20,766,429,184 bytes | 活跃重型进程 0 |
 | Windows x64 | `build_local_release.ps1 -Target WindowsX64 -Configuration Release -SkipQuality` | 1071.061 s | 50.78% | 20,692,557,824 bytes | 活跃重型进程 0 |
 
-GitHub Release：[v3.1.6](https://github.com/wzgrx/pure_live/releases/tag/v3.1.6)。Release 共 7 个资产：三个客户端产物、Android/Windows 两份构建元数据和两份 SHA-256 清单。
+GitHub Release：[v3.1.6](https://github.com/liuchuancong/pure_live/releases/tag/v3.1.6)。Release 共 7 个资产：三个客户端产物、Android/Windows 两份构建元数据和两份 SHA-256 清单。
 
 | 资产 | 大小 | SHA-256 | 签名状态 |
 | --- | ---: | --- | --- |

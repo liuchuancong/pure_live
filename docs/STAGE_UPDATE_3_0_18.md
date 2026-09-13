@@ -1,7 +1,7 @@
 # Pure Live v3.0.18 Android 真机播放与录制加固
 
 - 版本：`3.0.18+4106`
-- 代码基线：`wzgrx/pure_live@v3.0.17`
+- 代码基线：`liuchuancong/pure_live@v3.0.17`
 - 已审查上游：`liuchuancong/pure_live@9b1c0a6ee0c469e1363fbb214ad7abf26f775a27`
 - 目标产物：Android `arm64-v8a` Release APK
 - 修复来源：播放器截图探测和录制连续性为 `fork-regression`；虎牙签名为 `external-drift`；小窗控件与滚动边界为 `upstream-existing`/维护分支交互缺口。
