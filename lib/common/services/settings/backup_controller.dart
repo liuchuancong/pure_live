@@ -1,10 +1,13 @@
 import 'dart:io';
 import 'dart:convert';
+<<<<<<< HEAD
 
 import 'package:synchronized/synchronized.dart';
+=======
+>>>>>>> 110d763d (feat: 添加Windows多实例配置文件支持，优化设置恢复流程)
 import 'package:pure_live/get/get.dart';
-import 'package:pure_live/common/services/utils/hive_rx.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
+import 'package:pure_live/common/services/utils/hive_rx.dart';
 import 'package:pure_live/modules/tags/tag_management_controller.dart';
 import 'package:pure_live/common/services/settings/web_dav_controller.dart';
 import 'package:pure_live/common/services/settings/history_controller.dart';
@@ -27,6 +30,7 @@ import 'package:pure_live/common/services/settings/room_card_settings_controller
 
 enum BackupRestoreScope { all, favorites }
 
+
 class BackupController extends GetxController {
   static BackupController get to => Get.find();
 
@@ -36,6 +40,7 @@ class BackupController extends GetxController {
 
   final RxString backupDirectory = hiveString('backupDirectory', '');
 
+<<<<<<< HEAD
   Future<void> setBackupDirectoryDurably(String directory) {
     return _directoryMutationLock.synchronized(() async {
       final normalized = directory.trim();
@@ -54,6 +59,9 @@ class BackupController extends GetxController {
   }
 
   Map<String, dynamic> exportAllSettings({bool includeSensitiveData = false}) {
+=======
+  Map<String, dynamic> exportAllSettings({bool includeSensitiveData = true}) {
+>>>>>>> 110d763d (feat: 添加Windows多实例配置文件支持，优化设置恢复流程)
     if (!Get.isRegistered<TagManagementController>()) {
       Get.put(TagManagementController());
     }
@@ -471,7 +479,36 @@ class BackupController extends GetxController {
     }
   }
 
-  Map<String, dynamic> exportToTVSettings({bool includeSensitiveData = false}) {
+  Future<bool> recoverAndDelete(File file) async {
+    try {
+      if (!await file.exists()) {
+        return false;
+      }
+      final json = await file.readAsString();
+      final data = jsonDecode(json);
+      if (data is! Map<String, dynamic>) {
+        return false;
+      }
+      importAllSettings(data);
+      return true;
+    } catch (_) {
+      return false;
+    } finally {
+      try {
+        if (await file.exists()) {
+          await file.delete();
+        }
+        final parent = file.parent;
+        if (await parent.exists()) {
+          try {
+            await parent.delete();
+          } catch (_) {}
+        }
+      } catch (_) {}
+    }
+  }
+
+  Map<String, dynamic> exportToTVSettings({bool includeSensitiveData = true}) {
     final danmaku = Get.find<DanmakuSettingsController>().toJson();
     final iptv = Get.find<IptvSettingsController>().toJson();
     final favorite = Get.find<FavoriteRoomController>().toJson();
