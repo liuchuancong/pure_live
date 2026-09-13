@@ -112,4 +112,6 @@ class RoutePath {
   static const kIptv = "/iptv";
 
   static const kSettingsTags = '/settingTags';
+
+  static const kRemoteSync = '/remote_sync';
 }
