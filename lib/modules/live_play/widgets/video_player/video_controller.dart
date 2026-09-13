@@ -14,7 +14,7 @@ import 'package:flame_barrage/flame_barrage.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:pure_live/plugins/db_service.dart';
 import 'package:pure_live/player/utils/fullscreen.dart';
-import 'package:screen_brightness/screen_brightness.dart';
+import 'package:screen_brightness_platform_interface/screen_brightness_platform_interface.dart';
 import 'package:volume_controller/volume_controller.dart';
 import 'package:pure_live/player/core/player_manager.dart';
 import 'package:pure_live/player/core/portrait_stream_support.dart';
@@ -419,10 +419,10 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
   GlobalKey playerKey = GlobalKey();
 
   // 屏幕亮度
-  ScreenBrightness? _brightnessController;
-  ScreenBrightness? get brightnessController {
+  ScreenBrightnessPlatform? _brightnessController;
+  ScreenBrightnessPlatform? get brightnessController {
     if (!PlatformHelper.supportsBrightness) return null;
-    _brightnessController ??= ScreenBrightness();
+    _brightnessController ??= ScreenBrightnessPlatform.instance;
     return _brightnessController;
   }
 
