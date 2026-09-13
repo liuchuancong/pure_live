@@ -4,6 +4,8 @@
 
 ## 开发与发布
 
+- [WebDAV 配置抽屉路由与布局审计](WEBDAV_CONFIG_DRAWER_ROUTE_AND_LAYOUT_AUDIT_2026_09_14.md)：长配置名称收束与完整提示、编辑/删除动作可达性、页面所有的配置/删除路由、抽屉精确关闭及控制器导航解耦。
+
 - [桌面退出弹窗与动作事务审计](DESKTOP_EXIT_DIALOG_AND_ACTION_TRANSACTION_AUDIT_2026_09_13.md)：退出动作归一化、窄屏大字号布局、single-flight 路由、偏好落盘、原生失败后的窗口/拦截恢复及备份合同。
 
 - [共享选项弹窗布局与选择语义审计](SHARED_OPTION_DIALOG_LAYOUT_AND_SELECTION_AUDIT_2026_09_13.md)：选项文字收缩换行、长列表滚动、48 px 整行命中、当前值语义及系统返回合同。
