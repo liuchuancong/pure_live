@@ -4,6 +4,8 @@
 
 ## 开发与发布
 
+- [真实在线人数平台偏好持久化审计](AUDIENCE_PLATFORM_PREFERENCE_PERSISTENCE_AUDIT_2026_09_13.md)：同长度旧值修复、小写/去空白/去重/能力过滤合同、备份与导出归一化及安全设置开关。
+
 - [播放器显示模式与首选画质持久化审计](PLAYER_DISPLAY_PREFERENCE_PERSISTENCE_AUDIT_2026_09_13.md)：六种显示模式索引、五个稳定画质键、启动/运行时/备份修复、安全 UI 消费及单一有序来源。
 
 - [Windows 窗口尺寸持久化、PiP 几何与弹窗事务审计](WINDOW_SIZE_PERSISTENCE_AND_DIALOG_TRANSACTION_AUDIT_2026_09_13.md)：400×300～16384 单边合同、首帧/Hive/备份修复、瞬态窗口事件、PiP 有限矩形及路由拥有的事务弹窗。
