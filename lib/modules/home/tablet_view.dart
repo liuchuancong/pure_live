@@ -49,7 +49,7 @@ class HomeTabletView extends StatelessWidget {
                       NavigationRailDestination(
                         icon: const Icon(Remix.heart_3_line),
                         selectedIcon: const Icon(Remix.heart_3_fill),
-                        label: Text(i18n("favorites_title")),
+                        label: Text(i18n('favorites_title')),
                       ),
                     );
                     break;
@@ -58,7 +58,7 @@ class HomeTabletView extends StatelessWidget {
                       NavigationRailDestination(
                         icon: const Icon(Remix.fire_line),
                         selectedIcon: const Icon(Remix.fire_fill),
-                        label: Text(i18n("popular_title")),
+                        label: Text(i18n('popular_title')),
                       ),
                     );
                     break;
@@ -67,7 +67,7 @@ class HomeTabletView extends StatelessWidget {
                       NavigationRailDestination(
                         icon: const Icon(Remix.apps_2_line),
                         selectedIcon: const Icon(Remix.apps_2_fill),
-                        label: Text(i18n("areas_title")),
+                        label: Text(i18n('areas_title')),
                       ),
                     );
                     break;
@@ -76,7 +76,7 @@ class HomeTabletView extends StatelessWidget {
                       NavigationRailDestination(
                         icon: const Icon(Remix.download_2_line),
                         selectedIcon: const Icon(Remix.download_2_fill),
-                        label: Text(i18n("record_center")),
+                        label: Text(i18n('record_center')),
                       ),
                     );
                     break;
@@ -94,66 +94,56 @@ class HomeTabletView extends StatelessWidget {
 
             return Row(
               children: [
-                // Keep the whole rail reachable in landscape/short windows.
-                // Its scroll position must not attach to the page body's primary
-                // controller (automatically inherited on mobile platforms).
-                PrimaryScrollController.none(
-                  child: NavigationRail(
-                    groupAlignment: -1,
-                    scrollable: true,
-                    leadingAtTop: false,
-                    labelType: NavigationRailLabelType.all,
-                    leading: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Padding(padding: EdgeInsets.all(12), child: MenuButton()),
-                        Obx(
-                          () => SettingsService.to.app.enableMultiView.v
-                              ? Padding(
-                                  padding: const EdgeInsets.only(top: 0, bottom: 12, left: 12, right: 12),
-                                  child: _railAction(
-                                    onPressed: () => AppNavigator.toMultiview(),
-                                    tooltip: i18n("multiview_title"),
-                                    icon: Remix.layout_grid_line,
-                                  ),
-                                )
-                              : const SizedBox.shrink(),
+                NavigationRail(
+                  groupAlignment: 0.9,
+                  labelType: NavigationRailLabelType.all,
+                  leading: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Padding(padding: EdgeInsets.all(12), child: MenuButton()),
+                      Obx(
+                        () => SettingsService.to.app.enableMultiView.v
+                            ? Padding(
+                                padding: const EdgeInsets.only(top: 0, bottom: 12, left: 12, right: 12),
+                                child: IconButton(
+                                  onPressed: AppNavigator.toMultiview,
+                                  tooltip: i18n('multiview_title'),
+                                  icon: const Icon(Remix.layout_grid_line),
+                                ),
+                              )
+                            : const SizedBox.shrink(),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 0, bottom: 12, left: 12, right: 12),
+                        child: IconButton(
+                          onPressed: () => Get.toNamed(RoutePath.kToolbox),
+                          icon: const Icon(Remix.link),
                         ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 0, bottom: 12, left: 12, right: 12),
+                        child: IconButton(
+                          onPressed: () => Get.toNamed(RoutePath.kSearch),
+                          icon: const Icon(CustomIcons.search),
+                        ),
+                      ),
+                      if (showRecord)
                         Padding(
                           padding: const EdgeInsets.only(top: 0, bottom: 12, left: 12, right: 12),
-                          child: _railAction(
-                            onPressed: () => Get.toNamed(RoutePath.kToolbox),
-                            tooltip: i18n("toolbox_title"),
-                            icon: Remix.link,
+                          child: IconButton(
+                            onPressed: () => Get.toNamed(RoutePath.kRecordPage),
+                            icon: const Icon(Remix.download_2_line),
                           ),
                         ),
-                        Padding(
-                          padding: const EdgeInsets.only(top: 0, bottom: 12, left: 12, right: 12),
-                          child: _railAction(
-                            onPressed: () => Get.toNamed(RoutePath.kSearch),
-                            tooltip: i18n("search_live"),
-                            icon: CustomIcons.search,
-                          ),
-                        ),
-                        if (showRecord)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 0, bottom: 12, left: 12, right: 12),
-                            child: _railAction(
-                              onPressed: () => Get.toNamed(RoutePath.kRecordPage),
-                              tooltip: i18n("record_center"),
-                              icon: Remix.download_2_line,
-                            ),
-                          ),
-                      ],
-                    ),
-                    destinations: destinations,
-                    selectedIndex: activeSelectedIndex,
-                    onDestinationSelected: (int virtualIndex) {
-                      if (virtualIndex >= 0 && virtualIndex < virtualToRealMap.length) {
-                        onDestinationSelected(virtualToRealMap[virtualIndex]);
-                      }
-                    },
+                    ],
                   ),
+                  destinations: destinations,
+                  selectedIndex: activeSelectedIndex,
+                  onDestinationSelected: (int virtualIndex) {
+                    if (virtualIndex >= 0 && virtualIndex < virtualToRealMap.length) {
+                      onDestinationSelected(virtualToRealMap[virtualIndex]);
+                    }
+                  },
                 ),
                 const VerticalDivider(width: 1),
                 Expanded(
@@ -161,8 +151,8 @@ class HomeTabletView extends StatelessWidget {
                       ? AppStatusView(
                           type: AppStatusType.empty,
                           icon: Remix.menu_2_fill,
-                          title: i18n("no_menu_title"),
-                          subtitle: i18n("no_menu_subtitle"),
+                          title: i18n('no_menu_title'),
+                          subtitle: i18n('no_menu_subtitle'),
                         )
                       : body,
                 ),
