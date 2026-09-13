@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:remixicon/remixicon.dart';
@@ -164,33 +165,50 @@ class _BackupPageState extends State<BackupPage> {
             const SizedBox(height: 20),
             context.buildGroupTitle(i18n("log_manage")),
             context.buildModernCard([
-              context.buildTile(
-                icon: Remix.file_text_line,
-                title: i18n("enable_local_log"),
-                subtitle: i18n("enable_local_log_desc"),
-                isLong: true,
-                stackTrailingOnNarrow: true,
-                showNavigationChevronWhenStacked: false,
-                trailing: Switch(
-                  value: logController.storedEnableLog.v,
-                  onChanged: (val) => logController.storedEnableLog.v = val,
-                ),
-                onTap: () => logController.storedEnableLog.v = !logController.storedEnableLog.v,
-              ),
               Obx(() {
-                if (logController.serverPort.value == 0) return const SizedBox.shrink();
-                final String displayAddress = logController.serverAddress.value == '0.0.0.0'
-                    ? 'localhost'
-                    : logController.serverAddress.value;
-                final String urlStr = 'http://$displayAddress:${logController.serverPort.value}';
+                final applying = logController.isApplyingLogStatus.v;
+                final statusKey = logController.logStatusKey.v;
+                final subtitleKey = applying
+                    ? 'local_log_applying'
+                    : statusKey.isNotEmpty
+                    ? statusKey
+                    : 'enable_local_log_desc';
+                return context.buildTile(
+                  icon: Remix.file_text_line,
+                  title: i18n("enable_local_log"),
+                  subtitle: i18n(subtitleKey),
+                  subtitleColor: statusKey.isNotEmpty && !applying ? Theme.of(context).colorScheme.error : null,
+                  isLong: true,
+                  stackTrailingOnNarrow: true,
+                  showNavigationChevronWhenStacked: false,
+                  trailing: Switch(
+                    key: const ValueKey('local-log-switch'),
+                    value: logController.storedEnableLog.v,
+                    onChanged: applying ? null : (value) => unawaited(logController.setLoggingEnabled(value)),
+                  ),
+                  onTap: applying
+                      ? null
+                      : () => unawaited(logController.setLoggingEnabled(!logController.storedEnableLog.v)),
+                );
+              }),
+              Obx(() {
+                if (!logController.enableLog ||
+                    logController.isApplyingLogStatus.v ||
+                    logController.serverPort.value == 0) {
+                  return const SizedBox.shrink();
+                }
+                final uri = Uri(
+                  scheme: 'http',
+                  host: logController.serverAddress.value,
+                  port: logController.serverPort.value,
+                );
                 return context.buildTile(
                   icon: Remix.global_line,
                   title: i18n("view_logs_in_browser"),
-                  subtitle: urlStr,
+                  subtitle: uri.toString(),
                   isLong: true,
                   trailing: const Icon(Remix.arrow_right_s_line),
                   onTap: () async {
-                    final Uri uri = Uri.parse(urlStr);
                     if (await canLaunchUrl(uri)) {
                       await launchUrl(uri, mode: LaunchMode.externalApplication);
                     }

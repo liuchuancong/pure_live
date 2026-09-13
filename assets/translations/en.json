@@ -1354,6 +1354,8 @@
     "log_manage": "Log Management",
     "enable_local_log": "Enable Local Log",
     "enable_local_log_desc": "Write logs to local files when enabled",
+    "local_log_applying": "Updating local logging…",
+    "local_log_apply_failed": "Local logging was not changed. The switch shows the active runtime state.",
     "open_log_dir": "Open Log Directory",
     "open_log_dir_desc": "View and manage log files",
     "log_dir_not_exist": "Log directory does not exist",

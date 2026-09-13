@@ -18,64 +18,92 @@ class Log {
   static LogFileWriter? _logFileWriter;
   static final List<DebugLogModel> _allLogs = [];
   static HttpServer? _server;
+  static int _statusGeneration = 0;
   static List<DebugLogModel> get allLogs => List<DebugLogModel>.unmodifiable(_allLogs);
+
+  @visibleForTesting
+  static InternetAddress get logServerBindAddress => InternetAddress.loopbackIPv4;
+
+  static bool get _localLoggingEnabled => Get.isRegistered<LogController>() && LogController.to.enableLog;
+
+  @visibleForTesting
+  static bool shouldBufferRuntimeLog({required bool releaseMode, required bool localLoggingEnabled}) {
+    return !releaseMode || localLoggingEnabled;
+  }
 
   static void clearDebugLogs() => _allLogs.clear();
 
   static Future<void> init() async {
-    if (LogController.to.enableLog) {
-      _logFileWriter = LogFileWriter();
-      await _logFileWriter!.init();
-      await startLogServer();
-    }
+    await setEnabled(LogController.to.enableLog);
   }
 
   static void dispose() {
-    _logFileWriter?.close();
+    _statusGeneration++;
+    final writer = _logFileWriter;
+    final server = _server;
     _logFileWriter = null;
-    stopLogServer();
-  }
-
-  static Future<int> _getAvailablePort() async {
-    try {
-      final socket = await ServerSocket.bind(InternetAddress.anyIPv4, 0);
-      final port = socket.port;
-      await socket.close();
-      return port;
-    } catch (e) {
-      Log.w('获取空闲端口失败，尝试保底端口 8080: $e');
-      try {
-        final fallbackSocket = await ServerSocket.bind(InternetAddress.anyIPv4, 47854);
-        await fallbackSocket.close();
-        return 47854;
-      } catch (fallbackError) {
-        Log.w('保底端口 47854 也被占用: $fallbackError');
-        return 0;
-      }
-    }
-  }
-
-  static Future<void> startLogServer() async {
-    if (_server != null) return;
-    try {
-      final port = await _getAvailablePort();
-      if (port == 0) return;
-      _server = await HttpServer.bind(InternetAddress.anyIPv4, port);
-      String serverAddress = _server!.address.address;
-      int serverPort = _server!.port;
-      if (Get.isRegistered<LogController>()) {
-        LogController.to.updateServerInfo(serverAddress, serverPort);
-      }
-
-      _server!.listen((HttpRequest request) {
-        _handleNativeRequest(request);
-      });
-    } catch (_) {}
-  }
-
-  static void stopLogServer() {
-    _server?.close(force: true);
     _server = null;
+    _clearRuntimeEndpoint();
+    if (writer != null) unawaited(writer.close());
+    if (server != null) unawaited(server.close(force: true));
+  }
+
+  static Future<bool> setEnabled(bool enabled) async {
+    final generation = ++_statusGeneration;
+    await _closeActiveResources();
+    if (generation != _statusGeneration) return false;
+    if (!enabled) return true;
+
+    final writer = LogFileWriter();
+    if (!await writer.init()) {
+      await writer.close();
+      return false;
+    }
+    if (generation != _statusGeneration) {
+      await writer.close();
+      return false;
+    }
+
+    HttpServer server;
+    try {
+      // Port zero asks the OS to select and bind an available port atomically;
+      // loopback keeps the diagnostic page local to this device.
+      server = await HttpServer.bind(logServerBindAddress, 0);
+    } catch (error) {
+      debugPrint('Failed to start local log server: $error');
+      await writer.close();
+      return false;
+    }
+
+    if (generation != _statusGeneration) {
+      await server.close(force: true);
+      await writer.close();
+      return false;
+    }
+
+    _logFileWriter = writer;
+    _server = server;
+    if (Get.isRegistered<LogController>()) {
+      LogController.to.updateServerInfo(server.address.address, server.port);
+    }
+    server.listen(_handleNativeRequest);
+    return true;
+  }
+
+  static Future<void> _closeActiveResources() async {
+    final writer = _logFileWriter;
+    final server = _server;
+    _logFileWriter = null;
+    _server = null;
+    _clearRuntimeEndpoint();
+    if (writer != null) await writer.close();
+    if (server != null) await server.close(force: true);
+  }
+
+  static void _clearRuntimeEndpoint() {
+    if (Get.isRegistered<LogController>()) {
+      LogController.to.updateServerInfo('', 0);
+    }
   }
 
   static void _handleNativeRequest(HttpRequest request) {
@@ -273,28 +301,14 @@ class Log {
       ..close();
   }
 
-  static Future<void> updateLogStatus() async {
-    _logFileWriter?.close();
-    _logFileWriter = null;
-    if (LogController.to.enableLog) {
-      _logFileWriter = LogFileWriter();
-      await _logFileWriter!.init();
-      await startLogServer();
-    } else {
-      _logFileWriter?.close();
-      _logFileWriter = null;
-      stopLogServer();
-    }
-  }
+  static Future<bool> updateLogStatus() => setEnabled(LogController.to.enableLog);
 
   static void writeLog(Object content, [Level level = Level.info]) {
-    if (!LogController.to.enableLog || _logFileWriter == null) return;
+    if (!_localLoggingEnabled || _logFileWriter == null) return;
     _logFileWriter?.write("[${level.name.toUpperCase()}] $_currentTime：$content");
   }
 
   static void addDebugLog(String content, [Color? color]) {
-    if (kReleaseMode) return;
-
     String processedContent = content;
     if (content.contains("请求响应")) {
       processedContent = content.split("\n").join('\n💡 ');
@@ -321,46 +335,61 @@ class Log {
   );
 
   static void d(String message) {
-    if (!kReleaseMode) {
+    final localLoggingEnabled = _localLoggingEnabled;
+    if (shouldBufferRuntimeLog(releaseMode: kReleaseMode, localLoggingEnabled: localLoggingEnabled)) {
       addDebugLog(message, Colors.orange);
+    }
+    if (!kReleaseMode) {
       logger.d(message);
     }
-    if (LogController.to.enableLog) writeLog(message, Level.debug);
+    if (localLoggingEnabled) writeLog(message, Level.debug);
   }
 
   static void i(String message) {
-    if (!kReleaseMode) {
+    final localLoggingEnabled = _localLoggingEnabled;
+    if (shouldBufferRuntimeLog(releaseMode: kReleaseMode, localLoggingEnabled: localLoggingEnabled)) {
       addDebugLog(message, Colors.blue);
+    }
+    if (!kReleaseMode) {
       logger.i(message);
     }
-    if (LogController.to.enableLog) writeLog(message, Level.info);
+    if (localLoggingEnabled) writeLog(message, Level.info);
   }
 
   static void e(String message, StackTrace stackTrace) {
-    if (!kReleaseMode) {
+    final localLoggingEnabled = _localLoggingEnabled;
+    if (shouldBufferRuntimeLog(releaseMode: kReleaseMode, localLoggingEnabled: localLoggingEnabled)) {
       addDebugLog('$message\r\n\r\n$stackTrace', Colors.red);
+    }
+    if (!kReleaseMode) {
       logger.e(message, stackTrace: stackTrace);
     }
-    if (LogController.to.enableLog) writeLog("$message\n$stackTrace", Level.error);
+    if (localLoggingEnabled) writeLog("$message\n$stackTrace", Level.error);
   }
 
   static void w(String message) {
-    if (!kReleaseMode) {
+    final localLoggingEnabled = _localLoggingEnabled;
+    if (shouldBufferRuntimeLog(releaseMode: kReleaseMode, localLoggingEnabled: localLoggingEnabled)) {
       addDebugLog(message, Colors.pink);
+    }
+    if (!kReleaseMode) {
       logger.w(message);
     }
-    if (LogController.to.enableLog) writeLog(message, Level.warning);
+    if (localLoggingEnabled) writeLog(message, Level.warning);
   }
 
   static void logPrint(dynamic obj) {
     final String content = obj.toString();
-    if (!kReleaseMode) {
+    final localLoggingEnabled = _localLoggingEnabled;
+    if (shouldBufferRuntimeLog(releaseMode: kReleaseMode, localLoggingEnabled: localLoggingEnabled)) {
       addDebugLog(content, Colors.red);
+    }
+    if (!kReleaseMode) {
       if (kDebugMode) {
         print(content);
       }
     }
-    if (LogController.to.enableLog) writeLog(content, Level.info);
+    if (localLoggingEnabled) writeLog(content, Level.info);
   }
 
   static String get _currentTime => Utils.timeFormat.format(DateTime.now());
@@ -381,8 +410,8 @@ class LogFileWriter {
     _fileName = "$dt.log";
   }
 
-  Future<void> init() async {
-    if (_isInitialized) return;
+  Future<bool> init() async {
+    if (_isInitialized) return true;
 
     try {
       final logDir = await resolveLogDirectory();
@@ -395,9 +424,10 @@ class LogFileWriter {
       _isInitialized = true;
 
       await _writeSystemInfo();
+      return true;
     } catch (e, stackTrace) {
-      // 彻底消除 print，统一使用 Log.e
-      Log.e("Init log file failed: $e", stackTrace);
+      debugPrint('Init log file failed: $e\n$stackTrace');
+      return false;
     }
   }
 

@@ -1354,6 +1354,8 @@
     "log_manage": "日志管理",
     "enable_local_log": "启用本地日志",
     "enable_local_log_desc": "开启后将日志写入本地文件",
+    "local_log_applying": "正在更新本地日志状态…",
+    "local_log_apply_failed": "本地日志状态未发生变化，开关已恢复为当前运行状态。",
     "open_log_dir": "打开日志目录",
     "open_log_dir_desc": "查看并管理日志文件",
     "log_dir_not_exist": "日志目录不存在",

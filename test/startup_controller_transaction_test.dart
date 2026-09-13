@@ -142,6 +142,44 @@ void main() {
     await HivePrefUtil.flush();
     expect(HivePrefUtil.getBool('enableStartUp'), isTrue);
   });
+
+  test('latest request wins while each caller reports its own requested target', () async {
+    await HivePrefUtil.setBool('enableStartUp', false);
+    var nativeEnabled = false;
+    final requests = <bool>[];
+    final gates = <Completer<bool>>[];
+    final controller = StartupController(
+      readStartupState: () => nativeEnabled,
+      enableStartupAction: () async {
+        requests.add(true);
+        final gate = Completer<bool>();
+        gates.add(gate);
+        final result = await gate.future;
+        if (result) nativeEnabled = true;
+        return result;
+      },
+      disableStartupAction: () async {
+        requests.add(false);
+        final gate = Completer<bool>();
+        gates.add(gate);
+        final result = await gate.future;
+        if (result) nativeEnabled = false;
+        return result;
+      },
+    );
+
+    final enableResult = controller.setStartupEnabled(true);
+    await _waitFor(() => requests.length == 1);
+    final disableResult = controller.setStartupEnabled(false);
+    gates.first.complete(true);
+    await _waitFor(() => requests.length == 2);
+    gates.last.complete(true);
+
+    expect(await enableResult, isFalse);
+    expect(await disableResult, isTrue);
+    expect(requests, [true, false]);
+    expect(controller.enableStartUp.value, isFalse);
+  });
 }
 
 class _NoNetworkStartupController extends StartupController {

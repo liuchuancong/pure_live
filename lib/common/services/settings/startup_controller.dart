@@ -64,7 +64,7 @@ class StartupController extends GetxController {
       if (identical(_activeOperation, operation)) _activeOperation = null;
     });
     _activeOperation = operation;
-    return operation;
+    return operation.then((_) => _lastConfirmedEnabled == enabled && startupStatusKey.v.isEmpty);
   }
 
   Future<bool> _drainStartupRequests() async {
