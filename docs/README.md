@@ -4,6 +4,8 @@
 
 ## 开发与发布
 
+- [共享选项弹窗布局与选择语义审计](SHARED_OPTION_DIALOG_LAYOUT_AND_SELECTION_AUDIT_2026_09_13.md)：选项文字收缩换行、长列表滚动、48 px 整行命中、当前值语义及系统返回合同。
+
 - [共享确认与消息弹窗布局及路由审计](SHARED_ALERT_DIALOG_LAYOUT_AND_ROUTE_AUDIT_2026_09_13.md)：长正文滚动边界、窄屏大字号动作可达性、48 px 命中尺寸、所属路由关闭及既有调用链兼容。
 
 - [共享文本编辑弹窗生命周期与布局审计](SHARED_EDIT_DIALOG_LIFECYCLE_AND_LAYOUT_AUDIT_2026_09_13.md)：路由子树控制器所有权、确认/取消返回语义、窄屏大字号滚动视口及响应式动作排列。
