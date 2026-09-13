@@ -4,6 +4,8 @@
 
 ## 开发与发布
 
+- [桌面退出弹窗与动作事务审计](DESKTOP_EXIT_DIALOG_AND_ACTION_TRANSACTION_AUDIT_2026_09_13.md)：退出动作归一化、窄屏大字号布局、single-flight 路由、偏好落盘、原生失败后的窗口/拦截恢复及备份合同。
+
 - [共享选项弹窗布局与选择语义审计](SHARED_OPTION_DIALOG_LAYOUT_AND_SELECTION_AUDIT_2026_09_13.md)：选项文字收缩换行、长列表滚动、48 px 整行命中、当前值语义及系统返回合同。
 
 - [共享确认与消息弹窗布局及路由审计](SHARED_ALERT_DIALOG_LAYOUT_AND_ROUTE_AUDIT_2026_09_13.md)：长正文滚动边界、窄屏大字号动作可达性、48 px 命中尺寸、所属路由关闭及既有调用链兼容。
