@@ -1,9 +1,9 @@
 import 'dart:io';
 import 'dart:async';
-
 import 'package:pure_live/common/index.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb;
 import 'package:pure_live/modules/auth/utils/firebase_manager.dart';
+
 
 class FirebaseAuthControllerBackend {
   const FirebaseAuthControllerBackend();
@@ -89,36 +89,61 @@ class AuthController extends GetxController {
 
   Future<void> startAsyncInit() async {
     if (isConnecting || isClosed) return;
+
     final lifecycleGeneration = ++_lifecycleGeneration;
     isConnecting = true;
     isReady = false;
     update();
+
     try {
       final previousSubscription = _authSubscription;
       _authSubscription = null;
       await previousSubscription?.cancel();
+
+      if (!_isLifecycleCurrent(lifecycleGeneration)) return;
+      // Probe Firebase connectivity before initialization to avoid blocking
+      // app startup when Firebase services are unreachable or inaccessible.
+      final canAccessFirebase = await backend.canAccessFirebaseWebsite();
+
       if (!_isLifecycleCurrent(lifecycleGeneration)) return;
 
+      if (!canAccessFirebase) {
+        isInitSuccess = false;
+        _setSignedOut(clearMetadata: true);
+        debugPrint(
+          '[AuthController] Firebase website is unreachable, '
+          'skip Firebase initialization.',
+        );
+        return;
+      }
+
       await backend.initialize();
+
       if (!_isLifecycleCurrent(lifecycleGeneration)) return;
 
       isInitSuccess = true;
+
       _authSubscription = backend.authStateChanges().listen(
         (firebaseUser) {
           unawaited(_applyAuthUser(firebaseUser, lifecycleGeneration));
         },
         onError: (Object error, StackTrace stackTrace) {
           if (!_isLifecycleCurrent(lifecycleGeneration)) return;
+
           debugPrint('[AuthController] Auth state stream error: $error');
+
           isReady = true;
           update();
         },
       );
+
       await _applyAuthUser(backend.currentUser, lifecycleGeneration);
     } catch (error) {
       if (!_isLifecycleCurrent(lifecycleGeneration)) return;
+
       isInitSuccess = false;
       _setSignedOut(clearMetadata: true);
+
       debugPrint('[AuthController] Firebase async init error: $error');
     } finally {
       if (_isLifecycleCurrent(lifecycleGeneration)) {
