@@ -4,6 +4,8 @@
 
 ## 开发与发布
 
+- [本地日志事务、端点与隐私边界审计](LOCAL_LOGGING_TRANSACTION_AND_ENDPOINT_AUDIT_2026_09_13.md)：启停验证事务、运行期端点、回环绑定、原子端口、早期日志安全、Release 浏览器缓冲及双语忙碌/失败反馈。
+
 - [Windows 启动项事务与注册表命令审计](WINDOWS_STARTUP_TRANSACTION_AND_REGISTRY_COMMAND_AUDIT_2026_09_13.md)：注册表回读验证、失败回滚、旧便携路径识别、动态 UTF-16 读取、FFI 资源所有权及双语忙碌/失败反馈。
 
 - [真实在线人数平台偏好持久化审计](AUDIENCE_PLATFORM_PREFERENCE_PERSISTENCE_AUDIT_2026_09_13.md)：同长度旧值修复、小写/去空白/去重/能力过滤合同、备份与导出归一化及安全设置开关。
