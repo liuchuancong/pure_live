@@ -1,11 +1,8 @@
 import 'dart:io';
 import 'dart:convert';
-<<<<<<< HEAD
 
-import 'package:synchronized/synchronized.dart';
-=======
->>>>>>> 110d763d (feat: 添加Windows多实例配置文件支持，优化设置恢复流程)
 import 'package:pure_live/get/get.dart';
+import 'package:synchronized/synchronized.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:pure_live/common/services/utils/hive_rx.dart';
 import 'package:pure_live/modules/tags/tag_management_controller.dart';
@@ -30,7 +27,6 @@ import 'package:pure_live/common/services/settings/room_card_settings_controller
 
 enum BackupRestoreScope { all, favorites }
 
-
 class BackupController extends GetxController {
   static BackupController get to => Get.find();
 
@@ -40,7 +36,6 @@ class BackupController extends GetxController {
 
   final RxString backupDirectory = hiveString('backupDirectory', '');
 
-<<<<<<< HEAD
   Future<void> setBackupDirectoryDurably(String directory) {
     return _directoryMutationLock.synchronized(() async {
       final normalized = directory.trim();
@@ -58,10 +53,7 @@ class BackupController extends GetxController {
     });
   }
 
-  Map<String, dynamic> exportAllSettings({bool includeSensitiveData = false}) {
-=======
   Map<String, dynamic> exportAllSettings({bool includeSensitiveData = true}) {
->>>>>>> 110d763d (feat: 添加Windows多实例配置文件支持，优化设置恢复流程)
     if (!Get.isRegistered<TagManagementController>()) {
       Get.put(TagManagementController());
     }
