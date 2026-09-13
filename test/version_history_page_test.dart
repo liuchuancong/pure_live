@@ -64,7 +64,7 @@ void main() {
       tester,
       size: const Size(320, 480),
       textScale: 3,
-      loader: () async => [_release('3.2.0')],
+      loader: () async => [_release('3.2.0', fileUrl: '  https://Example.TEST/PureLive-3.2.0-portable.zip  ')],
       openExternalUrl: (uri) async {
         opened.add(uri);
         return true;
@@ -220,7 +220,7 @@ Future<void> _pumpPage(
   await tester.pumpAndSettle();
 }
 
-ReleaseModel _release(String version) {
+ReleaseModel _release(String version, {String? fileUrl}) {
   return ReleaseModel(
     version: version,
     title: 'Pure Live $version',
@@ -233,7 +233,7 @@ ReleaseModel _release(String version) {
         name: 'PureLive-$version-portable.zip',
         size: '64 MB',
         downloads: 17,
-        url: 'https://example.test/PureLive-$version-portable.zip',
+        url: fileUrl ?? 'https://example.test/PureLive-$version-portable.zip',
       ),
     ],
   );

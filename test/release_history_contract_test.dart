@@ -72,11 +72,21 @@ void main() {
       expect(releases.every((release) => release.version.isNotEmpty), isTrue);
     });
 
-    test('release actions accept only absolute web links', () {
-      expect(releaseHistoryWebUri('https://example.test/release')?.host, 'example.test');
-      expect(releaseHistoryWebUri('javascript:alert(1)'), isNull);
-      expect(releaseHistoryWebUri('/relative/release'), isNull);
-      expect(releaseHistoryWebUri(''), isNull);
+    test('release actions share the normalized complete HTTP target contract', () {
+      expect(
+        releaseHistoryWebUri(' HTTPS://Example.TEST:8443/release?q=a%2Fb ')?.toString(),
+        'https://example.test:8443/release?q=a%2Fb',
+      );
+      for (final value in <String>[
+        'prefix https://example.test/release',
+        'https://user:token@example.test/release',
+        'https://example.test:70000/release',
+        'javascript:alert(1)',
+        '/relative/release',
+        '',
+      ]) {
+        expect(releaseHistoryWebUri(value), isNull, reason: value);
+      }
     });
   });
 }

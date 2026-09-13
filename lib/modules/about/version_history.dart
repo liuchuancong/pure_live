@@ -66,11 +66,7 @@ List<ReleaseModel> parseReleaseHistoryPayload(Object? decoded) {
   return List.unmodifiable(releases);
 }
 
-Uri? releaseHistoryWebUri(String rawUrl) {
-  final uri = Uri.tryParse(rawUrl.trim());
-  if (uri == null || !uri.hasAuthority || (uri.scheme != 'https' && uri.scheme != 'http')) return null;
-  return uri;
-}
+Uri? releaseHistoryWebUri(String rawUrl) => updateDownloadUri(rawUrl);
 
 class VersionHistoryPage extends StatefulWidget {
   const VersionHistoryPage({super.key, this.releaseLoader, this.openExternalUrl, this.downloadRelease});
@@ -437,13 +433,15 @@ class _VersionHistoryPageState extends State<VersionHistoryPage> {
   }
 
   Future<void> _copyDownloadLink(BuildContext context, ReleaseFileModel file) async {
-    if (releaseHistoryWebUri(file.url) == null) return;
-    await Clipboard.setData(ClipboardData(text: file.url));
+    final uri = releaseHistoryWebUri(file.url);
+    if (uri == null) return;
+    await Clipboard.setData(ClipboardData(text: uri.toString()));
     if (context.mounted) _showMessage(context, 'copied_to_clipboard');
   }
 
   Future<void> _confirmDownload(BuildContext context, ReleaseFileModel file) async {
-    if (releaseHistoryWebUri(file.url) == null) return;
+    final uri = releaseHistoryWebUri(file.url);
+    if (uri == null) return;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -459,9 +457,9 @@ class _VersionHistoryPageState extends State<VersionHistoryPage> {
     try {
       final handler = widget.downloadRelease;
       if (handler != null) {
-        await handler(file.url, fileName: file.name);
+        await handler(uri.toString(), fileName: file.name);
       } else {
-        await downloadAndInstallApk(file.url, fileName: file.name);
+        await downloadAndInstallApk(uri.toString(), fileName: file.name);
       }
     } catch (_) {
       if (context.mounted) _showMessage(context, 'version_history_download_failed');
