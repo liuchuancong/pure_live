@@ -13,6 +13,7 @@ Widget _host({
   required Stream<int?> sourceWidth,
   required Stream<int?> sourceHeight,
   required List<_ResizeCall> calls,
+  BoxFit fit = BoxFit.contain,
   Duration debounce = const Duration(milliseconds: 20),
 }) {
   return MediaQuery(
@@ -26,6 +27,7 @@ Widget _host({
             outputIdentity: outputIdentity,
             sourceWidth: sourceWidth,
             sourceHeight: sourceHeight,
+            fit: fit,
             resizeDebounce: debounce,
             onResize: (width, height, force) async {
               calls.add((width: width, height: height, force: force));
@@ -127,6 +129,38 @@ void main() {
     expect(calls.last, (width: 320, height: 180, force: true));
   });
 
+  testWidgets('fit changes resize the native output for the fitted viewport', (tester) async {
+    final width = StreamController<int?>.broadcast();
+    final height = StreamController<int?>.broadcast();
+    addTearDown(width.close);
+    addTearDown(height.close);
+    final identity = Object();
+    final calls = <_ResizeCall>[];
+
+    Future<void> pumpFor(BoxFit fit) => tester.pumpWidget(
+      _host(
+        size: const Size(500, 500),
+        devicePixelRatio: 1,
+        outputIdentity: identity,
+        sourceWidth: width.stream,
+        sourceHeight: height.stream,
+        calls: calls,
+        fit: fit,
+      ),
+    );
+
+    await pumpFor(BoxFit.contain);
+    width.add(1920);
+    height.add(1080);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 20));
+    expect(calls.single, (width: 500, height: 282, force: true));
+
+    await pumpFor(BoxFit.cover);
+    await tester.pump(const Duration(milliseconds: 20));
+    expect(calls.last, (width: 890, height: 500, force: false));
+  });
+
   testWidgets('keyed focus promotion swaps big and small render targets', (tester) async {
     final width = StreamController<int?>.broadcast();
     final height = StreamController<int?>.broadcast();
@@ -145,6 +179,7 @@ void main() {
         outputIdentity: identity,
         sourceWidth: width.stream,
         sourceHeight: height.stream,
+        fit: BoxFit.contain,
         resizeDebounce: const Duration(milliseconds: 20),
         onResize: (outputWidth, outputHeight, force) async {
           calls.add((width: outputWidth, height: outputHeight, force: force));

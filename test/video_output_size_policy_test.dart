@@ -37,6 +37,39 @@ void main() {
     expect(size.height.toInt().isEven, isTrue);
   });
 
+  test('allocates enough source-aspect pixels for the selected fit', () {
+    expect(
+      calculateVideoOutputSize(
+        logicalViewport: const Size(500, 500),
+        devicePixelRatio: 1,
+        sourceWidth: 1920,
+        sourceHeight: 1080,
+        fit: BoxFit.cover,
+      ),
+      const Size(890, 500),
+    );
+    expect(
+      calculateVideoOutputSize(
+        logicalViewport: const Size(500, 500),
+        devicePixelRatio: 1,
+        sourceWidth: 1920,
+        sourceHeight: 1080,
+        fit: BoxFit.fitHeight,
+      ),
+      const Size(890, 500),
+    );
+    expect(
+      calculateVideoOutputSize(
+        logicalViewport: const Size(500, 500),
+        devicePixelRatio: 1,
+        sourceWidth: 1920,
+        sourceHeight: 1080,
+        fit: BoxFit.fitWidth,
+      ),
+      const Size(500, 282),
+    );
+  });
+
   test('uses a bounded provisional size until source metadata arrives', () {
     expect(
       calculateVideoOutputSize(logicalViewport: const Size(3840, 2160), devicePixelRatio: 1),
