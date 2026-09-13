@@ -300,6 +300,43 @@ void main() {
     await finish(tester);
   });
 
+  testWidgets('long config editor keeps its form and decisions reachable at narrow very-large text', (tester) async {
+    final longName = List.filled(4, 'very long WebDAV configuration name').join(' · ');
+    controller.configs.add(
+      WebDAVConfig(name: longName, address: 'https://example.test/dav/', username: 'user', password: 'password'),
+    );
+    await openPage(tester, size: const Size(320, 480), textScale: 3);
+
+    await tester.tap(find.byTooltip('更多操作'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('打开配置列表').hitTestable());
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.edit).hitTestable());
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.byType(TextFormField), findsNWidgets(4));
+    expect(find.text('取消').hitTestable(), findsOneWidget);
+    expect(find.text('更新').hitTestable(), findsOneWidget);
+    final formScroll = find.descendant(of: find.byType(AlertDialog), matching: find.byType(SingleChildScrollView));
+    expect(formScroll, findsOneWidget);
+    final scrollable = find.descendant(
+      of: formScroll,
+      matching: find.byWidgetPredicate((widget) => widget is Scrollable && widget.axisDirection == AxisDirection.down),
+    );
+    expect(scrollable, findsOneWidget);
+    await tester.scrollUntilVisible(find.byType(TextFormField).last, 120, scrollable: scrollable);
+    expect(find.byType(TextFormField).last.hitTestable(), findsOneWidget);
+    expect(find.text('取消').hitTestable(), findsOneWidget);
+    expect(find.text('更新').hitTestable(), findsOneWidget);
+
+    await tester.tap(find.text('取消').hitTestable());
+    await tester.pumpAndSettle();
+    expect(find.byType(AlertDialog), findsNothing);
+    expect(tester.state<ScaffoldState>(find.byType(Scaffold)).isEndDrawerOpen, isTrue);
+    await finish(tester);
+  });
+
   testWidgets('long config deletion keeps both decisions reachable and closes only its dialog', (tester) async {
     final longName = List.filled(4, 'very long WebDAV configuration name').join(' · ');
     controller.configs.add(
