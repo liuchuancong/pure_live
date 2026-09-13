@@ -185,43 +185,7 @@ class Utils {
   }
 
   static Future<T?> showOptionDialog<T>(List<T> contents, T value, {String title = ''}) async {
-    var result = await Get.dialog(
-      SimpleDialog(
-        title: Text(title),
-        children: [
-          RadioGroup<T>(
-            groupValue: value,
-            onChanged: (T? e) {
-              if (e != null) {
-                Navigator.of(Get.context!).pop(e);
-              }
-            },
-            child: Padding(
-              padding: const EdgeInsets.only(top: 0, bottom: 10, left: 16, right: 16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: contents.map<Widget>((e) {
-                  return Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Radio<T>(value: e, activeColor: Theme.of(Get.context!).colorScheme.primary),
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.of(Get.context!).pop(e);
-                        },
-                        child: Text(e.toString(), style: Theme.of(Get.context!).textTheme.bodyLarge),
-                      ),
-                    ],
-                  );
-                }).toList(),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-    return result;
+    return Get.dialog<T>(_OptionDialog<T>(contents: contents, selectedValue: value, title: title));
   }
 
   static Future<bool> showExitDialog() async {
@@ -352,6 +316,66 @@ class _SharedAlertDialog extends StatelessWidget {
       actionsOverflowDirection: VerticalDirection.down,
       actionsOverflowButtonSpacing: 8,
       actions: actionWidgets,
+    );
+  }
+}
+
+class _OptionDialog<T> extends StatelessWidget {
+  const _OptionDialog({required this.contents, required this.selectedValue, required this.title});
+
+  final List<T> contents;
+  final T selectedValue;
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    void select(T? value) {
+      if (value != null) {
+        Navigator.of(context).pop(value);
+      }
+    }
+
+    return AlertDialog(
+      scrollable: true,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+      title: title.isEmpty ? null : Text(title),
+      contentPadding: const EdgeInsets.fromLTRB(8, 12, 8, 16),
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 420),
+        child: RadioGroup<T>(
+          groupValue: selectedValue,
+          onChanged: select,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (var index = 0; index < contents.length; index++)
+                SimpleDialogOption(
+                  key: ValueKey<String>('shared-option-$index'),
+                  padding: EdgeInsets.zero,
+                  onPressed: () => select(contents[index]),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(minHeight: 48),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      child: Row(
+                        children: [
+                          Radio<T>(value: contents[index], activeColor: theme.colorScheme.primary),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(contents[index].toString(), style: theme.textTheme.bodyLarge, softWrap: true),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
