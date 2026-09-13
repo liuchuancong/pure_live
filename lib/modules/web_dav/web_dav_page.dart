@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:mime/mime.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
@@ -18,7 +20,7 @@ class _WebDavPageState extends State<WebDavPage> {
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final ScrollController _breadcrumbScrollController = ScrollController();
-  final GlobalKey _currentBreadcrumbKey = GlobalKey();
+  int _breadcrumbScrollGeneration = 0;
 
   void _showConfigDialog({WebDAVConfig? existingConfig}) {
     showDialog<void>(
@@ -29,8 +31,34 @@ class _WebDavPageState extends State<WebDavPage> {
 
   @override
   void dispose() {
+    _breadcrumbScrollGeneration++;
     _breadcrumbScrollController.dispose();
     super.dispose();
+  }
+
+  void _scheduleBreadcrumbScrollToCurrent() {
+    final generation = ++_breadcrumbScrollGeneration;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || generation != _breadcrumbScrollGeneration || !_breadcrumbScrollController.hasClients) return;
+      final position = _breadcrumbScrollController.position;
+      if (!position.hasContentDimensions) return;
+      final target = position.maxScrollExtent;
+      if ((position.pixels - target).abs() < 0.5) return;
+      unawaited(
+        _breadcrumbScrollController
+            .animateTo(target, duration: const Duration(milliseconds: 180), curve: Curves.easeOutCubic)
+            .then((_) {
+              if (!mounted || generation != _breadcrumbScrollGeneration || !_breadcrumbScrollController.hasClients) {
+                return;
+              }
+              final settledPosition = _breadcrumbScrollController.position;
+              final settledTarget = settledPosition.maxScrollExtent;
+              if ((settledPosition.pixels - settledTarget).abs() >= 0.5) {
+                settledPosition.jumpTo(settledTarget);
+              }
+            }),
+      );
+    });
   }
 
   @override
@@ -222,29 +250,32 @@ class _WebDavPageState extends State<WebDavPage> {
           height: 50,
           child: Align(
             alignment: Alignment.centerLeft,
-            child: Obx(
-              () => ListView(
+            child: Obx(() {
+              final parts = controller.breadcrumbParts.toList(growable: false);
+              _scheduleBreadcrumbScrollToCurrent();
+              return ListView(
+                key: const ValueKey('webdav-breadcrumb-scroll'),
                 controller: _breadcrumbScrollController,
                 primary: false,
                 physics: const PureLiveBoundedScrollPhysics(),
                 scrollDirection: Axis.horizontal,
-                children: _buildBreadcrumbs(),
-              ),
-            ),
+                children: _buildBreadcrumbs(parts),
+              );
+            }),
           ),
         ),
       ),
     );
   }
 
-  List<Widget> _buildBreadcrumbs() {
+  List<Widget> _buildBreadcrumbs(List<String> parts) {
     List<Widget> buttons = [];
     String accumulatedPath = '/';
 
     buttons.add(const SizedBox(width: 48));
     buttons.add(_buildCrumbButton(label: i18n("webdav_my_files"), targetPath: accumulatedPath));
 
-    for (String part in controller.breadcrumbParts) {
+    for (final part in parts) {
       buttons.add(Padding(padding: const EdgeInsets.symmetric(horizontal: 4), child: const Icon(Icons.navigate_next)));
       accumulatedPath += '$part/';
       buttons.add(_buildCrumbButton(label: part, targetPath: accumulatedPath));
@@ -256,7 +287,6 @@ class _WebDavPageState extends State<WebDavPage> {
   Widget _buildCrumbButton({required String label, required String targetPath}) {
     final isCurrent = targetPath == controller.dirPath.value;
     return TextButton(
-      key: isCurrent ? _currentBreadcrumbKey : null,
       style: TextButton.styleFrom(
         padding: const EdgeInsets.symmetric(horizontal: 8),
         minimumSize: Size.zero,
@@ -265,17 +295,25 @@ class _WebDavPageState extends State<WebDavPage> {
       onPressed: () {
         if (!isCurrent) {
           controller.dirPath.value = targetPath;
-          controller.isFromBreadcrumb.value = true;
           controller.updateBreadcrumbParts();
-          controller.triggerBreadcrumbScroll();
           controller.loadFiles();
         }
       },
-      child: Text(
-        label,
-        style: TextStyle(
-          color: isCurrent ? Theme.of(Get.context!).colorScheme.primary : Theme.of(Get.context!).colorScheme.onSurface,
-          fontWeight: FontWeight.w500,
+      child: Tooltip(
+        message: label,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 240),
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: isCurrent
+                  ? Theme.of(Get.context!).colorScheme.primary
+                  : Theme.of(Get.context!).colorScheme.onSurface,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ),
       ),
     );

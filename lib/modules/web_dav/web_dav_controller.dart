@@ -62,7 +62,6 @@ class WebDavPageController extends GetxController {
   final RxString configurationIssueKey = ''.obs;
   final RxString dirPath = '/'.obs;
   final RxList<String> breadcrumbParts = <String>[].obs;
-  final RxBool isFromBreadcrumb = false.obs;
 
   WebDAVService? _webdavService;
   WebDAVConfig? _serviceConfig;
@@ -218,19 +217,15 @@ class WebDavPageController extends GetxController {
     return cleanPath.endsWith('/') ? '$cleanPath$fileName/' : '$cleanPath/$fileName/';
   }
 
-  void goToParentDirectory() {
-    if (dirPath.value != '/') {
-      final cleanPath = dirPath.value.endsWith('/')
-          ? dirPath.value.substring(0, dirPath.value.length - 1)
-          : dirPath.value;
-      final newPath = cleanPath.substring(0, cleanPath.lastIndexOf('/') + 1);
-      dirPath.value = newPath.isEmpty ? '/' : newPath;
-      isFromBreadcrumb.value = true;
-      triggerBreadcrumbScroll();
-      loadFiles();
-    } else {
-      Navigator.pop(Get.context!);
-    }
+  bool goToParentDirectory() {
+    if (dirPath.value == '/') return false;
+    final cleanPath = dirPath.value.endsWith('/')
+        ? dirPath.value.substring(0, dirPath.value.length - 1)
+        : dirPath.value;
+    final newPath = cleanPath.substring(0, cleanPath.lastIndexOf('/') + 1);
+    dirPath.value = newPath.isEmpty ? '/' : newPath;
+    loadFiles();
+    return true;
   }
 
   void deleteConfig(WebDAVConfig config) {
@@ -252,8 +247,6 @@ class WebDavPageController extends GetxController {
     rebuildBreadcrumb();
   }
 
-  void triggerBreadcrumbScroll() {}
-
   void onConfigSelected(WebDAVConfig config) {
     currentConfig.value = config;
     dirPath.value = '/';
@@ -268,9 +261,7 @@ class WebDavPageController extends GetxController {
     final newPath = _directoryPathFor(file);
     if (newPath == null) return;
     dirPath.value = newPath;
-    isFromBreadcrumb.value = false;
     updateBreadcrumbParts();
-    triggerBreadcrumbScroll();
     loadFiles();
   }
 

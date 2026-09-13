@@ -284,10 +284,21 @@ void main() {
     final service = connect();
     service.reads.single.complete([webdav.File(name: 'previous.txt')]);
     await settle();
-    controller.goToParentDirectory();
+    expect(controller.goToParentDirectory(), isTrue);
     expect(controller.breadcrumbParts, ['first']);
     expect(controller.files, isEmpty);
     expect(service.paths.last, '/first/');
+  });
+
+  test('root parent request reports page ownership without reading or navigating', () async {
+    final service = connect();
+    service.reads.single.complete([]);
+    await settle();
+
+    expect(controller.goToParentDirectory(), isFalse);
+    expect(controller.dirPath.value, '/');
+    expect(controller.breadcrumbParts, isEmpty);
+    expect(service.paths, ['/']);
   });
 
   test('nameless directory uses its server path instead of throwing', () async {

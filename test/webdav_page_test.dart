@@ -439,6 +439,30 @@ void main() {
     await finish(tester);
   });
 
+  testWidgets('deep breadcrumbs reveal the current segment at narrow very-large text', (tester) async {
+    await openPage(tester, size: const Size(320, 480), textScale: 3);
+    final segments = [
+      for (var index = 0; index < 7; index++) 'very-long-directory-segment-$index',
+      'current-directory-endpoint',
+    ];
+    controller.dirPath.value = '/${segments.join('/')}/';
+    controller.rebuildBreadcrumb();
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.text(segments.last).hitTestable(), findsOneWidget);
+    expect(tester.getSize(find.text(segments.last)).width, lessThanOrEqualTo(240));
+    final breadcrumbScroll = find.descendant(
+      of: find.byKey(const ValueKey('webdav-breadcrumb-scroll')),
+      matching: find.byWidgetPredicate((widget) => widget is Scrollable && widget.axisDirection == AxisDirection.right),
+    );
+    expect(breadcrumbScroll, findsOneWidget);
+    final position = tester.state<ScrollableState>(breadcrumbScroll).position;
+    expect(position.maxScrollExtent, greaterThan(0));
+    expect(position.pixels, closeTo(position.maxScrollExtent, 0.5));
+    await finish(tester);
+  });
+
   testWidgets('removing the selected configuration clears its error and restores setup', (tester) async {
     await openPage(tester);
     selectConfig();
