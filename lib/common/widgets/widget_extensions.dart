@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:pure_live/get/get.dart';
+import 'package:pure_live/core/sites.dart';
+import 'package:pure_live/plugins/locale_helper.dart';
 import 'package:syncfusion_flutter_sliders/sliders.dart';
 import 'package:pure_live/common/style/app_text_styles.dart';
 
@@ -14,6 +16,30 @@ extension AppLayoutFactory on BuildContext {
           fontWeight: FontWeight.bold,
           color: theme.colorScheme.primary.withValues(alpha: 0.65),
           letterSpacing: 0.5,
+        ),
+      ),
+    );
+  }
+
+  Widget buildPlatformTag(String platform, {bool mini = false}) {
+    final theme = Theme.of(this);
+    final colorScheme = theme.colorScheme;
+    final id = platform.trim().toLowerCase();
+
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: mini ? 6 : 8, vertical: mini ? 2 : 4),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.75),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.2), width: 0.5),
+      ),
+      child: Text(
+        i18n('site_$id'),
+        style: AppTextStyles.t11.copyWith(
+          color: colorScheme.onSurfaceVariant,
+          fontSize: mini ? 10 : 12,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.15,
         ),
       ),
     );
