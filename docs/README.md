@@ -4,6 +4,8 @@
 
 ## 开发与发布
 
+- [WebDAV 恢复确认与事务审计](WEBDAV_RESTORE_CONFIRMATION_AND_TRANSACTION_AUDIT_2026_09_14.md)：具名覆盖确认、窄屏大字号动作可达、确认前零读取/零本地变更、单次恢复事务及服务/目录代次栅栏。
+
 - [WebDAV 文件行与删除确认审计](WEBDAV_FILE_ROW_AND_DELETE_DIALOG_AUDIT_2026_09_14.md)：超长文件名两行收束与完整提示、窄屏大字号动作可达、具名危险确认、页面路由所有权及单次删除事务。
 
 - [WebDAV 面包屑可见性与父级路由审计](WEBDAV_BREADCRUMB_VISIBILITY_AND_ROUTE_AUDIT_2026_09_14.md)：深层路径当前段自动可见、稳定滚动范围校准、超长目录名完整提示，以及根目录父级请求的页面所有权。
