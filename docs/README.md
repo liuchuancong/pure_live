@@ -4,6 +4,8 @@
 
 ## 开发与发布
 
+- [Windows 视频输出 fit 尺寸所有权审计](WINDOWS_VIDEO_OUTPUT_FIT_SIZING_AUDIT_2026_09_14.md)：Issue #767 的 viewport / DPR 尺寸策略遗漏显示模式、`cover` 等模式的纹理放大链、26 项回归及 Windows Debug 构建边界。
+
 - [Windows 副屏亮度所有权审计](WINDOWS_SECONDARY_MONITOR_BRIGHTNESS_OWNERSHIP_AUDIT_2026_09_14.md)：Issue #863 的无 Dart 调用原生 DDC/CI 写入链、旧 CMake 开关失效原因、移动端实现保留、245 项回归及 Windows Debug 依赖/打包边界。
 
 - [房间卡片设置回归与恢复审计](ROOM_CARD_SETTINGS_REGRESSION_AND_RESTORATION_AUDIT_2026_09_14.md)：Issue #864 的 3.1.3 稳定版缺失来源、当前架构下的移动/桌面独立预设与实时预览、3.1.2 持久值迁移、备份合同及 154 项回归。
