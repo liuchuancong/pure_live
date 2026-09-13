@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/services.dart';
@@ -116,12 +117,35 @@ class GeneralSettingsPage extends GetView<SettingsService> {
             }),
 
             if (Platform.isWindows) ...[
-              context.buildSwitchTile(
-                title: i18n("startup"),
-                subtitle: "",
-                value: SettingsService.to.startup.enableStartUp,
-                icon: Remix.windows_line,
-              ),
+              Obx(() {
+                final startup = SettingsService.to.startup;
+                final applying = startup.isApplyingStartup.v;
+                final statusKey = startup.startupStatusKey.v;
+                final subtitleKey = applying
+                    ? 'startup_applying'
+                    : statusKey.isNotEmpty
+                    ? statusKey
+                    : 'startup_subtitle';
+                return SwitchListTile(
+                  key: const ValueKey('windows-startup-switch'),
+                  secondary: Icon(Remix.windows_line, color: Theme.of(context).colorScheme.primary, size: 22),
+                  title: Text(i18n('startup'), style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600)),
+                  subtitle: Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Text(
+                      i18n(subtitleKey),
+                      style: AppTextStyles.t12.copyWith(
+                        color: statusKey.isNotEmpty && !applying
+                            ? Theme.of(context).colorScheme.error
+                            : Theme.of(context).hintColor.withValues(alpha: 0.75),
+                      ),
+                    ),
+                  ),
+                  value: startup.enableStartUp.v,
+                  onChanged: applying ? null : (value) => unawaited(startup.setStartupEnabled(value)),
+                  contentPadding: const EdgeInsets.only(left: 16, top: 2, bottom: 2, right: 8),
+                );
+              }),
               context.buildTile(
                 icon: Remix.aspect_ratio_line,
                 title: i18n("window_size"),

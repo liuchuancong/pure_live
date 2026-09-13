@@ -117,6 +117,46 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('legacy platform spellings render through canonical switch state', (tester) async {
+    tester.view.physicalSize = const Size(420, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final app = SettingsService.to.app;
+    app.realOnlinePlatforms.assignAll([' DOUYIN ', 'HUYA']);
+
+    await tester.pumpWidget(
+      EasyLocalization(
+        supportedLocales: const [Locale('zh')],
+        path: 'assets/translations',
+        fallbackLocale: const Locale('zh'),
+        assetLoader: const _AudienceAssetLoader(),
+        child: Builder(
+          builder: (context) => GetMaterialApp(
+            locale: context.locale,
+            localizationsDelegates: context.localizationDelegates,
+            supportedLocales: context.supportedLocales,
+            home: const AudienceMetricSettingsPage(),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final douyin = find.byKey(const ValueKey('audience-platform-douyin'));
+    await tester.ensureVisible(douyin);
+    await tester.pumpAndSettle();
+    expect(tester.widget<SwitchListTile>(douyin).value, isTrue);
+    expect(app.realOnlinePlatforms, [' DOUYIN ', 'HUYA']);
+    expect(app.toJson()['realOnlinePlatforms'], ['douyin']);
+
+    await tester.tap(douyin);
+    await tester.pumpAndSettle();
+    expect(app.realOnlinePlatforms, isEmpty);
+    expect(tester.widget<SwitchListTile>(douyin).value, isFalse);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('every live platform stays localized and operable in narrow very-large text', (tester) async {
     tester.view.physicalSize = const Size(320, 480);
     tester.view.devicePixelRatio = 1;

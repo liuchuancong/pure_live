@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -22,6 +23,8 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   late Directory hiveDirectory;
   late Map<String, dynamic> translations;
+  late _StartupFixture startupFixture;
+  late StartupController startupController;
 
   setUpAll(() async {
     hiveDirectory = await Directory.systemTemp.createTemp('pure-live-general-settings-layout-test-');
@@ -37,7 +40,14 @@ void main() {
     Get.reset();
     DisplayModeService.info.value = null;
     await HivePrefUtil.clear();
-    Get.put<SettingsService>(_TestSettingsService(), permanent: true);
+    await HivePrefUtil.setBool('enableStartUp', false);
+    startupFixture = _StartupFixture();
+    startupController = StartupController(
+      readStartupState: startupFixture.read,
+      enableStartupAction: startupFixture.enable,
+      disableStartupAction: startupFixture.disable,
+    );
+    Get.put<SettingsService>(_TestSettingsService(startupController), permanent: true);
   });
 
   tearDown(() {
@@ -116,6 +126,39 @@ void main() {
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();
+  }, skip: !Platform.isWindows);
+
+  testWidgets('startup switch waits for native verification and reports rollback', (tester) async {
+    tester.view.physicalSize = const Size(420, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await _pumpGeneralSettings(tester, translations);
+    final startupSwitch = find.byKey(const ValueKey('windows-startup-switch'));
+    await tester.ensureVisible(startupSwitch);
+    await tester.pumpAndSettle();
+
+    startupFixture.enableResult = false;
+    await tester.tap(startupSwitch);
+    await tester.pumpAndSettle();
+    expect(startupController.enableStartUp.value, isFalse);
+    expect(
+      find.text('The startup entry was not changed. The switch now shows the verified Windows state.'),
+      findsOneWidget,
+    );
+
+    startupFixture.enableResult = true;
+    startupFixture.enableGate = Completer<void>();
+    await tester.tap(startupSwitch);
+    await tester.pump();
+    expect(find.text('Updating the Windows startup entry…'), findsOneWidget);
+    expect(tester.widget<SwitchListTile>(startupSwitch).onChanged, isNull);
+    startupFixture.enableGate!.complete();
+    await tester.pumpAndSettle();
+    expect(startupController.enableStartUp.value, isTrue);
+    expect(find.text('Start Pure Live after signing in to Windows.'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   }, skip: !Platform.isWindows);
 
   testWidgets('window-size editor localizes presets and keeps every control reachable in narrow very-large text', (
@@ -310,6 +353,28 @@ Finder _dialogVerticalScrollable() {
       .first;
 }
 
+Future<void> _pumpGeneralSettings(WidgetTester tester, Map<String, dynamic> translations) async {
+  await tester.pumpWidget(
+    EasyLocalization(
+      supportedLocales: const [Locale('en')],
+      startLocale: const Locale('en'),
+      fallbackLocale: const Locale('en'),
+      saveLocale: false,
+      path: 'assets/translations',
+      assetLoader: _Translations(translations),
+      child: Builder(
+        builder: (context) => GetMaterialApp(
+          locale: context.locale,
+          localizationsDelegates: context.localizationDelegates,
+          supportedLocales: context.supportedLocales,
+          home: const GeneralSettingsPage(),
+        ),
+      ),
+    ),
+  );
+  await tester.pumpAndSettle();
+}
+
 class _Translations extends AssetLoader {
   const _Translations(this.values);
 
@@ -320,10 +385,12 @@ class _Translations extends AssetLoader {
 }
 
 class _TestSettingsService extends SettingsService {
+  _TestSettingsService(this._startup);
+
   final AppSettingsController _app = _TestAppSettingsController();
   final ExitSettingsController _exit = _TestExitSettingsController();
   final FontSettingsController _font = FontSettingsController();
-  final StartupController _startup = StartupController();
+  final StartupController _startup;
   final WindowSizeController _window = WindowSizeController();
 
   @override
@@ -350,6 +417,27 @@ class _TestSettingsService extends SettingsService {
   void onClose() {
     _exit.onClose();
     super.onClose();
+  }
+}
+
+class _StartupFixture {
+  bool nativeEnabled = false;
+  bool enableResult = true;
+  bool disableResult = true;
+  Completer<void>? enableGate;
+
+  bool read() => nativeEnabled;
+
+  Future<bool> enable() async {
+    final gate = enableGate;
+    if (gate != null) await gate.future;
+    if (enableResult) nativeEnabled = true;
+    return enableResult;
+  }
+
+  bool disable() {
+    if (disableResult) nativeEnabled = false;
+    return disableResult;
   }
 }
 

@@ -13,103 +13,206 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:pure_live/common/global/app_path_manager.dart';
 import 'package:pure_live/common/services/settings/log_controller.dart';
 
+enum LogBrowserRequestAction { page, clear, methodNotAllowed, forbidden, notFound }
+
 class Log {
   static const int maxDebugEntries = 2000;
+  static const String browserClearActionHeader = 'X-PureLive-Log-Action';
+  static const Map<String, String> browserSecurityHeaders = {
+    'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+    'Pragma': 'no-cache',
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'DENY',
+    'Cross-Origin-Resource-Policy': 'same-origin',
+    'Referrer-Policy': 'no-referrer',
+    'Content-Security-Policy': "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'",
+  };
   static LogFileWriter? _logFileWriter;
   static final List<DebugLogModel> _allLogs = [];
   static HttpServer? _server;
+  static int _statusGeneration = 0;
   static List<DebugLogModel> get allLogs => List<DebugLogModel>.unmodifiable(_allLogs);
+
+  @visibleForTesting
+  static InternetAddress get logServerBindAddress => InternetAddress.loopbackIPv4;
+
+  static bool get _localLoggingEnabled => Get.isRegistered<LogController>() && LogController.to.enableLog;
+
+  @visibleForTesting
+  static bool shouldBufferRuntimeLog({required bool releaseMode, required bool localLoggingEnabled}) {
+    return !releaseMode || localLoggingEnabled;
+  }
+
+  @visibleForTesting
+  static LogBrowserRequestAction classifyBrowserRequest({
+    required String method,
+    required String path,
+    String? actionHeader,
+  }) {
+    final normalizedMethod = method.toUpperCase();
+    if (path == '/') {
+      return normalizedMethod == 'GET' ? LogBrowserRequestAction.page : LogBrowserRequestAction.methodNotAllowed;
+    }
+    if (path == '/clear') {
+      if (normalizedMethod != 'POST') return LogBrowserRequestAction.methodNotAllowed;
+      return actionHeader == 'clear' ? LogBrowserRequestAction.clear : LogBrowserRequestAction.forbidden;
+    }
+    return LogBrowserRequestAction.notFound;
+  }
 
   static void clearDebugLogs() => _allLogs.clear();
 
   static Future<void> init() async {
-    if (LogController.to.enableLog) {
-      _logFileWriter = LogFileWriter();
-      await _logFileWriter!.init();
-      await startLogServer();
-    }
+    await setEnabled(LogController.to.enableLog);
   }
 
   static void dispose() {
-    _logFileWriter?.close();
+    _statusGeneration++;
+    final writer = _logFileWriter;
+    final server = _server;
     _logFileWriter = null;
-    stopLogServer();
-  }
-
-  static Future<int> _getAvailablePort() async {
-    try {
-      final socket = await ServerSocket.bind(InternetAddress.anyIPv4, 0);
-      final port = socket.port;
-      await socket.close();
-      return port;
-    } catch (e) {
-      Log.w('获取空闲端口失败，尝试保底端口 8080: $e');
-      try {
-        final fallbackSocket = await ServerSocket.bind(InternetAddress.anyIPv4, 47854);
-        await fallbackSocket.close();
-        return 47854;
-      } catch (fallbackError) {
-        Log.w('保底端口 47854 也被占用: $fallbackError');
-        return 0;
-      }
-    }
-  }
-
-  static Future<void> startLogServer() async {
-    if (_server != null) return;
-    try {
-      final port = await _getAvailablePort();
-      if (port == 0) return;
-      _server = await HttpServer.bind(InternetAddress.anyIPv4, port);
-      String serverAddress = _server!.address.address;
-      int serverPort = _server!.port;
-      if (Get.isRegistered<LogController>()) {
-        LogController.to.updateServerInfo(serverAddress, serverPort);
-      }
-
-      _server!.listen((HttpRequest request) {
-        _handleNativeRequest(request);
-      });
-    } catch (_) {}
-  }
-
-  static void stopLogServer() {
-    _server?.close(force: true);
     _server = null;
+    _clearRuntimeEndpoint();
+    if (writer != null) unawaited(writer.close());
+    if (server != null) unawaited(server.close(force: true));
+  }
+
+  static Future<bool> setEnabled(bool enabled) async {
+    final generation = ++_statusGeneration;
+    await _closeActiveResources();
+    if (generation != _statusGeneration) return false;
+    if (!enabled) return true;
+
+    final writer = LogFileWriter();
+    if (!await writer.init()) {
+      await writer.close();
+      return false;
+    }
+    if (generation != _statusGeneration) {
+      await writer.close();
+      return false;
+    }
+
+    HttpServer server;
+    try {
+      // Port zero asks the OS to select and bind an available port atomically;
+      // loopback keeps the diagnostic page local to this device.
+      server = await HttpServer.bind(logServerBindAddress, 0);
+    } catch (error) {
+      debugPrint('Failed to start local log server: $error');
+      await writer.close();
+      return false;
+    }
+
+    if (generation != _statusGeneration) {
+      await server.close(force: true);
+      await writer.close();
+      return false;
+    }
+
+    _logFileWriter = writer;
+    _server = server;
+    if (Get.isRegistered<LogController>()) {
+      LogController.to.updateServerInfo(server.address.address, server.port);
+    }
+    server.listen(_handleNativeRequest);
+    return true;
+  }
+
+  static Future<void> _closeActiveResources() async {
+    final writer = _logFileWriter;
+    final server = _server;
+    _logFileWriter = null;
+    _server = null;
+    _clearRuntimeEndpoint();
+    if (writer != null) await writer.close();
+    if (server != null) await server.close(force: true);
+  }
+
+  static void _clearRuntimeEndpoint() {
+    if (Get.isRegistered<LogController>()) {
+      LogController.to.updateServerInfo('', 0);
+    }
   }
 
   static void _handleNativeRequest(HttpRequest request) {
-    if (request.uri.path == '/clear') {
-      clearDebugLogs();
-      request.response
-        ..headers.contentType = ContentType.json
-        ..write(jsonEncode({'success': true}))
-        ..close();
-      return;
+    unawaited(_serveBrowserRequest(request));
+  }
+
+  @visibleForTesting
+  static Future<void> serveBrowserRequestForTesting(HttpRequest request) => _serveBrowserRequest(request);
+
+  static Future<void> _serveBrowserRequest(HttpRequest request) async {
+    final response = request.response;
+    try {
+      browserSecurityHeaders.forEach(response.headers.set);
+      final action = classifyBrowserRequest(
+        method: request.method,
+        path: request.uri.path,
+        actionHeader: request.headers.value(browserClearActionHeader),
+      );
+      switch (action) {
+        case LogBrowserRequestAction.page:
+          response.headers.contentType = ContentType('text', 'html', charset: 'utf-8');
+          response.write(renderBrowserPage());
+          break;
+        case LogBrowserRequestAction.clear:
+          clearDebugLogs();
+          response.headers.contentType = ContentType.json;
+          response.write(jsonEncode({'success': true}));
+          break;
+        case LogBrowserRequestAction.methodNotAllowed:
+          response.statusCode = HttpStatus.methodNotAllowed;
+          response.headers.set('Allow', request.uri.path == '/clear' ? 'POST' : 'GET');
+          response.headers.contentType = ContentType.json;
+          response.write(jsonEncode({'success': false, 'error': 'method_not_allowed'}));
+          break;
+        case LogBrowserRequestAction.forbidden:
+          response.statusCode = HttpStatus.forbidden;
+          response.headers.contentType = ContentType.json;
+          response.write(jsonEncode({'success': false, 'error': 'forbidden'}));
+          break;
+        case LogBrowserRequestAction.notFound:
+          response.statusCode = HttpStatus.notFound;
+          response.headers.contentType = ContentType.json;
+          response.write(jsonEncode({'success': false, 'error': 'not_found'}));
+          break;
+      }
+      await response.close();
+    } catch (error) {
+      debugPrint('Local log browser request failed: $error');
+      try {
+        await response.close();
+      } catch (_) {}
     }
+  }
 
-    final logRows = _allLogs
-        .map((log) {
-          final timeStr = Utils.timeFormat.format(log.datetime);
-          String typeClass = 'info';
-          if (log.color == Colors.red) {
-            typeClass = 'error';
-          } else if (log.color == Colors.orange) {
-            typeClass = 'debug';
-          } else if (log.color == Colors.pink) {
-            typeClass = 'warning';
-          }
+  @visibleForTesting
+  static String renderBrowserPage() {
+    final logRows = _allLogs.isEmpty
+        ? '<tr><td class="empty-state" colspan="2">No logs in this session.</td></tr>'
+        : _allLogs
+              .map((log) {
+                final timeStr = Utils.timeFormat.format(log.datetime);
+                String typeClass = 'info';
+                if (log.color == Colors.red) {
+                  typeClass = 'error';
+                } else if (log.color == Colors.orange) {
+                  typeClass = 'debug';
+                } else if (log.color == Colors.pink) {
+                  typeClass = 'warning';
+                }
 
-          final safeContent = const HtmlEscape()
-              .convert(log.content)
-              .replaceAll('\n', '<br>')
-              .replaceAll(' ', '&nbsp;');
-          return '<tr class="$typeClass">'
-              '<td class="time-col">$timeStr</td>'
-              '<td class="log-content">$safeContent</td>'
-              '</tr>';
-        })
-        .join('\n');
+                final safeContent = const HtmlEscape()
+                    .convert(log.content)
+                    .replaceAll('\n', '<br>')
+                    .replaceAll(' ', '&nbsp;');
+                return '<tr class="$typeClass">'
+                    '<td class="time-col">$timeStr</td>'
+                    '<td class="log-content">$safeContent</td>'
+                    '</tr>';
+              })
+              .join('\n');
 
     final html =
         '''
@@ -170,13 +273,14 @@ class Log {
 
     body { background-color: var(--bg-color); color: var(--text-main); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; padding: 24px; transition: background-color 0.2s; }
     .panel { max-width: 1400px; margin: 0 auto; background: var(--panel-bg); border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid var(--border-color); overflow: hidden; }
-    .top-bar { display: flex; justify-content: space-between; align-items: center; background: var(--top-bg); padding: 16px 24px; border-bottom: 1px solid var(--border-color); }
-    .title-area { display: flex; align-items: center; gap: 12px; }
+    .top-bar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; background: var(--top-bg); padding: 16px 24px; border-bottom: 1px solid var(--border-color); }
+    .title-area { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; min-width: 0; }
     .title { font-size: 16px; font-weight: 600; color: var(--text-main); }
-    .badge { background: var(--badge-bg); color: var(--badge-text); padding: 2px 8px; border-radius: 2Fpx; font-size: 12px; font-weight: 500; border: 1px solid var(--border-color); }
-    .btn-group { display: flex; gap: 8px; }
-    .btn { padding: 5px 16px; background: var(--btn-bg); color: var(--btn-text); border: 1px solid var(--btn-border); border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; }
+    .badge { background: var(--badge-bg); color: var(--badge-text); padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 500; border: 1px solid var(--border-color); }
+    .btn-group { display: flex; flex-wrap: wrap; gap: 8px; }
+    .btn { min-height: 36px; padding: 5px 16px; background: var(--btn-bg); color: var(--btn-text); border: 1px solid var(--btn-border); border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; justify-content: center; }
     .btn:hover { background: var(--btn-hover); }
+    .btn:focus-visible { outline: 3px solid #0969da66; outline-offset: 2px; }
     .btn-danger { color: #cf222e; }
     [data-theme="dark"] .btn-danger { color: #f85149; }
     .table-container { overflow-x: auto; }
@@ -191,14 +295,40 @@ class Log {
     .info .log-content { color: var(--text-main); }
     .warning .log-content { color: var(--log-warning); }
     .error .log-content { color: var(--log-error); font-weight: 500; }
+    .empty-state { padding: 48px 16px; text-align: center; color: var(--text-time); }
+    .status { min-height: 20px; max-width: 1400px; margin: 8px auto 0; color: var(--text-time); font-size: 13px; }
+
+    @media (max-width: 640px) {
+      body { padding: 8px; }
+      .panel { border-radius: 4px; }
+      .top-bar { align-items: stretch; padding: 12px; }
+      .title-area, .btn-group { width: 100%; }
+      .btn { flex: 1 1 calc(50% - 4px); min-height: 44px; padding: 8px; }
+      th, td { padding: 9px 10px; }
+      .time-col { width: 112px; }
+    }
   </style>
   <script>
-    let autoRefresh = setTimeout(() => location.reload(), 3000);
-    
+    let autoRefresh;
+
+    function scheduleRefresh() {
+      clearTimeout(autoRefresh);
+      autoRefresh = setTimeout(() => location.reload(), 3000);
+    }
+
+    function setStatus(message) {
+      document.getElementById('status').innerText = message;
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
       const savedTheme = localStorage.getItem('purelive-theme') || 'light';
       document.documentElement.setAttribute('data-theme', savedTheme);
       document.getElementById('theme-btn').innerText = savedTheme === 'light' ? '🌙 Dark' : '☀️ Light';
+      document.getElementById('theme-btn').addEventListener('click', toggleTheme);
+      document.getElementById('clear-btn').addEventListener('click', clearLogs);
+      document.getElementById('copy-btn').addEventListener('click', copyLogs);
+      document.getElementById('refresh-btn').addEventListener('click', () => location.reload());
+      scheduleRefresh();
     });
 
     function toggleTheme() {
@@ -208,29 +338,46 @@ class Log {
       localStorage.setItem('purelive-theme', newTheme);
       document.getElementById('theme-btn').innerText = newTheme === 'light' ? '🌙 Dark' : '☀️ Light';
     }
-    
+
     function clearLogs() {
+      if (!window.confirm('Clear all logs from this session?')) return;
       clearTimeout(autoRefresh);
-      fetch('/clear')
-        .then(res => res.json())
+      setStatus('Clearing logs…');
+      fetch('/clear', {
+        method: 'POST',
+        headers: {'X-PureLive-Log-Action': 'clear'}
+      })
+        .then(res => {
+          if (!res.ok) throw new Error('clear_failed');
+          return res.json();
+        })
         .then(data => {
-          if(data.success) location.reload();
+          if (data.success) location.reload();
+          else throw new Error('clear_failed');
         })
         .catch(() => {
-          autoRefresh = setTimeout(() => location.reload(), 3000);
+          setStatus('Clear failed. Logs were kept.');
+          scheduleRefresh();
         });
     }
 
     function copyLogs() {
+      clearTimeout(autoRefresh);
       const rows = document.querySelectorAll('tbody tr');
       let text = '';
       rows.forEach(row => {
-        const time = row.querySelector('.time-col').innerText;
-        const content = row.querySelector('.log-content').innerText;
-        text += '[' + time + '] ' + content + '\\n';
+        const timeCell = row.querySelector('.time-col');
+        const contentCell = row.querySelector('.log-content');
+        if (timeCell && contentCell) {
+          text += '[' + timeCell.innerText + '] ' + contentCell.innerText + '\\n';
+        }
       });
       navigator.clipboard.writeText(text).then(() => {
-        alert('Copied all logs to clipboard!');
+        setStatus('Copied all logs to the clipboard.');
+        scheduleRefresh();
+      }).catch(() => {
+        setStatus('Copy failed. Select the log text and copy it manually.');
+        scheduleRefresh();
       });
     }
   </script>
@@ -243,17 +390,17 @@ class Log {
         <span class="badge">Total: ${_allLogs.length}</span>
       </div>
       <div class="btn-group">
-        <button class="btn" id="theme-btn" onclick="toggleTheme()">🌙 Dark</button>
-        <button class="btn btn-danger" onclick="clearLogs()">Clear</button>
-        <button class="btn" onclick="copyLogs()">Copy</button>
-        <button class="btn" onclick="location.reload()">Refresh</button>
+        <button type="button" class="btn" id="theme-btn">🌙 Dark</button>
+        <button type="button" class="btn btn-danger" id="clear-btn">Clear</button>
+        <button type="button" class="btn" id="copy-btn">Copy</button>
+        <button type="button" class="btn" id="refresh-btn">Refresh</button>
       </div>
     </div>
     <div class="table-container">
       <table>
         <thead>
           <tr>
-            <th style="width: 160px;">Time</th>
+            <th class="time-col">Time</th>
             <th>Message</th>
           </tr>
         </thead>
@@ -263,38 +410,22 @@ class Log {
       </table>
     </div>
   </div>
+  <div class="status" id="status" role="status" aria-live="polite"></div>
 </body>
 </html>
 ''';
 
-    request.response
-      ..headers.contentType = ContentType.html
-      ..write(html)
-      ..close();
+    return html;
   }
 
-  static Future<void> updateLogStatus() async {
-    _logFileWriter?.close();
-    _logFileWriter = null;
-    if (LogController.to.enableLog) {
-      _logFileWriter = LogFileWriter();
-      await _logFileWriter!.init();
-      await startLogServer();
-    } else {
-      _logFileWriter?.close();
-      _logFileWriter = null;
-      stopLogServer();
-    }
-  }
+  static Future<bool> updateLogStatus() => setEnabled(LogController.to.enableLog);
 
   static void writeLog(Object content, [Level level = Level.info]) {
-    if (!LogController.to.enableLog || _logFileWriter == null) return;
+    if (!_localLoggingEnabled || _logFileWriter == null) return;
     _logFileWriter?.write("[${level.name.toUpperCase()}] $_currentTime：$content");
   }
 
   static void addDebugLog(String content, [Color? color]) {
-    if (kReleaseMode) return;
-
     String processedContent = content;
     if (content.contains("请求响应")) {
       processedContent = content.split("\n").join('\n💡 ');
@@ -321,46 +452,61 @@ class Log {
   );
 
   static void d(String message) {
-    if (!kReleaseMode) {
+    final localLoggingEnabled = _localLoggingEnabled;
+    if (shouldBufferRuntimeLog(releaseMode: kReleaseMode, localLoggingEnabled: localLoggingEnabled)) {
       addDebugLog(message, Colors.orange);
+    }
+    if (!kReleaseMode) {
       logger.d(message);
     }
-    if (LogController.to.enableLog) writeLog(message, Level.debug);
+    if (localLoggingEnabled) writeLog(message, Level.debug);
   }
 
   static void i(String message) {
-    if (!kReleaseMode) {
+    final localLoggingEnabled = _localLoggingEnabled;
+    if (shouldBufferRuntimeLog(releaseMode: kReleaseMode, localLoggingEnabled: localLoggingEnabled)) {
       addDebugLog(message, Colors.blue);
+    }
+    if (!kReleaseMode) {
       logger.i(message);
     }
-    if (LogController.to.enableLog) writeLog(message, Level.info);
+    if (localLoggingEnabled) writeLog(message, Level.info);
   }
 
   static void e(String message, StackTrace stackTrace) {
-    if (!kReleaseMode) {
+    final localLoggingEnabled = _localLoggingEnabled;
+    if (shouldBufferRuntimeLog(releaseMode: kReleaseMode, localLoggingEnabled: localLoggingEnabled)) {
       addDebugLog('$message\r\n\r\n$stackTrace', Colors.red);
+    }
+    if (!kReleaseMode) {
       logger.e(message, stackTrace: stackTrace);
     }
-    if (LogController.to.enableLog) writeLog("$message\n$stackTrace", Level.error);
+    if (localLoggingEnabled) writeLog("$message\n$stackTrace", Level.error);
   }
 
   static void w(String message) {
-    if (!kReleaseMode) {
+    final localLoggingEnabled = _localLoggingEnabled;
+    if (shouldBufferRuntimeLog(releaseMode: kReleaseMode, localLoggingEnabled: localLoggingEnabled)) {
       addDebugLog(message, Colors.pink);
+    }
+    if (!kReleaseMode) {
       logger.w(message);
     }
-    if (LogController.to.enableLog) writeLog(message, Level.warning);
+    if (localLoggingEnabled) writeLog(message, Level.warning);
   }
 
   static void logPrint(dynamic obj) {
     final String content = obj.toString();
-    if (!kReleaseMode) {
+    final localLoggingEnabled = _localLoggingEnabled;
+    if (shouldBufferRuntimeLog(releaseMode: kReleaseMode, localLoggingEnabled: localLoggingEnabled)) {
       addDebugLog(content, Colors.red);
+    }
+    if (!kReleaseMode) {
       if (kDebugMode) {
         print(content);
       }
     }
-    if (LogController.to.enableLog) writeLog(content, Level.info);
+    if (localLoggingEnabled) writeLog(content, Level.info);
   }
 
   static String get _currentTime => Utils.timeFormat.format(DateTime.now());
@@ -381,8 +527,8 @@ class LogFileWriter {
     _fileName = "$dt.log";
   }
 
-  Future<void> init() async {
-    if (_isInitialized) return;
+  Future<bool> init() async {
+    if (_isInitialized) return true;
 
     try {
       final logDir = await resolveLogDirectory();
@@ -395,9 +541,10 @@ class LogFileWriter {
       _isInitialized = true;
 
       await _writeSystemInfo();
+      return true;
     } catch (e, stackTrace) {
-      // 彻底消除 print，统一使用 Log.e
-      Log.e("Init log file failed: $e", stackTrace);
+      debugPrint('Init log file failed: $e\n$stackTrace');
+      return false;
     }
   }
 

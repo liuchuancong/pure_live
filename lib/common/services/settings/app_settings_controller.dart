@@ -22,6 +22,7 @@ class AppSettingsController extends GetxController {
   ];
 
   Worker? _refreshRateModeWorker;
+  Worker? _realOnlinePlatformsWorker;
 
   static AppRefreshRateMode _legacyRefreshRateMode(Object? enabled) {
     return enabled == true ? AppRefreshRateMode.balanced : AppRefreshRateMode.powerSaving;
@@ -102,7 +103,8 @@ class AppSettingsController extends GetxController {
       if (!realOnlinePlatforms.contains(Sites.ttingSite)) realOnlinePlatforms.add(Sites.ttingSite);
       audienceMetricMigration.v = 7;
     }
-    _removeUnsupportedOnlinePlatforms();
+    _repairRealOnlinePlatforms();
+    _realOnlinePlatformsWorker = ever<List<String>>(realOnlinePlatforms, (_) => _repairRealOnlinePlatforms());
     if (Platform.isAndroid || Platform.isWindows) {
       // Persist the migrated value once so later upgrades no longer depend on
       // the legacy boolean. Existing `true` maps to balanced; a fresh install
@@ -125,10 +127,12 @@ class AppSettingsController extends GetxController {
     }
   }
 
-  void _removeUnsupportedOnlinePlatforms() {
-    final supported = normalizeRealOnlinePlatforms(realOnlinePlatforms);
-    if (supported.length != realOnlinePlatforms.length) {
-      realOnlinePlatforms.v = supported;
+  List<String> get resolvedRealOnlinePlatforms => normalizeRealOnlinePlatforms(realOnlinePlatforms);
+
+  void _repairRealOnlinePlatforms() {
+    final normalized = resolvedRealOnlinePlatforms;
+    if (!listEquals(realOnlinePlatforms, normalized)) {
+      realOnlinePlatforms.v = normalized;
     }
   }
 
@@ -154,6 +158,8 @@ class AppSettingsController extends GetxController {
   void onClose() {
     _refreshRateModeWorker?.dispose();
     _refreshRateModeWorker = null;
+    _realOnlinePlatformsWorker?.dispose();
+    _realOnlinePlatformsWorker = null;
     super.onClose();
   }
 
@@ -170,12 +176,12 @@ class AppSettingsController extends GetxController {
     savedMenuIds.v = current;
   }
 
-  bool isRealOnlineEnabledFor(String? platform) => realOnlinePlatforms.contains(platform?.trim().toLowerCase());
+  bool isRealOnlineEnabledFor(String? platform) => resolvedRealOnlinePlatforms.contains(platform?.trim().toLowerCase());
 
   void setRealOnlineEnabledFor(String platform, bool enabled) {
     final normalized = platform.trim().toLowerCase();
     if (!LiveRoom.audienceCapabilityFor(normalized).supportsConcurrentOnline) return;
-    final next = List<String>.from(realOnlinePlatforms);
+    final next = resolvedRealOnlinePlatforms;
     if (enabled) {
       if (!next.contains(normalized)) next.add(normalized);
     } else {
@@ -203,7 +209,7 @@ class AppSettingsController extends GetxController {
       'refreshRateMode': refreshRateMode.storageValue,
       'enableHighRefreshRate': refreshRateMode != AppRefreshRateMode.powerSaving,
       'preferRealOnlineCounts': preferRealOnlineCounts.v,
-      'realOnlinePlatforms': realOnlinePlatforms.v,
+      'realOnlinePlatforms': resolvedRealOnlinePlatforms,
       'savedMenuIds': savedMenuIds.v,
       'enableMultiView': enableMultiView.v,
       'enableNewWindowPlay': enableNewWindowPlay.v,
@@ -230,7 +236,7 @@ class AppSettingsController extends GetxController {
       'showSplashPage': typed<bool>(json['showSplashPage'] ?? true),
       'preferRealOnlineCounts': typed<bool>(json['preferRealOnlineCounts'] ?? false),
       'realOnlinePlatforms': typed<List<String>>(
-        List<String>.from(json['realOnlinePlatforms'] ?? defaultRealOnlinePlatforms),
+        normalizeRealOnlinePlatforms(List<String>.from(json['realOnlinePlatforms'] ?? defaultRealOnlinePlatforms)),
       ),
       'savedMenuIds': typed<List<String>>(
         normalizeMenuIds(List<String>.from(json['savedMenuIds'] ?? HomeMenu.values.map((e) => e.id).toList())),
@@ -256,7 +262,7 @@ class AppSettingsController extends GetxController {
     setRefreshRateMode(parsed['refreshRateMode']);
     preferRealOnlineCounts.v = parsed['preferRealOnlineCounts'];
     realOnlinePlatforms.v = parsed['realOnlinePlatforms'];
-    _removeUnsupportedOnlinePlatforms();
+    _repairRealOnlinePlatforms();
     savedMenuIds.v = parsed['savedMenuIds'];
     enableMultiView.v = parsed['enableMultiView'];
     enableNewWindowPlay.v = parsed['enableNewWindowPlay'];

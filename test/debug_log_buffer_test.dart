@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pure_live/core/common/log.dart';
+import 'package:pure_live/get/get.dart';
 
 void main() {
   tearDown(Log.clearDebugLogs);
@@ -20,5 +21,18 @@ void main() {
     Log.addDebugLog('one');
 
     expect(() => Log.allLogs.clear(), throwsUnsupportedError);
+  });
+
+  test('logging before the settings service exists stays diagnostic-only', () {
+    Get.reset();
+
+    expect(() => Log.i('early-startup-log'), returnsNormally);
+    expect(Log.allLogs.last.content, 'early-startup-log');
+  });
+
+  test('release buffering is enabled only for an active local logging session', () {
+    expect(Log.shouldBufferRuntimeLog(releaseMode: true, localLoggingEnabled: false), isFalse);
+    expect(Log.shouldBufferRuntimeLog(releaseMode: true, localLoggingEnabled: true), isTrue);
+    expect(Log.shouldBufferRuntimeLog(releaseMode: false, localLoggingEnabled: false), isTrue);
   });
 }

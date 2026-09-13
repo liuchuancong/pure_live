@@ -1,9 +1,43 @@
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hive_ce/hive.dart';
+import 'package:pure_live/common/utils/hive_pref_util.dart';
+import 'package:pure_live/get/get.dart';
 import 'package:pure_live/common/services/settings/player_settings_controller.dart';
 import 'package:pure_live/player/utils/mpv_platform_profile.dart';
+import 'package:pure_live/player/utils/player_consts.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  late Directory hiveDirectory;
+
+  setUpAll(() async {
+    hiveDirectory = await Directory.systemTemp.createTemp('pure-live-player-settings-');
+    Hive.init(hiveDirectory.path);
+    await HivePrefUtil.init();
+  });
+
+  setUp(() async {
+    Get.testMode = true;
+    Get.reset();
+    debugDefaultTargetPlatformOverride = null;
+    await HivePrefUtil.clear();
+  });
+
+  tearDown(() async {
+    await HivePrefUtil.flush();
+    Get.reset();
+    Get.testMode = false;
+    debugDefaultTargetPlatformOverride = null;
+  });
+
+  tearDownAll(() async {
+    await Hive.close();
+    await hiveDirectory.delete(recursive: true);
+  });
+
   group('player settings migration', () {
     test('uses IJK only for a new iOS configuration', () {
       expect(defaultVideoPlayerKeyForPlatform(TargetPlatform.iOS), 'ijk');
@@ -167,6 +201,82 @@ void main() {
       expect(config['portraitFullscreenDisplayMode'], 'ambient');
       expect(config['portraitDanmakuMode'], 'followGlobal');
       expect(config['portraitRoomOverrides'], <String, String>{'bilibili:1': 'portrait'});
+    });
+
+    test('normalizes video fit and preferred quality in current and legacy backup paths', () {
+      expect(PlayerSettingsController.normalizeVideoFitIndex(-1), 0);
+      expect(PlayerSettingsController.normalizeVideoFitIndex(5), 5);
+      expect(PlayerSettingsController.normalizeVideoFitIndex(6), 0);
+      expect(PlayerSettingsController.normalizePreferredResolution('流畅'), '流畅');
+      expect(PlayerSettingsController.normalizePreferredResolution('retired-quality'), PlayerConsts.resolutions.first);
+
+      final parsed = PlayerSettingsController.parseConfig({
+        'videoFitIndex': 99,
+        'preferResolution': 'retired-wifi-quality',
+        'preferResolutionCellular': 'retired-cellular-quality',
+      });
+      final extracted = PlayerSettingsController.extractConfig({
+        'player': {'videoFitIndex': -4, 'preferResolution': 'retired-wifi-quality', 'preferResolutionCellular': '流畅'},
+      });
+
+      expect(parsed['videoFitIndex'], 0);
+      expect(parsed['preferResolution'], PlayerConsts.resolutions.first);
+      expect(parsed['preferResolutionCellular'], PlayerConsts.resolutions.first);
+      expect(extracted['videoFitIndex'], 0);
+      expect(extracted['preferResolution'], PlayerConsts.resolutions.first);
+      expect(extracted['preferResolutionCellular'], '流畅');
+      expect(() => PlayerSettingsController.parseConfig({'videoFitIndex': '5'}), throwsA(isA<TypeError>()));
+      expect(() => PlayerSettingsController.parseConfig({'preferResolution': 42}), throwsA(isA<TypeError>()));
+    });
+
+    test('repairs invalid persisted playback preferences before their first consumer', () async {
+      await HivePrefUtil.setInt('videoFitIndex', 99);
+      await HivePrefUtil.setString('preferResolution', 'retired-wifi-quality');
+      await HivePrefUtil.setString('preferResolutionCellular', 'retired-cellular-quality');
+
+      final settings = Get.put(PlayerSettingsController());
+
+      expect(settings.videoFitIndex.value, 0);
+      expect(settings.resolvedVideoFitIndex, 0);
+      expect(settings.preferResolution.value, PlayerConsts.resolutions.first);
+      expect(settings.resolvedPreferResolution, PlayerConsts.resolutions.first);
+      expect(settings.preferResolutionCellular.value, PlayerConsts.resolutions.first);
+      expect(settings.resolvedPreferResolutionCellular, PlayerConsts.resolutions.first);
+
+      await Future<void>.delayed(Duration.zero);
+      await HivePrefUtil.flush();
+      expect(HivePrefUtil.getInt('videoFitIndex'), 0);
+      expect(HivePrefUtil.getString('preferResolution'), PlayerConsts.resolutions.first);
+      expect(HivePrefUtil.getString('preferResolutionCellular'), PlayerConsts.resolutions.first);
+    });
+
+    test('repairs direct runtime writes and exports only canonical playback preferences', () async {
+      final settings = Get.put(PlayerSettingsController());
+
+      settings.videoFitIndex.value = -8;
+      settings.preferResolution.value = 'runtime-wifi-quality';
+      settings.preferResolutionCellular.value = 'runtime-cellular-quality';
+
+      expect(settings.resolvedVideoFitIndex, 0);
+      expect(settings.resolvedVideoFitDescriptionKey, 'video_fit_default');
+      expect(settings.resolvedPreferResolution, PlayerConsts.resolutions.first);
+      expect(settings.resolvedPreferResolutionCellular, PlayerConsts.resolutions.first);
+      expect(settings.toJson(), containsPair('videoFitIndex', 0));
+      expect(settings.toJson(), containsPair('preferResolution', PlayerConsts.resolutions.first));
+      expect(settings.toJson(), containsPair('preferResolutionCellular', PlayerConsts.resolutions.first));
+      expect(settings.advanceVideoFitIndex(), 1);
+      expect(settings.videoFitIndex.value, 1);
+      settings.videoFitIndex.value = 5;
+      expect(settings.advanceVideoFitIndex(), 0);
+
+      await Future<void>.delayed(Duration.zero);
+      expect(settings.videoFitIndex.value, 0);
+      expect(settings.preferResolution.value, PlayerConsts.resolutions.first);
+      expect(settings.preferResolutionCellular.value, PlayerConsts.resolutions.first);
+      await HivePrefUtil.flush();
+      expect(HivePrefUtil.getInt('videoFitIndex'), 0);
+      expect(HivePrefUtil.getString('preferResolution'), PlayerConsts.resolutions.first);
+      expect(HivePrefUtil.getString('preferResolutionCellular'), PlayerConsts.resolutions.first);
     });
   });
 }

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -22,6 +23,8 @@ void main() {
   late Map<String, dynamic> english;
   late _FixtureBackupController backup;
   late _FixtureAuthController auth;
+  late _LogStatusFixture logStatus;
+  late _FixtureLogController logController;
 
   setUpAll(() async {
     hiveDirectory = await Directory.systemTemp.createTemp('pure-live-backup-layout-test-');
@@ -39,7 +42,9 @@ void main() {
     backup = _FixtureBackupController(_fixtureConfig());
     Get.put<BackupController>(backup);
     Get.put<FontSettingsController>(_FixtureFontSettingsController());
-    Get.put<LogController>(_FixtureLogController());
+    logStatus = _LogStatusFixture();
+    logController = _FixtureLogController(logStatus.apply);
+    Get.put<LogController>(logController);
     Get.put<SettingsService>(_FixtureSettingsService());
     auth = Get.put<AuthController>(_FixtureAuthController()) as _FixtureAuthController;
     auth.isInitSuccess = true;
@@ -67,6 +72,43 @@ void main() {
 
     expect(tester.widget<Text>(subtitle).maxLines, isNull);
     expect(tester.getRect(toggle).top, greaterThanOrEqualTo(tester.getRect(title).bottom));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('local log switch waits for the runtime transaction and reports rollback', (tester) async {
+    await _pumpLocalized(tester, english: english, home: const BackupPage());
+
+    final title = find.text('Enable Local Log');
+    await _scrollUntilHitTestable(tester, title);
+    final toggle = find.byKey(const ValueKey('local-log-switch'));
+    await _scrollUntilHitTestable(tester, toggle);
+
+    logController.updateServerInfo('127.0.0.1', 45678);
+    await tester.pump();
+    expect(find.text('View Logs in Browser'), findsNothing);
+
+    logStatus.prepare();
+    await tester.tap(toggle);
+    await tester.pump();
+    expect(find.text('Updating local logging…'), findsOneWidget);
+    expect(tester.widget<Switch>(toggle).onChanged, isNull);
+
+    logStatus.complete(false);
+    await tester.pumpAndSettle();
+    expect(logController.storedEnableLog.value, isFalse);
+    expect(find.text('Local logging was not changed. The switch shows the active runtime state.'), findsOneWidget);
+
+    logStatus.prepare();
+    await tester.tap(toggle);
+    await tester.pump();
+    logStatus.complete(true);
+    await tester.pumpAndSettle();
+    expect(logController.storedEnableLog.value, isTrue);
+    expect(find.text('Write logs to local files when enabled'), findsOneWidget);
+    logController.updateServerInfo('127.0.0.1', 45678);
+    await tester.pumpAndSettle();
+    await _scrollUntilHitTestable(tester, find.text('View Logs in Browser'));
+    expect(find.text('http://127.0.0.1:45678'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -244,10 +286,22 @@ class _FixtureBackupController extends BackupController {
 }
 
 class _FixtureLogController extends LogController {
+  _FixtureLogController(Future<bool> Function(bool enabled) applyLogStatus) : super(applyLogStatus: applyLogStatus);
+
   @override
   // Avoid file logging side effects in a layout fixture.
   // ignore: must_call_super
   Future<void> onInit() async {}
+}
+
+class _LogStatusFixture {
+  Completer<bool>? _next;
+
+  void prepare() => _next = Completer<bool>();
+
+  Future<bool> apply(bool enabled) => _next!.future;
+
+  void complete(bool result) => _next!.complete(result);
 }
 
 class _FixtureFontSettingsController extends FontSettingsController {
