@@ -4,6 +4,8 @@
 
 ## 开发与发布
 
+- [播放器显示模式与首选画质持久化审计](PLAYER_DISPLAY_PREFERENCE_PERSISTENCE_AUDIT_2026_09_13.md)：六种显示模式索引、五个稳定画质键、启动/运行时/备份修复、安全 UI 消费及单一有序来源。
+
 - [Windows 窗口尺寸持久化、PiP 几何与弹窗事务审计](WINDOW_SIZE_PERSISTENCE_AND_DIALOG_TRANSACTION_AUDIT_2026_09_13.md)：400×300～16384 单边合同、首帧/Hive/备份修复、瞬态窗口事件、PiP 有限矩形及路由拥有的事务弹窗。
 
 - [主题设置持久化、备份与首帧安全审计](THEME_SETTINGS_PERSISTENCE_AND_FIRST_FRAME_AUDIT_2026_09_13.md)：模式/语言/颜色/加载样式支持项、0～64 有限间距、启动与运行时修复、旧版字段兼容及安全首帧消费。
