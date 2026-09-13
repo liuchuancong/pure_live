@@ -177,6 +177,7 @@ class _HistoryLimitDialog extends StatefulWidget {
 class _HistoryLimitDialogState extends State<_HistoryLimitDialog> {
   late int draftLimit;
   final customController = TextEditingController();
+  String? customErrorKey;
   static const presetOptions = <int>[20, 50, 100, 200, 500];
 
   @override
@@ -191,96 +192,115 @@ class _HistoryLimitDialogState extends State<_HistoryLimitDialog> {
     super.dispose();
   }
 
+  void _selectLimit(int value) {
+    setState(() {
+      draftLimit = value;
+      customErrorKey = null;
+    });
+  }
+
+  void _applyCustomLimit() {
+    final value = int.tryParse(customController.text.trim());
+    if (value == null || value < 0) {
+      setState(() => customErrorKey = 'history_limit_invalid');
+      return;
+    }
+    setState(() {
+      draftLimit = normalizeHistoryLimit(value);
+      customErrorKey = null;
+      customController.clear();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return AlertDialog(
+      scrollable: true,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
       title: Text(i18n("history_limit"), style: AppTextStyles.t16Bold),
-      content: SizedBox(
-        width: 320,
-        child: StatefulBuilder(
-          builder: (context, setDialogState) {
-            return SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 360),
+        child: SizedBox(
+          width: MediaQuery.sizeOf(context).width,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(i18n('history_limit_presets'), style: AppTextStyles.t12Muted),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
                 children: [
-                  Text(i18n('history_limit_presets'), style: AppTextStyles.t12Muted),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      ...presetOptions.map(
-                        (value) => ChoiceChip(
-                          label: Text('$value', style: AppTextStyles.t12),
-                          selected: draftLimit == value,
-                          onSelected: (_) => setDialogState(() => draftLimit = value),
-                        ),
-                      ),
-                      ChoiceChip(
-                        label: Text(i18n('history_unlimited'), style: AppTextStyles.t12),
-                        selected: draftLimit == unlimitedHistoryLimit,
-                        onSelected: (_) => setDialogState(() => draftLimit = unlimitedHistoryLimit),
-                      ),
-                      if (!presetOptions.contains(draftLimit) && draftLimit != unlimitedHistoryLimit)
-                        ChoiceChip(
-                          label: Text('$draftLimit', style: AppTextStyles.t12),
-                          selected: true,
-                          onSelected: (_) {},
-                        ),
-                    ],
+                  ...presetOptions.map(
+                    (value) => ChoiceChip(
+                      label: Text('$value', style: AppTextStyles.t12),
+                      selected: draftLimit == value,
+                      onSelected: (_) => _selectLimit(value),
+                    ),
                   ),
-                  const SizedBox(height: 24),
-                  Text(i18n('history_limit_custom'), style: AppTextStyles.t13Medium),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: customController,
-                          keyboardType: TextInputType.number,
-                          style: AppTextStyles.t14,
-                          decoration: InputDecoration(
-                            hintText: '50',
-                            suffixText: i18n("items"),
-                            suffixStyle: AppTextStyles.t12Muted,
-                            border: const OutlineInputBorder(),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      ElevatedButton(
-                        onPressed: () {
-                          final value = int.tryParse(customController.text.trim());
-                          if (value == null) return;
-                          setDialogState(() => draftLimit = normalizeHistoryLimit(value));
-                          customController.clear();
-                        },
-                        child: Text(
-                          i18n("apply"),
-                          style: AppTextStyles.t13Medium.copyWith(color: theme.colorScheme.primary),
-                        ),
-                      ),
-                    ],
+                  ChoiceChip(
+                    label: Text(i18n('history_unlimited'), style: AppTextStyles.t12),
+                    selected: draftLimit == unlimitedHistoryLimit,
+                    onSelected: (_) => _selectLimit(unlimitedHistoryLimit),
                   ),
-                  const SizedBox(height: 16),
-                  Text('${i18n("current_value")}: ${_historyLimitLabel(draftLimit)}', style: AppTextStyles.t12Muted),
-                  const SizedBox(height: 6),
-                  Text(i18n('history_limit_desc'), style: AppTextStyles.t12Muted),
+                  if (!presetOptions.contains(draftLimit) && draftLimit != unlimitedHistoryLimit)
+                    ChoiceChip(
+                      label: Text('$draftLimit', style: AppTextStyles.t12),
+                      selected: true,
+                      onSelected: (_) {},
+                    ),
                 ],
               ),
-            );
-          },
+              const SizedBox(height: 24),
+              Text(i18n('history_limit_custom'), style: AppTextStyles.t13Medium),
+              const SizedBox(height: 12),
+              TextField(
+                controller: customController,
+                keyboardType: TextInputType.number,
+                textInputAction: TextInputAction.done,
+                onSubmitted: (_) => _applyCustomLimit(),
+                onChanged: (_) {
+                  if (customErrorKey != null) setState(() => customErrorKey = null);
+                },
+                style: AppTextStyles.t14,
+                decoration: InputDecoration(
+                  hintText: '50',
+                  suffixText: i18n("items"),
+                  suffixStyle: AppTextStyles.t12Muted,
+                  errorText: customErrorKey == null ? null : i18n(customErrorKey!),
+                  border: const OutlineInputBorder(),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                ),
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: _applyCustomLimit,
+                  child: Text(i18n("apply"), style: AppTextStyles.t13Medium.copyWith(color: theme.colorScheme.primary)),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text('${i18n("current_value")}: ${_historyLimitLabel(draftLimit)}', style: AppTextStyles.t12Muted),
+              const SizedBox(height: 6),
+              Text(i18n('history_limit_desc'), style: AppTextStyles.t12Muted),
+            ],
+          ),
         ),
       ),
+      actionsOverflowDirection: VerticalDirection.down,
+      actionsOverflowButtonSpacing: 8,
       actions: [
         TextButton(
+          style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
           onPressed: () => Navigator.pop(context),
           child: Text(i18n("cancel"), style: AppTextStyles.t14Muted),
         ),
         TextButton(
+          style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
           onPressed: () {
             widget.controller.setHistoryLimit(draftLimit);
             if (context.mounted) Navigator.pop(context);

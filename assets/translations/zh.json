@@ -1669,6 +1669,7 @@
     "history_limit": "观看记录保留数量",
     "history_limit_presets": "预设数量",
     "history_limit_custom": "自定义数量",
+    "history_limit_invalid": "请输入大于或等于 0 的整数。",
     "history_limit_desc": "可选择固定数量或“不限”。固定数量只保留最近记录；不限会持续保留，仍可随时手动清空。",
     "history_unlimited": "不限",
     "clear_history": "清空历史",

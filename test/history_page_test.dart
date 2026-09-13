@@ -230,6 +230,53 @@ void main() {
     await finish(tester);
   });
 
+  testWidgets('history limit reports invalid custom input without changing the draft', (tester) async {
+    await open(tester, locale: 'en');
+    await tester.tap(find.byTooltip(english['history_limit'] as String));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'not-a-count');
+    final apply = find.widgetWithText(ElevatedButton, english['apply'] as String);
+    await tester.ensureVisible(apply);
+    await tester.tap(apply);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Enter a whole number of 0 or greater.'), findsOneWidget);
+    expect(find.text('Current Value: 50'), findsOneWidget);
+    expect(history.historyLimit.value, 50);
+
+    await tester.enterText(find.byType(TextField), '75');
+    await tester.pump();
+    expect(find.text('Enter a whole number of 0 or greater.'), findsNothing);
+    await tester.tap(apply);
+    await tester.pumpAndSettle();
+    expect(find.text('Current Value: 75'), findsOneWidget);
+    expect(history.historyLimit.value, 50);
+    await tester.tap(find.text(english['confirm'] as String));
+    await tester.pumpAndSettle();
+    expect(history.historyLimit.value, 75);
+    await finish(tester);
+  });
+
+  testWidgets('history limit actions remain reachable at narrow three-times text', (tester) async {
+    await open(tester, locale: 'en', size: const Size(320, 480), scale: 3);
+    await tester.tap(find.byTooltip(english['history_limit'] as String));
+    await tester.pumpAndSettle();
+    final field = find.byType(TextField);
+    await tester.ensureVisible(field);
+    await tester.enterText(field, '80');
+    final apply = find.widgetWithText(ElevatedButton, english['apply'] as String);
+    await tester.ensureVisible(apply);
+    await tester.tap(apply);
+    await tester.pumpAndSettle();
+    expect(find.text('Current Value: 80'), findsOneWidget);
+    final confirm = find.widgetWithText(TextButton, english['confirm'] as String);
+    await tester.ensureVisible(confirm);
+    await tester.tap(confirm);
+    await tester.pumpAndSettle();
+    expect(history.historyLimit.value, 80);
+    await finish(tester);
+  });
+
   testWidgets('successful refresh keeps watch timestamps and list order', (tester) async {
     await open(tester);
     final pending = refresh(tester);

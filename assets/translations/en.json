@@ -1669,6 +1669,7 @@
     "history_limit": "Watch History Retention",
     "history_limit_presets": "Preset Limits",
     "history_limit_custom": "Custom Limit",
+    "history_limit_invalid": "Enter a whole number of 0 or greater.",
     "history_limit_desc": "Choose a fixed count or Unlimited. A fixed count keeps only the newest entries; Unlimited keeps growing until you clear it.",
     "history_unlimited": "Unlimited",
     "clear_history": "Clear History",
