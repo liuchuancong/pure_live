@@ -1,8 +1,10 @@
 import 'dart:io';
 
+import 'package:flutter/services.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/services/settings/exit_settings_controller.dart';
+import 'package:pure_live/common/services/settings/window_size_controller.dart';
 import 'package:stop_watch_timer/stop_watch_timer.dart';
 
 class GeneralSettingsPage extends GetView<SettingsService> {
@@ -124,7 +126,7 @@ class GeneralSettingsPage extends GetView<SettingsService> {
                 icon: Remix.aspect_ratio_line,
                 title: i18n("window_size"),
                 subtitle:
-                    "${SettingsService.to.window.storedWidth.v.toInt()} × ${SettingsService.to.window.storedHeight.v.toInt()}",
+                    "${SettingsService.to.window.resolvedStoredWidth.toInt()} × ${SettingsService.to.window.resolvedStoredHeight.toInt()}",
                 trailing: const Icon(Icons.chevron_right_rounded),
                 onTap: () => _showWindowSizeDialog(context),
               ),
@@ -234,121 +236,166 @@ class GeneralSettingsPage extends GetView<SettingsService> {
   }
 
   void _showWindowSizeDialog(BuildContext context) {
-    final widthController = TextEditingController(text: SettingsService.to.window.storedWidth.v.toInt().toString());
-    final heightController = TextEditingController(text: SettingsService.to.window.storedHeight.v.toInt().toString());
-
-    final presets = [
-      {'name': '1080 × 720 (${i18n("default_option")})', 'w': 1080.0, 'h': 720.0},
-      {'name': '1280 × 720 (720P)', 'w': 1280.0, 'h': 720.0},
-      {'name': '1600 × 900', 'w': 1600.0, 'h': 900.0},
-      {'name': '1920 × 1080 (1080P)', 'w': 1920.0, 'h': 1080.0},
-      {'name': '2560 × 1440 (2K)', 'w': 2560.0, 'h': 1440.0},
-    ];
-
-    showDialog(
+    showDialog<void>(
       context: context,
-      builder: (context) {
-        final theme = Theme.of(context);
-        return AlertDialog(
-          scrollable: true,
-          title: Text(i18n("window_size")),
-          content: SizedBox(
-            width: 320,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(i18n("preset_options"), style: AppTextStyles.t13.copyWith(color: theme.hintColor)),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: presets.map((preset) {
-                    return ActionChip(
-                      label: Text(preset['name'] as String),
-                      onPressed: () {
-                        widthController.text = (preset['w'] as double).toInt().toString();
-                        heightController.text = (preset['h'] as double).toInt().toString();
-                      },
-                    );
-                  }).toList(),
-                ),
-                const SizedBox(height: 20),
-                Text(i18n("custom_input"), style: AppTextStyles.t13.copyWith(color: theme.hintColor)),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: widthController,
-                        keyboardType: TextInputType.number,
-                        decoration: InputDecoration(
-                          labelText: i18n("width"),
-                          hintText: "1080",
-                          border: const OutlineInputBorder(),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        ),
-                      ),
-                    ),
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 8),
-                      child: Text("×", style: AppTextStyles.t18),
-                    ),
-                    Expanded(
-                      child: TextField(
-                        controller: heightController,
-                        keyboardType: TextInputType.number,
-                        decoration: InputDecoration(
-                          labelText: i18n("height"),
-                          hintText: "720",
-                          border: const OutlineInputBorder(),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: Text(i18n("cancel"))),
-            TextButton(
-              onPressed: () async {
-                final double? w = double.tryParse(widthController.text);
-                final double? h = double.tryParse(heightController.text);
-                if (w != null && h != null && w > 0 && h > 0) {
-                  SettingsService.to.window.storedWidth.v = w;
-                  SettingsService.to.window.storedHeight.v = h;
-                  SettingsService.to.window.updateSize(Size(w, h));
-                  await Future.microtask(() async {
-                    await windowManager.setSize(Size(w, h), animate: true);
-                    await windowManager.center();
-                    SettingsService.to.window.setTracking(true);
-                  });
-
-                  Navigator.pop(Get.context!);
-                  ToastUtil.show(i18n("save_success"));
-                } else {
-                  ToastUtil.show(i18n("invalid_input"));
-                }
-              },
-              child: Text(
-                i18n("confirm"),
-                style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.bold),
-              ),
-            ),
-          ],
-        );
-      },
-    ).whenComplete(() {
-      widthController.dispose();
-      heightController.dispose();
-    });
+      builder: (context) => _WindowSizeDialog(initialSize: SettingsService.to.window.storedSize),
+    );
   }
 
   void _showCountdownDurationDialog(BuildContext context) {
     showDialog<void>(context: context, builder: (context) => const _CountdownDurationDialog());
+  }
+}
+
+class _WindowSizeDialog extends StatefulWidget {
+  const _WindowSizeDialog({required this.initialSize});
+
+  final Size initialSize;
+
+  @override
+  State<_WindowSizeDialog> createState() => _WindowSizeDialogState();
+}
+
+class _WindowSizeDialogState extends State<_WindowSizeDialog> {
+  late final TextEditingController _widthController;
+  late final TextEditingController _heightController;
+  String? _errorText;
+  bool _isApplying = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _widthController = TextEditingController(text: widget.initialSize.width.toInt().toString());
+    _heightController = TextEditingController(text: widget.initialSize.height.toInt().toString());
+  }
+
+  @override
+  void dispose() {
+    _widthController.dispose();
+    _heightController.dispose();
+    super.dispose();
+  }
+
+  void _clearError() {
+    if (_errorText != null) setState(() => _errorText = null);
+  }
+
+  Future<void> _apply() async {
+    final size = WindowSizeController.tryParseWindowSize(_widthController.text, _heightController.text);
+    if (size == null) {
+      setState(() => _errorText = i18n('window_size_out_of_range'));
+      return;
+    }
+    setState(() {
+      _errorText = null;
+      _isApplying = true;
+    });
+    try {
+      await windowManager.setSize(size, animate: true);
+      await windowManager.center();
+      SettingsService.to.window.saveWindowSize(size);
+      SettingsService.to.window.setTracking(true);
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      ToastUtil.show(i18n('save_success'));
+    } catch (error) {
+      debugPrint('Failed to apply startup window size: $error');
+      if (!mounted) return;
+      setState(() {
+        _errorText = i18n('window_size_apply_failed');
+        _isApplying = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final presets = [
+      ('1080 × 720 (${i18n("default_option")})', const Size(1080, 720)),
+      ('1280 × 720 (720P)', const Size(1280, 720)),
+      ('1600 × 900', const Size(1600, 900)),
+      ('1920 × 1080 (1080P)', const Size(1920, 1080)),
+      ('2560 × 1440 (2K)', const Size(2560, 1440)),
+    ];
+    return AlertDialog(
+      scrollable: true,
+      title: Text(i18n('window_size')),
+      content: SizedBox(
+        width: 320,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(i18n('preset_options'), style: AppTextStyles.t13.copyWith(color: theme.hintColor)),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: presets.map((preset) {
+                return ActionChip(
+                  label: Text(preset.$1),
+                  onPressed: _isApplying
+                      ? null
+                      : () {
+                          _widthController.text = preset.$2.width.toInt().toString();
+                          _heightController.text = preset.$2.height.toInt().toString();
+                          _clearError();
+                        },
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 20),
+            Text(i18n('custom_input'), style: AppTextStyles.t13.copyWith(color: theme.hintColor)),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(child: _buildDimensionField(_widthController, i18n('width'), '1080')),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: Text('×', style: AppTextStyles.t18),
+                ),
+                Expanded(child: _buildDimensionField(_heightController, i18n('height'), '720')),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _errorText ?? i18n('window_size_range_hint'),
+              key: const ValueKey('window-size-feedback'),
+              style: AppTextStyles.t12.copyWith(color: _errorText == null ? theme.hintColor : theme.colorScheme.error),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(onPressed: _isApplying ? null : () => Navigator.of(context).pop(), child: Text(i18n('cancel'))),
+        TextButton(
+          onPressed: _isApplying ? null : _apply,
+          child: _isApplying
+              ? const SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2))
+              : Text(
+                  i18n('confirm'),
+                  style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.bold),
+                ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDimensionField(TextEditingController controller, String label, String hint) {
+    return TextField(
+      controller: controller,
+      enabled: !_isApplying,
+      keyboardType: TextInputType.number,
+      inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(5)],
+      onChanged: (_) => _clearError(),
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        border: const OutlineInputBorder(),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      ),
+    );
   }
 }
 

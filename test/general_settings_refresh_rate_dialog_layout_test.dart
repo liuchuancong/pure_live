@@ -165,6 +165,7 @@ void main() {
     expect(find.textContaining('默认'), findsNothing);
     expect(find.text('Width'), findsOneWidget);
     expect(find.text('Height'), findsOneWidget);
+    expect(find.text('Width 400–16384 · Height 300–16384'), findsOneWidget);
     expect(find.text('Cancel'), findsOneWidget);
     expect(find.text('Confirm'), findsOneWidget);
 
@@ -197,6 +198,22 @@ void main() {
     expect(find.byType(AlertDialog), findsNothing);
     expect(SettingsService.to.window.storedWidth.value, 1280);
     expect(SettingsService.to.window.storedHeight.value, 720);
+
+    await tester.tap(find.text('Startup Window Size'));
+    await tester.pumpAndSettle();
+    final fields = find.byType(TextField);
+    await tester.enterText(fields.at(0), '20000');
+    await tester.enterText(fields.at(1), '900');
+    await tester.tap(find.text('Confirm'));
+    await tester.pump();
+    expect(find.text('Enter a window size within the supported range'), findsOneWidget);
+    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(SettingsService.to.window.storedWidth.value, 1280);
+    expect(SettingsService.to.window.storedHeight.value, 720);
+
+    await tester.tap(find.text('Cancel'));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();

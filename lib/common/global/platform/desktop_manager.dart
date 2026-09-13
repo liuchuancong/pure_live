@@ -16,6 +16,7 @@ import 'package:pure_live/plugins/share_command_handler.dart';
 import 'package:pure_live/routes/route_observer_controller.dart';
 import 'package:pure_live/common/utils/share_command_handler.dart';
 import 'package:pure_live/common/widgets/share_command_import_dialog.dart';
+import 'package:pure_live/common/services/settings/window_size_controller.dart';
 import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 import 'package:pure_live/player/utils/window_helper.dart';
 
@@ -28,12 +29,11 @@ class DesktopManager {
       await windowManager.ensureInitialized();
       await Window.initialize();
 
-      final double width = SettingsService.to.window.storedWidth.v;
-      final double height = SettingsService.to.window.storedHeight.v;
+      final storedSize = SettingsService.to.window.storedSize;
 
       final WindowOptions windowOptions = WindowOptions(
-        size: Size(width, height),
-        minimumSize: const Size(400, 300),
+        size: storedSize,
+        minimumSize: const Size(WindowSizeController.minWindowWidth, WindowSizeController.minWindowHeight),
         center: true,
         backgroundColor: Colors.transparent,
         skipTaskbar: false,
