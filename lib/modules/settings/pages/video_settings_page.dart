@@ -84,7 +84,7 @@ class VideoSettingsPage extends GetView<SettingsService> {
                 subtitle: i18n("prefer_resolution_subtitle"),
                 onTap: showPreferResolutionSelectorDialog,
                 trailing: Text(
-                  _preferredResolutionLabel(SettingsService.to.player.preferResolution.v),
+                  _preferredResolutionLabel(SettingsService.to.player.resolvedPreferResolution),
                   style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.w600),
                 ),
                 stackTrailingOnNarrow: true,
@@ -97,7 +97,7 @@ class VideoSettingsPage extends GetView<SettingsService> {
                 subtitle: i18n("mobile_quality_subtitle"),
                 onTap: showPreferResolutionCellularSelectorDialog,
                 trailing: Text(
-                  _preferredResolutionLabel(SettingsService.to.player.preferResolutionCellular.v),
+                  _preferredResolutionLabel(SettingsService.to.player.resolvedPreferResolutionCellular),
                   style: AppTextStyles.t13.copyWith(color: theme.colorScheme.primary, fontWeight: FontWeight.w600),
                 ),
                 stackTrailingOnNarrow: true,
@@ -287,7 +287,7 @@ class VideoSettingsPage extends GetView<SettingsService> {
   void showPreferResolutionSelectorDialog() {
     _showPreferredResolutionSelectorDialog(
       title: i18n('prefer_resolution'),
-      selected: SettingsService.to.player.preferResolution.v,
+      selected: SettingsService.to.player.resolvedPreferResolution,
       onSelected: SettingsService.to.player.changePreferResolution,
     );
   }
@@ -295,7 +295,7 @@ class VideoSettingsPage extends GetView<SettingsService> {
   void showPreferResolutionCellularSelectorDialog() {
     _showPreferredResolutionSelectorDialog(
       title: i18n('prefer_resolution_cellular'),
-      selected: SettingsService.to.player.preferResolutionCellular.v,
+      selected: SettingsService.to.player.resolvedPreferResolutionCellular,
       onSelected: SettingsService.to.player.changePreferResolutionCellular,
     );
   }

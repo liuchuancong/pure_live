@@ -9,7 +9,6 @@ import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/event_bus.dart';
 import 'package:flame_barrage/flame_barrage.dart';
-import 'package:pure_live/common/consts/app_consts.dart';
 import 'package:pure_live/common/utils/live_url_tool.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/modules/live_play/states/load_type.dart';
@@ -2266,25 +2265,26 @@ class _VideoFitSettingState extends State<VideoFitSetting> {
   VideoController get controller => widget.controller;
   @override
   Widget build(BuildContext context) {
-    final descs = AppConsts().videoFitType.map((e) => i18n(e['desc'])).toList();
-    final attrs = AppConsts().videoFitList;
     final player = SettingsService.to.player;
 
     return GestureDetector(
       onTap: () {
         controller.enableController();
-        int currentIndex = player.videoFitIndex.v + 1;
-        if (currentIndex >= attrs.length) {
-          currentIndex = 0;
-        }
-        player.videoFitIndex.v = currentIndex;
+        final currentIndex = player.advanceVideoFitIndex();
+        if (currentIndex == null) return;
         controller.setVideoFit(currentIndex);
       },
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 0, horizontal: 2),
         alignment: Alignment.center,
         height: 25,
-        child: Obx(() => Text(descs[player.videoFitIndex.v], style: AppTextStyles.t15.copyWith(color: Colors.white))),
+        child: Obx(() {
+          final descriptionKey = player.resolvedVideoFitDescriptionKey;
+          return Text(
+            descriptionKey.isEmpty ? '' : i18n(descriptionKey),
+            style: AppTextStyles.t15.copyWith(color: Colors.white),
+          );
+        }),
       ),
     );
   }

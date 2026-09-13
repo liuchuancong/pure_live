@@ -36,17 +36,8 @@ class AppConsts {
   // 语言映射
   static const Map<String, Locale> languages = {"English": Locale('en'), "简体中文": Locale('zh')};
 
-  // 视频 Fit 模式
-  List<BoxFit> videoFitList = [
-    BoxFit.contain,
-    BoxFit.cover,
-    BoxFit.fill,
-    BoxFit.fitHeight,
-    BoxFit.fitWidth,
-    BoxFit.scaleDown,
-  ];
-
-  /// desc 改成 key
+  // Video fit values and labels share one ordered source because the stored
+  // setting is an index into this list.
   List<Map<String, dynamic>> videoFitType = [
     {'attr': BoxFit.contain, 'desc': 'video_fit_default'},
     {'attr': BoxFit.cover, 'desc': 'video_fit_crop_center'},

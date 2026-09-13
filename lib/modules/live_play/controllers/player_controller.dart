@@ -605,9 +605,9 @@ class PlayerController extends GetxController {
     if (!isCurrent()) return;
 
     if (connectivityResult.contains(ConnectivityResult.mobile)) {
-      userPrefer = SettingsService.to.player.preferResolutionCellular.v;
+      userPrefer = SettingsService.to.player.resolvedPreferResolutionCellular;
     } else {
-      userPrefer = SettingsService.to.player.preferResolution.v;
+      userPrefer = SettingsService.to.player.resolvedPreferResolution;
     }
 
     final availableQualities = playQualites.map((e) => e.quality).toList();

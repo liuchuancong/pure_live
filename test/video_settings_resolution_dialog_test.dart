@@ -102,6 +102,37 @@ void main() {
     await tester.pump();
   }, skip: !Platform.isWindows);
 
+  testWidgets('unknown resolution values render and select through the canonical default', (tester) async {
+    SettingsService.to.player.preferResolution.value = 'retired-wifi-quality';
+    SettingsService.to.player.preferResolutionCellular.value = 'retired-cellular-quality';
+
+    await _pumpVideoSettings(tester, english: english, size: const Size(420, 800), platform: TargetPlatform.windows);
+
+    await tester.scrollUntilVisible(find.text('Resolution Preference'), 180, scrollable: _pageScrollable());
+    await tester.pumpAndSettle();
+    expect(find.text('Original'), findsNWidgets(2));
+    expect(find.text('retired-wifi-quality'), findsNothing);
+    expect(find.text('retired-cellular-quality'), findsNothing);
+    expect(SettingsService.to.player.preferResolution.value, 'retired-wifi-quality');
+
+    await tester.tap(find.text('Resolution Preference'));
+    await tester.pumpAndSettle();
+    final dialog = find.byType(AlertDialog);
+    expect(dialog, findsOneWidget);
+    expect(
+      tester
+          .widget<RadioGroup<String>>(find.descendant(of: dialog, matching: find.byType(RadioGroup<String>)))
+          .groupValue,
+      '原画',
+    );
+    expect(tester.takeException(), isNull);
+
+    await tester.tap(find.widgetWithText(SimpleDialogOption, 'Original'));
+    await tester.pumpAndSettle();
+    expect(SettingsService.to.player.preferResolution.value, '原画');
+    expect(dialog, findsNothing);
+  }, skip: !Platform.isWindows);
+
   testWidgets('ASMR timer keeps every preset and action reachable in narrow very-large text', (tester) async {
     await _pumpVideoSettings(
       tester,

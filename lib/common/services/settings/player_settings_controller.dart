@@ -25,6 +25,9 @@ String normalizeVideoPlayerKeyForPlatform(String key, TargetPlatform platform) {
 String get _defaultVideoPlayerKey => defaultVideoPlayerKeyForPlatform(defaultTargetPlatform);
 
 class PlayerSettingsController extends GetxController {
+  static const int defaultVideoFitIndex = 0;
+
+  final List<Worker> _workers = [];
   final RxInt videoFitIndex = hiveInt('videoFitIndex', 0);
   final RxString videoPlayerKey = hiveString('videoPlayerKey', _defaultVideoPlayerKey);
 
@@ -86,14 +89,67 @@ class PlayerSettingsController extends GetxController {
       _enumByName(PortraitDanmakuMode.values, portraitDanmakuModeName.v, PortraitDanmakuMode.followGlobal);
 
   List<BoxFit> get videoFitArray => AppConsts().videoFitType.map((e) => e['attr'] as BoxFit).toList();
+  int get resolvedVideoFitIndex => normalizeVideoFitIndex(videoFitIndex.v);
+  String get resolvedVideoFitDescriptionKey {
+    final options = AppConsts().videoFitType;
+    return options.isEmpty ? '' : options[resolvedVideoFitIndex]['desc'] as String;
+  }
+
+  String get resolvedPreferResolution => normalizePreferredResolution(preferResolution.v);
+  String get resolvedPreferResolutionCellular => normalizePreferredResolution(preferResolutionCellular.v);
+
+  int? advanceVideoFitIndex() {
+    final optionCount = videoFitArray.length;
+    if (optionCount == 0) return null;
+    final nextIndex = (resolvedVideoFitIndex + 1) % optionCount;
+    videoFitIndex.v = nextIndex;
+    return nextIndex;
+  }
 
   @override
   void onInit() {
     super.onInit();
+    _repairPlaybackPreferences();
     final normalizedPlayerKey = normalizeVideoPlayerKeyForPlatform(videoPlayerKey.v, defaultTargetPlatform);
     if (videoPlayerKey.v != normalizedPlayerKey) videoPlayerKey.v = normalizedPlayerKey;
     _normalizeMpvSettingsForPlatform(defaultTargetPlatform);
     _loadPortraitRoomOverrides(_portraitRoomOverridesRaw.v);
+    _workers.addAll([
+      ever<int>(videoFitIndex, (_) => _repairPlaybackPreferences()),
+      ever<String>(preferResolution, (_) => _repairPlaybackPreferences()),
+      ever<String>(preferResolutionCellular, (_) => _repairPlaybackPreferences()),
+    ]);
+  }
+
+  @override
+  void onClose() {
+    for (final worker in _workers) {
+      worker.dispose();
+    }
+    _workers.clear();
+    super.onClose();
+  }
+
+  static int normalizeVideoFitIndex(int value) {
+    final optionCount = AppConsts().videoFitType.length;
+    if (value < 0 || value >= optionCount) return defaultVideoFitIndex;
+    return value;
+  }
+
+  static String normalizePreferredResolution(String value) {
+    final normalized = value.trim();
+    return PlayerConsts.resolutions.contains(normalized) ? normalized : PlayerConsts.resolutions.first;
+  }
+
+  void _repairPlaybackPreferences() {
+    final fitIndex = resolvedVideoFitIndex;
+    if (videoFitIndex.v != fitIndex) videoFitIndex.v = fitIndex;
+
+    final wifiResolution = resolvedPreferResolution;
+    if (preferResolution.v != wifiResolution) preferResolution.v = wifiResolution;
+
+    final cellularResolution = resolvedPreferResolutionCellular;
+    if (preferResolutionCellular.v != cellularResolution) preferResolutionCellular.v = cellularResolution;
   }
 
   void _normalizeMpvSettingsForPlatform(TargetPlatform platform) {
@@ -210,10 +266,10 @@ class PlayerSettingsController extends GetxController {
 
   Map<String, dynamic> toJson() {
     return {
-      'videoFitIndex': videoFitIndex.v,
+      'videoFitIndex': resolvedVideoFitIndex,
       'videoPlayerKey': videoPlayerKey.v,
-      'preferResolution': preferResolution.v,
-      'preferResolutionCellular': preferResolutionCellular.v,
+      'preferResolution': resolvedPreferResolution,
+      'preferResolutionCellular': resolvedPreferResolutionCellular,
       'enableCodec': enableCodec.v,
       'playerCompatMode': playerCompatMode.v,
       'customPlayerOutput': customPlayerOutput.v,
@@ -243,13 +299,17 @@ class PlayerSettingsController extends GetxController {
     T typed<T>(dynamic value) => value as T;
     return {
       'portraitRoomOverrides': parsePortraitRoomOverrides(json['portraitRoomOverrides'] ?? '{}'),
-      'videoFitIndex': typed<int>(json['videoFitIndex'] ?? 0),
+      'videoFitIndex': normalizeVideoFitIndex(typed<int>(json['videoFitIndex'] ?? defaultVideoFitIndex)),
       'videoPlayerKey': normalizeVideoPlayerKeyForPlatform(
         typed<String>(json['videoPlayerKey'] ?? _defaultVideoPlayerKey),
         defaultTargetPlatform,
       ),
-      'preferResolution': typed<String>(json['preferResolution'] ?? PlayerConsts.resolutions.first),
-      'preferResolutionCellular': typed<String>(json['preferResolutionCellular'] ?? PlayerConsts.resolutions.first),
+      'preferResolution': normalizePreferredResolution(
+        typed<String>(json['preferResolution'] ?? PlayerConsts.resolutions.first),
+      ),
+      'preferResolutionCellular': normalizePreferredResolution(
+        typed<String>(json['preferResolutionCellular'] ?? PlayerConsts.resolutions.first),
+      ),
       'enableCodec': typed<bool>(json['enableCodec'] ?? true),
       'playerCompatMode': defaultTargetPlatform == TargetPlatform.android
           ? typed<bool>(json['playerCompatMode'] ?? false)
@@ -335,13 +395,17 @@ class PlayerSettingsController extends GetxController {
   static Map<String, dynamic> extractConfig(Map<String, dynamic>? rootConfig) {
     final player = rootConfig?['player'] as Map<String, dynamic>? ?? {};
     return {
-      'videoFitIndex': player['videoFitIndex'] ?? 0,
+      'videoFitIndex': normalizeVideoFitIndex((player['videoFitIndex'] ?? defaultVideoFitIndex) as int),
       'videoPlayerKey': normalizeVideoPlayerKeyForPlatform(
         (player['videoPlayerKey'] ?? _defaultVideoPlayerKey) as String,
         defaultTargetPlatform,
       ),
-      'preferResolution': player['preferResolution'] ?? PlayerConsts.resolutions.first,
-      'preferResolutionCellular': player['preferResolutionCellular'] ?? PlayerConsts.resolutions.first,
+      'preferResolution': normalizePreferredResolution(
+        (player['preferResolution'] ?? PlayerConsts.resolutions.first) as String,
+      ),
+      'preferResolutionCellular': normalizePreferredResolution(
+        (player['preferResolutionCellular'] ?? PlayerConsts.resolutions.first) as String,
+      ),
       'enableCodec': player['enableCodec'] ?? true,
       'playerCompatMode': defaultTargetPlatform == TargetPlatform.android ? player['playerCompatMode'] ?? false : false,
       'customPlayerOutput': player['customPlayerOutput'] ?? false,
