@@ -82,47 +82,12 @@ class _TaskList extends GetView<RecorderController> {
   const _TaskList({this.filter});
   final bool Function(LiveRecordTask task)? filter;
 
-  // 状态权重，数字越小排序越靠前
-  int _getStatusPriority(RecordStatus status) {
-    switch (status) {
-      case RecordStatus.running:
-        return 0;
-      case RecordStatus.reconnecting:
-        return 1;
-      case RecordStatus.preparing:
-        return 2;
-      case RecordStatus.waitingLive:
-        return 3;
-      case RecordStatus.queued:
-        return 4;
-      case RecordStatus.processing:
-        return 5;
-      case RecordStatus.completed:
-        return 6;
-      case RecordStatus.stopped:
-        return 7;
-      case RecordStatus.failed:
-        return 8;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      List<LiveRecordTask> list = controller.tasks;
-      if (filter != null) {
-        list = list.where(filter!).toList();
-      } else {
-        list = List.from(list);
-        list.sort((a, b) {
-          final prioA = _getStatusPriority(a.status);
-          final prioB = _getStatusPriority(b.status);
-          if (prioA != prioB) {
-            return prioA.compareTo(prioB);
-          }
-          return b.createTime.compareTo(a.createTime);
-        });
-      }
+      final source = controller.tasks;
+
+      final list = filter != null ? source.where(filter!).toList() : RecorderTaskOrdering.forDisplay(source);
 
       if (list.isEmpty) {
         return const _EmptyView();
