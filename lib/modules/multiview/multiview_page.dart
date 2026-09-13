@@ -411,53 +411,40 @@ class _MultiviewPageState extends State<MultiviewPage> {
   }
 
   Widget _buildToolbar() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-      child: Row(
+    final width = MediaQuery.sizeOf(context).width;
+    final compact = width < 680;
+
+    Widget buildLayoutSelector() {
+      return Obx(() {
+        final layout = controller.layout.value;
+
+        return SegmentedButton<MultiviewLayout>(
+          showSelectedIcon: false,
+          selected: {layout},
+          onSelectionChanged: (selection) {
+            controller.setLayout(selection.first);
+            // Reset the control bar after switching layouts.
+            // Only focus layout has the large-cell control bar.
+            _largeControlsVisible = false;
+          },
+          segments: const [
+            ButtonSegment(value: MultiviewLayout.single, icon: Icon(Remix.aspect_ratio_line), label: Text('1×1')),
+            ButtonSegment(value: MultiviewLayout.dual, icon: Icon(Remix.layout_column_line), label: Text('1×2')),
+            ButtonSegment(value: MultiviewLayout.quad, icon: Icon(Remix.layout_grid_line), label: Text('2×2')),
+            ButtonSegment(value: MultiviewLayout.focus, icon: Icon(Remix.focus_3_line), label: Text('1+3')),
+          ],
+        );
+      });
+    }
+
+    Widget buildActions() {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Expanded(
-            child: Center(
-              child: Obx(() {
-                final layout = controller.layout.value;
-                return SegmentedButton<MultiviewLayout>(
-                  showSelectedIcon: false,
-                  selected: {layout},
-                  onSelectionChanged: (selection) {
-                    controller.setLayout(selection.first);
-                    // 切换布局后控制条复位隐藏（仅 focus 布局存在控制条）。
-                    _largeControlsVisible = false;
-                  },
-                  segments: [
-                    ButtonSegment(
-                      value: MultiviewLayout.single,
-                      icon: const Icon(Remix.aspect_ratio_line),
-                      label: const Text('1×1'),
-                    ),
-                    ButtonSegment(
-                      value: MultiviewLayout.dual,
-                      icon: const Icon(Remix.layout_column_line),
-                      label: const Text('1×2'),
-                    ),
-                    ButtonSegment(
-                      value: MultiviewLayout.quad,
-                      icon: const Icon(Remix.layout_grid_line),
-                      label: const Text('2×2'),
-                    ),
-                    ButtonSegment(
-                      value: MultiviewLayout.focus,
-                      icon: const Icon(Remix.focus_3_line),
-                      label: const Text('1+3'),
-                    ),
-                  ],
-                );
-              }),
-            ),
-          ),
-          const SizedBox(width: 8),
-          // 页级弹幕开关（连接管理在核心层，UI 只切显隐开关）。
           Obx(() {
             final enabled = controller.danmakuEnabled.value;
             final theme = Theme.of(context);
+
             return IconButton(
               tooltip: i18n('danmaku'),
               icon: Icon(
@@ -468,9 +455,6 @@ class _MultiviewPageState extends State<MultiviewPage> {
               onPressed: () => controller.danmakuEnabled.toggle(),
             );
           }),
-          // The selected room volume is available in every layout. In focus
-          // mode the selected room is the large cell; in grid layouts it is
-          // the cell carrying audio focus.
           Obx(() {
             final selectedIndex = controller.audioFocusIndexState.value;
             final canAdjust =
@@ -483,11 +467,11 @@ class _MultiviewPageState extends State<MultiviewPage> {
               onPressed: canAdjust ? () => _showVolumeSheet(selectedIndex) : null,
             );
           }),
-          // 小格自动降质联动：仅 focus 布局生效，非 focus 下置灰防误触。
           Obx(() {
             final isFocusLayout = controller.layout.value == MultiviewLayout.focus;
             final enabled = controller.smallCellsLowQuality.value;
             final theme = Theme.of(context);
+
             return IconButton(
               tooltip: i18n('multiview_small_low_quality'),
               icon: Icon(
@@ -498,6 +482,32 @@ class _MultiviewPageState extends State<MultiviewPage> {
               onPressed: isFocusLayout ? () => controller.smallCellsLowQuality.toggle() : null,
             );
           }),
+        ],
+      );
+    }
+
+    if (compact) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(12, 6, 12, 4),
+        child: Column(
+          children: [
+            Center(
+              child: FittedBox(fit: BoxFit.scaleDown, child: buildLayoutSelector()),
+            ),
+            const SizedBox(height: 2),
+            Align(alignment: Alignment.centerRight, child: buildActions()),
+          ],
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+      child: Row(
+        children: [
+          Expanded(child: Center(child: buildLayoutSelector())),
+          const SizedBox(width: 8),
+          buildActions(),
         ],
       ),
     );
