@@ -30,17 +30,14 @@ part of fijkplayer;
 /// The return widget is placed as one of [Stack]'s children.
 /// If change FijkView between normal mode and full screen mode, the panel would
 /// be rebuild. [data] can be used to pass value from different panel.
-typedef FijkPanelWidgetBuilder = Widget Function(FijkPlayer player,
-    FijkData data, BuildContext context, Size viewSize, Rect texturePos);
+typedef FijkPanelWidgetBuilder =
+    Widget Function(FijkPlayer player, FijkData data, BuildContext context, Size viewSize, Rect texturePos);
 
 /// How a video should be inscribed into [FijkView].
 ///
 /// See also [BoxFit]
 class FijkFit {
-  const FijkFit(
-      {this.alignment = Alignment.center,
-      this.aspectRatio = -1,
-      this.sizeFactor = 1.0});
+  const FijkFit({this.alignment = Alignment.center, this.aspectRatio = -1, this.sizeFactor = 1.0});
 
   /// [Alignment] for this [FijkView] Container.
   /// alignment is applied to Texture inner FijkView
@@ -72,26 +69,14 @@ class FijkFit {
   final double sizeFactor;
 
   /// Fill the target FijkView box by distorting the video's aspect ratio.
-  static const FijkFit fill = FijkFit(
-    sizeFactor: 1.0,
-    aspectRatio: double.infinity,
-    alignment: Alignment.center,
-  );
+  static const FijkFit fill = FijkFit(sizeFactor: 1.0, aspectRatio: double.infinity, alignment: Alignment.center);
 
   /// As large as possible while still containing the video entirely within the
   /// target FijkView box.
-  static const FijkFit contain = FijkFit(
-    sizeFactor: 1.0,
-    aspectRatio: -1,
-    alignment: Alignment.center,
-  );
+  static const FijkFit contain = FijkFit(sizeFactor: 1.0, aspectRatio: -1, alignment: Alignment.center);
 
   /// As small as possible while still covering the entire target FijkView box.
-  static const FijkFit cover = FijkFit(
-    sizeFactor: -0.5,
-    aspectRatio: -1,
-    alignment: Alignment.center,
-  );
+  static const FijkFit cover = FijkFit(sizeFactor: -0.5, aspectRatio: -1, alignment: Alignment.center);
 
   /// Make sure the full width of the source is shown, regardless of
   /// whether this means the source overflows the target box vertically.
@@ -261,26 +246,23 @@ class _FijkViewState extends State<FijkView> {
     widget.onDispose?.call(_fijkData);
   }
 
-  AnimatedWidget _defaultRoutePageBuilder(
-      BuildContext context, Animation<double> animation) {
+  AnimatedWidget _defaultRoutePageBuilder(BuildContext context, Animation<double> animation) {
     return AnimatedBuilder(
       animation: animation,
       builder: (BuildContext context, Widget? child) {
         return Scaffold(
           resizeToAvoidBottomInset: false,
-          body: _InnerFijkView(
-            fijkViewState: this,
-            fullScreen: true,
-            cover: widget.cover,
-            data: _fijkData,
-          ),
+          body: _InnerFijkView(fijkViewState: this, fullScreen: true, cover: widget.cover, data: _fijkData),
         );
       },
     );
   }
 
-  Widget _fullScreenRoutePageBuilder(BuildContext context,
-      Animation<double> animation, Animation<double> secondaryAnimation) {
+  Widget _fullScreenRoutePageBuilder(
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+  ) {
     return _defaultRoutePageBuilder(context, animation);
   }
 
@@ -290,8 +272,7 @@ class _FijkViewState extends State<FijkView> {
       pageBuilder: _fullScreenRoutePageBuilder,
     );
 
-    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
-        overlays: []);
+    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: []);
     bool changed = false;
     var orientation = MediaQuery.of(context).orientation;
     FijkLog.d("start enter fullscreen. orientation:$orientation");
@@ -308,8 +289,10 @@ class _FijkViewState extends State<FijkView> {
     _fullScreen = false;
     widget.player.exitFullScreen();
 
-    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
-        overlays: [SystemUiOverlay.top, SystemUiOverlay.bottom]);
+    await SystemChrome.setEnabledSystemUIMode(
+      SystemUiMode.manual,
+      overlays: [SystemUiOverlay.top, SystemUiOverlay.bottom],
+    );
     if (changed) {
       if (_vWidth >= _vHeight) {
         await FijkPlugin.setOrientationPortrait();
@@ -332,23 +315,13 @@ class _FijkViewState extends State<FijkView> {
       height: widget.height,
       child: _fullScreen
           ? Container()
-          : _InnerFijkView(
-              fijkViewState: this,
-              fullScreen: false,
-              cover: widget.cover,
-              data: _fijkData,
-            ),
+          : _InnerFijkView(fijkViewState: this, fullScreen: false, cover: widget.cover, data: _fijkData),
     );
   }
 }
 
 class _InnerFijkView extends StatefulWidget {
-  _InnerFijkView({
-    required this.fijkViewState,
-    required this.fullScreen,
-    required this.cover,
-    required this.data,
-  });
+  _InnerFijkView({required this.fijkViewState, required this.fullScreen, required this.cover, required this.data});
 
   final _FijkViewState fijkViewState;
   final bool fullScreen;
@@ -474,12 +447,10 @@ class __InnerFijkViewState extends State<_InnerFijkView> {
 
   /// calculate Texture size
   Size getTxSize(BoxConstraints constraints, FijkFit fit) {
-    Size childSize = applyAspectRatio(
-        constraints, getAspectRatio(constraints, fit.aspectRatio));
+    Size childSize = applyAspectRatio(constraints, getAspectRatio(constraints, fit.aspectRatio));
     double sizeFactor = fit.sizeFactor;
     if (-1.0 < sizeFactor && sizeFactor < -0.0) {
-      sizeFactor = max(constraints.maxWidth / childSize.width,
-          constraints.maxHeight / childSize.height);
+      sizeFactor = max(constraints.maxWidth / childSize.width, constraints.maxHeight / childSize.height);
     } else if (-2.0 < sizeFactor && sizeFactor < -1.0) {
       sizeFactor = constraints.maxWidth / childSize.width;
     } else if (-3.0 < sizeFactor && sizeFactor < -2.0) {
@@ -500,11 +471,8 @@ class __InnerFijkViewState extends State<_InnerFijkView> {
 
   Widget buildTexture() {
     Widget tex = _textureId > 0 ? Texture(textureId: _textureId) : Container();
-    if (_degree != 0 && _textureId > 0) {
-      return RotatedBox(
-        quarterTurns: _degree ~/ 90,
-        child: tex,
-      );
+    if (_degree != 0 && _textureId >= 0) {
+      return RotatedBox(quarterTurns: _degree ~/ 90, child: tex);
     }
     return tex;
   }
@@ -532,43 +500,35 @@ class __InnerFijkViewState extends State<_InnerFijkView> {
     }
     _videoRender = value.videoRenderStart;
 
-    return LayoutBuilder(builder: (ctx, constraints) {
-      // get child size
-      final Size childSize = getTxSize(constraints, _fit);
-      final Offset offset = getTxOffset(constraints, childSize, _fit);
-      final Rect pos = Rect.fromLTWH(
-          offset.dx, offset.dy, childSize.width, childSize.height);
+    return LayoutBuilder(
+      builder: (ctx, constraints) {
+        // get child size
+        final Size childSize = getTxSize(constraints, _fit);
+        final Offset offset = getTxOffset(constraints, childSize, _fit);
+        final Rect pos = Rect.fromLTWH(offset.dx, offset.dy, childSize.width, childSize.height);
 
-      List ws = <Widget>[
-        Container(
-          width: constraints.maxWidth,
-          height: constraints.maxHeight,
-          color: _color,
-        ),
-        Positioned.fromRect(
+        List ws = <Widget>[
+          Container(width: constraints.maxWidth, height: constraints.maxHeight, color: _color),
+          Positioned.fromRect(
             rect: pos,
-            child: Container(
-              color: Color(0xFF000000),
-              child: buildTexture(),
-            )),
-      ];
-
-      if (widget.cover != null && !value.videoRenderStart) {
-        ws.add(Positioned.fromRect(
-          rect: pos,
-          child: Image(
-            image: widget.cover!,
-            fit: BoxFit.fill,
+            child: Container(color: Color(0xFF000000), child: buildTexture()),
           ),
-        ));
-      }
+        ];
 
-      if (_panelBuilder != null) {
-        ws.add(_panelBuilder!(_player, data, ctx, constraints.biggest, pos));
-      }
-      return Stack(
-        children: ws as List<Widget>,
-      );
-    });
+        if (widget.cover != null && !value.videoRenderStart) {
+          ws.add(
+            Positioned.fromRect(
+              rect: pos,
+              child: Image(image: widget.cover!, fit: BoxFit.fill),
+            ),
+          );
+        }
+
+        if (_panelBuilder != null) {
+          ws.add(_panelBuilder!(_player, data, ctx, constraints.biggest, pos));
+        }
+        return Stack(children: ws as List<Widget>);
+      },
+    );
   }
 }
