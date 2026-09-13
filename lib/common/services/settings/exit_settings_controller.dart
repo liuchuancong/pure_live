@@ -7,14 +7,21 @@ import 'package:stop_watch_timer/stop_watch_timer.dart';
 import 'package:pure_live/common/services/utils/hive_rx.dart';
 
 class ExitSettingsController extends GetxController {
+  static const String exitAction = 'exit';
+  static const String minimizeAction = 'minimize';
+  static const Set<String> supportedExitActions = {exitAction, minimizeAction};
   static const int defaultAutoShutdownMinutes = 120;
   static const int minAutoShutdownMinutes = 1;
   static const int maxAutoShutdownMinutes = 525600;
 
   static int normalizeAutoShutdownMinutes(int minutes) => minutes.clamp(minAutoShutdownMinutes, maxAutoShutdownMinutes);
 
+  static String normalizeExitAction(Object? action) {
+    return action is String && supportedExitActions.contains(action) ? action : exitAction;
+  }
+
   final RxBool dontAskExit = hiveBool('dontAskExit', false);
-  final RxString exitChoose = hiveString('exitChoose', '');
+  final RxString exitChoose = hiveString('exitChoose', exitAction);
   final RxInt autoShutDownTime = hiveInt('autoShutDownTime', defaultAutoShutdownMinutes);
   final RxBool enableAutoShutDownTime = hiveBool('enableAutoShutDownTime', false);
 
@@ -32,6 +39,11 @@ class ExitSettingsController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+
+    final normalizedExitAction = normalizeExitAction(exitChoose.v);
+    if (normalizedExitAction != exitChoose.v) {
+      exitChoose.v = normalizedExitAction;
+    }
 
     final normalizedMinutes = normalizeAutoShutdownMinutes(autoShutDownTime.v);
     if (normalizedMinutes != autoShutDownTime.v) {
@@ -127,7 +139,7 @@ class ExitSettingsController extends GetxController {
   }
 
   void setExitAction(String action) {
-    exitChoose.v = action;
+    exitChoose.v = normalizeExitAction(action);
   }
 
   void setDontAskExit(bool value) {
@@ -137,7 +149,7 @@ class ExitSettingsController extends GetxController {
   Map<String, dynamic> toJson() {
     return {
       'dontAskExit': dontAskExit.v,
-      'exitChoose': exitChoose.v,
+      'exitChoose': normalizeExitAction(exitChoose.v),
       'autoShutDownTime': normalizeAutoShutdownMinutes(autoShutDownTime.v),
       'enableAutoShutDownTime': enableAutoShutDownTime.v,
     };
@@ -147,7 +159,7 @@ class ExitSettingsController extends GetxController {
   static Map<String, dynamic> parseConfig(Map<String, dynamic> json) {
     return {
       'dontAskExit': (json['dontAskExit'] ?? false) as bool,
-      'exitChoose': (json['exitChoose'] ?? '') as String,
+      'exitChoose': normalizeExitAction(json['exitChoose']),
       'autoShutDownTime': normalizeAutoShutdownMinutes((json['autoShutDownTime'] ?? defaultAutoShutdownMinutes) as int),
       'enableAutoShutDownTime': (json['enableAutoShutDownTime'] ?? false) as bool,
     };
@@ -177,7 +189,7 @@ class ExitSettingsController extends GetxController {
     final exit = rootConfig?['exit'] as Map<String, dynamic>? ?? {};
     return {
       'dontAskExit': exit['dontAskExit'] ?? false,
-      'exitChoose': exit['exitChoose'] ?? '',
+      'exitChoose': normalizeExitAction(exit['exitChoose']),
       'autoShutDownTime': normalizeAutoShutdownMinutes((exit['autoShutDownTime'] ?? defaultAutoShutdownMinutes) as int),
       'enableAutoShutDownTime': exit['enableAutoShutDownTime'] ?? false,
     };
