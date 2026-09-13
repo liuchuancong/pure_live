@@ -54,6 +54,7 @@ class SearchController extends GetxController {
   final sortMode = LiveSearchSortMode.smart.obs;
   final ScrollController scrollController = createPureLiveScrollController();
   bool _isWebView2Available = true;
+  bool _webView2DialogOpen = false;
   int _searchGeneration = 0;
   int _currentPage = 0;
   String _activeKeyword = '';
@@ -508,43 +509,65 @@ class SearchController extends GetxController {
   }
 
   void showWebView2MissingDialog() {
-    if (!_active) return;
-    Get.dialog(
-      Builder(
-        builder: (BuildContext dialogContext) {
-          return AlertDialog(
+    if (!_active || _webView2DialogOpen) return;
+    _webView2DialogOpen = true;
+    unawaited(_showWebView2MissingDialog());
+  }
+
+  Future<void> _showWebView2MissingDialog() async {
+    try {
+      final openDownload = await Get.dialog<bool>(
+        Builder(
+          builder: (BuildContext dialogContext) => AlertDialog(
+            scrollable: true,
+            insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
             title: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Icon(Icons.report_problem_rounded, color: Theme.of(dialogContext).colorScheme.error),
                 const SizedBox(width: 8),
-                Text(i18n("webview2_missing_title")),
+                Flexible(child: Text(i18n('webview2_missing_title'))),
               ],
             ),
-            content: Text(i18n("webview2_missing_content"), style: const TextStyle(height: 1.4)),
+            content: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 420),
+              child: Text(i18n('webview2_missing_content'), style: const TextStyle(height: 1.4)),
+            ),
+            actionsOverflowDirection: VerticalDirection.down,
+            actionsOverflowButtonSpacing: 8,
             actions: [
-              TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: Text(i18n("cancel"))),
+              TextButton(
+                style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                child: Text(i18n('cancel')),
+              ),
               ElevatedButton(
-                onPressed: () async {
-                  Navigator.of(dialogContext).pop();
-                  final url = Uri.parse('https://developer.microsoft.com/zh-cn/microsoft-edge/webview2/?form=MA13LH');
-                  if (await canLaunchUrl(url)) {
-                    await launchUrl(url, mode: LaunchMode.externalApplication);
-                  } else {
-                    ToastUtil.show(i18n("webview2_open_error"));
-                  }
-                },
                 style: ElevatedButton.styleFrom(
+                  minimumSize: const Size(48, 48),
                   backgroundColor: Theme.of(dialogContext).colorScheme.primary,
                   foregroundColor: Theme.of(dialogContext).colorScheme.onPrimary,
                 ),
-                child: Text(i18n("confirm")),
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+                child: Text(i18n('webview2_open_download'), textAlign: TextAlign.center),
               ),
             ],
-          );
-        },
-      ),
-      barrierDismissible: false,
-    );
+          ),
+        ),
+        barrierDismissible: false,
+      );
+      if (openDownload != true || !_active) return;
+
+      final url = Uri.parse('https://developer.microsoft.com/microsoft-edge/webview2/');
+      final canOpen = await canLaunchUrl(url);
+      if (!_active) return;
+      final opened = canOpen && await launchUrl(url, mode: LaunchMode.externalApplication);
+      if (_active && !opened) ToastUtil.show(i18n('webview2_open_error'));
+    } catch (error, stackTrace) {
+      debugPrint('Opening the WebView2 download page failed: $error\n$stackTrace');
+      if (_active) ToastUtil.show(i18n('webview2_open_error'));
+    } finally {
+      _webView2DialogOpen = false;
+    }
   }
 
   @override
