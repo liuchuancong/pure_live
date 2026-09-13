@@ -4,6 +4,8 @@
 
 ## 开发与发布
 
+- [房间卡片设置回归与恢复审计](ROOM_CARD_SETTINGS_REGRESSION_AND_RESTORATION_AUDIT_2026_09_14.md)：Issue #864 的 3.1.3 稳定版缺失来源、当前架构下的移动/桌面独立预设与实时预览、3.1.2 持久值迁移、备份合同及 154 项回归。
+
 - [WebDAV 恢复确认与事务审计](WEBDAV_RESTORE_CONFIRMATION_AND_TRANSACTION_AUDIT_2026_09_14.md)：具名覆盖确认、窄屏大字号动作可达、确认前零读取/零本地变更、单次恢复事务及服务/目录代次栅栏。
 
 - [WebDAV 文件行与删除确认审计](WEBDAV_FILE_ROW_AND_DELETE_DIALOG_AUDIT_2026_09_14.md)：超长文件名两行收束与完整提示、窄屏大字号动作可达、具名危险确认、页面路由所有权及单次删除事务。
