@@ -4,6 +4,8 @@
 
 ## 开发与发布
 
+- [本地缓存清理确认与事务审计](CACHE_CLEAR_CONFIRMATION_AND_TRANSACTION_AUDIT_2026_09_14.md)：320×480 / 3.0 倍文字动作可达、破坏性层级、单次确认/清理任务及 10 项回归。
+
 - [账号退出确认与事务审计](ACCOUNT_LOGOUT_CONFIRMATION_AND_TRANSACTION_AUDIT_2026_09_14.md)：七个平台具名确认、320×480 / 3.0 倍中英文动作可达、单次路由/清理任务及 16 项回归。
 
 - [版本历史下载确认与事务审计](VERSION_HISTORY_DOWNLOAD_CONFIRMATION_AND_TRANSACTION_AUDIT_2026_09_14.md)：具名文件确认、320×480 / 3.0 倍文字动作可达、单次路由/下载任务及 19 项回归。
