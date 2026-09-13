@@ -1,22 +1,22 @@
 import 'dart:async';
 import 'dart:developer' as developer;
-
-import 'package:flame_barrage/flame_barrage.dart';
 import 'package:flutter/services.dart';
-import 'package:media_kit_video/media_kit_video.dart';
 import 'package:remixicon/remixicon.dart';
-
-import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/modules/live_play/controllers/player_state.dart';
-import 'package:pure_live/modules/live_play/pages/danmaku_settings_page.dart';
-import 'package:pure_live/modules/multiview/danmaku/multiview_danmaku_settings_binding.dart';
-import 'package:pure_live/modules/multiview/models/multiview_models.dart';
-import 'package:pure_live/modules/multiview/multiview_controller.dart';
-import 'package:pure_live/modules/multiview/widgets/multiview_fullscreen_surface.dart';
-import 'package:pure_live/modules/multiview/widgets/multiview_room_picker.dart';
+import 'package:flame_barrage/flame_barrage.dart';
+import 'package:media_kit_video/media_kit_video.dart';
 import 'package:pure_live/player/utils/fullscreen.dart';
+import 'package:pure_live/common/global/platform_utils.dart';
+import 'package:pure_live/modules/multiview/multiview_controller.dart';
+import 'package:pure_live/modules/multiview/models/multiview_models.dart';
+import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 import 'package:pure_live/player/widgets/video_output_viewport_sizer.dart';
+import 'package:pure_live/modules/live_play/pages/danmaku_settings_page.dart';
+import 'package:pure_live/modules/multiview/widgets/multiview_room_picker.dart';
+import 'package:pure_live/modules/multiview/widgets/multiview_fullscreen_surface.dart';
+import 'package:pure_live/modules/multiview/danmaku/multiview_danmaku_settings_binding.dart';
+
+
 
 /// 页面显示状态机：normal（完整界面）→ immersive（隐藏工具条与侧板，
 /// 留悬浮恢复钮）→ fullscreen（仅保留安全区内的退出钮）。
@@ -474,14 +474,28 @@ class _MultiviewPageState extends State<MultiviewPage> {
           // the cell carrying audio focus.
           Obx(() {
             final selectedIndex = controller.audioFocusIndexState.value;
+
             final canAdjust =
                 selectedIndex >= 0 &&
                 selectedIndex < controller.cells.length &&
                 controller.cells[selectedIndex].status == MultiviewCellStatus.playing;
-            return IconButton(
-              tooltip: i18n('multiview_volume'),
-              icon: const Icon(Remix.volume_up_line, size: 22),
-              onPressed: canAdjust ? () => _showVolumeSheet(selectedIndex) : null,
+
+            final muted = controller.allMuted.value;
+
+            return Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  tooltip: i18n('multiview_mute_all'),
+                  icon: Icon(muted ? Remix.volume_mute_line : Remix.volume_up_line, size: 22),
+                  onPressed: controller.toggleMuteAll,
+                ),
+                IconButton(
+                  tooltip: i18n('multiview_volume'),
+                  icon: const Icon(Remix.equalizer_2_line, size: 22),
+                  onPressed: canAdjust ? () => _showVolumeSheet(selectedIndex) : null,
+                ),
+              ],
             );
           }),
           // 小格自动降质联动：仅 focus 布局生效，非 focus 下置灰防误触。
