@@ -165,6 +165,15 @@ class _WebDavPageState extends State<WebDavPage> {
   }
 
   Future<void> _showDeleteDialog(WebDAVConfig config) async {
+    final confirmed = await _showDeleteConfirmation(i18n("webdav_confirm_delete_config", args: {"name": config.name}));
+    if (confirmed && mounted) controller.deleteConfig(config);
+  }
+
+  Future<bool> _showFileDeleteDialog(webdav.File file) =>
+      _showDeleteConfirmation(i18n("webdav_confirm_delete_item", args: {"name": _fileDisplayName(file)}));
+
+  Future<bool> _showDeleteConfirmation(String message) async {
+    if (!mounted) return false;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
@@ -173,10 +182,7 @@ class _WebDavPageState extends State<WebDavPage> {
           scrollable: true,
           insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
           title: Text(i18n("webdav_confirm_delete")),
-          content: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 420),
-            child: Text(i18n("webdav_confirm_delete_config", args: {"name": config.name})),
-          ),
+          content: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 420), child: Text(message)),
           actionsOverflowDirection: VerticalDirection.down,
           actionsOverflowButtonSpacing: 8,
           actions: [
@@ -198,7 +204,7 @@ class _WebDavPageState extends State<WebDavPage> {
         );
       },
     );
-    if (confirmed == true && mounted) controller.deleteConfig(config);
+    return confirmed ?? false;
   }
 
   Widget _buildAppBar() {
@@ -404,7 +410,9 @@ class _WebDavPageState extends State<WebDavPage> {
   ];
 
   Widget _buildFileItem(webdav.File file, int index) {
+    final displayName = _fileDisplayName(file);
     return ListTile(
+      isThreeLine: true,
       hoverColor: Theme.of(Get.context!).colorScheme.primaryContainer,
       leading: Icon(
         file.isDir ?? false
@@ -421,12 +429,19 @@ class _WebDavPageState extends State<WebDavPage> {
         color: Theme.of(Get.context!).colorScheme.primary,
         size: 28,
       ),
-      title: Text(
-        file.name ?? i18n("webdav_unnamed_file"),
-        style: AppTextStyles.t16.copyWith(fontWeight: FontWeight.w500),
+      title: Tooltip(
+        message: displayName,
+        child: Text(
+          displayName,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: AppTextStyles.t16.copyWith(fontWeight: FontWeight.w500),
+        ),
       ),
       subtitle: Text(
         file.mTime?.toString() ?? i18n("webdav_unknown_time"),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
         style: TextStyle(color: Theme.of(Get.context!).colorScheme.onSurfaceVariant),
       ),
       trailing: Obx(
@@ -441,13 +456,24 @@ class _WebDavPageState extends State<WebDavPage> {
             if (value == 'Download') {
               controller.downloadFile(file);
             } else if (value == 'Delete') {
-              controller.deleteFile(file);
+              unawaited(controller.deleteFile(file, confirmDelete: () => _showFileDeleteDialog(file)));
             }
           },
         ),
       ),
       onTap: () => controller.onFileTap(file),
     );
+  }
+
+  String _fileDisplayName(webdav.File file) {
+    final name = file.name?.trim();
+    if (name != null && name.isNotEmpty) return name;
+    final path = file.path?.trim().replaceAll(RegExp(r'/+$'), '');
+    if (path != null && path.isNotEmpty) {
+      final pathName = path.split('/').last.trim();
+      if (pathName.isNotEmpty) return pathName;
+    }
+    return i18n("webdav_unnamed_file");
   }
 
   Widget _buildErrorPage(String message, double minimumStateHeight) {

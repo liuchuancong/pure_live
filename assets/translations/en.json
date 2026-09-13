@@ -722,6 +722,7 @@
     "webdav_config_name_exists": "Config name already exists",
     "webdav_confirm_delete": "Are you sure you want to delete?",
     "webdav_confirm_delete_config": "Are you sure you want to delete config \"{name}\"?",
+    "webdav_confirm_delete_item": "Delete \"{name}\" from WebDAV?",
     "webdav_create_new_config": "Create New Config",
     "webdav_delete": "Delete",
     "webdav_delete_failed": "File deletion failed",

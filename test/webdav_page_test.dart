@@ -625,7 +625,9 @@ void main() {
       await openFileMenu(tester);
       await tester.tap(find.text(translations['webdav_delete']));
       await tester.pump(const Duration(milliseconds: 350));
-      await tester.tap(find.text(translations['confirm']));
+      await tester.tap(
+        find.descendant(of: find.byType(AlertDialog), matching: find.text(translations['webdav_delete'])),
+      );
       await tester.pump(const Duration(milliseconds: 350));
       expect(controller.canStartFileAction, isFalse);
       if (attempt == 0) {
@@ -640,6 +642,39 @@ void main() {
       expect(controller.canStartFileAction, isTrue);
     }
     expect(service.deletePaths, ['/backup.txt', '/backup.txt']);
+    await finish(tester);
+  });
+
+  testWidgets('file delete confirmation names a long target and keeps both decisions reachable', (tester) async {
+    final longName = List.filled(5, 'very long WebDAV backup name').join(' · ');
+    await openPage(tester, size: const Size(320, 480), textScale: 3);
+    selectConfig();
+    service.reads.single.complete([webdav.File(name: longName, path: '/backup.txt', isDir: false)]);
+    await tester.pumpAndSettle();
+    final fileTitle = tester.widget<Text>(find.text(longName));
+    expect(fileTitle.maxLines, 2);
+    expect(fileTitle.overflow, TextOverflow.ellipsis);
+    expect(find.byType(PopupMenuButton<String>).hitTestable(), findsOneWidget);
+    await openFileMenu(tester);
+    await tester.tap(find.text(translations['webdav_delete']));
+    await tester.pump(const Duration(milliseconds: 350));
+
+    final dialog = find.byType(AlertDialog);
+    expect(dialog, findsOneWidget);
+    expect(find.descendant(of: dialog, matching: find.textContaining(longName)), findsOneWidget);
+    expect(find.text(translations['cancel']).hitTestable(), findsOneWidget);
+    expect(
+      find.descendant(of: dialog, matching: find.text(translations['webdav_delete'])).hitTestable(),
+      findsOneWidget,
+    );
+    expect(tester.takeException(), isNull);
+
+    expect(await tester.binding.handlePopRoute(), isTrue);
+    await tester.pumpAndSettle();
+    expect(find.byType(AlertDialog), findsNothing);
+    expect(find.byType(WebDavPage), findsOneWidget);
+    expect(service.deletePaths, isEmpty);
+    expect(controller.canStartFileAction, isTrue);
     await finish(tester);
   });
 

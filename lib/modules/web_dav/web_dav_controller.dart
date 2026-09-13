@@ -4,7 +4,6 @@ import 'dart:convert';
 import 'package:pure_live/common/index.dart';
 import 'package:date_format/date_format.dart';
 import 'package:uuid/uuid.dart';
-import 'package:pure_live/plugins/utils.dart';
 import 'package:webdav_client/webdav_client.dart' as webdav;
 import 'package:pure_live/modules/web_dav/webdav_config.dart';
 import 'package:pure_live/modules/web_dav/webdav_service.dart';
@@ -14,21 +13,15 @@ import 'package:pure_live/common/services/settings/web_dav_controller.dart';
 class WebDavPageController extends GetxController {
   WebDavPageController({
     WebDAVService Function(WebDAVConfig)? serviceFactory,
-    Future<bool> Function()? confirmDelete,
     DateTime Function()? now,
     void Function(String message, {bool isError})? feedback,
   }) : _serviceFactory = serviceFactory ?? _createService,
-       _confirmDelete = confirmDelete ?? _showDeleteConfirmation,
        _now = now ?? DateTime.now,
        _feedback = feedback ?? _showTransferFeedback;
 
   final WebDAVService Function(WebDAVConfig) _serviceFactory;
-  final Future<bool> Function() _confirmDelete;
   final DateTime Function() _now;
   final void Function(String message, {bool isError}) _feedback;
-
-  static Future<bool> _showDeleteConfirmation() =>
-      Utils.showAlertDialog(i18n("webdav_confirm_delete"), title: i18n("webdav_delete"));
 
   static WebDAVService _createService(WebDAVConfig config) =>
       WebDAVService(url: config.fullUrl, username: config.username, password: config.password);
@@ -309,7 +302,7 @@ class WebDavPageController extends GetxController {
     }
   }
 
-  Future<void> deleteFile(webdav.File file) async {
+  Future<void> deleteFile(webdav.File file, {required Future<bool> Function() confirmDelete}) async {
     final service = _webdavService;
     final epoch = _serviceEpoch;
     final path = dirPath.value;
@@ -317,7 +310,7 @@ class WebDavPageController extends GetxController {
     if (service == null || !_ownsService(service, epoch) || remotePath == null || !canStartFileAction) return;
     fileActionLabelKey.value = 'webdav_deleting';
     try {
-      final result = await _confirmDelete();
+      final result = await confirmDelete();
       if (!result || !_ownsService(service, epoch) || dirPath.value != path) return;
       await service.removeFile(remotePath);
       if (!_ownsService(service, epoch)) return;

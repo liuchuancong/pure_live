@@ -45,10 +45,6 @@ void main() {
     feedback = [];
     controller = WebDavPageController(
       feedback: (message, {isError = false}) => feedback.add(message),
-      confirmDelete: () {
-        confirmationCount++;
-        return confirmation.future;
-      },
       serviceFactory: (selected) {
         connectedConfigs.add(selected);
         final service = _Service();
@@ -57,6 +53,11 @@ void main() {
       },
     );
   });
+
+  Future<bool> confirmDelete() {
+    confirmationCount++;
+    return confirmation.future;
+  }
 
   tearDown(() async {
     controller.onClose();
@@ -390,7 +391,7 @@ void main() {
 
   test('delete confirmed after service replacement never removes from either service', () async {
     final service = connect();
-    final deletion = controller.deleteFile(webdav.File(path: '/backup.txt'));
+    final deletion = controller.deleteFile(webdav.File(path: '/backup.txt'), confirmDelete: confirmDelete);
     controller.initializeWebDAV();
     confirmation.complete(true);
     await deletion;
@@ -400,7 +401,7 @@ void main() {
 
   test('delete cancellation leaves the server unchanged', () async {
     final service = connect();
-    final deletion = controller.deleteFile(webdav.File(path: '/backup.txt'));
+    final deletion = controller.deleteFile(webdav.File(path: '/backup.txt'), confirmDelete: confirmDelete);
     confirmation.complete(false);
     await deletion;
     expect(service.removals, isEmpty);
@@ -419,8 +420,8 @@ void main() {
 
   test('repeated delete clicks open only one confirmation', () async {
     connect();
-    final first = controller.deleteFile(webdav.File(path: '/backup.txt'));
-    final second = controller.deleteFile(webdav.File(path: '/backup.txt'));
+    final first = controller.deleteFile(webdav.File(path: '/backup.txt'), confirmDelete: confirmDelete);
+    final second = controller.deleteFile(webdav.File(path: '/backup.txt'), confirmDelete: confirmDelete);
     confirmation.complete(false);
     await Future.wait([first, second]);
     expect(confirmationCount, 1);
@@ -429,7 +430,7 @@ void main() {
 
   test('confirmation failure releases the operation without deleting anything', () async {
     final service = connect();
-    final deletion = controller.deleteFile(webdav.File(path: '/backup.txt'));
+    final deletion = controller.deleteFile(webdav.File(path: '/backup.txt'), confirmDelete: confirmDelete);
     confirmation.completeError(StateError('confirmation fixture'));
     await deletion;
     expect(service.removals, isEmpty);

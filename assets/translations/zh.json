@@ -723,6 +723,7 @@
     "webdav_config_name_exists": "配置名称已存在",
     "webdav_confirm_delete": "确定要删除吗？",
     "webdav_confirm_delete_config": "确定要删除配置 \"{name}\" 吗？",
+    "webdav_confirm_delete_item": "确定要从 WebDAV 删除“{name}”吗？",
     "webdav_create_new_config": "创建新配置",
     "webdav_delete": "删除",
     "webdav_delete_failed": "文件删除失败",
