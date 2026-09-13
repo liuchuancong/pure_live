@@ -4,6 +4,8 @@
 
 ## 开发与发布
 
+- [Windows 启动项事务与注册表命令审计](WINDOWS_STARTUP_TRANSACTION_AND_REGISTRY_COMMAND_AUDIT_2026_09_13.md)：注册表回读验证、失败回滚、旧便携路径识别、动态 UTF-16 读取、FFI 资源所有权及双语忙碌/失败反馈。
+
 - [真实在线人数平台偏好持久化审计](AUDIENCE_PLATFORM_PREFERENCE_PERSISTENCE_AUDIT_2026_09_13.md)：同长度旧值修复、小写/去空白/去重/能力过滤合同、备份与导出归一化及安全设置开关。
 
 - [播放器显示模式与首选画质持久化审计](PLAYER_DISPLAY_PREFERENCE_PERSISTENCE_AUDIT_2026_09_13.md)：六种显示模式索引、五个稳定画质键、启动/运行时/备份修复、安全 UI 消费及单一有序来源。
