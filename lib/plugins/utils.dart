@@ -208,66 +208,9 @@ class Utils {
     String confirm = '',
     String cancel = '',
   }) async {
-    final TextEditingController textEditingController = TextEditingController(text: content);
-    final res = await Get.dialog(
-      AlertDialog(
-        title: Text(title),
-        titleTextStyle: Get.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600, fontSize: 18),
-        contentPadding: const EdgeInsets.fromLTRB(24, 16, 24, 12),
-        content: SizedBox(
-          width: 420,
-          child: TextField(
-            controller: textEditingController,
-            autofocus: true,
-            maxLines: 5,
-            minLines: 4,
-            style: Get.textTheme.bodyMedium?.copyWith(fontFamily: 'monospace', fontSize: 13, height: 1.5),
-            decoration: InputDecoration(
-              hintText: hintText ?? title,
-              hintStyle: Get.textTheme.bodyMedium?.copyWith(
-                color: Get.theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
-              ),
-              filled: true,
-              fillColor: Get.theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
-              contentPadding: const EdgeInsets.all(16),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
-              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: BorderSide(color: Get.theme.colorScheme.primary, width: 1.5),
-              ),
-            ),
-          ),
-        ),
-        actionsPadding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
-        actions: [
-          TextButton(
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            ),
-            onPressed: () {
-              Navigator.of(Get.context!).pop();
-            },
-            child: Text(cancel.isNotEmpty ? cancel : i18n("cancel")),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: Get.theme.colorScheme.primary,
-              foregroundColor: Get.theme.colorScheme.onPrimary,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            ),
-            onPressed: () {
-              Navigator.of(Get.context!).pop(textEditingController.text);
-            },
-            child: Text(confirm.isNotEmpty ? confirm : i18n("confirm")),
-          ),
-        ],
-      ),
+    return Get.dialog<String>(
+      _EditTextDialog(initialValue: content, title: title, hintText: hintText, confirm: confirm, cancel: cancel),
     );
-    textEditingController.dispose();
-    return res;
   }
 
   static Future<T?> showOptionDialog<T>(List<T> contents, T value, {String title = ''}) async {
@@ -387,5 +330,152 @@ class Utils {
       ),
     );
     return result ?? false;
+  }
+}
+
+class _EditTextDialog extends StatefulWidget {
+  const _EditTextDialog({
+    required this.initialValue,
+    required this.title,
+    required this.hintText,
+    required this.confirm,
+    required this.cancel,
+  });
+
+  final String initialValue;
+  final String title;
+  final String? hintText;
+  final String confirm;
+  final String cancel;
+
+  @override
+  State<_EditTextDialog> createState() => _EditTextDialogState();
+}
+
+class _EditTextDialogState extends State<_EditTextDialog> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initialValue);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final media = MediaQuery.of(context);
+    final availableHeight = media.size.height;
+    final dialogHeight = availableHeight > 40 ? availableHeight - 40 : availableHeight;
+    final largeText = media.textScaler.scale(1) >= 1.6;
+    final stackActions = media.size.width < 420 || largeText;
+    final cancelButton = TextButton(
+      style: TextButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+      onPressed: () => Navigator.of(context).pop(),
+      child: Text(widget.cancel.isNotEmpty ? widget.cancel : i18n("cancel")),
+    );
+    final confirmButton = FilledButton(
+      style: FilledButton.styleFrom(
+        backgroundColor: theme.colorScheme.primary,
+        foregroundColor: theme.colorScheme.onPrimary,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+      onPressed: () => Navigator.of(context).pop(_controller.text),
+      child: Text(widget.confirm.isNotEmpty ? widget.confirm : i18n("confirm")),
+    );
+
+    return Dialog(
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+      clipBehavior: Clip.antiAlias,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: 468, maxHeight: dialogHeight),
+        child: SizedBox(
+          width: 468,
+          height: largeText ? dialogHeight : null,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Flexible(
+                fit: largeText ? FlexFit.tight : FlexFit.loose,
+                child: SingleChildScrollView(
+                  key: const ValueKey<String>('shared-edit-text-scroll'),
+                  padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        widget.title,
+                        style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600, fontSize: 18),
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: _controller,
+                        autofocus: true,
+                        maxLines: 5,
+                        minLines: 4,
+                        style: theme.textTheme.bodyMedium?.copyWith(fontFamily: 'monospace', fontSize: 13, height: 1.5),
+                        decoration: InputDecoration(
+                          hintText: widget.hintText ?? widget.title,
+                          hintStyle: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                          ),
+                          filled: true,
+                          fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+                          contentPadding: const EdgeInsets.all(16),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            borderSide: BorderSide.none,
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            borderSide: BorderSide.none,
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            borderSide: BorderSide(color: theme.colorScheme.primary, width: 1.5),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const Divider(height: 1),
+              SafeArea(
+                top: false,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+                  child: stackActions
+                      ? Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [cancelButton, const SizedBox(height: 8), confirmButton],
+                        )
+                      : Align(
+                          alignment: Alignment.centerRight,
+                          child: Wrap(
+                            alignment: WrapAlignment.end,
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [cancelButton, confirmButton],
+                          ),
+                        ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
