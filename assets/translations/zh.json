@@ -460,6 +460,7 @@
     "recorder_auto": "自动",
     "recorder_cancel_monitor": "取消监控",
     "recorder_cancel_monitor_confirm": "确定不再监控该直播间？",
+    "recorder_cancel_monitor_confirm_named": "确定停止监控“{name}”？已经保存的录制文件会保留。",
     "recorder_check_now": "立即检测",
     "recorder_empty_subtitle": "添加直播间后将在这里显示",
     "recorder_empty_title": "暂无录制任务",

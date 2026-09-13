@@ -459,6 +459,7 @@
     "recorder_auto": "Auto",
     "recorder_cancel_monitor": "Remove Monitor",
     "recorder_cancel_monitor_confirm": "Stop monitoring this live room?",
+    "recorder_cancel_monitor_confirm_named": "Stop monitoring \"{name}\"? Existing recording files will be kept.",
     "recorder_check_now": "Check Now",
     "recorder_empty_subtitle": "Added live rooms will appear here",
     "recorder_empty_title": "No Recording Tasks",

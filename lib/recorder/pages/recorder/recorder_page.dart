@@ -365,32 +365,7 @@ class _TaskCard extends GetView<RecorderController> {
     );
 
     Widget deleteButton() {
-      return TextButton(
-        onPressed: () async {
-          final ok = await showDialog<bool>(
-            context: Get.context!,
-            builder: (context) {
-              return AlertDialog(
-                title: Text(i18n("recorder_cancel_monitor")),
-                content: Text(i18n("recorder_cancel_monitor_confirm")),
-                actions: [
-                  TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(i18n("cancel"))),
-                  FilledButton(
-                    style: FilledButton.styleFrom(backgroundColor: Colors.red),
-                    onPressed: () => Navigator.of(context).pop(true),
-                    child: Text(i18n("confirm")),
-                  ),
-                ],
-              );
-            },
-          );
-
-          if (ok == true) {
-            await controller.unRecorder(task);
-          }
-        },
-        child: Text(i18n("remove"), style: AppTextStyles.t15.copyWith(color: Colors.red)),
-      );
+      return _RemoveMonitorButton(task: task, controller: controller);
     }
 
     final isWorking = {RecordStatus.running, RecordStatus.reconnecting, RecordStatus.preparing};
@@ -753,12 +728,82 @@ class _Tag extends StatelessWidget {
         children: [
           Icon(icon, size: 11, color: color),
           const SizedBox(width: 4),
-          Text(
-            text,
-            style: AppTextStyles.t11.copyWith(fontWeight: FontWeight.bold, color: color, letterSpacing: 0.2),
+          Flexible(
+            child: Text(
+              text,
+              style: AppTextStyles.t11.copyWith(fontWeight: FontWeight.bold, color: color, letterSpacing: 0.2),
+            ),
           ),
         ],
       ),
+    );
+  }
+}
+
+class _RemoveMonitorButton extends StatefulWidget {
+  const _RemoveMonitorButton({required this.task, required this.controller});
+
+  final LiveRecordTask task;
+  final RecorderController controller;
+
+  @override
+  State<_RemoveMonitorButton> createState() => _RemoveMonitorButtonState();
+}
+
+class _RemoveMonitorButtonState extends State<_RemoveMonitorButton> {
+  bool _busy = false;
+
+  String _displayName(LiveRecordTask task) {
+    for (final value in [task.title, task.nick, task.roomId]) {
+      final trimmed = value.trim();
+      if (trimmed.isNotEmpty) return trimmed;
+    }
+    return '--';
+  }
+
+  Future<void> _remove() async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    final target = widget.task;
+    try {
+      final ok = await showDialog<bool>(
+        context: context,
+        useRootNavigator: false,
+        builder: (dialogContext) => AlertDialog(
+          scrollable: true,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+          title: Text(i18n('recorder_cancel_monitor')),
+          content: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: Text(i18n('recorder_cancel_monitor_confirm_named', args: {'name': _displayName(target)})),
+          ),
+          actionsOverflowDirection: VerticalDirection.down,
+          actionsOverflowButtonSpacing: 8,
+          actions: [
+            TextButton(
+              style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: Text(i18n('cancel')),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(backgroundColor: Colors.red, minimumSize: const Size(48, 48)),
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: Text(i18n('confirm')),
+            ),
+          ],
+        ),
+      );
+      if (ok == true) await widget.controller.unRecorder(target);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return TextButton(
+      onPressed: _busy ? null : _remove,
+      child: Text(i18n('remove'), style: AppTextStyles.t15.copyWith(color: _busy ? null : Colors.red)),
     );
   }
 }
