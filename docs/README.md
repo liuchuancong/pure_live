@@ -4,6 +4,8 @@
 
 ## 开发与发布
 
+- [共享文本编辑弹窗生命周期与布局审计](SHARED_EDIT_DIALOG_LIFECYCLE_AND_LAYOUT_AUDIT_2026_09_13.md)：路由子树控制器所有权、确认/取消返回语义、窄屏大字号滚动视口及响应式动作排列。
+
 - **Windows Computer Use 模型说明**：仅在 Windows 客户端 GUI 验收开始时创建一个 Astra Light 任务，并在同一验收批次内持续复用；源码、测试、构建、文档、Android 与其他非 Computer Use 工作使用常规模型。权威规则见 [`AGENTS.md`](../AGENTS.md#device-and-collaboration-boundaries) 与 [`AGENT_WORKFLOW.md`](AGENT_WORKFLOW.md#model-and-task-handoff)。
 
 - [更新与版本历史 Web 目标归一化审计](UPDATE_AND_RELEASE_WEB_TARGET_AUDIT_2026_09_13.md)：共享 HTTP(S) 解析、用户信息/端口边界、单次 URI 归一化及复制与下载消费一致性。

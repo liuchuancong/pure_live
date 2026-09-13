@@ -1,5 +1,7 @@
 # 3.2.0 剩余工作与当前候选（2026-09-13）
 
+- **09-13 共享文本编辑弹窗已统一路由生命周期与响应式布局**：[专项审计](SHARED_EDIT_DIALOG_LIFECYCLE_AND_LAYOUT_AUDIT_2026_09_13.md)。旧静态方法在 `Get.dialog` 返回时立即释放输入控制器，但退出动画子树仍会继续访问它；固定编辑区也缺少窄屏大字号边界。有效红灯 **0/2 PASS** 后，`85ca7a73` 让弹窗子树持有控制器和路由 context，以有界滚动内容、纵向大字号动作和常规桌面紧凑布局覆盖两种形态。最终三文件 **14/14 PASS**、全库 analyze 无问题。未构建或执行原生 Windows/设备操作；A2-01 保持 RUN，宏观保持 **20 PASS / 42 RUN / 0 NR，共 42 组未闭环**，Astra Light 使用 0 次。
+
 - **09-13 更新与版本历史 Web 目标已统一归一化合同**：[专项审计](UPDATE_AND_RELEASE_WEB_TARGET_AUDIT_2026_09_13.md)。旧更新入口与版本历史各自维护不完整规则，会接受用户信息和越界端口；版本历史还会把通过修剪值校验的原始字符串交给剪贴板或下载器。有效红灯 **13 PASS / 3 FAIL** 后，`ce051c03` 统一共享结构化 HTTP(S) 解析、拒绝非空 userInfo，并让动作消费同一个规范 URI。直接 **16/16 PASS**，最终九文件 **47/47 PASS**、全库 analyze 无问题。未构建或执行原生 Windows/设备操作；A1-05/A2-01 保持 RUN，宏观保持 **20 PASS / 42 RUN / 0 NR，共 42 组未闭环**，Astra Light 使用 0 次。
 
 - **09-13 下载文件名已统一 UTF-8 字节边界并隔离长名称碰撞**：[专项审计](DOWNLOAD_FILENAME_UTF8_AND_COLLISION_AUDIT_2026_09_13.md)。旧逻辑按 160 UTF-16 code unit 截断，中文名称追加 `.part`/`.previous` 后可越过常见单目录项字节限制，emoji 还可能被切开；两个仅在末尾不同的长资产会得到同一目标名。稳定红灯 **8 PASS / 2 FAIL** 后，`83f38ecc` 使用 240 UTF-8 字节 basename 预算、完整 Unicode scalar 截断、最多 32 字节扩展名和 12 位 SHA-256 摘要，既有原子暂存/回滚流程继续复用结果。直接 **10/10 PASS**，最终八文件 **39/39 PASS**、全库 analyze 无问题。未构建或执行原生 Windows/设备操作；A1-05/A2-01 保持 RUN，宏观保持 **20 PASS / 42 RUN / 0 NR，共 42 组未闭环**，Astra Light 使用 0 次。
