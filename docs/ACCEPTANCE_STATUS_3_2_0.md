@@ -1,5 +1,7 @@
 # 3.2.0 剩余工作与当前候选（2026-09-13）
 
+- **09-13 下载文件名已统一 UTF-8 字节边界并隔离长名称碰撞**：[专项审计](DOWNLOAD_FILENAME_UTF8_AND_COLLISION_AUDIT_2026_09_13.md)。旧逻辑按 160 UTF-16 code unit 截断，中文名称追加 `.part`/`.previous` 后可越过常见单目录项字节限制，emoji 还可能被切开；两个仅在末尾不同的长资产会得到同一目标名。稳定红灯 **8 PASS / 2 FAIL** 后，`83f38ecc` 使用 240 UTF-8 字节 basename 预算、完整 Unicode scalar 截断、最多 32 字节扩展名和 12 位 SHA-256 摘要，既有原子暂存/回滚流程继续复用结果。直接 **10/10 PASS**，最终八文件 **39/39 PASS**、全库 analyze 无问题。未构建或执行原生 Windows/设备操作；A1-05/A2-01 保持 RUN，宏观保持 **20 PASS / 42 RUN / 0 NR，共 42 组未闭环**，Astra Light 使用 0 次。
+
 - **09-13 HTTP(S) 目标识别与 IPTV 网络导入已统一完整 URI 合同**：[专项审计](HTTP_TARGET_VALIDATION_AND_IPTV_IMPORT_AUDIT_2026_09_13.md)。旧未锚定正则会拒绝 localhost、IPv6、长顶级域名和大写 scheme，同时把输入前后缀或本地路径里的 URL 片段判为有效；外部打开还会在分类后重新解析原始文本。稳定行为红灯 **0/3 PASS** 后，`e46ffbc4` 统一完整 HTTP/HTTPS URI、非空 host、1～65535 显式端口和内部无空白规则，校验与启动直接共享已验证 URI；IPTV 页面回归证明长顶级域名只提交一次，嵌入文本显示本地化错误且不创建请求。直接 **3/3 PASS**、页面集成 **45/45 PASS**，最终十文件 **128/128 PASS**、全库 analyze 无问题。未构建或执行原生 Windows/设备操作；A1-05/A2-01 保持 RUN，宏观保持 **20 PASS / 42 RUN / 0 NR，共 42 组未闭环**，Astra Light 使用 0 次。
 
 - **09-13 浏览器日志页已统一严格路由、安全响应和窄屏动作布局**：[专项审计](LOG_BROWSER_HTTP_AND_RESPONSIVE_UI_AUDIT_2026_09_13.md)。旧服务允许 GET 直接清空日志，任意路径返回诊断页；页面缺少禁缓存/嵌入等响应策略，标题和四个按钮在窄屏保持单行，清空没有确认，复制失败没有可访问反馈。`56c6b9f8` 仅允许 `GET /` 读取和带动作头的 `POST /clear` 提交清空，以 403/404/405 返回其他请求；统一安全响应头，并增加换行顶栏、移动端 44 px 动作、空状态、非内联事件和 `aria-live` 状态。实际回环 HTTP **15/15 PASS**，最终九文件 **37/37 PASS**、全库 analyze 无问题。未构建或执行原生 Windows/设备操作；A2-01 保持 RUN，宏观保持 **20 PASS / 42 RUN / 0 NR，共 42 组未闭环**，Astra Light 使用 0 次。

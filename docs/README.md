@@ -4,6 +4,8 @@
 
 ## 开发与发布
 
+- [下载文件名 UTF-8 边界与冲突审计](DOWNLOAD_FILENAME_UTF8_AND_COLLISION_AUDIT_2026_09_13.md)：240 字节 basename、暂存/回滚后缀预算、完整 Unicode scalar、扩展名保留及长名称摘要去碰撞。
+
 - [HTTP(S) 目标校验与 IPTV 网络导入审计](HTTP_TARGET_VALIDATION_AND_IPTV_IMPORT_AUDIT_2026_09_13.md)：完整结构化 URI、长顶级域名/回环地址、端口边界、嵌入片段拒绝及外部打开与网络导入共享决策。
 
 - [浏览器日志 HTTP 合同与响应式界面审计](LOG_BROWSER_HTTP_AND_RESPONSIVE_UI_AUDIT_2026_09_13.md)：严格 GET/POST 路由、受保护的清空动作、安全响应头、HTML 转义、空状态和移动端 44 px 响应式动作。
