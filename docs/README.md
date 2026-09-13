@@ -4,6 +4,8 @@
 
 ## 开发与发布
 
+- [WebDAV 面包屑可见性与父级路由审计](WEBDAV_BREADCRUMB_VISIBILITY_AND_ROUTE_AUDIT_2026_09_14.md)：深层路径当前段自动可见、稳定滚动范围校准、超长目录名完整提示，以及根目录父级请求的页面所有权。
+
 - [WebDAV 配置表单响应式布局审计](WEBDAV_CONFIG_FORM_RESPONSIVE_AUDIT_2026_09_14.md)：长编辑标题收束与完整提示、单一纵向滚动面、窄屏大字号字段/动作可达性及 48×48 动作合同。
 
 - [WebDAV 配置抽屉路由与布局审计](WEBDAV_CONFIG_DRAWER_ROUTE_AND_LAYOUT_AUDIT_2026_09_14.md)：长配置名称收束与完整提示、编辑/删除动作可达性、页面所有的配置/删除路由、抽屉精确关闭及控制器导航解耦。
