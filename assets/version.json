@@ -1,21 +1,21 @@
 {
   "version": "3.1.3",
   "build_number": 4101,
-  "version_num": 301024101,
+  "version_num": 301034101,
   "android_abis": [
     "armeabi-v7a",
     "arm64-v8a",
     "x86_64"
   ],
-  "version_desc": "version: 3.1.3\n版本更新：\n- 修复ijk播放器黑屏。\n- 添加多画面静音。\n- 其他bug。\n\n",
+  "version_desc": "version: 3.1.3\n版本更新：\n- 合并来自于@wzgrx的更新。\n\n",
   "prerelease": false,
   "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.1.3",
   "platforms": {
     "android": {
       "version": "3.1.3",
       "build_number": 4101,
-      "version_num": 301024101,
-      "version_desc": "version: 3.1.3\n版本更新：\n- 修复ijk播放器黑屏。\n- 添加多画面静音。\n- 其他bug。\n\n",
+      "version_num": 301034101,
+      "version_desc": "version: 3.1.3\n版本更新：\n- 合并来自于@wzgrx的更新。\n\n",
       "prerelease": false,
       "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.1.3",
       "android_abis": [
@@ -27,8 +27,8 @@
     "windows": {
       "version": "3.1.3",
       "build_number": 4101,
-      "version_num": 301024101,
-      "version_desc": "version: 3.1.3\n版本更新：\n- 修复ijk播放器黑屏。\n- 添加多画面静音。\n- 其他bug。\n\n",
+      "version_num": 301034101,
+      "version_desc": "version: 3.1.3\n版本更新：\n- 合并来自于@wzgrx的更新。\n\n",
       "prerelease": false,
       "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.1.3",
       "windows_msix_available": true
@@ -36,24 +36,24 @@
     "linux": {
       "version": "3.1.3",
       "build_number": 4101,
-      "version_num": 301024101,
-      "version_desc": "version: 3.1.3\n版本更新：\n- 修复ijk播放器黑屏。\n- 添加多画面静音。\n- 其他bug。\n\n",
+      "version_num": 301034101,
+      "version_desc": "version: 3.1.3\n版本更新：\n- 合并来自于@wzgrx的更新。\n\n",
       "prerelease": false,
       "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.1.3"
     },
     "macos": {
       "version": "3.1.3",
       "build_number": 4101,
-      "version_num": 301024101,
-      "version_desc": "version: 3.1.3\n版本更新：\n- 修复ijk播放器黑屏。\n- 添加多画面静音。\n- 其他bug。\n\n",
+      "version_num": 301034101,
+      "version_desc": "version: 3.1.3\n版本更新：\n- 合并来自于@wzgrx的更新。\n\n",
       "prerelease": false,
       "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.1.3"
     },
     "ios": {
       "version": "3.1.3",
       "build_number": 4101,
-      "version_num": 301024101,
-      "version_desc": "version: 3.1.3\n版本更新：\n- 修复ijk播放器黑屏。\n- 添加多画面静音。\n- 其他bug。\n\n",
+      "version_num": 301034101,
+      "version_desc": "version: 3.1.3\n版本更新：\n- 合并来自于@wzgrx的更新。\n\n",
       "prerelease": false,
       "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.1.3"
     }
