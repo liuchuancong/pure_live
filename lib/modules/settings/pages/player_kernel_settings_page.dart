@@ -8,7 +8,6 @@ import 'package:pure_live/core/common/proxy_routing.dart';
 import 'package:pure_live/player/utils/player_consts.dart';
 import 'package:pure_live/player/models/player_engine.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
-import 'package:pure_live/player/utils/mpv_platform_profile.dart';
 import 'package:pure_live/modules/settings/pages/decoder_settings.dart';
 import 'package:pure_live/modules/settings/pages/renderer_settings.dart';
 import 'package:pure_live/modules/settings/pages/audio_output_settings_page.dart';
@@ -113,10 +112,6 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
 
   Widget _buildMpvSettings(BuildContext context) {
     final theme = Theme.of(context);
-    final platform = defaultTargetPlatform;
-    final videoOutputDrivers = mpvVideoOutputDriversForPlatform(platform);
-    final audioOutputDrivers = mpvAudioOutputDriversForPlatform(platform);
-    final hardwareDecoders = mpvHardwareDecodersForPlatform(platform);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
