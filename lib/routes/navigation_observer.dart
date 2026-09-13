@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'dart:developer';
-
 import 'package:flutter/scheduler.dart';
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/player/core/player_manager.dart';
+import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/player/utils/fullscreen.dart' show WindowService;
 import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
+
 
 class LiveRouteObserver extends RouteObserver<PageRoute<dynamic>> {
   @override
@@ -16,6 +16,8 @@ class LiveRouteObserver extends RouteObserver<PageRoute<dynamic>> {
       case RoutePath.kLivePlay:
         _onLivePlayEnter();
         break;
+      case RoutePath.kMultiview:
+        _onMultiviewEnter();
       case RoutePath.kRecordPage:
         _setVideoLayerVisible(false);
         break;
@@ -39,6 +41,16 @@ class LiveRouteObserver extends RouteObserver<PageRoute<dynamic>> {
     final playerManager = GlobalPlayerService.instance.player;
     playerManager.setVideoPresentationVisible(true);
     unawaited(playerManager.closeAppFloating());
+  }
+
+  void _onMultiviewEnter() {
+    final playerManager = GlobalPlayerService.instance.player;
+    unawaited(playerManager.closeAppFloating());
+    unawaited(playerManager.close());
+    final controller = _findLivePlayController();
+    if (controller == null) return;
+    final state = controller.state.value;
+    state.player.videoController?.clearListener();
   }
 
   void _onLivePlayExit(Route<dynamic> route) {
@@ -67,7 +79,6 @@ class LiveRouteObserver extends RouteObserver<PageRoute<dynamic>> {
   void _setVideoLayerVisible(bool visible) {
     final controller = _findLivePlayController();
     if (controller == null) return;
-
     // Windows removes the Texture subtree while this opaque route is visible.
     // Stop presentation-only stall supervision before that intentional
     // teardown so a long stay in recorder centre does not reopen a healthy
