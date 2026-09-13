@@ -4,6 +4,8 @@
 
 ## 开发与发布
 
+- [HTTP(S) 目标校验与 IPTV 网络导入审计](HTTP_TARGET_VALIDATION_AND_IPTV_IMPORT_AUDIT_2026_09_13.md)：完整结构化 URI、长顶级域名/回环地址、端口边界、嵌入片段拒绝及外部打开与网络导入共享决策。
+
 - [浏览器日志 HTTP 合同与响应式界面审计](LOG_BROWSER_HTTP_AND_RESPONSIVE_UI_AUDIT_2026_09_13.md)：严格 GET/POST 路由、受保护的清空动作、安全响应头、HTML 转义、空状态和移动端 44 px 响应式动作。
 
 - [本地日志事务、端点与隐私边界审计](LOCAL_LOGGING_TRANSACTION_AND_ENDPOINT_AUDIT_2026_09_13.md)：启停验证事务、运行期端点、回环绑定、原子端口、早期日志安全、Release 浏览器缓冲及双语忙碌/失败反馈。

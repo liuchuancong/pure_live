@@ -4,6 +4,8 @@
 
 状态：`NR` 未执行、`RUN` 执行中、`PASS` 通过、`FAIL` 失败、`BLOCKED` 缺少当前外部条件。`PASS` 必须附日志、截图、命令记录或确定性测试路径；构建成功不等于功能通过。
 
+> 2026-09-13 HTTP(S) 目标校验与 IPTV 网络导入增量：`e46ffbc4` 用完整结构化 URI 替换未锚定且限制顶级域名长度的正则，统一 HTTP/HTTPS scheme、非空 host、1～65535 显式端口和内部无空白合同；localhost、IPv4/IPv6、长顶级域名与编码组件保持有效，嵌入文本、无 scheme、非 HTTP 协议和越界端口被拒绝。校验、外部打开和 IPTV 网络导入共享决策。稳定行为红灯 0/3、直接 3/3、页面集成 45/45 和最终十文件 128/128 均已留档，全库 analyze 无问题，见 `docs/HTTP_TARGET_VALIDATION_AND_IPTV_IMPORT_AUDIT_2026_09_13.md`。A1-05/A2-01 保持 RUN，账本仍为 20 PASS / 42 RUN / 0 NR，共 42 组未闭环。
+
 > 2026-09-13 浏览器日志页增量：`56c6b9f8` 将读取限制为 `GET /`，将清空限制为带动作头的 `POST /clear`，其他请求按 403/404/405 返回；全部响应增加禁缓存/嗅探/嵌入、同来源资源、无引用来源与 CSP。页面同步增加窄屏换行、44 px 动作、键盘焦点、空状态、清空确认和 `aria-live` 反馈，并移除内联点击处理。有效红灯、实际回环 HTTP 15/15 和最终九文件 37/37 均已留档，全库 analyze 无问题，见 `docs/LOG_BROWSER_HTTP_AND_RESPONSIVE_UI_AUDIT_2026_09_13.md`。A2-01 保持 RUN，账本仍为 20 PASS / 42 RUN / 0 NR，共 42 组未闭环。
 
 > 2026-09-13 本地日志增量：`bfe935bc` 将开关改为 latest-target 单飞事务，只在文件写入器和 HTTP 服务启停成功后提交状态，失败回滚并显示双语反馈；快速相反请求按各自目标返回结果。浏览器端点只保留在当前运行期，服务使用回环地址和系统原子端口；设置注册前的早期日志保持诊断路径，Release 在显式开启的会话内提供有界浏览器缓冲。多轮有效红灯、分层回归和最终八文件 **32/32 PASS** 均已留档，全库 analyze 无问题，见 `docs/LOCAL_LOGGING_TRANSACTION_AND_ENDPOINT_AUDIT_2026_09_13.md`。A2-01 保持 RUN，账本仍为 20 PASS / 42 RUN / 0 NR，共 42 组未闭环。
