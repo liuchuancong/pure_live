@@ -1,5 +1,7 @@
 # 3.2.0 完整验收入口
 
+- **09-13 共享确认与消息弹窗已建立长内容、动作可达与所属路由合同**：[专项审计](SHARED_ALERT_DIALOG_LAYOUT_AND_ROUTE_AUDIT_2026_09_13.md)。旧确认弹窗的固定 400 高正文和旧消息弹窗的无滚动正文，在 320×480、3.0 倍文字下分别溢出 320 px 与 140 px，内置动作还依赖全局 context。有效红灯 **0/2 PASS**；`1edf8a67` 统一使用可滚动 `AlertDialog`、420 宽正文上限、16/20 边距、动作纵向溢出和 48×48 最小命中尺寸，并从弹窗自身 context 返回。最终五文件 **45/45 PASS**、全库 analyze 无问题。未构建或执行原生 Windows/设备操作；A2-01 保持 RUN，宏观保持 **20 PASS / 42 RUN / 0 NR**、仍有 42 组未闭环；Astra Light 0 次。
+
 - **09-13 共享文本编辑弹窗已统一路由生命周期与响应式布局**：[专项审计](SHARED_EDIT_DIALOG_LIFECYCLE_AND_LAYOUT_AUDIT_2026_09_13.md)。旧静态方法会在路由结果返回时提前释放输入控制器，确认后的退出动画稳定触发 disposed controller，并缺少窄屏大字号视口合同。有效红灯 **0/2 PASS**；`85ca7a73` 改由弹窗子树持有控制器，动作使用所属路由 context，内容可滚动并在窄屏/大字号下纵向排列动作。最终三文件 **14/14 PASS**、全库 analyze 无问题。未构建或执行原生 Windows/设备操作；A2-01 保持 RUN，宏观保持 **20 PASS / 42 RUN / 0 NR**、仍有 42 组未闭环；Astra Light 0 次。
 
 - **09-13 更新与版本历史 Web 目标已统一归一化合同**：[专项审计](UPDATE_AND_RELEASE_WEB_TARGET_AUDIT_2026_09_13.md)。旧两套局部规则会接受用户信息和越界端口，版本历史还会在校验归一化值后把原始字符串交给剪贴板或下载器。有效红灯为 **13 PASS / 3 FAIL**；`ce051c03` 统一复用结构化 HTTP(S) 解析、拒绝非空 userInfo，并让复制/下载消费同一个 `Uri.toString()`。直接 **16/16 PASS**，最终九文件 **47/47 PASS**、全库 analyze 无问题。未构建或执行原生 Windows/设备操作；A1-05/A2-01 保持 RUN，宏观保持 **20 PASS / 42 RUN / 0 NR**、仍有 42 组未闭环；Astra Light 0 次。
