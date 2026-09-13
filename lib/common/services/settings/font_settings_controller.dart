@@ -163,29 +163,59 @@ class FontSettingsController extends GetxController {
     if (fontList.isEmpty) {
       return;
     }
-    curFontModel.value = fontList.firstWhere((e) => e.id == id, orElse: () => fontList.first);
-    if (id == 'Default') {
+    if (id == 'Microsoft YaHei') {
+      curFontModel.value = fontList.firstWhere((e) => e.id == 'Default', orElse: () => fontList.first);
       fontState.value = DownloadState.notDownloaded;
     } else {
-      final downloaded = await FontDownloadManager.instance.checkFontDownloaded(id);
-      fontState.value = downloaded ? DownloadState.downloaded : DownloadState.notDownloaded;
-      if (downloaded) {
-        var loaded = await FontDownloadManager.instance.loadFont(id, fileName: fontFamilyFileName.v);
-        if (!loaded && fontFamilyFileName.v.isNotEmpty) {
-          loaded = await FontDownloadManager.instance.loadFont(id);
-          if (loaded) {
+      curFontModel.value = fontList.firstWhere((e) => e.id == id, orElse: () => fontList.first);
+
+      if (id == 'Default') {
+        fontState.value = DownloadState.notDownloaded;
+      } else {
+        final downloaded = await FontDownloadManager.instance.checkFontDownloaded(id);
+        fontState.value = downloaded ? DownloadState.downloaded : DownloadState.notDownloaded;
+
+        if (downloaded) {
+          var loaded = await FontDownloadManager.instance.loadFont(id, fileName: fontFamilyFileName.v);
+          if (!loaded && fontFamilyFileName.v.isNotEmpty) {
+            loaded = await FontDownloadManager.instance.loadFont(id);
+            if (loaded) {
+              fontFamilyFileName.v = '';
+              await HivePrefUtil.setString('fontFamilyFileName', '');
+            }
+          }
+          if (!loaded) {
+            fontState.value = DownloadState.notDownloaded;
+            fontFamilyName.v = Platform.isWindows ? 'Microsoft YaHei' : 'Default';
+            await HivePrefUtil.setString('fontFamilyName', fontFamilyName.v);
             fontFamilyFileName.v = '';
             await HivePrefUtil.setString('fontFamilyFileName', '');
+            if (fontFamilyName.v == 'Microsoft YaHei') {
+              curFontModel.value = fontList.firstWhere((e) => e.id == 'Default', orElse: () => fontList.first);
+            } else {
+              curFontModel.value = fontList.firstWhere((e) => e.id == fontFamilyName.v, orElse: () => fontList.first);
+            }
+          }
+        } else {
+          fontState.value = DownloadState.notDownloaded;
+          fontFamilyName.v = Platform.isWindows ? 'Microsoft YaHei' : 'Default';
+          await HivePrefUtil.setString('fontFamilyName', fontFamilyName.v);
+          fontFamilyFileName.v = '';
+          await HivePrefUtil.setString('fontFamilyFileName', '');
+          if (fontFamilyName.v == 'Microsoft YaHei') {
+            curFontModel.value = fontList.firstWhere((e) => e.id == 'Default', orElse: () => fontList.first);
+          } else {
+            curFontModel.value = fontList.firstWhere((e) => e.id == fontFamilyName.v, orElse: () => fontList.first);
           }
         }
-        if (!loaded) fontState.value = DownloadState.notDownloaded;
       }
     }
 
-    // The danmaku font is an independent selection. Register it as well so a
-    // persisted custom choice remains effective after a cold restart.
-    final danmakuId = Get.find<DanmakuSettingsController>().danmakuFontFamilyName.v;
-    if (danmakuId != 'Default' && danmakuId != id) {
+    // 处理弹幕字体
+    final danmakuController = Get.find<DanmakuSettingsController>();
+    final danmakuId = danmakuController.danmakuFontFamilyName.v;
+
+    if (danmakuId != 'Default' && danmakuId != id && danmakuId != 'Microsoft YaHei') {
       final danmakuDownloaded = await FontDownloadManager.instance.checkFontDownloaded(danmakuId);
       if (danmakuDownloaded) {
         var loaded = await FontDownloadManager.instance.loadFont(danmakuId, fileName: danmakuFontFamilyFileName.v);
@@ -196,6 +226,17 @@ class FontSettingsController extends GetxController {
             await HivePrefUtil.setString('danmakuFontFamilyFileName', '');
           }
         }
+        if (!loaded) {
+          danmakuController.danmakuFontFamilyName.v = 'Default';
+          await HivePrefUtil.setString('danmakuFontFamilyName', 'Default');
+          danmakuFontFamilyFileName.v = '';
+          await HivePrefUtil.setString('danmakuFontFamilyFileName', '');
+        }
+      } else {
+        danmakuController.danmakuFontFamilyName.v = 'Default';
+        await HivePrefUtil.setString('danmakuFontFamilyName', 'Default');
+        danmakuFontFamilyFileName.v = '';
+        await HivePrefUtil.setString('danmakuFontFamilyFileName', '');
       }
     }
   }
