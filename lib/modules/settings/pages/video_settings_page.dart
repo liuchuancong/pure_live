@@ -11,15 +11,24 @@ import 'package:pure_live/modules/settings/pages/portrait_live_settings_page.dar
 import 'package:pure_live/modules/settings/pages/audience_metric_settings_page.dart';
 
 typedef SleepTimerConfigurator = Future<void> Function({required bool enabled, required int minutes});
+typedef SleepPermissionRequester = Future<bool> Function();
 
 class VideoSettingsPage extends StatefulWidget {
-  const VideoSettingsPage({super.key, this.platformOverride, this.sleepTimerConfiguratorOverride});
+  const VideoSettingsPage({
+    super.key,
+    this.platformOverride,
+    this.sleepTimerConfiguratorOverride,
+    this.sleepPermissionRequesterOverride,
+  });
 
   @visibleForTesting
   final TargetPlatform? platformOverride;
 
   @visibleForTesting
   final SleepTimerConfigurator? sleepTimerConfiguratorOverride;
+
+  @visibleForTesting
+  final SleepPermissionRequester? sleepPermissionRequesterOverride;
 
   @override
   State<VideoSettingsPage> createState() => _VideoSettingsPageState();
@@ -30,6 +39,8 @@ enum _ResolutionPreferenceTarget { wifi, cellular }
 class _VideoSettingsPageState extends State<VideoSettingsPage> {
   bool _resolutionDialogBusy = false;
   bool _asmrDialogBusy = false;
+  bool _asmrModeBusy = false;
+  String? _asmrModeErrorText;
 
   TargetPlatform get _platform => widget.platformOverride ?? defaultTargetPlatform;
   bool get _isAndroid => _platform == TargetPlatform.android;
@@ -166,20 +177,13 @@ class _VideoSettingsPageState extends State<VideoSettingsPage> {
               context.buildSwitchTile(
                 icon: Remix.moon_clear_line,
                 title: i18n('asmr_sleep_mode'),
-                subtitle: i18n('asmr_sleep_mode_desc'),
+                subtitle: _asmrModeErrorText ?? i18n('asmr_sleep_mode_desc'),
+                subtitleColor: _asmrModeErrorText == null ? null : theme.colorScheme.error,
+                isLong: true,
                 value: SettingsService.to.app.enableAsmrSleepMode,
-                onChanged: (val) async {
-                  if (val) {
-                    final hasPermission = await LiveAudioService.requestPlatformPermissions();
-                    SettingsService.to.app.enableAsmrSleepMode.v = hasPermission;
-                  } else {
-                    SettingsService.to.app.enableAsmrSleepMode.v = false;
-                    await LiveAudioService.configureSleepTimer(
-                      enabled: false,
-                      minutes: SettingsService.to.app.asmrSleepMinutes.v,
-                    );
-                  }
-                },
+                enabled: !_asmrModeBusy,
+                autoCommit: false,
+                onChanged: _changeAsmrSleepMode,
               ),
             if (_isAndroid)
               Obx(
@@ -299,6 +303,39 @@ class _VideoSettingsPageState extends State<VideoSettingsPage> {
     } finally {
       if (mounted) setState(() => _asmrDialogBusy = false);
     }
+  }
+
+  Future<void> _changeAsmrSleepMode(bool enabled) async {
+    if (_asmrModeBusy || !mounted) return;
+    if (ModalRoute.of(context)?.isCurrent != true) return;
+    final app = SettingsService.to.app;
+    if (app.isClosed || app.enableAsmrSleepMode.v == enabled) return;
+    final requestPermission = widget.sleepPermissionRequesterOverride ?? LiveAudioService.requestPlatformPermissions;
+    final configureSleepTimer = widget.sleepTimerConfiguratorOverride ?? LiveAudioService.configureSleepTimer;
+    setState(() {
+      _asmrModeBusy = true;
+      _asmrModeErrorText = null;
+    });
+    try {
+      if (enabled) {
+        final granted = await requestPermission();
+        if (!_canCommitAsmrMode(app) || !granted) return;
+      } else {
+        await configureSleepTimer(enabled: false, minutes: app.asmrSleepMinutes.v);
+        if (!_canCommitAsmrMode(app)) return;
+      }
+      app.enableAsmrSleepMode.v = enabled;
+    } catch (_) {
+      if (_canCommitAsmrMode(app)) {
+        setState(() => _asmrModeErrorText = i18n('asmr_sleep_mode_apply_failed'));
+      }
+    } finally {
+      if (mounted) setState(() => _asmrModeBusy = false);
+    }
+  }
+
+  bool _canCommitAsmrMode(AppSettingsController app) {
+    return mounted && !app.isClosed && ModalRoute.of(context)?.isActive == true;
   }
 
   Future<void> _showPreferredResolutionSelectorDialog(_ResolutionPreferenceTarget target) async {

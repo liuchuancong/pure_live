@@ -445,6 +445,91 @@ void main() {
     expect(dialog, findsNothing);
     expect(tester.takeException(), isNull);
   }, skip: !Platform.isWindows);
+
+  testWidgets('ASMR mode serializes disable work and commits only after the timer service succeeds', (tester) async {
+    final app = SettingsService.to.app;
+    app.enableAsmrSleepMode.value = true;
+    app.asmrSleepMinutes.value = 60;
+    final disableAttempt = Completer<void>();
+    var calls = 0;
+
+    await _pumpVideoSettings(
+      tester,
+      english: english,
+      size: const Size(420, 800),
+      platform: TargetPlatform.android,
+      sleepTimerConfiguratorOverride: ({required enabled, required minutes}) {
+        calls++;
+        expect(enabled, isFalse);
+        expect(minutes, 60);
+        return calls == 1 ? disableAttempt.future : Future<void>.value();
+      },
+    );
+
+    final modeEntry = find.ancestor(
+      of: find.text('Auto-start sleep audio for new rooms'),
+      matching: find.byType(SwitchListTile),
+    );
+    await _scrollPageUntilHitTestable(tester, modeEntry);
+    final disable = tester.widget<SwitchListTile>(modeEntry).onChanged!;
+    disable(false);
+    disable(false);
+    await tester.pump();
+
+    expect(calls, 1);
+    expect(app.enableAsmrSleepMode.value, isTrue);
+    expect(tester.widget<SwitchListTile>(modeEntry).onChanged, isNull);
+
+    disableAttempt.completeError(StateError('fixture failure'));
+    await tester.pumpAndSettle();
+
+    expect(calls, 1);
+    expect(app.enableAsmrSleepMode.value, isTrue);
+    expect(find.text('Could not update auto sleep. Try again.'), findsOneWidget);
+    expect(tester.widget<SwitchListTile>(modeEntry).onChanged, isNotNull);
+
+    tester.widget<SwitchListTile>(modeEntry).onChanged!(false);
+    await tester.pumpAndSettle();
+
+    expect(calls, 2);
+    expect(app.enableAsmrSleepMode.value, isFalse);
+    expect(tester.widget<SwitchListTile>(modeEntry).onChanged, isNotNull);
+    expect(tester.takeException(), isNull);
+  }, skip: !Platform.isWindows);
+
+  testWidgets('ASMR mode commits enable only after permission is granted', (tester) async {
+    final app = SettingsService.to.app;
+    app.enableAsmrSleepMode.value = false;
+    var permissionCalls = 0;
+
+    await _pumpVideoSettings(
+      tester,
+      english: english,
+      size: const Size(420, 800),
+      platform: TargetPlatform.android,
+      sleepPermissionRequesterOverride: () async {
+        permissionCalls++;
+        return permissionCalls > 1;
+      },
+    );
+
+    final modeEntry = find.ancestor(
+      of: find.text('Auto-start sleep audio for new rooms'),
+      matching: find.byType(SwitchListTile),
+    );
+    await _scrollPageUntilHitTestable(tester, modeEntry);
+
+    tester.widget<SwitchListTile>(modeEntry).onChanged!(true);
+    await tester.pumpAndSettle();
+    expect(permissionCalls, 1);
+    expect(app.enableAsmrSleepMode.value, isFalse);
+
+    tester.widget<SwitchListTile>(modeEntry).onChanged!(true);
+    await tester.pumpAndSettle();
+    expect(permissionCalls, 2);
+    expect(app.enableAsmrSleepMode.value, isTrue);
+    expect(tester.takeException(), isNull);
+  }, skip: !Platform.isWindows);
 }
 
 Future<void> _pumpVideoSettings(
@@ -454,6 +539,7 @@ Future<void> _pumpVideoSettings(
   double textScale = 1,
   required TargetPlatform platform,
   SleepTimerConfigurator? sleepTimerConfiguratorOverride,
+  SleepPermissionRequester? sleepPermissionRequesterOverride,
 }) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
@@ -484,6 +570,7 @@ Future<void> _pumpVideoSettings(
           home: VideoSettingsPage(
             platformOverride: platform,
             sleepTimerConfiguratorOverride: sleepTimerConfiguratorOverride,
+            sleepPermissionRequesterOverride: sleepPermissionRequesterOverride,
           ),
         ),
       ),

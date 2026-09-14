@@ -116,6 +116,8 @@ extension AppLayoutFactory on BuildContext {
     Color? iconColor,
     Color? subtitleColor,
     bool isLong = false,
+    bool enabled = true,
+    bool autoCommit = true,
     ValueChanged<bool>? onChanged,
   }) {
     final theme = Theme.of(this);
@@ -135,10 +137,12 @@ extension AppLayoutFactory on BuildContext {
               )
             : null,
         value: value.value,
-        onChanged: (val) {
-          value.value = val;
-          onChanged?.call(val);
-        },
+        onChanged: enabled
+            ? (val) {
+                if (autoCommit) value.value = val;
+                onChanged?.call(val);
+              }
+            : null,
         contentPadding: const EdgeInsets.only(left: 16, top: 2, bottom: 2, right: 8),
       ),
     );

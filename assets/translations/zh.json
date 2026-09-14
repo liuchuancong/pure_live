@@ -202,6 +202,7 @@
     "enable_background_play": "后台播放",
     "asmr_sleep_mode": "新直播间自动助眠",
     "asmr_sleep_mode_desc": "开启后，进入新的直播间会自动切换为纯音频，并按下方时长停止播放；耳机按钮只切换当前直播间",
+    "asmr_sleep_mode_apply_failed": "更新自动助眠设置失败，请重试",
     "asmr_sleep_timer": "自动助眠播放时长",
     "asmr_sleep_timer_desc": "仅用于自动助眠；当前直播间的播放定时器在直播间菜单中单独设置",
     "switch_audio_only_mode": "切换到纯音频模式",

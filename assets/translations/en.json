@@ -201,6 +201,7 @@
     "enable_background_play": "Play Background",
     "asmr_sleep_mode": "Auto-start sleep audio for new rooms",
     "asmr_sleep_mode_desc": "New rooms start audio-only and stop after the duration below; the headphone button affects only the current room",
+    "asmr_sleep_mode_apply_failed": "Could not update auto sleep. Try again.",
     "asmr_sleep_timer": "Auto sleep playback duration",
     "asmr_sleep_timer_desc": "Used only by auto sleep; the current-room playback timer is configured from the room menu",
     "switch_audio_only_mode": "Switch to audio-only mode",
