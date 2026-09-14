@@ -286,6 +286,75 @@ void main() {
     expect(tester.takeException(), isNull);
   }, skip: !Platform.isWindows);
 
+  testWidgets('Windows PiP always-on-top serializes native updates and commits only after success', (tester) async {
+    final player = SettingsService.to.player;
+    player.windowsPipAlwaysOnTop.value = false;
+    final enableAttempt = Completer<void>();
+    final disableAttempt = Completer<void>();
+    final requests = <bool>[];
+
+    await _pumpVideoSettings(
+      tester,
+      english: english,
+      size: const Size(420, 800),
+      platform: TargetPlatform.windows,
+      pipAlwaysOnTopSetterOverride: (enabled) {
+        requests.add(enabled);
+        return switch (requests.length) {
+          1 => enableAttempt.future,
+          2 || 3 => Future<void>.value(),
+          4 => disableAttempt.future,
+          _ => throw StateError('unexpected native update'),
+        };
+      },
+    );
+
+    final pinEntry = find.ancestor(
+      of: find.text('Keep Windows mini player on top'),
+      matching: find.byType(SwitchListTile),
+    );
+    await _scrollPageUntilHitTestable(tester, pinEntry);
+    final enable = tester.widget<SwitchListTile>(pinEntry).onChanged!;
+    enable(true);
+    enable(true);
+    await tester.pump();
+
+    expect(requests, [true]);
+    expect(player.windowsPipAlwaysOnTop.value, isFalse);
+    expect(tester.widget<SwitchListTile>(pinEntry).onChanged, isNull);
+
+    enableAttempt.completeError(StateError('fixture failure'));
+    await tester.pumpAndSettle();
+
+    expect(requests, [true, false]);
+    expect(player.windowsPipAlwaysOnTop.value, isFalse);
+    expect(find.text('Could not update mini player stacking. Try again.'), findsOneWidget);
+    expect(tester.widget<SwitchListTile>(pinEntry).onChanged, isNotNull);
+
+    tester.widget<SwitchListTile>(pinEntry).onChanged!(true);
+    await tester.pumpAndSettle();
+
+    expect(requests, [true, false, true]);
+    expect(player.windowsPipAlwaysOnTop.value, isTrue);
+
+    final disable = tester.widget<SwitchListTile>(pinEntry).onChanged!;
+    disable(false);
+    disable(false);
+    await tester.pump();
+
+    expect(requests, [true, false, true, false]);
+    expect(player.windowsPipAlwaysOnTop.value, isTrue);
+    expect(tester.widget<SwitchListTile>(pinEntry).onChanged, isNull);
+
+    disableAttempt.complete();
+    await tester.pumpAndSettle();
+
+    expect(requests, [true, false, true, false]);
+    expect(player.windowsPipAlwaysOnTop.value, isFalse);
+    expect(tester.widget<SwitchListTile>(pinEntry).onChanged, isNotNull);
+    expect(tester.takeException(), isNull);
+  }, skip: !Platform.isWindows);
+
   testWidgets('ASMR timer owns one responsive route and releases it after cancellation', (tester) async {
     await _pumpVideoSettings(
       tester,
@@ -622,6 +691,7 @@ Future<void> _pumpVideoSettings(
   SleepPermissionRequester? sleepPermissionRequesterOverride,
   BackgroundPlaybackConfigurator? backgroundPlaybackConfiguratorOverride,
   ValueChanged<Future<void>>? backgroundPlaybackTaskObserver,
+  PipAlwaysOnTopSetter? pipAlwaysOnTopSetterOverride,
 }) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
@@ -655,6 +725,7 @@ Future<void> _pumpVideoSettings(
             sleepPermissionRequesterOverride: sleepPermissionRequesterOverride,
             backgroundPlaybackConfiguratorOverride: backgroundPlaybackConfiguratorOverride,
             backgroundPlaybackTaskObserver: backgroundPlaybackTaskObserver,
+            pipAlwaysOnTopSetterOverride: pipAlwaysOnTopSetterOverride,
           ),
         ),
       ),

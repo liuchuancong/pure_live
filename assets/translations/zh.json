@@ -1621,6 +1621,7 @@
     "local_gift_soop_signature_balloon": "签名气球",
     "windows_pip_always_on_top": "Windows 小窗始终置顶",
     "windows_pip_always_on_top_subtitle": "关闭后切换到其他应用时，小窗会按普通窗口层级被遮挡",
+    "windows_pip_always_on_top_apply_failed": "更新 Windows 小窗层级失败，请重试",
     "windows_pip_remember_position": "记住小窗位置和大小",
     "windows_pip_remember_position_subtitle": "下次进入小窗时恢复上次调整的尺寸与位置，并自动校正到当前可用显示器",
     "windows_pip_reset_position": "重置小窗位置和大小",

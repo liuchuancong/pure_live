@@ -6,6 +6,7 @@ import 'package:pure_live/player/utils/window_helper.dart';
 import 'package:pure_live/player/core/live_audio_service.dart';
 import 'package:pure_live/modules/settings/pages/font_family_manager_page.dart';
 import 'package:pure_live/common/services/settings/app_settings_controller.dart';
+import 'package:pure_live/common/services/settings/player_settings_controller.dart';
 import 'package:pure_live/modules/settings/pages/pip_danmaku_settings_page.dart';
 import 'package:pure_live/modules/settings/pages/portrait_live_settings_page.dart';
 import 'package:pure_live/modules/settings/pages/audience_metric_settings_page.dart';
@@ -13,6 +14,7 @@ import 'package:pure_live/modules/settings/pages/audience_metric_settings_page.d
 typedef SleepTimerConfigurator = Future<void> Function({required bool enabled, required int minutes});
 typedef SleepPermissionRequester = Future<bool> Function();
 typedef BackgroundPlaybackConfigurator = Future<void> Function({required bool enabled});
+typedef PipAlwaysOnTopSetter = Future<void> Function(bool enabled);
 
 class VideoSettingsPage extends StatefulWidget {
   const VideoSettingsPage({
@@ -22,6 +24,7 @@ class VideoSettingsPage extends StatefulWidget {
     this.sleepPermissionRequesterOverride,
     this.backgroundPlaybackConfiguratorOverride,
     this.backgroundPlaybackTaskObserver,
+    this.pipAlwaysOnTopSetterOverride,
   });
 
   @visibleForTesting
@@ -39,6 +42,9 @@ class VideoSettingsPage extends StatefulWidget {
   @visibleForTesting
   final ValueChanged<Future<void>>? backgroundPlaybackTaskObserver;
 
+  @visibleForTesting
+  final PipAlwaysOnTopSetter? pipAlwaysOnTopSetterOverride;
+
   @override
   State<VideoSettingsPage> createState() => _VideoSettingsPageState();
 }
@@ -52,6 +58,8 @@ class _VideoSettingsPageState extends State<VideoSettingsPage> {
   String? _asmrModeErrorText;
   bool _backgroundPlayBusy = false;
   String? _backgroundPlayErrorText;
+  bool _pipAlwaysOnTopBusy = false;
+  String? _pipAlwaysOnTopErrorText;
 
   TargetPlatform get _platform => widget.platformOverride ?? defaultTargetPlatform;
   bool get _isAndroid => _platform == TargetPlatform.android;
@@ -214,10 +222,14 @@ class _VideoSettingsPageState extends State<VideoSettingsPage> {
             if (_isWindows)
               context.buildSwitchTile(
                 title: i18n('windows_pip_always_on_top'),
-                subtitle: i18n('windows_pip_always_on_top_subtitle'),
+                subtitle: _pipAlwaysOnTopErrorText ?? i18n('windows_pip_always_on_top_subtitle'),
+                subtitleColor: _pipAlwaysOnTopErrorText == null ? null : theme.colorScheme.error,
+                isLong: true,
                 value: SettingsService.to.player.windowsPipAlwaysOnTop,
                 icon: Remix.pushpin_line,
-                onChanged: WindowHelper.instance.setPiPAlwaysOnTop,
+                enabled: !_pipAlwaysOnTopBusy,
+                autoCommit: false,
+                onChanged: _changePipAlwaysOnTop,
               ),
             if (_isWindows)
               context.buildSwitchTile(
@@ -381,6 +393,42 @@ class _VideoSettingsPageState extends State<VideoSettingsPage> {
 
   bool _canCommitAsmrMode(AppSettingsController app) {
     return mounted && !app.isClosed && ModalRoute.of(context)?.isActive == true;
+  }
+
+  Future<void> _changePipAlwaysOnTop(bool enabled) async {
+    if (_pipAlwaysOnTopBusy || !mounted) return;
+    if (ModalRoute.of(context)?.isCurrent != true) return;
+    final player = SettingsService.to.player;
+    if (player.isClosed || player.windowsPipAlwaysOnTop.v == enabled) return;
+    final previous = player.windowsPipAlwaysOnTop.v;
+    final setAlwaysOnTop = widget.pipAlwaysOnTopSetterOverride ?? WindowHelper.instance.setPiPAlwaysOnTop;
+    setState(() {
+      _pipAlwaysOnTopBusy = true;
+      _pipAlwaysOnTopErrorText = null;
+    });
+    try {
+      await setAlwaysOnTop(enabled);
+      if (!_canCommitPipAlwaysOnTop(player)) {
+        try {
+          await setAlwaysOnTop(previous);
+        } catch (_) {}
+        return;
+      }
+      player.windowsPipAlwaysOnTop.v = enabled;
+    } catch (_) {
+      try {
+        await setAlwaysOnTop(previous);
+      } catch (_) {}
+      if (_canCommitPipAlwaysOnTop(player)) {
+        setState(() => _pipAlwaysOnTopErrorText = i18n('windows_pip_always_on_top_apply_failed'));
+      }
+    } finally {
+      if (mounted) setState(() => _pipAlwaysOnTopBusy = false);
+    }
+  }
+
+  bool _canCommitPipAlwaysOnTop(PlayerSettingsController player) {
+    return mounted && !player.isClosed && ModalRoute.of(context)?.isActive == true;
   }
 
   Future<void> _showPreferredResolutionSelectorDialog(_ResolutionPreferenceTarget target) async {
