@@ -10,11 +10,16 @@ import 'package:pure_live/modules/settings/pages/pip_danmaku_settings_page.dart'
 import 'package:pure_live/modules/settings/pages/portrait_live_settings_page.dart';
 import 'package:pure_live/modules/settings/pages/audience_metric_settings_page.dart';
 
+typedef SleepTimerConfigurator = Future<void> Function({required bool enabled, required int minutes});
+
 class VideoSettingsPage extends StatefulWidget {
-  const VideoSettingsPage({super.key, this.platformOverride});
+  const VideoSettingsPage({super.key, this.platformOverride, this.sleepTimerConfiguratorOverride});
 
   @visibleForTesting
   final TargetPlatform? platformOverride;
+
+  @visibleForTesting
+  final SleepTimerConfigurator? sleepTimerConfiguratorOverride;
 
   @override
   State<VideoSettingsPage> createState() => _VideoSettingsPageState();
@@ -24,6 +29,7 @@ enum _ResolutionPreferenceTarget { wifi, cellular }
 
 class _VideoSettingsPageState extends State<VideoSettingsPage> {
   bool _resolutionDialogBusy = false;
+  bool _asmrDialogBusy = false;
 
   TargetPlatform get _platform => widget.platformOverride ?? defaultTargetPlatform;
   bool get _isAndroid => _platform == TargetPlatform.android;
@@ -185,7 +191,7 @@ class _VideoSettingsPageState extends State<VideoSettingsPage> {
                     _formatAsmrDuration(SettingsService.to.app.asmrSleepMinutes.v),
                     style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.w600),
                   ),
-                  onTap: () => _showAsmrSleepTimerDialog(context),
+                  onTap: _asmrDialogBusy ? null : _showAsmrSleepTimerDialog,
                 ),
               ),
             context.buildSwitchTile(
@@ -269,8 +275,30 @@ class _VideoSettingsPageState extends State<VideoSettingsPage> {
     );
   }
 
-  void _showAsmrSleepTimerDialog(BuildContext context) {
-    showDialog<void>(context: context, builder: (_) => const _AsmrSleepTimerDialog());
+  Future<void> _showAsmrSleepTimerDialog() async {
+    if (_asmrDialogBusy || !mounted) return;
+    if (ModalRoute.of(context)?.isCurrent != true) return;
+    final app = SettingsService.to.app;
+    final configureSleepTimer = widget.sleepTimerConfiguratorOverride ?? LiveAudioService.configureSleepTimer;
+    setState(() => _asmrDialogBusy = true);
+    try {
+      await showDialog<void>(
+        context: context,
+        useRootNavigator: true,
+        builder: (_) => _AsmrSleepTimerDialog(
+          initialMinutes: app.asmrSleepMinutes.v,
+          onSave: (minutes) async {
+            if (!mounted || app.isClosed || ModalRoute.of(context)?.isActive != true) return false;
+            await configureSleepTimer(enabled: LiveAudioService.isSleepSessionActive, minutes: minutes);
+            if (!mounted || app.isClosed || ModalRoute.of(context)?.isActive != true) return false;
+            app.asmrSleepMinutes.v = minutes;
+            return true;
+          },
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _asmrDialogBusy = false);
+    }
   }
 
   Future<void> _showPreferredResolutionSelectorDialog(_ResolutionPreferenceTarget target) async {
@@ -417,7 +445,10 @@ class _WindowsPipResetTileState extends State<_WindowsPipResetTile> {
 }
 
 class _AsmrSleepTimerDialog extends StatefulWidget {
-  const _AsmrSleepTimerDialog();
+  const _AsmrSleepTimerDialog({required this.initialMinutes, required this.onSave});
+
+  final int initialMinutes;
+  final Future<bool> Function(int minutes) onSave;
 
   @override
   State<_AsmrSleepTimerDialog> createState() => _AsmrSleepTimerDialogState();
@@ -427,11 +458,13 @@ class _AsmrSleepTimerDialogState extends State<_AsmrSleepTimerDialog> {
   static const _options = [15, 30, 45, 60, 90, 120, 240, 480, 720, 1440];
 
   late final TextEditingController _customController;
+  bool _saving = false;
+  String? _errorText;
 
   @override
   void initState() {
     super.initState();
-    _customController = TextEditingController(text: SettingsService.to.app.asmrSleepMinutes.v.toString());
+    _customController = TextEditingController(text: widget.initialMinutes.toString());
   }
 
   @override
@@ -441,60 +474,111 @@ class _AsmrSleepTimerDialogState extends State<_AsmrSleepTimerDialog> {
   }
 
   Future<void> _save() async {
+    if (_saving) return;
     final minutes = int.tryParse(_customController.text.trim());
     if (minutes == null || minutes < 1 || minutes > AppSettingsController.maxSleepMinutes) {
-      ToastUtil.show(i18n('custom_sleep_minutes_range'));
+      setState(() => _errorText = i18n('custom_sleep_minutes_range'));
       return;
     }
 
-    SettingsService.to.app.asmrSleepMinutes.v = minutes;
-    await LiveAudioService.configureSleepTimer(enabled: LiveAudioService.isSleepSessionActive, minutes: minutes);
-    if (mounted) Navigator.of(context).pop();
+    setState(() {
+      _saving = true;
+      _errorText = null;
+    });
+    try {
+      final saved = await widget.onSave(minutes);
+      if (!mounted) return;
+      if (!saved) {
+        setState(() {
+          _saving = false;
+          _errorText = i18n('asmr_sleep_timer_save_failed');
+        });
+        return;
+      }
+      setState(() => _saving = false);
+      Navigator.of(context, rootNavigator: true).pop();
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _saving = false;
+        _errorText = i18n('asmr_sleep_timer_save_failed');
+      });
+    }
+  }
+
+  void _setMinutes(int minutes) {
+    if (_saving) return;
+    setState(() {
+      _customController.text = minutes.toString();
+      _errorText = null;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      scrollable: true,
-      title: Text(i18n('asmr_sleep_timer')),
-      content: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 360),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(i18n('asmr_sleep_timer_explain'), style: Theme.of(context).textTheme.bodySmall),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: _options
-                  .map(
-                    (minutes) => ActionChip(
-                      label: Text(_formatAsmrDuration(minutes)),
-                      onPressed: () => _customController.text = minutes.toString(),
-                    ),
-                  )
-                  .toList(),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _customController,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                labelText: i18n('custom_sleep_minutes'),
-                helperText: i18n('custom_sleep_minutes_range'),
-                suffixText: i18n('minutes'),
-                border: const OutlineInputBorder(),
+    return PopScope(
+      canPop: !_saving,
+      child: AlertDialog(
+        key: const ValueKey('asmr-sleep-timer-dialog'),
+        scrollable: true,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+        title: Text(i18n('asmr_sleep_timer'), style: AppTextStyles.t16Bold),
+        content: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 360),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(i18n('asmr_sleep_timer_explain'), style: Theme.of(context).textTheme.bodySmall),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: _options
+                    .map(
+                      (minutes) => ActionChip(
+                        label: Text(_formatAsmrDuration(minutes)),
+                        onPressed: _saving ? null : () => _setMinutes(minutes),
+                      ),
+                    )
+                    .toList(),
               ),
-            ),
-          ],
+              const SizedBox(height: 16),
+              TextField(
+                controller: _customController,
+                enabled: !_saving,
+                keyboardType: TextInputType.number,
+                onChanged: (_) {
+                  if (_errorText != null) setState(() => _errorText = null);
+                },
+                decoration: InputDecoration(
+                  labelText: i18n('custom_sleep_minutes'),
+                  helperText: _errorText == null ? i18n('custom_sleep_minutes_range') : null,
+                  errorText: _errorText,
+                  suffixText: i18n('minutes'),
+                  border: const OutlineInputBorder(),
+                ),
+              ),
+            ],
+          ),
         ),
+        actionsOverflowDirection: VerticalDirection.down,
+        actionsOverflowButtonSpacing: 8,
+        actions: [
+          TextButton(
+            style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
+            onPressed: _saving ? null : () => Navigator.of(context, rootNavigator: true).pop(),
+            child: Text(i18n('cancel'), style: AppTextStyles.t14Muted),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(minimumSize: const Size(48, 48)),
+            onPressed: _saving ? null : _save,
+            child: _saving
+                ? const SizedBox.square(dimension: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                : Text(i18n('save')),
+          ),
+        ],
       ),
-      actions: [
-        TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(i18n('cancel'))),
-        FilledButton(onPressed: _save, child: Text(i18n('save'))),
-      ],
     );
   }
 }

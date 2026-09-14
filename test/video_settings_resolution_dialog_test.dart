@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -285,6 +286,46 @@ void main() {
     expect(tester.takeException(), isNull);
   }, skip: !Platform.isWindows);
 
+  testWidgets('ASMR timer owns one responsive route and releases it after cancellation', (tester) async {
+    await _pumpVideoSettings(
+      tester,
+      english: english,
+      size: const Size(320, 480),
+      textScale: 3,
+      platform: TargetPlatform.android,
+    );
+
+    final timerEntry = find.ancestor(of: find.text('Auto sleep playback duration'), matching: find.byType(ListTile));
+    await _scrollPageUntilHitTestable(tester, timerEntry);
+    final openTimer = tester.widget<ListTile>(timerEntry).onTap!;
+
+    openTimer();
+    openTimer();
+    await _pumpRouteTransition(tester);
+
+    final dialog = find.byKey(const ValueKey('asmr-sleep-timer-dialog'));
+    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(dialog, findsOneWidget);
+    final cancel = find.widgetWithText(TextButton, 'Cancel').hitTestable();
+    expect(cancel, findsOneWidget);
+    expect(tester.getSize(cancel).width, greaterThanOrEqualTo(48));
+    expect(tester.getSize(cancel).height, greaterThanOrEqualTo(48));
+    expect(tester.getRect(dialog).top, greaterThanOrEqualTo(0));
+    expect(tester.getRect(dialog).bottom, lessThanOrEqualTo(480));
+
+    await tester.tap(cancel);
+    await _pumpRouteTransition(tester);
+    expect(dialog, findsNothing);
+
+    openTimer();
+    await _pumpRouteTransition(tester);
+    expect(dialog, findsOneWidget);
+    await tester.tap(find.widgetWithText(TextButton, 'Cancel').hitTestable());
+    await _pumpRouteTransition(tester);
+    expect(dialog, findsNothing);
+    expect(tester.takeException(), isNull);
+  }, skip: !Platform.isWindows);
+
   testWidgets('ASMR timer keeps every preset and action reachable in narrow very-large text', (tester) async {
     await _pumpVideoSettings(
       tester,
@@ -341,6 +382,69 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();
   }, skip: !Platform.isWindows);
+
+  testWidgets('ASMR timer validates inline and serializes a failing save before retry', (tester) async {
+    final app = SettingsService.to.app;
+    app.asmrSleepMinutes.value = 60;
+    final firstAttempt = Completer<void>();
+    var calls = 0;
+
+    await _pumpVideoSettings(
+      tester,
+      english: english,
+      size: const Size(420, 800),
+      platform: TargetPlatform.android,
+      sleepTimerConfiguratorOverride: ({required enabled, required minutes}) {
+        calls++;
+        return calls == 1 ? firstAttempt.future : Future<void>.value();
+      },
+    );
+
+    final timerEntry = find.ancestor(of: find.text('Auto sleep playback duration'), matching: find.byType(ListTile));
+    await _scrollPageUntilHitTestable(tester, timerEntry);
+    await tester.tap(timerEntry.hitTestable());
+    await _pumpRouteTransition(tester);
+
+    final dialog = find.byKey(const ValueKey('asmr-sleep-timer-dialog'));
+    final customInput = find.descendant(of: dialog, matching: find.byType(TextField));
+    await tester.enterText(customInput, '0');
+    await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+    await tester.pumpAndSettle();
+
+    expect(calls, 0);
+    expect(app.asmrSleepMinutes.value, 60);
+    expect(find.text('Enter 1 minute to 365 days'), findsOneWidget);
+
+    await tester.enterText(customInput, '7');
+    final save = tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Save'));
+    save.onPressed!();
+    save.onPressed!();
+    await tester.pump();
+
+    expect(calls, 1);
+    expect(app.asmrSleepMinutes.value, 60);
+    expect(tester.widget<FilledButton>(find.byType(FilledButton)).onPressed, isNull);
+    expect(tester.widget<TextField>(customInput).enabled, isFalse);
+    expect(tester.widget<TextButton>(find.byType(TextButton)).onPressed, isNull);
+
+    firstAttempt.completeError(StateError('fixture failure'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(dialog, findsOneWidget);
+    expect(app.asmrSleepMinutes.value, 60);
+    expect(find.text('Could not update the sleep timer. Try again.'), findsOneWidget);
+    expect(tester.widget<TextField>(customInput).enabled, isTrue);
+
+    await tester.enterText(customInput, '8');
+    await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+    await _pumpRouteTransition(tester);
+
+    expect(calls, 2);
+    expect(app.asmrSleepMinutes.value, 8);
+    expect(dialog, findsNothing);
+    expect(tester.takeException(), isNull);
+  }, skip: !Platform.isWindows);
 }
 
 Future<void> _pumpVideoSettings(
@@ -349,6 +453,7 @@ Future<void> _pumpVideoSettings(
   required Size size,
   double textScale = 1,
   required TargetPlatform platform,
+  SleepTimerConfigurator? sleepTimerConfiguratorOverride,
 }) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
@@ -376,7 +481,10 @@ Future<void> _pumpVideoSettings(
             data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(textScale)),
             child: child!,
           ),
-          home: VideoSettingsPage(platformOverride: platform),
+          home: VideoSettingsPage(
+            platformOverride: platform,
+            sleepTimerConfiguratorOverride: sleepTimerConfiguratorOverride,
+          ),
         ),
       ),
     ),
