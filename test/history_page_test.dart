@@ -128,7 +128,7 @@ void main() {
     final pending = refresh(tester);
     await tester.tap(find.byTooltip(translations['clear_history'] as String));
     await tester.pumpAndSettle();
-    await tester.tap(find.text(translations['confirm'] as String));
+    await tester.tap(find.widgetWithText(FilledButton, translations['clear'] as String));
     await tester.pumpAndSettle();
     expect(find.byType(AlertDialog), findsNothing);
     expect(history.historyRooms.value, isEmpty);
@@ -346,6 +346,64 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(AlertDialog), findsNothing);
     expect(history.historyRooms.value, hasLength(2));
+    await finish(tester);
+  });
+
+  for (final locale in ['en', 'zh']) {
+    testWidgets('$locale clear confirmation names its snapshot and coalesces repeated actions', (tester) async {
+      final labels = locale == 'en' ? english : translations;
+      await open(tester, locale: locale, size: const Size(320, 480), scale: 3);
+      final clearAction = find.ancestor(
+        of: find.byTooltip(labels['clear_history'] as String),
+        matching: find.byType(IconButton),
+      );
+      final onPressed = tester.widget<IconButton>(clearAction).onPressed!;
+
+      onPressed();
+      onPressed();
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AlertDialog), findsOneWidget);
+      expect(
+        find.text(
+          locale == 'en' ? 'Clear all 2 history entries? This action cannot be undone.' : '确定清空这 2 条历史记录吗？此操作不可撤销。',
+        ),
+        findsOneWidget,
+      );
+      final cancel = find.widgetWithText(TextButton, labels['cancel'] as String).hitTestable();
+      final clear = find.widgetWithText(FilledButton, labels['clear'] as String).hitTestable();
+      expect(cancel, findsOneWidget);
+      expect(clear, findsOneWidget);
+      expect(tester.getSize(cancel).width, greaterThanOrEqualTo(48));
+      expect(tester.getSize(cancel).height, greaterThanOrEqualTo(48));
+      expect(tester.getSize(clear).width, greaterThanOrEqualTo(48));
+      expect(tester.getSize(clear).height, greaterThanOrEqualTo(48));
+      await tester.tap(cancel);
+      await tester.pumpAndSettle();
+      expect(history.historyRooms.value, hasLength(2));
+
+      onPressed();
+      await tester.pumpAndSettle();
+      expect(find.byType(AlertDialog), findsOneWidget);
+      await tester.tap(find.widgetWithText(TextButton, labels['cancel'] as String));
+      await tester.pumpAndSettle();
+      await finish(tester);
+    });
+  }
+
+  testWidgets('clear removes the confirmed snapshot but preserves watches added while deciding', (tester) async {
+    await open(tester, locale: 'en');
+    await tester.tap(find.byTooltip(english['clear_history'] as String));
+    await tester.pumpAndSettle();
+
+    history.addRoomToHistory(room('a', 0).copyWith(title: 'rewatched-a'));
+    history.addRoomToHistory(room('c', 0).copyWith(title: 'new-c'));
+    await tester.pump();
+    await tester.tap(find.widgetWithText(FilledButton, english['clear'] as String));
+    await tester.pumpAndSettle();
+
+    expect(history.historyRooms.value.map((room) => room.roomId), ['c', 'a']);
+    expect(history.historyRooms.value.map((room) => room.title), ['new-c', 'rewatched-a']);
     await finish(tester);
   });
 

@@ -1679,6 +1679,7 @@
     "history_unlimited": "不限",
     "clear_history": "清空历史",
     "clear_history_confirm": "确定要清空所有历史记录吗？",
+    "clear_history_confirm_named": "确定清空这 {count} 条历史记录吗？此操作不可撤销。",
     "current_value": "当前值",
     "portrait_live_settings": "竖屏直播适配",
     "portrait_live_settings_desc": "自动识别直播源方向，并统一普通页、全屏和小窗的显示策略",

@@ -15,6 +15,7 @@ class HistoryPage extends StatefulWidget {
 class _HistoryPageState extends State<HistoryPage> {
   final refreshController = EasyRefreshController(controlFinishRefresh: true, controlFinishLoad: true);
   Future<void>? _refreshTask;
+  bool _clearHistoryBusy = false;
 
   @override
   void dispose() {
@@ -73,25 +74,48 @@ class _HistoryPageState extends State<HistoryPage> {
 
   Future<void> _clearHistory() async {
     final controller = SettingsService.to.history;
-    if (controller.historyRooms.v.isEmpty) return;
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(i18n("clear_history"), style: AppTextStyles.t16Bold),
-        content: Text(i18n("clear_history_confirm"), style: AppTextStyles.t14),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: Text(i18n("cancel"), style: AppTextStyles.t14Muted),
+    if (_clearHistoryBusy || controller.historyRooms.v.isEmpty || !mounted) return;
+    final snapshot = List<LiveRoom>.from(controller.historyRooms.v);
+    setState(() => _clearHistoryBusy = true);
+    try {
+      final result = await showDialog<bool>(
+        context: context,
+        useRootNavigator: true,
+        builder: (dialogContext) => AlertDialog(
+          scrollable: true,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+          title: Text(i18n('clear_history'), style: AppTextStyles.t16Bold),
+          content: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: Text(
+              i18n('clear_history_confirm_named', args: {'count': snapshot.length.toString()}),
+              style: AppTextStyles.t14,
+            ),
           ),
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: Text(i18n("confirm"), style: AppTextStyles.t14Primary),
-          ),
-        ],
-      ),
-    );
-    if (result == true && !controller.isClosed) controller.clearHistory();
+          actionsOverflowDirection: VerticalDirection.down,
+          actionsOverflowButtonSpacing: 8,
+          actions: [
+            TextButton(
+              style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
+              onPressed: () => Navigator.of(dialogContext, rootNavigator: true).pop(false),
+              child: Text(i18n('cancel'), style: AppTextStyles.t14Muted),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                minimumSize: const Size(48, 48),
+                backgroundColor: Theme.of(dialogContext).colorScheme.error,
+                foregroundColor: Theme.of(dialogContext).colorScheme.onError,
+              ),
+              onPressed: () => Navigator.of(dialogContext, rootNavigator: true).pop(true),
+              child: Text(i18n('clear')),
+            ),
+          ],
+        ),
+      );
+      if (result == true && mounted && !controller.isClosed) controller.clearHistorySnapshot(snapshot);
+    } finally {
+      if (mounted) setState(() => _clearHistoryBusy = false);
+    }
   }
 
   @override
@@ -117,7 +141,7 @@ class _HistoryPageState extends State<HistoryPage> {
             return IconButton(
               tooltip: i18n("clear_history"),
               icon: const Icon(Icons.delete_forever),
-              onPressed: _clearHistory,
+              onPressed: _clearHistoryBusy ? null : _clearHistory,
             );
           }),
         ],

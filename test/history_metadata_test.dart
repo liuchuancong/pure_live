@@ -28,6 +28,17 @@ void main() {
     expect(refreshed.lastWatchedAt, 123456);
   });
 
+  test('clearing a history snapshot preserves later watches even when their identity matches', () {
+    final oldA = LiveRoom(roomId: 'a', platform: 'test', title: 'Old A');
+    final oldB = LiveRoom(roomId: 'b', platform: 'test', title: 'Old B');
+    final rewatchedA = LiveRoom(roomId: 'a', platform: 'test', title: 'Rewatched A');
+    final newC = LiveRoom(roomId: 'c', platform: 'test', title: 'New C');
+
+    final result = removeHistorySnapshotEntries([newC, rewatchedA, oldA, oldB], [oldA, oldB]);
+
+    expect(result, [newC, rewatchedA]);
+  });
+
   test('IPTV provider catch-up policy survives room JSON without accepting non-finite numbers', () {
     final stored = LiveRoom(
       roomId: 'iptv-1',

@@ -1679,6 +1679,7 @@
     "history_unlimited": "Unlimited",
     "clear_history": "Clear History",
     "clear_history_confirm": "Are you sure you want to clear all history records?",
+    "clear_history_confirm_named": "Clear all {count} history entries? This action cannot be undone.",
     "current_value": "Current Value",
     "portrait_live_settings": "Portrait Live Adaptation",
     "portrait_live_settings_desc": "Detect source orientation and coordinate the room, fullscreen and PiP presentation",
