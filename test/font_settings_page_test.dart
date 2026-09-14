@@ -137,6 +137,35 @@ void main() {
     expect(font.fontSizeTitleLarge.value, 20);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('reset confirmation coalesces repeated actions and releases after cancellation', (tester) async {
+    await _pumpPage(tester, english);
+    final resetAction = find.ancestor(of: find.byTooltip('Reset'), matching: find.byType(IconButton));
+    final onPressed = tester.widget<IconButton>(resetAction).onPressed!;
+
+    onPressed();
+    onPressed();
+    await _pumpRouteTransition(tester);
+
+    expect(find.byKey(const ValueKey('font-settings-reset-dialog')), findsOneWidget);
+    final cancel = find.widgetWithText(TextButton, 'Cancel').hitTestable();
+    final reset = find.widgetWithText(FilledButton, 'Reset').hitTestable();
+    expect(cancel, findsOneWidget);
+    expect(reset, findsOneWidget);
+    expect(tester.getSize(cancel).width, greaterThanOrEqualTo(48));
+    expect(tester.getSize(cancel).height, greaterThanOrEqualTo(48));
+    expect(tester.getSize(reset).width, greaterThanOrEqualTo(48));
+    expect(tester.getSize(reset).height, greaterThanOrEqualTo(48));
+    await tester.tap(cancel);
+    await _pumpRouteTransition(tester);
+
+    onPressed();
+    await _pumpRouteTransition(tester);
+    expect(find.byKey(const ValueKey('font-settings-reset-dialog')), findsOneWidget);
+    await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+    await _pumpRouteTransition(tester);
+    expect(tester.takeException(), isNull);
+  });
 }
 
 Future<void> _pumpPage(

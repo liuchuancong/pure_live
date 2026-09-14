@@ -2,8 +2,15 @@ import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/services/settings/font_settings_controller.dart';
 
-class FontSettingsPage extends GetView<SettingsService> {
+class FontSettingsPage extends StatefulWidget {
   const FontSettingsPage({super.key});
+
+  @override
+  State<FontSettingsPage> createState() => _FontSettingsPageState();
+}
+
+class _FontSettingsPageState extends State<FontSettingsPage> {
+  bool _resetBusy = false;
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +26,7 @@ class FontSettingsPage extends GetView<SettingsService> {
             child: IconButton(
               icon: const Icon(Remix.rest_time_line),
               tooltip: i18n("reset"),
-              onPressed: () => _resetToDefaults(context),
+              onPressed: _resetBusy ? null : _resetToDefaults,
             ),
           ),
         ],
@@ -117,22 +124,48 @@ class FontSettingsPage extends GetView<SettingsService> {
     );
   }
 
-  Future<void> _resetToDefaults(BuildContext context) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        key: const ValueKey('font-settings-reset-dialog'),
-        scrollable: true,
-        title: Text(i18n('reset')),
-        content: Text(i18n('font_settings_reset_confirm')),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: Text(i18n('cancel'))),
-          FilledButton(onPressed: () => Navigator.of(dialogContext).pop(true), child: Text(i18n('reset'))),
-        ],
-      ),
-    );
-    if (confirmed != true) return;
-    SettingsService.to.font.resetTypography();
-    ToastUtil.show(i18n("restore_default"));
+  Future<void> _resetToDefaults() async {
+    if (_resetBusy || !mounted) return;
+    final font = SettingsService.to.font;
+    setState(() => _resetBusy = true);
+    try {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        useRootNavigator: true,
+        builder: (dialogContext) => AlertDialog(
+          key: const ValueKey('font-settings-reset-dialog'),
+          scrollable: true,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+          title: Text(i18n('reset'), style: AppTextStyles.t16Bold),
+          content: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: Text(i18n('font_settings_reset_confirm'), style: AppTextStyles.t14),
+          ),
+          actionsOverflowDirection: VerticalDirection.down,
+          actionsOverflowButtonSpacing: 8,
+          actions: [
+            TextButton(
+              style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
+              onPressed: () => Navigator.of(dialogContext, rootNavigator: true).pop(false),
+              child: Text(i18n('cancel'), style: AppTextStyles.t14Muted),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                minimumSize: const Size(48, 48),
+                backgroundColor: Theme.of(dialogContext).colorScheme.error,
+                foregroundColor: Theme.of(dialogContext).colorScheme.onError,
+              ),
+              onPressed: () => Navigator.of(dialogContext, rootNavigator: true).pop(true),
+              child: Text(i18n('reset')),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true || !mounted || font.isClosed) return;
+      font.resetTypography();
+      ToastUtil.show(i18n('restore_default'));
+    } finally {
+      if (mounted) setState(() => _resetBusy = false);
+    }
   }
 }
