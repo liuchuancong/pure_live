@@ -50,6 +50,8 @@ import 'package:pure_live/modules/live_play/widgets/video_player/video_controlle
 import 'package:pure_live/modules/live_play/widgets/danmaku/compact_danmaku_overlay.dart';
 
 typedef UnifiedPlayerCreator = FutureOr<UnifiedPlayer> Function(PlayerEngine engine);
+typedef WindowsPipEnter = Future<void> Function(double videoRatio);
+typedef WindowsPipExit = Future<void> Function();
 
 @immutable
 class PlaybackSourceRefreshRequest {
@@ -229,6 +231,10 @@ class PlayerManager {
   final bool Function() _useHardStopOnExit;
   final Floating? _androidFloatingOverride;
   bool get _usesAndroidPip => PlatformUtils.isAndroid || _androidFloatingOverride != null;
+  final bool _usesWindowsPipOverride;
+  bool get _usesWindowsPip => !_usesAndroidPip && (Platform.isWindows || _usesWindowsPipOverride);
+  final WindowsPipEnter _windowsPipEnter;
+  final WindowsPipExit _windowsPipExit;
   final Future<void> Function(UnifiedPlayer player, bool audioOnly)? _audioModeServiceSync;
   final Future<void> Function(LiveRoom room) _audioSessionStart;
   Future<void> _playerLifecycleQueue = Future.value();
@@ -306,7 +312,12 @@ class PlayerManager {
     bool Function()? suppressAutomaticFallbackAudio,
     this._audioModeServiceSync,
     Future<void> Function(LiveRoom room)? audioSessionStart,
+    WindowsPipEnter? windowsPipEnter,
+    WindowsPipExit? windowsPipExit,
   }) : _androidFloatingOverride = androidFloating,
+       _usesWindowsPipOverride = windowsPipEnter != null || windowsPipExit != null,
+       _windowsPipEnter = windowsPipEnter ?? WindowService().enterWinPiP,
+       _windowsPipExit = windowsPipExit ?? WindowService().exitWinPiP,
        _playerCreator = playerCreator ?? PlayerAdapterFactory.create,
        _useHardStopOnExit = useHardStopOnExit ?? (() => SettingsService.to.player.useHardStopOnExit.v),
        _suppressAutomaticFallbackAudio = suppressAutomaticFallbackAudio ?? (() => false),
@@ -2735,7 +2746,14 @@ class PlayerManager {
 
   Future<void> enablePip() async {
     if (_usesAndroidPip) {
-      if (_pipTransitionInFlight || _disposed || _isClosing || _currentPlayer == null || !isInitialized.value) return;
+      if (_pipTransitionInFlight ||
+          _disposed ||
+          _isClosing ||
+          (_playbackIntentEstablished && !_playbackRequested) ||
+          _currentPlayer == null ||
+          !isInitialized.value) {
+        return;
+      }
       _startAndroidPipObservation();
       final sessionId = _sessionId;
       final intentRevision = _playbackIntentRevision;
@@ -2787,9 +2805,38 @@ class PlayerManager {
           _pipTransitionCancellation = null;
         }
       }
-    } else if (Platform.isWindows) {
-      await WindowService().enterWinPiP(currentVideoRatio);
-      isInPip.value = true;
+    } else if (_usesWindowsPip) {
+      if (_pipTransitionInFlight ||
+          _disposed ||
+          _isClosing ||
+          (_playbackIntentEstablished && !_playbackRequested) ||
+          _currentPlayer == null ||
+          !isInitialized.value) {
+        return;
+      }
+      if (isInPip.value) return;
+      final revision = ++_pipTransitionRevision;
+      final sessionId = _sessionId;
+      final player = _currentPlayer;
+      bool ownsTransition() =>
+          revision == _pipTransitionRevision && _isSessionValid(sessionId) && identical(player, _currentPlayer);
+      _pipTransitionInFlight = true;
+      isPipPreparing.value = true;
+      try {
+        await _windowsPipEnter(currentVideoRatio);
+        if (!ownsTransition()) {
+          if (!_pipTransitionInFlight && !isInPip.value) {
+            await _restoreWindowsMainWindow();
+          }
+          return;
+        }
+        isInPip.value = true;
+      } finally {
+        if (revision == _pipTransitionRevision) {
+          _pipTransitionInFlight = false;
+          isPipPreparing.value = false;
+        }
+      }
     }
   }
 
@@ -2814,9 +2861,42 @@ class PlayerManager {
   }
 
   Future<void> exitPip() async {
-    if (Platform.isWindows) {
-      await WindowService().exitWinPiP();
-      isInPip.value = false;
+    if (_usesWindowsPip) {
+      if (_pipTransitionInFlight || _disposed || _isClosing || !isInPip.value) return;
+      final revision = ++_pipTransitionRevision;
+      final sessionId = _sessionId;
+      final player = _currentPlayer;
+      bool ownsTransition() =>
+          revision == _pipTransitionRevision && _isSessionValid(sessionId) && identical(player, _currentPlayer);
+      _pipTransitionInFlight = true;
+      isPipPreparing.value = true;
+      try {
+        await _windowsPipExit();
+        if (!ownsTransition()) return;
+        isInPip.value = false;
+      } finally {
+        if (revision == _pipTransitionRevision) {
+          _pipTransitionInFlight = false;
+          isPipPreparing.value = false;
+        }
+      }
+    }
+  }
+
+  Future<void> _exitPipFromControl() async {
+    try {
+      await exitPip();
+    } catch (error, stackTrace) {
+      log('Windows PiP exit failed', error: error, stackTrace: stackTrace);
+      ToastUtil.show(i18n('windows_pip_exit_failed'));
+    }
+  }
+
+  Future<void> _restoreWindowsMainWindow() async {
+    try {
+      await _windowsPipExit();
+    } catch (error, stackTrace) {
+      log('Windows PiP main-window restoration failed', error: error, stackTrace: stackTrace);
     }
   }
 
@@ -3056,9 +3136,7 @@ class PlayerManager {
               GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onPanStart: (_) => windowManager.startDragging(),
-                onDoubleTap: () async {
-                  await exitPip();
-                },
+                onDoubleTap: isPipPreparing.value ? null : _exitPipFromControl,
                 child: Obx(
                   () => getVideoWidget(
                     SettingsService.to.player.videoFitIndex.v,
@@ -3103,9 +3181,7 @@ class PlayerManager {
                     duration: const Duration(milliseconds: 200),
                     child: IconButton(
                       icon: const Icon(Icons.close, color: Colors.white),
-                      onPressed: () async {
-                        await exitPip();
-                      },
+                      onPressed: isPipPreparing.value ? null : _exitPipFromControl,
                     ),
                   ),
                 ),
@@ -3409,9 +3485,10 @@ class PlayerManager {
 
   Future<void> close() {
     if (_disposed) return Future<void>.value();
+    final restoreWindowsWindow = _usesWindowsPip && isInPip.value;
     _cancelPipTransition();
     _stopAndroidPipObservation();
-    if (_usesAndroidPip) isInPip.value = false;
+    if (_usesAndroidPip || restoreWindowsWindow) isInPip.value = false;
     // Intent changes belong to dispatch, not native teardown. A pending source
     // open/recovery must lose ownership as soon as close is requested. Waiting
     // for the lifecycle queue used to let it become audible first, and a later
@@ -3427,7 +3504,12 @@ class PlayerManager {
     _cancelContinuityRecovery();
     _cancelVideoFrameStallRecovery();
     _cancelTransientLiveRetry();
-    return _enqueuePlayerLifecycle(_closeInternal);
+    return _enqueuePlayerLifecycle(() async {
+      if (restoreWindowsWindow) {
+        await _restoreWindowsMainWindow();
+      }
+      await _closeInternal();
+    });
   }
 
   Future<void> _closeInternal() async {
@@ -4494,9 +4576,14 @@ class PlayerManager {
 
   Future<void> dispose() async {
     if (_disposed) return;
+    _isClosing = true;
+    final restoreWindowsWindow = _usesWindowsPip && isInPip.value;
     _cancelPipTransition();
     _stopAndroidPipObservation();
-    if (_usesAndroidPip) isInPip.value = false;
+    if (_usesAndroidPip || restoreWindowsWindow) isInPip.value = false;
+    if (restoreWindowsWindow) {
+      await _restoreWindowsMainWindow();
+    }
     _disposed = true;
     _currentSource = null;
     _sourceOpened = false;
@@ -4509,7 +4596,6 @@ class PlayerManager {
     _sessionId++;
     _pendingPlayerError = null;
     _errorDedupeSignatures.clear();
-    _isClosing = true;
     _hideTimer?.cancel();
     _sourceReadyTimer?.cancel();
     _sourceReadyTimer = null;

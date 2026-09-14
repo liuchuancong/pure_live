@@ -547,14 +547,23 @@ class PIPButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return IconButton(
-      tooltip: i18n('float_window_play'),
-      color: Colors.white,
-      onPressed: () {
-        GlobalPlayerService.instance.player.enablePip();
-      },
-      icon: const Icon(CustomIcons.float_window),
-    );
+    return Obx(() {
+      final manager = GlobalPlayerService.instance.player;
+      return IconButton(
+        tooltip: i18n('float_window_play'),
+        color: Colors.white,
+        onPressed: manager.isPipPreparing.value
+            ? null
+            : () async {
+                try {
+                  await manager.enablePip();
+                } catch (_) {
+                  ToastUtil.show(i18n('pip_enter_failed'));
+                }
+              },
+        icon: const Icon(CustomIcons.float_window),
+      );
+    });
   }
 }
 
