@@ -4,6 +4,8 @@
 
 ## 开发与发布
 
+- [视频设置清晰度路由与选择事务审计](VIDEO_SETTINGS_RESOLUTION_ROUTE_TRANSACTION_AUDIT_2026_09_14.md)：双入口共享单次路由、类型化延迟提交、明确取消动作与页面/控制器生命周期栅栏。
+
 - [Windows 小窗几何捕获与重置事务审计](WINDOWS_PIP_GEOMETRY_CAPTURE_AND_RESET_AUDIT_2026_09_14.md)：显示器身份规范持久化、响应式单次重置、取消保留与五字段原子清空。
 
 - [精细字号恢复默认布局与事务审计](FONT_SETTINGS_RESET_LAYOUT_AND_TRANSACTION_AUDIT_2026_09_14.md)：五项字号单次恢复、窄屏大字号动作合同、取消后重入与页面/控制器退出栅栏。
