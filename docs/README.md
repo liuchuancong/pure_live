@@ -4,6 +4,8 @@
 
 ## 开发与发布
 
+- [Windows 标题栏项目链接可访问性与打开事务审计](WINDOWS_TITLE_BAR_PROJECT_LINK_TRANSACTION_AUDIT_2026_09_15.md)：具名链接与 Tooltip、键盘焦点/激活、单次外部打开、等待门禁、false/异常反馈，以及窄宽大字号收束。
+
 - [Windows 标题栏控制按钮可访问性与动作事务审计](WINDOWS_TITLE_BAR_CONTROL_ACCESSIBILITY_AUDIT_2026_09_15.md)：三个系统动作的双语语义与 Tooltip、键盘焦点/激活、可见焦点、异步 single-flight、失败反馈与可重试合同。
 
 - [Windows 窗口几何捕获所有权审计](WINDOWS_WINDOW_GEOMETRY_CAPTURE_OWNERSHIP_AUDIT_2026_09_14.md)：普通窗口/PiP 统一宿主队列、最小化/最大化/真全屏隔离、异步二次核对与事件异常收口。
