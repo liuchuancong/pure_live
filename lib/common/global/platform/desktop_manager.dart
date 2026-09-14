@@ -299,39 +299,26 @@ class CustomTitleBar extends StatelessWidget {
                   padding: const EdgeInsets.only(left: 12),
                   child: isFullscreen
                       ? null
-                      : Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            onTap: () async {
-                              final url = Uri.parse(VersionUtil.projectUrl);
-                              if (await canLaunchUrl(url)) {
-                                await launchUrl(url);
-                              }
-                            },
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Image.asset('assets/icons/icon.png', width: 16, height: 16),
-                                const SizedBox(width: 6),
-                                Text(
-                                  i18nOr('app_name', 'PureLive'),
-                                  style: AppTextStyles.t13.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                    color: iconColor,
-                                    decoration: TextDecoration.none,
-                                  ),
-                                ),
-                                const SizedBox(width: 6),
-                                if (showSizeText && !isFullscreen)
-                                  IgnorePointer(
-                                    child: Text(
-                                      '[${currentSize.width.toInt()} × ${currentSize.height.toInt()}]',
-                                      style: AppTextStyles.t12.copyWith(color: iconColor.withValues(alpha: 0.6)),
-                                    ),
-                                  ),
-                              ],
-                            ),
+                      : TitleBarProjectLink(
+                          semanticLabel: i18nOr('project_page', 'Project Homepage'),
+                          failureMessage: i18nOr(
+                            'external_browser_not_opened',
+                            'The system browser did not open. Check the default browser settings.',
                           ),
+                          appName: i18nOr('app_name', 'PureLive'),
+                          appNameStyle: AppTextStyles.t13.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: iconColor,
+                            decoration: TextDecoration.none,
+                          ),
+                          sizeTextStyle: AppTextStyles.t12.copyWith(color: iconColor.withValues(alpha: 0.6)),
+                          projectUri: Uri.parse(VersionUtil.projectUrl),
+                          iconColor: iconColor,
+                          hoverColor: isDark
+                              ? Colors.white.withValues(alpha: 0.08)
+                              : theme.colorScheme.primary.withValues(alpha: 0.08),
+                          currentSize: currentSize,
+                          showSizeText: showSizeText,
                         ),
                 ),
               ),
@@ -386,6 +373,124 @@ class CustomTitleBar extends StatelessWidget {
         ),
       );
     });
+  }
+}
+
+class TitleBarProjectLink extends StatefulWidget {
+  final String semanticLabel;
+  final String failureMessage;
+  final String appName;
+  final TextStyle appNameStyle;
+  final TextStyle sizeTextStyle;
+  final Uri projectUri;
+  final Color iconColor;
+  final Color hoverColor;
+  final Size currentSize;
+  final bool showSizeText;
+  final Future<bool> Function(Uri uri)? openExternalUrl;
+
+  const TitleBarProjectLink({
+    super.key,
+    required this.semanticLabel,
+    required this.failureMessage,
+    required this.appName,
+    required this.appNameStyle,
+    required this.sizeTextStyle,
+    required this.projectUri,
+    required this.iconColor,
+    required this.hoverColor,
+    required this.currentSize,
+    required this.showSizeText,
+    this.openExternalUrl,
+  });
+
+  @override
+  State<TitleBarProjectLink> createState() => _TitleBarProjectLinkState();
+}
+
+class _TitleBarProjectLinkState extends State<TitleBarProjectLink> {
+  bool _busy = false;
+  bool _hovered = false;
+  bool _pressed = false;
+  bool _focused = false;
+
+  Future<void> _openProject() async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    try {
+      final opened =
+          await (widget.openExternalUrl?.call(widget.projectUri) ??
+              launchUrl(widget.projectUri, mode: LaunchMode.externalApplication));
+      if (!opened) {
+        debugPrint('Desktop project link was not accepted by the external browser.');
+        _showFailure();
+      }
+    } catch (error, stackTrace) {
+      debugPrint('Desktop project link failed: $error\n$stackTrace');
+      _showFailure();
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  void _showFailure() {
+    if (mounted) {
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(content: Text(widget.failureMessage)));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final active = _hovered || _pressed || _focused;
+    return Semantics(
+      link: true,
+      enabled: !_busy,
+      label: widget.semanticLabel,
+      excludeSemantics: true,
+      child: Tooltip(
+        message: widget.semanticLabel,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            excludeFromSemantics: true,
+            onTap: _busy ? null : () => unawaited(_openProject()),
+            onHover: (value) => setState(() => _hovered = value),
+            onHighlightChanged: (value) => setState(() => _pressed = value),
+            onFocusChange: (value) => setState(() => _focused = value),
+            overlayColor: const WidgetStatePropertyAll(Colors.transparent),
+            child: AnimatedContainer(
+              height: 32,
+              duration: const Duration(milliseconds: 80),
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              decoration: BoxDecoration(
+                color: active ? widget.hoverColor : Colors.transparent,
+                border: _focused ? Border.all(color: widget.iconColor.withValues(alpha: 0.8)) : null,
+              ),
+              child: FittedBox(
+                alignment: Alignment.centerLeft,
+                fit: BoxFit.scaleDown,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Image.asset('assets/icons/icon.png', width: 16, height: 16),
+                    const SizedBox(width: 6),
+                    Text(widget.appName, maxLines: 1, style: widget.appNameStyle),
+                    if (widget.showSizeText) ...[
+                      const SizedBox(width: 6),
+                      Text(
+                        '[${widget.currentSize.width.toInt()} × ${widget.currentSize.height.toInt()}]',
+                        maxLines: 1,
+                        style: widget.sizeTextStyle,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 
