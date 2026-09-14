@@ -4,6 +4,8 @@
 
 ## 开发与发布
 
+- [精细字号恢复默认布局与事务审计](FONT_SETTINGS_RESET_LAYOUT_AND_TRANSACTION_AUDIT_2026_09_14.md)：五项字号单次恢复、窄屏大字号动作合同、取消后重入与页面/控制器退出栅栏。
+
 - [观看记录单项删除可访问性与事务审计](HISTORY_ENTRY_DELETE_ACCESSIBILITY_AND_TRANSACTION_AUDIT_2026_09_14.md)：具名 48×48 删除入口、长标题响应式确认、单次历史变更路由，以及确认期间同房间重新观看保护。
 
 - [观看记录清空确认与快照事务审计](HISTORY_CLEAR_CONFIRMATION_AND_SNAPSHOT_AUDIT_2026_09_14.md)：具名数量确认、320×480 / 3.0 倍中英文动作可达、单次路由，以及确认期间新增/重新观看记录的身份快照保护。
