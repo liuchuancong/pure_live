@@ -4,6 +4,8 @@
 
 ## 开发与发布
 
+- [Windows 小窗宿主事务与回滚审计](WINDOWS_PIP_HOST_TRANSACTION_AND_ROLLBACK_AUDIT_2026_09_14.md)：原生窗口串行队列、成功后模式提交、失败逐项回滚、几何隔离与 400×300 最小尺寸恢复。
+
 - [Windows 小窗进出事务与生命周期审计](WINDOWS_PIP_TRANSITION_OWNERSHIP_AUDIT_2026_09_14.md)：进出 single-flight、原生失败反馈、迟到进入清理、关闭/销毁恢复与关闭后重入栅栏。
 
 - [Windows 小窗置顶开关事务审计](WINDOWS_PIP_ALWAYS_ON_TOP_TRANSACTION_AUDIT_2026_09_14.md)：原生窗口层级成功后的延迟提交、等待态、旧层级恢复、失败反馈与单次重试事务。

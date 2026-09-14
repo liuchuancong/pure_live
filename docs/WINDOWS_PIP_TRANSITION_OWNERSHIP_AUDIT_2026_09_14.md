@@ -36,4 +36,4 @@
 - 本批增加 W2-01 的源码/Widget 证据，该组继续保持 `RUN`；宏观账本保持 **20 PASS / 42 RUN / 0 NR，共 42 组未闭环**。
 - 本批没有构建 Windows 候选、启动原生 GUI 或操作 Android 设备；Astra Light 使用 0 次，符合“仅在 Windows Computer Use GUI 验收开始时创建并复用一个任务”的规则。
 - 后续 Windows 累计候选需验证快速重复进入、原生进入/退出失败反馈、PiP 双击/关闭单次恢复、进入过程中关闭房间、进程退出、宽屏/全屏快照恢复和多显示器几何。
-- `WindowHelper` 内部模式提交与原生窗口分步失败的回滚仍需独立宿主层测试；该结论不以当前 Widget 结果替代原生窗口验收。
+- `WindowHelper` 内部模式提交、宿主串行与分步失败回滚已由 [`57ea9a85` 专项审计](WINDOWS_PIP_HOST_TRANSACTION_AND_ROLLBACK_AUDIT_2026_09_14.md)补齐；真实原生窗口验收仍按 W2-01 执行。
