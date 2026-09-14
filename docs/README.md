@@ -4,6 +4,8 @@
 
 ## 开发与发布
 
+- [视频设置 ASMR 模式开关事务审计](VIDEO_SETTINGS_ASMR_MODE_TRANSACTION_AUDIT_2026_09_14.md)：权限/定时服务完成后的延迟提交、开关等待态、失败保留与重试，以及共享开关的显式事务合同。
+
 - [视频设置 ASMR 定时路由与保存事务审计](VIDEO_SETTINGS_ASMR_TIMER_TRANSACTION_AUDIT_2026_09_14.md)：页面单次路由、行内范围/失败反馈、保存等待态与服务成功后的延迟持久化。
 
 - [视频设置清晰度路由与选择事务审计](VIDEO_SETTINGS_RESOLUTION_ROUTE_TRANSACTION_AUDIT_2026_09_14.md)：双入口共享单次路由、类型化延迟提交、明确取消动作与页面/控制器生命周期栅栏。
