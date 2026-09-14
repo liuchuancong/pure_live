@@ -4,6 +4,8 @@
 
 ## 开发与发布
 
+- [Windows 小窗呈现事务与回滚审计](WINDOWS_PIP_PRESENTATION_TRANSACTION_AUDIT_2026_09_14.md)：全屏/宽屏快照所有权、进出 single-flight、跨宿主呈现回滚、可重试退出与真实宿主状态同步。
+
 - [Windows 小窗宿主事务与回滚审计](WINDOWS_PIP_HOST_TRANSACTION_AND_ROLLBACK_AUDIT_2026_09_14.md)：原生窗口串行队列、成功后模式提交、失败逐项回滚、几何隔离与 400×300 最小尺寸恢复。
 
 - [Windows 小窗进出事务与生命周期审计](WINDOWS_PIP_TRANSITION_OWNERSHIP_AUDIT_2026_09_14.md)：进出 single-flight、原生失败反馈、迟到进入清理、关闭/销毁恢复与关闭后重入栅栏。

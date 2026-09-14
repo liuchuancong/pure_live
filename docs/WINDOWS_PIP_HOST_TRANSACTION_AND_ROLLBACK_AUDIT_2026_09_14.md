@@ -37,4 +37,4 @@
 - 本批增加 W2-01 的宿主层确定性证据，该组继续保持 `RUN`；宏观账本保持 **20 PASS / 42 RUN / 0 NR，共 42 组未闭环**。
 - 本批没有构建 Windows 候选、启动原生 GUI 或操作 Android 设备；Astra Light 使用 0 次。
 - 后续 Windows 累计候选需验证进入/退出时的真实窗口尺寸、400×300 最小缩放、置顶切换、主副屏记忆、原生失败反馈和进程退出恢复。
-- `WindowService` 在进入 PiP 前退出全屏并保存呈现快照；其前置全屏切换与后续宿主进入之间的失败回滚仍需下一轮独立审计。
+- `WindowService` 的前置全屏切换、宿主进入、退出呈现恢复与双层回滚已由 [Windows 小窗呈现事务与回滚审计](WINDOWS_PIP_PRESENTATION_TRANSACTION_AUDIT_2026_09_14.md) 补齐；真实 Windows 呈现往返继续纳入 W2-01 GUI 复验。
