@@ -4,6 +4,8 @@
 
 ## 开发与发布
 
+- [Windows 小窗进出事务与生命周期审计](WINDOWS_PIP_TRANSITION_OWNERSHIP_AUDIT_2026_09_14.md)：进出 single-flight、原生失败反馈、迟到进入清理、关闭/销毁恢复与关闭后重入栅栏。
+
 - [Windows 小窗置顶开关事务审计](WINDOWS_PIP_ALWAYS_ON_TOP_TRANSACTION_AUDIT_2026_09_14.md)：原生窗口层级成功后的延迟提交、等待态、旧层级恢复、失败反馈与单次重试事务。
 
 - [视频设置后台播放开关事务审计](VIDEO_SETTINGS_BACKGROUND_PLAYBACK_TRANSACTION_AUDIT_2026_09_14.md)：权限/后台服务完成后的延迟提交、开关等待态、失败保留与重试，以及助眠/纯音频保活兼容。
