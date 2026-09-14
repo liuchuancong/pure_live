@@ -341,6 +341,8 @@ class CustomTitleBar extends StatelessWidget {
             Row(
               children: [
                 WindowControlButton(
+                  semanticLabel: i18nOr('window_minimize', 'Minimize window'),
+                  failureMessage: i18nOr('window_close_action_failed', 'The window action failed. Try again.'),
                   icon: Icons.remove,
                   iconColor: iconColor,
                   hoverColor: isDark
@@ -351,6 +353,8 @@ class CustomTitleBar extends StatelessWidget {
                   },
                 ),
                 WindowControlButton(
+                  semanticLabel: i18nOr('window_maximize_restore', 'Maximize or restore window'),
+                  failureMessage: i18nOr('window_close_action_failed', 'The window action failed. Try again.'),
                   icon: Icons.crop_square,
                   iconColor: iconColor,
                   hoverColor: isDark
@@ -365,6 +369,8 @@ class CustomTitleBar extends StatelessWidget {
                   },
                 ),
                 WindowControlButton(
+                  semanticLabel: i18nOr('window_close', 'Close window'),
+                  failureMessage: i18nOr('window_close_action_failed', 'The window action failed. Try again.'),
                   icon: Icons.close,
                   iconColor: iconColor,
                   hoverIconColor: Colors.white,
@@ -384,7 +390,9 @@ class CustomTitleBar extends StatelessWidget {
 }
 
 class WindowControlButton extends StatefulWidget {
-  final VoidCallback onPressed;
+  final Future<void> Function() onPressed;
+  final String semanticLabel;
+  final String failureMessage;
   final IconData icon;
 
   final Color hoverColor;
@@ -397,6 +405,8 @@ class WindowControlButton extends StatefulWidget {
   const WindowControlButton({
     super.key,
     required this.onPressed,
+    required this.semanticLabel,
+    required this.failureMessage,
     required this.icon,
     required this.hoverColor,
     required this.iconColor,
@@ -409,51 +419,57 @@ class WindowControlButton extends StatefulWidget {
 }
 
 class _WindowControlButtonState extends State<WindowControlButton> {
-  bool hover = false;
-  bool pressed = false;
+  bool _hovered = false;
+  bool _pressed = false;
+  bool _focused = false;
+  bool _busy = false;
+
+  Future<void> _runAction() async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    try {
+      await widget.onPressed();
+    } catch (error, stackTrace) {
+      debugPrint('Desktop window control failed (${widget.semanticLabel}): $error\n$stackTrace');
+      if (mounted) {
+        ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(content: Text(widget.failureMessage)));
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) {
-        setState(() {
-          hover = true;
-        });
-      },
-      onExit: (_) {
-        setState(() {
-          hover = false;
-        });
-      },
-      child: GestureDetector(
-        onTapDown: (_) {
-          setState(() {
-            pressed = true;
-          });
-        },
-
-        onTapUp: (_) {
-          setState(() {
-            pressed = false;
-          });
-        },
-
-        onTapCancel: () {
-          setState(() {
-            pressed = false;
-          });
-        },
-        behavior: HitTestBehavior.opaque,
-        onTap: widget.onPressed,
-        child: Container(
-          width: 46,
-          height: 32,
-          color: hover ? widget.hoverColor : Colors.transparent,
-          alignment: Alignment.center,
-          child: Icon(
-            widget.icon,
-            size: 16,
-            color: (hover || pressed) ? (widget.hoverIconColor ?? widget.iconColor) : widget.iconColor,
+    final active = _hovered || _pressed || _focused;
+    final activeIconColor = widget.hoverIconColor ?? widget.iconColor;
+    return Semantics(
+      button: true,
+      enabled: !_busy,
+      label: widget.semanticLabel,
+      excludeSemantics: true,
+      child: Tooltip(
+        message: widget.semanticLabel,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            excludeFromSemantics: true,
+            onTap: _busy ? null : () => unawaited(_runAction()),
+            onHover: (value) => setState(() => _hovered = value),
+            onHighlightChanged: (value) => setState(() => _pressed = value),
+            onFocusChange: (value) => setState(() => _focused = value),
+            overlayColor: const WidgetStatePropertyAll(Colors.transparent),
+            child: AnimatedContainer(
+              width: 46,
+              height: 32,
+              duration: const Duration(milliseconds: 80),
+              decoration: BoxDecoration(
+                color: active ? widget.hoverColor : Colors.transparent,
+                border: _focused ? Border.all(color: activeIconColor.withValues(alpha: 0.8)) : null,
+              ),
+              alignment: Alignment.center,
+              child: Icon(widget.icon, size: 16, color: active ? activeIconColor : widget.iconColor),
+            ),
           ),
         ),
       ),
