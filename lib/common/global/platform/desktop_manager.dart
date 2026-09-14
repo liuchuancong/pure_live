@@ -695,11 +695,19 @@ mixin DesktopWindowMixin<T extends StatefulWidget> on State<T>
   void handleStatusBarTap() {}
 
   void _updateWindowSizeToController() {
-    if (WindowHelper.instance.currentMode == WindowLayoutMode.pip) {
-      unawaited(WindowHelper.instance.capturePiPGeometry());
+    unawaited(
+      _captureWindowGeometry().catchError((Object error, StackTrace stackTrace) {
+        debugPrint('Desktop window geometry capture failed: $error\n$stackTrace');
+      }),
+    );
+  }
+
+  Future<void> _captureWindowGeometry() async {
+    if (Platform.isWindows) {
+      await WindowHelper.instance.captureWindowGeometry(_sizeController.updateSize);
       return;
     }
-    windowManager.getSize().then(_sizeController.updateSize);
+    _sizeController.updateSize(await windowManager.getSize());
   }
 
   void _scheduleWindowSizeUpdate() {

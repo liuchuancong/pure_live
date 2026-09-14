@@ -47,6 +47,9 @@ class WindowsPipHost {
     required this.getSize,
     required this.getPosition,
     required this.isAlwaysOnTop,
+    required this.isMinimized,
+    required this.isMaximized,
+    required this.isFullScreen,
     required this.getDisplays,
     required this.getPrimaryDisplay,
     required this.setAlwaysOnTop,
@@ -60,6 +63,9 @@ class WindowsPipHost {
       getSize: windowManager.getSize,
       getPosition: windowManager.getPosition,
       isAlwaysOnTop: windowManager.isAlwaysOnTop,
+      isMinimized: windowManager.isMinimized,
+      isMaximized: windowManager.isMaximized,
+      isFullScreen: windowManager.isFullScreen,
       getDisplays: () async =>
           (await screenRetriever.getAllDisplays()).map(WindowsPipDisplay.fromDisplay).toList(growable: false),
       getPrimaryDisplay: () async => WindowsPipDisplay.fromDisplay(await screenRetriever.getPrimaryDisplay()),
@@ -73,6 +79,9 @@ class WindowsPipHost {
   final Future<Size> Function() getSize;
   final Future<Offset> Function() getPosition;
   final Future<bool> Function() isAlwaysOnTop;
+  final Future<bool> Function() isMinimized;
+  final Future<bool> Function() isMaximized;
+  final Future<bool> Function() isFullScreen;
   final Future<List<WindowsPipDisplay>> Function() getDisplays;
   final Future<WindowsPipDisplay> Function() getPrimaryDisplay;
   final Future<void> Function(bool value) setAlwaysOnTop;
@@ -83,6 +92,7 @@ class WindowsPipHost {
 
 typedef WindowsPipPreferencesReader = WindowsPipPreferences Function();
 typedef WindowsPipGeometryWriter = void Function(Size size, Offset position, String displayId);
+typedef WindowsNormalWindowSizeWriter = void Function(Size size);
 
 WindowsPipPreferences _readWindowsPipPreferences() {
   final windowSettings = SettingsService.to.window;
@@ -378,23 +388,47 @@ class WindowHelper {
       return Future<void>.value();
     }
 
+    return _serializeHostOperation(_capturePiPGeometry);
+  }
+
+  Future<void> captureWindowGeometry(WindowsNormalWindowSizeWriter writeNormalSize) {
+    if (!_isWindows) return Future<void>.value();
+
     return _serializeHostOperation(() async {
-      if (currentMode != WindowLayoutMode.pip) return;
-      final preferences = _readPreferences();
-
-      if (!preferences.rememberPosition) return;
-
-      final size = await _host.getSize();
-      final position = await _host.getPosition();
-
-      final displays = await _host.getDisplays();
-
-      final display = _findDisplayForPosition(displays, position) ?? await _host.getPrimaryDisplay();
-
       if (currentMode == WindowLayoutMode.pip) {
-        _writeGeometry(size, position, display.id);
+        await _capturePiPGeometry();
+        return;
       }
+
+      if (!await _isRestorableNormalWindow()) return;
+      final size = await _host.getSize();
+      if (currentMode != WindowLayoutMode.normal || !await _isRestorableNormalWindow()) return;
+      writeNormalSize(size);
     });
+  }
+
+  Future<void> _capturePiPGeometry() async {
+    if (currentMode != WindowLayoutMode.pip) return;
+    final preferences = _readPreferences();
+
+    if (!preferences.rememberPosition) return;
+
+    final size = await _host.getSize();
+    final position = await _host.getPosition();
+
+    final displays = await _host.getDisplays();
+
+    final display = _findDisplayForPosition(displays, position) ?? await _host.getPrimaryDisplay();
+
+    if (currentMode == WindowLayoutMode.pip) {
+      _writeGeometry(size, position, display.id);
+    }
+  }
+
+  Future<bool> _isRestorableNormalWindow() async {
+    if (await _host.isMinimized()) return false;
+    if (await _host.isMaximized()) return false;
+    return !await _host.isFullScreen();
   }
 
   Future<void> _serializeHostOperation(Future<void> Function() operation) {

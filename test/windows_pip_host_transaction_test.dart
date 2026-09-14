@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -154,6 +155,129 @@ void main() {
     readGate.complete();
     await Future.wait([entering, capture]);
   });
+
+  test('desktop window events delegate normal and PiP geometry to the serialized host owner', () {
+    final source = File('lib/common/global/platform/desktop_manager.dart').readAsStringSync();
+
+    expect(source, contains('captureWindowGeometry'));
+    expect(source, isNot(contains('windowManager.getSize().then(_sizeController.updateSize)')));
+    expect(source, contains('Desktop window geometry capture failed:'));
+  });
+
+  test('normal window geometry persists only a restorable window size', () async {
+    final host = _FakeWindowsPipHost();
+    final writes = <Size>[];
+    final helper = WindowHelper.test(
+      host: host.adapter(displays: const [display]),
+      readPreferences: preferences,
+    );
+
+    await helper.captureWindowGeometry(writes.add);
+    expect(writes, [host.normalSize]);
+
+    host
+      ..minimized = true
+      ..size = Size.zero;
+    await helper.captureWindowGeometry(writes.add);
+    host
+      ..minimized = false
+      ..maximized = true
+      ..size = const Size(1920, 1040);
+    await helper.captureWindowGeometry(writes.add);
+    host
+      ..maximized = false
+      ..fullScreen = true
+      ..size = const Size(1920, 1080);
+    await helper.captureWindowGeometry(writes.add);
+
+    expect(writes, [host.normalSize]);
+  });
+
+  test('normal geometry capture rechecks native presentation after its asynchronous size read', () async {
+    final host = _FakeWindowsPipHost();
+    final readGate = Completer<void>();
+    host.firstSizeReadGate = readGate;
+    final writes = <Size>[];
+    final helper = WindowHelper.test(
+      host: host.adapter(displays: const [display]),
+      readPreferences: preferences,
+    );
+
+    final capture = helper.captureWindowGeometry(writes.add);
+    await Future<void>.delayed(Duration.zero);
+    host.maximized = true;
+    readGate.complete();
+    await capture;
+
+    expect(writes, isEmpty);
+  });
+
+  test('failed normal geometry capture leaves the shared host queue retryable', () async {
+    final host = _FakeWindowsPipHost()..failOnce('isMaximized');
+    final writes = <Size>[];
+    final helper = WindowHelper.test(
+      host: host.adapter(displays: const [display]),
+      readPreferences: preferences,
+    );
+
+    await expectLater(helper.captureWindowGeometry(writes.add), throwsStateError);
+    await helper.captureWindowGeometry(writes.add);
+
+    expect(writes, [host.normalSize]);
+  });
+
+  test('geometry capture queued behind PiP entry writes only the committed PiP rectangle', () async {
+    final host = _FakeWindowsPipHost();
+    final sizeGate = Completer<void>();
+    host.setSizeGate = sizeGate;
+    final normalWrites = <Size>[];
+    final pipWrites = <Rect>[];
+    final helper = WindowHelper.test(
+      host: host.adapter(displays: const [display]),
+      readPreferences: preferences,
+      writeGeometry: (size, position, _) => pipWrites.add(position & size),
+    );
+
+    final entering = helper.enterPiP(16 / 9);
+    await Future<void>.delayed(Duration.zero);
+    final capture = helper.captureWindowGeometry(normalWrites.add);
+    await Future<void>.delayed(Duration.zero);
+
+    expect(normalWrites, isEmpty);
+    expect(pipWrites, isEmpty);
+    sizeGate.complete();
+    await Future.wait([entering, capture]);
+    expect(normalWrites, isEmpty);
+    expect(pipWrites, hasLength(2));
+    expect(pipWrites, everyElement(host.position & host.size));
+  });
+
+  test('geometry capture queued behind PiP exit persists only the restored normal size', () async {
+    final host = _FakeWindowsPipHost();
+    final normalWrites = <Size>[];
+    final pipWrites = <Rect>[];
+    final helper = WindowHelper.test(
+      host: host.adapter(displays: const [display]),
+      readPreferences: preferences,
+      writeGeometry: (size, position, _) => pipWrites.add(position & size),
+    );
+    await helper.enterPiP(16 / 9);
+    pipWrites.clear();
+    final positionGate = Completer<void>();
+    host.setPositionGate = positionGate;
+
+    final exiting = helper.exitPiP();
+    await Future<void>.delayed(Duration.zero);
+    final capture = helper.captureWindowGeometry(normalWrites.add);
+    await Future<void>.delayed(Duration.zero);
+
+    expect(normalWrites, isEmpty);
+    expect(pipWrites, isEmpty);
+    positionGate.complete();
+    await Future.wait([exiting, capture]);
+    expect(normalWrites, [host.normalSize]);
+    expect(pipWrites, isEmpty);
+  });
 }
 
 class _FakeWindowsPipHost {
@@ -163,6 +287,9 @@ class _FakeWindowsPipHost {
   late Offset position = normalPosition;
   Size minimumSize = const Size(WindowSizeController.minWindowWidth, WindowSizeController.minWindowHeight);
   bool alwaysOnTop = false;
+  bool minimized = false;
+  bool maximized = false;
+  bool fullScreen = false;
   final List<String> calls = [];
   final Map<String, int> _failures = {};
   Completer<void>? setSizeGate;
@@ -195,6 +322,21 @@ class _FakeWindowsPipHost {
         calls.add('isAlwaysOnTop');
         _throwIfRequested('isAlwaysOnTop');
         return alwaysOnTop;
+      },
+      isMinimized: () async {
+        calls.add('isMinimized');
+        _throwIfRequested('isMinimized');
+        return minimized;
+      },
+      isMaximized: () async {
+        calls.add('isMaximized');
+        _throwIfRequested('isMaximized');
+        return maximized;
+      },
+      isFullScreen: () async {
+        calls.add('isFullScreen');
+        _throwIfRequested('isFullScreen');
+        return fullScreen;
       },
       getDisplays: () async {
         calls.add('getDisplays');
