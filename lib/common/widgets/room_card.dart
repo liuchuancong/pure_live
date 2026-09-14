@@ -18,6 +18,7 @@ class RoomCard extends StatelessWidget {
     this.statusPendingLabel,
     this.showDelete = false,
     this.onDelete,
+    this.deleteTooltip,
     this.settingsViewport,
   });
   final LiveRoom room;
@@ -26,6 +27,7 @@ class RoomCard extends StatelessWidget {
   final String? statusPendingLabel;
   final bool showDelete;
   final VoidCallback? onDelete;
+  final String? deleteTooltip;
   final RoomCardViewport? settingsViewport;
   Widget _buildCover(BuildContext context, bool isDark) {
     final coverUrl = normalizeNetworkImageUrl(room.cover);
@@ -782,12 +784,15 @@ class RoomCard extends StatelessWidget {
                         ),
                       if (showDelete)
                         Positioned(
-                          right: 8,
-                          top: 8,
-                          child: GestureDetector(
-                            onTap: onDelete,
-                            behavior: HitTestBehavior.opaque, // 阻止事件穿透
-                            child: Container(
+                          right: 0,
+                          top: 0,
+                          child: IconButton(
+                            key: const ValueKey('room-card-delete'),
+                            tooltip: deleteTooltip ?? i18n('delete'),
+                            onPressed: onDelete,
+                            padding: const EdgeInsets.all(10),
+                            constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                            icon: Container(
                               padding: const EdgeInsets.all(6),
                               decoration: BoxDecoration(
                                 color: Colors.black.withValues(alpha: 0.6),

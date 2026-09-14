@@ -1680,6 +1680,8 @@
     "clear_history": "Clear History",
     "clear_history_confirm": "Are you sure you want to clear all history records?",
     "clear_history_confirm_named": "Clear all {count} history entries? This action cannot be undone.",
+    "remove_history_entry_named": "Remove {title} from watch history",
+    "remove_history_confirm_named": "Remove “{title}” from watch history? This only removes this saved entry.",
     "current_value": "Current Value",
     "portrait_live_settings": "Portrait Live Adaptation",
     "portrait_live_settings_desc": "Detect source orientation and coordinate the room, fullscreen and PiP presentation",
