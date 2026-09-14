@@ -199,31 +199,7 @@ class VideoSettingsPage extends GetView<SettingsService> {
                   SettingsService.to.window.rememberPipPosition.v = value;
                 },
               ),
-            if (_isWindows)
-              context.buildTile(
-                icon: Remix.reserved_line,
-                title: i18n('windows_pip_reset_position'),
-                subtitle: i18n('windows_pip_reset_position_subtitle'),
-                onTap: () async {
-                  final result = await showDialog<bool>(
-                    context: context,
-                    builder: (context) {
-                      return AlertDialog(
-                        title: Text(i18n('windows_pip_reset_position')),
-                        content: Text(i18n('windows_pip_reset_position_confirm')),
-                        actions: [
-                          TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(i18n('cancel'))),
-                          FilledButton(onPressed: () => Navigator.of(context).pop(true), child: Text(i18n('confirm'))),
-                        ],
-                      );
-                    },
-                  );
-
-                  if (result == true) {
-                    SettingsService.to.window.clearWindowsPipGeometry();
-                  }
-                },
-              ),
+            if (_isWindows) const _WindowsPipResetTile(),
 
             context.buildSwitchTile(
               title: i18n('enable_fullscreen_default'),
@@ -346,6 +322,72 @@ class VideoSettingsPage extends GetView<SettingsService> {
   String _preferredResolutionLabel(String value) {
     final key = PlayerConsts.resolutionLabelKey(value);
     return key == null ? value : i18n(key);
+  }
+}
+
+class _WindowsPipResetTile extends StatefulWidget {
+  const _WindowsPipResetTile();
+
+  @override
+  State<_WindowsPipResetTile> createState() => _WindowsPipResetTileState();
+}
+
+class _WindowsPipResetTileState extends State<_WindowsPipResetTile> {
+  bool _resetBusy = false;
+
+  Future<void> _confirmReset() async {
+    if (_resetBusy || !mounted) return;
+    final window = SettingsService.to.window;
+    setState(() => _resetBusy = true);
+    try {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        useRootNavigator: true,
+        builder: (dialogContext) => AlertDialog(
+          key: const ValueKey('windows-pip-reset-dialog'),
+          scrollable: true,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+          title: Text(i18n('windows_pip_reset_position'), style: AppTextStyles.t16Bold),
+          content: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: Text(i18n('windows_pip_reset_position_confirm'), style: AppTextStyles.t14),
+          ),
+          actionsOverflowDirection: VerticalDirection.down,
+          actionsOverflowButtonSpacing: 8,
+          actions: [
+            TextButton(
+              style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
+              onPressed: () => Navigator.of(dialogContext, rootNavigator: true).pop(false),
+              child: Text(i18n('cancel'), style: AppTextStyles.t14Muted),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                minimumSize: const Size(48, 48),
+                backgroundColor: Theme.of(dialogContext).colorScheme.error,
+                foregroundColor: Theme.of(dialogContext).colorScheme.onError,
+              ),
+              onPressed: () => Navigator.of(dialogContext, rootNavigator: true).pop(true),
+              child: Text(i18n('reset')),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true || !mounted || window.isClosed) return;
+      window.clearWindowsPipGeometry();
+      ToastUtil.show(i18n('windows_pip_reset_position_success'));
+    } finally {
+      if (mounted) setState(() => _resetBusy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return context.buildTile(
+      icon: Remix.reserved_line,
+      title: i18n('windows_pip_reset_position'),
+      subtitle: i18n('windows_pip_reset_position_subtitle'),
+      onTap: _resetBusy ? null : _confirmReset,
+    );
   }
 }
 

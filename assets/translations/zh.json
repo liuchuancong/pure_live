@@ -1623,6 +1623,7 @@
     "windows_pip_reset_position": "重置小窗位置和大小",
     "windows_pip_reset_position_subtitle": "清除已保存的小窗尺寸与位置，下次从应用所在显示器右下角打开",
     "windows_pip_reset_position_confirm": "确定要清除已保存的小窗位置和大小吗？",
+    "windows_pip_reset_position_success": "已清除保存的小窗位置和大小",
     "open_new_window": "新建独立播放窗口",
     "open_new_window_subtitle": "在独立窗口中打开当前直播",
     "open_room_in_new_window": "在新窗口播放此直播间",

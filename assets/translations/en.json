@@ -1623,6 +1623,7 @@
     "windows_pip_reset_position": "Reset PiP position and size",
     "windows_pip_reset_position_subtitle": "Clear the saved bounds and reopen PiP at the lower-right of the display containing the app",
     "windows_pip_reset_position_confirm": "Clear the saved PiP position and size?",
+    "windows_pip_reset_position_success": "Saved PiP position and size cleared",
     "open_new_window": "Open an independent player window",
     "open_new_window_subtitle": "Open the current stream in a separate window",
     "open_room_in_new_window": "Play this room in a new window",
