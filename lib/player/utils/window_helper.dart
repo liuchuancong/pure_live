@@ -4,8 +4,107 @@ import 'package:flutter/material.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:screen_retriever/screen_retriever.dart';
 import 'package:pure_live/common/services/settings_service.dart';
+import 'package:pure_live/common/services/settings/window_size_controller.dart';
 
 enum WindowLayoutMode { normal, pip }
+
+@immutable
+class WindowsPipDisplay {
+  const WindowsPipDisplay({required this.id, required this.size, this.visiblePosition, this.visibleSize});
+
+  factory WindowsPipDisplay.fromDisplay(Display display) {
+    return WindowsPipDisplay(
+      id: display.id,
+      size: display.size,
+      visiblePosition: display.visiblePosition,
+      visibleSize: display.visibleSize,
+    );
+  }
+
+  final String id;
+  final Size size;
+  final Offset? visiblePosition;
+  final Size? visibleSize;
+}
+
+@immutable
+class WindowsPipPreferences {
+  const WindowsPipPreferences({
+    required this.rememberPosition,
+    required this.alwaysOnTop,
+    required this.savedDisplayId,
+    this.savedBounds,
+  });
+
+  final bool rememberPosition;
+  final bool alwaysOnTop;
+  final String savedDisplayId;
+  final Rect? savedBounds;
+}
+
+class WindowsPipHost {
+  const WindowsPipHost({
+    required this.getSize,
+    required this.getPosition,
+    required this.isAlwaysOnTop,
+    required this.getDisplays,
+    required this.getPrimaryDisplay,
+    required this.setAlwaysOnTop,
+    required this.setMinimumSize,
+    required this.setSize,
+    required this.setPosition,
+  });
+
+  factory WindowsPipHost.system() {
+    return WindowsPipHost(
+      getSize: windowManager.getSize,
+      getPosition: windowManager.getPosition,
+      isAlwaysOnTop: windowManager.isAlwaysOnTop,
+      getDisplays: () async =>
+          (await screenRetriever.getAllDisplays()).map(WindowsPipDisplay.fromDisplay).toList(growable: false),
+      getPrimaryDisplay: () async => WindowsPipDisplay.fromDisplay(await screenRetriever.getPrimaryDisplay()),
+      setAlwaysOnTop: windowManager.setAlwaysOnTop,
+      setMinimumSize: windowManager.setMinimumSize,
+      setSize: windowManager.setSize,
+      setPosition: windowManager.setPosition,
+    );
+  }
+
+  final Future<Size> Function() getSize;
+  final Future<Offset> Function() getPosition;
+  final Future<bool> Function() isAlwaysOnTop;
+  final Future<List<WindowsPipDisplay>> Function() getDisplays;
+  final Future<WindowsPipDisplay> Function() getPrimaryDisplay;
+  final Future<void> Function(bool value) setAlwaysOnTop;
+  final Future<void> Function(Size size) setMinimumSize;
+  final Future<void> Function(Size size) setSize;
+  final Future<void> Function(Offset position) setPosition;
+}
+
+typedef WindowsPipPreferencesReader = WindowsPipPreferences Function();
+typedef WindowsPipGeometryWriter = void Function(Size size, Offset position, String displayId);
+
+WindowsPipPreferences _readWindowsPipPreferences() {
+  final windowSettings = SettingsService.to.window;
+  final pip = windowSettings.windowsPip;
+  return WindowsPipPreferences(
+    rememberPosition: windowSettings.rememberPipPosition.value,
+    alwaysOnTop: SettingsService.to.player.windowsPipAlwaysOnTop.value,
+    savedDisplayId: pip.displayId.value,
+    savedBounds: pip.hasValidBounds
+        ? Rect.fromLTWH(
+            pip.windowsPipX.value,
+            pip.windowsPipY.value,
+            pip.windowsPipWidth.value,
+            pip.windowsPipHeight.value,
+          )
+        : null,
+  );
+}
+
+void _writeWindowsPipGeometry(Size size, Offset position, String displayId) {
+  SettingsService.to.window.windowsPip.update(size, position, displayId);
+}
 
 @visibleForTesting
 Rect resolveWindowsPipBounds({
@@ -62,7 +161,30 @@ Rect resolveWindowsPipBounds({
 class WindowHelper {
   static final WindowHelper instance = WindowHelper._internal();
 
-  WindowHelper._internal();
+  WindowHelper._internal()
+    : this._withDependencies(
+        WindowsPipHost.system(),
+        _readWindowsPipPreferences,
+        _writeWindowsPipGeometry,
+        Platform.isWindows,
+      );
+
+  @visibleForTesting
+  factory WindowHelper.test({
+    required WindowsPipHost host,
+    required WindowsPipPreferencesReader readPreferences,
+    WindowsPipGeometryWriter? writeGeometry,
+    bool isWindows = true,
+  }) {
+    return WindowHelper._withDependencies(host, readPreferences, writeGeometry ?? ((_, _, _) {}), isWindows);
+  }
+
+  WindowHelper._withDependencies(this._host, this._readPreferences, this._writeGeometry, this._isWindows);
+
+  final WindowsPipHost _host;
+  final WindowsPipPreferencesReader _readPreferences;
+  final WindowsPipGeometryWriter _writeGeometry;
+  final bool _isWindows;
 
   final Size defaultSize = const Size(1280, 720);
 
@@ -70,9 +192,11 @@ class WindowHelper {
 
   Size _savedSize = const Size(1280, 720);
   Offset _savedPosition = Offset.zero;
+  Future<void> _hostQueue = Future<void>.value();
+  Future<void>? _pipTransition;
 
   Future<void> togglePiP(double videoRatio) async {
-    if (!Platform.isWindows) return;
+    if (!_isWindows) return;
 
     if (currentMode == WindowLayoutMode.normal) {
       await enterPiP(videoRatio);
@@ -81,17 +205,33 @@ class WindowHelper {
     }
   }
 
-  Future<void> enterPiP(double videoRatio) async {
-    currentMode = WindowLayoutMode.pip;
+  Future<void> enterPiP(double videoRatio) {
+    final activeTransition = _pipTransition;
+    if (activeTransition != null) return activeTransition;
+    if (currentMode == WindowLayoutMode.pip) return Future<void>.value();
 
-    _savedSize = await windowManager.getSize();
-    _savedPosition = await windowManager.getPosition();
+    late final Future<void> transition;
+    transition =
+        _serializeHostOperation(() async {
+          if (currentMode == WindowLayoutMode.pip) return;
+          await _enterPiP(videoRatio);
+        }).whenComplete(() {
+          if (identical(_pipTransition, transition)) _pipTransition = null;
+        });
+    _pipTransition = transition;
+    return transition;
+  }
 
-    final displays = await screenRetriever.getAllDisplays();
+  Future<void> _enterPiP(double videoRatio) async {
+    final normalSize = await _host.getSize();
+    final normalPosition = await _host.getPosition();
+    final normalAlwaysOnTop = await _host.isAlwaysOnTop();
 
-    final primaryDisplay = await screenRetriever.getPrimaryDisplay();
+    final displays = await _host.getDisplays();
 
-    final currentDisplay = _findDisplayForPosition(displays, _savedPosition) ?? primaryDisplay;
+    final primaryDisplay = await _host.getPrimaryDisplay();
+
+    final currentDisplay = _findDisplayForPosition(displays, normalPosition) ?? primaryDisplay;
 
     final safeSize = currentDisplay.visibleSize ?? currentDisplay.size;
 
@@ -129,23 +269,15 @@ class WindowHelper {
       }
     }
 
-    final windowSettings = SettingsService.to.window;
-
-    final pip = windowSettings.windowsPip;
-
-    final rememberPosition = windowSettings.rememberPipPosition.value;
+    final preferences = _readPreferences();
+    final rememberPosition = preferences.rememberPosition;
 
     Rect? savedBounds;
 
-    final savedDisplayMatches = pip.displayId.value.isEmpty || pip.displayId.value == currentDisplay.id;
+    final savedDisplayMatches = preferences.savedDisplayId.isEmpty || preferences.savedDisplayId == currentDisplay.id;
 
-    if (rememberPosition && pip.hasValidBounds && savedDisplayMatches) {
-      savedBounds = Rect.fromLTWH(
-        pip.windowsPipX.value,
-        pip.windowsPipY.value,
-        pip.windowsPipWidth.value,
-        pip.windowsPipHeight.value,
-      );
+    if (rememberPosition && preferences.savedBounds != null && savedDisplayMatches) {
+      savedBounds = preferences.savedBounds;
     }
 
     final workAreas = displays
@@ -165,60 +297,134 @@ class WindowHelper {
       savedBounds: savedBounds,
     );
 
-    await windowManager.setAlwaysOnTop(SettingsService.to.player.windowsPipAlwaysOnTop.value);
+    try {
+      await _host.setAlwaysOnTop(preferences.alwaysOnTop);
+      await _host.setMinimumSize(Size.zero);
+      await _host.setSize(bounds.size);
+      await _host.setPosition(bounds.topLeft);
 
-    await windowManager.setMinimumSize(Size.zero);
-
-    await windowManager.setSize(bounds.size);
-    await windowManager.setPosition(bounds.topLeft);
-
-    if (rememberPosition) {
-      final resolvedDisplay = _findDisplayForPosition(displays, bounds.topLeft) ?? currentDisplay;
-      pip.update(bounds.size, bounds.topLeft, resolvedDisplay.id);
+      if (rememberPosition) {
+        final resolvedDisplay = _findDisplayForPosition(displays, bounds.topLeft) ?? currentDisplay;
+        _writeGeometry(bounds.size, bounds.topLeft, resolvedDisplay.id);
+      }
+    } catch (error, stackTrace) {
+      await _restoreHostWindow(
+        alwaysOnTop: normalAlwaysOnTop,
+        minimumSize: const Size(WindowSizeController.minWindowWidth, WindowSizeController.minWindowHeight),
+        size: normalSize,
+        position: normalPosition,
+      );
+      Error.throwWithStackTrace(error, stackTrace);
     }
+
+    _savedSize = normalSize;
+    _savedPosition = normalPosition;
+    currentMode = WindowLayoutMode.pip;
   }
 
-  Future<void> exitPiP() async {
+  Future<void> exitPiP() {
+    final activeTransition = _pipTransition;
+    if (activeTransition != null) return activeTransition;
+    if (currentMode == WindowLayoutMode.normal) return Future<void>.value();
+
+    late final Future<void> transition;
+    transition =
+        _serializeHostOperation(() async {
+          if (currentMode == WindowLayoutMode.normal) return;
+          await _exitPiP();
+        }).whenComplete(() {
+          if (identical(_pipTransition, transition)) _pipTransition = null;
+        });
+    _pipTransition = transition;
+    return transition;
+  }
+
+  Future<void> _exitPiP() async {
+    final pipSize = await _host.getSize();
+    final pipPosition = await _host.getPosition();
+    final pipAlwaysOnTop = await _host.isAlwaysOnTop();
+
+    try {
+      await _host.setAlwaysOnTop(false);
+      await _host.setMinimumSize(const Size(WindowSizeController.minWindowWidth, WindowSizeController.minWindowHeight));
+      await _host.setSize(_savedSize);
+      await _host.setPosition(_savedPosition);
+    } catch (error, stackTrace) {
+      await _restoreHostWindow(
+        alwaysOnTop: pipAlwaysOnTop,
+        minimumSize: Size.zero,
+        size: pipSize,
+        position: pipPosition,
+      );
+      Error.throwWithStackTrace(error, stackTrace);
+    }
+
     currentMode = WindowLayoutMode.normal;
-
-    await windowManager.setAlwaysOnTop(false);
-
-    await windowManager.setMinimumSize(const Size(800, 600));
-
-    await windowManager.setSize(_savedSize);
-    await windowManager.setPosition(_savedPosition);
   }
 
-  Future<void> setPiPAlwaysOnTop(bool value) async {
-    if (!Platform.isWindows || currentMode != WindowLayoutMode.pip) {
-      return;
+  Future<void> setPiPAlwaysOnTop(bool value) {
+    if (!_isWindows || currentMode != WindowLayoutMode.pip) {
+      return Future<void>.value();
     }
 
-    await windowManager.setAlwaysOnTop(value);
+    return _serializeHostOperation(() async {
+      if (currentMode != WindowLayoutMode.pip) return;
+      await _host.setAlwaysOnTop(value);
+    });
   }
 
-  Future<void> capturePiPGeometry() async {
-    if (!Platform.isWindows || currentMode != WindowLayoutMode.pip) {
-      return;
+  Future<void> capturePiPGeometry() {
+    if (!_isWindows || currentMode != WindowLayoutMode.pip) {
+      return Future<void>.value();
     }
 
-    final windowSettings = SettingsService.to.window;
+    return _serializeHostOperation(() async {
+      if (currentMode != WindowLayoutMode.pip) return;
+      final preferences = _readPreferences();
 
-    if (!windowSettings.rememberPipPosition.value) {
-      return;
-    }
+      if (!preferences.rememberPosition) return;
 
-    final size = await windowManager.getSize();
-    final position = await windowManager.getPosition();
+      final size = await _host.getSize();
+      final position = await _host.getPosition();
 
-    final displays = await screenRetriever.getAllDisplays();
+      final displays = await _host.getDisplays();
 
-    final display = _findDisplayForPosition(displays, position) ?? await screenRetriever.getPrimaryDisplay();
+      final display = _findDisplayForPosition(displays, position) ?? await _host.getPrimaryDisplay();
 
-    windowSettings.windowsPip.update(size, position, display.id);
+      if (currentMode == WindowLayoutMode.pip) {
+        _writeGeometry(size, position, display.id);
+      }
+    });
   }
 
-  Display? _findDisplayForPosition(List<Display> displays, Offset position) {
+  Future<void> _serializeHostOperation(Future<void> Function() operation) {
+    final result = _hostQueue.then((_) => operation());
+    _hostQueue = result.then<void>((_) {}, onError: (Object _, StackTrace _) {});
+    return result;
+  }
+
+  Future<void> _restoreHostWindow({
+    required bool alwaysOnTop,
+    required Size minimumSize,
+    required Size size,
+    required Offset position,
+  }) async {
+    final restoreOperations = <Future<void> Function()>[
+      () => _host.setMinimumSize(minimumSize),
+      () => _host.setSize(size),
+      () => _host.setPosition(position),
+      () => _host.setAlwaysOnTop(alwaysOnTop),
+    ];
+    for (final restore in restoreOperations) {
+      try {
+        await restore();
+      } catch (error, stackTrace) {
+        debugPrint('Windows PiP host rollback step failed: $error\n$stackTrace');
+      }
+    }
+  }
+
+  WindowsPipDisplay? _findDisplayForPosition(List<WindowsPipDisplay> displays, Offset position) {
     for (final display in displays) {
       final offset = display.visiblePosition ?? Offset.zero;
 
