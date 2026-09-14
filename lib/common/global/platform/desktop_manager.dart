@@ -20,8 +20,31 @@ import 'package:pure_live/common/services/settings/window_size_controller.dart';
 import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 import 'package:pure_live/player/utils/window_helper.dart';
 
+class DesktopTrayMenuCoordinator {
+  Future<void>? _activeTransaction;
+
+  Future<void> show({required Future<void> Function() refresh, required Future<void> Function() open}) {
+    final activeTransaction = _activeTransaction;
+    if (activeTransaction != null) return activeTransaction;
+
+    late final Future<void> transaction;
+    transaction = _run(refresh, open).whenComplete(() {
+      if (identical(_activeTransaction, transaction)) _activeTransaction = null;
+    });
+    _activeTransaction = transaction;
+    return transaction;
+  }
+
+  Future<void> _run(Future<void> Function() refresh, Future<void> Function() open) async {
+    await refresh();
+    await open();
+  }
+}
+
 class DesktopManager {
   static State? _currentState;
+  static final DesktopTrayMenuCoordinator _trayMenuCoordinator = DesktopTrayMenuCoordinator();
+
   static Future<void> initialize() async {
     if (!PlatformUtils.isDesktop) return;
 
@@ -227,8 +250,7 @@ class DesktopManager {
     if (!PlatformUtils.isDesktop) return;
 
     try {
-      await updateTray();
-      await trayManager.popUpContextMenu();
+      await _trayMenuCoordinator.show(refresh: updateTray, open: () => trayManager.popUpContextMenu());
     } catch (e) {
       debugPrint('托盘右键点击处理失败: $e');
     }
@@ -674,24 +696,20 @@ mixin DesktopWindowMixin<T extends StatefulWidget> on State<T>
 
   @override
   void onTrayIconMouseDown() {
-    DesktopManager.handleTrayIconClick();
+    unawaited(DesktopManager.handleTrayIconClick());
   }
 
   @override
   void onTrayIconRightMouseDown() {
-    DesktopManager.handleTrayRightClick();
+    unawaited(DesktopManager.handleTrayRightClick());
   }
 
   @override
-  void onTrayIconRightMouseUp() {
-    windowManager.focus().then((_) {
-      trayManager.popUpContextMenu();
-    });
-  }
+  void onTrayIconRightMouseUp() {}
 
   @override
   void onTrayMenuItemClick(MenuItem menuItem) {
-    DesktopManager.handleTrayMenuClick(menuItem);
+    unawaited(DesktopManager.handleTrayMenuClick(menuItem));
   }
 
   @override
