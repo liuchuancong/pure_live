@@ -4,6 +4,8 @@
 
 ## 开发与发布
 
+- [Windows 标题栏控制按钮可访问性与动作事务审计](WINDOWS_TITLE_BAR_CONTROL_ACCESSIBILITY_AUDIT_2026_09_15.md)：三个系统动作的双语语义与 Tooltip、键盘焦点/激活、可见焦点、异步 single-flight、失败反馈与可重试合同。
+
 - [Windows 窗口几何捕获所有权审计](WINDOWS_WINDOW_GEOMETRY_CAPTURE_OWNERSHIP_AUDIT_2026_09_14.md)：普通窗口/PiP 统一宿主队列、最小化/最大化/真全屏隔离、异步二次核对与事件异常收口。
 
 - [Windows 小窗呈现事务与回滚审计](WINDOWS_PIP_PRESENTATION_TRANSACTION_AUDIT_2026_09_14.md)：全屏/宽屏快照所有权、进出 single-flight、跨宿主呈现回滚、可重试退出与真实宿主状态同步。

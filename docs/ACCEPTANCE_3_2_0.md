@@ -1,5 +1,7 @@
 # 3.2.0 完整验收入口
 
+- **09-15 Windows 标题栏控制按钮已补齐可访问输入与异步动作事务**：[专项审计](WINDOWS_TITLE_BAR_CONTROL_ACCESSIBILITY_AUDIT_2026_09_15.md)。旧三个系统按钮只有图标和鼠标手势，没有 Tooltip、可访问名称、键盘焦点或焦点指示；同步 `VoidCallback` 也不持有原生 Future，快速重复输入可并发派发动作，异常没有界面反馈。`0e654db8` 增加双语语义与 Tooltip，以 Material `InkWell` 提供 Tab 焦点、Enter/Space 激活和可见焦点边框，并在 `_runAction` 内等待单次动作、等待期禁用、收口异常、显示本地化 SnackBar 后恢复重试。有效红灯 **0 PASS / 1 FAIL**，新专项 **5/5 PASS**，最终十文件 **62/62 PASS**、最后一次 analyze 无问题。未构建候选、启动 GUI 或操作设备；W1-01 保持 RUN，宏观保持 **20 PASS / 42 RUN / 0 NR**、仍有 42 组未闭环；Astra Light 0 次。
+
 - **09-14 Windows 普通窗口与 PiP 已统一几何捕获所有权**：[专项审计](WINDOWS_WINDOW_GEOMETRY_CAPTURE_OWNERSHIP_AUDIT_2026_09_14.md)。旧桌面事件在队列外按旧模式分流，普通分支直接异步读取并保存尺寸；读数期间进入/退出 PiP 会污染下次启动大小，最小化、最大化和真全屏尺寸也未隔离，被动 Future 异常另会泄漏。`30c2e4cf` 将 Windows 普通尺寸与 PiP 矩形统一串入宿主队列，执行时按最终模式提交；普通尺寸在读取前后两次核对三种非普通呈现，失败后的队列可重试，桌面事件统一记录异常，非 Windows 路径保持。有效红灯 **7 PASS / 1 FAIL**，宿主专项 **13/13 PASS**，最终十文件 **121/121 PASS**、最后一次 analyze 无问题。未构建候选、启动 GUI 或操作设备；W1-01/W2-01 保持 RUN，宏观保持 **20 PASS / 42 RUN / 0 NR**、仍有 42 组未闭环；Astra Light 0 次。
 
 - **09-14 Windows 小窗呈现层已建立跨宿主事务与失败回滚**：[专项审计](WINDOWS_PIP_PRESENTATION_TRANSACTION_AUDIT_2026_09_14.md)。旧 `WindowService` 在退出全屏后若宿主进入异常不会恢复呈现，重试会覆盖原始快照；退出又在全屏/宽屏恢复前先清快照，恢复异常会让原生宿主、播放器和全局 PiP 状态分离。`b08a33f3` 增加呈现 seam、进出 single-flight 和原始快照所有权：进入失败恢复原呈现；退出呈现失败则恢复 PiP 呈现并重新进入宿主，宿主回滚也异常时以类型化结果让 `PlayerManager` 采用真实的普通窗口状态；全局 PiP 状态保留唯一发布者。有效红灯 **2 PASS / 3 FAIL**，最终七文件 **97/97 PASS**、最后一次 analyze 无问题。未构建候选、启动 GUI 或操作设备；W2-01 保持 RUN，宏观保持 **20 PASS / 42 RUN / 0 NR**、仍有 42 组未闭环；Astra Light 0 次。
