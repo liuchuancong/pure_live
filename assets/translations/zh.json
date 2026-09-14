@@ -211,6 +211,7 @@
     "custom_sleep_minutes_range": "请输入 1 分钟至 365 天之间的分钟数",
     "asmr_sleep_timer_save_failed": "更新自动助眠时长失败，请重试",
     "enable_background_play_subtitle": "暂时切出 APP 时继续播放；手动纯音频同样遵循此开关，自动助眠会话按计时继续",
+    "background_play_apply_failed": "更新后台播放设置失败，请重试",
     "enable_backoff": "启用指数退避",
     "enable_backoff_desc": "失败次数越多，检测间隔越长",
     "enable_cache_limit": "启用缓存限制",

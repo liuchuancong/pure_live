@@ -530,6 +530,86 @@ void main() {
     expect(app.enableAsmrSleepMode.value, isTrue);
     expect(tester.takeException(), isNull);
   }, skip: !Platform.isWindows);
+
+  testWidgets('background playback owns one permission transaction and delays preference commit', (tester) async {
+    final app = SettingsService.to.app;
+    app.enableBackgroundPlay.value = false;
+    final permissionAttempt = Completer<bool>();
+    final disableAttempt = Completer<void>();
+    var permissionCalls = 0;
+    var configureCalls = 0;
+    final tasks = <Future<void>>[];
+
+    await _pumpVideoSettings(
+      tester,
+      english: english,
+      size: const Size(420, 800),
+      platform: TargetPlatform.android,
+      sleepPermissionRequesterOverride: () {
+        permissionCalls++;
+        return permissionAttempt.future;
+      },
+      backgroundPlaybackConfiguratorOverride: ({required enabled}) {
+        configureCalls++;
+        expect(enabled, configureCalls <= 2);
+        if (configureCalls == 1) throw StateError('fixture failure');
+        if (configureCalls == 2) return Future<void>.value();
+        return disableAttempt.future;
+      },
+      backgroundPlaybackTaskObserver: tasks.add,
+    );
+
+    final backgroundEntry = find.ancestor(of: find.text('Play Background'), matching: find.byType(SwitchListTile));
+    await _scrollPageUntilHitTestable(tester, backgroundEntry);
+    final enable = tester.widget<SwitchListTile>(backgroundEntry).onChanged!;
+    enable(true);
+    enable(true);
+    await tester.pump();
+
+    expect(tasks, hasLength(2));
+    expect(permissionCalls, 1);
+    expect(configureCalls, 0);
+    expect(app.enableBackgroundPlay.value, isFalse);
+    expect(tester.widget<SwitchListTile>(backgroundEntry).onChanged, isNull);
+
+    permissionAttempt.complete(true);
+    await tasks.first;
+    await tester.pumpAndSettle();
+
+    expect(permissionCalls, 1);
+    expect(configureCalls, 1);
+    expect(app.enableBackgroundPlay.value, isFalse);
+    expect(find.text('Could not update background playback. Try again.'), findsOneWidget);
+    expect(tester.widget<SwitchListTile>(backgroundEntry).onChanged, isNotNull);
+
+    tester.widget<SwitchListTile>(backgroundEntry).onChanged!(true);
+    expect(tasks, hasLength(3));
+    await tasks.last;
+    await tester.pumpAndSettle();
+
+    expect(permissionCalls, 2);
+    expect(configureCalls, 2);
+    expect(app.enableBackgroundPlay.value, isTrue);
+
+    final disable = tester.widget<SwitchListTile>(backgroundEntry).onChanged!;
+    disable(false);
+    disable(false);
+    await tester.pump();
+
+    expect(tasks, hasLength(5));
+    expect(configureCalls, 3);
+    expect(app.enableBackgroundPlay.value, isTrue);
+    expect(tester.widget<SwitchListTile>(backgroundEntry).onChanged, isNull);
+
+    disableAttempt.complete();
+    await tasks[3];
+    await tester.pumpAndSettle();
+
+    expect(configureCalls, 3);
+    expect(app.enableBackgroundPlay.value, isFalse);
+    expect(tester.widget<SwitchListTile>(backgroundEntry).onChanged, isNotNull);
+    expect(tester.takeException(), isNull);
+  }, skip: !Platform.isWindows);
 }
 
 Future<void> _pumpVideoSettings(
@@ -540,6 +620,8 @@ Future<void> _pumpVideoSettings(
   required TargetPlatform platform,
   SleepTimerConfigurator? sleepTimerConfiguratorOverride,
   SleepPermissionRequester? sleepPermissionRequesterOverride,
+  BackgroundPlaybackConfigurator? backgroundPlaybackConfiguratorOverride,
+  ValueChanged<Future<void>>? backgroundPlaybackTaskObserver,
 }) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
@@ -571,6 +653,8 @@ Future<void> _pumpVideoSettings(
             platformOverride: platform,
             sleepTimerConfiguratorOverride: sleepTimerConfiguratorOverride,
             sleepPermissionRequesterOverride: sleepPermissionRequesterOverride,
+            backgroundPlaybackConfiguratorOverride: backgroundPlaybackConfiguratorOverride,
+            backgroundPlaybackTaskObserver: backgroundPlaybackTaskObserver,
           ),
         ),
       ),

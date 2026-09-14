@@ -12,6 +12,7 @@ import 'package:pure_live/modules/settings/pages/audience_metric_settings_page.d
 
 typedef SleepTimerConfigurator = Future<void> Function({required bool enabled, required int minutes});
 typedef SleepPermissionRequester = Future<bool> Function();
+typedef BackgroundPlaybackConfigurator = Future<void> Function({required bool enabled});
 
 class VideoSettingsPage extends StatefulWidget {
   const VideoSettingsPage({
@@ -19,6 +20,8 @@ class VideoSettingsPage extends StatefulWidget {
     this.platformOverride,
     this.sleepTimerConfiguratorOverride,
     this.sleepPermissionRequesterOverride,
+    this.backgroundPlaybackConfiguratorOverride,
+    this.backgroundPlaybackTaskObserver,
   });
 
   @visibleForTesting
@@ -29,6 +32,12 @@ class VideoSettingsPage extends StatefulWidget {
 
   @visibleForTesting
   final SleepPermissionRequester? sleepPermissionRequesterOverride;
+
+  @visibleForTesting
+  final BackgroundPlaybackConfigurator? backgroundPlaybackConfiguratorOverride;
+
+  @visibleForTesting
+  final ValueChanged<Future<void>>? backgroundPlaybackTaskObserver;
 
   @override
   State<VideoSettingsPage> createState() => _VideoSettingsPageState();
@@ -41,6 +50,8 @@ class _VideoSettingsPageState extends State<VideoSettingsPage> {
   bool _asmrDialogBusy = false;
   bool _asmrModeBusy = false;
   String? _asmrModeErrorText;
+  bool _backgroundPlayBusy = false;
+  String? _backgroundPlayErrorText;
 
   TargetPlatform get _platform => widget.platformOverride ?? defaultTargetPlatform;
   bool get _isAndroid => _platform == TargetPlatform.android;
@@ -158,19 +169,15 @@ class _VideoSettingsPageState extends State<VideoSettingsPage> {
               context.buildSwitchTile(
                 icon: Remix.music_2_line,
                 title: i18n("enable_background_play"),
-                subtitle: i18n("enable_background_play_subtitle"),
+                subtitle: _backgroundPlayErrorText ?? i18n("enable_background_play_subtitle"),
+                subtitleColor: _backgroundPlayErrorText == null ? null : theme.colorScheme.error,
+                isLong: true,
                 value: SettingsService.to.app.enableBackgroundPlay,
-                onChanged: (val) async {
-                  SettingsService.to.app.enableBackgroundPlay.v = val;
-                  if (val && _isAndroid) {
-                    bool hasPermission = await LiveAudioService.requestPlatformPermissions();
-                    SettingsService.to.app.enableBackgroundPlay.v = hasPermission;
-                    await LiveAudioService.syncKeepAlive();
-                  } else if (!val) {
-                    if (!LiveAudioService.isSleepSessionActive) {
-                      await LiveAudioService.releaseKeepAlive();
-                    }
-                  }
+                enabled: !_backgroundPlayBusy,
+                autoCommit: false,
+                onChanged: (enabled) {
+                  final task = _changeBackgroundPlayback(enabled);
+                  widget.backgroundPlaybackTaskObserver?.call(task);
                 },
               ),
             if (_isAndroid)
@@ -332,6 +339,44 @@ class _VideoSettingsPageState extends State<VideoSettingsPage> {
     } finally {
       if (mounted) setState(() => _asmrModeBusy = false);
     }
+  }
+
+  Future<void> _changeBackgroundPlayback(bool enabled) async {
+    if (_backgroundPlayBusy || !mounted) return;
+    if (ModalRoute.of(context)?.isCurrent != true) return;
+    final app = SettingsService.to.app;
+    if (app.isClosed || app.enableBackgroundPlay.v == enabled) return;
+    final previous = app.enableBackgroundPlay.v;
+    final requestPermission = widget.sleepPermissionRequesterOverride ?? LiveAudioService.requestPlatformPermissions;
+    final configure = widget.backgroundPlaybackConfiguratorOverride ?? LiveAudioService.configureBackgroundPlayback;
+    setState(() {
+      _backgroundPlayBusy = true;
+      _backgroundPlayErrorText = null;
+    });
+    try {
+      if (enabled) {
+        final granted = await requestPermission();
+        if (!_canCommitBackgroundPlayback(app) || !granted) return;
+      }
+      await configure(enabled: enabled);
+      if (!_canCommitBackgroundPlayback(app)) {
+        try {
+          await configure(enabled: previous);
+        } catch (_) {}
+        return;
+      }
+      app.enableBackgroundPlay.v = enabled;
+    } catch (_) {
+      if (_canCommitBackgroundPlayback(app)) {
+        setState(() => _backgroundPlayErrorText = i18n('background_play_apply_failed'));
+      }
+    } finally {
+      if (mounted) setState(() => _backgroundPlayBusy = false);
+    }
+  }
+
+  bool _canCommitBackgroundPlayback(AppSettingsController app) {
+    return mounted && !app.isClosed && ModalRoute.of(context)?.isActive == true;
   }
 
   bool _canCommitAsmrMode(AppSettingsController app) {

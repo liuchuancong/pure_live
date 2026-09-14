@@ -189,9 +189,19 @@ class LiveAudioService {
 
   static Future<void> releaseKeepAlive() => BackgroundPlaybackService.setKeepAlive(false);
 
-  static Future<void> syncKeepAlive() {
-    final shouldKeepAlive = (_handler?.playbackState.value.playing ?? false) && shouldContinueInBackground;
+  static Future<void> configureBackgroundPlayback({required bool enabled}) {
+    final shouldKeepAlive =
+        (_handler?.playbackState.value.playing ?? false) &&
+        BackgroundPlaybackPolicy.shouldContinue(
+          backgroundPlaybackEnabled: enabled,
+          sleepSessionActive: BackgroundPlaybackService.sleepSessionActive,
+          audioOnlySessionActive: BackgroundPlaybackService.audioOnlySessionActive,
+        );
     return BackgroundPlaybackService.setKeepAlive(shouldKeepAlive);
+  }
+
+  static Future<void> syncKeepAlive() {
+    return configureBackgroundPlayback(enabled: SettingsService.to.app.enableBackgroundPlay.v);
   }
 
   static Future<bool> requestPlatformPermissions() async {
