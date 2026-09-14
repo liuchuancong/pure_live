@@ -1,5 +1,7 @@
 # 3.2.0 完整验收入口
 
+- **09-14 视频设置 ASMR 定时已建立路由与异步保存事务**：[专项审计](VIDEO_SETTINGS_ASMR_TIMER_TRANSACTION_AUDIT_2026_09_14.md)。旧入口连续触发会叠加弹窗，保存又先写偏好再等待定时服务，失败时留下已变更值且没有可重试反馈。`1ac4919b` 以页面 single-flight、当前路由/生命周期栅栏和根 Navigator 持有弹窗；非法输入改为行内错误，服务等待期间输入、预设、取消、保存和系统返回均停止重复工作，成功后才持久化，失败保留旧值与草稿并允许重试。有效红灯 **8 PASS / 1 FAIL**，最终四文件 **23/23 PASS**、最后一次 analyze 无问题。未构建候选、启动 GUI 或操作设备；A2-01 保持 RUN，宏观保持 **20 PASS / 42 RUN / 0 NR**、仍有 42 组未闭环；Astra Light 0 次。
+
 - **09-14 视频设置清晰度双入口已建立页面路由事务**：[专项审计](VIDEO_SETTINGS_RESOLUTION_ROUTE_TRANSACTION_AUDIT_2026_09_14.md)。旧 Wi-Fi/移动网络入口通过全局 `Get.context` 各自创建弹窗，连续触发会叠加两条路由；页面销毁后旧回调抛错，被新页面覆盖后又会把弹窗盖到当前路由。`89bfb10c` 改由页面共享 single-flight，以页面/当前路由/控制器栅栏和 `showDialog<String>` 延迟提交精确目标；滚动内容、16/20 边距、420 px 上限和 48×48 取消动作覆盖 320×480 / 3.0 倍文字。主红灯 **5 PASS / 2 FAIL**，当前路由红灯 **7 PASS / 1 FAIL**，最终两文件 **23/23 PASS**、最后一次 analyze 无问题。未构建候选、启动 GUI 或操作设备；A2-01/W1-01 保持 RUN，宏观保持 **20 PASS / 42 RUN / 0 NR**、仍有 42 组未闭环；Astra Light 0 次。
 
 - **09-14 Windows 小窗捕获与重置已统一几何事务**：[专项审计](WINDOWS_PIP_GEOMETRY_CAPTURE_AND_RESET_AUDIT_2026_09_14.md)。旧运行时捕获/导出把 `displayId` 写在归一化器不读取的层级，尺寸和坐标保留但显示器身份稳定丢失；旧重置回调连续触发还会创建两个弹窗，在 320×480 / 3.0 倍英文下各溢出 704 px。`b13d8dea` 统一规范嵌套快照，并以页面单次门禁、根 Navigator、滚动正文、48×48 红色“重置”动作和生命周期栅栏完成五字段清空。四轮有效红灯分别为 **4 PASS / 1 FAIL、4 PASS / 1 FAIL、4 PASS / 1 FAIL、9 PASS / 1 FAIL**；最终五文件 **31/31 PASS**、最后一次 analyze 无问题。未构建候选、启动 GUI 或操作设备；W1-01/W2-01 保持 RUN，宏观保持 **20 PASS / 42 RUN / 0 NR**、仍有 42 组未闭环；Astra Light 0 次。
