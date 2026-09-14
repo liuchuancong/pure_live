@@ -4,6 +4,8 @@
 
 ## 开发与发布
 
+- [观看记录清空确认与快照事务审计](HISTORY_CLEAR_CONFIRMATION_AND_SNAPSHOT_AUDIT_2026_09_14.md)：具名数量确认、320×480 / 3.0 倍中英文动作可达、单次路由，以及确认期间新增/重新观看记录的身份快照保护。
+
 - [本地缓存清理确认与事务审计](CACHE_CLEAR_CONFIRMATION_AND_TRANSACTION_AUDIT_2026_09_14.md)：320×480 / 3.0 倍文字动作可达、破坏性层级、单次确认/清理任务及 10 项回归。
 
 - [账号退出确认与事务审计](ACCOUNT_LOGOUT_CONFIRMATION_AND_TRANSACTION_AUDIT_2026_09_14.md)：七个平台具名确认、320×480 / 3.0 倍中英文动作可达、单次路由/清理任务及 16 项回归。
