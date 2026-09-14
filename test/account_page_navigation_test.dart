@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -21,6 +22,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   late Directory hiveDirectory;
   late Map<String, dynamic> english;
+  late Map<String, dynamic> chinese;
   late CookieSettingsController cookies;
   late _TestBilibiliAccountService bilibili;
 
@@ -29,6 +31,7 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     await EasyLocalization.ensureInitialized();
     english = jsonDecode(await File('assets/translations/en.json').readAsString()) as Map<String, dynamic>;
+    chinese = jsonDecode(await File('assets/translations/zh.json').readAsString()) as Map<String, dynamic>;
     Hive.init(hiveDirectory.path);
     await HivePrefUtil.init();
   });
@@ -81,18 +84,99 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('logged-in platform confirmation remains reachable in narrow very-large text', (tester) async {
+  for (final locale in ['en', 'zh']) {
+    testWidgets('$locale logged-in confirmation names its account and remains reachable at three-times text', (
+      tester,
+    ) async {
+      final labels = locale == 'en' ? english : chinese;
+      cookies.huyaCookie.value = 'fixture-cookie';
+      await _pumpAccountPage(tester, labels, locale: locale);
+      final huya = find.text(labels['site_huya'] as String);
+      await _scrollPageUntilHitTestable(tester, huya);
+      await tester.tap(huya.hitTestable());
+      await tester.pumpAndSettle();
+
+      final dialog = find.byType(AlertDialog);
+      expect(dialog, findsOneWidget);
+      expect(
+        find.descendant(of: dialog, matching: find.text(locale == 'en' ? 'Log out of "Huya"?' : '确定退出“虎牙”账号吗？')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: dialog, matching: find.text(labels['cancel'] as String)).hitTestable(),
+        findsOneWidget,
+      );
+      expect(
+        find
+            .descendant(of: dialog, matching: find.widgetWithText(FilledButton, labels['logout'] as String))
+            .hitTestable(),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  testWidgets('logout confirmation coalesces repeated account row actions', (tester) async {
     cookies.huyaCookie.value = 'fixture-cookie';
     await _pumpAccountPage(tester, english);
-    final huya = find.text('Huya');
-    await _scrollPageUntilHitTestable(tester, huya);
-    await tester.tap(huya.hitTestable());
+    final huyaTile = find.ancestor(of: find.text('Huya'), matching: find.byType(ListTile));
+    final onTap = tester.widget<ListTile>(huyaTile).onTap!;
+
+    onTap();
+    onTap();
     await tester.pumpAndSettle();
 
-    final dialog = find.byType(AlertDialog);
-    expect(dialog, findsOneWidget);
-    expect(find.descendant(of: dialog, matching: find.text('Cancel')).hitTestable(), findsOneWidget);
-    expect(find.descendant(of: dialog, matching: find.text('Confirm')).hitTestable(), findsOneWidget);
+    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(find.text('Log out of "Huya"?'), findsOneWidget);
+    await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+    await tester.pumpAndSettle();
+    expect(cookies.huyaCookie.value, 'fixture-cookie');
+
+    onTap();
+    await tester.pumpAndSettle();
+    expect(find.byType(AlertDialog), findsOneWidget);
+    await tester.tap(find.widgetWithText(FilledButton, 'Logout'));
+    await tester.pumpAndSettle();
+    expect(cookies.huyaCookie.value, isEmpty);
+    expect(find.byType(AlertDialog), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Bilibili logout keeps the account transaction busy through browser cleanup', (tester) async {
+    final cleanup = Completer<void>();
+    var cleanupCalls = 0;
+    Get.delete<BiliBiliAccountService>(force: true);
+    bilibili = _TestBilibiliAccountService(
+      browserCookieClearer: () {
+        cleanupCalls++;
+        return cleanup.future;
+      },
+    );
+    Get.put<BiliBiliAccountService>(bilibili);
+    cookies.bilibiliCookie.value = 'fixture-cookie';
+    bilibili.logined.value = true;
+    bilibili.name.value = 'Fixture account';
+    await _pumpAccountPage(tester, english);
+    final tile = find.ancestor(of: find.text('Bilibili'), matching: find.byType(ListTile));
+    final staleOnTap = tester.widget<ListTile>(tile).onTap!;
+
+    staleOnTap();
+    staleOnTap();
+    await tester.pumpAndSettle();
+    expect(find.byType(AlertDialog), findsOneWidget);
+    await tester.tap(find.widgetWithText(FilledButton, 'Logout'));
+    await tester.pumpAndSettle();
+    expect(cleanupCalls, 1);
+    expect(cookies.bilibiliCookie.value, isEmpty);
+    expect(find.byType(AlertDialog), findsNothing);
+
+    staleOnTap();
+    await tester.pump();
+    expect(find.byType(AlertDialog), findsNothing);
+    expect(cleanupCalls, 1);
+
+    cleanup.complete();
+    await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
   });
 
@@ -109,7 +193,7 @@ void main() {
   });
 }
 
-Future<void> _pumpAccountPage(WidgetTester tester, Map<String, dynamic> english) async {
+Future<void> _pumpAccountPage(WidgetTester tester, Map<String, dynamic> translations, {String locale = 'en'}) async {
   tester.view.physicalSize = const Size(320, 480);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.resetPhysicalSize);
@@ -120,12 +204,12 @@ Future<void> _pumpAccountPage(WidgetTester tester, Map<String, dynamic> english)
   });
   await tester.pumpWidget(
     EasyLocalization(
-      supportedLocales: const [Locale('en')],
-      startLocale: const Locale('en'),
-      fallbackLocale: const Locale('en'),
+      supportedLocales: [Locale(locale)],
+      startLocale: Locale(locale),
+      fallbackLocale: Locale(locale),
       saveLocale: false,
       path: 'assets/translations',
-      assetLoader: _Translations(english),
+      assetLoader: _Translations(translations),
       child: Builder(
         builder: (context) => GetMaterialApp(
           locale: context.locale,
@@ -173,12 +257,12 @@ Future<void> _scrollPageUntilHitTestable(WidgetTester tester, Finder target) asy
 }
 
 class _Translations extends AssetLoader {
-  const _Translations(this.english);
+  const _Translations(this.translations);
 
-  final Map<String, dynamic> english;
+  final Map<String, dynamic> translations;
 
   @override
-  Future<Map<String, dynamic>> load(String path, Locale locale) async => english;
+  Future<Map<String, dynamic>> load(String path, Locale locale) async => translations;
 }
 
 class _TestSettingsService extends SettingsService {
@@ -200,6 +284,8 @@ class _TestSettingsService extends SettingsService {
 }
 
 class _TestBilibiliAccountService extends BiliBiliAccountService {
+  _TestBilibiliAccountService({super.browserCookieClearer}) : super(initialLoadDelay: const Duration(days: 1));
+
   @override
   // Avoid timers and account network activity in a route/layout fixture.
   // ignore: must_call_super

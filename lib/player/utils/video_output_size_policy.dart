@@ -9,6 +9,7 @@ Size calculateVideoOutputSize({
   required double devicePixelRatio,
   int? sourceWidth,
   int? sourceHeight,
+  BoxFit fit = BoxFit.contain,
 }) {
   if (!logicalViewport.width.isFinite ||
       !logicalViewport.height.isFinite ||
@@ -24,7 +25,19 @@ Size calculateVideoOutputSize({
   // Use a conservative 1080p provisional source before mpv publishes video
   // parameters. It is replaced immediately when the real dimensions arrive.
   final source = validSource ? Size(sourceWidth.toDouble(), sourceHeight.toDouble()) : const Size(1920, 1080);
-  final scale = math.min(1.0, math.min(viewportWidth / source.width, viewportHeight / source.height));
+  final widthScale = viewportWidth / source.width;
+  final heightScale = viewportHeight / source.height;
+  // Keep the native texture at the source aspect ratio so Flutter remains the
+  // sole owner of fitting/cropping. Use the fit's dominant axis to ensure the
+  // fitted texture is never enlarged above the visible physical viewport.
+  final requestedScale = switch (fit) {
+    BoxFit.contain || BoxFit.scaleDown => math.min(widthScale, heightScale),
+    BoxFit.cover || BoxFit.fill => math.max(widthScale, heightScale),
+    BoxFit.fitWidth => widthScale,
+    BoxFit.fitHeight => heightScale,
+    BoxFit.none => 1.0,
+  };
+  final scale = math.min(1.0, requestedScale);
 
   int evenPixel(double value) {
     final rounded = math.max(2, value.round());

@@ -11,12 +11,14 @@ import 'package:pure_live/common/models/live_room.dart';
 import 'package:pure_live/common/services/settings/font_settings_controller.dart';
 import 'package:pure_live/common/services/settings/history_controller.dart';
 import 'package:pure_live/common/services/settings/refresh_config_controller.dart';
+import 'package:pure_live/common/services/settings/room_card_settings_controller.dart';
 import 'package:pure_live/common/services/settings/theme_settings_controller.dart';
 import 'package:pure_live/common/services/settings_service.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:pure_live/get/get.dart';
 import 'package:pure_live/modules/history/history_page.dart';
 import 'package:pure_live/plugins/global.dart';
+import 'package:remixicon/remixicon.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -43,6 +45,7 @@ void main() {
     Get.testMode = true;
     Get.put<SettingsService>(_Settings());
     Get.put(ThemeSettingsController());
+    Get.put(RoomCardSettingsController());
     Get.put(RefreshConfigController()).maxConcurrentRefresh.value = 4;
     history = Get.put(HistoryController());
     history.setHistoryLimit(50);
@@ -126,7 +129,7 @@ void main() {
     final pending = refresh(tester);
     await tester.tap(find.byTooltip(translations['clear_history'] as String));
     await tester.pumpAndSettle();
-    await tester.tap(find.text(translations['confirm'] as String));
+    await tester.tap(find.widgetWithText(FilledButton, translations['clear'] as String));
     await tester.pumpAndSettle();
     expect(find.byType(AlertDialog), findsNothing);
     expect(history.historyRooms.value, isEmpty);
@@ -228,6 +231,53 @@ void main() {
     await finish(tester);
   });
 
+  testWidgets('history limit reports invalid custom input without changing the draft', (tester) async {
+    await open(tester, locale: 'en');
+    await tester.tap(find.byTooltip(english['history_limit'] as String));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'not-a-count');
+    final apply = find.widgetWithText(ElevatedButton, english['apply'] as String);
+    await tester.ensureVisible(apply);
+    await tester.tap(apply);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Enter a whole number of 0 or greater.'), findsOneWidget);
+    expect(find.text('Current Value: 50'), findsOneWidget);
+    expect(history.historyLimit.value, 50);
+
+    await tester.enterText(find.byType(TextField), '75');
+    await tester.pump();
+    expect(find.text('Enter a whole number of 0 or greater.'), findsNothing);
+    await tester.tap(apply);
+    await tester.pumpAndSettle();
+    expect(find.text('Current Value: 75'), findsOneWidget);
+    expect(history.historyLimit.value, 50);
+    await tester.tap(find.text(english['confirm'] as String));
+    await tester.pumpAndSettle();
+    expect(history.historyLimit.value, 75);
+    await finish(tester);
+  });
+
+  testWidgets('history limit actions remain reachable at narrow three-times text', (tester) async {
+    await open(tester, locale: 'en', size: const Size(320, 480), scale: 3);
+    await tester.tap(find.byTooltip(english['history_limit'] as String));
+    await tester.pumpAndSettle();
+    final field = find.byType(TextField);
+    await tester.ensureVisible(field);
+    await tester.enterText(field, '80');
+    final apply = find.widgetWithText(ElevatedButton, english['apply'] as String);
+    await tester.ensureVisible(apply);
+    await tester.tap(apply);
+    await tester.pumpAndSettle();
+    expect(find.text('Current Value: 80'), findsOneWidget);
+    final confirm = find.widgetWithText(TextButton, english['confirm'] as String);
+    await tester.ensureVisible(confirm);
+    await tester.tap(confirm);
+    await tester.pumpAndSettle();
+    expect(history.historyLimit.value, 80);
+    await finish(tester);
+  });
+
   testWidgets('successful refresh keeps watch timestamps and list order', (tester) async {
     await open(tester);
     final pending = refresh(tester);
@@ -297,6 +347,130 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(AlertDialog), findsNothing);
     expect(history.historyRooms.value, hasLength(2));
+    await finish(tester);
+  });
+
+  for (final locale in ['en', 'zh']) {
+    testWidgets('$locale clear confirmation names its snapshot and coalesces repeated actions', (tester) async {
+      final labels = locale == 'en' ? english : translations;
+      await open(tester, locale: locale, size: const Size(320, 480), scale: 3);
+      final clearAction = find.ancestor(
+        of: find.byTooltip(labels['clear_history'] as String),
+        matching: find.byType(IconButton),
+      );
+      final onPressed = tester.widget<IconButton>(clearAction).onPressed!;
+
+      onPressed();
+      onPressed();
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AlertDialog), findsOneWidget);
+      expect(
+        find.text(
+          locale == 'en' ? 'Clear all 2 history entries? This action cannot be undone.' : '确定清空这 2 条历史记录吗？此操作不可撤销。',
+        ),
+        findsOneWidget,
+      );
+      final cancel = find.widgetWithText(TextButton, labels['cancel'] as String).hitTestable();
+      final clear = find.widgetWithText(FilledButton, labels['clear'] as String).hitTestable();
+      expect(cancel, findsOneWidget);
+      expect(clear, findsOneWidget);
+      expect(tester.getSize(cancel).width, greaterThanOrEqualTo(48));
+      expect(tester.getSize(cancel).height, greaterThanOrEqualTo(48));
+      expect(tester.getSize(clear).width, greaterThanOrEqualTo(48));
+      expect(tester.getSize(clear).height, greaterThanOrEqualTo(48));
+      await tester.tap(cancel);
+      await tester.pumpAndSettle();
+      expect(history.historyRooms.value, hasLength(2));
+
+      onPressed();
+      await tester.pumpAndSettle();
+      expect(find.byType(AlertDialog), findsOneWidget);
+      await tester.tap(find.widgetWithText(TextButton, labels['cancel'] as String));
+      await tester.pumpAndSettle();
+      await finish(tester);
+    });
+  }
+
+  testWidgets('clear removes the confirmed snapshot but preserves watches added while deciding', (tester) async {
+    await open(tester, locale: 'en');
+    await tester.tap(find.byTooltip(english['clear_history'] as String));
+    await tester.pumpAndSettle();
+
+    history.addRoomToHistory(room('a', 0).copyWith(title: 'rewatched-a'));
+    history.addRoomToHistory(room('c', 0).copyWith(title: 'new-c'));
+    await tester.pump();
+    await tester.tap(find.widgetWithText(FilledButton, english['clear'] as String));
+    await tester.pumpAndSettle();
+
+    expect(history.historyRooms.value.map((room) => room.roomId), ['c', 'a']);
+    expect(history.historyRooms.value.map((room) => room.title), ['new-c', 'rewatched-a']);
+    await finish(tester);
+  });
+
+  testWidgets('history delete control is named and keeps a 48 pixel target', (tester) async {
+    history.historyRooms.value = [room('a', 100)];
+    await open(tester, locale: 'en', size: const Size(320, 480), scale: 3);
+
+    final delete = find.byTooltip('Remove old-a from watch history').hitTestable();
+    expect(delete, findsOneWidget);
+    expect(tester.getSize(delete).width, greaterThanOrEqualTo(48));
+    expect(tester.getSize(delete).height, greaterThanOrEqualTo(48));
+    await finish(tester);
+  });
+
+  for (final locale in ['en', 'zh']) {
+    testWidgets('$locale history delete names one entry and coalesces repeated actions', (tester) async {
+      final labels = locale == 'en' ? english : translations;
+      final title = locale == 'en'
+          ? List.filled(5, 'a very long room title').join(' / ')
+          : List.filled(5, '一个很长的直播间标题').join(' / ');
+      history.historyRooms.value = [room('a', 100).copyWith(title: title), room('b', 90)];
+      await open(tester, locale: locale, size: const Size(320, 480), scale: 3);
+      final deleteButton = find.ancestor(
+        of: find.byIcon(RemixIcons.delete_bin_line).first,
+        matching: find.byType(IconButton),
+      );
+      final onPressed = tester.widget<IconButton>(deleteButton).onPressed!;
+
+      onPressed();
+      onPressed();
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AlertDialog), findsOneWidget);
+      expect(
+        find.text(
+          locale == 'en'
+              ? 'Remove “$title” from watch history? This only removes this saved entry.'
+              : '要从观看记录中删除“$title”吗？仅删除这一条记录。',
+        ),
+        findsOneWidget,
+      );
+      final cancel = find.widgetWithText(TextButton, labels['cancel'] as String).hitTestable();
+      final remove = find.widgetWithText(FilledButton, labels['delete'] as String).hitTestable();
+      expect(cancel, findsOneWidget);
+      expect(remove, findsOneWidget);
+      expect(tester.getSize(cancel).height, greaterThanOrEqualTo(48));
+      expect(tester.getSize(remove).height, greaterThanOrEqualTo(48));
+      await tester.tap(cancel);
+      await tester.pumpAndSettle();
+      expect(history.historyRooms.value, hasLength(2));
+      await finish(tester);
+    });
+  }
+
+  testWidgets('confirmed delete preserves a later watch of the same room', (tester) async {
+    await open(tester, locale: 'en');
+    await tester.tap(find.byTooltip('Remove old-a from watch history'));
+    await tester.pumpAndSettle();
+
+    history.addRoomToHistory(room('a', 0).copyWith(title: 'rewatched-a'));
+    await tester.pump();
+    await tester.tap(find.widgetWithText(FilledButton, english['delete'] as String));
+    await tester.pumpAndSettle();
+
+    expect(history.historyRooms.value.map((room) => room.roomId), ['a', 'b']);
+    expect(history.historyRooms.value.first.title, 'rewatched-a');
     await finish(tester);
   });
 

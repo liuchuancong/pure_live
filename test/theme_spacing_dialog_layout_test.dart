@@ -172,9 +172,9 @@ Future<void> _pumpRouteTransition(WidgetTester tester) async {
 }
 
 Future<void> _scrollUntilHitTestable(WidgetTester tester, Finder target) async {
-  for (var attempt = 0; attempt < 30; attempt++) {
+  for (var attempt = 0; attempt < 40; attempt++) {
     if (target.hitTestable().evaluate().isNotEmpty) return;
-    await tester.drag(find.byType(Scrollable).first, const Offset(0, -120));
+    await tester.drag(find.byType(Scrollable).first, const Offset(0, -400));
     await tester.pump();
   }
   fail('Theme setting did not become hit-testable after bounded scrolling.');

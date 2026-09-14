@@ -79,10 +79,63 @@ class _AreasRoomPageState extends State<AreasRoomPage> {
   }
 }
 
-class FavoriteAreaFloatingButton extends StatelessWidget {
+class FavoriteAreaFloatingButton extends StatefulWidget {
   const FavoriteAreaFloatingButton({super.key, required this.area});
 
   final LiveArea area;
+
+  @override
+  State<FavoriteAreaFloatingButton> createState() => _FavoriteAreaFloatingButtonState();
+}
+
+class _FavoriteAreaFloatingButtonState extends State<FavoriteAreaFloatingButton> {
+  bool _busy = false;
+
+  LiveArea get area => widget.area;
+
+  Future<void> _toggleFavorite({required LiveArea target, required bool isFavorite}) async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    final favorites = SettingsService.to.fav;
+    try {
+      if (!isFavorite) {
+        favorites.addArea(target);
+        return;
+      }
+
+      final displayName = target.areaName?.trim().isNotEmpty == true ? target.areaName!.trim() : i18n('unnamed_area');
+      final confirmed = await showDialog<bool>(
+        context: context,
+        useRootNavigator: false,
+        builder: (dialogContext) => AlertDialog(
+          scrollable: true,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+          title: Text(i18n('unfollow')),
+          content: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: Text(i18n('unfollow_message', args: {'name': displayName})),
+          ),
+          actionsOverflowDirection: VerticalDirection.down,
+          actionsOverflowButtonSpacing: 8,
+          actions: [
+            TextButton(
+              style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: Text(i18n('cancel')),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(minimumSize: const Size(48, 48)),
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: Text(i18n('confirm')),
+            ),
+          ],
+        ),
+      );
+      if (confirmed == true) favorites.removeArea(target);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
 
   Widget _buildAvatar(BuildContext context) {
     final theme = Theme.of(context);
@@ -167,30 +220,7 @@ class FavoriteAreaFloatingButton extends StatelessWidget {
               color: Colors.transparent,
               child: InkWell(
                 borderRadius: BorderRadius.circular(isFavorite ? 24 : 16),
-                onTap: () {
-                  if (isFavorite) {
-                    showDialog<bool>(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        title: Text(i18n("unfollow")),
-                        content: Text(i18n("unfollow_message", args: {"name": displayName})),
-                        actions: [
-                          TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(i18n("cancel"))),
-                          ElevatedButton(
-                            onPressed: () => Navigator.of(context).pop(true),
-                            child: Text(i18n("confirm")),
-                          ),
-                        ],
-                      ),
-                    ).then((value) {
-                      if (value == true) {
-                        SettingsService.to.fav.removeArea(area);
-                      }
-                    });
-                  } else {
-                    SettingsService.to.fav.addArea(area);
-                  }
-                },
+                onTap: _busy ? null : () => _toggleFavorite(target: area, isFavorite: isFavorite),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   child: Row(

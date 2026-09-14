@@ -122,7 +122,11 @@ dependencies:
   android_intent_plus: ^6.0.0
 
   # -------------------------- 设备/系统权限/硬件 --------------------------
-  screen_brightness: ^2.1.2 # 屏幕亮度控制
+  # Brightness gestures are mobile-only. Depend on the mobile implementations
+  # directly so desktop builds never register a physical-monitor DDC/CI plugin.
+  screen_brightness_platform_interface: ^2.1.2
+  screen_brightness_android: ^2.1.6
+  screen_brightness_ios: ^2.1.4
   volume_controller: ^3.4.4 # 音量控制
   wakelock_plus: ^1.4.0 # 保持屏幕常亮
   battery_plus: ^7.0.0 # 电池状态获取

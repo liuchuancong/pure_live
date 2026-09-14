@@ -983,6 +983,7 @@ class MediaKitAdapter
       outputIdentity: _controller,
       sourceWidth: _widthSubject,
       sourceHeight: _heightSubject,
+      fit: effectiveFit,
       onResize: (width, height, force) => _controller.setSize(width: width, height: height, force: force),
       child: video,
     );

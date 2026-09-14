@@ -59,8 +59,8 @@ void main() {
     await Hive.close();
     await root.delete(recursive: true);
   });
-  Future<void> open(WidgetTester tester, String locale, double width, double scale) async {
-    tester.view.physicalSize = Size(width, 850);
+  Future<void> open(WidgetTester tester, String locale, double width, double scale, {double height = 850}) async {
+    tester.view.physicalSize = Size(width, height);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -181,6 +181,43 @@ void main() {
       expect(recorder.tasks.single, same(task));
       expect(recorder.removals, 0);
       expect(tester.takeException(), isNull);
+    });
+    testWidgets('recorder remove confirmation names a long task and stays reachable in $locale', (tester) async {
+      task.status = RecordStatus.stopped;
+      task.title = List.filled(6, locale == 'zh' ? '很长的直播间标题' : 'A very long live room title').join(' ');
+      await open(tester, locale, 320, 3, height: 480);
+      final remove = find.widgetWithText(TextButton, translations[locale]!['remove'] as String);
+      await tester.ensureVisible(remove);
+      await tester.pumpAndSettle();
+      await tester.tap(remove);
+      await tester.pumpAndSettle();
+      expect(find.descendant(of: find.byType(AlertDialog), matching: find.textContaining(task.title)), findsOneWidget);
+      expect(find.widgetWithText(TextButton, translations[locale]!['cancel'] as String).hitTestable(), findsOneWidget);
+      expect(
+        find.widgetWithText(FilledButton, translations[locale]!['confirm'] as String).hitTestable(),
+        findsOneWidget,
+      );
+      await tester.tap(find.widgetWithText(TextButton, translations[locale]!['cancel'] as String).hitTestable());
+      await tester.pumpAndSettle();
+      expect(recorder.removals, 0);
+      expect(tester.takeException(), isNull);
+    });
+    testWidgets('recorder remove confirmation is a single-flight route in $locale', (tester) async {
+      task.status = RecordStatus.stopped;
+      await open(tester, locale, 320, 1);
+      final remove = find.widgetWithText(TextButton, translations[locale]!['remove'] as String);
+      await tester.ensureVisible(remove);
+      await tester.pumpAndSettle();
+      final onPressed = tester.widget<TextButton>(remove).onPressed!;
+      onPressed();
+      onPressed();
+      await tester.pumpAndSettle();
+      expect(find.byType(AlertDialog), findsOneWidget);
+      expect(recorder.removals, 0);
+      await tester.tap(find.widgetWithText(FilledButton, translations[locale]!['confirm'] as String));
+      await tester.pumpAndSettle();
+      expect(recorder.removals, 1);
+      expect(find.byType(AlertDialog), findsNothing);
     });
     for (final width in [320.0, 900.0]) {
       for (final scale in [1.0, 2.0]) {

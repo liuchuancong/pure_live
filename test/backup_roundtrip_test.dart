@@ -8,6 +8,7 @@ import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:pure_live/common/services/settings_service.dart';
 import 'package:pure_live/common/services/settings/iptv_settings_controller.dart';
 import 'package:pure_live/common/services/settings/backup_controller.dart';
+import 'package:pure_live/common/services/settings/room_card_settings_controller.dart';
 
 Map<String, dynamic> detached(Map<String, dynamic> data) => jsonDecode(jsonEncode(data)) as Map<String, dynamic>;
 
@@ -44,6 +45,12 @@ void main() {
       final source = detached(backup.exportAllSettings());
       source['backupVersion'] = version;
       source['app']['enableBackgroundPlay'] = true;
+      source['roomCard']['mobilePreset'] = 'custom';
+      source['roomCard']['mobileConfig'] = {
+        ...Map<String, dynamic>.from(source['roomCard']['mobileConfig']),
+        'showPlatformBadge': true,
+        'cornerRadius': 24,
+      };
       source['volume']['roomVolumes'] = {'bilibili:123': 0.7};
       source['tags'] = {
         'tags': [
@@ -73,6 +80,8 @@ void main() {
       await Hive.box('app_settings').flush();
       expect(HivePrefUtil.getBool('enableBackgroundPlay'), isTrue);
       expect(jsonDecode(HivePrefUtil.getString('roomVolumes')!), {'bilibili:123': 0.7});
+      expect(settings.roomCard.configFor(RoomCardViewport.mobile).showPlatformBadge, isTrue);
+      expect(settings.roomCard.configFor(RoomCardViewport.mobile).cornerRadius, 24);
     });
   }
 

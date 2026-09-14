@@ -4,12 +4,14 @@ import 'package:pure_live/common/index.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
+import 'package:pure_live/common/services/settings/exit_settings_controller.dart';
 import 'package:pure_live/modules/account/bilibili/web_login_controller.dart';
 
 class Utils {
   static DateFormat dateFormat = DateFormat("MM-dd HH:mm");
   static DateFormat dateFormatWithYear = DateFormat("yyyy-MM-dd HH:mm");
   static DateFormat timeFormat = DateFormat("HH:mm:ss");
+  static Future<bool>? _activeExitFlow;
 
   static Future<void> exitDesktopApplication() async {
     if (!Platform.isWindows && !Platform.isLinux && !Platform.isMacOS) return;
@@ -19,24 +21,57 @@ class Utils {
     } catch (e) {
       debugPrint('设置落盘超时: $e');
     }
-    await windowManager.hide();
-    if (await windowManager.isPreventClose()) {
-      await windowManager.setPreventClose(false);
-    }
-    if (Get.isRegistered<BiliBiliWebLoginController>()) {
-      final controller = Get.find<BiliBiliWebLoginController>();
-      controller.showWebView.value = false;
-      await Future.delayed(const Duration(milliseconds: 300));
-    }
+    bool? wasVisible;
     try {
-      await trayManager.destroy().timeout(const Duration(seconds: 2));
+      wasVisible = await windowManager.isVisible();
     } catch (e) {
-      debugPrint('托盘注销超时: $e');
+      debugPrint('窗口可见状态读取失败: $e');
     }
+
+    var windowHidden = false;
+    var preventCloseChanged = false;
+    BiliBiliWebLoginController? webLoginController;
+    bool? webViewWasVisible;
     try {
+      await windowManager.hide();
+      windowHidden = true;
+      if (await windowManager.isPreventClose()) {
+        await windowManager.setPreventClose(false);
+        preventCloseChanged = true;
+      }
+      if (Get.isRegistered<BiliBiliWebLoginController>()) {
+        webLoginController = Get.find<BiliBiliWebLoginController>();
+        webViewWasVisible = webLoginController.showWebView.value;
+        webLoginController.showWebView.value = false;
+        await Future.delayed(const Duration(milliseconds: 300));
+      }
+      try {
+        await trayManager.destroy().timeout(const Duration(seconds: 2));
+      } catch (e) {
+        debugPrint('托盘注销超时: $e');
+      }
       await windowManager.destroy().timeout(const Duration(seconds: 2));
     } catch (e) {
-      debugPrint('窗口销毁超时: $e');
+      debugPrint('桌面退出操作失败: $e');
+      if (webLoginController != null && webViewWasVisible != null) {
+        webLoginController.showWebView.value = webViewWasVisible;
+      }
+      if (preventCloseChanged) {
+        try {
+          await windowManager.setPreventClose(true);
+        } catch (restoreError) {
+          debugPrint('窗口关闭拦截恢复失败: $restoreError');
+        }
+      }
+      if (windowHidden && wasVisible != false) {
+        try {
+          await windowManager.show();
+          await windowManager.focus();
+        } catch (restoreError) {
+          debugPrint('窗口可见状态恢复失败: $restoreError');
+        }
+      }
+      rethrow;
     }
   }
 
@@ -66,6 +101,8 @@ class Utils {
     } else {
       if (await windowManager.isPreventClose()) {
         await windowManager.hide();
+      } else {
+        await windowManager.minimize();
       }
     }
   }
@@ -79,29 +116,14 @@ class Utils {
     List<Widget>? actions,
     bool barrierDismissible = true,
   }) async {
-    var result = await Get.dialog<bool>(
-      AlertDialog(
-        title: Text(title),
-        content: Container(
-          constraints: const BoxConstraints(maxHeight: 400),
-          child: SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              child: selectable ? SelectableText(content) : Text(content),
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: (() => Navigator.of(Get.context!).pop(false)),
-            child: Text(cancel.isEmpty ? i18n("cancel") : cancel),
-          ),
-          TextButton(
-            onPressed: (() => Navigator.of(Get.context!).pop(true)),
-            child: Text(confirm.isEmpty ? i18n("confirm") : confirm),
-          ),
-          ...?actions,
-        ],
+    final result = await Get.dialog<bool>(
+      _SharedAlertDialog(
+        title: title,
+        content: content,
+        selectable: selectable,
+        cancel: cancel,
+        confirm: confirm,
+        additionalActions: actions,
       ),
       barrierDismissible: barrierDismissible,
     );
@@ -118,22 +140,8 @@ class Utils {
     String confirm = '',
     bool selectable = false,
   }) async {
-    var result = await Get.dialog(
-      AlertDialog(
-        title: Text(title),
-        content: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          child: selectable ? SelectableText(content) : Text(content),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(Get.context!).pop(true);
-            },
-            child: Text(confirm.isEmpty ? i18n("confirm") : confirm),
-          ),
-        ],
-      ),
+    final result = await Get.dialog<bool>(
+      _SharedAlertDialog(title: title, content: content, selectable: selectable, confirm: confirm),
     );
     return result ?? false;
   }
@@ -208,184 +216,437 @@ class Utils {
     String confirm = '',
     String cancel = '',
   }) async {
-    final TextEditingController textEditingController = TextEditingController(text: content);
-    final res = await Get.dialog(
-      AlertDialog(
-        title: Text(title),
-        titleTextStyle: Get.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600, fontSize: 18),
-        contentPadding: const EdgeInsets.fromLTRB(24, 16, 24, 12),
-        content: SizedBox(
-          width: 420,
-          child: TextField(
-            controller: textEditingController,
-            autofocus: true,
-            maxLines: 5,
-            minLines: 4,
-            style: Get.textTheme.bodyMedium?.copyWith(fontFamily: 'monospace', fontSize: 13, height: 1.5),
-            decoration: InputDecoration(
-              hintText: hintText ?? title,
-              hintStyle: Get.textTheme.bodyMedium?.copyWith(
-                color: Get.theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
-              ),
-              filled: true,
-              fillColor: Get.theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
-              contentPadding: const EdgeInsets.all(16),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
-              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
-                borderSide: BorderSide(color: Get.theme.colorScheme.primary, width: 1.5),
-              ),
-            ),
-          ),
-        ),
-        actionsPadding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
-        actions: [
-          TextButton(
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            ),
-            onPressed: () {
-              Navigator.of(Get.context!).pop();
-            },
-            child: Text(cancel.isNotEmpty ? cancel : i18n("cancel")),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: Get.theme.colorScheme.primary,
-              foregroundColor: Get.theme.colorScheme.onPrimary,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            ),
-            onPressed: () {
-              Navigator.of(Get.context!).pop(textEditingController.text);
-            },
-            child: Text(confirm.isNotEmpty ? confirm : i18n("confirm")),
-          ),
-        ],
-      ),
+    return Get.dialog<String>(
+      _EditTextDialog(initialValue: content, title: title, hintText: hintText, confirm: confirm, cancel: cancel),
     );
-    textEditingController.dispose();
-    return res;
   }
 
   static Future<T?> showOptionDialog<T>(List<T> contents, T value, {String title = ''}) async {
-    var result = await Get.dialog(
-      SimpleDialog(
-        title: Text(title),
-        children: [
-          RadioGroup<T>(
-            groupValue: value,
-            onChanged: (T? e) {
-              if (e != null) {
-                Navigator.of(Get.context!).pop(e);
-              }
-            },
-            child: Padding(
-              padding: const EdgeInsets.only(top: 0, bottom: 10, left: 16, right: 16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: contents.map<Widget>((e) {
-                  return Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Radio<T>(value: e, activeColor: Theme.of(Get.context!).colorScheme.primary),
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.of(Get.context!).pop(e);
-                        },
-                        child: Text(e.toString(), style: Theme.of(Get.context!).textTheme.bodyLarge),
-                      ),
-                    ],
-                  );
-                }).toList(),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-    return result;
+    return Get.dialog<T>(_OptionDialog<T>(contents: contents, selectedValue: value, title: title));
   }
 
-  static Future<bool> showExitDialog() async {
-    final dontAsk = SettingsService.to.exit.dontAskExit.v;
-    final exitChoose = SettingsService.to.exit.exitChoose.v;
+  static Future<bool> showExitDialog() {
+    final active = _activeExitFlow;
+    if (active != null) return active;
 
-    if (dontAsk) {
-      if (exitChoose == 'exit') {
-        if (await windowManager.isPreventClose()) {
-          await windowManager.setPreventClose(false);
+    late final Future<bool> tracked;
+    tracked = _showExitDialog().whenComplete(() {
+      if (identical(_activeExitFlow, tracked)) {
+        _activeExitFlow = null;
+      }
+    });
+    _activeExitFlow = tracked;
+    return tracked;
+  }
+
+  static Future<bool> _showExitDialog() async {
+    final settings = SettingsService.to.exit;
+    final rememberedAction = ExitSettingsController.normalizeExitAction(settings.exitChoose.v);
+
+    if (settings.dontAskExit.v) {
+      final succeeded = await _executeExitAction(rememberedAction);
+      if (!succeeded) {
+        try {
+          await _persistExitPreference(settings, dontAskAgain: false, action: rememberedAction);
+        } catch (error) {
+          debugPrint('退出偏好恢复失败: $error');
         }
-        Future.microtask(exitDesktopApplication);
-        return true;
-      } else if (exitChoose == 'minimize') {
-        await _minimizeOrHideDesktopWindow();
-        return true;
+      }
+      return succeeded;
+    }
+
+    final selection = await Get.dialog<_ExitDialogSelection>(
+      _ExitDecisionDialog(initialDontAskAgain: settings.dontAskExit.v),
+    );
+    if (selection == null) return false;
+
+    final previousDontAsk = settings.dontAskExit.v;
+    final previousAction = settings.exitChoose.v;
+    try {
+      await _persistExitPreference(settings, dontAskAgain: selection.dontAskAgain, action: selection.action);
+    } catch (error) {
+      _reportExitActionFailure(error);
+      return false;
+    }
+
+    final succeeded = await _executeExitAction(selection.action);
+    if (!succeeded) {
+      try {
+        await _persistExitPreference(settings, dontAskAgain: previousDontAsk, action: previousAction);
+      } catch (error) {
+        debugPrint('退出偏好回滚失败: $error');
       }
     }
-    bool shouldNotAskAgain = false;
-    var result = await Get.dialog<bool>(
-      StatefulBuilder(
-        builder: (context, setState) {
-          return AlertDialog(
-            title: Text(i18n("tip"), style: Get.textTheme.titleLarge),
-            content: Container(
-              constraints: const BoxConstraints(maxHeight: 400),
-              child: SingleChildScrollView(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
+    return succeeded;
+  }
+
+  static Future<void> _persistExitPreference(
+    ExitSettingsController settings, {
+    required bool dontAskAgain,
+    required String action,
+  }) {
+    return HivePrefUtil.persistBatch(() {
+      settings.setDontAskExit(dontAskAgain);
+      settings.setExitAction(action);
+    });
+  }
+
+  static Future<bool> _executeExitAction(String action) async {
+    try {
+      if (action == ExitSettingsController.minimizeAction) {
+        await _minimizeOrHideDesktopWindow();
+      } else {
+        await exitDesktopApplication();
+      }
+      return true;
+    } catch (error) {
+      _reportExitActionFailure(error);
+      return false;
+    }
+  }
+
+  static void _reportExitActionFailure(Object error) {
+    debugPrint('窗口关闭操作失败: $error');
+    ToastUtil.show(i18n('window_close_action_failed'));
+  }
+}
+
+class _ExitDialogSelection {
+  const _ExitDialogSelection({required this.action, required this.dontAskAgain});
+
+  final String action;
+  final bool dontAskAgain;
+}
+
+class _ExitDecisionDialog extends StatefulWidget {
+  const _ExitDecisionDialog({required this.initialDontAskAgain});
+
+  final bool initialDontAskAgain;
+
+  @override
+  State<_ExitDecisionDialog> createState() => _ExitDecisionDialogState();
+}
+
+class _ExitDecisionDialogState extends State<_ExitDecisionDialog> {
+  late bool _dontAskAgain;
+
+  @override
+  void initState() {
+    super.initState();
+    _dontAskAgain = widget.initialDontAskAgain;
+  }
+
+  void _select(String action) {
+    Navigator.of(context).pop(_ExitDialogSelection(action: action, dontAskAgain: _dontAskAgain));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return AlertDialog(
+      scrollable: true,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+      title: Text(i18n("tip"), style: theme.textTheme.titleLarge),
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 420),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(i18n("confirm_exit"), style: theme.textTheme.titleMedium),
+            const SizedBox(height: 12),
+            const Divider(height: 1),
+            CheckboxListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(i18n("dont_ask_again"), style: theme.textTheme.titleSmall),
+              value: _dontAskAgain,
+              onChanged: (value) {
+                if (value != null) {
+                  setState(() => _dontAskAgain = value);
+                }
+              },
+            ),
+          ],
+        ),
+      ),
+      actionsAlignment: MainAxisAlignment.spaceBetween,
+      actionsOverflowDirection: VerticalDirection.down,
+      actionsOverflowButtonSpacing: 8,
+      actions: [
+        TextButton(
+          style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
+          onPressed: () => _select(ExitSettingsController.minimizeAction),
+          child: Text(i18n("minimize")),
+        ),
+        FilledButton(
+          style: FilledButton.styleFrom(
+            minimumSize: const Size(48, 48),
+            backgroundColor: theme.colorScheme.error,
+            foregroundColor: theme.colorScheme.onError,
+          ),
+          onPressed: () => _select(ExitSettingsController.exitAction),
+          child: Text(i18n("exit_app")),
+        ),
+      ],
+    );
+  }
+}
+
+class _SharedAlertDialog extends StatelessWidget {
+  const _SharedAlertDialog({
+    required this.title,
+    required this.content,
+    required this.selectable,
+    required this.confirm,
+    this.cancel,
+    this.additionalActions,
+  });
+
+  final String title;
+  final String content;
+  final bool selectable;
+  final String confirm;
+  final String? cancel;
+  final List<Widget>? additionalActions;
+
+  @override
+  Widget build(BuildContext context) {
+    final actionWidgets = <Widget>[
+      if (cancel != null)
+        TextButton(
+          style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
+          onPressed: () => Navigator.of(context).pop(false),
+          child: Text(cancel!.isEmpty ? i18n("cancel") : cancel!),
+        ),
+      TextButton(
+        style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
+        onPressed: () => Navigator.of(context).pop(true),
+        child: Text(confirm.isEmpty ? i18n("confirm") : confirm),
+      ),
+      ...?additionalActions,
+    ];
+
+    return AlertDialog(
+      scrollable: true,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+      title: title.isEmpty ? null : Text(title),
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 420),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: selectable ? SelectableText(content) : Text(content),
+        ),
+      ),
+      actionsOverflowDirection: VerticalDirection.down,
+      actionsOverflowButtonSpacing: 8,
+      actions: actionWidgets,
+    );
+  }
+}
+
+class _OptionDialog<T> extends StatelessWidget {
+  const _OptionDialog({required this.contents, required this.selectedValue, required this.title});
+
+  final List<T> contents;
+  final T selectedValue;
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    void select(T? value) {
+      if (value != null) {
+        Navigator.of(context).pop(value);
+      }
+    }
+
+    return AlertDialog(
+      scrollable: true,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+      title: title.isEmpty ? null : Text(title),
+      contentPadding: const EdgeInsets.fromLTRB(8, 12, 8, 16),
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 420),
+        child: RadioGroup<T>(
+          groupValue: selectedValue,
+          onChanged: select,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (var index = 0; index < contents.length; index++)
+                SimpleDialogOption(
+                  key: ValueKey<String>('shared-option-$index'),
+                  padding: EdgeInsets.zero,
+                  onPressed: () => select(contents[index]),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(minHeight: 48),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      child: Row(
+                        children: [
+                          Radio<T>(value: contents[index], activeColor: theme.colorScheme.primary),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(contents[index].toString(), style: theme.textTheme.bodyLarge, softWrap: true),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _EditTextDialog extends StatefulWidget {
+  const _EditTextDialog({
+    required this.initialValue,
+    required this.title,
+    required this.hintText,
+    required this.confirm,
+    required this.cancel,
+  });
+
+  final String initialValue;
+  final String title;
+  final String? hintText;
+  final String confirm;
+  final String cancel;
+
+  @override
+  State<_EditTextDialog> createState() => _EditTextDialogState();
+}
+
+class _EditTextDialogState extends State<_EditTextDialog> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initialValue);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final media = MediaQuery.of(context);
+    final availableHeight = media.size.height;
+    final dialogHeight = availableHeight > 40 ? availableHeight - 40 : availableHeight;
+    final largeText = media.textScaler.scale(1) >= 1.6;
+    final stackActions = media.size.width < 420 || largeText;
+    final cancelButton = TextButton(
+      style: TextButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+      onPressed: () => Navigator.of(context).pop(),
+      child: Text(widget.cancel.isNotEmpty ? widget.cancel : i18n("cancel")),
+    );
+    final confirmButton = FilledButton(
+      style: FilledButton.styleFrom(
+        backgroundColor: theme.colorScheme.primary,
+        foregroundColor: theme.colorScheme.onPrimary,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+      onPressed: () => Navigator.of(context).pop(_controller.text),
+      child: Text(widget.confirm.isNotEmpty ? widget.confirm : i18n("confirm")),
+    );
+
+    return Dialog(
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+      clipBehavior: Clip.antiAlias,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: 468, maxHeight: dialogHeight),
+        child: SizedBox(
+          width: 468,
+          height: largeText ? dialogHeight : null,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Flexible(
+                fit: largeText ? FlexFit.tight : FlexFit.loose,
+                child: SingleChildScrollView(
+                  key: const ValueKey<String>('shared-edit-text-scroll'),
+                  padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Text(i18n("confirm_exit"), style: Get.textTheme.titleMedium),
-                      SizedBox(height: 12),
-                      const Divider(height: 1),
-                      CheckboxListTile(
-                        title: Text(i18n("dont_ask_again"), style: Get.textTheme.titleSmall),
-                        value: shouldNotAskAgain,
-                        onChanged: (bool? value) {
-                          setState(() {
-                            shouldNotAskAgain = value!;
-                          });
-                        },
+                      Text(
+                        widget.title,
+                        style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600, fontSize: 18),
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: _controller,
+                        autofocus: true,
+                        maxLines: 5,
+                        minLines: 4,
+                        style: theme.textTheme.bodyMedium?.copyWith(fontFamily: 'monospace', fontSize: 13, height: 1.5),
+                        decoration: InputDecoration(
+                          hintText: widget.hintText ?? widget.title,
+                          hintStyle: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                          ),
+                          filled: true,
+                          fillColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+                          contentPadding: const EdgeInsets.all(16),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            borderSide: BorderSide.none,
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            borderSide: BorderSide.none,
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            borderSide: BorderSide(color: theme.colorScheme.primary, width: 1.5),
+                          ),
+                        ),
                       ),
                     ],
                   ),
                 ),
               ),
-            ),
-            actionsAlignment: MainAxisAlignment.spaceBetween,
-            actions: [
-              TextButton(
-                onPressed: () async {
-                  SettingsService.to.exit.dontAskExit.v = shouldNotAskAgain;
-                  SettingsService.to.exit.exitChoose.v = 'minimize';
-                  Navigator.of(context).pop();
-                  Future.delayed(const Duration(milliseconds: 200), () async {
-                    await _minimizeOrHideDesktopWindow();
-                  });
-                },
-                child: Text(i18n("minimize")),
-              ),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
-                onPressed: () async {
-                  SettingsService.to.exit.dontAskExit.v = shouldNotAskAgain;
-                  SettingsService.to.exit.exitChoose.v = 'exit';
-                  Navigator.of(context).pop();
-                  await exitDesktopApplication();
-                },
-                child: Text(i18n("exit_app")),
+              const Divider(height: 1),
+              SafeArea(
+                top: false,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+                  child: stackActions
+                      ? Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [cancelButton, const SizedBox(height: 8), confirmButton],
+                        )
+                      : Align(
+                          alignment: Alignment.centerRight,
+                          child: Wrap(
+                            alignment: WrapAlignment.end,
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [cancelButton, confirmButton],
+                          ),
+                        ),
+                ),
               ),
             ],
-          );
-        },
+          ),
+        ),
       ),
     );
-    return result ?? false;
   }
 }

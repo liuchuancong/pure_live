@@ -183,6 +183,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('fixture').last);
     await completeReads(tester);
+    expect(tester.state<ScaffoldState>(find.byType(Scaffold)).isEndDrawerOpen, isFalse);
     expect(controller.currentConfig.value, same(saved));
     expect(controller.configurationIssueKey.value, isEmpty);
     expect(find.text(translations['webdav_saved_selection_invalid']), findsNothing);
@@ -281,7 +282,7 @@ void main() {
     await completeReads(tester);
     await tester.tap(find.byTooltip('更多操作'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('打开配置列表'));
+    await tester.tap(find.text('打开配置列表').hitTestable());
     await tester.pumpAndSettle();
     await tester.tap(find.byIcon(Icons.edit));
     await tester.pumpAndSettle();
@@ -296,6 +297,83 @@ void main() {
     expect(controller.currentConfig.value!.address, 'https://edited.test/dav/');
     expect(controller.currentConfig.value!.password, ' edited-password ');
     expect(service.reads, hasLength(2));
+    await finish(tester);
+  });
+
+  testWidgets('long config editor keeps its form and decisions reachable at narrow very-large text', (tester) async {
+    final longName = List.filled(4, 'very long WebDAV configuration name').join(' · ');
+    controller.configs.add(
+      WebDAVConfig(name: longName, address: 'https://example.test/dav/', username: 'user', password: 'password'),
+    );
+    await openPage(tester, size: const Size(320, 480), textScale: 3);
+
+    await tester.tap(find.byTooltip('更多操作'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('打开配置列表').hitTestable());
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.edit).hitTestable());
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.byType(TextFormField), findsNWidgets(4));
+    expect(find.text('取消').hitTestable(), findsOneWidget);
+    expect(find.text('更新').hitTestable(), findsOneWidget);
+    final formScroll = find.descendant(of: find.byType(AlertDialog), matching: find.byType(SingleChildScrollView));
+    expect(formScroll, findsOneWidget);
+    final scrollable = find.descendant(
+      of: formScroll,
+      matching: find.byWidgetPredicate((widget) => widget is Scrollable && widget.axisDirection == AxisDirection.down),
+    );
+    expect(scrollable, findsOneWidget);
+    await tester.scrollUntilVisible(find.byType(TextFormField).last, 120, scrollable: scrollable);
+    expect(find.byType(TextFormField).last.hitTestable(), findsOneWidget);
+    expect(find.text('取消').hitTestable(), findsOneWidget);
+    expect(find.text('更新').hitTestable(), findsOneWidget);
+
+    await tester.tap(find.text('取消').hitTestable());
+    await tester.pumpAndSettle();
+    expect(find.byType(AlertDialog), findsNothing);
+    expect(tester.state<ScaffoldState>(find.byType(Scaffold)).isEndDrawerOpen, isTrue);
+    await finish(tester);
+  });
+
+  testWidgets('long config deletion keeps both decisions reachable and closes only its dialog', (tester) async {
+    final longName = List.filled(4, 'very long WebDAV configuration name').join(' · ');
+    controller.configs.add(
+      WebDAVConfig(name: longName, address: 'https://example.test/dav/', username: 'user', password: 'password'),
+    );
+    await openPage(tester, size: const Size(320, 480), textScale: 3);
+
+    await tester.tap(find.byTooltip('更多操作'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('打开配置列表').hitTestable());
+    await tester.pumpAndSettle();
+    expect(find.byType(Drawer), findsOneWidget);
+
+    final deleteIcon = find.byIcon(Icons.delete);
+    final drawerScroll = find.descendant(of: find.byType(Drawer), matching: find.byType(Scrollable));
+    expect(drawerScroll, findsOneWidget);
+    await tester.scrollUntilVisible(deleteIcon, 120, scrollable: drawerScroll);
+    await tester.tap(deleteIcon.hitTestable());
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(find.text('取消').hitTestable(), findsOneWidget);
+    expect(find.text('删除').hitTestable(), findsOneWidget);
+
+    await tester.tap(find.text('取消').hitTestable());
+    await tester.pumpAndSettle();
+    expect(find.byType(AlertDialog), findsNothing);
+    expect(tester.state<ScaffoldState>(find.byType(Scaffold)).isEndDrawerOpen, isTrue);
+    expect(deleteIcon.hitTestable(), findsOneWidget);
+    expect(controller.configs.single.name, longName);
+
+    await tester.tap(deleteIcon.hitTestable());
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('删除').hitTestable());
+    await tester.pumpAndSettle();
+    expect(find.byType(AlertDialog), findsNothing);
+    expect(controller.configs, isEmpty);
+    expect(tester.state<ScaffoldState>(find.byType(Scaffold)).isEndDrawerOpen, isTrue);
     await finish(tester);
   });
 
@@ -361,6 +439,30 @@ void main() {
     await finish(tester);
   });
 
+  testWidgets('deep breadcrumbs reveal the current segment at narrow very-large text', (tester) async {
+    await openPage(tester, size: const Size(320, 480), textScale: 3);
+    final segments = [
+      for (var index = 0; index < 7; index++) 'very-long-directory-segment-$index',
+      'current-directory-endpoint',
+    ];
+    controller.dirPath.value = '/${segments.join('/')}/';
+    controller.rebuildBreadcrumb();
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.text(segments.last).hitTestable(), findsOneWidget);
+    expect(tester.getSize(find.text(segments.last)).width, lessThanOrEqualTo(240));
+    final breadcrumbScroll = find.descendant(
+      of: find.byKey(const ValueKey('webdav-breadcrumb-scroll')),
+      matching: find.byWidgetPredicate((widget) => widget is Scrollable && widget.axisDirection == AxisDirection.right),
+    );
+    expect(breadcrumbScroll, findsOneWidget);
+    final position = tester.state<ScrollableState>(breadcrumbScroll).position;
+    expect(position.maxScrollExtent, greaterThan(0));
+    expect(position.pixels, closeTo(position.maxScrollExtent, 0.5));
+    await finish(tester);
+  });
+
   testWidgets('removing the selected configuration clears its error and restores setup', (tester) async {
     await openPage(tester);
     selectConfig();
@@ -382,7 +484,9 @@ void main() {
     await tester.pumpAndSettle();
     var operationFinished = false;
     unawaited(
-      controller.downloadFile(webdav.File(path: '/backup.txt', isDir: false)).then((_) => operationFinished = true),
+      controller
+          .downloadFile(webdav.File(path: '/backup.txt', isDir: false), confirmRestore: () async => true)
+          .then((_) => operationFinished = true),
     );
     await tester.pump();
     expect(backup.restores, [
@@ -496,8 +600,15 @@ void main() {
     expect(find.text(translations['webdav_restoring']), findsOneWidget);
     expect(tester.widget<PopupMenuButton<String>>(find.byType(PopupMenuButton<String>)).enabled, isFalse);
     expect(tester.widget<FloatingActionButton>(find.byType(FloatingActionButton)).onPressed, isNull);
-    await controller.downloadFile(webdav.File(path: '/backup.txt'));
+    await controller.downloadFile(webdav.File(path: '/backup.txt'), confirmRestore: () async => true);
     await controller.uploadConfigSettings();
+    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(service.downloadPaths, isEmpty);
+    expect(service.uploads, isEmpty);
+    expect(backup.restores, isEmpty);
+
+    await tester.tap(find.widgetWithText(FilledButton, translations['recover_backup']));
+    await tester.pump(const Duration(milliseconds: 350));
     expect(service.downloadPaths, ['/backup.txt']);
     expect(service.uploads, isEmpty);
     expect(backup.restores, hasLength(1));
@@ -506,6 +617,48 @@ void main() {
     expect(find.text(translations['webdav_restoring']), findsNothing);
     expect(tester.widget<PopupMenuButton<String>>(find.byType(PopupMenuButton<String>)).enabled, isTrue);
     await finish(tester);
+  });
+
+  testWidgets('restore menu confirms its long target before reading or changing local settings', (tester) async {
+    final longName = List.filled(5, 'very long WebDAV backup name').join(' · ');
+    await openPage(tester, size: const Size(320, 480), textScale: 3);
+    selectConfig();
+    service.reads.single.complete([webdav.File(name: longName, path: '/backup.txt', isDir: false)]);
+    await tester.pumpAndSettle();
+    await openFileMenu(tester);
+    await tester.tap(find.text(translations['webdav_sync_to_local']));
+    await tester.pump(const Duration(milliseconds: 350));
+
+    final downloadsBeforeDecision = List<String>.from(service.downloadPaths);
+    final restoresBeforeDecision = backup.restores.length;
+    final dialog = find.byType(AlertDialog);
+    final dialogCount = dialog.evaluate().length;
+    final namedTargetCount = dialogCount == 0
+        ? 0
+        : find.descendant(of: dialog, matching: find.textContaining(longName)).evaluate().length;
+    final cancelIsReachable = find.text(translations['cancel']).hitTestable().evaluate().isNotEmpty;
+    final restoreIsReachable =
+        dialogCount != 0 &&
+        find.widgetWithText(FilledButton, translations['recover_backup']).hitTestable().evaluate().isNotEmpty;
+
+    if (dialogCount != 0) {
+      expect(await tester.binding.handlePopRoute(), isTrue);
+      await tester.pumpAndSettle();
+    }
+    if (backup.restores.isNotEmpty && !backup.restore.isCompleted) {
+      backup.restore.complete();
+      await tester.pumpAndSettle();
+    }
+    await finish(tester);
+
+    expect(downloadsBeforeDecision, isEmpty);
+    expect(restoresBeforeDecision, 0);
+    expect(dialogCount, 1);
+    expect(namedTargetCount, 1);
+    expect(cancelIsReachable, isTrue);
+    expect(restoreIsReachable, isTrue);
+    expect(service.downloadPaths, isEmpty);
+    expect(backup.restores, isEmpty);
   });
 
   testWidgets('delete confirmation cancel and network failure both restore a working retry entry', (tester) async {
@@ -523,7 +676,9 @@ void main() {
       await openFileMenu(tester);
       await tester.tap(find.text(translations['webdav_delete']));
       await tester.pump(const Duration(milliseconds: 350));
-      await tester.tap(find.text(translations['confirm']));
+      await tester.tap(
+        find.descendant(of: find.byType(AlertDialog), matching: find.text(translations['webdav_delete'])),
+      );
       await tester.pump(const Duration(milliseconds: 350));
       expect(controller.canStartFileAction, isFalse);
       if (attempt == 0) {
@@ -541,11 +696,46 @@ void main() {
     await finish(tester);
   });
 
+  testWidgets('file delete confirmation names a long target and keeps both decisions reachable', (tester) async {
+    final longName = List.filled(5, 'very long WebDAV backup name').join(' · ');
+    await openPage(tester, size: const Size(320, 480), textScale: 3);
+    selectConfig();
+    service.reads.single.complete([webdav.File(name: longName, path: '/backup.txt', isDir: false)]);
+    await tester.pumpAndSettle();
+    final fileTitle = tester.widget<Text>(find.text(longName));
+    expect(fileTitle.maxLines, 2);
+    expect(fileTitle.overflow, TextOverflow.ellipsis);
+    expect(find.byType(PopupMenuButton<String>).hitTestable(), findsOneWidget);
+    await openFileMenu(tester);
+    await tester.tap(find.text(translations['webdav_delete']));
+    await tester.pump(const Duration(milliseconds: 350));
+
+    final dialog = find.byType(AlertDialog);
+    expect(dialog, findsOneWidget);
+    expect(find.descendant(of: dialog, matching: find.textContaining(longName)), findsOneWidget);
+    expect(find.text(translations['cancel']).hitTestable(), findsOneWidget);
+    expect(
+      find.descendant(of: dialog, matching: find.text(translations['webdav_delete'])).hitTestable(),
+      findsOneWidget,
+    );
+    expect(tester.takeException(), isNull);
+
+    expect(await tester.binding.handlePopRoute(), isTrue);
+    await tester.pumpAndSettle();
+    expect(find.byType(AlertDialog), findsNothing);
+    expect(find.byType(WebDavPage), findsOneWidget);
+    expect(service.deletePaths, isEmpty);
+    expect(controller.canStartFileAction, isTrue);
+    await finish(tester);
+  });
+
   testWidgets('invalid downloaded JSON releases the menu without beginning a settings restore', (tester) async {
     service.downloadBytes = utf8.encode('{invalid');
     await showBackupFile(tester);
     await openFileMenu(tester);
     await tester.tap(find.text(translations['webdav_sync_to_local']));
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.tap(find.widgetWithText(FilledButton, translations['recover_backup']));
     await tester.pumpAndSettle();
     expect(backup.restores, isEmpty);
     expect(controller.canStartFileAction, isTrue);

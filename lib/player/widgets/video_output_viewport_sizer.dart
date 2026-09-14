@@ -16,6 +16,7 @@ class VideoOutputViewportSizer extends StatefulWidget {
     required this.outputIdentity,
     required this.sourceWidth,
     required this.sourceHeight,
+    required this.fit,
     required this.onResize,
     required this.child,
     this.resizeDebounce = const Duration(milliseconds: 180),
@@ -24,6 +25,7 @@ class VideoOutputViewportSizer extends StatefulWidget {
   final Object outputIdentity;
   final Stream<int?> sourceWidth;
   final Stream<int?> sourceHeight;
+  final BoxFit fit;
   final VideoOutputResizeCallback onResize;
   final Widget child;
   final Duration resizeDebounce;
@@ -65,6 +67,9 @@ class _VideoOutputViewportSizerState extends State<VideoOutputViewportSizer> {
       _hasPublishedViewport = false;
       _scheduleResize();
     }
+    if (oldWidget.fit != widget.fit) {
+      _scheduleResize();
+    }
   }
 
   void _bindSourceDimensions() {
@@ -99,6 +104,7 @@ class _VideoOutputViewportSizerState extends State<VideoOutputViewportSizer> {
       devicePixelRatio: _devicePixelRatio,
       sourceWidth: _sourceWidth,
       sourceHeight: _sourceHeight,
+      fit: widget.fit,
     );
     if (target.isEmpty || target == _requestedSize) return;
 

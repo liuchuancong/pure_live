@@ -25,6 +25,7 @@ class AccountController extends GetxController {
   Worker? _cookieWorker;
   Future<void>? _activeLoad;
   String? _activeLoadCookie;
+  Future<void>? _logoutTransaction;
   int _loadRevision = 0;
   bool _closed = false;
 
@@ -55,6 +56,19 @@ class AccountController extends GetxController {
     } else {
       AppNavigator.toBiliBiliLogin();
     }
+  }
+
+  Future<void> runLogoutTransaction(Future<void> Function() transaction) {
+    if (_closed) return Future.value();
+    final activeTransaction = _logoutTransaction;
+    if (activeTransaction != null) return activeTransaction;
+
+    late final Future<void> task;
+    task = Future<void>.sync(transaction).whenComplete(() {
+      if (identical(_logoutTransaction, task)) _logoutTransaction = null;
+    });
+    _logoutTransaction = task;
+    return task;
   }
 
   Future<void> loadDouyinAccount() {

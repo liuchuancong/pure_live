@@ -10,13 +10,22 @@ import 'package:pure_live/modules/settings/pages/pip_danmaku_settings_page.dart'
 import 'package:pure_live/modules/settings/pages/portrait_live_settings_page.dart';
 import 'package:pure_live/modules/settings/pages/audience_metric_settings_page.dart';
 
-class VideoSettingsPage extends GetView<SettingsService> {
+class VideoSettingsPage extends StatefulWidget {
   const VideoSettingsPage({super.key, this.platformOverride});
 
   @visibleForTesting
   final TargetPlatform? platformOverride;
 
-  TargetPlatform get _platform => platformOverride ?? defaultTargetPlatform;
+  @override
+  State<VideoSettingsPage> createState() => _VideoSettingsPageState();
+}
+
+enum _ResolutionPreferenceTarget { wifi, cellular }
+
+class _VideoSettingsPageState extends State<VideoSettingsPage> {
+  bool _resolutionDialogBusy = false;
+
+  TargetPlatform get _platform => widget.platformOverride ?? defaultTargetPlatform;
   bool get _isAndroid => _platform == TargetPlatform.android;
   bool get _isWindows => _platform == TargetPlatform.windows;
   bool get _isMobile => _platform == TargetPlatform.android || _platform == TargetPlatform.iOS;
@@ -82,7 +91,9 @@ class VideoSettingsPage extends GetView<SettingsService> {
                 icon: Remix.hd_line,
                 title: i18n("prefer_resolution"),
                 subtitle: i18n("prefer_resolution_subtitle"),
-                onTap: showPreferResolutionSelectorDialog,
+                onTap: _resolutionDialogBusy
+                    ? null
+                    : () => _showPreferredResolutionSelectorDialog(_ResolutionPreferenceTarget.wifi),
                 trailing: Text(
                   _preferredResolutionLabel(SettingsService.to.player.resolvedPreferResolution),
                   style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.w600),
@@ -95,7 +106,9 @@ class VideoSettingsPage extends GetView<SettingsService> {
                 icon: Remix.signal_tower_line,
                 title: i18n("mobile_quality"),
                 subtitle: i18n("mobile_quality_subtitle"),
-                onTap: showPreferResolutionCellularSelectorDialog,
+                onTap: _resolutionDialogBusy
+                    ? null
+                    : () => _showPreferredResolutionSelectorDialog(_ResolutionPreferenceTarget.cellular),
                 trailing: Text(
                   _preferredResolutionLabel(SettingsService.to.player.resolvedPreferResolutionCellular),
                   style: AppTextStyles.t13.copyWith(color: theme.colorScheme.primary, fontWeight: FontWeight.w600),
@@ -199,31 +212,7 @@ class VideoSettingsPage extends GetView<SettingsService> {
                   SettingsService.to.window.rememberPipPosition.v = value;
                 },
               ),
-            if (_isWindows)
-              context.buildTile(
-                icon: Remix.reserved_line,
-                title: i18n('windows_pip_reset_position'),
-                subtitle: i18n('windows_pip_reset_position_subtitle'),
-                onTap: () async {
-                  final result = await showDialog<bool>(
-                    context: context,
-                    builder: (context) {
-                      return AlertDialog(
-                        title: Text(i18n('windows_pip_reset_position')),
-                        content: Text(i18n('windows_pip_reset_position_confirm')),
-                        actions: [
-                          TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(i18n('cancel'))),
-                          FilledButton(onPressed: () => Navigator.of(context).pop(true), child: Text(i18n('confirm'))),
-                        ],
-                      );
-                    },
-                  );
-
-                  if (result == true) {
-                    SettingsService.to.window.clearWindowsPipGeometry();
-                  }
-                },
-              ),
+            if (_isWindows) const _WindowsPipResetTile(),
 
             context.buildSwitchTile(
               title: i18n('enable_fullscreen_default'),
@@ -284,68 +273,146 @@ class VideoSettingsPage extends GetView<SettingsService> {
     showDialog<void>(context: context, builder: (_) => const _AsmrSleepTimerDialog());
   }
 
-  void showPreferResolutionSelectorDialog() {
-    _showPreferredResolutionSelectorDialog(
-      title: i18n('prefer_resolution'),
-      selected: SettingsService.to.player.resolvedPreferResolution,
-      onSelected: SettingsService.to.player.changePreferResolution,
-    );
-  }
+  Future<void> _showPreferredResolutionSelectorDialog(_ResolutionPreferenceTarget target) async {
+    if (_resolutionDialogBusy || !mounted) return;
+    if (ModalRoute.of(context)?.isCurrent != true) return;
+    final player = SettingsService.to.player;
+    final title = i18n(target == _ResolutionPreferenceTarget.wifi ? 'prefer_resolution' : 'prefer_resolution_cellular');
+    final selected = target == _ResolutionPreferenceTarget.wifi
+        ? player.resolvedPreferResolution
+        : player.resolvedPreferResolutionCellular;
+    setState(() => _resolutionDialogBusy = true);
+    try {
+      final result = await showDialog<String>(
+        context: context,
+        useRootNavigator: true,
+        builder: (dialogContext) {
+          void select(String value) => Navigator.of(dialogContext, rootNavigator: true).pop(value);
 
-  void showPreferResolutionCellularSelectorDialog() {
-    _showPreferredResolutionSelectorDialog(
-      title: i18n('prefer_resolution_cellular'),
-      selected: SettingsService.to.player.resolvedPreferResolutionCellular,
-      onSelected: SettingsService.to.player.changePreferResolutionCellular,
-    );
-  }
-
-  void _showPreferredResolutionSelectorDialog({
-    required String title,
-    required String selected,
-    required ValueChanged<String> onSelected,
-  }) {
-    showDialog<void>(
-      context: Get.context!,
-      builder: (dialogContext) => AlertDialog(
-        scrollable: true,
-        title: Text(title),
-        contentPadding: const EdgeInsets.symmetric(vertical: 12),
-        content: RadioGroup<String>(
-          groupValue: selected,
-          onChanged: (value) {
-            if (value == null) return;
-            onSelected(value);
-            Navigator.of(dialogContext).pop();
-          },
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: PlayerConsts.resolutions
-                .map(
-                  (value) => SimpleDialogOption(
-                    onPressed: () {
-                      onSelected(value);
-                      Navigator.of(dialogContext).pop();
-                    },
-                    child: Row(
-                      children: [
-                        Radio<String>(value: value, activeColor: Theme.of(dialogContext).colorScheme.primary),
-                        const SizedBox(width: 4),
-                        Expanded(child: Text(_preferredResolutionLabel(value))),
-                      ],
-                    ),
-                  ),
-                )
-                .toList(),
-          ),
-        ),
-      ),
-    );
+          return AlertDialog(
+            key: const ValueKey('resolution-preference-dialog'),
+            scrollable: true,
+            insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+            title: Text(title, style: AppTextStyles.t16Bold),
+            contentPadding: const EdgeInsets.symmetric(vertical: 12),
+            content: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 420),
+              child: RadioGroup<String>(
+                groupValue: selected,
+                onChanged: (value) {
+                  if (value != null) select(value);
+                },
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: PlayerConsts.resolutions
+                      .map(
+                        (value) => SimpleDialogOption(
+                          onPressed: () => select(value),
+                          child: Row(
+                            children: [
+                              Radio<String>(value: value, activeColor: Theme.of(dialogContext).colorScheme.primary),
+                              const SizedBox(width: 4),
+                              Expanded(child: Text(_preferredResolutionLabel(value))),
+                            ],
+                          ),
+                        ),
+                      )
+                      .toList(),
+                ),
+              ),
+            ),
+            actionsOverflowDirection: VerticalDirection.down,
+            actionsOverflowButtonSpacing: 8,
+            actions: [
+              TextButton(
+                style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
+                onPressed: () => Navigator.of(dialogContext, rootNavigator: true).pop(),
+                child: Text(i18n('cancel'), style: AppTextStyles.t14Muted),
+              ),
+            ],
+          );
+        },
+      );
+      if (result == null || !mounted || player.isClosed || ModalRoute.of(context)?.isCurrent != true) return;
+      if (target == _ResolutionPreferenceTarget.wifi) {
+        player.changePreferResolution(result);
+      } else {
+        player.changePreferResolutionCellular(result);
+      }
+    } finally {
+      if (mounted) setState(() => _resolutionDialogBusy = false);
+    }
   }
 
   String _preferredResolutionLabel(String value) {
     final key = PlayerConsts.resolutionLabelKey(value);
     return key == null ? value : i18n(key);
+  }
+}
+
+class _WindowsPipResetTile extends StatefulWidget {
+  const _WindowsPipResetTile();
+
+  @override
+  State<_WindowsPipResetTile> createState() => _WindowsPipResetTileState();
+}
+
+class _WindowsPipResetTileState extends State<_WindowsPipResetTile> {
+  bool _resetBusy = false;
+
+  Future<void> _confirmReset() async {
+    if (_resetBusy || !mounted) return;
+    final window = SettingsService.to.window;
+    setState(() => _resetBusy = true);
+    try {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        useRootNavigator: true,
+        builder: (dialogContext) => AlertDialog(
+          key: const ValueKey('windows-pip-reset-dialog'),
+          scrollable: true,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+          title: Text(i18n('windows_pip_reset_position'), style: AppTextStyles.t16Bold),
+          content: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: Text(i18n('windows_pip_reset_position_confirm'), style: AppTextStyles.t14),
+          ),
+          actionsOverflowDirection: VerticalDirection.down,
+          actionsOverflowButtonSpacing: 8,
+          actions: [
+            TextButton(
+              style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
+              onPressed: () => Navigator.of(dialogContext, rootNavigator: true).pop(false),
+              child: Text(i18n('cancel'), style: AppTextStyles.t14Muted),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                minimumSize: const Size(48, 48),
+                backgroundColor: Theme.of(dialogContext).colorScheme.error,
+                foregroundColor: Theme.of(dialogContext).colorScheme.onError,
+              ),
+              onPressed: () => Navigator.of(dialogContext, rootNavigator: true).pop(true),
+              child: Text(i18n('reset')),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true || !mounted || window.isClosed) return;
+      window.clearWindowsPipGeometry();
+      ToastUtil.show(i18n('windows_pip_reset_position_success'));
+    } finally {
+      if (mounted) setState(() => _resetBusy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return context.buildTile(
+      icon: Remix.reserved_line,
+      title: i18n('windows_pip_reset_position'),
+      subtitle: i18n('windows_pip_reset_position_subtitle'),
+      onTap: _resetBusy ? null : _confirmReset,
+    );
   }
 }
 

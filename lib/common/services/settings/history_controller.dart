@@ -36,6 +36,12 @@ LiveRoom preserveHistoryMetadata(LiveRoom refreshed, LiveRoom previous) {
   return refreshed.withAudienceFallbackFrom(previous).copyWith(lastWatchedAt: previous.lastWatchedAt);
 }
 
+List<LiveRoom> removeHistorySnapshotEntries(Iterable<LiveRoom> current, Iterable<LiveRoom> snapshot) {
+  final ownedEntries = Set<LiveRoom>.identity()..addAll(snapshot);
+  if (ownedEntries.isEmpty) return List<LiveRoom>.of(current, growable: true);
+  return current.where((room) => !ownedEntries.contains(room)).toList(growable: true);
+}
+
 class HistoryController extends GetxController {
   static HistoryController get to => Get.find();
 
@@ -88,6 +94,10 @@ class HistoryController extends GetxController {
 
   void clearHistory() {
     historyRooms.v = <LiveRoom>[];
+  }
+
+  void clearHistorySnapshot(Iterable<LiveRoom> snapshot) {
+    historyRooms.v = removeHistorySnapshotEntries(historyRooms.v, snapshot);
   }
 
   void applyRefreshedRooms(List<LiveRoom> snapshot, List<LiveRoom?> refreshed) {

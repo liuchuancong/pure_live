@@ -87,6 +87,47 @@ void main() {
     expect(find.text('Long favorite area'), findsOneWidget);
   });
 
+  testWidgets('unfollow confirmation stays reachable for a long area at narrow three-times text', (tester) async {
+    final area = _area(Sites.huyaSite, '2', List.filled(8, 'Long favorite area').join(' '));
+    favorites.favoriteAreas.value = [area];
+    await _pumpLocalized(
+      tester,
+      english: english,
+      home: Scaffold(body: FavoriteAreaFloatingButton(area: area)),
+      size: const Size(320, 480),
+      textScale: 3,
+    );
+
+    await tester.tap(find.byType(InkWell).first);
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(find.text('Cancel').hitTestable(), findsOneWidget);
+    expect(find.text('Confirm').hitTestable(), findsOneWidget);
+    await tester.tap(find.text('Cancel').hitTestable());
+    await tester.pumpAndSettle();
+    expect(favorites.isFavoriteArea(area), isTrue);
+  });
+
+  testWidgets('unfollow confirmation is a single-flight route', (tester) async {
+    final area = _area(Sites.huyaSite, '2', 'Favorite area');
+    favorites.favoriteAreas.value = [area];
+    await _pumpLocalized(
+      tester,
+      english: english,
+      home: Scaffold(body: FavoriteAreaFloatingButton(area: area)),
+    );
+
+    final tap = tester.widget<InkWell>(find.byType(InkWell).first).onTap!;
+    tap();
+    tap();
+    await tester.pumpAndSettle();
+    expect(find.byType(AlertDialog), findsOneWidget);
+    await tester.tap(find.text('Cancel').hitTestable());
+    await tester.pumpAndSettle();
+    expect(find.byType(AlertDialog), findsNothing);
+    expect(favorites.isFavoriteArea(area), isTrue);
+  });
+
   testWidgets('favorite area catalogue remains usable on a narrow large-text viewport', (tester) async {
     favorites.hotAreasList.value = [Sites.huyaSite];
     favorites.favoriteAreas.value = [_area(Sites.huyaSite, '2', 'Long favorite area')];

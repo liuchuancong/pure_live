@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:mime/mime.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
@@ -18,16 +20,45 @@ class _WebDavPageState extends State<WebDavPage> {
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final ScrollController _breadcrumbScrollController = ScrollController();
-  final GlobalKey _currentBreadcrumbKey = GlobalKey();
+  int _breadcrumbScrollGeneration = 0;
 
   void _showConfigDialog({WebDAVConfig? existingConfig}) {
-    Get.dialog(_WebDavConfigDialog(controller: controller, existingConfig: existingConfig));
+    showDialog<void>(
+      context: context,
+      builder: (_) => _WebDavConfigDialog(controller: controller, existingConfig: existingConfig),
+    );
   }
 
   @override
   void dispose() {
+    _breadcrumbScrollGeneration++;
     _breadcrumbScrollController.dispose();
     super.dispose();
+  }
+
+  void _scheduleBreadcrumbScrollToCurrent() {
+    final generation = ++_breadcrumbScrollGeneration;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || generation != _breadcrumbScrollGeneration || !_breadcrumbScrollController.hasClients) return;
+      final position = _breadcrumbScrollController.position;
+      if (!position.hasContentDimensions) return;
+      final target = position.maxScrollExtent;
+      if ((position.pixels - target).abs() < 0.5) return;
+      unawaited(
+        _breadcrumbScrollController
+            .animateTo(target, duration: const Duration(milliseconds: 180), curve: Curves.easeOutCubic)
+            .then((_) {
+              if (!mounted || generation != _breadcrumbScrollGeneration || !_breadcrumbScrollController.hasClients) {
+                return;
+              }
+              final settledPosition = _breadcrumbScrollController.position;
+              final settledTarget = settledPosition.maxScrollExtent;
+              if ((settledPosition.pixels - settledTarget).abs() >= 0.5) {
+                settledPosition.jumpTo(settledTarget);
+              }
+            }),
+      );
+    });
   }
 
   @override
@@ -52,7 +83,7 @@ class _WebDavPageState extends State<WebDavPage> {
           );
         },
       ),
-      endDrawer: _buildDrawer(),
+      endDrawer: _buildDrawer(context),
       floatingActionButton: Obx(
         () => FloatingActionButton(
           onPressed: controller.canUpload ? () => controller.uploadConfigSettings() : null,
@@ -80,12 +111,12 @@ class _WebDavPageState extends State<WebDavPage> {
     );
   });
 
-  Widget _buildDrawer() {
+  Widget _buildDrawer(BuildContext context) {
     return Drawer(
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.only(topLeft: Radius.circular(0), bottomLeft: Radius.circular(0)),
       ),
-      backgroundColor: Theme.of(Get.context!).colorScheme.surfaceContainer,
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
       child: ListView(
         padding: EdgeInsets.zero,
         children: [
@@ -95,19 +126,30 @@ class _WebDavPageState extends State<WebDavPage> {
               children: [
                 for (final config in controller.configs)
                   ListTile(
-                    title: Text(config.name),
+                    title: Tooltip(
+                      message: config.name,
+                      child: Text(config.name, maxLines: 2, overflow: TextOverflow.ellipsis),
+                    ),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         IconButton(
+                          tooltip: i18n("webdav_edit_config", args: {"name": config.name}),
                           icon: const Icon(Icons.edit),
                           onPressed: () => _showConfigDialog(existingConfig: config),
                         ),
-                        IconButton(icon: const Icon(Icons.delete), onPressed: () => _showDeleteDialog(config)),
+                        IconButton(
+                          tooltip: i18n("webdav_delete"),
+                          icon: const Icon(Icons.delete),
+                          onPressed: () => _showDeleteDialog(config),
+                        ),
                       ],
                     ),
                     selected: controller.currentConfig.value?.name == config.name,
-                    onTap: () => controller.onConfigSelected(config),
+                    onTap: () {
+                      controller.onConfigSelected(config);
+                      _scaffoldKey.currentState?.closeEndDrawer();
+                    },
                   ),
                 ListTile(
                   title: Text(i18n("webdav_add_new_config")),
@@ -122,28 +164,67 @@ class _WebDavPageState extends State<WebDavPage> {
     );
   }
 
-  void _showDeleteDialog(WebDAVConfig config) {
-    Get.dialog(
-      AlertDialog(
-        title: Text(i18n("webdav_confirm_delete")),
-        content: Text(i18n("webdav_confirm_delete_config", args: {"name": config.name})),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(Get.context!);
-            },
-            child: Text(i18n("webdav_cancel")),
-          ),
-          TextButton(
-            onPressed: () => controller.deleteConfig(config),
-            child: Text(
-              i18n("webdav_delete"),
-              style: AppTextStyles.t14.copyWith(color: Theme.of(Get.context!).colorScheme.error),
+  Future<void> _showDeleteDialog(WebDAVConfig config) async {
+    final confirmed = await _showDeleteConfirmation(i18n("webdav_confirm_delete_config", args: {"name": config.name}));
+    if (confirmed && mounted) controller.deleteConfig(config);
+  }
+
+  Future<bool> _showFileDeleteDialog(webdav.File file) =>
+      _showDeleteConfirmation(i18n("webdav_confirm_delete_item", args: {"name": _fileDisplayName(file)}));
+
+  Future<bool> _showDeleteConfirmation(String message) => _showConfirmation(
+    title: i18n("webdav_confirm_delete"),
+    message: message,
+    confirmLabel: i18n("webdav_delete"),
+    danger: true,
+  );
+
+  Future<bool> _showFileRestoreDialog(webdav.File file) => _showConfirmation(
+    title: i18n("recover_backup"),
+    message: i18n("webdav_confirm_restore_item", args: {"name": _fileDisplayName(file)}),
+    confirmLabel: i18n("recover_backup"),
+  );
+
+  Future<bool> _showConfirmation({
+    required String title,
+    required String message,
+    required String confirmLabel,
+    bool danger = false,
+  }) async {
+    if (!mounted) return false;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        final theme = Theme.of(dialogContext);
+        return AlertDialog(
+          scrollable: true,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+          title: Text(title),
+          content: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 420), child: Text(message)),
+          actionsOverflowDirection: VerticalDirection.down,
+          actionsOverflowButtonSpacing: 8,
+          actions: [
+            TextButton(
+              style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: Text(i18n("webdav_cancel")),
             ),
-          ),
-        ],
-      ),
+            FilledButton(
+              style: danger
+                  ? FilledButton.styleFrom(
+                      minimumSize: const Size(48, 48),
+                      backgroundColor: theme.colorScheme.error,
+                      foregroundColor: theme.colorScheme.onError,
+                    )
+                  : FilledButton.styleFrom(minimumSize: const Size(48, 48)),
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: Text(confirmLabel),
+            ),
+          ],
+        );
+      },
     );
+    return confirmed ?? false;
   }
 
   Widget _buildAppBar() {
@@ -195,29 +276,32 @@ class _WebDavPageState extends State<WebDavPage> {
           height: 50,
           child: Align(
             alignment: Alignment.centerLeft,
-            child: Obx(
-              () => ListView(
+            child: Obx(() {
+              final parts = controller.breadcrumbParts.toList(growable: false);
+              _scheduleBreadcrumbScrollToCurrent();
+              return ListView(
+                key: const ValueKey('webdav-breadcrumb-scroll'),
                 controller: _breadcrumbScrollController,
                 primary: false,
                 physics: const PureLiveBoundedScrollPhysics(),
                 scrollDirection: Axis.horizontal,
-                children: _buildBreadcrumbs(),
-              ),
-            ),
+                children: _buildBreadcrumbs(parts),
+              );
+            }),
           ),
         ),
       ),
     );
   }
 
-  List<Widget> _buildBreadcrumbs() {
+  List<Widget> _buildBreadcrumbs(List<String> parts) {
     List<Widget> buttons = [];
     String accumulatedPath = '/';
 
     buttons.add(const SizedBox(width: 48));
     buttons.add(_buildCrumbButton(label: i18n("webdav_my_files"), targetPath: accumulatedPath));
 
-    for (String part in controller.breadcrumbParts) {
+    for (final part in parts) {
       buttons.add(Padding(padding: const EdgeInsets.symmetric(horizontal: 4), child: const Icon(Icons.navigate_next)));
       accumulatedPath += '$part/';
       buttons.add(_buildCrumbButton(label: part, targetPath: accumulatedPath));
@@ -229,7 +313,6 @@ class _WebDavPageState extends State<WebDavPage> {
   Widget _buildCrumbButton({required String label, required String targetPath}) {
     final isCurrent = targetPath == controller.dirPath.value;
     return TextButton(
-      key: isCurrent ? _currentBreadcrumbKey : null,
       style: TextButton.styleFrom(
         padding: const EdgeInsets.symmetric(horizontal: 8),
         minimumSize: Size.zero,
@@ -238,17 +321,25 @@ class _WebDavPageState extends State<WebDavPage> {
       onPressed: () {
         if (!isCurrent) {
           controller.dirPath.value = targetPath;
-          controller.isFromBreadcrumb.value = true;
           controller.updateBreadcrumbParts();
-          controller.triggerBreadcrumbScroll();
           controller.loadFiles();
         }
       },
-      child: Text(
-        label,
-        style: TextStyle(
-          color: isCurrent ? Theme.of(Get.context!).colorScheme.primary : Theme.of(Get.context!).colorScheme.onSurface,
-          fontWeight: FontWeight.w500,
+      child: Tooltip(
+        message: label,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 240),
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: isCurrent
+                  ? Theme.of(Get.context!).colorScheme.primary
+                  : Theme.of(Get.context!).colorScheme.onSurface,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ),
       ),
     );
@@ -339,7 +430,9 @@ class _WebDavPageState extends State<WebDavPage> {
   ];
 
   Widget _buildFileItem(webdav.File file, int index) {
+    final displayName = _fileDisplayName(file);
     return ListTile(
+      isThreeLine: true,
       hoverColor: Theme.of(Get.context!).colorScheme.primaryContainer,
       leading: Icon(
         file.isDir ?? false
@@ -356,12 +449,19 @@ class _WebDavPageState extends State<WebDavPage> {
         color: Theme.of(Get.context!).colorScheme.primary,
         size: 28,
       ),
-      title: Text(
-        file.name ?? i18n("webdav_unnamed_file"),
-        style: AppTextStyles.t16.copyWith(fontWeight: FontWeight.w500),
+      title: Tooltip(
+        message: displayName,
+        child: Text(
+          displayName,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: AppTextStyles.t16.copyWith(fontWeight: FontWeight.w500),
+        ),
       ),
       subtitle: Text(
         file.mTime?.toString() ?? i18n("webdav_unknown_time"),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
         style: TextStyle(color: Theme.of(Get.context!).colorScheme.onSurfaceVariant),
       ),
       trailing: Obx(
@@ -374,15 +474,26 @@ class _WebDavPageState extends State<WebDavPage> {
           ],
           onSelected: (value) {
             if (value == 'Download') {
-              controller.downloadFile(file);
+              unawaited(controller.downloadFile(file, confirmRestore: () => _showFileRestoreDialog(file)));
             } else if (value == 'Delete') {
-              controller.deleteFile(file);
+              unawaited(controller.deleteFile(file, confirmDelete: () => _showFileDeleteDialog(file)));
             }
           },
         ),
       ),
       onTap: () => controller.onFileTap(file),
     );
+  }
+
+  String _fileDisplayName(webdav.File file) {
+    final name = file.name?.trim();
+    if (name != null && name.isNotEmpty) return name;
+    final path = file.path?.trim().replaceAll(RegExp(r'/+$'), '');
+    if (path != null && path.isNotEmpty) {
+      final pathName = path.split('/').last.trim();
+      if (pathName.isNotEmpty) return pathName;
+    }
+    return i18n("webdav_unnamed_file");
   }
 
   Widget _buildErrorPage(String message, double minimumStateHeight) {
@@ -434,11 +545,18 @@ class _WebDavConfigDialogState extends State<_WebDavConfigDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final titleText = isEditing
+        ? i18n("webdav_edit_config", args: {"name": existingConfig!.name})
+        : i18n("webdav_add_new_config");
     return AlertDialog(
+      scrollable: true,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       titlePadding: const EdgeInsets.only(left: 24, right: 24, top: 24, bottom: 12),
       contentPadding: const EdgeInsets.symmetric(horizontal: 24),
       actionsPadding: const EdgeInsets.only(left: 24, right: 24, bottom: 16, top: 8),
+      actionsOverflowDirection: VerticalDirection.down,
+      actionsOverflowButtonSpacing: 8,
       title: Row(
         children: [
           Icon(
@@ -448,84 +566,80 @@ class _WebDavConfigDialogState extends State<_WebDavConfigDialog> {
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: Text(
-              isEditing
-                  ? i18n("webdav_edit_config", args: {"name": existingConfig!.name})
-                  : i18n("webdav_add_new_config"),
-              style: AppTextStyles.t18Bold,
+            child: Tooltip(
+              message: titleText,
+              child: Text(titleText, maxLines: 3, overflow: TextOverflow.ellipsis, style: AppTextStyles.t18Bold),
             ),
           ),
         ],
       ),
-      content: SizedBox(
-        width: 400,
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 400),
         child: Form(
           key: formKey,
-          child: SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.only(top: 8, bottom: 8),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextFormField(
-                    controller: nameController,
-                    decoration: InputDecoration(
-                      labelText: i18n("webdav_config_name"),
-                      prefixIcon: const Icon(Remix.bookmark_line, size: 20),
-                      border: const OutlineInputBorder(),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                    ),
-                    enabled: !isEditing,
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) return i18n("webdav_config_name_empty");
-                      if (!isEditing && controller.configs.any((c) => c.name == value.trim())) {
-                        return i18n("webdav_config_name_exists");
-                      }
-                      return null;
-                    },
+          child: Padding(
+            padding: const EdgeInsets.only(top: 8, bottom: 8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: nameController,
+                  decoration: InputDecoration(
+                    labelText: i18n("webdav_config_name"),
+                    prefixIcon: const Icon(Remix.bookmark_line, size: 20),
+                    border: const OutlineInputBorder(),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                   ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: addressController,
-                    keyboardType: TextInputType.url,
-                    autocorrect: false,
-                    decoration: InputDecoration(
-                      labelText: i18n("webdav_address"),
-                      errorMaxLines: 6,
-                      prefixIcon: const Icon(Remix.global_line, size: 20),
-                      border: const OutlineInputBorder(),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) return i18n("webdav_address_empty");
-                      return WebDAVConfig.isValidAddress(value) ? null : i18n("webdav_address_invalid");
-                    },
+                  enabled: !isEditing,
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) return i18n("webdav_config_name_empty");
+                    if (!isEditing && controller.configs.any((c) => c.name == value.trim())) {
+                      return i18n("webdav_config_name_exists");
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: addressController,
+                  keyboardType: TextInputType.url,
+                  autocorrect: false,
+                  decoration: InputDecoration(
+                    labelText: i18n("webdav_address"),
+                    errorMaxLines: 6,
+                    prefixIcon: const Icon(Remix.global_line, size: 20),
+                    border: const OutlineInputBorder(),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                   ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: userController,
-                    decoration: InputDecoration(
-                      labelText: i18n("webdav_username"),
-                      prefixIcon: const Icon(Remix.user_3_line, size: 20),
-                      border: const OutlineInputBorder(),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                    ),
-                    validator: (value) => value == null || value.trim().isEmpty ? i18n("webdav_username_empty") : null,
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) return i18n("webdav_address_empty");
+                    return WebDAVConfig.isValidAddress(value) ? null : i18n("webdav_address_invalid");
+                  },
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: userController,
+                  decoration: InputDecoration(
+                    labelText: i18n("webdav_username"),
+                    prefixIcon: const Icon(Remix.user_3_line, size: 20),
+                    border: const OutlineInputBorder(),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                   ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: pwdController,
-                    decoration: InputDecoration(
-                      labelText: i18n("webdav_password"),
-                      prefixIcon: const Icon(Remix.lock_password_line, size: 20),
-                      border: const OutlineInputBorder(),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                    ),
-                    obscureText: true,
-                    validator: (value) => value == null || value.isEmpty ? i18n("webdav_password_empty") : null,
+                  validator: (value) => value == null || value.trim().isEmpty ? i18n("webdav_username_empty") : null,
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: pwdController,
+                  decoration: InputDecoration(
+                    labelText: i18n("webdav_password"),
+                    prefixIcon: const Icon(Remix.lock_password_line, size: 20),
+                    border: const OutlineInputBorder(),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                   ),
-                ],
-              ),
+                  obscureText: true,
+                  validator: (value) => value == null || value.isEmpty ? i18n("webdav_password_empty") : null,
+                ),
+              ],
             ),
           ),
         ),
@@ -534,12 +648,12 @@ class _WebDavConfigDialogState extends State<_WebDavConfigDialog> {
         OutlinedButton(
           onPressed: Navigator.of(context).pop,
           style: OutlinedButton.styleFrom(
+            minimumSize: const Size(48, 48),
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           ),
           child: Text(i18n("webdav_cancel")),
         ),
-        const SizedBox(width: 8),
         ElevatedButton(
           onPressed: () {
             if (formKey.currentState?.validate() ?? false) {
@@ -564,6 +678,7 @@ class _WebDavConfigDialogState extends State<_WebDavConfigDialog> {
             }
           },
           style: ElevatedButton.styleFrom(
+            minimumSize: const Size(48, 48),
             backgroundColor: Theme.of(context).colorScheme.primary,
             foregroundColor: Theme.of(context).colorScheme.onPrimary,
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),

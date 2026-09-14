@@ -35,6 +35,9 @@ void main() {
       'favorite': {'favoriteRooms': 'not a list'},
       'history': {'historyRooms': 'not a list'},
       'webdav': {'webDavConfigs': 'not a list'},
+      'roomCard': {
+        'mobileConfig': {'showAvatar': 'not a boolean'},
+      },
       'page': {
         'pageSizeOptions': [12, 'bad'],
       },
@@ -45,7 +48,9 @@ void main() {
       },
     };
     for (final entry in badSections.entries) {
-      final error = ['favorite', 'history', 'webdav'].contains(entry.key) ? isA<FormatException>() : isA<TypeError>();
+      final error = ['favorite', 'history', 'webdav', 'roomCard'].contains(entry.key)
+          ? isA<FormatException>()
+          : isA<TypeError>();
       for (final data in <Map<String, dynamic>>[
         {
           'backupVersion': 3,

@@ -43,11 +43,13 @@ class WindowPipGeometry {
 
     _assign(
       WindowSizeController.normalizePipGeometry({
-        'displayId': displayId,
-        'windowsPipWidth': size.width,
-        'windowsPipHeight': size.height,
-        'windowsPipX': position.dx,
-        'windowsPipY': position.dy,
+        'windowsPip': {
+          'displayId': displayId,
+          'windowsPipWidth': size.width,
+          'windowsPipHeight': size.height,
+          'windowsPipX': position.dx,
+          'windowsPipY': position.dy,
+        },
       }),
     );
   }
@@ -62,11 +64,13 @@ class WindowPipGeometry {
 
   Map<String, dynamic> toJson() {
     return WindowSizeController.normalizePipGeometry({
-      'displayId': displayId.v,
-      'windowsPipWidth': windowsPipWidth.v,
-      'windowsPipHeight': windowsPipHeight.v,
-      'windowsPipX': windowsPipX.v,
-      'windowsPipY': windowsPipY.v,
+      'windowsPip': {
+        'displayId': displayId.v,
+        'windowsPipWidth': windowsPipWidth.v,
+        'windowsPipHeight': windowsPipHeight.v,
+        'windowsPipX': windowsPipX.v,
+        'windowsPipY': windowsPipY.v,
+      },
     });
   }
 

@@ -133,6 +133,158 @@ void main() {
     expect(dialog, findsNothing);
   }, skip: !Platform.isWindows);
 
+  testWidgets('resolution selectors share one responsive route and commit only its returned choice', (tester) async {
+    final player = SettingsService.to.player;
+    player.preferResolution.value = '高清';
+    player.preferResolutionCellular.value = '超清';
+
+    await _pumpVideoSettings(
+      tester,
+      english: english,
+      size: const Size(320, 480),
+      textScale: 3,
+      platform: TargetPlatform.windows,
+    );
+
+    final wifiEntry = find.ancestor(of: find.text('Resolution Preference'), matching: find.byType(ListTile));
+    await _scrollPageUntilHitTestable(tester, wifiEntry);
+    final wifiTap = tester.widget<ListTile>(wifiEntry).onTap!;
+    final cellularEntry = find.ancestor(of: find.text('Mobile Network Quality'), matching: find.byType(ListTile));
+    await _scrollPageUntilHitTestable(tester, cellularEntry);
+    final cellularTap = tester.widget<ListTile>(cellularEntry).onTap!;
+
+    wifiTap();
+    cellularTap();
+    await _pumpRouteTransition(tester);
+
+    final dialog = find.byKey(const ValueKey('resolution-preference-dialog'));
+    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(dialog, findsOneWidget);
+    expect(player.preferResolution.value, '高清');
+    expect(player.preferResolutionCellular.value, '超清');
+    final cancel = find.widgetWithText(TextButton, 'Cancel').hitTestable();
+    expect(cancel, findsOneWidget);
+    expect(tester.getSize(cancel).width, greaterThanOrEqualTo(48));
+    expect(tester.getSize(cancel).height, greaterThanOrEqualTo(48));
+    expect(tester.getRect(dialog).top, greaterThanOrEqualTo(0));
+    expect(tester.getRect(dialog).bottom, lessThanOrEqualTo(480));
+
+    await tester.tap(cancel);
+    await _pumpRouteTransition(tester);
+    expect(dialog, findsNothing);
+    expect(player.preferResolution.value, '高清');
+    expect(player.preferResolutionCellular.value, '超清');
+
+    cellularTap();
+    await _pumpRouteTransition(tester);
+    expect(dialog, findsOneWidget);
+    final cellularOption = find.widgetWithText(SimpleDialogOption, 'Blu-ray 4 Mbps');
+    await tester.ensureVisible(cellularOption);
+    await tester.pump();
+    await tester.tap(cellularOption);
+    await _pumpRouteTransition(tester);
+
+    expect(dialog, findsNothing);
+    expect(player.preferResolution.value, '高清');
+    expect(player.preferResolutionCellular.value, '蓝光4M');
+    expect(tester.takeException(), isNull);
+  }, skip: !Platform.isWindows);
+
+  testWidgets('disposed video settings ignores a captured resolution action', (tester) async {
+    await _pumpVideoSettings(tester, english: english, size: const Size(420, 800), platform: TargetPlatform.windows);
+
+    final wifiEntry = find.ancestor(of: find.text('Resolution Preference'), matching: find.byType(ListTile));
+    await _scrollPageUntilHitTestable(tester, wifiEntry);
+    final wifiTap = tester.widget<ListTile>(wifiEntry).onTap!;
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+    expect(wifiTap, returnsNormally);
+    await tester.pump();
+
+    expect(find.byType(AlertDialog), findsNothing);
+    expect(tester.takeException(), isNull);
+  }, skip: !Platform.isWindows);
+
+  testWidgets('covered video settings does not place a stale resolution dialog over the current route', (tester) async {
+    await _pumpVideoSettings(tester, english: english, size: const Size(420, 800), platform: TargetPlatform.windows);
+
+    final wifiEntry = find.ancestor(of: find.text('Resolution Preference'), matching: find.byType(ListTile));
+    await _scrollPageUntilHitTestable(tester, wifiEntry);
+    final wifiTap = tester.widget<ListTile>(wifiEntry).onTap!;
+    final navigator = Navigator.of(tester.element(wifiEntry));
+    navigator.push(MaterialPageRoute<void>(builder: (_) => const Scaffold(body: Text('Current route'))));
+    await _pumpRouteTransition(tester);
+
+    wifiTap();
+    await _pumpRouteTransition(tester);
+
+    expect(find.text('Current route'), findsOneWidget);
+    expect(find.byType(AlertDialog), findsNothing);
+    expect(tester.takeException(), isNull);
+  }, skip: !Platform.isWindows);
+
+  testWidgets('Windows PiP reset coalesces confirmation and preserves or clears the whole saved geometry', (
+    tester,
+  ) async {
+    final window = SettingsService.to.window;
+    window.windowsPip.update(const Size(640, 360), const Offset(120, 80), 'DISPLAY-1');
+
+    await _pumpVideoSettings(
+      tester,
+      english: english,
+      size: const Size(320, 480),
+      textScale: 3,
+      platform: TargetPlatform.windows,
+    );
+
+    final resetEntry = find.ancestor(of: find.text('Reset PiP position and size'), matching: find.byType(ListTile));
+    await _scrollPageUntilHitTestable(tester, resetEntry);
+    final resetTap = tester.widget<ListTile>(resetEntry).onTap!;
+
+    resetTap();
+    resetTap();
+    await _pumpRouteTransition(tester);
+
+    final dialog = find.byKey(const ValueKey('windows-pip-reset-dialog'));
+    expect(dialog, findsOneWidget);
+    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(window.windowsPip.displayId.value, 'DISPLAY-1');
+    expect(window.windowsPip.size, const Size(640, 360));
+    expect(window.windowsPip.position, const Offset(120, 80));
+
+    final cancel = find.widgetWithText(TextButton, 'Cancel').hitTestable();
+    final reset = find.widgetWithText(FilledButton, 'Reset').hitTestable();
+    expect(cancel, findsOneWidget);
+    expect(reset, findsOneWidget);
+    expect(tester.getSize(cancel).width, greaterThanOrEqualTo(48));
+    expect(tester.getSize(cancel).height, greaterThanOrEqualTo(48));
+    expect(tester.getSize(reset).width, greaterThanOrEqualTo(48));
+    expect(tester.getSize(reset).height, greaterThanOrEqualTo(48));
+    expect(tester.getRect(dialog).top, greaterThanOrEqualTo(0));
+    expect(tester.getRect(dialog).bottom, lessThanOrEqualTo(480));
+
+    await tester.tap(cancel);
+    await _pumpRouteTransition(tester);
+    expect(dialog, findsNothing);
+    expect(window.windowsPip.displayId.value, 'DISPLAY-1');
+    expect(window.windowsPip.size, const Size(640, 360));
+    expect(window.windowsPip.position, const Offset(120, 80));
+
+    resetTap();
+    await _pumpRouteTransition(tester);
+    expect(dialog, findsOneWidget);
+    await tester.tap(find.widgetWithText(FilledButton, 'Reset').hitTestable());
+    await _pumpRouteTransition(tester);
+
+    expect(dialog, findsNothing);
+    expect(window.windowsPip.displayId.value, isEmpty);
+    expect(window.windowsPip.size, Size.zero);
+    expect(window.windowsPip.position, Offset.zero);
+    expect(window.windowsPip.isValid, isFalse);
+    expect(tester.takeException(), isNull);
+  }, skip: !Platform.isWindows);
+
   testWidgets('ASMR timer keeps every preset and action reachable in narrow very-large text', (tester) async {
     await _pumpVideoSettings(
       tester,
@@ -246,6 +398,11 @@ Future<void> _scrollPageUntilHitTestable(WidgetTester tester, Finder target) asy
     await tester.pump();
   }
   fail('Target did not become hit-testable after bounded page scrolling.');
+}
+
+Future<void> _pumpRouteTransition(WidgetTester tester) async {
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 500));
 }
 
 class _Translations extends AssetLoader {

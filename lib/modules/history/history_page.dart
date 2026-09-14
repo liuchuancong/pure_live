@@ -15,6 +15,7 @@ class HistoryPage extends StatefulWidget {
 class _HistoryPageState extends State<HistoryPage> {
   final refreshController = EasyRefreshController(controlFinishRefresh: true, controlFinishLoad: true);
   Future<void>? _refreshTask;
+  bool _historyMutationBusy = false;
 
   @override
   void dispose() {
@@ -73,25 +74,76 @@ class _HistoryPageState extends State<HistoryPage> {
 
   Future<void> _clearHistory() async {
     final controller = SettingsService.to.history;
-    if (controller.historyRooms.v.isEmpty) return;
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(i18n("clear_history"), style: AppTextStyles.t16Bold),
-        content: Text(i18n("clear_history_confirm"), style: AppTextStyles.t14),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: Text(i18n("cancel"), style: AppTextStyles.t14Muted),
+    if (_historyMutationBusy || controller.historyRooms.v.isEmpty || !mounted) return;
+    final snapshot = List<LiveRoom>.from(controller.historyRooms.v);
+    setState(() => _historyMutationBusy = true);
+    try {
+      final confirmed = await _showDestructiveConfirmation(
+        title: i18n('clear_history'),
+        message: i18n('clear_history_confirm_named', args: {'count': snapshot.length.toString()}),
+        actionLabel: i18n('clear'),
+      );
+      if (confirmed && mounted && !controller.isClosed) controller.clearHistorySnapshot(snapshot);
+    } finally {
+      if (mounted) setState(() => _historyMutationBusy = false);
+    }
+  }
+
+  Future<void> _deleteHistoryRoom(LiveRoom room) async {
+    final controller = SettingsService.to.history;
+    if (_historyMutationBusy || !mounted || !controller.historyRooms.v.any((entry) => identical(entry, room))) return;
+    final title = _historyRoomLabel(room);
+    setState(() => _historyMutationBusy = true);
+    try {
+      final confirmed = await _showDestructiveConfirmation(
+        title: i18n('delete'),
+        message: i18n('remove_history_confirm_named', args: {'title': title}),
+        actionLabel: i18n('delete'),
+      );
+      if (confirmed && mounted && !controller.isClosed) controller.clearHistorySnapshot([room]);
+    } finally {
+      if (mounted) setState(() => _historyMutationBusy = false);
+    }
+  }
+
+  Future<bool> _showDestructiveConfirmation({
+    required String title,
+    required String message,
+    required String actionLabel,
+  }) async {
+    if (!mounted) return false;
+    return await showDialog<bool>(
+          context: context,
+          useRootNavigator: true,
+          builder: (dialogContext) => AlertDialog(
+            scrollable: true,
+            insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+            title: Text(title, style: AppTextStyles.t16Bold),
+            content: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 420),
+              child: Text(message, style: AppTextStyles.t14),
+            ),
+            actionsOverflowDirection: VerticalDirection.down,
+            actionsOverflowButtonSpacing: 8,
+            actions: [
+              TextButton(
+                style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
+                onPressed: () => Navigator.of(dialogContext, rootNavigator: true).pop(false),
+                child: Text(i18n('cancel'), style: AppTextStyles.t14Muted),
+              ),
+              FilledButton(
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size(48, 48),
+                  backgroundColor: Theme.of(dialogContext).colorScheme.error,
+                  foregroundColor: Theme.of(dialogContext).colorScheme.onError,
+                ),
+                onPressed: () => Navigator.of(dialogContext, rootNavigator: true).pop(true),
+                child: Text(actionLabel),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: Text(i18n("confirm"), style: AppTextStyles.t14Primary),
-          ),
-        ],
-      ),
-    );
-    if (result == true && !controller.isClosed) controller.clearHistory();
+        ) ??
+        false;
   }
 
   @override
@@ -117,7 +169,7 @@ class _HistoryPageState extends State<HistoryPage> {
             return IconButton(
               tooltip: i18n("clear_history"),
               icon: const Icon(Icons.delete_forever),
-              onPressed: _clearHistory,
+              onPressed: _historyMutationBusy ? null : _clearHistory,
             );
           }),
         ],
@@ -152,9 +204,11 @@ class _HistoryPageState extends State<HistoryPage> {
                         room: rooms[index],
                         dense: dense,
                         showDelete: true,
-                        onDelete: () {
-                          SettingsService.to.history.removeRoomFromHistory(rooms[index]);
-                        },
+                        deleteTooltip: i18n(
+                          'remove_history_entry_named',
+                          args: {'title': _historyRoomLabel(rooms[index])},
+                        ),
+                        onDelete: _historyMutationBusy ? null : () => _deleteHistoryRoom(rooms[index]),
                       ),
                     ),
             );
@@ -167,6 +221,14 @@ class _HistoryPageState extends State<HistoryPage> {
 
 String _historyLimitLabel(int limit) => limit == unlimitedHistoryLimit ? i18n('history_unlimited') : '$limit';
 
+String _historyRoomLabel(LiveRoom room) {
+  for (final candidate in [room.title, room.nick, room.roomId]) {
+    final value = candidate?.trim() ?? '';
+    if (value.isNotEmpty) return value;
+  }
+  return i18n('untitled_room');
+}
+
 class _HistoryLimitDialog extends StatefulWidget {
   const _HistoryLimitDialog({required this.controller});
   final HistoryController controller;
@@ -177,6 +239,7 @@ class _HistoryLimitDialog extends StatefulWidget {
 class _HistoryLimitDialogState extends State<_HistoryLimitDialog> {
   late int draftLimit;
   final customController = TextEditingController();
+  String? customErrorKey;
   static const presetOptions = <int>[20, 50, 100, 200, 500];
 
   @override
@@ -191,96 +254,115 @@ class _HistoryLimitDialogState extends State<_HistoryLimitDialog> {
     super.dispose();
   }
 
+  void _selectLimit(int value) {
+    setState(() {
+      draftLimit = value;
+      customErrorKey = null;
+    });
+  }
+
+  void _applyCustomLimit() {
+    final value = int.tryParse(customController.text.trim());
+    if (value == null || value < 0) {
+      setState(() => customErrorKey = 'history_limit_invalid');
+      return;
+    }
+    setState(() {
+      draftLimit = normalizeHistoryLimit(value);
+      customErrorKey = null;
+      customController.clear();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return AlertDialog(
+      scrollable: true,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
       title: Text(i18n("history_limit"), style: AppTextStyles.t16Bold),
-      content: SizedBox(
-        width: 320,
-        child: StatefulBuilder(
-          builder: (context, setDialogState) {
-            return SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 360),
+        child: SizedBox(
+          width: MediaQuery.sizeOf(context).width,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(i18n('history_limit_presets'), style: AppTextStyles.t12Muted),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
                 children: [
-                  Text(i18n('history_limit_presets'), style: AppTextStyles.t12Muted),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      ...presetOptions.map(
-                        (value) => ChoiceChip(
-                          label: Text('$value', style: AppTextStyles.t12),
-                          selected: draftLimit == value,
-                          onSelected: (_) => setDialogState(() => draftLimit = value),
-                        ),
-                      ),
-                      ChoiceChip(
-                        label: Text(i18n('history_unlimited'), style: AppTextStyles.t12),
-                        selected: draftLimit == unlimitedHistoryLimit,
-                        onSelected: (_) => setDialogState(() => draftLimit = unlimitedHistoryLimit),
-                      ),
-                      if (!presetOptions.contains(draftLimit) && draftLimit != unlimitedHistoryLimit)
-                        ChoiceChip(
-                          label: Text('$draftLimit', style: AppTextStyles.t12),
-                          selected: true,
-                          onSelected: (_) {},
-                        ),
-                    ],
+                  ...presetOptions.map(
+                    (value) => ChoiceChip(
+                      label: Text('$value', style: AppTextStyles.t12),
+                      selected: draftLimit == value,
+                      onSelected: (_) => _selectLimit(value),
+                    ),
                   ),
-                  const SizedBox(height: 24),
-                  Text(i18n('history_limit_custom'), style: AppTextStyles.t13Medium),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: customController,
-                          keyboardType: TextInputType.number,
-                          style: AppTextStyles.t14,
-                          decoration: InputDecoration(
-                            hintText: '50',
-                            suffixText: i18n("items"),
-                            suffixStyle: AppTextStyles.t12Muted,
-                            border: const OutlineInputBorder(),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      ElevatedButton(
-                        onPressed: () {
-                          final value = int.tryParse(customController.text.trim());
-                          if (value == null) return;
-                          setDialogState(() => draftLimit = normalizeHistoryLimit(value));
-                          customController.clear();
-                        },
-                        child: Text(
-                          i18n("apply"),
-                          style: AppTextStyles.t13Medium.copyWith(color: theme.colorScheme.primary),
-                        ),
-                      ),
-                    ],
+                  ChoiceChip(
+                    label: Text(i18n('history_unlimited'), style: AppTextStyles.t12),
+                    selected: draftLimit == unlimitedHistoryLimit,
+                    onSelected: (_) => _selectLimit(unlimitedHistoryLimit),
                   ),
-                  const SizedBox(height: 16),
-                  Text('${i18n("current_value")}: ${_historyLimitLabel(draftLimit)}', style: AppTextStyles.t12Muted),
-                  const SizedBox(height: 6),
-                  Text(i18n('history_limit_desc'), style: AppTextStyles.t12Muted),
+                  if (!presetOptions.contains(draftLimit) && draftLimit != unlimitedHistoryLimit)
+                    ChoiceChip(
+                      label: Text('$draftLimit', style: AppTextStyles.t12),
+                      selected: true,
+                      onSelected: (_) {},
+                    ),
                 ],
               ),
-            );
-          },
+              const SizedBox(height: 24),
+              Text(i18n('history_limit_custom'), style: AppTextStyles.t13Medium),
+              const SizedBox(height: 12),
+              TextField(
+                controller: customController,
+                keyboardType: TextInputType.number,
+                textInputAction: TextInputAction.done,
+                onSubmitted: (_) => _applyCustomLimit(),
+                onChanged: (_) {
+                  if (customErrorKey != null) setState(() => customErrorKey = null);
+                },
+                style: AppTextStyles.t14,
+                decoration: InputDecoration(
+                  hintText: '50',
+                  suffixText: i18n("items"),
+                  suffixStyle: AppTextStyles.t12Muted,
+                  errorText: customErrorKey == null ? null : i18n(customErrorKey!),
+                  border: const OutlineInputBorder(),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                ),
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: _applyCustomLimit,
+                  child: Text(i18n("apply"), style: AppTextStyles.t13Medium.copyWith(color: theme.colorScheme.primary)),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text('${i18n("current_value")}: ${_historyLimitLabel(draftLimit)}', style: AppTextStyles.t12Muted),
+              const SizedBox(height: 6),
+              Text(i18n('history_limit_desc'), style: AppTextStyles.t12Muted),
+            ],
+          ),
         ),
       ),
+      actionsOverflowDirection: VerticalDirection.down,
+      actionsOverflowButtonSpacing: 8,
       actions: [
         TextButton(
+          style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
           onPressed: () => Navigator.pop(context),
           child: Text(i18n("cancel"), style: AppTextStyles.t14Muted),
         ),
         TextButton(
+          style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
           onPressed: () {
             widget.controller.setHistoryLimit(draftLimit);
             if (context.mounted) Navigator.pop(context);

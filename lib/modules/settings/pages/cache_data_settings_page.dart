@@ -11,6 +11,8 @@ class CacheDataSettingsPage extends StatefulWidget {
 }
 
 class _CacheDataSettingsPageState extends State<CacheDataSettingsPage> {
+  bool _clearTransactionBusy = false;
+
   @override
   void initState() {
     super.initState();
@@ -44,37 +46,58 @@ class _CacheDataSettingsPageState extends State<CacheDataSettingsPage> {
   }
 
   Future<void> _confirmClearCache(ThemeData theme) async {
+    if (_clearTransactionBusy || !mounted) return;
+    setState(() => _clearTransactionBusy = true);
     final pageContext = context;
-    final ok = await showDialog<bool>(
-      context: pageContext,
-      builder: (dialogContext) => AlertDialog(
-        scrollable: true,
-        insetPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 24),
-        title: Text(i18n('confirm_clear_local_cache')),
-        content: Text(i18n('confirm_clear_local_cache_desc')),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: Text(i18n('cancel'))),
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: Text(i18n('clear'), style: TextStyle(color: theme.colorScheme.error)),
-          ),
-        ],
-      ),
-    );
-    if (ok != true || !mounted) return;
-
     try {
-      final result = await SettingsService.to.cache.clearCache();
-      if (result.succeeded) {
-        _showCacheMessage(i18n('cache_cleared'));
-      } else {
-        _showCacheMessage(
-          i18n('cache_clear_incomplete', args: {'size': result.remainingSizeMB.toStringAsFixed(2)}),
-          failed: true,
-        );
+      final ok = await showDialog<bool>(
+        context: pageContext,
+        useRootNavigator: true,
+        builder: (dialogContext) => AlertDialog(
+          scrollable: true,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+          title: Text(i18n('confirm_clear_local_cache')),
+          content: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: Text(i18n('confirm_clear_local_cache_desc')),
+          ),
+          actionsOverflowDirection: VerticalDirection.down,
+          actionsOverflowButtonSpacing: 8,
+          actions: [
+            TextButton(
+              style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
+              onPressed: () => Navigator.of(dialogContext, rootNavigator: true).pop(false),
+              child: Text(i18n('cancel')),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                minimumSize: const Size(48, 48),
+                backgroundColor: theme.colorScheme.error,
+                foregroundColor: theme.colorScheme.onError,
+              ),
+              onPressed: () => Navigator.of(dialogContext, rootNavigator: true).pop(true),
+              child: Text(i18n('clear')),
+            ),
+          ],
+        ),
+      );
+      if (ok != true || !mounted) return;
+
+      try {
+        final result = await SettingsService.to.cache.clearCache();
+        if (result.succeeded) {
+          _showCacheMessage(i18n('cache_cleared'));
+        } else {
+          _showCacheMessage(
+            i18n('cache_clear_incomplete', args: {'size': result.remainingSizeMB.toStringAsFixed(2)}),
+            failed: true,
+          );
+        }
+      } catch (_) {
+        _showCacheMessage(i18n('cache_operation_failed'), failed: true);
       }
-    } catch (_) {
-      _showCacheMessage(i18n('cache_operation_failed'), failed: true);
+    } finally {
+      if (mounted) setState(() => _clearTransactionBusy = false);
     }
   }
 
@@ -145,7 +168,9 @@ class _CacheDataSettingsPageState extends State<CacheDataSettingsPage> {
                 trailing: SettingsService.to.cache.isClearing.value
                     ? _progressIndicator(theme.colorScheme.error)
                     : Icon(Remix.delete_bin_6_line, color: theme.colorScheme.error),
-                onTap: SettingsService.to.cache.isBusy ? null : () => _confirmClearCache(theme),
+                onTap: SettingsService.to.cache.isBusy || _clearTransactionBusy
+                    ? null
+                    : () => _confirmClearCache(theme),
               ),
             ),
           ]),

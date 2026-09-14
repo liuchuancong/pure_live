@@ -100,6 +100,24 @@ void main() {
     expect(settings.windowSize.value, const Size(16384, 900));
   });
 
+  test('runtime PiP capture keeps display identity and bounds in one canonical snapshot', () async {
+    final settings = Get.put(WindowSizeController());
+
+    settings.windowsPip.update(const Size(640, 360), const Offset(-120, 80), ' DISPLAY-2 ');
+
+    expect(settings.windowsPip.isValid, isTrue);
+    expect(settings.windowsPip.toJson(), {
+      'displayId': 'DISPLAY-2',
+      'windowsPipWidth': 640.0,
+      'windowsPipHeight': 360.0,
+      'windowsPipX': -120.0,
+      'windowsPipY': 80.0,
+    });
+    await Future<void>.delayed(Duration.zero);
+    await HivePrefUtil.flush();
+    expect(HivePrefUtil.getString('windows_pip_display_id'), 'DISPLAY-2');
+  });
+
   test('current and legacy backup geometry normalize ranges and reject malformed scalars', () {
     final parsed = WindowSizeController.parseConfig({
       'storedWidth': 320,

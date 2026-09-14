@@ -2,11 +2,11 @@ import 'dart:io';
 
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/widgets/download_apk_dialog.dart';
+import 'package:pure_live/plugins/file_utils.dart';
 
 Uri? updateDownloadUri(String rawUrl) {
-  final uri = Uri.tryParse(rawUrl.trim());
-  if (uri == null || !uri.hasAuthority || (uri.scheme != 'https' && uri.scheme != 'http')) return null;
-  return uri;
+  final uri = FileUtils.parseHttpUrl(rawUrl);
+  return uri == null || uri.userInfo.isNotEmpty ? null : uri;
 }
 
 bool requiresInstallPackagesPermission({required bool isAndroid, required String fileName}) {

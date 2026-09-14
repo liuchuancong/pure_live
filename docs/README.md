@@ -4,6 +4,62 @@
 
 ## 开发与发布
 
+- [视频设置清晰度路由与选择事务审计](VIDEO_SETTINGS_RESOLUTION_ROUTE_TRANSACTION_AUDIT_2026_09_14.md)：双入口共享单次路由、类型化延迟提交、明确取消动作与页面/控制器生命周期栅栏。
+
+- [Windows 小窗几何捕获与重置事务审计](WINDOWS_PIP_GEOMETRY_CAPTURE_AND_RESET_AUDIT_2026_09_14.md)：显示器身份规范持久化、响应式单次重置、取消保留与五字段原子清空。
+
+- [精细字号恢复默认布局与事务审计](FONT_SETTINGS_RESET_LAYOUT_AND_TRANSACTION_AUDIT_2026_09_14.md)：五项字号单次恢复、窄屏大字号动作合同、取消后重入与页面/控制器退出栅栏。
+
+- [观看记录单项删除可访问性与事务审计](HISTORY_ENTRY_DELETE_ACCESSIBILITY_AND_TRANSACTION_AUDIT_2026_09_14.md)：具名 48×48 删除入口、长标题响应式确认、单次历史变更路由，以及确认期间同房间重新观看保护。
+
+- [观看记录清空确认与快照事务审计](HISTORY_CLEAR_CONFIRMATION_AND_SNAPSHOT_AUDIT_2026_09_14.md)：具名数量确认、320×480 / 3.0 倍中英文动作可达、单次路由，以及确认期间新增/重新观看记录的身份快照保护。
+
+- [本地缓存清理确认与事务审计](CACHE_CLEAR_CONFIRMATION_AND_TRANSACTION_AUDIT_2026_09_14.md)：320×480 / 3.0 倍文字动作可达、破坏性层级、单次确认/清理任务及 10 项回归。
+
+- [账号退出确认与事务审计](ACCOUNT_LOGOUT_CONFIRMATION_AND_TRANSACTION_AUDIT_2026_09_14.md)：七个平台具名确认、320×480 / 3.0 倍中英文动作可达、单次路由/清理任务及 16 项回归。
+
+- [版本历史下载确认与事务审计](VERSION_HISTORY_DOWNLOAD_CONFIRMATION_AND_TRANSACTION_AUDIT_2026_09_14.md)：具名文件确认、320×480 / 3.0 倍文字动作可达、单次路由/下载任务及 19 项回归。
+
+- [WebView2 缺失提示布局与事务审计](WEBVIEW2_MISSING_DIALOG_LAYOUT_AND_TRANSACTION_AUDIT_2026_09_14.md)：320×480 / 3.0 倍文字标题溢出、显式下载动作、单次路由/外部启动、退出栅栏及 101 项回归。
+
+- [录制中心取消监控布局与事务审计](RECORDER_MONITOR_REMOVAL_LAYOUT_AND_TRANSACTION_AUDIT_2026_09_14.md)：具名且明确保留文件的确认、320×480 / 3.0 倍文字布局、单次路由/底层调用及 43 项回归。
+
+- [关注分区取消关注弹窗布局与事务审计](FAVORITE_AREA_UNFOLLOW_LAYOUT_AND_TRANSACTION_AUDIT_2026_09_14.md)：320×480 / 3.0 倍文字下的 128 px 溢出、重复确认路由、捕获目标身份及 24 项回归。
+
+- [观看记录保留数量弹窗布局与校验审计](HISTORY_RETENTION_DIALOG_LAYOUT_AND_VALIDATION_AUDIT_2026_09_14.md)：320×480 / 3.0 倍文字下的 260 px 溢出、静默非法输入、统一滚动面、草稿提交语义及 30 项回归。
+
+- [Windows 视频输出 fit 尺寸所有权审计](WINDOWS_VIDEO_OUTPUT_FIT_SIZING_AUDIT_2026_09_14.md)：Issue #767 的 viewport / DPR 尺寸策略遗漏显示模式、`cover` 等模式的纹理放大链、26 项回归及 Windows Debug 构建边界。
+
+- [Windows 副屏亮度所有权审计](WINDOWS_SECONDARY_MONITOR_BRIGHTNESS_OWNERSHIP_AUDIT_2026_09_14.md)：Issue #863 的无 Dart 调用原生 DDC/CI 写入链、旧 CMake 开关失效原因、移动端实现保留、245 项回归及 Windows Debug 依赖/打包边界。
+
+- [房间卡片设置回归与恢复审计](ROOM_CARD_SETTINGS_REGRESSION_AND_RESTORATION_AUDIT_2026_09_14.md)：Issue #864 的 3.1.3 稳定版缺失来源、当前架构下的移动/桌面独立预设与实时预览、3.1.2 持久值迁移、备份合同及 154 项回归。
+
+- [WebDAV 恢复确认与事务审计](WEBDAV_RESTORE_CONFIRMATION_AND_TRANSACTION_AUDIT_2026_09_14.md)：具名覆盖确认、窄屏大字号动作可达、确认前零读取/零本地变更、单次恢复事务及服务/目录代次栅栏。
+
+- [WebDAV 文件行与删除确认审计](WEBDAV_FILE_ROW_AND_DELETE_DIALOG_AUDIT_2026_09_14.md)：超长文件名两行收束与完整提示、窄屏大字号动作可达、具名危险确认、页面路由所有权及单次删除事务。
+
+- [WebDAV 面包屑可见性与父级路由审计](WEBDAV_BREADCRUMB_VISIBILITY_AND_ROUTE_AUDIT_2026_09_14.md)：深层路径当前段自动可见、稳定滚动范围校准、超长目录名完整提示，以及根目录父级请求的页面所有权。
+
+- [WebDAV 配置表单响应式布局审计](WEBDAV_CONFIG_FORM_RESPONSIVE_AUDIT_2026_09_14.md)：长编辑标题收束与完整提示、单一纵向滚动面、窄屏大字号字段/动作可达性及 48×48 动作合同。
+
+- [WebDAV 配置抽屉路由与布局审计](WEBDAV_CONFIG_DRAWER_ROUTE_AND_LAYOUT_AUDIT_2026_09_14.md)：长配置名称收束与完整提示、编辑/删除动作可达性、页面所有的配置/删除路由、抽屉精确关闭及控制器导航解耦。
+
+- [桌面退出弹窗与动作事务审计](DESKTOP_EXIT_DIALOG_AND_ACTION_TRANSACTION_AUDIT_2026_09_13.md)：退出动作归一化、窄屏大字号布局、single-flight 路由、偏好落盘、原生失败后的窗口/拦截恢复及备份合同。
+
+- [共享选项弹窗布局与选择语义审计](SHARED_OPTION_DIALOG_LAYOUT_AND_SELECTION_AUDIT_2026_09_13.md)：选项文字收缩换行、长列表滚动、48 px 整行命中、当前值语义及系统返回合同。
+
+- [共享确认与消息弹窗布局及路由审计](SHARED_ALERT_DIALOG_LAYOUT_AND_ROUTE_AUDIT_2026_09_13.md)：长正文滚动边界、窄屏大字号动作可达性、48 px 命中尺寸、所属路由关闭及既有调用链兼容。
+
+- [共享文本编辑弹窗生命周期与布局审计](SHARED_EDIT_DIALOG_LIFECYCLE_AND_LAYOUT_AUDIT_2026_09_13.md)：路由子树控制器所有权、确认/取消返回语义、窄屏大字号滚动视口及响应式动作排列。
+
+- **Windows Computer Use 模型说明**：仅在 Windows 客户端 GUI 验收开始时创建一个 Astra Light 任务，并在同一验收批次内持续复用；源码、测试、构建、文档、Android 与其他非 Computer Use 工作使用常规模型。权威规则见 [`AGENTS.md`](../AGENTS.md#device-and-collaboration-boundaries) 与 [`AGENT_WORKFLOW.md`](AGENT_WORKFLOW.md#model-and-task-handoff)。
+
+- [更新与版本历史 Web 目标归一化审计](UPDATE_AND_RELEASE_WEB_TARGET_AUDIT_2026_09_13.md)：共享 HTTP(S) 解析、用户信息/端口边界、单次 URI 归一化及复制与下载消费一致性。
+
+- [下载文件名 UTF-8 边界与冲突审计](DOWNLOAD_FILENAME_UTF8_AND_COLLISION_AUDIT_2026_09_13.md)：240 字节 basename、暂存/回滚后缀预算、完整 Unicode scalar、扩展名保留及长名称摘要去碰撞。
+
+- [HTTP(S) 目标校验与 IPTV 网络导入审计](HTTP_TARGET_VALIDATION_AND_IPTV_IMPORT_AUDIT_2026_09_13.md)：完整结构化 URI、长顶级域名/回环地址、端口边界、嵌入片段拒绝及外部打开与网络导入共享决策。
+
 - [浏览器日志 HTTP 合同与响应式界面审计](LOG_BROWSER_HTTP_AND_RESPONSIVE_UI_AUDIT_2026_09_13.md)：严格 GET/POST 路由、受保护的清空动作、安全响应头、HTML 转义、空状态和移动端 44 px 响应式动作。
 
 - [本地日志事务、端点与隐私边界审计](LOCAL_LOGGING_TRANSACTION_AND_ENDPOINT_AUDIT_2026_09_13.md)：启停验证事务、运行期端点、回环绑定、原子端口、早期日志安全、Release 浏览器缓冲及双语忙碌/失败反馈。
