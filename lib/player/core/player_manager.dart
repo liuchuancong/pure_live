@@ -2874,6 +2874,11 @@ class PlayerManager {
         await _windowsPipExit();
         if (!ownsTransition()) return;
         isInPip.value = false;
+      } catch (error) {
+        if (error is WindowsPipExitFailure && !error.hostIsInPip && ownsTransition()) {
+          isInPip.value = false;
+        }
+        rethrow;
       } finally {
         if (revision == _pipTransitionRevision) {
           _pipTransitionInFlight = false;

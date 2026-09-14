@@ -13,6 +13,7 @@ import 'package:media_kit_video/media_kit_video.dart';
 import 'package:pure_live/common/models/live_room.dart';
 import 'package:pure_live/model/live_play_quality.dart';
 import 'package:pure_live/player/core/player_manager.dart';
+import 'package:pure_live/player/utils/fullscreen.dart';
 import 'package:pure_live/player/core/portrait_stream_support.dart';
 import 'package:pure_live/player/models/player_state.dart';
 import 'package:pure_live/player/models/player_engine.dart';
@@ -289,6 +290,7 @@ void main() {
 
     expect(manager.isPipPreparing.value, isFalse);
     expect(manager.isInPip.value, isTrue);
+    expect(GlobalPlayerState.to.isPipMode.value, isTrue);
 
     await manager.exitPip();
     expect(exitCalls, 2);
@@ -364,6 +366,30 @@ void main() {
 
     expect(exitCalls, 1);
     expect(manager.isInPip.value, isFalse);
+  });
+
+  test('Windows PiP exit adopts a committed host exit when presentation rollback also fails', () async {
+    final manager = _createManager(
+      _FakePlayer(),
+      windowsPipEnter: (_) async {},
+      windowsPipExit: () async {
+        throw WindowsPipExitFailure(
+          cause: StateError('presentation fixture failure'),
+          causeStackTrace: StackTrace.current,
+          hostIsInPip: false,
+        );
+      },
+    );
+    await manager.initialize();
+    await manager.enablePip();
+
+    await expectLater(manager.exitPip(), throwsA(isA<WindowsPipExitFailure>()));
+    await Future<void>.delayed(Duration.zero);
+
+    expect(manager.isPipPreparing.value, isFalse);
+    expect(manager.isInPip.value, isFalse);
+    expect(GlobalPlayerState.to.isPipMode.value, isFalse);
+    await manager.dispose();
   });
 
   test('unrelated player-state updates retain the active route video controller', () {
