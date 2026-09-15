@@ -1,8 +1,9 @@
-import 'package:pure_live/core/common/hls_source_query_policy.dart';
-
 import 'dart:async';
+import 'dart:convert';
 
+import 'package:pure_live/core/common/hls_source_query_policy.dart';
 import 'package:pure_live/core/interface/live_site.dart';
+import 'package:pure_live/core/site/douyin/douyin_site.dart';
 import 'package:pure_live/core/sites.dart';
 import 'package:pure_live/player/core/playback_source_transport.dart';
 
@@ -285,7 +286,87 @@ LiveRoom _room(String id) => LiveRoom(
   danmakuData: <String, dynamic>{'id': id},
 );
 
+class _DouyinMultiviewFixtureSite extends DouyinSite {
+  _DouyinMultiviewFixtureSite(this.detail);
+
+  final LiveRoom detail;
+  int strictCalls = 0;
+  int fallbackCalls = 0;
+
+  @override
+  Future<LiveRoom> getRoomDetailForRecording({required String platform, required String roomId}) async {
+    strictCalls++;
+    return detail;
+  }
+
+  @override
+  Future<LiveRoom> getRoomDetail({required String platform, required String roomId}) async {
+    fallbackCalls++;
+    return detail;
+  }
+}
+
 void main() {
+  test('Douyin multiview lowest quality remains a video source with required headers', () async {
+    final previousCookie = DouyinSite.cookie;
+    DouyinSite.cookie = 'ttwid=fixture';
+    final fixture = _DouyinMultiviewFixtureSite(
+      LiveRoom(
+        roomId: '123456789',
+        platform: Sites.douyinSite,
+        status: true,
+        liveStatus: LiveStatus.live,
+        data: {
+          'live_core_sdk_data': {
+            'pull_data': {
+              'options': {
+                'qualities': [
+                  {'name': '原画', 'sdk_key': 'origin'},
+                  {'name': '流畅', 'sdk_key': 'md'},
+                  {'name': 'ao', 'sdk_key': 'ao'},
+                ],
+              },
+              'stream_data': jsonEncode({
+                'data': {
+                  'origin': {
+                    'main': {'flv': 'https://cdn.test/source.flv'},
+                  },
+                  'md': {
+                    'main': {'flv': 'https://cdn.test/smooth.flv'},
+                  },
+                  'ao': {
+                    'main': {'flv': 'https://cdn.test/audio.flv?only_audio=1'},
+                  },
+                },
+              }),
+            },
+          },
+        },
+      ),
+    );
+
+    try {
+      final source = await MultiviewController.resolveStreamForSite(
+        LiveRoom(roomId: '123456789', platform: Sites.douyinSite),
+        site: Site(id: Sites.douyinSite, name: '抖音', logo: '', liveSite: fixture),
+        preferLowest: true,
+      );
+
+      expect(fixture.strictCalls, 1);
+      expect(fixture.fallbackCalls, 0);
+      expect(source.qualities.map((quality) => quality.selectionId), ['origin', 'md']);
+      expect(source.qualityIndex, 1);
+      expect(source.url, 'https://cdn.test/smooth.flv');
+      expect(Uri.parse(source.url).queryParameters['only_audio'], isNull);
+      expect(source.headers['origin'], 'https://live.douyin.com');
+      expect(source.headers['referer'], 'https://live.douyin.com/123456789');
+      expect(source.headers['cookie'], 'ttwid=fixture');
+      expect(source.headers['user-agent'], isNotEmpty);
+    } finally {
+      DouyinSite.cookie = previousCookie;
+    }
+  });
+
   test('default multiview resolution retains source policies and acknowledged quality', () async {
     final liveSite = _PolicyMultiviewSite();
     final source = await MultiviewController.resolveStreamForSite(
