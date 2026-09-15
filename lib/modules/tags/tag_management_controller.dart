@@ -2,6 +2,8 @@ import 'package:pure_live/common/index.dart';
 import 'package:pure_live/modules/tags/live_tag.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
 
+enum TagNameValidation { valid, empty, duplicate }
+
 class TagManagementController extends GetxController {
   static const String _storageKey = 'user_custom_tags_v5';
   static const String _roomTagsMappingKey = 'room_to_tags_mapping_v1';
@@ -103,10 +105,7 @@ class TagManagementController extends GetxController {
 
   bool addTag(String name, String description) {
     final cleanName = name.trim();
-    if (cleanName.isEmpty) return false;
-
-    final exists = tags.any((tag) => tag.name.toLowerCase() == cleanName.toLowerCase());
-    if (exists) return false;
+    if (validateTagName(cleanName) != TagNameValidation.valid) return false;
 
     final newTag = LiveTag(
       id: _allocateTagId(tags.map((tag) => tag.id).toSet()),
@@ -132,19 +131,24 @@ class TagManagementController extends GetxController {
   bool updateTag(int index, String newName, String newDescription) {
     if (index < 0 || index >= tags.length) return false;
     final cleanName = newName.trim();
-    if (cleanName.isEmpty) return false;
-
-    final normalizedName = cleanName.toLowerCase();
-    final exists = tags.asMap().entries.any(
-      (entry) => entry.key != index && entry.value.name.toLowerCase() == normalizedName,
-    );
-    if (exists) return false;
+    if (validateTagName(cleanName, excludingIndex: index) != TagNameValidation.valid) return false;
 
     tags[index].name = cleanName;
     tags[index].description = newDescription.trim();
     tags.refresh();
     saveTags();
     return true;
+  }
+
+  TagNameValidation validateTagName(String name, {int? excludingIndex}) {
+    final cleanName = name.trim();
+    if (cleanName.isEmpty) return TagNameValidation.empty;
+
+    final normalizedName = cleanName.toLowerCase();
+    final exists = tags.asMap().entries.any(
+      (entry) => entry.key != excludingIndex && entry.value.name.toLowerCase() == normalizedName,
+    );
+    return exists ? TagNameValidation.duplicate : TagNameValidation.valid;
   }
 
   void pinToTop(int index) {

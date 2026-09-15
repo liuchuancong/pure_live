@@ -431,6 +431,8 @@ class _TagEditorDialog extends StatefulWidget {
 class _TagEditorDialogState extends State<_TagEditorDialog> {
   late final TextEditingController _nameController;
   late final TextEditingController _descriptionController;
+  late final FocusNode _nameFocusNode;
+  String? _nameErrorText;
 
   bool get _isEdit => widget.index != null && widget.tag != null;
 
@@ -439,30 +441,54 @@ class _TagEditorDialogState extends State<_TagEditorDialog> {
     super.initState();
     _nameController = TextEditingController(text: _isEdit ? widget.tag!.name : '');
     _descriptionController = TextEditingController(text: _isEdit ? widget.tag!.description : '');
+    _nameFocusNode = FocusNode();
   }
 
   @override
   void dispose() {
     _nameController.dispose();
     _descriptionController.dispose();
+    _nameFocusNode.dispose();
     super.dispose();
   }
 
   void _submit() {
-    if (_nameController.text.trim().isEmpty) {
-      SmartDialog.showToast(i18n('tag_name_empty_error'));
+    final editIndex = _isEdit ? widget.controller.tags.indexWhere((current) => current.id == widget.tag!.id) : null;
+    final validation = widget.controller.validateTagName(
+      _nameController.text,
+      excludingIndex: editIndex != null && editIndex >= 0 ? editIndex : null,
+    );
+    if (validation != TagNameValidation.valid) {
+      setState(() {
+        _nameErrorText = switch (validation) {
+          TagNameValidation.empty => i18n('tag_name_empty_error'),
+          TagNameValidation.duplicate => i18n('tag_name_duplicate_error'),
+          TagNameValidation.valid => null,
+        };
+      });
+      _nameFocusNode.requestFocus();
       return;
     }
 
-    final editIndex = _isEdit ? widget.controller.tags.indexWhere((current) => current.id == widget.tag!.id) : null;
     final success = editIndex != null
         ? widget.controller.updateTag(editIndex, _nameController.text, _descriptionController.text)
         : widget.controller.addTag(_nameController.text, _descriptionController.text);
     if (success) {
       Navigator.pop(context);
     } else {
-      SmartDialog.showToast(i18n('tag_invalid_or_duplicate'));
+      setState(() => _nameErrorText = i18n('tag_invalid_or_duplicate'));
+      _nameFocusNode.requestFocus();
     }
+  }
+
+  void _clearNameError() {
+    if (_nameErrorText != null) setState(() => _nameErrorText = null);
+  }
+
+  void _clearName() {
+    _nameController.clear();
+    _clearNameError();
+    _nameFocusNode.requestFocus();
   }
 
   @override
@@ -485,19 +511,35 @@ class _TagEditorDialogState extends State<_TagEditorDialog> {
           TextField(
             key: const ValueKey('tag-editor-name'),
             controller: _nameController,
+            focusNode: _nameFocusNode,
             autofocus: !_isEdit,
             maxLength: 15,
             maxLines: 1,
             textInputAction: TextInputAction.next,
+            onChanged: (_) => _clearNameError(),
             decoration: InputDecoration(
               hintText: i18n('tag_input_hint'),
+              errorText: _nameErrorText,
               counterText: '',
               contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               suffixIcon: ValueListenableBuilder<TextEditingValue>(
                 valueListenable: _nameController,
                 builder: (context, value, _) => value.text.isNotEmpty
-                    ? IconButton(icon: const Icon(Icons.clear, size: 18), onPressed: _nameController.clear)
+                    ? Semantics(
+                        key: const ValueKey('tag-editor-clear-name'),
+                        container: true,
+                        excludeSemantics: true,
+                        label: i18n('clear_tag_name'),
+                        button: true,
+                        onTap: _clearName,
+                        child: IconButton(
+                          tooltip: i18n('clear_tag_name'),
+                          constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                          icon: const Icon(Icons.clear, size: 18),
+                          onPressed: _clearName,
+                        ),
+                      )
                     : const SizedBox.shrink(),
               ),
             ),
@@ -523,7 +565,20 @@ class _TagEditorDialogState extends State<_TagEditorDialog> {
               suffixIcon: ValueListenableBuilder<TextEditingValue>(
                 valueListenable: _descriptionController,
                 builder: (context, value, _) => value.text.isNotEmpty
-                    ? IconButton(icon: const Icon(Icons.clear, size: 18), onPressed: _descriptionController.clear)
+                    ? Semantics(
+                        key: const ValueKey('tag-editor-clear-description'),
+                        container: true,
+                        excludeSemantics: true,
+                        label: i18n('clear_tag_description'),
+                        button: true,
+                        onTap: _descriptionController.clear,
+                        child: IconButton(
+                          tooltip: i18n('clear_tag_description'),
+                          constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                          icon: const Icon(Icons.clear, size: 18),
+                          onPressed: _descriptionController.clear,
+                        ),
+                      )
                     : const SizedBox.shrink(),
               ),
             ),
@@ -531,15 +586,19 @@ class _TagEditorDialogState extends State<_TagEditorDialog> {
         ],
       ),
       actionsPadding: const EdgeInsets.fromLTRB(0, 0, 16, 16),
+      actionsOverflowDirection: VerticalDirection.down,
+      actionsOverflowButtonSpacing: 8,
       actions: [
         TextButton(
           key: const ValueKey('tag-editor-cancel'),
+          style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
           onPressed: () => Navigator.pop(context),
           child: Text(i18n('cancel'), style: TextStyle(color: theme.colorScheme.onSurfaceVariant)),
         ),
         ElevatedButton(
           key: const ValueKey('tag-editor-confirm'),
           style: ElevatedButton.styleFrom(
+            minimumSize: const Size(48, 48),
             elevation: 0,
             backgroundColor: theme.colorScheme.primary,
             foregroundColor: theme.colorScheme.onPrimary,

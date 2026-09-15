@@ -125,6 +125,74 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('room add form keeps validation inline and exposes named clear actions', (tester) async {
+    final semantics = tester.ensureSemantics();
+    try {
+      final room = _room();
+      SettingsService.to.fav.addRoom(room);
+      Get.find<TagManagementController>().tags.assignAll([LiveTag(id: 'existing', name: 'Existing')]);
+      await _pumpCard(tester, english, room);
+      await _openTagAssignment(tester);
+
+      await tester.tap(find.byIcon(Remix.add_circle_line));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('room-tag-submit-new')).hitTestable());
+      await tester.pumpAndSettle();
+      expect(find.text('Tag name cannot be empty'), findsOneWidget);
+
+      final nameField = find.byKey(const ValueKey('room-tag-name'));
+      await tester.enterText(nameField, 'EXISTING');
+      await tester.tap(find.byKey(const ValueKey('room-tag-submit-new')).hitTestable());
+      await tester.pumpAndSettle();
+      expect(find.text('A tag with this name already exists'), findsOneWidget);
+
+      await tester.enterText(nameField, 'Travel');
+      await tester.enterText(find.byKey(const ValueKey('room-tag-description')), 'Outdoor streams');
+      await tester.pump();
+      expect(find.text('A tag with this name already exists'), findsNothing);
+
+      final clearName = find.byKey(const ValueKey('room-tag-clear-name'));
+      final clearDescription = find.byKey(const ValueKey('room-tag-clear-description'));
+      expect(clearName.hitTestable(), findsOneWidget);
+      expect(clearDescription.hitTestable(), findsOneWidget);
+      expect(tester.getSemantics(clearName).label, 'Clear tag name');
+      expect(tester.getSemantics(clearDescription).label, 'Clear tag description');
+      expect(tester.getSize(clearName).height, greaterThanOrEqualTo(48));
+      expect(tester.getSize(clearDescription).height, greaterThanOrEqualTo(48));
+
+      await tester.tap(clearDescription);
+      await tester.pump();
+      expect(tester.widget<TextField>(find.byKey(const ValueKey('room-tag-description'))).controller!.text, isEmpty);
+      expect(tester.takeException(), isNull);
+    } finally {
+      semantics.dispose();
+    }
+  });
+
+  testWidgets('room add form remains scrollable at narrow 3x English text', (tester) async {
+    final room = _room();
+    SettingsService.to.fav.addRoom(room);
+    final textScale = await _pumpCard(tester, english, room);
+    await _openTagAssignment(tester);
+    textScale.value = 3;
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Remix.add_circle_line));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(find.byKey(const ValueKey('room-tag-cancel-new')).hitTestable(), findsOneWidget);
+    expect(find.byKey(const ValueKey('room-tag-submit-new')).hitTestable(), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('room-tag-submit-new')).hitTestable());
+    await tester.pumpAndSettle();
+    expect(find.text('Tag name cannot be empty'), findsOneWidget);
+    final description = find.byKey(const ValueKey('room-tag-description'));
+    await Scrollable.ensureVisible(tester.element(description), alignment: 0.5, duration: Duration.zero);
+    await tester.pump();
+    expect(description.hitTestable(), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('tag assignment remains reachable at 320x480 with 3x English text', (tester) async {
     final room = _room();
     SettingsService.to.fav.addRoom(room);

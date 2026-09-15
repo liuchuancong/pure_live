@@ -183,6 +183,56 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('tag editor keeps validation inline and exposes named clear actions', (tester) async {
+    final semantics = tester.ensureSemantics();
+    try {
+      Get.find<TagManagementController>().tags.assignAll([LiveTag(id: 'existing', name: 'Existing')]);
+      await _pumpPage(tester, english);
+      await tester.tap(find.byIcon(Remix.add_line));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const ValueKey('tag-editor-confirm')).hitTestable());
+      await tester.pumpAndSettle();
+      expect(find.text('Tag name cannot be empty'), findsOneWidget);
+      expect(find.byType(AlertDialog), findsOneWidget);
+
+      final nameField = find.byKey(const ValueKey('tag-editor-name'));
+      await tester.enterText(nameField, ' existing ');
+      await tester.tap(find.byKey(const ValueKey('tag-editor-confirm')).hitTestable());
+      await tester.pumpAndSettle();
+      expect(find.text('A tag with this name already exists'), findsOneWidget);
+
+      await tester.enterText(nameField, 'Travel');
+      await tester.enterText(find.byKey(const ValueKey('tag-editor-description')), 'Outdoor streams');
+      await tester.pump();
+      expect(find.text('A tag with this name already exists'), findsNothing);
+
+      final clearName = find.byKey(const ValueKey('tag-editor-clear-name'));
+      final clearDescription = find.byKey(const ValueKey('tag-editor-clear-description'));
+      expect(clearName, findsOneWidget);
+      expect(clearDescription, findsOneWidget);
+      expect(tester.getSemantics(clearName).label, 'Clear tag name');
+      expect(tester.getSemantics(clearDescription).label, 'Clear tag description');
+      expect(tester.getSize(clearName).height, greaterThanOrEqualTo(48));
+      expect(tester.getSize(clearDescription).height, greaterThanOrEqualTo(48));
+
+      await Scrollable.ensureVisible(tester.element(clearDescription), alignment: 0.5, duration: Duration.zero);
+      await tester.pump();
+      expect(clearDescription.hitTestable(), findsOneWidget);
+      await tester.tap(clearDescription);
+      await tester.pump();
+      await Scrollable.ensureVisible(tester.element(clearName), alignment: 0.5, duration: Duration.zero);
+      await tester.pump();
+      expect(clearName.hitTestable(), findsOneWidget);
+      await tester.tap(clearName);
+      await tester.pump();
+      expect(tester.widget<TextField>(nameField).controller!.text, isEmpty);
+      expect(tester.takeException(), isNull);
+    } finally {
+      semantics.dispose();
+    }
+  });
+
   testWidgets('case-only edit remains reachable and commits at narrow 3x text', (tester) async {
     final controller = Get.find<TagManagementController>();
     controller.tags.assignAll([LiveTag(id: 'case-edit', name: 'Travel', description: 'Before')]);
