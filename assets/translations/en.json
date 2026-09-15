@@ -1217,7 +1217,7 @@
     "tag_input_hint": "Please enter tag name...",
     "tag_desc_hint": "Please enter remarks/description (optional)...",
     "tag_invalid_or_duplicate": "Invalid name or tag already exists",
-    "delete_tag_confirm_msg": "Are you sure you want to permanently delete tag",
+    "delete_tag_confirm_named": "Are you sure you want to permanently delete \"{name}\"?",
     "no_tags_tip": "No custom tags found.\nTap the '+' button in the top right corner to create one.",
     "tag_name_label": "Tag Name",
     "tag_desc_label": "Description",

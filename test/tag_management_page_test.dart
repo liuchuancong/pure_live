@@ -202,6 +202,56 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('delete confirmation keeps its captured identity and destructive action hierarchy', (tester) async {
+    final controller = Get.find<TagManagementController>();
+    final original = LiveTag(id: 'delete-target', name: 'Original target');
+    controller.tags.assignAll([original, LiveTag(id: 'keep', name: 'Keep', order: 1)]);
+    controller.roomTagsMap.assignAll({
+      'bilibili:1': ['delete-target', 'keep'],
+    });
+    await _pumpPage(tester, english);
+
+    final deleteAction = find.byKey(const ValueKey('delete-tag-delete-target'));
+    await _scrollUntilHitTestable(tester, deleteAction);
+    await tester.tap(deleteAction);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Are you sure you want to permanently delete "Original target"?'), findsOneWidget);
+    final cancel = find.byKey(const ValueKey('delete-tag-cancel'));
+    final confirm = find.byKey(const ValueKey('delete-tag-confirm'));
+    expect(cancel.hitTestable(), findsOneWidget);
+    expect(confirm.hitTestable(), findsOneWidget);
+    expect(tester.getSize(cancel).height, greaterThanOrEqualTo(48));
+    expect(tester.getSize(confirm).height, greaterThanOrEqualTo(48));
+    expect(tester.widget(confirm), isA<FilledButton>());
+
+    final replacement = LiveTag(id: 'delete-target', name: 'Replacement target');
+    controller.tags.assignAll([replacement, LiveTag(id: 'keep', name: 'Keep', order: 1)]);
+    await tester.pump();
+    await tester.tap(confirm.hitTestable());
+    await tester.pumpAndSettle();
+
+    expect(controller.tags.map((tag) => tag.name), ['Replacement target', 'Keep']);
+    expect(controller.roomTagsMap, {
+      'bilibili:1': ['delete-target', 'keep'],
+    });
+    expect(find.byType(AlertDialog), findsNothing);
+
+    final replacementDelete = find.byKey(const ValueKey('delete-tag-delete-target'));
+    await _scrollUntilHitTestable(tester, replacementDelete);
+    await tester.tap(replacementDelete);
+    await tester.pumpAndSettle();
+    expect(find.text('Are you sure you want to permanently delete "Replacement target"?'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('delete-tag-confirm')).hitTestable());
+    await tester.pumpAndSettle();
+
+    expect(controller.tags.map((tag) => tag.name), ['Keep']);
+    expect(controller.roomTagsMap, {
+      'bilibili:1': ['keep'],
+    });
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('IME done submits the same add-tag transaction as Confirm', (tester) async {
     await _pumpPage(tester, english);
     await tester.tap(find.byIcon(Remix.add_line));

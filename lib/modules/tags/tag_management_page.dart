@@ -378,35 +378,50 @@ class _TagManagementPageState extends State<TagManagementPage> {
   }
 
   Future<void> _confirmDelete(BuildContext context, LiveTag tag) {
-    return _runOwnedDialog(
-      () => showDialog<void>(
+    final owner = controller;
+    return _runOwnedDialog(() async {
+      final confirmed = await showDialog<bool>(
         context: context,
         useRootNavigator: true,
-        builder: (dialogContext) => AlertDialog(
-          scrollable: true,
-          insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-          title: Text(i18n('delete_tag')),
-          content: Text('${i18n('delete_tag_confirm_msg')} "${tag.name}"?'),
-          actionsOverflowDirection: VerticalDirection.down,
-          actionsOverflowButtonSpacing: 8,
-          actions: [
-            TextButton(
-              key: const ValueKey('delete-tag-cancel'),
-              onPressed: () => Navigator.pop(dialogContext),
-              child: Text(i18n('cancel')),
+        builder: (dialogContext) {
+          final colorScheme = Theme.of(dialogContext).colorScheme;
+          return AlertDialog(
+            scrollable: true,
+            insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+            title: Text(i18n('delete_tag')),
+            content: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 420),
+              child: Text(i18n('delete_tag_confirm_named', args: {'name': tag.name})),
             ),
-            TextButton(
-              key: const ValueKey('delete-tag-confirm'),
-              onPressed: () {
-                controller.deleteTag(controller.tags.indexWhere((current) => current.id == tag.id));
-                Navigator.pop(dialogContext);
-              },
-              child: Text(i18n('delete'), style: TextStyle(color: Theme.of(dialogContext).colorScheme.error)),
-            ),
-          ],
-        ),
-      ),
-    );
+            actionsOverflowDirection: VerticalDirection.down,
+            actionsOverflowButtonSpacing: 8,
+            actions: [
+              TextButton(
+                key: const ValueKey('delete-tag-cancel'),
+                style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: Text(i18n('cancel')),
+              ),
+              FilledButton(
+                key: const ValueKey('delete-tag-confirm'),
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size(48, 48),
+                  backgroundColor: colorScheme.error,
+                  foregroundColor: colorScheme.onError,
+                ),
+                onPressed: () => Navigator.pop(dialogContext, true),
+                child: Text(i18n('delete')),
+              ),
+            ],
+          );
+        },
+      );
+      if (confirmed != true || !mounted) return;
+      if (!Get.isRegistered<TagManagementController>() || !identical(Get.find<TagManagementController>(), owner)) {
+        return;
+      }
+      owner.deleteTag(owner.tags.indexWhere((current) => identical(current, tag)));
+    });
   }
 
   Future<void> _runOwnedDialog(Future<void> Function() showDialogRoute) async {
