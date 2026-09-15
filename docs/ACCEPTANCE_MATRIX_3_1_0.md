@@ -4,6 +4,8 @@
 
 状态：`NR` 未执行、`RUN` 执行中、`PASS` 通过、`FAIL` 失败、`BLOCKED` 缺少当前外部条件。`PASS` 必须附日志、截图、命令记录或确定性测试路径；构建成功不等于功能通过。
 
+> 2026-09-15 标签身份与改名完整性增量：旧新增直接使用毫秒时间戳，确定性红灯中 256 个标签只得到 21 个不同 ID；旧加载继续保留碰撞，卡片 Key、房间映射及按 ID 编辑/删除因此失去唯一目标。旧改名也把当前项纳入不区分大小写的重复搜索，`Travel` → `travel` 被自身阻断。`79266c7e` 改用单调微秒分配并扫描现有集合；加载时保留旧 ID 第一项、重建空/重复身份、连续化顺序并写回，改名查重排除当前索引。有效红灯 7 PASS / 2 FAIL，补入旧数据迁移后直接红灯 7 PASS / 3 FAIL，页面专项 11/11，最终六文件 50/50 与本批唯一一次 analyze 通过，见 `docs/TAG_MANAGEMENT_IDENTITY_AND_RENAME_INTEGRITY_AUDIT_2026_09_15.md`。未构建候选、启动 GUI 或操作设备；A2-01/W1-01 保持 RUN，账本仍为 20 PASS / 42 RUN / 0 NR，共 42 组未闭环；Astra Light 0 次。
+
 > 2026-09-15 标签卡片动作增量：旧置顶、编辑和删除图标只有通用 Tooltip，多卡片列表无法从语义确认目标，`InkWell` 也没有明确按钮与点击合同。`267c56ab` 用共享组件为每项建立独立 `Semantics`，以中英文“置顶/编辑/删除 + 标签名”同时作为完整 Tooltip 与可访问名称，并统一按钮角色、点击动作、48 px 高度和弹窗等待期禁用。有效红灯 6 PASS / 1 FAIL，页面 7/7，最终五文件 22/22 与最后一次 analyze 通过，见 `docs/TAG_MANAGEMENT_CARD_ACTION_ACCESSIBILITY_AUDIT_2026_09_15.md`。未构建候选、启动 GUI 或操作设备；A2-01/W1-01 保持 RUN，账本仍为 20 PASS / 42 RUN / 0 NR，共 42 组未闭环；Astra Light 0 次。
 
 > 2026-09-15 标签管理详情增量：旧标签名称只是文字大小的 `GestureDetector`，没有 Tooltip、可访问名称、按钮/点击语义或 48 px 命中高度；新增、详情、编辑和删除也没有共享页面门禁，快速重复输入可叠加路由，卡片高度未计入应用内可调字号。`2daabafe` 增加具名 `Semantics` 容器与 `InkWell`，统一触摸、鼠标、键盘和辅助功能激活；四类弹窗共享同步 single-flight、根 Navigator 与 `finally` 重试，并按实际样式行高计算卡片尺寸。有效红灯 4 PASS / 2 FAIL，页面 6/6，最终五文件 21/21 与最后一次 analyze 通过，见 `docs/TAG_MANAGEMENT_DETAIL_ACCESSIBILITY_AND_ROUTE_AUDIT_2026_09_15.md`。未构建候选、启动 GUI 或操作设备；A2-01/W1-01 保持 RUN，账本仍为 20 PASS / 42 RUN / 0 NR，共 42 组未闭环；Astra Light 0 次。

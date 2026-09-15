@@ -4,6 +4,7 @@
 
 ## 开发与发布
 
+- [标签身份与改名完整性审计](TAG_MANAGEMENT_IDENTITY_AND_RENAME_INTEGRITY_AUDIT_2026_09_15.md)：快速新建唯一 ID、旧碰撞身份启动修复并写回、连续顺序，以及排除当前项的大小写改名重复检查。
 - [标签管理卡片动作可访问性审计](TAG_MANAGEMENT_CARD_ACTION_ACCESSIBILITY_AUDIT_2026_09_15.md)：置顶/编辑/删除均携带目标标签名、独立按钮与点击语义、完整 Tooltip、48 px 命中和等待期禁用。
 
 - [标签管理详情可访问性与路由事务审计](TAG_MANAGEMENT_DETAIL_ACCESSIBILITY_AND_ROUTE_AUDIT_2026_09_15.md)：具名 48 px 详情动作、独立按钮/点击语义、应用字号感知卡片高度，以及新增/详情/编辑/删除共享的页面级 single-flight 路由。
