@@ -1223,6 +1223,7 @@
     "tag_desc_label": "Description",
     "tag_name_empty_error": "Tag name cannot be empty",
     "tag_detail": "Tag Details",
+    "view_tag_details_named": "View tag details: {name}",
     "drag_tag_to_sort_tip": "Long-press any tag card to freely drag and drop them to dynamically adjust their display order.",
     "no_description_placeholder": "No description provided",
     "room_id_label": "Room ID: {id}",

@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce/hive.dart';
 import 'package:pure_live/common/services/settings_service.dart';
@@ -55,6 +56,10 @@ void main() {
     ]);
 
     await _pumpPage(tester, english);
+    final font = SettingsService.to.font;
+    font.fontSizeBodySmall.value = 15;
+    font.fontSizeBodyLarge.value = 18;
+    await tester.pumpAndSettle();
 
     expect(tester.takeException(), isNull);
     final scrollable = tester.state<ScrollableState>(find.byType(Scrollable).first);
@@ -83,6 +88,46 @@ void main() {
 
     expect(find.text('Tag Details'), findsOneWidget);
     expect(find.text('Confirm').hitTestable(), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('tag detail entry exposes its full named action', (tester) async {
+    final semantics = tester.ensureSemantics();
+    try {
+      Get.find<TagManagementController>().tags.assignAll([
+        LiveTag(id: 'named-detail', name: 'Travel streams', description: 'Outdoor channels'),
+      ]);
+      await _pumpPage(tester, english);
+
+      final entryKey = find.byKey(const ValueKey('tag-detail-named-detail'));
+      await _scrollUntilHitTestable(tester, entryKey);
+      final semanticsNode = tester.getSemantics(entryKey);
+      final semanticsData = semanticsNode.getSemanticsData();
+      expect(semanticsNode.label, 'View tag details: Travel streams');
+      expect(semanticsData.flagsCollection.isButton, isTrue);
+      expect(semanticsData.hasAction(SemanticsAction.tap), isTrue);
+      expect(tester.getSize(entryKey).height, greaterThanOrEqualTo(48));
+    } finally {
+      semantics.dispose();
+    }
+  });
+
+  testWidgets('rapid repeated tag detail activation owns one dialog route', (tester) async {
+    Get.find<TagManagementController>().tags.assignAll([
+      LiveTag(id: 'single-detail', name: 'Travel streams', description: 'Outdoor channels'),
+    ]);
+    await _pumpPage(tester, english);
+
+    final detailEntry = find.byKey(const ValueKey('tag-detail-single-detail'));
+    await _scrollUntilHitTestable(tester, detailEntry);
+    await tester.tap(detailEntry);
+    await tester.tap(detailEntry, warnIfMissed: false);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Tag Details'), findsOneWidget);
+    await tester.tap(find.text('Confirm').hitTestable());
+    await tester.pumpAndSettle();
+    expect(find.byType(AlertDialog), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
@@ -161,6 +206,8 @@ Future<void> _pumpPage(WidgetTester tester, Map<String, dynamic> english) async 
 Future<void> _scrollUntilHitTestable(WidgetTester tester, Finder target) async {
   final scrollable = find.descendant(of: find.byType(TagManagementPage), matching: find.byType(Scrollable)).first;
   await tester.scrollUntilVisible(target, 120, scrollable: scrollable, maxScrolls: 30);
+  expect(target, findsOneWidget);
+  await Scrollable.ensureVisible(tester.element(target), alignment: 0.5, duration: Duration.zero);
   await tester.pumpAndSettle();
 }
 

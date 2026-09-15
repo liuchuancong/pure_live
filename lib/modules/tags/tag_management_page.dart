@@ -1,11 +1,22 @@
+import 'dart:async';
+
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/modules/tags/live_tag.dart';
 import 'package:pure_live/modules/tags/tag_management_controller.dart';
 import 'package:flutter_reorderable_grid_view/widgets/reorderable_builder.dart';
 
-class TagManagementPage extends GetView<TagManagementController> {
+class TagManagementPage extends StatefulWidget {
   const TagManagementPage({super.key});
+
+  @override
+  State<TagManagementPage> createState() => _TagManagementPageState();
+}
+
+class _TagManagementPageState extends State<TagManagementPage> {
+  TagManagementController get controller => Get.find<TagManagementController>();
+
+  bool _dialogActive = false;
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +32,7 @@ class TagManagementPage extends GetView<TagManagementController> {
               key: const ValueKey('add-tag'),
               tooltip: i18n('add_tag'),
               icon: const Icon(Remix.add_line),
-              onPressed: () => _showTagDialog(context),
+              onPressed: _dialogActive ? null : () => unawaited(_showTagDialog(context)),
             ),
           ),
         ],
@@ -68,104 +79,7 @@ class TagManagementPage extends GetView<TagManagementController> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: GestureDetector(
-                              key: ValueKey('tag-detail-${tag.id}'),
-                              onTap: () {
-                                showDialog(
-                                  context: context,
-                                  builder: (dialogContext) => AlertDialog(
-                                    scrollable: true,
-                                    insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-                                    title: Text(
-                                      i18n('tag_detail'),
-                                      style: AppTextStyles.t16.copyWith(fontWeight: FontWeight.bold),
-                                    ),
-                                    contentPadding: const EdgeInsets.fromLTRB(24, 16, 24, 12),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                                    content: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          i18n('tag_name_label'),
-                                          style: AppTextStyles.t12.copyWith(
-                                            color: theme.colorScheme.primary,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 6),
-                                        Text(
-                                          tag.name,
-                                          style: AppTextStyles.t16.copyWith(
-                                            fontWeight: FontWeight.w600,
-                                            color: theme.colorScheme.onSurface,
-                                          ),
-                                        ),
-
-                                        if (tag.description.isNotEmpty) ...[
-                                          const SizedBox(height: 18),
-                                          Text(
-                                            i18n('tag_desc_label'),
-                                            style: AppTextStyles.t12.copyWith(
-                                              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
-                                            ),
-                                          ),
-                                          const SizedBox(height: 6),
-                                          Container(
-                                            width: double.infinity,
-                                            padding: const EdgeInsets.all(12),
-                                            decoration: BoxDecoration(
-                                              color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.2),
-                                              borderRadius: BorderRadius.circular(12),
-                                              border: Border.all(
-                                                color: theme.dividerColor.withValues(alpha: 0.05),
-                                                width: 0.5,
-                                              ),
-                                            ),
-                                            child: Text(
-                                              tag.description,
-                                              style: AppTextStyles.t14.copyWith(
-                                                color: theme.colorScheme.onSurfaceVariant,
-                                                height: 1.4,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ],
-                                    ),
-                                    actionsPadding: const EdgeInsets.fromLTRB(0, 0, 16, 16),
-                                    actions: [
-                                      ElevatedButton(
-                                        style: ElevatedButton.styleFrom(
-                                          elevation: 0,
-                                          backgroundColor: theme.colorScheme.primary,
-                                          foregroundColor: theme.colorScheme.onPrimary,
-                                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                        ),
-                                        onPressed: () => Navigator.pop(dialogContext),
-                                        child: Text(
-                                          i18n('confirm'),
-                                          style: const TextStyle(fontWeight: FontWeight.bold),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              },
-                              child: Text(
-                                tag.name,
-                                style: AppTextStyles.t14.copyWith(fontWeight: FontWeight.w600),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+                      Row(children: [Expanded(child: _buildTagDetailAction(context, tag))]),
 
                       const SizedBox(height: 4),
                       Expanded(
@@ -219,7 +133,9 @@ class TagManagementPage extends GetView<TagManagementController> {
                                 child: InkWell(
                                   key: ValueKey('edit-tag-${tag.id}'),
                                   borderRadius: BorderRadius.circular(6),
-                                  onTap: () => _showTagDialog(context, index: index, tag: tag),
+                                  onTap: _dialogActive
+                                      ? null
+                                      : () => unawaited(_showTagDialog(context, index: index, tag: tag)),
                                   child: SizedBox(
                                     height: 48,
                                     child: Icon(Remix.edit_line, size: 16, color: theme.colorScheme.onSurfaceVariant),
@@ -234,7 +150,7 @@ class TagManagementPage extends GetView<TagManagementController> {
                                 child: InkWell(
                                   key: ValueKey('delete-tag-${tag.id}'),
                                   borderRadius: BorderRadius.circular(6),
-                                  onTap: () => _confirmDelete(context, tag),
+                                  onTap: _dialogActive ? null : () => unawaited(_confirmDelete(context, tag)),
                                   child: SizedBox(
                                     height: 48,
                                     child: Icon(
@@ -275,10 +191,17 @@ class TagManagementPage extends GetView<TagManagementController> {
               builder: (generatedChildren) {
                 return LayoutBuilder(
                   builder: (context, constraints) {
-                    final textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
+                    final textScaler = MediaQuery.textScalerOf(context);
+                    final textScale = textScaler.scale(14) / 14;
                     final singleColumn = constraints.maxWidth < 420 || textScale > 1.5;
-                    final effectiveTextScale = textScale < 1 ? 1.0 : textScale;
-                    final cardExtent = 82 + 42 * effectiveTextScale;
+                    final titleStyle = AppTextStyles.t14;
+                    final descriptionStyle = AppTextStyles.t11;
+                    final titleLineExtent = textScaler.scale(titleStyle.fontSize ?? 14) * (titleStyle.height ?? 1.2);
+                    final descriptionLineExtent =
+                        textScaler.scale(descriptionStyle.fontSize ?? 12) * (descriptionStyle.height ?? 1.2);
+                    final titleExtent = titleLineExtent < 48 ? 48.0 : titleLineExtent;
+                    // Padding, gaps and the three 48 px action targets occupy 82 px.
+                    final cardExtent = 82 + titleExtent + descriptionLineExtent * 2;
                     return GridView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
@@ -299,6 +222,111 @@ class TagManagementPage extends GetView<TagManagementController> {
           }),
           const SizedBox(height: 32),
         ],
+      ),
+    );
+  }
+
+  Widget _buildTagDetailAction(BuildContext context, LiveTag tag) {
+    final actionLabel = i18n('view_tag_details_named', args: {'name': tag.name});
+    final VoidCallback? onActivate = _dialogActive ? null : () => unawaited(_showTagDetails(context, tag));
+    return Semantics(
+      container: true,
+      button: true,
+      enabled: !_dialogActive,
+      label: actionLabel,
+      excludeSemantics: true,
+      onTap: onActivate,
+      child: Tooltip(
+        message: actionLabel,
+        child: InkWell(
+          key: ValueKey('tag-detail-${tag.id}'),
+          borderRadius: BorderRadius.circular(8),
+          onTap: onActivate,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 48),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                tag.name,
+                style: AppTextStyles.t14.copyWith(fontWeight: FontWeight.w600),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showTagDetails(BuildContext context, LiveTag tag) {
+    return _runOwnedDialog(
+      () => showDialog<void>(
+        context: context,
+        useRootNavigator: true,
+        builder: (dialogContext) {
+          final theme = Theme.of(dialogContext);
+          return AlertDialog(
+            scrollable: true,
+            insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+            title: Text(i18n('tag_detail'), style: AppTextStyles.t16.copyWith(fontWeight: FontWeight.bold)),
+            contentPadding: const EdgeInsets.fromLTRB(24, 16, 24, 12),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  i18n('tag_name_label'),
+                  style: AppTextStyles.t12.copyWith(color: theme.colorScheme.primary, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  tag.name,
+                  style: AppTextStyles.t16.copyWith(fontWeight: FontWeight.w600, color: theme.colorScheme.onSurface),
+                ),
+                if (tag.description.isNotEmpty) ...[
+                  const SizedBox(height: 18),
+                  Text(
+                    i18n('tag_desc_label'),
+                    style: AppTextStyles.t12.copyWith(color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6)),
+                  ),
+                  const SizedBox(height: 6),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: theme.dividerColor.withValues(alpha: 0.05), width: 0.5),
+                    ),
+                    child: Text(
+                      tag.description,
+                      style: AppTextStyles.t14.copyWith(color: theme.colorScheme.onSurfaceVariant, height: 1.4),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            actionsOverflowDirection: VerticalDirection.down,
+            actionsOverflowButtonSpacing: 8,
+            actionsPadding: const EdgeInsets.fromLTRB(0, 0, 16, 16),
+            actions: [
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  elevation: 0,
+                  backgroundColor: theme.colorScheme.primary,
+                  foregroundColor: theme.colorScheme.onPrimary,
+                  minimumSize: const Size(48, 48),
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                onPressed: () => Navigator.pop(dialogContext),
+                child: Text(i18n('confirm'), style: const TextStyle(fontWeight: FontWeight.bold)),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -329,38 +357,56 @@ class TagManagementPage extends GetView<TagManagementController> {
     );
   }
 
-  void _showTagDialog(BuildContext context, {int? index, LiveTag? tag}) {
-    showDialog(
-      context: context,
-      builder: (_) => _TagEditorDialog(controller: controller, index: index, tag: tag),
+  Future<void> _showTagDialog(BuildContext context, {int? index, LiveTag? tag}) {
+    return _runOwnedDialog(
+      () => showDialog<void>(
+        context: context,
+        useRootNavigator: true,
+        builder: (_) => _TagEditorDialog(controller: controller, index: index, tag: tag),
+      ),
     );
   }
 
-  void _confirmDelete(BuildContext context, LiveTag tag) {
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        scrollable: true,
-        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-        title: Text(i18n('delete_tag')),
-        content: Text('${i18n('delete_tag_confirm_msg')} "${tag.name}"?'),
-        actions: [
-          TextButton(
-            key: const ValueKey('delete-tag-cancel'),
-            onPressed: () => Navigator.pop(dialogContext),
-            child: Text(i18n('cancel')),
-          ),
-          TextButton(
-            key: const ValueKey('delete-tag-confirm'),
-            onPressed: () {
-              controller.deleteTag(controller.tags.indexWhere((current) => current.id == tag.id));
-              Navigator.pop(dialogContext);
-            },
-            child: Text(i18n('delete'), style: TextStyle(color: Theme.of(dialogContext).colorScheme.error)),
-          ),
-        ],
+  Future<void> _confirmDelete(BuildContext context, LiveTag tag) {
+    return _runOwnedDialog(
+      () => showDialog<void>(
+        context: context,
+        useRootNavigator: true,
+        builder: (dialogContext) => AlertDialog(
+          scrollable: true,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          title: Text(i18n('delete_tag')),
+          content: Text('${i18n('delete_tag_confirm_msg')} "${tag.name}"?'),
+          actionsOverflowDirection: VerticalDirection.down,
+          actionsOverflowButtonSpacing: 8,
+          actions: [
+            TextButton(
+              key: const ValueKey('delete-tag-cancel'),
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(i18n('cancel')),
+            ),
+            TextButton(
+              key: const ValueKey('delete-tag-confirm'),
+              onPressed: () {
+                controller.deleteTag(controller.tags.indexWhere((current) => current.id == tag.id));
+                Navigator.pop(dialogContext);
+              },
+              child: Text(i18n('delete'), style: TextStyle(color: Theme.of(dialogContext).colorScheme.error)),
+            ),
+          ],
+        ),
       ),
     );
+  }
+
+  Future<void> _runOwnedDialog(Future<void> Function() showDialogRoute) async {
+    if (_dialogActive || !mounted) return;
+    setState(() => _dialogActive = true);
+    try {
+      await showDialogRoute();
+    } finally {
+      if (mounted) setState(() => _dialogActive = false);
+    }
   }
 }
 
