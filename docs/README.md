@@ -4,6 +4,7 @@
 
 ## 开发与发布
 
+- [标签编辑器校验、可访问性与布局审计](TAG_EDITOR_VALIDATION_ACCESSIBILITY_AND_LAYOUT_AUDIT_2026_09_15.md)：字段内空名称/重名反馈、具名 48 px 清除动作、窄屏大字号滚动，以及房间弹窗异步路由和控制器生命周期。
 - [标签房间映射迁移与导入完整性审计](TAG_ROOM_MAPPING_MIGRATION_AND_IMPORT_INTEGRITY_AUDIT_2026_09_15.md)：旧房间号向多平台无损合并、映射键/ID 规范化、导入前身份修复、孤儿映射清理和深拷贝持久化快照。
 - [标签身份与改名完整性审计](TAG_MANAGEMENT_IDENTITY_AND_RENAME_INTEGRITY_AUDIT_2026_09_15.md)：快速新建唯一 ID、旧碰撞身份启动修复并写回、连续顺序，以及排除当前项的大小写改名重复检查。
 - [标签管理卡片动作可访问性审计](TAG_MANAGEMENT_CARD_ACTION_ACCESSIBILITY_AUDIT_2026_09_15.md)：置顶/编辑/删除均携带目标标签名、独立按钮与点击语义、完整 Tooltip、48 px 命中和等待期禁用。
