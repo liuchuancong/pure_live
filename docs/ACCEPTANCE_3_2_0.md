@@ -1,5 +1,7 @@
 # 3.2.0 完整验收入口
 
+- **09-15 标签卡片置顶/编辑/删除已补齐目标身份与可访问动作**：[专项审计](TAG_MANAGEMENT_CARD_ACTION_ACCESSIBILITY_AUDIT_2026_09_15.md)。旧三个图标只有通用 Tooltip，多卡片列表无法从语义确认即将操作哪个标签，`InkWell` 也没有明确按钮与点击合同。`267c56ab` 用共享组件为每项建立独立 `Semantics`，以中英文“置顶/编辑/删除 + 标签名”同时作为完整 Tooltip 与可访问名称，并统一按钮角色、点击动作、48 px 高度和弹窗等待期禁用。有效红灯 **6 PASS / 1 FAIL**，页面 **7/7 PASS**，最终五文件 **22/22 PASS**、最后一次 analyze 无问题。未构建候选、启动 GUI 或操作设备；A2-01/W1-01 保持 RUN，宏观保持 **20 PASS / 42 RUN / 0 NR**、仍有 42 组未闭环；Astra Light 0 次。
+
 - **09-15 标签管理详情入口已补齐可访问动作并统一页面路由所有权**：[专项审计](TAG_MANAGEMENT_DETAIL_ACCESSIBILITY_AND_ROUTE_AUDIT_2026_09_15.md)。旧标签名称只是文字大小的 `GestureDetector`，没有 Tooltip、可访问名称、按钮/点击语义或 48 px 命中高度；新增、详情、编辑和删除也没有共享页面门禁，快速重复输入可叠加路由，卡片高度未计入应用内可调字号。`2daabafe` 增加具名 `Semantics` 容器与 `InkWell`，统一触摸、鼠标、键盘和辅助功能激活；四类弹窗共享同步 single-flight、根 Navigator 与 `finally` 重试，并按实际样式行高计算卡片尺寸。有效红灯 **4 PASS / 2 FAIL**，页面 **6/6 PASS**，最终五文件 **21/21 PASS**、最后一次 analyze 无问题。未构建候选、启动 GUI 或操作设备；A2-01/W1-01 保持 RUN，宏观保持 **20 PASS / 42 RUN / 0 NR**、仍有 42 组未闭环；Astra Light 0 次。
 
 - **09-15 桌面托盘右键菜单已统一事件与事务所有权**：[专项审计](DESKTOP_TRAY_CONTEXT_MENU_EVENT_AND_TRANSACTION_AUDIT_2026_09_15.md)。旧实现同时在右键按下和释放时弹出菜单，一次物理手势可形成两次请求；释放路径还会额外聚焦窗口并以无异常边界的 `.then` 再次弹出，连续右键会让刷新、聚焦与弹出交错。`cd9fed8d` 以右键按下为唯一入口、释放为空回调；新增协调器将“刷新菜单 → 弹出菜单”组成 single-flight，重复请求共享 Future，异常后释放门禁并由外围收口，所有托盘 void 回调显式派发 Future。有效红灯 **0 PASS / 1 FAIL**，新专项 **3/3 PASS**，最终七文件 **35/35 PASS**、最后一次 analyze 无问题。未构建候选、启动 GUI 或操作设备；W1-01 保持 RUN，宏观保持 **20 PASS / 42 RUN / 0 NR**、仍有 42 组未闭环；Astra Light 0 次。
