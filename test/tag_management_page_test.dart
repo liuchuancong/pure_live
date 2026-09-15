@@ -269,6 +269,34 @@ void main() {
     final stored = HivePrefUtil.getAnyPref('user_custom_tags_v5') as List<dynamic>;
     expect(stored.map((entry) => (entry as Map)['id']).toSet(), hasLength(2));
   });
+
+  test('loading room mappings removes blank keys, duplicate IDs, and orphan IDs', () async {
+    Get.delete<TagManagementController>();
+    await HivePrefUtil.setAnyPref('user_custom_tags_v5', [
+      {'id': 'first', 'name': 'First', 'description': '', 'order': 0},
+      {'id': 'second', 'name': 'Second', 'description': '', 'order': 1},
+    ]);
+    await HivePrefUtil.setAnyPref('room_to_tags_mapping_v1', {
+      ' room ': ['first', 'first', 'missing'],
+      'room': ['second'],
+      'empty': ['missing'],
+      'valid': ['second'],
+      '   ': ['first'],
+    });
+
+    final controller = Get.put(TagManagementController());
+    expect(controller.roomTagsMap, {
+      'room': ['first', 'second'],
+      'valid': ['second'],
+    });
+
+    await Future<void>.delayed(Duration.zero);
+    await HivePrefUtil.flush();
+    expect(HivePrefUtil.getAnyPref('room_to_tags_mapping_v1'), {
+      'room': ['first', 'second'],
+      'valid': ['second'],
+    });
+  });
 }
 
 Future<void> _pumpPage(WidgetTester tester, Map<String, dynamic> english) async {

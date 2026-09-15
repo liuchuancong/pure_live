@@ -58,6 +58,28 @@ void main() {
     expect(tags.getTagsForRoom(room), isEmpty);
   });
 
+  test('legacy room mappings merge with existing platform assignments without data loss', () async {
+    final tags = Get.find<TagManagementController>();
+    tags.tags.assignAll([LiveTag(id: 'legacy', name: 'Legacy'), LiveTag(id: 'existing', name: 'Existing', order: 1)]);
+    tags.roomTagsMap.assignAll({
+      'fixture-room': ['legacy', 'legacy', 'missing'],
+      'bilibili:fixture-room': ['existing'],
+    });
+
+    tags.migrateLegacyRoomTagKeys([_room(), _room(platform: 'huya')]);
+
+    expect(tags.roomTagsMap, {
+      'bilibili:fixture-room': ['existing', 'legacy'],
+      'huya:fixture-room': ['legacy'],
+    });
+    await Future<void>.delayed(Duration.zero);
+    await HivePrefUtil.flush();
+    expect(HivePrefUtil.getAnyPref('room_to_tags_mapping_v1'), {
+      'bilibili:fixture-room': ['existing', 'legacy'],
+      'huya:fixture-room': ['legacy'],
+    });
+  });
+
   testWidgets('room tag assignment opens from the authoritative mapping instead of stale room fields', (tester) async {
     final room = _room()..tagIds = ['stale'];
     SettingsService.to.fav.addRoom(room);
@@ -215,9 +237,9 @@ void main() {
   });
 }
 
-LiveRoom _room() => LiveRoom(
+LiveRoom _room({String platform = 'bilibili'}) => LiveRoom(
   roomId: 'fixture-room',
-  platform: 'bilibili',
+  platform: platform,
   nick: 'Fixture anchor',
   title: 'Fixture live room',
   liveStatus: LiveStatus.live,

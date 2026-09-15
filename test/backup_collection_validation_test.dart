@@ -114,6 +114,59 @@ void main() {
     expect(controller.tags.single.id, 'keep');
   });
 
+  test('tag import repairs identities and publishes only normalized room mappings', () async {
+    await HivePrefUtil.clear();
+    final controller = Get.put(TagManagementController());
+
+    controller.importFromJson({
+      'tags': [
+        {'id': 'duplicate', 'name': 'Second', 'order': 1},
+        {'id': 'duplicate', 'name': 'First', 'order': 0},
+        {'id': '', 'name': 'Empty identity', 'order': 2},
+      ],
+      'roomTagsMap': {
+        ' room ': ['duplicate', 'duplicate', 'missing'],
+        'empty': ['missing'],
+      },
+    });
+
+    expect(controller.tags.map((tag) => tag.name), ['First', 'Second', 'Empty identity']);
+    expect(controller.tags.map((tag) => tag.order), [0, 1, 2]);
+    final ids = controller.tags.map((tag) => tag.id).toList(growable: false);
+    expect(ids.first, 'duplicate');
+    expect(ids.toSet(), hasLength(3));
+    expect(controller.roomTagsMap, {
+      'room': ['duplicate'],
+    });
+
+    await Future<void>.delayed(Duration.zero);
+    await HivePrefUtil.flush();
+    expect(HivePrefUtil.getAnyPref('room_to_tags_mapping_v1'), {
+      'room': ['duplicate'],
+    });
+  });
+
+  test('tags-only import prunes mappings to identities that were replaced', () async {
+    await HivePrefUtil.clear();
+    final controller = Get.put(TagManagementController());
+    controller.tags.assignAll([LiveTag(id: 'old', name: 'Old')]);
+    controller.roomTagsMap.assignAll({
+      'bilibili:1': ['old'],
+    });
+
+    controller.importFromJson({
+      'tags': [
+        {'id': 'replacement', 'name': 'Replacement', 'order': 0},
+      ],
+    });
+
+    expect(controller.tags.single.id, 'replacement');
+    expect(controller.roomTagsMap, isEmpty);
+    await Future<void>.delayed(Duration.zero);
+    await HivePrefUtil.flush();
+    expect(HivePrefUtil.getAnyPref('room_to_tags_mapping_v1'), isEmpty);
+  });
+
   test('page options are eagerly checked before scalar writes', () {
     final controller = Get.put(PageSettingsController());
     controller.showPageSizeSelector.value = true;
