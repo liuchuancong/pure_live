@@ -125,6 +125,13 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Tag Details'), findsOneWidget);
+    expect(await tester.binding.handlePopRoute(), isTrue);
+    await tester.pumpAndSettle();
+    expect(find.byType(AlertDialog), findsNothing);
+
+    await tester.tap(detailEntry);
+    await tester.pumpAndSettle();
+    expect(find.text('Tag Details'), findsOneWidget);
     await tester.tap(find.text('Confirm').hitTestable());
     await tester.pumpAndSettle();
     expect(find.byType(AlertDialog), findsNothing);
