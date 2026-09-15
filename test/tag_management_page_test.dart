@@ -342,6 +342,63 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('edit confirmation does not transfer to a replacement with the same id', (tester) async {
+    final controller = Get.find<TagManagementController>();
+    final original = LiveTag(id: 'edit-target', name: 'Original');
+    controller.tags.assignAll([original]);
+    await _pumpPage(tester, english);
+
+    final editAction = find.byKey(const ValueKey('edit-tag-edit-target'));
+    await _scrollUntilHitTestable(tester, editAction);
+    await tester.tap(editAction);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const ValueKey('tag-editor-name')), 'Local draft');
+
+    final replacement = LiveTag(id: 'edit-target', name: 'Replacement');
+    controller.tags.assignAll([replacement]);
+    await tester.pump();
+    await tester.tap(find.byKey(const ValueKey('tag-editor-confirm')).hitTestable());
+    await tester.pumpAndSettle();
+
+    expect(find.text('This tag changed while you were editing. Close this dialog and try again.'), findsOneWidget);
+    final staleStatus = tester.widget<Semantics>(find.byKey(const ValueKey('tag-editor-transaction-error')));
+    expect(staleStatus.properties.liveRegion, isTrue);
+    expect(staleStatus.properties.label, 'This tag changed while you were editing. Close this dialog and try again.');
+    expect(controller.tags.single, same(replacement));
+    expect(replacement.name, 'Replacement');
+    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(tester.widget<ElevatedButton>(find.byKey(const ValueKey('tag-editor-confirm'))).onPressed, isNull);
+    expect(find.byKey(const ValueKey('tag-editor-cancel')).hitTestable(), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('edit confirmation preserves an external update to the captured object', (tester) async {
+    final controller = Get.find<TagManagementController>();
+    final target = LiveTag(id: 'edit-version', name: 'Original', description: 'Before');
+    controller.tags.assignAll([target]);
+    await _pumpPage(tester, english);
+
+    final editAction = find.byKey(const ValueKey('edit-tag-edit-version'));
+    await _scrollUntilHitTestable(tester, editAction);
+    await tester.tap(editAction);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const ValueKey('tag-editor-name')), 'Local draft');
+
+    target.name = 'External';
+    target.description = 'Updated elsewhere';
+    controller.tags.assignAll([target]);
+    await tester.pump();
+    await tester.tap(find.byKey(const ValueKey('tag-editor-confirm')).hitTestable());
+    await tester.pumpAndSettle();
+
+    expect(find.text('This tag changed while you were editing. Close this dialog and try again.'), findsOneWidget);
+    expect(target.name, 'External');
+    expect(target.description, 'Updated elsewhere');
+    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(tester.widget<ElevatedButton>(find.byKey(const ValueKey('tag-editor-confirm'))).onPressed, isNull);
+    expect(tester.takeException(), isNull);
+  });
+
   test('deleting a tag removes its room assignments and ignores stale indices', () async {
     final controller = Get.find<TagManagementController>();
     controller.tags.assignAll([LiveTag(id: 'remove', name: 'Remove'), LiveTag(id: 'keep', name: 'Keep', order: 1)]);

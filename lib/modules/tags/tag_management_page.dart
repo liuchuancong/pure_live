@@ -450,15 +450,20 @@ class _TagEditorDialogState extends State<_TagEditorDialog> {
   late final TextEditingController _nameController;
   late final TextEditingController _descriptionController;
   late final FocusNode _nameFocusNode;
+  late final String _initialName;
+  late final String _initialDescription;
   String? _nameErrorText;
+  String? _transactionErrorText;
 
   bool get _isEdit => widget.index != null && widget.tag != null;
 
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(text: _isEdit ? widget.tag!.name : '');
-    _descriptionController = TextEditingController(text: _isEdit ? widget.tag!.description : '');
+    _initialName = _isEdit ? widget.tag!.name : '';
+    _initialDescription = _isEdit ? widget.tag!.description : '';
+    _nameController = TextEditingController(text: _initialName);
+    _descriptionController = TextEditingController(text: _initialDescription);
     _nameFocusNode = FocusNode();
   }
 
@@ -471,11 +476,23 @@ class _TagEditorDialogState extends State<_TagEditorDialog> {
   }
 
   void _submit() {
-    final editIndex = _isEdit ? widget.controller.tags.indexWhere((current) => current.id == widget.tag!.id) : null;
-    final validation = widget.controller.validateTagName(
-      _nameController.text,
-      excludingIndex: editIndex != null && editIndex >= 0 ? editIndex : null,
-    );
+    if (_transactionErrorText != null) return;
+    if (!Get.isRegistered<TagManagementController>() ||
+        !identical(Get.find<TagManagementController>(), widget.controller)) {
+      _markTransactionStale();
+      return;
+    }
+
+    int? editIndex;
+    if (_isEdit) {
+      editIndex = widget.controller.tags.indexWhere((current) => identical(current, widget.tag));
+      final target = editIndex >= 0 ? widget.controller.tags[editIndex] : null;
+      if (target == null || target.name != _initialName || target.description != _initialDescription) {
+        _markTransactionStale();
+        return;
+      }
+    }
+    final validation = widget.controller.validateTagName(_nameController.text, excludingIndex: editIndex);
     if (validation != TagNameValidation.valid) {
       setState(() {
         _nameErrorText = switch (validation) {
@@ -497,6 +514,14 @@ class _TagEditorDialogState extends State<_TagEditorDialog> {
       setState(() => _nameErrorText = i18n('tag_invalid_or_duplicate'));
       _nameFocusNode.requestFocus();
     }
+  }
+
+  void _markTransactionStale() {
+    setState(() {
+      _nameErrorText = null;
+      _transactionErrorText = i18n('tag_editor_stale_error');
+    });
+    _nameFocusNode.unfocus();
   }
 
   void _clearNameError() {
@@ -601,6 +626,25 @@ class _TagEditorDialogState extends State<_TagEditorDialog> {
               ),
             ),
           ),
+          if (_transactionErrorText case final errorText?) ...[
+            const SizedBox(height: 16),
+            Semantics(
+              key: const ValueKey('tag-editor-transaction-error'),
+              container: true,
+              liveRegion: true,
+              label: errorText,
+              excludeSemantics: true,
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.errorContainer,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(errorText, style: TextStyle(color: theme.colorScheme.onErrorContainer)),
+              ),
+            ),
+          ],
         ],
       ),
       actionsPadding: const EdgeInsets.fromLTRB(0, 0, 16, 16),
@@ -623,7 +667,7 @@ class _TagEditorDialogState extends State<_TagEditorDialog> {
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           ),
-          onPressed: _submit,
+          onPressed: _transactionErrorText == null ? _submit : null,
           child: Text(i18n('confirm')),
         ),
       ],

@@ -1223,6 +1223,7 @@
     "tag_desc_label": "Description",
     "tag_name_empty_error": "Tag name cannot be empty",
     "tag_name_duplicate_error": "A tag with this name already exists",
+    "tag_editor_stale_error": "This tag changed while you were editing. Close this dialog and try again.",
     "clear_tag_name": "Clear tag name",
     "clear_tag_description": "Clear tag description",
     "tag_detail": "Tag Details",
