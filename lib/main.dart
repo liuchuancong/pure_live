@@ -157,21 +157,11 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
             themeMode: SettingsService.to.theme.themeMode,
             theme: lightTheme.copyWith(
               appBarTheme: const AppBarTheme(surfaceTintColor: Colors.transparent),
-              pageTransitionsTheme: const PageTransitionsTheme(
-                builders: <TargetPlatform, PageTransitionsBuilder>{
-                  TargetPlatform.android: PredictiveBackPageTransitionsBuilder(),
-                  TargetPlatform.windows: FadeForwardsPageTransitionsBuilder(),
-                },
-              ),
+              pageTransitionsTheme: appPageTransitionsTheme,
             ),
             darkTheme: darkTheme.copyWith(
               appBarTheme: const AppBarTheme(surfaceTintColor: Colors.transparent),
-              pageTransitionsTheme: const PageTransitionsTheme(
-                builders: <TargetPlatform, PageTransitionsBuilder>{
-                  TargetPlatform.android: PredictiveBackPageTransitionsBuilder(),
-                  TargetPlatform.windows: FadeForwardsPageTransitionsBuilder(),
-                },
-              ),
+              pageTransitionsTheme: appPageTransitionsTheme,
             ),
             locale: context.locale,
             navigatorObservers: [FlutterSmartDialog.observer, LiveRouteObserver()],

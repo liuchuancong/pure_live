@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:pure_live/common/style/theme.dart';
 import 'package:pure_live/get/get.dart';
 
 final TestWidgetsFlutterBinding _binding = TestWidgetsFlutterBinding.ensureInitialized();
@@ -60,8 +61,11 @@ Widget _getApp({PageTransitionsBuilder? androidTransitionBuilder}) {
   );
 }
 
-Future<GetPageRoute<dynamic>> _openSettledSecondaryPage(WidgetTester tester) async {
-  await tester.pumpWidget(_getApp());
+Future<GetPageRoute<dynamic>> _openSettledSecondaryPage(
+  WidgetTester tester, {
+  PageTransitionsBuilder? androidTransitionBuilder,
+}) async {
+  await tester.pumpWidget(_getApp(androidTransitionBuilder: androidTransitionBuilder));
   await tester.pumpAndSettle();
   await tester.tap(find.text('open secondary'));
   await tester.pumpAndSettle();
@@ -86,7 +90,10 @@ void main() {
   });
 
   testWidgets('settled GetPageRoute commits an Android predictive back gesture', (WidgetTester tester) async {
-    final GetPageRoute<dynamic> route = await _openSettledSecondaryPage(tester);
+    final GetPageRoute<dynamic> route = await _openSettledSecondaryPage(
+      tester,
+      androidTransitionBuilder: const PredictiveBackPageTransitionsBuilder(),
+    );
 
     await _startAndUpdateBackGesture(tester);
     expect(route.popGestureInProgress, isTrue);
@@ -102,7 +109,10 @@ void main() {
   testWidgets('settled GetPageRoute restores after an Android predictive back cancellation', (
     WidgetTester tester,
   ) async {
-    final GetPageRoute<dynamic> route = await _openSettledSecondaryPage(tester);
+    final GetPageRoute<dynamic> route = await _openSettledSecondaryPage(
+      tester,
+      androidTransitionBuilder: const PredictiveBackPageTransitionsBuilder(),
+    );
 
     await _startAndUpdateBackGesture(tester);
     expect(route.popGestureInProgress, isTrue);
@@ -131,6 +141,60 @@ void main() {
     final BuildContext context = tester.element(find.text('secondary page'));
     expect(Theme.of(context).pageTransitionsTheme.builders[TargetPlatform.android], same(probe));
     expect(buildCount, greaterThan(0));
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+  test('app Android transitions avoid the gesture-owned predictive builder', () {
+    expect(appPageTransitionsTheme.builders[TargetPlatform.android], isA<FadeForwardsPageTransitionsBuilder>());
+    expect(
+      appPageTransitionsTheme.builders[TargetPlatform.android],
+      isNot(isA<PredictiveBackPageTransitionsBuilder>()),
+    );
+    expect(appPageTransitionsTheme.builders[TargetPlatform.windows], isA<FadeForwardsPageTransitionsBuilder>());
+  });
+
+  testWidgets('app Android transition commits system back through the navigator fallback', (WidgetTester tester) async {
+    final PageTransitionsBuilder transitionBuilder = appPageTransitionsTheme.builders[TargetPlatform.android]!;
+    final GetPageRoute<dynamic> route = await _openSettledSecondaryPage(
+      tester,
+      androidTransitionBuilder: transitionBuilder,
+    );
+
+    await _startAndUpdateBackGesture(tester);
+    expect(route.isCurrent, isTrue);
+    expect(route.popGestureInProgress, isFalse);
+    expect(route.animation!.isCompleted, isTrue);
+
+    await _sendBackGesture(const MethodCall('commitBackGesture'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('secondary page'), findsNothing);
+    expect(find.text('open secondary'), findsOneWidget);
+
+    await tester.tap(find.text('open secondary'));
+    await tester.pumpAndSettle();
+    expect(find.text('secondary page'), findsOneWidget);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.android));
+
+  testWidgets('app Android transition keeps the current route when system back is canceled', (
+    WidgetTester tester,
+  ) async {
+    final PageTransitionsBuilder transitionBuilder = appPageTransitionsTheme.builders[TargetPlatform.android]!;
+    final GetPageRoute<dynamic> route = await _openSettledSecondaryPage(
+      tester,
+      androidTransitionBuilder: transitionBuilder,
+    );
+
+    await _startAndUpdateBackGesture(tester);
+    expect(route.isCurrent, isTrue);
+    expect(route.popGestureInProgress, isFalse);
+
+    await _sendBackGesture(const MethodCall('cancelBackGesture'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('secondary page'), findsOneWidget);
+    expect(find.text('open secondary'), findsNothing);
+    expect(route.isCurrent, isTrue);
+    expect(route.animation!.isCompleted, isTrue);
   }, variant: TargetPlatformVariant.only(TargetPlatform.android));
 }
 

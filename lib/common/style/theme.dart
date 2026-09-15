@@ -1,6 +1,17 @@
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 
+const PageTransitionsTheme appPageTransitionsTheme = PageTransitionsTheme(
+  builders: <TargetPlatform, PageTransitionsBuilder>{
+    // Keep Android's system back dispatch, but let an unclaimed gesture commit
+    // through Navigator's regular pop path. Flutter's gesture-owned shared
+    // element transition can retain input after its visual commit on some
+    // Android/ColorOS versions (Pure Live #852; Flutter #153577).
+    TargetPlatform.android: FadeForwardsPageTransitionsBuilder(),
+    TargetPlatform.windows: FadeForwardsPageTransitionsBuilder(),
+  },
+);
+
 /// Resolves the app-wide font without overriding a platform's native default.
 ///
 /// Downloaded fonts are registered under their persisted IDs and therefore
