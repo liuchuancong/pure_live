@@ -4,6 +4,8 @@
 
 ## 开发与发布
 
+- [标签管理详情可访问性与路由事务审计](TAG_MANAGEMENT_DETAIL_ACCESSIBILITY_AND_ROUTE_AUDIT_2026_09_15.md)：具名 48 px 详情动作、独立按钮/点击语义、应用字号感知卡片高度，以及新增/详情/编辑/删除共享的页面级 single-flight 路由。
+
 - [桌面托盘菜单事件与事务所有权审计](DESKTOP_TRAY_CONTEXT_MENU_EVENT_AND_TRANSACTION_AUDIT_2026_09_15.md)：右键按下唯一入口、释放事件去重、刷新/弹出 single-flight、异常收口与失败后重试。
 
 - [Windows 标题栏项目链接可访问性与打开事务审计](WINDOWS_TITLE_BAR_PROJECT_LINK_TRANSACTION_AUDIT_2026_09_15.md)：具名链接与 Tooltip、键盘焦点/激活、单次外部打开、等待门禁、false/异常反馈，以及窄宽大字号收束。
