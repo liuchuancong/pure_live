@@ -411,6 +411,39 @@ class FavoriteRoomController extends GetxController {
     };
   }
 
+  static Map<String, dynamic> parseFavoriteLists(Map<String, dynamic> json) {
+    if (!json.containsKey('favoriteRooms') && !json.containsKey('favoriteAreas')) {
+      throw const FormatException('No favorite lists in backup');
+    }
+    final parsed = <String, dynamic>{};
+    if (json.containsKey('favoriteRooms')) {
+      parsed['favoriteRooms'] = BackupMigrationUtil.parseObjectList(
+        json['favoriteRooms'],
+        LiveRoom.fromJson,
+        strict: true,
+      );
+    }
+    if (json.containsKey('favoriteAreas')) {
+      parsed['favoriteAreas'] = BackupMigrationUtil.parseObjectList(
+        json['favoriteAreas'],
+        LiveArea.fromJson,
+        strict: true,
+      );
+    }
+    return parsed;
+  }
+
+  void restoreFavoriteLists(Map<String, dynamic> json) {
+    final parsed = parseFavoriteLists(json);
+    if (parsed.containsKey('favoriteRooms')) {
+      favoriteRooms.v = parsed['favoriteRooms'];
+      _normalizeFavoriteRoomIdentities();
+    }
+    if (parsed.containsKey('favoriteAreas')) {
+      favoriteAreas.v = parsed['favoriteAreas'];
+    }
+  }
+
   void fromJson(Map<String, dynamic> json) {
     final parsed = parseConfig(json);
     shieldList.assignAll(parsed['shieldList']);

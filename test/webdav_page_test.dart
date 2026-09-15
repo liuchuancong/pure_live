@@ -493,7 +493,7 @@ void main() {
       {'backupVersion': 3},
     ]);
     expect(find.text('同步成功'), findsNothing);
-    backup.restore.complete();
+    backup.restore!.complete();
     await tester.pumpAndSettle();
     final successCount = find.text('同步成功').evaluate().length;
     await finish(tester);
@@ -595,7 +595,7 @@ void main() {
   ) async {
     await showBackupFile(tester);
     await openFileMenu(tester);
-    await tester.tap(find.text(translations['webdav_sync_to_local']));
+    await tester.tap(find.text(translations['webdav_restore_all_settings']));
     await tester.pump(const Duration(milliseconds: 350));
     expect(find.text(translations['webdav_restoring']), findsOneWidget);
     expect(tester.widget<PopupMenuButton<String>>(find.byType(PopupMenuButton<String>)).enabled, isFalse);
@@ -612,7 +612,7 @@ void main() {
     expect(service.downloadPaths, ['/backup.txt']);
     expect(service.uploads, isEmpty);
     expect(backup.restores, hasLength(1));
-    backup.restore.complete();
+    backup.restore!.complete();
     await tester.pumpAndSettle();
     expect(find.text(translations['webdav_restoring']), findsNothing);
     expect(tester.widget<PopupMenuButton<String>>(find.byType(PopupMenuButton<String>)).enabled, isTrue);
@@ -626,7 +626,7 @@ void main() {
     service.reads.single.complete([webdav.File(name: longName, path: '/backup.txt', isDir: false)]);
     await tester.pumpAndSettle();
     await openFileMenu(tester);
-    await tester.tap(find.text(translations['webdav_sync_to_local']));
+    await tester.tap(find.text(translations['webdav_restore_all_settings']));
     await tester.pump(const Duration(milliseconds: 350));
 
     final downloadsBeforeDecision = List<String>.from(service.downloadPaths);
@@ -645,8 +645,8 @@ void main() {
       expect(await tester.binding.handlePopRoute(), isTrue);
       await tester.pumpAndSettle();
     }
-    if (backup.restores.isNotEmpty && !backup.restore.isCompleted) {
-      backup.restore.complete();
+    if (backup.restores.isNotEmpty && !backup.restore!.isCompleted) {
+      backup.restore!.complete();
       await tester.pumpAndSettle();
     }
     await finish(tester);
@@ -659,6 +659,60 @@ void main() {
     expect(restoreIsReachable, isTrue);
     expect(service.downloadPaths, isEmpty);
     expect(backup.restores, isEmpty);
+  });
+
+  testWidgets('favorite-only restore stays reachable at narrow very-large text and cancel makes no request', (
+    tester,
+  ) async {
+    final longName = List.filled(5, 'very long WebDAV backup name').join(' · ');
+    await openPage(tester, size: const Size(320, 480), textScale: 3);
+    selectConfig();
+    service.reads.single.complete([webdav.File(name: longName, path: '/backup.txt', isDir: false)]);
+    await tester.pumpAndSettle();
+    await openFileMenu(tester);
+
+    expect(find.text(translations['webdav_restore_all_settings']).hitTestable(), findsOneWidget);
+    expect(find.text(translations['webdav_restore_favorites']).hitTestable(), findsOneWidget);
+    await tester.tap(find.text(translations['webdav_restore_favorites']));
+    await tester.pump(const Duration(milliseconds: 350));
+
+    final dialog = find.byType(AlertDialog);
+    expect(dialog, findsOneWidget);
+    expect(find.descendant(of: dialog, matching: find.textContaining(longName)), findsOneWidget);
+    expect(
+      find.descendant(of: dialog, matching: find.textContaining(translations['webdav_favorites_unchanged_hint'])),
+      findsOneWidget,
+    );
+    expect(find.text(translations['cancel']).hitTestable(), findsOneWidget);
+    expect(find.widgetWithText(FilledButton, translations['webdav_restore_favorites']).hitTestable(), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    await tester.tap(find.text(translations['cancel']).hitTestable());
+    await tester.pumpAndSettle();
+    expect(service.downloadPaths, isEmpty);
+    expect(backup.restores, isEmpty);
+    expect(backup.favoriteRestores, isEmpty);
+    await finish(tester);
+  });
+
+  testWidgets('favorite-only restore routes the downloaded backup to the selective importer', (tester) async {
+    await showBackupFile(tester);
+    await openFileMenu(tester);
+    await tester.tap(find.text(translations['webdav_restore_favorites']));
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.tap(find.widgetWithText(FilledButton, translations['webdav_restore_favorites']));
+    await tester.pump(const Duration(milliseconds: 350));
+
+    expect(find.text(translations['webdav_restoring_favorites']), findsOneWidget);
+    expect(service.downloadPaths, ['/backup.txt']);
+    expect(backup.restores, isEmpty);
+    expect(backup.favoriteRestores, [
+      {'backupVersion': 3},
+    ]);
+    backup.favoriteRestore!.complete();
+    await tester.pumpAndSettle();
+    expect(find.text(translations['webdav_sync_favorites_success']), findsOneWidget);
+    await finish(tester);
   });
 
   testWidgets('delete confirmation cancel and network failure both restore a working retry entry', (tester) async {
@@ -733,7 +787,7 @@ void main() {
     service.downloadBytes = utf8.encode('{invalid');
     await showBackupFile(tester);
     await openFileMenu(tester);
-    await tester.tap(find.text(translations['webdav_sync_to_local']));
+    await tester.tap(find.text(translations['webdav_restore_all_settings']));
     await tester.pump(const Duration(milliseconds: 350));
     await tester.tap(find.widgetWithText(FilledButton, translations['recover_backup']));
     await tester.pumpAndSettle();
@@ -808,7 +862,9 @@ class _Service extends WebDAVService {
 
 class _BackupController extends BackupController {
   final restores = <Map<String, dynamic>>[];
-  late Completer<void> restore;
+  final favoriteRestores = <Map<String, dynamic>>[];
+  Completer<void>? restore;
+  Completer<void>? favoriteRestore;
 
   @override
   Map<String, dynamic> exportAllSettings({bool includeSensitiveData = false}) => {'backupVersion': 3};
@@ -818,6 +874,13 @@ class _BackupController extends BackupController {
     restores.add(data);
     // Create the future in the widget test's clock, not setUp's root zone.
     restore = Completer<void>();
-    return restore.future;
+    return restore!.future;
+  }
+
+  @override
+  Future<void> restoreFavoriteSettings(Map<String, dynamic> data) {
+    favoriteRestores.add(data);
+    favoriteRestore = Completer<void>();
+    return favoriteRestore!.future;
   }
 }

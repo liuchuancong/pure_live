@@ -24,6 +24,8 @@ import 'package:pure_live/common/services/settings/cookie_settings_controller.da
 import 'package:pure_live/common/services/settings/danmaku_settings_controller.dart';
 import 'package:pure_live/common/services/settings/room_card_settings_controller.dart';
 
+enum BackupRestoreScope { all, favorites }
+
 class BackupController extends GetxController {
   static BackupController get to => Get.find();
 
@@ -326,10 +328,35 @@ class BackupController extends GetxController {
   }
 
   Future<void> restoreAllSettings(Map<String, dynamic> data) async {
+    await _persistRestore(() => importAllSettings(data));
+  }
+
+  Future<void> restoreFavoriteSettings(Map<String, dynamic> data) async {
+    await _persistRestore(() {
+      final version = data['backupVersion'];
+      if (version != null && (version is! int || version < 1)) {
+        throw const FormatException('Invalid backup version');
+      }
+
+      final Map<String, dynamic> favorite;
+      if (version == null) {
+        favorite = data;
+      } else {
+        final section = data['favorite'];
+        if (section is! Map || section.keys.any((key) => key is! String)) {
+          throw const FormatException('Invalid backup section: favorite');
+        }
+        favorite = Map<String, dynamic>.from(section);
+      }
+      Get.find<FavoriteRoomController>().restoreFavoriteLists(favorite);
+    });
+  }
+
+  Future<void> _persistRestore(void Function() restore) async {
     if (_restoreInProgress) throw StateError('A settings restore is already running');
     _restoreInProgress = true;
     try {
-      await HivePrefUtil.persistBatch(() => importAllSettings(data));
+      await HivePrefUtil.persistBatch(restore);
     } finally {
       _restoreInProgress = false;
     }

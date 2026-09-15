@@ -4,6 +4,7 @@ import 'package:mime/mime.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:webdav_client/webdav_client.dart' as webdav;
+import 'package:pure_live/common/services/settings/backup_controller.dart';
 import 'package:pure_live/modules/web_dav/web_dav_help.dart';
 import 'package:pure_live/modules/web_dav/webdav_config.dart';
 import 'package:pure_live/modules/web_dav/web_dav_controller.dart';
@@ -179,11 +180,17 @@ class _WebDavPageState extends State<WebDavPage> {
     danger: true,
   );
 
-  Future<bool> _showFileRestoreDialog(webdav.File file) => _showConfirmation(
-    title: i18n("recover_backup"),
-    message: i18n("webdav_confirm_restore_item", args: {"name": _fileDisplayName(file)}),
-    confirmLabel: i18n("recover_backup"),
-  );
+  Future<bool> _showFileRestoreDialog(webdav.File file, BackupRestoreScope scope) {
+    final favoritesOnly = scope == BackupRestoreScope.favorites;
+    return _showConfirmation(
+      title: i18n(favoritesOnly ? 'webdav_restore_favorites' : 'recover_backup'),
+      message: favoritesOnly
+          ? '${i18n("webdav_confirm_restore_favorites_item", args: {"name": _fileDisplayName(file)})} '
+                '${i18n("webdav_favorites_unchanged_hint")}'
+          : i18n("webdav_confirm_restore_item", args: {"name": _fileDisplayName(file)}),
+      confirmLabel: i18n(favoritesOnly ? 'webdav_restore_favorites' : 'recover_backup'),
+    );
+  }
 
   Future<bool> _showConfirmation({
     required String title,
@@ -469,12 +476,28 @@ class _WebDavPageState extends State<WebDavPage> {
           enabled: controller.canStartFileAction,
           icon: Icon(Icons.more_vert, color: Theme.of(Get.context!).colorScheme.onSurface),
           itemBuilder: (context) => [
-            if (file.isDir != true) PopupMenuItem(value: 'Download', child: Text(i18n("webdav_sync_to_local"))),
+            if (file.isDir != true) ...[
+              PopupMenuItem(value: 'RestoreAll', child: Text(i18n("webdav_restore_all_settings"))),
+              PopupMenuItem(value: 'RestoreFavorites', child: Text(i18n("webdav_restore_favorites"))),
+            ],
             PopupMenuItem(value: 'Delete', child: Text(i18n("webdav_delete"))),
           ],
           onSelected: (value) {
-            if (value == 'Download') {
-              unawaited(controller.downloadFile(file, confirmRestore: () => _showFileRestoreDialog(file)));
+            if (value == 'RestoreAll') {
+              unawaited(
+                controller.downloadFile(
+                  file,
+                  confirmRestore: () => _showFileRestoreDialog(file, BackupRestoreScope.all),
+                ),
+              );
+            } else if (value == 'RestoreFavorites') {
+              unawaited(
+                controller.downloadFile(
+                  file,
+                  scope: BackupRestoreScope.favorites,
+                  confirmRestore: () => _showFileRestoreDialog(file, BackupRestoreScope.favorites),
+                ),
+              );
             } else if (value == 'Delete') {
               unawaited(controller.deleteFile(file, confirmDelete: () => _showFileDeleteDialog(file)));
             }

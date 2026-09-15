@@ -5,6 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce/hive.dart';
 import 'package:pure_live/get/get.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
+import 'package:pure_live/common/models/live_area.dart';
+import 'package:pure_live/common/models/live_room.dart';
 import 'package:pure_live/common/services/settings_service.dart';
 import 'package:pure_live/common/services/settings/iptv_settings_controller.dart';
 import 'package:pure_live/common/services/settings/backup_controller.dart';
@@ -157,13 +159,106 @@ void main() {
     expect(await backup.recover(file), isTrue);
     expect(HivePrefUtil.getBool('enableBackgroundPlay'), isTrue);
   });
+  test('favorite-only restore changes followed lists and preserves every other favorite preference', () async {
+    final settings = await initialize();
+    final backup = settings.backup;
+    settings.app.enableBackgroundPlay.value = false;
+    settings.fav.shieldList.assignAll(['keep-shield']);
+    settings.fav.blockedDanmakuUsers.assignAll(['keep-user']);
+    settings.fav.hotAreasList.assignAll(['bilibili']);
+    settings.fav.preferPlatform.value = 'bilibili';
+    settings.fav.favoriteRooms.value = [LiveRoom(roomId: 'old', platform: 'bilibili')];
+    settings.fav.favoriteAreas.value = [LiveArea(areaId: 'old-area', platform: 'bilibili')];
+
+    await backup.restoreFavoriteSettings({
+      'backupVersion': 3,
+      'app': {'enableBackgroundPlay': true},
+      'favorite': {
+        'shieldList': ['replace-shield'],
+        'blockedDanmakuUsers': ['replace-user'],
+        'hotAreasList': ['douyu'],
+        'preferPlatform': 'douyu',
+        'favoriteRooms': [
+          {'roomId': ' 200 ', 'platform': ' BILIBILI ', 'title': 'Restored room'},
+        ],
+        'favoriteAreas': [
+          {'areaId': 'music', 'platform': 'douyu', 'areaName': 'Restored area'},
+        ],
+      },
+    });
+
+    expect(settings.app.enableBackgroundPlay.value, isFalse);
+    expect(settings.fav.shieldList, ['keep-shield']);
+    expect(settings.fav.blockedDanmakuUsers, ['keep-user']);
+    expect(settings.fav.hotAreasList, ['bilibili']);
+    expect(settings.fav.preferPlatform.value, 'bilibili');
+    expect(settings.fav.favoriteRooms.value.single.identityKey, 'bilibili:200');
+    expect(settings.fav.favoriteAreas.value.single.identityKey, jsonEncode(['douyu', '', 'music']));
+    expect(
+      (jsonDecode(HivePrefUtil.getString('favoriteRooms')!) as Map<String, dynamic>)['list'].single['roomId'],
+      '200',
+    );
+    expect(
+      (jsonDecode(HivePrefUtil.getString('favoriteAreas')!) as Map<String, dynamic>)['list'].single['areaId'],
+      'music',
+    );
+  });
+
+  test('favorite-only restore accepts legacy lists and ignores malformed unrelated sections', () async {
+    final settings = await initialize();
+    settings.fav.favoriteRooms.value = [LiveRoom(roomId: 'old', platform: 'bilibili')];
+    settings.fav.favoriteAreas.value = [LiveArea(areaId: 'old-area', platform: 'bilibili')];
+
+    await settings.backup.restoreFavoriteSettings({
+      'favoriteRooms': [
+        {'roomId': 'legacy', 'platform': 'huya'},
+      ],
+      'favoriteAreas': [
+        {'areaId': 'legacy-area', 'platform': 'huya'},
+      ],
+      'theme': 'malformed but outside the selected restore scope',
+    });
+
+    expect(settings.fav.favoriteRooms.value.single.identityKey, 'huya:legacy');
+    expect(settings.fav.favoriteAreas.value.single.areaId, 'legacy-area');
+  });
+
+  test('favorite-only restore validates its target before mutating either list', () async {
+    final settings = await initialize();
+    final rooms = [LiveRoom(roomId: 'keep', platform: 'bilibili')];
+    final areas = [LiveArea(areaId: 'keep-area', platform: 'bilibili')];
+    settings.fav.favoriteRooms.value = rooms;
+    settings.fav.favoriteAreas.value = areas;
+
+    for (final data in <Map<String, dynamic>>[
+      {'backupVersion': 3},
+      {'backupVersion': 3, 'favorite': 'wrong section type'},
+      {
+        'backupVersion': 3,
+        'favorite': {
+          'favoriteRooms': [
+            {'roomId': 'replacement', 'platform': 'douyu'},
+          ],
+          'favoriteAreas': 'wrong list type',
+        },
+      },
+      {'favoriteRooms': 'wrong list type'},
+    ]) {
+      await expectLater(settings.backup.restoreFavoriteSettings(data), throwsFormatException);
+      expect(settings.fav.favoriteRooms.value.single.identityKey, 'bilibili:keep');
+      expect(settings.fav.favoriteAreas.value.single.areaId, 'keep-area');
+    }
+  });
+
   test('overlapping restores reject rather than interleave writes', () async {
     final settings = await initialize();
     final backup = settings.backup;
     final source = detached(backup.exportAllSettings());
     final first = backup.restoreAllSettings(source);
-    await expectLater(backup.restoreAllSettings(source), throwsStateError);
+    await expectLater(backup.restoreFavoriteSettings(source), throwsStateError);
     await first;
-    await backup.restoreAllSettings(source);
+    final second = backup.restoreFavoriteSettings(source);
+    await expectLater(backup.restoreAllSettings(source), throwsStateError);
+    await second;
   });
 }

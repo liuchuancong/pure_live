@@ -325,7 +325,11 @@ class WebDavPageController extends GetxController {
   }
 
   /// 下载并恢复配置（走新备份系统）
-  Future<void> downloadFile(webdav.File file, {required Future<bool> Function() confirmRestore}) async {
+  Future<void> downloadFile(
+    webdav.File file, {
+    BackupRestoreScope scope = BackupRestoreScope.all,
+    required Future<bool> Function() confirmRestore,
+  }) async {
     final service = _webdavService;
     final epoch = _serviceEpoch;
     final path = dirPath.value;
@@ -337,7 +341,10 @@ class WebDavPageController extends GetxController {
         !canStartFileAction) {
       return;
     }
-    fileActionLabelKey.value = 'webdav_restoring';
+    fileActionLabelKey.value = switch (scope) {
+      BackupRestoreScope.all => 'webdav_restoring',
+      BackupRestoreScope.favorites => 'webdav_restoring_favorites',
+    };
     try {
       final result = await confirmRestore();
       if (!result || !_ownsService(service, epoch) || dirPath.value != path) return;
@@ -345,9 +352,20 @@ class WebDavPageController extends GetxController {
       // Fence before local mutation, not only before its success notification.
       if (!_ownsService(service, epoch) || dirPath.value != path) return;
       final data = jsonDecode(utf8.decode(bytes));
-      await _backupController.restoreAllSettings(Map<String, dynamic>.from(data as Map));
+      final backup = Map<String, dynamic>.from(data as Map);
+      switch (scope) {
+        case BackupRestoreScope.all:
+          await _backupController.restoreAllSettings(backup);
+        case BackupRestoreScope.favorites:
+          await _backupController.restoreFavoriteSettings(backup);
+      }
       if (!_ownsService(service, epoch) || dirPath.value != path) return;
-      _feedback(i18n("webdav_sync_success"));
+      _feedback(
+        i18n(switch (scope) {
+          BackupRestoreScope.all => 'webdav_sync_success',
+          BackupRestoreScope.favorites => 'webdav_sync_favorites_success',
+        }),
+      );
     } catch (e) {
       if (!_ownsService(service, epoch) || dirPath.value != path) return;
       _feedback('${i18n("webdav_download_failed")}: $e', isError: true);

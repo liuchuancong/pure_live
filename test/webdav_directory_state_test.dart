@@ -440,6 +440,24 @@ void main() {
     expect(controller.fileActionLabelKey.value, isEmpty);
   });
 
+  test('favorite-only download restores only followed lists with scope-specific feedback', () async {
+    final service = connect();
+    final download = controller.downloadFile(
+      webdav.File(path: '/backup.txt'),
+      scope: BackupRestoreScope.favorites,
+      confirmRestore: allowRestore,
+    );
+    expect(controller.fileActionLabelKey.value, 'webdav_restoring_favorites');
+    service.download.complete(utf8.encode('{"backupVersion":3,"favorite":{"favoriteRooms":[],"favoriteAreas":[]}}'));
+    await download;
+
+    expect(service.downloadPaths, ['/backup.txt']);
+    expect(backup.restores, isEmpty);
+    expect(backup.favoriteRestores, hasLength(1));
+    expect(feedback, ['webdav_sync_favorites_success']);
+    expect(controller.fileActionLabelKey.value, isEmpty);
+  });
+
   test('restore confirmed after service replacement never reads or changes local settings', () async {
     final service = connect();
     final restoreConfirmation = Completer<bool>();
@@ -601,6 +619,7 @@ class _Service extends WebDAVService {
 
 class _BackupController extends BackupController {
   final restores = <Map<String, dynamic>>[];
+  final favoriteRestores = <Map<String, dynamic>>[];
   Completer<void>? pendingRestore;
 
   @override
@@ -609,6 +628,12 @@ class _BackupController extends BackupController {
   @override
   Future<void> restoreAllSettings(Map<String, dynamic> data) async {
     restores.add(data);
+    await pendingRestore?.future;
+  }
+
+  @override
+  Future<void> restoreFavoriteSettings(Map<String, dynamic> data) async {
+    favoriteRestores.add(data);
     await pendingRestore?.future;
   }
 }
