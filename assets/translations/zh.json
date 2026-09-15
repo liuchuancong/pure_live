@@ -1228,6 +1228,7 @@
     "tag_detail": "标签详情",
     "view_tag_details_named": "查看标签详情：{name}",
     "move_tag_to_top_named": "将“{name}”移到顶部",
+    "tag_already_at_top_named": "“{name}”已位于顶部",
     "edit_tag_named": "编辑标签：{name}",
     "delete_tag_named": "删除标签：{name}",
     "drag_tag_to_sort_tip": "长按任意标签卡片，即可自由拖拽以动态调整它们的排列展示顺序。",

@@ -66,6 +66,7 @@ class _TagManagementPageState extends State<TagManagementPage> {
             }
             final children = List.generate(controller.tags.length, (index) {
               final tag = controller.tags[index];
+              final isTop = index == 0;
               return Material(
                 key: ValueKey(tag.id),
                 color: Colors.transparent,
@@ -108,15 +109,17 @@ class _TagManagementPageState extends State<TagManagementPage> {
                             Expanded(
                               child: _buildTagCardAction(
                                 key: ValueKey('pin-tag-${tag.id}'),
-                                label: i18n('move_tag_to_top_named', args: {'name': tag.name}),
-                                onActivate: _dialogActive ? null : () => controller.pinToTop(index),
-                                child: ReorderableDragStartListener(
-                                  index: index,
-                                  child: Icon(
-                                    Remix.sort_number_desc,
-                                    size: 16,
-                                    color: theme.colorScheme.primary.withValues(alpha: 0.8),
-                                  ),
+                                label: i18n(
+                                  isTop ? 'tag_already_at_top_named' : 'move_tag_to_top_named',
+                                  args: {'name': tag.name},
+                                ),
+                                onActivate: _dialogActive || isTop ? null : () => controller.pinToTop(index),
+                                child: Icon(
+                                  isTop ? Remix.pushpin_fill : Remix.pushpin_line,
+                                  size: 16,
+                                  color: isTop
+                                      ? theme.colorScheme.primary
+                                      : theme.colorScheme.primary.withValues(alpha: 0.8),
                                 ),
                               ),
                             ),

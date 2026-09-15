@@ -1228,6 +1228,7 @@
     "tag_detail": "Tag Details",
     "view_tag_details_named": "View tag details: {name}",
     "move_tag_to_top_named": "Move {name} to top",
+    "tag_already_at_top_named": "{name} is already at the top",
     "edit_tag_named": "Edit tag: {name}",
     "delete_tag_named": "Delete tag: {name}",
     "drag_tag_to_sort_tip": "Long-press any tag card to freely drag and drop them to dynamically adjust their display order.",

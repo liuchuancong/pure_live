@@ -121,7 +121,7 @@ void main() {
       await _pumpPage(tester, english);
 
       final expectedLabels = {
-        'pin-tag-named-actions': 'Move Travel streams to top',
+        'pin-tag-named-actions': 'Travel streams is already at the top',
         'edit-tag-named-actions': 'Edit tag: Travel streams',
         'delete-tag-named-actions': 'Delete tag: Travel streams',
       };
@@ -132,9 +132,45 @@ void main() {
         final semanticsData = semanticsNode.getSemanticsData();
         expect(semanticsNode.label, entry.value);
         expect(semanticsData.flagsCollection.isButton, isTrue);
-        expect(semanticsData.hasAction(SemanticsAction.tap), isTrue);
+        expect(semanticsData.hasAction(SemanticsAction.tap), entry.key != 'pin-tag-named-actions');
         expect(tester.getSize(action).height, greaterThanOrEqualTo(48));
       }
+    } finally {
+      semantics.dispose();
+    }
+  });
+
+  testWidgets('top state and move action stay separate from the grid drag owner', (tester) async {
+    final semantics = tester.ensureSemantics();
+    try {
+      final controller = Get.find<TagManagementController>();
+      controller.tags.assignAll([
+        LiveTag(id: 'first', name: 'First'),
+        LiveTag(id: 'second', name: 'Second', order: 1),
+        LiveTag(id: 'third', name: 'Third', order: 2),
+      ]);
+      await _pumpPage(tester, english);
+
+      final pinFirst = find.byKey(const ValueKey('pin-tag-first'));
+      await _scrollUntilHitTestable(tester, pinFirst);
+      final firstSemantics = tester.getSemantics(pinFirst);
+      expect(firstSemantics.label, 'First is already at the top');
+      expect(firstSemantics.getSemanticsData().hasAction(SemanticsAction.tap), isFalse);
+      expect(find.byType(ReorderableDragStartListener), findsNothing);
+
+      final pinSecond = find.byKey(const ValueKey('pin-tag-second'));
+      await _scrollUntilHitTestable(tester, pinSecond);
+      await tester.tap(pinSecond);
+      await tester.pumpAndSettle();
+
+      expect(controller.tags.map((tag) => tag.id), ['second', 'first', 'third']);
+      expect(controller.tags.map((tag) => tag.order), [0, 1, 2]);
+      final movedTop = find.byKey(const ValueKey('pin-tag-second'));
+      await _scrollUntilHitTestable(tester, movedTop);
+      final movedTopSemantics = tester.getSemantics(movedTop);
+      expect(movedTopSemantics.label, 'Second is already at the top');
+      expect(movedTopSemantics.getSemanticsData().hasAction(SemanticsAction.tap), isFalse);
+      expect(tester.takeException(), isNull);
     } finally {
       semantics.dispose();
     }
