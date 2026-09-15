@@ -4,6 +4,7 @@
 
 ## 开发与发布
 
+- [Issue #866 抖音多画面黑屏源码审计](ISSUE_866_DOUYIN_MULTIVIEW_AUDIT_2026_09_15.md)：3.1.3 纯音频 `ao` 被选作小格最低档的历史红灯、当前过滤修复、严格详情/视频源/播放请求头跨层回归，以及普通播放偶发失败、平板横屏和 Windows 卡顿的独立待验边界。
 - [标签编辑冲突与所有权审计](TAG_EDITOR_CONFLICT_AND_OWNERSHIP_AUDIT_2026_09_15.md)：同 ID 对象替换、原对象并发更新与控制器换代保护，以及具备 live-region 的可核对冲突状态。
 - [标签删除确认与目标身份审计](TAG_DELETE_CONFIRMATION_AND_IDENTITY_AUDIT_2026_09_15.md)：完整双语确认句、48 px 破坏性动作，以及确认期间控制器和标签对象身份替换保护。
 - [标签置顶状态与拖拽所有权审计](TAG_TOP_STATE_AND_DRAG_OWNERSHIP_AUDIT_2026_09_15.md)：首项已置顶状态与禁用语义、非首项具名置顶、连续顺序更新，以及整卡长按拖拽的唯一所有者。
