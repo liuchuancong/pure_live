@@ -106,59 +106,41 @@ class _TagManagementPageState extends State<TagManagementPage> {
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
                             Expanded(
-                              child: Tooltip(
-                                message: i18n('move_to_top'),
-                                child: InkWell(
-                                  key: ValueKey('pin-tag-${tag.id}'),
-                                  borderRadius: BorderRadius.circular(6),
-                                  onTap: () => controller.pinToTop(index),
-                                  child: SizedBox(
-                                    height: 48,
-                                    child: ReorderableDragStartListener(
-                                      index: index,
-                                      child: Icon(
-                                        Remix.sort_number_desc,
-                                        size: 16,
-                                        color: theme.colorScheme.primary.withValues(alpha: 0.8),
-                                      ),
-                                    ),
+                              child: _buildTagCardAction(
+                                key: ValueKey('pin-tag-${tag.id}'),
+                                label: i18n('move_tag_to_top_named', args: {'name': tag.name}),
+                                onActivate: _dialogActive ? null : () => controller.pinToTop(index),
+                                child: ReorderableDragStartListener(
+                                  index: index,
+                                  child: Icon(
+                                    Remix.sort_number_desc,
+                                    size: 16,
+                                    color: theme.colorScheme.primary.withValues(alpha: 0.8),
                                   ),
                                 ),
                               ),
                             ),
                             Container(width: 1, height: 14, color: theme.dividerColor.withValues(alpha: 0.1)),
                             Expanded(
-                              child: Tooltip(
-                                message: i18n('edit_tag'),
-                                child: InkWell(
-                                  key: ValueKey('edit-tag-${tag.id}'),
-                                  borderRadius: BorderRadius.circular(6),
-                                  onTap: _dialogActive
-                                      ? null
-                                      : () => unawaited(_showTagDialog(context, index: index, tag: tag)),
-                                  child: SizedBox(
-                                    height: 48,
-                                    child: Icon(Remix.edit_line, size: 16, color: theme.colorScheme.onSurfaceVariant),
-                                  ),
-                                ),
+                              child: _buildTagCardAction(
+                                key: ValueKey('edit-tag-${tag.id}'),
+                                label: i18n('edit_tag_named', args: {'name': tag.name}),
+                                onActivate: _dialogActive
+                                    ? null
+                                    : () => unawaited(_showTagDialog(context, index: index, tag: tag)),
+                                child: Icon(Remix.edit_line, size: 16, color: theme.colorScheme.onSurfaceVariant),
                               ),
                             ),
                             Container(width: 1, height: 14, color: theme.dividerColor.withValues(alpha: 0.1)),
                             Expanded(
-                              child: Tooltip(
-                                message: i18n('delete_tag'),
-                                child: InkWell(
-                                  key: ValueKey('delete-tag-${tag.id}'),
-                                  borderRadius: BorderRadius.circular(6),
-                                  onTap: _dialogActive ? null : () => unawaited(_confirmDelete(context, tag)),
-                                  child: SizedBox(
-                                    height: 48,
-                                    child: Icon(
-                                      Remix.delete_bin_line,
-                                      size: 16,
-                                      color: theme.colorScheme.error.withValues(alpha: 0.7),
-                                    ),
-                                  ),
+                              child: _buildTagCardAction(
+                                key: ValueKey('delete-tag-${tag.id}'),
+                                label: i18n('delete_tag_named', args: {'name': tag.name}),
+                                onActivate: _dialogActive ? null : () => unawaited(_confirmDelete(context, tag)),
+                                child: Icon(
+                                  Remix.delete_bin_line,
+                                  size: 16,
+                                  color: theme.colorScheme.error.withValues(alpha: 0.7),
                                 ),
                               ),
                             ),
@@ -254,6 +236,31 @@ class _TagManagementPageState extends State<TagManagementPage> {
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTagCardAction({
+    required Key key,
+    required String label,
+    required VoidCallback? onActivate,
+    required Widget child,
+  }) {
+    return Semantics(
+      container: true,
+      button: true,
+      enabled: onActivate != null,
+      label: label,
+      excludeSemantics: true,
+      onTap: onActivate,
+      child: Tooltip(
+        message: label,
+        child: InkWell(
+          key: key,
+          borderRadius: BorderRadius.circular(6),
+          onTap: onActivate,
+          child: SizedBox(height: 48, child: child),
         ),
       ),
     );

@@ -112,6 +112,34 @@ void main() {
     }
   });
 
+  testWidgets('tag card actions expose the affected tag name', (tester) async {
+    final semantics = tester.ensureSemantics();
+    try {
+      Get.find<TagManagementController>().tags.assignAll([
+        LiveTag(id: 'named-actions', name: 'Travel streams', description: 'Outdoor channels'),
+      ]);
+      await _pumpPage(tester, english);
+
+      final expectedLabels = {
+        'pin-tag-named-actions': 'Move Travel streams to top',
+        'edit-tag-named-actions': 'Edit tag: Travel streams',
+        'delete-tag-named-actions': 'Delete tag: Travel streams',
+      };
+      for (final entry in expectedLabels.entries) {
+        final action = find.byKey(ValueKey(entry.key));
+        await _scrollUntilHitTestable(tester, action);
+        final semanticsNode = tester.getSemantics(action);
+        final semanticsData = semanticsNode.getSemanticsData();
+        expect(semanticsNode.label, entry.value);
+        expect(semanticsData.flagsCollection.isButton, isTrue);
+        expect(semanticsData.hasAction(SemanticsAction.tap), isTrue);
+        expect(tester.getSize(action).height, greaterThanOrEqualTo(48));
+      }
+    } finally {
+      semantics.dispose();
+    }
+  });
+
   testWidgets('rapid repeated tag detail activation owns one dialog route', (tester) async {
     Get.find<TagManagementController>().tags.assignAll([
       LiveTag(id: 'single-detail', name: 'Travel streams', description: 'Outdoor channels'),
