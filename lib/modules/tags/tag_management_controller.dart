@@ -7,6 +7,7 @@ class TagManagementController extends GetxController {
   static const String _roomTagsMappingKey = 'room_to_tags_mapping_v1';
   final RxMap<String, List<String>> roomTagsMap = <String, List<String>>{}.obs;
   final RxList<LiveTag> tags = <LiveTag>[].obs;
+  int _lastGeneratedTagId = 0;
   static const Map<String, String> allTag = {'all': '全部'};
   static String get allTagKey => allTag.keys.first;
   static String get allTagLabel => allTag.values.first;
@@ -22,7 +23,26 @@ class TagManagementController extends GetxController {
     if (storedTags != null) {
       final list = storedTags.map((e) => LiveTag.fromJson(Map<String, dynamic>.from(e))).toList();
       list.sort((a, b) => a.order.compareTo(b.order));
-      tags.assignAll(list);
+      final usedIds = <String>{};
+      var repaired = false;
+      final normalized = <LiveTag>[];
+      for (var index = 0; index < list.length; index++) {
+        final tag = list[index];
+        var id = tag.id.trim();
+        if (id.isEmpty || usedIds.contains(id)) {
+          id = _allocateTagId(usedIds);
+          repaired = true;
+        }
+        usedIds.add(id);
+        if (id != tag.id || tag.order != index) {
+          repaired = true;
+          normalized.add(LiveTag(id: id, name: tag.name, description: tag.description, order: index));
+        } else {
+          normalized.add(tag);
+        }
+      }
+      tags.assignAll(normalized);
+      if (repaired) saveTags();
     } else {
       tags.clear();
     }
@@ -100,7 +120,7 @@ class TagManagementController extends GetxController {
     if (exists) return false;
 
     final newTag = LiveTag(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      id: _allocateTagId(tags.map((tag) => tag.id).toSet()),
       name: cleanName,
       description: description.trim(),
       order: tags.length,
@@ -125,10 +145,11 @@ class TagManagementController extends GetxController {
     final cleanName = newName.trim();
     if (cleanName.isEmpty) return false;
 
-    if (tags[index].name != cleanName) {
-      final exists = tags.any((tag) => tag.name.toLowerCase() == cleanName.toLowerCase());
-      if (exists) return false;
-    }
+    final normalizedName = cleanName.toLowerCase();
+    final exists = tags.asMap().entries.any(
+      (entry) => entry.key != index && entry.value.name.toLowerCase() == normalizedName,
+    );
+    if (exists) return false;
 
     tags[index].name = cleanName;
     tags[index].description = newDescription.trim();
@@ -179,6 +200,16 @@ class TagManagementController extends GetxController {
     }
     tags.refresh();
     saveTags();
+  }
+
+  String _allocateTagId(Set<String> usedIds) {
+    var candidate = DateTime.now().microsecondsSinceEpoch;
+    if (candidate <= _lastGeneratedTagId) candidate = _lastGeneratedTagId + 1;
+    while (usedIds.contains(candidate.toString())) {
+      candidate++;
+    }
+    _lastGeneratedTagId = candidate;
+    return candidate.toString();
   }
 
   Map<String, dynamic> exportToJson() {

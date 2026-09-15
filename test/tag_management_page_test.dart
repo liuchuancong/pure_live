@@ -183,6 +183,29 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('case-only edit remains reachable and commits at narrow 3x text', (tester) async {
+    final controller = Get.find<TagManagementController>();
+    controller.tags.assignAll([LiveTag(id: 'case-edit', name: 'Travel', description: 'Before')]);
+    await _pumpPage(tester, english);
+
+    final editAction = find.byKey(const ValueKey('edit-tag-case-edit'));
+    await _scrollUntilHitTestable(tester, editAction);
+    await tester.tap(editAction);
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('tag-editor-cancel')).hitTestable(), findsOneWidget);
+    expect(find.byKey(const ValueKey('tag-editor-confirm')).hitTestable(), findsOneWidget);
+    await tester.enterText(find.byKey(const ValueKey('tag-editor-name')), ' travel ');
+    await tester.enterText(find.byKey(const ValueKey('tag-editor-description')), 'After');
+    await tester.tap(find.byKey(const ValueKey('tag-editor-confirm')).hitTestable());
+    await tester.pumpAndSettle();
+
+    expect(controller.tags.single.name, 'travel');
+    expect(controller.tags.single.description, 'After');
+    expect(find.byType(AlertDialog), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
   test('deleting a tag removes its room assignments and ignores stale indices', () async {
     final controller = Get.find<TagManagementController>();
     controller.tags.assignAll([LiveTag(id: 'remove', name: 'Remove'), LiveTag(id: 'keep', name: 'Keep', order: 1)]);
@@ -200,6 +223,51 @@ void main() {
     });
     expect(() => controller.deleteTag(20), returnsNormally);
     expect(() => controller.updateTag(-1, 'bad', ''), returnsNormally);
+  });
+
+  test('case-only rename excludes the edited tag from duplicate detection', () async {
+    final controller = Get.find<TagManagementController>();
+    controller.tags.assignAll([LiveTag(id: 'travel', name: 'Travel'), LiveTag(id: 'work', name: 'Work', order: 1)]);
+
+    expect(controller.updateTag(0, ' travel ', 'Updated description'), isTrue);
+    expect(controller.tags.first.name, 'travel');
+    expect(controller.tags.first.description, 'Updated description');
+
+    expect(controller.updateTag(0, 'WORK', 'Must stay unchanged'), isFalse);
+    expect(controller.tags.first.name, 'travel');
+    expect(controller.tags.first.description, 'Updated description');
+  });
+
+  test('rapid tag creation keeps every persisted identity unique', () async {
+    final controller = Get.find<TagManagementController>();
+
+    for (var index = 0; index < 256; index++) {
+      expect(controller.addTag('Tag $index', ''), isTrue);
+    }
+
+    final ids = controller.tags.map((tag) => tag.id).toList(growable: false);
+    expect(ids.toSet(), hasLength(ids.length));
+  });
+
+  test('loading legacy identity collisions repairs and persists stable tag keys', () async {
+    Get.delete<TagManagementController>();
+    await HivePrefUtil.setAnyPref('user_custom_tags_v5', [
+      {'id': 'duplicate', 'name': 'Second', 'description': '', 'order': 1},
+      {'id': 'duplicate', 'name': 'First', 'description': '', 'order': 0},
+    ]);
+
+    final controller = Get.put(TagManagementController());
+    expect(controller.tags.map((tag) => tag.name), ['First', 'Second']);
+    expect(controller.tags.map((tag) => tag.order), [0, 1]);
+    final ids = controller.tags.map((tag) => tag.id).toList(growable: false);
+    expect(ids.first, 'duplicate');
+    expect(ids.last, isNot('duplicate'));
+    expect(ids.toSet(), hasLength(2));
+
+    await Future<void>.delayed(Duration.zero);
+    await HivePrefUtil.flush();
+    final stored = HivePrefUtil.getAnyPref('user_custom_tags_v5') as List<dynamic>;
+    expect(stored.map((entry) => (entry as Map)['id']).toSet(), hasLength(2));
   });
 }
 
