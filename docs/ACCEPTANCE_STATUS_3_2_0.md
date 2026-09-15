@@ -1,4 +1,6 @@
-# 3.2.0 剩余工作与当前候选（2026-09-15）
+# 3.2.0 剩余工作与当前候选（2026-09-16）
+
+- **09-16 Issue #852 的 ColorOS 14 普通页面系统手势卡住已落地兼容策略**：[专项审计](ISSUE_852_COLOROS_SYSTEM_BACK_AUDIT_2026_09_16.md)。当前亮/暗主题原先都让 Flutter 共享元素预测返回持有手势；Flutter P2 #153577 仍记录视觉完成后输入被继续阻塞。`6fbc1685` 集中页面转场并让 Android 普通路由采用 `FadeForwards`，保留 Manifest 系统回调、commit 的标准 Navigator pop、cancel 语义和直播页自有返回仲裁。有效红灯 **3 PASS / 3 FAIL**，直接回归 **6/6 PASS**，最终四文件 **21/21 PASS**、本批一次 analyze 无问题，代码提交已推送至 `origin` 并精确核对。ColorOS 14 实机仍待复验；A1-04/A1-05/A2-01 保持 RUN，宏观保持 **20 PASS / 42 RUN / 0 NR**、仍有 42 组未闭环；未构建候选、启动 GUI 或操作设备，Astra Light 0 次。
 
 - **09-15 Issue #865 的 WebDAV 仅恢复关注列表已在当前源码实现**：[专项审计](ISSUE_865_WEBDAV_FAVORITES_ONLY_RESTORE_AUDIT_2026_09_15.md)。旧入口只能全量覆盖；`a36ee8fa` 增加“恢复全部设置”和“仅恢复关注列表”，后者只导入 `favoriteRooms` / `favoriteAreas`，保留屏蔽项、平台选择及所有其他本机设置。版本化和旧版平铺备份均受支持，目标结构先于变更校验，目标外损坏 section 不阻断选择性导入，全量/仅关注共享单次持久化事务。320×480 / 3.0 倍文字入口与确认可达，最终六文件 **104/104 PASS**、本批一次 analyze 无问题，`origin/master` 已精确同步该提交。未构建候选、启动 GUI 或操作设备；A1-05/A2-01/W1-01 保持 RUN，宏观保持 **20 PASS / 42 RUN / 0 NR**、仍有 42 组未闭环；Astra Light 0 次。
 

@@ -1,5 +1,11 @@
 # Get 原生过渡与 Android 预测返回审计（2026-09-06）
 
+> 2026-09-16 后续：Issue #852 的厂商系统报告与 Flutter 上游仍开放的共享元素预测返回输入阻塞问题
+> 形成一致风险边界。`6fbc1685` 已让普通 Android 路由使用不接管 start/update 的 `FadeForwards`
+> 策略，同时保留 commit 的标准 Navigator 回退、cancel 语义及直播页自有返回仲裁。源码与相邻回归
+> **21/21 PASS**，ColorOS 14 实机仍待复验；见
+> [专项审计](ISSUE_852_COLOROS_SYSTEM_BACK_AUDIT_2026_09_16.md)。
+
 ## 范围与复现
 
 应用基线 `6babe449`，证据文档提交 `12f2384f`，Flutter 3.47.0。沿实际内置 GetMaterialApp / GetPageRoute 的 `Transition.native` 路由检查；未连接手机，未合并上游。

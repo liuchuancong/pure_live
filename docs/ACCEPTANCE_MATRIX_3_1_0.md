@@ -4,6 +4,8 @@
 
 状态：`NR` 未执行、`RUN` 执行中、`PASS` 通过、`FAIL` 失败、`BLOCKED` 缺少当前外部条件。`PASS` 必须附日志、截图、命令记录或确定性测试路径；构建成功不等于功能通过。
 
+> 2026-09-16 Issue #852 ColorOS 14 系统手势返回增量：普通路由原先让 Flutter 共享元素预测返回持有手势；Flutter P2 #153577 仍记录视觉完成后输入被继续阻塞。`6fbc1685` 集中亮/暗主题页面转场并让 Android 普通路由使用 `FadeForwards`，保留 Manifest 系统回调、commit 标准 Navigator pop、cancel 语义和直播页自有返回仲裁。有效红灯 3 PASS / 3 FAIL，直接 6/6，最终四文件 21/21 与本批一次 analyze 通过，见 `docs/ISSUE_852_COLOROS_SYSTEM_BACK_AUDIT_2026_09_16.md`；代码提交已推送至 `origin` 并精确核对。ColorOS 14 实机仍待复验；A1-04/A1-05/A2-01 保持 RUN，账本仍为 20 PASS / 42 RUN / 0 NR，共 42 组未闭环；未构建候选、启动 GUI 或操作设备，Astra Light 0 次。
+
 > 2026-09-15 Issue #865 WebDAV 仅恢复关注列表增量：旧入口只能全量覆盖；`a36ee8fa` 增加“恢复全部设置”和“仅恢复关注列表”，后者只导入 `favoriteRooms` / `favoriteAreas`，保留屏蔽项、平台选择及所有其他本机设置。版本化和旧版平铺备份均受支持，目标结构先于变更校验，目标外损坏 section 不阻断选择性导入，全量/仅关注共享单次持久化事务。320×480 / 3.0 倍文字入口与确认可达，最终六文件 104/104、本批一次 analyze 通过，见 `docs/ISSUE_865_WEBDAV_FAVORITES_ONLY_RESTORE_AUDIT_2026_09_15.md`；`origin/master` 已精确同步该提交。未构建候选、启动 GUI 或操作设备；A1-05/A2-01/W1-01 保持 RUN，账本仍为 20 PASS / 42 RUN / 0 NR，共 42 组未闭环；Astra Light 0 次。
 
 > 2026-09-15 Issue #866 抖音多画面选源增量：报告版本 3.1.3 会保留 `origin / md / ao`，而小格最低档路径取列表末项，独立历史夹具实际 0 PASS / 1 FAIL；`56cd4d97` 已排除 `ao` 与 `only_audio` rendition，`09a716e6` 证明严格详情解析后的最低档仍为视频 URL，并携带 User-Agent / Origin / Referer / Cookie。当前抖音解析器与多画面联合 59/59、本批一次 analyze 通过，见 `docs/ISSUE_866_DOUYIN_MULTIVIEW_AUDIT_2026_09_15.md`。历史 K90 cycle 46 只证明普通页/录制的纯音频项隔离，不替代当前多画面、平板横屏或 Windows 卡顿复验；A3-06/A3-08/W3-03 保持 RUN，账本仍为 20 PASS / 42 RUN / 0 NR，共 42 组未闭环；本批未构建候选、启动 GUI 或操作设备，Astra Light 0 次。
