@@ -1,7 +1,7 @@
 {
   "version": "3.1.4",
-  "build_number": 4102,
-  "version_num": 301034102,
+  "build_number": 4103,
+  "version_num": 301034103,
   "android_abis": [
     "armeabi-v7a",
     "arm64-v8a",
@@ -13,8 +13,8 @@
   "platforms": {
     "android": {
       "version": "3.1.4",
-      "build_number": 4102,
-      "version_num": 301034102,
+      "build_number": 4103,
+      "version_num": 301034103,
       "version_desc": "version: 3.1.4\n版本更新：\n- 修复windows亮度。\n\n",
       "prerelease": false,
       "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.1.4",
@@ -26,8 +26,8 @@
     },
     "windows": {
       "version": "3.1.4",
-      "build_number": 4102,
-      "version_num": 301034102,
+      "build_number": 4103,
+      "version_num": 301034103,
       "version_desc": "version: 3.1.4\n版本更新：\n- 修复windows亮度。\n\n",
       "prerelease": false,
       "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.1.4",
@@ -35,24 +35,24 @@
     },
     "linux": {
       "version": "3.1.4",
-      "build_number": 4102,
-      "version_num": 301034102,
+      "build_number": 4103,
+      "version_num": 301034103,
       "version_desc": "version: 3.1.4\n版本更新：\n- 修复windows亮度。\n\n",
       "prerelease": false,
       "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.1.4"
     },
     "macos": {
       "version": "3.1.4",
-      "build_number": 4102,
-      "version_num": 301034102,
+      "build_number": 4103,
+      "version_num": 301034103,
       "version_desc": "version: 3.1.4\n版本更新：\n- 修复windows亮度。\n\n",
       "prerelease": false,
       "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.1.4"
     },
     "ios": {
       "version": "3.1.4",
-      "build_number": 4102,
-      "version_num": 301034102,
+      "build_number": 4103,
+      "version_num": 301034103,
       "version_desc": "version: 3.1.4\n版本更新：\n- 修复windows亮度。\n\n",
       "prerelease": false,
       "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.1.4"
