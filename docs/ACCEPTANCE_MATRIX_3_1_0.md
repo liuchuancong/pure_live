@@ -4,6 +4,8 @@
 
 状态：`NR` 未执行、`RUN` 执行中、`PASS` 通过、`FAIL` 失败、`BLOCKED` 缺少当前外部条件。`PASS` 必须附日志、截图、命令记录或确定性测试路径；构建成功不等于功能通过。
 
+> 2026-09-19 Issue #867 房间卡片简洁布局增量：3.1.4 的简洁预设只隐藏字段，真实卡片与固定网格仍保留 16:9 封面；历史 `8169dafa` 明确使用 `showAsListTile: true`。`bc083310` 已补齐持久化布局维度、无封面紧凑行、固定/自然网格共享几何、3.1.2/3.1.4 迁移和手动布局选择器。有效红灯锁定控制器、设置页与热门卡片三类缺口，第一轮 25/25，最终八文件 82/82 与最终 analyze 通过，见 `docs/ISSUE_867_ROOM_CARD_COMPACT_LAYOUT_AUDIT_2026_09_19.md`；代码提交已推送至 `origin` 并精确核对。A1-02/A2-01/W1-01 保持 RUN，账本仍为 20 PASS / 42 RUN / 0 NR，共 42 组未闭环；未构建候选、启动 GUI 或操作设备，Astra Light 0 次。
+
 > 2026-09-16 Issue #852 ColorOS 14 系统手势返回增量：普通路由原先让 Flutter 共享元素预测返回持有手势；Flutter P2 #153577 仍记录视觉完成后输入被继续阻塞。`6fbc1685` 集中亮/暗主题页面转场并让 Android 普通路由使用 `FadeForwards`，保留 Manifest 系统回调、commit 标准 Navigator pop、cancel 语义和直播页自有返回仲裁。有效红灯 3 PASS / 3 FAIL，直接 6/6，最终四文件 21/21 与本批一次 analyze 通过，见 `docs/ISSUE_852_COLOROS_SYSTEM_BACK_AUDIT_2026_09_16.md`；代码提交已推送至 `origin` 并精确核对。ColorOS 14 实机仍待复验；A1-04/A1-05/A2-01 保持 RUN，账本仍为 20 PASS / 42 RUN / 0 NR，共 42 组未闭环；未构建候选、启动 GUI 或操作设备，Astra Light 0 次。
 
 > 2026-09-15 Issue #865 WebDAV 仅恢复关注列表增量：旧入口只能全量覆盖；`a36ee8fa` 增加“恢复全部设置”和“仅恢复关注列表”，后者只导入 `favoriteRooms` / `favoriteAreas`，保留屏蔽项、平台选择及所有其他本机设置。版本化和旧版平铺备份均受支持，目标结构先于变更校验，目标外损坏 section 不阻断选择性导入，全量/仅关注共享单次持久化事务。320×480 / 3.0 倍文字入口与确认可达，最终六文件 104/104、本批一次 analyze 通过，见 `docs/ISSUE_865_WEBDAV_FAVORITES_ONLY_RESTORE_AUDIT_2026_09_15.md`；`origin/master` 已精确同步该提交。未构建候选、启动 GUI 或操作设备；A1-05/A2-01/W1-01 保持 RUN，账本仍为 20 PASS / 42 RUN / 0 NR，共 42 组未闭环；Astra Light 0 次。
@@ -76,7 +78,7 @@
 
 > 2026-09-14 Windows 副屏亮度增量：Issue #863 的稳定写入链来自仍被生成注册器加载的 `screen_brightness_windows`。该插件注册后监听窗口大小/激活/关闭消息，通过 DDC/CI 把捕获值写到窗口当前所在的物理显示器；旧 `6cf42712` 的 CMake 变量没有被生成逻辑或插件消费。`a0bbe074` 改为平台接口与 Android/iOS 直接实现，Windows/macOS 注册器、锁文件和新 ZIP 均移除桌面亮度插件，移动端实现保留。有效红灯 1/4，最终 13 文件 245/245 与本批唯一一次 analyze 通过；Windows x64 Debug 构建成功，日志/安装清单/1,301 项 ZIP 均 0 命中，EXE 依赖表也不含亮度 DLL，见 `docs/WINDOWS_SECONDARY_MONITOR_BRIGHTNESS_OWNERSHIP_AUDIT_2026_09_14.md`。未启动 GUI 或写亮度；W1-01 保持 RUN，账本仍为 20 PASS / 42 RUN / 0 NR，共 42 组未闭环。
 
-> 2026-09-14 房间卡片设置增量：本地标签对照确认 `upstream-v3.1.2` 到 `upstream-v3.1.3` 删除设置目录九个文件、共 6,736 行，主题入口随之消失，与 Issue #864 的稳定版现象一致。`230ad13d` 按当前卡片架构恢复移动/桌面独立配置、三种预设、真实预览、可见字段和有限圆角，兼容 3.1.2 的四个 Hive 键/旧字段并纳入当前和旧版备份。14 个受影响测试文件 154/154、最后一次 Dart 编辑后的最终 analyze 均通过，见 `docs/ROOM_CARD_SETTINGS_REGRESSION_AND_RESTORATION_AUDIT_2026_09_14.md`。A1-02/A2-01 保持 RUN，账本仍为 20 PASS / 42 RUN / 0 NR，共 42 组未闭环。
+> 2026-09-14 房间卡片设置入口与字段增量：本地标签对照确认 `upstream-v3.1.2` 到 `upstream-v3.1.3` 删除设置目录九个文件、共 6,736 行，主题入口随之消失，与 Issue #864 的稳定版现象一致。`230ad13d` 按当前卡片架构恢复移动/桌面独立配置、三种预设身份、真实预览、可见字段、有限圆角、旧四键和备份合同；后续 #867 证明简洁预设的无封面拓扑当时仍缺失，并已由 `bc083310` 补齐。原批 14 个受影响测试文件 154/154、最后一次 Dart 编辑后的最终 analyze 均通过，见 `docs/ROOM_CARD_SETTINGS_REGRESSION_AND_RESTORATION_AUDIT_2026_09_14.md` 与 `docs/ISSUE_867_ROOM_CARD_COMPACT_LAYOUT_AUDIT_2026_09_19.md`。A1-02/A2-01 保持 RUN。
 
 > 2026-09-14 WebDAV 恢复增量：`79d8965f` 在远端读取和本机设置变更前显示包含完整文件名与覆盖说明的响应式确认弹窗；控制器等待页面结果，并在确认后、读取后及本地恢复后核对服务代次与目录路径，取消、系统返回、服务替换和目录变化均保持零旧状态提交。旧源码有效红灯 0/1，页面 27/27、目录状态 44/44、最终七文件 90/90 与一次全库 analyze 均已留档，见 `docs/WEBDAV_RESTORE_CONFIRMATION_AND_TRANSACTION_AUDIT_2026_09_14.md`。A1-05 保持 RUN，账本仍为 20 PASS / 42 RUN / 0 NR，共 42 组未闭环。
 
