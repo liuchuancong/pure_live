@@ -25,4 +25,20 @@ void main() {
     expect(height, lessThanOrEqualTo(availableForEachRow));
     expect(height, greaterThanOrEqualTo(96));
   });
+
+  test('room history reserves readable fixed regions at 3x text scale', () {
+    final metrics = resolveRoomHistoryTextMetrics(textScaler: const TextScaler.linear(3));
+    final height = resolveRoomHistoryCardHeight(
+      contentSize: const Size(449.5, 276),
+      columns: 2,
+      footerHeight: metrics.cardFooterHeight,
+      minimumCoverHeight: metrics.minimumCoverHeight,
+    );
+
+    expect(metrics.headerHeight, greaterThan(36));
+    expect(metrics.tabBarHeight, greaterThan(30));
+    expect(metrics.cardFooterHeight, greaterThan(36));
+    expect(metrics.scrollTabs, isTrue);
+    expect(height, greaterThanOrEqualTo(metrics.cardFooterHeight + metrics.minimumCoverHeight));
+  });
 }

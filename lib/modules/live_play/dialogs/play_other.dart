@@ -73,6 +73,18 @@ class _PlayOtherState extends State<PlayOther> with SingleTickerProviderStateMix
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final textTheme = theme.textTheme;
+    final textMetrics = resolveRoomHistoryTextMetrics(
+      textScaler: MediaQuery.textScalerOf(context),
+      headerFontSize: textTheme.titleSmall?.fontSize ?? 14,
+      headerLineHeight: textTheme.titleSmall?.height ?? 1.25,
+      tabFontSize: textTheme.labelMedium?.fontSize ?? 12,
+      tabLineHeight: textTheme.labelMedium?.height ?? 1.33,
+      titleFontSize: textTheme.labelMedium?.fontSize ?? 12,
+      titleLineHeight: textTheme.labelMedium?.height ?? 1.33,
+      detailFontSize: textTheme.labelSmall?.fontSize ?? 11,
+      detailLineHeight: textTheme.labelSmall?.height ?? 1.45,
+    );
 
     final layout = resolveContentFirstPanelLayout(MediaQuery.sizeOf(context), ContentFirstPanelKind.roomHistory);
 
@@ -88,7 +100,7 @@ class _PlayOtherState extends State<PlayOther> with SingleTickerProviderStateMix
         child: Column(
           children: [
             SizedBox(
-              height: 36,
+              height: textMetrics.headerHeight,
               child: Padding(
                 padding: const EdgeInsets.only(left: 10, right: 2),
                 child: Row(
@@ -133,9 +145,11 @@ class _PlayOtherState extends State<PlayOther> with SingleTickerProviderStateMix
               ),
             ),
             SizedBox(
-              height: 30,
+              height: textMetrics.tabBarHeight,
               child: TabBar(
                 controller: tabController,
+                isScrollable: textMetrics.scrollTabs,
+                tabAlignment: textMetrics.scrollTabs ? TabAlignment.start : TabAlignment.fill,
                 physics: const PureLiveBoundedScrollPhysics(),
                 labelColor: theme.colorScheme.primary,
                 unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
@@ -143,9 +157,24 @@ class _PlayOtherState extends State<PlayOther> with SingleTickerProviderStateMix
                 dividerHeight: 0,
                 labelPadding: const EdgeInsets.symmetric(horizontal: 6),
                 tabs: [
-                  _CompactTab(icon: Icons.sensors_rounded, label: i18n('online_room_title')),
-                  _CompactTab(icon: Icons.fiber_smart_record_rounded, label: i18n('recording_room_title')),
-                  _CompactTab(icon: Icons.history_rounded, label: i18n('watch_history')),
+                  _CompactTab(
+                    icon: Icons.sensors_rounded,
+                    label: i18n('online_room_title'),
+                    height: textMetrics.tabBarHeight - 2,
+                    shrinkToFit: !textMetrics.scrollTabs,
+                  ),
+                  _CompactTab(
+                    icon: Icons.fiber_smart_record_rounded,
+                    label: i18n('recording_room_title'),
+                    height: textMetrics.tabBarHeight - 2,
+                    shrinkToFit: !textMetrics.scrollTabs,
+                  ),
+                  _CompactTab(
+                    icon: Icons.history_rounded,
+                    label: i18n('watch_history'),
+                    height: textMetrics.tabBarHeight - 2,
+                    shrinkToFit: !textMetrics.scrollTabs,
+                  ),
                 ],
               ),
             ),
@@ -159,9 +188,9 @@ class _PlayOtherState extends State<PlayOther> with SingleTickerProviderStateMix
                             controller: tabController,
                             physics: const PureLiveBoundedScrollPhysics(),
                             children: [
-                              _buildRoomGrid(onlineRooms, history: false),
-                              _buildRoomGrid(recordingRooms, history: false),
-                              _buildRoomGrid(historyRooms, history: true),
+                              _buildRoomGrid(onlineRooms, history: false, textMetrics: textMetrics),
+                              _buildRoomGrid(recordingRooms, history: false, textMetrics: textMetrics),
+                              _buildRoomGrid(historyRooms, history: true, textMetrics: textMetrics),
                             ],
                           )
                         : AppStatusView(type: AppStatusType.loading, title: '', subtitle: ''),
@@ -185,7 +214,7 @@ class _PlayOtherState extends State<PlayOther> with SingleTickerProviderStateMix
     );
   }
 
-  Widget _buildRoomGrid(List<LiveRoom> rooms, {required bool history}) {
+  Widget _buildRoomGrid(List<LiveRoom> rooms, {required bool history, required RoomHistoryTextMetrics textMetrics}) {
     if (rooms.isEmpty) {
       return AppStatusView(type: AppStatusType.empty);
     }
@@ -200,6 +229,8 @@ class _PlayOtherState extends State<PlayOther> with SingleTickerProviderStateMix
           columns: columns,
           padding: padding,
           spacing: spacing,
+          footerHeight: textMetrics.cardFooterHeight,
+          minimumCoverHeight: textMetrics.minimumCoverHeight,
         );
 
         return GridView.builder(
@@ -219,6 +250,7 @@ class _PlayOtherState extends State<PlayOther> with SingleTickerProviderStateMix
             return _RoomSwitchCard(
               room: room,
               history: history,
+              textMetrics: textMetrics,
               onTap: () {
                 Navigator.of(context).pop();
                 widget.controller.switchRoom(room);
@@ -232,36 +264,37 @@ class _PlayOtherState extends State<PlayOther> with SingleTickerProviderStateMix
 }
 
 class _CompactTab extends StatelessWidget {
-  const _CompactTab({required this.icon, required this.label});
+  const _CompactTab({required this.icon, required this.label, required this.height, required this.shrinkToFit});
 
   final IconData icon;
   final String label;
+  final double height;
+  final bool shrinkToFit;
 
   @override
   Widget build(BuildContext context) {
+    final content = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 14),
+        const SizedBox(width: 3),
+        // Flexible causes a layout error here because TabBar may provide unbounded width constraints.
+        Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.labelMedium),
+      ],
+    );
     return Tab(
-      height: 28,
-      child: FittedBox(
-        fit: BoxFit.scaleDown,
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 14),
-            const SizedBox(width: 3),
-            // Flexible causes a layout error here because TabBar may provide unbounded width constraints.
-            Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.labelMedium),
-          ],
-        ),
-      ),
+      height: height,
+      child: shrinkToFit ? FittedBox(fit: BoxFit.scaleDown, child: content) : content,
     );
   }
 }
 
 class _RoomSwitchCard extends StatelessWidget {
-  const _RoomSwitchCard({required this.room, required this.history, required this.onTap});
+  const _RoomSwitchCard({required this.room, required this.history, required this.textMetrics, required this.onTap});
 
   final LiveRoom room;
   final bool history;
+  final RoomHistoryTextMetrics textMetrics;
   final VoidCallback onTap;
 
   String _historyLabel() {
@@ -312,42 +345,61 @@ class _RoomSwitchCard extends StatelessWidget {
                 Expanded(
                   child: _RoomSwitchCover(room: room, meta: meta),
                 ),
-                SizedBox(
-                  height: 36,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(7, 3, 3, 3),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700),
-                        ),
-                        const Spacer(),
-                        Row(
-                          children: [
-                            Icon(Icons.person_outline_rounded, size: 12, color: colors.onSurfaceVariant),
-                            const SizedBox(width: 3),
-                            Expanded(
-                              child: Text(
-                                nick.isEmpty ? i18n('unknown') : nick,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: theme.textTheme.labelSmall?.copyWith(color: colors.onSurfaceVariant),
-                              ),
-                            ),
-                            Icon(Icons.chevron_right_rounded, size: 14, color: colors.onSurfaceVariant),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
+                RoomSwitchCardDetails(
+                  height: textMetrics.cardFooterHeight,
+                  title: title,
+                  nick: nick.isEmpty ? i18n('unknown') : nick,
                 ),
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class RoomSwitchCardDetails extends StatelessWidget {
+  const RoomSwitchCardDetails({super.key, required this.height, required this.title, required this.nick});
+
+  final double height;
+  final String title;
+  final String nick;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    return SizedBox(
+      height: height,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(7, 3, 3, 3),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700),
+            ),
+            const Spacer(),
+            Row(
+              children: [
+                Icon(Icons.person_outline_rounded, size: 12, color: colors.onSurfaceVariant),
+                const SizedBox(width: 3),
+                Expanded(
+                  child: Text(
+                    nick,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.labelSmall?.copyWith(color: colors.onSurfaceVariant),
+                  ),
+                ),
+                Icon(Icons.chevron_right_rounded, size: 14, color: colors.onSurfaceVariant),
+              ],
+            ),
+          ],
         ),
       ),
     );

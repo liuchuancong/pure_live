@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pure_live/modules/live_play/widgets/danmaku/danmaku_tab.dart';
+import 'package:pure_live/modules/live_play/dialogs/play_other.dart';
 import 'package:pure_live/modules/live_play/widgets/content_first_panel_layout.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller_panel.dart';
 import 'package:pure_live/modules/live_play/states/ui_state.dart';
@@ -248,6 +249,48 @@ void main() {
 
     expect(tester.getSize(find.byKey(const ValueKey('stream-choice-0'))).height, metrics.itemHeight);
     expect(find.text('Quality'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('room switch card keeps both detail rows at 3x text scale', (tester) async {
+    late RoomHistoryTextMetrics metrics;
+    await tester.pumpWidget(
+      MaterialApp(
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(3)),
+          child: child!,
+        ),
+        home: Builder(
+          builder: (context) {
+            final textTheme = Theme.of(context).textTheme;
+            metrics = resolveRoomHistoryTextMetrics(
+              textScaler: const TextScaler.linear(3),
+              titleFontSize: textTheme.labelMedium?.fontSize ?? 12,
+              titleLineHeight: textTheme.labelMedium?.height ?? 1.33,
+              detailFontSize: textTheme.labelSmall?.fontSize ?? 11,
+              detailLineHeight: textTheme.labelSmall?.height ?? 1.45,
+            );
+            return Scaffold(
+              body: Center(
+                child: SizedBox(
+                  width: 220,
+                  child: RoomSwitchCardDetails(
+                    height: metrics.cardFooterHeight,
+                    title: 'A long room title',
+                    nick: 'A long broadcaster name',
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(tester.getSize(find.byType(RoomSwitchCardDetails)).height, metrics.cardFooterHeight);
+    expect(find.text('A long room title'), findsOneWidget);
+    expect(find.text('A long broadcaster name'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
