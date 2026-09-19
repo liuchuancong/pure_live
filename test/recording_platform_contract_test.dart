@@ -7,6 +7,7 @@ void main() {
     expect(
       Sites.supportedSiteIds,
       unorderedEquals(const [
+        Sites.weiboSite,
         Sites.bilibiliSite,
         Sites.douyuSite,
         Sites.huyaSite,

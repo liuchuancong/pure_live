@@ -547,8 +547,17 @@ class PIPButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final service = GlobalPlayerService.instance;
+    if (!service.initialized) {
+      return IconButton(
+        tooltip: i18n('float_window_play'),
+        color: Colors.white,
+        onPressed: null,
+        icon: const Icon(CustomIcons.float_window),
+      );
+    }
+    final manager = service.player;
     return Obx(() {
-      final manager = GlobalPlayerService.instance.player;
       return IconButton(
         tooltip: i18n('float_window_play'),
         color: Colors.white,
