@@ -131,6 +131,13 @@ def main():
                 continue
             if not (path.parent / target.split('#')[0]).is_file():
                 errors.append(f'{path.relative_to(root)}: broken link {target}')
+    readme = (root / 'README.md').read_text(encoding='utf-8-sig')
+    status_owner = '<!-- current-status-owner: docs/ACCEPTANCE_STATUS_3_2_0.md -->'
+    if readme.count(status_owner) != 1:
+        errors.append('README.md: current acceptance status must have one authoritative-owner marker')
+    for stale_label in ('源码未发布', '定向候选，未发布'):
+        if stale_label in readme:
+            errors.append(f'README.md: mutable batch status belongs in the acceptance ledgers: {stale_label}')
     workflows = {
         p.name: yaml.load(p.read_text(encoding='utf-8-sig'), Loader=Loader)
         for p in sorted((root / '.github/workflows').glob('*.yml'))
