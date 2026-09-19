@@ -57,20 +57,29 @@ $resourceSummary = $null
 $remainingHeavyProcesses = $null
 $status = 'failed'
 $failureMessage = $null
+$failurePhase = $null
 $analyzeInvocationCount = 0
 $leaseWaitSeconds = $null
 $phaseSeconds = [ordered]@{}
+$activePhase = $null
+$phaseClock = $null
 $repositoryAuditPath = Join-Path $repoRoot "local-artifacts\repository-audits\$([DateTime]::UtcNow.ToString('yyyyMMddTHHmmssfffZ'))-$($Scope.ToLowerInvariant()).json"
 
 Push-Location $repoRoot
+$sourceCommit = (git rev-parse HEAD).Trim()
+[string[]] $sourceChanges = @(git status --porcelain=v1 --untracked-files=all)
+$sourceDirty = $sourceChanges.Count -gt 0
 try {
+    $activePhase = 'lease_wait'
     $phaseClock = [Diagnostics.Stopwatch]::StartNew()
     $lease = Enter-PureLiveHeavyTaskSlot -TaskName $taskName
     $phaseClock.Stop()
     $leaseWaitSeconds = [Math]::Round($phaseClock.Elapsed.TotalSeconds, 3)
+    $activePhase = $null
     $monitor = Start-PureLiveResourceMonitor
 
     if ($runRepositoryChecks) {
+        $activePhase = 'repository_preflight'
         $phaseClock = [Diagnostics.Stopwatch]::StartNew()
         & (Join-Path $PSScriptRoot 'validate_build_policy.ps1')
         & (Join-Path $PSScriptRoot 'test_subst_path.ps1')
@@ -87,8 +96,10 @@ try {
         Assert-PureLiveCommandSucceeded 'Device UI map validation'
         $phaseClock.Stop()
         $phaseSeconds.repository_preflight = [Math]::Round($phaseClock.Elapsed.TotalSeconds, 3)
+        $activePhase = $null
     }
 
+    $activePhase = 'dependency_resolution'
     $phaseClock = [Diagnostics.Stopwatch]::StartNew()
     if ($SkipPubGet) {
         $packageConfig = Join-Path $repoRoot '.dart_tool\package_config.json'
@@ -113,8 +124,10 @@ try {
     }
     $phaseClock.Stop()
     $phaseSeconds.dependency_resolution = [Math]::Round($phaseClock.Elapsed.TotalSeconds, 3)
+    $activePhase = $null
 
     if ($runRepositoryChecks) {
+        $activePhase = 'repository_audit'
         $phaseClock = [Diagnostics.Stopwatch]::StartNew()
         python -m unittest discover -s (Join-Path $PSScriptRoot 'tests') -p test_repository_secret_audit.py
         Assert-PureLiveCommandSucceeded 'Repository secret audit regression tests'
@@ -132,15 +145,18 @@ try {
         Assert-PureLiveCommandSucceeded 'Built-in Kotlin audit'
         $phaseClock.Stop()
         $phaseSeconds.repository_audit = [Math]::Round($phaseClock.Elapsed.TotalSeconds, 3)
+        $activePhase = $null
     }
 
     # Native Assets hooks share the persistent verified Windows cache. Android
     # media stays cold until an explicitly targeted Android build.
+    $activePhase = 'native_prefetch'
     $phaseClock = [Diagnostics.Stopwatch]::StartNew()
     & (Join-Path $PSScriptRoot 'prefetch_android_native.ps1') -SkipAndroidMedia
     Assert-PureLiveCommandSucceeded 'Native dependency prefetch'
     $phaseClock.Stop()
     $phaseSeconds.native_prefetch = [Math]::Round($phaseClock.Elapsed.TotalSeconds, 3)
+    $activePhase = $null
 
     # This file vendors JavaScript in raw Dart strings and stays outside format.
     $formatExclusions = @('lib/core/scripts/douyin_sign.dart')
@@ -171,41 +187,58 @@ try {
     # Run them first so a red behavioral check fails before paying the Analyze
     # cost. Full keeps Analyze first because it is the shorter formal gate.
     if ($Scope -eq 'Focused' -and $resolvedTests.Count -gt 0) {
+        $activePhase = 'flutter_tests'
         $phaseClock = [Diagnostics.Stopwatch]::StartNew()
         # Keep all affected files in one test process so concurrency is bounded once.
         & $flutterw test --no-pub "--concurrency=$TestConcurrency" @testAssetArgs @resolvedTests
         Assert-PureLiveCommandSucceeded 'Focused Flutter tests'
         $phaseClock.Stop()
         $phaseSeconds.flutter_tests = [Math]::Round($phaseClock.Elapsed.TotalSeconds, 3)
+        $activePhase = $null
     }
 
     # Analyze is deliberately a single end-of-edit invocation.
     if ($shouldAnalyze) {
+        $activePhase = 'flutter_analyze'
         $phaseClock = [Diagnostics.Stopwatch]::StartNew()
         $analyzeInvocationCount++
         & $flutterw analyze --no-pub --no-fatal-infos --no-fatal-warnings
         Assert-PureLiveCommandSucceeded 'Flutter Analyze'
         $phaseClock.Stop()
         $phaseSeconds.flutter_analyze = [Math]::Round($phaseClock.Elapsed.TotalSeconds, 3)
+        $activePhase = $null
     }
 
     if ($Scope -eq 'Full') {
+        $activePhase = 'flutter_tests'
         $phaseClock = [Diagnostics.Stopwatch]::StartNew()
         & $flutterw test --no-pub "--concurrency=$TestConcurrency" @testAssetArgs
         Assert-PureLiveCommandSucceeded 'Full Flutter test suite'
         $phaseClock.Stop()
         $phaseSeconds.flutter_tests = [Math]::Round($phaseClock.Elapsed.TotalSeconds, 3)
+        $activePhase = $null
     }
 
     if ($Scope -eq 'Full' -and -not $SkipInterfaces) {
+        $activePhase = 'interface_probes'
         $phaseClock = [Diagnostics.Stopwatch]::StartNew()
         python (Join-Path $PSScriptRoot 'interface_probe.py')
         Assert-PureLiveCommandSucceeded 'Public interface probes'
         $phaseClock.Stop()
         $phaseSeconds.interface_probes = [Math]::Round($phaseClock.Elapsed.TotalSeconds, 3)
+        $activePhase = $null
     }
     $status = 'succeeded'
 } catch {
+    if ($activePhase) {
+        $failurePhase = $activePhase
+        if ($phaseClock -and $phaseClock.IsRunning) {
+            $phaseClock.Stop()
+        }
+        if ($phaseClock) {
+            $phaseSeconds[$activePhase] = [Math]::Round($phaseClock.Elapsed.TotalSeconds, 3)
+        }
+    }
     $failureMessage = $_.Exception.Message
     throw
 } finally {
@@ -215,9 +248,10 @@ try {
         $remainingHeavyProcesses = Wait-PureLiveBackgroundCpuSettle
         Exit-PureLiveHeavyTaskSlot -Lease $lease
     }
-    $sourceCommit = (git rev-parse HEAD).Trim()
+    $sourceCommitEnd = (git rev-parse HEAD).Trim()
+    [string[]] $sourceChangesEnd = @(git status --porcelain=v1 --untracked-files=all)
     $record = [ordered]@{
-        schema_version = 1
+        schema_version = 2
         task = $taskName
         command = $commandDescription
         source_commit = $sourceCommit
@@ -225,12 +259,17 @@ try {
         duration_seconds = [Math]::Round($stopwatch.Elapsed.TotalSeconds, 3)
         status = $status
         failure = $failureMessage
+        failed_phase = $failurePhase
         scope = $Scope
         analyze_invocations = $analyzeInvocationCount
         test_concurrency = $TestConcurrency
         test_assets = if ($SkipTestAssets) { 'skipped' } else { 'built' }
         test_paths = if ($Scope -eq 'Full') { @('test/') } else { $resolvedTests }
         repository_checks = $runRepositoryChecks
+        source_worktree_dirty = $sourceDirty
+        source_changes = $sourceChanges
+        source_changed_during_run = $sourceCommit -ne $sourceCommitEnd -or
+            @(Compare-Object $sourceChanges $sourceChangesEnd).Count -gt 0
         lease_wait_seconds = $leaseWaitSeconds
         phase_seconds = $phaseSeconds
         cache = [ordered]@{

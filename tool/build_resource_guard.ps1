@@ -34,17 +34,27 @@ function Get-PureLiveActiveHeavyProcess {
     $before = Get-PureLiveHeavyProcessSnapshot
     Start-Sleep -Milliseconds $SampleMilliseconds
     $after = Get-PureLiveHeavyProcessSnapshot
+    $commandLines = @{}
+    if ($after.Count -gt 0) {
+        # One filtered CIM query is much cheaper than opening a CIM session for
+        # every cached Dart/Gradle process. Lease acquisition takes two quiet
+        # samples, so the previous per-process queries added several seconds to
+        # every focused test even when no competing build existed.
+        $processFilter = @($after.Keys | ForEach-Object { "ProcessId = $_" }) -join ' OR '
+        try {
+            foreach ($process in @(Get-CimInstance Win32_Process -Filter $processFilter -ErrorAction Stop)) {
+                $commandLines[[int]$process.ProcessId] = [string]$process.CommandLine
+            }
+        } catch {
+            $commandLines = @{}
+        }
+    }
     $active = @()
     foreach ($id in $after.Keys) {
         if (-not $before.ContainsKey($id)) { continue }
         $current = $after[$id]
         $cpuDelta = [Math]::Max(0.0, $current.CpuSeconds - $before[$id].CpuSeconds)
-        $commandLine = $null
-        try {
-            $commandLine = (Get-CimInstance Win32_Process -Filter "ProcessId = $id" -ErrorAction Stop).CommandLine
-        } catch {
-            $commandLine = $null
-        }
+        $commandLine = if ($commandLines.ContainsKey([int]$id)) { $commandLines[[int]$id] } else { $null }
         $isLongLivedDaemon = $commandLine -match
             '(org\.gradle\.launcher\.daemon\.bootstrap\.GradleDaemon|org\.jetbrains\.kotlin\.daemon\.KotlinCompileDaemon|analysis_server\.dart\.snapshot)'
         $isBuildClient = $commandLine -match

@@ -62,6 +62,7 @@ The 2026-09-19 audit baseline contained 498 Markdown files (about 3.64 MB). `ACC
 - Acceptance status, numbered matrix or platform-count changes: `python -m unittest discover -s tool/tests -p test_acceptance_status_alignment.py`; checks all 62 unique A/W rows, current PASS/RUN/NR totals and the registered-site count against the platform-expansion head.
 - Release text/input changes: `python -m unittest discover -s tool/tests -p test_release_workflow_data.py`; needs Bash (Git Bash on Windows, optionally selected by `BASH_EXE`). Executes only tag validation and Markdown rendering in temporary directories; no release calls.
 - `tool/local_ci.ps1 -Scope Focused -TestPath <paths> [-Analyze] [-SkipPubGet]`: affected code verification. It skips repository-wide policy/device-fixture audits by default; add `-IncludeRepositoryChecks` only when those owners changed or a diagnostic explicitly needs the combined preflight.
+- Focused/Full JSON records identify dirty input paths, source changes during the run, the failed phase and its elapsed time. Use that evidence to resume the failed stage; do not rerun an unchanged command merely to recover missing timing or source context.
 - `tool/local_ci.ps1 -Scope Full`: formal delivery quality gate.
 - `tool/build_local_release.ps1 -Target <target> -Configuration <Debug|Release>`: one selected platform. Use documented evidence-based retry flags, not ad-hoc shell builds.
 

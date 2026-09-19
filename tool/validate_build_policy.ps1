@@ -419,6 +419,9 @@ foreach ($marker in @(
     '[int] $TestConcurrency = 12',
     'Enter-PureLiveHeavyTaskSlot',
     'test_acceptance_status_alignment.py',
+    'failed_phase = $failurePhase',
+    'source_worktree_dirty = $sourceDirty',
+    'source_changed_during_run = $sourceCommit -ne $sourceCommitEnd',
     'lease_wait_seconds = $leaseWaitSeconds',
     'phase_seconds = $phaseSeconds'
 )) {
@@ -426,6 +429,11 @@ foreach ($marker in @(
 }
 if (-not $qualityScript.Contains("audit_repository.py') --output `$repositoryAuditPath")) {
     throw 'Quality gate must run the whole-repository audit.'
+}
+$resourceGuard = Get-Content -LiteralPath (Join-Path $repoRoot 'tool\build_resource_guard.ps1') -Raw
+if (-not $resourceGuard.Contains("Get-CimInstance Win32_Process -Filter `$processFilter") -or
+    [regex]::Matches($resourceGuard, 'Get-CimInstance\s+Win32_Process').Count -ne 1) {
+    throw 'Heavy-task discovery must fetch process command lines in one filtered CIM query.'
 }
 if ([regex]::Matches($qualityScript, [regex]::Escape('& $flutterw analyze')).Count -ne 1) {
     throw 'Quality script must contain exactly one Flutter Analyze invocation.'

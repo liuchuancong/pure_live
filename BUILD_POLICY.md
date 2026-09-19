@@ -124,8 +124,8 @@ daemon 让后续阶段长期误排队。
 
 每次重型任务在 `local-artifacts/build-records/` 写入 JSON 记录，至少包含：
 
-- 实际命令、源码提交、目标平台与变体；
-- 开始时间、耗时和结果；
+- 实际命令、源码提交、运行开始时的未提交路径、目标平台与变体；
+- 开始时间、总耗时、各阶段耗时、失败阶段和结果；运行中源码状态改变必须单独标记；
 - Gradle/配置缓存启用状态、日志中可观察到的命中与 `UP-TO-DATE` 数量；
 - 重型进程峰值 CPU、峰值内存与进程数；
 - 产物绝对路径或验证范围；Android 同时记录包名、`versionName`、pubspec 基础 build、ABI 偏移、Manifest 实际 `versionCode`、文件大小和 SHA-256；
