@@ -13,13 +13,24 @@ class NotLivingVideoWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       type: MaterialType.transparency,
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [_buildHeader(), _buildContent()]),
+      child: Column(children: [_buildHeader(context), _buildContent()]),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context) {
+    final titleStyle = AppTextStyles.t14.copyWith(color: Colors.white, decoration: TextDecoration.none);
+    final titlePainter = TextPainter(
+      text: TextSpan(text: 'Ag', style: titleStyle),
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+      maxLines: 1,
+    )..layout();
+    final scaledContentHeight = titlePainter.height + 8;
+    final headerHeight = scaledContentHeight > 55 ? scaledContentHeight : 55.0;
+
     return Container(
-      height: 55,
+      key: const ValueKey('offline-room-header'),
+      height: headerHeight,
       alignment: Alignment.centerLeft,
       padding: const EdgeInsets.symmetric(horizontal: 8),
       decoration: const BoxDecoration(
@@ -35,11 +46,13 @@ class NotLivingVideoWidget extends StatelessWidget {
 
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.symmetric(horizontal: 12),
               child: Text(
+                key: const ValueKey('offline-room-title'),
                 controller.room.title!,
                 overflow: TextOverflow.ellipsis,
-                style: AppTextStyles.t14.copyWith(color: Colors.white, decoration: TextDecoration.none),
+                maxLines: 1,
+                style: titleStyle,
               ),
             ),
           ),
@@ -81,17 +94,34 @@ class NotLivingVideoWidget extends StatelessWidget {
 
   Widget _buildContent() {
     return Expanded(
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(8),
-              child: Text(i18n('play_video_failed'), style: AppTextStyles.t16.copyWith(color: Colors.white)),
+      child: LayoutBuilder(
+        builder: (context, constraints) => SingleChildScrollView(
+          key: const ValueKey('offline-room-content-scroll'),
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: (constraints.maxHeight - 16).clamp(0, double.infinity).toDouble()),
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: Text(i18n('play_video_failed'), style: AppTextStyles.t16.copyWith(color: Colors.white)),
+                  ),
+                  Text(
+                    i18n('room_offline'),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                  Text(
+                    i18n('switch_other_room_hint'),
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.t14.copyWith(color: Colors.white),
+                  ),
+                ],
+              ),
             ),
-            Text(i18n('room_offline'), style: const TextStyle(color: Colors.white)),
-            Text(i18n('switch_other_room_hint'), style: AppTextStyles.t14.copyWith(color: Colors.white)),
-          ],
+          ),
         ),
       ),
     );
