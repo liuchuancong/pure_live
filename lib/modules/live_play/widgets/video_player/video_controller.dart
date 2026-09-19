@@ -537,20 +537,24 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
     if (!_usesSystemVolume || !_ownsVolume) return;
     _volumeController = _injectedVolumeController ?? VolumeController.instance;
     _volumeController.showSystemUI = false;
-    // Snapshot the preference before subscribing. The plugin's initial system
-    // snapshot is not a user's change and must not replace that preference.
-    final targetVolume = room.getSavedVolume();
     try {
       registerVolumeListener();
       final revision = _volumeRevision;
       final observed = await _volumeController.getVolume().timeout(_volumeOperationTimeout);
       if (!_ownsVolume || revision != _volumeRevision || !observed.isFinite) return;
-      if (observed > 0.001) {
-        await setVolume(targetVolume);
-      } else {
-        // Respect an already-muted device without erasing this room's preference.
-        currentVolume.value = observed.clamp(0.0, 1.0);
+      if (_settingsService.vol.globalVolumeMute.v) {
+        // Global mute is an explicit app-wide request. It remains the only
+        // preference allowed to change the shared device stream on entry.
+        await setVolume(0.0);
+        return;
       }
+      // Android/iOS media volume belongs to the device, not to an individual
+      // room. A room-level snapshot can outlive this route while the user
+      // changes media volume elsewhere; replaying it here would unexpectedly
+      // overwrite that newer device choice (most visibly when the stale value
+      // is zero). Adopt the current native level without writing it back or
+      // erasing the desktop/multiview room preference.
+      currentVolume.value = observed.clamp(0.0, 1.0).toDouble();
     } catch (error, stack) {
       // An optional volume plugin must not prevent the room from opening.
       log('Initialize system volume failed', name: 'VideoController.Volume', error: error, stackTrace: stack);

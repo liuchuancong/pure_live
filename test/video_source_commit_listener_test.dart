@@ -72,7 +72,7 @@ void main() {
     expect(volume.writes, isEmpty);
   });
 
-  test('system volume initial snapshot does not overwrite the saved room preference', () async {
+  test('system volume entry adopts the device level without overwriting the saved room preference', () async {
     SettingsService.to.vol.roomVolumes = {'room_vol_fixture_volume': 0.25};
     final volume = _SystemVolume()..readReply = Completer<double>();
     final controller = volumeController(volume);
@@ -80,8 +80,25 @@ void main() {
     if (volume.fetchInitial) volume.events.add(0.8);
     volume.readReply!.complete(0.8);
     await controller.initialization;
-    expect(volume.writes, [0.25]);
+    expect(volume.writes, isEmpty);
+    expect(controller.currentVolume.value, 0.8);
     expect(controller.room.getSavedVolume(), 0.25);
+  });
+
+  test('system volume keeps the current device level when a room was previously muted', () async {
+    SettingsService.to.vol.roomVolumes = {'room_vol_fixture_volume': 0.0};
+    final volume = _SystemVolume()..initialValue = 0.8;
+
+    final controller = volumeController(volume);
+    await controller.initialization;
+
+    expect(
+      volume.writes,
+      isEmpty,
+      reason: 'Opening a room must not restore its stale app snapshot into the shared device media stream.',
+    );
+    expect(controller.currentVolume.value, 0.8);
+    expect(controller.room.getSavedVolume(), 0.0);
   });
 
   test('system volume external event updates the visible value and saved preference', () async {
@@ -120,9 +137,10 @@ void main() {
     await next.initialization;
     gate.complete(0.8);
     await old.initialization;
-    expect(volume.writes, [0.6]);
+    expect(volume.writes, isEmpty);
     expect(manager.playCalls, 1);
     expect(manager.currentFloatRoom, next.room);
+    expect(next.currentVolume.value, 0.8);
     volume.events.add(0.7);
     expect(old.room.getSavedVolume(), 0.2);
     expect(next.currentVolume.value, 0.7);
@@ -182,7 +200,7 @@ void main() {
     volume.writes.clear();
     volume.events.add(double.nan);
     await controller.setVolume(double.infinity);
-    expect(controller.currentVolume.value, 1);
+    expect(controller.currentVolume.value, 0.8);
     expect(volume.writes, isEmpty);
     controller.dispose();
     await controller.setVolume(0.3);
