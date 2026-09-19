@@ -69,7 +69,8 @@ class _WebDavPageState extends State<WebDavPage> {
       backgroundColor: Theme.of(Get.context!).colorScheme.surface,
       body: LayoutBuilder(
         builder: (context, constraints) {
-          final minimumStateHeight = (constraints.maxHeight - kToolbarHeight - 50)
+          final breadcrumbExtent = _breadcrumbHeaderExtent(context);
+          final minimumStateHeight = (constraints.maxHeight - kToolbarHeight - breadcrumbExtent)
               .clamp(0.0, double.infinity)
               .toDouble();
           return CustomScrollView(
@@ -77,7 +78,7 @@ class _WebDavPageState extends State<WebDavPage> {
             physics: const PureLiveScrollPhysics(),
             slivers: [
               _buildAppBar(),
-              _buildNavigationBar(),
+              _buildNavigationBar(breadcrumbExtent),
               SliverToBoxAdapter(child: _buildFileActionStatus()),
               _buildBodyContent(minimumStateHeight),
             ],
@@ -274,13 +275,27 @@ class _WebDavPageState extends State<WebDavPage> {
     );
   }
 
-  Widget _buildNavigationBar() {
+  double _breadcrumbHeaderExtent(BuildContext context) {
+    final labelStyle = Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w500);
+    final painter = TextPainter(
+      text: TextSpan(text: 'Ag国🙂', style: labelStyle),
+      textScaler: MediaQuery.textScalerOf(context),
+      textDirection: Directionality.of(context),
+      maxLines: 1,
+    )..layout();
+    final scaledExtent = painter.height + 16;
+    return scaledExtent < 50 ? 50 : scaledExtent;
+  }
+
+  Widget _buildNavigationBar(double extent) {
     return SliverPersistentHeader(
       pinned: true,
       delegate: _BreadcrumbHeaderDelegate(
+        extent: extent,
         child: Container(
+          key: const ValueKey('webdav-breadcrumb-header'),
           color: Theme.of(Get.context!).colorScheme.surface,
-          height: 50,
+          height: extent,
           child: Align(
             alignment: Alignment.centerLeft,
             child: Obx(() {
@@ -717,18 +732,20 @@ class _WebDavConfigDialogState extends State<_WebDavConfigDialog> {
 
 class _BreadcrumbHeaderDelegate extends SliverPersistentHeaderDelegate {
   final Widget child;
+  final double extent;
 
-  _BreadcrumbHeaderDelegate({required this.child});
+  _BreadcrumbHeaderDelegate({required this.child, required this.extent});
 
   @override
   Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) => child;
 
   @override
-  double get maxExtent => 50;
+  double get maxExtent => extent;
 
   @override
-  double get minExtent => 50;
+  double get minExtent => extent;
 
   @override
-  bool shouldRebuild(covariant _BreadcrumbHeaderDelegate oldDelegate) => child != oldDelegate.child;
+  bool shouldRebuild(covariant _BreadcrumbHeaderDelegate oldDelegate) =>
+      child != oldDelegate.child || extent != oldDelegate.extent;
 }

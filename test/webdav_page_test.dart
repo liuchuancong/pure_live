@@ -457,6 +457,10 @@ void main() {
       matching: find.byWidgetPredicate((widget) => widget is Scrollable && widget.axisDirection == AxisDirection.right),
     );
     expect(breadcrumbScroll, findsOneWidget);
+    final headerHeight = tester.getSize(breadcrumbScroll).height;
+    final currentLabelHeight = tester.getSize(find.text(segments.last)).height;
+    expect(headerHeight, greaterThanOrEqualTo(48));
+    expect(headerHeight, greaterThanOrEqualTo(currentLabelHeight + 16));
     final position = tester.state<ScrollableState>(breadcrumbScroll).position;
     expect(position.maxScrollExtent, greaterThan(0));
     expect(position.pixels, closeTo(position.maxScrollExtent, 0.5));
