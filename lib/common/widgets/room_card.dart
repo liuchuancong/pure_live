@@ -11,6 +11,33 @@ import 'package:pure_live/modules/tags/tag_management_controller.dart';
 import 'package:pure_live/plugins/event_bus.dart';
 import 'package:pure_live/common/services/settings/room_card_settings_controller.dart';
 
+double _roomTagTextScale(BuildContext context) {
+  final style = AppTextStyles.t13;
+  final fontSize = style.fontSize ?? 13;
+  return fontSize > 0 ? MediaQuery.textScalerOf(context).scale(fontSize) / fontSize : 1;
+}
+
+double _roomTagItemExtent(BuildContext context) {
+  final textScaler = MediaQuery.textScalerOf(context);
+
+  double singleLineHeight(TextStyle style) {
+    final painter = TextPainter(
+      text: TextSpan(text: 'Ag', style: style),
+      textDirection: Directionality.of(context),
+      textScaler: textScaler,
+      maxLines: 1,
+    )..layout();
+    final height = painter.height;
+    painter.dispose();
+    return height;
+  }
+
+  return (singleLineHeight(AppTextStyles.t13) + 3 + singleLineHeight(AppTextStyles.t11) + 24).ceilToDouble().clamp(
+    68.0,
+    double.infinity,
+  );
+}
+
 class RoomCard extends StatelessWidget {
   const RoomCard({
     super.key,
@@ -341,18 +368,15 @@ class RoomCard extends StatelessWidget {
           elevation: 8,
           shadowColor: Colors.black.withValues(alpha: 0.15),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
-          titlePadding: EdgeInsets.fromLTRB(16, MediaQuery.textScalerOf(context).scale(1) >= 2 ? 8 : 24, 16, 0),
-          contentPadding: MediaQuery.textScalerOf(context).scale(1) >= 2
+          titlePadding: EdgeInsets.fromLTRB(16, _roomTagTextScale(context) >= 2 ? 8 : 24, 16, 0),
+          contentPadding: _roomTagTextScale(context) >= 2
               ? const EdgeInsets.fromLTRB(12, 8, 12, 4)
               : const EdgeInsets.fromLTRB(28, 20, 28, 12),
-          actionsPadding: MediaQuery.textScalerOf(context).scale(1) >= 2
+          actionsPadding: _roomTagTextScale(context) >= 2
               ? const EdgeInsets.fromLTRB(8, 0, 8, 8)
               : const EdgeInsets.fromLTRB(20, 0, 20, 20),
           insetPadding: isSmallScreen
-              ? EdgeInsets.symmetric(
-                  horizontal: screenWidth * 0.05,
-                  vertical: MediaQuery.textScalerOf(context).scale(1) >= 2 ? 8 : 24,
-                )
+              ? EdgeInsets.symmetric(horizontal: screenWidth * 0.05, vertical: _roomTagTextScale(context) >= 2 ? 8 : 24)
               : const EdgeInsets.symmetric(horizontal: 40.0, vertical: 24.0),
           title: Row(
             children: [
@@ -408,10 +432,9 @@ class RoomCard extends StatelessWidget {
           ),
           content: Container(
             width: isSmallScreen ? screenWidth : 440,
+            height: isSmallScreen && _roomTagTextScale(context) >= 2 ? screenHeight * 0.42 : null,
             constraints: BoxConstraints(
-              maxHeight: isSmallScreen
-                  ? screenHeight * (MediaQuery.textScalerOf(context).scale(1) >= 2 ? 0.30 : 0.54)
-                  : 390,
+              maxHeight: isSmallScreen ? screenHeight * (_roomTagTextScale(context) >= 2 ? 0.42 : 0.54) : 390,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -592,12 +615,10 @@ class RoomCard extends StatelessWidget {
                               itemCount: tagController.tags.length,
                               padding: const EdgeInsets.only(right: 10, top: 4, bottom: 4, left: 2),
                               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: isSmallScreen || MediaQuery.textScalerOf(context).scale(1) >= 1.6
-                                    ? 1
-                                    : 2,
+                                crossAxisCount: isSmallScreen || _roomTagTextScale(context) >= 1.6 ? 1 : 2,
                                 mainAxisSpacing: 10,
                                 crossAxisSpacing: 10,
-                                mainAxisExtent: MediaQuery.textScalerOf(context).scale(1) >= 2 ? 136 : 68,
+                                mainAxisExtent: _roomTagItemExtent(context),
                               ),
                               itemBuilder: (context, index) {
                                 final tag = tagController.tags[index];
@@ -714,34 +735,56 @@ class RoomCard extends StatelessWidget {
             ),
           ),
           actions: [
-            TextButton(
-              style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            SizedBox(
+              width: double.maxFinite,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextButton(
+                      style: TextButton.styleFrom(
+                        minimumSize: const Size(0, 48),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      onPressed: () => Navigator.pop(context),
+                      child: Text(
+                        i18n('cancel'),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        minimumSize: const Size(0, 48),
+                        elevation: 0,
+                        backgroundColor: theme.colorScheme.primary,
+                        foregroundColor: theme.colorScheme.onPrimary,
+                        shadowColor: Colors.transparent,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                      ),
+                      onPressed: showAddSection
+                          ? null
+                          : () async {
+                              await tagController.setRoomTags(room, tempSelectedIds);
+                              if (context.mounted) Navigator.pop(context);
+                            },
+                      child: Text(
+                        i18n('confirm'),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              onPressed: () => Navigator.pop(context),
-              child: Text(
-                i18n('cancel'),
-                style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontWeight: FontWeight.w600),
-              ),
-            ),
-            const SizedBox(width: 6),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                elevation: 0,
-                backgroundColor: theme.colorScheme.primary,
-                foregroundColor: theme.colorScheme.onPrimary,
-                shadowColor: Colors.transparent,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
-              ),
-              onPressed: showAddSection
-                  ? null
-                  : () async {
-                      await tagController.setRoomTags(room, tempSelectedIds);
-                      if (context.mounted) Navigator.pop(context);
-                    },
-              child: Text(i18n('confirm'), style: const TextStyle(fontWeight: FontWeight.bold)),
             ),
           ],
         ),

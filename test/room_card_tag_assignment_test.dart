@@ -232,6 +232,24 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('tag assignment grows continuously before the 2x text breakpoint', (tester) async {
+    final room = _room();
+    SettingsService.to.fav.addRoom(room);
+    Get.find<TagManagementController>().tags.assignAll([
+      LiveTag(id: 'scaled', name: 'Scaled tag name', description: 'Scaled tag description'),
+    ]);
+
+    final textScale = await _pumpCard(tester, english, room);
+    await _openTagAssignment(tester);
+    textScale.value = 1.9;
+    await tester.pumpAndSettle();
+
+    final tile = find.ancestor(of: find.text('Scaled tag name'), matching: find.byType(InkWell)).first;
+    expect(tester.getSize(tile).height, greaterThan(68));
+    expect(tester.getSize(tile).height, lessThan(136));
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('long-press follow action observes favorite changes made outside its own state', (tester) async {
     final room = _room();
     await _pumpFollowButton(tester, english, room);
