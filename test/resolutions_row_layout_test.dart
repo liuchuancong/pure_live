@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pure_live/common/models/live_room.dart';
 import 'package:pure_live/common/services/settings/app_settings_controller.dart';
@@ -18,6 +19,7 @@ import 'package:pure_live/modules/live_play/states/room_state.dart';
 import 'package:pure_live/modules/live_play/widgets/resolution_selector/line_selector.dart';
 import 'package:pure_live/modules/live_play/widgets/resolution_selector/resolution_selector.dart';
 import 'package:pure_live/modules/live_play/widgets/resolution_selector/resolutions_row.dart';
+import 'package:pure_live/modules/live_play/widgets/resolution_selector/audience_info.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class _Loader extends AssetLoader {
@@ -104,6 +106,16 @@ class _Settings extends SettingsService {
   void onInit() {}
 }
 
+void _expectSingleLineTextHasFullHeight(WidgetTester tester, Finder finder) {
+  final paragraph = tester.renderObject<RenderParagraph>(finder);
+  final intrinsicHeight = paragraph.getMaxIntrinsicHeight(paragraph.size.width);
+  expect(
+    paragraph.size.height + 0.01,
+    greaterThanOrEqualTo(intrinsicHeight),
+    reason: '${tester.widget<Text>(finder).data} is vertically clipped',
+  );
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -157,6 +169,12 @@ void main() {
     expect(find.text('Accessibility quality'), findsOneWidget);
     expect(find.text('Line 1'), findsOneWidget);
     expect(tester.takeException(), isNull);
+    _expectSingleLineTextHasFullHeight(
+      tester,
+      find.descendant(of: find.byType(AudienceInfo), matching: find.byType(Text)),
+    );
+    _expectSingleLineTextHasFullHeight(tester, find.text('Accessibility quality'));
+    _expectSingleLineTextHasFullHeight(tester, find.text('Line 1'));
 
     await tester.tap(find.byType(ResolutionSelector));
     await tester.pumpAndSettle();

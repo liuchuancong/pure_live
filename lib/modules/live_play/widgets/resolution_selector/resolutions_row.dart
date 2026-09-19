@@ -19,8 +19,17 @@ class ResolutionsRow extends StatelessWidget {
         return Container(height: 55);
       }
 
+      final bodyText = TextPainter(
+        text: TextSpan(text: 'Ag', style: Theme.of(context).textTheme.bodySmall),
+        textDirection: Directionality.of(context),
+        textScaler: MediaQuery.textScalerOf(context),
+        maxLines: 1,
+      )..layout();
+      final contentHeight = bodyText.height + 8;
+      final rowHeight = contentHeight > 55 ? contentHeight : 55.0;
+
       return Container(
-        height: 55,
+        height: rowHeight,
         padding: const EdgeInsets.all(4.0),
         child: Row(
           children: [
@@ -28,7 +37,7 @@ class ResolutionsRow extends StatelessWidget {
               const Expanded(
                 flex: 3,
                 child: Padding(
-                  padding: EdgeInsets.all(8),
+                  padding: EdgeInsets.symmetric(horizontal: 8),
                   child: Align(alignment: Alignment.centerLeft, child: AudienceInfo()),
                 ),
               ),
