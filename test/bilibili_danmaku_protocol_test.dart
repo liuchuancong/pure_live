@@ -138,7 +138,7 @@ void main() {
       expect(payload['roomid'], 7734200);
       expect(payload['support_ack'], isTrue);
       expect(payload['queue_uuid'], '1a2b3c4d');
-      expect(payload['scene'], '');
+      expect(payload['scene'], 'room');
 
       final generatedQueueUuid = danmaku.buildJoinPayload(
         BiliBiliDanmakuArgs(

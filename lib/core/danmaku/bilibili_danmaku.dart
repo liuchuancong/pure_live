@@ -189,7 +189,7 @@ class BiliBiliDanmaku implements LiveDanmaku {
       "buvid": args.buvid,
       "support_ack": true,
       "queue_uuid": queueUuid ?? _newQueueUuid(),
-      "scene": "",
+      "scene": "room",
       "platform": "web",
       "type": 2,
       "key": args.token,
