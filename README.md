@@ -99,74 +99,26 @@ Pure Live 聚合多个第三方直播平台，并支持自定义直播源：
 
 ## 文档
 
+<!-- stable-doc-index:start -->
 | 文档 | 内容 |
 | --- | --- |
-| [文档索引](docs/README.md) | 开发、发布、依赖和功能文档入口 |
-| [维护范围与问题处置策略](MAINTENANCE_POLICY.md) | 平台支持边界、Issue 分流、Bug 来源判定、上游 Issue 优先级与完成标准 |
-| [上游同步审查策略](UPSTREAM_REVIEW_POLICY.md) | 三方差异、语义变更台账、冲突处置与合并门禁 |
+| [文档索引](docs/README.md) | 当前入口、开发验证、产品参考与历史证据查找方式 |
+| [3.2.0 验收入口](docs/ACCEPTANCE_3_2_0.md) | 最短执行顺序、Android/Windows 批次及发布门禁 |
+| [当前状态快照](docs/ACCEPTANCE_STATUS_3_2_0.md) | 当前候选、编号统计、主要阻塞与下一批顺序 |
+| [Android / Windows 验收矩阵](docs/ACCEPTANCE_MATRIX_3_1_0.md) | 62 个编号行的唯一状态和证据所有者 |
+| [维护范围与问题处置策略](MAINTENANCE_POLICY.md) | 平台支持边界、Issue 分流、来源判定与完成标准 |
+| [上游同步审查策略](UPSTREAM_REVIEW_POLICY.md) | 三方差异、语义审查、冲突处置与合并门禁 |
 | [构建与发布](docs/BUILD_AND_RELEASE.md) | 本机质量门禁、签名、打包和 Release 流程 |
-| [Windows 数据与升级](docs/WINDOWS_DATA_AND_UPGRADE.md) | 安装目录存储、关注恢复、换盘迁移和回滚 |
-| [Windows MSIX 证书说明](docs/MSIX_INSTALL.md) | 自行构建 MSIX 时的证书指纹核对与安装步骤 |
+| [平台接口与兼容性](docs/PLATFORM_COMPATIBILITY.md) | 分区、搜索、弹幕、观看指标和能力边界 |
+| [Windows 数据与升级](docs/WINDOWS_DATA_AND_UPGRADE.md) | 安装目录存储、关注恢复、迁移和回滚 |
+| [Windows MSIX 证书说明](docs/MSIX_INSTALL.md) | 自行构建 MSIX 时的证书核对与安装步骤 |
+| [高刷新率与性能验证](docs/PERFORMANCE.md) | Android / Windows 帧、CPU、GPU 与资源采样 |
+| [WebDAV 配置](docs/WEBDAV.md) | 通用字段、坚果云示例和故障排查 |
 | [依赖与接口审计](docs/DEPENDENCY_AUDIT.md) | 固定工具链、升级约束和接口探测范围 |
-| [平台接口与兼容性](docs/PLATFORM_COMPATIBILITY.md) | 分区、搜索、弹幕和人数指标的当前能力 |
-| [高刷新率与性能验证](docs/PERFORMANCE.md) | Android 120 Hz 适配、渲染优化和真机帧统计 |
-| [v3.1.8 录制会话时间修复](docs/STAGE_UPDATE_3_1_8.md) | 自动续接与用户录制会话时间解耦、持久化兼容、Android/Windows 双平台交付 |
-| [v3.1.8 Windows 运行审计](docs/WINDOWS_RUNTIME_AUDIT_3_1_8.md) | Bilibili 播放、远端/本地弹幕、短录媒体实读、退出回落与最终大小口径修正 |
-| [v3.1.7 虎牙醒目留言事件身份修复](docs/STAGE_UPDATE_3_1_7.md) | 平台事件 ID、合法重复留言、有界去重缓存与双平台交付 |
-| [v3.1.6 虎牙醒目留言实时刷新修复](docs/STAGE_UPDATE_3_1_6.md) | 通知/WUP 时序根因、非阻塞有界补偿、双平台安装包与验证边界 |
-| [v3.1.5 Android / Windows 双平台发布](docs/STAGE_UPDATE_3_1_5.md) | 同源版本冻结、分平台串行构建、安装包、签名状态与校验说明 |
-| [v3.1.4 Android 平板关注刷新修复](docs/STAGE_UPDATE_3_1_4.md) | 横屏平板下拉刷新根因、移动平台判定、触控链路与交付证据 |
-| [v3.1.3 Android / Windows 阶段更新](docs/STAGE_UPDATE_3_1_3.md) | 多画面真全屏退出根因、安全区控件、手势隔离和双平台交付证据 |
-| [v3.1.2 Android / Windows 阶段更新](docs/STAGE_UPDATE_3_1_2.md) | Windows 真全屏根因、窗口往返、定向回归与发布证据 |
-| [v3.1.1 Android / Windows 阶段更新](docs/STAGE_UPDATE_3_1_1.md) | 多画面声音、音量、弹幕目标、持久化、根因与发布证据 |
-| [v3.1.0 Android / Windows 验收矩阵](docs/ACCEPTANCE_MATRIX_3_1_0.md) | 快速回归顺序、全功能实机账本、平台/录制/性能矩阵与发布门禁 |
-| [2026-08-31 近期 Issue 审计](docs/ISSUE_AUDIT_2026_08_31.md) | #818 后台播放实机根因、最新 Issue 归因与 v3.1.0 处理范围 |
-| [v3.1.0 直播录制参考项目审计](docs/RECORDER_REFERENCE_AUDIT_3_1_0.md) | biliup / bililive-go 固定基线、协议韧性、录制状态机和平台引入门槛 |
-| [v3.1.0 网络代理链路审计](docs/NETWORK_PROXY_AUDIT_3_1_0.md) | API、封面头像、弹幕 WebSocket、全角地址输入与代理故障边界 |
-| [v3.1.0 阶段更新](docs/STAGE_UPDATE_3_1_0.md) | Android / Windows 更新范围、根因、验证证据、安装包与回滚说明 |
-| [WebDAV 配置](docs/WEBDAV.md) | 通用配置字段、坚果云示例和故障排查 |
-| [v3.0.0 全平台稳定版](docs/STAGE_UPDATE_3_0_0.md) | 最新上游状态绑定、Android 录制恢复、依赖锁与全平台发布门禁 |
-| [v3.0.1 Android 竖屏直播适配](docs/STAGE_UPDATE_3_0_1.md) | 稳定源方向识别、普通页自适应、全屏策略、画中画比例和房间覆盖 |
-| [v3.0.2 Android 播放比例修复](docs/STAGE_UPDATE_3_0_2.md) | 普通横屏 16:9 边界、竖屏适配隔离、原生单层缩放与弹幕主题布局 |
-| [v3.0.3 Android 竖屏 Surface 修复](docs/STAGE_UPDATE_3_0_3.md) | 原生/应用层几何统一、切换时序和横屏直播记录自适应双列 |
-| [v3.0.4 Android 可信画面比例修复](docs/STAGE_UPDATE_3_0_4.md) | 移动端单一比例控制、异常元数据回退与历史记录数量/日期增强 |
-| [v3.0.5 Android 有效画面识别](docs/STAGE_UPDATE_3_0_5.md) | 黑边内嵌竖屏识别、三档互动面板、横屏沉浸背景与动态 PiP |
-| [v3.0.6 Android 竖屏几何仲裁修复](docs/STAGE_UPDATE_3_0_6.md) | 抖音流元数据识别、裁边代际隔离、延迟有效采样与渲染一致性门禁 |
-| [v3.0.7 Android 竖屏真实画布修复](docs/STAGE_UPDATE_3_0_7.md) | 截图/解码坐标隔离、原生纹理防拉伸与显式横屏全屏入口 |
-| [v3.0.8 Android 竖屏与小窗比例修复](docs/STAGE_UPDATE_3_0_8.md) | 抖音选中流几何、可逆居中裁边、动态应用小窗与 PiP 可视区域 |
-| [v3.0.11 Android 跨模式比例隔离修复](docs/STAGE_UPDATE_3_0_11.md) | 清理 3.0.10 错误草稿、共享 fit 状态隔离与全屏局部竖屏视口 |
-| [v3.0.12 录制与全平台画质审计](docs/RECORDING_AND_QUALITY_AUDIT_3_0_12.md) | 十个平台画质名称/排序/真实请求、录制重连、分片隔离、原子合并与资源边界 |
-| [v3.0.13 十个平台录制修复](docs/RECORDING_AUDIT_3_0_13.md) | 严格房间状态、播放完整元数据、Android 首次初始化、原始 FFmpeg 参数向量与可见失败诊断 |
-| [v3.0.13 Android 阶段更新](docs/STAGE_UPDATE_3_0_13.md) | 版本范围、关键修复、质量门禁与正式交付要求 |
-| [v3.0.15 播放器回归修复审计](docs/PLAYER_RECOVERY_AUDIT_3_0_15.md) | 3.0.14 回归来源、路径/首帧门控撤除、竖屏几何恢复、推测式超时下线与回滚策略 |
-| [v3.0.18 Android 真机播放与录制加固](docs/STAGE_UPDATE_3_0_18.md) | Android 硬解截图探测隔离、虎牙单连接签名刷新、跨重试录制统计与录制中心真机边界验证 |
-| [v3.0.19 Windows x64 稳定版](docs/STAGE_UPDATE_3_0_19_WINDOWS.md) | Windows 启动按需初始化、播放器资源释放、录制统计、Escape、弹幕交互与正式安装/便携包验证 |
-| [v3.0.17 播放与录制连续性更新](docs/STAGE_UPDATE_3_0_17.md) | 用户播放意图/音频焦点统一、直播暂停/EOF 恢复、分片真实大小与录制中心有界滚动 |
-| [v3.0.16 播放器与录制阶段更新](docs/STAGE_UPDATE_3_0_16.md) | 生命周期单一所有权、Android Surface/几何、录制按需清晰度/线路、斗鱼输入与录制中心稳定性 |
-| [2026-08-27 录制链路审计](docs/RECORDER_REPAIR_AUDIT_2026-08-27.md) | 十个平台录制契约、斗鱼/虎牙线路游标、FFmpeg 错误分类、持久化和回滚 |
-| [v3.0.14 播放器与录制恢复审计](docs/PLAYER_RECOVERY_AUDIT_3_0_14.md) | 已由 v3.0.15 纠正的恢复设计及 FFmpeg 故障分层历史记录 |
-| [v3.0.14 Android 阶段更新](docs/STAGE_UPDATE_3_0_14.md) | 播放器稳定性修复、目标产物与正式交付门禁 |
-| [v3.0.9 Android 竖屏原生缩放修复](docs/STAGE_UPDATE_3_0_9.md) | 抖音官方几何模型、移动端单层缩放、实测裁边与四种呈现统一 |
-| [2026-08-25 上游 Issue 审计](docs/ISSUE_AUDIT_2026_08_25.md) | #793～#798、#791 录制根因及既有问题处理状态 |
-| [v2.9.7 Android update](docs/STAGE_UPDATE_2_9_7.md) | 全平台观看指标语义、热门排行、SOOP PC/移动端总在线与 40 项接口门禁 |
-| [v2.9.6 Android update](docs/STAGE_UPDATE_2_9_6.md) | 上游同步、抖音 Feed、Bilibili 热度排行与 40 项接口门禁 |
-| [v2.9.5 Android update](docs/STAGE_UPDATE_2_9_5.md) | 全平台画质切换契约、横屏自适应面板、观看指标与接口回归 |
-| [v2.9.4 全平台稳定版](docs/STAGE_UPDATE_2_9_4.md) | 上游多画面、录制目录保护、平台签名/快手兼容与全平台交付 |
-| [v2.9.5 上游 Issue 审计](docs/ISSUE_AUDIT_2026_08_24.md) | #778、#779、#780、#782、#783、#784, #785 的复现、根因与处理结果 |
-| [v2.9.3 Android 专项更新](docs/STAGE_UPDATE_2_9_3.md) | 横屏画质/线路内容驱动布局与小视口边界保护 |
-| [v2.9.2 Android 专项更新](docs/STAGE_UPDATE_2_9_2.md) | 横屏画质/线路、四宫格直播记录与左右分栏实时弹幕预览 |
-| [v2.9.1 Android 专项更新](docs/STAGE_UPDATE_2_9_1.md) | 横屏半屏内容面板、本地弹幕个性化与渲染缓存 |
-| [v2.1.5 阶段更新](docs/STAGE_UPDATE_2_1_5.md) | 本地弹幕同步、列表阅读、模板状态和 Windows 平滑滚动 |
-| [v2.1.6 Android 播放修复](docs/STAGE_UPDATE_2_1_6.md) | 音频/视频切换灰白画面与后台音频生命周期 |
-| [v2.2.0 阶段更新](docs/STAGE_UPDATE_2_2_0.md) | 播放恢复、音频模式、弹幕设置、Windows 多开与最终验证 |
-| [v2.3.0 稳定性更新](docs/STAGE_UPDATE_2_3_0.md) | PiP 返回弹幕恢复、启动刷新、横屏输入、长时间资源边界与验收状态 |
-| [v2.7.0 阶段稳定版](docs/STAGE_UPDATE_2_7_0.md) | 最新上游整合、热门页生命周期与全平台阶段发布 |
-| [v2.6.0 阶段稳定版](docs/STAGE_UPDATE_2_6_0.md) | 上游同步、近期 Issue、字体/SC/播放器与全平台阶段发布 |
-| [v2.5.0 阶段稳定版](docs/STAGE_UPDATE_2_5_0.md) | 首页有界并发、三档刷新率、Windows 视频纹理与依赖/上游审计 |
-| [近期 Issue 审计](docs/ISSUE_AUDIT_2026_08_23.md) | #769、#770、#771、#773 与 Windows 高 DPI 问题映射 |
 | [参与贡献](CONTRIBUTING.md) | 分支、提交、测试和 Pull Request 要求 |
 | [安全策略](SECURITY.md) | 私密漏洞报告和签名材料管理 |
-| [版本说明](RELEASE_NOTES.md) | 当前版本变更与历史记录 |
+| [版本说明](RELEASE_NOTES.md) | 当前稳定版变更与历史记录 |
+<!-- stable-doc-index:end -->
 
 ## ✨ 核心功能
 

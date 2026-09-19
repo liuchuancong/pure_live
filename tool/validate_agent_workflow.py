@@ -138,6 +138,17 @@ def main():
     for stale_label in ('源码未发布', '定向候选，未发布'):
         if stale_label in readme:
             errors.append(f'README.md: mutable batch status belongs in the acceptance ledgers: {stale_label}')
+    index_start = '<!-- stable-doc-index:start -->'
+    index_end = '<!-- stable-doc-index:end -->'
+    if readme.count(index_start) != 1 or readme.count(index_end) != 1:
+        errors.append('README.md: stable document index markers must appear exactly once')
+    else:
+        index = readme.split(index_start, 1)[1].split(index_end, 1)[0]
+        if len(re.findall(r'(?m)^\| \[', index)) > 18:
+            errors.append('README.md: stable document index is becoming a historical audit catalog')
+        for target in re.findall(r'\[[^\]]*\]\(([^)]+)\)', index):
+            if not (root / target.split('#')[0]).is_file():
+                errors.append(f'README.md: broken stable document link {target}')
     workflows = {
         p.name: yaml.load(p.read_text(encoding='utf-8-sig'), Loader=Loader)
         for p in sorted((root / '.github/workflows').glob('*.yml'))
