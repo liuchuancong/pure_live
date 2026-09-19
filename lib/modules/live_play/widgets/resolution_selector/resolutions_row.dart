@@ -24,10 +24,21 @@ class ResolutionsRow extends StatelessWidget {
         padding: const EdgeInsets.all(4.0),
         child: Row(
           children: [
-            const Padding(padding: EdgeInsets.all(8), child: AudienceInfo()),
-            const Spacer(),
-            const ResolutionSelector(),
-            const LineSelector(),
+            if (controller.site != Sites.iptvSite)
+              const Expanded(
+                flex: 3,
+                child: Padding(
+                  padding: EdgeInsets.all(8),
+                  child: Align(alignment: Alignment.centerLeft, child: AudienceInfo()),
+                ),
+              ),
+            const Expanded(
+              flex: 2,
+              child: Align(alignment: Alignment.centerRight, child: ResolutionSelector()),
+            ),
+            const Expanded(
+              child: Align(alignment: Alignment.centerRight, child: LineSelector()),
+            ),
           ],
         ),
       );

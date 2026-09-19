@@ -47,9 +47,13 @@ class LineSelector extends StatelessWidget {
                 ),
                 const SizedBox(width: 5),
               ],
-              Text(
-                currentLineName,
-                style: Get.theme.textTheme.labelSmall?.copyWith(color: Get.theme.colorScheme.primary),
+              Flexible(
+                child: Text(
+                  currentLineName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Get.theme.textTheme.labelSmall?.copyWith(color: Get.theme.colorScheme.primary),
+                ),
               ),
             ],
           ),
