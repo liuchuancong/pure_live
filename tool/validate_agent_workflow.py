@@ -111,6 +111,18 @@ def check_workflows(workflows):
     return errors
 
 
+def is_legacy_model_policy_copy(path):
+    """Keep archived evidence readable while rejecting new policy copies."""
+    if path.name in {
+        'ACCEPTANCE_HISTORY_3_2_0.md',
+        'ACCEPTANCE_MATRIX_HISTORY_3_1_0.md',
+        'ACCEPTANCE_STATUS_HISTORY_3_2_0.md',
+    }:
+        return True
+    match = re.search(r'(20\d{2})_(\d{2})_(\d{2})', path.name)
+    return bool(match and tuple(map(int, match.groups())) <= (2026, 9, 19))
+
+
 def main():
     root = Path(__file__).resolve().parent.parent
     errors = []
@@ -143,12 +155,20 @@ def main():
         root / 'docs/ACCEPTANCE_MATRIX_3_1_0.md',
         root / 'docs/ISSUE_TRIAGE_LEDGER_3_2_0.md',
     ]
-    if model_policy_keyword not in model_policy_owner.read_text(encoding='utf-8-sig'):
-        errors.append('docs/AGENT_WORKFLOW.md: missing centralized Windows GUI model/cost rule')
+    model_policy_text = model_policy_owner.read_text(encoding='utf-8-sig')
+    if model_policy_text.count(model_policy_keyword) != 1:
+        errors.append('docs/AGENT_WORKFLOW.md: Windows GUI model/cost rule must have one policy keyword')
     for path in active_documents:
         if model_policy_keyword in path.read_text(encoding='utf-8-sig'):
             errors.append(
                 f'{path.relative_to(root)}: duplicate Windows GUI model/cost rule; link to docs/AGENT_WORKFLOW.md'
+            )
+    for path in sorted((root / 'docs').glob('*.md')):
+        if path == model_policy_owner or is_legacy_model_policy_copy(path):
+            continue
+        if model_policy_keyword in path.read_text(encoding='utf-8-sig'):
+            errors.append(
+                f'{path.relative_to(root)}: new Windows GUI model/cost copy; link to docs/AGENT_WORKFLOW.md'
             )
     readme = (root / 'README.md').read_text(encoding='utf-8-sig')
     status_owner = '<!-- current-status-owner: docs/ACCEPTANCE_STATUS_3_2_0.md -->'
@@ -193,6 +213,8 @@ def main():
     controls = (duplicate, missing_guard, script_input, release_text)
     if not all(check_workflows(control) for control in controls):
         errors.append('validator negative controls failed')
+    if is_legacy_model_policy_copy(Path('FUTURE_AUDIT_2026_09_20.md')):
+        errors.append('model policy ownership negative control failed')
     for error in errors:
         print(f'ERROR {error}')
     print(f'Agent/workflow static audit: {len(entries)} instruction files, {len(workflows)} workflows, {len(errors)} errors; {len(controls)} negative controls checked.')
