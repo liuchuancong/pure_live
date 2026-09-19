@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pure_live/common/models/live_message.dart';
 import 'package:pure_live/core/danmaku/bilibili_danmaku.dart';
+import 'package:pure_live/core/site/bilibili/bilibili_site.dart';
 
 void main() {
   group('Bilibili danmaku protocol', () {
@@ -118,7 +119,112 @@ void main() {
       expect(update.kind, LiveAudienceMetricKind.totalViewers);
       expect(update.value, 18342);
     });
+
+    test('current web auth declares queue acknowledgement support', () {
+      final danmaku = BiliBiliDanmaku();
+      final payload = danmaku.buildJoinPayload(
+        BiliBiliDanmakuArgs(
+          roomId: 7734200,
+          token: 'token-fixture',
+          serverUrls: const ['wss://fixture.invalid/sub'],
+          buvid: 'buvid-fixture',
+          uid: 42,
+          cookie: 'DedeUserID=42;SESSDATA=fixture',
+        ),
+        queueUuid: '1a2b3c4d',
+      );
+
+      expect(payload['uid'], 42);
+      expect(payload['roomid'], 7734200);
+      expect(payload['support_ack'], isTrue);
+      expect(payload['queue_uuid'], '1a2b3c4d');
+      expect(payload['scene'], '');
+
+      final generatedQueueUuid = danmaku.buildJoinPayload(
+        BiliBiliDanmakuArgs(
+          roomId: 7734200,
+          token: 'token-fixture',
+          serverUrls: const ['wss://fixture.invalid/sub'],
+          buvid: 'buvid-fixture',
+          uid: 0,
+          cookie: '',
+        ),
+      )['queue_uuid'];
+      expect(generatedQueueUuid, isA<String>());
+      expect(generatedQueueUuid as String, matches(RegExp(r'^[0-9a-f]{8}$')));
+    });
+
+    test('acknowledges an ack-required message without dropping its chat', () {
+      final sent = <List<int>>[];
+      final received = <LiveMessage>[];
+      final danmaku = BiliBiliDanmaku(packetSender: sent.add)..onMessage = received.add;
+      final payload = json.encode({
+        'cmd': 'DANMU_MSG:4:0:2:2:2:0',
+        'msg_id': 'fixture-message-id',
+        'p_is_ack': true,
+        'p_msg_type': 1,
+        'info': [
+          [0, 1, 25, 0x64B5F6],
+          'ack me',
+          [1000, 'viewer'],
+        ],
+      });
+
+      danmaku.decodeMessage(_packet(utf8.encode(payload), operation: 5));
+
+      expect(received.single.message, 'ack me');
+      expect(sent, hasLength(1));
+      final ack = _decodePacket(sent.single);
+      expect(ack.operation, 24);
+      expect(json.decode(utf8.decode(ack.body)), {
+        'msg_id': 'fixture-message-id',
+        'cmd': 'DANMU_MSG:4:0:2:2:2:0',
+        'p_msg_type': 1,
+      });
+    });
+
+    test('ignores incomplete acknowledgement metadata but still emits chat', () {
+      final sent = <List<int>>[];
+      final received = <LiveMessage>[];
+      final danmaku = BiliBiliDanmaku(packetSender: sent.add)..onMessage = received.add;
+      final payload = json.encode({
+        'cmd': 'DANMU_MSG:4:0:2:2:2:0',
+        'p_is_ack': true,
+        'p_msg_type': 1,
+        'info': [
+          [0, 1, 25, 0x64B5F6],
+          'still visible',
+          [1000, 'viewer'],
+        ],
+      });
+
+      danmaku.decodeMessage(_packet(utf8.encode(payload), operation: 5));
+
+      expect(received.single.message, 'still visible');
+      expect(sent, isEmpty);
+    });
+
+    test('binds logged-in websocket uid to the same Cookie identity', () {
+      expect(
+        BiliBiliSite.resolveDanmakuUid(
+          cookie: 'SESSDATA=fixture; DedeUserID=778899; bili_jct=fixture',
+          storedUserId: 42,
+        ),
+        778899,
+      );
+      expect(BiliBiliSite.resolveDanmakuUid(cookie: 'SESSDATA=fixture', storedUserId: 42), 42);
+      expect(BiliBiliSite.resolveDanmakuUid(cookie: '', storedUserId: 42), 0);
+      expect(BiliBiliSite.resolveDanmakuUid(cookie: 'SESSDATA=fixture', storedUserId: -1), 0);
+    });
   });
+}
+
+({int operation, Uint8List body}) _decodePacket(List<int> packet) {
+  final bytes = Uint8List.fromList(packet);
+  final header = ByteData.sublistView(bytes);
+  final packetLength = header.getUint32(0, Endian.big);
+  final headerLength = header.getUint16(4, Endian.big);
+  return (operation: header.getUint32(8, Endian.big), body: bytes.sublist(headerLength, packetLength));
 }
 
 Uint8List _chatPacket(String message, String userName, {String? richUserName}) {

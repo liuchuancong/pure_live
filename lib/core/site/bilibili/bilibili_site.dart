@@ -609,10 +609,11 @@ class BiliBiliSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoo
     }
     return BiliBiliDanmakuArgs(
       roomId: realRoomId,
-      // A remembered uid without its login cookie is not an authenticated
-      // identity. Sending it in a guest auth packet makes the gateway close
-      // the socket on some rooms; anonymous danmaku uses uid=0.
-      uid: cookie.trim().isEmpty ? 0 : userId,
+      // Bind the websocket uid to the same Cookie whenever DedeUserID is
+      // available. Account refresh is asynchronous, so a separately persisted
+      // uid can briefly belong to an older identity even though the Cookie has
+      // already changed. Anonymous danmaku always uses uid=0.
+      uid: resolveDanmakuUid(cookie: cookie, storedUserId: userId),
       token: data['token']?.toString() ?? '',
       serverUrls: serverUrls,
       buvid: buvid3,
@@ -643,7 +644,7 @@ class BiliBiliSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoo
         final headers = await getHeader();
         danmakuArgs = BiliBiliDanmakuArgs(
           roomId: int.tryParse(realRoomId) ?? 0,
-          uid: cookie.trim().isEmpty ? 0 : userId,
+          uid: resolveDanmakuUid(cookie: cookie, storedUserId: userId),
           token: '',
           serverUrls: const ['wss://broadcastlv.chat.bilibili.com/sub'],
           buvid: buvid3,
@@ -668,6 +669,15 @@ class BiliBiliSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoo
       }
       return LiveRoom(roomId: roomId, platform: platform).getLiveRoomWithError();
     }
+  }
+
+  @visibleForTesting
+  static int resolveDanmakuUid({required String cookie, required int storedUserId}) {
+    if (cookie.trim().isEmpty) return 0;
+    final cookieUid = RegExp(r'(?:^|;)\s*DedeUserID=(\d+)(?:;|$)', caseSensitive: false).firstMatch(cookie)?.group(1);
+    final parsedCookieUid = int.tryParse(cookieUid ?? '');
+    if (parsedCookieUid != null && parsedCookieUid > 0) return parsedCookieUid;
+    return storedUserId > 0 ? storedUserId : 0;
   }
 
   @override

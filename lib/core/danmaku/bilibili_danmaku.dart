@@ -1,9 +1,11 @@
 import 'dart:io';
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:brotli/brotli.dart';
+import 'package:flutter/foundation.dart';
 
 import '../common/binary_writer.dart';
 
@@ -46,6 +48,11 @@ class BiliBiliDanmakuArgs {
 }
 
 class BiliBiliDanmaku implements LiveDanmaku {
+  factory BiliBiliDanmaku({void Function(List<int> packet)? packetSender}) => BiliBiliDanmaku._(packetSender);
+
+  BiliBiliDanmaku._(this._packetSender);
+
+  final void Function(List<int> packet)? _packetSender;
   static const int _packetHeaderLength = 16;
   static const int _maxTransportMessageBytes = 8 * 1024 * 1024;
   static const int _maxDecompressedMessageBytes = 16 * 1024 * 1024;
@@ -170,24 +177,42 @@ class BiliBiliDanmaku implements LiveDanmaku {
   }
 
   void joinRoom(BiliBiliDanmakuArgs args) {
-    var joinData = encodeData(
-      json.encode({
-        "uid": args.uid,
-        "roomid": args.roomId,
-        "protover": 3,
-        "buvid": args.buvid,
-        "platform": "web",
-        "type": 2,
-        "key": args.token,
-      }),
-      7,
-    );
-    webScoketUtils?.sendMessage(joinData);
+    _sendPacket(encodeData(json.encode(buildJoinPayload(args)), 7));
+  }
+
+  @visibleForTesting
+  Map<String, dynamic> buildJoinPayload(BiliBiliDanmakuArgs args, {String? queueUuid}) {
+    return {
+      "uid": args.uid,
+      "roomid": args.roomId,
+      "protover": 3,
+      "buvid": args.buvid,
+      "support_ack": true,
+      "queue_uuid": queueUuid ?? _newQueueUuid(),
+      "scene": "",
+      "platform": "web",
+      "type": 2,
+      "key": args.token,
+    };
+  }
+
+  String _newQueueUuid() {
+    final random = Random.secure();
+    return List<String>.generate(8, (_) => random.nextInt(16).toRadixString(16)).join();
+  }
+
+  void _sendPacket(List<int> packet) {
+    final sender = _packetSender;
+    if (sender != null) {
+      sender(packet);
+      return;
+    }
+    webScoketUtils?.sendMessage(packet);
   }
 
   @override
   void heartbeat() {
-    webScoketUtils?.sendMessage(encodeData("", 2));
+    _sendPacket(encodeData("", 2));
   }
 
   @override
@@ -344,6 +369,7 @@ class BiliBiliDanmaku implements LiveDanmaku {
   void parseMessage(String jsonMessage) {
     try {
       var obj = json.decode(jsonMessage);
+      _acknowledgeIfRequired(obj);
       var cmd = obj["cmd"].toString();
       if (cmd.contains("DANMU_MSG")) {
         if (obj["info"] != null && obj["info"].length != 0) {
@@ -408,6 +434,16 @@ class BiliBiliDanmaku implements LiveDanmaku {
     } catch (e) {
       CoreLog.error(e);
     }
+  }
+
+  void _acknowledgeIfRequired(dynamic packet) {
+    if (packet is! Map || packet['p_is_ack'] != true) return;
+    final msgId = packet['msg_id']?.toString().trim() ?? '';
+    final cmd = packet['cmd']?.toString().trim() ?? '';
+    if (!packet.containsKey('p_msg_type')) return;
+    final msgType = int.tryParse(packet['p_msg_type']?.toString() ?? '');
+    if (msgId.isEmpty || cmd.isEmpty || msgType == null) return;
+    _sendPacket(encodeData(json.encode({'msg_id': msgId, 'cmd': cmd, 'p_msg_type': msgType}), 24));
   }
 
   String _preferredBilibiliUserName(dynamic packet, List<dynamic> metadata, String legacyName) {

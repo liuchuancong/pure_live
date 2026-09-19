@@ -34,6 +34,7 @@ void main() {
       final observation = Duration(seconds: seconds.clamp(5, 90));
       final requestedCycles = int.tryParse(io.Platform.environment['PURELIVE_DANMAKU_CYCLES'] ?? '') ?? 1;
       final cycles = requestedCycles.clamp(1, 10);
+      final requireChat = io.Platform.environment['PURELIVE_DANMAKU_REQUIRE_CHAT'] == '1';
       final platforms = (io.Platform.environment['PURELIVE_DANMAKU_PLATFORMS'] ?? 'bilibili,huya,douyin')
           .split(',')
           .map((value) => value.trim().toLowerCase())
@@ -48,6 +49,7 @@ void main() {
         'route': route,
         'observationSeconds': observation.inSeconds,
         'cycles': cycles,
+        'requireChat': requireChat,
         'platforms': platforms,
         'publicRoomIdsPersisted': true,
         'cookiesOrSignedEndpointsPersisted': false,
@@ -75,7 +77,9 @@ void main() {
             final results = <Map<String, Object?>>[];
             for (var cycle = 1; cycle <= cycles; cycle++) {
               final cycleResults = await Future.wait(
-                platforms.map((platform) => _probePlatform(platform, observation, cycle: cycle)),
+                platforms.map(
+                  (platform) => _probePlatform(platform, observation, cycle: cycle, requireChat: requireChat),
+                ),
               );
               results.addAll(cycleResults);
             }
@@ -107,7 +111,12 @@ void main() {
 
 const _supportedProbePlatforms = <String>{Sites.bilibiliSite, Sites.huyaSite, Sites.douyinSite};
 
-Future<Map<String, Object?>> _probePlatform(String platform, Duration observation, {required int cycle}) async {
+Future<Map<String, Object?>> _probePlatform(
+  String platform,
+  Duration observation, {
+  required int cycle,
+  required bool requireChat,
+}) async {
   final stopwatch = Stopwatch()..start();
   LiveDanmaku? engine;
   try {
@@ -136,7 +145,8 @@ Future<Map<String, Object?>> _probePlatform(String platform, Duration observatio
     await firstReady.future.timeout(const Duration(seconds: 20));
     await Future<void>.delayed(observation);
     final connectedAtEnd = engine.isConnected;
-    final passed = connectedAtEnd && terminalCloseCount == 0;
+    final chatRequirementMet = !requireChat || chatCount > 0;
+    final passed = connectedAtEnd && terminalCloseCount == 0 && chatRequirementMet;
     return <String, Object?>{
       'platform': platform,
       'cycle': cycle,
@@ -146,6 +156,7 @@ Future<Map<String, Object?>> _probePlatform(String platform, Duration observatio
       'reconnectCount': reconnectCount,
       'terminalCloseCount': terminalCloseCount,
       'chatCount': chatCount,
+      'chatRequirementMet': chatRequirementMet,
       'audienceCount': audienceCount,
       'connectedAtEnd': connectedAtEnd,
       'durationMs': stopwatch.elapsedMilliseconds,
