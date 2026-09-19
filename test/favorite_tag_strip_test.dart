@@ -53,4 +53,38 @@ void main() {
     expect(chip(TagManagementController.allTagKey).selected, isTrue);
     expect(chip('sleep').selected, isFalse);
   });
+
+  testWidgets('favorite tag strip keeps scaled labels and touch targets visible', (tester) async {
+    Get.testMode = true;
+    addTearDown(Get.reset);
+    await tester.binding.setSurfaceSize(const Size(320, 480));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final tags = <LiveTag>[LiveTag(id: 'sleep', name: 'Sleep and relaxation')].obs;
+    final selected = TagManagementController.allTagKey.obs;
+
+    await tester.pumpWidget(
+      GetMaterialApp(
+        home: MediaQuery(
+          data: const MediaQueryData(size: Size(320, 480), textScaler: TextScaler.linear(3)),
+          child: Scaffold(
+            body: FavoriteTagStrip(
+              tags: tags,
+              selectedTagId: selected,
+              allLabel: 'All favorites',
+              labelStyle: const TextStyle(fontSize: 12),
+              onSelected: (tagId) => selected.value = tagId,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    final stripHeight = tester.getSize(find.byKey(const ValueKey('favorite_tag_strip'))).height;
+    final labelHeight = tester.getSize(find.text('All favorites')).height;
+    expect(stripHeight, greaterThanOrEqualTo(48));
+    expect(labelHeight, greaterThanOrEqualTo(40));
+    expect(stripHeight, greaterThanOrEqualTo(labelHeight + 20));
+  });
 }

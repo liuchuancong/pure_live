@@ -205,9 +205,27 @@ class FavoriteTagStrip extends StatelessWidget {
       final visibleTags = tags.toList(growable: false);
       final activeTagId = selectedTagId.value;
       if (visibleTags.isEmpty) return const SizedBox.shrink();
+      final effectiveLabelStyle = DefaultTextStyle.of(context).style.merge(labelStyle ?? AppTextStyles.t12);
+      final textScaler = MediaQuery.textScalerOf(context);
+      final textDirection = Directionality.of(context);
+      var tallestLabel = 0.0;
+      for (final label in <String>[allLabel, ...visibleTags.map((tag) => tag.name)]) {
+        final painter = TextPainter(
+          text: TextSpan(text: label, style: effectiveLabelStyle),
+          textScaler: textScaler,
+          textDirection: textDirection,
+          maxLines: 1,
+        )..layout();
+        if (painter.height > tallestLabel) tallestLabel = painter.height;
+      }
+      // ChoiceChip owns a 48 px touch target. The list padding adds another
+      // 12 px, while scaled label text may require more than the default chip
+      // height. Derive the rail height instead of clipping either contract.
+      final scaledStripHeight = tallestLabel + 28;
+      final stripHeight = scaledStripHeight < 60 ? 60.0 : scaledStripHeight;
       return SizedBox(
         key: const ValueKey('favorite_tag_strip'),
-        height: 44,
+        height: stripHeight,
         width: double.infinity,
         child: ListView.builder(
           scrollDirection: Axis.horizontal,
@@ -227,7 +245,8 @@ class FavoriteTagStrip extends StatelessWidget {
                 showCheckmark: false,
                 label: Text(
                   tag?.name ?? allLabel,
-                  style: (labelStyle ?? AppTextStyles.t12).copyWith(
+                  maxLines: 1,
+                  style: effectiveLabelStyle.copyWith(
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                     color: isSelected ? theme.colorScheme.onPrimary : theme.colorScheme.onSurfaceVariant,
                   ),
