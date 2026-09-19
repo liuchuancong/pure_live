@@ -139,6 +139,7 @@ void main() {
     expect(find.byKey(const ValueKey('local-danmaku-style-dialog')), findsOneWidget);
     expect(find.byKey(const ValueKey('local-danmaku-live-preview-pane')), findsOneWidget);
     expect(find.byKey(const ValueKey('local-danmaku-style-controls')), findsOneWidget);
+    expect(tester.getSize(find.byKey(const ValueKey('local-danmaku-style-header'))).height, greaterThan(38));
     expect(tester.takeException(), isNull);
   });
 }

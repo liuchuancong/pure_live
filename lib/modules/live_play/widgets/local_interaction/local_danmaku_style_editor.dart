@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/modules/live_play/widgets/content_first_panel_layout.dart';
 import 'package:pure_live/modules/live_play/widgets/local_interaction/local_interaction_controller.dart';
@@ -56,10 +58,16 @@ class _StyleSurface extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final headerHeight = panelCompact ? 38.0 : 46.0;
+    final theme = Theme.of(context);
+    final titleStyle = panelCompact ? theme.textTheme.titleSmall : theme.textTheme.titleMedium;
+    final titleLineExtent =
+        MediaQuery.textScalerOf(context).scale(titleStyle?.fontSize ?? (panelCompact ? 14 : 16)) *
+        (titleStyle?.height ?? 1.25);
+    final headerHeight = math.max(panelCompact ? 38.0 : 46.0, titleLineExtent + 8);
     return Column(
       children: [
         SizedBox(
+          key: const ValueKey('local-danmaku-style-header'),
           height: headerHeight,
           child: Padding(
             padding: EdgeInsets.only(left: panelCompact ? 10 : 14, right: 2),
@@ -74,9 +82,9 @@ class _StyleSurface extends StatelessWidget {
                 Expanded(
                   child: Text(
                     i18n('local_danmaku_style'),
-                    style: panelCompact
-                        ? Theme.of(context).textTheme.titleSmall
-                        : Theme.of(context).textTheme.titleMedium,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: titleStyle,
                   ),
                 ),
                 IconButton(
