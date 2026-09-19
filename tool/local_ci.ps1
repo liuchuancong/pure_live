@@ -164,6 +164,21 @@ try {
         Assert-PureLiveCommandSucceeded 'Changed Dart file format check'
     }
 
+    [string[]] $testAssetArgs = @()
+    if ($SkipTestAssets) { $testAssetArgs = @('--no-test-assets') }
+
+    # Focused tests are normally much shorter than a repository-wide Analyze.
+    # Run them first so a red behavioral check fails before paying the Analyze
+    # cost. Full keeps Analyze first because it is the shorter formal gate.
+    if ($Scope -eq 'Focused' -and $resolvedTests.Count -gt 0) {
+        $phaseClock = [Diagnostics.Stopwatch]::StartNew()
+        # Keep all affected files in one test process so concurrency is bounded once.
+        & $flutterw test --no-pub "--concurrency=$TestConcurrency" @testAssetArgs @resolvedTests
+        Assert-PureLiveCommandSucceeded 'Focused Flutter tests'
+        $phaseClock.Stop()
+        $phaseSeconds.flutter_tests = [Math]::Round($phaseClock.Elapsed.TotalSeconds, 3)
+    }
+
     # Analyze is deliberately a single end-of-edit invocation.
     if ($shouldAnalyze) {
         $phaseClock = [Diagnostics.Stopwatch]::StartNew()
@@ -174,19 +189,13 @@ try {
         $phaseSeconds.flutter_analyze = [Math]::Round($phaseClock.Elapsed.TotalSeconds, 3)
     }
 
-    [string[]] $testAssetArgs = @()
-    if ($SkipTestAssets) { $testAssetArgs = @('--no-test-assets') }
-    $phaseClock = [Diagnostics.Stopwatch]::StartNew()
     if ($Scope -eq 'Full') {
+        $phaseClock = [Diagnostics.Stopwatch]::StartNew()
         & $flutterw test --no-pub "--concurrency=$TestConcurrency" @testAssetArgs
         Assert-PureLiveCommandSucceeded 'Full Flutter test suite'
-    } elseif ($resolvedTests.Count -gt 0) {
-        # Keep all affected files in one test process so concurrency is bounded once.
-        & $flutterw test --no-pub "--concurrency=$TestConcurrency" @testAssetArgs @resolvedTests
-        Assert-PureLiveCommandSucceeded 'Focused Flutter tests'
+        $phaseClock.Stop()
+        $phaseSeconds.flutter_tests = [Math]::Round($phaseClock.Elapsed.TotalSeconds, 3)
     }
-    $phaseClock.Stop()
-    $phaseSeconds.flutter_tests = [Math]::Round($phaseClock.Elapsed.TotalSeconds, 3)
 
     if ($Scope -eq 'Full' -and -not $SkipInterfaces) {
         $phaseClock = [Diagnostics.Stopwatch]::StartNew()

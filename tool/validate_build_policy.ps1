@@ -430,6 +430,13 @@ if (-not $qualityScript.Contains("audit_repository.py') --output `$repositoryAud
 if ([regex]::Matches($qualityScript, [regex]::Escape('& $flutterw analyze')).Count -ne 1) {
     throw 'Quality script must contain exactly one Flutter Analyze invocation.'
 }
+$focusedTestIndex = $qualityScript.IndexOf("Assert-PureLiveCommandSucceeded 'Focused Flutter tests'")
+$analyzeIndex = $qualityScript.IndexOf("Assert-PureLiveCommandSucceeded 'Flutter Analyze'")
+$fullTestIndex = $qualityScript.IndexOf("Assert-PureLiveCommandSucceeded 'Full Flutter test suite'")
+if ($focusedTestIndex -lt 0 -or $analyzeIndex -lt 0 -or $fullTestIndex -lt 0 -or
+    -not ($focusedTestIndex -lt $analyzeIndex -and $analyzeIndex -lt $fullTestIndex)) {
+    throw 'Quality script must fail fast with Focused tests before Analyze while keeping Full tests after Analyze.'
+}
 
 $featureWorkflow = Get-Content -LiteralPath (Join-Path $repoRoot '.github\workflows\feature-build.yml') -Raw
 if ([regex]::Matches($featureWorkflow, '(?m)^\s+default:\s+true\s*$').Count -ne 0) {
