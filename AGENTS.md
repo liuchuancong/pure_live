@@ -19,6 +19,7 @@
 ## Maintenance scope and triage
 
 - For bugs and upstream work, use [MAINTENANCE_POLICY.md](MAINTENANCE_POLICY.md). Find the first invalid state and classify provenance; use `not-reproduced` when evidence is insufficient. Broaden review to callers, adjacent modes and resource ownership, not unrelated files by default.
+- Use the rapid Issue lane in [docs/AGENT_WORKFLOW.md](docs/AGENT_WORKFLOW.md): compare the reported tag with `HEAD` and search existing tests/evidence before opening a new investigation. Batch compact triage results in the central ledger. An unchanged `already-fixed` case does not get another bespoke audit, full analysis run, build or device session.
 - Read [UPSTREAM_REVIEW_POLICY.md](UPSTREAM_REVIEW_POLICY.md) only for upstream comparison/integration. Every incoming commit/file needs review before an authorized merge. A local fix does not imply an upstream merge.
 - Android and Windows are maintained first. New feature requests in fork Issues route upstream; explicit user-requested development retains its requested scope.
 - Preserve playback/session ownership, user pause/exit intent, source-generation fences, bounded caches and existing settings migration. Avoid replacing diagnosis with repeated delays, refreshes or retries.

@@ -1,5 +1,7 @@
 # 3.2.0 完整验收入口
 
+> 文档职责：本文件保留 3.2.0 验收顺序、门禁和既有历史证据；2026-09-19 起不再追加与其他验收文档重复的逐 Issue 时间线。新 Issue 分流进入[中央台账](ISSUE_TRIAGE_LEDGER_3_2_0.md)，62 组状态只在[验收矩阵](ACCEPTANCE_MATRIX_3_1_0.md)变化，当前总览只在[状态快照](ACCEPTANCE_STATUS_3_2_0.md)的总数或主要阻塞变化时更新。
+
 - **09-19 Issue #872 的 Bilibili 登录弹幕队列已对齐当前协议**：[专项审计](ISSUE_872_BILIBILI_LOGGED_IN_DANMAKU_AUDIT_2026_09_19.md)。3.1.4 到修订前认证包仍缺少 `support_ack`、queue UUID 与 room 场景，也未处理 `p_is_ack` 消息。`52db99fb` / `9b4eb33b` 增加当前认证字段、operation 24 ACK 和同 Cookie `DedeUserID` 身份绑定；有效红灯 **7 PASS / 3 FAIL**，七文件 **57/57 PASS**，最终协议 **11/11 PASS**、analyze 无问题。最终 DIRECT 严格探针在 45 秒内实际解析 1 条聊天且无重连/最终关闭；它仍是游客会话，报告者登录态 Windows 复验继续。未构建候选、启动 GUI 或操作设备；A4-01 保持 RUN，宏观保持 **20 PASS / 42 RUN / 0 NR**、仍有 42 组未闭环；Astra Light 0 次。
 
 - **09-19 Issue #871 / #845 的斗鱼聊天误过滤已改为完整性优先**：[专项审计](ISSUE_871_DOUYU_CHAT_COMPLETENESS_AUDIT_2026_09_19.md)。3.1.4 会硬丢同时缺少 `dms` 与 `if=1` 的非空 `chatmsg`；此前虽增加可见开关，缺失偏好键仍默认启用启发式过滤。`31ee5cd7` 改为新安装、3.1.4 升级和缺字段备份默认交付完整房间聊天，显式开启/关闭选择继续保留，UI 明示误过滤风险且开关无需重连。有效红灯 **16 PASS / 2 FAIL**，直接 **19/19 PASS**，最终五文件 **53/53 PASS**、analyze 无问题。71415 审查时离线，本批未启动 GUI、构建候选或操作设备；A4-01 保持 RUN，宏观保持 **20 PASS / 42 RUN / 0 NR**、仍有 42 组未闭环；Astra Light 0 次。

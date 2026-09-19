@@ -4,6 +4,7 @@
 
 ## 开发与发布
 
+- [3.2.0 Issue 分流中央台账](ISSUE_TRIAGE_LEDGER_3_2_0.md)：紧凑记录报告版本、当前映射、现有证据和重启调查条件，避免已修复 Issue 重复建档与重复验证。
 - [Issue #872 Bilibili 登录后无弹幕审计](ISSUE_872_BILIBILI_LOGGED_IN_DANMAKU_AUDIT_2026_09_19.md)：3.1.4 协议漂移核对、队列认证与 operation 24 ACK、同 Cookie uid 绑定、有效红灯、57 项相邻回归、严格公开实连及登录态 Windows 复验边界。
 - [Issue #871 / #845 斗鱼弹幕完整性审计](ISSUE_871_DOUYU_CHAT_COMPLETENESS_AUDIT_2026_09_19.md)：`dms` / `if` 启发式误过滤的确定性复现、3.1.4 缺字段迁移、完整聊天默认合同、显式过滤偏好保留、53 项回归及实时网页对照边界。
 - [Issue #869 Android 进房覆盖系统音量审计](ISSUE_869_ANDROID_ROOM_VOLUME_RESTORE_AUDIT_2026_09_19.md)：共享设备媒体音量与单房间快照的所有权、3.1.2/3.1.4 历史核对、全局静音例外、确定性红灯、253 项回归及 K90 原生复验边界。

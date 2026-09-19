@@ -19,6 +19,40 @@ Run analyze once after Dart edits settle. Reuse successful checks only when thei
 
 For code-only changes that still require native acceptance later, preserve the exact pending scenario and build SHA. Device presence is not a prerequisite for code diagnosis. Logs and historical audit reports are evidence, not current instructions.
 
+### Rapid Issue and bug lane
+
+Use this lane before a bespoke investigation. Its purpose is to reach the first decision with one read of each input and to stop work that cannot change the current product.
+
+1. Freeze `HEAD`; read the Issue body/comments once and map its reported version to a local tag.
+2. Search the affected paths, `tag..HEAD` commits, exact test names and existing reports. Retrieve matching sections by path; do not load the full documentation chronology.
+3. Record the decision in [ISSUE_TRIAGE_LEDGER_3_2_0.md](ISSUE_TRIAGE_LEDGER_3_2_0.md):
+   - `already-fixed`: cite the current commit/test. Stop unless the current inputs differ or the cited contract has changed.
+   - `present`: add the smallest deterministic red test, fix the first invalid state, run the affected group, then analyze once after Dart edits settle.
+   - `not-reproduced`: state the missing discriminator and the exact event that reopens investigation; do not loop on equivalent probes.
+   - other maintenance classifications follow `MAINTENANCE_POLICY.md`.
+4. Batch independent read-only Issue decisions into one ledger commit. Keep code fixes independently reversible, but run shared affected tests once after the batch settles.
+
+An unchanged `already-fixed` decision does not create another issue-specific report, add a duplicate acceptance timeline paragraph, run full analysis, build a client, browse screenshots again or start a device session. A detailed audit remains appropriate for a current code change, a complex ownership/data migration decision, a release artifact, or evidence that future maintainers need beyond the ledger row.
+
+### Documentation ownership
+
+Update only the owner of the information; avoid copying the same batch narrative across large files.
+
+| Information | Authoritative owner | Update rule |
+| --- | --- | --- |
+| Public features, install/use guidance | root `README.md` | Only user-visible behavior or delivery changes |
+| Documentation navigation | `docs/README.md` | Stable topic/ledger links, not every individual audit |
+| Issue classification and reopen trigger | `ISSUE_TRIAGE_LEDGER_3_2_0.md` | Every completed Issue triage; compact rows |
+| 62 Android/Windows acceptance states | `ACCEPTANCE_MATRIX_3_1_0.md` | Only when row evidence or state changes |
+| Current totals and major release blockers | `ACCEPTANCE_STATUS_3_2_0.md` | Snapshot changes, not routine per-Issue prose |
+| 3.2.0 execution order and gates | `ACCEPTANCE_3_2_0.md` | Procedure changes; its historical timeline is frozen |
+| Full client case catalog | `FULL_CLIENT_TEST_PLAN_2026_08_28.md` | New/changed user-observable cases only |
+| Root cause/design/release evidence | focused audit/stage document | Only when the compact ledger is insufficient |
+
+This ownership map supersedes the older habit of inserting the same result into the root README, both acceptance narratives, the matrix and the docs index. Existing historical entries remain evidence and need not be rewritten.
+
+The 2026-09-19 audit baseline contained 498 Markdown files (about 3.64 MB). `ACCEPTANCE_3_2_0.md` and `ACCEPTANCE_STATUS_3_2_0.md` alone held about 473 KB and repeated the same recent batch summaries. The ownership table and frozen timelines address that measured duplication without deleting historical evidence.
+
 ## Local entrypoints
 
 - `tool/validate_build_policy.ps1`: static repository policy checks, no Flutter/Gradle/ADB.
