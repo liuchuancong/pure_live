@@ -122,7 +122,7 @@
     "pip_danmaku_reset_confirm": "小窗弹幕开关、显示规则、颜色、字号和字重、速度、透明度、密度和帧率将全部恢复为默认值。",
     "platform_danmaku_filter": "平台弹幕过滤",
     "douyu_suspected_automated_filter": "过滤斗鱼疑似自动弹幕",
-    "douyu_suspected_automated_filter_desc": "关闭后显示平台收到的全部聊天，可能包含自动生成或活动弹幕",
+    "douyu_suspected_automated_filter_desc": "开启后按启发式标记隐藏疑似自动或活动弹幕，也可能隐藏普通聊天",
     "danmaku_similarity_filter": "相似弹幕过滤",
     "danmaku_similarity_filter_desc": "自动过滤短时间内高度相似的弹幕",
     "danmaku_similarity_filter_enable": "启用相似弹幕过滤",

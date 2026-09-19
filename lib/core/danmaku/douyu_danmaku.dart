@@ -13,7 +13,7 @@ import 'package:pure_live/core/interface/live_danmaku.dart';
 
 class DouyuDanmaku implements LiveDanmaku {
   DouyuDanmaku({bool Function()? filterSuspectedAutomatedMessages})
-    : _filterSuspectedAutomatedMessages = filterSuspectedAutomatedMessages ?? (() => true);
+    : _filterSuspectedAutomatedMessages = filterSuspectedAutomatedMessages ?? (() => false);
 
   final bool Function() _filterSuspectedAutomatedMessages;
 

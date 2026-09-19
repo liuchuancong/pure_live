@@ -64,6 +64,7 @@ void main() {
     settings = Get.put<SettingsService>(_Settings()) as _Settings;
     settings.fav.shieldList.clear();
     settings.fav.blockedDanmakuUsers.clear();
+    settings.danmaku.filterDouyuSuspectedAutomatedMessages.value = false;
     settings.danmaku.enableDanmakuSimilarityFilter.value = false;
     Get.put(DanmuShieldController());
   });
@@ -176,6 +177,23 @@ void main() {
     } finally {
       semantics.dispose();
     }
+  });
+
+  _case('Douyu heuristic filter is visibly opt-in and applies immediately', (tester) async {
+    await open(tester, modern: true, width: 320, scale: 2);
+    final label = find.text(labels['douyu_suspected_automated_filter'] as String);
+    final description = find.text(labels['douyu_suspected_automated_filter_desc'] as String);
+    await visible(tester, label);
+    expect(description, findsOneWidget);
+
+    final row = find.ancestor(of: label, matching: find.byType(SwitchListTile));
+    expect(tester.widget<SwitchListTile>(row).value, isFalse);
+    await tester.tap(label);
+    await tester.pumpAndSettle();
+
+    expect(settings.danmaku.filterDouyuSuspectedAutomatedMessages.value, isTrue);
+    expect(tester.widget<SwitchListTile>(row).value, isTrue);
+    expect(tester.takeException(), isNull);
   });
 
   _case('legacy keyword chip names the exact remove target', (tester) async {

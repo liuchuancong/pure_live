@@ -29,7 +29,10 @@ class DanmakuSettingsController extends GetxController {
   static const bool defaultPipDanmakuAutoFps = true;
   static const bool defaultNoEmojiMode = false;
   static const bool defaultPipDanmakuNoEmojiMode = false;
-  static const bool defaultFilterDouyuSuspectedAutomatedMessages = true;
+  // Completeness is the safe default: `dms` and `if` are optional decoration
+  // markers rather than a protocol-level visibility contract. Users can still
+  // opt into the heuristic when they prefer a quieter room feed.
+  static const bool defaultFilterDouyuSuspectedAutomatedMessages = false;
   // Preserve the complete platform feed unless the user explicitly chooses
   // fuzzy suppression. Enabling this by default can hide a large share of
   // short messages in busy rooms even though the transport received them.
@@ -90,10 +93,9 @@ class DanmakuSettingsController extends GetxController {
   final RxInt pipDanmakuFps = hiveInt('pipDanmakuFps', defaultPipDanmakuFps);
   final RxBool pipDanmakuAutoFps = hiveBool('pipDanmakuAutoFps', defaultPipDanmakuAutoFps);
 
-  // Douyu sometimes emits room-local chat packets without either of the
-  // decoration/fan markers used by its web client. Keep the conservative
-  // behavior by default, while allowing users who prefer the complete raw
-  // room feed to opt in explicitly.
+  // Douyu sometimes emits legitimate room-local chat packets without either
+  // decoration/fan marker. Preserve them unless the user explicitly enables
+  // the heuristic filter.
   final RxBool filterDouyuSuspectedAutomatedMessages = hiveBool(
     'filterDouyuSuspectedAutomatedMessages',
     defaultFilterDouyuSuspectedAutomatedMessages,

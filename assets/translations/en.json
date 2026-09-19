@@ -120,7 +120,7 @@
     "pip_danmaku_reset_confirm": "The PiP danmaku switch, display rules, color, font size and weight, speed, opacity, density, and frame rate will all be restored to defaults.",
     "platform_danmaku_filter": "Platform Danmaku Filters",
     "douyu_suspected_automated_filter": "Filter Suspected Automated Douyu Chat",
-    "douyu_suspected_automated_filter_desc": "Turn off to show the complete platform feed, including possible automated or event messages",
+    "douyu_suspected_automated_filter_desc": "Turn on to hide suspected automated or event chat heuristically; ordinary chat may also be hidden",
     "danmaku_similarity_filter": "Similar Danmaku Filter",
     "danmaku_similarity_filter_desc": "Automatically filters highly similar danmaku messages within a short period",
     "danmaku_similarity_filter_enable": "Enable Similar Danmaku Filter",
