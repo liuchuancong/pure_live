@@ -21,7 +21,7 @@
 | [850](https://github.com/liuchuancong/pure_live/issues/850) | 共用颜色选择器已有RGB/ARGB输入、确认/取消合同；不是再次引入旧选择器，见 [09-05审计](ISSUE_AUDIT_2026_09_05.md) |
 | [848](https://github.com/liuchuancong/pure_live/issues/848) | 系统字体回退已有修订和theme_font_resolution_test；报告仅一句描述，不扩大为所有字体场景已修复 |
 | [846](https://github.com/liuchuancong/pure_live/issues/846) | 刷新错误与下播分离、旧卡片保留已有修订；原旧数据组合仍有边界，见 [09-04审计](ISSUE_AUDIT_2026_09_04.md) |
-| [845](https://github.com/liuchuancong/pure_live/issues/845) | 协议、疑似自动消息开关和相似过滤偏好已分离；指定71415当前版本对照仍待原生补证，见 [09-05审计](ISSUE_AUDIT_2026_09_05.md) |
+| [845](https://github.com/liuchuancong/pure_live/issues/845) | 协议、疑似自动消息开关和相似过滤偏好已分离；09-19 重复报告 #871 后，启发式过滤改为明确选择、完整聊天改为默认。指定 71415 当前版本对照仍待在线补证，见 [#871 订正审计](ISSUE_871_DOUYU_CHAT_COMPLETENESS_AUDIT_2026_09_19.md) |
 | [836](https://github.com/liuchuancong/pure_live/issues/836) | 抖音端点/签名/访客参数和静默恢复已有修订，原报告房间缺少稳定ID，保留not-reproduced边界 |
 | [819](https://github.com/liuchuancong/pure_live/issues/819) | 小红书平台尚未接入；与参考项目差距合并到独立平台扩展表，不记作已有播放故障 |
 | [792](https://github.com/liuchuancong/pure_live/issues/792) | 虎牙下播历史弹幕请求尚未完成；先确认历史接口及与实时消息的去重/显示语义，不以缓存本地消息代替平台历史 |

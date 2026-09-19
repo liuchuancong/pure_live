@@ -4,6 +4,7 @@
 
 ## 开发与发布
 
+- [Issue #871 / #845 斗鱼弹幕完整性审计](ISSUE_871_DOUYU_CHAT_COMPLETENESS_AUDIT_2026_09_19.md)：`dms` / `if` 启发式误过滤的确定性复现、3.1.4 缺字段迁移、完整聊天默认合同、显式过滤偏好保留、53 项回归及实时网页对照边界。
 - [Issue #869 Android 进房覆盖系统音量审计](ISSUE_869_ANDROID_ROOM_VOLUME_RESTORE_AUDIT_2026_09_19.md)：共享设备媒体音量与单房间快照的所有权、3.1.2/3.1.4 历史核对、全局静音例外、确定性红灯、253 项回归及 K90 原生复验边界。
 - [Issue #867 房间卡片简洁布局回归审计](ISSUE_867_ROOM_CARD_COMPACT_LAYOUT_AUDIT_2026_09_19.md)：3.1.4 可见字段型简洁预设的稳定复现、3.1.2 无封面行历史合同、共享布局几何、旧快照迁移、82 项回归及 Windows 原生复验边界。
 - [Issue #852 ColorOS 14 系统手势返回审计](ISSUE_852_COLOROS_SYSTEM_BACK_AUDIT_2026_09_16.md)：Flutter 共享元素预测返回的输入持有风险、普通路由 FadeForwards 回退策略、commit/cancel 与目的页再交互回归，以及 ColorOS 14 原生复验边界。
