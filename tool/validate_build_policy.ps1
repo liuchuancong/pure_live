@@ -412,7 +412,16 @@ foreach ($marker in @(
 }
 
 $qualityScript = Get-Content -LiteralPath (Join-Path $repoRoot 'tool\local_ci.ps1') -Raw
-foreach ($marker in @("[ValidateSet('Focused', 'Full')]", '[int] $TestConcurrency = 12', 'Enter-PureLiveHeavyTaskSlot', 'test_acceptance_status_alignment.py')) {
+foreach ($marker in @(
+    "[ValidateSet('Focused', 'Full')]",
+    '[switch] $IncludeRepositoryChecks',
+    '$runRepositoryChecks = $Scope -eq ''Full'' -or $IncludeRepositoryChecks.IsPresent',
+    '[int] $TestConcurrency = 12',
+    'Enter-PureLiveHeavyTaskSlot',
+    'test_acceptance_status_alignment.py',
+    'lease_wait_seconds = $leaseWaitSeconds',
+    'phase_seconds = $phaseSeconds'
+)) {
     if (-not $qualityScript.Contains($marker)) { throw "Quality script policy marker is missing: $marker" }
 }
 if (-not $qualityScript.Contains("audit_repository.py') --output `$repositoryAuditPath")) {

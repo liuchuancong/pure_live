@@ -8,6 +8,7 @@ param(
     [switch] $SkipPubGet,
     [switch] $SkipInterfaces,
     [switch] $SkipTestAssets,
+    [switch] $IncludeRepositoryChecks,
     [ValidateRange(1, 20)]
     [int] $TestConcurrency = 12
 )
@@ -18,6 +19,7 @@ $flutterw = Join-Path $PSScriptRoot 'flutterw.ps1'
 . (Join-Path $PSScriptRoot 'build_resource_guard.ps1')
 
 $shouldAnalyze = $Analyze.IsPresent -or $Scope -eq 'Full'
+$runRepositoryChecks = $Scope -eq 'Full' -or $IncludeRepositoryChecks.IsPresent
 $resolvedTests = @($TestPath | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -Unique)
 if ($Scope -eq 'Focused' -and $resolvedTests.Count -eq 0 -and -not $shouldAnalyze) {
     throw 'Focused validation requires -TestPath and/or -Analyze.'
@@ -44,7 +46,8 @@ $commandDescription = if ($Scope -eq 'Full') {
         $(if ($shouldAnalyze) { ' -Analyze' } else { '' }) +
         $(if ($OfflinePub) { ' -OfflinePub' } else { '' }) +
         $(if ($SkipPubGet) { ' -SkipPubGet' } else { '' }) +
-        $(if ($SkipTestAssets) { ' -SkipTestAssets' } else { '' })
+        $(if ($SkipTestAssets) { ' -SkipTestAssets' } else { '' }) +
+        $(if ($IncludeRepositoryChecks) { ' -IncludeRepositoryChecks' } else { '' })
 }
 $startedAt = [DateTime]::UtcNow
 $stopwatch = [Diagnostics.Stopwatch]::StartNew()
@@ -55,27 +58,38 @@ $remainingHeavyProcesses = $null
 $status = 'failed'
 $failureMessage = $null
 $analyzeInvocationCount = 0
+$leaseWaitSeconds = $null
+$phaseSeconds = [ordered]@{}
 $repositoryAuditPath = Join-Path $repoRoot "local-artifacts\repository-audits\$([DateTime]::UtcNow.ToString('yyyyMMddTHHmmssfffZ'))-$($Scope.ToLowerInvariant()).json"
 
 Push-Location $repoRoot
 try {
+    $phaseClock = [Diagnostics.Stopwatch]::StartNew()
     $lease = Enter-PureLiveHeavyTaskSlot -TaskName $taskName
+    $phaseClock.Stop()
+    $leaseWaitSeconds = [Math]::Round($phaseClock.Elapsed.TotalSeconds, 3)
     $monitor = Start-PureLiveResourceMonitor
 
-    & (Join-Path $PSScriptRoot 'validate_build_policy.ps1')
-    & (Join-Path $PSScriptRoot 'test_subst_path.ps1')
-    & (Join-Path $PSScriptRoot 'test_android_recording_platforms.ps1')
-    & (Join-Path $PSScriptRoot 'test_android_recording_guard.ps1')
-    & (Join-Path $PSScriptRoot 'test_android_proxy_session.ps1')
-    & (Join-Path $PSScriptRoot 'test_android_activity_state.ps1')
-    & (Join-Path $PSScriptRoot 'test_android_surfaceflinger_timestats.ps1')
-    & (Join-Path $PSScriptRoot 'test_android_process_resource_metrics.ps1')
-    & (Join-Path $PSScriptRoot 'test_android_room_tag_assignment_smoke.ps1')
-    & (Join-Path $PSScriptRoot 'test_android_share_intake_smoke.ps1')
+    if ($runRepositoryChecks) {
+        $phaseClock = [Diagnostics.Stopwatch]::StartNew()
+        & (Join-Path $PSScriptRoot 'validate_build_policy.ps1')
+        & (Join-Path $PSScriptRoot 'test_subst_path.ps1')
+        & (Join-Path $PSScriptRoot 'test_android_recording_platforms.ps1')
+        & (Join-Path $PSScriptRoot 'test_android_recording_guard.ps1')
+        & (Join-Path $PSScriptRoot 'test_android_proxy_session.ps1')
+        & (Join-Path $PSScriptRoot 'test_android_activity_state.ps1')
+        & (Join-Path $PSScriptRoot 'test_android_surfaceflinger_timestats.ps1')
+        & (Join-Path $PSScriptRoot 'test_android_process_resource_metrics.ps1')
+        & (Join-Path $PSScriptRoot 'test_android_room_tag_assignment_smoke.ps1')
+        & (Join-Path $PSScriptRoot 'test_android_share_intake_smoke.ps1')
 
-    python (Join-Path $PSScriptRoot 'validate_device_ui_map.py')
-    Assert-PureLiveCommandSucceeded 'Device UI map validation'
+        python (Join-Path $PSScriptRoot 'validate_device_ui_map.py')
+        Assert-PureLiveCommandSucceeded 'Device UI map validation'
+        $phaseClock.Stop()
+        $phaseSeconds.repository_preflight = [Math]::Round($phaseClock.Elapsed.TotalSeconds, 3)
+    }
 
+    $phaseClock = [Diagnostics.Stopwatch]::StartNew()
     if ($SkipPubGet) {
         $packageConfig = Join-Path $repoRoot '.dart_tool\package_config.json'
         if (-not (Test-Path -LiteralPath $packageConfig)) {
@@ -97,26 +111,36 @@ try {
         & $flutterw @pubArgs
         Assert-PureLiveCommandSucceeded 'Locked dependency resolution'
     }
+    $phaseClock.Stop()
+    $phaseSeconds.dependency_resolution = [Math]::Round($phaseClock.Elapsed.TotalSeconds, 3)
 
-    python -m unittest discover -s (Join-Path $PSScriptRoot 'tests') -p test_repository_secret_audit.py
-    Assert-PureLiveCommandSucceeded 'Repository secret audit regression tests'
+    if ($runRepositoryChecks) {
+        $phaseClock = [Diagnostics.Stopwatch]::StartNew()
+        python -m unittest discover -s (Join-Path $PSScriptRoot 'tests') -p test_repository_secret_audit.py
+        Assert-PureLiveCommandSucceeded 'Repository secret audit regression tests'
 
-    python -m unittest discover -s (Join-Path $PSScriptRoot 'tests') -p test_cc_interface_probe.py
-    Assert-PureLiveCommandSucceeded 'CC interface probe regression tests'
+        python -m unittest discover -s (Join-Path $PSScriptRoot 'tests') -p test_cc_interface_probe.py
+        Assert-PureLiveCommandSucceeded 'CC interface probe regression tests'
 
-    python -m unittest discover -s (Join-Path $PSScriptRoot 'tests') -p test_acceptance_status_alignment.py
-    Assert-PureLiveCommandSucceeded 'Acceptance status alignment regression tests'
+        python -m unittest discover -s (Join-Path $PSScriptRoot 'tests') -p test_acceptance_status_alignment.py
+        Assert-PureLiveCommandSucceeded 'Acceptance status alignment regression tests'
 
-    python (Join-Path $PSScriptRoot 'audit_repository.py') --output $repositoryAuditPath
-    Assert-PureLiveCommandSucceeded 'Whole repository integrity audit'
+        python (Join-Path $PSScriptRoot 'audit_repository.py') --output $repositoryAuditPath
+        Assert-PureLiveCommandSucceeded 'Whole repository integrity audit'
+
+        python (Join-Path $PSScriptRoot 'audit_built_in_kotlin.py')
+        Assert-PureLiveCommandSucceeded 'Built-in Kotlin audit'
+        $phaseClock.Stop()
+        $phaseSeconds.repository_audit = [Math]::Round($phaseClock.Elapsed.TotalSeconds, 3)
+    }
 
     # Native Assets hooks share the persistent verified Windows cache. Android
     # media stays cold until an explicitly targeted Android build.
+    $phaseClock = [Diagnostics.Stopwatch]::StartNew()
     & (Join-Path $PSScriptRoot 'prefetch_android_native.ps1') -SkipAndroidMedia
     Assert-PureLiveCommandSucceeded 'Native dependency prefetch'
-
-    python (Join-Path $PSScriptRoot 'audit_built_in_kotlin.py')
-    Assert-PureLiveCommandSucceeded 'Built-in Kotlin audit'
+    $phaseClock.Stop()
+    $phaseSeconds.native_prefetch = [Math]::Round($phaseClock.Elapsed.TotalSeconds, 3)
 
     # This file vendors JavaScript in raw Dart strings and stays outside format.
     $formatExclusions = @('lib/core/scripts/douyin_sign.dart')
@@ -142,13 +166,17 @@ try {
 
     # Analyze is deliberately a single end-of-edit invocation.
     if ($shouldAnalyze) {
+        $phaseClock = [Diagnostics.Stopwatch]::StartNew()
         $analyzeInvocationCount++
         & $flutterw analyze --no-pub --no-fatal-infos --no-fatal-warnings
         Assert-PureLiveCommandSucceeded 'Flutter Analyze'
+        $phaseClock.Stop()
+        $phaseSeconds.flutter_analyze = [Math]::Round($phaseClock.Elapsed.TotalSeconds, 3)
     }
 
     [string[]] $testAssetArgs = @()
     if ($SkipTestAssets) { $testAssetArgs = @('--no-test-assets') }
+    $phaseClock = [Diagnostics.Stopwatch]::StartNew()
     if ($Scope -eq 'Full') {
         & $flutterw test --no-pub "--concurrency=$TestConcurrency" @testAssetArgs
         Assert-PureLiveCommandSucceeded 'Full Flutter test suite'
@@ -157,10 +185,15 @@ try {
         & $flutterw test --no-pub "--concurrency=$TestConcurrency" @testAssetArgs @resolvedTests
         Assert-PureLiveCommandSucceeded 'Focused Flutter tests'
     }
+    $phaseClock.Stop()
+    $phaseSeconds.flutter_tests = [Math]::Round($phaseClock.Elapsed.TotalSeconds, 3)
 
     if ($Scope -eq 'Full' -and -not $SkipInterfaces) {
+        $phaseClock = [Diagnostics.Stopwatch]::StartNew()
         python (Join-Path $PSScriptRoot 'interface_probe.py')
         Assert-PureLiveCommandSucceeded 'Public interface probes'
+        $phaseClock.Stop()
+        $phaseSeconds.interface_probes = [Math]::Round($phaseClock.Elapsed.TotalSeconds, 3)
     }
     $status = 'succeeded'
 } catch {
@@ -188,6 +221,9 @@ try {
         test_concurrency = $TestConcurrency
         test_assets = if ($SkipTestAssets) { 'skipped' } else { 'built' }
         test_paths = if ($Scope -eq 'Full') { @('test/') } else { $resolvedTests }
+        repository_checks = $runRepositoryChecks
+        lease_wait_seconds = $leaseWaitSeconds
+        phase_seconds = $phaseSeconds
         cache = [ordered]@{
             gradle_build_cache = 'enabled'
             configuration_cache = 'enabled'
@@ -195,7 +231,9 @@ try {
         }
         peak_resources = $resourceSummary
         active_heavy_processes_after = $remainingHeavyProcesses
-        outputs = @($repositoryAuditPath)
+        outputs = @(
+            if ($runRepositoryChecks) { $repositoryAuditPath }
+        )
         automatic_follow_up = $false
     }
     $recordPath = Write-PureLiveTaskRecord -RepoRoot $repoRoot -Record $record

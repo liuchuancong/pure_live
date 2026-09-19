@@ -79,6 +79,7 @@ Windows Firebase C++ SDK 由 `tool/prefetch_windows_native.ps1` 在构建前按�
 - 修改过程中优先运行直接相关的单元/Widget 测试或模块检查。
 - `flutter analyze` 在本轮代码修改完成后执行一次，避免每个小改动后重复启动分析服务器。
 - 定向测试使用一个 Flutter 命令承载全部目标文件，并从 `--concurrency=12` 开始。
+- `Focused` 默认只运行依赖校验、Native Assets 预取、改动文件格式检查及请求的 Analyze/测试；全仓策略、设备夹具、仓库完整性与 Built-in Kotlin 审计留给 `Full`，或在这些所有者本身发生变化时显式传入 `-IncludeRepositoryChecks`。禁止让每个业务红绿循环重复扫描 4937 个仓库文件和全部原生设备夹具。
 - 完整回归由 `tool/local_ci.ps1 -Scope Full` 显式触发；日常定向检查使用 `-Scope Focused -TestPath ...`。
 - 聚焦回归在根/本地插件 `pubspec.yaml` 与 `pubspec.lock` 均未变化且
   `.dart_tool/package_config.json` 已存在时，可显式传入 `-SkipPubGet`，避免对同一锁文件重复执行

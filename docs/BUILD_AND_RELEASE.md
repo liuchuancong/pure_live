@@ -2,7 +2,7 @@
 
 本仓库采用“本机优先、Actions 手动兜底”的流程，固定使用 Flutter `3.47.0`。`pubspec.lock`、Git 依赖提交和 FFmpeg 产物地址均已固定，便于复现结果。平台范围、CPU/RAM 配额、缓存、互斥和记录格式以 [`BUILD_POLICY.md`](../BUILD_POLICY.md) 为准。
 
-Current corrected release candidate: 2026-08-25, v3.0.0 build 4088, Windows 11 + Java 25 + Flutter 3.47.0. It replaces build 4087 atomically after one final quality gate, local Android/Windows stages and serial hosted Linux/macOS/iOS stages; see `STAGE_UPDATE_3_0_0.md`.
+当前候选、提交、门禁和平台阻塞统一见 [`ACCEPTANCE_STATUS_3_2_0.md`](ACCEPTANCE_STATUS_3_2_0.md)；本页不复制会快速过期的版本快照。历史 v3.0.0 交付证据保留在 [`STAGE_UPDATE_3_0_0.md`](STAGE_UPDATE_3_0_0.md)。
 
 ## 前置环境
 
@@ -28,7 +28,7 @@ PowerShell -ExecutionPolicy Bypass -File .\tool\local_ci.ps1 `
 PowerShell -ExecutionPolicy Bypass -File .\tool\local_ci.ps1 -Scope Full
 ```
 
-两种模式的 Flutter 测试都从 `--concurrency=12` 起步；脚本通过共享重型任务互斥锁排队，并在 `local-artifacts/build-records/` 记录耗时和资源峰值。
+两种模式的 Flutter 测试都从 `--concurrency=12` 起步；脚本通过共享重型任务互斥锁排队，并在 `local-artifacts/build-records/` 记录排队时间、各主要阶段耗时和资源峰值。`Focused` 默认不重复全仓策略、设备夹具和 4937 文件完整性扫描；修改这些工具/策略所有者时显式增加 `-IncludeRepositoryChecks`，正式 `Full` 门禁始终包含它们。
 
 ### 默认无设备修复流程
 
