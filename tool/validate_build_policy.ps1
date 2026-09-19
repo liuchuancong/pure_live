@@ -416,12 +416,17 @@ foreach ($marker in @(
     "[ValidateSet('Focused', 'Full')]",
     '[switch] $IncludeRepositoryChecks',
     '$runRepositoryChecks = $Scope -eq ''Full'' -or $IncludeRepositoryChecks.IsPresent',
+    '$formatMode = if ($Scope -eq ''Focused'') { ''apply'' } else { ''check'' }',
+    '& $flutterw dart format @dartFiles',
+    '& $flutterw dart format --output=none --set-exit-if-changed @dartFiles',
     '[int] $TestConcurrency = 12',
     'Enter-PureLiveHeavyTaskSlot',
     'test_acceptance_status_alignment.py',
     'failed_phase = $failurePhase',
     'source_worktree_dirty = $sourceDirty',
     'source_changed_during_run = $sourceCommit -ne $sourceCommitEnd',
+    'format_mode = $formatMode',
+    'dart_format_files = $dartFiles',
     'lease_wait_seconds = $leaseWaitSeconds',
     'phase_seconds = $phaseSeconds'
 )) {

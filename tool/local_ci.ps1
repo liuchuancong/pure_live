@@ -20,6 +20,7 @@ $flutterw = Join-Path $PSScriptRoot 'flutterw.ps1'
 
 $shouldAnalyze = $Analyze.IsPresent -or $Scope -eq 'Full'
 $runRepositoryChecks = $Scope -eq 'Full' -or $IncludeRepositoryChecks.IsPresent
+$formatMode = if ($Scope -eq 'Focused') { 'apply' } else { 'check' }
 $resolvedTests = @($TestPath | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -Unique)
 if ($Scope -eq 'Focused' -and $resolvedTests.Count -eq 0 -and -not $shouldAnalyze) {
     throw 'Focused validation requires -TestPath and/or -Analyze.'
@@ -63,6 +64,7 @@ $leaseWaitSeconds = $null
 $phaseSeconds = [ordered]@{}
 $activePhase = $null
 $phaseClock = $null
+[string[]] $dartFiles = @()
 $repositoryAuditPath = Join-Path $repoRoot "local-artifacts\repository-audits\$([DateTime]::UtcNow.ToString('yyyyMMddTHHmmssfffZ'))-$($Scope.ToLowerInvariant()).json"
 
 Push-Location $repoRoot
@@ -162,7 +164,7 @@ try {
     $formatExclusions = @('lib/core/scripts/douyin_sign.dart')
     # Wrap the complete pipeline in an array expression. With no changed Dart
     # files PowerShell otherwise assigns $null, which has no Count in strict mode.
-    [string[]] $dartFiles = @(
+    $dartFiles = @(
         @(
             git diff --name-only --diff-filter=ACMR HEAD -- '*.dart'
             git ls-files --others --exclude-standard -- '*.dart'
@@ -176,8 +178,17 @@ try {
         } | Sort-Object -Unique
     )
     if ($dartFiles.Count -gt 0) {
-        & $flutterw dart format --output=none --set-exit-if-changed @dartFiles
-        Assert-PureLiveCommandSucceeded 'Changed Dart file format check'
+        if ($formatMode -eq 'apply') {
+            # A focused red/green loop should not fail only to request the exact
+            # deterministic formatter command that the wrapper can run itself.
+            & $flutterw dart format @dartFiles
+            Assert-PureLiveCommandSucceeded 'Changed Dart file formatting'
+        } else {
+            # Formal Full validation remains read-only: an unformatted tree is a
+            # delivery failure rather than a source mutation during the gate.
+            & $flutterw dart format --output=none --set-exit-if-changed @dartFiles
+            Assert-PureLiveCommandSucceeded 'Changed Dart file format check'
+        }
     }
 
     [string[]] $testAssetArgs = @()
@@ -266,6 +277,8 @@ try {
         test_assets = if ($SkipTestAssets) { 'skipped' } else { 'built' }
         test_paths = if ($Scope -eq 'Full') { @('test/') } else { $resolvedTests }
         repository_checks = $runRepositoryChecks
+        format_mode = $formatMode
+        dart_format_files = $dartFiles
         source_worktree_dirty = $sourceDirty
         source_changes = $sourceChanges
         source_changed_during_run = $sourceCommit -ne $sourceCommitEnd -or
