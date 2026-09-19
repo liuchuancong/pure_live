@@ -174,6 +174,83 @@ void main() {
     expect(wide.lineHeight, 173);
   });
 
+  test('stream selector reserves scaled title and choice rows at accessibility text sizes', () {
+    final metrics = resolveStreamSelectorTextMetrics(textScaler: const TextScaler.linear(3));
+    final layout = resolveStreamSelectorPanelLayout(
+      maximumDialogSize: const Size(449.5, 396),
+      qualityCount: 4,
+      lineCount: 6,
+      splitContent: false,
+      textMetrics: metrics,
+    );
+
+    expect(metrics.dialogTitleRowHeight, greaterThan(35));
+    expect(metrics.paneHeaderHeight, greaterThan(23));
+    expect(metrics.itemHeight, greaterThan(42));
+    expect(layout.dialogHeight, 396);
+    expect(layout.qualityHeight, greaterThanOrEqualTo(metrics.minimumPaneHeight));
+    expect(layout.lineHeight, greaterThanOrEqualTo(metrics.minimumPaneHeight));
+
+    final shortViewport = resolveStreamSelectorPanelLayout(
+      maximumDialogSize: const Size(300, 240),
+      qualityCount: 12,
+      lineCount: 18,
+      splitContent: false,
+      textMetrics: metrics,
+    );
+    final availableBodyHeight = 240 - metrics.dialogChromeHeight - 12;
+    expect(
+      shortViewport.qualityHeight + shortViewport.gap + shortViewport.lineHeight,
+      lessThanOrEqualTo(availableBodyHeight),
+    );
+  });
+
+  testWidgets('stream choice pane keeps 3x labels inside scaled rows', (tester) async {
+    late StreamSelectorTextMetrics metrics;
+    await tester.pumpWidget(
+      MaterialApp(
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(3)),
+          child: child!,
+        ),
+        home: Builder(
+          builder: (context) {
+            final textTheme = Theme.of(context).textTheme;
+            metrics = resolveStreamSelectorTextMetrics(
+              textScaler: const TextScaler.linear(3),
+              paneTitleFontSize: textTheme.labelLarge?.fontSize ?? 14,
+              paneTitleLineHeight: textTheme.labelLarge?.height ?? 1.25,
+              itemFontSize: textTheme.bodyMedium?.fontSize ?? 14,
+              itemLineHeight: textTheme.bodyMedium?.height ?? 1.25,
+            );
+            return Scaffold(
+              body: Center(
+                child: SizedBox(
+                  width: 260,
+                  height: metrics.minimumPaneHeight + 16,
+                  child: StreamChoicePane(
+                    icon: Icons.high_quality_rounded,
+                    title: 'Quality',
+                    itemCount: 2,
+                    selectedIndex: 0,
+                    labelBuilder: (index) => index == 0 ? 'Original' : 'High definition',
+                    textMetrics: metrics,
+                    onSelected: null,
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(tester.getSize(find.byKey(const ValueKey('stream-choice-0'))).height, metrics.itemHeight);
+    expect(find.text('Quality'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   test('local style keeps its preview/settings split on a smaller landscape phone', () {
     const viewport = Size(720, 360);
     final style = resolveContentFirstPanelLayout(viewport, ContentFirstPanelKind.localDanmakuStyle);

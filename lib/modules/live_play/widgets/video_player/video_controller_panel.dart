@@ -1375,32 +1375,45 @@ class FullscreenStreamSelectorButton extends StatelessWidget {
           final live = controller.livePlayController;
           final state = live.state.value.player;
           final switching = live.playerController.isStreamSwitching.value;
+          final textTheme = Theme.of(dialogContext).textTheme;
+          final textMetrics = resolveStreamSelectorTextMetrics(
+            textScaler: MediaQuery.textScalerOf(dialogContext),
+            dialogTitleFontSize: textTheme.titleSmall?.fontSize ?? 14,
+            dialogTitleLineHeight: textTheme.titleSmall?.height ?? 1.25,
+            paneTitleFontSize: textTheme.labelLarge?.fontSize ?? 14,
+            paneTitleLineHeight: textTheme.labelLarge?.height ?? 1.25,
+            itemFontSize: textTheme.bodyMedium?.fontSize ?? 14,
+            itemLineHeight: textTheme.bodyMedium?.height ?? 1.25,
+          );
           final panelLayout = resolveStreamSelectorPanelLayout(
             maximumDialogSize: layout.size,
             qualityCount: state.qualites.length,
             lineCount: state.lineCount,
             splitContent: layout.splitContent,
+            textMetrics: textMetrics,
           );
-          final qualityPane = _StreamChoicePane(
+          final qualityPane = StreamChoicePane(
             key: const ValueKey('stream-quality-pane'),
             icon: Icons.high_quality_rounded,
             title: i18n('select_quality'),
             itemCount: state.qualites.length,
             selectedIndex: state.currentQuality,
             labelBuilder: (index) => state.qualites[index].quality,
+            textMetrics: textMetrics,
             onSelected: switching
                 ? null
                 : (index) async {
                     await live.setResolution(ReloadDataType.changeQuality, index, state.currentLineIndex);
                   },
           );
-          final linePane = _StreamChoicePane(
+          final linePane = StreamChoicePane(
             key: const ValueKey('stream-line-pane'),
             icon: Icons.alt_route_rounded,
             title: i18n('select_line'),
             itemCount: state.lineCount,
             selectedIndex: state.currentLineIndex,
             labelBuilder: (index) => i18n('toolbox_line', args: {'index': (index + 1).toString()}),
+            textMetrics: textMetrics,
             onSelected: switching
                 ? null
                 : (index) async {
@@ -1422,7 +1435,7 @@ class FullscreenStreamSelectorButton extends StatelessWidget {
               child: Column(
                 children: [
                   SizedBox(
-                    height: 35,
+                    height: textMetrics.dialogTitleRowHeight,
                     child: Padding(
                       padding: const EdgeInsets.only(left: 9, right: 1),
                       child: Row(
@@ -1432,6 +1445,8 @@ class FullscreenStreamSelectorButton extends StatelessWidget {
                           Expanded(
                             child: Text(
                               i18n('fullscreen_stream_settings'),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: Theme.of(dialogContext).textTheme.titleSmall,
                             ),
                           ),
@@ -1557,14 +1572,15 @@ class FullscreenStreamSelectorButton extends StatelessWidget {
   }
 }
 
-class _StreamChoicePane extends StatelessWidget {
-  const _StreamChoicePane({
+class StreamChoicePane extends StatelessWidget {
+  const StreamChoicePane({
     super.key,
     required this.icon,
     required this.title,
     required this.itemCount,
     required this.selectedIndex,
     required this.labelBuilder,
+    required this.textMetrics,
     required this.onSelected,
   });
 
@@ -1573,6 +1589,7 @@ class _StreamChoicePane extends StatelessWidget {
   final int itemCount;
   final int selectedIndex;
   final String Function(int index) labelBuilder;
+  final StreamSelectorTextMetrics textMetrics;
   final Future<void> Function(int index)? onSelected;
 
   @override
@@ -1589,7 +1606,7 @@ class _StreamChoicePane extends StatelessWidget {
         child: Column(
           children: [
             SizedBox(
-              height: 23,
+              height: textMetrics.paneHeaderHeight,
               child: Row(
                 children: [
                   Icon(icon, size: 16, color: colors.primary),
@@ -1597,6 +1614,8 @@ class _StreamChoicePane extends StatelessWidget {
                   Expanded(
                     child: Text(
                       title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
                     ),
                   ),
@@ -1614,7 +1633,7 @@ class _StreamChoicePane extends StatelessWidget {
                     physics: const PureLiveScrollPhysics(),
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: columns,
-                      mainAxisExtent: 42,
+                      mainAxisExtent: textMetrics.itemHeight,
                       mainAxisSpacing: 5,
                       crossAxisSpacing: 5,
                     ),
@@ -1622,6 +1641,7 @@ class _StreamChoicePane extends StatelessWidget {
                     itemBuilder: (context, index) {
                       final selected = selectedIndex == index;
                       return Material(
+                        key: ValueKey('stream-choice-$index'),
                         color: selected
                             ? colors.primaryContainer.withValues(alpha: .78)
                             : colors.surfaceContainerHighest,

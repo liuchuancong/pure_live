@@ -83,6 +83,46 @@ class StreamSelectorPanelLayout {
   final bool splitContent;
 }
 
+@immutable
+class StreamSelectorTextMetrics {
+  const StreamSelectorTextMetrics({
+    required this.dialogTitleRowHeight,
+    required this.paneHeaderHeight,
+    required this.itemHeight,
+  });
+
+  static const standard = StreamSelectorTextMetrics(dialogTitleRowHeight: 35, paneHeaderHeight: 23, itemHeight: 42);
+
+  final double dialogTitleRowHeight;
+  final double paneHeaderHeight;
+  final double itemHeight;
+
+  double get dialogChromeHeight => dialogTitleRowHeight + 1;
+  double get paneChromeHeight => 4 + paneHeaderHeight + 4 + 6;
+  double get minimumPaneHeight => math.max(78, paneChromeHeight + itemHeight);
+}
+
+/// Resolves the stream selector's fixed rows from the actual themed font sizes
+/// and the platform text scaler. This keeps the fullscreen panel readable at
+/// accessibility scales instead of clipping 3x text into 23/42 px boxes.
+StreamSelectorTextMetrics resolveStreamSelectorTextMetrics({
+  required TextScaler textScaler,
+  double dialogTitleFontSize = 14,
+  double dialogTitleLineHeight = 1.25,
+  double paneTitleFontSize = 14,
+  double paneTitleLineHeight = 1.25,
+  double itemFontSize = 14,
+  double itemLineHeight = 1.25,
+}) {
+  double lineExtent(double fontSize, double lineHeight) => textScaler.scale(fontSize) * lineHeight;
+
+  return StreamSelectorTextMetrics(
+    dialogTitleRowHeight: math.max(35, lineExtent(dialogTitleFontSize, dialogTitleLineHeight) + 8),
+    paneHeaderHeight: math.max(23, lineExtent(paneTitleFontSize, paneTitleLineHeight) + 5.5),
+    itemHeight: math.max(42, lineExtent(itemFontSize, itemLineHeight) + 16),
+  );
+}
+
 /// Sizes the complete stream selector from the number of visible choices.
 ///
 /// A short quality/line list produces a short dialog instead of two mostly
@@ -94,15 +134,16 @@ StreamSelectorPanelLayout resolveStreamSelectorPanelLayout({
   required int lineCount,
   required bool splitContent,
   double gap = 5,
+  StreamSelectorTextMetrics textMetrics = StreamSelectorTextMetrics.standard,
 }) {
-  const dialogChromeHeight = 36.0; // compact title row + divider
   const bodyPadding = 6.0;
-  const minimumPaneHeight = 78.0;
+  final dialogChromeHeight = textMetrics.dialogChromeHeight;
+  final minimumPaneHeight = textMetrics.minimumPaneHeight;
 
   final innerWidth = math.max(0.0, maximumDialogSize.width - bodyPadding * 2);
   final paneWidth = splitContent ? math.max(0.0, (innerWidth - gap) / 2) : innerWidth;
-  final desiredQuality = _streamChoicePaneHeight(paneWidth, qualityCount);
-  final desiredLine = _streamChoicePaneHeight(paneWidth, lineCount);
+  final desiredQuality = _streamChoicePaneHeight(paneWidth, qualityCount, textMetrics);
+  final desiredLine = _streamChoicePaneHeight(paneWidth, lineCount, textMetrics);
   final maximumBodyHeight = math.max(0.0, maximumDialogSize.height - dialogChromeHeight - bodyPadding * 2);
 
   if (splitContent) {
@@ -130,11 +171,15 @@ StreamSelectorPanelLayout resolveStreamSelectorPanelLayout({
     );
   }
 
-  final availableForPanes = math.max(minimumPaneHeight * 2, maximumBodyHeight - gap);
-  final extraSpace = math.max(0.0, availableForPanes - minimumPaneHeight * 2);
-  final desiredExtra = math.max(1.0, desiredQuality + desiredLine - minimumPaneHeight * 2);
-  final qualityExtraShare = math.max(0.0, desiredQuality - minimumPaneHeight) / desiredExtra;
-  final qualityHeight = minimumPaneHeight + extraSpace * qualityExtraShare;
+  final availableForPanes = math.max(0.0, maximumBodyHeight - gap);
+  // Extremely short windows may not fit two complete accessibility-sized
+  // panes. Share only the space that actually exists so the dialog itself
+  // never overflows; each pane's grid remains independently scrollable.
+  final effectiveMinimum = math.min(minimumPaneHeight, availableForPanes / 2);
+  final extraSpace = math.max(0.0, availableForPanes - effectiveMinimum * 2);
+  final desiredExtra = math.max(1.0, desiredQuality + desiredLine - effectiveMinimum * 2);
+  final qualityExtraShare = math.max(0.0, desiredQuality - effectiveMinimum) / desiredExtra;
+  final qualityHeight = effectiveMinimum + extraSpace * qualityExtraShare;
   final lineHeight = availableForPanes - qualityHeight;
   return StreamSelectorPanelLayout(
     dialogHeight: maximumDialogSize.height,
@@ -145,10 +190,9 @@ StreamSelectorPanelLayout resolveStreamSelectorPanelLayout({
   );
 }
 
-double _streamChoicePaneHeight(double paneWidth, int itemCount) {
-  // 4 top padding + 23 header + 4 divider + 6 bottom padding.
-  const paneChromeHeight = 37.0;
-  const itemHeight = 42.0;
+double _streamChoicePaneHeight(double paneWidth, int itemCount, StreamSelectorTextMetrics textMetrics) {
+  final paneChromeHeight = textMetrics.paneChromeHeight;
+  final itemHeight = textMetrics.itemHeight;
   const itemSpacing = 5.0;
   if (itemCount <= 0) return 78;
   final gridWidth = math.max(0.0, paneWidth - 12);
