@@ -49,7 +49,9 @@ Update only the owner of the information; avoid copying the same batch narrative
 | Full client case catalog | `FULL_CLIENT_TEST_PLAN_2026_08_28.md` | New/changed user-observable cases only |
 | Root cause/design/release evidence | focused audit/stage document | Only when the compact ledger is insufficient |
 
-This ownership map supersedes the older habit of inserting the same result into the root README, both acceptance narratives, the matrix and the docs index. Existing historical entries remain evidence and need not be rewritten.
+This ownership map supersedes the older habit of inserting the same result into the root README, both acceptance narratives, the matrix and the docs index. Historical timelines now live in `ACCEPTANCE_HISTORY_3_2_0.md`, `ACCEPTANCE_STATUS_HISTORY_3_2_0.md`, `ACCEPTANCE_MATRIX_HISTORY_3_1_0.md` and `README_HISTORY_2026_09_19.md`; treat them as read-only evidence and never append current status to them.
+
+Read the compact active files first. Open a history archive only when a current row, Issue or audit links to an older batch whose exact evidence is needed. Do not load an archive merely to answer current progress, choose the next test, or repeat a completed investigation.
 
 The 2026-09-19 audit baseline contained 498 Markdown files (about 3.64 MB). `ACCEPTANCE_3_2_0.md` and `ACCEPTANCE_STATUS_3_2_0.md` alone held about 473 KB and repeated the same recent batch summaries. The ownership table and frozen timelines address that measured duplication without deleting historical evidence.
 
