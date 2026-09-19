@@ -1019,6 +1019,110 @@ class LockButton extends StatelessWidget {
   }
 }
 
+class MobileStreamChoiceDialog extends StatelessWidget {
+  const MobileStreamChoiceDialog({
+    super.key,
+    required this.title,
+    required this.itemCount,
+    required this.selectedIndex,
+    required this.labelBuilder,
+    required this.onSelected,
+  });
+
+  final String title;
+  final int itemCount;
+  final int selectedIndex;
+  final String Function(int index) labelBuilder;
+  final ValueChanged<int> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return Dialog(
+      key: const ValueKey('mobile-stream-choice-dialog'),
+      insetPadding: const EdgeInsets.all(16),
+      clipBehavior: Clip.hardEdge,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 500, maxHeight: 440),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 10, 8, 4),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: i18n('cancel'),
+                    icon: const Icon(Icons.close, size: 18),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            Flexible(
+              child: ListView.builder(
+                primary: false,
+                shrinkWrap: true,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                physics: const PureLiveScrollPhysics(),
+                itemCount: itemCount,
+                itemBuilder: (context, index) {
+                  final selected = selectedIndex == index;
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 5),
+                    child: Material(
+                      key: ValueKey('mobile-stream-choice-$index'),
+                      color: selected ? colors.primary : colors.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(8),
+                      clipBehavior: Clip.antiAlias,
+                      child: InkWell(
+                        onTap: () => onSelected(index),
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(minHeight: 48),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                            child: Center(
+                              child: Text(
+                                labelBuilder(index),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.center,
+                                style: AppTextStyles.t15.copyWith(color: selected ? colors.onPrimary : null),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            SafeArea(
+              top: false,
+              minimum: const EdgeInsets.fromLTRB(8, 4, 8, 8),
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(i18n('cancel'))),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class LineSelectorButton extends StatelessWidget {
   const LineSelectorButton({super.key, required this.controller});
 
@@ -1030,82 +1134,19 @@ class LineSelectorButton extends StatelessWidget {
 
     showDialog(
       context: context,
-      builder: (context) => Dialog(
-        insetPadding: const EdgeInsets.all(16.0),
-        clipBehavior: Clip.hardEdge,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 400, maxHeight: 300),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(24, 16, 10, 0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(i18n("select_line"), style: Theme.of(context).textTheme.titleMedium),
-                    IconButton(icon: const Icon(Icons.close, size: 18), onPressed: () => Navigator.of(context).pop()),
-                  ],
-                ),
-              ),
-              const Divider(height: 1),
-              Expanded(
-                child: Obx(
-                  () => ListView.builder(
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    itemCount: controller.livePlayController.state.value.player.lineCount,
-                    itemBuilder: (context, index) {
-                      final isSelected = index == controller.livePlayController.state.value.player.currentLineIndex;
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 6.0),
-                        child: Center(
-                          child: InkWell(
-                            onTap: () {
-                              controller.livePlayController.setResolution(
-                                ReloadDataType.changeLine,
-                                controller.livePlayController.state.value.player.currentQuality,
-                                index,
-                              );
-                              Navigator.of(context).pop();
-                            },
-                            borderRadius: BorderRadius.circular(8),
-                            child: Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Container(
-                                width: double.infinity, // 设定按钮固定宽度
-                                height: 38, // 设定按钮高度
-                                alignment: Alignment.center,
-                                decoration: BoxDecoration(
-                                  color: isSelected
-                                      ? Get.theme.colorScheme.primary
-                                      : Get.theme.colorScheme.surfaceContainerHighest,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text(
-                                  i18n("toolbox_line", args: {"index": (index + 1).toString()}),
-                                  style: AppTextStyles.t15.copyWith(color: isSelected ? Colors.white : null),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(8, 8, 8, 16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(i18n('cancel')))],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+      builder: (context) => Obx(() {
+        final state = controller.livePlayController.state.value.player;
+        return MobileStreamChoiceDialog(
+          title: i18n('select_line'),
+          itemCount: state.lineCount,
+          selectedIndex: state.currentLineIndex,
+          labelBuilder: (index) => i18n('toolbox_line', args: {'index': '${index + 1}'}),
+          onSelected: (index) {
+            controller.livePlayController.setResolution(ReloadDataType.changeLine, state.currentQuality, index);
+            Navigator.of(context).pop();
+          },
+        );
+      }),
     ).then((_) {
       controller.isMenuOpen.value = false;
       controller.enableController();
@@ -1197,83 +1238,19 @@ class ResolutionSelectorButton extends StatelessWidget {
 
     showDialog(
       context: context,
-      builder: (context) => Dialog(
-        insetPadding: const EdgeInsets.all(16.0),
-        clipBehavior: Clip.hardEdge,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 500, maxHeight: 400),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(24, 16, 10, 0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(i18n("select_quality"), style: Theme.of(context).textTheme.titleMedium),
-                    IconButton(icon: const Icon(Icons.close, size: 18), onPressed: () => Navigator.of(context).pop()),
-                  ],
-                ),
-              ),
-              const Divider(height: 1),
-              Expanded(
-                child: Obx(
-                  () => ListView.builder(
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    itemCount: controller.livePlayController.state.value.player.qualites.length,
-                    itemBuilder: (context, index) {
-                      final isSelected = index == controller.livePlayController.state.value.player.currentQuality;
-                      final qualityName = controller.livePlayController.state.value.player.qualites[index].quality;
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 6.0),
-                        child: Center(
-                          child: InkWell(
-                            onTap: () {
-                              controller.livePlayController.setResolution(
-                                ReloadDataType.changeQuality,
-                                index,
-                                controller.livePlayController.state.value.player.currentLineIndex,
-                              );
-                              Navigator.of(context).pop();
-                            },
-                            borderRadius: BorderRadius.circular(8),
-                            child: Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Container(
-                                width: double.infinity, // 独占一行宽度
-                                height: 38,
-                                alignment: Alignment.center,
-                                decoration: BoxDecoration(
-                                  color: isSelected
-                                      ? Get.theme.colorScheme.primary
-                                      : Get.theme.colorScheme.surfaceContainerHighest,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text(
-                                  qualityName,
-                                  style: AppTextStyles.t15.copyWith(color: isSelected ? Colors.white : null),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(8, 8, 8, 16),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(i18n('cancel')))],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+      builder: (context) => Obx(() {
+        final state = controller.livePlayController.state.value.player;
+        return MobileStreamChoiceDialog(
+          title: i18n('select_quality'),
+          itemCount: state.qualites.length,
+          selectedIndex: state.currentQuality,
+          labelBuilder: (index) => state.qualites[index].quality,
+          onSelected: (index) {
+            controller.livePlayController.setResolution(ReloadDataType.changeQuality, index, state.currentLineIndex);
+            Navigator.of(context).pop();
+          },
+        );
+      }),
     ).then((_) {
       controller.isMenuOpen.value = false;
       controller.enableController();
