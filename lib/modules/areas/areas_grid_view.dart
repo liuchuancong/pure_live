@@ -274,7 +274,7 @@ class _AreaGridViewState extends State<AreaGridView> with TickerProviderStateMix
             crossAxisCount: crossAxisCount,
             crossAxisSpacing: spacing,
             mainAxisSpacing: SettingsService.to.theme.mainAxisSpacing.v,
-            mainAxisExtent: itemWidth + 72,
+            mainAxisExtent: areaCardGridMainAxisExtent(context, itemWidth),
           ),
           itemCount: childrenList.length,
           itemBuilder: (context, index) {
