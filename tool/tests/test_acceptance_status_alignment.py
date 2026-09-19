@@ -12,6 +12,23 @@ EXPANSION = ROOT / "docs" / "PLATFORM_EXPANSION_AUDIT_2026_09_07.md"
 
 
 class AcceptanceStatusAlignmentTests(unittest.TestCase):
+    def test_numbered_rows_stay_compact(self):
+        rows = [
+            line
+            for line in MATRIX.read_text(encoding="utf-8").splitlines()
+            if re.match(r"^\| (?:A|W)\d-\d{2} \|", line)
+        ]
+
+        self.assertEqual(len(rows), 62)
+        for row in rows:
+            row_id = row.split("|", 2)[1].strip()
+            with self.subTest(row_id=row_id):
+                self.assertLessEqual(
+                    len(row),
+                    1000,
+                    f"{row_id} contains batch history; keep current evidence and remaining closure only",
+                )
+
     def test_status_counts_match_the_numbered_matrix(self):
         matrix = MATRIX.read_text(encoding="utf-8")
         status = STATUS.read_text(encoding="utf-8")

@@ -131,6 +131,25 @@ def main():
                 continue
             if not (path.parent / target.split('#')[0]).is_file():
                 errors.append(f'{path.relative_to(root)}: broken link {target}')
+    model_policy_owner = root / 'docs/AGENT_WORKFLOW.md'
+    model_policy_keyword = 'Astra Light'
+    active_documents = [
+        root / 'AGENTS.md',
+        root / 'BUILD_POLICY.md',
+        root / 'MAINTENANCE_POLICY.md',
+        root / 'README.md',
+        root / 'docs/ACCEPTANCE_3_2_0.md',
+        root / 'docs/ACCEPTANCE_STATUS_3_2_0.md',
+        root / 'docs/ACCEPTANCE_MATRIX_3_1_0.md',
+        root / 'docs/ISSUE_TRIAGE_LEDGER_3_2_0.md',
+    ]
+    if model_policy_keyword not in model_policy_owner.read_text(encoding='utf-8-sig'):
+        errors.append('docs/AGENT_WORKFLOW.md: missing centralized Windows GUI model/cost rule')
+    for path in active_documents:
+        if model_policy_keyword in path.read_text(encoding='utf-8-sig'):
+            errors.append(
+                f'{path.relative_to(root)}: duplicate Windows GUI model/cost rule; link to docs/AGENT_WORKFLOW.md'
+            )
     readme = (root / 'README.md').read_text(encoding='utf-8-sig')
     status_owner = '<!-- current-status-owner: docs/ACCEPTANCE_STATUS_3_2_0.md -->'
     if readme.count(status_owner) != 1:

@@ -43,7 +43,7 @@ Update only the owner of the information; avoid copying the same batch narrative
 | Public features, install/use guidance | root `README.md` | Only user-visible behavior or delivery changes |
 | Documentation navigation | `docs/README.md` | Stable topic/ledger links, not every individual audit |
 | Issue classification and reopen trigger | `ISSUE_TRIAGE_LEDGER_3_2_0.md` | Every completed Issue triage; compact rows |
-| 62 Android/Windows acceptance states | `ACCEPTANCE_MATRIX_3_1_0.md` | Only when row evidence or state changes |
+| 62 Android/Windows acceptance states | `ACCEPTANCE_MATRIX_3_1_0.md` | Only when row evidence or state changes; keep each row within 1000 characters and move batch detail to its focused report |
 | Current totals and major release blockers | `ACCEPTANCE_STATUS_3_2_0.md` | Snapshot changes, not routine per-Issue prose |
 | 3.2.0 execution order and gates | `ACCEPTANCE_3_2_0.md` | Procedure changes; its historical timeline is frozen |
 | Full client case catalog | `FULL_CLIENT_TEST_PLAN_2026_08_28.md` | New/changed user-observable cases only |

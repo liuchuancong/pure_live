@@ -41,7 +41,7 @@ Read [BUILD_POLICY.md](BUILD_POLICY.md) before heavy commands. Use [docs/AGENT_W
 
 - Default to source/tests/local builds. Phone discovery, ADB, install, logs and device UI require a current explicit device request. Historical phone connections are not continuing consent.
 - Read-only upstream comparison is distinct from merging; merge only within the current requested scope. For requested device work, use `tool/run_android_device_test_turn.ps1` and its shared-device lease; see [docs/ANDROID_DEVICE_TEST_ROTATION.md](docs/ANDROID_DEVICE_TEST_ROTATION.md).
-- Follow the single Windows GUI model/cost rule in [docs/AGENT_WORKFLOW.md](docs/AGENT_WORKFLOW.md#model-and-task-handoff): one reused Astra Light task for that Computer Use batch and none elsewhere. Do not repeat an unchanged model rule or zero-usage statement in routine progress reports.
+- The Windows GUI model/cost rule has one owner: [docs/AGENT_WORKFLOW.md](docs/AGENT_WORKFLOW.md#model-and-task-handoff). Link to it when needed; do not restate unchanged model policy or usage boilerplate in active plans, audit documents or routine progress reports.
 - Use subagents only when explicitly requested by the user or applicable instructions. Keep independent read-only work separate; serialize edits to shared files, builds and device leases. Preserve the configured model/effort unless the user requests a change.
 
 ## Completion
