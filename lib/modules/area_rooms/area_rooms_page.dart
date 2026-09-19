@@ -44,33 +44,41 @@ class _AreasRoomPageState extends State<AreasRoomPage> {
           pageSizeOptions: SettingsService.to.page.pageSizeOptions,
           emptyBuilder: (context) => EmptyView(icon: Icons.live_tv_rounded, title: i18n('no_data'), subtitle: ''),
           contentBuilder: (context, list, scrollController) {
-            return LayoutBuilder(
-              builder: (context, constraint) {
-                final width = constraint.maxWidth;
-                final crossAxisCount = width > 1280 ? 5 : (width > 960 ? 4 : (width > 640 ? 3 : 2));
-                final spacing = SettingsService.to.theme.crossAxisSpacing.v;
-                final itemWidth = (width - 12 - spacing * (crossAxisCount - 1)) / crossAxisCount;
-                return GridView.builder(
-                  scrollCacheExtent: ScrollCacheExtent.pixels(width > 680 ? 480 : 320),
-                  addAutomaticKeepAlives: false,
-                  addRepaintBoundaries: true,
-                  keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: crossAxisCount,
-                    crossAxisSpacing: spacing,
-                    mainAxisSpacing: SettingsService.to.theme.mainAxisSpacing.v,
-                    mainAxisExtent: itemWidth * 9 / 16 + 72,
-                  ),
-                  padding: const EdgeInsets.fromLTRB(6, 6, 6, 80),
-                  controller: scrollController,
-                  itemCount: list.length,
-                  itemBuilder: (context, index) {
-                    final room = list[index];
-                    return RoomCard(key: ValueKey('${room.platform}:${room.roomId}'), room: room, dense: true);
-                  },
-                );
-              },
-            );
+            return Obx(() {
+              final roomCardAppearance = SettingsService.to.roomCard.resolve();
+              return LayoutBuilder(
+                builder: (context, constraint) {
+                  final width = constraint.maxWidth;
+                  final crossAxisCount = width > 1280 ? 5 : (width > 960 ? 4 : (width > 640 ? 3 : 2));
+                  final spacing = SettingsService.to.theme.crossAxisSpacing.v;
+                  final itemWidth = (width - 12 - spacing * (crossAxisCount - 1)) / crossAxisCount;
+                  return GridView.builder(
+                    scrollCacheExtent: ScrollCacheExtent.pixels(width > 680 ? 480 : 320),
+                    addAutomaticKeepAlives: false,
+                    addRepaintBoundaries: true,
+                    keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: crossAxisCount,
+                      crossAxisSpacing: spacing,
+                      mainAxisSpacing: SettingsService.to.theme.mainAxisSpacing.v,
+                      mainAxisExtent: RoomCardLayoutMetrics.gridMainAxisExtent(
+                        itemWidth: itemWidth,
+                        appearance: roomCardAppearance,
+                        dense: true,
+                        textScaler: MediaQuery.textScalerOf(context),
+                      ),
+                    ),
+                    padding: const EdgeInsets.fromLTRB(6, 6, 6, 80),
+                    controller: scrollController,
+                    itemCount: list.length,
+                    itemBuilder: (context, index) {
+                      final room = list[index];
+                      return RoomCard(key: ValueKey('${room.platform}:${room.roomId}'), room: room, dense: true);
+                    },
+                  );
+                },
+              );
+            });
           },
         ),
         floatingActionButton: FavoriteAreaFloatingButton(area: widget.subCategory),

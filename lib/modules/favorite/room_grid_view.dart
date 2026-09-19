@@ -33,6 +33,7 @@ class RoomGridView extends GetView<FavoriteController> {
           final dense = SettingsService.to.app.enableDenseFavorites.v;
           final spacing = SettingsService.to.theme.crossAxisSpacing.v;
           final mainAxisSpacing = SettingsService.to.theme.mainAxisSpacing.v;
+          final roomCardAppearance = SettingsService.to.roomCard.resolve();
           final isVerifyingFavorites = controller.isVerifyingFavorites.value;
           var crossAxisCount = width > 1280 ? 4 : (width > 960 ? 3 : (width > 640 ? 2 : 1));
           if (dense) {
@@ -74,7 +75,12 @@ class RoomGridView extends GetView<FavoriteController> {
                 crossAxisCount: crossAxisCount,
                 crossAxisSpacing: spacing,
                 mainAxisSpacing: mainAxisSpacing,
-                mainAxisExtent: itemWidth * 9 / 16 + (dense ? 72 : 84),
+                mainAxisExtent: RoomCardLayoutMetrics.gridMainAxisExtent(
+                  itemWidth: itemWidth,
+                  appearance: roomCardAppearance,
+                  dense: dense,
+                  textScaler: MediaQuery.textScalerOf(context),
+                ),
               ),
               itemCount: displayList.length,
               itemBuilder: (context, index) {

@@ -8,6 +8,8 @@ enum RoomCardViewport { mobile, desktop }
 
 enum RoomCardPlatformBadgeMode { automatic, always, hidden }
 
+enum RoomCardLayout { cover, compact }
+
 enum RoomCardPreset {
   compact('compact'),
   standard('normal'),
@@ -22,6 +24,7 @@ enum RoomCardPreset {
 @immutable
 class RoomCardAppearance {
   const RoomCardAppearance({
+    required this.layout,
     required this.showAvatar,
     required this.showAnchorName,
     required this.showPlatformBadge,
@@ -36,8 +39,9 @@ class RoomCardAppearance {
   static const double maxCornerRadius = 32;
 
   static const compact = RoomCardAppearance(
-    showAvatar: false,
-    showAnchorName: false,
+    layout: RoomCardLayout.compact,
+    showAvatar: true,
+    showAnchorName: true,
     showPlatformBadge: false,
     automaticPlatformBadge: false,
     showAudience: true,
@@ -46,6 +50,7 @@ class RoomCardAppearance {
   );
 
   static const standard = RoomCardAppearance(
+    layout: RoomCardLayout.cover,
     showAvatar: true,
     showAnchorName: true,
     showPlatformBadge: false,
@@ -56,6 +61,7 @@ class RoomCardAppearance {
   );
 
   static const detailed = RoomCardAppearance(
+    layout: RoomCardLayout.cover,
     showAvatar: true,
     showAnchorName: true,
     showPlatformBadge: true,
@@ -65,6 +71,7 @@ class RoomCardAppearance {
     cornerRadius: defaultCornerRadius,
   );
 
+  final RoomCardLayout layout;
   final bool showAvatar;
   final bool showAnchorName;
   final bool showPlatformBadge;
@@ -113,6 +120,28 @@ class RoomCardAppearance {
       return normalizeCornerRadius(value);
     }
 
+    RoomCardLayout readLayout() {
+      final value = json['layout'];
+      if (value != null) {
+        if (strict && value is! String) throw const FormatException('layout must be a string');
+        if (value is String) {
+          final normalized = value.trim().toLowerCase();
+          if (normalized == RoomCardLayout.cover.name) return RoomCardLayout.cover;
+          if (normalized == RoomCardLayout.compact.name || normalized == 'list' || normalized == 'listtile') {
+            return RoomCardLayout.compact;
+          }
+          if (strict) throw const FormatException('layout must be cover or compact');
+        }
+        return fallback.layout;
+      }
+
+      final legacy = json['showAsListTile'];
+      if (legacy == null) return fallback.layout;
+      if (strict && legacy is! bool) throw const FormatException('showAsListTile must be a boolean');
+      if (legacy is! bool) return fallback.layout;
+      return legacy ? RoomCardLayout.compact : RoomCardLayout.cover;
+    }
+
     final hasExplicitPlatformValue = json.containsKey('showPlatformBadge') || json.containsKey('showPlatform');
     final showPlatformBadge = readBool('showPlatformBadge', 'showPlatform', fallback.showPlatformBadge);
     final automaticPlatformBadge = json.containsKey('automaticPlatformBadge')
@@ -121,7 +150,24 @@ class RoomCardAppearance {
         ? false
         : fallback.automaticPlatformBadge;
 
+    // 3.1.4 persisted the compact preset as visibility flags only. The preset
+    // key still proves that this exact snapshot was not a user-custom layout,
+    // so upgrade it to the restored compact topology and identity fields.
+    final isBrokenCompactPresetSnapshot =
+        fallback.layout == RoomCardLayout.compact &&
+        !json.containsKey('layout') &&
+        !json.containsKey('showAsListTile') &&
+        readBool('showAvatar', 'showAvatar', fallback.showAvatar) == false &&
+        readBool('showAnchorName', 'showSubtitle', fallback.showAnchorName) == false &&
+        showPlatformBadge == false &&
+        automaticPlatformBadge == false &&
+        readBool('showAudience', 'showAudience', fallback.showAudience) == true &&
+        readBool('showReplayBadge', 'showRecordBadge', fallback.showReplayBadge) == true &&
+        readRadius() == compact.cornerRadius;
+    if (isBrokenCompactPresetSnapshot) return compact;
+
     return RoomCardAppearance(
+      layout: readLayout(),
       showAvatar: readBool('showAvatar', 'showAvatar', fallback.showAvatar),
       showAnchorName: readBool('showAnchorName', 'showSubtitle', fallback.showAnchorName),
       showPlatformBadge: showPlatformBadge,
@@ -133,6 +179,7 @@ class RoomCardAppearance {
   }
 
   RoomCardAppearance copyWith({
+    RoomCardLayout? layout,
     bool? showAvatar,
     bool? showAnchorName,
     bool? showPlatformBadge,
@@ -142,6 +189,7 @@ class RoomCardAppearance {
     double? cornerRadius,
   }) {
     return RoomCardAppearance(
+      layout: layout ?? this.layout,
       showAvatar: showAvatar ?? this.showAvatar,
       showAnchorName: showAnchorName ?? this.showAnchorName,
       showPlatformBadge: showPlatformBadge ?? this.showPlatformBadge,
@@ -161,6 +209,7 @@ class RoomCardAppearance {
 
   Map<String, dynamic> toJson() {
     return {
+      'layout': layout.name,
       'showAvatar': showAvatar,
       'showAnchorName': showAnchorName,
       'showPlatformBadge': showPlatformBadge,
@@ -174,6 +223,7 @@ class RoomCardAppearance {
   @override
   bool operator ==(Object other) {
     return other is RoomCardAppearance &&
+        other.layout == layout &&
         other.showAvatar == showAvatar &&
         other.showAnchorName == showAnchorName &&
         other.showPlatformBadge == showPlatformBadge &&
@@ -185,6 +235,7 @@ class RoomCardAppearance {
 
   @override
   int get hashCode => Object.hash(
+    layout,
     showAvatar,
     showAnchorName,
     showPlatformBadge,

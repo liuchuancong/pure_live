@@ -132,6 +132,7 @@ class _RoomCardSettingsPageState extends State<RoomCardSettingsPage> {
             const SizedBox(height: 20),
             context.buildGroupTitle(i18n('room_card_appearance')),
             context.buildModernCard([
+              _layoutMode(controller, config),
               context.buildSliderTile(
                 context,
                 icon: Remix.rounded_corner,
@@ -243,6 +244,53 @@ class _RoomCardSettingsPageState extends State<RoomCardSettingsPage> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _layoutMode(RoomCardSettingsController controller, RoomCardAppearance config) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(padding: EdgeInsets.only(top: 2), child: Icon(Icons.view_agenda_outlined)),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(i18n('room_card_layout'), style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600)),
+                const SizedBox(height: 2),
+                Text(i18n('room_card_layout_subtitle'), style: AppTextStyles.t12),
+                const SizedBox(height: 10),
+                Wrap(
+                  key: const ValueKey('room-card-layout-mode'),
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    _layoutModeChip(controller, config, RoomCardLayout.cover, i18n('room_card_layout_cover')),
+                    _layoutModeChip(controller, config, RoomCardLayout.compact, i18n('room_card_layout_compact')),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _layoutModeChip(
+    RoomCardSettingsController controller,
+    RoomCardAppearance config,
+    RoomCardLayout layout,
+    String label,
+  ) {
+    return ChoiceChip(
+      key: ValueKey('room-card-layout-${layout.name}'),
+      label: Text(label),
+      selected: config.layout == layout,
+      onSelected: (_) => controller.updateConfig(_viewport, config.copyWith(layout: layout)),
     );
   }
 

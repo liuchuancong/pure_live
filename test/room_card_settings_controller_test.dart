@@ -42,6 +42,8 @@ void main() {
 
     expect(controller.configFor(RoomCardViewport.mobile), RoomCardAppearance.compact);
     expect(controller.configFor(RoomCardViewport.desktop), RoomCardAppearance.detailed);
+    expect(controller.configFor(RoomCardViewport.mobile).layout, RoomCardLayout.compact);
+    expect(controller.configFor(RoomCardViewport.desktop).layout, RoomCardLayout.cover);
     expect(controller.presetFor(RoomCardViewport.mobile), RoomCardPreset.compact);
     expect(controller.presetFor(RoomCardViewport.desktop), RoomCardPreset.detailed);
 
@@ -63,6 +65,27 @@ void main() {
     expect(controller.configFor(RoomCardViewport.mobile).cornerRadius, RoomCardAppearance.maxCornerRadius);
   });
 
+  test('3.1.4 compact visibility snapshot upgrades to the restored compact row', () async {
+    await HivePrefUtil.setString('room_card_desktop_preset', RoomCardPreset.compact.storageKey);
+    await HivePrefUtil.setString(
+      'room_card_desktop_config',
+      jsonEncode({
+        'showAvatar': false,
+        'showAnchorName': false,
+        'showPlatformBadge': false,
+        'automaticPlatformBadge': false,
+        'showAudience': true,
+        'showReplayBadge': true,
+        'cornerRadius': 12,
+      }),
+    );
+
+    final controller = Get.put(RoomCardSettingsController());
+
+    expect(controller.configFor(RoomCardViewport.desktop), RoomCardAppearance.compact);
+    expect(controller.presetFor(RoomCardViewport.desktop), RoomCardPreset.compact);
+  });
+
   test('existing 3.1.2 room card values migrate through compatible storage keys', () async {
     await HivePrefUtil.setString('room_card_mobile_preset', 'custom');
     await HivePrefUtil.setString(
@@ -73,6 +96,7 @@ void main() {
         'showPlatform': true,
         'showAudience': false,
         'showRecordBadge': false,
+        'showAsListTile': true,
         'cardBorderRadius': 27,
       }),
     );
@@ -85,6 +109,7 @@ void main() {
     expect(mobile.showPlatformBadge, isTrue);
     expect(mobile.showAudience, isFalse);
     expect(mobile.showReplayBadge, isFalse);
+    expect(mobile.layout, RoomCardLayout.compact);
     expect(mobile.cornerRadius, 27);
     expect(controller.presetFor(RoomCardViewport.mobile), RoomCardPreset.custom);
   });
@@ -93,6 +118,8 @@ void main() {
     final current = RoomCardSettingsController.parseConfig({'mobilePreset': 'compact', 'desktopPreset': 'rich'});
     expect(current['mobileConfig'], RoomCardAppearance.compact);
     expect(current['desktopConfig'], RoomCardAppearance.detailed);
+    expect((current['mobileConfig'] as RoomCardAppearance).layout, RoomCardLayout.compact);
+    expect((current['desktopConfig'] as RoomCardAppearance).layout, RoomCardLayout.cover);
 
     final legacy = RoomCardSettingsController.extractConfig({
       'room_card_mobile_preset': 'custom',
@@ -111,6 +138,12 @@ void main() {
     expect(
       () => RoomCardSettingsController.parseConfig({
         'desktopConfig': {'cornerRadius': double.infinity},
+      }),
+      throwsFormatException,
+    );
+    expect(
+      () => RoomCardSettingsController.parseConfig({
+        'desktopConfig': {'layout': 'unknown'},
       }),
       throwsFormatException,
     );

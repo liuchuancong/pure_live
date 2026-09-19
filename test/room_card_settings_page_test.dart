@@ -63,24 +63,40 @@ void main() {
     expect(find.byKey(const ValueKey('room-card-target-mobile')), findsOneWidget);
     expect(find.byKey(const ValueKey('room-card-target-desktop')), findsOneWidget);
     expect(SettingsService.to.roomCard.currentViewport, RoomCardViewport.desktop);
+    expect(find.byKey(const ValueKey('room-card-compact-layout')), findsOneWidget);
+    expect(find.byKey(const ValueKey('room-card-cover-layout')), findsNothing);
     expect(find.byKey(const ValueKey('room-card-platform-badge')), findsNothing);
-    expect(find.byKey(const ValueKey('room-card-avatar')), findsNothing);
-    expect(find.byKey(const ValueKey('room-card-anchor-name')), findsNothing);
+    expect(find.byKey(const ValueKey('room-card-avatar')), findsOneWidget);
+    expect(find.byKey(const ValueKey('room-card-anchor-name')), findsOneWidget);
+    final compactHeight = tester.getSize(find.byKey(const ValueKey('room-card-surface'))).height;
     final compactShape = tester.widget<Card>(find.byKey(const ValueKey('room-card-surface'))).shape;
     expect((compactShape! as RoundedRectangleBorder).borderRadius, BorderRadius.circular(12));
 
     await tester.tap(find.byKey(const ValueKey('room-card-preset-normal')).hitTestable());
     await tester.pump();
     expect(SettingsService.to.roomCard.configFor(RoomCardViewport.desktop), RoomCardAppearance.standard);
+    expect(find.byKey(const ValueKey('room-card-cover-layout')), findsOneWidget);
+    expect(find.byKey(const ValueKey('room-card-compact-layout')), findsNothing);
     expect(find.byKey(const ValueKey('room-card-platform-badge')), findsOneWidget);
     expect(find.byKey(const ValueKey('room-card-avatar')), findsOneWidget);
     expect(find.byKey(const ValueKey('room-card-anchor-name')), findsOneWidget);
+    final standardHeight = tester.getSize(find.byKey(const ValueKey('room-card-surface'))).height;
+    expect(standardHeight, greaterThan(compactHeight * 2));
 
     final settingsScroll = tester.state<ScrollableState>(
       find.descendant(of: find.byKey(const ValueKey('room-card-settings-scroll')), matching: find.byType(Scrollable)),
     );
+    settingsScroll.position.jumpTo(settingsScroll.position.maxScrollExtent);
+    await tester.pump();
+    expect(find.byKey(const ValueKey('room-card-layout-compact')), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('room-card-layout-compact')).hitTestable());
+    await tester.pump();
+    expect(SettingsService.to.roomCard.configFor(RoomCardViewport.desktop).layout, RoomCardLayout.compact);
+    expect(SettingsService.to.roomCard.presetFor(RoomCardViewport.desktop), RoomCardPreset.custom);
+
     settingsScroll.position.jumpTo(0);
     await tester.pump();
+    expect(find.byKey(const ValueKey('room-card-compact-layout')), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('room-card-target-mobile')).hitTestable());
     await tester.pump();
     expect(SettingsService.to.roomCard.configFor(RoomCardViewport.mobile), RoomCardAppearance.detailed);

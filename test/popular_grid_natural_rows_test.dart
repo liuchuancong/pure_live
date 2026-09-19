@@ -7,6 +7,7 @@ import 'package:pure_live/common/base/base_page_scroll_bone.dart';
 import 'package:pure_live/common/base/live_directory_controller.dart';
 import 'package:pure_live/common/models/live_room.dart';
 import 'package:pure_live/common/services/settings_service.dart';
+import 'package:pure_live/common/services/settings/room_card_settings_controller.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:pure_live/common/widgets/room_card.dart';
 import 'package:pure_live/get/get.dart';
@@ -94,4 +95,40 @@ void main() {
       });
     }
   }
+
+  testWidgets('compact preset restores short identity rows instead of cover cards', (tester) async {
+    tester.view.physicalSize = const Size(1000, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(() async {
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+    });
+    SettingsService.to.roomCard.applyPreset(RoomCardViewport.desktop, RoomCardPreset.compact);
+    final fixture = WeiboApplicationFixture();
+    final controller = LiveDirectoryController(directory: fixture.adapter);
+    controller.list.assignAll([
+      LiveRoom(
+        platform: 'weibo',
+        roomId: 'compact-fixture',
+        title: 'Compact title',
+        nick: 'Compact owner',
+        liveStatus: LiveStatus.live,
+      ),
+    ]);
+    controller.totalCount.value = 1;
+    Get.put<BasePageScrollAndStateBone<LiveRoom>>(controller, tag: 'weibo');
+
+    await tester.pumpWidget(const GetMaterialApp(home: Scaffold(body: PopularGridView('weibo'))));
+    await tester.pumpAndSettle();
+
+    final card = find.byKey(const ValueKey('weibo:compact-fixture'));
+    expect(find.descendant(of: card, matching: find.byKey(const ValueKey('room-card-compact-layout'))), findsOneWidget);
+    expect(find.descendant(of: card, matching: find.byKey(const ValueKey('room-card-cover-layout'))), findsNothing);
+    expect(tester.getSize(card).height, lessThan(100));
+    expect(find.descendant(of: card, matching: find.byKey(const ValueKey('room-card-avatar'))), findsOneWidget);
+    expect(find.descendant(of: card, matching: find.byKey(const ValueKey('room-card-anchor-name'))), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 }

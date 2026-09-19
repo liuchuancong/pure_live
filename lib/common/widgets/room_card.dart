@@ -754,6 +754,201 @@ class RoomCard extends StatelessWidget {
     });
   }
 
+  Widget _buildAudienceMetric({required bool dense}) {
+    return Obx(() {
+      final app = SettingsService.to.app;
+      final preferReal = app.preferRealOnlineCounts.v;
+      final platformEnabled = app.isRealOnlineEnabledFor(room.platform);
+      final type = room.audienceType(preferRealOnline: preferReal, platformEnabled: platformEnabled);
+      final value = room.audienceValue(preferRealOnline: preferReal, platformEnabled: platformEnabled);
+      final labelKey = switch (type) {
+        AudienceMetricType.popularity => 'audience_popularity',
+        AudienceMetricType.onlineViewers => 'audience_online',
+        AudienceMetricType.totalViewers => 'audience_total',
+        AudienceMetricType.followers => 'audience_followers',
+        AudienceMetricType.unknown => 'audience_count',
+      };
+      final displayValue = value.isEmpty ? i18n('audience_waiting') : readableCount(value);
+      return CoverMetricBadge(
+        key: const ValueKey('cover-audience-metric'),
+        icon: switch (type) {
+          AudienceMetricType.onlineViewers => Icons.people_alt_rounded,
+          AudienceMetricType.followers => Icons.favorite_rounded,
+          AudienceMetricType.totalViewers => Icons.visibility_rounded,
+          _ => Icons.whatshot_rounded,
+        },
+        value: displayValue,
+        semanticLabel: '${i18n(labelKey)} $displayValue',
+        dense: dense,
+      );
+    });
+  }
+
+  Widget _buildCompactPlatformBadge(bool isDark) {
+    return Container(
+      key: const ValueKey('room-card-platform-badge'),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.grey[800] : Colors.grey[100],
+        borderRadius: BorderRadius.circular(7),
+      ),
+      child: Text(
+        room.platform?.toUpperCase() ?? '',
+        maxLines: 1,
+        overflow: TextOverflow.fade,
+        softWrap: false,
+        style: AppTextStyles.t11.copyWith(
+          fontSize: 10,
+          fontWeight: FontWeight.w600,
+          color: isDark ? Colors.grey[300] : Colors.grey[800],
+        ),
+      ),
+    );
+  }
+
+  Widget? _buildCompactTrailing({
+    required RoomCardAppearance config,
+    required bool isDark,
+    required bool showAutomaticPlatformBadge,
+    required double availableWidth,
+    required double textScale,
+  }) {
+    final minimumMetricWidth = showDelete ? 360.0 : (dense ? 260.0 : 300.0);
+    final canShowMetrics = availableWidth >= minimumMetricWidth && textScale < 1.8;
+    final children = <Widget>[];
+
+    if (canShowMetrics && (config.showPlatformBadge || showAutomaticPlatformBadge)) {
+      children.add(_buildCompactPlatformBadge(isDark));
+    }
+    if (canShowMetrics) {
+      if (statusPending) {
+        children.add(
+          CoverMetricBadge(
+            icon: Icons.sync_rounded,
+            value: statusPendingLabel ?? i18n('favorite_status_verifying'),
+            semanticLabel: statusPendingLabel ?? i18n('favorite_status_verifying'),
+            dense: true,
+          ),
+        );
+      } else if (config.showAudience && room.isLiveNow) {
+        children.add(_buildAudienceMetric(dense: true));
+      } else if (config.showReplayBadge && room.isRecord == true) {
+        children.add(
+          CountChip(icon: Icons.videocam_rounded, count: i18n('replay'), dense: true, color: Get.theme.primaryColor),
+        );
+      }
+    } else if (statusPending) {
+      children.add(
+        Tooltip(
+          message: statusPendingLabel ?? i18n('favorite_status_verifying'),
+          child: const Icon(Icons.sync_rounded, size: 18),
+        ),
+      );
+    }
+
+    if (showDelete) {
+      children.add(
+        IconButton(
+          key: const ValueKey('room-card-delete'),
+          tooltip: deleteTooltip ?? i18n('delete'),
+          onPressed: onDelete,
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+          icon: Icon(RemixIcons.delete_bin_line, size: dense ? 17 : 19),
+        ),
+      );
+    }
+    if (children.isEmpty) return null;
+
+    return Padding(
+      padding: const EdgeInsets.only(left: 6),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (var index = 0; index < children.length; index++) ...[
+            if (index > 0) const SizedBox(width: 4),
+            children[index],
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCompactLayout({
+    required BuildContext context,
+    required RoomCardAppearance config,
+    required bool isDark,
+    required bool showAutomaticPlatformBadge,
+    required double availableWidth,
+    required double textScale,
+  }) {
+    final height = RoomCardLayoutMetrics.compactHeight(
+      appearance: config,
+      dense: dense,
+      hasAction: showDelete,
+      textScaler: MediaQuery.textScalerOf(context),
+    );
+    final trailing = _buildCompactTrailing(
+      config: config,
+      isDark: isDark,
+      showAutomaticPlatformBadge: showAutomaticPlatformBadge,
+      availableWidth: availableWidth,
+      textScale: textScale,
+    );
+
+    return SizedBox(
+      key: const ValueKey('room-card-compact-layout'),
+      height: height,
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: dense ? 8 : 10, vertical: dense ? 8 : 10),
+        child: Row(
+          children: [
+            if (config.showAvatar) ...[
+              KeyedSubtree(
+                key: const ValueKey('room-card-avatar'),
+                child: CommonAvatar(avatarUrl: room.avatar, fallbackName: room.nick, dense: dense),
+              ),
+              SizedBox(width: dense ? 8 : 10),
+            ],
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    room.title ?? '',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: (dense ? AppTextStyles.t13 : AppTextStyles.t15).copyWith(
+                      height: 1.2,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.white : Colors.black87,
+                    ),
+                  ),
+                  if (config.showAnchorName) ...[
+                    SizedBox(height: dense ? 2 : 3),
+                    Text(
+                      room.nick ?? '',
+                      key: const ValueKey('room-card-anchor-name'),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: (dense ? AppTextStyles.t12 : AppTextStyles.t13).copyWith(
+                        height: 1.2,
+                        fontWeight: FontWeight.w500,
+                        color: isDark ? Colors.grey[400] : Colors.grey[700],
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            ?trailing,
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -780,177 +975,151 @@ class RoomCard extends StatelessWidget {
               onTap: () => onTap(context),
               onLongPress: () => onLongPress(context),
               onSecondaryTap: () => onLongPress(context),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Stack(
-                    children: [
-                      AspectRatio(
-                        aspectRatio: 16 / 9,
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(radius),
-                          child: ColoredBox(
-                            color: isDark ? Colors.grey[850]! : Colors.grey.shade100,
-                            child: _buildCover(context, isDark),
-                          ),
-                        ),
-                      ),
-                      if (config.showPlatformBadge)
-                        Positioned(
-                          key: const ValueKey('room-card-platform-badge'),
-                          left: 8,
-                          top: 8,
-                          child: Container(
-                            padding: EdgeInsets.symmetric(horizontal: dense ? 6 : 8, vertical: dense ? 3 : 4),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withValues(alpha: 0.58),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              room.platform?.toUpperCase() ?? '',
-                              style: AppTextStyles.t11.copyWith(
-                                fontSize: dense ? 10 : null,
-                                color: Colors.white,
-                                fontWeight: FontWeight.w700,
+              child: config.layout == RoomCardLayout.compact
+                  ? _buildCompactLayout(
+                      context: context,
+                      config: config,
+                      isDark: isDark,
+                      showAutomaticPlatformBadge: showAutomaticPlatformBadge,
+                      availableWidth: constraints.maxWidth,
+                      textScale: textScale,
+                    )
+                  : Column(
+                      key: const ValueKey('room-card-cover-layout'),
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Stack(
+                          children: [
+                            AspectRatio(
+                              aspectRatio: 16 / 9,
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(radius),
+                                child: ColoredBox(
+                                  color: isDark ? Colors.grey[850]! : Colors.grey.shade100,
+                                  child: _buildCover(context, isDark),
+                                ),
                               ),
                             ),
-                          ),
-                        ),
-                      if (config.showReplayBadge && room.isRecord == true)
-                        Positioned(
-                          key: const ValueKey('room-card-replay-badge'),
-                          right: showDelete ? (dense ? 44 : 48) : 8,
-                          top: 8,
-                          child: CountChip(
-                            icon: Icons.videocam_rounded,
-                            count: i18n("replay"),
-                            dense: dense,
-                            color: Get.theme.primaryColor,
-                          ),
-                        ),
-                      if (statusPending)
-                        Positioned(
-                          right: 8,
-                          bottom: 8,
-                          child: CoverMetricBadge(
-                            icon: Icons.sync_rounded,
-                            value: statusPendingLabel ?? i18n('favorite_status_verifying'),
-                            semanticLabel: statusPendingLabel ?? i18n('favorite_status_verifying'),
-                            dense: dense,
-                          ),
-                        )
-                      else if (config.showAudience && room.isLiveNow)
-                        Positioned(
-                          right: 8,
-                          bottom: 8,
-                          child: Obx(() {
-                            final app = SettingsService.to.app;
-                            final preferReal = app.preferRealOnlineCounts.v;
-                            final platformEnabled = app.isRealOnlineEnabledFor(room.platform);
-                            final type = room.audienceType(
-                              preferRealOnline: preferReal,
-                              platformEnabled: platformEnabled,
-                            );
-                            final value = room.audienceValue(
-                              preferRealOnline: preferReal,
-                              platformEnabled: platformEnabled,
-                            );
-                            final labelKey = switch (type) {
-                              AudienceMetricType.popularity => 'audience_popularity',
-                              AudienceMetricType.onlineViewers => 'audience_online',
-                              AudienceMetricType.totalViewers => 'audience_total',
-                              AudienceMetricType.followers => 'audience_followers',
-                              AudienceMetricType.unknown => 'audience_count',
-                            };
-                            final displayValue = value.isEmpty ? i18n('audience_waiting') : readableCount(value);
-                            return CoverMetricBadge(
-                              key: const ValueKey('cover-audience-metric'),
-                              icon: switch (type) {
-                                AudienceMetricType.onlineViewers => Icons.people_alt_rounded,
-                                AudienceMetricType.followers => Icons.favorite_rounded,
-                                AudienceMetricType.totalViewers => Icons.visibility_rounded,
-                                _ => Icons.whatshot_rounded,
-                              },
-                              value: displayValue,
-                              semanticLabel: '${i18n(labelKey)} $displayValue',
-                              dense: dense,
-                            );
-                          }),
-                        ),
-                      if (showDelete)
-                        Positioned(
-                          right: 0,
-                          top: 0,
-                          child: IconButton(
-                            key: const ValueKey('room-card-delete'),
-                            tooltip: deleteTooltip ?? i18n('delete'),
-                            onPressed: onDelete,
-                            padding: const EdgeInsets.all(10),
-                            constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-                            icon: Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: BoxDecoration(
-                                color: Colors.black.withValues(alpha: 0.6),
-                                shape: BoxShape.circle,
+                            if (config.showPlatformBadge)
+                              Positioned(
+                                key: const ValueKey('room-card-platform-badge'),
+                                left: 8,
+                                top: 8,
+                                child: Container(
+                                  padding: EdgeInsets.symmetric(horizontal: dense ? 6 : 8, vertical: dense ? 3 : 4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withValues(alpha: 0.58),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    room.platform?.toUpperCase() ?? '',
+                                    style: AppTextStyles.t11.copyWith(
+                                      fontSize: dense ? 10 : null,
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
                               ),
-                              child: Icon(RemixIcons.delete_bin_line, color: Colors.white, size: dense ? 16 : 18),
-                            ),
-                          ),
+                            if (config.showReplayBadge && room.isRecord == true)
+                              Positioned(
+                                key: const ValueKey('room-card-replay-badge'),
+                                right: showDelete ? (dense ? 44 : 48) : 8,
+                                top: 8,
+                                child: CountChip(
+                                  icon: Icons.videocam_rounded,
+                                  count: i18n("replay"),
+                                  dense: dense,
+                                  color: Get.theme.primaryColor,
+                                ),
+                              ),
+                            if (statusPending)
+                              Positioned(
+                                right: 8,
+                                bottom: 8,
+                                child: CoverMetricBadge(
+                                  icon: Icons.sync_rounded,
+                                  value: statusPendingLabel ?? i18n('favorite_status_verifying'),
+                                  semanticLabel: statusPendingLabel ?? i18n('favorite_status_verifying'),
+                                  dense: dense,
+                                ),
+                              )
+                            else if (config.showAudience && room.isLiveNow)
+                              Positioned(right: 8, bottom: 8, child: _buildAudienceMetric(dense: dense)),
+                            if (showDelete)
+                              Positioned(
+                                right: 0,
+                                top: 0,
+                                child: IconButton(
+                                  key: const ValueKey('room-card-delete'),
+                                  tooltip: deleteTooltip ?? i18n('delete'),
+                                  onPressed: onDelete,
+                                  padding: const EdgeInsets.all(10),
+                                  constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                                  icon: Container(
+                                    padding: const EdgeInsets.all(6),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withValues(alpha: 0.6),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(RemixIcons.delete_bin_line, color: Colors.white, size: dense ? 16 : 18),
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
-                    ],
-                  ),
-                  ListTile(
-                    dense: dense,
-                    minLeadingWidth: dense ? 34 : 40,
-                    contentPadding: EdgeInsets.symmetric(horizontal: dense ? 10 : 12, vertical: dense ? 4 : 6),
-                    horizontalTitleGap: dense ? 8 : 12,
-                    leading: config.showAvatar
-                        ? KeyedSubtree(
-                            key: const ValueKey('room-card-avatar'),
-                            child: CommonAvatar(avatarUrl: room.avatar, fallbackName: room.nick, dense: dense),
-                          )
-                        : null,
-                    title: Text(
-                      room.title ?? '',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: (dense ? AppTextStyles.t13 : AppTextStyles.t15).copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: isDark ? Colors.white : Colors.black87,
-                      ),
-                    ),
-                    subtitle: config.showAnchorName
-                        ? Text(
-                            room.nick ?? '',
-                            key: const ValueKey('room-card-anchor-name'),
+                        ListTile(
+                          dense: dense,
+                          minLeadingWidth: dense ? 34 : 40,
+                          contentPadding: EdgeInsets.symmetric(horizontal: dense ? 10 : 12, vertical: dense ? 4 : 6),
+                          horizontalTitleGap: dense ? 8 : 12,
+                          leading: config.showAvatar
+                              ? KeyedSubtree(
+                                  key: const ValueKey('room-card-avatar'),
+                                  child: CommonAvatar(avatarUrl: room.avatar, fallbackName: room.nick, dense: dense),
+                                )
+                              : null,
+                          title: Text(
+                            room.title ?? '',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: (dense ? AppTextStyles.t12 : AppTextStyles.t13).copyWith(
-                              fontWeight: FontWeight.w500,
-                              color: isDark ? Colors.grey[400] : Colors.grey[700],
+                            style: (dense ? AppTextStyles.t13 : AppTextStyles.t15).copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: isDark ? Colors.white : Colors.black87,
                             ),
-                          )
-                        : null,
-                    trailing: showAutomaticPlatformBadge
-                        ? Container(
-                            key: const ValueKey('room-card-platform-badge'),
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: isDark ? Colors.grey[800] : Colors.grey[100],
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              room.platform?.toUpperCase() ?? '',
-                              style: AppTextStyles.t11.copyWith(
-                                fontWeight: FontWeight.w600,
-                                color: isDark ? Colors.grey[300] : Colors.grey[800],
-                              ),
-                            ),
-                          )
-                        : null,
-                  ),
-                ],
-              ),
+                          ),
+                          subtitle: config.showAnchorName
+                              ? Text(
+                                  room.nick ?? '',
+                                  key: const ValueKey('room-card-anchor-name'),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: (dense ? AppTextStyles.t12 : AppTextStyles.t13).copyWith(
+                                    fontWeight: FontWeight.w500,
+                                    color: isDark ? Colors.grey[400] : Colors.grey[700],
+                                  ),
+                                )
+                              : null,
+                          trailing: showAutomaticPlatformBadge
+                              ? Container(
+                                  key: const ValueKey('room-card-platform-badge'),
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: isDark ? Colors.grey[800] : Colors.grey[100],
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    room.platform?.toUpperCase() ?? '',
+                                    style: AppTextStyles.t11.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                      color: isDark ? Colors.grey[300] : Colors.grey[800],
+                                    ),
+                                  ),
+                                )
+                              : null,
+                        ),
+                      ],
+                    ),
             ),
           );
         },

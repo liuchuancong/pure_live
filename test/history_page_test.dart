@@ -410,8 +410,10 @@ void main() {
 
   testWidgets('history delete control is named and keeps a 48 pixel target', (tester) async {
     history.historyRooms.value = [room('a', 100)];
+    Get.find<RoomCardSettingsController>().applyPreset(RoomCardViewport.desktop, RoomCardPreset.compact);
     await open(tester, locale: 'en', size: const Size(320, 480), scale: 3);
 
+    expect(find.byKey(const ValueKey('room-card-compact-layout')), findsOneWidget);
     final delete = find.byTooltip('Remove old-a from watch history').hitTestable();
     expect(delete, findsOneWidget);
     expect(tester.getSize(delete).width, greaterThanOrEqualTo(48));
