@@ -4,6 +4,8 @@
 
 状态：`NR` 未执行、`RUN` 执行中、`PASS` 通过、`FAIL` 失败、`BLOCKED` 缺少当前外部条件。`PASS` 必须附日志、截图、命令记录或确定性测试路径；构建成功不等于功能通过。
 
+> 2026-09-19 Issue #869 Android 进房音量增量：3.1.4 与冻结的 3.1.2 都在设备当前媒体音量非 0 时把单房间保存值写回共享系统媒体流，因而旧房间静音值会覆盖用户在外部更新后的设备值。`789f03cc` 改为普通进入只采纳设备当前值、不执行房间恢复写入；明确全局静音仍是唯一初始化写入例外，既有生命周期和事件代次保护保留。有效红灯 35 PASS / 1 FAIL，直接 36/36，最终八文件 253/253 与 analyze 通过，见 `docs/ISSUE_869_ANDROID_ROOM_VOLUME_RESTORE_AUDIT_2026_09_19.md`；代码已推送至 `origin` 并精确核对。A3-04 保持 RUN，账本仍为 20 PASS / 42 RUN / 0 NR，共 42 组未闭环；未构建候选、操作设备或启动 GUI，Astra Light 0 次。
+
 > 2026-09-19 Issue #867 房间卡片简洁布局增量：3.1.4 的简洁预设只隐藏字段，真实卡片与固定网格仍保留 16:9 封面；历史 `8169dafa` 明确使用 `showAsListTile: true`。`bc083310` 已补齐持久化布局维度、无封面紧凑行、固定/自然网格共享几何、3.1.2/3.1.4 迁移和手动布局选择器。有效红灯锁定控制器、设置页与热门卡片三类缺口，第一轮 25/25，最终八文件 82/82 与最终 analyze 通过，见 `docs/ISSUE_867_ROOM_CARD_COMPACT_LAYOUT_AUDIT_2026_09_19.md`；代码提交已推送至 `origin` 并精确核对。A1-02/A2-01/W1-01 保持 RUN，账本仍为 20 PASS / 42 RUN / 0 NR，共 42 组未闭环；未构建候选、启动 GUI 或操作设备，Astra Light 0 次。
 
 > 2026-09-16 Issue #852 ColorOS 14 系统手势返回增量：普通路由原先让 Flutter 共享元素预测返回持有手势；Flutter P2 #153577 仍记录视觉完成后输入被继续阻塞。`6fbc1685` 集中亮/暗主题页面转场并让 Android 普通路由使用 `FadeForwards`，保留 Manifest 系统回调、commit 标准 Navigator pop、cancel 语义和直播页自有返回仲裁。有效红灯 3 PASS / 3 FAIL，直接 6/6，最终四文件 21/21 与本批一次 analyze 通过，见 `docs/ISSUE_852_COLOROS_SYSTEM_BACK_AUDIT_2026_09_16.md`；代码提交已推送至 `origin` 并精确核对。ColorOS 14 实机仍待复验；A1-04/A1-05/A2-01 保持 RUN，账本仍为 20 PASS / 42 RUN / 0 NR，共 42 组未闭环；未构建候选、启动 GUI 或操作设备，Astra Light 0 次。

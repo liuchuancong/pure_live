@@ -6,6 +6,8 @@
 
 来源 **upstream-existing（已核对冻结源码）**：本地冻结 `5ff565e9d21c79fa6e2b5f9434098de2cc940d4e`（liuchuancong，08-25）含相同的初始化、初始监听保存和 setter 等待后发布逻辑；维护分支随后沿用。此次未 fetch/合并或声称最新上游已修复，也未复现报告者 Android 16 的物理按键故障。下面是独立源码缺陷，不将它们等同于 #858 根因。
 
+> **2026-09-19 合同订正：** 本审计当时保留了“进入移动端房间时把房间保存值写回系统媒体流”的旧行为，只修复其生命周期与竞争条件。后续 Issue [#869](https://github.com/liuchuancong/pure_live/issues/869) 证明该行为本身会把过期的房间静音值覆盖到用户更新后的共享设备音量；冻结的 3.1.2 与 3.1.4 都存在此路径。提交 `789f03ccf62ecaa1cf810df311d80c149eed02a2` 改为普通进入时采纳设备当前值、不执行房间恢复写入，同时保留本审计的归属、代次、超时和明确全局静音合同。详见 [#869 专项审计](ISSUE_869_ANDROID_ROOM_VOLUME_RESTORE_AUDIT_2026_09_19.md)。
+
 ## 修改前的四项实际失败
 
 基线只增加接口注入和用例，原处理顺序不变。记录 `local-artifacts/build-records/20260910T102429523Z-volume-lifecycle-baseline.json`：原有 5 项通过、新增 4 项失败。
