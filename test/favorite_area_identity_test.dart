@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce/hive.dart';
 import 'package:pure_live/common/models/live_area.dart';
+import 'package:pure_live/common/models/live_room.dart';
 import 'package:pure_live/common/services/settings/favorite_room_controller.dart';
 import 'package:pure_live/common/services/settings_service.dart';
 import 'package:pure_live/common/services/utils/settings_upgrade_migration.dart';
@@ -13,6 +14,7 @@ import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:pure_live/get/get.dart';
 import 'package:pure_live/modules/area_rooms/area_rooms_page.dart';
 import 'package:pure_live/modules/areas/favorite_areas_controller.dart';
+import 'package:pure_live/modules/live_play/widgets/button/favorite_floating_button.dart';
 
 LiveArea area(String platform, {String id = '1', String? type, String name = '分类'}) => LiveArea(
   platform: platform,
@@ -166,9 +168,10 @@ void main() {
     expect(SettingsUpgradeMigration.mergeRawSettings(merged, [incoming]), merged);
   });
 
-  testWidgets('actual favorite button adds another platform and confirmation removes only its target', (tester) async {
+  testWidgets('actual favorite actions keep touch targets and update only their target', (tester) async {
     final target = area('huya');
     final other = area('douyu');
+    final room = LiveRoom(roomId: 'fixture-room', platform: 'bilibili', nick: 'Fixture host');
     final settings = (await tester.runAsync(() async {
       // Hive's file backend and Flutter's fake widget clock have different
       // I/O scheduling. Use Hive's supported memory backend for this widget;
@@ -191,6 +194,8 @@ void main() {
               children: [
                 FavoriteAreaFloatingButton(area: target),
                 Obx(() => Text('favorites:${favoritesPage.favoriteAreas.length}')),
+                FavoriteFloatingButton(room: room),
+                FavoriteFloatingButton(room: room, compact: true),
               ],
             ),
           ),
@@ -198,6 +203,14 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.text('favorites:1'), findsOneWidget);
+      for (final button in [
+        find.byKey(const ValueKey('favorite-action-button-expanded')),
+        find.byKey(const ValueKey('favorite-action-button-compact')),
+      ]) {
+        final size = tester.getSize(button);
+        expect(size.width, greaterThanOrEqualTo(48));
+        expect(size.height, greaterThanOrEqualTo(48));
+      }
       await tester.tap(find.byType(InkWell).first);
       await tester.pumpAndSettle();
       expect(find.byType(AlertDialog), findsNothing);

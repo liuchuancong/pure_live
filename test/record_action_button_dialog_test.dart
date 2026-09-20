@@ -44,6 +44,7 @@ void main() {
     String language = 'en',
     Size size = const Size(800, 600),
     double textScale = 1,
+    bool compactHeader = false,
     Future<void> Function()? onOpenRecordCenter,
   }) async {
     tester.view.physicalSize = size;
@@ -76,6 +77,7 @@ void main() {
                   room: room,
                   recorderController: recorder,
                   onOpenRecordCenter: onOpenRecordCenter ?? () async {},
+                  compactHeader: compactHeader,
                 ),
               ),
             ),
@@ -89,6 +91,16 @@ void main() {
   Future<void> openDialog(WidgetTester tester, {String language = 'en'}) async {
     await tester.tap(find.widgetWithText(FilledButton, translations[language]!['record'] as String));
     await tester.pumpAndSettle();
+  }
+
+  for (final compactHeader in [false, true]) {
+    testWidgets('${compactHeader ? 'compact' : 'expanded'} record action keeps a 48dp touch target', (tester) async {
+      await open(tester, compactHeader: compactHeader);
+
+      final size = tester.getSize(find.byKey(const ValueKey('record-action-button')));
+      expect(size.width, greaterThanOrEqualTo(48));
+      expect(size.height, greaterThanOrEqualTo(48));
+    });
   }
 
   for (final language in ['en', 'zh']) {

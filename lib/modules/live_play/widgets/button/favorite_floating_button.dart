@@ -49,8 +49,14 @@ class FavoriteFloatingButton extends StatelessWidget {
         return Tooltip(
           message: label,
           child: IconButton.filledTonal(
-            visualDensity: VisualDensity.compact,
-            constraints: const BoxConstraints.tightFor(width: 40, height: 38),
+            key: const ValueKey('favorite-action-button-compact'),
+            // Compact visual density subtracts eight logical pixels from the
+            // supplied constraints, reducing this header action back to 40dp.
+            visualDensity: VisualDensity.standard,
+            constraints: const BoxConstraints.tightFor(
+              width: kMinInteractiveDimension,
+              height: kMinInteractiveDimension,
+            ),
             padding: EdgeInsets.zero,
             onPressed: () => _toggleFavorite(isFavorite),
             icon: Icon(isFavorite ? Remix.heart_3_fill : Remix.heart_3_line, size: 19),
@@ -58,6 +64,7 @@ class FavoriteFloatingButton extends StatelessWidget {
         );
       }
       return FilledButton(
+        key: const ValueKey('favorite-action-button-expanded'),
         style: ButtonStyle(
           padding: WidgetStateProperty.all(Platform.isWindows ? const EdgeInsets.all(12) : const EdgeInsets.all(5)),
           backgroundColor: WidgetStateProperty.all(
@@ -65,7 +72,7 @@ class FavoriteFloatingButton extends StatelessWidget {
           ),
           shape: WidgetStateProperty.all(RoundedRectangleBorder(borderRadius: BorderRadius.circular(6))),
           textStyle: WidgetStateProperty.all(AppTextStyles.t12),
-          minimumSize: WidgetStateProperty.all(Size.zero),
+          minimumSize: WidgetStateProperty.all(const Size(kMinInteractiveDimension, kMinInteractiveDimension)),
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         ),
         onPressed: () => _toggleFavorite(isFavorite),

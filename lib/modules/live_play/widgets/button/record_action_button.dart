@@ -72,15 +72,15 @@ class _RecordActionButtonState extends State<RecordActionButton> {
       return Tooltip(
         message: label,
         child: SizedBox(
-          width: widget.compactHeader ? 40 : null,
-          height: widget.compactHeader ? 38 : null,
+          width: widget.compactHeader ? kMinInteractiveDimension : null,
+          height: kMinInteractiveDimension,
           child: FilledButton(
             key: const ValueKey('record-action-button'),
             style: FilledButton.styleFrom(
               backgroundColor: backgroundColor,
               foregroundColor: foregroundColor,
               padding: widget.compactHeader ? EdgeInsets.zero : const EdgeInsets.symmetric(horizontal: 8),
-              minimumSize: widget.compactHeader ? const Size(38, 38) : const Size(0, 38),
+              minimumSize: const Size(kMinInteractiveDimension, kMinInteractiveDimension),
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               elevation: 0,
