@@ -210,7 +210,7 @@ class _FirebaseEmailAuthState extends State<FirebaseEmailAuth> {
           const SizedBox(height: 24),
           if (!_forgotPassword) ...[
             ConstrainedBox(
-              constraints: const BoxConstraints(minHeight: 46),
+              constraints: const BoxConstraints(minHeight: kMinInteractiveDimension),
               child: FilledButton(
                 style: FilledButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
                 onPressed: _isLoading ? null : _handleSubmit,
@@ -240,7 +240,7 @@ class _FirebaseEmailAuthState extends State<FirebaseEmailAuth> {
               ),
               const SizedBox(height: 16),
               ConstrainedBox(
-                constraints: const BoxConstraints(minHeight: 46),
+                constraints: const BoxConstraints(minHeight: kMinInteractiveDimension),
                 child: OutlinedButton.icon(
                   style: OutlinedButton.styleFrom(
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -273,7 +273,7 @@ class _FirebaseEmailAuthState extends State<FirebaseEmailAuth> {
           ],
           if (_isSigningIn && _forgotPassword && widget.backend.supportsPasswordReset) ...[
             ConstrainedBox(
-              constraints: const BoxConstraints(minHeight: 46),
+              constraints: const BoxConstraints(minHeight: kMinInteractiveDimension),
               child: FilledButton(
                 style: FilledButton.styleFrom(
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
