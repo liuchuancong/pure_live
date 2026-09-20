@@ -301,7 +301,7 @@ class VersionPage extends GetView<VersionController> {
                             OutlinedButton.styleFrom(
                               backgroundColor: theme.colorScheme.surfaceContainerLow,
                               foregroundColor: theme.colorScheme.onSurfaceVariant,
-                              minimumSize: const Size(0, 44),
+                              minimumSize: const Size(0, kMinInteractiveDimension),
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                               // Subtle border matching your design specs
                               side: BorderSide(color: theme.dividerColor.withValues(alpha: 0.08), width: 1),
