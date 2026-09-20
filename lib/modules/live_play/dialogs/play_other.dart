@@ -117,9 +117,13 @@ class _PlayOtherState extends State<PlayOther> with SingleTickerProviderStateMix
                     ),
                     Obx(
                       () => IconButton(
+                        key: const ValueKey('room-history-refresh'),
                         tooltip: i18n('refresh'),
-                        visualDensity: VisualDensity.compact,
-                        constraints: const BoxConstraints.tightFor(width: 32, height: 32),
+                        visualDensity: VisualDensity.standard,
+                        constraints: const BoxConstraints.tightFor(
+                          width: contentFirstPanelHeaderActionExtent,
+                          height: contentFirstPanelHeaderActionExtent,
+                        ),
                         padding: EdgeInsets.zero,
                         onPressed: refreshing.value
                             ? null
@@ -131,9 +135,13 @@ class _PlayOtherState extends State<PlayOther> with SingleTickerProviderStateMix
                       ),
                     ),
                     IconButton(
+                      key: const ValueKey('room-history-close'),
                       tooltip: i18n('close'),
-                      visualDensity: VisualDensity.compact,
-                      constraints: const BoxConstraints.tightFor(width: 32, height: 32),
+                      visualDensity: VisualDensity.standard,
+                      constraints: const BoxConstraints.tightFor(
+                        width: contentFirstPanelHeaderActionExtent,
+                        height: contentFirstPanelHeaderActionExtent,
+                      ),
                       padding: EdgeInsets.zero,
                       icon: const Icon(Icons.close_rounded, size: 18),
                       onPressed: () {

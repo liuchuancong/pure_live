@@ -1115,9 +1115,13 @@ class FullscreenStreamSelectorButton extends StatelessWidget {
                             ),
                           ),
                           IconButton(
+                            key: const ValueKey('fullscreen-stream-selector-close'),
                             tooltip: i18n('close'),
-                            visualDensity: VisualDensity.compact,
-                            constraints: const BoxConstraints.tightFor(width: 32, height: 32),
+                            visualDensity: VisualDensity.standard,
+                            constraints: const BoxConstraints.tightFor(
+                              width: contentFirstPanelHeaderActionExtent,
+                              height: contentFirstPanelHeaderActionExtent,
+                            ),
                             padding: EdgeInsets.zero,
                             onPressed: () => Navigator.pop(dialogContext),
                             icon: const Icon(Icons.close_rounded, size: 19),
@@ -1460,7 +1464,7 @@ class BottomActionBar extends StatelessWidget {
       child: Column(
         children: [
           SizedBox(
-            height: 38,
+            height: portraitFullscreenComposerHeight,
             child: Row(
               children: [
                 Expanded(child: FullscreenLocalDanmakuComposer(controller: controller)),
@@ -1612,7 +1616,7 @@ class _FullscreenLocalDanmakuComposerState extends State<FullscreenLocalDanmakuC
       final localStyle = local.currentDanmakuStyle;
       return SizedBox(
         key: const ValueKey('fullscreen-local-danmaku-composer'),
-        height: 38,
+        height: portraitFullscreenComposerHeight,
         child: TextField(
           controller: _textController,
           focusNode: _focusNode,
@@ -1644,9 +1648,12 @@ class _FullscreenLocalDanmakuComposerState extends State<FullscreenLocalDanmakuC
             prefixIcon: IconButton(
               key: const ValueKey('fullscreen-local-danmaku-style'),
               tooltip: i18n('local_danmaku_style'),
-              visualDensity: VisualDensity.compact,
+              visualDensity: VisualDensity.standard,
               padding: EdgeInsets.zero,
-              constraints: const BoxConstraints.tightFor(width: 36, height: 36),
+              constraints: const BoxConstraints.tightFor(
+                width: portraitFullscreenComposerHeight,
+                height: portraitFullscreenComposerHeight,
+              ),
               onPressed: () async {
                 controller.isMenuOpen.value = true;
                 controller.stopHideController();
@@ -1664,13 +1671,20 @@ class _FullscreenLocalDanmakuComposerState extends State<FullscreenLocalDanmakuC
               },
               icon: Icon(Icons.auto_awesome_rounded, color: Color(local.danmakuColor.v), size: 18),
             ),
-            prefixIconConstraints: const BoxConstraints(minWidth: 36),
+            prefixIconConstraints: const BoxConstraints(
+              minWidth: portraitFullscreenComposerHeight,
+              minHeight: portraitFullscreenComposerHeight,
+            ),
             suffixIcon: IconButton(
               key: const ValueKey('fullscreen-local-danmaku-send'),
               tooltip: i18n('local_send_message'),
-              visualDensity: VisualDensity.compact,
+              visualDensity: VisualDensity.standard,
               onPressed: _send,
               icon: const Icon(Icons.send_rounded, color: Colors.white, size: 18),
+            ),
+            suffixIconConstraints: const BoxConstraints(
+              minWidth: portraitFullscreenComposerHeight,
+              minHeight: portraitFullscreenComposerHeight,
             ),
             contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
             enabledBorder: OutlineInputBorder(

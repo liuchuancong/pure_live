@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:pure_live/modules/live_play/widgets/danmaku/danmaku_tab.dart';
 import 'package:pure_live/modules/live_play/dialogs/play_other.dart';
 import 'package:pure_live/modules/live_play/widgets/content_first_panel_layout.dart';
+import 'package:pure_live/modules/live_play/widgets/layout/portrait_fullscreen_interaction.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller_panel.dart';
 import 'package:pure_live/modules/live_play/states/ui_state.dart';
 
@@ -120,7 +121,7 @@ void main() {
     expect(style.splitContent, isTrue, reason: 'phone landscape keeps preview left and controls right');
     expect(resolveStreamChoiceColumns(streams.size.width - 24), 3);
 
-    final roomGridSize = Size(rooms.size.width, rooms.size.height - 36 - 30 - 1);
+    final roomGridSize = Size(rooms.size.width, rooms.size.height - contentFirstPanelHeaderActionExtent - 30 - 1);
     final cardHeight = resolveRoomHistoryCardHeight(contentSize: roomGridSize, columns: 2);
     expect(cardHeight * 2 + 6 * 2 + 5, lessThanOrEqualTo(roomGridSize.height));
   });
@@ -141,7 +142,7 @@ void main() {
       lineCount: 6,
       splitContent: false,
     );
-    expect(common.dialogHeight, 305);
+    expect(common.dialogHeight, 318);
     expect(common.qualityHeight, 126);
     expect(common.lineHeight, 126);
 
@@ -151,7 +152,7 @@ void main() {
       lineCount: 1,
       splitContent: false,
     );
-    expect(shortLists.dialogHeight, 211, reason: 'one quality and one line must not leave a full-height blank dialog');
+    expect(shortLists.dialogHeight, 224, reason: 'one quality and one line must not leave a full-height blank dialog');
 
     final manyChoices = resolveStreamSelectorPanelLayout(
       maximumDialogSize: const Size(449.5, 396),
@@ -170,9 +171,15 @@ void main() {
       splitContent: true,
     );
     expect(wide.splitContent, isTrue);
-    expect(wide.dialogHeight, 221);
+    expect(wide.dialogHeight, 234);
     expect(wide.qualityHeight, 173);
     expect(wide.lineHeight, 173);
+  });
+
+  test('stream selector title reserves a 48dp close target at default text scale', () {
+    final metrics = resolveStreamSelectorTextMetrics(textScaler: TextScaler.noScaling);
+
+    expect(metrics.dialogTitleRowHeight, greaterThanOrEqualTo(48));
   });
 
   test('stream selector reserves scaled title and choice rows at accessibility text sizes', () {
@@ -304,6 +311,8 @@ void main() {
   test('fullscreen local composer follows the global interaction switch', () {
     expect(shouldShowFullscreenLocalDanmakuComposer(false), isFalse);
     expect(shouldShowFullscreenLocalDanmakuComposer(true), isTrue);
+    expect(portraitFullscreenComposerHeight, greaterThanOrEqualTo(48));
+    expect(portraitFullscreenBottomBarHeight, greaterThanOrEqualTo(4 * 2 + portraitFullscreenComposerHeight + 2 + 48));
   });
 
   test('large landscape windows keep dense panels split internally', () {

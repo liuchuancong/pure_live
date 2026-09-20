@@ -6,7 +6,8 @@ enum PortraitPanelDragDisposition { restorePanel, enterFullscreen }
 
 const double portraitFullscreenRestoreGestureZone = 96;
 // Shared by the controls and entry guidance so their layout cannot drift.
-const double portraitFullscreenControlsHeight = 104;
+const double portraitFullscreenComposerHeight = 48;
+const double portraitFullscreenControlsHeight = 112;
 
 PortraitPanelDragDisposition resolvePortraitPanelDragEnd({
   required bool entryEnabled,

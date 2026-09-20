@@ -17,6 +17,12 @@ void main() {
     expect(resolveRoomHistoryColumns(double.nan), 1);
   });
 
+  test('room history header reserves a 48dp action target at default text scale', () {
+    final metrics = resolveRoomHistoryTextMetrics(textScaler: TextScaler.noScaling);
+
+    expect(metrics.headerHeight, greaterThanOrEqualTo(48));
+  });
+
   test('two-column room cards fit two complete rows in the content viewport', () {
     const content = Size(414, 320);
     final height = resolveRoomHistoryCardHeight(contentSize: content, columns: 2);

@@ -91,7 +91,7 @@ void main() {
         home: Center(
           child: SizedBox(
             width: 320,
-            height: 104,
+            height: portraitFullscreenControlsHeight,
             child: PortraitFullscreenRestoreGestureRegion(
               enabled: true,
               onRestore: () => restores++,
@@ -131,7 +131,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     await tester.pumpWidget(const MaterialApp(home: Scaffold(body: PortraitFullscreenEntryHint())));
     final hint = tester.getRect(find.byKey(const ValueKey('portrait-fullscreen-entry-hint')));
-    expect(hint.bottom, lessThanOrEqualTo(800 - 104 - 12));
+    expect(hint.bottom, lessThanOrEqualTo(800 - portraitFullscreenControlsHeight - 12));
     await tester.pumpWidget(const SizedBox());
   });
 

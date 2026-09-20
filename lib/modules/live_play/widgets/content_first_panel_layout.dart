@@ -2,6 +2,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 
+const contentFirstPanelHeaderActionExtent = 48.0;
+
 enum ContentFirstPanelKind { roomHistory, streamSelector, localDanmakuStyle }
 
 /// Shared sizing policy for landscape playback overlays.
@@ -91,7 +93,11 @@ class StreamSelectorTextMetrics {
     required this.itemHeight,
   });
 
-  static const standard = StreamSelectorTextMetrics(dialogTitleRowHeight: 35, paneHeaderHeight: 23, itemHeight: 42);
+  static const standard = StreamSelectorTextMetrics(
+    dialogTitleRowHeight: contentFirstPanelHeaderActionExtent,
+    paneHeaderHeight: 23,
+    itemHeight: 42,
+  );
 
   final double dialogTitleRowHeight;
   final double paneHeaderHeight;
@@ -117,7 +123,10 @@ StreamSelectorTextMetrics resolveStreamSelectorTextMetrics({
   double lineExtent(double fontSize, double lineHeight) => textScaler.scale(fontSize) * lineHeight;
 
   return StreamSelectorTextMetrics(
-    dialogTitleRowHeight: math.max(35, lineExtent(dialogTitleFontSize, dialogTitleLineHeight) + 8),
+    dialogTitleRowHeight: math.max(
+      contentFirstPanelHeaderActionExtent,
+      lineExtent(dialogTitleFontSize, dialogTitleLineHeight) + 8,
+    ),
     paneHeaderHeight: math.max(23, lineExtent(paneTitleFontSize, paneTitleLineHeight) + 5.5),
     itemHeight: math.max(42, lineExtent(itemFontSize, itemLineHeight) + 16),
   );
@@ -236,7 +245,7 @@ RoomHistoryTextMetrics resolveRoomHistoryTextMetrics({
   final tabLineExtent = lineExtent(tabFontSize, tabLineHeight);
   final detailLineExtent = lineExtent(detailFontSize, detailLineHeight);
   return RoomHistoryTextMetrics(
-    headerHeight: math.max(36, lineExtent(headerFontSize, headerLineHeight) + 8),
+    headerHeight: math.max(contentFirstPanelHeaderActionExtent, lineExtent(headerFontSize, headerLineHeight) + 8),
     tabBarHeight: math.max(30, tabLineExtent + 10),
     // Six pixels are consumed by the vertical padding; two more absorb text
     // metric rounding across fonts and device pixel ratios.

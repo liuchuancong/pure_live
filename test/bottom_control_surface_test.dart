@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pure_live/modules/live_play/widgets/layout/bottom_control_surface.dart';
+import 'package:pure_live/modules/live_play/widgets/layout/portrait_fullscreen_interaction.dart';
 
 void main() {
   Widget scene({required bool portrait, bool visible = true}) => MaterialApp(
@@ -11,12 +12,15 @@ void main() {
         children: [
           BottomControlSurface(
             visible: visible,
-            height: portrait ? 104 : 56,
+            height: portrait ? portraitFullscreenControlsHeight : 56,
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 4),
               child: Column(
                 children: [
-                  if (portrait) ...[const SizedBox(height: 38), const SizedBox(height: 2)],
+                  if (portrait) ...[
+                    const SizedBox(height: portraitFullscreenComposerHeight),
+                    const SizedBox(height: 2),
+                  ],
                   const SizedBox(height: 48),
                 ],
               ),
