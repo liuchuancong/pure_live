@@ -418,9 +418,13 @@ class RoomCard extends StatelessWidget {
                       ],
                     )
                   : IconButton(
+                      key: const ValueKey('room-tag-open-new'),
                       tooltip: i18n('add_tag'),
-                      constraints: const BoxConstraints(),
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      visualDensity: VisualDensity.standard,
+                      constraints: const BoxConstraints(
+                        minWidth: kMinInteractiveDimension,
+                        minHeight: kMinInteractiveDimension,
+                      ),
                       icon: Icon(Remix.add_circle_line, size: 20, color: theme.colorScheme.primary),
                       onPressed: () {
                         setModalState(() {

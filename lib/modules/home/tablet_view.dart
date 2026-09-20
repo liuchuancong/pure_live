@@ -19,6 +19,16 @@ class HomeTabletView extends StatelessWidget {
     required this.onDestinationSelected,
   });
 
+  Widget _railAction({required VoidCallback onPressed, required String tooltip, required IconData icon}) {
+    return IconButton(
+      onPressed: onPressed,
+      tooltip: tooltip,
+      visualDensity: VisualDensity.standard,
+      constraints: const BoxConstraints(minWidth: kMinInteractiveDimension, minHeight: kMinInteractiveDimension),
+      icon: Icon(icon),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -101,37 +111,37 @@ class HomeTabletView extends StatelessWidget {
                           () => SettingsService.to.app.enableMultiView.v
                               ? Padding(
                                   padding: const EdgeInsets.only(top: 0, bottom: 12, left: 12, right: 12),
-                                  child: IconButton(
+                                  child: _railAction(
                                     onPressed: () => AppNavigator.toMultiview(),
                                     tooltip: i18n("multiview_title"),
-                                    icon: const Icon(Remix.layout_grid_line),
+                                    icon: Remix.layout_grid_line,
                                   ),
                                 )
                               : const SizedBox.shrink(),
                         ),
                         Padding(
                           padding: const EdgeInsets.only(top: 0, bottom: 12, left: 12, right: 12),
-                          child: IconButton(
+                          child: _railAction(
                             onPressed: () => Get.toNamed(RoutePath.kToolbox),
                             tooltip: i18n("toolbox_title"),
-                            icon: const Icon(Remix.link),
+                            icon: Remix.link,
                           ),
                         ),
                         Padding(
                           padding: const EdgeInsets.only(top: 0, bottom: 12, left: 12, right: 12),
-                          child: IconButton(
+                          child: _railAction(
                             onPressed: () => Get.toNamed(RoutePath.kSearch),
                             tooltip: i18n("search_live"),
-                            icon: const Icon(CustomIcons.search),
+                            icon: CustomIcons.search,
                           ),
                         ),
                         if (showRecord)
                           Padding(
                             padding: const EdgeInsets.only(top: 0, bottom: 12, left: 12, right: 12),
-                            child: IconButton(
+                            child: _railAction(
                               onPressed: () => Get.toNamed(RoutePath.kRecordPage),
                               tooltip: i18n("record_center"),
-                              icon: const Icon(Remix.download_2_line),
+                              icon: Remix.download_2_line,
                             ),
                           ),
                       ],

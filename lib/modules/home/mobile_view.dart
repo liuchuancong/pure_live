@@ -6,14 +6,12 @@ class HomeMobileView extends StatelessWidget {
   final Widget body;
   final int index;
   final void Function(int) onDestinationSelected;
-  final void Function()? onFavoriteDoubleTap;
 
   const HomeMobileView({
     super.key,
     required this.body,
     required this.index,
     required this.onDestinationSelected,
-    required this.onFavoriteDoubleTap,
   });
 
   @override
@@ -31,11 +29,8 @@ class HomeMobileView extends StatelessWidget {
               case HomeMenu.favorites:
                 destinations.add(
                   NavigationDestination(
-                    icon: GestureDetector(onDoubleTap: onFavoriteDoubleTap, child: const Icon(Remix.heart_3_line)),
-                    selectedIcon: GestureDetector(
-                      onDoubleTap: onFavoriteDoubleTap,
-                      child: const Icon(Remix.heart_3_fill),
-                    ),
+                    icon: const Icon(Remix.heart_3_line),
+                    selectedIcon: const Icon(Remix.heart_3_fill),
                     label: i18n("favorites_title"),
                   ),
                 );

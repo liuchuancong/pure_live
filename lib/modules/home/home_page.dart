@@ -191,10 +191,15 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin,
   }
 
   void handMoveRefresh() {
-    favoriteController.refreshData();
+    if (favoriteController.loadding.value) return;
+    unawaited(favoriteController.refreshData());
   }
 
   void onDestinationSelected(int index) {
+    if (index == _selectedIndex && index == HomeMenu.favorites.index) {
+      handMoveRefresh();
+      return;
+    }
     if (mounted) {
       setState(() => _selectedIndex = index);
     }
@@ -269,7 +274,6 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin,
                     body: currentWidget,
                     index: adjustedIndex,
                     onDestinationSelected: onDestinationSelected,
-                    onFavoriteDoubleTap: handMoveRefresh,
                   )
                 : HomeTabletView(
                     body: currentWidget,
