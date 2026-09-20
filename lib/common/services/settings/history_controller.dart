@@ -1,5 +1,9 @@
+import 'dart:convert';
+
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/services/utils/backup_migration_util.dart';
+import 'package:pure_live/common/utils/hive_pref_util.dart';
+import 'package:synchronized/synchronized.dart';
 
 const int defaultHistoryLimit = 50;
 const int unlimitedHistoryLimit = 0;
@@ -46,6 +50,9 @@ class HistoryController extends GetxController {
   static HistoryController get to => Get.find();
 
   static const String historyLimitKey = 'historyLimit';
+  static const String _historyRoomsKey = 'historyRooms';
+
+  final Lock _historyMutationLock = Lock();
 
   final Rx<List<LiveRoom>> historyRooms = hiveObject(
     'historyRooms',
@@ -74,12 +81,38 @@ class HistoryController extends GetxController {
     }
   }
 
+  Future<void> setHistoryLimitDurably(int value) {
+    return _historyMutationLock.synchronized(() async {
+      final beforeLimit = historyLimit.v;
+      final beforeRooms = List<LiveRoom>.from(historyRooms.v);
+      setHistoryLimit(value);
+      if (beforeLimit == historyLimit.v && _encodeRooms(beforeRooms) == _encodeRooms(historyRooms.v)) return;
+      try {
+        await _writeState(limit: historyLimit.v, rooms: historyRooms.v);
+      } catch (error, stackTrace) {
+        historyLimit.v = beforeLimit;
+        historyRooms.v = beforeRooms;
+        try {
+          await _writeState(limit: beforeLimit, rooms: beforeRooms);
+        } catch (_) {}
+        Error.throwWithStackTrace(error, stackTrace);
+      }
+    });
+  }
+
   void addRoomToHistory(LiveRoom room) {
     historyRooms.v = upsertHistoryRoom(
       historyRooms.v,
       room,
       watchedAt: DateTime.now().millisecondsSinceEpoch,
       limit: historyLimit.v,
+    );
+  }
+
+  Future<bool> addRoomToHistoryDurably(LiveRoom room) {
+    return _mutateRoomsDurably(
+      (current) =>
+          upsertHistoryRoom(current, room, watchedAt: DateTime.now().millisecondsSinceEpoch, limit: historyLimit.v),
     );
   }
 
@@ -100,6 +133,11 @@ class HistoryController extends GetxController {
     historyRooms.v = removeHistorySnapshotEntries(historyRooms.v, snapshot);
   }
 
+  Future<bool> clearHistorySnapshotDurably(Iterable<LiveRoom> snapshot) {
+    final ownedSnapshot = List<LiveRoom>.from(snapshot);
+    return _mutateRoomsDurably((current) => removeHistorySnapshotEntries(current, ownedSnapshot));
+  }
+
   void applyRefreshedRooms(List<LiveRoom> snapshot, List<LiveRoom?> refreshed) {
     // LiveRoom equality compares room identity, not the particular watch/import.
     // Only replace the exact entries still owned by this refresh snapshot.
@@ -109,6 +147,53 @@ class HistoryController extends GetxController {
       if (updated != null) replacements[snapshot[i]] = updated;
     }
     historyRooms.v = applyHistoryLimit(historyRooms.v.map((room) => replacements[room] ?? room), historyLimit.v);
+  }
+
+  Future<bool> applyRefreshedRoomsDurably(List<LiveRoom> snapshot, List<LiveRoom?> refreshed) {
+    final ownedSnapshot = List<LiveRoom>.from(snapshot);
+    final ownedRefreshed = List<LiveRoom?>.from(refreshed);
+    return _mutateRoomsDurably((current) {
+      final replacements = Map<LiveRoom, LiveRoom>.identity();
+      for (var index = 0; index < ownedSnapshot.length && index < ownedRefreshed.length; index++) {
+        final updated = ownedRefreshed[index];
+        if (updated != null) replacements[ownedSnapshot[index]] = updated;
+      }
+      return applyHistoryLimit(current.map((room) => replacements[room] ?? room), historyLimit.v);
+    });
+  }
+
+  Future<bool> _mutateRoomsDurably(List<LiveRoom> Function(List<LiveRoom> current) update) {
+    return _historyMutationLock.synchronized(() async {
+      final before = List<LiveRoom>.from(historyRooms.v);
+      final updated = applyHistoryLimit(update(List<LiveRoom>.from(before)), historyLimit.v);
+      if (_encodeRooms(before) == _encodeRooms(updated)) return false;
+      historyRooms.v = updated;
+      try {
+        await _writeRooms(updated);
+        return true;
+      } catch (error, stackTrace) {
+        historyRooms.v = before;
+        try {
+          await _writeRooms(before);
+        } catch (_) {}
+        Error.throwWithStackTrace(error, stackTrace);
+      }
+    });
+  }
+
+  Future<void> _writeRooms(List<LiveRoom> rooms) async {
+    await HivePrefUtil.setString(_historyRoomsKey, _encodeRooms(rooms));
+    await HivePrefUtil.flush();
+  }
+
+  Future<void> _writeState({required int limit, required List<LiveRoom> rooms}) async {
+    await HivePrefUtil.setInt(historyLimitKey, limit);
+    await HivePrefUtil.setString(_historyRoomsKey, _encodeRooms(rooms));
+    await HivePrefUtil.flush();
+  }
+
+  String _encodeRooms(Iterable<LiveRoom> rooms) {
+    return jsonEncode({'list': rooms.map((room) => room.toJson()).toList(growable: false)});
   }
 
   Map<String, dynamic> toJson() {

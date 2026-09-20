@@ -742,7 +742,7 @@ class LivePlayController extends GetxController
       if (loadEpoch != _roomLoadEpoch) return;
 
       if (liveRoom.platform != Sites.iptvSite) {
-        SettingsService.to.history.addRoomToHistory(liveRoom);
+        await _addRoomToHistory(liveRoom);
         await _updateFavoriteRoomSnapshot(liveRoom);
       }
 
@@ -795,6 +795,14 @@ class LivePlayController extends GetxController
         error: error,
         stackTrace: stackTrace,
       );
+    }
+  }
+
+  Future<void> _addRoomToHistory(LiveRoom room) async {
+    try {
+      await SettingsService.to.history.addRoomToHistoryDurably(room);
+    } catch (error, stackTrace) {
+      developer.log('Persist room history failed', name: 'LivePlayController', error: error, stackTrace: stackTrace);
     }
   }
 

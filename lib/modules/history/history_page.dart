@@ -56,7 +56,13 @@ class _HistoryPageState extends State<HistoryPage> {
       shouldCancel: () => !mounted,
     );
     if (!mounted || history.isClosed) return;
-    history.applyRefreshedRooms(list, refreshed);
+    try {
+      await history.applyRefreshedRoomsDurably(list, refreshed);
+    } catch (error) {
+      debugPrint('History refresh persistence failed: $error');
+      result = false;
+      if (mounted) ToastUtil.show(i18n('history_changes_save_failed'));
+    }
     if (result) {
       refreshController.finishRefresh(IndicatorResult.success);
       refreshController.resetFooter();
@@ -83,7 +89,12 @@ class _HistoryPageState extends State<HistoryPage> {
         message: i18n('clear_history_confirm_named', args: {'count': snapshot.length.toString()}),
         actionLabel: i18n('clear'),
       );
-      if (confirmed && mounted && !controller.isClosed) controller.clearHistorySnapshot(snapshot);
+      if (confirmed && mounted && !controller.isClosed) {
+        await controller.clearHistorySnapshotDurably(snapshot);
+      }
+    } catch (error) {
+      debugPrint('Clearing history failed: $error');
+      if (mounted) ToastUtil.show(i18n('history_changes_save_failed'));
     } finally {
       if (mounted) setState(() => _historyMutationBusy = false);
     }
@@ -100,7 +111,12 @@ class _HistoryPageState extends State<HistoryPage> {
         message: i18n('remove_history_confirm_named', args: {'title': title}),
         actionLabel: i18n('delete'),
       );
-      if (confirmed && mounted && !controller.isClosed) controller.clearHistorySnapshot([room]);
+      if (confirmed && mounted && !controller.isClosed) {
+        await controller.clearHistorySnapshotDurably([room]);
+      }
+    } catch (error) {
+      debugPrint('Deleting history item failed: $error');
+      if (mounted) ToastUtil.show(i18n('history_changes_save_failed'));
     } finally {
       if (mounted) setState(() => _historyMutationBusy = false);
     }
@@ -240,6 +256,7 @@ class _HistoryLimitDialogState extends State<_HistoryLimitDialog> {
   late int draftLimit;
   final customController = TextEditingController();
   String? customErrorKey;
+  bool _saving = false;
   static const presetOptions = <int>[20, 50, 100, 200, 500];
 
   @override
@@ -262,6 +279,7 @@ class _HistoryLimitDialogState extends State<_HistoryLimitDialog> {
   }
 
   void _applyCustomLimit() {
+    if (_saving) return;
     final value = int.tryParse(customController.text.trim());
     if (value == null || value < 0) {
       setState(() => customErrorKey = 'history_limit_invalid');
@@ -272,6 +290,20 @@ class _HistoryLimitDialogState extends State<_HistoryLimitDialog> {
       customErrorKey = null;
       customController.clear();
     });
+  }
+
+  Future<void> _save() async {
+    if (_saving) return;
+    setState(() => _saving = true);
+    try {
+      await widget.controller.setHistoryLimitDurably(draftLimit);
+      if (mounted) Navigator.pop(context);
+    } catch (error) {
+      debugPrint('Saving history limit failed: $error');
+      if (mounted) ToastUtil.show(i18n('history_changes_save_failed'));
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
   }
 
   @override
@@ -299,19 +331,19 @@ class _HistoryLimitDialogState extends State<_HistoryLimitDialog> {
                     (value) => ChoiceChip(
                       label: Text('$value', style: AppTextStyles.t12),
                       selected: draftLimit == value,
-                      onSelected: (_) => _selectLimit(value),
+                      onSelected: _saving ? null : (_) => _selectLimit(value),
                     ),
                   ),
                   ChoiceChip(
                     label: Text(i18n('history_unlimited'), style: AppTextStyles.t12),
                     selected: draftLimit == unlimitedHistoryLimit,
-                    onSelected: (_) => _selectLimit(unlimitedHistoryLimit),
+                    onSelected: _saving ? null : (_) => _selectLimit(unlimitedHistoryLimit),
                   ),
                   if (!presetOptions.contains(draftLimit) && draftLimit != unlimitedHistoryLimit)
                     ChoiceChip(
                       label: Text('$draftLimit', style: AppTextStyles.t12),
                       selected: true,
-                      onSelected: (_) {},
+                      onSelected: _saving ? null : (_) {},
                     ),
                 ],
               ),
@@ -320,6 +352,7 @@ class _HistoryLimitDialogState extends State<_HistoryLimitDialog> {
               const SizedBox(height: 12),
               TextField(
                 controller: customController,
+                enabled: !_saving,
                 keyboardType: TextInputType.number,
                 textInputAction: TextInputAction.done,
                 onSubmitted: (_) => _applyCustomLimit(),
@@ -341,7 +374,7 @@ class _HistoryLimitDialogState extends State<_HistoryLimitDialog> {
                 width: double.infinity,
                 height: 48,
                 child: ElevatedButton(
-                  onPressed: _applyCustomLimit,
+                  onPressed: _saving ? null : _applyCustomLimit,
                   child: Text(i18n("apply"), style: AppTextStyles.t13Medium.copyWith(color: theme.colorScheme.primary)),
                 ),
               ),
@@ -358,16 +391,15 @@ class _HistoryLimitDialogState extends State<_HistoryLimitDialog> {
       actions: [
         TextButton(
           style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
-          onPressed: () => Navigator.pop(context),
+          onPressed: _saving ? null : () => Navigator.pop(context),
           child: Text(i18n("cancel"), style: AppTextStyles.t14Muted),
         ),
         TextButton(
           style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
-          onPressed: () {
-            widget.controller.setHistoryLimit(draftLimit);
-            if (context.mounted) Navigator.pop(context);
-          },
-          child: Text(i18n("confirm"), style: AppTextStyles.t14Primary),
+          onPressed: _saving ? null : _save,
+          child: _saving
+              ? const SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2))
+              : Text(i18n("confirm"), style: AppTextStyles.t14Primary),
         ),
       ],
     );
