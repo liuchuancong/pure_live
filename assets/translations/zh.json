@@ -1868,5 +1868,16 @@
   "liveme_chat_notice": "LiveMe 远端聊天尚待接入；热度、当前观看和累计观看分别展示。",
   "liveme_quality_source": "原始画质",
   "liveme_quality_smooth": "流畅画质",
-  "liveme_quality_hls": "HLS 自动"
+  "liveme_quality_hls": "HLS 自动",
+  "site_tiktok": "TikTok LIVE",
+  "tiktok_directory_scope": "首阶段接入精确账号、@账号、官方主页/直播间/直播分享链接；游客公开推荐目录依赖网页会话，当前入口保留范围说明。",
+  "tiktok_chat_notice": "TikTok LIVE 远端聊天尚待接入；当前观看与累计进房分别展示。",
+  "tiktok_quality_origin": "原始画质",
+  "tiktok_quality_uhd60": "超清 60 帧",
+  "tiktok_quality_hd60": "高清 60 帧",
+  "tiktok_quality_uhd": "超清",
+  "tiktok_quality_hd": "高清",
+  "tiktok_quality_sd": "标清",
+  "tiktok_quality_ld": "流畅",
+  "tiktok_quality_auto": "自动"
 }

@@ -16,6 +16,8 @@ import 'package:pure_live/core/site/chzzk/chzzk_link.dart';
 import 'package:pure_live/core/site/kick/kick_link.dart';
 import 'package:pure_live/core/site/liveme/liveme_api.dart';
 import 'package:pure_live/core/site/liveme/liveme_link.dart';
+import 'package:pure_live/core/site/tiktok/tiktok_api.dart';
+import 'package:pure_live/core/site/tiktok/tiktok_link.dart';
 import 'package:pure_live/core/site/seventeenlive/seventeenlive_link.dart';
 
 import 'package:pure_live/common/index.dart';
@@ -105,8 +107,10 @@ class LiveUrlTool {
       if (KickLink.parse(raw) != null) return true;
       if (SeventeenLiveLink.parse(raw) != null) return true;
       if (LiveMeLink.parse(raw) != null) return true;
+      if (TikTokLink.parse(raw) != null) return true;
       final uri = Uri.parse(raw);
-      return InkeApi.roomFromUri(uri) != null ||
+      return TikTokLink.isShortHost(uri.host) ||
+          InkeApi.roomFromUri(uri) != null ||
           MissevanApi.roomFromUri(uri) != null ||
           roots.any((root) => _hostIs(uri.host.toLowerCase(), root));
     });
@@ -120,6 +124,7 @@ class LiveUrlTool {
     HuajiaoApi? huajiaoApi,
     OpenrecApi? openrecApi,
     LiveMeApi? liveMeApi,
+    TikTokApi? tiktokApi,
     Duration timeout = const Duration(seconds: 12),
   }) async {
     if (cancelToken?.isCancelled ?? false) return [];
@@ -133,6 +138,7 @@ class LiveUrlTool {
         huajiaoApi ?? HuajiaoApi(),
         openrecApi ?? OpenrecApi(),
         liveMeApi ?? LiveMeApi(),
+        tiktokApi ?? TikTokApi(),
         ownedCancel,
       );
       final result = cancelToken == null
@@ -158,6 +164,7 @@ class LiveUrlTool {
     HuajiaoApi huajiaoApi,
     OpenrecApi openrecApi,
     LiveMeApi liveMeApi,
+    TikTokApi tiktokApi,
     dio.CancelToken cancel,
   ) async {
     for (final raw in sharedHttpUrls(text)) {
@@ -202,6 +209,12 @@ class LiveUrlTool {
         if (session.isClosed || cancel.isCancelled) return [];
         return [shortId, Sites.liveMeSite];
       }
+      final tiktok = TikTokLink.parse(raw);
+      if (tiktok != null) {
+        final username = await tiktokApi.resolveReference(tiktok, cancel: cancel);
+        if (session.isClosed || cancel.isCancelled) return [];
+        return [username, Sites.tiktokSite];
+      }
       late List<String> segments;
       try {
         segments = uri.pathSegments.where((part) => part.isNotEmpty).toList(growable: false);
@@ -209,6 +222,23 @@ class LiveUrlTool {
         continue;
       }
       if (segments.isEmpty) continue;
+      if (TikTokLink.isShortHost(host)) {
+        final response = await session.get(uri);
+        final location = LiveShortLinkSession.redirectTarget(uri, response);
+        if (location == null) continue;
+        final target = await _parseLiveUrl(
+          location.toString(),
+          session,
+          kilakilaApi,
+          huajiaoApi,
+          openrecApi,
+          liveMeApi,
+          tiktokApi,
+          cancel,
+        );
+        if (target.isNotEmpty) return target;
+        continue;
+      }
       if (_hostIs(host, 'b23.tv')) {
         final response = await session.get(uri);
         final location = LiveShortLinkSession.redirectTarget(uri, response);
@@ -220,6 +250,7 @@ class LiveUrlTool {
           huajiaoApi,
           openrecApi,
           liveMeApi,
+          tiktokApi,
           cancel,
         );
         if (target.isNotEmpty) return target;

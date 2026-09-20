@@ -52,6 +52,11 @@ class LiveSearchCapabilities {
       supportsPagination: true,
       supportsWebSearch: false,
     ),
+    Sites.tiktokSite: LiveSearchCapability(
+      coverage: NativeSearchCoverage.channelLookup,
+      supportsPagination: false,
+      supportsWebSearch: false,
+    ),
     Sites.xiaohongshuSite: LiveSearchCapability(
       coverage: NativeSearchCoverage.roomLookup,
       supportsPagination: false,

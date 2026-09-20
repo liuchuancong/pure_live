@@ -2,6 +2,7 @@ import 'site/niconico/niconico_site.dart';
 import 'site/chzzk/chzzk_site.dart';
 import 'site/kick/kick_site.dart';
 import 'site/liveme/liveme_site.dart';
+import 'site/tiktok/tiktok_site.dart';
 import 'site/seventeenlive/seventeenlive_site.dart';
 import 'site/showroom/showroom_site.dart';
 import 'site/weibo/weibo_site.dart';
@@ -57,6 +58,7 @@ class Sites {
   static const String chzzkSite = 'chzzk';
   static const String kickSite = 'kick';
   static const String liveMeSite = 'liveme';
+  static const String tiktokSite = 'tiktok';
   static const String seventeenLiveSite = '17live';
 
   static const Set<String> supportedSiteIds = {
@@ -85,6 +87,7 @@ class Sites {
     chzzkSite,
     kickSite,
     liveMeSite,
+    tiktokSite,
     seventeenLiveSite,
     iptvSite,
   };
@@ -122,6 +125,7 @@ class Sites {
     Site(id: chzzkSite, name: i18n('site_chzzk'), logo: 'assets/images/logo.png', liveSite: ChzzkSite()),
     Site(id: kickSite, name: i18n('site_kick'), logo: 'assets/images/logo.png', liveSite: KickSite()),
     Site(id: liveMeSite, name: i18n('site_liveme'), logo: 'assets/images/logo.png', liveSite: LiveMeSite()),
+    Site(id: tiktokSite, name: i18n('site_tiktok'), logo: 'assets/images/logo.png', liveSite: TikTokSite()),
     Site(
       id: seventeenLiveSite,
       name: i18n('site_17live'),
@@ -238,6 +242,12 @@ class Sites {
         name: i18n('site_liveme'),
         logo: 'assets/images/logo.png',
         liveSite: LiveMeSite(),
+      ),
+      tiktokSite => Site(
+        id: tiktokSite,
+        name: i18n('site_tiktok'),
+        logo: 'assets/images/logo.png',
+        liveSite: TikTokSite(),
       ),
       seventeenLiveSite => Site(
         id: seventeenLiveSite,

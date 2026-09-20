@@ -143,6 +143,13 @@ class LiveRoom {
       hasTotalViewers: true,
       onlineAvailability: AudienceOnlineAvailability.roomList,
     ),
+    // TikTok LIVE exposes liveRoomStats.userCount as concurrent viewers and
+    // enterCount as cumulative room entries; keep those metrics separate.
+    'tiktok': AudiencePlatformCapability(
+      hasPopularity: false,
+      hasTotalViewers: true,
+      onlineAvailability: AudienceOnlineAvailability.roomRealtime,
+    ),
     'ttinglive': AudiencePlatformCapability(
       hasPopularity: false,
       hasTotalViewers: false,

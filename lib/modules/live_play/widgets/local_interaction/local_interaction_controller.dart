@@ -455,6 +455,14 @@ class LocalInteractionController extends GetxController {
       badge: 'LM',
     ),
     LocalPlatformPack(
+      id: Sites.tiktokSite,
+      nameKey: 'site_tiktok',
+      currencyKey: 'local_currency_generic',
+      levelKey: 'local_level_generic',
+      accentColor: Color(0xFFFE2C55),
+      badge: 'TT',
+    ),
+    LocalPlatformPack(
       id: Sites.iptvSite,
       nameKey: 'site_iptv',
       currencyKey: 'local_currency_generic',
