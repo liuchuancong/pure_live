@@ -44,7 +44,7 @@ class PlatformSettingsPage extends GetView<SettingsService> {
                     ),
                   ],
                 ),
-                onTap: showPreferPlatformSelectorDialog,
+                onTap: () => showPreferPlatformSelectorDialog(context),
               ),
             ),
             context.buildTile(
@@ -77,9 +77,9 @@ class PlatformSettingsPage extends GetView<SettingsService> {
     return i18nOr('site_$normalized', normalized);
   }
 
-  void showPreferPlatformSelectorDialog() {
+  void showPreferPlatformSelectorDialog(BuildContext context) {
     showDialog<void>(
-      context: Get.context!,
+      context: context,
       builder: (dialogContext) {
         final theme = Theme.of(dialogContext);
         return AlertDialog(

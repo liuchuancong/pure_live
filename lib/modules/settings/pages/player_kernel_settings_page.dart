@@ -40,7 +40,7 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
                 icon: Remix.toggle_line,
                 title: i18n("kernel_switch"),
                 subtitle: i18n(canSwitchPlayer ? "kernel_switch_subtitle" : "kernel_fixed_subtitle"),
-                onTap: canSwitchPlayer ? showVideoSetDialog : null,
+                onTap: canSwitchPlayer ? () => showVideoSetDialog(context) : null,
                 trailing: Text(
                   i18n(activeI18nKey),
                   style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.w600),
@@ -61,7 +61,7 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
                 icon: Remix.global_line,
                 title: i18n("network_proxy"),
                 subtitle: i18n("network_proxy_subtitle"),
-                onTap: showProxySettingsDialog,
+                onTap: () => showProxySettingsDialog(context),
                 trailing: Text(
                   SettingsService.to.proxy.enableProxy.v ? i18n("enabled") : i18n("disabled"),
                   style: AppTextStyles.t13.copyWith(
@@ -259,12 +259,12 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
   }
 
   // 播放器选择弹窗
-  void showVideoSetDialog() {
+  void showVideoSetDialog(BuildContext pageContext) {
     final playerKeys = availableVideoPlayerKeysForPlatform(defaultTargetPlatform);
     if (playerKeys.length <= 1) return;
 
     showDialog(
-      context: Get.context!,
+      context: pageContext,
       builder: (BuildContext context) {
         return SimpleDialog(
           title: Text(i18n("change_player")),
@@ -314,8 +314,8 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
   }
 
   // 代理设置弹窗（替换为统一SwitchTile）
-  void showProxySettingsDialog() {
-    showDialog(context: Get.context!, builder: (context) => const _PlayerProxySettingsDialog());
+  void showProxySettingsDialog(BuildContext context) {
+    showDialog(context: context, builder: (context) => const _PlayerProxySettingsDialog());
   }
 }
 

@@ -30,13 +30,13 @@ class ThemeSettingsPage extends GetView<SettingsService> {
               icon: Remix.moon_clear_line,
               title: i18n("change_theme_mode"),
               subtitle: i18n("change_theme_mode_subtitle"),
-              onTap: showThemeModeSelectorDialog,
+              onTap: () => showThemeModeSelectorDialog(context),
             ),
             context.buildTile(
               icon: Remix.palette_line,
               title: i18n("change_theme_color"),
               subtitle: i18n("change_theme_color_subtitle"),
-              onTap: colorPickerDialog,
+              onTap: () => colorPickerDialog(context),
               trailing: Obx(
                 () => ColorIndicator(
                   width: 28,
@@ -137,7 +137,7 @@ class ThemeSettingsPage extends GetView<SettingsService> {
               icon: Remix.global_line,
               title: i18n("change_language"),
               subtitle: i18n("change_language_subtitle"),
-              onTap: showLanguageSelecterDialog,
+              onTap: () => showLanguageSelecterDialog(context),
             ),
           ]),
           const SizedBox(height: 20),
@@ -192,9 +192,9 @@ class ThemeSettingsPage extends GetView<SettingsService> {
     );
   }
 
-  Future<void> showThemeModeSelectorDialog() async {
+  Future<void> showThemeModeSelectorDialog(BuildContext context) async {
     final value = await showDialog<String>(
-      context: Get.context!,
+      context: context,
       builder: (context) => ThemeChoiceDialog<String>(
         title: i18n('change_theme_mode'),
         value: SettingsService.to.theme.resolvedThemeModeName,
@@ -204,11 +204,11 @@ class ThemeSettingsPage extends GetView<SettingsService> {
     if (value != null) SettingsService.to.theme.changeThemeMode(value);
   }
 
-  Future<bool> colorPickerDialog() async {
+  Future<bool> colorPickerDialog(BuildContext context) async {
     final bool isZh = Get.locale?.languageCode == 'zh';
     final initialColor = SettingsService.to.theme.themeColor;
     return showAppColorPickerDialog(
-      context: Get.context!,
+      context: context,
       initialColor: initialColor,
       title: i18n('theme_color'),
       enableOpacity: false,
@@ -224,8 +224,7 @@ class ThemeSettingsPage extends GetView<SettingsService> {
     );
   }
 
-  Future<void> showLanguageSelecterDialog() async {
-    final pageContext = Get.context!;
+  Future<void> showLanguageSelecterDialog(BuildContext pageContext) async {
     final value = await showDialog<String>(
       context: pageContext,
       builder: (context) => ThemeChoiceDialog<String>(
