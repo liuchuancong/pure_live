@@ -202,6 +202,21 @@ class _IptvManagePageState extends State<IptvManagePage> {
     }
   }
 
+  Future<void> _openItemSource(ManageItem item) async {
+    final key = _operationKey(item);
+    if (isSyncingAll.value || _busyItems.contains(key)) return;
+    setState(() => _busyItems.add(key));
+    try {
+      final opened = await FileUtils.openFileOrUrl(item.url);
+      if (!opened && mounted) ToastUtil.show(i18n('manage_page_open_failed'));
+    } catch (_) {
+      if (mounted) ToastUtil.show(i18n('manage_page_open_failed'));
+    } finally {
+      _busyItems.remove(key);
+      if (mounted) setState(() {});
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -458,9 +473,7 @@ class _IptvManagePageState extends State<IptvManagePage> {
         borderRadius: BorderRadius.circular(22),
         child: InkWell(
           borderRadius: BorderRadius.circular(22),
-          onTap: () {
-            FileUtils.openFileOrUrl(item.url);
-          },
+          onTap: _itemActionsBlocked(item) ? null : () => unawaited(_openItemSource(item)),
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(

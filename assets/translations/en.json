@@ -920,6 +920,7 @@
     "manage_page_syncing": "Syncing remote subscription streams from server...",
     "manage_page_success": "Updated successfully",
     "manage_page_failed": "Remote server connection or parsing routine failed",
+    "manage_page_open_failed": "Could not open the subscription file or link",
     "network_import_failed": "Failed to download or parse network subscription source",
     "provider_name_exists_tip": "This subscription name already exists",
     "unsupported_file_format": "Unsupported file format. Only M3U or TXT are allowed.",

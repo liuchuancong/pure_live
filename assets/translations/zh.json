@@ -922,6 +922,7 @@
     "manage_page_syncing": "正在批量抓取网络流数据...",
     "manage_page_success": "同步成功",
     "manage_page_failed": "远端服务器连接或解析失败",
+    "manage_page_open_failed": "订阅源文件或链接打开失败",
     "network_import_failed": "网络订阅源下载或解析失败",
     "provider_name_exists_tip": "该订阅名称已存在",
     "unsupported_file_format": "不支持的文件格式，仅限 M3U 或 TXT",
