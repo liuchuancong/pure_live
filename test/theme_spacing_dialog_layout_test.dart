@@ -53,6 +53,11 @@ void main() {
     expect(find.text('0 px'), findsOneWidget);
     expect(find.text('16 px'), findsOneWidget);
     expect(find.byType(TextField), findsOneWidget);
+    for (final key in ['theme-spacing-increment', 'theme-spacing-decrement']) {
+      final size = tester.getSize(find.byKey(ValueKey(key)));
+      expect(size.width, greaterThanOrEqualTo(kMinInteractiveDimension));
+      expect(size.height, greaterThanOrEqualTo(kMinInteractiveDimension));
+    }
     await _scrollDialogToBottom(tester);
     expect(find.text('Cancel').hitTestable(), findsOneWidget);
     expect(find.text('Confirm').hitTestable(), findsOneWidget);

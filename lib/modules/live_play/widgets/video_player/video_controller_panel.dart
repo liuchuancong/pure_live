@@ -594,7 +594,7 @@ class PortraitOrientationButton extends StatelessWidget {
       return IconButton(
         key: const ValueKey('portrait-orientation-override'),
         tooltip: i18n('portrait_room_override'),
-        visualDensity: VisualDensity.compact,
+        constraints: const BoxConstraints(minWidth: kMinInteractiveDimension, minHeight: kMinInteractiveDimension),
         color: selected == PortraitOrientationOverride.automatic ? Colors.white : const Color(0xFFFFD166),
         onPressed: () => _showPicker(context, selected),
         icon: Icon(icon, size: 21),
@@ -647,7 +647,7 @@ class PortraitFullscreenDisplayModeButton extends StatelessWidget {
       return IconButton(
         key: const ValueKey('portrait-fullscreen-display-mode'),
         tooltip: i18n('portrait_fullscreen_display_mode'),
-        visualDensity: VisualDensity.compact,
+        constraints: const BoxConstraints(minWidth: kMinInteractiveDimension, minHeight: kMinInteractiveDimension),
         color: selected == PortraitFullscreenDisplayMode.ambient ? Colors.white : const Color(0xFFFFD166),
         onPressed: () => _showPicker(context, selected),
         icon: Icon(portraitFullscreenDisplayModeIcon(selected), size: 21),
@@ -1890,7 +1890,7 @@ class AudioOnlyButton extends StatelessWidget {
       final audioOnly = controller.isAudioOnly;
       return IconButton(
         tooltip: i18n(audioOnly ? 'restore_video_mode' : 'switch_audio_only_mode'),
-        visualDensity: VisualDensity.compact,
+        constraints: const BoxConstraints(minWidth: kMinInteractiveDimension, minHeight: kMinInteractiveDimension),
         iconSize: 21,
         color: audioOnly ? const Color(0xFFFFD166) : Colors.white,
         onPressed: switching
@@ -1916,7 +1916,7 @@ class CastButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return IconButton(
       tooltip: i18n('cast_screen'),
-      visualDensity: VisualDensity.compact,
+      constraints: const BoxConstraints(minWidth: kMinInteractiveDimension, minHeight: kMinInteractiveDimension),
       iconSize: 21,
       color: Colors.white,
       onPressed: () {

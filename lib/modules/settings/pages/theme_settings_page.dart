@@ -465,14 +465,20 @@ class _ThemeSpacingDialogState extends State<ThemeSpacingDialog> {
                       IconButton(
                         key: const ValueKey('theme-spacing-increment'),
                         tooltip: '+1',
-                        visualDensity: VisualDensity.compact,
+                        constraints: const BoxConstraints(
+                          minWidth: kMinInteractiveDimension,
+                          minHeight: kMinInteractiveDimension,
+                        ),
                         onPressed: () => _step(1),
                         icon: const Icon(Icons.arrow_drop_up),
                       ),
                       IconButton(
                         key: const ValueKey('theme-spacing-decrement'),
                         tooltip: '-1',
-                        visualDensity: VisualDensity.compact,
+                        constraints: const BoxConstraints(
+                          minWidth: kMinInteractiveDimension,
+                          minHeight: kMinInteractiveDimension,
+                        ),
                         onPressed: () => _step(-1),
                         icon: const Icon(Icons.arrow_drop_down),
                       ),

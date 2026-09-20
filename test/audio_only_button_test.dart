@@ -40,6 +40,11 @@ void main() {
       ),
     );
     final buttons = find.byType(IconButton);
+    for (var index = 0; index < buttons.evaluate().length; index++) {
+      final size = tester.getSize(buttons.at(index));
+      expect(size.width, greaterThanOrEqualTo(kMinInteractiveDimension));
+      expect(size.height, greaterThanOrEqualTo(kMinInteractiveDimension));
+    }
     final originalIcon = (tester.widget<IconButton>(buttons.first).icon as Icon).icon;
     controller.audioOnlyState.value = true;
     controller.audioModeSwitching.value = true;
