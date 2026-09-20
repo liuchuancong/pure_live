@@ -408,9 +408,21 @@ class BackupController extends GetxController {
 
   Future<void> _persistRestore(void Function() restore) async {
     if (_restoreInProgress) throw StateError('A settings restore is already running');
+    final previous = exportAllSettings(includeSensitiveData: true);
     _restoreInProgress = true;
     try {
       await HivePrefUtil.persistBatch(restore);
+    } catch (_) {
+      try {
+        // Restore the complete in-memory controller graph as well as storage.
+        // This also covers failures thrown after an earlier controller already
+        // notified its observers during an otherwise valid import.
+        await HivePrefUtil.persistBatch(() => importAllSettings(previous));
+      } catch (_) {
+        // Preserve the original restore failure for the caller. A later app
+        // startup still reads the last successfully committed Hive snapshot.
+      }
+      rethrow;
     } finally {
       _restoreInProgress = false;
     }
