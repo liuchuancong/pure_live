@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:convert';
 
+import 'package:synchronized/synchronized.dart';
 import 'package:pure_live/get/get.dart';
 import 'package:pure_live/common/services/utils/hive_rx.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
@@ -31,8 +32,26 @@ class BackupController extends GetxController {
 
   static const int backupVersion = 3;
   static bool _restoreInProgress = false;
+  final Lock _directoryMutationLock = Lock();
 
   final RxString backupDirectory = hiveString('backupDirectory', '');
+
+  Future<void> setBackupDirectoryDurably(String directory) {
+    return _directoryMutationLock.synchronized(() async {
+      final normalized = directory.trim();
+      final previous = backupDirectory.v;
+      backupDirectory.v = normalized;
+      try {
+        await HivePrefUtil.setString('backupDirectory', normalized);
+        await HivePrefUtil.flush();
+      } catch (_) {
+        backupDirectory.v = previous;
+        await HivePrefUtil.setString('backupDirectory', previous);
+        await HivePrefUtil.flush();
+        rethrow;
+      }
+    });
+  }
 
   Map<String, dynamic> exportAllSettings({bool includeSensitiveData = false}) {
     if (!Get.isRegistered<TagManagementController>()) {

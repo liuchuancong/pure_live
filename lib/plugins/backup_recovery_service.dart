@@ -27,10 +27,14 @@ class BackupRecoveryService {
     final file = File('$selectedDirectory/purelive_$dateStr.txt');
 
     if (await backup.backup(file)) {
-      ToastUtil.show(i18n("create_backup_success"));
       if (backup.backupDirectory.v.isEmpty) {
-        backup.backupDirectory.v = selectedDirectory;
+        try {
+          await backup.setBackupDirectoryDurably(selectedDirectory);
+        } catch (_) {
+          ToastUtil.show(i18n('backup_directory_update_failed'));
+        }
       }
+      ToastUtil.show(i18n("create_backup_success"));
       return selectedDirectory;
     } else {
       ToastUtil.show(i18n("create_backup_failed"));
@@ -61,7 +65,7 @@ class BackupRecoveryService {
     String? selectedDirectory = await FilePicker.getDirectoryPath();
     if (selectedDirectory == null) return null;
 
-    backup.backupDirectory.v = selectedDirectory;
+    await backup.setBackupDirectoryDurably(selectedDirectory);
     return selectedDirectory;
   }
 
