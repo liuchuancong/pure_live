@@ -451,8 +451,17 @@ class _UserAgentDialog extends StatefulWidget {
 }
 
 class _UserAgentDialogState extends State<_UserAgentDialog> {
+  static const double _minInputHeight = 120;
+  static const double _maxInputHeight = 360;
+  static const double _inputResizeStep = 48;
+
   late final TextEditingController controller;
-  final RxDouble customInputHeight = 100.0.obs;
+  final RxDouble customInputHeight = 144.0.obs;
+
+  void _setInputHeight(double value) {
+    customInputHeight.value = value.clamp(_minInputHeight, _maxInputHeight).toDouble();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -497,9 +506,13 @@ class _UserAgentDialogState extends State<_UserAgentDialog> {
               children: [
                 Text(i18n("custom_ua_desc"), style: theme.textTheme.bodySmall?.copyWith(color: theme.hintColor)),
                 const SizedBox(height: 16),
-                Obx(
-                  () => Container(
-                    height: customInputHeight.value,
+                Obx(() {
+                  final inputHeight = customInputHeight.value;
+                  final canShrink = inputHeight > _minInputHeight;
+                  final canGrow = inputHeight < _maxInputHeight;
+                  final resizeLabel = i18n('edit_ua_title');
+                  return Container(
+                    height: inputHeight,
                     decoration: BoxDecoration(
                       color: theme.colorScheme.surfaceContainerLow,
                       borderRadius: BorderRadius.circular(14),
@@ -525,40 +538,69 @@ class _UserAgentDialogState extends State<_UserAgentDialog> {
                             style: AppTextStyles.t13.copyWith(fontFamily: 'monospace'),
                           ),
                         ),
-                        GestureDetector(
-                          behavior: HitTestBehavior.translucent,
-                          onVerticalDragUpdate: (details) {
-                            final newHeight = customInputHeight.value + details.delta.dy;
-                            if (newHeight >= 80 && newHeight <= 350) {
-                              customInputHeight.value = newHeight;
-                            }
-                          },
-                          child: Container(
-                            width: double.infinity,
-                            height: 16,
-                            decoration: BoxDecoration(
-                              color: theme.dividerColor.withValues(alpha: 0.03),
-                              borderRadius: const BorderRadius.only(
-                                bottomLeft: Radius.circular(14),
-                                bottomRight: Radius.circular(14),
-                              ),
+                        Container(
+                          height: kMinInteractiveDimension,
+                          decoration: BoxDecoration(
+                            color: theme.dividerColor.withValues(alpha: 0.03),
+                            borderRadius: const BorderRadius.only(
+                              bottomLeft: Radius.circular(14),
+                              bottomRight: Radius.circular(14),
                             ),
-                            child: Center(
-                              child: Container(
-                                width: 36,
-                                height: 4,
-                                decoration: BoxDecoration(
-                                  color: theme.hintColor.withValues(alpha: 0.3),
-                                  borderRadius: BorderRadius.circular(2),
+                          ),
+                          child: Row(
+                            children: [
+                              IconButton(
+                                key: const ValueKey('iptv-user-agent-resize-decrease'),
+                                tooltip: i18n('decrease_value', args: {'label': resizeLabel}),
+                                onPressed: canShrink ? () => _setInputHeight(inputHeight - _inputResizeStep) : null,
+                                icon: const Icon(Icons.remove_rounded),
+                              ),
+                              Expanded(
+                                child: Semantics(
+                                  label: resizeLabel,
+                                  value: '${inputHeight.round()} px',
+                                  increasedValue:
+                                      '${(inputHeight + _inputResizeStep).clamp(_minInputHeight, _maxInputHeight).round()} px',
+                                  decreasedValue:
+                                      '${(inputHeight - _inputResizeStep).clamp(_minInputHeight, _maxInputHeight).round()} px',
+                                  onIncrease: canGrow ? () => _setInputHeight(inputHeight + _inputResizeStep) : null,
+                                  onDecrease: canShrink ? () => _setInputHeight(inputHeight - _inputResizeStep) : null,
+                                  child: GestureDetector(
+                                    key: const ValueKey('iptv-user-agent-resize-handle'),
+                                    behavior: HitTestBehavior.opaque,
+                                    onVerticalDragUpdate: (details) =>
+                                        _setInputHeight(customInputHeight.value + details.delta.dy),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.drag_indicator_rounded,
+                                          size: 20,
+                                          color: theme.hintColor.withValues(alpha: 0.65),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          '${inputHeight.round()} px',
+                                          style: theme.textTheme.labelSmall?.copyWith(color: theme.hintColor),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ),
+                              IconButton(
+                                key: const ValueKey('iptv-user-agent-resize-increase'),
+                                tooltip: i18n('increase_value', args: {'label': resizeLabel}),
+                                onPressed: canGrow ? () => _setInputHeight(inputHeight + _inputResizeStep) : null,
+                                icon: const Icon(Icons.add_rounded),
+                              ),
+                            ],
                           ),
                         ),
                       ],
                     ),
-                  ),
-                ),
+                  );
+                }),
               ],
             ),
           ),

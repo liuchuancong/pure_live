@@ -164,13 +164,14 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
             width: isCurrentActive ? 1.8 : 1.2,
           ),
         ),
-        child: GestureDetector(
-          onTap: () async {
-            if (localExists) {
-              final path = await AppPathManager().getFontFamilyFolderPath(fontModel.id);
-              await FileUtils.openFileOrUrl(path);
-            }
-          },
+        child: InkWell(
+          borderRadius: BorderRadius.circular(24),
+          onTap: localExists
+              ? () async {
+                  final path = await AppPathManager().getFontFamilyFolderPath(fontModel.id);
+                  await FileUtils.openFileOrUrl(path);
+                }
+              : null,
           child: ClipRRect(
             borderRadius: BorderRadius.circular(24),
             child: Container(

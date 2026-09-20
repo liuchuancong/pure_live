@@ -199,17 +199,15 @@ class AccountPage extends GetView<AccountController> {
           trailing: !isEnabled
               ? null
               : isLogined
-              ? GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: onTap,
-                  child: Padding(
-                    padding: const EdgeInsets.all(4),
-                    child: Icon(
-                      Remix.logout_box_r_line,
-                      color: theme.colorScheme.error.withValues(alpha: 0.8),
-                      size: 18,
-                    ),
+              ? IconButton(
+                  tooltip: i18n('logout'),
+                  visualDensity: VisualDensity.standard,
+                  constraints: const BoxConstraints(
+                    minWidth: kMinInteractiveDimension,
+                    minHeight: kMinInteractiveDimension,
                   ),
+                  onPressed: onTap,
+                  icon: Icon(Remix.logout_box_r_line, color: theme.colorScheme.error.withValues(alpha: 0.8), size: 18),
                 )
               : Icon(Icons.chevron_right_rounded, color: theme.hintColor.withValues(alpha: 0.4), size: 20),
           onTap: isEnabled ? onTap : null,
