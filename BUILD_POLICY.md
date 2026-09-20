@@ -20,7 +20,7 @@
 
 ### 1.1 Bug 修复默认交付闭环
 
-一次用户任务中同一根因或相邻功能的多个修复合并为一个交付批次，避免每个小提交重复增加版本。完成修复并通过定向验证后按固定顺序执行：
+一次持续审查中的多个独立修复组成一个“修复列车”：每项修复通过受影响测试后立即独立提交并同步源码，但在仍有已计划 Dart 修改时明确保留一次全仓 Analyze、Full、版本递增和原生构建到收敛点统一执行。交付批次以该收敛点为边界，而不是以每个小提交为边界；这样既不积压本地代码，也不为同一候选重复支付全仓门禁和打包成本。新业务修改发生在收敛门禁后时，原门禁只证明原提交，新修改进入下一收敛点。完成修复列车并通过定向验证后按固定顺序执行：
 
 1. 将语义版本补丁位和数字 build 各递增一次，并同步 `pubspec.yaml`、`assets/version.json`、工作流默认标签、MSIX 版本、README、Release Notes 与阶段文档。
 2. 在干净提交上执行一次完整质量门禁；同一业务源码已通过完整门禁而后续只修改发布脚本或文档时，可引用该证据并使用 `-SkipQuality` 重建最终提交。
@@ -77,7 +77,7 @@ Windows Firebase C++ SDK 由 `tool/prefetch_windows_native.ps1` 在构建前按�
 - 上游同步先执行 [`UPSTREAM_REVIEW_POLICY.md`](UPSTREAM_REVIEW_POLICY.md)：冻结完整提交，运行
   `tool/review_upstream_update.ps1`，以 merge base 盘点全部入站提交和全部文件，记录逐文件差异与冲突处置，再允许 merge。合并后必须运行 `tool/audit_repository.py` 复核整个已跟踪仓库。上游工作流、版本、更新源和默认设置不得机械覆盖维护分支；播放器普通页布局与系统返回必须通过确定性 Widget 回归。
 - 修改过程中优先运行直接相关的单元/Widget 测试或模块检查。
-- `flutter analyze` 在本轮代码修改完成后执行一次，避免每个小改动后重复启动分析服务器。
+- `flutter analyze` 在修复列车的计划 Dart 修改完成后执行一次，避免每个源码同步提交都重复启动分析服务器；每项修复仍先运行其受影响测试并立即推送，状态账本明确标注收敛 Analyze 是否待执行。
 - 同时请求定向测试与 Analyze 时，`Focused` 先执行更短的受影响测试，红灯立即结束；测试转绿后再执行本轮唯一一次 Analyze。`Full` 保持 Analyze 在完整测试前，以较短的全仓静态门禁先行失败。
 - 定向测试使用一个 Flutter 命令承载全部目标文件，并从 `--concurrency=12` 开始。
 - `Focused` 默认只运行依赖校验、Native Assets 预取、改动 Dart 文件的确定性格式化及请求的 Analyze/测试；格式化由同一次聚焦验证直接完成，避免仅因格式退出后再次排队重跑。`Full` 保持只检查、不改源码。全仓策略、设备夹具、仓库完整性与 Built-in Kotlin 审计留给 `Full`，或在这些所有者本身发生变化时显式传入 `-IncludeRepositoryChecks`。禁止让每个业务红绿循环重复扫描 4937 个仓库文件和全部原生设备夹具。
@@ -136,9 +136,13 @@ daemon 让后续阶段长期误排队。
 ## 7. 推荐调用
 
 ```powershell
-# 日常定向验证：同一命令运行受影响测试，修改完成后附加一次 Analyze
+# 修复列车中的单项红绿循环：先只运行受影响测试，成功后即可同步源码
 PowerShell -ExecutionPolicy Bypass -File .\tool\local_ci.ps1 `
-  -Scope Focused -TestPath test/example_test.dart -Analyze -SkipPubGet
+  -Scope Focused -TestPath test/example_test.dart -SkipPubGet
+
+# 计划内 Dart 修改收敛后只运行一次全仓 Analyze
+PowerShell -ExecutionPolicy Bypass -File .\tool\local_ci.ps1 `
+  -Scope Focused -Analyze -SkipPubGet
 
 # Android 交互 Debug（一次只构建这一目标）
 PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1 `

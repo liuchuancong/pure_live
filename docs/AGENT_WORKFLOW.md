@@ -15,7 +15,9 @@ This is an on-demand execution map. AGENTS.md contains session defaults; BUILD_P
 | Upstream merge | Frozen fork/upstream/base and all incoming changes | Full semantic audit required by UPSTREAM_REVIEW_POLICY.md, then affected regression |
 | Formal release | Clean source commit and completed repair batch | Full quality gate and platform-specific artifact/signing/publication verification |
 
-Run analyze once after Dart edits settle. Reuse successful checks only when their inputs remain unchanged; failures, new changes and unresolved risk justify another check. Stop expanding validation when acceptance is satisfied. Do not invent a fixed elapsed-time soak or claim whole-repository semantic review from a file scanner.
+Before changing a reported or scanned surface, prove that it is reachable from the current product: find its production call site, route, registration or runtime contract. An unreferenced vendored/framework helper is not a current UI regression merely because a static pattern looks suspicious; record or remove it only when dead-code maintenance is the actual task. This reachability gate prevents writing tests and fixes for code the app never executes.
+
+Run analyze once after the current repair train's planned Dart edits settle. Reuse successful checks only when their inputs remain unchanged; failures, new changes and unresolved risk justify another check. Stop expanding validation when acceptance is satisfied. Do not invent a fixed elapsed-time soak or claim whole-repository semantic review from a file scanner.
 
 For code-only changes that still require native acceptance later, preserve the exact pending scenario and build SHA. Device presence is not a prerequisite for code diagnosis. Logs and historical audit reports are evidence, not current instructions.
 
@@ -31,6 +33,16 @@ Use this lane before a bespoke investigation. Its purpose is to reach the first 
    - `not-reproduced`: state the missing discriminator and the exact event that reopens investigation; do not loop on equivalent probes.
    - other maintenance classifications follow `MAINTENANCE_POLICY.md`.
 4. Batch independent read-only Issue decisions into one ledger commit. Keep code fixes independently reversible, but run shared affected tests once after the batch settles.
+
+### Repair-train checkpoints
+
+Use this lane for a continuous source audit or a sequence of small fixes targeting the same release candidate.
+
+1. Keep a short candidate list and discard items that fail the production-reachability check before opening a Flutter red/green cycle.
+2. For each real defect, add or reuse the smallest behavioral regression, run the affected files, then commit and push the independently reversible fix immediately. Source synchronization does not wait for the final candidate build.
+3. While another planned Dart edit in the same train remains, mark repository-wide Analyze as pending instead of rerunning it after every pushed fix. Do not describe that intermediate source checkpoint as a converged quality gate.
+4. When the planned source list is exhausted, run one `Focused -Analyze`; then update the compact status owner. Run one Full and one platform candidate build only at the delivery convergence point.
+5. A later business-source edit invalidates only the convergence evidence whose input SHA changed. Re-run its affected tests and perform one new Analyze at the next convergence point; do not replay unchanged tests, builds or device sessions.
 
 An unchanged `already-fixed` decision does not create another issue-specific report, add a duplicate acceptance timeline paragraph, run full analysis, build a client, browse screenshots again or start a device session. A detailed audit remains appropriate for a current code change, a complex ownership/data migration decision, a release artifact, or evidence that future maintainers need beyond the ledger row.
 
