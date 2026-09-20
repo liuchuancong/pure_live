@@ -21,23 +21,57 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
         : SettingsService.to.font.fontFamilyName as Rx<String>;
   }
 
-  Future<void> _activateFont(FontModel model, {String? targetFileName}) async {
+  Future<bool> _activateFont(FontModel model, {String? targetFileName}) async {
     if (isDanmakuSettings) {
-      await SettingsService.to.font.activateDanmakuFontFamily(model, targetFileName: targetFileName);
-      Get.updateLocale(Get.locale ?? const Locale('zh', 'CN'));
-    } else {
-      await SettingsService.to.font.activateFontFamily(model, targetFileName: targetFileName);
+      final activated = await SettingsService.to.font.activateDanmakuFontFamily(model, targetFileName: targetFileName);
+      if (activated) Get.updateLocale(Get.locale ?? const Locale('zh', 'CN'));
+      return activated;
     }
+    return SettingsService.to.font.activateFontFamily(model, targetFileName: targetFileName);
   }
 
   Future<void> _setDefaultFont() async {
-    if (isDanmakuSettings) {
-      await SettingsService.to.font.resetDanmakuFontFamily();
+    final settings = SettingsService.to.font;
+    if (settings.fontState.value == DownloadState.downloading) return;
+    final previousModel = settings.curFontModel.value;
+    final previousState = settings.fontState.value;
+    settings.curFontModel.value = null;
+    settings.fontState.value = DownloadState.downloading;
+    var completed = false;
+    try {
+      if (isDanmakuSettings) {
+        await settings.resetDanmakuFontFamily();
+      } else {
+        await settings.resetAppFontFamily();
+      }
       ToastUtil.show(i18n('font_reset_default'));
-      return;
+      completed = true;
+    } catch (_) {
+      ToastUtil.show(i18n('font_load_failed'));
+    } finally {
+      settings.curFontModel.value = completed ? null : previousModel;
+      settings.fontState.value = completed ? DownloadState.notDownloaded : previousState;
     }
-    await SettingsService.to.font.resetAppFontFamily();
-    ToastUtil.show(i18n('font_reset_default'));
+  }
+
+  Future<void> _applyInstalledFont(BuildContext context, FontModel fontModel) async {
+    final settings = SettingsService.to.font;
+    if (settings.fontState.value == DownloadState.downloading) return;
+    final previousModel = settings.curFontModel.value;
+    final previousState = settings.fontState.value;
+    settings.curFontModel.value = fontModel;
+    settings.fontState.value = DownloadState.downloading;
+    var activated = false;
+    try {
+      activated = fontModel.files.length <= 1
+          ? await _activateFont(fontModel)
+          : await _showFontWeightSelector(context, fontModel);
+    } catch (_) {
+      ToastUtil.show(i18n('font_load_failed'));
+    } finally {
+      settings.curFontModel.value = activated ? fontModel : previousModel;
+      settings.fontState.value = activated ? DownloadState.downloaded : previousState;
+    }
   }
 
   Future<void> _openFontFolder([String? fontId]) async {
@@ -342,15 +376,7 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
         ? IconButton.filledTonal(
             key: ValueKey('font-apply-${fontModel.id}'),
             tooltip: i18n("apply"),
-            onPressed: operationPending
-                ? null
-                : () async {
-                    if (fontModel.files.length <= 1) {
-                      await _activateFont(fontModel);
-                    } else {
-                      await _showFontWeightSelector(context, fontModel);
-                    }
-                  },
+            onPressed: operationPending ? null : () => _applyInstalledFont(context, fontModel),
             icon: const Icon(Icons.check_rounded),
           )
         : ElevatedButton(
@@ -361,15 +387,7 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
             ),
-            onPressed: operationPending
-                ? null
-                : () async {
-                    if (fontModel.files.length <= 1) {
-                      await _activateFont(fontModel);
-                    } else {
-                      await _showFontWeightSelector(context, fontModel);
-                    }
-                  },
+            onPressed: operationPending ? null : () => _applyInstalledFont(context, fontModel),
             child: Text(
               i18n("apply"),
               style: AppTextStyles.t13Bold.copyWith(color: theme.colorScheme.onPrimaryContainer),
@@ -492,7 +510,7 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
     }
   }
 
-  Future<void> _showFontWeightSelector(BuildContext context, FontModel fontModel) async {
+  Future<bool> _showFontWeightSelector(BuildContext context, FontModel fontModel) async {
     final path = await AppPathManager().getFontFamilyFolderPath(fontModel.id);
     final fontDir = Directory(path);
     final downloadedFiles = <File>[];
@@ -508,31 +526,37 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
 
     if (downloadedFiles.isEmpty) {
       ToastUtil.show(i18n('font_not_downloaded_or_corrupted'));
-      return;
+      return false;
     }
-    if (!context.mounted) return;
+    if (!context.mounted) return false;
 
-    await showDialog<void>(
-      context: context,
-      builder: (context) => FontWeightSelectorDialog(
-        fontName: fontModel.name,
-        downloadedFiles: downloadedFiles,
-        onAutoSelected: () => _activateFont(fontModel),
-        onFileSelected: (file) async {
-          final fileNameWithExt = p.basename(file.path);
-          final label = p.basenameWithoutExtension(file.path).split('-').last;
-          final modifiedModel = FontModel(
-            id: fontModel.id,
-            name: "${fontModel.name} ($label)",
-            files: ["${fontModel.id}/$fileNameWithExt"],
-            desc: fontModel.desc,
-            official: fontModel.official,
-            license: fontModel.license,
-          );
-          await _activateFont(modifiedModel, targetFileName: fileNameWithExt);
-        },
-      ),
-    );
+    return await showDialog<bool>(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => FontWeightSelectorDialog(
+            fontName: fontModel.name,
+            downloadedFiles: downloadedFiles,
+            onAutoSelected: () async {
+              if (!await _activateFont(fontModel)) throw const _FontActivationRejected();
+            },
+            onFileSelected: (file) async {
+              final fileNameWithExt = p.basename(file.path);
+              final label = p.basenameWithoutExtension(file.path).split('-').last;
+              final modifiedModel = FontModel(
+                id: fontModel.id,
+                name: "${fontModel.name} ($label)",
+                files: ["${fontModel.id}/$fileNameWithExt"],
+                desc: fontModel.desc,
+                official: fontModel.official,
+                license: fontModel.license,
+              );
+              if (!await _activateFont(modifiedModel, targetFileName: fileNameWithExt)) {
+                throw const _FontActivationRejected();
+              }
+            },
+          ),
+        ) ??
+        false;
   }
 
   Widget _buildLicenseBadge(ThemeData theme, FontModel fontModel, String? diskSize) {
@@ -594,7 +618,11 @@ abstract final class FontFamilyFilePolicy {
   }
 }
 
-class FontWeightSelectorDialog extends StatelessWidget {
+class _FontActivationRejected implements Exception {
+  const _FontActivationRejected();
+}
+
+class FontWeightSelectorDialog extends StatefulWidget {
   const FontWeightSelectorDialog({
     super.key,
     required this.fontName,
@@ -609,68 +637,89 @@ class FontWeightSelectorDialog extends StatelessWidget {
   final Future<void> Function(File file) onFileSelected;
 
   @override
+  State<FontWeightSelectorDialog> createState() => _FontWeightSelectorDialogState();
+}
+
+class _FontWeightSelectorDialogState extends State<FontWeightSelectorDialog> {
+  bool _selectionPending = false;
+
+  Future<void> _select(Future<void> Function() operation) async {
+    if (_selectionPending) return;
+    setState(() => _selectionPending = true);
+    try {
+      await operation();
+      if (mounted) Navigator.of(context).pop(true);
+    } catch (error) {
+      if (mounted) {
+        setState(() => _selectionPending = false);
+        if (error is! _FontActivationRejected) ToastUtil.show(i18n('font_load_failed'));
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final mediaQuery = MediaQuery.of(context);
     final compact = mediaQuery.size.width < 420 || mediaQuery.textScaler.scale(13) > 18;
 
-    return Dialog(
-      insetPadding: EdgeInsets.symmetric(horizontal: compact ? 12 : 40, vertical: 24),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      backgroundColor: theme.colorScheme.surfaceContainerHigh,
-      child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: 400, maxHeight: mediaQuery.size.height - 48),
-        child: SingleChildScrollView(
-          key: const ValueKey('font-weight-selector-scroll'),
-          padding: EdgeInsets.all(compact ? 16 : 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                i18n('font_selector_title', args: {"name": fontName}),
-                key: const ValueKey('font-weight-selector-title'),
-                style: AppTextStyles.t18Bold,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                i18n('font_selector_subtitle'),
-                style: AppTextStyles.t13.copyWith(color: theme.colorScheme.onSurfaceVariant),
-              ),
-              const SizedBox(height: 16),
-              _buildOption(
-                context,
-                key: const ValueKey('font-weight-auto'),
-                icon: Icons.auto_awesome,
-                title: i18n('font_auto_weight'),
-                subtitle: i18n('font_auto_weight_desc'),
-                onTap: () async {
-                  Navigator.of(context).pop();
-                  await onAutoSelected();
-                },
-              ),
-              const Divider(height: 16),
-              ...downloadedFiles.map((file) {
-                final fileNameWithExt = p.basename(file.path);
-                final label = p.basenameWithoutExtension(file.path).split('-').last;
-                return _buildOption(
+    return PopScope(
+      canPop: !_selectionPending,
+      child: Dialog(
+        insetPadding: EdgeInsets.symmetric(horizontal: compact ? 12 : 40, vertical: 24),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: theme.colorScheme.surfaceContainerHigh,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: 400, maxHeight: mediaQuery.size.height - 48),
+          child: SingleChildScrollView(
+            key: const ValueKey('font-weight-selector-scroll'),
+            padding: EdgeInsets.all(compact ? 16 : 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  i18n('font_selector_title', args: {"name": widget.fontName}),
+                  key: const ValueKey('font-weight-selector-title'),
+                  style: AppTextStyles.t18Bold,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  i18n('font_selector_subtitle'),
+                  style: AppTextStyles.t13.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                ),
+                const SizedBox(height: 16),
+                _buildOption(
                   context,
-                  key: ValueKey('font-weight-$fileNameWithExt'),
-                  icon: Icons.font_download_outlined,
-                  title: i18n('font_lock_weight', args: {"label": label}),
-                  subtitle: i18n('font_lock_weight_desc'),
-                  onTap: () async {
-                    Navigator.of(context).pop();
-                    await onFileSelected(file);
-                  },
-                );
-              }),
-              const SizedBox(height: 16),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(i18n('cancel'))),
-              ),
-            ],
+                  key: const ValueKey('font-weight-auto'),
+                  icon: Icons.auto_awesome,
+                  title: i18n('font_auto_weight'),
+                  subtitle: i18n('font_auto_weight_desc'),
+                  onTap: _selectionPending ? null : () => _select(widget.onAutoSelected),
+                ),
+                const Divider(height: 16),
+                ...widget.downloadedFiles.map((file) {
+                  final fileNameWithExt = p.basename(file.path);
+                  final label = p.basenameWithoutExtension(file.path).split('-').last;
+                  return _buildOption(
+                    context,
+                    key: ValueKey('font-weight-$fileNameWithExt'),
+                    icon: Icons.font_download_outlined,
+                    title: i18n('font_lock_weight', args: {"label": label}),
+                    subtitle: i18n('font_lock_weight_desc'),
+                    onTap: _selectionPending ? null : () => _select(() => widget.onFileSelected(file)),
+                  );
+                }),
+                const SizedBox(height: 16),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: _selectionPending ? null : () => Navigator.of(context).pop(false),
+                    child: Text(i18n('cancel')),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -683,7 +732,7 @@ class FontWeightSelectorDialog extends StatelessWidget {
     required IconData icon,
     required String title,
     required String subtitle,
-    required Future<void> Function() onTap,
+    required Future<void> Function()? onTap,
   }) {
     return InkWell(
       key: key,

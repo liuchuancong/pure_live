@@ -200,11 +200,11 @@ class FontSettingsController extends GetxController {
     }
   }
 
-  Future<void> activateFontFamily(FontModel fontModel, {String? targetFileName}) async {
+  Future<bool> activateFontFamily(FontModel fontModel, {String? targetFileName}) async {
     final loaded = await FontDownloadManager.instance.loadFont(fontModel.id, fileName: targetFileName ?? '');
     if (!loaded) {
       ToastUtil.show(i18n('font_not_downloaded_or_corrupted'));
-      return;
+      return false;
     }
     final selectedFileName = targetFileName ?? '';
     await HivePrefUtil.setPrefs({'fontFamilyName': fontModel.id, 'fontFamilyFileName': selectedFileName});
@@ -212,7 +212,6 @@ class FontSettingsController extends GetxController {
     fontFamilyName.v = fontModel.id;
     fontFamilyFileName.v = selectedFileName;
     curFontModel.value = fontModel;
-    fontState.value = DownloadState.downloaded;
     refreshSystemTheme();
     Get.updateLocale(Get.locale ?? const Locale('zh', 'CN'));
     if (targetFileName != null) {
@@ -221,19 +220,21 @@ class FontSettingsController extends GetxController {
     } else {
       ToastUtil.show(i18n('font_toast_global', args: {"name": fontModel.name}));
     }
+    return true;
   }
 
-  Future<void> activateDanmakuFontFamily(FontModel font, {String? targetFileName}) async {
+  Future<bool> activateDanmakuFontFamily(FontModel font, {String? targetFileName}) async {
     final loaded = await FontDownloadManager.instance.loadFont(font.id, fileName: targetFileName ?? '');
     if (!loaded) {
       ToastUtil.show(i18n('font_not_downloaded_or_corrupted'));
-      return;
+      return false;
     }
     final selectedFileName = targetFileName ?? '';
     await HivePrefUtil.setPrefs({'danmakuFontFamilyName': font.id, 'danmakuFontFamilyFileName': selectedFileName});
     await HivePrefUtil.flush();
     Get.find<DanmakuSettingsController>().danmakuFontFamilyName.v = font.id;
     danmakuFontFamilyFileName.v = selectedFileName;
+    return true;
   }
 
   Future<void> resetAppFontFamily() async {
