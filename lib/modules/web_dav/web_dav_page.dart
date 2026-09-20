@@ -66,7 +66,7 @@ class _WebDavPageState extends State<WebDavPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       key: _scaffoldKey,
-      backgroundColor: Theme.of(Get.context!).colorScheme.surface,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: LayoutBuilder(
         builder: (context, constraints) {
           final breadcrumbExtent = _breadcrumbHeaderExtent(context);
@@ -240,7 +240,7 @@ class _WebDavPageState extends State<WebDavPage> {
       floating: true,
       pinned: false,
       snap: false,
-      backgroundColor: Theme.of(Get.context!).colorScheme.surface,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       surfaceTintColor: Colors.transparent,
       title: Text(i18n("webdav"), style: const TextStyle(fontWeight: FontWeight.w400)),
       actions: [
@@ -248,7 +248,7 @@ class _WebDavPageState extends State<WebDavPage> {
           tooltip: i18n("webdav_more_actions"),
           child: SizedBox.square(
             dimension: kMinInteractiveDimension,
-            child: Icon(Icons.more_vert, color: Theme.of(Get.context!).colorScheme.onPrimaryContainer),
+            child: Icon(Icons.more_vert, color: Theme.of(context).colorScheme.onPrimaryContainer),
           ),
           onSelected: (int value) {
             if (value == 1) {
@@ -297,7 +297,7 @@ class _WebDavPageState extends State<WebDavPage> {
         extent: extent,
         child: Container(
           key: const ValueKey('webdav-breadcrumb-header'),
-          color: Theme.of(Get.context!).colorScheme.surface,
+          color: Theme.of(context).colorScheme.surface,
           height: extent,
           child: Align(
             alignment: Alignment.centerLeft,
@@ -359,9 +359,7 @@ class _WebDavPageState extends State<WebDavPage> {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              color: isCurrent
-                  ? Theme.of(Get.context!).colorScheme.primary
-                  : Theme.of(Get.context!).colorScheme.onSurface,
+              color: isCurrent ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurface,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -458,7 +456,7 @@ class _WebDavPageState extends State<WebDavPage> {
     final displayName = _fileDisplayName(file);
     return ListTile(
       isThreeLine: true,
-      hoverColor: Theme.of(Get.context!).colorScheme.primaryContainer,
+      hoverColor: Theme.of(context).colorScheme.primaryContainer,
       leading: Icon(
         file.isDir ?? false
             ? Icons.folder_outlined
@@ -471,7 +469,7 @@ class _WebDavPageState extends State<WebDavPage> {
             : lookupMimeType(file.name ?? '')?.startsWith('text/') ?? false
             ? Icons.text_snippet_outlined
             : Icons.insert_drive_file_outlined,
-        color: Theme.of(Get.context!).colorScheme.primary,
+        color: Theme.of(context).colorScheme.primary,
         size: 28,
       ),
       title: Tooltip(
@@ -487,51 +485,49 @@ class _WebDavPageState extends State<WebDavPage> {
         file.mTime?.toString() ?? i18n("webdav_unknown_time"),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: TextStyle(color: Theme.of(Get.context!).colorScheme.onSurfaceVariant),
+        style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
       ),
-      trailing: Obx(
-        () {
-          final enabled = controller.canStartFileAction;
-          return PopupMenuButton<String>(
-            enabled: enabled,
-            tooltip: i18n("webdav_more_actions"),
-            child: SizedBox.square(
-              dimension: kMinInteractiveDimension,
-              child: Icon(
-                Icons.more_vert,
-                color: enabled ? Theme.of(Get.context!).colorScheme.onSurface : Theme.of(Get.context!).disabledColor,
-              ),
+      trailing: Obx(() {
+        final enabled = controller.canStartFileAction;
+        return PopupMenuButton<String>(
+          enabled: enabled,
+          tooltip: i18n("webdav_more_actions"),
+          child: SizedBox.square(
+            dimension: kMinInteractiveDimension,
+            child: Icon(
+              Icons.more_vert,
+              color: enabled ? Theme.of(context).colorScheme.onSurface : Theme.of(context).disabledColor,
             ),
-            itemBuilder: (context) => [
-              if (file.isDir != true) ...[
-                PopupMenuItem(value: 'RestoreAll', child: Text(i18n("webdav_restore_all_settings"))),
-                PopupMenuItem(value: 'RestoreFavorites', child: Text(i18n("webdav_restore_favorites"))),
-              ],
-              PopupMenuItem(value: 'Delete', child: Text(i18n("webdav_delete"))),
+          ),
+          itemBuilder: (context) => [
+            if (file.isDir != true) ...[
+              PopupMenuItem(value: 'RestoreAll', child: Text(i18n("webdav_restore_all_settings"))),
+              PopupMenuItem(value: 'RestoreFavorites', child: Text(i18n("webdav_restore_favorites"))),
             ],
-            onSelected: (value) {
-              if (value == 'RestoreAll') {
-                unawaited(
-                  controller.downloadFile(
-                    file,
-                    confirmRestore: () => _showFileRestoreDialog(file, BackupRestoreScope.all),
-                  ),
-                );
-              } else if (value == 'RestoreFavorites') {
-                unawaited(
-                  controller.downloadFile(
-                    file,
-                    scope: BackupRestoreScope.favorites,
-                    confirmRestore: () => _showFileRestoreDialog(file, BackupRestoreScope.favorites),
-                  ),
-                );
-              } else if (value == 'Delete') {
-                unawaited(controller.deleteFile(file, confirmDelete: () => _showFileDeleteDialog(file)));
-              }
-            },
-          );
-        },
-      ),
+            PopupMenuItem(value: 'Delete', child: Text(i18n("webdav_delete"))),
+          ],
+          onSelected: (value) {
+            if (value == 'RestoreAll') {
+              unawaited(
+                controller.downloadFile(
+                  file,
+                  confirmRestore: () => _showFileRestoreDialog(file, BackupRestoreScope.all),
+                ),
+              );
+            } else if (value == 'RestoreFavorites') {
+              unawaited(
+                controller.downloadFile(
+                  file,
+                  scope: BackupRestoreScope.favorites,
+                  confirmRestore: () => _showFileRestoreDialog(file, BackupRestoreScope.favorites),
+                ),
+              );
+            } else if (value == 'Delete') {
+              unawaited(controller.deleteFile(file, confirmDelete: () => _showFileDeleteDialog(file)));
+            }
+          },
+        );
+      }),
       onTap: () => controller.onFileTap(file),
     );
   }
@@ -553,7 +549,7 @@ class _WebDavPageState extends State<WebDavPage> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.error, size: 64, color: Theme.of(Get.context!).colorScheme.onPrimaryContainer),
+          Icon(Icons.error, size: 64, color: Theme.of(context).colorScheme.onPrimaryContainer),
           const SizedBox(height: 16),
           Text(message, textAlign: TextAlign.center, style: AppTextStyles.t12),
           TextButton(onPressed: controller.loadFiles, child: Text(i18n("retry"))),
