@@ -246,7 +246,7 @@ RoomHistoryTextMetrics resolveRoomHistoryTextMetrics({
   final detailLineExtent = lineExtent(detailFontSize, detailLineHeight);
   return RoomHistoryTextMetrics(
     headerHeight: math.max(contentFirstPanelHeaderActionExtent, lineExtent(headerFontSize, headerLineHeight) + 8),
-    tabBarHeight: math.max(30, tabLineExtent + 10),
+    tabBarHeight: math.max(kMinInteractiveDimension, tabLineExtent + 10),
     // Six pixels are consumed by the vertical padding; two more absorb text
     // metric rounding across fonts and device pixel ratios.
     cardFooterHeight: math.max(36, lineExtent(titleFontSize, titleLineHeight) + detailLineExtent + 8),

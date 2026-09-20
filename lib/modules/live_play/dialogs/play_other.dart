@@ -168,19 +168,19 @@ class _PlayOtherState extends State<PlayOther> with SingleTickerProviderStateMix
                   _CompactTab(
                     icon: Icons.sensors_rounded,
                     label: i18n('online_room_title'),
-                    height: textMetrics.tabBarHeight - 2,
+                    height: textMetrics.tabBarHeight,
                     shrinkToFit: !textMetrics.scrollTabs,
                   ),
                   _CompactTab(
                     icon: Icons.fiber_smart_record_rounded,
                     label: i18n('recording_room_title'),
-                    height: textMetrics.tabBarHeight - 2,
+                    height: textMetrics.tabBarHeight,
                     shrinkToFit: !textMetrics.scrollTabs,
                   ),
                   _CompactTab(
                     icon: Icons.history_rounded,
                     label: i18n('watch_history'),
-                    height: textMetrics.tabBarHeight - 2,
+                    height: textMetrics.tabBarHeight,
                     shrinkToFit: !textMetrics.scrollTabs,
                   ),
                 ],
