@@ -4,6 +4,7 @@ import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/file_utils.dart';
 import 'package:pure_live/plugins/db_service.dart';
+import 'package:pure_live/core/iptv/local/database.dart' as database;
 import 'package:pure_live/core/iptv/services/epg_sync_engine.dart';
 import 'package:pure_live/core/iptv/services/iptv_sync_engine.dart';
 
@@ -785,7 +786,9 @@ class _IptvManagePageState extends State<IptvManagePage> {
                         isNetwork: item.isNetwork,
                         isAutoSync: value,
                         type: item.type,
-                        raw: item.raw,
+                        raw: item.type == ManageItemType.iptv
+                            ? (item.raw as database.Provider).copyWith(isAutoUpdate: value)
+                            : (item.raw as database.EpgSource).copyWith(isAutoUpdate: value),
                       );
 
                       ToastUtil.show(value ? i18n("auto_sync_tag") : i18n("auto_sync_disabled"));
