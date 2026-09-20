@@ -121,6 +121,7 @@ void main() {
 
     expect(find.byKey(const ValueKey('local-danmaku-style-controls')), findsOneWidget);
     expect(find.byTooltip('Close'), findsOneWidget);
+    _expectStyleHeaderActionsAreAccessible(tester);
     expect(tester.takeException(), isNull);
   });
 
@@ -139,9 +140,24 @@ void main() {
     expect(find.byKey(const ValueKey('local-danmaku-style-dialog')), findsOneWidget);
     expect(find.byKey(const ValueKey('local-danmaku-live-preview-pane')), findsOneWidget);
     expect(find.byKey(const ValueKey('local-danmaku-style-controls')), findsOneWidget);
-    expect(tester.getSize(find.byKey(const ValueKey('local-danmaku-style-header'))).height, greaterThan(38));
+    _expectStyleHeaderActionsAreAccessible(tester);
     expect(tester.takeException(), isNull);
   });
+}
+
+void _expectStyleHeaderActionsAreAccessible(WidgetTester tester) {
+  final headerSize = tester.getSize(find.byKey(const ValueKey('local-danmaku-style-header')));
+  expect(headerSize.height, greaterThanOrEqualTo(kMinInteractiveDimension));
+  for (final tooltip in ['Restore default', 'Close']) {
+    final button = find.widgetWithIcon(
+      IconButton,
+      tooltip == 'Close' ? Icons.close_rounded : Icons.restart_alt_rounded,
+    );
+    expect(button, findsOneWidget);
+    final size = tester.getSize(button);
+    expect(size.width, greaterThanOrEqualTo(kMinInteractiveDimension), reason: '$tooltip width');
+    expect(size.height, greaterThanOrEqualTo(kMinInteractiveDimension), reason: '$tooltip height');
+  }
 }
 
 Future<void> _pumpPage(

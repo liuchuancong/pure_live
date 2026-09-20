@@ -63,7 +63,7 @@ class _StyleSurface extends StatelessWidget {
     final titleLineExtent =
         MediaQuery.textScalerOf(context).scale(titleStyle?.fontSize ?? (panelCompact ? 14 : 16)) *
         (titleStyle?.height ?? 1.25);
-    final headerHeight = math.max(panelCompact ? 38.0 : 46.0, titleLineExtent + 8);
+    final headerHeight = math.max(kMinInteractiveDimension, titleLineExtent + 8);
     return Column(
       children: [
         SizedBox(
@@ -89,16 +89,20 @@ class _StyleSurface extends StatelessWidget {
                 ),
                 IconButton(
                   tooltip: i18n('restore_default'),
-                  visualDensity: VisualDensity.compact,
-                  constraints: BoxConstraints.tightFor(width: panelCompact ? 34 : 40, height: panelCompact ? 34 : 40),
+                  constraints: const BoxConstraints.tightFor(
+                    width: kMinInteractiveDimension,
+                    height: kMinInteractiveDimension,
+                  ),
                   padding: EdgeInsets.zero,
                   onPressed: controller.resetDanmakuStyle,
                   icon: Icon(Icons.restart_alt_rounded, size: panelCompact ? 19 : 20),
                 ),
                 IconButton(
                   tooltip: i18n('close'),
-                  visualDensity: VisualDensity.compact,
-                  constraints: BoxConstraints.tightFor(width: panelCompact ? 34 : 40, height: panelCompact ? 34 : 40),
+                  constraints: const BoxConstraints.tightFor(
+                    width: kMinInteractiveDimension,
+                    height: kMinInteractiveDimension,
+                  ),
                   padding: EdgeInsets.zero,
                   onPressed: close,
                   icon: Icon(Icons.close_rounded, size: panelCompact ? 19 : 20),
