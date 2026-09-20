@@ -215,7 +215,7 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin,
     }
   }
 
-  void onBackButtonPressed(bool didPop, _) async {
+  void onBackButtonPressed(bool didPop, _) {
     if (!didPop) {
       MoveToDesktop().moveToDesktop();
     }

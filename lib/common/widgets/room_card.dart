@@ -118,8 +118,8 @@ class RoomCard extends StatelessWidget {
     );
   }
 
-  void onTap(BuildContext context) async {
-    AppNavigator.toLiveRoomDetail(liveRoom: room);
+  void onTap(BuildContext context) {
+    unawaited(AppNavigator.toLiveRoomDetail(liveRoom: room));
   }
 
   void showFollowDialog(

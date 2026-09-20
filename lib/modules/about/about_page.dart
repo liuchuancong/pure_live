@@ -1,5 +1,3 @@
-import 'widgets/version_dialog.dart';
-
 import 'package:pure_live/common/index.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:markdown_widget/config/configs.dart';
@@ -130,13 +128,6 @@ class _AboutPageState extends State<AboutPage> {
           ]),
         ],
       ),
-    );
-  }
-
-  void showCheckUpdateDialog(BuildContext context) async {
-    showDialog(
-      context: Get.context!,
-      builder: (context) => VersionUtil.hasNewVersion() ? NewVersionDialog() : NoNewVersionDialog(),
     );
   }
 
