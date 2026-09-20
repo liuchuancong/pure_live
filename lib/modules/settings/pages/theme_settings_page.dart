@@ -107,13 +107,13 @@ class ThemeSettingsPage extends GetView<SettingsService> {
               icon: Remix.arrow_left_right_line,
               title: i18n("cross_axis_spacing"),
               subtitle: i18n("cross_axis_spacing_subtitle"),
-              onTap: showCrossAxisSpacingDialog,
+              onTap: () => showCrossAxisSpacingDialog(context),
             ),
             context.buildTile(
               icon: Remix.arrow_up_down_line,
               title: i18n("main_axis_spacing"),
               subtitle: i18n("main_axis_spacing_subtitle"),
-              onTap: showMainAxisSpacingDialog,
+              onTap: () => showMainAxisSpacingDialog(context),
             ),
           ]),
           if (Get.width > 680) ...[
@@ -238,8 +238,9 @@ class ThemeSettingsPage extends GetView<SettingsService> {
     }
   }
 
-  Future<void> showCrossAxisSpacingDialog() {
+  Future<void> showCrossAxisSpacingDialog(BuildContext context) {
     return showCustomSpacingDialog(
+      context: context,
       title: i18n("cross_axis_spacing"),
       hintText: i18n("cross_axis_spacing_subtitle"),
       currentValue: SettingsService.to.theme.resolvedCrossAxisSpacing,
@@ -247,8 +248,9 @@ class ThemeSettingsPage extends GetView<SettingsService> {
     );
   }
 
-  Future<void> showMainAxisSpacingDialog() {
+  Future<void> showMainAxisSpacingDialog(BuildContext context) {
     return showCustomSpacingDialog(
+      context: context,
       title: i18n("main_axis_spacing"),
       hintText: i18n("main_axis_spacing_subtitle"),
       currentValue: SettingsService.to.theme.resolvedMainAxisSpacing,
@@ -257,13 +259,15 @@ class ThemeSettingsPage extends GetView<SettingsService> {
   }
 
   Future<void> showCustomSpacingDialog({
+    required BuildContext context,
     required String title,
     required String hintText,
     required double currentValue,
     required ValueChanged<double> onSelected,
   }) async {
-    final selectedValue = await Get.dialog<double>(
-      ThemeSpacingDialog(title: title, hintText: hintText, currentValue: currentValue),
+    final selectedValue = await showDialog<double>(
+      context: context,
+      builder: (context) => ThemeSpacingDialog(title: title, hintText: hintText, currentValue: currentValue),
     );
     if (selectedValue != null) onSelected(selectedValue);
   }

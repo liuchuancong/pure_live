@@ -471,9 +471,11 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
       ToastUtil.show(i18n('font_not_downloaded_or_corrupted'));
       return;
     }
+    if (!context.mounted) return;
 
-    Get.dialog(
-      FontWeightSelectorDialog(
+    await showDialog<void>(
+      context: context,
+      builder: (context) => FontWeightSelectorDialog(
         fontName: fontModel.name,
         downloadedFiles: downloadedFiles,
         onAutoSelected: () => _activateFont(fontModel),
