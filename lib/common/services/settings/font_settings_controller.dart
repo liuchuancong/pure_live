@@ -276,6 +276,7 @@ class FontSettingsController extends GetxController {
       if (entity is! Directory) continue;
       final id = entity.path.split(Platform.pathSeparator).last;
       if (id.startsWith('.')) continue;
+      if (!await FontDownloadManager.instance.checkFontDownloaded(id)) continue;
       int bytes = 0;
       await for (final f in entity.list(recursive: true)) {
         if (f is File) bytes += await f.length();

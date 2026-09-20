@@ -171,15 +171,18 @@ class FontDownloadManager {
         }
 
         final urls = mirror.mirrors(filePath);
-        final fastestUrl = await RaceHttp.findFastestUrl(urls);
-        if (fastestUrl == null) throw Exception("No reachable font source for: $fileName");
+        final remainingUrls = List<String>.of(urls);
         int retryCount = 0;
         const maxRetries = 3;
 
-        while (retryCount < maxRetries) {
+        while (retryCount < maxRetries && remainingUrls.isNotEmpty) {
+          final downloadUrl = await RaceHttp.findFastestUrl(remainingUrls);
+          if (downloadUrl == null) {
+            throw Exception("No reachable font source for: $fileName");
+          }
           try {
             await HttpClient.instance.download(
-              fastestUrl,
+              downloadUrl,
               staged.path,
               header: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -192,12 +195,13 @@ class FontDownloadManager {
             throw Exception("File is empty or corrupted");
           } catch (e) {
             retryCount++;
+            remainingUrls.remove(downloadUrl);
             if (staged.existsSync()) {
               try {
                 staged.deleteSync();
               } catch (_) {}
             }
-            if (retryCount >= maxRetries) {
+            if (retryCount >= maxRetries || remainingUrls.isEmpty) {
               throw Exception("Failed to sync file slice: $fileName");
             }
             await Future.delayed(const Duration(seconds: 1));
