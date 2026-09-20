@@ -1019,7 +1019,7 @@ class LockButton extends StatelessWidget {
               margin: const EdgeInsets.only(right: 20.0),
               child: IconButton(
                 tooltip: i18n(controller.showLocked.value ? 'unlock_player_controls' : 'lock_player_controls'),
-                onPressed: () => {controller.showLocked.toggle()},
+                onPressed: controller.showLocked.toggle,
                 icon: Icon(controller.showLocked.value ? Icons.lock_rounded : Icons.lock_open_rounded, size: 28),
                 color: Colors.white,
                 style: IconButton.styleFrom(
