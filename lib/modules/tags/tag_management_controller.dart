@@ -1,4 +1,5 @@
 import 'package:pure_live/common/index.dart';
+import 'package:synchronized/synchronized.dart';
 import 'package:pure_live/modules/tags/live_tag.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
 
@@ -9,6 +10,7 @@ class TagManagementController extends GetxController {
   static const String _roomTagsMappingKey = 'room_to_tags_mapping_v1';
   final RxMap<String, List<String>> roomTagsMap = <String, List<String>>{}.obs;
   final RxList<LiveTag> tags = <LiveTag>[].obs;
+  final Lock _roomTagWriteLock = Lock();
   int _lastGeneratedTagId = 0;
   static const Map<String, String> allTag = {'all': '全部'};
   static String get allTagKey => allTag.keys.first;
@@ -41,20 +43,28 @@ class TagManagementController extends GetxController {
   }
 
   Future<void> setRoomTags(LiveRoom room, List<String> newTagIds) async {
-    final roomKey = room.identityKey;
-    final normalizedTagIds = _normalizeTagIds(newTagIds);
-    final legacyKey = room.normalizedRoomId;
-    if (legacyKey.isNotEmpty && legacyKey != roomKey) {
-      roomTagsMap.remove(legacyKey);
-    }
-    if (normalizedTagIds.isEmpty) {
-      roomTagsMap.remove(roomKey);
-    } else {
-      roomTagsMap[roomKey] = normalizedTagIds;
-    }
+    await _roomTagWriteLock.synchronized(() async {
+      final before = _copyRoomTagsMap(roomTagsMap);
+      final roomKey = room.identityKey;
+      final normalizedTagIds = _normalizeTagIds(newTagIds);
+      final legacyKey = room.normalizedRoomId;
+      if (legacyKey.isNotEmpty && legacyKey != roomKey) {
+        roomTagsMap.remove(legacyKey);
+      }
+      if (normalizedTagIds.isEmpty) {
+        roomTagsMap.remove(roomKey);
+      } else {
+        roomTagsMap[roomKey] = normalizedTagIds;
+      }
 
-    roomTagsMap.refresh();
-    await saveRoomTagsMapping();
+      roomTagsMap.refresh();
+      try {
+        await saveRoomTagsMapping();
+      } catch (_) {
+        roomTagsMap.assignAll(before);
+        rethrow;
+      }
+    });
   }
 
   /// Moves the legacy room-number-only mapping to platform-scoped identities.

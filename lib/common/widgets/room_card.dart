@@ -179,126 +179,129 @@ class RoomCard extends StatelessWidget {
     final theme = Theme.of(context);
     final bool isFollowed = SettingsService.to.fav.isFavorite(room);
 
-    Get.dialog(
-      AlertDialog(
-        backgroundColor: theme.colorScheme.surface,
-        elevation: 6,
-        shadowColor: Colors.black.withValues(alpha: 0.12),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        titlePadding: const EdgeInsets.fromLTRB(24, 20, 16, 0),
-        contentPadding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
-        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.2),
-                shape: BoxShape.circle,
-              ),
-              child: Image.asset(Sites.of(room.platform!).logo, width: 28, height: 28),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                room.nick ?? '',
-                style: AppTextStyles.t16.copyWith(fontWeight: FontWeight.w700, letterSpacing: 0.3),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-
-            IconButton(
-              tooltip: i18n('share'),
-              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-              icon: Icon(RemixIcons.share_forward_line, size: 20, color: theme.colorScheme.primary),
-              onPressed: () {
-                Navigator.pop(context);
-                ShareCommandHandler.instance.onShareRoomPressed(room);
-              },
-            ),
-            SizedBox(width: 6),
-            IconButton(
-              tooltip: i18n('set_room_tags'),
-              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-              icon: Icon(
-                Remix.price_tag_3_line,
-                size: 20,
-                color: isFollowed ? theme.colorScheme.primary : theme.disabledColor.withValues(alpha: 0.6),
-              ),
-              onPressed: () {
-                Navigator.pop(context);
-                if (isFollowed) {
-                  unawaited(_showTagSelectionGridModal(context, theme, tagController));
-                } else {
-                  SmartDialog.showToast(i18n('tags_need_follow_tip'));
-                  showFollowDialog(
-                    context,
-                    theme,
-                    anchorName: room.nick ?? '',
-                    onConfirm: () {
-                      SettingsService.to.fav.addRoom(room);
-                      unawaited(_showTagSelectionGridModal(context, theme, tagController));
-                    },
-                  );
-                }
-              },
-            ),
-          ],
-        ),
-        content: Container(
-          width: double.maxFinite,
-          constraints: const BoxConstraints(maxWidth: 380),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
+    unawaited(
+      showDialog<void>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          backgroundColor: theme.colorScheme.surface,
+          elevation: 6,
+          shadowColor: Colors.black.withValues(alpha: 0.12),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          titlePadding: const EdgeInsets.fromLTRB(24, 20, 16, 0),
+          contentPadding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
+          actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          title: Row(
             children: [
               Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(14),
+                padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceContainerLow,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: theme.dividerColor.withValues(alpha: 0.04), width: 0.8),
+                  color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.2),
+                  shape: BoxShape.circle,
                 ),
+                child: Image.asset(Sites.of(room.normalizedPlatformId).logo, width: 28, height: 28),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
                 child: Text(
-                  room.title ?? '',
-                  style: AppTextStyles.t14.copyWith(
-                    color: theme.colorScheme.onSurface,
-                    fontWeight: FontWeight.w500,
-                    height: 1.45,
-                  ),
+                  room.nick ?? '',
+                  style: AppTextStyles.t16.copyWith(fontWeight: FontWeight.w700, letterSpacing: 0.3),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              const SizedBox(height: 14),
-              Padding(
-                padding: const EdgeInsets.only(left: 4),
-                child: Text(
-                  i18n('room_id_label', args: {"id": ?room.roomId}),
-                  style: AppTextStyles.t11.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.5,
-                  ),
+
+              IconButton(
+                tooltip: i18n('share'),
+                constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                icon: Icon(RemixIcons.share_forward_line, size: 20, color: theme.colorScheme.primary),
+                onPressed: () {
+                  Navigator.pop(dialogContext);
+                  ShareCommandHandler.instance.onShareRoomPressed(room);
+                },
+              ),
+              SizedBox(width: 6),
+              IconButton(
+                tooltip: i18n('set_room_tags'),
+                constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                icon: Icon(
+                  Remix.price_tag_3_line,
+                  size: 20,
+                  color: isFollowed ? theme.colorScheme.primary : theme.disabledColor.withValues(alpha: 0.6),
                 ),
+                onPressed: () {
+                  Navigator.pop(dialogContext);
+                  if (isFollowed) {
+                    unawaited(_showTagSelectionGridModal(context, theme, tagController));
+                  } else {
+                    SmartDialog.showToast(i18n('tags_need_follow_tip'));
+                    showFollowDialog(
+                      context,
+                      theme,
+                      anchorName: room.nick ?? '',
+                      onConfirm: () {
+                        SettingsService.to.fav.addRoom(room);
+                        unawaited(_showTagSelectionGridModal(context, theme, tagController));
+                      },
+                    );
+                  }
+                },
               ),
             ],
           ),
-        ),
-        actions: [
-          FollowButton(room: room),
-          TextButton(
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              i18n('close'),
-              style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontWeight: FontWeight.w600),
+          content: Container(
+            width: double.maxFinite,
+            constraints: const BoxConstraints(maxWidth: 380),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surfaceContainerLow,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: theme.dividerColor.withValues(alpha: 0.04), width: 0.8),
+                  ),
+                  child: Text(
+                    room.title ?? '',
+                    style: AppTextStyles.t14.copyWith(
+                      color: theme.colorScheme.onSurface,
+                      fontWeight: FontWeight.w500,
+                      height: 1.45,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Padding(
+                  padding: const EdgeInsets.only(left: 4),
+                  child: Text(
+                    i18n('room_id_label', args: {"id": ?room.roomId}),
+                    style: AppTextStyles.t11.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-        ],
+          actions: [
+            FollowButton(room: room),
+            TextButton(
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(
+                i18n('close'),
+                style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -323,6 +326,7 @@ class RoomCard extends StatelessWidget {
     final bool isSmallScreen = screenWidth < 600;
 
     bool showAddSection = false;
+    bool assignmentPending = false;
     String? nameErrorText;
     final tagScrollController = ScrollController();
     void clearName(StateSetter setModalState) {
@@ -361,8 +365,9 @@ class RoomCard extends StatelessWidget {
       });
     }
 
-    await Get.dialog<void>(
-      StatefulBuilder(
+    await showDialog<void>(
+      context: context,
+      builder: (context) => StatefulBuilder(
         builder: (context, setModalState) => AlertDialog(
           backgroundColor: theme.colorScheme.surface,
           elevation: 8,
@@ -772,19 +777,33 @@ class RoomCard extends StatelessWidget {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                       ),
-                      onPressed: showAddSection
+                      onPressed: showAddSection || assignmentPending
                           ? null
                           : () async {
-                              await tagController.setRoomTags(room, tempSelectedIds);
-                              if (context.mounted) Navigator.pop(context);
+                              setModalState(() => assignmentPending = true);
+                              try {
+                                await tagController.setRoomTags(room, tempSelectedIds);
+                                if (context.mounted) Navigator.pop(context);
+                              } catch (error) {
+                                debugPrint('Room tag assignment failed: $error');
+                                if (context.mounted) {
+                                  setModalState(() => assignmentPending = false);
+                                  ToastUtil.show(i18n('tag_assignment_save_failed'));
+                                }
+                              }
                             },
-                      child: Text(
-                        i18n('confirm'),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
+                      child: assignmentPending
+                          ? SizedBox.square(
+                              dimension: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2, semanticsLabel: i18n('refresh_loading')),
+                            )
+                          : Text(
+                              i18n('confirm'),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(fontWeight: FontWeight.bold),
+                            ),
                     ),
                   ),
                 ],
