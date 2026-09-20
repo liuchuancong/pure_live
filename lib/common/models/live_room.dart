@@ -118,6 +118,13 @@ class LiveRoom {
       hasTotalViewers: true,
       onlineAvailability: AudienceOnlineAvailability.unsupported,
     ),
+    // CHZZK exposes concurrentUserCount and separately tells clients whether
+    // the value may be shown through cvExposure.
+    'chzzk': AudiencePlatformCapability(
+      hasPopularity: false,
+      hasTotalViewers: false,
+      onlineAvailability: AudienceOnlineAvailability.roomList,
+    ),
     'ttinglive': AudiencePlatformCapability(
       hasPopularity: false,
       hasTotalViewers: false,
