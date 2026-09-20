@@ -4,35 +4,46 @@ import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/event_bus.dart';
 
-class FavoriteFloatingButton extends StatelessWidget {
+class FavoriteFloatingButton extends StatefulWidget {
   const FavoriteFloatingButton({super.key, required this.room, this.compact = false});
 
   final LiveRoom room;
   final bool compact;
 
-  Future<void> _toggleFavorite(bool isFavorite) async {
-    if (!isFavorite) {
-      if (SettingsService.to.fav.addRoom(room)) {
-        EventBus.instance.emit('changeFavorite', true);
+  @override
+  State<FavoriteFloatingButton> createState() => _FavoriteFloatingButtonState();
+}
+
+class _FavoriteFloatingButtonState extends State<FavoriteFloatingButton> {
+  bool _pending = false;
+
+  Future<void> _toggleFavorite(BuildContext context, bool isFavorite) async {
+    if (_pending) return;
+    final targetRoom = widget.room;
+    setState(() => _pending = true);
+    try {
+      if (!isFavorite) {
+        if (SettingsService.to.fav.addRoom(targetRoom)) {
+          EventBus.instance.emit('changeFavorite', true);
+        }
+        return;
       }
-      return;
-    }
-    // Bind the actions to the dialog route itself. A global Get context may
-    // point at the page navigator while routes are transitioning.
-    final confirmed = await Get.dialog<bool>(
-      Builder(
+      final confirmed = await showDialog<bool>(
+        context: context,
         builder: (dialogContext) => AlertDialog(
           title: Text(i18n('unfollow')),
-          content: Text(i18n('unfollow_message', args: {'name': room.nick ?? ''})),
+          content: Text(i18n('unfollow_message', args: {'name': targetRoom.nick ?? ''})),
           actions: [
             TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: Text(i18n('cancel'))),
             TextButton(onPressed: () => Navigator.of(dialogContext).pop(true), child: Text(i18n('confirm'))),
           ],
         ),
-      ),
-    );
-    if (confirmed == true && SettingsService.to.fav.removeRoom(room)) {
-      EventBus.instance.emit('changeFavorite', true);
+      );
+      if (confirmed == true && SettingsService.to.fav.removeRoom(targetRoom)) {
+        EventBus.instance.emit('changeFavorite', true);
+      }
+    } finally {
+      if (mounted) setState(() => _pending = false);
     }
   }
 
@@ -42,10 +53,10 @@ class FavoriteFloatingButton extends StatelessWidget {
       // Explicitly observe the persisted list. The former EventBus + local
       // setState path missed canonical room-id changes and external updates.
       final favoriteRooms = SettingsService.to.fav.favoriteRooms.value;
-      final isFavorite = favoriteRooms.any((candidate) => candidate.hasSameIdentity(room));
+      final isFavorite = favoriteRooms.any((candidate) => candidate.hasSameIdentity(widget.room));
       final label = i18n(isFavorite ? 'followed' : 'follow');
 
-      if (compact) {
+      if (widget.compact) {
         return Tooltip(
           message: label,
           child: IconButton.filledTonal(
@@ -58,7 +69,7 @@ class FavoriteFloatingButton extends StatelessWidget {
               height: kMinInteractiveDimension,
             ),
             padding: EdgeInsets.zero,
-            onPressed: () => _toggleFavorite(isFavorite),
+            onPressed: _pending ? null : () => _toggleFavorite(context, isFavorite),
             icon: Icon(isFavorite ? Remix.heart_3_fill : Remix.heart_3_line, size: 19),
           ),
         );
@@ -75,7 +86,7 @@ class FavoriteFloatingButton extends StatelessWidget {
           minimumSize: WidgetStateProperty.all(const Size(kMinInteractiveDimension, kMinInteractiveDimension)),
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         ),
-        onPressed: () => _toggleFavorite(isFavorite),
+        onPressed: _pending ? null : () => _toggleFavorite(context, isFavorite),
         child: Text(label),
       );
     });

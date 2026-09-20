@@ -394,7 +394,12 @@ class TopActionBar extends StatelessWidget {
                       ),
                       color: Colors.white,
                       onPressed: () {
-                        Get.dialog(PlayOther(controller: Get.find<LivePlayController>()));
+                        unawaited(
+                          showDialog<void>(
+                            context: context,
+                            builder: (_) => PlayOther(controller: controller.livePlayController),
+                          ),
+                        );
                       },
                       style: IconButton.styleFrom(backgroundColor: Colors.black26),
                     ),
@@ -1810,10 +1815,11 @@ class SettingsButton extends StatelessWidget {
         if (controller.isMenuOpen.value) return;
         controller.isMenuOpen.value = true;
         try {
-          await Get.dialog<void>(
-            SettingsPanel(controller: controller),
+          await showDialog<void>(
+            context: context,
             barrierColor: Colors.black.withValues(alpha: 0.58),
             useSafeArea: true,
+            builder: (_) => SettingsPanel(controller: controller),
           );
         } finally {
           controller.isMenuOpen.value = false;

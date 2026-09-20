@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:developer' as developer;
 
@@ -24,10 +25,7 @@ class LivePlayMenuButton extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       offset: const Offset(12, 0),
       position: PopupMenuPosition.under,
-      child: const SizedBox.square(
-        dimension: kMinInteractiveDimension,
-        child: Icon(Remix.apps_2_line),
-      ),
+      child: const SizedBox.square(dimension: kMinInteractiveDimension, child: Icon(Remix.apps_2_line)),
       onOpened: () {
         controller.updateUI(isMenuOpen: true);
       },
@@ -48,7 +46,7 @@ class LivePlayMenuButton extends StatelessWidget {
         break;
 
       case 1:
-        _switchLiveRoom();
+        _switchLiveRoom(context);
         break;
 
       case 2:
@@ -87,8 +85,13 @@ class LivePlayMenuButton extends StatelessWidget {
     controller.openNaviteAPP();
   }
 
-  void _switchLiveRoom() {
-    Get.dialog(PlayOther(controller: controller));
+  void _switchLiveRoom(BuildContext context) {
+    unawaited(
+      showDialog<void>(
+        context: context,
+        builder: (_) => PlayOther(controller: controller),
+      ),
+    );
   }
 
   void _castScreen(BuildContext context) {

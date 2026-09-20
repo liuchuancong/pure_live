@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/modules/live_play/dialogs/play_other.dart';
 import 'package:pure_live/modules/live_play/controllers/player_state.dart';
@@ -68,7 +70,12 @@ class NotLivingVideoWidget extends StatelessWidget {
               ),
               color: Colors.white,
               onPressed: () {
-                Get.dialog(PlayOther(controller: Get.find<LivePlayController>()));
+                unawaited(
+                  showDialog<void>(
+                    context: context,
+                    builder: (_) => PlayOther(controller: controller),
+                  ),
+                );
               },
             ),
             const DatetimeInfo(),
