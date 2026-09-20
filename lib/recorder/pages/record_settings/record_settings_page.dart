@@ -94,39 +94,13 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
                 icon: Remix.delete_bin_4_line,
                 title: i18n("clear_all_cache"),
                 subtitle: i18n("clear_all_cache_desc"),
-                onTap: () async {
-                  final ok = await showDialog<bool>(
-                    context: context,
-                    builder: (dialogContext) => AlertDialog(
-                      scrollable: true,
-                      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                      title: Text(i18n("confirm_clear_cache"), style: const TextStyle(fontWeight: FontWeight.bold)),
-                      content: Text(i18n("confirm_clear_cache_desc")),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.of(dialogContext).pop(false),
-                          child: Text(i18n("cancel")),
-                        ),
-                        ElevatedButton(
-                          onPressed: () => Navigator.of(dialogContext).pop(true),
-                          child: Text(i18n("clear")),
-                        ),
-                      ],
-                    ),
-                  );
-
-                  if (ok == true) {
-                    try {
-                      await controller.clearCache();
-                      if (!context.mounted) return;
-                      Get.snackbar(i18n("done"), i18n("cache_cleared"), snackPosition: SnackPosition.bottom);
-                    } catch (error) {
-                      debugPrint('Recorder cache clear failed: $error');
-                      if (context.mounted) ToastUtil.show(i18n('cache_operation_failed'));
-                    }
-                  }
-                },
+                trailing: controller.cacheClearPending.value
+                    ? SizedBox.square(
+                        dimension: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2, semanticsLabel: i18n('clear_all_cache')),
+                      )
+                    : null,
+                onTap: controller.cacheClearPending.value ? null : () => _clearCache(context),
               ),
             ]),
             const SizedBox(height: 20),
@@ -249,6 +223,38 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
         ),
       ),
     );
+  }
+
+  Future<void> _clearCache(BuildContext context) async {
+    if (controller.cacheClearPending.value) return;
+    controller.cacheClearPending.value = true;
+
+    try {
+      final ok = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          scrollable: true,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          title: Text(i18n("confirm_clear_cache"), style: const TextStyle(fontWeight: FontWeight.bold)),
+          content: Text(i18n("confirm_clear_cache_desc")),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: Text(i18n("cancel"))),
+            ElevatedButton(onPressed: () => Navigator.of(dialogContext).pop(true), child: Text(i18n("clear"))),
+          ],
+        ),
+      );
+
+      if (ok != true) return;
+      await controller.clearCache();
+      if (!context.mounted) return;
+      Get.snackbar(i18n("done"), i18n("cache_cleared"), snackPosition: SnackPosition.bottom);
+    } catch (error) {
+      debugPrint('Recorder cache clear failed: $error');
+      if (context.mounted) ToastUtil.show(i18n('cache_operation_failed'));
+    } finally {
+      if (!controller.isClosed) controller.cacheClearPending.value = false;
+    }
   }
 
   Widget _buildCacheHeader(BuildContext context, ThemeData theme) {
