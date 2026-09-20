@@ -1838,5 +1838,11 @@
   "weibo_directory_scope": "An official public recommendation snapshot only. Cards omit live status and viewer counts. Use an exact broadcast ID or official live URL; nickname search is not integrated.",
   "weibo_room_scope": "Favorites track this broadcast, not the broadcaster account. Import a new live link for a new broadcast.",
   "weibo_restricted": "Access is restricted or playback is disabled. No public live source is available.",
-  "weibo_original_stream": "Original stream"
+  "weibo_original_stream": "Original stream",
+  "site_showroom": "SHOWROOM",
+  "showroom_directory_scope": "Official public live snapshot and native genres. Directory and keyword search page the same snapshot locally. Room links can resolve an offline room; view_num is shown as session total views, not concurrent viewers.",
+  "showroom_quality_auto": "Auto",
+  "showroom_quality_original": "Original",
+  "showroom_quality_medium": "Medium",
+  "showroom_quality_low": "Low"
 }

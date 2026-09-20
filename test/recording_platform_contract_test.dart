@@ -28,6 +28,7 @@ void main() {
         Sites.ttingSite,
         Sites.xiaohongshuSite,
         Sites.niconicoSite,
+        Sites.showroomSite,
         Sites.iptvSite,
       ]),
     );

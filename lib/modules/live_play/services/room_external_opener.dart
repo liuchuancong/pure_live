@@ -13,6 +13,7 @@ import 'package:pure_live/core/site/inke/inke_site.dart';
 import 'package:pure_live/core/site/kilakila/kilakila_site.dart';
 import 'package:pure_live/core/sites.dart';
 import 'package:pure_live/core/site/huajiao/huajiao_link.dart';
+import 'package:pure_live/core/site/showroom/showroom_link.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 
 enum RoomExternalOpenResult { opened, unavailable, failed, cancelled }
@@ -54,6 +55,12 @@ class RoomExternalOpener {
         try {
           return RoomExternalTarget(web: NiconicoLink.url(id));
         } on NiconicoException {
+          return null;
+        }
+      case Sites.showroomSite:
+        try {
+          return RoomExternalTarget(web: ShowroomLink.roomUrl(id));
+        } on FormatException {
           return null;
         }
       case Sites.xiaohongshuSite:

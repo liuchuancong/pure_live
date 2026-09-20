@@ -1838,5 +1838,11 @@
   "weibo_directory_scope": "仅展示官方公开推荐快照；推荐卡片未提供直播状态及观看人数。支持精确场次 ID 或官方直播链接，不支持昵称搜索。",
   "weibo_room_scope": "收藏跟踪当前直播场次，不是主播账号；新场次需重新导入直播链接。",
   "weibo_restricted": "当前场次存在访问限制或播放已关闭；公开直播源不可用。",
-  "weibo_original_stream": "原始流"
+  "weibo_original_stream": "原始流",
+  "site_showroom": "SHOWROOM",
+  "showroom_directory_scope": "官方公开直播快照与原生分类；目录和关键词搜索在同一快照内本地分页。直播间链接可查询未开播状态；view_num 作为本场累计观看展示，不当作实时在线人数。",
+  "showroom_quality_auto": "自动",
+  "showroom_quality_original": "原画",
+  "showroom_quality_medium": "中画质",
+  "showroom_quality_low": "低画质"
 }

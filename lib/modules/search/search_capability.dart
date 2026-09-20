@@ -27,6 +27,11 @@ class LiveSearchCapabilities {
       supportsWebSearch: false,
     ),
     Sites.niconicoSite: LiveSearchCapability(coverage: NativeSearchCoverage.liveOnly, supportsPagination: true),
+    Sites.showroomSite: LiveSearchCapability(
+      coverage: NativeSearchCoverage.liveOnly,
+      supportsPagination: true,
+      supportsWebSearch: false,
+    ),
     Sites.xiaohongshuSite: LiveSearchCapability(
       coverage: NativeSearchCoverage.roomLookup,
       supportsPagination: false,

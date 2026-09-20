@@ -103,6 +103,8 @@ class SearchController extends GetxController {
         throw StateError('Weibo supports exact broadcast lookup, not web keyword search');
       case Sites.niconicoSite:
         return 'https://live.nicovideo.jp/search?keyword=$q&status=onair';
+      case Sites.showroomSite:
+        throw StateError('SHOWROOM web keyword search is not exposed');
       case Sites.xiaohongshuSite:
         throw StateError('Xiaohongshu supports exact broadcast-room lookup, not web keyword search');
       case Sites.ttingSite:
