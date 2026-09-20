@@ -397,6 +397,8 @@
     "platform_display_subtitle": "管理首页直播平台排序",
     "platform_settings": "平台显示与授权",
     "play_video_failed": "无法播放直播",
+    "lock_player_controls": "锁定播放器控制栏",
+    "unlock_player_controls": "解锁播放器控制栏",
     "player_kernel": "播放器内核",
     "please_enter_keyword": "请输入关键词",
     "please_input_keyword": "请输入关键字",

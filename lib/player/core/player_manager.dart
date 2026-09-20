@@ -3173,6 +3173,7 @@ class PlayerManager {
                       builder: (context, snapshot) {
                         var isPlay = snapshot.data ?? true;
                         return IconButton(
+                          tooltip: i18n(isPlay ? 'multiview_pause' : 'multiview_play'),
                           iconSize: 42,
                           style: IconButton.styleFrom(backgroundColor: Colors.black45),
                           icon: Icon(
@@ -3196,6 +3197,7 @@ class PlayerManager {
                     opacity: isHovered.value ? 1 : 0,
                     duration: const Duration(milliseconds: 200),
                     child: IconButton(
+                      tooltip: i18n('close'),
                       icon: const Icon(Icons.close, color: Colors.white),
                       onPressed: isPipPreparing.value ? null : _exitPipFromControl,
                     ),

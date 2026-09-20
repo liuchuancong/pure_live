@@ -531,6 +531,7 @@ class _UserAgentDialogState extends State<_UserAgentDialog> {
                               counterText: "",
                               contentPadding: const EdgeInsets.fromLTRB(14, 14, 14, 4),
                               suffixIcon: IconButton(
+                                tooltip: i18n('clear'),
                                 icon: const Icon(Remix.close_circle_line, size: 18),
                                 onPressed: () => controller.clear(),
                               ),

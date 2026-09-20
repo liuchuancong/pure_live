@@ -27,6 +27,7 @@ class SearchPage extends GetView<pure_live.SearchController> {
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(24)),
             contentPadding: const EdgeInsets.symmetric(horizontal: 12.0),
             prefixIcon: IconButton(
+              tooltip: MaterialLocalizations.of(context).backButtonTooltip,
               onPressed: () {
                 if (Navigator.canPop(Get.context!)) {
                   Navigator.of(Get.context!).pop();
@@ -34,7 +35,11 @@ class SearchPage extends GetView<pure_live.SearchController> {
               },
               icon: const Icon(Icons.arrow_back),
             ),
-            suffixIcon: IconButton(onPressed: controller.doSearch, icon: const Icon(Icons.search)),
+            suffixIcon: IconButton(
+              tooltip: i18n('search_live'),
+              onPressed: controller.doSearch,
+              icon: const Icon(Icons.search),
+            ),
           ),
           onSubmitted: (e) {
             controller.doSearch();

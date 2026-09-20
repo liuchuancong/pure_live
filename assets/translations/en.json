@@ -396,6 +396,8 @@
     "platform_display_subtitle": "Manage home platform order",
     "platform_settings": "Platform Display & Authorization",
     "play_video_failed": "Play Video Failed",
+    "lock_player_controls": "Lock player controls",
+    "unlock_player_controls": "Unlock player controls",
     "player_kernel": "Player Engine",
     "please_enter_keyword": "Please enter a keyword",
     "please_input_keyword": "Please enter a keyword",

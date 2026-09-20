@@ -1018,6 +1018,7 @@ class LockButton extends StatelessWidget {
             child: Container(
               margin: const EdgeInsets.only(right: 20.0),
               child: IconButton(
+                tooltip: i18n(controller.showLocked.value ? 'unlock_player_controls' : 'lock_player_controls'),
                 onPressed: () => {controller.showLocked.toggle()},
                 icon: Icon(controller.showLocked.value ? Icons.lock_rounded : Icons.lock_open_rounded, size: 28),
                 color: Colors.white,
@@ -1739,10 +1740,7 @@ class PlayPauseButton extends StatelessWidget {
           key: const ValueKey('player-play-pause-action'),
           tooltip: i18n(isPlaying ? 'multiview_pause' : 'multiview_play'),
           visualDensity: VisualDensity.standard,
-          constraints: const BoxConstraints(
-            minWidth: kMinInteractiveDimension,
-            minHeight: kMinInteractiveDimension,
-          ),
+          constraints: const BoxConstraints(minWidth: kMinInteractiveDimension, minHeight: kMinInteractiveDimension),
           onPressed: () => playerManager.togglePlayPause(),
           icon: Icon(isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded, color: Colors.white, size: 28),
         );
@@ -1857,11 +1855,7 @@ class ExpandWindowButton extends StatelessWidget {
         onPressed: () => controller.toggleWindowFullScreen(),
         icon: RotatedBox(
           quarterTurns: 1,
-          child: Icon(
-            expanded ? Icons.unfold_less_rounded : Icons.unfold_more_rounded,
-            color: Colors.white,
-            size: 26,
-          ),
+          child: Icon(expanded ? Icons.unfold_less_rounded : Icons.unfold_more_rounded, color: Colors.white, size: 26),
         ),
       );
     });
@@ -1883,11 +1877,7 @@ class ExpandButton extends StatelessWidget {
         visualDensity: VisualDensity.standard,
         constraints: const BoxConstraints(minWidth: kMinInteractiveDimension, minHeight: kMinInteractiveDimension),
         onPressed: () => controller.toggleFullScreen(),
-        icon: Icon(
-          expanded ? Icons.fullscreen_exit_rounded : Icons.fullscreen_rounded,
-          color: Colors.white,
-          size: 26,
-        ),
+        icon: Icon(expanded ? Icons.fullscreen_exit_rounded : Icons.fullscreen_rounded, color: Colors.white, size: 26),
       );
     });
   }
@@ -1994,10 +1984,7 @@ class FavoriteButton extends StatelessWidget {
                     children: [
                       Icon(isFavorite ? Icons.check_rounded : Icons.close, color: Colors.white, size: 15),
                       const SizedBox(width: 2),
-                      Text(
-                        isFavorite ? i18n('followed') : i18n('follow'),
-                        style: const TextStyle(color: Colors.white),
-                      ),
+                      Text(isFavorite ? i18n('followed') : i18n('follow'), style: const TextStyle(color: Colors.white)),
                     ],
                   ),
                 ),

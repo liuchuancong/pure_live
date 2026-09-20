@@ -54,7 +54,11 @@ class _LocalInteractionSheetState extends State<LocalInteractionSheet> {
               Row(
                 children: [
                   Expanded(child: Text(i18n('local_interaction_title'), style: Theme.of(context).textTheme.titleLarge)),
-                  IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close)),
+                  IconButton(
+                    tooltip: i18n('close'),
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close),
+                  ),
                 ],
               ),
               Text(i18n('local_interaction_desc'), style: Theme.of(context).textTheme.bodySmall),
@@ -129,7 +133,11 @@ class _LocalInteractionSheetState extends State<LocalInteractionSheet> {
                       decoration: InputDecoration(hintText: i18n('local_message_hint')),
                     ),
                   ),
-                  IconButton.filled(onPressed: _sendChat, icon: const Icon(Icons.send_rounded)),
+                  IconButton.filled(
+                    tooltip: i18n('local_send_message'),
+                    onPressed: _sendChat,
+                    icon: const Icon(Icons.send_rounded),
+                  ),
                 ],
               ),
               const SizedBox(height: 16),
