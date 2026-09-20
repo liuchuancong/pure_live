@@ -17,7 +17,10 @@ class MenuButton extends GetView<AuthController> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       offset: const Offset(12, 0),
       position: PopupMenuPosition.under,
-      icon: const Icon(Icons.menu_rounded),
+      child: const SizedBox.square(
+        dimension: kMinInteractiveDimension,
+        child: Icon(Icons.menu_rounded),
+      ),
       onSelected: (int index) async {
         if (index == 3) {
           try {

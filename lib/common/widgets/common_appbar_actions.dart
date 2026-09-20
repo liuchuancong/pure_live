@@ -12,7 +12,10 @@ class CommonAppBarActions extends StatelessWidget {
       children: [
         PopupMenuButton<int>(
           tooltip: i18n("more"),
-          icon: const Icon(Remix.menu_search_line, size: 24),
+          child: const SizedBox.square(
+            dimension: kMinInteractiveDimension,
+            child: Icon(Remix.menu_search_line, size: 24),
+          ),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           offset: const Offset(0, 10),
           position: PopupMenuPosition.under,

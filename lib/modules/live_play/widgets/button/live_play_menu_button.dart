@@ -24,7 +24,10 @@ class LivePlayMenuButton extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       offset: const Offset(12, 0),
       position: PopupMenuPosition.under,
-      icon: const Icon(Remix.apps_2_line),
+      child: const SizedBox.square(
+        dimension: kMinInteractiveDimension,
+        child: Icon(Remix.apps_2_line),
+      ),
       onOpened: () {
         controller.updateUI(isMenuOpen: true);
       },

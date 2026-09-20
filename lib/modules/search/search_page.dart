@@ -253,15 +253,23 @@ class _SearchOptions extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     PopupMenuButton<LiveSearchSortMode>(
+                      key: const ValueKey('search-sort-selector'),
+                      tooltip: _sortLabel(controller.sortMode.v),
                       initialValue: controller.sortMode.v,
                       onSelected: controller.setSortMode,
                       itemBuilder: (context) => [
                         for (final mode in LiveSearchSortMode.values)
                           PopupMenuItem(value: mode, child: Text(_sortLabel(mode))),
                       ],
-                      child: Chip(
-                        avatar: const Icon(Icons.sort_rounded, size: 17),
-                        label: Text(_sortLabel(controller.sortMode.v)),
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(
+                          minWidth: kMinInteractiveDimension,
+                          minHeight: kMinInteractiveDimension,
+                        ),
+                        child: Chip(
+                          avatar: const Icon(Icons.sort_rounded, size: 17),
+                          label: Text(_sortLabel(controller.sortMode.v)),
+                        ),
                       ),
                     ),
                     if (controller.canOpenWebSearch) ...[

@@ -245,8 +245,11 @@ class _WebDavPageState extends State<WebDavPage> {
       title: Text(i18n("webdav"), style: const TextStyle(fontWeight: FontWeight.w400)),
       actions: [
         PopupMenuButton<int>(
-          icon: Icon(Icons.more_vert, color: Theme.of(Get.context!).colorScheme.onPrimaryContainer),
           tooltip: i18n("webdav_more_actions"),
+          child: SizedBox.square(
+            dimension: kMinInteractiveDimension,
+            child: Icon(Icons.more_vert, color: Theme.of(Get.context!).colorScheme.onPrimaryContainer),
+          ),
           onSelected: (int value) {
             if (value == 1) {
               controller.loadFiles();
@@ -487,37 +490,47 @@ class _WebDavPageState extends State<WebDavPage> {
         style: TextStyle(color: Theme.of(Get.context!).colorScheme.onSurfaceVariant),
       ),
       trailing: Obx(
-        () => PopupMenuButton<String>(
-          enabled: controller.canStartFileAction,
-          icon: Icon(Icons.more_vert, color: Theme.of(Get.context!).colorScheme.onSurface),
-          itemBuilder: (context) => [
-            if (file.isDir != true) ...[
-              PopupMenuItem(value: 'RestoreAll', child: Text(i18n("webdav_restore_all_settings"))),
-              PopupMenuItem(value: 'RestoreFavorites', child: Text(i18n("webdav_restore_favorites"))),
+        () {
+          final enabled = controller.canStartFileAction;
+          return PopupMenuButton<String>(
+            enabled: enabled,
+            tooltip: i18n("webdav_more_actions"),
+            child: SizedBox.square(
+              dimension: kMinInteractiveDimension,
+              child: Icon(
+                Icons.more_vert,
+                color: enabled ? Theme.of(Get.context!).colorScheme.onSurface : Theme.of(Get.context!).disabledColor,
+              ),
+            ),
+            itemBuilder: (context) => [
+              if (file.isDir != true) ...[
+                PopupMenuItem(value: 'RestoreAll', child: Text(i18n("webdav_restore_all_settings"))),
+                PopupMenuItem(value: 'RestoreFavorites', child: Text(i18n("webdav_restore_favorites"))),
+              ],
+              PopupMenuItem(value: 'Delete', child: Text(i18n("webdav_delete"))),
             ],
-            PopupMenuItem(value: 'Delete', child: Text(i18n("webdav_delete"))),
-          ],
-          onSelected: (value) {
-            if (value == 'RestoreAll') {
-              unawaited(
-                controller.downloadFile(
-                  file,
-                  confirmRestore: () => _showFileRestoreDialog(file, BackupRestoreScope.all),
-                ),
-              );
-            } else if (value == 'RestoreFavorites') {
-              unawaited(
-                controller.downloadFile(
-                  file,
-                  scope: BackupRestoreScope.favorites,
-                  confirmRestore: () => _showFileRestoreDialog(file, BackupRestoreScope.favorites),
-                ),
-              );
-            } else if (value == 'Delete') {
-              unawaited(controller.deleteFile(file, confirmDelete: () => _showFileDeleteDialog(file)));
-            }
-          },
-        ),
+            onSelected: (value) {
+              if (value == 'RestoreAll') {
+                unawaited(
+                  controller.downloadFile(
+                    file,
+                    confirmRestore: () => _showFileRestoreDialog(file, BackupRestoreScope.all),
+                  ),
+                );
+              } else if (value == 'RestoreFavorites') {
+                unawaited(
+                  controller.downloadFile(
+                    file,
+                    scope: BackupRestoreScope.favorites,
+                    confirmRestore: () => _showFileRestoreDialog(file, BackupRestoreScope.favorites),
+                  ),
+                );
+              } else if (value == 'Delete') {
+                unawaited(controller.deleteFile(file, confirmDelete: () => _showFileDeleteDialog(file)));
+              }
+            },
+          );
+        },
       ),
       onTap: () => controller.onFileTap(file),
     );
