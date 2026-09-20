@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:async';
+import 'dart:developer';
 
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/utils.dart';
@@ -63,6 +64,9 @@ class AppNavigator {
         manager.cancelRoomSessionReentry();
       }
       await Get.toNamed(RoutePath.kLivePlay, arguments: normalizedRoom, parameters: {"site": platform});
+    } catch (error, stackTrace) {
+      log('Open live room route failed', name: 'AppNavigator', error: error, stackTrace: stackTrace);
+      ToastUtil.show(i18n('get_room_info_failed_retry'));
     } finally {
       _openingLiveRoom = false;
     }
