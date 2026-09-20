@@ -414,7 +414,6 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
   late final DanmakuManager _danmakuManager;
 
   // Keys
-  GlobalKey<BrightnessVolumnDargAreaState> brightnessKey = GlobalKey<BrightnessVolumnDargAreaState>();
   final danmuKey = GlobalKey();
   GlobalKey playerKey = GlobalKey();
 

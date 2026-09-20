@@ -824,33 +824,21 @@ class BrightnessVolumnDargAreaState extends State<BrightnessVolumnDargArea> {
   double _portraitRestoreDistance = 0;
 
   @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
   void dispose() {
     _hideBVTimer?.cancel();
     super.dispose();
   }
 
-  void updateVolumn(double? volume) {
-    _isDargLeft = false;
-    _cancelAndRestartHideBVTimer();
-    setState(() {
-      _updateDargVarVal = volume!;
-    });
-  }
-
   void _cancelAndRestartHideBVTimer() {
+    if (!mounted) return;
     _hideBVTimer?.cancel();
     _hideBVTimer = Timer(const Duration(seconds: 1), () {
-      setState(() => _hideBVStuff = true);
+      if (mounted) setState(() => _hideBVStuff = true);
     });
     setState(() => _hideBVStuff = false);
   }
 
-  void _onVerticalDragUpdate(Offset position, Offset delta) async {
+  Future<void> _onVerticalDragUpdate(Offset position, Offset delta) async {
     if (controller.showLocked.value) return;
 
     if (delta.distance < 0.5) return;
@@ -865,17 +853,25 @@ class BrightnessVolumnDargAreaState extends State<BrightnessVolumnDargArea> {
 
     if (_hideBVStuff || _isDargLeft != dargLeft) {
       _isDargLeft = dargLeft;
-      if (_isDargLeft) {
-        if (PlatformUtils.isMobile) {
-          double v = await controller.brightness();
-          setState(() => _updateDargVarVal = v);
+      try {
+        if (_isDargLeft) {
+          if (PlatformUtils.isMobile) {
+            final v = await controller.brightness();
+            if (!mounted || _isDargLeft != dargLeft) return;
+            setState(() => _updateDargVarVal = v);
+          }
+        } else {
+          final v = await controller.volume();
+          if (!mounted || _isDargLeft != dargLeft) return;
+          setState(() => _updateDargVarVal = v ?? 1.0);
         }
-      } else {
-        double? v = await controller.volume();
-        setState(() => _updateDargVarVal = v ?? 1.0);
+      } catch (error) {
+        debugPrint('Read brightness/volume for drag failed: $error');
+        return;
       }
     }
 
+    if (!mounted || _isDargLeft != dargLeft) return;
     _cancelAndRestartHideBVTimer();
 
     double sensitivity = 0.25;
@@ -908,7 +904,7 @@ class BrightnessVolumnDargAreaState extends State<BrightnessVolumnDargArea> {
       _portraitRestoreDistance = (_portraitRestoreDistance - details.delta.dy).clamp(0.0, double.infinity).toDouble();
       return;
     }
-    _onVerticalDragUpdate(details.localPosition, details.delta);
+    unawaited(_onVerticalDragUpdate(details.localPosition, details.delta));
   }
 
   void _onVerticalDragEnd(DragEndDetails details) {
@@ -945,7 +941,7 @@ class BrightnessVolumnDargAreaState extends State<BrightnessVolumnDargArea> {
     return Listener(
       onPointerSignal: (event) {
         if (event is PointerScrollEvent) {
-          _onVerticalDragUpdate(event.localPosition, event.scrollDelta);
+          unawaited(_onVerticalDragUpdate(event.localPosition, event.scrollDelta));
         }
       },
       child: GestureDetector(
