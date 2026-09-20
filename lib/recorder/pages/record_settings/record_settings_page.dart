@@ -73,7 +73,7 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
                 title: i18n("enable_cache_limit"),
                 subtitle: i18n("enable_cache_limit_desc"),
                 value: controller.enableCacheLimit,
-                onChanged: (value) => unawaited(controller.updateEnableCacheLimit(value)),
+                onChanged: (value) => unawaited(_updateCacheLimit(value)),
               ),
               if (controller.enableCacheLimit.value)
                 context.buildTile(
@@ -117,9 +117,14 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
                   );
 
                   if (ok == true) {
-                    await controller.clearCache();
-                    if (!context.mounted) return;
-                    Get.snackbar(i18n("done"), i18n("cache_cleared"), snackPosition: SnackPosition.bottom);
+                    try {
+                      await controller.clearCache();
+                      if (!context.mounted) return;
+                      Get.snackbar(i18n("done"), i18n("cache_cleared"), snackPosition: SnackPosition.bottom);
+                    } catch (error) {
+                      debugPrint('Recorder cache clear failed: $error');
+                      if (context.mounted) ToastUtil.show(i18n('cache_operation_failed'));
+                    }
                   }
                 },
               ),
@@ -291,6 +296,15 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
   String _resolutionLabel(String value) {
     final key = PlayerConsts.resolutionLabelKey(value);
     return key == null ? value : i18n(key);
+  }
+
+  Future<void> _updateCacheLimit(bool value) async {
+    try {
+      await controller.updateEnableCacheLimit(value);
+    } catch (error) {
+      debugPrint('Recorder cache limit update failed: $error');
+      ToastUtil.show(i18n('cache_operation_failed'));
+    }
   }
 
   void _showRwTimeoutDialog(BuildContext context) {
