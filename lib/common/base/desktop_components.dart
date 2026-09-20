@@ -236,10 +236,11 @@ class CompactPageSizeSelector extends StatelessWidget {
       final int currentSize = options.contains(controller.pageSize.value) ? controller.pageSize.value : options.first;
 
       return PopupMenuButton<int>(
+        key: const ValueKey('desktop-page-size-selector'),
         initialValue: currentSize,
         tooltip: i18n("per_page"),
         position: PopupMenuPosition.under,
-        offset: const Offset(0, 170),
+        offset: Offset.zero,
         onSelected: (int newValue) {
           controller.setPageSize(newValue);
         },
