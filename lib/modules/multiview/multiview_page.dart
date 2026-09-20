@@ -1022,10 +1022,7 @@ class _MultiviewCellView extends StatelessWidget {
       position: PopupMenuPosition.under,
       onSelected: onSelectQuality,
       child: ConstrainedBox(
-        constraints: const BoxConstraints(
-          minWidth: kMinInteractiveDimension,
-          minHeight: kMinInteractiveDimension,
-        ),
+        constraints: const BoxConstraints(minWidth: kMinInteractiveDimension, minHeight: kMinInteractiveDimension),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
@@ -1088,14 +1085,15 @@ class _MultiviewCellView extends StatelessWidget {
   }
 
   Widget _buildResolvingContent() {
+    final roomLabel = _multiviewRoomLabel(state.room);
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           const CircularProgressIndicator(strokeWidth: 2.5),
-          if ((state.room?.nick ?? '').isNotEmpty) ...[
+          if (roomLabel.isNotEmpty) ...[
             const SizedBox(height: 10),
-            Text(state.room!.nick!, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTextStyles.t12Muted),
+            Text(roomLabel, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTextStyles.t12Muted),
           ],
         ],
       ),
@@ -1103,6 +1101,7 @@ class _MultiviewCellView extends StatelessWidget {
   }
 
   Widget _buildOfflineContent(ThemeData theme) {
+    final roomLabel = _multiviewRoomLabel(state.room);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
@@ -1111,9 +1110,9 @@ class _MultiviewCellView extends StatelessWidget {
           Icon(Remix.live_line, size: 30, color: theme.colorScheme.onSurfaceVariant),
           const SizedBox(height: 10),
           Text(i18n('multiview_room_offline'), style: AppTextStyles.t14Bold, textAlign: TextAlign.center),
-          if ((state.room?.nick ?? '').isNotEmpty) ...[
+          if (roomLabel.isNotEmpty) ...[
             const SizedBox(height: 4),
-            Text(state.room!.nick!, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTextStyles.t12Muted),
+            Text(roomLabel, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppTextStyles.t12Muted),
           ],
           const SizedBox(height: 6),
           Text(i18n('multiview_room_offline_hint'), style: AppTextStyles.t12Muted, textAlign: TextAlign.center),
@@ -1161,6 +1160,15 @@ class _MultiviewCellView extends StatelessWidget {
       ),
     );
   }
+}
+
+String _multiviewRoomLabel(LiveRoom? room) {
+  if (room == null) return '';
+  for (final candidate in [room.nick, room.title, room.roomId]) {
+    final value = candidate?.trim() ?? '';
+    if (value.isNotEmpty) return value;
+  }
+  return '';
 }
 
 /// 播放中格子左上角的房间名条：平台徽标 + 主播昵称。

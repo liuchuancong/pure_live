@@ -23,8 +23,14 @@ class ToolBoxDirectLinkFlow {
     Future<void> Function(String)? useUrl,
   }) async {
     scope.checkActive();
-    final site = _siteFor(room.platform!);
-    final detail = await scope.wait(() => site.getRoomDetail(roomId: room.roomId!, platform: room.platform!));
+    final platform = room.normalizedPlatformId;
+    final roomId = room.normalizedRoomId;
+    if (platform.isEmpty || roomId.isEmpty || !Sites.isSupported(platform)) {
+      notify('toolbox_parse_failed');
+      return;
+    }
+    final site = _siteFor(platform);
+    final detail = await scope.wait(() => site.getRoomDetail(roomId: roomId, platform: platform));
     final qualities = site is LiveQualityDiscovery
         ? await scope.waitCancellable((cancel) => site.discoverPlayQualities(detail: detail, cancel: cancel))
         : await scope.wait(() => site.discoverPlayQualities(detail: detail, cancel: scope.cancelToken));

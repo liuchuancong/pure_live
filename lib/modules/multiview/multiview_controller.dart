@@ -539,10 +539,11 @@ class MultiviewController extends GetxController {
   Future<void> assignRoom(int cellIndex, LiveRoom room) async {
     if (_closed || isClosed) return;
     RangeError.checkValidIndex(cellIndex, cells, 'cellIndex');
-    if (room.platform == null || !Sites.isSupported(room.platform!)) {
+    final targetRoom = room.normalizedIdentityCopy();
+    if (targetRoom.normalizedPlatformId.isEmpty || !Sites.isSupported(targetRoom.normalizedPlatformId)) {
       throw ArgumentError.value(room.platform, 'room.platform', 'Unsupported live platform');
     }
-    if (room.roomId == null || room.roomId!.isEmpty) {
+    if (targetRoom.normalizedRoomId.isEmpty) {
       throw ArgumentError.value(room.roomId, 'room.roomId', 'Room id is required');
     }
 
@@ -560,7 +561,7 @@ class MultiviewController extends GetxController {
     _updateCell(
       cellIndex,
       cells[cellIndex].copyWith(
-        room: room,
+        room: targetRoom,
         status: MultiviewCellStatus.resolving,
         clearError: true,
         clearVideoController: true,
@@ -573,8 +574,8 @@ class MultiviewController extends GetxController {
     // A room already verified as offline is a valid picker result. Do not hit
     // playback APIs or construct a native decoder only to surface a generic
     // error card.
-    if (room.isExplicitlyOfflineNow) {
-      _setOfflineCell(cellIndex, epoch, room);
+    if (targetRoom.isExplicitlyOfflineNow) {
+      _setOfflineCell(cellIndex, epoch, targetRoom);
       return;
     }
 
@@ -587,15 +588,15 @@ class MultiviewController extends GetxController {
     _discoveryScopes[cellIndex] = scope;
     try {
       source = _streamResolver != null
-          ? await _streamResolver(room, preferLowest: preferLowest)
-          : await _defaultStreamResolver(room, preferLowest: preferLowest, discoveryScope: scope);
+          ? await _streamResolver(targetRoom, preferLowest: preferLowest)
+          : await _defaultStreamResolver(targetRoom, preferLowest: preferLowest, discoveryScope: scope);
     } on MultiviewRoomOffline catch (offline) {
-      _setOfflineCell(cellIndex, epoch, offline.room.fillFromDetail(room));
+      _setOfflineCell(cellIndex, epoch, offline.room.fillFromDetail(targetRoom));
       return;
     } catch (error, stackTrace) {
       if (_isStale(cellIndex, epoch)) return;
       developer.log(
-        'MultiviewController: resolve stream failed for ${room.platform}/${room.roomId}',
+        'MultiviewController: resolve stream failed for ${targetRoom.platform}/${targetRoom.roomId}',
         name: 'MultiviewController',
         error: error,
         stackTrace: stackTrace,
@@ -618,7 +619,7 @@ class MultiviewController extends GetxController {
       await _openCellSource(handle, source, start: true);
     } catch (error, stackTrace) {
       developer.log(
-        'MultiviewController: start playback failed for ${room.platform}/${room.roomId}',
+        'MultiviewController: start playback failed for ${targetRoom.platform}/${targetRoom.roomId}',
         name: 'MultiviewController',
         error: error,
         stackTrace: stackTrace,
@@ -635,7 +636,7 @@ class MultiviewController extends GetxController {
     // handle can receive audio focus. All multiview handles start muted, so
     // this cannot create a first-frame volume burst.
     try {
-      await handle.setVolume(_roomVolumeLoader(room).clamp(0.0, 1.0));
+      await handle.setVolume(_roomVolumeLoader(targetRoom).clamp(0.0, 1.0));
     } catch (error, stackTrace) {
       developer.log(
         'MultiviewController: restore room volume failed',
