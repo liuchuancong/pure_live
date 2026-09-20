@@ -1,7 +1,7 @@
 import 'package:pure_live/common/index.dart';
-import 'package:synchronized/synchronized.dart';
-import 'package:pure_live/modules/tags/live_tag.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
+import 'package:pure_live/modules/tags/live_tag.dart';
+import 'package:synchronized/synchronized.dart';
 
 enum TagNameValidation { valid, empty, duplicate }
 
@@ -10,7 +10,7 @@ class TagManagementController extends GetxController {
   static const String _roomTagsMappingKey = 'room_to_tags_mapping_v1';
   final RxMap<String, List<String>> roomTagsMap = <String, List<String>>{}.obs;
   final RxList<LiveTag> tags = <LiveTag>[].obs;
-  final Lock _roomTagWriteLock = Lock();
+  final Lock _stateMutationLock = Lock();
   int _lastGeneratedTagId = 0;
   static const Map<String, String> allTag = {'all': '全部'};
   static String get allTagKey => allTag.keys.first;
@@ -34,17 +34,25 @@ class TagManagementController extends GetxController {
     }
   }
 
-  Future<void> saveTags() async {
-    await HivePrefUtil.setAnyPref(_storageKey, tags.map((e) => e.toJson()).toList());
+  Future<void> saveTags() {
+    final snapshot = _serializeTags(tags);
+    if (HivePrefUtil.isCollectingWrites) {
+      return HivePrefUtil.setAnyPref(_storageKey, snapshot);
+    }
+    return _stateMutationLock.synchronized(() => HivePrefUtil.setAnyPref(_storageKey, snapshot));
   }
 
-  Future<void> saveRoomTagsMapping() async {
-    await HivePrefUtil.setAnyPref(_roomTagsMappingKey, _copyRoomTagsMap(roomTagsMap));
+  Future<void> saveRoomTagsMapping() {
+    final snapshot = _copyRoomTagsMap(roomTagsMap);
+    if (HivePrefUtil.isCollectingWrites) {
+      return HivePrefUtil.setAnyPref(_roomTagsMappingKey, snapshot);
+    }
+    return _stateMutationLock.synchronized(() => HivePrefUtil.setAnyPref(_roomTagsMappingKey, snapshot));
   }
 
   Future<void> setRoomTags(LiveRoom room, List<String> newTagIds) async {
-    await _roomTagWriteLock.synchronized(() async {
-      final before = _copyRoomTagsMap(roomTagsMap);
+    await _stateMutationLock.synchronized(() async {
+      final before = _snapshotState();
       final roomKey = room.identityKey;
       final normalizedTagIds = _normalizeTagIds(newTagIds);
       final legacyKey = room.normalizedRoomId;
@@ -59,9 +67,9 @@ class TagManagementController extends GetxController {
 
       roomTagsMap.refresh();
       try {
-        await saveRoomTagsMapping();
+        await _persistState(tagsChanged: false, roomTagsChanged: true);
       } catch (_) {
-        roomTagsMap.assignAll(before);
+        _restoreState(before);
         rethrow;
       }
     });
@@ -113,41 +121,63 @@ class TagManagementController extends GetxController {
     return roomTagsMap[room.identityKey] ?? roomTagsMap[room.normalizedRoomId] ?? [];
   }
 
-  bool addTag(String name, String description) {
-    final cleanName = name.trim();
-    if (validateTagName(cleanName) != TagNameValidation.valid) return false;
+  Future<bool> addTag(String name, String description) {
+    return _stateMutationLock.synchronized(() async {
+      final cleanName = name.trim();
+      if (validateTagName(cleanName) != TagNameValidation.valid) return false;
+      final before = _snapshotState();
 
-    final newTag = LiveTag(
-      id: _allocateTagId(tags.map((tag) => tag.id).toSet()),
-      name: cleanName,
-      description: description.trim(),
-      order: tags.length,
-    );
+      final newTag = LiveTag(
+        id: _allocateTagId(tags.map((tag) => tag.id).toSet()),
+        name: cleanName,
+        description: description.trim(),
+        order: tags.length,
+      );
 
-    tags.add(newTag);
-    saveTags();
-    return true;
+      tags.add(newTag);
+      try {
+        await _persistState(tagsChanged: true, roomTagsChanged: false);
+        return true;
+      } catch (_) {
+        _restoreState(before);
+        rethrow;
+      }
+    });
   }
 
-  void updateAllTags(List<LiveTag> newList) {
-    tags.assignAll(newList);
-    for (int i = 0; i < tags.length; i++) {
-      tags[i].order = i;
-    }
-    tags.refresh();
-    saveTags();
+  Future<void> updateAllTags(List<LiveTag> newList) {
+    final requestedOrder = List<LiveTag>.from(newList);
+    return _stateMutationLock.synchronized(() async {
+      final before = _snapshotState();
+      tags.assignAll(requestedOrder);
+      _refreshSequentialOrders();
+      try {
+        await _persistState(tagsChanged: true, roomTagsChanged: false);
+      } catch (_) {
+        _restoreState(before);
+        rethrow;
+      }
+    });
   }
 
-  bool updateTag(int index, String newName, String newDescription) {
-    if (index < 0 || index >= tags.length) return false;
-    final cleanName = newName.trim();
-    if (validateTagName(cleanName, excludingIndex: index) != TagNameValidation.valid) return false;
+  Future<bool> updateTag(int index, String newName, String newDescription) {
+    return _stateMutationLock.synchronized(() async {
+      if (index < 0 || index >= tags.length) return false;
+      final cleanName = newName.trim();
+      if (validateTagName(cleanName, excludingIndex: index) != TagNameValidation.valid) return false;
+      final before = _snapshotState();
 
-    tags[index].name = cleanName;
-    tags[index].description = newDescription.trim();
-    tags.refresh();
-    saveTags();
-    return true;
+      tags[index].name = cleanName;
+      tags[index].description = newDescription.trim();
+      tags.refresh();
+      try {
+        await _persistState(tagsChanged: true, roomTagsChanged: false);
+        return true;
+      } catch (_) {
+        _restoreState(before);
+        rethrow;
+      }
+    });
   }
 
   TagNameValidation validateTagName(String name, {int? excludingIndex}) {
@@ -161,40 +191,63 @@ class TagManagementController extends GetxController {
     return exists ? TagNameValidation.duplicate : TagNameValidation.valid;
   }
 
-  void pinToTop(int index) {
-    if (index <= 0 || index >= tags.length) return;
+  Future<void> pinToTop(int index) {
+    return _stateMutationLock.synchronized(() async {
+      if (index <= 0 || index >= tags.length) return;
+      final before = _snapshotState();
 
-    final targetTag = tags.removeAt(index);
-    tags.insert(0, targetTag);
-
-    _refreshSequentialOrders();
-  }
-
-  void togglePinStatus(int index) {
-    _refreshSequentialOrders();
-  }
-
-  void deleteTag(int index) {
-    if (index < 0 || index >= tags.length) return;
-    final deletedTagId = tags[index].id;
-    tags.removeAt(index);
-
-    var mappingChanged = false;
-    for (final entry in roomTagsMap.entries.toList(growable: false)) {
-      final remainingIds = entry.value.where((id) => id != deletedTagId).toList(growable: false);
-      if (remainingIds.length == entry.value.length) continue;
-      mappingChanged = true;
-      if (remainingIds.isEmpty) {
-        roomTagsMap.remove(entry.key);
-      } else {
-        roomTagsMap[entry.key] = remainingIds;
+      final targetTag = tags.removeAt(index);
+      tags.insert(0, targetTag);
+      _refreshSequentialOrders();
+      try {
+        await _persistState(tagsChanged: true, roomTagsChanged: false);
+      } catch (_) {
+        _restoreState(before);
+        rethrow;
       }
-    }
-    if (mappingChanged) {
-      roomTagsMap.refresh();
-      saveRoomTagsMapping();
-    }
-    _refreshSequentialOrders();
+    });
+  }
+
+  Future<void> togglePinStatus(int index) {
+    return _stateMutationLock.synchronized(() async {
+      final before = _snapshotState();
+      _refreshSequentialOrders();
+      try {
+        await _persistState(tagsChanged: true, roomTagsChanged: false);
+      } catch (_) {
+        _restoreState(before);
+        rethrow;
+      }
+    });
+  }
+
+  Future<void> deleteTag(int index) {
+    return _stateMutationLock.synchronized(() async {
+      if (index < 0 || index >= tags.length) return;
+      final before = _snapshotState();
+      final deletedTagId = tags[index].id;
+      tags.removeAt(index);
+
+      var mappingChanged = false;
+      for (final entry in roomTagsMap.entries.toList(growable: false)) {
+        final remainingIds = entry.value.where((id) => id != deletedTagId).toList(growable: false);
+        if (remainingIds.length == entry.value.length) continue;
+        mappingChanged = true;
+        if (remainingIds.isEmpty) {
+          roomTagsMap.remove(entry.key);
+        } else {
+          roomTagsMap[entry.key] = remainingIds;
+        }
+      }
+      if (mappingChanged) roomTagsMap.refresh();
+      _refreshSequentialOrders();
+      try {
+        await _persistState(tagsChanged: true, roomTagsChanged: mappingChanged);
+      } catch (_) {
+        _restoreState(before);
+        rethrow;
+      }
+    });
   }
 
   void _refreshSequentialOrders() {
@@ -202,7 +255,54 @@ class TagManagementController extends GetxController {
       tags[i].order = i;
     }
     tags.refresh();
-    saveTags();
+  }
+
+  Future<void> _persistState({required bool tagsChanged, required bool roomTagsChanged}) async {
+    if (!tagsChanged && !roomTagsChanged) return;
+    final tagsSnapshot = tagsChanged ? _serializeTags(tags) : null;
+    final roomTagsSnapshot = roomTagsChanged ? _copyRoomTagsMap(roomTagsMap) : null;
+    if (HivePrefUtil.isCollectingWrites) {
+      if (tagsSnapshot != null) await HivePrefUtil.setAnyPref(_storageKey, tagsSnapshot);
+      if (roomTagsSnapshot != null) await HivePrefUtil.setAnyPref(_roomTagsMappingKey, roomTagsSnapshot);
+      return;
+    }
+    if (roomTagsSnapshot == null) {
+      await HivePrefUtil.setAnyPref(_storageKey, tagsSnapshot);
+      return;
+    }
+    if (tagsSnapshot == null) {
+      await HivePrefUtil.setAnyPref(_roomTagsMappingKey, roomTagsSnapshot);
+      return;
+    }
+    await HivePrefUtil.persistBatch(() {
+      HivePrefUtil.setAnyPref(_storageKey, tagsSnapshot);
+      HivePrefUtil.setAnyPref(_roomTagsMappingKey, roomTagsSnapshot);
+    });
+  }
+
+  _TagStateSnapshot _snapshotState() {
+    return _TagStateSnapshot(
+      order: List<LiveTag>.from(tags),
+      values: {
+        for (final tag in tags) tag: _LiveTagSnapshot(name: tag.name, description: tag.description, order: tag.order),
+      },
+      roomTags: _copyRoomTagsMap(roomTagsMap),
+    );
+  }
+
+  void _restoreState(_TagStateSnapshot snapshot) {
+    for (final entry in snapshot.values.entries) {
+      entry.key.name = entry.value.name;
+      entry.key.description = entry.value.description;
+      entry.key.order = entry.value.order;
+    }
+    tags.assignAll(snapshot.order);
+    tags.refresh();
+    roomTagsMap.assignAll(snapshot.roomTags);
+  }
+
+  List<Map<String, dynamic>> _serializeTags(Iterable<LiveTag> source) {
+    return source.map((tag) => Map<String, dynamic>.from(tag.toJson())).toList(growable: false);
   }
 
   String _allocateTagId(Set<String> usedIds) {
@@ -324,4 +424,20 @@ class TagManagementController extends GetxController {
       }
     }
   }
+}
+
+class _TagStateSnapshot {
+  const _TagStateSnapshot({required this.order, required this.values, required this.roomTags});
+
+  final List<LiveTag> order;
+  final Map<LiveTag, _LiveTagSnapshot> values;
+  final Map<String, List<String>> roomTags;
+}
+
+class _LiveTagSnapshot {
+  const _LiveTagSnapshot({required this.name, required this.description, required this.order});
+
+  final String name;
+  final String description;
+  final int order;
 }

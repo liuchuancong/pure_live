@@ -326,6 +326,7 @@ class RoomCard extends StatelessWidget {
     final bool isSmallScreen = screenWidth < 600;
 
     bool showAddSection = false;
+    bool tagCreationPending = false;
     bool assignmentPending = false;
     String? nameErrorText;
     final tagScrollController = ScrollController();
@@ -335,7 +336,8 @@ class RoomCard extends StatelessWidget {
       nameFocusNode.requestFocus();
     }
 
-    void submitNewTag(StateSetter setModalState) {
+    Future<void> submitNewTag(BuildContext dialogContext, StateSetter setModalState) async {
+      if (tagCreationPending || assignmentPending) return;
       final name = nameController.text.trim();
       final validation = tagController.validateTagName(name);
       if (validation != TagNameValidation.valid) {
@@ -349,25 +351,39 @@ class RoomCard extends StatelessWidget {
         nameFocusNode.requestFocus();
         return;
       }
-      if (!tagController.addTag(name, descController.text)) {
-        setModalState(() => nameErrorText = i18n('tag_invalid_or_duplicate'));
-        nameFocusNode.requestFocus();
-        return;
+      setModalState(() => tagCreationPending = true);
+      try {
+        if (!await tagController.addTag(name, descController.text)) {
+          if (!dialogContext.mounted) return;
+          setModalState(() {
+            tagCreationPending = false;
+            nameErrorText = i18n('tag_invalid_or_duplicate');
+          });
+          nameFocusNode.requestFocus();
+          return;
+        }
+        if (!dialogContext.mounted) return;
+        final newTag = tagController.tags.firstWhere((tag) => tag.name.toLowerCase() == name.toLowerCase());
+        tempSelectedIds.add(newTag.id);
+        nameController.clear();
+        descController.clear();
+        nameFocusNode.unfocus();
+        setModalState(() {
+          tagCreationPending = false;
+          nameErrorText = null;
+          showAddSection = false;
+        });
+      } catch (error) {
+        debugPrint('Creating a room tag failed: $error');
+        if (!dialogContext.mounted) return;
+        setModalState(() => tagCreationPending = false);
+        ToastUtil.show(i18n('tag_changes_save_failed'));
       }
-      final newTag = tagController.tags.firstWhere((tag) => tag.name.toLowerCase() == name.toLowerCase());
-      tempSelectedIds.add(newTag.id);
-      nameController.clear();
-      descController.clear();
-      nameFocusNode.unfocus();
-      setModalState(() {
-        nameErrorText = null;
-        showAddSection = false;
-      });
     }
 
     await showDialog<void>(
       context: context,
-      builder: (context) => StatefulBuilder(
+      builder: (dialogContext) => StatefulBuilder(
         builder: (context, setModalState) => AlertDialog(
           backgroundColor: theme.colorScheme.surface,
           elevation: 8,
@@ -403,22 +419,28 @@ class RoomCard extends StatelessWidget {
                         IconButton(
                           key: const ValueKey('room-tag-cancel-new'),
                           tooltip: i18n('cancel'),
-                          onPressed: () {
-                            nameController.clear();
-                            descController.clear();
-                            nameFocusNode.unfocus();
-                            setModalState(() {
-                              nameErrorText = null;
-                              showAddSection = false;
-                            });
-                          },
+                          onPressed: tagCreationPending
+                              ? null
+                              : () {
+                                  nameController.clear();
+                                  descController.clear();
+                                  nameFocusNode.unfocus();
+                                  setModalState(() {
+                                    nameErrorText = null;
+                                    showAddSection = false;
+                                  });
+                                },
                           icon: const Icon(Icons.close_rounded),
                         ),
                         IconButton(
                           key: const ValueKey('room-tag-submit-new'),
                           tooltip: i18n('add_tag'),
-                          onPressed: () => submitNewTag(setModalState),
-                          icon: const Icon(Icons.check_rounded),
+                          onPressed: tagCreationPending
+                              ? null
+                              : () => unawaited(submitNewTag(dialogContext, setModalState)),
+                          icon: tagCreationPending
+                              ? const SizedBox.square(dimension: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                              : const Icon(Icons.check_rounded),
                         ),
                       ],
                     )
@@ -431,11 +453,13 @@ class RoomCard extends StatelessWidget {
                         minHeight: kMinInteractiveDimension,
                       ),
                       icon: Icon(Remix.add_circle_line, size: 20, color: theme.colorScheme.primary),
-                      onPressed: () {
-                        setModalState(() {
-                          showAddSection = true; // Slide open text fields inputs section block
-                        });
-                      },
+                      onPressed: assignmentPending
+                          ? null
+                          : () {
+                              setModalState(() {
+                                showAddSection = true; // Slide open text fields inputs section block
+                              });
+                            },
                     ),
             ],
           ),
@@ -481,6 +505,7 @@ class RoomCard extends StatelessWidget {
                               maxLength: 15,
                               maxLines: 1,
                               textInputAction: TextInputAction.next,
+                              enabled: !tagCreationPending,
                               onChanged: (_) {
                                 if (nameErrorText != null) setModalState(() => nameErrorText = null);
                               },
@@ -540,6 +565,7 @@ class RoomCard extends StatelessWidget {
                               maxLength: 40,
                               maxLines: 1,
                               textInputAction: TextInputAction.done,
+                              enabled: !tagCreationPending,
                               onSubmitted: (_) => submitNewTag(setModalState),
                               style: AppTextStyles.t13.copyWith(fontWeight: FontWeight.w500),
                               decoration: InputDecoration(
@@ -755,7 +781,7 @@ class RoomCard extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: tagCreationPending || assignmentPending ? null : () => Navigator.pop(context),
                       child: Text(
                         i18n('cancel'),
                         maxLines: 2,
@@ -777,7 +803,7 @@ class RoomCard extends StatelessWidget {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                       ),
-                      onPressed: showAddSection || assignmentPending
+                      onPressed: showAddSection || tagCreationPending || assignmentPending
                           ? null
                           : () async {
                               setModalState(() => assignmentPending = true);

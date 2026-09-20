@@ -407,26 +407,25 @@ void main() {
       'huya:2': ['remove'],
     });
 
-    controller.deleteTag(0);
-    await Future<void>.delayed(Duration.zero);
+    await controller.deleteTag(0);
 
     expect(controller.tags.map((tag) => tag.id), ['keep']);
     expect(controller.roomTagsMap, {
       'bilibili:1': ['keep'],
     });
-    expect(() => controller.deleteTag(20), returnsNormally);
-    expect(() => controller.updateTag(-1, 'bad', ''), returnsNormally);
+    await expectLater(controller.deleteTag(20), completes);
+    expect(await controller.updateTag(-1, 'bad', ''), isFalse);
   });
 
   test('case-only rename excludes the edited tag from duplicate detection', () async {
     final controller = Get.find<TagManagementController>();
     controller.tags.assignAll([LiveTag(id: 'travel', name: 'Travel'), LiveTag(id: 'work', name: 'Work', order: 1)]);
 
-    expect(controller.updateTag(0, ' travel ', 'Updated description'), isTrue);
+    expect(await controller.updateTag(0, ' travel ', 'Updated description'), isTrue);
     expect(controller.tags.first.name, 'travel');
     expect(controller.tags.first.description, 'Updated description');
 
-    expect(controller.updateTag(0, 'WORK', 'Must stay unchanged'), isFalse);
+    expect(await controller.updateTag(0, 'WORK', 'Must stay unchanged'), isFalse);
     expect(controller.tags.first.name, 'travel');
     expect(controller.tags.first.description, 'Updated description');
   });
@@ -435,7 +434,7 @@ void main() {
     final controller = Get.find<TagManagementController>();
 
     for (var index = 0; index < 256; index++) {
-      expect(controller.addTag('Tag $index', ''), isTrue);
+      expect(await controller.addTag('Tag $index', ''), isTrue);
     }
 
     final ids = controller.tags.map((tag) => tag.id).toList(growable: false);

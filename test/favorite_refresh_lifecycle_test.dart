@@ -214,13 +214,13 @@ void main() {
     await _drain(tester, c.source);
     final tag = LiveTag(id: 'outdoor', name: 'Outdoor');
     c.tagController.tags.assignAll([tag]);
-    c.tagController.setRoomTags(_room(), [tag.id]);
+    await c.tagController.setRoomTags(_room(), [tag.id]);
     c.changeSelectedTag(tag.id);
     await tester.pump(Duration.zero);
     expect(c.selectedTagId.value, tag.id);
     expect(c.list, hasLength(1));
 
-    c.tagController.deleteTag(0);
+    await c.tagController.deleteTag(0);
     await tester.pump(Duration.zero);
 
     expect(c.selectedTagId.value, TagManagementController.allTagKey);

@@ -17,6 +17,9 @@ class _TagManagementPageState extends State<TagManagementPage> {
   TagManagementController get controller => Get.find<TagManagementController>();
 
   bool _dialogActive = false;
+  bool _actionPending = false;
+
+  bool get _interactionLocked => _dialogActive || _actionPending;
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +35,7 @@ class _TagManagementPageState extends State<TagManagementPage> {
               key: const ValueKey('add-tag'),
               tooltip: i18n('add_tag'),
               icon: const Icon(Remix.add_line),
-              onPressed: _dialogActive ? null : () => unawaited(_showTagDialog(context)),
+              onPressed: _interactionLocked ? null : () => unawaited(_showTagDialog(context)),
             ),
           ),
         ],
@@ -113,7 +116,9 @@ class _TagManagementPageState extends State<TagManagementPage> {
                                   isTop ? 'tag_already_at_top_named' : 'move_tag_to_top_named',
                                   args: {'name': tag.name},
                                 ),
-                                onActivate: _dialogActive || isTop ? null : () => controller.pinToTop(index),
+                                onActivate: _interactionLocked || isTop
+                                    ? null
+                                    : () => unawaited(_runTagAction(() => controller.pinToTop(index))),
                                 child: Icon(
                                   isTop ? Remix.pushpin_fill : Remix.pushpin_line,
                                   size: 16,
@@ -128,7 +133,7 @@ class _TagManagementPageState extends State<TagManagementPage> {
                               child: _buildTagCardAction(
                                 key: ValueKey('edit-tag-${tag.id}'),
                                 label: i18n('edit_tag_named', args: {'name': tag.name}),
-                                onActivate: _dialogActive
+                                onActivate: _interactionLocked
                                     ? null
                                     : () => unawaited(_showTagDialog(context, index: index, tag: tag)),
                                 child: Icon(Remix.edit_line, size: 16, color: theme.colorScheme.onSurfaceVariant),
@@ -139,7 +144,7 @@ class _TagManagementPageState extends State<TagManagementPage> {
                               child: _buildTagCardAction(
                                 key: ValueKey('delete-tag-${tag.id}'),
                                 label: i18n('delete_tag_named', args: {'name': tag.name}),
-                                onActivate: _dialogActive ? null : () => unawaited(_confirmDelete(context, tag)),
+                                onActivate: _interactionLocked ? null : () => unawaited(_confirmDelete(context, tag)),
                                 child: Icon(
                                   Remix.delete_bin_line,
                                   size: 16,
@@ -170,8 +175,9 @@ class _TagManagementPageState extends State<TagManagementPage> {
                 ],
               ),
               onReorder: (ReorderedListFunction reorderedListFunction) {
+                if (_interactionLocked) return;
                 final newList = reorderedListFunction(controller.tags) as List<LiveTag>;
-                controller.updateAllTags(newList);
+                unawaited(_runTagAction(() => controller.updateAllTags(newList)));
               },
               builder: (generatedChildren) {
                 return LayoutBuilder(
@@ -213,11 +219,11 @@ class _TagManagementPageState extends State<TagManagementPage> {
 
   Widget _buildTagDetailAction(BuildContext context, LiveTag tag) {
     final actionLabel = i18n('view_tag_details_named', args: {'name': tag.name});
-    final VoidCallback? onActivate = _dialogActive ? null : () => unawaited(_showTagDetails(context, tag));
+    final VoidCallback? onActivate = _interactionLocked ? null : () => unawaited(_showTagDetails(context, tag));
     return Semantics(
       container: true,
       button: true,
-      enabled: !_dialogActive,
+      enabled: !_interactionLocked,
       label: actionLabel,
       excludeSemantics: true,
       onTap: onActivate,
@@ -420,8 +426,26 @@ class _TagManagementPageState extends State<TagManagementPage> {
       if (!Get.isRegistered<TagManagementController>() || !identical(Get.find<TagManagementController>(), owner)) {
         return;
       }
-      owner.deleteTag(owner.tags.indexWhere((current) => identical(current, tag)));
+      try {
+        await owner.deleteTag(owner.tags.indexWhere((current) => identical(current, tag)));
+      } catch (error) {
+        debugPrint('Deleting a tag failed: $error');
+        if (mounted) ToastUtil.show(i18n('tag_changes_save_failed'));
+      }
     });
+  }
+
+  Future<void> _runTagAction(Future<void> Function() action) async {
+    if (_interactionLocked || !mounted) return;
+    setState(() => _actionPending = true);
+    try {
+      await action();
+    } catch (error) {
+      debugPrint('Updating tags failed: $error');
+      if (mounted) ToastUtil.show(i18n('tag_changes_save_failed'));
+    } finally {
+      if (mounted) setState(() => _actionPending = false);
+    }
   }
 
   Future<void> _runOwnedDialog(Future<void> Function() showDialogRoute) async {
@@ -454,6 +478,8 @@ class _TagEditorDialogState extends State<_TagEditorDialog> {
   late final String _initialDescription;
   String? _nameErrorText;
   String? _transactionErrorText;
+  String? _saveErrorText;
+  bool _saving = false;
 
   bool get _isEdit => widget.index != null && widget.tag != null;
 
@@ -475,8 +501,8 @@ class _TagEditorDialogState extends State<_TagEditorDialog> {
     super.dispose();
   }
 
-  void _submit() {
-    if (_transactionErrorText != null) return;
+  Future<void> _submit() async {
+    if (_transactionErrorText != null || _saving) return;
     if (!Get.isRegistered<TagManagementController>() ||
         !identical(Get.find<TagManagementController>(), widget.controller)) {
       _markTransactionStale();
@@ -505,13 +531,31 @@ class _TagEditorDialogState extends State<_TagEditorDialog> {
       return;
     }
 
-    final success = editIndex != null
-        ? widget.controller.updateTag(editIndex, _nameController.text, _descriptionController.text)
-        : widget.controller.addTag(_nameController.text, _descriptionController.text);
-    if (success) {
-      Navigator.pop(context);
-    } else {
-      setState(() => _nameErrorText = i18n('tag_invalid_or_duplicate'));
+    setState(() {
+      _saving = true;
+      _saveErrorText = null;
+    });
+    try {
+      final success = editIndex != null
+          ? await widget.controller.updateTag(editIndex, _nameController.text, _descriptionController.text)
+          : await widget.controller.addTag(_nameController.text, _descriptionController.text);
+      if (!mounted) return;
+      if (success) {
+        Navigator.pop(context);
+      } else {
+        setState(() {
+          _saving = false;
+          _nameErrorText = i18n('tag_invalid_or_duplicate');
+        });
+        _nameFocusNode.requestFocus();
+      }
+    } catch (error) {
+      debugPrint('Saving a tag failed: $error');
+      if (!mounted) return;
+      setState(() {
+        _saving = false;
+        _saveErrorText = i18n('tag_changes_save_failed');
+      });
       _nameFocusNode.requestFocus();
     }
   }
@@ -519,13 +563,19 @@ class _TagEditorDialogState extends State<_TagEditorDialog> {
   void _markTransactionStale() {
     setState(() {
       _nameErrorText = null;
+      _saveErrorText = null;
       _transactionErrorText = i18n('tag_editor_stale_error');
     });
     _nameFocusNode.unfocus();
   }
 
   void _clearNameError() {
-    if (_nameErrorText != null) setState(() => _nameErrorText = null);
+    if (_nameErrorText != null || _saveErrorText != null) {
+      setState(() {
+        _nameErrorText = null;
+        _saveErrorText = null;
+      });
+    }
   }
 
   void _clearName() {
@@ -537,140 +587,150 @@ class _TagEditorDialogState extends State<_TagEditorDialog> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return AlertDialog(
-      scrollable: true,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-      title: Text(_isEdit ? i18n('edit_tag') : i18n('add_tag')),
-      contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            i18n('tag_name_label'),
-            style: AppTextStyles.t12.copyWith(color: theme.colorScheme.primary, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 6),
-          TextField(
-            key: const ValueKey('tag-editor-name'),
-            controller: _nameController,
-            focusNode: _nameFocusNode,
-            autofocus: !_isEdit,
-            maxLength: 15,
-            maxLines: 1,
-            textInputAction: TextInputAction.next,
-            onChanged: (_) => _clearNameError(),
-            decoration: InputDecoration(
-              hintText: i18n('tag_input_hint'),
-              errorText: _nameErrorText,
-              counterText: '',
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              suffixIcon: ValueListenableBuilder<TextEditingValue>(
-                valueListenable: _nameController,
-                builder: (context, value, _) => value.text.isNotEmpty
-                    ? Semantics(
-                        key: const ValueKey('tag-editor-clear-name'),
-                        container: true,
-                        excludeSemantics: true,
-                        label: i18n('clear_tag_name'),
-                        button: true,
-                        onTap: _clearName,
-                        child: IconButton(
-                          tooltip: i18n('clear_tag_name'),
-                          constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-                          icon: const Icon(Icons.clear, size: 18),
-                          onPressed: _clearName,
-                        ),
-                      )
-                    : const SizedBox.shrink(),
-              ),
+    return PopScope<Object?>(
+      canPop: !_saving,
+      child: AlertDialog(
+        scrollable: true,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+        title: Text(_isEdit ? i18n('edit_tag') : i18n('add_tag')),
+        contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              i18n('tag_name_label'),
+              style: AppTextStyles.t12.copyWith(color: theme.colorScheme.primary, fontWeight: FontWeight.bold),
             ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            i18n('tag_desc_label'),
-            style: AppTextStyles.t12.copyWith(color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6)),
-          ),
-          const SizedBox(height: 6),
-          TextField(
-            key: const ValueKey('tag-editor-description'),
-            controller: _descriptionController,
-            maxLength: 40,
-            maxLines: 1,
-            textInputAction: TextInputAction.done,
-            onSubmitted: (_) => _submit(),
-            decoration: InputDecoration(
-              hintText: i18n('tag_desc_hint'),
-              counterText: '',
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              suffixIcon: ValueListenableBuilder<TextEditingValue>(
-                valueListenable: _descriptionController,
-                builder: (context, value, _) => value.text.isNotEmpty
-                    ? Semantics(
-                        key: const ValueKey('tag-editor-clear-description'),
-                        container: true,
-                        excludeSemantics: true,
-                        label: i18n('clear_tag_description'),
-                        button: true,
-                        onTap: _descriptionController.clear,
-                        child: IconButton(
-                          tooltip: i18n('clear_tag_description'),
-                          constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-                          icon: const Icon(Icons.clear, size: 18),
-                          onPressed: _descriptionController.clear,
-                        ),
-                      )
-                    : const SizedBox.shrink(),
-              ),
-            ),
-          ),
-          if (_transactionErrorText case final errorText?) ...[
-            const SizedBox(height: 16),
-            Semantics(
-              key: const ValueKey('tag-editor-transaction-error'),
-              container: true,
-              liveRegion: true,
-              label: errorText,
-              excludeSemantics: true,
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.errorContainer,
-                  borderRadius: BorderRadius.circular(12),
+            const SizedBox(height: 6),
+            TextField(
+              key: const ValueKey('tag-editor-name'),
+              controller: _nameController,
+              focusNode: _nameFocusNode,
+              autofocus: !_isEdit,
+              maxLength: 15,
+              maxLines: 1,
+              textInputAction: TextInputAction.next,
+              enabled: !_saving,
+              onChanged: (_) => _clearNameError(),
+              decoration: InputDecoration(
+                hintText: i18n('tag_input_hint'),
+                errorText: _nameErrorText,
+                counterText: '',
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                suffixIcon: ValueListenableBuilder<TextEditingValue>(
+                  valueListenable: _nameController,
+                  builder: (context, value, _) => value.text.isNotEmpty
+                      ? Semantics(
+                          key: const ValueKey('tag-editor-clear-name'),
+                          container: true,
+                          excludeSemantics: true,
+                          label: i18n('clear_tag_name'),
+                          button: true,
+                          onTap: _clearName,
+                          child: IconButton(
+                            tooltip: i18n('clear_tag_name'),
+                            constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                            icon: const Icon(Icons.clear, size: 18),
+                            onPressed: _clearName,
+                          ),
+                        )
+                      : const SizedBox.shrink(),
                 ),
-                child: Text(errorText, style: TextStyle(color: theme.colorScheme.onErrorContainer)),
               ),
             ),
+            const SizedBox(height: 16),
+            Text(
+              i18n('tag_desc_label'),
+              style: AppTextStyles.t12.copyWith(color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6)),
+            ),
+            const SizedBox(height: 6),
+            TextField(
+              key: const ValueKey('tag-editor-description'),
+              controller: _descriptionController,
+              maxLength: 40,
+              maxLines: 1,
+              textInputAction: TextInputAction.done,
+              enabled: !_saving,
+              onSubmitted: _saving ? null : (_) => unawaited(_submit()),
+              decoration: InputDecoration(
+                hintText: i18n('tag_desc_hint'),
+                counterText: '',
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                suffixIcon: ValueListenableBuilder<TextEditingValue>(
+                  valueListenable: _descriptionController,
+                  builder: (context, value, _) => value.text.isNotEmpty
+                      ? Semantics(
+                          key: const ValueKey('tag-editor-clear-description'),
+                          container: true,
+                          excludeSemantics: true,
+                          label: i18n('clear_tag_description'),
+                          button: true,
+                          onTap: _descriptionController.clear,
+                          child: IconButton(
+                            tooltip: i18n('clear_tag_description'),
+                            constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                            icon: const Icon(Icons.clear, size: 18),
+                            onPressed: _descriptionController.clear,
+                          ),
+                        )
+                      : const SizedBox.shrink(),
+                ),
+              ),
+            ),
+            if ((_transactionErrorText ?? _saveErrorText) case final errorText?) ...[
+              const SizedBox(height: 16),
+              Semantics(
+                key: const ValueKey('tag-editor-transaction-error'),
+                container: true,
+                liveRegion: true,
+                label: errorText,
+                excludeSemantics: true,
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.errorContainer,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(errorText, style: TextStyle(color: theme.colorScheme.onErrorContainer)),
+                ),
+              ),
+            ],
           ],
+        ),
+        actionsPadding: const EdgeInsets.fromLTRB(0, 0, 16, 16),
+        actionsOverflowDirection: VerticalDirection.down,
+        actionsOverflowButtonSpacing: 8,
+        actions: [
+          TextButton(
+            key: const ValueKey('tag-editor-cancel'),
+            style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
+            onPressed: _saving ? null : () => Navigator.pop(context),
+            child: Text(i18n('cancel'), style: TextStyle(color: theme.colorScheme.onSurfaceVariant)),
+          ),
+          ElevatedButton(
+            key: const ValueKey('tag-editor-confirm'),
+            style: ElevatedButton.styleFrom(
+              minimumSize: const Size(48, 48),
+              elevation: 0,
+              backgroundColor: theme.colorScheme.primary,
+              foregroundColor: theme.colorScheme.onPrimary,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            onPressed: _transactionErrorText == null && !_saving ? () => unawaited(_submit()) : null,
+            child: _saving
+                ? SizedBox.square(
+                    dimension: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2, semanticsLabel: i18n('refresh_loading')),
+                  )
+                : Text(i18n('confirm')),
+          ),
         ],
       ),
-      actionsPadding: const EdgeInsets.fromLTRB(0, 0, 16, 16),
-      actionsOverflowDirection: VerticalDirection.down,
-      actionsOverflowButtonSpacing: 8,
-      actions: [
-        TextButton(
-          key: const ValueKey('tag-editor-cancel'),
-          style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
-          onPressed: () => Navigator.pop(context),
-          child: Text(i18n('cancel'), style: TextStyle(color: theme.colorScheme.onSurfaceVariant)),
-        ),
-        ElevatedButton(
-          key: const ValueKey('tag-editor-confirm'),
-          style: ElevatedButton.styleFrom(
-            minimumSize: const Size(48, 48),
-            elevation: 0,
-            backgroundColor: theme.colorScheme.primary,
-            foregroundColor: theme.colorScheme.onPrimary,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          ),
-          onPressed: _transactionErrorText == null ? _submit : null,
-          child: Text(i18n('confirm')),
-        ),
-      ],
     );
   }
 }
