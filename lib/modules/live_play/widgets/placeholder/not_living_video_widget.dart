@@ -51,7 +51,7 @@ class NotLivingVideoWidget extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 12),
               child: Text(
                 key: const ValueKey('offline-room-title'),
-                controller.room.title!,
+                _offlineRoomTitle(controller.room),
                 overflow: TextOverflow.ellipsis,
                 maxLines: 1,
                 style: titleStyle,
@@ -138,4 +138,12 @@ class NotLivingVideoWidget extends StatelessWidget {
       ),
     );
   }
+}
+
+String _offlineRoomTitle(LiveRoom room) {
+  for (final candidate in [room.title, room.nick, room.roomId]) {
+    final value = candidate?.trim() ?? '';
+    if (value.isNotEmpty) return value;
+  }
+  return i18n('untitled_room');
 }

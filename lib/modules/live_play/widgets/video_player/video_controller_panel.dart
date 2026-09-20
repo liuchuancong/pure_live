@@ -340,7 +340,7 @@ class TopActionBar extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          controller.room.title!,
+                          _liveRoomTitle(controller.room),
                           overflow: TextOverflow.ellipsis,
                           style: AppTextStyles.t16.copyWith(
                             color: Colors.white,
@@ -348,11 +348,10 @@ class TopActionBar extends StatelessWidget {
                             decoration: TextDecoration.none,
                           ),
                         ),
-                        if (controller.room.currentProgramme != null &&
-                            controller.room.currentProgramme!.isNotEmpty) ...[
+                        if (_liveProgramme(controller.room) case final programme?) ...[
                           const SizedBox(height: 2),
                           Text(
-                            "${i18n('now_playing')}: ${controller.room.currentProgramme!}",
+                            "${i18n('now_playing')}: $programme",
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               color: Colors.white.withValues(alpha: 0.85),
@@ -1797,6 +1796,19 @@ class DanmakuButton extends StatelessWidget {
       ),
     );
   }
+}
+
+String _liveRoomTitle(LiveRoom room) {
+  for (final candidate in [room.title, room.nick, room.roomId]) {
+    final value = candidate?.trim() ?? '';
+    if (value.isNotEmpty) return value;
+  }
+  return i18n('untitled_room');
+}
+
+String? _liveProgramme(LiveRoom room) {
+  final programme = room.currentProgramme?.trim() ?? '';
+  return programme.isEmpty ? null : programme;
 }
 
 class SettingsButton extends StatelessWidget {
