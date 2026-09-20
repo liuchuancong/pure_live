@@ -28,6 +28,12 @@ void main() {
 
     final list = tester.widget<ListView>(find.byKey(const ValueKey('search-platform-strip')));
     final scrollController = list.controller!;
+    final visibleChips = find.byType(ChoiceChip);
+    expect(visibleChips, findsWidgets);
+    for (var index = 0; index < visibleChips.evaluate().length; index++) {
+      final size = tester.getSize(visibleChips.at(index));
+      expect(size.height, greaterThanOrEqualTo(kMinInteractiveDimension));
+    }
 
     await tester.drag(find.byKey(const ValueKey('search-platform-strip')), const Offset(-4000, 0));
     await tester.pumpAndSettle();
