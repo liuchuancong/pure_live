@@ -2998,6 +2998,12 @@ class PlayerManager {
                             builder: (context, snapshot) {
                               var isPlay = snapshot.data ?? true;
                               return IconButton(
+                                tooltip: i18n(isPlay ? 'multiview_pause' : 'multiview_play'),
+                                visualDensity: VisualDensity.standard,
+                                constraints: const BoxConstraints(
+                                  minWidth: kMinInteractiveDimension,
+                                  minHeight: kMinInteractiveDimension,
+                                ),
                                 iconSize: 42,
                                 style: IconButton.styleFrom(backgroundColor: Colors.black45),
                                 icon: Icon(
@@ -3025,8 +3031,13 @@ class PlayerManager {
                         child: IgnorePointer(
                           ignoring: !isHovered.value,
                           child: IconButton(
-                            constraints: const BoxConstraints(),
-                            padding: const EdgeInsets.all(4),
+                            key: const ValueKey('app-floating-close-action'),
+                            tooltip: i18n('close'),
+                            visualDensity: VisualDensity.standard,
+                            constraints: const BoxConstraints.tightFor(
+                              width: kMinInteractiveDimension,
+                              height: kMinInteractiveDimension,
+                            ),
                             style: IconButton.styleFrom(backgroundColor: Colors.black45),
                             icon: const Icon(Icons.close, color: Colors.white, size: 20),
                             onPressed: () async {

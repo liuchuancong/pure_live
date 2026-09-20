@@ -649,65 +649,69 @@ class _MultiviewPageState extends State<MultiviewPage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
       decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.55), borderRadius: BorderRadius.circular(10)),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Obx(() {
-            final playing = controller.playingFlags[bigIndex];
-            return _controlBarButton(
-              icon: playing ? Remix.pause_line : Remix.play_line,
-              tooltip: i18n(playing ? 'multiview_pause' : 'multiview_play'),
-              onTap: () => unawaited(controller.toggleCellPlayPause(bigIndex)),
-            );
-          }),
-          _controlBarButton(
-            icon: Remix.refresh_line,
-            tooltip: i18n('multiview_refresh'),
-            onTap: () {
-              final room = state.room;
-              if (room != null) unawaited(controller.assignRoom(bigIndex, room));
-            },
-          ),
-          Obx(() {
-            final enabled = controller.danmakuEnabled.value;
-            return _controlBarButton(
-              icon: CustomIcons.danmaku_open,
-              tooltip: i18n('danmaku'),
-              iconColor: enabled ? Theme.of(context).colorScheme.primary : iconColor,
-              onTap: () => controller.danmakuEnabled.toggle(),
-            );
-          }),
-          _controlBarButton(
-            icon: Remix.settings_3_line,
-            tooltip: i18n('multiview_danmaku_settings'),
-            onTap: _showDanmakuSettings,
-          ),
-          _controlBarButton(
-            icon: Remix.hd_line,
-            tooltip: i18n('select_quality'),
-            onTap: () => _showQualitySheet(state),
-          ),
-          if (state.lines.length > 1)
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        physics: const PureLiveBoundedScrollPhysics(),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Obx(() {
+              final playing = controller.playingFlags[bigIndex];
+              return _controlBarButton(
+                icon: playing ? Remix.pause_line : Remix.play_line,
+                tooltip: i18n(playing ? 'multiview_pause' : 'multiview_play'),
+                onTap: () => unawaited(controller.toggleCellPlayPause(bigIndex)),
+              );
+            }),
             _controlBarButton(
-              icon: Remix.route_line,
-              tooltip: i18n('multiview_line_selector'),
-              onTap: () => _showLineSheet(state),
+              icon: Remix.refresh_line,
+              tooltip: i18n('multiview_refresh'),
+              onTap: () {
+                final room = state.room;
+                if (room != null) unawaited(controller.assignRoom(bigIndex, room));
+              },
             ),
-          _controlBarButton(
-            icon: Remix.volume_down_line,
-            tooltip: i18n('multiview_volume'),
-            onTap: () => _showVolumeSheet(bigIndex),
-          ),
-          _controlBarButton(
-            icon: _displayMode == _DisplayMode.fullscreen ? Remix.fullscreen_exit_line : Remix.fullscreen_line,
-            tooltip: i18n('multiview_fullscreen'),
-            onTap: () => unawaited(
-              _changeDisplayMode(
-                _displayMode == _DisplayMode.fullscreen ? _DisplayMode.normal : _DisplayMode.fullscreen,
+            Obx(() {
+              final enabled = controller.danmakuEnabled.value;
+              return _controlBarButton(
+                icon: CustomIcons.danmaku_open,
+                tooltip: i18n('danmaku'),
+                iconColor: enabled ? Theme.of(context).colorScheme.primary : iconColor,
+                onTap: () => controller.danmakuEnabled.toggle(),
+              );
+            }),
+            _controlBarButton(
+              icon: Remix.settings_3_line,
+              tooltip: i18n('multiview_danmaku_settings'),
+              onTap: _showDanmakuSettings,
+            ),
+            _controlBarButton(
+              icon: Remix.hd_line,
+              tooltip: i18n('select_quality'),
+              onTap: () => _showQualitySheet(state),
+            ),
+            if (state.lines.length > 1)
+              _controlBarButton(
+                icon: Remix.route_line,
+                tooltip: i18n('multiview_line_selector'),
+                onTap: () => _showLineSheet(state),
+              ),
+            _controlBarButton(
+              icon: Remix.volume_down_line,
+              tooltip: i18n('multiview_volume'),
+              onTap: () => _showVolumeSheet(bigIndex),
+            ),
+            _controlBarButton(
+              icon: _displayMode == _DisplayMode.fullscreen ? Remix.fullscreen_exit_line : Remix.fullscreen_line,
+              tooltip: i18n('multiview_fullscreen'),
+              onTap: () => unawaited(
+                _changeDisplayMode(
+                  _displayMode == _DisplayMode.fullscreen ? _DisplayMode.normal : _DisplayMode.fullscreen,
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -721,6 +725,8 @@ class _MultiviewPageState extends State<MultiviewPage> {
   }) {
     return IconButton(
       tooltip: tooltip,
+      visualDensity: VisualDensity.standard,
+      constraints: const BoxConstraints(minWidth: kMinInteractiveDimension, minHeight: kMinInteractiveDimension),
       icon: Icon(icon, size: 20, color: iconColor ?? Colors.white.withValues(alpha: 0.92)),
       onPressed: onTap,
     );
@@ -1290,8 +1296,11 @@ class _ImmersiveRestoreButton extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(14),
-          child: Padding(
-            padding: const EdgeInsets.all(10),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints.tightFor(
+              width: kMinInteractiveDimension,
+              height: kMinInteractiveDimension,
+            ),
             child: Icon(Remix.collapse_diagonal_line, size: 20, color: theme.colorScheme.onSurface),
           ),
         ),

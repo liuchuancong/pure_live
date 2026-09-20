@@ -87,25 +87,35 @@ class DanmuShieldPage extends GetView<DanmuShieldController> {
                       child: InkWell(
                         borderRadius: BorderRadius.circular(10),
                         onTap: () => controller.remove(item),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.primary.withValues(alpha: 0.06),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.15)),
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(
+                            minWidth: kMinInteractiveDimension,
+                            minHeight: kMinInteractiveDimension,
                           ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Flexible(
-                                child: Text(
-                                  item,
-                                  style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.primary.withValues(alpha: 0.06),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: theme.colorScheme.primary.withValues(alpha: 0.15)),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    item,
+                                    style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(width: 6),
-                              Icon(Remix.close_line, size: 14, color: theme.colorScheme.primary.withValues(alpha: 0.6)),
-                            ],
+                                const SizedBox(width: 6),
+                                Icon(
+                                  Remix.close_line,
+                                  size: 14,
+                                  color: theme.colorScheme.primary.withValues(alpha: 0.6),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
