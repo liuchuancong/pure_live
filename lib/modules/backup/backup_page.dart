@@ -18,10 +18,37 @@ class BackupPage extends StatefulWidget {
   State<BackupPage> createState() => _BackupPageState();
 }
 
+enum _BackupAction { create, restore, directory }
+
 class _BackupPageState extends State<BackupPage> {
   final LogController logController = LogController.to;
   String get backupDirectory => SettingsService.to.backup.backupDirectory.v;
-  String get m3uDirectory => SettingsService.to.iptv.m3uDirectory.v;
+  _BackupAction? _backupAction;
+
+  Future<void> _runBackupAction(
+    _BackupAction action,
+    String failureMessageKey,
+    Future<void> Function() operation,
+  ) async {
+    if (_backupAction != null) return;
+    setState(() => _backupAction = action);
+    try {
+      await operation();
+    } catch (error, stackTrace) {
+      debugPrint('Backup action $action failed: $error\n$stackTrace');
+      if (mounted) ToastUtil.show(i18n(failureMessageKey));
+    } finally {
+      if (mounted) setState(() => _backupAction = null);
+    }
+  }
+
+  Widget? _backupActionIndicator(_BackupAction action) {
+    if (_backupAction != action) return null;
+    return SizedBox.square(
+      dimension: 20,
+      child: CircularProgressIndicator(strokeWidth: 2, semanticsLabel: i18n('refresh_loading')),
+    );
+  }
 
   Future<void> _openLogDirectory() async {
     try {
@@ -135,18 +162,32 @@ class _BackupPageState extends State<BackupPage> {
                 title: i18n("create_backup"),
                 subtitle: i18n("create_backup_subtitle"),
                 isLong: true,
-                onTap: () async {
-                  // The export flow chooses a directory and remembers the first
-                  // successful choice; no separate first-run settings step.
-                  await BackupRecoveryService().createAppSettingsBackup(backupDirectory);
-                },
+                trailing: _backupActionIndicator(_BackupAction.create),
+                onTap: _backupAction == null
+                    ? () => unawaited(
+                        _runBackupAction(_BackupAction.create, 'create_backup_failed', () async {
+                          // The export flow chooses a directory and remembers the first
+                          // successful choice; no separate first-run settings step.
+                          await BackupRecoveryService().createAppSettingsBackup(backupDirectory);
+                        }),
+                      )
+                    : null,
               ),
               context.buildTile(
                 icon: Remix.file_upload_line,
                 title: i18n("recover_backup"),
                 subtitle: i18n("recover_backup_subtitle"),
                 isLong: true,
-                onTap: () => BackupRecoveryService().recoverSettingsFromFile(),
+                trailing: _backupActionIndicator(_BackupAction.restore),
+                onTap: _backupAction == null
+                    ? () => unawaited(
+                        _runBackupAction(
+                          _BackupAction.restore,
+                          'recover_backup_failed',
+                          BackupRecoveryService().recoverSettingsFromFile,
+                        ),
+                      )
+                    : null,
               ),
             ]),
             const SizedBox(height: 20),
@@ -157,9 +198,14 @@ class _BackupPageState extends State<BackupPage> {
                 title: i18n("backup_directory"),
                 subtitle: backupDirectory.isEmpty ? i18n('please_set_backup_directory') : backupDirectory,
                 isLong: true,
-                onTap: () async {
-                  await BackupRecoveryService().updateBackupDirectory();
-                },
+                trailing: _backupActionIndicator(_BackupAction.directory),
+                onTap: _backupAction == null
+                    ? () => unawaited(
+                        _runBackupAction(_BackupAction.directory, 'backup_directory_update_failed', () async {
+                          await BackupRecoveryService().updateBackupDirectory();
+                        }),
+                      )
+                    : null,
               ),
             ]),
             const SizedBox(height: 20),

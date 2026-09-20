@@ -939,6 +939,7 @@
     "invalid_backup_archive": "Invalid backup archive, master manifest file not found",
     "backup_success": "Full application backup compiled successfully",
     "backup_failed": "Failed to compile full application backup archive",
+    "backup_directory_update_failed": "The backup directory was not changed. Try again.",
     "restore_success": "Application state and data restored successfully",
     "restore_failed": "Failed to parse or restore backup archive data",
     "contains_old_data": "(including legacy {} data)",
