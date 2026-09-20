@@ -194,14 +194,20 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
         InkWell(
           borderRadius: BorderRadius.circular(4),
           onTap: () => launchUrlString("https://mpv.io"),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-            child: Text(
-              i18n("mpv_official_docs"),
-              style: AppTextStyles.t12.copyWith(
-                color: theme.colorScheme.primary,
-                fontWeight: FontWeight.w600,
-                decoration: TextDecoration.underline,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: kMinInteractiveDimension),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Align(
+                alignment: Alignment.center,
+                child: Text(
+                  i18n("mpv_official_docs"),
+                  style: AppTextStyles.t12.copyWith(
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.w600,
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
               ),
             ),
           ),
@@ -211,20 +217,23 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
     final reset = InkWell(
       borderRadius: BorderRadius.circular(8),
       onTap: () => SettingsService.to.player.resetMpvPlayerSettings(),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Remix.refresh_line, size: 14, color: Colors.red),
-            const SizedBox(width: 4),
-            Flexible(
-              child: Text(
-                i18n("reset"),
-                style: const TextStyle(color: Colors.red, fontWeight: FontWeight.w600),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: kMinInteractiveDimension),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Remix.refresh_line, size: 14, color: Colors.red),
+              const SizedBox(width: 4),
+              Flexible(
+                child: Text(
+                  i18n("reset"),
+                  style: const TextStyle(color: Colors.red, fontWeight: FontWeight.w600),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
