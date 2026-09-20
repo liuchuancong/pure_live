@@ -97,14 +97,14 @@ void main() {
     await settle();
   }
 
-  test('configuration mutations do not depend on a global navigation context', () {
+  test('configuration mutations do not depend on a global navigation context', () async {
     controller.configs.assignAll([config]);
 
-    expect(() => controller.onConfigSelected(config), returnsNormally);
+    await expectLater(controller.onConfigSelected(config), completes);
     expect(controller.currentConfig.value, same(config));
     expect(services, hasLength(1));
 
-    expect(() => controller.deleteConfig(config), returnsNormally);
+    await expectLater(controller.deleteConfig(config), completes);
     expect(controller.configs, isEmpty);
     expect(controller.currentConfig.value, isNull);
     expect(controller.dirPath.value, '/');

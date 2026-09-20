@@ -123,8 +123,9 @@ class _WebDavPageState extends State<WebDavPage> {
         padding: EdgeInsets.zero,
         children: [
           SizedBox(height: kToolbarHeight),
-          Obx(
-            () => Column(
+          Obx(() {
+            final configBusy = controller.isConfigMutationPending.value;
+            return Column(
               children: [
                 for (final config in controller.configs)
                   ListTile(
@@ -138,37 +139,41 @@ class _WebDavPageState extends State<WebDavPage> {
                         IconButton(
                           tooltip: i18n("webdav_edit_config", args: {"name": config.name}),
                           icon: const Icon(Icons.edit),
-                          onPressed: () => _showConfigDialog(existingConfig: config),
+                          onPressed: configBusy ? null : () => _showConfigDialog(existingConfig: config),
                         ),
                         IconButton(
                           tooltip: i18n("webdav_delete"),
                           icon: const Icon(Icons.delete),
-                          onPressed: () => _showDeleteDialog(config),
+                          onPressed: configBusy ? null : () => _showDeleteDialog(config),
                         ),
                       ],
                     ),
                     selected: controller.currentConfig.value?.name == config.name,
-                    onTap: () {
-                      controller.onConfigSelected(config);
-                      _scaffoldKey.currentState?.closeEndDrawer();
-                    },
+                    onTap: configBusy
+                        ? null
+                        : () async {
+                            if (await controller.onConfigSelected(config) && mounted) {
+                              _scaffoldKey.currentState?.closeEndDrawer();
+                            }
+                          },
                   ),
                 ListTile(
                   title: Text(i18n("webdav_add_new_config")),
                   leading: const Icon(Icons.add),
-                  onTap: () => _showConfigDialog(),
+                  onTap: configBusy ? null : () => _showConfigDialog(),
                 ),
               ],
-            ),
-          ),
+            );
+          }),
         ],
       ),
     );
   }
 
   Future<void> _showDeleteDialog(WebDAVConfig config) async {
+    if (controller.isConfigMutationPending.value) return;
     final confirmed = await _showDeleteConfirmation(i18n("webdav_confirm_delete_config", args: {"name": config.name}));
-    if (confirmed && mounted) controller.deleteConfig(config);
+    if (confirmed && mounted) await controller.deleteConfig(config);
   }
 
   Future<bool> _showFileDeleteDialog(webdav.File file) =>
@@ -578,6 +583,24 @@ class _WebDavConfigDialogState extends State<_WebDavConfigDialog> {
   late final addressController = TextEditingController(text: existingConfig?.address);
   late final userController = TextEditingController(text: existingConfig?.username);
   late final pwdController = TextEditingController(text: existingConfig?.password);
+  bool _saving = false;
+
+  Future<void> _submit() async {
+    if (_saving || !(formKey.currentState?.validate() ?? false)) return;
+    setState(() => _saving = true);
+    final newConfig = WebDAVConfig(
+      name: nameController.text.trim(),
+      address: addressController.text.trim(),
+      username: userController.text.trim(),
+      password: pwdController.text,
+    );
+    try {
+      final saved = await controller.saveConfig(newConfig, existingName: existingConfig?.name);
+      if (saved && mounted) Navigator.of(context).pop();
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
 
   @override
   void dispose() {
@@ -637,7 +660,7 @@ class _WebDavConfigDialogState extends State<_WebDavConfigDialog> {
                     border: const OutlineInputBorder(),
                     contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                   ),
-                  enabled: !isEditing,
+                  enabled: !isEditing && !_saving,
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) return i18n("webdav_config_name_empty");
                     if (!isEditing && controller.configs.any((c) => c.name == value.trim())) {
@@ -649,6 +672,7 @@ class _WebDavConfigDialogState extends State<_WebDavConfigDialog> {
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: addressController,
+                  enabled: !_saving,
                   keyboardType: TextInputType.url,
                   autocorrect: false,
                   decoration: InputDecoration(
@@ -666,6 +690,7 @@ class _WebDavConfigDialogState extends State<_WebDavConfigDialog> {
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: userController,
+                  enabled: !_saving,
                   decoration: InputDecoration(
                     labelText: i18n("webdav_username"),
                     prefixIcon: const Icon(Remix.user_3_line, size: 20),
@@ -677,6 +702,7 @@ class _WebDavConfigDialogState extends State<_WebDavConfigDialog> {
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: pwdController,
+                  enabled: !_saving,
                   decoration: InputDecoration(
                     labelText: i18n("webdav_password"),
                     prefixIcon: const Icon(Remix.lock_password_line, size: 20),
@@ -693,7 +719,7 @@ class _WebDavConfigDialogState extends State<_WebDavConfigDialog> {
       ),
       actions: [
         OutlinedButton(
-          onPressed: Navigator.of(context).pop,
+          onPressed: _saving ? null : Navigator.of(context).pop,
           style: OutlinedButton.styleFrom(
             minimumSize: const Size(48, 48),
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -702,28 +728,7 @@ class _WebDavConfigDialogState extends State<_WebDavConfigDialog> {
           child: Text(i18n("webdav_cancel")),
         ),
         ElevatedButton(
-          onPressed: () {
-            if (formKey.currentState?.validate() ?? false) {
-              final newConfig = WebDAVConfig(
-                name: nameController.text.trim(),
-                address: addressController.text.trim(),
-                username: userController.text.trim(),
-                password: pwdController.text,
-              );
-
-              if (isEditing) {
-                final index = controller.configs.indexWhere((c) => c.name == existingConfig!.name);
-                controller.configs[index] = newConfig;
-              } else {
-                controller.configs.add(newConfig);
-              }
-              controller.currentConfig.value = newConfig;
-              controller.saveCurrentConfig(newConfig.name);
-              controller.dirPath.value = '/';
-              controller.initializeWebDAV();
-              Navigator.of(context).pop();
-            }
-          },
+          onPressed: _saving ? null : _submit,
           style: ElevatedButton.styleFrom(
             minimumSize: const Size(48, 48),
             backgroundColor: Theme.of(context).colorScheme.primary,
@@ -732,7 +737,9 @@ class _WebDavConfigDialogState extends State<_WebDavConfigDialog> {
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             elevation: 0,
           ),
-          child: Text(isEditing ? i18n("webdav_update") : i18n("webdav_add")),
+          child: _saving
+              ? const SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2))
+              : Text(isEditing ? i18n("webdav_update") : i18n("webdav_add")),
         ),
       ],
     );

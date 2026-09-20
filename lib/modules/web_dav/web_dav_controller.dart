@@ -48,6 +48,7 @@ class WebDavPageController extends GetxController {
   final RxList<webdav.File> files = <webdav.File>[].obs;
   final RxBool isLoading = false.obs;
   final RxBool isUploading = false.obs;
+  final RxBool isConfigMutationPending = false.obs;
   // Retained across service changes until download/restore or deletion settles.
   // A local restore already committing must finish before exporting a backup.
   final RxString fileActionLabelKey = ''.obs;
@@ -64,8 +65,6 @@ class WebDavPageController extends GetxController {
 
   final WebDavController _webDavController = Get.find<WebDavController>();
   final BackupController _backupController = Get.find<BackupController>();
-  StreamSubscription<List<WebDAVConfig>>? _configsSubscription;
-  StreamSubscription<WebDAVConfig?>? _currentConfigSubscription;
 
   bool get canUpload {
     final selected = currentConfig.value;
@@ -81,20 +80,6 @@ class WebDavPageController extends GetxController {
     // 从全局 WebDavController 读取配置
     configs.assignAll(_webDavController.webDavConfigs.v);
     _restoreSelection();
-
-    // 监听同步到全局
-    _configsSubscription = configs.listen((_) {
-      _webDavController.webDavConfigs.v = List.from(configs);
-      _webDavController.webDavConfigs.refresh();
-    });
-
-    _currentConfigSubscription = currentConfig.listen((config) {
-      if (config != null) {
-        _webDavController.currentWebDavConfig.v = jsonEncode(config.toJson());
-      } else {
-        _webDavController.currentWebDavConfig.v = '';
-      }
-    });
   }
 
   void _restoreSelection() {
@@ -131,8 +116,6 @@ class WebDavPageController extends GetxController {
     _loadEpoch++;
     _webdavService?.close();
     _webdavService = null;
-    _configsSubscription?.cancel();
-    _currentConfigSubscription?.cancel();
     super.onClose();
   }
 
@@ -168,9 +151,39 @@ class WebDavPageController extends GetxController {
       identical(service, _webdavService) &&
       identical(currentConfig.value, _serviceConfig);
 
-  Future<void> saveCurrentConfig(String configName) async {
-    if (currentConfig.value != null) {
-      _webDavController.currentWebDavConfig.v = jsonEncode(currentConfig.value!.toJson());
+  Future<bool> saveConfig(WebDAVConfig config, {String? existingName}) async {
+    if (_disposed || isConfigMutationPending.value) return false;
+    isConfigMutationPending.value = true;
+    try {
+      final updated = List<WebDAVConfig>.from(configs);
+      if (existingName == null) {
+        if (updated.any((candidate) => candidate.name == config.name)) {
+          _feedback(i18n('webdav_config_name_exists'), isError: true);
+          return false;
+        }
+        updated.add(config);
+      } else {
+        final index = updated.indexWhere((candidate) => candidate.name == existingName);
+        if (index < 0) {
+          _feedback(i18n('webdav_config_save_failed'), isError: true);
+          return false;
+        }
+        updated[index] = config;
+      }
+
+      await _webDavController.replaceStateDurably(configs: updated, currentConfig: config);
+      if (_disposed) return true;
+      configs.assignAll(updated);
+      currentConfig.value = config;
+      dirPath.value = '/';
+      initializeWebDAV();
+      return true;
+    } catch (error) {
+      debugPrint('Saving WebDAV configuration failed: $error');
+      _feedback(i18n('webdav_config_save_failed'), isError: true);
+      return false;
+    } finally {
+      if (!_disposed) isConfigMutationPending.value = false;
     }
   }
 
@@ -221,12 +234,29 @@ class WebDavPageController extends GetxController {
     return true;
   }
 
-  void deleteConfig(WebDAVConfig config) {
-    configs.removeWhere((c) => c.name == config.name);
-    if (currentConfig.value?.name == config.name) {
-      currentConfig.value = null;
-      dirPath.value = '/';
-      initializeWebDAV();
+  Future<bool> deleteConfig(WebDAVConfig config) async {
+    if (_disposed || isConfigMutationPending.value) return false;
+    isConfigMutationPending.value = true;
+    try {
+      final updated = configs.where((candidate) => candidate.name != config.name).toList(growable: false);
+      if (updated.length == configs.length) return false;
+      final deletingCurrent = currentConfig.value?.name == config.name;
+      final nextCurrent = deletingCurrent ? null : currentConfig.value;
+      await _webDavController.replaceStateDurably(configs: updated, currentConfig: nextCurrent);
+      if (_disposed) return true;
+      configs.assignAll(updated);
+      if (deletingCurrent) {
+        currentConfig.value = null;
+        dirPath.value = '/';
+        initializeWebDAV();
+      }
+      return true;
+    } catch (error) {
+      debugPrint('Deleting WebDAV configuration failed: $error');
+      _feedback(i18n('webdav_config_delete_failed'), isError: true);
+      return false;
+    } finally {
+      if (!_disposed) isConfigMutationPending.value = false;
     }
   }
 
@@ -240,13 +270,27 @@ class WebDavPageController extends GetxController {
     rebuildBreadcrumb();
   }
 
-  void onConfigSelected(WebDAVConfig config) {
-    currentConfig.value = config;
-    dirPath.value = '/';
-    breadcrumbParts.clear();
-    saveCurrentConfig(config.name);
-    initializeWebDAV();
-    rebuildBreadcrumb();
+  Future<bool> onConfigSelected(WebDAVConfig config) async {
+    if (_disposed || isConfigMutationPending.value) return false;
+    isConfigMutationPending.value = true;
+    try {
+      final selected = configs.firstWhereOrNull((candidate) => candidate.name == config.name);
+      if (selected == null) return false;
+      await _webDavController.replaceStateDurably(configs: configs, currentConfig: selected);
+      if (_disposed) return true;
+      currentConfig.value = selected;
+      dirPath.value = '/';
+      breadcrumbParts.clear();
+      initializeWebDAV();
+      rebuildBreadcrumb();
+      return true;
+    } catch (error) {
+      debugPrint('Selecting WebDAV configuration failed: $error');
+      _feedback(i18n('webdav_config_select_failed'), isError: true);
+      return false;
+    } finally {
+      if (!_disposed) isConfigMutationPending.value = false;
+    }
   }
 
   void onFileTap(webdav.File file) {

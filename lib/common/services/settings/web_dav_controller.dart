@@ -1,8 +1,17 @@
+import 'dart:convert';
+
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/modules/web_dav/webdav_config.dart';
 import 'package:pure_live/common/services/utils/backup_migration_util.dart';
+import 'package:pure_live/common/utils/hive_pref_util.dart';
+import 'package:synchronized/synchronized.dart';
 
 class WebDavController extends GetxController {
+  static const String _currentConfigKey = 'currentWebDavConfig';
+  static const String _configsKey = 'webDavConfigs';
+
+  final Lock _mutationLock = Lock();
+
   final RxString currentWebDavConfig = hiveString('currentWebDavConfig', '');
 
   final Rx<List<WebDAVConfig>> webDavConfigs = hiveObject(
@@ -39,6 +48,41 @@ class WebDavController extends GetxController {
     webDavConfigs.v[idx] = config;
     webDavConfigs.refresh();
     return true;
+  }
+
+  Future<void> replaceStateDurably({required Iterable<WebDAVConfig> configs, required WebDAVConfig? currentConfig}) {
+    final requested = List<WebDAVConfig>.from(configs);
+    return _mutationLock.synchronized(() async {
+      final beforeConfigs = List<WebDAVConfig>.from(webDavConfigs.v);
+      final beforeCurrent = currentWebDavConfig.v;
+      final nextConfigs = List<WebDAVConfig>.unmodifiable(requested);
+      final selected = currentConfig == null
+          ? null
+          : nextConfigs.firstWhereOrNull((config) => config.name == currentConfig.name);
+      final nextCurrent = selected == null ? '' : jsonEncode(selected.toJson());
+
+      webDavConfigs.v = nextConfigs;
+      currentWebDavConfig.v = nextCurrent;
+      try {
+        await _writeState(configs: nextConfigs, current: nextCurrent);
+      } catch (error, stackTrace) {
+        webDavConfigs.v = beforeConfigs;
+        currentWebDavConfig.v = beforeCurrent;
+        try {
+          await _writeState(configs: beforeConfigs, current: beforeCurrent);
+        } catch (_) {}
+        Error.throwWithStackTrace(error, stackTrace);
+      }
+    });
+  }
+
+  Future<void> _writeState({required List<WebDAVConfig> configs, required String current}) async {
+    await HivePrefUtil.setString(
+      _configsKey,
+      jsonEncode({'list': configs.map((config) => config.toJson()).toList(growable: false)}),
+    );
+    await HivePrefUtil.setString(_currentConfigKey, current);
+    await HivePrefUtil.flush();
   }
 
   Map<String, dynamic> toJson() {
