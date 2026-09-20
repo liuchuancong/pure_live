@@ -413,8 +413,8 @@ class _StyleControls extends StatelessWidget {
                     avatar: CircleAvatar(backgroundColor: Color(preset.color), radius: 5),
                     label: Text(i18n(preset.labelKey)),
                     labelPadding: const EdgeInsets.symmetric(horizontal: 2),
-                    visualDensity: compactUi ? VisualDensity.compact : VisualDensity.standard,
-                    materialTapTargetSize: compactUi ? MaterialTapTargetSize.shrinkWrap : MaterialTapTargetSize.padded,
+                    visualDensity: VisualDensity.standard,
+                    materialTapTargetSize: MaterialTapTargetSize.padded,
                     onSelected: (_) => controller.applyDanmakuPreset(preset),
                   ),
                 )
@@ -437,8 +437,8 @@ class _StyleControls extends StatelessWidget {
                       _ => Icons.trending_flat_rounded,
                     }, size: 17),
                     label: Text(i18n('local_danmaku_placement_$id')),
-                    visualDensity: compactUi ? VisualDensity.compact : VisualDensity.standard,
-                    materialTapTargetSize: compactUi ? MaterialTapTargetSize.shrinkWrap : MaterialTapTargetSize.padded,
+                    visualDensity: VisualDensity.standard,
+                    materialTapTargetSize: MaterialTapTargetSize.padded,
                     onSelected: (_) => custom(() => controller.danmakuPlacement.v = id),
                   ),
                 )
@@ -459,8 +459,8 @@ class _StyleControls extends StatelessWidget {
                       i18n('local_danmaku_font_$id'),
                       style: TextStyle(fontFamily: LocalInteractionController.normalizeFontFamily(id)),
                     ),
-                    visualDensity: compactUi ? VisualDensity.compact : VisualDensity.standard,
-                    materialTapTargetSize: compactUi ? MaterialTapTargetSize.shrinkWrap : MaterialTapTargetSize.padded,
+                    visualDensity: VisualDensity.standard,
+                    materialTapTargetSize: MaterialTapTargetSize.padded,
                     onSelected: (_) => custom(() => controller.danmakuFontFamily.v = id),
                   ),
                 )
@@ -544,32 +544,32 @@ class _StyleControls extends StatelessWidget {
                 selected: controller.danmakuFontWeight.v >= 700,
                 avatar: const Icon(Icons.format_bold_rounded, size: 18),
                 label: Text(i18n('local_danmaku_bold')),
-                visualDensity: compactUi ? VisualDensity.compact : VisualDensity.standard,
-                materialTapTargetSize: compactUi ? MaterialTapTargetSize.shrinkWrap : MaterialTapTargetSize.padded,
+                visualDensity: VisualDensity.standard,
+                materialTapTargetSize: MaterialTapTargetSize.padded,
                 onSelected: (value) => custom(() => controller.danmakuFontWeight.v = value ? 800 : 500),
               ),
               FilterChip(
                 selected: controller.danmakuItalic.v,
                 avatar: const Icon(Icons.format_italic_rounded, size: 18),
                 label: Text(i18n('local_danmaku_italic')),
-                visualDensity: compactUi ? VisualDensity.compact : VisualDensity.standard,
-                materialTapTargetSize: compactUi ? MaterialTapTargetSize.shrinkWrap : MaterialTapTargetSize.padded,
+                visualDensity: VisualDensity.standard,
+                materialTapTargetSize: MaterialTapTargetSize.padded,
                 onSelected: (value) => custom(() => controller.danmakuItalic.v = value),
               ),
               FilterChip(
                 selected: controller.danmakuShowStroke.v,
                 avatar: const Icon(Icons.border_color_rounded, size: 18),
                 label: Text(i18n('local_danmaku_stroke')),
-                visualDensity: compactUi ? VisualDensity.compact : VisualDensity.standard,
-                materialTapTargetSize: compactUi ? MaterialTapTargetSize.shrinkWrap : MaterialTapTargetSize.padded,
+                visualDensity: VisualDensity.standard,
+                materialTapTargetSize: MaterialTapTargetSize.padded,
                 onSelected: (value) => custom(() => controller.danmakuShowStroke.v = value),
               ),
               FilterChip(
                 selected: controller.danmakuShowShadow.v,
                 avatar: const Icon(Icons.blur_on_rounded, size: 18),
                 label: Text(i18n('local_danmaku_shadow')),
-                visualDensity: compactUi ? VisualDensity.compact : VisualDensity.standard,
-                materialTapTargetSize: compactUi ? MaterialTapTargetSize.shrinkWrap : MaterialTapTargetSize.padded,
+                visualDensity: VisualDensity.standard,
+                materialTapTargetSize: MaterialTapTargetSize.padded,
                 onSelected: (value) => custom(() => controller.danmakuShowShadow.v = value),
               ),
             ],
@@ -717,26 +717,42 @@ class _StyleColorPalette extends StatelessWidget {
             final foreground = ThemeData.estimateBrightnessForColor(color) == Brightness.dark
                 ? Colors.white
                 : Colors.black87;
-            return InkWell(
-              key: ValueKey('$keyPrefix-$value'),
-              borderRadius: BorderRadius.circular(24),
-              onTap: () => onSelected(value),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 150),
-                width: size,
-                height: size,
-                decoration: BoxDecoration(
-                  color: color,
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: isSelected ? theme.colorScheme.primary : theme.colorScheme.outlineVariant,
-                    width: isSelected ? 2.5 : 1,
+            final colorLabel = '#${(value & 0xFFFFFF).toRadixString(16).padLeft(6, '0').toUpperCase()}';
+            return Tooltip(
+              message: colorLabel,
+              child: Semantics(
+                button: true,
+                selected: isSelected,
+                label: '${i18n('local_danmaku_color')} $colorLabel',
+                child: InkWell(
+                  key: ValueKey('$keyPrefix-$value'),
+                  borderRadius: BorderRadius.circular(24),
+                  onTap: () => onSelected(value),
+                  child: SizedBox.square(
+                    dimension: kMinInteractiveDimension,
+                    child: Center(
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 150),
+                        width: size,
+                        height: size,
+                        decoration: BoxDecoration(
+                          color: color,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: isSelected ? theme.colorScheme.primary : theme.colorScheme.outlineVariant,
+                            width: isSelected ? 2.5 : 1,
+                          ),
+                          boxShadow: isSelected
+                              ? [BoxShadow(color: theme.colorScheme.primary.withValues(alpha: .22), blurRadius: 5)]
+                              : null,
+                        ),
+                        child: isSelected
+                            ? Icon(Icons.check_rounded, size: compact ? 16 : 19, color: foreground)
+                            : null,
+                      ),
+                    ),
                   ),
-                  boxShadow: isSelected
-                      ? [BoxShadow(color: theme.colorScheme.primary.withValues(alpha: .22), blurRadius: 5)]
-                      : null,
                 ),
-                child: isSelected ? Icon(Icons.check_rounded, size: compact ? 16 : 19, color: foreground) : null,
               ),
             );
           })
@@ -834,13 +850,16 @@ class _StyleSlider extends StatelessWidget {
           },
         ),
         SizedBox(
-          height: dense ? 32 : 40,
-          child: Slider(
-            value: value.clamp(min, max).toDouble(),
-            min: min,
-            max: max,
-            divisions: divisions,
-            onChanged: onChanged,
+          height: kMinInteractiveDimension,
+          child: SliderTheme(
+            data: SliderThemeData(trackHeight: dense ? 3 : 4),
+            child: Slider(
+              value: value.clamp(min, max).toDouble(),
+              min: min,
+              max: max,
+              divisions: divisions,
+              onChanged: onChanged,
+            ),
           ),
         ),
       ],
