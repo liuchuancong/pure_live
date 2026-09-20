@@ -466,8 +466,8 @@ class _DatetimeInfoState extends State<DatetimeInfo> {
 
   @override
   void dispose() {
-    super.dispose();
     refreshDateTimer?.cancel();
+    super.dispose();
   }
 
   @override
