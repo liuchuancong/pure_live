@@ -194,11 +194,15 @@ class _DesktopPaginationBarState extends State<DesktopPaginationBar> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 3),
       child: InkWell(
+        key: ValueKey('desktop-page-$pageNum'),
         borderRadius: BorderRadius.circular(6),
         onTap: (isCurrent || controller.loadding.value) ? null : () => controller.goToPage(pageNum),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+          constraints: const BoxConstraints(
+            minWidth: kMinInteractiveDimension,
+            minHeight: kMinInteractiveDimension,
+          ),
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: isCurrent ? theme.colorScheme.primary : Colors.transparent,
@@ -243,7 +247,7 @@ class CompactPageSizeSelector extends StatelessWidget {
           return options.map((int value) {
             return PopupMenuItem<int>(
               value: value,
-              height: 36,
+              height: kMinInteractiveDimension,
               child: Center(
                 child: Text(
                   '$value',
@@ -256,7 +260,10 @@ class CompactPageSizeSelector extends StatelessWidget {
           }).toList();
         },
         child: Container(
-          constraints: const BoxConstraints(minHeight: 30),
+          constraints: const BoxConstraints(
+            minWidth: kMinInteractiveDimension,
+            minHeight: kMinInteractiveDimension,
+          ),
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(6),

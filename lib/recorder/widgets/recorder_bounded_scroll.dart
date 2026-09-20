@@ -50,7 +50,7 @@ class RecorderStatusSelector extends StatelessWidget {
                           key: ValueKey('recorder-status-$index'),
                           onTap: () => controller.animateTo(index),
                           child: SizedBox(
-                            height: 36,
+                            height: kMinInteractiveDimension,
                             child: Center(
                               child: Text(
                                 labels[index],

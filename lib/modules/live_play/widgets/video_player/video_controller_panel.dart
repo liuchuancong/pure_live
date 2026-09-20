@@ -1208,29 +1208,32 @@ class FullscreenStreamSelectorButton extends StatelessWidget {
           child: InkWell(
             borderRadius: BorderRadius.circular(18),
             onTap: switching ? null : () => unawaited(_showSelector(context)),
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: compact ? 8 : 11, vertical: 7),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  switching
-                      ? const SizedBox(
-                          width: 15,
-                          height: 15,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                        )
-                      : const Icon(Icons.tune_rounded, size: 17, color: Colors.white),
-                  const SizedBox(width: 6),
-                  ConstrainedBox(
-                    constraints: BoxConstraints(maxWidth: compact ? 90 : 150),
-                    child: Text(
-                      label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.t13.copyWith(color: Colors.white, fontWeight: FontWeight.w600),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: kMinInteractiveDimension),
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: compact ? 8 : 11),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    switching
+                        ? const SizedBox(
+                            width: 15,
+                            height: 15,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          )
+                        : const Icon(Icons.tune_rounded, size: 17, color: Colors.white),
+                    const SizedBox(width: 6),
+                    ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: compact ? 90 : 150),
+                      child: Text(
+                        label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.t13.copyWith(color: Colors.white, fontWeight: FontWeight.w600),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -1944,23 +1947,46 @@ class FavoriteButton extends StatelessWidget {
       final room = controller.room;
       final favoriteRooms = SettingsService.to.fav.favoriteRooms.value;
       final isFavorite = favoriteRooms.any((candidate) => candidate.hasSameIdentity(room));
-      return GestureDetector(
-        onTap: () {
-          controller.enableController();
-          final changed = isFavorite ? SettingsService.to.fav.removeRoom(room) : SettingsService.to.fav.addRoom(room);
-          if (changed) EventBus.instance.emit('changeFavorite', true);
-        },
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 0, horizontal: 2),
-          alignment: Alignment.center,
-          height: 25,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Icon(isFavorite ? Icons.check_rounded : Icons.close, color: Colors.white, size: 15),
-              Text(isFavorite ? i18n('followed') : i18n('follow'), style: const TextStyle(color: Colors.white)),
-            ],
+      final actionLabel = i18n(isFavorite ? 'unfollow' : 'follow');
+      return Semantics(
+        button: true,
+        label: actionLabel,
+        child: Tooltip(
+          message: actionLabel,
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              key: const ValueKey('fullscreen-favorite-action'),
+              borderRadius: BorderRadius.circular(8),
+              onTap: () {
+                controller.enableController();
+                final changed = isFavorite
+                    ? SettingsService.to.fav.removeRoom(room)
+                    : SettingsService.to.fav.addRoom(room);
+                if (changed) EventBus.instance.emit('changeFavorite', true);
+              },
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(
+                  minWidth: kMinInteractiveDimension,
+                  minHeight: kMinInteractiveDimension,
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Icon(isFavorite ? Icons.check_rounded : Icons.close, color: Colors.white, size: 15),
+                      const SizedBox(width: 2),
+                      Text(
+                        isFavorite ? i18n('followed') : i18n('follow'),
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           ),
         ),
       );
@@ -1983,26 +2009,42 @@ class _VideoFitSettingState extends State<VideoFitSetting> {
   Widget build(BuildContext context) {
     final player = SettingsService.to.player;
 
-    return GestureDetector(
-      onTap: () {
-        controller.enableController();
-        final currentIndex = player.advanceVideoFitIndex();
-        if (currentIndex == null) return;
-        controller.setVideoFit(currentIndex);
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 0, horizontal: 2),
-        alignment: Alignment.center,
-        height: 25,
-        child: Obx(() {
-          final descriptionKey = player.resolvedVideoFitDescriptionKey;
-          return Text(
-            descriptionKey.isEmpty ? '' : i18n(descriptionKey),
-            style: AppTextStyles.t15.copyWith(color: Colors.white),
-          );
-        }),
-      ),
-    );
+    return Obx(() {
+      final descriptionKey = player.resolvedVideoFitDescriptionKey;
+      final label = descriptionKey.isEmpty ? '' : i18n(descriptionKey);
+      return Semantics(
+        button: true,
+        label: label,
+        child: Tooltip(
+          message: label,
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              key: const ValueKey('video-fit-action'),
+              borderRadius: BorderRadius.circular(8),
+              onTap: () {
+                controller.enableController();
+                final currentIndex = player.advanceVideoFitIndex();
+                if (currentIndex == null) return;
+                controller.setVideoFit(currentIndex);
+              },
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(
+                  minWidth: kMinInteractiveDimension,
+                  minHeight: kMinInteractiveDimension,
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                  child: Center(
+                    child: Text(label, style: AppTextStyles.t15.copyWith(color: Colors.white)),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    });
   }
 }
 
