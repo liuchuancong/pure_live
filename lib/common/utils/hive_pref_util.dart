@@ -54,6 +54,17 @@ class HivePrefUtil {
     return true;
   }
 
+  /// Commits related preferences in one Hive batch so readers never observe
+  /// only part of a multi-key state transition.
+  static Future<void> setPrefs(Map<String, dynamic> values) async {
+    final batch = _writeBatch;
+    if (batch != null) {
+      batch.addAll(values);
+      return;
+    }
+    await _box.putAll(values);
+  }
+
   static bool? getBool(String key) {
     final value = _get(key);
     return value is bool ? value : null;

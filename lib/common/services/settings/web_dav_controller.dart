@@ -77,11 +77,10 @@ class WebDavController extends GetxController {
   }
 
   Future<void> _writeState({required List<WebDAVConfig> configs, required String current}) async {
-    await HivePrefUtil.setString(
-      _configsKey,
-      jsonEncode({'list': configs.map((config) => config.toJson()).toList(growable: false)}),
-    );
-    await HivePrefUtil.setString(_currentConfigKey, current);
+    await HivePrefUtil.setPrefs({
+      _configsKey: jsonEncode({'list': configs.map((config) => config.toJson()).toList(growable: false)}),
+      _currentConfigKey: current,
+    });
     await HivePrefUtil.flush();
   }
 
