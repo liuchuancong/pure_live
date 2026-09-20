@@ -80,7 +80,7 @@ class IptvSyncEngine {
 
       if (matchedItems.isNotEmpty) {
         for (final item in matchedItems) {
-          await db.deleteProviderCascading(item.id);
+          if (!await _iptvImportManager.deleteProviderDurably(item)) return false;
 
           final String dotExt = item.type.startsWith('.') ? item.type : '.${item.type}';
           final cachedFile = File(p.join(dir.path, '${item.id}$dotExt'));

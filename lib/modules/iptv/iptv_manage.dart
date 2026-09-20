@@ -836,7 +836,6 @@ class _IptvManagePageState extends State<IptvManagePage> {
                   ? null
                   : () async {
                       setDialogState(() => deleting = true);
-                      final db = Get.find<DbService>().db;
 
                       try {
                         if (item.type == ManageItemType.iptv) {
@@ -845,7 +844,8 @@ class _IptvManagePageState extends State<IptvManagePage> {
                           );
                           if (!deleted) throw StateError('Playlist changed before deletion');
                         } else {
-                          await db.deleteEpgSourceCascading(item.id);
+                          final deleted = await EpgImportManager().deleteSourceDurably(item.raw as database.EpgSource);
+                          if (!deleted) throw StateError('EPG source changed before deletion');
                         }
 
                         if (!mounted) return;

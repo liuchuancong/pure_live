@@ -96,7 +96,7 @@ class EpgSyncEngine {
 
       if (matchedItems.isNotEmpty) {
         for (final item in matchedItems) {
-          await db.deleteEpgSourceCascading(item.id);
+          if (!await EpgImportManager().deleteSourceDurably(item)) return false;
           final lowercaseUrl = item.url.toLowerCase();
           final String ext = lowercaseUrl.endsWith('.json') ? '.json' : (lowercaseUrl.endsWith('.gz') ? '.gz' : '.xml');
           final cachedFile = File(p.join(dir.path, '${item.id}$ext'));

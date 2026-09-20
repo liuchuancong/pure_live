@@ -145,6 +145,16 @@ class EpgImportManager {
     }
   }
 
+  Future<bool> deleteSourceDurably(database.EpgSource expectedSource) {
+    return _importLock.synchronized(() async {
+      final db = Get.find<DbService>().db;
+      final current = await db.getEpgSourceById(expectedSource.id);
+      if (current != expectedSource) return false;
+      await db.deleteEpgSourceCascading(expectedSource.id);
+      return true;
+    });
+  }
+
   Future<bool> importEpgFile({
     required File file,
     required String sourceName,
