@@ -76,6 +76,7 @@ Future<void> _showDownloadDialog(Uri uri, {String? fileName, required String res
       }
     } catch (e) {
       ToastUtil.show('${i18n("request_install_permission_failed")}${e.toString()}');
+      return;
     }
   }
   ToastUtil.show(
