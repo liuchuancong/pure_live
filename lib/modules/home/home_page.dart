@@ -47,7 +47,6 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin, WidgetsBindingObserver {
-  Timer? _debounceTimer;
   Timer? _resumeRefreshTimer;
   Timer? _updateCheckTimer;
   final FavoriteController favoriteController = Get.find<FavoriteController>();
@@ -180,16 +179,6 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin,
     }
   }
 
-  void debounceListen(Function? func, [int delay = 1000]) {
-    if (_debounceTimer != null) {
-      _debounceTimer?.cancel();
-    }
-    _debounceTimer = Timer(Duration(milliseconds: delay), () {
-      func?.call();
-      _debounceTimer = null;
-    });
-  }
-
   void handMoveRefresh() {
     if (favoriteController.loadding.value) return;
     unawaited(favoriteController.refreshData());
@@ -296,7 +285,6 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin,
     WidgetsBinding.instance.removeObserver(this);
     favoriteController.tabBottomIndex.removeListener(_favoriteTabListener);
     _savedMenuWorker?.dispose();
-    _debounceTimer?.cancel();
     _resumeRefreshTimer?.cancel();
     _updateCheckTimer?.cancel();
     super.dispose();
