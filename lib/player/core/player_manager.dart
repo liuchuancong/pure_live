@@ -2842,9 +2842,10 @@ class PlayerManager {
 
   math.Rectangle<int>? _currentPipSourceRect({required double contentAspectRatio}) {
     final context = _pipSourceKey.currentContext;
-    final renderObject = context?.findRenderObject();
+    if (context == null) return null;
+    final renderObject = context.findRenderObject();
     if (renderObject is! RenderBox || !renderObject.hasSize) return null;
-    final view = View.maybeOf(context!);
+    final view = View.maybeOf(context);
     if (view == null) return null;
     final origin = renderObject.localToGlobal(Offset.zero);
     final visibleRect = resolveContainedVideoRect(
