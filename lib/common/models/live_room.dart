@@ -130,6 +130,12 @@ class LiveRoom {
       hasTotalViewers: false,
       onlineAvailability: AudienceOnlineAvailability.roomList,
     ),
+    // The room detail keeps current liveViewerCount separate from cumulative viewerCount.
+    '17live': AudiencePlatformCapability(
+      hasPopularity: false,
+      hasTotalViewers: true,
+      onlineAvailability: AudienceOnlineAvailability.roomRealtime,
+    ),
     'ttinglive': AudiencePlatformCapability(
       hasPopularity: false,
       hasTotalViewers: false,
