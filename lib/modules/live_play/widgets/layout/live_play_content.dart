@@ -349,29 +349,35 @@ class _PortraitLiveRoomLayoutState extends State<PortraitLiveRoomLayout> {
                     borderRadius: BorderRadius.circular(24),
                     clipBehavior: Clip.antiAlias,
                     child: Tooltip(
-                      message: '横屏全屏',
+                      message: i18nOr('enter_landscape_fullscreen', '横屏全屏'),
                       child: InkWell(
                         key: const ValueKey('portrait-landscape-fullscreen'),
                         onTap: widget.onEnterLandscapeFullscreen,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(Icons.screen_rotation_rounded, color: Colors.white, size: 20),
-                              if (constraints.maxWidth >= 160) ...[
-                                const SizedBox(width: 6),
-                                const Flexible(
-                                  child: Text(
-                                    '横屏全屏',
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(
+                            minWidth: kMinInteractiveDimension,
+                            minHeight: kMinInteractiveDimension,
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 14),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.screen_rotation_rounded, color: Colors.white, size: 20),
+                                if (constraints.maxWidth >= 160) ...[
+                                  const SizedBox(width: 6),
+                                  Flexible(
+                                    child: Text(
+                                      i18nOr('enter_landscape_fullscreen', '横屏全屏'),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                                    ),
                                   ),
-                                ),
+                                ],
                               ],
-                            ],
+                            ),
                           ),
                         ),
                       ),

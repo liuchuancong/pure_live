@@ -61,6 +61,11 @@ class NotLivingVideoWidget extends StatelessWidget {
             IconButton(
               icon: const Icon(Icons.swap_horiz_outlined),
               tooltip: i18n('switch_live_room'),
+              visualDensity: VisualDensity.standard,
+              constraints: const BoxConstraints(
+                minWidth: kMinInteractiveDimension,
+                minHeight: kMinInteractiveDimension,
+              ),
               color: Colors.white,
               onPressed: () {
                 Get.dialog(PlayOther(controller: Get.find<LivePlayController>()));
@@ -74,13 +79,13 @@ class NotLivingVideoWidget extends StatelessWidget {
   }
 
   Widget _buildBackButton() {
-    return GestureDetector(
-      onTap: _exitFullscreen,
-      child: Container(
-        alignment: Alignment.center,
-        padding: const EdgeInsets.all(12),
-        child: const Icon(Icons.arrow_back_rounded, color: Colors.white),
-      ),
+    return IconButton(
+      key: const ValueKey('offline-room-exit-fullscreen'),
+      tooltip: i18n('exit_fullscreen'),
+      visualDensity: VisualDensity.standard,
+      constraints: const BoxConstraints(minWidth: kMinInteractiveDimension, minHeight: kMinInteractiveDimension),
+      onPressed: _exitFullscreen,
+      icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
     );
   }
 

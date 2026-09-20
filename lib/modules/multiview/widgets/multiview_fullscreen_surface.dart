@@ -42,7 +42,7 @@ class MultiviewFullscreenSurface extends StatelessWidget {
                       customBorder: const CircleBorder(),
                       onTap: onExit,
                       child: const SizedBox.square(
-                        dimension: 44,
+                        dimension: kMinInteractiveDimension,
                         child: Icon(Remix.fullscreen_exit_line, size: 22, color: Colors.white),
                       ),
                     ),

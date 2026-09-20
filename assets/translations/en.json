@@ -225,6 +225,7 @@
     "enable_fullscreen_default": "Auto Full Screen",
     "enable_fullscreen_default_subtitle": "When enter live play, auto into full screen",
     "enter_fullscreen": "Enter fullscreen",
+    "enter_landscape_fullscreen": "Landscape fullscreen",
     "exit_fullscreen": "Exit fullscreen",
     "expand_player_window": "Expand player",
     "collapse_player_window": "Collapse player",
