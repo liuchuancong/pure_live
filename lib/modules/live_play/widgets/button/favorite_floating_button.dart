@@ -23,7 +23,7 @@ class _FavoriteFloatingButtonState extends State<FavoriteFloatingButton> {
     setState(() => _pending = true);
     try {
       if (!isFavorite) {
-        if (SettingsService.to.fav.addRoom(targetRoom)) {
+        if (await SettingsService.to.fav.addRoomDurably(targetRoom)) {
           EventBus.instance.emit('changeFavorite', true);
         }
         return;
@@ -39,9 +39,12 @@ class _FavoriteFloatingButtonState extends State<FavoriteFloatingButton> {
           ],
         ),
       );
-      if (confirmed == true && SettingsService.to.fav.removeRoom(targetRoom)) {
+      if (confirmed == true && await SettingsService.to.fav.removeRoomDurably(targetRoom)) {
         EventBus.instance.emit('changeFavorite', true);
       }
+    } catch (error) {
+      debugPrint('Favorite room change failed: $error');
+      ToastUtil.show(i18n('favorite_changes_save_failed'));
     } finally {
       if (mounted) setState(() => _pending = false);
     }

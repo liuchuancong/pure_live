@@ -713,14 +713,20 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
         );
         if (refreshEpoch != _refreshEpoch || isClosed) return;
 
-        final latest = List<LiveRoom>.from(SettingsService.to.fav.favoriteRooms.v);
-        final merged = invalidateUnverified
-            ? mergeAuthoritativeFavoriteRefresh(latest, rooms.map(favoriteRoomIdentity), updates)
-            : mergeFavoriteRoomUpdates(latest, updates);
-        if (merged.changed) {
-          // One Hive write and one visible publication. A failed startup request
-          // remains unknown instead of carrying the previous process's live bit.
-          SettingsService.to.fav.favoriteRooms.v = merged.rooms;
+        try {
+          await SettingsService.to.fav.mutateRoomsDurably((latest) {
+            final merged = invalidateUnverified
+                ? mergeAuthoritativeFavoriteRefresh(latest, rooms.map(favoriteRoomIdentity), updates)
+                : mergeFavoriteRoomUpdates(latest, updates);
+            return merged.rooms;
+          });
+        } catch (error, stackTrace) {
+          developer.log(
+            'Persist favorite room refresh failed',
+            name: 'FavoriteController',
+            error: error,
+            stackTrace: stackTrace,
+          );
         }
         if (markFullRefresh) {
           _lastFullRefreshAt = _now();

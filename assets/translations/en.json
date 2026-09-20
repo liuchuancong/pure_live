@@ -1241,6 +1241,7 @@
     "tag_editor_stale_error": "This tag changed while you were editing. Close this dialog and try again.",
     "tag_assignment_save_failed": "The room tags were not saved. Try again.",
     "tag_changes_save_failed": "The tag changes were not saved. Try again.",
+    "favorite_changes_save_failed": "The favorite changes were not saved. Try again.",
     "clear_tag_name": "Clear tag name",
     "clear_tag_description": "Clear tag description",
     "tag_detail": "Tag Details",

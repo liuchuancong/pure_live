@@ -238,9 +238,18 @@ class RoomCard extends StatelessWidget {
                       context,
                       theme,
                       anchorName: room.nick ?? '',
-                      onConfirm: () {
-                        SettingsService.to.fav.addRoom(room);
-                        unawaited(_showTagSelectionGridModal(context, theme, tagController));
+                      onConfirm: () async {
+                        try {
+                          final favorites = SettingsService.to.fav;
+                          final changed = await favorites.addRoomDurably(room);
+                          if (changed) EventBus.instance.emit('changeFavorite', true);
+                          if (context.mounted && favorites.isFavorite(room)) {
+                            await _showTagSelectionGridModal(context, theme, tagController);
+                          }
+                        } catch (error) {
+                          debugPrint('Favorite room change failed: $error');
+                          ToastUtil.show(i18n('favorite_changes_save_failed'));
+                        }
                       },
                     );
                   }
@@ -1239,7 +1248,7 @@ class _FollowButtonState extends State<FollowButton> {
     final favorites = SettingsService.to.fav;
     try {
       if (!isFavorite) {
-        final changed = favorites.addRoom(widget.room);
+        final changed = await favorites.addRoomDurably(widget.room);
         if (changed) EventBus.instance.emit('changeFavorite', true);
 
         if (mounted && (changed || favorites.isFavorite(widget.room))) {
@@ -1265,11 +1274,14 @@ class _FollowButtonState extends State<FollowButton> {
 
       if (!mounted || confirmed != true) return;
 
-      final changed = favorites.removeRoom(widget.room);
+      final changed = await favorites.removeRoomDurably(widget.room);
       if (changed) EventBus.instance.emit('changeFavorite', true);
       if (!favorites.isFavorite(widget.room)) {
         Navigator.of(context).pop();
       }
+    } catch (error) {
+      debugPrint('Favorite room change failed: $error');
+      ToastUtil.show(i18n('favorite_changes_save_failed'));
     } finally {
       if (mounted) setState(() => _busy = false);
     }

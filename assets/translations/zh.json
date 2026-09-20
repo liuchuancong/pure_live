@@ -1241,6 +1241,7 @@
     "tag_editor_stale_error": "编辑期间此标签已发生变化。请关闭弹窗后重试。",
     "tag_assignment_save_failed": "直播间标签未保存，请重试",
     "tag_changes_save_failed": "标签更改未保存，请重试",
+    "favorite_changes_save_failed": "收藏更改未保存，请重试",
     "clear_tag_name": "清除标签名称",
     "clear_tag_description": "清除标签说明",
     "tag_detail": "标签详情",

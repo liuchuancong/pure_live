@@ -714,7 +714,7 @@ class LivePlayController extends GetxController
       if (liveStatus) {
         await _handleLiveRoom(liveRoom, loadEpoch: loadEpoch);
       } else {
-        _handleNotLiveRoom(liveRoom);
+        await _handleNotLiveRoom(liveRoom);
       }
 
       updateRoom(isLoading: false);
@@ -743,8 +743,7 @@ class LivePlayController extends GetxController
 
       if (liveRoom.platform != Sites.iptvSite) {
         SettingsService.to.history.addRoomToHistory(liveRoom);
-        SettingsService.to.fav.updateRoom(liveRoom);
-        EventBus.instance.emit('refresh_room_changed', true);
+        await _updateFavoriteRoomSnapshot(liveRoom);
       }
 
       await _syncDanmakuConnection(liveRoom);
@@ -769,20 +768,34 @@ class LivePlayController extends GetxController
     }
   }
 
-  void _handleNotLiveRoom(LiveRoom liveRoom) {
+  Future<void> _handleNotLiveRoom(LiveRoom liveRoom) async {
     unawaited(danmakuController.stopDanmaku());
     updateRoom(success: false, isLiving: false);
     setNormalScreen();
     GlobalPlayerState.to.isFullscreen.value = false;
     GlobalPlayerState.to.isWindowFullscreen.value = false;
     if (liveRoom.platform != Sites.iptvSite) {
-      SettingsService.to.fav.updateRoom(liveRoom);
-      EventBus.instance.emit('refresh_room_changed', true);
+      await _updateFavoriteRoomSnapshot(liveRoom);
     }
     ToastUtil.show(
       liveRoom.effectiveLiveStatus == LiveStatus.banned ? i18n('server_error_retry_later') : i18n('stream_not_live'),
     );
     _restoreQualityAndLines();
+  }
+
+  Future<void> _updateFavoriteRoomSnapshot(LiveRoom room) async {
+    try {
+      if (await SettingsService.to.fav.updateRoomDurably(room)) {
+        EventBus.instance.emit('refresh_room_changed', true);
+      }
+    } catch (error, stackTrace) {
+      developer.log(
+        'Persist favorite room refresh failed',
+        name: 'LivePlayController',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
   }
 
   void _handleUnknownStatus() {

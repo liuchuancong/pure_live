@@ -1,9 +1,17 @@
+import 'dart:convert';
+
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/consts/app_consts.dart';
 import 'package:pure_live/common/services/utils/backup_migration_util.dart';
+import 'package:pure_live/common/utils/hive_pref_util.dart';
+import 'package:synchronized/synchronized.dart';
 
 class FavoriteRoomController extends GetxController {
   static const int maxShieldKeywordLength = 40;
+  static const String _favoriteRoomsStorageKey = 'favoriteRooms';
+  static const String _favoriteAreasStorageKey = 'favoriteAreas';
+
+  final Lock _favoriteMutationLock = Lock();
 
   final RxList<String> shieldList = hiveStringList('shieldList', <String>[]);
 
@@ -274,6 +282,15 @@ class FavoriteRoomController extends GetxController {
     return true;
   }
 
+  Future<bool> addRoomDurably(LiveRoom room) {
+    return _favoriteMutationLock.synchronized(() async {
+      final before = List<LiveRoom>.from(favoriteRooms.v);
+      if (!addRoom(room)) return false;
+      await _persistRoomsOrRollback(before);
+      return true;
+    });
+  }
+
   bool removeRoom(LiveRoom room) {
     final index = favoriteRooms.v.indexWhere((candidate) => candidate.hasSameIdentity(room));
 
@@ -284,6 +301,15 @@ class FavoriteRoomController extends GetxController {
     favoriteRooms.v = updated;
 
     return true;
+  }
+
+  Future<bool> removeRoomDurably(LiveRoom room) {
+    return _favoriteMutationLock.synchronized(() async {
+      final before = List<LiveRoom>.from(favoriteRooms.v);
+      if (!removeRoom(room)) return false;
+      await _persistRoomsOrRollback(before);
+      return true;
+    });
   }
 
   bool updateRoom(LiveRoom room) {
@@ -304,6 +330,38 @@ class FavoriteRoomController extends GetxController {
     return true;
   }
 
+  Future<bool> updateRoomDurably(LiveRoom room) {
+    return _favoriteMutationLock.synchronized(() async {
+      final before = List<LiveRoom>.from(favoriteRooms.v);
+      if (!updateRoom(room)) return false;
+      await _persistRoomsOrRollback(before);
+      return true;
+    });
+  }
+
+  Future<bool> replaceRoomsDurably(Iterable<LiveRoom> rooms) {
+    final replacement = List<LiveRoom>.from(rooms);
+    return mutateRoomsDurably((_) => replacement);
+  }
+
+  Future<bool> mutateRoomsDurably(List<LiveRoom> Function(List<LiveRoom> current) update) {
+    return _favoriteMutationLock.synchronized(() async {
+      final before = List<LiveRoom>.from(favoriteRooms.v);
+      final updated = <LiveRoom>[];
+      final identities = <String>{};
+      for (final room in update(List<LiveRoom>.from(before))) {
+        final normalized = room.normalizedIdentityCopy();
+        if (_isValidFavoriteRoom(normalized) && identities.add(normalized.identityKey)) {
+          updated.add(normalized);
+        }
+      }
+      if (_encodeFavoriteRooms(before) == _encodeFavoriteRooms(updated)) return false;
+      favoriteRooms.v = updated;
+      await _persistRoomsOrRollback(before);
+      return true;
+    });
+  }
+
   bool addArea(LiveArea area) {
     if (area.identityKey == null || isFavoriteArea(area)) return false;
 
@@ -312,6 +370,15 @@ class FavoriteRoomController extends GetxController {
     favoriteAreas.v = updated;
 
     return true;
+  }
+
+  Future<bool> addAreaDurably(LiveArea area) {
+    return _favoriteMutationLock.synchronized(() async {
+      final before = List<LiveArea>.from(favoriteAreas.v);
+      if (!addArea(area)) return false;
+      await _persistAreasOrRollback(before);
+      return true;
+    });
   }
 
   bool removeArea(LiveArea area) {
@@ -323,6 +390,57 @@ class FavoriteRoomController extends GetxController {
     favoriteAreas.v = updated;
 
     return true;
+  }
+
+  Future<bool> removeAreaDurably(LiveArea area) {
+    return _favoriteMutationLock.synchronized(() async {
+      final before = List<LiveArea>.from(favoriteAreas.v);
+      if (!removeArea(area)) return false;
+      await _persistAreasOrRollback(before);
+      return true;
+    });
+  }
+
+  Future<void> _persistRoomsOrRollback(List<LiveRoom> before) async {
+    try {
+      await _writeFavoriteRooms(favoriteRooms.v);
+    } catch (error, stackTrace) {
+      favoriteRooms.v = List<LiveRoom>.from(before);
+      try {
+        await _writeFavoriteRooms(before);
+      } catch (_) {}
+      Error.throwWithStackTrace(error, stackTrace);
+    }
+  }
+
+  Future<void> _persistAreasOrRollback(List<LiveArea> before) async {
+    try {
+      await _writeFavoriteAreas(favoriteAreas.v);
+    } catch (error, stackTrace) {
+      favoriteAreas.v = List<LiveArea>.from(before);
+      try {
+        await _writeFavoriteAreas(before);
+      } catch (_) {}
+      Error.throwWithStackTrace(error, stackTrace);
+    }
+  }
+
+  Future<void> _writeFavoriteRooms(List<LiveRoom> rooms) async {
+    await HivePrefUtil.setString(_favoriteRoomsStorageKey, _encodeFavoriteRooms(rooms));
+    await HivePrefUtil.flush();
+  }
+
+  Future<void> _writeFavoriteAreas(List<LiveArea> areas) async {
+    await HivePrefUtil.setString(_favoriteAreasStorageKey, _encodeFavoriteAreas(areas));
+    await HivePrefUtil.flush();
+  }
+
+  String _encodeFavoriteRooms(Iterable<LiveRoom> rooms) {
+    return jsonEncode({'list': rooms.map((room) => room.toJson()).toList(growable: false)});
+  }
+
+  String _encodeFavoriteAreas(Iterable<LiveArea> areas) {
+    return jsonEncode({'list': areas.map((area) => area.toJson()).toList(growable: false)});
   }
 
   bool addShieldList(String value) {

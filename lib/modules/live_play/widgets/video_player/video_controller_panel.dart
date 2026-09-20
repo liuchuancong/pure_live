@@ -1954,15 +1954,40 @@ class CastButton extends StatelessWidget {
   }
 }
 
-class FavoriteButton extends StatelessWidget {
+class FavoriteButton extends StatefulWidget {
   const FavoriteButton({super.key, required this.controller});
 
   final VideoController controller;
 
   @override
+  State<FavoriteButton> createState() => _FavoriteButtonState();
+}
+
+class _FavoriteButtonState extends State<FavoriteButton> {
+  bool _pending = false;
+
+  Future<void> _toggleFavorite(bool isFavorite) async {
+    if (_pending) return;
+    setState(() => _pending = true);
+    final controller = widget.controller;
+    controller.enableController();
+    try {
+      final changed = isFavorite
+          ? await SettingsService.to.fav.removeRoomDurably(controller.room)
+          : await SettingsService.to.fav.addRoomDurably(controller.room);
+      if (changed) EventBus.instance.emit('changeFavorite', true);
+    } catch (error) {
+      debugPrint('Favorite room change failed: $error');
+      ToastUtil.show(i18n('favorite_changes_save_failed'));
+    } finally {
+      if (mounted) setState(() => _pending = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final room = controller.room;
+      final room = widget.controller.room;
       final favoriteRooms = SettingsService.to.fav.favoriteRooms.value;
       final isFavorite = favoriteRooms.any((candidate) => candidate.hasSameIdentity(room));
       final actionLabel = i18n(isFavorite ? 'unfollow' : 'follow');
@@ -1976,13 +2001,7 @@ class FavoriteButton extends StatelessWidget {
             child: InkWell(
               key: const ValueKey('fullscreen-favorite-action'),
               borderRadius: BorderRadius.circular(8),
-              onTap: () {
-                controller.enableController();
-                final changed = isFavorite
-                    ? SettingsService.to.fav.removeRoom(room)
-                    : SettingsService.to.fav.addRoom(room);
-                if (changed) EventBus.instance.emit('changeFavorite', true);
-              },
+              onTap: _pending ? null : () => _toggleFavorite(isFavorite),
               child: ConstrainedBox(
                 constraints: const BoxConstraints(
                   minWidth: kMinInteractiveDimension,
@@ -1994,7 +2013,13 @@ class FavoriteButton extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Icon(isFavorite ? Icons.check_rounded : Icons.close, color: Colors.white, size: 15),
+                      if (_pending)
+                        const SizedBox.square(
+                          dimension: 15,
+                          child: CircularProgressIndicator(strokeWidth: 1.8, color: Colors.white),
+                        )
+                      else
+                        Icon(isFavorite ? Icons.check_rounded : Icons.close, color: Colors.white, size: 15),
                       const SizedBox(width: 2),
                       Text(isFavorite ? i18n('followed') : i18n('follow'), style: const TextStyle(color: Colors.white)),
                     ],

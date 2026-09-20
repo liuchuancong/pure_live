@@ -107,7 +107,7 @@ class _FavoriteAreaFloatingButtonState extends State<FavoriteAreaFloatingButton>
     final favorites = SettingsService.to.fav;
     try {
       if (!isFavorite) {
-        favorites.addArea(target);
+        await favorites.addAreaDurably(target);
         return;
       }
 
@@ -139,7 +139,10 @@ class _FavoriteAreaFloatingButtonState extends State<FavoriteAreaFloatingButton>
           ],
         ),
       );
-      if (confirmed == true) favorites.removeArea(target);
+      if (confirmed == true) await favorites.removeAreaDurably(target);
+    } catch (error) {
+      debugPrint('Favorite area change failed: $error');
+      ToastUtil.show(i18n('favorite_changes_save_failed'));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
