@@ -149,17 +149,19 @@ class _UserManagerState extends State<UserManager> {
   }
 
   Future<bool> _showConfirm(String actionName, String targetEmail) async {
+    if (!mounted) return false;
     // Insert the target last so braces in an address stay literal text.
     final formattedContent = i18n('confirm_content', args: {'action': actionName, 'target': targetEmail});
-    return await Get.dialog<bool>(
-          AlertDialog(
+    return await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
             scrollable: true,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             title: Text(i18n('confirm_title')),
             content: Text(formattedContent),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(Get.context!, false), child: Text(i18n('cancel'))),
-              TextButton(onPressed: () => Navigator.pop(Get.context!, true), child: Text(i18n('confirm'))),
+              TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: Text(i18n('cancel'))),
+              TextButton(onPressed: () => Navigator.pop(dialogContext, true), child: Text(i18n('confirm'))),
             ],
           ),
         ) ??
@@ -325,7 +327,7 @@ class _UserManagerState extends State<UserManager> {
   }
 
   Widget _buildUserCard(int index, UserItem user) {
-    final theme = Theme.of(Get.context!);
+    final theme = Theme.of(context);
     final int roleWeight = FirebaseManager.roleWeights[user.role] ?? 2;
     Color roleColor = theme.colorScheme.primary;
     String roleText = i18n('role_user');
@@ -488,15 +490,17 @@ class _UserManagerState extends State<UserManager> {
           label: i18n('action_delete_account'),
           color: theme.colorScheme.error,
           onTap: () async {
+            if (!mounted) return;
             final ok =
-                await Get.dialog<bool>(
-                  AlertDialog(
+                await showDialog<bool>(
+                  context: context,
+                  builder: (dialogContext) => AlertDialog(
                     scrollable: true,
                     title: Text(i18n('confirm_title')),
                     content: Text(i18n('delete_confirm_content').replaceAll('{}', user.email)),
                     actions: [
-                      TextButton(onPressed: () => Navigator.pop(Get.context!, false), child: Text(i18n('cancel'))),
-                      TextButton(onPressed: () => Navigator.pop(Get.context!, true), child: Text(i18n('confirm'))),
+                      TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: Text(i18n('cancel'))),
+                      TextButton(onPressed: () => Navigator.pop(dialogContext, true), child: Text(i18n('confirm'))),
                     ],
                   ),
                 ) ??
