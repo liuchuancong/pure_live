@@ -22,26 +22,61 @@ class FontDownloadManager {
     return fontRoot.path;
   }
 
-  Future<bool> checkFontDownloaded(String fontId) async {
+  bool _isSafeFontId(String fontId) =>
+      fontId.isNotEmpty && fontId != '.' && fontId != '..' && RegExp(r'^[a-zA-Z0-9._-]+$').hasMatch(fontId);
+
+  void _notifyState(Function(DownloadState) callback, DownloadState state) {
+    try {
+      callback(state);
+    } catch (error) {
+      log('Font download state callback failed: $error');
+    }
+  }
+
+  Future<Directory?> _resolveFontDirectory(String rawFontId) async {
+    final fontId = rawFontId.trim();
+    if (!_isSafeFontId(fontId)) return null;
     final root = await _fontRootPath;
     final fontDir = Directory("$root/$fontId");
-    if (!await fontDir.exists()) return false;
-
-    int validFileCount = 0;
-    await for (final entity in fontDir.list()) {
-      final lowerPath = entity.path.toLowerCase();
-      if (entity is File && (lowerPath.endsWith('.ttf') || lowerPath.endsWith('.otf')) && await entity.length() > 0) {
-        validFileCount++;
+    final previousDir = Directory("$root/.$fontId.previous");
+    if (await previousDir.exists()) {
+      if (await fontDir.exists()) {
+        try {
+          await previousDir.delete(recursive: true);
+        } catch (error) {
+          log('Failed to remove stale font rollback directory: $error');
+        }
+      } else {
+        await previousDir.rename(fontDir.path);
       }
     }
-    return validFileCount >= 1;
+    return fontDir;
+  }
+
+  Future<bool> checkFontDownloaded(String fontId) async {
+    try {
+      final fontDir = await _resolveFontDirectory(fontId);
+      if (fontDir == null || !await fontDir.exists()) return false;
+
+      int validFileCount = 0;
+      await for (final entity in fontDir.list()) {
+        final lowerPath = entity.path.toLowerCase();
+        if (entity is File &&
+            (lowerPath.endsWith('.ttf') || lowerPath.endsWith('.otf')) &&
+            await _isValidFontFile(entity)) {
+          validFileCount++;
+        }
+      }
+      return validFileCount >= 1;
+    } catch (_) {
+      return false;
+    }
   }
 
   Future<bool> loadFont(String fontId, {String fileName = ''}) async {
     try {
-      final root = await _fontRootPath;
-      final fontDir = Directory("$root/$fontId");
-      if (!await fontDir.exists()) return false;
+      final fontDir = await _resolveFontDirectory(fontId);
+      if (fontDir == null || !await fontDir.exists()) return false;
 
       final loader = FontLoader(fontId);
       bool containsValidFonts = false;
@@ -49,7 +84,7 @@ class FontDownloadManager {
       await for (final entity in fontDir.list()) {
         if (entity is File) {
           final lowerPath = entity.path.toLowerCase();
-          if ((lowerPath.endsWith('.ttf') || lowerPath.endsWith('.otf')) && await entity.length() > 0) {
+          if ((lowerPath.endsWith('.ttf') || lowerPath.endsWith('.otf')) && await _isValidFontFile(entity)) {
             files.add(entity);
           }
         }
@@ -86,56 +121,80 @@ class FontDownloadManager {
     required Function(DownloadState) onStateChanged,
   }) async {
     final root = await _fontRootPath;
-    final fontId = fontModel.id;
+    final fontId = fontModel.id.trim();
     final fontDir = Directory("$root/$fontId");
+    final stagedDir = Directory("$root/.$fontId.pending");
+    final previousDir = Directory("$root/.$fontId.previous");
 
-    if (!await fontDir.exists()) {
-      await fontDir.create(recursive: true);
-    }
-
-    onStateChanged(DownloadState.downloading);
+    _notifyState(onStateChanged, DownloadState.downloading);
     log("Starting block download pipeline for font family: $fontId");
 
     try {
+      if (!_isSafeFontId(fontId) || fontModel.files.isEmpty) {
+        throw const FormatException('Invalid font family manifest');
+      }
+
+      // Finish or discard an interrupted commit before staging new files.
+      if (await previousDir.exists()) {
+        if (await fontDir.exists()) {
+          await previousDir.delete(recursive: true);
+        } else {
+          await previousDir.rename(fontDir.path);
+        }
+      }
+      if (await stagedDir.exists()) await stagedDir.delete(recursive: true);
+      await stagedDir.create(recursive: true);
+
       final mirror = GitHubMirror(owner: 'liuchuancong', repo: 'fonts', branch: 'master');
+      final fileNames = <String>{};
 
       for (final filePath in fontModel.files) {
+        final pathParts = filePath.split('/');
         final fileName = filePath.split('/').last;
-        final file = File("${fontDir.path}/$fileName");
+        final lowerName = fileName.toLowerCase();
+        if (filePath.contains('\\') ||
+            pathParts.any((part) => part.isEmpty || part == '.' || part == '..') ||
+            fileName.isEmpty ||
+            fileName == '.' ||
+            fileName == '..' ||
+            RegExp(r'[<>:"/\\|?*\x00-\x1F]').hasMatch(fileName) ||
+            (!lowerName.endsWith('.ttf') && !lowerName.endsWith('.otf')) ||
+            !fileNames.add(fileName)) {
+          throw FormatException('Invalid font file manifest: $filePath');
+        }
+        final existing = File("${fontDir.path}/$fileName");
+        final staged = File("${stagedDir.path}/$fileName");
 
-        if (await file.exists()) {
-          final length = await file.length();
-          if (length == 0) {
-            await file.delete();
-          } else {
-            continue;
-          }
+        if (await existing.exists() && await _isValidFontFile(existing)) {
+          await existing.copy(staged.path);
+          continue;
         }
 
         final urls = mirror.mirrors(filePath);
         final fastestUrl = await RaceHttp.findFastestUrl(urls);
+        if (fastestUrl == null) throw Exception("No reachable font source for: $fileName");
         int retryCount = 0;
         const maxRetries = 3;
 
         while (retryCount < maxRetries) {
           try {
             await HttpClient.instance.download(
-              fastestUrl!,
-              file.path,
+              fastestUrl,
+              staged.path,
               header: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
               },
             );
 
-            if (await file.exists() && await file.length() > 0) {
+            if (await staged.exists() && await _isValidFontFile(staged)) {
               break;
             }
             throw Exception("File is empty or corrupted");
           } catch (e) {
             retryCount++;
-            if (file.existsSync()) {
+            if (staged.existsSync()) {
               try {
-                file.deleteSync();
+                staged.deleteSync();
               } catch (_) {}
             }
             if (retryCount >= maxRetries) {
@@ -146,29 +205,74 @@ class FontDownloadManager {
         }
       }
 
-      onStateChanged(DownloadState.downloaded);
+      final hadPrevious = await fontDir.exists();
+      if (hadPrevious) await fontDir.rename(previousDir.path);
+      try {
+        await stagedDir.rename(fontDir.path);
+      } catch (_) {
+        if (hadPrevious && await previousDir.exists() && !await fontDir.exists()) {
+          await previousDir.rename(fontDir.path);
+        }
+        rethrow;
+      }
+      if (await previousDir.exists()) {
+        try {
+          await previousDir.delete(recursive: true);
+        } catch (_) {
+          // The new family is complete. A later update can remove this stale
+          // rollback directory before staging another bundle.
+        }
+      }
+      _notifyState(onStateChanged, DownloadState.downloaded);
       return true;
     } catch (e, s) {
       log("Font bundle sync sequence aborted: $e, retry count exceeded $s");
-      onStateChanged(DownloadState.notDownloaded);
-
-      if (await fontDir.exists()) {
+      if (await stagedDir.exists()) {
         try {
-          await fontDir.delete(recursive: true);
+          await stagedDir.delete(recursive: true);
         } catch (_) {}
       }
+      final retainedState = await checkFontDownloaded(fontId) ? DownloadState.downloaded : DownloadState.notDownloaded;
+      _notifyState(onStateChanged, retainedState);
       return false;
+    }
+  }
+
+  Future<bool> _isValidFontFile(File file) async {
+    RandomAccessFile? handle;
+    try {
+      if (!await file.exists() || await file.length() < 12) return false;
+      handle = await file.open();
+      final signature = await handle.read(4);
+      if (signature.length != 4) return false;
+      final tag = String.fromCharCodes(signature);
+      return (signature[0] == 0 && signature[1] == 1 && signature[2] == 0 && signature[3] == 0) ||
+          tag == 'OTTO' ||
+          tag == 'true' ||
+          tag == 'typ1' ||
+          tag == 'ttcf';
+    } catch (_) {
+      return false;
+    } finally {
+      await handle?.close();
     }
   }
 
   Future<bool> deleteFontFamily(FontModel fontModel, Function(DownloadState) onStateChanged) async {
     try {
+      final fontId = fontModel.id.trim();
+      if (!_isSafeFontId(fontId)) return false;
       final root = await _fontRootPath;
-      final fontDir = Directory("$root/${fontModel.id}");
-      if (await fontDir.exists()) {
-        await fontDir.delete(recursive: true);
+      for (final fontDir in [
+        Directory("$root/$fontId"),
+        Directory("$root/.$fontId.pending"),
+        Directory("$root/.$fontId.previous"),
+      ]) {
+        if (await fontDir.exists()) {
+          await fontDir.delete(recursive: true);
+        }
       }
-      onStateChanged(DownloadState.notDownloaded);
+      _notifyState(onStateChanged, DownloadState.notDownloaded);
       return true;
     } catch (e) {
       log("Failed to delete font family: $e");
