@@ -18,8 +18,6 @@ import 'package:pure_live/modules/settings/pages/local_interaction_settings_page
 class SettingsPage extends GetView<SettingsService> {
   const SettingsPage({super.key});
 
-  BuildContext get context => Get.context!;
-
   @override
   Widget build(BuildContext context) {
     final mediaQuery = MediaQuery.of(context);

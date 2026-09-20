@@ -29,8 +29,9 @@ class SearchPage extends GetView<pure_live.SearchController> {
             prefixIcon: IconButton(
               tooltip: MaterialLocalizations.of(context).backButtonTooltip,
               onPressed: () {
-                if (Navigator.canPop(Get.context!)) {
-                  Navigator.of(Get.context!).pop();
+                final navigator = Navigator.of(context);
+                if (navigator.canPop()) {
+                  navigator.pop();
                 }
               },
               icon: const Icon(Icons.arrow_back),

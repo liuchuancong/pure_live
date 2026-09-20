@@ -39,7 +39,7 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
                 icon: Remix.hd_line,
                 title: i18n("default_record_quality"),
                 subtitle: _resolutionLabel(controller.defaultQuality.value),
-                onTap: _showQualityDialog,
+                onTap: () => _showQualityDialog(context),
               ),
               context.buildSwitchTile(
                 icon: Remix.translate_2,
@@ -80,7 +80,7 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
                   icon: Remix.database_2_line,
                   title: i18n("cache_limit"),
                   subtitle: "${controller.maxCacheMB.value} MB",
-                  onTap: _showCacheDialog,
+                  onTap: () => _showCacheDialog(context),
                 ),
               Obx(() {
                 final size = controller.cacheSizeMB.value;
@@ -96,7 +96,7 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
                 subtitle: i18n("clear_all_cache_desc"),
                 onTap: () async {
                   final ok = await showDialog<bool>(
-                    context: Get.context!,
+                    context: context,
                     builder: (dialogContext) => AlertDialog(
                       scrollable: true,
                       insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
@@ -118,6 +118,7 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
 
                   if (ok == true) {
                     await controller.clearCache();
+                    if (!context.mounted) return;
                     Get.snackbar(i18n("done"), i18n("cache_cleared"), snackPosition: SnackPosition.bottom);
                   }
                 },
@@ -136,13 +137,13 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
                 icon: Remix.timer_flash_line,
                 title: i18n("rw_timeout"),
                 subtitle: "${controller.rwTimeout.value}s",
-                onTap: _showRwTimeoutDialog,
+                onTap: () => _showRwTimeoutDialog(context),
               ),
               context.buildTile(
                 icon: Remix.speed_mini_line,
                 title: i18n("queue_size"),
                 subtitle: "${controller.threadQueueSize.value}",
-                onTap: _showQueueSizeDialog,
+                onTap: () => _showQueueSizeDialog(context),
               ),
               context.buildSliderTile(
                 context,
@@ -158,7 +159,7 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
                 icon: Remix.task_line,
                 title: i18n("max_record_tasks"),
                 subtitle: "${controller.maxTaskCount.value}",
-                onTap: _showMaxTaskDialog,
+                onTap: () => _showMaxTaskDialog(context),
               ),
             ]),
             const SizedBox(height: 20),
@@ -292,13 +293,14 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
     return key == null ? value : i18n(key);
   }
 
-  void _showRwTimeoutDialog() {
+  void _showRwTimeoutDialog(BuildContext context) {
     final Map<int, String> timeoutOptions = {
       15: i18n("timeout_fast"),
       30: i18n("timeout_balanced"),
       60: i18n("timeout_safe"),
     };
     _showRadioDialog<int>(
+      context: context,
       title: i18n("rw_timeout"),
       selected: controller.rwTimeout.value,
       options: timeoutOptions.entries
@@ -308,9 +310,10 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
     );
   }
 
-  void _showQueueSizeDialog() {
+  void _showQueueSizeDialog(BuildContext context) {
     final queueOptions = RecorderConfig.supportedThreadQueueSizes;
     _showRadioDialog<int>(
+      context: context,
       title: i18n("queue_size"),
       selected: controller.threadQueueSize.value,
       options: queueOptions
@@ -331,9 +334,9 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
     );
   }
 
-  void _showMaxTaskDialog() {
+  void _showMaxTaskDialog(BuildContext context) {
     showDialog<void>(
-      context: Get.context!,
+      context: context,
       builder: (context) => _RecordIntegerDialog(
         title: i18n("max_record_tasks"),
         fieldKey: 'record-max-tasks',
@@ -351,8 +354,9 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
     );
   }
 
-  void _showQualityDialog() {
+  void _showQualityDialog(BuildContext context) {
     _showRadioDialog<String>(
+      context: context,
       title: i18n("default_record_quality"),
       selected: controller.defaultQuality.value,
       options: PlayerConsts.resolutions
@@ -362,9 +366,9 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
     );
   }
 
-  void _showCacheDialog() {
+  void _showCacheDialog(BuildContext context) {
     showDialog<void>(
-      context: Get.context!,
+      context: context,
       builder: (context) => _RecordIntegerDialog(
         title: i18n("set_max_cache"),
         fieldKey: 'record-cache-limit',
@@ -378,6 +382,7 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
   }
 
   void _showRadioDialog<T>({
+    required BuildContext context,
     required String title,
     required T selected,
     required List<_RecordOption<T>> options,
@@ -385,7 +390,7 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
   }) {
     var selectionPending = false;
     showDialog<void>(
-      context: Get.context!,
+      context: context,
       builder: (dialogContext) {
         final theme = Theme.of(dialogContext);
         return AlertDialog(
