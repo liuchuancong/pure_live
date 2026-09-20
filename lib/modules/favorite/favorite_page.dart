@@ -14,7 +14,7 @@ class FavoritePage extends GetView<FavoriteController> {
       builder: (context, constraint) {
         return Obx(() {
           bool showAction = Get.width <= 680;
-          final availableSitesList = Sites().availableSites(containsAll: true);
+          final availableSitesList = controller.availableFavoriteSites;
           final siteKey = ValueKey(availableSitesList.map((e) => e.id).join('|'));
 
           return Scaffold(

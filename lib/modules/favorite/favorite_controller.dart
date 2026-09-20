@@ -61,6 +61,19 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
   /// construction separate from snapshot ownership and persistence.
   LiveSite createRoomRefreshSite(String platform) => Sites.of(platform).liveSite;
 
+  /// Keeps the favourites platform rail focused on platforms that actually
+  /// have saved rooms. The aggregate tab remains available for an empty list
+  /// and for cross-platform browsing.
+  List<Site> get availableFavoriteSites => favoriteSitesForRooms(SettingsService.to.fav.favoriteRooms.v);
+
+  List<Site> favoriteSitesForRooms(Iterable<LiveRoom> rooms) {
+    final available = Sites().availableSites(containsAll: true);
+    final favoriteSiteIds = rooms.map((room) => room.normalizedPlatformId).where((siteId) => siteId.isNotEmpty).toSet();
+    return available
+        .where((site) => site.id == Sites.allSite || favoriteSiteIds.contains(site.id.trim().toLowerCase()))
+        .toList(growable: false);
+  }
+
   @override
   Future<void>? get activePageOperation => _startupRefresh ?? _activeRoomRefresh ?? super.activePageOperation;
 
@@ -241,7 +254,7 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
   /// single horizontal swipe could publish two different grids.
   void selectSiteIndex(int index) {
     if (isClosed) return;
-    final availableSites = Sites().availableSites(containsAll: true);
+    final availableSites = availableFavoriteSites;
     if (index < 0 || index >= availableSites.length) return;
     final nextPlatformId = availableSites[index].id;
     final resetTag = selectedTagId.value != TagManagementController.allTagKey;
@@ -294,7 +307,7 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
   List<LiveRoom> getFilteredRoomsIgnoringLiveStatus() {
     final List<LiveRoom> source = List<LiveRoom>.from(SettingsService.to.fav.favoriteRooms.v);
 
-    final currentAvailableSites = Sites().availableSites(containsAll: true);
+    final currentAvailableSites = availableFavoriteSites;
     if (tabSiteIndex.value < 0 || tabSiteIndex.value >= currentAvailableSites.length) {
       return [];
     }
@@ -326,7 +339,7 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
   }
 
   List<LiveRoom> _filterSyncedRooms() {
-    final currentAvailableSites = Sites().availableSites(containsAll: true);
+    final currentAvailableSites = availableFavoriteSites;
     if (tabSiteIndex.value < 0 || tabSiteIndex.value >= currentAvailableSites.length) {
       return [];
     }
@@ -403,7 +416,7 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
         ? List<LiveRoom>.from(preview.replayRooms)
         : roomsBase.where((r) => r.effectiveLiveStatus == LiveStatus.replay).toList();
 
-    final currentAvailableSites = Sites().availableSites(containsAll: true);
+    final currentAvailableSites = favoriteSitesForRooms(roomsBase);
     var nextVisibleTags = <LiveTag>[];
 
     if (tabSiteIndex.value >= 0 && tabSiteIndex.value < currentAvailableSites.length) {
@@ -496,7 +509,7 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
   }
 
   void _refreshVisibleTagsFromSyncedRooms() {
-    final sites = Sites().availableSites(containsAll: true);
+    final sites = availableFavoriteSites;
     if (tabSiteIndex.value < 0 || tabSiteIndex.value >= sites.length) {
       _assignIfSnapshotChanged(visibleTags, const <LiveTag>[]);
       return;
