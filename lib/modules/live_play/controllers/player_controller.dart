@@ -450,6 +450,7 @@ class PlayerController extends GetxController {
         qualities: playerState.qualites,
         currentQuality: playerState.currentQuality,
       ),
+      livePlayController: _main,
       onSourceCommitted: applySourceCommit,
       onAudioOnlyChanged: _main.setCurrentRoomAudioOnlyFromUser,
     );
@@ -540,6 +541,7 @@ class PlayerController extends GetxController {
         currentQuality: currentQuality,
         sourceQueryPolicies: session.sourceQueryPolicies,
       ),
+      livePlayController: _main,
       onSourceCommitted: applySourceCommit,
       onAudioOnlyChanged: _main.setCurrentRoomAudioOnlyFromUser,
     );
