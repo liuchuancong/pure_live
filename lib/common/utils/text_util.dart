@@ -1,10 +1,9 @@
 import 'package:pure_live/common/index.dart';
-import 'package:easy_localization/easy_localization.dart';
 
 String readableCount(String info) {
   try {
     int count = int.parse(info);
-    bool isZh = EasyLocalization.of(Get.context!)?.locale.languageCode == 'zh';
+    bool isZh = Get.locale?.languageCode == 'zh';
 
     if (isZh) {
       if (count >= 10000) {

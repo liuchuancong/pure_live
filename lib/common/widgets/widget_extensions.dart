@@ -30,20 +30,12 @@ extension AppLayoutFactory on BuildContext {
 
       String typeString = child.runtimeType.toString();
 
-      // ✨ 核心修复：如果是包装组件，自动向下探测其内部子组件的实际类型
-      Widget underlyingChild = child;
-      if (child is StreamBuilder) {
-        underlyingChild = (child).builder(Get.context!, const AsyncSnapshot.nothing());
-      }
-
-      final String underlyingType = underlyingChild.runtimeType.toString();
       final bool isTileElement =
           child is ListTile ||
+          child is StreamBuilder ||
           typeString.contains('ListTile') ||
           typeString.contains('SwitchListTile') ||
-          typeString.contains('Obx') ||
-          underlyingType.contains('ListTile') ||
-          underlyingType.contains('SwitchListTile');
+          typeString.contains('Obx');
 
       if (isTileElement) {
         ShapeBorder effectiveShape;
@@ -69,19 +61,12 @@ extension AppLayoutFactory on BuildContext {
         final nextChild = validChildren[i + 1];
         String nextTypeString = nextChild.runtimeType.toString();
 
-        Widget nextUnderlying = nextChild;
-        if (nextChild is StreamBuilder) {
-          nextUnderlying = (nextChild).builder(Get.context!, const AsyncSnapshot.nothing());
-        }
-
-        final String nextUnderlyingType = nextUnderlying.runtimeType.toString();
         final bool isNextTile =
             nextChild is ListTile ||
+            nextChild is StreamBuilder ||
             nextTypeString.contains('ListTile') ||
             nextTypeString.contains('SwitchListTile') ||
-            nextTypeString.contains('Obx') ||
-            nextUnderlyingType.contains('ListTile') ||
-            nextUnderlyingType.contains('SwitchListTile');
+            nextTypeString.contains('Obx');
 
         if (isNextTile) {
           autoShapedChildren.add(
