@@ -537,15 +537,13 @@ class BackButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => GlobalPlayerState.to.isWindowFullscreen.value
+    return IconButton(
+      tooltip: i18n('exit_fullscreen'),
+      onPressed: () => GlobalPlayerState.to.isWindowFullscreen.value
           ? controller.toggleWindowFullScreen()
           : controller.toggleFullScreen(),
-      child: Container(
-        alignment: Alignment.center,
-        padding: const EdgeInsets.all(12),
-        child: const Icon(Icons.arrow_back_rounded, color: Colors.white),
-      ),
+      constraints: const BoxConstraints(minWidth: kMinInteractiveDimension, minHeight: kMinInteractiveDimension),
+      icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
     );
   }
 }
