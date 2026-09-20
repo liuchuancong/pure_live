@@ -25,6 +25,8 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
   bool _initializing = false;
   String? _initializationErrorKey;
   bool _sourceDialogOpen = false;
+  bool _importMenuOpen = false;
+  bool _localImporting = false;
   bool _networkDialogOpen = false;
   bool _networkImporting = false;
 
@@ -189,7 +191,10 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
               icon: Remix.download_2_line,
               title: i18n("import_playlist"),
               subtitle: i18n("playlist_file_type"),
-              onTap: () => showIptvImportDialog(),
+              onTap: _localImporting || _networkImporting ? null : () => unawaited(showIptvImportDialog()),
+              trailing: _localImporting
+                  ? const SizedBox.square(dimension: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                  : null,
             ),
           ]),
           const SizedBox(height: 20),
@@ -199,7 +204,10 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
               icon: Remix.file_add_line,
               title: i18n("import_epg_source"),
               subtitle: i18n("epg_file_type"),
-              onTap: () => showEpgImportDialog(),
+              onTap: _localImporting || _networkImporting ? null : () => unawaited(showEpgImportDialog()),
+              trailing: _localImporting
+                  ? const SizedBox.square(dimension: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                  : null,
             ),
             Obx(
               () => context.buildTile(
@@ -291,119 +299,166 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
     );
   }
 
-  void showIptvImportDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        final theme = Theme.of(context);
-        return AlertDialog(
-          scrollable: true,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-          titlePadding: const EdgeInsets.only(top: 24, left: 24, right: 24, bottom: 8),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          title: Row(
-            children: [
-              Icon(Remix.play_list_add_line, color: theme.colorScheme.primary, size: 24),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  i18n("dialog_import_playlist_title"),
-                  style: AppTextStyles.t18.copyWith(fontWeight: FontWeight.bold),
+  Future<void> showIptvImportDialog() async {
+    if (_importMenuOpen) return;
+    if (_localImporting || _networkImporting) {
+      ToastUtil.show(i18n("iptv_import_in_progress"));
+      return;
+    }
+    _importMenuOpen = true;
+    try {
+      await showDialog<void>(
+        context: context,
+        builder: (BuildContext context) {
+          final theme = Theme.of(context);
+          return AlertDialog(
+            scrollable: true,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+            titlePadding: const EdgeInsets.only(top: 24, left: 24, right: 24, bottom: 8),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            title: Row(
+              children: [
+                Icon(Remix.play_list_add_line, color: theme.colorScheme.primary, size: 24),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    i18n("dialog_import_playlist_title"),
+                    style: AppTextStyles.t18.copyWith(fontWeight: FontWeight.bold),
+                  ),
                 ),
-              ),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Material(
-                color: Colors.transparent,
-                child: ListTile(
-                  leading: Icon(Remix.folder_open_line, color: theme.colorScheme.primary),
-                  title: Text(i18n("local_import")),
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    IptvImportManager().importFromLocalPicker().then((_) => _refreshData());
-                  },
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Material(
+                  color: Colors.transparent,
+                  child: ListTile(
+                    leading: Icon(Remix.folder_open_line, color: theme.colorScheme.primary),
+                    title: Text(i18n("local_import")),
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      unawaited(_importFromLocal(isEpg: false));
+                    },
+                  ),
                 ),
-              ),
-              const SizedBox(height: 4),
-              Material(
-                color: Colors.transparent,
-                child: ListTile(
-                  leading: Icon(Remix.global_line, color: theme.colorScheme.primary),
-                  title: Text(i18n("network_import")),
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    showEditTextDialog(isEpg: false);
-                  },
+                const SizedBox(height: 4),
+                Material(
+                  color: Colors.transparent,
+                  child: ListTile(
+                    leading: Icon(Remix.global_line, color: theme.colorScheme.primary),
+                    title: Text(i18n("network_import")),
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      unawaited(showEditTextDialog(isEpg: false));
+                    },
+                  ),
                 ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
+              ],
+            ),
+          );
+        },
+      );
+    } finally {
+      _importMenuOpen = false;
+    }
   }
 
-  void showEpgImportDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        final theme = Theme.of(context);
-        return AlertDialog(
-          scrollable: true,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-          titlePadding: const EdgeInsets.only(top: 24, left: 24, right: 24, bottom: 8),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          title: Row(
-            children: [
-              Icon(Remix.file_add_line, color: theme.colorScheme.primary, size: 24),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  i18n("dialog_import_epg_title"),
-                  style: AppTextStyles.t18.copyWith(fontWeight: FontWeight.bold),
+  Future<void> showEpgImportDialog() async {
+    if (_importMenuOpen) return;
+    if (_localImporting || _networkImporting) {
+      ToastUtil.show(i18n("iptv_import_in_progress"));
+      return;
+    }
+    _importMenuOpen = true;
+    try {
+      await showDialog<void>(
+        context: context,
+        builder: (BuildContext context) {
+          final theme = Theme.of(context);
+          return AlertDialog(
+            scrollable: true,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+            titlePadding: const EdgeInsets.only(top: 24, left: 24, right: 24, bottom: 8),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            title: Row(
+              children: [
+                Icon(Remix.file_add_line, color: theme.colorScheme.primary, size: 24),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    i18n("dialog_import_epg_title"),
+                    style: AppTextStyles.t18.copyWith(fontWeight: FontWeight.bold),
+                  ),
                 ),
-              ),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Material(
-                color: Colors.transparent,
-                child: ListTile(
-                  leading: Icon(Remix.draft_line, color: theme.colorScheme.primary),
-                  title: Text(i18n("local_import")),
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    EpgImportManager().importFromLocalPicker().then((_) => _refreshData());
-                  },
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Material(
+                  color: Colors.transparent,
+                  child: ListTile(
+                    leading: Icon(Remix.draft_line, color: theme.colorScheme.primary),
+                    title: Text(i18n("local_import")),
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      unawaited(_importFromLocal(isEpg: true));
+                    },
+                  ),
                 ),
-              ),
-              const SizedBox(height: 4),
-              Material(
-                color: Colors.transparent,
-                child: ListTile(
-                  leading: Icon(Remix.cloud_windy_line, color: theme.colorScheme.primary),
-                  title: Text(i18n("network_import")),
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    showEditTextDialog(isEpg: true);
-                  },
+                const SizedBox(height: 4),
+                Material(
+                  color: Colors.transparent,
+                  child: ListTile(
+                    leading: Icon(Remix.cloud_windy_line, color: theme.colorScheme.primary),
+                    title: Text(i18n("network_import")),
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      unawaited(showEditTextDialog(isEpg: true));
+                    },
+                  ),
                 ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
+              ],
+            ),
+          );
+        },
+      );
+    } finally {
+      _importMenuOpen = false;
+    }
+  }
+
+  Future<void> _importFromLocal({required bool isEpg}) async {
+    if (_localImporting || _networkImporting) {
+      ToastUtil.show(i18n("iptv_import_in_progress"));
+      return;
+    }
+    setState(() => _localImporting = true);
+    try {
+      final success = isEpg
+          ? await EpgImportManager().importFromLocalPicker()
+          : await IptvImportManager().importFromLocalPicker();
+      if (!success || !mounted) return;
+      try {
+        await _refreshData();
+      } catch (_) {
+        if (mounted) ToastUtil.show(i18n('iptv_import_refresh_failed'));
+      }
+    } catch (_) {
+      if (mounted) ToastUtil.show(i18n(isEpg ? 'epg_import_failed' : 'local_import_failed'));
+    } finally {
+      if (mounted) {
+        setState(() => _localImporting = false);
+      } else {
+        _localImporting = false;
+      }
+    }
   }
 
   Future<void> showEditTextDialog({required bool isEpg}) async {
     if (_networkDialogOpen) return;
-    if (_networkImporting) {
+    if (_localImporting || _networkImporting) {
       ToastUtil.show(i18n("iptv_import_in_progress"));
       return;
     }
@@ -414,7 +469,7 @@ class _IptvPageState extends State<IptvPage> with SingleTickerProviderStateMixin
         barrierDismissible: false,
         builder: (_) => _NetworkImportDialog(
           submit: (url, name) async {
-            if (_networkImporting) return false;
+            if (_localImporting || _networkImporting) return false;
             _networkImporting = true;
             try {
               final success = widget.importFromNetwork != null
