@@ -16,7 +16,7 @@ class ResolutionsRow extends StatelessWidget {
       final state = controller.state.value;
 
       if (!state.room.success) {
-        return Container(height: 55);
+        return Container(height: 56);
       }
 
       final bodyText = TextPainter(

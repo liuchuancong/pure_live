@@ -753,7 +753,7 @@ class _IptvManagePageState extends State<IptvManagePage> {
 
           Switch(
             value: item.isAutoSync,
-            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            materialTapTargetSize: MaterialTapTargetSize.padded,
             activeThumbColor: theme.colorScheme.primary,
 
             onChanged: busy
