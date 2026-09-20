@@ -151,6 +151,7 @@ class EpgImportManager {
     bool forceUpdate = false,
     String url = '',
     bool showTips = true,
+    database.EpgSource? expectedSource,
   }) async {
     try {
       final db = Get.find<DbService>().db;
@@ -187,8 +188,15 @@ class EpgImportManager {
 
       var cancelled = false;
       final success = await _importLock.synchronized(() async {
-        final existing = await db.getAllEpgSources();
-        final matchedList = existing.where((e) => (e.name).trim().toLowerCase() == cleanName).toList();
+        final List<database.EpgSource> matchedList;
+        if (expectedSource != null) {
+          final current = await db.getEpgSourceById(expectedSource.id);
+          if (current != expectedSource) return false;
+          matchedList = [current!];
+        } else {
+          final existing = await db.getAllEpgSources();
+          matchedList = existing.where((e) => (e.name).trim().toLowerCase() == cleanName).toList();
+        }
 
         var finalSourceId = FileUtils.generateUuid();
         if (matchedList.isNotEmpty) finalSourceId = matchedList.first.id;
@@ -220,6 +228,9 @@ class EpgImportManager {
         // awaiting confirmation. The transaction still owns deletion, every
         // programme batch and final pruning.
         return db.transaction(() async {
+          for (final source in matchedList) {
+            if (await db.getEpgSourceById(source.id) != source) return false;
+          }
           for (final duplicate in matchedList.skip(1)) {
             await db.deleteEpgSourceCascading(duplicate.id);
           }

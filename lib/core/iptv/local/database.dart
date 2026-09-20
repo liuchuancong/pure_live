@@ -293,6 +293,10 @@ class AppDatabase extends _$AppDatabase {
 
   Future<List<EpgSource>> getAllEpgSources() => select(epgSources).get();
 
+  Future<EpgSource?> getEpgSourceById(String id) {
+    return (select(epgSources)..where((t) => t.id.equals(id))).getSingleOrNull();
+  }
+
   Future<void> upsertEpgSource(EpgSourcesCompanion entry) => into(epgSources).insertOnConflictUpdate(entry);
 
   // --- EPG Channel queries ---

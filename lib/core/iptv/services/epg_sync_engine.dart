@@ -36,6 +36,7 @@ class EpgSyncEngine {
       final bool success = await EpgImportManager().importEpgFile(
         file: tempFile,
         sourceName: source.name,
+        expectedSource: source,
         forceUpdate: forceUpdate,
         url: source.url,
         showTips: showTips,
