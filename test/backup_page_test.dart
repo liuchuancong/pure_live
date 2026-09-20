@@ -175,7 +175,7 @@ class _BackupController extends BackupController {
   RxString get backupDirectory => _directory;
 
   @override
-  bool backup(File file) {
+  Future<bool> backup(File file) async {
     destinations.add(file);
     return succeeds;
   }

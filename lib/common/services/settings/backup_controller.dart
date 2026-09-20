@@ -317,10 +317,10 @@ class BackupController extends GetxController {
     }
   }
 
-  bool backup(File file) {
+  Future<bool> backup(File file) async {
     try {
       final data = exportAllSettings();
-      file.writeAsStringSync(const JsonEncoder.withIndent('  ').convert(data));
+      await file.writeAsString(const JsonEncoder.withIndent('  ').convert(data));
       return true;
     } catch (_) {
       return false;
@@ -364,7 +364,7 @@ class BackupController extends GetxController {
 
   Future<bool> recover(File file) async {
     try {
-      final json = file.readAsStringSync();
+      final json = await file.readAsString();
       final data = jsonDecode(json);
 
       if (data is! Map<String, dynamic>) {

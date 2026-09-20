@@ -26,7 +26,7 @@ class BackupRecoveryService {
     final dateStr = formatDate(DateTime.now(), [yyyy, '-', mm, '-', dd, 'T', HH, '_', nn, '_', ss]);
     final file = File('$selectedDirectory/purelive_$dateStr.txt');
 
-    if (backup.backup(file)) {
+    if (await backup.backup(file)) {
       ToastUtil.show(i18n("create_backup_success"));
       if (backup.backupDirectory.v.isEmpty) {
         backup.backupDirectory.v = selectedDirectory;
