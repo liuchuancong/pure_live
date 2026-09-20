@@ -6,7 +6,7 @@ import 'package:pure_live/modules/live_play/controllers/live_play_controller.dar
 class DanmakuMessageActions {
   DanmakuMessageActions._();
 
-  static Future<void> show(BuildContext context, LiveMessage message) async {
+  static Future<void> show(BuildContext context, LiveMessage message, {required LivePlayController controller}) async {
     await showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
@@ -34,8 +34,8 @@ class DanmakuMessageActions {
                   subtitle: Text(message.userName, maxLines: 1, overflow: TextOverflow.ellipsis),
                   onTap: () {
                     SettingsService.to.fav.addBlockedDanmakuUser(message.userName);
-                    if (Get.isRegistered<LivePlayController>()) {
-                      Get.find<LivePlayController>().removeDanmakuWhere(
+                    if (!controller.isClosed) {
+                      controller.removeDanmakuWhere(
                         (item) => item.userName.trim().toLowerCase() == message.userName.trim().toLowerCase(),
                       );
                     }
@@ -51,7 +51,7 @@ class DanmakuMessageActions {
                   Navigator.of(sheetContext).pop();
                   // The originating row may have been evicted while this sheet
                   // was open. The sheet still owns a live navigator context.
-                  showKeywordDialog(sheetContext, message.message);
+                  showKeywordDialog(sheetContext, message.message, controller: controller);
                 },
               ),
             ],
@@ -61,17 +61,19 @@ class DanmakuMessageActions {
     );
   }
 
-  static Future<void> showKeywordDialog(BuildContext context, String message) async {
+  static Future<void> showKeywordDialog(
+    BuildContext context,
+    String message, {
+    required LivePlayController controller,
+  }) async {
     final keyword = await showDialog<String>(
       context: context,
       builder: (_) => _DanmakuKeywordDialog(initialText: message),
     );
     if (keyword == null || keyword.isEmpty) return;
     SettingsService.to.fav.addShieldList(keyword);
-    if (Get.isRegistered<LivePlayController>()) {
-      Get.find<LivePlayController>().removeDanmakuWhere(
-        (item) => item.message.toLowerCase().contains(keyword.toLowerCase()),
-      );
+    if (!controller.isClosed) {
+      controller.removeDanmakuWhere((item) => item.message.toLowerCase().contains(keyword.toLowerCase()));
     }
     ToastUtil.show(i18n('danmaku_keyword_blocked'));
   }

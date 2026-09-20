@@ -26,7 +26,7 @@ class DanmakuTabView extends GetView<LivePlayController> {
                 physics: const PureLiveBoundedScrollPhysics(),
                 children: [
                   SettingsService.to.danmaku.enableDanmakuDisplay.v
-                      ? DanmakuListView(room: state.room.detail!)
+                      ? DanmakuListView(room: state.room.detail!, controller: controller)
                       : Center(
                           child: Padding(
                             padding: const EdgeInsets.all(24),

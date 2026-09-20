@@ -119,6 +119,7 @@ void main() {
               body: DanmakuListView(
                 key: key,
                 room: LiveRoom(roomId: 'fixture', platform: 'test'),
+                controller: room,
               ),
             ),
           ),

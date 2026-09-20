@@ -140,7 +140,13 @@ class DanmakuManager {
     final context = Get.context;
     if (context == null) return;
     controller.pause();
-    unawaited(DanmakuMessageActions.show(context, message).whenComplete(controller.resume));
+    unawaited(
+      DanmakuMessageActions.show(
+        context,
+        message,
+        controller: videoController.livePlayController,
+      ).whenComplete(controller.resume),
+    );
   }
 
   void _scheduleConfigUpdate() {

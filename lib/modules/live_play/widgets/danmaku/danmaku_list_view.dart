@@ -50,8 +50,9 @@ class DanmakuTailFollowGuard {
 
 class DanmakuListView extends StatefulWidget {
   final LiveRoom room;
+  final LivePlayController controller;
 
-  const DanmakuListView({super.key, required this.room});
+  const DanmakuListView({super.key, required this.room, required this.controller});
 
   @override
   State<DanmakuListView> createState() => DanmakuListViewState();
@@ -81,7 +82,7 @@ class DanmakuListViewState extends State<DanmakuListView> {
   StreamSubscription? messagesSub;
   StreamSubscription? removalsSub;
 
-  LivePlayController get controller => Get.find<LivePlayController>();
+  LivePlayController get controller => widget.controller;
 
   @override
   void initState() {
@@ -277,7 +278,7 @@ class DanmakuListViewState extends State<DanmakuListView> {
     while (_itemCache.length >= _itemCacheCapacity) {
       _itemCache.remove(_itemCache.keys.first);
     }
-    final item = DanmakuItem(key: ObjectKey(message), danmaku: message);
+    final item = DanmakuItem(key: ObjectKey(message), danmaku: message, controller: controller);
     _itemCache[message] = item;
     return item;
   }
@@ -444,15 +445,17 @@ class DanmakuListViewState extends State<DanmakuListView> {
 
 class DanmakuItem extends StatelessWidget {
   final LiveMessage danmaku;
+  final LivePlayController controller;
 
-  const DanmakuItem({super.key, required this.danmaku});
+  const DanmakuItem({super.key, required this.danmaku, required this.controller});
 
   Future<void> _copyMessage() async {
     await Clipboard.setData(ClipboardData(text: "${danmaku.userName}: ${danmaku.message}"));
     ToastUtil.show(i18n('copied_to_clipboard'));
   }
 
-  Future<void> _showActions(BuildContext context) => DanmakuMessageActions.show(context, danmaku);
+  Future<void> _showActions(BuildContext context) =>
+      DanmakuMessageActions.show(context, danmaku, controller: controller);
 
   @override
   Widget build(BuildContext context) {

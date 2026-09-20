@@ -142,7 +142,7 @@ void main() {
   for (final confirm in [false, true]) {
     _case('focused keyword ${confirm ? "confirm" : "cancel"} survives route exit', (tester) async {
       await open(tester);
-      final pending = DanmakuMessageActions.showKeywordDialog(host, 'original');
+      final pending = DanmakuMessageActions.showKeywordDialog(host, 'original', controller: room);
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField), '  New KEY  ');
       await tapLabel(tester, confirm ? 'confirm' : 'cancel');
@@ -187,7 +187,7 @@ void main() {
         message: List.filled(25, 'Message content').join(' '),
         color: LiveMessageColor.white,
       );
-      final pending = DanmakuMessageActions.show(host, message);
+      final pending = DanmakuMessageActions.show(host, message, controller: room);
       await tester.pumpAndSettle();
       await tapLabel(tester, 'block_danmaku_keyword');
       expect(find.byType(TextField), findsOneWidget);
@@ -202,6 +202,7 @@ void main() {
     final pending = DanmakuMessageActions.show(
       host,
       LiveMessage(type: LiveMessageType.chat, userName: 'viewer', message: 'old row', color: LiveMessageColor.white),
+      controller: room,
     );
     await tester.pumpAndSettle();
     originVisible.value = false;
@@ -218,7 +219,7 @@ void main() {
     _case('keyword $dismissal preserves saved preferences and reopens', (tester) async {
       await open(tester);
       settings.fav.addShieldList('keep');
-      final pending = DanmakuMessageActions.showKeywordDialog(host, 'discard');
+      final pending = DanmakuMessageActions.showKeywordDialog(host, 'discard', controller: room);
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField), dismissal == 'blank' ? '   ' : 'edited');
       if (dismissal == 'barrier') {
@@ -232,7 +233,7 @@ void main() {
       await pending;
       expect(settings.fav.shieldList.toList(), ['keep']);
       expect(room.predicates, isEmpty);
-      final reopened = DanmakuMessageActions.showKeywordDialog(host, 'fresh');
+      final reopened = DanmakuMessageActions.showKeywordDialog(host, 'fresh', controller: room);
       await tester.pumpAndSettle();
       expect(tester.widget<TextField>(find.byType(TextField)).controller!.text, 'fresh');
       await tapLabel(tester, 'cancel');
@@ -243,7 +244,7 @@ void main() {
 
   _case('keyword confirmation persists through a real settings file reopen', (tester) async {
     await open(tester);
-    final pending = DanmakuMessageActions.showKeywordDialog(host, '  persisted  ');
+    final pending = DanmakuMessageActions.showKeywordDialog(host, '  persisted  ', controller: room);
     await tester.pumpAndSettle();
     await tapLabel(tester, 'confirm');
     await pending;
@@ -269,6 +270,7 @@ void main() {
     final pending = DanmakuMessageActions.show(
       host,
       LiveMessage(type: LiveMessageType.chat, userName: 'viewer', message: content, color: LiveMessageColor.white),
+      controller: room,
     );
     await tester.pumpAndSettle();
     await tapLabel(tester, 'copy');
@@ -290,6 +292,7 @@ void main() {
         message: 'hello',
         color: LiveMessageColor.white,
       ),
+      controller: room,
     );
     await tester.pumpAndSettle();
     await tapLabel(tester, 'block_danmaku_user');
@@ -323,7 +326,7 @@ void main() {
       await open(tester, language: language, scale: 2, size: const Size(320, 480));
       tester.view.viewInsets = const FakeViewPadding(bottom: 180);
       addTearDown(tester.view.resetViewInsets);
-      final pending = DanmakuMessageActions.showKeywordDialog(host, 'draft');
+      final pending = DanmakuMessageActions.showKeywordDialog(host, 'draft', controller: room);
       await tester.pumpAndSettle();
       final field = find.byType(TextField);
       await tester.ensureVisible(field);
