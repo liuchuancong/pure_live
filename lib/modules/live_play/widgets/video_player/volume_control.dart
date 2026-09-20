@@ -294,6 +294,11 @@ class _OverlayVolumeControlState extends State<OverlayVolumeControl> {
         },
         child: IconButton(
           onPressed: _handleToggleMute,
+          visualDensity: VisualDensity.standard,
+          constraints: const BoxConstraints(
+            minWidth: kMinInteractiveDimension,
+            minHeight: kMinInteractiveDimension,
+          ),
           icon: Icon(icon, color: Colors.white, size: 24),
           tooltip: _volume == 0 ? i18n('cancel_mute') : i18n('mute'),
         ),

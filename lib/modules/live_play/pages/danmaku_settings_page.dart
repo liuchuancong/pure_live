@@ -111,8 +111,8 @@ class _DanmakuSettingsContentState extends State<DanmakuSettingsContent> {
                       fontWeight: FontWeight.w600,
                       fontSize: isEmbedded ? 12 : null,
                     ),
-                    visualDensity: isEmbedded ? VisualDensity.compact : VisualDensity.standard,
-                    materialTapTargetSize: isEmbedded ? MaterialTapTargetSize.shrinkWrap : MaterialTapTargetSize.padded,
+                    visualDensity: VisualDensity.standard,
+                    materialTapTargetSize: MaterialTapTargetSize.padded,
                     avatar: SizedBox(
                       width: isEmbedded ? 16 : 18,
                       child: activePreset?.id == preset.id
@@ -133,8 +133,9 @@ class _DanmakuSettingsContentState extends State<DanmakuSettingsContent> {
                   style: OutlinedButton.styleFrom(
                     foregroundColor: theme.colorScheme.primary,
                     side: BorderSide(color: theme.colorScheme.primary.withValues(alpha: 0.45)),
-                    visualDensity: isEmbedded ? VisualDensity.compact : VisualDensity.standard,
-                    tapTargetSize: isEmbedded ? MaterialTapTargetSize.shrinkWrap : MaterialTapTargetSize.padded,
+                    visualDensity: VisualDensity.standard,
+                    tapTargetSize: MaterialTapTargetSize.padded,
+                    minimumSize: const Size(kMinInteractiveDimension, kMinInteractiveDimension),
                     padding: EdgeInsets.symmetric(horizontal: isEmbedded ? 10 : 12),
                   ),
                   icon: Icon(Icons.save_outlined, size: isEmbedded ? 16 : 18),
@@ -145,8 +146,9 @@ class _DanmakuSettingsContentState extends State<DanmakuSettingsContent> {
                   style: OutlinedButton.styleFrom(
                     foregroundColor: theme.colorScheme.primary,
                     side: BorderSide(color: theme.colorScheme.primary.withValues(alpha: 0.45)),
-                    visualDensity: isEmbedded ? VisualDensity.compact : VisualDensity.standard,
-                    tapTargetSize: isEmbedded ? MaterialTapTargetSize.shrinkWrap : MaterialTapTargetSize.padded,
+                    visualDensity: VisualDensity.standard,
+                    tapTargetSize: MaterialTapTargetSize.padded,
+                    minimumSize: const Size(kMinInteractiveDimension, kMinInteractiveDimension),
                     padding: EdgeInsets.symmetric(horizontal: isEmbedded ? 10 : 12),
                   ),
                   icon: Icon(Icons.restore_rounded, size: isEmbedded ? 16 : 18),
@@ -623,8 +625,8 @@ class _DanmakuSettingsContentState extends State<DanmakuSettingsContent> {
       type: MaterialType.transparency,
       child: SwitchListTile(
         contentPadding: EdgeInsets.symmetric(horizontal: isEmbedded ? 14 : 16),
-        dense: isEmbedded,
-        visualDensity: isEmbedded ? VisualDensity.compact : VisualDensity.standard,
+        dense: false,
+        visualDensity: VisualDensity.standard,
         title: Text(
           title,
           style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w600, color: labelColor),
