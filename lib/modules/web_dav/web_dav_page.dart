@@ -337,7 +337,7 @@ class _WebDavPageState extends State<WebDavPage> {
     return TextButton(
       style: TextButton.styleFrom(
         padding: const EdgeInsets.symmetric(horizontal: 8),
-        minimumSize: Size.zero,
+        minimumSize: const Size(kMinInteractiveDimension, kMinInteractiveDimension),
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
       ),
       onPressed: () {

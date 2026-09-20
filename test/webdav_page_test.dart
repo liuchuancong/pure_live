@@ -467,6 +467,22 @@ void main() {
     await finish(tester);
   });
 
+  testWidgets('breadcrumb segments keep 48dp touch targets at default text scale', (tester) async {
+    await openPage(tester);
+    controller.dirPath.value = '/a/';
+    controller.rebuildBreadcrumb();
+    await tester.pumpAndSettle();
+
+    for (final label in [translations['webdav_my_files'] as String, 'a']) {
+      final button = find.ancestor(of: find.text(label), matching: find.byType(TextButton));
+      expect(button, findsOneWidget);
+      final size = tester.getSize(button);
+      expect(size.width, greaterThanOrEqualTo(48));
+      expect(size.height, greaterThanOrEqualTo(48));
+    }
+    await finish(tester);
+  });
+
   testWidgets('removing the selected configuration clears its error and restores setup', (tester) async {
     await openPage(tester);
     selectConfig();

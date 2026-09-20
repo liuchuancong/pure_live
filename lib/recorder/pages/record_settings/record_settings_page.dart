@@ -253,7 +253,7 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
         onPressed: controller.openRecordDir,
         style: TextButton.styleFrom(
           padding: EdgeInsets.zero,
-          minimumSize: Size.zero,
+          minimumSize: const Size(kMinInteractiveDimension, kMinInteractiveDimension),
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           foregroundColor: theme.colorScheme.primary,
         ),

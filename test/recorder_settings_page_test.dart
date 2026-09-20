@@ -93,6 +93,24 @@ void main() {
     });
   }
 
+  testWidgets('open-folder header action keeps a 48dp touch target', (tester) async {
+    await _pumpRecorderSettings(
+      tester,
+      translations: translations,
+      locale: const Locale('zh'),
+      size: const Size(360, 780),
+      textScale: 1,
+    );
+
+    final label = find.text(translations['recorder_open_folder'] as String);
+    await _scrollPageUntilHitTestable(tester, label);
+    final button = find.ancestor(of: label, matching: find.byType(TextButton));
+    expect(button, findsOneWidget);
+    final size = tester.getSize(button);
+    expect(size.width, greaterThanOrEqualTo(48));
+    expect(size.height, greaterThanOrEqualTo(48));
+  });
+
   testWidgets('narrow very-large text keeps recorder controls and every quality reachable', (tester) async {
     settings.managedRecordPath.value = r'C:\Users\tester\Pure Live\Recordings\A very long managed recording folder';
     await _pumpRecorderSettings(
