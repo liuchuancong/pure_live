@@ -196,11 +196,7 @@ class _PortraitLiveRoomLayoutState extends State<PortraitLiveRoomLayout> {
       velocity: details.primaryVelocity ?? 0,
     );
     if (disposition == PortraitPanelDragDisposition.enterFullscreen) {
-      setState(() {
-        _entryPending = true;
-        _settling = true;
-        _dismissOffset = panelHeight + 36;
-      });
+      _requestPortraitFullscreen(panelHeight);
       return;
     }
 
@@ -211,6 +207,24 @@ class _PortraitLiveRoomLayoutState extends State<PortraitLiveRoomLayout> {
       _settling = true;
       _dismissOffset = 0;
       _panelHeight = stops.first;
+    });
+  }
+
+  void _requestPortraitFullscreen(double panelHeight) {
+    if (_entryPending || widget.onEnterPortraitFullscreen == null) return;
+    setState(() {
+      _entryPending = true;
+      _settling = true;
+      _dismissOffset = panelHeight + 36;
+    });
+  }
+
+  void _settlePanelHeight(double panelHeight) {
+    if (_entryPending) return;
+    setState(() {
+      _settling = true;
+      _dismissOffset = 0;
+      _panelHeight = panelHeight;
     });
   }
 
@@ -278,55 +292,81 @@ class _PortraitLiveRoomLayoutState extends State<PortraitLiveRoomLayout> {
                       height: current.clamp(240.0, double.infinity),
                       child: Column(
                         children: [
-                          GestureDetector(
-                            key: const ValueKey('live-play-portrait-sheet-handle'),
-                            behavior: HitTestBehavior.opaque,
-                            onVerticalDragUpdate: (details) =>
-                                _updatePanelDrag(details, current, range.minimum, range.maximum),
-                            onVerticalDragEnd: (details) =>
-                                _finishPanelDrag(details, current, range.minimum, range.middle, range.maximum),
-                            onVerticalDragCancel: () {
-                              setState(() {
-                                _settling = true;
-                                _dismissOffset = 0;
-                              });
-                            },
-                            child: SizedBox(
-                              height: widget.onEnterPortraitFullscreen == null ? 24 : 40,
-                              child: Center(
-                                child: widget.onEnterPortraitFullscreen == null
-                                    ? Container(
-                                        width: 38,
-                                        height: 4,
-                                        decoration: BoxDecoration(
-                                          color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.30),
-                                          borderRadius: BorderRadius.circular(99),
-                                        ),
-                                      )
-                                    : Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Icon(
-                                            Icons.keyboard_arrow_down_rounded,
-                                            size: 20,
-                                            color: Theme.of(context).colorScheme.primary,
+                          Semantics(
+                            label: i18n('portrait_panel_resize'),
+                            value: '${current.round()} px',
+                            hint: i18n('portrait_panel_resize_hint'),
+                            increasedValue: current < range.maximum
+                                ? '${(current < range.middle ? range.middle : range.maximum).round()} px'
+                                : null,
+                            decreasedValue: current > range.minimum
+                                ? '${(current > range.middle ? range.middle : range.minimum).round()} px'
+                                : null,
+                            onTap: widget.onEnterPortraitFullscreen == null
+                                ? null
+                                : () => _requestPortraitFullscreen(current),
+                            onIncrease: current < range.maximum
+                                ? () => _settlePanelHeight(current < range.middle ? range.middle : range.maximum)
+                                : null,
+                            onDecrease: current > range.minimum
+                                ? () => _settlePanelHeight(current > range.middle ? range.middle : range.minimum)
+                                : widget.onEnterPortraitFullscreen == null
+                                ? null
+                                : () => _requestPortraitFullscreen(current),
+                            child: GestureDetector(
+                              key: const ValueKey('live-play-portrait-sheet-handle'),
+                              behavior: HitTestBehavior.opaque,
+                              onTap: widget.onEnterPortraitFullscreen == null
+                                  ? null
+                                  : () => _requestPortraitFullscreen(current),
+                              onVerticalDragUpdate: (details) =>
+                                  _updatePanelDrag(details, current, range.minimum, range.maximum),
+                              onVerticalDragEnd: (details) =>
+                                  _finishPanelDrag(details, current, range.minimum, range.middle, range.maximum),
+                              onVerticalDragCancel: () {
+                                setState(() {
+                                  _settling = true;
+                                  _dismissOffset = 0;
+                                });
+                              },
+                              child: SizedBox(
+                                height: kMinInteractiveDimension,
+                                child: Center(
+                                  child: widget.onEnterPortraitFullscreen == null
+                                      ? Container(
+                                          width: 38,
+                                          height: 4,
+                                          decoration: BoxDecoration(
+                                            color: Theme.of(context).colorScheme.onSurfaceVariant
+                                                .withValues(alpha: 0.30),
+                                            borderRadius: BorderRadius.circular(99),
                                           ),
-                                          const SizedBox(width: 4),
-                                          Flexible(
-                                            child: Text(
-                                              i18n('portrait_fullscreen_enter_hint'),
-                                              key: const ValueKey('portrait-fullscreen-enter-hint'),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: TextStyle(
-                                                color: Theme.of(context).colorScheme.primary,
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.w600,
+                                        )
+                                      : Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                              Icons.keyboard_arrow_down_rounded,
+                                              size: 20,
+                                              color: Theme.of(context).colorScheme.primary,
+                                            ),
+                                            const SizedBox(width: 4),
+                                            Flexible(
+                                              child: Text(
+                                                i18n('portrait_fullscreen_enter_hint'),
+                                                key: const ValueKey('portrait-fullscreen-enter-hint'),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: TextStyle(
+                                                  color: Theme.of(context).colorScheme.primary,
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
                                               ),
                                             ),
-                                          ),
-                                        ],
-                                      ),
+                                          ],
+                                        ),
+                                ),
                               ),
                             ),
                           ),

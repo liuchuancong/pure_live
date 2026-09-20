@@ -1782,6 +1782,8 @@
     "portrait_reset_video_height_desc": "Reset to adaptive mode and clear custom height",
     "portrait_height_presets": "Preset Height",
     "portrait_fullscreen_enter_hint": "Swipe down for portrait fullscreen",
+    "portrait_panel_resize": "Danmaku panel height",
+    "portrait_panel_resize_hint": "Swipe vertically or use accessibility adjustment actions to resize the panel",
     "portrait_fullscreen_restore_hint": "Portrait fullscreen · Swipe up to restore danmaku",
     "picarto_public_directory": "Public live streams (adult content excluded)",
     "audience_picarto_detail": "Directory and room viewers are concurrent viewers; total_views is cumulative and remains separate.",

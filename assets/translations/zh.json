@@ -1782,6 +1782,8 @@
     "portrait_reset_video_height_desc": "恢复为自适应模式并重置自定义高度",
     "portrait_height_presets": "预设高度",
     "portrait_fullscreen_enter_hint": "下滑进入竖屏全屏",
+    "portrait_panel_resize": "弹幕面板高度",
+    "portrait_panel_resize_hint": "上下滑动或使用无障碍调整操作改变面板高度",
     "portrait_fullscreen_restore_hint": "已进入竖屏全屏 · 上滑恢复弹幕栏",
     "picarto_public_directory": "公开直播（不含成人内容）",
     "audience_picarto_detail": "目录和房间详情的 viewers 为在线人数，total_views 为累计观看，分别显示",
