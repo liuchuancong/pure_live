@@ -126,12 +126,15 @@ class NavigationSettingsPage extends StatelessWidget {
                       ),
                       if (isVisible && savedOrder.length > 1) ...[
                         const SizedBox(width: 8),
-                        ReorderableDragStartListener(
-                          key: ValueKey('navigation-menu-drag-${menu.id}'),
-                          index: index,
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            child: Icon(RemixIcons.sort_asc, size: 20),
+                        Tooltip(
+                          message: i18n('drag_menu_to_sort_tip'),
+                          child: ReorderableDragStartListener(
+                            key: ValueKey('navigation-menu-drag-${menu.id}'),
+                            index: index,
+                            child: const SizedBox.square(
+                              dimension: kMinInteractiveDimension,
+                              child: Center(child: Icon(RemixIcons.sort_asc, size: 20)),
+                            ),
                           ),
                         ),
                       ],

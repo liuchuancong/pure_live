@@ -51,12 +51,15 @@ class HotAreasPage extends GetView<HotAreasController> {
                       ),
                       if (isShow && visibleCount > 1) ...[
                         const SizedBox(width: 8),
-                        ReorderableDragStartListener(
-                          key: ValueKey('platform-drag-${item.id}'),
-                          index: index,
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            child: Icon(RemixIcons.sort_asc, size: 20),
+                        Tooltip(
+                          message: i18n('drag_to_sort_tip'),
+                          child: ReorderableDragStartListener(
+                            key: ValueKey('platform-drag-${item.id}'),
+                            index: index,
+                            child: const SizedBox.square(
+                              dimension: kMinInteractiveDimension,
+                              child: Center(child: Icon(RemixIcons.sort_asc, size: 20)),
+                            ),
                           ),
                         ),
                       ],
