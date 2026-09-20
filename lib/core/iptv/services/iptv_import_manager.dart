@@ -183,6 +183,26 @@ class IptvImportManager {
     }
   }
 
+  Future<bool> deleteProviderDurably(database.Provider expectedProvider) {
+    return _importLock.synchronized(() async {
+      final db = Get.find<DbService>().db;
+      final current = await db.getProviderById(expectedProvider.id);
+      if (current != expectedProvider) return false;
+
+      await db.deleteProviderCascading(expectedProvider.id);
+      final source = expectedProvider.url;
+      if (source != null && source.isNotEmpty) {
+        try {
+          final cache = await _cacheDirectory();
+          await _deleteOwnedLocalFile(source, cache, legacyProviderId: expectedProvider.id, db: db);
+        } catch (error) {
+          debugPrint('Deleted playlist cache cleanup failed: $error');
+        }
+      }
+      return true;
+    });
+  }
+
   Future<bool> importIptvFile({
     required File file,
     required String providerName,

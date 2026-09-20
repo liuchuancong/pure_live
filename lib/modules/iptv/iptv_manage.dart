@@ -7,6 +7,7 @@ import 'package:pure_live/plugins/db_service.dart';
 import 'package:pure_live/core/iptv/local/database.dart' as database;
 import 'package:pure_live/core/iptv/services/epg_sync_engine.dart';
 import 'package:pure_live/core/iptv/services/iptv_sync_engine.dart';
+import 'package:pure_live/core/iptv/services/iptv_import_manager.dart';
 
 enum ManageItemType { iptv, epg }
 
@@ -839,7 +840,10 @@ class _IptvManagePageState extends State<IptvManagePage> {
 
                       try {
                         if (item.type == ManageItemType.iptv) {
-                          await db.deleteProviderCascading(item.id);
+                          final deleted = await IptvImportManager().deleteProviderDurably(
+                            item.raw as database.Provider,
+                          );
+                          if (!deleted) throw StateError('Playlist changed before deletion');
                         } else {
                           await db.deleteEpgSourceCascading(item.id);
                         }
