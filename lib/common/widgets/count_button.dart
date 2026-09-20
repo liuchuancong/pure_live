@@ -12,7 +12,7 @@ class CountButton extends StatefulWidget {
     this.step = 1,
     this.backgroundColor,
     this.foregroundColor,
-    this.buttonSize = const Size(35, 35),
+    this.buttonSize = const Size(kMinInteractiveDimension, kMinInteractiveDimension),
     this.incrementIcon,
     this.decrementIcon,
     this.semanticLabel,

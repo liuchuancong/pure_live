@@ -369,6 +369,11 @@ class TopActionBar extends StatelessWidget {
                   IconButton(
                     icon: const Icon(Icons.assignment_outlined), // 节目单账本图标
                     tooltip: i18n('view_schedule'),
+                    visualDensity: VisualDensity.standard,
+                    constraints: const BoxConstraints(
+                      minWidth: kMinInteractiveDimension,
+                      minHeight: kMinInteractiveDimension,
+                    ),
                     color: Colors.white,
                     onPressed: () => _showSchedule(context),
                   ),
@@ -382,6 +387,11 @@ class TopActionBar extends StatelessWidget {
                       key: const ValueKey('fullscreen-room-history'),
                       icon: const Icon(Icons.swap_horiz_outlined),
                       tooltip: i18n('switch_live_room'),
+                      visualDensity: VisualDensity.standard,
+                      constraints: const BoxConstraints(
+                        minWidth: kMinInteractiveDimension,
+                        minHeight: kMinInteractiveDimension,
+                      ),
                       color: Colors.white,
                       onPressed: () {
                         Get.dialog(PlayOther(controller: Get.find<LivePlayController>()));
@@ -551,6 +561,8 @@ class PIPButton extends StatelessWidget {
     if (!service.initialized) {
       return IconButton(
         tooltip: i18n('float_window_play'),
+        visualDensity: VisualDensity.standard,
+        constraints: const BoxConstraints(minWidth: kMinInteractiveDimension, minHeight: kMinInteractiveDimension),
         color: Colors.white,
         onPressed: null,
         icon: const Icon(CustomIcons.float_window),
@@ -560,6 +572,8 @@ class PIPButton extends StatelessWidget {
     return Obx(() {
       return IconButton(
         tooltip: i18n('float_window_play'),
+        visualDensity: VisualDensity.standard,
+        constraints: const BoxConstraints(minWidth: kMinInteractiveDimension, minHeight: kMinInteractiveDimension),
         color: Colors.white,
         onPressed: manager.isPipPreparing.value
             ? null
@@ -594,6 +608,7 @@ class PortraitOrientationButton extends StatelessWidget {
       return IconButton(
         key: const ValueKey('portrait-orientation-override'),
         tooltip: i18n('portrait_room_override'),
+        visualDensity: VisualDensity.standard,
         constraints: const BoxConstraints(minWidth: kMinInteractiveDimension, minHeight: kMinInteractiveDimension),
         color: selected == PortraitOrientationOverride.automatic ? Colors.white : const Color(0xFFFFD166),
         onPressed: () => _showPicker(context, selected),
@@ -647,6 +662,7 @@ class PortraitFullscreenDisplayModeButton extends StatelessWidget {
       return IconButton(
         key: const ValueKey('portrait-fullscreen-display-mode'),
         tooltip: i18n('portrait_fullscreen_display_mode'),
+        visualDensity: VisualDensity.standard,
         constraints: const BoxConstraints(minWidth: kMinInteractiveDimension, minHeight: kMinInteractiveDimension),
         color: selected == PortraitFullscreenDisplayMode.ambient ? Colors.white : const Color(0xFFFFD166),
         onPressed: () => _showPicker(context, selected),
@@ -1714,20 +1730,23 @@ class PlayPauseButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final playerManager = GlobalPlayerService.instance.player;
 
-    return GestureDetector(
-      onTap: () => playerManager.togglePlayPause(),
-      child: StreamBuilder<bool>(
-        stream: playerManager.onPlaying.distinct(),
-        initialData: playerManager.isPlayingNow,
-        builder: (context, snapshot) {
-          final isPlaying = snapshot.data ?? playerManager.isPlayingNow;
-          return Container(
-            alignment: Alignment.center,
-            padding: const EdgeInsets.only(right: 6),
-            child: Icon(isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded, color: Colors.white, size: 28),
-          );
-        },
-      ),
+    return StreamBuilder<bool>(
+      stream: playerManager.onPlaying.distinct(),
+      initialData: playerManager.isPlayingNow,
+      builder: (context, snapshot) {
+        final isPlaying = snapshot.data ?? playerManager.isPlayingNow;
+        return IconButton(
+          key: const ValueKey('player-play-pause-action'),
+          tooltip: i18n(isPlaying ? 'multiview_pause' : 'multiview_play'),
+          visualDensity: VisualDensity.standard,
+          constraints: const BoxConstraints(
+            minWidth: kMinInteractiveDimension,
+            minHeight: kMinInteractiveDimension,
+          ),
+          onPressed: () => playerManager.togglePlayPause(),
+          icon: Icon(isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded, color: Colors.white, size: 28),
+        );
+      },
     );
   }
 }
@@ -1739,13 +1758,13 @@ class RefreshButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => controller.refresh(),
-      child: Container(
-        alignment: Alignment.center,
-        padding: const EdgeInsets.only(right: 6),
-        child: const Icon(Icons.refresh_rounded, color: Colors.white),
-      ),
+    return IconButton(
+      key: const ValueKey('player-refresh-action'),
+      tooltip: i18n('refresh'),
+      visualDensity: VisualDensity.standard,
+      constraints: const BoxConstraints(minWidth: kMinInteractiveDimension, minHeight: kMinInteractiveDimension),
+      onPressed: () => controller.refresh(),
+      icon: const Icon(Icons.refresh_rounded, color: Colors.white),
     );
   }
 }
@@ -1757,13 +1776,16 @@ class DanmakuButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => controller.hideDanmaku.toggle(),
-      child: Container(
-        alignment: Alignment.center,
-        padding: const EdgeInsets.only(right: 6, left: 6),
-        child: Obx(
-          () => controller.hideDanmaku.value
+    return Obx(
+      () => IconButton(
+        key: const ValueKey('player-danmaku-action'),
+        tooltip: i18n('danmaku'),
+        visualDensity: VisualDensity.standard,
+        constraints: const BoxConstraints(minWidth: kMinInteractiveDimension, minHeight: kMinInteractiveDimension),
+        onPressed: () => controller.hideDanmaku.toggle(),
+        icon: SizedBox.square(
+          dimension: 24,
+          child: controller.hideDanmaku.value
               ? SvgPicture.asset(
                   'assets/images/video/danmu_close.svg',
                   // ignore: deprecated_member_use
@@ -1787,8 +1809,12 @@ class SettingsButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () async {
+    return IconButton(
+      key: const ValueKey('player-danmaku-settings-action'),
+      tooltip: i18n('settings_danmaku_title'),
+      visualDensity: VisualDensity.standard,
+      constraints: const BoxConstraints(minWidth: kMinInteractiveDimension, minHeight: kMinInteractiveDimension),
+      onPressed: () async {
         if (controller.isMenuOpen.value) return;
         controller.isMenuOpen.value = true;
         try {
@@ -1802,9 +1828,8 @@ class SettingsButton extends StatelessWidget {
           controller.enableController();
         }
       },
-      child: Container(
-        alignment: Alignment.center,
-        padding: const EdgeInsets.only(right: 6, left: 6),
+      icon: SizedBox.square(
+        dimension: 24,
         child: SvgPicture.asset(
           'assets/images/video/danmu_setting.svg',
           // ignore: deprecated_member_use
@@ -1824,22 +1849,18 @@ class ExpandWindowButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Obx(() {
       final expanded = GlobalPlayerState.to.isWindowFullscreen.value;
-      return Semantics(
-        button: true,
-        label: i18n(playerWindowActionLabelKey(expanded)),
-        child: GestureDetector(
-          excludeFromSemantics: true,
-          onTap: () => controller.toggleWindowFullScreen(),
-          child: Container(
-            alignment: Alignment.center,
-            child: RotatedBox(
-              quarterTurns: 1,
-              child: Icon(
-                expanded ? Icons.unfold_less_rounded : Icons.unfold_more_rounded,
-                color: Colors.white,
-                size: 26,
-              ),
-            ),
+      return IconButton(
+        key: const ValueKey('player-window-expand-action'),
+        tooltip: i18n(playerWindowActionLabelKey(expanded)),
+        visualDensity: VisualDensity.standard,
+        constraints: const BoxConstraints(minWidth: kMinInteractiveDimension, minHeight: kMinInteractiveDimension),
+        onPressed: () => controller.toggleWindowFullScreen(),
+        icon: RotatedBox(
+          quarterTurns: 1,
+          child: Icon(
+            expanded ? Icons.unfold_less_rounded : Icons.unfold_more_rounded,
+            color: Colors.white,
+            size: 26,
           ),
         ),
       );
@@ -1856,23 +1877,16 @@ class ExpandButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Obx(() {
       final expanded = GlobalPlayerState.to.isFullscreen.value;
-      return Semantics(
-        button: true,
-        label: i18n(fullscreenActionLabelKey(expanded)),
-        child: GestureDetector(
-          excludeFromSemantics: true,
-          onTap: () => controller.toggleFullScreen(),
-          child: Container(
-            alignment: Alignment.center,
-            child: Padding(
-              padding: const EdgeInsets.only(left: 6),
-              child: Icon(
-                expanded ? Icons.fullscreen_exit_rounded : Icons.fullscreen_rounded,
-                color: Colors.white,
-                size: 26,
-              ),
-            ),
-          ),
+      return IconButton(
+        key: const ValueKey('player-fullscreen-action'),
+        tooltip: i18n(fullscreenActionLabelKey(expanded)),
+        visualDensity: VisualDensity.standard,
+        constraints: const BoxConstraints(minWidth: kMinInteractiveDimension, minHeight: kMinInteractiveDimension),
+        onPressed: () => controller.toggleFullScreen(),
+        icon: Icon(
+          expanded ? Icons.fullscreen_exit_rounded : Icons.fullscreen_rounded,
+          color: Colors.white,
+          size: 26,
         ),
       );
     });
@@ -1893,6 +1907,7 @@ class AudioOnlyButton extends StatelessWidget {
       final audioOnly = controller.isAudioOnly;
       return IconButton(
         tooltip: i18n(audioOnly ? 'restore_video_mode' : 'switch_audio_only_mode'),
+        visualDensity: VisualDensity.standard,
         constraints: const BoxConstraints(minWidth: kMinInteractiveDimension, minHeight: kMinInteractiveDimension),
         iconSize: 21,
         color: audioOnly ? const Color(0xFFFFD166) : Colors.white,
@@ -1919,6 +1934,7 @@ class CastButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return IconButton(
       tooltip: i18n('cast_screen'),
+      visualDensity: VisualDensity.standard,
       constraints: const BoxConstraints(minWidth: kMinInteractiveDimension, minHeight: kMinInteractiveDimension),
       iconSize: 21,
       color: Colors.white,
@@ -2117,6 +2133,11 @@ class SettingsPanel extends StatelessWidget {
                   IconButton(
                     key: const ValueKey('fullscreen-danmaku-settings-close'),
                     tooltip: i18n('close'),
+                    visualDensity: VisualDensity.standard,
+                    constraints: const BoxConstraints(
+                      minWidth: kMinInteractiveDimension,
+                      minHeight: kMinInteractiveDimension,
+                    ),
                     color: colorScheme.onSurfaceVariant,
                     onPressed: () => Navigator.of(context).pop(),
                     icon: const Icon(Icons.close_rounded),
