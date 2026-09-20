@@ -47,8 +47,10 @@ void main() {
               locale: context.locale,
               localizationsDelegates: context.localizationDelegates,
               supportedLocales: context.supportedLocales,
-              home: const Scaffold(
-                body: Center(child: SizedBox(width: 120, child: ResolutionSelector())),
+              home: Scaffold(
+                body: Center(
+                  child: SizedBox(width: 120, child: ResolutionSelector(controller: controller)),
+                ),
               ),
             ),
           ),

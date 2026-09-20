@@ -157,8 +157,11 @@ void main() {
               data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(3)),
               child: child!,
             ),
-            home: const Scaffold(
-              body: Align(alignment: Alignment.topCenter, child: ResolutionsRow()),
+            home: Scaffold(
+              body: Align(
+                alignment: Alignment.topCenter,
+                child: ResolutionsRow(controller: host),
+              ),
             ),
           ),
         ),

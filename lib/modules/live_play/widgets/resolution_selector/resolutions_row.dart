@@ -6,9 +6,9 @@ import 'package:pure_live/common/index.dart';
 import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
 
 class ResolutionsRow extends StatelessWidget {
-  const ResolutionsRow({super.key});
+  const ResolutionsRow({super.key, required this.controller});
 
-  LivePlayController get controller => Get.find<LivePlayController>();
+  final LivePlayController controller;
 
   @override
   Widget build(BuildContext context) {
@@ -34,19 +34,28 @@ class ResolutionsRow extends StatelessWidget {
         child: Row(
           children: [
             if (controller.site != Sites.iptvSite)
-              const Expanded(
+              Expanded(
                 flex: 3,
                 child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 8),
-                  child: Align(alignment: Alignment.centerLeft, child: AudienceInfo()),
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: AudienceInfo(controller: controller),
+                  ),
                 ),
               ),
-            const Expanded(
+            Expanded(
               flex: 2,
-              child: Align(alignment: Alignment.centerRight, child: ResolutionSelector()),
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: ResolutionSelector(controller: controller),
+              ),
             ),
-            const Expanded(
-              child: Align(alignment: Alignment.centerRight, child: LineSelector()),
+            Expanded(
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: LineSelector(controller: controller),
+              ),
             ),
           ],
         ),

@@ -4,9 +4,9 @@ import 'package:pure_live/modules/live_play/states/load_type.dart';
 import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
 
 class ResolutionSelector extends StatelessWidget {
-  const ResolutionSelector({super.key});
+  const ResolutionSelector({super.key, required this.controller});
 
-  LivePlayController get controller => Get.find<LivePlayController>();
+  final LivePlayController controller;
 
   @override
   Widget build(BuildContext context) {
@@ -36,10 +36,7 @@ class ResolutionSelector extends StatelessWidget {
         },
         position: PopupMenuPosition.under,
         child: ConstrainedBox(
-          constraints: const BoxConstraints(
-            minWidth: kMinInteractiveDimension,
-            minHeight: kMinInteractiveDimension,
-          ),
+          constraints: const BoxConstraints(minWidth: kMinInteractiveDimension, minHeight: kMinInteractiveDimension),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
             child: Row(

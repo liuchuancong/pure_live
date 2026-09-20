@@ -2,9 +2,9 @@ import 'package:pure_live/common/index.dart';
 import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
 
 class AudienceInfo extends StatelessWidget {
-  const AudienceInfo({super.key});
+  const AudienceInfo({super.key, required this.controller});
 
-  LivePlayController get controller => Get.find<LivePlayController>();
+  final LivePlayController controller;
 
   @override
   Widget build(BuildContext context) {

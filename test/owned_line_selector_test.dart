@@ -32,7 +32,7 @@ void main() {
                 width: 300,
                 child: MediaQuery(
                   data: const MediaQueryData(textScaler: TextScaler.linear(2)),
-                  child: const LineSelector(),
+                  child: LineSelector(controller: host),
                 ),
               ),
             ),

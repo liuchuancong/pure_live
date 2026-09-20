@@ -557,7 +557,7 @@ class LivePlayContent extends StatelessWidget {
               settings.portraitLayoutMode != PortraitLayoutMode.compatibility;
           return LivePlayNormalLayout(
             video: LivePlayVideo(controller: controller, expandToParent: useAdaptivePortraitFrame),
-            resolution: const ResolutionsRow(),
+            resolution: ResolutionsRow(controller: controller),
             danmaku: _buildDanmaku(),
             showPanel: controller.site != Sites.iptvSite,
             isPortraitSource: isPortrait,
