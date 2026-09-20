@@ -68,11 +68,14 @@ class WebDavPageController extends GetxController {
 
   bool get canUpload {
     final selected = currentConfig.value;
-    final busy = isUploading.value || fileActionLabelKey.value.isNotEmpty;
+    final busy = isConfigMutationPending.value || isUploading.value || fileActionLabelKey.value.isNotEmpty;
     return !_disposed && selected != null && !busy && _webdavService != null && identical(selected, _serviceConfig);
   }
 
   bool get canStartFileAction => canUpload;
+
+  bool get canMutateConfig =>
+      !_disposed && !isConfigMutationPending.value && !isUploading.value && fileActionLabelKey.value.isEmpty;
 
   @override
   void onInit() {
@@ -152,10 +155,11 @@ class WebDavPageController extends GetxController {
       identical(currentConfig.value, _serviceConfig);
 
   Future<bool> saveConfig(WebDAVConfig config, {String? existingName}) async {
-    if (_disposed || isConfigMutationPending.value) return false;
+    if (!canMutateConfig) return false;
     isConfigMutationPending.value = true;
     try {
       final updated = List<WebDAVConfig>.from(configs);
+      final editingCurrent = existingName != null && currentConfig.value?.name == existingName;
       if (existingName == null) {
         if (updated.any((candidate) => candidate.name == config.name)) {
           _feedback(i18n('webdav_config_name_exists'), isError: true);
@@ -171,12 +175,15 @@ class WebDavPageController extends GetxController {
         updated[index] = config;
       }
 
-      await _webDavController.replaceStateDurably(configs: updated, currentConfig: config);
+      final nextCurrent = existingName == null || editingCurrent ? config : currentConfig.value;
+      await _webDavController.replaceStateDurably(configs: updated, currentConfig: nextCurrent);
       if (_disposed) return true;
       configs.assignAll(updated);
-      currentConfig.value = config;
-      dirPath.value = '/';
-      initializeWebDAV();
+      if (existingName == null || editingCurrent) {
+        currentConfig.value = config;
+        dirPath.value = '/';
+        initializeWebDAV();
+      }
       return true;
     } catch (error) {
       debugPrint('Saving WebDAV configuration failed: $error');
@@ -235,7 +242,7 @@ class WebDavPageController extends GetxController {
   }
 
   Future<bool> deleteConfig(WebDAVConfig config) async {
-    if (_disposed || isConfigMutationPending.value) return false;
+    if (!canMutateConfig) return false;
     isConfigMutationPending.value = true;
     try {
       final updated = configs.where((candidate) => candidate.name != config.name).toList(growable: false);
@@ -271,7 +278,7 @@ class WebDavPageController extends GetxController {
   }
 
   Future<bool> onConfigSelected(WebDAVConfig config) async {
-    if (_disposed || isConfigMutationPending.value) return false;
+    if (!canMutateConfig) return false;
     isConfigMutationPending.value = true;
     try {
       final selected = configs.firstWhereOrNull((candidate) => candidate.name == config.name);

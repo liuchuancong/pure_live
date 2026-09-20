@@ -124,7 +124,7 @@ class _WebDavPageState extends State<WebDavPage> {
         children: [
           SizedBox(height: kToolbarHeight),
           Obx(() {
-            final configBusy = controller.isConfigMutationPending.value;
+            final configBusy = !controller.canMutateConfig;
             return Column(
               children: [
                 for (final config in controller.configs)
@@ -171,7 +171,7 @@ class _WebDavPageState extends State<WebDavPage> {
   }
 
   Future<void> _showDeleteDialog(WebDAVConfig config) async {
-    if (controller.isConfigMutationPending.value) return;
+    if (!controller.canMutateConfig) return;
     final confirmed = await _showDeleteConfirmation(i18n("webdav_confirm_delete_config", args: {"name": config.name}));
     if (confirmed && mounted) await controller.deleteConfig(config);
   }
