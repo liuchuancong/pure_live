@@ -491,6 +491,7 @@
     "recorder_restart_record": "Record Again",
     "recorder_start": "Start",
     "recorder_start_failed": "Start failed: {error}",
+    "record_settings_apply_failed": "The recording setting was not saved. Try again.",
     "recorder_status_completed": "Completed",
     "recorder_status_failed": "Failed",
     "recorder_status_preparing": "Preparing",

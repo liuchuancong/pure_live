@@ -409,9 +409,10 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
                 if (dialogContext.mounted && ModalRoute.of(dialogContext)?.isCurrent == true) {
                   Navigator.of(dialogContext).pop();
                 }
-              } catch (_) {
+              } catch (error) {
                 selectionPending = false;
-                rethrow;
+                debugPrint('Recorder setting update failed: $error');
+                if (dialogContext.mounted) ToastUtil.show(i18n('record_settings_apply_failed'));
               }
             },
             child: Column(

@@ -492,6 +492,7 @@
     "recorder_restart_record": "重新录制",
     "recorder_start": "启动",
     "recorder_start_failed": "启动失败: {error}",
+    "record_settings_apply_failed": "录制设置未保存，请重试",
     "recorder_status_completed": "已完成",
     "recorder_status_failed": "失败",
     "recorder_status_preparing": "准备中",
