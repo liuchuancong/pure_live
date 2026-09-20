@@ -846,9 +846,12 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
     throw Exception('Brightness not supported on this platform');
   }
 
-  void setBrightness(double value) async {
-    if (PlatformHelper.supportsBrightness) {
-      await brightnessController!.setApplicationScreenBrightness(value);
+  Future<void> setBrightness(double value) async {
+    if (!PlatformHelper.supportsBrightness || !value.isFinite) return;
+    try {
+      await brightnessController!.setApplicationScreenBrightness(value.clamp(0.0, 1.0).toDouble());
+    } catch (error, stackTrace) {
+      log('Set brightness failed', name: 'VideoController.Brightness', error: error, stackTrace: stackTrace);
     }
   }
 
@@ -1255,18 +1258,6 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
       }
     } finally {
       audioModeSwitching.value = false;
-    }
-  }
-
-  void retryRoom() async {
-    var liveRoom = await Sites.of(room.platform!).liveSite
-        .getRoomDetail(roomId: room.roomId!, platform: room.platform!);
-
-    if (liveRoom.isExplicitlyOfflineNow) {
-      _livePlayController.setNormalScreen();
-      ToastUtil.show(i18n("room_offline"));
-    } else {
-      changeLine();
     }
   }
 
