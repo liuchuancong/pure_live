@@ -7,7 +7,19 @@ import 'package:pure_live/core/common/http_client.dart';
 import 'package:pure_live/core/common/request_scope.dart';
 import 'package:pure_live/core/site/zhanqi/zhanqi_player_layout.dart';
 
-enum ZhanqiFailure { transport, access, missing, rateLimited, service, api, schema, identity, cancelled }
+enum ZhanqiFailure {
+  transport,
+  access,
+  missing,
+  rateLimited,
+  service,
+  api,
+  schema,
+  identity,
+  cancelled,
+  notLive,
+  mediaUnavailable,
+}
 
 class ZhanqiException implements Exception {
   const ZhanqiException(this.kind);
