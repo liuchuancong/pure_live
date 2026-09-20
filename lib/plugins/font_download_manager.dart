@@ -161,7 +161,7 @@ class FontDownloadManager {
     }
   }
 
-  Future<void> deleteFontFamily(FontModel fontModel, Function(DownloadState) onStateChanged) async {
+  Future<bool> deleteFontFamily(FontModel fontModel, Function(DownloadState) onStateChanged) async {
     try {
       final root = await _fontRootPath;
       final fontDir = Directory("$root/${fontModel.id}");
@@ -169,8 +169,10 @@ class FontDownloadManager {
         await fontDir.delete(recursive: true);
       }
       onStateChanged(DownloadState.notDownloaded);
+      return true;
     } catch (e) {
       log("Failed to delete font family: $e");
+      return false;
     }
   }
 }

@@ -135,6 +135,7 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
       final isSelectedModel = SettingsService.to.font.curFontModel.value == fontModel;
       final diskSize = SettingsService.to.font.fontFolderSizes[fontModel.id];
       final localExists = diskSize != null;
+      final operationPending = SettingsService.to.font.fontState.value == DownloadState.downloading;
 
       return AnimatedContainer(
         key: ValueKey('font-family-${fontModel.id}'),
@@ -166,7 +167,7 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
         ),
         child: InkWell(
           borderRadius: BorderRadius.circular(24),
-          onTap: localExists
+          onTap: localExists && !operationPending
               ? () async {
                   final path = await AppPathManager().getFontFamilyFolderPath(fontModel.id);
                   await FileUtils.openFileOrUrl(path);
@@ -271,6 +272,7 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
 
   Widget _buildPresetEnvironmentCard(ThemeData theme) {
     final bool isDefaultActive = currentFontRx.value == 'Default';
+    final operationPending = SettingsService.to.font.fontState.value == DownloadState.downloading;
 
     return AnimatedContainer(
       key: const ValueKey('font-family-default'),
@@ -315,7 +317,7 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
             style: AppTextStyles.t11.copyWith(color: theme.hintColor.withValues(alpha: 0.7)),
           ),
           trailing: isDefaultActive ? Icon(Icons.check_circle, color: theme.colorScheme.primary, size: 18) : null,
-          onTap: _setDefaultFont,
+          onTap: operationPending ? null : _setDefaultFont,
         ),
       ),
     );
@@ -331,18 +333,21 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
     final theme = Theme.of(context);
     final mediaQuery = MediaQuery.of(context);
     final useCompactActions = mediaQuery.size.width < 360 || mediaQuery.textScaler.scale(13) > 18;
+    final operationPending = SettingsService.to.font.fontState.value == DownloadState.downloading;
 
     Widget applyButton() => useCompactActions
         ? IconButton.filledTonal(
             key: ValueKey('font-apply-${fontModel.id}'),
             tooltip: i18n("apply"),
-            onPressed: () async {
-              if (fontModel.files.length <= 1) {
-                await _activateFont(fontModel);
-              } else {
-                await _showFontWeightSelector(context, fontModel);
-              }
-            },
+            onPressed: operationPending
+                ? null
+                : () async {
+                    if (fontModel.files.length <= 1) {
+                      await _activateFont(fontModel);
+                    } else {
+                      await _showFontWeightSelector(context, fontModel);
+                    }
+                  },
             icon: const Icon(Icons.check_rounded),
           )
         : ElevatedButton(
@@ -353,13 +358,15 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
             ),
-            onPressed: () async {
-              if (fontModel.files.length <= 1) {
-                await _activateFont(fontModel);
-              } else {
-                await _showFontWeightSelector(context, fontModel);
-              }
-            },
+            onPressed: operationPending
+                ? null
+                : () async {
+                    if (fontModel.files.length <= 1) {
+                      await _activateFont(fontModel);
+                    } else {
+                      await _showFontWeightSelector(context, fontModel);
+                    }
+                  },
             child: Text(
               i18n("apply"),
               style: AppTextStyles.t13Bold.copyWith(color: theme.colorScheme.onPrimaryContainer),
@@ -408,14 +415,14 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
               padding: const EdgeInsets.all(10),
               backgroundColor: theme.colorScheme.error.withValues(alpha: 0.05),
             ),
-            onPressed: () => SettingsService.to.font.uninstallFontFamily(fontModel),
+            onPressed: operationPending ? null : () => _uninstallFont(fontModel),
           ),
           applyButton(),
         ] else if (useCompactActions)
           IconButton.filledTonal(
             key: ValueKey('font-download-${fontModel.id}'),
             tooltip: i18n("download"),
-            onPressed: () => _downloadAndActivateFont(context, fontModel),
+            onPressed: operationPending ? null : () => _downloadAndActivateFont(context, fontModel),
             icon: const Icon(Remix.download_cloud_2_line),
           )
         else
@@ -429,27 +436,56 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
             ),
-            onPressed: () => _downloadAndActivateFont(context, fontModel),
+            onPressed: operationPending ? null : () => _downloadAndActivateFont(context, fontModel),
           ),
       ],
     );
   }
 
   Future<void> _downloadAndActivateFont(BuildContext context, FontModel fontModel) async {
-    SettingsService.to.font.curFontModel.value = fontModel;
-    final success = await FontDownloadManager.instance.downloadFontFamily(
-      fontModel: fontModel,
-      onStateChanged: (state) => SettingsService.to.font.fontState.value = state,
-    );
-    if (success) {
-      await SettingsService.to.font.refreshFontDiskSizes(force: true);
-      if (fontModel.files.length <= 1) {
-        await _activateFont(fontModel);
-      } else if (context.mounted) {
-        await _showFontWeightSelector(context, fontModel);
+    final settings = SettingsService.to.font;
+    if (settings.fontState.value == DownloadState.downloading) return;
+    settings.curFontModel.value = fontModel;
+    settings.fontState.value = DownloadState.downloading;
+    var success = false;
+    try {
+      success = await FontDownloadManager.instance.downloadFontFamily(
+        fontModel: fontModel,
+        // This page owns the whole download -> disk refresh -> activation
+        // transaction, so the manager must not unlock controls mid-cleanup.
+        onStateChanged: (_) {},
+      );
+      if (success) {
+        await settings.refreshFontDiskSizes(force: true);
+        if (fontModel.files.length <= 1) {
+          await _activateFont(fontModel);
+        } else if (context.mounted) {
+          await _showFontWeightSelector(context, fontModel);
+        }
+      } else {
+        ToastUtil.show(i18n("font_load_failed"));
       }
-    } else {
+    } catch (_) {
       ToastUtil.show(i18n("font_load_failed"));
+    } finally {
+      settings.fontState.value = success ? DownloadState.downloaded : DownloadState.notDownloaded;
+    }
+  }
+
+  Future<void> _uninstallFont(FontModel fontModel) async {
+    final settings = SettingsService.to.font;
+    if (settings.fontState.value == DownloadState.downloading) return;
+    settings.curFontModel.value = fontModel;
+    settings.fontState.value = DownloadState.downloading;
+    var deleted = false;
+    try {
+      deleted = await settings.uninstallFontFamily(fontModel);
+      if (!deleted) ToastUtil.show(i18n('font_delete_failed'));
+    } catch (_) {
+      ToastUtil.show(i18n('font_delete_failed'));
+    } finally {
+      if (deleted) settings.curFontModel.value = null;
+      settings.fontState.value = DownloadState.notDownloaded;
     }
   }
 

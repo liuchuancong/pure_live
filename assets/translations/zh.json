@@ -1133,6 +1133,7 @@
     "font_family_settings": "字体样式设置",
     "downloading_font": "正在下载并载入全套字库...",
     "font_load_failed": "字库载入失败，请重试",
+    "font_delete_failed": "字体删除失败，请重试",
     "change_font_family": "更换系统默认字体",
     "current_font_prefix": "当前字体",
     "factory_default_group": "系统预设环境",

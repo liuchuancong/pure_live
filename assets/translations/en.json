@@ -1128,6 +1128,7 @@
     "font_title_large_desc": "Used for top AppBar navigation titles and critical alert headings",
     "downloading_font": "Downloading and registering font bundle...",
     "font_load_failed": "Font bundle sync sequence aborted.",
+    "font_delete_failed": "Failed to delete the font. Try again.",
     "font_settings_desc": "Granularly fine-tune baseline typography tokens",
     "font_settings_reset_confirm": "Restore all five advanced font sizes to their defaults?",
     "reset": "Reset",

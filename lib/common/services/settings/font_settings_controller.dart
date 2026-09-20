@@ -285,8 +285,9 @@ class FontSettingsController extends GetxController {
     _lastFontDiskSizeRefresh = DateTime.now();
   }
 
-  Future<void> uninstallFontFamily(FontModel font) async {
-    await FontDownloadManager.instance.deleteFontFamily(font, (s) {});
+  Future<bool> uninstallFontFamily(FontModel font) async {
+    final deleted = await FontDownloadManager.instance.deleteFontFamily(font, (s) {});
+    if (!deleted) return false;
     if (fontFamilyName.v == font.id) {
       await resetAppFontFamily();
     }
@@ -295,6 +296,7 @@ class FontSettingsController extends GetxController {
       await resetDanmakuFontFamily();
     }
     await refreshFontDiskSizes(force: true);
+    return true;
   }
 
   void refreshSystemTheme() {
