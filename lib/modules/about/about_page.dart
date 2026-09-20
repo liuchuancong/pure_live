@@ -1,7 +1,7 @@
+import 'dart:async';
+
 import 'package:pure_live/common/index.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:markdown_widget/config/configs.dart';
-import 'package:markdown_widget/widget/markdown_block.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:remixicon/remixicon.dart'; // 🌟 Imported Remix Icons pack
 
@@ -13,6 +13,8 @@ class AboutPage extends StatefulWidget {
 }
 
 class _AboutPageState extends State<AboutPage> {
+  bool _openingProject = false;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -114,9 +116,7 @@ class _AboutPageState extends State<AboutPage> {
               title: i18n("project_page"),
               subtitle: VersionUtil.projectUrl,
               isLong: true,
-              onTap: () {
-                launchUrl(Uri.parse(VersionUtil.projectUrl), mode: LaunchMode.externalApplication);
-              },
+              onTap: () => unawaited(_openProject()),
             ),
             context.buildTile(
               icon: Remix.error_warning_line,
@@ -131,9 +131,22 @@ class _AboutPageState extends State<AboutPage> {
     );
   }
 
+  Future<void> _openProject() async {
+    if (_openingProject) return;
+    _openingProject = true;
+    try {
+      final opened = await launchUrl(Uri.parse(VersionUtil.projectUrl), mode: LaunchMode.externalApplication);
+      if (!opened) ToastUtil.show(i18n('external_browser_not_opened'));
+    } catch (_) {
+      ToastUtil.show(i18n('external_browser_not_opened'));
+    } finally {
+      _openingProject = false;
+    }
+  }
+
   void openLicensePage() {
     showLicensePage(
-      context: Get.context!,
+      context: context,
       applicationName: i18n("app_name"),
       applicationLegalese: i18n("app_legalese"),
       applicationVersion: VersionUtil.version,
@@ -142,42 +155,6 @@ class _AboutPageState extends State<AboutPage> {
         padding: const EdgeInsets.all(12),
         child: SizedBox(width: 60, child: Center(child: Image.asset('assets/icons/icon.png'))),
       ),
-    );
-  }
-
-  void showNewFeaturesDialog() {
-    final config = Get.isDarkMode ? MarkdownConfig.darkConfig : MarkdownConfig.defaultConfig;
-    final mediaQuery = MediaQuery.of(context);
-    final maxWidth = mediaQuery.size.width * 0.9;
-    final maxHeight = mediaQuery.size.height * 0.7;
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text(i18n("what_is_new")),
-          content: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: maxWidth, maxHeight: maxHeight),
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                      launchUrl(Uri.parse('https://github.com'), mode: LaunchMode.externalApplication);
-                    },
-                    child: Text(i18n("open_source_free"), style: AppTextStyles.t20),
-                  ),
-                  MarkdownBlock(data: VersionUtil.latestUpdateLog, config: config),
-                  const SizedBox(height: 10),
-                ],
-              ),
-            ),
-          ),
-          actionsAlignment: MainAxisAlignment.start,
-        );
-      },
     );
   }
 }
