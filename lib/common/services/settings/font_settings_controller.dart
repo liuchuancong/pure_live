@@ -206,10 +206,11 @@ class FontSettingsController extends GetxController {
       ToastUtil.show(i18n('font_not_downloaded_or_corrupted'));
       return;
     }
+    final selectedFileName = targetFileName ?? '';
+    await HivePrefUtil.setPrefs({'fontFamilyName': fontModel.id, 'fontFamilyFileName': selectedFileName});
+    await HivePrefUtil.flush();
     fontFamilyName.v = fontModel.id;
-    fontFamilyFileName.v = targetFileName ?? '';
-    await HivePrefUtil.setString('fontFamilyName', fontModel.id);
-    await HivePrefUtil.setString('fontFamilyFileName', fontFamilyFileName.v);
+    fontFamilyFileName.v = selectedFileName;
     curFontModel.value = fontModel;
     fontState.value = DownloadState.downloaded;
     refreshSystemTheme();
@@ -228,25 +229,26 @@ class FontSettingsController extends GetxController {
       ToastUtil.show(i18n('font_not_downloaded_or_corrupted'));
       return;
     }
+    final selectedFileName = targetFileName ?? '';
+    await HivePrefUtil.setPrefs({'danmakuFontFamilyName': font.id, 'danmakuFontFamilyFileName': selectedFileName});
+    await HivePrefUtil.flush();
     Get.find<DanmakuSettingsController>().danmakuFontFamilyName.v = font.id;
-    danmakuFontFamilyFileName.v = targetFileName ?? '';
-    await HivePrefUtil.setString('danmakuFontFamilyName', font.id);
-    await HivePrefUtil.setString('danmakuFontFamilyFileName', danmakuFontFamilyFileName.v);
+    danmakuFontFamilyFileName.v = selectedFileName;
   }
 
   Future<void> resetAppFontFamily() async {
+    await HivePrefUtil.setPrefs({'fontFamilyName': defaultFontFamilyName, 'fontFamilyFileName': ''});
+    await HivePrefUtil.flush();
     fontFamilyName.v = defaultFontFamilyName;
     fontFamilyFileName.v = '';
-    await HivePrefUtil.setString('fontFamilyName', defaultFontFamilyName);
-    await HivePrefUtil.setString('fontFamilyFileName', '');
     refreshSystemTheme();
   }
 
   Future<void> resetDanmakuFontFamily() async {
+    await HivePrefUtil.setPrefs({'danmakuFontFamilyName': defaultFontFamilyName, 'danmakuFontFamilyFileName': ''});
+    await HivePrefUtil.flush();
     Get.find<DanmakuSettingsController>().danmakuFontFamilyName.v = defaultFontFamilyName;
     danmakuFontFamilyFileName.v = '';
-    await HivePrefUtil.setString('danmakuFontFamilyName', defaultFontFamilyName);
-    await HivePrefUtil.setString('danmakuFontFamilyFileName', '');
   }
 
   Future<void> refreshFontDiskSizes({bool force = false}) {

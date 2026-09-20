@@ -187,8 +187,7 @@ class HistoryController extends GetxController {
   }
 
   Future<void> _writeState({required int limit, required List<LiveRoom> rooms}) async {
-    await HivePrefUtil.setInt(historyLimitKey, limit);
-    await HivePrefUtil.setString(_historyRoomsKey, _encodeRooms(rooms));
+    await HivePrefUtil.setPrefs({historyLimitKey: limit, _historyRoomsKey: _encodeRooms(rooms)});
     await HivePrefUtil.flush();
   }
 
