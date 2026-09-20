@@ -40,6 +40,19 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
     ToastUtil.show(i18n('font_reset_default'));
   }
 
+  Future<void> _openFontFolder([String? fontId]) async {
+    try {
+      final path = fontId == null
+          ? p.join((await AppPathManager().downloadDir).path, AppPathManager.fontDirectoryName)
+          : await AppPathManager().getFontFamilyFolderPath(fontId);
+      if (!await FileUtils.openFileOrUrl(path)) {
+        ToastUtil.show(i18n('open_font_dir_failed'));
+      }
+    } catch (_) {
+      ToastUtil.show(i18n('open_font_dir_failed'));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -47,11 +60,6 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
     final title = isDanmakuSettings ? i18n("change_danmaku_font_family") : i18n("font_family_settings");
     final openFolderLabel = i18n("recorder_open_folder");
     final useCompactFolderAction = mediaQuery.size.width < 520 || mediaQuery.textScaler.scale(14) > 18;
-
-    Future<void> openFontFolder() async {
-      final downloadDir = await AppPathManager().downloadDir;
-      await FileUtils.openFileOrUrl(p.join(downloadDir.path, AppPathManager.fontDirectoryName));
-    }
 
     SettingsService.to.font.refreshFontDiskSizes();
 
@@ -71,13 +79,13 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
             IconButton(
               key: const ValueKey('font-open-folder-action'),
               tooltip: openFolderLabel,
-              onPressed: openFontFolder,
+              onPressed: () => _openFontFolder(),
               icon: const Icon(Remix.folder_open_line, size: 20),
             )
           else
             TextButton.icon(
               key: const ValueKey('font-open-folder-action'),
-              onPressed: openFontFolder,
+              onPressed: () => _openFontFolder(),
               icon: const Icon(Remix.folder_open_line, size: 18),
               label: Text(openFolderLabel, maxLines: 1, overflow: TextOverflow.ellipsis),
             ),
@@ -167,12 +175,7 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
         ),
         child: InkWell(
           borderRadius: BorderRadius.circular(24),
-          onTap: localExists && !operationPending
-              ? () async {
-                  final path = await AppPathManager().getFontFamilyFolderPath(fontModel.id);
-                  await FileUtils.openFileOrUrl(path);
-                }
-              : null,
+          onTap: localExists && !operationPending ? () => _openFontFolder(fontModel.id) : null,
           child: ClipRRect(
             borderRadius: BorderRadius.circular(24),
             child: Container(

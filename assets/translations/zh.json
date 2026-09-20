@@ -1437,6 +1437,8 @@
     "open_log_dir_desc": "查看并管理日志文件",
     "log_dir_not_exist": "日志目录不存在",
     "open_log_dir_failed": "打开日志目录失败",
+    "open_log_browser_failed": "日志页面打开失败，请检查默认浏览器设置",
+    "open_font_dir_failed": "字体目录打开失败，请检查目录访问权限",
     "iptv_manage": "IPTV管理",
     "iptv_list_manage": "播放列表管理",
     "playlist_settings": "播放源设置",

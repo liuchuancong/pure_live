@@ -65,6 +65,15 @@ class _BackupPageState extends State<BackupPage> {
     }
   }
 
+  Future<void> _openLogBrowser(Uri uri) async {
+    try {
+      final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!opened && mounted) ToastUtil.show(i18n('open_log_browser_failed'));
+    } catch (_) {
+      if (mounted) ToastUtil.show(i18n('open_log_browser_failed'));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -254,11 +263,7 @@ class _BackupPageState extends State<BackupPage> {
                   subtitle: uri.toString(),
                   isLong: true,
                   trailing: const Icon(Remix.arrow_right_s_line),
-                  onTap: () async {
-                    if (await canLaunchUrl(uri)) {
-                      await launchUrl(uri, mode: LaunchMode.externalApplication);
-                    }
-                  },
+                  onTap: () => _openLogBrowser(uri),
                 );
               }),
 

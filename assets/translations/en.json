@@ -1437,6 +1437,8 @@
     "open_log_dir_desc": "View and manage log files",
     "log_dir_not_exist": "Log directory does not exist",
     "open_log_dir_failed": "Failed to open log directory",
+    "open_log_browser_failed": "Could not open the log page. Check the default browser settings",
+    "open_font_dir_failed": "Could not open the font folder. Check folder access permissions",
     "iptv_manage": "IPTV Management",
     "iptv_list_manage": "Playlist Management",
     "playlist_settings": "Playlist Settings",
