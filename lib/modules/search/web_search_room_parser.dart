@@ -10,6 +10,7 @@ import 'package:pure_live/core/site/kilakila/kilakila_link.dart';
 import 'package:pure_live/core/site/showroom/showroom_link.dart';
 import 'package:pure_live/core/site/chzzk/chzzk_link.dart';
 import 'package:pure_live/core/site/kick/kick_link.dart';
+import 'package:pure_live/core/site/liveme/liveme_link.dart';
 import 'package:pure_live/core/site/seventeenlive/seventeenlive_link.dart';
 
 class WebSearchRoomTarget {
@@ -84,6 +85,8 @@ class WebSearchRoomParser {
     if (seventeenLive != null) {
       return WebSearchRoomTarget(platform: Sites.seventeenLiveSite, roomId: seventeenLive);
     }
+    final liveMe = LiveMeLink.parseDurableRoomId(rawUrl);
+    if (liveMe != null) return WebSearchRoomTarget(platform: Sites.liveMeSite, roomId: liveMe);
     final host = uri.host.toLowerCase();
     final segments = uri.pathSegments.where((segment) => segment.trim().isNotEmpty).toList(growable: false);
 

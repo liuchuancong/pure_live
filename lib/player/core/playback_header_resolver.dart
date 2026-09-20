@@ -18,6 +18,7 @@ import 'package:pure_live/core/site/huajiao/huajiao_api.dart';
 import 'package:pure_live/core/site/showroom/showroom_api.dart';
 import 'package:pure_live/core/site/chzzk/chzzk_api.dart';
 import 'package:pure_live/core/site/kick/kick_api.dart';
+import 'package:pure_live/core/site/liveme/liveme_api.dart';
 import 'package:pure_live/core/site/seventeenlive/seventeenlive_api.dart';
 import 'package:pure_live/core/common/http_header_policy.dart';
 
@@ -187,6 +188,9 @@ class PlaybackHeaderResolver {
         break;
       case Sites.seventeenLiveSite:
         headers = SeventeenLiveApi.mediaHeaders(roomId);
+        break;
+      case Sites.liveMeSite:
+        headers = LiveMeApi.mediaHeaders(roomId);
         break;
       default:
         headers = const <String, String>{};

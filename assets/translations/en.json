@@ -1862,5 +1862,11 @@
   "seventeen_quality_enhanced": "Enhanced HD",
   "seventeen_quality_hd": "HD",
   "seventeen_quality_h264": "H.264",
-  "seventeen_quality_standard": "Standard"
+  "seventeen_quality_standard": "Standard",
+  "site_liveme": "LiveMe",
+  "liveme_directory_scope": "Uses LiveMe's public trending directory and native creator search. Search may include offline creators and the directory follows official pagination.",
+  "liveme_chat_notice": "LiveMe remote chat is pending. Heat, current viewers, and cumulative viewers stay separate.",
+  "liveme_quality_source": "Source",
+  "liveme_quality_smooth": "Smooth",
+  "liveme_quality_hls": "HLS Auto"
 }

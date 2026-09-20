@@ -136,6 +136,13 @@ class LiveRoom {
       hasTotalViewers: true,
       onlineAvailability: AudienceOnlineAvailability.roomRealtime,
     ),
+    // LiveMe exposes platform heat, current playnumber and cumulative
+    // watchnumber as separate fields in both its directory and room response.
+    'liveme': AudiencePlatformCapability(
+      hasPopularity: true,
+      hasTotalViewers: true,
+      onlineAvailability: AudienceOnlineAvailability.roomList,
+    ),
     'ttinglive': AudiencePlatformCapability(
       hasPopularity: false,
       hasTotalViewers: false,

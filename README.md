@@ -48,7 +48,7 @@
 - **下一稳定版目标**：3.2.0，当前处于完整验收阶段，尚未发布。本轮只维护本仓库、不合并上游；优先源码审查、确定性回归和本地验证，手机操作按本轮明确安排执行，不把连接设备作为修复前置条件。进度、缺口与发布门禁见 [3.2.0 验收入口](docs/ACCEPTANCE_3_2_0.md)，开发包及旧版通过记录不等于最终版已通过。
 <!-- current-status-owner: docs/ACCEPTANCE_STATUS_3_2_0.md -->
 - **当前验收快照**：源码提交、候选包、设备状态、编号统计与剩余阻塞只在[当前状态快照](docs/ACCEPTANCE_STATUS_3_2_0.md)维护；分项状态与证据见[验收矩阵](docs/ACCEPTANCE_MATRIX_3_1_0.md)。README 不再复制逐批测试数量、候选哈希和待办时间线。
-- **源码平台范围**：目前 25 个直播站点 + IPTV，共 26 个适配器；注册不等于目录、搜索、播放、弹幕和录制均已完整验收，能力边界见[平台兼容性](docs/PLATFORM_COMPATIBILITY.md)。
+- **源码平台范围**：目前 26 个直播站点 + IPTV，共 27 个适配器；注册不等于目录、搜索、播放、弹幕和录制均已完整验收，能力边界见[平台兼容性](docs/PLATFORM_COMPATIBILITY.md)。
 - **当前源码版本号**：`3.1.8+4121`。候选包按源码 SHA 与验证记录识别，同一版本号不代表包含相同修订；3.2.0 只在完整目标验收后发布。
 - **Android 系统要求**：Android 8.0 / API 26 及以上（与当前 FFmpegKit 原生录制依赖一致）
 - **v3.0.0 上游源码基线**：`liuchuancong/pure_live@e808dcae`；完整记录见 `docs/STAGE_UPDATE_3_0_0.md`
@@ -81,7 +81,7 @@ Pure Live 聚合多个第三方直播平台，并支持自定义直播源：
 
 支持按照平台、分区等条件进行筛选，也可以隐藏不关注的平台。
 
-**未发布开发源码另有** AcFun、Picarto、TwitCasting、猫耳 FM、映客、克拉克拉、花椒、OPENREC / mellow-fan、TTingLive / FLEX TV、小红书、niconico、微博直播、SHOWROOM、CHZZK、Kick 与 17LIVE。上面的既有平台列表与本段源码范围分别看待；各入口、原生证据和未完成能力以[平台能力表](docs/PLATFORM_COMPATIBILITY.md)为准，不把测试数量或可返回媒体地址当成完整观看/录制通过。
+**未发布开发源码另有** AcFun、Picarto、TwitCasting、猫耳 FM、映客、克拉克拉、花椒、OPENREC / mellow-fan、TTingLive / FLEX TV、小红书、niconico、微博直播、SHOWROOM、CHZZK、Kick、17LIVE 与 LiveMe。上面的既有平台列表与本段源码范围分别看待；各入口、原生证据和未完成能力以[平台能力表](docs/PLATFORM_COMPATIBILITY.md)为准，不把测试数量或可返回媒体地址当成完整观看/录制通过。
 
 ### 自定义直播源
 
@@ -245,7 +245,7 @@ Android 支持根据设备显示模式动态适配刷新率：
 - 观众人数
 - 粉丝数量
 - 直播状态筛选
-- YY 等九个平台原生/本机搜索，快手保留网页搜索
+- YY、LiveMe 等平台原生/本机搜索，快手保留网页搜索
 - Bilibili、斗鱼、虎牙、抖音、快手、网易 CC、Twitch、SOOP、YY 网页直播间识别
 
 同时提供本地互动系统。
@@ -287,9 +287,9 @@ Pure Live 会区分不同平台的观看数据口径：
 - 累计观看人数
 
 其中抖音、快手、网易 CC、Twitch、SOOP、AcFun、Picarto、TwitCasting、
-mellow-fan（OPENREC）、FLEX TV（TTingLive）、CHZZK、Kick 和 17LIVE 可以显示平台明确返回的并发人数。
+mellow-fan（OPENREC）、FLEX TV（TTingLive）、CHZZK、Kick、17LIVE 和 LiveMe 可以显示平台明确返回的并发人数。
 
-设置页会列出全部 25 个普通直播平台。虎牙、Bilibili、斗鱼等平台按照公开数据实际提供的热度、
+设置页会列出全部 26 个普通直播平台。虎牙、Bilibili、斗鱼等平台按照公开数据实际提供的热度、
 累计观看或未知状态展示，不把这些字段混作并发人数；不支持并发人数的平台保留关闭态并显示口径说明。
 
 可以通过：

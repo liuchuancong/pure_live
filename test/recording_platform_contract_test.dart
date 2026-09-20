@@ -32,6 +32,7 @@ void main() {
         Sites.chzzkSite,
         Sites.kickSite,
         Sites.seventeenLiveSite,
+        Sites.liveMeSite,
         Sites.iptvSite,
       ]),
     );

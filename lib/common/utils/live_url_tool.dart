@@ -14,6 +14,8 @@ import 'package:pure_live/core/site/kilakila/kilakila_link.dart';
 import 'package:pure_live/core/site/showroom/showroom_link.dart';
 import 'package:pure_live/core/site/chzzk/chzzk_link.dart';
 import 'package:pure_live/core/site/kick/kick_link.dart';
+import 'package:pure_live/core/site/liveme/liveme_api.dart';
+import 'package:pure_live/core/site/liveme/liveme_link.dart';
 import 'package:pure_live/core/site/seventeenlive/seventeenlive_link.dart';
 
 import 'package:pure_live/common/index.dart';
@@ -102,6 +104,7 @@ class LiveUrlTool {
       if (ChzzkLink.parse(raw) != null) return true;
       if (KickLink.parse(raw) != null) return true;
       if (SeventeenLiveLink.parse(raw) != null) return true;
+      if (LiveMeLink.parse(raw) != null) return true;
       final uri = Uri.parse(raw);
       return InkeApi.roomFromUri(uri) != null ||
           MissevanApi.roomFromUri(uri) != null ||
@@ -116,6 +119,7 @@ class LiveUrlTool {
     KilakilaApi? kilakilaApi,
     HuajiaoApi? huajiaoApi,
     OpenrecApi? openrecApi,
+    LiveMeApi? liveMeApi,
     Duration timeout = const Duration(seconds: 12),
   }) async {
     if (cancelToken?.isCancelled ?? false) return [];
@@ -128,6 +132,7 @@ class LiveUrlTool {
         kilakilaApi ?? KilakilaApi(),
         huajiaoApi ?? HuajiaoApi(),
         openrecApi ?? OpenrecApi(),
+        liveMeApi ?? LiveMeApi(),
         ownedCancel,
       );
       final result = cancelToken == null
@@ -152,6 +157,7 @@ class LiveUrlTool {
     KilakilaApi kilakilaApi,
     HuajiaoApi huajiaoApi,
     OpenrecApi openrecApi,
+    LiveMeApi liveMeApi,
     dio.CancelToken cancel,
   ) async {
     for (final raw in sharedHttpUrls(text)) {
@@ -190,6 +196,12 @@ class LiveUrlTool {
         if (session.isClosed || cancel.isCancelled) return [];
         return [owner.userId, Sites.kilakilaSite];
       }
+      final liveMe = LiveMeLink.parse(raw);
+      if (liveMe != null) {
+        final shortId = await liveMeApi.resolveReference(liveMe, cancel: cancel);
+        if (session.isClosed || cancel.isCancelled) return [];
+        return [shortId, Sites.liveMeSite];
+      }
       late List<String> segments;
       try {
         segments = uri.pathSegments.where((part) => part.isNotEmpty).toList(growable: false);
@@ -201,7 +213,15 @@ class LiveUrlTool {
         final response = await session.get(uri);
         final location = LiveShortLinkSession.redirectTarget(uri, response);
         if (location == null) continue;
-        final target = await _parseLiveUrl(location.toString(), session, kilakilaApi, huajiaoApi, openrecApi, cancel);
+        final target = await _parseLiveUrl(
+          location.toString(),
+          session,
+          kilakilaApi,
+          huajiaoApi,
+          openrecApi,
+          liveMeApi,
+          cancel,
+        );
         if (target.isNotEmpty) return target;
         continue;
       }

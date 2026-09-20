@@ -447,6 +447,14 @@ class LocalInteractionController extends GetxController {
       badge: '17',
     ),
     LocalPlatformPack(
+      id: Sites.liveMeSite,
+      nameKey: 'site_liveme',
+      currencyKey: 'local_currency_generic',
+      levelKey: 'local_level_generic',
+      accentColor: Color(0xFF7C4DFF),
+      badge: 'LM',
+    ),
+    LocalPlatformPack(
       id: Sites.iptvSite,
       nameKey: 'site_iptv',
       currencyKey: 'local_currency_generic',

@@ -16,6 +16,7 @@ import 'package:pure_live/core/site/huajiao/huajiao_link.dart';
 import 'package:pure_live/core/site/showroom/showroom_link.dart';
 import 'package:pure_live/core/site/chzzk/chzzk_link.dart';
 import 'package:pure_live/core/site/kick/kick_link.dart';
+import 'package:pure_live/core/site/liveme/liveme_link.dart';
 import 'package:pure_live/core/site/seventeenlive/seventeenlive_link.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 
@@ -81,6 +82,12 @@ class RoomExternalOpener {
       case Sites.seventeenLiveSite:
         try {
           return RoomExternalTarget(web: SeventeenLiveLink.url(id));
+        } on FormatException {
+          return null;
+        }
+      case Sites.liveMeSite:
+        try {
+          return RoomExternalTarget(web: LiveMeLink.url(id));
         } on FormatException {
           return null;
         }

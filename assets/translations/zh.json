@@ -1862,5 +1862,11 @@
   "seventeen_quality_enhanced": "增强高清",
   "seventeen_quality_hd": "高清",
   "seventeen_quality_h264": "H.264",
-  "seventeen_quality_standard": "标准"
+  "seventeen_quality_standard": "标准",
+  "site_liveme": "LiveMe",
+  "liveme_directory_scope": "接入官网公开热门目录与原生主播搜索；搜索可返回未开播主播，目录按官网分页。",
+  "liveme_chat_notice": "LiveMe 远端聊天尚待接入；热度、当前观看和累计观看分别展示。",
+  "liveme_quality_source": "原始画质",
+  "liveme_quality_smooth": "流畅画质",
+  "liveme_quality_hls": "HLS 自动"
 }
