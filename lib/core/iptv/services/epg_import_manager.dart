@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:path/path.dart' as p;
 import 'package:archive/archive.dart';
 import 'package:drift/drift.dart' as drift;
+import 'package:synchronized/synchronized.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:pure_live/plugins/db_service.dart';
@@ -20,6 +21,7 @@ class EpgImportManager {
     : _cacheDirectory = cacheDirectory ?? _defaultCacheDirectory;
 
   final Future<Directory> Function() _cacheDirectory;
+  static final _importLock = Lock();
 
   static Future<Directory> _defaultCacheDirectory() => AppPathManager().getDir(AppPathManager.dirIptvCache);
 
@@ -183,56 +185,61 @@ class EpgImportManager {
         return false;
       }
 
-      final existing = await db.getAllEpgSources();
-      final matchedList = existing.where((e) => (e.name).trim().toLowerCase() == cleanName).toList();
+      var cancelled = false;
+      final success = await _importLock.synchronized(() async {
+        final existing = await db.getAllEpgSources();
+        final matchedList = existing.where((e) => (e.name).trim().toLowerCase() == cleanName).toList();
 
-      String finalSourceId = FileUtils.generateUuid();
+        var finalSourceId = FileUtils.generateUuid();
+        if (matchedList.isNotEmpty) finalSourceId = matchedList.first.id;
 
-      if (matchedList.isNotEmpty) {
-        finalSourceId = matchedList.first.id;
-      }
-
-      if (!forceUpdate && matchedList.isNotEmpty) {
-        final confirmed = await Get.dialog<bool>(
-          Builder(
-            builder: (context) => AlertDialog(
-              scrollable: true,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              title: Text(i18n("provider_name_exists_tip")),
-              content: Text('"$sourceName"\n\n${i18n("replace_confirm_message").replaceAll("{}", typeName)}'),
-              actions: [
-                TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(i18n("cancel"))),
-                TextButton(onPressed: () => Navigator.of(context).pop(true), child: Text(i18n("confirm"))),
-              ],
+        if (!forceUpdate && matchedList.isNotEmpty) {
+          final confirmed = await Get.dialog<bool>(
+            Builder(
+              builder: (context) => AlertDialog(
+                scrollable: true,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                title: Text(i18n("provider_name_exists_tip")),
+                content: Text('"$sourceName"\n\n${i18n("replace_confirm_message").replaceAll("{}", typeName)}'),
+                actions: [
+                  TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(i18n("cancel"))),
+                  TextButton(onPressed: () => Navigator.of(context).pop(true), child: Text(i18n("confirm"))),
+                ],
+              ),
             ),
-          ),
-          barrierDismissible: false,
-        );
-        if (confirmed != true) return false;
-      }
-
-      // The transaction owns deletion, every programme batch and final pruning.
-      // Let errors escape its callback so Drift rolls back before reporting failure.
-      final success = await db.transaction(() async {
-        for (final duplicate in matchedList.skip(1)) {
-          await db.deleteEpgSourceCascading(duplicate.id);
+            barrierDismissible: false,
+          );
+          if (confirmed != true) {
+            cancelled = true;
+            return false;
+          }
         }
-        await db.deleteEpgProgrammesForSource(finalSourceId);
-        await (db.delete(db.epgChannels)..where((t) => t.sourceId.equals(finalSourceId))).go();
-        await _executeDatabaseWrite(
-          db: db,
-          file: file,
-          sourceId: finalSourceId,
-          sourceName: sourceName,
-          parsedResult: parsedResult,
-          url: url,
-        );
-        return true;
+
+        // The lock owns source discovery and commit as one operation, so a
+        // background refresh cannot replace the source while a user import is
+        // awaiting confirmation. The transaction still owns deletion, every
+        // programme batch and final pruning.
+        return db.transaction(() async {
+          for (final duplicate in matchedList.skip(1)) {
+            await db.deleteEpgSourceCascading(duplicate.id);
+          }
+          await db.deleteEpgProgrammesForSource(finalSourceId);
+          await (db.delete(db.epgChannels)..where((t) => t.sourceId.equals(finalSourceId))).go();
+          await _executeDatabaseWrite(
+            db: db,
+            file: file,
+            sourceId: finalSourceId,
+            sourceName: sourceName,
+            parsedResult: parsedResult,
+            url: url,
+          );
+          return true;
+        });
       });
 
       if (success) {
         if (showTips) ToastUtil.show(i18n("epg_import_success"));
-      } else {
+      } else if (!cancelled) {
         if (showTips) ToastUtil.show(i18n("epg_import_failed"));
       }
       return success;
