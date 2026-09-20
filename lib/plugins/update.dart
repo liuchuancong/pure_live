@@ -34,6 +34,8 @@ final List<String> mirrors = [
   'https://gitproxy.click/',
 ];
 
+Future<void>? _activeDownloadDialog;
+
 List<String> getMirrorUrls(String apkUrl, {bool githubOriginOnly = false}) {
   final uri = updateDownloadUri(apkUrl);
   if (uri == null) return const [];
@@ -44,13 +46,26 @@ List<String> getMirrorUrls(String apkUrl, {bool githubOriginOnly = false}) {
   return mirrorsUrl.toSet().toList(growable: false);
 }
 
-Future<void> downloadAndInstallApk(String apkUrl, {String? fileName}) async {
+Future<void> downloadAndInstallApk(String apkUrl, {String? fileName}) {
   final uri = updateDownloadUri(apkUrl);
   if (uri == null) {
     ToastUtil.show(i18n('download_failed'));
-    return;
+    return Future<void>.value();
   }
   final resolvedFileName = safeDownloadFileName(uri.toString(), suggestedName: fileName);
+
+  final active = _activeDownloadDialog;
+  if (active != null) return active;
+
+  late final Future<void> tracked;
+  tracked = _showDownloadDialog(uri, fileName: fileName, resolvedFileName: resolvedFileName).whenComplete(() {
+    if (identical(_activeDownloadDialog, tracked)) _activeDownloadDialog = null;
+  });
+  _activeDownloadDialog = tracked;
+  return tracked;
+}
+
+Future<void> _showDownloadDialog(Uri uri, {String? fileName, required String resolvedFileName}) async {
   if (requiresInstallPackagesPermission(isAndroid: Platform.isAndroid, fileName: resolvedFileName)) {
     try {
       final hasInstallPermission = await requestStorageInstallPermission();
@@ -68,7 +83,7 @@ Future<void> downloadAndInstallApk(String apkUrl, {String? fileName}) async {
         ? i18n('downloading_apk', args: {'version': VersionUtil.latestVersion})
         : i18n('downloading_app', args: {'app': resolvedFileName}),
   );
-  Get.dialog(
+  await Get.dialog<void>(
     DownloadApkDialog(
       apkUrl: uri.toString(),
       version: VersionUtil.latestVersion,

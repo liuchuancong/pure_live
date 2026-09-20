@@ -86,6 +86,7 @@ class VersionController extends GetxController {
   final loading = true.obs;
   final error = false.obs;
   final updateLog = ''.obs;
+  final downloadPending = false.obs;
 
   @override
   void onInit() {

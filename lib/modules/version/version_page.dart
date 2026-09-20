@@ -329,7 +329,9 @@ class VersionPage extends GetView<VersionController> {
                                 return BorderSide(color: theme.dividerColor.withValues(alpha: 0.08), width: 1);
                               }),
                             ),
-                        onPressed: () => _showActionDialog(context, title, mirrorUrls[i], i + 1),
+                        onPressed: controller.downloadPending.value
+                            ? null
+                            : () => _showActionDialog(context, title, mirrorUrls[i], i + 1),
                         icon: const Icon(Remix.link_m, size: 14),
                         label: Text(
                           githubOriginOnly
@@ -451,6 +453,8 @@ class VersionPage extends GetView<VersionController> {
 
   Future<void> _startDownload(BuildContext context, String targetUrl) async {
     if (versionDownloadUri(targetUrl) == null) return;
+    if (controller.downloadPending.value) return;
+    controller.downloadPending.value = true;
     try {
       final handler = downloadRelease;
       if (handler != null) {
@@ -460,6 +464,8 @@ class VersionPage extends GetView<VersionController> {
       }
     } catch (_) {
       if (context.mounted) _showMessage(context, 'version_update_download_failed');
+    } finally {
+      if (!controller.isClosed) controller.downloadPending.value = false;
     }
   }
 
