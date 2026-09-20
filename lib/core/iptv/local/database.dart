@@ -12,6 +12,15 @@ import 'package:pure_live/common/global/app_path_manager.dart';
 part 'database.g.dart';
 
 const _uuid = Uuid();
+const _deleteReferenceBatchSize = 400;
+
+Iterable<List<String>> _deleteReferenceBatches(List<String> ids) sync* {
+  for (var offset = 0; offset < ids.length; offset += _deleteReferenceBatchSize) {
+    final next = offset + _deleteReferenceBatchSize;
+    final end = next < ids.length ? next : ids.length;
+    yield ids.sublist(offset, end);
+  }
+}
 
 @DriftDatabase(
   tables: [
@@ -354,9 +363,20 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Future<void> deleteEpgSourceCascading(String sourceId) async {
-    await (delete(epgProgrammes)..where((t) => t.sourceId.equals(sourceId))).go();
-    await (delete(epgChannels)..where((t) => t.sourceId.equals(sourceId))).go();
-    await (delete(epgSources)..where((t) => t.id.equals(sourceId))).go();
+    await transaction(() async {
+      final channelIds = (await (select(
+        epgChannels,
+      )..where((t) => t.sourceId.equals(sourceId))).get()).map((channel) => channel.id).toList(growable: false);
+      await (delete(epgMappings)..where((t) => t.epgSourceId.equals(sourceId))).go();
+      for (final ids in _deleteReferenceBatches(channelIds)) {
+        await (delete(epgMappings)..where((t) => t.epgChannelId.isIn(ids))).go();
+        await (delete(epgReminders)..where((t) => t.epgChannelId.isIn(ids))).go();
+        await (delete(scheduledRecordings)..where((t) => t.epgChannelId.isIn(ids))).go();
+      }
+      await (delete(epgProgrammes)..where((t) => t.sourceId.equals(sourceId))).go();
+      await (delete(epgChannels)..where((t) => t.sourceId.equals(sourceId))).go();
+      await (delete(epgSources)..where((t) => t.id.equals(sourceId))).go();
+    });
   }
 
   Future<List<Provider>> getNetworkProviders() {
@@ -364,8 +384,21 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Future<void> deleteProviderCascading(String providerId) async {
-    await (delete(channels)..where((t) => t.providerId.equals(providerId))).go();
-    await (delete(providers)..where((t) => t.id.equals(providerId))).go();
+    await transaction(() async {
+      final channelIds = (await (select(
+        channels,
+      )..where((t) => t.providerId.equals(providerId))).get()).map((channel) => channel.id).toList(growable: false);
+      await (delete(epgMappings)..where((t) => t.providerId.equals(providerId))).go();
+      for (final ids in _deleteReferenceBatches(channelIds)) {
+        await (delete(epgMappings)..where((t) => t.channelId.isIn(ids))).go();
+        await (delete(favoriteListChannels)..where((t) => t.channelId.isIn(ids))).go();
+        await (delete(failoverGroupChannels)..where((t) => t.channelId.isIn(ids))).go();
+        await (delete(epgReminders)..where((t) => t.channelId.isIn(ids))).go();
+        await (delete(scheduledRecordings)..where((t) => t.channelId.isIn(ids))).go();
+      }
+      await (delete(channels)..where((t) => t.providerId.equals(providerId))).go();
+      await (delete(providers)..where((t) => t.id.equals(providerId))).go();
+    });
   }
 
   Future<void> updateProviderUpdateStatus(String providerId, bool status) async {
@@ -411,11 +444,7 @@ class AppDatabase extends _$AppDatabase {
     epgSources,
   )..where((t) => t.id.equals(id))).write(EpgSourcesCompanion(lastRefresh: Value(DateTime.now())));
 
-  Future<void> deleteEpgSource(String id) async {
-    await deleteEpgProgrammesForSource(id);
-    await (delete(epgChannels)..where((t) => t.sourceId.equals(id))).go();
-    await (delete(epgSources)..where((t) => t.id.equals(id))).go();
-  }
+  Future<void> deleteEpgSource(String id) => deleteEpgSourceCascading(id);
 
   Future<List<Channel>> getAllChannels() => select(channels).get();
 
