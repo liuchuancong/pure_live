@@ -22,6 +22,7 @@ class LineSelector extends StatelessWidget {
       final currentLineName = i18n("toolbox_line", args: {"index": (currentIndex + 1).toString()});
 
       return PopupMenuButton<int>(
+        key: const ValueKey('room-line-selector'),
         enabled: !switching,
         tooltip: i18n("select_play_line"),
         color: Get.theme.colorScheme.surfaceContainerHighest,
@@ -34,28 +35,34 @@ class LineSelector extends StatelessWidget {
           controller.updateUI(isMenuOpen: false);
         },
         position: PopupMenuPosition.under,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8.0),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (switching) ...[
-                SizedBox(
-                  width: 12,
-                  height: 12,
-                  child: CircularProgressIndicator(strokeWidth: 1.8, color: Get.theme.colorScheme.primary),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            minWidth: kMinInteractiveDimension,
+            minHeight: kMinInteractiveDimension,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (switching) ...[
+                  SizedBox(
+                    width: 12,
+                    height: 12,
+                    child: CircularProgressIndicator(strokeWidth: 1.8, color: Get.theme.colorScheme.primary),
+                  ),
+                  const SizedBox(width: 5),
+                ],
+                Flexible(
+                  child: Text(
+                    currentLineName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Get.theme.textTheme.labelSmall?.copyWith(color: Get.theme.colorScheme.primary),
+                  ),
                 ),
-                const SizedBox(width: 5),
               ],
-              Flexible(
-                child: Text(
-                  currentLineName,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Get.theme.textTheme.labelSmall?.copyWith(color: Get.theme.colorScheme.primary),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
         onSelected: (newLineIndex) async {

@@ -1014,25 +1014,40 @@ class _MultiviewCellView extends StatelessWidget {
     if (!_qualityAvailable) return const SizedBox.shrink();
     final currentName = state.qualities[state.qualityIndex.clamp(0, state.qualities.length - 1)].quality;
     return PopupMenuButton<int>(
+      key: const ValueKey('multiview-quality-selector'),
       tooltip: i18n('select_quality'),
       color: theme.colorScheme.surfaceContainerHighest,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       offset: const Offset(0, 5),
       position: PopupMenuPosition.under,
       onSelected: onSelectQuality,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.55), borderRadius: BorderRadius.circular(10)),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Remix.equalizer_line, size: 12, color: Colors.white),
-            const SizedBox(width: 4),
-            Text(
-              currentName,
-              style: AppTextStyles.t11.copyWith(color: Colors.white, fontWeight: FontWeight.w600),
-            ),
-          ],
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(
+          minWidth: kMinInteractiveDimension,
+          minHeight: kMinInteractiveDimension,
+        ),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: 0.55),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Remix.equalizer_line, size: 12, color: Colors.white),
+              const SizedBox(width: 4),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 120),
+                child: Text(
+                  currentName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.t11.copyWith(color: Colors.white, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
       itemBuilder: (context) => [

@@ -26,7 +26,7 @@ class ResolutionsRow extends StatelessWidget {
         maxLines: 1,
       )..layout();
       final contentHeight = bodyText.height + 8;
-      final rowHeight = contentHeight > 55 ? contentHeight : 55.0;
+      final rowHeight = contentHeight > 56 ? contentHeight : 56.0;
 
       return Container(
         height: rowHeight,
