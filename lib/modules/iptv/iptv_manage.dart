@@ -65,6 +65,8 @@ class _IptvManagePageState extends State<IptvManagePage> {
 
   String _operationKey(ManageItem item) => '${item.type.name}:${item.id}';
 
+  bool _itemActionsBlocked(ManageItem item) => isSyncingAll.value || _busyItems.contains(_operationKey(item));
+
   Future<bool> _refreshData() async {
     final epoch = ++_refreshEpoch;
     if (mounted) {
@@ -139,7 +141,7 @@ class _IptvManagePageState extends State<IptvManagePage> {
   }
 
   Future<void> _syncAll() async {
-    if (isSyncingAll.value || _loading) return;
+    if (isSyncingAll.value || _loading || _busyItems.isNotEmpty) return;
 
     final syncItems = allItems.where((e) => e.isNetwork && e.isAutoSync).toList();
 
@@ -153,17 +155,20 @@ class _IptvManagePageState extends State<IptvManagePage> {
     ToastUtil.show(i18n("manage_page_syncing"));
 
     try {
+      var allSucceeded = true;
       for (final item in syncItems) {
         if (!mounted) return;
+        final bool succeeded;
         if (item.type == ManageItemType.iptv) {
-          await IptvSyncEngine.instance.syncPlaylist(item.raw);
+          succeeded = await IptvSyncEngine.instance.syncPlaylist(item.raw);
         } else {
-          await EpgSyncEngine.instance.updateEpgCache(item.raw, forceUpdate: true);
+          succeeded = await EpgSyncEngine.instance.updateEpgCache(item.raw, forceUpdate: true);
         }
+        allSucceeded = allSucceeded && succeeded;
       }
 
       final refreshed = await _refreshData();
-      if (mounted) ToastUtil.show(i18n(refreshed ? 'manage_page_success' : 'manage_page_failed'));
+      if (mounted) ToastUtil.show(i18n(allSucceeded && refreshed ? 'manage_page_success' : 'manage_page_failed'));
     } catch (e) {
       debugPrint("$e");
       if (mounted) ToastUtil.show(i18n("manage_page_failed"));
@@ -174,16 +179,18 @@ class _IptvManagePageState extends State<IptvManagePage> {
 
   Future<void> _syncItem(ManageItem item) async {
     final key = _operationKey(item);
-    if (_busyItems.contains(key)) return;
+    if (isSyncingAll.value || _busyItems.contains(key)) return;
     setState(() => _busyItems.add(key));
     if (mounted) ToastUtil.show(i18n('manage_page_single_syncing'));
     try {
+      final bool succeeded;
       if (item.type == ManageItemType.iptv) {
-        await IptvSyncEngine.instance.syncPlaylist(item.raw, showTips: true);
+        succeeded = await IptvSyncEngine.instance.syncPlaylist(item.raw);
       } else {
-        await EpgSyncEngine.instance.updateEpgCache(item.raw, forceUpdate: true);
+        succeeded = await EpgSyncEngine.instance.updateEpgCache(item.raw, forceUpdate: true);
       }
-      if (mounted) await _refreshData();
+      final refreshed = mounted ? await _refreshData() : false;
+      if (mounted) ToastUtil.show(i18n(succeeded && refreshed ? 'manage_page_success' : 'manage_page_failed'));
     } catch (error) {
       debugPrint('$error');
       if (mounted) ToastUtil.show(i18n('manage_page_failed'));
@@ -204,7 +211,7 @@ class _IptvManagePageState extends State<IptvManagePage> {
           Obx(
             () => IconButton(
               tooltip: i18n('sync'),
-              onPressed: isSyncingAll.value || _loading ? null : _syncAll,
+              onPressed: isSyncingAll.value || _loading || _busyItems.isNotEmpty ? null : _syncAll,
               icon: isSyncingAll.value
                   ? AppStatusView(type: AppStatusType.loading, title: "", subtitle: "", isMini: true)
                   : const Icon(Remix.refresh_line),
@@ -503,7 +510,7 @@ class _IptvManagePageState extends State<IptvManagePage> {
                               theme,
                               icon: Remix.download_cloud_2_line,
                               label: i18n('sync'),
-                              onTap: _busyItems.contains(_operationKey(item)) ? null : () => _syncItem(item),
+                              onTap: _itemActionsBlocked(item) ? null : () => _syncItem(item),
                             ),
                             const SizedBox(height: 10),
                           ],
@@ -512,7 +519,7 @@ class _IptvManagePageState extends State<IptvManagePage> {
                             icon: Remix.delete_bin_6_line,
                             label: i18n('webdav_delete'),
                             danger: true,
-                            onTap: () => _showDeleteDialog(item),
+                            onTap: _itemActionsBlocked(item) ? null : () => _showDeleteDialog(item),
                           ),
                           if (item.isNetwork) ...[const SizedBox(height: 10), _buildSwitchButton(theme, item)],
                         ],
@@ -529,7 +536,7 @@ class _IptvManagePageState extends State<IptvManagePage> {
                                     theme,
                                     icon: Remix.download_cloud_2_line,
                                     label: i18n("sync"),
-                                    onTap: _busyItems.contains(_operationKey(item)) ? null : () => _syncItem(item),
+                                    onTap: _itemActionsBlocked(item) ? null : () => _syncItem(item),
                                   ),
                                 ),
 
@@ -542,9 +549,7 @@ class _IptvManagePageState extends State<IptvManagePage> {
                                   icon: Remix.delete_bin_6_line,
                                   label: i18n("webdav_delete"),
                                   danger: true,
-                                  onTap: () {
-                                    _showDeleteDialog(item);
-                                  },
+                                  onTap: _itemActionsBlocked(item) ? null : () => _showDeleteDialog(item),
                                 ),
                               ),
                             ],
@@ -562,7 +567,7 @@ class _IptvManagePageState extends State<IptvManagePage> {
                               theme,
                               icon: Remix.download_cloud_2_line,
                               label: i18n("sync"),
-                              onTap: _busyItems.contains(_operationKey(item)) ? null : () => _syncItem(item),
+                              onTap: _itemActionsBlocked(item) ? null : () => _syncItem(item),
                             ),
                           ),
 
@@ -578,9 +583,7 @@ class _IptvManagePageState extends State<IptvManagePage> {
                             icon: Remix.delete_bin_6_line,
                             label: i18n("webdav_delete"),
                             danger: true,
-                            onTap: () {
-                              _showDeleteDialog(item);
-                            },
+                            onTap: _itemActionsBlocked(item) ? null : () => _showDeleteDialog(item),
                           ),
                         ),
                       ],
@@ -729,7 +732,7 @@ class _IptvManagePageState extends State<IptvManagePage> {
 
   Widget _buildSwitchButton(ThemeData theme, ManageItem item) {
     final operationKey = _operationKey(item);
-    final busy = _busyItems.contains(operationKey);
+    final busy = _itemActionsBlocked(item);
 
     return Container(
       constraints: const BoxConstraints(minHeight: 48),
@@ -801,9 +804,14 @@ class _IptvManagePageState extends State<IptvManagePage> {
   }
 
   void _showDeleteDialog(ManageItem item) {
+    if (_itemActionsBlocked(item)) {
+      ToastUtil.show(i18n('iptv_import_in_progress'));
+      return;
+    }
     final theme = Theme.of(context);
     final navigator = Navigator.of(context, rootNavigator: true);
     final operationKey = _operationKey(item);
+    setState(() => _busyItems.add(operationKey));
     var deleting = false;
     late final DialogRoute<void> route;
 
@@ -854,6 +862,11 @@ class _IptvManagePageState extends State<IptvManagePage> {
       ),
     );
 
-    unawaited(navigator.push(route));
+    unawaited(
+      navigator.push(route).whenComplete(() {
+        _busyItems.remove(operationKey);
+        if (mounted) setState(() {});
+      }),
+    );
   }
 }
