@@ -219,14 +219,9 @@ class AppDatabase extends _$AppDatabase {
 
   Future<void> upsertProvider(ProvidersCompanion entry) => into(providers).insertOnConflictUpdate(entry);
 
-  Future<void> deleteProvider(String id) => (delete(providers)..where((t) => t.id.equals(id))).go();
+  Future<void> deleteProvider(String id) => deleteProviderCascading(id);
 
-  Future<void> deleteProviderAndChannels(String providerId) async {
-    await transaction(() async {
-      await (delete(channels)..where((t) => t.providerId.equals(providerId))).go();
-      await (delete(providers)..where((t) => t.id.equals(providerId))).go();
-    });
-  }
+  Future<void> deleteProviderAndChannels(String providerId) => deleteProviderCascading(providerId);
 
   // --- Channel queries ---
   Future<void> deleteMappingsByProviderId(String providerId) =>
