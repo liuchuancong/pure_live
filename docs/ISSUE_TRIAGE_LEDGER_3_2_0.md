@@ -2,6 +2,8 @@
 
 本台账是 Issue 首轮分流的唯一紧凑索引。它记录“当前源码还需要做什么”，不复制专项审计的完整过程。状态分类遵循 [`MAINTENANCE_POLICY.md`](../MAINTENANCE_POLICY.md)。
 
+2026-09-20 复核：上游仍为下表 19 个 Open Issue，本仓库 Open Issue 为 0；没有新增条目。#853 当日更新时间发生变化，但正文仍未提供房间、请求/确认档位、解码宽高或码率，处置条件保持不变。
+
 | Issue | 报告基线 | 当前映射 | 当前证据 | 处置 / 再开条件 |
 | --- | --- | --- | --- | --- |
 | [#872 Bilibili 登录后弹幕不显示](https://github.com/liuchuancong/pure_live/issues/872) | 3.1.4 / Windows | `present` → 已在 `master` 修订 | `52db99fb` / `9b4eb33b` 补齐认证队列、ACK 和用户绑定；协议 11/11、直接探针观测到聊天；见[Issue #872 审计](ISSUE_872_BILIBILI_LOGGED_IN_DANMAKU_AUDIT_2026_09_19.md) | 代码调查停止；只在报告者登录态 Windows 仍复现或协议字段再次变化时重开 |
