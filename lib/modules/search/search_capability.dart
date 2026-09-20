@@ -37,6 +37,11 @@ class LiveSearchCapabilities {
       supportsPagination: true,
       supportsWebSearch: false,
     ),
+    Sites.kickSite: LiveSearchCapability(
+      coverage: NativeSearchCoverage.liveAndOffline,
+      supportsPagination: false,
+      supportsWebSearch: false,
+    ),
     Sites.xiaohongshuSite: LiveSearchCapability(
       coverage: NativeSearchCoverage.roomLookup,
       supportsPagination: false,

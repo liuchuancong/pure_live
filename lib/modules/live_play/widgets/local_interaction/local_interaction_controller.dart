@@ -431,6 +431,14 @@ class LocalInteractionController extends GetxController {
       badge: '🎮',
     ),
     LocalPlatformPack(
+      id: Sites.kickSite,
+      nameKey: 'site_kick',
+      currencyKey: 'local_currency_generic',
+      levelKey: 'local_level_generic',
+      accentColor: Color(0xFF53FC18),
+      badge: '🟢',
+    ),
+    LocalPlatformPack(
       id: Sites.iptvSite,
       nameKey: 'site_iptv',
       currencyKey: 'local_currency_generic',

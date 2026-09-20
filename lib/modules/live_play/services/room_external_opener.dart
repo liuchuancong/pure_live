@@ -15,6 +15,7 @@ import 'package:pure_live/core/sites.dart';
 import 'package:pure_live/core/site/huajiao/huajiao_link.dart';
 import 'package:pure_live/core/site/showroom/showroom_link.dart';
 import 'package:pure_live/core/site/chzzk/chzzk_link.dart';
+import 'package:pure_live/core/site/kick/kick_link.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 
 enum RoomExternalOpenResult { opened, unavailable, failed, cancelled }
@@ -67,6 +68,12 @@ class RoomExternalOpener {
       case Sites.chzzkSite:
         try {
           return RoomExternalTarget(web: ChzzkLink.url(id));
+        } on FormatException {
+          return null;
+        }
+      case Sites.kickSite:
+        try {
+          return RoomExternalTarget(web: KickLink.url(id));
         } on FormatException {
           return null;
         }

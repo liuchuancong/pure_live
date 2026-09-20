@@ -125,6 +125,11 @@ class LiveRoom {
       hasTotalViewers: false,
       onlineAvailability: AudienceOnlineAvailability.roomList,
     ),
+    'kick': AudiencePlatformCapability(
+      hasPopularity: false,
+      hasTotalViewers: false,
+      onlineAvailability: AudienceOnlineAvailability.roomList,
+    ),
     'ttinglive': AudiencePlatformCapability(
       hasPopularity: false,
       hasTotalViewers: false,

@@ -1,5 +1,6 @@
 import 'site/niconico/niconico_site.dart';
 import 'site/chzzk/chzzk_site.dart';
+import 'site/kick/kick_site.dart';
 import 'site/showroom/showroom_site.dart';
 import 'site/weibo/weibo_site.dart';
 import 'site/tting/tting_site.dart';
@@ -52,6 +53,7 @@ class Sites {
   static const String xiaohongshuSite = 'xiaohongshu';
   static const String showroomSite = 'showroom';
   static const String chzzkSite = 'chzzk';
+  static const String kickSite = 'kick';
 
   static const Set<String> supportedSiteIds = {
     weiboSite,
@@ -77,6 +79,7 @@ class Sites {
     xiaohongshuSite,
     showroomSite,
     chzzkSite,
+    kickSite,
     iptvSite,
   };
 
@@ -111,6 +114,7 @@ class Sites {
     Site(id: weiboSite, name: i18n('site_weibo'), logo: 'assets/images/logo.png', liveSite: WeiboSite()),
     Site(id: showroomSite, name: i18n('site_showroom'), logo: 'assets/images/logo.png', liveSite: ShowroomSite()),
     Site(id: chzzkSite, name: i18n('site_chzzk'), logo: 'assets/images/logo.png', liveSite: ChzzkSite()),
+    Site(id: kickSite, name: i18n('site_kick'), logo: 'assets/images/logo.png', liveSite: KickSite()),
     Site(id: iptvSite, name: i18n("site_iptv"), logo: "assets/images/logo.png", liveSite: IptvSite()),
   ];
 
@@ -215,6 +219,7 @@ class Sites {
         liveSite: ShowroomSite(),
       ),
       chzzkSite => Site(id: chzzkSite, name: i18n('site_chzzk'), logo: 'assets/images/logo.png', liveSite: ChzzkSite()),
+      kickSite => Site(id: kickSite, name: i18n('site_kick'), logo: 'assets/images/logo.png', liveSite: KickSite()),
       _ => throw StateError('Unsupported live site: $normalizedId'),
     };
   }

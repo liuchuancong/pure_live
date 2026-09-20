@@ -13,6 +13,7 @@ import 'package:pure_live/core/site/kilakila/kilakila_api.dart';
 import 'package:pure_live/core/site/kilakila/kilakila_link.dart';
 import 'package:pure_live/core/site/showroom/showroom_link.dart';
 import 'package:pure_live/core/site/chzzk/chzzk_link.dart';
+import 'package:pure_live/core/site/kick/kick_link.dart';
 
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/utils/live_short_link_session.dart';
@@ -83,6 +84,7 @@ class LiveUrlTool {
       'twitcasting.tv',
       'showroom-live.com',
       'chzzk.naver.com',
+      'kick.com',
     };
     return sharedHttpUrls(text).any((raw) {
       if (WeiboLink.parse(raw) != null ||
@@ -97,6 +99,7 @@ class LiveUrlTool {
       }
       if (ShowroomLink.parse(raw) != null) return true;
       if (ChzzkLink.parse(raw) != null) return true;
+      if (KickLink.parse(raw) != null) return true;
       final uri = Uri.parse(raw);
       return InkeApi.roomFromUri(uri) != null ||
           MissevanApi.roomFromUri(uri) != null ||

@@ -17,6 +17,7 @@ import 'package:pure_live/core/site/kilakila/kilakila_api.dart';
 import 'package:pure_live/core/site/huajiao/huajiao_api.dart';
 import 'package:pure_live/core/site/showroom/showroom_api.dart';
 import 'package:pure_live/core/site/chzzk/chzzk_api.dart';
+import 'package:pure_live/core/site/kick/kick_api.dart';
 import 'package:pure_live/core/common/http_header_policy.dart';
 
 /// Resolves the HTTP headers used to read a platform's media stream.
@@ -179,6 +180,9 @@ class PlaybackHeaderResolver {
         break;
       case Sites.chzzkSite:
         headers = ChzzkApi.mediaHeaders;
+        break;
+      case Sites.kickSite:
+        headers = KickApi.mediaHeaders(roomId);
         break;
       default:
         headers = const <String, String>{};
