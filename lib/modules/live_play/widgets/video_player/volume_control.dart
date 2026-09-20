@@ -115,7 +115,7 @@ class _OverlayVolumeControlState extends State<OverlayVolumeControl> {
       }
     });
 
-    controller.setVolume(_volume);
+    unawaited(controller.setVolume(_volume));
     _overlayEntry?.markNeedsBuild();
   }
 
@@ -141,7 +141,7 @@ class _OverlayVolumeControlState extends State<OverlayVolumeControl> {
         _volume = _lastVolume > 0 ? _lastVolume : 0.5;
       }
     });
-    controller.setVolume(_volume);
+    unawaited(controller.setVolume(_volume));
     _overlayEntry?.markNeedsBuild();
   }
 
@@ -265,7 +265,11 @@ class _OverlayVolumeControlState extends State<OverlayVolumeControl> {
   void _handleVolumeDrag(DragUpdateDetails details, double trackHeight) {
     if (trackHeight <= 0) return;
     final deltaRatio = -details.delta.dy / trackHeight;
-    final newVolume = (_volume + deltaRatio).clamp(0.0, 1.0);
+    _applyVolume(_volume + deltaRatio);
+  }
+
+  void _applyVolume(double value) {
+    final newVolume = value.clamp(0.0, 1.0).toDouble();
     if (newVolume != _volume) {
       _valueRevision++;
       setState(() {
@@ -273,34 +277,40 @@ class _OverlayVolumeControlState extends State<OverlayVolumeControl> {
         if (_volume > 0) _lastVolume = _volume;
       });
       _overlayEntry?.markNeedsBuild();
-      controller.setVolume(_volume);
+      unawaited(controller.setVolume(_volume));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     IconData icon = _volume == 0 ? Icons.volume_off : (_volume < 0.5 ? Icons.volume_down : Icons.volume_up);
+    final percentage = (_volume * 100).round();
 
-    return CompositedTransformTarget(
-      link: _layerLink,
-      child: MouseRegion(
-        onEnter: (_) {
-          _isMouseInIcon = true;
-          _showVolumeBar();
-        },
-        onExit: (_) {
-          _isMouseInIcon = false;
-          _startHideTimer();
-        },
-        child: IconButton(
-          onPressed: _handleToggleMute,
-          visualDensity: VisualDensity.standard,
-          constraints: const BoxConstraints(
-            minWidth: kMinInteractiveDimension,
-            minHeight: kMinInteractiveDimension,
+    return Semantics(
+      label: i18n('room_volume'),
+      value: '$percentage%',
+      increasedValue: _volume < 1 ? '${((_volume + 0.05).clamp(0.0, 1.0) * 100).round()}%' : null,
+      decreasedValue: _volume > 0 ? '${((_volume - 0.05).clamp(0.0, 1.0) * 100).round()}%' : null,
+      onIncrease: _volume < 1 ? () => _applyVolume(_volume + 0.05) : null,
+      onDecrease: _volume > 0 ? () => _applyVolume(_volume - 0.05) : null,
+      child: CompositedTransformTarget(
+        link: _layerLink,
+        child: MouseRegion(
+          onEnter: (_) {
+            _isMouseInIcon = true;
+            _showVolumeBar();
+          },
+          onExit: (_) {
+            _isMouseInIcon = false;
+            _startHideTimer();
+          },
+          child: IconButton(
+            onPressed: _handleToggleMute,
+            visualDensity: VisualDensity.standard,
+            constraints: const BoxConstraints(minWidth: kMinInteractiveDimension, minHeight: kMinInteractiveDimension),
+            icon: Icon(icon, color: Colors.white, size: 24),
+            tooltip: _volume == 0 ? i18n('cancel_mute') : i18n('mute'),
           ),
-          icon: Icon(icon, color: Colors.white, size: 24),
-          tooltip: _volume == 0 ? i18n('cancel_mute') : i18n('mute'),
         ),
       ),
     );

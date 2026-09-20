@@ -65,7 +65,7 @@ class VideoKeyboardShortcuts extends StatelessWidget {
             if (volume == null) return;
             volume = volume + 0.05;
             volume = volume.clamp(0.0, 1.0);
-            controller.setVolume(volume);
+            await controller.setVolume(volume);
             controller.updateVolumn(volume);
           },
         if (controller != null)
@@ -74,7 +74,7 @@ class VideoKeyboardShortcuts extends StatelessWidget {
             if (volume == null) return;
             volume = volume - 0.05;
             volume = volume.clamp(0.0, 1.0);
-            controller.setVolume(volume);
+            await controller.setVolume(volume);
             controller.updateVolumn(volume);
           },
       },

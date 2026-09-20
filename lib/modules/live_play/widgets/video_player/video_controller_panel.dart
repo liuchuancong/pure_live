@@ -883,7 +883,7 @@ class BrightnessVolumnDargAreaState extends State<BrightnessVolumnDargArea> {
       if (_isDargLeft) {
         unawaited(controller.setBrightness(dragRange));
       } else {
-        controller.setVolume(dragRange);
+        unawaited(controller.setVolume(dragRange));
       }
       setState(() => _updateDargVarVal = dragRange);
     }
