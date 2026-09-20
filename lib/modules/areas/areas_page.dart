@@ -55,21 +55,24 @@ class AreasPage extends GetView<AreasController> {
                   child: InkWell(
                     borderRadius: BorderRadius.circular(16),
                     onTap: () => Get.toNamed(RoutePath.kFavoriteAreas),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Remix.heart_add_2_line, size: 16, color: Theme.of(context).colorScheme.primary),
-                          const SizedBox(width: 8),
-                          Text(
-                            i18n("favorite_areas"),
-                            style: AppTextStyles.t12Bold.copyWith(
-                              color: Theme.of(context).colorScheme.primary,
-                              letterSpacing: 0.5,
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(minHeight: kMinInteractiveDimension),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Remix.heart_add_2_line, size: 16, color: Theme.of(context).colorScheme.primary),
+                            const SizedBox(width: 8),
+                            Text(
+                              i18n("favorite_areas"),
+                              style: AppTextStyles.t12Bold.copyWith(
+                                color: Theme.of(context).colorScheme.primary,
+                                letterSpacing: 0.5,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),
