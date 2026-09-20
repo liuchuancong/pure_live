@@ -62,7 +62,7 @@ class _IptvManagePageState extends State<IptvManagePage> {
   }
 
   bool _isNetwork(String url) {
-    return url.startsWith("http://") || url.startsWith("https://");
+    return FileUtils.parseHttpUrl(url) != null;
   }
 
   String _operationKey(ManageItem item) => '${item.type.name}:${item.id}';
@@ -445,17 +445,21 @@ class _IptvManagePageState extends State<IptvManagePage> {
   }
 
   Widget _buildItemCard(ThemeData theme, ManageItem item) {
-    String formatText = 'M3U';
-    final String lowercaseUrl = item.url.toLowerCase();
-
+    final sourcePath = (Uri.tryParse(item.url)?.path ?? item.url).toLowerCase();
+    final String formatText;
     if (item.type == ManageItemType.epg) {
-      formatText = lowercaseUrl.endsWith('.gz') ? 'XML.GZ' : 'EPG';
-    } else if (lowercaseUrl.contains('.txt') || (item.raw.type?.toLowerCase() == 'txt')) {
-      formatText = 'TXT';
-    } else if (lowercaseUrl.contains('.json') || (item.raw.type?.toLowerCase() == 'json')) {
-      formatText = 'JSON';
-    } else if (lowercaseUrl.endsWith('.gz') || (item.raw.type?.toLowerCase() == 'gz')) {
-      formatText = 'GZ';
+      formatText = sourcePath.endsWith('.gz')
+          ? 'XML.GZ'
+          : sourcePath.endsWith('.json')
+          ? 'JSON'
+          : 'XML';
+    } else {
+      final type = (item.raw as database.Provider).type.toLowerCase().replaceFirst('.', '');
+      formatText = type == 'txt' || sourcePath.endsWith('.txt')
+          ? 'TXT'
+          : type == 'm3u8' || sourcePath.endsWith('.m3u8')
+          ? 'M3U8'
+          : 'M3U';
     }
 
     return Container(
