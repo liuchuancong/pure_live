@@ -337,11 +337,46 @@ class BackupController extends GetxController {
   }
 
   Future<bool> backup(File file) async {
+    final staged = File('${file.path}.part');
+    final previous = File('${file.path}.previous');
     try {
       final data = exportAllSettings();
-      await file.writeAsString(const JsonEncoder.withIndent('  ').convert(data));
+      if (!await file.parent.exists()) await file.parent.create(recursive: true);
+
+      // Recover an interrupted replacement before starting a new one.
+      if (await previous.exists()) {
+        if (await file.exists()) {
+          await previous.delete();
+        } else {
+          await previous.rename(file.path);
+        }
+      }
+      if (await staged.exists()) await staged.delete();
+      await staged.writeAsString(const JsonEncoder.withIndent('  ').convert(data), flush: true);
+
+      final hadPrevious = await file.exists();
+      if (hadPrevious) await file.rename(previous.path);
+      try {
+        await staged.rename(file.path);
+      } catch (_) {
+        if (hadPrevious && await previous.exists() && !await file.exists()) {
+          await previous.rename(file.path);
+        }
+        rethrow;
+      }
+      if (await previous.exists()) {
+        try {
+          await previous.delete();
+        } catch (_) {
+          // The completed backup is authoritative; stale rollback cleanup is
+          // retried by the next backup targeting the same path.
+        }
+      }
       return true;
     } catch (_) {
+      try {
+        if (await staged.exists()) await staged.delete();
+      } catch (_) {}
       return false;
     }
   }
