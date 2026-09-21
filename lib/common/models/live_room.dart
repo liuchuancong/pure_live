@@ -226,6 +226,13 @@ class LiveRoom {
       hasTotalViewers: true,
       onlineAvailability: AudienceOnlineAvailability.roomList,
     ),
+    // Steam community cards and getbroadcastmpd both expose the current
+    // concurrent audience independently from the broadcast identity.
+    'steambroadcast': AudiencePlatformCapability(
+      hasPopularity: false,
+      hasTotalViewers: false,
+      onlineAvailability: AudienceOnlineAvailability.roomList,
+    ),
     'ttinglive': AudiencePlatformCapability(
       hasPopularity: false,
       hasTotalViewers: false,

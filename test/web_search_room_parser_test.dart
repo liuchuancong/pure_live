@@ -24,6 +24,7 @@ void main() {
       'https://goodgame.ru/Verloin': (Sites.goodGameSite, 'verloin'),
       'https://goodgame.ru/player?15365': (Sites.goodGameSite, 'id:15365'),
       'https://live.fc2.com/10608314/': (Sites.fc2LiveSite, '10608314'),
+      'https://steamcommunity.com/broadcast/watch/76561198373527746': (Sites.steamBroadcastSite, '76561198373527746'),
     };
 
     for (final entry in cases.entries) {
@@ -105,5 +106,17 @@ void main() {
     expect(await LiveUrlTool.parseLiveUrl('https://goodgame.ru/player?15365'), ['id:15365', Sites.goodGameSite]);
     expect(await LiveUrlTool.parseLiveUrl('https://live.fc2.com/10608314/'), ['10608314', Sites.fc2LiveSite]);
     expect(await LiveUrlTool.parseLiveUrl('https://goodgame.ru/streams'), isEmpty);
+  });
+
+  test('Steam community watch links resolve to their durable SteamID64', () async {
+    expect(
+      LiveUrlTool.containsSupportedLink('Steam https://steamcommunity.com/broadcast/watch/76561198373527746'),
+      isTrue,
+    );
+    expect(
+      await LiveUrlTool.parseLiveUrl('Steam https://steamcommunity.com/broadcast/watch/76561198373527746?l=english'),
+      ['76561198373527746', Sites.steamBroadcastSite],
+    );
+    expect(await LiveUrlTool.parseLiveUrl('https://steamcommunity.com/app/730/broadcasts'), isEmpty);
   });
 }

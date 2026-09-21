@@ -12,7 +12,7 @@ void main() {
   late Directory folder;
 
   setUpAll(() async {
-    folder = await Directory.systemTemp.createTemp('fc2live-catalog-');
+    folder = await Directory.systemTemp.createTemp('steam-broadcast-catalog-');
     Hive.init(folder.path);
     await HivePrefUtil.init();
   });
@@ -29,19 +29,19 @@ void main() {
     await folder.delete(recursive: true);
   });
 
-  test('catalog thirty-one adds FC2 Live once and preserves a later hide', () async {
-    await HivePrefUtil.setInt('siteCatalogMigration', 30);
-    await HivePrefUtil.setStringList('hotAreasList', [Sites.huyaSite, Sites.goodGameSite]);
+  test('catalog thirty-two adds Steam Broadcasts once and preserves a later hide', () async {
+    await HivePrefUtil.setInt('siteCatalogMigration', 31);
+    await HivePrefUtil.setStringList('hotAreasList', [Sites.huyaSite, Sites.fc2LiveSite]);
     final favorites = Get.put(FavoriteRoomController());
-    expect(favorites.hotAreasList, [Sites.huyaSite, Sites.goodGameSite, Sites.fc2LiveSite, Sites.steamBroadcastSite]);
+    expect(favorites.hotAreasList, [Sites.huyaSite, Sites.fc2LiveSite, Sites.steamBroadcastSite]);
     expect(favorites.siteCatalogMigration.value, 32);
-    favorites.hotAreasList.remove(Sites.fc2LiveSite);
+    favorites.hotAreasList.remove(Sites.steamBroadcastSite);
     await Hive.box<dynamic>('app_settings').flush();
     Get.reset();
     await Hive.close();
     await HivePrefUtil.init();
     final reopened = Get.put(FavoriteRoomController());
-    expect(reopened.hotAreasList, [Sites.huyaSite, Sites.goodGameSite, Sites.steamBroadcastSite]);
+    expect(reopened.hotAreasList, [Sites.huyaSite, Sites.fc2LiveSite]);
     expect(reopened.siteCatalogMigration.value, 32);
   });
 }

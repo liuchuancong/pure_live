@@ -14,7 +14,7 @@
 
 | 批次 | 平台 | 源码状态 | 下一步 |
 | --- | --- | --- | --- |
-| A | 已注册 38 个直播站点 + IPTV | 应用入口、能力表与设置目录已覆盖 | 补齐各平台双端原生与录制证据 |
+| A | 已注册 39 个直播站点 + IPTV | 应用入口、能力表与设置目录已覆盖 | 补齐各平台双端原生与录制证据 |
 | A | Shopee Live（Indonesia） | 有限目录、搜索、分享链接、浏览器动态会话、FLV、续期与录制恢复已接入 | 集中验收阶段执行 Android/Windows 真实播放与短录 |
 | B | 战旗直播 | 内部适配器与媒体域名前缀识别已完成 | 取得当前真实直播字节证据后注册 |
 | B | 浪 Live | 内部精确账号/链接与 FLV/HLS 解析已完成 | 取得公开目录合同与当前媒体样本后注册 |
@@ -24,6 +24,7 @@
 | C | Rumble | 官网公开直播分页、目录内搜索、精确直播页/频道链接、当前/累计观看分列、浏览器动态 HLS、多档画质与录制恢复已接入 | 集中验收阶段执行 Android/Windows 真实目录、播放与短录 |
 | C | GoodGame | 官网 API v4 原生分页、精确频道/播放器链接、目录内搜索、当前观看、四档短时 HLS 与录制恢复已接入 | 集中验收阶段执行 Android/Windows 真实目录、播放与短录 |
 | C | FC2 Live | 官网普通目录、分类、精确频道与链接、当前/累计观看、控制 WebSocket、owned HLS 播放/录制恢复已接入 | 集中验收阶段执行 Android/Windows 真实播放、停止、恢复与短录 |
+| C | Steam Broadcasts | 官网热门社区直播原生分页、精确 SteamID64/观看链接、当前观看、账号状态、自适应 HLS 与录制恢复已接入 | 集中验收阶段使用 Clash 执行 Android/Windows 真实播放、恢复与短录 |
 | 生命周期 | Trovo | 2026 年 Streamlink 已移除插件 | 先核对官网服务状态，再决定归档或恢复研究 |
 | 生命周期 | DLive | 2026-09-21 官网已显示服务停止页面；旧 Streamlink 插件仅保留历史参考 | 不注册失效入口，保留生命周期证据 |
 | 生命周期 | 一直播、企鹅电竞 | 已归档现行生命周期证据 | 保留历史解析，不进入应用注册 |
@@ -49,4 +50,6 @@ OPENREC / mellow-fan、TTingLive / FLEX TV、小红书、niconico、微博直播
 - Streamlink 当前 GoodGame 实现：<https://github.com/streamlink/streamlink/blob/master/src/streamlink/plugins/goodgame.py>
 - FC2 Live 官网：<https://live.fc2.com/>
 - yt-dlp 当前 FC2 Live 实现：<https://github.com/yt-dlp/yt-dlp/blob/master/yt_dlp/extractor/fc2.py>
+- Steam Community Broadcasts：<https://steamcommunity.com/?subsection=broadcasts>
+- Streamlink 当前 Steam 实现：<https://github.com/streamlink/streamlink/blob/master/src/streamlink/plugins/steam.py>
 - 2026 年插件变更记录：<https://github.com/streamlink/streamlink/releases>

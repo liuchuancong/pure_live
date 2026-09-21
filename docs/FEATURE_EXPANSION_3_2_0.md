@@ -79,6 +79,7 @@
 | C2 | WinkTV | 官方已于 2025-06-02 结束独立服务并并入 PandaTV；旧接口仅作历史资料，见[检查点](SECOND_BATCH_PLATFORM_LIFECYCLE_CHECKPOINT_2026_09_21.md) |
 | C2 | PopkonTV | 已注册：官网目录/排序、频道与昵称搜索、访问状态、游客 HLS 会话、画质、播放/录制恢复；见[检查点](POPKONTV_CONTRACT_CHECKPOINT_2026_09_21.md) |
 | C2 | PandaTV（韩国） | 已注册：官方目录、精确频道、状态、HLS 多画质与 Origin/Referer；见[检查点](PANDALIVE_CONTRACT_CHECKPOINT_2026_09_21.md) |
+| C2 | Steam Broadcasts | 已注册：匿名社区直播分页、SteamID64/官方观看链接、当前观看、账号状态、自适应 HLS 与恢复；见[检查点](STEAM_BROADCAST_CONTRACT_CHECKPOINT_2026_09_21.md) |
 | C2 | Shopee Live | 区域店铺/场次 URL、状态、媒体与请求头 |
 | C2 | 淘宝直播 | 分享/场次识别、状态、媒体、账号态 |
 | C2 | 京东直播 | 场次识别、状态、媒体、账号态 |
