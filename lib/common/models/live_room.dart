@@ -247,6 +247,13 @@ class LiveRoom {
       hasTotalViewers: true,
       onlineAvailability: AudienceOnlineAvailability.unsupported,
     ),
+    // Kugou keeps directory viewerNum/getViewerNum, platform hot and
+    // broadcaster fansCount as three independent metrics.
+    'kugoulive': AudiencePlatformCapability(
+      hasPopularity: true,
+      hasTotalViewers: false,
+      onlineAvailability: AudienceOnlineAvailability.roomList,
+    ),
     'ttinglive': AudiencePlatformCapability(
       hasPopularity: false,
       hasTotalViewers: false,

@@ -32,6 +32,7 @@ import 'package:pure_live/core/site/goodgame/goodgame_link.dart';
 import 'package:pure_live/core/site/fc2live/fc2_link.dart';
 import 'package:pure_live/core/site/steambroadcast/steam_broadcast_link.dart';
 import 'package:pure_live/core/site/jdlive/jd_live_link.dart';
+import 'package:pure_live/core/site/kugoulive/kugou_live_link.dart';
 import 'package:pure_live/core/site/taobaolive/taobao_live_api.dart';
 import 'package:pure_live/core/site/taobaolive/taobao_live_link.dart';
 import 'package:pure_live/core/site/seventeenlive/seventeenlive_link.dart';
@@ -136,6 +137,7 @@ class LiveUrlTool {
       if (Fc2Link.parseChannelId(raw) != null) return true;
       if (SteamBroadcastLink.parseSteamId(raw) != null) return true;
       if (JdLiveLink.parseLiveId(raw) != null) return true;
+      if (KugouLiveLink.parseRoomId(raw) != null) return true;
       if (TaobaoLiveLink.parse(raw) != null || TaobaoLiveLink.shortUri(raw) != null) return true;
       final uri = Uri.parse(raw);
       return TikTokLink.isShortHost(uri.host) ||
@@ -280,6 +282,8 @@ class LiveUrlTool {
       if (steamBroadcast != null) return [steamBroadcast, Sites.steamBroadcastSite];
       final jdLive = JdLiveLink.parseLiveId(raw);
       if (jdLive != null) return [jdLive, Sites.jdLiveSite];
+      final kugouLive = KugouLiveLink.parseRoomId(raw);
+      if (kugouLive != null) return [kugouLive, Sites.kugouLiveSite];
       final taobaoLive = TaobaoLiveLink.parse(raw);
       if (taobaoLive != null) return [taobaoLive.storageKey, Sites.taobaoLiveSite];
       if (TaobaoLiveLink.shortUri(raw) != null) {

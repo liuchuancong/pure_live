@@ -17,6 +17,7 @@ import 'site/fc2live/fc2_site.dart';
 import 'site/steambroadcast/steam_broadcast_site.dart';
 import 'site/jdlive/jd_live_site.dart';
 import 'site/taobaolive/taobao_live_site.dart';
+import 'site/kugoulive/kugou_live_site.dart';
 import 'site/seventeenlive/seventeenlive_site.dart';
 import 'site/showroom/showroom_site.dart';
 import 'site/weibo/weibo_site.dart';
@@ -87,6 +88,7 @@ class Sites {
   static const String steamBroadcastSite = 'steambroadcast';
   static const String jdLiveSite = 'jdlive';
   static const String taobaoLiveSite = 'taobaolive';
+  static const String kugouLiveSite = 'kugoulive';
   static const String seventeenLiveSite = '17live';
 
   static const Set<String> supportedSiteIds = {
@@ -130,6 +132,7 @@ class Sites {
     steamBroadcastSite,
     jdLiveSite,
     taobaoLiveSite,
+    kugouLiveSite,
     seventeenLiveSite,
     iptvSite,
   };
@@ -197,6 +200,7 @@ class Sites {
     ),
     Site(id: jdLiveSite, name: i18n('site_jdlive'), logo: 'assets/images/logo.png', liveSite: JdLiveSite()),
     Site(id: taobaoLiveSite, name: i18n('site_taobaolive'), logo: 'assets/images/logo.png', liveSite: TaobaoLiveSite()),
+    Site(id: kugouLiveSite, name: i18n('site_kugoulive'), logo: 'assets/images/logo.png', liveSite: KugouLiveSite()),
     Site(
       id: seventeenLiveSite,
       name: i18n('site_17live'),
@@ -398,6 +402,12 @@ class Sites {
         name: i18n('site_taobaolive'),
         logo: 'assets/images/logo.png',
         liveSite: TaobaoLiveSite(),
+      ),
+      kugouLiveSite => Site(
+        id: kugouLiveSite,
+        name: i18n('site_kugoulive'),
+        logo: 'assets/images/logo.png',
+        liveSite: KugouLiveSite(),
       ),
       seventeenLiveSite => Site(
         id: seventeenLiveSite,

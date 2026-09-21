@@ -25,6 +25,7 @@ import 'package:pure_live/core/site/goodgame/goodgame_link.dart';
 import 'package:pure_live/core/site/fc2live/fc2_link.dart';
 import 'package:pure_live/core/site/steambroadcast/steam_broadcast_link.dart';
 import 'package:pure_live/core/site/jdlive/jd_live_link.dart';
+import 'package:pure_live/core/site/kugoulive/kugou_live_link.dart';
 import 'package:pure_live/core/site/taobaolive/taobao_live_link.dart';
 import 'package:pure_live/core/site/seventeenlive/seventeenlive_link.dart';
 
@@ -151,6 +152,10 @@ class WebSearchRoomParser {
     final jdLive = JdLiveLink.parseLiveId(rawUrl);
     if (jdLive != null) {
       return WebSearchRoomTarget(platform: Sites.jdLiveSite, roomId: jdLive);
+    }
+    final kugouLive = KugouLiveLink.parseRoomId(rawUrl);
+    if (kugouLive != null) {
+      return WebSearchRoomTarget(platform: Sites.kugouLiveSite, roomId: kugouLive);
     }
     final host = uri.host.toLowerCase();
     final segments = uri.pathSegments.where((segment) => segment.trim().isNotEmpty).toList(growable: false);
