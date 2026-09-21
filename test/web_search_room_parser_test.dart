@@ -16,6 +16,7 @@ void main() {
       'https://play.sooplive.co.kr/streamer_1/123': (Sites.soopSite, 'streamer_1'),
       'https://www.yy.com/1382731151': (Sites.yySite, '1382731151'),
       'https://live.acfun.cn/live/42?from=search': (Sites.acfunSite, '42'),
+      'https://live.shopee.co.id/share?from=live&session=225239358': (Sites.shopeeLiveSite, 'id:225239358'),
     };
 
     for (final entry in cases.entries) {
@@ -51,5 +52,12 @@ void main() {
   test('AcFun shared room links resolve offline without treating author pages as streams', () async {
     expect(await LiveUrlTool.parseLiveUrl('看看这个直播 https://live.acfun.cn/live/42?source=share'), ['42', 'acfun']);
     expect(await LiveUrlTool.parseLiveUrl('https://live.acfun.cn/search?keyword=huya.com'), isEmpty);
+  });
+
+  test('Shopee Live official share links resolve to durable regional session IDs', () async {
+    expect(await LiveUrlTool.parseLiveUrl('Shopee Live https://live.shopee.co.id/share?from=live&session=225239358'), [
+      'id:225239358',
+      Sites.shopeeLiveSite,
+    ]);
   });
 }

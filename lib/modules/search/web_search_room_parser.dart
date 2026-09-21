@@ -16,6 +16,7 @@ import 'package:pure_live/core/site/youtube/youtube_link.dart';
 import 'package:pure_live/core/site/bigo/bigo_link.dart';
 import 'package:pure_live/core/site/pandalive/pandalive_link.dart';
 import 'package:pure_live/core/site/popkontv/popkontv_link.dart';
+import 'package:pure_live/core/site/shopeelive/shopeelive_link.dart';
 import 'package:pure_live/core/site/seventeenlive/seventeenlive_link.dart';
 
 class WebSearchRoomTarget {
@@ -102,6 +103,10 @@ class WebSearchRoomParser {
     if (pandaLive != null) return WebSearchRoomTarget(platform: Sites.pandaLiveSite, roomId: pandaLive);
     final popkon = PopkonLink.parse(rawUrl);
     if (popkon != null) return WebSearchRoomTarget(platform: Sites.popkonSite, roomId: popkon.storageKey);
+    final shopeeLive = ShopeeLiveLink.parse(rawUrl);
+    if (shopeeLive != null) {
+      return WebSearchRoomTarget(platform: Sites.shopeeLiveSite, roomId: shopeeLive.storageKey);
+    }
     final host = uri.host.toLowerCase();
     final segments = uri.pathSegments.where((segment) => segment.trim().isNotEmpty).toList(growable: false);
 
