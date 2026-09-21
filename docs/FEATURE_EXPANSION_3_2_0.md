@@ -80,9 +80,9 @@
 | C2 | PopkonTV | 已注册：官网目录/排序、频道与昵称搜索、访问状态、游客 HLS 会话、画质、播放/录制恢复；见[检查点](POPKONTV_CONTRACT_CHECKPOINT_2026_09_21.md) |
 | C2 | PandaTV（韩国） | 已注册：官方目录、精确频道、状态、HLS 多画质与 Origin/Referer；见[检查点](PANDALIVE_CONTRACT_CHECKPOINT_2026_09_21.md) |
 | C2 | Steam Broadcasts | 已注册：匿名社区直播分页、SteamID64/官方观看链接、当前观看、账号状态、自适应 HLS 与恢复；见[检查点](STEAM_BROADCAST_CONTRACT_CHECKPOINT_2026_09_21.md) |
-| C2 | Shopee Live | 区域店铺/场次 URL、状态、媒体与请求头 |
+| C2 | Shopee Live | 已注册：区域店铺/场次链接、有限目录、搜索、状态、浏览器动态 FLV、续期与恢复；见[检查点](SHOPEE_LIVE_CONTRACT_CHECKPOINT_2026_09_21.md) |
 | C2 | 淘宝直播 | 分享/场次识别、状态、媒体、账号态 |
-| C2 | 京东直播 | 场次识别、状态、媒体、账号态 |
+| C2 | 京东直播 | 已注册：官网精选分页、场次/官方链接、状态、累计观看、HLS/FLV 与恢复；见[检查点](JD_LIVE_CONTRACT_CHECKPOINT_2026_09_21.md) |
 | C3 | 百度直播 | 房间/分享识别、状态、媒体与搜索 |
 | C3 | 酷狗直播 | 房间身份、状态、音视频媒体与聊天 |
 | C3 | 知乎直播 | 活动/直播间识别、状态、媒体和回放分类 |

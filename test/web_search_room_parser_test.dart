@@ -25,6 +25,7 @@ void main() {
       'https://goodgame.ru/player?15365': (Sites.goodGameSite, 'id:15365'),
       'https://live.fc2.com/10608314/': (Sites.fc2LiveSite, '10608314'),
       'https://steamcommunity.com/broadcast/watch/76561198373527746': (Sites.steamBroadcastSite, '76561198373527746'),
+      'https://lives.jd.com/#/48266468?origin=0': (Sites.jdLiveSite, '48266468'),
     };
 
     for (final entry in cases.entries) {
@@ -118,5 +119,14 @@ void main() {
       ['76561198373527746', Sites.steamBroadcastSite],
     );
     expect(await LiveUrlTool.parseLiveUrl('https://steamcommunity.com/app/730/broadcasts'), isEmpty);
+  });
+
+  test('JD Live hash routes resolve to their stable live ID', () async {
+    expect(LiveUrlTool.containsSupportedLink('京东直播 https://lives.jd.com/#/48266468?origin=0'), isTrue);
+    expect(await LiveUrlTool.parseLiveUrl('京东直播 https://lives.jd.com/#/48266468?origin=0'), [
+      '48266468',
+      Sites.jdLiveSite,
+    ]);
+    expect(await LiveUrlTool.parseLiveUrl('https://lives.jd.com/#/channel'), isEmpty);
   });
 }

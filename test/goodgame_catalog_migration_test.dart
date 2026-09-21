@@ -39,15 +39,22 @@ void main() {
       Sites.goodGameSite,
       Sites.fc2LiveSite,
       Sites.steamBroadcastSite,
+      Sites.jdLiveSite,
     ]);
-    expect(favorites.siteCatalogMigration.value, 32);
+    expect(favorites.siteCatalogMigration.value, 33);
     favorites.hotAreasList.remove(Sites.goodGameSite);
     await Hive.box<dynamic>('app_settings').flush();
     Get.reset();
     await Hive.close();
     await HivePrefUtil.init();
     final reopened = Get.put(FavoriteRoomController());
-    expect(reopened.hotAreasList, [Sites.huyaSite, Sites.rumbleSite, Sites.fc2LiveSite, Sites.steamBroadcastSite]);
-    expect(reopened.siteCatalogMigration.value, 32);
+    expect(reopened.hotAreasList, [
+      Sites.huyaSite,
+      Sites.rumbleSite,
+      Sites.fc2LiveSite,
+      Sites.steamBroadcastSite,
+      Sites.jdLiveSite,
+    ]);
+    expect(reopened.siteCatalogMigration.value, 33);
   });
 }

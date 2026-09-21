@@ -15,6 +15,7 @@ import 'site/rumble/rumble_site.dart';
 import 'site/goodgame/goodgame_site.dart';
 import 'site/fc2live/fc2_site.dart';
 import 'site/steambroadcast/steam_broadcast_site.dart';
+import 'site/jdlive/jd_live_site.dart';
 import 'site/seventeenlive/seventeenlive_site.dart';
 import 'site/showroom/showroom_site.dart';
 import 'site/weibo/weibo_site.dart';
@@ -83,6 +84,7 @@ class Sites {
   static const String goodGameSite = 'goodgame';
   static const String fc2LiveSite = 'fc2live';
   static const String steamBroadcastSite = 'steambroadcast';
+  static const String jdLiveSite = 'jdlive';
   static const String seventeenLiveSite = '17live';
 
   static const Set<String> supportedSiteIds = {
@@ -124,6 +126,7 @@ class Sites {
     goodGameSite,
     fc2LiveSite,
     steamBroadcastSite,
+    jdLiveSite,
     seventeenLiveSite,
     iptvSite,
   };
@@ -189,6 +192,7 @@ class Sites {
       logo: 'assets/images/logo.png',
       liveSite: SteamBroadcastSite(),
     ),
+    Site(id: jdLiveSite, name: i18n('site_jdlive'), logo: 'assets/images/logo.png', liveSite: JdLiveSite()),
     Site(
       id: seventeenLiveSite,
       name: i18n('site_17live'),
@@ -378,6 +382,12 @@ class Sites {
         name: i18n('site_steambroadcast'),
         logo: 'assets/images/logo.png',
         liveSite: SteamBroadcastSite(),
+      ),
+      jdLiveSite => Site(
+        id: jdLiveSite,
+        name: i18n('site_jdlive'),
+        logo: 'assets/images/logo.png',
+        liveSite: JdLiveSite(),
       ),
       seventeenLiveSite => Site(
         id: seventeenLiveSite,
