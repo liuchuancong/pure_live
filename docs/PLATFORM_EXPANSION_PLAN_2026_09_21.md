@@ -14,7 +14,7 @@
 
 | 批次 | 平台 | 源码状态 | 下一步 |
 | --- | --- | --- | --- |
-| A | 已注册 36 个直播站点 + IPTV | 应用入口、能力表与设置目录已覆盖 | 补齐各平台双端原生与录制证据 |
+| A | 已注册 37 个直播站点 + IPTV | 应用入口、能力表与设置目录已覆盖 | 补齐各平台双端原生与录制证据 |
 | A | Shopee Live（Indonesia） | 有限目录、搜索、分享链接、浏览器动态会话、FLV、续期与录制恢复已接入 | 集中验收阶段执行 Android/Windows 真实播放与短录 |
 | B | 战旗直播 | 内部适配器与媒体域名前缀识别已完成 | 取得当前真实直播字节证据后注册 |
 | B | 浪 Live | 内部精确账号/链接与 FLV/HLS 解析已完成 | 取得公开目录合同与当前媒体样本后注册 |
@@ -22,6 +22,7 @@
 | C | NimoTV | 官网有限推荐快照、快照关键词搜索、精确频道/别名、官方链接、直播状态、当前观看人数、五档签名 FLV、续期与录制恢复已接入 | 集中验收阶段执行 Android/Windows 真实目录、播放与短录 |
 | C | Dailymotion | 官网公开 API 原生直播目录/搜索/精确视频与频道当前直播、官方链接回流、浏览器动态主清单、多档 HLS、续期与录制恢复已接入 | 集中验收阶段执行 Android/Windows 真实目录、播放与短录 |
 | C | Rumble | 官网公开直播分页、目录内搜索、精确直播页/频道链接、当前/累计观看分列、浏览器动态 HLS、多档画质与录制恢复已接入 | 集中验收阶段执行 Android/Windows 真实目录、播放与短录 |
+| C | GoodGame | 官网 API v4 原生分页、精确频道/播放器链接、目录内搜索、当前观看、四档短时 HLS 与录制恢复已接入 | 集中验收阶段执行 Android/Windows 真实目录、播放与短录 |
 | 生命周期 | Trovo | 2026 年 Streamlink 已移除插件 | 先核对官网服务状态，再决定归档或恢复研究 |
 | 生命周期 | DLive | 2026-09-21 官网已显示服务停止页面；旧 Streamlink 插件仅保留历史参考 | 不注册失效入口，保留生命周期证据 |
 | 生命周期 | 一直播、企鹅电竞 | 已归档现行生命周期证据 | 保留历史解析，不进入应用注册 |
@@ -43,4 +44,6 @@ OPENREC / mellow-fan、TTingLive / FLEX TV、小红书、niconico、微博直播
 - Streamlink 当前 Dailymotion 实现：<https://github.com/streamlink/streamlink/blob/master/src/streamlink/plugins/dailymotion.py>
 - Rumble 公开直播目录：<https://rumble.com/browse/live>
 - yt-dlp 当前 Rumble 实现：<https://github.com/yt-dlp/yt-dlp/blob/master/yt_dlp/extractor/rumble.py>
+- GoodGame 官网：<https://goodgame.ru/>
+- Streamlink 当前 GoodGame 实现：<https://github.com/streamlink/streamlink/blob/master/src/streamlink/plugins/goodgame.py>
 - 2026 年插件变更记录：<https://github.com/streamlink/streamlink/releases>

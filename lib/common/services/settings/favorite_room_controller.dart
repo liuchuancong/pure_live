@@ -198,6 +198,11 @@ class FavoriteRoomController extends GetxController {
       hotAreasList.assignAll(updated);
       siteCatalogMigration.v = 29;
     }
+    if (siteCatalogMigration.v < 30) {
+      if (!updated.contains(Sites.goodGameSite)) updated.add(Sites.goodGameSite);
+      hotAreasList.assignAll(updated);
+      siteCatalogMigration.v = 30;
+    }
   }
 
   void _normalizeSiteCatalogIds() {

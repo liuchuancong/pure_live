@@ -21,6 +21,8 @@ void main() {
       'https://www.nimo.tv/live/40972312': (Sites.nimoTvSite, '40972312'),
       'https://www.dailymotion.com/video/x3b68jn': (Sites.dailymotionSite, 'x3b68jn'),
       'https://rumble.com/v7fngda-rt-de-live-tv.html': (Sites.rumbleSite, 'v7fngda-rt-de-live-tv'),
+      'https://goodgame.ru/Verloin': (Sites.goodGameSite, 'verloin'),
+      'https://goodgame.ru/player?15365': (Sites.goodGameSite, 'id:15365'),
     };
 
     for (final entry in cases.entries) {
@@ -95,5 +97,11 @@ void main() {
     expect(await LiveUrlTool.parseLiveUrl(url), ['v7fngda-rt-de-live-tv', Sites.rumbleSite]);
     expect(await LiveUrlTool.parseLiveUrl('https://rumble.com/embed/v7dh3fs/'), isEmpty);
     expect(await LiveUrlTool.parseLiveUrl('https://rumble.com/c/RTDE'), isEmpty);
+  });
+
+  test('GoodGame channel and player links resolve to durable channel or stream identities', () async {
+    expect(await LiveUrlTool.parseLiveUrl('https://goodgame.ru/Verloin'), ['verloin', Sites.goodGameSite]);
+    expect(await LiveUrlTool.parseLiveUrl('https://goodgame.ru/player?15365'), ['id:15365', Sites.goodGameSite]);
+    expect(await LiveUrlTool.parseLiveUrl('https://goodgame.ru/streams'), isEmpty);
   });
 }

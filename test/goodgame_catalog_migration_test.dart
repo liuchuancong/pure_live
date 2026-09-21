@@ -12,7 +12,7 @@ void main() {
   late Directory folder;
 
   setUpAll(() async {
-    folder = await Directory.systemTemp.createTemp('rumble-catalog-');
+    folder = await Directory.systemTemp.createTemp('goodgame-catalog-');
     Hive.init(folder.path);
     await HivePrefUtil.init();
   });
@@ -29,19 +29,19 @@ void main() {
     await folder.delete(recursive: true);
   });
 
-  test('catalog twenty-nine adds Rumble once and preserves a later hide', () async {
-    await HivePrefUtil.setInt('siteCatalogMigration', 28);
-    await HivePrefUtil.setStringList('hotAreasList', [Sites.huyaSite, Sites.dailymotionSite]);
+  test('catalog thirty adds GoodGame once and preserves a later hide', () async {
+    await HivePrefUtil.setInt('siteCatalogMigration', 29);
+    await HivePrefUtil.setStringList('hotAreasList', [Sites.huyaSite, Sites.rumbleSite]);
     final favorites = Get.put(FavoriteRoomController());
-    expect(favorites.hotAreasList, [Sites.huyaSite, Sites.dailymotionSite, Sites.rumbleSite, Sites.goodGameSite]);
+    expect(favorites.hotAreasList, [Sites.huyaSite, Sites.rumbleSite, Sites.goodGameSite]);
     expect(favorites.siteCatalogMigration.value, 30);
-    favorites.hotAreasList.remove(Sites.rumbleSite);
+    favorites.hotAreasList.remove(Sites.goodGameSite);
     await Hive.box<dynamic>('app_settings').flush();
     Get.reset();
     await Hive.close();
     await HivePrefUtil.init();
     final reopened = Get.put(FavoriteRoomController());
-    expect(reopened.hotAreasList, [Sites.huyaSite, Sites.dailymotionSite, Sites.goodGameSite]);
+    expect(reopened.hotAreasList, [Sites.huyaSite, Sites.rumbleSite]);
     expect(reopened.siteCatalogMigration.value, 30);
   });
 }

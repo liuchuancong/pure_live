@@ -21,6 +21,7 @@ import 'package:pure_live/core/site/vkvideolive/vkvideolive_link.dart';
 import 'package:pure_live/core/site/nimotv/nimotv_link.dart';
 import 'package:pure_live/core/site/dailymotion/dailymotion_link.dart';
 import 'package:pure_live/core/site/rumble/rumble_link.dart';
+import 'package:pure_live/core/site/goodgame/goodgame_link.dart';
 import 'package:pure_live/core/site/seventeenlive/seventeenlive_link.dart';
 
 class WebSearchRoomTarget {
@@ -126,6 +127,10 @@ class WebSearchRoomParser {
     final rumble = RumbleLink.parseVideoKey(rawUrl);
     if (rumble != null) {
       return WebSearchRoomTarget(platform: Sites.rumbleSite, roomId: rumble);
+    }
+    final goodGame = GoodGameLink.parse(rawUrl);
+    if (goodGame != null) {
+      return WebSearchRoomTarget(platform: Sites.goodGameSite, roomId: goodGame.storageKey);
     }
     final host = uri.host.toLowerCase();
     final segments = uri.pathSegments.where((segment) => segment.trim().isNotEmpty).toList(growable: false);
