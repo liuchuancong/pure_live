@@ -479,6 +479,14 @@ class LocalInteractionController extends GetxController {
       badge: 'BG',
     ),
     LocalPlatformPack(
+      id: Sites.pandaLiveSite,
+      nameKey: 'site_pandalive',
+      currencyKey: 'local_currency_generic',
+      levelKey: 'local_level_generic',
+      accentColor: Color(0xFFFE4D6A),
+      badge: 'PD',
+    ),
+    LocalPlatformPack(
       id: Sites.iptvSite,
       nameKey: 'site_iptv',
       currencyKey: 'local_currency_generic',

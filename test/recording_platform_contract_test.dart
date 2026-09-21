@@ -33,6 +33,10 @@ void main() {
         Sites.kickSite,
         Sites.seventeenLiveSite,
         Sites.liveMeSite,
+        Sites.tiktokSite,
+        Sites.youtubeSite,
+        Sites.bigoSite,
+        Sites.pandaLiveSite,
         Sites.iptvSite,
       ]),
     );

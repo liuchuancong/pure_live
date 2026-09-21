@@ -4,7 +4,7 @@
 
 ## 当前基线与执行规则
 
-- 源码已注册 **29 个直播站点 + IPTV，共 30 个适配器**。用户列出的 Y Live、AcFun、Picarto、TwitCasting、猫耳、映客、克拉克拉、花椒、OPENREC、TTingLive、小红书、niconico、微博和 IPTV 均已在 `lib/core/sites.dart` 注册；本轮继续新增 SHOWROOM、CHZZK、Kick、17LIVE、LiveMe、TikTok LIVE、YouTube Live 与 Bigo Live。
+- 源码已注册 **30 个直播站点 + IPTV，共 31 个适配器**。用户列出的 Y Live、AcFun、Picarto、TwitCasting、猫耳、映客、克拉克拉、花椒、OPENREC、TTingLive、小红书、niconico、微博和 IPTV 均已在 `lib/core/sites.dart` 注册；本轮继续新增 SHOWROOM、CHZZK、Kick、17LIVE、LiveMe、TikTok LIVE、YouTube Live、Bigo Live 与 PandaTV。
 - 本轮范围同时包含：30 个已注册适配器的能力补齐、2 个当前实施平台、2 个生命周期归档平台、第二批国际/电商/区域平台扩展，以及录制与诊断功能。
 - 先连续完成平台和功能源码，每个独立改动提交并同步 GitHub；完整 Analyze、测试、构建和设备验收集中到源码批次结束后执行。
 - 新平台按“URL/分享识别 → 元数据/状态 → 媒体候选 → 线路/画质/请求头 → 播放/录制 → 目录/搜索/弹幕 → 应用注册”推进。
@@ -17,7 +17,7 @@
 - Streamlink 8.5.x：当前维护 YouTube、Bigo、CHZZK、Kick、TwitCasting、niconico、SOOP 等插件；其插件更新记录用于判断平台现行契约与维护活跃度。
 - 所有参考实现都需重新核对官网响应、身份字段、直播状态和媒体有效性，再转换为 Dart 原生适配器。
 
-## A. 已注册的 30 个适配器：全部补齐
+## A. 已注册的 31 个适配器：全部补齐
 
 | 优先级 | 平台 | 当前入口 | 本轮补齐重点 |
 | --- | --- | --- | --- |
@@ -50,6 +50,7 @@
 | P1 | TikTok LIVE | 本轮新增 | 精确账号与官方主页/直播间/分享链接、开播/未开播/私密/订阅/付费状态、H.264/H.265 的 FLV/HLS 多画质、当前/累计进房分列、播放/录制刷新；游客推荐目录和远端聊天待接入 |
 | P1 | YouTube Live | 本轮新增 | 精确视频 ID、官方观看/直播/短链/嵌入链接、频道或 handle 当前直播发现、开播/未开播/受限状态、HLS 多画质/直连 itag/DASH 自动源、并发观看、签名到期与播放/录制刷新；推荐目录、关键词分页和聊天待接入 |
 | P1 | Bigo Live | 本轮新增 | 有限公开目录、精确 ID/官方链接、Web token、真实状态、受保护 HLS 私有 relay、播放/录制恢复；短链和聊天待接入 |
+| P1 | PandaTV（韩国） | 本轮新增 | 官方公开直播分页、精确频道/官方链接、开播与访问状态、AWS IVS HLS 五档画质、当前在线、播放/录制恢复；昵称搜索和聊天待接入 |
 | P1 | IPTV | 已注册 | M3U/本地频道分组、EPG、节目单搜索、Logo、请求头、时移与源健康 |
 
 ### 30 平台统一能力
@@ -76,7 +77,7 @@
 | --- | --- | --- |
 | C2 | WinkTV | 官方已于 2025-06-02 结束独立服务并并入 PandaTV；旧接口仅作历史资料，见[检查点](SECOND_BATCH_PLATFORM_LIFECYCLE_CHECKPOINT_2026_09_21.md) |
 | C2 | PopkonTV | 频道查询、状态、媒体与区域状态 |
-| C2 | PandaTV（韩国） | 当前首要实现项：官方目录、精确频道、状态、HLS 多画质与 Origin/Referer |
+| C2 | PandaTV（韩国） | 已注册：官方目录、精确频道、状态、HLS 多画质与 Origin/Referer；见[检查点](PANDALIVE_CONTRACT_CHECKPOINT_2026_09_21.md) |
 | C2 | Shopee Live | 区域店铺/场次 URL、状态、媒体与请求头 |
 | C2 | 淘宝直播 | 分享/场次识别、状态、媒体、账号态 |
 | C2 | 京东直播 | 场次识别、状态、媒体、账号态 |
