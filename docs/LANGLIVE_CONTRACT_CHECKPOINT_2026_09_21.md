@@ -46,4 +46,3 @@ FLV/HLS 执行前缀字节检查；页面或测试数据里的示例 URL 不计�
 - 官方房间页：<https://www.lang.live/main/5461380>
 - 历史参考实现：<https://github.com/bililive-go/bililive-go/blob/ef71711a7c573b013d82fec01ee8d0609ee36aca/src/live/lang/lang.go>
 - APKPure 当前包页面：<https://apkpure.net/cn/lang-live-live-music-shows/com.lang.lang/download>
-

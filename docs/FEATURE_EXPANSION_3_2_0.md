@@ -74,9 +74,9 @@
 
 | 批次 | 平台 | 首个交付 |
 | --- | --- | --- |
-| C2 | WinkTV | 频道查询、状态、HLS/FLV 与请求头 |
+| C2 | WinkTV | 官方已于 2025-06-02 结束独立服务并并入 PandaTV；旧接口仅作历史资料，见[检查点](SECOND_BATCH_PLATFORM_LIFECYCLE_CHECKPOINT_2026_09_21.md) |
 | C2 | PopkonTV | 频道查询、状态、媒体与区域状态 |
-| C2 | PandaTV（韩国） | 频道身份、状态、画质媒体、Cookie/代理 |
+| C2 | PandaTV（韩国） | 当前首要实现项：官方目录、精确频道、状态、HLS 多画质与 Origin/Referer |
 | C2 | Shopee Live | 区域店铺/场次 URL、状态、媒体与请求头 |
 | C2 | 淘宝直播 | 分享/场次识别、状态、媒体、账号态 |
 | C2 | 京东直播 | 场次识别、状态、媒体、账号态 |
