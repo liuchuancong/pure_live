@@ -7,6 +7,8 @@ import 'package:flutter/foundation.dart';
 import 'package:pure_live/core/common/http_client.dart';
 import 'package:pure_live/core/common/request_scope.dart';
 
+import 'bigo_token.dart';
+
 enum BigoFailure { transport, access, missing, rateLimited, service, api, schema, identity, cancelled }
 
 enum BigoAccess { public, loginRequired, restricted }
@@ -66,21 +68,56 @@ class BigoStudioStatus {
   final String roomType;
 }
 
+class BigoStudioRoom {
+  const BigoStudioRoom({
+    required this.status,
+    required this.roomId,
+    required this.nickname,
+    required this.title,
+    required this.category,
+    required this.avatar,
+    required this.hls,
+  });
+
+  final BigoStudioStatus status;
+  final String? roomId;
+  final String nickname;
+  final String title;
+  final String category;
+  final String? avatar;
+  final Uri? hls;
+}
+
 typedef BigoRequest = Future<({int status, String body})> Function(
   String method,
   Uri uri,
   Map<String, String>? form,
   CancelToken cancel,
 );
+typedef BigoTokenDataBuilder = String Function(String timestamp);
+typedef BigoJsonpCallbackFactory = String Function();
 
 class BigoApi {
-  BigoApi({BigoRequest? request, this.deadline = const Duration(seconds: 20)}) : _request = request ?? _defaultRequest;
+  BigoApi({
+    BigoRequest? request,
+    BigoTokenDataBuilder? tokenDataBuilder,
+    BigoJsonpCallbackFactory? callbackFactory,
+    this.deadline = const Duration(seconds: 20),
+  }) : _request = request ?? _defaultRequest,
+       _tokenDataBuilder = tokenDataBuilder ?? BigoTokenCodec.buildData,
+       _callbackFactory = callbackFactory ?? _defaultCallback;
   static const origin = 'https://ta.bigo.tv/official_website';
+  static const securityOrigin = 'https://sec.bigo.sg/v1/webjs';
   static const webOrigin = 'https://www.bigo.tv';
   static const headers = {'Origin': webOrigin, 'Referer': '$webOrigin/', 'User-Agent': 'Mozilla/5.0'};
   static const responseLimit = 1024 * 1024;
   final BigoRequest _request;
+  final BigoTokenDataBuilder _tokenDataBuilder;
+  final BigoJsonpCallbackFactory _callbackFactory;
   final Duration deadline;
+
+  static String _defaultCallback() =>
+      'jsonpcallback_${DateTime.now().millisecondsSinceEpoch}_${DateTime.now().microsecondsSinceEpoch % 1000000}';
 
   static Future<({int status, String body})> _defaultRequest(
     String method,
@@ -148,9 +185,9 @@ class BigoApi {
         }
       });
 
-  Future<Map<String, dynamic>> _read(String path, CancelToken cancel, {Map<String, String>? form}) async {
+  Future<String> _readResponse(String method, Uri uri, CancelToken cancel, {Map<String, String>? form}) async {
     if (cancel.isCancelled) throw const BigoException(BigoFailure.cancelled);
-    final response = await _request(form == null ? 'GET' : 'POST', Uri.parse('$origin$path'), form, cancel);
+    final response = await _request(method, uri, form, cancel);
     if (cancel.isCancelled) throw const BigoException(BigoFailure.cancelled);
     final failure = switch (response.status) {
       200 => null,
@@ -165,11 +202,22 @@ class BigoApi {
       throw const BigoException(BigoFailure.schema);
     }
     try {
-      return _object(jsonDecode(response.body));
+      return response.body;
     } on FormatException {
       throw const BigoException(BigoFailure.schema);
     }
   }
+
+  Future<Map<String, dynamic>> _readUri(String method, Uri uri, CancelToken cancel, {Map<String, String>? form}) async {
+    try {
+      return _object(jsonDecode(await _readResponse(method, uri, cancel, form: form)));
+    } on FormatException {
+      throw const BigoException(BigoFailure.schema);
+    }
+  }
+
+  Future<Map<String, dynamic>> _read(String path, CancelToken cancel, {Map<String, String>? form}) =>
+      _readUri(form == null ? 'GET' : 'POST', Uri.parse('$origin$path'), cancel, form: form);
 
   /// Verified US/English homepage request; finite snapshot, not all rooms or
   /// a pagination contract. The server returned 20 rows despite fetchNum=10.
@@ -189,6 +237,66 @@ class BigoApi {
           expectedOwnerId: expectedOwnerId,
         );
       });
+
+  /// Resolves the current public web token before reading status/media. The
+  /// token and HLS lease remain inside the caller-owned request scope.
+  Future<BigoStudioRoom> studioRoom({required String siteId, int? expectedOwnerId, CancelToken? cancel}) =>
+      _scope(cancel, (token) async {
+        validateSiteId(siteId);
+        if (expectedOwnerId != null) _ownerId(expectedOwnerId);
+        final accessToken = await _webToken(token);
+        final uri = Uri.parse('$origin/studio/getInternalStudioInfo')
+            .replace(queryParameters: <String, String>{'siteId': siteId, 'verify': '', 'token': accessToken});
+        return parseStudioRoom(await _readUri('POST', uri, token), siteId: siteId, expectedOwnerId: expectedOwnerId);
+      });
+
+  Future<String> _webToken(CancelToken cancel) async {
+    final timestampCallback = _callback();
+    final timestampJson = _jsonp(
+      await _readResponse(
+        'GET',
+        Uri.parse('$securityOrigin/t').replace(queryParameters: {'callback': timestampCallback}),
+        cancel,
+      ),
+      timestampCallback,
+    );
+    if (timestampJson['code'] is! int) throw const BigoException(BigoFailure.schema);
+    final timestamp = _text(timestampJson['time']);
+    if (!RegExp(r'^[0-9]{1,20}$').hasMatch(timestamp)) throw const BigoException(BigoFailure.schema);
+    final statusCallback = _callback();
+    final statusJson = _jsonp(
+      await _readResponse(
+        'GET',
+        Uri.parse('$securityOrigin/status')
+            .replace(queryParameters: {'callback': statusCallback, 'data': _tokenDataBuilder(timestamp)}),
+        cancel,
+      ),
+      statusCallback,
+    );
+    final accessToken = _text(statusJson['token']);
+    if (accessToken.isEmpty || accessToken.length > 4096 || RegExp(r'[\x00-\x20\x7f]').hasMatch(accessToken)) {
+      throw const BigoException(BigoFailure.schema);
+    }
+    return accessToken;
+  }
+
+  String _callback() {
+    final value = _callbackFactory();
+    if (!RegExp(r'^jsonp[A-Za-z0-9_]{1,96}$').hasMatch(value)) throw const BigoException(BigoFailure.schema);
+    return value;
+  }
+
+  static Map<String, dynamic> _jsonp(String source, String callback) {
+    final prefix = '$callback(';
+    final trimmed = source.trim();
+    if (!trimmed.startsWith(prefix) || !trimmed.endsWith(');')) throw const BigoException(BigoFailure.schema);
+    final body = trimmed.substring(prefix.length, trimmed.length - 2);
+    try {
+      return _object(jsonDecode(body));
+    } on FormatException {
+      throw const BigoException(BigoFailure.schema);
+    }
+  }
 
   static Map<String, dynamic> _object(Object? value) {
     if (value is! Map<String, dynamic>) throw const BigoException(BigoFailure.schema);
@@ -299,5 +407,50 @@ class BigoApi {
       roomStatus: _number(data['roomStatus']),
       roomType: _text(data['roomType']),
     );
+  }
+
+  static BigoStudioRoom parseStudioRoom(Map<String, dynamic> json, {required String siteId, int? expectedOwnerId}) {
+    validateSiteId(siteId);
+    if (expectedOwnerId != null) _ownerId(expectedOwnerId);
+    final data = _success(json);
+    final owner = _ownerId(data['uid']);
+    if (expectedOwnerId != null && owner != expectedOwnerId) throw const BigoException(BigoFailure.identity);
+    final status = parseStudioStatus(json, siteId: siteId, expectedOwnerId: owner);
+    final rawRoomId = data['roomId'];
+    final roomId = rawRoomId == null || rawRoomId == '' || rawRoomId == '0' ? null : _text(rawRoomId);
+    if (roomId != null && !RegExp(r'^[1-9][0-9]{0,31}$').hasMatch(roomId)) {
+      throw const BigoException(BigoFailure.schema);
+    }
+    final nickname = data['nick_name'] == null ? '' : _text(data['nick_name']);
+    final title = data['roomTopic'] == null ? '' : _text(data['roomTopic']);
+    final category = data['gameTitle'] == null ? '' : _text(data['gameTitle']);
+    final rawAvatar = data['avatar'];
+    final avatar = rawAvatar == null || rawAvatar == '' ? null : _httpsUri(_text(rawAvatar)).toString();
+    final rawHls = data['hls_src'];
+    final hls = rawHls == null || rawHls == '' ? null : _httpsUri(_text(rawHls), hls: true);
+    if (status.access != BigoAccess.public && hls != null) throw const BigoException(BigoFailure.schema);
+    if (status.reportedAlive == false && hls != null) throw const BigoException(BigoFailure.schema);
+    return BigoStudioRoom(
+      status: status,
+      roomId: roomId,
+      nickname: nickname,
+      title: title,
+      category: category,
+      avatar: avatar,
+      hls: hls,
+    );
+  }
+
+  static Uri _httpsUri(String source, {bool hls = false}) {
+    final uri = Uri.tryParse(source);
+    if (uri == null ||
+        uri.scheme != 'https' ||
+        uri.host.isEmpty ||
+        uri.userInfo.isNotEmpty ||
+        uri.hasFragment ||
+        (hls && !uri.path.toLowerCase().endsWith('.m3u8'))) {
+      throw const BigoException(BigoFailure.schema);
+    }
+    return uri;
   }
 }
