@@ -19,6 +19,7 @@ import 'package:pure_live/core/site/popkontv/popkontv_link.dart';
 import 'package:pure_live/core/site/shopeelive/shopeelive_link.dart';
 import 'package:pure_live/core/site/vkvideolive/vkvideolive_link.dart';
 import 'package:pure_live/core/site/nimotv/nimotv_link.dart';
+import 'package:pure_live/core/site/dailymotion/dailymotion_link.dart';
 import 'package:pure_live/core/site/seventeenlive/seventeenlive_link.dart';
 
 class WebSearchRoomTarget {
@@ -116,6 +117,10 @@ class WebSearchRoomParser {
     final nimoTv = NimoTvLink.parse(rawUrl);
     if (nimoTv != null) {
       return WebSearchRoomTarget(platform: Sites.nimoTvSite, roomId: nimoTv.storageKey);
+    }
+    final dailymotion = DailymotionLink.parseVideoId(rawUrl);
+    if (dailymotion != null) {
+      return WebSearchRoomTarget(platform: Sites.dailymotionSite, roomId: dailymotion);
     }
     final host = uri.host.toLowerCase();
     final segments = uri.pathSegments.where((segment) => segment.trim().isNotEmpty).toList(growable: false);

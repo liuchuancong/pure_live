@@ -10,6 +10,7 @@ import 'site/popkontv/popkontv_site.dart';
 import 'site/shopeelive/shopeelive_site.dart';
 import 'site/vkvideolive/vkvideolive_site.dart';
 import 'site/nimotv/nimotv_site.dart';
+import 'site/dailymotion/dailymotion_site.dart';
 import 'site/seventeenlive/seventeenlive_site.dart';
 import 'site/showroom/showroom_site.dart';
 import 'site/weibo/weibo_site.dart';
@@ -73,6 +74,7 @@ class Sites {
   static const String shopeeLiveSite = 'shopeelive';
   static const String vkVideoLiveSite = 'vkvideolive';
   static const String nimoTvSite = 'nimotv';
+  static const String dailymotionSite = 'dailymotion';
   static const String seventeenLiveSite = '17live';
 
   static const Set<String> supportedSiteIds = {
@@ -109,6 +111,7 @@ class Sites {
     shopeeLiveSite,
     vkVideoLiveSite,
     nimoTvSite,
+    dailymotionSite,
     seventeenLiveSite,
     iptvSite,
   };
@@ -159,6 +162,12 @@ class Sites {
       liveSite: VkVideoLiveSite(),
     ),
     Site(id: nimoTvSite, name: i18n('site_nimotv'), logo: 'assets/images/logo.png', liveSite: NimoTvSite()),
+    Site(
+      id: dailymotionSite,
+      name: i18n('site_dailymotion'),
+      logo: 'assets/images/logo.png',
+      liveSite: DailymotionSite(),
+    ),
     Site(
       id: seventeenLiveSite,
       name: i18n('site_17live'),
@@ -318,6 +327,12 @@ class Sites {
         name: i18n('site_nimotv'),
         logo: 'assets/images/logo.png',
         liveSite: NimoTvSite(),
+      ),
+      dailymotionSite => Site(
+        id: dailymotionSite,
+        name: i18n('site_dailymotion'),
+        logo: 'assets/images/logo.png',
+        liveSite: DailymotionSite(),
       ),
       seventeenLiveSite => Site(
         id: seventeenLiveSite,

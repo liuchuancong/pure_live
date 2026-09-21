@@ -4,7 +4,7 @@
 
 ## 当前平台能力
 
-2026-09-21 按 `lib/core/sites.dart` 核对：当前源码注册 **34 个直播站点 + IPTV，共 35 个适配器**。这是源码注册数量，不是已发布包或完整验收数量。小红书、niconico、微博、SHOWROOM、CHZZK、Kick、17LIVE、LiveMe、TikTok LIVE、YouTube Live、Bigo Live、PandaTV、PopkonTV、Shopee Live、VK Video Live 和 NimoTV 已接入应用入口；原生整体验收继续，当前候选与完整剩余范围以[验收状态](ACCEPTANCE_STATUS_3_2_0.md)为准。
+2026-09-21 按 `lib/core/sites.dart` 核对：当前源码注册 **35 个直播站点 + IPTV，共 36 个适配器**。这是源码注册数量，不是已发布包或完整验收数量。小红书、niconico、微博、SHOWROOM、CHZZK、Kick、17LIVE、LiveMe、TikTok LIVE、YouTube Live、Bigo Live、PandaTV、PopkonTV、Shopee Live、VK Video Live、NimoTV 和 Dailymotion 已接入应用入口；原生整体验收继续，当前候选与完整剩余范围以[验收状态](ACCEPTANCE_STATUS_3_2_0.md)为准。
 
 ### 09-09 及更早阶段的取证快照
 
@@ -59,14 +59,15 @@ TwitCasting 新增公开目录、顶栏分类、详情/HLS三档、录制输入�
 | PopkonTV | 官网公开直播目录，热门/最新/新人/热榜四种原生排序与分页 | 原生频道 ID、昵称关键词与官方直播链接搜索，包含未开播主播 | 当前未接入 | `watchCnt` 为当前在线；`totalWatchCnt` 为本场累计观看；`bookmark` 为收藏/关注，分列展示 |
 | Shopee Live（印尼） | 官网首页有限公开直播推荐快照，不宣称全站目录 | 当前快照标题关键词、精确场次 ID 与官方分享链接 | 当前未接入 | 目录 `view_count` 与详情 `viewer_count` 为当前观看；`member_cnt` 不作并发人数 |
 | VK Video Live | 官网公开分类与在线直播目录，保留服务端 offset 游标 | 原生频道搜索，保留 after 游标并包含未开播频道；当前与旧版官方频道链接均可回流 | 当前未接入 | `count.viewers` 为当前观看；`count.views` 为累计场次观看；频道 `subscribers` 为关注数，分列展示 |
-| NimoTV | 首阶段保留精确频道范围说明；官网首页目录使用二进制会话接口 | 精确频道号、频道别名与官方房间链接，包含未开播状态；关键词分页待接入 | 当前未接入 | 直播页 `viewerNum` 为当前观看；下播或缺值时保持未知 |
+| NimoTV | 官网首页公开推荐有限快照 | 当前快照关键词、精确频道号、频道别名与官方房间链接，包含未开播状态 | 当前未接入 | 官网卡片与直播页 `viewerNum` 为当前观看；下播或缺值时保持未知 |
+| Dailymotion | 官网公开 API 的原生直播目录，保留 `page/limit/has_more` | 直播节目关键词、精确视频 ID、官方视频链接；精确频道名可返回当前直播 | 当前未接入 | 公开 API 未返回已核验的并发人数，保持未知；不以累计播放量替代 |
 | IPTV | 本地导入频道分组 | 本地频道查询 | 无远端弹幕服务 | 不虚构观看人数 |
 
 > “热度”是平台排序/活跃度指标，不等同于唯一在线用户数。界面会按平台字段分别显示“热度”“在线”或“累计观看”，避免把不同含义的数据统一标成在线人数。
 
 搜索页会直接显示当前平台的覆盖范围，并提供“包含未开播”筛选。平台选择栏使用独立水平列表：项目超过屏幕宽度时可横向访问，首尾为硬边界，不使用无对应内容页的 `TabBar` 自动定位。综合排序固定把直播中房间放在前面，再比较当前观看口径、粉丝数和主页平台顺序；“平台优先”直接使用“平台显示设置”的拖动顺序，“观众优先”和“粉丝优先”则调整对应字段的比较次序。粉丝字段只在平台搜索响应明确提供时参与，缺少该字段的结果保留为稳定次序；快手使用网页搜索入口，IPTV 只查找本机导入频道。每个平台单独维护翻页结束状态，空页或重复页会停止继续请求。
 
-“全部”搜索并发请求各原生平台，但按单个平台完成顺序渐进显示，某个平台超过 12 秒会被标记为本轮部分失败，不再阻塞其他结果。搜索页生命周期内复用同一组适配器，Twitch 等游标分页状态不会因每次读取平台列表而丢失。网页继续搜索可从 Bilibili、斗鱼、虎牙、抖音、快手、网易 CC、Twitch、SOOP、YY、AcFun、Picarto、TwitCasting、SHOWROOM、CHZZK、Kick、17LIVE、LiveMe、TikTok LIVE、YouTube Live、Bigo Live、PandaTV、PopkonTV、Shopee Live、VK Video Live 和 NimoTV 的已支持直播间链接识别“平台 + 房间号”；搜索/分类页和相似伪装域名会被忽略。
+“全部”搜索并发请求各原生平台，但按单个平台完成顺序渐进显示，某个平台超过 12 秒会被标记为本轮部分失败，不再阻塞其他结果。搜索页生命周期内复用同一组适配器，Twitch 等游标分页状态不会因每次读取平台列表而丢失。网页继续搜索可从 Bilibili、斗鱼、虎牙、抖音、快手、网易 CC、Twitch、SOOP、YY、AcFun、Picarto、TwitCasting、SHOWROOM、CHZZK、Kick、17LIVE、LiveMe、TikTok LIVE、YouTube Live、Bigo Live、PandaTV、PopkonTV、Shopee Live、VK Video Live、NimoTV 和 Dailymotion 的已支持直播间链接识别“平台 + 房间号”；搜索/分类页和相似伪装域名会被忽略。
 
 “设置 → 通用 → 观看数据与排行口径”提供两个全局模式和分平台开关：
 
@@ -113,6 +114,7 @@ TwitCasting 新增公开目录、顶栏分类、详情/HLS三档、录制输入�
 | Shopee Live（印尼） | 官方 FLV URL 的 `resolution` 稳定 ID | 普通 HTTP 优先；遇到官网动态校验时由无界面 WebView 复用官方指纹/SAP 中间件。播放、录制与恢复重新取得短时地址，并按 `expire_ts` 提前续期 |
 | VK Video Live | 官方 HLS master 分辨率与带宽 | 合并主线路与共享线路的同档变体；从 URL 路径 `expires` 解析过期时间，播放、录制与恢复重取房间和签名 HLS 后保持稳定分辨率 ID |
 | NimoTV | 官方签名 FLV 的 `ratio` 五档 | 移动房间页解码时效媒体包，固定使用 HTTPS；播放、录制与恢复重取 `wsSecret/wsTime`，并保持稳定 ratio ID |
+| Dailymotion | 官方嵌入播放器 HLS master 的 `NAME` / 分辨率 / 带宽 | 浏览器上下文读取动态签名 master，仅接受同视频 ID 的 `*.dmcdn.net` rendition；播放恢复与录制入口重新解析并保持稳定 rendition ID |
 
 横屏“清晰度与播放线路”面板根据画质数、线路数和可用高度计算整体尺寸。一个画质/一条线路时收紧面板；常见四画质使用均衡 `2×2`；项目多时只让按钮网格滚动，不用固定比例制造空白。按钮区域是主要视觉，标题、留白和重复的当前值标签均已压缩。
 
@@ -131,6 +133,8 @@ TwitCasting 新增公开目录、顶栏分类、详情/HLS三档、录制输入�
 2026-09-21 的 VK Video Live 生产探测从官网当前页面取得公开分类、在线目录与原生频道搜索请求；搜索包含开播和未开播频道，房间接口返回并发、累计观看、主播身份与两条带签名 HLS master。使用官网 Origin/Referer 读取 master 返回 HTTP 200、`application/vnd.apple.mpegurl` 与 `#EXTM3U`，当前样本解析出 1080p、720p、480p、360p、240p 五档变体，实际变体清单同样返回 HTTP 200。源码已接入分类、目录、搜索、链接迁移、画质/线路、到期续期和录制恢复；详细证据见 [VK Video Live 合同检查点](VK_VIDEO_LIVE_CONTRACT_CHECKPOINT_2026_09_21.md)。
 
 2026-09-21 的 NimoTV 生产探测从官网当前首页取得公开直播样本，移动房间页直接返回稳定房间号、主播、标题、分类、当前观看与十六进制媒体包。解码后按平台 ratio 生成 1080p、720p、480p、360p、240p 五档 HTTPS FLV；当前签名样本读取返回 HTTP 200，字节前缀为标准 `FLV` 文件头。源码已接入精确频道/别名、官方链接、状态、五档画质、到期续期与录制恢复；详细证据见 [NimoTV 合同检查点](NIMOTV_CONTRACT_CHECKPOINT_2026_09_21.md)。
+
+2026-09-21 的 Dailymotion 生产探测从官网公开 API 取得原生直播分页、搜索、节目/频道身份与明确 `mode/onair` 状态；官方嵌入播放器动态取得签名 HLS master，当前样本返回 380p、240p、480@60 三档 `*.dmcdn.net` rendition，独立 rendition 请求返回 HTTP 200 与 HLS 清单字节。源码已接入目录、搜索、链接回流、动态画质、播放/录制恢复；详细证据见 [Dailymotion 合同检查点](DAILYMOTION_CONTRACT_CHECKPOINT_2026_09_21.md)。
 
 ```powershell
 python tool/interface_probe.py

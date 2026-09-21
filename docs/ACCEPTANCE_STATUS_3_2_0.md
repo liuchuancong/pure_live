@@ -12,7 +12,7 @@
 | Windows 最新归档 | `2fb471d3` Debug；尚未纳入之后的源码修订，也不是 3.2.0 Release 候选 |
 | 手机快照 | `192.168.1.2:5555` 已重新核对 25102RKBEC / myron / Android 17 / root；Pure Live 无进程和录制服务，但前台为其他应用，本轮守卫停止安装与输入 |
 | 当前安装 APK | 只读刷新为 3.1.8 / 6121；上次精确 `base.apk` 哈希仍为 `4BF85571…6B82` Release 测试包，本轮未重拉包，正式签名候选仍待生成 |
-| 平台范围 | 当前源码 **34 个直播站点 + IPTV，共 35 个适配器**；PandaTV、PopkonTV、Shopee Live、VK Video Live 与 NimoTV 已完成首阶段源码接入，战旗与浪 Live 保持内部 readiness，DLive、一直播与企鹅电竞已归档生命周期证据；已注册平台仍有能力与双端原生覆盖缺口 |
+| 平台范围 | 当前源码 **35 个直播站点 + IPTV，共 36 个适配器**；PandaTV、PopkonTV、Shopee Live、VK Video Live、NimoTV 与 Dailymotion 已完成首阶段源码接入，战旗与浪 Live 保持内部 readiness，DLive、一直播与企鹅电竞已归档生命周期证据；已注册平台仍有能力与双端原生覆盖缺口 |
 | 编号总账 | 历史大组 20 PASS / 42 RUN / 0 NR；RUN 是待补证或部分完成，不等于 42 个当前 Bug |
 
 ## 编号统计
@@ -31,7 +31,7 @@
 2. **Windows GUI/性能批次未完成**：多 DPI、主副屏、PiP/全屏/多窗口、WebView2、Issue #767 的 4K GPU 对照及退出回落需要同一 Release 候选集中执行。
 3. **Android 组合矩阵未闭合**：当前候选仍需覆盖锁屏/后台、横屏/系统返回、PiP、实体音量键、自动录制和累计数据迁移；设备在线时优先合并执行。
 4. **平台与录制范围较大**：每个平台的目录、播放、弹幕、录制、断流恢复和资源释放尚未全部在当前双端候选上完成；长录和严格解码仍是发布门禁。
-5. **平台扩展继续推进**：战旗与浪 Live 等待当前生产媒体证据后注册；DLive、一直播与企鹅电竞已完成生命周期归档；PandaTV、PopkonTV、Shopee Live、VK Video Live 与 NimoTV 已进入源码能力表，双端原生与录制证据并入集中验收。
+5. **平台扩展继续推进**：战旗与浪 Live 等待当前生产媒体证据后注册；DLive、一直播与企鹅电竞已完成生命周期归档；PandaTV、PopkonTV、Shopee Live、VK Video Live、NimoTV 与 Dailymotion 已进入源码能力表，双端原生与录制证据并入集中验收。
 6. **发布链未开始**：版本冻结、正式签名、全平台串行产物、README/更新日志、资产复验和 GitHub 发布均等待前述门禁。
 
 ## 下一批顺序

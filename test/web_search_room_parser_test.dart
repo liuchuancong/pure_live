@@ -19,6 +19,7 @@ void main() {
       'https://live.shopee.co.id/share?from=live&session=225239358': (Sites.shopeeLiveSite, 'id:225239358'),
       'https://live.vkvideo.ru/HighMySide': (Sites.vkVideoLiveSite, 'highmyside'),
       'https://www.nimo.tv/live/40972312': (Sites.nimoTvSite, '40972312'),
+      'https://www.dailymotion.com/video/x3b68jn': (Sites.dailymotionSite, 'x3b68jn'),
     };
 
     for (final entry in cases.entries) {
@@ -74,5 +75,17 @@ void main() {
   test('NimoTV numeric rooms and aliases resolve to stable channel keys', () async {
     expect(await LiveUrlTool.parseLiveUrl('NimoTV https://www.nimo.tv/live/40972312'), ['40972312', Sites.nimoTvSite]);
     expect(await LiveUrlTool.parseLiveUrl('https://m.nimo.tv/SBTCPotm'), ['sbtcpotm', Sites.nimoTvSite]);
+  });
+
+  test('Dailymotion video, live, embed and short links resolve to a stable video ID', () async {
+    for (final url in [
+      'https://www.dailymotion.com/video/x3b68jn',
+      'https://www.dailymotion.com/live/x3b68jn',
+      'https://www.dailymotion.com/embed/video/x3b68jn',
+      'https://dai.ly/x3b68jn',
+    ]) {
+      expect(await LiveUrlTool.parseLiveUrl(url), ['x3b68jn', Sites.dailymotionSite], reason: url);
+    }
+    expect(await LiveUrlTool.parseLiveUrl('https://www.dailymotion.com/CNEWS'), isEmpty);
   });
 }
