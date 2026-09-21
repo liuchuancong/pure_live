@@ -11,6 +11,7 @@ import 'package:pure_live/model/live_play_quality.dart';
 import 'package:pure_live/plugins/locale_helper.dart';
 
 import 'nimotv_api.dart';
+import 'nimotv_browser.dart';
 import 'nimotv_link.dart';
 
 class NimoTvSite extends LiveSite
@@ -23,9 +24,12 @@ class NimoTvSite extends LiveSite
         LivePlayUrlResolver,
         LivePlayRecoveryResolver,
         LivePlayLeaseMetadata {
-  NimoTvSite({NimoTvApi? api}) : _api = api ?? NimoTvApi();
+  NimoTvSite({NimoTvApi? api, NimoTvDirectoryResolver? directoryResolver})
+    : _api = api ?? NimoTvApi(),
+      _directoryResolver = directoryResolver ?? NimoTvBrowserDirectoryResolver();
 
   final NimoTvApi _api;
+  final NimoTvDirectoryResolver _directoryResolver;
 
   @override
   String get id => 'nimotv';
@@ -48,9 +52,9 @@ class NimoTvSite extends LiveSite
             children: [
               LiveArea(
                 platform: id,
-                areaType: 'exact',
-                areaId: 'channel',
-                areaName: i18n('nimotv_category_exact'),
+                areaType: 'snapshot',
+                areaId: 'homepage',
+                areaName: i18n('nimotv_category_homepage'),
                 typeName: name,
               ),
             ],
@@ -80,19 +84,59 @@ class NimoTvSite extends LiveSite
     data: includeMedia ? room : null,
   );
 
-  @override
-  Future<LiveDirectoryPage> getDirectoryPage({int page = 1, LiveArea? category, CancelToken? cancel}) async {
-    if (category != null && (category.platform != id || category.areaType != 'exact' || category.areaId != 'channel')) {
-      throw const NimoTvException(NimoTvFailure.identity);
+  bool _supportsCategory(LiveArea category) =>
+      category.platform == id &&
+      ((category.areaType == 'snapshot' && category.areaId == 'homepage') ||
+          (category.areaType == 'exact' && category.areaId == 'channel'));
+
+  Future<List<NimoTvRoom>> _directoryRooms({CancelToken? cancel}) async {
+    if (cancel?.isCancelled == true) throw const NimoTvException(NimoTvFailure.cancelled);
+    try {
+      final rooms = await _directoryResolver.resolve();
+      if (cancel?.isCancelled == true) throw const NimoTvException(NimoTvFailure.cancelled);
+      return rooms;
+    } on NimoTvException {
+      rethrow;
+    } catch (_) {
+      if (cancel?.isCancelled == true) throw const NimoTvException(NimoTvFailure.cancelled);
+      throw const NimoTvException(NimoTvFailure.transport);
     }
-    return LiveDirectoryPage(page: page, hasMore: false, rooms: const []);
   }
 
   @override
-  Future<List<LiveRoom>> getRecommendRooms({int page = 1, int pageSize = 30}) async => const [];
+  Future<LiveDirectoryPage> getDirectoryPage({int page = 1, LiveArea? category, CancelToken? cancel}) async {
+    if (category != null && !_supportsCategory(category)) {
+      throw const NimoTvException(NimoTvFailure.identity);
+    }
+    if (page != 1) return LiveDirectoryPage(page: page, hasMore: false, rooms: const []);
+    final rooms = await _directoryRooms(cancel: cancel);
+    return LiveDirectoryPage(
+      page: page,
+      hasMore: false,
+      rooms: List.unmodifiable(rooms.map((room) => _room(room, includeMedia: false))),
+    );
+  }
 
   @override
-  Future<List<LiveRoom>> getCategoryRooms(LiveArea category, {int page = 1, int pageSize = 30}) async => const [];
+  Future<List<LiveRoom>> getRecommendRooms({int page = 1, int pageSize = 30}) =>
+      _directorySlice(page: page, pageSize: pageSize);
+
+  @override
+  Future<List<LiveRoom>> getCategoryRooms(LiveArea category, {int page = 1, int pageSize = 30}) async {
+    if (!_supportsCategory(category)) {
+      throw const NimoTvException(NimoTvFailure.identity);
+    }
+    return _directorySlice(page: page, pageSize: pageSize);
+  }
+
+  Future<List<LiveRoom>> _directorySlice({required int page, required int pageSize}) async {
+    if (page < 1 || pageSize < 1) return const [];
+    final rooms = await _directoryRooms();
+    final start = (page - 1) * pageSize;
+    if (start >= rooms.length) return const [];
+    final end = (start + pageSize).clamp(0, rooms.length);
+    return List.unmodifiable(rooms.sublist(start, end).map((room) => _room(room, includeMedia: false)));
+  }
 
   @override
   Future<List<LiveRoom>> searchRooms(String keyword, {int page = 1, int pageSize = 30}) =>
@@ -105,15 +149,31 @@ class NimoTvSite extends LiveSite
     int pageSize = 30,
     CancelToken? cancel,
   }) async {
-    if (page != 1 || pageSize < 1) return [];
+    if (page < 1 || pageSize < 1) return [];
     final key = NimoTvLink.parse(keyword) ?? NimoTvLink.parseKey(keyword);
-    if (key == null) return [];
-    try {
-      return [_room(await _api.room(key.storageKey, resolveMedia: false, cancel: cancel), includeMedia: false)];
-    } on NimoTvException catch (error) {
-      if (error.kind == NimoTvFailure.missing) return [];
-      rethrow;
+    if (key != null && page == 1) {
+      try {
+        return [_room(await _api.room(key.storageKey, resolveMedia: false, cancel: cancel), includeMedia: false)];
+      } on NimoTvException catch (error) {
+        if (error.kind != NimoTvFailure.missing) rethrow;
+      }
     }
+    if (cancel?.isCancelled == true) throw const NimoTvException(NimoTvFailure.cancelled);
+    final normalized = keyword.trim().toLowerCase();
+    if (normalized.isEmpty) return [];
+    final rooms = await _directoryRooms(cancel: cancel);
+    if (cancel?.isCancelled == true) throw const NimoTvException(NimoTvFailure.cancelled);
+    final matches = rooms
+        .where((room) {
+          return room.nickname.toLowerCase().contains(normalized) ||
+              room.title.toLowerCase().contains(normalized) ||
+              room.category.toLowerCase().contains(normalized);
+        })
+        .toList(growable: false);
+    final start = (page - 1) * pageSize;
+    if (start >= matches.length) return [];
+    final end = (start + pageSize).clamp(0, matches.length);
+    return List.unmodifiable(matches.sublist(start, end).map((room) => _room(room, includeMedia: false)));
   }
 
   String _key(String roomId, String platform) {

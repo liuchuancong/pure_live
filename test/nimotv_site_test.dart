@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pure_live/common/models/live_room.dart';
 import 'package:pure_live/core/site/nimotv/nimotv_api.dart';
+import 'package:pure_live/core/site/nimotv/nimotv_browser.dart';
 import 'package:pure_live/core/site/nimotv/nimotv_link.dart';
 import 'package:pure_live/core/site/nimotv/nimotv_site.dart';
 import 'package:pure_live/core/sites.dart';
@@ -25,12 +26,33 @@ void main() {
     }
   });
 
-  test('exact channel search returns current identity without fabricating a catalog', () async {
-    final transport = _FixtureTransport();
-    final site = NimoTvSite(api: NimoTvApi(request: transport.call));
+  test('homepage directory exposes a finite snapshot and local keyword search', () async {
+    final directory = _FixtureDirectory();
+    final site = NimoTvSite(
+      api: NimoTvApi(request: _FixtureTransport().call),
+      directoryResolver: directory,
+    );
     final category = (await site.getCategores(1, 30)).single.children.single;
-    expect(category.areaId, 'channel');
-    expect((await site.getDirectoryPage(category: category)).rooms, isEmpty);
+    expect(category.areaId, 'homepage');
+    expect(category.areaType, 'snapshot');
+    final page = await site.getDirectoryPage(category: category);
+    expect(page.hasMore, isFalse);
+    expect(page.rooms.map((room) => room.roomId), ['40972312', '694735831']);
+    expect(page.rooms.first.onlineViewers, '1900');
+    expect(page.rooms.first.cover, page.rooms.first.avatar);
+    expect(page.rooms.first.audienceMetricType, AudienceMetricType.onlineViewers);
+
+    final searched = await site.searchRooms('fixture', pageSize: 1);
+    expect(searched.single.roomId, '40972312');
+    expect(directory.calls, 2);
+  });
+
+  test('exact channel search returns authoritative current identity', () async {
+    final transport = _FixtureTransport();
+    final site = NimoTvSite(
+      api: NimoTvApi(request: transport.call),
+      directoryResolver: _FixtureDirectory(),
+    );
     final rooms = await site.searchRooms('https://www.nimo.tv/live/40972312');
     expect(rooms.single.roomId, '40972312');
     expect(rooms.single.nick, 'Fixture Host');
@@ -41,7 +63,10 @@ void main() {
 
   test('room detail exposes five signed FLV qualities, recovery and lease timing', () async {
     final transport = _FixtureTransport();
-    final site = NimoTvSite(api: NimoTvApi(request: transport.call));
+    final site = NimoTvSite(
+      api: NimoTvApi(request: transport.call),
+      directoryResolver: _FixtureDirectory(),
+    );
     final detail = await site.getRoomDetail(roomId: '40972312', platform: Sites.nimoTvSite);
     expect(detail.effectiveLiveStatus, LiveStatus.live);
     expect(detail.httpHeaders['Referer'], 'https://www.nimo.tv/live/40972312');
@@ -71,6 +96,32 @@ void main() {
     expect(room.qualities, isEmpty);
   });
 
+  test('browser directory payload validates identity, audience and media hosts', () {
+    final rooms = NimoTvBrowserDirectoryResolver.parseDirectoryPayload(
+      jsonEncode([
+        {
+          'roomId': '40972312',
+          'nickname': 'Fixture Host',
+          'avatar': 'http://img.nimo.tv/avatar/fixture.png',
+          'title': 'Fixture Live',
+          'category': 'Wild Rift',
+          'viewerCount': 1900,
+        },
+      ]),
+    );
+    expect(rooms.single.avatar, 'https://img.nimo.tv/avatar/fixture.png');
+    expect(rooms.single.cover, rooms.single.avatar);
+    expect(rooms.single.viewerCount, 1900);
+    expect(rooms.single.state, NimoTvState.live);
+    expect(
+      () => NimoTvBrowserDirectoryResolver.parseDirectoryPayload(
+        '[{"roomId":"1","nickname":"x","avatar":"https://evil.test/a.png","title":"x"}]',
+      ),
+      throwsA(isA<NimoTvException>()),
+    );
+    expect(NimoTvBrowserDirectoryResolver.buildDirectoryScript(), contains('home-hot-'));
+  });
+
   test('registry exposes one NimoTV adapter with recording recovery', () {
     expect(Sites.supportedSiteIds, contains(Sites.nimoTvSite));
     expect(Sites.of(Sites.nimoTvSite).liveSite, isA<NimoTvSite>());
@@ -86,7 +137,43 @@ final class _FixtureTransport {
       roomCalls++;
       return (status: 200, body: _roomHtml(generation: roomCalls));
     }
+    if (uri.host == 'm.nimo.tv') return (status: 404, body: '');
     throw StateError('Unexpected fixture request: $uri');
+  }
+}
+
+final class _FixtureDirectory implements NimoTvDirectoryResolver {
+  int calls = 0;
+
+  @override
+  Future<List<NimoTvRoom>> resolve() async {
+    calls++;
+    return [
+      NimoTvRoom(
+        roomId: '40972312',
+        anchorId: '',
+        nickname: 'Fixture Host',
+        avatar: 'https://img.nimo.tv/avatar/fixture.png',
+        cover: 'https://img.nimo.tv/avatar/fixture.png',
+        title: 'Fixture Live',
+        category: 'Wild Rift',
+        viewerCount: 1900,
+        state: NimoTvState.live,
+        qualities: const [],
+      ),
+      NimoTvRoom(
+        roomId: '694735831',
+        anchorId: '',
+        nickname: 'Second Host',
+        avatar: '',
+        cover: '',
+        title: 'Second Live',
+        category: 'PK',
+        viewerCount: 569,
+        state: NimoTvState.live,
+        qualities: const [],
+      ),
+    ];
   }
 }
 
