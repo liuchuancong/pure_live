@@ -575,7 +575,7 @@ class RoomCard extends StatelessWidget {
                               maxLines: 1,
                               textInputAction: TextInputAction.done,
                               enabled: !tagCreationPending,
-                              onSubmitted: (_) => submitNewTag(setModalState),
+                              onSubmitted: (_) => unawaited(submitNewTag(dialogContext, setModalState)),
                               style: AppTextStyles.t13.copyWith(fontWeight: FontWeight.w500),
                               decoration: InputDecoration(
                                 hintText: i18n('tag_desc_hint'),
@@ -1276,6 +1276,7 @@ class _FollowButtonState extends State<FollowButton> {
 
       final changed = await favorites.removeRoomDurably(widget.room);
       if (changed) EventBus.instance.emit('changeFavorite', true);
+      if (!mounted) return;
       if (!favorites.isFavorite(widget.room)) {
         Navigator.of(context).pop();
       }

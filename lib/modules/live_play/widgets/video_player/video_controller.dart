@@ -4,7 +4,6 @@ import 'dart:io';
 import 'dart:async';
 import 'dart:developer';
 
-import 'video_controller_panel.dart';
 import 'iptv_programme_policy.dart';
 
 import 'package:flutter/scheduler.dart';

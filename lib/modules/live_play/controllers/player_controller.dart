@@ -22,6 +22,7 @@ import 'package:pure_live/core/site/huya/huya_transport_policy.dart';
 import 'package:pure_live/modules/live_play/states/load_type.dart';
 import 'package:pure_live/common/utils/latest_async_value_queue.dart';
 import 'package:pure_live/modules/live_play/states/live_play_state.dart';
+import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller.dart';
 
 typedef StreamSourceOpener = Future<void> Function(
@@ -184,6 +185,12 @@ class PlayerController extends GetxController {
   int _streamSelectionEpoch = 0;
   int _lastSourceCommitRevision = 0;
   final RxBool isStreamSwitching = false.obs;
+
+  LivePlayController get _videoSessionController {
+    final host = _main;
+    if (host is LivePlayController) return host;
+    return Get.find<LivePlayController>();
+  }
 
   Future<void> _openGlobalStream(
     String url,
@@ -450,7 +457,7 @@ class PlayerController extends GetxController {
         qualities: playerState.qualites,
         currentQuality: playerState.currentQuality,
       ),
-      livePlayController: _main,
+      livePlayController: _videoSessionController,
       onSourceCommitted: applySourceCommit,
       onAudioOnlyChanged: _main.setCurrentRoomAudioOnlyFromUser,
     );
@@ -541,7 +548,7 @@ class PlayerController extends GetxController {
         currentQuality: currentQuality,
         sourceQueryPolicies: session.sourceQueryPolicies,
       ),
-      livePlayController: _main,
+      livePlayController: _videoSessionController,
       onSourceCommitted: applySourceCommit,
       onAudioOnlyChanged: _main.setCurrentRoomAudioOnlyFromUser,
     );
