@@ -205,6 +205,13 @@ class LiveRoom {
       hasTotalViewers: false,
       onlineAvailability: AudienceOnlineAvailability.unsupported,
     ),
+    // Live directory cards expose a dedicated current-viewer badge. The
+    // VideoObject interaction count is cumulative and stays in totalViewers.
+    'rumble': AudiencePlatformCapability(
+      hasPopularity: false,
+      hasTotalViewers: true,
+      onlineAvailability: AudienceOnlineAvailability.roomList,
+    ),
     'ttinglive': AudiencePlatformCapability(
       hasPopularity: false,
       hasTotalViewers: false,

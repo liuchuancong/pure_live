@@ -20,6 +20,7 @@ void main() {
       'https://live.vkvideo.ru/HighMySide': (Sites.vkVideoLiveSite, 'highmyside'),
       'https://www.nimo.tv/live/40972312': (Sites.nimoTvSite, '40972312'),
       'https://www.dailymotion.com/video/x3b68jn': (Sites.dailymotionSite, 'x3b68jn'),
+      'https://rumble.com/v7fngda-rt-de-live-tv.html': (Sites.rumbleSite, 'v7fngda-rt-de-live-tv'),
     };
 
     for (final entry in cases.entries) {
@@ -87,5 +88,12 @@ void main() {
       expect(await LiveUrlTool.parseLiveUrl(url), ['x3b68jn', Sites.dailymotionSite], reason: url);
     }
     expect(await LiveUrlTool.parseLiveUrl('https://www.dailymotion.com/CNEWS'), isEmpty);
+  });
+
+  test('Rumble public video links resolve without confusing embed or channel identities', () async {
+    const url = 'https://rumble.com/v7fngda-rt-de-live-tv.html?e9s=src_v1_blp';
+    expect(await LiveUrlTool.parseLiveUrl(url), ['v7fngda-rt-de-live-tv', Sites.rumbleSite]);
+    expect(await LiveUrlTool.parseLiveUrl('https://rumble.com/embed/v7dh3fs/'), isEmpty);
+    expect(await LiveUrlTool.parseLiveUrl('https://rumble.com/c/RTDE'), isEmpty);
   });
 }

@@ -11,6 +11,7 @@ import 'site/shopeelive/shopeelive_site.dart';
 import 'site/vkvideolive/vkvideolive_site.dart';
 import 'site/nimotv/nimotv_site.dart';
 import 'site/dailymotion/dailymotion_site.dart';
+import 'site/rumble/rumble_site.dart';
 import 'site/seventeenlive/seventeenlive_site.dart';
 import 'site/showroom/showroom_site.dart';
 import 'site/weibo/weibo_site.dart';
@@ -75,6 +76,7 @@ class Sites {
   static const String vkVideoLiveSite = 'vkvideolive';
   static const String nimoTvSite = 'nimotv';
   static const String dailymotionSite = 'dailymotion';
+  static const String rumbleSite = 'rumble';
   static const String seventeenLiveSite = '17live';
 
   static const Set<String> supportedSiteIds = {
@@ -112,6 +114,7 @@ class Sites {
     vkVideoLiveSite,
     nimoTvSite,
     dailymotionSite,
+    rumbleSite,
     seventeenLiveSite,
     iptvSite,
   };
@@ -168,6 +171,7 @@ class Sites {
       logo: 'assets/images/logo.png',
       liveSite: DailymotionSite(),
     ),
+    Site(id: rumbleSite, name: i18n('site_rumble'), logo: 'assets/images/logo.png', liveSite: RumbleSite()),
     Site(
       id: seventeenLiveSite,
       name: i18n('site_17live'),
@@ -333,6 +337,12 @@ class Sites {
         name: i18n('site_dailymotion'),
         logo: 'assets/images/logo.png',
         liveSite: DailymotionSite(),
+      ),
+      rumbleSite => Site(
+        id: rumbleSite,
+        name: i18n('site_rumble'),
+        logo: 'assets/images/logo.png',
+        liveSite: RumbleSite(),
       ),
       seventeenLiveSite => Site(
         id: seventeenLiveSite,

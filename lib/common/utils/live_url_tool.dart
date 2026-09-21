@@ -27,6 +27,7 @@ import 'package:pure_live/core/site/shopeelive/shopeelive_link.dart';
 import 'package:pure_live/core/site/vkvideolive/vkvideolive_link.dart';
 import 'package:pure_live/core/site/nimotv/nimotv_link.dart';
 import 'package:pure_live/core/site/dailymotion/dailymotion_link.dart';
+import 'package:pure_live/core/site/rumble/rumble_link.dart';
 import 'package:pure_live/core/site/seventeenlive/seventeenlive_link.dart';
 
 import 'package:pure_live/common/index.dart';
@@ -124,6 +125,7 @@ class LiveUrlTool {
       if (ShopeeLiveLink.parse(raw) != null) return true;
       if (VkVideoLiveLink.parse(raw) != null) return true;
       if (DailymotionLink.parseVideoId(raw) != null) return true;
+      if (RumbleLink.parseVideoKey(raw) != null) return true;
       final uri = Uri.parse(raw);
       return TikTokLink.isShortHost(uri.host) ||
           InkeApi.roomFromUri(uri) != null ||
@@ -254,6 +256,8 @@ class LiveUrlTool {
       if (nimoTv != null) return [nimoTv.storageKey, Sites.nimoTvSite];
       final dailymotion = DailymotionLink.parseVideoId(raw);
       if (dailymotion != null) return [dailymotion, Sites.dailymotionSite];
+      final rumble = RumbleLink.parseVideoKey(raw);
+      if (rumble != null) return [rumble, Sites.rumbleSite];
       late List<String> segments;
       try {
         segments = uri.pathSegments.where((part) => part.isNotEmpty).toList(growable: false);
