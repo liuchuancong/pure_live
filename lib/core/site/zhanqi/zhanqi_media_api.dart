@@ -1,11 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:pure_live/core/common/http_client.dart';
 import 'package:pure_live/core/common/request_scope.dart';
 import 'package:pure_live/core/site/zhanqi/zhanqi_api.dart';
-import 'package:pure_live/core/site/zhanqi/zhanqi_player_layout.dart';
 
 enum ZhanqiMediaMethod { get, postMultipart }
 
@@ -43,7 +43,22 @@ class ZhanqiMediaResponse {
 
 typedef ZhanqiMediaTransport = Future<ZhanqiMediaResponse> Function(ZhanqiMediaRequest request, CancelToken cancel);
 
+class ZhanqiMediaProbeResponse {
+  ZhanqiMediaProbeResponse({required this.status, required Uint8List prefix}) : prefix = Uint8List.fromList(prefix);
+
+  final int status;
+  final Uint8List prefix;
+}
+
+typedef ZhanqiMediaProbeTransport = Future<ZhanqiMediaProbeResponse> Function(
+  Uri uri,
+  Map<String, String> headers,
+  CancelToken cancel,
+);
+
 enum ZhanqiRouteState { notRequired, resolved, partial, unavailable }
+
+enum ZhanqiMediaKind { flv, hls }
 
 /// A single signed media identity. Multiple logical lines can share it, so
 /// their original indices are retained without publishing duplicate URLs.
@@ -88,6 +103,16 @@ class ZhanqiMediaResolution {
   final List<ZhanqiMediaSource> sources;
 }
 
+/// One bounded, byte-verified media candidate. A signed URL is kept internal
+/// until its response begins with a valid FLV header or HLS manifest marker.
+class ZhanqiValidatedMedia {
+  ZhanqiValidatedMedia({required this.source, required this.uri, required this.kind});
+
+  final ZhanqiMediaSource source;
+  final Uri uri;
+  final ZhanqiMediaKind kind;
+}
+
 class _ZhanqiViewer {
   const _ZhanqiViewer({required this.gid, required this.clientIp, required this.cookie});
 
@@ -108,14 +133,18 @@ class _ZhanqiTemplate {
 class ZhanqiMediaApi {
   ZhanqiMediaApi({
     ZhanqiMediaTransport? transport,
+    ZhanqiMediaProbeTransport? probeTransport,
     DateTime Function()? now,
     this.deadline = const Duration(seconds: 30),
   }) : _transport = transport ?? _defaultTransport,
+       _probeTransport = probeTransport ?? _defaultProbeTransport,
        _now = now ?? DateTime.now;
 
   static const _aliResolver = 'umc.danuoyi.alicdn.com';
   static const _platform = '128';
   static const _maxSources = 64;
+  static const _probeBytes = 4096;
+  static const _defaultProbeBudget = 12;
   static const _templates = <int, _ZhanqiTemplate>{
     12: _ZhanqiTemplate('dlhdl-cdn.zhanqi.tv', _flvPath),
     13: _ZhanqiTemplate('dlhls-cdn.zhanqi.tv', _dlHlsPath),
@@ -132,6 +161,7 @@ class ZhanqiMediaApi {
   };
 
   final ZhanqiMediaTransport _transport;
+  final ZhanqiMediaProbeTransport _probeTransport;
   final DateTime Function() _now;
   final Duration deadline;
 
@@ -173,6 +203,42 @@ class ZhanqiMediaApi {
     );
   }
 
+  static Future<ZhanqiMediaProbeResponse> _defaultProbeTransport(
+    Uri uri,
+    Map<String, String> headers,
+    CancelToken cancel,
+  ) async {
+    final response = await HttpClient.instance.dio.get<ResponseBody>(
+      uri.toString(),
+      cancelToken: cancel,
+      options: Options(
+        responseType: ResponseType.stream,
+        followRedirects: false,
+        headers: {...headers, 'Range': 'bytes=0-${_probeBytes - 1}', 'Accept-Encoding': 'identity'},
+        validateStatus: (_) => true,
+      ),
+    );
+    final body = response.data;
+    if (body == null) throw const ZhanqiException(ZhanqiFailure.schema);
+    final status = response.statusCode ?? 0;
+    if (status != 200 && status != 206) {
+      await body.stream.listen((_) {}).cancel();
+      return ZhanqiMediaProbeResponse(status: status, prefix: Uint8List(0));
+    }
+    final iterator = StreamIterator<List<int>>(body.stream);
+    final prefix = BytesBuilder(copy: false);
+    try {
+      while (prefix.length < _probeBytes && await iterator.moveNext()) {
+        final chunk = iterator.current;
+        final remaining = _probeBytes - prefix.length;
+        prefix.add(chunk.length <= remaining ? chunk : chunk.sublist(0, remaining));
+      }
+      return ZhanqiMediaProbeResponse(status: status, prefix: prefix.takeBytes());
+    } finally {
+      await iterator.cancel();
+    }
+  }
+
   Future<ZhanqiMediaResolution> resolve(ZhanqiRoomSnapshot room, {CancelToken? cancel}) => withRequestCancellation(
     cancel,
     (transport) async {
@@ -191,6 +257,114 @@ class ZhanqiMediaApi {
       }
     },
   );
+
+  /// Probes signed candidates in resolver order and keeps at most one working
+  /// route for each logical source. This reads only a small response prefix and
+  /// never treats HTTP success, content type, or a signed URL alone as proof.
+  Future<List<ZhanqiValidatedMedia>> validate(
+    ZhanqiMediaResolution resolution, {
+    CancelToken? cancel,
+    int maxCandidates = _defaultProbeBudget,
+  }) => withRequestCancellation(cancel, (transport) async {
+    if (maxCandidates < 1 || maxCandidates > _maxSources * 2) {
+      throw const ZhanqiException(ZhanqiFailure.schema);
+    }
+    if (transport.isCancelled) throw const ZhanqiException(ZhanqiFailure.cancelled);
+    try {
+      return await Future.any<List<ZhanqiValidatedMedia>>([
+        _validate(resolution, transport, maxCandidates),
+        transport.whenCancel.then<List<ZhanqiValidatedMedia>>(
+          (_) => throw const ZhanqiException(ZhanqiFailure.cancelled),
+        ),
+      ]).timeout(deadline);
+    } on TimeoutException {
+      throw const ZhanqiException(ZhanqiFailure.transport);
+    } catch (error) {
+      if (cancel?.isCancelled == true) throw const ZhanqiException(ZhanqiFailure.cancelled);
+      if (error is ZhanqiException) rethrow;
+      throw const ZhanqiException(ZhanqiFailure.transport);
+    }
+  });
+
+  Future<List<ZhanqiValidatedMedia>> _validate(
+    ZhanqiMediaResolution resolution,
+    CancelToken cancel,
+    int maxCandidates,
+  ) async {
+    if (!RegExp(r'^[1-9][0-9]{0,19}$').hasMatch(resolution.roomId) ||
+        !RegExp('^${RegExp.escape(resolution.roomId)}_[A-Za-z0-9_-]{1,64}\$').hasMatch(resolution.videoId) ||
+        resolution.sources.isEmpty ||
+        resolution.sources.length > _maxSources) {
+      throw const ZhanqiException(ZhanqiFailure.identity);
+    }
+    final result = <ZhanqiValidatedMedia>[];
+    var attempts = 0;
+    var transportFailures = 0;
+    for (final source in resolution.sources) {
+      for (final candidate in source.candidates) {
+        if (attempts >= maxCandidates) break;
+        attempts++;
+        final kind = _candidateKind(candidate);
+        if (kind == null) continue;
+        try {
+          final response = await _probeTransport(candidate, source.headers, cancel);
+          if (cancel.isCancelled) throw const ZhanqiException(ZhanqiFailure.cancelled);
+          if ((response.status == 200 || response.status == 206) && _matches(kind, response.prefix)) {
+            result.add(ZhanqiValidatedMedia(source: source, uri: candidate, kind: kind));
+            break;
+          }
+        } catch (error) {
+          if (cancel.isCancelled || (error is DioException && CancelToken.isCancel(error))) {
+            throw const ZhanqiException(ZhanqiFailure.cancelled);
+          }
+          if (error is ZhanqiException && error.kind == ZhanqiFailure.cancelled) rethrow;
+          transportFailures++;
+        }
+      }
+      if (attempts >= maxCandidates) break;
+    }
+    if (result.isNotEmpty) return List.unmodifiable(result);
+    if (attempts > 0 && transportFailures == attempts) throw const ZhanqiException(ZhanqiFailure.transport);
+    throw const ZhanqiException(ZhanqiFailure.mediaUnavailable);
+  }
+
+  static ZhanqiMediaKind? _candidateKind(Uri uri) {
+    if (uri.scheme != 'https' || uri.userInfo.isNotEmpty || uri.hasFragment || uri.host.isEmpty || uri.hasPort) {
+      return null;
+    }
+    final path = uri.path.toLowerCase();
+    if (path.endsWith('.flv')) return ZhanqiMediaKind.flv;
+    if (path.endsWith('.m3u8')) return ZhanqiMediaKind.hls;
+    return null;
+  }
+
+  static bool _matches(ZhanqiMediaKind kind, Uint8List prefix) => switch (kind) {
+    ZhanqiMediaKind.flv => _isFlv(prefix),
+    ZhanqiMediaKind.hls => _isHls(prefix),
+  };
+
+  static bool _isFlv(Uint8List value) {
+    if (value.length < 9 || value[0] != 0x46 || value[1] != 0x4c || value[2] != 0x56 || value[3] != 1) {
+      return false;
+    }
+    final flags = value[4];
+    if (flags == 0 || flags & 0xfa != 0) return false;
+    final offset = value[5] << 24 | value[6] << 16 | value[7] << 8 | value[8];
+    return offset >= 9 && offset <= _probeBytes;
+  }
+
+  static bool _isHls(Uint8List value) {
+    if (value.isEmpty) return false;
+    var start = 0;
+    if (value.length >= 3 && value[0] == 0xef && value[1] == 0xbb && value[2] == 0xbf) start = 3;
+    const marker = <int>[0x23, 0x45, 0x58, 0x54, 0x4d, 0x33, 0x55];
+    if (value.length - start < marker.length) return false;
+    for (var index = 0; index < marker.length; index++) {
+      if (value[start + index] != marker[index]) return false;
+    }
+    final end = start + marker.length;
+    return value.length == end || value[end] == 0x0a || value[end] == 0x0d;
+  }
 
   Future<ZhanqiMediaResolution> _resolve(ZhanqiRoomSnapshot room, CancelToken cancel) async {
     if (room.reportedLive != true) throw const ZhanqiException(ZhanqiFailure.notLive);
