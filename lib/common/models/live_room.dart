@@ -219,6 +219,13 @@ class LiveRoom {
       hasTotalViewers: false,
       onlineAvailability: AudienceOnlineAvailability.roomList,
     ),
+    // FC2 exposes current `count` and cumulative `total` independently in
+    // both its public directory and member metadata.
+    'fc2live': AudiencePlatformCapability(
+      hasPopularity: false,
+      hasTotalViewers: true,
+      onlineAvailability: AudienceOnlineAvailability.roomList,
+    ),
     'ttinglive': AudiencePlatformCapability(
       hasPopularity: false,
       hasTotalViewers: false,

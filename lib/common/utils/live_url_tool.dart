@@ -29,6 +29,7 @@ import 'package:pure_live/core/site/nimotv/nimotv_link.dart';
 import 'package:pure_live/core/site/dailymotion/dailymotion_link.dart';
 import 'package:pure_live/core/site/rumble/rumble_link.dart';
 import 'package:pure_live/core/site/goodgame/goodgame_link.dart';
+import 'package:pure_live/core/site/fc2live/fc2_link.dart';
 import 'package:pure_live/core/site/seventeenlive/seventeenlive_link.dart';
 
 import 'package:pure_live/common/index.dart';
@@ -128,6 +129,7 @@ class LiveUrlTool {
       if (DailymotionLink.parseVideoId(raw) != null) return true;
       if (RumbleLink.parseVideoKey(raw) != null) return true;
       if (GoodGameLink.parse(raw) != null) return true;
+      if (Fc2Link.parseChannelId(raw) != null) return true;
       final uri = Uri.parse(raw);
       return TikTokLink.isShortHost(uri.host) ||
           InkeApi.roomFromUri(uri) != null ||
@@ -262,6 +264,8 @@ class LiveUrlTool {
       if (rumble != null) return [rumble, Sites.rumbleSite];
       final goodGame = GoodGameLink.parse(raw);
       if (goodGame != null) return [goodGame.storageKey, Sites.goodGameSite];
+      final fc2Live = Fc2Link.parseChannelId(raw);
+      if (fc2Live != null) return [fc2Live, Sites.fc2LiveSite];
       late List<String> segments;
       try {
         segments = uri.pathSegments.where((part) => part.isNotEmpty).toList(growable: false);
