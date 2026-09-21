@@ -18,6 +18,7 @@ import 'package:pure_live/core/site/pandalive/pandalive_link.dart';
 import 'package:pure_live/core/site/popkontv/popkontv_link.dart';
 import 'package:pure_live/core/site/shopeelive/shopeelive_link.dart';
 import 'package:pure_live/core/site/vkvideolive/vkvideolive_link.dart';
+import 'package:pure_live/core/site/nimotv/nimotv_link.dart';
 import 'package:pure_live/core/site/seventeenlive/seventeenlive_link.dart';
 
 class WebSearchRoomTarget {
@@ -111,6 +112,10 @@ class WebSearchRoomParser {
     final vkVideoLive = VkVideoLiveLink.parse(rawUrl);
     if (vkVideoLive != null) {
       return WebSearchRoomTarget(platform: Sites.vkVideoLiveSite, roomId: vkVideoLive.storageKey);
+    }
+    final nimoTv = NimoTvLink.parse(rawUrl);
+    if (nimoTv != null) {
+      return WebSearchRoomTarget(platform: Sites.nimoTvSite, roomId: nimoTv.storageKey);
     }
     final host = uri.host.toLowerCase();
     final segments = uri.pathSegments.where((segment) => segment.trim().isNotEmpty).toList(growable: false);

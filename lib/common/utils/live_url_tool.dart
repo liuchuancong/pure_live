@@ -25,6 +25,7 @@ import 'package:pure_live/core/site/pandalive/pandalive_link.dart';
 import 'package:pure_live/core/site/popkontv/popkontv_link.dart';
 import 'package:pure_live/core/site/shopeelive/shopeelive_link.dart';
 import 'package:pure_live/core/site/vkvideolive/vkvideolive_link.dart';
+import 'package:pure_live/core/site/nimotv/nimotv_link.dart';
 import 'package:pure_live/core/site/seventeenlive/seventeenlive_link.dart';
 
 import 'package:pure_live/common/index.dart';
@@ -247,6 +248,8 @@ class LiveUrlTool {
       if (shopeeLive != null) return [shopeeLive.storageKey, Sites.shopeeLiveSite];
       final vkVideoLive = VkVideoLiveLink.parse(raw);
       if (vkVideoLive != null) return [vkVideoLive.storageKey, Sites.vkVideoLiveSite];
+      final nimoTv = NimoTvLink.parse(raw);
+      if (nimoTv != null) return [nimoTv.storageKey, Sites.nimoTvSite];
       late List<String> segments;
       try {
         segments = uri.pathSegments.where((part) => part.isNotEmpty).toList(growable: false);

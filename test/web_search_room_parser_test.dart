@@ -18,6 +18,7 @@ void main() {
       'https://live.acfun.cn/live/42?from=search': (Sites.acfunSite, '42'),
       'https://live.shopee.co.id/share?from=live&session=225239358': (Sites.shopeeLiveSite, 'id:225239358'),
       'https://live.vkvideo.ru/HighMySide': (Sites.vkVideoLiveSite, 'highmyside'),
+      'https://www.nimo.tv/live/40972312': (Sites.nimoTvSite, '40972312'),
     };
 
     for (final entry in cases.entries) {
@@ -68,5 +69,10 @@ void main() {
       Sites.vkVideoLiveSite,
     ]);
     expect(await LiveUrlTool.parseLiveUrl('https://vkplay.live/HighMySide'), ['highmyside', Sites.vkVideoLiveSite]);
+  });
+
+  test('NimoTV numeric rooms and aliases resolve to stable channel keys', () async {
+    expect(await LiveUrlTool.parseLiveUrl('NimoTV https://www.nimo.tv/live/40972312'), ['40972312', Sites.nimoTvSite]);
+    expect(await LiveUrlTool.parseLiveUrl('https://m.nimo.tv/SBTCPotm'), ['sbtcpotm', Sites.nimoTvSite]);
   });
 }

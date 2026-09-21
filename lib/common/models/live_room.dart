@@ -192,6 +192,12 @@ class LiveRoom {
       hasTotalViewers: true,
       onlineAvailability: AudienceOnlineAvailability.roomList,
     ),
+    // The mobile room bootstrap exposes viewerNum only for the active room.
+    'nimotv': AudiencePlatformCapability(
+      hasPopularity: false,
+      hasTotalViewers: false,
+      onlineAvailability: AudienceOnlineAvailability.roomRealtime,
+    ),
     'ttinglive': AudiencePlatformCapability(
       hasPopularity: false,
       hasTotalViewers: false,
