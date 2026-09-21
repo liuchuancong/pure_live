@@ -150,6 +150,13 @@ class LiveRoom {
       hasTotalViewers: true,
       onlineAvailability: AudienceOnlineAvailability.roomRealtime,
     ),
+    // The watch page exposes a dedicated concurrent-view renderer while a
+    // broadcast is live. Historical viewCount is deliberately not reused.
+    'youtube': AudiencePlatformCapability(
+      hasPopularity: false,
+      hasTotalViewers: false,
+      onlineAvailability: AudienceOnlineAvailability.roomRealtime,
+    ),
     'ttinglive': AudiencePlatformCapability(
       hasPopularity: false,
       hasTotalViewers: false,

@@ -57,6 +57,11 @@ class LiveSearchCapabilities {
       supportsPagination: false,
       supportsWebSearch: false,
     ),
+    Sites.youtubeSite: LiveSearchCapability(
+      coverage: NativeSearchCoverage.channelLookup,
+      supportsPagination: false,
+      supportsWebSearch: false,
+    ),
     Sites.xiaohongshuSite: LiveSearchCapability(
       coverage: NativeSearchCoverage.roomLookup,
       supportsPagination: false,

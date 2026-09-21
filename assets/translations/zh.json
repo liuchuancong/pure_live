@@ -1879,5 +1879,10 @@
   "tiktok_quality_hd": "高清",
   "tiktok_quality_sd": "标清",
   "tiktok_quality_ld": "流畅",
-  "tiktok_quality_auto": "自动"
+  "tiktok_quality_auto": "自动",
+  "site_youtube": "YouTube Live",
+  "youtube_directory_scope": "首阶段接入精确视频 ID、官方观看/直播/短链/嵌入链接，以及频道或 @handle 的当前直播发现；公开推荐目录与关键词分页仍按官网会话继续补齐。",
+  "youtube_chat_notice": "YouTube Live 远端聊天尚待接入；仅在直播页返回专用并发观看字段时显示当前在线，不把累计播放量当作在线人数。",
+  "youtube_quality_hls_auto": "HLS 自动",
+  "youtube_quality_dash_auto": "DASH 自动"
 }

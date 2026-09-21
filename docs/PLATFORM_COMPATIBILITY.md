@@ -4,7 +4,7 @@
 
 ## 当前平台能力
 
-2026-09-21 按 `lib/core/sites.dart` 核对：当前源码注册 **27 个直播站点 + IPTV，共 28 个适配器**。这是源码注册数量，不是已发布包或完整验收数量。小红书、niconico、微博、SHOWROOM、CHZZK、Kick、17LIVE、LiveMe 和 TikTok LIVE 已接入应用入口；原生整体验收继续，当前候选与完整剩余范围以[验收状态](ACCEPTANCE_STATUS_3_2_0.md)为准。
+2026-09-21 按 `lib/core/sites.dart` 核对：当前源码注册 **28 个直播站点 + IPTV，共 29 个适配器**。这是源码注册数量，不是已发布包或完整验收数量。小红书、niconico、微博、SHOWROOM、CHZZK、Kick、17LIVE、LiveMe、TikTok LIVE 和 YouTube Live 已接入应用入口；原生整体验收继续，当前候选与完整剩余范围以[验收状态](ACCEPTANCE_STATUS_3_2_0.md)为准。
 
 ### 09-09 及更早阶段的取证快照
 
@@ -53,18 +53,19 @@ TwitCasting 新增公开目录、顶栏分类、详情/HLS三档、录制输入�
 | 17LIVE | 首阶段保持范围说明；官网当前目录为个性化动态推荐 | 精确房间号及官方直播间/主播主页链接，包含未开播状态；昵称搜索待接入 | 当前未接入 | `liveViewerCount` 为当前观看，`viewerCount` 为本场累计观看，分别展示 |
 | LiveMe | 官网公开热门目录，保留原生分页 | 原生主播关键词分页，包含未开播主播；直播间、主播主页和旧场次链接可回流为稳定短号 | 当前未接入 | `heat` 为平台热度、`playnumber` 为当前观看、`watchnumber` 为本场累计观看，三者分列 |
 | TikTok LIVE | 游客推荐目录依赖网页会话，当前页面保留明确范围说明 | 精确账号、@账号、官方主页/直播间/直播分享链接；可返回未开播账号 | 当前未接入 | `liveRoomStats.userCount` 为当前观看，`enterCount` 为累计进房，分别展示 |
+| YouTube Live | 首阶段保持范围说明；公开推荐目录依赖动态网页会话 | 精确视频 ID、观看/直播/短链/嵌入链接，以及频道或 `@handle` 的当前直播发现 | 当前未接入 | 仅使用直播页专用并发观看字段；普通 `viewCount` 不作当前在线人数 |
 | IPTV | 本地导入频道分组 | 本地频道查询 | 无远端弹幕服务 | 不虚构观看人数 |
 
 > “热度”是平台排序/活跃度指标，不等同于唯一在线用户数。界面会按平台字段分别显示“热度”“在线”或“累计观看”，避免把不同含义的数据统一标成在线人数。
 
 搜索页会直接显示当前平台的覆盖范围，并提供“包含未开播”筛选。平台选择栏使用独立水平列表：项目超过屏幕宽度时可横向访问，首尾为硬边界，不使用无对应内容页的 `TabBar` 自动定位。综合排序固定把直播中房间放在前面，再比较当前观看口径、粉丝数和主页平台顺序；“平台优先”直接使用“平台显示设置”的拖动顺序，“观众优先”和“粉丝优先”则调整对应字段的比较次序。粉丝字段只在平台搜索响应明确提供时参与，缺少该字段的结果保留为稳定次序；快手使用网页搜索入口，IPTV 只查找本机导入频道。每个平台单独维护翻页结束状态，空页或重复页会停止继续请求。
 
-“全部”搜索并发请求各原生平台，但按单个平台完成顺序渐进显示，某个平台超过 12 秒会被标记为本轮部分失败，不再阻塞其他结果。搜索页生命周期内复用同一组适配器，Twitch 等游标分页状态不会因每次读取平台列表而丢失。网页继续搜索可从 Bilibili、斗鱼、虎牙、抖音、快手、网易 CC、Twitch、SOOP、YY、AcFun、Picarto、TwitCasting、SHOWROOM、CHZZK、Kick、17LIVE、LiveMe 和 TikTok LIVE 的已支持直播间链接识别“平台 + 房间号”；搜索/分类页和相似伪装域名会被忽略。
+“全部”搜索并发请求各原生平台，但按单个平台完成顺序渐进显示，某个平台超过 12 秒会被标记为本轮部分失败，不再阻塞其他结果。搜索页生命周期内复用同一组适配器，Twitch 等游标分页状态不会因每次读取平台列表而丢失。网页继续搜索可从 Bilibili、斗鱼、虎牙、抖音、快手、网易 CC、Twitch、SOOP、YY、AcFun、Picarto、TwitCasting、SHOWROOM、CHZZK、Kick、17LIVE、LiveMe、TikTok LIVE 和 YouTube Live 的已支持直播间链接识别“平台 + 房间号”；搜索/分类页和相似伪装域名会被忽略。
 
 “设置 → 通用 → 观看数据与排行口径”提供两个全局模式和分平台开关：
 
 - **平台热度优先**：按平台列表提供的热度或累计观看显示、降序排序；快手等只公开当前观看人数的平台继续保留“在线”标签。热门页、收藏、搜索与房间选择器共用同一个数值解析和稳定排序器。
-- **真实在线人数优先**：抖音、快手、网易 CC、Twitch、SOOP Live、CHZZK、Kick、17LIVE、LiveMe、TikTok LIVE 仅在拿到明确并发人数时按在线显示、排序；支持平台尚未取得列表值或房间消息时明确显示“待刷新”，不再回退为一个被误标或参与在线排行的热度值。
+- **真实在线人数优先**：抖音、快手、网易 CC、Twitch、SOOP Live、CHZZK、Kick、17LIVE、LiveMe、TikTok LIVE、YouTube Live 仅在拿到明确并发人数时按在线显示、排序；支持平台尚未取得列表值或房间消息时明确显示“待刷新”，不再回退为一个被误标或参与在线排行的热度值。
 - 哔哩哔哩的列表 `online` 与弹幕心跳、斗鱼公开 `ol/hot`、虎牙 `totalCount/userCount/iAttendeeCount` 都是热度，均不换写成真实人数。由此避免把几百万热度显示为几百万人同时在线。
 - 切换全局口径或分平台开关后，收藏与搜索现有结果会立即重新排序，热门页会刷新当前平台的候选池后重排；在线模式把已启用且支持并发人数的平台排在仅提供热度/累计值的平台之前。网易 CC 在线模式一次取 100 个热度候选后按并发人数排序，避免只在每 20 张卡片内部重排。
 
@@ -99,10 +100,13 @@ TwitCasting 新增公开目录、顶栏分类、详情/HLS三档、录制输入�
 | 17LIVE | API 明确返回的增强高清、高清、H.264、标准 FLV | 同档聚合并保留官方多 CDN 顺序；恢复重新读取房间状态与媒体并保持稳定质量 ID，不跨档静默降级 |
 | LiveMe | `source-flv` / `smooth-flv` / `hls` | 合并官方同档多线路，HTTP 媒体升级到 HTTPS；恢复重新解析短号到当前场次并保持稳定画质 ID，不跨档静默降级 |
 | TikTok LIVE | `codec:quality:protocol` | 按官方 `sdk_params` 绑定 H.264/H.265、画质、分辨率和 FLV/HLS；恢复重查稳定账号并保持精确画质 ID，不跨档或跨协议静默降级 |
+| YouTube Live | HLS master 分辨率/帧率/编码、直连 `itag`，以及 DASH 自动源 | 稳定 ID 区分协议与画质；解析签名到期时间，恢复时重取播放器响应与 manifest，不把加密签名源伪装成可播直链 |
 
 横屏“清晰度与播放线路”面板根据画质数、线路数和可用高度计算整体尺寸。一个画质/一条线路时收紧面板；常见四画质使用均衡 `2×2`；项目多时只让按钮网格滚动，不用固定比例制造空白。按钮区域是主要视觉，标题、留白和重复的当前值标签均已压缩。
 
 ## 本地接口探测
+
+2026-09-21 的 YouTube Live 首阶段生产探测使用本机 Clash 请求官方 Sky News 当前直播：频道 `/@SkyNews/live` 的 canonical 稳定回流到视频 `xDWQ3LkccY8`；watch page、Innertube player 与 HLS master 均返回 HTTP 200，播放器同时给出 HLS/DASH，HLS master 含 144p～1080p60 共 6 个音视频复合变体，页面专用 renderer 返回 `watching now` 并发数。该证据验证公开接口与媒体合同，不代替 Android/Windows 原生播放或录制验收。实现契约同时对照 [Streamlink 当前 YouTube 插件](https://github.com/streamlink/streamlink/blob/master/src/streamlink/plugins/youtube.py)与 [yt-dlp 当前字段合同](https://github.com/yt-dlp/yt-dlp/blob/master/yt_dlp/extractor/common.py)。
 
 ```powershell
 python tool/interface_probe.py

@@ -18,6 +18,8 @@ import 'package:pure_live/core/site/liveme/liveme_api.dart';
 import 'package:pure_live/core/site/liveme/liveme_link.dart';
 import 'package:pure_live/core/site/tiktok/tiktok_api.dart';
 import 'package:pure_live/core/site/tiktok/tiktok_link.dart';
+import 'package:pure_live/core/site/youtube/youtube_api.dart';
+import 'package:pure_live/core/site/youtube/youtube_link.dart';
 import 'package:pure_live/core/site/seventeenlive/seventeenlive_link.dart';
 
 import 'package:pure_live/common/index.dart';
@@ -108,6 +110,7 @@ class LiveUrlTool {
       if (SeventeenLiveLink.parse(raw) != null) return true;
       if (LiveMeLink.parse(raw) != null) return true;
       if (TikTokLink.parse(raw) != null) return true;
+      if (YouTubeLink.parse(raw) != null) return true;
       final uri = Uri.parse(raw);
       return TikTokLink.isShortHost(uri.host) ||
           InkeApi.roomFromUri(uri) != null ||
@@ -125,6 +128,7 @@ class LiveUrlTool {
     OpenrecApi? openrecApi,
     LiveMeApi? liveMeApi,
     TikTokApi? tiktokApi,
+    YouTubeApi? youtubeApi,
     Duration timeout = const Duration(seconds: 12),
   }) async {
     if (cancelToken?.isCancelled ?? false) return [];
@@ -139,6 +143,7 @@ class LiveUrlTool {
         openrecApi ?? OpenrecApi(),
         liveMeApi ?? LiveMeApi(),
         tiktokApi ?? TikTokApi(),
+        youtubeApi ?? YouTubeApi(),
         ownedCancel,
       );
       final result = cancelToken == null
@@ -165,6 +170,7 @@ class LiveUrlTool {
     OpenrecApi openrecApi,
     LiveMeApi liveMeApi,
     TikTokApi tiktokApi,
+    YouTubeApi youtubeApi,
     dio.CancelToken cancel,
   ) async {
     for (final raw in sharedHttpUrls(text)) {
@@ -215,6 +221,12 @@ class LiveUrlTool {
         if (session.isClosed || cancel.isCancelled) return [];
         return [username, Sites.tiktokSite];
       }
+      final youtube = YouTubeLink.parse(raw);
+      if (youtube != null) {
+        final videoId = await youtubeApi.resolveReference(youtube, cancel: cancel);
+        if (session.isClosed || cancel.isCancelled) return [];
+        return [videoId, Sites.youtubeSite];
+      }
       late List<String> segments;
       try {
         segments = uri.pathSegments.where((part) => part.isNotEmpty).toList(growable: false);
@@ -234,6 +246,7 @@ class LiveUrlTool {
           openrecApi,
           liveMeApi,
           tiktokApi,
+          youtubeApi,
           cancel,
         );
         if (target.isNotEmpty) return target;
@@ -251,6 +264,7 @@ class LiveUrlTool {
           openrecApi,
           liveMeApi,
           tiktokApi,
+          youtubeApi,
           cancel,
         );
         if (target.isNotEmpty) return target;

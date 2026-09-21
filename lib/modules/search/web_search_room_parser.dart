@@ -12,6 +12,7 @@ import 'package:pure_live/core/site/chzzk/chzzk_link.dart';
 import 'package:pure_live/core/site/kick/kick_link.dart';
 import 'package:pure_live/core/site/liveme/liveme_link.dart';
 import 'package:pure_live/core/site/tiktok/tiktok_link.dart';
+import 'package:pure_live/core/site/youtube/youtube_link.dart';
 import 'package:pure_live/core/site/seventeenlive/seventeenlive_link.dart';
 
 class WebSearchRoomTarget {
@@ -90,6 +91,8 @@ class WebSearchRoomParser {
     if (liveMe != null) return WebSearchRoomTarget(platform: Sites.liveMeSite, roomId: liveMe);
     final tiktok = TikTokLink.parseDurableUsername(rawUrl);
     if (tiktok != null) return WebSearchRoomTarget(platform: Sites.tiktokSite, roomId: tiktok);
+    final youtube = YouTubeLink.parseDurableVideoId(rawUrl);
+    if (youtube != null) return WebSearchRoomTarget(platform: Sites.youtubeSite, roomId: youtube);
     final host = uri.host.toLowerCase();
     final segments = uri.pathSegments.where((segment) => segment.trim().isNotEmpty).toList(growable: false);
 

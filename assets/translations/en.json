@@ -1879,5 +1879,10 @@
   "tiktok_quality_hd": "HD",
   "tiktok_quality_sd": "SD",
   "tiktok_quality_ld": "Low",
-  "tiktok_quality_auto": "Auto"
+  "tiktok_quality_auto": "Auto",
+  "site_youtube": "YouTube Live",
+  "youtube_directory_scope": "The first adapter stage supports exact video IDs, official watch/live/short/embed links, and current-live discovery from channel or @handle links. The public recommendation catalog and keyword pagination remain session-scoped follow-up work.",
+  "youtube_chat_notice": "YouTube Live remote chat is pending. Current viewers are shown only when the live watch page exposes its dedicated concurrent count; cumulative video views are kept separate.",
+  "youtube_quality_hls_auto": "HLS Auto",
+  "youtube_quality_dash_auto": "DASH Auto"
 }
