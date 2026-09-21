@@ -157,6 +157,13 @@ class LiveRoom {
       hasTotalViewers: false,
       onlineAvailability: AudienceOnlineAvailability.roomRealtime,
     ),
+    // The finite public directory exposes user_count for current broadcasts.
+    // Room detail has no verified concurrent field and therefore keeps it unknown.
+    'bigo': AudiencePlatformCapability(
+      hasPopularity: false,
+      hasTotalViewers: false,
+      onlineAvailability: AudienceOnlineAvailability.roomList,
+    ),
     'ttinglive': AudiencePlatformCapability(
       hasPopularity: false,
       hasTotalViewers: false,

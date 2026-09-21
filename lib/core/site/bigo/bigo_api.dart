@@ -9,7 +9,20 @@ import 'package:pure_live/core/common/request_scope.dart';
 
 import 'bigo_token.dart';
 
-enum BigoFailure { transport, access, missing, rateLimited, service, api, schema, identity, cancelled }
+enum BigoFailure {
+  transport,
+  access,
+  missing,
+  rateLimited,
+  service,
+  api,
+  schema,
+  identity,
+  unknownState,
+  notLive,
+  mediaUnavailable,
+  cancelled,
+}
 
 enum BigoAccess { public, loginRequired, restricted }
 
@@ -201,11 +214,7 @@ class BigoApi {
     if (response.body.length > responseLimit || utf8.encode(response.body).length > responseLimit) {
       throw const BigoException(BigoFailure.schema);
     }
-    try {
-      return response.body;
-    } on FormatException {
-      throw const BigoException(BigoFailure.schema);
-    }
+    return response.body;
   }
 
   Future<Map<String, dynamic>> _readUri(String method, Uri uri, CancelToken cancel, {Map<String, String>? form}) async {

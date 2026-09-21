@@ -471,6 +471,14 @@ class LocalInteractionController extends GetxController {
       badge: 'YT',
     ),
     LocalPlatformPack(
+      id: Sites.bigoSite,
+      nameKey: 'site_bigo',
+      currencyKey: 'local_currency_generic',
+      levelKey: 'local_level_generic',
+      accentColor: Color(0xFF6A5CFF),
+      badge: 'BG',
+    ),
+    LocalPlatformPack(
       id: Sites.iptvSite,
       nameKey: 'site_iptv',
       currencyKey: 'local_currency_generic',

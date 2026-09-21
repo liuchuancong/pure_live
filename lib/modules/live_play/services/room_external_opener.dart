@@ -19,6 +19,8 @@ import 'package:pure_live/core/site/kick/kick_link.dart';
 import 'package:pure_live/core/site/liveme/liveme_link.dart';
 import 'package:pure_live/core/site/tiktok/tiktok_link.dart';
 import 'package:pure_live/core/site/youtube/youtube_link.dart';
+import 'package:pure_live/core/site/bigo/bigo_link.dart';
+import 'package:pure_live/core/site/bigo/bigo_api.dart';
 import 'package:pure_live/core/site/seventeenlive/seventeenlive_link.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 
@@ -103,6 +105,12 @@ class RoomExternalOpener {
         try {
           return RoomExternalTarget(web: YouTubeLink.videoUrl(id));
         } on FormatException {
+          return null;
+        }
+      case Sites.bigoSite:
+        try {
+          return RoomExternalTarget(web: BigoLink.url(id));
+        } on BigoException {
           return null;
         }
       case Sites.xiaohongshuSite:

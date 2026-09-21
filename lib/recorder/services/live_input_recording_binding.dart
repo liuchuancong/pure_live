@@ -1,9 +1,12 @@
 import 'package:dio/dio.dart';
 import 'package:pure_live/core/interface/live_input_recipe.dart';
+import 'package:pure_live/core/site/bigo/bigo_api.dart';
+import 'package:pure_live/core/site/bigo/bigo_input_recipe.dart';
 import 'package:pure_live/core/site/niconico/niconico_api.dart';
 import 'package:pure_live/core/site/niconico/niconico_input_recipe.dart';
 import 'package:pure_live/core/site/niconico/niconico_watch.dart';
 
+import 'bigo_hls_input.dart';
 import 'niconico_hls_input.dart';
 import 'owned_record_input.dart';
 import 'recorder_proxy_routing.dart';
@@ -19,9 +22,20 @@ typedef NiconicoRecordInputOpener = Future<OwnedRecordInput> Function(
 });
 
 OwnedRecordSource bindLiveInputForRecording(LiveInputRecipe recipe) => switch (recipe) {
+  BigoInputRecipe() => bindBigoRecording(recipe),
   NiconicoInputRecipe() => bindNiconicoRecording(recipe),
   _ => throw UnsupportedError('No recording binding for this input recipe'),
 };
+
+OwnedRecordSource bindBigoRecording(
+  BigoInputRecipe recipe, {
+  BigoApi? api,
+  String Function(Uri) findProxy = resolveRecorderProxyDirective,
+}) => OwnedRecordSource(
+  identity: recipe.identity,
+  createInput: (cancel) =>
+      BigoHlsInput.open(recipe.siteId, recording: true, api: api, findProxy: findProxy, cancel: cancel),
+);
 
 OwnedRecordSource bindNiconicoRecording(
   NiconicoInputRecipe recipe, {

@@ -24,6 +24,20 @@ import 'recorder_proxy_routing.dart';
 part 'hls_relay_diagnostics.dart';
 part 'hls_relay_prefetch.dart';
 
+typedef HlsMediaPrefixTransformer = Uint8List Function(Uint8List prefix);
+typedef HlsManifestMediaTransformResolver = HlsMediaPrefixTransform? Function(Uri manifest, String source);
+
+/// A manifest-scoped, length-preserving media prefix transform. It is applied
+/// only to plain media URI lines, never to keys, maps or nested playlists.
+final class HlsMediaPrefixTransform {
+  HlsMediaPrefixTransform({required this.prefixBytes, required this.transform}) {
+    if (prefixBytes < 1 || prefixBytes > 64 * 1024) throw ArgumentError('Invalid HLS media prefix length');
+  }
+
+  final int prefixBytes;
+  final HlsMediaPrefixTransformer transform;
+}
+
 /// Relays HLS resources over an app-private loopback server, verifying upstream
 /// HTTPS and allowing recording inputs to end without cancelling output IO.
 ///
@@ -49,6 +63,7 @@ class FFmpegHlsInputRelay {
     required this._masterSelection,
     required this.diagnostics,
     required this.prefetchEnabled,
+    required HlsManifestMediaTransformResolver? manifestMediaTransform,
   }) {
     _bodyIdleTimeout = bodyIdleTimeout;
     _upstream = HlsUpstreamClient(
@@ -60,6 +75,7 @@ class FFmpegHlsInputRelay {
       requestCookies: requestCookies,
     );
     _resources['root'] = upstream;
+    _manifestMediaTransform = manifestMediaTransform;
   }
 
   static const int _maximumManifestBytes = 4 * 1024 * 1024;
@@ -125,8 +141,10 @@ class FFmpegHlsInputRelay {
   late final HlsUpstreamClient _upstream;
   HlsMasterSelection? _masterSelection;
   final Map<String, Uri> _resources = <String, Uri>{};
+  final Map<String, HlsMediaPrefixTransform> _resourceTransforms = <String, HlsMediaPrefixTransform>{};
   final Map<String, String> _resourceIds = <String, String>{};
   final Map<String, String> _manifests = <String, String>{};
+  HlsManifestMediaTransformResolver? _manifestMediaTransform;
   // Retain current and previous playlist generations, including keys/maps and
   // all nested renditions. Never retain every segment seen since startup.
   final Map<String, List<Set<String>>> _manifestReferences = {};
@@ -195,6 +213,9 @@ class FFmpegHlsInputRelay {
     Future<Directory> Function()? createStagingDirectory,
     HlsRelayDiagnostics? diagnostics,
     bool enablePrefetch = false,
+    // Custom media transforms stay on the direct relay path until the
+    // prefetch cache can retain manifest-scoped transform ownership.
+    HlsManifestMediaTransformResolver? manifestMediaTransform,
   }) async {
     final arguments = List<String>.of(source);
     final inputIndex = arguments.indexOf('-i');
@@ -216,6 +237,9 @@ class FFmpegHlsInputRelay {
     if (upstream == null || !_isHlsUri(upstream)) {
       if (requestCookies != null || masterSelection != null) throw const FormatException('Missing runtime HLS input');
       return null;
+    }
+    if (manifestMediaTransform != null && enablePrefetch) {
+      throw ArgumentError('HLS media transforms are not supported with prefetch');
     }
     final supportedHost = !kIsWeb && (Platform.isAndroid || Platform.isLinux);
     if (!force &&
@@ -258,6 +282,7 @@ class FFmpegHlsInputRelay {
       masterSelection: masterSelection,
       diagnostics: diagnostics,
       prefetchEnabled: enablePrefetch && drainOnStop,
+      manifestMediaTransform: manifestMediaTransform,
     );
     relay._subscription = server.listen(relay._acceptRequest, onError: relay._handleServerError);
     return relay;
@@ -356,7 +381,9 @@ class FFmpegHlsInputRelay {
     await _connections.settled;
     _upstream.clear();
     _masterSelection = null;
+    _manifestMediaTransform = null;
     _resources.clear();
+    _resourceTransforms.clear();
     _resourceIds.clear();
     _manifests.clear();
     _manifestReferences.clear();
@@ -381,6 +408,7 @@ class FFmpegHlsInputRelay {
     }
 
     _activeResources.update(resourceId, (count) => count + 1, ifAbsent: () => 1);
+    final prefixTransform = _resourceTransforms[resourceId];
     final trace = diagnostics?._begin(resourceId, request.method);
     final budget = drainOnStop ? HlsResponseBudget(_bodyIdleTimeout) : null;
     var outcome = 'completed';
@@ -394,6 +422,10 @@ class FFmpegHlsInputRelay {
         return;
       }
       final range = request.headers.value(HttpHeaders.rangeHeader);
+      if (prefixTransform != null && range != null && range != 'bytes=0-') {
+        await _replyStatus(request, HttpStatus.requestedRangeNotSatisfiable);
+        return;
+      }
       if (_prefetch != null) {
         if (_prefetchFeeds.contains(resourceId)) {
           await _servePrefetchManifest(request, resourceId, trace);
@@ -418,7 +450,7 @@ class FFmpegHlsInputRelay {
         request.method,
         upstream,
         budget: budget,
-        range: _isHlsUri(upstream) || _manifests.containsKey(resourceId) ? null : range,
+        range: prefixTransform != null || _isHlsUri(upstream) || _manifests.containsKey(resourceId) ? null : range,
       );
       request.response.statusCode = upstreamResponse.statusCode;
       trace?.receivedHeaders(upstreamResponse.statusCode);
@@ -475,7 +507,7 @@ class FFmpegHlsInputRelay {
 
       final length = upstreamResponse.contentLength;
       if (drainOnStop && const {HttpStatus.ok, HttpStatus.partialContent}.contains(upstreamResponse.statusCode)) {
-        await _publishCompleteBody(request, upstreamResponse, trace, budget);
+        await _publishCompleteBody(request, upstreamResponse, trace, budget, prefixTransform);
         return;
       }
       if (budget != null) {
@@ -487,10 +519,13 @@ class FFmpegHlsInputRelay {
       }
       if (length >= 0) request.response.contentLength = length;
       request.response.bufferOutput = false;
+      final body = prefixTransform == null
+          ? upstreamResponse
+          : _transformMediaPrefix(upstreamResponse, prefixTransform);
       if (trace == null) {
-        await upstreamResponse.pipe(request.response);
+        await body.pipe(request.response);
       } else {
-        await upstreamResponse
+        await body
             .map((chunk) {
               trace.chunk(chunk);
               return chunk;
@@ -541,9 +576,11 @@ class FFmpegHlsInputRelay {
     HttpClientResponse upstream,
     _HlsRequestTrace? trace,
     HlsResponseBudget? budget,
+    HlsMediaPrefixTransform? prefixTransform,
   ) async {
     final iterator = HlsBodyReader(upstream);
     final body = HlsMediaSpool(createDirectory: _createStagingDirectory);
+    final transformer = prefixTransform == null ? null : _HlsMediaPrefixState(prefixTransform);
     var stopped = _fetchStopped;
     void abort() {
       stopped = true;
@@ -562,9 +599,12 @@ class FFmpegHlsInputRelay {
       _fetchAborters.add(abort);
       while (await _nextBodyChunk(iterator, budget)) {
         if (stopped) throw const _HlsFetchStopped();
-        trace?.chunk(iterator.current);
-        await body.add(iterator.current);
+        for (final chunk in transformer?.add(iterator.current) ?? <List<int>>[iterator.current]) {
+          trace?.chunk(chunk);
+          await body.add(chunk);
+        }
       }
+      transformer?.finish();
       if (stopped) throw const _HlsFetchStopped();
       trace?.completeBody();
       await body.seal(
@@ -616,6 +656,7 @@ class FFmpegHlsInputRelay {
     final hadTrailingNewline = source.endsWith('\n');
     final output = <String>[];
     final referenced = <String>{};
+    final mediaTransform = _manifestMediaTransform?.call(baseUri, source);
     for (final rawLine in const LineSplitter().convert(source)) {
       final line = rawLine.endsWith('\r') ? rawLine.substring(0, rawLine.length - 1) : rawLine;
       final trimmed = line.trim();
@@ -633,7 +674,7 @@ class FFmpegHlsInputRelay {
           }),
         );
       } else {
-        output.add(_localResource(baseUri.resolve(trimmed), referenced) ?? line);
+        output.add(_localResource(baseUri.resolve(trimmed), referenced, mediaTransform: mediaTransform) ?? line);
       }
     }
     final value = output.join('\n');
@@ -660,7 +701,12 @@ class FFmpegHlsInputRelay {
     return rewritten;
   }
 
-  String? _localResource(Uri upstream, Set<String> referenced, {String? identity}) {
+  String? _localResource(
+    Uri upstream,
+    Set<String> referenced, {
+    String? identity,
+    HlsMediaPrefixTransform? mediaTransform,
+  }) {
     if (!const <String>{'http', 'https'}.contains(upstream.scheme.toLowerCase())) return null;
     final key = identity == null ? upstream.toString() : 'prefetch:$identity';
     final id = _resourceIds.putIfAbsent(key, () {
@@ -669,6 +715,7 @@ class FFmpegHlsInputRelay {
       _resourceKeys[value] = key;
       return value;
     });
+    if (mediaTransform != null) _resourceTransforms[id] = mediaTransform;
     referenced.add(id);
     final extension = _localExtension(upstream);
     return Uri(
@@ -699,6 +746,7 @@ class FFmpegHlsInputRelay {
     }
     for (final id in _resources.keys.where((id) => !reachable.contains(id)).toList()) {
       _resources.remove(id);
+      _resourceTransforms.remove(id);
       final key = _resourceKeys.remove(id);
       if (key != null) _resourceIds.remove(key);
       _prefetchResources.remove(id);
@@ -894,6 +942,45 @@ class FFmpegHlsInputRelay {
 
   void _handleServerError(Object error, StackTrace stackTrace) {
     if (!_closed) Log.w('FFmpeg HLS relay server failed: $error\n$stackTrace');
+  }
+}
+
+Stream<List<int>> _transformMediaPrefix(Stream<List<int>> source, HlsMediaPrefixTransform transform) async* {
+  final state = _HlsMediaPrefixState(transform);
+  await for (final chunk in source) {
+    for (final output in state.add(chunk)) {
+      yield output;
+    }
+  }
+  state.finish();
+}
+
+final class _HlsMediaPrefixState {
+  _HlsMediaPrefixState(this.transform);
+
+  final HlsMediaPrefixTransform transform;
+  final BytesBuilder _prefix = BytesBuilder(copy: false);
+  bool _complete = false;
+
+  Iterable<List<int>> add(List<int> chunk) {
+    if (_complete) return <List<int>>[chunk];
+    final needed = transform.prefixBytes - _prefix.length;
+    if (chunk.length < needed) {
+      _prefix.add(chunk);
+      return const <List<int>>[];
+    }
+    _prefix.add(chunk.sublist(0, needed));
+    final original = _prefix.takeBytes();
+    final transformed = transform.transform(original);
+    if (transformed.length != transform.prefixBytes) {
+      throw const FormatException('HLS media prefix transform changed the body length');
+    }
+    _complete = true;
+    return <List<int>>[transformed, if (chunk.length > needed) chunk.sublist(needed)];
+  }
+
+  void finish() {
+    if (!_complete) throw const FormatException('HLS media body ended before its transform prefix');
   }
 }
 

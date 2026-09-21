@@ -1884,5 +1884,12 @@
   "youtube_directory_scope": "首阶段接入精确视频 ID、官方观看/直播/短链/嵌入链接，以及频道或 @handle 的当前直播发现；公开推荐目录与关键词分页仍按官网会话继续补齐。",
   "youtube_chat_notice": "YouTube Live 远端聊天尚待接入；仅在直播页返回专用并发观看字段时显示当前在线，不把累计播放量当作在线人数。",
   "youtube_quality_hls_auto": "HLS 自动",
-  "youtube_quality_dash_auto": "DASH 自动"
+  "youtube_quality_dash_auto": "DASH 自动",
+  "site_bigo": "Bigo Live",
+  "bigo_directory_scope": "官网公开目录是有限推荐快照，不宣称覆盖全站；原生搜索支持精确 Bigo ID 与官方房间链接。",
+  "bigo_category_public": "公开推荐",
+  "bigo_chat_notice": "Bigo Live 远端聊天尚待接入；目录 user_count 仅作为当前直播在线人数，房间详情缺值时保持未知。",
+  "bigo_login_required": "该房间当前要求登录，直播状态与媒体保持未知。",
+  "bigo_access_restricted": "该房间受密码或付费访问限制，直播状态与媒体保持未知。",
+  "bigo_quality_live": "直播自动"
 }
