@@ -68,7 +68,7 @@
 | 进行中 | 战旗直播 | 房间元数据、H5 v3 矩阵、公共访客会话、签名、Ali 调度、有界媒体验证及内部 LiveSite | 新生产样本媒体通过后完成应用注册与播放/录制入口，见[检查点](ZHANQI_MEDIA_PROBE_CHECKPOINT_2026_09_21.md) |
 | 生命周期归档 | 一直播 | 历史官方域名当前 DNS 失效；旧 API 合同已留档 | 仅在取得官方迁移入口和当前媒体证据后恢复实施，见[检查点](LEGACY_PLATFORM_LIFECYCLE_CHECKPOINT_2026_09_21.md) |
 | 生命周期归档 | 企鹅电竞 | 官方已于 2022-06-07 停止服务 | 旧适配器仅作历史资料，不计入当前可用平台，见[检查点](LEGACY_PLATFORM_LIFECYCLE_CHECKPOINT_2026_09_21.md) |
-| 进行中 | 浪 Live | 当前官网/WebView、官方客户端、旧适配器与访问审计 | 当前 API 合同、房间状态、媒体、分享与播放/录制刷新 |
+| 进行中 | 浪 Live | 当前 APK 合同、精确 ID/官方链接、状态、FLV/HLS 与内部 LiveSite 已实现 | 从可访问区域取得当前生产响应并完成媒体前缀验证后注册，见[检查点](LANGLIVE_CONTRACT_CHECKPOINT_2026_09_21.md) |
 
 ## C. 第二批平台扩展
 
