@@ -44,7 +44,7 @@ www.yizhibo.com/live/h5api/get_basic_live_info?scid=ROOM_ID
 
 1. 浪 Live：核验当前 API/页面合同，完成精确房间号和官方链接、状态、媒体、播放/录制刷新。
 2. 战旗直播：保留已完成的内部 LiveSite；发现新开播样本后运行有界媒体探测，通过后注册。
-3. 第二批活跃平台：按 WinkTV、PopkonTV、PandaTV（韩国）顺序继续。
+3. 第二批中的 WinkTV、PandaTV、PopkonTV 已完成生命周期或源码接入，下一项转入 Shopee Live。
 
 ## 来源
 
@@ -53,4 +53,3 @@ www.yizhibo.com/live/h5api/get_basic_live_info?scid=ROOM_ID
 - JustLive-Web 变更记录：<https://github.com/guyijie1211/JustLive-Web>
 - 浪 Live 官方客户端：<https://play.google.com/store/apps/details?id=com.lang.lang>
 - 浪 Live 官方 WebView：<https://webview.lang.live/>
-

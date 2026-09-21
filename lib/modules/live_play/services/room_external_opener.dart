@@ -22,6 +22,7 @@ import 'package:pure_live/core/site/youtube/youtube_link.dart';
 import 'package:pure_live/core/site/bigo/bigo_link.dart';
 import 'package:pure_live/core/site/bigo/bigo_api.dart';
 import 'package:pure_live/core/site/pandalive/pandalive_link.dart';
+import 'package:pure_live/core/site/popkontv/popkontv_link.dart';
 import 'package:pure_live/core/site/seventeenlive/seventeenlive_link.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 
@@ -117,6 +118,12 @@ class RoomExternalOpener {
       case Sites.pandaLiveSite:
         try {
           return RoomExternalTarget(web: PandaLiveLink.url(id));
+        } on FormatException {
+          return null;
+        }
+      case Sites.popkonSite:
+        try {
+          return RoomExternalTarget(web: PopkonLink.url(id));
         } on FormatException {
           return null;
         }

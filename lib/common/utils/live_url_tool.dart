@@ -22,6 +22,7 @@ import 'package:pure_live/core/site/youtube/youtube_api.dart';
 import 'package:pure_live/core/site/youtube/youtube_link.dart';
 import 'package:pure_live/core/site/bigo/bigo_link.dart';
 import 'package:pure_live/core/site/pandalive/pandalive_link.dart';
+import 'package:pure_live/core/site/popkontv/popkontv_link.dart';
 import 'package:pure_live/core/site/seventeenlive/seventeenlive_link.dart';
 
 import 'package:pure_live/common/index.dart';
@@ -115,6 +116,7 @@ class LiveUrlTool {
       if (YouTubeLink.parse(raw) != null) return true;
       if (BigoLink.parse(raw) != null) return true;
       if (PandaLiveLink.parse(raw) != null) return true;
+      if (PopkonLink.parse(raw) != null) return true;
       final uri = Uri.parse(raw);
       return TikTokLink.isShortHost(uri.host) ||
           InkeApi.roomFromUri(uri) != null ||
@@ -235,6 +237,8 @@ class LiveUrlTool {
       if (bigo != null) return [bigo, Sites.bigoSite];
       final pandaLive = PandaLiveLink.parse(raw);
       if (pandaLive != null) return [pandaLive, Sites.pandaLiveSite];
+      final popkon = PopkonLink.parse(raw);
+      if (popkon != null) return [popkon.storageKey, Sites.popkonSite];
       late List<String> segments;
       try {
         segments = uri.pathSegments.where((part) => part.isNotEmpty).toList(growable: false);

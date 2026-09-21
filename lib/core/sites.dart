@@ -6,6 +6,7 @@ import 'site/tiktok/tiktok_site.dart';
 import 'site/youtube/youtube_site.dart';
 import 'site/bigo/bigo_site.dart';
 import 'site/pandalive/pandalive_site.dart';
+import 'site/popkontv/popkontv_site.dart';
 import 'site/seventeenlive/seventeenlive_site.dart';
 import 'site/showroom/showroom_site.dart';
 import 'site/weibo/weibo_site.dart';
@@ -65,6 +66,7 @@ class Sites {
   static const String youtubeSite = 'youtube';
   static const String bigoSite = 'bigo';
   static const String pandaLiveSite = 'pandalive';
+  static const String popkonSite = 'popkontv';
   static const String seventeenLiveSite = '17live';
 
   static const Set<String> supportedSiteIds = {
@@ -97,6 +99,7 @@ class Sites {
     youtubeSite,
     bigoSite,
     pandaLiveSite,
+    popkonSite,
     seventeenLiveSite,
     iptvSite,
   };
@@ -138,6 +141,7 @@ class Sites {
     Site(id: youtubeSite, name: i18n('site_youtube'), logo: 'assets/images/logo.png', liveSite: YouTubeSite()),
     Site(id: bigoSite, name: i18n('site_bigo'), logo: 'assets/images/logo.png', liveSite: BigoSite()),
     Site(id: pandaLiveSite, name: i18n('site_pandalive'), logo: 'assets/images/logo.png', liveSite: PandaLiveSite()),
+    Site(id: popkonSite, name: i18n('site_popkontv'), logo: 'assets/images/logo.png', liveSite: PopkonSite()),
     Site(
       id: seventeenLiveSite,
       name: i18n('site_17live'),
@@ -273,6 +277,12 @@ class Sites {
         name: i18n('site_pandalive'),
         logo: 'assets/images/logo.png',
         liveSite: PandaLiveSite(),
+      ),
+      popkonSite => Site(
+        id: popkonSite,
+        name: i18n('site_popkontv'),
+        logo: 'assets/images/logo.png',
+        liveSite: PopkonSite(),
       ),
       seventeenLiveSite => Site(
         id: seventeenLiveSite,
