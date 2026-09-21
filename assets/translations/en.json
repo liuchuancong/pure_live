@@ -1891,5 +1891,9 @@
   "bigo_chat_notice": "Bigo Live remote chat is pending. Directory user_count is shown as current viewers only for active cards; missing room-detail values stay unknown.",
   "bigo_login_required": "This room currently requires sign-in, so its live state and media remain unknown.",
   "bigo_access_restricted": "This room is password- or payment-restricted, so its live state and media remain unknown.",
-  "bigo_quality_live": "Live Auto"
+  "bigo_quality_live": "Live Auto",
+  "site_zhanqi": "Zhanqi Live",
+  "zhanqi_directory_scope": "The official directory is currently a finite snapshot dominated by historical events and replay programs. Registration still requires a byte-verified media sample. Native search accepts an exact room code or official room URL.",
+  "zhanqi_category_public": "Public live directory",
+  "zhanqi_chat_notice": "Remote Zhanqi chat is pending. The directory online field is displayed as platform popularity, not concurrent viewers."
 }

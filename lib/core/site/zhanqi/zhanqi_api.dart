@@ -18,6 +18,7 @@ enum ZhanqiFailure {
   identity,
   cancelled,
   notLive,
+  unknownState,
   mediaUnavailable,
 }
 

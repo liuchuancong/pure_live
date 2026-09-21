@@ -1891,5 +1891,9 @@
   "bigo_chat_notice": "Bigo Live 远端聊天尚待接入；目录 user_count 仅作为当前直播在线人数，房间详情缺值时保持未知。",
   "bigo_login_required": "该房间当前要求登录，直播状态与媒体保持未知。",
   "bigo_access_restricted": "该房间受密码或付费访问限制，直播状态与媒体保持未知。",
-  "bigo_quality_live": "直播自动"
+  "bigo_quality_live": "直播自动",
+  "site_zhanqi": "战旗直播",
+  "zhanqi_directory_scope": "官网目录当前主要是有限历史赛事与节目回放快照；平台注册前仍要求实际媒体前缀通过验证。原生搜索支持精确房间号和官方房间链接。",
+  "zhanqi_category_public": "公开直播目录",
+  "zhanqi_chat_notice": "战旗远端弹幕尚待接入；目录 online 字段按平台热度展示，不作为当前并发人数。"
 }
