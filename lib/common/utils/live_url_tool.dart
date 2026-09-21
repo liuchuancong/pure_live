@@ -24,6 +24,7 @@ import 'package:pure_live/core/site/bigo/bigo_link.dart';
 import 'package:pure_live/core/site/pandalive/pandalive_link.dart';
 import 'package:pure_live/core/site/popkontv/popkontv_link.dart';
 import 'package:pure_live/core/site/shopeelive/shopeelive_link.dart';
+import 'package:pure_live/core/site/vkvideolive/vkvideolive_link.dart';
 import 'package:pure_live/core/site/seventeenlive/seventeenlive_link.dart';
 
 import 'package:pure_live/common/index.dart';
@@ -119,6 +120,7 @@ class LiveUrlTool {
       if (PandaLiveLink.parse(raw) != null) return true;
       if (PopkonLink.parse(raw) != null) return true;
       if (ShopeeLiveLink.parse(raw) != null) return true;
+      if (VkVideoLiveLink.parse(raw) != null) return true;
       final uri = Uri.parse(raw);
       return TikTokLink.isShortHost(uri.host) ||
           InkeApi.roomFromUri(uri) != null ||
@@ -243,6 +245,8 @@ class LiveUrlTool {
       if (popkon != null) return [popkon.storageKey, Sites.popkonSite];
       final shopeeLive = ShopeeLiveLink.parse(raw);
       if (shopeeLive != null) return [shopeeLive.storageKey, Sites.shopeeLiveSite];
+      final vkVideoLive = VkVideoLiveLink.parse(raw);
+      if (vkVideoLive != null) return [vkVideoLive.storageKey, Sites.vkVideoLiveSite];
       late List<String> segments;
       try {
         segments = uri.pathSegments.where((part) => part.isNotEmpty).toList(growable: false);

@@ -8,6 +8,7 @@ import 'site/bigo/bigo_site.dart';
 import 'site/pandalive/pandalive_site.dart';
 import 'site/popkontv/popkontv_site.dart';
 import 'site/shopeelive/shopeelive_site.dart';
+import 'site/vkvideolive/vkvideolive_site.dart';
 import 'site/seventeenlive/seventeenlive_site.dart';
 import 'site/showroom/showroom_site.dart';
 import 'site/weibo/weibo_site.dart';
@@ -69,6 +70,7 @@ class Sites {
   static const String pandaLiveSite = 'pandalive';
   static const String popkonSite = 'popkontv';
   static const String shopeeLiveSite = 'shopeelive';
+  static const String vkVideoLiveSite = 'vkvideolive';
   static const String seventeenLiveSite = '17live';
 
   static const Set<String> supportedSiteIds = {
@@ -103,6 +105,7 @@ class Sites {
     pandaLiveSite,
     popkonSite,
     shopeeLiveSite,
+    vkVideoLiveSite,
     seventeenLiveSite,
     iptvSite,
   };
@@ -146,6 +149,12 @@ class Sites {
     Site(id: pandaLiveSite, name: i18n('site_pandalive'), logo: 'assets/images/logo.png', liveSite: PandaLiveSite()),
     Site(id: popkonSite, name: i18n('site_popkontv'), logo: 'assets/images/logo.png', liveSite: PopkonSite()),
     Site(id: shopeeLiveSite, name: i18n('site_shopeelive'), logo: 'assets/images/logo.png', liveSite: ShopeeLiveSite()),
+    Site(
+      id: vkVideoLiveSite,
+      name: i18n('site_vkvideolive'),
+      logo: 'assets/images/logo.png',
+      liveSite: VkVideoLiveSite(),
+    ),
     Site(
       id: seventeenLiveSite,
       name: i18n('site_17live'),
@@ -293,6 +302,12 @@ class Sites {
         name: i18n('site_shopeelive'),
         logo: 'assets/images/logo.png',
         liveSite: ShopeeLiveSite(),
+      ),
+      vkVideoLiveSite => Site(
+        id: vkVideoLiveSite,
+        name: i18n('site_vkvideolive'),
+        logo: 'assets/images/logo.png',
+        liveSite: VkVideoLiveSite(),
       ),
       seventeenLiveSite => Site(
         id: seventeenLiveSite,
