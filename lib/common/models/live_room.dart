@@ -240,6 +240,13 @@ class LiveRoom {
       hasTotalViewers: true,
       onlineAvailability: AudienceOnlineAvailability.unsupported,
     ),
+    // Taobao's live-detail viewCount is cumulative session traffic. It is not
+    // a concurrent audience count; broadcaster fansNum remains separate.
+    'taobaolive': AudiencePlatformCapability(
+      hasPopularity: false,
+      hasTotalViewers: true,
+      onlineAvailability: AudienceOnlineAvailability.unsupported,
+    ),
     'ttinglive': AudiencePlatformCapability(
       hasPopularity: false,
       hasTotalViewers: false,

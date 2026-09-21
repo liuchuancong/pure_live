@@ -4,7 +4,7 @@
 
 ## 当前平台能力
 
-2026-09-21 按 `lib/core/sites.dart` 核对：当前源码注册 **40 个直播站点 + IPTV，共 41 个适配器**。这是源码注册数量，不是已发布包或完整验收数量。小红书、niconico、微博、SHOWROOM、CHZZK、Kick、17LIVE、LiveMe、TikTok LIVE、YouTube Live、Bigo Live、PandaTV、PopkonTV、Shopee Live、VK Video Live、NimoTV、Dailymotion、Rumble、GoodGame、FC2 Live、Steam Broadcasts 和京东直播已接入应用入口；原生整体验收继续，当前候选与完整剩余范围以[验收状态](ACCEPTANCE_STATUS_3_2_0.md)为准。
+2026-09-21 按 `lib/core/sites.dart` 核对：当前源码注册 **41 个直播站点 + IPTV，共 42 个适配器**。这是源码注册数量，不是已发布包或完整验收数量。小红书、niconico、微博、SHOWROOM、CHZZK、Kick、17LIVE、LiveMe、TikTok LIVE、YouTube Live、Bigo Live、PandaTV、PopkonTV、Shopee Live、VK Video Live、NimoTV、Dailymotion、Rumble、GoodGame、FC2 Live、Steam Broadcasts、京东直播和淘宝直播已接入应用入口；原生整体验收继续，当前候选与完整剩余范围以[验收状态](ACCEPTANCE_STATUS_3_2_0.md)为准。
 
 ### 09-09 及更早阶段的取证快照
 
@@ -66,13 +66,14 @@ TwitCasting 新增公开目录、顶栏分类、详情/HLS三档、录制输入�
 | FC2 Live | 官网普通内容有限快照；公开分类在同一快照内筛选 | 精确频道号/官网房间链接，含未开播；关键词在当前快照内匹配 | 当前未接入 | `count` 为当前观看，`total` 为本场累计观看；付费/登录/门票房间保持受限状态 |
 | Steam Broadcasts | 官网热门社区直播原生分页，每页 10 条 | 当前目录页内按游戏、主播和标题匹配；精确 SteamID64/官方观看链接查询 | 当前未接入 | 目录和观看接口分别返回当前并发观看数；受限账号保持未知状态 |
 | 京东直播 | 官网精选原生分页，每页最多 30 个直播卡片 | 当前目录页内按场次、作者、主播和标题匹配；精确场次 ID/官方房间链接查询 | 当前未接入 | 官网 `pv` 只标为观看，按累计观看展示，不冒充当前并发人数 |
+| 淘宝直播 | 当前公开门户尚未取得经核验的消费者目录，页面持续说明范围 | 精确场次 ID、主播账号 ID、官方房间链接与 `m.tb.cn` 分享短链；保留未开播、回放和受限状态 | 当前未接入 | `viewCount` 为场次累计观看，不作并发人数；`fansNum` 为主播粉丝，分列展示 |
 | IPTV | 本地导入频道分组 | 本地频道查询 | 无远端弹幕服务 | 不虚构观看人数 |
 
 > “热度”是平台排序/活跃度指标，不等同于唯一在线用户数。界面会按平台字段分别显示“热度”“在线”或“累计观看”，避免把不同含义的数据统一标成在线人数。
 
 搜索页会直接显示当前平台的覆盖范围，并提供“包含未开播”筛选。平台选择栏使用独立水平列表：项目超过屏幕宽度时可横向访问，首尾为硬边界，不使用无对应内容页的 `TabBar` 自动定位。综合排序固定把直播中房间放在前面，再比较当前观看口径、粉丝数和主页平台顺序；“平台优先”直接使用“平台显示设置”的拖动顺序，“观众优先”和“粉丝优先”则调整对应字段的比较次序。粉丝字段只在平台搜索响应明确提供时参与，缺少该字段的结果保留为稳定次序；快手使用网页搜索入口，IPTV 只查找本机导入频道。每个平台单独维护翻页结束状态，空页或重复页会停止继续请求。
 
-“全部”搜索并发请求各原生平台，但按单个平台完成顺序渐进显示，某个平台超过 12 秒会被标记为本轮部分失败，不再阻塞其他结果。搜索页生命周期内复用同一组适配器，Twitch 等游标分页状态不会因每次读取平台列表而丢失。网页继续搜索可从 Bilibili、斗鱼、虎牙、抖音、快手、网易 CC、Twitch、SOOP、YY、AcFun、Picarto、TwitCasting、SHOWROOM、CHZZK、Kick、17LIVE、LiveMe、TikTok LIVE、YouTube Live、Bigo Live、PandaTV、PopkonTV、Shopee Live、VK Video Live、NimoTV、Dailymotion、Rumble、GoodGame、FC2 Live、Steam Broadcasts 和京东直播的已支持直播间链接识别“平台 + 房间号”；搜索/分类页和相似伪装域名会被忽略。
+“全部”搜索并发请求各原生平台，但按单个平台完成顺序渐进显示，某个平台超过 12 秒会被标记为本轮部分失败，不再阻塞其他结果。搜索页生命周期内复用同一组适配器，Twitch 等游标分页状态不会因每次读取平台列表而丢失。网页继续搜索可从 Bilibili、斗鱼、虎牙、抖音、快手、网易 CC、Twitch、SOOP、YY、AcFun、Picarto、TwitCasting、SHOWROOM、CHZZK、Kick、17LIVE、LiveMe、TikTok LIVE、YouTube Live、Bigo Live、PandaTV、PopkonTV、Shopee Live、VK Video Live、NimoTV、Dailymotion、Rumble、GoodGame、FC2 Live、Steam Broadcasts、京东直播和淘宝直播的已支持直播间链接识别“平台 + 房间号”；搜索/分类页和相似伪装域名会被忽略。
 
 “设置 → 通用 → 观看数据与排行口径”提供两个全局模式和分平台开关：
 
@@ -125,6 +126,7 @@ TwitCasting 新增公开目录、顶栏分类、详情/HLS三档、录制输入�
 | FC2 Live | `auto` owned HLS input | 每次原生打开重新取得房间版本、控制令牌和同频道 HLS master；控制 WebSocket 与私有 relay 同生命周期，恢复时建立新会话，不暴露可复用的短时媒体 URL |
 | Steam Broadcasts | `auto` HLS master | 每次播放、录制与恢复重新查询同一 SteamID64，验证 Steam media host、广播身份、`broadcast_origin` 与 master 子清单后再交给原生消费者 |
 | 京东直播 | `hls` / `flv` 原始线路 | 每次播放、录制与恢复重新查询同一场次；HLS 清单和子资源绑定同一 JD Cloud 主机与流标识，默认优先 HLS |
+| 淘宝直播 | `newDefinition` / `definition` 的 `lld`～`ud` 稳定档位 | 匿名 MTop 会话动态签名并按物理媒体去重；每档同时保留 HLS/FLV 线路，播放、录制与恢复重新查询同一场次或主播身份，并按 `auth_key` 提前续期 |
 
 横屏“清晰度与播放线路”面板根据画质数、线路数和可用高度计算整体尺寸。一个画质/一条线路时收紧面板；常见四画质使用均衡 `2×2`；项目多时只让按钮网格滚动，不用固定比例制造空白。按钮区域是主要视觉，标题、留白和重复的当前值标签均已压缩。
 
@@ -155,6 +157,8 @@ TwitCasting 新增公开目录、顶栏分类、详情/HLS三档、录制输入�
 2026-09-21 的 Steam Broadcasts 生产探测从官网匿名热门接口连续取得两页、每页 10 条当前直播；目录卡片同时提供 SteamID64、游戏、主播、封面和当前观看。`getbroadcastmpd` 对当前样本返回 `ready`、当前观看数、DASH 与 HLS，HLS master 实际读取为 HTTP 200，含 1080p60、720p30、480p30、360p30 四档 H.264/AAC 变体。源码已接入原生分页、页内搜索、精确链接、身份/媒体域约束、自适应 HLS、播放/录制恢复；详细证据见 [Steam Broadcasts 合同检查点](STEAM_BROADCAST_CONTRACT_CHECKPOINT_2026_09_21.md)。
 
 2026-09-21 的京东直播生产探测从官网匿名精选接口取得第一页 30 个直播卡片及第二页另外 30 个直播卡片；卡片提供场次、作者、主播、标题、封面和累计观看。当前样本的播放接口返回直播状态、HLS 与 FLV；HLS 实际读取为 HTTP 200 和连续 TS 分片，FLV 前缀实测为标准 `FLV`。源码已接入原生分页、页内搜索、精确链接、状态与媒体域约束、HLS/FLV 线路和播放/录制恢复；详细证据见 [京东直播合同检查点](JD_LIVE_CONTRACT_CHECKPOINT_2026_09_21.md)。
+
+2026-09-21 的淘宝直播生产探测先由匿名 MTop 响应签发短时 `_m_h5_tk` 会话，再以 `MD5(token&t&appKey&data)` 取得当前直播详情；主播账号 `1759494485` 解析到当前场次并返回五档定义、累计观看与粉丝字段。HLS 主清单实际读取为 HTTP 200 和连续 TS 分片，FLV 前缀实测为标准 `FLV`。源码已接入精确场次/主播身份、官方链接与分享短链、匿名签名、状态、画质去重、HLS/FLV、到期续期和播放/录制恢复；详细证据见 [淘宝直播合同检查点](TAOBAO_LIVE_CONTRACT_CHECKPOINT_2026_09_21.md)。
 
 ```powershell
 python tool/interface_probe.py

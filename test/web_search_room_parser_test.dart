@@ -26,6 +26,7 @@ void main() {
       'https://live.fc2.com/10608314/': (Sites.fc2LiveSite, '10608314'),
       'https://steamcommunity.com/broadcast/watch/76561198373527746': (Sites.steamBroadcastSite, '76561198373527746'),
       'https://lives.jd.com/#/48266468?origin=0': (Sites.jdLiveSite, '48266468'),
+      'https://h5.m.taobao.com/taolive/video.html?id=12345678901': (Sites.taobaoLiveSite, 'live:12345678901'),
     };
 
     for (final entry in cases.entries) {
@@ -128,5 +129,11 @@ void main() {
       Sites.jdLiveSite,
     ]);
     expect(await LiveUrlTool.parseLiveUrl('https://lives.jd.com/#/channel'), isEmpty);
+  });
+
+  test('Taobao Live official room links resolve without a network request', () async {
+    const url = 'https://h5.m.taobao.com/taolive/video.html?id=12345678901';
+    expect(LiveUrlTool.containsSupportedLink('淘宝直播 $url'), isTrue);
+    expect(await LiveUrlTool.parseLiveUrl('淘宝直播 $url'), ['live:12345678901', Sites.taobaoLiveSite]);
   });
 }

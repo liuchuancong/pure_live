@@ -25,6 +25,7 @@ import 'package:pure_live/core/site/goodgame/goodgame_link.dart';
 import 'package:pure_live/core/site/fc2live/fc2_link.dart';
 import 'package:pure_live/core/site/steambroadcast/steam_broadcast_link.dart';
 import 'package:pure_live/core/site/jdlive/jd_live_link.dart';
+import 'package:pure_live/core/site/taobaolive/taobao_live_link.dart';
 import 'package:pure_live/core/site/seventeenlive/seventeenlive_link.dart';
 
 class WebSearchRoomTarget {
@@ -65,6 +66,10 @@ class WebSearchRoomParser {
   static WebSearchRoomTarget? parse(String rawUrl) {
     final niconico = NiconicoLink.parse(rawUrl);
     if (niconico != null) return WebSearchRoomTarget(platform: Sites.niconicoSite, roomId: niconico);
+    final taobaoLive = TaobaoLiveLink.parse(rawUrl);
+    if (taobaoLive != null) {
+      return WebSearchRoomTarget(platform: Sites.taobaoLiveSite, roomId: taobaoLive.storageKey);
+    }
     // Broadcast shares need asynchronous owner lookup in LiveUrlTool. Only
     // verified owner links can be mapped synchronously to a durable app ID.
     final huajiao = HuajiaoLink.parse(rawUrl);

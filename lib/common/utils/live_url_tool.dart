@@ -32,6 +32,8 @@ import 'package:pure_live/core/site/goodgame/goodgame_link.dart';
 import 'package:pure_live/core/site/fc2live/fc2_link.dart';
 import 'package:pure_live/core/site/steambroadcast/steam_broadcast_link.dart';
 import 'package:pure_live/core/site/jdlive/jd_live_link.dart';
+import 'package:pure_live/core/site/taobaolive/taobao_live_api.dart';
+import 'package:pure_live/core/site/taobaolive/taobao_live_link.dart';
 import 'package:pure_live/core/site/seventeenlive/seventeenlive_link.dart';
 
 import 'package:pure_live/common/index.dart';
@@ -134,6 +136,7 @@ class LiveUrlTool {
       if (Fc2Link.parseChannelId(raw) != null) return true;
       if (SteamBroadcastLink.parseSteamId(raw) != null) return true;
       if (JdLiveLink.parseLiveId(raw) != null) return true;
+      if (TaobaoLiveLink.parse(raw) != null || TaobaoLiveLink.shortUri(raw) != null) return true;
       final uri = Uri.parse(raw);
       return TikTokLink.isShortHost(uri.host) ||
           InkeApi.roomFromUri(uri) != null ||
@@ -152,6 +155,7 @@ class LiveUrlTool {
     LiveMeApi? liveMeApi,
     TikTokApi? tiktokApi,
     YouTubeApi? youtubeApi,
+    TaobaoLiveApi? taobaoLiveApi,
     Duration timeout = const Duration(seconds: 12),
   }) async {
     if (cancelToken?.isCancelled ?? false) return [];
@@ -167,6 +171,7 @@ class LiveUrlTool {
         liveMeApi ?? LiveMeApi(),
         tiktokApi ?? TikTokApi(),
         youtubeApi ?? YouTubeApi(),
+        taobaoLiveApi ?? TaobaoLiveApi(),
         ownedCancel,
       );
       final result = cancelToken == null
@@ -194,6 +199,7 @@ class LiveUrlTool {
     LiveMeApi liveMeApi,
     TikTokApi tiktokApi,
     YouTubeApi youtubeApi,
+    TaobaoLiveApi taobaoLiveApi,
     dio.CancelToken cancel,
   ) async {
     for (final raw in sharedHttpUrls(text)) {
@@ -274,6 +280,13 @@ class LiveUrlTool {
       if (steamBroadcast != null) return [steamBroadcast, Sites.steamBroadcastSite];
       final jdLive = JdLiveLink.parseLiveId(raw);
       if (jdLive != null) return [jdLive, Sites.jdLiveSite];
+      final taobaoLive = TaobaoLiveLink.parse(raw);
+      if (taobaoLive != null) return [taobaoLive.storageKey, Sites.taobaoLiveSite];
+      if (TaobaoLiveLink.shortUri(raw) != null) {
+        final identity = await taobaoLiveApi.resolveReference(raw, cancel: cancel);
+        if (session.isClosed || cancel.isCancelled) return [];
+        return [identity.storageKey, Sites.taobaoLiveSite];
+      }
       late List<String> segments;
       try {
         segments = uri.pathSegments.where((part) => part.isNotEmpty).toList(growable: false);
@@ -294,6 +307,7 @@ class LiveUrlTool {
           liveMeApi,
           tiktokApi,
           youtubeApi,
+          taobaoLiveApi,
           cancel,
         );
         if (target.isNotEmpty) return target;
@@ -312,6 +326,7 @@ class LiveUrlTool {
           liveMeApi,
           tiktokApi,
           youtubeApi,
+          taobaoLiveApi,
           cancel,
         );
         if (target.isNotEmpty) return target;
