@@ -4,7 +4,7 @@
 
 ## 当前平台能力
 
-2026-09-21 按 `lib/core/sites.dart` 核对：当前源码注册 **43 个直播站点 + IPTV，共 44 个适配器**。这是源码注册数量，不是已发布包或完整验收数量。小红书、niconico、微博、SHOWROOM、CHZZK、Kick、17LIVE、LiveMe、TikTok LIVE、YouTube Live、Bigo Live、PandaTV、PopkonTV、Shopee Live、VK Video Live、NimoTV、Dailymotion、Rumble、GoodGame、FC2 Live、Steam Broadcasts、京东直播、淘宝直播、酷狗直播和百度直播已接入应用入口；原生整体验收继续，当前候选与完整剩余范围以[验收状态](ACCEPTANCE_STATUS_3_2_0.md)为准。
+2026-09-21 按 `lib/core/sites.dart` 核对：当前源码注册 **44 个直播站点 + IPTV，共 45 个适配器**。这是源码注册数量，不是已发布包或完整验收数量。小红书、niconico、微博、SHOWROOM、CHZZK、Kick、17LIVE、LiveMe、TikTok LIVE、YouTube Live、Bigo Live、PandaTV、PopkonTV、Shopee Live、VK Video Live、NimoTV、Dailymotion、Rumble、GoodGame、FC2 Live、Steam Broadcasts、京东直播、淘宝直播、酷狗直播、百度直播和六间房直播已接入应用入口；原生整体验收继续，当前候选与完整剩余范围以[验收状态](ACCEPTANCE_STATUS_3_2_0.md)为准。
 
 ### 09-09 及更早阶段的取证快照
 
@@ -69,13 +69,14 @@ TwitCasting 新增公开目录、顶栏分类、详情/HLS三档、录制输入�
 | 淘宝直播 | 当前公开门户尚未取得经核验的消费者目录，页面持续说明范围 | 精确场次 ID、主播账号 ID、官方房间链接与 `m.tb.cn` 分享短链；保留未开播、回放和受限状态 | 当前未接入 | `viewCount` 为场次累计观看，不作并发人数；`fansNum` 为主播粉丝，分列展示 |
 | 酷狗直播 | 官网推荐及完整分类原生分页；分类从当前官网导航读取 | 官网主播搜索可返回开播与未开播主播；精确房间号和官方房间链接查询 | 当前未接入，页面明确说明 | `viewerNum/getViewerNum` 为当前观看，`hot` 为平台热度，`fansCount` 为粉丝，三者分列 |
 | 百度直播 | 官网推荐与购物、财经、健康、教育、新闻、休闲分类，按官方 `session_id/refresh_index` 连续分页 | 精确房间号、`/m/room/` 房间链接与 PC/H5 官方分享链接；昵称关键词网页合同待核验 | 当前未接入，页面明确说明 | 目录 `audience_count` 与房间 `online_users` 为当前观看；主播粉丝数独立展示 |
+| 六间房直播 | 官网大厅服务端当前直播快照；全部、歌区、舞区、脱口秀、星颜、派对按同一快照本地分页 | 官网昵称搜索可返回开播和未开播主播；精确房间号、`v.6.cn` / `m.6.cn` 房间及主播链接 | 当前未接入，页面明确说明 | 大厅 `count` 保留为平台热度，不冒充唯一并发人数；详情 `fans_num` 为粉丝数 |
 | IPTV | 本地导入频道分组 | 本地频道查询 | 无远端弹幕服务 | 不虚构观看人数 |
 
 > “热度”是平台排序/活跃度指标，不等同于唯一在线用户数。界面会按平台字段分别显示“热度”“在线”或“累计观看”，避免把不同含义的数据统一标成在线人数。
 
 搜索页会直接显示当前平台的覆盖范围，并提供“包含未开播”筛选。平台选择栏使用独立水平列表：项目超过屏幕宽度时可横向访问，首尾为硬边界，不使用无对应内容页的 `TabBar` 自动定位。综合排序固定把直播中房间放在前面，再比较当前观看口径、粉丝数和主页平台顺序；“平台优先”直接使用“平台显示设置”的拖动顺序，“观众优先”和“粉丝优先”则调整对应字段的比较次序。粉丝字段只在平台搜索响应明确提供时参与，缺少该字段的结果保留为稳定次序；快手使用网页搜索入口，IPTV 只查找本机导入频道。每个平台单独维护翻页结束状态，空页或重复页会停止继续请求。
 
-“全部”搜索并发请求各原生平台，但按单个平台完成顺序渐进显示，某个平台超过 12 秒会被标记为本轮部分失败，不再阻塞其他结果。搜索页生命周期内复用同一组适配器，Twitch 等游标分页状态不会因每次读取平台列表而丢失。网页继续搜索可从 Bilibili、斗鱼、虎牙、抖音、快手、网易 CC、Twitch、SOOP、YY、AcFun、Picarto、TwitCasting、SHOWROOM、CHZZK、Kick、17LIVE、LiveMe、TikTok LIVE、YouTube Live、Bigo Live、PandaTV、PopkonTV、Shopee Live、VK Video Live、NimoTV、Dailymotion、Rumble、GoodGame、FC2 Live、Steam Broadcasts、京东直播、淘宝直播、酷狗直播和百度直播的已支持直播间链接识别“平台 + 房间号”；搜索/分类页和相似伪装域名会被忽略。
+“全部”搜索并发请求各原生平台，但按单个平台完成顺序渐进显示，某个平台超过 12 秒会被标记为本轮部分失败，不再阻塞其他结果。搜索页生命周期内复用同一组适配器，Twitch 等游标分页状态不会因每次读取平台列表而丢失。网页继续搜索可从 Bilibili、斗鱼、虎牙、抖音、快手、网易 CC、Twitch、SOOP、YY、AcFun、Picarto、TwitCasting、SHOWROOM、CHZZK、Kick、17LIVE、LiveMe、TikTok LIVE、YouTube Live、Bigo Live、PandaTV、PopkonTV、Shopee Live、VK Video Live、NimoTV、Dailymotion、Rumble、GoodGame、FC2 Live、Steam Broadcasts、京东直播、淘宝直播、酷狗直播、百度直播和六间房直播的已支持直播间链接识别“平台 + 房间号”；搜索/分类页和相似伪装域名会被忽略。
 
 “设置 → 通用 → 观看数据与排行口径”提供两个全局模式和分平台开关：
 
@@ -131,6 +132,7 @@ TwitCasting 新增公开目录、顶栏分类、详情/HLS三档、录制输入�
 | 淘宝直播 | `newDefinition` / `definition` 的 `lld`～`ud` 稳定档位 | 匿名 MTop 会话动态签名并按物理媒体去重；每档同时保留 HLS/FLV 线路，播放、录制与恢复重新查询同一场次或主播身份，并按 `auth_key` 提前续期 |
 | 酷狗直播 | `protocol:rate:codec:layout` | 只接受绑定当前房间号且带 `txSecret/txTime/token` 的官方 HTTPS FLV/HLS；合并多 CDN 同档线路，播放、录制与恢复重新取签名，并按 `txTime` 提前续期 |
 | 百度直播 | `protocol:resolution:codec` | 只接受路径绑定当前房间号的 `*.bdstatic.com` HTTPS FLV/HLS；明细返回多档 FLV及默认 HLS，播放与录制恢复重新查询同一房间并保持稳定档位 ID |
+| 六间房直播 | `flv:source` | 房间号先绑定官网返回的主播 UID，再校验当前直播场次；只接受 `wlive.6rooms.com/httpflv/v{UID}-{LIVE_ID}[-many].flv`，播放与录制恢复重新查询同一房间和场次 |
 
 横屏“清晰度与播放线路”面板根据画质数、线路数和可用高度计算整体尺寸。一个画质/一条线路时收紧面板；常见四画质使用均衡 `2×2`；项目多时只让按钮网格滚动，不用固定比例制造空白。按钮区域是主要视觉，标题、留白和重复的当前值标签均已压缩。
 
@@ -167,6 +169,8 @@ TwitCasting 新增公开目录、顶栏分类、详情/HLS三档、录制输入�
 2026-09-21 的酷狗直播生产探测从官网读取 14 个当前分类，并验证推荐目录及分类目录的原生分页、主播搜索的开播/未开播结果、精确房间状态和媒体合同。当前直播样本返回两条 CDN、稳定 rate/codec/layout 描述及房间绑定签名；HTTPS FLV 实际读取为 HTTP 200、`video/x-flv` 且字节前缀为标准 `FLV`。源码已接入目录、分类、搜索、精确链接、指标分列、签名媒体校验、到期续期及播放/录制恢复；详细证据见 [酷狗直播合同检查点](KUGOU_LIVE_CONTRACT_CHECKPOINT_2026_09_21.md)。
 
 2026-09-21 的百度直播生产探测从官网当前 PC 客户端合同取得推荐页 10 个正在直播的房间与七个分类，目录保留官方 `session_id/refresh_index` 分页状态；房间 `11572411040` 的明细返回 1080P/720P/540P FLV 及默认 HLS。两条当前 HLS 样本读取为 HTTP 206、`application/x-mpegURL` 与 `#EXTM3U`，两条 FLV 样本读取为 HTTP 200、`video/x-flv` 与标准 `FLV` 文件头。源码已接入目录、分类、精确房间/链接、状态、指标分列、画质、播放/录制恢复；详细证据见 [百度直播合同检查点](BAIDU_LIVE_CONTRACT_CHECKPOINT_2026_09_21.md)。
+
+2026-09-21 的六间房直播生产探测从官网大厅服务端变量解析出 411 条当前直播和平台原始分类，官网昵称搜索同时返回当前主播与未开播主播身份；房间页把公开房号 `8838` 绑定到主播 UID `56182128`，移动房间接口返回当前场次 `222415076`、粉丝、分辨率、码率和 FLV 标识。当前 FLV 经官方 302 调度后返回 HTTP 200、`video/x-flv` 与标准 `FLV` 文件头；源码已接入目录、分类、昵称/精确搜索、链接、状态、热度/粉丝分列、媒体身份校验及播放/录制恢复。详细证据见 [六间房直播合同检查点](SIXROOM_CONTRACT_CHECKPOINT_2026_09_21.md)。
 
 ```powershell
 python tool/interface_probe.py

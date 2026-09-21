@@ -34,6 +34,7 @@ import 'package:pure_live/core/site/steambroadcast/steam_broadcast_link.dart';
 import 'package:pure_live/core/site/jdlive/jd_live_link.dart';
 import 'package:pure_live/core/site/kugoulive/kugou_live_link.dart';
 import 'package:pure_live/core/site/baidulive/baidu_live_link.dart';
+import 'package:pure_live/core/site/sixroom/sixroom_link.dart';
 import 'package:pure_live/core/site/taobaolive/taobao_live_api.dart';
 import 'package:pure_live/core/site/taobaolive/taobao_live_link.dart';
 import 'package:pure_live/core/site/seventeenlive/seventeenlive_link.dart';
@@ -140,6 +141,7 @@ class LiveUrlTool {
       if (JdLiveLink.parseLiveId(raw) != null) return true;
       if (KugouLiveLink.parseRoomId(raw) != null) return true;
       if (BaiduLiveLink.parseRoomId(raw) != null) return true;
+      if (SixRoomLink.parseRoomId(raw) != null) return true;
       if (TaobaoLiveLink.parse(raw) != null || TaobaoLiveLink.shortUri(raw) != null) return true;
       final uri = Uri.parse(raw);
       return TikTokLink.isShortHost(uri.host) ||

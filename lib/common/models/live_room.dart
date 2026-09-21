@@ -261,6 +261,14 @@ class LiveRoom {
       hasTotalViewers: false,
       onlineAvailability: AudienceOnlineAvailability.roomList,
     ),
+    // Six Rooms exposes a homepage `count` used by its ranking cards, without
+    // a stable public contract proving unique concurrent viewers. Keep it as
+    // platform popularity; room fans remain an independent follower metric.
+    'sixroom': AudiencePlatformCapability(
+      hasPopularity: true,
+      hasTotalViewers: false,
+      onlineAvailability: AudienceOnlineAvailability.unsupported,
+    ),
     'ttinglive': AudiencePlatformCapability(
       hasPopularity: false,
       hasTotalViewers: false,
