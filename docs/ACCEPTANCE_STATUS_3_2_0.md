@@ -1,4 +1,4 @@
-# 3.2.0 剩余工作与当前候选（2026-09-21）
+# 3.2.0 剩余工作与当前候选（2026-09-22）
 
 本页只保留当前快照和主要阻塞。逐批历史已移至[状态时间线归档](ACCEPTANCE_STATUS_HISTORY_3_2_0.md)，编号证据以[验收矩阵](ACCEPTANCE_MATRIX_3_1_0.md)为准，执行顺序见[完整验收入口](ACCEPTANCE_3_2_0.md)。**全目标未完成，正式版本未发布。**
 
@@ -6,13 +6,13 @@
 
 | 项目 | 当前证据 |
 | --- | --- |
-| 功能源码基线 | `2e9cd0bb` 已推送。最新平台批次接入六间房直播的大厅快照/六分类、昵称与精确搜索、状态、热度/粉丝分列、房号→UID→场次身份链、HTTPS FLV、播放及录制恢复；确定性回归 **7/7**（`20260921T154729917Z-quality-focused.json`）、当前生产适配器探针 **1/1**（`20260921T153542231Z-quality-focused.json`），新增源码与测试分项 Analyze 均无诊断。此前 `f70e9ec9` 接入百度直播，`73939575` 接入酷狗直播。最近一次完整门禁仍绑定 `b79e8838`：Flutter **4999/4999**、公共接口 **42/42**，记录 `20260919T181710597Z-quality-full.json`；下个候选前需重跑一次 Full |
-| Android 最新本机构建/原生输入 | 现存 `b79e8838` arm64 Debug，3.1.8+4121 / Manifest 6121，289007467 B，SHA-256 `377D4CD5…30ED`；16 个原生库、最小 ELF LOAD `0x4000`、APK 内容门禁通过。该包早于当前源码 `5644b45e`，未覆盖安装，也不作为新增布局修复的原生证据 |
+| 功能源码基线 | `51ef36ab` 已推送。最新平台批次接入 LOOK 直播的视频/语音推荐、精确房间与当前页关键词筛选、状态、当前观看/热度分列、官方网页加密信封、HTTPS HLS/FLV、客户端专用房型提示及播放/录制恢复，并补齐后续平台本地互动身份包、录制平台合同与畸形 UTF-8 分享链接保护；LOOK 确定性回归 **7/7**、当前生产适配器探针 **1/1**（`20260922T051447923Z-quality-focused.json`），相关 79 项集中回归通过（`20260922T052650208Z-quality-focused.json`），分项 Analyze 无诊断。此前 `2e9cd0bb` 接入六间房直播。最近一次完整门禁仍绑定 `b79e8838`：Flutter **4999/4999**、公共接口 **42/42**，记录 `20260919T181710597Z-quality-full.json`；下个候选前需重跑一次 Full |
+| Android 最新本机构建/原生输入 | 现存 `b79e8838` arm64 Debug，3.1.8+4121 / Manifest 6121，289007467 B，SHA-256 `377D4CD5…30ED`；16 个原生库、最小 ELF LOAD `0x4000`、APK 内容门禁通过。该包早于当前源码 `51ef36ab`，未覆盖安装，也不作为新增平台与布局修复的原生证据 |
 | Android 当前编号账本 | 46 行：16 PASS / 30 RUN / 0 NR；每行仍含多个动作和平台组合，旧包证据不自动覆盖当前源码 |
 | Windows 最新归档 | `2fb471d3` Debug；尚未纳入之后的源码修订，也不是 3.2.0 Release 候选 |
 | 手机快照 | `192.168.1.2:5555` 已重新核对 25102RKBEC / myron / Android 17 / root；Pure Live 无进程和录制服务，但前台为其他应用，本轮守卫停止安装与输入 |
 | 当前安装 APK | 只读刷新为 3.1.8 / 6121；上次精确 `base.apk` 哈希仍为 `4BF85571…6B82` Release 测试包，本轮未重拉包，正式签名候选仍待生成 |
-| 平台范围 | 当前源码 **44 个直播站点 + IPTV，共 45 个适配器**；PandaTV、PopkonTV、Shopee Live、VK Video Live、NimoTV、Dailymotion、Rumble、GoodGame、FC2 Live、Steam Broadcasts、京东直播、淘宝直播、酷狗直播、百度直播与六间房直播已完成首阶段源码接入，战旗与浪 Live 保持内部 readiness，DLive、一直播与企鹅电竞已归档生命周期证据；已注册平台仍有能力与双端原生覆盖缺口 |
+| 平台范围 | 当前 **45 个直播站点 + IPTV，2 组未注册**，即源码共 46 个适配器；PandaTV、PopkonTV、Shopee Live、VK Video Live、NimoTV、Dailymotion、Rumble、GoodGame、FC2 Live、Steam Broadcasts、京东直播、淘宝直播、酷狗直播、百度直播、六间房直播与 LOOK 直播已完成首阶段源码接入，战旗与浪 Live 保持内部 readiness，DLive、一直播与企鹅电竞已归档生命周期证据；已注册平台仍有能力与双端原生覆盖缺口 |
 | 编号总账 | 历史大组 20 PASS / 42 RUN / 0 NR；RUN 是待补证或部分完成，不等于 42 个当前 Bug |
 
 ## 编号统计
@@ -31,7 +31,7 @@
 2. **Windows GUI/性能批次未完成**：多 DPI、主副屏、PiP/全屏/多窗口、WebView2、Issue #767 的 4K GPU 对照及退出回落需要同一 Release 候选集中执行。
 3. **Android 组合矩阵未闭合**：当前候选仍需覆盖锁屏/后台、横屏/系统返回、PiP、实体音量键、自动录制和累计数据迁移；设备在线时优先合并执行。
 4. **平台与录制范围较大**：每个平台的目录、播放、弹幕、录制、断流恢复和资源释放尚未全部在当前双端候选上完成；长录和严格解码仍是发布门禁。
-5. **平台扩展继续推进**：战旗与浪 Live 等待当前生产媒体证据后注册；DLive、一直播与企鹅电竞已完成生命周期归档；PandaTV、PopkonTV、Shopee Live、VK Video Live、NimoTV、Dailymotion、Rumble、GoodGame、FC2 Live、Steam Broadcasts、京东直播、淘宝直播、酷狗直播、百度直播与六间房直播已进入源码能力表，双端原生与录制证据并入集中验收。
+5. **平台扩展继续推进**：战旗与浪 Live 等待当前生产媒体证据后注册；DLive、一直播与企鹅电竞已完成生命周期归档；PandaTV、PopkonTV、Shopee Live、VK Video Live、NimoTV、Dailymotion、Rumble、GoodGame、FC2 Live、Steam Broadcasts、京东直播、淘宝直播、酷狗直播、百度直播、六间房直播与 LOOK 直播已进入源码能力表，双端原生与录制证据并入集中验收。
 6. **发布链未开始**：版本冻结、正式签名、全平台串行产物、README/更新日志、资产复验和 GitHub 发布均等待前述门禁。
 
 ## 下一批顺序

@@ -14,7 +14,7 @@
 
 | 批次 | 平台 | 源码状态 | 下一步 |
 | --- | --- | --- | --- |
-| A | 已注册 44 个直播站点 + IPTV | 应用入口、能力表与设置目录已覆盖 | 补齐各平台双端原生与录制证据 |
+| A | 已注册 45 个直播站点 + IPTV | 应用入口、能力表与设置目录已覆盖 | 补齐各平台双端原生与录制证据 |
 | A | Shopee Live（Indonesia） | 有限目录、搜索、分享链接、浏览器动态会话、FLV、续期与录制恢复已接入 | 集中验收阶段执行 Android/Windows 真实播放与短录 |
 | B | 战旗直播 | 内部适配器与媒体域名前缀识别已完成 | 取得当前真实直播字节证据后注册 |
 | B | 浪 Live | 内部精确账号/链接与 FLV/HLS 解析已完成 | 取得公开目录合同与当前媒体样本后注册 |
@@ -30,6 +30,7 @@
 | C | 酷狗直播 | 官网动态分类、推荐/分类原生分页、主播搜索（含未开播）、精确房间、当前观看/热度/粉丝分列、签名 HTTPS FLV、续期与录制恢复已接入 | 集中验收阶段执行 Android/Windows 真实目录、搜索、播放恢复与短录；远端聊天继续核验 |
 | C | 百度直播 | 官网推荐/七分类原生会话分页、精确房间与官方链接、开播状态、当前观看/粉丝分列、HTTPS FLV/HLS、多档画质与录制恢复已接入 | 集中验收阶段执行 Android/Windows 真实目录、分类、播放恢复与短录；昵称搜索与远端聊天继续核验 |
 | C | 六间房直播 | 官网大厅 411 条当前直播快照、六分类本地分页、官网昵称搜索（含未开播主播）、精确房间与官方链接、状态、平台热度/粉丝分列、HTTPS FLV 与播放/录制恢复已接入 | 集中验收阶段执行 Android/Windows 真实目录、搜索、播放恢复与短录；远端聊天继续核验 |
+| C | LOOK 直播 | 官网视频/语音推荐原生分页、精确房间与官方链接、当前推荐页关键词筛选、状态、当前观看/热度分列、HTTPS HLS/FLV、客户端专用房型提示与播放/录制恢复已接入 | 集中验收阶段执行 Android/Windows 真实目录、搜索、音频/视频播放恢复与短录；远端聊天继续核验 |
 | 生命周期 | Trovo | 2026 年 Streamlink 已移除插件 | 先核对官网服务状态，再决定归档或恢复研究 |
 | 生命周期 | DLive | 2026-09-21 官网已显示服务停止页面；旧 Streamlink 插件仅保留历史参考 | 不注册失效入口，保留生命周期证据 |
 | 生命周期 | 一直播、企鹅电竞 | 已归档现行生命周期证据 | 保留历史解析，不进入应用注册 |
@@ -67,4 +68,6 @@ OPENREC / mellow-fan、TTingLive / FLEX TV、小红书、niconico、微博直播
 - DouyinLiveRecorder 当前百度实现：<https://github.com/ihmily/DouyinLiveRecorder/blob/main/src/spider.py>
 - 六间房直播官网：<https://v.6.cn/>
 - StreamGet 当前六间房实现：<https://github.com/ihmily/streamget/blob/master/streamget/platforms/sixroom/live_stream.py>
+- LOOK 直播官网：<https://look.163.com/hot>
+- StreamGet 当前 LOOK 实现：<https://github.com/ihmily/streamget/blob/master/streamget/platforms/look/live_stream.py>
 - 2026 年插件变更记录：<https://github.com/streamlink/streamlink/releases>
