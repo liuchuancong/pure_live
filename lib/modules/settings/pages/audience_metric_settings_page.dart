@@ -26,6 +26,7 @@ class AudienceMetricSettingsPage extends StatelessWidget {
     (id: 'xiaohongshu', labelKey: 'site_xiaohongshu', detailKey: 'audience_xiaohongshu_detail'),
     (id: 'niconico', labelKey: 'site_niconico', detailKey: 'audience_niconico_detail'),
     (id: 'weibo', labelKey: 'site_weibo', detailKey: 'audience_weibo_detail'),
+    (id: 'looklive', labelKey: 'site_looklive', detailKey: 'audience_looklive_detail'),
   ];
 
   @override

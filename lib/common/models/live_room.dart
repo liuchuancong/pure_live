@@ -269,6 +269,13 @@ class LiveRoom {
       hasTotalViewers: false,
       onlineAvailability: AudienceOnlineAvailability.unsupported,
     ),
+    // LOOK keeps recommendation popularity and onlineNumber as independent
+    // values. The latter is the current audience shown on official web cards.
+    'looklive': AudiencePlatformCapability(
+      hasPopularity: true,
+      hasTotalViewers: false,
+      onlineAvailability: AudienceOnlineAvailability.roomList,
+    ),
     'ttinglive': AudiencePlatformCapability(
       hasPopularity: false,
       hasTotalViewers: false,
