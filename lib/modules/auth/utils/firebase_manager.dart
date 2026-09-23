@@ -212,6 +212,28 @@ class FirebaseManager {
     return allowedRoles.contains(targetRole);
   }
 
+  /// Roles the current user is allowed to see in the user directory.
+  ///
+  /// Derived from the same [roleVisibilityMap] entry used by [canVisible], so
+  /// the server-side `where('role', whereIn: visibleRoles())` filter returns
+  /// exactly the set the client would have accepted. This avoids page-size
+  /// drift where the server returns N docs but the client silently drops some.
+  ///
+  /// `roleWeights` is the authoritative list of known roles: it is populated
+  /// from the `roles` collection in [loadUploadConfig] with `user` always
+  /// added as a fallback.
+  List<String> visibleRoles() {
+    final myRole = currentUserRole ?? 'user';
+    final allowed = roleVisibilityMap[myRole];
+    if (allowed == null || allowed.isEmpty) {
+      if (isAdmin()) return const ['admin', 'manager', 'user'];
+      if (isManager()) return const ['manager', 'user'];
+      return const ['user'];
+    }
+    final filtered = allowed.where(roleWeights.containsKey).toList(growable: false);
+    return filtered.isEmpty ? const ['user'] : filtered;
+  }
+
   Future<void> uploadConfig() async {
     final secureUser = auth.currentUser;
     if (secureUser == null || secureUser.uid.trim().isEmpty) {

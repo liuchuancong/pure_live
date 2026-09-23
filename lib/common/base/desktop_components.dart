@@ -44,10 +44,11 @@ class _DesktopPaginationBarState extends State<DesktopPaginationBar> {
     return Obx(() {
       final int current = controller.currentPage;
       final bool hasPrev = current > 1;
-      final bool hasNext = controller.canLoadMore.value;
       final int? total = controller.totalCount.value;
       final int size = controller.pageSize.value;
       final int maxPage = total != null ? (total / size).ceil() : 0;
+
+      final bool hasNext = total != null ? current < maxPage : controller.canLoadMore.value;
 
       List<Widget> pageNodes = [];
       pageNodes.add(_buildNumBlock(context, 1, current == 1));
@@ -199,10 +200,7 @@ class _DesktopPaginationBarState extends State<DesktopPaginationBar> {
         onTap: (isCurrent || controller.loadding.value) ? null : () => controller.goToPage(pageNum),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          constraints: const BoxConstraints(
-            minWidth: kMinInteractiveDimension,
-            minHeight: kMinInteractiveDimension,
-          ),
+          constraints: const BoxConstraints(minWidth: kMinInteractiveDimension, minHeight: kMinInteractiveDimension),
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: isCurrent ? theme.colorScheme.primary : Colors.transparent,
@@ -261,10 +259,7 @@ class CompactPageSizeSelector extends StatelessWidget {
           }).toList();
         },
         child: Container(
-          constraints: const BoxConstraints(
-            minWidth: kMinInteractiveDimension,
-            minHeight: kMinInteractiveDimension,
-          ),
+          constraints: const BoxConstraints(minWidth: kMinInteractiveDimension, minHeight: kMinInteractiveDimension),
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(6),

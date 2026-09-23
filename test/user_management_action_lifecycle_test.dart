@@ -1,20 +1,20 @@
+import 'dart:io';
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter/rendering.dart';
 import 'package:hive_ce/hive.dart';
+import 'package:flutter/rendering.dart';
+import 'package:pure_live/common/index.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:pure_live/modules/auth/models/user_item.dart';
 import 'package:pure_live/modules/auth/user_manage_page.dart';
+import 'package:pure_live/modules/auth/utils/firebase_manager.dart';
 import 'package:pure_live/modules/auth/user_management_actions.dart';
 import 'package:pure_live/modules/auth/user_server_remote_controller.dart';
-import 'package:pure_live/modules/auth/utils/firebase_manager.dart';
 
 class _Loader extends AssetLoader {
   const _Loader();
@@ -49,11 +49,6 @@ class _Controller extends UserServerRemoteController {
     super.onInit();
     isSuperAdmin = true;
   }
-
-  @override
-  Future<List<String>> readCloudUserIds() async => [];
-  @override
-  Future<Map<String, String>> readCloudRoles(List<String>? uids) async => {};
 
   @override
   Future<void> refreshData() async {

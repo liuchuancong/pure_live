@@ -1,9 +1,9 @@
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
-import 'package:pure_live/modules/auth/user_management_actions.dart';
 import 'package:pure_live/modules/auth/models/user_item.dart';
 import 'package:pure_live/modules/auth/utils/firebase_manager.dart';
+import 'package:pure_live/modules/auth/user_management_actions.dart';
 import 'package:pure_live/modules/auth/user_server_remote_controller.dart';
 import 'package:pure_live/modules/auth/components/user_detail_main_page.dart';
 
@@ -169,6 +169,8 @@ class _UserManagerState extends State<UserManager> {
   }
 
   Widget _buildListUserCard(List<UserItem> userList, ScrollController scrollController) {
+    final startIndex = (controller.currentPage - 1) * controller.pageSize.value;
+
     return LayoutBuilder(
       builder: (context, constraint) {
         return WaterfallFlow.builder(
@@ -182,7 +184,7 @@ class _UserManagerState extends State<UserManager> {
           ),
           itemCount: userList.length,
           itemBuilder: (context, index) {
-            return _buildUserCard(index, userList[index]);
+            return _buildUserCard(startIndex + index, userList[index]);
           },
         );
       },

@@ -1,13 +1,13 @@
 import 'dart:async';
 import 'dart:typed_data';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce/hive.dart';
 import 'package:pure_live/common/index.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
-import 'package:pure_live/modules/auth/user_server_remote_controller.dart';
 import 'package:pure_live/modules/auth/utils/firebase_manager.dart';
+import 'package:pure_live/modules/auth/user_server_remote_controller.dart';
 
 // This isolated I/O double is never passed to a Firestore query. The SDK's
 // production-extension restriction does not describe this id/data-only fixture.
@@ -39,35 +39,6 @@ class _Controller extends UserServerRemoteController {
   String get currentUserUid {
     authReads++;
     return 'self';
-  }
-
-  @override
-  Future<List<String>> readCloudUserIds() async => await (ids ?? Future.value([]));
-  @override
-  Future<Map<String, String>> readCloudRoles(List<String>? uids) async {
-    if (uids == null) {
-      globalRoles++;
-      return await (statsRoles ?? Future.value({}));
-    }
-    roleQueries.add(uids);
-    return await (roles ?? Future.value({}));
-  }
-
-  @override
-  Future<List<DocumentSnapshot>> readCloudUsers({
-    required int limitCount,
-    required String keyword,
-    required DocumentSnapshot? after,
-  }) async {
-    queries.add((keyword: keyword, after: after?.id, size: limitCount));
-    if (reader != null) return await reader!(limitCount, keyword, after);
-    return await (rows ?? Future.value([]));
-  }
-
-  @override
-  Future<void> writeCloudUser(String id, Map<String, dynamic> data) async {
-    writes++;
-    await write;
   }
 
   @override
