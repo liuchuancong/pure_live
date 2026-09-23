@@ -6,10 +6,10 @@
 
 | 项目 | 当前证据 |
 | --- | --- |
-| 功能源码基线 | `035cc32f` 已推送，工作区干净。本轮全仓 Analyze 无 error/warning，另有 1 项既有 info；Full 在修复下载失败弹窗测试前得到 Flutter **5294/5295**，失败点已单独修复并通过 10/10。当前提交随后完成全库 Flutter **5295/5295**（`20260923T144109920Z-quality-focused.json`）与公共接口 **42/42**（`local-artifacts/build-records/interface-probes-20260923.log`）。这两项不是当前提交的正式 Full 记录；发布候选前仍需重跑 Full，并执行双端原生验收 |
+| 功能源码基线 | `9a15c7fe` 已推送，工作区干净。本轮全仓 Analyze 无 error/warning，另有 1 项既有 info；Full 在修复下载失败弹窗测试前得到 Flutter **5294/5295**，失败点已单独修复并通过 10/10。`035cc32f` 功能源码完成全库 Flutter **5295/5295**（`20260923T144109920Z-quality-focused.json`）与公共接口 **42/42**（`local-artifacts/build-records/interface-probes-20260923.log`）；随后微博未知人数显示修复在 `9a15c7fe` 完成相关 **82/82**（`20260923T145649972Z-quality-focused.json`）。这些不是当前提交的正式 Full 记录；发布候选前仍需重跑 Full，并执行双端原生验收 |
 | Android 最新本机构建/原生输入 | 现存 `b79e8838` arm64 Debug，3.1.8+4121 / Manifest 6121，289007467 B，SHA-256 `377D4CD5…30ED`；16 个原生库、最小 ELF LOAD `0x4000`、APK 内容门禁通过。该包早于当前源码 `035cc32f`，未覆盖安装；新增平台、搜索、布局及录制等后续修订均待新候选原生验收 |
 | Android 当前编号账本 | 46 行：16 PASS / 30 RUN / 0 NR；每行仍含多个动作和平台组合，旧包证据不自动覆盖当前源码 |
-| Windows 最新归档 | `2fb471d3` Debug；尚未纳入之后的源码修订，也不是 3.2.0 Release 候选 |
+| Windows 最新归档 | `9a15c7fe` x64 Debug 已构建：`PureLive-3.1.8-4121-windows-x64-debug.zip`，SHA-256 `e5353f23…d1125b`，记录 `20260923T152205072Z-build-windowsx64-debug.json`；仅证明当前源码的编译与归档，尚未完成 GUI/播放/录制原生验收，也不是 3.2.0 Release 候选 |
 | 手机快照 | `192.168.1.2:5555` 已重新核对 25102RKBEC / myron / Android 17 / root；Pure Live 无进程和录制服务，但前台为其他应用，本轮守卫停止安装与输入 |
 | 当前安装 APK | 只读刷新为 3.1.8 / 6121；上次精确 `base.apk` 哈希仍为 `4BF85571…6B82` Release 测试包，本轮未重拉包，正式签名候选仍待生成 |
 | 平台范围 | 当前 **45 个直播站点 + IPTV，2 组未注册**，即源码共 46 个适配器；PandaTV、PopkonTV、Shopee Live、VK Video Live、NimoTV、Dailymotion、Rumble、GoodGame、FC2 Live、Steam Broadcasts、京东直播、淘宝直播、酷狗直播、百度直播、六间房直播与 LOOK 直播已完成首阶段源码接入，战旗与浪 Live 保持内部 readiness，DLive、一直播与企鹅电竞已归档生命周期证据；已注册平台仍有能力与双端原生覆盖缺口 |
@@ -27,7 +27,7 @@
 
 ## 主要阻塞
 
-1. **当前原生闭环缺失**：Android 现存 `b79e8838` 候选已通过当时完整门禁，但早于近期功能与布局修订；手机上次只读检查时在线且型号/代号/root 已复核，前台由其他应用占用，因此未安装或发送界面输入。Windows 最新原生证据同样早于当前 `master`。
+1. **当前原生闭环缺失**：Android 现存 `b79e8838` 候选已通过当时完整门禁，但早于近期功能与布局修订；手机上次只读检查时在线且型号/代号/root 已复核，前台由其他应用占用，因此未安装或发送界面输入。Windows 已有当前源码 Debug 归档，但还没有当前候选的 GUI/播放/录制与 Release 证据。
 2. **Windows GUI/性能批次未完成**：多 DPI、主副屏、PiP/全屏/多窗口、WebView2、Issue #767 的 4K GPU 对照、Issue #875 的 1+3 连续播放与退出回落需要同一 Release 候选集中执行。
 3. **Android 组合矩阵未闭合**：当前候选仍需覆盖锁屏/后台、横屏/系统返回、PiP、实体音量键、自动录制和累计数据迁移；设备在线时优先合并执行。
 4. **平台与录制范围较大**：每个平台的目录、播放、弹幕、录制、断流恢复和资源释放尚未全部在当前双端候选上完成；OPENREC 当前本机官网/公共接口 CloudFront 403，需在可访问窗口复核；长录和严格解码仍是发布门禁。
