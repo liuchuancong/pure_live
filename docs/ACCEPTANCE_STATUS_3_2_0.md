@@ -6,8 +6,8 @@
 
 | 项目 | 当前证据 |
 | --- | --- |
-| 功能源码基线 | `73b94d19` 已推送。映客精确 UID 查询保留，新增官网有限公开精选的昵称筛选与本地分页，并在搜索页声明非全站搜索；Focused **52/52**、全库 Analyze 无诊断，记录 `20260923T051516978Z-quality-focused.json`。猫耳 FM 官网直播关键词分页另见[专项记录](MISSEVAN_NATIVE_KEYWORD_SEARCH_AUDIT_2026_09_23.md)（其批次 116/116、生产搜索 1/1）。近期外部打开和网页搜索修订见[房间目标](ROOM_EXTERNAL_OPEN_COVERAGE_AUDIT_2026_09_23.md)、[链接回流](WEB_SEARCH_XHS_TTING_LINK_AUDIT_2026_09_23.md)、[导航归属](WEB_SEARCH_NAVIGATION_OWNERSHIP_AUDIT_2026_09_23.md)。最近一次完整门禁仍绑定 `b79e8838`：Flutter **4999/4999**、公共接口 **42/42**，记录 `20260919T181710597Z-quality-full.json`；下个候选前需重跑 Full |
-| Android 最新本机构建/原生输入 | 现存 `b79e8838` arm64 Debug，3.1.8+4121 / Manifest 6121，289007467 B，SHA-256 `377D4CD5…30ED`；16 个原生库、最小 ELF LOAD `0x4000`、APK 内容门禁通过。该包早于当前源码 `73b94d19`，未覆盖安装；新增平台、搜索、布局及录制等后续修订均待新候选原生验收 |
+| 功能源码基线 | `c0585530` 已推送。克拉克拉新增[官网主播关键词分页](KILAKILA_NATIVE_KEYWORD_SEARCH_AUDIT_2026_09_23.md)、`/zhubo/{uid}` 链接回流与网页搜索入口；最终受影响测试 **195/195**、注册适配器生产搜索 **1/1**，全库 Analyze 无诊断（记录 `20260923T054603851Z-quality-focused.json`、`20260923T054316626Z-quality-focused.json`）。映客有限精选昵称筛选 **52/52**、生产搜索 **1/1**；猫耳 FM 官网直播关键词分页另见[专项记录](MISSEVAN_NATIVE_KEYWORD_SEARCH_AUDIT_2026_09_23.md)。最近一次完整门禁仍绑定 `b79e8838`：Flutter **4999/4999**、公共接口 **42/42**，记录 `20260919T181710597Z-quality-full.json`；下个候选前需重跑 Full |
+| Android 最新本机构建/原生输入 | 现存 `b79e8838` arm64 Debug，3.1.8+4121 / Manifest 6121，289007467 B，SHA-256 `377D4CD5…30ED`；16 个原生库、最小 ELF LOAD `0x4000`、APK 内容门禁通过。该包早于当前源码 `c0585530`，未覆盖安装；新增平台、搜索、布局及录制等后续修订均待新候选原生验收 |
 | Android 当前编号账本 | 46 行：16 PASS / 30 RUN / 0 NR；每行仍含多个动作和平台组合，旧包证据不自动覆盖当前源码 |
 | Windows 最新归档 | `2fb471d3` Debug；尚未纳入之后的源码修订，也不是 3.2.0 Release 候选 |
 | 手机快照 | `192.168.1.2:5555` 已重新核对 25102RKBEC / myron / Android 17 / root；Pure Live 无进程和录制服务，但前台为其他应用，本轮守卫停止安装与输入 |
