@@ -39,11 +39,18 @@ final class MultiviewFrameWatchdog {
     _lastRevision = revision.value;
     _clock.start();
     revision.addListener(_onFrame);
+    // start() runs after the asynchronous native open; its first frame may
+    // already have been presented before this listener was attached.
+    if (_lastRevision! > 0) _armDeadline();
   }
 
   void _onFrame() {
     if (_disposed || revision.value == _lastRevision) return;
     _lastRevision = revision.value;
+    _armDeadline();
+  }
+
+  void _armDeadline() {
     _hidden = !isEligible();
     _deadline = _now + timeout;
     // A high-FPS stream only moves the deadline; it never allocates a timer
