@@ -381,6 +381,11 @@ class LivePlayController extends GetxController
     if (superChats.isNotEmpty) superChats.clear();
   }
 
+  /// A metadata retry on the same room is not a new paid-message session.
+  /// Keep already delivered messages until they expire or the room changes.
+  @visibleForTesting
+  void beginRoomMetadataLoad() => updateRoom(isLoading: true, loadError: null);
+
   /// Restores the normal room presentation for one system-back attempt.
   ///
   /// The route-local PopScope owns whether the route can pop. Keeping teardown
@@ -688,8 +693,7 @@ class LivePlayController extends GetxController
     if (requestedRoom == null || roomId == null || requestedPlatform == null) return LiveRoom();
     final loadEpoch = ++_roomLoadEpoch;
 
-    clearSuperChats();
-    updateRoom(isLoading: true, loadError: null);
+    beginRoomMetadataLoad();
 
     try {
       final fetchedRoom = await currentSite.liveSite.getRoomDetail(roomId: roomId, platform: requestedPlatform);
@@ -698,7 +702,6 @@ class LivePlayController extends GetxController
       liveRoom = liveRoom.fillFromDetail(requestedRoom);
       if (!_isRoomLoadCurrent(loadEpoch, roomId, requestedPlatform)) return liveRoom;
       updateRoom(detail: liveRoom);
-      unawaited(getSuperChatMessage(roomId, platform: requestedPlatform, loadEpoch: loadEpoch));
 
       if (currentSite.id == Sites.iptvSite) {
         await _initIptvPlayer(liveRoom, loadEpoch: loadEpoch);
@@ -715,6 +718,7 @@ class LivePlayController extends GetxController
       final liveStatus = liveRoom.isPlayableNow;
 
       if (liveStatus) {
+        unawaited(getSuperChatMessage(roomId, platform: requestedPlatform, loadEpoch: loadEpoch));
         await _handleLiveRoom(liveRoom, loadEpoch: loadEpoch);
       } else {
         await _handleNotLiveRoom(liveRoom);
@@ -773,6 +777,7 @@ class LivePlayController extends GetxController
 
   Future<void> _handleNotLiveRoom(LiveRoom liveRoom) async {
     unawaited(danmakuController.stopDanmaku());
+    clearSuperChats();
     updateRoom(success: false, isLiving: false);
     setNormalScreen();
     GlobalPlayerState.to.isFullscreen.value = false;
@@ -897,6 +902,7 @@ class LivePlayController extends GetxController
     updateRoom(success: false, isLiving: true);
     await playerController.destroyPlayer();
     clearClosedPlaybackSource();
+    clearSuperChats();
 
     updatePlayer(hasUseDefaultResolution: false);
     updateUI(refreshKey: 0);

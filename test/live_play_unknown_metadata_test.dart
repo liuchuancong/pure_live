@@ -87,4 +87,44 @@ void main() {
       }
     });
   }
+
+  test('same-room metadata failure retains delivered super chats and settles loading', () {
+    final room = LiveRoom(roomId: '12345', platform: 'bilibili');
+    final owner = LivePlayController(room: room, site: 'bilibili');
+    final now = DateTime.now();
+    final message = LiveSuperChatMessage(
+      messageId: 'paid-1',
+      backgroundBottomColor: '#FFFFFF',
+      backgroundColor: '#FFFFFF',
+      endTime: now.add(const Duration(minutes: 5)),
+      face: '',
+      message: 'paid message',
+      price: 1,
+      startTime: now,
+      userName: 'viewer',
+    );
+    try {
+      owner.state.value = LivePlayState(
+        room: RoomState(detail: room, success: true),
+        player: const PlayerState(playUrls: ['https://media.example/live.flv']),
+      );
+      owner.addSingleSuperChat(message);
+
+      owner.beginRoomMetadataLoad();
+      expect(owner.superChats, [message]);
+      expect(owner.state.value.room.isLoading, isTrue);
+
+      owner.settleUnknownRoomMetadata();
+      expect(owner.superChats, [message]);
+      expect(owner.state.value.room.isLoading, isFalse);
+      expect(owner.state.value.room.success, isTrue);
+    } finally {
+      owner.clearSuperChats();
+      owner.state.close();
+      owner.danmakuMessages.close();
+      owner.danmakuPresentationRevision.close();
+      owner.localGiftEffect.close();
+      owner.superChats.close();
+    }
+  });
 }

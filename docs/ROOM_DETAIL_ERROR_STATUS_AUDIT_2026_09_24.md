@@ -11,3 +11,7 @@
 ## 切房时的旧线路状态（后续修订）
 
 进一步沿 `switchRoom` 生产路径复核发现：旧原生播放器已关闭，但原 `PlayerState.playUrls` / `ownedSource` 仍可保留。若新房详情请求恰好返回未知状态，`hasPlaybackSource` 会误读旧线路，并把新房标成正在播放。切房关闭旧播放器后现同步清空线路、画质和 owned source；同房临时详情失败仍保留真实现存播放器。新增 URL/owned 两种旧线路回归，四文件相邻测试 **29/29**，全仓 Analyze 0 error / 0 warning、1 项既有 info（`20260923T170236392Z-quality-focused.json`）。该测试直接验证切房路径调用的清理方法和未知状态转换，未执行原生 `switchRoom` 全流程；Android/Windows 真正切房网络故障仍由 AND-FAULT-05 / WIN-FAULT-02 验收。
+
+## 同房重试期间的付费消息
+
+同一房间的元数据刷新原本在发出请求前清空 `superChats`，故临时请求失败会移除尚未到期的付费消息。现在刷新开始只更新加载状态；确认切房或明确下播时清理房间消息，直播状态确定后才发起该场次的付费消息快照请求。待核验状态不再触发此额外请求。构造已有播放源与未到期消息的确定性回归通过，连同到期策略、播放状态三文件 **11/11**；全仓 Analyze 0 error / 0 warning、1 项既有 info（`20260923T170718688Z-quality-focused.json`）。真机/Windows GUI 的同房刷新和切房故障留在 AND-FAULT-05 / WIN-FAULT-02。
