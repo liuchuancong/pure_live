@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce/hive.dart';
@@ -46,7 +48,7 @@ InkeSite _site({void Function(String)? called}) => InkeSite(
 );
 
 const _notice =
-    '官网精选目录，非全站列表。部分在播间暂无公开播放地址；搜索与弹幕暂未接入。 '
+    '官网精选目录，非全站列表。部分在播间暂无公开播放地址；支持精确 UID 或官网房间链接查询，昵称搜索与弹幕暂未接入。 '
     'Website showcases, not a full directory. Some live rooms lack a public playback source.';
 
 class _NoticeController extends LiveDirectoryController {
@@ -77,12 +79,71 @@ void main() {
     expect(Sites.supportSites.where((s) => s.id == 'inke'), hasLength(1));
     expect(Sites.supportSites.map((s) => s.id).toSet(), Sites.supportedSiteIds);
     expect(LiveRoom.audienceCapabilityFor('inke').supportsConcurrentOnline, isFalse);
-    expect(LiveSearchCapabilities.forPlatform('inke').supportsNativeSearch, isFalse);
+    expect(LiveSearchCapabilities.forPlatform('inke').coverage, NativeSearchCoverage.roomLookup);
+    expect(LiveSearchCapabilities.forPlatform('inke').supportsNativeSearch, isTrue);
     expect(LiveSearchCapabilities.forPlatform('inke').supportsWebSearch, isFalse);
     expect(MultiviewDanmakuSession.isSupportedPlatform('inke'), isFalse);
     final controller = LiveDirectoryController(directory: _site());
     addTearDown(controller.onClose);
     expect(controller.pageNotice, 'inke_directory_scope');
+  });
+
+  test('bilingual directory notice describes exact lookup and remaining scope', () {
+    final chinese = jsonDecode(File('assets/translations/zh.json').readAsStringSync()) as Map<String, dynamic>;
+    final english = jsonDecode(File('assets/translations/en.json').readAsStringSync()) as Map<String, dynamic>;
+    expect(chinese['inke_directory_scope'], contains('精确 UID'));
+    expect(chinese['inke_directory_scope'], contains('昵称搜索'));
+    expect(english['inke_directory_scope'], contains('Exact UID'));
+    expect(english['inke_directory_scope'], contains('nickname search'));
+  });
+
+  test('exact UID and official link lookup use metadata only, including offline state', () async {
+    final paths = <String>[];
+    final site = _site(called: paths.add);
+    final live = await site.searchRooms('100');
+    expect(live.single.roomId, '100');
+    expect(live.single.isLiveNow, isTrue);
+    expect(live.single.data, isNull);
+    expect(paths, ['/web/live_share_pc']);
+    expect((await site.searchRooms('https://www.inke.cn/liveroom/index.html?uid=100&id=old')).single.roomId, '100');
+    expect(paths, ['/web/live_share_pc', '/web/live_share_pc']);
+    expect(await site.searchRooms('100', page: 2), isEmpty);
+    for (final input in ['主播昵称', 'https://www.inke.cn/', 'https://www.inke.cn.evil.test/liveroom/index.html?uid=100']) {
+      expect(await site.searchRooms(input), isEmpty);
+    }
+    expect(paths, hasLength(2));
+
+    final offline = InkeSite(
+      api: InkeApi(request: (uri, _) async => (status: 200, body: jsonEncode({'error_code': 1099999920, 'data': {}}))),
+    );
+    final room = (await offline.searchRooms('100')).single;
+    expect(room.roomId, '100');
+    expect(room.isExplicitlyOfflineNow, isTrue);
+    expect(room.title, 'UID 100');
+    expect(room.nick, 'UID 100');
+  });
+
+  test('exact lookup preserves access errors and forwards cancellation', () async {
+    final token = CancelToken();
+    final absent = InkeSite(
+      api: InkeApi(
+        request: (uri, cancel) async {
+          expect(identical(cancel, token), isTrue);
+          return (status: 404, body: '');
+        },
+      ),
+    );
+    expect(await absent.searchRoomsCancellable('100', cancel: token), isEmpty);
+    final denied = InkeSite(api: InkeApi(request: (_, _) async => (status: 403, body: '')));
+    await expectLater(
+      denied.searchRooms('100'),
+      throwsA(isA<InkeException>().having((error) => error.kind, 'kind', InkeFailure.access)),
+    );
+    final cancelled = CancelToken()..cancel();
+    await expectLater(
+      absent.searchRoomsCancellable('100', cancel: cancelled),
+      throwsA(isA<InkeException>().having((error) => error.kind, 'kind', InkeFailure.cancelled)),
+    );
   });
 
   test('real sharing entry points use stable UID without sending a request', () async {

@@ -592,7 +592,7 @@
     "kilakila_newcomers": "Rising stars",
     "kilakila_directory_scope": "Official hot/rising-star listings, not a full directory. Favorites use anchor UIDs. Public free streams only; search and chat are not integrated.",
     "site_inke": "Inke",
-    "inke_directory_scope": "Website showcases, not a full directory. Some live rooms lack a public playback source. Search and chat are not integrated yet.",
+    "inke_directory_scope": "Website showcases, not a full directory. Some live rooms lack a public playback source. Exact UID or official room-link lookup is supported; nickname search and chat are not integrated yet.",
     "inke_media_unavailable": "This room is live, but the current website showcases have no verified public playback source. Refresh later.",
     "site_bilibili": "Bilibili",
     "site_cc": "NetEase CC",

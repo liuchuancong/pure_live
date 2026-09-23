@@ -11,7 +11,7 @@
 OPENREC / mellow-fan 已接入复合频道身份、公开目录与 HLS 质量；其当前生产整链可达性与原生验收仍有缺口，见[应用审计](OPENREC_APPLICATION_INTEGRATION_AUDIT_2026_09_09.md)。TTingLive / FLEX TV 已接入有限首页目录、精确频道查询及按源 token 策略；应用回归 201/201，最新生产注册适配器与 24 份 HLS 列表链路通过，后续 Windows 原生短录两次采集目标失败；保留片段的合并/完整解码通过，但起始延迟及音视频时间覆盖仍待修，完整录制未通过，见[应用审计](TTING_APPLICATION_INTEGRATION_AUDIT_2026_09_09.md)、[生产链路审计](TTING_PRODUCTION_RELAY_AUDIT_2026_09_09.md)及[原生短录审计](TTING_NATIVE_RECORDING_AUDIT_2026_09_09.md)。
 克拉克拉与花椒已接入公开目录、UID 收藏及播放/录制解析；两者搜索、弹幕与 Android/Windows 原生验收仍待完成，见[克拉克拉应用审计](KILAKILA_APPLICATION_INTEGRATION_AUDIT_2026_09_08.md)、[萌星目录修订](KILAKILA_RISING_STAR_AUDIT_2026_09_08.md)及[花椒应用审计](HUAJIAO_APPLICATION_INTEGRATION_AUDIT_2026_09_08.md)。花椒空页仍有 more 时沿原生游标有界继续，游标按页面和刷新批次隔离，不用结果条数代替结束信号。
 当前 [Android 候选 bee143e2](OPENREC_PICARTO_ANDROID_CANDIDATE_2026_09_09.md) 已包含克拉克拉、花椒、OPENREC 和 Picarto 响应收尾修订；完整门禁/打包通过，尚未安装，后续 TTing 和源策略输入链未入包。Windows f3de664a 未随本批更新，原生能力证据仍按各平台分列。
-猫耳和映客已应用接入；猫耳 Windows 原生短录有独立证据，映客当前只到公开接口和生产地址解析，见[映客应用审计](INKE_APPLICATION_INTEGRATION_AUDIT_2026_09_08.md)。
+猫耳和映客已应用接入；猫耳 Windows 原生短录有独立证据，映客已有公开接口和生产地址解析，并补齐精确 UID/官网链接查询，见[映客应用审计](INKE_APPLICATION_INTEGRATION_AUDIT_2026_09_08.md)与[精确查询记录](INKE_EXACT_UID_SEARCH_AUDIT_2026_09_23.md)。
 Picarto 已进入 Android 候选并取得部分原生证据，见 [接入审计](PICARTO_ADAPTER_AUDIT_2026_09_07.md)及[停止/清理补证](ANDROID_PROXY_OCCLUSION_AUDIT_2026_09_07.md)。
 TwitCasting 新增公开目录、顶栏分类、详情/HLS三档、录制输入与恢复；Android 80b7431c已覆盖安装并解除首段401，low出现实际画面，但短录文件严格解码仍失败，见[修复候选复验](TWITCASTING_COOKIE_ANDROID_RETEST_2026_09_07.md)。首次high/首帧、完整文件与长录仍待验收；当前 Windows f3de664a 候选已包含源码，但没有本平台对应的新原生验收。
 参考项目尚未接入的平台单列于 [平台扩展差距表](PLATFORM_EXPANSION_AUDIT_2026_09_07.md)，不计作本项目已支持。
@@ -39,7 +39,7 @@ TwitCasting 新增公开目录、顶栏分类、详情/HLS三档、录制输入�
 | Picarto | 公开直播目录入口；完整分类待接入 | 官网搜索入口，分享链接回流 | 当前未接入，页面明确说明 | `viewers` 为在线，详情 `total_views` 为累计观看 |
 | TwitCasting | 官网顶栏分类与最多60条公开热门窗口；页面缓存后本地分页 | 官网搜索入口；仅频道根链接回流，movie/archive待接入 | 当前未接入，页面明确说明 | 目录 `current_viewer_count` 为在线；详情缺值时保留未知 |
 | 猫耳 FM | 官网 catalog/tag 分类与原生推荐分页 | 精确房间号或 `fm.missevan.com/live/{id}` 官网链接，含未开播；昵称/关键词待接入 | 当前未接入 | `score` 为热度，粉丝分列；不以零值冒充当前在线 |
-| 映客 | 官网有限精选及服务端频道，页面持续说明非全站列表 | 当前未接入，无虚构网页搜索入口 | 当前未接入 | 未取得人数，保持未知；主播等级不作观众数 |
+| 映客 | 官网有限精选及服务端频道，页面持续说明非全站列表 | 精确映客 UID 或官网房间链接，含未开播；昵称/关键词待接入，无网页搜索入口 | 当前未接入 | 未取得人数，保持未知；主播等级不作观众数 |
 | 克拉克拉 | 官方热门/萌星，type 0/107 原生分页 | 当前未接入 | 当前未接入 | `watchNumber` 未证实为并发人数，保持未知 |
 | 花椒 | 官方 H5 公开视频推荐，保留原生游标 | 当前未接入，无虚构网页搜索入口 | 当前未接入 | `current_heat` 为热度，不作在线人数 |
 | OPENREC / mellow-fan | 公开广播列表，频道聚合与多场歧义提示 | 当前未接入，无虚构网页搜索入口 | 当前未接入 | 公开并发人数；隐藏或多场歧义时保持未知 |

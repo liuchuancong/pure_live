@@ -120,7 +120,7 @@ class LiveSearchCapabilities {
       supportsWebSearch: false,
     ),
     Sites.inkeSite: LiveSearchCapability(
-      coverage: NativeSearchCoverage.unavailable,
+      coverage: NativeSearchCoverage.roomLookup,
       supportsPagination: false,
       supportsWebSearch: false,
     ),

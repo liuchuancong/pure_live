@@ -116,7 +116,7 @@ class SearchController extends GetxController {
       case Sites.kilakilaSite:
         throw StateError('Kilakila search is not integrated');
       case Sites.inkeSite:
-        throw StateError('Inke search is not integrated');
+        throw StateError('Inke supports exact UID lookup, not web keyword search');
       case Sites.missevanSite:
         throw StateError('Missevan supports exact room lookup, not web keyword search');
       case Sites.ccSite:

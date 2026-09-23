@@ -5,6 +5,7 @@ import 'package:pure_live/common/models/live_room.dart';
 import 'package:pure_live/core/danmaku/empty_danmaku.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
 import 'package:pure_live/core/interface/live_directory.dart';
+import 'package:pure_live/core/interface/live_search.dart';
 import 'package:pure_live/core/interface/live_site.dart';
 import 'package:pure_live/model/live_category.dart';
 import 'package:pure_live/model/live_play_quality.dart';
@@ -17,7 +18,8 @@ class InkeSite extends LiveSite
         LiveDirectoryNotice,
         LiveSiteRoomRefresher,
         LiveSiteRecordRoomResolver,
-        LivePlayRecoveryResolver {
+        LivePlayRecoveryResolver,
+        LiveCancellableSearch {
   InkeSite({InkeApi? api}) : _api = api ?? InkeApi();
   final InkeApi _api;
 
@@ -67,6 +69,42 @@ class InkeSite extends LiveSite
   @override
   Future<List<LiveRoom>> getCategoryRooms(LiveArea category, {int page = 1, int pageSize = 30}) =>
       _slice(page: page, pageSize: pageSize, category: category);
+
+  @override
+  Future<List<LiveRoom>> searchRooms(String keyword, {int page = 1, int pageSize = 30}) =>
+      searchRoomsCancellable(keyword, page: page, pageSize: pageSize);
+
+  @override
+  Future<List<LiveRoom>> searchRoomsCancellable(
+    String keyword, {
+    int page = 1,
+    int pageSize = 30,
+    CancelToken? cancel,
+  }) async {
+    if (page != 1 || pageSize < 1) return const [];
+    final input = keyword.trim();
+    String? uid;
+    try {
+      uid = InkeApi.roomId(input);
+    } on InkeException {
+      final uri = Uri.tryParse(input);
+      if (uri != null) uid = InkeApi.roomFromUri(uri);
+    }
+    if (uid == null) return const [];
+    try {
+      final room = await _api.detail(uid, playback: false, cancel: cancel);
+      if (room.isExplicitlyOfflineNow) {
+        // The public no-current-broadcast response has no profile metadata.
+        // Keep the search card identifiable without inventing a nickname.
+        room.title = 'UID $uid';
+        room.nick = 'UID $uid';
+      }
+      return [room];
+    } on InkeException catch (error) {
+      if (error.kind == InkeFailure.notFound) return const [];
+      rethrow;
+    }
+  }
 
   Future<LiveRoom> _detail(String roomId, String platform, {required bool playback}) async {
     if (platform != id) throw const InkeException(InkeFailure.schema);
