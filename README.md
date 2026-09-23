@@ -64,26 +64,20 @@ Android 录制在创建任务和申请存储权限前检查目录：应用私有
 
 ---
 
-## 📺 支持平台
+## 📺 平台范围
 
-Pure Live 聚合多个第三方直播平台，并支持自定义直播源：
+**版本边界先看清**：已发布的 [v3.1.8](https://github.com/wzgrx/pure_live/releases/tag/v3.1.8) 注册 **9 个直播站点 + IPTV**；当前未发布的 3.2.0 开发源码注册 **45 个直播站点 + IPTV**。后者表示应用入口已有适配器，不表示 45 站的目录、搜索、弹幕、播放与录制都已通过双端验收。各站实际能力和人数口径见[平台兼容性](docs/PLATFORM_COMPATIBILITY.md)，候选与剩余验证见[当前状态](docs/ACCEPTANCE_STATUS_3_2_0.md)。
 
-- **Bilibili**
-- **虎牙直播（Huya）**
-- **斗鱼直播（Douyu）**
-- **快手（Kuaishou）**
-- **抖音（Douyin）**
-- **网易 CC 直播**
-- **Twitch**
-- **SOOP Live**
-- **YY Live**
-- **自定义 M3U / M3U8 直播源**
+| 阶段 | 平台 |
+| --- | --- |
+| v3.1.8 已发布（9 站） | 哔哩哔哩、斗鱼、虎牙、抖音、快手、网易 CC、Twitch、SOOP Live、YY Live |
+| 3.2.0 未发布源码新增：国内（13 站） | AcFun、猫耳 FM、映客、克拉克拉、花椒、小红书、微博直播、京东直播、淘宝直播、酷狗直播、百度直播、六间房直播、LOOK 直播 |
+| 3.2.0 未发布源码新增：其他地区（23 站） | Picarto、TwitCasting、OPENREC / mellow-fan、TTingLive / FLEX TV、niconico、SHOWROOM、CHZZK、Kick、17LIVE、LiveMe、TikTok LIVE、YouTube Live、Bigo Live、PandaTV、PopkonTV、Shopee Live、VK Video Live、NimoTV、Dailymotion、Rumble、GoodGame、FC2 Live、Steam Broadcasts |
+| 两阶段均有 | IPTV / 自定义直播源；本地或网络导入，不计作直播平台站点 |
 
-支持按照平台、分区等条件进行筛选，也可以隐藏不关注的平台。
+可按平台与分区浏览、筛选和隐藏入口；搜索、直播状态、官方链接回流、人数语义、远端弹幕及录制能力随平台而异，不用统一标签代替各站合同。战旗直播、浪 Live 仍在内部适配准备阶段，暂未计入 45 站。
 
-当前源码的“第三方账号”页可选填斗鱼 Cookie，取流与播放/录制请求会使用同一会话；画质仍以平台实际确认档位显示。匿名接口可能将部分房间原画请求回落到 4M，登录态提升与长时稳定性需要在候选包中对照验证，见 [Issue #873 审计](docs/ISSUE_873_DOUYU_QUALITY_AND_SESSION_AUDIT_2026_09_23.md)。
-
-**未发布开发源码另有** AcFun、Picarto、TwitCasting、猫耳 FM、映客、克拉克拉、花椒、OPENREC / mellow-fan、TTingLive / FLEX TV、小红书、niconico、微博直播、SHOWROOM、CHZZK、Kick、17LIVE、LiveMe、TikTok LIVE、YouTube Live、Bigo Live、PandaTV、PopkonTV、Shopee Live、VK Video Live、NimoTV、Dailymotion、Rumble、GoodGame、FC2 Live、Steam Broadcasts、京东直播、淘宝直播、酷狗直播、百度直播、六间房直播与 LOOK 直播。上面的既有平台列表与本段源码范围分别看待；各入口、原生证据和未完成能力以[平台能力表](docs/PLATFORM_COMPATIBILITY.md)为准，不把测试数量或可返回媒体地址当成完整观看/录制通过。
+当前源码的“第三方账号”页可选填斗鱼 Cookie，取流与播放/录制请求使用同一会话；画质以平台实际确认档位显示。匿名接口可能将部分房间原画请求回落到 4M，登录态提升与长时稳定性仍需在候选包中对照验证，见 [Issue #873 审计](docs/ISSUE_873_DOUYU_QUALITY_AND_SESSION_AUDIT_2026_09_23.md)。
 
 ### 自定义直播源
 
