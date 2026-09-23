@@ -194,8 +194,8 @@ class LiveSearchCapabilities {
       supportsWebSearch: false,
     ),
     Sites.huajiaoSite: LiveSearchCapability(
-      coverage: NativeSearchCoverage.channelLookup,
-      supportsPagination: false,
+      coverage: NativeSearchCoverage.showcaseSnapshot,
+      supportsPagination: true,
       supportsWebSearch: false,
     ),
     Sites.kilakilaSite: LiveSearchCapability(

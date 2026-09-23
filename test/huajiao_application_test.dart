@@ -126,7 +126,8 @@ void main() {
     expect(Sites.supportSites.where((s) => s.id == 'huajiao'), hasLength(1));
     expect(Sites.supportSites.map((s) => s.id).toSet(), Sites.supportedSiteIds);
     expect(LiveSearchCapabilities.forPlatform('huajiao').supportsWebSearch, isFalse);
-    expect(LiveSearchCapabilities.forPlatform('huajiao').coverage, NativeSearchCoverage.channelLookup);
+    expect(LiveSearchCapabilities.forPlatform('huajiao').coverage, NativeSearchCoverage.showcaseSnapshot);
+    expect(LiveSearchCapabilities.forPlatform('huajiao').supportsPagination, isTrue);
     expect(LiveSearchCapabilities.forPlatform('huajiao').supportsNativeSearch, isTrue);
     expect(site.liveSite, isA<LiveCancellableSearch>());
     expect(LiveRoom.audienceCapabilityFor('huajiao').supportsConcurrentOnline, isFalse);
@@ -347,15 +348,10 @@ void main() {
     expect(calls.map((uri) => uri.queryParameters['uid']), ['100', '100']);
   });
 
-  test('search has one bounded identity request and ignores unsupported terms and broadcast links', () async {
+  test('search has one bounded identity request and ignores malformed identities and broadcast links', () async {
     final calls = <Uri>[];
     final source = HuajiaoSite(api: _api(called: calls.add));
-    for (final query in [
-      'Fixture',
-      '000100',
-      'https://h.huajiao.com/l/index?liveid=200',
-      'https://evil.test/user/100',
-    ]) {
+    for (final query in ['000100', 'https://h.huajiao.com/l/index?liveid=200', 'https://evil.test/user/100']) {
       expect(await source.searchRooms(query), isEmpty);
     }
     expect(await source.searchRooms('100', page: 2), isEmpty);
@@ -365,6 +361,58 @@ void main() {
     expect(room.status, isTrue);
     expect(room.audienceMetricType, AudienceMetricType.unknown);
     expect(calls.map((uri) => uri.path), ['/Web/UserInfo/full']);
+  });
+
+  test('keyword search filters only three public recommendation pages and paginates stable matches', () async {
+    final calls = <int>[];
+    final source = HuajiaoSite(
+      api: HuajiaoApi(
+        request: (uri, _) async {
+          expect(uri.path, '/feed/getLives4H5');
+          final offset = int.parse(uri.queryParameters['offset']!);
+          calls.add(offset);
+          final owners = switch (offset) {
+            0 => [100],
+            30 => [200, 201],
+            60 => [201, 202],
+            _ => throw StateError('search scanned beyond its public window'),
+          };
+          final data = _page(owners, next: offset + 30) as Map<String, dynamic>;
+          final feeds = (data['sections'] as List).single['feeds'] as List;
+          for (final row in feeds) {
+            final uid = (row['author']['uid'] as int);
+            row['author']['nickname'] = uid == 100 ? 'Other' : 'Key $uid';
+            row['feed']['title'] = uid == 100 ? 'Other title' : 'Public $uid';
+          }
+          return _ok(data);
+        },
+      ),
+    );
+    expect(source.supportsSearchPaginationFor('Key'), isTrue);
+    expect(source.supportsSearchPaginationFor('100'), isFalse);
+    expect(source.supportsSearchPaginationFor('https://h.huajiao.com/site/profile_100.html'), isFalse);
+    expect((await source.searchRooms('Key', pageSize: 1)).map((room) => room.roomId), ['200']);
+    expect((await source.searchRooms('Key', page: 2, pageSize: 1)).map((room) => room.roomId), ['201']);
+    expect((await source.searchRooms('Key', page: 3, pageSize: 1)).map((room) => room.roomId), ['202']);
+    expect(await source.searchRooms('Key', page: 91, pageSize: 1), isEmpty);
+    expect(calls, [0, 30, 0, 30, 0, 30, 60]);
+  });
+
+  test('keyword search forwards cancellation and does not advance its cursor after cancellation', () async {
+    final calls = <int>[];
+    final token = CancelToken();
+    final source = HuajiaoSite(
+      api: HuajiaoApi(
+        request: (uri, cancel) async {
+          expect(cancel, same(token));
+          calls.add(int.parse(uri.queryParameters['offset']!));
+          token.cancel();
+          return _ok(_page([100], next: 30));
+        },
+      ),
+    );
+    await expectLater(source.searchRoomsCancellable('Fixture', cancel: token), _failure(HuajiaoFailure.cancelled));
+    expect(calls, [0]);
   });
 
   test('unknown Huajiao UID is empty search while schema and cancellation stay errors', () async {
