@@ -116,9 +116,9 @@ class SearchController extends GetxController {
       case Sites.kilakilaSite:
         throw StateError('Kilakila search is not integrated');
       case Sites.inkeSite:
-        throw StateError('Inke search is not integrated');
+        throw StateError('Inke supports exact UID lookup, not web keyword search');
       case Sites.missevanSite:
-        throw StateError('Missevan search is not integrated');
+        throw StateError('Missevan supports exact room lookup, not web keyword search');
       case Sites.ccSite:
         return "https://cc.163.com/search/all/?query=$q&only=all";
       case Sites.kuaishouSite:
@@ -415,6 +415,9 @@ class SearchController extends GetxController {
       final site = sites[index.v - 1];
       final capability = LiveSearchCapabilities.forPlatform(site.id);
       if (site.id == Sites.acfunSite) return i18n('search_coverage_acfun');
+      if (site.id == Sites.huajiaoSite) return i18n('search_coverage_huajiao');
+      if (site.id == Sites.kilakilaSite) return i18n('search_coverage_kilakila');
+      if (site.id == Sites.openrecSite) return i18n('search_coverage_openrec');
       return switch (capability.coverage) {
         NativeSearchCoverage.roomLookup => i18n('search_coverage_room_lookup', args: {'site': site.name}),
         NativeSearchCoverage.channelLookup => i18n('search_coverage_channel_lookup', args: {'site': site.name}),

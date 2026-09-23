@@ -3,6 +3,8 @@ import 'dart:math';
 
 import 'package:crypto/crypto.dart';
 import 'package:pure_live/core/common/http_client.dart';
+import 'package:pure_live/common/services/settings/cookie_value.dart';
+import 'package:pure_live/common/services/settings_service.dart';
 
 class DouyuUtils {
   static const String defaultDeviceId = '10000000000000000000000000001501';
@@ -99,15 +101,40 @@ class DouyuUtils {
       'origin': 'https://www.douyu.com',
       'referer': referer,
       'user-agent': userAgent,
-      'cookie': 'dy_did=$deviceId; acf_did=$deviceId',
+      'cookie': cookieHeader(),
     };
+  }
+
+  /// Keep the signer DID consistent with its request Cookie, while appending
+  /// optional account session fields to Douyu request/playback headers.
+  static String cookieHeader({String? accountCookie}) {
+    final stored = accountCookie ?? _configuredAccountCookie();
+    final normalized = normalizeAccountCookie(stored).replaceFirst(RegExp(r'^Cookie:\s*', caseSensitive: false), '');
+    final fields = <String>['dy_did=$deviceId', 'acf_did=$deviceId'];
+    for (final piece in normalized.split(';')) {
+      final separator = piece.indexOf('=');
+      if (separator <= 0) continue;
+      final name = piece.substring(0, separator).trim();
+      if (!RegExp(r"^[A-Za-z0-9_!#$%&'*+.^`|~-]+$").hasMatch(name)) continue;
+      if (name.toLowerCase() == 'dy_did' || name.toLowerCase() == 'acf_did') continue;
+      fields.add('$name=${piece.substring(separator + 1).trim()}');
+    }
+    return fields.join('; ');
+  }
+
+  static String _configuredAccountCookie() {
+    try {
+      return SettingsService.to.cookieManager.douyuCookie.value;
+    } catch (_) {
+      return '';
+    }
   }
 
   static Map<String, String> playbackHeaders(String roomId) => <String, String>{
     'origin': 'https://www.douyu.com',
     'referer': 'https://www.douyu.com/$roomId',
     'user-agent': userAgent,
-    'cookie': 'dy_did=$deviceId; acf_did=$deviceId',
+    'cookie': cookieHeader(),
   };
 
   /// Builds the form body from an already validated encryption descriptor.

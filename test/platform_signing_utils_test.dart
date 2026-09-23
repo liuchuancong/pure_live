@@ -58,6 +58,17 @@ void main() {
       expect(headers['cookie'], contains('dy_did=${DouyuUtils.deviceId}'));
       expect(headers['cookie'], contains('acf_did=${DouyuUtils.deviceId}'));
     });
+
+    test('account Cookie fields preserve signer DID and discard duplicate device IDs', () {
+      final header = DouyuUtils.cookieHeader(
+        accountCookie: 'Cookie: dy_did=other; acf_did=other; acf_auth=secret; token=a=b; bad name=no\r\n',
+      );
+      expect(header, startsWith('dy_did=${DouyuUtils.deviceId}; acf_did=${DouyuUtils.deviceId}'));
+      expect(header, contains('acf_auth=secret'));
+      expect(header, contains('token=a=b'));
+      expect(header, isNot(contains('other')));
+      expect(header, isNot(contains('bad name')));
+    });
   });
 
   group('DouyinUtils', () {

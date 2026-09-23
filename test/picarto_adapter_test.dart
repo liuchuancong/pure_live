@@ -9,6 +9,8 @@ import 'package:pure_live/common/models/live_area.dart';
 import 'package:pure_live/common/models/live_room.dart';
 import 'package:pure_live/common/utils/live_url_tool.dart';
 import 'package:pure_live/core/interface/live_site.dart';
+import 'package:pure_live/core/interface/live_directory.dart';
+import 'package:pure_live/core/interface/live_search.dart';
 import 'package:pure_live/core/common/http_client.dart' as core;
 import 'package:pure_live/core/site/picarto/picarto_api.dart';
 import 'package:pure_live/core/site/picarto/picarto_hls.dart';
@@ -57,6 +59,31 @@ Map<String, dynamic> directory({int page = 1, int count = 30, List<Object?>? row
   'next_page_url': 'https://untrusted.example/ignored',
   'data': rows ?? [channel()],
 };
+Map<String, dynamic> categories() => {
+  'categories': [
+    {'id': 10, 'label': 'Comic', 'online_channels': 3},
+    {'id': 33, 'label': 'Drawing', 'online_channels': 2},
+  ],
+  'languages': [],
+  'video_categories': [],
+};
+Map<String, dynamic> profileSearch({List<Object?>? rows, int count = 2}) => {
+  'searchProfiles': {
+    'count': count,
+    'data':
+        rows ??
+        [
+          {
+            'id': 15237,
+            'name': 'Artist',
+            'online': true,
+            'follower_count': 915,
+            'avatar': 'https://images.picarto.tv/a.jpg',
+          },
+          {'id': 24680, 'name': 'OfflineArtist', 'online': false, 'follower_count': 24, 'avatar': null},
+        ],
+  },
+};
 Matcher failure(PicartoFailure kind) => throwsA(isA<PicartoException>().having((e) => e.kind, 'kind', kind));
 
 void main() {
@@ -90,9 +117,13 @@ void main() {
     expect(site, isA<LiveSiteRecordRoomResolver>());
     expect(site, isA<LiveSiteRoomRefresher>());
     expect(site, isA<LivePlayRecoveryResolver>());
+    expect(site, isA<LiveSiteDirectoryPager>());
+    expect(site, isA<LiveCancellableSearch>());
     expect(Sites.supportSites.where((s) => s.id == 'picarto'), hasLength(1));
     final capability = LiveSearchCapabilities.forPlatform('picarto');
-    expect(capability.supportsNativeSearch, isFalse);
+    expect(capability.coverage, NativeSearchCoverage.liveAndOffline);
+    expect(capability.supportsNativeSearch, isTrue);
+    expect(capability.supportsPagination, isTrue);
     expect(capability.supportsWebSearch, isTrue);
     expect(MultiviewDanmakuSession.isSupportedPlatform('picarto'), isFalse);
   });
@@ -161,6 +192,177 @@ void main() {
       ),
     );
     expect((await api.directory()).map((r) => r.roomId), ['Artist']);
+  });
+
+  test('official live category metadata has stable IDs and no fabricated audience', () async {
+    var calls = 0;
+    final api = PicartoApi(
+      request: (uri, _) async {
+        calls++;
+        expect(uri.path, '/api/languages-categories');
+        return (status: 200, body: jsonEncode(categories()));
+      },
+    );
+    final result = await api.categories();
+    expect(calls, 1);
+    expect(result.map((area) => [area.platform, area.areaType, area.areaId, area.areaName]), [
+      ['picarto', 'category', '10', 'Comic'],
+      ['picarto', 'category', '33', 'Drawing'],
+    ]);
+  });
+
+  test('category pages use the official filter and server pagination, even for short rows', () async {
+    final requests = <Uri>[];
+    final api = PicartoApi(
+      request: (uri, _) async {
+        requests.add(uri);
+        return (status: 200, body: jsonEncode(directory(page: int.parse(uri.queryParameters['page']!), count: 30)));
+      },
+    );
+    final category = LiveArea(platform: 'picarto', areaType: 'category', areaId: '10', areaName: 'Comic');
+    final first = await api.directoryPage(category: category);
+    final second = await api.directoryPage(page: 2, category: category);
+    expect(first.rooms.single.roomId, 'Artist');
+    expect(first.hasMore, isTrue);
+    expect(second.hasMore, isFalse);
+    expect(requests, hasLength(2));
+    for (final uri in requests) {
+      expect(uri.queryParameters['filter_params[categories]'], '10: true');
+      expect(uri.queryParameters['filter_params[adult]'], 'false');
+      expect(uri.queryParameters['filter_params[languages]'], '');
+      expect(uri.queryParameters['type'], 'stream');
+    }
+  });
+
+  test('category identity and server category mismatch fail before presenting a false match', () async {
+    var calls = 0;
+    final api = PicartoApi(
+      request: (_, _) async {
+        calls++;
+        return (status: 200, body: jsonEncode(directory()));
+      },
+    );
+    for (final category in [
+      LiveArea(platform: 'other', areaType: 'category', areaId: '10'),
+      LiveArea(platform: 'picarto', areaType: 'directory', areaId: '10'),
+      LiveArea(platform: 'picarto', areaType: 'category', areaId: '010'),
+      LiveArea(platform: 'picarto', areaType: 'category', areaId: 'abc'),
+    ]) {
+      await expectLater(api.directoryPage(category: category), failure(PicartoFailure.schema));
+    }
+    expect(calls, 0);
+    await expectLater(
+      api.directoryPage(
+        category: LiveArea(platform: 'picarto', areaType: 'category', areaId: '33'),
+      ),
+      failure(PicartoFailure.schema),
+    );
+    expect(calls, 1);
+  });
+
+  test('malformed category metadata is surfaced rather than an empty catalogue', () async {
+    for (final data in [
+      <String, dynamic>{},
+      {'categories': []},
+      {
+        'categories': [
+          {'id': 10, 'label': ''},
+        ],
+      },
+      {
+        'categories': [
+          {'id': 10, 'label': 'Comic'},
+          {'id': 10, 'label': 'Comic'},
+        ],
+      },
+    ]) {
+      final api = PicartoApi(request: (_, _) async => (status: 200, body: jsonEncode(data)));
+      await expectLater(api.categories(), failure(PicartoFailure.schema));
+    }
+  });
+
+  test('official profile search pages include offline identities without inventing audience', () async {
+    final requests = <Uri>[];
+    final api = PicartoApi(
+      request: (uri, _) async {
+        requests.add(uri);
+        return (status: 200, body: jsonEncode(profileSearch(count: 0)));
+      },
+    );
+    final rooms = await api.searchProfiles(' artist ', page: 2, pageSize: 20);
+    expect(requests, hasLength(1));
+    final uri = requests.single;
+    expect(uri.path, '/api/search');
+    expect(uri.queryParameters, containsPair('type', 'searchProfiles'));
+    expect(uri.queryParameters, containsPair('q', 'artist'));
+    expect(uri.queryParameters, containsPair('first', '20'));
+    expect(uri.queryParameters, containsPair('page', '2'));
+    expect(uri.queryParameters, containsPair('tag_search', 'false'));
+    expect(rooms.map((room) => room.roomId), ['Artist', 'OfflineArtist']);
+    expect(rooms.first.isLiveNow, isTrue);
+    expect(rooms.last.isExplicitlyOfflineNow, isTrue);
+    expect(rooms.first.followers, '915');
+    expect(rooms.first.onlineViewers, isEmpty);
+    expect(rooms.first.watching, isEmpty);
+    expect(rooms.first.audienceMetricType, AudienceMetricType.unknown);
+    expect(rooms.last.link, 'https://picarto.tv/OfflineArtist');
+  });
+
+  test('profile search rejects bad rows and invalid page before network I/O', () async {
+    var calls = 0;
+    final api = PicartoApi(
+      request: (_, _) async {
+        calls++;
+        return (status: 200, body: jsonEncode(profileSearch()));
+      },
+    );
+    for (final page in [0, 10001]) {
+      await expectLater(api.searchProfiles('artist', page: page), failure(PicartoFailure.schema));
+    }
+    for (final size in [0, 61]) {
+      await expectLater(api.searchProfiles('artist', pageSize: size), failure(PicartoFailure.schema));
+    }
+    expect(await api.searchProfiles(' '), isEmpty);
+    expect(calls, 0);
+    for (final body in [
+      <String, dynamic>{},
+      {
+        'searchProfiles': {'data': {}},
+      },
+      profileSearch(
+        rows: [
+          {'id': 1, 'name': 'Artist', 'online': null},
+        ],
+      ),
+      profileSearch(
+        rows: [
+          {'id': 1, 'name': 'Artist', 'online': true, 'follower_count': -1},
+        ],
+      ),
+    ]) {
+      final malformed = PicartoApi(request: (_, _) async => (status: 200, body: jsonEncode(body)));
+      await expectLater(malformed.searchProfiles('artist'), failure(PicartoFailure.schema));
+    }
+  });
+
+  test('site search forwards cancellation and keeps profile search independent from media', () async {
+    final token = CancelToken();
+    final calls = <Uri>[];
+    final site = PicartoSite(
+      api: PicartoApi(
+        request: (uri, cancel) async {
+          expect(cancel, same(token));
+          calls.add(uri);
+          return (status: 200, body: jsonEncode(profileSearch()));
+        },
+      ),
+    );
+    final rooms = await site.searchRoomsCancellable('artist', cancel: token);
+    expect(rooms, hasLength(2));
+    expect(calls.map((uri) => uri.path), ['/api/search']);
+    token.cancel();
+    await expectLater(site.searchRoomsCancellable('artist', cancel: token), failure(PicartoFailure.cancelled));
+    expect(calls, hasLength(1));
   });
 
   test('invalid pagination is rejected without network I/O', () async {
@@ -438,10 +640,26 @@ void main() {
     );
   });
 
-  test('category entry delegates to the public directory, foreign categories fail', () async {
-    final site = PicartoSite(api: PicartoApi(request: (_, _) async => (status: 200, body: jsonEncode(directory()))));
-    final category = (await site.getCategores(1, 30)).single.children.single;
-    expect((await site.getCategoryRooms(category)).single.roomId, 'Artist');
+  test('site exposes native categories, public directory and category-aware pager', () async {
+    final site = PicartoSite(
+      api: PicartoApi(
+        request: (uri, _) async => (
+          status: 200,
+          body: jsonEncode(
+            uri.path == '/api/languages-categories'
+                ? categories()
+                : directory(page: int.parse(uri.queryParameters['page']!)),
+          ),
+        ),
+      ),
+    );
+    final children = (await site.getCategores(1, 30)).single.children;
+    expect(children.map((area) => area.areaId), ['live', '10', '33']);
+    expect(children.map((area) => area.areaType), ['directory', 'category', 'category']);
+    expect((await site.getCategoryRooms(children.first)).single.roomId, 'Artist');
+    expect((await site.getCategoryRooms(children[1])).single.roomId, 'Artist');
+    expect((await site.getDirectoryPage(category: children[1])).hasMore, isTrue);
+    expect((await site.getDirectoryPage(page: 2, category: children.first)).hasMore, isFalse);
     expect(await site.getCategores(2, 30), isEmpty);
     expect(() => site.getCategoryRooms(LiveArea(platform: 'other', areaId: 'live')), failure(PicartoFailure.schema));
   });

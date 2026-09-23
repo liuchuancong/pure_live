@@ -1,9 +1,11 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:rxdart/rxdart.dart';
 
 import '../models/player_state.dart';
+
+import 'package:flutter/foundation.dart';
+
 import '../models/player_exception.dart';
 import '../models/player_error_type.dart';
 
@@ -15,20 +17,14 @@ import 'package:media_kit_video/media_kit_video.dart';
 import 'package:media_kit/media_kit.dart' hide PlayerState;
 import 'package:pure_live/player/models/player_engine.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
+import 'package:pure_live/player/core/source_event_fence.dart';
 import 'package:pure_live/player/utils/live_buffer_policy.dart';
 import 'package:pure_live/player/utils/mpv_platform_profile.dart';
+import 'package:pure_live/player/core/playback_proxy_policy.dart';
+import 'package:pure_live/player/core/player_error_classifier.dart';
 import 'package:pure_live/common/utils/latest_async_value_queue.dart';
 import 'package:pure_live/player/widgets/video_output_viewport_sizer.dart';
 import 'package:pure_live/player/interface/media_kit_player_accessor.dart';
-import 'package:pure_live/player/core/player_error_classifier.dart';
-import 'package:pure_live/player/core/source_event_fence.dart';
-import 'package:pure_live/player/core/playback_proxy_policy.dart';
-
-@visibleForTesting
-({int width, int height})? resolveMediaKitDisplaySize(VideoParams params) {
-  final size = resolveVideoParamsDisplaySize(params);
-  return size == null ? null : (width: size.width, height: size.height);
-}
 
 @visibleForTesting
 bool shouldPublishMediaKitPlaying(bool nativePlaying) => nativePlaying;
@@ -202,8 +198,6 @@ class MediaKitAdapter
 
   final _videoFrameProgressSubject = PublishSubject<int>();
 
-  VoidCallback? _videoFrameRevisionListener;
-
   // =========================
   // subscriptions
   // =========================
@@ -305,17 +299,13 @@ class MediaKitAdapter
             );
 
       if (PlatformUtils.isWindows) {
-        var lastRevision = _controller.frameRevision.value;
-        void handleFrameRevision() {
+        _videoParamsSub = _player.stream.videoParams.listen((params) {
           if (_disposed) return;
-          final revision = _controller.frameRevision.value;
-          if (revision == lastRevision) return;
-          lastRevision = revision;
-          _videoFrameProgressSubject.add(revision);
-        }
-
-        _videoFrameRevisionListener = handleFrameRevision;
-        _controller.frameRevision.addListener(handleFrameRevision);
+          final size = _resolveMediaKitDisplaySize(params);
+          if (size != null) {
+            _videoFrameProgressSubject.add(DateTime.now().millisecondsSinceEpoch);
+          }
+        });
       }
 
       await _bindListeners(sourceGeneration: _sourceFence.generation);
@@ -717,10 +707,13 @@ class MediaKitAdapter
     _videoParamsSub = _player.stream.videoParams.listen((params) {
       if (_disposed) return;
       if (!_sourceFence.accepts(sourceGeneration)) return;
-      final size = resolveMediaKitDisplaySize(params);
-      _widthSubject.add(size?.width);
-      _heightSubject.add(size?.height);
+      final size = _resolveMediaKitDisplaySize(params);
+      _widthSubject.add(size?.width.toInt());
+      _heightSubject.add(size?.height.toInt());
       if (size != null) {
+        if (PlatformUtils.isWindows) {
+          _videoFrameProgressSubject.add(DateTime.now().millisecondsSinceEpoch);
+        }
         // Non-native backends do not expose mpv frame properties. Their video
         // parameter event remains the strongest available readiness signal.
         if (!_usesNativeFrameProbe) _markDecodedVideoFrame(sourceGeneration);
@@ -787,6 +780,15 @@ class MediaKitAdapter
     ]);
   }
 
+  Size? _resolveMediaKitDisplaySize(VideoParams params) {
+    final width = params.dw ?? params.w ?? 0;
+    final height = params.dh ?? params.h ?? 0;
+    if (width > 0 && height > 0) {
+      return Size(width.toDouble(), height.toDouble());
+    }
+    return null;
+  }
+
   static bool _isActionableNativeLog(String prefix, String text) {
     final normalizedPrefix = prefix.trim().toLowerCase();
     if (normalizedPrefix == 'ffmpeg') return text.trimLeft().toLowerCase().startsWith('tcp:');
@@ -803,10 +805,10 @@ class MediaKitAdapter
 
   void _publishCurrentNativeSnapshot(int generation) {
     if (!_sourceFence.accepts(generation) || _disposed) return;
-    final size = resolveMediaKitDisplaySize(_player.state.videoParams);
+    final size = _resolveMediaKitDisplaySize(_player.state.videoParams);
     if (size != null) {
-      _widthSubject.add(size.width);
-      _heightSubject.add(size.height);
+      _widthSubject.add(size.width.toInt());
+      _heightSubject.add(size.height.toInt());
       if (!_usesNativeFrameProbe) _markDecodedVideoFrame(generation);
     }
     final audioParams = _player.state.audioParams;
@@ -984,7 +986,7 @@ class MediaKitAdapter
       sourceWidth: _widthSubject,
       sourceHeight: _heightSubject,
       fit: effectiveFit,
-      onResize: (width, height, force) => _controller.setSize(width: width, height: height, force: force),
+      onResize: (width, height, force) => _controller.setSize(width: width, height: height),
       child: video,
     );
   }
@@ -1052,7 +1054,7 @@ class MediaKitAdapter
         // updates. Disabling decode here saves battery during long ASMR sessions
         // while retaining the same player, demuxer and network connection.
         if (audioOnly) {
-          await _controller.setVideoOutputEnabled(false);
+          await _player.setVideoTrack(VideoTrack.no());
         } else {
           await _restoreAndroidVideoOutput();
         }
@@ -1096,7 +1098,7 @@ class MediaKitAdapter
       // The stream is broadcast, but arm after attaching the listener so a
       // stale cached state can never be mistaken for the next decoded frame.
       armed = true;
-      await _controller.setVideoOutputEnabled(true);
+      await _player.setVideoTrack(VideoTrack.auto());
 
       var observedFreshFrame = true;
       await frameReady.future.timeout(
@@ -1148,12 +1150,6 @@ class MediaKitAdapter
     _pendingNativeErrorTimer = null;
 
     _sourceFence.clear();
-
-    final frameRevisionListener = _videoFrameRevisionListener;
-    if (frameRevisionListener != null) {
-      _controller.frameRevision.removeListener(frameRevisionListener);
-      _videoFrameRevisionListener = null;
-    }
 
     await _cancelAllSubscriptions();
 

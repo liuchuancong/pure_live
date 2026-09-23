@@ -7,6 +7,7 @@ import 'package:pure_live/core/common/request_scope.dart';
 import 'package:pure_live/core/danmaku/empty_danmaku.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
 import 'package:pure_live/core/interface/live_directory.dart';
+import 'package:pure_live/core/interface/live_search.dart';
 import 'package:pure_live/core/interface/live_site.dart';
 import 'package:pure_live/model/live_category.dart';
 import 'package:pure_live/model/live_play_quality.dart';
@@ -28,7 +29,8 @@ class OpenrecSite extends LiveSite
         LiveDirectoryNotice,
         LiveSiteRoomRefresher,
         LiveSiteRecordRoomResolver,
-        LivePlayRecoveryResolver {
+        LivePlayRecoveryResolver,
+        LiveCancellableSearch {
   OpenrecSite({OpenrecApi? api}) : _api = api ?? OpenrecApi();
   final OpenrecApi _api;
   @override
@@ -51,6 +53,7 @@ class OpenrecSite extends LiveSite
       avatar: movie.avatar,
       cover: movie.cover,
       link: key.url,
+      watching: '',
       liveStatus: movie.isLive ? LiveStatus.live : LiveStatus.unknown,
       onlineViewers: movie.viewers?.toString(),
       audienceMetricType: AudienceMetricType.onlineViewers,
@@ -69,6 +72,9 @@ class OpenrecSite extends LiveSite
       avatar: owner.avatar,
       cover: owner.avatar,
       link: key.url,
+      watching: '',
+      audienceMetricType: AudienceMetricType.unknown,
+      status: owner.isLive,
       liveStatus: owner.isLive ? LiveStatus.live : LiveStatus.offline,
       notice: owner.movieIds.length > 1 ? i18n('openrec_multiple_broadcasts') : null,
     );
@@ -126,6 +132,32 @@ class OpenrecSite extends LiveSite
           ),
         ]
       : [];
+
+  @override
+  Future<List<LiveRoom>> searchRooms(String keyword, {int page = 1, int pageSize = 30}) =>
+      searchRoomsCancellable(keyword, page: page, pageSize: pageSize);
+
+  @override
+  Future<List<LiveRoom>> searchRoomsCancellable(
+    String keyword, {
+    int page = 1,
+    int pageSize = 30,
+    CancelToken? cancel,
+  }) async {
+    if (page < 1 || pageSize < 1) throw const OpenrecException(OpenrecFailure.schema);
+    if (page > 1) return const [];
+    final input = keyword.trim();
+    final uri = Uri.tryParse(input);
+    if (uri == null || uri.hasQuery || uri.hasFragment) return const [];
+    final link = OpenrecLink.validId(input) ? OpenrecLink(OpenrecLinkKind.channel, input) : OpenrecLink.parse(input);
+    if (link == null || link.kind != OpenrecLinkKind.channel) return const [];
+    try {
+      return [_owner(await _api.channel(link.id, cancel: cancel))];
+    } on OpenrecException catch (error) {
+      if (error.kind == OpenrecFailure.missing) return const [];
+      rethrow;
+    }
+  }
 
   Future<LiveRoom> _detail(String roomId, String platform, {required bool playback}) async {
     if (platform != id) throw const OpenrecException(OpenrecFailure.identity);

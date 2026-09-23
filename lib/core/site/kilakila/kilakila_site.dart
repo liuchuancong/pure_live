@@ -5,11 +5,13 @@ import 'package:pure_live/common/models/live_room.dart';
 import 'package:pure_live/core/danmaku/empty_danmaku.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
 import 'package:pure_live/core/interface/live_directory.dart';
+import 'package:pure_live/core/interface/live_search.dart';
 import 'package:pure_live/core/interface/live_site.dart';
 import 'package:pure_live/model/live_category.dart';
 import 'package:pure_live/model/live_play_quality.dart';
 
 import 'kilakila_api.dart';
+import 'kilakila_link.dart';
 
 /// App identities are anchor UIDs, never one-broadcast IDs or display numbers.
 class KilakilaSite extends LiveSite
@@ -18,7 +20,8 @@ class KilakilaSite extends LiveSite
         LiveDirectoryNotice,
         LiveSiteRoomRefresher,
         LiveSiteRecordRoomResolver,
-        LivePlayRecoveryResolver {
+        LivePlayRecoveryResolver,
+        LiveCancellableSearch {
   KilakilaSite({KilakilaApi? api}) : _api = api ?? KilakilaApi();
   final KilakilaApi _api;
   @override
@@ -41,6 +44,9 @@ class KilakilaSite extends LiveSite
     cover: snapshot.cover,
     avatar: snapshot.avatar,
     link: ownerUrl(snapshot.userId),
+    watching: '',
+    audienceMetricType: AudienceMetricType.unknown,
+    status: snapshot.isLive ? true : null,
     liveStatus: snapshot.isLive ? LiveStatus.live : LiveStatus.unknown,
     // watchNumber has no verified concurrent-viewer semantics. Broadcast IDs
     // and signed media remain ephemeral; favorites/backup retain only the UID.
@@ -104,6 +110,48 @@ class KilakilaSite extends LiveSite
         ]
       : [];
 
+  @override
+  Future<List<LiveRoom>> searchRooms(String keyword, {int page = 1, int pageSize = 30}) =>
+      searchRoomsCancellable(keyword, page: page, pageSize: pageSize);
+
+  @override
+  Future<List<LiveRoom>> searchRoomsCancellable(
+    String keyword, {
+    int page = 1,
+    int pageSize = 30,
+    CancelToken? cancel,
+  }) async {
+    if (page < 1 || pageSize < 1) throw const KilakilaException(KilakilaFailure.schema);
+    if (page > 1) return const [];
+    final input = keyword.trim();
+    final link = RegExp(r'^[1-9][0-9]{0,31}$').hasMatch(input)
+        ? KilakilaLink(KilakilaLinkKind.owner, input)
+        : KilakilaLink.parse(input);
+    if (link == null || link.kind != KilakilaLinkKind.owner) return const [];
+    try {
+      final owner = await _api.owner(link.id, cancel: cancel);
+      final current = owner.currentRoom;
+      if (current != null) return [_room(current)];
+      return [
+        LiveRoom(
+          platform: id,
+          roomId: owner.userId,
+          userId: owner.userId,
+          nick: owner.nick,
+          avatar: owner.avatar,
+          link: ownerUrl(owner.userId),
+          watching: '',
+          audienceMetricType: AudienceMetricType.unknown,
+          status: null,
+          liveStatus: LiveStatus.unknown,
+        ),
+      ];
+    } on KilakilaException catch (error) {
+      if (error.kind == KilakilaFailure.notFound) return const [];
+      rethrow;
+    }
+  }
+
   Future<LiveRoom> _detail(String uid, String platform, {required bool playback}) async {
     if (platform != id) throw const KilakilaException(KilakilaFailure.schema);
     final owner = await _api.owner(uid);
@@ -117,6 +165,9 @@ class KilakilaSite extends LiveSite
         nick: owner.nick,
         avatar: owner.avatar,
         link: ownerUrl(owner.userId),
+        watching: '',
+        audienceMetricType: AudienceMetricType.unknown,
+        status: null,
         liveStatus: LiveStatus.unknown,
       );
     }

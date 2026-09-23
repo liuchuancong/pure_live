@@ -957,7 +957,7 @@ class _MultiviewCellView extends StatelessWidget {
               sourceWidth: videoController.player.stream.width,
               sourceHeight: videoController.player.stream.height,
               fit: BoxFit.contain,
-              onResize: (width, height, force) => videoController.setSize(width: width, height: height, force: force),
+              onResize: (width, height, force) => videoController.setSize(width: width, height: height),
               child: video,
             )
           : video;

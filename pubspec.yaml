@@ -64,15 +64,14 @@ dependencies:
   media_kit:
     git:
       url: https://github.com/Predidit/media-kit.git
-      ref: 994465d9bfca3f39d0b41199d16e7fd93fe97881
       path: ./media_kit
+      ref: 6fd002aabce0c22009bfbf564c1b7f16f0b120d8
+
   media_kit_video:
-    path: ./third_party/media_kit_video # Local patch gives Android Surface lifecycle and audio‑only track selection
-  media_kit_libs_video:
     git:
       url: https://github.com/Predidit/media-kit.git
-      ref: 994465d9bfca3f39d0b41199d16e7fd93fe97881
-      path: ./libs/universal/media_kit_libs_video
+      path: ./media_kit_video
+      ref: 6fd002aabce0c22009bfbf564c1b7f16f0b120d8
 
   better_player_plus:
     path: plugins/built_in_kotlin/better_player_plus # Local AGP 9 Built‑in Kotlin patch
@@ -212,31 +211,6 @@ dependency_overrides:
       url: https://github.com/liuchuancong/screen_retriever.git
       path: ./packages/screen_retriever
       ref: b246b3963738d6cc159c921764c194c73dbdf2ad
-  media_kit_libs_linux:
-    git:
-      url: https://github.com/Predidit/media-kit.git
-      ref: 994465d9bfca3f39d0b41199d16e7fd93fe97881
-      path: ./libs/linux/media_kit_libs_linux
-  media_kit_libs_ios_video:
-    git:
-      url: https://github.com/Predidit/media-kit.git
-      ref: 994465d9bfca3f39d0b41199d16e7fd93fe97881
-      path: ./libs/ios/media_kit_libs_ios_video
-  media_kit_libs_android_video:
-    git:
-      url: https://github.com/Predidit/media-kit.git
-      ref: 994465d9bfca3f39d0b41199d16e7fd93fe97881
-      path: ./libs/android/media_kit_libs_android_video
-  media_kit_libs_windows_video:
-    git:
-      url: https://github.com/Predidit/media-kit.git
-      ref: 994465d9bfca3f39d0b41199d16e7fd93fe97881
-      path: ./libs/windows/media_kit_libs_windows_video
-  media_kit_libs_macos_video:
-    git:
-      url: https://github.com/Predidit/media-kit.git
-      ref: 994465d9bfca3f39d0b41199d16e7fd93fe97881
-      path: ./libs/macos/media_kit_libs_macos_video
 
 # 开发依赖
 dev_dependencies:

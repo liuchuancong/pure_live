@@ -7,6 +7,7 @@ class CookieSettingsController extends GetxController {
   final RxString bilibiliCookie = hiveString('bilibiliCookie', '');
   final RxInt bilibiliUid = hiveInt('bilibiliUid', 0);
   final RxString huyaCookie = hiveString('huyaCookie', '');
+  final RxString douyuCookie = hiveString('douyuCookie', '');
   final RxString douyinCookie = hiveString('douyinCookie', '');
   final RxString kuaishouCookie = hiveString('kuaishouCookie', '');
   final RxString twitchCookie = hiveString('twitchCookie', '');
@@ -24,6 +25,7 @@ class CookieSettingsController extends GetxController {
     for (final cookie in [
       bilibiliCookie,
       huyaCookie,
+      douyuCookie,
       douyinCookie,
       kuaishouCookie,
       twitchCookie,
@@ -39,6 +41,7 @@ class CookieSettingsController extends GetxController {
   void clearAllCookies() {
     bilibiliCookie.v = '';
     huyaCookie.v = '';
+    douyuCookie.v = '';
     douyinCookie.v = '';
     kuaishouCookie.v = '';
     twitchCookie.v = '';
@@ -52,6 +55,7 @@ class CookieSettingsController extends GetxController {
     return {
       'bilibiliCookie': bilibiliCookie.v,
       'huyaCookie': huyaCookie.v,
+      'douyuCookie': douyuCookie.v,
       'douyinCookie': douyinCookie.v,
       'kuaishouCookie': kuaishouCookie.v,
       'bilibiliUid': bilibiliUid.v,
@@ -67,6 +71,7 @@ class CookieSettingsController extends GetxController {
     return {
       'bilibiliCookie': normalizeAccountCookie((json['bilibiliCookie'] ?? '') as String),
       'huyaCookie': normalizeAccountCookie((json['huyaCookie'] ?? '') as String),
+      'douyuCookie': normalizeAccountCookie((json['douyuCookie'] ?? '') as String),
       'douyinCookie': normalizeAccountCookie((json['douyinCookie'] ?? '') as String),
       'kuaishouCookie': normalizeAccountCookie((json['kuaishouCookie'] ?? '') as String),
       'bilibiliUid': (json['bilibiliUid'] ?? 0) as int,
@@ -81,6 +86,7 @@ class CookieSettingsController extends GetxController {
     final parsed = parseConfig(json);
     bilibiliCookie.v = parsed['bilibiliCookie'];
     huyaCookie.v = parsed['huyaCookie'];
+    douyuCookie.v = parsed['douyuCookie'];
     douyinCookie.v = parsed['douyinCookie'];
     kuaishouCookie.v = parsed['kuaishouCookie'];
     bilibiliUid.v = parsed['bilibiliUid'];

@@ -4,21 +4,23 @@ import 'package:pure_live/core/danmaku/empty_danmaku.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
 import 'package:pure_live/core/interface/live_site.dart';
 import 'package:pure_live/core/interface/live_directory.dart';
+import 'package:pure_live/core/interface/live_search.dart';
 import 'package:dio/dio.dart';
 import 'package:pure_live/model/live_category.dart';
 import 'package:pure_live/model/live_play_quality.dart';
 
 import 'missevan_api.dart';
 
-/// Anonymous directory, room, playback and recording adapter. Search and
-/// danmaku remain absent until their public contracts are verified.
+/// Anonymous directory, exact room lookup, playback and recording adapter.
+/// Keyword search and danmaku remain absent until their contracts are verified.
 class MissevanSite extends LiveSite
     implements
         LiveSiteRoomRefresher,
         LiveSiteRecordRoomResolver,
         LivePlayRecoveryResolver,
         LivePlayLeaseMetadata,
-        LiveSiteDirectoryPager {
+        LiveSiteDirectoryPager,
+        LiveCancellableSearch {
   MissevanSite({MissevanApi? api}) : _api = api ?? MissevanApi();
   final MissevanApi _api;
   @override
@@ -42,6 +44,36 @@ class MissevanSite extends LiveSite
   @override
   Future<List<LiveRoom>> getCategoryRooms(LiveArea category, {int page = 1, int pageSize = 30}) =>
       _api.directory(page: page, pageSize: pageSize, category: category);
+
+  @override
+  Future<List<LiveRoom>> searchRooms(String keyword, {int page = 1, int pageSize = 30}) =>
+      searchRoomsCancellable(keyword, page: page, pageSize: pageSize);
+
+  @override
+  Future<List<LiveRoom>> searchRoomsCancellable(
+    String keyword, {
+    int page = 1,
+    int pageSize = 30,
+    CancelToken? cancel,
+  }) async {
+    if (page != 1 || pageSize < 1) return const [];
+    final input = keyword.trim();
+    String? id;
+    try {
+      id = MissevanApi.roomId(input);
+    } on MissevanException {
+      final uri = Uri.tryParse(input);
+      if (uri != null) id = MissevanApi.roomFromUri(uri);
+    }
+    if (id == null) return const [];
+    try {
+      return [await _api.detail(id, includeMedia: false, cancel: cancel)];
+    } on MissevanException catch (error) {
+      if (error.kind == MissevanFailure.notFound) return const [];
+      rethrow;
+    }
+  }
+
   @override
   Future<LiveRoom> getRoomDetail({required String roomId, required String platform}) {
     if (platform != id) throw const MissevanException(MissevanFailure.schema);

@@ -8,6 +8,7 @@ import 'package:pure_live/core/danmaku/empty_danmaku.dart';
 import 'package:pure_live/core/common/request_scope.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
 import 'package:pure_live/core/interface/live_directory.dart';
+import 'package:pure_live/core/interface/live_search.dart';
 import 'package:pure_live/core/interface/live_site.dart';
 import 'package:pure_live/model/live_category.dart';
 import 'package:pure_live/model/live_play_quality.dart';
@@ -21,7 +22,8 @@ class HuajiaoSite extends LiveSite
         LiveDirectoryNotice,
         LiveSiteRoomRefresher,
         LiveSiteRecordRoomResolver,
-        LivePlayRecoveryResolver {
+        LivePlayRecoveryResolver,
+        LiveCancellableSearch {
   HuajiaoSite({HuajiaoApi? api}) : _api = api ?? HuajiaoApi();
   final HuajiaoApi _api;
   @override
@@ -124,6 +126,36 @@ class HuajiaoSite extends LiveSite
         ]
       : [];
 
+  @override
+  Future<List<LiveRoom>> searchRooms(String keyword, {int page = 1, int pageSize = 30}) =>
+      searchRoomsCancellable(keyword, page: page, pageSize: pageSize);
+
+  @override
+  Future<List<LiveRoom>> searchRoomsCancellable(
+    String keyword, {
+    int page = 1,
+    int pageSize = 30,
+    CancelToken? cancel,
+  }) async {
+    if (page < 1 || pageSize < 1) throw const HuajiaoException(HuajiaoFailure.schema);
+    if (page > 1) return const [];
+    final input = keyword.trim();
+    String? uid;
+    if (HuajiaoLink.validId(input)) {
+      uid = input;
+    } else {
+      final link = HuajiaoLink.parse(input);
+      if (link?.kind == HuajiaoLinkKind.owner) uid = link!.id;
+    }
+    if (uid == null) return const [];
+    try {
+      return [_owner(await _api.owner(uid, cancel: cancel))];
+    } on HuajiaoException catch (error) {
+      if (error.kind == HuajiaoFailure.notFound) return const [];
+      rethrow;
+    }
+  }
+
   LiveRoom _owner(HuajiaoOwner owner) => LiveRoom(
     platform: id,
     roomId: owner.userId,
@@ -133,6 +165,9 @@ class HuajiaoSite extends LiveSite
     avatar: owner.avatar,
     cover: owner.avatar,
     link: HuajiaoLink.ownerUrl(owner.userId),
+    watching: '',
+    audienceMetricType: AudienceMetricType.unknown,
+    status: owner.isLive,
     liveStatus: owner.isLive ? LiveStatus.live : LiveStatus.offline,
   );
 

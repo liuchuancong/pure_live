@@ -405,6 +405,9 @@ class KilakilaApi {
       Uri.parse('$ownerOrigin/Tg/personalH5').replace(queryParameters: {'uid': requested}),
       cancel,
     );
+    // The public profile endpoint uses 1013 for an unknown account. Other
+    // business failures (including code 1) remain service errors.
+    if (_integer(envelope['code']) == 1013) throw const KilakilaException(KilakilaFailure.notFound);
     _businessCode(envelope['code']);
     final body = _object(envelope['data']);
     final user = _object(body['userResp']);

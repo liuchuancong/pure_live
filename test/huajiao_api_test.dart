@@ -110,6 +110,17 @@ void main() {
     await expectLater(_api(data).owner('100'), _failure(HuajiaoFailure.identity));
   });
 
+  test('anonymous empty-base sentinel is an unknown UID, not a malformed owner', () async {
+    await expectLater(_api({'base': <Object>[], 'living': 0}).owner('100'), _failure(HuajiaoFailure.notFound));
+    await expectLater(
+      _api({
+        'base': [<String, Object>{}],
+        'living': 0,
+      }).owner('100'),
+      _failure(HuajiaoFailure.schema),
+    );
+  });
+
   test('invalid IDs and pagination bounds send no requests', () async {
     var calls = 0;
     final api = HuajiaoApi(
