@@ -151,6 +151,8 @@ void main() {
     await _scrollPageUntilHitTestable(tester, clearFolder);
     await tester.tap(clearFolder.hitTestable());
     await tester.pumpAndSettle();
+    expect(settings.cacheClearPromptOpen.value, isTrue);
+    expect(settings.cacheClearPending.value, isFalse, reason: 'confirmation is not a cache operation');
     final clearDialog = find.byType(AlertDialog);
     expect(clearDialog, findsOneWidget);
     final cancel = find.descendant(of: clearDialog, matching: find.text('Cancel'));
@@ -160,6 +162,8 @@ void main() {
     await tester.tap(cancel);
     await tester.pumpAndSettle();
     expect(clearDialog, findsNothing);
+    expect(settings.cacheClearPromptOpen.value, isFalse);
+    expect(settings.cacheClearPending.value, isFalse);
     expect(tester.takeException(), isNull);
   });
 
