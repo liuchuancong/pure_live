@@ -183,6 +183,55 @@ void main() {
     expect(openedRooms.single.roomId, 'second_room');
   });
 
+  test('leaving a detected room before confirmation drops the stale room', () async {
+    final confirmation = Completer<bool?>();
+    final openedRooms = <LiveRoom>[];
+    final controller = Get.put(
+      WebSearchController(
+        initialArguments: _validArguments,
+        useExternalBrowser: false,
+        confirmRoom: (_) => confirmation.future,
+        openRoom: (room) async => openedRooms.add(room),
+      ),
+    );
+
+    final detection = controller.observeUrl('https://live.bilibili.com/100');
+    await controller.observeUrl('https://www.bilibili.com/search?keyword=live');
+    confirmation.complete(true);
+    await detection;
+
+    expect(openedRooms, isEmpty);
+    expect(controller.showWebView.value, isTrue);
+  });
+
+  test('confirming an older room after a newer navigation opens only the newer room', () async {
+    final confirmations = <Completer<bool?>>[Completer<bool?>(), Completer<bool?>()];
+    final promptedTargets = <String>[];
+    final openedRooms = <LiveRoom>[];
+    final controller = Get.put(
+      WebSearchController(
+        initialArguments: _validArguments,
+        useExternalBrowser: false,
+        confirmRoom: (target) {
+          promptedTargets.add(target.key);
+          return confirmations[promptedTargets.length - 1].future;
+        },
+        openRoom: (room) async => openedRooms.add(room),
+      ),
+    );
+
+    final first = controller.observeUrl('https://live.bilibili.com/100');
+    final second = controller.observeUrl('https://www.huya.com/second_room');
+    confirmations[0].complete(true);
+    await _flushAsync();
+    expect(promptedTargets, ['bilibili:100', 'huya:second_room']);
+    expect(openedRooms, isEmpty);
+
+    confirmations[1].complete(true);
+    await Future.wait([first, second]);
+    expect(openedRooms.map((room) => '${room.platform}:${room.roomId}'), ['huya:second_room']);
+  });
+
   test('closing while a room dialog is pending drops its late confirmation', () async {
     final confirmation = Completer<bool?>();
     final openedRooms = <LiveRoom>[];
