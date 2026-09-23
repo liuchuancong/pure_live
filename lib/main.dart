@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/file_utils.dart';
@@ -17,7 +18,6 @@ import 'package:pure_live/core/iptv/services/epg_import_manager.dart';
 import 'package:pure_live/common/global/platform/desktop_manager.dart';
 import 'package:pure_live/core/iptv/services/iptv_import_manager.dart';
 import 'package:pure_live/common/services/settings/player_settings_controller.dart';
-
 
 void main(List<String> args) async {
   // Flutter abbreviates every framework error after the first one. In release

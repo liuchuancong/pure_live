@@ -10,15 +10,15 @@ import 'package:tray_manager/tray_manager.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:pure_live/routes/app_navigation.dart';
 import 'package:flutter_acrylic/flutter_acrylic.dart';
+import 'package:pure_live/player/utils/window_helper.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/plugins/share_command_handler.dart';
 import 'package:pure_live/routes/route_observer_controller.dart';
 import 'package:pure_live/common/utils/share_command_handler.dart';
 import 'package:pure_live/common/widgets/share_command_import_dialog.dart';
-import 'package:pure_live/common/services/settings/window_size_controller.dart';
 import 'package:pure_live/modules/live_play/controllers/player_state.dart';
-import 'package:pure_live/player/utils/window_helper.dart';
+import 'package:pure_live/common/services/settings/window_size_controller.dart';
 
 class DesktopTrayMenuCoordinator {
   Future<void>? _activeTransaction;
@@ -135,10 +135,16 @@ class DesktopManager {
         return child ?? const SizedBox.shrink();
       }
 
-      return Column(
-        children: [
-          if (!fullscreen && !pipMode) const CustomTitleBar(),
-          if (child != null) Expanded(child: child),
+      return Overlay(
+        initialEntries: [
+          OverlayEntry(
+            builder: (context) => Column(
+              children: [
+                if (!fullscreen && !pipMode) const CustomTitleBar(),
+                if (child != null) Expanded(child: child),
+              ],
+            ),
+          ),
         ],
       );
     });
