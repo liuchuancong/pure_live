@@ -76,6 +76,7 @@ class PandaLiveSite extends LiveSite
     link: PandaLiveLink.url(room.userId),
     liveStatus: LiveStatus.live,
     onlineViewers: room.onlineViewers?.toString(),
+    totalViewers: null,
     followers: room.followers?.toString(),
     audienceMetricType: AudienceMetricType.onlineViewers,
     notice: room.isAdult
@@ -102,6 +103,7 @@ class PandaLiveSite extends LiveSite
       PandaLiveState.unknown => LiveStatus.unknown,
     },
     onlineViewers: room.onlineViewers?.toString(),
+    totalViewers: null,
     followers: room.followers?.toString(),
     introduction: room.introduction,
     audienceMetricType: AudienceMetricType.onlineViewers,
@@ -146,15 +148,64 @@ class PandaLiveSite extends LiveSite
     int pageSize = 30,
     CancelToken? cancel,
   }) async {
-    if (page != 1 || pageSize < 1) return [];
-    final userId = PandaLiveLink.parseOrId(keyword);
-    if (userId == null) return [];
-    try {
-      return [_room(await _api.room(userId, resolveMedia: false, cancel: cancel), includeMedia: false)];
-    } on PandaLiveException catch (error) {
-      if (error.kind == PandaLiveFailure.missing) return [];
-      rethrow;
+    if (page < 1 || pageSize < 1) return [];
+    final query = keyword.trim();
+    final linkId = PandaLiveLink.parse(query);
+    if (linkId != null) {
+      if (page > 1) return [];
+      try {
+        return [_room(await _api.room(linkId, resolveMedia: false, cancel: cancel), includeMedia: false)];
+      } on PandaLiveException catch (error) {
+        if (error.kind == PandaLiveFailure.missing) return [];
+        rethrow;
+      }
     }
+    if (Uri.tryParse(query)?.hasScheme == true || query.length < 2 || query.length > 100) return [];
+    final exactId = PandaLiveLink.normalizeUserId(query);
+    if (page == 1 && exactId != null) {
+      try {
+        return [_room(await _api.room(exactId, resolveMedia: false, cancel: cancel), includeMedia: false)];
+      } on PandaLiveException catch (error) {
+        if (error.kind != PandaLiveFailure.missing) rethrow;
+      }
+    }
+
+    // The official site has separate LIVE (title/broadcaster) and BJ (live
+    // plus offline profile) searches. Split the requested page between them,
+    // preserving each source's native offset/limit instead of pretending that
+    // either endpoint has a combined server cursor.
+    final liveSize = pageSize > 1 ? (pageSize + 1) ~/ 2 : 0;
+    final bjSize = pageSize - liveSize;
+    PandaLiveDirectoryPage? live;
+    PandaLiveSearchPage? broadcasters;
+    Object? liveError;
+    Object? bjError;
+    // The public gateway may stall one of two simultaneous same-host POSTs.
+    // Query BJ profiles first so offline broadcasters remain discoverable.
+    try {
+      broadcasters = await _api.searchBroadcasters(query, page: page, size: bjSize.clamp(1, 50), cancel: cancel);
+    } catch (error) {
+      bjError = error;
+    }
+    if (cancel?.isCancelled == true) throw const PandaLiveException(PandaLiveFailure.cancelled);
+    if (liveSize > 0) {
+      try {
+        live = await _api.searchLive(query, page: page, size: liveSize.clamp(1, 50), cancel: cancel);
+      } catch (error) {
+        liveError = error;
+      }
+    }
+    if (cancel?.isCancelled == true) throw const PandaLiveException(PandaLiveFailure.cancelled);
+    if (live == null && broadcasters == null) throw (liveError ?? bjError)!;
+    final seen = <String>{};
+    final rooms = <LiveRoom>[
+      for (final card in live?.rooms ?? const <PandaLiveCard>[])
+        if (seen.add(card.userId.toLowerCase())) _directoryCard(card),
+      for (final profile in broadcasters?.rooms ?? const <PandaLiveRoom>[])
+        if (seen.add(profile.userId.toLowerCase())) _room(profile, includeMedia: false),
+    ];
+    if (rooms.isEmpty && (liveError != null || bjError != null)) throw (liveError ?? bjError)!;
+    return List.unmodifiable(rooms);
   }
 
   String _userId(String roomId, String platform) {

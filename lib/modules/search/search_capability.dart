@@ -72,13 +72,13 @@ class LiveSearchCapabilities {
       supportsWebSearch: false,
     ),
     Sites.bigoSite: LiveSearchCapability(
-      coverage: NativeSearchCoverage.roomLookup,
+      coverage: NativeSearchCoverage.showcaseSnapshot,
       supportsPagination: false,
       supportsWebSearch: false,
     ),
     Sites.pandaLiveSite: LiveSearchCapability(
-      coverage: NativeSearchCoverage.channelLookup,
-      supportsPagination: false,
+      coverage: NativeSearchCoverage.liveAndOffline,
+      supportsPagination: true,
       supportsWebSearch: false,
     ),
     Sites.popkonSite: LiveSearchCapability(
@@ -194,8 +194,8 @@ class LiveSearchCapabilities {
       supportsWebSearch: false,
     ),
     Sites.huajiaoSite: LiveSearchCapability(
-      coverage: NativeSearchCoverage.channelLookup,
-      supportsPagination: false,
+      coverage: NativeSearchCoverage.showcaseSnapshot,
+      supportsPagination: true,
       supportsWebSearch: false,
     ),
     Sites.kilakilaSite: LiveSearchCapability(

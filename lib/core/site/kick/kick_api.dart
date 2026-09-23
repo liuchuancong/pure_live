@@ -225,6 +225,16 @@ class KickApi {
     return KickRoom(channel, live);
   }
 
+  /// Chatroom ID is distinct from the channel/user ID. Do not subscribe to a
+  /// guessed channel when the public channel response omits this field.
+  Future<int> chatroomId(String rawSlug, {CancelToken? cancel}) async {
+    final slug = KickLink.normalize(rawSlug);
+    if (slug == null) throw const KickException(KickFailure.identity);
+    final root = await _json('/api/v2/channels/$slug', const {}, cancel);
+    if (KickLink.normalize(_text(root['slug'])) != slug) throw const KickException(KickFailure.identity);
+    return _positiveInt(_object(root['chatroom'])['id']);
+  }
+
   static KickLive _live(Map<String, dynamic> data, {KickChannel? owner, Object? playbackUrl}) {
     final channel = owner ?? _channel(_object(data['channel']), isLive: true, searchShape: false);
     final channelId = _positiveInt(data['channel_id']);

@@ -32,12 +32,14 @@ final class PandaLiveLink {
   static String? normalizeUserId(Object? value) {
     if (value is! String) return null;
     final userId = value.trim();
-    return RegExp(r'^[A-Za-z0-9_]{1,64}$').hasMatch(userId) ? userId : null;
+    // The official BJ index also contains social-login IDs such as
+    // 1506087545@ka, which the public member endpoint resolves directly.
+    return RegExp(r'^[A-Za-z0-9_]{1,64}(?:@[A-Za-z0-9_]{2,16})?$').hasMatch(userId) ? userId : null;
   }
 
   static String url(String rawUserId) {
     final userId = normalizeUserId(rawUserId);
     if (userId == null) throw const FormatException('Invalid PandaTV user ID');
-    return 'https://www.pandalive.co.kr/live/play/$userId';
+    return Uri.https('www.pandalive.co.kr', '/live/play/$userId').toString();
   }
 }

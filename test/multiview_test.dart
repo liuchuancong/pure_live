@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
+
 import 'package:pure_live/core/common/hls_source_query_policy.dart';
 import 'package:pure_live/core/interface/live_site.dart';
 import 'package:pure_live/core/site/douyin/douyin_site.dart';
@@ -21,7 +23,7 @@ import 'package:pure_live/modules/multiview/multiview_controller.dart';
 /// 所有操作按「名称:动作」写入共享日志，用于断言释放顺序与静音互斥。
 /// 音量模型与真实实现一致：会话音量（sessionVolume）与静音标志（muted）
 /// 相互独立，[volume] 暴露实际输出音量（muted ? 0 : sessionVolume）。
-class _RecordingPlayer implements MultiviewCellPlayerHandle, MultiviewNativeInputRouting {
+class _RecordingPlayer implements MultiviewCellPlayerHandle, MultiviewNativeInputRouting, MultiviewFrameProgressHandle {
   _RecordingPlayer(this._log, this.name);
 
   final List<String> _log;
@@ -63,6 +65,10 @@ class _RecordingPlayer implements MultiviewCellPlayerHandle, MultiviewNativeInpu
   Object? disposeError;
 
   final StreamController<bool> _playingController = StreamController<bool>.broadcast();
+  @override
+  final ValueNotifier<int> frameRevision = ValueNotifier<int>(0);
+
+  void emitFrame() => frameRevision.value++;
 
   @override
   VideoController? get videoController => null;
@@ -176,7 +182,12 @@ class _FakeDanmaku extends LiveDanmaku {
 
 /// 测试装配体：假工厂 + 假解析器 + 可控的解析门闩。
 class _Harness {
-  _Harness({int? maxCellCount}) {
+  _Harness({
+    int? maxCellCount,
+    Duration frameStallTimeout = Duration.zero,
+    bool Function()? frameVisible,
+    Duration Function()? frameElapsed,
+  }) {
     controller = MultiviewController(
       playerFactory: _factory,
       streamResolver: _resolver,
@@ -187,6 +198,9 @@ class _Harness {
         savedRoomVolumes[_volumeKey(room)] = volume;
       },
       maxCellCount: maxCellCount,
+      frameStallTimeout: frameStallTimeout,
+      isFramePresentationVisible: frameVisible,
+      frameWatchdogElapsed: frameElapsed,
     );
   }
 
@@ -1402,6 +1416,96 @@ void main() {
       expect(controller.cells[0].lineIndex, 1);
       expect(controller.cells[0].lines.length, 2);
       expect(harness.log.last, contains('流畅?line=1'));
+    });
+
+    testWidgets('presented-frame stall refreshes only the affected cell and restores quality and line', (tester) async {
+      var elapsed = Duration.zero;
+      final harness = _Harness(
+        frameStallTimeout: const Duration(seconds: 10),
+        frameVisible: () => true,
+        frameElapsed: () => elapsed,
+      );
+      final controller = harness.controller;
+      await controller.assignRoom(0, _room('r1'));
+      await controller.assignRoom(1, _room('r2'));
+      await controller.setCellQuality(0, 1);
+      await controller.setCellLine(0, 1);
+      harness.players[0].emitFrame();
+      harness.players[1].emitFrame();
+
+      elapsed = const Duration(seconds: 9);
+      await tester.pump(const Duration(seconds: 9));
+      harness.players[1].emitFrame();
+      elapsed = const Duration(seconds: 10);
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pump();
+      await tester.pump();
+
+      expect(harness.players.length, 3);
+      expect(harness.log, contains('p0:pDispose'));
+      expect(harness.log, isNot(contains('p1:pDispose')));
+      expect(controller.cells[0].status, MultiviewCellStatus.playing);
+      expect(controller.cells[0].qualityIndex, 1);
+      expect(controller.cells[0].lineIndex, 1);
+      expect(controller.cells[1].status, MultiviewCellStatus.playing);
+      expect(controller.audioFocusIndex, 1);
+      expect(harness.players[2].muted, isTrue);
+      await controller.disposeAll();
+    });
+
+    testWidgets('paused cell never refreshes from a presented-frame timeout', (tester) async {
+      var elapsed = Duration.zero;
+      final harness = _Harness(
+        frameStallTimeout: const Duration(seconds: 10),
+        frameVisible: () => true,
+        frameElapsed: () => elapsed,
+      );
+      final controller = harness.controller;
+      await controller.assignRoom(0, _room('r1'));
+      harness.players.single.emitFrame();
+      await controller.toggleCellPlayPause(0);
+      elapsed = const Duration(seconds: 30);
+      await tester.pump(const Duration(seconds: 30));
+      expect(harness.players.length, 1);
+      expect(harness.players.single.isPlaying, isFalse);
+      await controller.disposeAll();
+    });
+
+    testWidgets('focus rail stays untouched and automatic stall recovery has a finite budget', (tester) async {
+      var elapsed = Duration.zero;
+      final harness = _Harness(
+        frameStallTimeout: const Duration(seconds: 10),
+        frameVisible: () => true,
+        frameElapsed: () => elapsed,
+      );
+      final controller = harness.controller;
+      await controller.setLayout(MultiviewLayout.focus);
+      await controller.assignRoom(0, _room('big'));
+      await controller.assignRoom(1, _room('small'));
+      harness.players[0].emitFrame();
+      harness.players[1].emitFrame();
+
+      elapsed = const Duration(seconds: 10);
+      await tester.pump(const Duration(seconds: 10));
+      await tester.pump();
+      await tester.pump();
+      expect(harness.players.length, 3);
+      expect(harness.players[1].isPlaying, isTrue);
+      harness.players[2].emitFrame();
+
+      elapsed = const Duration(seconds: 20);
+      await tester.pump(const Duration(seconds: 10));
+      await tester.pump();
+      await tester.pump();
+      expect(harness.players.length, 4);
+      harness.players[3].emitFrame();
+
+      elapsed = const Duration(seconds: 30);
+      await tester.pump(const Duration(seconds: 10));
+      await tester.pump();
+      expect(harness.players.length, 4);
+      expect(harness.players[1].isPlaying, isTrue);
+      await controller.disposeAll();
     });
   });
 }

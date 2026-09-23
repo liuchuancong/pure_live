@@ -6,8 +6,8 @@
 
 | 项目 | 当前证据 |
 | --- | --- |
-| 功能源码基线 | `62e4914d` 已推送。17LIVE 新增[官网公开推荐原生游标与当前直播搜索](SEVENTEENLIVE_PUBLIC_CATALOG_SEARCH_AUDIT_2026_09_23.md)，定向与生产探针 **6/6**；本批全库 Analyze 超时终止，不计作静态门禁通过。此前克拉克拉[官网主播关键词分页](KILAKILA_NATIVE_KEYWORD_SEARCH_AUDIT_2026_09_23.md)受影响测试 **195/195**、生产搜索 **1/1**，当批全库 Analyze 无诊断；映客有限精选昵称筛选 **52/52**、生产搜索 **1/1**；猫耳 FM 官网关键词分页见[专项记录](MISSEVAN_NATIVE_KEYWORD_SEARCH_AUDIT_2026_09_23.md)。最近一次完整门禁仍绑定 `b79e8838`：Flutter **4999/4999**、公共接口 **42/42**，记录 `20260919T181710597Z-quality-full.json`；下个候选前需重跑 Full |
-| Android 最新本机构建/原生输入 | 现存 `b79e8838` arm64 Debug，3.1.8+4121 / Manifest 6121，289007467 B，SHA-256 `377D4CD5…30ED`；16 个原生库、最小 ELF LOAD `0x4000`、APK 内容门禁通过。该包早于当前源码 `62e4914d`，未覆盖安装；新增平台、搜索、布局及录制等后续修订均待新候选原生验收 |
+| 功能源码基线 | `5db7019d` 已推送。Windows 多画面[呈现帧停滞有界单格恢复](ISSUE_875_WINDOWS_MULTIVIEW_FRAME_STALL_AUDIT_2026_09_23.md)四文件 **80/80**，实际 Issue #875 现象待原生复核；Bigo [有限公开推荐关键词筛选](BIGO_PUBLIC_SNAPSHOT_SEARCH_AUDIT_2026_09_23.md) **124/124**、只读探针 **1/1**；花椒[三页内筛选](HUAJIAO_PUBLIC_RECOMMENDATION_SEARCH_AUDIT_2026_09_23.md) **149/149**、探针 **1/1**；PandaTV [双路搜索](PANDALIVE_NATIVE_SEARCH_AUDIT_2026_09_23.md) **92/92**。本批全仓 Analyze 无 error/warning，另有 1 项既有 info；完整 Full 门禁最近仍绑定 `b79e8838`：Flutter **4999/4999**、公共接口 **42/42**，记录 `20260919T181710597Z-quality-full.json`；下个候选前需重跑 Full |
+| Android 最新本机构建/原生输入 | 现存 `b79e8838` arm64 Debug，3.1.8+4121 / Manifest 6121，289007467 B，SHA-256 `377D4CD5…30ED`；16 个原生库、最小 ELF LOAD `0x4000`、APK 内容门禁通过。该包早于当前源码 `5db7019d`，未覆盖安装；新增平台、搜索、布局及录制等后续修订均待新候选原生验收 |
 | Android 当前编号账本 | 46 行：16 PASS / 30 RUN / 0 NR；每行仍含多个动作和平台组合，旧包证据不自动覆盖当前源码 |
 | Windows 最新归档 | `2fb471d3` Debug；尚未纳入之后的源码修订，也不是 3.2.0 Release 候选 |
 | 手机快照 | `192.168.1.2:5555` 已重新核对 25102RKBEC / myron / Android 17 / root；Pure Live 无进程和录制服务，但前台为其他应用，本轮守卫停止安装与输入 |
@@ -28,7 +28,7 @@
 ## 主要阻塞
 
 1. **当前原生闭环缺失**：Android 现存 `b79e8838` 候选已通过当时完整门禁，但早于近期功能与布局修订；手机上次只读检查时在线且型号/代号/root 已复核，前台由其他应用占用，因此未安装或发送界面输入。Windows 最新原生证据同样早于当前 `master`。
-2. **Windows GUI/性能批次未完成**：多 DPI、主副屏、PiP/全屏/多窗口、WebView2、Issue #767 的 4K GPU 对照及退出回落需要同一 Release 候选集中执行。
+2. **Windows GUI/性能批次未完成**：多 DPI、主副屏、PiP/全屏/多窗口、WebView2、Issue #767 的 4K GPU 对照、Issue #875 的 1+3 连续播放与退出回落需要同一 Release 候选集中执行。
 3. **Android 组合矩阵未闭合**：当前候选仍需覆盖锁屏/后台、横屏/系统返回、PiP、实体音量键、自动录制和累计数据迁移；设备在线时优先合并执行。
 4. **平台与录制范围较大**：每个平台的目录、播放、弹幕、录制、断流恢复和资源释放尚未全部在当前双端候选上完成；OPENREC 当前本机官网/公共接口 CloudFront 403，需在可访问窗口复核；长录和严格解码仍是发布门禁。
 5. **平台扩展继续推进**：战旗与浪 Live 等待当前生产媒体证据后注册；DLive、一直播与企鹅电竞已完成生命周期归档；PandaTV、PopkonTV、Shopee Live、VK Video Live、NimoTV、Dailymotion、Rumble、GoodGame、FC2 Live、Steam Broadcasts、京东直播、淘宝直播、酷狗直播、百度直播、六间房直播与 LOOK 直播已进入源码能力表，双端原生与录制证据并入集中验收。

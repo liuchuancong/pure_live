@@ -56,6 +56,28 @@ void main() {
     expect(await site.getLiveStatus(platform: 'bigo', roomId: 'fixture_101'), isTrue);
   });
 
+  test('keyword search filters the finite public snapshot while exact identity stays separate', () async {
+    final api = _BigoFixtureApi();
+    final site = BigoSite(api: api);
+    final byName = (await site.searchRooms('Fixture')).single;
+    expect(byName.roomId, 'fixture_101');
+    expect(byName.onlineViewers, '127');
+    expect(byName.data, isNull);
+    expect((await site.searchRooms('live')).single.roomId, 'fixture_101');
+    expect(await site.searchRooms('Fixture', page: 2), isEmpty);
+    expect(await site.searchRooms('https://www.bigo.tv/search/music?tab=host'), isEmpty);
+    expect((await site.searchRooms('fixture_101')).single.roomId, 'fixture_101');
+    expect(api.directoryCalls, 1);
+    expect(api.studioCalls, 1);
+  });
+
+  test('keyword search stops at cancellation after a directory response', () async {
+    final token = CancelToken();
+    final site = BigoSite(api: _BigoFixtureApi(cancelDuringDirectory: true));
+    await expectLater(site.searchRoomsCancellable('Fixture', cancel: token), _failure(BigoFailure.cancelled));
+    expect(token.isCancelled, isTrue);
+  });
+
   test('gated detail remains unknown and never creates an owned media recipe', () async {
     final site = BigoSite(api: _BigoFixtureApi(access: BigoAccess.loginRequired));
     final detail = await site.getRoomDetail(roomId: 'fixture_101', platform: 'bigo');
@@ -78,28 +100,37 @@ void main() {
 Matcher _failure(BigoFailure kind) => throwsA(isA<BigoException>().having((error) => error.kind, 'kind', kind));
 
 final class _BigoFixtureApi extends BigoApi {
-  _BigoFixtureApi({this.access = BigoAccess.public}) : super(request: (_, _, _, _) async => throw StateError('unused'));
+  _BigoFixtureApi({this.access = BigoAccess.public, this.cancelDuringDirectory = false})
+    : super(request: (_, _, _, _) async => throw StateError('unused'));
 
   final BigoAccess access;
+  final bool cancelDuringDirectory;
+  int directoryCalls = 0;
+  int studioCalls = 0;
 
   @override
-  Future<List<BigoDirectoryCard>> directory({CancelToken? cancel}) async => const [
-    BigoDirectoryCard(
-      siteId: 'fixture_101',
-      ownerId: 101,
-      broadcastId: '7000000000000000001',
-      sid: 202,
-      title: 'Fixture live',
-      nickname: 'Fixture owner',
-      cover: 'https://image.example/cover.jpg',
-      reportedViewers: 127,
-      locked: false,
-      roomFlag: 1,
-    ),
-  ];
+  Future<List<BigoDirectoryCard>> directory({CancelToken? cancel}) async {
+    directoryCalls++;
+    if (cancelDuringDirectory) cancel?.cancel();
+    return const [
+      BigoDirectoryCard(
+        siteId: 'fixture_101',
+        ownerId: 101,
+        broadcastId: '7000000000000000001',
+        sid: 202,
+        title: 'Fixture live',
+        nickname: 'Fixture owner',
+        cover: 'https://image.example/cover.jpg',
+        reportedViewers: 127,
+        locked: false,
+        roomFlag: 1,
+      ),
+    ];
+  }
 
   @override
   Future<BigoStudioRoom> studioRoom({required String siteId, int? expectedOwnerId, CancelToken? cancel}) async {
+    studioCalls++;
     final public = access == BigoAccess.public;
     return BigoStudioRoom(
       status: BigoStudioStatus(

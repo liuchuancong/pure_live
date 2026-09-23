@@ -29,3 +29,6 @@ if __name__ == "__main__":
     remove_duplicate_keys(
         r"D:\flutter\pure_live\assets\translations\zh.json"
     )
+    remove_duplicate_keys(
+        r"D:\flutter\pure_live\assets\translations\en.json"
+    )

@@ -133,6 +133,7 @@ final class BigoSite extends LiveSite
       liveStatus: LiveStatus.live,
       watching: viewers ?? '',
       onlineViewers: viewers,
+      totalViewers: null,
       audienceMetricType: AudienceMetricType.onlineViewers,
       notice: i18n('bigo_chat_notice'),
       httpHeaders: BigoApi.headers,
@@ -162,6 +163,8 @@ final class BigoSite extends LiveSite
       area: room.category.isEmpty ? name : room.category,
       link: BigoLink.url(status.canonicalSiteId),
       liveStatus: liveStatus,
+      onlineViewers: null,
+      totalViewers: null,
       notice: notice,
       httpHeaders: BigoApi.headers,
       data: includeMedia && liveStatus == LiveStatus.live ? room : null,
@@ -206,13 +209,47 @@ final class BigoSite extends LiveSite
     int pageSize = 30,
     CancelToken? cancel,
   }) async {
-    if (page != 1 || pageSize < 1) return [];
-    final siteId = BigoLink.parseOrSiteId(keyword);
-    if (siteId == null) return [];
+    if (page != 1 || pageSize < 1) return const [];
+    final query = keyword.trim();
+    final linkId = BigoLink.parse(query);
+    if (linkId != null) return _exactSearch(linkId, cancel: cancel);
+    if (query.isEmpty ||
+        query.length > 100 ||
+        RegExp(r'[\x00-\x1f]').hasMatch(query) ||
+        Uri.tryParse(query)?.hasScheme == true) {
+      return const [];
+    }
+    final siteId = BigoLink.parseOrSiteId(query);
+    final looksLikeId = siteId != null && RegExp(r'[0-9_.-]').hasMatch(query);
+    if (looksLikeId) {
+      final exact = await _exactSearch(siteId, cancel: cancel);
+      if (exact.isNotEmpty) return exact;
+    }
+    // The public web search endpoints currently return null even for a known
+    // live ID. Filter the verified finite recommendation snapshot instead of
+    // presenting that empty response as a platform-wide search result.
+    final cards = await _directory(cancel: cancel);
+    if (cancel?.isCancelled == true) throw const BigoException(BigoFailure.cancelled);
+    if (siteId != null && !looksLikeId && cards.any((card) => card.siteId.toLowerCase() == query.toLowerCase())) {
+      return _exactSearch(siteId, cancel: cancel);
+    }
+    final needle = query.toLowerCase();
+    final matches = <String, LiveRoom>{};
+    for (final card in cards) {
+      if (card.nickname.toLowerCase().contains(needle) || card.title.toLowerCase().contains(needle)) {
+        matches.putIfAbsent(card.siteId.toLowerCase(), () => _card(card));
+      }
+    }
+    if (matches.isNotEmpty) return List.unmodifiable(matches.values);
+    if (siteId != null && !looksLikeId) return _exactSearch(siteId, cancel: cancel);
+    return const [];
+  }
+
+  Future<List<LiveRoom>> _exactSearch(String siteId, {CancelToken? cancel}) async {
     try {
       return [_room(await _api.studioRoom(siteId: siteId, cancel: cancel), includeMedia: false)];
     } on BigoException catch (error) {
-      if (error.kind == BigoFailure.missing) return [];
+      if (error.kind == BigoFailure.missing) return const [];
       rethrow;
     }
   }

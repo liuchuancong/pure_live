@@ -23,7 +23,8 @@ class HuajiaoSite extends LiveSite
         LiveSiteRoomRefresher,
         LiveSiteRecordRoomResolver,
         LivePlayRecoveryResolver,
-        LiveCancellableSearch {
+        LiveCancellableSearch,
+        LiveSearchPaginationPolicy {
   HuajiaoSite({HuajiaoApi? api}) : _api = api ?? HuajiaoApi();
   final HuajiaoApi _api;
   @override
@@ -130,6 +131,19 @@ class HuajiaoSite extends LiveSite
   Future<List<LiveRoom>> searchRooms(String keyword, {int page = 1, int pageSize = 30}) =>
       searchRoomsCancellable(keyword, page: page, pageSize: pageSize);
 
+  static const int searchRecommendationPages = 3;
+
+  @override
+  bool supportsSearchPaginationFor(String keyword) {
+    final input = keyword.trim();
+    return input.isNotEmpty &&
+        input.length <= 100 &&
+        !HuajiaoLink.validId(input) &&
+        !RegExp(r'^[0-9]+$').hasMatch(input) &&
+        HuajiaoLink.parse(input) == null &&
+        Uri.tryParse(input)?.hasScheme != true;
+  }
+
   @override
   Future<List<LiveRoom>> searchRoomsCancellable(
     String keyword, {
@@ -137,8 +151,7 @@ class HuajiaoSite extends LiveSite
     int pageSize = 30,
     CancelToken? cancel,
   }) async {
-    if (page < 1 || pageSize < 1) throw const HuajiaoException(HuajiaoFailure.schema);
-    if (page > 1) return const [];
+    if (page < 1 || pageSize < 1 || pageSize > 50) throw const HuajiaoException(HuajiaoFailure.schema);
     final input = keyword.trim();
     String? uid;
     if (HuajiaoLink.validId(input)) {
@@ -147,7 +160,30 @@ class HuajiaoSite extends LiveSite
       final link = HuajiaoLink.parse(input);
       if (link?.kind == HuajiaoLinkKind.owner) uid = link!.id;
     }
-    if (uid == null) return const [];
+    if (uid == null) {
+      if (!supportsSearchPaginationFor(input) || RegExp(r'[\x00-\x1f]').hasMatch(input)) return const [];
+      final start = (page - 1) * pageSize;
+      if (start >= searchRecommendationPages * 30) return const [];
+      final query = input.toLowerCase();
+      final matches = <String, LiveRoom>{};
+      var offset = 0;
+      // This is a bounded filter of the official public recommendation feed,
+      // not a platform-wide broadcaster index or a fabricated search API.
+      for (var index = 0; index < searchRecommendationPages; index++) {
+        if (cancel?.isCancelled == true) throw const HuajiaoException(HuajiaoFailure.cancelled);
+        final result = await _api.directory(offset: offset, cancel: cancel);
+        if (cancel?.isCancelled == true) throw const HuajiaoException(HuajiaoFailure.cancelled);
+        for (final feed in result.feeds) {
+          if (feed.name.toLowerCase().contains(query) || feed.title.toLowerCase().contains(query)) {
+            matches.putIfAbsent(feed.userId, () => _card(feed));
+          }
+        }
+        if (!result.hasMore || matches.length >= start + pageSize) break;
+        offset = result.nextOffset;
+      }
+      return List.unmodifiable(matches.values.skip(start).take(pageSize));
+    }
+    if (page > 1) return const [];
     try {
       return [_owner(await _api.owner(uid, cancel: cancel))];
     } on HuajiaoException catch (error) {
