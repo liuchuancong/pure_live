@@ -157,7 +157,9 @@ final class GoodGameSite extends LiveSite
               room.title.toLowerCase().contains(query) ||
               room.category.toLowerCase().contains(query),
         )
-        .take(pageSize.clamp(1, 50))
+        // Search pages follow the server's 50-card directory pages. Trimming
+        // them to the UI's smaller page size would permanently skip matches
+        // in slots 31-50 when the next request advances to server page 2.
         .map((room) => _room(room, includeMedia: false))
         .toList(growable: false);
   }

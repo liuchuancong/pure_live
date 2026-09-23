@@ -93,6 +93,40 @@ void main() {
     expect(requests.last.path, '/api/4/users/not-found/stream');
   });
 
+  test('directory-backed search preserves matches past the UI page size', () async {
+    final template = Map<String, dynamic>.from((_directory()['streams'] as List).single as Map);
+    final rooms = List.generate(84, (index) {
+      final id = 20000 + index;
+      return {
+        ...template,
+        'id': id,
+        'key': 'match$index',
+        'title': 'match title $index',
+        'streamer': {'username': 'match$index'},
+        'sources': {'source': 'https://hls.goodgame.ru/hls/$id.m3u8?expires=1790064565&token=fixture'},
+      };
+    });
+    final site = GoodGameSite(
+      api: GoodGameApi(
+        request: (uri, _, _) async {
+          final page = int.parse(uri.queryParameters['page']!);
+          return (
+            status: 200,
+            body: jsonEncode({
+              'queryInfo': {'qty': rooms.length, 'page': page, 'onPage': 50},
+              'streams': rooms.skip((page - 1) * 50).take(50).toList(),
+            }),
+          );
+        },
+      ),
+    );
+    final first = await site.searchRooms('match title', page: 1, pageSize: 30);
+    final second = await site.searchRooms('match title', page: 2, pageSize: 30);
+    expect(first, hasLength(50));
+    expect(second, hasLength(34));
+    expect({...first.map((room) => room.roomId), ...second.map((room) => room.roomId)}, hasLength(84));
+  });
+
   test('registry exposes one GoodGame adapter with recording recovery', () {
     expect(Sites.supportedSiteIds, contains(Sites.goodGameSite));
     expect(Sites.of(Sites.goodGameSite).liveSite, isA<GoodGameSite>());
