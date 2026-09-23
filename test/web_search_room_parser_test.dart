@@ -27,6 +27,9 @@ void main() {
       'https://steamcommunity.com/broadcast/watch/76561198373527746': (Sites.steamBroadcastSite, '76561198373527746'),
       'https://lives.jd.com/#/48266468?origin=0': (Sites.jdLiveSite, '48266468'),
       'https://h5.m.taobao.com/taolive/video.html?id=12345678901': (Sites.taobaoLiveSite, 'live:12345678901'),
+      'https://www.xiaohongshu.com/livestream/1234567890123456789?source=share':
+          (Sites.xiaohongshuSite, '1234567890123456789'),
+      'https://www.flextv.co.kr/channels/123456/live': (Sites.ttingSite, '123456'),
     };
 
     for (final entry in cases.entries) {
@@ -52,6 +55,12 @@ void main() {
       'https://live.acfun.cn/live/42/extra',
       'https://live.acfun.cn.evil.example/live/42',
       'https://secret@live.acfun.cn/live/42',
+      'https://www.xiaohongshu.com/explore/1234567890123456789',
+      'https://www.xiaohongshu.com/livestream/1234567890123456789/extra',
+      'https://www.xiaohongshu.com.evil.example/livestream/1234567890123456789',
+      'https://www.flextv.co.kr/channels/123456',
+      'https://www.flextv.co.kr/channels/123456/live/extra',
+      'https://www.flextv.co.kr.evil.example/channels/123456/live',
     ];
 
     for (final url in urls) {

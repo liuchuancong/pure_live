@@ -31,6 +31,8 @@ import 'package:pure_live/core/site/sixroom/sixroom_link.dart';
 import 'package:pure_live/core/site/looklive/look_live_link.dart';
 import 'package:pure_live/core/site/taobaolive/taobao_live_link.dart';
 import 'package:pure_live/core/site/seventeenlive/seventeenlive_link.dart';
+import 'package:pure_live/core/site/tting/tting_link.dart';
+import 'package:pure_live/core/site/xiaohongshu/xiaohongshu_link.dart';
 
 class WebSearchRoomTarget {
   const WebSearchRoomTarget({required this.platform, required this.roomId});
@@ -88,6 +90,14 @@ class WebSearchRoomParser {
     if (uri == null || (uri.scheme != 'http' && uri.scheme != 'https')) return null;
     // Bare composite IDs belong to exact search, not web navigation. Preserve
     // the raw URL for the adapter's structural dot-segment checks.
+    final xiaohongshu = XiaohongshuLink.parse(rawUrl);
+    if (xiaohongshu != null) {
+      return WebSearchRoomTarget(platform: Sites.xiaohongshuSite, roomId: xiaohongshu);
+    }
+    final tting = TtingLink.parse(rawUrl);
+    if (tting != null) {
+      return WebSearchRoomTarget(platform: Sites.ttingSite, roomId: '$tting');
+    }
     final weibo = WeiboLink.parse(rawUrl);
     if (weibo != null) return WebSearchRoomTarget(platform: Sites.weiboSite, roomId: weibo);
     final missevan = MissevanApi.roomFromUri(uri);
