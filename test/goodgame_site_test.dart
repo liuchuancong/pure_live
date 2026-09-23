@@ -66,6 +66,33 @@ void main() {
     expect(Uri.parse(recovered.urls.single).queryParameters['generation'], '3');
   });
 
+  test('official room links and player IDs are single-page searches', () async {
+    final requests = <Uri>[];
+    final fixture = _FixtureTransport();
+    final site = GoodGameSite(
+      api: GoodGameApi(
+        request: (uri, headers, cancel) {
+          requests.add(uri);
+          return fixture.call(uri, headers, cancel);
+        },
+      ),
+    );
+    for (final query in ['https://goodgame.ru/Verloin', 'id:15365', 'https://goodgame.ru/player?15365']) {
+      expect(site.supportsSearchPaginationFor(query), isFalse);
+      expect((await site.searchRooms(query)).single.roomId, 'verloin');
+      final before = requests.length;
+      expect(await site.searchRooms(query, page: 2), isEmpty);
+      expect(requests, hasLength(before));
+    }
+    expect(site.supportsSearchPaginationFor('Neverwinter'), isTrue);
+    expect(site.supportsSearchPaginationFor(''), isFalse);
+
+    final beforeMissing = requests.length;
+    expect(await site.searchRooms('https://goodgame.ru/not-found'), isEmpty);
+    expect(requests, hasLength(beforeMissing + 1));
+    expect(requests.last.path, '/api/4/users/not-found/stream');
+  });
+
   test('registry exposes one GoodGame adapter with recording recovery', () {
     expect(Sites.supportedSiteIds, contains(Sites.goodGameSite));
     expect(Sites.of(Sites.goodGameSite).liveSite, isA<GoodGameSite>());
