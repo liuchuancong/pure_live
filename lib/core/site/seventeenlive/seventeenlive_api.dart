@@ -37,6 +37,15 @@ class SeventeenLiveStream {
   final List<Uri> urls;
 }
 
+class SeventeenLiveDirectoryPage {
+  SeventeenLiveDirectoryPage({required Iterable<SeventeenLiveRoom> rooms, required this.nextCursor})
+    : rooms = List.unmodifiable(rooms);
+
+  final List<SeventeenLiveRoom> rooms;
+  final String? nextCursor;
+  bool get hasMore => nextCursor != null;
+}
+
 class SeventeenLiveRoom {
   const SeventeenLiveRoom({
     required this.roomId,
@@ -89,6 +98,14 @@ class SeventeenLiveApi {
     'Referer': SeventeenLiveLink.url(roomId),
   };
 
+  static Map<String, String> catalogHeaders() => {
+    'User-Agent': userAgent,
+    'Accept': 'application/json, text/plain, */*',
+    'Accept-Language': 'ja-JP,ja;q=0.9,en;q=0.8',
+    'Origin': origin,
+    'Referer': '$origin/',
+  };
+
   static Map<String, String> mediaHeaders(String roomId) => {
     'User-Agent': userAgent,
     'Origin': origin,
@@ -99,15 +116,16 @@ class SeventeenLiveApi {
 
   static Future<({int status, String body})> _defaultRequest(Uri uri, CancelToken? cancel) =>
       withRequestCancellation(cancel, (transport) async {
-        final roomId = SeventeenLiveLink.normalizeRoomId(uri.pathSegments.isEmpty ? '' : uri.pathSegments.last);
-        if (roomId == null) throw const SeventeenLiveException(SeventeenLiveFailure.identity);
+        final catalog = uri.path == '/api/v1/sections' || uri.path == '/api/v1/liveStreams/search';
+        final roomId = catalog ? null : SeventeenLiveLink.normalizeRoomId(uri.pathSegments.last);
+        if (!catalog && roomId == null) throw const SeventeenLiveException(SeventeenLiveFailure.identity);
         final response = await HttpClient.instance.dio.get<ResponseBody>(
           uri.toString(),
           cancelToken: transport,
           options: Options(
             responseType: ResponseType.stream,
             followRedirects: false,
-            headers: requestHeaders(roomId),
+            headers: catalog ? catalogHeaders() : requestHeaders(roomId!),
             receiveTimeout: const Duration(seconds: 20),
             validateStatus: (_) => true,
           ),
@@ -148,10 +166,89 @@ class SeventeenLiveApi {
   Future<SeventeenLiveRoom> room(String rawRoomId, {CancelToken? cancel}) async {
     final roomId = SeventeenLiveLink.normalizeRoomId(rawRoomId);
     if (roomId == null) throw const SeventeenLiveException(SeventeenLiveFailure.identity);
+    final body = await _fetch(Uri.parse('$apiOrigin/api/v1/lives/$roomId'), cancel);
+    try {
+      return _room(roomId, _object(jsonDecode(body)));
+    } on FormatException {
+      throw const SeventeenLiveException(SeventeenLiveFailure.schema);
+    }
+  }
+
+  /// The website's public JP recommendation sections use an opaque cursor.
+  /// Banner, archive and VOD sections are not current-live directory rows.
+  Future<SeventeenLiveDirectoryPage> directory({String? cursor, CancelToken? cancel}) async {
+    if (cursor != null && (cursor.isEmpty || cursor.length > 512 || cursor.contains(RegExp(r'[\x00-\x1f]')))) {
+      throw const SeventeenLiveException(SeventeenLiveFailure.schema);
+    }
+    final uri = Uri.parse('$apiOrigin/api/v1/sections')
+        .replace(queryParameters: {'count': '20', 'typeTab': '2', 'region': 'JP', 'cursor': cursor ?? ''});
+    final body = await _fetch(uri, cancel);
+    try {
+      final data = _object(jsonDecode(body));
+      final sections = _list(data['sections'], max: 80);
+      final seen = <String>{};
+      final rooms = <SeventeenLiveRoom>[];
+      for (final raw in sections) {
+        final section = _object(raw);
+        if (const {'TopBanner', 'ArchiveVideo', 'Vod'}.contains(section['id'])) continue;
+        for (final rawGrid in _list(section['grids'] ?? const [], max: 200)) {
+          final stream = _object(rawGrid)['stream'];
+          if (stream == null) continue;
+          try {
+            final row = _object(stream);
+            final roomId = _positiveInt(row['liveStreamID']).toString();
+            final room = _room(roomId, row, requireOwnerRoomId: false, includeStreams: false);
+            if (room.state == SeventeenLiveState.live && seen.add(roomId)) rooms.add(room);
+          } on SeventeenLiveException {
+            // An individual stale or malformed recommendation must not hide
+            // the other independently identified live rooms in this section.
+          }
+        }
+      }
+      final rawCursor = data['cursor'];
+      if (rawCursor != null && rawCursor is! String) throw const SeventeenLiveException(SeventeenLiveFailure.schema);
+      final nextCursor = rawCursor is String && rawCursor.isNotEmpty && rawCursor != cursor ? rawCursor : null;
+      if (nextCursor != null && (nextCursor.length > 512 || nextCursor.contains(RegExp(r'[\x00-\x1f]')))) {
+        throw const SeventeenLiveException(SeventeenLiveFailure.schema);
+      }
+      return SeventeenLiveDirectoryPage(rooms: rooms, nextCursor: nextCursor);
+    } on FormatException {
+      throw const SeventeenLiveException(SeventeenLiveFailure.schema);
+    }
+  }
+
+  /// The website exposes a bounded current-live search result, without a
+  /// server cursor or offline profiles. Exact room links remain a separate path.
+  Future<List<SeventeenLiveRoom>> searchCurrentLive(String keyword, {CancelToken? cancel}) async {
+    final query = keyword.trim();
+    if (query.isEmpty || query.length > 100) throw const SeventeenLiveException(SeventeenLiveFailure.schema);
+    final uri = Uri.parse('$apiOrigin/api/v1/liveStreams/search').replace(queryParameters: {'query': query});
+    final body = await _fetch(uri, cancel);
+    try {
+      final rows = _list(jsonDecode(body), max: 100);
+      final seen = <String>{};
+      final rooms = <SeventeenLiveRoom>[];
+      for (final raw in rows) {
+        try {
+          final row = _object(raw);
+          final roomId = _positiveInt(row['liveStreamID']).toString();
+          final room = _room(roomId, row, includeStreams: false);
+          if (room.state == SeventeenLiveState.live && seen.add(roomId)) rooms.add(room);
+        } on SeventeenLiveException {
+          // Search cards may disappear between the website index and read.
+        }
+      }
+      return List.unmodifiable(rooms);
+    } on FormatException {
+      throw const SeventeenLiveException(SeventeenLiveFailure.schema);
+    }
+  }
+
+  Future<String> _fetch(Uri uri, CancelToken? cancel) async {
     if (cancel?.isCancelled == true) throw const SeventeenLiveException(SeventeenLiveFailure.cancelled);
     late final ({int status, String body}) response;
     try {
-      response = await _request(Uri.parse('$apiOrigin/api/v1/lives/$roomId'), cancel);
+      response = await _request(uri, cancel);
     } catch (error) {
       if (cancel?.isCancelled == true || (error is DioException && CancelToken.isCancel(error))) {
         throw const SeventeenLiveException(SeventeenLiveFailure.cancelled);
@@ -170,18 +267,21 @@ class SeventeenLiveApi {
     };
     if (failure != null) throw SeventeenLiveException(failure);
     if (response.body.length > responseLimit) throw const SeventeenLiveException(SeventeenLiveFailure.schema);
-    try {
-      return _room(roomId, _object(jsonDecode(response.body)));
-    } on FormatException {
-      throw const SeventeenLiveException(SeventeenLiveFailure.schema);
-    }
+    return response.body;
   }
 
-  static SeventeenLiveRoom _room(String requestedRoomId, Map<String, dynamic> data) {
+  static SeventeenLiveRoom _room(
+    String requestedRoomId,
+    Map<String, dynamic> data, {
+    bool requireOwnerRoomId = true,
+    bool includeStreams = true,
+  }) {
     final responseRoomId = _positiveInt(data['liveStreamID']).toString();
     final user = _object(data['userInfo']);
-    final ownerRoomId = _positiveInt(user['roomID']).toString();
-    if (responseRoomId != requestedRoomId || ownerRoomId != requestedRoomId) {
+    final ownerRoomId = user['roomID'] == null ? null : _positiveInt(user['roomID']).toString();
+    if (responseRoomId != requestedRoomId ||
+        (requireOwnerRoomId && ownerRoomId != requestedRoomId) ||
+        (ownerRoomId != null && ownerRoomId != requestedRoomId)) {
       throw const SeventeenLiveException(SeventeenLiveFailure.identity);
     }
     final userId = _text(data['userID']);
@@ -194,7 +294,7 @@ class SeventeenLiveApi {
     };
     final nickname = _firstText([user['displayName'], user['openID']]);
     final title = _optionalText(data['caption']);
-    final streams = state == SeventeenLiveState.live ? _streams(data) : const <SeventeenLiveStream>[];
+    final streams = includeStreams && state == SeventeenLiveState.live ? _streams(data) : const <SeventeenLiveStream>[];
     return SeventeenLiveRoom(
       roomId: requestedRoomId,
       userId: userId,

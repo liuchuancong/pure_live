@@ -15,7 +15,7 @@
 ### 09-09 及更早阶段的取证快照
 
 OPENREC / mellow-fan 已接入复合频道身份、公开目录与 HLS 质量；当前源码补精确频道查询，2026-09-23 本机公共接口 CloudFront 403，现网整链可达性与原生验收仍有缺口，见[应用审计](OPENREC_APPLICATION_INTEGRATION_AUDIT_2026_09_09.md)和[精确查询及访问记录](OPENREC_EXACT_CHANNEL_SEARCH_AUDIT_2026_09_23.md)。TTingLive / FLEX TV 已接入有限首页目录、精确频道查询及按源 token 策略；应用回归 201/201，最新生产注册适配器与 24 份 HLS 列表链路通过，后续 Windows 原生短录两次采集目标失败；保留片段的合并/完整解码通过，但起始延迟及音视频时间覆盖仍待修，完整录制未通过，见[应用审计](TTING_APPLICATION_INTEGRATION_AUDIT_2026_09_09.md)、[生产链路审计](TTING_PRODUCTION_RELAY_AUDIT_2026_09_09.md)及[原生短录审计](TTING_NATIVE_RECORDING_AUDIT_2026_09_09.md)。
-克拉克拉与花椒已接入公开目录、UID 收藏及播放/录制解析；两者现补精确主播号/官方主页查询，弹幕与 Android/Windows 原生验收仍待完成，见[克拉克拉应用审计](KILAKILA_APPLICATION_INTEGRATION_AUDIT_2026_09_08.md)、[萌星目录修订](KILAKILA_RISING_STAR_AUDIT_2026_09_08.md)、[克拉克拉精确查询](KILAKILA_EXACT_UID_SEARCH_AUDIT_2026_09_23.md)、[花椒应用审计](HUAJIAO_APPLICATION_INTEGRATION_AUDIT_2026_09_08.md)及[花椒精确查询](HUAJIAO_EXACT_UID_SEARCH_AUDIT_2026_09_23.md)。花椒空页仍有 more 时沿原生游标有界继续，游标按页面和刷新批次隔离，不用结果条数代替结束信号。
+克拉克拉与花椒已接入公开目录、UID 收藏及播放/录制解析；克拉克拉现补精确主播号/官方主页及[官网主播关键词搜索](KILAKILA_NATIVE_KEYWORD_SEARCH_AUDIT_2026_09_23.md)，花椒现补精确主播号/官方主页查询。弹幕与 Android/Windows 原生验收仍待完成，见[克拉克拉应用审计](KILAKILA_APPLICATION_INTEGRATION_AUDIT_2026_09_08.md)、[萌星目录修订](KILAKILA_RISING_STAR_AUDIT_2026_09_08.md)、[克拉克拉精确查询](KILAKILA_EXACT_UID_SEARCH_AUDIT_2026_09_23.md)、[花椒应用审计](HUAJIAO_APPLICATION_INTEGRATION_AUDIT_2026_09_08.md)及[花椒精确查询](HUAJIAO_EXACT_UID_SEARCH_AUDIT_2026_09_23.md)。花椒空页仍有 more 时沿原生游标有界继续，游标按页面和刷新批次隔离，不用结果条数代替结束信号。
 当前 [Android 候选 bee143e2](OPENREC_PICARTO_ANDROID_CANDIDATE_2026_09_09.md) 已包含克拉克拉、花椒、OPENREC 和 Picarto 响应收尾修订；完整门禁/打包通过，尚未安装，后续 TTing 和源策略输入链未入包。Windows f3de664a 未随本批更新，原生能力证据仍按各平台分列。
 猫耳和映客已应用接入；猫耳 Windows 原生短录有独立证据，映客已有公开接口和生产地址解析，并补齐精确 UID/官网链接查询及公开精选昵称筛选，见[映客应用审计](INKE_APPLICATION_INTEGRATION_AUDIT_2026_09_08.md)与[精确查询记录](INKE_EXACT_UID_SEARCH_AUDIT_2026_09_23.md)。昵称筛选只覆盖当前有限精选，不代表全站主播索引。
 Picarto 已进入 Android 候选并取得部分原生证据，见 [接入审计](PICARTO_ADAPTER_AUDIT_2026_09_07.md)及[停止/清理补证](ANDROID_PROXY_OCCLUSION_AUDIT_2026_09_07.md)。当前源码新增官网动态直播分类与原生分类分页、主播档案原生搜索，见[分类专项记录](PICARTO_NATIVE_CATEGORY_AUDIT_2026_09_23.md)与[搜索专项记录](PICARTO_PROFILE_SEARCH_AUDIT_2026_09_23.md)；这些更新尚未进入原生候选。
@@ -46,7 +46,7 @@ TwitCasting 新增公开目录、顶栏分类、详情/HLS三档、录制输入�
 | TwitCasting | 官网顶栏分类与最多60条公开热门窗口；页面缓存后本地分页 | 官网当前直播关键词搜索，最多50条公开窗口本地分页；精确频道根链接可返回未开播频道；网页搜索保留，movie/archive不映射当前直播 | 当前未接入，页面明确说明 | 目录 `current_viewer_count` 为在线；搜索页未给并发人数时保持未知 |
 | 猫耳 FM | 官网 catalog/tag 分类与原生推荐分页 | 官网直播间关键词原生分页，含未开播；精确房间号与 `fm.missevan.com/live/{id}` 官网链接保留 | 当前未接入 | `score` 为热度，详情粉丝分列；不以零值冒充当前在线 |
 | 映客 | 官网有限精选及服务端频道，页面持续说明非全站列表 | 精确映客 UID 或官网房间链接，含未开播；当前公开精选可按昵称本地筛选及分页，不代表全站搜索；无网页搜索入口 | 当前未接入 | 未取得人数，保持未知；主播等级不作观众数 |
-| 克拉克拉 | 官方热门/萌星，type 0/107 原生分页 | 精确主播 UID 或官方主播主页，未公布当前场次时状态未知；昵称/关键词尚未接入 | 当前未接入 | `watchNumber` 未证实为并发人数，保持未知 |
+| 克拉克拉 | 官方热门/萌星，type 0/107 原生分页 | 官网用户关键词原生分页，含无当前场次的主播；精确主播 UID、官方主播主页与 `/zhubo/{uid}` 搜索链接回流；搜索卡缺直播状态时保持未知，详情再查询 | 当前未接入 | `watchNumber` 未证实为并发人数，保持未知 |
 | 花椒 | 官方 H5 公开视频推荐，保留原生游标 | 精确花椒号或官方主播主页，含未开播主播；昵称/关键词尚未接入，无虚构网页搜索入口 | 当前未接入 | `current_heat` 为热度，不作在线人数；主播资料缺观看人数时保持未知 |
 | OPENREC / mellow-fan | 公开广播列表，频道聚合与多场歧义提示 | 精确频道 ID/官方频道根链接，含未开播；昵称/关键词尚未接入，当前生产接口 403 待复核 | 当前未接入 | 公开并发人数；隐藏或多场歧义时保持未知 |
 | TTingLive / FLEX TV | 有限首页公开直播快照，不宣称全站分类 | 精确频道号或频道直播链接，含未开播；不支持昵称/关键词 | 当前未接入 | 主目录 `playerCount`；详情和收藏刷新缺值时保持未知 |
@@ -56,7 +56,7 @@ TwitCasting 新增公开目录、顶栏分类、详情/HLS三档、录制输入�
 | SHOWROOM | 官网公开 onlives 快照与原生分类 | 同一直播快照内的直播关键词分页；直播间链接可查询未开播状态 | 当前未接入 | `view_num` 作为本场累计观看，不当作并发在线人数 |
 | CHZZK | 官方公开热门直播游标目录 | 原生频道搜索，包含开播和未开播频道 | 当前未接入 | `cvExposure=true` 时展示 `concurrentUserCount` 并发人数，否则保持未知 |
 | Kick | 官方公开直播分页 | 原生有界搜索，直播匹配和未开播频道合并去重 | 当前未接入 | `show_view_count=false` 时保持未知，其他公开 `viewer_count` 作为并发人数 |
-| 17LIVE | 首阶段保持范围说明；官网当前目录为个性化动态推荐 | 精确房间号及官方直播间/主播主页链接，包含未开播状态；昵称搜索待接入 | 当前未接入 | `liveViewerCount` 为当前观看，`viewerCount` 为本场累计观看，分别展示 |
+| 17LIVE | 官网日本区公开推荐 sections，保留原生游标；只展示已核验当前直播，不宣称全站目录 | 官网当前直播关键词有限窗口，不含未开播昵称；精确房间号及官方直播间/主播主页链接仍可返回未开播状态 | 当前未接入 | `liveViewerCount` 为当前观看，`viewerCount` 为本场累计观看，分别展示 |
 | LiveMe | 官网公开热门目录，保留原生分页 | 原生主播关键词分页，包含未开播主播；直播间、主播主页和旧场次链接可回流为稳定短号 | 当前未接入 | `heat` 为平台热度、`playnumber` 为当前观看、`watchnumber` 为本场累计观看，三者分列 |
 | TikTok LIVE | 游客推荐目录依赖网页会话，当前页面保留明确范围说明 | 精确账号、@账号、官方主页/直播间/直播分享链接；可返回未开播账号 | 当前未接入 | `liveRoomStats.userCount` 为当前观看，`enterCount` 为累计进房，分别展示 |
 | YouTube Live | 首阶段保持范围说明；公开推荐目录依赖动态网页会话 | 精确视频 ID、观看/直播/短链/嵌入链接，以及频道或 `@handle` 的当前直播发现 | 当前未接入 | 仅使用直播页专用并发观看字段；普通 `viewCount` 不作当前在线人数 |

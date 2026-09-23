@@ -14,7 +14,7 @@ import 'seventeenlive_link.dart';
 
 class SeventeenLiveSite extends LiveSite
     implements
-        LiveSiteDirectoryPager,
+        LiveSiteCursorDirectoryPager,
         LiveDirectoryNotice,
         LiveCancellableSearch,
         LiveSiteRoomRefresher,
@@ -38,16 +38,43 @@ class SeventeenLiveSite extends LiveSite
   LiveDanmaku getDanmaku() => EmptyDanmaku();
 
   @override
+  Future<LiveDirectoryPage> getDirectoryPageAtCursor({
+    required int page,
+    String? cursor,
+    LiveArea? category,
+    CancelToken? cancel,
+  }) async {
+    if (page < 1 || (page == 1 && cursor != null) || (page > 1 && cursor == null) || category != null) {
+      throw const SeventeenLiveException(SeventeenLiveFailure.schema);
+    }
+    final result = await _api.directory(cursor: cursor, cancel: cancel);
+    return LiveDirectoryPage(
+      page: page,
+      rooms: result.rooms.map((room) => _card(room, includeMedia: false)),
+      hasMore: result.hasMore,
+      nextCursor: result.nextCursor,
+    );
+  }
+
+  /// Compatibility callers replay a short prefix; catalogue controllers use
+  /// the cursor contract directly and own their refresh generation.
+  @override
   Future<LiveDirectoryPage> getDirectoryPage({int page = 1, LiveArea? category, CancelToken? cancel}) async {
-    if (cancel?.isCancelled == true) throw const SeventeenLiveException(SeventeenLiveFailure.cancelled);
-    if (page < 1 || category != null) throw const SeventeenLiveException(SeventeenLiveFailure.schema);
-    return LiveDirectoryPage(page: page, hasMore: false, rooms: const []);
+    if (page < 1 || page > 20) throw const SeventeenLiveException(SeventeenLiveFailure.schema);
+    String? cursor;
+    for (var current = 1; current <= page; current++) {
+      final result = await getDirectoryPageAtCursor(page: current, cursor: cursor, category: category, cancel: cancel);
+      if (current == page) return result;
+      if (!result.hasMore) return LiveDirectoryPage(page: page, hasMore: false, rooms: const []);
+      cursor = result.nextCursor;
+    }
+    throw const SeventeenLiveException(SeventeenLiveFailure.schema);
   }
 
   @override
   Future<List<LiveRoom>> getRecommendRooms({int page = 1, int pageSize = 30}) async {
     if (pageSize < 1) throw const SeventeenLiveException(SeventeenLiveFailure.schema);
-    return (await getDirectoryPage(page: page)).rooms;
+    return (await getDirectoryPage(page: page)).rooms.take(pageSize).toList(growable: false);
   }
 
   LiveRoom _card(SeventeenLiveRoom room, {required bool includeMedia}) => LiveRoom(
@@ -125,13 +152,18 @@ class SeventeenLiveSite extends LiveSite
   }) async {
     if (page != 1 || pageSize < 1) return [];
     final roomId = SeventeenLiveLink.parseOrId(keyword);
-    if (roomId == null) return [];
-    try {
-      return [_card(await _api.room(roomId, cancel: cancel), includeMedia: false)];
-    } on SeventeenLiveException catch (error) {
-      if (error.kind == SeventeenLiveFailure.missing) return [];
-      rethrow;
+    if (roomId != null) {
+      try {
+        return [_card(await _api.room(roomId, cancel: cancel), includeMedia: false)];
+      } on SeventeenLiveException catch (error) {
+        if (error.kind == SeventeenLiveFailure.missing) return [];
+        rethrow;
+      }
     }
+    final query = keyword.trim();
+    if (query.isEmpty || query.length > 100 || Uri.tryParse(query)?.hasScheme == true) return [];
+    final rooms = await _api.searchCurrentLive(query, cancel: cancel);
+    return rooms.take(pageSize).map((room) => _card(room, includeMedia: false)).toList(growable: false);
   }
 
   SeventeenLiveRoom _snapshot(LiveRoom detail) {

@@ -115,9 +115,10 @@ void main() {
     expect(Sites.supportSites.map((s) => s.id).toSet(), Sites.supportedSiteIds);
     expect(Sites.supportSites.where((s) => s.id == 'kilakila'), hasLength(1));
     expect(LiveRoom.audienceCapabilityFor('kilakila').supportsConcurrentOnline, isFalse);
-    expect(LiveSearchCapabilities.forPlatform('kilakila').coverage, NativeSearchCoverage.channelLookup);
+    expect(LiveSearchCapabilities.forPlatform('kilakila').coverage, NativeSearchCoverage.liveAndOffline);
     expect(LiveSearchCapabilities.forPlatform('kilakila').supportsNativeSearch, isTrue);
-    expect(LiveSearchCapabilities.forPlatform('kilakila').supportsWebSearch, isFalse);
+    expect(LiveSearchCapabilities.forPlatform('kilakila').supportsPagination, isTrue);
+    expect(LiveSearchCapabilities.forPlatform('kilakila').supportsWebSearch, isTrue);
     expect(Sites.of('kilakila').liveSite, isA<LiveCancellableSearch>());
     expect(MultiviewDanmakuSession.isSupportedPlatform('kilakila'), isFalse);
     final controller = _Controller(KilakilaSite(api: api()));
@@ -236,15 +237,39 @@ void main() {
     expect(room.watching, isEmpty);
     expect(calls.map((uri) => uri.path), ['/Tg/personalH5']);
   });
-  test('unsupported terms, broadcast links and later pages send no owner request', () async {
+  test('official keyword page returns paged broadcaster profiles without media requests', () async {
+    final calls = <Uri>[];
+    final source = KilakilaSite(
+      api: KilakilaApi(
+        request: (uri, _) async {
+          calls.add(uri);
+          expect(uri.pathSegments.take(4), ['aboutus', 'serach', 'kw', '音乐']);
+          return (
+            status: 200,
+            body:
+                '<html><div class="userList">'
+                '<a href="/zhubo/100"><div class="anchorInfo">'
+                '<div class="anchorHeaderImg"><img src="https://img.example/100.png"></div>'
+                '<div class="anchor-name">音乐主播</div></div></a>'
+                '<a href="/zhubo/101"><div class="anchorInfo">'
+                '<div class="anchor-name">音乐电台</div></div></a>'
+                '</div></html>',
+          );
+        },
+      ),
+    );
+    final firstPage = await source.searchRooms('音乐', page: 1);
+    expect(firstPage.map((room) => room.roomId), ['100', '101']);
+    expect(firstPage.map((room) => room.nick), ['音乐主播', '音乐电台']);
+    expect(firstPage.every((room) => room.effectiveLiveStatus == LiveStatus.unknown && room.data == null), isTrue);
+    expect(calls.single.pathSegments, ['aboutus', 'serach', 'kw', '音乐']);
+    await source.searchRooms('音乐', page: 2);
+    expect(calls.last.pathSegments, ['aboutus', 'serach', 'kw', '音乐', 'p', '2']);
+  });
+  test('invalid IDs, broadcast links and later exact pages send no owner request', () async {
     final calls = <Uri>[];
     final source = KilakilaSite(api: api(called: calls.add));
-    for (final query in [
-      'Fixture',
-      '00100',
-      '${KilakilaApi.origin}/room/$first',
-      'https://evil.test/index/roomuser/uid/100',
-    ]) {
+    for (final query in ['00100', '${KilakilaApi.origin}/room/$first', 'https://evil.test/index/roomuser/uid/100']) {
       expect(await source.searchRooms(query), isEmpty);
     }
     expect(await source.searchRooms(uid, page: 2), isEmpty);
@@ -372,6 +397,9 @@ void main() {
     final owner = KilakilaSite.ownerUrl(uid);
     expect(WebSearchRoomParser.parse(owner)?.key, 'kilakila:$uid');
     expect(await LiveUrlTool.parseLiveUrl(owner, kilakilaApi: source), [uid, 'kilakila']);
+    final searchProfile = '${KilakilaApi.origin}/zhubo/$uid';
+    expect(WebSearchRoomParser.parse(searchProfile)?.key, 'kilakila:$uid');
+    expect(await LiveUrlTool.parseLiveUrl(searchProfile, kilakilaApi: source), [uid, 'kilakila']);
     expect(calls, hasLength(2));
     for (final bad in [
       broadcast.replaceFirst('/room/', '/%72oom/'),

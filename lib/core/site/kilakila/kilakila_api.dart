@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
+import 'package:html/parser.dart' as html;
 import 'package:pure_live/core/common/http_client.dart';
 import 'package:pure_live/core/common/request_scope.dart';
 
@@ -152,7 +153,7 @@ class KilakilaApi {
     return result;
   }
 
-  Future<Map<String, dynamic>> _json(Uri uri, CancelToken? cancel) async {
+  Future<String> _fetch(Uri uri, CancelToken? cancel) async {
     if (cancel?.isCancelled == true) throw const KilakilaException(KilakilaFailure.cancelled);
     late final ({int status, String body}) response;
     try {
@@ -175,11 +176,61 @@ class KilakilaApi {
     if (response.body.length > responseLimit || utf8.encode(response.body).length > responseLimit) {
       throw const KilakilaException(KilakilaFailure.schema);
     }
+    return response.body;
+  }
+
+  Future<Map<String, dynamic>> _json(Uri uri, CancelToken? cancel) async {
     try {
-      return _object(jsonDecode(response.body));
+      return _object(jsonDecode(await _fetch(uri, cancel)));
     } on FormatException {
       throw const KilakilaException(KilakilaFailure.schema);
     }
+  }
+
+  /// Official website user search. Pages are server-sized; profile cards do
+  /// not disclose the current broadcast state, so callers keep it unknown.
+  Future<List<KilakilaOwnerSnapshot>> searchOwners(
+    String keyword, {
+    int page = 1,
+    int pageSize = 20,
+    CancelToken? cancel,
+  }) async {
+    final query = keyword.trim();
+    if (page < 1 || page > 10000 || pageSize < 1 || pageSize > 100 || query.length > 100) {
+      throw const KilakilaException(KilakilaFailure.schema);
+    }
+    if (query.isEmpty) return const [];
+    final uri = Uri(
+      scheme: 'https',
+      host: 'live.kilakila.cn',
+      pathSegments: [
+        'aboutus',
+        'serach',
+        'kw',
+        query,
+        if (page > 1) ...['p', '$page'],
+      ],
+    );
+    final document = html.parse(await _fetch(uri, cancel));
+    final list = document.querySelector('.userList');
+    if (list == null || list.children.length > 100) throw const KilakilaException(KilakilaFailure.schema);
+    final profiles = <String, KilakilaOwnerSnapshot>{};
+    for (final anchor in list.children.where((element) => element.localName == 'a')) {
+      final path = anchor.attributes['href'] ?? '';
+      final match = RegExp(r'^/zhubo/([1-9][0-9]{0,31})$').firstMatch(path);
+      final nick = anchor.querySelector('.anchor-name')?.text.trim() ?? '';
+      if (match == null || nick.isEmpty) throw const KilakilaException(KilakilaFailure.schema);
+      final uid = id(match.group(1)!);
+      profiles.putIfAbsent(
+        uid,
+        () => KilakilaOwnerSnapshot(
+          userId: uid,
+          nick: nick,
+          avatar: _picture(anchor.querySelector('.anchorHeaderImg img')?.attributes['src']),
+        ),
+      );
+    }
+    return List.unmodifiable(profiles.values);
   }
 
   static void _businessCode(Object? value, {bool roomDetail = false}) {

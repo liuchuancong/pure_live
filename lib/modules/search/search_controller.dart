@@ -114,7 +114,7 @@ class SearchController extends GetxController {
       case Sites.huajiaoSite:
         throw StateError('Huajiao search is not integrated');
       case Sites.kilakilaSite:
-        throw StateError('Kilakila search is not integrated');
+        return 'https://live.kilakila.cn/aboutus/serach/kw/$q';
       case Sites.inkeSite:
         throw StateError('Inke supports exact UID lookup, not web keyword search');
       case Sites.missevanSite:

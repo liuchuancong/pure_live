@@ -61,6 +61,46 @@ Map<String, dynamic> _body(Object? b, {int code = 200}) => {
 Matcher _failure(KilakilaFailure kind) => throwsA(isA<KilakilaException>().having((e) => e.kind, 'kind', kind));
 
 void main() {
+  test('official user search parses stable profile IDs and safely encodes page paths', () async {
+    final calls = <Uri>[];
+    final api = KilakilaApi(
+      request: (uri, _) async {
+        calls.add(uri);
+        return (
+          status: 200,
+          body:
+              '<html><div class="userList">'
+              '<a href="/zhubo/100"><div class="anchor-name">音乐主播</div>'
+              '<div class="anchorHeaderImg"><img src="https://img.example/avatar.png"></div></a>'
+              '<a href="/zhubo/100"><div class="anchor-name">音乐主播</div></a>'
+              '<a href="/zhubo/101"><div class="anchor-name">音乐电台</div></a>'
+              '</div></html>',
+        );
+      },
+    );
+    final owners = await api.searchOwners(' 音乐/ASMR ', page: 2);
+    expect(calls.single.pathSegments, ['aboutus', 'serach', 'kw', '音乐/ASMR', 'p', '2']);
+    expect(owners.map((owner) => owner.userId), ['100', '101']);
+    expect(owners.first.nick, '音乐主播');
+    expect(owners.first.avatar, 'https://img.example/avatar.png');
+    expect(owners.first.currentRoom, isNull);
+    expect(() => owners.add(owners.first), throwsUnsupportedError);
+  });
+
+  test('empty user search differs from malformed profile markup and cancellation', () async {
+    final empty = KilakilaApi(request: (_, _) async => (status: 200, body: '<div class="userList"></div>'));
+    expect(await empty.searchOwners('missing'), isEmpty);
+    final malformed = KilakilaApi(
+      request: (_, _) async =>
+          (status: 200, body: '<div class="userList"><a href="https://evil.test/zhubo/1">x</a></div>'),
+    );
+    await expectLater(malformed.searchOwners('keyword'), _failure(KilakilaFailure.schema));
+    final cancelled = KilakilaApi(request: (_, _) async => throw StateError('unexpected request'));
+    await expectLater(
+      cancelled.searchOwners('keyword', cancel: CancelToken()..cancel('fixture')),
+      _failure(KilakilaFailure.cancelled),
+    );
+  });
   test('numeric room links preserve large string IDs, not owner IDs or opaque payloads', () {
     for (final host in ['live.kilakila.cn', 'www.hongdoufm.com']) {
       expect(KilakilaApi.numericRoomFromUri(Uri.parse('https://$host/room/$_rid')), _rid);

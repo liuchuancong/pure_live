@@ -21,7 +21,8 @@ class KilakilaSite extends LiveSite
         LiveSiteRoomRefresher,
         LiveSiteRecordRoomResolver,
         LivePlayRecoveryResolver,
-        LiveCancellableSearch {
+        LiveCancellableSearch,
+        LiveSearchPaginationPolicy {
   KilakilaSite({KilakilaApi? api}) : _api = api ?? KilakilaApi();
   final KilakilaApi _api;
   @override
@@ -56,6 +57,20 @@ class KilakilaSite extends LiveSite
             for (final entry in snapshot.media.entries)
               LivePlayQuality(id: entry.key, quality: entry.key.toUpperCase(), data: <String>[entry.value]),
           ],
+  );
+
+  static LiveRoom _profileRoom(KilakilaOwnerSnapshot owner) => LiveRoom(
+    platform: 'kilakila',
+    roomId: owner.userId,
+    userId: owner.userId,
+    title: owner.nick,
+    nick: owner.nick,
+    avatar: owner.avatar,
+    link: ownerUrl(owner.userId),
+    watching: '',
+    audienceMetricType: AudienceMetricType.unknown,
+    status: null,
+    liveStatus: LiveStatus.unknown,
   );
 
   int _type(LiveArea? category) {
@@ -114,6 +129,19 @@ class KilakilaSite extends LiveSite
   Future<List<LiveRoom>> searchRooms(String keyword, {int page = 1, int pageSize = 30}) =>
       searchRoomsCancellable(keyword, page: page, pageSize: pageSize);
 
+  static KilakilaLink? _searchLink(String input) => RegExp(r'^[1-9][0-9]{0,31}$').hasMatch(input)
+      ? KilakilaLink(KilakilaLinkKind.owner, input)
+      : KilakilaLink.parse(input);
+
+  @override
+  bool supportsSearchPaginationFor(String keyword) {
+    final input = keyword.trim();
+    return input.isNotEmpty &&
+        _searchLink(input) == null &&
+        !RegExp(r'^[0-9]+$').hasMatch(input) &&
+        Uri.tryParse(input)?.hasScheme != true;
+  }
+
   @override
   Future<List<LiveRoom>> searchRoomsCancellable(
     String keyword, {
@@ -122,30 +150,21 @@ class KilakilaSite extends LiveSite
     CancelToken? cancel,
   }) async {
     if (page < 1 || pageSize < 1) throw const KilakilaException(KilakilaFailure.schema);
-    if (page > 1) return const [];
     final input = keyword.trim();
-    final link = RegExp(r'^[1-9][0-9]{0,31}$').hasMatch(input)
-        ? KilakilaLink(KilakilaLinkKind.owner, input)
-        : KilakilaLink.parse(input);
-    if (link == null || link.kind != KilakilaLinkKind.owner) return const [];
+    final link = _searchLink(input);
+    if (link == null) {
+      if (!supportsSearchPaginationFor(input)) return const [];
+      return List.unmodifiable([
+        for (final owner in await _api.searchOwners(input, page: page, pageSize: pageSize, cancel: cancel))
+          _profileRoom(owner),
+      ]);
+    }
+    if (link.kind != KilakilaLinkKind.owner || page > 1) return const [];
     try {
       final owner = await _api.owner(link.id, cancel: cancel);
       final current = owner.currentRoom;
       if (current != null) return [_room(current)];
-      return [
-        LiveRoom(
-          platform: id,
-          roomId: owner.userId,
-          userId: owner.userId,
-          nick: owner.nick,
-          avatar: owner.avatar,
-          link: ownerUrl(owner.userId),
-          watching: '',
-          audienceMetricType: AudienceMetricType.unknown,
-          status: null,
-          liveStatus: LiveStatus.unknown,
-        ),
-      ];
+      return [_profileRoom(owner)];
     } on KilakilaException catch (error) {
       if (error.kind == KilakilaFailure.notFound) return const [];
       rethrow;

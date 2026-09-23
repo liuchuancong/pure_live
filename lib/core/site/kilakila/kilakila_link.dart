@@ -46,11 +46,13 @@ class KilakilaLink {
     try {
       final query = uri.queryParametersAll;
       if (query.values.any((v) => v.length != 1)) return null;
-      final pathPrefix = ownerHost ? '/index/roomuser/uid/' : '/room/';
+      final publicOwnerPath = roomHost && rawPath.startsWith('/zhubo/');
+      if (publicOwnerPath && uri.hasQuery) return null;
+      final pathPrefix = ownerHost ? '/index/roomuser/uid/' : (publicOwnerPath ? '/zhubo/' : '/room/');
       final isPath = rawPath.startsWith(pathPrefix);
       final isDetail = roomHost && {'/PcLive/index/detail', '/PcLive/index/detail/'}.contains(rawPath);
       if (!isPath && !isDetail) return null;
-      final kind = ownerHost ? KilakilaLinkKind.owner : KilakilaLinkKind.broadcast;
+      final kind = ownerHost || publicOwnerPath ? KilakilaLinkKind.owner : KilakilaLinkKind.broadcast;
       String payload;
       if (isPath) {
         if (query.containsKey('id') || query.containsKey('uid') || query.containsKey('_specific_parameter')) {
