@@ -1,17 +1,18 @@
-import 'dart:convert';
-import 'dart:async';
 import 'dart:io';
+import 'dart:async';
+import 'dart:convert';
 
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as path;
-import 'package:pure_live/common/widgets/download_apk_dialog.dart';
 import 'package:pure_live/get/get.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:pure_live/common/widgets/download_apk_dialog.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
   late Directory downloadDirectory;
 
   setUpAll(() async {
@@ -22,30 +23,39 @@ void main() {
   setUp(() async {
     Get.testMode = true;
     Get.reset();
+
     downloadDirectory = await Directory.systemTemp.createTemp('pure-live-download-dialog-test-');
   });
 
   tearDown(() {
     Get.reset();
-    if (downloadDirectory.existsSync()) downloadDirectory.deleteSync(recursive: true);
+
+    if (downloadDirectory.existsSync()) {
+      downloadDirectory.deleteSync(recursive: true);
+    }
   });
 
   test('download file names stay inside the managed directory', () {
     expect(safeDownloadFileName('https://example.test/releases/PureLive.apk?token=fixture'), 'PureLive.apk');
+
     expect(
       safeDownloadFileName('https://example.test/releases/app.apk', suggestedName: '../../outside.apk'),
       'outside.apk',
     );
+
     expect(safeDownloadFileName('https://example.test/releases/%2e%2e%2fescape.apk'), 'escape.apk');
+
     expect(safeDownloadFileName('https://example.test/'), 'PureLive-download');
   });
 
   test('long Unicode download names fit staging limits and remain collision resistant', () {
     final sharedPrefix = List.filled(80, '直播更新包').join();
+
     final first = safeDownloadFileName(
       'https://example.test/releases/app.apk',
       suggestedName: '$sharedPrefix-first.apk',
     );
+
     final second = safeDownloadFileName(
       'https://example.test/releases/app.apk',
       suggestedName: '$sharedPrefix-second.apk',
@@ -54,7 +64,9 @@ void main() {
     expect(first, endsWith('.apk'));
     expect(second, endsWith('.apk'));
     expect(first, isNot(second));
+
     expect(utf8.encode('$first.previous'), hasLength(lessThanOrEqualTo(255)));
+
     expect(utf8.encode('$second.previous'), hasLength(lessThanOrEqualTo(255)));
   });
 
@@ -65,60 +77,138 @@ void main() {
     );
 
     expect(utf8.decode(utf8.encode(result)), result);
+
     expect(result, endsWith('.apk'));
   });
 
-  testWidgets('Android completion stages atomically and opens the downloaded file', (tester) async {
+  testWidgets('Android completion stages atomically and keeps the dialog open until install is requested', (
+    tester,
+  ) async {
     String? transferPath;
     String? openedPath;
+
     final dialog = DownloadApkDialog(
       apkUrl: 'https://example.test/PureLive.apk?token=fixture',
       fileName: '../../PureLive-fixture.apk',
       runtimePlatform: DownloadRuntimePlatform.android,
-      completionDelay: Duration.zero,
       downloadDirectoryProvider: () async => downloadDirectory,
       transfer: ({required url, required destinationPath, required cancelToken, required onProgress}) async {
         transferPath = destinationPath;
+
         File(destinationPath).writeAsStringSync('fixture-apk');
+
         onProgress(11, 11);
       },
       fileOpener: (filePath) async {
         openedPath = filePath;
+
         return const DownloadedFileOpenResult.opened();
       },
     );
 
     final expectedPath = path.join(downloadDirectory.path, 'PureLive-fixture.apk');
+
     File(expectedPath).writeAsStringSync('previous-apk');
 
     await _openDialog(tester, dialog);
+
     await _waitFor(tester, () => transferPath != null);
-    await _waitFor(tester, () => openedPath != null);
+
     await tester.pumpAndSettle();
 
     expect(transferPath, '$expectedPath.part');
-    expect(openedPath, expectedPath);
+
+    expect(openedPath, isNull);
+
     expect(File(expectedPath).readAsStringSync(), 'fixture-apk');
+
     expect(File('$expectedPath.part').existsSync(), isFalse);
+
     expect(File('$expectedPath.previous').existsSync(), isFalse);
+
+    expect(find.byType(DownloadApkDialog), findsOneWidget);
+
+    expect(find.byKey(const ValueKey('download-open-folder')), findsOneWidget);
+
+    expect(find.byKey(const ValueKey('download-install')), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('download-install')));
+
+    await _waitFor(tester, () => openedPath != null);
+
+    await tester.pumpAndSettle();
+
+    expect(openedPath, expectedPath);
+
     expect(find.byType(DownloadApkDialog), findsNothing);
   });
 
-  testWidgets('open failure keeps the completed file and offers an open retry', (tester) async {
+  testWidgets('open folder uses the completed file parent directory', (tester) async {
+    String? transferPath;
+    String? openedPath;
+
+    final dialog = DownloadApkDialog(
+      apkUrl: 'https://example.test/PureLive.apk',
+      fileName: 'PureLive-folder-test.apk',
+      runtimePlatform: DownloadRuntimePlatform.android,
+      downloadDirectoryProvider: () async => downloadDirectory,
+      transfer: ({required url, required destinationPath, required cancelToken, required onProgress}) async {
+        transferPath = destinationPath;
+
+        File(destinationPath).writeAsStringSync('fixture-apk');
+
+        onProgress(10, 10);
+      },
+      fileOpener: (filePath) async {
+        openedPath = filePath;
+
+        return const DownloadedFileOpenResult.opened();
+      },
+    );
+
+    await _openDialog(tester, dialog);
+
+    await _waitFor(tester, () => transferPath != null);
+
+    await tester.pumpAndSettle();
+
+    final expectedFilePath = path.join(downloadDirectory.path, 'PureLive-folder-test.apk');
+
+    final expectedDirectoryPath = downloadDirectory.path;
+
+    expect(File(expectedFilePath).existsSync(), isTrue);
+
+    expect(openedPath, isNull);
+
+    await tester.tap(find.byKey(const ValueKey('download-open-folder')));
+
+    await _waitFor(tester, () => openedPath != null);
+
+    await tester.pumpAndSettle();
+
+    expect(openedPath, expectedDirectoryPath);
+
+    expect(find.byType(DownloadApkDialog), findsOneWidget);
+  });
+
+  testWidgets('open failure keeps the completed file and offers an install retry', (tester) async {
     var transferCalls = 0;
     var openCalls = 0;
+
     final dialog = DownloadApkDialog(
       apkUrl: 'https://example.test/PureLive-portable.zip',
       runtimePlatform: DownloadRuntimePlatform.desktop,
-      completionDelay: Duration.zero,
       downloadDirectoryProvider: () async => downloadDirectory,
       transfer: ({required url, required destinationPath, required cancelToken, required onProgress}) async {
         transferCalls++;
+
         File(destinationPath).writeAsStringSync('fixture-zip');
+
         onProgress(5, 5);
       },
       fileOpener: (filePath) async {
         openCalls++;
+
         return openCalls == 1
             ? const DownloadedFileOpenResult.failed('fixture shell error')
             : const DownloadedFileOpenResult.opened();
@@ -126,80 +216,123 @@ void main() {
     );
 
     await _openDialog(tester, dialog, size: const Size(320, 480), textScale: 3);
-    await _waitFor(tester, () => transferCalls == 1);
-    await _waitFor(tester, () => openCalls == 1);
-    await tester.pump(const Duration(milliseconds: 500));
 
-    expect(find.text('The file was downloaded. Opening it failed: fixture shell error'), findsOneWidget);
-    final retry = find.byKey(const ValueKey('download-open-again'));
+    await _waitFor(tester, () => transferCalls == 1);
+
+    await tester.pumpAndSettle();
+
+    expect(openCalls, 0);
+
+    expect(find.text('Download complete'), findsOneWidget);
+
+    final install = find.byKey(const ValueKey('download-install'));
+
     final scroll = find
         .descendant(of: find.byKey(const ValueKey('download-dialog-scroll')), matching: find.byType(Scrollable))
         .first;
-    await tester.scrollUntilVisible(retry, -100, scrollable: scroll, maxScrolls: 10);
+
+    await tester.scrollUntilVisible(install, -100, scrollable: scroll, maxScrolls: 10);
+
     await tester.pump(const Duration(milliseconds: 300));
-    expect(retry.hitTestable(), findsOneWidget);
+
+    expect(install.hitTestable(), findsOneWidget);
+
     expect(File(path.join(downloadDirectory.path, 'PureLive-portable.zip')).existsSync(), isTrue);
 
+    await tester.tap(install);
+
+    await _waitFor(tester, () => openCalls == 1);
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('The file was downloaded. Opening it failed: fixture shell error'), findsOneWidget);
+
+    final retry = find.byKey(const ValueKey('download-open-again'));
+
+    expect(retry.hitTestable(), findsOneWidget);
+
     await tester.tap(retry);
+
     await _waitFor(tester, () => openCalls == 2);
+
     await tester.pumpAndSettle();
 
     expect(transferCalls, 1);
+
     expect(openCalls, 2);
+
     expect(find.byType(DownloadApkDialog), findsNothing);
   });
 
   testWidgets('cancel removes the staged partial file without opening it', (tester) async {
     final transferDone = Completer<void>();
     var openCalls = 0;
+
     final dialog = DownloadApkDialog(
       apkUrl: 'https://example.test/PureLive-cancel.apk',
-      completionDelay: Duration.zero,
       downloadDirectoryProvider: () async => downloadDirectory,
       transfer: ({required url, required destinationPath, required cancelToken, required onProgress}) {
         File(destinationPath).writeAsStringSync('partial-apk');
+
         cancelToken.whenCancel.then((_) {
-          if (!transferDone.isCompleted) transferDone.complete();
+          if (!transferDone.isCompleted) {
+            transferDone.complete();
+          }
         });
+
         return transferDone.future;
       },
       fileOpener: (filePath) async {
         openCalls++;
+
         return const DownloadedFileOpenResult.opened();
       },
     );
 
     await _openDialog(tester, dialog);
+
     final partialPath = path.join(downloadDirectory.path, 'PureLive-cancel.apk.part');
+
     await _waitFor(tester, () => File(partialPath).existsSync());
+
     await tester.tap(find.byKey(const ValueKey('download-cancel')));
+
     await _waitFor(tester, () => !File(partialPath).existsSync());
+
     await tester.pumpAndSettle();
 
     expect(openCalls, 0);
+
     expect(find.byType(DownloadApkDialog), findsNothing);
   });
 
   testWidgets('transfer failure removes the staged partial file', (tester) async {
     var transferFailed = false;
+
     final dialog = DownloadApkDialog(
       apkUrl: 'https://example.test/PureLive-failed.apk',
-      completionDelay: Duration.zero,
       downloadDirectoryProvider: () async => downloadDirectory,
       transfer: ({required url, required destinationPath, required cancelToken, required onProgress}) async {
         File(destinationPath).writeAsStringSync('partial-apk');
+
         transferFailed = true;
+
         throw StateError('fixture transfer failure');
       },
     );
 
     await _openDialog(tester, dialog);
+
     final partialPath = path.join(downloadDirectory.path, 'PureLive-failed.apk.part');
+
     await _waitFor(tester, () => transferFailed && !File(partialPath).existsSync());
+
     await tester.pumpAndSettle();
 
     expect(File(partialPath).existsSync(), isFalse);
+
     expect(File(path.join(downloadDirectory.path, 'PureLive-failed.apk')).existsSync(), isFalse);
+
     expect(find.byType(DownloadApkDialog), findsNothing);
   });
 
@@ -213,32 +346,47 @@ void main() {
     await _openDialog(tester, dialog, size: const Size(320, 480), textScale: 3);
 
     final cancel = find.byKey(const ValueKey('download-cancel'));
+
     final scroll = find
         .descendant(of: find.byKey(const ValueKey('download-dialog-scroll')), matching: find.byType(Scrollable))
         .first;
+
     await tester.scrollUntilVisible(cancel, -100, scrollable: scroll, maxScrolls: 10);
+
     await tester.pump(const Duration(milliseconds: 300));
+
     expect(cancel.hitTestable(), findsOneWidget);
+
     expect(tester.takeException(), isNull);
   });
 
   test('download completion source does not terminate the running desktop process', () {
     final source = File('lib/common/widgets/download_apk_dialog.dart').readAsStringSync();
+
     expect(source, isNot(contains('exit(0)')));
+
     expect(source, isNot(contains('setPreventClose(false)')));
   });
 
   test('download completion feedback is translated in both locales', () {
     final english = jsonDecode(File('assets/translations/en.json').readAsStringSync()) as Map<String, dynamic>;
+
     final chinese = jsonDecode(File('assets/translations/zh.json').readAsStringSync()) as Map<String, dynamic>;
+
     const keys = {
       'download_complete_opening',
+      'download_complete',
+      'download_opening_folder',
       'download_open_again',
       'download_open_failed',
       'download_open_failed_detail',
+      'open_folder',
+      'install',
     };
+
     for (final key in keys) {
       expect(english[key], isA<String>().having((value) => value.trim(), key, isNotEmpty));
+
       expect(chinese[key], isA<String>().having((value) => value.trim(), key, isNotEmpty));
     }
   });
@@ -247,8 +395,10 @@ void main() {
 Future<void> _waitFor(WidgetTester tester, bool Function() condition) async {
   for (var attempt = 0; attempt < 300 && !condition(); attempt++) {
     await tester.pump(const Duration(milliseconds: 10));
+
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 5)));
   }
+
   expect(condition(), isTrue);
 }
 
@@ -260,7 +410,9 @@ Future<void> _openDialog(
 }) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
+
   addTearDown(tester.view.resetPhysicalSize);
+
   addTearDown(tester.view.resetDevicePixelRatio);
 
   await tester.pumpWidget(
@@ -296,8 +448,11 @@ Future<void> _openDialog(
       ),
     ),
   );
+
   await tester.pumpAndSettle();
+
   await tester.tap(find.byKey(const ValueKey('show-download-dialog')));
+
   await tester.pump();
 }
 
@@ -308,15 +463,33 @@ class _Translations extends AssetLoader {
   Future<Map<String, dynamic>> load(String path, Locale locale) async => const {
     'cancel': 'Cancel',
     'close': 'Close',
+
+    'download_complete': 'Download complete',
+
+    'download_opening_folder': 'Opening download folder...',
+
     'download_complete_opening': 'Download complete. Opening file...',
+
     'download_failed': 'Download failed. Please try again.',
+
     'download_open_again': 'Open again',
+
     'download_open_failed': 'The file was downloaded, but opening failed.',
+
     'download_open_failed_detail': 'The file was downloaded. Opening it failed: {message}',
+
     'download_preparing': 'Preparing...',
+
     'downloaded_mb': 'Downloaded: {mb} MB',
+
     'downloading_app': 'Downloading {app}...',
+
     'downloading_version': 'Downloading v{version}...',
+
     'install_tip': 'Continue in the system installer.',
+
+    'open_folder': 'Open Folder',
+
+    'install': 'Install',
   };
 }

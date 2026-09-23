@@ -1,27 +1,30 @@
+import 'dart:io';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
-import 'dart:io';
 
-import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
-import 'package:open_filex/open_filex.dart';
+import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as path;
-import 'package:pure_live/common/global/app_path_manager.dart';
-import 'package:pure_live/common/global/platform_utils.dart';
+import 'package:open_filex/open_filex.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/file_utils.dart';
+import 'package:pure_live/common/global/platform_utils.dart';
+import 'package:pure_live/common/global/app_path_manager.dart';
 
 enum DownloadRuntimePlatform { android, desktop, other }
 
 typedef DownloadProgressCallback = void Function(int received, int total);
+
 typedef DownloadFileTransfer = Future<void> Function({
   required String url,
   required String destinationPath,
   required CancelToken cancelToken,
   required DownloadProgressCallback onProgress,
 });
+
 typedef DownloadDirectoryProvider = Future<Directory> Function();
+
 typedef DownloadFileOpener = Future<DownloadedFileOpenResult> Function(String filePath);
 
 const _maxDownloadBaseNameBytes = 240;
@@ -29,6 +32,7 @@ const _maxDownloadExtensionBytes = 32;
 
 class DownloadedFileOpenResult {
   const DownloadedFileOpenResult.opened() : isOpened = true, message = '';
+
   const DownloadedFileOpenResult.failed([this.message = '']) : isOpened = false;
 
   final bool isOpened;
@@ -37,25 +41,35 @@ class DownloadedFileOpenResult {
 
 String safeDownloadFileName(String url, {String? suggestedName}) {
   var candidate = suggestedName?.trim() ?? '';
+
   if (candidate.isEmpty) {
     try {
       final uri = Uri.parse(url.trim());
       final segments = uri.pathSegments.where((segment) => segment.trim().isNotEmpty).toList();
-      if (segments.isNotEmpty) candidate = segments.last;
+
+      if (segments.isNotEmpty) {
+        candidate = segments.last;
+      }
     } catch (_) {}
   }
 
   try {
     candidate = Uri.decodeComponent(candidate);
   } catch (_) {}
+
   candidate = candidate.replaceAll('\\', '/').split('/').last.trim();
+
   candidate = candidate
       .replaceAll(RegExp(r'[\x00-\x1F\x7F<>:"/\\|?*\u202A-\u202E\u2066-\u2069]'), '_')
       .replaceFirst(RegExp(r'^[. ]+'), '')
       .replaceFirst(RegExp(r'[. ]+$'), '');
+
   candidate = String.fromCharCodes(candidate.runes);
 
-  if (candidate.isEmpty || candidate == '.' || candidate == '..') candidate = 'PureLive-download';
+  if (candidate.isEmpty || candidate == '.' || candidate == '..') {
+    candidate = 'PureLive-download';
+  }
+
   if (RegExp(r'^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)', caseSensitive: false).hasMatch(candidate)) {
     candidate = '_$candidate';
   }
@@ -64,30 +78,50 @@ String safeDownloadFileName(String url, {String? suggestedName}) {
 }
 
 String _fitDownloadBaseName(String candidate) {
-  if (utf8.encode(candidate).length <= _maxDownloadBaseNameBytes) return candidate;
+  if (utf8.encode(candidate).length <= _maxDownloadBaseNameBytes) {
+    return candidate;
+  }
 
   final rawExtension = path.extension(candidate);
   final extension = _truncateUtf8(rawExtension, _maxDownloadExtensionBytes);
+
   final stem = rawExtension.isEmpty ? candidate : candidate.substring(0, candidate.length - rawExtension.length);
+
   final digest = sha256.convert(utf8.encode(candidate)).toString().substring(0, 12);
+
   final suffix = '-$digest$extension';
+
   final stemBudget = _maxDownloadBaseNameBytes - utf8.encode(suffix).length;
+
   var fittedStem = _truncateUtf8(stem, stemBudget);
-  if (fittedStem.isEmpty) fittedStem = _truncateUtf8('PureLive', stemBudget);
+
+  if (fittedStem.isEmpty) {
+    fittedStem = _truncateUtf8('PureLive', stemBudget);
+  }
+
   return '$fittedStem$suffix';
 }
 
 String _truncateUtf8(String value, int maxBytes) {
-  if (maxBytes <= 0 || value.isEmpty) return '';
+  if (maxBytes <= 0 || value.isEmpty) {
+    return '';
+  }
+
   final buffer = StringBuffer();
   var usedBytes = 0;
+
   for (final rune in value.runes) {
     final scalar = String.fromCharCode(rune);
     final scalarBytes = utf8.encode(scalar).length;
-    if (usedBytes + scalarBytes > maxBytes) break;
+
+    if (usedBytes + scalarBytes > maxBytes) {
+      break;
+    }
+
     buffer.write(scalar);
     usedBytes += scalarBytes;
   }
+
   return buffer.toString();
 }
 
@@ -101,7 +135,6 @@ class DownloadApkDialog extends StatefulWidget {
     this.downloadDirectoryProvider,
     this.transfer,
     this.fileOpener,
-    this.completionDelay = const Duration(seconds: 1),
     this.startAutomatically = true,
   });
 
@@ -112,7 +145,6 @@ class DownloadApkDialog extends StatefulWidget {
   final DownloadDirectoryProvider? downloadDirectoryProvider;
   final DownloadFileTransfer? transfer;
   final DownloadFileOpener? fileOpener;
-  final Duration completionDelay;
   final bool startAutomatically;
 
   @override
@@ -125,29 +157,48 @@ class _DownloadApkDialogState extends State<DownloadApkDialog> {
   late final String _resolvedFileName;
 
   int _progress = 0;
+
   bool _hasKnownTotal = false;
   bool _isDownloading = true;
   bool _isOpening = false;
+  bool _downloadCompleted = false;
+
   String _statusText = '';
   String? _openFailure;
+
   File? _partialFile;
   File? _completedFile;
 
   DownloadRuntimePlatform get _runtimePlatform {
     final override = widget.runtimePlatform;
-    if (override != null) return override;
-    if (Platform.isAndroid) return DownloadRuntimePlatform.android;
-    if (PlatformUtils.isDesktop) return DownloadRuntimePlatform.desktop;
+
+    if (override != null) {
+      return override;
+    }
+
+    if (Platform.isAndroid) {
+      return DownloadRuntimePlatform.android;
+    }
+
+    if (PlatformUtils.isDesktop) {
+      return DownloadRuntimePlatform.desktop;
+    }
+
     return DownloadRuntimePlatform.other;
   }
 
   @override
   void initState() {
     super.initState();
+
     _resolvedFileName = safeDownloadFileName(widget.apkUrl, suggestedName: widget.fileName);
+
     _statusText = i18n('download_preparing');
+
     _cancelToken = CancelToken();
+
     _dio = Dio(BaseOptions(connectTimeout: const Duration(seconds: 15), receiveTimeout: const Duration(seconds: 120)));
+
     if (widget.startAutomatically) {
       unawaited(Future<void>.microtask(_startDownload));
     }
@@ -155,21 +206,28 @@ class _DownloadApkDialogState extends State<DownloadApkDialog> {
 
   Future<void> _startDownload() async {
     File? partialFile;
+
     try {
       final baseDir = await _getSafeDownloadDir();
+
       final completedFile = File(path.join(baseDir.path, _resolvedFileName));
+
       partialFile = File('${completedFile.path}.part');
+
       _partialFile = partialFile;
+
       await _recoverInterruptedCommit(completedFile);
       await _deleteIfPresent(partialFile);
 
       final transfer = widget.transfer ?? _defaultTransfer;
+
       await transfer(
         url: widget.apkUrl,
         destinationPath: partialFile.path,
         cancelToken: _cancelToken,
         onProgress: _updateProgress,
       );
+
       if (_cancelToken.isCancelled) {
         await _deleteIfPresent(partialFile);
         return;
@@ -178,30 +236,26 @@ class _DownloadApkDialogState extends State<DownloadApkDialog> {
       if (!await partialFile.exists()) {
         throw const FileSystemException('Downloaded staging file is missing');
       }
+
       _completedFile = await _commitStagedFile(partialFile, completedFile);
+
       _partialFile = null;
 
       if (!mounted) return;
+
       setState(() {
         _progress = 100;
         _hasKnownTotal = true;
         _isDownloading = false;
         _isOpening = false;
-        _statusText = i18n('download_complete_opening');
+        _downloadCompleted = true;
+        _statusText = i18n('download_complete');
       });
-
-      if (_runtimePlatform == DownloadRuntimePlatform.android && _resolvedFileName.toLowerCase().endsWith('.apk')) {
-        ScaffoldMessenger.maybeOf(context)
-            ?.showSnackBar(SnackBar(content: Text(i18n('install_tip')), duration: const Duration(seconds: 2)));
-      }
-
-      if (widget.completionDelay > Duration.zero) {
-        await Future<void>.delayed(widget.completionDelay);
-      }
-      if (mounted) await _openCompletedFile();
     } catch (error) {
       await _deleteIfPresent(partialFile);
+
       log(error.toString(), name: 'DownloadApkDialog');
+
       if (mounted && !_cancelToken.isCancelled) {
         _showErrorAndClose(i18n('download_failed'));
       }
@@ -228,19 +282,27 @@ class _DownloadApkDialogState extends State<DownloadApkDialog> {
 
   void _updateProgress(int received, int total) {
     if (!mounted) return;
+
     if (total > 0) {
       final progress = (received / total * 100).round().clamp(0, 100);
+
       final receivedMb = received / (1024 * 1024);
+
       final totalMb = total / (1024 * 1024);
+
       setState(() {
         _progress = progress;
         _hasKnownTotal = true;
-        _statusText = '${receivedMb.toStringAsFixed(1)} MB / ${totalMb.toStringAsFixed(1)} MB';
+        _statusText =
+            '${receivedMb.toStringAsFixed(1)} MB / '
+            '${totalMb.toStringAsFixed(1)} MB';
       });
+
       return;
     }
 
     final mb = received ~/ (1024 * 1024);
+
     setState(() {
       _hasKnownTotal = false;
       _statusText = i18n('downloaded_mb', args: {'mb': '$mb'});
@@ -249,21 +311,31 @@ class _DownloadApkDialogState extends State<DownloadApkDialog> {
 
   Future<void> _openCompletedFile() async {
     final file = _completedFile;
-    if (file == null || _isOpening) return;
+
+    if (file == null || _isOpening) {
+      return;
+    }
 
     setState(() {
       _isOpening = true;
       _openFailure = null;
       _statusText = i18n('download_complete_opening');
     });
+
     final result = await _openDownloadedFile(file.path);
+
     if (!mounted) return;
+
     if (result.isOpened) {
-      if (Navigator.canPop(context)) Navigator.pop(context, true);
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context, true);
+      }
+
       return;
     }
 
     final detail = result.message.trim();
+
     setState(() {
       _isOpening = false;
       _openFailure = detail;
@@ -273,15 +345,65 @@ class _DownloadApkDialogState extends State<DownloadApkDialog> {
     });
   }
 
+  Future<void> _openDownloadFolder() async {
+    final file = _completedFile;
+
+    if (file == null || _isOpening) {
+      return;
+    }
+
+    setState(() {
+      _isOpening = true;
+      _openFailure = null;
+      _statusText = i18n('download_opening_folder');
+    });
+
+    try {
+      final opened = await FileUtils.openFileOrUrl(file.parent.path);
+
+      if (!mounted) return;
+
+      if (opened) {
+        setState(() {
+          _isOpening = false;
+          _statusText = i18n('download_complete');
+        });
+
+        return;
+      }
+
+      setState(() {
+        _isOpening = false;
+        _openFailure = '';
+        _statusText = i18n('download_open_failed');
+      });
+    } catch (error) {
+      if (!mounted) return;
+
+      setState(() {
+        _isOpening = false;
+        _openFailure = error.toString();
+        _statusText = i18n('download_open_failed_detail', args: {'message': error.toString()});
+      });
+    }
+  }
+
   Future<DownloadedFileOpenResult> _openDownloadedFile(String filePath) async {
     final opener = widget.fileOpener;
-    if (opener != null) return opener(filePath);
+
+    if (opener != null) {
+      return opener(filePath);
+    }
+
     try {
       if (_runtimePlatform == DownloadRuntimePlatform.android) {
         final opened = await FileUtils.openFileOrUrl(filePath);
+
         return opened ? const DownloadedFileOpenResult.opened() : const DownloadedFileOpenResult.failed();
       }
+
       final result = await OpenFilex.open(filePath);
+
       return result.type == ResultType.done
           ? const DownloadedFileOpenResult.opened()
           : DownloadedFileOpenResult.failed(result.message);
@@ -292,31 +414,51 @@ class _DownloadApkDialogState extends State<DownloadApkDialog> {
 
   Future<Directory> _getSafeDownloadDir() async {
     final provider = widget.downloadDirectoryProvider;
+
     if (provider != null) {
       final directory = await provider();
-      if (!await directory.exists()) await directory.create(recursive: true);
+
+      if (!await directory.exists()) {
+        await directory.create(recursive: true);
+      }
+
       return directory;
     }
 
     final Directory downloadDir;
+
     if (_runtimePlatform == DownloadRuntimePlatform.android) {
       final directory = await getDownloadsDirectory();
-      if (directory == null) throw const FileSystemException('Downloads directory is missing');
+
+      if (directory == null) {
+        throw const FileSystemException('Downloads directory is missing');
+      }
+
       downloadDir = Directory(path.join(directory.path, 'pure_live'));
     } else {
       downloadDir = await AppPathManager().getDir(AppPathManager.dirDownload);
     }
-    if (!await downloadDir.exists()) await downloadDir.create(recursive: true);
+
+    if (!await downloadDir.exists()) {
+      await downloadDir.create(recursive: true);
+    }
+
     return downloadDir;
   }
 
   Future<void> _deleteIfPresent(File? file) async {
-    if (file != null && await file.exists()) await file.delete();
+    if (file != null && await file.exists()) {
+      await file.delete();
+    }
   }
 
   Future<void> _recoverInterruptedCommit(File completedFile) async {
     final backupFile = File('${completedFile.path}.previous');
-    if (!await backupFile.exists()) return;
+
+    if (!await backupFile.exists()) {
+      return;
+    }
+
     if (await completedFile.exists()) {
       await backupFile.delete();
     } else {
@@ -326,29 +468,47 @@ class _DownloadApkDialogState extends State<DownloadApkDialog> {
 
   Future<File> _commitStagedFile(File partialFile, File completedFile) async {
     final backupFile = File('${completedFile.path}.previous');
+
     await _deleteIfPresent(backupFile);
+
     final hadPreviousFile = await completedFile.exists();
-    if (hadPreviousFile) await completedFile.rename(backupFile.path);
+
+    if (hadPreviousFile) {
+      await completedFile.rename(backupFile.path);
+    }
+
     try {
       final committedFile = await partialFile.rename(completedFile.path);
+
       await _deleteIfPresent(backupFile);
+
       return committedFile;
     } catch (_) {
       if (hadPreviousFile && await backupFile.exists() && !await completedFile.exists()) {
         await backupFile.rename(completedFile.path);
       }
+
       rethrow;
     }
   }
 
   void _cancelDownload() {
-    if (!_cancelToken.isCancelled) _cancelToken.cancel(i18n('cancel'));
-    if (Navigator.canPop(context)) Navigator.pop(context, false);
+    if (!_cancelToken.isCancelled) {
+      _cancelToken.cancel(i18n('cancel'));
+    }
+
+    if (Navigator.canPop(context)) {
+      Navigator.pop(context, false);
+    }
   }
 
   void _showErrorAndClose(String message) {
     final messenger = ScaffoldMessenger.maybeOf(context);
-    if (Navigator.canPop(context)) Navigator.pop(context, false);
+
+    if (Navigator.canPop(context)) {
+      Navigator.pop(context, false);
+    }
+
     messenger?.showSnackBar(SnackBar(content: Text(message)));
   }
 
@@ -356,6 +516,7 @@ class _DownloadApkDialogState extends State<DownloadApkDialog> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final media = MediaQuery.of(context);
+
     final compact = media.size.width < 420 || media.textScaler.scale(1) > 1.5;
 
     final statusContent = Column(
@@ -379,6 +540,7 @@ class _DownloadApkDialogState extends State<DownloadApkDialog> {
         ),
       ],
     );
+
     final statusIcon = Container(
       width: 44,
       height: 44,
@@ -494,6 +656,7 @@ class _DownloadApkDialogState extends State<DownloadApkDialog> {
         ),
       );
     }
+
     if (_isOpening) {
       return FilledButton.icon(
         onPressed: null,
@@ -501,37 +664,77 @@ class _DownloadApkDialogState extends State<DownloadApkDialog> {
         label: Text(i18n('download_complete_opening'), textAlign: TextAlign.center),
       );
     }
+
     if (_openFailure != null) {
       final close = OutlinedButton(
         key: const ValueKey('download-close'),
         onPressed: () {
-          if (Navigator.canPop(context)) Navigator.pop(context, false);
+          if (Navigator.canPop(context)) {
+            Navigator.pop(context, false);
+          }
         },
         child: Text(i18n('close')),
       );
+
       final openAgain = FilledButton.icon(
         key: const ValueKey('download-open-again'),
         onPressed: _openCompletedFile,
-        icon: const Icon(Icons.open_in_new_rounded),
+        icon: const Icon(Icons.install_mobile_rounded),
         label: Text(i18n('download_open_again'), textAlign: TextAlign.center),
       );
+
       if (compact) {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [openAgain, const SizedBox(height: 8), close],
         );
       }
+
       return Row(mainAxisAlignment: MainAxisAlignment.end, children: [close, const SizedBox(width: 8), openAgain]);
     }
+
+    if (_downloadCompleted) {
+      final openFolder = OutlinedButton.icon(
+        key: const ValueKey('download-open-folder'),
+        onPressed: _openDownloadFolder,
+        icon: const Icon(Icons.folder_open_rounded),
+        label: Text(i18n('open_folder'), textAlign: TextAlign.center),
+      );
+
+      final install = FilledButton.icon(
+        key: const ValueKey('download-install'),
+        onPressed: _openCompletedFile,
+        icon: const Icon(Icons.install_mobile_rounded),
+        label: Text(i18n('install'), textAlign: TextAlign.center),
+      );
+
+      if (compact) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [install, const SizedBox(height: 8), openFolder],
+        );
+      }
+
+      return Row(mainAxisAlignment: MainAxisAlignment.end, children: [openFolder, const SizedBox(width: 8), install]);
+    }
+
     return const SizedBox.shrink();
   }
 
   @override
   void dispose() {
-    if (!_cancelToken.isCancelled) _cancelToken.cancel('dialog disposed');
+    if (!_cancelToken.isCancelled) {
+      _cancelToken.cancel('dialog disposed');
+    }
+
     _dio.close(force: true);
+
     final partialFile = _partialFile;
-    if (partialFile != null) partialFile.delete().ignore();
+
+    if (partialFile != null) {
+      partialFile.delete().ignore();
+    }
+
     super.dispose();
   }
 }
