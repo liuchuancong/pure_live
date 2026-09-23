@@ -199,9 +199,9 @@ class LiveSearchCapabilities {
       supportsWebSearch: false,
     ),
     Sites.kilakilaSite: LiveSearchCapability(
-      coverage: NativeSearchCoverage.channelLookup,
-      supportsPagination: false,
-      supportsWebSearch: false,
+      coverage: NativeSearchCoverage.liveAndOffline,
+      supportsPagination: true,
+      supportsWebSearch: true,
     ),
     Sites.inkeSite: LiveSearchCapability(
       coverage: NativeSearchCoverage.showcaseSnapshot,

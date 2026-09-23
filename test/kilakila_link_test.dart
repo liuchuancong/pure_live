@@ -31,6 +31,9 @@ void main() {
     final owner = KilakilaLink.parse('https://live.hongrenshuo.com.cn/index/roomuser/uid/123')!;
     expect(owner.id, '123');
     expect(owner.kind, KilakilaLinkKind.owner);
+    final publicProfile = KilakilaLink.parse('https://live.kilakila.cn/zhubo/123')!;
+    expect(publicProfile.id, '123');
+    expect(publicProfile.kind, KilakilaLinkKind.owner);
   });
 
   for (final url in [
@@ -56,6 +59,10 @@ void main() {
     'https://live.hongrenshuo.com.cn/room/123',
     'https://live.hongrenshuo.com.cn/index/roomuser/uid/123?uid=456',
     'https://live.kilakila.cn/room/123 456',
+    'https://live.kilakila.cn/zhubo/123?uid=456',
+    'https://live.kilakila.cn/zhubo/123/extra',
+    'https://live.kilakila.cn/%7Ahubo/123',
+    'https://live.kilakila.cn/zhubo/00123',
   ]) {
     test('reject malformed or ambiguous URL: $url', () => expect(KilakilaLink.parse(url), isNull));
   }
