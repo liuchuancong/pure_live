@@ -1,19 +1,19 @@
-import 'dart:convert';
 import 'dart:io';
-
-import 'package:easy_localization/easy_localization.dart';
+import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart';
-import 'package:pure_live/common/utils/play_quality_label.dart';
 import 'package:pure_live/get/get.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:pure_live/model/live_play_quality.dart';
-import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
-import 'package:pure_live/modules/live_play/controllers/player_controller.dart';
-import 'package:pure_live/modules/live_play/states/live_play_state.dart';
-import 'package:pure_live/modules/live_play/states/player_state.dart';
-import 'package:pure_live/modules/live_play/states/room_state.dart';
-import 'package:pure_live/modules/live_play/widgets/resolution_selector/resolution_selector.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:pure_live/common/utils/play_quality_label.dart';
+import 'package:pure_live/modules/live_play/states/room_state.dart';
+import 'package:pure_live/modules/live_play/states/player_state.dart';
+import 'package:pure_live/modules/live_play/states/live_play_state.dart';
+import 'package:pure_live/modules/live_play/controllers/player_controller.dart';
+import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
+import 'package:pure_live/modules/live_play/widgets/resolution_selector/resolution_selector.dart';
+
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -108,8 +108,7 @@ class _LabelController extends GetxController implements LivePlayController {
     int? refreshKey,
     bool? isMenuOpen,
     int? closeTimes,
-    bool? closeTimeFlag,
-    bool? displayVideoLayer,
+    bool? closeTimeFlag
   }) {}
 
   @override

@@ -1,12 +1,12 @@
 import 'dart:async';
 import 'dart:developer';
+
 import 'package:flutter/scheduler.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/player/core/player_manager.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/player/utils/fullscreen.dart' show WindowService;
 import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
-
 
 class LiveRouteObserver extends RouteObserver<PageRoute<dynamic>> {
   @override
@@ -60,7 +60,6 @@ class LiveRouteObserver extends RouteObserver<PageRoute<dynamic>> {
     final state = controller.state.value;
     final preventFloating = controller.takeSuppressAppFloatingOnNextPop();
 
-    controller.updateUI(displayVideoLayer: false);
     controller.updateRoom(success: false);
 
     final playerManager = GlobalPlayerService.instance.player;
@@ -84,12 +83,6 @@ class LiveRouteObserver extends RouteObserver<PageRoute<dynamic>> {
     // teardown so a long stay in recorder centre does not reopen a healthy
     // Huya transport in the background.
     GlobalPlayerService.instance.player.setVideoPresentationVisible(visible);
-
-    SchedulerBinding.instance.addPostFrameCallback((_) async {
-      if (!controller.isClosed) {
-        controller.updateUI(displayVideoLayer: visible);
-      }
-    });
   }
 
   /// A popped route remains in the overlay during its reverse transition.
@@ -104,7 +97,6 @@ class LiveRouteObserver extends RouteObserver<PageRoute<dynamic>> {
         await SchedulerBinding.instance.endOfFrame;
         final controller = _findLivePlayController();
         if (controller != null && !controller.isClosed) {
-          controller.updateUI(displayVideoLayer: true);
           // Let the rebuilt Texture publish its viewport before presentation
           // supervision resumes. The first mounted layout force-reasserts the
           // Windows native size even when it equals the previous viewport.

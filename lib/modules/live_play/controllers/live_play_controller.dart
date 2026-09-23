@@ -1,31 +1,26 @@
-import 'package:pure_live/player/core/playback_source.dart';
-
 import 'dart:io';
 import 'dart:async';
-
-import 'package:pure_live/core/common/hls_source_query_policy.dart';
-
 import 'dart:developer' as developer;
-
-import 'package:flutter/scheduler.dart';
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/common/services/settings/app_settings_controller.dart';
 import 'package:pure_live/plugins/event_bus.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:pure_live/plugins/emoji_manager.dart';
 import 'package:pure_live/model/live_play_quality.dart';
 import 'package:pure_live/player/core/player_manager.dart';
+import 'package:pure_live/player/core/playback_source.dart';
 import 'package:pure_live/player/core/live_audio_service.dart';
 import 'package:pure_live/modules/live_play/states/ui_state.dart';
-import 'package:pure_live/modules/live_play/services/room_external_opener.dart';
 import 'package:pure_live/modules/live_play/states/load_type.dart';
+import 'package:pure_live/core/common/hls_source_query_policy.dart';
 import 'package:pure_live/modules/live_play/states/room_state.dart';
 import 'package:pure_live/modules/live_play/states/player_state.dart';
 import 'package:pure_live/modules/live_play/states/live_play_state.dart';
 import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 import 'package:pure_live/recorder/pages/recorder/recorder_controller.dart';
 import 'package:pure_live/modules/live_play/controllers/timer_controller.dart';
+import 'package:pure_live/modules/live_play/services/room_external_opener.dart';
 import 'package:pure_live/modules/live_play/controllers/player_controller.dart';
+import 'package:pure_live/common/services/settings/app_settings_controller.dart';
 import 'package:pure_live/modules/live_play/controllers/danmaku_controller.dart';
 import 'package:pure_live/modules/live_play/controllers/danmaku_session_host.dart';
 import 'package:pure_live/modules/live_play/widgets/danmaku/danmaku_list_view.dart';
@@ -33,6 +28,7 @@ import 'package:pure_live/modules/live_play/widgets/video_player/video_controlle
 import 'package:pure_live/modules/live_play/controllers/danmaku_presentation_recovery.dart';
 import 'package:pure_live/modules/live_play/widgets/local_interaction/local_interaction_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/local_interaction/local_message_delivery_queue.dart';
+
 
 // live_play_controller.dart
 
@@ -137,7 +133,7 @@ class LivePlayController extends GetxController
         isCurrentRoomAudioOnly: initialAudioOnly,
         hasUseDefaultResolution: restored?.hasUseDefaultResolution ?? false,
       ),
-      ui: UIState(closeTimes: 60, closeTimeFlag: false, displayVideoLayer: true),
+      ui: UIState(closeTimes: 60, closeTimeFlag: false),
     );
     // Re-entering from the app floating window continues the same room session.
     // Resetting the timer here extended an existing sleep session and also
@@ -462,14 +458,7 @@ class LivePlayController extends GetxController
     );
   }
 
-  void updateUI({
-    VideoMode? screenMode,
-    int? refreshKey,
-    bool? isMenuOpen,
-    int? closeTimes,
-    bool? closeTimeFlag,
-    bool? displayVideoLayer,
-  }) {
+  void updateUI({VideoMode? screenMode, int? refreshKey, bool? isMenuOpen, int? closeTimes, bool? closeTimeFlag}) {
     state.value = state.value.copyWith(
       ui: state.value.ui.copyWith(
         screenMode: screenMode,
@@ -477,7 +466,6 @@ class LivePlayController extends GetxController
         isMenuOpen: isMenuOpen,
         closeTimes: closeTimes,
         closeTimeFlag: closeTimeFlag,
-        displayVideoLayer: displayVideoLayer,
       ),
     );
   }
@@ -1022,17 +1010,7 @@ class LivePlayController extends GetxController
   /// observer, which waits for the recorder route's reverse
   /// transition to finish before attaching a Windows texture again.
   Future<void> openRecordCenter() async {
-    updateUI(displayVideoLayer: false);
-    await SchedulerBinding.instance.endOfFrame;
-    try {
-      await Get.toNamed(RoutePath.kRecordPage);
-    } catch (_) {
-      // A failed navigation never reaches the observer's didPop callback.
-      if (!isClosed) {
-        updateUI(displayVideoLayer: true);
-      }
-      rethrow;
-    }
+    await Get.toNamed(RoutePath.kRecordPage);
   }
 
   bool takeSuppressAppFloatingOnNextPop() {

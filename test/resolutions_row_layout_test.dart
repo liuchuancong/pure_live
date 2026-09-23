@@ -1,26 +1,26 @@
-import 'dart:convert';
 import 'dart:io';
+import 'dart:convert';
 
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:pure_live/get/get.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pure_live/common/models/live_room.dart';
-import 'package:pure_live/common/services/settings/app_settings_controller.dart';
-import 'package:pure_live/common/services/settings_service.dart';
-import 'package:pure_live/get/get.dart';
 import 'package:pure_live/model/live_play_quality.dart';
-import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
-import 'package:pure_live/modules/live_play/controllers/player_controller.dart';
-import 'package:pure_live/modules/live_play/states/live_play_state.dart';
-import 'package:pure_live/modules/live_play/states/load_type.dart';
-import 'package:pure_live/modules/live_play/states/player_state.dart';
-import 'package:pure_live/modules/live_play/states/room_state.dart';
-import 'package:pure_live/modules/live_play/widgets/resolution_selector/line_selector.dart';
-import 'package:pure_live/modules/live_play/widgets/resolution_selector/resolution_selector.dart';
-import 'package:pure_live/modules/live_play/widgets/resolution_selector/resolutions_row.dart';
-import 'package:pure_live/modules/live_play/widgets/resolution_selector/audience_info.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:pure_live/common/services/settings_service.dart';
+import 'package:pure_live/modules/live_play/states/load_type.dart';
+import 'package:pure_live/modules/live_play/states/room_state.dart';
+import 'package:pure_live/modules/live_play/states/player_state.dart';
+import 'package:pure_live/modules/live_play/states/live_play_state.dart';
+import 'package:pure_live/modules/live_play/controllers/player_controller.dart';
+import 'package:pure_live/common/services/settings/app_settings_controller.dart';
+import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
+import 'package:pure_live/modules/live_play/widgets/resolution_selector/line_selector.dart';
+import 'package:pure_live/modules/live_play/widgets/resolution_selector/audience_info.dart';
+import 'package:pure_live/modules/live_play/widgets/resolution_selector/resolutions_row.dart';
+import 'package:pure_live/modules/live_play/widgets/resolution_selector/resolution_selector.dart';
 
 class _Loader extends AssetLoader {
   const _Loader();
@@ -62,14 +62,7 @@ class _Host extends GetxController implements LivePlayController {
   }
 
   @override
-  void updateUI({
-    Object? screenMode,
-    int? refreshKey,
-    bool? isMenuOpen,
-    int? closeTimes,
-    bool? closeTimeFlag,
-    bool? displayVideoLayer,
-  }) {}
+  void updateUI({Object? screenMode, int? refreshKey, bool? isMenuOpen, int? closeTimes, bool? closeTimeFlag}) {}
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);

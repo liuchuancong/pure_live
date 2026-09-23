@@ -4,8 +4,8 @@ import 'record_action_content.dart';
 
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/recorder/models/live_record_task.dart';
 import 'package:pure_live/recorder/models/record_status.dart';
+import 'package:pure_live/recorder/models/live_record_task.dart';
 import 'package:pure_live/recorder/pages/recorder/recorder_controller.dart';
 
 class RecordActionButton extends StatefulWidget {
@@ -137,10 +137,7 @@ class _RecordActionButtonState extends State<RecordActionButton> {
           break;
 
         case "page":
-          // DialogRoute completes its result before the reverse animation is
-          // removed. Keep the native video surface out of overlapping routes.
-          await Future<void>.delayed(kThemeAnimationDuration);
-          if (mounted) await widget.onOpenRecordCenter();
+          await widget.onOpenRecordCenter();
           break;
       }
     } finally {

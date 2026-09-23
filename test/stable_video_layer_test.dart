@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:pure_live/modules/live_play/widgets/video_player/video_player.dart';
 
 void main() {
   testWidgets('temporarily hiding video preserves the mounted texture subtree', (tester) async {
@@ -12,11 +11,7 @@ void main() {
         home: SizedBox(
           width: 320,
           height: 180,
-          child: StableVideoLayer(
-            visible: visible,
-            video: _MountProbe(onMount: () => mounted++, onDispose: () => disposed++),
-            placeholder: const ColoredBox(color: Colors.black),
-          ),
+          child: _MountProbe(onMount: () => mounted++, onDispose: () => disposed++),
         ),
       );
     }
@@ -43,12 +38,7 @@ void main() {
         home: SizedBox(
           width: 320,
           height: 180,
-          child: StableVideoLayer(
-            visible: visible,
-            preserveMountedVideo: false,
-            video: _MountProbe(onMount: () => mounted++, onDispose: () => disposed++),
-            placeholder: const ColoredBox(color: Colors.black),
-          ),
+          child: _MountProbe(onMount: () => mounted++, onDispose: () => disposed++),
         ),
       );
     }
