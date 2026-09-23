@@ -19,16 +19,6 @@ class HomeTabletView extends StatelessWidget {
     required this.onDestinationSelected,
   });
 
-  Widget _railAction({required VoidCallback onPressed, required String tooltip, required IconData icon}) {
-    return IconButton(
-      onPressed: onPressed,
-      tooltip: tooltip,
-      visualDensity: VisualDensity.standard,
-      constraints: const BoxConstraints(minWidth: kMinInteractiveDimension, minHeight: kMinInteractiveDimension),
-      icon: Icon(icon),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
