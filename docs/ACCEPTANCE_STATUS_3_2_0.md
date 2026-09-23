@@ -6,7 +6,7 @@
 
 | 项目 | 当前证据 |
 | --- | --- |
-| 功能源码基线 | 当前源码 `d1437fe5`；上一干净输入 `52be1624` 通过[完整门禁及双端 Debug 构建](CURRENT_SOURCE_FULL_GATE_DEBUG_CANDIDATES_2026_09_24.md)：Flutter **5324/5324**、公共接口 **42/42**。此后[Windows 标题栏异常修订](WINDOWS_TITLE_BAR_OVERLAY_RUNTIME_AUDIT_2026_09_24.md)定向 **11/11**、全仓 Analyze 无问题；新源码仍待收敛 Full，GUI/媒体/长时原生验收未闭环 |
+| 功能源码基线 | 当前源码 `6220f106`；上一干净输入 `52be1624` 通过[完整门禁及双端 Debug 构建](CURRENT_SOURCE_FULL_GATE_DEBUG_CANDIDATES_2026_09_24.md)：Flutter **5324/5324**、公共接口 **42/42**。此后[Windows 标题栏异常修订](WINDOWS_TITLE_BAR_OVERLAY_RUNTIME_AUDIT_2026_09_24.md)定向 **11/11**，房间/多画面平台徽标不再为取图片创建适配器，四文件 **10/10**（`20260923T184732079Z-quality-focused.json`）；两批全仓 Analyze 无问题。新源码仍待收敛 Full，GUI/媒体/长时原生验收未闭环 |
 | Android 最新本机构建/原生输入 | `52be1624` arm64 Debug，3.1.8+4121 / Manifest 6121，290060910 B，SHA-256 `04C597E8…5E5A981`；16 个原生库、最小 ELF LOAD `0x4000`、APK 内容门禁通过（`20260923T182320498Z-build-androidarm64-debug.json`）。尚未覆盖安装或执行本候选 A0～A8 原生验收 |
 | Android 当前编号账本 | 46 行：16 PASS / 30 RUN / 0 NR；每行仍含多个动作和平台组合，旧包证据不自动覆盖当前源码 |
 | Windows 最新归档 | `d1437fe5` x64 Debug：`PureLive-3.1.8-4121-windows-x64-debug.zip`，143795103 B，SHA-256 `6B6B3413…FC5F6`，记录 `20260923T183912700Z-build-windowsx64-debug.json`；标题栏启动异常已在[实际窗口](WINDOWS_TITLE_BAR_OVERLAY_RUNTIME_AUDIT_2026_09_24.md)复验消失，导航/设置/热门/搜索/录制中心仅完成轻量 GUI，播放/录制/长时原生验收仍待续 |
@@ -37,6 +37,6 @@
 ## 下一批顺序
 
 1. 继续按战旗、浪 Live 的生产证据门槛与 C2/C3 活跃平台顺序扩展源码；同时完成当前仍可确定复现的 Issue/所有权缺口，已经修复或证据不足的条目停止重复调查。
-2. `52be1624` Full 与双端 Debug 构建已通过；后续 Windows 标题栏修订 `d1437fe5` 有定向测试、全仓 Analyze、Windows Debug 与轻量实窗复验，待源码批次收敛再运行 Full 和更新 Android 候选。手机进入可用测试窗口后按轮转规则批量收口 A0～A8，不为每个小修复重复构建；设备窗口尚未释放时继续源码工作。
+2. `52be1624` Full 与双端 Debug 构建已通过；后续 Windows 标题栏修订 `d1437fe5` 有定向测试、全仓 Analyze、Windows Debug 与轻量实窗复验，当前 `6220f106` 的徽标渲染减配器分配另有定向测试与 Analyze。待源码批次收敛再运行 Full 和更新 Android 候选。手机进入可用测试窗口后按轮转规则批量收口 A0～A8，不为每个小修复重复构建；设备窗口尚未释放时继续源码工作。
 3. 同一候选集中完成平台播放/弹幕/录制、资源与性能证据，失败项回源码修订后只重跑受影响组。
 4. 42 个编号组和发布范围实际闭合后，固定 3.2.0 提交并执行完整发布门禁。
