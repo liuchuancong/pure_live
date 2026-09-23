@@ -6,6 +6,8 @@
 
 2026-09-22 按 `lib/core/sites.dart` 核对：当前源码注册 **45 个直播站点 + IPTV，共 46 个适配器**。这是源码注册数量，不是已发布包或完整验收数量。小红书、niconico、微博、SHOWROOM、CHZZK、Kick、17LIVE、LiveMe、TikTok LIVE、YouTube Live、Bigo Live、PandaTV、PopkonTV、Shopee Live、VK Video Live、NimoTV、Dailymotion、Rumble、GoodGame、FC2 Live、Steam Broadcasts、京东直播、淘宝直播、酷狗直播、百度直播、六间房直播和 LOOK 直播已接入应用入口；原生整体验收继续，当前候选与完整剩余范围以[验收状态](ACCEPTANCE_STATUS_3_2_0.md)为准。
 
+2026-09-23 房间页“外部打开”也已与注册表对齐：此前 14 个新增站点缺少官方房间 URL 映射，操作会落到 `unavailable`；现在 45 个直播站点均有按稳定房间身份重建的官方目标，IPTV 不存在远端官方房间页。构造、无效 ID 与启动动作的定向证据见[外部打开覆盖审计](ROOM_EXTERNAL_OPEN_COVERAGE_AUDIT_2026_09_23.md)；这只是源码动作合同，外部浏览器/客户端实际落地仍待当前候选双端验证。
+
 2026-09-23 搜索页能力表已与这 46 个已注册适配器核对：此前 14 个新平台虽有原生查询实现，UI 却因缺少能力登记而落到通用网页搜索；现已逐一标注搜索范围与分页，45 个平台提供原生搜索入口，快手保持已有网页入口。范围与回归见[搜索能力登记审计](SEARCH_REGISTRY_COVERAGE_AUDIT_2026_09_23.md)。该数量是源码入口，不等于 45 个平台的生产可达或双端原生验收通过。
 
 ### 09-09 及更早阶段的取证快照
