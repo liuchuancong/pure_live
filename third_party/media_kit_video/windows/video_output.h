@@ -106,6 +106,8 @@ class VideoOutput {
   // deletion after unregister in |Resize|) access this object after
   // destruction.
   std::atomic<bool> destroyed_ = false;
+  // Serialize the callback's destroyed check and task enqueue with teardown.
+  std::mutex callback_mutex_;
 
   std::mutex textures_mutex_ = std::mutex();
 

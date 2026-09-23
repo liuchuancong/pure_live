@@ -15,7 +15,7 @@ WinDbg `.ecxr; kv` 指向 `ucrtbase!abort+0x4e`，异常子码 `FAST_FAIL_FATAL_
 1. `VideoOutputManager.Dispose` 启动 detached worker 后立刻向 Dart 返回 `Success`；Dart `NativeVideoController._dispose` 因而提前结束，而 `NativePlayer.dispose` 会继续销毁 mpv 核心。
 2. `VideoOutput::~VideoOutput` 即使已经进入 worker，也只是把 `mpv_render_context_free` 放入线程池，未等待完成；同时提前释放 D3D11 renderer。多格或恢复/换源下的队列延迟可以放大这个窗口。
 
-本批修改使 Dispose 的平台通道响应发生在 worker 删除视频输出之后；析构先停止帧回调、排空已排队的渲染任务，等待 Flutter 纹理注销，再在线程池中同步完成 `mpv_render_context_free`，最后释放 D3D11 renderer。`destroyed_` 改为 atomic，避免回调与析构并发读取标志的数据竞争。真实长播是否完全稳定仍由新候选实测决定。
+本批修改使 Dispose 的平台通道响应发生在 worker 删除视频输出之后；析构先停止帧回调、排空已排队的渲染任务，等待 Flutter 纹理注销，再在线程池中同步完成 `mpv_render_context_free`，最后释放 D3D11 renderer。`destroyed_` 改为 atomic；后续静态复核发现回调可能在读取旧标志后、析构排空任务入队之后才提交新的渲染任务，故用同一 `callback_mutex_` 串行化“检查标志＋入队”和“标记销毁＋排空入队”。真实长播是否完全稳定仍由新候选实测决定。
 
 ## 采样器旁路缺陷
 
@@ -23,7 +23,8 @@ WinDbg `.ecxr; kv` 指向 `ucrtbase!abort+0x4e`，异常子码 `FAST_FAIL_FATAL_
 
 ## 待完成验证
 
-- Windows Debug 已从本批未提交工作树编译成功，记录 `local-artifacts/build-records/20260923T200222535Z-build-windowsx64-debug.json`；ZIP 143,799,711 B、SHA-256 `2A601BBE39C9E55084BC54E850E708D7828317F1A6E9BDE845EA237863F35D30`，编译后的 `media_kit_video_plugin.dll` SHA-256 `435BBF8EBA69F17155B3C618A7E187E88EAE4A996B023C13676F510A9D3B81D3`。构建只证明 C++ 编译/链接与打包，GUI 验收另行记录。
+- 首个同步释放修订 Windows Debug 记录 `20260923T200222535Z-build-windowsx64-debug.json`，ZIP SHA-256 `2A601BBE39C9E55084BC54E850E708D7828317F1A6E9BDE845EA237863F35D30`。同一虎牙房间普通播放/返回、1+3 起播/返回/重进均成功，无新 WER；返回完成只落在 `(1.182s, 16.065s]` 的观测区间，关格完成未确认、长播未执行。该候选尚无回调入队互斥，不沿用为最终长播结论。
+- 加入回调互斥后的 Windows Debug 编译/链接与打包成功，记录 `local-artifacts/build-records/20260923T204036859Z-build-windowsx64-debug.json`；ZIP 143,800,836 B、SHA-256 `7068873F3784856222582D7E64F5A4FC287050C6A7B3E622DAA6E678602109C9`，`media_kit_video_plugin.dll` SHA-256 `D026CC4A4391BBCB3CF0981FAA81E19D63226F933D5A8ACC067014E5510E13DA`。构建只证明 C++ 编译/链接与打包，最终 GUI 验收另行记录。
 - 针对进入/退出、换源和多格恢复做短循环，观察 WER 与进程是否保持。
 - 同一新候选重新执行 WIN-MULTI-01：1+3 大/小格与 2×2 分别连续播放至少 30 分钟，使用已修订的持久采样器记录帧 revision、缓冲、媒体错误、CPU/GPU 与退出回落。
 - 这批源码与诊断不替代 Android 候选验收，也不构成 3.2.0 发布证据。

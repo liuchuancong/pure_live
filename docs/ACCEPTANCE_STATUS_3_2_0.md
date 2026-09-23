@@ -9,7 +9,7 @@
 | 功能源码基线 | Dart 业务源码 `822af302` 已通过[完整门禁与双端 Debug 构建](FULL_GATE_DUAL_DEBUG_822AF302_2026_09_24.md)：Flutter **5326/5326**、公共接口 **42/42**、全仓 Analyze 无问题，记录 `20260923T185608270Z-quality-full.json`。其后 `6973c57f` 修订 Windows 原生视频释放顺序及性能采样脚本，C++ Debug 构建通过；原完整门禁不覆盖新原生源码的运行时验收 |
 | Android 最新本机构建/原生输入 | `822af302` arm64 Debug，3.1.8+4121 / Manifest 6121，290061996 B，SHA-256 `5E9B29B5…C1DEDC`；16 个原生库、最小 ELF LOAD `0x4000`、APK 内容门禁通过（`20260923T185754279Z-build-androidarm64-debug.json`）。尚未覆盖安装或执行本候选 A0～A8 原生验收 |
 | Android 当前编号账本 | 46 行：16 PASS / 30 RUN / 0 NR；每行仍含多个动作和平台组合，旧包证据不自动覆盖当前源码 |
-| Windows 最新归档 | `6973c57f` 提交前同内容工作树 x64 Debug：`PureLive-3.1.8-4121-windows-x64-debug.zip`，143799711 B，SHA-256 `2A601BBE…63F35D30`，记录 `20260923T200222535Z-build-windowsx64-debug.json`。旧候选 1+3 双路约 28 分钟后因 mpv render context 未释放触发[原生终止](WINDOWS_MULTIVIEW_NATIVE_ABORT_2026_09_24.md)；新候选编译通过，短循环与长播复验进行中 |
+| Windows 最新归档 | `6973c57f` 后追加回调入队互斥的 x64 Debug：`PureLive-3.1.8-4121-windows-x64-debug.zip`，143800836 B，SHA-256 `7068873F…02109C9`，记录 `20260923T204036859Z-build-windowsx64-debug.json`。旧候选 1+3 双路约 28 分钟后因 mpv render context 未释放触发[原生终止](WINDOWS_MULTIVIEW_NATIVE_ABORT_2026_09_24.md)；首个同步释放修订短循环已通过，无新 WER；最终候选长播与多格复验待续 |
 | 手机快照 | `192.168.1.2:5555` 本轮只读核对 25102RKBEC / myron，前台先为小红书、后为哔哩哔哩；本轮没有安装、唤醒或输入。此前 Android 17 / root 与 Pure Live 无进程/录制服务的核验属于旧快照，实际设备动作前需重读 |
 | 当前安装 APK | 只读刷新为 3.1.8 / 6121；上次精确 `base.apk` 哈希仍为 `4BF85571…6B82` Release 测试包，本轮未重拉包，正式签名候选仍待生成 |
 | 平台范围 | 当前 **45 个直播站点 + IPTV，2 组未注册**，即源码共 46 个适配器；PandaTV、PopkonTV、Shopee Live、VK Video Live、NimoTV、Dailymotion、Rumble、GoodGame、FC2 Live、Steam Broadcasts、京东直播、淘宝直播、酷狗直播、百度直播、六间房直播与 LOOK 直播已完成首阶段源码接入，战旗与浪 Live 保持内部 readiness，DLive、一直播与企鹅电竞已归档生命周期证据；已注册平台仍有能力与双端原生覆盖缺口 |

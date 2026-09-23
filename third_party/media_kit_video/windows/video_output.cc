@@ -121,14 +121,19 @@ VideoOutput::VideoOutput(int64_t handle,
 }
 
 VideoOutput::~VideoOutput() {
-  destroyed_ = true;
   // Stop future notifications and drain work already queued for this object
   // before its texture or render context can be released.
-  thread_pool_ref_->Post([context = render_context_]() {
-    if (context) {
-      mpv_render_context_set_update_callback(context, nullptr, nullptr);
-    }
-  }).get();
+  std::future<void> callbacks_stopped;
+  {
+    std::lock_guard<std::mutex> lock(callback_mutex_);
+    destroyed_ = true;
+    callbacks_stopped = thread_pool_ref_->Post([context = render_context_]() {
+      if (context) {
+        mpv_render_context_set_update_callback(context, nullptr, nullptr);
+      }
+    });
+  }
+  callbacks_stopped.get();
 
   if (texture_id_) {
     auto promise = std::promise<void>();
@@ -164,6 +169,7 @@ VideoOutput::~VideoOutput() {
 }
 
 void VideoOutput::NotifyRender() {
+  std::lock_guard<std::mutex> lock(callback_mutex_);
   if (destroyed_) {
     return;
   }
