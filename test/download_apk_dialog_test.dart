@@ -443,6 +443,7 @@ void main() {
       'download_complete_opening',
       'download_complete',
       'download_opening_folder',
+      'download_open_folder_failed',
       'download_open_again',
       'download_open_failed',
       'download_open_failed_detail',

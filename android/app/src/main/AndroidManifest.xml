@@ -30,6 +30,12 @@
     <intent>
       <action android:name="android.speech.RecognitionService" />
     </intent>
+    <!-- Android 11+ package visibility: allow resolving a handler that can open
+         the download folder through the external storage documents provider. -->
+    <intent>
+      <action android:name="android.intent.action.VIEW" />
+      <data android:mimeType="vnd.android.document/directory" />
+    </intent>
   </queries>
   <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
   <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />

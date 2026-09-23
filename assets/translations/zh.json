@@ -171,6 +171,7 @@
   "download_preparing": "准备中...",
   "download_complete": "下载完成",
   "download_opening_folder": "正在打开下载文件夹...",
+  "download_open_folder_failed": "系统里没有可以打开该文件夹的应用，文件位置：{path}",
   "open_folder": "打开文件夹",
   "install": "立即安装",
   "download_directory": "下载目录",

@@ -192,6 +192,12 @@ class FileUtils {
           type: 'vnd.android.document/directory',
         );
 
+        // 精简模拟器镜像没有处理 vnd.android.document/directory 的文件管理器。
+        // 未解析到任何界面时必须如实返回失败，否则界面会误报“已打开文件夹”。
+        if (await intent.canResolveActivity() != true) {
+          return false;
+        }
+
         await intent.launch();
         return true;
       } catch (_) {}

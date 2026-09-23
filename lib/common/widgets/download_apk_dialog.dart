@@ -368,7 +368,10 @@ class _DownloadApkDialogState extends State<DownloadApkDialog> {
       setState(() {
         _isOpening = false;
         _openFailure = '';
-        _statusText = i18n('download_open_failed');
+        // Devices (emulators, minimal ROMs) without a folder handler cannot
+        // open the directory; show where the package actually is instead of
+        // claiming success.
+        _statusText = i18n('download_open_folder_failed', args: {'path': file.parent.path});
       });
     } catch (error) {
       if (!mounted) return;

@@ -170,6 +170,7 @@
   "download_preparing": "Preparing...",
   "download_complete": "Download complete",
   "download_opening_folder": "Opening download folder...",
+  "download_open_folder_failed": "No app on this device can open the folder. The file is in: {path}",
   "open_folder": "Open Folder",
   "install": "Install",
   "download_directory": "Download Folder",
