@@ -220,7 +220,10 @@ void main() {
     expect(c.selectedTagId.value, tag.id);
     expect(c.list, hasLength(1));
 
-    await c.tagController.deleteTag(0);
+    final deletion = c.tagController.deleteTag(0);
+    // A two-key settings batch yields one event-loop turn before persistence.
+    await tester.pump(Duration.zero);
+    await deletion;
     await tester.pump(Duration.zero);
 
     expect(c.selectedTagId.value, TagManagementController.allTagKey);
