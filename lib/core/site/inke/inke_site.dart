@@ -19,7 +19,8 @@ class InkeSite extends LiveSite
         LiveSiteRoomRefresher,
         LiveSiteRecordRoomResolver,
         LivePlayRecoveryResolver,
-        LiveCancellableSearch {
+        LiveCancellableSearch,
+        LiveSearchPaginationPolicy {
   InkeSite({InkeApi? api}) : _api = api ?? InkeApi();
   final InkeApi _api;
 
@@ -74,6 +75,21 @@ class InkeSite extends LiveSite
   Future<List<LiveRoom>> searchRooms(String keyword, {int page = 1, int pageSize = 30}) =>
       searchRoomsCancellable(keyword, page: page, pageSize: pageSize);
 
+  static String? _searchUid(String input) {
+    try {
+      return InkeApi.roomId(input);
+    } on InkeException {
+      final uri = Uri.tryParse(input);
+      return uri == null ? null : InkeApi.roomFromUri(uri);
+    }
+  }
+
+  @override
+  bool supportsSearchPaginationFor(String keyword) {
+    final input = keyword.trim();
+    return input.isNotEmpty && _searchUid(input) == null && Uri.tryParse(input)?.hasScheme != true;
+  }
+
   @override
   Future<List<LiveRoom>> searchRoomsCancellable(
     String keyword, {
@@ -81,16 +97,15 @@ class InkeSite extends LiveSite
     int pageSize = 30,
     CancelToken? cancel,
   }) async {
-    if (page != 1 || pageSize < 1) return const [];
+    if (page < 1 || pageSize < 1) throw const InkeException(InkeFailure.schema);
     final input = keyword.trim();
-    String? uid;
-    try {
-      uid = InkeApi.roomId(input);
-    } on InkeException {
-      final uri = Uri.tryParse(input);
-      if (uri != null) uid = InkeApi.roomFromUri(uri);
+    final uid = _searchUid(input);
+    if (uid == null) {
+      // A malformed/shared URL is not a nickname query.
+      if (Uri.tryParse(input)?.hasScheme == true) return const [];
+      return _api.searchShowcases(input, page: page, pageSize: pageSize, cancel: cancel);
     }
-    if (uid == null) return const [];
+    if (page != 1) return const [];
     try {
       final room = await _api.detail(uid, playback: false, cancel: cancel);
       if (room.isExplicitlyOfflineNow) {

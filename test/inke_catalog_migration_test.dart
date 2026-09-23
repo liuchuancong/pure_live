@@ -91,9 +91,9 @@ void main() {
       expect(controller.index.value, greaterThan(0));
       expect(controller.canOpenWebSearch, isFalse);
       expect(controller.canSearchNatively, isTrue);
-      expect(controller.capabilityText, 'search_coverage_room_lookup');
+      expect(controller.capabilityText, 'search_coverage_showcase_snapshot');
       expect(() => controller.buildSearchUrl('inke', 'example'), throwsStateError);
-      controller.searchController.text = 'example';
+      controller.searchController.text = 'https://www.inke.cn/';
       await controller.doSearch();
       expect(controller.results, isEmpty);
       expect(controller.errorMessage.value, isEmpty);
@@ -142,6 +142,55 @@ void main() {
       expect(controller.hasMore.value, isFalse);
       await controller.loadMore();
       expect(calls, 1);
+    } finally {
+      controller.onClose();
+    }
+  });
+
+  test('search page shows bounded nickname matches and accurate coverage', () async {
+    Get.put(SettingsService());
+    final adapter = InkeSite(
+      api: InkeApi(
+        request: (uri, _) async => (
+          status: 200,
+          body: jsonEncode({
+            'error_code': 0,
+            'data': uri.path.endsWith('Live_top_pc')
+                ? {
+                    'list': [
+                      {'uid': 100, 'live_id': '200', 'nick': '音乐主播'},
+                      {'uid': 101, 'live_id': '201', 'nick': '聊天主播'},
+                    ],
+                  }
+                : {
+                    'list': [
+                      {
+                        'tab_key': 'MUSIC',
+                        'channel_name': '音乐',
+                        'list': [
+                          {'uid': 102, 'live_id': '202', 'nick': '音乐电台'},
+                        ],
+                      },
+                    ],
+                  },
+          }),
+        ),
+      ),
+    );
+    final controller = SearchController(
+      searchSites: [Site(id: 'inke', name: '映客', logo: '', liveSite: adapter)],
+    );
+    try {
+      controller.index.value = 1;
+      expect(controller.capabilityText, 'search_coverage_showcase_snapshot');
+      controller.searchController.text = '音乐';
+      await controller.doSearch();
+      expect(controller.results.map((room) => room.roomId), ['100', '102']);
+      expect(controller.errorMessage.value, isEmpty);
+      expect(controller.hasMore.value, isTrue);
+      await controller.loadMore();
+      expect(controller.results.map((room) => room.roomId), ['100', '102']);
+      expect(controller.hasMore.value, isFalse);
     } finally {
       controller.onClose();
     }

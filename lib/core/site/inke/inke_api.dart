@@ -231,6 +231,26 @@ class InkeApi {
       ),
   ];
 
+  /// Filter the two finite public website showcases locally. This is not a
+  /// server-side nickname index and cannot discover channels outside them.
+  Future<List<LiveRoom>> searchShowcases(String keyword, {int page = 1, int pageSize = 20, CancelToken? cancel}) async {
+    final query = keyword.trim().toLowerCase();
+    if (page < 1 || page > 10000 || pageSize < 1 || pageSize > 60 || query.length > 100) {
+      throw const InkeException(InkeFailure.schema);
+    }
+    if (query.isEmpty) return const [];
+    final top = _rows((await _get('Live_top_pc', cancel: cancel))['list']);
+    final groups = await _channels(cancel: cancel);
+    final matches = <String, LiveRoom>{};
+    for (final row in [...top, for (final group in groups) ..._rows(group['list'])]) {
+      final room = _card(row);
+      if (room.nick!.toLowerCase().contains(query)) matches.putIfAbsent(room.roomId!, () => room);
+    }
+    final start = (page - 1) * pageSize;
+    if (start >= matches.length) return const [];
+    return List.unmodifiable(matches.values.skip(start).take(pageSize));
+  }
+
   Future<LiveDirectoryPage> directoryPage({int page = 1, LiveArea? category, CancelToken? cancel}) async {
     if (page < 1 || (category != null && (category.platform != 'inke' || category.areaType != 'showcase'))) {
       throw const InkeException(InkeFailure.schema);
