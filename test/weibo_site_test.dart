@@ -122,6 +122,16 @@ void main() {
     data = fixture('detail');
     await expectLater(site.searchRooms(id), failure(WeiboFailure.api));
   });
+  test('missing exact broadcast is an empty search result, not a provider failure', () async {
+    status = 404;
+    expect(await site.searchRooms(id), isEmpty);
+    await expectLater(room(), failure(WeiboFailure.missing));
+    await expectLater(site.searchRooms('样本'), failure(WeiboFailure.missing));
+    for (final (httpStatus, kind) in [(429, WeiboFailure.rateLimited), (503, WeiboFailure.service)]) {
+      status = httpStatus;
+      await expectLater(site.searchRooms(id), failure(kind));
+    }
+  });
   test('nickname search filters only the finite recommendation snapshot', () async {
     final matches = await site.searchRooms('样本');
     expect(matches.map((room) => room.roomId), [id, '1022:2321325000000000000001']);

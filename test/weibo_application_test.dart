@@ -180,6 +180,23 @@ void main() {
     expect(f.detailCalls, 1);
   });
 
+  test('missing exact Weibo broadcast presents empty search rather than provider error', () async {
+    final adapter = WeiboSite(api: WeiboApi(request: (_, _, _, _) async => (status: 404, body: '')));
+    final c = search.SearchController(
+      searchSites: [Site(id: 'weibo', name: 'Weibo', logo: '', liveSite: adapter)],
+    );
+    addTearDown(c.onClose);
+    c.index.value = 1;
+    c.searchController.text = weiboFixtureId;
+
+    await c.doSearch();
+
+    expect(c.searched.value, isTrue);
+    expect(c.results, isEmpty);
+    expect(c.errorMessage.value, isEmpty);
+    expect(c.hasMore.value, isFalse);
+  });
+
   test('closing actual search cancels nested adapter I/O and suppresses late results', () async {
     final started = Completer<CancelToken>();
     final response = Completer<({int status, String body})>();

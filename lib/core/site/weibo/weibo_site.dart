@@ -171,7 +171,14 @@ class WeiboSite extends LiveSite
     _page(page, pageSize);
     if (page > 1) return [];
     final liveId = WeiboLink.parse(keyword);
-    if (liveId != null) return [_room(await _api.detail(liveId, cancel: cancel))];
+    if (liveId != null) {
+      try {
+        return [_room(await _api.detail(liveId, cancel: cancel))];
+      } on WeiboException catch (error) {
+        if (error.kind == WeiboFailure.missing) return [];
+        rethrow;
+      }
+    }
     final query = keyword.trim().toLowerCase();
     if (query.isEmpty) return [];
     // Only filter the current official recommendation snapshot. This is not
