@@ -7,8 +7,8 @@ import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/common/services/settings/backup_controller.dart';
-import 'package:pure_live/modules/backup/remote_receiver/remote_sync_device.dart';
-import 'package:pure_live/modules/backup/remote_receiver/remote_sync_protocol.dart';
+import 'package:pure_live/modules/remote_receiver/remote_sync_device.dart';
+import 'package:pure_live/modules/remote_receiver/remote_sync_protocol.dart';
 
 class RemoteSyncService extends GetxController {
   static RemoteSyncService get to => Get.find<RemoteSyncService>();
@@ -225,10 +225,7 @@ class RemoteSyncService extends GetxController {
 
   Future<void> _refreshNetworkInfo() async {
     try {
-      final interfaces = await NetworkInterface.list(
-        type: InternetAddressType.IPv4,
-        includeLoopback: false,
-      );
+      final interfaces = await NetworkInterface.list(type: InternetAddressType.IPv4, includeLoopback: false);
 
       final ips = <String>{};
 
@@ -457,11 +454,7 @@ class RemoteSyncService extends GetxController {
       try {
         response.statusCode = HttpStatus.internalServerError;
 
-        await _writeResponse(response, {
-          'code': 500,
-          'msg': 'Internal Server Error',
-          'data': false,
-        });
+        await _writeResponse(response, {'code': 500, 'msg': 'Internal Server Error', 'data': false});
       } catch (_) {
         // Response may already be closed.
       }
@@ -532,11 +525,7 @@ class RemoteSyncService extends GetxController {
     } catch (_) {
       request.response.statusCode = HttpStatus.internalServerError;
 
-      await _writeResponse(request.response, {
-        'code': 500,
-        'msg': 'Export settings failed',
-        'data': false,
-      });
+      await _writeResponse(request.response, {'code': 500, 'msg': 'Export settings failed', 'data': false});
     }
   }
 
@@ -553,11 +542,7 @@ class RemoteSyncService extends GetxController {
       if (content.trim().isEmpty) {
         request.response.statusCode = HttpStatus.badRequest;
 
-        await _writeResponse(request.response, {
-          'code': 400,
-          'msg': 'Empty request',
-          'data': false,
-        });
+        await _writeResponse(request.response, {'code': 400, 'msg': 'Empty request', 'data': false});
 
         return;
       }
@@ -567,11 +552,7 @@ class RemoteSyncService extends GetxController {
       if (body is! Map<String, dynamic>) {
         request.response.statusCode = HttpStatus.badRequest;
 
-        await _writeResponse(request.response, {
-          'code': 400,
-          'msg': 'Invalid request',
-          'data': false,
-        });
+        await _writeResponse(request.response, {'code': 400, 'msg': 'Invalid request', 'data': false});
 
         return;
       }
@@ -581,11 +562,7 @@ class RemoteSyncService extends GetxController {
       if (type != RemoteSyncProtocol.syncType) {
         request.response.statusCode = HttpStatus.badRequest;
 
-        await _writeResponse(request.response, {
-          'code': 400,
-          'msg': 'Invalid sync type',
-          'data': false,
-        });
+        await _writeResponse(request.response, {'code': 400, 'msg': 'Invalid sync type', 'data': false});
 
         return;
       }
@@ -595,11 +572,7 @@ class RemoteSyncService extends GetxController {
       if (settings is! Map) {
         request.response.statusCode = HttpStatus.badRequest;
 
-        await _writeResponse(request.response, {
-          'code': 400,
-          'msg': 'Settings is empty',
-          'data': false,
-        });
+        await _writeResponse(request.response, {'code': 400, 'msg': 'Settings is empty', 'data': false});
 
         return;
       }
@@ -621,11 +594,7 @@ class RemoteSyncService extends GetxController {
       try {
         request.response.statusCode = HttpStatus.internalServerError;
 
-        await _writeResponse(request.response, {
-          'code': 500,
-          'msg': 'Internal Server Error',
-          'data': false,
-        });
+        await _writeResponse(request.response, {'code': 500, 'msg': 'Internal Server Error', 'data': false});
       } catch (_) {}
     }
   }
@@ -739,10 +708,7 @@ class RemoteSyncService extends GetxController {
     }
   }
 
-  Future<void> _handleDiscoveryEvent(
-    BonsoirDiscoveryEvent event,
-    BonsoirDiscovery discovery,
-  ) async {
+  Future<void> _handleDiscoveryEvent(BonsoirDiscoveryEvent event, BonsoirDiscovery discovery) async {
     if (_disposed) {
       return;
     }
@@ -814,9 +780,7 @@ class RemoteSyncService extends GetxController {
       return;
     }
 
-    final name = attributes['name']?.trim().isNotEmpty == true
-        ? attributes['name']!.trim()
-        : service.name;
+    final name = attributes['name']?.trim().isNotEmpty == true ? attributes['name']!.trim() : service.name;
 
     final devicePlatform = attributes['platform'] ?? '';
     final deviceVersion = attributes['version'] ?? '';
@@ -935,13 +899,7 @@ class RemoteSyncService extends GetxController {
       name: broadcastName,
       type: _mdnsServiceType,
       port: localPort.value,
-      attributes: {
-        'id': _deviceId,
-        'name': deviceName,
-        'platform': platform,
-        'version': version,
-        'ip': localIp.value,
-      },
+      attributes: {'id': _deviceId, 'name': deviceName, 'platform': platform, 'version': version, 'ip': localIp.value},
     );
 
     final broadcast = BonsoirBroadcast(service: service);

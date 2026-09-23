@@ -37,8 +37,6 @@ import 'package:pure_live/modules/tags/tag_management_binding.dart';
 import 'package:pure_live/modules/hot_areas/hot_areas_binding.dart';
 import 'package:pure_live/modules/shield/danmu_shield_binding.dart';
 import 'package:pure_live/modules/account/yy/yy_cookie_binding.dart';
-import 'package:pure_live/modules/account/taobao/taobao_cookie_binding.dart';
-import 'package:pure_live/modules/account/taobao/taobao_cookie_page.dart';
 import 'package:pure_live/modules/areas/favorite_areas_binding.dart';
 import 'package:pure_live/modules/account/soop/soop_cookie_page.dart';
 import 'package:pure_live/modules/account/huya/huya_cookie_page.dart';
@@ -51,16 +49,18 @@ import 'package:pure_live/modules/account/bilibili/web_login_page.dart';
 import 'package:pure_live/modules/account/soop/soop_cookie_binding.dart';
 import 'package:pure_live/modules/account/huya/huya_cookie_binding.dart';
 import 'package:pure_live/recorder/pages/recorder/recorder_binding.dart';
+import 'package:pure_live/modules/remote_receiver/remote_sync_page.dart';
+import 'package:pure_live/modules/account/taobao/taobao_cookie_page.dart';
 import 'package:pure_live/modules/account/twitch/twitch_cookie_page.dart';
 import 'package:pure_live/modules/account/douyin/douyin_cookie_page.dart';
+import 'package:pure_live/modules/remote_receiver/remote_sync_binding.dart';
+import 'package:pure_live/modules/account/taobao/taobao_cookie_binding.dart';
 import 'package:pure_live/modules/account/twitch/twitch_cookie_binding.dart';
 import 'package:pure_live/modules/live_play/bindings/live_play_binding.dart';
 import 'package:pure_live/modules/multiview/bindings/multiview_binding.dart';
 import 'package:pure_live/modules/account/douyin/douyin_cookie_binding.dart';
 import 'package:pure_live/modules/account/kuaishou/kuaishou_cookie_page.dart';
-import 'package:pure_live/modules/backup/remote_receiver/remote_sync_page.dart';
 import 'package:pure_live/modules/account/kuaishou/kuaishou_cookie_binding.dart';
-import 'package:pure_live/modules/backup/remote_receiver/remote_sync_binding.dart';
 import 'package:pure_live/recorder/pages/record_settings/record_settings_page.dart';
 import 'package:pure_live/recorder/pages/record_settings/record_settings_binding.dart';
 
@@ -249,7 +249,7 @@ class AppPages {
       page: _smoothPage(() => const TagManagementPage()),
       bindings: [TagManagementBinding()],
     ),
-     GetPage(
+    GetPage(
       name: RoutePath.kRemoteSync,
       page: _smoothPage(() => const RemoteSyncPage()),
       bindings: [RemoteSyncBinding()],
