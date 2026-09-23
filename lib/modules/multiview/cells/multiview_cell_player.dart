@@ -3,6 +3,7 @@ import 'package:pure_live/core/common/hls_source_query_policy.dart';
 
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 
@@ -77,6 +78,12 @@ abstract interface class MultiviewCellPlayerHandle {
 abstract interface class MultiviewOwnedInputHandle {
   Future<void> startOwned(OwnedPlaybackSource source);
   Future<void> openOwned(OwnedPlaybackSource source);
+}
+
+/// Optional Windows presentation progress; a playing transport alone does not
+/// prove that the visible texture is still advancing.
+abstract interface class MultiviewFrameProgressHandle {
+  ValueListenable<int>? get frameRevision;
 }
 
 /// 单格播放器工厂：按目标渲染分辨率创建一格播放器。
@@ -264,7 +271,8 @@ abstract interface class MultiviewNativeInputRouting {
 
 /// Per-cell input ownership, shared with the main player's transport contract.
 /// The backend retains sole ownership of its video-controller release hook.
-class MultiviewCellPlayer implements MultiviewCellPlayerHandle, MultiviewOwnedInputHandle {
+class MultiviewCellPlayer
+    implements MultiviewCellPlayerHandle, MultiviewOwnedInputHandle, MultiviewFrameProgressHandle {
   MultiviewCellPlayer({
     required int renderWidth,
     required int renderHeight,
@@ -288,6 +296,8 @@ class MultiviewCellPlayer implements MultiviewCellPlayerHandle, MultiviewOwnedIn
 
   @override
   VideoController? get videoController => _closed ? null : _backend.videoController;
+  @override
+  ValueListenable<int>? get frameRevision => _closed ? null : _backend.videoController?.frameRevision;
   @override
   bool get isPlaying => !_closed && _backend.isPlaying;
   @override
