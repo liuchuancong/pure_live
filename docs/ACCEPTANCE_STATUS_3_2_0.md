@@ -6,8 +6,8 @@
 
 | 项目 | 当前证据 |
 | --- | --- |
-| 功能源码基线 | `fe00a869` 已推送。花椒新增[最多三页公开推荐的昵称/标题筛选](HUAJIAO_PUBLIC_RECOMMENDATION_SEARCH_AUDIT_2026_09_23.md)，受影响测试 **149/149**、只读生产探针 **1/1**；此前 PandaTV [LIVE 与未开播主播双路搜索](PANDALIVE_NATIVE_SEARCH_AUDIT_2026_09_23.md) **92/92**。本轮全库 Analyze 待源码收敛，最近一次完整门禁仍绑定 `b79e8838`：Flutter **4999/4999**、公共接口 **42/42**，记录 `20260919T181710597Z-quality-full.json`；下个候选前需重跑 Full |
-| Android 最新本机构建/原生输入 | 现存 `b79e8838` arm64 Debug，3.1.8+4121 / Manifest 6121，289007467 B，SHA-256 `377D4CD5…30ED`；16 个原生库、最小 ELF LOAD `0x4000`、APK 内容门禁通过。该包早于当前源码 `fe00a869`，未覆盖安装；新增平台、搜索、布局及录制等后续修订均待新候选原生验收 |
+| 功能源码基线 | `5d6917c7` 已推送。Bigo 新增[有限公开推荐快照昵称/标题筛选](BIGO_PUBLIC_SNAPSHOT_SEARCH_AUDIT_2026_09_23.md)，受影响测试 **124/124**、只读生产探针 **1/1**；花椒[最多三页公开推荐筛选](HUAJIAO_PUBLIC_RECOMMENDATION_SEARCH_AUDIT_2026_09_23.md) **149/149**、探针 **1/1**；PandaTV [LIVE 与未开播主播双路搜索](PANDALIVE_NATIVE_SEARCH_AUDIT_2026_09_23.md) **92/92**。本轮全库 Analyze 待源码收敛，最近一次完整门禁仍绑定 `b79e8838`：Flutter **4999/4999**、公共接口 **42/42**，记录 `20260919T181710597Z-quality-full.json`；下个候选前需重跑 Full |
+| Android 最新本机构建/原生输入 | 现存 `b79e8838` arm64 Debug，3.1.8+4121 / Manifest 6121，289007467 B，SHA-256 `377D4CD5…30ED`；16 个原生库、最小 ELF LOAD `0x4000`、APK 内容门禁通过。该包早于当前源码 `5d6917c7`，未覆盖安装；新增平台、搜索、布局及录制等后续修订均待新候选原生验收 |
 | Android 当前编号账本 | 46 行：16 PASS / 30 RUN / 0 NR；每行仍含多个动作和平台组合，旧包证据不自动覆盖当前源码 |
 | Windows 最新归档 | `2fb471d3` Debug；尚未纳入之后的源码修订，也不是 3.2.0 Release 候选 |
 | 手机快照 | `192.168.1.2:5555` 已重新核对 25102RKBEC / myron / Android 17 / root；Pure Live 无进程和录制服务，但前台为其他应用，本轮守卫停止安装与输入 |
