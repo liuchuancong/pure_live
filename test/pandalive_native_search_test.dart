@@ -29,7 +29,7 @@ Map<String, Object?> _bj({String id = 'see994', int idx = 202, Object? media}) =
   'userNick': '가온主播',
   'thumbUrl': 'https://cdn.pandalive.co.kr/avatar.jpg',
   'blockService': false,
-  if (media != null) 'media': media,
+  'media': ?media,
 };
 
 ({int status, String body}) _page(List<Object?> rows, {required int page, required int size, required int total}) => (
