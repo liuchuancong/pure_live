@@ -23,7 +23,6 @@ import 'package:pure_live/player/utils/mpv_platform_profile.dart';
 import 'package:pure_live/player/core/playback_proxy_policy.dart';
 import 'package:pure_live/player/core/player_error_classifier.dart';
 import 'package:pure_live/common/utils/latest_async_value_queue.dart';
-import 'package:pure_live/player/widgets/video_output_viewport_sizer.dart';
 import 'package:pure_live/player/interface/media_kit_player_accessor.dart';
 
 @visibleForTesting
@@ -977,7 +976,8 @@ class MediaKitAdapter
   Widget getVideoWidget({BoxFit? fit}) {
     final effectiveFit = fit ?? _videoFit;
     _videoFit = effectiveFit;
-    final video = Video(
+
+    return Video(
       controller: _controller,
       controls: NoVideoControls,
       fit: effectiveFit,
@@ -986,15 +986,6 @@ class MediaKitAdapter
       // rooms on Home/lock even though the background policy kept them alive.
       pauseUponEnteringBackgroundMode: false,
       resumeUponEnteringForegroundMode: false,
-    );
-    if (!PlatformUtils.isWindows) return video;
-    return VideoOutputViewportSizer(
-      outputIdentity: _controller,
-      sourceWidth: _widthSubject,
-      sourceHeight: _heightSubject,
-      fit: effectiveFit,
-      onResize: (width, height, force) => _controller.setSize(width: width, height: height),
-      child: video,
     );
   }
 
