@@ -6,7 +6,7 @@
 
 | 项目 | 当前证据 |
 | --- | --- |
-| 功能源码基线 | 当前业务代码 `4e9895dd`，探针代码 `2d83145d`；微博昵称筛选相关测试 **98/98**（`20260923T155843575Z-quality-focused.json`），未知人数修复相关测试 **110/110**（`20260923T154525064Z-quality-focused.json`）。当前干净输入全仓 Analyze 0 error / 0 warning、1 项既有 info（`20260923T161406931Z-quality-focused.json`）；微博只读生产探针观察到 9 张推荐卡、昵称筛选命中 1 张、场次/主播身份一致，媒体未验证（`weibo-metadata-search-20260924.json`）。上一正式 Full 在 `a4f3eeb3` 通过 Flutter **5295/5295**、公共接口 **42/42**（`20260923T153951228Z-quality-full.json`）；该 Full 早于当前业务修复，最终候选仍须重新完成门禁与双端原生验收 |
+| 功能源码基线 | 当前业务代码 `4e9895dd`，搜索探针代码 `2d83145d`；微博昵称筛选相关测试 **98/98**（`20260923T155843575Z-quality-focused.json`），未知人数修复相关测试 **110/110**（`20260923T154525064Z-quality-focused.json`）。当前干净输入全仓 Analyze 0 error / 0 warning、1 项既有 info（`20260923T161406931Z-quality-focused.json`）；微博只读搜索探针观察到 9 张推荐卡、昵称筛选命中 1 张、场次/主播身份一致（`weibo-metadata-search-20260924.json`）。另有[同输入短录复核](WEIBO_RECORDING_SOURCE_RELATIVE_RECHECK_2026_09_24.md)：现网两段录制、严格解码及内容/时钟比较通过，聚焦测试 **12/12**（`20260923T162239341Z-quality-focused.json`），不覆盖客户端 GUI 或长录。上一正式 Full 在 `a4f3eeb3` 通过 Flutter **5295/5295**、公共接口 **42/42**（`20260923T153951228Z-quality-full.json`）；该 Full 早于当前业务修复，最终候选仍须重新完成门禁与双端原生验收 |
 | Android 最新本机构建/原生输入 | 现存 `b79e8838` arm64 Debug，3.1.8+4121 / Manifest 6121，289007467 B，SHA-256 `377D4CD5…30ED`；16 个原生库、最小 ELF LOAD `0x4000`、APK 内容门禁通过。该包早于当前源码，未覆盖安装；新增平台、搜索、布局及录制等后续修订均待新候选原生验收 |
 | Android 当前编号账本 | 46 行：16 PASS / 30 RUN / 0 NR；每行仍含多个动作和平台组合，旧包证据不自动覆盖当前源码 |
 | Windows 最新归档 | `9a15c7fe` x64 Debug 已构建：`PureLive-3.1.8-4121-windows-x64-debug.zip`，SHA-256 `e5353f23…d1125b`，记录 `20260923T152205072Z-build-windowsx64-debug.json`；早于当前人数展示修复，尚未完成 GUI/播放/录制原生验收，也不是 3.2.0 Release 候选 |
