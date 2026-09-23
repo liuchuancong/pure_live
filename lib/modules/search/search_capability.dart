@@ -72,7 +72,7 @@ class LiveSearchCapabilities {
       supportsWebSearch: false,
     ),
     Sites.bigoSite: LiveSearchCapability(
-      coverage: NativeSearchCoverage.roomLookup,
+      coverage: NativeSearchCoverage.showcaseSnapshot,
       supportsPagination: false,
       supportsWebSearch: false,
     ),

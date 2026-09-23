@@ -1899,7 +1899,7 @@
   "youtube_quality_hls_auto": "HLS Auto",
   "youtube_quality_dash_auto": "DASH Auto",
   "site_bigo": "Bigo Live",
-  "bigo_directory_scope": "The official public directory is a finite recommendation snapshot, not a complete catalog. Native search accepts an exact Bigo ID or official room URL.",
+  "bigo_directory_scope": "The official public directory is a finite recommendation snapshot, not a complete catalog. Filter current recommendations by host or title; exact Bigo IDs and official room URLs are queried separately.",
   "bigo_category_public": "Public recommendations",
   "bigo_chat_notice": "Bigo Live remote chat is pending. Directory user_count is shown as current viewers only for active cards; missing room-detail values stay unknown.",
   "bigo_login_required": "This room currently requires sign-in, so its live state and media remain unknown.",
