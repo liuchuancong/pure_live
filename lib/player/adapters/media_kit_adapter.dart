@@ -298,15 +298,14 @@ class MediaKitAdapter
               ),
             );
 
-      if (PlatformUtils.isWindows) {
-        _videoParamsSub = _player.stream.videoParams.listen((params) {
-          if (_disposed) return;
-          final size = _resolveMediaKitDisplaySize(params);
-          if (size != null) {
-            _videoFrameProgressSubject.add(DateTime.now().millisecondsSinceEpoch);
-          }
-        });
-      }
+      // NOTE: videoParams-driven frame progress used to live here as a
+      // secondary subscription, but it was never added to `_subscriptions`
+      // and was silently overwritten by `_bindListeners` below. It also
+      // published a fake "frame" tick on resolution changes only. The real
+      // Windows frame heartbeat is emitted from `_markDecodedVideoFrame`,
+      // which is driven by the native mpv frame probes bound in
+      // `_bindNativeSourceObservers`. `_bindListeners` owns the single
+      // videoParams subscription and registers it for cancellation.
 
       await _bindListeners(sourceGeneration: _sourceFence.generation);
 
@@ -461,6 +460,14 @@ class MediaKitAdapter
     // PlayerManager recreate watchdog timers and notify UI listeners dozens of
     // times per second on Windows. Keep the dedicated frame stream hot while
     // emitting state only when it actually changes.
+    //
+    // The Windows frame heartbeat is published here rather than from
+    // `videoParams`: video-params only changes on resolution/pixel-format
+    // transitions, so it froze the PlayerManager stall watchdog on any stable
+    // stream and generated a `video_frame_stall_timeout` every ten seconds.
+    if (supportsVideoFrameProgress) {
+      _videoFrameProgressSubject.add(DateTime.now().millisecondsSinceEpoch);
+    }
     _publishMediaProgressState();
     _cancelRecoveredNativeError(NativeDiagnosticComponent.video);
   }
@@ -711,11 +718,11 @@ class MediaKitAdapter
       _widthSubject.add(size?.width.toInt());
       _heightSubject.add(size?.height.toInt());
       if (size != null) {
-        if (PlatformUtils.isWindows) {
-          _videoFrameProgressSubject.add(DateTime.now().millisecondsSinceEpoch);
-        }
         // Non-native backends do not expose mpv frame properties. Their video
         // parameter event remains the strongest available readiness signal.
+        // Native Windows uses the mpv frame probes bound in
+        // `_bindNativeSourceObservers`; this branch must not push a
+        // resolution-change tick into the frame progress stream.
         if (!_usesNativeFrameProbe) _markDecodedVideoFrame(sourceGeneration);
       }
     });
