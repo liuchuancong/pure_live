@@ -1,5 +1,11 @@
 # 浪 Live 合同与内部适配检查点（2026-09-21）
 
+## 2026-09-23 CDN 边缘复核
+
+同一公开房间 `5461380` 的官网 `GET https://api.lang.live/langweb/v1/room/liveinfo?room_id=5461380` 出现明确的边缘差异：本机直连到当时的 CloudFront `13.33.183.19` / `.128` 返回 HTTP 200、`ret_code=0`，房间身份一致、`live_status=0`；直连到当时 DNS 返回的 `3.160.150.11` / `.38` 均为 HTTP 403 HTML，经本机 Clash 也为 403。`--resolve` 仅用于诊断同一官方主机的两个边缘，**不写入生产解析或固定 IP**。一个已下播房间的元数据成功不能证明当前直播媒体可播。
+
+新增显式只读探针 `PURELIVE_LANGLIVE_ROOM_PROBE=1`：走当前系统解析时，注册前的 `LangLiveApi` 如实报告 `edge_access_blocked`，不把 403 当作房间下播；与确定性适配器测试合计 **8/8**，记录 `20260923T090143778Z-quality-focused.json`。探针此前两次以严格成功断言运行时分别遇到 `access` 与诊断边缘连接 `transport`，失败记录保留在本机 `local-artifacts/build-records/`。当前仍缺公开在播房间与 FLV/HLS 前缀字节证据，故注册门槛不变。
+
 ## 已完成
 
 - 从当前 Android 包 `com.lang.lang` 6.6.7.6（versionCode 2353）确认生产域名仍为
