@@ -28,6 +28,7 @@ class TwitcastingApi {
   static const origin = 'https://twitcasting.tv';
   static const directoryOrigin = 'https://frontendapi.twitcasting.tv';
   static const directoryWindow = 60;
+  static const searchWindow = 50;
   static const responseLimit = 1024 * 1024;
   static const playHeaders = <String, String>{'Referer': '$origin/', 'Origin': origin, 'User-Agent': 'Mozilla/5.0'};
   final TwitcastingRequest _request;
@@ -248,6 +249,74 @@ class TwitcastingApi {
           watching: '$count',
           onlineViewers: '$count',
           audienceMetricType: AudienceMetricType.onlineViewers,
+          status: true,
+          liveStatus: LiveStatus.live,
+        ),
+      );
+    }
+    return List.unmodifiable(rooms.values);
+  }
+
+  /// The public text-search page exposes up to 50 live matches in one HTML
+  /// window. User/recording/premier sections are distinct from current lives.
+  Future<List<LiveRoom>> searchLives(String keyword, {int page = 1, int pageSize = 20, CancelToken? cancel}) async {
+    final query = keyword.trim();
+    if (page < 1 || page > 10000 || pageSize < 1 || pageSize > searchWindow || query.length > 100) {
+      throw const TwitcastingException(TwitcastingFailure.schema);
+    }
+    if (query.isEmpty || (page - 1) * pageSize >= searchWindow) return const [];
+    final uri = Uri(
+      scheme: 'https',
+      host: 'search.twitcasting.tv',
+      pathSegments: ['search', 'text', query],
+      queryParameters: {'hl': 'en'},
+    );
+    final document = html.parse(await read(uri, cancel: cancel));
+    final section = document.querySelector('#tw-search-result-live');
+    if (section == null) throw const TwitcastingException(TwitcastingFailure.schema);
+    final rows = section.querySelectorAll('.tw-search-result-row');
+    if (rows.length > searchWindow) throw const TwitcastingException(TwitcastingFailure.schema);
+    final rooms = <String, LiveRoom>{};
+    for (final row in rows.skip((page - 1) * pageSize).take(pageSize)) {
+      final movieHref = row.querySelector('a.tw-movie-thumbnail2')?.attributes['href'] ?? '';
+      final channelHref = row.querySelector('.tw-search-result-row-user-name .usertext a')?.attributes['href'] ?? '';
+      final movieUri = Uri.tryParse(movieHref);
+      final channelUri = Uri.tryParse(channelHref);
+      if (movieUri == null ||
+          channelUri == null ||
+          movieUri.hasAuthority ||
+          channelUri.hasAuthority ||
+          movieUri.hasQuery ||
+          movieUri.hasFragment ||
+          channelUri.hasQuery ||
+          channelUri.hasFragment ||
+          channelUri.pathSegments.length != 1 ||
+          movieUri.pathSegments.length != 3 ||
+          row.querySelector('.tw-movie-thumbnail2-badge[data-status="live"]') == null ||
+          row.querySelector('.tw-movie-thumbnail2-image-wrapper[data-can-play="true"]') == null) {
+        throw const TwitcastingException(TwitcastingFailure.schema);
+      }
+      final channel = channelName(channelUri.pathSegments.single);
+      final movie = integer(movieUri.pathSegments.last);
+      if (movieUri.pathSegments[0].toLowerCase() != channel ||
+          movieUri.pathSegments[1] != 'movie' ||
+          movie == null ||
+          movie <= 0) {
+        throw const TwitcastingException(TwitcastingFailure.schema);
+      }
+      rooms.putIfAbsent(
+        channel,
+        () => LiveRoom(
+          platform: 'twitcasting',
+          roomId: channel,
+          userId: channel,
+          link: '$origin/$channel',
+          title: row.querySelector('.tw-movie-thumbnail-title')?.text.trim() ?? '',
+          nick: row.querySelector('.tw-search-result-row-user-name .username')?.text.trim() ?? channel,
+          cover: picture(row.querySelector('.tw-movie-thumbnail2-image')?.attributes['src']),
+          avatar: picture(row.querySelector('.userimage32 img')?.attributes['src']),
+          watching: '',
+          audienceMetricType: AudienceMetricType.unknown,
           status: true,
           liveStatus: LiveStatus.live,
         ),

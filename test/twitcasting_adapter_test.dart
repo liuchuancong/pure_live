@@ -9,6 +9,7 @@ import 'package:pure_live/common/models/live_room.dart';
 import 'package:pure_live/common/utils/live_url_tool.dart';
 import 'package:pure_live/core/common/http_client.dart' as core;
 import 'package:pure_live/core/interface/live_site.dart';
+import 'package:pure_live/core/interface/live_search.dart';
 import 'package:pure_live/core/site/twitcasting/twitcasting_api.dart';
 import 'package:pure_live/core/site/twitcasting/twitcasting_site.dart';
 import 'package:pure_live/core/sites.dart';
@@ -34,16 +35,38 @@ TwitcastingApi apiFor({String? page, Map<String, dynamic>? stream, List<Uri>? ca
     );
   },
 );
+String searchHtml(int count, {bool liveBadge = true}) =>
+    '''
+<html><body><div id="tw-search-result-live">
+${List.generate(count, (i) => '''
+<div class="tw-search-result-row">
+  <a class="tw-movie-thumbnail2" href="/c:artist$i/movie/${i + 1}">
+    <div class="tw-movie-thumbnail2-image-wrapper" data-can-play="true">
+      <img class="tw-movie-thumbnail2-image" src="https://images.twitcasting.tv/cover$i.jpg">
+      ${liveBadge ? '<span class="tw-movie-thumbnail2-badge" data-status="live">LIVE</span>' : ''}
+    </div><span class="tw-movie-thumbnail-title">Stream $i</span>
+  </a>
+  <div class="tw-search-result-row-user-name"><div class="userimage32">
+    <img src="https://images.twitcasting.tv/avatar$i.jpg">
+  </div><div class="usertext"><a href="/c:artist$i"><span class="username">Artist $i</span></a></div></div>
+</div>''').join()}
+</div><div id="tw-search-result-movie"><div class="tw-search-result-row">old recording</div></div>
+<div id="tw-search-result-user"><div class="tw-search-result-row">offline profile</div></div>
+</body></html>
+''';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  test('registered adapter exposes recording and fresh recovery without claiming remote chat or native search', () {
+  test('registered adapter exposes recording, recovery and native live search without remote chat', () {
     expect(Sites.of(' TWITCASTING ').liveSite, isA<TwitcastingSite>());
     expect(Sites.of('twitcasting').liveSite, isA<LiveSiteRecordRoomResolver>());
     expect(Sites.of('twitcasting').liveSite, isA<LiveSiteRoomRefresher>());
     expect(Sites.of('twitcasting').liveSite, isA<LivePlayRecoveryResolver>());
+    expect(Sites.of('twitcasting').liveSite, isA<LiveCancellableSearch>());
     expect(Sites.supportSites.where((s) => s.id == 'twitcasting'), hasLength(1));
-    expect(LiveSearchCapabilities.forPlatform('twitcasting').supportsNativeSearch, false);
+    expect(LiveSearchCapabilities.forPlatform('twitcasting').coverage, NativeSearchCoverage.liveOnly);
+    expect(LiveSearchCapabilities.forPlatform('twitcasting').supportsNativeSearch, true);
+    expect(LiveSearchCapabilities.forPlatform('twitcasting').supportsPagination, true);
     expect(LiveSearchCapabilities.forPlatform('twitcasting').supportsWebSearch, true);
     expect(MultiviewDanmakuSession.isSupportedPlatform('twitcasting'), false);
     expect(LiveRoom.audienceCapabilityFor('twitcasting').onlineAvailableInRoomLists, true);
@@ -135,6 +158,83 @@ void main() {
     expect((await api.directory(page: 2, pageSize: 30)).first.roomId, 'artist30');
     expect(await api.directory(page: 3, pageSize: 30), isEmpty);
     expect(requests, 1);
+  });
+  test('public text search returns only live rows and leaves unverified audience unknown', () async {
+    final calls = <Uri>[];
+    final api = TwitcastingApi(
+      request: (uri, _) async {
+        calls.add(uri);
+        return (status: 200, body: searchHtml(2));
+      },
+    );
+    final rooms = await api.searchLives(' artist ', pageSize: 20);
+    expect(calls.single.host, 'search.twitcasting.tv');
+    expect(calls.single.pathSegments, ['search', 'text', 'artist']);
+    expect(rooms.map((room) => room.roomId), ['c:artist0', 'c:artist1']);
+    expect(rooms.first.link, 'https://twitcasting.tv/c:artist0');
+    expect(rooms.first.nick, 'Artist 0');
+    expect(rooms.first.title, 'Stream 0');
+    expect(rooms.first.cover, 'https://images.twitcasting.tv/cover0.jpg');
+    expect(rooms.first.isLiveNow, isTrue);
+    expect(rooms.first.watching, isEmpty);
+    expect(rooms.first.onlineViewers, anyOf(isNull, isEmpty));
+  });
+  test('search slices at the official 50-result window and ignores other result sections', () async {
+    var calls = 0;
+    final api = TwitcastingApi(
+      request: (_, _) async {
+        calls++;
+        return (status: 200, body: searchHtml(50));
+      },
+    );
+    expect((await api.searchLives('t', page: 2, pageSize: 20)).first.roomId, 'c:artist20');
+    expect(await api.searchLives('t', page: 3, pageSize: 20), hasLength(10));
+    expect(await api.searchLives('t', page: 4, pageSize: 20), isEmpty);
+    expect(calls, 2);
+  });
+  test('search rejects malformed live rows, pages and challenge HTML', () async {
+    var calls = 0;
+    final api = TwitcastingApi(
+      request: (_, _) async {
+        calls++;
+        return (status: 200, body: searchHtml(1));
+      },
+    );
+    for (final page in [0, 10001]) {
+      await expectLater(api.searchLives('t', page: page), failure(TwitcastingFailure.schema));
+    }
+    for (final size in [0, 51]) {
+      await expectLater(api.searchLives('t', pageSize: size), failure(TwitcastingFailure.schema));
+    }
+    expect(await api.searchLives(' '), isEmpty);
+    expect(calls, 0);
+    for (final body in [
+      '<html>challenge</html>',
+      searchHtml(1, liveBadge: false),
+      searchHtml(1).replaceFirst('/c:artist0/movie/1', '/c:other/movie/1'),
+      searchHtml(1).replaceFirst('data-can-play="true"', 'data-can-play="false"'),
+    ]) {
+      final malformed = TwitcastingApi(request: (_, _) async => (status: 200, body: body));
+      await expectLater(malformed.searchLives('t'), failure(TwitcastingFailure.schema));
+    }
+  });
+  test('site search forwards cancellation and never reads room media while searching', () async {
+    final token = CancelToken();
+    final calls = <Uri>[];
+    final site = TwitcastingSite(
+      api: TwitcastingApi(
+        request: (uri, cancel) async {
+          expect(cancel, same(token));
+          calls.add(uri);
+          return (status: 200, body: searchHtml(1));
+        },
+      ),
+    );
+    expect((await site.searchRoomsCancellable('artist', cancel: token)).single.roomId, 'c:artist0');
+    expect(calls.map((uri) => uri.host), ['search.twitcasting.tv']);
+    token.cancel();
+    await expectLater(site.searchRoomsCancellable('artist', cancel: token), failure(TwitcastingFailure.cancelled));
+    expect(calls, hasLength(1));
   });
   test('locked, group, deleted and offline directory entries do not become playable cards', () async {
     final row = (jsonFixture('directory.json')['movies'] as List).single as Map;

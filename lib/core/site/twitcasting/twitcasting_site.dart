@@ -1,7 +1,9 @@
+import 'package:dio/dio.dart';
 import 'package:pure_live/common/models/live_area.dart';
 import 'package:pure_live/common/models/live_room.dart';
 import 'package:pure_live/core/danmaku/empty_danmaku.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
+import 'package:pure_live/core/interface/live_search.dart';
 import 'package:pure_live/core/interface/live_site.dart';
 import 'package:pure_live/model/live_category.dart';
 import 'package:pure_live/model/live_play_quality.dart';
@@ -9,7 +11,7 @@ import 'package:pure_live/model/live_play_quality.dart';
 import 'twitcasting_api.dart';
 
 class TwitcastingSite extends LiveSite
-    implements LiveSiteRoomRefresher, LiveSiteRecordRoomResolver, LivePlayRecoveryResolver {
+    implements LiveSiteRoomRefresher, LiveSiteRecordRoomResolver, LivePlayRecoveryResolver, LiveCancellableSearch {
   TwitcastingSite({TwitcastingApi? api}) : _api = api ?? TwitcastingApi();
   final TwitcastingApi _api;
   @override
@@ -34,6 +36,18 @@ class TwitcastingSite extends LiveSite
     }
     return _api.directory(page: page, pageSize: pageSize, category: category.areaId!);
   }
+
+  @override
+  Future<List<LiveRoom>> searchRooms(String keyword, {int page = 1, int pageSize = 30}) =>
+      searchRoomsCancellable(keyword, page: page, pageSize: pageSize);
+
+  @override
+  Future<List<LiveRoom>> searchRoomsCancellable(
+    String keyword, {
+    int page = 1,
+    int pageSize = 30,
+    CancelToken? cancel,
+  }) => _api.searchLives(keyword, page: page, pageSize: pageSize, cancel: cancel);
 
   @override
   Future<LiveRoom> getRoomDetail({required String roomId, required String platform}) {

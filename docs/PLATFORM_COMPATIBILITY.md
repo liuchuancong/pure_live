@@ -13,7 +13,7 @@ OPENREC / mellow-fan 已接入复合频道身份、公开目录与 HLS 质量；
 当前 [Android 候选 bee143e2](OPENREC_PICARTO_ANDROID_CANDIDATE_2026_09_09.md) 已包含克拉克拉、花椒、OPENREC 和 Picarto 响应收尾修订；完整门禁/打包通过，尚未安装，后续 TTing 和源策略输入链未入包。Windows f3de664a 未随本批更新，原生能力证据仍按各平台分列。
 猫耳和映客已应用接入；猫耳 Windows 原生短录有独立证据，映客已有公开接口和生产地址解析，并补齐精确 UID/官网链接查询，见[映客应用审计](INKE_APPLICATION_INTEGRATION_AUDIT_2026_09_08.md)与[精确查询记录](INKE_EXACT_UID_SEARCH_AUDIT_2026_09_23.md)。
 Picarto 已进入 Android 候选并取得部分原生证据，见 [接入审计](PICARTO_ADAPTER_AUDIT_2026_09_07.md)及[停止/清理补证](ANDROID_PROXY_OCCLUSION_AUDIT_2026_09_07.md)。当前源码新增官网动态直播分类与原生分类分页、主播档案原生搜索，见[分类专项记录](PICARTO_NATIVE_CATEGORY_AUDIT_2026_09_23.md)与[搜索专项记录](PICARTO_PROFILE_SEARCH_AUDIT_2026_09_23.md)；这些更新尚未进入原生候选。
-TwitCasting 新增公开目录、顶栏分类、详情/HLS三档、录制输入与恢复；Android 80b7431c已覆盖安装并解除首段401，low出现实际画面，但短录文件严格解码仍失败，见[修复候选复验](TWITCASTING_COOKIE_ANDROID_RETEST_2026_09_07.md)。首次high/首帧、完整文件与长录仍待验收；当前 Windows f3de664a 候选已包含源码，但没有本平台对应的新原生验收。
+TwitCasting 新增公开目录、顶栏分类、详情/HLS三档、录制输入与恢复；Android 80b7431c已覆盖安装并解除首段401，low出现实际画面，但短录文件严格解码仍失败，见[修复候选复验](TWITCASTING_COOKIE_ANDROID_RETEST_2026_09_07.md)。当前源码另补[官网当前直播搜索](TWITCASTING_PUBLIC_LIVE_SEARCH_AUDIT_2026_09_23.md)；首次high/首帧、完整文件与长录仍待验收，现有 Android/Windows 候选早于这项搜索修订。
 参考项目尚未接入的平台单列于 [平台扩展差距表](PLATFORM_EXPANSION_AUDIT_2026_09_07.md)，不计作本项目已支持。
 
 源码开发中的 AcFun（正式 v3.1.8 发布包不含；当前 af88a032 Android Debug 候选已包含）：已接入官网直播分类与目录、包含未开播作者的
@@ -37,7 +37,7 @@ TwitCasting 新增公开目录、顶栏分类、详情/HLS三档、录制输入�
 | YY Live | 动态读取头部与分类元数据 | 原生直播间/主播搜索，可返回未开播结果 | YY WebSocket | `users` 为平台热度值 |
 | AcFun | 官网直播分类与目录 | 原生作者搜索，含未开播作者；稀疏分页 | 当前未接入，页面明确说明 | `onlineCount` 为在线；点赞、粉丝分列 |
 | Picarto | 官网动态直播分类、公开目录与分类原生分页；每次读取当期分类元数据 | 官网原生主播档案关键词分页，含未开播结果；网页搜索和分享链接回流保留 | 当前未接入，页面明确说明 | `viewers` 为在线，详情 `total_views` 为累计观看；搜索 `follower_count` 为粉丝，搜索缺在线人数时保持未知 |
-| TwitCasting | 官网顶栏分类与最多60条公开热门窗口；页面缓存后本地分页 | 官网搜索入口；仅频道根链接回流，movie/archive待接入 | 当前未接入，页面明确说明 | 目录 `current_viewer_count` 为在线；详情缺值时保留未知 |
+| TwitCasting | 官网顶栏分类与最多60条公开热门窗口；页面缓存后本地分页 | 官网当前直播关键词搜索，最多50条公开窗口本地分页；网页搜索保留；仅频道根链接回流，movie/archive待接入 | 当前未接入，页面明确说明 | 目录 `current_viewer_count` 为在线；搜索页未给并发人数时保持未知 |
 | 猫耳 FM | 官网 catalog/tag 分类与原生推荐分页 | 精确房间号或 `fm.missevan.com/live/{id}` 官网链接，含未开播；昵称/关键词待接入 | 当前未接入 | `score` 为热度，粉丝分列；不以零值冒充当前在线 |
 | 映客 | 官网有限精选及服务端频道，页面持续说明非全站列表 | 精确映客 UID 或官网房间链接，含未开播；昵称/关键词待接入，无网页搜索入口 | 当前未接入 | 未取得人数，保持未知；主播等级不作观众数 |
 | 克拉克拉 | 官方热门/萌星，type 0/107 原生分页 | 当前未接入 | 当前未接入 | `watchNumber` 未证实为并发人数，保持未知 |
