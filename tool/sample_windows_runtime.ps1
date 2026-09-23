@@ -167,7 +167,7 @@ $samples = [Collections.Generic.List[object]]::new()
 $previousCpuSeconds = $null
 $previousElapsed = 0.0
 $processExitObserved = $false
-$plannedSampleCount = [Math]::Floor($DurationSeconds / $IntervalSeconds) + 1
+$nextSampleElapsed = 0.0
 $gpuEngineCounterPath = $null
 [string[]] $gpuMemoryCounterPaths = @()
 if ($IncludeGpu) {
@@ -198,14 +198,17 @@ $displayAdapters = @(
         }
 )
 
-for ($sampleIndex = 0; $sampleIndex -lt $plannedSampleCount; $sampleIndex++) {
-    if ($sampleIndex -gt 0) {
-        $targetElapsedMilliseconds = $sampleIndex * $IntervalSeconds * 1000.0
-        $remainingMilliseconds = $targetElapsedMilliseconds - $stopwatch.Elapsed.TotalMilliseconds
-        if ($remainingMilliseconds -gt 0) {
-            Start-Sleep -Milliseconds ([Math]::Ceiling($remainingMilliseconds))
-        }
+while ($true) {
+    # Sampling a busy GPU can take longer than the requested interval. Use the
+    # wall-clock deadline rather than a fixed iteration count, and skip missed
+    # slots instead of extending a 35-minute run to 45+ minutes.
+    if ($samples.Count -gt 0 -and $stopwatch.Elapsed.TotalSeconds -ge $DurationSeconds) { break }
+    if ($nextSampleElapsed -gt $DurationSeconds) { break }
+    $remainingMilliseconds = ($nextSampleElapsed - $stopwatch.Elapsed.TotalSeconds) * 1000.0
+    if ($remainingMilliseconds -gt 0) {
+        Start-Sleep -Milliseconds ([Math]::Ceiling($remainingMilliseconds))
     }
+    if ($samples.Count -gt 0 -and $stopwatch.Elapsed.TotalSeconds -ge $DurationSeconds) { break }
 
     $process = Get-Process -Id $TargetProcessId -ErrorAction SilentlyContinue
     if (-not $process) {
@@ -271,6 +274,7 @@ for ($sampleIndex = 0; $sampleIndex -lt $plannedSampleCount; $sampleIndex++) {
 
     $previousCpuSeconds = $cpuSeconds
     $previousElapsed = $elapsed
+    $nextSampleElapsed = ([Math]::Floor($stopwatch.Elapsed.TotalSeconds / $IntervalSeconds) + 1) * $IntervalSeconds
 }
 
 $stopwatch.Stop()

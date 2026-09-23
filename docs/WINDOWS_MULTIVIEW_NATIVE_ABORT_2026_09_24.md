@@ -21,10 +21,18 @@ WinDbg `.ecxr; kv` 指向 `ucrtbase!abort+0x4e`，异常子码 `FAST_FAIL_FATAL_
 
 同次 30 分钟 CPU/GPU 采样器在目标进程结束时抛出 PowerShell StrictMode `Count` 属性错误，旧实现只在整个循环结束后输出 CSV，导致该轮没有性能序列。最小短生命周期进程复现了采样期间退出的路径；修订后每行立即追加 CSV，采样窗口中途退出时标记 `process_exit_observed` 并照常写 summary，同时预先冻结进程文件版本，避免退出后再次读取失效的 `MainModule`。`tool/test_windows_runtime_metrics.ps1` 10/10 通过；短生命周期复验生成了 1 行 CSV 与匹配 summary，退出标记为 true。旧轮缺失的序列不补造。
 
+## 最终互斥候选的长播观察
+
+`21a0c1ec` 对应的最终互斥候选，Windows 测试进程 PID 53288 于 2026-09-23 20:44:03 UTC 启动。相同虎牙房间普通播放/返回及 1+3 播放/返回短循环成功，未见新 WER。1+3 双格约 20:50:28 UTC 开始；主格持续变化，右上小格最后一次可确认不同画面在 21:03:22，21:13:57 首次观察到同一静止画面，并持续至 21:36；没有可见缓冲或错误遮罩，声音未测。点击小格和标题栏关闭未得到可见响应，主线程两份现场快照分别处于 Flutter 无障碍名称调用和 `GetMessageW` 等待，尚不足以区分小格纹理停帧、整窗交互问题及高负载主机的输入影响。原报告是**大格**停帧，故此观察不作 #875 原报告复现或修复结论。2×2 未执行。
+
+本机保留 PID 53288 的两份 live minidump 和栈摘要于 `local-artifacts/diagnostics/windows-regression/`，不入 Git。退出前先尝试正常关闭 10 秒，随后仅结束该 Windows 测试进程；没有手机操作。采样 CSV `20260923T205039271Z-issue875-mutex-1plus3-pid53288.csv` 保留 202 行（20:51:52–21:34:52 UTC），无进程终止和新 WER；采样器被手动终止，因此该 CSV 无 summary，不能据此推断 30 分钟验收通过。GPU dedicated 计数器出现远超物理容量的数值，不作为显存证据。
+
+该轮还揭示采样器第二个缺陷：5 秒采样槽在高负载下实际中位间隔约 12.4 秒，旧版按预定次数循环而非真实截止时间，35 分钟请求会延长运行。现在按照实时时钟截止、跳过错过的槽；慢采集器回归以 1.8 秒采集 / 1 秒间隔请求运行 10 秒，得到 5 行、实际 10.881 秒，而非原先的 11 次固定采集。单次系统计数器调用仍可能超过截止时间，此修订消除的是重复补采造成的累积超时。
+
 ## 待完成验证
 
 - 首个同步释放修订 Windows Debug 记录 `20260923T200222535Z-build-windowsx64-debug.json`，ZIP SHA-256 `2A601BBE39C9E55084BC54E850E708D7828317F1A6E9BDE845EA237863F35D30`。同一虎牙房间普通播放/返回、1+3 起播/返回/重进均成功，无新 WER；返回完成只落在 `(1.182s, 16.065s]` 的观测区间，关格完成未确认、长播未执行。该候选尚无回调入队互斥，不沿用为最终长播结论。
-- 加入回调互斥后的 Windows Debug 编译/链接与打包成功，记录 `local-artifacts/build-records/20260923T204036859Z-build-windowsx64-debug.json`；ZIP 143,800,836 B、SHA-256 `7068873F3784856222582D7E64F5A4FC287050C6A7B3E622DAA6E678602109C9`，`media_kit_video_plugin.dll` SHA-256 `D026CC4A4391BBCB3CF0981FAA81E19D63226F933D5A8ACC067014E5510E13DA`。构建只证明 C++ 编译/链接与打包，最终 GUI 验收另行记录。
+- 加入回调互斥后的 Windows Debug 编译/链接与打包成功，记录 `local-artifacts/build-records/20260923T204036859Z-build-windowsx64-debug.json`；ZIP 143,800,836 B、SHA-256 `7068873F3784856222582D7E64F5A4FC287050C6A7B3E622DAA6E678602109C9`，`media_kit_video_plugin.dll` SHA-256 `D026CC4A4391BBCB3CF0981FAA81E19D63226F933D5A8ACC067014E5510E13DA`。构建及上述单次 1+3 观察均未覆盖最终 GUI 验收。
 - 针对进入/退出、换源和多格恢复做短循环，观察 WER 与进程是否保持。
 - 同一新候选重新执行 WIN-MULTI-01：1+3 大/小格与 2×2 分别连续播放至少 30 分钟，使用已修订的持久采样器记录帧 revision、缓冲、媒体错误、CPU/GPU 与退出回落。
 - 这批源码与诊断不替代 Android 候选验收，也不构成 3.2.0 发布证据。
