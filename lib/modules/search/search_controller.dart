@@ -417,6 +417,7 @@ class SearchController extends GetxController {
       if (site.id == Sites.acfunSite) return i18n('search_coverage_acfun');
       if (site.id == Sites.huajiaoSite) return i18n('search_coverage_huajiao');
       if (site.id == Sites.kilakilaSite) return i18n('search_coverage_kilakila');
+      if (site.id == Sites.openrecSite) return i18n('search_coverage_openrec');
       return switch (capability.coverage) {
         NativeSearchCoverage.roomLookup => i18n('search_coverage_room_lookup', args: {'site': site.name}),
         NativeSearchCoverage.channelLookup => i18n('search_coverage_channel_lookup', args: {'site': site.name}),

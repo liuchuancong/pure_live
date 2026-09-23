@@ -105,7 +105,7 @@ class LiveSearchCapabilities {
       supportsWebSearch: false,
     ),
     Sites.openrecSite: LiveSearchCapability(
-      coverage: NativeSearchCoverage.unavailable,
+      coverage: NativeSearchCoverage.channelLookup,
       supportsPagination: false,
       supportsWebSearch: false,
     ),

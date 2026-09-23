@@ -8,7 +8,7 @@
 
 ### 09-09 及更早阶段的取证快照
 
-OPENREC / mellow-fan 已接入复合频道身份、公开目录与 HLS 质量；其当前生产整链可达性与原生验收仍有缺口，见[应用审计](OPENREC_APPLICATION_INTEGRATION_AUDIT_2026_09_09.md)。TTingLive / FLEX TV 已接入有限首页目录、精确频道查询及按源 token 策略；应用回归 201/201，最新生产注册适配器与 24 份 HLS 列表链路通过，后续 Windows 原生短录两次采集目标失败；保留片段的合并/完整解码通过，但起始延迟及音视频时间覆盖仍待修，完整录制未通过，见[应用审计](TTING_APPLICATION_INTEGRATION_AUDIT_2026_09_09.md)、[生产链路审计](TTING_PRODUCTION_RELAY_AUDIT_2026_09_09.md)及[原生短录审计](TTING_NATIVE_RECORDING_AUDIT_2026_09_09.md)。
+OPENREC / mellow-fan 已接入复合频道身份、公开目录与 HLS 质量；当前源码补精确频道查询，2026-09-23 本机公共接口 CloudFront 403，现网整链可达性与原生验收仍有缺口，见[应用审计](OPENREC_APPLICATION_INTEGRATION_AUDIT_2026_09_09.md)和[精确查询及访问记录](OPENREC_EXACT_CHANNEL_SEARCH_AUDIT_2026_09_23.md)。TTingLive / FLEX TV 已接入有限首页目录、精确频道查询及按源 token 策略；应用回归 201/201，最新生产注册适配器与 24 份 HLS 列表链路通过，后续 Windows 原生短录两次采集目标失败；保留片段的合并/完整解码通过，但起始延迟及音视频时间覆盖仍待修，完整录制未通过，见[应用审计](TTING_APPLICATION_INTEGRATION_AUDIT_2026_09_09.md)、[生产链路审计](TTING_PRODUCTION_RELAY_AUDIT_2026_09_09.md)及[原生短录审计](TTING_NATIVE_RECORDING_AUDIT_2026_09_09.md)。
 克拉克拉与花椒已接入公开目录、UID 收藏及播放/录制解析；两者现补精确主播号/官方主页查询，弹幕与 Android/Windows 原生验收仍待完成，见[克拉克拉应用审计](KILAKILA_APPLICATION_INTEGRATION_AUDIT_2026_09_08.md)、[萌星目录修订](KILAKILA_RISING_STAR_AUDIT_2026_09_08.md)、[克拉克拉精确查询](KILAKILA_EXACT_UID_SEARCH_AUDIT_2026_09_23.md)、[花椒应用审计](HUAJIAO_APPLICATION_INTEGRATION_AUDIT_2026_09_08.md)及[花椒精确查询](HUAJIAO_EXACT_UID_SEARCH_AUDIT_2026_09_23.md)。花椒空页仍有 more 时沿原生游标有界继续，游标按页面和刷新批次隔离，不用结果条数代替结束信号。
 当前 [Android 候选 bee143e2](OPENREC_PICARTO_ANDROID_CANDIDATE_2026_09_09.md) 已包含克拉克拉、花椒、OPENREC 和 Picarto 响应收尾修订；完整门禁/打包通过，尚未安装，后续 TTing 和源策略输入链未入包。Windows f3de664a 未随本批更新，原生能力证据仍按各平台分列。
 猫耳和映客已应用接入；猫耳 Windows 原生短录有独立证据，映客已有公开接口和生产地址解析，并补齐精确 UID/官网链接查询，见[映客应用审计](INKE_APPLICATION_INTEGRATION_AUDIT_2026_09_08.md)与[精确查询记录](INKE_EXACT_UID_SEARCH_AUDIT_2026_09_23.md)。
@@ -42,7 +42,7 @@ TwitCasting 新增公开目录、顶栏分类、详情/HLS三档、录制输入�
 | 映客 | 官网有限精选及服务端频道，页面持续说明非全站列表 | 精确映客 UID 或官网房间链接，含未开播；昵称/关键词待接入，无网页搜索入口 | 当前未接入 | 未取得人数，保持未知；主播等级不作观众数 |
 | 克拉克拉 | 官方热门/萌星，type 0/107 原生分页 | 精确主播 UID 或官方主播主页，未公布当前场次时状态未知；昵称/关键词尚未接入 | 当前未接入 | `watchNumber` 未证实为并发人数，保持未知 |
 | 花椒 | 官方 H5 公开视频推荐，保留原生游标 | 精确花椒号或官方主播主页，含未开播主播；昵称/关键词尚未接入，无虚构网页搜索入口 | 当前未接入 | `current_heat` 为热度，不作在线人数；主播资料缺观看人数时保持未知 |
-| OPENREC / mellow-fan | 公开广播列表，频道聚合与多场歧义提示 | 当前未接入，无虚构网页搜索入口 | 当前未接入 | 公开并发人数；隐藏或多场歧义时保持未知 |
+| OPENREC / mellow-fan | 公开广播列表，频道聚合与多场歧义提示 | 精确频道 ID/官方频道根链接，含未开播；昵称/关键词尚未接入，当前生产接口 403 待复核 | 当前未接入 | 公开并发人数；隐藏或多场歧义时保持未知 |
 | TTingLive / FLEX TV | 有限首页公开直播快照，不宣称全站分类 | 精确频道号或频道直播链接，含未开播；不支持昵称/关键词 | 当前未接入 | 主目录 `playerCount`；详情和收藏刷新缺值时保持未知 |
 | 小红书 | 公开目录/分类尚未取得，展示范围说明 | 精确直播房间/已核验分享链接；不宣称昵称搜索 | 当前未接入 | 缺少明确并发人数时保持未知 |
 | niconico | 公开原生目录与分类分页 | 当前直播关键词分页及官方网页搜索 | 当前未接入 | 平台累计观看不冒充并发在线人数 |

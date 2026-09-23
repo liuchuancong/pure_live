@@ -14,6 +14,7 @@ import 'package:pure_live/common/services/settings_service.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:pure_live/common/utils/live_url_tool.dart';
 import 'package:pure_live/core/interface/live_directory.dart';
+import 'package:pure_live/core/interface/live_search.dart';
 import 'package:pure_live/core/interface/live_site.dart';
 import 'package:pure_live/core/site/openrec/openrec_api.dart';
 import 'package:pure_live/core/site/openrec/openrec_site.dart';
@@ -105,8 +106,10 @@ void main() {
     expect(site.liveSite, isA<OpenrecSite>());
     expect(Sites.supportSites.where((s) => s.id == 'openrec'), hasLength(1));
     expect(Sites.supportSites.map((s) => s.id).toSet(), Sites.supportedSiteIds);
-    expect(LiveSearchCapabilities.forPlatform('openrec').supportsNativeSearch, isFalse);
+    expect(LiveSearchCapabilities.forPlatform('openrec').coverage, NativeSearchCoverage.channelLookup);
+    expect(LiveSearchCapabilities.forPlatform('openrec').supportsNativeSearch, isTrue);
     expect(LiveSearchCapabilities.forPlatform('openrec').supportsWebSearch, isFalse);
+    expect(site.liveSite, isA<LiveCancellableSearch>());
     expect(LiveRoom.audienceCapabilityFor('openrec').onlineAvailableInRoomLists, isTrue);
     final popular = PopularController();
     addTearDown(popular.onClose);
@@ -135,6 +138,70 @@ void main() {
     expect(controller.canLoadMore.value, isFalse);
     expect(controller.list.single.onlineViewers, isNotEmpty);
     expect(controller.list.single.totalViewers, isEmpty);
+  });
+  test('exact channel ID and official root link search retain pinned identity without media', () async {
+    final urls = <Uri>[];
+    final site = OpenrecSite(api: _api(called: urls.add));
+    for (final query in ['Fixture_Owner', 'https://www.mellow-fan.com/user/Fixture_Owner']) {
+      final room = (await site.searchRooms(query)).single;
+      expect(room.roomId, _key);
+      expect(room.nick, '配信者 Fixture');
+      expect(room.link, 'https://www.mellow-fan.com/user/Fixture_Owner');
+      expect(room.isLiveNow, isTrue);
+      expect(room.data, isNull);
+      expect(room.watching, isEmpty);
+      expect(room.onlineViewers, isEmpty);
+      expect(room.audienceMetricType, AudienceMetricType.unknown);
+    }
+    expect(urls.map((uri) => uri.path), [
+      '/external/api/v5/channels/Fixture_Owner',
+      '/external/api/v5/channels/Fixture_Owner',
+    ]);
+  });
+  test('exact channel search returns explicit offline and leaves multiple broadcasts unselected', () async {
+    final offline = OpenrecSite(api: OpenrecApi(request: (_, _) async => _ok(_json('channel-offline'))));
+    final owner = (await offline.searchRooms('Fixture_Owner')).single;
+    expect(owner.roomId, _key);
+    expect(owner.isExplicitlyOfflineNow, isTrue);
+    expect(owner.watching, isEmpty);
+    final multiple = _json('channel-live');
+    multiple['onair_broadcast_movies'].add(_movie('5678'));
+    final site = OpenrecSite(api: OpenrecApi(request: (_, _) async => _ok(multiple)));
+    final room = (await site.searchRooms('Fixture_Owner')).single;
+    expect(room.isLiveNow, isTrue);
+    expect(room.notice, 'openrec_multiple_broadcasts');
+    expect(room.data, isNull);
+    expect(room.onlineViewers, isEmpty);
+  });
+  test('unsupported search terms, movie links and later pages send no request', () async {
+    final urls = <Uri>[];
+    final site = OpenrecSite(api: _api(called: urls.add));
+    for (final query in [
+      'Fixture Owner',
+      'https://www.mellow-fan.com/live/fixture1234',
+      'https://evil.test/user/Fixture_Owner',
+      'https://www.mellow-fan.com/user/Fixture_Owner/playlist',
+      'https://www.mellow-fan.com/user/Fixture_Owner?search_query=other',
+      'https://www.mellow-fan.com/user/Fixture_Owner#other',
+    ]) {
+      expect(await site.searchRooms(query), isEmpty);
+    }
+    expect(await site.searchRooms('Fixture_Owner', page: 2), isEmpty);
+    expect(urls, isEmpty);
+  });
+  test('missing channel is empty; access, schema and cancellation remain errors', () async {
+    final missing = OpenrecSite(api: OpenrecApi(request: (_, _) async => (status: 404, body: '')));
+    expect(await missing.searchRooms('Fixture_Owner'), isEmpty);
+    final denied = OpenrecSite(api: OpenrecApi(request: (_, _) async => (status: 403, body: '')));
+    await expectLater(denied.searchRooms('Fixture_Owner'), _failure(OpenrecFailure.access));
+    final malformed = OpenrecSite(api: OpenrecApi(request: (_, _) async => _ok({'id': 'Fixture_Owner'})));
+    await expectLater(malformed.searchRooms('Fixture_Owner'), _failure(OpenrecFailure.schema));
+    final token = CancelToken()..cancel('fixture');
+    final cancelled = OpenrecSite(api: OpenrecApi(request: (_, _) async => fail('cancelled request reached network')));
+    await expectLater(
+      cancelled.searchRoomsCancellable('Fixture_Owner', cancel: token),
+      _failure(OpenrecFailure.cancelled),
+    );
   });
   test('metadata refresh does not fetch media and keeps current title/audience', () async {
     final urls = <Uri>[];
