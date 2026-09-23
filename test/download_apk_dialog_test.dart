@@ -90,7 +90,6 @@ void main() {
     final dialog = DownloadApkDialog(
       apkUrl: 'https://example.test/PureLive.apk?token=fixture',
       fileName: '../../PureLive-fixture.apk',
-      runtimePlatform: DownloadRuntimePlatform.android,
       downloadDirectoryProvider: () async => downloadDirectory,
       transfer: ({required url, required destinationPath, required cancelToken, required onProgress}) async {
         transferPath = destinationPath;
@@ -113,6 +112,8 @@ void main() {
     await _openDialog(tester, dialog);
 
     await _waitFor(tester, () => transferPath != null);
+
+    await _waitFor(tester, () => find.byKey(const ValueKey('download-install')).evaluate().isNotEmpty);
 
     await tester.pumpAndSettle();
 
@@ -146,11 +147,11 @@ void main() {
   testWidgets('open folder uses the completed file parent directory', (tester) async {
     String? transferPath;
     String? openedPath;
+    var openedFolderCalls = 0;
 
     final dialog = DownloadApkDialog(
       apkUrl: 'https://example.test/PureLive.apk',
       fileName: 'PureLive-folder-test.apk',
-      runtimePlatform: DownloadRuntimePlatform.android,
       downloadDirectoryProvider: () async => downloadDirectory,
       transfer: ({required url, required destinationPath, required cancelToken, required onProgress}) async {
         transferPath = destinationPath;
@@ -164,11 +165,19 @@ void main() {
 
         return const DownloadedFileOpenResult.opened();
       },
+      folderOpener: (directoryPath) async {
+        openedFolderCalls++;
+        openedPath = directoryPath;
+
+        return true;
+      },
     );
 
     await _openDialog(tester, dialog);
 
     await _waitFor(tester, () => transferPath != null);
+
+    await _waitFor(tester, () => find.byKey(const ValueKey('download-open-folder')).evaluate().isNotEmpty);
 
     await tester.pumpAndSettle();
 
@@ -186,6 +195,8 @@ void main() {
 
     await tester.pumpAndSettle();
 
+    expect(openedFolderCalls, 1);
+
     expect(openedPath, expectedDirectoryPath);
 
     expect(find.byType(DownloadApkDialog), findsOneWidget);
@@ -197,7 +208,6 @@ void main() {
 
     final dialog = DownloadApkDialog(
       apkUrl: 'https://example.test/PureLive-portable.zip',
-      runtimePlatform: DownloadRuntimePlatform.desktop,
       downloadDirectoryProvider: () async => downloadDirectory,
       transfer: ({required url, required destinationPath, required cancelToken, required onProgress}) async {
         transferCalls++;
@@ -218,6 +228,8 @@ void main() {
     await _openDialog(tester, dialog, size: const Size(320, 480), textScale: 3);
 
     await _waitFor(tester, () => transferCalls == 1);
+
+    await _waitFor(tester, () => find.byKey(const ValueKey('download-install')).evaluate().isNotEmpty);
 
     await tester.pumpAndSettle();
 
@@ -248,6 +260,10 @@ void main() {
     expect(find.text('The file was downloaded. Opening it failed: fixture shell error'), findsOneWidget);
 
     final retry = find.byKey(const ValueKey('download-open-again'));
+
+    await tester.scrollUntilVisible(retry, -100, scrollable: scroll, maxScrolls: 10);
+
+    await tester.pump(const Duration(milliseconds: 300));
 
     expect(retry.hitTestable(), findsOneWidget);
 
@@ -368,6 +384,56 @@ void main() {
     expect(source, isNot(contains('setPreventClose(false)')));
   });
 
+  testWidgets('platform default download directory offers direct install only', (tester) async {
+    String? transferPath;
+    String? openedPath;
+
+    final dialog = DownloadApkDialog(
+      apkUrl: 'https://example.test/PureLive-default-dir.apk',
+      fileName: 'PureLive-default-dir.apk',
+      downloadDirectoryProvider: () async => downloadDirectory,
+      showOpenFolder: false,
+      transfer: ({required url, required destinationPath, required cancelToken, required onProgress}) async {
+        transferPath = destinationPath;
+
+        File(destinationPath).writeAsStringSync('fixture-apk');
+
+        onProgress(9, 9);
+      },
+      fileOpener: (filePath) async {
+        openedPath = filePath;
+
+        return const DownloadedFileOpenResult.opened();
+      },
+    );
+
+    await _openDialog(tester, dialog);
+
+    await _waitFor(tester, () => transferPath != null);
+
+    await _waitFor(tester, () => find.byKey(const ValueKey('download-install')).evaluate().isNotEmpty);
+
+    await tester.pumpAndSettle();
+
+    expect(transferPath, '${path.join(downloadDirectory.path, 'PureLive-default-dir.apk')}.part');
+
+    expect(find.byKey(const ValueKey('download-open-folder')), findsNothing);
+
+    final install = find.byKey(const ValueKey('download-install'));
+
+    expect(install, findsOneWidget);
+
+    await tester.tap(install);
+
+    await _waitFor(tester, () => openedPath != null);
+
+    await tester.pumpAndSettle();
+
+    expect(openedPath, path.join(downloadDirectory.path, 'PureLive-default-dir.apk'));
+
+    expect(find.byType(DownloadApkDialog), findsNothing);
+  });
+
   test('download completion feedback is translated in both locales', () {
     final english = jsonDecode(File('assets/translations/en.json').readAsStringSync()) as Map<String, dynamic>;
 
@@ -382,6 +448,19 @@ void main() {
       'download_open_failed_detail',
       'open_folder',
       'install',
+      'download_directory',
+      'download_directory_desc',
+      'download_directory_default_label',
+      'download_directory_reset',
+      'download_directory_updated',
+      'download_directory_pick_failed',
+      'download_directory_not_selected',
+      'download_directory_permission_hint',
+      'download_directory_prompt_title',
+      'download_directory_prompt_message',
+      'download_directory_default_path',
+      'download_directory_use_default',
+      'download_directory_choose',
     };
 
     for (final key in keys) {

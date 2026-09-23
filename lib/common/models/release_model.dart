@@ -18,35 +18,23 @@ class ReleaseModel {
   });
 
   factory ReleaseModel.fromJson(Map<String, dynamic> json) {
-    final version = json['version'] ?? json['tagName'] ?? '';
+    final rawFiles = json['files'] ?? json['assets'];
+    final filesData = rawFiles is List ? rawFiles : const <dynamic>[];
 
-    final filesData = json['files'] ?? json['assets'] ?? [];
-
-    final authorData = json['author'] ?? {};
-    final authorName = authorData['name'] ?? authorData['login'] ?? '';
-
-    final date = json['date'] ?? json['publishedAt'] ?? '';
+    final authorData = json['author'] is Map ? Map<String, dynamic>.from(json['author'] as Map) : <String, dynamic>{};
 
     return ReleaseModel(
-      version: version,
-      title: json['title'] ?? json['name'] ?? '',
-      date: date,
-      github: json['github'] ?? json['url'] ?? '',
+      version: _string(json['version'] ?? json['tagName']),
+      title: _string(json['title'] ?? json['name']),
+      date: _string(json['date'] ?? json['publishedAt']),
+      github: _string(json['github'] ?? json['url']),
       author: AuthorModel(
-        name: authorName,
-        avatar: authorData['avatar'] ?? '',
-        profile: authorData['profile'] ?? authorData['html_url'] ?? '',
+        name: _string(authorData['name'] ?? authorData['login']),
+        avatar: _string(authorData['avatar'] ?? authorData['avatar_url']),
+        profile: _string(authorData['profile'] ?? authorData['html_url']),
       ),
-      changelog: json['changelog'] ?? json['body'] ?? '',
-      files: filesData.map<ReleaseFileModel>((e) {
-        final downloads = e['downloads'] ?? e['downloadCount'] ?? 0;
-        return ReleaseFileModel(
-          name: e['name'] ?? '',
-          size: e['size'] ?? '0.0mb',
-          downloads: downloads,
-          url: e['url'] ?? '',
-        );
-      }).toList(),
+      changelog: _string(json['changelog'] ?? json['body']),
+      files: filesData.whereType<Map>().map((e) => ReleaseFileModel.fromJson(Map<String, dynamic>.from(e))).toList(),
     );
   }
 
@@ -71,7 +59,11 @@ class AuthorModel {
   AuthorModel({required this.name, required this.avatar, required this.profile});
 
   factory AuthorModel.fromJson(Map<String, dynamic> json) {
-    return AuthorModel(name: json['name'] ?? '', avatar: json['avatar'] ?? '', profile: json['profile'] ?? '');
+    return AuthorModel(
+      name: _string(json['name'] ?? json['login']),
+      avatar: _string(json['avatar'] ?? json['avatar_url']),
+      profile: _string(json['profile'] ?? json['html_url']),
+    );
   }
 
   Map<String, dynamic> toJson() {
@@ -89,14 +81,44 @@ class ReleaseFileModel {
 
   factory ReleaseFileModel.fromJson(Map<String, dynamic> json) {
     return ReleaseFileModel(
-      name: json['name'] ?? '',
-      size: json['size'] ?? '',
-      downloads: json['downloads'] ?? 0,
-      url: json['url'] ?? '',
+      name: _string(json['name']),
+      size: _formatSize(json['size']),
+      downloads: _int(json['downloads'] ?? json['downloadCount']),
+      url: _string(json['url'] ?? json['browser_download_url']),
     );
   }
 
   Map<String, dynamic> toJson() {
     return {'name': name, 'size': size, 'downloads': downloads, 'url': url};
   }
+}
+
+String _string(Object? value) {
+  if (value == null) return '';
+  return value.toString().trim();
+}
+
+int _int(Object? value) {
+  return switch (value) {
+    int number => number,
+    num number => number.toInt(),
+    String text => int.tryParse(text.trim()) ?? 0,
+    _ => 0,
+  };
+}
+
+/// Normalizes size to a human-readable string.
+///
+/// GitHub API returns the size in bytes as a number.
+/// The custom format already returns a formatted string like "120.42mb".
+String _formatSize(Object? value) {
+  if (value == null) return '0.0mb';
+  if (value is String) {
+    final trimmed = value.trim();
+    return trimmed.isEmpty ? '0.0mb' : trimmed;
+  }
+  if (value is num) {
+    return '${(value / (1024 * 1024)).toStringAsFixed(2)}mb';
+  }
+  return value.toString();
 }

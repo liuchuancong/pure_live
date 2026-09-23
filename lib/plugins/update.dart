@@ -1,7 +1,9 @@
 import 'dart:io';
 
 import 'package:pure_live/common/index.dart';
+import 'package:pure_live/common/services/settings/cache_controller.dart';
 import 'package:pure_live/common/widgets/download_apk_dialog.dart';
+import 'package:pure_live/common/widgets/download_directory_dialog.dart';
 import 'package:pure_live/plugins/file_utils.dart';
 
 Uri? updateDownloadUri(String rawUrl) {
@@ -79,17 +81,67 @@ Future<void> _showDownloadDialog(Uri uri, {String? fileName, required String res
       return;
     }
   }
+  if (!await _ensureDownloadDirectorySelected()) return;
   ToastUtil.show(
     fileName == null
         ? i18n('downloading_apk', args: {'version': VersionUtil.latestVersion})
         : i18n('downloading_app', args: {'app': resolvedFileName}),
   );
+  final cache = Get.find<CacheController>();
   await Get.dialog<void>(
     DownloadApkDialog(
       apkUrl: uri.toString(),
       version: VersionUtil.latestVersion,
       fileName: fileName == null ? null : resolvedFileName,
+      downloadDirectoryProvider: CacheController.resolveDownloadDirectory,
+      showOpenFolder: cache.hasCustomDownloadDirectory,
     ),
     barrierDismissible: false,
   );
+}
+
+/// Resolves where the update package is stored before the download dialog
+/// opens.
+///
+/// When no usable download directory exists the user picks either a custom
+/// folder or the platform default. Declining the prompt cancels the update.
+Future<bool> _ensureDownloadDirectorySelected() async {
+  final cache = Get.find<CacheController>();
+  if (!await cache.needsDownloadDirectoryPrompt() && await _ensureDownloadDirectoryAccess(cache)) {
+    return true;
+  }
+
+  final defaultPath = (await CacheController.defaultDownloadDirectory()).path;
+  final choice = await showDownloadDirectoryChoiceDialog(defaultDirectoryPath: defaultPath);
+  if (choice == null) return false;
+
+  if (choice == DownloadDirectoryChoice.useDefault) {
+    await cache.useDefaultDownloadDirectory();
+    return true;
+  }
+
+  final selected = await FileUtils.pickDirectory();
+  if (selected == null || selected.trim().isEmpty) {
+    ToastUtil.show(i18n('download_directory_not_selected'));
+    return false;
+  }
+
+  await cache.setDownloadDirectory(selected);
+  if (await _ensureDownloadDirectoryAccess(cache)) return true;
+
+  ToastUtil.show(i18n('download_directory_permission_hint'));
+  if (Platform.isAndroid) openAppSettings();
+  return false;
+}
+
+/// 动态申请写入所选下载目录的权限，并确认该目录真的可以写入。
+///
+/// 应用专属的默认目录位于应用沙箱内，不需要任何权限；只有用户自选的公共目录
+/// （例如 `/storage/emulated/0/Download/...`）才会触发系统权限申请。
+Future<bool> _ensureDownloadDirectoryAccess(CacheController cache) async {
+  if (!cache.hasCustomDownloadDirectory) return true;
+  if (await CacheController.isCustomDownloadDirectoryUsable()) return true;
+
+  await FileUtils.requestStoragePermission();
+  return CacheController.isCustomDownloadDirectoryUsable();
 }

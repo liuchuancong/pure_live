@@ -9,13 +9,9 @@ import 'package:path/path.dart' as path;
 import 'package:open_filex/open_filex.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/file_utils.dart';
-import 'package:pure_live/common/global/platform_utils.dart';
-import 'package:pure_live/common/global/app_path_manager.dart';
-
-enum DownloadRuntimePlatform { android, desktop, other }
+import 'package:pure_live/common/services/settings/cache_controller.dart';
 
 typedef DownloadProgressCallback = void Function(int received, int total);
-
 typedef DownloadFileTransfer = Future<void> Function({
   required String url,
   required String destinationPath,
@@ -26,6 +22,9 @@ typedef DownloadFileTransfer = Future<void> Function({
 typedef DownloadDirectoryProvider = Future<Directory> Function();
 
 typedef DownloadFileOpener = Future<DownloadedFileOpenResult> Function(String filePath);
+
+/// Opens the directory holding the downloaded package.
+typedef DownloadFolderOpener = Future<bool> Function(String directoryPath);
 
 const _maxDownloadBaseNameBytes = 240;
 const _maxDownloadExtensionBytes = 32;
@@ -131,21 +130,31 @@ class DownloadApkDialog extends StatefulWidget {
     required this.apkUrl,
     this.version = '',
     this.fileName,
-    this.runtimePlatform,
     this.downloadDirectoryProvider,
     this.transfer,
     this.fileOpener,
+    this.folderOpener,
     this.startAutomatically = true,
+    this.showOpenFolder = true,
   });
 
   final String apkUrl;
   final String version;
   final String? fileName;
-  final DownloadRuntimePlatform? runtimePlatform;
   final DownloadDirectoryProvider? downloadDirectoryProvider;
   final DownloadFileTransfer? transfer;
   final DownloadFileOpener? fileOpener;
+
+  /// Folder-install action. Defaults to the platform-aware directory opener.
+  final DownloadFolderOpener? folderOpener;
+
   final bool startAutomatically;
+
+  /// Shows the "open folder" action next to the direct install button.
+  ///
+  /// Only a user-selected download directory enables this action; the platform
+  /// default folder leaves direct installation as the only choice.
+  final bool showOpenFolder;
 
   @override
   State<DownloadApkDialog> createState() => _DownloadApkDialogState();
@@ -168,24 +177,6 @@ class _DownloadApkDialogState extends State<DownloadApkDialog> {
 
   File? _partialFile;
   File? _completedFile;
-
-  DownloadRuntimePlatform get _runtimePlatform {
-    final override = widget.runtimePlatform;
-
-    if (override != null) {
-      return override;
-    }
-
-    if (Platform.isAndroid) {
-      return DownloadRuntimePlatform.android;
-    }
-
-    if (PlatformUtils.isDesktop) {
-      return DownloadRuntimePlatform.desktop;
-    }
-
-    return DownloadRuntimePlatform.other;
-  }
 
   @override
   void initState() {
@@ -359,7 +350,9 @@ class _DownloadApkDialogState extends State<DownloadApkDialog> {
     });
 
     try {
-      final opened = await FileUtils.openFileOrUrl(file.parent.path);
+      // The folder action always receives the containing directory, never the
+      // package file itself.
+      final opened = await (widget.folderOpener ?? FileUtils.openFileOrUrl)(file.parent.path);
 
       if (!mounted) return;
 
@@ -395,13 +388,9 @@ class _DownloadApkDialogState extends State<DownloadApkDialog> {
       return opener(filePath);
     }
 
+    // Direct installation always hands the downloaded file to the system
+    // handler; folder installation is a separate action below.
     try {
-      if (_runtimePlatform == DownloadRuntimePlatform.android) {
-        final opened = await FileUtils.openFileOrUrl(filePath);
-
-        return opened ? const DownloadedFileOpenResult.opened() : const DownloadedFileOpenResult.failed();
-      }
-
       final result = await OpenFilex.open(filePath);
 
       return result.type == ResultType.done
@@ -412,32 +401,14 @@ class _DownloadApkDialogState extends State<DownloadApkDialog> {
     }
   }
 
+  /// Resolves the directory every downloaded byte is written into.
+  ///
+  /// Callers pass the Cache & Data download directory so Dio writes the update
+  /// package next to downloaded files and fonts.
   Future<Directory> _getSafeDownloadDir() async {
     final provider = widget.downloadDirectoryProvider;
 
-    if (provider != null) {
-      final directory = await provider();
-
-      if (!await directory.exists()) {
-        await directory.create(recursive: true);
-      }
-
-      return directory;
-    }
-
-    final Directory downloadDir;
-
-    if (_runtimePlatform == DownloadRuntimePlatform.android) {
-      final directory = await getDownloadsDirectory();
-
-      if (directory == null) {
-        throw const FileSystemException('Downloads directory is missing');
-      }
-
-      downloadDir = Directory(path.join(directory.path, 'pure_live'));
-    } else {
-      downloadDir = await AppPathManager().getDir(AppPathManager.dirDownload);
-    }
+    final downloadDir = provider != null ? await provider() : await CacheController.resolveDownloadDirectory();
 
     if (!await downloadDir.exists()) {
       await downloadDir.create(recursive: true);
@@ -694,18 +665,24 @@ class _DownloadApkDialogState extends State<DownloadApkDialog> {
     }
 
     if (_downloadCompleted) {
-      final openFolder = OutlinedButton.icon(
-        key: const ValueKey('download-open-folder'),
-        onPressed: _openDownloadFolder,
-        icon: const Icon(Icons.folder_open_rounded),
-        label: Text(i18n('open_folder'), textAlign: TextAlign.center),
-      );
-
       final install = FilledButton.icon(
         key: const ValueKey('download-install'),
         onPressed: _openCompletedFile,
         icon: const Icon(Icons.install_mobile_rounded),
         label: Text(i18n('install'), textAlign: TextAlign.center),
+      );
+
+      // The folder action only exists for a user-selected download directory;
+      // otherwise direct installation is the single choice.
+      if (!widget.showOpenFolder) {
+        return Align(alignment: Alignment.centerRight, child: install);
+      }
+
+      final openFolder = OutlinedButton.icon(
+        key: const ValueKey('download-open-folder'),
+        onPressed: _openDownloadFolder,
+        icon: const Icon(Icons.folder_open_rounded),
+        label: Text(i18n('open_folder'), textAlign: TextAlign.center),
       );
 
       if (compact) {

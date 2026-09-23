@@ -1,7 +1,10 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
+import 'package:pure_live/plugins/file_utils.dart';
+import 'package:pure_live/common/services/settings/cache_controller.dart';
 
 class CacheDataSettingsPage extends StatefulWidget {
   const CacheDataSettingsPage({super.key});
@@ -104,6 +107,42 @@ class _CacheDataSettingsPageState extends State<CacheDataSettingsPage> {
   Widget _progressIndicator(Color color) =>
       SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2, color: color));
 
+  /// Updates the shared download directory used by app updates, downloaded
+  /// files and font bundles.
+  Future<void> _pickDownloadDirectory() async {
+    try {
+      final selected = await FileUtils.pickDirectory();
+      if (selected == null || selected.trim().isEmpty) return;
+
+      final cache = SettingsService.to.cache;
+      await cache.setDownloadDirectory(selected);
+
+      // An app-sandbox default never needs this; a user-selected public folder
+      // may still lack the Android "All files access" grant.
+      if (!await CacheController.isCustomDownloadDirectoryUsable()) {
+        await FileUtils.requestStoragePermission();
+      }
+      if (!await CacheController.isCustomDownloadDirectoryUsable()) {
+        _showCacheMessage(i18n('download_directory_permission_hint'), failed: true);
+        if (Platform.isAndroid) openAppSettings();
+        return;
+      }
+
+      _showCacheMessage(i18n('download_directory_updated'));
+    } catch (_) {
+      _showCacheMessage(i18n('download_directory_pick_failed'), failed: true);
+    }
+  }
+
+  Future<void> _resetDownloadDirectory() async {
+    try {
+      await SettingsService.to.cache.useDefaultDownloadDirectory();
+      _showCacheMessage(i18n('download_directory_updated'));
+    } catch (_) {
+      _showCacheMessage(i18n('download_directory_pick_failed'), failed: true);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -173,6 +212,27 @@ class _CacheDataSettingsPageState extends State<CacheDataSettingsPage> {
                     : () => _confirmClearCache(theme),
               ),
             ),
+            Obx(() {
+              final customDirectory = SettingsService.to.cache.downloadDirectory.value.trim();
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  context.buildTile(
+                    icon: Remix.folder_2_line,
+                    title: i18n('download_directory'),
+                    subtitle: customDirectory.isEmpty ? i18n('download_directory_default_label') : customDirectory,
+                    isLong: true,
+                    onTap: _pickDownloadDirectory,
+                  ),
+                  if (customDirectory.isNotEmpty)
+                    context.buildTile(
+                      icon: Remix.refresh_line,
+                      title: i18n('download_directory_reset'),
+                      onTap: _resetDownloadDirectory,
+                    ),
+                ],
+              );
+            }),
           ]),
           const SizedBox(height: 32),
         ],

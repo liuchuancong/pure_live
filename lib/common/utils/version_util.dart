@@ -2,25 +2,26 @@ import 'dart:async';
 
 import 'package:pure_live/gen/env.g.dart';
 import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/common/log.dart';
 import 'package:pure_live/plugins/race_http.dart';
 import 'package:pure_live/common/consts/app_consts.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:pure_live/common/utils/githup_mirror.dart';
+import 'package:pure_live/common/models/release_model.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
+import 'package:pure_live/common/utils/release_asset_urls.dart';
+import 'package:pure_live/modules/about/widgets/release_history_repository.dart';
 
 class VersionUtil {
   static PackageInfo? _packageInfo;
 
-  /// Release/update repository for this maintained distribution.
-  ///
-  /// Keeping the owner configurable lets downstream builders select their own
-  /// release feed without editing runtime code. This repository defaults to
-  /// the liuchuancong maintenance release channel so its bundled version.json and generated asset
-  /// URLs always describe the same published artifacts.
   static final String updateOwner = AppConfig.pureliveUpdateOwner;
   static final String updateRepository = AppConfig.pureliveUpdateRepository;
+
   static final String projectUrl = 'https://github.com/$updateOwner/$updateRepository';
+
   static final String issuesUrl = '$projectUrl/issues';
+
   static const String githubUrl = 'https://github.com/liuchuancong';
 
   static const String email = '17792321552@163.com';
@@ -45,8 +46,13 @@ class VersionUtil {
   static String latestUpdateLog = '';
   static bool prerelease = false;
   static String downloadUrl = '';
+
   static Set<String> latestAndroidAbis = AppConsts.supportAndroidAbis;
+
+  static List<Map<String, dynamic>> latestAssets = [];
+
   static bool latestWindowsMsixAvailable = false;
+
   var allReleased = [].obs;
 
   static Map<String, dynamic>? _cachedVersionJson;
@@ -70,8 +76,10 @@ class VersionUtil {
 
   Future<bool> checkUpdate() async {
     if (_cachedVersionJson != null) {
+      Log.d('[version]: version=${_cachedVersionJson!['version']} build=${_cachedVersionJson!['build_number']}');
       try {
         _applyVersionData(_cachedVersionJson!);
+        await _loadLatestReleaseAssets();
         isHasNewVersion.value = hasNewVersion();
         return true;
       } catch (_) {
@@ -84,11 +92,13 @@ class VersionUtil {
     try {
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final urls = _versionUrls.map((e) => '$e?ts=$timestamp').toList();
-
       final data = await RaceHttp.fetchJson(
         urls,
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'User-Agent':
+              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
+              'AppleWebKit/537.36 (KHTML, like Gecko) '
+              'Chrome/120.0.0.0 Safari/537.36',
           'Accept': 'application/json',
         },
       ).timeout(const Duration(seconds: 10));
@@ -99,59 +109,137 @@ class VersionUtil {
       }
 
       _applyVersionData(data);
+
+      await _loadLatestReleaseAssets();
+
       _cachedVersionJson = data;
+
       isHasNewVersion.value = hasNewVersion();
-      debugPrint("🏁 更新线路成功");
+
       return true;
-    } catch (e) {
-      debugPrint("⚠️ 更新检查失败: $e");
+    } catch (e, s) {
+      Log.e('[version] 更新检查失败: $e', s);
       _resetAfterFailedCheck();
       return false;
     }
   }
 
+  static Future<void> _loadLatestReleaseAssets() async {
+    latestAssets = [];
+    final version = _normalizeVersion(latestVersion);
+
+    if (version.isEmpty) {
+      return;
+    }
+    try {
+      final releases = await ReleaseHistoryRepository.instance.load(forceRefresh: true);
+      ReleaseModel? currentRelease;
+      for (final release in releases) {
+        if (_normalizeVersion(release.version) == version) {
+          currentRelease = release;
+          break;
+        }
+      }
+
+      if (currentRelease == null) {
+        return;
+      }
+
+      final assetList = <Map<String, dynamic>>[];
+      for (final file in currentRelease.files) {
+        final name = file.name.trim();
+        final url = file.url.trim();
+        if (name.isEmpty || url.isEmpty) {
+          continue;
+        }
+        assetList.add(<String, dynamic>{'name': name, 'browser_download_url': url});
+      }
+
+      final assets = ReleaseAssetUrls(assets: assetList);
+      latestAssets = assets.all.entries
+          .map((entry) => <String, dynamic>{'name': entry.key, 'url': entry.value})
+          .toList();
+    } catch (e, s) {
+      Log.e('[version] releases.json 获取失败: $e', s);
+      latestAssets = [];
+    }
+  }
+
+  static String _normalizeVersion(String value) {
+    return value.replaceFirst(RegExp(r'^[vV]'), '').trim();
+  }
+
   static void _applyVersionData(Map<String, dynamic> data) {
     final selected = selectPlatformVersionData(data, platform: _currentPlatformKey);
+
     final parsedVersion = selected['version']?.toString().trim() ?? '';
+
     final parsedBuildNumber = _versionInt(selected['build_number']);
+
     if (parsedVersion.isEmpty || parsedBuildNumber == null || parsedBuildNumber <= 0) {
       throw const FormatException('Incomplete release identity');
     }
+
     latestVersion = parsedVersion;
+
     latestVersionNum = _versionInt(selected['version_num']) ?? 0;
+
     latestBuildNumber = parsedBuildNumber;
+
     latestUpdateLog = selected['version_desc']?.toString() ?? '';
+
     prerelease = selected['prerelease'] == true;
+
     downloadUrl = selected['download_url']?.toString() ?? '';
+
     latestAndroidAbis = selectAndroidAbis(selected);
+
     latestWindowsMsixAvailable = selected['windows_msix_available'] == true;
   }
 
-  /// Only advertises APK variants that the release feed says were published.
-  /// Older feeds default to arm64, matching this maintenance branch's local
-  /// release target, rather than generating links to missing assets.
   static Set<String> selectAndroidAbis(Map<String, dynamic> data) {
     final raw = data['android_abis'];
-    if (raw is! List) return const {'arm64-v8a'};
+
+    if (raw is! List) {
+      return const {'arm64-v8a'};
+    }
+
     return raw.map((item) => item.toString()).where(AppConsts.supportAndroidAbis.contains).toSet();
   }
 
-  /// Keeps update announcements aligned with the artifacts that were really
-  /// published for each platform. The top-level object remains the fallback
-  /// for older feeds and older clients.
   static Map<String, dynamic> selectPlatformVersionData(Map<String, dynamic> data, {required String platform}) {
     final platforms = data['platforms'];
+
     final platformData = platforms is Map ? platforms[platform] : null;
-    if (platformData is! Map) return data;
+
+    if (platformData is! Map) {
+      return data;
+    }
+
     return {...data, ...Map<String, dynamic>.from(platformData)};
   }
 
   static String get _currentPlatformKey {
-    if (PlatformUtils.isWindows) return 'windows';
-    if (PlatformUtils.isAndroid) return 'android';
-    if (PlatformUtils.isMacOS) return 'macos';
-    if (PlatformUtils.isIOS) return 'ios';
-    if (PlatformUtils.isLinux) return 'linux';
+    if (PlatformUtils.isWindows) {
+      return 'windows';
+    }
+
+    if (PlatformUtils.isAndroid) {
+      return 'android';
+    }
+
+    if (PlatformUtils.isMacOS) {
+      return 'macos';
+    }
+
+    if (PlatformUtils.isIOS) {
+      return 'ios';
+    }
+
+    if (PlatformUtils.isLinux) {
+      return 'linux';
+    }
+
     return 'default';
   }
 
@@ -162,9 +250,11 @@ class VersionUtil {
   static bool isNewerVersion(String latest, String current) {
     try {
       final latestClean = latest.split(RegExp(r'[-+]'))[0].replaceFirst(RegExp('^[vV]'), '').trim();
+
       final currentClean = current.split(RegExp(r'[-+]'))[0].replaceFirst(RegExp('^[vV]'), '').trim();
 
       final latestParts = latestClean.split('.').map(int.parse).toList();
+
       final currentParts = currentClean.split('.').map(int.parse).toList();
 
       final maxLength = latestParts.length > currentParts.length ? latestParts.length : currentParts.length;
@@ -172,15 +262,22 @@ class VersionUtil {
       while (latestParts.length < maxLength) {
         latestParts.add(0);
       }
+
       while (currentParts.length < maxLength) {
         currentParts.add(0);
       }
 
       for (int i = 0; i < maxLength; i++) {
-        if (latestParts[i] > currentParts[i]) return true;
-        if (latestParts[i] < currentParts[i]) return false;
+        if (latestParts[i] > currentParts[i]) {
+          return true;
+        }
+
+        if (latestParts[i] < currentParts[i]) {
+          return false;
+        }
       }
     } catch (_) {}
+
     return false;
   }
 
@@ -195,13 +292,20 @@ class VersionUtil {
 
   void _resetAfterFailedCheck() {
     latestVersion = version;
+
     latestBuildNumber = buildNumber > 0 ? buildNumber : null;
+
     latestVersionNum = 0;
     latestUpdateLog = '';
     prerelease = false;
     downloadUrl = '';
-    latestAndroidAbis = const {};
+
+    latestAndroidAbis = AppConsts.supportAndroidAbis;
+
+    latestAssets = [];
+
     latestWindowsMsixAvailable = false;
+
     isHasNewVersion.value = false;
   }
 }

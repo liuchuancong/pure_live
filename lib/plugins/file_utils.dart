@@ -4,6 +4,8 @@ import 'dart:math';
 import 'package:path/path.dart' as p;
 import 'package:open_filex/open_filex.dart';
 import 'package:pure_live/common/index.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:android_intent_plus/android_intent.dart';
 
@@ -56,15 +58,31 @@ class FileUtils {
     return RegExp(r"^\d+$").hasMatch(value);
   }
 
-  /// 请求外部存储管理权限
+  /// 请求写入应用沙箱之外目录所需的存储权限。
+  ///
+  /// Android 11+ 使用「所有文件访问权限」这一特殊权限；Android 10 及以下使用
+  /// 传统的运行时存储权限。应用专属外部目录（`getDownloadsDirectory()`）不需要
+  /// 任何权限，因此只有用户主动选择了公共目录时才会走到这里。
+  ///
+  /// 返回值表示调用结束时的授权状态；「所有文件访问权限」需要用户跳转系统设置
+  /// 页面手动开启，返回 false 时调用方应再校验目标目录是否真的可写。
   static Future<bool> requestStoragePermission() async {
-    if (Platform.isAndroid || Platform.isIOS) {
-      if (await Permission.manageExternalStorage.isDenied) {
+    if (!Platform.isAndroid) return true;
+
+    try {
+      final androidInfo = await DeviceInfoPlugin().androidInfo;
+      if (androidInfo.version.sdkInt >= 30) {
+        if (await Permission.manageExternalStorage.isGranted) return true;
         final status = await Permission.manageExternalStorage.request();
         return status.isGranted;
       }
+      if (await Permission.storage.isGranted) return true;
+      final status = await Permission.storage.request();
+      return status.isGranted;
+    } catch (_) {
+      final status = await Permission.storage.request();
+      return status.isGranted;
     }
-    return true;
   }
 
   static Future<File> convertPhysicalFile(String shareContent) async {
@@ -146,14 +164,34 @@ class FileUtils {
 
     if (Platform.isAndroid && isDir) {
       try {
-        final String folderPath = trimmedPath.replaceFirst('/storage/emulated/0/', '');
-        final String docId = 'primary:${Uri.encodeComponent(folderPath)}';
-        final String contentUri = 'content://com.android.externalstorage.documents/document/$docId';
-        final AndroidIntent intent = AndroidIntent(
+        const externalStorage = '/storage/emulated/0/';
+
+        if (!trimmedPath.startsWith(externalStorage)) {
+          return false;
+        }
+
+        final relativePath = trimmedPath
+            .substring(externalStorage.length)
+            .replaceAll('\\', '/')
+            .replaceAll(RegExp(r'^/+|/+$'), '');
+
+        if (relativePath.isEmpty) {
+          return false;
+        }
+
+        final documentId = 'primary:$relativePath';
+
+        final contentUri = Uri.parse(
+          'content://com.android.externalstorage.documents/document/'
+          '${Uri.encodeComponent(documentId)}',
+        );
+
+        final intent = AndroidIntent(
           action: 'android.intent.action.VIEW',
-          data: contentUri,
+          data: contentUri.toString(),
           type: 'vnd.android.document/directory',
         );
+
         await intent.launch();
         return true;
       } catch (_) {}
@@ -175,5 +213,26 @@ class FileUtils {
     }
 
     return false;
+  }
+
+  /// Opens the system directory picker and lets the user choose a download directory.
+  ///
+  /// Returns:
+  /// - A filesystem path on desktop platforms.
+  /// - A platform-specific directory path or URI on Android.
+  /// - `null` if the user cancels the picker or an error occurs.
+  static Future<String?> pickDirectory() async {
+    try {
+      final result = await FilePicker.getDirectoryPath(dialogTitle: 'Select download directory');
+
+      if (result == null || result.trim().isEmpty) {
+        return null;
+      }
+
+      return result.trim();
+    } catch (error) {
+      debugPrint('Pick directory failed: $error');
+      return null;
+    }
   }
 }

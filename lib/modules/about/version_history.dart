@@ -1,77 +1,19 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:flutter/services.dart';
-import 'package:markdown_widget/config/configs.dart';
-import 'package:markdown_widget/widget/all.dart';
-import 'package:pure_live/common/index.dart';
-import 'package:pure_live/common/models/release_model.dart';
-import 'package:pure_live/core/common/http_client.dart';
-import 'package:pure_live/plugins/race_http.dart';
-import 'package:pure_live/plugins/update.dart';
 import 'package:remixicon/remixicon.dart';
+import 'package:pure_live/common/index.dart';
+import 'package:pure_live/plugins/update.dart';
 import 'package:url_launcher/url_launcher.dart';
-
-typedef ReleaseHistoryLoader = Future<List<ReleaseModel>> Function();
-typedef ReleaseHistoryExternalLauncher = Future<bool> Function(Uri uri);
-typedef ReleaseHistoryDownloadHandler = Future<void> Function(String url, {String? fileName});
-
-const _releaseHistoryHeaders = <String, String>{
-  'User-Agent':
-      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
-      'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36',
-  'Accept': 'application/json,text/plain,*/*',
-};
-
-Future<List<ReleaseModel>> loadConfiguredReleaseHistory() async {
-  final mirror = VersionUtil.mirror;
-  final sourceUrls = SettingsService.to.app.useGitHubOriginForUpdates.v
-      ? [mirror.rawUrl('assets/releases.json')]
-      : mirror.mirrors('assets/releases.json');
-  final timestamp = DateTime.now().millisecondsSinceEpoch.toString();
-  final urls = sourceUrls
-      .map((source) {
-        final uri = Uri.parse(source);
-        return uri.replace(queryParameters: {...uri.queryParameters, 'ts': timestamp}).toString();
-      })
-      .toList(growable: false);
-  final url = await RaceHttp.findFastestUrl(urls, headers: _releaseHistoryHeaders);
-  if (url == null) throw StateError('No release history source responded');
-
-  final response = await HttpClient.instance.getJson(url, header: _releaseHistoryHeaders);
-  final decoded = response is String ? json.decode(response) : response;
-  return parseReleaseHistoryPayload(decoded);
-}
-
-List<ReleaseModel> parseReleaseHistoryPayload(Object? decoded) {
-  final rawReleases = switch (decoded) {
-    List values => values,
-    Map values when values['releases'] is List => values['releases'] as List,
-    _ => null,
-  };
-  if (rawReleases == null) throw const FormatException('Invalid release history payload');
-
-  final releases = <ReleaseModel>[];
-  for (final entry in rawReleases) {
-    if (entry is! Map) continue;
-    final release = ReleaseModel.fromJson(Map<String, dynamic>.from(entry));
-    if (release.version.trim().isEmpty) continue;
-    releases.add(release);
-  }
-  releases.sort((left, right) {
-    final byDate = right.date.compareTo(left.date);
-    return byDate != 0 ? byDate : right.version.compareTo(left.version);
-  });
-  return List.unmodifiable(releases);
-}
-
-Uri? releaseHistoryWebUri(String rawUrl) => updateDownloadUri(rawUrl);
+import 'package:markdown_widget/widget/all.dart';
+import 'package:markdown_widget/config/configs.dart';
+import 'package:pure_live/common/models/release_model.dart';
+import 'package:pure_live/modules/about/widgets/release_history_repository.dart';
 
 class VersionHistoryPage extends StatefulWidget {
-  const VersionHistoryPage({super.key, this.releaseLoader, this.openExternalUrl, this.downloadRelease});
+  const VersionHistoryPage({super.key, this.openExternalUrl, this.downloadRelease});
 
-  final ReleaseHistoryLoader? releaseLoader;
   final ReleaseHistoryExternalLauncher? openExternalUrl;
   final ReleaseHistoryDownloadHandler? downloadRelease;
 
@@ -85,6 +27,8 @@ class _VersionHistoryPageState extends State<VersionHistoryPage> {
   final RxBool historyError = false.obs;
   final RxInt _selectedHistoryIndex = 0.obs;
   bool _downloadInProgress = false;
+
+  ReleaseHistoryRepository get _repository => ReleaseHistoryRepository.instance;
 
   @override
   void initState() {
@@ -103,7 +47,7 @@ class _VersionHistoryPageState extends State<VersionHistoryPage> {
     historyLoading.value = true;
     historyError.value = false;
     try {
-      final releases = await (widget.releaseLoader ?? loadConfiguredReleaseHistory)();
+      final releases = await _repository.load(forceRefresh: forceRefresh);
       if (!mounted) return;
       allReleased.assignAll(releases);
       final preservedIndex = selectedVersion == null
@@ -419,7 +363,7 @@ class _VersionHistoryPageState extends State<VersionHistoryPage> {
   }
 
   VoidCallback? _releaseAction(BuildContext context, String rawUrl) {
-    final uri = releaseHistoryWebUri(rawUrl);
+    final uri = _repository.webUri(rawUrl);
     return uri == null ? null : () => _openRelease(context, uri);
   }
 
@@ -434,7 +378,7 @@ class _VersionHistoryPageState extends State<VersionHistoryPage> {
   }
 
   Future<void> _copyDownloadLink(BuildContext context, ReleaseFileModel file) async {
-    final uri = releaseHistoryWebUri(file.url);
+    final uri = _repository.webUri(file.url);
     if (uri == null) return;
     await Clipboard.setData(ClipboardData(text: uri.toString()));
     if (context.mounted) _showMessage(context, 'copied_to_clipboard');
@@ -442,7 +386,7 @@ class _VersionHistoryPageState extends State<VersionHistoryPage> {
 
   Future<void> _confirmDownload(BuildContext context, ReleaseFileModel file) async {
     if (_downloadInProgress || !mounted || !context.mounted) return;
-    final uri = releaseHistoryWebUri(file.url);
+    final uri = _repository.webUri(file.url);
     if (uri == null) return;
     _downloadInProgress = true;
     try {
@@ -651,7 +595,7 @@ class _ReleaseAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final uri = releaseHistoryWebUri(url);
+    final uri = ReleaseHistoryRepository.instance.webUri(url);
     return CircleAvatar(
       radius: 18,
       backgroundColor: theme.colorScheme.surfaceContainerHighest,
@@ -733,7 +677,7 @@ class _ReleaseFileCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final hasLink = releaseHistoryWebUri(file.url) != null;
+    final hasLink = ReleaseHistoryRepository.instance.webUri(file.url) != null;
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),

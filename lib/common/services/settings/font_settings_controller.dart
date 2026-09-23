@@ -7,6 +7,7 @@ import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/models/font_model.dart';
 import 'package:pure_live/plugins/font_download_manager.dart';
 import 'package:pure_live/common/global/app_path_manager.dart';
+import 'package:pure_live/common/services/settings/cache_controller.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:pure_live/common/services/medels/download_status.dart';
 import 'package:pure_live/common/services/settings/danmaku_settings_controller.dart';
@@ -308,7 +309,7 @@ class FontSettingsController extends GetxController {
   }
 
   Future<void> _refreshFontDiskSizes() async {
-    final dir = await AppPathManager().getDir(AppPathManager.dirDownload);
+    final dir = await CacheController.resolveDownloadDirectory();
     final fontDir = Directory('${dir.path}${Platform.pathSeparator}${AppPathManager.fontDirectoryName}');
     if (!await fontDir.exists()) {
       fontFolderSizes.clear();

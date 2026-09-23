@@ -1,15 +1,18 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:path/path.dart' as p;
 import 'package:flutter/foundation.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/global/app_path_manager.dart';
+import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:pure_live/common/services/settings/refresh_config_controller.dart';
 import 'package:pure_live/plugins/cache_manager.dart';
 
 typedef CacheDirectoryResolver = Future<List<Directory>> Function();
 typedef CacheDirectoryPurger = Future<bool> Function(Directory directory);
 typedef EncodedImageCacheClearer = Future<void> Function();
+typedef DownloadDirectoryPathProvider = Future<String> Function();
 
 int _measureDirectoryBytes(List<String> paths) {
   var total = 0;
@@ -41,6 +44,24 @@ abstract final class CacheStoragePolicy {
   static const localDirectoryNames = <String>[AppPathManager.dirImageCache, AppPathManager.dirEmojiCache];
 }
 
+/// Platform fallback used when the user has not selected a download directory.
+Future<String> _platformDefaultDownloadPath() async {
+  if (Platform.isAndroid) {
+    final downloads = await getDownloadsDirectory();
+    if (downloads != null) return p.join(downloads.path, 'pure_live');
+  }
+  return (await AppPathManager().downloadDir).path;
+}
+
+Future<bool> _directoryExists(String path) async {
+  if (path.isEmpty) return false;
+  try {
+    return await Directory(path).exists();
+  } on FileSystemException {
+    return false;
+  }
+}
+
 class CacheClearResult {
   const CacheClearResult({required this.remainingSizeMB, required this.failedOperations});
 
@@ -55,13 +76,16 @@ class CacheController extends GetxController {
     CacheDirectoryResolver? cacheDirectoryResolver,
     CacheDirectoryPurger? cacheDirectoryPurger,
     EncodedImageCacheClearer? encodedImageCacheClearer,
+    DownloadDirectoryPathProvider? defaultDownloadDirectoryPathProvider,
   }) : _cacheDirectoryResolver = cacheDirectoryResolver ?? _defaultCacheDirectories,
        _cacheDirectoryPurger = cacheDirectoryPurger ?? _purgeDirectory,
-       _encodedImageCacheClearer = encodedImageCacheClearer ?? _clearDefaultEncodedImageCache;
+       _encodedImageCacheClearer = encodedImageCacheClearer ?? _clearDefaultEncodedImageCache,
+       _defaultDownloadDirectoryPathProvider = defaultDownloadDirectoryPathProvider ?? _platformDefaultDownloadPath;
 
   final CacheDirectoryResolver _cacheDirectoryResolver;
   final CacheDirectoryPurger _cacheDirectoryPurger;
   final EncodedImageCacheClearer _encodedImageCacheClearer;
+  final DownloadDirectoryPathProvider _defaultDownloadDirectoryPathProvider;
 
   final cacheSizeMB = 0.0.obs;
   final refreshTurns = 0.0.obs;
@@ -78,6 +102,110 @@ class CacheController extends GetxController {
   Future<void>? _imageRefreshOperation;
 
   bool get isBusy => isScanning.value || isClearing.value || isRefreshingImages.value;
+
+  /// Persisted custom download directory. An empty value means the platform
+  /// default directory is used.
+  static const downloadDirectoryPrefKey = 'downloadDirectoryPath';
+
+  /// True once the user answered the download-directory prompt, so a later
+  /// update does not ask again after the default directory was chosen.
+  static const downloadDirectoryDecisionPrefKey = 'downloadDirectoryDecisionMade';
+
+  /// User-selected download directory for update packages, downloaded files and
+  /// font bundles. Empty means the platform default is in use.
+  final RxString downloadDirectory = RxString(readDownloadDirectoryPreference());
+
+  /// Mirrors [downloadDirectoryDecisionPrefKey] for the settings UI.
+  final RxBool downloadDirectoryDecided = RxBool(readDownloadDirectoryDecisionMade());
+
+  bool get hasCustomDownloadDirectory => downloadDirectory.v.trim().isNotEmpty;
+
+  /// Reads the persisted download directory without requiring an initialized
+  /// Hive box, so startup-time font resolution can rely on it too.
+  static String readDownloadDirectoryPreference() {
+    try {
+      return HivePrefUtil.getString(downloadDirectoryPrefKey)?.trim() ?? '';
+    } catch (_) {
+      return '';
+    }
+  }
+
+  static bool readDownloadDirectoryDecisionMade() {
+    try {
+      return HivePrefUtil.getBool(downloadDirectoryDecisionPrefKey) ?? false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Platform default directory, used when the user keeps the default.
+  static Future<Directory> defaultDownloadDirectory() async => Directory(await _platformDefaultDownloadPath());
+
+  /// Resolves the effective download directory: the user-selected path when
+  /// configured, otherwise the platform default.
+  static Future<Directory> resolveDownloadDirectory() async {
+    final custom = readDownloadDirectoryPreference();
+    if (custom.isNotEmpty) return Directory(custom);
+    return defaultDownloadDirectory();
+  }
+
+  /// Resolves the effective download directory and creates it when missing.
+  static Future<Directory> ensureDownloadDirectory() async {
+    final directory = await resolveDownloadDirectory();
+    if (!await directory.exists()) await directory.create(recursive: true);
+    return directory;
+  }
+
+  /// Proves the stored custom directory accepts writes.
+  ///
+  /// Android scoped storage can leave a previously selected folder readable
+  /// but not writable; the update flow checks this before transferring bytes.
+  /// An unset custom directory reports `true` so the platform default path is
+  /// handled by the download dialog itself.
+  static Future<bool> isCustomDownloadDirectoryUsable() async {
+    final custom = readDownloadDirectoryPreference();
+    if (custom.isEmpty) return true;
+    try {
+      final directory = Directory(custom);
+      await directory.create(recursive: true);
+      final probe = File(p.join(custom, '.pure_live_write_probe'));
+      await probe.writeAsString('ok', flush: true);
+      await probe.delete();
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Whether the app-update flow must ask the user where downloads go.
+  ///
+  /// The prompt appears when no usable directory exists yet: a stored custom
+  /// directory disappeared, or the user has never answered and the default
+  /// directory is not present either.
+  Future<bool> needsDownloadDirectoryPrompt() async {
+    final custom = downloadDirectory.v.trim();
+    if (custom.isNotEmpty) return !await _directoryExists(custom);
+    if (downloadDirectoryDecided.v) return false;
+    return !await _directoryExists(await _defaultDownloadDirectoryPathProvider());
+  }
+
+  /// Stores a user-selected download directory and marks the prompt answered.
+  Future<void> setDownloadDirectory(String directory) async {
+    final normalized = directory.trim();
+    if (normalized.isEmpty) return useDefaultDownloadDirectory();
+    downloadDirectory.v = normalized;
+    downloadDirectoryDecided.v = true;
+    await HivePrefUtil.setPrefs({downloadDirectoryPrefKey: normalized, downloadDirectoryDecisionPrefKey: true});
+    await HivePrefUtil.flush();
+  }
+
+  /// Keeps the platform default directory and remembers that choice.
+  Future<void> useDefaultDownloadDirectory() async {
+    downloadDirectory.v = '';
+    downloadDirectoryDecided.v = true;
+    await HivePrefUtil.setPrefs({downloadDirectoryPrefKey: '', downloadDirectoryDecisionPrefKey: true});
+    await HivePrefUtil.flush();
+  }
 
   static Future<List<Directory>> _defaultCacheDirectories() async {
     final manager = AppPathManager();

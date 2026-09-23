@@ -8,6 +8,7 @@ import 'package:pure_live/common/models/font_model.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/plugins/font_download_manager.dart';
 import 'package:pure_live/common/global/app_path_manager.dart';
+import 'package:pure_live/common/services/settings/cache_controller.dart';
 import 'package:pure_live/common/services/medels/download_status.dart';
 
 class FontFamilyManagerPage extends GetView<SettingsService> {
@@ -76,9 +77,10 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
 
   Future<void> _openFontFolder([String? fontId]) async {
     try {
+      final downloadPath = (await CacheController.resolveDownloadDirectory()).path;
       final path = fontId == null
-          ? p.join((await AppPathManager().downloadDir).path, AppPathManager.fontDirectoryName)
-          : await AppPathManager().getFontFamilyFolderPath(fontId);
+          ? p.join(downloadPath, AppPathManager.fontDirectoryName)
+          : await AppPathManager().getFontFamilyFolderPath(fontId, downloadPath: downloadPath);
       if (!await FileUtils.openFileOrUrl(path)) {
         ToastUtil.show(i18n('open_font_dir_failed'));
       }
@@ -511,7 +513,10 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
   }
 
   Future<bool> _showFontWeightSelector(BuildContext context, FontModel fontModel) async {
-    final path = await AppPathManager().getFontFamilyFolderPath(fontModel.id);
+    final path = await AppPathManager().getFontFamilyFolderPath(
+      fontModel.id,
+      downloadPath: (await CacheController.resolveDownloadDirectory()).path,
+    );
     final fontDir = Directory(path);
     final downloadedFiles = <File>[];
 

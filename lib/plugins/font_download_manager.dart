@@ -7,6 +7,7 @@ import 'package:pure_live/core/common/http_client.dart';
 import 'package:pure_live/common/models/font_model.dart';
 import 'package:pure_live/common/utils/githup_mirror.dart';
 import 'package:pure_live/common/global/app_path_manager.dart';
+import 'package:pure_live/common/services/settings/cache_controller.dart';
 import 'package:pure_live/common/services/medels/download_status.dart';
 
 class FontDownloadManager {
@@ -14,7 +15,9 @@ class FontDownloadManager {
   static final FontDownloadManager instance = FontDownloadManager._();
 
   Future<String> get _fontRootPath async {
-    final directory = await AppPathManager().getDir(AppPathManager.dirDownload);
+    // Fonts share the same user-selectable download directory as app updates
+    // so both live under one folder and follow the Cache & Data setting.
+    final directory = await CacheController.ensureDownloadDirectory();
     final fontRoot = Directory("${directory.path}${Platform.pathSeparator}${AppPathManager.fontDirectoryName}");
     if (!await fontRoot.exists()) {
       await fontRoot.create(recursive: true);

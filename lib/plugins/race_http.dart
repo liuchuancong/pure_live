@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
-import 'package:flutter/foundation.dart';
 import 'package:charset_converter/charset_converter.dart';
 
 class RaceHttp {
@@ -113,7 +112,6 @@ class RaceHttp {
 
             if (!completer.isCompleted) {
               completer.complete(result);
-              debugPrint("🏁 Race winner: $url");
             }
           } catch (_) {}
         }),
