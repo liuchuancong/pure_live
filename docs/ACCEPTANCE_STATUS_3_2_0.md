@@ -6,8 +6,8 @@
 
 | 项目 | 当前证据 |
 | --- | --- |
-| 功能源码基线 | `5f2905e1` 已推送。Windows 多画面[呈现帧停滞有界单格恢复](ISSUE_875_WINDOWS_MULTIVIEW_FRAME_STALL_AUDIT_2026_09_23.md)四文件 **79/79**，实际 Issue #875 现象待原生复核；Bigo [有限公开推荐关键词筛选](BIGO_PUBLIC_SNAPSHOT_SEARCH_AUDIT_2026_09_23.md) **124/124**、只读探针 **1/1**；花椒[三页内筛选](HUAJIAO_PUBLIC_RECOMMENDATION_SEARCH_AUDIT_2026_09_23.md) **149/149**、探针 **1/1**；PandaTV [双路搜索](PANDALIVE_NATIVE_SEARCH_AUDIT_2026_09_23.md) **92/92**。本批全仓 Analyze 无 error/warning，另有 1 项既有 info；完整 Full 门禁最近仍绑定 `b79e8838`：Flutter **4999/4999**、公共接口 **42/42**，记录 `20260919T181710597Z-quality-full.json`；下个候选前需重跑 Full |
-| Android 最新本机构建/原生输入 | 现存 `b79e8838` arm64 Debug，3.1.8+4121 / Manifest 6121，289007467 B，SHA-256 `377D4CD5…30ED`；16 个原生库、最小 ELF LOAD `0x4000`、APK 内容门禁通过。该包早于当前源码 `5f2905e1`，未覆盖安装；新增平台、搜索、布局及录制等后续修订均待新候选原生验收 |
+| 功能源码基线 | `5db7019d` 已推送。Windows 多画面[呈现帧停滞有界单格恢复](ISSUE_875_WINDOWS_MULTIVIEW_FRAME_STALL_AUDIT_2026_09_23.md)四文件 **80/80**，实际 Issue #875 现象待原生复核；Bigo [有限公开推荐关键词筛选](BIGO_PUBLIC_SNAPSHOT_SEARCH_AUDIT_2026_09_23.md) **124/124**、只读探针 **1/1**；花椒[三页内筛选](HUAJIAO_PUBLIC_RECOMMENDATION_SEARCH_AUDIT_2026_09_23.md) **149/149**、探针 **1/1**；PandaTV [双路搜索](PANDALIVE_NATIVE_SEARCH_AUDIT_2026_09_23.md) **92/92**。本批全仓 Analyze 无 error/warning，另有 1 项既有 info；完整 Full 门禁最近仍绑定 `b79e8838`：Flutter **4999/4999**、公共接口 **42/42**，记录 `20260919T181710597Z-quality-full.json`；下个候选前需重跑 Full |
+| Android 最新本机构建/原生输入 | 现存 `b79e8838` arm64 Debug，3.1.8+4121 / Manifest 6121，289007467 B，SHA-256 `377D4CD5…30ED`；16 个原生库、最小 ELF LOAD `0x4000`、APK 内容门禁通过。该包早于当前源码 `5db7019d`，未覆盖安装；新增平台、搜索、布局及录制等后续修订均待新候选原生验收 |
 | Android 当前编号账本 | 46 行：16 PASS / 30 RUN / 0 NR；每行仍含多个动作和平台组合，旧包证据不自动覆盖当前源码 |
 | Windows 最新归档 | `2fb471d3` Debug；尚未纳入之后的源码修订，也不是 3.2.0 Release 候选 |
 | 手机快照 | `192.168.1.2:5555` 已重新核对 25102RKBEC / myron / Android 17 / root；Pure Live 无进程和录制服务，但前台为其他应用，本轮守卫停止安装与输入 |
