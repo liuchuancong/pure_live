@@ -6,10 +6,10 @@
 
 | 项目 | 当前证据 |
 | --- | --- |
-| 功能源码基线 | 当前源码 `822af302` 已通过[完整门禁与双端 Debug 构建](FULL_GATE_DUAL_DEBUG_822AF302_2026_09_24.md)：Flutter **5326/5326**、公共接口 **42/42**、全仓 Analyze 无问题，记录 `20260923T185608270Z-quality-full.json`；包含 Windows 标题栏异常修订与平台徽标无适配器资源查询。GUI/媒体/长时原生验收仍未闭环 |
+| 功能源码基线 | Dart 业务源码 `822af302` 已通过[完整门禁与双端 Debug 构建](FULL_GATE_DUAL_DEBUG_822AF302_2026_09_24.md)：Flutter **5326/5326**、公共接口 **42/42**、全仓 Analyze 无问题，记录 `20260923T185608270Z-quality-full.json`。其后 `6973c57f` 修订 Windows 原生视频释放顺序及性能采样脚本，C++ Debug 构建通过；原完整门禁不覆盖新原生源码的运行时验收 |
 | Android 最新本机构建/原生输入 | `822af302` arm64 Debug，3.1.8+4121 / Manifest 6121，290061996 B，SHA-256 `5E9B29B5…C1DEDC`；16 个原生库、最小 ELF LOAD `0x4000`、APK 内容门禁通过（`20260923T185754279Z-build-androidarm64-debug.json`）。尚未覆盖安装或执行本候选 A0～A8 原生验收 |
 | Android 当前编号账本 | 46 行：16 PASS / 30 RUN / 0 NR；每行仍含多个动作和平台组合，旧包证据不自动覆盖当前源码 |
-| Windows 最新归档 | `822af302` x64 Debug：`PureLive-3.1.8-4121-windows-x64-debug.zip`，143795654 B，SHA-256 `AA59CF3A…FA0D6B`，记录 `20260923T190132254Z-build-windowsx64-debug.json`；此前 `d1437fe5` 候选的[标题栏实窗复验](WINDOWS_TITLE_BAR_OVERLAY_RUNTIME_AUDIT_2026_09_24.md)不自动覆盖新 ZIP，播放/录制/长时原生验收仍待续 |
+| Windows 最新归档 | `6973c57f` 提交前同内容工作树 x64 Debug：`PureLive-3.1.8-4121-windows-x64-debug.zip`，143799711 B，SHA-256 `2A601BBE…63F35D30`，记录 `20260923T200222535Z-build-windowsx64-debug.json`。旧候选 1+3 双路约 28 分钟后因 mpv render context 未释放触发[原生终止](WINDOWS_MULTIVIEW_NATIVE_ABORT_2026_09_24.md)；新候选编译通过，短循环与长播复验进行中 |
 | 手机快照 | `192.168.1.2:5555` 本轮只读核对 25102RKBEC / myron，前台先为小红书、后为哔哩哔哩；本轮没有安装、唤醒或输入。此前 Android 17 / root 与 Pure Live 无进程/录制服务的核验属于旧快照，实际设备动作前需重读 |
 | 当前安装 APK | 只读刷新为 3.1.8 / 6121；上次精确 `base.apk` 哈希仍为 `4BF85571…6B82` Release 测试包，本轮未重拉包，正式签名候选仍待生成 |
 | 平台范围 | 当前 **45 个直播站点 + IPTV，2 组未注册**，即源码共 46 个适配器；PandaTV、PopkonTV、Shopee Live、VK Video Live、NimoTV、Dailymotion、Rumble、GoodGame、FC2 Live、Steam Broadcasts、京东直播、淘宝直播、酷狗直播、百度直播、六间房直播与 LOOK 直播已完成首阶段源码接入，战旗与浪 Live 保持内部 readiness，DLive、一直播与企鹅电竞已归档生命周期证据；已注册平台仍有能力与双端原生覆盖缺口 |
@@ -27,8 +27,8 @@
 
 ## 主要阻塞
 
-1. **当前原生闭环缺失**：`822af302` 的 Android 与 Windows Debug 候选已由同一通过完整门禁的源码串行生成；Windows 的轻量实窗复验属于前一候选，实际播放/录制仍缺；手机只读检查时前台由其他应用占用，本批未安装或发送界面输入。两端均无 3.2.0 Release 候选。
-2. **Windows GUI/性能批次未完成**：多 DPI、主副屏、PiP/全屏/多窗口、WebView2、Issue #767 的 4K GPU 对照、Issue #875 的 1+3 连续播放与退出回落需要同一 Release 候选集中执行。
+1. **当前原生闭环缺失**：Android `822af302` Debug 候选尚未安装；手机只读检查时前台由其他应用占用，本批未发送界面输入。Windows 旧候选长播发生 mpv 原生终止，新修订 `6973c57f` 的 Debug 编译通过、GUI 复验进行中。两端均无 3.2.0 Release 候选。
+2. **Windows GUI/性能批次未完成**：先确认[原生终止修订](WINDOWS_MULTIVIEW_NATIVE_ABORT_2026_09_24.md)在短循环与 1+3/2×2 长播中有效；多 DPI、主副屏、PiP/全屏/多窗口、WebView2、Issue #767 的 4K GPU 对照、Issue #875 的停帧判别与退出回落仍需集中执行。旧轮在 30 分钟前崩溃，不计 #875 停帧复现或完成。
 3. **Android 组合矩阵未闭合**：当前候选仍需覆盖锁屏/后台、横屏/系统返回、PiP、实体音量键、自动录制和累计数据迁移；设备在线时优先合并执行。
 4. **平台与录制范围较大**：每个平台的目录、播放、弹幕、录制、断流恢复和资源释放尚未全部在当前双端候选上完成；OPENREC 当前本机官网/公共接口 CloudFront 403，需在可访问窗口复核；长录和严格解码仍是发布门禁。
 5. **平台扩展继续推进**：战旗与浪 Live 等待当前生产媒体证据后注册；DLive、一直播与企鹅电竞已完成生命周期归档；PandaTV、PopkonTV、Shopee Live、VK Video Live、NimoTV、Dailymotion、Rumble、GoodGame、FC2 Live、Steam Broadcasts、京东直播、淘宝直播、酷狗直播、百度直播、六间房直播与 LOOK 直播已进入源码能力表，双端原生与录制证据并入集中验收。
@@ -37,6 +37,6 @@
 ## 下一批顺序
 
 1. 继续按战旗、浪 Live 的生产证据门槛与 C2/C3 活跃平台顺序扩展源码；同时完成当前仍可确定复现的 Issue/所有权缺口，已经修复或证据不足的条目停止重复调查。
-2. `822af302` Full 与双端 Debug 构建已通过，候选与当前源码一致。手机进入可用测试窗口后按轮转规则批量收口 A0～A8，不为每个小修复重复构建；设备窗口尚未释放时继续源码或 Windows 候选验收。
+2. Android `822af302` Debug 保留待设备窗口；Windows 使用 `6973c57f` 的新 Debug 先完成原生释放顺序短循环与 WIN-MULTI-01 长播。手机进入可用测试窗口后按轮转规则批量收口 A0～A8，不为每个小修复重复构建。
 3. 同一候选集中完成平台播放/弹幕/录制、资源与性能证据，失败项回源码修订后只重跑受影响组。
 4. 42 个编号组和发布范围实际闭合后，固定 3.2.0 提交并执行完整发布门禁。
