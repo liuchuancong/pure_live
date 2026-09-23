@@ -175,8 +175,8 @@ class LiveSearchCapabilities {
       supportsPagination: true,
     ),
     Sites.missevanSite: LiveSearchCapability(
-      coverage: NativeSearchCoverage.roomLookup,
-      supportsPagination: false,
+      coverage: NativeSearchCoverage.liveAndOffline,
+      supportsPagination: true,
       supportsWebSearch: false,
     ),
     Sites.openrecSite: LiveSearchCapability(

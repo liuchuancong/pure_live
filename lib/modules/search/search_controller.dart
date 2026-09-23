@@ -118,7 +118,7 @@ class SearchController extends GetxController {
       case Sites.inkeSite:
         throw StateError('Inke supports exact UID lookup, not web keyword search');
       case Sites.missevanSite:
-        throw StateError('Missevan supports exact room lookup, not web keyword search');
+        throw StateError('Missevan uses native keyword search, not web search');
       case Sites.ccSite:
         return "https://cc.163.com/search/all/?query=$q&only=all";
       case Sites.kuaishouSite:
