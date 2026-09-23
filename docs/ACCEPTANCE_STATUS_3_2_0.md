@@ -6,7 +6,7 @@
 
 | 项目 | 当前证据 |
 | --- | --- |
-| 功能源码基线 | 当前源码 `be2e94d7`；最近一次干净输入 `68723042` 通过[完整门禁](FULL_GATE_DEBUG_CANDIDATES_2026_09_24.md)：Flutter **5310/5310**、公共接口 **42/42**、全仓 Analyze 无问题，记录 `20260923T173235870Z-quality-full.json`。之后新增首选平台仅限可见项的修订，相关三文件 **19/19** 与全仓 Analyze 通过（`20260923T175253474Z-quality-focused.json`），但该修订尚未进入新 Full 或双端构建。双端 GUI/媒体/长时原生验收仍待完成 |
+| 功能源码基线 | 当前源码 `87f3551c`；最近一次干净输入 `68723042` 通过[完整门禁](FULL_GATE_DEBUG_CANDIDATES_2026_09_24.md)：Flutter **5310/5310**、公共接口 **42/42**、全仓 Analyze 无问题，记录 `20260923T173235870Z-quality-full.json`。之后首选平台仅限可见项的修订已通过三文件 **19/19** 与全仓 Analyze（`20260923T175253474Z-quality-focused.json`）；46 个平台的首选弹窗再增加按名称/ID 过滤、空态与双语文本，通过 **7/7** Widget 和全仓 Analyze（`20260923T175852865Z-quality-focused.json`）。后两批尚未进入新 Full 或双端构建，GUI/媒体/长时原生验收仍待完成 |
 | Android 最新本机构建/原生输入 | `68723042` arm64 Debug，早于当前首选平台修订；3.1.8+4121 / Manifest 6121，290059168 B，SHA-256 `7EDC3D99…6D29B`；16 个原生库、最小 ELF LOAD `0x4000`、APK 内容门禁通过（`20260923T174057849Z-build-androidarm64-debug.json`）。尚未覆盖安装或执行本候选 A0～A8 原生验收 |
 | Android 当前编号账本 | 46 行：16 PASS / 30 RUN / 0 NR；每行仍含多个动作和平台组合，旧包证据不自动覆盖当前源码 |
 | Windows 最新归档 | `68723042` x64 Debug 已构建，早于当前首选平台修订：`PureLive-3.1.8-4121-windows-x64-debug.zip`，143791330 B，SHA-256 `CB781024…993E7`，记录 `20260923T173604049Z-build-windowsx64-debug.json`；尚未完成 GUI/播放/录制原生验收，也不是 3.2.0 Release 候选 |
