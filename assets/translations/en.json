@@ -418,6 +418,8 @@
     "prefer_best_stream": "Prefer Original Quality Stream",
     "prefer_best_stream_desc": "Force the highest quality stream (0:v:0)",
     "prefer_platform": "Platform Preference",
+    "prefer_platform_filter_empty": "No matching platforms",
+    "prefer_platform_filter_hint": "Search visible platforms",
     "prefer_platform_subtitle": "When enter popular/areas, first platform choice",
     "prefer_resolution": "Resolution Preference",
     "prefer_resolution_cellular": "Cellular Preferred Resolution",

@@ -78,41 +78,84 @@ class PlatformSettingsPage extends GetView<SettingsService> {
   }
 
   void showPreferPlatformSelectorDialog(BuildContext context) {
-    showDialog<void>(
-      context: context,
-      builder: (dialogContext) {
-        final theme = Theme.of(dialogContext);
-        return AlertDialog(
-          scrollable: true,
-          insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-          title: Text(i18n('prefer_platform'), style: const TextStyle(fontWeight: FontWeight.bold)),
-          contentPadding: const EdgeInsets.fromLTRB(12, 8, 12, 16),
-          content: Obx(
-            () => RadioGroup<String>(
-              groupValue: SettingsService.to.fav.preferPlatform.value,
-              onChanged: (value) {
-                if (value == null) return;
-                SettingsService.to.fav.changePreferPlatform(value);
-                Navigator.of(dialogContext).pop();
-              },
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: Sites()
-                    .availableSites()
-                    .map(
-                      (site) => RadioListTile<String>(
-                        value: site.id,
-                        activeColor: theme.colorScheme.primary,
-                        title: Text(site.name, style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w500)),
-                      ),
-                    )
-                    .toList(growable: false),
+    showDialog<void>(context: context, builder: (_) => const _PreferPlatformSelectorDialog());
+  }
+}
+
+class _PreferPlatformSelectorDialog extends StatefulWidget {
+  const _PreferPlatformSelectorDialog();
+
+  @override
+  State<_PreferPlatformSelectorDialog> createState() => _PreferPlatformSelectorDialogState();
+}
+
+class _PreferPlatformSelectorDialogState extends State<_PreferPlatformSelectorDialog> {
+  String _query = '';
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return AlertDialog(
+      scrollable: true,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      title: Text(i18n('prefer_platform'), style: const TextStyle(fontWeight: FontWeight.bold)),
+      contentPadding: const EdgeInsets.fromLTRB(12, 8, 12, 16),
+      content: SizedBox(
+        width: 360,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              child: TextField(
+                key: const ValueKey('prefer-platform-filter'),
+                onChanged: (value) => setState(() => _query = value.trim().toLowerCase()),
+                decoration: InputDecoration(
+                  prefixIcon: const Icon(Icons.search_rounded),
+                  hintText: i18n('prefer_platform_filter_hint'),
+                  border: const OutlineInputBorder(),
+                ),
               ),
             ),
-          ),
-        );
-      },
+            Obx(() {
+              final sites = Sites()
+                  .availableSites()
+                  .where((site) {
+                    if (_query.isEmpty) return true;
+                    return site.id.contains(_query) || site.name.toLowerCase().contains(_query);
+                  })
+                  .toList(growable: false);
+              if (sites.isEmpty) {
+                return Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(i18n('prefer_platform_filter_empty'), style: AppTextStyles.t14),
+                );
+              }
+              return RadioGroup<String>(
+                groupValue: SettingsService.to.fav.preferPlatform.value,
+                onChanged: (value) {
+                  if (value == null) return;
+                  SettingsService.to.fav.changePreferPlatform(value);
+                  Navigator.of(context).pop();
+                },
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: sites
+                      .map(
+                        (site) => RadioListTile<String>(
+                          value: site.id,
+                          activeColor: theme.colorScheme.primary,
+                          title: Text(site.name, style: AppTextStyles.t15.copyWith(fontWeight: FontWeight.w500)),
+                        ),
+                      )
+                      .toList(growable: false),
+                ),
+              );
+            }),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -99,6 +99,30 @@ void main() {
     expect(favorites.preferPlatform.value, Sites.iptvSite);
   });
 
+  testWidgets('preference dialog filters many visible platforms by name or id', (tester) async {
+    await _pumpLocalized(tester, english: english, home: const PlatformSettingsPage(), size: const Size(420, 800));
+    await tester.tap(find.text('Platform Preference'));
+    await tester.pumpAndSettle();
+
+    final filter = find.byKey(const ValueKey('prefer-platform-filter'));
+    expect(filter, findsOneWidget);
+    await tester.enterText(filter, 'weibo');
+    await tester.pumpAndSettle();
+    final dialog = find.byType(Dialog);
+    final choices = find.descendant(of: dialog, matching: find.byType(RadioListTile<String>));
+    expect(choices, findsOneWidget);
+    expect(tester.widget<RadioListTile<String>>(choices).value, Sites.weiboSite);
+
+    await tester.enterText(filter, 'no-such-platform');
+    await tester.pumpAndSettle();
+    expect(choices, findsNothing);
+    expect(find.text('No matching platforms'), findsOneWidget);
+
+    await tester.enterText(filter, 'iptv');
+    await tester.pumpAndSettle();
+    expect(tester.widget<RadioListTile<String>>(choices).value, Sites.iptvSite);
+  });
+
   test('hidden platform preference is rejected and restored backup preference follows visible order', () {
     favorites.hotAreasList.value = [Sites.bilibiliSite, Sites.iptvSite];
     favorites.changePreferPlatform(Sites.douyuSite);
