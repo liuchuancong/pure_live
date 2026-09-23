@@ -52,7 +52,7 @@ class LiveSearchCapabilities {
       supportsWebSearch: false,
     ),
     Sites.seventeenLiveSite: LiveSearchCapability(
-      coverage: NativeSearchCoverage.roomLookup,
+      coverage: NativeSearchCoverage.liveOnly,
       supportsPagination: false,
       supportsWebSearch: false,
     ),
