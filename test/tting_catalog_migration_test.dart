@@ -34,8 +34,12 @@ void main() {
     await HivePrefUtil.setStringList('realOnlinePlatforms', ['twitch']);
     final favorites = Get.put(FavoriteRoomController());
     final app = Get.put(AppSettingsController());
-    expect(favorites.hotAreasList, ['huya', 'openrec', 'ttinglive', 'xiaohongshu', 'niconico', 'weibo']);
-    expect(favorites.siteCatalogMigration.value, 14);
+    final expectedPrefix = ['huya', 'openrec', 'ttinglive', 'xiaohongshu', 'niconico', 'weibo'];
+    expect(favorites.hotAreasList.take(expectedPrefix.length), expectedPrefix);
+    final migrated = favorites.hotAreasList.toList(growable: false);
+    expect(migrated.toSet(), hasLength(migrated.length));
+    final hidden = migrated.where((id) => id != 'ttinglive').toList(growable: false);
+    expect(favorites.siteCatalogMigration.value, 38);
     expect(app.realOnlinePlatforms, ['twitch', 'ttinglive']);
     expect(app.audienceMetricMigration.value, 7);
     favorites.hotAreasList.remove('ttinglive');
@@ -44,7 +48,7 @@ void main() {
     Get.reset();
     await Hive.close();
     await HivePrefUtil.init();
-    expect(Get.put(FavoriteRoomController()).hotAreasList, ['huya', 'openrec', 'xiaohongshu', 'niconico', 'weibo']);
+    expect(Get.put(FavoriteRoomController()).hotAreasList, hidden);
     expect(Get.put(AppSettingsController()).realOnlinePlatforms, ['twitch']);
   });
   test('backup retains channel and owner identity, tags, normalized ordering and disabled audience choice', () {

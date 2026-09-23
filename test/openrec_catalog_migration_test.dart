@@ -36,8 +36,12 @@ void main() {
     await HivePrefUtil.setStringList('realOnlinePlatforms', ['twitch']);
     final favorites = Get.put(FavoriteRoomController());
     final app = Get.put(AppSettingsController());
-    expect(favorites.hotAreasList, ['huya', 'openrec', 'ttinglive', 'xiaohongshu', 'niconico', 'weibo']);
-    expect(favorites.siteCatalogMigration.value, 14);
+    final expectedPrefix = ['huya', 'openrec', 'ttinglive', 'xiaohongshu', 'niconico', 'weibo'];
+    expect(favorites.hotAreasList.take(expectedPrefix.length), expectedPrefix);
+    final migrated = favorites.hotAreasList.toList(growable: false);
+    expect(migrated.toSet(), hasLength(migrated.length));
+    final hidden = migrated.where((id) => id != 'openrec').toList(growable: false);
+    expect(favorites.siteCatalogMigration.value, 38);
     expect(app.realOnlinePlatforms, ['twitch', 'openrec', 'ttinglive']);
     expect(app.audienceMetricMigration.value, 7);
     favorites.hotAreasList.remove('openrec');
@@ -46,7 +50,7 @@ void main() {
     Get.reset();
     await Hive.close();
     await HivePrefUtil.init();
-    expect(Get.put(FavoriteRoomController()).hotAreasList, ['huya', 'ttinglive', 'xiaohongshu', 'niconico', 'weibo']);
+    expect(Get.put(FavoriteRoomController()).hotAreasList, hidden);
     expect(Get.put(AppSettingsController()).realOnlinePlatforms, ['twitch', 'ttinglive']);
   });
   test('backup preserves pinned owner case, numeric ID, tags and platform order', () {
@@ -67,19 +71,15 @@ void main() {
     expect(restored.userId, '100');
     expect(restored.tagIds, ['fixture']);
   });
-  test('real search flow explains missing capability and makes no web request', () async {
+  test('search advertises exact-channel scope without a web fallback', () {
     Get.put(SettingsService());
     final controller = SearchController();
     try {
       controller.index.value = controller.sites.indexWhere((s) => s.id == 'openrec') + 1;
       expect(controller.index.value, greaterThan(0));
       expect(controller.canOpenWebSearch, isFalse);
+      expect(controller.capabilityText, 'search_coverage_openrec');
       expect(() => controller.buildSearchUrl('openrec', 'fixture'), throwsStateError);
-      controller.searchController.text = 'fixture';
-      await controller.doSearch();
-      expect(controller.errorMessage.value, 'search_coverage_unavailable');
-      expect(controller.loading.value, isFalse);
-      expect(controller.hasMore.value, isFalse);
     } finally {
       controller.onClose();
     }

@@ -46,7 +46,7 @@ void main() {
     await HivePrefUtil.setInt('siteCatalogMigration', 4);
     await HivePrefUtil.setStringList('hotAreasList', ['huya', 'acfun']);
     final settings = Get.put(FavoriteRoomController());
-    expect(settings.hotAreasList, [
+    final expectedPrefix = [
       'huya',
       'acfun',
       'twitcasting',
@@ -59,37 +59,17 @@ void main() {
       'xiaohongshu',
       'niconico',
       'weibo',
-    ]);
-    expect(settings.siteCatalogMigration.value, 14);
+    ];
+    expect(settings.hotAreasList.take(expectedPrefix.length), expectedPrefix);
+    final migrated = settings.hotAreasList.toList(growable: false);
+    expect(migrated.toSet(), hasLength(migrated.length));
+    final hidden = migrated.where((id) => id != 'twitcasting').toList(growable: false);
+    expect(settings.siteCatalogMigration.value, 38);
     settings.hotAreasList.remove('twitcasting');
     settings.onInit();
-    expect(settings.hotAreasList, [
-      'huya',
-      'acfun',
-      'missevan',
-      'inke',
-      'kilakila',
-      'huajiao',
-      'openrec',
-      'ttinglive',
-      'xiaohongshu',
-      'niconico',
-      'weibo',
-    ]);
+    expect(settings.hotAreasList, hidden);
     await Hive.box<dynamic>('app_settings').flush();
-    expect(HivePrefUtil.getStringList('hotAreasList'), [
-      'huya',
-      'acfun',
-      'missevan',
-      'inke',
-      'kilakila',
-      'huajiao',
-      'openrec',
-      'ttinglive',
-      'xiaohongshu',
-      'niconico',
-      'weibo',
-    ]);
+    expect(HivePrefUtil.getStringList('hotAreasList'), hidden);
   });
 
   test('audience upgrade adds only TwitCasting and respects subsequent disabling', () async {

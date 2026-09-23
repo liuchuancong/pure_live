@@ -54,195 +54,67 @@ class FavoriteRoomController extends GetxController {
     _migrateSiteCatalog();
   }
 
+  static const List<String> _catalogAdditions = [
+    Sites.acfunSite, // v3
+    Sites.picartoSite, // v4
+    Sites.twitcastingSite, // v5
+    Sites.missevanSite, // v6
+    Sites.inkeSite, // v7
+    Sites.kilakilaSite, // v8
+    Sites.huajiaoSite, // v9
+    Sites.openrecSite, // v10
+    Sites.ttingSite, // v11
+    Sites.xiaohongshuSite, // v12
+    Sites.niconicoSite, // v13
+    Sites.weiboSite, // v14
+    Sites.showroomSite, // v15
+    Sites.chzzkSite, // v16
+    Sites.kickSite, // v17
+    Sites.seventeenLiveSite, // v18
+    Sites.liveMeSite, // v19
+    Sites.tiktokSite, // v20
+    Sites.youtubeSite, // v21
+    Sites.bigoSite, // v22
+    Sites.pandaLiveSite, // v23
+    Sites.popkonSite, // v24
+    Sites.shopeeLiveSite, // v25
+    Sites.vkVideoLiveSite, // v26
+    Sites.nimoTvSite, // v27
+    Sites.dailymotionSite, // v28
+    Sites.rumbleSite, // v29
+    Sites.goodGameSite, // v30
+    Sites.fc2LiveSite, // v31
+    Sites.steamBroadcastSite, // v32
+    Sites.jdLiveSite, // v33
+    Sites.taobaoLiveSite, // v34
+    Sites.kugouLiveSite, // v35
+    Sites.baiduLiveSite, // v36
+    Sites.sixRoomSite, // v37
+    Sites.lookLiveSite, // v38
+  ];
+  static const int currentSiteCatalogMigration = 38;
+
   void _migrateSiteCatalog() {
+    assert(currentSiteCatalogMigration == 2 + _catalogAdditions.length);
+    final previous = siteCatalogMigration.v;
+    if (previous >= currentSiteCatalogMigration) return;
     final updated = List<String>.from(hotAreasList);
-    if (siteCatalogMigration.v < 2) {
+    final seen = updated.toSet();
+    if (previous < 2) {
       for (final site in Sites.supportSites) {
-        if (!updated.contains(site.id)) updated.add(site.id);
+        if (seen.add(site.id)) updated.add(site.id);
       }
     }
-    // Add only the new platform. Re-enabling all supported IDs here would
-    // discard the user's deliberately hidden platforms on each new release.
-    if (siteCatalogMigration.v < 3) {
-      if (!updated.contains(Sites.acfunSite)) updated.add(Sites.acfunSite);
-      hotAreasList.assignAll(updated);
-      siteCatalogMigration.v = 3;
+    // Each post-v2 migration only adds its own site. One final Rx update and
+    // version write avoid a disk-write storm when an older installation jumps
+    // across many catalog versions, while preserving hidden older sites.
+    for (var index = 0; index < _catalogAdditions.length; index++) {
+      if (previous < index + 3 && seen.add(_catalogAdditions[index])) {
+        updated.add(_catalogAdditions[index]);
+      }
     }
-    if (siteCatalogMigration.v < 4) {
-      if (!updated.contains(Sites.picartoSite)) updated.add(Sites.picartoSite);
-      hotAreasList.assignAll(updated);
-      siteCatalogMigration.v = 4;
-    }
-    if (siteCatalogMigration.v < 5) {
-      if (!updated.contains(Sites.twitcastingSite)) updated.add(Sites.twitcastingSite);
-      hotAreasList.assignAll(updated);
-      siteCatalogMigration.v = 5;
-    }
-    if (siteCatalogMigration.v < 6) {
-      if (!updated.contains(Sites.missevanSite)) updated.add(Sites.missevanSite);
-      hotAreasList.assignAll(updated);
-      siteCatalogMigration.v = 6;
-    }
-    if (siteCatalogMigration.v < 7) {
-      if (!updated.contains(Sites.inkeSite)) updated.add(Sites.inkeSite);
-      hotAreasList.assignAll(updated);
-      siteCatalogMigration.v = 7;
-    }
-    if (siteCatalogMigration.v < 8) {
-      if (!updated.contains(Sites.kilakilaSite)) updated.add(Sites.kilakilaSite);
-      hotAreasList.assignAll(updated);
-      siteCatalogMigration.v = 8;
-    }
-    if (siteCatalogMigration.v < 9) {
-      if (!updated.contains(Sites.huajiaoSite)) updated.add(Sites.huajiaoSite);
-      hotAreasList.assignAll(updated);
-      siteCatalogMigration.v = 9;
-    }
-    if (siteCatalogMigration.v < 10) {
-      if (!updated.contains(Sites.openrecSite)) updated.add(Sites.openrecSite);
-      hotAreasList.assignAll(updated);
-      siteCatalogMigration.v = 10;
-    }
-    if (siteCatalogMigration.v < 11) {
-      if (!updated.contains(Sites.ttingSite)) updated.add(Sites.ttingSite);
-      hotAreasList.assignAll(updated);
-      siteCatalogMigration.v = 11;
-    }
-    if (siteCatalogMigration.v < 12) {
-      if (!updated.contains(Sites.xiaohongshuSite)) updated.add(Sites.xiaohongshuSite);
-      hotAreasList.assignAll(updated);
-      siteCatalogMigration.v = 12;
-    }
-    if (siteCatalogMigration.v < 13) {
-      if (!updated.contains(Sites.niconicoSite)) updated.add(Sites.niconicoSite);
-      hotAreasList.assignAll(updated);
-      siteCatalogMigration.v = 13;
-    }
-    if (siteCatalogMigration.v < 14) {
-      if (!updated.contains(Sites.weiboSite)) updated.add(Sites.weiboSite);
-      hotAreasList.assignAll(updated);
-      siteCatalogMigration.v = 14;
-    }
-    if (siteCatalogMigration.v < 15) {
-      if (!updated.contains(Sites.showroomSite)) updated.add(Sites.showroomSite);
-      hotAreasList.assignAll(updated);
-      siteCatalogMigration.v = 15;
-    }
-    if (siteCatalogMigration.v < 16) {
-      if (!updated.contains(Sites.chzzkSite)) updated.add(Sites.chzzkSite);
-      hotAreasList.assignAll(updated);
-      siteCatalogMigration.v = 16;
-    }
-    if (siteCatalogMigration.v < 17) {
-      if (!updated.contains(Sites.kickSite)) updated.add(Sites.kickSite);
-      hotAreasList.assignAll(updated);
-      siteCatalogMigration.v = 17;
-    }
-    if (siteCatalogMigration.v < 18) {
-      if (!updated.contains(Sites.seventeenLiveSite)) updated.add(Sites.seventeenLiveSite);
-      hotAreasList.assignAll(updated);
-      siteCatalogMigration.v = 18;
-    }
-    if (siteCatalogMigration.v < 19) {
-      if (!updated.contains(Sites.liveMeSite)) updated.add(Sites.liveMeSite);
-      hotAreasList.assignAll(updated);
-      siteCatalogMigration.v = 19;
-    }
-    if (siteCatalogMigration.v < 20) {
-      if (!updated.contains(Sites.tiktokSite)) updated.add(Sites.tiktokSite);
-      hotAreasList.assignAll(updated);
-      siteCatalogMigration.v = 20;
-    }
-    if (siteCatalogMigration.v < 21) {
-      if (!updated.contains(Sites.youtubeSite)) updated.add(Sites.youtubeSite);
-      hotAreasList.assignAll(updated);
-      siteCatalogMigration.v = 21;
-    }
-    if (siteCatalogMigration.v < 22) {
-      if (!updated.contains(Sites.bigoSite)) updated.add(Sites.bigoSite);
-      hotAreasList.assignAll(updated);
-      siteCatalogMigration.v = 22;
-    }
-    if (siteCatalogMigration.v < 23) {
-      if (!updated.contains(Sites.pandaLiveSite)) updated.add(Sites.pandaLiveSite);
-      hotAreasList.assignAll(updated);
-      siteCatalogMigration.v = 23;
-    }
-    if (siteCatalogMigration.v < 24) {
-      if (!updated.contains(Sites.popkonSite)) updated.add(Sites.popkonSite);
-      hotAreasList.assignAll(updated);
-      siteCatalogMigration.v = 24;
-    }
-    if (siteCatalogMigration.v < 25) {
-      if (!updated.contains(Sites.shopeeLiveSite)) updated.add(Sites.shopeeLiveSite);
-      hotAreasList.assignAll(updated);
-      siteCatalogMigration.v = 25;
-    }
-    if (siteCatalogMigration.v < 26) {
-      if (!updated.contains(Sites.vkVideoLiveSite)) updated.add(Sites.vkVideoLiveSite);
-      hotAreasList.assignAll(updated);
-      siteCatalogMigration.v = 26;
-    }
-    if (siteCatalogMigration.v < 27) {
-      if (!updated.contains(Sites.nimoTvSite)) updated.add(Sites.nimoTvSite);
-      hotAreasList.assignAll(updated);
-      siteCatalogMigration.v = 27;
-    }
-    if (siteCatalogMigration.v < 28) {
-      if (!updated.contains(Sites.dailymotionSite)) updated.add(Sites.dailymotionSite);
-      hotAreasList.assignAll(updated);
-      siteCatalogMigration.v = 28;
-    }
-    if (siteCatalogMigration.v < 29) {
-      if (!updated.contains(Sites.rumbleSite)) updated.add(Sites.rumbleSite);
-      hotAreasList.assignAll(updated);
-      siteCatalogMigration.v = 29;
-    }
-    if (siteCatalogMigration.v < 30) {
-      if (!updated.contains(Sites.goodGameSite)) updated.add(Sites.goodGameSite);
-      hotAreasList.assignAll(updated);
-      siteCatalogMigration.v = 30;
-    }
-    if (siteCatalogMigration.v < 31) {
-      if (!updated.contains(Sites.fc2LiveSite)) updated.add(Sites.fc2LiveSite);
-      hotAreasList.assignAll(updated);
-      siteCatalogMigration.v = 31;
-    }
-    if (siteCatalogMigration.v < 32) {
-      if (!updated.contains(Sites.steamBroadcastSite)) updated.add(Sites.steamBroadcastSite);
-      hotAreasList.assignAll(updated);
-      siteCatalogMigration.v = 32;
-    }
-    if (siteCatalogMigration.v < 33) {
-      if (!updated.contains(Sites.jdLiveSite)) updated.add(Sites.jdLiveSite);
-      hotAreasList.assignAll(updated);
-      siteCatalogMigration.v = 33;
-    }
-    if (siteCatalogMigration.v < 34) {
-      if (!updated.contains(Sites.taobaoLiveSite)) updated.add(Sites.taobaoLiveSite);
-      hotAreasList.assignAll(updated);
-      siteCatalogMigration.v = 34;
-    }
-    if (siteCatalogMigration.v < 35) {
-      if (!updated.contains(Sites.kugouLiveSite)) updated.add(Sites.kugouLiveSite);
-      hotAreasList.assignAll(updated);
-      siteCatalogMigration.v = 35;
-    }
-    if (siteCatalogMigration.v < 36) {
-      if (!updated.contains(Sites.baiduLiveSite)) updated.add(Sites.baiduLiveSite);
-      hotAreasList.assignAll(updated);
-      siteCatalogMigration.v = 36;
-    }
-    if (siteCatalogMigration.v < 37) {
-      if (!updated.contains(Sites.sixRoomSite)) updated.add(Sites.sixRoomSite);
-      hotAreasList.assignAll(updated);
-      siteCatalogMigration.v = 37;
-    }
-    if (siteCatalogMigration.v < 38) {
-      if (!updated.contains(Sites.lookLiveSite)) updated.add(Sites.lookLiveSite);
-      hotAreasList.assignAll(updated);
-      siteCatalogMigration.v = 38;
-    }
+    if (!_sameStrings(hotAreasList, updated)) hotAreasList.assignAll(updated);
+    siteCatalogMigration.v = currentSiteCatalogMigration;
   }
 
   void _normalizeSiteCatalogIds() {
