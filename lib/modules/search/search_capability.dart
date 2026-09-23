@@ -170,7 +170,10 @@ class LiveSearchCapabilities {
     Sites.yySite: LiveSearchCapability(coverage: NativeSearchCoverage.liveAndOffline, supportsPagination: true),
     Sites.acfunSite: LiveSearchCapability(coverage: NativeSearchCoverage.liveAndOffline, supportsPagination: true),
     Sites.picartoSite: LiveSearchCapability(coverage: NativeSearchCoverage.liveAndOffline, supportsPagination: true),
-    Sites.twitcastingSite: LiveSearchCapability(coverage: NativeSearchCoverage.liveOnly, supportsPagination: true),
+    Sites.twitcastingSite: LiveSearchCapability(
+      coverage: NativeSearchCoverage.liveAndOffline,
+      supportsPagination: true,
+    ),
     Sites.missevanSite: LiveSearchCapability(
       coverage: NativeSearchCoverage.roomLookup,
       supportsPagination: false,
