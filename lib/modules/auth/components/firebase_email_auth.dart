@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'dart:async';
 import 'dart:convert';
-
 import 'package:flutter/foundation.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
@@ -9,8 +8,8 @@ import 'package:pure_live/plugins/utils.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:best_form_validator/best_form_validator.dart';
 import 'package:pure_live/modules/auth/utils/firebase_manager.dart';
+
 
 class FirebaseEmailAuthBackend {
   const FirebaseEmailAuthBackend();
@@ -140,7 +139,7 @@ class _FirebaseEmailAuthState extends State<FirebaseEmailAuth> {
               autofillHints: const [AutofillHints.email],
               style: AppTextStyles.t14,
               validator: (value) {
-                if (Validators.validateEmail(value?.trim()) != null) {
+                if (!GetUtils.isEmail(value!.trim())) {
                   return i18n('firebase_enter_valid_email');
                 }
                 return null;
