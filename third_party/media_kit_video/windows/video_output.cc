@@ -122,8 +122,17 @@ VideoOutput::VideoOutput(int64_t handle,
 
 VideoOutput::~VideoOutput() {
   destroyed_ = true;
-  auto promise = std::promise<void>();
+  // Stop future notifications and drain work already queued for this object
+  // before its texture or render context can be released.
+  thread_pool_ref_->Post([context = render_context_]() {
+    if (context) {
+      mpv_render_context_set_update_callback(context, nullptr, nullptr);
+    }
+  }).get();
+
   if (texture_id_) {
+    auto promise = std::promise<void>();
+    auto texture_released = promise.get_future();
     registrar_->texture_registrar()->UnregisterTexture(
         texture_id_, [&, texture_id = texture_id_]() {
           auto future = thread_pool_ref_->Post([&, id = texture_id]() {
@@ -137,19 +146,21 @@ VideoOutput::~VideoOutput() {
             textures_.clear();
             // S/W
             pixel_buffer_textures_.clear();
-            // Free D3D11Renderer through the thread pool
-            d3d11_renderer_.reset(nullptr);
             promise.set_value();
           });
         });
+    texture_released.get();
   }
 
-  promise.get_future().wait();
   texture_id_ = 0;
 
-  thread_pool_ref_->Post([render_context = render_context_]() {
-    mpv_render_context_free(render_context);
-  });
+  // libmpv requires this to finish before mpv_terminate_destroy(ctx). Keep
+  // the D3D11 device alive until the render context has released it.
+  thread_pool_ref_->Post([this, context = render_context_]() {
+    mpv_render_context_free(context);
+    d3d11_renderer_.reset(nullptr);
+  }).get();
+  render_context_ = nullptr;
 }
 
 void VideoOutput::NotifyRender() {
