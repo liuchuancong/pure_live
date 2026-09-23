@@ -77,6 +77,8 @@ class WeiboSite extends LiveSite
           cover: card.cover,
           link: WeiboLink.url(card.liveId),
           liveStatus: LiveStatus.unknown,
+          audienceMetricType: AudienceMetricType.unknown,
+          watching: '',
           notice: i18n('weibo_room_scope'),
         ),
       ),
@@ -131,6 +133,8 @@ class WeiboSite extends LiveSite
       WeiboBroadcastState.replay => LiveStatus.replay,
       WeiboBroadcastState.unknown => LiveStatus.unknown,
     },
+    audienceMetricType: AudienceMetricType.unknown,
+    watching: '',
     notice: [if (detail.access != WeiboAccess.public) i18n('weibo_restricted'), i18n('weibo_room_scope')].join('\n'),
     data: detail,
   );

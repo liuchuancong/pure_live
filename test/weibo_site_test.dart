@@ -84,6 +84,7 @@ void main() {
     expect(card.liveStatus, LiveStatus.unknown);
     expect(card.onlineViewers, isEmpty);
     expect(card.hasRealOnlineCount, isFalse);
+    expect(card.audienceValue(preferRealOnline: false, platformEnabled: false), isEmpty);
     expect((await site.getDirectoryPage(page: 2)).rooms, isEmpty);
     expect(calls, hasLength(1));
   });
@@ -109,6 +110,7 @@ void main() {
       expect(r.data, isA<WeiboLiveDetail>());
       expect(r.onlineViewers, isEmpty);
       expect(r.hasRealOnlineCount, isFalse);
+      expect(r.audienceValue(preferRealOnline: false, platformEnabled: false), isEmpty);
     }
     expect(calls, hasLength(3));
   });
