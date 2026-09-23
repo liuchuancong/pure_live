@@ -312,7 +312,9 @@ foreach ($marker in @(
     '$flutterAssets.Count -lt 1000',
     'verify_android_elf_alignment.ps1',
     'zipalign.exe',
-    '-P 16'
+    '-P 16',
+    "minSdkVersion:",
+    'manifest_min_sdk'
 )) {
     if (-not $androidVerifier.Contains($marker)) {
         throw "Android APK integrity marker is missing: $marker"

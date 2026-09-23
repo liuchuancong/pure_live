@@ -65,6 +65,7 @@ local-artifacts/diagnostics/full-regression-20260828/
 
 ### A1 — Android 安装、升级与冷启动
 
+- [ ] AND-BASE-00 在安装前核对候选 APK 实际 `minSdkVersion` 与唯一 ABI，并与目标 Android / Android TV 的 SDK、支持 ABI 对照；低于最低 API 或 ABI 不匹配的设备记录为兼容范围差异，不执行覆盖安装。发布材料的系统要求须与 APK 清单一致。
 - [ ] AND-BASE-01 显式选择一个 ADB transport；当同一手机出现两个无线序列时，所有命令固定传 `-s SERIAL`，避免装到一个 transport、采样另一个 transport。
 - [ ] AND-BASE-02 核对已装 APK 包名、版本、ABI、签名类型和数据目录；覆盖安装前后关注、历史、标签、主题和核心设置保持。
 - [ ] AND-BASE-03 强制停止后冷启动 5 次：没有白屏/黑屏/闪退/重复页面；启动期间首页数据开始刷新且不会阻塞首帧。

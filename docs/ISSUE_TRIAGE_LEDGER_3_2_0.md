@@ -2,10 +2,11 @@
 
 本台账是 Issue 首轮分流的唯一紧凑索引。它记录“当前源码还需要做什么”，不复制专项审计的完整过程。状态分类遵循 [`MAINTENANCE_POLICY.md`](../MAINTENANCE_POLICY.md)。
 
-2026-09-23 复核：本轮处理 #873 斗鱼最高画质与 #874 关注列表单独同步，本仓库 Open Issue 为 0；上游新开 #875 已进入 Windows 多画面专项。#853 仍缺少房间、请求/确认档位、解码宽高或码率；该项处置条件保持不变。
+2026-09-24 复核：本仓库 Open Issue 为 0；上游新开 #876 已核对实际 APK 安装边界，#875 仍待 Windows 多画面原生验收。#853 仍缺少房间、请求/确认档位、解码宽高或码率；该项处置条件保持不变。
 
 | Issue | 报告基线 | 当前映射 | 当前证据 | 处置 / 再开条件 |
 | --- | --- | --- | --- | --- |
+| [#876 小米电视 Android 6.0.1 安装 v3.0.2 提示系统版本不足](https://github.com/liuchuancong/pure_live/issues/876) | MIUI TV 1.3.8 / Android 6.0.1；旧 v2.0.14 在用，具体 CPU ABI 未提供 | `deferred`，来源为设备与发行包最低 API 不匹配；旧系统兼容是独立原生依赖/电视验收工作 | [本仓库 v3.0.2 正式附件](https://github.com/wzgrx/pure_live/releases/tag/v3.0.2) SHA-256 `CF45B3C2…795CC` 与本地留存一致，`aapt` 实读 `sdkVersion=24`、仅 `arm64-v8a`；Android 6.0.1 为 API 23。当前源码及候选为 API 26，FFmpegKit 原生库要求该下限；新增 APK 门禁实测当前包 26 通过、期望 27 拒绝 | 不降低声明下限绕过安装器。旧系统兼容需替换/隔离 API 26 原生依赖并验证全录制与电视 UI；若 API 达标且 ABI 匹配仍安装失败，凭 APK 哈希、设备 ABI 与安装器精确错误重开 |
 | [#875 Windows 1+3 大画面播放一段时间后停帧](https://github.com/liuchuancong/pure_live/issues/875) | 3.1.4 / Windows x64；报告 3.1.3 正常，但未给房间、时长、声音状态、日志或录屏 | `not-reproduced`；已补当前源码的呈现帧监督与有界单格恢复，报告根因待当前 Windows 候选实测 | `v3.1.3..v3.1.4` 对多画面/MediaKit 无改动；原多画面只订阅 `playingStream`。本批接入 Windows `frameRevision` 监视，首帧先于监听亦可启动计时；可见大格停帧自动刷新并保留画质/线路/音频焦点；四文件 **80/80**；见[专项审计](ISSUE_875_WINDOWS_MULTIVIEW_FRAME_STALL_AUDIT_2026_09_23.md) | 按 WIN-MULTI-01 对照 1+3 大格/小格与 2×2，记录房间、画质/线路、停帧时长、音频、帧 revision、buffering、媒体错误和 GPU；区分 URL 过期、缓冲、解码或纹理根因，不以源码绿灯替代原生复现与闭环 |
 | [#873 斗鱼最高画质回落](https://github.com/liuchuancong/pure_live/issues/873) | 3.1.4 / Windows 11；评论补充匿名流 10–20 分钟断线 | `present`；匿名服务端回落已实测，当前源码增加可选账号 Cookie 路径，最终改善程度待复验 | 公开推荐房间 `24422` 列出原画 2K60，但匿名请求 `rate=0` 返回确认 `rate=4`；`4489985` 同批原画请求确认 `rate=0`。当前适配器已区分请求与确认；本批补齐斗鱼 Cookie 设置、签名请求与播放/录制请求头；见[Issue #873 审计](ISSUE_873_DOUYU_QUALITY_AND_SESSION_AUDIT_2026_09_23.md) | 当前 Windows 候选以同房间登录/匿名对照确认档位、解码宽高、码率及持续播放；若登录态仍回落或中途断线，保留平台返回及媒体请求失败证据进一步定位 |
 | [#874 单独同步关注列表](https://github.com/liuchuancong/pure_live/issues/874) | 3.1.4 / Windows 11；跨桌面与移动端 | `present` → 当前源码新增发送端与本地文件交换 | 在 #865 选择性恢复基础上，增加关注房间/分区专用 v3 导出、WebDAV 上传与本地导入；`backupScope: favorites` 阻止完整恢复误用；见[Issue #874 审计](ISSUE_874_FAVORITES_PORTABLE_BACKUP_AUDIT_2026_09_23.md) | 当前候选需验证真实 WebDAV 双端上传/回读及本地文件互导；若专用文件影响其他设备设置则重开 |
