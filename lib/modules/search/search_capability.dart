@@ -115,7 +115,7 @@ class LiveSearchCapabilities {
       supportsWebSearch: false,
     ),
     Sites.kilakilaSite: LiveSearchCapability(
-      coverage: NativeSearchCoverage.unavailable,
+      coverage: NativeSearchCoverage.channelLookup,
       supportsPagination: false,
       supportsWebSearch: false,
     ),

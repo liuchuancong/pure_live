@@ -283,6 +283,20 @@ void main() {
     );
   });
 
+  test('owner business 1013 is missing identity, while other business errors remain service failures', () async {
+    for (final code in [1013, 1]) {
+      final api = KilakilaApi(
+        request: (uri, _) async {
+          expect(uri.host, 'live.hongrenshuo.com.cn');
+          expect(uri.path, '/Tg/personalH5');
+          expect(uri.queryParameters['uid'], '100');
+          return (status: 200, body: jsonEncode({'code': code, 'msg': 'fixture', 'data': null}));
+        },
+      );
+      await expectLater(api.owner('100'), _failure(code == 1013 ? KilakilaFailure.notFound : KilakilaFailure.service));
+    }
+  });
+
   for (final entry in {
     401: KilakilaFailure.access,
     403: KilakilaFailure.access,

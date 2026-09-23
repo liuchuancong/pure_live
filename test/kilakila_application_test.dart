@@ -13,6 +13,7 @@ import 'package:pure_live/common/models/live_room.dart';
 import 'package:pure_live/common/services/settings_service.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:pure_live/common/utils/live_url_tool.dart';
+import 'package:pure_live/core/interface/live_search.dart';
 import 'package:pure_live/core/interface/live_site.dart';
 import 'package:pure_live/core/site/kilakila/kilakila_api.dart';
 import 'package:pure_live/core/site/kilakila/kilakila_site.dart';
@@ -109,13 +110,15 @@ void main() {
   tearDown(Get.reset);
   tearDownAll(Hive.close);
 
-  test('registration is unique and unsupported capabilities stay explicit', () {
+  test('registration is unique and precise search capabilities stay explicit', () {
     expect(Sites.of(' KILAKILA ').liveSite, isA<KilakilaSite>());
     expect(Sites.supportSites.map((s) => s.id).toSet(), Sites.supportedSiteIds);
     expect(Sites.supportSites.where((s) => s.id == 'kilakila'), hasLength(1));
     expect(LiveRoom.audienceCapabilityFor('kilakila').supportsConcurrentOnline, isFalse);
-    expect(LiveSearchCapabilities.forPlatform('kilakila').supportsNativeSearch, isFalse);
+    expect(LiveSearchCapabilities.forPlatform('kilakila').coverage, NativeSearchCoverage.channelLookup);
+    expect(LiveSearchCapabilities.forPlatform('kilakila').supportsNativeSearch, isTrue);
     expect(LiveSearchCapabilities.forPlatform('kilakila').supportsWebSearch, isFalse);
+    expect(Sites.of('kilakila').liveSite, isA<LiveCancellableSearch>());
     expect(MultiviewDanmakuSession.isSupportedPlatform('kilakila'), isFalse);
     final controller = _Controller(KilakilaSite(api: api()));
     addTearDown(controller.onClose);
@@ -202,6 +205,70 @@ void main() {
     expect(command['roomId'], uid);
     expect(command['link'], KilakilaSite.ownerUrl(uid));
     expect(RoomExternalOpener.resolve('kilakila', reopened)?.web, KilakilaSite.ownerUrl(uid));
+  });
+  test('exact UID and official owner link search use one owner request with no media resolution', () async {
+    final calls = <Uri>[];
+    final source = KilakilaSite(api: api(called: calls.add));
+    for (final query in [uid, KilakilaSite.ownerUrl(uid)]) {
+      final room = (await source.searchRooms(query)).single;
+      expect(room.roomId, uid);
+      expect(room.nick, 'Fixture');
+      expect(room.link, KilakilaSite.ownerUrl(uid));
+      expect(room.isLiveNow, isTrue);
+      expect(room.data, isNull);
+      expect(room.watching, isEmpty);
+      expect(room.onlineViewers, isEmpty);
+      expect(room.audienceMetricType, AudienceMetricType.unknown);
+    }
+    expect(calls.map((uri) => uri.path), ['/Tg/personalH5', '/Tg/personalH5']);
+    expect(calls.map((uri) => uri.queryParameters['uid']), [uid, uid]);
+  });
+  test('empty current card returns owner with unknown live state, not an invented offline result', () async {
+    final calls = <Uri>[];
+    final source = KilakilaSite(
+      api: api(advertised: () => {'roomSourceType': 0, 'recommendSource': 0}, called: calls.add),
+    );
+    final room = (await source.searchRooms(uid)).single;
+    expect(room.roomId, uid);
+    expect(room.effectiveLiveStatus, LiveStatus.unknown);
+    expect(room.isExplicitlyOfflineNow, isFalse);
+    expect(room.status, isNull);
+    expect(room.watching, isEmpty);
+    expect(calls.map((uri) => uri.path), ['/Tg/personalH5']);
+  });
+  test('unsupported terms, broadcast links and later pages send no owner request', () async {
+    final calls = <Uri>[];
+    final source = KilakilaSite(api: api(called: calls.add));
+    for (final query in [
+      'Fixture',
+      '00100',
+      '${KilakilaApi.origin}/room/$first',
+      'https://evil.test/index/roomuser/uid/100',
+    ]) {
+      expect(await source.searchRooms(query), isEmpty);
+    }
+    expect(await source.searchRooms(uid, page: 2), isEmpty);
+    expect(calls, isEmpty);
+  });
+  test('missing owner is empty search but service/schema/cancellation remain explicit', () async {
+    final missing = KilakilaSite(api: KilakilaApi(request: (_, _) async => ok({'code': 1013, 'data': null})));
+    expect(await missing.searchRooms('100'), isEmpty);
+    final service = KilakilaSite(api: KilakilaApi(request: (_, _) async => ok({'code': 1, 'data': null})));
+    await expectLater(
+      service.searchRooms('100'),
+      throwsA(isA<KilakilaException>().having((e) => e.kind, 'kind', KilakilaFailure.service)),
+    );
+    final malformed = KilakilaSite(api: KilakilaApi(request: (_, _) async => ok({'code': 200, 'data': {}})));
+    await expectLater(
+      malformed.searchRooms('100'),
+      throwsA(isA<KilakilaException>().having((e) => e.kind, 'kind', KilakilaFailure.schema)),
+    );
+    final token = CancelToken()..cancel('fixture');
+    final cancelled = KilakilaSite(api: api(called: (_) => fail('cancelled request reached network')));
+    await expectLater(
+      cancelled.searchRoomsCancellable('100', cancel: token),
+      throwsA(isA<KilakilaException>().having((e) => e.kind, 'kind', KilakilaFailure.cancelled)),
+    );
   });
   test('playback and recorder renewal follow a new broadcast with stable quality IDs', () async {
     var current = first;
