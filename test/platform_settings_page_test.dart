@@ -123,6 +123,22 @@ void main() {
     expect(tester.widget<RadioListTile<String>>(choices).value, Sites.iptvSite);
   });
 
+  testWidgets('preference dialog tracks a changed visible platform order while open', (tester) async {
+    favorites.hotAreasList.value = [Sites.bilibiliSite, Sites.iptvSite];
+    await _pumpLocalized(tester, english: english, home: const PlatformSettingsPage(), size: const Size(420, 800));
+    await tester.tap(find.text('Platform Preference'));
+    await tester.pumpAndSettle();
+
+    final dialog = find.byType(Dialog);
+    final choices = find.descendant(of: dialog, matching: find.byType(RadioListTile<String>));
+    expect(choices, findsNWidgets(2));
+    favorites.hotAreasList.value = [Sites.weiboSite, Sites.bilibiliSite, Sites.weiboSite];
+    await tester.pumpAndSettle();
+    expect(choices, findsNWidgets(2));
+    expect(tester.widget<RadioListTile<String>>(choices.first).value, Sites.weiboSite);
+    expect(tester.widget<RadioListTile<String>>(choices.last).value, Sites.bilibiliSite);
+  });
+
   test('hidden platform preference is rejected and restored backup preference follows visible order', () {
     favorites.hotAreasList.value = [Sites.bilibiliSite, Sites.iptvSite];
     favorites.changePreferPlatform(Sites.douyuSite);

@@ -91,6 +91,19 @@ class _PreferPlatformSelectorDialog extends StatefulWidget {
 
 class _PreferPlatformSelectorDialogState extends State<_PreferPlatformSelectorDialog> {
   String _query = '';
+  final Map<String, Site> _siteCache = {};
+
+  List<Site> _visibleSites() {
+    final seen = <String>{};
+    final result = <Site>[];
+    for (final rawId in SettingsService.to.fav.hotAreasList) {
+      final id = rawId.trim().toLowerCase();
+      if (!seen.add(id) || !Sites.isSupported(id)) continue;
+      // Searching must not reconstruct every adapter on each keystroke.
+      result.add(_siteCache.putIfAbsent(id, () => Sites.of(id)));
+    }
+    return result;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -119,8 +132,7 @@ class _PreferPlatformSelectorDialogState extends State<_PreferPlatformSelectorDi
               ),
             ),
             Obx(() {
-              final sites = Sites()
-                  .availableSites()
+              final sites = _visibleSites()
                   .where((site) {
                     if (_query.isEmpty) return true;
                     return site.id.contains(_query) || site.name.toLowerCase().contains(_query);
