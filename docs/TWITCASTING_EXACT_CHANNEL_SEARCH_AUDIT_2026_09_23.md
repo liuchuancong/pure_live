@@ -9,4 +9,3 @@ TwitCasting [官方帮助](https://www.tp.twitcasting.tv/helpcenter.php?pid=INDE
 ## 回归
 
 先新增根链接离线回归，旧实现以 schema 错误失败；实现后覆盖离线、开播但旧媒体无效、404、取消、根路径与 movie 路径区分。最终 TwitCasting 适配器 **38/38**，搜索能力与 Widget 三文件联合回归 **121/121**，定向 Analyze 无诊断。本批为源码级验证，Android/Windows 原生输入与播放留给后续候选。
-
