@@ -24,44 +24,26 @@ Future<bool> requestStorageInstallPermission() async {
 }
 
 final List<String> mirrors = [
-  // 🟢 最佳：api=200 + asset=206（支持断点续传）
+  // 🟢 asset=206: resumable, best for large files
   'https://cdn.gh-proxy.org/',
   'https://edgeone.gh-proxy.org/',
   'https://hk.gh-proxy.org/',
   'https://gh.noki.eu.org/',
   'https://gh-proxy.com/',
   'https://slink.ltd/',
-
-  // 🟡 可用：api=200 + asset=200
-  'https://gh.con.sh/',
-  'https://ghp.keleyaa.com/',
-  'https://ghproxy.cxkpro.top/',
-  'https://ghproxy.link/',
-  'https://gh-proxy.net/',
-  'https://gh-proxy.org/',
-  'https://gh-proxy.pages.dev/',
-  'https://ghpxy.hwinzniej.top/',
-  'https://gitproxy.click/',
-  'https://tvv.tw/',
-  'https://v6.gh-proxy.org/',
-
-  // 🟠 仅下载可用：asset 正常，API 被限
-  'https://fastgit.cc/',
   'https://gh.catmak.name/',
-  'https://ghfile.geekertao.top/',
-  'https://ghproxy.monkeyray.net/',
-  'https://github.ednovas.xyz/',
   'https://proxy.gitwarp.top/',
-  'https://g.blfrp.cn/',
-  'https://gh.ddlc.top/',
-  'https://gh.xxooo.cf/',
-  'https://ghm.078465.xyz/',
-  'https://ghproxy.imciel.com/',
+  'https://github.ednovas.xyz/',
+  'https://ghproxy.monkeyray.net/',
+  'https://fastgit.cc/',
+  'https://ghfile.geekertao.top/',
+
+  // 🟠 asset=200: works, but no resume
+  'https://gh-proxy.org/',
   'https://ghproxy.net/',
-  'https://git.yylx.win/',
-  'https://github.geekery.cn/',
-  'https://gitproxy.mrhjx.cn/',
   'https://wget.la/',
+  'https://git.yylx.win/',
+  'https://g.blfrp.cn/',
 ];
 
 Future<void>? _activeDownloadDialog;
