@@ -1906,7 +1906,7 @@
   "bigo_access_restricted": "This room is password- or payment-restricted, so its live state and media remain unknown.",
   "bigo_quality_live": "Live Auto",
   "site_pandalive": "PandaTV",
-  "pandalive_directory_scope": "The official public live directory has native pagination. Search accepts an exact channel ID or official live/channel URL; nickname keyword search is pending.",
+  "pandalive_directory_scope": "The official public live directory uses native pagination. Search combines current-live title/broadcaster matches with BJ profiles including offline broadcasters, each using its own native offset. Exact channel IDs and official live/channel URLs remain supported.",
   "pandalive_public_directory": "Public live directory",
   "pandalive_chat_notice": "PandaTV remote chat is pending. The platform user field is shown as current viewers; playCnt is kept separate from concurrency.",
   "pandalive_adult_notice": "This room requires the platform's adult verification.",

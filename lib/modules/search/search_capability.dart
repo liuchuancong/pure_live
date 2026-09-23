@@ -77,8 +77,8 @@ class LiveSearchCapabilities {
       supportsWebSearch: false,
     ),
     Sites.pandaLiveSite: LiveSearchCapability(
-      coverage: NativeSearchCoverage.channelLookup,
-      supportsPagination: false,
+      coverage: NativeSearchCoverage.liveAndOffline,
+      supportsPagination: true,
       supportsWebSearch: false,
     ),
     Sites.popkonSite: LiveSearchCapability(

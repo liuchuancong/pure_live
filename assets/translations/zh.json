@@ -1906,7 +1906,7 @@
   "bigo_access_restricted": "该房间受密码或付费访问限制，直播状态与媒体保持未知。",
   "bigo_quality_live": "直播自动",
   "site_pandalive": "PandaTV",
-  "pandalive_directory_scope": "官网公开直播目录支持原生分页；搜索支持精确频道 ID 与官方直播间/频道链接，昵称关键词搜索尚待接入。",
+  "pandalive_directory_scope": "官网公开直播目录支持原生分页；搜索同时读取当前直播标题/主播与含未开播主播的 BJ 列表，分别按官网原生 offset 翻页。精确频道 ID 和官方直播间/频道链接继续支持。",
   "pandalive_public_directory": "公开直播",
   "pandalive_chat_notice": "PandaTV 远端聊天尚待接入；user 字段按平台当前在线人数展示，playCnt 不作为并发人数。",
   "pandalive_adult_notice": "该直播间需要平台成年验证。",

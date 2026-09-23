@@ -72,6 +72,15 @@ final class PandaLiveDirectoryPage {
   final bool hasMore;
 }
 
+final class PandaLiveSearchPage {
+  PandaLiveSearchPage({required Iterable<PandaLiveRoom> rooms, required this.page, required this.hasMore})
+    : rooms = List.unmodifiable(rooms);
+
+  final List<PandaLiveRoom> rooms;
+  final int page;
+  final bool hasMore;
+}
+
 final class PandaLiveStream {
   const PandaLiveStream({
     required this.id,
@@ -275,9 +284,7 @@ class PandaLiveApi {
 
   Future<PandaLiveDirectoryPage> directory({int page = 1, int size = 30, CancelToken? cancel}) =>
       _scope(cancel, (token) async {
-        if (page < 1 || page > 1000 || size < 1 || size > 50) {
-          throw const PandaLiveException(PandaLiveFailure.schema);
-        }
+        _validateRequestPage(page, size);
         final offset = (page - 1) * size;
         final root = await _post(
           '/v1/live/index',
@@ -286,16 +293,83 @@ class PandaLiveApi {
           token,
         );
         _requireSuccess(root);
-        final paging = _object(root['page']);
-        if (_nonNegativeInt(paging['offset']) != offset || _positiveInt(paging['limit']) != size) {
-          throw const PandaLiveException(PandaLiveFailure.identity);
-        }
-        final total = _nonNegativeInt(paging['total']);
-        final responsePage = _positiveInt(paging['page']);
-        if (responsePage != page) throw const PandaLiveException(PandaLiveFailure.identity);
-        final rooms = _list(root['list'], max: 64).map((value) => parseCard(_object(value))).toList(growable: false);
-        return PandaLiveDirectoryPage(rooms: rooms, page: page, hasMore: offset + rooms.length < total);
+        final result = _pagedRows(root, page: page, size: size);
+        final rooms = result.rows.map((value) => parseCard(_object(value))).toList(growable: false);
+        return PandaLiveDirectoryPage(rooms: rooms, page: page, hasMore: result.hasMore);
       });
+
+  /// Official LIVE search: title and broadcaster matches among current rooms.
+  Future<PandaLiveDirectoryPage> searchLive(String keyword, {int page = 1, int size = 10, CancelToken? cancel}) =>
+      _scope(cancel, (token) async {
+        _validateRequestPage(page, size);
+        final query = _searchKeyword(keyword);
+        final root = await _post(
+          '/v1/live/index',
+          {'offset': '${(page - 1) * size}', 'limit': '$size', 'orderBy': 'user', 'searchVal': query},
+          '$origin/search/live?text=${Uri.encodeQueryComponent(query)}',
+          token,
+        );
+        _requireSuccess(root);
+        final result = _pagedRows(root, page: page, size: size);
+        final rooms = result.rows.map((value) => parseCard(_object(value))).toList(growable: false);
+        return PandaLiveDirectoryPage(rooms: rooms, page: page, hasMore: result.hasMore);
+      });
+
+  /// Official BJ search: profiles can be offline and may contain a current
+  /// `media` summary. No watch token or media playlist is requested here.
+  Future<PandaLiveSearchPage> searchBroadcasters(String keyword, {int page = 1, int size = 10, CancelToken? cancel}) =>
+      _scope(cancel, (token) async {
+        _validateRequestPage(page, size);
+        final query = _searchKeyword(keyword);
+        final root = await _post(
+          '/v1/live/bj_list',
+          {'offset': '${(page - 1) * size}', 'limit': '$size', 'searchVal': query},
+          '$origin/search/bj?text=${Uri.encodeQueryComponent(query)}',
+          token,
+        );
+        _requireSuccess(root);
+        final result = _pagedRows(root, page: page, size: size);
+        final rooms = <PandaLiveRoom>[];
+        for (final raw in result.rows) {
+          try {
+            final profile = _object(raw);
+            if (_bool(profile['blockService']) == true) continue;
+            rooms.add(parseSearchProfile(profile));
+          } on PandaLiveException {
+            // Keep valid search profiles when an unrelated row is malformed.
+          }
+        }
+        return PandaLiveSearchPage(rooms: rooms, page: page, hasMore: result.hasMore);
+      });
+
+  static void _validateRequestPage(int page, int size) {
+    if (page < 1 || page > 1000 || size < 1 || size > 50) throw const PandaLiveException(PandaLiveFailure.schema);
+  }
+
+  static String _searchKeyword(String keyword) {
+    final query = keyword.trim();
+    if (query.length < 2 || query.length > 100 || RegExp(r'[\x00-\x1f]').hasMatch(query)) {
+      throw const PandaLiveException(PandaLiveFailure.schema);
+    }
+    return query;
+  }
+
+  static ({List<Object?> rows, bool hasMore}) _pagedRows(
+    Map<String, dynamic> root, {
+    required int page,
+    required int size,
+  }) {
+    final offset = (page - 1) * size;
+    final paging = _object(root['page']);
+    if (_nonNegativeInt(paging['offset']) != offset ||
+        _positiveInt(paging['limit']) != size ||
+        _positiveInt(paging['page']) != page) {
+      throw const PandaLiveException(PandaLiveFailure.identity);
+    }
+    final total = _nonNegativeInt(paging['total']);
+    final rows = _list(root['list'], max: 64);
+    return (rows: rows, hasMore: offset + rows.length < total);
+  }
 
   Future<PandaLiveRoom> room(String rawUserId, {bool resolveMedia = true, CancelToken? cancel}) =>
       _scope(cancel, (token) async {
@@ -368,6 +442,57 @@ class PandaLiveApi {
       followers: _optionalNonNegativeInt(data['fanCnt']),
       isAdult: _bool(data['isAdult']) ?? false,
       isPassword: _bool(data['isPw']) ?? false,
+    );
+  }
+
+  static PandaLiveRoom parseSearchProfile(Map<String, dynamic> profile) {
+    final userId = _userId(profile['userId']);
+    final userIndex = _positiveInt(profile['userIdx']);
+    final nickname = _text(profile['userNick']);
+    final avatar = _image(profile['thumbUrl']);
+    final rawMedia = profile['media'];
+    if (rawMedia == null) {
+      return PandaLiveRoom(
+        userId: userId,
+        userIndex: userIndex,
+        nickname: nickname,
+        title: nickname,
+        avatar: avatar,
+        cover: '',
+        introduction: '',
+        category: '',
+        followers: null,
+        onlineViewers: null,
+        state: PandaLiveState.offline,
+        access: PandaLiveAccess.public,
+        streams: const [],
+      );
+    }
+    final media = _object(rawMedia);
+    _validateMediaIdentity(media, userId, userIndex);
+    final live = _bool(media['isLive']);
+    return PandaLiveRoom(
+      userId: userId,
+      userIndex: userIndex,
+      nickname: nickname,
+      title: _firstText([media['title'], nickname]),
+      avatar: avatar,
+      cover: _image(media['thumbUrl'] ?? media['ivsThumbnail']),
+      introduction: '',
+      category: _optionalText(media['category']),
+      followers: _optionalNonNegativeInt(media['fanCnt']),
+      onlineViewers: live == true ? _optionalNonNegativeInt(media['user']) : null,
+      state: switch (live) {
+        true => PandaLiveState.live,
+        false => PandaLiveState.offline,
+        null => PandaLiveState.unknown,
+      },
+      access: _bool(media['isAdult']) == true
+          ? PandaLiveAccess.adult
+          : _bool(media['isPw']) == true
+          ? PandaLiveAccess.password
+          : PandaLiveAccess.public,
+      streams: const [],
     );
   }
 
