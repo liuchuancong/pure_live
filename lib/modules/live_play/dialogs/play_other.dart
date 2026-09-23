@@ -154,7 +154,7 @@ class _PlayOtherState extends State<PlayOther> with SingleTickerProviderStateMix
             ),
             SizedBox(
               height: textMetrics.tabBarHeight,
-              child: TabBar(
+              child: ScrollableTabBar(
                 controller: tabController,
                 isScrollable: textMetrics.scrollTabs,
                 tabAlignment: textMetrics.scrollTabs ? TabAlignment.start : TabAlignment.fill,

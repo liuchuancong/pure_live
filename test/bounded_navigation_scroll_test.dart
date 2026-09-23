@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:pure_live/common/widgets/scrollable_tab_bar.dart';
 import 'package:pure_live/common/widgets/pure_live_scroll_physics.dart';
 
 void main() {
@@ -44,7 +45,7 @@ void main() {
           child: Scaffold(
             body: Align(
               alignment: Alignment.topCenter,
-              child: TabBar(
+              child: ScrollableTabBar(
                 key: const ValueKey('bounded-tabs'),
                 isScrollable: true,
                 physics: const PureLiveBoundedScrollPhysics(),

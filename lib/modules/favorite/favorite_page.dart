@@ -22,7 +22,7 @@ class FavoritePage extends GetView<FavoriteController> {
               centerTitle: true,
               leading: showAction ? const MenuButton() : null,
               actions: showAction ? [CommonAppBarActions()] : null,
-              title: TabBar(
+              title: ScrollableTabBar(
                 key: const ValueKey('favorite-status-tabs'),
                 controller: controller.tabController,
                 isScrollable: false,
@@ -121,7 +121,7 @@ class _FavoriteSiteTabsState extends State<_FavoriteSiteTabs> with SingleTickerP
     final availableSitesList = widget.availableSitesList;
     return Column(
       children: [
-        TabBar(
+        ScrollableTabBar(
           key: const ValueKey('favorite-platform-tabs'),
           controller: _tabController,
           isScrollable: true,

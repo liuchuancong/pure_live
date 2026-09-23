@@ -1,6 +1,6 @@
 import 'package:remixicon/remixicon.dart';
-import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:pure_live/common/index.dart';
+import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:pure_live/modules/areas/widgets/area_card.dart';
 import 'package:pure_live/modules/areas/areas_list_controller.dart';
 
@@ -178,7 +178,7 @@ class _AreaGridViewState extends State<AreaGridView> with TickerProviderStateMix
 
       return Column(
         children: [
-          TabBar(
+          ScrollableTabBar(
             key: const ValueKey('area-category-tabs'),
             controller: _tabController,
             // A tap is committed intent, unlike an unfinished horizontal drag.

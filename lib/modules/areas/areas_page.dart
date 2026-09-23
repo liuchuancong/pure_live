@@ -22,7 +22,7 @@ class AreasPage extends GetView<AreasController> {
               centerTitle: true,
               leading: showAction ? const MenuButton() : null,
               actions: showAction ? [CommonAppBarActions()] : null,
-              title: TabBar(
+              title: ScrollableTabBar(
                 key: const ValueKey('areas-platform-tabs'),
                 controller: controller.tabController,
                 isScrollable: true,

@@ -24,7 +24,7 @@ class PopularPage extends GetView<PopularController> {
               centerTitle: true,
               leading: showAction ? const MenuButton() : null,
               actions: showAction ? [CommonAppBarActions()] : null,
-              title: TabBar(
+              title: ScrollableTabBar(
                 key: const ValueKey('popular-platform-tabs'),
                 controller: controller.tabController,
                 isScrollable: true,

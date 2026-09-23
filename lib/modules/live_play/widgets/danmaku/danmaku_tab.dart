@@ -62,7 +62,7 @@ class DanmakuSectionTabBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       color: Theme.of(context).colorScheme.surface,
-      child: TabBar(
+      child: ScrollableTabBar(
         key: const ValueKey('live-danmaku-section-tabs'),
         isScrollable: false,
         tabAlignment: TabAlignment.fill,
