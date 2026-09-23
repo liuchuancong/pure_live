@@ -6,7 +6,7 @@
 
 | 项目 | 当前证据 |
 | --- | --- |
-| 功能源码基线 | 最新业务源码 `69deda1f`：全平台搜索并发上限 12，逐站补位与取消队列见[搜索审计](SEARCH_AGGREGATE_CONCURRENCY_AUDIT_2026_09_24.md)；房间详情及付费消息修订见[房间审计](ROOM_DETAIL_ERROR_STATUS_AUDIT_2026_09_24.md)。搜索取消测试 **21/21**，全仓 Analyze 0 error / 0 warning、1 项既有 info（`20260923T171611708Z-quality-focused.json`）。微博现网两段同输入短录复核见[录制证据](WEIBO_RECORDING_SOURCE_RELATIVE_RECHECK_2026_09_24.md)。上一正式 Full 在 `a4f3eeb3` 通过 Flutter **5295/5295**、公共接口 **42/42**（`20260923T153951228Z-quality-full.json`）；该 Full 早于当前业务修复，最终候选仍须重新完成门禁与双端原生验收 |
+| 功能源码基线 | 最新业务源码 `d44d6c12`：微博精确场次 404 搜索返回空结果，详情及 429/5xx 保留错误分类；适配器与应用测试 **76/76**，最终追加错误分类断言后适配器 **43/43**，全仓 Analyze 0 error / 0 warning、1 项既有 info（`20260923T172346013Z-quality-focused.json`）。全平台搜索并发修订见[搜索审计](SEARCH_AGGREGATE_CONCURRENCY_AUDIT_2026_09_24.md)，房间状态修订见[房间审计](ROOM_DETAIL_ERROR_STATUS_AUDIT_2026_09_24.md)。上一正式 Full 在 `a4f3eeb3` 通过 Flutter **5295/5295**、公共接口 **42/42**（`20260923T153951228Z-quality-full.json`）；该 Full 早于当前业务修复，最终候选仍须重新完成门禁与双端原生验收 |
 | Android 最新本机构建/原生输入 | 现存 `b79e8838` arm64 Debug，3.1.8+4121 / Manifest 6121，289007467 B，SHA-256 `377D4CD5…30ED`；16 个原生库、最小 ELF LOAD `0x4000`、APK 内容门禁通过。该包早于当前源码，未覆盖安装；新增平台、搜索、布局及录制等后续修订均待新候选原生验收 |
 | Android 当前编号账本 | 46 行：16 PASS / 30 RUN / 0 NR；每行仍含多个动作和平台组合，旧包证据不自动覆盖当前源码 |
 | Windows 最新归档 | `9a15c7fe` x64 Debug 已构建：`PureLive-3.1.8-4121-windows-x64-debug.zip`，SHA-256 `e5353f23…d1125b`，记录 `20260923T152205072Z-build-windowsx64-debug.json`；早于当前人数展示修复，尚未完成 GUI/播放/录制原生验收，也不是 3.2.0 Release 候选 |
@@ -37,6 +37,6 @@
 ## 下一批顺序
 
 1. 继续按战旗、浪 Live 的生产证据门槛与 C2/C3 活跃平台顺序扩展源码；同时完成当前仍可确定复现的 Issue/所有权缺口，已经修复或证据不足的条目停止重复调查。
-2. `a4f3eeb3` Full 已通过；当前 `69deda1f` 的相邻测试与全仓 Analyze 已通过。业务源码收敛时完成一次最终 Full，生成一个新 Android arm64 候选。手机进入可用测试窗口后批量收口 A0～A8，不为每个小修复重复构建；设备窗口尚未释放时继续源码或 Windows 工作。
+2. `a4f3eeb3` Full 已通过；当前 `d44d6c12` 的相邻测试与全仓 Analyze 已通过。业务源码收敛时完成一次最终 Full，生成一个新 Android arm64 候选。手机进入可用测试窗口后批量收口 A0～A8，不为每个小修复重复构建；设备窗口尚未释放时继续源码或 Windows 工作。
 3. 同一候选集中完成平台播放/弹幕/录制、资源与性能证据，失败项回源码修订后只重跑受影响组。
 4. 42 个编号组和发布范围实际闭合后，固定 3.2.0 提交并执行完整发布门禁。
