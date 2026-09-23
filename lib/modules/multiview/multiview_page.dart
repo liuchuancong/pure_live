@@ -1188,7 +1188,7 @@ class _RoomNameChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (hasLogo) ...[Image.asset(Sites.of(platform).logo, width: 13, height: 13), const SizedBox(width: 5)],
+          if (hasLogo) ...[Image.asset(Sites.logoForId(platform), width: 13, height: 13), const SizedBox(width: 5)],
           ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 120),
             child: Text(
