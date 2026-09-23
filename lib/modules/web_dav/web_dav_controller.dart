@@ -322,8 +322,8 @@ class WebDavPageController extends GetxController {
     return buildPath(name);
   }
 
-  /// 上传配置到 WebDAV（走新备份系统）
-  Future<void> uploadConfigSettings() async {
+  /// Upload a full backup or a portable follow-list-only payload.
+  Future<void> uploadConfigSettings({BackupRestoreScope scope = BackupRestoreScope.all}) async {
     final service = _webdavService;
     final epoch = _serviceEpoch;
     if (service == null || !_ownsService(service, epoch) || !canUpload) return;
@@ -332,10 +332,13 @@ class WebDavPageController extends GetxController {
     try {
       final dateStr = formatDate(_now(), [yyyy, '-', mm, '-', dd, 'T', HH, '_', nn, '_', ss]);
       // Timestamp-only names overwrite earlier backups within the same second.
-      final fileName = 'purelive_${dateStr}_${const Uuid().v4()}.txt';
+      final prefix = scope == BackupRestoreScope.favorites ? 'purelive_favorites' : 'purelive';
+      final fileName = '${prefix}_${dateStr}_${const Uuid().v4()}.txt';
 
-      // 备份所有配置
-      final data = _backupController.exportAllSettings();
+      final data = switch (scope) {
+        BackupRestoreScope.all => _backupController.exportAllSettings(),
+        BackupRestoreScope.favorites => _backupController.exportFavoriteSettings(),
+      };
       final content = jsonEncode(data);
       final bytes = utf8.encode(content);
 
@@ -343,7 +346,9 @@ class WebDavPageController extends GetxController {
       await service.writeFile(remotePath, bytes);
       if (!_ownsService(service, epoch)) return;
 
-      _feedback(i18n("webdav_upload_success"));
+      _feedback(
+        i18n(scope == BackupRestoreScope.favorites ? 'webdav_upload_favorites_success' : 'webdav_upload_success'),
+      );
       if (dirPath.value == path) await loadFiles();
     } catch (e) {
       if (!_ownsService(service, epoch)) return;

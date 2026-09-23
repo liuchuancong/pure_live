@@ -116,6 +116,18 @@ void main() {
     await finish(tester);
   });
 
+  testWidgets('favorites export has a distinct file and remembers its first directory', (tester) async {
+    picker.result = directory.path;
+    await openPage(tester);
+    await tester.tap(find.text('仅导出关注列表'));
+    await tester.pumpAndSettle();
+    expect(backup.favoriteDestinations, hasLength(1));
+    expect(backup.favoriteDestinations.single.path, contains('purelive_favorites_'));
+    expect(backup.destinations, isEmpty);
+    expect(backup.backupDirectory.value, directory.path);
+    await finish(tester);
+  });
+
   testWidgets('failed first export leaves the backup directory unset', (tester) async {
     picker.result = directory.path;
     backup.succeeds = false;
@@ -169,14 +181,26 @@ class _DirectoryPicker extends FilePickerPlatform {
 class _BackupController extends BackupController {
   final _directory = ''.obs;
   final destinations = <File>[];
+  final favoriteDestinations = <File>[];
   bool succeeds = true;
 
   @override
   RxString get backupDirectory => _directory;
 
   @override
+  Future<void> setBackupDirectoryDurably(String directory) async {
+    _directory.value = directory;
+  }
+
+  @override
   Future<bool> backup(File file) async {
     destinations.add(file);
+    return succeeds;
+  }
+
+  @override
+  Future<bool> backupFavorites(File file) async {
+    favoriteDestinations.add(file);
     return succeeds;
   }
 }

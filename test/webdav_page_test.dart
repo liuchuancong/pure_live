@@ -41,7 +41,7 @@ void main() {
 
   setUp(() {
     Get.testMode = true;
-    final settings = Get.put(WebDavController());
+    final settings = Get.put<WebDavController>(_WebDavSettingsFixture());
     settings.currentWebDavConfig.v = '';
     settings.webDavConfigs.v = [];
     backup = _BackupController();
@@ -543,6 +543,20 @@ void main() {
     expect(jsonDecode(utf8.decode(service.uploadBytes.single)), {'backupVersion': 3});
   });
 
+  testWidgets('menu uploads a favorites-only file without starting a full backup', (tester) async {
+    await openPage(tester);
+    selectConfig();
+    await completeReads(tester);
+    await tester.tap(find.byType(PopupMenuButton<int>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(translations['webdav_upload_favorites']));
+    await tester.pump();
+    expect(service.uploadPaths.single, startsWith('/purelive_favorites_'));
+    expect(jsonDecode(utf8.decode(service.uploadBytes.single))['backupScope'], 'favorites');
+    await finishUploads(tester);
+    await finish(tester);
+  });
+
   testWidgets('repeated upload taps send one backup and keep the action disabled until completion', (tester) async {
     await openPage(tester);
     selectConfig();
@@ -838,6 +852,19 @@ class _SettingsService extends SettingsService {
   void onInit() {}
 }
 
+// Widget interactions test selection and navigation; durable Hive commits have
+// separate controller coverage and can outlive the widget test's fake clock.
+class _WebDavSettingsFixture extends WebDavController {
+  @override
+  Future<void> replaceStateDurably({
+    required Iterable<WebDAVConfig> configs,
+    required WebDAVConfig? currentConfig,
+  }) async {
+    webDavConfigs.v = List<WebDAVConfig>.from(configs);
+    currentWebDavConfig.v = currentConfig == null ? '' : jsonEncode(currentConfig.toJson());
+  }
+}
+
 class _Service extends WebDAVService {
   _Service() : super(url: 'http://127.0.0.1', username: '', password: '');
   final reads = <Completer<List<webdav.File>>>[];
@@ -888,6 +915,13 @@ class _BackupController extends BackupController {
 
   @override
   Map<String, dynamic> exportAllSettings({bool includeSensitiveData = false}) => {'backupVersion': 3};
+
+  @override
+  Map<String, dynamic> exportFavoriteSettings() => {
+    'backupVersion': 3,
+    'backupScope': 'favorites',
+    'favorite': {'favoriteRooms': [], 'favoriteAreas': []},
+  };
 
   @override
   Future<void> restoreAllSettings(Map<String, dynamic> data) {

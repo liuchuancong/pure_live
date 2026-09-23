@@ -18,7 +18,7 @@ class BackupPage extends StatefulWidget {
   State<BackupPage> createState() => _BackupPageState();
 }
 
-enum _BackupAction { create, restore, directory }
+enum _BackupAction { create, createFavorites, restore, restoreFavorites, directory }
 
 class _BackupPageState extends State<BackupPage> {
   final LogController logController = LogController.to;
@@ -194,6 +194,36 @@ class _BackupPageState extends State<BackupPage> {
                           _BackupAction.restore,
                           'recover_backup_failed',
                           BackupRecoveryService().recoverSettingsFromFile,
+                        ),
+                      )
+                    : null,
+              ),
+              context.buildTile(
+                icon: Remix.file_download_line,
+                title: i18n('create_favorite_backup'),
+                subtitle: i18n('favorite_backup_scope_hint'),
+                isLong: true,
+                trailing: _backupActionIndicator(_BackupAction.createFavorites),
+                onTap: _backupAction == null
+                    ? () => unawaited(
+                        _runBackupAction(_BackupAction.createFavorites, 'create_favorite_backup_failed', () async {
+                          await BackupRecoveryService().createFavoriteBackup(backupDirectory);
+                        }),
+                      )
+                    : null,
+              ),
+              context.buildTile(
+                icon: Remix.file_upload_line,
+                title: i18n('recover_favorite_backup'),
+                subtitle: i18n('favorite_backup_scope_hint'),
+                isLong: true,
+                trailing: _backupActionIndicator(_BackupAction.restoreFavorites),
+                onTap: _backupAction == null
+                    ? () => unawaited(
+                        _runBackupAction(
+                          _BackupAction.restoreFavorites,
+                          'recover_favorite_backup_failed',
+                          BackupRecoveryService().recoverFavoriteSettingsFromFile,
                         ),
                       )
                     : null,

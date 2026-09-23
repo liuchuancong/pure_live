@@ -397,6 +397,22 @@ void main() {
     await first;
   });
 
+  test('favorites-only upload uses separate filename and list-only payload', () async {
+    final service = connect();
+    final upload = controller.uploadConfigSettings(scope: BackupRestoreScope.favorites);
+    expect(service.uploadPaths.single, startsWith('/purelive_favorites_'));
+    expect(jsonDecode(utf8.decode(service.uploadBytes.single)), {
+      'backupVersion': 3,
+      'backupScope': 'favorites',
+      'favorite': {'favoriteRooms': [], 'favoriteAreas': []},
+    });
+    service.upload.complete();
+    await settle();
+    service.reads.last.complete([]);
+    await upload;
+    expect(feedback, ['webdav_upload_favorites_success']);
+  });
+
   test('old upload completion does not release the new service upload state', () async {
     final firstService = connect();
     final first = controller.uploadConfigSettings();
@@ -624,6 +640,13 @@ class _BackupController extends BackupController {
 
   @override
   Map<String, dynamic> exportAllSettings({bool includeSensitiveData = false}) => {'backupVersion': 3};
+
+  @override
+  Map<String, dynamic> exportFavoriteSettings() => {
+    'backupVersion': 3,
+    'backupScope': 'favorites',
+    'favorite': {'favoriteRooms': [], 'favoriteAreas': []},
+  };
 
   @override
   Future<void> restoreAllSettings(Map<String, dynamic> data) async {

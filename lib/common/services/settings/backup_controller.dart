@@ -87,6 +87,19 @@ class BackupController extends GetxController {
     return data;
   }
 
+  /// Portable follow-list payload: no device preferences, cookies or credentials.
+  Map<String, dynamic> exportFavoriteSettings() {
+    final favorite = Get.find<FavoriteRoomController>();
+    return {
+      'backupVersion': backupVersion,
+      'backupScope': 'favorites',
+      'favorite': {
+        'favoriteRooms': favorite.favoriteRooms.v.map((room) => room.toJson()).toList(growable: false),
+        'favoriteAreas': favorite.favoriteAreas.v.map((area) => area.toJson()).toList(growable: false),
+      },
+    };
+  }
+
   /// Removes credentials and session cookies before a backup leaves the device.
   static Map<String, dynamic> redactSensitiveData(Map<String, dynamic> source) {
     final result = Map<String, dynamic>.from(source)
@@ -155,6 +168,9 @@ class BackupController extends GetxController {
   }
 
   void importAllSettings(Map<String, dynamic> data) {
+    if (data['backupScope'] == 'favorites') {
+      throw const FormatException('Favorites-only backup requires favorites restore');
+    }
     validateBackupIdentity(data);
     final version = data['backupVersion'];
 
@@ -337,10 +353,17 @@ class BackupController extends GetxController {
   }
 
   Future<bool> backup(File file) async {
+    return _writeBackup(file, exportAllSettings());
+  }
+
+  Future<bool> backupFavorites(File file) async {
+    return _writeBackup(file, exportFavoriteSettings());
+  }
+
+  Future<bool> _writeBackup(File file, Map<String, dynamic> data) async {
     final staged = File('${file.path}.part');
     final previous = File('${file.path}.previous');
     try {
-      final data = exportAllSettings();
       if (!await file.parent.exists()) await file.parent.create(recursive: true);
 
       // Recover an interrupted replacement before starting a new one.
@@ -382,6 +405,9 @@ class BackupController extends GetxController {
   }
 
   Future<void> restoreAllSettings(Map<String, dynamic> data) async {
+    if (data['backupScope'] == 'favorites') {
+      throw const FormatException('Favorites-only backup requires favorites restore');
+    }
     await _persistRestore(() => importAllSettings(data));
   }
 

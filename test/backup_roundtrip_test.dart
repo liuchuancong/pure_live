@@ -150,12 +150,12 @@ void main() {
     await Hive.box('app_settings').close();
     try {
       expect(await backup.recover(file), isFalse);
-      // Input validation is not an in-memory rollback guarantee.
-      expect(settings.app.enableBackgroundPlay.value, isTrue);
+      // Failed persistence rolls the in-memory controller state back too.
+      expect(settings.app.enableBackgroundPlay.value, isFalse);
     } finally {
       await HivePrefUtil.init();
     }
-    // Retry the exact same input even though its Rx value is already true.
+    // Retry the same input after reopening the store.
     expect(await backup.recover(file), isTrue);
     expect(HivePrefUtil.getBool('enableBackgroundPlay'), isTrue);
   });
@@ -260,5 +260,32 @@ void main() {
     final second = backup.restoreFavoriteSettings(source);
     await expectLater(backup.restoreAllSettings(source), throwsStateError);
     await second;
+  });
+
+  test('favorites-only file exports exact lists and requires scoped restore', () async {
+    final settings = await initialize();
+    settings.fav.favoriteRooms.value = [LiveRoom(roomId: '123', platform: 'bilibili')];
+    settings.fav.favoriteAreas.value = [LiveArea(areaId: 'music', platform: 'douyu')];
+    settings.app.enableBackgroundPlay.value = true;
+    settings.cookieManager.twitchCookie.value = 'local-cookie';
+    final file = File('${directory.path}/favorites-only.txt');
+
+    expect(await settings.backup.backupFavorites(file), isTrue);
+    final exported = jsonDecode(await file.readAsString()) as Map<String, dynamic>;
+    expect(exported.keys, {'backupVersion', 'backupScope', 'favorite'});
+    expect(exported['backupScope'], 'favorites');
+    expect((exported['favorite'] as Map).keys, {'favoriteRooms', 'favoriteAreas'});
+    expect((exported['favorite']['favoriteRooms'] as List).single['roomId'], '123');
+    expect(exported.toString(), isNot(contains('local-cookie')));
+
+    settings.fav.favoriteRooms.value = [];
+    settings.fav.favoriteAreas.value = [];
+    expect(await settings.backup.recover(file), isFalse);
+    expect(settings.fav.favoriteRooms.value, isEmpty);
+    await settings.backup.restoreFavoriteSettings(exported);
+    expect(settings.fav.favoriteRooms.value.single.identityKey, 'bilibili:123');
+    expect(settings.fav.favoriteAreas.value.single.areaId, 'music');
+    expect(settings.app.enableBackgroundPlay.value, isTrue);
+    expect(settings.cookieManager.twitchCookie.value, 'local-cookie');
   });
 }

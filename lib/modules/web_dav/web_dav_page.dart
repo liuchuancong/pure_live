@@ -129,22 +129,27 @@ class _WebDavPageState extends State<WebDavPage> {
               children: [
                 for (final config in controller.configs)
                   ListTile(
-                    title: Tooltip(
-                      message: config.name,
-                      child: Text(config.name, maxLines: 2, overflow: TextOverflow.ellipsis),
-                    ),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
+                    title: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        IconButton(
-                          tooltip: i18n("webdav_edit_config", args: {"name": config.name}),
-                          icon: const Icon(Icons.edit),
-                          onPressed: configBusy ? null : () => _showConfigDialog(existingConfig: config),
+                        Tooltip(
+                          message: config.name,
+                          child: Text(config.name, maxLines: 2, overflow: TextOverflow.ellipsis),
                         ),
-                        IconButton(
-                          tooltip: i18n("webdav_delete"),
-                          icon: const Icon(Icons.delete),
-                          onPressed: configBusy ? null : () => _showDeleteDialog(config),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            IconButton(
+                              tooltip: i18n("webdav_edit_config", args: {"name": config.name}),
+                              icon: const Icon(Icons.edit),
+                              onPressed: configBusy ? null : () => _showConfigDialog(existingConfig: config),
+                            ),
+                            IconButton(
+                              tooltip: i18n("webdav_delete"),
+                              icon: const Icon(Icons.delete),
+                              onPressed: configBusy ? null : () => _showDeleteDialog(config),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -262,6 +267,8 @@ class _WebDavPageState extends State<WebDavPage> {
               _scaffoldKey.currentState?.openEndDrawer();
             } else if (value == 3) {
               Get.to(() => const WebDavHelpPage());
+            } else if (value == 4) {
+              controller.uploadConfigSettings(scope: BackupRestoreScope.favorites);
             }
           },
           itemBuilder: (BuildContext context) => [
@@ -276,6 +283,11 @@ class _WebDavPageState extends State<WebDavPage> {
             PopupMenuItem(
               value: 3,
               child: MenuListTile(leading: const Icon(Remix.question_line), text: i18n("webdav_help_tutorial")),
+            ),
+            PopupMenuItem(
+              value: 4,
+              enabled: controller.canUpload,
+              child: Text(i18n('webdav_upload_favorites'), softWrap: true),
             ),
           ],
         ),
