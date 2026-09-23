@@ -205,7 +205,9 @@ final class GoodGameApi {
       final room = parseDirectoryRoom(_object(item));
       if (room.state == GoodGameState.live && seen.add(room.channel)) items.add(room);
     }
-    return GoodGamePage(items: items, hasMore: page * perPage < total && items.isNotEmpty);
+    // A page may contain only offline/blocked cards after local filtering.
+    // The server's total, not the visible item count, owns pagination.
+    return GoodGamePage(items: items, hasMore: page * perPage < total);
   }
 
   static GoodGameRoom parseDirectoryRoom(Map<String, dynamic> data) {
