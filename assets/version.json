@@ -1,58 +1,61 @@
 {
-  "version": "3.1.8",
-  "build_number": 4121,
-  "version_num": 301084121,
-  "version_desc": "- 修复自动续接后录制中心开始时间跳到最近一次 FFmpeg 尝试的问题，用户会话与原生分片时间分离。\n- 录制会话时间持久化到 schema 6；应用重启后保持，旧任务安全回退，用户显式重新录制时正确重置。\n- Android arm64-v8a 与 Windows x64 从同一冻结源码串行构建，附安装包、便携包、构建元数据和 SHA-256。\n- 本轮不合并上游代码；Windows 虎牙实播已验证跨短签名录制、画质与线路切换，新增确定性模型回归。",
-  "prerelease": false,
-  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.1.8",
+  "version": "3.1.4",
+  "build_number": 4102,
+  "version_num": 301034102,
   "android_abis": [
-    "arm64-v8a"
+    "armeabi-v7a",
+    "arm64-v8a",
+    "x86_64"
   ],
+  "version_desc": "version: 3.1.4\n版本更新：\n- 修复windows亮度。\n\n",
+  "prerelease": false,
+  "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.1.4",
   "platforms": {
     "android": {
-      "version": "3.1.8",
-      "build_number": 4121,
-      "version_num": 301084121,
-      "version_desc": "- 录制中心固定显示用户本次录制的真实开始时间；CDN 续签、自动重连和换线不再覆盖。\n- schema 6 保存会话时间，升级旧任务安全回退，显式重新录制生成新时间。\n- 提供单一 arm64-v8a Release 更新包并核验版本、ABI、Flutter 资源、关键原生库和 SHA-256。",
+      "version": "3.1.4",
+      "build_number": 4102,
+      "version_num": 301034102,
+      "version_desc": "version: 3.1.4\n版本更新：\n- 修复windows亮度。\n\n",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.1.8",
+      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.1.4",
       "android_abis": [
-        "arm64-v8a"
+        "armeabi-v7a",
+        "arm64-v8a",
+        "x86_64"
       ]
     },
     "windows": {
-      "version": "3.1.8",
-      "build_number": 4121,
-      "version_num": 301084121,
-      "version_desc": "- 修复虎牙短签名续接后录制中心时间漂移，同时保留独立分片前缀和累计统计。\n- 延续可选择安装目录的 x64 安装程序和免安装便携 ZIP。\n- Windows 资产按当前 CMake 安装清单打包并核验版本、资源、残留文件和 SHA-256。",
+      "version": "3.1.4",
+      "build_number": 4102,
+      "version_num": 301034102,
+      "version_desc": "version: 3.1.4\n版本更新：\n- 修复windows亮度。\n\n",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.1.8",
-      "windows_msix_available": false
+      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.1.4",
+      "windows_msix_available": true
     },
     "linux": {
-      "version": "3.0.0",
-      "build_number": 4088,
-      "version_num": 300004088,
-      "version_desc": "- 修复 Android 3.0.0 直播页系统侧滑返回失效：移除全局返回拦截，启用预测性返回，并由路由局部 PopScope 区分普通页、横屏/全屏和弹窗；退出路由前不再提前清理播放器监听。\n- 新增只读上游全差异审查工作流与合并后全仓扫描，固定 Git 依赖到 40 位提交；全平台工作流按 Android、Windows、Linux、Apple 阶段串行。\n- 修复 Windows/MSIX 日志目录入口指向错误层级且忽略打开结果的问题。\n- 同步并审查最新上游 liuchuancong/pure_live@e808dcae；吸收多窗口开关与历史容量配置，并保留维护仓库版本、更新源和按需串行构建策略。\n- 修复上游直播页 Shell 回归：普通手机页恢复视频、画质/线路与弹幕列表同时可见，桌面恢复可见侧栏，IPTV 不预留空面板。\n- 补齐上游合并门禁、布局 Widget 回归、历史容量备份/边界/响应式持久化、多窗口升级默认值和英文录制提示。\n- 修复跨房间横竖屏比例串联：房间变化立即清理旧视频宽高，宽高成对有效后才应用真实比例。\n- 修复 Windows 重复启动卡顿及宽屏/全屏进入画中画后状态丢失；无参数二次启动在 Flutter engine 前拦截，协议和多窗口参数继续转发。\n- 修复 YY 部分直播间 ErrAuthNotPass：对齐当前 StreamManager 合同，失败时自动回退官方匿名移动 HLS，并实读上游 #798 房间清单。\n- 增强 Android/斗鱼录制：统一播放请求头、重新解析过期 CDN、正确引用 FFmpeg 参数、允许短时单轨输入，并隔离及探测自定义录制目录。\n- 降低启动和长时间录制开销：FFmpeg 惰性且可重试初始化，录制进度不重排全表，持久化写入节流。\n- Syncfusion sliders 更新至 34.2.5；42 项公开平台接口合同、完整测试和全平台串行发布门禁覆盖 Android arm64-v8a、Windows x64、Linux x64、macOS Universal 与 iOS arm64。",
+      "version": "3.1.4",
+      "build_number": 4102,
+      "version_num": 301034102,
+      "version_desc": "version: 3.1.4\n版本更新：\n- 修复windows亮度。\n\n",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.0"
+      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.1.4"
     },
     "macos": {
-      "version": "3.0.0",
-      "build_number": 4088,
-      "version_num": 300004088,
-      "version_desc": "- 修复 Android 3.0.0 直播页系统侧滑返回失效：移除全局返回拦截，启用预测性返回，并由路由局部 PopScope 区分普通页、横屏/全屏和弹窗；退出路由前不再提前清理播放器监听。\n- 新增只读上游全差异审查工作流与合并后全仓扫描，固定 Git 依赖到 40 位提交；全平台工作流按 Android、Windows、Linux、Apple 阶段串行。\n- 修复 Windows/MSIX 日志目录入口指向错误层级且忽略打开结果的问题。\n- 同步并审查最新上游 liuchuancong/pure_live@e808dcae；吸收多窗口开关与历史容量配置，并保留维护仓库版本、更新源和按需串行构建策略。\n- 修复上游直播页 Shell 回归：普通手机页恢复视频、画质/线路与弹幕列表同时可见，桌面恢复可见侧栏，IPTV 不预留空面板。\n- 补齐上游合并门禁、布局 Widget 回归、历史容量备份/边界/响应式持久化、多窗口升级默认值和英文录制提示。\n- 修复跨房间横竖屏比例串联：房间变化立即清理旧视频宽高，宽高成对有效后才应用真实比例。\n- 修复 Windows 重复启动卡顿及宽屏/全屏进入画中画后状态丢失；无参数二次启动在 Flutter engine 前拦截，协议和多窗口参数继续转发。\n- 修复 YY 部分直播间 ErrAuthNotPass：对齐当前 StreamManager 合同，失败时自动回退官方匿名移动 HLS，并实读上游 #798 房间清单。\n- 增强 Android/斗鱼录制：统一播放请求头、重新解析过期 CDN、正确引用 FFmpeg 参数、允许短时单轨输入，并隔离及探测自定义录制目录。\n- 降低启动和长时间录制开销：FFmpeg 惰性且可重试初始化，录制进度不重排全表，持久化写入节流。\n- Syncfusion sliders 更新至 34.2.5；42 项公开平台接口合同、完整测试和全平台串行发布门禁覆盖 Android arm64-v8a、Windows x64、Linux x64、macOS Universal 与 iOS arm64。",
+      "version": "3.1.4",
+      "build_number": 4102,
+      "version_num": 301034102,
+      "version_desc": "version: 3.1.4\n版本更新：\n- 修复windows亮度。\n\n",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.0"
+      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.1.4"
     },
     "ios": {
-      "version": "3.0.0",
-      "build_number": 4088,
-      "version_num": 300004088,
-      "version_desc": "- 修复 Android 3.0.0 直播页系统侧滑返回失效：移除全局返回拦截，启用预测性返回，并由路由局部 PopScope 区分普通页、横屏/全屏和弹窗；退出路由前不再提前清理播放器监听。\n- 新增只读上游全差异审查工作流与合并后全仓扫描，固定 Git 依赖到 40 位提交；全平台工作流按 Android、Windows、Linux、Apple 阶段串行。\n- 修复 Windows/MSIX 日志目录入口指向错误层级且忽略打开结果的问题。\n- 同步并审查最新上游 liuchuancong/pure_live@e808dcae；吸收多窗口开关与历史容量配置，并保留维护仓库版本、更新源和按需串行构建策略。\n- 修复上游直播页 Shell 回归：普通手机页恢复视频、画质/线路与弹幕列表同时可见，桌面恢复可见侧栏，IPTV 不预留空面板。\n- 补齐上游合并门禁、布局 Widget 回归、历史容量备份/边界/响应式持久化、多窗口升级默认值和英文录制提示。\n- 修复跨房间横竖屏比例串联：房间变化立即清理旧视频宽高，宽高成对有效后才应用真实比例。\n- 修复 Windows 重复启动卡顿及宽屏/全屏进入画中画后状态丢失；无参数二次启动在 Flutter engine 前拦截，协议和多窗口参数继续转发。\n- 修复 YY 部分直播间 ErrAuthNotPass：对齐当前 StreamManager 合同，失败时自动回退官方匿名移动 HLS，并实读上游 #798 房间清单。\n- 增强 Android/斗鱼录制：统一播放请求头、重新解析过期 CDN、正确引用 FFmpeg 参数、允许短时单轨输入，并隔离及探测自定义录制目录。\n- 降低启动和长时间录制开销：FFmpeg 惰性且可重试初始化，录制进度不重排全表，持久化写入节流。\n- Syncfusion sliders 更新至 34.2.5；42 项公开平台接口合同、完整测试和全平台串行发布门禁覆盖 Android arm64-v8a、Windows x64、Linux x64、macOS Universal 与 iOS arm64。",
+      "version": "3.1.4",
+      "build_number": 4102,
+      "version_num": 301034102,
+      "version_desc": "version: 3.1.4\n版本更新：\n- 修复windows亮度。\n\n",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.0.0"
+      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.1.4"
     }
-  },
-  "windows_msix_available": false
+  }
 }
