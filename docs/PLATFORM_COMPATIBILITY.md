@@ -6,6 +6,10 @@
 
 2026-09-22 按 `lib/core/sites.dart` 核对：当前源码注册 **45 个直播站点 + IPTV，共 46 个适配器**。这是源码注册数量，不是已发布包或完整验收数量。小红书、niconico、微博、SHOWROOM、CHZZK、Kick、17LIVE、LiveMe、TikTok LIVE、YouTube Live、Bigo Live、PandaTV、PopkonTV、Shopee Live、VK Video Live、NimoTV、Dailymotion、Rumble、GoodGame、FC2 Live、Steam Broadcasts、京东直播、淘宝直播、酷狗直播、百度直播、六间房直播和 LOOK 直播已接入应用入口；原生整体验收继续，当前候选与完整剩余范围以[验收状态](ACCEPTANCE_STATUS_3_2_0.md)为准。
 
+2026-09-23 房间页“外部打开”也已与注册表对齐：此前 14 个新增站点缺少官方房间 URL 映射，操作会落到 `unavailable`；现在 45 个直播站点均有按稳定房间身份重建的官方目标，IPTV 不存在远端官方房间页。构造、无效 ID 与启动动作的定向证据见[外部打开覆盖审计](ROOM_EXTERNAL_OPEN_COVERAGE_AUDIT_2026_09_23.md)；这只是源码动作合同，外部浏览器/客户端实际落地仍待当前候选双端验证。
+
+内置网页搜索打开小红书直播间或 TTing/FLEX 频道直播页时，现也能识别稳定房间身份并提示回到应用播放；普通内容与仿冒链接仍被排除，见[链接回流审计](WEB_SEARCH_XHS_TTING_LINK_AUDIT_2026_09_23.md)。
+
 2026-09-23 搜索页能力表已与这 46 个已注册适配器核对：此前 14 个新平台虽有原生查询实现，UI 却因缺少能力登记而落到通用网页搜索；现已逐一标注搜索范围与分页，45 个平台提供原生搜索入口，快手保持已有网页入口。范围与回归见[搜索能力登记审计](SEARCH_REGISTRY_COVERAGE_AUDIT_2026_09_23.md)。该数量是源码入口，不等于 45 个平台的生产可达或双端原生验收通过。
 
 ### 09-09 及更早阶段的取证快照
@@ -13,9 +17,9 @@
 OPENREC / mellow-fan 已接入复合频道身份、公开目录与 HLS 质量；当前源码补精确频道查询，2026-09-23 本机公共接口 CloudFront 403，现网整链可达性与原生验收仍有缺口，见[应用审计](OPENREC_APPLICATION_INTEGRATION_AUDIT_2026_09_09.md)和[精确查询及访问记录](OPENREC_EXACT_CHANNEL_SEARCH_AUDIT_2026_09_23.md)。TTingLive / FLEX TV 已接入有限首页目录、精确频道查询及按源 token 策略；应用回归 201/201，最新生产注册适配器与 24 份 HLS 列表链路通过，后续 Windows 原生短录两次采集目标失败；保留片段的合并/完整解码通过，但起始延迟及音视频时间覆盖仍待修，完整录制未通过，见[应用审计](TTING_APPLICATION_INTEGRATION_AUDIT_2026_09_09.md)、[生产链路审计](TTING_PRODUCTION_RELAY_AUDIT_2026_09_09.md)及[原生短录审计](TTING_NATIVE_RECORDING_AUDIT_2026_09_09.md)。
 克拉克拉与花椒已接入公开目录、UID 收藏及播放/录制解析；两者现补精确主播号/官方主页查询，弹幕与 Android/Windows 原生验收仍待完成，见[克拉克拉应用审计](KILAKILA_APPLICATION_INTEGRATION_AUDIT_2026_09_08.md)、[萌星目录修订](KILAKILA_RISING_STAR_AUDIT_2026_09_08.md)、[克拉克拉精确查询](KILAKILA_EXACT_UID_SEARCH_AUDIT_2026_09_23.md)、[花椒应用审计](HUAJIAO_APPLICATION_INTEGRATION_AUDIT_2026_09_08.md)及[花椒精确查询](HUAJIAO_EXACT_UID_SEARCH_AUDIT_2026_09_23.md)。花椒空页仍有 more 时沿原生游标有界继续，游标按页面和刷新批次隔离，不用结果条数代替结束信号。
 当前 [Android 候选 bee143e2](OPENREC_PICARTO_ANDROID_CANDIDATE_2026_09_09.md) 已包含克拉克拉、花椒、OPENREC 和 Picarto 响应收尾修订；完整门禁/打包通过，尚未安装，后续 TTing 和源策略输入链未入包。Windows f3de664a 未随本批更新，原生能力证据仍按各平台分列。
-猫耳和映客已应用接入；猫耳 Windows 原生短录有独立证据，映客已有公开接口和生产地址解析，并补齐精确 UID/官网链接查询，见[映客应用审计](INKE_APPLICATION_INTEGRATION_AUDIT_2026_09_08.md)与[精确查询记录](INKE_EXACT_UID_SEARCH_AUDIT_2026_09_23.md)。
+猫耳和映客已应用接入；猫耳 Windows 原生短录有独立证据，映客已有公开接口和生产地址解析，并补齐精确 UID/官网链接查询及公开精选昵称筛选，见[映客应用审计](INKE_APPLICATION_INTEGRATION_AUDIT_2026_09_08.md)与[精确查询记录](INKE_EXACT_UID_SEARCH_AUDIT_2026_09_23.md)。昵称筛选只覆盖当前有限精选，不代表全站主播索引。
 Picarto 已进入 Android 候选并取得部分原生证据，见 [接入审计](PICARTO_ADAPTER_AUDIT_2026_09_07.md)及[停止/清理补证](ANDROID_PROXY_OCCLUSION_AUDIT_2026_09_07.md)。当前源码新增官网动态直播分类与原生分类分页、主播档案原生搜索，见[分类专项记录](PICARTO_NATIVE_CATEGORY_AUDIT_2026_09_23.md)与[搜索专项记录](PICARTO_PROFILE_SEARCH_AUDIT_2026_09_23.md)；这些更新尚未进入原生候选。
-TwitCasting 新增公开目录、顶栏分类、详情/HLS三档、录制输入与恢复；Android 80b7431c已覆盖安装并解除首段401，low出现实际画面，但短录文件严格解码仍失败，见[修复候选复验](TWITCASTING_COOKIE_ANDROID_RETEST_2026_09_07.md)。当前源码另补[官网当前直播搜索](TWITCASTING_PUBLIC_LIVE_SEARCH_AUDIT_2026_09_23.md)；首次high/首帧、完整文件与长录仍待验收，现有 Android/Windows 候选早于这项搜索修订。
+TwitCasting 新增公开目录、顶栏分类、详情/HLS三档、录制输入与恢复；Android 80b7431c已覆盖安装并解除首段401，low出现实际画面，但短录文件严格解码仍失败，见[修复候选复验](TWITCASTING_COOKIE_ANDROID_RETEST_2026_09_07.md)。当前源码另补[官网当前直播搜索](TWITCASTING_PUBLIC_LIVE_SEARCH_AUDIT_2026_09_23.md)与[频道根链接精确查询](TWITCASTING_EXACT_CHANNEL_SEARCH_AUDIT_2026_09_23.md)；根链接可返回未开播频道，但电影/归档链接不替换为当前直播。首次high/首帧、完整文件与长录仍待验收，现有 Android/Windows 候选早于这项搜索修订。
 参考项目尚未接入的平台单列于 [平台扩展差距表](PLATFORM_EXPANSION_AUDIT_2026_09_07.md)，不计作本项目已支持。
 
 源码开发中的 AcFun（正式 v3.1.8 发布包不含；当前 af88a032 Android Debug 候选已包含）：已接入官网直播分类与目录、包含未开播作者的
@@ -39,9 +43,9 @@ TwitCasting 新增公开目录、顶栏分类、详情/HLS三档、录制输入�
 | YY Live | 动态读取头部与分类元数据 | 原生直播间/主播搜索，可返回未开播结果 | YY WebSocket | `users` 为平台热度值 |
 | AcFun | 官网直播分类与目录 | 原生作者搜索，含未开播作者；稀疏分页 | 当前未接入，页面明确说明 | `onlineCount` 为在线；点赞、粉丝分列 |
 | Picarto | 官网动态直播分类、公开目录与分类原生分页；每次读取当期分类元数据 | 官网原生主播档案关键词分页，含未开播结果；网页搜索和分享链接回流保留 | 当前未接入，页面明确说明 | `viewers` 为在线，详情 `total_views` 为累计观看；搜索 `follower_count` 为粉丝，搜索缺在线人数时保持未知 |
-| TwitCasting | 官网顶栏分类与最多60条公开热门窗口；页面缓存后本地分页 | 官网当前直播关键词搜索，最多50条公开窗口本地分页；网页搜索保留；仅频道根链接回流，movie/archive待接入 | 当前未接入，页面明确说明 | 目录 `current_viewer_count` 为在线；搜索页未给并发人数时保持未知 |
-| 猫耳 FM | 官网 catalog/tag 分类与原生推荐分页 | 精确房间号或 `fm.missevan.com/live/{id}` 官网链接，含未开播；昵称/关键词待接入 | 当前未接入 | `score` 为热度，粉丝分列；不以零值冒充当前在线 |
-| 映客 | 官网有限精选及服务端频道，页面持续说明非全站列表 | 精确映客 UID 或官网房间链接，含未开播；昵称/关键词待接入，无网页搜索入口 | 当前未接入 | 未取得人数，保持未知；主播等级不作观众数 |
+| TwitCasting | 官网顶栏分类与最多60条公开热门窗口；页面缓存后本地分页 | 官网当前直播关键词搜索，最多50条公开窗口本地分页；精确频道根链接可返回未开播频道；网页搜索保留，movie/archive不映射当前直播 | 当前未接入，页面明确说明 | 目录 `current_viewer_count` 为在线；搜索页未给并发人数时保持未知 |
+| 猫耳 FM | 官网 catalog/tag 分类与原生推荐分页 | 官网直播间关键词原生分页，含未开播；精确房间号与 `fm.missevan.com/live/{id}` 官网链接保留 | 当前未接入 | `score` 为热度，详情粉丝分列；不以零值冒充当前在线 |
+| 映客 | 官网有限精选及服务端频道，页面持续说明非全站列表 | 精确映客 UID 或官网房间链接，含未开播；当前公开精选可按昵称本地筛选及分页，不代表全站搜索；无网页搜索入口 | 当前未接入 | 未取得人数，保持未知；主播等级不作观众数 |
 | 克拉克拉 | 官方热门/萌星，type 0/107 原生分页 | 精确主播 UID 或官方主播主页，未公布当前场次时状态未知；昵称/关键词尚未接入 | 当前未接入 | `watchNumber` 未证实为并发人数，保持未知 |
 | 花椒 | 官方 H5 公开视频推荐，保留原生游标 | 精确花椒号或官方主播主页，含未开播主播；昵称/关键词尚未接入，无虚构网页搜索入口 | 当前未接入 | `current_heat` 为热度，不作在线人数；主播资料缺观看人数时保持未知 |
 | OPENREC / mellow-fan | 公开广播列表，频道聚合与多场歧义提示 | 精确频道 ID/官方频道根链接，含未开播；昵称/关键词尚未接入，当前生产接口 403 待复核 | 当前未接入 | 公开并发人数；隐藏或多场歧义时保持未知 |
@@ -79,6 +83,8 @@ TwitCasting 新增公开目录、顶栏分类、详情/HLS三档、录制输入�
 
 搜索页会直接显示当前平台的覆盖范围，并提供“包含未开播”筛选。平台选择栏使用独立水平列表：项目超过屏幕宽度时可横向访问，首尾为硬边界，不使用无对应内容页的 `TabBar` 自动定位。综合排序固定把直播中房间放在前面，再比较当前观看口径、粉丝数和主页平台顺序；“平台优先”直接使用“平台显示设置”的拖动顺序，“观众优先”和“粉丝优先”则调整对应字段的比较次序。粉丝字段只在平台搜索响应明确提供时参与，缺少该字段的结果保留为稳定次序；快手使用网页搜索入口，IPTV 只查找本机导入频道。每个平台单独维护翻页结束状态，空页或重复页会停止继续请求。
 
+工具箱剪贴板预填与房间链接解析共用已核验的房间 URL 合同；官网首页、搜索/分类页与录像链接不会仅凭平台域名触发自动填入。抖音 `www.douyin.com/video/{id}` 是作品链接，不以尾部视频号冒充当前直播房间号；既有精确房间根链接和官方直播分享链接继续解析，见[链接预检审计](TOOLBOX_ROOM_LINK_PREFILTER_AUDIT_2026_09_23.md)。
+
 “全部”搜索并发请求各原生平台，但按单个平台完成顺序渐进显示，某个平台超过 12 秒会被标记为本轮部分失败，不再阻塞其他结果。搜索页生命周期内复用同一组适配器，Twitch 等游标分页状态不会因每次读取平台列表而丢失。网页继续搜索可从 Bilibili、斗鱼、虎牙、抖音、快手、网易 CC、Twitch、SOOP、YY、AcFun、Picarto、TwitCasting、SHOWROOM、CHZZK、Kick、17LIVE、LiveMe、TikTok LIVE、YouTube Live、Bigo Live、PandaTV、PopkonTV、Shopee Live、VK Video Live、NimoTV、Dailymotion、Rumble、GoodGame、FC2 Live、Steam Broadcasts、京东直播、淘宝直播、酷狗直播、百度直播、六间房直播和 LOOK 直播的已支持直播间链接识别“平台 + 房间号”；搜索/分类页和相似伪装域名会被忽略。
 
 “设置 → 通用 → 观看数据与排行口径”提供两个全局模式和分平台开关：
@@ -88,7 +94,7 @@ TwitCasting 新增公开目录、顶栏分类、详情/HLS三档、录制输入�
 - 哔哩哔哩的列表 `online` 与弹幕心跳、斗鱼公开 `ol/hot`、虎牙 `totalCount/userCount/iAttendeeCount` 都是热度，均不换写成真实人数。由此避免把几百万热度显示为几百万人同时在线。
 - 切换全局口径或分平台开关后，收藏与搜索现有结果会立即重新排序，热门页会刷新当前平台的候选池后重排；在线模式把已启用且支持并发人数的平台排在仅提供热度/累计值的平台之前。网易 CC 在线模式一次取 100 个热度候选后按并发人数排序，避免只在每 20 张卡片内部重排。
 
-猫耳 FM 的精确查询沿用房间详情接口，只读取房间元数据；无效关键词直接返回空结果，媒体线路留待真正进房时解析，见[猫耳精确房间查询记录](MISSEVAN_EXACT_ROOM_SEARCH_AUDIT_2026_09_23.md)。
+猫耳 FM 的精确查询沿用房间详情接口，只读取房间元数据；官网直播间搜索现按 `s/p/page_size` 原生分页并保留未开播房间，媒体线路留待真正进房时解析。见[精确房间查询记录](MISSEVAN_EXACT_ROOM_SEARCH_AUDIT_2026_09_23.md)与[官网关键词搜索审计](MISSEVAN_NATIVE_KEYWORD_SEARCH_AUDIT_2026_09_23.md)。
 
 ## 画质与播放线路契约
 

@@ -60,7 +60,7 @@ void main() {
         LiveRoom(platform: 'missevan', watching: '120').effectiveAudienceMetricType,
         AudienceMetricType.popularity,
       );
-      expect(LiveSearchCapabilities.forPlatform('missevan').coverage, NativeSearchCoverage.roomLookup);
+      expect(LiveSearchCapabilities.forPlatform('missevan').coverage, NativeSearchCoverage.liveAndOffline);
       expect(LiveSearchCapabilities.forPlatform('missevan').supportsNativeSearch, isTrue);
       expect(LiveSearchCapabilities.forPlatform('missevan').supportsWebSearch, isFalse);
       expect(MultiviewDanmakuSession.isSupportedPlatform('missevan'), isFalse);
@@ -166,14 +166,65 @@ void main() {
       expect(offline.single.roomId, '101');
       expect(offline.single.isExplicitlyOfflineNow, isTrue);
       expect(await site.searchRooms('101', page: 2), isEmpty);
-      for (final input in [
-        '主播昵称',
-        'https://fm.missevan.com/catalog/100',
-        'https://fm.missevan.com.evil.test/live/100',
-      ]) {
+      for (final input in ['https://fm.missevan.com/catalog/100', 'https://fm.missevan.com.evil.test/live/100']) {
         expect(await site.searchRooms(input), isEmpty);
       }
       expect(calls, ['https://fm.missevan.com/api/v2/live/100', 'https://fm.missevan.com/api/v2/live/101']);
+    });
+
+    test('official keyword search retains live and offline rooms across native pages', () async {
+      final calls = <Uri>[];
+      final site = MissevanSite(
+        api: MissevanApi(
+          request: (uri, _) async {
+            calls.add(uri);
+            final page = int.parse(uri.queryParameters['p']!);
+            final live = _row(page * 100)..['name'] = '测试直播 $page';
+            final offline = _row(page * 100 + 1, open: 0)..['creator_username'] = '测试主播 $page';
+            return _ok({
+              'data': [live, offline],
+              'pagination': {'p': page, 'pagesize': 20, 'maxpage': 2, 'count': 4},
+            });
+          },
+        ),
+      );
+
+      final first = await site.searchRooms('测试', page: 1, pageSize: 20);
+      final second = await site.searchRooms('测试', page: 2, pageSize: 20);
+      expect(first.map((room) => room.roomId), ['100', '101']);
+      expect(first.first.isLiveNow, isTrue);
+      expect(first.last.isExplicitlyOfflineNow, isTrue);
+      expect(first.first.data, isNull);
+      expect(first.first.effectivePopularity, '321');
+      expect(first.first.effectiveOnlineViewers, isEmpty);
+      expect(second.map((room) => room.roomId), ['200', '201']);
+      expect(calls.map((uri) => uri.path), everyElement('/api/v2/chatroom/search'));
+      expect(calls.map((uri) => uri.queryParameters), [
+        {'s': '测试', 'p': '1', 'page_size': '20'},
+        {'s': '测试', 'p': '2', 'page_size': '20'},
+      ]);
+      final capability = LiveSearchCapabilities.forPlatform('missevan');
+      expect(capability.coverage, NativeSearchCoverage.liveAndOffline);
+      expect(capability.supportsPagination, isTrue);
+    });
+
+    test('keyword search validates pagination and forwards cancellation', () async {
+      final token = CancelToken();
+      final site = MissevanSite(
+        api: MissevanApi(
+          request: (uri, cancel) async {
+            expect(identical(cancel, token), isTrue);
+            return _ok({
+              'data': [_row(100)],
+              'pagination': {'p': 99, 'pagesize': 20, 'maxpage': 1, 'count': 1},
+            });
+          },
+        ),
+      );
+      await expectLater(site.searchRoomsCancellable('主播昵称', cancel: token), _failure(MissevanFailure.schema));
+      final cancelled = CancelToken()..cancel();
+      await expectLater(site.searchRoomsCancellable('主播昵称', cancel: cancelled), _failure(MissevanFailure.cancelled));
+      expect(await site.searchRooms('https://other.example/live/100'), isEmpty);
     });
 
     test('exact lookup maps only confirmed absence to empty and forwards cancellation', () async {

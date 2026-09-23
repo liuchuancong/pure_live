@@ -79,7 +79,8 @@ void main() {
     expect(Sites.supportSites.where((s) => s.id == 'inke'), hasLength(1));
     expect(Sites.supportSites.map((s) => s.id).toSet(), Sites.supportedSiteIds);
     expect(LiveRoom.audienceCapabilityFor('inke').supportsConcurrentOnline, isFalse);
-    expect(LiveSearchCapabilities.forPlatform('inke').coverage, NativeSearchCoverage.roomLookup);
+    expect(LiveSearchCapabilities.forPlatform('inke').coverage, NativeSearchCoverage.showcaseSnapshot);
+    expect(LiveSearchCapabilities.forPlatform('inke').supportsPagination, isTrue);
     expect(LiveSearchCapabilities.forPlatform('inke').supportsNativeSearch, isTrue);
     expect(LiveSearchCapabilities.forPlatform('inke').supportsWebSearch, isFalse);
     expect(MultiviewDanmakuSession.isSupportedPlatform('inke'), isFalse);
@@ -92,9 +93,9 @@ void main() {
     final chinese = jsonDecode(File('assets/translations/zh.json').readAsStringSync()) as Map<String, dynamic>;
     final english = jsonDecode(File('assets/translations/en.json').readAsStringSync()) as Map<String, dynamic>;
     expect(chinese['inke_directory_scope'], contains('精确 UID'));
-    expect(chinese['inke_directory_scope'], contains('昵称搜索'));
+    expect(chinese['inke_directory_scope'], contains('昵称筛选'));
     expect(english['inke_directory_scope'], contains('Exact UID'));
-    expect(english['inke_directory_scope'], contains('nickname search'));
+    expect(english['inke_directory_scope'], contains('nickname filtering'));
   });
 
   test('exact UID and official link lookup use metadata only, including offline state', () async {
@@ -108,7 +109,7 @@ void main() {
     expect((await site.searchRooms('https://www.inke.cn/liveroom/index.html?uid=100&id=old')).single.roomId, '100');
     expect(paths, ['/web/live_share_pc', '/web/live_share_pc']);
     expect(await site.searchRooms('100', page: 2), isEmpty);
-    for (final input in ['主播昵称', 'https://www.inke.cn/', 'https://www.inke.cn.evil.test/liveroom/index.html?uid=100']) {
+    for (final input in ['https://www.inke.cn/', 'https://www.inke.cn.evil.test/liveroom/index.html?uid=100']) {
       expect(await site.searchRooms(input), isEmpty);
     }
     expect(paths, hasLength(2));
@@ -121,6 +122,43 @@ void main() {
     expect(room.isExplicitlyOfflineNow, isTrue);
     expect(room.title, 'UID 100');
     expect(room.nick, 'UID 100');
+  });
+
+  test('nickname search matches only bounded public showcases without media lookup', () async {
+    final paths = <String>[];
+    final site = InkeSite(
+      api: InkeApi(
+        request: (uri, _) async {
+          paths.add(uri.path);
+          return switch (uri.path) {
+            '/web/Live_top_pc' => _ok({
+              'list': [
+                {..._row(100), 'nick': '音乐主播'},
+                {..._row(101), 'nick': '聊天主播'},
+              ],
+            }),
+            '/web/Live_channel_pc' => _ok({
+              'list': [
+                {
+                  'tab_key': 'MUSIC',
+                  'channel_name': '音乐',
+                  'list': [
+                    {..._row(100), 'nick': '音乐主播'},
+                    {..._row(102), 'nick': '音乐电台'},
+                  ],
+                },
+              ],
+            }),
+            _ => throw StateError('unexpected ${uri.path}'),
+          };
+        },
+      ),
+    );
+    expect((await site.searchRooms('音乐', pageSize: 1)).map((room) => room.roomId), ['100']);
+    expect((await site.searchRooms('音乐', page: 2, pageSize: 1)).map((room) => room.roomId), ['102']);
+    expect(paths, ['/web/Live_top_pc', '/web/Live_channel_pc', '/web/Live_top_pc', '/web/Live_channel_pc']);
+    expect(await site.searchRooms('音乐', page: 3, pageSize: 1), isEmpty);
+    expect(paths, hasLength(6));
   });
 
   test('exact lookup preserves access errors and forwards cancellation', () async {

@@ -64,7 +64,7 @@ void main() {
     expect(Sites.of('twitcasting').liveSite, isA<LivePlayRecoveryResolver>());
     expect(Sites.of('twitcasting').liveSite, isA<LiveCancellableSearch>());
     expect(Sites.supportSites.where((s) => s.id == 'twitcasting'), hasLength(1));
-    expect(LiveSearchCapabilities.forPlatform('twitcasting').coverage, NativeSearchCoverage.liveOnly);
+    expect(LiveSearchCapabilities.forPlatform('twitcasting').coverage, NativeSearchCoverage.liveAndOffline);
     expect(LiveSearchCapabilities.forPlatform('twitcasting').supportsNativeSearch, true);
     expect(LiveSearchCapabilities.forPlatform('twitcasting').supportsPagination, true);
     expect(LiveSearchCapabilities.forPlatform('twitcasting').supportsWebSearch, true);
@@ -178,6 +178,56 @@ void main() {
     expect(rooms.first.isLiveNow, isTrue);
     expect(rooms.first.watching, isEmpty);
     expect(rooms.first.onlineViewers, anyOf(isNull, isEmpty));
+  });
+  test('exact channel link search returns the offline channel without parsing stale media', () async {
+    final calls = <Uri>[];
+    final api = apiFor(stream: jsonFixture('offline-stream.json'), calls: calls);
+    final site = TwitcastingSite(api: api);
+    final result = await site.searchRooms('https://twitcasting.tv/fixture_artist?ref=share');
+    expect(result.single.roomId, 'fixture_artist');
+    expect(result.single.isExplicitlyOfflineNow, isTrue);
+    expect(result.single.data, isEmpty);
+    expect(calls.map((uri) => uri.path), ['/fixture_artist', '/streamserver.php']);
+    expect(await site.searchRooms('https://twitcasting.tv/fixture_artist', page: 2), isEmpty);
+    expect(await site.searchRooms('https://twitcasting.tv/fixture_artist/movie/42'), isEmpty);
+    expect(calls, hasLength(2));
+  });
+  test('exact channel link search resolves live metadata, absence and cancellation', () async {
+    final token = CancelToken();
+    final calls = <Uri>[];
+    final site = TwitcastingSite(
+      api: TwitcastingApi(
+        request: (uri, cancel) async {
+          expect(cancel, same(token));
+          calls.add(uri);
+          if (uri.path == '/streamserver.php') {
+            // A search card is metadata-only even when the current HLS is invalid.
+            return (
+              status: 200,
+              body: jsonEncode({
+                'movie': {'id': 42, 'live': true},
+                'tc-hls': 'stale',
+              }),
+            );
+          }
+          return (status: 200, body: fixture('room.html'));
+        },
+      ),
+    );
+    final live = await site.searchRoomsCancellable('http://www.twitcasting.tv/Fixture_Artist/', cancel: token);
+    expect(live.single.roomId, 'fixture_artist');
+    expect(live.single.isLiveNow, isTrue);
+    expect(live.single.data, isEmpty);
+    expect(calls.map((uri) => uri.path), ['/fixture_artist', '/streamserver.php']);
+
+    final missing = TwitcastingSite(api: TwitcastingApi(request: (_, _) async => (status: 404, body: '')));
+    expect(await missing.searchRooms('https://twitcasting.tv/fixture_artist'), isEmpty);
+    token.cancel();
+    await expectLater(
+      site.searchRoomsCancellable('https://twitcasting.tv/fixture_artist', cancel: token),
+      failure(TwitcastingFailure.cancelled),
+    );
+    expect(calls, hasLength(2));
   });
   test('search slices at the official 50-result window and ignores other result sections', () async {
     var calls = 0;

@@ -24,6 +24,20 @@ import 'package:pure_live/core/site/bigo/bigo_api.dart';
 import 'package:pure_live/core/site/pandalive/pandalive_link.dart';
 import 'package:pure_live/core/site/popkontv/popkontv_link.dart';
 import 'package:pure_live/core/site/seventeenlive/seventeenlive_link.dart';
+import 'package:pure_live/core/site/shopeelive/shopeelive_link.dart';
+import 'package:pure_live/core/site/vkvideolive/vkvideolive_link.dart';
+import 'package:pure_live/core/site/nimotv/nimotv_link.dart';
+import 'package:pure_live/core/site/dailymotion/dailymotion_link.dart';
+import 'package:pure_live/core/site/rumble/rumble_link.dart';
+import 'package:pure_live/core/site/goodgame/goodgame_link.dart';
+import 'package:pure_live/core/site/fc2live/fc2_link.dart';
+import 'package:pure_live/core/site/steambroadcast/steam_broadcast_link.dart';
+import 'package:pure_live/core/site/jdlive/jd_live_link.dart';
+import 'package:pure_live/core/site/taobaolive/taobao_live_link.dart';
+import 'package:pure_live/core/site/kugoulive/kugou_live_link.dart';
+import 'package:pure_live/core/site/baidulive/baidu_live_link.dart';
+import 'package:pure_live/core/site/sixroom/sixroom_link.dart';
+import 'package:pure_live/core/site/looklive/look_live_link.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 
 enum RoomExternalOpenResult { opened, unavailable, failed, cancelled }
@@ -38,6 +52,14 @@ class RoomExternalTarget {
 typedef RoomExternalLauncher = Future<bool> Function(String url);
 
 class RoomExternalOpener {
+  static RoomExternalTarget? _official(String Function() build) {
+    try {
+      return RoomExternalTarget(web: build());
+    } on FormatException {
+      return null;
+    }
+  }
+
   static String? _id(String? value) {
     final id = value?.trim();
     if (id == null || id.isEmpty || id == '.' || id == '..' || RegExp(r'[\s\x00-\x1f/\\?#%]').hasMatch(id)) {
@@ -127,6 +149,40 @@ class RoomExternalOpener {
         } on FormatException {
           return null;
         }
+      case Sites.shopeeLiveSite:
+        return _official(() => ShopeeLiveLink.url(id));
+      case Sites.vkVideoLiveSite:
+        return _official(() => VkVideoLiveLink.url(id));
+      case Sites.nimoTvSite:
+        return _official(() => NimoTvLink.url(id));
+      case Sites.dailymotionSite:
+        return _official(() => DailymotionLink.videoUrl(id));
+      case Sites.rumbleSite:
+        return _official(() => RumbleLink.videoUrl(id));
+      case Sites.goodGameSite:
+        final reference = GoodGameLink.parseReference(id);
+        if (reference == null) return null;
+        return _official(
+          () => reference.kind == GoodGameLinkKind.player
+              ? Uri.https('goodgame.ru', '/player', {'src': reference.value}).toString()
+              : GoodGameLink.channelUrl(reference.value),
+        );
+      case Sites.fc2LiveSite:
+        return _official(() => Fc2Link.channelUrl(id));
+      case Sites.steamBroadcastSite:
+        return _official(() => SteamBroadcastLink.watchUrl(id));
+      case Sites.jdLiveSite:
+        return _official(() => JdLiveLink.watchUrl(id));
+      case Sites.taobaoLiveSite:
+        return _official(() => TaobaoLiveLink.watchUrl(id));
+      case Sites.kugouLiveSite:
+        return _official(() => KugouLiveLink.watchUrl(id));
+      case Sites.baiduLiveSite:
+        return _official(() => BaiduLiveLink.watchUrl(id));
+      case Sites.sixRoomSite:
+        return _official(() => SixRoomLink.watchUrl(id));
+      case Sites.lookLiveSite:
+        return _official(() => LookLiveLink.watchUrl(id));
       case Sites.xiaohongshuSite:
         final broadcast = XiaohongshuLink.parse(id);
         return broadcast == null ? null : RoomExternalTarget(web: XiaohongshuLink.url(broadcast));

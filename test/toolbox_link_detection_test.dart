@@ -8,6 +8,7 @@ void main() {
     'https://www.douyu.com/123',
     'https://www.huya.com/fixture',
     'https://live.douyin.com/123',
+    'https://www.douyin.com/123?source=share',
     'https://v.douyin.com/AbCd/',
     'https://webcast.amemv.com/douyin/webcast/reflow/123',
     'https://live.kuaishou.com/u/fixture',
@@ -40,6 +41,14 @@ void main() {
     'javascript://www.huya.com/123',
     'https://',
     'https://%/',
+    'https://live.bilibili.com/',
+    'https://www.douyu.com/search?kw=game',
+    'https://www.twitch.tv/directory',
+    'https://picarto.tv/search?q=art',
+    'https://twitcasting.tv/artist/movie/42',
+    'https://live.kuaishou.com/search',
+    'https://www.douyin.com/search/123?type=live',
+    'https://www.douyin.com/video/123',
   ]) {
     test('does not auto-fill unrelated or ambiguous text: $text', () {
       expect(ToolBoxController.containsSupportedLink(text), isFalse);

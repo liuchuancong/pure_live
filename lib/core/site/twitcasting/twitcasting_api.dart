@@ -265,6 +265,20 @@ class TwitcastingApi {
       throw const TwitcastingException(TwitcastingFailure.schema);
     }
     if (query.isEmpty || (page - 1) * pageSize >= searchWindow) return const [];
+    // A channel root URL is stable across broadcasts. Resolve its current
+    // metadata directly so a shared link can also find an offline channel;
+    // never treat a movie/archive URL as this channel's current live session.
+    final inputUri = Uri.tryParse(query);
+    if (inputUri != null && {'twitcasting.tv', 'www.twitcasting.tv'}.contains(inputUri.host.toLowerCase())) {
+      final channel = channelFromUri(inputUri);
+      if (channel == null || page != 1) return const [];
+      try {
+        return [await detail(channel, includeMedia: false, cancel: cancel)];
+      } on TwitcastingException catch (error) {
+        if (error.kind == TwitcastingFailure.notFound) return const [];
+        rethrow;
+      }
+    }
     final uri = Uri(
       scheme: 'https',
       host: 'search.twitcasting.tv',
@@ -325,7 +339,7 @@ class TwitcastingApi {
     return List.unmodifiable(rooms.values);
   }
 
-  Future<LiveRoom> detail(String input, {CancelToken? cancel}) async {
+  Future<LiveRoom> detail(String input, {bool includeMedia = true, CancelToken? cancel}) async {
     final channel = channelName(input);
     final page = await read(Uri.parse('$origin/$channel'), cancel: cancel);
     if (page.contains('Enter the secret word to access')) throw const TwitcastingException(TwitcastingFailure.access);
@@ -363,7 +377,7 @@ class TwitcastingApi {
     );
     // Observed offline responses contain stale HLS URLs for a DIFFERENT movie.
     // Only movie.live is authoritative; ignore every URL when it is false.
-    if (!live) {
+    if (!live || !includeMedia) {
       room.data = const <LivePlayQuality>[];
       return room;
     }

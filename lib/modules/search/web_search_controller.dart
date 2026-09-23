@@ -123,6 +123,7 @@ class WebSearchController extends GetxController {
   WebSearchBrowser? _browser;
   InAppWebViewController? _nativeController;
   WebSearchRoomTarget? _pendingTarget;
+  String? _observedTargetKey;
   String? _dismissedTarget;
   Future<void>? _promptOperation;
   Future<void>? _externalOpenOperation;
@@ -314,9 +315,12 @@ class WebSearchController extends GetxController {
     if (uri == null) return Future.value();
     final target = WebSearchRoomParser.parse(uri.toString());
     if (target == null) {
+      _observedTargetKey = null;
+      _pendingTarget = null;
       _dismissedTarget = null;
       return Future.value();
     }
+    _observedTargetKey = target.key;
     if (_dismissedTarget == target.key) return Future.value();
 
     _pendingTarget = target;
@@ -347,6 +351,9 @@ class WebSearchController extends GetxController {
         debugPrint('[WebSearch] Room confirmation failed: $error');
       }
       if (!_isCurrent(generation)) return;
+      // A dialog can outlive the document that discovered it. A later room
+      // will be drained next; a non-room navigation clears the pending target.
+      if (_observedTargetKey != target.key) continue;
       if (confirmed != true) {
         _dismissedTarget = target.key;
         continue;
@@ -432,6 +439,7 @@ class WebSearchController extends GetxController {
     _closed = true;
     _generation++;
     _pendingTarget = null;
+    _observedTargetKey = null;
     showWebView.value = false;
     isOpeningExternal.value = false;
     late final Future<void> task;
@@ -492,6 +500,7 @@ class WebSearchController extends GetxController {
       _closed = true;
       _generation++;
       _pendingTarget = null;
+      _observedTargetKey = null;
       showWebView.value = false;
     }
     unawaited(_disposeBrowser());

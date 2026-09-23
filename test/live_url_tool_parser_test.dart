@@ -22,7 +22,6 @@ void main() {
     'www.huya.com/fixture': ['fixture', 'huya'],
     'https://www.bilibili.com/123': ['123', 'bilibili'],
     'https://www.douyin.com/123?source=share': ['123', 'douyin'],
-    'https://www.douyin.com/video/123': ['123', 'douyin'],
     'https://webcast.amemv.com/douyin/webcast/reflow/123?source=share': ['123', 'douyin'],
     'https://www.douyu.com/fixtureAlias': ['fixtureAlias', 'douyu'],
     'https://cc.163.com/channel123/': ['channel123', 'cc'],
@@ -32,6 +31,7 @@ void main() {
   };
   for (final entry in valid.entries) {
     test('parses shared room identity: ${entry.key}', () async {
+      expect(LiveUrlTool.containsSupportedLink(entry.key), isTrue);
       expect(await parseWithoutNetwork(entry.key), entry.value);
     });
   }
@@ -41,6 +41,8 @@ void main() {
     'https://example.org/?next=https://www.huya.com/123',
     'https://user@www.huya.com/123',
     'https://www.douyin.com/',
+    'https://www.douyin.com/search/123?type=live',
+    'https://www.douyin.com/video/123',
     'https://www.twitch.tv/directory',
     'https://www.huya.com/search?keyword=123',
     'ftp://www.huya.com/123',

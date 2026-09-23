@@ -7,8 +7,6 @@ import 'package:pure_live/core/site/openrec/openrec_link.dart';
 import 'package:dio/dio.dart' as dio;
 import 'package:pure_live/core/site/huajiao/huajiao_api.dart';
 import 'package:pure_live/core/site/huajiao/huajiao_link.dart';
-import 'package:pure_live/core/site/missevan/missevan_api.dart';
-import 'package:pure_live/core/site/inke/inke_api.dart';
 import 'package:pure_live/core/site/kilakila/kilakila_api.dart';
 import 'package:pure_live/core/site/kilakila/kilakila_link.dart';
 import 'package:pure_live/core/site/showroom/showroom_link.dart';
@@ -98,28 +96,15 @@ class LiveUrlTool {
 
   static bool _hostIs(String host, String root) => host == root || host.endsWith('.$root');
 
+  static String? _douyinWebRoomId(Uri uri) {
+    if (uri.host.toLowerCase() != 'www.douyin.com') return null;
+    final segments = uri.pathSegments.where((part) => part.isNotEmpty).toList(growable: false);
+    // /video/{id} is a recording and /search/{query} is a result page; their
+    // trailing numbers are not live room IDs.
+    return segments.length == 1 && RegExp(r'^\d{1,20}$').hasMatch(segments.single) ? segments.single : null;
+  }
+
   static bool containsSupportedLink(String text) {
-    const roots = {
-      'bilibili.com',
-      'b23.tv',
-      'douyu.com',
-      'huya.com',
-      'douyin.com',
-      'webcast.amemv.com',
-      'live.kuaishou.com',
-      'live.kuaishou.cn',
-      'cc.163.com',
-      'twitch.tv',
-      'sooplive.com',
-      'sooplive.co.kr',
-      'yy.com',
-      'live.acfun.cn',
-      'picarto.tv',
-      'twitcasting.tv',
-      'showroom-live.com',
-      'chzzk.naver.com',
-      'kick.com',
-    };
     return sharedHttpUrls(text).any((raw) {
       if (WeiboLink.parse(raw) != null ||
           NiconicoLink.parse(raw) != null ||
@@ -154,11 +139,33 @@ class LiveUrlTool {
       if (SixRoomLink.parseRoomId(raw) != null) return true;
       if (LookLiveLink.parseRoomId(raw) != null) return true;
       if (TaobaoLiveLink.parse(raw) != null || TaobaoLiveLink.shortUri(raw) != null) return true;
+      // Reuse the actual synchronous room-link contract. A platform's home,
+      // category, search or archive URL is not enough to prefill a room input.
+      if (WebSearchRoomParser.parse(raw) != null) return true;
       final uri = Uri.parse(raw);
-      return TikTokLink.isShortHost(uri.host) ||
-          InkeApi.roomFromUri(uri) != null ||
-          MissevanApi.roomFromUri(uri) != null ||
-          roots.any((root) => _hostIs(uri.host.toLowerCase(), root));
+      final host = uri.host.toLowerCase();
+      final segments = uri.pathSegments.where((part) => part.isNotEmpty).toList(growable: false);
+      if (segments.isEmpty) return false;
+      // These links need a redirect or a legacy alias in parseLiveUrl, so
+      // they have no immediate WebSearchRoomTarget to reuse.
+      if (TikTokLink.isShortHost(host) || _hostIs(host, 'b23.tv') || host == 'v.douyin.com') return true;
+      if (host == 'live.kuaishou.cn' && segments.length >= 2 && segments.first == 'u') {
+        return WebSearchRoomParser.isRoomIdentifier(segments[1], RegExp(r'^[a-zA-Z0-9_-]+$'));
+      }
+      if (segments.length == 1 && host == 'www.bilibili.com') {
+        return WebSearchRoomParser.isRoomIdentifier(segments.single, RegExp(r'^\d+$'));
+      }
+      if (segments.length == 1 && (_hostIs(host, 'douyu.com') || host == 'cc.163.com')) {
+        return WebSearchRoomParser.isRoomIdentifier(segments.single, RegExp(r'^[a-zA-Z0-9_-]+$'));
+      }
+      if (_hostIs(host, 'sooplive.com')) {
+        return WebSearchRoomParser.isRoomIdentifier(segments.first, RegExp(r'^[a-zA-Z0-9_-]+$'));
+      }
+      if (host == 'webcast.amemv.com') {
+        return RegExp(r'(?:^|/)reflow/\d+(?:/|$)').hasMatch(uri.path);
+      }
+      if (_douyinWebRoomId(uri) != null) return true;
+      return false;
     });
   }
 
@@ -375,7 +382,7 @@ class LiveUrlTool {
         id = segments.first;
       } else if (host == 'www.douyin.com') {
         platform = Sites.douyinSite;
-        id = segments.last;
+        id = _douyinWebRoomId(uri);
       } else if (host == 'webcast.amemv.com') {
         platform = Sites.douyinSite;
         id = RegExp(r'(?:^|/)reflow/(\d+)(?:/|$)').firstMatch(uri.path)?.group(1);

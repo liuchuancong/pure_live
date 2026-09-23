@@ -118,7 +118,7 @@ class SearchController extends GetxController {
       case Sites.inkeSite:
         throw StateError('Inke supports exact UID lookup, not web keyword search');
       case Sites.missevanSite:
-        throw StateError('Missevan supports exact room lookup, not web keyword search');
+        throw StateError('Missevan uses native keyword search, not web search');
       case Sites.ccSite:
         return "https://cc.163.com/search/all/?query=$q&only=all";
       case Sites.kuaishouSite:
@@ -292,6 +292,7 @@ class SearchController extends GetxController {
       if (batch.failed) failures.add(batch.site.name);
       _hasMoreByPlatform[batch.site.id] = _canLoadAnotherPage(
         site: batch.site,
+        keyword: keyword,
         capability: capability,
         batch: batch,
         addedCount: addedCount,
@@ -319,11 +320,16 @@ class SearchController extends GetxController {
 
   bool _canLoadAnotherPage({
     required Site site,
+    required String keyword,
     required LiveSearchCapability capability,
     required _SiteSearchBatch batch,
     required int addedCount,
   }) {
-    if (!capability.supportsPagination || batch.failed || batch.rooms.isEmpty) {
+    if (!capability.supportsPagination ||
+        (site.liveSite is LiveSearchPaginationPolicy &&
+            !(site.liveSite as LiveSearchPaginationPolicy).supportsSearchPaginationFor(keyword)) ||
+        batch.failed ||
+        batch.rooms.isEmpty) {
       _stagnantPagesByPlatform.remove(site.id);
       return false;
     }
@@ -420,6 +426,7 @@ class SearchController extends GetxController {
       if (site.id == Sites.openrecSite) return i18n('search_coverage_openrec');
       return switch (capability.coverage) {
         NativeSearchCoverage.roomLookup => i18n('search_coverage_room_lookup', args: {'site': site.name}),
+        NativeSearchCoverage.showcaseSnapshot => i18n('search_coverage_showcase_snapshot', args: {'site': site.name}),
         NativeSearchCoverage.channelLookup => i18n('search_coverage_channel_lookup', args: {'site': site.name}),
         NativeSearchCoverage.liveAndOffline => i18n('search_coverage_live_and_offline', args: {'site': site.name}),
         NativeSearchCoverage.liveOnly => i18n('search_coverage_live_only', args: {'site': site.name}),
@@ -452,11 +459,16 @@ class SearchController extends GetxController {
         .where((site) => LiveSearchCapabilities.forPlatform(site.id).coverage == NativeSearchCoverage.roomLookup)
         .map((site) => site.name)
         .join('、');
+    final snapshotSites = sites
+        .where((site) => LiveSearchCapabilities.forPlatform(site.id).coverage == NativeSearchCoverage.showcaseSnapshot)
+        .map((site) => site.name)
+        .join('、');
     return [
       summary,
       if (unavailableSites.isNotEmpty) i18n('search_coverage_unavailable', args: {'site': unavailableSites}),
       if (lookupSites.isNotEmpty) i18n('search_coverage_channel_lookup', args: {'site': lookupSites}),
       if (roomLookupSites.isNotEmpty) i18n('search_coverage_room_lookup', args: {'site': roomLookupSites}),
+      if (snapshotSites.isNotEmpty) i18n('search_coverage_showcase_snapshot', args: {'site': snapshotSites}),
     ].join(' ');
   }
 

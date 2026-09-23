@@ -1,6 +1,15 @@
 import 'package:pure_live/core/sites.dart';
 
-enum NativeSearchCoverage { liveOnly, liveAndOffline, channelLookup, roomLookup, localChannels, webOnly, unavailable }
+enum NativeSearchCoverage {
+  liveOnly,
+  liveAndOffline,
+  channelLookup,
+  roomLookup,
+  showcaseSnapshot,
+  localChannels,
+  webOnly,
+  unavailable,
+}
 
 class LiveSearchCapability {
   const LiveSearchCapability({required this.coverage, required this.supportsPagination, this.supportsWebSearch = true});
@@ -170,10 +179,13 @@ class LiveSearchCapabilities {
     Sites.yySite: LiveSearchCapability(coverage: NativeSearchCoverage.liveAndOffline, supportsPagination: true),
     Sites.acfunSite: LiveSearchCapability(coverage: NativeSearchCoverage.liveAndOffline, supportsPagination: true),
     Sites.picartoSite: LiveSearchCapability(coverage: NativeSearchCoverage.liveAndOffline, supportsPagination: true),
-    Sites.twitcastingSite: LiveSearchCapability(coverage: NativeSearchCoverage.liveOnly, supportsPagination: true),
+    Sites.twitcastingSite: LiveSearchCapability(
+      coverage: NativeSearchCoverage.liveAndOffline,
+      supportsPagination: true,
+    ),
     Sites.missevanSite: LiveSearchCapability(
-      coverage: NativeSearchCoverage.roomLookup,
-      supportsPagination: false,
+      coverage: NativeSearchCoverage.liveAndOffline,
+      supportsPagination: true,
       supportsWebSearch: false,
     ),
     Sites.openrecSite: LiveSearchCapability(
@@ -192,8 +204,8 @@ class LiveSearchCapabilities {
       supportsWebSearch: false,
     ),
     Sites.inkeSite: LiveSearchCapability(
-      coverage: NativeSearchCoverage.roomLookup,
-      supportsPagination: false,
+      coverage: NativeSearchCoverage.showcaseSnapshot,
+      supportsPagination: true,
       supportsWebSearch: false,
     ),
     Sites.iptvSite: LiveSearchCapability(
