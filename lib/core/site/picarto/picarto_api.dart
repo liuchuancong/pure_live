@@ -3,9 +3,11 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
+import 'package:pure_live/common/models/live_area.dart';
 import 'package:pure_live/common/models/live_room.dart';
 import 'package:pure_live/core/common/http_client.dart';
 import 'package:pure_live/core/common/request_scope.dart';
+import 'package:pure_live/core/interface/live_directory.dart';
 
 enum PicartoFailure { transport, access, rateLimited, service, notFound, schema, cancelled, qualityUnavailable }
 
@@ -25,6 +27,7 @@ class PicartoApi {
   static const origin = 'https://picarto.tv';
   static const apiOrigin = 'https://ptvintern.picarto.tv';
   static const responseLimit = 1024 * 1024;
+  static const serverPageSize = 30;
   static const playHeaders = <String, String>{'Referer': '$origin/', 'Origin': origin};
   final PicartoRequest _request;
 
@@ -158,18 +161,62 @@ class PicartoApi {
     }
   }
 
-  Future<List<LiveRoom>> directory({int page = 1, int pageSize = 30, CancelToken? cancel}) async {
+  Future<List<LiveArea>> categories({CancelToken? cancel}) async {
+    final data = object(await read(Uri.parse('$apiOrigin/api/languages-categories'), cancel: cancel));
+    final rows = data['categories'];
+    if (rows is! List || rows.isEmpty || rows.length > 200) throw const PicartoException(PicartoFailure.schema);
+    final result = <String, LiveArea>{};
+    for (final raw in rows) {
+      final category = object(raw);
+      final id = integer(category['id']);
+      final label = text(category['label']);
+      if (id == null || id <= 0 || label.isEmpty || label.length > 100 || result.containsKey('$id')) {
+        throw const PicartoException(PicartoFailure.schema);
+      }
+      result['$id'] = LiveArea(
+        platform: 'picarto',
+        areaType: 'category',
+        areaId: '$id',
+        areaName: label,
+        typeName: 'Picarto',
+      );
+    }
+    return List.unmodifiable(result.values);
+  }
+
+  Future<List<LiveRoom>> directory({int page = 1, int pageSize = 30, LiveArea? category, CancelToken? cancel}) async =>
+      (await directoryPage(page: page, pageSize: pageSize, category: category, cancel: cancel)).rooms;
+
+  Future<LiveDirectoryPage> directoryPage({
+    int page = 1,
+    int pageSize = serverPageSize,
+    LiveArea? category,
+    CancelToken? cancel,
+  }) async {
     if (page < 1 || page > 10000 || pageSize < 1 || pageSize > 60) throw const PicartoException(PicartoFailure.schema);
-    final uri = Uri.parse('$apiOrigin/api/explore').replace(
-      queryParameters: {
-        'first': '$pageSize',
-        'page': '$page',
-        'filter_params[adult]': 'false',
-        'order_by[field]': 'viewers',
-        'order_by[order]': 'DESC',
-        'type': 'stream',
-      },
-    );
+    int? categoryId;
+    if (category != null) {
+      if (category.platform != 'picarto' || category.areaType != 'category') {
+        throw const PicartoException(PicartoFailure.schema);
+      }
+      categoryId = int.tryParse(category.areaId ?? '');
+      if (categoryId == null || categoryId <= 0 || '$categoryId' != category.areaId) {
+        throw const PicartoException(PicartoFailure.schema);
+      }
+    }
+    final query = <String, String>{
+      'first': '$pageSize',
+      'page': '$page',
+      'filter_params[adult]': 'false',
+      'order_by[field]': 'viewers',
+      'order_by[order]': 'DESC',
+      'type': 'stream',
+    };
+    if (categoryId != null) {
+      query['filter_params[languages]'] = '';
+      query['filter_params[categories]'] = '$categoryId: true';
+    }
+    final uri = Uri.parse('$apiOrigin/api/explore').replace(queryParameters: query);
     final data = object(await read(uri, cancel: cancel));
     final rows = data['data'];
     final last = integer(data['last_page']);
@@ -188,13 +235,19 @@ class PicartoApi {
     for (final raw in rows) {
       final row = object(raw);
       if (row['adult'] is! bool) throw const PicartoException(PicartoFailure.schema);
+      if (categoryId != null) {
+        final categories = row['categories'];
+        if (categories is! List || !categories.any((value) => integer(object(value)['id']) == categoryId)) {
+          throw const PicartoException(PicartoFailure.schema);
+        }
+      }
       final room = parseChannel(row);
       // Explicit filtering is not a fabricated offline status. Do not fetch
       // more pages to fill a short page or follow the API's arbitrary next URL.
       if (row['adult'] != false || !room.isPlayableNow) continue;
       rooms.putIfAbsent(room.roomId!.toLowerCase(), () => room);
     }
-    return List.unmodifiable(rooms.values);
+    return LiveDirectoryPage(rooms: rooms.values, page: page, hasMore: page < last);
   }
 
   static LiveRoom parseChannel(Map<String, dynamic> channel, {String? expectedName, bool detail = false}) {
