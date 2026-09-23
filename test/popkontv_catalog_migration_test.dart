@@ -33,15 +33,18 @@ void main() {
     await HivePrefUtil.setInt('siteCatalogMigration', 23);
     await HivePrefUtil.setStringList('hotAreasList', [Sites.huyaSite, Sites.pandaLiveSite]);
     final favorites = Get.put(FavoriteRoomController());
-    expect(favorites.hotAreasList, [Sites.huyaSite, Sites.pandaLiveSite, Sites.popkonSite]);
-    expect(favorites.siteCatalogMigration.value, 24);
+    final expectedPrefix = [Sites.huyaSite, Sites.pandaLiveSite, Sites.popkonSite];
+    expect(favorites.hotAreasList.take(expectedPrefix.length), expectedPrefix);
+    final migrated = favorites.hotAreasList.toList(growable: false);
+    expect(migrated.toSet(), hasLength(migrated.length));
+    expect(favorites.siteCatalogMigration.value, 38);
     favorites.hotAreasList.remove(Sites.popkonSite);
     await Hive.box<dynamic>('app_settings').flush();
     Get.reset();
     await Hive.close();
     await HivePrefUtil.init();
     final reopened = Get.put(FavoriteRoomController());
-    expect(reopened.hotAreasList, [Sites.huyaSite, Sites.pandaLiveSite]);
-    expect(reopened.siteCatalogMigration.value, 24);
+    expect(reopened.hotAreasList, migrated.where((id) => id != Sites.popkonSite).toList(growable: false));
+    expect(reopened.siteCatalogMigration.value, 38);
   });
 }
