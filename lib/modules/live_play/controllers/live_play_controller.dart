@@ -871,6 +871,11 @@ class LivePlayController extends GetxController
     updatePlayer(playUrls: [], currentLineIndex: 0, qualites: [], currentQuality: 0);
   }
 
+  /// Closing the old native player also ends ownership of its selected media.
+  /// A failed detail lookup for the next room must not reuse that old source.
+  @visibleForTesting
+  void clearClosedPlaybackSource() => _restoreQualityAndLines();
+
   Future<void> switchRoom(LiveRoom newRoom) async {
     // Fence any room-detail/play-quality request that was started before this
     // switch. Its late result must not restore the previous room or socket.
@@ -891,6 +896,7 @@ class LivePlayController extends GetxController
 
     updateRoom(success: false, isLiving: true);
     await playerController.destroyPlayer();
+    clearClosedPlaybackSource();
 
     updatePlayer(hasUseDefaultResolution: false);
     updateUI(refreshKey: 0);

@@ -7,3 +7,7 @@
 原有实现先由确定性测试复现：`20260923T164659859Z-quality-focused.json` 中新增两条断言分别见到 `offline` 与假 `0`。修订后模型、播放状态、受影响录制解析和外部打开六文件 **51/51** 通过（`20260923T164857926Z-quality-focused.json`）；状态/收藏刷新/录制轮询邻接三文件 **46/46** 通过（`20260923T164959886Z-quality-focused.json`）。最后补基础站点观看值断言并复验 **6/6**，全仓 Analyze 0 error / 0 warning、1 项既有 info（`20260923T165213674Z-quality-focused.json`）。这些集合有重叠，不相加为独立测试数量。
 
 源码与状态测试只证明错误分类和播放页状态转换；当前 Android、Windows 候选均早于修订，GUI 网络故障/恢复与真实媒体保持在[完整客户端测试清单](FULL_CLIENT_TEST_PLAN_2026_08_28.md)的 AND-FAULT-05 / WIN-FAULT-02，尚待同一候选集中验收。
+
+## 切房时的旧线路状态（后续修订）
+
+进一步沿 `switchRoom` 生产路径复核发现：旧原生播放器已关闭，但原 `PlayerState.playUrls` / `ownedSource` 仍可保留。若新房详情请求恰好返回未知状态，`hasPlaybackSource` 会误读旧线路，并把新房标成正在播放。切房关闭旧播放器后现同步清空线路、画质和 owned source；同房临时详情失败仍保留真实现存播放器。新增 URL/owned 两种旧线路回归，四文件相邻测试 **29/29**，全仓 Analyze 0 error / 0 warning、1 项既有 info（`20260923T170236392Z-quality-focused.json`）。该测试直接验证切房路径调用的清理方法和未知状态转换，未执行原生 `switchRoom` 全流程；Android/Windows 真正切房网络故障仍由 AND-FAULT-05 / WIN-FAULT-02 验收。
