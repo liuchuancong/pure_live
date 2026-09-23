@@ -2,10 +2,11 @@
 
 本台账是 Issue 首轮分流的唯一紧凑索引。它记录“当前源码还需要做什么”，不复制专项审计的完整过程。状态分类遵循 [`MAINTENANCE_POLICY.md`](../MAINTENANCE_POLICY.md)。
 
-2026-09-23 复核：上游新增 #874 关注列表单独同步需求，本仓库 Open Issue 为 0。#853 仍缺少房间、请求/确认档位、解码宽高或码率；该项处置条件保持不变。
+2026-09-23 复核：本轮处理 #873 斗鱼最高画质与 #874 关注列表单独同步，本仓库 Open Issue 为 0。#853 仍缺少房间、请求/确认档位、解码宽高或码率；该项处置条件保持不变。
 
 | Issue | 报告基线 | 当前映射 | 当前证据 | 处置 / 再开条件 |
 | --- | --- | --- | --- | --- |
+| [#873 斗鱼最高画质回落](https://github.com/liuchuancong/pure_live/issues/873) | 3.1.4 / Windows 11；评论补充匿名流 10–20 分钟断线 | `present`；匿名服务端回落已实测，当前源码增加可选账号 Cookie 路径，最终改善程度待复验 | 公开推荐房间 `24422` 列出原画 2K60，但匿名请求 `rate=0` 返回确认 `rate=4`；`4489985` 同批原画请求确认 `rate=0`。当前适配器已区分请求与确认；本批补齐斗鱼 Cookie 设置、签名请求与播放/录制请求头；见[Issue #873 审计](ISSUE_873_DOUYU_QUALITY_AND_SESSION_AUDIT_2026_09_23.md) | 当前 Windows 候选以同房间登录/匿名对照确认档位、解码宽高、码率及持续播放；若登录态仍回落或中途断线，保留平台返回及媒体请求失败证据进一步定位 |
 | [#874 单独同步关注列表](https://github.com/liuchuancong/pure_live/issues/874) | 3.1.4 / Windows 11；跨桌面与移动端 | `present` → 当前源码新增发送端与本地文件交换 | 在 #865 选择性恢复基础上，增加关注房间/分区专用 v3 导出、WebDAV 上传与本地导入；`backupScope: favorites` 阻止完整恢复误用；见[Issue #874 审计](ISSUE_874_FAVORITES_PORTABLE_BACKUP_AUDIT_2026_09_23.md) | 当前候选需验证真实 WebDAV 双端上传/回读及本地文件互导；若专用文件影响其他设备设置则重开 |
 | [#872 Bilibili 登录后弹幕不显示](https://github.com/liuchuancong/pure_live/issues/872) | 3.1.4 / Windows | `present` → 已在 `master` 修订 | `52db99fb` / `9b4eb33b` 补齐认证队列、ACK 和用户绑定；协议 11/11、直接探针观测到聊天；见[Issue #872 审计](ISSUE_872_BILIBILI_LOGGED_IN_DANMAKU_AUDIT_2026_09_19.md) | 代码调查停止；只在报告者登录态 Windows 仍复现或协议字段再次变化时重开 |
 | [#871](https://github.com/liuchuancong/pure_live/issues/871) / [#845 斗鱼弹幕明显少于网页](https://github.com/liuchuancong/pure_live/issues/845) | 3.1.4 / Windows | `present` → 已在 `master` 修订 | `31ee5cd7` 将房间匹配的非空 `chatmsg` 改为完整性优先，`dms` / `if` 启发式过滤只在用户明确开启后生效；最终相邻回归 53/53、analyze 通过；见[斗鱼弹幕审计](ISSUE_871_DOUYU_CHAT_COMPLETENESS_AUDIT_2026_09_19.md) | 代码调查停止；仅在当前源码仍有原始 WebSocket 与网页/App 数量差异时重开 |

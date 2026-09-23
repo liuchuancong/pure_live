@@ -61,6 +61,7 @@ void main() {
     final names = AppPages.routes.map((route) => route.name).toList(growable: false);
     expect(names.where((name) => name == RoutePath.kDouyinCookie), hasLength(1));
     expect(names.where((name) => name == RoutePath.kDouyuCookie), hasLength(1));
+    expect(names.where((name) => name == RoutePath.kDouyuAccountCookie), hasLength(1));
   });
 
   testWidgets('Douyin account row opens the canonical cookie route', (tester) async {
@@ -180,15 +181,31 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('disabled Douyu account row has no navigation affordance', (tester) async {
+  testWidgets('Douyu account row opens its distinct editor without reusing the legacy Douyin alias', (tester) async {
+    await _pumpAccountPage(tester, english);
+    final douyu = find.text('Douyu');
+    await _scrollPageUntilHitTestable(tester, douyu);
+    await tester.tap(douyu.hitTestable());
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('canonical-douyu-cookie')), findsOneWidget);
+    expect(find.byKey(const ValueKey('legacy-douyu-cookie')), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Douyu saved-session row labels local state and clears it on confirmation', (tester) async {
+    cookies.douyuCookie.value = 'acf_auth=fixture';
     await _pumpAccountPage(tester, english);
     final douyu = find.text('Douyu');
     await _scrollPageUntilHitTestable(tester, douyu);
     final tile = find.ancestor(of: douyu, matching: find.byType(ListTile));
-
-    expect(tester.widget<ListTile>(tile).enabled, isFalse);
-    expect(find.descendant(of: tile, matching: find.text('Disabled')), findsOneWidget);
-    expect(find.descendant(of: tile, matching: find.byIcon(Icons.chevron_right_rounded)), findsNothing);
+    expect(find.descendant(of: tile, matching: find.text('Cookie saved on this device')), findsOneWidget);
+    final logout = find.descendant(of: tile, matching: find.byType(IconButton));
+    await _scrollPageUntilHitTestable(tester, logout);
+    await tester.tap(logout.hitTestable());
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Logout'));
+    await tester.pumpAndSettle();
+    expect(cookies.douyuCookie.value, isEmpty);
     expect(tester.takeException(), isNull);
   });
 }
@@ -229,6 +246,10 @@ Future<void> _pumpAccountPage(WidgetTester tester, Map<String, dynamic> translat
             GetPage(
               name: RoutePath.kDouyuCookie,
               page: () => const Scaffold(key: ValueKey('legacy-douyu-cookie')),
+            ),
+            GetPage(
+              name: RoutePath.kDouyuAccountCookie,
+              page: () => const Scaffold(key: ValueKey('canonical-douyu-cookie')),
             ),
           ],
         ),

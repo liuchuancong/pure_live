@@ -42,6 +42,8 @@ import 'package:pure_live/modules/account/taobao/taobao_cookie_page.dart';
 import 'package:pure_live/modules/areas/favorite_areas_binding.dart';
 import 'package:pure_live/modules/account/soop/soop_cookie_page.dart';
 import 'package:pure_live/modules/account/huya/huya_cookie_page.dart';
+import 'package:pure_live/modules/account/douyu/douyu_cookie_page.dart';
+import 'package:pure_live/modules/account/douyu/douyu_cookie_binding.dart';
 import 'package:pure_live/modules/area_rooms/area_rooms_binding.dart';
 import 'package:pure_live/recorder/pages/recorder/recorder_page.dart';
 import 'package:pure_live/modules/account/bilibili/qr_login_page.dart';
@@ -145,6 +147,12 @@ class AppPages {
       name: RoutePath.kHuyaCookie,
       page: _smoothPage(() => const HuyaCookiePage()),
       bindings: [HuyaCookieBinding()],
+    ),
+
+    GetPage(
+      name: RoutePath.kDouyuAccountCookie,
+      page: _smoothPage(() => const DouyuCookiePage()),
+      bindings: [DouyuCookieBinding()],
     ),
 
     GetPage(

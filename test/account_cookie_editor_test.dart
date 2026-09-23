@@ -11,12 +11,16 @@ import 'package:pure_live/common/services/settings_service.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:pure_live/get/get.dart';
 import 'package:pure_live/modules/account/douyin/douyin_cookie_controller.dart';
+import 'package:pure_live/modules/account/douyu/douyu_cookie_controller.dart';
 import 'package:pure_live/modules/account/huya/huya_cookie_controller.dart';
 import 'package:pure_live/modules/account/kuaishou/kuaishou_cookie_controller.dart';
 import 'package:pure_live/modules/account/soop/soop_cookie_controller.dart';
 import 'package:pure_live/modules/account/taobao/taobao_cookie_controller.dart';
 import 'package:pure_live/modules/account/twitch/twitch_cookie_controller.dart';
 import 'package:pure_live/modules/account/widgets/account_cookie_editor.dart';
+import 'package:pure_live/core/site/douyu/douyu_utils.dart';
+import 'package:pure_live/player/core/playback_header_resolver.dart';
+import 'package:pure_live/recorder/services/ffmpeg_header_factory.dart';
 import 'package:pure_live/modules/account/yy/yy_cookie_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -59,23 +63,28 @@ void main() {
 
     final parsed = CookieSettingsController.parseConfig({
       'huyaCookie': ' \r\nhuya=backup\u0000 ',
+      'douyuCookie': ' \r\ndouyu=backup\u0000 ',
       'douyinCookie': 'douyin=backup',
       'taobaoCookie': ' taobao=backup\r\n ',
     });
     expect(parsed['huyaCookie'], 'huya=backup');
+    expect(parsed['douyuCookie'], 'douyu=backup');
     expect(parsed['douyinCookie'], 'douyin=backup');
     expect(parsed['taobaoCookie'], 'taobao=backup');
   });
 
   test('all platform cookie controllers persist the normalized header value', () {
     cookies.huyaCookie.value = ' \r\nhuya=stored\u0000 ';
+    cookies.douyuCookie.value = ' \r\ndouyu=stored\u0000 ';
     cookies.douyinCookie.value = ' \r\ndouyin=stored\u0000 ';
     cookies.onInit();
     expect(cookies.huyaCookie.value, 'huya=stored');
+    expect(cookies.douyuCookie.value, 'douyu=stored');
     expect(cookies.douyinCookie.value, 'douyin=stored');
 
     final douyin = DouyinCookieController();
     final huya = HuyaCookieController();
+    final douyu = DouyuCookieController();
     final kuaishou = KuaishouCookieController();
     final soop = SoopCookieBindingCookieController();
     final twitch = TwitchCookieBindingCookieController();
@@ -84,6 +93,7 @@ void main() {
     addTearDown(() {
       douyin.onClose();
       huya.onClose();
+      douyu.onClose();
       kuaishou.onClose();
       soop.onClose();
       twitch.onClose();
@@ -93,6 +103,7 @@ void main() {
 
     douyin.setCookie(' \r\ndouyin=value\u0000 ');
     huya.setCookie(' \r\nhuya=value\u0000 ');
+    douyu.setCookie(' \r\ndouyu=value\u0000 ');
     kuaishou.setCookie(' \r\nkuaishou=value\u0000 ');
     soop.setCookie(' \r\nsoop=value\u0000 ');
     twitch.setCookie(' \r\ntwitch=value\u0000 ');
@@ -101,11 +112,27 @@ void main() {
 
     expect(cookies.douyinCookie.value, 'douyin=value');
     expect(cookies.huyaCookie.value, 'huya=value');
+    expect(cookies.douyuCookie.value, 'douyu=value');
     expect(cookies.kuaishouCookie.value, 'kuaishou=value');
     expect(cookies.soopCookie.value, 'soop=value');
     expect(cookies.twitchCookie.value, 'twitch=value');
     expect(cookies.yyCookie.value, 'yy=value');
     expect(cookies.taobaoCookie.value, 'taobao=value');
+  });
+
+  test('Douyu session reaches signing, playback and recorder headers consistently', () async {
+    cookies.douyuCookie.value = 'acf_auth=fixture-secret; dy_did=old-device';
+    final request = DouyuUtils.requestHeaders('123');
+    final playback = await PlaybackHeaderResolver.resolve(platform: 'douyu', roomId: '123');
+    final recorder = await FFmpegHeaderFactory.build(platform: 'douyu', roomId: '123');
+    expect(request['cookie'], contains('acf_auth=fixture-secret'));
+    expect(playback['cookie'], request['cookie']);
+    expect(recorder['cookie'], request['cookie']);
+    expect(request['cookie'], contains('dy_did=${DouyuUtils.deviceId}'));
+    expect(request['cookie'], isNot(contains('old-device')));
+    expect(CookieSettingsController.parseConfig(cookies.toJson())['douyuCookie'], cookies.douyuCookie.value);
+    cookies.clearAllCookies();
+    expect(DouyuUtils.requestHeaders('123')['cookie'], isNot(contains('fixture-secret')));
   });
 
   testWidgets('cookie editor saves normalized input at narrow three-times text scale', (tester) async {
@@ -159,6 +186,7 @@ void main() {
     const paths = [
       'lib/modules/account/douyin/douyin_cookie_page.dart',
       'lib/modules/account/huya/huya_cookie_page.dart',
+      'lib/modules/account/douyu/douyu_cookie_page.dart',
       'lib/modules/account/kuaishou/kuaishou_cookie_page.dart',
       'lib/modules/account/soop/soop_cookie_page.dart',
       'lib/modules/account/twitch/twitch_cookie_page.dart',

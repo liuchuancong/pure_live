@@ -81,6 +81,8 @@ Pure Live 聚合多个第三方直播平台，并支持自定义直播源：
 
 支持按照平台、分区等条件进行筛选，也可以隐藏不关注的平台。
 
+当前源码的“第三方账号”页可选填斗鱼 Cookie，取流与播放/录制请求会使用同一会话；画质仍以平台实际确认档位显示。匿名接口可能将部分房间原画请求回落到 4M，登录态提升与长时稳定性需要在候选包中对照验证，见 [Issue #873 审计](docs/ISSUE_873_DOUYU_QUALITY_AND_SESSION_AUDIT_2026_09_23.md)。
+
 **未发布开发源码另有** AcFun、Picarto、TwitCasting、猫耳 FM、映客、克拉克拉、花椒、OPENREC / mellow-fan、TTingLive / FLEX TV、小红书、niconico、微博直播、SHOWROOM、CHZZK、Kick、17LIVE、LiveMe、TikTok LIVE、YouTube Live、Bigo Live、PandaTV、PopkonTV、Shopee Live、VK Video Live、NimoTV、Dailymotion、Rumble、GoodGame、FC2 Live、Steam Broadcasts、京东直播、淘宝直播、酷狗直播、百度直播、六间房直播与 LOOK 直播。上面的既有平台列表与本段源码范围分别看待；各入口、原生证据和未完成能力以[平台能力表](docs/PLATFORM_COMPATIBILITY.md)为准，不把测试数量或可返回媒体地址当成完整观看/录制通过。
 
 ### 自定义直播源
