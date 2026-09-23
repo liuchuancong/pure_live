@@ -93,12 +93,13 @@ class PlatformSettingsPage extends GetView<SettingsService> {
               groupValue: SettingsService.to.fav.preferPlatform.value,
               onChanged: (value) {
                 if (value == null) return;
-                SettingsService.to.fav.preferPlatform.value = value;
+                SettingsService.to.fav.changePreferPlatform(value);
                 Navigator.of(dialogContext).pop();
               },
               child: Column(
                 mainAxisSize: MainAxisSize.min,
-                children: Sites.supportSites
+                children: Sites()
+                    .availableSites()
                     .map(
                       (site) => RadioListTile<String>(
                         value: site.id,

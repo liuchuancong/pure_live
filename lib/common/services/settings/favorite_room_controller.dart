@@ -52,6 +52,7 @@ class FavoriteRoomController extends GetxController {
     _normalizeSiteCatalogIds();
     _normalizeFavoriteRoomIdentities();
     _migrateSiteCatalog();
+    _normalizePreferredPlatform();
   }
 
   static const List<String> _catalogAdditions = [
@@ -137,6 +138,12 @@ class FavoriteRoomController extends GetxController {
     final preferred = preferPlatform.v.trim().toLowerCase();
 
     preferPlatform.v = supported.contains(preferred) ? preferred : Sites.bilibiliSite;
+  }
+
+  void _normalizePreferredPlatform() {
+    if (hotAreasList.isNotEmpty && !hotAreasList.contains(preferPlatform.v)) {
+      preferPlatform.v = hotAreasList.first;
+    }
   }
 
   bool _sameStrings(List<String> left, List<String> right) {
@@ -492,7 +499,7 @@ class FavoriteRoomController extends GetxController {
   void changePreferPlatform(String name) {
     final normalized = name.trim().toLowerCase();
 
-    if (Sites.supportedSiteIds.contains(normalized)) {
+    if (hotAreasList.contains(normalized)) {
       preferPlatform.v = normalized;
     }
   }
@@ -563,6 +570,7 @@ class FavoriteRoomController extends GetxController {
     favoriteRooms.v = parsed['favoriteRooms'];
     favoriteAreas.v = parsed['favoriteAreas'];
     _normalizeSiteCatalogIds();
+    _normalizePreferredPlatform();
     _normalizeFavoriteRoomIdentities();
   }
 
