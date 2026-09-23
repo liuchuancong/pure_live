@@ -1,10 +1,10 @@
 import 'dart:io';
 
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/common/services/settings/cache_controller.dart';
+import 'package:pure_live/plugins/file_utils.dart';
 import 'package:pure_live/common/widgets/download_apk_dialog.dart';
 import 'package:pure_live/common/widgets/download_directory_dialog.dart';
-import 'package:pure_live/plugins/file_utils.dart';
+import 'package:pure_live/common/services/settings/cache_controller.dart';
 
 Uri? updateDownloadUri(String rawUrl) {
   final uri = FileUtils.parseHttpUrl(rawUrl);
@@ -24,16 +24,44 @@ Future<bool> requestStorageInstallPermission() async {
 }
 
 final List<String> mirrors = [
-  'https://gh-proxy.org/',
-  'https://gh.h233.eu.org/',
-  'https://git.yylx.win/',
-  'https://ghproxy.cc/',
+  // 🟢 最佳：api=200 + asset=206（支持断点续传）
   'https://cdn.gh-proxy.org/',
-  'https://wget.la/',
-  'https://github.ednovas.xyz/',
-  'https://down.npee.cn/?',
+  'https://edgeone.gh-proxy.org/',
+  'https://hk.gh-proxy.org/',
+  'https://gh.noki.eu.org/',
+  'https://gh-proxy.com/',
   'https://slink.ltd/',
+
+  // 🟡 可用：api=200 + asset=200
+  'https://gh.con.sh/',
+  'https://ghp.keleyaa.com/',
+  'https://ghproxy.cxkpro.top/',
+  'https://ghproxy.link/',
+  'https://gh-proxy.net/',
+  'https://gh-proxy.org/',
+  'https://gh-proxy.pages.dev/',
+  'https://ghpxy.hwinzniej.top/',
   'https://gitproxy.click/',
+  'https://tvv.tw/',
+  'https://v6.gh-proxy.org/',
+
+  // 🟠 仅下载可用：asset 正常，API 被限
+  'https://fastgit.cc/',
+  'https://gh.catmak.name/',
+  'https://ghfile.geekertao.top/',
+  'https://ghproxy.monkeyray.net/',
+  'https://github.ednovas.xyz/',
+  'https://proxy.gitwarp.top/',
+  'https://g.blfrp.cn/',
+  'https://gh.ddlc.top/',
+  'https://gh.xxooo.cf/',
+  'https://ghm.078465.xyz/',
+  'https://ghproxy.imciel.com/',
+  'https://ghproxy.net/',
+  'https://git.yylx.win/',
+  'https://github.geekery.cn/',
+  'https://gitproxy.mrhjx.cn/',
+  'https://wget.la/',
 ];
 
 Future<void>? _activeDownloadDialog;
