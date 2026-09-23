@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:easy_refresh/easy_refresh.dart';
@@ -37,6 +38,7 @@ void main() {
     await EasyLocalization.ensureInitialized();
     initRefresh();
     Hive.init(directory.path);
+    await Hive.openBox('app_settings', bytes: Uint8List(0));
     await HivePrefUtil.init();
     translations = jsonDecode(await File('assets/translations/zh.json').readAsString()) as Map<String, dynamic>;
     english = jsonDecode(await File('assets/translations/en.json').readAsString()) as Map<String, dynamic>;
@@ -128,9 +130,11 @@ void main() {
     await open(tester);
     final pending = refresh(tester);
     await tester.tap(find.byTooltip(translations['clear_history'] as String));
-    await tester.pumpAndSettle();
+    // The refresh indicator remains animated until the pending room requests
+    // complete, so the confirmation route must not wait for global quiescence.
+    await tester.pump(const Duration(milliseconds: 300));
     await tester.tap(find.widgetWithText(FilledButton, translations['clear'] as String));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 300));
     expect(find.byType(AlertDialog), findsNothing);
     expect(history.historyRooms.value, isEmpty);
     await complete(tester);
