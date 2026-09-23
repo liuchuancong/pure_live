@@ -12,6 +12,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 const Duration liveSearchRequestTimeout = Duration(seconds: 12);
 const int maxConsecutiveStagnantSearchPages = 2;
+const int maxConcurrentNativeSearchSites = 12;
 
 class SearchController extends GetxController {
   SearchController({List<Site>? searchSites, this.requestTimeout = liveSearchRequestTimeout})
@@ -273,9 +274,7 @@ class SearchController extends GetxController {
     final failures = <String>[];
     var completed = 0;
     final cancel = _searchCancel!;
-    final batchStream = Stream<_SiteSearchBatch>.fromFutures(
-      searchableSites.map((site) => _searchSite(site, keyword, page, cancel)),
-    );
+    final batchStream = _searchSitesBounded(searchableSites, keyword, page, cancel);
 
     // Render completed platforms immediately instead of holding the whole
     // result grid behind the slowest network request.
@@ -316,6 +315,34 @@ class SearchController extends GetxController {
     loading.v = false;
     loadingMore.v = false;
     pendingSiteCount.v = 0;
+  }
+
+  Stream<_SiteSearchBatch> _searchSitesBounded(
+    List<Site> searchableSites,
+    String keyword,
+    int page,
+    CancelToken cancel,
+  ) async* {
+    final active = <int, Future<_SiteSearchBatch>>{};
+    var next = 0;
+
+    void fillSlots() {
+      while (!cancel.isCancelled && active.length < maxConcurrentNativeSearchSites && next < searchableSites.length) {
+        final index = next++;
+        active[index] = _searchSite(searchableSites[index], keyword, page, cancel);
+      }
+    }
+
+    fillSlots();
+    while (active.isNotEmpty) {
+      final completed = await Future.any(
+        active.entries.map((entry) => entry.value.then((batch) => (index: entry.key, batch: batch))),
+      );
+      active.remove(completed.index);
+      yield completed.batch;
+      // Retired searches drain started requests but never open queued sites.
+      fillSlots();
+    }
   }
 
   bool _canLoadAnotherPage({
