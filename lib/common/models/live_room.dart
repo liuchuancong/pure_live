@@ -932,7 +932,14 @@ extension LiveRoomExtension on LiveRoom {
   }
 
   LiveRoom getLiveRoomWithError() {
-    return copyWith(liveStatus: LiveStatus.offline, status: false, isRecord: false);
+    // A failed detail request is not evidence that a broadcast ended. Keep
+    // the last known identity/metadata, but make playback status pending.
+    return copyWith(
+      liveStatus: LiveStatus.unknown,
+      status: false,
+      isRecord: false,
+      watching: (watching ?? '').trim() == '0' ? '' : watching,
+    );
   }
 
   /// Returns a fresh room snapshot for the original live stream.

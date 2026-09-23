@@ -10,7 +10,7 @@ void main() {
     expect(room.hasIdentity(platform: 'bilibili', roomId: '54321'), isFalse);
   });
 
-  test('error fallback returns an offline copy without mutating active room state', () {
+  test('request error keeps room status pending without mutating active state', () {
     final active = LiveRoom(
       platform: 'bilibili',
       roomId: '12345',
@@ -24,9 +24,16 @@ void main() {
     expect(fallback, isNot(same(active)));
     expect(fallback.status, isFalse);
     expect(fallback.isRecord, isFalse);
-    expect(fallback.liveStatus, LiveStatus.offline);
+    expect(fallback.liveStatus, LiveStatus.unknown);
+    expect(fallback.isLiveStatusPending, isTrue);
+    expect(fallback.isExplicitlyOfflineNow, isFalse);
     expect(active.status, isTrue);
     expect(active.isRecord, isTrue);
     expect(active.liveStatus, LiveStatus.live);
+  });
+
+  test('empty request-error fallback does not invent an audience value', () {
+    final fallback = LiveRoom(platform: 'bilibili', roomId: '12345').getLiveRoomWithError();
+    expect(fallback.audienceValue(preferRealOnline: false, platformEnabled: false), isEmpty);
   });
 }

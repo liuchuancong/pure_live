@@ -295,6 +295,9 @@ class LivePlayController extends GetxController
       if (isClosed) return;
       final current = state.value.room.detail;
       if (current?.roomId != roomId || current?.platform != platform) return;
+      // A request-error fallback is pending, not a newer broadcast state.
+      // Keep the attached player and its last known room while it plays.
+      if (fetched.isLiveStatusPending) return;
       final refreshed = fetched.withAudienceFallbackFrom(current!);
       final isLiving = refreshed.isPlayableNow;
       updateRoom(detail: refreshed, isLiving: isLiving, success: true, isLoading: false);
@@ -807,6 +810,11 @@ class LivePlayController extends GetxController
   }
 
   void _handleUnknownStatus() {
+    settleUnknownRoomMetadata();
+    if (state.value.player.hasPlaybackSource) {
+      if (Get.currentRoute == '/live_play') ToastUtil.show(i18n('get_room_info_failed_retry'));
+      return;
+    }
     unawaited(danmakuController.stopDanmaku());
     if (Get.currentRoute == '/live_play') {
       ToastUtil.show(i18n('get_room_info_failed_retry'));
@@ -814,6 +822,17 @@ class LivePlayController extends GetxController
       GlobalPlayerState.to.isFullscreen.value = false;
       GlobalPlayerState.to.isWindowFullscreen.value = false;
     }
+  }
+
+  @visibleForTesting
+  void settleUnknownRoomMetadata() {
+    final hasPlaybackSource = state.value.player.hasPlaybackSource;
+    updateRoom(
+      isLiving: hasPlaybackSource,
+      success: hasPlaybackSource,
+      isLoading: false,
+      loadError: i18n('get_room_info_failed_retry'),
+    );
   }
 
   void _handleCurrentLineAndQuality(ReloadDataType reloadDataType, int line, bool isReCalculate) {

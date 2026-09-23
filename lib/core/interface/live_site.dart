@@ -224,7 +224,7 @@ class LiveSite {
     return Future.value(
       LiveRoom(
         cover: '',
-        watching: '0',
+        watching: '',
         roomId: '',
         // The base implementation has no platform evidence. Treat it as
         // pending/unknown instead of fabricating an authoritative offline
