@@ -4,6 +4,7 @@ import 'package:pure_live/common/models/live_room.dart';
 import 'package:pure_live/core/danmaku/empty_danmaku.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
 import 'package:pure_live/core/interface/live_directory.dart';
+import 'package:pure_live/core/interface/live_search.dart';
 import 'package:pure_live/core/interface/live_site.dart';
 import 'package:pure_live/model/live_category.dart';
 import 'package:pure_live/model/live_play_quality.dart';
@@ -13,7 +14,12 @@ import 'picarto_api.dart';
 import 'picarto_hls.dart';
 
 class PicartoSite extends LiveSite
-    implements LiveSiteRoomRefresher, LiveSiteRecordRoomResolver, LivePlayRecoveryResolver, LiveSiteDirectoryPager {
+    implements
+        LiveSiteRoomRefresher,
+        LiveSiteRecordRoomResolver,
+        LivePlayRecoveryResolver,
+        LiveSiteDirectoryPager,
+        LiveCancellableSearch {
   PicartoSite({PicartoApi? api}) : _api = api ?? PicartoApi();
   final PicartoApi _api;
   @override
@@ -61,6 +67,18 @@ class PicartoSite extends LiveSite
     }
     return _api.directory(page: page, pageSize: pageSize, category: category);
   }
+
+  @override
+  Future<List<LiveRoom>> searchRooms(String keyword, {int page = 1, int pageSize = 30}) =>
+      searchRoomsCancellable(keyword, page: page, pageSize: pageSize);
+
+  @override
+  Future<List<LiveRoom>> searchRoomsCancellable(
+    String keyword, {
+    int page = 1,
+    int pageSize = 30,
+    CancelToken? cancel,
+  }) => _api.searchProfiles(keyword, page: page, pageSize: pageSize, cancel: cancel);
 
   @override
   Future<LiveRoom> getRoomDetailForRefresh({required String roomId, required String platform}) async =>

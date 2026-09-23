@@ -184,6 +184,57 @@ class PicartoApi {
     return List.unmodifiable(result.values);
   }
 
+  /// The official profile search includes offline channels. Its `count` is
+  /// inconsistent across pages, so the caller advances on returned rows only.
+  Future<List<LiveRoom>> searchProfiles(String keyword, {int page = 1, int pageSize = 20, CancelToken? cancel}) async {
+    final query = keyword.trim();
+    if (page < 1 || page > 10000 || pageSize < 1 || pageSize > 60 || query.length > 100) {
+      throw const PicartoException(PicartoFailure.schema);
+    }
+    if (query.isEmpty) return const [];
+    final uri = Uri.parse('$apiOrigin/api/search').replace(
+      queryParameters: {
+        'first': '$pageSize',
+        'page': '$page',
+        'q': query,
+        'type': 'searchProfiles',
+        'tag_search': 'false',
+      },
+    );
+    final payload = object(await read(uri, cancel: cancel));
+    final result = object(payload['searchProfiles']);
+    final rows = result['data'];
+    if (rows is! List || rows.length > pageSize) throw const PicartoException(PicartoFailure.schema);
+    final rooms = <String, LiveRoom>{};
+    for (final raw in rows) {
+      final profile = object(raw);
+      final id = integer(profile['id']);
+      final name = channelName(text(profile['name']));
+      final online = profile['online'];
+      final followers = integer(profile['follower_count']);
+      if (id == null || id <= 0 || online is! bool || (followers != null && followers < 0)) {
+        throw const PicartoException(PicartoFailure.schema);
+      }
+      rooms.putIfAbsent(
+        name.toLowerCase(),
+        () => LiveRoom(
+          platform: 'picarto',
+          roomId: name,
+          userId: '$id',
+          nick: name,
+          link: '$origin/${Uri.encodeComponent(name)}',
+          avatar: imageUrl(profile['avatar']),
+          watching: '',
+          followers: followers == null ? '' : '$followers',
+          audienceMetricType: AudienceMetricType.unknown,
+          status: online,
+          liveStatus: online ? LiveStatus.live : LiveStatus.offline,
+        ),
+      );
+    }
+    return List.unmodifiable(rooms.values);
+  }
+
   Future<List<LiveRoom>> directory({int page = 1, int pageSize = 30, LiveArea? category, CancelToken? cancel}) async =>
       (await directoryPage(page: page, pageSize: pageSize, category: category, cancel: cancel)).rooms;
 

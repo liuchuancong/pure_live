@@ -10,6 +10,7 @@ import 'package:pure_live/common/models/live_room.dart';
 import 'package:pure_live/common/utils/live_url_tool.dart';
 import 'package:pure_live/core/interface/live_site.dart';
 import 'package:pure_live/core/interface/live_directory.dart';
+import 'package:pure_live/core/interface/live_search.dart';
 import 'package:pure_live/core/common/http_client.dart' as core;
 import 'package:pure_live/core/site/picarto/picarto_api.dart';
 import 'package:pure_live/core/site/picarto/picarto_hls.dart';
@@ -66,6 +67,23 @@ Map<String, dynamic> categories() => {
   'languages': [],
   'video_categories': [],
 };
+Map<String, dynamic> profileSearch({List<Object?>? rows, int count = 2}) => {
+  'searchProfiles': {
+    'count': count,
+    'data':
+        rows ??
+        [
+          {
+            'id': 15237,
+            'name': 'Artist',
+            'online': true,
+            'follower_count': 915,
+            'avatar': 'https://images.picarto.tv/a.jpg',
+          },
+          {'id': 24680, 'name': 'OfflineArtist', 'online': false, 'follower_count': 24, 'avatar': null},
+        ],
+  },
+};
 Matcher failure(PicartoFailure kind) => throwsA(isA<PicartoException>().having((e) => e.kind, 'kind', kind));
 
 void main() {
@@ -100,9 +118,12 @@ void main() {
     expect(site, isA<LiveSiteRoomRefresher>());
     expect(site, isA<LivePlayRecoveryResolver>());
     expect(site, isA<LiveSiteDirectoryPager>());
+    expect(site, isA<LiveCancellableSearch>());
     expect(Sites.supportSites.where((s) => s.id == 'picarto'), hasLength(1));
     final capability = LiveSearchCapabilities.forPlatform('picarto');
-    expect(capability.supportsNativeSearch, isFalse);
+    expect(capability.coverage, NativeSearchCoverage.liveAndOffline);
+    expect(capability.supportsNativeSearch, isTrue);
+    expect(capability.supportsPagination, isTrue);
     expect(capability.supportsWebSearch, isTrue);
     expect(MultiviewDanmakuSession.isSupportedPlatform('picarto'), isFalse);
   });
@@ -258,6 +279,90 @@ void main() {
       final api = PicartoApi(request: (_, _) async => (status: 200, body: jsonEncode(data)));
       await expectLater(api.categories(), failure(PicartoFailure.schema));
     }
+  });
+
+  test('official profile search pages include offline identities without inventing audience', () async {
+    final requests = <Uri>[];
+    final api = PicartoApi(
+      request: (uri, _) async {
+        requests.add(uri);
+        return (status: 200, body: jsonEncode(profileSearch(count: 0)));
+      },
+    );
+    final rooms = await api.searchProfiles(' artist ', page: 2, pageSize: 20);
+    expect(requests, hasLength(1));
+    final uri = requests.single;
+    expect(uri.path, '/api/search');
+    expect(uri.queryParameters, containsPair('type', 'searchProfiles'));
+    expect(uri.queryParameters, containsPair('q', 'artist'));
+    expect(uri.queryParameters, containsPair('first', '20'));
+    expect(uri.queryParameters, containsPair('page', '2'));
+    expect(uri.queryParameters, containsPair('tag_search', 'false'));
+    expect(rooms.map((room) => room.roomId), ['Artist', 'OfflineArtist']);
+    expect(rooms.first.isLiveNow, isTrue);
+    expect(rooms.last.isExplicitlyOfflineNow, isTrue);
+    expect(rooms.first.followers, '915');
+    expect(rooms.first.onlineViewers, isEmpty);
+    expect(rooms.first.watching, isEmpty);
+    expect(rooms.first.audienceMetricType, AudienceMetricType.unknown);
+    expect(rooms.last.link, 'https://picarto.tv/OfflineArtist');
+  });
+
+  test('profile search rejects bad rows and invalid page before network I/O', () async {
+    var calls = 0;
+    final api = PicartoApi(
+      request: (_, _) async {
+        calls++;
+        return (status: 200, body: jsonEncode(profileSearch()));
+      },
+    );
+    for (final page in [0, 10001]) {
+      await expectLater(api.searchProfiles('artist', page: page), failure(PicartoFailure.schema));
+    }
+    for (final size in [0, 61]) {
+      await expectLater(api.searchProfiles('artist', pageSize: size), failure(PicartoFailure.schema));
+    }
+    expect(await api.searchProfiles(' '), isEmpty);
+    expect(calls, 0);
+    for (final body in [
+      <String, dynamic>{},
+      {
+        'searchProfiles': {'data': {}},
+      },
+      profileSearch(
+        rows: [
+          {'id': 1, 'name': 'Artist', 'online': null},
+        ],
+      ),
+      profileSearch(
+        rows: [
+          {'id': 1, 'name': 'Artist', 'online': true, 'follower_count': -1},
+        ],
+      ),
+    ]) {
+      final malformed = PicartoApi(request: (_, _) async => (status: 200, body: jsonEncode(body)));
+      await expectLater(malformed.searchProfiles('artist'), failure(PicartoFailure.schema));
+    }
+  });
+
+  test('site search forwards cancellation and keeps profile search independent from media', () async {
+    final token = CancelToken();
+    final calls = <Uri>[];
+    final site = PicartoSite(
+      api: PicartoApi(
+        request: (uri, cancel) async {
+          expect(cancel, same(token));
+          calls.add(uri);
+          return (status: 200, body: jsonEncode(profileSearch()));
+        },
+      ),
+    );
+    final rooms = await site.searchRoomsCancellable('artist', cancel: token);
+    expect(rooms, hasLength(2));
+    expect(calls.map((uri) => uri.path), ['/api/search']);
+    token.cancel();
+    await expectLater(site.searchRoomsCancellable('artist', cancel: token), failure(PicartoFailure.cancelled));
+    expect(calls, hasLength(1));
   });
 
   test('invalid pagination is rejected without network I/O', () async {
