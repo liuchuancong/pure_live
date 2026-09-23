@@ -77,6 +77,78 @@ class LiveSearchCapabilities {
       supportsPagination: false,
       supportsWebSearch: false,
     ),
+    // These registered adapters already implement native search. Keep their
+    // UI capability in sync with the actual exact-ID, snapshot or paged API.
+    Sites.shopeeLiveSite: LiveSearchCapability(
+      coverage: NativeSearchCoverage.liveAndOffline,
+      supportsPagination: false,
+      supportsWebSearch: false,
+    ),
+    Sites.vkVideoLiveSite: LiveSearchCapability(
+      coverage: NativeSearchCoverage.liveAndOffline,
+      supportsPagination: true,
+      supportsWebSearch: false,
+    ),
+    Sites.nimoTvSite: LiveSearchCapability(
+      coverage: NativeSearchCoverage.liveAndOffline,
+      supportsPagination: true,
+      supportsWebSearch: false,
+    ),
+    Sites.dailymotionSite: LiveSearchCapability(
+      coverage: NativeSearchCoverage.liveAndOffline,
+      supportsPagination: true,
+      supportsWebSearch: false,
+    ),
+    Sites.rumbleSite: LiveSearchCapability(
+      coverage: NativeSearchCoverage.liveAndOffline,
+      supportsPagination: true,
+      supportsWebSearch: false,
+    ),
+    Sites.goodGameSite: LiveSearchCapability(
+      coverage: NativeSearchCoverage.liveAndOffline,
+      supportsPagination: true,
+      supportsWebSearch: false,
+    ),
+    Sites.fc2LiveSite: LiveSearchCapability(
+      coverage: NativeSearchCoverage.liveAndOffline,
+      supportsPagination: true,
+      supportsWebSearch: false,
+    ),
+    Sites.steamBroadcastSite: LiveSearchCapability(
+      coverage: NativeSearchCoverage.liveAndOffline,
+      supportsPagination: true,
+      supportsWebSearch: false,
+    ),
+    Sites.jdLiveSite: LiveSearchCapability(
+      coverage: NativeSearchCoverage.liveAndOffline,
+      supportsPagination: true,
+      supportsWebSearch: false,
+    ),
+    Sites.taobaoLiveSite: LiveSearchCapability(
+      coverage: NativeSearchCoverage.roomLookup,
+      supportsPagination: false,
+      supportsWebSearch: false,
+    ),
+    Sites.kugouLiveSite: LiveSearchCapability(
+      coverage: NativeSearchCoverage.liveAndOffline,
+      supportsPagination: true,
+      supportsWebSearch: false,
+    ),
+    Sites.baiduLiveSite: LiveSearchCapability(
+      coverage: NativeSearchCoverage.roomLookup,
+      supportsPagination: false,
+      supportsWebSearch: false,
+    ),
+    Sites.sixRoomSite: LiveSearchCapability(
+      coverage: NativeSearchCoverage.liveAndOffline,
+      supportsPagination: false,
+      supportsWebSearch: false,
+    ),
+    Sites.lookLiveSite: LiveSearchCapability(
+      coverage: NativeSearchCoverage.roomLookup,
+      supportsPagination: false,
+      supportsWebSearch: false,
+    ),
     Sites.xiaohongshuSite: LiveSearchCapability(
       coverage: NativeSearchCoverage.roomLookup,
       supportsPagination: false,

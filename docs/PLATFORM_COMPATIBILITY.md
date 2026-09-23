@@ -6,6 +6,8 @@
 
 2026-09-22 按 `lib/core/sites.dart` 核对：当前源码注册 **45 个直播站点 + IPTV，共 46 个适配器**。这是源码注册数量，不是已发布包或完整验收数量。小红书、niconico、微博、SHOWROOM、CHZZK、Kick、17LIVE、LiveMe、TikTok LIVE、YouTube Live、Bigo Live、PandaTV、PopkonTV、Shopee Live、VK Video Live、NimoTV、Dailymotion、Rumble、GoodGame、FC2 Live、Steam Broadcasts、京东直播、淘宝直播、酷狗直播、百度直播、六间房直播和 LOOK 直播已接入应用入口；原生整体验收继续，当前候选与完整剩余范围以[验收状态](ACCEPTANCE_STATUS_3_2_0.md)为准。
 
+2026-09-23 搜索页能力表已与这 46 个已注册适配器核对：此前 14 个新平台虽有原生查询实现，UI 却因缺少能力登记而落到通用网页搜索；现已逐一标注搜索范围与分页，45 个平台提供原生搜索入口，快手保持已有网页入口。范围与回归见[搜索能力登记审计](SEARCH_REGISTRY_COVERAGE_AUDIT_2026_09_23.md)。该数量是源码入口，不等于 45 个平台的生产可达或双端原生验收通过。
+
 ### 09-09 及更早阶段的取证快照
 
 OPENREC / mellow-fan 已接入复合频道身份、公开目录与 HLS 质量；当前源码补精确频道查询，2026-09-23 本机公共接口 CloudFront 403，现网整链可达性与原生验收仍有缺口，见[应用审计](OPENREC_APPLICATION_INTEGRATION_AUDIT_2026_09_09.md)和[精确查询及访问记录](OPENREC_EXACT_CHANNEL_SEARCH_AUDIT_2026_09_23.md)。TTingLive / FLEX TV 已接入有限首页目录、精确频道查询及按源 token 策略；应用回归 201/201，最新生产注册适配器与 24 份 HLS 列表链路通过，后续 Windows 原生短录两次采集目标失败；保留片段的合并/完整解码通过，但起始延迟及音视频时间覆盖仍待修，完整录制未通过，见[应用审计](TTING_APPLICATION_INTEGRATION_AUDIT_2026_09_09.md)、[生产链路审计](TTING_PRODUCTION_RELAY_AUDIT_2026_09_09.md)及[原生短录审计](TTING_NATIVE_RECORDING_AUDIT_2026_09_09.md)。
@@ -60,8 +62,8 @@ TwitCasting 新增公开目录、顶栏分类、详情/HLS三档、录制输入�
 | Shopee Live（印尼） | 官网首页有限公开直播推荐快照，不宣称全站目录 | 当前快照标题关键词、精确场次 ID 与官方分享链接 | 当前未接入 | 目录 `view_count` 与详情 `viewer_count` 为当前观看；`member_cnt` 不作并发人数 |
 | VK Video Live | 官网公开分类与在线直播目录，保留服务端 offset 游标 | 原生频道搜索，保留 after 游标并包含未开播频道；当前与旧版官方频道链接均可回流 | 当前未接入 | `count.viewers` 为当前观看；`count.views` 为累计场次观看；频道 `subscribers` 为关注数，分列展示 |
 | NimoTV | 官网首页公开推荐有限快照 | 当前快照关键词、精确频道号、频道别名与官方房间链接，包含未开播状态 | 当前未接入 | 官网卡片与直播页 `viewerNum` 为当前观看；下播或缺值时保持未知 |
-| Dailymotion | 官网公开 API 的原生直播目录，保留 `page/limit/has_more` | 直播节目关键词、精确视频 ID、官方视频链接；精确频道名可返回当前直播 | 当前未接入 | 公开 API 未返回已核验的并发人数，保持未知；不以累计播放量替代 |
-| Rumble | 官网公开直播目录，保留原生 `page` 与 `rel=next` | 当前直播目录内按标题、频道、分类匹配；精确直播页和频道链接 | 当前未接入 | 直播卡片及直播页动态字段为当前观看；VideoObject `userInteractionCount` 为累计观看，分列展示 |
+| Dailymotion | 官网公开 API 的原生直播目录，保留 `page/limit/has_more` | 直播节目关键词、精确视频 ID、官方视频链接；精确频道名可返回当前直播，已结束的直播视频 ID 可返回离线 | 当前未接入 | 公开 API 未返回已核验的并发人数，保持未知；不以累计播放量替代 |
+| Rumble | 官网公开直播目录，保留原生 `page` 与 `rel=next` | 当前直播目录内按标题、频道、分类匹配；精确直播页和频道链接 | 当前未接入 | 直播卡片及直播页动态字段为当前观看；VideoObject `userInteractionCount` 为累计观看，分列展示；HLS master 保留换行解析 |
 | GoodGame | 官网 API 的 GoodGame 原生直播目录，保留每页 50 条和服务端总量 | 精确频道/播放器链接；当前目录页内按标题、主播和游戏匹配 | 当前未接入 | `viewers` 为当前观看；`rating`、premium 计数与粉丝分别处理 |
 | FC2 Live | 官网普通内容有限快照；公开分类在同一快照内筛选 | 精确频道号/官网房间链接，含未开播；关键词在当前快照内匹配 | 当前未接入 | `count` 为当前观看，`total` 为本场累计观看；付费/登录/门票房间保持受限状态 |
 | Steam Broadcasts | 官网热门社区直播原生分页，每页 10 条 | 当前目录页内按游戏、主播和标题匹配；精确 SteamID64/官方观看链接查询 | 当前未接入 | 目录和观看接口分别返回当前并发观看数；受限账号保持未知状态 |

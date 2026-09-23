@@ -213,7 +213,10 @@ return JSON.stringify({
 
   static List<RumbleQuality> _parseMedia(Map<String, dynamic> payload) {
     final masterUrl = _string(payload['masterUrl']);
-    final playlist = _string(payload['playlist']);
+    // HLS is line-oriented. The generic text sanitizer collapses whitespace
+    // for labels and would erase every playlist line break before parsing.
+    final playlist = payload['playlist'];
+    if (playlist is! String) throw const RumbleException(RumbleFailure.schema);
     final master = Uri.tryParse(masterUrl);
     if (master == null ||
         master.scheme != 'https' ||

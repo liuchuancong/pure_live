@@ -29,7 +29,11 @@ void main() {
 
   test('directory parser separates current and cumulative audience values', () {
     final directory = Fc2Api.parseDirectory(_directoryPayload());
-    expect(directory.rooms, hasLength(2), reason: 'open-chat entries are not public media rooms');
+    expect(
+      directory.rooms,
+      hasLength(3),
+      reason: 'open-chat entries are filtered; ticket rooms remain visible as restricted',
+    );
     final public = directory.rooms.first;
     expect(public.channelId, '10608314');
     expect(public.currentViewers, 61);
@@ -56,7 +60,7 @@ void main() {
     final site = Fc2Site(api: _Fc2FixtureApi());
     final categories = (await site.getCategores(1, 30)).single.children;
     final all = await site.getDirectoryPage(category: categories.first);
-    expect(all.rooms, hasLength(2));
+    expect(all.rooms, hasLength(3));
     expect(all.rooms.first.onlineViewers, '61');
     expect(all.rooms.first.totalViewers, '1727');
     expect(all.rooms.first.audienceMetricType, AudienceMetricType.onlineViewers);

@@ -38,7 +38,7 @@ void main() {
     final first = await site.getDirectoryPage(category: category);
     expect(first.rooms.single.roomId, 'x3b68jn');
     expect(first.rooms.single.effectiveLiveStatus, LiveStatus.live);
-    expect(first.rooms.single.onlineViewers, isNull);
+    expect(first.rooms.single.onlineViewers, isEmpty);
     expect(first.rooms.single.audienceMetricType, AudienceMetricType.unknown);
     expect(first.hasMore, isTrue);
 
@@ -47,6 +47,18 @@ void main() {
     final channel = await site.searchRooms('CNEWS');
     expect(channel.single.nick, 'CNEWS');
     expect(transport.userCalls, 1);
+  });
+
+  test('exact live-video identity can return an ended broadcast without a false online count', () async {
+    final site = DailymotionSite(
+      api: DailymotionApi(
+        request: (_, _, _) async => (status: 200, body: jsonEncode({..._FixtureTransport._video(), 'onair': false})),
+      ),
+      mediaResolver: _FixtureMedia(),
+    );
+    final room = (await site.searchRooms('x3b68jn')).single;
+    expect(room.isExplicitlyOfflineNow, isTrue);
+    expect(room.onlineViewers, isEmpty);
   });
 
   test('embedded player payload validates and sorts native HLS renditions', () {
