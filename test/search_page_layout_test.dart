@@ -231,7 +231,7 @@ void main() {
     }
   }
 
-  for (final platform in [Sites.kuaishouSite, Sites.openrecSite, Sites.huajiaoSite, Sites.kilakilaSite]) {
+  for (final platform in [Sites.kuaishouSite, Sites.openrecSite, Sites.kilakilaSite]) {
     testWidgets('$platform unsupported native search offers only a useful action', (tester) async {
       final c = await _mount(tester, platform: platform);
       expect(c.canSearchNatively, false);
@@ -250,7 +250,13 @@ void main() {
     });
   }
 
-  for (final platform in [Sites.picartoSite, Sites.inkeSite, Sites.missevanSite, Sites.twitcastingSite]) {
+  for (final platform in [
+    Sites.picartoSite,
+    Sites.inkeSite,
+    Sites.missevanSite,
+    Sites.twitcastingSite,
+    Sites.huajiaoSite,
+  ]) {
     testWidgets('$platform native search is actionable and keeps its web capability', (tester) async {
       final c = await _mount(tester, platform: platform);
       expect(c.canSearchNatively, true);

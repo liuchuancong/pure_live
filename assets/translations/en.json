@@ -1653,6 +1653,7 @@
     "site_twitcasting": "TwitCasting",
     "site_acfun": "AcFun Live",
     "search_coverage_acfun": "Search AcFun authors, including live and offline authors. Live status is refreshed on entry; followers are not concurrent viewers.",
+    "search_coverage_huajiao": "Huajiao supports exact account IDs or official broadcaster profile links, including offline accounts; name and keyword search are not integrated.",
     "audience_acfun_detail": "Live directory and room details use onlineCount. Likes and followers remain separate; author search has no concurrent count.",
     "remote_danmaku_not_integrated": "Remote chat is not integrated for this platform. You can enable local interaction in settings; its messages appear only on this device.",
     "soop_cookie_hint": "Paste the SOOP Live Cookie",

@@ -14,6 +14,7 @@ import 'package:pure_live/common/services/settings_service.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:pure_live/common/utils/live_url_tool.dart';
 import 'package:pure_live/core/interface/live_directory.dart';
+import 'package:pure_live/core/interface/live_search.dart';
 import 'package:pure_live/core/interface/live_site.dart';
 import 'package:pure_live/core/site/huajiao/huajiao_api.dart';
 import 'package:pure_live/core/site/huajiao/huajiao_link.dart';
@@ -125,7 +126,9 @@ void main() {
     expect(Sites.supportSites.where((s) => s.id == 'huajiao'), hasLength(1));
     expect(Sites.supportSites.map((s) => s.id).toSet(), Sites.supportedSiteIds);
     expect(LiveSearchCapabilities.forPlatform('huajiao').supportsWebSearch, isFalse);
-    expect(LiveSearchCapabilities.forPlatform('huajiao').supportsNativeSearch, isFalse);
+    expect(LiveSearchCapabilities.forPlatform('huajiao').coverage, NativeSearchCoverage.channelLookup);
+    expect(LiveSearchCapabilities.forPlatform('huajiao').supportsNativeSearch, isTrue);
+    expect(site.liveSite, isA<LiveCancellableSearch>());
     expect(LiveRoom.audienceCapabilityFor('huajiao').supportsConcurrentOnline, isFalse);
     final popular = PopularController();
     addTearDown(popular.onClose);
@@ -324,6 +327,63 @@ void main() {
     expect(json.containsKey('data'), isFalse);
     expect(full.link, HuajiaoLink.ownerUrl('100'));
     expect(RoomExternalOpener.resolve('huajiao', LiveRoom.fromJson(json))!.web, HuajiaoLink.ownerUrl('100'));
+  });
+
+  test('exact Huajiao ID and verified profile link search include offline owners without media', () async {
+    final calls = <Uri>[];
+    final source = HuajiaoSite(
+      api: _api(living: () => 0, called: calls.add),
+    );
+    for (final query in ['100', 'https://h.huajiao.com/site/profile_100.html']) {
+      final room = (await source.searchRooms(query)).single;
+      expect(room.roomId, '100');
+      expect(room.nick, 'Fixture');
+      expect(room.link, 'https://h.huajiao.com/site/profile_100.html');
+      expect(room.isExplicitlyOfflineNow, isTrue);
+      expect(room.watching, isEmpty);
+      expect(room.onlineViewers, isEmpty);
+    }
+    expect(calls.map((uri) => uri.path), ['/Web/UserInfo/full', '/Web/UserInfo/full']);
+    expect(calls.map((uri) => uri.queryParameters['uid']), ['100', '100']);
+  });
+
+  test('search has one bounded identity request and ignores unsupported terms and broadcast links', () async {
+    final calls = <Uri>[];
+    final source = HuajiaoSite(api: _api(called: calls.add));
+    for (final query in [
+      'Fixture',
+      '000100',
+      'https://h.huajiao.com/l/index?liveid=200',
+      'https://evil.test/user/100',
+    ]) {
+      expect(await source.searchRooms(query), isEmpty);
+    }
+    expect(await source.searchRooms('100', page: 2), isEmpty);
+    expect(calls, isEmpty);
+    final room = (await source.searchRooms('100')).single;
+    expect(room.isLiveNow, isTrue);
+    expect(room.status, isTrue);
+    expect(room.audienceMetricType, AudienceMetricType.unknown);
+    expect(calls.map((uri) => uri.path), ['/Web/UserInfo/full']);
+  });
+
+  test('unknown Huajiao UID is empty search while schema and cancellation stay errors', () async {
+    final missing = HuajiaoSite(api: HuajiaoApi(request: (_, _) async => _ok({'base': [], 'living': 0})));
+    expect(await missing.searchRooms('9999999999999999'), isEmpty);
+    final malformed = HuajiaoSite(api: HuajiaoApi(request: (_, _) async => _ok({'base': null, 'living': 0})));
+    await expectLater(malformed.searchRooms('100'), _failure(HuajiaoFailure.schema));
+    final token = CancelToken();
+    final cancelled = HuajiaoSite(
+      api: HuajiaoApi(
+        request: (_, cancel) async {
+          expect(cancel, same(token));
+          return _ok(_owner(0));
+        },
+      ),
+    );
+    expect((await cancelled.searchRoomsCancellable('100', cancel: token)).single.roomId, '100');
+    token.cancel();
+    await expectLater(cancelled.searchRoomsCancellable('100', cancel: token), _failure(HuajiaoFailure.cancelled));
   });
 
   test('legacy pages replay server offsets; invalid cursor/category do not send requests', () async {

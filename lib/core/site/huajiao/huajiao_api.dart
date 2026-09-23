@@ -11,6 +11,7 @@ enum HuajiaoFailure {
   access,
   rateLimited,
   service,
+  notFound,
   schema,
   cancelled,
   restricted,
@@ -188,6 +189,11 @@ class HuajiaoApi {
       'with_living': '1',
       'with_counter': '1',
     }, cancel);
+    // The anonymous endpoint returns an empty base list (rather than an
+    // error code) for an unknown UID. Keep malformed non-empty shapes strict.
+    if (data['base'] is List && (data['base'] as List).isEmpty && _integer(data['living']) == 0) {
+      throw const HuajiaoException(HuajiaoFailure.notFound);
+    }
     final base = _object(data['base']);
     if (_id(base['uid']) != uid) throw const HuajiaoException(HuajiaoFailure.identity);
     final living = _integer(data['living']);

@@ -1655,6 +1655,7 @@
     "site_twitcasting": "TwitCasting",
     "site_acfun": "AcFun 直播",
     "search_coverage_acfun": "搜索 AcFun 作者，包含直播中和未开播作者；进入房间时重新确认开播状态，粉丝数不代表在线人数。",
+    "search_coverage_huajiao": "花椒仅支持精确花椒号或官方主播主页链接，可返回未开播主播；昵称与关键词搜索尚未接入。",
     "audience_acfun_detail": "直播目录和房间详情使用 onlineCount；点赞和粉丝数单独保留，作者搜索不含在线人数",
     "remote_danmaku_not_integrated": "此平台的远端弹幕尚未接入；可在设置中开启本地互动，仅在本机显示。",
     "audience_soop_detail": "推荐和搜索优先使用 total_view_cnt（PC + 移动端）；分类使用 view_cnt，缺少总数时才合并 PC/移动端字段，播放器详情缺值不写成 0",

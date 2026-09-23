@@ -110,7 +110,7 @@ class LiveSearchCapabilities {
       supportsWebSearch: false,
     ),
     Sites.huajiaoSite: LiveSearchCapability(
-      coverage: NativeSearchCoverage.unavailable,
+      coverage: NativeSearchCoverage.channelLookup,
       supportsPagination: false,
       supportsWebSearch: false,
     ),
