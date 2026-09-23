@@ -60,7 +60,8 @@ void main() {
         LiveRoom(platform: 'missevan', watching: '120').effectiveAudienceMetricType,
         AudienceMetricType.popularity,
       );
-      expect(LiveSearchCapabilities.forPlatform('missevan').supportsNativeSearch, isFalse);
+      expect(LiveSearchCapabilities.forPlatform('missevan').coverage, NativeSearchCoverage.roomLookup);
+      expect(LiveSearchCapabilities.forPlatform('missevan').supportsNativeSearch, isTrue);
       expect(LiveSearchCapabilities.forPlatform('missevan').supportsWebSearch, isFalse);
       expect(MultiviewDanmakuSession.isSupportedPlatform('missevan'), isFalse);
       expect(MultiviewDanmakuSession.isSupportedPlatform('future-platform'), isFalse);
@@ -144,6 +145,54 @@ void main() {
     });
   });
   group('public detail contract', () {
+    test('exact room or official link lookup includes offline rooms without parsing media', () async {
+      final calls = <String>[];
+      final site = MissevanSite(
+        api: MissevanApi(
+          request: (uri, _) async {
+            calls.add(uri.toString());
+            final info = _detail(open: uri.path.endsWith('/101') ? 0 : 1);
+            (info['room'] as Map)['room_id'] = uri.path.endsWith('/101') ? 101 : 100;
+            (info['room'] as Map)['channel'] = 'not required for search';
+            return _ok(info);
+          },
+        ),
+      );
+      final live = await site.searchRooms('100');
+      expect(live.single.roomId, '100');
+      expect(live.single.isLiveNow, isTrue);
+      expect(live.single.data, isEmpty);
+      final offline = await site.searchRooms('https://fm.missevan.com/live/101', pageSize: 1);
+      expect(offline.single.roomId, '101');
+      expect(offline.single.isExplicitlyOfflineNow, isTrue);
+      expect(await site.searchRooms('101', page: 2), isEmpty);
+      for (final input in [
+        '主播昵称',
+        'https://fm.missevan.com/catalog/100',
+        'https://fm.missevan.com.evil.test/live/100',
+      ]) {
+        expect(await site.searchRooms(input), isEmpty);
+      }
+      expect(calls, ['https://fm.missevan.com/api/v2/live/100', 'https://fm.missevan.com/api/v2/live/101']);
+    });
+
+    test('exact lookup maps only confirmed absence to empty and forwards cancellation', () async {
+      final token = CancelToken();
+      final absent = MissevanSite(
+        api: MissevanApi(
+          request: (uri, cancel) async {
+            expect(identical(cancel, token), isTrue);
+            return (status: 404, body: '');
+          },
+        ),
+      );
+      expect(await absent.searchRoomsCancellable('100', cancel: token), isEmpty);
+      final denied = MissevanSite(api: MissevanApi(request: (uri, cancel) async => (status: 403, body: '')));
+      await expectLater(denied.searchRooms('100'), _failure(MissevanFailure.access));
+      final cancelled = CancelToken()..cancel();
+      await expectLater(absent.searchRoomsCancellable('100', cancel: cancelled), _failure(MissevanFailure.cancelled));
+    });
+
     test('HTTPS streams, stable transport IDs, score is heat rather than viewers', () async {
       final site = MissevanSite(api: _fixed(_detail()));
       final room = await site.getRoomDetail(roomId: '100', platform: 'missevan');

@@ -100,7 +100,7 @@ class LiveSearchCapabilities {
     Sites.picartoSite: LiveSearchCapability(coverage: NativeSearchCoverage.webOnly, supportsPagination: false),
     Sites.twitcastingSite: LiveSearchCapability(coverage: NativeSearchCoverage.webOnly, supportsPagination: false),
     Sites.missevanSite: LiveSearchCapability(
-      coverage: NativeSearchCoverage.unavailable,
+      coverage: NativeSearchCoverage.roomLookup,
       supportsPagination: false,
       supportsWebSearch: false,
     ),

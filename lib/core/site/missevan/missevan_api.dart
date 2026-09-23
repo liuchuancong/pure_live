@@ -255,7 +255,7 @@ class MissevanApi {
     );
   }
 
-  Future<LiveRoom> detail(String input, {CancelToken? cancel}) async {
+  Future<LiveRoom> detail(String input, {bool includeMedia = true, CancelToken? cancel}) async {
     final id = roomId(input);
     final info = await _get('live/$id', cancel: cancel);
     final row = _object(info['room']);
@@ -269,9 +269,9 @@ class MissevanApi {
     }
     final followers = _integer(_object(row['statistics'])['attention_count']);
     if (followers != null && followers >= 0) room.followers = '$followers';
-    if (!room.isLiveNow) {
+    if (!room.isLiveNow || !includeMedia) {
       room.data = const <LivePlayQuality>[];
-      return room; // Ignore stale/offline channel URLs entirely.
+      return room; // Search metadata and offline rooms never inspect stale channel URLs.
     }
     final channel = _object(row['channel']);
     final qualities = <LivePlayQuality>[];
