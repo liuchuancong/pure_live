@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:pure_live/common/models/live_area.dart';
 import 'package:pure_live/common/models/live_room.dart';
-import 'package:pure_live/core/danmaku/empty_danmaku.dart';
+import 'package:pure_live/core/danmaku/goodgame_danmaku.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
 import 'package:pure_live/core/interface/live_directory.dart';
 import 'package:pure_live/core/interface/live_search.dart';
@@ -36,7 +36,7 @@ final class GoodGameSite extends LiveSite
   String get directoryNoticeKey => 'goodgame_directory_scope';
 
   @override
-  LiveDanmaku getDanmaku() => EmptyDanmaku();
+  LiveDanmaku getDanmaku() => GoodGameDanmaku();
 
   @override
   Future<List<LiveCategory>> getCategores(int page, int pageSize) async => page == 1 && pageSize > 0
@@ -73,6 +73,7 @@ final class GoodGameSite extends LiveSite
     cover: room.cover,
     area: room.category.isEmpty ? 'GoodGame Live' : room.category,
     link: GoodGameLink.channelUrl(room.channel),
+    danmakuData: room.streamId.toString(),
     liveStatus: switch (room.state) {
       GoodGameState.live => LiveStatus.live,
       GoodGameState.offline => LiveStatus.offline,
@@ -81,7 +82,7 @@ final class GoodGameSite extends LiveSite
     onlineViewers: room.viewers?.toString(),
     followers: room.followers?.toString(),
     audienceMetricType: room.viewers == null ? AudienceMetricType.unknown : AudienceMetricType.onlineViewers,
-    notice: room.adult ? i18n('goodgame_adult_notice') : i18n('goodgame_chat_notice'),
+    notice: room.adult ? i18n('goodgame_adult_notice') : i18n('goodgame_audience_notice'),
     httpHeaders: GoodGameApi.mediaHeaders(room.channel),
     data: includeMedia ? room : null,
   );
