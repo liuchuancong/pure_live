@@ -734,7 +734,11 @@ class LiveRoom {
     if (_hasAudienceValue(effectivePopularity)) return effectivePopularity;
     if (_hasAudienceValue(effectiveTotalViewers)) return effectiveTotalViewers;
     if (hasRealOnlineCount) return effectiveOnlineViewers;
-    return (watching ?? '0').trim();
+    final legacy = (watching ?? '').trim();
+    // The legacy default "0" is not a measurement. Unknown-metric adapters
+    // must not render it as a verified audience count.
+    if (effectiveAudienceMetricType == AudienceMetricType.unknown && !_hasAudienceValue(legacy)) return '';
+    return legacy;
   }
 
   AudienceMetricType audienceType({required bool preferRealOnline, required bool platformEnabled}) {
