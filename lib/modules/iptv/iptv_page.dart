@@ -595,7 +595,7 @@ class _UserAgentDialogState extends State<_UserAgentDialog> {
                           ),
                         ),
                         Container(
-                          height: kMinInteractiveDimension,
+                          height: MediaQuery.textScalerOf(context).scale(32).clamp(48.0, 96.0).toDouble(),
                           decoration: BoxDecoration(
                             color: theme.dividerColor.withValues(alpha: 0.03),
                             borderRadius: const BorderRadius.only(
@@ -626,20 +626,28 @@ class _UserAgentDialogState extends State<_UserAgentDialog> {
                                     behavior: HitTestBehavior.opaque,
                                     onVerticalDragUpdate: (details) =>
                                         _setInputHeight(customInputHeight.value + details.delta.dy),
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Icon(
-                                          Icons.drag_indicator_rounded,
-                                          size: 20,
-                                          color: theme.hintColor.withValues(alpha: 0.65),
-                                        ),
-                                        const SizedBox(width: 6),
-                                        Text(
+                                    child: LayoutBuilder(
+                                      builder: (context, constraints) {
+                                        final label = Text(
                                           '${inputHeight.round()} px',
+                                          maxLines: 2,
+                                          textAlign: TextAlign.center,
                                           style: theme.textTheme.labelSmall?.copyWith(color: theme.hintColor),
-                                        ),
-                                      ],
+                                        );
+                                        if (constraints.maxWidth < 170) return Center(child: label);
+                                        return Row(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Icon(
+                                              Icons.drag_indicator_rounded,
+                                              size: 20,
+                                              color: theme.hintColor.withValues(alpha: 0.65),
+                                            ),
+                                            const SizedBox(width: 6),
+                                            Flexible(child: label),
+                                          ],
+                                        );
+                                      },
                                     ),
                                   ),
                                 ),
