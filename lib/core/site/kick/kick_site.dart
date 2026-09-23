@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:pure_live/common/models/live_area.dart';
 import 'package:pure_live/common/models/live_room.dart';
-import 'package:pure_live/core/danmaku/empty_danmaku.dart';
+import 'package:pure_live/core/danmaku/kick_danmaku.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
 import 'package:pure_live/core/interface/live_directory.dart';
 import 'package:pure_live/core/interface/live_search.dart';
@@ -42,7 +42,7 @@ class KickSite extends LiveSite
   String get directoryNoticeKey => 'kick_directory_scope';
 
   @override
-  LiveDanmaku getDanmaku() => EmptyDanmaku();
+  LiveDanmaku getDanmaku() => KickDanmaku(api: _api);
 
   static LiveRoom _channelCard(KickChannel channel) => LiveRoom(
     platform: 'kick',
@@ -55,6 +55,7 @@ class KickSite extends LiveSite
     followers: channel.followers?.toString(),
     introduction: channel.bio,
     link: KickLink.url(channel.slug),
+    danmakuData: channel.slug,
     liveStatus: channel.isBanned
         ? LiveStatus.banned
         : channel.isLive
@@ -74,6 +75,7 @@ class KickSite extends LiveSite
     followers: live.channel.followers?.toString(),
     introduction: live.channel.bio,
     link: KickLink.url(live.channel.slug),
+    danmakuData: live.channel.slug,
     liveStatus: LiveStatus.live,
     onlineViewers: live.viewers?.toString(),
     audienceMetricType: AudienceMetricType.onlineViewers,
