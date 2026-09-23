@@ -6,11 +6,11 @@
 
 | 项目 | 当前证据 |
 | --- | --- |
-| 功能源码基线 | 当前干净输入 `68723042`（业务源码至 `d44d6c12`）通过[完整门禁](FULL_GATE_DEBUG_CANDIDATES_2026_09_24.md)：Flutter **5310/5310**、公共接口 **42/42**、全仓 Analyze 无问题，记录 `20260923T173235870Z-quality-full.json`。搜索/房间修订见[聚合搜索](SEARCH_AGGREGATE_CONCURRENCY_AUDIT_2026_09_24.md)和[状态处理](ROOM_DETAIL_ERROR_STATUS_AUDIT_2026_09_24.md)。源码与构建证据齐备，双端 GUI/媒体/长时原生验收仍待完成 |
-| Android 最新本机构建/原生输入 | `68723042` arm64 Debug，3.1.8+4121 / Manifest 6121，290059168 B，SHA-256 `7EDC3D99…6D29B`；16 个原生库、最小 ELF LOAD `0x4000`、APK 内容门禁通过（`20260923T174057849Z-build-androidarm64-debug.json`）。尚未覆盖安装或执行本候选 A0～A8 原生验收 |
+| 功能源码基线 | 当前源码 `be2e94d7`；最近一次干净输入 `68723042` 通过[完整门禁](FULL_GATE_DEBUG_CANDIDATES_2026_09_24.md)：Flutter **5310/5310**、公共接口 **42/42**、全仓 Analyze 无问题，记录 `20260923T173235870Z-quality-full.json`。之后新增首选平台仅限可见项的修订，相关三文件 **19/19** 与全仓 Analyze 通过（`20260923T175253474Z-quality-focused.json`），但该修订尚未进入新 Full 或双端构建。双端 GUI/媒体/长时原生验收仍待完成 |
+| Android 最新本机构建/原生输入 | `68723042` arm64 Debug，早于当前首选平台修订；3.1.8+4121 / Manifest 6121，290059168 B，SHA-256 `7EDC3D99…6D29B`；16 个原生库、最小 ELF LOAD `0x4000`、APK 内容门禁通过（`20260923T174057849Z-build-androidarm64-debug.json`）。尚未覆盖安装或执行本候选 A0～A8 原生验收 |
 | Android 当前编号账本 | 46 行：16 PASS / 30 RUN / 0 NR；每行仍含多个动作和平台组合，旧包证据不自动覆盖当前源码 |
-| Windows 最新归档 | `68723042` x64 Debug 已构建：`PureLive-3.1.8-4121-windows-x64-debug.zip`，143791330 B，SHA-256 `CB781024…993E7`，记录 `20260923T173604049Z-build-windowsx64-debug.json`；尚未完成 GUI/播放/录制原生验收，也不是 3.2.0 Release 候选 |
-| 手机快照 | `192.168.1.2:5555` 已重新核对 25102RKBEC / myron / Android 17 / root；Pure Live 无进程和录制服务，但前台为其他应用，本轮守卫停止安装与输入 |
+| Windows 最新归档 | `68723042` x64 Debug 已构建，早于当前首选平台修订：`PureLive-3.1.8-4121-windows-x64-debug.zip`，143791330 B，SHA-256 `CB781024…993E7`，记录 `20260923T173604049Z-build-windowsx64-debug.json`；尚未完成 GUI/播放/录制原生验收，也不是 3.2.0 Release 候选 |
+| 手机快照 | `192.168.1.2:5555` 本轮只读核对 25102RKBEC / myron，前台为哔哩哔哩；本轮没有安装、唤醒或输入。此前 Android 17 / root 与 Pure Live 无进程/录制服务的核验属于旧快照，实际设备动作前需重读 |
 | 当前安装 APK | 只读刷新为 3.1.8 / 6121；上次精确 `base.apk` 哈希仍为 `4BF85571…6B82` Release 测试包，本轮未重拉包，正式签名候选仍待生成 |
 | 平台范围 | 当前 **45 个直播站点 + IPTV，2 组未注册**，即源码共 46 个适配器；PandaTV、PopkonTV、Shopee Live、VK Video Live、NimoTV、Dailymotion、Rumble、GoodGame、FC2 Live、Steam Broadcasts、京东直播、淘宝直播、酷狗直播、百度直播、六间房直播与 LOOK 直播已完成首阶段源码接入，战旗与浪 Live 保持内部 readiness，DLive、一直播与企鹅电竞已归档生命周期证据；已注册平台仍有能力与双端原生覆盖缺口 |
 | 编号总账 | 历史大组 20 PASS / 42 RUN / 0 NR；RUN 是待补证或部分完成，不等于 42 个当前 Bug |
@@ -37,6 +37,6 @@
 ## 下一批顺序
 
 1. 继续按战旗、浪 Live 的生产证据门槛与 C2/C3 活跃平台顺序扩展源码；同时完成当前仍可确定复现的 Issue/所有权缺口，已经修复或证据不足的条目停止重复调查。
-2. `68723042` Full 与双端 Debug 构建已通过；以该候选进入集中原生验收。手机进入可用测试窗口后批量收口 A0～A8，不为每个小修复重复构建；设备窗口尚未释放时继续 Windows 候选验收或源码工作。
+2. `68723042` Full 与双端 Debug 构建已通过，但候选早于当前源码。源码批次收敛后重建同一输入的 Android/Windows 候选，再集中原生验收；手机进入可用测试窗口后批量收口 A0～A8，不为每个小修复重复构建；设备窗口尚未释放时继续 Windows 候选验收或源码工作。
 3. 同一候选集中完成平台播放/弹幕/录制、资源与性能证据，失败项回源码修订后只重跑受影响组。
 4. 42 个编号组和发布范围实际闭合后，固定 3.2.0 提交并执行完整发布门禁。
