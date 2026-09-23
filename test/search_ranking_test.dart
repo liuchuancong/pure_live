@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pure_live/common/models/live_room.dart';
+import 'package:pure_live/core/sites.dart';
 import 'package:pure_live/modules/search/search_capability.dart';
 import 'package:pure_live/modules/search/search_ranking.dart';
 
@@ -119,5 +120,34 @@ void main() {
     expect(LiveSearchCapabilities.forPlatform('kuaishou').supportsNativeSearch, isFalse);
     expect(LiveSearchCapabilities.forPlatform('iptv').supportsPagination, isFalse);
     expect(LiveSearchCapabilities.forPlatform('iptv').supportsWebSearch, isFalse);
+  });
+
+  test('every registered adapter with native search is exposed in the search UI', () {
+    final expected = <String, (NativeSearchCoverage, bool)>{
+      Sites.shopeeLiveSite: (NativeSearchCoverage.liveAndOffline, false),
+      Sites.vkVideoLiveSite: (NativeSearchCoverage.liveAndOffline, true),
+      Sites.nimoTvSite: (NativeSearchCoverage.liveAndOffline, true),
+      Sites.dailymotionSite: (NativeSearchCoverage.liveAndOffline, true),
+      Sites.rumbleSite: (NativeSearchCoverage.liveAndOffline, true),
+      Sites.goodGameSite: (NativeSearchCoverage.liveAndOffline, true),
+      Sites.fc2LiveSite: (NativeSearchCoverage.liveAndOffline, true),
+      Sites.steamBroadcastSite: (NativeSearchCoverage.liveAndOffline, true),
+      Sites.jdLiveSite: (NativeSearchCoverage.liveAndOffline, true),
+      Sites.taobaoLiveSite: (NativeSearchCoverage.roomLookup, false),
+      Sites.kugouLiveSite: (NativeSearchCoverage.liveAndOffline, true),
+      Sites.baiduLiveSite: (NativeSearchCoverage.roomLookup, false),
+      Sites.sixRoomSite: (NativeSearchCoverage.liveAndOffline, false),
+      Sites.lookLiveSite: (NativeSearchCoverage.roomLookup, false),
+    };
+    expect(expected.keys, everyElement(isIn(Sites.supportedSiteIds)));
+    for (final entry in expected.entries) {
+      final actual = LiveSearchCapabilities.forPlatform(entry.key);
+      expect(actual.coverage, entry.value.$1, reason: entry.key);
+      expect(actual.supportsPagination, entry.value.$2, reason: entry.key);
+      expect(actual.supportsWebSearch, isFalse, reason: entry.key);
+    }
+    for (final id in Sites.supportedSiteIds) {
+      expect(LiveSearchCapabilities.forPlatform(id).supportsNativeSearch, id != Sites.kuaishouSite, reason: id);
+    }
   });
 }

@@ -258,6 +258,20 @@ void main() {
     Sites.huajiaoSite,
     Sites.kilakilaSite,
     Sites.openrecSite,
+    Sites.shopeeLiveSite,
+    Sites.vkVideoLiveSite,
+    Sites.nimoTvSite,
+    Sites.dailymotionSite,
+    Sites.rumbleSite,
+    Sites.goodGameSite,
+    Sites.fc2LiveSite,
+    Sites.steamBroadcastSite,
+    Sites.jdLiveSite,
+    Sites.taobaoLiveSite,
+    Sites.kugouLiveSite,
+    Sites.baiduLiveSite,
+    Sites.sixRoomSite,
+    Sites.lookLiveSite,
   ]) {
     testWidgets('$platform native search is actionable and keeps its web capability', (tester) async {
       final c = await _mount(tester, platform: platform);
