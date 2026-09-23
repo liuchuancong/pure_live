@@ -130,6 +130,29 @@ void main() {
     final key = retain(manifest('#EXT-X-KEY:METHOD=AES-128,URI="k",OTHER=1\n#EXTINF:2,\na.ts\n'));
     expect(() => render(key), throwsFormatException);
   });
+  test('legacy ALLOW-CACHE YES permits retention, while NO keeps fallback', () {
+    final yes = manifest('#EXTINF:2,\na.ts\n', properties: '#EXT-X-ALLOW-CACHE:YES\n');
+    final window = retain(yes);
+    final output = render(window);
+    sameMedia(window, output);
+    expect(output, isNot(contains('#EXT-X-ALLOW-CACHE')));
+
+    for (final value in ['NO', 'MAYBE', 'yes']) {
+      final parsed = HlsMediaSnapshot.parse(
+        manifest('#EXTINF:2,\na.ts\n', properties: '#EXT-X-ALLOW-CACHE:$value\n'),
+        source,
+      );
+      expect(parsed.unhandledTags, contains('#EXT-X-ALLOW-CACHE'));
+      expect(() => HlsRetainedWindow(source).merge(parsed), throwsFormatException);
+    }
+    expect(
+      () => HlsMediaSnapshot.parse(
+        manifest('#EXTINF:2,\na.ts\n', properties: '#EXT-X-ALLOW-CACHE:YES\n#EXT-X-ALLOW-CACHE:YES\n'),
+        source,
+      ),
+      throwsFormatException,
+    );
+  });
   test('map disappearance and pathological discontinuity expansion fail instead of changing media meaning', () {
     final window = retain(manifest('#EXT-X-MAP:URI="init.mp4"\n#EXTINF:2,\na.m4s\n'));
     window.merge(HlsMediaSnapshot.parse(manifest('#EXTINF:2,\nb.ts\n', first: 41), source));
