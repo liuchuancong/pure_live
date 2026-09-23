@@ -2,7 +2,7 @@
 
 - 版本：`3.0.9+4097`
 - 目标：Android `arm64-v8a` Release APK
-- 冻结基线：`wzgrx/pure_live@3f80262b`
+- 冻结基线：`liuchuancong/pure_live@3f80262b`
 - 来源分类：`fork-regression`
 - 上游：本轮不合并上游，只修复维护仓库播放器几何链
 - 设备操作：代码审查、官方文档/GitHub 对照、实时流探测、自动化测试和本机构建，不操作手机

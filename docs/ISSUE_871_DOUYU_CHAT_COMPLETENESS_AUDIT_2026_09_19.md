@@ -2,7 +2,7 @@
 
 ## 范围与结论
 
-上游 [#871](https://github.com/liuchuancong/pure_live/issues/871) 报告 Windows 3.1.4 的斗鱼弹幕明显少于网页，甚至只显示连接状态而没有聊天；它与较早的 [#845](https://github.com/liuchuancong/pure_live/issues/845) 属于同一产品边界。审查只读取上游 Issue 和冻结源码，以维护仓库 `wzgrx/pure_live` 为实现基线，没有同步上游提交。
+上游 [#871](https://github.com/liuchuancong/pure_live/issues/871) 报告 Windows 3.1.4 的斗鱼弹幕明显少于网页，甚至只显示连接状态而没有聊天；它与较早的 [#845](https://github.com/liuchuancong/pure_live/issues/845) 属于同一产品边界。审查只读取上游 Issue 和冻结源码，以维护仓库 `liuchuancong/pure_live` 为实现基线，没有同步上游提交。
 
 3.1.4 的协议层会直接丢弃同时缺少 `dms` 与 `if=1` 的 `chatmsg`。09-04 两次 60 秒原始捕获分别收到 69/43 条聊天，其中 6/5 条会被该门禁排除；这不足以解释每一次“完全没有聊天”，但稳定证明门禁会把平台已经送达的非空房间聊天误判为不可见。此前 `971c2753` 把门禁改成用户开关，却继续默认开启，因此 3.1.4 升级用户在没有该新偏好键时仍继承过滤行为。#871 的重复报告说明“默认保持干净列表”不符合用户对直播弹幕完整性的预期。
 

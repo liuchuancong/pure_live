@@ -12,17 +12,17 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/wzgrx/pure_live/releases/latest">
-    <img alt="Latest Release" src="https://img.shields.io/github/v/release/wzgrx/pure_live">
+  <a href="https://github.com/liuchuancong/pure_live/releases/latest">
+    <img alt="Latest Release" src="https://img.shields.io/github/v/release/liuchuancong/pure_live">
   </a>
-  <a href="https://github.com/wzgrx/pure_live/actions/workflows/feature-build.yml">
-    <img alt="Manual Build" src="https://github.com/wzgrx/pure_live/actions/workflows/feature-build.yml/badge.svg">
+  <a href="https://github.com/liuchuancong/pure_live/actions/workflows/feature-build.yml">
+    <img alt="Manual Build" src="https://github.com/liuchuancong/pure_live/actions/workflows/feature-build.yml/badge.svg">
   </a>
   <a href="https://github.com/liuchuancong/pure_live">
     <img alt="Stars" src="https://img.shields.io/github/stars/liuchuancong/pure_live?color=yellow">
   </a>
-  <a href="https://github.com/wzgrx/pure_live/releases">
-    <img alt="Downloads" src="https://img.shields.io/github/downloads/wzgrx/pure_live/total?style=flat-square">
+  <a href="https://github.com/liuchuancong/pure_live/releases">
+    <img alt="Downloads" src="https://img.shields.io/github/downloads/liuchuancong/pure_live/total?style=flat-square">
   </a>
   <a href="LICENSE">
     <img alt="License" src="https://img.shields.io/github/license/liuchuancong/pure_live?color=blue">
@@ -44,7 +44,7 @@
 - 每个完成的 Bug 修复批次默认递增版本，优先构建 Android `arm64-v8a` 正式更新包，并同步源码、版本标签、安装包与校验文件到本仓库 GitHub Release；其他平台仍按本轮明确范围串行构建。
 - 每次同步上游、分析 Bug 和审查原项目 Issue 的来源判定、根因、兼容、验证与回滚流程见[维护范围与问题处置策略](MAINTENANCE_POLICY.md)及[上游同步审查策略](UPSTREAM_REVIEW_POLICY.md)。
 
-- **最新稳定版**：[v3.1.8](https://github.com/wzgrx/pure_live/releases/tag/v3.1.8)
+- **最新稳定版**：[v3.1.8](https://github.com/liuchuancong/pure_live/releases/tag/v3.1.8)
 - **下一稳定版目标**：3.2.0，当前处于完整验收阶段，尚未发布。本轮只维护本仓库、不合并上游；优先源码审查、确定性回归和本地验证，手机操作按本轮明确安排执行，不把连接设备作为修复前置条件。进度、缺口与发布门禁见 [3.2.0 验收入口](docs/ACCEPTANCE_3_2_0.md)，开发包及旧版通过记录不等于最终版已通过。
 <!-- current-status-owner: docs/ACCEPTANCE_STATUS_3_2_0.md -->
 - **当前验收快照**：源码提交、候选包、设备状态、编号统计与剩余阻塞只在[当前状态快照](docs/ACCEPTANCE_STATUS_3_2_0.md)维护；分项状态与证据见[验收矩阵](docs/ACCEPTANCE_MATRIX_3_1_0.md)。README 不再复制逐批测试数量、候选哈希和待办时间线。
@@ -66,7 +66,7 @@ Android 录制在创建任务和申请存储权限前检查目录：应用私有
 
 ## 📺 平台范围
 
-**版本边界先看清**：已发布的 [v3.1.8](https://github.com/wzgrx/pure_live/releases/tag/v3.1.8) 注册 **9 个直播站点 + IPTV**；当前未发布的 3.2.0 开发源码注册 **45 个直播站点 + IPTV**。后者表示应用入口已有适配器，不表示 45 站的目录、搜索、弹幕、播放与录制都已通过双端验收。各站实际能力和人数口径见[平台兼容性](docs/PLATFORM_COMPATIBILITY.md)，候选与剩余验证见[当前状态](docs/ACCEPTANCE_STATUS_3_2_0.md)。
+**版本边界先看清**：已发布的 [v3.1.8](https://github.com/liuchuancong/pure_live/releases/tag/v3.1.8) 注册 **9 个直播站点 + IPTV**；当前未发布的 3.2.0 开发源码注册 **45 个直播站点 + IPTV**。后者表示应用入口已有适配器，不表示 45 站的目录、搜索、弹幕、播放与录制都已通过双端验收。各站实际能力和人数口径见[平台兼容性](docs/PLATFORM_COMPATIBILITY.md)，候选与剩余验证见[当前状态](docs/ACCEPTANCE_STATUS_3_2_0.md)。
 
 | 阶段 | 平台 |
 | --- | --- |

@@ -1,7 +1,7 @@
 # v2.6.0 阶段稳定版
 
 版本：`2.6.0+4076`
-维护仓库：`wzgrx/pure_live`
+维护仓库：`liuchuancong/pure_live`
 上游基线：`liuchuancong/pure_live@c3ae29bb`
 发布日期：2026-08-23
 
@@ -46,13 +46,13 @@
 
 | 平台 | 产物 | SHA-256 | 来源/记录 |
 |---|---|---|---|
-| Android arm64-v8a | `PureLive-2.6.0-4076-arm64-v8a-release.apk` | `704f7a873905b2d8d89f66b347a128562f6ea0c2ac9f7e9421ef12c4dd230e77` | `56275967`；[Actions 32594370391](https://github.com/wzgrx/pure_live/actions/runs/32594370391)；正式 RSA-4096 签名，包名 `com.mystyle.purelive`，仅含 `arm64-v8a` |
+| Android arm64-v8a | `PureLive-2.6.0-4076-arm64-v8a-release.apk` | `704f7a873905b2d8d89f66b347a128562f6ea0c2ac9f7e9421ef12c4dd230e77` | `56275967`；[Actions 32594370391](https://github.com/liuchuancong/pure_live/actions/runs/32594370391)；正式 RSA-4096 签名，包名 `com.mystyle.purelive`，仅含 `arm64-v8a` |
 | Windows x64 | `PureLive-2.6.0-windows-x64-setup.exe` | `693a8dba51ca825780309098605c3622724c467e37d23d472847aa35cee3559c` | `56275967`；本机 Inno Setup，可选安装目录 |
 | Windows x64 | `PureLive-2.6.0-4076-windows-x64-portable.zip` | `b08258dbf747c7aaae5030669d63a1653f60abb251c95de920403db2c51a28b0` | `56275967`；`20260822T195209357Z-build-windowsx64-release.json` |
-| Linux x64 | `PureLive-2.6.0-4076-linux-x64.tar.gz` | `4ba6a34c7f7d0d67b244af9d269f4ffe07185953ff4e4f73e57820402bb6b3d5` | `56275967`；[Actions 32595365876](https://github.com/wzgrx/pure_live/actions/runs/32595365876) |
-| macOS Universal | `PureLive-2.6.0-4076-macos-universal.dmg` | `073026d33e50515b8f1ca68fddba609403ba445378924b5a28d2bfd9cfd7380d` | `56275967`；[Actions 32595637310](https://github.com/wzgrx/pure_live/actions/runs/32595637310) |
+| Linux x64 | `PureLive-2.6.0-4076-linux-x64.tar.gz` | `4ba6a34c7f7d0d67b244af9d269f4ffe07185953ff4e4f73e57820402bb6b3d5` | `56275967`；[Actions 32595365876](https://github.com/liuchuancong/pure_live/actions/runs/32595365876) |
+| macOS Universal | `PureLive-2.6.0-4076-macos-universal.dmg` | `073026d33e50515b8f1ca68fddba609403ba445378924b5a28d2bfd9cfd7380d` | `56275967`；[Actions 32595637310](https://github.com/liuchuancong/pure_live/actions/runs/32595637310) |
 | macOS Universal | `PureLive-2.6.0-4076-macos-universal.zip` | `c6508e80e82b5286a1491b7b0ed09a5cb2d509efe2ed32fc4b40f6358ba1328c` | 同上 |
-| iOS arm64 | `PureLive-2.6.0-4076-ios-arm64-unsigned-app.zip` | `e5c888f248da2b3cb9c8f10343494b9e91fcc4246f611fdd862dadbf04349b45` | `56275967`；[Actions 32596143257](https://github.com/wzgrx/pure_live/actions/runs/32596143257) |
+| iOS arm64 | `PureLive-2.6.0-4076-ios-arm64-unsigned-app.zip` | `e5c888f248da2b3cb9c8f10343494b9e91fcc4246f611fdd862dadbf04349b45` | `56275967`；[Actions 32596143257](https://github.com/liuchuancong/pure_live/actions/runs/32596143257) |
 | iOS TrollStore | `PureLive-2.6.0-4076-ios-arm64-trollstore.ipa` | `099756d50f7f82cb01dd5db202f59b56099628bdba6b98960c496d461dd9f564` | 同上；工作流完成临时签名与 IPA 结构验证 |
 
 Android 使用 `apksigner` 复核 v2 签名、版本名和 ABI；全部远端产物侧车校验通过，Linux 归档包含主程序，macOS/iOS 归档包含完整 `.app` 结构。Windows Release 冷启动后进行了 372.339 秒、37 个采样点的隔离实例烟雾测试：工作集从 307,494,912 B 到 304,701,440 B，私有字节减少 20,561,920 B，CPU 累计仅增加 2.125 秒，未出现随时间持续增长；记录为 `20260822T195317241Z-windows-release-smoke.json`。
