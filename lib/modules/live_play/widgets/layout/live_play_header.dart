@@ -1,4 +1,5 @@
 import 'package:pure_live/common/index.dart';
+import 'package:pure_live/common/widgets/common_avatar.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/button/record_action_button.dart';
@@ -30,11 +31,7 @@ class LivePlayHeader extends StatelessWidget implements PreferredSizeWidget {
       children: [
         Obx(() {
           final avatar = controller.state.value.room.detail?.avatar;
-          return CircleAvatar(
-            radius: 16,
-            foregroundImage: avatar != null && avatar.isNotEmpty ? CachedNetworkImageProvider(avatar) : null,
-            backgroundColor: Theme.of(context).disabledColor,
-          );
+          return CommonAvatar(avatarUrl: avatar, radius: 16);
         }),
         const SizedBox(width: 8),
         Expanded(

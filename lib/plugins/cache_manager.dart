@@ -10,12 +10,13 @@ class CustomImageCacheManager {
   static final CacheManager instance = _createManager();
 
   static CacheManager _createManager() {
-    final client = HttpClient();
-    client.idleTimeout = const Duration(seconds: 30);
-    // The callback reads the current setting for every new connection. Covers
-    // and avatars previously used flutter_cache_manager's separate DIRECT
-    // client, so API cards could load through the app proxy while all images
-    // still failed DNS independently.
+    final client = HttpClient()
+      ..idleTimeout = const Duration(seconds: 30)
+      ..badCertificateCallback = (X509Certificate cert, String host, int port) {
+        // Ignore all HTTPS certificate validation errors.
+        return true;
+      };
+
     client.findProxy = (_) {
       try {
         return _proxyDirectiveProvider?.call() ?? 'DIRECT';
@@ -23,6 +24,7 @@ class CustomImageCacheManager {
         return 'DIRECT';
       }
     };
+
     return CacheManager(
       Config(
         key,
@@ -33,9 +35,6 @@ class CustomImageCacheManager {
     );
   }
 
-  /// Covers and avatars share one bounded cache. A short stale period lets a
-  /// later widget resolve revalidate a reused platform URL without globally
-  /// tearing down every visible image at the same instant.
   static Future<void> initialize({String Function()? proxyDirectiveProvider}) async {
     _proxyDirectiveProvider = proxyDirectiveProvider;
     instance;
@@ -43,23 +42,28 @@ class CustomImageCacheManager {
 
   static Future<void> remove(String url) async {
     final fileInfo = await instance.getFileFromCache(url);
+
     if (fileInfo == null) {
       return;
     }
+
     final file = fileInfo.file;
+
     for (var i = 0; i < 5; i++) {
       try {
         if (!await file.exists()) {
           return;
         }
+
         await file.delete();
         return;
       } on PathAccessException catch (_) {
         if (i == 4) {
           return;
         }
+
         await Future.delayed(Duration(milliseconds: 100 * (i + 1)));
-      } catch (e) {
+      } catch (_) {
         return;
       }
     }
@@ -69,5 +73,7 @@ class CustomImageCacheManager {
     await instance.emptyCache();
   }
 
-  static Future<Directory> cacheDirectory() => IOFileSystem.createDirectory(key);
+  static Future<Directory> cacheDirectory() {
+    return IOFileSystem.createDirectory(key);
+  }
 }
