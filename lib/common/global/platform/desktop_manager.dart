@@ -127,27 +127,26 @@ class DesktopManager {
   }
 
   static Widget buildWithTitleBar(Widget? child) {
-    return Obx(() {
-      final fullscreen = GlobalPlayerState.to.isFullscreen.value;
-      final pipMode = GlobalPlayerState.to.isPipMode.value;
-
-      if (!PlatformUtils.isWindows) {
-        return child ?? const SizedBox.shrink();
-      }
-
-      return Overlay(
-        initialEntries: [
-          OverlayEntry(
-            builder: (context) => Column(
+    final content = child ?? const SizedBox.shrink();
+    if (!PlatformUtils.isWindows) {
+      return content;
+    }
+    return Overlay(
+      initialEntries: [
+        OverlayEntry(
+          builder: (_) => Obx(() {
+            final fullscreen = GlobalPlayerState.to.isFullscreen.value;
+            final pipMode = GlobalPlayerState.to.isPipMode.value;
+            return Column(
               children: [
                 if (!fullscreen && !pipMode) const CustomTitleBar(),
-                if (child != null) Expanded(child: child),
+                Expanded(child: content),
               ],
-            ),
-          ),
-        ],
-      );
-    });
+            );
+          }),
+        ),
+      ],
+    );
   }
 
   static Future<void> _initTray() async {
