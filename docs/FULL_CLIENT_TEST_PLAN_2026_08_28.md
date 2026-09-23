@@ -163,7 +163,7 @@ local-artifacts/diagnostics/full-regression-20260828/
 
 ### A6 — Android 平台适配器矩阵
 
-对 Bilibili、斗鱼、虎牙、抖音、快手、YY、CC、Twitch、SOOP、IPTV 分平台记录以下合同；“公开接口未提供”与“请求失败”分开显示：
+对 `lib/core/sites.dart` 当前注册的全部平台逐项记录以下合同；先覆盖 Bilibili、斗鱼、虎牙、抖音、快手、YY、CC、Twitch、SOOP、IPTV 核心组，其余平台按实际能力逐批执行。“公开接口未提供”与“请求失败”分开显示，不把空实现当弹幕连接通过：
 
 - [ ] 首页热门/分区/搜索可用性，分页、去重和错误类型；
 - [ ] 房间详情、开播状态、标题、主播、封面、关注状态；
@@ -174,7 +174,7 @@ local-artifacts/diagnostics/full-regression-20260828/
 - [ ] 弹幕匿名/登录要求、WebSocket 地址、心跳、重连和房间隔离；
 - [ ] 录制地址是否与播放地址合同不同，FFmpeg 需要的 headers、协议白名单、时间戳和容器兼容。
 
-每个平台至少完成一个当前在播样本的详情/播放/画质/线路/弹幕/录制探测；缺少直播样本时保留 fixture 自动化与探测时间，不借用另一平台结论。
+每个平台至少完成一个当前在播样本的详情、播放、画质/线路和可录制性探测；弹幕按实际能力记录连接结果或明确空实现。缺少直播样本时保留 fixture 自动化与探测时间，不借用另一平台结论。小红书另测 `xhsdiscover://live_audience` 仅导入房间号，忽略预加载 `flvUrl`，打开后重新取当前房间媒体；官网深链的 `room_id`、`source` 必填，畸形/重复身份拒绝。
 
 弹幕原生矩阵前可先运行当前生产适配器的重复连接基线：`.\tool\run_danmaku_connection_probe.ps1 -RouteMode DIRECT -Cycles 10 -ObservationSeconds 5 -Platforms bilibili,huya,douyin`。该 opt-in 探针只记录公开房间 ID 和聚合事件计数；通过只表示本机网络、短观察窗口和所列平台当时可连接，不替代 Android/Windows GUI、断网恢复、长时稳定性或指定报告房间。
 
@@ -182,7 +182,7 @@ local-artifacts/diagnostics/full-regression-20260828/
 
 - [ ] AND-REC-01 从直播页开始录制，录制中心立即出现正确房间、平台、画质、状态、时间、实时大小、速度和码率。
 - [ ] AND-REC-02 停止、取消等待、失败重试、立即检查、重连；状态只按允许路径转换，不全部显示“等待开播”。
-- [ ] AND-REC-03 Bilibili/斗鱼/虎牙/抖音/快手/YY/CC/Twitch/SOOP/IPTV 的流地址和 headers 分别核验；有可用样本才执行短录制。
+- [ ] AND-REC-03 对当前全部已注册平台分别核验流地址、headers、可录制性与结束行为；先覆盖 Bilibili/斗鱼/虎牙/抖音/快手/YY/CC/Twitch/SOOP/IPTV，有可用样本才执行短录制，受限/下播/无媒体单独记因。
 - [ ] AND-REC-04 录制文件可由 ffprobe 读取，持续时间接近墙钟，文件大小增长；0B、超大时长、负速度和错误阶段不出现。
 - [ ] AND-REC-05 录制设置：目录、缓存上限、默认画质、拼音目录、最佳流、读写超时、队列、分段、最大任务、重连、轮询/退避和开机启动。
 - [ ] AND-REC-06 录制中心横/纵滚动边界、卡片自适应列数、长错误文本、任务删除确认、重启后持久化恢复。
@@ -192,7 +192,7 @@ local-artifacts/diagnostics/full-regression-20260828/
 
 ### A8 — Android 故障注入、性能与稳定性
 
-- [ ] AND-FAULT-01 飞行模式/断网 10–30 秒后恢复；首页请求、直播、弹幕、录制采用有限退避且页面可手动恢复。
+- [ ] AND-FAULT-01 用网络层 fixture 注入 10–30 秒断网后恢复；首页请求、直播、弹幕、录制采用有限退避且页面可手动恢复。远程 K90 Pro Max 不切换 Wi-Fi 或飞行模式；真实无线切换只在可现场处置的独立测试设备执行。
 - [ ] AND-FAULT-02 Wi-Fi↔蜂窝网络语义 fixture、DNS 错误、HTTP 超时、429、5xx、空响应、字段类型漂移；错误分类明确。
 - [ ] AND-FAULT-03 流地址过期、CDN 重定向、解码错误、线路失效；只在明确错误时恢复，不以固定延时自动暂停。
 - [ ] AND-FAULT-04 快速进入/退出房间 20 次、A/B 房间切换 20 次、横竖屏/小窗循环 20 次；无崩溃、ANR 和旧会话回流。
