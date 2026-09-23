@@ -421,6 +421,7 @@ class SearchController extends GetxController {
       final site = sites[index.v - 1];
       final capability = LiveSearchCapabilities.forPlatform(site.id);
       if (site.id == Sites.acfunSite) return i18n('search_coverage_acfun');
+      if (site.id == Sites.weiboSite) return i18n('search_coverage_weibo');
       if (site.id == Sites.huajiaoSite) return i18n('search_coverage_huajiao');
       if (site.id == Sites.kilakilaSite) return i18n('search_coverage_kilakila');
       if (site.id == Sites.openrecSite) return i18n('search_coverage_openrec');
@@ -456,7 +457,11 @@ class SearchController extends GetxController {
         .map((site) => site.name)
         .join('、');
     final roomLookupSites = sites
-        .where((site) => LiveSearchCapabilities.forPlatform(site.id).coverage == NativeSearchCoverage.roomLookup)
+        .where(
+          (site) =>
+              site.id != Sites.weiboSite &&
+              LiveSearchCapabilities.forPlatform(site.id).coverage == NativeSearchCoverage.roomLookup,
+        )
         .map((site) => site.name)
         .join('、');
     final snapshotSites = sites
@@ -468,6 +473,7 @@ class SearchController extends GetxController {
       if (unavailableSites.isNotEmpty) i18n('search_coverage_unavailable', args: {'site': unavailableSites}),
       if (lookupSites.isNotEmpty) i18n('search_coverage_channel_lookup', args: {'site': lookupSites}),
       if (roomLookupSites.isNotEmpty) i18n('search_coverage_room_lookup', args: {'site': roomLookupSites}),
+      if (sites.any((site) => site.id == Sites.weiboSite)) i18n('search_coverage_weibo'),
       if (snapshotSites.isNotEmpty) i18n('search_coverage_showcase_snapshot', args: {'site': snapshotSites}),
     ].join(' ');
   }

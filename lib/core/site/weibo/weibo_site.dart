@@ -171,8 +171,13 @@ class WeiboSite extends LiveSite
     _page(page, pageSize);
     if (page > 1) return [];
     final liveId = WeiboLink.parse(keyword);
-    if (liveId == null) return [];
-    return [_room(await _api.detail(liveId, cancel: cancel))];
+    if (liveId != null) return [_room(await _api.detail(liveId, cancel: cancel))];
+    final query = keyword.trim().toLowerCase();
+    if (query.isEmpty) return [];
+    // Only filter the current official recommendation snapshot. This is not
+    // a broadcaster or full-site search and does not establish live status.
+    final directory = await getDirectoryPage(cancel: cancel);
+    return directory.rooms.where((room) => (room.nick ?? '').toLowerCase().contains(query)).take(pageSize).toList();
   }
 
   WeiboLiveDetail _detail(LiveRoom room) {

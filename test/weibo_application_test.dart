@@ -155,6 +155,14 @@ void main() {
     await c.doSearch();
     expect(c.results, isEmpty);
     expect(f.detailCalls, 1);
+    expect(f.directoryCalls, 1);
+    c.searchController.text = '样本 1';
+    await c.doSearch();
+    expect(c.results.single.userId, '102');
+    expect(c.results.single.liveStatus, LiveStatus.unknown);
+    expect(c.hasMore.value, isFalse);
+    expect(f.directoryCalls, 2);
+    expect(f.detailCalls, 1);
   });
 
   test('actual search retains replay identity but allows the live-only filter to hide it', () async {
