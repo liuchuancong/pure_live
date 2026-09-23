@@ -9,6 +9,7 @@ MATRIX = ROOT / "docs" / "ACCEPTANCE_MATRIX_3_1_0.md"
 STATUS = ROOT / "docs" / "ACCEPTANCE_STATUS_3_2_0.md"
 SITES = ROOT / "lib" / "core" / "sites.dart"
 EXPANSION = ROOT / "docs" / "PLATFORM_EXPANSION_AUDIT_2026_09_07.md"
+FEATURE_PLAN = ROOT / "docs" / "FEATURE_EXPANSION_3_2_0.md"
 
 
 class AcceptanceStatusAlignmentTests(unittest.TestCase):
@@ -81,6 +82,15 @@ class AcceptanceStatusAlignmentTests(unittest.TestCase):
 
         expected_summary = f"当前 **{ordinary_count} 个直播站点 + IPTV，{remaining_count} 组未注册**"
         self.assertTrue(expected_summary in status, f"Missing current platform summary: {expected_summary}")
+
+        feature_plan = FEATURE_PLAN.read_text(encoding="utf-8")
+        expected_plan_total = f"**{ordinary_count} 个直播站点 + IPTV，共 {len(registered)} 个适配器**"
+        self.assertIn(expected_plan_total, feature_plan)
+        self.assertIn(f"## A. 已注册的 {len(registered)} 个适配器", feature_plan)
+        plan_section = feature_plan.split("## A. 已注册的", 1)[1].split("### ", 1)[0]
+        plan_rows = re.findall(r"^\| P[01] \| ([^|]+) \|", plan_section, re.MULTILINE)
+        self.assertEqual(len(plan_rows), len(registered))
+        self.assertEqual(len(set(plan_rows)), len(plan_rows))
 
 
 if __name__ == "__main__":
