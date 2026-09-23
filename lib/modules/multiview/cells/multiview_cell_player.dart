@@ -1,17 +1,15 @@
-import 'package:pure_live/player/core/playback_source.dart';
-import 'package:pure_live/core/common/hls_source_query_policy.dart';
-
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:media_kit/media_kit.dart';
-import 'package:media_kit_video/media_kit_video.dart';
-
-import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/common/index.dart';
+import 'package:media_kit_video/media_kit_video.dart';
+import 'package:pure_live/player/core/playback_source.dart';
+import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/player/adapters/media_kit_adapter.dart';
-import 'package:pure_live/player/core/playback_source_transport.dart';
 import 'package:pure_live/player/core/playback_proxy_policy.dart';
+import 'package:pure_live/core/common/hls_source_query_policy.dart';
+import 'package:pure_live/player/core/playback_source_transport.dart';
 
 /// multiview 单格播放器契约。
 ///
@@ -297,7 +295,7 @@ class MultiviewCellPlayer
   @override
   VideoController? get videoController => _closed ? null : _backend.videoController;
   @override
-  ValueListenable<int>? get frameRevision => _closed ? null : _backend.videoController?.frameRevision;
+  ValueListenable<int>? get frameRevision => null;
   @override
   bool get isPlaying => !_closed && _backend.isPlaying;
   @override

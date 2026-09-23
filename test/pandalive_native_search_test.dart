@@ -1,13 +1,13 @@
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
+import 'package:pure_live/core/sites.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pure_live/common/models/live_room.dart';
+import 'package:pure_live/modules/search/search_capability.dart';
 import 'package:pure_live/core/site/pandalive/pandalive_api.dart';
 import 'package:pure_live/core/site/pandalive/pandalive_link.dart';
 import 'package:pure_live/core/site/pandalive/pandalive_site.dart';
-import 'package:pure_live/core/sites.dart';
-import 'package:pure_live/modules/search/search_capability.dart';
 
 Map<String, Object?> _live({String id = 'gaoninc', int idx = 101, String nick = '가온'}) => {
   'userId': id,
@@ -29,7 +29,7 @@ Map<String, Object?> _bj({String id = 'see994', int idx = 202, Object? media}) =
   'userNick': '가온主播',
   'thumbUrl': 'https://cdn.pandalive.co.kr/avatar.jpg',
   'blockService': false,
-  if (media != null) 'media': media,
+  'media': ?media,
 };
 
 ({int status, String body}) _page(List<Object?> rows, {required int page, required int size, required int total}) => (
