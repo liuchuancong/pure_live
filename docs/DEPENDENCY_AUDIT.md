@@ -18,7 +18,7 @@
 - 原先受约束的 10 项现固定到发布稳定版：`_fe_analyzer_shared 108.0.0`、`analyzer 14.4.0`、`cli_util 0.6.0`、`dbus 0.8.0`、`file_picker_linux 2.0.1`、`material_color_utilities 0.13.1`、`nm 0.6.0`、`qr 4.0.0`、`source_gen 4.3.0`、`test_api 0.7.14`。`flutter pub outdated --json` 对当前全部直接/传递依赖返回 **0 项落后**。
 - `qr_flutter 4.1.0` 仍调用 `qr 3.x` 的旧构造与静态常量，强行解析到 `qr 4.0.0` 时编译失败。项目的唯一二维码入口现直接用 `qr 4.0.0` 矩阵绘制，保留低纠错等级、黑白对比和 12 px 留白；旧 Flutter 包已退出依赖图。新增渲染测试与 Bilibili 登录测试同批通过。
 - 移除项目没有使用的 `json_serializable`，把 Drift 构建器更新为当前 `drift_dev:drift_dev` 并限定 `tables.dart`/`database.dart`，关闭忽略项目 CLI 参数的 enven 自动构建器；旧 protobuf 构建配置已移除。`build_runner` 由 1351 个 JSON 输入和 5404 个 Drift 输入缩至 6 个 Drift 输入，生成后格式化的 `database.g.dart` 与仓库基线一致。
-- 当前源码的完整质量门禁已通过：仓库审计 0 error、格式检查 0 处变更、Flutter Analyze 无问题、**5334/5334** 测试；记录为 `20260924T023009765Z-quality-full.json`。双端新构建仍待完成。**原生 FFmpeg 另计**：插件最新公开版 `0.6.2` 的 builders `0.11.1` 仍携带 FFmpeg `9.0.1`，而[官方最新稳定版](https://ffmpeg.org/download.html)为 `9.0.2`；需重新构建并验证各目标 ABI 的原生 bundle，不能用 pub 包版本 0 项落后代替这一步。
+- 当前源码的完整质量门禁已通过：仓库审计 0 error、格式检查 0 处变更、Flutter Analyze 无问题、**5334/5334** 测试；记录为 `20260924T023009765Z-quality-full.json`。同一源码的 Android arm64、Windows x64 Debug 构建也已通过，记录分别为 `20260924T023453893Z-build-androidarm64-debug.json` 与 `20260924T023903144Z-build-windowsx64-debug.json`；Android 打包的 18 个 ELF 通过 16 KB 对齐检查。**原生 FFmpeg 另计**：以上候选仍采用插件最新公开版 `0.6.2` / builders `0.11.1` 附带的 FFmpeg `9.0.1`，而[官方最新稳定版](https://ffmpeg.org/download.html)为 `9.0.2`；需重新构建并验证各目标 ABI 的原生 bundle，不能用 pub 包版本 0 项落后代替这一步。
 
 ## 固定工具链
 
