@@ -47,6 +47,10 @@ jobs:
             done
           fi
           xcrun --find metal
+          if [[ "$TARGET" == ios ]]; then
+            xcrun --sdk iphoneos --find metal
+            xcrun --sdk iphoneos metal -v || true
+          fi
 
       - name: Fetch pinned native builder source
         shell: bash
@@ -122,6 +126,10 @@ jobs:
               echo '=== Upstream inner build log ==='
               tail -n 160 build.log
             fi
+            if [[ -f prebuilt/src/ffmpeg/ffbuild/config.log ]]; then
+              echo '=== FFmpeg configure log ==='
+              tail -n 120 prebuilt/src/ffmpeg/ffbuild/config.log
+            fi
             exit 1
           fi
           tail -n 40 "$RUNNER_TEMP/native-build.log"
@@ -176,5 +184,6 @@ jobs:
           path: |
             ${{ runner.temp }}/native-build.log
             builder/build.log
+            builder/prebuilt/src/ffmpeg/ffbuild/config.log
           if-no-files-found: ignore
           retention-days: 3
