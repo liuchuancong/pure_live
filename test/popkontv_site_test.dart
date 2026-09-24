@@ -140,6 +140,51 @@ void main() {
     expect(mediaRequests, 0);
   });
 
+  test('an adult broadcast hidden from guest search stays live via the public directory', () async {
+    // Production (2026-09-25): guest search/all returns the profile but omits
+    // adult broadcasts from liveList, while livelist still lists them.
+    var directoryRequests = 0;
+    var mediaRequests = 0;
+    final api = PopkonApi(
+      request: (method, uri, data, referer, cancel) async {
+        if (uri.path.endsWith('/search/all')) return (status: 200, body: jsonEncode(_search(live: false)));
+        if (uri.path.endsWith('/livelist')) {
+          directoryRequests++;
+          return (
+            status: 200,
+            body: jsonEncode(
+              _directoryPage([
+                {..._directoryCard(), 'isAdult': 1},
+              ]),
+            ),
+          );
+        }
+        mediaRequests++;
+        return (status: 500, body: '');
+      },
+    );
+    final room = await api.room('fixture_101@P-00117');
+    expect(room.state, PopkonState.live);
+    expect(room.access, PopkonAccess.adult);
+    expect(room.onlineViewers, 127);
+    expect(mediaRequests, 0);
+
+    // A second detail inside the snapshot window reuses the directory.
+    await api.room('fixture_101@P-00117');
+    expect(directoryRequests, 1);
+  });
+
+  test('a channel absent from search and directory is offline', () async {
+    final api = PopkonApi(
+      request: (method, uri, data, referer, cancel) async => (
+        status: 200,
+        body: jsonEncode(uri.path.endsWith('/livelist') ? _directoryPage(const []) : _search(live: false)),
+      ),
+    );
+    final room = await api.room('fixture_101@P-00117');
+    expect(room.state, PopkonState.offline);
+  });
+
   test('manifest parser rejects media-host lookalikes', () {
     final master = Uri.parse('https://fixture.hscdn.com/master.m3u8');
     expect(
@@ -241,3 +286,9 @@ chunklist_1080.m3u8?token=fixture
 #EXT-X-STREAM-INF:BANDWIDTH=1813448,CODECS="avc1.42c01f,mp4a.40.2",RESOLUTION=1280x720
 chunklist_720.m3u8?token=fixture
 ''';
+
+Map<String, dynamic> _directoryPage(List<Map<String, dynamic>> cards) => {
+  'statusCd': 'S2000',
+  'statusMsg': 'SUCCESS',
+  'data': {'list': cards, 'topCnt': 0, 'totalCnt': cards.length, 'pageNum': 1, 'totalPage': 1},
+};
