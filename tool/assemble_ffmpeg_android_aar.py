@@ -21,7 +21,9 @@ METADATA = (
     "classes.jar",
     "META-INF/com/android/build/gradle/aar-metadata.properties",
 )
-MIN_LOAD_ALIGNMENT = 0x4000
+# Android's 16 KB page-size requirement applies to 64-bit devices. The NDK
+# still emits 4 KB PT_LOAD alignment for the 32-bit armeabi-v7a target.
+MIN_LOAD_ALIGNMENT = {"arm64-v8a": 0x4000, "armeabi-v7a": 0x1000, "x86_64": 0x4000}
 
 
 def sha256(data: bytes) -> str:
@@ -56,8 +58,8 @@ def validate_elf(data: bytes, abi: str, version: str) -> None:
             continue
         load_count += 1
         alignment = struct.unpack_from("<Q" if elf_class == 2 else "<I", data, header + alignment_offset)[0]
-        if alignment < MIN_LOAD_ALIGNMENT:
-            raise ValueError(f"{abi}: PT_LOAD alignment {alignment:#x} is below 16 KB")
+        if alignment < MIN_LOAD_ALIGNMENT[abi]:
+            raise ValueError(f"{abi}: PT_LOAD alignment {alignment:#x} is below {MIN_LOAD_ALIGNMENT[abi] // 1024} KB")
     if load_count == 0:
         raise ValueError(f"{abi}: ELF has no PT_LOAD segment")
 

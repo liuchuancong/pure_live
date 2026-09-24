@@ -63,6 +63,11 @@ class AssembleFFmpegAndroidAarTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "below 16 KB"):
             assemble(self.inputs, self.root / "unaligned.aar", "n9.0.2")
 
+    def test_accepts_ndk_armv7_four_kb_alignment(self) -> None:
+        write_aar(self.inputs["armeabi-v7a"], "armeabi-v7a", alignment=0x1000)
+        hashes = assemble(self.inputs, self.root / "armv7.aar", "n9.0.2")
+        self.assertIn("armeabi-v7a", hashes)
+
     def test_rejects_mismatched_wrapper_metadata(self) -> None:
         write_aar(self.inputs["armeabi-v7a"], "armeabi-v7a", manifest=b"different")
         with self.assertRaisesRegex(ValueError, "metadata differs"):
