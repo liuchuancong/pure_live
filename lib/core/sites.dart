@@ -1,48 +1,52 @@
-import 'site/niconico/niconico_site.dart';
-import 'site/chzzk/chzzk_site.dart';
-import 'site/kick/kick_site.dart';
-import 'site/liveme/liveme_site.dart';
-import 'site/tiktok/tiktok_site.dart';
-import 'site/youtube/youtube_site.dart';
-import 'site/bigo/bigo_site.dart';
-import 'site/pandalive/pandalive_site.dart';
-import 'site/popkontv/popkontv_site.dart';
-import 'site/shopeelive/shopeelive_site.dart';
-import 'site/vkvideolive/vkvideolive_site.dart';
-import 'site/nimotv/nimotv_site.dart';
-import 'site/dailymotion/dailymotion_site.dart';
-import 'site/rumble/rumble_site.dart';
-import 'site/goodgame/goodgame_site.dart';
-import 'site/fc2live/fc2_site.dart';
-import 'site/steambroadcast/steam_broadcast_site.dart';
-import 'site/jdlive/jd_live_site.dart';
-import 'site/taobaolive/taobao_live_site.dart';
-import 'site/kugoulive/kugou_live_site.dart';
-import 'site/baidulive/baidu_live_site.dart';
-import 'site/sixroom/sixroom_site.dart';
-import 'site/looklive/look_live_site.dart';
-import 'site/seventeenlive/seventeenlive_site.dart';
-import 'site/showroom/showroom_site.dart';
-import 'site/weibo/weibo_site.dart';
-import 'site/tting/tting_site.dart';
-import 'site/xiaohongshu/xiaohongshu_site.dart';
-import 'site/openrec/openrec_site.dart';
-import 'site/picarto/picarto_site.dart';
-import 'site/missevan/missevan_site.dart';
-import 'site/inke/inke_site.dart';
-import 'site/kilakila/kilakila_site.dart';
-import 'site/huajiao/huajiao_site.dart';
-import 'site/twitcasting/twitcasting_site.dart';
 import 'site/yy/yy_site.dart';
-import 'site/acfun/acfun_site.dart';
+import 'site/kick/kick_site.dart';
+import 'site/bigo/bigo_site.dart';
+import 'site/inke/inke_site.dart';
 import 'site/soop/soop_site.dart';
 import 'site/huya/huya_site.dart';
 import 'interface/live_site.dart';
+import 'site/chzzk/chzzk_site.dart';
+import 'site/fc2live/fc2_site.dart';
+import 'site/weibo/weibo_site.dart';
+import 'site/tting/tting_site.dart';
+import 'site/acfun/acfun_site.dart';
 import 'site/douyu/douyu_site.dart';
+import 'site/liveme/liveme_site.dart';
+import 'site/tiktok/tiktok_site.dart';
+import 'site/nimotv/nimotv_site.dart';
+import 'site/rumble/rumble_site.dart';
 import 'site/douyin/douyin_site.dart';
+import 'site/jdlive/jd_live_site.dart';
+import 'site/youtube/youtube_site.dart';
+import 'site/sixroom/sixroom_site.dart';
+import 'site/openrec/openrec_site.dart';
+import 'site/picarto/picarto_site.dart';
+import 'site/huajiao/huajiao_site.dart';
+import 'site/niconico/niconico_site.dart';
+import 'site/popkontv/popkontv_site.dart';
+import 'site/goodgame/goodgame_site.dart';
+import 'site/showroom/showroom_site.dart';
+import 'site/missevan/missevan_site.dart';
+import 'site/kilakila/kilakila_site.dart';
+import 'site/looklive/look_live_site.dart';
+import 'site/pandalive/pandalive_site.dart';
+import 'site/kugoulive/kugou_live_site.dart';
+import 'site/baidulive/baidu_live_site.dart';
 
 import 'package:pure_live/common/index.dart';
+
+import 'site/shopeelive/shopeelive_site.dart';
+import 'site/taobaolive/taobao_live_site.dart';
+import 'site/vkvideolive/vkvideolive_site.dart';
+import 'site/dailymotion/dailymotion_site.dart';
+import 'site/xiaohongshu/xiaohongshu_site.dart';
+import 'site/twitcasting/twitcasting_site.dart';
+import 'site/seventeenlive/seventeenlive_site.dart';
+
 import 'package:pure_live/core/site/cc/cc_site.dart';
+
+import 'site/steambroadcast/steam_broadcast_site.dart';
+
 import 'package:pure_live/core/site/iptv/iptv_site.dart';
 import 'package:pure_live/core/site/twitch/twitch_site.dart';
 import 'package:pure_live/core/site/kuaishou/kuaishou_site.dart';
@@ -146,6 +150,63 @@ class Sites {
     iptvSite,
   };
 
+  /// Root directory for all platform artwork.
+  static const String _assetRoot = 'assets/images';
+
+  /// Keep all platform logos in one place.
+  ///
+  /// Every supported platform must resolve to its own asset here; the generic
+  /// `logo.png` is only the safety net in [logoForId] for future additions
+  /// that have not received artwork yet.
+  static const Map<String, String> _logos = {
+    bilibiliSite: '$_assetRoot/bilibili_2.png',
+    douyuSite: '$_assetRoot/douyu.png',
+    huyaSite: '$_assetRoot/huya.png',
+    douyinSite: '$_assetRoot/douyin.png',
+    kuaishouSite: '$_assetRoot/kuaishou.png',
+    ccSite: '$_assetRoot/cc.png',
+    iptvSite: '$_assetRoot/iptv.png',
+    twitchSite: '$_assetRoot/twitch.png',
+    soopSite: '$_assetRoot/soop.png',
+    yySite: '$_assetRoot/yy.png',
+    acfunSite: '$_assetRoot/acfun.png',
+    picartoSite: '$_assetRoot/picarto.png',
+    twitcastingSite: '$_assetRoot/twitcasting.png',
+    missevanSite: '$_assetRoot/missevan.png',
+    inkeSite: '$_assetRoot/inke.png',
+    kilakilaSite: '$_assetRoot/kilakila.png',
+    huajiaoSite: '$_assetRoot/huajiao.png',
+    openrecSite: '$_assetRoot/openrec.png',
+    ttingSite: '$_assetRoot/ttinglive.png',
+    xiaohongshuSite: '$_assetRoot/xiaohongshu.png',
+    niconicoSite: '$_assetRoot/niconico.png',
+    weiboSite: '$_assetRoot/weibo.png',
+    showroomSite: '$_assetRoot/showroom.png',
+    chzzkSite: '$_assetRoot/chzzk.png',
+    kickSite: '$_assetRoot/kick.png',
+    pandaLiveSite: '$_assetRoot/panda.png',
+    popkonSite: '$_assetRoot/popkon.png',
+    shopeeLiveSite: '$_assetRoot/shopee.png',
+    vkVideoLiveSite: '$_assetRoot/vk.png',
+    nimoTvSite: '$_assetRoot/nimo.png',
+    dailymotionSite: '$_assetRoot/dailymotion.png',
+    rumbleSite: '$_assetRoot/rumble.png',
+    goodGameSite: '$_assetRoot/goodgame.png',
+    fc2LiveSite: '$_assetRoot/fc2.png',
+    steamBroadcastSite: '$_assetRoot/steam.png',
+    jdLiveSite: '$_assetRoot/jd.png',
+    taobaoLiveSite: '$_assetRoot/taobao.png',
+    kugouLiveSite: '$_assetRoot/kugou.png',
+    baiduLiveSite: '$_assetRoot/baidu.png',
+    lookLiveSite: '$_assetRoot/look.png',
+    seventeenLiveSite: '$_assetRoot/17live.png',
+    sixRoomSite: '$_assetRoot/sixroom.png',
+    youtubeSite: '$_assetRoot/youtube.png',
+    bigoSite: '$_assetRoot/bigo.png',
+    liveMeSite: '$_assetRoot/liveme.png',
+    tiktokSite: '$_assetRoot/tiktok.png',
+  };
+
   static bool isSupported(String id) => supportedSiteIds.contains(id.trim().toLowerCase());
 
   /// Read-only artwork lookup for frequently rebuilt room and multiview UI.
@@ -153,319 +214,293 @@ class Sites {
   static String logoForId(String id) {
     final normalizedId = id.trim().toLowerCase();
     if (!supportedSiteIds.contains(normalizedId)) throw StateError('Unsupported live site: $normalizedId');
+    return _logos[normalizedId] ?? '$_assetRoot/logo.png';
+  }
+
+  /// Create a single platform adapter.
+  ///
+  /// Keeping construction in one switch prevents `supportSites`,
+  /// `availableSites` and `of` from drifting apart when a new platform
+  /// is added, and guarantees every site picks up its logo through
+  /// [logoForId] instead of hard-coding asset paths in three places.
+  static Site _createSite(String id) {
+    final normalizedId = id.trim().toLowerCase();
     return switch (normalizedId) {
-      bilibiliSite => 'assets/images/bilibili_2.png',
-      douyuSite => 'assets/images/douyu.png',
-      huyaSite => 'assets/images/huya.png',
-      douyinSite => 'assets/images/douyin.png',
-      kuaishouSite => 'assets/images/kuaishou.png',
-      ccSite => 'assets/images/cc.png',
-      twitchSite => 'assets/images/twitch.png',
-      soopSite => 'assets/images/soop.png',
-      yySite => 'assets/images/yy.png',
-      _ => 'assets/images/logo.png',
+      weiboSite => Site(id: weiboSite, name: i18n('site_weibo'), logo: logoForId(weiboSite), liveSite: WeiboSite()),
+      niconicoSite => Site(id: niconicoSite, name: 'niconico', logo: logoForId(niconicoSite), liveSite: NiconicoSite()),
+      bilibiliSite => Site(
+        id: bilibiliSite,
+        name: i18n("site_bilibili"),
+        logo: logoForId(bilibiliSite),
+        liveSite: BiliBiliSite(),
+      ),
+      douyuSite => Site(id: douyuSite, name: i18n("site_douyu"), logo: logoForId(douyuSite), liveSite: DouyuSite()),
+      huyaSite => Site(id: huyaSite, name: i18n("site_huya"), logo: logoForId(huyaSite), liveSite: HuyaSite()),
+      douyinSite => Site(
+        id: douyinSite,
+        name: i18n("site_douyin"),
+        logo: logoForId(douyinSite),
+        liveSite: DouyinSite(),
+      ),
+      kuaishouSite => Site(
+        id: kuaishouSite,
+        name: i18n("site_kuaishou"),
+        logo: logoForId(kuaishouSite),
+        liveSite: KuaishowSite(),
+      ),
+      ccSite => Site(id: ccSite, name: i18n("site_cc"), logo: logoForId(ccSite), liveSite: CCSite()),
+      twitchSite => Site(
+        id: twitchSite,
+        name: i18n("site_twitch"),
+        logo: logoForId(twitchSite),
+        liveSite: TwitchSite(),
+      ),
+      soopSite => Site(id: soopSite, name: i18n("site_soop"), logo: logoForId(soopSite), liveSite: SoopSite()),
+      yySite => Site(id: yySite, name: i18n("site_yy"), logo: logoForId(yySite), liveSite: YYSite()),
+      acfunSite => Site(id: acfunSite, name: i18n('site_acfun'), logo: logoForId(acfunSite), liveSite: AcfunSite()),
+      picartoSite => Site(id: picartoSite, name: 'Picarto', logo: logoForId(picartoSite), liveSite: PicartoSite()),
+      twitcastingSite => Site(
+        id: twitcastingSite,
+        name: 'TwitCasting',
+        logo: logoForId(twitcastingSite),
+        liveSite: TwitcastingSite(),
+      ),
+      missevanSite => Site(
+        id: missevanSite,
+        name: i18n('site_missevan'),
+        logo: logoForId(missevanSite),
+        liveSite: MissevanSite(),
+      ),
+      iptvSite => Site(id: iptvSite, name: i18n("site_iptv"), logo: logoForId(iptvSite), liveSite: IptvSite()),
+      inkeSite => Site(id: inkeSite, name: i18n('site_inke'), logo: logoForId(inkeSite), liveSite: InkeSite()),
+      kilakilaSite => Site(
+        id: kilakilaSite,
+        name: i18n('site_kilakila'),
+        logo: logoForId(kilakilaSite),
+        liveSite: KilakilaSite(),
+      ),
+      huajiaoSite => Site(
+        id: huajiaoSite,
+        name: i18n('site_huajiao'),
+        logo: logoForId(huajiaoSite),
+        liveSite: HuajiaoSite(),
+      ),
+      openrecSite => Site(
+        id: openrecSite,
+        name: 'mellow-fan (OPENREC)',
+        logo: logoForId(openrecSite),
+        liveSite: OpenrecSite(),
+      ),
+      ttingSite => Site(id: ttingSite, name: 'FLEX TV (TTingLive)', logo: logoForId(ttingSite), liveSite: TtingSite()),
+      xiaohongshuSite => Site(
+        id: xiaohongshuSite,
+        name: i18n('site_xiaohongshu'),
+        logo: logoForId(xiaohongshuSite),
+        liveSite: XiaohongshuSite(),
+      ),
+      showroomSite => Site(
+        id: showroomSite,
+        name: i18n('site_showroom'),
+        logo: logoForId(showroomSite),
+        liveSite: ShowroomSite(),
+      ),
+      chzzkSite => Site(id: chzzkSite, name: i18n('site_chzzk'), logo: logoForId(chzzkSite), liveSite: ChzzkSite()),
+      kickSite => Site(id: kickSite, name: i18n('site_kick'), logo: logoForId(kickSite), liveSite: KickSite()),
+      liveMeSite => Site(
+        id: liveMeSite,
+        name: i18n('site_liveme'),
+        logo: logoForId(liveMeSite),
+        liveSite: LiveMeSite(),
+      ),
+      tiktokSite => Site(
+        id: tiktokSite,
+        name: i18n('site_tiktok'),
+        logo: logoForId(tiktokSite),
+        liveSite: TikTokSite(),
+      ),
+      youtubeSite => Site(
+        id: youtubeSite,
+        name: i18n('site_youtube'),
+        logo: logoForId(youtubeSite),
+        liveSite: YouTubeSite(),
+      ),
+      bigoSite => Site(id: bigoSite, name: i18n('site_bigo'), logo: logoForId(bigoSite), liveSite: BigoSite()),
+      pandaLiveSite => Site(
+        id: pandaLiveSite,
+        name: i18n('site_pandalive'),
+        logo: logoForId(pandaLiveSite),
+        liveSite: PandaLiveSite(),
+      ),
+      popkonSite => Site(
+        id: popkonSite,
+        name: i18n('site_popkontv'),
+        logo: logoForId(popkonSite),
+        liveSite: PopkonSite(),
+      ),
+      shopeeLiveSite => Site(
+        id: shopeeLiveSite,
+        name: i18n('site_shopeelive'),
+        logo: logoForId(shopeeLiveSite),
+        liveSite: ShopeeLiveSite(),
+      ),
+      vkVideoLiveSite => Site(
+        id: vkVideoLiveSite,
+        name: i18n('site_vkvideolive'),
+        logo: logoForId(vkVideoLiveSite),
+        liveSite: VkVideoLiveSite(),
+      ),
+      nimoTvSite => Site(
+        id: nimoTvSite,
+        name: i18n('site_nimotv'),
+        logo: logoForId(nimoTvSite),
+        liveSite: NimoTvSite(),
+      ),
+      dailymotionSite => Site(
+        id: dailymotionSite,
+        name: i18n('site_dailymotion'),
+        logo: logoForId(dailymotionSite),
+        liveSite: DailymotionSite(),
+      ),
+      rumbleSite => Site(
+        id: rumbleSite,
+        name: i18n('site_rumble'),
+        logo: logoForId(rumbleSite),
+        liveSite: RumbleSite(),
+      ),
+      goodGameSite => Site(
+        id: goodGameSite,
+        name: i18n('site_goodgame'),
+        logo: logoForId(goodGameSite),
+        liveSite: GoodGameSite(),
+      ),
+      fc2LiveSite => Site(
+        id: fc2LiveSite,
+        name: i18n('site_fc2live'),
+        logo: logoForId(fc2LiveSite),
+        liveSite: Fc2Site(),
+      ),
+      steamBroadcastSite => Site(
+        id: steamBroadcastSite,
+        name: i18n('site_steambroadcast'),
+        logo: logoForId(steamBroadcastSite),
+        liveSite: SteamBroadcastSite(),
+      ),
+      jdLiveSite => Site(
+        id: jdLiveSite,
+        name: i18n('site_jdlive'),
+        logo: logoForId(jdLiveSite),
+        liveSite: JdLiveSite(),
+      ),
+      taobaoLiveSite => Site(
+        id: taobaoLiveSite,
+        name: i18n('site_taobaolive'),
+        logo: logoForId(taobaoLiveSite),
+        liveSite: TaobaoLiveSite(),
+      ),
+      kugouLiveSite => Site(
+        id: kugouLiveSite,
+        name: i18n('site_kugoulive'),
+        logo: logoForId(kugouLiveSite),
+        liveSite: KugouLiveSite(),
+      ),
+      baiduLiveSite => Site(
+        id: baiduLiveSite,
+        name: i18n('site_baidulive'),
+        logo: logoForId(baiduLiveSite),
+        liveSite: BaiduLiveSite(),
+      ),
+      sixRoomSite => Site(
+        id: sixRoomSite,
+        name: i18n('site_sixroom'),
+        logo: logoForId(sixRoomSite),
+        liveSite: SixRoomSite(),
+      ),
+      lookLiveSite => Site(
+        id: lookLiveSite,
+        name: i18n('site_looklive'),
+        logo: logoForId(lookLiveSite),
+        liveSite: LookLiveSite(),
+      ),
+      seventeenLiveSite => Site(
+        id: seventeenLiveSite,
+        name: i18n('site_17live'),
+        logo: logoForId(seventeenLiveSite),
+        liveSite: SeventeenLiveSite(),
+      ),
+      _ => throw StateError('Unsupported live site: $normalizedId'),
     };
   }
 
-  static List<Site> get supportSites => [
-    Site(id: bilibiliSite, name: i18n("site_bilibili"), logo: "assets/images/bilibili_2.png", liveSite: BiliBiliSite()),
-    Site(id: douyuSite, name: i18n("site_douyu"), logo: "assets/images/douyu.png", liveSite: DouyuSite()),
-    Site(id: huyaSite, name: i18n("site_huya"), logo: "assets/images/huya.png", liveSite: HuyaSite()),
-    Site(id: douyinSite, name: i18n("site_douyin"), logo: "assets/images/douyin.png", liveSite: DouyinSite()),
-    Site(id: kuaishouSite, name: i18n("site_kuaishou"), logo: "assets/images/kuaishou.png", liveSite: KuaishowSite()),
-    Site(id: ccSite, name: i18n("site_cc"), logo: "assets/images/cc.png", liveSite: CCSite()),
-    Site(id: twitchSite, name: i18n("site_twitch"), logo: "assets/images/twitch.png", liveSite: TwitchSite()),
-    Site(id: soopSite, name: i18n("site_soop"), logo: "assets/images/soop.png", liveSite: SoopSite()),
-    Site(id: yySite, name: i18n("site_yy"), logo: "assets/images/yy.png", liveSite: YYSite()),
-    Site(id: acfunSite, name: i18n('site_acfun'), logo: 'assets/images/logo.png', liveSite: AcfunSite()),
-    Site(id: picartoSite, name: 'Picarto', logo: 'assets/images/logo.png', liveSite: PicartoSite()),
-    Site(id: twitcastingSite, name: 'TwitCasting', logo: 'assets/images/logo.png', liveSite: TwitcastingSite()),
-    Site(id: missevanSite, name: i18n('site_missevan'), logo: 'assets/images/logo.png', liveSite: MissevanSite()),
-    Site(id: inkeSite, name: i18n('site_inke'), logo: 'assets/images/logo.png', liveSite: InkeSite()),
-    Site(id: kilakilaSite, name: i18n('site_kilakila'), logo: 'assets/images/logo.png', liveSite: KilakilaSite()),
-    Site(id: huajiaoSite, name: i18n('site_huajiao'), logo: 'assets/images/logo.png', liveSite: HuajiaoSite()),
-    Site(id: openrecSite, name: 'mellow-fan (OPENREC)', logo: 'assets/images/logo.png', liveSite: OpenrecSite()),
-    Site(id: ttingSite, name: 'FLEX TV (TTingLive)', logo: 'assets/images/logo.png', liveSite: TtingSite()),
-    Site(
-      id: xiaohongshuSite,
-      name: i18n('site_xiaohongshu'),
-      logo: 'assets/images/logo.png',
-      liveSite: XiaohongshuSite(),
-    ),
-    Site(id: niconicoSite, name: 'niconico', logo: 'assets/images/logo.png', liveSite: NiconicoSite()),
-    Site(id: weiboSite, name: i18n('site_weibo'), logo: 'assets/images/logo.png', liveSite: WeiboSite()),
-    Site(id: showroomSite, name: i18n('site_showroom'), logo: 'assets/images/logo.png', liveSite: ShowroomSite()),
-    Site(id: chzzkSite, name: i18n('site_chzzk'), logo: 'assets/images/logo.png', liveSite: ChzzkSite()),
-    Site(id: kickSite, name: i18n('site_kick'), logo: 'assets/images/logo.png', liveSite: KickSite()),
-    Site(id: liveMeSite, name: i18n('site_liveme'), logo: 'assets/images/logo.png', liveSite: LiveMeSite()),
-    Site(id: tiktokSite, name: i18n('site_tiktok'), logo: 'assets/images/logo.png', liveSite: TikTokSite()),
-    Site(id: youtubeSite, name: i18n('site_youtube'), logo: 'assets/images/logo.png', liveSite: YouTubeSite()),
-    Site(id: bigoSite, name: i18n('site_bigo'), logo: 'assets/images/logo.png', liveSite: BigoSite()),
-    Site(id: pandaLiveSite, name: i18n('site_pandalive'), logo: 'assets/images/logo.png', liveSite: PandaLiveSite()),
-    Site(id: popkonSite, name: i18n('site_popkontv'), logo: 'assets/images/logo.png', liveSite: PopkonSite()),
-    Site(id: shopeeLiveSite, name: i18n('site_shopeelive'), logo: 'assets/images/logo.png', liveSite: ShopeeLiveSite()),
-    Site(
-      id: vkVideoLiveSite,
-      name: i18n('site_vkvideolive'),
-      logo: 'assets/images/logo.png',
-      liveSite: VkVideoLiveSite(),
-    ),
-    Site(id: nimoTvSite, name: i18n('site_nimotv'), logo: 'assets/images/logo.png', liveSite: NimoTvSite()),
-    Site(
-      id: dailymotionSite,
-      name: i18n('site_dailymotion'),
-      logo: 'assets/images/logo.png',
-      liveSite: DailymotionSite(),
-    ),
-    Site(id: rumbleSite, name: i18n('site_rumble'), logo: 'assets/images/logo.png', liveSite: RumbleSite()),
-    Site(id: goodGameSite, name: i18n('site_goodgame'), logo: 'assets/images/logo.png', liveSite: GoodGameSite()),
-    Site(id: fc2LiveSite, name: i18n('site_fc2live'), logo: 'assets/images/logo.png', liveSite: Fc2Site()),
-    Site(
-      id: steamBroadcastSite,
-      name: i18n('site_steambroadcast'),
-      logo: 'assets/images/logo.png',
-      liveSite: SteamBroadcastSite(),
-    ),
-    Site(id: jdLiveSite, name: i18n('site_jdlive'), logo: 'assets/images/logo.png', liveSite: JdLiveSite()),
-    Site(id: taobaoLiveSite, name: i18n('site_taobaolive'), logo: 'assets/images/logo.png', liveSite: TaobaoLiveSite()),
-    Site(id: kugouLiveSite, name: i18n('site_kugoulive'), logo: 'assets/images/logo.png', liveSite: KugouLiveSite()),
-    Site(id: baiduLiveSite, name: i18n('site_baidulive'), logo: 'assets/images/logo.png', liveSite: BaiduLiveSite()),
-    Site(id: sixRoomSite, name: i18n('site_sixroom'), logo: 'assets/images/logo.png', liveSite: SixRoomSite()),
-    Site(id: lookLiveSite, name: i18n('site_looklive'), logo: 'assets/images/logo.png', liveSite: LookLiveSite()),
-    Site(
-      id: seventeenLiveSite,
-      name: i18n('site_17live'),
-      logo: 'assets/images/logo.png',
-      liveSite: SeventeenLiveSite(),
-    ),
-    Site(id: iptvSite, name: i18n("site_iptv"), logo: "assets/images/logo.png", liveSite: IptvSite()),
-  ];
+  /// Build the complete supported-site list.
+  ///
+  /// The list is cached because platform adapters can contain session,
+  /// authentication or request-related state. Recreating them every time
+  /// `supportSites` is accessed would unnecessarily discard that state.
+  static final List<Site> _supportedSites = List<Site>.unmodifiable([
+    for (final id in [
+      bilibiliSite,
+      douyuSite,
+      huyaSite,
+      douyinSite,
+      kuaishouSite,
+      ccSite,
+      twitchSite,
+      soopSite,
+      yySite,
+      acfunSite,
+      picartoSite,
+      twitcastingSite,
+      missevanSite,
+      inkeSite,
+      kilakilaSite,
+      huajiaoSite,
+      openrecSite,
+      ttingSite,
+      xiaohongshuSite,
+      niconicoSite,
+      weiboSite,
+      showroomSite,
+      chzzkSite,
+      kickSite,
+      liveMeSite,
+      tiktokSite,
+      youtubeSite,
+      bigoSite,
+      pandaLiveSite,
+      popkonSite,
+      shopeeLiveSite,
+      vkVideoLiveSite,
+      nimoTvSite,
+      dailymotionSite,
+      rumbleSite,
+      goodGameSite,
+      fc2LiveSite,
+      steamBroadcastSite,
+      jdLiveSite,
+      taobaoLiveSite,
+      kugouLiveSite,
+      baiduLiveSite,
+      sixRoomSite,
+      lookLiveSite,
+      seventeenLiveSite,
+      iptvSite,
+    ])
+      _createSite(id),
+  ]);
+
+  static List<Site> get supportSites => _supportedSites;
 
   static Site of(String id) {
     final normalizedId = id.trim().toLowerCase();
     // Do not construct every platform adapter for a single lookup. Favourite
     // verification performs this operation for every saved room; the previous
     // list scan allocated nine adapters per card and also discarded platform
-    // session caches immediately afterwards.
-    return switch (normalizedId) {
-      weiboSite => Site(id: weiboSite, name: i18n('site_weibo'), logo: 'assets/images/logo.png', liveSite: WeiboSite()),
-      niconicoSite => Site(
-        id: niconicoSite,
-        name: 'niconico',
-        logo: 'assets/images/logo.png',
-        liveSite: NiconicoSite(),
-      ),
-      bilibiliSite => Site(
-        id: bilibiliSite,
-        name: i18n("site_bilibili"),
-        logo: "assets/images/bilibili_2.png",
-        liveSite: BiliBiliSite(),
-      ),
-      douyuSite => Site(
-        id: douyuSite,
-        name: i18n("site_douyu"),
-        logo: "assets/images/douyu.png",
-        liveSite: DouyuSite(),
-      ),
-      huyaSite => Site(id: huyaSite, name: i18n("site_huya"), logo: "assets/images/huya.png", liveSite: HuyaSite()),
-      douyinSite => Site(
-        id: douyinSite,
-        name: i18n("site_douyin"),
-        logo: "assets/images/douyin.png",
-        liveSite: DouyinSite(),
-      ),
-      kuaishouSite => Site(
-        id: kuaishouSite,
-        name: i18n("site_kuaishou"),
-        logo: "assets/images/kuaishou.png",
-        liveSite: KuaishowSite(),
-      ),
-      ccSite => Site(id: ccSite, name: i18n("site_cc"), logo: "assets/images/cc.png", liveSite: CCSite()),
-      twitchSite => Site(
-        id: twitchSite,
-        name: i18n("site_twitch"),
-        logo: "assets/images/twitch.png",
-        liveSite: TwitchSite(),
-      ),
-      soopSite => Site(id: soopSite, name: i18n("site_soop"), logo: "assets/images/soop.png", liveSite: SoopSite()),
-      yySite => Site(id: yySite, name: i18n("site_yy"), logo: "assets/images/yy.png", liveSite: YYSite()),
-      acfunSite => Site(id: acfunSite, name: i18n('site_acfun'), logo: 'assets/images/logo.png', liveSite: AcfunSite()),
-      picartoSite => Site(id: picartoSite, name: 'Picarto', logo: 'assets/images/logo.png', liveSite: PicartoSite()),
-      twitcastingSite => Site(
-        id: twitcastingSite,
-        name: 'TwitCasting',
-        logo: 'assets/images/logo.png',
-        liveSite: TwitcastingSite(),
-      ),
-      missevanSite => Site(
-        id: missevanSite,
-        name: i18n('site_missevan'),
-        logo: 'assets/images/logo.png',
-        liveSite: MissevanSite(),
-      ),
-      iptvSite => Site(id: iptvSite, name: i18n("site_iptv"), logo: "assets/images/logo.png", liveSite: IptvSite()),
-      inkeSite => Site(id: inkeSite, name: i18n('site_inke'), logo: 'assets/images/logo.png', liveSite: InkeSite()),
-      kilakilaSite => Site(
-        id: kilakilaSite,
-        name: i18n('site_kilakila'),
-        logo: 'assets/images/logo.png',
-        liveSite: KilakilaSite(),
-      ),
-      huajiaoSite => Site(
-        id: huajiaoSite,
-        name: i18n('site_huajiao'),
-        logo: 'assets/images/logo.png',
-        liveSite: HuajiaoSite(),
-      ),
-      openrecSite => Site(
-        id: openrecSite,
-        name: 'mellow-fan (OPENREC)',
-        logo: 'assets/images/logo.png',
-        liveSite: OpenrecSite(),
-      ),
-      ttingSite => Site(
-        id: ttingSite,
-        name: 'FLEX TV (TTingLive)',
-        logo: 'assets/images/logo.png',
-        liveSite: TtingSite(),
-      ),
-      xiaohongshuSite => Site(
-        id: xiaohongshuSite,
-        name: i18n('site_xiaohongshu'),
-        logo: 'assets/images/logo.png',
-        liveSite: XiaohongshuSite(),
-      ),
-      showroomSite => Site(
-        id: showroomSite,
-        name: i18n('site_showroom'),
-        logo: 'assets/images/logo.png',
-        liveSite: ShowroomSite(),
-      ),
-      chzzkSite => Site(id: chzzkSite, name: i18n('site_chzzk'), logo: 'assets/images/logo.png', liveSite: ChzzkSite()),
-      kickSite => Site(id: kickSite, name: i18n('site_kick'), logo: 'assets/images/logo.png', liveSite: KickSite()),
-      liveMeSite => Site(
-        id: liveMeSite,
-        name: i18n('site_liveme'),
-        logo: 'assets/images/logo.png',
-        liveSite: LiveMeSite(),
-      ),
-      tiktokSite => Site(
-        id: tiktokSite,
-        name: i18n('site_tiktok'),
-        logo: 'assets/images/logo.png',
-        liveSite: TikTokSite(),
-      ),
-      youtubeSite => Site(
-        id: youtubeSite,
-        name: i18n('site_youtube'),
-        logo: 'assets/images/logo.png',
-        liveSite: YouTubeSite(),
-      ),
-      bigoSite => Site(id: bigoSite, name: i18n('site_bigo'), logo: 'assets/images/logo.png', liveSite: BigoSite()),
-      pandaLiveSite => Site(
-        id: pandaLiveSite,
-        name: i18n('site_pandalive'),
-        logo: 'assets/images/logo.png',
-        liveSite: PandaLiveSite(),
-      ),
-      popkonSite => Site(
-        id: popkonSite,
-        name: i18n('site_popkontv'),
-        logo: 'assets/images/logo.png',
-        liveSite: PopkonSite(),
-      ),
-      shopeeLiveSite => Site(
-        id: shopeeLiveSite,
-        name: i18n('site_shopeelive'),
-        logo: 'assets/images/logo.png',
-        liveSite: ShopeeLiveSite(),
-      ),
-      vkVideoLiveSite => Site(
-        id: vkVideoLiveSite,
-        name: i18n('site_vkvideolive'),
-        logo: 'assets/images/logo.png',
-        liveSite: VkVideoLiveSite(),
-      ),
-      nimoTvSite => Site(
-        id: nimoTvSite,
-        name: i18n('site_nimotv'),
-        logo: 'assets/images/logo.png',
-        liveSite: NimoTvSite(),
-      ),
-      dailymotionSite => Site(
-        id: dailymotionSite,
-        name: i18n('site_dailymotion'),
-        logo: 'assets/images/logo.png',
-        liveSite: DailymotionSite(),
-      ),
-      rumbleSite => Site(
-        id: rumbleSite,
-        name: i18n('site_rumble'),
-        logo: 'assets/images/logo.png',
-        liveSite: RumbleSite(),
-      ),
-      goodGameSite => Site(
-        id: goodGameSite,
-        name: i18n('site_goodgame'),
-        logo: 'assets/images/logo.png',
-        liveSite: GoodGameSite(),
-      ),
-      fc2LiveSite => Site(
-        id: fc2LiveSite,
-        name: i18n('site_fc2live'),
-        logo: 'assets/images/logo.png',
-        liveSite: Fc2Site(),
-      ),
-      steamBroadcastSite => Site(
-        id: steamBroadcastSite,
-        name: i18n('site_steambroadcast'),
-        logo: 'assets/images/logo.png',
-        liveSite: SteamBroadcastSite(),
-      ),
-      jdLiveSite => Site(
-        id: jdLiveSite,
-        name: i18n('site_jdlive'),
-        logo: 'assets/images/logo.png',
-        liveSite: JdLiveSite(),
-      ),
-      taobaoLiveSite => Site(
-        id: taobaoLiveSite,
-        name: i18n('site_taobaolive'),
-        logo: 'assets/images/logo.png',
-        liveSite: TaobaoLiveSite(),
-      ),
-      kugouLiveSite => Site(
-        id: kugouLiveSite,
-        name: i18n('site_kugoulive'),
-        logo: 'assets/images/logo.png',
-        liveSite: KugouLiveSite(),
-      ),
-      baiduLiveSite => Site(
-        id: baiduLiveSite,
-        name: i18n('site_baidulive'),
-        logo: 'assets/images/logo.png',
-        liveSite: BaiduLiveSite(),
-      ),
-      sixRoomSite => Site(
-        id: sixRoomSite,
-        name: i18n('site_sixroom'),
-        logo: 'assets/images/logo.png',
-        liveSite: SixRoomSite(),
-      ),
-      lookLiveSite => Site(
-        id: lookLiveSite,
-        name: i18n('site_looklive'),
-        logo: 'assets/images/logo.png',
-        liveSite: LookLiveSite(),
-      ),
-      seventeenLiveSite => Site(
-        id: seventeenLiveSite,
-        name: i18n('site_17live'),
-        logo: 'assets/images/logo.png',
-        liveSite: SeventeenLiveSite(),
-      ),
-      _ => throw StateError('Unsupported live site: $normalizedId'),
-    };
+    // session caches immediately afterwards. Reusing the cached adapter keeps
+    // both allocations and platform session state intact.
+    for (final site in _supportedSites) {
+      if (site.id == normalizedId) return site;
+    }
+    return _createSite(normalizedId);
   }
 
   List<Site> availableSites({bool containsAll = false}) {
@@ -482,7 +517,7 @@ class Sites {
       }
     }
     if (containsAll) {
-      result.insert(0, Site(id: allSite, name: i18n("site_all"), logo: "assets/images/all.png", liveSite: LiveSite()));
+      result.insert(0, Site(id: allSite, name: i18n("site_all"), logo: "$_assetRoot/all.png", liveSite: LiveSite()));
     }
     return result;
   }
