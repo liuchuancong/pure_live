@@ -103,6 +103,10 @@ def assemble(inputs: dict[str, Path], output: Path, version: str) -> dict[str, s
         raise FileExistsError(staging)
     try:
         with zipfile.ZipFile(staging, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9, allowZip64=True) as archive:
+            for name in ("jni/", *(f"jni/{abi}/" for abi in ABIS)):
+                info = zipfile.ZipInfo(name, date_time=(1980, 1, 1, 0, 0, 0))
+                info.external_attr = (0o755 << 16) | 0x10
+                archive.writestr(info, b"")
             payloads = list(metadata.items()) + [(f"jni/{abi}/libffmpegkit.so", libraries[abi]) for abi in ABIS]
             for name, data in payloads:
                 info = zipfile.ZipInfo(name, date_time=(1980, 1, 1, 0, 0, 0))

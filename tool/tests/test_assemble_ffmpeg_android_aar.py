@@ -50,6 +50,7 @@ class AssembleFFmpegAndroidAarTest(unittest.TestCase):
         self.assertEqual(set(hashes), {"aar", *ABIS})
         with zipfile.ZipFile(output) as archive:
             self.assertEqual(archive.testzip(), None)
+            self.assertTrue({"jni/", *(f"jni/{abi}/" for abi in ABIS)}.issubset(archive.namelist()))
             self.assertEqual(
                 sorted(name for name in archive.namelist() if name.endswith(".so")),
                 sorted(f"jni/{abi}/libffmpegkit.so" for abi in ABIS),
