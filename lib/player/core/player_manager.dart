@@ -891,9 +891,24 @@ class PlayerManager {
     final elapsed = DateTime.now().difference(since);
     final remaining = _portraitDetector.stabilityDelay - elapsed;
     final generation = _geometrySessionGeneration;
-    _geometryStabilityTimer = Timer(remaining.isNegative ? Duration.zero : remaining, () {
+    // Timer truncates to whole milliseconds, so an unrounded remainder fires
+    // up to 1 ms early. commitPending() then rejects the sample, and a decoder
+    // that reported its size only once stayed "unknown" forever. Round up.
+    final delay = remaining.isNegative
+        ? Duration.zero
+        : Duration(milliseconds: (remaining.inMicroseconds / Duration.microsecondsPerMillisecond).ceil() + 1);
+    _geometryStabilityTimer = Timer(delay, () {
       _geometryStabilityTimer = null;
       if (generation != _geometrySessionGeneration || _disposed || _isClosing) return;
+      final pendingSince = _portraitDetector.pendingSince;
+      if (pendingSince != null &&
+          _portraitDetector.hasPendingCandidate &&
+          DateTime.now().difference(pendingSince) < _portraitDetector.stabilityDelay) {
+        // Monotonic timers and the wall clock can still disagree (clock
+        // adjustments); retry rather than dropping the only sample.
+        _scheduleGeometryStabilityCommit();
+        return;
+      }
       final snapshot = _portraitDetector.commitPending();
       _publishVideoGeometry(snapshot);
       if (snapshot.isStable) _scheduleActiveContentProbe();
