@@ -23,7 +23,7 @@ PURELIVE_PROBE_SITES=huya,douyu PURELIVE_PROBE_REPORT=/tmp/report.json ...   # �
 | 网络 / 地区限制 | GoodGame（`hls.goodgame.ru` 超时）、OPENREC（mellow-fan 接口 curl 同样 403）、VK 部分签名子播放列表 403（疑与 `srcIp` 和代理分流有关） |
 | 平台侧变化 | 花椒：匿名 `getLives4H5` 报告总数但不再返回任何 feed，官网 PC 端已无直播列表；手机网络结果相同 |
 | 快照有限 | TTingLive：首页快照仅 1 个房间且已下播 |
-| 修复待真机验证 | Kick |
+| 修复已验证 | Kick（Android 真机、Windows 集成测试） |
 
 ## 本批修复
 
@@ -33,6 +33,6 @@ PURELIVE_PROBE_SITES=huya,douyu PURELIVE_PROBE_REPORT=/tmp/report.json ...   # �
 | PopkonTV | 游客搜索不再返回成人直播，详情退回主播资料判为下播；改为在 60 秒缓存的公开目录中确认 | `3331c42c` |
 | LiveMe | 精选列表出现无 `ushortid` 的联合房间卡，整页因身份校验失败 | `3d0aaceb` |
 | VK Video Live | 新 CDN `*.vkuser.net` 不在白名单；共享镜像 403 导致整个房间失败 | `bb421c45` |
-| Kick | Cloudflare 对 `dart:io` 的 TLS 指纹一律 403（curl 与手机 curl 均 200）；Android 改走平台 TLS 的原生通道，Windows/Linux 仍受阻 | `f1511974`，待真机 |
+| Kick | Cloudflare 对 `dart:io` 的 TLS 指纹一律 403（curl 与手机 curl 均 200）。Android 走平台 TLS（`HttpURLConnection`），Windows 走 WinHTTP/Schannel，均只放行 kick.com；IVS 播放列表仍走 dio。Linux 仍受阻 | `f1511974`（Android）、`76a59f31`（路由）、`8435e9e2`（Windows WinHTTP）；Android 真机 1080p60 播放与聊天通过，Windows `integration_test/native_http_kick_test.dart` 通过 |
 | TwitCasting | 分片需要播放列表下发的 `lvhls_ssid_*` Cookie；FFmpeg（mpv/IJK）会回放，App 实测可播，仅探针需要补 Cookie 回放 | `59b29295`（探针） |
 
