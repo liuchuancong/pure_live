@@ -155,12 +155,21 @@ Future<void> _probeSite(String id, Map<String, Object?> result) async {
 }
 
 /// Classifies the first bytes of a stream, following HLS master -> media -> segment.
-Future<String> _checkMedia(Uri uri, Map<String, String> headers, {int depth = 0}) async {
+/// Cookies set by a playlist are replayed on its children, as FFmpeg's HLS
+/// demuxer does (e.g. TwitCasting's per-movie `lvhls_ssid_*` segment cookie).
+Future<String> _checkMedia(
+  Uri uri,
+  Map<String, String> headers, {
+  int depth = 0,
+  List<Cookie> cookies = const <Cookie>[],
+}) async {
   final client = HttpClient()..connectionTimeout = const Duration(seconds: 10);
   try {
     final request = await client.getUrl(uri).timeout(_mediaTimeout);
     headers.forEach((k, v) => request.headers.set(k, v, preserveHeaderCase: true));
+    request.cookies.addAll(cookies);
     final response = await request.close().timeout(_mediaTimeout);
+    final jar = <Cookie>[...cookies, ...response.cookies];
     if (response.statusCode >= 400) return 'http-${response.statusCode}';
     final bytes = BytesBuilder(copy: false);
     try {
@@ -189,10 +198,10 @@ Future<String> _checkMedia(Uri uri, Map<String, String> headers, {int depth = 0}
         : uri.resolveUri(response.redirects.last.location);
     final lines = const LineSplitter().convert(text).map((l) => l.trim()).toList();
     final map = RegExp(r'#EXT-X-MAP:.*URI="([^"]+)"').firstMatch(text)?.group(1);
-    if (map != null) return await _checkMedia(base.resolve(map), headers, depth: depth + 1);
+    if (map != null) return await _checkMedia(base.resolve(map), headers, depth: depth + 1, cookies: jar);
     final next = lines.firstWhere((l) => l.isNotEmpty && !l.startsWith('#'), orElse: () => '');
     if (next.isEmpty) return text.contains('#EXT-X-ENDLIST') ? 'hls-ended' : 'hls-empty';
-    return await _checkMedia(base.resolve(next), headers, depth: depth + 1);
+    return await _checkMedia(base.resolve(next), headers, depth: depth + 1, cookies: jar);
   } on TimeoutException {
     return 'timeout';
   } catch (error) {
