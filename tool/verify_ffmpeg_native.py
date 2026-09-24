@@ -18,6 +18,7 @@ ARCHIVES = {
     'windows': ('bundle-base-windows-x86_64-shared-lgpl.zip', 'e61684a91f7471ba00f1d5b36a24e93ab602ef72bd57000d94990e7e0c5dfe3a'),
     'linux': ('bundle-base-linux-x86_64-shared-lgpl.zip', 'd6003c3feb2bdcdccd0d4ad5e7b76fa8e8951430c6a22c1db7be5e13da19403d'),
     'macos': ('bundle-base-macos-universal-lgpl.xcframework.zip', '9977fc0d3de38af4830c54f536146b2595843d7a45850c50c6205ffb56ca899a'),
+    'ios': ('bundle-base-ios-universal-lgpl.xcframework.zip', 'f1758956e81d938bedf39e796dc99a3b34951cffcc681ab52e241d47b0c93aa4'),
 }
 WINDOWS_DLL_SHA256 = '302d978048f389dbb07f01c1a34a4988a92d1e3ebf0e960e2dd8314f83632b34'
 VERSION = b'n9.0.2'
@@ -71,10 +72,10 @@ def verify(platform: str, artifact: Path, cache_archive: Path | None = None, abi
         if len(candidates) != 1:
             raise ValueError(f'Expected one packaged Linux FFmpeg library under {artifact}, found {len(candidates)}')
         artifact = candidates[0]
-    if platform == 'macos' and artifact.is_dir():
+    if platform in ('macos', 'ios') and artifact.is_dir():
         candidates = [path for path in artifact.rglob('ffmpegkit') if path.parent.name == 'ffmpegkit.framework' and path.is_file()]
         if len(candidates) != 1:
-            raise ValueError(f'Expected one packaged macOS FFmpeg framework binary under {artifact}, found {len(candidates)}')
+            raise ValueError(f'Expected one packaged {platform} FFmpeg framework binary under {artifact}, found {len(candidates)}')
         artifact = candidates[0]
 
     if platform == 'android':
@@ -96,6 +97,9 @@ def verify(platform: str, artifact: Path, cache_archive: Path | None = None, abi
     if platform == 'macos':
         if macos_architectures(library) != {0x01000007, 0x0100000C}:
             raise ValueError(f'macOS FFmpeg library lacks x86_64 and arm64 slices: {artifact}')
+    if platform == 'ios':
+        if library[:4] != b'\xcf\xfa\xed\xfe' or len(library) < 8 or struct.unpack_from('<I', library, 4)[0] != 0x0100000C:
+            raise ValueError(f'iOS FFmpeg library is not arm64 Mach-O: {artifact}')
 
     return {'platform': platform, 'version': VERSION.decode(), 'archive_sha256': expected, 'library_sha256': hashlib.sha256(library).hexdigest()}
 

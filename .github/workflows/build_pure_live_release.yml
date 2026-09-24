@@ -631,6 +631,9 @@ jobs:
             exit 1
           fi
           echo "app_path=$app_path" >> "$GITHUB_OUTPUT"
+      - name: Verify iOS FFmpeg runtime
+        if: ${{ github.event_name == 'push' || inputs.build_ios }}
+        run: python3 tool/verify_ffmpeg_native.py ios "${{ steps.ios_app.outputs.app_path }}"
       - name: Archive unsigned iOS application
         if: ${{ github.event_name == 'push' || inputs.build_ios }}
         shell: bash

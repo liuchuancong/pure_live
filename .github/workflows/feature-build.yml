@@ -1030,6 +1030,10 @@ jobs:
           echo "Found iOS application:"
           echo "$app_path"
 
+      - name: Verify iOS FFmpeg runtime
+        if: ${{ github.event_name == 'push' || inputs.build_ios }}
+        run: python3 tool/verify_ffmpeg_native.py ios "${{ steps.ios_app.outputs.app_path }}"
+
       # -----------------------------------------------------
       # Original unsigned app
       # -----------------------------------------------------

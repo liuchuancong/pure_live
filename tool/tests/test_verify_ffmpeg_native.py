@@ -87,6 +87,17 @@ class VerifyFFmpegNativeTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'lacks x86_64 and arm64'):
                 native.verify('macos', app, self.archive)
 
+    def test_ios_requires_arm64_macho(self):
+        app = self.root / 'Runner.app'
+        binary = app / 'Frameworks/ffmpegkit.framework/ffmpegkit'
+        binary.parent.mkdir(parents=True)
+        with mock.patch.dict(native.ARCHIVES, {'ios': (self.archive.name, self.digest)}):
+            binary.write_bytes(b'\xcf\xfa\xed\xfe' + struct.pack('<I', 0x0100000C) + b'FFmpeg n9.0.2')
+            self.assertEqual(native.verify('ios', app, self.archive)['version'], 'n9.0.2')
+            binary.write_bytes(b'\xcf\xfa\xed\xfe' + struct.pack('<I', 0x01000007) + b'FFmpeg n9.0.2')
+            with self.assertRaisesRegex(ValueError, 'not arm64 Mach-O'):
+                native.verify('ios', app, self.archive)
+
 
 if __name__ == '__main__':
     unittest.main()
