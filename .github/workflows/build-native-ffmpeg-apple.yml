@@ -103,11 +103,11 @@ jobs:
           rust_setup.write_text(source.replace(before, after))
 
           # On GitHub's Xcode 26 runner, root's xcrun does not resolve the
-          # runner user's downloaded Metal cryptex. Pass its executable path
-          # to FFmpeg rather than letting configure run root's xcrun lookup.
+          # runner user's downloaded Metal cryptex. Pass both compiler and
+          # linker paths to FFmpeg instead of root's xcrun lookup.
           functions = Path('builder/scripts/function.sh')
           before = 'truthy "$enable_metal" && config_options+=" --enable-metal"'
-          after = 'truthy "$enable_metal" && config_options+=" --enable-metal --metalcc=${PURELIVE_METALCC}"'
+          after = 'truthy "$enable_metal" && config_options+=" --enable-metal --metalcc=${PURELIVE_METALCC} --metallib=${PURELIVE_METALLIB}"'
           source = functions.read_text()
           if source.count(before) != 1:
               raise SystemExit('Unexpected upstream Metal configure option')
@@ -129,7 +129,9 @@ jobs:
           cd builder
           chmod +x runner.sh scripts/build_all.sh
           export PURELIVE_METALCC="$(xcrun --find metal)"
+          export PURELIVE_METALLIB="$(xcrun --find metallib)"
           sudo "$PURELIVE_METALCC" -v
+          sudo test -x "$PURELIVE_METALLIB"
           if ! sudo -E "$HOMEBREW_BASH" scripts/build_all.sh \
             --platform="$TARGET" --deps --bundle=base \
             --build=ffmpeg,kit,bundle --license=lgpl --not-small --local \
