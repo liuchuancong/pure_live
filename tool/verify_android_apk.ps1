@@ -62,6 +62,23 @@ try {
         }
     }
 
+    $ffmpegEntry = $entries["lib/$ExpectedAbi/libffmpegkit.so"]
+    $ffmpegStream = $ffmpegEntry.Open()
+    try {
+        $ffmpegBuffer = [byte[]]::new([int]$ffmpegEntry.Length)
+        $offset = 0
+        while ($offset -lt $ffmpegBuffer.Length) {
+            $read = $ffmpegStream.Read($ffmpegBuffer, $offset, $ffmpegBuffer.Length - $offset)
+            if ($read -le 0) { throw 'FFmpeg library ended before its ZIP entry length.' }
+            $offset += $read
+        }
+        if (-not [Text.Encoding]::ASCII.GetString($ffmpegBuffer).Contains('n9.0.2')) {
+            throw 'Android APK contains a FFmpeg Kit library older than the pinned n9.0.2 native bundle.'
+        }
+    } finally {
+        $ffmpegStream.Dispose()
+    }
+
     $flutterAssets = @($archive.Entries | Where-Object {
         $_.FullName.StartsWith('assets/flutter_assets/', [StringComparison]::Ordinal) -and
             -not $_.FullName.EndsWith('/', [StringComparison]::Ordinal)

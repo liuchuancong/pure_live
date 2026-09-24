@@ -284,3 +284,5 @@ ffmpeg_kit_extended_config:
   type: base
   gpl: false
   small: false
+  android: https://github.com/wzgrx/pure_live/releases/download/native-ffmpeg-9.0.2-b1/bundle-base-shared-lgpl-release.aar
+  windows: https://github.com/wzgrx/pure_live/releases/download/native-ffmpeg-9.0.2-b1/bundle-base-windows-x86_64-shared-lgpl.zip

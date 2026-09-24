@@ -99,13 +99,15 @@ function Get-FFmpegBuilderProfile {
             AndroidSha256 = '2b66caaaefbe5032ffe6e32d87e1af398653ec8dbbc193f4481dd4f562f2182d'
             WindowsSha256 = '2367fbc6ecd7c5df1995c5c0cf5d95f65a99396d4d3fe9d1968c683d3481c125'
         }
-        # ffmpeg_kit_extended_flutter 0.6.2 / FFmpeg 9.0.1. The package fixes
-        # argv preservation and debug native builds; its hook pins builders
-        # 0.11.1, whose Android and Windows archives were reviewed together.
+        # The 0.6.2 hook is retained, while its Android/Windows binaries are
+        # rebuilt from FFmpeg n9.0.2 and published as pinned project assets.
         '0.6.2' = @{
             BuilderVersion = '0.11.1'
-            AndroidSha256 = 'b214c2aafb20af5416989600826b2b7cb59c8f1572fb78547cc4a222b65134fc'
-            WindowsSha256 = 'ac4f7c6893eb2d2a7d9c1c7a08e8cad42105b509d097ce2b2eceabcdcbd7cb47'
+            CacheVersion = '0.11.1-ffmpeg-9.0.2-b1'
+            AndroidSha256 = 'c6c9b1ff7be756b0fb587f98e05972ca4dae97e8275c22961b443b4fd5f49bf7'
+            WindowsSha256 = 'e61684a91f7471ba00f1d5b36a24e93ab602ef72bd57000d94990e7e0c5dfe3a'
+            AndroidUrl = 'https://github.com/wzgrx/pure_live/releases/download/native-ffmpeg-9.0.2-b1/bundle-base-shared-lgpl-release.aar'
+            WindowsUrl = 'https://github.com/wzgrx/pure_live/releases/download/native-ffmpeg-9.0.2-b1/bundle-base-windows-x86_64-shared-lgpl.zip'
         }
     }
     $profile = $profiles[$packageVersion]
@@ -115,8 +117,11 @@ function Get-FFmpegBuilderProfile {
     return @{
         PackageVersion = $packageVersion
         BuilderVersion = $profile.BuilderVersion
+        CacheVersion = if ($profile.CacheVersion) { $profile.CacheVersion } else { $profile.BuilderVersion }
         AndroidSha256 = $profile.AndroidSha256
         WindowsSha256 = $profile.WindowsSha256
+        AndroidUrl = if ($profile.AndroidUrl) { $profile.AndroidUrl } else { "https://github.com/akashskypatel/ffmpeg-kit-builders/releases/download/v$($profile.BuilderVersion)-android/bundle-base-shared-lgpl-release.aar" }
+        WindowsUrl = if ($profile.WindowsUrl) { $profile.WindowsUrl } else { "https://github.com/akashskypatel/ffmpeg-kit-builders/releases/download/v$($profile.BuilderVersion)-windows/bundle-base-windows-x86_64-shared-lgpl.zip" }
     }
 }
 
@@ -153,8 +158,9 @@ function Reset-FFmpegWindowsExtractionIfNeeded {
 
 $ffmpegProfile = Get-FFmpegBuilderProfile
 $ffmpegBuilderVersion = $ffmpegProfile.BuilderVersion
+$ffmpegCacheVersion = $ffmpegProfile.CacheVersion
 $ffmpegHookCacheRoot = Join-Path $repoRoot '.dart_tool\hooks_runner\shared\ffmpeg_kit_extended_flutter\build\ffmpeg_kit_cache'
-Write-Host "FFmpeg native profile: package $($ffmpegProfile.PackageVersion), builder $ffmpegBuilderVersion"
+Write-Host "FFmpeg native profile: package $($ffmpegProfile.PackageVersion), builder $ffmpegBuilderVersion, native $ffmpegCacheVersion"
 
 function Get-MediaKitBundleCatalog {
     $config = Get-Content -LiteralPath (Join-Path $repoRoot '.dart_tool\package_config.json') -Raw | ConvertFrom-Json
@@ -194,8 +200,8 @@ if (-not $SkipAndroidMedia) {
     Install-VerifiedAsset `
         -Name $ffmpegAndroidName `
         -Destination (Join-Path $ffmpegHookCacheRoot "android\$ffmpegAndroidName") `
-        -CachePath (Join-Path $persistentRoot "ffmpeg-kit\v$ffmpegBuilderVersion-android\$ffmpegAndroidName") `
-        -Url "https://github.com/akashskypatel/ffmpeg-kit-builders/releases/download/v$ffmpegBuilderVersion-android/$ffmpegAndroidName" `
+        -CachePath (Join-Path $persistentRoot "ffmpeg-kit\v$ffmpegCacheVersion-android\$ffmpegAndroidName") `
+        -Url $ffmpegProfile.AndroidUrl `
         -Sha256 $ffmpegProfile.AndroidSha256
 }
 
@@ -208,10 +214,10 @@ $ffmpegWindowsName = 'bundle-base-windows-x86_64-shared-lgpl.zip'
 $ffmpegWindowsRoot = Join-Path $ffmpegHookCacheRoot 'windows'
 Reset-FFmpegWindowsExtractionIfNeeded `
     -HookWindowsRoot $ffmpegWindowsRoot `
-    -BuilderVersion $ffmpegBuilderVersion
+    -BuilderVersion $ffmpegCacheVersion
 Install-VerifiedAsset `
     -Name $ffmpegWindowsName `
     -Destination (Join-Path $ffmpegWindowsRoot $ffmpegWindowsName) `
-    -CachePath (Join-Path $persistentRoot "ffmpeg-kit\v$ffmpegBuilderVersion-windows\$ffmpegWindowsName") `
-    -Url "https://github.com/akashskypatel/ffmpeg-kit-builders/releases/download/v$ffmpegBuilderVersion-windows/$ffmpegWindowsName" `
+    -CachePath (Join-Path $persistentRoot "ffmpeg-kit\v$ffmpegCacheVersion-windows\$ffmpegWindowsName") `
+    -Url $ffmpegProfile.WindowsUrl `
     -Sha256 $ffmpegProfile.WindowsSha256

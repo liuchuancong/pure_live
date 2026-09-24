@@ -133,6 +133,8 @@ Ubuntu 24.04 构建会同时安装 `libva`、VDPAU、PulseAudio、Wayland、EGL 
 
 ## 单独命令
 
+Android 与 Windows 的 FFmpeg Kit 使用项目[原生依赖资产预发布](https://github.com/wzgrx/pure_live/releases/tag/native-ffmpeg-9.0.2-b1)中的 FFmpeg `n9.0.2`；不是应用版本号。运行本机完整构建脚本时会先校验下载文件的 SHA-256。直接执行下列 Flutter 命令前，也可先运行 `tool/prefetch_android_native.ps1`；最终以 APK 内 `libffmpegkit.so` 和 Windows `libffmpegkit.dll` 的版本、哈希与实际运行结果为准。Android AAR 包含 `arm64-v8a`、`armeabi-v7a`、`x86_64`；其中 arm64 与 x86_64 ELF `LOAD` 段按 16 KiB 对齐。
+
 ```powershell
 .\tool\flutterw.ps1 pub get --enforce-lockfile
 .\tool\flutterw.ps1 analyze --no-pub --no-fatal-infos --no-fatal-warnings
