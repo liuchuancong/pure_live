@@ -32,7 +32,11 @@ android {
     }
 
     defaultConfig {
-        minSdkVersion 16
+        minSdkVersion 21
         consumerProguardFiles 'proguard-rules.pro'
     }
+}
+
+dependencies {
+    implementation project(':media_kit')
 }

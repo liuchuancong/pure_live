@@ -12,32 +12,15 @@ import android.os.Looper;
 import android.util.Log;
 import android.view.Surface;
 
-import java.lang.reflect.Method;
+import com.alexmercerind.mediakitandroidhelper.MediaKitAndroidHelper;
 import java.util.Locale;
-import java.util.Objects;
 
 import io.flutter.view.TextureRegistry;
 
 public class VideoOutput implements TextureRegistry.SurfaceProducer.Callback {
     private static final String TAG = "VideoOutput";
-    private static final Method newGlobalObjectRef;
-    private static final Method deleteGlobalObjectRef;
     private static final Handler handler = new Handler(Looper.getMainLooper());
 
-    static {
-        try {
-            // com.alexmercerind.mediakitandroidhelper.MediaKitAndroidHelper is part of package:media_kit_libs_android_video & package:media_kit_libs_android_audio packages.
-            // Use reflection to invoke methods of com.alexmercerind.mediakitandroidhelper.MediaKitAndroidHelper.
-            Class<?> mediaKitAndroidHelperClass = Class.forName("com.alexmercerind.mediakitandroidhelper.MediaKitAndroidHelper");
-            newGlobalObjectRef = mediaKitAndroidHelperClass.getDeclaredMethod("newGlobalObjectRef", Object.class);
-            deleteGlobalObjectRef = mediaKitAndroidHelperClass.getDeclaredMethod("deleteGlobalObjectRef", long.class);
-            newGlobalObjectRef.setAccessible(true);
-            deleteGlobalObjectRef.setAccessible(true);
-        } catch (Throwable e) {
-            Log.i("media_kit", "package:media_kit_libs_android_video missing. Make sure you have added it to pubspec.yaml.");
-            throw new RuntimeException("Failed to initialize com.alexmercerind.media_kit_video.VideoOutput.");
-        }
-    }
 
     private long id = 0;
     private long wid = 0;
@@ -259,7 +242,7 @@ public class VideoOutput implements TextureRegistry.SurfaceProducer.Callback {
     private static long newGlobalObjectRef(Object object) {
         Log.i(TAG, String.format(Locale.ENGLISH, "newGlobalRef: object = %s", object));
         try {
-            return (long) Objects.requireNonNull(newGlobalObjectRef.invoke(null, object));
+            return MediaKitAndroidHelper.newGlobalObjectRef(object);
         } catch (Throwable e) {
             Log.e(TAG, "newGlobalRef", e);
             return 0;
@@ -269,7 +252,7 @@ public class VideoOutput implements TextureRegistry.SurfaceProducer.Callback {
     private static void deleteGlobalObjectRef(long ref) {
         Log.i(TAG, String.format(Locale.ENGLISH, "deleteGlobalObjectRef: ref = %d", ref));
         try {
-            deleteGlobalObjectRef.invoke(null, ref);
+            MediaKitAndroidHelper.deleteGlobalObjectRef(ref);
         } catch (Throwable e) {
             Log.e(TAG, "deleteGlobalObjectRef", e);
         }

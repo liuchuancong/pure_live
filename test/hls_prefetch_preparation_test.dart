@@ -61,6 +61,45 @@ final class Origin {
 }
 
 void main() {
+  for (final allowCache in ['YES', 'NO']) {
+    test('single media prefetch respects legacy ALLOW-CACHE:$allowCache', () async {
+      var bodies = 0;
+      final origin = await Origin.start((request) async {
+        if (request.uri.path.endsWith('.m3u8')) {
+          request.response.write(
+            media(
+              '/video',
+              0,
+              ended: true,
+            ).replaceFirst('#EXT-X-MEDIA-SEQUENCE:0\n', '#EXT-X-MEDIA-SEQUENCE:0\n#EXT-X-ALLOW-CACHE:$allowCache\n'),
+          );
+        } else {
+          bodies++;
+          request.response.write('body');
+        }
+      });
+      final args = ['-i', 'http://127.0.0.1:${origin.server.port}/video.m3u8'];
+      final relay = (await FFmpegHlsInputRelay.startForArguments(args, drainOnStop: true, enablePrefetch: true))!;
+      final client = HttpClient();
+      try {
+        final response = await fetch(client, relay.inputUri);
+        expect(response.$1, 200);
+        expect(relay.prefetchFeedCount, allowCache == 'YES' ? 1 : 0);
+        if (allowCache == 'YES') {
+          expect(response.$2, contains('#EXT-X-DISCONTINUITY-SEQUENCE:0'));
+          expect(response.$2, isNot(contains('#EXT-X-ALLOW-CACHE')));
+        } else {
+          expect(response.$2, contains('#EXT-X-ALLOW-CACHE:NO'));
+        }
+        if (allowCache == 'NO') expect(bodies, 0);
+      } finally {
+        client.close(force: true);
+        await relay.close();
+        await origin.close();
+      }
+      expect(relay.prefetchBodyCount, 0);
+    });
+  }
   for (final config in [
     (enabled: true, sourceHint: false, override: <String>[], automatic: true),
     (enabled: false, sourceHint: false, override: <String>[], automatic: false),

@@ -5,8 +5,10 @@ import 'dart:io' as io;
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:pure_live/common/models/live_room.dart';
 import 'package:pure_live/core/common/http_client.dart';
 import 'package:pure_live/core/site/weibo/weibo_api.dart';
+import 'package:pure_live/core/site/weibo/weibo_site.dart';
 
 void main() {
   test(
@@ -46,6 +48,12 @@ void main() {
           report['directoryCards'] = cards.length;
           expect(cards, isNotEmpty);
           final selected = cards.first;
+          report['stage'] = 'snapshot-search';
+          final matches = await WeiboSite(api: api).searchRooms(selected.nickname);
+          expect(matches.any((room) => room.roomId == selected.liveId), isTrue);
+          expect(matches.every((room) => room.liveStatus == LiveStatus.unknown), isTrue);
+          report['nicknameSnapshotMatches'] = matches.length;
+          report['nicknameTargetPresent'] = true;
           report['stage'] = 'detail';
           final status = await api.detail(selected.liveId, expectedOwnerId: selected.ownerId);
           expect(status.ownerId == selected.ownerId, isTrue);

@@ -50,7 +50,7 @@
 - **当前验收快照**：源码提交、候选包、设备状态、编号统计与剩余阻塞只在[当前状态快照](docs/ACCEPTANCE_STATUS_3_2_0.md)维护；分项状态与证据见[验收矩阵](docs/ACCEPTANCE_MATRIX_3_1_0.md)。README 不再复制逐批测试数量、候选哈希和待办时间线。
 - **源码平台范围**：目前 45 个直播站点 + IPTV，共 46 个适配器；注册不等于目录、搜索、播放、弹幕和录制均已完整验收，能力边界见[平台兼容性](docs/PLATFORM_COMPATIBILITY.md)。
 - **当前源码版本号**：`3.1.8+4121`。候选包按源码 SHA 与验证记录识别，同一版本号不代表包含相同修订；3.2.0 只在完整目标验收后发布。
-- **Android 系统要求**：Android 8.0 / API 26 及以上（与当前 FFmpegKit 原生录制依赖一致）
+- **Android / Android TV 安装要求**：当前源码与下一候选为 Android 8.0 / API 26 及以上、arm64-v8a；系统版本和 CPU ABI 两项都要匹配。已发布 v3.0.2 的实际 APK 最低为 Android 7.0 / API 24、仅含 arm64-v8a；Android 6.0.1 / API 23 电视不在该包的安装范围内。当前 API 26 下限与 FFmpegKit 原生录制依赖一致，旧系统兼容需另行处理原生依赖并完成电视端验收。
 - **v3.0.0 上游源码基线**：`liuchuancong/pure_live@e808dcae`；完整记录见 `docs/STAGE_UPDATE_3_0_0.md`
 - **本轮构建平台**：Android arm64-v8a、Windows x64 安装程序与便携 ZIP；其他平台继续使用 v3.0.0 安装包
 - **质量门禁**：播放器来源/Surface/几何回归见 `docs/PLAYER_RECOVERY_AUDIT_3_0_15.md`，十个平台录制链路见 `docs/RECORDER_REPAIR_AUDIT_2026-08-27.md`
@@ -173,7 +173,7 @@ Windows、Linux、macOS 等桌面平台使用对应平台的播放器实现。
 - 字体粗细与观看模板联动
 - 精确重复和相似文本两级过滤
 
-3.2.0 开发源码新增 Kick 公开聊天只读接入；确认房间订阅后显示远端评论。当前安装包尚未包含该能力，双端真实消息验收仍待完成，详见[平台兼容性](docs/PLATFORM_COMPATIBILITY.md)。
+3.2.0 开发源码新增 Kick 与 GoodGame 公开聊天只读接入；确认房间订阅后显示远端评论。当前安装包尚未包含这两项能力，双端真实消息验收仍待完成，详见[平台兼容性](docs/PLATFORM_COMPATIBILITY.md)。
 
 弹幕系统采用房间会话隔离、平台消息 ID 去重以及过期队列淘汰机制，减少切换直播间后出现：
 

@@ -148,6 +148,25 @@ class Sites {
 
   static bool isSupported(String id) => supportedSiteIds.contains(id.trim().toLowerCase());
 
+  /// Read-only artwork lookup for frequently rebuilt room and multiview UI.
+  /// A badge must not allocate a platform adapter just to obtain its asset.
+  static String logoForId(String id) {
+    final normalizedId = id.trim().toLowerCase();
+    if (!supportedSiteIds.contains(normalizedId)) throw StateError('Unsupported live site: $normalizedId');
+    return switch (normalizedId) {
+      bilibiliSite => 'assets/images/bilibili_2.png',
+      douyuSite => 'assets/images/douyu.png',
+      huyaSite => 'assets/images/huya.png',
+      douyinSite => 'assets/images/douyin.png',
+      kuaishouSite => 'assets/images/kuaishou.png',
+      ccSite => 'assets/images/cc.png',
+      twitchSite => 'assets/images/twitch.png',
+      soopSite => 'assets/images/soop.png',
+      yySite => 'assets/images/yy.png',
+      _ => 'assets/images/logo.png',
+    };
+  }
+
   static List<Site> get supportSites => [
     Site(id: bilibiliSite, name: i18n("site_bilibili"), logo: "assets/images/bilibili_2.png", liveSite: BiliBiliSite()),
     Site(id: douyuSite, name: i18n("site_douyu"), logo: "assets/images/douyu.png", liveSite: DouyuSite()),

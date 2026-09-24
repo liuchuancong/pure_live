@@ -84,6 +84,7 @@ void main() {
     expect(card.liveStatus, LiveStatus.unknown);
     expect(card.onlineViewers, isEmpty);
     expect(card.hasRealOnlineCount, isFalse);
+    expect(card.audienceValue(preferRealOnline: false, platformEnabled: false), isEmpty);
     expect((await site.getDirectoryPage(page: 2)).rooms, isEmpty);
     expect(calls, hasLength(1));
   });
@@ -109,22 +110,49 @@ void main() {
       expect(r.data, isA<WeiboLiveDetail>());
       expect(r.onlineViewers, isEmpty);
       expect(r.hasRealOnlineCount, isFalse);
+      expect(r.audienceValue(preferRealOnline: false, platformEnabled: false), isEmpty);
     }
     expect(calls, hasLength(3));
   });
-  test('exact search does not pretend nickname or UID lookup; API errors propagate', () async {
-    expect(await site.searchRooms('nickname'), isEmpty);
-    expect(await site.searchRooms('101'), isEmpty);
+  test('exact broadcast lookup remains separate from snapshot filtering; API errors propagate', () async {
     expect(await site.searchRooms(id, page: 2), isEmpty);
+    expect(await site.searchRooms('  '), isEmpty);
     expect(calls, isEmpty);
     expect((await site.searchRooms(WeiboLink.url(id))).single.roomId, id);
     data = fixture('detail');
     await expectLater(site.searchRooms(id), failure(WeiboFailure.api));
   });
+  test('missing exact broadcast is an empty search result, not a provider failure', () async {
+    status = 404;
+    expect(await site.searchRooms(id), isEmpty);
+    await expectLater(room(), failure(WeiboFailure.missing));
+    await expectLater(site.searchRooms('样本'), failure(WeiboFailure.missing));
+    for (final (httpStatus, kind) in [(429, WeiboFailure.rateLimited), (503, WeiboFailure.service)]) {
+      status = httpStatus;
+      await expectLater(site.searchRooms(id), failure(kind));
+    }
+  });
+  test('nickname search filters only the finite recommendation snapshot', () async {
+    final matches = await site.searchRooms('样本');
+    expect(matches.map((room) => room.roomId), [id, '1022:2321325000000000000001']);
+    expect(matches.every((room) => room.liveStatus == LiveStatus.unknown), isTrue);
+    expect(
+      matches.every((room) => room.audienceValue(preferRealOnline: false, platformEnabled: false).isEmpty),
+      isTrue,
+    );
+    expect((await site.searchRooms(' 样本 1 ', pageSize: 1)).single.userId, '102');
+    expect((await site.searchRooms('样本', pageSize: 1)).single.roomId, id);
+    expect(await site.searchRooms('nickname'), isEmpty);
+    expect(await site.searchRooms('101'), isEmpty);
+    expect(await site.searchRooms('样本', page: 2), isEmpty);
+    expect(calls, hasLength(5));
+    expect(calls.every((uri) => uri.path.contains('pc_recommend')), isTrue);
+  });
   test('pre-cancelled directory and exact search do not dispatch', () async {
     final c = CancelToken()..cancel();
     await expectLater(site.getDirectoryPage(cancel: c), failure(WeiboFailure.cancelled));
     await expectLater(site.searchRoomsCancellable(id, cancel: c), failure(WeiboFailure.cancelled));
+    await expectLater(site.searchRoomsCancellable('样本', cancel: c), failure(WeiboFailure.cancelled));
     expect(calls, isEmpty);
   });
   test('exact search forwards cancellation to its owned HTTP request', () async {

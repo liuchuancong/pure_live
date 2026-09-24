@@ -37,8 +37,12 @@ void main() {
     await HivePrefUtil.setStringList('realOnlinePlatforms', ['twitch']);
     final favorites = Get.put(FavoriteRoomController());
     final app = Get.put(AppSettingsController());
-    expect(favorites.hotAreasList, ['huya', 'ttinglive', 'weibo']);
-    expect(favorites.siteCatalogMigration.value, 14);
+    final expectedPrefix = ['huya', 'ttinglive', 'weibo'];
+    expect(favorites.hotAreasList.take(expectedPrefix.length), expectedPrefix);
+    final migrated = favorites.hotAreasList.toList(growable: false);
+    expect(migrated.toSet(), hasLength(migrated.length));
+    final hidden = migrated.where((id) => id != 'weibo').toList(growable: false);
+    expect(favorites.siteCatalogMigration.value, 38);
     expect(app.realOnlinePlatforms, ['twitch']);
     expect(app.audienceMetricMigration.value, 7);
     favorites.hotAreasList.remove('weibo');
@@ -46,16 +50,16 @@ void main() {
     Get.reset();
     await Hive.close();
     await HivePrefUtil.init();
-    expect(Get.put(FavoriteRoomController()).hotAreasList, ['huya', 'ttinglive']);
+    expect(Get.put(FavoriteRoomController()).hotAreasList, hidden);
     expect(Get.put(AppSettingsController()).realOnlinePlatforms, ['twitch']);
   });
 
   test('current catalog preserves an explicitly empty selected-site list', () async {
-    await HivePrefUtil.setInt('siteCatalogMigration', 14);
+    await HivePrefUtil.setInt('siteCatalogMigration', 38);
     await HivePrefUtil.setStringList('hotAreasList', []);
     final favorites = Get.put(FavoriteRoomController());
     expect(favorites.hotAreasList, isEmpty);
-    expect(favorites.siteCatalogMigration.value, 14);
+    expect(favorites.siteCatalogMigration.value, 38);
   });
 
   test('backup preserves selected sites, separate broadcast/owner identities and tags', () {

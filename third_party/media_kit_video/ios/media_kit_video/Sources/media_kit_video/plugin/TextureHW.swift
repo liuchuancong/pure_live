@@ -53,6 +53,10 @@ public class TextureHW: NSObject, FlutterTexture, ResizableTextureProtocol {
     return Unmanaged.passRetained(textureContext!.pixelBuffer)
   }
 
+  public func dispose() {
+    disposeMPV()
+  }
+
   private func initMPV() {
     EAGLContext.setCurrent(context)
     defer {
@@ -86,10 +90,10 @@ public class TextureHW: NSObject, FlutterTexture, ResizableTextureProtocol {
     }
 
     MPVHelpers.checkError(
-      mpv_render_context_create(&renderContext, handle, &params)
+      media_kit_mpv_render_context_create(&renderContext, handle, &params)
     )
 
-    mpv_render_context_set_update_callback(
+    media_kit_mpv_render_context_set_update_callback(
       renderContext,
       { (ctx) in
         let that = unsafeBitCast(ctx, to: TextureHW.self)
@@ -102,14 +106,16 @@ public class TextureHW: NSObject, FlutterTexture, ResizableTextureProtocol {
   }
 
   private func disposeMPV() {
+    guard let renderContext = renderContext else { return }
     EAGLContext.setCurrent(context)
     defer {
       OpenGLESHelpers.checkError("disposeMPV")
       EAGLContext.setCurrent(nil)
     }
 
-    mpv_render_context_set_update_callback(renderContext, nil, nil)
-    mpv_render_context_free(renderContext)
+    media_kit_mpv_render_context_set_update_callback(renderContext, nil, nil)
+    media_kit_mpv_render_context_free(renderContext)
+    self.renderContext = nil
   }
 
   public func resize(_ size: CGSize) {
@@ -151,6 +157,7 @@ public class TextureHW: NSObject, FlutterTexture, ResizableTextureProtocol {
   }
 
   public func render(_ size: CGSize) {
+    guard renderContext != nil else { return }
     let textureContext = textureContexts.nextAvailable()
     if textureContext == nil {
       return
@@ -180,7 +187,7 @@ public class TextureHW: NSObject, FlutterTexture, ResizableTextureProtocol {
       mpv_render_param(type: MPV_RENDER_PARAM_INVALID, data: nil),
     ]
 
-    mpv_render_context_render(renderContext, &params)
+    media_kit_mpv_render_context_render(renderContext, &params)
 
     glFlush()
 

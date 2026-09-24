@@ -29,6 +29,7 @@ class RecordSettingsController extends GetxController {
   final cacheSizeMB = 0.0.obs;
   final managedRecordPath = ''.obs;
   final selectingRecordDirectory = false.obs;
+  final cacheClearPromptOpen = false.obs;
   final cacheClearPending = false.obs;
 
   /// =====================================

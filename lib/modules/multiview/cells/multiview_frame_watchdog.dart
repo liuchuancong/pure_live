@@ -58,6 +58,24 @@ final class MultiviewFrameWatchdog {
     _timer ??= Timer(_hidden ? hiddenPoll : timeout, _check);
   }
 
+  /// The caller knows when a cell enters or leaves the viewport. Observe that
+  /// transition immediately: a brief scroll away and back must not consume
+  /// the old visible deadline before the next scheduled timeout check.
+  void eligibilityChanged() {
+    if (_disposed || !_started || _deadline == null) return;
+    if (!isEligible()) {
+      if (_hidden) return;
+      _hidden = true;
+      _timer?.cancel();
+      _timer = Timer(hiddenPoll, _check);
+    } else if (_hidden) {
+      _hidden = false;
+      _deadline = _now + timeout;
+      _timer?.cancel();
+      _timer = Timer(timeout, _check);
+    }
+  }
+
   void _check() {
     _timer = null;
     if (_disposed || _deadline == null) return;

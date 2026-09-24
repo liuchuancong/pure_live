@@ -291,6 +291,9 @@ class LivePlayController extends GetxController
       if (isClosed) return;
       final current = state.value.room.detail;
       if (current?.roomId != roomId || current?.platform != platform) return;
+      // A request-error fallback is pending, not a newer broadcast state.
+      // Keep the attached player and its last known room while it plays.
+      if (fetched.isLiveStatusPending) return;
       final refreshed = fetched.withAudienceFallbackFrom(current!);
       final isLiving = refreshed.isPlayableNow;
       updateRoom(detail: refreshed, isLiving: isLiving, success: true, isLoading: false);
@@ -373,6 +376,11 @@ class LivePlayController extends GetxController
     _superChatExpiryTimer = null;
     if (superChats.isNotEmpty) superChats.clear();
   }
+
+  /// A metadata retry on the same room is not a new paid-message session.
+  /// Keep already delivered messages until they expire or the room changes.
+  @visibleForTesting
+  void beginRoomMetadataLoad() => updateRoom(isLoading: true, loadError: null);
 
   /// Restores the normal room presentation for one system-back attempt.
   ///
@@ -673,8 +681,7 @@ class LivePlayController extends GetxController
     if (requestedRoom == null || roomId == null || requestedPlatform == null) return LiveRoom();
     final loadEpoch = ++_roomLoadEpoch;
 
-    clearSuperChats();
-    updateRoom(isLoading: true, loadError: null);
+    beginRoomMetadataLoad();
 
     try {
       final fetchedRoom = await currentSite.liveSite.getRoomDetail(roomId: roomId, platform: requestedPlatform);
@@ -683,7 +690,6 @@ class LivePlayController extends GetxController
       liveRoom = liveRoom.fillFromDetail(requestedRoom);
       if (!_isRoomLoadCurrent(loadEpoch, roomId, requestedPlatform)) return liveRoom;
       updateRoom(detail: liveRoom);
-      unawaited(getSuperChatMessage(roomId, platform: requestedPlatform, loadEpoch: loadEpoch));
 
       if (currentSite.id == Sites.iptvSite) {
         await _initIptvPlayer(liveRoom, loadEpoch: loadEpoch);
@@ -700,6 +706,7 @@ class LivePlayController extends GetxController
       final liveStatus = liveRoom.isPlayableNow;
 
       if (liveStatus) {
+        unawaited(getSuperChatMessage(roomId, platform: requestedPlatform, loadEpoch: loadEpoch));
         await _handleLiveRoom(liveRoom, loadEpoch: loadEpoch);
       } else {
         await _handleNotLiveRoom(liveRoom);
@@ -758,6 +765,7 @@ class LivePlayController extends GetxController
 
   Future<void> _handleNotLiveRoom(LiveRoom liveRoom) async {
     unawaited(danmakuController.stopDanmaku());
+    clearSuperChats();
     updateRoom(success: false, isLiving: false);
     setNormalScreen();
     GlobalPlayerState.to.isFullscreen.value = false;
@@ -795,6 +803,11 @@ class LivePlayController extends GetxController
   }
 
   void _handleUnknownStatus() {
+    settleUnknownRoomMetadata();
+    if (state.value.player.hasPlaybackSource) {
+      if (Get.currentRoute == '/live_play') ToastUtil.show(i18n('get_room_info_failed_retry'));
+      return;
+    }
     unawaited(danmakuController.stopDanmaku());
     if (Get.currentRoute == '/live_play') {
       ToastUtil.show(i18n('get_room_info_failed_retry'));
@@ -802,6 +815,17 @@ class LivePlayController extends GetxController
       GlobalPlayerState.to.isFullscreen.value = false;
       GlobalPlayerState.to.isWindowFullscreen.value = false;
     }
+  }
+
+  @visibleForTesting
+  void settleUnknownRoomMetadata() {
+    final hasPlaybackSource = state.value.player.hasPlaybackSource;
+    updateRoom(
+      isLiving: hasPlaybackSource,
+      success: hasPlaybackSource,
+      isLoading: false,
+      loadError: i18n('get_room_info_failed_retry'),
+    );
   }
 
   void _handleCurrentLineAndQuality(ReloadDataType reloadDataType, int line, bool isReCalculate) {
@@ -840,6 +864,11 @@ class LivePlayController extends GetxController
     updatePlayer(playUrls: [], currentLineIndex: 0, qualites: [], currentQuality: 0);
   }
 
+  /// Closing the old native player also ends ownership of its selected media.
+  /// A failed detail lookup for the next room must not reuse that old source.
+  @visibleForTesting
+  void clearClosedPlaybackSource() => _restoreQualityAndLines();
+
   Future<void> switchRoom(LiveRoom newRoom) async {
     // Fence any room-detail/play-quality request that was started before this
     // switch. Its late result must not restore the previous room or socket.
@@ -860,6 +889,8 @@ class LivePlayController extends GetxController
 
     updateRoom(success: false, isLiving: true);
     await playerController.destroyPlayer();
+    clearClosedPlaybackSource();
+    clearSuperChats();
 
     updatePlayer(hasUseDefaultResolution: false);
     updateUI(refreshKey: 0);

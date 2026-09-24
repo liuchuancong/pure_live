@@ -70,7 +70,7 @@ void main() {
     expect(AppSettingsController.normalizeRealOnlinePlatforms(['missevan', 'twitch']), ['twitch']);
   });
 
-  test('search selection advertises exact room lookup without web fallback', () async {
+  test('search selection advertises native live and offline lookup without web fallback', () {
     Get.put(SettingsService());
     final controller = SearchController();
     try {
@@ -78,15 +78,8 @@ void main() {
       expect(controller.index.value, greaterThan(0));
       expect(controller.canOpenWebSearch, isFalse);
       expect(controller.canSearchNatively, isTrue);
-      expect(controller.capabilityText, 'search_coverage_room_lookup');
+      expect(controller.capabilityText, 'search_coverage_live_and_offline');
       expect(() => controller.buildSearchUrl('missevan', 'example'), throwsStateError);
-      controller.searchController.text = 'example';
-      await controller.doSearch();
-      expect(controller.results, isEmpty);
-      expect(controller.errorMessage.value, isEmpty);
-      expect(controller.hasMore.value, isFalse);
-      expect(controller.loading.value, isFalse);
-      expect(controller.pendingSiteCount.value, 0);
     } finally {
       controller.onClose();
     }

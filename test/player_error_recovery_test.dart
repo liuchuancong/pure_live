@@ -1014,8 +1014,14 @@ void main() {
       const {},
       room: LiveRoom(roomId: 'portrait', platform: 'test'),
     );
-    await Future<void>.delayed(const Duration(milliseconds: 120));
-    await Future<void>.delayed(const Duration(seconds: 1));
+    // Wait for the decoder's stable geometry rather than assuming its
+    // observation and stability timers finish within a fixed wall-clock wait
+    // while the full suite runs other test isolates concurrently.
+    if (!manager.videoGeometry.value.isStable) {
+      await manager.videoGeometry.stream
+          .firstWhere((snapshot) => snapshot.orientation == VideoSourceOrientation.portrait && snapshot.isStable)
+          .timeout(const Duration(seconds: 5));
+    }
     expect(manager.isVerticalVideo.value, isTrue);
     for (var cycle = 0; cycle < 3; cycle++) {
       manager.isInPip.value = true;
@@ -1050,7 +1056,7 @@ void main() {
     mediaKit._height.add(1080);
     final snapshot = await manager.videoGeometry.stream
         .firstWhere((snapshot) => snapshot.orientation == VideoSourceOrientation.landscape && snapshot.isStable)
-        .timeout(const Duration(seconds: 2));
+        .timeout(const Duration(seconds: 5));
     expect(snapshot.effectiveAspectRatio, closeTo(16 / 9, 0.001));
     expect(manager.isVerticalVideo.value, isFalse);
     await manager.dispose();

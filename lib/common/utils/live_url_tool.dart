@@ -46,6 +46,14 @@ import 'package:pure_live/modules/toolbox/toolbox_direct_link_flow.dart';
 import 'package:pure_live/modules/search/web_search_room_parser.dart';
 
 class LiveUrlTool {
+  static Iterable<String> _sharedXhsDeepLinks(String text) sync* {
+    final links = RegExp(r'(?<![A-Za-z0-9:/=?&._-])xhsdiscover://live_audience\?[^\s<>]+', caseSensitive: false);
+    for (final match in links.allMatches(text)) {
+      final candidate = match.group(0)!.split(RegExp(r'[，。！？、；：）》」』”’]')).first;
+      yield candidate.replaceFirst(RegExp(r'''[,!?;:)\]}"']+$'''), '');
+    }
+  }
+
   /// Extract complete HTTP URLs before inspecting host/path. This also avoids
   /// treating an embedded www address in an FTP URL as a second HTTP link.
   static Iterable<Uri> sharedHttpUris(String text) => sharedHttpUrls(text).map(Uri.parse);
@@ -105,6 +113,7 @@ class LiveUrlTool {
   }
 
   static bool containsSupportedLink(String text) {
+    if (_sharedXhsDeepLinks(text).any((raw) => XiaohongshuLink.deepLinkRoomId(raw) != null)) return true;
     return sharedHttpUrls(text).any((raw) {
       if (WeiboLink.parse(raw) != null ||
           NiconicoLink.parse(raw) != null ||
@@ -226,6 +235,10 @@ class LiveUrlTool {
     TaobaoLiveApi taobaoLiveApi,
     dio.CancelToken cancel,
   ) async {
+    for (final raw in _sharedXhsDeepLinks(text)) {
+      final roomId = XiaohongshuLink.deepLinkRoomId(raw);
+      if (roomId != null) return [roomId, Sites.xiaohongshuSite];
+    }
     for (final raw in sharedHttpUrls(text)) {
       final uri = Uri.parse(raw);
       if (session.isClosed) return [];

@@ -8,7 +8,6 @@
 
 #include "include/media_kit_video/media_kit_video_plugin.h"
 
-#ifndef MEDIA_KIT_LIBS_NOT_FOUND
 
 #include <gtk/gtk.h>
 
@@ -35,6 +34,14 @@ static void media_kit_video_plugin_handle_method_call(
   const gchar* method = fl_method_call_get_name(method_call);
   if (g_strcmp0(method, "VideoOutputManager.Create") == 0) {
     FlValue* arguments = fl_method_call_get_args(method_call);
+    FlValue* library = fl_value_lookup_string(arguments, "libmpv");
+    if (library == nullptr || fl_value_get_type(library) != FL_VALUE_TYPE_STRING ||
+        media_kit_mpv_initialize(fl_value_get_string(library)) != 0) {
+      response = FL_METHOD_RESPONSE(fl_method_error_response_new(
+          "libmpv", "Could not bind the player's libmpv library.", nullptr));
+      fl_method_call_respond(method_call, response, nullptr);
+      return;
+    }
     FlValue* handle = fl_value_lookup_string(arguments, "handle");
     FlValue* configuration = fl_value_lookup_string(arguments, "configuration");
 
@@ -193,15 +200,3 @@ void media_kit_video_plugin_register_with_registrar(
     FlPluginRegistrar* registrar) {
   media_kit_video_plugin_new(registrar);
 }
-
-#else
-
-#include <iostream>
-
-void media_kit_video_plugin_register_with_registrar(
-    FlPluginRegistrar* registrar) {
-  std::cout << "media_kit: WARNING: package:media_kit_libs_*** not found."
-            << std::endl;
-}
-
-#endif

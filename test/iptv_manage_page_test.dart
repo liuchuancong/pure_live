@@ -184,13 +184,21 @@ void main() {
     expect(db.updateCalls, 1);
     await tester.tap(find.text(en['webdav_delete'] as String));
     await tester.pumpAndSettle();
+    expect(find.byType(AlertDialog), findsNothing, reason: 'a pending item update serializes destructive actions');
+    expect(find.text(db.providerName), findsOneWidget);
+    update.complete();
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(en['webdav_delete'] as String));
+    await tester.pumpAndSettle();
     await tester.tap(find.text(en['confirm'] as String));
     await tester.pumpAndSettle();
     expect(find.text(db.providerName), findsNothing);
-    update.complete();
+    toggle.onChanged!(false);
     await tester.pumpAndSettle();
+    expect(db.updateCalls, 1, reason: 'an old switch callback cannot update a deleted provider');
     expect(find.text(db.providerName), findsNothing);
     expect(tester.takeException(), isNull);
+    await tester.pump(const Duration(seconds: 3));
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();
   });
@@ -265,6 +273,14 @@ class _Database extends AppDatabase {
   }
 
   @override
+  Future<Provider?> getProviderById(String id) async {
+    for (final provider in providerItems) {
+      if (provider.id == id) return provider;
+    }
+    return null;
+  }
+
+  @override
   Future<List<EpgSource>> getAllEpgSources() async {
     epgReads++;
     return List.of(epgs);
@@ -282,6 +298,8 @@ class _Database extends AppDatabase {
     updateCalls++;
     final reply = updateReply;
     if (reply != null) await reply.future;
+    final index = providerItems.indexWhere((provider) => provider.id == providerId);
+    if (index >= 0) providerItems[index] = providerItems[index].copyWith(isAutoUpdate: status);
   }
 
   void completePending() {

@@ -78,6 +78,79 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('preference dialog only offers platforms visible in popular and areas', (tester) async {
+    favorites.hotAreasList.value = [Sites.bilibiliSite, Sites.iptvSite];
+    favorites.preferPlatform.value = Sites.bilibiliSite;
+    await _pumpLocalized(tester, english: english, home: const PlatformSettingsPage(), size: const Size(420, 800));
+
+    await tester.tap(find.text('Platform Preference'));
+    await tester.pumpAndSettle();
+
+    final dialog = find.byType(Dialog);
+    expect(find.descendant(of: dialog, matching: find.byType(RadioListTile<String>)), findsNWidgets(2));
+    expect(find.descendant(of: dialog, matching: find.text('Douyu')), findsNothing);
+    await tester.tap(
+      find.ancestor(
+        of: find.descendant(of: dialog, matching: find.text('Network')),
+        matching: find.byType(RadioListTile<String>),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(favorites.preferPlatform.value, Sites.iptvSite);
+  });
+
+  testWidgets('preference dialog filters many visible platforms by name or id', (tester) async {
+    await _pumpLocalized(tester, english: english, home: const PlatformSettingsPage(), size: const Size(420, 800));
+    await tester.tap(find.text('Platform Preference'));
+    await tester.pumpAndSettle();
+
+    final filter = find.byKey(const ValueKey('prefer-platform-filter'));
+    expect(filter, findsOneWidget);
+    await tester.enterText(filter, 'weibo');
+    await tester.pumpAndSettle();
+    final dialog = find.byType(Dialog);
+    final choices = find.descendant(of: dialog, matching: find.byType(RadioListTile<String>));
+    expect(choices, findsOneWidget);
+    expect(tester.widget<RadioListTile<String>>(choices).value, Sites.weiboSite);
+
+    await tester.enterText(filter, 'no-such-platform');
+    await tester.pumpAndSettle();
+    expect(choices, findsNothing);
+    expect(find.text('No matching platforms'), findsOneWidget);
+
+    await tester.enterText(filter, 'iptv');
+    await tester.pumpAndSettle();
+    expect(tester.widget<RadioListTile<String>>(choices).value, Sites.iptvSite);
+  });
+
+  testWidgets('preference dialog tracks a changed visible platform order while open', (tester) async {
+    favorites.hotAreasList.value = [Sites.bilibiliSite, Sites.iptvSite];
+    await _pumpLocalized(tester, english: english, home: const PlatformSettingsPage(), size: const Size(420, 800));
+    await tester.tap(find.text('Platform Preference'));
+    await tester.pumpAndSettle();
+
+    final dialog = find.byType(Dialog);
+    final choices = find.descendant(of: dialog, matching: find.byType(RadioListTile<String>));
+    expect(choices, findsNWidgets(2));
+    favorites.hotAreasList.value = [Sites.weiboSite, Sites.bilibiliSite, Sites.weiboSite];
+    await tester.pumpAndSettle();
+    expect(choices, findsNWidgets(2));
+    expect(tester.widget<RadioListTile<String>>(choices.first).value, Sites.weiboSite);
+    expect(tester.widget<RadioListTile<String>>(choices.last).value, Sites.bilibiliSite);
+  });
+
+  test('hidden platform preference is rejected and restored backup preference follows visible order', () {
+    favorites.hotAreasList.value = [Sites.bilibiliSite, Sites.iptvSite];
+    favorites.changePreferPlatform(Sites.douyuSite);
+    expect(favorites.preferPlatform.value, Sites.bilibiliSite);
+
+    favorites.fromJson({
+      'hotAreasList': [Sites.iptvSite, Sites.bilibiliSite],
+      'preferPlatform': Sites.douyuSite,
+    });
+    expect(favorites.preferPlatform.value, Sites.iptvSite);
+  });
+
   testWidgets('platform rows stack controls and expose drag handles only for persisted visible order', (tester) async {
     favorites.hotAreasList.value = [Sites.bilibiliSite];
     favorites.preferPlatform.value = Sites.bilibiliSite;

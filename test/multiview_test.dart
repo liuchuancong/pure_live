@@ -1507,6 +1507,107 @@ void main() {
       expect(harness.players[1].isPlaying, isTrue);
       await controller.disposeAll();
     });
+
+    testWidgets('visible focus small cell recovers without refreshing an offscreen cell', (tester) async {
+      var elapsed = Duration.zero;
+      final harness = _Harness(
+        frameStallTimeout: const Duration(seconds: 10),
+        frameVisible: () => true,
+        frameElapsed: () => elapsed,
+      );
+      final controller = harness.controller;
+      await controller.setLayout(MultiviewLayout.focus);
+      await controller.assignRoom(0, _room('big'));
+      await controller.assignRoom(1, _room('visible'));
+      await controller.assignRoom(2, _room('offscreen'));
+      controller.setVisibleFocusSmallCells([1]);
+      for (final player in harness.players) {
+        player.emitFrame();
+      }
+
+      elapsed = const Duration(seconds: 9);
+      await tester.pump(const Duration(seconds: 9));
+      harness.players[0].emitFrame();
+      elapsed = const Duration(seconds: 10);
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pump();
+      await tester.pump();
+
+      expect(harness.players.length, 4);
+      expect(harness.log, contains('p1:pDispose'));
+      expect(harness.log, isNot(contains('p0:pDispose')));
+      expect(harness.log, isNot(contains('p2:pDispose')));
+      expect(controller.cells[1].room?.roomId, 'visible');
+      await controller.disposeAll();
+    });
+
+    testWidgets('hidden focus small cell gets a fresh grace period when scrolled into view', (tester) async {
+      var elapsed = Duration.zero;
+      final harness = _Harness(
+        frameStallTimeout: const Duration(seconds: 10),
+        frameVisible: () => true,
+        frameElapsed: () => elapsed,
+      );
+      final controller = harness.controller;
+      await controller.setLayout(MultiviewLayout.focus);
+      await controller.assignRoom(1, _room('small'));
+      controller.setVisibleFocusSmallCells([1]);
+      harness.players.single.emitFrame();
+
+      elapsed = const Duration(seconds: 5);
+      await tester.pump(const Duration(seconds: 5));
+      controller.setVisibleFocusSmallCells(const []);
+      elapsed = const Duration(seconds: 20);
+      await tester.pump(const Duration(seconds: 15));
+      expect(harness.players.length, 1);
+
+      controller.setVisibleFocusSmallCells([1]);
+      elapsed = const Duration(seconds: 21);
+      await tester.pump(const Duration(seconds: 1));
+      elapsed = const Duration(seconds: 29);
+      await tester.pump(const Duration(seconds: 8));
+      expect(harness.players.length, 1);
+      elapsed = const Duration(seconds: 30);
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pump();
+      await tester.pump();
+      expect(harness.players.length, 2);
+      await controller.disposeAll();
+    });
+
+    testWidgets('focus promotion discards the old rail map before monitoring the new large cell', (tester) async {
+      var elapsed = Duration.zero;
+      final harness = _Harness(
+        frameStallTimeout: const Duration(seconds: 10),
+        frameVisible: () => true,
+        frameElapsed: () => elapsed,
+      );
+      final controller = harness.controller;
+      await controller.setLayout(MultiviewLayout.focus);
+      await controller.assignRoom(0, _room('old-big'));
+      await controller.assignRoom(1, _room('old-small'));
+      await controller.assignRoom(2, _room('new-big'));
+      controller.setVisibleFocusSmallCells([1]);
+      for (final player in harness.players) {
+        player.emitFrame();
+      }
+      elapsed = const Duration(seconds: 5);
+      await tester.pump(const Duration(seconds: 5));
+      await controller.promoteCell(2);
+
+      elapsed = const Duration(seconds: 10);
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pump();
+      expect(harness.players.length, 3, reason: 'newly focused cell receives a full visible grace interval');
+      elapsed = const Duration(seconds: 15);
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pump();
+      expect(harness.players.length, 4);
+      expect(harness.log, contains('p2:pDispose'));
+      expect(harness.log, isNot(contains('p0:pDispose')));
+      expect(harness.log, isNot(contains('p1:pDispose')));
+      await controller.disposeAll();
+    });
   });
 }
 

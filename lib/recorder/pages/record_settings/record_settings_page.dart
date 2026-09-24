@@ -100,7 +100,9 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
                         child: CircularProgressIndicator(strokeWidth: 2, semanticsLabel: i18n('clear_all_cache')),
                       )
                     : null,
-                onTap: controller.cacheClearPending.value ? null : () => _clearCache(context),
+                onTap: controller.cacheClearPending.value || controller.cacheClearPromptOpen.value
+                    ? null
+                    : () => _clearCache(context),
               ),
             ]),
             const SizedBox(height: 20),
@@ -226,8 +228,8 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
   }
 
   Future<void> _clearCache(BuildContext context) async {
-    if (controller.cacheClearPending.value) return;
-    controller.cacheClearPending.value = true;
+    if (controller.cacheClearPending.value || controller.cacheClearPromptOpen.value) return;
+    controller.cacheClearPromptOpen.value = true;
 
     try {
       final ok = await showDialog<bool>(
@@ -245,7 +247,9 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
         ),
       );
 
-      if (ok != true) return;
+      if (!controller.isClosed) controller.cacheClearPromptOpen.value = false;
+      if (ok != true || controller.isClosed) return;
+      controller.cacheClearPending.value = true;
       await controller.clearCache();
       if (!context.mounted) return;
       Get.snackbar(i18n("done"), i18n("cache_cleared"), snackPosition: SnackPosition.bottom);
@@ -253,7 +257,10 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
       debugPrint('Recorder cache clear failed: $error');
       if (context.mounted) ToastUtil.show(i18n('cache_operation_failed'));
     } finally {
-      if (!controller.isClosed) controller.cacheClearPending.value = false;
+      if (!controller.isClosed) {
+        controller.cacheClearPromptOpen.value = false;
+        controller.cacheClearPending.value = false;
+      }
     }
   }
 

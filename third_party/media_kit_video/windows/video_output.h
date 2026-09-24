@@ -9,15 +9,16 @@
 #ifndef VIDEO_OUTPUT_H_
 #define VIDEO_OUTPUT_H_
 
+#include <atomic>
 #include <optional>
 
-#include <client.h>
-#include <render.h>
-#include <render_dxgi.h>
+#include "media_kit_mpv.h"
+#include "mpv/render_dxgi.h"
 
 #include <future>
 #include <memory>
 #include <chrono>
+#include <atomic>
 
 #include <flutter/method_channel.h>
 #include <flutter/plugin_registrar_windows.h>
@@ -104,7 +105,9 @@ class VideoOutput {
   // For preventing any asynchronous operations (primarily texture objects
   // deletion after unregister in |Resize|) access this object after
   // destruction.
-  bool destroyed_ = false;
+  std::atomic<bool> destroyed_ = false;
+  // Serialize the callback's destroyed check and task enqueue with teardown.
+  std::mutex callback_mutex_;
 
   std::mutex textures_mutex_ = std::mutex();
 

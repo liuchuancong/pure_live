@@ -327,7 +327,9 @@ void main() {
     expect(find.text(translations['iptv_import_close_hint'] as String), findsOneWidget);
     await tester.tap(find.text(translations['close'] as String));
     await tester.pumpAndSettle();
-    await openImport(tester);
+    await tester.tap(find.text(translations['import_playlist'] as String));
+    await tester.pumpAndSettle();
+    expect(find.text(translations['network_import'] as String), findsNothing);
     expect(find.byType(TextField), findsNothing);
     expect(imports, hasLength(1));
     await tap(tester, 'custom_ua_title');

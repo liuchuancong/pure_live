@@ -13,6 +13,7 @@ import 'package:pure_live/modules/multiview/models/multiview_models.dart';
 import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 import 'package:pure_live/player/widgets/video_output_viewport_sizer.dart';
 import 'package:pure_live/modules/live_play/pages/danmaku_settings_page.dart';
+import 'package:pure_live/modules/multiview/widgets/focus_rail_visibility.dart';
 import 'package:pure_live/modules/multiview/widgets/multiview_room_picker.dart';
 import 'package:pure_live/modules/live_play/widgets/layout/live_play_back_scope.dart';
 import 'package:pure_live/modules/multiview/widgets/multiview_fullscreen_surface.dart';
@@ -55,6 +56,23 @@ class _MultiviewPageState extends State<MultiviewPage> {
   /// 视觉节奏一致），追加格滚动呈现。
   static const int _focusSmallViewportCells = 3;
 
+  final ScrollController _focusRailScrollController = ScrollController();
+  List<int> _focusRailCellIndices = const [];
+  double _focusRailItemExtent = 0;
+  double _focusRailViewportExtent = 0;
+
+  void _syncFocusRailVisibility() {
+    final offset = _focusRailScrollController.hasClients ? _focusRailScrollController.offset : 0.0;
+    controller.setVisibleFocusSmallCells(
+      visibleFocusRailCells(
+        cellIndices: _focusRailCellIndices,
+        scrollOffset: offset,
+        viewportExtent: _focusRailViewportExtent,
+        itemExtent: _focusRailItemExtent,
+      ),
+    );
+  }
+
   /// 当前显示模式；仅 chrome 显隐差异，见 [_DisplayMode]。
   _DisplayMode _displayMode = _DisplayMode.normal;
 
@@ -85,6 +103,7 @@ class _MultiviewPageState extends State<MultiviewPage> {
     super.initState();
     _targetCell = _firstAssignableCell();
     _layoutWorker = ever<MultiviewLayout>(controller.layout, (_) => _clampTargetCell());
+    _focusRailScrollController.addListener(_syncFocusRailVisibility);
     // 桌面端 Esc 退沉浸/全屏。用全局键盘钩子而非 Focus 节点：
     // 选台面板搜索框等输入焦点不应抢占 Esc 处理权；
     // 本路由非栈顶（弹层/上层页面打开）时让位，不干扰其按键语义。
@@ -95,6 +114,9 @@ class _MultiviewPageState extends State<MultiviewPage> {
   void dispose() {
     HardwareKeyboard.instance.removeHandler(_handleGlobalKeyEvent);
     _layoutWorker?.dispose();
+    _focusRailScrollController.removeListener(_syncFocusRailVisibility);
+    _focusRailScrollController.dispose();
+    if (Get.isRegistered<MultiviewController>()) controller.setVisibleFocusSmallCells(const []);
     // 极端路径防御：页面在全屏态被系统直接销毁（路由被移除/上层 offAndTo）
     // 时恢复系统 UI 与窗口状态。doExitFullScreen 幂等，重复调用安全。
     if (_displayMode == _DisplayMode.fullscreen) {
@@ -539,6 +561,7 @@ class _MultiviewPageState extends State<MultiviewPage> {
       final focused = controller.focusedCellIndex.value;
       final audioFocus = controller.audioFocusIndexState.value;
       final danmakuEnabled = controller.danmakuEnabled.value;
+      if (layout != MultiviewLayout.focus) controller.setVisibleFocusSmallCells(const []);
       final content = layout == MultiviewLayout.focus
           ? _buildFocusLayout(cells, focused: focused, isWide: isWide, danmakuEnabled: danmakuEnabled)
           : Column(
@@ -615,12 +638,17 @@ class _MultiviewPageState extends State<MultiviewPage> {
             builder: (context, boxConstraints) {
               // 固定行高 = 视口高 / 首屏格数：前三格铺满视口，超出滚动。
               final extent = boxConstraints.maxHeight / _focusSmallViewportCells;
+              _focusRailCellIndices = others;
+              _focusRailItemExtent = extent;
+              _focusRailViewportExtent = boxConstraints.maxHeight;
+              _syncFocusRailVisibility();
               final canAdd = controller.canAddCell;
               // 常驻全部子项（SingleChildScrollView + Column），不做虚拟化：
               // maxCells=9、首屏 3 格的规模下虚拟化是纯负收益——滚动会反复
               // 销毁/重建 Video（Windows 共享渲染线程纹理重附开销大），且把
               // GlobalKey 零重建降级为仅视口内成立。滚动行为不变。
               return SingleChildScrollView(
+                controller: _focusRailScrollController,
                 child: Column(
                   children: [
                     for (final index in others)
@@ -1197,7 +1225,7 @@ class _RoomNameChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (hasLogo) ...[Image.asset(Sites.of(platform).logo, width: 13, height: 13), const SizedBox(width: 5)],
+          if (hasLogo) ...[Image.asset(Sites.logoForId(platform), width: 13, height: 13), const SizedBox(width: 5)],
           ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 120),
             child: Text(

@@ -77,6 +77,8 @@ class WeiboSite extends LiveSite
           cover: card.cover,
           link: WeiboLink.url(card.liveId),
           liveStatus: LiveStatus.unknown,
+          audienceMetricType: AudienceMetricType.unknown,
+          watching: '',
           notice: i18n('weibo_room_scope'),
         ),
       ),
@@ -131,6 +133,8 @@ class WeiboSite extends LiveSite
       WeiboBroadcastState.replay => LiveStatus.replay,
       WeiboBroadcastState.unknown => LiveStatus.unknown,
     },
+    audienceMetricType: AudienceMetricType.unknown,
+    watching: '',
     notice: [if (detail.access != WeiboAccess.public) i18n('weibo_restricted'), i18n('weibo_room_scope')].join('\n'),
     data: detail,
   );
@@ -167,8 +171,20 @@ class WeiboSite extends LiveSite
     _page(page, pageSize);
     if (page > 1) return [];
     final liveId = WeiboLink.parse(keyword);
-    if (liveId == null) return [];
-    return [_room(await _api.detail(liveId, cancel: cancel))];
+    if (liveId != null) {
+      try {
+        return [_room(await _api.detail(liveId, cancel: cancel))];
+      } on WeiboException catch (error) {
+        if (error.kind == WeiboFailure.missing) return [];
+        rethrow;
+      }
+    }
+    final query = keyword.trim().toLowerCase();
+    if (query.isEmpty) return [];
+    // Only filter the current official recommendation snapshot. This is not
+    // a broadcaster or full-site search and does not establish live status.
+    final directory = await getDirectoryPage(cancel: cancel);
+    return directory.rooms.where((room) => (room.nick ?? '').toLowerCase().contains(query)).take(pageSize).toList();
   }
 
   WeiboLiveDetail _detail(LiveRoom room) {

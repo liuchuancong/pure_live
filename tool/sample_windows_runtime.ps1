@@ -141,6 +141,15 @@ function Get-GpuSnapshot {
 }
 
 $initialProcess = Get-Process -Id $TargetProcessId -ErrorAction Stop
+$initialProcessName = $initialProcess.ProcessName
+$initialExecutable = $initialProcess.Path
+$initialFileVersion = $null
+$initialProductVersion = $null
+if ($initialExecutable -and (Test-Path -LiteralPath $initialExecutable)) {
+    $versionInfo = (Get-Item -LiteralPath $initialExecutable).VersionInfo
+    $initialFileVersion = $versionInfo.FileVersion
+    $initialProductVersion = $versionInfo.ProductVersion
+}
 $resolvedOutput = if ([IO.Path]::IsPathRooted($OutputDirectory)) {
     [IO.Path]::GetFullPath($OutputDirectory)
 } else {
@@ -158,7 +167,7 @@ $samples = [Collections.Generic.List[object]]::new()
 $previousCpuSeconds = $null
 $previousElapsed = 0.0
 $processExitObserved = $false
-$plannedSampleCount = [Math]::Floor($DurationSeconds / $IntervalSeconds) + 1
+$nextSampleElapsed = 0.0
 $gpuEngineCounterPath = $null
 [string[]] $gpuMemoryCounterPaths = @()
 if ($IncludeGpu) {
@@ -189,14 +198,17 @@ $displayAdapters = @(
         }
 )
 
-for ($sampleIndex = 0; $sampleIndex -lt $plannedSampleCount; $sampleIndex++) {
-    if ($sampleIndex -gt 0) {
-        $targetElapsedMilliseconds = $sampleIndex * $IntervalSeconds * 1000.0
-        $remainingMilliseconds = $targetElapsedMilliseconds - $stopwatch.Elapsed.TotalMilliseconds
-        if ($remainingMilliseconds -gt 0) {
-            Start-Sleep -Milliseconds ([Math]::Ceiling($remainingMilliseconds))
-        }
+while ($true) {
+    # Sampling a busy GPU can take longer than the requested interval. Use the
+    # wall-clock deadline rather than a fixed iteration count, and skip missed
+    # slots instead of extending a 35-minute run to 45+ minutes.
+    if ($samples.Count -gt 0 -and $stopwatch.Elapsed.TotalSeconds -ge $DurationSeconds) { break }
+    if ($nextSampleElapsed -gt $DurationSeconds) { break }
+    $remainingMilliseconds = ($nextSampleElapsed - $stopwatch.Elapsed.TotalSeconds) * 1000.0
+    if ($remainingMilliseconds -gt 0) {
+        Start-Sleep -Milliseconds ([Math]::Ceiling($remainingMilliseconds))
     }
+    if ($samples.Count -gt 0 -and $stopwatch.Elapsed.TotalSeconds -ge $DurationSeconds) { break }
 
     $process = Get-Process -Id $TargetProcessId -ErrorAction SilentlyContinue
     if (-not $process) {
@@ -204,49 +216,65 @@ for ($sampleIndex = 0; $sampleIndex -lt $plannedSampleCount; $sampleIndex++) {
         break
     }
 
-    $elapsed = $stopwatch.Elapsed.TotalSeconds
-    $cpuSeconds = [double]$process.CPU
-    $processCounters = Get-CimInstance -ClassName Win32_Process -Filter "ProcessId = $TargetProcessId" -ErrorAction SilentlyContinue
-    $readTransferCount = if ($processCounters) { [double]$processCounters.ReadTransferCount } else { 0.0 }
-    $writeTransferCount = if ($processCounters) { [double]$processCounters.WriteTransferCount } else { 0.0 }
-    $elapsedDelta = $elapsed - $previousElapsed
-    $cpuPercent = Get-PureLiveIntervalCpuPercent -CurrentCpuSeconds $cpuSeconds `
-        -PreviousCpuSeconds $previousCpuSeconds -ElapsedSeconds $elapsedDelta `
-        -LogicalProcessors $logicalProcessors
+    try {
+        $elapsed = $stopwatch.Elapsed.TotalSeconds
+        $cpuSeconds = [double]$process.CPU
+        $processCounters = Get-CimInstance -ClassName Win32_Process -Filter "ProcessId = $TargetProcessId" -ErrorAction SilentlyContinue
+        $readTransferCount = if ($processCounters) { [double]$processCounters.ReadTransferCount } else { 0.0 }
+        $writeTransferCount = if ($processCounters) { [double]$processCounters.WriteTransferCount } else { 0.0 }
+        $elapsedDelta = $elapsed - $previousElapsed
+        $cpuPercent = Get-PureLiveIntervalCpuPercent -CurrentCpuSeconds $cpuSeconds `
+            -PreviousCpuSeconds $previousCpuSeconds -ElapsedSeconds $elapsedDelta `
+            -LogicalProcessors $logicalProcessors
 
-    $gpu = if ($IncludeGpu -and $gpuEngineCounterPath) {
-        Get-GpuSnapshot `
-            -ProcessId $TargetProcessId `
-            -EngineCounterPath $gpuEngineCounterPath `
-            -MemoryCounterPaths $gpuMemoryCounterPaths
-    } else {
-        $null
+        $gpu = if ($IncludeGpu -and $gpuEngineCounterPath) {
+            Get-GpuSnapshot `
+                -ProcessId $TargetProcessId `
+                -EngineCounterPath $gpuEngineCounterPath `
+                -MemoryCounterPaths $gpuMemoryCounterPaths
+        } else {
+            $null
+        }
+
+        $sample = [pscustomobject][ordered]@{
+            timestamp_utc = [DateTime]::UtcNow.ToString('o')
+            elapsed_seconds = [Math]::Round($elapsed, 3)
+            scenario = $Scenario
+            process_id = $TargetProcessId
+            responding = [bool]$process.Responding
+            cpu_percent = $cpuPercent
+            working_set_mib = [Math]::Round($process.WorkingSet64 / 1MB, 4)
+            private_bytes_mib = [Math]::Round($process.PrivateMemorySize64 / 1MB, 4)
+            handles = [int]$process.HandleCount
+            threads = [int]$process.Threads.Count
+            io_read_mib = [Math]::Round($readTransferCount / 1MB, 4)
+            io_write_mib = [Math]::Round($writeTransferCount / 1MB, 4)
+            gpu_engine_sum_percent = if ($null -ne $gpu -and $null -ne $gpu.EngineSumPercent) { [Math]::Round($gpu.EngineSumPercent, 4) } else { $null }
+            gpu_3d_percent = if ($null -ne $gpu -and $null -ne $gpu.ThreeDPercent) { [Math]::Round($gpu.ThreeDPercent, 4) } else { $null }
+            gpu_video_decode_percent = if ($null -ne $gpu -and $null -ne $gpu.VideoDecodePercent) { [Math]::Round($gpu.VideoDecodePercent, 4) } else { $null }
+            gpu_video_processing_percent = if ($null -ne $gpu -and $null -ne $gpu.VideoProcessingPercent) { [Math]::Round($gpu.VideoProcessingPercent, 4) } else { $null }
+            gpu_copy_percent = if ($null -ne $gpu -and $null -ne $gpu.CopyPercent) { [Math]::Round($gpu.CopyPercent, 4) } else { $null }
+            gpu_dedicated_mib = if ($null -ne $gpu -and $null -ne $gpu.DedicatedMiB) { [Math]::Round($gpu.DedicatedMiB, 4) } else { $null }
+            gpu_shared_mib = if ($null -ne $gpu -and $null -ne $gpu.SharedMiB) { [Math]::Round($gpu.SharedMiB, 4) } else { $null }
+        }
+    } catch {
+        # A process may exit between Get-Process and a later property getter.
+        # Preserve completed rows instead of mistaking that race for a sampler failure.
+        if (-not (Get-Process -Id $TargetProcessId -ErrorAction SilentlyContinue)) {
+            $processExitObserved = $true
+            break
+        }
+        throw
     }
 
-    $samples.Add([pscustomobject][ordered]@{
-        timestamp_utc = [DateTime]::UtcNow.ToString('o')
-        elapsed_seconds = [Math]::Round($elapsed, 3)
-        scenario = $Scenario
-        process_id = $TargetProcessId
-        responding = [bool]$process.Responding
-        cpu_percent = $cpuPercent
-        working_set_mib = [Math]::Round($process.WorkingSet64 / 1MB, 4)
-        private_bytes_mib = [Math]::Round($process.PrivateMemorySize64 / 1MB, 4)
-        handles = [int]$process.HandleCount
-        threads = [int]$process.Threads.Count
-        io_read_mib = [Math]::Round($readTransferCount / 1MB, 4)
-        io_write_mib = [Math]::Round($writeTransferCount / 1MB, 4)
-        gpu_engine_sum_percent = if ($null -ne $gpu -and $null -ne $gpu.EngineSumPercent) { [Math]::Round($gpu.EngineSumPercent, 4) } else { $null }
-        gpu_3d_percent = if ($null -ne $gpu -and $null -ne $gpu.ThreeDPercent) { [Math]::Round($gpu.ThreeDPercent, 4) } else { $null }
-        gpu_video_decode_percent = if ($null -ne $gpu -and $null -ne $gpu.VideoDecodePercent) { [Math]::Round($gpu.VideoDecodePercent, 4) } else { $null }
-        gpu_video_processing_percent = if ($null -ne $gpu -and $null -ne $gpu.VideoProcessingPercent) { [Math]::Round($gpu.VideoProcessingPercent, 4) } else { $null }
-        gpu_copy_percent = if ($null -ne $gpu -and $null -ne $gpu.CopyPercent) { [Math]::Round($gpu.CopyPercent, 4) } else { $null }
-        gpu_dedicated_mib = if ($null -ne $gpu -and $null -ne $gpu.DedicatedMiB) { [Math]::Round($gpu.DedicatedMiB, 4) } else { $null }
-        gpu_shared_mib = if ($null -ne $gpu -and $null -ne $gpu.SharedMiB) { [Math]::Round($gpu.SharedMiB, 4) } else { $null }
-    })
+    $samples.Add($sample)
+    # Keep long-soak evidence durable even when the target crashes or this
+    # sampler encounters a later error. The final summary is written below.
+    $sample | Export-Csv -LiteralPath $csvPath -NoTypeInformation -Encoding utf8 -Append
 
     $previousCpuSeconds = $cpuSeconds
     $previousElapsed = $elapsed
+    $nextSampleElapsed = ([Math]::Floor($stopwatch.Elapsed.TotalSeconds / $IntervalSeconds) + 1) * $IntervalSeconds
 }
 
 $stopwatch.Stop()
@@ -254,17 +282,16 @@ if ($samples.Count -eq 0) {
     throw "Process $TargetProcessId exited before the first sample."
 }
 
-$samples | Export-Csv -LiteralPath $csvPath -NoTypeInformation -Encoding utf8
 $allResponding = -not [bool]($samples | Where-Object { -not $_.responding } | Select-Object -First 1)
 $summary = [ordered]@{
     schema = 1
     generated_at_utc = [DateTime]::UtcNow.ToString('o')
     scenario = $Scenario
     process_id = $TargetProcessId
-    process_name = $initialProcess.ProcessName
-    executable = $initialProcess.Path
-    file_version = $initialProcess.MainModule.FileVersionInfo.FileVersion
-    product_version = $initialProcess.MainModule.FileVersionInfo.ProductVersion
+    process_name = $initialProcessName
+    executable = $initialExecutable
+    file_version = $initialFileVersion
+    product_version = $initialProductVersion
     requested_duration_seconds = $DurationSeconds
     actual_duration_seconds = [Math]::Round($stopwatch.Elapsed.TotalSeconds, 3)
     interval_seconds = $IntervalSeconds

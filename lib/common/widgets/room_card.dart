@@ -198,7 +198,7 @@ class RoomCard extends StatelessWidget {
                   color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.2),
                   shape: BoxShape.circle,
                 ),
-                child: Image.asset(Sites.of(room.normalizedPlatformId).logo, width: 28, height: 28),
+                child: Image.asset(Sites.logoForId(room.normalizedPlatformId), width: 28, height: 28),
               ),
               const SizedBox(width: 12),
               Expanded(

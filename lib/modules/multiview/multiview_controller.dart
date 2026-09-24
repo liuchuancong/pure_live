@@ -306,6 +306,32 @@ class MultiviewController extends GetxController {
     growable: true,
   );
   final List<int> _frameStallRecoveries = List<int>.filled(MultiviewLayout.quad.capacity, 0, growable: true);
+  Set<int> _visibleFocusSmallCells = const {};
+
+  /// The page reports the focus rail's physically visible cells. An
+  /// unreported/offscreen small cell is never refreshed solely for missing
+  /// presented frames; the large cell remains monitored independently.
+  void setVisibleFocusSmallCells(Iterable<int> indices) {
+    if (_closed) return;
+    _visibleFocusSmallCells = layout.value == MultiviewLayout.focus
+        ? {
+            for (final index in indices)
+              if (index >= 0 && index < cells.length) index,
+          }
+        : const {};
+    _notifyFrameEligibilityChanged();
+  }
+
+  void _notifyFrameEligibilityChanged() {
+    for (final watchdog in _frameWatchdogs) {
+      watchdog?.eligibilityChanged();
+    }
+  }
+
+  bool _isCellFrameVisible(int cellIndex) =>
+      layout.value != MultiviewLayout.focus ||
+      focusedCellIndex.value == cellIndex ||
+      _visibleFocusSmallCells.contains(cellIndex);
 
   /// 音频焦点格下标，默认 0。
   ///
@@ -487,6 +513,7 @@ class MultiviewController extends GetxController {
       _frameStallRecoveries.add(0);
     }
 
+    _visibleFocusSmallCells = const {};
     layout.value = newLayout;
 
     // 进入 focus 布局时视觉跟随既有声源（零音频扰动），
@@ -505,6 +532,8 @@ class MultiviewController extends GetxController {
     if (_audioFocusIndex.value >= capacity) {
       _refocusToFirstPlaying(fallback: 0);
     }
+
+    _notifyFrameEligibilityChanged();
 
     // 布局变化可能改变大画面格（进入/离开 focus），同步弹幕会话。
     unawaited(_syncDanmakuSession());
@@ -541,7 +570,11 @@ class MultiviewController extends GetxController {
   Future<void> promoteCell(int cellIndex) async {
     RangeError.checkValidIndex(cellIndex, cells, 'cellIndex');
     final previousFocused = focusedCellIndex.value;
+    // The rail re-reports visibility after the GlobalKey move. Until then,
+    // monitor only the new large cell rather than trusting the old rail map.
+    _visibleFocusSmallCells = const {};
     focusedCellIndex.value = cellIndex;
+    _notifyFrameEligibilityChanged();
     await setAudioFocus(cellIndex);
 
     if (!smallCellsLowQuality.value || layout.value != MultiviewLayout.focus) return;
@@ -991,6 +1024,7 @@ class MultiviewController extends GetxController {
   /// notifier，必须先摘除全部渲染引用再开始原生销毁；句柄随后在后台
   /// 串行 teardown，onClose 场景不阻塞路由 pop。
   Future<void> disposeAll() async {
+    _visibleFocusSmallCells = const {};
     final handles = <MultiviewCellPlayerHandle>[];
     for (var i = 0; i < _players.length; i++) {
       final handle = _captureSlot(i);
@@ -1057,7 +1091,7 @@ class MultiviewController extends GetxController {
           !_isStale(cellIndex, epoch) &&
           identical(_players[cellIndex], handle) &&
           cells[cellIndex].status == MultiviewCellStatus.playing &&
-          (layout.value != MultiviewLayout.focus || focusedCellIndex.value == cellIndex) &&
+          _isCellFrameVisible(cellIndex) &&
           playingFlags[cellIndex] &&
           handle.isPlaying &&
           _isFramePresentationVisible(),
@@ -1084,6 +1118,7 @@ class MultiviewController extends GetxController {
   Future<void> _recoverPresentedFrameStall(int cellIndex, int epoch, MultiviewCellPlayerHandle handle) async {
     if (_isStale(cellIndex, epoch) ||
         !identical(_players[cellIndex], handle) ||
+        !_isCellFrameVisible(cellIndex) ||
         !handle.isPlaying ||
         !playingFlags[cellIndex] ||
         !_isFramePresentationVisible()) {

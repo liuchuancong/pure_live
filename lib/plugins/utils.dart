@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:pure_live/common/index.dart';
-import 'package:tray_manager/tray_manager.dart';
+import 'package:pure_live/common/global/platform/desktop_tray_service.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:pure_live/common/services/settings/exit_settings_controller.dart';
@@ -46,7 +46,7 @@ class Utils {
         await Future.delayed(const Duration(milliseconds: 300));
       }
       try {
-        await trayManager.destroy().timeout(const Duration(seconds: 2));
+        DesktopTrayService.dispose();
       } catch (e) {
         debugPrint('托盘注销超时: $e');
       }

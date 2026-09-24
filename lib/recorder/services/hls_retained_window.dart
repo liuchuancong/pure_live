@@ -181,6 +181,7 @@ final class HlsMediaSnapshot {
         '#EXT-X-VERSION',
         '#EXT-X-ENDLIST',
         '#EXT-X-PLAYLIST-TYPE',
+        '#EXT-X-ALLOW-CACHE',
         '#EXT-X-PART-INF',
         '#EXT-X-SERVER-CONTROL',
       }.contains(tag)) {
@@ -299,6 +300,10 @@ final class HlsMediaSnapshot {
         case '#EXT-X-PLAYLIST-TYPE':
           if (value != 'EVENT' && value != 'VOD') throw const FormatException('Invalid playlist type');
           playlistType = value;
+        case '#EXT-X-ALLOW-CACHE':
+          // This legacy tag was removed in HLS version 7. YES carries no
+          // media-state restriction; NO must keep the prefetch fallback.
+          if (value != 'YES') unhandled.add('#EXT-X-ALLOW-CACHE');
         case '#EXT-X-INDEPENDENT-SEGMENTS':
           independent = true;
         default:

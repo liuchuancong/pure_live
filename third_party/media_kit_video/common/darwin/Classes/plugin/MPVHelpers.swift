@@ -8,7 +8,7 @@ import Foundation
 public enum MPVHelpers {
   public static func checkError(_ status: CInt) {
     if status < 0 {
-      NSLog("MPVHelpers: error: \(String(cString: mpv_error_string(status)))")
+      NSLog("MPVHelpers: error: \(String(cString: media_kit_mpv_error_string(status)))")
       exit(1)
     }
   }
@@ -18,10 +18,10 @@ public enum MPVHelpers {
   ) -> MPVVideoOutParams {
     var node = mpv_node()
     defer {
-      mpv_free_node_contents(&node)
+      media_kit_mpv_free_node_contents(&node)
     }
 
-    mpv_get_property(handle, "video-out-params", MPV_FORMAT_NODE, &node)
+    media_kit_mpv_get_property(handle, "video-out-params", MPV_FORMAT_NODE, &node)
 
     if node.format != MPV_FORMAT_NODE_MAP {
       return MPVVideoOutParams.empty

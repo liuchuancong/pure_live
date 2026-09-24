@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:pure_live/common/models/live_area.dart';
 import 'package:pure_live/common/models/live_room.dart';
-import 'package:pure_live/core/danmaku/empty_danmaku.dart';
+import 'package:pure_live/core/danmaku/goodgame_danmaku.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
 import 'package:pure_live/core/interface/live_directory.dart';
 import 'package:pure_live/core/interface/live_search.dart';
@@ -18,6 +18,7 @@ final class GoodGameSite extends LiveSite
         LiveSiteDirectoryPager,
         LiveDirectoryNotice,
         LiveCancellableSearch,
+        LiveSearchPaginationPolicy,
         LiveSiteRoomRefresher,
         LiveSiteRecordRoomResolver,
         LivePlayUrlResolver,
@@ -25,6 +26,10 @@ final class GoodGameSite extends LiveSite
   GoodGameSite({GoodGameApi? api}) : _api = api ?? GoodGameApi();
 
   final GoodGameApi _api;
+  static const int maxSearchDirectoryPages = 10;
+  static const Duration searchDirectoryCacheAge = Duration(seconds: 30);
+  List<GoodGameRoom>? _searchDirectorySnapshot;
+  DateTime? _searchDirectoryFetchedAt;
 
   @override
   String get id => 'goodgame';
@@ -36,7 +41,7 @@ final class GoodGameSite extends LiveSite
   String get directoryNoticeKey => 'goodgame_directory_scope';
 
   @override
-  LiveDanmaku getDanmaku() => EmptyDanmaku();
+  LiveDanmaku getDanmaku() => GoodGameDanmaku();
 
   @override
   Future<List<LiveCategory>> getCategores(int page, int pageSize) async => page == 1 && pageSize > 0
@@ -73,6 +78,7 @@ final class GoodGameSite extends LiveSite
     cover: room.cover,
     area: room.category.isEmpty ? 'GoodGame Live' : room.category,
     link: GoodGameLink.channelUrl(room.channel),
+    danmakuData: room.streamId.toString(),
     liveStatus: switch (room.state) {
       GoodGameState.live => LiveStatus.live,
       GoodGameState.offline => LiveStatus.offline,
@@ -81,7 +87,7 @@ final class GoodGameSite extends LiveSite
     onlineViewers: room.viewers?.toString(),
     followers: room.followers?.toString(),
     audienceMetricType: room.viewers == null ? AudienceMetricType.unknown : AudienceMetricType.onlineViewers,
-    notice: room.adult ? i18n('goodgame_adult_notice') : i18n('goodgame_chat_notice'),
+    notice: room.adult ? i18n('goodgame_adult_notice') : i18n('goodgame_audience_notice'),
     httpHeaders: GoodGameApi.mediaHeaders(room.channel),
     data: includeMedia ? room : null,
   );
@@ -115,6 +121,37 @@ final class GoodGameSite extends LiveSite
   Future<List<LiveRoom>> searchRooms(String keyword, {int page = 1, int pageSize = 30}) =>
       searchRoomsCancellable(keyword, page: page, pageSize: pageSize);
 
+  static bool _isExactOnly(String input) =>
+      GoodGameLink.parse(input) != null || GoodGameLink.parseReference(input)?.kind == GoodGameLinkKind.player;
+
+  @override
+  bool supportsSearchPaginationFor(String keyword) {
+    final input = keyword.trim();
+    return input.isNotEmpty && !_isExactOnly(input);
+  }
+
+  Future<List<GoodGameRoom>> _searchDirectory(CancelToken? cancel) async {
+    final snapshot = _searchDirectorySnapshot;
+    final fetchedAt = _searchDirectoryFetchedAt;
+    if (snapshot != null && fetchedAt != null && DateTime.now().difference(fetchedAt) < searchDirectoryCacheAge) {
+      if (cancel?.isCancelled == true) throw cancel!.cancelError!;
+      return snapshot;
+    }
+    final rooms = <GoodGameRoom>[];
+    final seen = <String>{};
+    for (var directoryPage = 1; directoryPage <= maxSearchDirectoryPages; directoryPage++) {
+      final result = await _api.directory(page: directoryPage, cancel: cancel);
+      for (final room in result.items) {
+        if (seen.add(room.channel)) rooms.add(room);
+      }
+      if (!result.hasMore) break;
+    }
+    if (cancel?.isCancelled == true) throw cancel!.cancelError!;
+    _searchDirectorySnapshot = List.unmodifiable(rooms);
+    _searchDirectoryFetchedAt = DateTime.now();
+    return _searchDirectorySnapshot!;
+  }
+
   @override
   Future<List<LiveRoom>> searchRoomsCancellable(
     String keyword, {
@@ -124,17 +161,21 @@ final class GoodGameSite extends LiveSite
   }) async {
     final raw = keyword.trim();
     if (raw.isEmpty || page < 1 || pageSize < 1) return [];
+    final exactOnly = _isExactOnly(raw);
+    if (exactOnly && page != 1) return [];
     final reference = GoodGameLink.parseReference(raw);
     if (page == 1 && reference != null && (!raw.contains(' ') || raw.contains('://'))) {
       try {
         return [_room(await _api.room(reference.storageKey, cancel: cancel), includeMedia: false)];
       } on GoodGameException catch (error) {
         if (error.kind != GoodGameFailure.missing && error.kind != GoodGameFailure.schema) rethrow;
+        if (exactOnly) return [];
       }
     }
+    if (exactOnly) return [];
     final query = raw.toLowerCase();
-    final result = await _api.directory(page: page, cancel: cancel);
-    return result.items
+    final rooms = await _searchDirectory(cancel);
+    return rooms
         .where(
           (room) =>
               room.channel.contains(query) ||
@@ -142,7 +183,8 @@ final class GoodGameSite extends LiveSite
               room.title.toLowerCase().contains(query) ||
               room.category.toLowerCase().contains(query),
         )
-        .take(pageSize.clamp(1, 50))
+        .skip((page - 1) * pageSize)
+        .take(pageSize)
         .map((room) => _room(room, includeMedia: false))
         .toList(growable: false);
   }

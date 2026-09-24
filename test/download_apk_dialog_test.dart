@@ -342,7 +342,9 @@ void main() {
     final partialPath = path.join(downloadDirectory.path, 'PureLive-failed.apk.part');
 
     await _waitFor(tester, () => transferFailed && !File(partialPath).existsSync());
-
+    // Removing the staging file precedes the async error continuation that
+    // closes the animated progress dialog.
+    await _waitFor(tester, () => find.byType(DownloadApkDialog).evaluate().isEmpty);
     await tester.pumpAndSettle();
 
     expect(File(partialPath).existsSync(), isFalse);

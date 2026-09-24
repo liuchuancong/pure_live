@@ -67,6 +67,7 @@ void main() {
       expect(room.effectiveLiveStatus, LiveStatus.unknown);
       expect(room.isLiveStatusPending, isTrue);
       expect(room.isExplicitlyOfflineNow, isFalse);
+      expect(room.audienceValue(preferRealOnline: false, platformEnabled: false), isEmpty);
     });
   });
 }

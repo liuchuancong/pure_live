@@ -155,6 +155,14 @@ void main() {
     await c.doSearch();
     expect(c.results, isEmpty);
     expect(f.detailCalls, 1);
+    expect(f.directoryCalls, 1);
+    c.searchController.text = '样本 1';
+    await c.doSearch();
+    expect(c.results.single.userId, '102');
+    expect(c.results.single.liveStatus, LiveStatus.unknown);
+    expect(c.hasMore.value, isFalse);
+    expect(f.directoryCalls, 2);
+    expect(f.detailCalls, 1);
   });
 
   test('actual search retains replay identity but allows the live-only filter to hide it', () async {
@@ -170,6 +178,23 @@ void main() {
     c.setIncludeOffline(true);
     expect(c.results.single.roomId, weiboFixtureId);
     expect(f.detailCalls, 1);
+  });
+
+  test('missing exact Weibo broadcast presents empty search rather than provider error', () async {
+    final adapter = WeiboSite(api: WeiboApi(request: (_, _, _, _) async => (status: 404, body: '')));
+    final c = search.SearchController(
+      searchSites: [Site(id: 'weibo', name: 'Weibo', logo: '', liveSite: adapter)],
+    );
+    addTearDown(c.onClose);
+    c.index.value = 1;
+    c.searchController.text = weiboFixtureId;
+
+    await c.doSearch();
+
+    expect(c.searched.value, isTrue);
+    expect(c.results, isEmpty);
+    expect(c.errorMessage.value, isEmpty);
+    expect(c.hasMore.value, isFalse);
   });
 
   test('closing actual search cancels nested adapter I/O and suppresses late results', () async {

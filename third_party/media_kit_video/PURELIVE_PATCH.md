@@ -1,9 +1,16 @@
 # PureLive media_kit_video patch
 
 - Upstream: `https://github.com/Predidit/media-kit.git`
-- Base commit: `994465d9bfca3f39d0b41199d16e7fd93fe97881`
+- Base commit: `d13fc22ba1b19b45de3090c2d1b0f8a541b585a0`
 - Package version: `media_kit_video 1.2.5`
 - License: MIT; the upstream `LICENSE` is retained in this directory.
+
+This revision uses `media_kit`'s Native Assets hook rather than the removed
+`media_kit_libs_*` packages. The local patch was replayed with a three-way
+merge against the new upstream video implementation. Android JNI references
+now call the helper class shipped by `media_kit` directly. The unused upstream
+`deletedGlobalObjectRefs` field was dropped; reference deletion remains
+serialized by the existing Surface owner and delayed teardown.
 
 ## Why this copy exists
 
