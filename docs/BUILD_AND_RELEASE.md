@@ -54,7 +54,7 @@ PowerShell -ExecutionPolicy Bypass -File .\tool\local_ci.ps1 -Scope Full
 
 Android 构建使用 Java 25 运行 Gradle 与 lint，应用和插件的 Java/Kotlin 字节码目标保持 17。脚本优先读取 `PURE_LIVE_JAVA_HOME`，随后检测 Android Studio JBR，最后回退到本机 Temurin；当前工具链为 compileSdk/targetSdk 37、Gradle 9.7.1、AGP 9.3.3 和 AGP Built-in Kotlin。`tool/audit_built_in_kotlin.py` 会在本地 CI 中阻止独立 KGP、模块私有 AGP classpath 和旧 Kotlin DSL 回归。
 
-Android 打包前由 `tool/prefetch_android_native.ps1` 依据当前 media_kit Native Assets 清单下载并逐一校验四个 ABI 的 libmpv 档案，以及 FFmpeg builders v0.11.1 AAR；质量门禁以 `-SkipAndroidMedia` 准备 media_kit 与 FFmpeg 的 Windows 档案。原生文件写入持久缓存和各自的 Native Assets 共享缓存，减少重复下载并拦截损坏文件。
+Android 打包前由 `tool/prefetch_android_native.ps1` 依据当前 media_kit Native Assets 清单下载并逐一校验四个 ABI 的 libmpv 档案，以及项目固定 SHA-256 的 FFmpeg 9.0.2 AAR；质量门禁以 `-SkipAndroidMedia` 准备 media_kit 与 FFmpeg 的 Windows 档案。原生文件写入持久缓存和各自的 Native Assets 共享缓存，减少重复下载并拦截损坏文件。
 
 Windows 的 `flutter_inappwebview_windows` 需要 `nuget.exe`。脚本会自动发现 `%LOCALAPPDATA%\Codex\nuget\nuget.exe` 或 `PATH` 中的 NuGet；建议从 `https://dist.nuget.org/` 下载并核验 Microsoft Authenticode 签名。
 
@@ -133,7 +133,7 @@ Ubuntu 24.04 构建会同时安装 `libva`、VDPAU、PulseAudio、Wayland、EGL 
 
 ## 单独命令
 
-Android、Windows 与 Linux 的 FFmpeg Kit 使用项目[原生依赖资产预发布](https://github.com/wzgrx/pure_live/releases/tag/native-ffmpeg-9.0.2-b1)中的 FFmpeg `n9.0.2`；不是应用版本号。运行本机完整构建脚本时会先校验下载文件的 SHA-256。直接执行下列 Flutter 命令前，也可先运行 `tool/prefetch_android_native.ps1`；最终以 APK 内 `libffmpegkit.so` 和 Windows `libffmpegkit.dll` 的版本、哈希与实际运行结果为准。Android AAR 包含 `arm64-v8a`、`armeabi-v7a`、`x86_64`；其中 arm64 与 x86_64 ELF `LOAD` 段按 16 KiB 对齐。Linux 资产使用 Ubuntu 24.04 基线，不能混用更高 glibc 环境编出的 ZIP。
+Android、Windows、Linux、macOS 与 iOS 的 FFmpeg Kit 使用项目[原生依赖资产预发布](https://github.com/wzgrx/pure_live/releases/tag/native-ffmpeg-9.0.2-b1)中的 FFmpeg `n9.0.2`；不是应用版本号。运行本机完整构建脚本时会先校验下载文件的 SHA-256。直接执行下列 Flutter 命令前，也可先运行 `tool/prefetch_android_native.ps1`；最终以 APK 内 `libffmpegkit.so` 和 Windows `libffmpegkit.dll` 的版本、哈希与实际运行结果为准。Android AAR 包含 `arm64-v8a`、`armeabi-v7a`、`x86_64`；其中 arm64 与 x86_64 ELF `LOAD` 段按 16 KiB 对齐。Linux 资产使用 Ubuntu 24.04 基线，不能混用更高 glibc 环境编出的 ZIP。Apple 两端使用各自的 universal XCFramework ZIP，并在应用构建后校验实际打包的 Mach-O 架构与 `n9.0.2` 标记。
 
 ```powershell
 .\tool\flutterw.ps1 pub get --enforce-lockfile
