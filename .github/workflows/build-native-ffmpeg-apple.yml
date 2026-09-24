@@ -36,7 +36,16 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          sudo xcodebuild -downloadComponent MetalToolchain
+          if ! xcrun --find metal >/dev/null 2>&1; then
+            for attempt in 1 2 3; do
+              if sudo xcodebuild -downloadComponent MetalToolchain && xcrun --find metal >/dev/null 2>&1; then
+                break
+              fi
+              if [[ "$attempt" -lt 3 ]]; then
+                sleep "$((attempt * 30))"
+              fi
+            done
+          fi
           xcrun --find metal
 
       - name: Fetch pinned native builder source
