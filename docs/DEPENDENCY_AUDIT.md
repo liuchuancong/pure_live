@@ -9,7 +9,7 @@
 - 升至 Android Gradle Plugin **9.3.3**（9.3 稳定补丁）和 Gradle **9.7.1**；wrapper 固定官方发布的 ZIP SHA-256。Google Services 4.5.0 保持当前版本；两个尚用 setup-python v6.1.0 的工作流统一到仓库已有的 v7.0.0 固定提交。
 - 再次运行 `flutter pub outdated --json`：直接/开发依赖 **0 项落后**；播放器迁移后仍有 10 项较新版本受 Flutter SDK 或上游包约束锁定。
 - `Predidit/media-kit` 已从 `994465d9` 升至 HEAD `d13fc22b`。新版将 libmpv 改为 SHA-256 校验的 Native Assets，旧 `media_kit_libs_*` 插件及依赖覆盖已移除；`media_kit_video` 以三方合并移植本地 Android Surface/音轨和 Windows 帧进度补丁。`code_assets 2.1.0` 是新版媒体钩子的要求；先核验 FFmpeg 钩子 API，再升级 `objective_c` 至 9.6.0，定向测试已通过。网页内核指定功能分支与 `screen_retriever` 的远端 HEAD 均未变化。
-- 新 APK / 桌面版本在完整质量门禁、Native Assets 构建和平台回归后产出；此处的静态分析及定向测试不代替发布验收。
+- 同一源码 `31a3c964` 已通过完整质量门禁（仓库审计 0 error、Flutter Analyze 无问题、**5333/5333** 测试），产出 Android arm64 与 Windows x64 Debug 候选；记录分别为 `20260924T011045818Z-build-androidarm64-debug.json` 和 `20260924T013607460Z-build-windowsx64-debug.json`。这些构建结果不代替两端设备/GUI 与 Release 验收。
 
 版本来源：[Flutter tags](https://github.com/flutter/flutter/tags)、[pub.dev outdated](https://dart.dev/tools/pub/cmd/pub-outdated)、[AGP 9.3 发布说明](https://developer.android.com/build/releases/agp-9-3-0-release-notes)、[Gradle 9.7.1 发布说明](https://docs.gradle.org/9.7.1/release-notes.html)、[tray_manager 变更记录](https://pub.dev/packages/tray_manager/changelog)、[media-kit fork 对比](https://github.com/Predidit/media-kit/compare/994465d9bfca3f39d0b41199d16e7fd93fe97881...d13fc22ba1b19b45de3090c2d1b0f8a541b585a0)。
 
@@ -61,6 +61,8 @@ Android 官方要求同时检查 APK 内原生库的 ZIP 对齐与 ELF `LOAD` �
 - Maven Central 的 [fplayer-core 1.0.4](https://central.sonatype.com/artifact/io.github.flutterplayer/fplayer-core) 仍是该坐标最新版本，直接升小版本不会得到已验证的 16 KB 二进制。后续采用源码可复现重编译或经过 API/许可证/ABI 回归的播放器替换，不引入来源不明的预编译库。
 
 本地逐 ELF 结果保存于 `local-artifacts/diagnostics/elf-alignment-20260901T152627221/`。正式稳定版门禁将以所有打包 ABI 的 ZIP + ELF 双重对齐为准。
+
+2026-09-24 升级版 arm64 Debug APK（`31a3c964`）已重新检查：18 个打包原生库的最小 ELF `LOAD` 对齐均为 `0x4000`，APK 内容门禁通过；这是当前 arm64 Debug 候选的结果，不覆盖其他 ABI、Release 或真机回归。
 
 ## 直播接口探测
 
