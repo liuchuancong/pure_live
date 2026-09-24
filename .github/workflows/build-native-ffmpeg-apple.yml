@@ -32,6 +32,13 @@ jobs:
           sudo xcode-select --switch "$xcode_path/Contents/Developer"
           xcodebuild -version
 
+      - name: Install Xcode 26 Metal toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo xcodebuild -downloadComponent MetalToolchain
+          xcrun --find metal
+
       - name: Fetch pinned native builder source
         shell: bash
         run: |
