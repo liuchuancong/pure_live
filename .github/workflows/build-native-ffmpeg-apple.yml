@@ -1,0 +1,127 @@
+name: Build pinned FFmpeg Apple native asset
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: One Apple platform per run
+        required: true
+        type: choice
+        options:
+          - macos
+          - ios
+
+permissions:
+  contents: read
+
+jobs:
+  native:
+    name: FFmpeg 9.0.2 ${{ inputs.target }} base LGPL
+    runs-on: macos-15
+    timeout-minutes: 120
+    env:
+      TARGET: ${{ inputs.target }}
+      BUILDER_COMMIT: ddf4698fdcd79ffeb1d52001299f8634063d675e
+    steps:
+      - name: Select Xcode 26
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcode_path=$(find /Applications -maxdepth 1 -type d -name 'Xcode_26*.app' -print | sort | tail -n 1)
+          test -n "$xcode_path"
+          sudo xcode-select --switch "$xcode_path/Contents/Developer"
+          xcodebuild -version
+
+      - name: Fetch pinned native builder source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git init builder
+          git -C builder remote add origin https://github.com/akashskypatel/ffmpeg-kit-builders.git
+          git -C builder fetch --depth 1 origin "$BUILDER_COMMIT"
+          git -C builder checkout --detach FETCH_HEAD
+          test "$(git -C builder rev-parse HEAD)" = "$BUILDER_COMMIT"
+          python3 - <<'PY'
+          from pathlib import Path
+          config = Path('builder/scripts/variable.sh')
+          before = 'export ffmpeg_git_checkout_version="release/9.0"'
+          after = 'export ffmpeg_git_checkout_version="n9.0.2"'
+          source = config.read_text()
+          if source.count(before) != 1:
+              raise SystemExit('Unexpected upstream FFmpeg version selector')
+          config.write_text(source.replace(before, after))
+          PY
+
+      - name: Install upstream Apple build tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd builder
+          chmod +x scripts/toolchain/setup-macos-tools.sh
+          scripts/toolchain/setup-macos-tools.sh
+
+      - name: Build one base LGPL xcframework
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd builder
+          chmod +x runner.sh scripts/build_all.sh
+          if ! sudo -E "$HOMEBREW_BASH" scripts/build_all.sh \
+            --platform="$TARGET" --deps --bundle=base \
+            --build=ffmpeg,kit,bundle --license=lgpl --not-small --local \
+            > "$RUNNER_TEMP/native-build.log" 2>&1; then
+            tail -n 160 "$RUNNER_TEMP/native-build.log"
+            exit 1
+          fi
+          tail -n 40 "$RUNNER_TEMP/native-build.log"
+
+      - name: Verify and stage native archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib
+          import os
+          import shutil
+          import zipfile
+          from pathlib import Path
+
+          target = os.environ['TARGET']
+          name = f'bundle-base-{target}-universal-lgpl.xcframework.zip'
+          matches = list(Path('builder/prebuilt').rglob(name))
+          if len(matches) != 1:
+              raise SystemExit(f'Expected exactly one {name}, found {len(matches)}')
+          source = matches[0]
+          found_version = False
+          with zipfile.ZipFile(source) as archive:
+              for item in archive.infolist():
+                  if item.file_size < 100000 or item.file_size > 150000000:
+                      continue
+                  data = archive.read(item)
+                  if data[:4] in (b'\xcf\xfa\xed\xfe', b'\xca\xfe\xba\xbe') and b'n9.0.2' in data:
+                      found_version = True
+                      break
+          if not found_version:
+              raise SystemExit(f'Mach-O n9.0.2 marker missing from {source}')
+          output = Path('out') / name
+          output.parent.mkdir(exist_ok=True)
+          shutil.copyfile(source, output)
+          print(f'{output} {output.stat().st_size} sha256:{hashlib.sha256(output.read_bytes()).hexdigest()}')
+          PY
+
+      - name: Upload verified Apple native archive
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ffmpeg-9.0.2-${{ inputs.target }}-base-lgpl
+          path: out/*.zip
+          if-no-files-found: error
+          retention-days: 3
+
+      - name: Preserve native build log on failure
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ffmpeg-9.0.2-${{ inputs.target }}-failure-log
+          path: ${{ runner.temp }}/native-build.log
+          if-no-files-found: ignore
+          retention-days: 3
