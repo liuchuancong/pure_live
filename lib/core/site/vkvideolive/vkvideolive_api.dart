@@ -342,9 +342,26 @@ class VkVideoLiveApi {
 
   Future<List<VkVideoLiveQuality>> _qualities(List<Uri> masters, String channel, CancelToken cancel) async {
     final grouped = <String, _VariantGroup>{};
+    // Primary and shared masters are mirrors. One mirror refusing this client
+    // (seen: shared 403, primary 200) must not fail the room; only fail when
+    // no mirror answered. Malformed manifests still fail.
+    Object? firstFailure;
+    StackTrace? firstStack;
+    var served = 0;
     for (final master in masters.take(4)) {
-      final response = await _request(master, mediaHeaders(channel), cancel);
-      _throwStatus(response.status);
+      final ({int status, String body}) response;
+      try {
+        response = await _request(master, mediaHeaders(channel), cancel);
+        _throwStatus(response.status);
+      } catch (error, stack) {
+        if (cancel.isCancelled || (error is VkVideoLiveException && error.kind == VkVideoLiveFailure.cancelled)) {
+          rethrow;
+        }
+        firstFailure ??= error;
+        firstStack ??= stack;
+        continue;
+      }
+      served++;
       if (response.body.length > manifestLimit) throw const VkVideoLiveException(VkVideoLiveFailure.schema);
       for (final variant in parseMaster(master, response.body)) {
         final current = grouped.putIfAbsent(
@@ -360,6 +377,7 @@ class VkVideoLiveApi {
         if (!current.urls.contains(variant.urls.single)) current.urls.add(variant.urls.single);
       }
     }
+    if (served == 0 && firstFailure != null) Error.throwWithStackTrace(firstFailure, firstStack!);
     final result =
         grouped.values
             .map(
@@ -650,6 +668,8 @@ class VkVideoLiveApi {
     return uri.toString();
   }
 
+  static bool _mediaHost(String host) => host.endsWith('.okcdn.ru') || host.endsWith('.vkuser.net');
+
   static Uri? _media(Object? value) {
     final text = value is String ? value.trim() : '';
     if (text.isEmpty) return null;
@@ -658,7 +678,8 @@ class VkVideoLiveApi {
         uri.scheme != 'https' ||
         uri.userInfo.isNotEmpty ||
         uri.hasFragment ||
-        !uri.host.toLowerCase().endsWith('.okcdn.ru') ||
+        // VK serves live HLS from okcdn.ru and, since 2026-09, vkuser.net.
+        !_mediaHost(uri.host.toLowerCase()) ||
         !uri.path.toLowerCase().contains('.m3u8')) {
       throw const VkVideoLiveException(VkVideoLiveFailure.schema);
     }
