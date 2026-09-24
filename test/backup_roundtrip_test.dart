@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce/hive.dart';
@@ -11,6 +12,7 @@ import 'package:pure_live/common/services/settings_service.dart';
 import 'package:pure_live/common/services/settings/iptv_settings_controller.dart';
 import 'package:pure_live/common/services/settings/backup_controller.dart';
 import 'package:pure_live/common/services/settings/room_card_settings_controller.dart';
+import 'package:pure_live/modules/web_dav/webdav_service.dart';
 
 Map<String, dynamic> detached(Map<String, dynamic> data) => jsonDecode(jsonEncode(data)) as Map<String, dynamic>;
 
@@ -288,4 +290,72 @@ void main() {
     expect(settings.app.enableBackgroundPlay.value, isTrue);
     expect(settings.cookieManager.twitchCookie.value, 'local-cookie');
   });
+
+  test('favorites-only payload survives actual WebDAV upload, listing and restore without other settings', () async {
+    final settings = await initialize();
+    settings.fav.favoriteRooms.value = [LiveRoom(roomId: 'room-123', platform: 'bilibili')];
+    settings.fav.favoriteAreas.value = [LiveArea(areaId: 'music', platform: 'douyu')];
+    settings.cookieManager.twitchCookie.value = 'sender-secret';
+    final payload = utf8.encode(jsonEncode(settings.backup.exportFavoriteSettings()));
+    expect(utf8.decode(payload), isNot(contains('sender-secret')));
+
+    await HttpOverrides.runWithHttpOverrides(() async {
+      final stored = <String, List<int>>{};
+      final requests = <String>[];
+      final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+      final subscription = server.listen((request) async {
+        requests.add('${request.method} ${request.uri.path}');
+        if (request.method == 'OPTIONS') {
+          request.response.statusCode = HttpStatus.ok;
+        } else if (request.method == 'MKCOL') {
+          request.response.statusCode = HttpStatus.created;
+        } else if (request.method == 'PUT') {
+          stored[request.uri.path] = await request.fold<List<int>>([], (bytes, chunk) => bytes..addAll(chunk));
+          request.response.statusCode = HttpStatus.created;
+        } else if (request.method == 'PROPFIND') {
+          request.response.statusCode = HttpStatus.multiStatus;
+          request.response.headers.contentType = ContentType('application', 'xml');
+          request.response.write('''<?xml version="1.0" encoding="utf-8"?>
+<d:multistatus xmlns:d="DAV:">
+  <d:response><d:href>/dav/</d:href><d:propstat><d:prop><d:resourcetype><d:collection/></d:resourcetype></d:prop><d:status>HTTP/1.1 200 OK</d:status></d:propstat></d:response>
+  <d:response><d:href>/dav/favorites.txt</d:href><d:propstat><d:prop><d:resourcetype/><d:getcontentlength>${payload.length}</d:getcontentlength></d:prop><d:status>HTTP/1.1 200 OK</d:status></d:propstat></d:response>
+</d:multistatus>''');
+        } else if (request.method == 'GET') {
+          final bytes = stored[request.uri.path];
+          request.response.statusCode = bytes == null ? HttpStatus.notFound : HttpStatus.ok;
+          if (bytes != null) request.response.add(bytes);
+        } else {
+          request.response.statusCode = HttpStatus.methodNotAllowed;
+        }
+        await request.response.close();
+      });
+      final webdav = WebDAVService(url: 'http://127.0.0.1:${server.port}/dav/', username: '', password: '');
+      try {
+        await webdav.writeFile('/favorites.txt', Uint8List.fromList(payload));
+        final listed = await webdav.readDirectory('/');
+        expect(listed.map((file) => file.path), ['/favorites.txt']);
+        final downloaded = jsonDecode(utf8.decode(await webdav.readFile(listed.single.path!))) as Map<String, dynamic>;
+        expect(downloaded['backupScope'], 'favorites');
+        expect(downloaded.keys, {'backupVersion', 'backupScope', 'favorite'});
+
+        settings.fav.favoriteRooms.value = [];
+        settings.fav.favoriteAreas.value = [];
+        settings.app.enableBackgroundPlay.value = true;
+        settings.cookieManager.twitchCookie.value = 'receiver-secret';
+        await settings.backup.restoreFavoriteSettings(downloaded);
+        expect(settings.fav.favoriteRooms.value.single.identityKey, 'bilibili:room-123');
+        expect(settings.fav.favoriteAreas.value.single.areaId, 'music');
+        expect(settings.app.enableBackgroundPlay.value, isTrue);
+        expect(settings.cookieManager.twitchCookie.value, 'receiver-secret');
+        expect(stored['/dav/favorites.txt'], payload);
+        expect(requests, containsAllInOrder(['PUT /dav/favorites.txt', 'PROPFIND /dav/', 'GET /dav/favorites.txt']));
+      } finally {
+        webdav.close();
+        await subscription.cancel();
+        await server.close(force: true);
+      }
+    }, _RealNetwork());
+  });
 }
+
+class _RealNetwork extends HttpOverrides {}
