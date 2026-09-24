@@ -107,6 +107,10 @@ jobs:
             --build=ffmpeg,kit,bundle --license=lgpl --not-small --local \
             > "$RUNNER_TEMP/native-build.log" 2>&1; then
             tail -n 160 "$RUNNER_TEMP/native-build.log"
+            if [[ -f build.log ]]; then
+              echo '=== Upstream inner build log ==='
+              tail -n 160 build.log
+            fi
             exit 1
           fi
           tail -n 40 "$RUNNER_TEMP/native-build.log"
@@ -158,6 +162,8 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: ffmpeg-9.0.2-${{ inputs.target }}-failure-log
-          path: ${{ runner.temp }}/native-build.log
+          path: |
+            ${{ runner.temp }}/native-build.log
+            builder/build.log
           if-no-files-found: ignore
           retention-days: 3
