@@ -8,7 +8,7 @@
 | --- | --- |
 | 功能源码基线 | 依赖配置至 `060420f7`：Flutter 3.47.5、AGP 9.3.3、Gradle 9.7.1、pub 直接与传递图均已复核升级，FFmpeg 9.0.2 覆盖 Android/Windows/Linux/macOS/iOS。最新本地 Full 记录 `20260924T033341958Z-quality-full.json`（`b6033234`，Analyze 与 **5334/5334** 测试通过），随后 Android/Windows 原生候选及 Linux/macOS/iOS 单平台构建分别通过；公开接口探测 **42/42**。这仍不代替双端客户端完整验收 |
 | Android 最新本机构建/原生输入 | `e4532d77` arm64 Debug 已通过 `20260924T033620351Z-build-androidarm64-debug.json`；FFmpeg 9.0.2 AAR、18 个原生库及 16 KB ELF 门禁由本机构建验证。手机上已安装的是较早 `31a3c964` 候选，当前原生升级包尚待按设备轮转窗口覆盖安装并执行 A0～A8 |
-| 五平台原生升级 | [Linux 构建](https://github.com/wzgrx/pure_live/actions/runs/35956033043)、[macOS 应用构建](https://github.com/wzgrx/pure_live/actions/runs/35974500374)与 [iOS 应用构建](https://github.com/wzgrx/pure_live/actions/runs/35977431211)通过，Apple 两端均核对实际打包的 FFmpeg 9.0.2 架构和版本；这是构建证据，不等于设备/GUI 功能验收 |
+| 五平台原生升级 | [Linux 构建](https://github.com/liuchuancong/pure_live/actions/runs/35956033043)、[macOS 应用构建](https://github.com/liuchuancong/pure_live/actions/runs/35974500374)与 [iOS 应用构建](https://github.com/liuchuancong/pure_live/actions/runs/35977431211)通过，Apple 两端均核对实际打包的 FFmpeg 9.0.2 架构和版本；这是构建证据，不等于设备/GUI 功能验收 |
 | Android 当前编号账本 | 46 行：16 PASS / 30 RUN / 0 NR；每行仍含多个动作和平台组合，旧包证据不自动覆盖当前源码 |
 | Windows 最新归档 | `e4532d77` x64 Debug 构建已通过 `20260924T033917897Z-build-windowsx64-debug.json`，含 FFmpeg 9.0.2；当前 Native Assets 候选仍需 1+3、2×2、音频、帧进度和严格退出 GUI 复验 |
 | 手机快照 | `192.168.1.2:5555` 已核对 25102RKBEC / myron，`su -c id` 为 root。覆盖安装前 Pure Live 无运行进程或录制服务；安装后前台是另一应用，本批未启动 Pure Live、唤醒屏幕或发送界面输入。实际运行时动作前需重读手机状态 |

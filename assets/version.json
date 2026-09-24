@@ -1,23 +1,23 @@
 {
-  "version": "3.1.4",
-  "build_number": 4102,
-  "version_num": 301034102,
+  "version": "3.1.5",
+  "build_number": 4104,
+  "version_num": 301034104,
   "android_abis": [
     "armeabi-v7a",
     "arm64-v8a",
     "x86_64"
   ],
-  "version_desc": "version: 3.1.4\n版本更新：\n- 修复windows亮度。\n\n",
+  "version_desc": "version: 3.1.5\n版本更新：\n- 新增 23 个直播平台：百度、酷狗、淘宝、京东、六间房、LOOK、Steam、Bigo、GoodGame、Rumble、Dailymotion、NimoTV、VK、Shopee、LiveMe、17Live、Showroom、Chzzk、Kick、TikTok、YouTube 等。\n- 小红书支持导入官方直播间链接；微博、猫耳、B站、斗鱼等平台搜索、弹幕与详情体验优化。\n- 多画面卡顿恢复时保留手动选择的线路；修复黑屏、房间切换残留画面、进入房间音量被改变等问题。\n- Windows：修复 mpv 渲染释放与画中画切换问题，支持多实例配置文件，优化标题栏与托盘菜单。\n- 全大字体与无障碍适配：优化按钮、对话框与选择器布局，新增音量调节等辅助操作。\n- 收藏、标签、设置、IPTV、备份、字体等数据写入改为原子提交，避免并发场景下状态丢失。\n- WebDAV：新增局域网远程同步，支持收藏独立备份与选择性恢复。\n- 设置页新增音频输出与解码器配置；优化弹幕设置、字体选择与动态主题。\n- 升级 FFmpeg 9.0.2 原生库，Android 支持 16 KB 对齐，更新下载镜像列表，修复 Firebase 初始化阻塞启动。\n\n",
   "prerelease": false,
-  "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.1.4",
+  "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.1.5",
   "platforms": {
     "android": {
-      "version": "3.1.4",
-      "build_number": 4102,
-      "version_num": 301034102,
-      "version_desc": "version: 3.1.4\n版本更新：\n- 修复windows亮度。\n\n",
+      "version": "3.1.5",
+      "build_number": 4104,
+      "version_num": 301034104,
+      "version_desc": "version: 3.1.5\n版本更新：\n- 新增 23 个直播平台：百度、酷狗、淘宝、京东、六间房、LOOK、Steam、Bigo、GoodGame、Rumble、Dailymotion、NimoTV、VK、Shopee、LiveMe、17Live、Showroom、Chzzk、Kick、TikTok、YouTube 等。\n- 小红书支持导入官方直播间链接；微博、猫耳、B站、斗鱼等平台搜索、弹幕与详情体验优化。\n- 多画面卡顿恢复时保留手动选择的线路；修复黑屏、房间切换残留画面、进入房间音量被改变等问题。\n- Windows：修复 mpv 渲染释放与画中画切换问题，支持多实例配置文件，优化标题栏与托盘菜单。\n- 全大字体与无障碍适配：优化按钮、对话框与选择器布局，新增音量调节等辅助操作。\n- 收藏、标签、设置、IPTV、备份、字体等数据写入改为原子提交，避免并发场景下状态丢失。\n- WebDAV：新增局域网远程同步，支持收藏独立备份与选择性恢复。\n- 设置页新增音频输出与解码器配置；优化弹幕设置、字体选择与动态主题。\n- 升级 FFmpeg 9.0.2 原生库，Android 支持 16 KB 对齐，更新下载镜像列表，修复 Firebase 初始化阻塞启动。\n\n",
       "prerelease": false,
-      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.1.4",
+      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.1.5",
       "android_abis": [
         "armeabi-v7a",
         "arm64-v8a",
@@ -25,37 +25,37 @@
       ]
     },
     "windows": {
-      "version": "3.1.4",
-      "build_number": 4102,
-      "version_num": 301034102,
-      "version_desc": "version: 3.1.4\n版本更新：\n- 修复windows亮度。\n\n",
+      "version": "3.1.5",
+      "build_number": 4104,
+      "version_num": 301034104,
+      "version_desc": "version: 3.1.5\n版本更新：\n- 新增 23 个直播平台：百度、酷狗、淘宝、京东、六间房、LOOK、Steam、Bigo、GoodGame、Rumble、Dailymotion、NimoTV、VK、Shopee、LiveMe、17Live、Showroom、Chzzk、Kick、TikTok、YouTube 等。\n- 小红书支持导入官方直播间链接；微博、猫耳、B站、斗鱼等平台搜索、弹幕与详情体验优化。\n- 多画面卡顿恢复时保留手动选择的线路；修复黑屏、房间切换残留画面、进入房间音量被改变等问题。\n- Windows：修复 mpv 渲染释放与画中画切换问题，支持多实例配置文件，优化标题栏与托盘菜单。\n- 全大字体与无障碍适配：优化按钮、对话框与选择器布局，新增音量调节等辅助操作。\n- 收藏、标签、设置、IPTV、备份、字体等数据写入改为原子提交，避免并发场景下状态丢失。\n- WebDAV：新增局域网远程同步，支持收藏独立备份与选择性恢复。\n- 设置页新增音频输出与解码器配置；优化弹幕设置、字体选择与动态主题。\n- 升级 FFmpeg 9.0.2 原生库，Android 支持 16 KB 对齐，更新下载镜像列表，修复 Firebase 初始化阻塞启动。\n\n",
       "prerelease": false,
-      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.1.4",
+      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.1.5",
       "windows_msix_available": true
     },
     "linux": {
-      "version": "3.1.4",
-      "build_number": 4102,
-      "version_num": 301034102,
-      "version_desc": "version: 3.1.4\n版本更新：\n- 修复windows亮度。\n\n",
+      "version": "3.1.5",
+      "build_number": 4104,
+      "version_num": 301034104,
+      "version_desc": "version: 3.1.5\n版本更新：\n- 新增 23 个直播平台：百度、酷狗、淘宝、京东、六间房、LOOK、Steam、Bigo、GoodGame、Rumble、Dailymotion、NimoTV、VK、Shopee、LiveMe、17Live、Showroom、Chzzk、Kick、TikTok、YouTube 等。\n- 小红书支持导入官方直播间链接；微博、猫耳、B站、斗鱼等平台搜索、弹幕与详情体验优化。\n- 多画面卡顿恢复时保留手动选择的线路；修复黑屏、房间切换残留画面、进入房间音量被改变等问题。\n- Windows：修复 mpv 渲染释放与画中画切换问题，支持多实例配置文件，优化标题栏与托盘菜单。\n- 全大字体与无障碍适配：优化按钮、对话框与选择器布局，新增音量调节等辅助操作。\n- 收藏、标签、设置、IPTV、备份、字体等数据写入改为原子提交，避免并发场景下状态丢失。\n- WebDAV：新增局域网远程同步，支持收藏独立备份与选择性恢复。\n- 设置页新增音频输出与解码器配置；优化弹幕设置、字体选择与动态主题。\n- 升级 FFmpeg 9.0.2 原生库，Android 支持 16 KB 对齐，更新下载镜像列表，修复 Firebase 初始化阻塞启动。\n\n",
       "prerelease": false,
-      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.1.4"
+      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.1.5"
     },
     "macos": {
-      "version": "3.1.4",
-      "build_number": 4102,
-      "version_num": 301034102,
-      "version_desc": "version: 3.1.4\n版本更新：\n- 修复windows亮度。\n\n",
+      "version": "3.1.5",
+      "build_number": 4104,
+      "version_num": 301034104,
+      "version_desc": "version: 3.1.5\n版本更新：\n- 新增 23 个直播平台：百度、酷狗、淘宝、京东、六间房、LOOK、Steam、Bigo、GoodGame、Rumble、Dailymotion、NimoTV、VK、Shopee、LiveMe、17Live、Showroom、Chzzk、Kick、TikTok、YouTube 等。\n- 小红书支持导入官方直播间链接；微博、猫耳、B站、斗鱼等平台搜索、弹幕与详情体验优化。\n- 多画面卡顿恢复时保留手动选择的线路；修复黑屏、房间切换残留画面、进入房间音量被改变等问题。\n- Windows：修复 mpv 渲染释放与画中画切换问题，支持多实例配置文件，优化标题栏与托盘菜单。\n- 全大字体与无障碍适配：优化按钮、对话框与选择器布局，新增音量调节等辅助操作。\n- 收藏、标签、设置、IPTV、备份、字体等数据写入改为原子提交，避免并发场景下状态丢失。\n- WebDAV：新增局域网远程同步，支持收藏独立备份与选择性恢复。\n- 设置页新增音频输出与解码器配置；优化弹幕设置、字体选择与动态主题。\n- 升级 FFmpeg 9.0.2 原生库，Android 支持 16 KB 对齐，更新下载镜像列表，修复 Firebase 初始化阻塞启动。\n\n",
       "prerelease": false,
-      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.1.4"
+      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.1.5"
     },
     "ios": {
-      "version": "3.1.4",
-      "build_number": 4102,
-      "version_num": 301034102,
-      "version_desc": "version: 3.1.4\n版本更新：\n- 修复windows亮度。\n\n",
+      "version": "3.1.5",
+      "build_number": 4104,
+      "version_num": 301034104,
+      "version_desc": "version: 3.1.5\n版本更新：\n- 新增 23 个直播平台：百度、酷狗、淘宝、京东、六间房、LOOK、Steam、Bigo、GoodGame、Rumble、Dailymotion、NimoTV、VK、Shopee、LiveMe、17Live、Showroom、Chzzk、Kick、TikTok、YouTube 等。\n- 小红书支持导入官方直播间链接；微博、猫耳、B站、斗鱼等平台搜索、弹幕与详情体验优化。\n- 多画面卡顿恢复时保留手动选择的线路；修复黑屏、房间切换残留画面、进入房间音量被改变等问题。\n- Windows：修复 mpv 渲染释放与画中画切换问题，支持多实例配置文件，优化标题栏与托盘菜单。\n- 全大字体与无障碍适配：优化按钮、对话框与选择器布局，新增音量调节等辅助操作。\n- 收藏、标签、设置、IPTV、备份、字体等数据写入改为原子提交，避免并发场景下状态丢失。\n- WebDAV：新增局域网远程同步，支持收藏独立备份与选择性恢复。\n- 设置页新增音频输出与解码器配置；优化弹幕设置、字体选择与动态主题。\n- 升级 FFmpeg 9.0.2 原生库，Android 支持 16 KB 对齐，更新下载镜像列表，修复 Firebase 初始化阻塞启动。\n\n",
       "prerelease": false,
-      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.1.4"
+      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.1.5"
     }
   }
 }

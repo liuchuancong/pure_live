@@ -1,99 +1,191 @@
+<div align="center">
 
-<p align="center">
-  <img src="assets/icons/icon.png" width="150" alt="Pure Live 图标"/>
-</p>
+<img src="assets/icons/icon.png" width="150" alt="Pure Live 图标"/>
 
-<h1 align="center">纯粹直播（Pure Live）</h1>
+# 纯粹直播（Pure Live）
 
-<h4 align="center">基于 Flutter 的开源多平台直播聚合播放器</h4>
+**基于 Flutter 的开源多平台直播聚合播放器**
 
-<p align="center">
-  A third-party live stream aggregator built with Flutter.
-</p>
+A third-party live stream aggregator built with Flutter.
 
-<p align="center">
-  <a href="https://github.com/liuchuancong/pure_live/releases/latest">
-    <img alt="Latest Release" src="https://img.shields.io/github/v/release/liuchuancong/pure_live">
-  </a>
-  <a href="https://github.com/liuchuancong/pure_live/actions/workflows/feature-build.yml">
-    <img alt="Manual Build" src="https://github.com/liuchuancong/pure_live/actions/workflows/feature-build.yml/badge.svg">
-  </a>
-  <a href="https://github.com/liuchuancong/pure_live">
-    <img alt="Stars" src="https://img.shields.io/github/stars/liuchuancong/pure_live?color=yellow">
-  </a>
-  <a href="https://github.com/liuchuancong/pure_live/releases">
-    <img alt="Downloads" src="https://img.shields.io/github/downloads/liuchuancong/pure_live/total?style=flat-square">
-  </a>
-  <a href="LICENSE">
-    <img alt="License" src="https://img.shields.io/github/license/liuchuancong/pure_live?color=blue">
-  </a>
-</p>
+[![Latest Release](https://img.shields.io/github/v/release/liuchuancong/pure_live?color=success&label=%E6%9C%80%E6%96%B0%E7%89%88%E6%9C%AC)](https://github.com/liuchuancong/pure_live/releases/latest)
+[![Stars](https://img.shields.io/github/stars/liuchuancong/pure_live?color=yellow)](https://github.com/liuchuancong/pure_live/stargazers)
+[![Downloads](https://img.shields.io/github/downloads/liuchuancong/pure_live/total?style=flat-square&color=orange&label=%E4%B8%8B%E8%BD%BD)](https://github.com/liuchuancong/pure_live/releases)
+[![License](https://img.shields.io/github/license/liuchuancong/pure_live?color=blue)](LICENSE)
+[![Platform](https://img.shields.io/badge/Android%20%7C%20TV%20%7C%20Windows%20%7C%20Linux%20%7C%20macOS%20%7C%20iOS-8A2BE2)](https://github.com/liuchuancong/pure_live)
+[![Flutter](https://img.shields.io/badge/Flutter-3.47-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
 
-> 纯粹直播（Pure Live）是一款开源的第三方多平台直播聚合播放器，使用 Flutter 构建，支持 Android、Android TV、Windows、Linux、macOS 和 iOS 等平台。
+<img src="assets/images/banner.png" width="720" alt="Pure Live 界面预览"/>
 
-> 本维护分支基于 [liuchuancong/pure_live](https://github.com/liuchuancong/pure_live)，维护本机优先构建、正式签名、接口探测、Windows 数据迁移及高刷新率优化。上游变更按独立审查流程处理；当前 3.2.0 验收阶段不合并上游。
+</div>
 
-## 维护分支说明（请先阅读）
-
-<!-- maintenance-readme-markers: maintenance-scope; android-first; windows-maintained; upstream-feature-routing; bugfix-release-default -->
-
-- 本仓库重点维护 **Android / Android TV 与 Windows**。当前日常使用 Android 更多，因此多数修复、功能整合和安装包会优先更新 Android；Windows 继续作为主要桌面维护目标。
-- Linux、macOS 和 iOS 保留源码及上游兼容性，但缺少持续使用的对应设备，列为社区验证范围，不承诺每轮构建、更新时效或运行结果。
-- 本分支更新频繁、历史定制较多，仍可能出现较多回归、接口时效和设备兼容问题。若更看重低频变更或原项目行为，可切换到[原项目](https://github.com/liuchuancong/pure_live)。
-- 本仓库 Issue 仅受理**可复现的维护型 Bug**。新增功能、产品方向和全新平台适配请提交到[原项目 Issue](https://github.com/liuchuancong/pure_live/issues/new/choose)。
-- 每个完成的 Bug 修复批次默认递增版本，优先构建 Android `arm64-v8a` 正式更新包，并同步源码、版本标签、安装包与校验文件到本仓库 GitHub Release；其他平台仍按本轮明确范围串行构建。
-- 每次同步上游、分析 Bug 和审查原项目 Issue 的来源判定、根因、兼容、验证与回滚流程见[维护范围与问题处置策略](MAINTENANCE_POLICY.md)及[上游同步审查策略](UPSTREAM_REVIEW_POLICY.md)。
-
-- **最新稳定版**：[v3.1.8](https://github.com/liuchuancong/pure_live/releases/tag/v3.1.8)
-- **下一稳定版目标**：3.2.0，当前处于完整验收阶段，尚未发布。本轮只维护本仓库、不合并上游；优先源码审查、确定性回归和本地验证，手机操作按本轮明确安排执行，不把连接设备作为修复前置条件。进度、缺口与发布门禁见 [3.2.0 验收入口](docs/ACCEPTANCE_3_2_0.md)，开发包及旧版通过记录不等于最终版已通过。
-<!-- current-status-owner: docs/ACCEPTANCE_STATUS_3_2_0.md -->
-- **当前验收快照**：源码提交、候选包、设备状态、编号统计与剩余阻塞只在[当前状态快照](docs/ACCEPTANCE_STATUS_3_2_0.md)维护；分项状态与证据见[验收矩阵](docs/ACCEPTANCE_MATRIX_3_1_0.md)。README 不再复制逐批测试数量、候选哈希和待办时间线。
-- **源码平台范围**：目前 45 个直播站点 + IPTV，共 46 个适配器；注册不等于目录、搜索、播放、弹幕和录制均已完整验收，能力边界见[平台兼容性](docs/PLATFORM_COMPATIBILITY.md)。
-- **当前源码版本号**：`3.1.8+4121`。候选包按源码 SHA 与验证记录识别，同一版本号不代表包含相同修订；3.2.0 只在完整目标验收后发布。
-- **Android / Android TV 安装要求**：当前源码与下一候选为 Android 8.0 / API 26 及以上、arm64-v8a；系统版本和 CPU ABI 两项都要匹配。已发布 v3.0.2 的实际 APK 最低为 Android 7.0 / API 24、仅含 arm64-v8a；Android 6.0.1 / API 23 电视不在该包的安装范围内。当前 API 26 下限与 FFmpegKit 原生录制依赖一致，旧系统兼容需另行处理原生依赖并完成电视端验收。
-- **v3.0.0 上游源码基线**：`liuchuancong/pure_live@e808dcae`；完整记录见 `docs/STAGE_UPDATE_3_0_0.md`
-- **本轮构建平台**：Android arm64-v8a、Windows x64 安装程序与便携 ZIP；其他平台继续使用 v3.0.0 安装包
-- **质量门禁**：播放器来源/Surface/几何回归见 `docs/PLAYER_RECOVERY_AUDIT_3_0_15.md`，十个平台录制链路见 `docs/RECORDER_REPAIR_AUDIT_2026-08-27.md`
-
-本版本还会在启动、备份恢复和手动清理时剔除空平台、空房间号、`0/null/undefined/nan/none` 等无效关注记录，并按“平台 + 房间号”去重，避免损坏的历史收藏继续参与首页刷新。
-
-录制页的自动重连、轮询、缓存限制、最高画质和目录命名等开关现在直接绑定持久化配置；缓存限制改为实时读取，重新进入页面或升级后保持用户选择。
-Android 录制在创建任务和申请存储权限前检查目录：应用私有目录会提示选择可导出的目录且不会留下“未启动”幽灵任务；工作资料等任意数字用户空间均能正确识别，外部同名文件夹不会误判。
-
-![Pure Live 界面预览](assets/images/banner.png)
+> **纯粹直播** 是一款开源的第三方多平台直播聚合播放器，使用 Flutter 构建，支持 Android、Android TV、Windows、Linux、macOS 和 iOS。一个应用看遍全网直播，支持多画面同看、弹幕、录制、定时关闭与数据同步。
 
 ---
 
-## 📺 平台范围
+## 📺 支持站点
 
-**版本边界先看清**：已发布的 [v3.1.8](https://github.com/liuchuancong/pure_live/releases/tag/v3.1.8) 注册 **9 个直播站点 + IPTV**；当前未发布的 3.2.0 开发源码注册 **45 个直播站点 + IPTV**。后者表示应用入口已有适配器，不表示 45 站的目录、搜索、弹幕、播放与录制都已通过双端验收。各站实际能力和人数口径见[平台兼容性](docs/PLATFORM_COMPATIBILITY.md)，候选与剩余验证见[当前状态](docs/ACCEPTANCE_STATUS_3_2_0.md)。
+**45 个直播站点 + IPTV 自定义直播源，共 46 个适配器。** 各站分区、搜索、弹幕、人数口径与能力边界见[平台兼容性](docs/PLATFORM_COMPATIBILITY.md)。
 
-| 阶段 | 平台 |
-| --- | --- |
-| v3.1.8 已发布（9 站） | 哔哩哔哩、斗鱼、虎牙、抖音、快手、网易 CC、Twitch、SOOP Live、YY Live |
-| 3.2.0 未发布源码新增：国内（13 站） | AcFun、猫耳 FM、映客、克拉克拉、花椒、小红书、微博直播、京东直播、淘宝直播、酷狗直播、百度直播、六间房直播、LOOK 直播 |
-| 3.2.0 未发布源码新增：其他地区（23 站） | Picarto、TwitCasting、OPENREC / mellow-fan、TTingLive / FLEX TV、niconico、SHOWROOM、CHZZK、Kick、17LIVE、LiveMe、TikTok LIVE、YouTube Live、Bigo Live、PandaTV、PopkonTV、Shopee Live、VK Video Live、NimoTV、Dailymotion、Rumble、GoodGame、FC2 Live、Steam Broadcasts |
-| 两阶段均有 | IPTV / 自定义直播源；本地或网络导入，不计作直播平台站点 |
+### 🇨🇳 国内平台（20 站）
 
-可按平台与分区浏览、筛选和隐藏入口；搜索、直播状态、官方链接回流、人数语义、远端弹幕及录制能力随平台而异，不用统一标签代替各站合同。战旗直播、浪 Live 仍在内部适配准备阶段，暂未计入 45 站。
+| | | |
+| --- | --- | --- |
+| <img src="assets/images/bilibili.png" width="26"/> **哔哩哔哩** | <img src="assets/images/douyu.png" width="26"/> **斗鱼** | <img src="assets/images/huya.png" width="26"/> **虎牙** |
+| <img src="assets/images/douyin.png" width="26"/> **抖音** | <img src="assets/images/kuaishou.png" width="26"/> **快手** | <img src="assets/images/yy.png" width="26"/> **YY 直播** |
+| <img src="assets/images/cc.png" width="26"/> **网易 CC** | <img src="assets/images/acfun.png" width="26"/> **AcFun** | <img src="assets/images/missevan.png" width="26"/> **猫耳 FM** |
+| <img src="assets/images/inke.png" width="26"/> **映客** | <img src="assets/images/kilakila.png" width="26"/> **克拉克拉** | <img src="assets/images/huajiao.png" width="26"/> **花椒直播** |
+| <img src="assets/images/xiaohongshu.png" width="26"/> **小红书** | <img src="assets/images/weibo.png" width="26"/> **微博直播** | <img src="assets/images/jd.png" width="26"/> **京东直播** |
+| <img src="assets/images/taobao.png" width="26"/> **淘宝直播** | <img src="assets/images/kugou.png" width="26"/> **酷狗直播** | <img src="assets/images/baidu.png" width="26"/> **百度直播** |
+| <img src="assets/images/sixroom.png" width="26"/> **六间房** | <img src="assets/images/look.png" width="26"/> **LOOK 直播** | |
 
-当前源码的“第三方账号”页可选填斗鱼 Cookie，取流与播放/录制请求使用同一会话；画质以平台实际确认档位显示。匿名接口可能将部分房间原画请求回落到 4M，登录态提升与长时稳定性仍需在候选包中对照验证，见 [Issue #873 审计](docs/ISSUE_873_DOUYU_QUALITY_AND_SESSION_AUDIT_2026_09_23.md)。
+### 🌍 海外平台（25 站）
 
-### 自定义直播源
+| | | |
+| --- | --- | --- |
+| <img src="assets/images/twitch.png" width="26"/> **Twitch** | <img src="assets/images/soop.png" width="26"/> **SOOP Live** | <img src="assets/images/youtube.png" width="26"/> **YouTube Live** |
+| <img src="assets/images/tiktok.png" width="26"/> **TikTok LIVE** | <img src="assets/images/kick.png" width="26"/> **Kick** | <img src="assets/images/chzzk.png" width="26"/> **CHZZK** |
+| <img src="assets/images/bigo.png" width="26"/> **Bigo Live** | <img src="assets/images/17live.png" width="26"/> **17LIVE** | <img src="assets/images/liveme.png" width="26"/> **LiveMe** |
+| <img src="assets/images/showroom.png" width="26"/> **SHOWROOM** | <img src="assets/images/niconico.png" width="26"/> **niconico** | <img src="assets/images/openrec.png" width="26"/> **OPENREC / mellow-fan** |
+| <img src="assets/images/ttinglive.png" width="26"/> **TTingLive / FLEX TV** | <img src="assets/images/picarto.png" width="26"/> **Picarto** | <img src="assets/images/twitcasting.png" width="26"/> **TwitCasting** |
+| <img src="assets/images/dailymotion.png" width="26"/> **Dailymotion** | <img src="assets/images/rumble.png" width="26"/> **Rumble** | <img src="assets/images/vk.png" width="26"/> **VK Video Live** |
+| <img src="assets/images/goodgame.png" width="26"/> **GoodGame** | <img src="assets/images/fc2.png" width="26"/> **FC2 Live** | <img src="assets/images/steam.png" width="26"/> **Steam 直播** |
+| <img src="assets/images/panda.png" width="26"/> **PandaTV** | <img src="assets/images/popkon.png" width="26"/> **PopkonTV** | <img src="assets/images/shopee.png" width="26"/> **Shopee Live** |
+| <img src="assets/images/nimo.png" width="26"/> **NimoTV** | | |
 
-支持导入：
+### 📡 IPTV / 自定义直播源
 
-- M3U
-- M3U8
-- 本地直播源
-- 网络直播源
+- 支持 **M3U / M3U8**、本地直播源、网络直播源导入
+- 按分区、平台和频道管理，支持 EPG 节目单与订阅源同步
 
-可以按照分区、平台和频道进行管理。
+> 🚧 战旗直播、浪 LIVE 正在内部适配中。注册适配器不等于每个站点都已完整验收，实际能力以[平台兼容性](docs/PLATFORM_COMPATIBILITY.md)为准。
 
 ---
 
+## 📥 下载安装
 
-## 文档
+前往 [**GitHub Releases**](https://github.com/liuchuancong/pure_live/releases/latest) 获取最新安装包，并使用同一 Release 的 `SHA256SUMS.txt` 校验完整性。
+
+| 平台 | 安装包 | 系统要求 |
+| --- | --- | --- |
+| 📱 Android / Android TV | APK（arm64-v8a / armeabi-v7a / x86_64，以 Release 实际发布为准） | Android 8.0（API 26）及以上 |
+| 🖥️ Windows | EXE 安装器 / 便携 ZIP（MSIX 可自行构建，见 [MSIX 证书说明](docs/MSIX_INSTALL.md)） | Windows 10 / 11 x64 |
+| 🍎 macOS | Universal DMG / ZIP | Apple Silicon + Intel |
+| 🐧 Linux | Portable tar.gz | x64 |
+| 📲 iOS | TrollStore IPA / 未签名 ZIP | arm64 |
+
+- Android 使用正式包名 `com.mystyle.purelive`，正式 Release 使用仓库专用持久签名，可直接覆盖升级。
+- Windows 安装向导支持选择其他磁盘，设置、关注、历史、IPTV、录制和缓存集中保存在安装目录 `AppData`。
+- macOS / Linux / iOS 源码保留构建能力，相关产物以具体 Release 说明为准，属社区验证范围。
+
+---
+
+## ✨ 核心功能
+
+### 🎬 多平台聚合
+
+- 聚合 45 个直播平台，按平台与分区浏览、筛选和隐藏入口
+- 跨平台搜索，支持综合 / 平台顺序 / 观众 / 粉丝等排序，直播 / 未开播筛选
+- 各平台保持独立分页状态；"全部"搜索按平台完成顺序渐进显示，单平台超时不挡其他结果
+
+### ▶️ 多播放器
+
+Android / Android TV 支持在设置中切换播放器，出现黑屏、卡顿或硬解兼容问题时可随时更换：
+
+- IJKPlayer
+- EXOPlayer
+- MPV Player
+
+Windows、Linux、macOS 等桌面平台使用对应平台的播放器实现。
+
+### 🖥️ 多画面同看
+
+- 支持双画面、四画面和一大多小聚焦布局
+- 每格独立播放、暂停、音量、清晰度和线路，只有聚焦画面出声
+- 聚焦画面可接入平台弹幕；移动端最多 4 路解码，桌面端最多 9 路
+- 小画面可自动使用低清晰度以控制占用，Windows 按实际可见尺寸协商渲染输出
+
+### 💬 弹幕系统
+
+弹幕过滤、用户屏蔽、关键词屏蔽、描边、透明度、字号、速度、显示区域、最大数量、发送间隔、刷新 FPS、平台原始颜色 / 统一颜色、点击与长按操作、精确重复与相似文本两级过滤。
+
+弹幕系统采用房间会话隔离、平台消息 ID 去重与过期队列淘汰，避免切房后串房弹幕、重复弹幕或积压弹幕突然播放。
+
+### 🪟 小窗弹幕
+
+**设置 → 视频设置 → 小窗弹幕**，或在直播间进入**弹幕设置**配置：
+
+- Android 系统画中画、Windows 小窗、应用内悬浮窗
+- 独立弹幕控制器、队列与样式，不污染主播放器弹幕队列
+- 自动根据窗口尺寸缩放，配置本地保存、下次进入继续生效
+
+### 📺 高刷新率
+
+Android 根据设备显示模式动态适配刷新率：请求当前分辨率支持的最高刷新率，适配 60 / 90 / 120 Hz 等高刷屏；界面跟随设备最高刷新率，弹幕主画面 60 FPS、小窗 30 FPS，手动模式最高 240 FPS，并优化封面解码、图片缓存与弹幕重绘。
+
+### 🎧 ASMR / 助眠模式
+
+- 新房间自动进入纯音频、媒体保活、自定义自动停止时间、后台持续播放
+- 前台切音频保留视频解码热状态，回前台可复用当前纹理；后台自动停用视频轨降低电量开销
+
+### ⏺️ 直播录制
+
+- 直播流实时录制，保存到本地随时回放
+- 自定义位置只写入带所有权标记的 `PureLiveRecords` 专用子目录，清理与容量限制不会误删其他文件
+- 可配合定时关闭、后台音频、系统媒体通知进行长时间观看
+
+### ⏰ 定时关闭
+
+设置倒计时自动停止播放或退出应用，适用于睡眠、ASMR、长时间观看与后台音频播放。
+
+### 💾 数据管理
+
+- 本地配置导出 / 导入、配置恢复
+- WebDAV 同步与备份，支持 [坚果云](docs/WEBDAV.md) 等服务商
+- **仅导出 / 导入关注列表**：专用文件只含关注房间与分区，适合 Windows 与移动端之间交换
+- 备份格式 v3，Cookie 与 WebDAV 凭据默认不进入同步备份
+
+### 🔥 Firebase 用户同步（可选）
+
+Firebase 不是必要条件，应用不要求注册账号。如需使用可 Fork 项目并在自己的 Firebase 项目中配置。
+
+---
+
+## 🔍 搜索与本地互动
+
+搜索结果支持综合排序、平台顺序、观众人数、粉丝数量与直播状态筛选；百度直播支持精确房间号与官方链接查询，快手保留网页搜索，各平台原生搜索能力详见[平台兼容性](docs/PLATFORM_COMPATIBILITY.md)。
+
+内置本地互动系统，昵称、头衔、弹幕输入、体验币、平台身份徽章、礼物目录、等级风格与画面礼物效果默认保存在本机，可在**设置 → 本地用户与互动**统一启用或关闭。
+
+---
+
+## 🧭 观看数据与导航
+
+- 区分各平台观看数据口径：热度、真实在线人数、累计观看人数，不支持的平台保留关闭态并显示口径说明；在**设置 → 通用 → 观看数据与排行口径**选择排行方式
+- **设置 → 导航栏显示控制** 可显示、隐藏和排序收藏、热门、分区及录制中心页签，支持拖动排序
+
+---
+
+## 🛠️ 本地构建
+
+项目固定使用 Flutter `3.47.0` / Dart `3.13.0`、AGP `9.3.1`、Gradle `9.5.0` 与 Java 25 构建运行时，Android 字节码目标 Java/Kotlin 17。资源档位与缓存规则见 [构建资源策略](BUILD_POLICY.md)。
+
+完整质量门禁：
+
+```powershell
+PowerShell -ExecutionPolicy Bypass -File .\tool\local_ci.ps1 -Scope Full
+```
+
+安装包每次只构建一个平台与变体，例如 Android arm64 正式包：
+
+```powershell
+PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1 `
+  -Target AndroidArm64 -Configuration Release -FullRegression -RequireReleaseSigning
+```
+
+---
+
+## 📚 文档
 
 <!-- stable-doc-index:start -->
 | 文档 | 内容 |
@@ -117,352 +209,29 @@ Android 录制在创建任务和申请存储权限前检查目录：应用私有
 | [版本说明](RELEASE_NOTES.md) | 当前稳定版变更与历史记录 |
 <!-- stable-doc-index:end -->
 
-## ✨ 核心功能
+---
 
-### 🎬 多平台直播
+## 📌 维护说明
 
-- 聚合多个主流直播平台。
-- 支持平台分区浏览。
-- 支持跨平台搜索。
-- 支持直播 / 未开播筛选。
-- 支持综合、平台顺序、观众和粉丝等排序方式。
-- 各个平台保持独立分页状态。
-- 猫耳 FM 在当前未发布源码中支持官网直播间关键词分页搜索，可显示未开播房间；精确房间号和官网直播链接仍可直接查询。
-- 快手保留网页搜索入口。
-- 离线频道按照平台接口实际返回结果展示。
+<!-- maintenance-readme-markers: maintenance-scope; android-first; windows-maintained; upstream-feature-routing; bugfix-release-default -->
 
-### ▶️ 多播放器
-
-Android / Android TV 支持多个播放器：
-
-- IJKPlayer
-- EXOPlayer
-- MPV Player
-
-当某个播放器出现黑屏、卡顿、硬解兼容性问题或者特定直播流无法播放时，可以在设置中切换播放器。
-
-Windows、Linux、macOS 等桌面平台使用对应平台的播放器实现。
-
-### 🖥️ 多画面同看
-
-- 支持双画面、四画面和一大多小聚焦布局。
-- 每格独立播放、暂停、音量、清晰度和线路，只有聚焦画面出声。
-- 聚焦画面可接入平台弹幕；快速切换使用最新音频焦点，避免多个画面同时出声。
-- 移动端最多同时保留 4 路解码，桌面端最多 9 路，并可让小画面自动使用低清晰度以控制占用。
-- Windows 每格按实际可见物理尺寸和源分辨率防抖协商渲染输出；切换布局、晋升大画面和缩放窗口时保留播放会话，同时避免沿用旧格纹理。详见[多画面渲染目标审计](docs/MULTIVIEW_RENDER_TARGET_AUDIT_2026_09_11.md)。
-
-### 💬 弹幕系统
-
-提供完整的弹幕控制能力：
-
-- 弹幕过滤
-- 用户屏蔽
-- 关键词屏蔽
-- 弹幕描边
-- 弹幕透明度
-- 字号调整
-- 速度调整
-- 显示区域调整
-- 最大弹幕数量
-- 发送间隔控制
-- 刷新 FPS
-- 平台原始颜色
-- 统一弹幕颜色
-- 应用界面动态最高刷新率，弹幕渲染智能省电适配
-- 弹幕点击与长按操作
-- 字体粗细与观看模板联动
-- 精确重复和相似文本两级过滤
-
-3.2.0 开发源码新增 Kick 与 GoodGame 公开聊天只读接入；确认房间订阅后显示远端评论。当前安装包尚未包含这两项能力，双端真实消息验收仍待完成，详见[平台兼容性](docs/PLATFORM_COMPATIBILITY.md)。
-
-弹幕系统采用房间会话隔离、平台消息 ID 去重以及过期队列淘汰机制，减少切换直播间后出现：
-
-- 串房弹幕
-- 重复弹幕
-- 旧弹幕重新出现
-- 几分钟前积压弹幕突然播放
-
-### 🪟 小窗弹幕
-
-进入：
-
-**设置 → 视频设置 → 小窗弹幕**
-
-或者在直播间进入：
-
-**弹幕设置**
-
-即可配置小窗弹幕。
-
-支持：
-
-- Android 系统画中画
-- Windows 小窗
-- 应用内悬浮窗
-- 独立弹幕控制器
-- 独立弹幕队列
-- 独立弹幕样式
-- 自动根据窗口尺寸缩放
-- 最大弹幕数量
-- FPS 调整
-- 速度调整
-- 显示区域调整
-- 弹幕字号和透明度
-- 弹幕点击和长按
-
-小窗弹幕不会污染主播放器弹幕队列。
-
-配置会保存到本地，下次进入直播间后继续生效。
-
-“最佳观看”模板默认将弹幕限制在画面顶部约 20% 区域，以减少弹幕对画面的遮挡。
-
-主播放器、小窗以及 Windows 桌面端统一使用 px/s 速度和逻辑帧时钟。
-
-切换横竖屏或者应用从后台恢复时，不会根据后台停留时间产生大量弹幕补跳。
-
-### 📺 高刷新率
-
-Android 支持根据设备显示模式动态适配刷新率：
-
-- 自动监听当前显示模式
-- 请求当前分辨率支持的最高刷新率
-- 适配 60 Hz / 90 Hz / 120 Hz 等高刷新率设备
-- 优化封面图片解码
-- 优化图片缓存
-- 优化弹幕重绘
-- 应用界面跟随设备最高刷新率；自动弹幕主画面 60 FPS、小窗 30 FPS，手动模式最高 240 FPS
+- 本仓库重点维护 **Android / Android TV 与 Windows**：多数修复与安装包优先更新 Android，Windows 继续作为主要桌面维护目标；Linux、macOS 与 iOS 为社区验证范围，不承诺每轮构建。
+- 当前 **3.2.0** 处于完整验收阶段，尚未发布；进度与发布门禁见 [3.2.0 验收入口](docs/ACCEPTANCE_3_2_0.md)，当前状态见 [状态快照](docs/ACCEPTANCE_STATUS_3_2_0.md)。
+- Issue 受理**可复现的维护型 Bug**（[提交 Bug](https://github.com/liuchuancong/pure_live/issues/new/choose)）；Bug 修复批次默认递增版本并优先构建 Android 正式包。
+- 上游变更的来源判定、根因、兼容、验证与回滚流程见[维护范围与问题处置策略](MAINTENANCE_POLICY.md)及[上游同步审查策略](UPSTREAM_REVIEW_POLICY.md)。
 
 ---
 
-## 🔍 搜索与直播互动
+## 🤝 贡献与致谢
 
-支持跨平台直播搜索，并提供独立的平台分页状态。平台选择栏可访问屏幕外项目，但首尾严格有界；“全部”搜索按平台完成顺序渐进显示，单个平台超时或失败不会挡住其他结果。相邻页完整重叠时保留一次继续机会，连续第二个停滞页有界结束，避免漏掉后页或对固定响应无限追加；同一平台与关键词的未完成首屏重复提交共享一次请求，聚合结果已部分呈现时也不会重新请求，完成后仍可主动刷新。详见[搜索分页审计](docs/SEARCH_PAGINATION_STAGNATION_AUDIT_2026_09_11.md)与[搜索提交事务审计](docs/SEARCH_SUBMIT_TRANSACTION_AUDIT_2026_09_11.md)。
+**主开发者**：[@liuchuancong](https://github.com/liuchuancong)
 
-搜索结果支持：
+**协助开发者**：[@RebornQ](https://github.com/RebornQ) · [@wzgrx](https://github.com/wzgrx)
 
-- 综合排序
-- 平台顺序
-- 观众人数
-- 粉丝数量
-- 直播状态筛选
-- YY、LiveMe、TikTok LIVE、YouTube Live、Bigo Live、PandaTV、PopkonTV、Shopee Live、VK Video Live、NimoTV、Dailymotion、Rumble、GoodGame、FC2 Live、Steam Broadcasts、京东直播、淘宝直播、酷狗直播、六间房直播等平台原生/本机搜索；百度直播支持精确房间号与官方链接查询，LOOK 直播支持精确房间号并在当前官网推荐页内筛选关键词，快手保留网页搜索
-- Bilibili、斗鱼、虎牙、抖音、快手、网易 CC、Twitch、SOOP、YY、AcFun、Picarto、TwitCasting、SHOWROOM、CHZZK、Kick、17LIVE、LiveMe、TikTok LIVE、YouTube Live、Bigo Live、PandaTV、PopkonTV、Shopee Live、VK Video Live、NimoTV、Dailymotion、Rumble、GoodGame、FC2 Live、Steam Broadcasts、京东直播、淘宝直播、酷狗直播、百度直播、六间房直播、LOOK 直播网页直播间识别
+> 📌 欢迎贡献维护型修复、测试和文档！分支、提交、测试与 Pull Request 要求见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
-同时提供本地互动系统。
+**代码参考**
 
-本地用户与互动数据可以保存：
-
-- 昵称
-- 头衔
-- 弹幕输入
-- 体验币
-- 平台身份徽章
-- 礼物目录
-- 等级风格
-- 画面礼物效果
-
-这些数据默认保存在本机。
-
-可以通过：
-
-**设置 → 本地用户与互动**
-
-统一启用或关闭相关功能。
-
----
-
-## 🧭 底部导航
-
-**设置 → 导航栏显示控制** 可以显示、隐藏和排序收藏、热门、分区及录制中心页签。至少保留一个可用页签；
-只有当前显示的多个页签提供拖动排序入口，异常或旧版配置中的重复、未知与空白 ID 会在加载时自动整理。
-
----
-
-## 👀 观看数据
-
-Pure Live 会区分不同平台的观看数据口径：
-
-- 热度
-- 真实在线人数
-- 累计观看人数
-
-其中抖音、快手、网易 CC、Twitch、SOOP、AcFun、Picarto、TwitCasting、
-mellow-fan（OPENREC）、FLEX TV（TTingLive）、CHZZK、Kick、17LIVE、LiveMe、TikTok LIVE、YouTube Live、Bigo Live、PandaTV、PopkonTV、Shopee Live、VK Video Live、NimoTV、Rumble、GoodGame、FC2 Live、Steam Broadcasts、酷狗直播、百度直播和 LOOK 直播可以显示平台明确返回的并发人数。
-
-设置页会列出全部 45 个普通直播平台。虎牙、Bilibili、斗鱼、Dailymotion、京东直播、淘宝直播、六间房直播等平台按照公开数据实际提供的热度、
-累计观看或未知状态展示，不把这些字段混作并发人数；不支持并发人数的平台保留关闭态并显示口径说明。
-
-可以通过：
-
-**设置 → 通用 → 观看数据与排行口径**
-
-选择排行方式，并管理支持人数统计的平台。
-
----
-
-## 🎧 ASMR / 助眠模式
-
-Android 支持 ASMR 助眠模式。
-
-可以设置：
-
-- 新房间自动进入纯音频
-- 媒体保活
-- 自定义自动停止时间
-- 后台持续播放
-
-房间内的耳机图标只控制当前房间的纯音频状态。
-
-电视图标用于投屏。
-
-前台手动进入音频模式时保留同一播放器的视频解码热状态，切回画面通常可直接复用当前纹理；应用进入后台后立即停用视频轨以降低解码和电量开销，回到前台再静默预热。深度恢复期间显示低开销音频卡片和明确进度，不再以黑屏或整页转圈阻塞操作。
-
-当前各平台通常返回音视频复用直播流；关闭视频轨主要节省解码、GPU 与电量，并不等同于只下载音频。只有平台明确提供独立音频地址时，才可能同时实现网络流量显著下降和无等待画面恢复。
-
----
-
-## ⏺️ 直播录制
-
-支持直播流实时录制。
-
-可以将直播保存到本地，在直播结束后进行回放。
-
-选择自定义位置时，程序只写入该位置下带所有权标记的 `PureLiveRecords` 专用子目录；“清空录制文件目录”和自动容量限制均只处理该目录，不会遍历删除所选父目录中的其他文件。
-
-支持配合：
-
-- 直播录制
-- 定时关闭
-- 后台音频
-- 系统媒体通知
-
-进行长时间观看或助眠使用。
-
----
-
-## ⏰ 定时关闭
-
-支持设置倒计时自动停止播放或退出应用。
-
-适用于：
-
-- 睡眠
-- ASMR
-- 长时间观看
-- 后台音频播放
-
----
-
-## 💾 数据管理
-
-支持：
-
-- 本地配置导出
-- 本地配置导入
-- WebDAV 同步
-- WebDAV 备份
-- M3U / M3U8 导入
-- 配置恢复
-
-“备份与还原”还提供**仅导出/导入关注列表**；WebDAV 更多操作提供“仅上传关注列表”，接收端选择“仅恢复关注列表”。专用文件只含关注房间和分区，适合在 Windows 与移动端之间交换，其他设备设置保持各自原值。完整备份和关注列表专用文件分开命名；专用文件需使用关注列表导入入口。
-
-备份格式目前为 **v3**。
-
-默认情况下：
-
-- Cookie 不进入普通同步备份
-- WebDAV 凭据不进入普通同步备份
-
-旧版本备份文件仍然建议按照敏感文件进行保管。
-
----
-
-## 🔐 Firebase 用户同步
-
-项目支持可选的 Firebase 用户同步功能。
-
-Firebase 不是 Pure Live 使用的必要条件。
-
-如果需要使用 Firebase 功能，可以 Fork 项目，并在自己的 Firebase 项目中配置对应服务。
-
-应用不会要求所有用户必须注册账号。
-
----
-
-## 📥 下载
-
-前往 [维护分支 GitHub Releases](https://github.com/wzgrx/pure_live/releases/latest) 获取最新安装包，并使用同一 Release 的 `SHA256SUMS.txt` 校验完整性。
-
-### Android
-
-当前 Android 正式包以 `arm64-v8a` 为主，适用于当前主流 64 位 ARM 手机和平板。更新页读取版本清单中的实际 ABI 列表，只展示对应 Release 实际发布的下载链接。
-
-Android 始终使用正式包名：
-
-`com.mystyle.purelive`
-
-不再生成并存 QA 包。
-
-正式 Release 使用仓库专用持久签名，因此可以直接覆盖旧的正式版本。
-
-缺少正式发布密钥的本机测试包使用调试签名。
-
-发布脚本会阻止调试签名进入正式 Release。
-
-### Windows
-
-提供：
-
-- Windows x64
-- 便携 ZIP
-- EXE 安装器
-
-EXE 安装向导支持选择其他磁盘，并把设置、关注、历史、IPTV、录制和缓存集中保存到安装目录 `AppData`。便携 ZIP 不包含运行时数据。
-
-自行构建 MSIX 时的证书配置见 [Windows MSIX 证书说明](docs/MSIX_INSTALL.md)。
-
-### macOS
-
-源码保留 Intel x64、Apple Silicon arm64 与 Universal 构建能力。本维护分支缺少持续使用的 macOS 设备，相关产物只在 Release 明确列出时成立，并标为社区验证。
-
-### Linux
-
-源码保留 Linux x64 构建能力。Linux 网页搜索会交给系统浏览器，原生搜索与播放继续在应用内完成；本维护分支缺少常规运行验证。
-
-### iOS
-
-源码保留 iOS arm64 设备构建能力。相关 `.app`、签名和 IPA 状态以具体 Release 说明为准，本维护分支缺少持续使用的 iOS 设备。
-
----
-
-## 🧪 本地构建与验证
-
-项目固定使用 Flutter `3.47.0` / Dart `3.13.0`、AGP `9.3.1`、Gradle `9.5.0` 与 Java 25 构建运行时，Android 应用和插件字节码目标保持 Java/Kotlin 17。资源档位、串行平台阶段和增量缓存规则见 [构建资源策略](BUILD_POLICY.md)。正式交付的完整质量门禁：
-
-```powershell
-PowerShell -ExecutionPolicy Bypass -File .\tool\local_ci.ps1 -Scope Full
-```
-
-安装包每次只构建本轮明确指定的一个平台与变体，例如 Android arm64 正式包：
-
-```powershell
-PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1 `
-  -Target AndroidArm64 -Configuration Release -FullRegression -RequireReleaseSigning
-```
-
-当前稳定版的源码基线、修复范围、验证证据、实际构建平台和产物校验见顶部版本条目及对应阶段文档；通用门禁和单平台串行发布流程见[构建与发布](docs/BUILD_AND_RELEASE.md)。
-
-## 🤝 参与开发
-
-- **主开发者**：[@liuchuancong](https://github.com/liuchuancong)
-- **协助开发者**：[@wzgrx](https://github.com/wzgrx/pure_live)
-- **协助开发者**：[@RebornQ](https://github.com/RebornQ)
-
-> 📌 **欢迎贡献维护型修复、测试和文档**！
-> - 如发现 License 使用不当，请提交 Issue 或 Pull Request
-> - 本仓库 Issue 聚焦可复现 Bug；新增功能和产品建议统一提交到[原项目](https://github.com/liuchuancong/pure_live/issues/new/choose)
-
-### 代码参考
 - [dart_simple_live](https://github.com/xiaoyaocz/dart_simple_live)
 - [pure_live (Jackiu1997)](https://github.com/Jackiu1997/pure_live)
 
@@ -471,8 +240,6 @@ PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1 `
 ## 🌟 Star 趋势
 
 如果 Pure Live 对你有帮助，欢迎给项目一个 ⭐ Star：
-
-## Star History
 
 <a href="https://www.star-history.com/?repos=liuchuancong%2Fpure_live&type=date&legend=bottom-right">
  <picture>
