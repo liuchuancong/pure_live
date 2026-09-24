@@ -1146,7 +1146,12 @@ class MultiviewController extends GetxController {
     if (selectedQualityId != null) {
       final qualityIndex = cells[cellIndex].qualities.indexWhere((quality) => quality.selectionId == selectedQualityId);
       if (qualityIndex >= 0 && qualityIndex != cells[cellIndex].qualityIndex) {
-        await setCellQuality(cellIndex, qualityIndex);
+        final qualityRestore = setCellQuality(cellIndex, qualityIndex);
+        // setCellQuality advances the slot epoch before its first await. A
+        // later manual line/quality choice must supersede this recovery.
+        final qualityEpoch = _cellEpochs[cellIndex];
+        await qualityRestore;
+        if (_isStale(cellIndex, qualityEpoch)) return;
       }
     }
     if (!identical(_players[cellIndex], refreshedHandle) || cells[cellIndex].status != MultiviewCellStatus.playing) {

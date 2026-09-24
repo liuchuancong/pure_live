@@ -1453,6 +1453,39 @@ void main() {
       await controller.disposeAll();
     });
 
+    testWidgets('manual line selection wins over a pending frame-stall quality restore', (tester) async {
+      var elapsed = Duration.zero;
+      final harness = _Harness(
+        frameStallTimeout: const Duration(seconds: 10),
+        frameVisible: () => true,
+        frameElapsed: () => elapsed,
+      );
+      final controller = harness.controller;
+      await controller.assignRoom(0, _room('r1'));
+      await controller.setCellQuality(0, 1);
+      await controller.setCellLine(0, 1);
+      harness.players.single.emitFrame();
+      final qualityGate = Completer<void>();
+      harness.qualityGates['r1'] = qualityGate;
+
+      elapsed = const Duration(seconds: 10);
+      await tester.pump(const Duration(seconds: 10));
+      await tester.pump();
+      await tester.pump();
+      expect(harness.players.length, 2);
+      expect(controller.cells[0].status, MultiviewCellStatus.playing);
+      expect(controller.cells[0].qualityIndex, 0);
+
+      await controller.setCellLine(0, 1);
+      await controller.setCellLine(0, 0);
+      qualityGate.complete();
+      await tester.pump();
+      await tester.pump();
+      expect(controller.cells[0].lineIndex, 0);
+      expect(harness.players[1].inputs.last.$1, 'https://stream/r1/原画');
+      await controller.disposeAll();
+    });
+
     testWidgets('paused cell never refreshes from a presented-frame timeout', (tester) async {
       var elapsed = Duration.zero;
       final harness = _Harness(
