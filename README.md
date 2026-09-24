@@ -31,7 +31,7 @@
 
 > 纯粹直播（Pure Live）是一款开源的第三方多平台直播聚合播放器，使用 Flutter 构建，支持 Android、Android TV、Windows、Linux、macOS 和 iOS 等平台。
 
-> 本维护分支基于 [liuchuancong/pure_live](https://github.com/liuchuancong/pure_live)，维护本机优先构建、正式签名、接口探测、Windows 数据迁移及高刷新率优化。上游变更按独立审查流程处理；当前 3.2.0 验收阶段不合并上游。
+> 本维护分支基于 [liuchuancong/pure_live](https://github.com/liuchuancong/pure_live)，维护本机优先构建、正式签名、接口探测、Windows 数据迁移及高刷新率优化。上游变更按独立审查流程处理；3.2.0 周期不合并上游。
 
 ## 维护分支说明（请先阅读）
 
@@ -44,15 +44,15 @@
 - 每个完成的 Bug 修复批次默认递增版本，优先构建 Android `arm64-v8a` 正式更新包，并同步源码、版本标签、安装包与校验文件到本仓库 GitHub Release；其他平台仍按本轮明确范围串行构建。
 - 每次同步上游、分析 Bug 和审查原项目 Issue 的来源判定、根因、兼容、验证与回滚流程见[维护范围与问题处置策略](MAINTENANCE_POLICY.md)及[上游同步审查策略](UPSTREAM_REVIEW_POLICY.md)。
 
-- **最新稳定版**：[v3.1.8](https://github.com/wzgrx/pure_live/releases/tag/v3.1.8)
-- **下一稳定版目标**：3.2.0，当前处于完整验收阶段，尚未发布。本轮只维护本仓库、不合并上游；优先源码审查、确定性回归和本地验证，手机操作按本轮明确安排执行，不把连接设备作为修复前置条件。进度、缺口与发布门禁见 [3.2.0 验收入口](docs/ACCEPTANCE_3_2_0.md)，开发包及旧版通过记录不等于最终版已通过。
+- **最新稳定版**：[v3.2.0](https://github.com/wzgrx/pure_live/releases/tag/v3.2.0)，从维护分支 `claude` 发布，更新内容见[版本说明](RELEASE_NOTES.md)。
+- **3.2.0 真机验收**：发布后继续进行。部分编号大项仍在补充双端证据，进度与剩余缺口见 [3.2.0 验收入口](docs/ACCEPTANCE_3_2_0.md)。
 <!-- current-status-owner: docs/ACCEPTANCE_STATUS_3_2_0.md -->
 - **当前验收快照**：源码提交、候选包、设备状态、编号统计与剩余阻塞只在[当前状态快照](docs/ACCEPTANCE_STATUS_3_2_0.md)维护；分项状态与证据见[验收矩阵](docs/ACCEPTANCE_MATRIX_3_1_0.md)。README 不再复制逐批测试数量、候选哈希和待办时间线。
-- **源码平台范围**：目前 45 个直播站点 + IPTV，共 46 个适配器；注册不等于目录、搜索、播放、弹幕和录制均已完整验收，能力边界见[平台兼容性](docs/PLATFORM_COMPATIBILITY.md)。
-- **当前源码版本号**：`3.1.8+4121`。候选包按源码 SHA 与验证记录识别，同一版本号不代表包含相同修订；3.2.0 只在完整目标验收后发布。
+- **平台范围**：v3.2.0 支持 45 个直播站点 + IPTV，共 46 个适配器；注册不等于目录、搜索、播放、弹幕和录制均已完整验收，能力边界见[平台兼容性](docs/PLATFORM_COMPATIBILITY.md)。
+- **当前源码版本号**：`3.2.0+4123`。候选包按源码 SHA 与验证记录识别，同一版本号不代表包含相同修订。
 - **Android / Android TV 安装要求**：当前源码与下一候选为 Android 8.0 / API 26 及以上、arm64-v8a；系统版本和 CPU ABI 两项都要匹配。已发布 v3.0.2 的实际 APK 最低为 Android 7.0 / API 24、仅含 arm64-v8a；Android 6.0.1 / API 23 电视不在该包的安装范围内。当前 API 26 下限与 FFmpegKit 原生录制依赖一致，旧系统兼容需另行处理原生依赖并完成电视端验收。
 - **v3.0.0 上游源码基线**：`liuchuancong/pure_live@e808dcae`；完整记录见 `docs/STAGE_UPDATE_3_0_0.md`
-- **本轮构建平台**：Android arm64-v8a、Windows x64 安装程序与便携 ZIP；其他平台继续使用 v3.0.0 安装包
+- **本轮构建平台**：Android arm64-v8a、Windows x64 安装程序与便携 ZIP、Linux x64 便携 tar.gz；macOS 与 iOS 继续使用 v3.0.0 安装包
 - **质量门禁**：播放器来源/Surface/几何回归见 `docs/PLAYER_RECOVERY_AUDIT_3_0_15.md`，十个平台录制链路见 `docs/RECORDER_REPAIR_AUDIT_2026-08-27.md`
 
 本版本还会在启动、备份恢复和手动清理时剔除空平台、空房间号、`0/null/undefined/nan/none` 等无效关注记录，并按“平台 + 房间号”去重，避免损坏的历史收藏继续参与首页刷新。
@@ -66,13 +66,13 @@ Android 录制在创建任务和申请存储权限前检查目录：应用私有
 
 ## 📺 平台范围
 
-**版本边界先看清**：已发布的 [v3.1.8](https://github.com/wzgrx/pure_live/releases/tag/v3.1.8) 注册 **9 个直播站点 + IPTV**；当前未发布的 3.2.0 开发源码注册 **45 个直播站点 + IPTV**。后者表示应用入口已有适配器，不表示 45 站的目录、搜索、弹幕、播放与录制都已通过双端验收。各站实际能力和人数口径见[平台兼容性](docs/PLATFORM_COMPATIBILITY.md)，候选与剩余验证见[当前状态](docs/ACCEPTANCE_STATUS_3_2_0.md)。
+**版本边界**：[v3.1.8](https://github.com/wzgrx/pure_live/releases/tag/v3.1.8) 支持 **9 个直播站点 + IPTV**；[v3.2.0](https://github.com/wzgrx/pure_live/releases/tag/v3.2.0) 支持 **45 个直播站点 + IPTV**。平台已注册不代表 45 站的目录、搜索、弹幕、播放与录制都已通过双端真机验收。各站实际能力和人数口径见[平台兼容性](docs/PLATFORM_COMPATIBILITY.md)，剩余验证见[当前状态](docs/ACCEPTANCE_STATUS_3_2_0.md)。
 
 | 阶段 | 平台 |
 | --- | --- |
-| v3.1.8 已发布（9 站） | 哔哩哔哩、斗鱼、虎牙、抖音、快手、网易 CC、Twitch、SOOP Live、YY Live |
-| 3.2.0 未发布源码新增：国内（13 站） | AcFun、猫耳 FM、映客、克拉克拉、花椒、小红书、微博直播、京东直播、淘宝直播、酷狗直播、百度直播、六间房直播、LOOK 直播 |
-| 3.2.0 未发布源码新增：其他地区（23 站） | Picarto、TwitCasting、OPENREC / mellow-fan、TTingLive / FLEX TV、niconico、SHOWROOM、CHZZK、Kick、17LIVE、LiveMe、TikTok LIVE、YouTube Live、Bigo Live、PandaTV、PopkonTV、Shopee Live、VK Video Live、NimoTV、Dailymotion、Rumble、GoodGame、FC2 Live、Steam Broadcasts |
+| v3.1.8 起（9 站） | 哔哩哔哩、斗鱼、虎牙、抖音、快手、网易 CC、Twitch、SOOP Live、YY Live |
+| v3.2.0 新增：国内（13 站） | AcFun、猫耳 FM、映客、克拉克拉、花椒、小红书、微博直播、京东直播、淘宝直播、酷狗直播、百度直播、六间房直播、LOOK 直播 |
+| v3.2.0 新增：其他地区（23 站） | Picarto、TwitCasting、OPENREC / mellow-fan、TTingLive / FLEX TV、niconico、SHOWROOM、CHZZK、Kick、17LIVE、LiveMe、TikTok LIVE、YouTube Live、Bigo Live、PandaTV、PopkonTV、Shopee Live、VK Video Live、NimoTV、Dailymotion、Rumble、GoodGame、FC2 Live、Steam Broadcasts |
 | 两阶段均有 | IPTV / 自定义直播源；本地或网络导入，不计作直播平台站点 |
 
 可按平台与分区浏览、筛选和隐藏入口；搜索、直播状态、官方链接回流、人数语义、远端弹幕及录制能力随平台而异，不用统一标签代替各站合同。战旗直播、浪 Live 仍在内部适配准备阶段，暂未计入 45 站。
@@ -127,7 +127,7 @@ Android 录制在创建任务和申请存储权限前检查目录：应用私有
 - 支持直播 / 未开播筛选。
 - 支持综合、平台顺序、观众和粉丝等排序方式。
 - 各个平台保持独立分页状态。
-- 猫耳 FM 在当前未发布源码中支持官网直播间关键词分页搜索，可显示未开播房间；精确房间号和官网直播链接仍可直接查询。
+- 猫耳 FM 自 v3.2.0 起支持官网直播间关键词分页搜索，可显示未开播房间；精确房间号和官网直播链接仍可直接查询。
 - 快手保留网页搜索入口。
 - 离线频道按照平台接口实际返回结果展示。
 
@@ -403,11 +403,7 @@ Android 始终使用正式包名：
 
 不再生成并存 QA 包。
 
-正式 Release 使用仓库专用持久签名，因此可以直接覆盖旧的正式版本。
-
-缺少正式发布密钥的本机测试包使用调试签名。
-
-发布脚本会阻止调试签名进入正式 Release。
+v3.1.8 与 v3.2.0 的 APK 均为 Release 编译、使用同一个固定的本地调试证书签名（SHA-256 `1e832295…8f237ff7b9`，文件名或元数据标注 `debug-signed`），两者之间及同证书的测试包之间可以直接覆盖安装、保留数据。证书不同的旧安装包需要先在应用内备份，卸载后再安装。
 
 ### Windows
 
@@ -437,7 +433,7 @@ EXE 安装向导支持选择其他磁盘，并把设置、关注、历史、IPTV
 
 ## 🧪 本地构建与验证
 
-项目固定使用 Flutter `3.47.0` / Dart `3.13.0`、AGP `9.3.1`、Gradle `9.5.0` 与 Java 25 构建运行时，Android 应用和插件字节码目标保持 Java/Kotlin 17。资源档位、串行平台阶段和增量缓存规则见 [构建资源策略](BUILD_POLICY.md)。正式交付的完整质量门禁：
+项目固定使用 Flutter `3.47.5` / Dart `3.13.4`、AGP `9.3.3`、Gradle `9.7.1` 与 Java 25 构建运行时，Android 应用和插件字节码目标保持 Java/Kotlin 17。资源档位、串行平台阶段和增量缓存规则见 [构建资源策略](BUILD_POLICY.md)。正式交付的完整质量门禁：
 
 ```powershell
 PowerShell -ExecutionPolicy Bypass -File .\tool\local_ci.ps1 -Scope Full

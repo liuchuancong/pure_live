@@ -1,6 +1,6 @@
 # 3.2.0 剩余工作与当前候选（2026-09-24）
 
-本页只保留当前快照和主要阻塞。逐批历史已移至[状态时间线归档](ACCEPTANCE_STATUS_HISTORY_3_2_0.md)，编号证据以[验收矩阵](ACCEPTANCE_MATRIX_3_1_0.md)为准，执行顺序见[完整验收入口](ACCEPTANCE_3_2_0.md)。**全目标未完成，正式版本未发布。**
+本页只保留当前快照和主要阻塞。逐批历史已移至[状态时间线归档](ACCEPTANCE_STATUS_HISTORY_3_2_0.md)，编号证据以[验收矩阵](ACCEPTANCE_MATRIX_3_1_0.md)为准，执行顺序见[完整验收入口](ACCEPTANCE_3_2_0.md)。**v3.2.0 已于 2026-09-25 从 `claude` 分支发布（Android arm64、Windows x64、Linux x64，未推送应用内更新）；下表的真机验收缺口在发布后继续补齐。**
 
 ## 当前可证明的状态
 
