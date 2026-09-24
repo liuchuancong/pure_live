@@ -7,15 +7,14 @@ import 'package:pure_live/common/global/platform/desktop_manager.dart';
 void main() {
   test('desktop tray context menu has one event owner and one transaction coordinator', () {
     final source = File('lib/common/global/platform/desktop_manager.dart').readAsStringSync();
+    final service = File('lib/common/global/platform/desktop_tray_service.dart').readAsStringSync();
 
     expect(source, contains('class DesktopTrayMenuCoordinator'));
     expect(source, contains('final DesktopTrayMenuCoordinator _trayMenuCoordinator'));
-    expect(source, contains('unawaited(DesktopManager.handleTrayRightClick())'));
-    expect(
-      source,
-      contains('@override\n  void onTrayIconRightMouseUp() {}'),
-      reason: 'the right-button release must not open a second context menu',
-    );
+    expect(source, contains('onRightClick: handleTrayRightClick'));
+    expect(service, contains('ContextMenuTrigger.none'));
+    expect(service, contains('event is TrayIconRightClickedEvent'));
+    expect(service, contains('if (_icon != null) return;'));
   });
 
   test('concurrent context-menu requests share refresh and popup work', () async {

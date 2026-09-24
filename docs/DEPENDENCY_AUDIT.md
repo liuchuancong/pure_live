@@ -1,19 +1,30 @@
 # 依赖与接口审计
 
-最近核验日期：2026-09-04
+最近核验日期：2026-09-24
+
+## 2026-09-24 全量版本复核与升级进度
+
+- 对照 Flutter 官方 GitHub 稳定标签，将独立工具链从 3.47.0 升至 **3.47.5 / Dart 3.13.4**；旧 SDK 保留以便回滚。
+- `flutter pub outdated --json` 显示的 **20 个落后直接/开发依赖全部升级**，锁文件重新解析后共有 49 个包变更。托盘库 0.7.0 不再沿用已弃用的旧接口，改为 `TrayIcon`、`Menu` 与原生事件；菜单对象在应用生命周期内复用。
+- 升至 Android Gradle Plugin **9.3.3**（9.3 稳定补丁）和 Gradle **9.7.1**；wrapper 固定官方发布的 ZIP SHA-256。Google Services 4.5.0 保持当前版本；两个尚用 setup-python v6.1.0 的工作流统一到仓库已有的 v7.0.0 固定提交。
+- 再次运行 `flutter pub outdated --json`：直接/开发依赖 **0 项落后**；13 项较新版本属于 Flutter SDK 或上游包约束锁定的传递依赖，`resolvable` 与当前锁版本相同，不添加全局 override。
+- `Predidit/media-kit` 的 HEAD `d13fc22b` 比当前 `994465d9` 多 5 次提交，但新树移除了应用依赖的 `libs/android/media_kit_libs_android_video` 等包路径，且改写视频实现。此项需要一起迁移本地 Surface/音轨补丁与各平台 native libs，单纯改 Git ref 会破坏依赖解析；完成迁移和回归前保留已核验修订。网页内核指定功能分支与 `screen_retriever` 的远端 HEAD 均未变化。
+- 依赖升级阶段只做解析、静态分析、定向测试与 Gradle 配置检查；新 APK / 桌面版本构建在依赖和本地补丁收敛后执行。
+
+版本来源：[Flutter tags](https://github.com/flutter/flutter/tags)、[pub.dev outdated](https://dart.dev/tools/pub/cmd/pub-outdated)、[AGP 9.3 发布说明](https://developer.android.com/build/releases/agp-9-3-0-release-notes)、[Gradle 9.7.1 发布说明](https://docs.gradle.org/9.7.1/release-notes.html)、[tray_manager 变更记录](https://pub.dev/packages/tray_manager/changelog)、[media-kit fork 对比](https://github.com/Predidit/media-kit/compare/994465d9bfca3f39d0b41199d16e7fd93fe97881...d13fc22ba1b19b45de3090c2d1b0f8a541b585a0)。
 
 ## 固定工具链
 
-- Flutter 3.47.0 / Dart 3.13.0（`.fvmrc`）。
-- Android compileSdk/targetSdk 37，Java 25 构建运行时，Java/Kotlin 17 字节码目标，AGP 9.3.1，Gradle 9.5.0。
+- Flutter 3.47.5 / Dart 3.13.4（`.fvmrc`）。
+- Android compileSdk/targetSdk 37，Java 25 构建运行时，Java/Kotlin 17 字节码目标，AGP 9.3.3，Gradle 9.7.1。
 - Google Services Gradle Plugin 4.5.0。
 - FFmpeg Kit Extended Flutter 0.6.2，按插件构建钩子解析 builders v0.11.1 / FFmpeg 9.0.1，并复用经过 SHA-256 校验的 Android/Windows Native Assets 共享缓存。
 
 Android 已启用 AGP 9 Built-in Kotlin。主应用、`flv_lzc` 以及六个仍使用独立 KGP 的插件已完成本地迁移，根设置不再声明或应用 `org.jetbrains.kotlin.android`。当前 Flutter 3.47 的通用依赖检查会把 AGP 自带编译器套用到独立 KGP 最低版本规则，因此 Gradle 属性跳过该项误判，同时由 `tool/audit_built_in_kotlin.py` 固定检查 AGP/Gradle 下限、开关和全部本地模块；实际 release 编译继续作为最终门禁。
 
-AGP 9.3.1 是当前 9.3 稳定补丁，官方兼容表给出的默认 Gradle 为 9.5.0；仓库保持该验证组合。Google Services 4.5.0 与 Firebase 当前官方设置文档一致。Gradle 独立发行线虽已有更新版本，但不越过 AGP/Flutter 已验证默认组合做孤立升级。
+AGP 9.3.3 是 9.3 稳定补丁；Gradle 9.7.1 是本轮检查时的稳定版。两者均通过版本和解析检查后再进入应用构建门禁。Google Services 4.5.0 与 Firebase 当前官方设置文档一致。
 
-`flutter pub outdated` 已于 2026-09-04 在 Flutter 3.47.0 上重新复核并完成全部可解析升级。直接依赖当前包括 `cached_network_image 4.0.0`、`dynamic_color 2.1.0`、`ffmpeg_kit_extended_flutter 0.6.2`、`flex_color_picker 4.0.0`、`loading_indicator 4.0.2`、`permission_handler 13.0.2`、`file_picker 12.2.0` 与 Syncfusion sliders `34.2.6`。`dynamic_color` 2.x 和图像/颜色组件采用独立 `material_ui`；应用在单一边界把其完整 Material 3 `ColorScheme` 转换为 Flutter 框架主题，并以字段完整性及组件渲染测试防止主题角色丢失。剩余提示均为 Flutter SDK、生成器或上游约束锁定的传递依赖（例如 `code_assets`、`qr`），不使用 override 强行拆开其兼容组合。
+`flutter pub outdated` 已于 2026-09-24 在 Flutter 3.47.5 上重新复核并完成全部可解析升级。直接依赖当前包括 `cached_network_image 4.0.2`、`dynamic_color 2.1.0`、`ffmpeg_kit_extended_flutter 0.6.2`、`flex_color_picker 4.0.0`、`loading_indicator 4.0.2`、`permission_handler 13.0.2`、`file_picker 13.1.0` 与 Syncfusion sliders `34.2.9`。`dynamic_color` 2.x 和图像/颜色组件采用独立 `material_ui`；应用在单一边界把其完整 Material 3 `ColorScheme` 转换为 Flutter 框架主题，并以字段完整性及组件渲染测试防止主题角色丢失。剩余提示均为 Flutter SDK、生成器或上游约束锁定的传递依赖（例如 `code_assets`、`qr`），不使用 override 强行拆开其兼容组合。
 
 播放器依赖在 v2.6.0 再次单独核验：`better_player_plus` 为 1.3.5 的 Built-in Kotlin 本地快照；项目使用的 `Predidit/media-kit` 修订分支仍固定到 `994465d9bfca3f39d0b41199d16e7fd93fe97881`，`media_kit_video` 使用包含 Surface/音频模式生命周期修复的仓库副本。`pub outdated` 中其余较新版本均为当前 Flutter SDK 或上游依赖约束锁定的传递包，未用强制 override 破坏播放器组合兼容性。
 

@@ -6,7 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/utils.dart';
-import 'package:tray_manager/tray_manager.dart';
+import 'package:pure_live/common/global/platform/desktop_tray_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:pure_live/routes/app_navigation.dart';
 import 'package:flutter_acrylic/flutter_acrylic.dart';
@@ -107,9 +107,6 @@ class DesktopManager {
       windowManager.addListener(state as WindowListener);
     }
 
-    if (state is TrayListener) {
-      trayManager.addListener(state as TrayListener);
-    }
   }
 
   static void disposeListeners() {
@@ -119,9 +116,6 @@ class DesktopManager {
       windowManager.removeListener(_currentState as WindowListener);
     }
 
-    if (_currentState is TrayListener) {
-      trayManager.removeListener(_currentState as TrayListener);
-    }
 
     _currentState = null;
   }
@@ -148,15 +142,15 @@ class DesktopManager {
     if (!PlatformUtils.isDesktop) return;
 
     try {
-      if (Platform.isWindows) {
-        await trayManager.setIcon('assets/icons/app_icon.ico');
-      } else if (Platform.isMacOS) {
-        await trayManager.setIcon('assets/icons/app_icon.ico');
-      }
-      // The desktop window is created before EasyLocalization has loaded its
-      // delegate. Use a stable tooltip here and build the localized context
-      // menu after the first application frame.
-      await trayManager.setToolTip('PureLive');
+      DesktopTrayService.initialize(
+        onClick: handleTrayIconClick,
+        onRightClick: handleTrayRightClick,
+        onWindowAction: () async {
+          final isVisible = await windowManager.isVisible();
+          await handleTrayMenuClick(isVisible ? 'hide_window' : 'show_window');
+        },
+        onExit: () => handleTrayMenuClick('exit_app'),
+      );
     } catch (e) {
       debugPrint('系统托盘初始化失败: $e');
     }
@@ -167,24 +161,14 @@ class DesktopManager {
 
     try {
       final useChineseFallback = PlatformDispatcher.instance.locale.languageCode == 'zh';
-      await trayManager.setToolTip(i18nOr('app_name', useChineseFallback ? '纯粹直播' : 'PureLive'));
-
       final isVisible = await windowManager.isVisible();
-
-      final menu = Menu(
-        items: [
-          MenuItem(
-            key: isVisible ? 'hide_window' : 'show_window',
-            label: isVisible
-                ? i18nOr('hide_window', useChineseFallback ? '隐藏窗口' : 'Hide Window')
-                : i18nOr('show_window', useChineseFallback ? '显示窗口' : 'Show Window'),
-          ),
-          MenuItem.separator(),
-          MenuItem(key: 'exit_app', label: i18nOr('exit_app', useChineseFallback ? '退出应用' : 'Exit')),
-        ],
+      DesktopTrayService.update(
+        tooltip: i18nOr('app_name', useChineseFallback ? '纯粹直播' : 'PureLive'),
+        windowLabel: isVisible
+            ? i18nOr('hide_window', useChineseFallback ? '隐藏窗口' : 'Hide Window')
+            : i18nOr('show_window', useChineseFallback ? '显示窗口' : 'Show Window'),
+        exitLabel: i18nOr('exit_app', useChineseFallback ? '退出应用' : 'Exit'),
       );
-
-      await trayManager.setContextMenu(menu);
     } catch (e) {
       debugPrint('${i18n("tray_update_failed")}: $e');
     }
@@ -200,11 +184,11 @@ class DesktopManager {
     await updateTray();
   }
 
-  static Future<void> handleTrayMenuClick(MenuItem menuItem) async {
+  static Future<void> handleTrayMenuClick(String action) async {
     if (!PlatformUtils.isDesktop) return;
 
     try {
-      switch (menuItem.key) {
+      switch (action) {
         case 'show_window':
           await showWindow();
           break;
@@ -250,7 +234,7 @@ class DesktopManager {
     if (!PlatformUtils.isDesktop) return;
 
     try {
-      await _trayMenuCoordinator.show(refresh: updateTray, open: () => trayManager.popUpContextMenu());
+      await _trayMenuCoordinator.show(refresh: updateTray, open: () async => DesktopTrayService.openContextMenu());
     } catch (e) {
       debugPrint('托盘右键点击处理失败: $e');
     }
@@ -604,7 +588,7 @@ class _WindowControlButtonState extends State<WindowControlButton> {
 }
 
 mixin DesktopWindowMixin<T extends StatefulWidget> on State<T>
-    implements WindowListener, TrayListener, WidgetsBindingObserver {
+    implements WindowListener, WidgetsBindingObserver {
   final GlobalKey<NavigatorState> appNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'Pure Live navigator');
   bool _isDialogOpen = false;
   Timer? _windowGeometryTimer;
@@ -694,24 +678,6 @@ mixin DesktopWindowMixin<T extends StatefulWidget> on State<T>
   }
 
   @override
-  void onTrayIconMouseDown() {
-    unawaited(DesktopManager.handleTrayIconClick());
-  }
-
-  @override
-  void onTrayIconRightMouseDown() {
-    unawaited(DesktopManager.handleTrayRightClick());
-  }
-
-  @override
-  void onTrayIconRightMouseUp() {}
-
-  @override
-  void onTrayMenuItemClick(MenuItem menuItem) {
-    unawaited(DesktopManager.handleTrayMenuClick(menuItem));
-  }
-
-  @override
   void onWindowFocus() {}
 
   @override
@@ -769,9 +735,6 @@ mixin DesktopWindowMixin<T extends StatefulWidget> on State<T>
 
   @override
   void onWindowEvent(String eventName) {}
-
-  @override
-  void onTrayIconMouseUp() {}
 
   @override
   void didChangeAccessibilityFeatures() {}
