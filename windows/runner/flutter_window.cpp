@@ -4,9 +4,34 @@
 #include <cmath>
 #include <optional>
 #include <set>
+#include <thread>
 
 #include <flutter/standard_method_codec.h>
 #include "flutter/generated_plugin_registrant.h"
+
+namespace {
+
+constexpr UINT kNativeHttpDoneMessage = WM_APP + 0x3A1;
+
+std::string StringArgument(const flutter::EncodableMap& args, const char* key) {
+  const auto it = args.find(flutter::EncodableValue(key));
+  if (it == args.end()) return std::string();
+  if (const auto* value = std::get_if<std::string>(&it->second)) return *value;
+  return std::string();
+}
+
+int IntArgument(const flutter::EncodableMap& args, const char* key,
+                int fallback) {
+  const auto it = args.find(flutter::EncodableValue(key));
+  if (it == args.end()) return fallback;
+  if (const auto* value = std::get_if<int32_t>(&it->second)) return *value;
+  if (const auto* value = std::get_if<int64_t>(&it->second)) {
+    return static_cast<int>(*value);
+  }
+  return fallback;
+}
+
+}  // namespace
 
 FlutterWindow::FlutterWindow(const flutter::DartProject& project)
     : project_(project) {}
@@ -54,6 +79,15 @@ bool FlutterWindow::OnCreate() {
         result->NotImplemented();
       });
 
+  native_http_channel_ =
+      std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
+          flutter_controller_->engine()->messenger(), "pure_live/native_http",
+          &flutter::StandardMethodCodec::GetInstance());
+  native_http_channel_->SetMethodCallHandler(
+      [this](const auto& call, auto result) {
+        HandleNativeHttpCall(call, std::move(result));
+      });
+
   SetChildContent(flutter_controller_->view()->GetNativeWindow());
 
   flutter_controller_->engine()->SetNextFrameCallback([&]() {
@@ -75,6 +109,8 @@ void FlutterWindow::OnDestroy() {
   // re-entrant message would crash in FlutterWindowsView::GetEngine().
   flutter_controller_destroying_ = true;
   display_mode_channel_.reset();
+  native_http_channel_.reset();
+  native_http_pending_.clear();
   flutter_controller_.reset();
 
   Win32Window::OnDestroy();
@@ -84,6 +120,10 @@ LRESULT
 FlutterWindow::MessageHandler(HWND hwnd, UINT const message,
                               WPARAM const wparam,
                               LPARAM const lparam) noexcept {
+  if (message == kNativeHttpDoneMessage) {
+    DrainNativeHttpCompletions();
+    return 0;
+  }
   if (message == WM_MOVE || message == WM_DISPLAYCHANGE ||
       message == WM_DPICHANGED) {
     NotifyDisplayModeChanged(message == WM_DISPLAYCHANGE);
@@ -239,4 +279,81 @@ void FlutterWindow::RememberDisplayMode(
   last_display_width_ = snapshot.width;
   last_display_height_ = snapshot.height;
   last_display_refresh_rate_ = snapshot.current_refresh_rate;
+}
+
+void FlutterWindow::HandleNativeHttpCall(
+    const flutter::MethodCall<flutter::EncodableValue>& call,
+    std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result) {
+  // Cloudflare rejects dart:io's TLS fingerprint on kick.com (403); the
+  // Windows Schannel stack used by WinHTTP is accepted.
+  if (call.method_name() != "getKickJson") {
+    result->NotImplemented();
+    return;
+  }
+  const auto* args = std::get_if<flutter::EncodableMap>(call.arguments());
+  if (!args) {
+    result->Error("native_http_failed", "Missing arguments");
+    return;
+  }
+  const std::string url = StringArgument(*args, "url");
+  if (!NativeHttpIsAllowedKickUrl(url)) {
+    result->Error("native_http_failed", "Native HTTP host is not allowed");
+    return;
+  }
+  std::vector<std::pair<std::string, std::string>> headers;
+  const auto header_it = args->find(flutter::EncodableValue("headers"));
+  if (header_it != args->end()) {
+    if (const auto* map = std::get_if<flutter::EncodableMap>(&header_it->second)) {
+      for (const auto& [name, value] : *map) {
+        const auto* name_text = std::get_if<std::string>(&name);
+        const auto* value_text = std::get_if<std::string>(&value);
+        if (name_text && value_text) headers.emplace_back(*name_text, *value_text);
+      }
+    }
+  }
+  std::string proxy;
+  const std::string proxy_host = StringArgument(*args, "proxyHost");
+  const int proxy_port = IntArgument(*args, "proxyPort", 0);
+  if (!proxy_host.empty() && proxy_port > 0 && proxy_port <= 65535) {
+    proxy = proxy_host + ":" + std::to_string(proxy_port);
+  }
+  const int timeout_ms =
+      std::clamp(IntArgument(*args, "timeoutMillis", 20000), 1000, 60000);
+
+  const int id = native_http_next_id_++;
+  native_http_pending_[id] = std::move(result);
+  const HWND window = GetHandle();
+  std::shared_ptr<NativeHttpQueue> queue = native_http_queue_;
+  std::thread([=]() {
+    NativeHttpResponse response = NativeHttpGet(url, headers, proxy, timeout_ms);
+    {
+      std::lock_guard<std::mutex> lock(queue->mutex);
+      queue->done.emplace_back(id, std::move(response));
+    }
+    PostMessage(window, kNativeHttpDoneMessage, 0, 0);
+  }).detach();
+}
+
+void FlutterWindow::DrainNativeHttpCompletions() {
+  std::deque<std::pair<int, NativeHttpResponse>> done;
+  {
+    std::lock_guard<std::mutex> lock(native_http_queue_->mutex);
+    done.swap(native_http_queue_->done);
+  }
+  for (auto& [id, response] : done) {
+    auto it = native_http_pending_.find(id);
+    if (it == native_http_pending_.end()) continue;
+    auto result = std::move(it->second);
+    native_http_pending_.erase(it);
+    if (!response.error.empty()) {
+      result->Error("native_http_failed", response.error);
+      continue;
+    }
+    result->Success(flutter::EncodableValue(flutter::EncodableMap{
+        {flutter::EncodableValue("statusCode"),
+         flutter::EncodableValue(response.status)},
+        {flutter::EncodableValue("body"),
+         flutter::EncodableValue(std::move(response.body))},
+    }));
+  }
 }

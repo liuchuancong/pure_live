@@ -18,6 +18,10 @@ class AndroidNativeHttp {
 
   static bool get isSupported => Platform.isAndroid;
 
+  /// kick.com is served natively on Android (platform TLS) and Windows
+  /// (WinHTTP/Schannel); both register the same `pure_live/native_http` channel.
+  static bool get supportsKick => Platform.isAndroid || Platform.isWindows;
+
   static Future<dynamic> postTwitchJson({
     required String url,
     required Map<String, String> headers,

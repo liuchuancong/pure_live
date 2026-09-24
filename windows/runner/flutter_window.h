@@ -6,10 +6,14 @@
 #include <flutter/flutter_view_controller.h>
 #include <flutter/method_channel.h>
 
+#include <deque>
+#include <map>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <vector>
 
+#include "native_http.h"
 #include "win32_window.h"
 
 // A window that does nothing but host a Flutter view.
@@ -41,6 +45,17 @@ class FlutterWindow : public Win32Window {
       const DisplayModeSnapshot& snapshot) const;
   void RememberDisplayMode(const DisplayModeSnapshot& snapshot);
   void NotifyDisplayModeChanged(bool force = false);
+  void HandleNativeHttpCall(
+      const flutter::MethodCall<flutter::EncodableValue>& call,
+      std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result);
+  void DrainNativeHttpCompletions();
+
+  // Completed WinHTTP requests, handed from worker threads to the platform
+  // thread. Shared so a worker never touches a destroyed window.
+  struct NativeHttpQueue {
+    std::mutex mutex;
+    std::deque<std::pair<int, NativeHttpResponse>> done;
+  };
 
   // The project to run.
   flutter::DartProject project_;
@@ -52,6 +67,13 @@ class FlutterWindow : public Win32Window {
   bool flutter_controller_destroying_ = false;
   std::unique_ptr<flutter::MethodChannel<flutter::EncodableValue>>
       display_mode_channel_;
+  std::unique_ptr<flutter::MethodChannel<flutter::EncodableValue>>
+      native_http_channel_;
+  std::shared_ptr<NativeHttpQueue> native_http_queue_ =
+      std::make_shared<NativeHttpQueue>();
+  std::map<int, std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>>>
+      native_http_pending_;
+  int native_http_next_id_ = 1;
   std::wstring last_display_device_;
   int last_display_width_ = 0;
   int last_display_height_ = 0;
