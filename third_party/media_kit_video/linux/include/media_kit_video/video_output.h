@@ -12,9 +12,7 @@
 #include <flutter_linux/flutter_linux.h>
 #include <epoxy/egl.h>
 
-#include "mpv/client.h"
-#include "mpv/render.h"
-#include "mpv/render_gl.h"
+#include "media_kit_mpv.h"
 #include "gl_render_thread.h"
 
 typedef struct _VideoOutputConfiguration {

@@ -12,8 +12,8 @@ topics:
   - cross-platform
 
 environment:
-  sdk: ">=2.17.0 <4.0.0"
-  flutter: ">=3.7.0"
+  sdk: ">=3.10.0 <4.0.0"
+  flutter: ">=3.38.0"
 
 dependencies:
   flutter:
@@ -22,7 +22,7 @@ dependencies:
   media_kit:
     git:
       url: https://github.com/Predidit/media-kit.git
-      ref: 994465d9bfca3f39d0b41199d16e7fd93fe97881
+      ref: d13fc22ba1b19b45de3090c2d1b0f8a541b585a0
       path: ./media_kit
 
   synchronized: ^3.1.0

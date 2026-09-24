@@ -49,8 +49,8 @@ concurrency:
   group: manual-build-${{ github.ref }}
   cancel-in-progress: false
 env:
-  FLUTTER_VERSION: 3.47.0
-  FLUTTER_LINUX_ARCHIVE: stable/linux/flutter_linux_3.47.0-stable.tar.xz
+  FLUTTER_VERSION: 3.47.5
+  FLUTTER_LINUX_ARCHIVE: stable/linux/flutter_linux_3.47.5-stable.tar.xz
   FLUTTER_LINUX_SHA256: 26cd99d3d94b1367e6b50535a18aeef0282c10a535bbe3ec493534dcdab75296
 jobs:
   quality:

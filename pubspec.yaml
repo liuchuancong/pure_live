@@ -64,15 +64,10 @@ dependencies:
   media_kit:
     git:
       url: https://github.com/Predidit/media-kit.git
-      ref: 994465d9bfca3f39d0b41199d16e7fd93fe97881
+      ref: d13fc22ba1b19b45de3090c2d1b0f8a541b585a0
       path: ./media_kit
   media_kit_video:
-    path: ./third_party/media_kit_video # Local patch gives Android Surface lifecycle and audio‑only track selection
-  media_kit_libs_video:
-    git:
-      url: https://github.com/Predidit/media-kit.git
-      ref: 994465d9bfca3f39d0b41199d16e7fd93fe97881
-      path: ./libs/universal/media_kit_libs_video
+    path: ./third_party/media_kit_video # Local Android Surface and Windows presentation patches
 
   better_player_plus:
     path: plugins/built_in_kotlin/better_player_plus # Local AGP 9 Built‑in Kotlin patch
@@ -204,6 +199,7 @@ dependency_overrides:
   share_handler_android:
     path: plugins/built_in_kotlin/share_handler_android # share_handler Android本地兼容补丁
   hooks: ^2.2.0 # Native Assets 构建 hooks 兼容
+  code_assets: ^2.1.0 # media_kit Native Assets 2 and FFmpeg hook compatibility
   xml: ^7.0.1 # webdav_client xml7兼容
   wakelock_plus: ^1.4.0 # media_kit声明版本覆盖
   screen_retriever:
@@ -211,31 +207,6 @@ dependency_overrides:
       url: https://github.com/liuchuancong/screen_retriever.git
       path: ./packages/screen_retriever
       ref: b246b3963738d6cc159c921764c194c73dbdf2ad
-  media_kit_libs_linux:
-    git:
-      url: https://github.com/Predidit/media-kit.git
-      ref: 994465d9bfca3f39d0b41199d16e7fd93fe97881
-      path: ./libs/linux/media_kit_libs_linux
-  media_kit_libs_ios_video:
-    git:
-      url: https://github.com/Predidit/media-kit.git
-      ref: 994465d9bfca3f39d0b41199d16e7fd93fe97881
-      path: ./libs/ios/media_kit_libs_ios_video
-  media_kit_libs_android_video:
-    git:
-      url: https://github.com/Predidit/media-kit.git
-      ref: 994465d9bfca3f39d0b41199d16e7fd93fe97881
-      path: ./libs/android/media_kit_libs_android_video
-  media_kit_libs_windows_video:
-    git:
-      url: https://github.com/Predidit/media-kit.git
-      ref: 994465d9bfca3f39d0b41199d16e7fd93fe97881
-      path: ./libs/windows/media_kit_libs_windows_video
-  media_kit_libs_macos_video:
-    git:
-      url: https://github.com/Predidit/media-kit.git
-      ref: 994465d9bfca3f39d0b41199d16e7fd93fe97881
-      path: ./libs/macos/media_kit_libs_macos_video
 
 # 开发依赖
 dev_dependencies:

@@ -9,11 +9,11 @@
 #ifndef VIDEO_OUTPUT_H_
 #define VIDEO_OUTPUT_H_
 
+#include <atomic>
 #include <optional>
 
-#include <client.h>
-#include <render.h>
-#include <render_dxgi.h>
+#include "media_kit_mpv.h"
+#include "mpv/render_dxgi.h"
 
 #include <future>
 #include <memory>

@@ -20,15 +20,25 @@ public class TextureHW: NSObject, FlutterTexture, ResizableTextureProtocol {
     skipCheckArgs: true
   )
 
-  init(
+  init?(
     handle: OpaquePointer,
     updateCallback: @escaping UpdateCallback
   ) {
+    guard let pixelFormat = OpenGLHelpers.createPixelFormat() else { return nil }
+    guard let context = OpenGLHelpers.createContext(pixelFormat) else {
+      OpenGLHelpers.deletePixelFormat(pixelFormat)
+      return nil
+    }
+    guard let textureCache = OpenGLHelpers.createTextureCache(context, pixelFormat) else {
+      OpenGLHelpers.deleteContext(context)
+      OpenGLHelpers.deletePixelFormat(pixelFormat)
+      return nil
+    }
     self.handle = handle
     self.updateCallback = updateCallback
-    self.pixelFormat = OpenGLHelpers.createPixelFormat()
-    self.context = OpenGLHelpers.createContext(pixelFormat)
-    self.textureCache = OpenGLHelpers.createTextureCache(context, pixelFormat)
+    self.pixelFormat = pixelFormat
+    self.context = context
+    self.textureCache = textureCache
 
     super.init()
 
@@ -55,6 +65,10 @@ public class TextureHW: NSObject, FlutterTexture, ResizableTextureProtocol {
     }
 
     return Unmanaged.passRetained(textureContext!.pixelBuffer)
+  }
+
+  public func dispose() {
+    disposeMPV()
   }
 
   private func initMPV() {
@@ -90,10 +104,10 @@ public class TextureHW: NSObject, FlutterTexture, ResizableTextureProtocol {
     }
 
     MPVHelpers.checkError(
-      mpv_render_context_create(&renderContext, handle, &params)
+      media_kit_mpv_render_context_create(&renderContext, handle, &params)
     )
 
-    mpv_render_context_set_update_callback(
+    media_kit_mpv_render_context_set_update_callback(
       renderContext,
       { (ctx) in
         let that = unsafeBitCast(ctx, to: TextureHW.self)
@@ -106,14 +120,16 @@ public class TextureHW: NSObject, FlutterTexture, ResizableTextureProtocol {
   }
 
   private func disposeMPV() {
+    guard let renderContext = renderContext else { return }
     CGLSetCurrentContext(context)
     defer {
       OpenGLHelpers.checkError("disposeMPV")
       CGLSetCurrentContext(nil)
     }
 
-    mpv_render_context_set_update_callback(renderContext, nil, nil)
-    mpv_render_context_free(renderContext)
+    media_kit_mpv_render_context_set_update_callback(renderContext, nil, nil)
+    media_kit_mpv_render_context_free(renderContext)
+    self.renderContext = nil
   }
 
   public func resize(_ size: CGSize) {
@@ -155,6 +171,7 @@ public class TextureHW: NSObject, FlutterTexture, ResizableTextureProtocol {
   }
 
   public func render(_ size: CGSize) {
+    guard renderContext != nil else { return }
     let textureContext = textureContexts.nextAvailable()
     if textureContext == nil {
       return
@@ -183,7 +200,7 @@ public class TextureHW: NSObject, FlutterTexture, ResizableTextureProtocol {
       mpv_render_param(type: MPV_RENDER_PARAM_OPENGL_FBO, data: fboPtr),
       mpv_render_param(type: MPV_RENDER_PARAM_INVALID, data: nil),
     ]
-    mpv_render_context_render(renderContext, &params)
+    media_kit_mpv_render_context_render(renderContext, &params)
 
     glFlush()
 

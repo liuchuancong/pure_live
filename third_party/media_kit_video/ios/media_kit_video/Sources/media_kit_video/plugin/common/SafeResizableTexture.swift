@@ -21,6 +21,12 @@ public class SafeResizableTexture:
     self.child = child
   }
 
+  public func dispose() {
+    locked {
+      child.dispose()
+    }
+  }
+
   public func resize(_ size: CGSize) {
     return locked {
       return child.resize(size)

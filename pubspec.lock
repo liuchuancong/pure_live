@@ -361,13 +361,13 @@ packages:
     source: hosted
     version: "0.3.0"
   code_assets:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
       name: code_assets
-      sha256: bf394f466ba9205f1812a0433b392d6af280f155f56651eda7c18cc32ed493b8
+      sha256: "828110d598123b5ea96c00c9f3c72105bf79f8ee36c20a39b26209ade421ec57"
       url: "https://pub.dev"
     source: hosted
-    version: "1.2.1"
+    version: "2.1.0"
   collection:
     dependency: transitive
     description:
@@ -1353,74 +1353,11 @@ packages:
     dependency: "direct main"
     description:
       path: media_kit
-      ref: "994465d9bfca3f39d0b41199d16e7fd93fe97881"
-      resolved-ref: "994465d9bfca3f39d0b41199d16e7fd93fe97881"
+      ref: d13fc22ba1b19b45de3090c2d1b0f8a541b585a0
+      resolved-ref: d13fc22ba1b19b45de3090c2d1b0f8a541b585a0
       url: "https://github.com/Predidit/media-kit.git"
     source: git
     version: "1.1.11"
-  media_kit_libs_android_video:
-    dependency: "direct overridden"
-    description:
-      path: "libs/android/media_kit_libs_android_video"
-      ref: "994465d9bfca3f39d0b41199d16e7fd93fe97881"
-      resolved-ref: "994465d9bfca3f39d0b41199d16e7fd93fe97881"
-      url: "https://github.com/Predidit/media-kit.git"
-    source: git
-    version: "1.3.6"
-  media_kit_libs_ios_video:
-    dependency: "direct overridden"
-    description:
-      path: "libs/ios/media_kit_libs_ios_video"
-      ref: "994465d9bfca3f39d0b41199d16e7fd93fe97881"
-      resolved-ref: "994465d9bfca3f39d0b41199d16e7fd93fe97881"
-      url: "https://github.com/Predidit/media-kit.git"
-    source: git
-    version: "1.1.4"
-  media_kit_libs_linux:
-    dependency: "direct overridden"
-    description:
-      path: "libs/linux/media_kit_libs_linux"
-      ref: "994465d9bfca3f39d0b41199d16e7fd93fe97881"
-      resolved-ref: "994465d9bfca3f39d0b41199d16e7fd93fe97881"
-      url: "https://github.com/Predidit/media-kit.git"
-    source: git
-    version: "1.1.3"
-  media_kit_libs_macos_video:
-    dependency: "direct overridden"
-    description:
-      path: "libs/macos/media_kit_libs_macos_video"
-      ref: "994465d9bfca3f39d0b41199d16e7fd93fe97881"
-      resolved-ref: "994465d9bfca3f39d0b41199d16e7fd93fe97881"
-      url: "https://github.com/Predidit/media-kit.git"
-    source: git
-    version: "1.1.4"
-  media_kit_libs_ohos:
-    dependency: transitive
-    description:
-      path: "libs/ohos/media_kit_libs_ohos"
-      ref: "994465d9bfca3f39d0b41199d16e7fd93fe97881"
-      resolved-ref: "994465d9bfca3f39d0b41199d16e7fd93fe97881"
-      url: "https://github.com/Predidit/media-kit.git"
-    source: git
-    version: "1.0.0"
-  media_kit_libs_video:
-    dependency: "direct main"
-    description:
-      path: "libs/universal/media_kit_libs_video"
-      ref: "994465d9bfca3f39d0b41199d16e7fd93fe97881"
-      resolved-ref: "994465d9bfca3f39d0b41199d16e7fd93fe97881"
-      url: "https://github.com/Predidit/media-kit.git"
-    source: git
-    version: "1.0.5"
-  media_kit_libs_windows_video:
-    dependency: "direct overridden"
-    description:
-      path: "libs/windows/media_kit_libs_windows_video"
-      ref: "994465d9bfca3f39d0b41199d16e7fd93fe97881"
-      resolved-ref: "994465d9bfca3f39d0b41199d16e7fd93fe97881"
-      url: "https://github.com/Predidit/media-kit.git"
-    source: git
-    version: "1.0.10"
   media_kit_video:
     dependency: "direct main"
     description:
@@ -1471,10 +1408,10 @@ packages:
     dependency: transitive
     description:
       name: native_toolchain_c
-      sha256: a1c26117c48cebe5677b0cf0e33a980a79a7c5577effc86f52e5a0d309cdcb60
+      sha256: "90eaad8059ebc2004a63810a4696ea9acdb02473e47ed3b6b3bafb100ac77e31"
       url: "https://pub.dev"
     source: hosted
-    version: "0.19.3"
+    version: "0.19.5"
   nativeapi:
     dependency: transitive
     description:
@@ -1495,10 +1432,10 @@ packages:
     dependency: transitive
     description:
       name: objective_c
-      sha256: b7fb95a6d9a4f009edd63dc5ac69f07420b23a16161c6dd8660290b59c602e8e
+      sha256: ad56fd53a78ff6b1472fa59ff2a4e8b8ccabafc586fc263a1dfad0b99b5553e3
       url: "https://pub.dev"
     source: hosted
-    version: "9.5.0"
+    version: "9.6.0"
   octo_image:
     dependency: transitive
     description:
@@ -1747,6 +1684,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.2.0"
+  process:
+    dependency: transitive
+    description:
+      name: process
+      sha256: "4242ba3508d37e01808bdf71ad1d5bb93a8d671bf2e7450e6b1b353fb0808891"
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.0.6"
   protobuf:
     dependency: "direct main"
     description:

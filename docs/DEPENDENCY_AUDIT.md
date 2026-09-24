@@ -7,9 +7,9 @@
 - 对照 Flutter 官方 GitHub 稳定标签，将独立工具链从 3.47.0 升至 **3.47.5 / Dart 3.13.4**；旧 SDK 保留以便回滚。
 - `flutter pub outdated --json` 显示的 **20 个落后直接/开发依赖全部升级**，锁文件重新解析后共有 49 个包变更。托盘库 0.7.0 不再沿用已弃用的旧接口，改为 `TrayIcon`、`Menu` 与原生事件；菜单对象在应用生命周期内复用。
 - 升至 Android Gradle Plugin **9.3.3**（9.3 稳定补丁）和 Gradle **9.7.1**；wrapper 固定官方发布的 ZIP SHA-256。Google Services 4.5.0 保持当前版本；两个尚用 setup-python v6.1.0 的工作流统一到仓库已有的 v7.0.0 固定提交。
-- 再次运行 `flutter pub outdated --json`：直接/开发依赖 **0 项落后**；13 项较新版本属于 Flutter SDK 或上游包约束锁定的传递依赖，`resolvable` 与当前锁版本相同，不添加全局 override。
-- `Predidit/media-kit` 的 HEAD `d13fc22b` 比当前 `994465d9` 多 5 次提交，但新树移除了应用依赖的 `libs/android/media_kit_libs_android_video` 等包路径，且改写视频实现。此项需要一起迁移本地 Surface/音轨补丁与各平台 native libs，单纯改 Git ref 会破坏依赖解析；完成迁移和回归前保留已核验修订。网页内核指定功能分支与 `screen_retriever` 的远端 HEAD 均未变化。
-- 依赖升级阶段只做解析、静态分析、定向测试与 Gradle 配置检查；新 APK / 桌面版本构建在依赖和本地补丁收敛后执行。
+- 再次运行 `flutter pub outdated --json`：直接/开发依赖 **0 项落后**；播放器迁移后仍有 10 项较新版本受 Flutter SDK 或上游包约束锁定。
+- `Predidit/media-kit` 已从 `994465d9` 升至 HEAD `d13fc22b`。新版将 libmpv 改为 SHA-256 校验的 Native Assets，旧 `media_kit_libs_*` 插件及依赖覆盖已移除；`media_kit_video` 以三方合并移植本地 Android Surface/音轨和 Windows 帧进度补丁。`code_assets 2.1.0` 是新版媒体钩子的要求；先核验 FFmpeg 钩子 API，再升级 `objective_c` 至 9.6.0，定向测试已通过。网页内核指定功能分支与 `screen_retriever` 的远端 HEAD 均未变化。
+- 新 APK / 桌面版本在完整质量门禁、Native Assets 构建和平台回归后产出；此处的静态分析及定向测试不代替发布验收。
 
 版本来源：[Flutter tags](https://github.com/flutter/flutter/tags)、[pub.dev outdated](https://dart.dev/tools/pub/cmd/pub-outdated)、[AGP 9.3 发布说明](https://developer.android.com/build/releases/agp-9-3-0-release-notes)、[Gradle 9.7.1 发布说明](https://docs.gradle.org/9.7.1/release-notes.html)、[tray_manager 变更记录](https://pub.dev/packages/tray_manager/changelog)、[media-kit fork 对比](https://github.com/Predidit/media-kit/compare/994465d9bfca3f39d0b41199d16e7fd93fe97881...d13fc22ba1b19b45de3090c2d1b0f8a541b585a0)。
 
@@ -24,9 +24,9 @@ Android 已启用 AGP 9 Built-in Kotlin。主应用、`flv_lzc` 以及六个仍�
 
 AGP 9.3.3 是 9.3 稳定补丁；Gradle 9.7.1 是本轮检查时的稳定版。两者均通过版本和解析检查后再进入应用构建门禁。Google Services 4.5.0 与 Firebase 当前官方设置文档一致。
 
-`flutter pub outdated` 已于 2026-09-24 在 Flutter 3.47.5 上重新复核并完成全部可解析升级。直接依赖当前包括 `cached_network_image 4.0.2`、`dynamic_color 2.1.0`、`ffmpeg_kit_extended_flutter 0.6.2`、`flex_color_picker 4.0.0`、`loading_indicator 4.0.2`、`permission_handler 13.0.2`、`file_picker 13.1.0` 与 Syncfusion sliders `34.2.9`。`dynamic_color` 2.x 和图像/颜色组件采用独立 `material_ui`；应用在单一边界把其完整 Material 3 `ColorScheme` 转换为 Flutter 框架主题，并以字段完整性及组件渲染测试防止主题角色丢失。剩余提示均为 Flutter SDK、生成器或上游约束锁定的传递依赖（例如 `code_assets`、`qr`），不使用 override 强行拆开其兼容组合。
+`flutter pub outdated` 已于 2026-09-24 在 Flutter 3.47.5 上重新复核并完成全部可解析升级。直接依赖当前包括 `cached_network_image 4.0.2`、`dynamic_color 2.1.0`、`ffmpeg_kit_extended_flutter 0.6.2`、`flex_color_picker 4.0.0`、`loading_indicator 4.0.2`、`permission_handler 13.0.2`、`file_picker 13.1.0` 与 Syncfusion sliders `34.2.9`。`dynamic_color` 2.x 和图像/颜色组件采用独立 `material_ui`；应用在单一边界把其完整 Material 3 `ColorScheme` 转换为 Flutter 框架主题，并以字段完整性及组件渲染测试防止主题角色丢失。剩余提示均为 Flutter SDK、生成器或上游约束锁定的传递依赖（例如 `qr`）；`code_assets` 的覆盖仅用于让已单独核验的 FFmpeg 钩子与新版媒体钩子共享 2.1.0 API。
 
-播放器依赖在 v2.6.0 再次单独核验：`better_player_plus` 为 1.3.5 的 Built-in Kotlin 本地快照；项目使用的 `Predidit/media-kit` 修订分支仍固定到 `994465d9bfca3f39d0b41199d16e7fd93fe97881`，`media_kit_video` 使用包含 Surface/音频模式生命周期修复的仓库副本。`pub outdated` 中其余较新版本均为当前 Flutter SDK 或上游依赖约束锁定的传递包，未用强制 override 破坏播放器组合兼容性。
+播放器依赖在本轮再次单独核验：`better_player_plus` 为 1.3.5 的 Built-in Kotlin 本地快照；项目使用的 `Predidit/media-kit` 固定到 `d13fc22ba1b19b45de3090c2d1b0f8a541b585a0`，`media_kit_video` 使用包含 Surface/音频模式和 Windows 画面进度修复的仓库副本。移除旧平台库插件后，由 `media_kit` 本身的 Native Assets 钩子选择并验证各平台 libmpv。
 
 ## 可复现依赖
 
@@ -39,9 +39,9 @@ AGP 9.3.3 是 9.3 稳定补丁；Gradle 9.7.1 是本轮检查时的稳定版。�
 - 2026-08-24 重新执行远端引用核对：`Predidit/media-kit@994465d9`、`liuchuancong/screen_retriever@b246b396` 与 `liuchuancong/flv_lzc@030d611` 均仍是各自远端 HEAD；网页内核目标分支仍解析到 `3e6c4c4a`。
 - 上游 `7410eb9f` 已把斗鱼与抖音签名迁移为纯 Dart，并从锁文件和桌面插件注册中移除 JS 运行时。维护分支进一步修复斗鱼过期时间单位/并发缓存和抖音参数副作用，平台签名单元回归与斗鱼公开描述符探测共同验证。
 - `volume_controller 3.6.1` 在发布日的官方归档哈希发生变化；锁文件已通过官方 `pub.dev` API 与 `flutter pub get` 重建为当前归档 SHA-256 `9e776874…b446f`，随后 `--enforce-lockfile` 复核通过。
-- Windows 单实例插件同步上游恢复为 hosted `windows_single_instance 1.2.0`，删除仓库内旧副本；`file_picker` 使用稳定版 12.0.0 API。
+- Windows 单实例插件同步上游恢复为 hosted `windows_single_instance 1.2.0`，删除仓库内旧副本；`file_picker` 使用稳定版 13.1.0 API。
 - `flv_lzc` 固定自上游 `030d611` 并存放在 `plugins/flv_lzc`；仅移除 Android 注册阶段的临时 `SurfaceTexture` 探测，规避 Flutter 3.47 平台纹理注册断言，保留上游许可证和来源说明。
-- Android 本地构建会预取并校验 MediaKit arm64 库与 FFmpeg Kit builders v0.11.1 AAR；质量门禁和 Windows 构建会单独预取同版本 Windows ZIP。0.6.2 对应的 Android AAR SHA-256 为 `b214c2aa…134fc`，Windows ZIP 为 `ac4f7c68…7cb47`；两者预先写入 Native Assets 共享缓存，避免 Windows Dart 下载器在 GitHub Release 重定向处长时间等待。
+- Android 本地构建按当前 `media_kit/hook/native_bundles.json` 预取并校验四个 ABI 的 Native Assets，同时准备 FFmpeg Kit builders v0.11.1 AAR；质量门禁和 Windows 构建预取 media_kit 与 FFmpeg 的 Windows 档案。FFmpeg 0.6.2 对应的 Android AAR SHA-256 为 `b214c2aa…134fc`，Windows ZIP 为 `ac4f7c68…7cb47`；所有文件先经过哈希校验，再写入对应 Native Assets 共享缓存。
 - FFmpeg 9 默认校验 TLS 对端证书，而 Android/Linux OpenSSL 构建时写入的 `OPENSSLDIR` 不存在于用户设备。应用因此保留证书校验，显式使用 curl 于 2026-08-13 从 Mozilla NSS 导出的 `assets/certificates/mozilla-ca-bundle.pem`，固定 SHA-256 `f66dff1b…80bc9`。启动时复制到应用数据目录并再次校验，仅对 HTTPS 输入注入 `-ca_file`；不以关闭 TLS 校验掩盖信任库缺失。
 - 删除已停止作用的 `sqlite3_flutter_libs`；项目使用 `sqlite3` 3.x 的 Native Assets。
 - 升级 `app_links`、`connectivity_plus`、`pro_mpack` 与 Syncfusion sliders，并通过静态分析和完整测试。

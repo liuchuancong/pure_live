@@ -11,7 +11,9 @@ param(
     [switch] $SkipInstaller,
     [switch] $UseOfficialRepositories,
     [switch] $RequireReleaseSigning,
-    [switch] $DedicatedBuild
+    [switch] $DedicatedBuild,
+    [ValidatePattern('^[a-z0-9][a-z0-9-]{0,39}$')]
+    [string] $CandidateLabel = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -49,7 +51,8 @@ if ($Target -eq 'WindowsX64') {
     $fullVersion = "$displayVersion+$buildNumber"
 }
 $artifactVersion = $fullVersion.Replace('+', '-')
-$output = Join-Path $repoRoot "local-artifacts\$artifactVersion"
+$artifactDirectory = if ($CandidateLabel) { "$artifactVersion-$CandidateLabel" } else { $artifactVersion }
+$output = Join-Path $repoRoot "local-artifacts\$artifactDirectory"
 $recordDirectory = Join-Path $repoRoot 'local-artifacts\build-records'
 New-Item -ItemType Directory -Force -Path $output, $recordDirectory | Out-Null
 
@@ -222,6 +225,7 @@ try {
             -Arguments @('pub', 'get', '--enforce-lockfile') `
             -LogPath $commandLog
         Assert-PureLiveCommandSucceeded 'Windows locked dependency resolution' -ExitCode $pubGetExitCode
+        & (Join-Path $PSScriptRoot 'prefetch_android_native.ps1') -SkipAndroidMedia
         & (Join-Path $PSScriptRoot 'prefetch_windows_native.ps1')
 
         $windowsArgs = @(
@@ -428,7 +432,8 @@ try {
         task = "build-$($Target.ToLowerInvariant())-$configurationLower"
         command = ".\tool\build_local_release.ps1 -Target $Target -Configuration $Configuration" +
             $(if ($DedicatedBuild) { ' -DedicatedBuild' } else { '' }) +
-            $(if ($FullRegression) { ' -FullRegression' } else { ' -SkipQuality' })
+            $(if ($FullRegression) { ' -FullRegression' } else { ' -SkipQuality' }) +
+            $(if ($CandidateLabel) { " -CandidateLabel $CandidateLabel" } else { '' })
         source_commit = $sourceCommit
         started_at_utc = $startedAt.ToString('o')
         duration_seconds = [Math]::Round($stopwatch.Elapsed.TotalSeconds, 3)
@@ -436,6 +441,7 @@ try {
         failure = $failureMessage
         target = $Target
         configuration = $Configuration
+        candidate_label = if ($CandidateLabel) { $CandidateLabel } else { $null }
         gradle_workers = if ($Target -eq 'AndroidArm64') { $gradleWorkers } else { $null }
         quality = if ($FullRegression) { 'full-in-this-invocation' } else { 'external-focused-or-existing-evidence' }
         cache = $cacheSummary

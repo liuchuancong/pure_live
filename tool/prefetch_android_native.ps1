@@ -1,8 +1,7 @@
 [CmdletBinding()]
 param(
-    # local_ci only needs the Windows Native Assets archive used by the
-    # ffmpeg_kit build hook. Release builds leave this switch unset and also
-    # prefetch the Android media-kit/FFmpeg artifacts.
+    # local_ci needs Windows Native Assets archives. Release builds leave
+    # this switch unset and also prefetch the Android media-kit/FFmpeg assets.
     [switch] $SkipAndroidMedia
 )
 
@@ -157,21 +156,39 @@ $ffmpegBuilderVersion = $ffmpegProfile.BuilderVersion
 $ffmpegHookCacheRoot = Join-Path $repoRoot '.dart_tool\hooks_runner\shared\ffmpeg_kit_extended_flutter\build\ffmpeg_kit_cache'
 Write-Host "FFmpeg native profile: package $($ffmpegProfile.PackageVersion), builder $ffmpegBuilderVersion"
 
+function Get-MediaKitBundleCatalog {
+    $config = Get-Content -LiteralPath (Join-Path $repoRoot '.dart_tool\package_config.json') -Raw | ConvertFrom-Json
+    $package = @($config.packages | Where-Object { $_.name -eq 'media_kit' })
+    if ($package.Count -ne 1) { throw 'Expected exactly one resolved media_kit package' }
+    $packageRoot = ([Uri]$package[0].rootUri).LocalPath
+    $catalogPath = Join-Path $packageRoot 'hook\native_bundles.json'
+    $catalog = Get-Content -LiteralPath $catalogPath -Raw | ConvertFrom-Json
+    if ($catalog.schema -ne 1) { throw "Unsupported media_kit bundle catalog: $catalogPath" }
+    return $catalog.bundles
+}
+
+$mediaKitBundles = Get-MediaKitBundleCatalog
+$mediaKitHookCacheRoot = Join-Path $repoRoot '.dart_tool\hooks_runner\shared\media_kit\build\prebuilt'
+$mediaTargets = @('windows_x64')
 if (-not $SkipAndroidMedia) {
-    $mediaKitAssets = @(
-        @{ Name = 'default-arm64-v8a.jar'; Sha256 = '13e882d96b8cd235425172b022e4a94dfcae5f07985dff85c8d648e7369fa2d1' },
-        @{ Name = 'default-armeabi-v7a.jar'; Sha256 = '7f522ed762ea6dfeba93a02e3837c5538790030b9965a03ed3a00276adc7b32c' },
-        @{ Name = 'default-x86_64.jar'; Sha256 = 'aed0fffc99e5e554d48e1af90bc700133c25fbc02615bf1bf17db9299365c481' },
-        @{ Name = 'default-x86.jar'; Sha256 = '9269643264a1c9689116467f313d5e1b23ea56a68d338ab940c5e8fcf07061c6' }
-    )
-    foreach ($asset in $mediaKitAssets) {
-        Install-VerifiedAsset `
-            -Name $asset.Name `
-            -Destination (Join-Path $repoRoot "build\media_kit_libs_android_video\v1.2.7\$($asset.Name)") `
-            -CachePath (Join-Path $persistentRoot "media-kit\v1.2.7\$($asset.Name)") `
-            -Url "https://github.com/Predidit/libmpv-android-video-build/releases/download/v1.2.7/$($asset.Name)" `
-            -Sha256 $asset.Sha256
+    $mediaTargets += @('android_arm64', 'android_arm', 'android_x64', 'android_ia32')
+}
+foreach ($target in $mediaTargets) {
+    $asset = $mediaKitBundles.$target
+    if ($null -eq $asset) { throw "Missing media_kit native bundle: $target" }
+    if ($asset.url -notmatch '^https://' -or $asset.sha256 -notmatch '^[a-f0-9]{64}$') {
+        throw "Invalid media_kit native bundle: $target"
     }
+    $archiveName = "archive.$($asset.format)"
+    Install-VerifiedAsset `
+        -Name "media_kit $target" `
+        -Destination (Join-Path $mediaKitHookCacheRoot "$($asset.sha256)\$archiveName") `
+        -CachePath (Join-Path $persistentRoot "media-kit\native-assets\$($asset.sha256)\$archiveName") `
+        -Url $asset.url `
+        -Sha256 $asset.sha256
+}
+
+if (-not $SkipAndroidMedia) {
 
     $ffmpegAndroidName = 'bundle-base-shared-lgpl-release.aar'
     Install-VerifiedAsset `
