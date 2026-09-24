@@ -1,10 +1,10 @@
 import 'dart:io';
 
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/common/services/settings/cache_controller.dart';
+import 'package:pure_live/plugins/file_utils.dart';
 import 'package:pure_live/common/widgets/download_apk_dialog.dart';
 import 'package:pure_live/common/widgets/download_directory_dialog.dart';
-import 'package:pure_live/plugins/file_utils.dart';
+import 'package:pure_live/common/services/settings/cache_controller.dart';
 
 Uri? updateDownloadUri(String rawUrl) {
   final uri = FileUtils.parseHttpUrl(rawUrl);
@@ -24,16 +24,26 @@ Future<bool> requestStorageInstallPermission() async {
 }
 
 final List<String> mirrors = [
-  'https://gh-proxy.org/',
-  'https://gh.h233.eu.org/',
-  'https://git.yylx.win/',
-  'https://ghproxy.cc/',
+  // 🟢 asset=206: resumable, best for large files
   'https://cdn.gh-proxy.org/',
-  'https://wget.la/',
-  'https://github.ednovas.xyz/',
-  'https://down.npee.cn/?',
+  'https://edgeone.gh-proxy.org/',
+  'https://hk.gh-proxy.org/',
+  'https://gh.noki.eu.org/',
+  'https://gh-proxy.com/',
   'https://slink.ltd/',
-  'https://gitproxy.click/',
+  'https://gh.catmak.name/',
+  'https://proxy.gitwarp.top/',
+  'https://github.ednovas.xyz/',
+  'https://ghproxy.monkeyray.net/',
+  'https://fastgit.cc/',
+  'https://ghfile.geekertao.top/',
+
+  // 🟠 asset=200: works, but no resume
+  'https://gh-proxy.org/',
+  'https://ghproxy.net/',
+  'https://wget.la/',
+  'https://git.yylx.win/',
+  'https://g.blfrp.cn/',
 ];
 
 Future<void>? _activeDownloadDialog;
