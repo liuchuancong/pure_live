@@ -11,6 +11,7 @@ import 'dart:math' as math;
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
+import 'package:pure_live/core/danmaku/empty_danmaku.dart';
 import 'package:pure_live/core/interface/live_site.dart';
 import 'package:pure_live/core/site/huya/huya_transport_policy.dart';
 import 'package:pure_live/plugins/file_utils.dart';
@@ -27,6 +28,7 @@ import 'package:pure_live/recorder/services/cache_service.dart';
 import 'package:pure_live/recorder/services/ffmpeg_header_factory.dart';
 import 'package:pure_live/recorder/services/recorder_continuation_policy.dart';
 import 'package:pure_live/recorder/services/recorder_background_service.dart';
+import 'package:pure_live/recorder/services/recording_danmaku_service.dart';
 import 'package:pure_live/recorder/services/recording_output_metrics.dart';
 import 'package:pure_live/recorder/services/stream_resolver_service.dart';
 import 'package:pure_live/recorder/services/video_processor_service.dart';
@@ -124,7 +126,43 @@ class RecorderController extends GetxService {
     });
     _ffmpegSub = ffmpeg.stream.listen((event) => unawaited(_handleFFmpegEvent(event)));
     _pollingWorker = ever<bool>(settings.enablePolling, _onPollingChanged);
+    _danmakuTasksWorker = ever<List<LiveRecordTask>>(tasks, _danmakuRecorder.sync);
+    _danmakuSettingWorker = ever<bool>(settings.recordDanmaku, (_) => _danmakuRecorder.sync(tasks));
     unawaited(restoreAndAutoPoll());
+  }
+
+  /// Opt-in chat capture beside each attempt's video. It only observes task
+  /// snapshots, so chat failures never reach stream or FFmpeg handling.
+  late final RecordingDanmakuService _danmakuRecorder = RecordingDanmakuService(
+    enabled: () => settings.recordDanmaku.value,
+    connect: _connectRecordingDanmaku,
+  );
+  Worker? _danmakuTasksWorker;
+  Worker? _danmakuSettingWorker;
+
+  Future<RecordingDanmakuConnection?> _connectRecordingDanmaku(
+    LiveRecordTask task,
+    void Function(LiveMessage message) onMessage,
+  ) async {
+    if (!Sites.isSupported(task.platform)) return null;
+    final site = _siteResolver(task.platform);
+    final engine = site.getDanmaku();
+    if (engine is EmptyDanmaku) return null;
+    final room = await site.getRoomDetail(roomId: task.roomId, platform: task.platform);
+    engine.onMessage = onMessage;
+    try {
+      await engine.start(room.danmakuData).timeout(const Duration(seconds: 20));
+    } catch (_) {
+      engine.onMessage = null;
+      await engine.stop().catchError((Object _) {});
+      rethrow;
+    }
+    return RecordingDanmakuConnection(
+      stop: () async {
+        engine.onMessage = null;
+        await engine.stop();
+      },
+    );
   }
 
   Future<void> _handleFFmpegEvent(FFmpegEvent event) async {
@@ -1576,6 +1614,9 @@ class RecorderController extends GetxService {
     _startRequests.clear();
     _pollingWorker?.dispose();
     _pollingWorker = null;
+    _danmakuTasksWorker?.dispose();
+    _danmakuSettingWorker?.dispose();
+    unawaited(_danmakuRecorder.dispose());
     for (final request in _pollInFlight.values) {
       request.complete();
     }

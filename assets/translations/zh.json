@@ -694,6 +694,8 @@
     "update_log": "更新日志",
     "use_pinyin_folder": "使用拼音文件夹名",
     "use_pinyin_folder_desc": "开启后使用主播拼音命名录制文件夹，关闭则使用主播原名",
+    "record_danmaku": "同时录制弹幕",
+    "record_danmaku_desc": "在录像旁保存同名 .xml 弹幕文件（B 站格式，可用 DanmakuFactory、PotPlayer 等加载）；需要平台已接入远端弹幕",
     "version": "版本",
     "version_history_desc": "历史版本更新记录",
     "version_update": "版本更新",

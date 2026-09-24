@@ -694,6 +694,8 @@
     "update_log": "Update Log",
     "use_pinyin_folder": "Use Pinyin Folder Name",
     "use_pinyin_folder_desc": "Use the streamer's pinyin name for recording folders instead of the original name",
+    "record_danmaku": "Record chat",
+    "record_danmaku_desc": "Save live chat beside each video as a same-name .xml file (Bilibili format for DanmakuFactory, PotPlayer, etc.); needs a platform with remote chat",
     "version": "Version",
     "version_history_desc": "Version update history",
     "version_update": "Version Update",
