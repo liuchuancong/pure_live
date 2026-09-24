@@ -1,41 +1,41 @@
 {
-  "version": "3.2.0",
-  "build_number": 4123,
-  "version_num": 302004123,
-  "version_desc": "- 直播平台从 9 站扩展到 45 站 + IPTV，更多平台支持官方原生搜索、链接回流和只读聊天弹幕。\n- 修复竖屏直播偶尔识别不出来的问题，以及多画面停帧恢复覆盖手动选线、切换房间残留旧播放源等问题。\n- 画中画、备份、关注、WebDAV 与录制设置改为事务化持久化；新增只含关注列表的便携备份与 WebDAV 上传。\n- Flutter 3.47.5、AGP 9.3.3、Gradle 9.7.1、Java 25 构建运行时，依赖全部最新；FFmpeg 9.0.2。",
+  "version": "3.2.1",
+  "build_number": 4124,
+  "version_num": 302014124,
+  "version_desc": "- 新增「同时录制弹幕」：每段录像旁保存同名 B 站格式 .xml 弹幕（默认关闭）。\n- 修复 Kick（Android / Windows）、SHOWROOM、PopkonTV、LiveMe、VK Video Live 的目录或播放问题。\n- 应用内小窗不再挡住菜单和对话框；直播间加载失败时显示重试。",
   "prerelease": false,
-  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.2.0",
+  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.2.1",
   "android_abis": [
     "arm64-v8a"
   ],
   "platforms": {
     "android": {
-      "version": "3.2.0",
-      "build_number": 4123,
-      "version_num": 302004123,
-      "version_desc": "- 45 个直播站点 + IPTV；修复竖屏直播偶尔识别不出来的问题（Android 精确定时器触发）。\n- 画中画、备份、关注和录制设置事务化持久化，新增关注便携备份与 WebDAV 上传。\n- arm64-v8a Release，与 v3.1.8 同一证书签名，可直接覆盖安装。",
+      "version": "3.2.1",
+      "build_number": 4124,
+      "version_num": 302014124,
+      "version_desc": "- 新增「同时录制弹幕」：每段录像旁保存同名 B 站格式 .xml 弹幕（默认关闭）。\n- 修复 Kick（Android / Windows）、SHOWROOM、PopkonTV、LiveMe、VK Video Live 的目录或播放问题。\n- 应用内小窗不再挡住菜单和对话框；直播间加载失败时显示重试。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.2.0",
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.2.1",
       "android_abis": [
         "arm64-v8a"
       ]
     },
     "windows": {
-      "version": "3.2.0",
-      "build_number": 4123,
-      "version_num": 302004123,
-      "version_desc": "- 45 个直播站点 + IPTV；修复 mpv 销毁时序竞态、多画面停帧恢复覆盖手动选线等问题。\n- 画中画窗口切换事务化，大字号下各设置页可缩放滚动。\n- 可选择安装目录的 x64 安装程序和免安装便携 ZIP。",
+      "version": "3.2.1",
+      "build_number": 4124,
+      "version_num": 302014124,
+      "version_desc": "- 新增「同时录制弹幕」：每段录像旁保存同名 B 站格式 .xml 弹幕（默认关闭）。\n- 修复 Kick（Android / Windows）、SHOWROOM、PopkonTV、LiveMe、VK Video Live 的目录或播放问题。\n- 应用内小窗不再挡住菜单和对话框；直播间加载失败时显示重试。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.2.0",
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.2.1",
       "windows_msix_available": false
     },
     "linux": {
-      "version": "3.2.0",
-      "build_number": 4123,
-      "version_num": 302004123,
-      "version_desc": "- 45 个直播站点 + IPTV，FFmpeg 9.0.2。\n- 在 Ubuntu 24.04 环境构建的 x64 便携 tar.gz，社区验证范围。",
+      "version": "3.2.1",
+      "build_number": 4124,
+      "version_num": 302014124,
+      "version_desc": "- 新增「同时录制弹幕」：每段录像旁保存同名 B 站格式 .xml 弹幕（默认关闭）。\n- 修复 Kick（Android / Windows）、SHOWROOM、PopkonTV、LiveMe、VK Video Live 的目录或播放问题。\n- 应用内小窗不再挡住菜单和对话框；直播间加载失败时显示重试。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.2.0"
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.2.1"
     },
     "macos": {
       "version": "3.0.0",

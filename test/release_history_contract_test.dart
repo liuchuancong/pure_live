@@ -68,7 +68,7 @@ void main() {
       final releases = parseReleaseHistoryPayload(raw);
 
       expect(releases, hasLength(raw.length));
-      expect(releases.first.version, '3.2.0');
+      expect(releases.first.version, '3.2.1');
       expect(releases.every((release) => release.version.isNotEmpty), isTrue);
     });
 
