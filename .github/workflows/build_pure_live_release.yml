@@ -51,7 +51,7 @@ concurrency:
 env:
   FLUTTER_VERSION: 3.47.5
   FLUTTER_LINUX_ARCHIVE: stable/linux/flutter_linux_3.47.5-stable.tar.xz
-  FLUTTER_LINUX_SHA256: 26cd99d3d94b1367e6b50535a18aeef0282c10a535bbe3ec493534dcdab75296
+  FLUTTER_LINUX_SHA256: 2132e990f236f8d22e7c6314b29a191a95b10d7cbcfec9b4e2e303d996652cbb
 jobs:
   quality:
     name: Analyze, test and probe
