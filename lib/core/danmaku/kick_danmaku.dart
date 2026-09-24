@@ -121,6 +121,8 @@ class KickDanmaku extends LiveDanmaku {
     await socket?.close();
   }
 
+  static final _emoteCode = RegExp(r'\[emote:\d+:([^\]\s]+)\]');
+
   static KickPusherFrame parseFrame(Object? raw, int chatroomId) {
     const ignored = (subscribed: false, ping: false, error: false, message: null);
     if (raw is! String || raw.length > 128 * 1024) return ignored;
@@ -148,7 +150,10 @@ class KickDanmaku extends LiveDanmaku {
       if (room != null && int.tryParse(room.toString()) != chatroomId) return ignored;
       final type = message['type'];
       if (type != null && type != '' && type != 'message' && type != 'reply') return ignored;
-      final content = (legacy == null ? message['content'] : message['message'])?.toString().trim() ?? '';
+      // Kick sends emotes inline as [emote:<id>:<name>]; show the name.
+      final content = ((legacy == null ? message['content'] : message['message'])?.toString() ?? '')
+          .replaceAllMapped(_emoteCode, (match) => match.group(1)!)
+          .trim();
       final userName = sender['username']?.toString().trim() ?? '';
       if (content.isEmpty || content.length > 16000 || userName.isEmpty || userName.length > 256) return ignored;
       final identity = _object(sender['identity']);

@@ -168,6 +168,23 @@ void main() {
     expect(KickDanmaku.parseFrame('{bad json', 668).message, isNull);
     expect(KickDanmaku.parseFrame(jsonEncode({'event': 'Other', 'channel': 'chatrooms.668.v2'}), 668).message, isNull);
   });
+
+  test('emote codes render as their emote names', () {
+    // Production chat carries emotes as [emote:<id>:<name>]; the raw codes
+    // flooded the danmaku list and scrolling overlay.
+    final data = {
+      'id': 'e-1',
+      'chatroom_id': 668,
+      'content': '[emote:37226:KEKW] lol [emote:37243:gachiGASM]',
+      'type': 'message',
+      'sender': {'id': 1, 'username': 'viewer'},
+    };
+    final parsed = KickDanmaku.parseFrame(
+      jsonEncode({'event': r'App\Events\ChatMessageEvent', 'channel': 'chatrooms.668.v2', 'data': jsonEncode(data)}),
+      668,
+    ).message;
+    expect(parsed?.message, 'KEKW lol gachiGASM');
+  });
 }
 
 class _FakeChannel implements WebSocketChannel {
