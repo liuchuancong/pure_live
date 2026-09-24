@@ -104,7 +104,15 @@ class KickApi {
   final KickRequest _request;
 
   static Future<({int status, String body})> _defaultRequest(Uri uri, CancelToken? cancel) =>
-      AndroidNativeHttp.isSupported ? _androidRequest(uri, cancel) : _dioRequest(uri, cancel);
+      usesPlatformTls(uri, android: AndroidNativeHttp.isSupported)
+      ? _androidRequest(uri, cancel)
+      : _dioRequest(uri, cancel);
+
+  /// Only kick.com is behind the Cloudflare TLS check; the IVS playlists the
+  /// room detail also fetches through this request stay on dio (the native
+  /// channel refuses every other host).
+  static bool usesPlatformTls(Uri uri, {required bool android}) =>
+      android && uri.scheme == 'https' && uri.host.toLowerCase() == 'kick.com';
 
   /// Cloudflare answers every kick.com API request made with dart:io's TLS
   /// stack with 403, so the whole Kick catalog, search and rooms failed.
