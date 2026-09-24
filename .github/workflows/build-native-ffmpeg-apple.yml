@@ -86,6 +86,17 @@ jobs:
           if source.count(before) != 1:
               raise SystemExit('Unexpected upstream Apple assembler invocation')
           driver.write_text(source.replace(before, after))
+
+          # cargo-c is a host tool. During iOS builds the upstream runner has
+          # SDKROOT=iPhoneOS, which makes host libgit2 compile against iOS
+          # Security headers and fail on the absent cssmtype.h header.
+          rust_setup = Path('builder/scripts/toolchain/setup-apple-rust.sh')
+          before = 'cargo install --locked cargo-c'
+          after = 'env SDKROOT="$(xcrun --sdk macosx --show-sdk-path)" cargo install --locked cargo-c'
+          source = rust_setup.read_text()
+          if source.count(before) != 1:
+              raise SystemExit('Unexpected upstream cargo-c install command')
+          rust_setup.write_text(source.replace(before, after))
           PY
 
       - name: Install upstream Apple build tools
