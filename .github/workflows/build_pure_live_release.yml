@@ -479,7 +479,9 @@ jobs:
             --release \
             --dart-define=PURELIVE_BUILD_SOURCE=github-manual
       - name: Verify Linux FFmpeg native bundle
-        run: python3 tool/verify_ffmpeg_native.py linux build/linux/x64/release/bundle/lib/libffmpegkit.so
+        run: |
+          find build/linux/x64/release/bundle -type f -iname '*ffmpeg*' -print
+          python3 tool/verify_ffmpeg_native.py linux build/linux/x64/release/bundle
       - name: Get version
         id: version
         shell: bash

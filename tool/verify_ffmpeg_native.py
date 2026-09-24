@@ -32,6 +32,12 @@ def verify(platform: str, artifact: Path, cache_archive: Path | None = None, abi
     if digest(archive) != expected:
         raise ValueError(f'{platform} FFmpeg hook archive SHA-256 differs from pinned n9.0.2 asset: {archive}')
 
+    if platform == 'linux' and artifact.is_dir():
+        candidates = list(artifact.rglob('libffmpegkit.so'))
+        if len(candidates) != 1:
+            raise ValueError(f'Expected one packaged Linux FFmpeg library under {artifact}, found {len(candidates)}')
+        artifact = candidates[0]
+
     if platform == 'android':
         with zipfile.ZipFile(artifact) as apk:
             library = apk.read(f'lib/{abi}/libffmpegkit.so')

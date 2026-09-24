@@ -47,6 +47,7 @@ class VerifyFFmpegNativeTest(unittest.TestCase):
                 native.verify('linux', so, self.archive)
             so.write_bytes(elf + b'FFmpeg version n9.0.2 GLIBC_2.38')
             self.assertEqual(native.verify('linux', so, self.archive)['version'], 'n9.0.2')
+            self.assertEqual(native.verify('linux', self.root, self.archive)['version'], 'n9.0.2')
 
     def test_rejects_replaced_hook_archive(self):
         dll = self.root / 'libffmpegkit.dll'
