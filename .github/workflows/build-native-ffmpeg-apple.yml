@@ -65,6 +65,17 @@ jobs:
           source = driver.read_text()
           if source.count(before) != 1:
               raise SystemExit('Unexpected upstream dependency flag forwarding')
+          source = source.replace(before, after)
+
+          # The assembler is a separate process; build_all does not propagate
+          # its license/small selection, so it otherwise requests absent
+          # small and GPL binaries after the two normal LGPL arches succeed.
+          before = '    "--platform=${apple_platforms_str}"'
+          after = (before + ' ' + chr(92) + chr(10)
+                   + '    --license=lgpl ' + chr(92) + chr(10)
+                   + '    --not-small')
+          if source.count(before) != 1:
+              raise SystemExit('Unexpected upstream Apple assembler invocation')
           driver.write_text(source.replace(before, after))
           PY
 
