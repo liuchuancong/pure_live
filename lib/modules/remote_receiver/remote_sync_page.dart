@@ -1,4 +1,3 @@
-import 'package:qr/qr.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
