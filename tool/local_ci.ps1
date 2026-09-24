@@ -140,6 +140,9 @@ try {
         python -m unittest discover -s (Join-Path $PSScriptRoot 'tests') -p test_assemble_ffmpeg_android_aar.py
         Assert-PureLiveCommandSucceeded 'FFmpeg Android AAR assembly regression tests'
 
+        python -m unittest discover -s (Join-Path $PSScriptRoot 'tests') -p test_verify_ffmpeg_native.py
+        Assert-PureLiveCommandSucceeded 'FFmpeg native asset verification regression tests'
+
         python -m unittest discover -s (Join-Path $PSScriptRoot 'tests') -p test_acceptance_status_alignment.py
         Assert-PureLiveCommandSucceeded 'Acceptance status alignment regression tests'
 

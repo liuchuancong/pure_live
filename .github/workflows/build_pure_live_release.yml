@@ -145,6 +145,11 @@ jobs:
             --release \
             --split-per-abi \
             --dart-define=PURELIVE_BUILD_SOURCE=github-manual
+      - name: Verify Android FFmpeg native bundle
+        run: |
+          python3 tool/verify_ffmpeg_native.py android build/app/outputs/flutter-apk/app-arm64-v8a-release.apk --abi arm64-v8a
+          python3 tool/verify_ffmpeg_native.py android build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk --abi armeabi-v7a
+          python3 tool/verify_ffmpeg_native.py android build/app/outputs/flutter-apk/app-x86_64-release.apk --abi x86_64
       - name: Get version
         id: version
         shell: bash
@@ -304,6 +309,9 @@ jobs:
           fastforge package `
             --platform windows `
             --targets exe,msix
+      - name: Verify Windows FFmpeg native bundle
+        shell: pwsh
+        run: python tool/verify_ffmpeg_native.py windows build/windows/x64/runner/Release/libffmpegkit.dll
       - name: Locate Windows release bundle
         id: bundle
         shell: pwsh
@@ -470,6 +478,8 @@ jobs:
           flutter build linux \
             --release \
             --dart-define=PURELIVE_BUILD_SOURCE=github-manual
+      - name: Verify Linux FFmpeg native bundle
+        run: python3 tool/verify_ffmpeg_native.py linux build/linux/x64/release/bundle/lib/libffmpegkit.so
       - name: Get version
         id: version
         shell: bash

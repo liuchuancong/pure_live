@@ -224,6 +224,9 @@ jobs:
             --target-platform android-arm64 \
             --dart-define=PURELIVE_BUILD_SOURCE=github-manual
 
+      - name: Verify Android FFmpeg native bundle
+        run: python tool/verify_ffmpeg_native.py android build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+
       # -----------------------------------------------------
       # Version
       # -----------------------------------------------------
@@ -459,6 +462,10 @@ jobs:
             --platform windows `
             --targets exe,msix
 
+      - name: Verify Windows FFmpeg native bundle
+        shell: pwsh
+        run: python tool/verify_ffmpeg_native.py windows build/windows/x64/runner/Release/libffmpegkit.dll
+
       # -----------------------------------------------------
       # Rename
       # -----------------------------------------------------
@@ -678,6 +685,9 @@ jobs:
           flutter build linux \
             --release \
             --dart-define=PURELIVE_BUILD_SOURCE=github-manual
+
+      - name: Verify Linux FFmpeg native bundle
+        run: python3 tool/verify_ffmpeg_native.py linux build/linux/x64/release/bundle/lib/libffmpegkit.so
 
       # -----------------------------------------------------
       # Version
