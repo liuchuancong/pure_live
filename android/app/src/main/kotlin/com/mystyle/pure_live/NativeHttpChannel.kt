@@ -36,13 +36,19 @@ internal class NativeHttpChannel(binaryMessenger: BinaryMessenger) : MethodChann
     }
 
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
-        if (call.method != "postTwitchJson") {
-            result.notImplemented()
-            return
+        val handler: (MethodCall) -> Map<String, Any> = when (call.method) {
+            "postTwitchJson" -> ::executeTwitchPost
+            // Cloudflare rejects dart:io's TLS fingerprint on every kick.com API
+            // endpoint (403); Android's platform TLS stack is accepted.
+            "getKickJson" -> ::executeKickGet
+            else -> {
+                result.notImplemented()
+                return
+            }
         }
         executor.execute {
             try {
-                val response = executeTwitchPost(call)
+                val response = handler(call)
                 mainHandler.post { result.success(response) }
             } catch (error: Throwable) {
                 mainHandler.post {
@@ -59,6 +65,56 @@ internal class NativeHttpChannel(binaryMessenger: BinaryMessenger) : MethodChann
     fun dispose() {
         channel.setMethodCallHandler(null)
         executor.shutdownNow()
+    }
+
+    private fun executeKickGet(call: MethodCall): Map<String, Any> {
+        val urlValue = call.argument<String>("url") ?: error("Missing URL")
+        val uri = URI(urlValue)
+        require(uri.scheme.equals("https", ignoreCase = true) && uri.host.equals("kick.com", ignoreCase = true)) {
+            "Native HTTP host is not allowed"
+        }
+        val connection = openConnection(call, urlValue).apply {
+            requestMethod = "GET"
+            doOutput = false
+        }
+        try {
+            applyHeaders(connection, call.argument<Map<*, *>>("headers").orEmpty())
+            val statusCode = connection.responseCode
+            val stream = if (statusCode in 200..299) connection.inputStream else connection.errorStream
+            val responseBody = stream?.use { readBoundedUtf8(it) }.orEmpty()
+            return mapOf("statusCode" to statusCode, "body" to responseBody)
+        } finally {
+            connection.disconnect()
+        }
+    }
+
+    private fun openConnection(call: MethodCall, urlValue: String): HttpURLConnection {
+        val timeoutMillis = (call.argument<Number>("timeoutMillis")?.toInt() ?: 20_000).coerceIn(1_000, 60_000)
+        val proxyHost = call.argument<String>("proxyHost")?.trim().orEmpty()
+        val proxyPort = call.argument<Number>("proxyPort")?.toInt() ?: 0
+        val proxy = if (proxyHost.isNotEmpty() && proxyPort in 1..65_535) {
+            Proxy(Proxy.Type.HTTP, InetSocketAddress.createUnresolved(proxyHost, proxyPort))
+        } else {
+            Proxy.NO_PROXY
+        }
+        return (URL(urlValue).openConnection(proxy) as HttpURLConnection).apply {
+            connectTimeout = timeoutMillis
+            readTimeout = timeoutMillis
+            instanceFollowRedirects = false
+            useCaches = false
+            doInput = true
+        }
+    }
+
+    private fun applyHeaders(connection: HttpURLConnection, headers: Map<*, *>) {
+        for ((rawName, rawValue) in headers) {
+            val name = rawName?.toString()?.trim().orEmpty()
+            val value = rawValue?.toString().orEmpty()
+            if (name.isEmpty() || name.lowercase() in DISALLOWED_HEADERS || value.contains('\r') || value.contains('\n')) {
+                continue
+            }
+            connection.setRequestProperty(name, value)
+        }
     }
 
     private fun executeTwitchPost(call: MethodCall): Map<String, Any> {

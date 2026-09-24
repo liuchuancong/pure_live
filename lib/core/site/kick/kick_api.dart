@@ -3,6 +3,9 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
+import 'package:pure_live/common/services/settings/proxy_settings_controller.dart';
+import 'package:pure_live/common/services/settings_service.dart';
+import 'package:pure_live/core/common/android_native_http.dart';
 import 'package:pure_live/core/common/http_client.dart';
 import 'package:pure_live/core/common/request_scope.dart';
 
@@ -101,6 +104,31 @@ class KickApi {
   final KickRequest _request;
 
   static Future<({int status, String body})> _defaultRequest(Uri uri, CancelToken? cancel) =>
+      AndroidNativeHttp.isSupported ? _androidRequest(uri, cancel) : _dioRequest(uri, cancel);
+
+  /// Cloudflare answers every kick.com API request made with dart:io's TLS
+  /// stack with 403, so the whole Kick catalog, search and rooms failed.
+  /// Android's platform TLS stack is accepted.
+  static Future<({int status, String body})> _androidRequest(Uri uri, CancelToken? cancel) async {
+    if (cancel?.isCancelled == true) throw const KickException(KickFailure.cancelled);
+    ProxySettingsController? proxy;
+    try {
+      proxy = SettingsService.to.proxy;
+    } catch (_) {}
+    final enabled = proxy?.enableAppProxy.value == true;
+    final response = await AndroidNativeHttp.getKickJson(
+      url: uri.toString(),
+      headers: headers,
+      proxyHost: enabled ? proxy!.appProxyHost.value : null,
+      proxyPort: enabled ? proxy!.appProxyPort.value : null,
+    );
+    if (cancel?.isCancelled == true) throw const KickException(KickFailure.cancelled);
+    if (response.status != 200) return (status: response.status, body: '');
+    if (response.body.length > responseLimit) throw const KickException(KickFailure.schema);
+    return response;
+  }
+
+  static Future<({int status, String body})> _dioRequest(Uri uri, CancelToken? cancel) =>
       withRequestCancellation(cancel, (transport) async {
         final response = await HttpClient.instance.dio.get<ResponseBody>(
           uri.toString(),
