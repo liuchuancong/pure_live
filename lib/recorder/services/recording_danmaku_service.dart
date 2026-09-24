@@ -182,13 +182,13 @@ class RecordingDanmakuService {
     final directory = task.outputDir?.trim() ?? '';
     if (task.status != RecordStatus.running || directory.isEmpty) {
       // Reconnecting/preparing: the previous attempt's video has ended.
-      _closeWriter(state);
+      unawaited(_closeWriter(state));
       return;
     }
     final prefix = task.recordingFilePrefix;
     final key = '$directory\u0000$prefix';
     if (state.writerKey == key) return;
-    _closeWriter(state);
+    unawaited(_closeWriter(state));
     try {
       state.writer = RecordingDanmakuWriter.open(File(p.join(directory, '$prefix.xml')), startedAt: task.createTime);
       state.writerKey = key;
@@ -215,18 +215,20 @@ class RecordingDanmakuService {
     }
   }
 
-  void _closeWriter(_TaskDanmaku state) {
+  Future<void> _closeWriter(_TaskDanmaku state) async {
     final writer = state.writer;
     state.writer = null;
     state.writerKey = null;
-    if (writer != null) unawaited(writer.close().catchError((Object _) {}));
+    await writer?.close().catchError((Object _) {});
   }
 
   Future<void> _release(String taskId) async {
     final state = _tasks.remove(taskId);
     if (state == null) return;
     state.disposed = true;
-    _closeWriter(state);
+    // Await the close so dispose() returns with the XML terminated and the
+    // file handle released (Windows keeps open files locked).
+    await _closeWriter(state);
     final connection = state.connection;
     state.connection = null;
     await connection?.stop().catchError((Object _) {});

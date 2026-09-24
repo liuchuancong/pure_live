@@ -85,6 +85,7 @@ void main() {
     final second = await File('${dir.path}/${task.recordingFilePrefix}.xml').readAsString();
     expect(second, contains('<d p="1.000,'));
     expect(second.trimRight(), endsWith('</i>'));
+    await service.dispose();
   });
 
   test('does nothing while disabled', () async {
