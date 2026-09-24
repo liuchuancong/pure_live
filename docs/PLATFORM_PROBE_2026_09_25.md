@@ -36,3 +36,15 @@ PURELIVE_PROBE_SITES=huya,douyu PURELIVE_PROBE_REPORT=/tmp/report.json ...   # �
 | Kick | Cloudflare 对 `dart:io` 的 TLS 指纹一律 403（curl 与手机 curl 均 200）。Android 走平台 TLS（`HttpURLConnection`），Windows 走 WinHTTP/Schannel，均只放行 kick.com；IVS 播放列表仍走 dio。Linux 仍受阻 | `f1511974`（Android）、`76a59f31`（路由）、`8435e9e2`（Windows WinHTTP）；Android 真机 1080p60 播放与聊天通过，Windows `integration_test/native_http_kick_test.dart` 通过 |
 | TwitCasting | 分片需要播放列表下发的 `lvhls_ssid_*` Cookie；FFmpeg（mpv/IJK）会回放，App 实测可播，仅探针需要补 Cookie 回放 | `59b29295`（探针） |
 
+
+## 待处理：Shopee Live 部分直播间有声无画面（Android）
+
+真机（K90，3.2.1 候选）现象：目录、详情、在线人数与 720p FLV 地址正常，播放 30 秒以上仍只有声音；这段时间系统没有创建任何视频硬件解码器。
+
+已确认：
+
+- 录制保存的原始 TS 为 **HEVC Main 720×1280（竖屏）+ AAC**，录制端（ffmpeg-kit / FFmpeg 9.0.2）能识别视频轨。
+- 仓库自编的 FFmpeg 9.0.2 `flvdec.c` 只支持增强型 FLV 的 `hvc1`，没有国内 codec id 12 扩展，因此 Shopee 使用的是**增强型 FLV-HEVC**。
+- media_kit 的 `libmpv.so` 内置 FFmpeg 7.1（Lavc 61.19），包含 HEVC 软件解码（NEON），只编入了 H.264 的 MediaCodec 硬解。IJK 的 `libijkffmpeg.so` 为 Lavc 58.18（FFmpeg 4.0 系）。
+
+下一步：在真机「获取直链」取得地址后，于主机用同版本 mpv / ffprobe 复现，区分是增强型 FLV 的扩展包类型、mpv 硬解回退，还是解码器缺失；然后决定是修正 mpv 选项、针对有声无画面的会话切换内核，还是让 Shopee 走应用内 FLV 中继。修复需要真机复验。
