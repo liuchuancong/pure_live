@@ -30,6 +30,7 @@
 ## 产品与平台参考
 
 - [平台接口与兼容性](PLATFORM_COMPATIBILITY.md)：目录、搜索、弹幕、人数和能力边界。
+- [全平台端到端探针](PLATFORM_PROBE_2026_09_25.md)：45 个平台从目录到真实媒体的逐站结论与复现命令。
 - [网络代理链路](NETWORK_PROXY_AUDIT_3_1_0.md)：API、媒体、图片和 WebSocket 的代理所有权。
 - [关注刷新设计](FAVORITE_REFRESH_DESIGN.md)：刷新、并发、快照和失败语义。
 - [录制参考审计](RECORDER_REFERENCE_AUDIT_3_1_0.md)：录制架构、参考项目和已知边界。
