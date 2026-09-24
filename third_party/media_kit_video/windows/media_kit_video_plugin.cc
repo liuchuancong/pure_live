@@ -103,6 +103,13 @@ void MediaKitVideoPlugin::HandleMethodCall(
     std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result) {
   if (method_call.method_name().compare("VideoOutputManager.Create") == 0) {
     auto arguments = std::get<flutter::EncodableMap>(*method_call.arguments());
+    const auto library = arguments.find(flutter::EncodableValue("libmpv"));
+    if (library == arguments.end() ||
+        !std::holds_alternative<std::string>(library->second) ||
+        media_kit_mpv_initialize(std::get<std::string>(library->second).c_str()) != 0) {
+      result->Error("libmpv", "Could not bind the player's libmpv library.");
+      return;
+    }
     auto handle =
         std::get<std::string>(arguments[flutter::EncodableValue("handle")]);
     auto configuration = std::get<flutter::EncodableMap>(
@@ -188,8 +195,13 @@ void MediaKitVideoPlugin::HandleMethodCall(
     auto handle =
         std::get<std::string>(arguments[flutter::EncodableValue("handle")]);
     auto handle_value = static_cast<int64_t>(std::stoll(handle.c_str()));
-    video_output_manager_->Dispose(handle_value);
-    result->Success(flutter::EncodableValue(std::monostate{}));
+    auto completion =
+        std::shared_ptr<flutter::MethodResult<flutter::EncodableValue>>(std::move(result));
+    video_output_manager_->Dispose(handle_value, [this, completion]() {
+      RunOnMainThread([completion]() {
+        completion->Success(flutter::EncodableValue(std::monostate{}));
+      });
+    });
   } else if (method_call.method_name().compare("VideoOutputManager.SetSize") ==
              0) {
     auto arguments = std::get<flutter::EncodableMap>(*method_call.arguments());

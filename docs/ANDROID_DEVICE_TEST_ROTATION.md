@@ -61,11 +61,12 @@ Pure Live 的实机命令统一由仓库包装器进入 `purelive` lane：
 
 ```powershell
 .\tool\run_android_device_test_turn.ps1 `
-  -CommandLine '.\tool\android_runtime_smoke.ps1' `
+  -Serial '192.168.1.2:5555' `
+  -CommandLine '.\tool\android_runtime_smoke.ps1 -Serial $env:PURELIVE_ADB_SERIAL -ExpectedModel 25102RKBEC -ExpectedDevice myron' `
   -TimeoutMinutes 30
 ```
 
-同一台手机同时出现 USB 与网络 ADB 时，脚本优先选取唯一网络 transport；出现多个手机或多个网络 transport 时必须传入 `-Serial`，脚本拒绝猜测目标设备。默认证据写入 `local-artifacts/diagnostics/android-runtime-smoke-<时间>`，不会进入 Git。音频模式切换使用 UI 状态轮询完成串行确认，不用固定短延时连续点击，避免把尚未完成的第一次切换误判为第二次恢复。
+同一台手机同时出现 USB 与网络 ADB 时，脚本优先选取唯一网络 transport；出现多个手机或多个网络 transport 时必须传入 `-Serial`，脚本拒绝猜测目标设备。冒烟脚本会先核对型号/代号、前台应用和 Pure Live 进程：其他应用占用前台时在脚本自身的唤醒、启动和点击前结束；外层轮转包装器的唤醒/待机恢复仍按租约执行。确需切换前台时明确追加 `-AllowForegroundSwitch`，确需重启已运行的 Pure Live 时追加 `-AllowAppRestart`。预检失败时也不会在清理阶段强停 Pure Live。默认证据写入 `local-artifacts/diagnostics/android-runtime-smoke-<时间>`，不会进入 Git。音频模式切换使用 UI 状态轮询完成串行确认，不用固定短延时连续点击，避免把尚未完成的第一次切换误判为第二次恢复。
 
 需要把安装、仅重启 Pure Live、测试和证据采集合并成一个有边界的测试轮次时，把这些命令放进同一个 `-CommandLine`。包装器会等待 A、B 完成本轮，再独占设备执行 C，最后把下一轮交回 A。
 

@@ -6,6 +6,32 @@ import 'xiaohongshu_share.dart';
 /// Broadcast room identity only. Profile IDs, notes and recommended rooms are
 /// not aliases. Resolve short links only within the observed share hosts/routes.
 class XiaohongshuLink {
+  /// The official app deep link names a room; flvUrl is only a preload hint.
+  /// Import the identity and let the normal room API resolve current media.
+  static String? deepLinkRoomId(String raw) {
+    final value = raw.trim();
+    if (value.length > 8192 || value.contains(RegExp(r'[\x00-\x20\x7f]'))) return null;
+    final uri = Uri.tryParse(value);
+    if (uri == null ||
+        uri.scheme.toLowerCase() != 'xhsdiscover' ||
+        uri.host.toLowerCase() != 'live_audience' ||
+        uri.path.isNotEmpty ||
+        uri.userInfo.isNotEmpty ||
+        uri.hasPort ||
+        uri.hasFragment) {
+      return null;
+    }
+    try {
+      final room = uri.queryParametersAll['room_id'];
+      final source = uri.queryParametersAll['source'];
+      if (room?.length != 1 || source?.length != 1 || source!.single.trim().isEmpty) return null;
+      final id = room!.single;
+      return RegExp(r'^[1-9][0-9]{0,19}$').hasMatch(id) ? id : null;
+    } on FormatException {
+      return null;
+    }
+  }
+
   static bool _plainPath(String value) {
     if (value.length > 8192 || value.contains(RegExp(r'[\x00-\x20\x7f]'))) return false;
     final path = value.split(RegExp(r'[?#]')).first;
@@ -28,6 +54,8 @@ class XiaohongshuLink {
   static String? parse(String raw) {
     final value = raw.trim();
     if (RegExp(r'^[1-9][0-9]{0,19}$').hasMatch(value)) return value;
+    final deepLink = deepLinkRoomId(value);
+    if (deepLink != null) return deepLink;
     final uri = _webUri(value);
     if (uri == null || !{'www.xiaohongshu.com', 'xiaohongshu.com'}.contains(uri.host)) {
       return null;

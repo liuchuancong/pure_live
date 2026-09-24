@@ -177,7 +177,7 @@ class _RoomTileLeading extends StatelessWidget {
                 color: Theme.of(context).colorScheme.surfaceContainerLowest,
                 shape: BoxShape.circle,
               ),
-              child: Image.asset(Sites.of(platform).logo, width: 14, height: 14),
+              child: Image.asset(Sites.logoForId(platform), width: 14, height: 14),
             ),
           ),
       ],

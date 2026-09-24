@@ -734,7 +734,11 @@ class LiveRoom {
     if (_hasAudienceValue(effectivePopularity)) return effectivePopularity;
     if (_hasAudienceValue(effectiveTotalViewers)) return effectiveTotalViewers;
     if (hasRealOnlineCount) return effectiveOnlineViewers;
-    return (watching ?? '0').trim();
+    final legacy = (watching ?? '').trim();
+    // The legacy default "0" is not a measurement. Unknown-metric adapters
+    // must not render it as a verified audience count.
+    if (effectiveAudienceMetricType == AudienceMetricType.unknown && !_hasAudienceValue(legacy)) return '';
+    return legacy;
   }
 
   AudienceMetricType audienceType({required bool preferRealOnline, required bool platformEnabled}) {
@@ -928,7 +932,14 @@ extension LiveRoomExtension on LiveRoom {
   }
 
   LiveRoom getLiveRoomWithError() {
-    return copyWith(liveStatus: LiveStatus.offline, status: false, isRecord: false);
+    // A failed detail request is not evidence that a broadcast ended. Keep
+    // the last known identity/metadata, but make playback status pending.
+    return copyWith(
+      liveStatus: LiveStatus.unknown,
+      status: false,
+      isRecord: false,
+      watching: (watching ?? '').trim() == '0' ? '' : watching,
+    );
   }
 
   /// Returns a fresh room snapshot for the original live stream.

@@ -88,4 +88,35 @@ void main() {
     await tester.pump(const Duration(seconds: 30));
     expect(stalls, 0);
   });
+
+  testWidgets('brief viewport hide and return resets the deadline immediately', (tester) async {
+    final revision = ValueNotifier<int>(1);
+    addTearDown(revision.dispose);
+    var now = Duration.zero;
+    var visible = true;
+    var stalls = 0;
+    final watchdog = MultiviewFrameWatchdog(
+      revision: revision,
+      timeout: const Duration(seconds: 10),
+      elapsed: () => now,
+      isEligible: () => visible,
+      onStall: () => stalls++,
+    )..start();
+    addTearDown(watchdog.dispose);
+
+    now = const Duration(seconds: 5);
+    await tester.pump(const Duration(seconds: 5));
+    visible = false;
+    watchdog.eligibilityChanged();
+    now = const Duration(seconds: 6);
+    await tester.pump(const Duration(seconds: 1));
+    visible = true;
+    watchdog.eligibilityChanged();
+    now = const Duration(seconds: 10);
+    await tester.pump(const Duration(seconds: 4));
+    expect(stalls, 0, reason: 'the initial deadline must be discarded');
+    now = const Duration(seconds: 16);
+    await tester.pump(const Duration(seconds: 6));
+    expect(stalls, 1);
+  });
 }

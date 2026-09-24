@@ -158,10 +158,10 @@ void main() {
   });
   test('a removed provider does not recreate orphaned mappings', () async {
     await seed();
-    final before = await snapshot();
     await db.deleteProvider('provider');
+    expect(await db.getAllMappings(), isEmpty, reason: 'provider deletion cascades its mappings');
     await run();
-    expect(await snapshot(), before);
+    expect(await db.getAllMappings(), isEmpty);
   });
   test('eligible auto mapping follows current source but another provider is untouched', () async {
     await seed();

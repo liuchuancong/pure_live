@@ -15,3 +15,7 @@
 源码回归覆盖专用数据包字段边界、误用完整恢复保护、恢复后非关注设置不变、WebDAV 独立文件名及入口、并发门禁、本地导出路径。四个受影响测试文件分组执行共 **92/92 PASS**（WebDAV 页面 31、备份往返 10、目录状态及本地备份页 51）；记录分别为 `20260923T010219447Z-quality-focused.json`、`20260923T010530295Z-quality-focused.json`、`20260923T010617673Z-quality-focused.json`。九个修改过的 Dart 文件 Analyze **No issues found**；文档对齐测试 3/3，工作流审计 0 error。
 
 本轮额外消除了 3 倍大字下 WebDAV 菜单项的横向溢出，并让窗口夹具的 WebDAV 选择/本地目录写入使用同步可控的假持久层；原有“持久化失败后内存值应保持新值”的旧断言已与实际回滚合同对齐。真实 WebDAV 跨设备回读、本地文件互导及 Windows/Android 可视布局留到统一候选原生验收批次。
+
+## 2026-09-24 本机真实 WebDAV 传输增量
+
+新增 `test/backup_roundtrip_test.dart` 的一条跨层测试：生产关注列表导出经真实 `WebDAVService` 的 OPTIONS/PUT/PROPFIND/GET 在本机回环 WebDAV 服务器往返，再由生产关注恢复事务导入。断言远端文件仅含 v3 `backupVersion`、`backupScope: favorites` 和两组关注数据，不含发送端 Cookie；接收时房间/分区恢复，接收端后台播放设置和 Cookie 保持。与已有 WebDAV 实际文件传输测试一起执行，聚焦测试及全库 Analyze 均通过，记录 `local-artifacts/build-records/20260924T110730575Z-quality-focused.json`。首轮夹具受到 Flutter widget 测试默认 HTTP 覆盖影响，OPTIONS 得到测试替身响应；修订为仅测试作用域内使用真实本机网络后通过，未修改产品传输逻辑。该证据覆盖同进程的序列化→HTTP→恢复，不替代真实远端账号、Android/Windows 双端 GUI 和跨设备持久化验收。

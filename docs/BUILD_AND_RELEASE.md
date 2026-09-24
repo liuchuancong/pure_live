@@ -1,6 +1,6 @@
 # 本地构建、测试与发布
 
-本仓库采用“本机优先、Actions 手动兜底”的流程，固定使用 Flutter `3.47.0`。`pubspec.lock`、Git 依赖提交和 FFmpeg 产物地址均已固定，便于复现结果。平台范围、CPU/RAM 配额、缓存、互斥和记录格式以 [`BUILD_POLICY.md`](../BUILD_POLICY.md) 为准。
+本仓库采用“本机优先、Actions 手动兜底”的流程，固定使用 Flutter `3.47.5`。`pubspec.lock`、Git 依赖提交和 FFmpeg 产物地址均已固定，便于复现结果。平台范围、CPU/RAM 配额、缓存、互斥和记录格式以 [`BUILD_POLICY.md`](../BUILD_POLICY.md) 为准。
 
 当前候选、提交、门禁和平台阻塞统一见 [`ACCEPTANCE_STATUS_3_2_0.md`](ACCEPTANCE_STATUS_3_2_0.md)；本页不复制会快速过期的版本快照。历史 v3.0.0 交付证据保留在 [`STAGE_UPDATE_3_0_0.md`](STAGE_UPDATE_3_0_0.md)。
 
@@ -47,14 +47,14 @@ PowerShell -ExecutionPolicy Bypass -File .\tool\local_ci.ps1 -Scope Full
 
 1. 环境变量 `PURE_LIVE_FLUTTER` 指向的 `flutter.bat`；
 2. `.fvm/flutter_sdk/bin/flutter.bat`；
-3. `%LOCALAPPDATA%\Codex\flutter\sdk-3.47.0\flutter\bin\flutter.bat`；
+3. `%LOCALAPPDATA%\Codex\flutter\sdk-3.47.5\flutter\bin\flutter.bat`；
 4. `PATH` 中的 Flutter。
 
 路径较长时脚本会从 `P:` 到 `W:` 为当前工作区选择并保留一个稳定的短盘符映射，规避 FFmpeg Native Assets 在 Windows 上超过传统路径长度后的构建失败，也支持本地主工作区与临时自托管 Runner 并行构建。映射记录位于未跟踪的 `.dart_tool/pure_live_subst_drive.txt`；连续的 `pub get`、分析、测试和构建会复用同一盘符，避免 Native Assets 增量缓存引用已经释放的盘符。
 
-Android 构建使用 Java 25 运行 Gradle 与 lint，应用和插件的 Java/Kotlin 字节码目标保持 17。脚本优先读取 `PURE_LIVE_JAVA_HOME`，随后检测 Android Studio JBR，最后回退到本机 Temurin；当前工具链为 compileSdk/targetSdk 37、Gradle 9.5.0、AGP 9.3.1 和 AGP Built-in Kotlin。`tool/audit_built_in_kotlin.py` 会在本地 CI 中阻止独立 KGP、模块私有 AGP classpath 和旧 Kotlin DSL 回归。
+Android 构建使用 Java 25 运行 Gradle 与 lint，应用和插件的 Java/Kotlin 字节码目标保持 17。脚本优先读取 `PURE_LIVE_JAVA_HOME`，随后检测 Android Studio JBR，最后回退到本机 Temurin；当前工具链为 compileSdk/targetSdk 37、Gradle 9.7.1、AGP 9.3.3 和 AGP Built-in Kotlin。`tool/audit_built_in_kotlin.py` 会在本地 CI 中阻止独立 KGP、模块私有 AGP classpath 和旧 Kotlin DSL 回归。
 
-Android 打包前会由 `tool/prefetch_android_native.ps1` 下载并逐一校验 media_kit 的四个 libmpv JAR及 FFmpeg builders v0.11.1 AAR；质量门禁以 `-SkipAndroidMedia` 只准备 Windows FFmpeg ZIP。原生文件写入持久缓存和 Native Assets 共享缓存，减少重复下载并拦截损坏文件。
+Android 打包前由 `tool/prefetch_android_native.ps1` 依据当前 media_kit Native Assets 清单下载并逐一校验四个 ABI 的 libmpv 档案，以及项目固定 SHA-256 的 FFmpeg 9.0.2 AAR；质量门禁以 `-SkipAndroidMedia` 准备 media_kit 与 FFmpeg 的 Windows 档案。原生文件写入持久缓存和各自的 Native Assets 共享缓存，减少重复下载并拦截损坏文件。
 
 Windows 的 `flutter_inappwebview_windows` 需要 `nuget.exe`。脚本会自动发现 `%LOCALAPPDATA%\Codex\nuget\nuget.exe` 或 `PATH` 中的 NuGet；建议从 `https://dist.nuget.org/` 下载并核验 Microsoft Authenticode 签名。
 
@@ -129,9 +129,11 @@ Linux、macOS 和 iOS 通过 `feature-build` 手动选择补建；所有平台�
 
 Linux 版使用系统浏览器承接“继续网页搜索”，避免引入额外 WPE WebKit 运行时；平台原生搜索、直播详情、弹幕与播放链路仍在应用内完成。Windows/macOS/Android/iOS 使用锁定修订版 `flutter_inappwebview`。
 
-Ubuntu 24.04 构建会同时安装 `libva`、VDPAU、PulseAudio、Wayland、EGL 与 X11 开发包，以满足当前锁定 `libmpv.so` 的 glibc 2.38 / GLIBCXX 3.4.32 基线和链接依赖；Android 使用仓库内的同版本网页内核兼容副本通过 AGP 9.3.1 / R8 构建。Linux 归档携带应用与媒体库，目标系统仍需提供 GTK、托盘、显卡驱动和音频运行库。
+Ubuntu 24.04 构建会同时安装 `libva`、VDPAU、PulseAudio、Wayland、EGL 与 X11 开发包，以满足当前锁定 `libmpv.so` 的 glibc 2.38 / GLIBCXX 3.4.32 基线和链接依赖；Android 使用仓库内的同版本网页内核兼容副本通过 AGP 9.3.3 / R8 构建。Linux 归档携带应用与媒体库，目标系统仍需提供 GTK、托盘、显卡驱动和音频运行库。
 
 ## 单独命令
+
+Android、Windows、Linux、macOS 与 iOS 的 FFmpeg Kit 使用项目[原生依赖资产预发布](https://github.com/wzgrx/pure_live/releases/tag/native-ffmpeg-9.0.2-b1)中的 FFmpeg `n9.0.2`；不是应用版本号。运行本机完整构建脚本时会先校验下载文件的 SHA-256。直接执行下列 Flutter 命令前，也可先运行 `tool/prefetch_android_native.ps1`；最终以 APK 内 `libffmpegkit.so` 和 Windows `libffmpegkit.dll` 的版本、哈希与实际运行结果为准。Android AAR 包含 `arm64-v8a`、`armeabi-v7a`、`x86_64`；其中 arm64 与 x86_64 ELF `LOAD` 段按 16 KiB 对齐。Linux 资产使用 Ubuntu 24.04 基线，不能混用更高 glibc 环境编出的 ZIP。Apple 两端使用各自的 universal XCFramework ZIP，并在应用构建后校验实际打包的 Mach-O 架构与 `n9.0.2` 标记。
 
 ```powershell
 .\tool\flutterw.ps1 pub get --enforce-lockfile

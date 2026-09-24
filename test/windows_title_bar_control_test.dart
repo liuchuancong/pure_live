@@ -12,8 +12,8 @@ void main() {
     final source = File('lib/common/global/platform/desktop_manager.dart').readAsStringSync();
 
     expect(source, contains('required this.semanticLabel'));
-    expect(source, contains('child: Tooltip('));
-    expect(source, contains('message: widget.semanticLabel'));
+    expect(source, isNot(contains('child: Tooltip(')));
+    expect(source, contains('label: widget.semanticLabel'));
     expect(source, contains('Future<void> _runAction()'));
     expect(source, contains('enabled: !_busy'));
     expect(source, contains('ScaffoldMessenger.maybeOf(context)?.showSnackBar'));

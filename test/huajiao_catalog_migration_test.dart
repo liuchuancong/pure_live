@@ -31,27 +31,22 @@ void main() {
     await HivePrefUtil.setInt('siteCatalogMigration', 8);
     await HivePrefUtil.setStringList('hotAreasList', ['huya', 'inke']);
     final settings = Get.put(FavoriteRoomController());
-    expect(settings.hotAreasList, [
-      'huya',
-      'inke',
-      'huajiao',
-      'openrec',
-      'ttinglive',
-      'xiaohongshu',
-      'niconico',
-      'weibo',
-    ]);
-    expect(settings.siteCatalogMigration.value, 14);
+    final expectedPrefix = ['huya', 'inke', 'huajiao', 'openrec', 'ttinglive', 'xiaohongshu', 'niconico', 'weibo'];
+    expect(settings.hotAreasList.take(expectedPrefix.length), expectedPrefix);
+    final migrated = settings.hotAreasList.toList(growable: false);
+    expect(migrated.toSet(), hasLength(migrated.length));
+    final hidden = migrated.where((id) => id != 'huajiao').toList(growable: false);
+    expect(settings.siteCatalogMigration.value, 38);
     settings.hotAreasList.remove('huajiao');
     settings.onInit();
-    expect(settings.hotAreasList, ['huya', 'inke', 'openrec', 'ttinglive', 'xiaohongshu', 'niconico', 'weibo']);
+    expect(settings.hotAreasList, hidden);
     await Hive.box<dynamic>('app_settings').flush();
     Get.reset();
     await Hive.close();
     await HivePrefUtil.init();
     final reopened = Get.put(FavoriteRoomController());
-    expect(reopened.siteCatalogMigration.value, 14);
-    expect(reopened.hotAreasList, ['huya', 'inke', 'openrec', 'ttinglive', 'xiaohongshu', 'niconico', 'weibo']);
+    expect(reopened.siteCatalogMigration.value, 38);
+    expect(reopened.hotAreasList, hidden);
   });
 
   test('backup normalization retains Huajiao order and does not duplicate it', () async {
@@ -68,21 +63,15 @@ void main() {
     expect(json['hotAreasList'], ['huajiao', 'huya']);
   });
 
-  test('actual search flow reports missing capability and does not fall back to web', () async {
+  test('search advertises the bounded native recommendation scope without a web fallback', () {
     Get.put(SettingsService());
     final controller = SearchController();
     try {
       controller.index.value = controller.sites.indexWhere((site) => site.id == 'huajiao') + 1;
       expect(controller.index.value, greaterThan(0));
       expect(controller.canOpenWebSearch, isFalse);
-      expect(controller.capabilityText, 'search_coverage_unavailable');
+      expect(controller.capabilityText, 'search_coverage_huajiao');
       expect(() => controller.buildSearchUrl('huajiao', 'example'), throwsStateError);
-      controller.searchController.text = 'example';
-      await controller.doSearch();
-      expect(controller.errorMessage.value, 'search_coverage_unavailable');
-      expect(controller.loading.value, isFalse);
-      expect(controller.pendingSiteCount.value, 0);
-      expect(controller.hasMore.value, isFalse);
     } finally {
       controller.onClose();
     }

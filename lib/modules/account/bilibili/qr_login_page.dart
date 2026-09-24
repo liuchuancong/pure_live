@@ -1,8 +1,8 @@
 import 'dart:async';
 
 import 'package:pure_live/common/index.dart';
+import 'package:pure_live/modules/account/bilibili/bilibili_login_qr_code.dart';
 import 'package:pure_live/modules/account/bilibili/qr_login_controller.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 import 'package:remixicon/remixicon.dart';
 
 class BiliBiliQRLoginPage extends GetView<BiliBiliQRLoginController> {
@@ -82,13 +82,7 @@ class BiliBiliQRLoginPage extends GetView<BiliBiliQRLoginController> {
                 padding: const EdgeInsets.all(16),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(12),
-                  child: QrImageView(
-                    data: controller.qrcodeUrl.value,
-                    version: QrVersions.auto,
-                    backgroundColor: Colors.white,
-                    size: size,
-                    padding: const EdgeInsets.all(12),
-                  ),
+                  child: BilibiliLoginQrCode(data: controller.qrcodeUrl.value, size: size),
                 ),
               ),
             ]);

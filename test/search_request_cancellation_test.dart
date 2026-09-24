@@ -58,6 +58,23 @@ Future<void> _flush() async {
   }
 }
 
+const _manyNativeIds = [
+  Sites.bilibiliSite,
+  Sites.douyuSite,
+  Sites.huyaSite,
+  Sites.douyinSite,
+  Sites.ccSite,
+  Sites.twitchSite,
+  Sites.soopSite,
+  Sites.yySite,
+  Sites.acfunSite,
+  Sites.picartoSite,
+  Sites.twitcastingSite,
+  Sites.niconicoSite,
+  Sites.missevanSite,
+  Sites.inkeSite,
+];
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUpAll(() async {
@@ -202,6 +219,68 @@ void main() {
     expect(c.loadingMore.value, isFalse);
   });
 
+  test('aggregate search caps active providers and refills as results arrive', () async {
+    expect(_manyNativeIds.length, greaterThan(search.maxConcurrentNativeSearchSites));
+    final gates = List.generate(_manyNativeIds.length, (_) => Completer<void>());
+    final started = <int>[];
+    final c = _controller([
+      for (var i = 0; i < _manyNativeIds.length; i++)
+        _site(
+          _Owned((_, _, _) async {
+            started.add(i);
+            await gates[i].future;
+            return [_room('result-$i', _manyNativeIds[i])];
+          }),
+          _manyNativeIds[i],
+        ),
+    ]);
+
+    final run = c.doSearch();
+    await _flush();
+    expect(started, List.generate(search.maxConcurrentNativeSearchSites, (i) => i));
+    expect(c.pendingSiteCount.value, _manyNativeIds.length);
+
+    gates.first.complete();
+    await _flush();
+    expect(c.results.single.roomId, 'result-0');
+    expect(started, hasLength(search.maxConcurrentNativeSearchSites + 1));
+
+    for (var i = 1; i < gates.length; i++) {
+      gates[i].complete();
+    }
+    await run;
+    expect(started, hasLength(_manyNativeIds.length));
+    expect(c.results, hasLength(_manyNativeIds.length));
+    expect(c.pendingSiteCount.value, 0);
+  });
+
+  test('retiring aggregate search drains active providers without starting queued sites', () async {
+    final gates = List.generate(_manyNativeIds.length, (_) => Completer<void>());
+    final started = <int>[];
+    final c = _controller([
+      for (var i = 0; i < _manyNativeIds.length; i++)
+        _site(
+          _Owned((_, _, _) async {
+            started.add(i);
+            await gates[i].future;
+            return [_room('result-$i', _manyNativeIds[i])];
+          }),
+          _manyNativeIds[i],
+        ),
+    ]);
+
+    final run = c.doSearch();
+    await _flush();
+    expect(started, hasLength(search.maxConcurrentNativeSearchSites));
+    c.onClose();
+    for (final gate in gates) {
+      gate.complete();
+    }
+    await run;
+    expect(started, hasLength(search.maxConcurrentNativeSearchSites));
+    expect(c.results, isEmpty);
+  });
+
   test('owned deadline cancels transport and waits for provider settlement', () async {
     final cancelled = Completer<void>();
     final cleanup = Completer<void>();
@@ -268,10 +347,18 @@ void main() {
   for (final action in ['close', 'replace', 'timeout']) {
     test('legacy $action stops UI wait and consumes late failure', () async {
       final late = Completer<List<LiveRoom>>();
+      final started = Completer<void>();
       final c = _controller([
-        _site(_Legacy((keyword, _) async => keyword == 'old' ? late.future : [_room('new')])),
+        _site(
+          _Legacy((keyword, _) async {
+            if (keyword != 'old') return [_room('new')];
+            started.complete();
+            return late.future;
+          }),
+        ),
       ], timeout: action == 'timeout' ? const Duration(milliseconds: 20) : const Duration(seconds: 12));
       final old = c.doSearch();
+      await started.future;
       if (action == 'close') c.onClose();
       if (action == 'replace') {
         c.searchController.text = 'new';

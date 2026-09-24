@@ -26,6 +26,7 @@ import 'package:pure_live/recorder/services/recording_output_metrics.dart';
 import 'package:pure_live/recorder/services/video_processor_service.dart';
 
 import 'media_packet_timeline.dart';
+import 'recording_clock_probe_support.dart';
 
 void main() {
   test(
@@ -292,8 +293,46 @@ void main() {
             for (final track in tracks) {
               expect(track['completePresentationTimestamps'], true);
               expect(track['observedDtsRegressions'], 0);
-              expect(track['knownInternalGapCount'], 0);
             }
+            // A public source may itself have cadence gaps or AAC time-base
+            // quantization. Remux the exact retained FLV once as a reference;
+            // the production multi-segment output must retain its decoded
+            // content and add no clock step relative to that single remux.
+            final reference = File(p.join(evidenceDir.path, 'single-reference.mp4'));
+            await _run(Platform.environment['PURELIVE_FFMPEG']!, [
+              '-v',
+              'error',
+              '-i',
+              source.path,
+              '-map',
+              '0:v:0',
+              '-map',
+              '0:a:0',
+              '-c',
+              'copy',
+              reference.path,
+            ]);
+            final sourceFrames = await decodeClockMedia(source, evidenceDir, 'source', ['video', 'audio']);
+            final referenceFrames = await decodeClockMedia(reference, evidenceDir, 'reference', ['video', 'audio']);
+            final outputFrames = await decodeClockMedia(File(mp4), evidenceDir, 'output', ['video', 'audio']);
+            final frameComparisons = <String, Map<String, Object?>>{};
+            for (final kind in ['video', 'audio']) {
+              final sourceToReference = sourceFrames[kind]!.compare(referenceFrames[kind]!);
+              final referenceToOutput = referenceFrames[kind]!.compare(outputFrames[kind]!);
+              frameComparisons[kind] = {
+                'sourceToReference': sourceToReference,
+                'referenceToOutput': referenceToOutput,
+                'sourceToOutput': sourceFrames[kind]!.compare(outputFrames[kind]!),
+              };
+              expect(sourceToReference['orderedContentEqual'], true, reason: '$kind reference content');
+              expect(referenceToOutput['orderedContentEqual'], true, reason: '$kind final content');
+              expect(
+                referenceToOutput['offsetSpreadSeconds'] as double,
+                lessThanOrEqualTo(kind == 'video' ? 2 / 90000 : 2 / 44100),
+                reason: '$kind added clock step',
+              );
+            }
+            report['frameComparisons'] = frameComparisons;
             expect((timeline['av'] as Map)['commonCoveredSeconds'] as num, greaterThanOrEqualTo(10));
             report.addAll({
               'contract': 'passed',

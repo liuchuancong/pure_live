@@ -782,6 +782,11 @@ class _IptvManagePageState extends State<IptvManagePage> {
             onChanged: busy
                 ? null
                 : (value) async {
+                    if (!mounted ||
+                        _itemActionsBlocked(item) ||
+                        !allItems.any((candidate) => candidate.type == item.type && candidate.id == item.id)) {
+                      return;
+                    }
                     setState(() => _busyItems.add(operationKey));
                     final db = Get.find<DbService>().db;
 

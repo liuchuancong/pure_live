@@ -1,3 +1,6 @@
+#if SWIFT_PACKAGE
+  import Mpv
+#endif
 #if canImport(Flutter)
   import Flutter
 #elseif canImport(FlutterMacOS)
@@ -71,6 +74,12 @@ public class MediaKitVideoPlugin: NSObject, FlutterPlugin {
     _ result: FlutterResult
   ) {
     let args = arguments as? [String: Any]
+    guard let library = args?["libmpv"] as? String,
+      library.withCString({ media_kit_mpv_initialize($0) }) == 0
+    else {
+      result(FlutterError(code: "libmpv", message: "Could not bind the player's libmpv library.", details: nil))
+      return
+    }
     let handleStr = args?["handle"] as! String
     let handle: Int64? = Int64(handleStr)
     let configDict = args?["configuration"] as! [String: Any]
@@ -127,7 +136,7 @@ public class MediaKitVideoPlugin: NSObject, FlutterPlugin {
 
   private func handleDisposeMethodCall(
     _ arguments: Any?,
-    _ result: FlutterResult
+    _ result: @escaping FlutterResult
   ) {
     let args = arguments as? [String: Any]
     let handleStr = args?["handle"] as! String
@@ -136,10 +145,9 @@ public class MediaKitVideoPlugin: NSObject, FlutterPlugin {
     assert(handle != nil, "handle must be an Int64")
 
     videoOutputManager.destroy(
-      handle: handle!
+      handle: handle!,
+      completion: { result(nil) }
     )
-
-    result(nil)
   }
 
   private func handleEnterNativeFullscreenMethodCall(

@@ -11,7 +11,9 @@ param(
     [switch] $SkipInstaller,
     [switch] $UseOfficialRepositories,
     [switch] $RequireReleaseSigning,
-    [switch] $DedicatedBuild
+    [switch] $DedicatedBuild,
+    [ValidatePattern('^[a-z0-9][a-z0-9-]{0,39}$')]
+    [string] $CandidateLabel = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -49,7 +51,8 @@ if ($Target -eq 'WindowsX64') {
     $fullVersion = "$displayVersion+$buildNumber"
 }
 $artifactVersion = $fullVersion.Replace('+', '-')
-$output = Join-Path $repoRoot "local-artifacts\$artifactVersion"
+$artifactDirectory = if ($CandidateLabel) { "$artifactVersion-$CandidateLabel" } else { $artifactVersion }
+$output = Join-Path $repoRoot "local-artifacts\$artifactDirectory"
 $recordDirectory = Join-Path $repoRoot 'local-artifacts\build-records'
 New-Item -ItemType Directory -Force -Path $output, $recordDirectory | Out-Null
 
@@ -196,6 +199,14 @@ try {
         $buildExitCode = Invoke-PureLiveLoggedFlutter -Arguments $androidArgs -LogPath $commandLog
         Assert-PureLiveCommandSucceeded 'Android arm64 build' -ExitCode $buildExitCode
 
+        # The upstream Native Assets hook downloads URL overrides anew, even
+        # after prefetch. Verify the artifact that the hook actually consumed.
+        $androidFfmpegAar = Join-Path $repoRoot '.dart_tool\hooks_runner\shared\ffmpeg_kit_extended_flutter\build\ffmpeg_kit_cache\android\bundle-base-shared-lgpl-release.aar'
+        if (-not (Test-Path -LiteralPath $androidFfmpegAar -PathType Leaf) -or
+            (Get-FileHash -LiteralPath $androidFfmpegAar -Algorithm SHA256).Hash.ToLowerInvariant() -ne 'c6c9b1ff7be756b0fb587f98e05972ca4dae97e8275c22961b443b4fd5f49bf7') {
+            throw 'Android FFmpeg Kit hook artifact differs from the pinned n9.0.2 AAR.'
+        }
+
         $apkSource = Join-Path $repoRoot "build\app\outputs\flutter-apk\app-arm64-v8a-$configurationLower.apk"
         if (-not (Test-Path -LiteralPath $apkSource -PathType Leaf)) {
             throw "Expected Android artifact was not produced: $apkSource"
@@ -222,6 +233,7 @@ try {
             -Arguments @('pub', 'get', '--enforce-lockfile') `
             -LogPath $commandLog
         Assert-PureLiveCommandSucceeded 'Windows locked dependency resolution' -ExitCode $pubGetExitCode
+        & (Join-Path $PSScriptRoot 'prefetch_android_native.ps1') -SkipAndroidMedia
         & (Join-Path $PSScriptRoot 'prefetch_windows_native.ps1')
 
         $windowsArgs = @(
@@ -238,7 +250,21 @@ try {
         $buildExitCode = Invoke-PureLiveLoggedFlutter -Arguments $windowsArgs -LogPath $commandLog
         Assert-PureLiveCommandSucceeded 'Windows x64 build' -ExitCode $buildExitCode
 
+        $windowsFfmpegZip = Join-Path $repoRoot '.dart_tool\hooks_runner\shared\ffmpeg_kit_extended_flutter\build\ffmpeg_kit_cache\windows\bundle-base-windows-x86_64-shared-lgpl.zip'
+        if (-not (Test-Path -LiteralPath $windowsFfmpegZip -PathType Leaf) -or
+            (Get-FileHash -LiteralPath $windowsFfmpegZip -Algorithm SHA256).Hash.ToLowerInvariant() -ne 'e61684a91f7471ba00f1d5b36a24e93ab602ef72bd57000d94990e7e0c5dfe3a') {
+            throw 'Windows FFmpeg Kit hook artifact differs from the pinned n9.0.2 ZIP.'
+        }
+
         $windowsSource = Join-Path $repoRoot "build\windows\x64\runner\$configurationDirectory"
+        $ffmpegDll = Join-Path $windowsSource 'libffmpegkit.dll'
+        if (-not (Test-Path -LiteralPath $ffmpegDll -PathType Leaf)) {
+            throw "Windows FFmpeg Kit DLL is missing: $ffmpegDll"
+        }
+        $ffmpegDllHash = (Get-FileHash -LiteralPath $ffmpegDll -Algorithm SHA256).Hash.ToLowerInvariant()
+        if ($ffmpegDllHash -ne '302d978048f389dbb07f01c1a34a4988a92d1e3ebf0e960e2dd8314f83632b34') {
+            throw "Windows FFmpeg Kit DLL does not match the pinned n9.0.2 bundle: $ffmpegDllHash"
+        }
         $expectedPrefix = [IO.Path]::GetFullPath($repoRoot).TrimEnd('\') + '\'
         $windowsSourceFull = [IO.Path]::GetFullPath($windowsSource)
         if (-not $windowsSourceFull.StartsWith($expectedPrefix, [StringComparison]::OrdinalIgnoreCase)) {
@@ -428,7 +454,8 @@ try {
         task = "build-$($Target.ToLowerInvariant())-$configurationLower"
         command = ".\tool\build_local_release.ps1 -Target $Target -Configuration $Configuration" +
             $(if ($DedicatedBuild) { ' -DedicatedBuild' } else { '' }) +
-            $(if ($FullRegression) { ' -FullRegression' } else { ' -SkipQuality' })
+            $(if ($FullRegression) { ' -FullRegression' } else { ' -SkipQuality' }) +
+            $(if ($CandidateLabel) { " -CandidateLabel $CandidateLabel" } else { '' })
         source_commit = $sourceCommit
         started_at_utc = $startedAt.ToString('o')
         duration_seconds = [Math]::Round($stopwatch.Elapsed.TotalSeconds, 3)
@@ -436,6 +463,7 @@ try {
         failure = $failureMessage
         target = $Target
         configuration = $Configuration
+        candidate_label = if ($CandidateLabel) { $CandidateLabel } else { $null }
         gradle_workers = if ($Target -eq 'AndroidArm64') { $gradleWorkers } else { $null }
         quality = if ($FullRegression) { 'full-in-this-invocation' } else { 'external-focused-or-existing-evidence' }
         cache = $cacheSummary

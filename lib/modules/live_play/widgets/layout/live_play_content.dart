@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:ui' as ui;
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/gestures.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/modules/live_play/states/ui_state.dart';
@@ -171,7 +172,10 @@ class _PortraitLiveRoomLayoutState extends State<PortraitLiveRoomLayout> {
         _panelHeight = panelHeight - collapseDelta;
         final remaining = delta - collapseDelta;
         if (widget.onEnterPortraitFullscreen != null && remaining > 0) {
-          _dismissOffset = (_dismissOffset + remaining).clamp(0.0, panelHeight + 36).toDouble();
+          // Leave a final animated travel segment for the fullscreen request.
+          // If dragging reaches the animation target, AnimatedSlide has no
+          // transition to finish and its onEnd callback never fires.
+          _dismissOffset = (_dismissOffset + remaining).clamp(0.0, panelHeight).toDouble();
         }
         return;
       }
@@ -301,7 +305,9 @@ class _PortraitLiveRoomLayoutState extends State<PortraitLiveRoomLayout> {
                                 : null,
                             decreasedValue: current > range.minimum
                                 ? '${(current > range.middle ? range.middle : range.minimum).round()} px'
-                                : null,
+                                : widget.onEnterPortraitFullscreen == null
+                                ? null
+                                : i18n('portrait_fullscreen_enter_hint'),
                             onTap: widget.onEnterPortraitFullscreen == null
                                 ? null
                                 : () => _requestPortraitFullscreen(current),
@@ -316,6 +322,7 @@ class _PortraitLiveRoomLayoutState extends State<PortraitLiveRoomLayout> {
                             child: GestureDetector(
                               key: const ValueKey('live-play-portrait-sheet-handle'),
                               behavior: HitTestBehavior.opaque,
+                              dragStartBehavior: DragStartBehavior.down,
                               onTap: widget.onEnterPortraitFullscreen == null
                                   ? null
                                   : () => _requestPortraitFullscreen(current),

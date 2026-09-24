@@ -46,6 +46,7 @@ void main() {
     expect(detail.title, 'Fixture live');
     expect(detail.nick, 'Fixture owner');
     expect(detail.onlineViewers, isNull, reason: 'room detail has no verified concurrent field');
+    expect(detail.audienceValue(preferRealOnline: false, platformEnabled: false), isEmpty);
     final qualities = await site.getPlayQualites(detail: detail);
     expect(qualities.single.selectionId, 'live');
     final resolution = await site.resolvePlayUrlsRaw(detail: detail, quality: qualities.single);

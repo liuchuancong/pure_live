@@ -20,12 +20,12 @@ dependencies:
   uuid: ^4.5.3 # 生成唯一标识符
   html_unescape: ^2.0.0 # HTML转义字符解码
   brotli: ^0.6.0 # Brotli压缩解压
-  equatable: ^2.0.7
+  equatable: ^3.0.0
   xml: ^7.0.1 # XML parser
-  archive: ^4.0.4
+  archive: ^4.3.0
   string_similarity: ^2.0.0
   fuzzywuzzy: ^1.1.6
-  scrollview_observer: ^1.27.1
+  scrollview_observer: ^1.27.3
   flutter_reorderable_grid_view: ^5.6.0
   pro_mpack: ^3.2.0
   share_plus: ^13.1.0
@@ -33,10 +33,10 @@ dependencies:
   flutter_json: ^0.2.0
 
   # Local database (SQLite)
-  drift: ^2.33.0
+  drift: ^2.35.0
   charset_converter: ^2.3.0
-  synchronized: ^3.1.0
-  meta: ^1.18.0 # Flutter 3.47.0 SDK pin
+  synchronized: ^3.4.2
+  meta: ^1.18.0 # Flutter 3.47.5 SDK pin
 
   # -------------------------- 网络请求/网络状态 --------------------------
   http: ^1.1.0 # 基础HTTP请求
@@ -48,9 +48,9 @@ dependencies:
   connectivity_plus: ^7.3.1 # 网络连接状态监听
   webdav_client: ^1.2.2 # WebDAV文件存储客户端
 
-  firebase_core: ^4.10.0
-  firebase_auth: ^6.5.2
-  cloud_firestore: ^6.5.0
+  firebase_core: ^4.15.0
+  firebase_auth: ^6.7.0
+  cloud_firestore: ^6.10.0
 
   win32_registry: ^3.0.3
   flutter_spinkit: ^5.2.2
@@ -63,25 +63,23 @@ dependencies:
   media_kit:
     git:
       url: https://github.com/Predidit/media-kit.git
+      ref: d13fc22ba1b19b45de3090c2d1b0f8a541b585a0
       path: ./media_kit
-      ref: 6fd002aabce0c22009bfbf564c1b7f16f0b120d8
 
   media_kit_video:
     git:
       url: https://github.com/Predidit/media-kit.git
       path: ./media_kit_video
-      ref: 6fd002aabce0c22009bfbf564c1b7f16f0b120d8
+      ref: d13fc22ba1b19b45de3090c2d1b0f8a541b585a0
 
-  better_player_plus:
-    path: plugins/built_in_kotlin/better_player_plus # Local AGP 9 Built‑in Kotlin patch
+  better_player_plus: ^1.4.1
 
   audio_service: ^0.18.18 # 后台音频服务
   audio_service_win: ^0.0.3
   audio_session: ^0.2.3 # 音频会话管理
-  # Keep this exact: each package patch selects a different reviewed native
-  # builders release. 0.6.2 preserves argv through FFmpeg/FFprobe/FFplay and
-  # selects builders 0.11.1 (FFmpeg 9.0.1); the repository prefetch gate pins
-  # the Android and Windows archive hashes.
+  # Keep this exact: 0.6.2 preserves argv through FFmpeg/FFprobe/FFplay.
+  # Platform URL overrides below select our verified FFmpeg 9.0.2 bundles;
+  # prefetch gates pin the Android and Windows archive hashes.
   ffmpeg_kit_extended_flutter: 0.6.2
   bonsoir: ^7.1.5 # 局域网同步
 
@@ -89,17 +87,17 @@ dependencies:
     path: plugins/flv_lzc # Vendored from liuchuancong/flv_lzc@030d611
   # -------------------------- UI组件/界面样式 --------------------------
   flutter_svg: ^2.2.1 # SVG图片渲染
-  lottie: ^3.3.3 #动画
-  cached_network_image: ^4.0.0 # 网络图片缓存
+  lottie: ^3.6.1 #动画
+  cached_network_image: ^4.0.2 # 网络图片缓存
   dynamic_color: ^2.1.0 # 动态主题色
-  material_ui: ^1.1.1 # dynamic_color 2.x 的独立 Material ColorScheme 桥接
+  material_ui: ^1.4.0 # dynamic_color 2.x 的独立 Material ColorScheme 桥接
   waterfall_flow: ^3.1.1 # 瀑布流布局
   easy_refresh: ^3.5.0 # 下拉刷新/上拉加载
   flutter_smart_dialog: ^5.1.0 # 自定义弹窗
   flex_color_picker: ^4.0.0 # 颜色选择器
   bordered_text: ^3.0.2 # 带边框文字
   flutter_color: ^2.1.1 # 颜色工具
-  syncfusion_flutter_sliders: ^34.2.5 # 滑块组件
+  syncfusion_flutter_sliders: ^34.2.9 # 滑块组件
   markdown_widget: ^2.3.2+8 # Markdown渲染
 
   # -------------------------- 图标/字体 --------------------------
@@ -109,7 +107,7 @@ dependencies:
   # -------------------------- 窗口/桌面端控制 --------------------------
   window_manager: ^0.5.1 # 桌面端窗口管理
   windows_single_instance: ^1.2.0
-  tray_manager: ^0.5.2 # 系统托盘管理
+  tray_manager: ^0.7.0 # 系统托盘管理
   flutter_acrylic: ^1.1.4 # 亚克力毛玻璃效果
   screen_retriever:
     git:
@@ -125,7 +123,7 @@ dependencies:
   screen_brightness_platform_interface: ^2.1.2
   screen_brightness_android: ^2.1.6
   screen_brightness_ios: ^2.1.4
-  volume_controller: ^3.4.4 # 音量控制
+  volume_controller: ^3.7.1 # 音量控制
   wakelock_plus: ^1.4.0 # 保持屏幕常亮
   battery_plus: ^7.0.0 # 电池状态获取
   permission_handler: ^13.0.1 # 权限管理
@@ -135,9 +133,9 @@ dependencies:
     path: plugins/built_in_kotlin/mobile_scanner # Local AGP 9 Built‑in Kotlin patch
 
   # -------------------------- 数据存储/数据库 --------------------------
-  hive_ce: ^2.15.1 # Hive本地数据库
+  hive_ce: ^2.20.0 # Hive本地数据库
   hive_ce_flutter: ^2.3.3 # Hive Flutter集成
-  flutter_cache_manager: ^3.4.1 # 通用缓存管理
+  flutter_cache_manager: ^3.4.5 # 通用缓存管理
 
   # -------------------------- 文件/路径/存储 --------------------------
   path_provider: ^2.1.5 # 获取文件路径
@@ -147,7 +145,7 @@ dependencies:
   shared_preferences_windows: ^2.4.1 # Windows 本地化配置目录重定向
   path: ^1.9.1 # 路径处理
   file: ^7.0.1 # 文件操作
-  file_picker: ^12.0.0 # 文件选择器
+  file_picker: ^13.1.0 # 文件选择器
   uri_to_file: ^1.0.0 # URI转文件
   open_filex: ^4.7.0 # 打开本地文件
   mime: ^2.0.0 # MIME类型处理
@@ -155,7 +153,7 @@ dependencies:
   # -------------------------- 工具/通用库 --------------------------
   timezone: ^0.11.0 # 时区处理
   date_format: ^2.0.9 # 日期格式化
-  logger: ^2.6.2 # 日志打印
+  logger: ^2.8.0 # 日志打印
   quiver: ^3.2.1 # 实用工具集
   ffi: ^2.2.0 # 本地代码交互
   rxdart: ^0.28.0 # 响应式编程
@@ -171,7 +169,7 @@ dependencies:
       ref: 3e6c4c4a25340cd363af9d38891d88498b90be26
 
   # -------------------------- 直播协议/定制SDK --------------------------
-  protobuf: ^6.0.0 # Protocol Buffers
+  protobuf: ^6.1.0 # Protocol Buffers
   fixnum: ^1.1.0 # 固定精度数字
   dlna_dart: ^0.1.0 # DLNA投屏
 
@@ -191,20 +189,32 @@ dependencies:
     path: plugins/built_in_kotlin/floating # Local AGP 9 Built‑in Kotlin patch
 
   flutter_floating: ^2.0.1 # 悬浮窗
-  qr_flutter: ^4.1.0 # 二维码生成
+  qr: ^4.0.0 # Bilibili 登录二维码矩阵；绘制由应用控制
   easy_localization: ^3.0.8 #多语言
   app_links: ^7.2.1
   scroll_animator: 0.3.0
 
 # 依赖覆盖（强制指定版本）
 dependency_overrides:
+  # Keep the full dependency graph at current stable releases while upstream
+  # packages and Flutter SDK pins are migrated and regression-tested here.
+  _fe_analyzer_shared: 108.0.0
+  analyzer: 14.4.0
+  cli_util: 0.6.0
+  dbus: 0.8.0
+  file_picker_linux: 2.0.1
+  material_color_utilities: 0.13.1
+  nm: 0.6.0
+  source_gen: 4.3.0
+  test_api: 0.7.14
   flutter_inappwebview_android:
     path: plugins/built_in_kotlin/flutter_inappwebview_android # 上游网页内核Android子包ProGuard兼容补丁
   share_handler_android:
     path: plugins/built_in_kotlin/share_handler_android # share_handler Android本地兼容补丁
   hooks: ^2.2.0 # Native Assets 构建 hooks 兼容
+  code_assets: ^2.1.0 
   xml: ^7.0.1 # webdav_client xml7兼容
-  wakelock_plus: ^1.4.0 # media_kit声明版本覆盖
+  wakelock_plus: ^1.4.0 
   screen_retriever:
     git:
       url: https://github.com/liuchuancong/screen_retriever.git
@@ -217,14 +227,13 @@ dev_dependencies:
     sdk: flutter
   shared_preferences: ^2.5.5 # widget tests mock localization persistence
   change_app_package_name: ^1.5.0 # 修改应用包名
-  json_serializable: ^6.7.1 # JSON序列化
   build_runner: ^2.4.15 # 代码生成器
   flutter_launcher_icons: ^0.14.4 # 应用图标生成
   msix: ^3.16.12 # Windows安装包打包
   intl_utils: ^2.8.11 # 国际化工具
   flutter_lints: ^6.0.0 # 代码规范检查
   dmg: ^0.1.7 # macOS安装包打包
-  drift_dev: ^2.33.0
+  drift_dev: ^2.35.0
   enven: ^1.3.0
 
 # 应用图标配置
@@ -277,3 +286,8 @@ ffmpeg_kit_extended_config:
   type: base
   gpl: false
   small: false
+  android: https://github.com/wzgrx/pure_live/releases/download/native-ffmpeg-9.0.2-b1/bundle-base-shared-lgpl-release.aar
+  windows: https://github.com/wzgrx/pure_live/releases/download/native-ffmpeg-9.0.2-b1/bundle-base-windows-x86_64-shared-lgpl.zip
+  linux: https://github.com/wzgrx/pure_live/releases/download/native-ffmpeg-9.0.2-b1/bundle-base-linux-x86_64-shared-lgpl.zip
+  macos: https://github.com/wzgrx/pure_live/releases/download/native-ffmpeg-9.0.2-b1/bundle-base-macos-universal-lgpl.xcframework.zip
+  ios: https://github.com/wzgrx/pure_live/releases/download/native-ffmpeg-9.0.2-b1/bundle-base-ios-universal-lgpl.xcframework.zip

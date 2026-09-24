@@ -15,6 +15,33 @@ const id = '570341209400361612';
 const dynamicRoom = 'https://www.xiaohongshu.com/livestream/dynpath9oMyTyTC/$id';
 
 void main() {
+  test('official XHS live-audience deep link imports only its room identity', () async {
+    final link = 'xhsdiscover://live_audience?room_id=$id&source=share&flvUrl=http%3A%2F%2F127.0.0.1%2Fprivate';
+    final f = fixtures.ShortLinkFixture((_) async => throw StateError('No network'));
+    expect(XiaohongshuLink.parse(link), id);
+    expect(LiveUrlTool.containsSupportedLink('直播入口：$link，复制'), true);
+    expect(await f.parse('直播入口：$link，复制'), [id, 'xiaohongshu']);
+    expect(f.created, 0);
+  });
+  for (final link in [
+    'xhsdiscover://live_audience?room_id=$id',
+    'xhsdiscover://live_audience?room_id=$id&room_id=42&source=share',
+    'xhsdiscover://live_audience?room_id=0&source=share',
+    'xhsdiscover://live_audience?room_id=$id&source=',
+    'xhsdiscover://live_audience/path?room_id=$id&source=share',
+    'xhsdiscover://live_audience?room_id=$id&source=share#fragment',
+    'xhsdiscover://other?room_id=$id&source=share',
+    'ftp://xhsdiscover://live_audience?room_id=$id&source=share',
+    'https://example.com/?target=xhsdiscover://live_audience?room_id=$id&source=share',
+  ]) {
+    test('XHS deep link rejects non-room or ambiguous input: $link', () async {
+      final f = fixtures.ShortLinkFixture((_) async => throw StateError('No network'));
+      expect(XiaohongshuLink.parse(link), isNull);
+      expect(LiveUrlTool.containsSupportedLink(link), false);
+      expect(await f.parse(link), isEmpty);
+      expect(f.created, 0);
+    });
+  }
   test('XHS share input accepts the observed dynamic room route', () async {
     final f = fixtures.ShortLinkFixture((_) async => throw StateError('No network'));
     expect(await f.parse(dynamicRoom), [id, 'xiaohongshu']);

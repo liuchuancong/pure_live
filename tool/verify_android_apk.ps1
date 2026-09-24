@@ -12,7 +12,10 @@ param(
 
     [string] $ExpectedBaseVersionCode = '',
 
-    [int] $ExpectedAbiVersionOffset = 0
+    [int] $ExpectedAbiVersionOffset = 0,
+
+    [ValidateRange(1, 100)]
+    [int] $ExpectedMinSdk = 26
 )
 
 $ErrorActionPreference = 'Stop'
@@ -57,6 +60,23 @@ try {
         if ($entries[$required.Key].Length -lt $required.Value) {
             throw "Android APK entry is unexpectedly small: $($required.Key) ($($entries[$required.Key].Length) bytes)"
         }
+    }
+
+    $ffmpegEntry = $entries["lib/$ExpectedAbi/libffmpegkit.so"]
+    $ffmpegStream = $ffmpegEntry.Open()
+    try {
+        $ffmpegBuffer = [byte[]]::new([int]$ffmpegEntry.Length)
+        $offset = 0
+        while ($offset -lt $ffmpegBuffer.Length) {
+            $read = $ffmpegStream.Read($ffmpegBuffer, $offset, $ffmpegBuffer.Length - $offset)
+            if ($read -le 0) { throw 'FFmpeg library ended before its ZIP entry length.' }
+            $offset += $read
+        }
+        if (-not [Text.Encoding]::ASCII.GetString($ffmpegBuffer).Contains('n9.0.2')) {
+            throw 'Android APK contains a FFmpeg Kit library older than the pinned n9.0.2 native bundle.'
+        }
+    } finally {
+        $ffmpegStream.Dispose()
     }
 
     $flutterAssets = @($archive.Entries | Where-Object {
@@ -116,10 +136,19 @@ if ($LASTEXITCODE -ne 0) {
     throw "aapt2 failed while reading APK metadata: $resolvedApk"
 }
 $packageLine = $badging | Where-Object { $_ -like 'package:*' } | Select-Object -First 1
+$minSdkLine = $badging | Where-Object { $_ -like 'minSdkVersion:*' } | Select-Object -First 1
 $versionCodeMatch = if ($packageLine) { [regex]::Match($packageLine, "(?<![A-Za-z])versionCode='(\d+)'") } else { $null }
 $versionNameMatch = if ($packageLine) { [regex]::Match($packageLine, "(?<![A-Za-z])versionName='([^']*)'") } else { $null }
 if (-not $packageLine -or -not $versionCodeMatch.Success -or -not $versionNameMatch.Success) {
     throw 'Android APK manifest version metadata was not found.'
+}
+$minSdkMatch = if ($minSdkLine) { [regex]::Match($minSdkLine, "^minSdkVersion:'(\d+)'$") } else { $null }
+if (-not $minSdkLine -or -not $minSdkMatch.Success) {
+    throw 'Android APK manifest minimum SDK metadata was not found.'
+}
+$manifestMinSdk = [int]$minSdkMatch.Groups[1].Value
+if ($manifestMinSdk -ne $ExpectedMinSdk) {
+    throw "Android APK minSdk mismatch: expected $ExpectedMinSdk, found $manifestMinSdk"
 }
 $manifestVersionCode = [int64]$versionCodeMatch.Groups[1].Value
 $manifestVersionName = $versionNameMatch.Groups[1].Value
@@ -144,7 +173,7 @@ $apkFile = Get-Item -LiteralPath $resolvedApk
 $apkHash = (Get-FileHash -LiteralPath $resolvedApk -Algorithm SHA256).Hash
 Write-Host (
     "Android APK integrity passed: ABI=$ExpectedAbi, version=$manifestVersionName, " +
-    "manifestVersionCode=$manifestVersionCode, Flutter assets=$($flutterAssets.Count), asset bytes=$flutterAssetBytes"
+    "manifestVersionCode=$manifestVersionCode, minSdk=$manifestMinSdk, Flutter assets=$($flutterAssets.Count), asset bytes=$flutterAssetBytes"
 )
 
 [pscustomobject][ordered]@{
@@ -153,6 +182,7 @@ Write-Host (
     base_version_code = $baseVersionCode
     abi_version_code_offset = $ExpectedAbiVersionOffset
     manifest_version_code = $manifestVersionCode
+    manifest_min_sdk = $manifestMinSdk
     abi = $ExpectedAbi
     native_library_count = $elfAlignment.library_count
     minimum_elf_load_alignment = $elfAlignment.minimum_required_alignment

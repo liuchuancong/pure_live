@@ -1,8 +1,9 @@
+import 'package:qr/qr.dart';
 import 'package:remixicon/remixicon.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
+import 'package:pure_live/common/widgets/qr_code_widget.dart';
 import 'package:pure_live/common/services/settings/backup_controller.dart';
 import 'package:pure_live/modules/remote_receiver/remote_sync_device.dart';
 import 'package:pure_live/modules/remote_receiver/remote_sync_service.dart';
@@ -175,13 +176,7 @@ class _RemoteSyncPageState extends State<RemoteSyncPage> {
             Text(i18n('remote_sync_my_device'), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
             const SizedBox(height: 16),
             if (service.qrData.isNotEmpty)
-              QrImageView(
-                data: service.qrData,
-                version: QrVersions.auto,
-                backgroundColor: Colors.white,
-                size: 180.0,
-                padding: const EdgeInsets.all(12),
-              ),
+              QrCodeWidget(data: service.qrData, size: 180, padding: const EdgeInsets.all(12)),
             const SizedBox(height: 12),
             SelectableText(
               service.address.isEmpty ? i18n('remote_sync_no_address') : service.address,

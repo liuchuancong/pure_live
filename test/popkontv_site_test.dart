@@ -119,7 +119,7 @@ void main() {
     final qualities = await site.getPlayQualites(detail: detail);
     expect(qualities.map((quality) => quality.selectionId), ['1080p', '720p']);
     final resolution = await site.resolvePlayUrlsRaw(detail: detail, quality: qualities.last);
-    expect(resolution.urls.single, contains('/720.m3u8'));
+    expect(Uri.parse(resolution.urls.single).path, endsWith('/chunklist_720.m3u8'));
     await site.resolvePlayUrlsForRecoveryRaw(detail: detail, quality: qualities.last);
     expect(watchRequests, 3, reason: 'API room, detail, and recovery each obtain a new watch session');
     expect(manifestRequests, 3);
