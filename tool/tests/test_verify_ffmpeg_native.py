@@ -1,4 +1,5 @@
 import hashlib
+import struct
 import sys
 import tempfile
 import unittest
@@ -68,6 +69,23 @@ class VerifyFFmpegNativeTest(unittest.TestCase):
             staged = native.stage_linux_runtime(bundle, self.archive)
             self.assertEqual(staged.read_bytes(), payload)
             self.assertEqual(native.verify('linux', bundle, self.archive)['version'], 'n9.0.2')
+
+    def test_macos_requires_both_universal_architectures(self):
+        app = self.root / 'PureLive.app'
+        binary = app / 'Contents/Frameworks/ffmpegkit.framework/ffmpegkit'
+        binary.parent.mkdir(parents=True)
+
+        def fat_arches(*cpus: int) -> bytes:
+            header = b'\xca\xfe\xba\xbe' + struct.pack('>I', len(cpus))
+            header += b''.join(struct.pack('>IIIII', cpu, 0, 64, 100, 14) for cpu in cpus)
+            return header + b'FFmpeg n9.0.2'
+
+        with mock.patch.dict(native.ARCHIVES, {'macos': (self.archive.name, self.digest)}):
+            binary.write_bytes(fat_arches(0x01000007, 0x0100000C))
+            self.assertEqual(native.verify('macos', app, self.archive)['version'], 'n9.0.2')
+            binary.write_bytes(fat_arches(0x01000007, 0x01000007))
+            with self.assertRaisesRegex(ValueError, 'lacks x86_64 and arm64'):
+                native.verify('macos', app, self.archive)
 
 
 if __name__ == '__main__':

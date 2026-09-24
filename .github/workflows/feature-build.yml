@@ -901,6 +901,7 @@ jobs:
           echo "=== macOS architecture ==="
 
           lipo -info "$executable"
+          python3 tool/verify_ffmpeg_native.py macos "$app_path"
 
       - name: Archive macOS application
         if: ${{ (github.event_name == 'push' && startsWith(github.ref_name, 'stage-macos-')) || inputs.build_macos }}

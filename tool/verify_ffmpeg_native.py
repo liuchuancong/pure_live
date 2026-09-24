@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import re
+import struct
 import sys
 import zipfile
 from pathlib import Path
@@ -16,6 +17,7 @@ ARCHIVES = {
     'android': ('bundle-base-shared-lgpl-release.aar', 'c6c9b1ff7be756b0fb587f98e05972ca4dae97e8275c22961b443b4fd5f49bf7'),
     'windows': ('bundle-base-windows-x86_64-shared-lgpl.zip', 'e61684a91f7471ba00f1d5b36a24e93ab602ef72bd57000d94990e7e0c5dfe3a'),
     'linux': ('bundle-base-linux-x86_64-shared-lgpl.zip', 'd6003c3feb2bdcdccd0d4ad5e7b76fa8e8951430c6a22c1db7be5e13da19403d'),
+    'macos': ('bundle-base-macos-universal-lgpl.xcframework.zip', '9977fc0d3de38af4830c54f536146b2595843d7a45850c50c6205ffb56ca899a'),
 }
 WINDOWS_DLL_SHA256 = '302d978048f389dbb07f01c1a34a4988a92d1e3ebf0e960e2dd8314f83632b34'
 VERSION = b'n9.0.2'
@@ -48,6 +50,16 @@ def stage_linux_runtime(bundle: Path, archive: Path) -> Path:
     return target
 
 
+def macos_architectures(binary: bytes) -> set[int]:
+    """Return Mach-O CPU types from the executable, rejecting partial bundles."""
+    if binary[:4] != b'\xca\xfe\xba\xbe' or len(binary) < 8:
+        raise ValueError('macOS FFmpeg binary is not a 32-bit-header universal Mach-O')
+    count = struct.unpack_from('>I', binary, 4)[0]
+    if count < 2 or len(binary) < 8 + count * 20:
+        raise ValueError('macOS FFmpeg universal Mach-O header is incomplete')
+    return {struct.unpack_from('>I', binary, 8 + index * 20)[0] for index in range(count)}
+
+
 def verify(platform: str, artifact: Path, cache_archive: Path | None = None, abi: str = 'arm64-v8a') -> dict[str, str]:
     name, expected = ARCHIVES[platform]
     archive = cache_archive or CACHE / platform / name
@@ -58,6 +70,11 @@ def verify(platform: str, artifact: Path, cache_archive: Path | None = None, abi
         candidates = list(artifact.rglob('libffmpegkit.so'))
         if len(candidates) != 1:
             raise ValueError(f'Expected one packaged Linux FFmpeg library under {artifact}, found {len(candidates)}')
+        artifact = candidates[0]
+    if platform == 'macos' and artifact.is_dir():
+        candidates = [path for path in artifact.rglob('ffmpegkit') if path.parent.name == 'ffmpegkit.framework' and path.is_file()]
+        if len(candidates) != 1:
+            raise ValueError(f'Expected one packaged macOS FFmpeg framework binary under {artifact}, found {len(candidates)}')
         artifact = candidates[0]
 
     if platform == 'android':
@@ -76,6 +93,9 @@ def verify(platform: str, artifact: Path, cache_archive: Path | None = None, abi
         glibc_versions = [tuple(map(int, version)) for version in re.findall(rb'GLIBC_(\d+)\.(\d+)', library)]
         if not glibc_versions or max(glibc_versions) > (2, 39):
             raise ValueError(f'Linux FFmpeg library exceeds Ubuntu 24.04 glibc baseline: {artifact}')
+    if platform == 'macos':
+        if macos_architectures(library) != {0x01000007, 0x0100000C}:
+            raise ValueError(f'macOS FFmpeg library lacks x86_64 and arm64 slices: {artifact}')
 
     return {'platform': platform, 'version': VERSION.decode(), 'archive_sha256': expected, 'library_sha256': hashlib.sha256(library).hexdigest()}
 
