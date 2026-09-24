@@ -17,6 +17,7 @@ import 'package:hive_ce/hive.dart';
 import 'package:pure_live/common/models/live_room.dart';
 import 'package:pure_live/common/services/settings_service.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
+import 'package:pure_live/core/interface/live_site.dart';
 import 'package:pure_live/core/sites.dart';
 import 'package:pure_live/get/get.dart';
 import 'package:pure_live/player/core/playback_header_resolver.dart';
@@ -24,6 +25,10 @@ import 'package:pure_live/player/core/playback_header_resolver.dart';
 const _siteTimeout = Duration(seconds: 90);
 const _mediaTimeout = Duration(seconds: 15);
 const _roomsPerSite = 3;
+
+// These adapters resolve their catalog or media through a headless WebView,
+// which does not exist on a test host; verify them on a device instead.
+const _webViewSites = {'dailymotion', 'nimotv', 'rumble', 'shopeelive'};
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -90,6 +95,10 @@ void main() {
 }
 
 Future<void> _probeSite(String id, Map<String, Object?> result) async {
+  if (_webViewSites.contains(id)) {
+    result['verdict'] = 'needs-device';
+    return;
+  }
   final site = Sites.of(id).liveSite;
   result['stage'] = 'catalog';
   var rooms = await site.getRecommendRooms(page: 1, pageSize: 20);
@@ -125,7 +134,13 @@ Future<void> _probeSite(String id, Map<String, Object?> result) async {
       }
       result['qualities'] = qualities.map((q) => q.quality).toList();
       result['stage'] = 'urls';
-      final urls = await site.getPlayUrls(detail: detail, quality: qualities.first);
+      // Same entry point as the player: owned inputs carry no exportable URL.
+      final resolution = await site.resolvePlayUrls(detail: detail, quality: qualities.first);
+      if (resolution.inputRecipe != null) {
+        result['verdict'] = 'owned-input';
+        return;
+      }
+      final urls = resolution.urls;
       if (urls.isEmpty) {
         attempts.add('no-urls');
         continue;
