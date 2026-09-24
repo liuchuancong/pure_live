@@ -1721,6 +1721,9 @@ void main() {
           final entered = Completer<void>();
           final lease = Completer<PlaybackSourceRefreshResult>();
           var creations = 0;
+          // Windows warm-swaps onto a new player; other hosts reopen the fresh
+          // source on the active player. Either one is a recovery.
+          int recoveries() => (creations - 1) + (active.openedUrls.length - 1);
           final manager = _manager(
             {PlayerEngine.mediaKit: active},
             playerCreator: (_) => creations++ == 0 ? active : replacement,
@@ -1774,9 +1777,9 @@ void main() {
             }
             await Future<void>.delayed(const Duration(milliseconds: 90));
             if (observation == 'EOF') {
-              expect(creations, 2, reason: 'a cached frame must not cancel real EOF recovery');
+              expect(recoveries(), 1, reason: 'a cached frame must not cancel real EOF recovery');
             } else {
-              expect(creations, 1, reason: 'the original transport recovered while the signer was pending');
+              expect(recoveries(), 0, reason: 'the original transport recovered while the signer was pending');
               expect(manager.currentPlayer, same(active));
               expect(active.openedUrls, [url]);
               expect(active.softStopCalls, 0);
@@ -1787,7 +1790,7 @@ void main() {
               if (observation == 'buffer' && !resolverFails) {
                 active.emitLoading(true);
                 await Future<void>.delayed(const Duration(milliseconds: 100));
-                expect(creations, 2);
+                expect(recoveries(), 1);
               }
             }
           } finally {
@@ -2902,18 +2905,23 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 6));
     }
 
+    // Windows reuses the retired player as its warm standby; other hosts
+    // recreate the engine with a fresh player.
+    final secondCandidate = Platform.isWindows ? players.first : players[2];
+    final secondCandidateOpens = Platform.isWindows ? 2 : 1;
     final secondCandidateDeadline = DateTime.now().add(const Duration(milliseconds: 300));
-    while (players.first.openedUrls.length < 2 && DateTime.now().isBefore(secondCandidateDeadline)) {
+    while (secondCandidate.openedUrls.length < secondCandidateOpens &&
+        DateTime.now().isBefore(secondCandidateDeadline)) {
       await Future<void>.delayed(const Duration(milliseconds: 5));
     }
-    players.first.emitFrame();
+    secondCandidate.emitFrame();
 
     final secondRecoveryDeadline = DateTime.now().add(const Duration(milliseconds: 300));
-    while (!identical(manager.currentPlayer, players.first) && DateTime.now().isBefore(secondRecoveryDeadline)) {
+    while (!identical(manager.currentPlayer, secondCandidate) && DateTime.now().isBefore(secondRecoveryDeadline)) {
       await Future<void>.delayed(const Duration(milliseconds: 5));
     }
-    expect(creations, 2);
-    expect(manager.currentPlayer, same(players.first));
+    expect(creations, Platform.isWindows ? 2 : 3);
+    expect(manager.currentPlayer, same(secondCandidate));
     expect(manager.hasError.value, isFalse);
     await manager.dispose();
   });
