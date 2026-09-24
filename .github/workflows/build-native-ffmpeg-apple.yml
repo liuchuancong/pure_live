@@ -101,6 +101,17 @@ jobs:
           if source.count(before) != 1:
               raise SystemExit('Unexpected upstream cargo-c install command')
           rust_setup.write_text(source.replace(before, after))
+
+          # On GitHub's Xcode 26 runner, root's xcrun does not resolve the
+          # runner user's downloaded Metal cryptex. Pass its executable path
+          # to FFmpeg rather than letting configure run root's xcrun lookup.
+          functions = Path('builder/scripts/function.sh')
+          before = 'truthy "$enable_metal" && config_options+=" --enable-metal"'
+          after = 'truthy "$enable_metal" && config_options+=" --enable-metal --metalcc=${PURELIVE_METALCC}"'
+          source = functions.read_text()
+          if source.count(before) != 1:
+              raise SystemExit('Unexpected upstream Metal configure option')
+          functions.write_text(source.replace(before, after))
           PY
 
       - name: Install upstream Apple build tools
@@ -117,6 +128,8 @@ jobs:
           set -euo pipefail
           cd builder
           chmod +x runner.sh scripts/build_all.sh
+          export PURELIVE_METALCC="$(xcrun --find metal)"
+          sudo "$PURELIVE_METALCC" -v
           if ! sudo -E "$HOMEBREW_BASH" scripts/build_all.sh \
             --platform="$TARGET" --deps --bundle=base \
             --build=ffmpeg,kit,bundle --license=lgpl --not-small --local \
