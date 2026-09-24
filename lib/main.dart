@@ -17,6 +17,7 @@ import 'package:pure_live/common/utils/share_command_handler.dart';
 import 'package:pure_live/common/utils/shared_media_intake.dart';
 import 'package:pure_live/core/iptv/services/iptv_import_manager.dart';
 import 'package:pure_live/plugins/file_utils.dart';
+import 'package:pure_live/player/utils/popup_route_tracker.dart';
 import 'package:material_ui/material_ui.dart' as material;
 
 void main(List<String> args) async {
@@ -164,7 +165,7 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
               pageTransitionsTheme: appPageTransitionsTheme,
             ),
             locale: context.locale,
-            navigatorObservers: [FlutterSmartDialog.observer, LiveRouteObserver()],
+            navigatorObservers: [FlutterSmartDialog.observer, LiveRouteObserver(), PopupRouteTracker.instance],
             builder: FlutterSmartDialog.init(
               builder: (context, child) {
                 Widget resultWidget = child ?? const SizedBox.shrink();
