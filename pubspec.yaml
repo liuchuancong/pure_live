@@ -83,8 +83,8 @@ dependencies:
   ffmpeg_kit_extended_flutter: 0.6.2
   bonsoir: ^7.1.5 # 局域网同步
 
-  flv_lzc:
-    path: plugins/flv_lzc # Vendored from liuchuancong/flv_lzc@030d611
+  flv_lzc: 
+    git: https://github.com/liuchuancong/flv_lzc.git
   # -------------------------- UI组件/界面样式 --------------------------
   flutter_svg: ^2.2.1 # SVG图片渲染
   lottie: ^3.6.1 #动画
