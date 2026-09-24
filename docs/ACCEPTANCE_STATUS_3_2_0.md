@@ -6,10 +6,11 @@
 
 | 项目 | 当前证据 |
 | --- | --- |
-| 功能源码基线 | 当前 `31a3c964` 将 Flutter 3.47.5、AGP 9.3.3、Gradle 9.7.1、全部可解析直接依赖与 media-kit Native Assets 升级并同步 GitHub。完整门禁：仓库审计 0 error、Flutter Analyze 无问题、测试 **5333/5333**（`20260924T013002698Z-quality-full.json`）；此前焦点布局/Windows 停帧修订仍在同一源码内。2026-09-24 当前脚本的公开接口探测 **42/42** 通过；这不代替客户端双端播放/录制与 Release 验收 |
-| Android 最新本机构建/原生输入 | `31a3c964` arm64 Debug，3.1.8+4121 / Manifest 6121，237160466 B，SHA-256 `3B572462…D543AF`；18 个原生库、最小 ELF LOAD `0x4000`、APK 内容门禁通过（`20260924T011045818Z-build-androidarm64-debug.json`）。同提交完整质量门禁 **5333/5333**；已在 25102RKBEC / myron 上以 `adb -s 192.168.1.2:5555 install -r` 保留数据覆盖安装，现装 `base.apk` SHA-256 与候选完全一致。A0～A8 运行时验收仍待执行 |
+| 功能源码基线 | 依赖配置至 `060420f7`：Flutter 3.47.5、AGP 9.3.3、Gradle 9.7.1、pub 直接与传递图均已复核升级，FFmpeg 9.0.2 覆盖 Android/Windows/Linux/macOS/iOS。最新本地 Full 记录 `20260924T033341958Z-quality-full.json`（`b6033234`，Analyze 与 **5334/5334** 测试通过），随后 Android/Windows 原生候选及 Linux/macOS/iOS 单平台构建分别通过；公开接口探测 **42/42**。这仍不代替双端客户端完整验收 |
+| Android 最新本机构建/原生输入 | `e4532d77` arm64 Debug 已通过 `20260924T033620351Z-build-androidarm64-debug.json`；FFmpeg 9.0.2 AAR、18 个原生库及 16 KB ELF 门禁由本机构建验证。手机上已安装的是较早 `31a3c964` 候选，当前原生升级包尚待按设备轮转窗口覆盖安装并执行 A0～A8 |
+| 五平台原生升级 | [Linux 构建](https://github.com/wzgrx/pure_live/actions/runs/35956033043)、[macOS 应用构建](https://github.com/wzgrx/pure_live/actions/runs/35974500374)与 [iOS 应用构建](https://github.com/wzgrx/pure_live/actions/runs/35977431211)通过，Apple 两端均核对实际打包的 FFmpeg 9.0.2 架构和版本；这是构建证据，不等于设备/GUI 功能验收 |
 | Android 当前编号账本 | 46 行：16 PASS / 30 RUN / 0 NR；每行仍含多个动作和平台组合，旧包证据不自动覆盖当前源码 |
-| Windows 最新归档 | `31a3c964` x64 Debug 已通过同提交完整门禁并打包：`PureLive-3.1.8-4121-windows-x64-debug.zip`，144964529 B，SHA-256 `5db8b19b…bb23dfcf`，记录 `20260924T013607460Z-build-windowsx64-debug.json`；归档 1301 项、ZIP CRC 校验通过。其 `libmpv-2.dll` 已在本机独立加载、报告 client API 2.5，并成功创建/销毁播放器句柄。旧 `248c0587` 候选 1+3 双格稀疏观察 31 分 49 秒均有画面变化；该结果不自动覆盖新版 Native Assets，仍需按[原生记录](ISSUE_875_WINDOWS_MULTIVIEW_FRAME_STALL_AUDIT_2026_09_23.md)复验 |
+| Windows 最新归档 | `e4532d77` x64 Debug 构建已通过 `20260924T033917897Z-build-windowsx64-debug.json`，含 FFmpeg 9.0.2；当前 Native Assets 候选仍需 1+3、2×2、音频、帧进度和严格退出 GUI 复验 |
 | 手机快照 | `192.168.1.2:5555` 已核对 25102RKBEC / myron，`su -c id` 为 root。覆盖安装前 Pure Live 无运行进程或录制服务；安装后前台是另一应用，本批未启动 Pure Live、唤醒屏幕或发送界面输入。实际运行时动作前需重读手机状态 |
 | 当前安装 APK | 3.1.8 / 6121，2026-09-24 09:40 本地时间覆盖安装成功；安装包与 `31a3c964` Debug 候选同 SHA-256 `3B572462…D543AF`，`firstInstallTime` 仍为 2026-07-21 18:07:53，数据未执行清除；正式签名候选仍待生成 |
 | 平台范围 | 当前 **45 个直播站点 + IPTV，2 组未注册**，即源码共 46 个适配器；PandaTV、PopkonTV、Shopee Live、VK Video Live、NimoTV、Dailymotion、Rumble、GoodGame、FC2 Live、Steam Broadcasts、京东直播、淘宝直播、酷狗直播、百度直播、六间房直播与 LOOK 直播已完成首阶段源码接入，战旗与浪 Live 保持内部 readiness，DLive、一直播与企鹅电竞已归档生命周期证据；已注册平台仍有能力与双端原生覆盖缺口 |
@@ -27,8 +28,8 @@
 
 ## 主要阻塞
 
-1. **当前原生闭环缺失**：Android `31a3c964` Debug 候选已保留数据覆盖安装且哈希核对一致；当前手机前台由其他应用占用，本批未发送界面输入，A0～A8 仍待验。Windows 同提交 Debug 也已构建，但新版媒体原生输入还未经过 GUI 长播和退出复验。两端均无 3.2.0 Release 候选。
-2. **Windows GUI/性能批次未完成**：当前升级版的完整质量门禁与 Debug 归档已通过；旧版 1+3 [原生复验](ISSUE_875_WINDOWS_MULTIVIEW_FRAME_STALL_AUDIT_2026_09_23.md)是局部通过，不能代替升级版测试。多 DPI、主副屏、PiP/全屏/多窗口、WebView2、Issue #767 的 4K GPU 对照、Issue #875 的大格停帧判别、音频与帧进度及严格退出计时仍需集中执行。
+1. **当前原生闭环缺失**：升级版 Android Debug 已本机构建，但手机仍装较早候选；A0～A8 与当前 Windows Native Assets 的 GUI/录制复验待按轮转窗口执行。两端均无 3.2.0 Release 候选。
+2. **Windows GUI/性能批次未完成**：`e4532d77` Debug 已构建；旧版 1+3 [原生复验](ISSUE_875_WINDOWS_MULTIVIEW_FRAME_STALL_AUDIT_2026_09_23.md)不能代替升级版。多 DPI、主副屏、PiP/全屏/多窗口、WebView2、Issue #767 的 4K GPU 对照、Issue #875 的大格停帧判别、音频与帧进度及严格退出计时仍需集中执行。
 3. **Android 组合矩阵未闭合**：当前候选仍需覆盖锁屏/后台、横屏/系统返回、PiP、实体音量键、自动录制和累计数据迁移；设备在线时优先合并执行。
 4. **平台与录制范围较大**：每个平台的目录、播放、弹幕、录制、断流恢复和资源释放尚未全部在当前双端候选上完成；OPENREC 当前本机官网/公共接口 CloudFront 403，需在可访问窗口复核；长录和严格解码仍是发布门禁。
 5. **平台扩展继续推进**：战旗与浪 Live 等待当前生产媒体证据后注册；DLive、一直播与企鹅电竞已完成生命周期归档；PandaTV、PopkonTV、Shopee Live、VK Video Live、NimoTV、Dailymotion、Rumble、GoodGame、FC2 Live、Steam Broadcasts、京东直播、淘宝直播、酷狗直播、百度直播、六间房直播与 LOOK 直播已进入源码能力表，双端原生与录制证据并入集中验收。
@@ -37,6 +38,6 @@
 ## 下一批顺序
 
 1. 继续按战旗、浪 Live 的生产证据门槛与 C2/C3 活跃平台顺序扩展源码；同时完成当前仍可确定复现的 Issue/所有权缺口，已经修复或证据不足的条目停止重复调查。
-2. Android 与 Windows 均以 `31a3c964` 升级版 Debug 作为下一批候选；Windows 复验 1+3 小格帧修订/缓冲/音频、2×2 和严格退出计时。Android 已安装，手机进入可用测试窗口后按轮转规则批量收口 A0～A8，不为每个小修复重复构建。
+2. Android 与 Windows 以 `e4532d77` 原生升级 Debug 作为下一批候选；Windows 批量复验多格画面、音频与退出。Android 当前安装的是较早候选，手机进入可用测试窗口后按轮转规则保留数据覆盖安装升级版，再集中收口 A0～A8。
 3. 同一候选集中完成平台播放/弹幕/录制、资源与性能证据，失败项回源码修订后只重跑受影响组。
 4. 42 个编号组和发布范围实际闭合后，固定 3.2.0 提交并执行完整发布门禁。
