@@ -688,8 +688,8 @@ jobs:
 
       - name: Verify Linux FFmpeg native bundle
         run: |
+          python3 tool/verify_ffmpeg_native.py linux build/linux/x64/release/bundle --stage-linux
           find build/linux/x64/release/bundle -type f -iname '*ffmpeg*' -print
-          python3 tool/verify_ffmpeg_native.py linux build/linux/x64/release/bundle
 
       # -----------------------------------------------------
       # Version

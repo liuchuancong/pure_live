@@ -19,11 +19,33 @@ ARCHIVES = {
 }
 WINDOWS_DLL_SHA256 = '302d978048f389dbb07f01c1a34a4988a92d1e3ebf0e960e2dd8314f83632b34'
 VERSION = b'n9.0.2'
+LINUX_LIBRARY_ENTRY = 'bundle-base-linux-x86_64-shared-lgpl/lib/libffmpegkit.so'
 
 
 def digest(path: Path) -> str:
     with path.open('rb') as stream:
         return hashlib.file_digest(stream, 'sha256').hexdigest()
+
+
+def stage_linux_runtime(bundle: Path, archive: Path) -> Path:
+    """Place the verified hook archive's runtime in the portable Linux bundle.
+
+    Flutter's Linux Native Assets hook can resolve a CodeAsset without copying
+    its ELF into the release bundle. Dart FFI also opens this library by name,
+    so release packaging must include it beside the other plugin libraries.
+    """
+    if not bundle.is_dir():
+        raise ValueError(f'Linux release bundle is missing: {bundle}')
+    if digest(archive) != ARCHIVES['linux'][1]:
+        raise ValueError(f'Linux FFmpeg hook archive SHA-256 differs from pinned n9.0.2 asset: {archive}')
+    with zipfile.ZipFile(archive) as package:
+        library = package.read(LINUX_LIBRARY_ENTRY)
+    target = bundle / 'lib/libffmpegkit.so'
+    target.parent.mkdir(parents=True, exist_ok=True)
+    temporary = target.with_name(f'{target.name}.tmp')
+    temporary.write_bytes(library)
+    temporary.replace(target)
+    return target
 
 
 def verify(platform: str, artifact: Path, cache_archive: Path | None = None, abi: str = 'arm64-v8a') -> dict[str, str]:
@@ -64,8 +86,13 @@ def main() -> int:
     parser.add_argument('artifact', type=Path)
     parser.add_argument('--cache-archive', type=Path)
     parser.add_argument('--abi', choices=('arm64-v8a', 'armeabi-v7a', 'x86_64'), default='arm64-v8a')
+    parser.add_argument('--stage-linux', action='store_true', help='copy verified ELF from hook ZIP into Linux release bundle')
     args = parser.parse_args()
     try:
+        if args.stage_linux:
+            if args.platform != 'linux':
+                raise ValueError('--stage-linux requires the linux platform')
+            stage_linux_runtime(args.artifact, args.cache_archive or CACHE / 'linux' / ARCHIVES['linux'][0])
         print(verify(args.platform, args.artifact, args.cache_archive, args.abi))
     except (OSError, ValueError, KeyError, zipfile.BadZipFile) as error:
         print(f'FFmpeg native verification failed: {error}', file=sys.stderr)

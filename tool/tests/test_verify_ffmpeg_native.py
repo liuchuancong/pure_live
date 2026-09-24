@@ -55,6 +55,20 @@ class VerifyFFmpegNativeTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'archive SHA-256 differs'):
             native.verify('windows', dll, self.archive)
 
+    def test_stages_verified_linux_runtime_in_portable_bundle(self):
+        elf = bytearray(b'\x7fELF\x02' + b'\x00' * 32)
+        elf[18:20] = (62).to_bytes(2, 'little')
+        payload = bytes(elf) + b'FFmpeg version n9.0.2 GLIBC_2.38'
+        with zipfile.ZipFile(self.archive, 'w') as package:
+            package.writestr(native.LINUX_LIBRARY_ENTRY, payload)
+        pinned = hashlib.sha256(self.archive.read_bytes()).hexdigest()
+        bundle = self.root / 'bundle'
+        bundle.mkdir()
+        with mock.patch.dict(native.ARCHIVES, {'linux': (self.archive.name, pinned)}):
+            staged = native.stage_linux_runtime(bundle, self.archive)
+            self.assertEqual(staged.read_bytes(), payload)
+            self.assertEqual(native.verify('linux', bundle, self.archive)['version'], 'n9.0.2')
+
 
 if __name__ == '__main__':
     unittest.main()
