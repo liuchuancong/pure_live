@@ -7,11 +7,18 @@
 - 对照 Flutter 官方 GitHub 稳定标签，将独立工具链从 3.47.0 升至 **3.47.5 / Dart 3.13.4**；旧 SDK 保留以便回滚。
 - `flutter pub outdated --json` 显示的 **20 个落后直接/开发依赖全部升级**，锁文件重新解析后共有 49 个包变更。托盘库 0.7.0 不再沿用已弃用的旧接口，改为 `TrayIcon`、`Menu` 与原生事件；菜单对象在应用生命周期内复用。
 - 升至 Android Gradle Plugin **9.3.3**（9.3 稳定补丁）和 Gradle **9.7.1**；wrapper 固定官方发布的 ZIP SHA-256。Google Services 4.5.0 保持当前版本；两个尚用 setup-python v6.1.0 的工作流统一到仓库已有的 v7.0.0 固定提交。
-- 再次运行 `flutter pub outdated --json`：直接/开发依赖 **0 项落后**；播放器迁移后仍有 10 项较新版本受 Flutter SDK 或上游包约束锁定。
+- 再次运行 `flutter pub outdated --json`：直接/开发依赖 **0 项落后**。随后继续迁移原先被 SDK/上游约束锁定的 10 项传递依赖；当前整个 pub 图显示 **0 项落后**，见下文原生 FFmpeg 单独版本边界。
 - `Predidit/media-kit` 已从 `994465d9` 升至 HEAD `d13fc22b`。新版将 libmpv 改为 SHA-256 校验的 Native Assets，旧 `media_kit_libs_*` 插件及依赖覆盖已移除；`media_kit_video` 以三方合并移植本地 Android Surface/音轨和 Windows 帧进度补丁。`code_assets 2.1.0` 是新版媒体钩子的要求；先核验 FFmpeg 钩子 API，再升级 `objective_c` 至 9.6.0，定向测试已通过。网页内核指定功能分支与 `screen_retriever` 的远端 HEAD 均未变化。
 - 同一源码 `31a3c964` 已通过完整质量门禁（仓库审计 0 error、Flutter Analyze 无问题、**5333/5333** 测试），产出 Android arm64 与 Windows x64 Debug 候选；记录分别为 `20260924T011045818Z-build-androidarm64-debug.json` 和 `20260924T013607460Z-build-windowsx64-debug.json`。这些构建结果不代替两端设备/GUI 与 Release 验收。
 
-版本来源：[Flutter tags](https://github.com/flutter/flutter/tags)、[pub.dev outdated](https://dart.dev/tools/pub/cmd/pub-outdated)、[AGP 9.3 发布说明](https://developer.android.com/build/releases/agp-9-3-0-release-notes)、[Gradle 9.7.1 发布说明](https://docs.gradle.org/9.7.1/release-notes.html)、[tray_manager 变更记录](https://pub.dev/packages/tray_manager/changelog)、[media-kit fork 对比](https://github.com/Predidit/media-kit/compare/994465d9bfca3f39d0b41199d16e7fd93fe97881...d13fc22ba1b19b45de3090c2d1b0f8a541b585a0)。
+版本来源：[Flutter tags](https://github.com/flutter/flutter/tags)、[pub.dev outdated](https://dart.dev/tools/pub/cmd/pub-outdated)、[AGP 9.3 发布说明](https://developer.android.com/build/releases/agp-9-3-0-release-notes)、[Gradle 9.7.1 发布说明](https://docs.gradle.org/9.7.1/release-notes.html)、[tray_manager 变更记录](https://pub.dev/packages/tray_manager/changelog)、[media-kit fork 对比](https://github.com/Predidit/media-kit/compare/994465d9bfca3f39d0b41199d16e7fd93fe97881...d13fc22ba1b19b45de3090c2d1b0f8a541b585a0)、[FFmpeg 官方发行版](https://ffmpeg.org/download.html)。
+
+## 2026-09-24 传递依赖与生成链继续迁移
+
+- 原先受约束的 10 项现固定到发布稳定版：`_fe_analyzer_shared 108.0.0`、`analyzer 14.4.0`、`cli_util 0.6.0`、`dbus 0.8.0`、`file_picker_linux 2.0.1`、`material_color_utilities 0.13.1`、`nm 0.6.0`、`qr 4.0.0`、`source_gen 4.3.0`、`test_api 0.7.14`。`flutter pub outdated --json` 对当前全部直接/传递依赖返回 **0 项落后**。
+- `qr_flutter 4.1.0` 仍调用 `qr 3.x` 的旧构造与静态常量，强行解析到 `qr 4.0.0` 时编译失败。项目的唯一二维码入口现直接用 `qr 4.0.0` 矩阵绘制，保留低纠错等级、黑白对比和 12 px 留白；旧 Flutter 包已退出依赖图。新增渲染测试与 Bilibili 登录测试同批通过。
+- 移除项目没有使用的 `json_serializable`，把 Drift 构建器更新为当前 `drift_dev:drift_dev` 并限定 `tables.dart`/`database.dart`，关闭忽略项目 CLI 参数的 enven 自动构建器；旧 protobuf 构建配置已移除。`build_runner` 由 1351 个 JSON 输入和 5404 个 Drift 输入缩至 6 个 Drift 输入，生成后格式化的 `database.g.dart` 与仓库基线一致。
+- 当前源码的完整质量门禁已通过：仓库审计 0 error、格式检查 0 处变更、Flutter Analyze 无问题、**5334/5334** 测试；记录为 `20260924T023009765Z-quality-full.json`。双端新构建仍待完成。**原生 FFmpeg 另计**：插件最新公开版 `0.6.2` 的 builders `0.11.1` 仍携带 FFmpeg `9.0.1`，而[官方最新稳定版](https://ffmpeg.org/download.html)为 `9.0.2`；需重新构建并验证各目标 ABI 的原生 bundle，不能用 pub 包版本 0 项落后代替这一步。
 
 ## 固定工具链
 
@@ -24,7 +31,7 @@ Android 已启用 AGP 9 Built-in Kotlin。主应用、`flv_lzc` 以及六个仍�
 
 AGP 9.3.3 是 9.3 稳定补丁；Gradle 9.7.1 是本轮检查时的稳定版。两者均通过版本和解析检查后再进入应用构建门禁。Google Services 4.5.0 与 Firebase 当前官方设置文档一致。
 
-`flutter pub outdated` 已于 2026-09-24 在 Flutter 3.47.5 上重新复核并完成全部可解析升级。直接依赖当前包括 `cached_network_image 4.0.2`、`dynamic_color 2.1.0`、`ffmpeg_kit_extended_flutter 0.6.2`、`flex_color_picker 4.0.0`、`loading_indicator 4.0.2`、`permission_handler 13.0.2`、`file_picker 13.1.0` 与 Syncfusion sliders `34.2.9`。`dynamic_color` 2.x 和图像/颜色组件采用独立 `material_ui`；应用在单一边界把其完整 Material 3 `ColorScheme` 转换为 Flutter 框架主题，并以字段完整性及组件渲染测试防止主题角色丢失。剩余提示均为 Flutter SDK、生成器或上游约束锁定的传递依赖（例如 `qr`）；`code_assets` 的覆盖仅用于让已单独核验的 FFmpeg 钩子与新版媒体钩子共享 2.1.0 API。
+`flutter pub outdated` 已于 2026-09-24 在 Flutter 3.47.5 上重新复核，当前直接和传递依赖均为公开稳定最新版。直接依赖当前包括 `cached_network_image 4.0.2`、`dynamic_color 2.1.0`、`ffmpeg_kit_extended_flutter 0.6.2`、`flex_color_picker 4.0.0`、`loading_indicator 4.0.2`、`permission_handler 13.0.2`、`file_picker 13.1.0` 与 Syncfusion sliders `34.2.9`。`dynamic_color` 2.x 和图像/颜色组件采用独立 `material_ui`；应用在单一边界把其完整 Material 3 `ColorScheme` 转换为 Flutter 框架主题，并以字段完整性及组件渲染测试防止主题角色丢失。部分覆盖项用于跨越 Flutter SDK 或上游包的旧约束，必须以代码生成、分析、测试和原生构建证据验证；`code_assets` 的覆盖让 FFmpeg 钩子与新版媒体钩子共享 2.1.0 API。
 
 播放器依赖在本轮再次单独核验：`better_player_plus` 为 1.3.5 的 Built-in Kotlin 本地快照；项目使用的 `Predidit/media-kit` 固定到 `d13fc22ba1b19b45de3090c2d1b0f8a541b585a0`，`media_kit_video` 使用包含 Surface/音频模式和 Windows 画面进度修复的仓库副本。移除旧平台库插件后，由 `media_kit` 本身的 Native Assets 钩子选择并验证各平台 libmpv。
 

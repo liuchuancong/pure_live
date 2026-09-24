@@ -187,13 +187,24 @@ dependencies:
     path: plugins/built_in_kotlin/floating # Local AGP 9 Built‑in Kotlin patch
 
   flutter_floating: ^2.0.1 # 悬浮窗
-  qr_flutter: ^4.1.0 # 二维码生成
+  qr: ^4.0.0 # Bilibili 登录二维码矩阵；绘制由应用控制
   easy_localization: ^3.0.8 #多语言
   app_links: ^7.2.1
   scroll_animator: 0.3.0
 
 # 依赖覆盖（强制指定版本）
 dependency_overrides:
+  # Keep the full dependency graph at current stable releases while upstream
+  # packages and Flutter SDK pins are migrated and regression-tested here.
+  _fe_analyzer_shared: 108.0.0
+  analyzer: 14.4.0
+  cli_util: 0.6.0
+  dbus: 0.8.0
+  file_picker_linux: 2.0.1
+  material_color_utilities: 0.13.1
+  nm: 0.6.0
+  source_gen: 4.3.0
+  test_api: 0.7.14
   flutter_inappwebview_android:
     path: plugins/built_in_kotlin/flutter_inappwebview_android # 上游网页内核Android子包ProGuard兼容补丁
   share_handler_android:
@@ -214,7 +225,6 @@ dev_dependencies:
     sdk: flutter
   shared_preferences: ^2.5.5 # widget tests mock localization persistence
   change_app_package_name: ^1.5.0 # 修改应用包名
-  json_serializable: ^6.7.1 # JSON序列化
   build_runner: ^2.4.15 # 代码生成器
   flutter_launcher_icons: ^0.14.4 # 应用图标生成
   msix: ^3.16.12 # Windows安装包打包
