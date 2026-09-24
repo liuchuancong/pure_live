@@ -51,14 +51,20 @@ def stage_linux_runtime(bundle: Path, archive: Path) -> Path:
     return target
 
 
-def macos_architectures(binary: bytes) -> set[int]:
-    """Return Mach-O CPU types from the executable, rejecting partial bundles."""
-    if binary[:4] != b'\xca\xfe\xba\xbe' or len(binary) < 8:
-        raise ValueError('macOS FFmpeg binary is not a 32-bit-header universal Mach-O')
+def macho_architectures(binary: bytes) -> set[int]:
+    """Return Mach-O CPU types from thin or universal executables."""
+    if len(binary) < 8:
+        raise ValueError('Apple FFmpeg Mach-O header is incomplete')
+    magic = binary[:4]
+    if magic == b'\xcf\xfa\xed\xfe':
+        return {struct.unpack_from('<I', binary, 4)[0]}
+    if magic not in (b'\xca\xfe\xba\xbe', b'\xca\xfe\xba\xbf'):
+        raise ValueError(f'Apple FFmpeg binary has unexpected Mach-O magic: {magic.hex()}')
     count = struct.unpack_from('>I', binary, 4)[0]
-    if count < 2 or len(binary) < 8 + count * 20:
-        raise ValueError('macOS FFmpeg universal Mach-O header is incomplete')
-    return {struct.unpack_from('>I', binary, 8 + index * 20)[0] for index in range(count)}
+    stride = 20 if magic == b'\xca\xfe\xba\xbe' else 32
+    if count < 1 or len(binary) < 8 + count * stride:
+        raise ValueError('Apple FFmpeg universal Mach-O header is incomplete')
+    return {struct.unpack_from('>I', binary, 8 + index * stride)[0] for index in range(count)}
 
 
 def verify(platform: str, artifact: Path, cache_archive: Path | None = None, abi: str = 'arm64-v8a') -> dict[str, str]:
@@ -95,11 +101,12 @@ def verify(platform: str, artifact: Path, cache_archive: Path | None = None, abi
         if not glibc_versions or max(glibc_versions) > (2, 39):
             raise ValueError(f'Linux FFmpeg library exceeds Ubuntu 24.04 glibc baseline: {artifact}')
     if platform == 'macos':
-        if macos_architectures(library) != {0x01000007, 0x0100000C}:
+        if macho_architectures(library) != {0x01000007, 0x0100000C}:
             raise ValueError(f'macOS FFmpeg library lacks x86_64 and arm64 slices: {artifact}')
     if platform == 'ios':
-        if library[:4] != b'\xcf\xfa\xed\xfe' or len(library) < 8 or struct.unpack_from('<I', library, 4)[0] != 0x0100000C:
-            raise ValueError(f'iOS FFmpeg library is not arm64 Mach-O: {artifact}')
+        architectures = macho_architectures(library)
+        if architectures != {0x0100000C}:
+            raise ValueError(f'iOS FFmpeg library is not arm64 Mach-O ({architectures}): {artifact}')
 
     return {'platform': platform, 'version': VERSION.decode(), 'archive_sha256': expected, 'library_sha256': hashlib.sha256(library).hexdigest()}
 

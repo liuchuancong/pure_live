@@ -94,6 +94,8 @@ class VerifyFFmpegNativeTest(unittest.TestCase):
         with mock.patch.dict(native.ARCHIVES, {'ios': (self.archive.name, self.digest)}):
             binary.write_bytes(b'\xcf\xfa\xed\xfe' + struct.pack('<I', 0x0100000C) + b'FFmpeg n9.0.2')
             self.assertEqual(native.verify('ios', app, self.archive)['version'], 'n9.0.2')
+            binary.write_bytes(b'\xca\xfe\xba\xbe' + struct.pack('>I', 1) + struct.pack('>IIIII', 0x0100000C, 0, 64, 100, 14) + b'FFmpeg n9.0.2')
+            self.assertEqual(native.verify('ios', app, self.archive)['version'], 'n9.0.2')
             binary.write_bytes(b'\xcf\xfa\xed\xfe' + struct.pack('<I', 0x01000007) + b'FFmpeg n9.0.2')
             with self.assertRaisesRegex(ValueError, 'not arm64 Mach-O'):
                 native.verify('ios', app, self.archive)
