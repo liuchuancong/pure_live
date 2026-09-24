@@ -25,7 +25,7 @@
 - Flutter 3.47.5 / Dart 3.13.4（`.fvmrc`）。
 - Android compileSdk/targetSdk 37，Java 25 构建运行时，Java/Kotlin 17 字节码目标，AGP 9.3.3，Gradle 9.7.1。
 - Google Services Gradle Plugin 4.5.0。
-- FFmpeg Kit Extended Flutter 0.6.2，按插件构建钩子解析 builders v0.11.1 / FFmpeg 9.0.1，并复用经过 SHA-256 校验的 Android/Windows Native Assets 共享缓存。
+- FFmpeg Kit Extended Flutter 0.6.2；应用通过平台资产覆盖采用已验证的 FFmpeg 9.0.2 Android/Windows/Linux 原生包，并复用经过 SHA-256 校验的 Android/Windows Native Assets 共享缓存。Apple 原生包仍在分别构建和验证。
 
 Android 已启用 AGP 9 Built-in Kotlin。主应用、`flv_lzc` 以及六个仍使用独立 KGP 的插件已完成本地迁移，根设置不再声明或应用 `org.jetbrains.kotlin.android`。当前 Flutter 3.47 的通用依赖检查会把 AGP 自带编译器套用到独立 KGP 最低版本规则，因此 Gradle 属性跳过该项误判，同时由 `tool/audit_built_in_kotlin.py` 固定检查 AGP/Gradle 下限、开关和全部本地模块；实际 release 编译继续作为最终门禁。
 
@@ -34,6 +34,8 @@ AGP 9.3.3 是 9.3 稳定补丁；Gradle 9.7.1 是本轮检查时的稳定版。�
 `flutter pub outdated` 已于 2026-09-24 在 Flutter 3.47.5 上重新复核，当前直接和传递依赖均为公开稳定最新版。直接依赖当前包括 `cached_network_image 4.0.2`、`dynamic_color 2.1.0`、`ffmpeg_kit_extended_flutter 0.6.2`、`flex_color_picker 4.0.0`、`loading_indicator 4.0.2`、`permission_handler 13.0.2`、`file_picker 13.1.0` 与 Syncfusion sliders `34.2.9`。`dynamic_color` 2.x 和图像/颜色组件采用独立 `material_ui`；应用在单一边界把其完整 Material 3 `ColorScheme` 转换为 Flutter 框架主题，并以字段完整性及组件渲染测试防止主题角色丢失。部分覆盖项用于跨越 Flutter SDK 或上游包的旧约束，必须以代码生成、分析、测试和原生构建证据验证；`code_assets` 的覆盖让 FFmpeg 钩子与新版媒体钩子共享 2.1.0 API。
 
 播放器依赖在本轮再次单独核验：`better_player_plus` 为 1.3.5 的 Built-in Kotlin 本地快照；项目使用的 `Predidit/media-kit` 固定到 `d13fc22ba1b19b45de3090c2d1b0f8a541b585a0`，`media_kit_video` 使用包含 Surface/音频模式和 Windows 画面进度修复的仓库副本。移除旧平台库插件后，由 `media_kit` 本身的 Native Assets 钩子选择并验证各平台 libmpv。
+
+2026-09-24 再查 `Predidit/media-kit` 的远端 HEAD 仍为 `d13fc22b`；其 Native Assets 清单引用的四组播放器原生资产，也分别对应各构建仓库当日最新公开发行标签：[Android v1.2.7](https://github.com/Predidit/libmpv-android-video-build/releases/tag/v1.2.7)、[Windows 202609151348](https://github.com/Predidit/libmpv-win32-video-cmake/releases/tag/202609151348)、[Linux 20260810](https://github.com/Predidit/libmpv-linux-build/releases/tag/20260810)、[Apple 0.6.8](https://github.com/Predidit/libmpv-darwin-build/releases/tag/0.6.8)。这里核对的是所选构建仓库的发布资产，并不将其标签号等同于底层 mpv 的源码版本。
 
 ## 可复现依赖
 

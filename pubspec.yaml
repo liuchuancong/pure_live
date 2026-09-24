@@ -75,10 +75,9 @@ dependencies:
   audio_service: ^0.18.18 # 后台音频服务
   audio_service_win: ^0.0.3
   audio_session: ^0.2.3 # 音频会话管理
-  # Keep this exact: each package patch selects a different reviewed native
-  # builders release. 0.6.2 preserves argv through FFmpeg/FFprobe/FFplay and
-  # selects builders 0.11.1 (FFmpeg 9.0.1); the repository prefetch gate pins
-  # the Android and Windows archive hashes.
+  # Keep this exact: 0.6.2 preserves argv through FFmpeg/FFprobe/FFplay.
+  # Platform URL overrides below select our verified FFmpeg 9.0.2 bundles;
+  # prefetch gates pin the Android and Windows archive hashes.
   ffmpeg_kit_extended_flutter: 0.6.2
 
   flv_lzc:
