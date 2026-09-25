@@ -8,9 +8,15 @@ class PlayerConsts {
     'mpv': PlayerEngine.mediaKit,
     'ijk': PlayerEngine.fijk,
     'exo': PlayerEngine.exo,
+    'fvp': PlayerEngine.fvp,
   };
 
-  static const Map<String, String> names = {'mpv': 'player_mpv', 'ijk': 'player_ijk', 'exo': 'player_exo'};
+  static const Map<String, String> names = {
+    'mpv': 'player_mpv',
+    'ijk': 'player_ijk',
+    'exo': 'player_exo',
+    'fvp': 'player_fvp',
+  };
 
   static String getKeyByI18nKey(String i18nKey) {
     return names.entries.firstWhere((e) => e.value == i18nKey, orElse: () => names.entries.first).key;

@@ -190,6 +190,7 @@ dependencies:
   easy_localization: ^3.0.8 #多语言
   app_links: ^7.2.1
   scroll_animator: 0.3.0
+  fvp: ^0.38.1
 
 # 依赖覆盖（强制指定版本）
 dependency_overrides:
