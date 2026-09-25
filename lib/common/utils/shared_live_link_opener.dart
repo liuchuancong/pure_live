@@ -10,13 +10,19 @@ typedef SharedLiveRoomOpener = Future<void> Function(LiveRoom room);
 /// Opens a live room from text shared by a platform app, using the same
 /// resolution as the toolbox's "jump to room" (short links included).
 class SharedLiveLinkOpener {
-  SharedLiveLinkOpener({SharedLiveLinkParser? parse, SharedLiveRoomOpener? open, void Function(String)? notify})
-    : _parse = parse ?? LiveUrlTool.parseLiveUrl,
-      _open = open ?? ((room) => AppNavigator.toLiveRoomDetail(liveRoom: room)),
-      _notify = notify ?? ((key) => ToastUtil.show(i18n(key)));
+  SharedLiveLinkOpener({
+    SharedLiveLinkParser? parse,
+    SharedLiveRoomOpener? open,
+    Future<void> Function()? waitForNavigator,
+    void Function(String)? notify,
+  }) : _parse = parse ?? LiveUrlTool.parseLiveUrl,
+       _waitForNavigator = waitForNavigator ?? (() async {}),
+       _open = open ?? ((room) => AppNavigator.toLiveRoomDetail(liveRoom: room)),
+       _notify = notify ?? ((key) => ToastUtil.show(i18n(key)));
 
   final SharedLiveLinkParser _parse;
   final SharedLiveRoomOpener _open;
+  final Future<void> Function() _waitForNavigator;
   final void Function(String) _notify;
 
   static bool containsLiveLink(String text) => LiveUrlTool.containsSupportedLink(text);
@@ -46,6 +52,11 @@ class SharedLiveLinkOpener {
       data: '',
       danmakuData: '',
     );
+    try {
+      await _waitForNavigator();
+    } catch (_) {
+      return false;
+    }
     // The room route completes only when it is closed; the share queue must
     // not wait for that.
     unawaited(_open(room).catchError((Object _) {}));

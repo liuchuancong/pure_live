@@ -106,7 +106,6 @@ class DesktopManager {
     if (state is WindowListener) {
       windowManager.addListener(state as WindowListener);
     }
-
   }
 
   static void disposeListeners() {
@@ -115,7 +114,6 @@ class DesktopManager {
     if (_currentState is WindowListener) {
       windowManager.removeListener(_currentState as WindowListener);
     }
-
 
     _currentState = null;
   }
@@ -587,8 +585,7 @@ class _WindowControlButtonState extends State<WindowControlButton> {
   }
 }
 
-mixin DesktopWindowMixin<T extends StatefulWidget> on State<T>
-    implements WindowListener, WidgetsBindingObserver {
+mixin DesktopWindowMixin<T extends StatefulWidget> on State<T> implements WindowListener, WidgetsBindingObserver {
   final GlobalKey<NavigatorState> appNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'Pure Live navigator');
   bool _isDialogOpen = false;
   Timer? _windowGeometryTimer;
@@ -652,6 +649,10 @@ mixin DesktopWindowMixin<T extends StatefulWidget> on State<T>
       _isDialogOpen = false;
     }
   }
+
+  /// Resolves once the app navigator is past the splash route. A share that
+  /// cold-starts the app arrives before routes exist.
+  Future<void> waitForShareNavigator() => _waitForShareCommandNavigator();
 
   Future<BuildContext> _waitForShareCommandNavigator() async {
     final deadline = DateTime.now().add(const Duration(seconds: 8));

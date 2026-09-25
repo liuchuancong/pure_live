@@ -326,15 +326,18 @@ void main() {
     final routeClosed = Completer<void>();
     final notices = <String>[];
     LiveRoom? openedRoom;
+    var waits = 0;
     final opener = SharedLiveLinkOpener(
       parse: (text) async => text.contains('/6') ? ['6', 'bilibili'] : const <String>[],
       open: (room) {
         openedRoom = room;
         return routeClosed.future;
       },
+      waitForNavigator: () async => waits++,
       notify: notices.add,
     );
     expect(await opener.open('https://live.bilibili.com/6'), isTrue);
+    expect(waits, 1);
     expect(openedRoom?.roomId, '6');
     expect(openedRoom?.platform, 'bilibili');
     expect(await opener.open('https://example.com/none'), isFalse);

@@ -116,7 +116,7 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
       },
       notifyUnsupported: (key) => ToastUtil.show(i18n(key)),
       isLiveLink: SharedLiveLinkOpener.containsLiveLink,
-      openLiveLink: SharedLiveLinkOpener().open,
+      openLiveLink: SharedLiveLinkOpener(waitForNavigator: waitForShareNavigator).open,
       reportError: (error, stackTrace) => debugPrint('Shared media receiver failed: $error\n$stackTrace'),
     );
     final receiver = SharedMediaReceiver(
