@@ -163,10 +163,14 @@ $ffmpegHookCacheRoot = Join-Path $repoRoot '.dart_tool\hooks_runner\shared\ffmpe
 Write-Host "FFmpeg native profile: package $($ffmpegProfile.PackageVersion), builder $ffmpegBuilderVersion, native $ffmpegCacheVersion"
 
 function Get-MediaKitBundleCatalog {
-    $config = Get-Content -LiteralPath (Join-Path $repoRoot '.dart_tool\package_config.json') -Raw | ConvertFrom-Json
+    $configPath = Join-Path $repoRoot '.dart_tool\package_config.json'
+    $config = Get-Content -LiteralPath $configPath -Raw | ConvertFrom-Json
     $package = @($config.packages | Where-Object { $_.name -eq 'media_kit' })
     if ($package.Count -ne 1) { throw 'Expected exactly one resolved media_kit package' }
-    $packageRoot = ([Uri]$package[0].rootUri).LocalPath
+    # Path dependencies (the vendored third_party/media_kit) carry a rootUri
+    # relative to package_config.json; git/hosted ones are absolute file URIs.
+    $rootUri = [Uri]::new([Uri]::new($configPath), [string]$package[0].rootUri)
+    $packageRoot = $rootUri.LocalPath
     $catalogPath = Join-Path $packageRoot 'hook\native_bundles.json'
     $catalog = Get-Content -LiteralPath $catalogPath -Raw | ConvertFrom-Json
     if ($catalog.schema -ne 1) { throw "Unsupported media_kit bundle catalog: $catalogPath" }
