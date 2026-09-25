@@ -1,41 +1,41 @@
 {
-  "version": "3.2.2",
-  "build_number": 4125,
-  "version_num": 302024125,
-  "version_desc": "- 修复 Shopee Live 有声无画面、第一个直播间打不开；修复 NimoTV 全部直播间打不开。\n- 海外网页解析站点（NimoTV、Dailymotion、Rumble、Shopee）使用 App 代理。\n- 其他 App 分享的直播链接可直接打开直播间；竖屏控制栏全屏按钮固定显示。",
+  "version": "3.2.3",
+  "build_number": 4126,
+  "version_num": 302034126,
+  "version_desc": "- 修复 FC2 全部直播间打不开；修复 17LIVE 部分主播有声音没画面。\n- 多画面新增「全部静音」。\n- 海外平台时好时坏时，请把 Clash 固定到单个节点。",
   "prerelease": false,
-  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.2.2",
+  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.2.3",
   "android_abis": [
     "arm64-v8a"
   ],
   "platforms": {
     "android": {
-      "version": "3.2.2",
-      "build_number": 4125,
-      "version_num": 302024125,
-      "version_desc": "- 修复 Shopee Live 有声无画面、第一个直播间打不开；修复 NimoTV 全部直播间打不开。\n- 海外网页解析站点（NimoTV、Dailymotion、Rumble、Shopee）使用 App 代理。\n- 其他 App 分享的直播链接可直接打开直播间；竖屏控制栏全屏按钮固定显示。",
+      "version": "3.2.3",
+      "build_number": 4126,
+      "version_num": 302034126,
+      "version_desc": "- 修复 FC2 全部直播间打不开；修复 17LIVE 部分主播有声音没画面。\n- 多画面新增「全部静音」。\n- 海外平台时好时坏时，请把 Clash 固定到单个节点。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.2.2",
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.2.3",
       "android_abis": [
         "arm64-v8a"
       ]
     },
     "windows": {
-      "version": "3.2.2",
-      "build_number": 4125,
-      "version_num": 302024125,
-      "version_desc": "- 修复 Shopee Live 有声无画面、第一个直播间打不开；修复 NimoTV 全部直播间打不开。\n- 海外网页解析站点（NimoTV、Dailymotion、Rumble、Shopee）使用 App 代理。\n- 其他 App 分享的直播链接可直接打开直播间；竖屏控制栏全屏按钮固定显示。",
+      "version": "3.2.3",
+      "build_number": 4126,
+      "version_num": 302034126,
+      "version_desc": "- 修复 FC2 全部直播间打不开；修复 17LIVE 部分主播有声音没画面。\n- 多画面新增「全部静音」。\n- 海外平台时好时坏时，请把 Clash 固定到单个节点。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.2.2",
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.2.3",
       "windows_msix_available": false
     },
     "linux": {
-      "version": "3.2.2",
-      "build_number": 4125,
-      "version_num": 302024125,
-      "version_desc": "- 修复 Shopee Live 有声无画面、第一个直播间打不开；修复 NimoTV 全部直播间打不开。\n- 海外网页解析站点（NimoTV、Dailymotion、Rumble、Shopee）使用 App 代理。\n- 其他 App 分享的直播链接可直接打开直播间；竖屏控制栏全屏按钮固定显示。",
+      "version": "3.2.3",
+      "build_number": 4126,
+      "version_num": 302034126,
+      "version_desc": "- 修复 FC2 全部直播间打不开；修复 17LIVE 部分主播有声音没画面。\n- 多画面新增「全部静音」。\n- 海外平台时好时坏时，请把 Clash 固定到单个节点。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.2.2"
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.2.3"
     },
     "macos": {
       "version": "3.0.0",
