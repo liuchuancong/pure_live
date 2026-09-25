@@ -76,3 +76,13 @@ PURELIVE_PROBE_SITES=huya,douyu PURELIVE_PROBE_REPORT=/tmp/report.json ...   # �
 ## FLV 视频编码普查（2026-09-25）
 
 探针新增按画质报告 FLV 首个视频标签的编码（`PURELIVE_PROBE_ALL_QUALITIES=1`）。除 Shopee Live 与 17LIVE（取决于主播编码器）外，AcFun、哔哩哔哩、抖音、斗鱼、虎牙、映客、KilaKila、快手、酷狗、LiveMe、六间房、微博所有画质均为 AVC。传统「编码号 12」HEVC 会让播放内核（FFmpeg 7.1）只出声音，Shopee 与 17LIVE 已经本机中转改写（`79f78e06`、`719f902f`）。
+
+## 私有播放输入（P3）与代理出口 IP（2026-09-25 下午）
+
+新增 `integration_test/owned_inputs_test.dart`：取直播间 → 打开与播放器相同的私有输入 → 从本机地址读取真实媒体。Windows 结果：
+
+- **FC2**：原先全部失败。FC2 把主播放列表和子播放列表改成了不带 `.m3u8` 后缀的 `/master_playlist`、`/playlist`，HLS 中转拒收，播放与录制都报格式错误。`dffc351d` 起按 HLS 处理，Windows 实测取到 TS 分片。
+- **niconico**：fMP4 分片正常（854×480）。
+- **Bigo**：接口要求登录（`needLogin`），与探针结论一致。
+
+**代理出口 IP 轮换导致的间歇 403**：本机 Clash 出口在 134.195.101.180 与 .197 之间轮换（负载均衡组）。FC2 分片签名与请求 IP 绑定，出口一换就 403，重试又可能成功；NimoTV 间歇 403、VK 子播放列表 403（`srcIp`）、Dailymotion `E005` 都符合同一特征。测试海外平台时请把 Clash 固定到单个节点（选择模式，不用负载均衡 / 自动测速），否则这些站点会时好时坏，并非 App 问题。
