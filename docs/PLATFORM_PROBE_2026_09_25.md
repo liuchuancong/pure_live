@@ -64,3 +64,15 @@ PURELIVE_PROBE_SITES=huya,douyu PURELIVE_PROBE_REPORT=/tmp/report.json ...   # �
 - 用真实 14 MB 样本，Dart 改写结果与 Python 原型逐字节一致，FFmpeg 7.1 解出 713 帧 HEVC 1080×1920（`missing picture in access unit` 警告在原始流上用 FFmpeg 8 也会出现，与改写无关）。
 - 真机：Shopee 直播间 1080p FLV 正常出画面，竖屏布局识别正确；线路 1 → 线路 2 切换正常；退出后应用内小窗继续播放。
 - 同时修复：直播间加载失败后退出，不再弹出黑色空白小窗（claude@928ea47d）。
+
+## 参考项目平台覆盖（2026-09-25）
+
+对照 [bililive-go](https://github.com/bililive-go/bililive-go) `src/live/` 与 [biliup](https://github.com/biliup/biliup) Rust 下载器模块：
+
+- biliup 的 acfun、afreecatv（即 SOOP）、bigo、bilibili、cc、douyin、douyu、huya、inke、kilakila、kuaishou、missevan、niconico、picarto、ttinglive、twitcasting、twitch、youtube、yy 本项目均已接入。
+- bililive-go 额外的 hongdoufm（红豆 Live）与 KilaKila 为同一服务，本项目 KilaKila 适配器已接受 `www.hongdoufm.com` 房间链接；qq（企鹅电竞）已于 2022 年停运，yizhibo（一直播）已停止直播业务，不再接入。
+- 结论：两个参考项目中仍在运营的直播平台全部已覆盖。
+
+## FLV 视频编码普查（2026-09-25）
+
+探针新增按画质报告 FLV 首个视频标签的编码（`PURELIVE_PROBE_ALL_QUALITIES=1`）。除 Shopee Live 与 17LIVE（取决于主播编码器）外，AcFun、哔哩哔哩、抖音、斗鱼、虎牙、映客、KilaKila、快手、酷狗、LiveMe、六间房、微博所有画质均为 AVC。传统「编码号 12」HEVC 会让播放内核（FFmpeg 7.1）只出声音，Shopee 与 17LIVE 已经本机中转改写（`79f78e06`、`719f902f`）。
