@@ -1,0 +1,91 @@
+{
+  "schema": 1,
+  "bundles": {
+    "android_arm64": {
+      "url": "https://github.com/Predidit/libmpv-android-video-build/releases/download/v1.2.7/default-arm64-v8a.jar",
+      "sha256": "13e882d96b8cd235425172b022e4a94dfcae5f07985dff85c8d648e7369fa2d1",
+      "format": "zip",
+      "root": "lib/arm64-v8a",
+      "library": "libmpv.so"
+    },
+    "android_arm": {
+      "url": "https://github.com/Predidit/libmpv-android-video-build/releases/download/v1.2.7/default-armeabi-v7a.jar",
+      "sha256": "7f522ed762ea6dfeba93a02e3837c5538790030b9965a03ed3a00276adc7b32c",
+      "format": "zip",
+      "root": "lib/armeabi-v7a",
+      "library": "libmpv.so"
+    },
+    "android_x64": {
+      "url": "https://github.com/Predidit/libmpv-android-video-build/releases/download/v1.2.7/default-x86_64.jar",
+      "sha256": "aed0fffc99e5e554d48e1af90bc700133c25fbc02615bf1bf17db9299365c481",
+      "format": "zip",
+      "root": "lib/x86_64",
+      "library": "libmpv.so"
+    },
+    "android_ia32": {
+      "url": "https://github.com/Predidit/libmpv-android-video-build/releases/download/v1.2.7/default-x86.jar",
+      "sha256": "9269643264a1c9689116467f313d5e1b23ea56a68d338ab940c5e8fcf07061c6",
+      "format": "zip",
+      "root": "lib/x86",
+      "library": "libmpv.so"
+    },
+    "windows_arm64": {
+      "url": "https://github.com/Predidit/libmpv-win32-video-cmake/releases/download/202609151348/mpv-dev-aarch64-20260915-git-0b7ed67.zip",
+      "sha256": "2adb3eb11a7985699203ee94b6182088e0e0bc8be492cd4adf184411dbf6a31d",
+      "format": "zip",
+      "library": "libmpv-2.dll"
+    },
+    "windows_x64": {
+      "url": "https://github.com/Predidit/libmpv-win32-video-cmake/releases/download/202609151348/mpv-dev-x86_64-20260915-git-0b7ed67.7z",
+      "sha256": "8adceab30b6bcc5503fa9d3823b68f4acd15ee1c41d6dc2492826f373531c10a",
+      "format": "7z",
+      "library": "libmpv-2.dll"
+    },
+    "linux_x64": {
+      "url": "https://github.com/Predidit/libmpv-linux-build/releases/download/20260810/libmpv_x86_64.zip",
+      "sha256": "45922100e5240bf69a72fa2ae140d5b54e1ed03993a8a3746dc798e3ae8ad6e4",
+      "format": "zip",
+      "library": "libmpv.so.2"
+    },
+    "linux_arm64": {
+      "url": "https://github.com/Predidit/libmpv-linux-build/releases/download/20260810/libmpv_aarch64.zip",
+      "sha256": "da0609556e2864dbe828102972edea96173a4be1ad1427a7493942dccb039b9f",
+      "format": "zip",
+      "library": "libmpv.so.2"
+    },
+    "ios_arm64": {
+      "url": "https://github.com/Predidit/libmpv-darwin-build/releases/download/0.6.8/libmpv-xcframeworks_0.6.8_ios-universal-video-default.tar.gz",
+      "sha256": "d428641cc6c100de8234eae04e229966e46949eb73fcabd526a008a02e9bf968",
+      "format": "tar.gz",
+      "library": "Mpv",
+      "xcframework": true
+    },
+    "ios_x64": {
+      "url": "https://github.com/Predidit/libmpv-darwin-build/releases/download/0.6.8/libmpv-xcframeworks_0.6.8_ios-universal-video-default.tar.gz",
+      "sha256": "d428641cc6c100de8234eae04e229966e46949eb73fcabd526a008a02e9bf968",
+      "format": "tar.gz",
+      "library": "Mpv",
+      "xcframework": true
+    },
+    "macos_arm64": {
+      "url": "https://github.com/Predidit/libmpv-darwin-build/releases/download/0.6.8/libmpv-xcframeworks_0.6.8_macos-universal-video-default.tar.gz",
+      "sha256": "c396976a267eaaa64bc603f3cc1a2ee02d27c7d5d57935d2458f364afdf0f3cb",
+      "format": "tar.gz",
+      "library": "Mpv",
+      "xcframework": true
+    },
+    "macos_x64": {
+      "url": "https://github.com/Predidit/libmpv-darwin-build/releases/download/0.6.8/libmpv-xcframeworks_0.6.8_macos-universal-video-default.tar.gz",
+      "sha256": "c396976a267eaaa64bc603f3cc1a2ee02d27c7d5d57935d2458f364afdf0f3cb",
+      "format": "tar.gz",
+      "library": "Mpv",
+      "xcframework": true
+    },
+    "ohos_arm64": {
+      "url": "https://github.com/ErBWs/libmpv-ohos-build/releases/download/20260811/libmpv_aarch64.zip",
+      "sha256": "2bfb9844a7552c450694581b315b26cdf6202eaa57724e9f70f3facfad75163b",
+      "format": "zip",
+      "library": "libmpv.so.2"
+    }
+  }
+}

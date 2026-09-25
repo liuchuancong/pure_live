@@ -11,6 +11,8 @@ analyzer:
     # Device captures, build records and one-off forensic helpers live here;
     # they are evidence artifacts rather than application source.
     - local-artifacts/**
+    # Vendored upstream package (Predidit/media-kit@d13fc22b); analyzed upstream.
+    - third_party/media_kit/**
     - android/**
     - ios/**
     - web/**

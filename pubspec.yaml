@@ -62,10 +62,9 @@ dependencies:
 
   # -------------------------- 音视频播放 --------------------------
   media_kit:
-    git:
-      url: https://github.com/Predidit/media-kit.git
-      ref: d13fc22ba1b19b45de3090c2d1b0f8a541b585a0
-      path: ./media_kit
+    # Predidit/media-kit@d13fc22b vendored: Android libmpv rebuilt with
+    # mpv 0.41.0 + FFmpeg 9.0.2 (hook/native_bundles.json); no Kazumi option.
+    path: ./third_party/media_kit
   media_kit_video:
     path: ./third_party/media_kit_video # Local Android Surface and Windows presentation patches
 
@@ -194,6 +193,8 @@ dependencies:
 
 # 依赖覆盖（强制指定版本）
 dependency_overrides:
+  media_kit:
+    path: ./third_party/media_kit
   # Keep the full dependency graph at current stable releases while upstream
   # packages and Flutter SDK pins are migrated and regression-tested here.
   _fe_analyzer_shared: 108.0.0
