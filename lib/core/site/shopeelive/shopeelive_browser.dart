@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:pure_live/core/utils/webview_proxy_scope.dart';
 
 abstract interface class ShopeeLiveSessionResolver {
   Future<Map<String, dynamic>> resolve(String sessionId);
@@ -42,7 +43,7 @@ class ShopeeLiveBrowserSessionResolver implements ShopeeLiveSessionResolver {
     _evaluationTail = release.future;
     try {
       await predecessor;
-      return await _resolveExclusive(sessionId);
+      return await WebViewProxyScope.run(() => _resolveExclusive(sessionId));
     } finally {
       release.complete();
     }

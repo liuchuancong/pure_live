@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:pure_live/core/utils/webview_proxy_scope.dart';
 
 import 'dailymotion_api.dart';
 import 'dailymotion_link.dart';
@@ -52,7 +53,7 @@ final class DailymotionBrowserMediaResolver implements DailymotionMediaResolver 
     _evaluationTail = release.future;
     try {
       await predecessor;
-      return await _resolveExclusive(videoId);
+      return await WebViewProxyScope.run(() => _resolveExclusive(videoId));
     } finally {
       release.complete();
     }

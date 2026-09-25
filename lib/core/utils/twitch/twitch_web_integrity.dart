@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:pure_live/core/utils/webview_proxy_scope.dart';
 
 class TwitchWebIntegrityToken {
   const TwitchWebIntegrityToken({required this.token, required this.expiration});
@@ -157,12 +158,12 @@ class TwitchWebIntegrityProvider {
     _evaluationTail = release.future;
     try {
       await predecessor;
-      return await _evaluateExclusive(
-        functionBody: functionBody,
-        userAgent: userAgent,
-        channel: channel,
-        proxyHost: proxyHost,
-        proxyPort: proxyPort,
+      // The proxy override is process-global; share its queue with every
+      // other headless WebView resolver.
+      return await WebViewProxyScope.run(
+        () => _evaluateExclusive(functionBody: functionBody, userAgent: userAgent, channel: channel),
+        proxyHost: proxyHost ?? '',
+        proxyPort: proxyPort ?? 0,
       );
     } finally {
       release.complete();
@@ -173,27 +174,12 @@ class TwitchWebIntegrityProvider {
     required String functionBody,
     required String userAgent,
     required String channel,
-    String? proxyHost,
-    int? proxyPort,
   }) async {
     final controllerCompleter = Completer<InAppWebViewController>();
     final pageCompleter = Completer<void>();
-    final proxyController = ProxyController.instance();
-    var proxyOverridden = false;
     HeadlessInAppWebView? webView;
 
     try {
-      final host = proxyHost?.trim() ?? '';
-      if (Platform.isAndroid && host.isNotEmpty && proxyPort != null && proxyPort > 0 && proxyPort <= 65535) {
-        final available = await WebViewFeature.isFeatureSupported(WebViewFeature.PROXY_OVERRIDE);
-        if (available) {
-          await proxyController.setProxyOverride(
-            settings: ProxySettings(proxyRules: [ProxyRule(url: '$host:$proxyPort')]),
-          );
-          proxyOverridden = true;
-        }
-      }
-
       final origin = WebUri('https://www.twitch.tv/$channel');
       final initialData = InAppWebViewInitialData(
         data: '<!doctype html><html><head></head><body></body></html>',
@@ -253,13 +239,6 @@ class TwitchWebIntegrityProvider {
     } finally {
       if (webView?.isRunning() == true) {
         await webView!.dispose();
-      }
-      if (proxyOverridden) {
-        try {
-          await proxyController.clearProxyOverride();
-        } catch (_) {
-          // Cleanup must not hide the primary acquisition result/error.
-        }
       }
     }
   }
