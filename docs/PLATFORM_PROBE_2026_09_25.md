@@ -37,14 +37,20 @@ PURELIVE_PROBE_SITES=huya,douyu PURELIVE_PROBE_REPORT=/tmp/report.json ...   # �
 | TwitCasting | 分片需要播放列表下发的 `lvhls_ssid_*` Cookie；FFmpeg（mpv/IJK）会回放，App 实测可播，仅探针需要补 Cookie 回放 | `59b29295`（探针） |
 
 
-## 待处理：Shopee Live 部分直播间有声无画面（Android）
+## 已修复：Shopee Live 有声无画面（claude@79f78e06）
 
-真机（K90，3.2.1 候选）现象：目录、详情、在线人数与 720p FLV 地址正常，播放 30 秒以上仍只有声音；这段时间系统没有创建任何视频硬件解码器。
+真机（K90，3.2.1）现象：目录、详情、在线人数与 1080p FLV 地址正常，播放时只有声音，系统没有创建视频解码器。
 
-已确认：
+根因（2026-09-25 用真机「获取直链」取得的 FLV 在主机复现）：
 
-- 录制保存的原始 TS 为 **HEVC Main 720×1280（竖屏）+ AAC**，录制端（ffmpeg-kit / FFmpeg 9.0.2）能识别视频轨。
-- 仓库自编的 FFmpeg 9.0.2 `flvdec.c` 只支持增强型 FLV 的 `hvc1`，没有国内 codec id 12 扩展，因此 Shopee 使用的是**增强型 FLV-HEVC**。
-- media_kit 的 `libmpv.so` 内置 FFmpeg 7.1（Lavc 61.19），包含 HEVC 软件解码（NEON），只编入了 H.264 的 MediaCodec 硬解。IJK 的 `libijkffmpeg.so` 为 Lavc 58.18（FFmpeg 4.0 系）。
+- Shopee CDN（`*.livetech.shopee.co.id`）的 FLV 用的是**传统 FLV + 国内 codec id 12 扩展**表示 HEVC，不是增强型 FLV（之前据录制端推断为增强型 FLV，是错的）。
+- FFmpeg 8.0 才在 `flvdec.c` 加入 `FLV_CODECID_X_HEVC = 12`。media_kit 的 `libmpv.so` 内置 FFmpeg 7.1，读到 codec 12 报 `Video codec (c) is not implemented` 并丢弃视频轨，只剩 AAC 音频。用 FFmpeg 7.1.5 静态版复现一致。
+- 录制端 ffmpeg-kit 是 FFmpeg 9.0.2，认识 codec 12，所以录像有画面。
 
-下一步：在真机「获取直链」取得地址后，于主机用同版本 mpv / ffprobe 复现，区分是增强型 FLV 的扩展包类型、mpv 硬解回退，还是解码器缺失；然后决定是修正 mpv 选项、针对有声无画面的会话切换内核，还是让 Shopee 走应用内 FLV 中继。修复需要真机复验。
+修复：`lib/player/core/flv_legacy_hevc_relay.dart`。libmpv 打开 Shopee 的 FLV 地址时，改走本机回环中继，把 codec 12 的视频标签改写为增强型 FLV（`hvc1`，FFmpeg 6.1 起支持）：只改标签头，NAL 与 HEVCDecoderConfigurationRecord 原样复制，其他标签不动。IJK / Exo 内核与其他站点的地址不受影响。
+
+验证：
+
+- 用真实 14 MB 样本，Dart 改写结果与 Python 原型逐字节一致，FFmpeg 7.1 解出 713 帧 HEVC 1080×1920（`missing picture in access unit` 警告在原始流上用 FFmpeg 8 也会出现，与改写无关）。
+- 真机：Shopee 直播间 1080p FLV 正常出画面，竖屏布局识别正确；线路 1 → 线路 2 切换正常；退出后应用内小窗继续播放。
+- 同时修复：直播间加载失败后退出，不再弹出黑色空白小窗（claude@928ea47d）。
