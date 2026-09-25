@@ -1,7 +1,6 @@
 // Plays a real live stream through FvpAdapter (libmdk) on a real runner:
 //   flutter test integration_test/fvp_playback_test.dart --device-id=windows
 // Use the long device flag (see webview_sites_test.dart).
-import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
