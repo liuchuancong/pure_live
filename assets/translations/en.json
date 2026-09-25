@@ -184,9 +184,9 @@
     "empty_areas_room_title": "No Live Found",
     "empty_areas_subtitle": "Click the button above\nto switch platform",
     "empty_areas_title": "No Area Found",
-    "empty_favorite_offline_subtitle": "Please follow live rooms first",
+    "empty_favorite_offline_subtitle": "Follow streamers from Popular, Categories or Search to see them here",
     "empty_favorite_offline_title": "No Offline Room",
-    "empty_favorite_online_subtitle": "Please follow live rooms first",
+    "empty_favorite_online_subtitle": "Follow streamers from Popular, Categories or Search to see them here",
     "empty_favorite_online_title": "No Online Room",
     "favorite_empty_online_title": "No followed rooms are live in this filter",
     "favorite_empty_recording_title": "No recordings in this filter",
@@ -196,7 +196,7 @@
     "favorite_show_offline": "View offline",
     "favorite_status_verifying": "Verifying",
     "favorite_status_unknown": "Status pending",
-    "empty_favorite_subtitle": "Please follow live rooms first",
+    "empty_favorite_subtitle": "Follow streamers from Popular, Categories or Search to see them here",
     "empty_favorite_title": "No Favorites",
     "empty_history": "No history here",
     "empty_live_subtitle": "Click the button above\nto switch platform",
@@ -2019,5 +2019,7 @@
   "langlive_directory_scope": "The first stage accepts an exact Lang Live account or an official main/room URL. The public directory contract is still being verified.",
   "langlive_chat_notice": "Remote Lang Live chat is pending. Concurrent viewers stay unknown when the platform does not provide an explicit count.",
   "langlive_quality_flv": "FLV Live",
-  "langlive_quality_hls": "HLS Live"
+  "langlive_quality_hls": "HLS Live",
+  "notice_expand": "Show details",
+  "notice_collapse": "Show less"
 }

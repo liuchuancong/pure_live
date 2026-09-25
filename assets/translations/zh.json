@@ -185,9 +185,9 @@
     "empty_areas_room_title": "未发现直播",
     "empty_areas_subtitle": "请点击上方按钮切换平台",
     "empty_areas_title": "未发现分区",
-    "empty_favorite_offline_subtitle": "请先关注其他直播间",
+    "empty_favorite_offline_subtitle": "在热门、分区或搜索里关注主播后，会显示在这里",
     "empty_favorite_offline_title": "无未开播直播间",
-    "empty_favorite_online_subtitle": "请先关注其他直播间",
+    "empty_favorite_online_subtitle": "在热门、分区或搜索里关注主播后，会显示在这里",
     "empty_favorite_online_title": "无已开播直播间",
     "favorite_empty_online_title": "当前筛选暂无已开播直播",
     "favorite_empty_recording_title": "当前筛选暂无录播",
@@ -197,7 +197,7 @@
     "favorite_show_offline": "查看未开播",
     "favorite_status_verifying": "正在核验",
     "favorite_status_unknown": "状态待确认",
-    "empty_favorite_subtitle": "请先关注其他直播间",
+    "empty_favorite_subtitle": "在热门、分区或搜索里关注主播后，会显示在这里",
     "empty_favorite_title": "无关注直播",
     "empty_history": "无观看历史记录",
     "empty_live_subtitle": "请点击上方按钮切换平台",
@@ -2019,5 +2019,7 @@
   "langlive_directory_scope": "首阶段支持精确浪 Live 账号及官方 main/room 链接；公开目录合同仍在核验。",
   "langlive_chat_notice": "浪 Live 远端聊天尚待接入；平台未返回明确并发人数时保持未知。",
   "langlive_quality_flv": "FLV 直播",
-  "langlive_quality_hls": "HLS 直播"
+  "langlive_quality_hls": "HLS 直播",
+  "notice_expand": "展开说明",
+  "notice_collapse": "收起"
 }
