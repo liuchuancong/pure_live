@@ -211,8 +211,8 @@ Future<String> _checkMedia(
       if (bytes.isEmpty) return 'no-bytes';
     }
     final data = bytes.takeBytes();
-    if (data.length >= 3 && data[0] == 0x46 && data[1] == 0x4c && data[2] == 0x56)
-      return 'ok:flv(${_flvVideoCodec(data)})';
+    final isFlv = data.length >= 3 && data[0] == 0x46 && data[1] == 0x4c && data[2] == 0x56;
+    if (isFlv) return 'ok:flv(${_flvVideoCodec(data)})';
     if (data.isNotEmpty && data[0] == 0x47) return 'ok:ts';
     if (data.length >= 8) {
       final box = latin1.decode(data.sublist(4, 8), allowInvalid: true);
