@@ -21,7 +21,9 @@ v3.2.5 build 4128 是 3.2.4 之后的播放内核更新：fvp 内核在电脑版
 
 ## 验证
 
-- `flutter analyze` 无问题，全量测试通过（WSL 5283 个）。
+- `flutter analyze` 无问题，全量测试通过（WSL 5283 个、Windows 5373 个）。
+- Windows 便携版：启动后加载 mdk，正常退出，无残留进程。
+- 真机（Android）：3.2.5 覆盖安装正常、数据保留；fvp 走代理的修复待手机空闲后复测。
 - Windows：fvp 内核播放哔哩哔哩、斗鱼、虎牙，以及经代理的 Shopee、17LIVE、Twitch，均出画面且无报错。
 - Linux（WSLg）：新 mpv 库播放哔哩哔哩、斗鱼、虎牙、17LIVE；fvp 内核播放哔哩哔哩、虎牙、17LIVE。
 - 检查方法：`integration_test/engine_playback_test.dart`；Linux mpv 库的构建与校验见 `tool/native/libmpv-linux/README.md`。
