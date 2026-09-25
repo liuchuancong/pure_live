@@ -1,41 +1,41 @@
 {
-  "version": "3.2.3",
-  "build_number": 4126,
-  "version_num": 302034126,
-  "version_desc": "- 修复 FC2 全部直播间打不开；修复 17LIVE 部分主播有声音没画面。\n- 多画面新增「全部静音」。\n- 海外平台时好时坏时，请把 Clash 固定到单个节点。",
+  "version": "3.2.4",
+  "build_number": 4127,
+  "version_num": 302044127,
+  "version_desc": "- 安卓 mpv 内核升级到 mpv 0.41.0 + FFmpeg 9.0.2；新增 fvp（mdk）播放内核。\n- 修复 Linux 版无法播放视频（漏打包 mpv 库）。\n- AGP 9.4.1、Gradle 9.8.0、Temurin 26、Media3 1.11.1。",
   "prerelease": false,
-  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.2.3",
+  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.2.4",
   "android_abis": [
     "arm64-v8a"
   ],
   "platforms": {
     "android": {
-      "version": "3.2.3",
-      "build_number": 4126,
-      "version_num": 302034126,
-      "version_desc": "- 修复 FC2 全部直播间打不开；修复 17LIVE 部分主播有声音没画面。\n- 多画面新增「全部静音」。\n- 海外平台时好时坏时，请把 Clash 固定到单个节点。",
+      "version": "3.2.4",
+      "build_number": 4127,
+      "version_num": 302044127,
+      "version_desc": "- 安卓 mpv 内核升级到 mpv 0.41.0 + FFmpeg 9.0.2；新增 fvp（mdk）播放内核。\n- 修复 Linux 版无法播放视频（漏打包 mpv 库）。\n- AGP 9.4.1、Gradle 9.8.0、Temurin 26、Media3 1.11.1。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.2.3",
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.2.4",
       "android_abis": [
         "arm64-v8a"
       ]
     },
     "windows": {
-      "version": "3.2.3",
-      "build_number": 4126,
-      "version_num": 302034126,
-      "version_desc": "- 修复 FC2 全部直播间打不开；修复 17LIVE 部分主播有声音没画面。\n- 多画面新增「全部静音」。\n- 海外平台时好时坏时，请把 Clash 固定到单个节点。",
+      "version": "3.2.4",
+      "build_number": 4127,
+      "version_num": 302044127,
+      "version_desc": "- 安卓 mpv 内核升级到 mpv 0.41.0 + FFmpeg 9.0.2；新增 fvp（mdk）播放内核。\n- 修复 Linux 版无法播放视频（漏打包 mpv 库）。\n- AGP 9.4.1、Gradle 9.8.0、Temurin 26、Media3 1.11.1。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.2.3",
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.2.4",
       "windows_msix_available": false
     },
     "linux": {
-      "version": "3.2.3",
-      "build_number": 4126,
-      "version_num": 302034126,
-      "version_desc": "- 修复 FC2 全部直播间打不开；修复 17LIVE 部分主播有声音没画面。\n- 多画面新增「全部静音」。\n- 海外平台时好时坏时，请把 Clash 固定到单个节点。",
+      "version": "3.2.4",
+      "build_number": 4127,
+      "version_num": 302044127,
+      "version_desc": "- 安卓 mpv 内核升级到 mpv 0.41.0 + FFmpeg 9.0.2；新增 fvp（mdk）播放内核。\n- 修复 Linux 版无法播放视频（漏打包 mpv 库）。\n- AGP 9.4.1、Gradle 9.8.0、Temurin 26、Media3 1.11.1。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.2.3"
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.2.4"
     },
     "macos": {
       "version": "3.0.0",

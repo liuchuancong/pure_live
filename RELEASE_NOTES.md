@@ -1,3 +1,36 @@
+# Pure Live v3.2.4
+
+v3.2.4 build 4127 升级了开发环境和安卓播放内核：安卓默认的 mpv 内核换用 FFmpeg 9，新增 fvp（mdk）播放内核，并修复 Linux 版无法播放的问题。从维护分支 `claude` 发布，没有合并上游代码。
+
+## 播放内核
+
+- **安卓 mpv 内核升级到 mpv 0.41.0 + FFmpeg 9.0.2**（原来是 FFmpeg 7.1）。新版 FFmpeg 能直接识别更多直播流格式，包括 Shopee、部分 17LIVE 主播使用的 HEVC 写法；硬件解码照常使用手机的 MediaCodec。
+- **新增 fvp 播放内核（基于 mdk）**：在「设置 → 播放内核设置 → 内核切换」里选择「Fvp播放器」（安卓、iOS）。它自带新版 FFmpeg，优先使用硬件解码，兼容性好，可作为 IJK 的替代；IJK 上游自 2021 年起已停止维护，继续保留为备用。
+- **Exo 内核**：Media3 升级到 1.11.1。
+
+## 修复
+
+- **Linux 版无法播放视频**：以前的 Linux 安装包漏打包了 mpv 播放库，只有系统自带 libmpv 时才能播放；现在已随包提供。
+
+## 开发环境
+
+- Android Gradle Plugin 9.4.1、Gradle 9.8.0、构建用 JDK 换为 Temurin 26.0.2.1；Flutter 3.47.5 与全部依赖均为最新稳定版。
+
+## 已知问题
+
+- **海外平台时好时坏**：Clash 使用负载均衡或自动测速时，出口 IP 会轮换，FC2、NimoTV、VK 等平台的播放链接与请求 IP 绑定，出口一换就会被拒。请把 Clash 固定到单个节点。
+- **Dailymotion** 拒绝机房和代理 IP；**Rumble** 有 Cloudflare 人机验证；**Bigo** 需要登录。
+- **Windows**：App 自己的网络请求不跟随系统代理，海外站点需要在「网络代理」里填写代理。
+- **Linux 版 Kick** 仍被 Cloudflare 拦截；Linux 的 mpv 库仍是 FFmpeg 7.1（Shopee、17LIVE 经 App 内转换后可播）。
+- fvp 内核目前只在安卓、iOS 可选；桌面端待验证后开放。
+
+## 验证
+
+- `flutter analyze` 无问题，全量测试通过（WSL 5283 个、Windows 5373 个）。
+- 真机（Android）：新 mpv 内核播放斗鱼 1080p，使用高通硬件解码；fvp 内核播放哔哩哔哩直播正常。
+- Windows：安装包内 mdk、mpv、FFmpegKit 的库文件互不冲突，启动与退出正常。
+- 构建方法与校验见 `tool/native/libmpv-android/README.md`。
+
 # Pure Live v3.2.3
 
 v3.2.3 build 4126 是 3.2.2 之后的修复版本：修复 FC2 全部直播间打不开、17LIVE 部分主播有声音没画面，并为多画面加回「全部静音」。从维护分支 `claude` 发布，没有合并上游代码。
