@@ -17,7 +17,7 @@ PURELIVE_PROBE_SITES=huya,douyu PURELIVE_PROBE_REPORT=/tmp/report.json ...   # �
 | --- | --- |
 | 取到媒体（27） | 17LIVE、AcFun、百度、哔哩哔哩、CC、CHZZK、抖音、斗鱼、虎牙、映客、京东、克拉克拉、快手、酷狗、LiveMe、LOOK、猫耳、PandaTV、Picarto、SHOWROOM、六间房、SOOP、Steam、TwitCasting、Twitch、微博、YY |
 | 私有播放输入已建立 | FC2、niconico |
-| 需要 WebView，真机验证 | Dailymotion、NimoTV、Rumble、Shopee Live |
+| 需要 WebView（Windows 集成测试 `integration_test/webview_sites_test.dart`） | Shopee Live、NimoTV 通过；Rumble 受 Cloudflare 质询影响时通过时不通过；Dailymotion 见下 |
 | 按设计无公开目录 | 淘宝、TikTok、小红书、YouTube（仅搜索与链接回流） |
 | 需要登录 / 成人认证 | Bigo（`needLogin`）、PopkonTV 目录前列均为成人直播 |
 | 网络 / 地区限制 | GoodGame（`hls.goodgame.ru` 超时）、OPENREC（mellow-fan 接口 curl 同样 403）、VK 部分签名子播放列表 403（疑与 `srcIp` 和代理分流有关） |
@@ -35,7 +35,16 @@ PURELIVE_PROBE_SITES=huya,douyu PURELIVE_PROBE_REPORT=/tmp/report.json ...   # �
 | VK Video Live | 新 CDN `*.vkuser.net` 不在白名单；共享镜像 403 导致整个房间失败 | `bb421c45` |
 | Kick | Cloudflare 对 `dart:io` 的 TLS 指纹一律 403（curl 与手机 curl 均 200）。Android 走平台 TLS（`HttpURLConnection`），Windows 走 WinHTTP/Schannel，均只放行 kick.com；IVS 播放列表仍走 dio。Linux 仍受阻 | `f1511974`（Android）、`76a59f31`（路由）、`8435e9e2`（Windows WinHTTP）；Android 真机 1080p60 播放与聊天通过，Windows `integration_test/native_http_kick_test.dart` 通过 |
 | TwitCasting | 分片需要播放列表下发的 `lvhls_ssid_*` Cookie；FFmpeg（mpv/IJK）会回放，App 实测可播，仅探针需要补 Cookie 回放 | `59b29295`（探针） |
+| NimoTV | 流信息包 `mStreamPkg` 改版：`id=` 前的 `|` 变为长度字节，全部房间格式错误；CDN 现在对整个查询串签名（`wsSecret`/`wsTime`/`fm`/`ctype`），改用 https 或追加 `ratio` 均 403/404，只能播放包内给出的原画 http 地址 | `ad82bcfa` |
+| Shopee Live | ① 首次打开走 WebView 会话解析，冷启动可超过 45 秒，被统一超时判为网络错误（第一个房间失败、之后正常）；② 任一播放地址或封面不在白名单就整间报格式错误；③ 新增自有 CDN `play-spe.livestream.shopee.co.id`（`cdnID=SHOPEE`），同样是 codec 12 HEVC | `66a6bc78`、`e0185e6b`、`264a9351` |
+| Nimo / Dailymotion / Rumble / Shopee | Android 无头 WebView 没有使用 App 代理（只有 Twitch 用了），国内配置代理后这几个站仍直连失败；改为共享的 `WebViewProxyScope`，并串行化进程级 `ProxyController` | `9f541aae` |
 
+
+## 环境限制（非代码问题）
+
+- **Dailymotion**：元数据接口能返回签名主播放列表，但 `cdndirector.dailymotion.com` 对本机 Clash 出口（美国机房 IP）一律 403，`x-error-code: E005`，换请求头、Cookie、`app=com.dailymotion.neon` 均无效，判断为屏蔽机房/代理 IP。需要住宅 IP 才能验证。另外公开接口 `flags=live_onair` 会列出实际已下播（`DM003`）的频道，App 的目录用 `mode=live&sort=live-audience` 并过滤 `onair`，不受影响。
+- **Rumble**：接口与页面都在 Cloudflare「Just a moment…」质询之后；无头 WebView 有时能通过（5 次中 2 次取到 1080p HLS），频繁请求后质询升级即失败。
+- **Windows 上的 dart:io 不跟随系统代理**：WebView2 走系统代理，App 自己的请求只认「网络代理」里的设置。只开了系统代理（未开 TUN、未在 App 里设置代理）时，NimoTV 这类站点会出现「目录能加载、进房间失败」。可以考虑增加「跟随系统代理」选项（待定）。
 
 ## 已修复：Shopee Live 有声无画面（claude@79f78e06）
 
