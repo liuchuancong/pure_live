@@ -37,6 +37,7 @@ PURELIVE_PROBE_SITES=huya,douyu PURELIVE_PROBE_REPORT=/tmp/report.json ...   # �
 | TwitCasting | 分片需要播放列表下发的 `lvhls_ssid_*` Cookie；FFmpeg（mpv/IJK）会回放，App 实测可播，仅探针需要补 Cookie 回放 | `59b29295`（探针） |
 | NimoTV | 流信息包 `mStreamPkg` 改版：`id=` 前的 `|` 变为长度字节，全部房间格式错误；CDN 现在对整个查询串签名（`wsSecret`/`wsTime`/`fm`/`ctype`），改用 https 或追加 `ratio` 均 403/404，只能播放包内给出的原画 http 地址 | `ad82bcfa` |
 | Shopee Live | ① 首次打开走 WebView 会话解析，冷启动可超过 45 秒，被统一超时判为网络错误（第一个房间失败、之后正常）；② 任一播放地址或封面不在白名单就整间报格式错误；③ 新增自有 CDN `play-spe.livestream.shopee.co.id`（`cdnID=SHOPEE`），同样是 codec 12 HEVC | `66a6bc78`、`e0185e6b`、`264a9351` |
+| NimoTV（Android） | Android WebView 的移动端 UA 被首页脚本重定向到 `m.nimo.tv`，没有目录卡片，手机上 NimoTV 标签页始终失败；改用桌面 UA。房间标题含 HTML 实体（`Hi&#39;`）未解码。真机（经 App 代理）：目录与房间可打开、出画面，但 CDN 间歇 403 会中断播放 | `4828bc47` |
 | Nimo / Dailymotion / Rumble / Shopee | Android 无头 WebView 没有使用 App 代理（只有 Twitch 用了），国内配置代理后这几个站仍直连失败；改为共享的 `WebViewProxyScope`，并串行化进程级 `ProxyController` | `9f541aae` |
 
 
