@@ -1455,17 +1455,38 @@ class BottomActionBar extends StatelessWidget {
                     );
                   }
 
-                  return SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    physics: const PureLiveBoundedScrollPhysics(),
-                    clipBehavior: Clip.hardEdge,
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(minWidth: constraints.maxWidth),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [left, right]),
+                  // The inline bar scrolls when a phone is too narrow for
+                  // every action. Fullscreen stays pinned outside the scroll
+                  // view: as the last item it used to be clipped off-screen.
+                  final pinExpand = !GlobalPlayerState.to.isWindowFullscreen.value;
+                  final inlineRight = _buildRightActions(compact: false, includeExpand: !pinExpand);
+                  return Row(
+                    children: [
+                      Expanded(
+                        child: LayoutBuilder(
+                          builder: (context, scrollConstraints) => SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            physics: const PureLiveBoundedScrollPhysics(),
+                            clipBehavior: Clip.hardEdge,
+                            child: ConstrainedBox(
+                              constraints: BoxConstraints(minWidth: scrollConstraints.maxWidth),
+                              child: Padding(
+                                padding: const EdgeInsets.only(left: 8),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [left, inlineRight],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
+                      if (pinExpand)
+                        Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: ExpandButton(controller: controller),
+                        ),
+                    ],
                   );
                 },
               ),
@@ -1529,7 +1550,7 @@ class BottomActionBar extends StatelessWidget {
     );
   }
 
-  Widget _buildRightActions({required bool compact}) {
+  Widget _buildRightActions({required bool compact, bool includeExpand = true}) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -1542,7 +1563,7 @@ class BottomActionBar extends StatelessWidget {
         if (Platform.isWindows) OverlayVolumeControl(controller: controller),
         if (Platform.isWindows && controller.supportWindowFull && !GlobalPlayerState.to.isFullscreen.value)
           ExpandWindowButton(controller: controller),
-        if (!GlobalPlayerState.to.isWindowFullscreen.value) ExpandButton(controller: controller),
+        if (includeExpand && !GlobalPlayerState.to.isWindowFullscreen.value) ExpandButton(controller: controller),
       ],
     );
   }
