@@ -64,7 +64,7 @@ jobs:
       - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
         with:
           distribution: zulu
-          java-version: "25"
+          java-version: "26"
       - name: Install pinned Flutter SDK from the official archive
         shell: bash
         run: |
@@ -106,7 +106,7 @@ jobs:
       - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
         with:
           distribution: zulu
-          java-version: "25"
+          java-version: "26"
           cache: gradle
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:

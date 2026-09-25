@@ -7,7 +7,7 @@ version = "1.3.5"
 
 val lifecycleVersion = "2.9.4"
 val annotationVersion = "1.9.1"
-val media3Version = "1.10.1"
+val media3Version = "1.11.1"
 val workVersion = "2.10.5"
 
 allprojects {

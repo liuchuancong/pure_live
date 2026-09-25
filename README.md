@@ -435,7 +435,7 @@ EXE 安装向导支持选择其他磁盘，并把设置、关注、历史、IPTV
 
 ## 🧪 本地构建与验证
 
-项目固定使用 Flutter `3.47.5` / Dart `3.13.4`、AGP `9.3.3`、Gradle `9.7.1` 与 Java 25 构建运行时，Android 应用和插件字节码目标保持 Java/Kotlin 17。资源档位、串行平台阶段和增量缓存规则见 [构建资源策略](BUILD_POLICY.md)。正式交付的完整质量门禁：
+项目固定使用 Flutter `3.47.5` / Dart `3.13.4`、AGP `9.4.1`、Gradle `9.8.0` 与 Java 26（Temurin 26.0.2.1）构建运行时，Android 应用和插件字节码目标保持 Java/Kotlin 17。资源档位、串行平台阶段和增量缓存规则见 [构建资源策略](BUILD_POLICY.md)。正式交付的完整质量门禁：
 
 ```powershell
 PowerShell -ExecutionPolicy Bypass -File .\tool\local_ci.ps1 -Scope Full

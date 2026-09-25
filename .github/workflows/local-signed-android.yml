@@ -28,13 +28,13 @@ jobs:
           # Preserve Gradle/Flutter intermediates between manual release jobs;
           # the build script deletes final APKs and Git resets tracked files.
           clean: false
-      - name: Select local Java 25
+      - name: Select local Java 26
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
           $candidates = @()
           if ($env:RUNNER_TOOL_CACHE) {
-            $candidates += Get-ChildItem (Join-Path $env:RUNNER_TOOL_CACHE 'Java_Zulu_jdk\25*\x64') `
+            $candidates += Get-ChildItem (Join-Path $env:RUNNER_TOOL_CACHE 'Java_Zulu_jdk\26*\x64') `
               -Directory -ErrorAction SilentlyContinue |
               Sort-Object FullName -Descending |
               Select-Object -ExpandProperty FullName
@@ -49,11 +49,11 @@ jobs:
               $java = Join-Path $_ 'bin\java.exe'
               if (-not (Test-Path -LiteralPath $java -PathType Leaf)) { return $false }
               $versionText = (& $java -version 2>&1 | Out-String)
-              return $versionText -match 'version\s+"25(?:\.|\")'
+              return $versionText -match 'version\s+"26(?:\.|\")'
             } |
             Select-Object -First 1
           if (-not $jdk) {
-            throw 'Java 25 was not found in the runner cache, Android Studio JBR, or JAVA_HOME.'
+            throw 'Java 26 was not found in the runner cache, Android Studio JBR, or JAVA_HOME.'
           }
           $jdk = (Resolve-Path -LiteralPath $jdk).Path
           "JAVA_HOME=$jdk" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append

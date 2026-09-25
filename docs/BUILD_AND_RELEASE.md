@@ -8,7 +8,7 @@
 
 - Windows 11 x64，已启用 Flutter Windows 桌面开发所需的 Visual Studio C++ 工具；
 - Android SDK；设备或模拟器仅用于显式安排的安装验收；
-- Java 25 构建运行时（Android 应用和插件字节码目标仍为 17）；
+- Java 26（Temurin 26.0.2.1）构建运行时（Android 应用和插件字节码目标仍为 17）；
 - Python 3，用于直播接口探测和发布历史更新；
 - 可选：Inno Setup 6，用于生成 Windows EXE 安装包；
 - 可选：GitHub CLI，用于从本机创建并上传 Release。
@@ -52,7 +52,7 @@ PowerShell -ExecutionPolicy Bypass -File .\tool\local_ci.ps1 -Scope Full
 
 路径较长时脚本会从 `P:` 到 `W:` 为当前工作区选择并保留一个稳定的短盘符映射，规避 FFmpeg Native Assets 在 Windows 上超过传统路径长度后的构建失败，也支持本地主工作区与临时自托管 Runner 并行构建。映射记录位于未跟踪的 `.dart_tool/pure_live_subst_drive.txt`；连续的 `pub get`、分析、测试和构建会复用同一盘符，避免 Native Assets 增量缓存引用已经释放的盘符。
 
-Android 构建使用 Java 25 运行 Gradle 与 lint，应用和插件的 Java/Kotlin 字节码目标保持 17。脚本优先读取 `PURE_LIVE_JAVA_HOME`，随后检测 Android Studio JBR，最后回退到本机 Temurin；当前工具链为 compileSdk/targetSdk 37、Gradle 9.7.1、AGP 9.3.3 和 AGP Built-in Kotlin。`tool/audit_built_in_kotlin.py` 会在本地 CI 中阻止独立 KGP、模块私有 AGP classpath 和旧 Kotlin DSL 回归。
+Android 构建使用 Java 26 运行 Gradle 与 lint，应用和插件的 Java/Kotlin 字节码目标保持 17。脚本优先读取 `PURE_LIVE_JAVA_HOME`，随后检测 Android Studio JBR，最后回退到本机 Temurin；当前工具链为 compileSdk/targetSdk 37、Gradle 9.8.0、AGP 9.4.1、Media3 1.11.1 和 AGP Built-in Kotlin。`tool/audit_built_in_kotlin.py` 会在本地 CI 中阻止独立 KGP、模块私有 AGP classpath 和旧 Kotlin DSL 回归。
 
 Android 打包前由 `tool/prefetch_android_native.ps1` 依据当前 media_kit Native Assets 清单下载并逐一校验四个 ABI 的 libmpv 档案，以及项目固定 SHA-256 的 FFmpeg 9.0.2 AAR；质量门禁以 `-SkipAndroidMedia` 准备 media_kit 与 FFmpeg 的 Windows 档案。原生文件写入持久缓存和各自的 Native Assets 共享缓存，减少重复下载并拦截损坏文件。
 
@@ -117,7 +117,7 @@ PowerShell -ExecutionPolicy Bypass -File .\tool\build_local_release.ps1 `
 签名材料只保存在 GitHub Secrets、Actions 托管额度紧张时，可在本机注册
 Windows x64 临时自托管 Runner，再手动运行
 `local-signed-android` 工作流。编译仍在本机完成，工作流仅把签名 Secrets
-注入临时进程；工作流依次检测 Runner 工具缓存、Android Studio JBR 与 `JAVA_HOME`，且只接受真实 Java 25，任务结束后会清理 JKS 和 `android/key.properties`。
+注入临时进程；工作流依次检测 Runner 工具缓存、Android Studio JBR 与 `JAVA_HOME`，且只接受真实 Java 26，任务结束后会清理 JKS 和 `android/key.properties`。
 
 临时 Runner 仅通过手动工作流构建当前指定的 Android arm64 Release；普通提交与标签不自动追加托管构建。
 
