@@ -1,6 +1,9 @@
 // Plays a real live stream through FvpAdapter (libmdk) on a real runner:
 //   flutter test integration_test/fvp_playback_test.dart --device-id=windows
-// Use the long device flag (see webview_sites_test.dart).
+//     [--dart-define=PURELIVE_FVP_SITES=shopeelive,17live]
+//     [--dart-define=PURELIVE_TEST_PROXY=127.0.0.1:7897]
+// PURELIVE_TEST_PROXY sets the app and playback proxy, as a user in China
+// would. Use the long device flag (see webview_sites_test.dart).
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -21,11 +24,25 @@ void main() {
   setUpAll(() async {
     await Hive.openBox<dynamic>('app_settings', bytes: Uint8List(0));
     await HivePrefUtil.init();
-    Get.put(SettingsService(), permanent: true);
+    final settings = Get.put(SettingsService(), permanent: true);
+    const proxy = String.fromEnvironment('PURELIVE_TEST_PROXY');
+    final separator = proxy.lastIndexOf(':');
+    if (separator > 0) {
+      final host = proxy.substring(0, separator);
+      final port = int.parse(proxy.substring(separator + 1));
+      settings.proxy
+        ..appProxyHost.value = host
+        ..appProxyPort.value = port
+        ..enableAppProxy.value = true
+        ..proxyHost.value = host
+        ..proxyPort.value = port
+        ..enableProxy.value = true;
+    }
   });
   tearDownAll(Hive.close);
 
-  for (final id in const ['bilibili', 'douyu', 'huya']) {
+  const sites = String.fromEnvironment('PURELIVE_FVP_SITES', defaultValue: 'bilibili,douyu,huya');
+  for (final id in sites.split(',')) {
     testWidgets('fvp plays a live $id room with video', (tester) async {
       final site = Sites.of(id).liveSite;
       late String url;
@@ -33,6 +50,7 @@ void main() {
       await tester.runAsync(() async {
         final rooms = await site.getRecommendRooms(page: 1, pageSize: 10);
         for (final card in rooms) {
+          if (card.liveStatus == LiveStatus.offline) continue;
           final detail = await site.getRoomDetail(roomId: card.roomId!, platform: id);
           if (detail.liveStatus != LiveStatus.live) continue;
           final qualities = await site.getPlayQualites(detail: detail);

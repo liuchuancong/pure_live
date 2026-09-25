@@ -7,6 +7,7 @@ import 'package:rxdart/rxdart.dart';
 
 import 'package:pure_live/common/models/live_room.dart';
 import 'package:pure_live/common/services/settings_service.dart';
+import 'package:pure_live/player/core/playback_proxy_policy.dart';
 import 'package:pure_live/player/core/player_error_classifier.dart';
 import 'package:pure_live/player/interface/unified_player_interface.dart';
 import 'package:pure_live/player/models/player_engine.dart';
@@ -20,13 +21,19 @@ import 'package:pure_live/player/models/player_state.dart';
 /// streams the older engines drop, and it prefers platform hardware decoders
 /// (MediaCodec / VideoToolbox) with FFmpeg and dav1d as software fallbacks.
 class FvpAdapter
-    implements UnifiedPlayer, VideoFitAwarePlayer, SourceTransitionAwarePlayer, AudioOutputSuppressionAwarePlayer {
+    implements
+        UnifiedPlayer,
+        VideoFitAwarePlayer,
+        SourceTransitionAwarePlayer,
+        AudioOutputSuppressionAwarePlayer,
+        PrivateInputAwarePlayer {
   mdk.Player? _player;
   bool _initialized = false;
   bool _disposed = false;
   bool _audioOnly = false;
   bool _audioOutputSuppressed = false;
   bool _acceptSourceEvents = false;
+  bool _privateInput = false;
   double _volume = 1.0;
   BoxFit _fit = BoxFit.contain;
   int _generation = 0;
@@ -149,6 +156,9 @@ class FvpAdapter
   void setAudioOutputSuppressed(bool suppressed) => _audioOutputSuppressed = suppressed;
 
   @override
+  void setPrivateInput(bool value, {String? sourceIdentity}) => _privateInput = value;
+
+  @override
   void beginSourceTransition() {
     if (_disposed) return;
     _acceptSourceEvents = false;
@@ -175,6 +185,9 @@ class FvpAdapter
     _audioOnly = audioOnly;
     player.state = mdk.PlaybackState.stopped;
     player.setProperty('avio.headers', encodeHeaders(headers));
+    // FFmpeg's http/tls option; an empty value (local relay, no proxy) is
+    // ignored because FFmpeg only uses an http:// proxy URL.
+    player.setProperty('avio.http_proxy', PlaybackProxyPolicy.currentNativeUrl(privateInput: _privateInput));
     player.setActiveTracks(mdk.MediaType.video, audioOnly ? const [] : const [0]);
     player.volume = _audioOutputSuppressed ? 0.0 : _volume;
     player.media = url;
