@@ -1,5 +1,18 @@
 [
   {
+    "version": "3.2.2",
+    "title": "Pure Live v3.2.2",
+    "date": "2026-09-25",
+    "github": "https://github.com/wzgrx/pure_live/releases/tag/v3.2.2",
+    "author": {
+      "name": "wzgrx",
+      "avatar": "https://avatars.githubusercontent.com/u/39661556?v=4",
+      "profile": "https://github.com/wzgrx"
+    },
+    "changelog": "# Pure Live v3.2.2\n\nv3.2.2 build 4125 是 3.2.1 之后的修复版本，集中修复 Shopee Live、NimoTV 的播放，海外站点不走代理的问题，以及从其他 App 分享直播链接打不开的问题。从维护分支 `claude` 发布，没有合并上游代码。\n\n## 平台修复\n\n- **Shopee Live 有声音没画面**：Shopee 的 FLV 用的是国内 CDN 常见的「编码号 12」方式表示 HEVC（H.265），播放内核自带的 FFmpeg 7.1 不认识，只剩声音。现在播放时经本机中转，把视频标签改写成 FFmpeg 7.1 能识别的增强型 FLV，画面正常；视频数据原样传递，不转码。\n- **Shopee Live 第一个直播间常打不开**：首次进房要在后台加载 Shopee 网页，冷启动可能超过 45 秒被判为网络错误，已放宽到 80 秒；另外部分直播间改由 Shopee 自有 CDN 播放，以前不在允许列表里，现在也能播；单个异常的播放地址或封面不再导致整个直播间打不开。\n- **NimoTV 全部直播间打不开**：NimoTV 9 月改了直播流信息的格式，并对整串播放参数签名。现在按新格式解析，提供原画 FLV；手机上的目录以前被跳转到移动版网页而加载失败，已修复；房间标题里的 `&#39;` 等乱码已修正。\n- **海外站点不走代理**：NimoTV、Dailymotion、Rumble、Shopee Live 会在后台用网页解析，以前没有使用「网络代理」里设置的代理，国内开了代理也连不上。现在会使用 App 代理。\n\n## 新功能与界面\n\n- **分享直播链接直接打开直播间**：在哔哩哔哩等 App 里点「分享」选 Pure Live，会直接打开对应直播间；App 未启动时也可以。以前只认 Pure Live 自己的分享口令。\n- **竖屏直播间的全屏按钮看不到**：手机上控制栏按钮太多，全屏按钮被挤到屏幕外，只能双击进入全屏。现在全屏按钮固定显示在最右侧。\n- **直播间加载失败后退出不再出现黑色小窗**。\n\n## 已知问题\n\n- **NimoTV**：CDN 会不定时返回 403，播放可能中断，点重试通常能恢复；只有原画一个画质。\n- **Dailymotion**：它的 CDN 拒绝机房和代理 IP，需要住宅网络才能播放。\n- **Rumble**：前面有 Cloudflare 人机验证，时好时坏。\n- **Windows**：App 自己的网络请求不跟随系统代理，海外站点需要在「网络代理」里填写代理。\n- **Linux 版 Kick** 仍被 Cloudflare 拦截。\n\n## 验证\n\n- `flutter analyze` 无问题，全量测试通过。\n- 真机（Android，REDMI K90）：Shopee 1080p 出画面、切换线路、应用内小窗；NimoTV 经代理加载目录并出画面；分享链接在冷启动和运行中都能打开直播间；竖屏全屏按钮；冷启动、全屏与返回手势、后台播放、系统画中画、IJK / Exo 内核切换。\n- Windows：新增端到端测试 `integration_test/webview_sites_test.dart`，Shopee Live、NimoTV 从目录到取得播放地址全部通过。\n- 逐站结论与环境限制见 [全平台探针报告](docs/PLATFORM_PROBE_2026_09_25.md)。",
+    "files": []
+  },
+  {
     "version": "3.2.1",
     "title": "Pure Live v3.2.1",
     "date": "2026-09-25",

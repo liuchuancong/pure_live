@@ -1,41 +1,41 @@
 {
-  "version": "3.2.1",
-  "build_number": 4124,
-  "version_num": 302014124,
-  "version_desc": "- 新增「同时录制弹幕」：每段录像旁保存同名 B 站格式 .xml 弹幕（默认关闭）。\n- 修复 Kick（Android / Windows）、SHOWROOM、PopkonTV、LiveMe、VK Video Live 的目录或播放问题。\n- 应用内小窗不再挡住菜单和对话框；直播间加载失败时显示重试。",
+  "version": "3.2.2",
+  "build_number": 4125,
+  "version_num": 302024125,
+  "version_desc": "- 修复 Shopee Live 有声无画面、第一个直播间打不开；修复 NimoTV 全部直播间打不开。\n- 海外网页解析站点（NimoTV、Dailymotion、Rumble、Shopee）使用 App 代理。\n- 其他 App 分享的直播链接可直接打开直播间；竖屏控制栏全屏按钮固定显示。",
   "prerelease": false,
-  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.2.1",
+  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.2.2",
   "android_abis": [
     "arm64-v8a"
   ],
   "platforms": {
     "android": {
-      "version": "3.2.1",
-      "build_number": 4124,
-      "version_num": 302014124,
-      "version_desc": "- 新增「同时录制弹幕」：每段录像旁保存同名 B 站格式 .xml 弹幕（默认关闭）。\n- 修复 Kick（Android / Windows）、SHOWROOM、PopkonTV、LiveMe、VK Video Live 的目录或播放问题。\n- 应用内小窗不再挡住菜单和对话框；直播间加载失败时显示重试。",
+      "version": "3.2.2",
+      "build_number": 4125,
+      "version_num": 302024125,
+      "version_desc": "- 修复 Shopee Live 有声无画面、第一个直播间打不开；修复 NimoTV 全部直播间打不开。\n- 海外网页解析站点（NimoTV、Dailymotion、Rumble、Shopee）使用 App 代理。\n- 其他 App 分享的直播链接可直接打开直播间；竖屏控制栏全屏按钮固定显示。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.2.1",
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.2.2",
       "android_abis": [
         "arm64-v8a"
       ]
     },
     "windows": {
-      "version": "3.2.1",
-      "build_number": 4124,
-      "version_num": 302014124,
-      "version_desc": "- 新增「同时录制弹幕」：每段录像旁保存同名 B 站格式 .xml 弹幕（默认关闭）。\n- 修复 Kick（Android / Windows）、SHOWROOM、PopkonTV、LiveMe、VK Video Live 的目录或播放问题。\n- 应用内小窗不再挡住菜单和对话框；直播间加载失败时显示重试。",
+      "version": "3.2.2",
+      "build_number": 4125,
+      "version_num": 302024125,
+      "version_desc": "- 修复 Shopee Live 有声无画面、第一个直播间打不开；修复 NimoTV 全部直播间打不开。\n- 海外网页解析站点（NimoTV、Dailymotion、Rumble、Shopee）使用 App 代理。\n- 其他 App 分享的直播链接可直接打开直播间；竖屏控制栏全屏按钮固定显示。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.2.1",
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.2.2",
       "windows_msix_available": false
     },
     "linux": {
-      "version": "3.2.1",
-      "build_number": 4124,
-      "version_num": 302014124,
-      "version_desc": "- 新增「同时录制弹幕」：每段录像旁保存同名 B 站格式 .xml 弹幕（默认关闭）。\n- 修复 Kick（Android / Windows）、SHOWROOM、PopkonTV、LiveMe、VK Video Live 的目录或播放问题。\n- 应用内小窗不再挡住菜单和对话框；直播间加载失败时显示重试。",
+      "version": "3.2.2",
+      "build_number": 4125,
+      "version_num": 302024125,
+      "version_desc": "- 修复 Shopee Live 有声无画面、第一个直播间打不开；修复 NimoTV 全部直播间打不开。\n- 海外网页解析站点（NimoTV、Dailymotion、Rumble、Shopee）使用 App 代理。\n- 其他 App 分享的直播链接可直接打开直播间；竖屏控制栏全屏按钮固定显示。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.2.1"
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.2.2"
     },
     "macos": {
       "version": "3.0.0",
