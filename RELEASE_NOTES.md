@@ -1,6 +1,6 @@
 # Pure Live v3.2.5
 
-v3.2.5 是 3.2.4 之后的播放内核更新：fvp 内核在电脑版也能选了，修复 fvp 不走代理、误报错误的问题，Linux 版的 mpv 库也升级到 FFmpeg 9。从维护分支 `claude` 发布，没有合并上游代码。
+v3.2.5 build 4128 是 3.2.4 之后的播放内核更新：fvp 内核在电脑版也能选了，修复 fvp 不走代理、误报错误的问题，Linux 版的 mpv 库也升级到 FFmpeg 9。从维护分支 `claude` 发布，没有合并上游代码。
 
 ## 播放内核
 
@@ -11,6 +11,20 @@ v3.2.5 是 3.2.4 之后的播放内核更新：fvp 内核在电脑版也能选�
 
 - **fvp 内核不走播放代理**：以前选 fvp 后，Twitch、Shopee 等需要代理的海外平台都打不开；现在和 mpv、IJK 一样使用「网络代理」里的播放代理。
 - **fvp 内核误报播放失败**：mdk 某个解码器（比如字幕、硬件解码器）打不开时会自动换下一个，App 却把这当成播放失败（虎牙部分直播间可复现）。现在不再误报。
+
+## 已知问题
+
+- **海外平台时好时坏**：Clash 出口 IP 轮换时，FC2、NimoTV、VK 等平台的播放链接会被拒，请把 Clash 固定到单个节点。
+- **Dailymotion** 拒绝机房和代理 IP；**Rumble** 有 Cloudflare 人机验证；**Bigo** 需要登录。
+- **Windows**：App 自己的网络请求不跟随系统代理，海外站点需要在「网络代理」里填写代理。
+- **Linux**：mpv 库需要系统里有 `libva-wayland2`（大多数桌面发行版已自带）；Kick 仍被 Cloudflare 拦截。
+
+## 验证
+
+- `flutter analyze` 无问题，全量测试通过（WSL 5283 个）。
+- Windows：fvp 内核播放哔哩哔哩、斗鱼、虎牙，以及经代理的 Shopee、17LIVE、Twitch，均出画面且无报错。
+- Linux（WSLg）：新 mpv 库播放哔哩哔哩、斗鱼、虎牙、17LIVE；fvp 内核播放哔哩哔哩、虎牙、17LIVE。
+- 检查方法：`integration_test/engine_playback_test.dart`；Linux mpv 库的构建与校验见 `tool/native/libmpv-linux/README.md`。
 
 # Pure Live v3.2.4
 
