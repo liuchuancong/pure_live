@@ -61,7 +61,7 @@ void main() {
     expect(transport.roomCalls, 1);
   });
 
-  test('room detail exposes five signed FLV qualities, recovery and lease timing', () async {
+  test('room detail exposes the signed source FLV, recovery and lease timing', () async {
     final transport = _FixtureTransport();
     final site = NimoTvSite(
       api: NimoTvApi(request: transport.call),
@@ -71,14 +71,14 @@ void main() {
     expect(detail.effectiveLiveStatus, LiveStatus.live);
     expect(detail.httpHeaders['Referer'], 'https://www.nimo.tv/live/40972312');
     final qualities = await site.getPlayQualites(detail: detail);
-    expect(qualities.map((quality) => quality.selectionId), ['flv:6000', 'flv:2500', 'flv:1000', 'flv:500', 'flv:250']);
+    expect(qualities.map((quality) => quality.selectionId), ['flv:source']);
     final first = await site.resolvePlayUrlsRaw(detail: detail, quality: qualities.first);
     final firstUri = Uri.parse(first.urls.single);
-    expect(firstUri.scheme, 'https');
+    // The CDN rejects https and any parameter added to its signed query.
+    expect(firstUri.scheme, 'http');
     expect(firstUri.host, 'al.flv.nimo.tv');
     expect(firstUri.path, '/live/fixture_stream.flv');
-    expect(firstUri.queryParameters['ratio'], '6000');
-    expect(firstUri.queryParameters['wsSecret'], 'secret1');
+    expect(firstUri.query, 'wsSecret=secret1&wsTime=6b49d200&fm=Zml4dHVyZQ%3D%3D&ctype=nimo_wap');
 
     final recovered = await site.resolvePlayUrlsForRecoveryRaw(detail: detail, quality: qualities.first);
     expect(Uri.parse(recovered.urls.single).queryParameters['wsSecret'], 'secret2');
@@ -87,6 +87,18 @@ void main() {
     const media = 'https://al.flv.nimo.tv/live/fixture.flv?wsTime=6b49d200';
     expect(NimoTvApi.mediaInvalidAt(media), DateTime.utc(2027, 1, 15, 7, 59, 50));
     expect(NimoTvApi.mediaRefreshAt(media), DateTime.utc(2027, 1, 15, 7, 54, 50));
+  });
+
+  test('stream packages with a length-prefixed id field still resolve media (2026-09 format)', () {
+    for (final lengthPrefixedId in [false, true]) {
+      final room = NimoTvApi.parseRoom(
+        _roomHtml(generation: 1, lengthPrefixedId: lengthPrefixedId),
+        resolveMedia: true,
+      );
+      final url = room.qualities.first.url;
+      expect(url.path, '/live/fixture_stream.flv');
+      expect(url.queryParameters['ctype'], 'nimo_wap'); // the trailing TARS head byte is not included
+    }
   });
 
   test('offline rooms keep current audience unknown and have no media', () {
@@ -177,9 +189,14 @@ final class _FixtureDirectory implements NimoTvDirectoryResolver {
   }
 }
 
-String _roomHtml({required int generation, bool live = true}) {
+String _roomHtml({required int generation, bool live = true, bool lengthPrefixedId = false}) {
+  final idField = lengthPrefixedId ? '\\f3id=fixture_stream|\x86' : '|id=fixture_stream|';
+  final query = 'wsSecret=secret$generation&wsTime=6b49d200&fm=Zml4dHVyZQ%3D%3D&ctype=nimo_wap';
+  // Mirrors the TARS layout: a type-6 head byte and a one-byte length before
+  // the signed query, then the next field's (printable) head byte `S`.
   final payload =
-      'http://al.hls.nimo.tv/live/V|id=fixture_stream|appid=81&tp=1700000000&wsSecret=secret$generation&wsTime=6b49d200';
+      'http://al.flv.nimo.tv/live/&http://al.hls.nimo.tv/live/V${idField}appid=81&tp=1700000000'
+      'F${String.fromCharCode(query.length)}${query}S';
   final package = payload.codeUnits.map((value) => value.toRadixString(16).padLeft(2, '0')).join();
   final room = <String, dynamic>{
     'roomId': 40972312,
