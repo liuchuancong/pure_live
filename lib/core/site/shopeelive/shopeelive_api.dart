@@ -120,6 +120,7 @@ class ShopeeLiveApi {
     ShopeeLiveRequest? request,
     ShopeeLiveSessionResolver? sessionResolver,
     this.deadline = const Duration(seconds: 45),
+    this.sessionDeadline = const Duration(seconds: 80),
   }) : _request = request ?? _defaultRequest,
        _sessionResolver = sessionResolver ?? ShopeeLiveBrowserSessionResolver();
 
@@ -161,6 +162,11 @@ class ShopeeLiveApi {
   final ShopeeLiveSessionResolver _sessionResolver;
   final Duration deadline;
 
+  /// Session lookups usually fall back to a headless WebView, whose cold start
+  /// (engine, page and module loading) alone can take over 45 seconds. The
+  /// resolver's own stages are bounded at 12 + 20 + 35 seconds.
+  final Duration sessionDeadline;
+
   static Future<({int status, String body})> _defaultRequest(
     Uri uri,
     Map<String, String> headers,
@@ -201,14 +207,14 @@ class ShopeeLiveApi {
     }
   }
 
-  Future<T> _scope<T>(CancelToken? caller, Future<T> Function(CancelToken) work) =>
+  Future<T> _scope<T>(CancelToken? caller, Future<T> Function(CancelToken) work, {Duration? timeout}) =>
       withRequestCancellation(caller, (transport) async {
         if (transport.isCancelled) throw const ShopeeLiveException(ShopeeLiveFailure.cancelled);
         try {
           return await Future.any<T>([
             work(transport),
             transport.whenCancel.then<T>((_) => throw const ShopeeLiveException(ShopeeLiveFailure.cancelled)),
-          ]).timeout(deadline);
+          ]).timeout(timeout ?? deadline);
         } on TimeoutException {
           throw const ShopeeLiveException(ShopeeLiveFailure.transport);
         } catch (error) {
@@ -250,7 +256,7 @@ class ShopeeLiveApi {
     }
     if (token.isCancelled) throw const ShopeeLiveException(ShopeeLiveFailure.cancelled);
     return parseSession(payload, expectedSessionId: key.sessionId);
-  });
+  }, timeout: sessionDeadline);
 
   Future<ShopeeLiveRoom> refresh(String rawRoomId, {CancelToken? cancel}) => _scope(cancel, (token) async {
     final key = ShopeeLiveLink.parseKey(rawRoomId);

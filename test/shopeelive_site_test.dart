@@ -118,6 +118,27 @@ void main() {
     expect(Sites.supportSites.where((site) => site.id == Sites.shopeeLiveSite), hasLength(1));
   });
 
+  test('a slow browser session fallback gets its own deadline instead of the request deadline', () async {
+    final api = ShopeeLiveApi(
+      request: (_, _, _) async => (status: 403, body: ''),
+      sessionResolver: _FixtureSessionResolver(delay: const Duration(milliseconds: 150)),
+      deadline: const Duration(milliseconds: 50),
+      sessionDeadline: const Duration(seconds: 5),
+    );
+    final room = await api.session('id:225239358');
+    expect(room.sessionId, '225239358');
+
+    final hung = ShopeeLiveApi(
+      request: (_, _, _) async => (status: 403, body: ''),
+      sessionResolver: _FixtureSessionResolver(delay: const Duration(seconds: 5)),
+      sessionDeadline: const Duration(milliseconds: 50),
+    );
+    await expectLater(
+      hung.session('id:225239358'),
+      throwsA(isA<ShopeeLiveException>().having((error) => error.kind, 'kind', ShopeeLiveFailure.transport)),
+    );
+  });
+
   test('caller cancellation is classified before transport', () async {
     final api = ShopeeLiveApi(
       request: (_, _, _) async => throw StateError('unused'),
@@ -131,11 +152,15 @@ void main() {
 }
 
 final class _FixtureSessionResolver implements ShopeeLiveSessionResolver {
+  _FixtureSessionResolver({this.delay = Duration.zero});
+
+  final Duration delay;
   int calls = 0;
 
   @override
   Future<Map<String, dynamic>> resolve(String sessionId) async {
     calls++;
+    if (delay > Duration.zero) await Future<void>.delayed(delay);
     return _session(sessionId, generation: calls);
   }
 }
