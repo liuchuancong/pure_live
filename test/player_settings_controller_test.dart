@@ -62,7 +62,7 @@ void main() {
       expect(normalizeVideoPlayerKeyForPlatform('ijk', TargetPlatform.android), 'ijk');
       expect(normalizeVideoPlayerKeyForPlatform('missing', TargetPlatform.android), 'mpv');
       expect(normalizeVideoPlayerKeyForPlatform('missing', TargetPlatform.iOS), 'ijk');
-      expect(availableVideoPlayerKeysForPlatform(TargetPlatform.windows), const <String>['mpv']);
+      expect(availableVideoPlayerKeysForPlatform(TargetPlatform.windows), const <String>['mpv', 'fvp']);
     });
 
     test('normalizes Android-only and desktop MPV options imported on iOS', () {

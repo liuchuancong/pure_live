@@ -13,7 +13,8 @@ String defaultVideoPlayerKeyForPlatform(TargetPlatform platform) => platform == 
 List<String> availableVideoPlayerKeysForPlatform(TargetPlatform platform) =>
     platform == TargetPlatform.android || platform == TargetPlatform.iOS
     ? PlayerConsts.engines.keys.toList(growable: false)
-    : const <String>['mpv'];
+    // Desktop: mpv (default) or fvp/libmdk. IJK and Exo are mobile-only.
+    : const <String>['mpv', 'fvp'];
 
 String normalizeVideoPlayerKeyForPlatform(String key, TargetPlatform platform) {
   final availableKeys = availableVideoPlayerKeysForPlatform(platform);
