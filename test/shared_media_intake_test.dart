@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:pure_live/common/models/live_room.dart';
+import 'package:pure_live/common/utils/shared_live_link_opener.dart';
 import 'package:pure_live/common/utils/shared_media_intake.dart';
 import 'package:share_handler/share_handler.dart';
 
@@ -296,6 +298,49 @@ void main() {
     expect(androidPlugin, contains('contentResolver.openInputStream(uri) ?: return false'));
     expect(androidPlugin, isNot(contains('FileDirectory.getAbsolutePath(applicationContext, uri)')));
   });
+
+  test('text shared from a platform app opens the linked live room', () async {
+    const shared = '快来看直播 https://live.bilibili.com/6 分享自哔哩哔哩';
+    final opened = <String>[];
+    var unsupported = 0;
+    final intake = _intake(
+      isLiveLink: SharedLiveLinkOpener.containsLiveLink,
+      openLiveLink: (text) async {
+        opened.add(text);
+        return true;
+      },
+      notifyUnsupported: (_) => unsupported++,
+    );
+    final result = await intake.ingest(SharedMedia(content: shared));
+    expect(result.kind, SharedMediaIntakeKind.liveLink);
+    expect(result.handled, isTrue);
+    expect(opened, [shared]);
+    expect(unsupported, 0);
+
+    final prose = await intake.ingest(SharedMedia(content: 'just some words'));
+    expect(prose.kind, SharedMediaIntakeKind.unsupported);
+    expect(unsupported, 1);
+  });
+
+  test('the live link opener resolves the room and does not wait for the room route', () async {
+    final routeClosed = Completer<void>();
+    final notices = <String>[];
+    LiveRoom? openedRoom;
+    final opener = SharedLiveLinkOpener(
+      parse: (text) async => text.contains('/6') ? ['6', 'bilibili'] : const <String>[],
+      open: (room) {
+        openedRoom = room;
+        return routeClosed.future;
+      },
+      notify: notices.add,
+    );
+    expect(await opener.open('https://live.bilibili.com/6'), isTrue);
+    expect(openedRoom?.roomId, '6');
+    expect(openedRoom?.platform, 'bilibili');
+    expect(await opener.open('https://example.com/none'), isFalse);
+    expect(notices, ['toolbox_parse_failed']);
+    routeClosed.complete();
+  });
 }
 
 SharedAttachment _attachment(String path) => SharedAttachment(path: path, type: SharedAttachmentType.file);
@@ -308,8 +353,12 @@ SharedMediaIntake _intake({
   SharedAttachmentReleaser? releaseAttachment,
   SharedMediaFeedback? notifyUnsupported,
   SharedMediaErrorReporter? reportError,
+  SharedRoomCommandPredicate? isLiveLink,
+  SharedRoomCommandConsumer? openLiveLink,
 }) {
   return SharedMediaIntake(
+    isLiveLink: isLiveLink,
+    openLiveLink: openLiveLink,
     isRoomCommand: isRoomCommand ?? (_) => false,
     consumeRoomCommand: consumeRoomCommand ?? (_) async => true,
     importPlaylist: importPlaylist ?? (_) async => true,
