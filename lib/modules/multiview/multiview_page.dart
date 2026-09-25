@@ -491,6 +491,20 @@ class _MultiviewPageState extends State<MultiviewPage> {
               onPressed: () => controller.danmakuEnabled.toggle(),
             );
           }),
+          Obx(() {
+            final muted = controller.allMuted.value;
+            final theme = Theme.of(context);
+            return IconButton(
+              key: const ValueKey('multiview-mute-all'),
+              tooltip: i18n(muted ? 'multiview_unmute_all' : 'multiview_mute_all'),
+              icon: Icon(
+                muted ? Remix.volume_mute_line : Remix.volume_vibrate_line,
+                size: 22,
+                color: muted ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant,
+              ),
+              onPressed: controller.toggleMuteAll,
+            );
+          }),
           // The selected room volume is available in every layout. In focus
           // mode the selected room is the large cell; in grid layouts it is
           // the cell carrying audio focus.

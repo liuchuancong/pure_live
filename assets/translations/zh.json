@@ -1721,6 +1721,8 @@
     "multiview_line_selector": "线路",
     "multiview_line": "线路 {index}",
     "multiview_volume": "音量",
+    "multiview_mute_all": "全部静音",
+    "multiview_unmute_all": "恢复声音",
     "cookie_hint": "粘贴 {name} Cookie",
     "cookie_tip": "登录 {name} 网页并进入任意直播间，在浏览器开发者工具的网络请求中复制完整 Cookie；Cookie 仅保存在本机。",
     "open_link_confirm": "是否打开此链接？",

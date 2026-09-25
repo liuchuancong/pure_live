@@ -741,6 +741,32 @@ void main() {
       expect(harness.log.where((e) => e == 'p1:mute:on'), isNotEmpty);
     });
 
+    test('一键静音让所有格静音，切换焦点也不出声，再次点击恢复焦点格声音 (upstream #879)', () async {
+      final harness = _Harness();
+      final controller = harness.controller;
+      await controller.assignRoom(0, _room('r1'));
+      await controller.assignRoom(1, _room('r2'));
+      await harness.pump();
+
+      await controller.toggleMuteAll();
+      await harness.pump();
+      expect(controller.allMuted.value, isTrue);
+      expect(harness.players[0].muted, isTrue);
+      expect(harness.players[1].muted, isTrue);
+
+      controller.setAudioFocus(0);
+      await harness.pump();
+      expect(controller.audioFocusIndex, 0);
+      expect(harness.players[0].muted, isTrue);
+      expect(harness.players[1].muted, isTrue);
+
+      await controller.toggleMuteAll();
+      await harness.pump();
+      expect(controller.allMuted.value, isFalse);
+      expect(harness.players[0].muted, isFalse);
+      expect(harness.players[1].muted, isTrue);
+    });
+
     test('连续切换音频焦点时最后一次选择胜出', () async {
       final harness = _Harness();
       final controller = harness.controller;
