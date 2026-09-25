@@ -28,6 +28,18 @@ LiveMessage _chat(String text, {String id = '', LiveMessageType type = LiveMessa
 
 Future<void> _settle() => Future<void>.delayed(const Duration(milliseconds: 20));
 
+/// Writer release and file close are real IO; under a loaded parallel run
+/// they can take longer than any fixed delay, so wait for the outcome.
+Future<void> _until(bool Function() done, {Duration timeout = const Duration(seconds: 10)}) async {
+  final deadline = DateTime.now().add(timeout);
+  while (!done()) {
+    if (DateTime.now().isAfter(deadline)) fail('condition not reached within $timeout');
+    await Future<void>.delayed(const Duration(milliseconds: 5));
+  }
+}
+
+bool _closed(File file) => file.existsSync() && file.readAsStringSync().trimRight().endsWith('</i>');
+
 void main() {
   late Directory dir;
   setUp(() async => dir = await Directory.systemTemp.createTemp('rec-danmaku-'));
@@ -58,7 +70,7 @@ void main() {
     // The CDN ends the attempt; the recorder reconnects with a new prefix.
     task.status = RecordStatus.reconnecting;
     service.sync([task]);
-    await _settle();
+    await _until(() => _closed(first));
     final xml = await first.readAsString();
     expect(xml, startsWith('<?xml version="1.0" encoding="UTF-8"?>\n<i>'));
     expect(xml.trimRight(), endsWith('</i>'));
@@ -80,9 +92,10 @@ void main() {
 
     task.status = RecordStatus.stopped;
     service.sync([task]);
-    await _settle();
+    final secondFile = File('${dir.path}/${task.recordingFilePrefix}.xml');
+    await _until(() => stops == 1 && _closed(secondFile));
     expect(stops, 1);
-    final second = await File('${dir.path}/${task.recordingFilePrefix}.xml').readAsString();
+    final second = await secondFile.readAsString();
     expect(second, contains('<d p="1.000,'));
     expect(second.trimRight(), endsWith('</i>'));
     await service.dispose();
