@@ -485,17 +485,18 @@ class ShopeeLiveApi {
     if (RegExp(r'^[A-Za-z0-9_-]{8,160}$').hasMatch(raw)) {
       return 'https://down-ws-id.img.susercontent.com/file/$raw';
     }
+    // Artwork is cosmetic: an unrecognised value shows the placeholder
+    // instead of failing the whole room or directory.
     final uri = Uri.tryParse(raw);
-    if (uri == null || uri.scheme != 'https' || uri.userInfo.isNotEmpty || uri.hasFragment) {
-      throw const ShopeeLiveException(ShopeeLiveFailure.schema);
-    }
+    if (uri == null || uri.scheme != 'https' || uri.userInfo.isNotEmpty || uri.hasFragment) return '';
     final host = uri.host.toLowerCase();
-    if (host != 'cf.shopee.co.id' && !host.endsWith('.img.susercontent.com')) {
-      throw const ShopeeLiveException(ShopeeLiveFailure.schema);
-    }
+    if (host != 'cf.shopee.co.id' && !host.endsWith('.img.susercontent.com')) return '';
     return uri.toString();
   }
 
+  /// A session lists several candidates; one from an unrecognised CDN or
+  /// scheme is skipped rather than failing the room. A live room with no
+  /// usable candidate left is reported as media-unavailable by the site.
   static Uri? _media(Object? value) {
     final raw = value is String ? value.trim() : '';
     if (raw.isEmpty) return null;
@@ -506,7 +507,7 @@ class ShopeeLiveApi {
         uri.hasFragment ||
         !uri.host.toLowerCase().endsWith('.livetech.shopee.co.id') ||
         (!uri.path.toLowerCase().endsWith('.flv') && !uri.path.toLowerCase().endsWith('.m3u8'))) {
-      throw const ShopeeLiveException(ShopeeLiveFailure.schema);
+      return null;
     }
     return uri;
   }

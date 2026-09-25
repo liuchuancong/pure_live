@@ -139,6 +139,27 @@ void main() {
     );
   });
 
+  test('an unrecognised play URL or artwork is skipped instead of failing the room', () {
+    final payload = _session('225239358', generation: 1);
+    final session = payload['session'] as Map<String, dynamic>;
+    session['avatar'] = 'https://avatar.other-cdn.example/a.png';
+    session['cover_pic'] = 'http://cf.shopee.co.id/file/cover';
+    payload['play_urls'] = [
+      'https://play.other-cdn.example/live/id-live-fixture.flv',
+      'http://play-hw-las.livetech.shopee.co.id/live/id-live-fixture.flv',
+      ...(payload['play_urls'] as List),
+    ];
+    final room = ShopeeLiveApi.parseSession(payload, expectedSessionId: '225239358');
+    expect(room.avatar, isEmpty);
+    expect(room.cover, isEmpty);
+    expect(room.qualities.single.urls, hasLength(2));
+    expect(room.qualities.single.urls.every((url) => url.host.endsWith('.livetech.shopee.co.id')), isTrue);
+
+    payload['play_urls'] = ['https://play.other-cdn.example/live/x.flv'];
+    session['play_url'] = '';
+    expect(ShopeeLiveApi.parseSession(payload, expectedSessionId: '225239358').qualities, isEmpty);
+  });
+
   test('caller cancellation is classified before transport', () async {
     final api = ShopeeLiveApi(
       request: (_, _, _) async => throw StateError('unused'),
