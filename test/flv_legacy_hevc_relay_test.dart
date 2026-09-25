@@ -56,6 +56,7 @@ void main() {
   test('only Shopee Live FLV hosts are routed through the relay', () {
     expect(FlvLegacyHevcRelay.appliesTo('https://play-tx-las.livetech.shopee.co.id/live/a.flv?x=1'), isTrue);
     expect(FlvLegacyHevcRelay.appliesTo(_upstream), isTrue);
+    expect(FlvLegacyHevcRelay.appliesTo('https://play-spe.livestream.shopee.co.id/live/id-live-1-2.flv?x=1'), isTrue);
     expect(FlvLegacyHevcRelay.appliesTo('https://play-tx-las.livetech.shopee.co.id/live/a.m3u8'), isFalse);
     expect(FlvLegacyHevcRelay.appliesTo('https://livetech.shopee.co.id.evil.example/live/a.flv'), isFalse);
     expect(FlvLegacyHevcRelay.appliesTo('https://hw.flv.huya.com/src/a.flv'), isFalse);

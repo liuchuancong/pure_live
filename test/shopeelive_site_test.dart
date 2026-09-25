@@ -155,6 +155,15 @@ void main() {
     expect(room.qualities.single.urls, hasLength(2));
     expect(room.qualities.single.urls.every((url) => url.host.endsWith('.livetech.shopee.co.id')), isTrue);
 
+    // Shopee's own CDN (cdnID=SHOPEE) is a valid playback host.
+    payload['play_urls'] = [
+      'https://play-spe.livestream.shopee.co.id/live/id-live-1-225239358.flv?cdnID=SHOPEE&resolution=1088x1920',
+    ];
+    expect(
+      ShopeeLiveApi.parseSession(payload, expectedSessionId: '225239358').qualities.map((quality) => quality.label),
+      contains('1088p · FLV'),
+    );
+
     payload['play_urls'] = ['https://play.other-cdn.example/live/x.flv'];
     session['play_url'] = '';
     expect(ShopeeLiveApi.parseSession(payload, expectedSessionId: '225239358').qualities, isEmpty);

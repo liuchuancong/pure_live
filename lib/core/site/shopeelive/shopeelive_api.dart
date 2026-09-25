@@ -127,6 +127,10 @@ class ShopeeLiveApi {
   static const String marketplaceOrigin = 'https://shopee.co.id';
   static const String liveOrigin = 'https://live.shopee.co.id';
   static const int responseLimit = 4 * 1024 * 1024;
+
+  /// Playback CDNs: third-party edges (`cdnID=TXCLOUD`/`HUAWEI`) and Shopee's
+  /// own (`play-spe.livestream`, `cdnID=SHOPEE`). All serve codec-id-12 HEVC FLV.
+  static const Set<String> mediaHostSuffixes = {'.livetech.shopee.co.id', '.livestream.shopee.co.id'};
   static const String userAgent =
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
       'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36';
@@ -505,7 +509,7 @@ class ShopeeLiveApi {
         uri.scheme != 'https' ||
         uri.userInfo.isNotEmpty ||
         uri.hasFragment ||
-        !uri.host.toLowerCase().endsWith('.livetech.shopee.co.id') ||
+        !mediaHostSuffixes.any(uri.host.toLowerCase().endsWith) ||
         (!uri.path.toLowerCase().endsWith('.flv') && !uri.path.toLowerCase().endsWith('.m3u8'))) {
       return null;
     }

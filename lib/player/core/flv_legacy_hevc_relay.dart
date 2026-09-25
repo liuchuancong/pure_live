@@ -71,7 +71,7 @@ class FlvLegacyHevcTagRewriter {
 class FlvLegacyHevcRelay {
   FlvLegacyHevcRelay._(this._server, this._upstream, this._headers, this._findProxy, this._secret);
 
-  static const Set<String> _hostSuffixes = {'.livetech.shopee.co.id'};
+  static const Set<String> _hostSuffixes = {'.livetech.shopee.co.id', '.livestream.shopee.co.id'};
 
   final HttpServer _server;
   final Uri _upstream;
