@@ -7,6 +7,7 @@ import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/player/core/player_manager.dart';
 import 'package:pure_live/player/utils/fullscreen.dart' show WindowService;
 import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
+import 'package:pure_live/modules/live_play/widgets/layout/live_play_video.dart' show shouldFloatAfterLivePlayExit;
 
 class LiveRouteObserver extends RouteObserver<PageRoute<dynamic>> {
   @override
@@ -52,7 +53,8 @@ class LiveRouteObserver extends RouteObserver<PageRoute<dynamic>> {
     controller.updateRoom(success: false);
 
     final playerManager = GlobalPlayerService.instance.player;
-    if (_shouldShowFloating(preventFloating)) {
+    final canFloat = shouldFloatAfterLivePlayExit(state.room, hasVideo: state.player.videoController != null);
+    if (canFloat && _shouldShowFloating(preventFloating)) {
       _showFloatingAfterExit(route: route, controller: controller, playerManager: playerManager);
     } else {
       state.player.videoController?.clearListener();

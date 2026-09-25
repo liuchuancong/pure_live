@@ -72,6 +72,10 @@ LivePlayPlaceholder livePlayPlaceholderFor(RoomState room) {
   return room.isLiving ? LivePlayPlaceholder.loading : LivePlayPlaceholder.notLiving;
 }
 
+/// Leaving a room only floats a player that is actually presenting video.
+/// A failed or never-opened room would otherwise leave an empty black window.
+bool shouldFloatAfterLivePlayExit(RoomState room, {required bool hasVideo}) => hasVideo && room.loadError == null;
+
 class RoomLoadFailedWidget extends StatelessWidget {
   const RoomLoadFailedWidget({super.key, required this.onRetry});
 
