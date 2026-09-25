@@ -2,10 +2,15 @@
 
 本台账是 Issue 首轮分流的唯一紧凑索引。它记录“当前源码还需要做什么”，不复制专项审计的完整过程。状态分类遵循 [`MAINTENANCE_POLICY.md`](../MAINTENANCE_POLICY.md)。
 
+2026-09-25 复核：新增上游 #877–#879，见下表前三行。
+
 2026-09-24 复核：本仓库 Open Issue 为 0；上游 #876 已关闭且本仓库核对了实际 APK 安装边界，#875 仍开放并待 Windows 多画面原生验收。旧候选 1+3 长播另发现[mpv 渲染上下文未释放导致原生终止](WINDOWS_MULTIVIEW_NATIVE_ABORT_2026_09_24.md)，并曾有待判别小格静止画面；`248c0587` 新 Debug 的 1+3 双格稀疏观察 31 分 49 秒均变化，2×2、音频/帧进度和严格退出计时仍待补证，报告所指大格持续停帧尚未复现。#853 仍缺少房间、请求/确认档位、解码宽高或码率；该项处置条件保持不变。
 
 | Issue | 报告基线 | 当前映射 | 当前证据 | 处置 / 再开条件 |
 | --- | --- | --- | --- | --- |
+| [#879 多画面一键静音没有了](https://github.com/liuchuancong/pure_live/issues/879) | 上游 v3.1.15 / Windows；称 3.1.14 有 | `present`（功能缺失）→ 已在 `claude` 实现 | 本仓库与上游 master 的多画面都只有「音频焦点」模型（仅一格出声），没有全部静音。`c42e70a9` 在工具栏新增「全部静音 / 恢复声音」：静音期间焦点仍可切换（音量、弹幕、大画面跟随），但不会出声；焦点队列改为携带 (格, 是否静音)，切换不会被进行中的焦点任务合并掉；`test/multiview_test.dart` 62/62 | 若需要「单格静音」而非全局静音另行提出 |
+| [#878 新增微信视频号直播](https://github.com/liuchuancong/pure_live/issues/878) | 功能请求（已被上游关闭） | `deferred` | 视频号直播没有公开网页目录与播放接口，取流依赖微信客户端登录态，不符合本项目「公开接口、不代登录」的平台接入条件 | 出现公开网页播放入口时重新评估 |
+| [#877 新接入平台黑屏有声无画面](https://github.com/liuchuancong/pure_live/issues/877) | 上游 v3.1.15 / Android MIUI14；多为唱歌、电台类直播，评论补充「有些是语音直播」 | `present`（部分）→ 已在 `claude` 修订 | 根因之一：部分 CDN 以传统 FLV「编码号 12」传 HEVC，播放内核的 FFmpeg 7.1 不识别，只剩声音。全平台探针（新增按画质报告 FLV 视频编码）发现 Shopee Live 与 17LIVE（取决于主播编码器）属于这种情况，其余 FLV 平台全部为 AVC；v3.2.2 起 Shopee、`719f902f` 起 17LIVE 经本机中转改写为增强型 FLV。语音 / 电台直播本身没有画面，属正常 | 若其他平台仍有声无画面，请附平台与房间号，用探针 `PURELIVE_PROBE_ALL_QUALITIES=1` 核对编码 |
 | [#876 小米电视 Android 6.0.1 安装 v3.0.2 提示系统版本不足](https://github.com/liuchuancong/pure_live/issues/876) | MIUI TV 1.3.8 / Android 6.0.1；旧 v2.0.14 在用，具体 CPU ABI 未提供 | `deferred`，来源为设备与发行包最低 API 不匹配；旧系统兼容是独立原生依赖/电视验收工作 | [本仓库 v3.0.2 正式附件](https://github.com/wzgrx/pure_live/releases/tag/v3.0.2) SHA-256 `CF45B3C2…795CC` 与本地留存一致，`aapt` 实读 `sdkVersion=24`、仅 `arm64-v8a`；Android 6.0.1 为 API 23。当前源码及候选为 API 26，FFmpegKit 原生库要求该下限；新增 APK 门禁实测当前包 26 通过、期望 27 拒绝 | 不降低声明下限绕过安装器。旧系统兼容需替换/隔离 API 26 原生依赖并验证全录制与电视 UI；若 API 达标且 ABI 匹配仍安装失败，凭 APK 哈希、设备 ABI 与安装器精确错误重开 |
 | [#875 Windows 1+3 大画面播放一段时间后停帧](https://github.com/liuchuancong/pure_live/issues/875) | 3.1.4 / Windows x64；报告 3.1.3 正常，但未给房间、时长、声音状态、日志或录屏 | `not-reproduced`；已补呈现帧监督与有界单格恢复，报告根因待继续判别 | `v3.1.3..v3.1.4` 对多画面/MediaKit 无改动；已接入 Windows `frameRevision` 监视，大格及实际可见小格可单格恢复，滚出视口小格排除。`248c0587` Debug 的 1+3 双格观察 31 分 49 秒均变化，未观察持续静帧；稀疏观察未直接证明自动恢复或排除短暂停顿，2×2 未执行；见[专项审计](ISSUE_875_WINDOWS_MULTIVIEW_FRAME_STALL_AUDIT_2026_09_23.md) | 继续 WIN-MULTI-01 的 2×2 与大格/小格对照，记录音频、帧 revision、buffering、媒体错误、GPU 及退出计时；区分 URL 过期、缓冲、解码或纹理根因，不以源码绿灯或本轮稀疏观察代替完整原生闭环 |
 | [#873 斗鱼最高画质回落](https://github.com/liuchuancong/pure_live/issues/873) | 3.1.4 / Windows 11；评论补充匿名流 10–20 分钟断线 | `present`；匿名服务端回落已实测，当前源码增加可选账号 Cookie 路径，最终改善程度待复验 | 公开推荐房间 `24422` 列出原画 2K60，但匿名请求 `rate=0` 返回确认 `rate=4`；`4489985` 同批原画请求确认 `rate=0`。当前适配器已区分请求与确认；本批补齐斗鱼 Cookie 设置、签名请求与播放/录制请求头；见[Issue #873 审计](ISSUE_873_DOUYU_QUALITY_AND_SESSION_AUDIT_2026_09_23.md) | 当前 Windows 候选以同房间登录/匿名对照确认档位、解码宽高、码率及持续播放；若登录态仍回落或中途断线，保留平台返回及媒体请求失败证据进一步定位 |
