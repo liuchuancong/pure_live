@@ -2,8 +2,8 @@
   "schema": 1,
   "bundles": {
     "android_arm64": {
-      "url": "https://github.com/Predidit/libmpv-android-video-build/releases/download/v1.2.7/default-arm64-v8a.jar",
-      "sha256": "13e882d96b8cd235425172b022e4a94dfcae5f07985dff85c8d648e7369fa2d1",
+      "url": "https://github.com/wzgrx/pure_live/releases/download/native-libmpv-android-0.41.0-ff9.0.2-b1/libmpv-android-0.41.0-ffmpeg-9.0.2-arm64-v8a.jar",
+      "sha256": "9c6d44f97fad10bd15a98d5d1928a07004d82464ed0e0f5c87f9d462cb62f020",
       "format": "zip",
       "root": "lib/arm64-v8a",
       "library": "libmpv.so"
