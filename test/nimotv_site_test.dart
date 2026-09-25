@@ -101,6 +101,11 @@ void main() {
     }
   });
 
+  test('room page titles are HTML-unescaped', () {
+    final room = NimoTvApi.parseRoom(_roomHtml(generation: 1), resolveMedia: false);
+    expect(room.title, "Fixture's Live & Chat");
+  });
+
   test('offline rooms keep current audience unknown and have no media', () {
     final room = NimoTvApi.parseRoom(_roomHtml(generation: 1, live: false), resolveMedia: true);
     expect(room.state, NimoTvState.offline);
@@ -203,7 +208,7 @@ String _roomHtml({required int generation, bool live = true, bool lengthPrefixed
     'anchorId': 1639528022670,
     'nickname': 'Fixture Host',
     'avatarUrl': 'https://img.nimo.tv/avatar/fixture.png',
-    'title': 'Fixture Live',
+    'title': 'Fixture&#39;s Live &amp; Chat',
     'game': 'Wild Rift',
     'viewerNum': 60,
     'liveStreamStatus': live ? 1 : 0,

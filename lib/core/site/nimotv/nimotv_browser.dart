@@ -68,7 +68,14 @@ class NimoTvBrowserDirectoryResolver implements NimoTvDirectoryResolver {
     try {
       webView = HeadlessInAppWebView(
         initialUrlRequest: URLRequest(url: WebUri(pageUrl)),
-        initialSettings: InAppWebViewSettings(javaScriptEnabled: true, cacheEnabled: true, transparentBackground: true),
+        // A mobile WebView UA is redirected to m.nimo.tv, which has none of
+        // the homepage cards the directory script reads (Android only).
+        initialSettings: InAppWebViewSettings(
+          javaScriptEnabled: true,
+          cacheEnabled: true,
+          transparentBackground: true,
+          userAgent: NimoTvApi.desktopUserAgent,
+        ),
         onWebViewCreated: (controller) {
           if (!controllerCompleter.isCompleted) controllerCompleter.complete(controller);
         },

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
+import 'package:html_unescape/html_unescape.dart';
 import 'package:pure_live/core/common/http_client.dart';
 import 'package:pure_live/core/common/request_scope.dart';
 
@@ -302,10 +303,13 @@ class NimoTvApi {
     throw const NimoTvException(NimoTvFailure.schema);
   }
 
+  static final HtmlUnescape _html = HtmlUnescape();
+
+  // Room pages embed titles HTML-escaped (`Hi&#39; Anh Em`).
   static String _optionalText(Object? value) {
     if (value == null) return '';
     if (value is! String) throw const NimoTvException(NimoTvFailure.schema);
-    final text = value.trim();
+    final text = (value.contains('&') ? _html.convert(value) : value).trim();
     if (text.length > 8192) throw const NimoTvException(NimoTvFailure.schema);
     return text;
   }
