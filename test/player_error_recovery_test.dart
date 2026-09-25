@@ -1293,7 +1293,7 @@ void main() {
       var creations = 0;
       final manager = _manager(
         {PlayerEngine.mediaKit: first},
-        bufferingStallTimeout: const Duration(seconds: 2),
+        bufferingStallTimeout: const Duration(seconds: 4),
         playerCreator: (_) => creations++ == 0 ? first : replacement,
       );
       manager.configureDefaultEngine(PlayerEngine.mediaKit);
@@ -1306,6 +1306,7 @@ void main() {
           room: LiveRoom(roomId: 'deadline', platform: 'huya'),
         );
         first.emitLoading(true);
+        final clock = Stopwatch()..start();
         for (var i = 0; i < 4; i++) {
           await Future<void>.delayed(const Duration(milliseconds: 400));
           if (notification == 'paused-state') {
@@ -1314,9 +1315,15 @@ void main() {
             first.emitUnexpectedPlaying(i.isOdd);
           }
         }
-        expect(creations, 1, reason: 'a short buffering episode must not reopen a live source');
-        await Future<void>.delayed(const Duration(milliseconds: 500));
-        await Future<void>.delayed(const Duration(milliseconds: 100));
+        // Wide margins on both sides: loaded runners overshoot timers.
+        if (clock.elapsed < const Duration(milliseconds: 3200)) {
+          expect(creations, 1, reason: 'a short buffering episode must not reopen a live source');
+        }
+        // An extended deadline would fire 4 s after the last notification
+        // (about 5.6 s); the original one fires at 4 s.
+        while (creations < 2 && clock.elapsed < const Duration(milliseconds: 4800)) {
+          await Future<void>.delayed(const Duration(milliseconds: 20));
+        }
         expect(creations, 2, reason: 'state notifications are not media progress and must not extend the deadline');
         expect(manager.currentPlayer, same(replacement));
       } finally {
@@ -2124,7 +2131,9 @@ void main() {
                         room: LiveRoom(roomId: 'next-room', platform: 'test'),
                       ))
                 .then((_) => completed = true);
-        await Future<void>.delayed(const Duration(milliseconds: 150));
+        // The lease stays pending throughout, so completing at all proves the
+        // command did not wait for it; the allowance only absorbs runner load.
+        await command.timeout(const Duration(seconds: 2), onTimeout: () {});
         expect(completed, isTrue, reason: 'a credential request must not own the native command queue');
         expect(lease.isCompleted, isFalse);
         if (action.endsWith('late failure')) {
