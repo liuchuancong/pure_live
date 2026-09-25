@@ -379,6 +379,12 @@ void main() {
   test(
     'rolling HTTP snapshots prefetch both selected tracks before expiry while slow bodies remain in flight',
     () async {
+      // Each segment lives for one [segmentMs] slot and the playlist shows
+      // three, so bodies ([bodyDelay]) outlast the window. The slot is wide
+      // enough that a loaded runner's event-loop stalls do not skip a segment.
+      const segmentMs = 300;
+      const bodyDelay = Duration(milliseconds: 4 * segmentMs);
+      const budget = Duration(seconds: 4);
       final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
       final client = HttpClient()..connectionTimeout = const Duration(seconds: 2);
       final clock = Stopwatch()..start();
@@ -399,17 +405,19 @@ void main() {
             if (request.uri.path.endsWith('.m3u8')) {
               manifestCount++;
               if (manifestCount > 2 && !firstComplete) refreshBeforeFirstBody = true;
-              final first = clock.elapsedMilliseconds ~/ 120;
+              final first = clock.elapsedMilliseconds ~/ segmentMs;
               firstByTrack[track] = first;
               request.response.write(playlist(first, 3));
             } else {
               final sequence = int.parse(request.uri.pathSegments.last.split('.').first);
               requested.add('$track/$sequence');
-              if (sequence < clock.elapsedMilliseconds ~/ 120) {
+              // RFC 8216 6.2.2: a removed segment stays available for the
+              // playlist's duration (three slots) after leaving it.
+              if (sequence < clock.elapsedMilliseconds ~/ segmentMs - 3) {
                 expired++;
                 request.response.statusCode = 410;
               } else {
-                await Future.any([Future<void>.delayed(const Duration(milliseconds: 600)), release.future]);
+                await Future.any([Future<void>.delayed(bodyDelay), release.future]);
                 firstComplete = true;
                 request.response.contentLength = 1;
                 request.response.add([sequence]);
@@ -433,9 +441,9 @@ void main() {
         pool: pool,
         pollInterval: const Duration(milliseconds: 30),
         fetchSnapshot: (uri, token) =>
-            transport.loadSnapshot(uri, token, budget: HlsResponseBudget(const Duration(seconds: 2))),
+            transport.loadSnapshot(uri, token, budget: HlsResponseBudget(budget)),
         loadResource: (resource, token) =>
-            transport.loadMedia(resource.uri, token, budget: HlsResponseBudget(const Duration(seconds: 2))),
+            transport.loadMedia(resource.uri, token, budget: HlsResponseBudget(budget)),
       );
       final local = <Uri, HlsPrefetchResource>{};
       final beginnings = <String, int>{};
@@ -451,7 +459,7 @@ void main() {
           final initial = await transport.loadSnapshot(
             uri,
             HlsPrefetchCancellation(),
-            budget: HlsResponseBudget(const Duration(seconds: 2)),
+            budget: HlsResponseBudget(budget),
           );
           beginnings[track] = initial.segments.first.sequence;
           expect(scheduler.select(track, uri, initial), true);
