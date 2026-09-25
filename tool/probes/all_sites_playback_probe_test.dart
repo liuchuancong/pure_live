@@ -6,6 +6,7 @@
 //   PURELIVE_ALL_SITES_PROBE=1 flutter test tool/probes/all_sites_playback_probe_test.dart
 //   PURELIVE_PROBE_SITES=huya,douyu        limit to some sites
 //   PURELIVE_PROBE_REPORT=/tmp/report.json write the JSON report there
+//   PURELIVE_PROBE_ALL_QUALITIES=1         also classify every offered quality (FLV codec per rung)
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -156,6 +157,20 @@ Future<void> _probeSite(String id, Map<String, Object?> result) async {
       final headers = await PlaybackHeaderResolver.resolve(platform: id, roomId: roomId);
       final media = await _checkMedia(uri, headers);
       result['media'] = media;
+      if (Platform.environment['PURELIVE_PROBE_ALL_QUALITIES'] == '1') {
+        // Codec per offered quality: HEVC is often only on non-default rungs.
+        final perQuality = <String, String>{};
+        for (final quality in qualities) {
+          try {
+            final other = await site.resolvePlayUrls(detail: detail, quality: quality);
+            final otherUri = other.urls.isEmpty ? null : Uri.tryParse(other.urls.first);
+            perQuality[quality.quality] = otherUri == null ? 'no-url' : await _checkMedia(otherUri, headers);
+          } catch (error) {
+            perQuality[quality.quality] = 'error: ${_describe(error)}';
+          }
+        }
+        result['mediaByQuality'] = perQuality;
+      }
       if (media.startsWith('ok:')) {
         result['verdict'] = 'media-ok';
         return;
@@ -196,7 +211,8 @@ Future<String> _checkMedia(
       if (bytes.isEmpty) return 'no-bytes';
     }
     final data = bytes.takeBytes();
-    if (data.length >= 3 && data[0] == 0x46 && data[1] == 0x4c && data[2] == 0x56) return 'ok:flv';
+    if (data.length >= 3 && data[0] == 0x46 && data[1] == 0x4c && data[2] == 0x56)
+      return 'ok:flv(${_flvVideoCodec(data)})';
     if (data.isNotEmpty && data[0] == 0x47) return 'ok:ts';
     if (data.length >= 8) {
       final box = latin1.decode(data.sublist(4, 8), allowInvalid: true);
@@ -224,6 +240,30 @@ Future<String> _checkMedia(
   } finally {
     client.close(force: true);
   }
+}
+
+/// First video tag's codec: `avc` (7), `hevc-id12` (legacy HEVC, needs the
+/// libmpv rewrite relay), Enhanced FLV FourCC, or `none` within the sample.
+String _flvVideoCodec(List<int> data) {
+  if (data.length < 13) return 'none';
+  var offset = 9 + 4;
+  while (offset + 12 <= data.length) {
+    final type = data[offset] & 0x1f;
+    final size = (data[offset + 1] << 16) | (data[offset + 2] << 8) | data[offset + 3];
+    if (type == 9) {
+      final flags = data[offset + 11];
+      if ((flags & 0x80) != 0) {
+        return offset + 16 <= data.length ? 'ex-${latin1.decode(data.sublist(offset + 12, offset + 16))}' : 'ex';
+      }
+      return switch (flags & 0x0f) {
+        7 => 'avc',
+        12 => 'hevc-id12',
+        final id => 'id$id',
+      };
+    }
+    offset += 11 + size + 4;
+  }
+  return 'none';
 }
 
 String _describe(Object error) {

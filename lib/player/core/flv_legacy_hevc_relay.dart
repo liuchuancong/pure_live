@@ -71,7 +71,9 @@ class FlvLegacyHevcTagRewriter {
 class FlvLegacyHevcRelay {
   FlvLegacyHevcRelay._(this._server, this._upstream, this._headers, this._findProxy, this._secret);
 
-  static const Set<String> _hostSuffixes = {'.livetech.shopee.co.id', '.livestream.shopee.co.id'};
+  /// CDNs where codec-id-12 HEVC has been observed. On 17LIVE it depends on
+  /// the broadcaster's encoder; AVC tags pass through the relay unchanged.
+  static const Set<String> _hostSuffixes = {'.livetech.shopee.co.id', '.livestream.shopee.co.id', '.17app.co'};
 
   final HttpServer _server;
   final Uri _upstream;

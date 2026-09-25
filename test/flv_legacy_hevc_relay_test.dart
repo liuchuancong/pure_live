@@ -59,6 +59,7 @@ void main() {
     expect(FlvLegacyHevcRelay.appliesTo('https://play-spe.livestream.shopee.co.id/live/id-live-1-2.flv?x=1'), isTrue);
     expect(FlvLegacyHevcRelay.appliesTo('https://play-tx-las.livetech.shopee.co.id/live/a.m3u8'), isFalse);
     expect(FlvLegacyHevcRelay.appliesTo('https://livetech.shopee.co.id.evil.example/live/a.flv'), isFalse);
+    expect(FlvLegacyHevcRelay.appliesTo('https://china-pull-rtmp-17.17app.co/live/abc.flv?t=1'), isTrue);
     expect(FlvLegacyHevcRelay.appliesTo('https://hw.flv.huya.com/src/a.flv'), isFalse);
     expect(FlvLegacyHevcRelay.appliesTo('rtmp://play.livetech.shopee.co.id/live/a.flv'), isFalse);
   });
