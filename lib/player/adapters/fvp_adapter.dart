@@ -129,14 +129,9 @@ class FvpAdapter
         }
       }),
     );
-    _subscriptions.add(
-      player.onEvent.listen((event) {
-        if (_disposed || !_acceptSourceEvents) return;
-        if (event.error < 0 && (event.category == 'reader.buffering' || event.category.startsWith('decoder'))) {
-          _fail('fvp ${event.category}: ${event.detail}', PlayerErrorType.native);
-        }
-      }),
-    );
+    // mdk reports a failed decoder open (e.g. a subtitle or hardware
+    // decoder) as a negative onEvent and then tries the next decoder in the
+    // list, so those events are not terminal; MediaStatus.invalid is.
   }
 
   void _fail(String message, PlayerErrorType fallbackType) {

@@ -3,7 +3,6 @@
 // Use the long device flag (see webview_sites_test.dart).
 import 'dart:typed_data';
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce/hive.dart';
 import 'package:integration_test/integration_test.dart';
@@ -57,15 +56,11 @@ void main() {
         adapter.onError.listen((e) => errors.add(e.message));
         await adapter.setDataSource(url, [url], headers);
       });
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(body: SizedBox(width: 640, height: 360, child: adapter.getVideoWidget())),
-        ),
-      );
-      for (var i = 0; i < 60 && !(playing && sizes.isNotEmpty); i++) {
-        await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 500)));
-        await tester.pump();
-      }
+      await tester.runAsync(() async {
+        for (var i = 0; i < 60 && !(playing && sizes.isNotEmpty); i++) {
+          await Future<void>.delayed(const Duration(milliseconds: 500));
+        }
+      });
       // ignore: avoid_print
       print('fvp $id playing=$playing width=${sizes.isEmpty ? null : sizes.last} errors=$errors');
       expect(errors, isEmpty);
