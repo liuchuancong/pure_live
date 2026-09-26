@@ -80,7 +80,8 @@ class FFmpegHlsInputRelay {
 
   static const int _maximumManifestBytes = 4 * 1024 * 1024;
   static const Duration _connectionTimeout = Duration(seconds: 15);
-  static final RegExp _hlsPath = RegExp(r'\.m3u8$', caseSensitive: false);
+  // FC2 (2026-09) serves suffix-less `/master_playlist` and `/playlist`.
+  static final RegExp _hlsPath = RegExp(r'(\.m3u8|/(master_)?playlist)$', caseSensitive: false);
   static final RegExp _uriAttribute = RegExp(r'URI="([^"]+)"', caseSensitive: false);
   static const Set<String> _allowedMediaExtensions = <String>{
     '3gp',

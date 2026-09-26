@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
+import 'package:html_unescape/html_unescape.dart';
 import 'package:pure_live/core/common/http_client.dart';
 import 'package:pure_live/core/common/request_scope.dart';
 
@@ -216,6 +217,12 @@ class NimoTvApi {
     );
   }
 
+  /// Decodes `mStreamPkg`, a hex TARS `GetStreamInfoByRoomRsp`.
+  ///
+  /// Since 2026-09 the CDN signs the complete query it hands out
+  /// (`wsSecret`, `wsTime`, `fm`, `ctype`): appending `ratio`/`needwm` or
+  /// switching to https answers 403/404, so only the source stream is offered,
+  /// over the plain-http FLV base the package itself names.
   static List<NimoTvQuality> parseStreamPackage(String rawHex) {
     if (rawHex.isEmpty || rawHex.length.isOdd || rawHex.length > 32768 || !RegExp(r'^[0-9a-fA-F]+$').hasMatch(rawHex)) {
       throw const NimoTvException(NimoTvFailure.schema);
@@ -225,49 +232,34 @@ class NimoTvApi {
       bytes.add(int.parse(rawHex.substring(offset, offset + 2), radix: 16));
     }
     final payload = String.fromCharCodes(bytes);
-    final appId = _capture(payload, r'appid=(\d+)');
-    final hlsDomain = _capture(payload, r'(https?://[A-Za-z]{2,3}\.hls[A-Za-z./]+)(?:V|&)');
-    final streamId = _capture(payload, r'\|id=([^|\\\x00-\x1f&]+)');
-    final timestamp = _capture(payload, r'tp=(\d+)');
-    final secret = _capture(payload, r'wsSecret=(\w+)');
-    final expires = _capture(payload, r'wsTime=(\w+)');
     final flvBase =
-        '${hlsDomain.replaceFirst('http://', 'https://').replaceFirst('hls.nimo.tv', 'flv.nimo.tv')}$streamId.flv';
-    final base = Uri.tryParse(flvBase);
-    if (base == null ||
-        base.scheme != 'https' ||
-        !RegExp(r'^[a-z]{2,3}\.flv\.nimo\.tv$').hasMatch(base.host.toLowerCase())) {
+        RegExp(r'https?://[a-z]{2,3}\.flv\.nimo\.tv/live/').firstMatch(payload)?.group(0) ??
+        _capture(payload, r'(https?://[A-Za-z]{2,3}\.hls[A-Za-z./]+)(?:V|&)').replaceFirst('.hls.', '.flv.');
+    // The field before `id=` used to end in `|`; newer packages put a length
+    // byte there instead. Anchor on the terminating `|` and skip `appid=`.
+    final streamId = _capture(payload, r'(?:^|[^A-Za-z])id=([^|\\\x00-\x1f&]+)\|');
+    if (!RegExp(r'^[A-Za-z0-9_-]{1,256}$').hasMatch(streamId)) throw const NimoTvException(NimoTvFailure.schema);
+    final query = _signedQuery(bytes, payload);
+    final base = Uri.tryParse('${flvBase.replaceFirst('https://', 'http://')}$streamId.flv?$query');
+    if (base == null || !RegExp(r'^[a-z]{2,3}\.flv\.nimo\.tv$').hasMatch(base.host.toLowerCase())) {
       throw const NimoTvException(NimoTvFailure.schema);
     }
-    const definitions = [
-      (ratio: 6000, label: '1080p', sort: 6000, needWatermark: false, sphd: false),
-      (ratio: 2500, label: '720p', sort: 2500, needWatermark: true, sphd: true),
-      (ratio: 1000, label: '480p', sort: 1000, needWatermark: true, sphd: true),
-      (ratio: 500, label: '360p', sort: 500, needWatermark: true, sphd: true),
-      (ratio: 250, label: '240p', sort: 250, needWatermark: true, sphd: false),
-    ];
-    return List.unmodifiable(
-      definitions.map((definition) {
-        final params = <String, String>{
-          'appid': appId,
-          'id': streamId,
-          'tp': timestamp,
-          'wsSecret': secret,
-          'wsTime': expires,
-          'u': '0',
-          't': '100',
-          'needwm': definition.needWatermark ? '1' : '0',
-          'ratio': '${definition.ratio}',
-          if (definition.sphd) 'sphd': '1',
-        };
-        return NimoTvQuality(
-          id: 'flv:${definition.ratio}',
-          label: '${definition.label} · FLV',
-          sort: definition.sort,
-          url: base.replace(queryParameters: params),
-        );
-      }),
-    );
+    return List.unmodifiable([NimoTvQuality(id: 'flv:source', label: 'Source · FLV', sort: 10000, url: base)]);
+  }
+
+  /// The signed query is a TARS string: a head byte of type 6 (1-byte length)
+  /// followed by that length. Reading it by length keeps the next field's
+  /// printable head byte out of the URL.
+  static String _signedQuery(List<int> bytes, String payload) {
+    final start = payload.indexOf('wsSecret=');
+    if (start < 2 || (bytes[start - 2] & 0x0f) != 6) throw const NimoTvException(NimoTvFailure.schema);
+    final end = start + bytes[start - 1];
+    if (end > bytes.length) throw const NimoTvException(NimoTvFailure.schema);
+    final query = payload.substring(start, end);
+    if (!RegExp(r'^wsSecret=\w+&wsTime=\w+(?:&[A-Za-z]+=[A-Za-z0-9%._~-]*)*$').hasMatch(query)) {
+      throw const NimoTvException(NimoTvFailure.schema);
+    }
+    return query;
   }
 
   static DateTime? mediaInvalidAt(String rawUrl) {
@@ -311,10 +303,13 @@ class NimoTvApi {
     throw const NimoTvException(NimoTvFailure.schema);
   }
 
+  static final HtmlUnescape _html = HtmlUnescape();
+
+  // Room pages embed titles HTML-escaped (`Hi&#39; Anh Em`).
   static String _optionalText(Object? value) {
     if (value == null) return '';
     if (value is! String) throw const NimoTvException(NimoTvFailure.schema);
-    final text = value.trim();
+    final text = (value.contains('&') ? _html.convert(value) : value).trim();
     if (text.length > 8192) throw const NimoTvException(NimoTvFailure.schema);
     return text;
   }

@@ -1,0 +1,477 @@
+diff --git a/buildscripts/build.sh b/buildscripts/build.sh
+index f84a3f2..cda476c 100755
+--- a/buildscripts/build.sh
++++ b/buildscripts/build.sh
+@@ -110,7 +110,7 @@ build () {
+ 	printf >&2 '\e[1;34m%s\e[m\n' "Building $1..."
+ 	pushd deps/$1
+ 	BUILDSCRIPT=../../scripts/$1.sh
+- 	sudo chmod +x $BUILDSCRIPT
++ 	chmod +x $BUILDSCRIPT
+ 	[ $cleanbuild -eq 1 ] && $BUILDSCRIPT clean
+     $BUILDSCRIPT build
+     popd
+diff --git a/buildscripts/bundle_default.sh b/buildscripts/bundle_default.sh
+index d4056e3..daf10f9 100755
+--- a/buildscripts/bundle_default.sh
++++ b/buildscripts/bundle_default.sh
+@@ -1,10 +1,10 @@
+ # --------------------------------------------------
+ 
+ if [ ! -f "deps" ]; then
+-  sudo rm -r deps
++  rm -r deps
+ fi
+ if [ ! -f "prefix" ]; then
+-  sudo rm -r prefix
++  rm -r prefix
+ fi
+ 
+ ./download.sh
+@@ -25,7 +25,7 @@ cp flavors/default.sh scripts/ffmpeg.sh
+ 
+ cd deps/media-kit-android-helper
+ 
+-sudo chmod +x gradlew
++chmod +x gradlew
+ ./gradlew assembleRelease
+ 
+ unzip -o app/build/outputs/apk/release/app-release.apk -d app/build/outputs/apk/release
+diff --git a/buildscripts/bundle_encoders-gpl.sh b/buildscripts/bundle_encoders-gpl.sh
+index 5e89758..2c31856 100755
+--- a/buildscripts/bundle_encoders-gpl.sh
++++ b/buildscripts/bundle_encoders-gpl.sh
+@@ -4,10 +4,10 @@ set -euxo pipefail
+ export ENCODERS_GPL=1
+ 
+ if [ -d deps ]; then
+-  sudo rm -r deps
++  rm -r deps
+ fi
+ if [ -d prefix ]; then
+-  sudo rm -r prefix
++  rm -r prefix
+ fi
+ 
+ ./download.sh
+@@ -26,7 +26,7 @@ cp flavors/encoders-gpl.sh scripts/ffmpeg.sh
+ 
+ cd deps/media-kit-android-helper
+ 
+-sudo chmod +x gradlew
++chmod +x gradlew
+ ./gradlew assembleRelease
+ 
+ unzip -o app/build/outputs/apk/release/app-release.apk -d app/build/outputs/apk/release
+diff --git a/buildscripts/bundle_full.sh b/buildscripts/bundle_full.sh
+index 9140a41..03408c7 100755
+--- a/buildscripts/bundle_full.sh
++++ b/buildscripts/bundle_full.sh
+@@ -1,10 +1,10 @@
+ # --------------------------------------------------
+ 
+ if [ ! -f "deps" ]; then
+-  sudo rm -r deps
++  rm -r deps
+ fi
+ if [ ! -f "prefix" ]; then
+-  sudo rm -r prefix
++  rm -r prefix
+ fi
+ 
+ ./download.sh
+@@ -25,7 +25,7 @@ cp flavors/full.sh scripts/ffmpeg.sh
+ 
+ cd deps/media-kit-android-helper
+ 
+-sudo chmod +x gradlew
++chmod +x gradlew
+ ./gradlew assembleRelease
+ 
+ unzip -o app/build/outputs/apk/release/app-release.apk -d app/build/outputs/apk/release
+diff --git a/buildscripts/flavors/default.sh b/buildscripts/flavors/default.sh
+index 58dd530..e44a2a0 100644
+--- a/buildscripts/flavors/default.sh
++++ b/buildscripts/flavors/default.sh
+@@ -48,7 +48,6 @@ sed -i -e 's/#define FFMPEG_CONFIGURATION.*/#define FFMPEG_CONFIGURATION ""/' ..
+ 	--disable-filters \
+ 	--disable-doc \
+ 	--disable-avdevice \
+-	--disable-postproc \
+ 	--disable-programs \
+ 	--disable-gray \
+ 	--disable-swscale-alpha \
+@@ -76,7 +75,6 @@ sed -i -e 's/#define FFMPEG_CONFIGURATION.*/#define FFMPEG_CONFIGURATION ""/' ..
+ 	\
+ 	--enable-libxml2 \
+ 	\
+-	--enable-avutil \
+ 	--enable-avcodec \
+ 	--enable-avfilter \
+ 	--enable-avformat \
+diff --git a/buildscripts/include/depinfo.sh b/buildscripts/include/depinfo.sh
+index 6636076..42a0ecf 100755
+--- a/buildscripts/include/depinfo.sh
++++ b/buildscripts/include/depinfo.sh
+@@ -3,19 +3,19 @@
+ ## Dependency versions
+ 
+ v_sdk=9123335_latest
+-v_ndk=27.2.12479018
++v_ndk=27.3.13750724
+ v_sdk_build_tools=34.0.0
+ 
+ v_libass=0.17.1
+ v_harfbuzz=7.2.0
+ v_fribidi=1.0.12
+ v_freetype=2-13-0
+-v_mbedtls=3.4.0
+-v_dav1d=1.2.0
++v_mbedtls=3.6.7
++v_dav1d=1.5.4
+ v_libxml2=2.10.3
+-v_ffmpeg=7.1.3
+-v_mpv=32a164cc017acab50389f2194f720ccfd0b01a28
+-v_libplacebo=d4624cbfb37fdef337a7da5794b66202671a89cd
++v_ffmpeg=9.0.2
++v_mpv=41f6a645068483470267271e1d09966ca3b9f413
++v_libplacebo=cee9b076f2c63104ccfd497fa79c39a867293ec4
+ v_lcms2=lcms2.17
+ v_libogg=1.3.5
+ v_libvorbis=1.3.7
+@@ -26,11 +26,11 @@ v_media_kit_android_helper=b768ce102cfa9b5ddec618bb939d689d1b0899fa
+ v_gas_preprocessor=ac1836309c2e77023c228b7184485597286289d3
+ 
+ ## Pinned commit SHAs for tag-based clones
+-sha_mbedtls=1873d3bfc2da771672bd8e7e8f41f57e0af77f33
+-sha_dav1d=676a864a11af2c0522e1f992e770589543894686
++sha_mbedtls=068ff080b369adfac81509f9b57b2afabaf82dc5
++sha_dav1d=54706fc6bc0cdecab7e9593974a4039cc038fca7
+ sha_libxml2=f507d167f1755b7eaea09fb1a44d29aab828b6d1
+ sha_libvpx=d6eb9696aa72473c1a11d34d928d35a3acc0c9a9
+-sha_ffmpeg=f46e514491172d15bd74b4abb1814cd2f05a763e
++sha_ffmpeg=946fcce07b6dcd0331c8cc609192aeff5e1924f8
+ sha_freetype=de8b92dd7ec634e9e2b25ef534c54a3537555c11
+ sha_fribidi=6428d8469e536bcbb6e12c7b79ba6659371c435a
+ sha_harfbuzz=a321c4fee56b15247c10f9aa3db7e7ccb3b8173b
+diff --git a/buildscripts/patches/ffmpeg/ffmpeg-hls-kazumi-combined.patch b/buildscripts/patches/ffmpeg/ffmpeg-hls-kazumi-combined.patch
+deleted file mode 100644
+index 88be2f2..0000000
+--- a/buildscripts/patches/ffmpeg/ffmpeg-hls-kazumi-combined.patch
++++ /dev/null
+@@ -1,303 +0,0 @@
+-diff --git a/libavformat/hls.c b/libavformat/hls.c
+-index 22ee1c6..d23c0f5 100644
+---- a/libavformat/hls.c
+-+++ b/libavformat/hls.c
+-@@ -84,6 +84,8 @@ struct segment {
+-     uint8_t iv[16];
+-     /* associated Media Initialization Section, treated as a segment */
+-     struct segment *init_section;
+-+    /* Kazumi: Segment follows a DISCONTINUITY tag */
+-+    int after_discontinuity;
+- };
+- 
+- struct rendition;
+-@@ -223,6 +225,7 @@ typedef struct HLSContext {
+-     AVIOInterruptCB *interrupt_callback;
+-     AVDictionary *avio_opts;
+-     AVDictionary *seg_format_opts;
+-+    int seg_allow_img;
+-     char *allowed_extensions;
+-     char *allowed_segment_extensions;
+-     int extension_picky;
+-@@ -233,6 +236,21 @@ typedef struct HLSContext {
+-     int seg_max_retry;
+-     AVIOContext *playlist_pb;
+-     HLSCryptoContext  crypto_ctx;
+-+    /* Kazumi: Ad filtering based on PTS discontinuity */
+-+    int hls_ad_filter;              /* Enable PTS-based ad filtering */
+-+    int has_discontinuity;          /* M3U8 contains #EXT-X-DISCONTINUITY */
+-+    int64_t last_main_pts;          /* Last PTS from main content (video) */
+-+    int64_t last_main_audio_pts;    /* Last PTS from main content (audio) */
+-+    int in_ad_segment;              /* Currently in ad segment */
+-+    int after_seek;                 /* Flag to ignore PTS jump after seek */
+-+    /* Kazumi: PTS offset approach for seamless playback */
+-+    int64_t pts_offset;             /* Current PTS offset to apply */
+-+    int64_t ad_start_video_pts;     /* Video PTS when ad started (before offset) */
+-+    int64_t ad_start_audio_pts;     /* Audio PTS when ad started (before offset) */
+-+    int64_t ad_resume_video_pts;    /* Video PTS when resuming from ad */
+-+    int64_t ad_resume_audio_pts;    /* Audio PTS when resuming from ad */
+-+    int video_resumed;              /* Video has resumed from ad */
+-+    int audio_resumed;              /* Audio has resumed from ad */
+- } HLSContext;
+- 
+- static void free_segment_dynarray(struct segment **segments, int n_segments)
+-@@ -802,6 +820,8 @@ static int parse_playlist(HLSContext *c, const char *url,
+-     struct segment **prev_segments = NULL;
+-     int prev_n_segments = 0;
+-     int64_t prev_start_seq_no = -1;
+-+    /* Kazumi: Track if next segment follows DISCONTINUITY */
+-+    int next_seg_after_discontinuity = 0;
+- 
+-     if (is_http && !in && c->http_persistent && c->playlist_pb) {
+-         in = c->playlist_pb;
+-@@ -967,6 +987,15 @@ static int parse_playlist(HLSContext *c, const char *url,
+-         } else if (av_strstart(line, "#EXT-X-ENDLIST", &ptr)) {
+-             if (pls)
+-                 pls->finished = 1;
+-+        } else if (av_strstart(line, "#EXT-X-DISCONTINUITY", NULL)) {
+-+            /* Kazumi: Mark that stream has discontinuity and next segment follows it */
+-+            if (c->hls_ad_filter) {
+-+                if (!c->has_discontinuity) {
+-+                    c->has_discontinuity = 1;
+-+                    av_log(c->ctx, AV_LOG_INFO, "Kazumi: Stream has DISCONTINUITY tags, ad filtering enabled\n");
+-+                }
+-+                next_seg_after_discontinuity = 1;
+-+            }
+-         } else if (av_strstart(line, "#EXTINF:", &ptr)) {
+-             is_segment = 1;
+-             duration   = atof(ptr) * AV_TIME_BASE;
+-@@ -1066,6 +1095,9 @@ static int parse_playlist(HLSContext *c, const char *url,
+-                 }
+- 
+-                 seg->init_section = cur_init_section;
+-+                /* Kazumi: Mark segment as following discontinuity */
+-+                seg->after_discontinuity = next_seg_after_discontinuity;
+-+                next_seg_after_discontinuity = 0;
+-             }
+-         }
+-     }
+-@@ -2132,6 +2164,11 @@ static int hls_read_header(AVFormatContext *s)
+-     c->first_packet = 1;
+-     c->first_timestamp = AV_NOPTS_VALUE;
+-     c->cur_timestamp = AV_NOPTS_VALUE;
+-+    /* Kazumi: Initialize ad filtering state */
+-+    c->last_main_pts = AV_NOPTS_VALUE;
+-+    c->last_main_audio_pts = AV_NOPTS_VALUE;
+-+    c->ad_start_video_pts = AV_NOPTS_VALUE;
+-+    c->ad_start_audio_pts = AV_NOPTS_VALUE;
+- 
+-     if ((ret = ffio_copy_url_options(s->pb, &c->avio_opts)) < 0)
+-         return ret;
+-@@ -2308,12 +2345,60 @@ static int hls_read_header(AVFormatContext *s)
+-             in_fmt = av_find_input_format(pls->audio_setup_info.codec_id == AV_CODEC_ID_AAC ? "aac" :
+-                                           pls->audio_setup_info.codec_id == AV_CODEC_ID_AC3 ? "ac3" : "eac3");
+-         } else {
+-             pls->ctx->probesize = s->probesize > 0 ? s->probesize : 1024 * 4;
+-             pls->ctx->max_analyze_duration = s->max_analyze_duration > 0 ? s->max_analyze_duration : 4 * AV_TIME_BASE;
+-             pls->ctx->interrupt_callback = s->interrupt_callback;
+-             url = av_strdup(pls->segments[0]->url);
+--            ret = av_probe_input_buffer(&pls->pb.pub, &in_fmt, url, NULL, 0, 0);
+--
+-+            /* Peek at the beginning of the first segment to detect
+-+             * png/gif-magic-pretending segments, then always restore the
+-+             * read position. When a fake image magic is found we do not
+-+             * assert the format ourselves: the generic probe is re-run with
+-+             * (a) an offset that breaks the image signature and (b) a NULL
+-+             * filename so that the .webp-style URL extension can no longer
+-+             * boost image demuxer scores. The probe then decides from the
+-+             * actual payload (e.g. mpegts via 0x47 + 188 alignment). This
+-+             * keeps the HLS layer free of format assumptions: malformed
+-+             * png/gif-looking garbage simply fails the probe at header time
+-+             * instead of being forced into mpegts. */
+-+            {
+-+                uint8_t b[10] = { 0 };
+-+                unsigned probe_offset = 0;
+-+                const char *probe_url = url;
+-+                int n = avio_read(&pls->pb.pub, b, sizeof(b));
+-+                if (n < 0 && n != AVERROR_EOF) {
+-+                    /* propagate real I/O errors like av_probe_input_buffer2()
+-+                     * does, instead of degrading them into a second probe */
+-+                    ret = n;
+-+                    av_log(s, AV_LOG_ERROR, "Failed to read segment header for probing: %s\n",
+-+                           av_err2str(ret));
+-+                    avformat_free_context(pls->ctx);
+-+                    pls->ctx = NULL;
+-+                    av_free(url);
+-+                    return ret;
+-+                }
+-+                if (n == AVERROR_EOF)
+-+                    n = 0;
+-+                if ((ret = avio_seek(&pls->pb.pub, 0, SEEK_SET)) < 0) {
+-+                    av_log(s, AV_LOG_ERROR, "Failed to restore segment read position after signature check: %s\n",
+-+                           av_err2str(ret));
+-+                    avformat_free_context(pls->ctx);
+-+                    pls->ctx = NULL;
+-+                    av_free(url);
+-+                    return ret;
+-+                }
+-+                if (!c->seg_allow_img) {
+-+                    if (n >= 8 && !memcmp(b, "\x89PNG\r\n\x1a\n", 8)) {
+-+                        probe_offset = 3;  /* break the png signature for the probe */
+-+                        probe_url = NULL;  /* drop misleading extension scores */
+-+                        av_log(s, AV_LOG_INFO, "Segment starts with png magic, probing without filename at offset %u\n", probe_offset);
+-+                    } else if (n >= 6 && (!memcmp(b, "GIF87a", 6) || !memcmp(b, "GIF89a", 6))) {
+-+                        probe_offset = 10; /* break the gif signature for the probe */
+-+                        probe_url = NULL;
+-+                        av_log(s, AV_LOG_INFO, "Segment starts with gif magic, probing without filename at offset %u\n", probe_offset);
+-+                    }
+-+                }
+-+                ret = av_probe_input_buffer(&pls->pb.pub, &in_fmt, probe_url, NULL, probe_offset, 0);
+-+            }
+-             for (int n = 0; n < pls->n_segments; n++)
+-                 if (ret >= 0)
+-                     ret = test_segment(s, in_fmt, pls, pls->segments[n]);
+-@@ -2544,6 +2629,114 @@ static int hls_read_packet(AVFormatContext *s, AVPacket *pkt)
+-                 }
+- 
+-                 seg = current_segment(pls);
+-+
+-+                /* Kazumi: PTS-based ad filtering with offset adjustment */
+-+                if (c->hls_ad_filter && c->has_discontinuity) {
+-+                    enum AVMediaType pkt_type = pls->ctx->streams[pls->pkt->stream_index]->codecpar->codec_type;
+-+                    int is_video = (pkt_type == AVMEDIA_TYPE_VIDEO);
+-+                    int is_audio = (pkt_type == AVMEDIA_TYPE_AUDIO);
+-+                    int64_t current_pts = pls->pkt->pts != AV_NOPTS_VALUE ? pls->pkt->pts : pls->pkt->dts;
+-+                    int64_t pts_in_us = AV_NOPTS_VALUE;
+-+
+-+                    if (current_pts != AV_NOPTS_VALUE) {
+-+                        AVRational pkt_tb = pls->ctx->streams[pls->pkt->stream_index]->time_base;
+-+                        pts_in_us = av_rescale_q(current_pts, pkt_tb, AV_TIME_BASE_Q);
+-+                    }
+-+
+-+                    /* Phase 1: In ad segment - drop packets and wait for return */
+-+                    if (c->in_ad_segment) {
+-+                        if (pts_in_us != AV_NOPTS_VALUE) {
+-+                            int64_t ref_pts = c->ad_start_video_pts;
+-+                            int64_t pts_diff;
+-+                            if (ref_pts == AV_NOPTS_VALUE) ref_pts = c->ad_start_audio_pts;
+-+                            pts_diff = pts_in_us - ref_pts;
+-+
+-+                            /* Check if returned to main content PTS range */
+-+                            if (pts_diff > -2000000 && pts_diff < 10000000) {
+-+                                /* Resuming from ad */
+-+                                if (is_video && !c->video_resumed) {
+-+                                    c->video_resumed = 1;
+-+                                    c->ad_resume_video_pts = pts_in_us;
+-+                                    av_log(c->ctx, AV_LOG_INFO, "Kazumi: Video resuming at PTS=%"PRId64"ms\n", pts_in_us/1000);
+-+                                }
+-+                                if (is_audio && !c->audio_resumed) {
+-+                                    c->audio_resumed = 1;
+-+                                    c->ad_resume_audio_pts = pts_in_us;
+-+                                    av_log(c->ctx, AV_LOG_INFO, "Kazumi: Audio resuming at PTS=%"PRId64"ms\n", pts_in_us/1000);
+-+                                }
+-+
+-+                                /* When both tracks resumed, calculate and apply offset */
+-+                                if (c->video_resumed && c->audio_resumed) {
+-+                                    int64_t video_gap = c->ad_resume_video_pts - c->ad_start_video_pts;
+-+                                    c->pts_offset -= video_gap;
+-+                                    av_log(c->ctx, AV_LOG_INFO, "Kazumi: Ad skipped! Offset adjusted by %"PRId64"ms, total offset=%"PRId64"ms\n",
+-+                                           -video_gap/1000, c->pts_offset/1000);
+-+                                    c->in_ad_segment = 0;
+-+                                }
+-+
+-+                                /* Apply offset and let packet through */
+-+                                if (c->pts_offset != 0 && pls->pkt->pts != AV_NOPTS_VALUE) {
+-+                                    AVRational pkt_tb = pls->ctx->streams[pls->pkt->stream_index]->time_base;
+-+                                    int64_t offset_in_tb = av_rescale_q(c->pts_offset, AV_TIME_BASE_Q, pkt_tb);
+-+                                    pls->pkt->pts += offset_in_tb;
+-+                                    if (pls->pkt->dts != AV_NOPTS_VALUE)
+-+                                        pls->pkt->dts += offset_in_tb;
+-+                                }
+-+                                /* Update tracking */
+-+                                if (is_video) c->last_main_pts = pts_in_us + c->pts_offset;
+-+                                if (is_audio) c->last_main_audio_pts = pts_in_us + c->pts_offset;
+-+                            } else {
+-+                                /* Still in ad content, drop packet */
+-+                                av_packet_unref(pls->pkt);
+-+                                continue;
+-+                            }
+-+                        } else {
+-+                            /* No PTS, drop packet */
+-+                            av_packet_unref(pls->pkt);
+-+                            continue;
+-+                        }
+-+                    }
+-+                    /* Phase 2: Normal playback - detect ad and apply offset */
+-+                    else {
+-+                        if (pts_in_us != AV_NOPTS_VALUE) {
+-+                            if (c->after_seek) {
+-+                                if (is_video) c->last_main_pts = pts_in_us;
+-+                                if (is_audio) c->last_main_audio_pts = pts_in_us;
+-+                                c->after_seek = 0;
+-+                                c->pts_offset = 0;
+-+                            } else if (is_video && c->last_main_pts != AV_NOPTS_VALUE) {
+-+                                int64_t pts_diff = pts_in_us - (c->last_main_pts - c->pts_offset);
+-+
+-+                                /* Ad detection: PTS jumps backward significantly (> 1 sec) */
+-+                                if (pts_diff < -1000000) {
+-+                                    c->in_ad_segment = 1;
+-+                                    c->video_resumed = 0;
+-+                                    c->audio_resumed = 0;
+-+                                    c->ad_start_video_pts = c->last_main_pts - c->pts_offset;
+-+                                    c->ad_start_audio_pts = c->last_main_audio_pts - c->pts_offset;
+-+                                    av_log(c->ctx, AV_LOG_INFO, "Kazumi: Ad detected! PTS jumped from %"PRId64"ms to %"PRId64"ms\n",
+-+                                           (c->last_main_pts - c->pts_offset)/1000, pts_in_us/1000);
+-+                                    av_packet_unref(pls->pkt);
+-+                                    continue;
+-+                                }
+-+                            }
+-+
+-+                            /* Apply offset if any */
+-+                            if (c->pts_offset != 0 && pls->pkt->pts != AV_NOPTS_VALUE) {
+-+                                AVRational pkt_tb = pls->ctx->streams[pls->pkt->stream_index]->time_base;
+-+                                int64_t offset_in_tb = av_rescale_q(c->pts_offset, AV_TIME_BASE_Q, pkt_tb);
+-+                                pls->pkt->pts += offset_in_tb;
+-+                                if (pls->pkt->dts != AV_NOPTS_VALUE)
+-+                                    pls->pkt->dts += offset_in_tb;
+-+                            }
+-+
+-+                            /* Update tracking */
+-+                            if (is_video) c->last_main_pts = pts_in_us + c->pts_offset;
+-+                            if (is_audio) c->last_main_audio_pts = pts_in_us + c->pts_offset;
+-+                        }
+-+                    }
+-+                }
+-+
+-                 if (seg && seg->key_type == KEY_SAMPLE_AES && !strstr(pls->ctx->iformat->name, "mov")) {
+-                     enum AVCodecID codec_id = pls->ctx->streams[pls->pkt->stream_index]->codecpar->codec_id;
+-                     memcpy(c->crypto_ctx.iv, seg->iv, sizeof(seg->iv));
+-@@ -2663,6 +2856,12 @@ static int hls_read_seek(AVFormatContext *s, int stream_index,
+-     int64_t first_timestamp, seek_timestamp, duration;
+-     int64_t seq_no, seg_start_ts;
+- 
+-+    /* Kazumi: Mark that we're seeking - reset ad filtering state */
+-+    c->after_seek = 1;
+-+    c->in_ad_segment = 0;
+-+    c->video_resumed = 0;
+-+    c->audio_resumed = 0;
+-+
+-     if ((flags & AVSEEK_FLAG_BYTE) || (c->ctx->ctx_flags & AVFMTCTX_UNSEEKABLE))
+-         return AVERROR(ENOSYS);
+- 
+-@@ -2773,8 +2972,8 @@ static int hls_probe(const AVProbeData *p)
+-             !mime_x &&
+-             !av_match_ext    (p->filename, "m3u8,m3u") &&
+-              ff_match_url_ext(p->filename, "m3u8,m3u") <= 0) {
+--            av_log(NULL, AV_LOG_ERROR, "Not detecting m3u8/hls with non standard extension and non standard mime type\n");
+--            return 0;
+-+            av_log(NULL, AV_LOG_WARNING, "HLS playlist with non-standard extension/MIME, lowering probe score\n");
+-+            return AVPROBE_SCORE_MAX / 2;
+-         }
+-         if (mime_x)
+-             av_log(NULL, AV_LOG_WARNING, "mime type is not rfc8216 compliant\n");
+-@@ -2824,6 +3023,10 @@ static const AVOption hls_options[] = {
+-         OFFSET(seg_format_opts), AV_OPT_TYPE_DICT, {.str = NULL}, 0, 0, FLAGS},
+-     {"seg_max_retry", "Maximum number of times to reload a segment on error.",
+-      OFFSET(seg_max_retry), AV_OPT_TYPE_INT, {.i64 = 0}, 0, INT_MAX, FLAGS},
+-+    {"hls_ad_filter", "Filter ad segments based on PTS discontinuity (Kazumi)",
+-+        OFFSET(hls_ad_filter), AV_OPT_TYPE_BOOL, {.i64 = 0}, 0, 1, FLAGS},
+-+    {"seg_allow_img", "Allow PNG/GIF-signature HLS segments to participate in normal image probing; 0 = probe past image disguise, 1 = normal probing",
+-+        OFFSET(seg_allow_img), AV_OPT_TYPE_BOOL, { .i64 = 0}, 0, 1, FLAGS},
+-     {NULL}
+- };
+- 
+diff --git a/buildscripts/scripts/lcms2.sh b/buildscripts/scripts/lcms2.sh
+old mode 100644
+new mode 100755
+diff --git a/buildscripts/scripts/libplacebo.sh b/buildscripts/scripts/libplacebo.sh
+old mode 100644
+new mode 100755
+diff --git a/buildscripts/scripts/libxml2.sh b/buildscripts/scripts/libxml2.sh
+old mode 100644
+new mode 100755
+diff --git a/buildscripts/scripts/shaderc.sh b/buildscripts/scripts/shaderc.sh
+old mode 100644
+new mode 100755

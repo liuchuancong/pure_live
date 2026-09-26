@@ -124,7 +124,15 @@ void main() {
       await opening;
       await operation;
       expect(cleaned, true);
-      expect(f.players.first.openedUrls, isEmpty);
+      // The cancelled input must never reach a player. Only Windows warm-swaps
+      // the replacement onto a second player; other hosts reuse the first one.
+      final firstOpened = f.players.first.openedUrls;
+      if (action == 'new-source' && !Platform.isWindows) {
+        expect(firstOpened, hasLength(1));
+        expect(firstOpened.single, contains('/replacement/'));
+      } else {
+        expect(firstOpened, isEmpty);
+      }
       expect(f.manager.currentSourceCommit?.source, action == 'new-source' ? same(replacement.source) : isNull);
       expect(f.manager.hasError.value, false);
     });

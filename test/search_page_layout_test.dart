@@ -180,6 +180,20 @@ void main() {
       await tester.pumpWidget(const SizedBox.shrink());
     });
   }
+  testWidgets('long coverage notice starts on one line and expands on demand', (tester) async {
+    await _mount(tester, lang: 'zh', size: const Size(640, 900), scale: 1, state: 'initial');
+    Text notice() => tester.widget<Text>(find.byKey(const ValueKey('search-capability-notice')));
+    expect(notice().maxLines, 1);
+    final toggle = find.byKey(const ValueKey('search-capability-toggle'));
+    expect(toggle, findsOneWidget);
+    await tester.tap(toggle);
+    await tester.pump();
+    expect(notice().maxLines, isNull);
+    await tester.tap(toggle);
+    await tester.pump();
+    expect(notice().maxLines, 1);
+    expect(tester.takeException(), null);
+  });
   for (final lang in ['zh', 'en']) {
     for (final state in ['initial', 'loading', 'empty', 'error', 'partial', 'results']) {
       testWidgets('$lang $state remains reachable in short large-text viewport', (tester) async {
@@ -188,10 +202,13 @@ void main() {
         final scroll = find.byType(CustomScrollView);
         expect(scroll, findsOneWidget);
         expect(c.scrollController.positions, hasLength(1));
+        final overflow = c.scrollController.position.maxScrollExtent;
         await tester.drag(scroll, const Offset(0, -1600));
         await tester.pump();
         expect(tester.takeException(), null);
-        expect(c.scrollController.offset, greaterThan(0));
+        // Content taller than the viewport must scroll; content that fits
+        // (e.g. with the coverage notice collapsed) is already reachable.
+        if (overflow > 0) expect(c.scrollController.offset, greaterThan(0));
         await tester.pumpWidget(const SizedBox.shrink());
         expect(c.scrollController.hasClients, false);
       });

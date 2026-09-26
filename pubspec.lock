@@ -876,6 +876,11 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.1"
+  flutter_driver:
+    dependency: transitive
+    description: flutter
+    source: sdk
+    version: "0.0.0"
   flutter_exit_app:
     dependency: "direct main"
     description:
@@ -1064,6 +1069,11 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "11.0.0"
+  fuchsia_remote_debug_protocol:
+    dependency: transitive
+    description: flutter
+    source: sdk
+    version: "0.0.0"
   fuzzywuzzy:
     dependency: "direct main"
     description:
@@ -1072,6 +1082,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.2.0"
+  fvp:
+    dependency: "direct main"
+    description:
+      name: fvp
+      sha256: c6db09d88a6c84ba84fb047b4082a03987199e968273da9ad051660e18cfca55
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.38.1"
   get_it:
     dependency: transitive
     description:
@@ -1192,6 +1210,11 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.10.1"
+  integration_test:
+    dependency: "direct dev"
+    description: flutter
+    source: sdk
+    version: "0.0.0"
   intl:
     dependency: transitive
     description:
@@ -1387,11 +1410,9 @@ packages:
   media_kit:
     dependency: "direct main"
     description:
-      path: media_kit
-      ref: d13fc22ba1b19b45de3090c2d1b0f8a541b585a0
-      resolved-ref: d13fc22ba1b19b45de3090c2d1b0f8a541b585a0
-      url: "https://github.com/Predidit/media-kit.git"
-    source: git
+      path: "third_party/media_kit"
+      relative: true
+    source: path
     version: "1.1.11"
   media_kit_video:
     dependency: "direct main"
@@ -2142,6 +2163,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.2.0"
+  sync_http:
+    dependency: transitive
+    description:
+      name: sync_http
+      sha256: "7f0cd72eca000d2e026bcd6f990b81d0ca06022ef4e32fb257b30d3d1014a961"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.3.1"
   syncfusion_flutter_core:
     dependency: transitive
     description:
@@ -2350,6 +2379,46 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.4.3"
+  video_player:
+    dependency: transitive
+    description:
+      name: video_player
+      sha256: "8c837b570dccb9ae6ff73d2e0b03c7e708bfefd3bd1194faa7f3e7f200dfc399"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.14.0"
+  video_player_android:
+    dependency: transitive
+    description:
+      name: video_player_android
+      sha256: d27054dea34d748a44f06d433a57005d2aac69944485b0abbaed3303dbcfa3f1
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.12.2"
+  video_player_avfoundation:
+    dependency: transitive
+    description:
+      name: video_player_avfoundation
+      sha256: "2fc56e537324a19eb649fca991aa308ac961b5406292876fa657b062de461fd8"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.12.0"
+  video_player_platform_interface:
+    dependency: transitive
+    description:
+      name: video_player_platform_interface
+      sha256: "92c0fbabe20c788e71fd10d26cea998d0d253282e65d145aed0818731cf593ce"
+      url: "https://pub.dev"
+    source: hosted
+    version: "6.9.0"
+  video_player_web:
+    dependency: transitive
+    description:
+      name: video_player_web
+      sha256: "9f3c00be2ef9b76a95d94ac5119fb843dca6f2c69e6c9968f6f2b6c9e7afbdeb"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.4.0"
   visibility_detector:
     dependency: transitive
     description:
@@ -2446,6 +2515,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.2.2"
+  webdriver:
+    dependency: transitive
+    description:
+      name: webdriver
+      sha256: "28b82ec894fed45dd71c23ba62d1af973ed97dd59a4f5790a4d38b0b13e5657e"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.2.0"
   win32:
     dependency: "direct main"
     description:

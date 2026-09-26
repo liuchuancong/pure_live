@@ -81,6 +81,35 @@ void main() {
     expect(VkVideoLiveApi.mediaRefreshAt(media), DateTime.utc(2027, 1, 15, 7, 57, 50));
   });
 
+  test('streams on the vkuser.net CDN are accepted like okcdn.ru', () async {
+    // Production (2026-09-25): some channels are served from *.vkuser.net.
+    final transport = _FixtureTransport(mediaHost: 'oklive6-4.vkuser.net');
+    final site = VkVideoLiveSite(api: VkVideoLiveApi(request: transport.call));
+    final detail = await site.getRoomDetail(roomId: 'highmyside', platform: Sites.vkVideoLiveSite);
+    final qualities = await site.getPlayQualites(detail: detail);
+    expect(qualities, isNotEmpty);
+    final urls = await site.resolvePlayUrlsRaw(detail: detail, quality: qualities.first);
+    expect(urls.urls.every((url) => Uri.parse(url).host == 'oklive6-4.vkuser.net'), isTrue);
+  });
+
+  test('a rejected mirror is skipped while another master still serves the room', () async {
+    // Production (2026-09-25): the shared mirror answered 403 while the
+    // primary master answered 200; the whole room failed with "access".
+    final transport = _FixtureTransport(rejectHost: 'vsd255.okcdn.ru');
+    final site = VkVideoLiveSite(api: VkVideoLiveApi(request: transport.call));
+    final detail = await site.getRoomDetail(roomId: 'highmyside', platform: Sites.vkVideoLiveSite);
+    final qualities = await site.getPlayQualites(detail: detail);
+    expect(qualities, isNotEmpty);
+    final urls = await site.resolvePlayUrlsRaw(detail: detail, quality: qualities.first);
+    expect(urls.urls.map((url) => Uri.parse(url).host).toSet(), {'vsd130.okcdn.ru'});
+  });
+
+  test('the room fails when every master is rejected', () async {
+    final transport = _FixtureTransport(rejectHost: '*');
+    final api = VkVideoLiveApi(request: transport.call);
+    await expectLater(api.room('highmyside'), throwsA(isA<VkVideoLiveException>()));
+  });
+
   test('registry exposes one VK Video Live adapter with recording recovery', () {
     expect(Sites.supportedSiteIds, contains(Sites.vkVideoLiveSite));
     expect(Sites.of(Sites.vkVideoLiveSite).liveSite, isA<VkVideoLiveSite>());
@@ -89,6 +118,13 @@ void main() {
 }
 
 final class _FixtureTransport {
+  _FixtureTransport({this.mediaHost, this.rejectHost});
+
+  /// Media host answering 403 (`*` rejects every media host).
+  final String? rejectHost;
+
+  /// Replaces the fixture's okcdn.ru media hosts when set.
+  final String? mediaHost;
   final List<int> directoryOffsets = [];
   final List<String?> searchAfter = [];
   int roomCalls = 0;
@@ -108,9 +144,14 @@ final class _FixtureTransport {
     }
     if (uri.path == '/v1/blog/highmyside/public_video_stream') {
       roomCalls++;
-      return (status: 200, body: jsonEncode(_room(generation: roomCalls)));
+      var body = jsonEncode(_room(generation: roomCalls));
+      if (mediaHost != null) body = body.replaceAll(RegExp(r'vsd[0-9]+\.okcdn\.ru'), mediaHost!);
+      return (status: 200, body: body);
     }
-    if (uri.host.endsWith('.okcdn.ru')) {
+    if (rejectHost == '*' && uri.host != 'api.live.vkvideo.ru' || uri.host == rejectHost) {
+      return (status: 403, body: '');
+    }
+    if (uri.host.endsWith('.okcdn.ru') || uri.host == mediaHost) {
       final generation = uri.queryParameters['generation'] ?? '1';
       return (status: 200, body: _master(generation));
     }

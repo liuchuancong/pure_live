@@ -26,7 +26,7 @@ abstract class BasePageScrollAndStateBone<T> extends BaseController {
   final totalCount = Rxn<int>();
 
   final showBackToTop = false.obs;
-  final showBackToBottom = true.obs;
+  final showBackToBottom = false.obs;
 
   bool? _lastIsDesktop;
   bool? _pendingIsDesktop;
@@ -44,6 +44,11 @@ abstract class BasePageScrollAndStateBone<T> extends BaseController {
         ? SettingsService.to.page.defaultPageSize.v
         : 20;
     _ownedScrollController.addListener(_scrollListener);
+    // Content changes the scroll extent without a scroll event; re-evaluate
+    // the jump buttons once the new list has been laid out.
+    ever<List<T>>(list, (_) => WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!isClosed) _syncScrollFlags();
+    }));
   }
 
   void bindActiveScrollController(ScrollController? externalController) {
@@ -109,8 +114,9 @@ abstract class BasePageScrollAndStateBone<T> extends BaseController {
 
   void _syncScrollFlags() {
     if (!scrollController.hasClients) {
+      // Empty and error states have no scroll view: nothing to jump through.
       if (showBackToTop.value) showBackToTop.value = false;
-      if (!showBackToBottom.value) showBackToBottom.value = true;
+      if (showBackToBottom.value) showBackToBottom.value = false;
       return;
     }
     final offset = scrollController.offset;

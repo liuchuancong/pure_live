@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce/hive.dart';
+import 'package:pure_live/common/services/settings/player_settings_controller.dart';
 import 'package:pure_live/common/services/settings_service.dart';
 import 'package:pure_live/common/services/utils/hive_rx.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
@@ -47,18 +48,19 @@ void main() {
 
   tearDownAll(Hive.close);
 
-  testWidgets('Windows replaces a stale IJK preference and presents MPV as a fixed integrated engine', (tester) async {
+  testWidgets('Windows replaces a stale IJK preference and offers MPV and fvp only', (tester) async {
     await _pumpKernelPage(tester, translations, size: const Size(900, 900));
 
     expect(SettingsService.to.player.videoPlayerKey.v, 'mpv');
     expect(HivePrefUtil.getString('videoPlayerKey'), 'mpv');
     expect(find.text('MPV Player'), findsOneWidget);
     expect(find.text('IJK Player'), findsNothing);
-    expect(find.text('This platform uses the integrated MPV engine.'), findsOneWidget);
+    expect(find.text('Different engines affect performance'), findsOneWidget);
 
     final engineTile = find.ancestor(of: find.text('Player Engine'), matching: find.byType(ListTile));
     expect(engineTile, findsOneWidget);
-    expect(tester.widget<ListTile>(engineTile).onTap, isNull);
+    expect(tester.widget<ListTile>(engineTile).onTap, isNotNull);
+    expect(availableVideoPlayerKeysForPlatform(TargetPlatform.windows), ['mpv', 'fvp']);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pumpAndSettle();

@@ -1,0 +1,97 @@
+# 全平台端到端探针（2026-09-25）
+
+`tool/probes/all_sites_playback_probe_test.dart` 用 App 自己的适配器把每个已注册平台走一遍：目录 → 直播间详情 → 画质 → 播放地址（与播放器同一入口 `resolvePlayUrls`）→ 实际请求媒体并识别 FLV / TS / fMP4，HLS 会顺着主播放列表、子播放列表一直请求到分片，并回放播放列表下发的 Cookie。探针只输出每个平台的结论，不保存地址、Cookie 或媒体。
+
+```bash
+PURELIVE_ALL_SITES_PROBE=1 flutter test tool/probes/all_sites_playback_probe_test.dart
+PURELIVE_PROBE_SITES=huya,douyu PURELIVE_PROBE_REPORT=/tmp/report.json ...   # 限定平台 / 输出 JSON
+```
+
+运行环境：WSL2 主机，Clash TUN 透明代理。结论只代表这台主机的网络；需要 WebView 的平台和最终播放效果仍以真机为准。
+
+## 结果
+
+首轮 24/45 取到媒体；本批修复后 **27/45** 取到媒体，另有 2 个平台成功建立私有播放输入。
+
+| 结论 | 平台 |
+| --- | --- |
+| 取到媒体（27） | 17LIVE、AcFun、百度、哔哩哔哩、CC、CHZZK、抖音、斗鱼、虎牙、映客、京东、克拉克拉、快手、酷狗、LiveMe、LOOK、猫耳、PandaTV、Picarto、SHOWROOM、六间房、SOOP、Steam、TwitCasting、Twitch、微博、YY |
+| 私有播放输入已建立 | FC2、niconico |
+| 需要 WebView（Windows 集成测试 `integration_test/webview_sites_test.dart`） | Shopee Live、NimoTV 通过；Rumble 受 Cloudflare 质询影响时通过时不通过；Dailymotion 见下 |
+| 按设计无公开目录 | 淘宝、TikTok、小红书、YouTube（仅搜索与链接回流） |
+| 需要登录 / 成人认证 | Bigo（`needLogin`）、PopkonTV 目录前列均为成人直播 |
+| 网络 / 地区限制 | GoodGame（`hls.goodgame.ru` 超时）、OPENREC（mellow-fan 接口 curl 同样 403）、VK 部分签名子播放列表 403（疑与 `srcIp` 和代理分流有关） |
+| 平台侧变化 | 花椒：匿名 `getLives4H5` 报告总数但不再返回任何 feed，官网 PC 端已无直播列表；手机网络结果相同 |
+| 快照有限 | TTingLive：首页快照仅 1 个房间且已下播 |
+| 修复已验证 | Kick（Android 真机、Windows 集成测试） |
+
+## 2026-09-26 复测（3.2.5 之后）
+
+同一环境重跑全平台探针：**27/45 取到媒体**（CHZZK 修复后），另有 3 个平台建立私有播放输入（FC2、niconico，以及此前需要登录的 **Bigo**）。其余结论与 09-25 相同。
+
+| 平台 | 现象 | 根因 | 处理 |
+| --- | --- | --- | --- |
+| CHZZK | 首轮详情全部失败（`CHZZK service`） | 亚运会期间热门前 30 有 10 个是仅限韩国观看的转播；`/service/v2/.../live-detail` 对这类直播改为直接返回 HTTP 500 / `code 9004`（해외 시청 불가），整个详情失败 | 改用网页播放器使用的 `/service/v3.1/...`：字段相同，受限直播正常返回 `krOnlyViewing: true` 且不给播放地址，App 显示「当前地区受到播放限制」；非受限房间 1080p60 HLS 正常 |
+| 探针 | 只试前 3 个房间，全是受限转播时误报失败 | — | 带提示且无画质的房间记为受平台限制并跳过，最多扫描 12 个房间，仍按 3 次有效尝试判定 |
+
+## 本批修复
+
+| 平台 | 根因 | 提交 |
+| --- | --- | --- |
+| SHOWROOM | 无人开播的分类改为返回 `cell_type: 7` 提示卡，被当作直播行解析，整个目录报格式错误 | `b1e5db41` |
+| PopkonTV | 游客搜索不再返回成人直播，详情退回主播资料判为下播；改为在 60 秒缓存的公开目录中确认 | `3331c42c` |
+| LiveMe | 精选列表出现无 `ushortid` 的联合房间卡，整页因身份校验失败 | `3d0aaceb` |
+| VK Video Live | 新 CDN `*.vkuser.net` 不在白名单；共享镜像 403 导致整个房间失败 | `bb421c45` |
+| Kick | Cloudflare 对 `dart:io` 的 TLS 指纹一律 403（curl 与手机 curl 均 200）。Android 走平台 TLS（`HttpURLConnection`），Windows 走 WinHTTP/Schannel，均只放行 kick.com；IVS 播放列表仍走 dio。Linux 仍受阻 | `f1511974`（Android）、`76a59f31`（路由）、`8435e9e2`（Windows WinHTTP）；Android 真机 1080p60 播放与聊天通过，Windows `integration_test/native_http_kick_test.dart` 通过 |
+| TwitCasting | 分片需要播放列表下发的 `lvhls_ssid_*` Cookie；FFmpeg（mpv/IJK）会回放，App 实测可播，仅探针需要补 Cookie 回放 | `59b29295`（探针） |
+| NimoTV | 流信息包 `mStreamPkg` 改版：`id=` 前的 `|` 变为长度字节，全部房间格式错误；CDN 现在对整个查询串签名（`wsSecret`/`wsTime`/`fm`/`ctype`），改用 https 或追加 `ratio` 均 403/404，只能播放包内给出的原画 http 地址 | `ad82bcfa` |
+| Shopee Live | ① 首次打开走 WebView 会话解析，冷启动可超过 45 秒，被统一超时判为网络错误（第一个房间失败、之后正常）；② 任一播放地址或封面不在白名单就整间报格式错误；③ 新增自有 CDN `play-spe.livestream.shopee.co.id`（`cdnID=SHOPEE`），同样是 codec 12 HEVC | `66a6bc78`、`e0185e6b`、`264a9351` |
+| NimoTV（Android） | Android WebView 的移动端 UA 被首页脚本重定向到 `m.nimo.tv`，没有目录卡片，手机上 NimoTV 标签页始终失败；改用桌面 UA。房间标题含 HTML 实体（`Hi&#39;`）未解码。真机（经 App 代理）：目录与房间可打开、出画面，但 CDN 间歇 403 会中断播放 | `4828bc47` |
+| Nimo / Dailymotion / Rumble / Shopee | Android 无头 WebView 没有使用 App 代理（只有 Twitch 用了），国内配置代理后这几个站仍直连失败；改为共享的 `WebViewProxyScope`，并串行化进程级 `ProxyController` | `9f541aae` |
+
+
+## 环境限制（非代码问题）
+
+- **Dailymotion**：元数据接口能返回签名主播放列表，但 `cdndirector.dailymotion.com` 对本机 Clash 出口（美国机房 IP）一律 403，`x-error-code: E005`，换请求头、Cookie、`app=com.dailymotion.neon` 均无效，判断为屏蔽机房/代理 IP。需要住宅 IP 才能验证。另外公开接口 `flags=live_onair` 会列出实际已下播（`DM003`）的频道，App 的目录用 `mode=live&sort=live-audience` 并过滤 `onair`，不受影响。
+- **Rumble**：接口与页面都在 Cloudflare「Just a moment…」质询之后；无头 WebView 有时能通过（5 次中 2 次取到 1080p HLS），频繁请求后质询升级即失败。
+- **Windows 上的 dart:io 不跟随系统代理**：WebView2 走系统代理，App 自己的请求只认「网络代理」里的设置。只开了系统代理（未开 TUN、未在 App 里设置代理）时，NimoTV 这类站点会出现「目录能加载、进房间失败」。可以考虑增加「跟随系统代理」选项（待定）。
+
+## 已修复：Shopee Live 有声无画面（claude@79f78e06）
+
+真机（K90，3.2.1）现象：目录、详情、在线人数与 1080p FLV 地址正常，播放时只有声音，系统没有创建视频解码器。
+
+根因（2026-09-25 用真机「获取直链」取得的 FLV 在主机复现）：
+
+- Shopee CDN（`*.livetech.shopee.co.id`）的 FLV 用的是**传统 FLV + 国内 codec id 12 扩展**表示 HEVC，不是增强型 FLV（之前据录制端推断为增强型 FLV，是错的）。
+- FFmpeg 8.0 才在 `flvdec.c` 加入 `FLV_CODECID_X_HEVC = 12`。media_kit 的 `libmpv.so` 内置 FFmpeg 7.1，读到 codec 12 报 `Video codec (c) is not implemented` 并丢弃视频轨，只剩 AAC 音频。用 FFmpeg 7.1.5 静态版复现一致。
+- 录制端 ffmpeg-kit 是 FFmpeg 9.0.2，认识 codec 12，所以录像有画面。
+
+修复：`lib/player/core/flv_legacy_hevc_relay.dart`。libmpv 打开 Shopee 的 FLV 地址时，改走本机回环中继，把 codec 12 的视频标签改写为增强型 FLV（`hvc1`，FFmpeg 6.1 起支持）：只改标签头，NAL 与 HEVCDecoderConfigurationRecord 原样复制，其他标签不动。IJK / Exo 内核与其他站点的地址不受影响。
+
+验证：
+
+- 用真实 14 MB 样本，Dart 改写结果与 Python 原型逐字节一致，FFmpeg 7.1 解出 713 帧 HEVC 1080×1920（`missing picture in access unit` 警告在原始流上用 FFmpeg 8 也会出现，与改写无关）。
+- 真机：Shopee 直播间 1080p FLV 正常出画面，竖屏布局识别正确；线路 1 → 线路 2 切换正常；退出后应用内小窗继续播放。
+- 同时修复：直播间加载失败后退出，不再弹出黑色空白小窗（claude@928ea47d）。
+
+## 参考项目平台覆盖（2026-09-25）
+
+对照 [bililive-go](https://github.com/bililive-go/bililive-go) `src/live/` 与 [biliup](https://github.com/biliup/biliup) Rust 下载器模块：
+
+- biliup 的 acfun、afreecatv（即 SOOP）、bigo、bilibili、cc、douyin、douyu、huya、inke、kilakila、kuaishou、missevan、niconico、picarto、ttinglive、twitcasting、twitch、youtube、yy 本项目均已接入。
+- bililive-go 额外的 hongdoufm（红豆 Live）与 KilaKila 为同一服务，本项目 KilaKila 适配器已接受 `www.hongdoufm.com` 房间链接；qq（企鹅电竞）已于 2022 年停运，yizhibo（一直播）已停止直播业务，不再接入。
+- 结论：两个参考项目中仍在运营的直播平台全部已覆盖。
+
+## FLV 视频编码普查（2026-09-25）
+
+探针新增按画质报告 FLV 首个视频标签的编码（`PURELIVE_PROBE_ALL_QUALITIES=1`）。除 Shopee Live 与 17LIVE（取决于主播编码器）外，AcFun、哔哩哔哩、抖音、斗鱼、虎牙、映客、KilaKila、快手、酷狗、LiveMe、六间房、微博所有画质均为 AVC。传统「编码号 12」HEVC 会让播放内核（FFmpeg 7.1）只出声音，Shopee 与 17LIVE 已经本机中转改写（`79f78e06`、`719f902f`）。
+
+## 私有播放输入（P3）与代理出口 IP（2026-09-25 下午）
+
+新增 `integration_test/owned_inputs_test.dart`：取直播间 → 打开与播放器相同的私有输入 → 从本机地址读取真实媒体。Windows 结果：
+
+- **FC2**：原先全部失败。FC2 把主播放列表和子播放列表改成了不带 `.m3u8` 后缀的 `/master_playlist`、`/playlist`，HLS 中转拒收，播放与录制都报格式错误。`dffc351d` 起按 HLS 处理，Windows 实测取到 TS 分片。
+- **niconico**：fMP4 分片正常（854×480）。
+- **Bigo**：接口要求登录（`needLogin`），与探针结论一致。
+
+**代理出口 IP 轮换导致的间歇 403**：本机 Clash 出口在 134.195.101.180 与 .197 之间轮换（负载均衡组）。FC2 分片签名与请求 IP 绑定，出口一换就 403，重试又可能成功；NimoTV 间歇 403、VK 子播放列表 403（`srcIp`）、Dailymotion `E005` 都符合同一特征。测试海外平台时请把 Clash 固定到单个节点（选择模式，不用负载均衡 / 自动测速），否则这些站点会时好时坏，并非 App 问题。

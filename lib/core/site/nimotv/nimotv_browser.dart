@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:pure_live/core/utils/webview_proxy_scope.dart';
 
 import 'nimotv_api.dart';
 
@@ -51,7 +52,7 @@ class NimoTvBrowserDirectoryResolver implements NimoTvDirectoryResolver {
     _evaluationTail = release.future;
     try {
       await predecessor;
-      final rooms = await _resolveExclusive();
+      final rooms = await WebViewProxyScope.run(_resolveExclusive);
       _cached = rooms;
       _cachedAt = DateTime.now();
       return rooms;
@@ -67,7 +68,14 @@ class NimoTvBrowserDirectoryResolver implements NimoTvDirectoryResolver {
     try {
       webView = HeadlessInAppWebView(
         initialUrlRequest: URLRequest(url: WebUri(pageUrl)),
-        initialSettings: InAppWebViewSettings(javaScriptEnabled: true, cacheEnabled: true, transparentBackground: true),
+        // A mobile WebView UA is redirected to m.nimo.tv, which has none of
+        // the homepage cards the directory script reads (Android only).
+        initialSettings: InAppWebViewSettings(
+          javaScriptEnabled: true,
+          cacheEnabled: true,
+          transparentBackground: true,
+          userAgent: NimoTvApi.desktopUserAgent,
+        ),
         onWebViewCreated: (controller) {
           if (!controllerCompleter.isCompleted) controllerCompleter.complete(controller);
         },

@@ -249,7 +249,14 @@ class ShowroomApi {
       final id = _nonNegativeInt(group['genre_id']);
       if (!seen.add(id)) continue;
       final name = _text(group['genre_name']);
-      final lives = _list(group['lives'], max: 5000).map((row) => _live(_object(row))).toList(growable: false);
+      final lives = _list(group['lives'], max: 5000)
+          .map(_object)
+          // A genre with nobody live carries a message cell (`cell_type: 7`,
+          // no room) instead of an empty list. Skip such non-room cells; real
+          // live rows keep their strict validation.
+          .where((row) => row['room_id'] != null || row['cell_type'] == null)
+          .map(_live)
+          .toList(growable: false);
       genres.add(ShowroomGenre(id: id, name: name, lives: lives));
     }
     if (genres.isEmpty) throw const ShowroomException(ShowroomFailure.schema);

@@ -236,6 +236,18 @@ try {
         & (Join-Path $PSScriptRoot 'prefetch_android_native.ps1') -SkipAndroidMedia
         & (Join-Path $PSScriptRoot 'prefetch_windows_native.ps1')
 
+        # A debug run (flutter test integration_test / flutter run) leaves its
+        # JIT kernel_blob.bin in build\flutter_assets. Release builds do not
+        # delete it and the Windows CMake install copies that whole folder,
+        # so a stale 180 MB debug blob would ship. It is never a release input.
+        if ($Configuration -ne 'Debug') {
+            $staleKernelBlob = Join-Path $repoRoot 'build\flutter_assets\kernel_blob.bin'
+            if (Test-Path -LiteralPath $staleKernelBlob -PathType Leaf) {
+                Remove-Item -LiteralPath $staleKernelBlob -Force
+                Write-Host "Removed stale debug kernel blob: $staleKernelBlob"
+            }
+        }
+
         $windowsArgs = @(
             'build', 'windows', "--$configurationLower",
             "--build-name=$displayVersion", "--build-number=$buildNumber",
@@ -374,6 +386,10 @@ try {
         }
         if (-not (Test-Path -LiteralPath (Join-Path $windowsPackageFull 'pure_live.exe') -PathType Leaf)) {
             throw 'The staged Windows package does not contain pure_live.exe.'
+        }
+        if ($Configuration -ne 'Debug' -and
+            (Test-Path -LiteralPath (Join-Path $windowsPackageFull 'data\flutter_assets\kernel_blob.bin') -PathType Leaf)) {
+            throw 'The staged Windows package contains a debug kernel_blob.bin.'
         }
         if ($Configuration -eq 'Release') {
             foreach ($runtimeFile in @('msvcp140.dll', 'vcruntime140.dll', 'vcruntime140_1.dll')) {

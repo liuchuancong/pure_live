@@ -120,12 +120,17 @@ class ShopeeLiveApi {
     ShopeeLiveRequest? request,
     ShopeeLiveSessionResolver? sessionResolver,
     this.deadline = const Duration(seconds: 45),
+    this.sessionDeadline = const Duration(seconds: 80),
   }) : _request = request ?? _defaultRequest,
        _sessionResolver = sessionResolver ?? ShopeeLiveBrowserSessionResolver();
 
   static const String marketplaceOrigin = 'https://shopee.co.id';
   static const String liveOrigin = 'https://live.shopee.co.id';
   static const int responseLimit = 4 * 1024 * 1024;
+
+  /// Playback CDNs: third-party edges (`cdnID=TXCLOUD`/`HUAWEI`) and Shopee's
+  /// own (`play-spe.livestream`, `cdnID=SHOPEE`). All serve codec-id-12 HEVC FLV.
+  static const Set<String> mediaHostSuffixes = {'.livetech.shopee.co.id', '.livestream.shopee.co.id'};
   static const String userAgent =
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
       'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36';
@@ -160,6 +165,11 @@ class ShopeeLiveApi {
   final ShopeeLiveRequest _request;
   final ShopeeLiveSessionResolver _sessionResolver;
   final Duration deadline;
+
+  /// Session lookups usually fall back to a headless WebView, whose cold start
+  /// (engine, page and module loading) alone can take over 45 seconds. The
+  /// resolver's own stages are bounded at 12 + 20 + 35 seconds.
+  final Duration sessionDeadline;
 
   static Future<({int status, String body})> _defaultRequest(
     Uri uri,
@@ -201,14 +211,14 @@ class ShopeeLiveApi {
     }
   }
 
-  Future<T> _scope<T>(CancelToken? caller, Future<T> Function(CancelToken) work) =>
+  Future<T> _scope<T>(CancelToken? caller, Future<T> Function(CancelToken) work, {Duration? timeout}) =>
       withRequestCancellation(caller, (transport) async {
         if (transport.isCancelled) throw const ShopeeLiveException(ShopeeLiveFailure.cancelled);
         try {
           return await Future.any<T>([
             work(transport),
             transport.whenCancel.then<T>((_) => throw const ShopeeLiveException(ShopeeLiveFailure.cancelled)),
-          ]).timeout(deadline);
+          ]).timeout(timeout ?? deadline);
         } on TimeoutException {
           throw const ShopeeLiveException(ShopeeLiveFailure.transport);
         } catch (error) {
@@ -250,7 +260,7 @@ class ShopeeLiveApi {
     }
     if (token.isCancelled) throw const ShopeeLiveException(ShopeeLiveFailure.cancelled);
     return parseSession(payload, expectedSessionId: key.sessionId);
-  });
+  }, timeout: sessionDeadline);
 
   Future<ShopeeLiveRoom> refresh(String rawRoomId, {CancelToken? cancel}) => _scope(cancel, (token) async {
     final key = ShopeeLiveLink.parseKey(rawRoomId);
@@ -479,17 +489,18 @@ class ShopeeLiveApi {
     if (RegExp(r'^[A-Za-z0-9_-]{8,160}$').hasMatch(raw)) {
       return 'https://down-ws-id.img.susercontent.com/file/$raw';
     }
+    // Artwork is cosmetic: an unrecognised value shows the placeholder
+    // instead of failing the whole room or directory.
     final uri = Uri.tryParse(raw);
-    if (uri == null || uri.scheme != 'https' || uri.userInfo.isNotEmpty || uri.hasFragment) {
-      throw const ShopeeLiveException(ShopeeLiveFailure.schema);
-    }
+    if (uri == null || uri.scheme != 'https' || uri.userInfo.isNotEmpty || uri.hasFragment) return '';
     final host = uri.host.toLowerCase();
-    if (host != 'cf.shopee.co.id' && !host.endsWith('.img.susercontent.com')) {
-      throw const ShopeeLiveException(ShopeeLiveFailure.schema);
-    }
+    if (host != 'cf.shopee.co.id' && !host.endsWith('.img.susercontent.com')) return '';
     return uri.toString();
   }
 
+  /// A session lists several candidates; one from an unrecognised CDN or
+  /// scheme is skipped rather than failing the room. A live room with no
+  /// usable candidate left is reported as media-unavailable by the site.
   static Uri? _media(Object? value) {
     final raw = value is String ? value.trim() : '';
     if (raw.isEmpty) return null;
@@ -498,9 +509,9 @@ class ShopeeLiveApi {
         uri.scheme != 'https' ||
         uri.userInfo.isNotEmpty ||
         uri.hasFragment ||
-        !uri.host.toLowerCase().endsWith('.livetech.shopee.co.id') ||
+        !mediaHostSuffixes.any(uri.host.toLowerCase().endsWith) ||
         (!uri.path.toLowerCase().endsWith('.flv') && !uri.path.toLowerCase().endsWith('.m3u8'))) {
-      throw const ShopeeLiveException(ShopeeLiveFailure.schema);
+      return null;
     }
     return uri;
   }

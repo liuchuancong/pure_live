@@ -129,8 +129,14 @@ void main() {
               received.addAll(chunk);
               if (received.length >= prefix.length && !prefixReceived.isCompleted) prefixReceived.complete();
             },
-            onDone: ended.complete,
-            onError: ended.completeError,
+            // Closing a stalled relay may surface as reset-then-done (POSIX)
+            // or as a clean done (Windows); either one ends the downstream.
+            onDone: () {
+              if (!ended.isCompleted) ended.complete();
+            },
+            onError: (Object error, StackTrace stackTrace) {
+              if (!ended.isCompleted) ended.completeError(error, stackTrace);
+            },
           );
           await prefixReceived.future.timeout(const Duration(seconds: 2));
           var finished = false;
@@ -144,6 +150,7 @@ void main() {
             reason: 'An already-forwarded SEI starts an incomplete picture, not a complete stop boundary.',
           );
           if (stalled) {
+            ended.future.ignore();
             await relay.close().timeout(const Duration(seconds: 2));
             await stopping.timeout(const Duration(seconds: 2));
             expect(received, prefix);

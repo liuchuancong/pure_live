@@ -80,13 +80,21 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
               subtitle: i18n("gpu_decode"),
               value: SettingsService.to.player.enableCodec,
             ),
+            // RTX VSR is an mpv d3d11vpp filter; other engines ignore it.
             if (PlatformUtils.isWindows)
-              context.buildSwitchTile(
-                icon: Remix.image_edit_line,
-                title: i18n('enable_rtx_vsr'),
-                subtitle: i18n('enable_rtx_vsr_subtitle'),
-                value: SettingsService.to.player.enableRtxVsr,
-              ),
+              Obx(() {
+                final activeKey = normalizeVideoPlayerKeyForPlatform(
+                  SettingsService.to.player.videoPlayerKey.v,
+                  defaultTargetPlatform,
+                );
+                if (PlayerConsts.engines[activeKey] != PlayerEngine.mediaKit) return const SizedBox.shrink();
+                return context.buildSwitchTile(
+                  icon: Remix.image_edit_line,
+                  title: i18n('enable_rtx_vsr'),
+                  subtitle: i18n('enable_rtx_vsr_subtitle'),
+                  value: SettingsService.to.player.enableRtxVsr,
+                );
+              }),
             context.buildSwitchTile(
               icon: Remix.shut_down_line,
               title: i18n('force_destroy_player'),

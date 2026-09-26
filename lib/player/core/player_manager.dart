@@ -37,11 +37,13 @@ import 'package:pure_live/model/live_play_quality.dart';
 import 'package:pure_live/player/utils/fullscreen.dart';
 import 'package:flutter_floating/flutter_floating.dart';
 import 'package:pure_live/player/utils/player_consts.dart';
+import 'package:pure_live/player/utils/popup_route_tracker.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/core/site/huya/huya_transport_policy.dart';
 import 'package:pure_live/player/utils/pip_window_widget.dart';
 import 'package:pure_live/player/core/live_audio_service.dart';
 import 'package:pure_live/common/utils/latest_async_value_queue.dart';
+import 'package:pure_live/player/adapters/media_kit_adapter.dart';
 import 'package:pure_live/player/adapters/player_adapter_factory.dart';
 import 'package:pure_live/player/interface/media_kit_player_accessor.dart';
 import 'package:pure_live/player/utils/media_kit_content_probe.dart';
@@ -891,9 +893,24 @@ class PlayerManager {
     final elapsed = DateTime.now().difference(since);
     final remaining = _portraitDetector.stabilityDelay - elapsed;
     final generation = _geometrySessionGeneration;
-    _geometryStabilityTimer = Timer(remaining.isNegative ? Duration.zero : remaining, () {
+    // Timer truncates to whole milliseconds, so an unrounded remainder fires
+    // up to 1 ms early. commitPending() then rejects the sample, and a decoder
+    // that reported its size only once stayed "unknown" forever. Round up.
+    final delay = remaining.isNegative
+        ? Duration.zero
+        : Duration(milliseconds: (remaining.inMicroseconds / Duration.microsecondsPerMillisecond).ceil() + 1);
+    _geometryStabilityTimer = Timer(delay, () {
       _geometryStabilityTimer = null;
       if (generation != _geometrySessionGeneration || _disposed || _isClosing) return;
+      final pendingSince = _portraitDetector.pendingSince;
+      if (pendingSince != null &&
+          _portraitDetector.hasPendingCandidate &&
+          DateTime.now().difference(pendingSince) < _portraitDetector.stabilityDelay) {
+        // Monotonic timers and the wall clock can still disagree (clock
+        // adjustments); retry rather than dropping the only sample.
+        _scheduleGeometryStabilityCommit();
+        return;
+      }
       final snapshot = _portraitDetector.commitPending();
       _publishVideoGeometry(snapshot);
       if (snapshot.isStable) _scheduleActiveContentProbe();
@@ -2255,6 +2272,7 @@ class PlayerManager {
         headers: headers,
         policy: sourceQueryPolicy,
         nativeOpen: nativeOpen,
+        rewriteLegacyHevcFlv: player is MediaKitAdapter,
       ),
     };
     try {
@@ -2932,127 +2950,130 @@ class PlayerManager {
     floatingManager.createFloating(
       _floatTag,
       FloatingOverlay(
-        MouseRegion(
-          onEnter: (_) {
-            if (!touchControls && (Platform.isWindows || Platform.isMacOS)) isHovered.value = true;
-          },
-          onExit: (_) {
-            if (!touchControls && (Platform.isWindows || Platform.isMacOS)) isHovered.value = false;
-          },
-          child: Obx(() {
-            // The overlay is created before late decoder/frame evidence may
-            // settle. Keep its outer bounds on the same reactive geometry as
-            // the texture instead of freezing the entry-time 16:9 size.
-            videoPresentationRevision.value;
-            final floatingSize = resolveAppFloatingSize(aspectRatio: currentVideoRatio, maxSide: maxSide);
-            return Container(
-              width: floatingSize.width,
-              height: floatingSize.height,
-              clipBehavior: Clip.antiAlias,
-              decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), color: Colors.black),
-              child: Stack(
-                children: [
-                  Obx(
-                    () => Positioned.fill(
-                      child: isFloatingVideoVisible.value
-                          ? getVideoWidget(
-                              SettingsService.to.player.videoFitIndex.v,
-                              fitList: SettingsService.to.player.videoFitArray,
-                            )
-                          : const SizedBox.shrink(),
-                    ),
-                  ),
-                  Positioned.fill(child: _buildCompactDanmaku()),
-                  Positioned.fill(
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: () async {
-                        // Mobile overlays hide their controls after a short
-                        // delay.  Previously the next tap immediately opened
-                        // the room, so the close/pause controls could never be
-                        // revealed again without racing the three-second
-                        // timer.  Match native PiP behaviour: the first tap
-                        // reveals controls; a second tap resumes the room.
-                        if (touchControls && !isHovered.value) {
-                          isHovered.value = true;
-                          resetHideTimer();
-                          return;
-                        }
-                        final room = currentFloatRoom;
-                        if (room != null) {
-                          await AppNavigator.toLiveRoomDetail(liveRoom: room);
-                        }
-                      },
-                      child: const SizedBox.expand(),
-                    ),
-                  ),
-                  Center(
-                    child: Obx(
-                      () => AnimatedOpacity(
-                        opacity: isHovered.value ? 1 : 0,
-                        duration: const Duration(milliseconds: 200),
-                        child: IgnorePointer(
-                          ignoring: !isHovered.value,
-                          child: StreamBuilder<bool>(
-                            stream: onPlaying,
-                            initialData: isPlayingNow,
-                            builder: (context, snapshot) {
-                              var isPlay = snapshot.data ?? true;
-                              return IconButton(
-                                tooltip: i18n(isPlay ? 'multiview_pause' : 'multiview_play'),
-                                visualDensity: VisualDensity.standard,
-                                constraints: const BoxConstraints(
-                                  minWidth: kMinInteractiveDimension,
-                                  minHeight: kMinInteractiveDimension,
-                                ),
-                                iconSize: 42,
-                                style: IconButton.styleFrom(backgroundColor: Colors.black45),
-                                icon: Icon(
-                                  isPlay ? Icons.pause_circle_filled : Icons.play_circle_filled,
-                                  color: Colors.white,
-                                ),
-                                onPressed: () {
-                                  togglePlayPause();
-                                  resetHideTimer();
-                                },
-                              );
-                            },
-                          ),
-                        ),
+        // Stay out of the way of menus/dialogs opened after this entry.
+        PopupAwareVisibility(
+          child: MouseRegion(
+            onEnter: (_) {
+              if (!touchControls && (Platform.isWindows || Platform.isMacOS)) isHovered.value = true;
+            },
+            onExit: (_) {
+              if (!touchControls && (Platform.isWindows || Platform.isMacOS)) isHovered.value = false;
+            },
+            child: Obx(() {
+              // The overlay is created before late decoder/frame evidence may
+              // settle. Keep its outer bounds on the same reactive geometry as
+              // the texture instead of freezing the entry-time 16:9 size.
+              videoPresentationRevision.value;
+              final floatingSize = resolveAppFloatingSize(aspectRatio: currentVideoRatio, maxSide: maxSide);
+              return Container(
+                width: floatingSize.width,
+                height: floatingSize.height,
+                clipBehavior: Clip.antiAlias,
+                decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), color: Colors.black),
+                child: Stack(
+                  children: [
+                    Obx(
+                      () => Positioned.fill(
+                        child: isFloatingVideoVisible.value
+                            ? getVideoWidget(
+                                SettingsService.to.player.videoFitIndex.v,
+                                fitList: SettingsService.to.player.videoFitArray,
+                              )
+                            : const SizedBox.shrink(),
                       ),
                     ),
-                  ),
-                  Positioned(
-                    right: 4,
-                    top: 4,
-                    child: Obx(
-                      () => AnimatedOpacity(
-                        opacity: isHovered.value ? 1 : 0,
-                        duration: const Duration(milliseconds: 200),
-                        child: IgnorePointer(
-                          ignoring: !isHovered.value,
-                          child: IconButton(
-                            key: const ValueKey('app-floating-close-action'),
-                            tooltip: i18n('close'),
-                            visualDensity: VisualDensity.standard,
-                            constraints: const BoxConstraints.tightFor(
-                              width: kMinInteractiveDimension,
-                              height: kMinInteractiveDimension,
+                    Positioned.fill(child: _buildCompactDanmaku()),
+                    Positioned.fill(
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () async {
+                          // Mobile overlays hide their controls after a short
+                          // delay.  Previously the next tap immediately opened
+                          // the room, so the close/pause controls could never be
+                          // revealed again without racing the three-second
+                          // timer.  Match native PiP behaviour: the first tap
+                          // reveals controls; a second tap resumes the room.
+                          if (touchControls && !isHovered.value) {
+                            isHovered.value = true;
+                            resetHideTimer();
+                            return;
+                          }
+                          final room = currentFloatRoom;
+                          if (room != null) {
+                            await AppNavigator.toLiveRoomDetail(liveRoom: room);
+                          }
+                        },
+                        child: const SizedBox.expand(),
+                      ),
+                    ),
+                    Center(
+                      child: Obx(
+                        () => AnimatedOpacity(
+                          opacity: isHovered.value ? 1 : 0,
+                          duration: const Duration(milliseconds: 200),
+                          child: IgnorePointer(
+                            ignoring: !isHovered.value,
+                            child: StreamBuilder<bool>(
+                              stream: onPlaying,
+                              initialData: isPlayingNow,
+                              builder: (context, snapshot) {
+                                var isPlay = snapshot.data ?? true;
+                                return IconButton(
+                                  tooltip: i18n(isPlay ? 'multiview_pause' : 'multiview_play'),
+                                  visualDensity: VisualDensity.standard,
+                                  constraints: const BoxConstraints(
+                                    minWidth: kMinInteractiveDimension,
+                                    minHeight: kMinInteractiveDimension,
+                                  ),
+                                  iconSize: 42,
+                                  style: IconButton.styleFrom(backgroundColor: Colors.black45),
+                                  icon: Icon(
+                                    isPlay ? Icons.pause_circle_filled : Icons.play_circle_filled,
+                                    color: Colors.white,
+                                  ),
+                                  onPressed: () {
+                                    togglePlayPause();
+                                    resetHideTimer();
+                                  },
+                                );
+                              },
                             ),
-                            style: IconButton.styleFrom(backgroundColor: Colors.black45),
-                            icon: const Icon(Icons.close, color: Colors.white, size: 20),
-                            onPressed: () async {
-                              await stop();
-                            },
                           ),
                         ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-            );
-          }),
+                    Positioned(
+                      right: 4,
+                      top: 4,
+                      child: Obx(
+                        () => AnimatedOpacity(
+                          opacity: isHovered.value ? 1 : 0,
+                          duration: const Duration(milliseconds: 200),
+                          child: IgnorePointer(
+                            ignoring: !isHovered.value,
+                            child: IconButton(
+                              key: const ValueKey('app-floating-close-action'),
+                              tooltip: i18n('close'),
+                              visualDensity: VisualDensity.standard,
+                              constraints: const BoxConstraints.tightFor(
+                                width: kMinInteractiveDimension,
+                                height: kMinInteractiveDimension,
+                              ),
+                              style: IconButton.styleFrom(backgroundColor: Colors.black45),
+                              icon: const Icon(Icons.close, color: Colors.white, size: 20),
+                              onPressed: () async {
+                                await stop();
+                              },
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }),
+          ),
         ),
         right: 50,
         top: 100,

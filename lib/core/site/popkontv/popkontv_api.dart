@@ -383,7 +383,8 @@ class PopkonApi {
         }
         if (card == null) {
           if (profile == null) throw const PopkonException(PopkonFailure.missing);
-          return parseProfile(profile);
+          card = await _findLiveInDirectory(key, token);
+          if (card == null) return parseProfile(profile);
         }
         final access = _cardAccess(card);
         if (!resolveMedia || access != PopkonAccess.public) return _roomFromCard(card, access: access);
@@ -395,6 +396,32 @@ class PopkonApi {
         if (streams.isEmpty) throw const PopkonException(PopkonFailure.mediaUnavailable);
         return _roomFromCard(card, access: PopkonAccess.public, streams: streams);
       });
+
+  // Guest search/all omits adult broadcasts from `liveList` (it still returns
+  // the profile), while the public livelist keeps them. Without this lookup
+  // every adult room opened from the directory was reported offline.
+  static const _directoryLookupPages = 3;
+  static const _directorySnapshotTtl = Duration(seconds: 60);
+  ({DateTime at, List<PopkonCard> cards})? _directorySnapshot;
+
+  Future<PopkonCard?> _findLiveInDirectory(PopkonChannelKey key, CancelToken token) async {
+    final cached = _directorySnapshot;
+    var cards = cached?.cards;
+    if (cached == null || DateTime.now().difference(cached.at) >= _directorySnapshotTtl) {
+      final collected = <PopkonCard>[];
+      for (var page = 1; page <= _directoryLookupPages; page++) {
+        final result = await directory(page: page, size: 50, cancel: token);
+        collected.addAll(result.rooms);
+        if (!result.hasMore) break;
+      }
+      cards = List<PopkonCard>.unmodifiable(collected);
+      _directorySnapshot = (at: DateTime.now(), cards: cards);
+    }
+    for (final card in cards!) {
+      if (_matches(card.signId, card.partnerCode, key)) return card;
+    }
+    return null;
+  }
 
   Future<Uri?> _watch(PopkonCard card, CancelToken cancel) async {
     Future<Map<String, dynamic>> request(String startCode) => _post(

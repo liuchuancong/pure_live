@@ -73,7 +73,7 @@ class MultiviewController extends GetxController {
     if (this.maxCellCount < MultiviewLayout.focus.capacity || this.maxCellCount > maxCells) {
       throw ArgumentError.value(this.maxCellCount, 'maxCellCount', 'must be between 4 and $maxCells');
     }
-    _audioFocusTransitions = LatestAsyncValueQueue<int>(_applyAudioFocus);
+    _audioFocusTransitions = LatestAsyncValueQueue<_AudioFocusTarget>(_applyAudioFocus);
   }
 
   /// focus（一大多小）布局的格子数上限。
@@ -342,7 +342,11 @@ class MultiviewController extends GetxController {
 
   /// Serializes native mute calls and coalesces rapid focus taps to the latest
   /// cell, preventing out-of-order futures from leaving multiple cells audible.
-  late final LatestAsyncValueQueue<int> _audioFocusTransitions;
+  late final LatestAsyncValueQueue<_AudioFocusTarget> _audioFocusTransitions;
+
+  /// Page-level "mute all": focus still moves (volume, danmaku, focus cell),
+  /// but no cell is unmuted until the user turns it off again.
+  final RxBool allMuted = false.obs;
 
   /// 小格自动降质联动开关（仅 focus 布局生效）。
   ///
@@ -982,7 +986,17 @@ class MultiviewController extends GetxController {
   Future<void> setAudioFocus(int cellIndex) {
     RangeError.checkValidIndex(cellIndex, cells, 'cellIndex');
     _audioFocusIndex.value = cellIndex;
-    return _audioFocusTransitions.submit(cellIndex).catchError((Object error, StackTrace stackTrace) {
+    return _submitAudioFocus();
+  }
+
+  Future<void> toggleMuteAll() {
+    allMuted.toggle();
+    return _submitAudioFocus();
+  }
+
+  Future<void> _submitAudioFocus() {
+    final target = (index: _audioFocusIndex.value, muted: allMuted.value);
+    return _audioFocusTransitions.submit(target).catchError((Object error, StackTrace stackTrace) {
       developer.log(
         'MultiviewController: audio focus transition failed',
         name: 'MultiviewController',
@@ -992,7 +1006,8 @@ class MultiviewController extends GetxController {
     });
   }
 
-  Future<void> _applyAudioFocus(int targetIndex) async {
+  Future<void> _applyAudioFocus(_AudioFocusTarget focus) async {
+    final targetIndex = focus.index;
     // Mute every non-target handle, not just the previously remembered one:
     // this also repairs any inconsistent state left by a native call failure.
     for (var index = 0; index < _players.length; index++) {
@@ -1015,7 +1030,7 @@ class MultiviewController extends GetxController {
     // will apply that pending target next, so never unmute this stale target.
     if (_audioFocusIndex.value != targetIndex || targetIndex >= _players.length) return;
     final target = _players[targetIndex];
-    if (target != null) await target.setMuted(false);
+    if (target != null) await target.setMuted(focus.muted);
   }
 
   /// 释放全部格子（页面 onClose 调用），cells 全部回到 empty。
@@ -1299,3 +1314,5 @@ class MultiviewController extends GetxController {
     }
   }
 }
+
+typedef _AudioFocusTarget = ({int index, bool muted});

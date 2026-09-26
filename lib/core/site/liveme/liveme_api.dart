@@ -266,7 +266,13 @@ class LiveMeApi {
     final rooms = <LiveMeRoom>[];
     final seen = <String>{};
     for (final raw in _list(data['video_info'], max: 100)) {
-      final room = _videoRoom(_object(raw), includeMedia: false);
+      final video = _object(raw);
+      // Some featured cards (e.g. union rooms) carry no short id. Rooms are
+      // keyed by short id, so such a card cannot be opened or followed; skip
+      // it instead of failing the whole page. Present-but-invalid ids still
+      // fail below.
+      if (video['ushortid'] == null) continue;
+      final room = _videoRoom(video, includeMedia: false);
       if (room.state != LiveMeState.restricted && seen.add(room.shortId)) rooms.add(room);
     }
     return LiveMeDirectoryPage(rooms: rooms, hasMore: _integer(data['next_page']) == 1);

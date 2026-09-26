@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:pure_live/common/index.dart';
+import 'package:pure_live/modules/live_play/states/room_state.dart';
 import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_player.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_loading.dart';
@@ -31,10 +34,11 @@ class LivePlayVideo extends StatelessWidget {
           final state = controller.state.value;
           final videoController = state.player.videoController;
           if (videoController == null) {
-            if (state.room.isLoading || state.room.isLiving) {
-              return const VideoLoading();
-            }
-            return NotLivingVideoWidget(controller: controller);
+            return switch (livePlayPlaceholderFor(state.room)) {
+              LivePlayPlaceholder.loading => const VideoLoading(),
+              LivePlayPlaceholder.loadFailed => RoomLoadFailedWidget(onRetry: controller.onInitPlayerState),
+              LivePlayPlaceholder.notLiving => NotLivingVideoWidget(controller: controller),
+            };
           }
           return Stack(
             fit: StackFit.expand,
@@ -51,6 +55,56 @@ class LivePlayVideo extends StatelessWidget {
             ],
           );
         }),
+      ),
+    );
+  }
+}
+
+enum LivePlayPlaceholder { loading, loadFailed, notLiving }
+
+/// What the video area shows before a player exists. A finished load that
+/// recorded an error must not keep spinning: `isLiving` defaults to true, so
+/// a failed room request previously left an endless spinner with no retry.
+@visibleForTesting
+LivePlayPlaceholder livePlayPlaceholderFor(RoomState room) {
+  if (room.isLoading) return LivePlayPlaceholder.loading;
+  if (room.loadError != null) return LivePlayPlaceholder.loadFailed;
+  return room.isLiving ? LivePlayPlaceholder.loading : LivePlayPlaceholder.notLiving;
+}
+
+/// Leaving a room only floats a player that is actually presenting video.
+/// A failed or never-opened room would otherwise leave an empty black window.
+bool shouldFloatAfterLivePlayExit(RoomState room, {required bool hasVideo}) => hasVideo && room.loadError == null;
+
+class RoomLoadFailedWidget extends StatelessWidget {
+  const RoomLoadFailedWidget({super.key, required this.onRetry});
+
+  final Future<Object?> Function() onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.error_outline_rounded, color: Colors.white70, size: 36),
+            const SizedBox(height: 8),
+            Text(
+              i18n('get_room_info_failed_retry'),
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.white),
+            ),
+            const SizedBox(height: 12),
+            FilledButton.tonalIcon(
+              key: const ValueKey('room-load-retry'),
+              onPressed: () => unawaited(onRetry()),
+              icon: const Icon(Icons.refresh_rounded),
+              label: Text(i18n('retry')),
+            ),
+          ],
+        ),
       ),
     );
   }
