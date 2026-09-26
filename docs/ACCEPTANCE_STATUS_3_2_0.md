@@ -13,7 +13,7 @@
 | Windows 最新归档 | `e4532d77` x64 Debug 构建已通过 `20260924T033917897Z-build-windowsx64-debug.json`，含 FFmpeg 9.0.2；当前 Native Assets 候选仍需 1+3、2×2、音频、帧进度和严格退出 GUI 复验 |
 | 手机快照 | `192.168.1.2:5555` 已核对 25102RKBEC / myron，`su -c id` 为 root。覆盖安装前 Pure Live 无运行进程或录制服务；安装后前台是另一应用，本批未启动 Pure Live、唤醒屏幕或发送界面输入。实际运行时动作前需重读手机状态 |
 | 当前安装 APK | 3.1.8 / 6121，2026-09-24 09:40 本地时间覆盖安装成功；安装包与 `31a3c964` Debug 候选同 SHA-256 `3B572462…D543AF`，`firstInstallTime` 仍为 2026-07-21 18:07:53，数据未执行清除；正式签名候选仍待生成 |
-| 平台范围 | 当前 **45 个直播站点 + IPTV，2 组未注册**，即源码共 46 个适配器；PandaTV、PopkonTV、Shopee Live、VK Video Live、NimoTV、Dailymotion、Rumble、GoodGame、FC2 Live、Steam Broadcasts、京东直播、淘宝直播、酷狗直播、百度直播、六间房直播与 LOOK 直播已完成首阶段源码接入，战旗与浪 Live 保持内部 readiness，DLive、一直播与企鹅电竞已归档生命周期证据；已注册平台仍有能力与双端原生覆盖缺口 |
+| 平台范围 | 当前 **34 个直播站点 + IPTV，0 组未注册**，即源码共 35 个适配器（3.2.8 前为 45 站）。3.2.8 下线花椒、OPENREC、TTingLive、PopkonTV、GoodGame、VK Video Live、Dailymotion、Rumble、NimoTV、Shopee Live、淘宝直播，并删除未注册的战旗、浪 Live 代码，依据见[平台兼容性](PLATFORM_COMPATIBILITY.md)开头说明；DLive、一直播与企鹅电竞已归档生命周期证据；已注册平台仍有能力与双端原生覆盖缺口 |
 | 编号总账 | 历史大组 20 PASS / 42 RUN / 0 NR；RUN 是待补证或部分完成，不等于 42 个当前 Bug |
 
 ## 编号统计
