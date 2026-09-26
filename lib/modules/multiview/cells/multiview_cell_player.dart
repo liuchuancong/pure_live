@@ -295,7 +295,7 @@ class MultiviewCellPlayer
   @override
   VideoController? get videoController => _closed ? null : _backend.videoController;
   @override
-  ValueListenable<int>? get frameRevision => null;
+  ValueListenable<int>? get frameRevision => _closed ? null : _backend.videoController?.frameRevision;
   @override
   bool get isPlaying => !_closed && _backend.isPlaying;
   @override

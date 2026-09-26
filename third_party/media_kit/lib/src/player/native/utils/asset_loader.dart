@@ -63,12 +63,7 @@ class AssetLoader {
       );
     } else if (Platform.isAndroid) {
       asset = path.normalize(
-        AndroidAssetLoader.loadSync(
-          path.join(
-            'flutter_assets',
-            key,
-          ),
-        ),
+        AndroidAssetLoader.loadSync(path.join('flutter_assets', key)),
       );
     } else if (Platform.operatingSystem == 'ohos') {
       asset = path.normalize(

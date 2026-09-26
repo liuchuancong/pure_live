@@ -178,7 +178,8 @@ class PlayerState {
   }
 
   @override
-  String toString() => 'Player('
+  String toString() =>
+      'Player('
       'playlist: $playlist, '
       'playing: $playing, '
       'completed: $completed, '

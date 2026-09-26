@@ -20,10 +20,7 @@ class AudioDevice {
   final String description;
 
   /// {@macro audio_device}
-  const AudioDevice(
-    this.name,
-    this.description,
-  );
+  const AudioDevice(this.name, this.description);
 
   /// [AudioDevice] with automatic device selection.
   factory AudioDevice.auto() => const AudioDevice('auto', '');

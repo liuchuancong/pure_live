@@ -46,9 +46,12 @@ abstract class BasePageScrollAndStateBone<T> extends BaseController {
     _ownedScrollController.addListener(_scrollListener);
     // Content changes the scroll extent without a scroll event; re-evaluate
     // the jump buttons once the new list has been laid out.
-    ever<List<T>>(list, (_) => WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!isClosed) _syncScrollFlags();
-    }));
+    ever<List<T>>(
+      list,
+      (_) => WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!isClosed) _syncScrollFlags();
+      }),
+    );
   }
 
   void bindActiveScrollController(ScrollController? externalController) {

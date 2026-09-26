@@ -12,18 +12,19 @@ final DynamicLibrary stdlib = Platform.isWindows
 
 typedef PosixMallocNative = Pointer Function(IntPtr);
 typedef PosixMalloc = Pointer Function(int);
-final PosixMalloc posixMalloc =
-    stdlib.lookupFunction<PosixMallocNative, PosixMalloc>('malloc');
+final PosixMalloc posixMalloc = stdlib
+    .lookupFunction<PosixMallocNative, PosixMalloc>('malloc');
 
 typedef PosixCallocNative = Pointer Function(IntPtr num, IntPtr size);
 typedef PosixCalloc = Pointer Function(int num, int size);
-final PosixCalloc posixCalloc =
-    stdlib.lookupFunction<PosixCallocNative, PosixCalloc>('calloc');
+final PosixCalloc posixCalloc = stdlib
+    .lookupFunction<PosixCallocNative, PosixCalloc>('calloc');
 
 typedef PosixFreeNative = Void Function(Pointer);
 typedef PosixFree = void Function(Pointer);
-final PosixFree posixFree =
-    stdlib.lookupFunction<PosixFreeNative, PosixFree>('free');
+final PosixFree posixFree = stdlib.lookupFunction<PosixFreeNative, PosixFree>(
+  'free',
+);
 
 typedef WinGetProcessHeapFn = Pointer Function();
 final WinGetProcessHeapFn winGetProcessHeap = stdlib
@@ -32,14 +33,14 @@ final Pointer processHeap = winGetProcessHeap();
 
 typedef WinHeapAllocNative = Pointer Function(Pointer, Uint32, IntPtr);
 typedef WinHeapAlloc = Pointer Function(Pointer, int, int);
-final WinHeapAlloc winHeapAlloc =
-    stdlib.lookupFunction<WinHeapAllocNative, WinHeapAlloc>('HeapAlloc');
+final WinHeapAlloc winHeapAlloc = stdlib
+    .lookupFunction<WinHeapAllocNative, WinHeapAlloc>('HeapAlloc');
 
-typedef WinHeapFreeNative = Int32 Function(
-    Pointer heap, Uint32 flags, Pointer memory);
+typedef WinHeapFreeNative =
+    Int32 Function(Pointer heap, Uint32 flags, Pointer memory);
 typedef WinHeapFree = int Function(Pointer heap, int flags, Pointer memory);
-final WinHeapFree winHeapFree =
-    stdlib.lookupFunction<WinHeapFreeNative, WinHeapFree>('HeapFree');
+final WinHeapFree winHeapFree = stdlib
+    .lookupFunction<WinHeapFreeNative, WinHeapFree>('HeapFree');
 
 // ignore: constant_identifier_names
 const int HEAP_ZERO_MEMORY = 8;
@@ -127,8 +128,11 @@ class _CallocAllocator implements Allocator {
   Pointer<T> allocate<T extends NativeType>(int byteCount, {int? alignment}) {
     Pointer<T> result;
     if (Platform.isWindows) {
-      result = winHeapAlloc(processHeap, /*flags=*/ HEAP_ZERO_MEMORY, byteCount)
-          .cast();
+      result = winHeapAlloc(
+        processHeap,
+        /*flags=*/ HEAP_ZERO_MEMORY,
+        byteCount,
+      ).cast();
     } else {
       result = posixCalloc(byteCount, 1).cast();
     }

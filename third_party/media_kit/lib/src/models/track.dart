@@ -74,7 +74,8 @@ abstract class _Track {
   }
 
   @override
-  String toString() => '$runtimeType('
+  String toString() =>
+      '$runtimeType('
       '$id, '
       '$title, '
       '$language, '
@@ -177,17 +178,8 @@ class AudioTrack extends _Track {
   /// This factory constructor may be used to load external audio as URI.
   ///
   /// **NOTE:** External audio track is automatically unloaded upon playback completion.
-  factory AudioTrack.uri(
-    String uri, {
-    String? title,
-    String? language,
-  }) =>
-      AudioTrack(
-        uri,
-        title,
-        language,
-        uri: true,
-      );
+  factory AudioTrack.uri(String uri, {String? title, String? language}) =>
+      AudioTrack(uri, title, language, uri: true);
 
   @override
   bool operator ==(Object other) {
@@ -253,11 +245,7 @@ class SubtitleTrack extends _Track {
   /// This factory constructor may be used to load external subtitles e.g. SRT, WebVTT etc. as URI.
   ///
   /// **NOTE:** External audio track is automatically unloaded upon playback completion.
-  factory SubtitleTrack.uri(
-    String uri, {
-    String? title,
-    String? language,
-  }) =>
+  factory SubtitleTrack.uri(String uri, {String? title, String? language}) =>
       SubtitleTrack(uri, title, language, uri: true);
 
   /// [SubtitleTrack] loaded with data.
@@ -265,11 +253,7 @@ class SubtitleTrack extends _Track {
   /// This factory constructor may be used to load external subtitles e.g. SRT, WebVTT etc. as data.
   ///
   /// **NOTE:** External audio track is automatically unloaded upon playback completion.
-  factory SubtitleTrack.data(
-    String data, {
-    String? title,
-    String? language,
-  }) =>
+  factory SubtitleTrack.data(String data, {String? title, String? language}) =>
       SubtitleTrack(data, title, language, data: true);
 
   @override

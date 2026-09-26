@@ -37,42 +37,40 @@ class Media extends Playable {
   /// 2. Close the file descriptor created by [AndroidContentUriProvider] to handle content:// URIs on Android.
   /// 3. Delete the temporary file created by [Media.memory].
   static final Finalizer<_MediaFinalizerContext> _finalizer =
-      Finalizer<_MediaFinalizerContext>(
-    (context) async {
-      final uri = context.uri;
-      final memory = context.memory;
-      // Decrement reference count.
-      ref[uri] = ((ref[uri] ?? 0) - 1).clamp(0, 1 << 32);
-      // Remove [Media] instance from [cache] if reference count is 0.
-      if (ref[uri] == 0) {
-        cache.remove(uri);
-      }
-      // content:// : Close the possible file descriptor on Android.
-      try {
-        if (Platform.isAndroid) {
-          final data = Uri.parse(uri);
-          if (data.isScheme('FD')) {
-            final fd = int.parse(data.authority);
-            if (fd > 0) {
-              await AndroidContentUriProvider.closeFileDescriptor(uri);
+      Finalizer<_MediaFinalizerContext>((context) async {
+        final uri = context.uri;
+        final memory = context.memory;
+        // Decrement reference count.
+        ref[uri] = ((ref[uri] ?? 0) - 1).clamp(0, 1 << 32);
+        // Remove [Media] instance from [cache] if reference count is 0.
+        if (ref[uri] == 0) {
+          cache.remove(uri);
+        }
+        // content:// : Close the possible file descriptor on Android.
+        try {
+          if (Platform.isAndroid) {
+            final data = Uri.parse(uri);
+            if (data.isScheme('FD')) {
+              final fd = int.parse(data.authority);
+              if (fd > 0) {
+                await AndroidContentUriProvider.closeFileDescriptor(uri);
+              }
             }
           }
+        } catch (exeception, stacktrace) {
+          print(exeception);
+          print(stacktrace);
         }
-      } catch (exeception, stacktrace) {
-        print(exeception);
-        print(stacktrace);
-      }
-      // Media.memory : Delete the temporary file.
-      try {
-        if (memory) {
-          await File(uri).delete_();
+        // Media.memory : Delete the temporary file.
+        try {
+          if (memory) {
+            await File(uri).delete_();
+          }
+        } catch (exeception, stacktrace) {
+          print(exeception);
+          print(stacktrace);
         }
-      } catch (exeception, stacktrace) {
-        print(exeception);
-        print(stacktrace);
-      }
-    },
-  );
+      });
 
   /// URI of the [Media].
   final String uri;
@@ -107,10 +105,9 @@ class Media extends Playable {
     Map<String, String>? httpHeaders,
     this.start,
     this.end,
-  })  : uri = normalizeURI(resource),
-        extras = extras ?? cache[normalizeURI(resource)]?.extras,
-        httpHeaders =
-            httpHeaders ?? cache[normalizeURI(resource)]?.httpHeaders {
+  }) : uri = normalizeURI(resource),
+       extras = extras ?? cache[normalizeURI(resource)]?.extras,
+       httpHeaders = httpHeaders ?? cache[normalizeURI(resource)]?.httpHeaders {
     // Increment reference count.
     ref[uri] = ((ref[uri] ?? 0) + 1).clamp(0, 1 << 32);
     // Store [this] instance in [cache].
@@ -119,22 +116,13 @@ class Media extends Playable {
       httpHeaders: this.httpHeaders,
     );
     // Attach [this] instance to [Finalizer].
-    _finalizer.attach(
-      this,
-      _MediaFinalizerContext(
-        uri,
-        _memory,
-      ),
-    );
+    _finalizer.attach(this, _MediaFinalizerContext(uri, _memory));
   }
 
   /// Creates a [Media] instance from [Uint8List].
   ///
   /// The [type] parameter is optional and is used to specify the MIME type of the media on web.
-  static Future<Media> memory(
-    Uint8List data, {
-    String? type,
-  }) async {
+  static Future<Media> memory(Uint8List data, {String? type}) async {
     final file = await TempFile.create();
     await file.write_(data);
     final instance = Media(file.path);
@@ -240,13 +228,11 @@ class _MediaCache {
   final Map<String, String>? httpHeaders;
 
   /// {@macro _media_cache}
-  const _MediaCache({
-    this.extras,
-    this.httpHeaders,
-  });
+  const _MediaCache({this.extras, this.httpHeaders});
 
   @override
-  String toString() => '_MediaCache('
+  String toString() =>
+      '_MediaCache('
       'extras: $extras, '
       'httpHeaders: $httpHeaders'
       ')';

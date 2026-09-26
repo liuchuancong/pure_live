@@ -142,7 +142,8 @@ class VideoParams {
       alpha.hashCode;
 
   @override
-  String toString() => 'VideoParams('
+  String toString() =>
+      'VideoParams('
       'pixelformat: $pixelformat, '
       'hwPixelformat: $hwPixelformat, '
       'w: $w, '

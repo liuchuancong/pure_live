@@ -34,24 +34,24 @@ class Media extends Playable {
   /// 3. Revoke the object URL created by [Media.memory] on web.
   static final Finalizer<_MediaFinalizerContext> _finalizer =
       Finalizer<_MediaFinalizerContext>((context) async {
-    final uri = context.uri;
-    final memory = context.memory;
-    // Decrement reference count.
-    ref[uri] = ((ref[uri] ?? 0) - 1).clamp(0, 1 << 32);
-    // Remove [Media] instance from [cache] if reference count is 0.
-    if (ref[uri] == 0) {
-      cache.remove(uri);
-    }
-    // Media.memory : Revoke the object URL.
-    try {
-      if (memory) {
-        html.Url.revokeObjectUrl(uri);
-      }
-    } catch (exeception, stacktrace) {
-      print(exeception);
-      print(stacktrace);
-    }
-  });
+        final uri = context.uri;
+        final memory = context.memory;
+        // Decrement reference count.
+        ref[uri] = ((ref[uri] ?? 0) - 1).clamp(0, 1 << 32);
+        // Remove [Media] instance from [cache] if reference count is 0.
+        if (ref[uri] == 0) {
+          cache.remove(uri);
+        }
+        // Media.memory : Revoke the object URL.
+        try {
+          if (memory) {
+            html.Url.revokeObjectUrl(uri);
+          }
+        } catch (exeception, stacktrace) {
+          print(exeception);
+          print(stacktrace);
+        }
+      });
 
   /// URI of the [Media].
   final String uri;
@@ -86,10 +86,9 @@ class Media extends Playable {
     Map<String, String>? httpHeaders,
     this.start,
     this.end,
-  })  : uri = normalizeURI(resource),
-        extras = extras ?? cache[normalizeURI(resource)]?.extras,
-        httpHeaders =
-            httpHeaders ?? cache[normalizeURI(resource)]?.httpHeaders {
+  }) : uri = normalizeURI(resource),
+       extras = extras ?? cache[normalizeURI(resource)]?.extras,
+       httpHeaders = httpHeaders ?? cache[normalizeURI(resource)]?.httpHeaders {
     // Ensure httpHeaders are not null or empty to prevent using unsupported HTTP headers on the web
     if (httpHeaders != null && httpHeaders.isNotEmpty) {
       throw UnsupportedError('HTTP headers are not supported on web');
@@ -103,22 +102,13 @@ class Media extends Playable {
       httpHeaders: this.httpHeaders,
     );
     // Attach [this] instance to [Finalizer].
-    _finalizer.attach(
-      this,
-      _MediaFinalizerContext(
-        uri,
-        _memory,
-      ),
-    );
+    _finalizer.attach(this, _MediaFinalizerContext(uri, _memory));
   }
 
   /// Creates a [Media] instance from [Uint8List].
   ///
   /// The [type] parameter is optional and is used to specify the MIME type of the media on web.
-  static Future<Media> memory(
-    Uint8List data, {
-    String? type,
-  }) {
+  static Future<Media> memory(Uint8List data, {String? type}) {
     final src = html.Url.createObjectUrlFromBlob(html.Blob([data], type));
     final instance = Media(src);
     instance._memory = true;
@@ -195,13 +185,11 @@ class _MediaCache {
   final Map<String, String>? httpHeaders;
 
   /// {@macro _media_cache}
-  const _MediaCache({
-    this.extras,
-    this.httpHeaders,
-  });
+  const _MediaCache({this.extras, this.httpHeaders});
 
   @override
-  String toString() => '_MediaCache('
+  String toString() =>
+      '_MediaCache('
       'extras: $extras, '
       'httpHeaders: $httpHeaders'
       ')';

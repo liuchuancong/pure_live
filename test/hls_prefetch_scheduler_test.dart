@@ -440,10 +440,8 @@ void main() {
       final scheduler = HlsPrefetchScheduler(
         pool: pool,
         pollInterval: const Duration(milliseconds: 30),
-        fetchSnapshot: (uri, token) =>
-            transport.loadSnapshot(uri, token, budget: HlsResponseBudget(budget)),
-        loadResource: (resource, token) =>
-            transport.loadMedia(resource.uri, token, budget: HlsResponseBudget(budget)),
+        fetchSnapshot: (uri, token) => transport.loadSnapshot(uri, token, budget: HlsResponseBudget(budget)),
+        loadResource: (resource, token) => transport.loadMedia(resource.uri, token, budget: HlsResponseBudget(budget)),
       );
       final local = <Uri, HlsPrefetchResource>{};
       final beginnings = <String, int>{};

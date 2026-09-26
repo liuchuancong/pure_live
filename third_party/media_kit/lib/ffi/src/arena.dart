@@ -103,7 +103,8 @@ class Arena implements Allocator {
   void _ensureInUse() {
     if (!_inUse) {
       throw StateError(
-          'Arena no longer in use, `releaseAll(reuse: false)` was called.');
+        'Arena no longer in use, `releaseAll(reuse: false)` was called.',
+      );
     }
   }
 }
@@ -116,8 +117,10 @@ class Arena implements Allocator {
 ///
 /// If the isolate is shut down, through `Isolate.kill()`, resources are _not_
 /// cleaned up.
-R using<R>(R Function(Arena) computation,
-    [Allocator wrappedAllocator = calloc]) {
+R using<R>(
+  R Function(Arena) computation, [
+  Allocator wrappedAllocator = calloc,
+]) {
   final arena = Arena(wrappedAllocator);
   bool isAsync = false;
   try {
@@ -140,8 +143,10 @@ R using<R>(R Function(Arena) computation,
 ///
 /// If the isolate is shut down, through `Isolate.kill()`, resources are _not_
 /// cleaned up.
-R withZoneArena<R>(R Function() computation,
-    [Allocator wrappedAllocator = calloc]) {
+R withZoneArena<R>(
+  R Function() computation, [
+  Allocator wrappedAllocator = calloc,
+]) {
   final arena = Arena(wrappedAllocator);
   var arenaHolder = [arena];
   bool isAsync = false;
@@ -151,8 +156,9 @@ R withZoneArena<R>(R Function() computation,
       if (result is Future) {
         isAsync = true;
         return result.whenComplete(() {
-          arena.releaseAll();
-        }) as R;
+              arena.releaseAll();
+            })
+            as R;
       }
       return result;
     }, zoneValues: {#_arena: arenaHolder});

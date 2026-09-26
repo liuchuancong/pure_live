@@ -30,15 +30,22 @@ typedef ComputeCallback<Q, R> = FutureOr<R> Function(Q message);
 ///
 /// The `debugLabel` argument can be specified to provide a name to add to the
 /// [Timeline]. This is useful when profiling an application.
-typedef ComputeImpl = Future<R> Function<Q, R>(
-    ComputeCallback<Q, R> callback, Q message,
-    {String? debugLabel});
+typedef ComputeImpl =
+    Future<R> Function<Q, R>(
+      ComputeCallback<Q, R> callback,
+      Q message, {
+      String? debugLabel,
+    });
 
 /// The dart:io implementation of [isolate.compute].
-Future<R> compute<Q, R>(ComputeCallback<Q, R> callback, Q message,
-    {String? debugLabel}) async {
-  debugLabel ??=
-      bool.fromEnvironment('dart.vm.product') ? 'compute' : callback.toString();
+Future<R> compute<Q, R>(
+  ComputeCallback<Q, R> callback,
+  Q message, {
+  String? debugLabel,
+}) async {
+  debugLabel ??= bool.fromEnvironment('dart.vm.product')
+      ? 'compute'
+      : callback.toString();
 
   final Flow flow = Flow.begin();
   Timeline.startSync('$debugLabel: start', flow: flow);
@@ -94,10 +101,9 @@ Future<R> compute<Q, R>(ComputeCallback<Q, R> callback, Q message,
 
     // native error; see Isolate.addErrorListener
     case 2:
-      await Future<Never>.error(RemoteError(
-        response[0] as String,
-        response[1] as String,
-      ));
+      await Future<Never>.error(
+        RemoteError(response[0] as String, response[1] as String),
+      );
 
     // caught error; see _buildErrorResponse
     case 3:
@@ -147,8 +153,9 @@ Future<void> _spawn<Q, R>(_IsolateConfiguration<Q, R> configuration) async {
   late final List<dynamic> computationResult;
 
   try {
-    computationResult =
-        _buildSuccessResponse(await configuration.applyAndTime());
+    computationResult = _buildSuccessResponse(
+      await configuration.applyAndTime(),
+    );
   } catch (e, s) {
     computationResult = _buildErrorResponse(e, s);
   }
