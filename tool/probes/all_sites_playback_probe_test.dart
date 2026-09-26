@@ -27,6 +27,10 @@ const _siteTimeout = Duration(seconds: 90);
 const _mediaTimeout = Duration(seconds: 15);
 const _roomsPerSite = 3;
 
+/// Rooms the platform itself restricts (region, adult) are skipped without
+/// using one of the [_roomsPerSite] attempts, up to this many listed rooms.
+const _roomsScanned = 12;
+
 // These adapters resolve their catalog or media through a headless WebView,
 // which does not exist on a test host; verify them on a device instead.
 const _webViewSites = {'dailymotion', 'nimotv', 'rumble', 'shopeelive'};
@@ -116,10 +120,13 @@ Future<void> _probeSite(String id, Map<String, Object?> result) async {
     result['verdict'] = 'no-catalog';
     return;
   }
-  final candidates = rooms.where((r) => (r.roomId ?? '').trim().isNotEmpty).take(_roomsPerSite);
+  final candidates = rooms.where((r) => (r.roomId ?? '').trim().isNotEmpty).take(_roomsScanned);
   final attempts = <String>[];
+  var restricted = 0;
   for (final listed in candidates) {
+    if (attempts.length >= _roomsPerSite) break;
     final roomId = listed.roomId!.trim();
+    LiveRoom? restrictedCandidate;
     try {
       result['stage'] = 'detail';
       final detail = await site.getRoomDetail(roomId: roomId, platform: id);
@@ -128,7 +135,11 @@ Future<void> _probeSite(String id, Map<String, Object?> result) async {
         continue;
       }
       result['stage'] = 'qualities';
+      // A live room the platform marks with a notice (e.g. CHZZK krOnlyViewing)
+      // and that yields no qualities is a platform restriction, not a failure.
+      if ((detail.notice ?? '').isNotEmpty) restrictedCandidate = detail;
       final qualities = await site.getPlayQualites(detail: detail);
+      restrictedCandidate = null;
       if (qualities.isEmpty) {
         attempts.add('no-qualities');
         continue;
@@ -177,9 +188,14 @@ Future<void> _probeSite(String id, Map<String, Object?> result) async {
       }
       attempts.add(media);
     } catch (error) {
+      if (restrictedCandidate != null) {
+        restricted++;
+        continue;
+      }
       attempts.add('${result['stage']}: ${_describe(error)}');
     }
   }
+  if (restricted > 0) result['restrictedSkipped'] = restricted;
   result['attempts'] = attempts;
   result['verdict'] ??= attempts.every((a) => a.startsWith('not-live')) ? 'no-live-room' : 'failed';
 }
