@@ -284,9 +284,9 @@ class DouyuSite
     if (roomId.trim().isEmpty) {
       throw const DouyuPlayApiException('room id is empty');
     }
-    // A stored cookie can be pasted once and left for weeks: renew it here, on
-    // the path that actually needs a login, instead of failing the room as a
-    // guest because the token aged out.
+    // A pasted cookie is good for seven days and then stops being a login:
+    // renew it here, on the path that actually needs one, instead of failing the
+    // room as a guest because the token aged out.
     await DouyuUtils.ensureFreshSession();
 
     Object? lastError;
@@ -302,6 +302,10 @@ class DouyuSite
         return parsePlayResponse(result);
       } catch (error) {
         lastError = error;
+        // The first attempt is also the cheapest way to learn the cookie is
+        // stale: renew it (the long-term key is the only thing that can) and let
+        // the retry use the fresh one.
+        await DouyuUtils.ensureFreshSession(force: true);
       }
     }
     throw DouyuPlayApiException('H5 play request failed after retry', cause: lastError);
