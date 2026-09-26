@@ -284,6 +284,11 @@ class DouyuSite
     if (roomId.trim().isEmpty) {
       throw const DouyuPlayApiException('room id is empty');
     }
+    // A stored cookie can be pasted once and left for weeks: renew it here, on
+    // the path that actually needs a login, instead of failing the room as a
+    // guest because the token aged out.
+    await DouyuUtils.ensureFreshSession();
+
     Object? lastError;
     for (var attempt = 0; attempt < 2; attempt++) {
       try {

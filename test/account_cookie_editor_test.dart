@@ -123,8 +123,13 @@ void main() {
     expect(request['cookie'], contains('acf_auth=fixture-secret'));
     expect(playback['cookie'], request['cookie']);
     expect(recorder['cookie'], request['cookie']);
-    expect(request['cookie'], contains('dy_did=${DouyuUtils.deviceId}'));
-    expect(request['cookie'], isNot(contains('old-device')));
+    // The DID the login was issued for wins over the process DID: signing with a
+    // different one than the cookie advertises is how a valid session gets
+    // answered as a guest. The fallback (a cookie without `dy_did`) is covered
+    // in douyu_cookie_session_test.dart.
+    expect(request['cookie'], contains('dy_did=old-device'));
+    expect(request['cookie'], contains('acf_did=old-device'));
+    expect(request['cookie'], isNot(contains('dy_did=${DouyuUtils.deviceId}')));
     expect(CookieSettingsController.parseConfig(cookies.toJson())['douyuCookie'], cookies.douyuCookie.value);
     cookies.clearAllCookies();
     expect(DouyuUtils.requestHeaders('123')['cookie'], isNot(contains('fixture-secret')));

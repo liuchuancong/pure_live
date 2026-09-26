@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/site/douyu/douyu_utils.dart';
 import 'package:pure_live/modules/account/account_controller.dart';
 import 'package:pure_live/common/services/settings/bilibili_account_service.dart';
 
@@ -147,12 +148,24 @@ class AccountPage extends GetView<AccountController> {
               );
             }),
             Obx(() {
-              final isLogined = cookie.douyuCookie.v.isNotEmpty;
+              // A stored cookie is not the same as a working login: an expired
+              // one is a guest request whatever its length, so the tile follows
+              // the session the cookie actually carries. An expired cookie whose
+              // renewal key is present stays "signed in" because playback
+              // renews it on its own.
+              final session = DouyuUtils.sessionState(cookie.douyuCookie.v);
+              final isLogined = session == DouyuSessionState.valid || session == DouyuSessionState.expiredRefreshable;
+
               return _buildAccountTile(
                 context,
                 logo: 'assets/images/douyu.png',
                 title: i18n('site_douyu'),
-                subtitle: isLogined ? i18n('cookie_saved_local') : i18n('set_cookie'),
+                subtitle: switch (session) {
+                  DouyuSessionState.none => i18n('set_cookie'),
+                  DouyuSessionState.valid => i18n('cookie_saved_local'),
+                  DouyuSessionState.expiredRefreshable => i18n('douyu_session_renewable'),
+                  DouyuSessionState.guest || DouyuSessionState.expired => i18n('douyu_session_needs_cookie'),
+                },
                 isLogined: isLogined,
                 onTap: () => isLogined
                     ? _showLogoutDialog(
@@ -160,6 +173,8 @@ class AccountPage extends GetView<AccountController> {
                         accountName: i18n('site_douyu'),
                         onConfirm: () => cookie.douyuCookie.v = '',
                       )
+                    // A cookie that no longer holds a session is replaced, not
+                    // signed out of: the editor is where the viewer fixes it.
                     : Get.toNamed(RoutePath.kDouyuAccountCookie),
               );
             }),
