@@ -134,6 +134,34 @@ class Sites {
 
   static bool isRetired(String id) => retiredSiteIds.contains(id.trim().toLowerCase());
 
+  /// Web hosts of the retired platforms, so a shared link can be answered with
+  /// "retired" instead of being ignored as unrecognised text.
+  static const Set<String> _retiredHosts = {
+    'huajiao.com',
+    'openrec.tv',
+    'flextv.co.kr',
+    'ttinglive.com',
+    'popkontv.com',
+    'goodgame.ru',
+    'vkvideo.ru',
+    'vkplay.live',
+    'dailymotion.com',
+    'dai.ly',
+    'rumble.com',
+    'nimo.tv',
+    'shopee.co.id',
+    'taobao.com',
+    'm.tb.cn',
+  };
+
+  static bool isRetiredLink(String text) {
+    for (final match in RegExp(r'https?://[^\s]+', caseSensitive: false).allMatches(text)) {
+      final host = Uri.tryParse(match.group(0)!)?.host.toLowerCase() ?? '';
+      if (_retiredHosts.any((h) => host == h || host.endsWith('.$h'))) return true;
+    }
+    return false;
+  }
+
   /// Read-only artwork lookup for frequently rebuilt room and multiview UI.
   /// A badge must not allocate a platform adapter just to obtain its asset.
   static String logoForId(String id) {
