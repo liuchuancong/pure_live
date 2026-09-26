@@ -3,17 +3,31 @@ import 'package:pure_live/get/get.dart';
 import 'package:syncfusion_flutter_sliders/sliders.dart';
 import 'package:pure_live/common/style/app_text_styles.dart';
 
+/// Settings groups stay readable on wide desktop windows instead of stretching
+/// each row across the whole screen; narrower layouts are unaffected.
+const double settingsContentMaxWidth = 960;
+
+Widget _readableWidth(Widget child) => Align(
+  alignment: Alignment.topCenter,
+  child: ConstrainedBox(
+    constraints: const BoxConstraints(maxWidth: settingsContentMaxWidth),
+    child: child,
+  ),
+);
+
 extension AppLayoutFactory on BuildContext {
   Widget buildGroupTitle(String text) {
     final theme = Theme.of(this);
-    return Padding(
-      padding: const EdgeInsets.only(left: 8, bottom: 8),
-      child: Text(
-        text,
-        style: AppTextStyles.t12.copyWith(
-          fontWeight: FontWeight.bold,
-          color: theme.colorScheme.primary.withValues(alpha: 0.65),
-          letterSpacing: 0.5,
+    return _readableWidth(
+      Padding(
+        padding: const EdgeInsets.only(left: 8, bottom: 8),
+        child: Text(
+          text,
+          style: AppTextStyles.t12.copyWith(
+            fontWeight: FontWeight.bold,
+            color: theme.colorScheme.primary.withValues(alpha: 0.65),
+            letterSpacing: 0.5,
+          ),
         ),
       ),
     );
@@ -82,14 +96,16 @@ extension AppLayoutFactory on BuildContext {
       }
     }
 
-    return Material(
-      clipBehavior: Clip.antiAlias,
-      color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.15),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: theme.dividerColor.withValues(alpha: 0.05), width: 0.5),
+    return _readableWidth(
+      Material(
+        clipBehavior: Clip.antiAlias,
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.15),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(color: theme.dividerColor.withValues(alpha: 0.05), width: 0.5),
+        ),
+        child: Column(children: autoShapedChildren),
       ),
-      child: Column(children: autoShapedChildren),
     );
   }
 
