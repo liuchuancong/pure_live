@@ -1,41 +1,41 @@
 {
-  "version": "3.2.7",
-  "build_number": 4130,
-  "version_num": 302074130,
-  "version_desc": "- 修复 Android 17 上局域网代理（电脑 Clash、路由器）全部失效，开启时请允许「本地网络」权限。\n- 修复 Twitch 直播间误报未开播、在线人数为 0。",
+  "version": "3.2.8",
+  "build_number": 4131,
+  "version_num": 302084131,
+  "version_desc": "- 下线 11 个难以维护的平台（花椒、OPENREC、Shopee 等），现支持 34 个平台 + IPTV。\n- 电脑版只保留 mpv 内核；安卓 fvp 内核修复崩溃与黑屏。\n- 修复 Windows 任务栏显示 pure_live。",
   "prerelease": false,
-  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.2.7",
+  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.2.8",
   "android_abis": [
     "arm64-v8a"
   ],
   "platforms": {
     "android": {
-      "version": "3.2.7",
-      "build_number": 4130,
-      "version_num": 302074130,
-      "version_desc": "- 修复 Android 17 上局域网代理（电脑 Clash、路由器）全部失效，开启时请允许「本地网络」权限。\n- 修复 Twitch 直播间误报未开播、在线人数为 0。",
+      "version": "3.2.8",
+      "build_number": 4131,
+      "version_num": 302084131,
+      "version_desc": "- 下线 11 个难以维护的平台（花椒、OPENREC、Shopee 等），现支持 34 个平台 + IPTV。\n- 电脑版只保留 mpv 内核；安卓 fvp 内核修复崩溃与黑屏。\n- 修复 Windows 任务栏显示 pure_live。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.2.7",
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.2.8",
       "android_abis": [
         "arm64-v8a"
       ]
     },
     "windows": {
-      "version": "3.2.7",
-      "build_number": 4130,
-      "version_num": 302074130,
-      "version_desc": "- 修复 Android 17 上局域网代理（电脑 Clash、路由器）全部失效，开启时请允许「本地网络」权限。\n- 修复 Twitch 直播间误报未开播、在线人数为 0。",
+      "version": "3.2.8",
+      "build_number": 4131,
+      "version_num": 302084131,
+      "version_desc": "- 下线 11 个难以维护的平台（花椒、OPENREC、Shopee 等），现支持 34 个平台 + IPTV。\n- 电脑版只保留 mpv 内核；安卓 fvp 内核修复崩溃与黑屏。\n- 修复 Windows 任务栏显示 pure_live。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.2.7",
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.2.8",
       "windows_msix_available": false
     },
     "linux": {
-      "version": "3.2.7",
-      "build_number": 4130,
-      "version_num": 302074130,
-      "version_desc": "- 修复 Android 17 上局域网代理（电脑 Clash、路由器）全部失效，开启时请允许「本地网络」权限。\n- 修复 Twitch 直播间误报未开播、在线人数为 0。",
+      "version": "3.2.8",
+      "build_number": 4131,
+      "version_num": 302084131,
+      "version_desc": "- 下线 11 个难以维护的平台（花椒、OPENREC、Shopee 等），现支持 34 个平台 + IPTV。\n- 电脑版只保留 mpv 内核；安卓 fvp 内核修复崩溃与黑屏。\n- 修复 Windows 任务栏显示 pure_live。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.2.7"
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.2.8"
     },
     "macos": {
       "version": "3.0.0",

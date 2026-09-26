@@ -1,5 +1,18 @@
 [
   {
+    "version": "3.2.8",
+    "title": "Pure Live v3.2.8",
+    "date": "2026-09-26",
+    "github": "https://github.com/wzgrx/pure_live/releases/tag/v3.2.8",
+    "author": {
+      "name": "wzgrx",
+      "avatar": "https://avatars.githubusercontent.com/u/39661556?v=4",
+      "profile": "https://github.com/wzgrx"
+    },
+    "changelog": "# Pure Live v3.2.8\n\nv3.2.8 build 4131 精简了平台和播放内核：下线 11 个难以维护、基本无法使用的平台，电脑版只保留 mpv 内核，并完善安卓的 fvp 内核。从维护分支 `claude` 发布，没有合并上游代码。\n\n## 平台调整：下线 11 个平台\n\n以下平台下线，依据是全平台探针、近两个月的维护记录和真机实测：\n\n- 花椒：官方已不再返回直播列表\n- OPENREC / mellow-fan：接口被拒（403），没有目录\n- TTingLive / FLEX TV：目录里只剩 1 个房间，还是下播状态\n- PopkonTV：目录以成人直播为主，详情无法获取\n- GoodGame：连接超时\n- VK Video Live：播放地址和 IP 绑定，经常被拒\n- Dailymotion：直播内容很少，拒绝代理 IP\n- Rumble：有 Cloudflare 人机验证\n- NimoTV：依赖网页组件，播放地址经常被拒\n- Shopee Live：反爬网页会话，特殊视频编码，分享链接冷启动打不开\n- 淘宝直播：没有公开目录，只能用链接\n\n现在支持 **34 个直播平台 + IPTV**。已关注的这些平台主播仍保留在关注列表里，打开时会提示「该平台已下线」，可以自行取消关注；保存过的淘宝 Cookie 会自动清除。\n\n## 播放内核\n\n- **电脑版（Windows、Linux）只保留 mpv 内核**：fvp 在电脑上省下的 CPU 有限，却有「关闭播放器时可能卡住」的已知问题（上游 fvp#402）。安装包也不再包含 fvp 的库文件。之前选过 fvp 的用户会自动改回 mpv。\n- **安卓 fvp 内核（备用内核）改进**：\n  - 音频改用 OpenSL 输出，避免部分手机关闭播放器时崩溃、电视盒子卡顿、切换音频输出后没有声音；\n  - 17LIVE 部分主播使用的旧式 HEVC 视频改用软件解码，避免高通手机「有声音没画面」；\n  - 直播开头卡顿导致拿不到画面尺寸时，自动重新准备一次，不再一直黑屏。\n\n## 修复\n\n- **Windows 任务栏显示「pure_live」**（上游 #883）：窗口标题和程序描述改为「纯粹直播」。\n\n## 已知问题\n\n- **海外平台时好时坏**：Clash 出口 IP 轮换时，FC2、VK 等平台的播放链接会被拒，请把 Clash 固定到单个节点。\n- **Windows**：App 自己的网络请求不跟随系统代理，海外站点需要在「网络代理」里填写代理。\n- **Linux**：mpv 库需要系统里有 `libva-wayland2`；Kick 仍被 Cloudflare 拦截。\n- 上游新报告的网页搜索一直加载（#881）、斗鱼原画（#885）、全屏问题（#886）正在复现核对。\n\n## 验证\n\n- 全量测试通过；真机（REDMI K90，Android 17）：热门页平台标签为 34 个平台 + IPTV；fvp 内核连续进出 Shopee、Twitch、哔哩哔哩直播间无崩溃、无 AAudio 输出；Twitch 经电脑 Clash 播放 1080p60。\n",
+    "files": []
+  },
+  {
     "version": "3.2.7",
     "title": "Pure Live v3.2.7",
     "date": "2026-09-26",
