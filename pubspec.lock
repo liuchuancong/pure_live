@@ -1062,9 +1062,11 @@ packages:
   flv_lzc:
     dependency: "direct main"
     description:
-      path: "plugins/flv_lzc"
-      relative: true
-    source: path
+      path: "."
+      ref: HEAD
+      resolved-ref: "162030d642857109048a8e6858d502b8d73c754a"
+      url: "https://github.com/liuchuancong/flv_lzc.git"
+    source: git
     version: "1.0.4+purelive.2"
   font_awesome_flutter:
     dependency: "direct main"

@@ -1,21 +1,18 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
+
 import 'package:meta/meta.dart';
+
 import '../common/binary_writer.dart';
+
 import 'package:pure_live/core/common/core_log.dart';
 import 'package:pure_live/common/models/live_message.dart';
 import 'package:pure_live/core/common/web_socket_util.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
 
-
-
-
 class DouyuDanmaku implements LiveDanmaku {
-  DouyuDanmaku({bool Function()? filterSuspectedAutomatedMessages})
-    : _filterSuspectedAutomatedMessages = filterSuspectedAutomatedMessages ?? (() => false);
-
-  final bool Function() _filterSuspectedAutomatedMessages;
+  DouyuDanmaku({bool Function()? filterSuspectedAutomatedMessages});
 
   @override
   int heartbeatTime = 45 * 1000;

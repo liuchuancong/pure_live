@@ -1,21 +1,21 @@
 {
   "version": "3.1.6",
   "build_number": 4105,
-  "version_num": 301034105,
+  "version_num": 301064105,
   "android_abis": [
     "armeabi-v7a",
     "arm64-v8a",
     "x86_64"
   ],
-  "version_desc": "version: 3.1.6\n版本更新：\n- 新增 fvp（libmdk）作为第四个播放引擎：Android 保留 fvp，桌面端只带 libmpv，避免双引擎带来的音量与代理问题。\n- 快手主播搜索改用原生接口，修复此前网页版列表为空；同时下线 11 个长期无法维护的平台（GoodGame、Rumble、Dailymotion、NimoTV、VK、Shopee、淘宝直播、花椒、OPENREC、PopKonTV、TTing），其收藏、历史与分享链接仍可读并明确提示\"已下线\"。\n- 斗鱼登录态改按 Cookie 中的 JWT 判定：新增 LTP0 与 dy_did 输入，Cookie 7 天时效内自动续期，失效前自动刷新、播放失败时强制续期一次。\n- 平台播放修复：FC2 无后缀播放列表、17LIVE 与 Shopee 的 HEVC FLV 继电器、NimoTV 2026-09 流格式、VK 的 vkuser.net CDN、Kick 原生 TLS 通道、Showroom 无演出单元格、LiveMe 精选卡。\n- 分享链路：其他 App 分享的直播间链接可直接打开（冷启动等待导航完成），已下线平台的链接给出明确提示。\n- 多画面：新增一键静音全部；卡顿恢复时保留手动选择的线路。\n- 录播：可选把直播聊天记录与录像一并保存；码率改按文件实际增长计算，任务释放时等待聊天文件写完。\n- 播放器与界面：小窗不再吞掉其上方菜单的点击；双击进入竖屏全屏、再双击收起控制栏；内联控制条全屏按钮常显；房间加载失败显示重试状态而不是一直转圈。\n- Windows / Linux / Android：窗口与可执行文件使用应用名；宽窗口下设置分组不再被拉满；Linux 包内置 libmpv；Android 17 访问局域网代理时申请本地网络权限；Windows 包不再混入旧的 kernel_blob.bin。\n\n",
+  "version_desc": "version: 3.1.6\n版本更新：\n- 快手主播搜索改用原生接口，修复此前网页版列表为空；同时下线 11 个长期无法维护的平台（GoodGame、Rumble、Dailymotion、NimoTV、VK、Shopee、淘宝直播、花椒、OPENREC、PopKonTV、TTing），其收藏、历史与分享链接仍可读并明确提示\"已下线\"。\n- 斗鱼登录态改按 Cookie 中的 JWT 判定：新增 LTP0 与 dy_did 输入，Cookie 7 天时效内自动续期，失效前自动刷新、播放失败时强制续期一次。\n- 平台播放修复：FC2 无后缀播放列表、17LIVE 与 Shopee 的 HEVC FLV 继电器、NimoTV 2026-09 流格式、VK 的 vkuser.net CDN、Kick 原生 TLS 通道、Showroom 无演出单元格、LiveMe 精选卡。\n- 分享链路：其他 App 分享的直播间链接可直接打开（冷启动等待导航完成），已下线平台的链接给出明确提示。\n- 多画面：新增一键静音全部；卡顿恢复时保留手动选择的线路。\n- 录播：可选把直播聊天记录与录像一并保存；码率改按文件实际增长计算，任务释放时等待聊天文件写完。\n- 播放器与界面：小窗不再吞掉其上方菜单的点击；双击进入竖屏全屏、再双击收起控制栏；内联控制条全屏按钮常显；房间加载失败显示重试状态而不是一直转圈。\n- Windows / Linux / Android：窗口与可执行文件使用应用名；宽窗口下设置分组不再被拉满；Linux 包内置 libmpv；Android 17 访问局域网代理时申请本地网络权限；Windows 包不再混入旧的 kernel_blob.bin。\n\n",
   "prerelease": false,
   "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.1.6",
   "platforms": {
     "android": {
       "version": "3.1.6",
       "build_number": 4105,
-      "version_num": 301034105,
-      "version_desc": "version: 3.1.6\n版本更新：\n- 新增 fvp（libmdk）作为第四个播放引擎：Android 保留 fvp，桌面端只带 libmpv，避免双引擎带来的音量与代理问题。\n- 快手主播搜索改用原生接口，修复此前网页版列表为空；同时下线 11 个长期无法维护的平台（GoodGame、Rumble、Dailymotion、NimoTV、VK、Shopee、淘宝直播、花椒、OPENREC、PopKonTV、TTing），其收藏、历史与分享链接仍可读并明确提示\"已下线\"。\n- 斗鱼登录态改按 Cookie 中的 JWT 判定：新增 LTP0 与 dy_did 输入，Cookie 7 天时效内自动续期，失效前自动刷新、播放失败时强制续期一次。\n- 平台播放修复：FC2 无后缀播放列表、17LIVE 与 Shopee 的 HEVC FLV 继电器、NimoTV 2026-09 流格式、VK 的 vkuser.net CDN、Kick 原生 TLS 通道、Showroom 无演出单元格、LiveMe 精选卡。\n- 分享链路：其他 App 分享的直播间链接可直接打开（冷启动等待导航完成），已下线平台的链接给出明确提示。\n- 多画面：新增一键静音全部；卡顿恢复时保留手动选择的线路。\n- 录播：可选把直播聊天记录与录像一并保存；码率改按文件实际增长计算，任务释放时等待聊天文件写完。\n- 播放器与界面：小窗不再吞掉其上方菜单的点击；双击进入竖屏全屏、再双击收起控制栏；内联控制条全屏按钮常显；房间加载失败显示重试状态而不是一直转圈。\n- Windows / Linux / Android：窗口与可执行文件使用应用名；宽窗口下设置分组不再被拉满；Linux 包内置 libmpv；Android 17 访问局域网代理时申请本地网络权限；Windows 包不再混入旧的 kernel_blob.bin。\n\n",
+      "version_num": 301064105,
+      "version_desc": "version: 3.1.6\n版本更新：\n- 快手主播搜索改用原生接口，修复此前网页版列表为空；同时下线 11 个长期无法维护的平台（GoodGame、Rumble、Dailymotion、NimoTV、VK、Shopee、淘宝直播、花椒、OPENREC、PopKonTV、TTing），其收藏、历史与分享链接仍可读并明确提示\"已下线\"。\n- 斗鱼登录态改按 Cookie 中的 JWT 判定：新增 LTP0 与 dy_did 输入，Cookie 7 天时效内自动续期，失效前自动刷新、播放失败时强制续期一次。\n- 平台播放修复：FC2 无后缀播放列表、17LIVE 与 Shopee 的 HEVC FLV 继电器、NimoTV 2026-09 流格式、VK 的 vkuser.net CDN、Kick 原生 TLS 通道、Showroom 无演出单元格、LiveMe 精选卡。\n- 分享链路：其他 App 分享的直播间链接可直接打开（冷启动等待导航完成），已下线平台的链接给出明确提示。\n- 多画面：新增一键静音全部；卡顿恢复时保留手动选择的线路。\n- 录播：可选把直播聊天记录与录像一并保存；码率改按文件实际增长计算，任务释放时等待聊天文件写完。\n- 播放器与界面：小窗不再吞掉其上方菜单的点击；双击进入竖屏全屏、再双击收起控制栏；内联控制条全屏按钮常显；房间加载失败显示重试状态而不是一直转圈。\n- Windows / Linux / Android：窗口与可执行文件使用应用名；宽窗口下设置分组不再被拉满；Linux 包内置 libmpv；Android 17 访问局域网代理时申请本地网络权限；Windows 包不再混入旧的 kernel_blob.bin。\n\n",
       "prerelease": false,
       "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.1.6",
       "android_abis": [
@@ -27,8 +27,8 @@
     "windows": {
       "version": "3.1.6",
       "build_number": 4105,
-      "version_num": 301034105,
-      "version_desc": "version: 3.1.6\n版本更新：\n- 新增 fvp（libmdk）作为第四个播放引擎：Android 保留 fvp，桌面端只带 libmpv，避免双引擎带来的音量与代理问题。\n- 快手主播搜索改用原生接口，修复此前网页版列表为空；同时下线 11 个长期无法维护的平台（GoodGame、Rumble、Dailymotion、NimoTV、VK、Shopee、淘宝直播、花椒、OPENREC、PopKonTV、TTing），其收藏、历史与分享链接仍可读并明确提示\"已下线\"。\n- 斗鱼登录态改按 Cookie 中的 JWT 判定：新增 LTP0 与 dy_did 输入，Cookie 7 天时效内自动续期，失效前自动刷新、播放失败时强制续期一次。\n- 平台播放修复：FC2 无后缀播放列表、17LIVE 与 Shopee 的 HEVC FLV 继电器、NimoTV 2026-09 流格式、VK 的 vkuser.net CDN、Kick 原生 TLS 通道、Showroom 无演出单元格、LiveMe 精选卡。\n- 分享链路：其他 App 分享的直播间链接可直接打开（冷启动等待导航完成），已下线平台的链接给出明确提示。\n- 多画面：新增一键静音全部；卡顿恢复时保留手动选择的线路。\n- 录播：可选把直播聊天记录与录像一并保存；码率改按文件实际增长计算，任务释放时等待聊天文件写完。\n- 播放器与界面：小窗不再吞掉其上方菜单的点击；双击进入竖屏全屏、再双击收起控制栏；内联控制条全屏按钮常显；房间加载失败显示重试状态而不是一直转圈。\n- Windows / Linux / Android：窗口与可执行文件使用应用名；宽窗口下设置分组不再被拉满；Linux 包内置 libmpv；Android 17 访问局域网代理时申请本地网络权限；Windows 包不再混入旧的 kernel_blob.bin。\n\n",
+      "version_num": 301064105,
+      "version_desc": "version: 3.1.6\n版本更新：\n- 快手主播搜索改用原生接口，修复此前网页版列表为空；同时下线 11 个长期无法维护的平台（GoodGame、Rumble、Dailymotion、NimoTV、VK、Shopee、淘宝直播、花椒、OPENREC、PopKonTV、TTing），其收藏、历史与分享链接仍可读并明确提示\"已下线\"。\n- 斗鱼登录态改按 Cookie 中的 JWT 判定：新增 LTP0 与 dy_did 输入，Cookie 7 天时效内自动续期，失效前自动刷新、播放失败时强制续期一次。\n- 平台播放修复：FC2 无后缀播放列表、17LIVE 与 Shopee 的 HEVC FLV 继电器、NimoTV 2026-09 流格式、VK 的 vkuser.net CDN、Kick 原生 TLS 通道、Showroom 无演出单元格、LiveMe 精选卡。\n- 分享链路：其他 App 分享的直播间链接可直接打开（冷启动等待导航完成），已下线平台的链接给出明确提示。\n- 多画面：新增一键静音全部；卡顿恢复时保留手动选择的线路。\n- 录播：可选把直播聊天记录与录像一并保存；码率改按文件实际增长计算，任务释放时等待聊天文件写完。\n- 播放器与界面：小窗不再吞掉其上方菜单的点击；双击进入竖屏全屏、再双击收起控制栏；内联控制条全屏按钮常显；房间加载失败显示重试状态而不是一直转圈。\n- Windows / Linux / Android：窗口与可执行文件使用应用名；宽窗口下设置分组不再被拉满；Linux 包内置 libmpv；Android 17 访问局域网代理时申请本地网络权限；Windows 包不再混入旧的 kernel_blob.bin。\n\n",
       "prerelease": false,
       "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.1.6",
       "windows_msix_available": true
@@ -36,24 +36,24 @@
     "linux": {
       "version": "3.1.6",
       "build_number": 4105,
-      "version_num": 301034105,
-      "version_desc": "version: 3.1.6\n版本更新：\n- 新增 fvp（libmdk）作为第四个播放引擎：Android 保留 fvp，桌面端只带 libmpv，避免双引擎带来的音量与代理问题。\n- 快手主播搜索改用原生接口，修复此前网页版列表为空；同时下线 11 个长期无法维护的平台（GoodGame、Rumble、Dailymotion、NimoTV、VK、Shopee、淘宝直播、花椒、OPENREC、PopKonTV、TTing），其收藏、历史与分享链接仍可读并明确提示\"已下线\"。\n- 斗鱼登录态改按 Cookie 中的 JWT 判定：新增 LTP0 与 dy_did 输入，Cookie 7 天时效内自动续期，失效前自动刷新、播放失败时强制续期一次。\n- 平台播放修复：FC2 无后缀播放列表、17LIVE 与 Shopee 的 HEVC FLV 继电器、NimoTV 2026-09 流格式、VK 的 vkuser.net CDN、Kick 原生 TLS 通道、Showroom 无演出单元格、LiveMe 精选卡。\n- 分享链路：其他 App 分享的直播间链接可直接打开（冷启动等待导航完成），已下线平台的链接给出明确提示。\n- 多画面：新增一键静音全部；卡顿恢复时保留手动选择的线路。\n- 录播：可选把直播聊天记录与录像一并保存；码率改按文件实际增长计算，任务释放时等待聊天文件写完。\n- 播放器与界面：小窗不再吞掉其上方菜单的点击；双击进入竖屏全屏、再双击收起控制栏；内联控制条全屏按钮常显；房间加载失败显示重试状态而不是一直转圈。\n- Windows / Linux / Android：窗口与可执行文件使用应用名；宽窗口下设置分组不再被拉满；Linux 包内置 libmpv；Android 17 访问局域网代理时申请本地网络权限；Windows 包不再混入旧的 kernel_blob.bin。\n\n",
+      "version_num": 301064105,
+      "version_desc": "version: 3.1.6\n版本更新：\n- 快手主播搜索改用原生接口，修复此前网页版列表为空；同时下线 11 个长期无法维护的平台（GoodGame、Rumble、Dailymotion、NimoTV、VK、Shopee、淘宝直播、花椒、OPENREC、PopKonTV、TTing），其收藏、历史与分享链接仍可读并明确提示\"已下线\"。\n- 斗鱼登录态改按 Cookie 中的 JWT 判定：新增 LTP0 与 dy_did 输入，Cookie 7 天时效内自动续期，失效前自动刷新、播放失败时强制续期一次。\n- 平台播放修复：FC2 无后缀播放列表、17LIVE 与 Shopee 的 HEVC FLV 继电器、NimoTV 2026-09 流格式、VK 的 vkuser.net CDN、Kick 原生 TLS 通道、Showroom 无演出单元格、LiveMe 精选卡。\n- 分享链路：其他 App 分享的直播间链接可直接打开（冷启动等待导航完成），已下线平台的链接给出明确提示。\n- 多画面：新增一键静音全部；卡顿恢复时保留手动选择的线路。\n- 录播：可选把直播聊天记录与录像一并保存；码率改按文件实际增长计算，任务释放时等待聊天文件写完。\n- 播放器与界面：小窗不再吞掉其上方菜单的点击；双击进入竖屏全屏、再双击收起控制栏；内联控制条全屏按钮常显；房间加载失败显示重试状态而不是一直转圈。\n- Windows / Linux / Android：窗口与可执行文件使用应用名；宽窗口下设置分组不再被拉满；Linux 包内置 libmpv；Android 17 访问局域网代理时申请本地网络权限；Windows 包不再混入旧的 kernel_blob.bin。\n\n",
       "prerelease": false,
       "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.1.6"
     },
     "macos": {
       "version": "3.1.6",
       "build_number": 4105,
-      "version_num": 301034105,
-      "version_desc": "version: 3.1.6\n版本更新：\n- 新增 fvp（libmdk）作为第四个播放引擎：Android 保留 fvp，桌面端只带 libmpv，避免双引擎带来的音量与代理问题。\n- 快手主播搜索改用原生接口，修复此前网页版列表为空；同时下线 11 个长期无法维护的平台（GoodGame、Rumble、Dailymotion、NimoTV、VK、Shopee、淘宝直播、花椒、OPENREC、PopKonTV、TTing），其收藏、历史与分享链接仍可读并明确提示\"已下线\"。\n- 斗鱼登录态改按 Cookie 中的 JWT 判定：新增 LTP0 与 dy_did 输入，Cookie 7 天时效内自动续期，失效前自动刷新、播放失败时强制续期一次。\n- 平台播放修复：FC2 无后缀播放列表、17LIVE 与 Shopee 的 HEVC FLV 继电器、NimoTV 2026-09 流格式、VK 的 vkuser.net CDN、Kick 原生 TLS 通道、Showroom 无演出单元格、LiveMe 精选卡。\n- 分享链路：其他 App 分享的直播间链接可直接打开（冷启动等待导航完成），已下线平台的链接给出明确提示。\n- 多画面：新增一键静音全部；卡顿恢复时保留手动选择的线路。\n- 录播：可选把直播聊天记录与录像一并保存；码率改按文件实际增长计算，任务释放时等待聊天文件写完。\n- 播放器与界面：小窗不再吞掉其上方菜单的点击；双击进入竖屏全屏、再双击收起控制栏；内联控制条全屏按钮常显；房间加载失败显示重试状态而不是一直转圈。\n- Windows / Linux / Android：窗口与可执行文件使用应用名；宽窗口下设置分组不再被拉满；Linux 包内置 libmpv；Android 17 访问局域网代理时申请本地网络权限；Windows 包不再混入旧的 kernel_blob.bin。\n\n",
+      "version_num": 301064105,
+      "version_desc": "version: 3.1.6\n版本更新：\n- 快手主播搜索改用原生接口，修复此前网页版列表为空；同时下线 11 个长期无法维护的平台（GoodGame、Rumble、Dailymotion、NimoTV、VK、Shopee、淘宝直播、花椒、OPENREC、PopKonTV、TTing），其收藏、历史与分享链接仍可读并明确提示\"已下线\"。\n- 斗鱼登录态改按 Cookie 中的 JWT 判定：新增 LTP0 与 dy_did 输入，Cookie 7 天时效内自动续期，失效前自动刷新、播放失败时强制续期一次。\n- 平台播放修复：FC2 无后缀播放列表、17LIVE 与 Shopee 的 HEVC FLV 继电器、NimoTV 2026-09 流格式、VK 的 vkuser.net CDN、Kick 原生 TLS 通道、Showroom 无演出单元格、LiveMe 精选卡。\n- 分享链路：其他 App 分享的直播间链接可直接打开（冷启动等待导航完成），已下线平台的链接给出明确提示。\n- 多画面：新增一键静音全部；卡顿恢复时保留手动选择的线路。\n- 录播：可选把直播聊天记录与录像一并保存；码率改按文件实际增长计算，任务释放时等待聊天文件写完。\n- 播放器与界面：小窗不再吞掉其上方菜单的点击；双击进入竖屏全屏、再双击收起控制栏；内联控制条全屏按钮常显；房间加载失败显示重试状态而不是一直转圈。\n- Windows / Linux / Android：窗口与可执行文件使用应用名；宽窗口下设置分组不再被拉满；Linux 包内置 libmpv；Android 17 访问局域网代理时申请本地网络权限；Windows 包不再混入旧的 kernel_blob.bin。\n\n",
       "prerelease": false,
       "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.1.6"
     },
     "ios": {
       "version": "3.1.6",
       "build_number": 4105,
-      "version_num": 301034105,
-      "version_desc": "version: 3.1.6\n版本更新：\n- 新增 fvp（libmdk）作为第四个播放引擎：Android 保留 fvp，桌面端只带 libmpv，避免双引擎带来的音量与代理问题。\n- 快手主播搜索改用原生接口，修复此前网页版列表为空；同时下线 11 个长期无法维护的平台（GoodGame、Rumble、Dailymotion、NimoTV、VK、Shopee、淘宝直播、花椒、OPENREC、PopKonTV、TTing），其收藏、历史与分享链接仍可读并明确提示\"已下线\"。\n- 斗鱼登录态改按 Cookie 中的 JWT 判定：新增 LTP0 与 dy_did 输入，Cookie 7 天时效内自动续期，失效前自动刷新、播放失败时强制续期一次。\n- 平台播放修复：FC2 无后缀播放列表、17LIVE 与 Shopee 的 HEVC FLV 继电器、NimoTV 2026-09 流格式、VK 的 vkuser.net CDN、Kick 原生 TLS 通道、Showroom 无演出单元格、LiveMe 精选卡。\n- 分享链路：其他 App 分享的直播间链接可直接打开（冷启动等待导航完成），已下线平台的链接给出明确提示。\n- 多画面：新增一键静音全部；卡顿恢复时保留手动选择的线路。\n- 录播：可选把直播聊天记录与录像一并保存；码率改按文件实际增长计算，任务释放时等待聊天文件写完。\n- 播放器与界面：小窗不再吞掉其上方菜单的点击；双击进入竖屏全屏、再双击收起控制栏；内联控制条全屏按钮常显；房间加载失败显示重试状态而不是一直转圈。\n- Windows / Linux / Android：窗口与可执行文件使用应用名；宽窗口下设置分组不再被拉满；Linux 包内置 libmpv；Android 17 访问局域网代理时申请本地网络权限；Windows 包不再混入旧的 kernel_blob.bin。\n\n",
+      "version_num": 301064105,
+      "version_desc": "version: 3.1.6\n版本更新：\n- 快手主播搜索改用原生接口，修复此前网页版列表为空；同时下线 11 个长期无法维护的平台（GoodGame、Rumble、Dailymotion、NimoTV、VK、Shopee、淘宝直播、花椒、OPENREC、PopKonTV、TTing），其收藏、历史与分享链接仍可读并明确提示\"已下线\"。\n- 斗鱼登录态改按 Cookie 中的 JWT 判定：新增 LTP0 与 dy_did 输入，Cookie 7 天时效内自动续期，失效前自动刷新、播放失败时强制续期一次。\n- 平台播放修复：FC2 无后缀播放列表、17LIVE 与 Shopee 的 HEVC FLV 继电器、NimoTV 2026-09 流格式、VK 的 vkuser.net CDN、Kick 原生 TLS 通道、Showroom 无演出单元格、LiveMe 精选卡。\n- 分享链路：其他 App 分享的直播间链接可直接打开（冷启动等待导航完成），已下线平台的链接给出明确提示。\n- 多画面：新增一键静音全部；卡顿恢复时保留手动选择的线路。\n- 录播：可选把直播聊天记录与录像一并保存；码率改按文件实际增长计算，任务释放时等待聊天文件写完。\n- 播放器与界面：小窗不再吞掉其上方菜单的点击；双击进入竖屏全屏、再双击收起控制栏；内联控制条全屏按钮常显；房间加载失败显示重试状态而不是一直转圈。\n- Windows / Linux / Android：窗口与可执行文件使用应用名；宽窗口下设置分组不再被拉满；Linux 包内置 libmpv；Android 17 访问局域网代理时申请本地网络权限；Windows 包不再混入旧的 kernel_blob.bin。\n\n",
       "prerelease": false,
       "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.1.6"
     }
