@@ -1,15 +1,15 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
-
 import 'package:meta/meta.dart';
-
 import '../common/binary_writer.dart';
-
 import 'package:pure_live/core/common/core_log.dart';
 import 'package:pure_live/common/models/live_message.dart';
 import 'package:pure_live/core/common/web_socket_util.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
+
+
+
 
 class DouyuDanmaku implements LiveDanmaku {
   DouyuDanmaku({bool Function()? filterSuspectedAutomatedMessages})
@@ -113,101 +113,75 @@ class DouyuDanmaku implements LiveDanmaku {
   }
 
   void decodeMessage(List<int> data) {
-    for (final result in deserializeDouyuPackets(data)) {
-      try {
-        final jsonData = sttToJObject(result);
-        if (jsonData is! Map) continue;
-
-        final type = jsonData["type"]?.toString();
-        LiveMessage? liveMsg;
-        if (type == "chatmsg") {
-          final packetRoomId = jsonData['rid']?.toString() ?? '';
-          if (packetRoomId.isNotEmpty && _roomId.isNotEmpty && packetRoomId != _roomId) continue;
-          final text = jsonData["txt"]?.toString() ?? '';
-          if (text.isEmpty) continue;
-          final isSuspectedAutomated = jsonData['dms'] == null && jsonData['if']?.toString() != '1';
-          if (isSuspectedAutomated && _filterSuspectedAutomatedMessages()) continue;
-          final col = int.tryParse(jsonData["col"]?.toString() ?? '') ?? 0;
-          final rawTimestamp = int.tryParse(jsonData['cst']?.toString() ?? '');
-          final sentAt = rawTimestamp == null
-              ? null
-              : DateTime.fromMillisecondsSinceEpoch(rawTimestamp > 100000000000 ? rawTimestamp : rawTimestamp * 1000);
-          final messageId = jsonData['cid']?.toString() ?? '';
-          liveMsg = LiveMessage(
-            type: LiveMessageType.chat,
-            userName: jsonData["nn"]?.toString() ?? '',
-            userId: jsonData['uid']?.toString() ?? '',
-            message: text,
-            color: getColor(col),
-            messageId: messageId.isEmpty ? '' : 'douyu:$messageId',
-            sentAt: sentAt,
-          );
-        } else if (type == "comm_chatmsg") {
-          liveMsg = _parseCommonSuperChat(jsonData);
-        } else if (type == "voice_trlt") {
-          liveMsg = _parseVoiceSuperChat(jsonData);
-        }
-        if (liveMsg != null) onMessage?.call(liveMsg);
-      } catch (e) {
-        // One malformed packet must not discard the valid packets coalesced
-        // after it in the same WebSocket frame.
-        CoreLog.error("Douyu packet parse failed: $e");
+    try {
+      String? result = deserializeDouyu(data);
+      if (result == null) {
+        return;
       }
+      var jsonData = sttToJObject(result);
+
+      var type = jsonData["type"]?.toString();
+      var fans = jsonData["if"] ?? '0'.toString();
+      LiveMessage? liveMsg;
+      if (type == "chatmsg" && fans == '1') {
+        var col = int.tryParse(jsonData["col"].toString()) ?? 0;
+        liveMsg = LiveMessage(
+          type: LiveMessageType.chat,
+          userName: jsonData["nn"].toString(),
+          message: jsonData["txt"].toString(),
+          color: getColor(col),
+        );
+      } else if (type == "comm_chatmsg") {
+        DateTime curTimestamp = DateTime.fromMillisecondsSinceEpoch(int.parse(jsonData["now"]));
+        var face = "";
+        try {
+          face = jsonData["chatmsg"]["ic"];
+        } catch (e) {
+          CoreLog.error("DouyuSuperChat-face:$e");
+        }
+        LiveSuperChatMessage sc = LiveSuperChatMessage(
+          backgroundBottomColor: "#292a60",
+          backgroundColor: "#c1c1ff",
+          endTime: curTimestamp.add(Duration(seconds: int.parse(jsonData["cet"]))),
+          face: "https://apic.douyucdn.cn/upload/${face}_small.jpg",
+          message: jsonData["chatmsg"]["txt"].toString(),
+          price: int.parse(jsonData["cprice"]) ~/ 100,
+          startTime: curTimestamp,
+          userName: jsonData["chatmsg"]["nn"].toString(),
+        );
+        liveMsg = LiveMessage(
+          type: LiveMessageType.superChat,
+          userName: "SUPER_CHAT_MESSAGE",
+          message: "SUPER_CHAT_MESSAGE",
+          color: LiveMessageColor.white,
+          data: sc,
+        );
+      } else if (type == "voice_trlt") {
+        var scData = jsonData["list"][0];
+        LiveSuperChatMessage sc2 = LiveSuperChatMessage(
+          backgroundBottomColor: "#246488",
+          backgroundColor: "#ffffff",
+          endTime: DateTime.fromMillisecondsSinceEpoch(int.parse(scData["etime"]) * 1000),
+          face: "https://${scData["uat"][1]}",
+          message: scData["content"].toString(),
+          price: int.parse(scData["realPrice"]) ~/ 100,
+          startTime: DateTime.fromMillisecondsSinceEpoch(int.parse(scData["acptime"]) * 1000),
+          userName: scData["un"].toString(),
+        );
+        liveMsg = LiveMessage(
+          type: LiveMessageType.superChat,
+          userName: "SUPER_CHAT_MESSAGE",
+          message: "SUPER_CHAT_MESSAGE",
+          color: LiveMessageColor.white,
+          data: sc2,
+        );
+      } else if (type != "uenter") {}
+      if (liveMsg != null) {
+        onMessage?.call(liveMsg);
+      }
+    } catch (e) {
+      CoreLog.error("DouyuSuperChat:$e");
     }
-  }
-
-  LiveMessage? _parseCommonSuperChat(Map jsonData) {
-    final chat = jsonData["chatmsg"];
-    final now = int.tryParse(jsonData["now"]?.toString() ?? '');
-    final duration = int.tryParse(jsonData["cet"]?.toString() ?? '');
-    final rawPrice = int.tryParse(jsonData["cprice"]?.toString() ?? '');
-    if (chat is! Map || now == null || duration == null || rawPrice == null) return null;
-    final face = chat["ic"]?.toString() ?? '';
-    final startTime = DateTime.fromMillisecondsSinceEpoch(now);
-    final superChat = LiveSuperChatMessage(
-      backgroundBottomColor: "#292a60",
-      backgroundColor: "#c1c1ff",
-      endTime: startTime.add(Duration(seconds: duration)),
-      face: face.isEmpty ? '' : "https://apic.douyucdn.cn/upload/${face}_small.jpg",
-      message: chat["txt"]?.toString() ?? '',
-      price: rawPrice ~/ 100,
-      startTime: startTime,
-      userName: chat["nn"]?.toString() ?? '',
-    );
-    return _superChatMessage(superChat);
-  }
-
-  LiveMessage? _parseVoiceSuperChat(Map jsonData) {
-    final list = jsonData["list"];
-    if (list is! List || list.isEmpty || list.first is! Map) return null;
-    final scData = list.first as Map;
-    final endSeconds = int.tryParse(scData["etime"]?.toString() ?? '');
-    final startSeconds = int.tryParse(scData["acptime"]?.toString() ?? '');
-    final rawPrice = int.tryParse(scData["realPrice"]?.toString() ?? '');
-    if (endSeconds == null || startSeconds == null || rawPrice == null) return null;
-    final avatars = scData["uat"];
-    final avatar = avatars is List && avatars.length > 1 ? avatars[1].toString() : '';
-    final superChat = LiveSuperChatMessage(
-      backgroundBottomColor: "#246488",
-      backgroundColor: "#ffffff",
-      endTime: DateTime.fromMillisecondsSinceEpoch(endSeconds * 1000),
-      face: avatar.isEmpty ? '' : "https://$avatar",
-      message: scData["content"]?.toString() ?? '',
-      price: rawPrice ~/ 100,
-      startTime: DateTime.fromMillisecondsSinceEpoch(startSeconds * 1000),
-      userName: scData["un"]?.toString() ?? '',
-    );
-    return _superChatMessage(superChat);
-  }
-
-  LiveMessage _superChatMessage(LiveSuperChatMessage data) {
-    return LiveMessage(
-      type: LiveMessageType.superChat,
-      userName: "SUPER_CHAT_MESSAGE",
-      message: "SUPER_CHAT_MESSAGE",
-      color: LiveMessageColor.white,
-      data: data,
-    );
   }
 
   List<int> serializeDouyu(String body) {
@@ -234,33 +208,23 @@ class DouyuDanmaku implements LiveDanmaku {
   }
 
   String? deserializeDouyu(List<int> buffer) {
-    final packets = deserializeDouyuPackets(buffer);
-    return packets.isEmpty ? null : packets.first;
-  }
-
-  /// One WebSocket frame commonly carries several complete Douyu packets.
-  /// Iterate by each packet's own length instead of silently dropping every
-  /// packet after the first.
-  List<String> deserializeDouyuPackets(List<int> buffer) {
-    final packets = <String>[];
     try {
-      final bytes = Uint8List.fromList(buffer);
-      var offset = 0;
-      while (offset + 12 <= bytes.length) {
-        final header = ByteData.sublistView(bytes, offset, offset + 4);
-        final fullMsgLength = header.getUint32(0, Endian.little);
-        final frameLength = fullMsgLength + 4;
-        final bodyLength = fullMsgLength - 9;
-        if (fullMsgLength < 9 || bodyLength < 0 || offset + frameLength > bytes.length) break;
-        final bodyStart = offset + 12;
-        final bodyEnd = bodyStart + bodyLength;
-        packets.add(utf8.decode(bytes.sublist(bodyStart, bodyEnd), allowMalformed: true));
-        offset += frameLength;
-      }
+      var reader = BinaryReader(Uint8List.fromList(buffer));
+      int fullMsgLength = reader.readInt32(endian: Endian.little); //fullMsgLength
+      reader.readInt32(endian: Endian.little); //fullMsgLength2
+      int bodyLength = fullMsgLength - 9;
+      reader.readShort(endian: Endian.little); //packType
+      reader.readByte(endian: Endian.little); //encrypted
+      reader.readByte(endian: Endian.little); //reserved
+
+      var bytes = reader.readBytes(bodyLength);
+
+      reader.readByte(endian: Endian.little); //固定为0
+      return utf8.decode(bytes);
     } catch (e) {
       CoreLog.error(e);
+      return null;
     }
-    return packets;
   }
 
   //辣鸡STT
@@ -281,10 +245,9 @@ class DouyuDanmaku implements LiveDanmaku {
         if (field.isEmpty) {
           continue;
         }
-        final separator = field.indexOf("@=");
-        if (separator <= 0) continue;
-        var k = field.substring(0, separator);
-        var v = unscapeSlashAt(field.substring(separator + 2));
+        var tokens = field.split("@=");
+        var k = tokens[0];
+        var v = unscapeSlashAt(tokens[1]);
         result[k] = sttToJObject(v);
       }
       return result;
