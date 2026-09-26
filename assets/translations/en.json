@@ -2072,5 +2072,6 @@
   "douyu_cookie_tip_step1": "Step 1 · Page cookie: open any Douyu page, press F12 and copy the whole cookie from any request (it contains dy_auth, good for about 7 days).",
   "douyu_cookie_tip_step2": "Step 2 · Renewal credentials: in the Network tab search passport.douyu.com, open that request and copy LTP0 and dy_did from its cookie — pasting it below fills both fields automatically.",
   "douyu_cookie_tip_lifetime": "The cookie lasts 7 days; once LTP0 and dy_did are set it is renewed before it expires, so there is nothing to paste again. Press \"Renew now\" to verify. The cookie is stored on this device only.",
-  "douyu_cookie_credentials_absorbed": "LTP0 / dy_did taken from what you pasted; the stored login cookie was kept (that was the passport cookie, not the login one)"
+  "douyu_cookie_credentials_absorbed": "LTP0 / dy_did taken from what you pasted; the stored login cookie was kept (that was the passport cookie, not the login one)",
+  "douyu_cookie_credentials_only": "That was the passport request cookie: LTP0 / dy_did were taken from it. It cannot be used for playback (Douyu's edge answers 403), so paste the page cookie (with dy_auth) as well."
 }

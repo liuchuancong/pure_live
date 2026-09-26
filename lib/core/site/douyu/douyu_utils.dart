@@ -102,6 +102,14 @@ class DouyuUtils {
   static Map<String, dynamic> _encKey = <String, dynamic>{};
   static Future<void>? _encKeyRefresh;
   static int? _encKeyFetchedAtSeconds;
+
+  /// DID the cached encryption descriptor was issued for.
+  ///
+  /// Douyu issues the descriptor to a device and validates the signed request
+  /// against the same one, so a descriptor fetched for another DID makes every
+  /// signed request fail — and switching accounts (which changes the stored
+  /// `dy_did`) has to invalidate it.
+  static String? _encKeyDeviceId;
   static final String _sessionDeviceId = generateDeviceId();
 
   static String get deviceId => _sessionDeviceId;
@@ -129,6 +137,7 @@ class DouyuUtils {
   static bool _isCachedEncryptionKeyUsable(int nowSeconds) {
     final fetchedAt = _encKeyFetchedAtSeconds;
     return fetchedAt != null &&
+        _encKeyDeviceId == effectiveDeviceId() &&
         nowSeconds - fetchedAt < _maximumCacheAgeSeconds &&
         isEncryptionKeyUsable(_encKey, nowSeconds: nowSeconds);
   }
@@ -153,9 +162,13 @@ class DouyuUtils {
   }
 
   static Future<void> _fetchEncryptionKey() async {
+    // The same DID has to be used here, in the signed query and in the request
+    // Cookie: Douyu issues the descriptor to a device and rejects a signature
+    // presented by another one (a plain 403 from its edge, with no API error).
+    final did = effectiveDeviceId();
     final response = await HttpClient.instance.getJson(
       _apiDouyuEnc,
-      queryParameters: {'did': deviceId},
+      queryParameters: {'did': did},
       header: requestHeaders(),
     );
     final rawData = response is Map ? response['data'] : null;
@@ -168,6 +181,7 @@ class DouyuUtils {
     }
     _encKey = data;
     _encKeyFetchedAtSeconds = _nowSeconds();
+    _encKeyDeviceId = did;
   }
 
   /// Creates the browser DID used by a single app process.
@@ -425,6 +439,9 @@ class DouyuUtils {
 
     final renewed = mergeSetCookieLines(stored, setCookies);
     if (renewed.isEmpty) return null;
+    // A renewal that drops the session field is a downgrade to guest: keep the
+    // cookie that at least still has a chance.
+    if (sessionToken(renewed) == null) return null;
 
     // The response may hand back the same value it was given while extending it
     // server-side, so an unchanged string still counts as a renewal and the
@@ -514,9 +531,40 @@ class DouyuUtils {
       final name = piece.substring(0, separator).trim();
       if (!RegExp(r"^[A-Za-z0-9_!#$%&'*+.^`|~-]+$").hasMatch(name)) continue;
       if (name.toLowerCase() == 'dy_did' || name.toLowerCase() == 'acf_did') continue;
+      // `LTP0` belongs to passport.douyu.com (it is the renewal key, not a
+      // session field) and the bytes of a request are a place Douyu's edge
+      // watches: sending it to the play endpoints is both unnecessary and a
+      // reason for the edge to answer 403 without an API error.
+      if (name.toLowerCase() == longTermTokenName.toLowerCase()) continue;
       fields.add('$name=${piece.substring(separator + 1).trim()}');
     }
     return fields.join('; ');
+  }
+
+  /// A secret-free description of the credential pairing a request will use.
+  ///
+  /// A Douyu 403 from the edge carries no API error, so the only way to tell
+  /// "wrong device" from "bad cookie" afterwards is to record which fields were
+  /// present and where the device id came from. Values are never included.
+  static String requestShape(String roomId) {
+    final cookie = _configuredAccountCookie();
+    final fields = parseCookieFields(cookie).map((field) => field.name.toLowerCase()).toSet();
+    final flags = <String>[
+      if (fields.contains(jwtTokenName)) 'acf_jwt_token',
+      if (fields.contains(authTokenName.toLowerCase())) 'acf_auth',
+      if (fields.contains(webAuthTokenName)) webAuthTokenName,
+      if (fields.contains(longTermTokenName.toLowerCase())) longTermTokenName,
+      if (fields.contains(deviceIdName)) deviceIdName,
+      if (fields.contains('acf_stk')) 'acf_stk',
+      if (_storedLtp0() != null) 'LTP0(field)',
+      if (_storedDid() != null) 'dy_did(field)',
+    ];
+    final didSource = cookieField(cookie, deviceIdName) != null
+        ? 'cookie'
+        : (_storedDid() != null ? 'field' : 'process');
+    return 'did=$didSource/${effectiveDeviceId()} '
+        'cookieFields=${fields.length}[${flags.join(',')}] '
+        'len=${cookie.length}';
   }
 
   /// When the stored cookie was obtained, as recorded when it was saved.

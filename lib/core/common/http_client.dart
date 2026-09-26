@@ -197,7 +197,17 @@ class HttpClient {
 
   HttpError _handleError(dynamic e, String defaultMsg) {
     if (e is DioException && e.type == DioExceptionType.badResponse) {
-      return HttpError(e.message ?? defaultMsg, statusCode: e.response?.statusCode ?? 0);
+      final response = e.response;
+      final body = response?.data?.toString();
+      return HttpError(
+        e.message ?? defaultMsg,
+        statusCode: response?.statusCode ?? 0,
+        responseBody: body == null || body.length <= 256 ? body : body.substring(0, 256),
+        responseHeaders: <String, String>{
+          for (final entry in response?.headers.map.entries ?? const <MapEntry<String, List<String>>>[])
+            if (entry.value.isNotEmpty) entry.key: entry.value.join(', '),
+        },
+      );
     } else {
       return HttpError(defaultMsg);
     }
