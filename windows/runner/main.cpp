@@ -13,9 +13,13 @@ namespace {
 constexpr wchar_t kPrimaryInstanceMutex[] =
     L"Local\\PureLive_Primary_Instance_v1";
 
+// Native title shown by the taskbar, Alt+Tab and Task Manager (the Chinese app name);
+// the in-app title bar is drawn by Flutter. Escaped to keep the source ASCII.
+constexpr wchar_t kWindowTitle[] = L"\u7EAF\u7CB9\u76F4\u64AD";
+
 void BringPrimaryWindowToFront() {
   const HWND window =
-      ::FindWindowW(L"FLUTTER_RUNNER_WIN32_WINDOW", L"pure_live");
+      ::FindWindowW(L"FLUTTER_RUNNER_WIN32_WINDOW", kWindowTitle);
   if (window == nullptr) {
     return;
   }
@@ -74,7 +78,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
     FlutterWindow window(project);
     Win32Window::Point origin(10, 10);
     Win32Window::Size size(1280, 720);
-    if (!window.Create(L"pure_live", origin, size)) {
+    if (!window.Create(kWindowTitle, origin, size)) {
       return EXIT_FAILURE;
     }
     window.SetQuitOnClose(true);

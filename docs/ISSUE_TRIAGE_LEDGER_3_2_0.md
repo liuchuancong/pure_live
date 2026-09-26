@@ -2,12 +2,16 @@
 
 本台账是 Issue 首轮分流的唯一紧凑索引。它记录“当前源码还需要做什么”，不复制专项审计的完整过程。状态分类遵循 [`MAINTENANCE_POLICY.md`](../MAINTENANCE_POLICY.md)。
 
-2026-09-25 复核：新增上游 #877–#879，见下表前三行。
+2026-09-26 复核：新增上游 #881、#883、#885、#886，见下表前四行。2026-09-25 复核：新增上游 #877–#879。
 
 2026-09-24 复核：本仓库 Open Issue 为 0；上游 #876 已关闭且本仓库核对了实际 APK 安装边界，#875 仍开放并待 Windows 多画面原生验收。旧候选 1+3 长播另发现[mpv 渲染上下文未释放导致原生终止](WINDOWS_MULTIVIEW_NATIVE_ABORT_2026_09_24.md)，并曾有待判别小格静止画面；`248c0587` 新 Debug 的 1+3 双格稀疏观察 31 分 49 秒均变化，2×2、音频/帧进度和严格退出计时仍待补证，报告所指大格持续停帧尚未复现。#853 仍缺少房间、请求/确认档位、解码宽高或码率；该项处置条件保持不变。
 
 | Issue | 报告基线 | 当前映射 | 当前证据 | 处置 / 再开条件 |
 | --- | --- | --- | --- | --- |
+| [#883 Windows 任务栏显示 pure_live](https://github.com/liuchuancong/pure_live/issues/883) | 上游 v3.1.5 / Windows | `present` → 已在 `claude` 修复 | 本仓库 3.2.5 Windows 实测原生窗口标题为 `pure_live`：`windows/runner/main.cpp` 以 `L"pure_live"` 创建窗口，`Runner.rc` 的 FileDescription/ProductName 也是 `pure_live`（上游 3e540381 仅改了资源字段，本分支未包含）。现在窗口标题为「纯粹直播」（单实例查找使用同一常量），FileDescription「纯粹直播」、ProductName「纯粹直播 Pure Live」；`test/windows_runner_title_test.dart` | Windows 安装包任务栏仍显示英文名时重开 |
+| [#881 网页搜索一直加载](https://github.com/liuchuancong/pure_live/issues/881) | 上游 v3.1.5 / Android 16（小米 Pad 7 Ultra），原项目也复现 | 待复现 | 录屏上传失败，无具体平台；需在本仓库最新版用各平台「继续网页搜索」逐一复现 | 提供平台与关键词后复现 |
+| [#885 斗鱼播放不了原画](https://github.com/liuchuancong/pure_live/issues/885) | 上游 3.1.5 / Android | 待复现 | 可能与 #873（匿名接口原画回落 4M、需登录 Cookie）同源，见 [Issue #873 审计](ISSUE_873_DOUYU_QUALITY_AND_SESSION_AUDIT_2026_09_23.md)；需用本仓库最新版对照登录/未登录 | 本仓库登录后仍无原画时重开 |
+| [#886 全屏相关问题与建议](https://github.com/liuchuancong/pure_live/issues/886) | 上游 v3.1.5 / Android 15，抖音直播间 | 待分析 | 详情在附件 PDF，需逐条对照本仓库全屏实现（竖屏/横屏全屏、返回手势） | 分析 PDF 后逐条处理 |
 | [#879 多画面一键静音没有了](https://github.com/liuchuancong/pure_live/issues/879) | 上游 v3.1.15 / Windows；称 3.1.14 有 | `present`（功能缺失）→ 已在 `claude` 实现 | 本仓库与上游 master 的多画面都只有「音频焦点」模型（仅一格出声），没有全部静音。`c42e70a9` 在工具栏新增「全部静音 / 恢复声音」：静音期间焦点仍可切换（音量、弹幕、大画面跟随），但不会出声；焦点队列改为携带 (格, 是否静音)，切换不会被进行中的焦点任务合并掉；`test/multiview_test.dart` 62/62 | 若需要「单格静音」而非全局静音另行提出 |
 | [#878 新增微信视频号直播](https://github.com/liuchuancong/pure_live/issues/878) | 功能请求（已被上游关闭） | `deferred` | 视频号直播没有公开网页目录与播放接口，取流依赖微信客户端登录态，不符合本项目「公开接口、不代登录」的平台接入条件 | 出现公开网页播放入口时重新评估 |
 | [#877 新接入平台黑屏有声无画面](https://github.com/liuchuancong/pure_live/issues/877) | 上游 v3.1.15 / Android MIUI14；多为唱歌、电台类直播，评论补充「有些是语音直播」 | `present`（部分）→ 已在 `claude` 修订 | 根因之一：部分 CDN 以传统 FLV「编码号 12」传 HEVC，播放内核的 FFmpeg 7.1 不识别，只剩声音。全平台探针（新增按画质报告 FLV 视频编码）发现 Shopee Live 与 17LIVE（取决于主播编码器）属于这种情况，其余 FLV 平台全部为 AVC；v3.2.2 起 Shopee、`719f902f` 起 17LIVE 经本机中转改写为增强型 FLV。语音 / 电台直播本身没有画面，属正常 | 若其他平台仍有声无画面，请附平台与房间号，用探针 `PURELIVE_PROBE_ALL_QUALITIES=1` 核对编码 |
