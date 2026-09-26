@@ -214,6 +214,14 @@ class _VideoControllerPanelState extends State<VideoControllerPanel> {
                     if (globalPosition != null && controller.handleDanmakuPointer(globalPosition, longPress: false)) {
                       return;
                     }
+                    // Touch: a second tap hides visible controls (upstream #886),
+                    // as in other video apps. Desktop clicks keep revealing them.
+                    if (PlatformUtils.isMobile &&
+                        controller.showController.value &&
+                        GlobalPlayerService.instance.player.isPlayingNow) {
+                      controller.toggleController();
+                      return;
+                    }
                     // A buffering/paused player must not swallow the only way
                     // to reveal its controls. Always expose the action bar; a
                     // tap on a paused surface keeps the historical resume
@@ -239,7 +247,7 @@ class _VideoControllerPanelState extends State<VideoControllerPanel> {
                     if (!controller.showLocked.value) {
                       GlobalPlayerState.to.isWindowFullscreen.value
                           ? controller.toggleWindowFullScreen()
-                          : controller.toggleFullScreen();
+                          : controller.toggleFullScreenFromGesture();
                     }
                   },
                   child: BrightnessVolumnDargArea(controller: controller),
