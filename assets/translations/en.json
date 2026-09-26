@@ -2021,5 +2021,6 @@
   "langlive_quality_flv": "FLV Live",
   "langlive_quality_hls": "HLS Live",
   "notice_expand": "Show details",
-  "notice_collapse": "Show less"
+  "notice_collapse": "Show less",
+  "local_network_permission_denied": "Local network access was not granted, so a LAN proxy (e.g. Clash on your PC) cannot be reached. Allow it in Settings > Apps > Pure Live > Permissions."
 }

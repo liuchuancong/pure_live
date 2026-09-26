@@ -690,18 +690,10 @@ class TwitchSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomR
   }
 
   @override
-  Future<LiveRoom> getRoomDetail({required String platform, required String roomId}) async {
-    try {
-      return await _loadRoomDetail(roomId);
-    } catch (e) {
-      final liveRoom =
-          SettingsService.to.fav.favoriteRooms.v.firstWhereOrNull(
-            (r) => r.roomId == roomId && r.platform == platform,
-          ) ??
-          LiveRoom(roomId: roomId, platform: Sites.twitchSite);
-      return liveRoom.copyWith(liveStatus: LiveStatus.offline, status: false, isRecord: false);
-    }
-  }
+  // A failed lookup is not an offline channel: reporting it as offline showed
+  // "not live" for live channels whenever Twitch or the proxy failed, with no
+  // retry. Let the room page present the load error like other platforms.
+  Future<LiveRoom> getRoomDetail({required String platform, required String roomId}) => _loadRoomDetail(roomId);
 
   @override
   Future<LiveRoom> getRoomDetailForRefresh({required String platform, required String roomId}) {
@@ -734,6 +726,10 @@ class TwitchSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomR
       Stream stream when stream.streamType == 'live' => true,
       _ => false,
     };
+    // StreamMetadata stopped returning viewersCount (it parses as 0); the
+    // ChannelShell stream in the same batch still carries the live count.
+    final shellViewers = userOrError.stream?.viewersCount ?? 0;
+    final viewers = shellViewers > 0 ? shellViewers : (user.stream?.viewersCount ?? 0);
     final title = user.lastBroadcast?.title ?? "";
     return LiveRoom(
       roomId: roomId,
@@ -741,8 +737,8 @@ class TwitchSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomR
       cover: user.profileImageUrl,
       nick: userOrError.displayName,
       avatar: user.profileImageUrl,
-      watching: online ? user.stream!.viewersCount.toString() : "0",
-      onlineViewers: online ? user.stream!.viewersCount.toString() : "0",
+      watching: online ? viewers.toString() : "0",
+      onlineViewers: online ? viewers.toString() : "0",
       audienceMetricType: AudienceMetricType.onlineViewers,
       area: user.stream?.game?.name ?? user.stream?.game?.displayName,
       status: online,
