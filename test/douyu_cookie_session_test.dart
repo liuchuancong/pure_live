@@ -27,6 +27,16 @@ String sessionCookie({
 
 int _secondsFromNow(Duration offset) => DateTime.now().add(offset).millisecondsSinceEpoch ~/ 1000;
 
+/// The web flavour, as `www.douyu.com` hands it over: the login lives in
+/// `dy_auth`, there is no JWT to read an expiry from and no `LTP0` to renew with.
+/// Taken from a real browser cookie (account id redacted), because the shape is
+/// the whole point: the H5-only logic read this as a guest cookie.
+const String webCookie =
+    'dy_did=73d91171ec9e4614d1f5532c00011701; game_did=gL7j2IBs-CT8WuCJX2I8l5W6f1VB0BsNfOe; '
+    '_ga=GA1.1.1870208202.1780155809; HMACCOUNT=498D2F764FF3F7F0; dy_accounts_main=1; '
+    'dy_auth=f5f68VIwO8XE68TA8Wv%2BzAqYdKePRNY3n85g7ScIQOpJdvSJvpqs4N%2F%2BD0bkst0rg323moxICzq8LC5me8VYiawFBilvyYPL3xs9vazn8XqRoD0JEKtxVvc; '
+    'mantine-color-scheme-value=light; dy_teen_mode=%7B%22uid%22%3A%22349384914%22%2C%22status%22%3A0%7D; msgUnread=waiting';
+
 void main() {
   tearDown(() {
     DouyuUtils.debugCookieFetcher = null;
@@ -106,6 +116,47 @@ void main() {
         ),
         DouyuSessionState.expired,
       );
+    });
+  });
+
+  group('web cookie (www.douyu.com)', () {
+    test('a dy_auth cookie is a session, not a guest', () {
+      expect(DouyuUtils.sessionToken(webCookie), isNotNull);
+      expect(DouyuUtils.sessionState(webCookie), DouyuSessionState.valid);
+    });
+
+    test('its expiry is unknown rather than expired', () {
+      expect(DouyuUtils.sessionExpiry(webCookie), isNull);
+      expect(DouyuUtils.isSessionExpired(webCookie), isFalse);
+    });
+
+    test('it is not refreshable: the web flow issues no LTP0', () {
+      expect(DouyuUtils.canRefreshSession(webCookie), isFalse);
+    });
+
+    test('requests present the did the login belongs to', () {
+      final header = DouyuUtils.cookieHeader(accountCookie: webCookie);
+
+      expect(header, startsWith('dy_did=73d91171ec9e4614d1f5532c00011701; acf_did=73d91171ec9e4614d1f5532c00011701'));
+      expect(header, contains('dy_auth='), reason: 'the opaque token must be forwarded verbatim');
+      expect(header, contains('%2B'), reason: 'the token is percent-encoded and must not be decoded in transit');
+    });
+
+    test('ensureFreshSession leaves it alone', () async {
+      var called = false;
+      DouyuUtils.debugCookieFetcher = (_, _) async {
+        called = true;
+        return const <String>[];
+      };
+
+      await DouyuUtils.ensureFreshSession(accountCookie: webCookie);
+
+      expect(called, isFalse);
+    });
+
+    test('an H5 cookie without LTP0 is still a session with an unknown end', () {
+      // No LTP0 and no readable JWT: a session we cannot date, not a guest.
+      expect(DouyuUtils.sessionState('dy_did=abc; acf_auth=opaque-token'), DouyuSessionState.valid);
     });
   });
 

@@ -31,7 +31,10 @@ class DouyuCookieController extends GetxController {
     return switch (state) {
       DouyuSessionState.none => i18n('douyu_cookie_cleared'),
       DouyuSessionState.guest => i18n('douyu_cookie_guest'),
-      DouyuSessionState.valid => i18n('douyu_cookie_valid', args: {'time': at}),
+      // The web cookie's token is opaque: it is a login with no readable end.
+      DouyuSessionState.valid => expiry == null
+          ? i18n('douyu_cookie_valid_no_expiry')
+          : i18n('douyu_cookie_valid', args: {'time': at}),
       DouyuSessionState.expiredRefreshable => i18n('douyu_cookie_expired_refreshable', args: {'time': at}),
       DouyuSessionState.expired => i18n('douyu_cookie_expired', args: {'time': at}),
     };
