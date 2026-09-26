@@ -1,41 +1,41 @@
 {
-  "version": "3.2.8",
-  "build_number": 4131,
-  "version_num": 302084131,
-  "version_desc": "- 下线 11 个难以维护的平台（花椒、OPENREC、Shopee 等），现支持 34 个平台 + IPTV。\n- 电脑版只保留 mpv 内核；安卓 fvp 内核修复崩溃与黑屏。\n- 修复 Windows 任务栏显示 pure_live。",
+  "version": "3.2.9",
+  "build_number": 4132,
+  "version_num": 302094132,
+  "version_desc": "- 修复小窗播放时首页菜单「搜索直播」「链接访问」点不动。\n- 竖屏直播双击进入竖屏全屏，再点一次画面收起控制栏。\n- 快手改为 App 内主播搜索，不再一直加载。",
   "prerelease": false,
-  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.2.8",
+  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.2.9",
   "android_abis": [
     "arm64-v8a"
   ],
   "platforms": {
     "android": {
-      "version": "3.2.8",
-      "build_number": 4131,
-      "version_num": 302084131,
-      "version_desc": "- 下线 11 个难以维护的平台（花椒、OPENREC、Shopee 等），现支持 34 个平台 + IPTV。\n- 电脑版只保留 mpv 内核；安卓 fvp 内核修复崩溃与黑屏。\n- 修复 Windows 任务栏显示 pure_live。",
+      "version": "3.2.9",
+      "build_number": 4132,
+      "version_num": 302094132,
+      "version_desc": "- 修复小窗播放时首页菜单「搜索直播」「链接访问」点不动。\n- 竖屏直播双击进入竖屏全屏，再点一次画面收起控制栏。\n- 快手改为 App 内主播搜索，不再一直加载。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.2.8",
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.2.9",
       "android_abis": [
         "arm64-v8a"
       ]
     },
     "windows": {
-      "version": "3.2.8",
-      "build_number": 4131,
-      "version_num": 302084131,
-      "version_desc": "- 下线 11 个难以维护的平台（花椒、OPENREC、Shopee 等），现支持 34 个平台 + IPTV。\n- 电脑版只保留 mpv 内核；安卓 fvp 内核修复崩溃与黑屏。\n- 修复 Windows 任务栏显示 pure_live。",
+      "version": "3.2.9",
+      "build_number": 4132,
+      "version_num": 302094132,
+      "version_desc": "- 修复小窗播放时首页菜单「搜索直播」「链接访问」点不动。\n- 竖屏直播双击进入竖屏全屏，再点一次画面收起控制栏。\n- 快手改为 App 内主播搜索，不再一直加载。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.2.8",
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.2.9",
       "windows_msix_available": false
     },
     "linux": {
-      "version": "3.2.8",
-      "build_number": 4131,
-      "version_num": 302084131,
-      "version_desc": "- 下线 11 个难以维护的平台（花椒、OPENREC、Shopee 等），现支持 34 个平台 + IPTV。\n- 电脑版只保留 mpv 内核；安卓 fvp 内核修复崩溃与黑屏。\n- 修复 Windows 任务栏显示 pure_live。",
+      "version": "3.2.9",
+      "build_number": 4132,
+      "version_num": 302094132,
+      "version_desc": "- 修复小窗播放时首页菜单「搜索直播」「链接访问」点不动。\n- 竖屏直播双击进入竖屏全屏，再点一次画面收起控制栏。\n- 快手改为 App 内主播搜索，不再一直加载。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.2.8"
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.2.9"
     },
     "macos": {
       "version": "3.0.0",
