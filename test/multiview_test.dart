@@ -23,7 +23,12 @@ import 'package:pure_live/modules/multiview/multiview_controller.dart';
 /// 所有操作按「名称:动作」写入共享日志，用于断言释放顺序与静音互斥。
 /// 音量模型与真实实现一致：会话音量（sessionVolume）与静音标志（muted）
 /// 相互独立，[volume] 暴露实际输出音量（muted ? 0 : sessionVolume）。
-class _RecordingPlayer implements MultiviewCellPlayerHandle, MultiviewNativeInputRouting, MultiviewFrameProgressHandle {
+class _RecordingPlayer
+    implements
+        MultiviewCellPlayerHandle,
+        MultiviewNativeInputRouting,
+        MultiviewFrameProgressHandle,
+        MultiviewSourceEndHandle {
   _RecordingPlayer(this._log, this.name);
 
   final List<String> _log;
@@ -69,6 +74,16 @@ class _RecordingPlayer implements MultiviewCellPlayerHandle, MultiviewNativeInpu
   final ValueNotifier<int> frameRevision = ValueNotifier<int>(0);
 
   void emitFrame() => frameRevision.value++;
+
+  final StreamController<void> _sourceEndController = StreamController<void>.broadcast();
+  @override
+  Stream<void> get sourceEnded => _sourceEndController.stream;
+
+  /// The server closed the live source: mpv reports completion and goes idle.
+  void endSource() {
+    playing = false;
+    _sourceEndController.add(null);
+  }
 
   @override
   VideoController? get videoController => null;
@@ -1509,6 +1524,64 @@ void main() {
       await tester.pump();
       expect(controller.cells[0].lineIndex, 0);
       expect(harness.players[1].inputs.last.$1, 'https://stream/r1/原画');
+      await controller.disposeAll();
+    });
+
+    testWidgets('a live source the server ends reloads the idle cell and keeps quality and line', (tester) async {
+      final harness = _Harness(frameStallTimeout: const Duration(seconds: 10), frameVisible: () => false);
+      final controller = harness.controller;
+      await controller.assignRoom(0, _room('r1'));
+      await controller.setCellQuality(0, 1);
+      await controller.setCellLine(0, 1);
+
+      harness.players.single.endSource();
+      await tester.pump();
+      await tester.pump();
+      await tester.pump();
+
+      expect(harness.players.length, 2, reason: 'no frame watchdog is needed: the player is idle, not stalled');
+      expect(harness.log, contains('p0:pDispose'));
+      expect(controller.cells[0].status, MultiviewCellStatus.playing);
+      expect(controller.cells[0].qualityIndex, 1);
+      expect(controller.cells[0].lineIndex, 1);
+      await controller.disposeAll();
+    });
+
+    testWidgets('a source that expires every five minutes keeps recovering; a tight failure loop stops', (tester) async {
+      var elapsed = Duration.zero;
+      final harness = _Harness(frameStallTimeout: const Duration(seconds: 10), frameElapsed: () => elapsed);
+      final controller = harness.controller;
+      await controller.assignRoom(0, _room('r1'));
+
+      Future<void> endAt(Duration at) async {
+        elapsed = at;
+        harness.players.last.endSource();
+        await tester.pump();
+        await tester.pump();
+        await tester.pump();
+      }
+
+      await endAt(const Duration(minutes: 5));
+      await endAt(const Duration(minutes: 10));
+      await endAt(const Duration(minutes: 15));
+      expect(harness.players.length, 4, reason: 'Douyu anonymous original quality ends every 300 s');
+
+      await endAt(const Duration(minutes: 15, seconds: 5));
+      expect(harness.players.length, 5);
+      await endAt(const Duration(minutes: 15, seconds: 10));
+      expect(harness.players.length, 5, reason: 'two recoveries within three minutes is the limit');
+      await controller.disposeAll();
+    });
+
+    testWidgets('a paused cell does not reload when its source ends', (tester) async {
+      final harness = _Harness(frameStallTimeout: const Duration(seconds: 10));
+      final controller = harness.controller;
+      await controller.assignRoom(0, _room('r1'));
+      await controller.toggleCellPlayPause(0);
+      harness.players.single.endSource();
+      await tester.pump();
+      await tester.pump();
+      expect(harness.players.length, 1);
       await controller.disposeAll();
     });
 

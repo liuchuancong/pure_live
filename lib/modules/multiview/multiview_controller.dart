@@ -305,7 +305,25 @@ class MultiviewController extends GetxController {
     null,
     growable: true,
   );
-  final List<int> _frameStallRecoveries = List<int>.filled(MultiviewLayout.quad.capacity, 0, growable: true);
+
+  /// Recent automatic recoveries per cell (clock times). At most
+  /// [_maxRecoveriesPerWindow] may happen within [_recoveryWindow]; a source
+  /// that expires every few minutes (Douyu anonymous original quality: 300 s)
+  /// keeps recovering, while a source that fails right away is not hammered.
+  final List<List<Duration>> _frameStallRecoveries = List<List<Duration>>.generate(
+    MultiviewLayout.quad.capacity,
+    (_) => <Duration>[],
+    growable: true,
+  );
+  final List<StreamSubscription<void>?> _sourceEndSubs = List<StreamSubscription<void>?>.filled(
+    MultiviewLayout.quad.capacity,
+    null,
+    growable: true,
+  );
+  static const int _maxRecoveriesPerWindow = 2;
+  static const Duration _recoveryWindow = Duration(minutes: 3);
+  final Stopwatch _recoveryClock = Stopwatch()..start();
+  Duration _recoveryNow() => frameWatchdogElapsed?.call() ?? _recoveryClock.elapsed;
   Set<int> _visibleFocusSmallCells = const {};
 
   /// The page reports the focus rail's physically visible cells. An
@@ -501,6 +519,7 @@ class MultiviewController extends GetxController {
     while (cells.length > capacity) {
       _playingSubs.removeLast()?.cancel();
       _frameWatchdogs.removeLast()?.dispose();
+      _sourceEndSubs.removeLast()?.cancel();
       _frameStallRecoveries.removeLast();
       playingFlags.removeLast();
       cells.removeLast();
@@ -514,7 +533,8 @@ class MultiviewController extends GetxController {
       playingFlags.add(false);
       _playingSubs.add(null);
       _frameWatchdogs.add(null);
-      _frameStallRecoveries.add(0);
+      _sourceEndSubs.add(null);
+      _frameStallRecoveries.add(<Duration>[]);
     }
 
     _visibleFocusSmallCells = const {};
@@ -559,7 +579,8 @@ class MultiviewController extends GetxController {
     playingFlags.add(false);
     _playingSubs.add(null);
     _frameWatchdogs.add(null);
-    _frameStallRecoveries.add(0);
+    _sourceEndSubs.add(null);
+    _frameStallRecoveries.add(<Duration>[]);
   }
 
   /// focus 布局下把 [cellIndex] 格晋升为大画面。
@@ -605,7 +626,7 @@ class MultiviewController extends GetxController {
   Future<void> assignRoom(int cellIndex, LiveRoom room, {bool fromFrameRecovery = false}) async {
     if (_closed || isClosed) return;
     RangeError.checkValidIndex(cellIndex, cells, 'cellIndex');
-    if (!fromFrameRecovery) _frameStallRecoveries[cellIndex] = 0;
+    if (!fromFrameRecovery) _frameStallRecoveries[cellIndex].clear();
     final targetRoom = room.normalizedIdentityCopy();
     if (targetRoom.normalizedPlatformId.isEmpty || !Sites.isSupported(targetRoom.normalizedPlatformId)) {
       throw ArgumentError.value(room.platform, 'room.platform', 'Unsupported live platform');
@@ -1090,10 +1111,29 @@ class MultiviewController extends GetxController {
   void _stopFrameWatchdog(int cellIndex) {
     _frameWatchdogs[cellIndex]?.dispose();
     _frameWatchdogs[cellIndex] = null;
+    _sourceEndSubs[cellIndex]?.cancel();
+    _sourceEndSubs[cellIndex] = null;
   }
 
   void _watchCellFrames(int cellIndex, int epoch, MultiviewCellPlayerHandle handle) {
     _stopFrameWatchdog(cellIndex);
+    if (handle is MultiviewSourceEndHandle) {
+      _sourceEndSubs[cellIndex] = (handle as MultiviewSourceEndHandle).sourceEnded.listen((_) {
+        unawaited(
+          _recoverPresentedFrameStall(cellIndex, epoch, handle, sourceEnded: true).catchError((
+            Object error,
+            StackTrace stackTrace,
+          ) {
+            developer.log(
+              'Multiview cell $cellIndex source-end recovery failed',
+              name: 'MultiviewController',
+              error: error,
+              stackTrace: stackTrace,
+            );
+          }),
+        );
+      });
+    }
     if (frameStallTimeout <= Duration.zero || handle is! MultiviewFrameProgressHandle) return;
     final revision = (handle as MultiviewFrameProgressHandle).frameRevision;
     if (revision == null) return;
@@ -1130,28 +1170,37 @@ class MultiviewController extends GetxController {
     watchdog.start();
   }
 
-  Future<void> _recoverPresentedFrameStall(int cellIndex, int epoch, MultiviewCellPlayerHandle handle) async {
-    if (_isStale(cellIndex, epoch) ||
-        !identical(_players[cellIndex], handle) ||
-        !_isCellFrameVisible(cellIndex) ||
-        !handle.isPlaying ||
-        !playingFlags[cellIndex] ||
-        !_isFramePresentationVisible()) {
+  /// Reloads a cell whose picture stopped advancing, or whose live source the
+  /// server ended ([sourceEnded]: the player is idle, not stalled, so the
+  /// playing/visibility gates of the frame watchdog do not apply).
+  Future<void> _recoverPresentedFrameStall(
+    int cellIndex,
+    int epoch,
+    MultiviewCellPlayerHandle handle, {
+    bool sourceEnded = false,
+  }) async {
+    if (_isStale(cellIndex, epoch) || !identical(_players[cellIndex], handle) || !playingFlags[cellIndex]) return;
+    if (!sourceEnded && (!_isCellFrameVisible(cellIndex) || !handle.isPlaying || !_isFramePresentationVisible())) {
       return;
     }
     final state = cells[cellIndex];
     final room = state.room;
     if (room == null || state.status != MultiviewCellStatus.playing) return;
-    if (_frameStallRecoveries[cellIndex] >= 2) {
-      developer.log('Multiview cell $cellIndex exhausted automatic frame-stall recovery', name: 'MultiviewController');
+    final now = _recoveryNow();
+    final recent = _frameStallRecoveries[cellIndex]..removeWhere((at) => now - at >= _recoveryWindow);
+    if (recent.length >= _maxRecoveriesPerWindow) {
+      developer.log('Multiview cell $cellIndex exhausted automatic recovery', name: 'MultiviewController');
       return;
     }
-    _frameStallRecoveries[cellIndex]++;
+    recent.add(now);
     final selectedQualityId = state.qualities.isNotEmpty && state.qualityIndex < state.qualities.length
         ? state.qualities[state.qualityIndex].selectionId
         : null;
     final selectedLine = state.lineIndex;
-    developer.log('Multiview cell $cellIndex presented-frame stall; refreshing room', name: 'MultiviewController');
+    developer.log(
+      'Multiview cell $cellIndex ${sourceEnded ? 'live source ended' : 'presented-frame stall'}; refreshing room',
+      name: 'MultiviewController',
+    );
     final refresh = assignRoom(cellIndex, room, fromFrameRecovery: true);
     final refreshEpoch = _cellEpochs[cellIndex];
     await refresh;
