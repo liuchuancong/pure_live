@@ -142,7 +142,7 @@ Android / Android TV 支持多个播放器：
 
 当某个播放器出现黑屏、卡顿、硬解兼容性问题或者特定直播流无法播放时，可以在设置中切换播放器。
 
-Windows、Linux 可在 MPV Player 和 Fvp 播放器之间切换；电脑版不会自动切换内核。
+Windows、Linux 使用 MPV Player（mpv 0.41 + FFmpeg 9）；Fvp 只在 Android 上作为备用内核提供。
 
 ### 🖥️ 多画面同看
 

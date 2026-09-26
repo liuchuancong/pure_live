@@ -1,0 +1,145 @@
+group 'com.mediadevkit.fvp'
+version '1.0'
+
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath("com.android.tools.build:gradle:8.13.2")
+    }
+}
+
+rootProject.allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+apply plugin: 'com.android.library'
+
+android {
+    if (project.android.hasProperty("namespace")) {
+        namespace 'com.mediadevkit.fvp'
+    }
+    // Bumping the plugin compileSdkVersion requires all clients of this plugin
+    // to bump the version in their app.
+    compileSdk = 36
+
+    // Use the NDK version
+    // declared in /android/app/build.gradle file of the Flutter project.
+    // Replace it with a version number if this plugin requires a specfic NDK version.
+    // (e.g. ndkVersion "23.1.7779620")
+    //ndkVersion '26.3.11579264' // android.ndkVersion
+
+    // Invoke the shared CMake build with the Android Gradle Plugin.
+    externalNativeBuild {
+        cmake {
+            path "CMakeLists.txt"
+            // The default CMake version for the Android Gradle Plugin is 3.10.2.
+            // https://developer.android.com/studio/projects/install-ndk#vanilla_cmake
+            //
+            // The Flutter tooling requires that developers have CMake 3.10 or later
+            // installed. You should not increase this version, as doing so will cause
+            // the plugin to fail to compile for some customers of the plugin.
+            // version "3.10.2"
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
+
+    defaultConfig {
+        minSdk = 21    // lower version error in ndk 26. requires flutter > 3.19
+
+        externalNativeBuild {
+            cmake {
+                cppFlags ""
+                arguments '-DANDROID_STL=c++_shared' // default is static
+            }
+        }
+        ndk {
+            // Specifies the ABI configurations of your native
+            // libraries Gradle should build and package with your APK.
+            abiFilters 'arm64-v8a', 'armeabi-v7a', 'x86', 'x86_64'
+        }
+        //ndkVersion "25.2.9519653"
+    }
+
+    dependencies {
+        testImplementation 'junit:junit:4.13.2'
+        testImplementation 'org.mockito:mockito-core:5.0.0'
+    }
+
+    testOptions {
+        unitTests.all {
+            testLogging {
+               events "passed", "skipped", "failed", "standardOut", "standardError"
+               outputs.upToDateWhen {false}
+               showStandardStreams = true
+            }
+        }
+    }
+}
+
+def flutterSdkVersion = {
+    def properties = new Properties()
+    file(rootDir.absolutePath + "/local.properties").withInputStream { properties.load(it) }
+    def flutterSdkPath = properties.getProperty("flutter.sdk")
+    if (flutterSdkPath == null) {
+        flutterSdkPath = System.env.FLUTTER_ROOT // from flutter.groovy
+
+        if (flutterSdkPath == null) {
+            // add-to-app local.properties file located at <modulePath>/.android/local.properties
+            file(project(":flutter").getProjectDir().getParent() + "/local.properties").withInputStream { properties.load(it) }
+            flutterSdkPath = properties.getProperty("flutter.sdk")
+        }
+    }
+    assert flutterSdkPath != null, "flutter.sdk not set in local.properties"
+    def versionFile = file(flutterSdkPath + '/bin/cache/flutter.version.json')
+    if (!versionFile.exists()) {
+        def version = file(flutterSdkPath + '/version')
+        assert version.exists(), 'flutter version file not found'
+        return version.text.trim()
+    }
+    def versionJson = new groovy.json.JsonSlurper().parseText(versionFile.text)
+    return versionJson.flutterVersion
+}()
+
+def preprocessJava(Map textMap) {
+    def f = file('src/main/java/com/mediadevkit/fvp/FvpPlugin.java')
+    assert f.exists(), path + "not found"
+    def content = f.text
+    def newContent = content
+    textMap.forEach { oldText, newText ->
+        newContent = newContent.replaceAll(oldText, newText)
+    }
+    if (content != newContent) {
+        println "rewrite " + f.path
+        f.write(newContent)
+    }
+}
+// VersionNumber is deprecated
+// 3.24.1, 3.24.0-1.0.pre.509 // Float.parseFloat(flutterSdkVersion.replaceAll('(\\d+\\.\\d+).*', '$1'))
+def flutterSdkVersionInt = flutterSdkVersion.split('\\D')[[0, 1, 2]].inject(0, (a, b) -> 100*a + Integer.parseInt(b))
+println "flutterSdkVersion: ${flutterSdkVersion}, ${flutterSdkVersionInt}"
+if (flutterSdkVersionInt < 32400) {
+    println 'Impeller is not perfect for flutter < 3.24'
+    preprocessJava(['//// FLUTTER_3.24_BEGIN': '/\\*// FLUTTER_3.24_BEGIN-', '//// FLUTTER_3.24_END': '\\*/// FLUTTER_3.24_END-'])
+} else {
+    preprocessJava(['/\\*// FLUTTER_3.24_BEGIN-': '//// FLUTTER_3.24_BEGIN', '\\*/// FLUTTER_3.24_END-': '//// FLUTTER_3.24_END'])
+    /// rename onSurfaceAvailable to onSurfaceCreated if flutterSdkVersionInt < 32700
+    if (flutterSdkVersionInt < 32700) {
+        println 'rename onSurfaceAvailable to onSurfaceCreated'
+        preprocessJava(['onSurfaceAvailable': 'onSurfaceCreated'])
+    }
+    if (flutterSdkVersionInt < 32800) {
+        println 'rename onSurfaceCleanup to onSurfaceDestroyed'
+        preprocessJava(['onSurfaceCleanup': 'onSurfaceDestroyed'])
+    }
+}

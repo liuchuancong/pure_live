@@ -13,6 +13,7 @@ analyzer:
     - local-artifacts/**
     # Vendored upstream package (Predidit/media-kit@d13fc22b); analyzed upstream.
     - third_party/media_kit/**
+    - third_party/fvp/**
     - android/**
     - ios/**
     - web/**

@@ -48,19 +48,20 @@ void main() {
 
   tearDownAll(Hive.close);
 
-  testWidgets('Windows replaces a stale IJK preference and offers MPV and fvp only', (tester) async {
+  testWidgets('Windows replaces a stale IJK or fvp preference and presents MPV as a fixed engine', (tester) async {
     await _pumpKernelPage(tester, translations, size: const Size(900, 900));
 
     expect(SettingsService.to.player.videoPlayerKey.v, 'mpv');
     expect(HivePrefUtil.getString('videoPlayerKey'), 'mpv');
     expect(find.text('MPV Player'), findsOneWidget);
     expect(find.text('IJK Player'), findsNothing);
-    expect(find.text('Different engines affect performance'), findsOneWidget);
+    expect(find.text('This platform uses the integrated MPV engine.'), findsOneWidget);
 
     final engineTile = find.ancestor(of: find.text('Player Engine'), matching: find.byType(ListTile));
     expect(engineTile, findsOneWidget);
-    expect(tester.widget<ListTile>(engineTile).onTap, isNotNull);
-    expect(availableVideoPlayerKeysForPlatform(TargetPlatform.windows), ['mpv', 'fvp']);
+    expect(tester.widget<ListTile>(engineTile).onTap, isNull);
+    expect(availableVideoPlayerKeysForPlatform(TargetPlatform.windows), ['mpv']);
+    expect(normalizeVideoPlayerKeyForPlatform('fvp', TargetPlatform.windows), 'mpv');
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pumpAndSettle();

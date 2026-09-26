@@ -15,7 +15,6 @@ list(APPEND FLUTTER_PLUGIN_LIST
   firebase_core
   flutter_acrylic
   flutter_inappwebview_windows
-  fvp
   media_kit_video
   permission_handler_windows
   screen_retriever_windows

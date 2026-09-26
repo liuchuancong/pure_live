@@ -103,7 +103,7 @@
 | 编号 | 平台 | 检查点 | 方式 |
 | --- | --- | --- | --- |
 | T1 | A W | 通用、主题、字体、导航、页面、房间卡片、人数口径、刷新率各页修改后立即生效并持久化 | U |
-| T2 | A W | 播放器内核切换后可正常播放：Android mpv / fvp / IJK / Exo，电脑版 mpv / fvp；fvp 走播放代理（`integration_test/engine_playback_test.dart`） | P D |
+| T2 | A W | 播放器内核切换后可正常播放：Android mpv / fvp / IJK / Exo（fvp 走播放代理）；电脑版固定 mpv，旧的 fvp 选择自动改回 mpv（`integration_test/engine_playback_test.dart`） | P D |
 | T3 | A W | 网络代理：应用内代理开关对目录、播放和录制一致生效 | U D |
 | T4 | A W | 平台设置：隐藏平台、平台顺序、首选平台过滤 | U |
 | T5 | A W | 竖屏直播设置：自动识别开关、按房间覆盖 | U |
