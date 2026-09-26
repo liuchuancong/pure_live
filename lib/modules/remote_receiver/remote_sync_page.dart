@@ -36,8 +36,9 @@ class _RemoteSyncPageState extends State<RemoteSyncPage> {
   /// Another device asks to read or overwrite this device's settings.
   Future<bool> _confirmIncoming(String action, String remoteAddress) async {
     if (!mounted) return false;
-    final allowed = await Get.dialog<bool>(
-      AlertDialog(
+    final allowed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
         title: Text(i18n('remote_sync')),
         content: Text(
           i18n(
@@ -46,8 +47,8 @@ class _RemoteSyncPageState extends State<RemoteSyncPage> {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Get.back(result: false), child: Text(i18n('cancel'))),
-          FilledButton(onPressed: () => Get.back(result: true), child: Text(i18n('confirm'))),
+          TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: Text(i18n('cancel'))),
+          FilledButton(onPressed: () => Navigator.of(dialogContext).pop(true), child: Text(i18n('confirm'))),
         ],
       ),
       barrierDismissible: false,
@@ -59,8 +60,9 @@ class _RemoteSyncPageState extends State<RemoteSyncPage> {
   Future<String?> _askPairingCode() async {
     final controller = TextEditingController();
     try {
-      final code = await Get.dialog<String>(
-        AlertDialog(
+      final code = await showDialog<String>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
           title: Text(i18n('remote_sync_pairing_code')),
           content: TextField(
             controller: controller,
@@ -68,12 +70,12 @@ class _RemoteSyncPageState extends State<RemoteSyncPage> {
             keyboardType: TextInputType.number,
             maxLength: RemoteSyncProtocol.pairingCodeLength,
             decoration: InputDecoration(hintText: i18n('remote_sync_pairing_code_hint')),
-            onSubmitted: (value) => Get.back(result: value),
+            onSubmitted: (value) => Navigator.of(dialogContext).pop(value),
           ),
           actions: [
-            TextButton(onPressed: () => Get.back(), child: Text(i18n('cancel'))),
+            TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: Text(i18n('cancel'))),
             FilledButton(
-              onPressed: () => Get.back(result: controller.text),
+              onPressed: () => Navigator.of(dialogContext).pop(controller.text),
               child: Text(i18n('confirm')),
             ),
           ],
@@ -100,13 +102,14 @@ class _RemoteSyncPageState extends State<RemoteSyncPage> {
   }
 
   Future<void> _receiveFromDevice(String ip, int port, {String? code}) async {
-    final confirm = await Get.dialog<bool>(
-      AlertDialog(
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
         title: Text(i18n('remote_sync_receive')),
         content: Text(i18n('remote_sync_receive_confirm')),
         actions: [
-          TextButton(onPressed: () => Get.back(result: false), child: Text(i18n('cancel'))),
-          FilledButton(onPressed: () => Get.back(result: true), child: Text(i18n('confirm'))),
+          TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: Text(i18n('cancel'))),
+          FilledButton(onPressed: () => Navigator.of(dialogContext).pop(true), child: Text(i18n('confirm'))),
         ],
       ),
     );
@@ -148,7 +151,7 @@ class _RemoteSyncPageState extends State<RemoteSyncPage> {
   Future<void> _scanQr() async {
     if (PlatformUtils.isDesktop) return;
     final result = await Get.to<String>(() => const _RemoteSyncScannerPage());
-    if (result == null || result.trim().isEmpty) return;
+    if (!mounted || result == null || result.trim().isEmpty) return;
 
     final parsed = RemoteSyncProtocol.parseQr(result);
     if (parsed == null) {
@@ -156,19 +159,17 @@ class _RemoteSyncPageState extends State<RemoteSyncPage> {
       return;
     }
 
-    final action = await Get.dialog<String>(
-      AlertDialog(
+    final action = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
         title: Text(i18n('remote_sync_select_action')),
         content: Text('${parsed.ip}:${parsed.port}'),
         actions: [
           TextButton(
-            onPressed: () => Get.back(result: 'receive'),
+            onPressed: () => Navigator.of(dialogContext).pop('receive'),
             child: Text(i18n('remote_sync_receive')),
           ),
-          FilledButton(
-            onPressed: () => Get.back(result: 'send'),
-            child: Text(i18n('remote_sync_send')),
-          ),
+          FilledButton(onPressed: () => Navigator.of(dialogContext).pop('send'), child: Text(i18n('remote_sync_send'))),
         ],
       ),
     );
