@@ -1,5 +1,18 @@
 [
   {
+    "version": "3.2.7",
+    "title": "Pure Live v3.2.7",
+    "date": "2026-09-26",
+    "github": "https://github.com/wzgrx/pure_live/releases/tag/v3.2.7",
+    "author": {
+      "name": "wzgrx",
+      "avatar": "https://avatars.githubusercontent.com/u/39661556?v=4",
+      "profile": "https://github.com/wzgrx"
+    },
+    "changelog": "# Pure Live v3.2.7\n\nv3.2.7 build 4130 修复 Android 17 手机上局域网代理完全失效的问题，以及 Twitch 直播间误报「未开播」。请使用电脑上的 Clash 或路由器代理的安卓用户尽快更新。从维护分支 `claude` 发布，没有合并上游代码。\n\n## 修复\n\n- **Android 17 上局域网代理全部失效**（3.2.4 起）：Android 17 要求应用获得「本地网络」权限才能连接局域网地址，3.2.4 升级到新版系统接口后没有申请这个权限，导致把代理设为电脑或路由器地址（如 `192.168.x.x`）时，海外平台全部打不开，国内平台开启 App 代理后也加载失败。现在开启局域网代理时会弹出系统授权「允许此应用访问本地网络设备」，请选择「始终允许」；拒绝后会提示到系统设置中开启。\n- **Twitch 直播间误报「未开播」**：获取直播间信息失败（网络或代理不通）时，以前会把正在直播的频道显示成「该房间未开播或已下播」，也没有重试入口；现在会显示「获取直播间信息失败」并可重试。\n- **Twitch 在线人数显示为 0**：Twitch 接口调整后人数字段挪了位置，已改为读取正确字段。\n\n## 已知问题\n\n- **fvp 内核（安卓）**：播放部分 Shopee 直播（旧式 HEVC 编码）时偶发首次打开只有声音、没有画面，重新进入即可；默认的 mpv 内核不受影响。\n- **海外平台时好时坏**：Clash 出口 IP 轮换时，FC2、NimoTV、VK 等平台的播放链接会被拒，请把 Clash 固定到单个节点。\n- **Dailymotion** 拒绝机房和代理 IP；**Rumble** 有 Cloudflare 人机验证；**GoodGame** 连接超时。\n- **Windows**：App 自己的网络请求不跟随系统代理，海外站点需要在「网络代理」里填写代理。\n- **Linux**：mpv 库需要系统里有 `libva-wayland2`；Kick 仍被 Cloudflare 拦截。\n\n## 验证\n\n- 真机（REDMI K90，Android 17）：开启局域网代理后弹出本地网络授权；允许后 Twitch 经电脑 Clash 用 fvp 内核播放 1080p60，在线人数与弹幕正常；Shopee 目录（WebView）与直播间经代理可播；哔哩哔哩 fvp 播放正常；关闭 App 代理时直播间可正常加载。\n- 3.2.6 升级安装后关注等数据完整保留。\n",
+    "files": []
+  },
+  {
     "version": "3.2.6",
     "title": "Pure Live v3.2.6",
     "date": "2026-09-26",
