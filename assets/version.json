@@ -1,41 +1,41 @@
 {
-  "version": "3.2.5",
-  "build_number": 4128,
-  "version_num": 302054128,
-  "version_desc": "- 电脑版（Windows、Linux）可选 fvp 播放内核；修复 fvp 不走播放代理、误报播放失败。\n- Linux 版 mpv 库升级到 FFmpeg 9.0.2。",
+  "version": "3.2.6",
+  "build_number": 4129,
+  "version_num": 302064129,
+  "version_desc": "- 修复 CHZZK 部分直播间（仅限韩国观看的转播）打不开。\n- 电脑版设置页宽屏排版、空列表、搜索说明等界面优化。",
   "prerelease": false,
-  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.2.5",
+  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.2.6",
   "android_abis": [
     "arm64-v8a"
   ],
   "platforms": {
     "android": {
-      "version": "3.2.5",
-      "build_number": 4128,
-      "version_num": 302054128,
-      "version_desc": "- 电脑版（Windows、Linux）可选 fvp 播放内核；修复 fvp 不走播放代理、误报播放失败。\n- Linux 版 mpv 库升级到 FFmpeg 9.0.2。",
+      "version": "3.2.6",
+      "build_number": 4129,
+      "version_num": 302064129,
+      "version_desc": "- 修复 CHZZK 部分直播间（仅限韩国观看的转播）打不开。\n- 电脑版设置页宽屏排版、空列表、搜索说明等界面优化。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.2.5",
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.2.6",
       "android_abis": [
         "arm64-v8a"
       ]
     },
     "windows": {
-      "version": "3.2.5",
-      "build_number": 4128,
-      "version_num": 302054128,
-      "version_desc": "- 电脑版（Windows、Linux）可选 fvp 播放内核；修复 fvp 不走播放代理、误报播放失败。\n- Linux 版 mpv 库升级到 FFmpeg 9.0.2。",
+      "version": "3.2.6",
+      "build_number": 4129,
+      "version_num": 302064129,
+      "version_desc": "- 修复 CHZZK 部分直播间（仅限韩国观看的转播）打不开。\n- 电脑版设置页宽屏排版、空列表、搜索说明等界面优化。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.2.5",
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.2.6",
       "windows_msix_available": false
     },
     "linux": {
-      "version": "3.2.5",
-      "build_number": 4128,
-      "version_num": 302054128,
-      "version_desc": "- 电脑版（Windows、Linux）可选 fvp 播放内核；修复 fvp 不走播放代理、误报播放失败。\n- Linux 版 mpv 库升级到 FFmpeg 9.0.2。",
+      "version": "3.2.6",
+      "build_number": 4129,
+      "version_num": 302064129,
+      "version_desc": "- 修复 CHZZK 部分直播间（仅限韩国观看的转播）打不开。\n- 电脑版设置页宽屏排版、空列表、搜索说明等界面优化。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.2.5"
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.2.6"
     },
     "macos": {
       "version": "3.0.0",
