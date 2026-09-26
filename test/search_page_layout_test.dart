@@ -27,7 +27,6 @@ class _Controller extends search.SearchController {
   bool filteredOffline = false;
   @override
   bool get hasFilteredOfflineResults => filteredOffline;
-  Future<void> searchWithoutNativeAdapter() => super.doSearch();
   @override
   Future<bool> isWebView2Installed() async => true;
   @override
@@ -248,26 +247,8 @@ void main() {
     }
   }
 
-  for (final platform in [Sites.kuaishouSite]) {
-    testWidgets('$platform unsupported native search offers only a useful action', (tester) async {
-      final c = await _mount(tester, platform: platform);
-      expect(c.canSearchNatively, false);
-      await c.searchWithoutNativeAdapter();
-      await tester.pump();
-      expect(c.errorMessage.value, isNotEmpty);
-      final status = tester.widget<AppStatusView>(find.byType(AppStatusView));
-      expect(status.subtitle, c.errorMessage.value);
-      expect(status.onButtonPressed != null, c.canOpenWebSearch);
-      if (c.canOpenWebSearch) {
-        status.onButtonPressed!();
-        expect(c.webSearches, 1);
-      }
-      expect(c.searches, 0);
-      expect(tester.takeException(), null);
-    });
-  }
-
   for (final platform in [
+    Sites.kuaishouSite,
     Sites.picartoSite,
     Sites.inkeSite,
     Sites.missevanSite,

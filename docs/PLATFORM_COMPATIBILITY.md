@@ -41,7 +41,7 @@ TwitCasting 新增公开目录、顶栏分类、详情/HLS三档、录制输入�
 | 斗鱼 | 动态读取移动端分类接口 | 原生直播间搜索，可返回未开播结果；可选本机账号 Cookie 用于取流及媒体请求 | WebSocket | 热度；所选画质与服务端确认档位分列，匿名请求可能降档 |
 | 虎牙 | 网站业务分类与动态游戏列表 | 原生搜索当前直播间 | `wsapi.huya.com` WebSocket，按 `live:<uid>`/`chat:<uid>` 注册房间组并解析批量推送 | 列表/详情/URI 8006 均为热度 |
 | 抖音 | 从直播首页动态提取分类 | 带网页签名参数的当前直播搜索 | WebSocket | 顶层/嵌套 `user_count` 为当前在线；`display_value/total_user` 为累计观看，缺少累计值时不再用在线值冒充 |
-| 快手 | 网站当前直播频道、动态子分类与推荐回放 | 网页搜索入口 | 移动端增量 feed，cursor 串行轮询、断开取消；已有真实评论补证 | 在线；房间页下播但卡片仍带播放地址时按录播处理 |
+| 快手 | 网站当前直播频道、动态子分类与推荐回放 | 主播搜索（含未开播，分页）；网页搜索入口保留 | 移动端增量 feed，cursor 串行轮询、断开取消；已有真实评论补证 | 在线；房间页下播但卡片仍带播放地址时按录播处理 |
 | 网易 CC | 动态游戏列表，保留网站顶层入口 | 原生主播/直播间搜索，可返回未开播结果 | 当前未接入 | `webcc_visitor/hot_score/visitor` 为同一热度口径；只有 `vision_visitor/online_num` 为并发人数 |
 | Twitch | 网站 GraphQL 标签与目录接口 | 原生频道搜索，可返回未开播频道 | Twitch IRC WebSocket；登录 Cookie 中的 `auth-token`/`login` 用于认证聊天 | `viewersCount` 为并发观看人数 |
 | SOOP Live | 官方分类与推荐接口 | 原生搜索当前直播间 | SOOP WebSocket；账号 Cookie 可选 | 推荐/搜索以 `total_view_cnt`（PC + 移动端）为并发人数；分类使用 `view_cnt`；`current_view_cnt` 仅是 PC 端分量 |

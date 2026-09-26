@@ -528,8 +528,55 @@ class KuaishowSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoo
 
   @override
   Future<List<LiveRoom>> searchRooms(String keyword, {int page = 1, int pageSize = 30}) async {
-    // 快手无法搜索主播，只能搜索游戏分类这里不做展示
-    return [];
+    // Live-stream search answers anonymous visitors with "服务器繁忙", so the
+    // web search page never lists rooms (upstream #881). The streamer search
+    // stays public and reports whether each streamer is live.
+    final result = await HttpClient.instance.getJson(
+      'https://live.kuaishou.com/live_api/search/author',
+      queryParameters: {'keyword': keyword, 'page': page, 'lssid': ''},
+      header: {...headers, 'Referer': 'https://live.kuaishou.com/search?keyword=${Uri.encodeQueryComponent(keyword)}'},
+    );
+    return parseAuthorSearch(result).take(pageSize).toList(growable: false);
+  }
+
+  @visibleForTesting
+  static List<LiveRoom> parseAuthorSearch(dynamic json) {
+    final data = json is Map ? json['data'] : null;
+    final list = data is Map ? data['list'] : null;
+    if (list is! List) return const [];
+    final rooms = <LiveRoom>[];
+    for (final author in list) {
+      if (author is! Map) continue;
+      final id = author['id']?.toString().trim() ?? '';
+      if (id.isEmpty) continue;
+      final name = author['name']?.toString() ?? '';
+      final avatar = author['avatar']?.toString() ?? '';
+      final counts = author['counts'];
+      final banned = author['bannedStatus'];
+      rooms.add(
+        LiveRoom(
+          platform: Sites.kuaishouSite,
+          roomId: id,
+          userId: id,
+          nick: name,
+          title: name,
+          avatar: avatar,
+          cover: avatar,
+          // The author search has no viewer count; an empty value renders as
+          // "pending refresh" instead of a fabricated 0.
+          watching: '',
+          followers: counts is Map ? counts['fan']?.toString() ?? '0' : '0',
+          introduction: author['description']?.toString(),
+          link: 'https://live.kuaishou.com/u/$id',
+          liveStatus: banned is Map && banned['banned'] == true
+              ? LiveStatus.banned
+              : author['living'] == true
+              ? LiveStatus.live
+              : LiveStatus.offline,
+        ),
+      );
+    }
+    return rooms;
   }
 
   @override

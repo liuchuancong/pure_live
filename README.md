@@ -128,7 +128,7 @@ Android 录制在创建任务和申请存储权限前检查目录：应用私有
 - 支持综合、平台顺序、观众和粉丝等排序方式。
 - 各个平台保持独立分页状态。
 - 猫耳 FM 自 v3.2.0 起支持官网直播间关键词分页搜索，可显示未开播房间；精确房间号和官网直播链接仍可直接查询。
-- 快手保留网页搜索入口。
+- 快手自 v3.2.9 起支持 App 内主播搜索（含未开播主播）；快手网页端不向未登录用户返回直播间结果，网页搜索入口仍保留。
 - 离线频道按照平台接口实际返回结果展示。
 
 ### ▶️ 多播放器
@@ -246,7 +246,7 @@ Android 支持根据设备显示模式动态适配刷新率：
 - 观众人数
 - 粉丝数量
 - 直播状态筛选
-- YY、LiveMe、TikTok LIVE、YouTube Live、Bigo Live、PandaTV、FC2 Live、Steam Broadcasts、京东直播、酷狗直播、六间房直播等平台原生/本机搜索；百度直播支持精确房间号与官方链接查询，LOOK 直播支持精确房间号并在当前官网推荐页内筛选关键词，快手保留网页搜索
+- YY、LiveMe、TikTok LIVE、YouTube Live、Bigo Live、PandaTV、FC2 Live、Steam Broadcasts、京东直播、酷狗直播、六间房直播等平台原生/本机搜索；百度直播支持精确房间号与官方链接查询，LOOK 直播支持精确房间号并在当前官网推荐页内筛选关键词，快手支持主播搜索
 - Bilibili、斗鱼、虎牙、抖音、快手、网易 CC、Twitch、SOOP、YY、AcFun、Picarto、TwitCasting、SHOWROOM、CHZZK、Kick、17LIVE、LiveMe、TikTok LIVE、YouTube Live、Bigo Live、PandaTV、FC2 Live、Steam Broadcasts、京东直播、酷狗直播、百度直播、六间房直播、LOOK 直播网页直播间识别
 
 同时提供本地互动系统。

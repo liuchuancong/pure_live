@@ -112,12 +112,13 @@ void main() {
     });
   });
 
-  test('declares native and web-only platform search coverage', () {
+  test('declares native platform search coverage', () {
     expect(LiveSearchCapabilities.forPlatform('bilibili').mayIncludeOffline, isTrue);
     expect(LiveSearchCapabilities.forPlatform('twitch').mayIncludeOffline, isTrue);
     expect(LiveSearchCapabilities.forPlatform('soop').coverage, NativeSearchCoverage.liveOnly);
     expect(LiveSearchCapabilities.forPlatform('yy').supportsNativeSearch, isTrue);
-    expect(LiveSearchCapabilities.forPlatform('kuaishou').supportsNativeSearch, isFalse);
+    expect(LiveSearchCapabilities.forPlatform('kuaishou').coverage, NativeSearchCoverage.liveAndOffline);
+    expect(LiveSearchCapabilities.forPlatform('kuaishou').supportsWebSearch, isTrue);
     expect(LiveSearchCapabilities.forPlatform('iptv').supportsPagination, isFalse);
     expect(LiveSearchCapabilities.forPlatform('iptv').supportsWebSearch, isFalse);
   });
@@ -140,7 +141,7 @@ void main() {
       expect(actual.supportsWebSearch, isFalse, reason: entry.key);
     }
     for (final id in Sites.supportedSiteIds) {
-      expect(LiveSearchCapabilities.forPlatform(id).supportsNativeSearch, id != Sites.kuaishouSite, reason: id);
+      expect(LiveSearchCapabilities.forPlatform(id).supportsNativeSearch, isTrue, reason: id);
     }
   });
 }
