@@ -160,6 +160,165 @@ void main() {
     });
   });
 
+  group('renewal credentials', () {
+    test('are read from the separately pasted fields', () {
+      // The page cookie has neither: they come from the passport request.
+      final credentials = DouyuUtils.refreshCredentials(webCookie, longTerm: 'lt-from-field', did: 'did-from-field');
+
+      expect(credentials.longTerm, 'lt-from-field');
+      expect(credentials.did, 'did-from-field');
+      expect(DouyuUtils.canRefreshSession(webCookie, longTerm: 'lt-from-field', did: 'did-from-field'), isTrue);
+      expect(DouyuUtils.canRefreshSession(webCookie), isFalse);
+    });
+
+    test('fall back to the cookie fields, then to the process DID', () {
+      final fromCookie = DouyuUtils.refreshCredentials('$webCookie; LTP0=lt-in-cookie');
+      expect(fromCookie.longTerm, 'lt-in-cookie');
+      expect(fromCookie.did, '73d91171ec9e4614d1f5532c00011701', reason: 'the cookie carries its own dy_did');
+
+      // A renewal must present the device the login belongs to; inventing one
+      // would only make the passport endpoint refuse it. (Request headers do
+      // fall back — see `effectiveDeviceId`.)
+      final noDid = DouyuUtils.refreshCredentials('dy_auth=x; LTP0=lt', did: '');
+      expect(noDid.did, isNull);
+      expect(DouyuUtils.canRefreshSession('dy_auth=x; LTP0=lt'), isFalse);
+      expect(DouyuUtils.effectiveDeviceId(accountCookie: 'dy_auth=x'), DouyuUtils.deviceId);
+    });
+
+    test('the renewal posts them to the passport endpoint', () async {
+      Map<String, String>? seenHeaders;
+      DouyuUtils.debugCookieFetcher = (url, headers) async {
+        seenHeaders = headers;
+        return <String>['dy_auth=renewed-cookie'];
+      };
+      DouyuUtils.debugCookiePersister = (_, _) {};
+
+      final renewed = await DouyuUtils.refreshSession(
+        accountCookie: webCookie,
+        longTerm: 'lt-from-field',
+        did: 'did-from-field',
+        force: true,
+      );
+
+      expect(seenHeaders!['cookie'], 'dy_did=did-from-field;LTP0=lt-from-field');
+      expect(renewed, isNotNull);
+      expect(DouyuUtils.cookieField(renewed!, 'dy_auth'), 'renewed-cookie');
+    });
+
+    test('a renewal without credentials does not even call the endpoint', () async {
+      var called = false;
+      DouyuUtils.debugCookieFetcher = (_, _) async {
+        called = true;
+        return const <String>[];
+      };
+
+      final renewed = await DouyuUtils.refreshSession(accountCookie: webCookie, force: true);
+
+      expect(renewed, isNull);
+      expect(called, isFalse);
+    });
+
+    test('whitespace-only fields do not count as credentials', () {
+      expect(DouyuUtils.canRefreshSession(webCookie, longTerm: '  ', did: '  '), isFalse);
+      expect(DouyuUtils.refreshCredentials(webCookie, longTerm: ' lt ', did: ' did ').longTerm, 'lt');
+    });
+  });
+
+  group('seven-day lifetime', () {
+    DateTime daysAgo(double days) => DateTime.now().subtract(Duration(minutes: (days * 24 * 60).round()));
+
+    test('a freshly saved web cookie is valid and not due for renewal', () {
+      final savedAt = daysAgo(1);
+
+      expect(DouyuUtils.sessionState(webCookie, savedAt: savedAt), DouyuSessionState.valid);
+      expect(DouyuUtils.isSessionExpired(webCookie, savedAt: savedAt), isFalse);
+      expect(DouyuUtils.shouldRefreshSession(webCookie, savedAt: savedAt), isFalse);
+    });
+
+    test('it is renewed a day before it expires', () {
+      final savedAt = daysAgo(6.5);
+
+      // Still a working login, but inside the renewal window.
+      expect(DouyuUtils.isSessionExpired(webCookie, savedAt: savedAt), isFalse);
+      expect(DouyuUtils.shouldRefreshSession(webCookie, savedAt: savedAt), isTrue);
+    });
+
+    test('past seven days it is expired, and refreshable when LTP0 is present', () {
+      final savedAt = daysAgo(8);
+      expect(DouyuUtils.sessionState(webCookie, savedAt: savedAt), DouyuSessionState.expired);
+
+      final withLongTerm = '$webCookie; LTP0=long-term-key';
+      expect(DouyuUtils.sessionState(withLongTerm, savedAt: savedAt), DouyuSessionState.expiredRefreshable);
+      expect(DouyuUtils.shouldRefreshSession(withLongTerm, savedAt: savedAt), isTrue);
+    });
+
+    test('without a recorded save time the end stays unknown', () {
+      // Nothing recorded it (a cookie pasted before this existed): the app must
+      // not invent an expiry and refuse a login that still works.
+      expect(DouyuUtils.sessionExpiry(webCookie), isNull);
+      expect(DouyuUtils.sessionState(webCookie), DouyuSessionState.valid);
+      expect(DouyuUtils.shouldRefreshSession(webCookie), isFalse);
+    });
+
+    test('a JWT expiry still wins over the recorded time', () {
+      final savedAt = daysAgo(8);
+      final h5 = sessionCookie(expiresAtSeconds: _secondsFromNow(const Duration(days: 3)));
+
+      // The token says three days are left, so the eight-day-old save time is
+      // irrelevant — and three days is outside the one-day renewal window.
+      expect(DouyuUtils.sessionState(h5, savedAt: savedAt), DouyuSessionState.valid);
+      expect(DouyuUtils.shouldRefreshSession(h5, savedAt: savedAt), isFalse);
+    });
+
+    test('an H5 token inside the renewal window is due for renewal', () {
+      final h5 = sessionCookie(expiresAtSeconds: _secondsFromNow(const Duration(hours: 5)));
+
+      expect(DouyuUtils.isSessionExpired(h5), isFalse);
+      expect(DouyuUtils.shouldRefreshSession(h5), isTrue);
+    });
+
+    test('the renewal window drives ensureFreshSession', () async {
+      var refreshed = false;
+      DouyuUtils.debugCookieFetcher = (_, _) async {
+        refreshed = true;
+        return <String>['acf_jwt_token=renewed'];
+      };
+      DouyuUtils.debugCookiePersister = (_, _) {};
+
+      final renewable = '$webCookie; LTP0=long-term-key';
+      await DouyuUtils.ensureFreshSession(accountCookie: renewable, savedAt: daysAgo(1));
+      expect(refreshed, isFalse, reason: 'a day-old cookie has six days left');
+
+      await DouyuUtils.ensureFreshSession(accountCookie: renewable, savedAt: daysAgo(6.5));
+      expect(refreshed, isTrue);
+    });
+
+    test('force renews a cookie that looks fresh', () async {
+      var refreshed = false;
+      DouyuUtils.debugCookieFetcher = (_, _) async {
+        refreshed = true;
+        return <String>['acf_jwt_token=renewed'];
+      };
+      DouyuUtils.debugCookiePersister = (_, _) {};
+
+      await DouyuUtils.ensureFreshSession(accountCookie: '$webCookie; LTP0=lt', savedAt: daysAgo(0.1), force: true);
+
+      expect(refreshed, isTrue, reason: 'a request already came back as a guest');
+    });
+
+    test('a cookie with no long-term key is never renewed, however old', () async {
+      var called = false;
+      DouyuUtils.debugCookieFetcher = (_, _) async {
+        called = true;
+        return const <String>[];
+      };
+
+      await DouyuUtils.ensureFreshSession(accountCookie: webCookie, savedAt: daysAgo(30), force: true);
+
+      expect(called, isFalse);
+    });
+  });
+
   group('Set-Cookie merging', () {
     test('keeps everything the response did not mention', () {
       final merged = DouyuUtils.mergeSetCookieLines(
@@ -239,15 +398,21 @@ void main() {
       );
     });
 
-    test('stores the renewed cookie', () async {
+    test('stores the renewed cookie and the time it was renewed', () async {
       String? persisted;
+      DateTime? persistedAt;
       DouyuUtils.debugCookieFetcher = (_, _) async => <String>['acf_jwt_token=fresh'];
-      DouyuUtils.debugCookiePersister = (cookie) => persisted = cookie;
+      DouyuUtils.debugCookiePersister = (cookie, savedAt) {
+        persisted = cookie;
+        persistedAt = savedAt;
+      };
 
       await DouyuUtils.refreshSession(accountCookie: sessionCookie(expiresAtSeconds: _secondsFromNow(const Duration(hours: -1))));
 
       expect(persisted, isNotNull);
       expect(DouyuUtils.cookieField(persisted!, 'acf_jwt_token'), 'fresh');
+      expect(persistedAt, isNotNull, reason: 'the seven-day rule counts from here');
+      expect(DateTime.now().difference(persistedAt!).inMinutes, lessThan(1));
     });
 
     test('does nothing for a live session', () async {
@@ -258,11 +423,13 @@ void main() {
       };
 
       final renewed = await DouyuUtils.refreshSession(
-        accountCookie: sessionCookie(expiresAtSeconds: _secondsFromNow(const Duration(hours: 2))),
+        // Three days left: outside the one-day renewal window, so there is
+        // nothing to do (a token with hours left *is* inside it, by design).
+        accountCookie: sessionCookie(expiresAtSeconds: _secondsFromNow(const Duration(days: 3))),
       );
 
       expect(renewed, isNull);
-      expect(called, isFalse, reason: 'a valid session must not spend a request');
+      expect(called, isFalse, reason: 'a session with days left must not spend a request');
     });
 
     test('does nothing when there is no long-term key', () async {
@@ -282,7 +449,7 @@ void main() {
 
     test('ensureFreshSession renews an expired cookie and swallows a failure', () async {
       String? persisted;
-      DouyuUtils.debugCookiePersister = (cookie) => persisted = cookie;
+      DouyuUtils.debugCookiePersister = (cookie, _) => persisted = cookie;
       DouyuUtils.debugCookieFetcher = (_, _) async => <String>['acf_jwt_token=fresh'];
 
       await DouyuUtils.ensureFreshSession(accountCookie: sessionCookie(expiresAtSeconds: _secondsFromNow(const Duration(hours: -1))));
@@ -297,7 +464,7 @@ void main() {
     test('an endpoint that answers without a cookie leaves the stored one alone', () async {
       var persisted = false;
       DouyuUtils.debugCookieFetcher = (_, _) async => const <String>[];
-      DouyuUtils.debugCookiePersister = (_) => persisted = true;
+      DouyuUtils.debugCookiePersister = (_, _) => persisted = true;
 
       final renewed = await DouyuUtils.refreshSession(
         accountCookie: sessionCookie(expiresAtSeconds: _secondsFromNow(const Duration(hours: -1))),

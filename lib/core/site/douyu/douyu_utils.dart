@@ -57,6 +57,19 @@ class DouyuUtils {
   ///   one without asking the viewer to sign in again.
   ///
   /// `dy_did` is the device the login belongs to in both flavours.
+  /// `dy_did` is the device the login belongs to in both flavours.
+  ///
+  /// The web `dy_auth` is good for seven days, and that lifetime lives in the
+  /// `Set-Cookie` attributes a browser keeps — a pasted header string does not
+  /// carry it, which is why the caller passes the time the cookie was saved.
+  static const Duration webCookieLifetime = Duration(days: 7);
+
+  /// How long before [webCookieLifetime] the cookie is renewed.
+  ///
+  /// Renewing a day early costs one request and keeps playback from discovering
+  /// the expiry mid-session.
+  static const Duration refreshMargin = Duration(days: 1);
+
   static const String jwtTokenName = 'acf_jwt_token';
   static const String authTokenName = 'acf_auth';
   static const String webAuthTokenName = 'dy_auth';
@@ -81,9 +94,10 @@ class DouyuUtils {
   @visibleForTesting
   static Future<List<String>> Function(Uri url, Map<String, String> headers)? debugCookieFetcher;
 
-  /// Test seam for storing a renewed cookie; production writes it to settings.
+  /// Test seam for storing a renewed cookie and its save time; production writes
+  /// both to settings.
   @visibleForTesting
-  static void Function(String cookie)? debugCookiePersister;
+  static void Function(String cookie, DateTime savedAt)? debugCookiePersister;
 
   static Map<String, dynamic> _encKey = <String, dynamic>{};
   static Future<void>? _encKeyRefresh;
@@ -222,14 +236,21 @@ class DouyuUtils {
     }
   }
 
-  /// When the stored session ends, or `null` when the cookie carries no
-  /// decodable session token.
-  static DateTime? sessionExpiry(String cookie, {DateTime? now}) {
+  /// When the stored session ends, or `null` when nothing says.
+  ///
+  /// Two sources, in order: the JWT's own `exp` (the H5 flavour), and — for the
+  /// opaque web `dy_auth` — the recorded save time plus Douyu's seven-day rule.
+  /// Without a save time the end is unknown rather than guessed.
+  static DateTime? sessionExpiry(String cookie, {DateTime? now, DateTime? savedAt}) {
     final token = sessionToken(cookie);
     if (token == null || token.isEmpty) return null;
+
     final expiresAt = _asInt(decodeJwtPayload(token)?['exp']);
-    if (expiresAt == null || expiresAt <= 0) return null;
-    return DateTime.fromMillisecondsSinceEpoch(expiresAt * 1000);
+    if (expiresAt != null && expiresAt > 0) {
+      return DateTime.fromMillisecondsSinceEpoch(expiresAt * 1000);
+    }
+
+    return savedAt?.add(webCookieLifetime);
   }
 
   /// Whether the cookie can no longer be used as a login.
@@ -238,30 +259,78 @@ class DouyuUtils {
   /// request whatever the cookie length says, and treating it as a session is
   /// what makes a stale cookie look like a successful login.
   ///
-  /// A token whose expiry cannot be read (the web `dy_auth`) is not expired:
-  /// the app cannot know when it ends, and guessing "expired" would refuse a
-  /// login that still works.
-  static bool isSessionExpired(String cookie) {
+  /// A token whose end is unknown is not expired either: guessing "expired"
+  /// would refuse a login that still works.
+  static bool isSessionExpired(String cookie, {DateTime? now, DateTime? savedAt}) {
     if (sessionToken(cookie) == null) return true;
-    final expiry = sessionExpiry(cookie);
-    return expiry != null && !expiry.isAfter(DateTime.now());
+    final expiry = sessionExpiry(cookie, now: now, savedAt: savedAt ?? storedSessionSavedAt());
+    return expiry != null && !expiry.isAfter(now ?? DateTime.now());
   }
 
-  /// Whether [cookie] carries everything the passport endpoint needs to renew
-  /// an expired session without asking the viewer to sign in again.
-  static bool canRefreshSession(String cookie) {
-    final longTerm = cookieField(cookie, longTermTokenName);
-    final did = cookieField(cookie, deviceIdName);
-    return longTerm != null && longTerm.isNotEmpty && did != null && did.isNotEmpty;
+  /// Whether the cookie should be renewed now rather than when it breaks.
+  ///
+  /// True inside [refreshMargin] of the end, whether that end came from a JWT or
+  /// from the recorded save time.
+  static bool shouldRefreshSession(String cookie, {DateTime? now, DateTime? savedAt}) {
+    if (sessionToken(cookie) == null) return true;
+    final expiry = sessionExpiry(cookie, now: now, savedAt: savedAt ?? storedSessionSavedAt());
+    if (expiry == null) return false;
+    return !(now ?? DateTime.now()).isBefore(expiry.subtract(refreshMargin));
+  }
+
+  /// The long-term key and device id a renewal needs.
+  ///
+  /// Either source counts: a viewer who pasted everything into the cookie box,
+  /// and one who filled the two passport fields separately (which is where they
+  /// actually come from) must both work.
+  static ({String? longTerm, String? did}) refreshCredentials(
+    String cookie, {
+    String? longTerm,
+    String? did,
+  }) {
+    final resolvedLongTerm = _nonBlank(longTerm) ?? _nonBlank(cookieField(cookie, longTermTokenName)) ?? _storedLtp0();
+    // No fallback to the process DID here: a renewal must present the device the
+    // login was issued for, and inventing one would only make the passport
+    // endpoint refuse it. Request headers keep that fallback; a renewal does not.
+    final resolvedDid = _nonBlank(did) ?? _nonBlank(cookieField(cookie, deviceIdName)) ?? _storedDid();
+    return (longTerm: resolvedLongTerm, did: resolvedDid);
+  }
+
+  /// Whether a renewal is possible at all: the passport endpoint needs both the
+  /// long-term key and the device the login belongs to.
+  static bool canRefreshSession(String cookie, {String? longTerm, String? did}) {
+    final credentials = refreshCredentials(cookie, longTerm: longTerm, did: did);
+    return credentials.longTerm != null && credentials.did != null;
+  }
+
+  static String? _nonBlank(String? value) {
+    final trimmed = value?.trim();
+    return trimmed == null || trimmed.isEmpty ? null : trimmed;
+  }
+
+  static String? _storedLtp0() {
+    try {
+      return _nonBlank(SettingsService.to.cookieManager.douyuLtp0.v);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static String? _storedDid() {
+    try {
+      return _nonBlank(SettingsService.to.cookieManager.douyuDid.v);
+    } catch (_) {
+      return null;
+    }
   }
 
   /// What the stored cookie is worth, for the account UI.
-  static DouyuSessionState sessionState(String cookie, {DateTime? now}) {
+  static DouyuSessionState sessionState(String cookie, {DateTime? now, DateTime? savedAt}) {
     final normalized = normalizeAccountCookie(cookie);
     if (normalized.isEmpty) return DouyuSessionState.none;
 
     final at = now ?? DateTime.now();
-    final expiry = sessionExpiry(normalized, now: at);
+    final expiry = sessionExpiry(normalized, now: at, savedAt: savedAt ?? storedSessionSavedAt());
     // A token with no readable expiry (the web `dy_auth`) is a valid session
     // with an unknown end — not a guest, and not an expired one.
     if (sessionToken(normalized) == null) return DouyuSessionState.guest;
@@ -316,12 +385,22 @@ class DouyuUtils {
   ///
   /// Returns the renewed cookie, or `null` when there was nothing to do or the
   /// passport endpoint answered without a usable cookie.
-  static Future<String?> refreshSession({String? accountCookie}) async {
+  static Future<String?> refreshSession({
+    String? accountCookie,
+    DateTime? savedAt,
+    bool force = false,
+    String? longTerm,
+    String? did,
+  }) async {
     final stored = normalizeAccountCookie(accountCookie ?? _configuredAccountCookie());
-    if (stored.isEmpty || !canRefreshSession(stored) || !isSessionExpired(stored)) return null;
+    if (stored.isEmpty) return null;
 
-    final did = cookieField(stored, deviceIdName)!;
-    final longTerm = cookieField(stored, longTermTokenName)!;
+    final credentials = refreshCredentials(stored, longTerm: longTerm, did: did);
+    if (credentials.longTerm == null || credentials.did == null) return null;
+    if (!force && !shouldRefreshSession(stored, savedAt: savedAt)) return null;
+
+    final resolvedDid = credentials.did!;
+    final resolvedLongTerm = credentials.longTerm!;
     final milliseconds = DateTime.now().millisecondsSinceEpoch.toString();
     final url = Uri.parse(_apiDouyuPassport).replace(
       queryParameters: <String, String>{
@@ -332,15 +411,25 @@ class DouyuUtils {
       },
     );
 
+    // This is the request the long-term key exists for: without it in the header
+    // the passport endpoint has nothing to renew and answers as a guest.
     final setCookies = await _fetchSetCookies(url, <String, String>{
       ...requestHeaders(),
-      'cookie': '$deviceIdName=$did;$longTermTokenName=$longTerm',
+      'cookie': '$deviceIdName=$resolvedDid;$longTermTokenName=$resolvedLongTerm',
     });
 
-    final renewed = mergeSetCookieLines(stored, setCookies);
-    if (renewed.isEmpty || renewed == stored) return null;
+    // No `Set-Cookie` at all means the endpoint did not renew anything. That has
+    // to stay a no-op: recording a renewal time here would keep a cookie that is
+    // about to die looking fresh for another seven days.
+    if (setCookies.isEmpty) return null;
 
-    await _persistCookie(renewed);
+    final renewed = mergeSetCookieLines(stored, setCookies);
+    if (renewed.isEmpty) return null;
+
+    // The response may hand back the same value it was given while extending it
+    // server-side, so an unchanged string still counts as a renewal and the
+    // recorded time follows the server's answer rather than the string.
+    await _persistCookie(renewed, DateTime.now());
     return renewed;
   }
 
@@ -349,11 +438,22 @@ class DouyuUtils {
   ///
   /// Never throws: a failed renewal means the request goes out as a guest, which
   /// is strictly better than failing the playback the viewer asked for.
-  static Future<void> ensureFreshSession({String? accountCookie}) async {
+  static Future<void> ensureFreshSession({
+    String? accountCookie,
+    DateTime? savedAt,
+    bool force = false,
+    String? longTerm,
+    String? did,
+  }) async {
     try {
       final stored = normalizeAccountCookie(accountCookie ?? _configuredAccountCookie());
-      if (stored.isEmpty || !canRefreshSession(stored) || !isSessionExpired(stored)) return;
-      await refreshSession(accountCookie: stored);
+      if (stored.isEmpty || !canRefreshSession(stored, longTerm: longTerm, did: did)) return;
+      // `force` is the failure path: a request came back as a guest, which says
+      // more about the cookie than any recorded timestamp can.
+      // A failure path says more than any timestamp: a request came back as a
+      // guest, so renew now regardless of how old the cookie looks.
+      if (!force && !shouldRefreshSession(stored, savedAt: savedAt)) return;
+      await refreshSession(accountCookie: stored, savedAt: savedAt, force: force, longTerm: longTerm, did: did);
     } catch (error) {
       CoreLog.w('Douyu session refresh failed: $error');
     }
@@ -372,14 +472,17 @@ class DouyuUtils {
     return List<String>.from(raw);
   }
 
-  static Future<void> _persistCookie(String cookie) async {
+  static Future<void> _persistCookie(String cookie, DateTime savedAt) async {
     final injected = debugCookiePersister;
     if (injected != null) {
-      injected(cookie);
+      injected(cookie, savedAt);
       return;
     }
     try {
-      SettingsService.to.cookieManager.douyuCookie.v = cookie;
+      final cookies = SettingsService.to.cookieManager;
+      cookies.douyuCookie.v = cookie;
+      // Remember when, or the seven-day rule has nothing to count from.
+      cookies.douyuCookieSavedAt.v = savedAt.millisecondsSinceEpoch ~/ 1000;
     } catch (_) {
       // No settings store (a unit test, a headless run): the renewed cookie is
       // still returned to the caller, so this request benefits either way.
@@ -414,6 +517,20 @@ class DouyuUtils {
       fields.add('$name=${piece.substring(separator + 1).trim()}');
     }
     return fields.join('; ');
+  }
+
+  /// When the stored cookie was obtained, as recorded when it was saved.
+  ///
+  /// `null` when nothing recorded it — a cookie pasted before this existed, or a
+  /// unit test with no settings store. The seven-day rule then has no start
+  /// point, and the app says "unknown" instead of inventing one.
+  static DateTime? storedSessionSavedAt({int? savedAtSeconds}) {
+    try {
+      final seconds = savedAtSeconds ?? SettingsService.to.cookieManager.douyuCookieSavedAt.v;
+      return seconds > 0 ? DateTime.fromMillisecondsSinceEpoch(seconds * 1000) : null;
+    } catch (_) {
+      return null;
+    }
   }
 
   static String _configuredAccountCookie() {
