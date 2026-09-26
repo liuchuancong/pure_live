@@ -1,4 +1,5 @@
 import 'package:pure_live/core/interface/live_quality_discovery.dart';
+import 'package:pure_live/recorder/services/recording_bitrate_window.dart';
 import 'package:pure_live/recorder/services/live_input_recording_binding.dart';
 import 'package:pure_live/common/utils/play_quality_label.dart';
 
@@ -371,8 +372,6 @@ class RecorderController extends GetxService {
       final activeNative = ffmpeg.getSession(task.taskId);
       final nativeSession = activeNative?.sessionId == sessionId ? activeNative : null;
       final attemptBytes = math.max(snapshot.bytes, nativeSession?.fileSize ?? 0);
-      final previous = monitor.previous;
-      monitor.previous = (bytes: attemptBytes, sampledAt: now);
       final mediaStarted = attemptBytes > 0 || nativeSession?.mediaStarted == true;
       if (!mediaStarted) return;
 
@@ -380,12 +379,8 @@ class RecorderController extends GetxService {
       final attempt = _attemptProgress[task.taskId] ?? const RecordingAttemptProgress(baseBytes: 0, baseSeconds: 0);
       final totalBytes = attempt.totalBytes(attemptBytes);
       if (totalBytes > task.fileSize) task.fileSize = totalBytes;
-      if (attemptBytes > previous.bytes) {
-        final elapsedMs = now.difference(previous.sampledAt).inMilliseconds;
-        if (elapsedMs > 0) {
-          task.bitrate = (attemptBytes - previous.bytes) * 8 / elapsedMs;
-        }
-      }
+      final windowBitrate = monitor.bitrate.add(attemptBytes, now);
+      if (windowBitrate != null) task.bitrate = windowBitrate;
       if (task.bitrate <= 0 && (nativeSession?.bitrate ?? 0) > 0) task.bitrate = nativeSession!.bitrate;
       final wallSeconds = now.difference(monitor.startedAt!).inSeconds;
       final attemptSeconds = math.max(wallSeconds, nativeSession?.recordedSeconds ?? 0);
@@ -1737,8 +1732,7 @@ class _RecorderPollRequest {
 }
 
 class _RecorderOutputMonitor {
-  _RecorderOutputMonitor({required this.task, required this.sessionId, required this.tracker})
-    : previous = (bytes: 0, sampledAt: DateTime.now());
+  _RecorderOutputMonitor({required this.task, required this.sessionId, required this.tracker});
 
   final LiveRecordTask task;
   final int sessionId;
@@ -1746,7 +1740,7 @@ class _RecorderOutputMonitor {
   Timer? timer;
   Completer<void>? sampling;
   bool finishing = false;
-  ({int bytes, DateTime sampledAt}) previous;
+  final bitrate = RecordingBitrateWindow();
   DateTime? startedAt;
 }
 

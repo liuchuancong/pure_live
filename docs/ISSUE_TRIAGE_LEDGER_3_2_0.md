@@ -2,12 +2,16 @@
 
 本台账是 Issue 首轮分流的唯一紧凑索引。它记录“当前源码还需要做什么”，不复制专项审计的完整过程。状态分类遵循 [`MAINTENANCE_POLICY.md`](../MAINTENANCE_POLICY.md)。
 
-2026-09-25 复核：新增上游 #877–#879，见下表前三行。
+2026-09-26 复核：新增上游 #881、#883、#885、#886，见下表前四行。2026-09-25 复核：新增上游 #877–#879。
 
 2026-09-24 复核：本仓库 Open Issue 为 0；上游 #876 已关闭且本仓库核对了实际 APK 安装边界，#875 仍开放并待 Windows 多画面原生验收。旧候选 1+3 长播另发现[mpv 渲染上下文未释放导致原生终止](WINDOWS_MULTIVIEW_NATIVE_ABORT_2026_09_24.md)，并曾有待判别小格静止画面；`248c0587` 新 Debug 的 1+3 双格稀疏观察 31 分 49 秒均变化，2×2、音频/帧进度和严格退出计时仍待补证，报告所指大格持续停帧尚未复现。#853 仍缺少房间、请求/确认档位、解码宽高或码率；该项处置条件保持不变。
 
 | Issue | 报告基线 | 当前映射 | 当前证据 | 处置 / 再开条件 |
 | --- | --- | --- | --- | --- |
+| [#883 Windows 任务栏显示 pure_live](https://github.com/liuchuancong/pure_live/issues/883) | 上游 v3.1.5 / Windows | `present` → 已在 `claude` 修复 | 本仓库 3.2.5 Windows 实测原生窗口标题为 `pure_live`：`windows/runner/main.cpp` 以 `L"pure_live"` 创建窗口，`Runner.rc` 的 FileDescription/ProductName 也是 `pure_live`（上游 3e540381 仅改了资源字段，本分支未包含）。现在窗口标题为「纯粹直播」（单实例查找使用同一常量），FileDescription「纯粹直播」、ProductName「纯粹直播 Pure Live」；`test/windows_runner_title_test.dart` | Windows 安装包任务栏仍显示英文名时重开 |
+| [#881 网页搜索一直加载](https://github.com/liuchuancong/pure_live/issues/881) | 上游 v3.1.5 / Android 16（小米 Pad 7 Ultra），原项目也复现 | `present` → 已在 `claude` 修复（3.2.9） | 本仓库只有快手走网页搜索。真机复现：快手网页搜索页只显示「相关游戏」，没有主播或直播间，进度条一直不结束。直接请求快手接口核对根因：`/live_api/search/overview` 对未登录访客返回 authors 0、liveStreams 0，`/live_api/search/liveStream` 返回 result 10「服务器繁忙，请稍后再试」，属于快手的登录/反爬限制，不是 WebView 缺陷；`/live_api/search/author` 仍公开返回主播 id、昵称、头像、粉丝数与 `living` 开播状态。修复：快手改为 App 内原生主播搜索（含未开播，逐页请求直到空页），网页入口保留。复现过程中另发现：首页小窗播放时「更多」菜单的「搜索直播 / 链接访问」点不动（flutter_floating 的拖动手势层仍拦截点击），已一并修复（c766d319），可能正是报告中的「点击无反应」 | 快手主播搜索返回空或失败时附关键词重开 |
+| [#885 斗鱼播放不了原画](https://github.com/liuchuancong/pure_live/issues/885) | 上游 3.1.5 / Android | `platform-limit` → 与 #873 同源，非客户端缺陷 | 报告截图底部提示「平台实际返回 蓝光4M，已按真实画质播放」：客户端请求的是原画（`rate=0`），斗鱼匿名接口对部分高规格房间（如 2K60 原画）回落为 4M，客户端按平台确认档位显示与播放，未伪装成原画。2026-09-23 匿名对照（[Issue #873 审计](ISSUE_873_DOUYU_QUALITY_AND_SESSION_AUDIT_2026_09_23.md)）：1080P30 原画房间同档返回，2K60 原画房间回落 4M。本仓库账号页已有独立斗鱼 Cookie 入口，签名/播放/录制请求沿用同一会话 | 在账号页填入自己的斗鱼 Cookie 后仍只返回 4M 时，附房间号与请求/确认档位重开 |
+| [#886 全屏相关问题与建议](https://github.com/liuchuancong/pure_live/issues/886) | 上游 v3.1.5 / Android 15，抖音直播间 | `present` → 已在 `claude` 修复（3.2.9） | PDF 三条：① 竖屏直播双击进入的是横屏式全屏，底部控制栏挤在竖屏宽度里——双击改为与下滑相同，进入/退出竖屏全屏（`toggleFullScreenFromGesture`），不符合竖屏全屏条件时仍走普通全屏；② 横屏直播内嵌控制栏的全屏按钮被挤出屏幕——3.2.2 已固定在滚动区外（52ea1f52）；③ 建议再次点击画面收起控制栏——手机上控制栏显示且正在播放时，单击即收起（暂停时单击仍显示控制栏并恢复播放，电脑版点击行为不变）。真机 REDMI K90 / Android 17 抖音竖屏直播间：双击进入竖屏全屏、再双击退出，进入后约 2 秒单击即收起（录屏逐帧核对）；斗鱼横屏直播间双击仍进入横屏全屏 | 新版仍复现时附录屏重开 |
 | [#879 多画面一键静音没有了](https://github.com/liuchuancong/pure_live/issues/879) | 上游 v3.1.15 / Windows；称 3.1.14 有 | `present`（功能缺失）→ 已在 `claude` 实现 | 本仓库与上游 master 的多画面都只有「音频焦点」模型（仅一格出声），没有全部静音。`c42e70a9` 在工具栏新增「全部静音 / 恢复声音」：静音期间焦点仍可切换（音量、弹幕、大画面跟随），但不会出声；焦点队列改为携带 (格, 是否静音)，切换不会被进行中的焦点任务合并掉；`test/multiview_test.dart` 62/62 | 若需要「单格静音」而非全局静音另行提出 |
 | [#878 新增微信视频号直播](https://github.com/liuchuancong/pure_live/issues/878) | 功能请求（已被上游关闭） | `deferred` | 视频号直播没有公开网页目录与播放接口，取流依赖微信客户端登录态，不符合本项目「公开接口、不代登录」的平台接入条件 | 出现公开网页播放入口时重新评估 |
 | [#877 新接入平台黑屏有声无画面](https://github.com/liuchuancong/pure_live/issues/877) | 上游 v3.1.15 / Android MIUI14；多为唱歌、电台类直播，评论补充「有些是语音直播」 | `present`（部分）→ 已在 `claude` 修订 | 根因之一：部分 CDN 以传统 FLV「编码号 12」传 HEVC，播放内核的 FFmpeg 7.1 不识别，只剩声音。全平台探针（新增按画质报告 FLV 视频编码）发现 Shopee Live 与 17LIVE（取决于主播编码器）属于这种情况，其余 FLV 平台全部为 AVC；v3.2.2 起 Shopee、`719f902f` 起 17LIVE 经本机中转改写为增强型 FLV。语音 / 电台直播本身没有画面，属正常 | 若其他平台仍有声无画面，请附平台与房间号，用探针 `PURELIVE_PROBE_ALL_QUALITIES=1` 核对编码 |

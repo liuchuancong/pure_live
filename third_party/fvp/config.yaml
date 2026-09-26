@@ -1,0 +1,38 @@
+output: lib/src/generated_bindings.dart
+name: NativeLibrary
+description: Bindings to libmdk
+headers:
+  entry-points:
+    - mdk-sdk/include/mdk/c/module.h
+#    - lib/src/callbacks.h
+functions:
+  include:
+    - MDK.*
+    - mdk.*
+    - Mdk.*
+structs:
+  include:
+    - MDK.*
+    - mdk.*
+  exclude:
+    - mdk.+RenderAPI
+unions:
+  include:
+    - MDK.*
+    - mdk.*
+enums:
+  include:
+    - MDK.*
+    - mdk.*
+macros:
+  include:
+    - MDK.*
+    - mdk.*
+globals:
+  include:
+    - MDK.*
+    - mdk.*
+comments: true
+preamble: |
+  // Copyright (c) 2019-2025 WangBin <wbsecg1 at gmail.com>
+  // https://github.com/wang-bin/mdk-sdk

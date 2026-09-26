@@ -15,7 +15,6 @@ import 'package:pure_live/modules/account/douyu/douyu_cookie_controller.dart';
 import 'package:pure_live/modules/account/huya/huya_cookie_controller.dart';
 import 'package:pure_live/modules/account/kuaishou/kuaishou_cookie_controller.dart';
 import 'package:pure_live/modules/account/soop/soop_cookie_controller.dart';
-import 'package:pure_live/modules/account/taobao/taobao_cookie_controller.dart';
 import 'package:pure_live/modules/account/twitch/twitch_cookie_controller.dart';
 import 'package:pure_live/modules/account/widgets/account_cookie_editor.dart';
 import 'package:pure_live/core/site/douyu/douyu_utils.dart';
@@ -70,7 +69,7 @@ void main() {
     expect(parsed['huyaCookie'], 'huya=backup');
     expect(parsed['douyuCookie'], 'douyu=backup');
     expect(parsed['douyinCookie'], 'douyin=backup');
-    expect(parsed['taobaoCookie'], 'taobao=backup');
+    expect(parsed.containsKey('taobaoCookie'), isFalse, reason: 'retired Taobao cookie is not restored');
   });
 
   test('all platform cookie controllers persist the normalized header value', () {
@@ -89,7 +88,6 @@ void main() {
     final soop = SoopCookieBindingCookieController();
     final twitch = TwitchCookieBindingCookieController();
     final yy = YyCookieBindingCookieController();
-    final taobao = TaobaoCookieController();
     addTearDown(() {
       douyin.onClose();
       huya.onClose();
@@ -98,7 +96,6 @@ void main() {
       soop.onClose();
       twitch.onClose();
       yy.onClose();
-      taobao.onClose();
     });
 
     douyin.setCookie(' \r\ndouyin=value\u0000 ');
@@ -108,7 +105,6 @@ void main() {
     soop.setCookie(' \r\nsoop=value\u0000 ');
     twitch.setCookie(' \r\ntwitch=value\u0000 ');
     yy.setCookie(' \r\nyy=value\u0000 ');
-    taobao.setCookie(' \r\ntaobao=value\u0000 ');
 
     expect(cookies.douyinCookie.value, 'douyin=value');
     expect(cookies.huyaCookie.value, 'huya=value');
@@ -117,7 +113,6 @@ void main() {
     expect(cookies.soopCookie.value, 'soop=value');
     expect(cookies.twitchCookie.value, 'twitch=value');
     expect(cookies.yyCookie.value, 'yy=value');
-    expect(cookies.taobaoCookie.value, 'taobao=value');
   });
 
   test('Douyu session reaches signing, playback and recorder headers consistently', () async {

@@ -8,23 +8,16 @@ import 'interface/live_site.dart';
 import 'site/chzzk/chzzk_site.dart';
 import 'site/fc2live/fc2_site.dart';
 import 'site/weibo/weibo_site.dart';
-import 'site/tting/tting_site.dart';
 import 'site/acfun/acfun_site.dart';
 import 'site/douyu/douyu_site.dart';
 import 'site/liveme/liveme_site.dart';
 import 'site/tiktok/tiktok_site.dart';
-import 'site/nimotv/nimotv_site.dart';
-import 'site/rumble/rumble_site.dart';
 import 'site/douyin/douyin_site.dart';
 import 'site/jdlive/jd_live_site.dart';
 import 'site/youtube/youtube_site.dart';
 import 'site/sixroom/sixroom_site.dart';
-import 'site/openrec/openrec_site.dart';
 import 'site/picarto/picarto_site.dart';
-import 'site/huajiao/huajiao_site.dart';
 import 'site/niconico/niconico_site.dart';
-import 'site/popkontv/popkontv_site.dart';
-import 'site/goodgame/goodgame_site.dart';
 import 'site/showroom/showroom_site.dart';
 import 'site/missevan/missevan_site.dart';
 import 'site/kilakila/kilakila_site.dart';
@@ -35,10 +28,6 @@ import 'site/baidulive/baidu_live_site.dart';
 
 import 'package:pure_live/common/index.dart';
 
-import 'site/shopeelive/shopeelive_site.dart';
-import 'site/taobaolive/taobao_live_site.dart';
-import 'site/vkvideolive/vkvideolive_site.dart';
-import 'site/dailymotion/dailymotion_site.dart';
 import 'site/xiaohongshu/xiaohongshu_site.dart';
 import 'site/twitcasting/twitcasting_site.dart';
 import 'site/seventeenlive/seventeenlive_site.dart';
@@ -72,9 +61,6 @@ class Sites {
   static const String missevanSite = 'missevan';
   static const String inkeSite = 'inke';
   static const String kilakilaSite = 'kilakila';
-  static const String huajiaoSite = 'huajiao';
-  static const String openrecSite = 'openrec';
-  static const String ttingSite = 'ttinglive';
   static const String xiaohongshuSite = 'xiaohongshu';
   static const String showroomSite = 'showroom';
   static const String chzzkSite = 'chzzk';
@@ -84,17 +70,9 @@ class Sites {
   static const String youtubeSite = 'youtube';
   static const String bigoSite = 'bigo';
   static const String pandaLiveSite = 'pandalive';
-  static const String popkonSite = 'popkontv';
-  static const String shopeeLiveSite = 'shopeelive';
-  static const String vkVideoLiveSite = 'vkvideolive';
-  static const String nimoTvSite = 'nimotv';
-  static const String dailymotionSite = 'dailymotion';
-  static const String rumbleSite = 'rumble';
-  static const String goodGameSite = 'goodgame';
   static const String fc2LiveSite = 'fc2live';
   static const String steamBroadcastSite = 'steambroadcast';
   static const String jdLiveSite = 'jdlive';
-  static const String taobaoLiveSite = 'taobaolive';
   static const String kugouLiveSite = 'kugoulive';
   static const String baiduLiveSite = 'baidulive';
   static const String sixRoomSite = 'sixroom';
@@ -119,9 +97,6 @@ class Sites {
     missevanSite,
     inkeSite,
     kilakilaSite,
-    huajiaoSite,
-    openrecSite,
-    ttingSite,
     xiaohongshuSite,
     showroomSite,
     chzzkSite,
@@ -131,17 +106,9 @@ class Sites {
     youtubeSite,
     bigoSite,
     pandaLiveSite,
-    popkonSite,
-    shopeeLiveSite,
-    vkVideoLiveSite,
-    nimoTvSite,
-    dailymotionSite,
-    rumbleSite,
-    goodGameSite,
     fc2LiveSite,
     steamBroadcastSite,
     jdLiveSite,
-    taobaoLiveSite,
     kugouLiveSite,
     baiduLiveSite,
     sixRoomSite,
@@ -175,9 +142,6 @@ class Sites {
     missevanSite: '$_assetRoot/missevan.png',
     inkeSite: '$_assetRoot/inke.png',
     kilakilaSite: '$_assetRoot/kilakila.png',
-    huajiaoSite: '$_assetRoot/huajiao.png',
-    openrecSite: '$_assetRoot/openrec.png',
-    ttingSite: '$_assetRoot/ttinglive.png',
     xiaohongshuSite: '$_assetRoot/xiaohongshu.png',
     niconicoSite: '$_assetRoot/niconico.png',
     weiboSite: '$_assetRoot/weibo.png',
@@ -185,17 +149,9 @@ class Sites {
     chzzkSite: '$_assetRoot/chzzk.png',
     kickSite: '$_assetRoot/kick.png',
     pandaLiveSite: '$_assetRoot/panda.png',
-    popkonSite: '$_assetRoot/popkon.png',
-    shopeeLiveSite: '$_assetRoot/shopee.png',
-    vkVideoLiveSite: '$_assetRoot/vk.png',
-    nimoTvSite: '$_assetRoot/nimo.png',
-    dailymotionSite: '$_assetRoot/dailymotion.png',
-    rumbleSite: '$_assetRoot/rumble.png',
-    goodGameSite: '$_assetRoot/goodgame.png',
     fc2LiveSite: '$_assetRoot/fc2.png',
     steamBroadcastSite: '$_assetRoot/steam.png',
     jdLiveSite: '$_assetRoot/jd.png',
-    taobaoLiveSite: '$_assetRoot/taobao.png',
     kugouLiveSite: '$_assetRoot/kugou.png',
     baiduLiveSite: '$_assetRoot/baidu.png',
     lookLiveSite: '$_assetRoot/look.png',
@@ -209,10 +165,59 @@ class Sites {
 
   static bool isSupported(String id) => supportedSiteIds.contains(id.trim().toLowerCase());
 
+  /// Platforms removed in 3.2.8 (hard to maintain, niche or no longer usable).
+  /// Saved follows, history and links for them stay readable and are shown as
+  /// retired instead of failing as unknown.
+  static const Set<String> retiredSiteIds = {
+    'huajiao',
+    'openrec',
+    'ttinglive',
+    'popkontv',
+    'shopeelive',
+    'vkvideolive',
+    'nimotv',
+    'dailymotion',
+    'rumble',
+    'goodgame',
+    'taobaolive',
+  };
+
+  static bool isRetired(String id) => retiredSiteIds.contains(id.trim().toLowerCase());
+
+  /// Web hosts of the retired platforms, so a shared link can be answered with
+  /// "retired" instead of being ignored as unrecognised text.
+  static const Set<String> _retiredHosts = {
+    'huajiao.com',
+    'openrec.tv',
+    'flextv.co.kr',
+    'ttinglive.com',
+    'popkontv.com',
+    'goodgame.ru',
+    'vkvideo.ru',
+    'vkplay.live',
+    'dailymotion.com',
+    'dai.ly',
+    'rumble.com',
+    'nimo.tv',
+    'shopee.co.id',
+    'taobao.com',
+    'm.tb.cn',
+  };
+
+  static bool isRetiredLink(String text) {
+    for (final match in RegExp(r'https?://[^\s]+', caseSensitive: false).allMatches(text)) {
+      final host = Uri.tryParse(match.group(0)!)?.host.toLowerCase() ?? '';
+      if (_retiredHosts.any((h) => host == h || host.endsWith('.$h'))) return true;
+    }
+    return false;
+  }
+
   /// Read-only artwork lookup for frequently rebuilt room and multiview UI.
   /// A badge must not allocate a platform adapter just to obtain its asset.
   static String logoForId(String id) {
     final normalizedId = id.trim().toLowerCase();
+    // Retired platforms keep a neutral badge so saved follows still render.
+    if (retiredSiteIds.contains(normalizedId)) return '$_assetRoot/logo.png';
     if (!supportedSiteIds.contains(normalizedId)) throw StateError('Unsupported live site: $normalizedId');
     return _logos[normalizedId] ?? '$_assetRoot/logo.png';
   }
@@ -279,19 +284,6 @@ class Sites {
         logo: logoForId(kilakilaSite),
         liveSite: KilakilaSite(),
       ),
-      huajiaoSite => Site(
-        id: huajiaoSite,
-        name: i18n('site_huajiao'),
-        logo: logoForId(huajiaoSite),
-        liveSite: HuajiaoSite(),
-      ),
-      openrecSite => Site(
-        id: openrecSite,
-        name: 'mellow-fan (OPENREC)',
-        logo: logoForId(openrecSite),
-        liveSite: OpenrecSite(),
-      ),
-      ttingSite => Site(id: ttingSite, name: 'FLEX TV (TTingLive)', logo: logoForId(ttingSite), liveSite: TtingSite()),
       xiaohongshuSite => Site(
         id: xiaohongshuSite,
         name: i18n('site_xiaohongshu'),
@@ -331,48 +323,6 @@ class Sites {
         logo: logoForId(pandaLiveSite),
         liveSite: PandaLiveSite(),
       ),
-      popkonSite => Site(
-        id: popkonSite,
-        name: i18n('site_popkontv'),
-        logo: logoForId(popkonSite),
-        liveSite: PopkonSite(),
-      ),
-      shopeeLiveSite => Site(
-        id: shopeeLiveSite,
-        name: i18n('site_shopeelive'),
-        logo: logoForId(shopeeLiveSite),
-        liveSite: ShopeeLiveSite(),
-      ),
-      vkVideoLiveSite => Site(
-        id: vkVideoLiveSite,
-        name: i18n('site_vkvideolive'),
-        logo: logoForId(vkVideoLiveSite),
-        liveSite: VkVideoLiveSite(),
-      ),
-      nimoTvSite => Site(
-        id: nimoTvSite,
-        name: i18n('site_nimotv'),
-        logo: logoForId(nimoTvSite),
-        liveSite: NimoTvSite(),
-      ),
-      dailymotionSite => Site(
-        id: dailymotionSite,
-        name: i18n('site_dailymotion'),
-        logo: logoForId(dailymotionSite),
-        liveSite: DailymotionSite(),
-      ),
-      rumbleSite => Site(
-        id: rumbleSite,
-        name: i18n('site_rumble'),
-        logo: logoForId(rumbleSite),
-        liveSite: RumbleSite(),
-      ),
-      goodGameSite => Site(
-        id: goodGameSite,
-        name: i18n('site_goodgame'),
-        logo: logoForId(goodGameSite),
-        liveSite: GoodGameSite(),
-      ),
       fc2LiveSite => Site(
         id: fc2LiveSite,
         name: i18n('site_fc2live'),
@@ -390,12 +340,6 @@ class Sites {
         name: i18n('site_jdlive'),
         logo: logoForId(jdLiveSite),
         liveSite: JdLiveSite(),
-      ),
-      taobaoLiveSite => Site(
-        id: taobaoLiveSite,
-        name: i18n('site_taobaolive'),
-        logo: logoForId(taobaoLiveSite),
-        liveSite: TaobaoLiveSite(),
       ),
       kugouLiveSite => Site(
         id: kugouLiveSite,
@@ -453,9 +397,6 @@ class Sites {
       missevanSite,
       inkeSite,
       kilakilaSite,
-      huajiaoSite,
-      openrecSite,
-      ttingSite,
       xiaohongshuSite,
       niconicoSite,
       weiboSite,
@@ -467,17 +408,9 @@ class Sites {
       youtubeSite,
       bigoSite,
       pandaLiveSite,
-      popkonSite,
-      shopeeLiveSite,
-      vkVideoLiveSite,
-      nimoTvSite,
-      dailymotionSite,
-      rumbleSite,
-      goodGameSite,
       fc2LiveSite,
       steamBroadcastSite,
       jdLiveSite,
-      taobaoLiveSite,
       kugouLiveSite,
       baiduLiveSite,
       sixRoomSite,

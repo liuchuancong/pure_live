@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/widgets.dart';
+import 'package:flutter_floating/flutter_floating.dart';
 import 'package:pure_live/get/get.dart';
 
 /// Tracks open modal popups (menus, dialogs, bottom sheets).
@@ -62,4 +65,23 @@ class PopupAwareVisibility extends StatelessWidget {
       );
     });
   }
+}
+
+/// [PopupAwareVisibility] only fades the floating content: flutter_floating
+/// wraps it in an opaque drag detector that keeps claiming taps, so a menu
+/// under the invisible window (the home "search / open link" items) could not
+/// be tapped. Offstage the whole floating view while a popup is open.
+StreamSubscription<int> hideFloatingWhilePopupsOpen(FloatingOverlay overlay) {
+  void apply(int openPopups) {
+    if (!overlay.isShowing) return;
+    if (openPopups > 0) {
+      if (!overlay.isHidden) overlay.hide();
+    } else if (overlay.isHidden) {
+      overlay.show();
+    }
+  }
+
+  final subscription = PopupRouteTracker.openPopups.listen(apply);
+  apply(PopupRouteTracker.openPopups.value);
+  return subscription;
 }

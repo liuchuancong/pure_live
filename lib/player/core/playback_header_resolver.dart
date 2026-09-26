@@ -1,6 +1,4 @@
-import 'package:pure_live/core/site/tting/tting_api.dart';
 import 'package:pure_live/core/site/xiaohongshu/xiaohongshu_api.dart';
-import 'package:pure_live/core/site/openrec/openrec_api.dart';
 import 'package:pure_live/common/services/settings_service.dart';
 import 'package:pure_live/core/site/bilibili/bilibili_site.dart';
 import 'package:pure_live/core/site/douyin/douyin_site.dart';
@@ -14,7 +12,6 @@ import 'package:pure_live/core/site/twitcasting/twitcasting_api.dart';
 import 'package:pure_live/core/site/missevan/missevan_api.dart';
 import 'package:pure_live/core/site/inke/inke_api.dart';
 import 'package:pure_live/core/site/kilakila/kilakila_api.dart';
-import 'package:pure_live/core/site/huajiao/huajiao_api.dart';
 import 'package:pure_live/core/site/showroom/showroom_api.dart';
 import 'package:pure_live/core/site/chzzk/chzzk_api.dart';
 import 'package:pure_live/core/site/kick/kick_api.dart';
@@ -23,7 +20,6 @@ import 'package:pure_live/core/site/tiktok/tiktok_api.dart';
 import 'package:pure_live/core/site/youtube/youtube_api.dart';
 import 'package:pure_live/core/site/bigo/bigo_api.dart';
 import 'package:pure_live/core/site/pandalive/pandalive_api.dart';
-import 'package:pure_live/core/site/popkontv/popkontv_api.dart';
 import 'package:pure_live/core/site/seventeenlive/seventeenlive_api.dart';
 import 'package:pure_live/core/common/http_header_policy.dart';
 
@@ -161,17 +157,8 @@ class PlaybackHeaderResolver {
       case Sites.missevanSite:
         headers = MissevanApi.playHeaders;
         break;
-      case Sites.openrecSite:
-        headers = OpenrecApi.headers;
-        break;
-      case Sites.ttingSite:
-        headers = TtingApi.playHeaders;
-        break;
       case Sites.xiaohongshuSite:
         headers = XiaohongshuApi.headers;
-        break;
-      case Sites.huajiaoSite:
-        headers = HuajiaoApi.headers;
         break;
       case Sites.kilakilaSite:
         headers = KilakilaApi.playHeaders;
@@ -208,9 +195,6 @@ class PlaybackHeaderResolver {
         break;
       case Sites.pandaLiveSite:
         headers = PandaLiveApi.mediaHeaders(roomId);
-        break;
-      case Sites.popkonSite:
-        headers = PopkonApi.mediaHeaders(roomId);
         break;
       default:
         headers = const <String, String>{};

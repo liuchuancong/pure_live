@@ -62,9 +62,9 @@ class FavoriteRoomController extends GetxController {
     Sites.missevanSite, // v6
     Sites.inkeSite, // v7
     Sites.kilakilaSite, // v8
-    Sites.huajiaoSite, // v9
-    Sites.openrecSite, // v10
-    Sites.ttingSite, // v11
+    'huajiao', // v9 (retired in 3.2.8; keeps later versions aligned)
+    'openrec', // v10 (retired in 3.2.8; keeps later versions aligned)
+    'ttinglive', // v11 (retired in 3.2.8; keeps later versions aligned)
     Sites.xiaohongshuSite, // v12
     Sites.niconicoSite, // v13
     Sites.weiboSite, // v14
@@ -77,17 +77,17 @@ class FavoriteRoomController extends GetxController {
     Sites.youtubeSite, // v21
     Sites.bigoSite, // v22
     Sites.pandaLiveSite, // v23
-    Sites.popkonSite, // v24
-    Sites.shopeeLiveSite, // v25
-    Sites.vkVideoLiveSite, // v26
-    Sites.nimoTvSite, // v27
-    Sites.dailymotionSite, // v28
-    Sites.rumbleSite, // v29
-    Sites.goodGameSite, // v30
+    'popkontv', // v24 (retired in 3.2.8; keeps later versions aligned)
+    'shopeelive', // v25 (retired in 3.2.8; keeps later versions aligned)
+    'vkvideolive', // v26 (retired in 3.2.8; keeps later versions aligned)
+    'nimotv', // v27 (retired in 3.2.8; keeps later versions aligned)
+    'dailymotion', // v28 (retired in 3.2.8; keeps later versions aligned)
+    'rumble', // v29 (retired in 3.2.8; keeps later versions aligned)
+    'goodgame', // v30 (retired in 3.2.8; keeps later versions aligned)
     Sites.fc2LiveSite, // v31
     Sites.steamBroadcastSite, // v32
     Sites.jdLiveSite, // v33
-    Sites.taobaoLiveSite, // v34
+    'taobaolive', // v34 (retired in 3.2.8; keeps later versions aligned)
     Sites.kugouLiveSite, // v35
     Sites.baiduLiveSite, // v36
     Sites.sixRoomSite, // v37
@@ -110,6 +110,7 @@ class FavoriteRoomController extends GetxController {
     // version write avoid a disk-write storm when an older installation jumps
     // across many catalog versions, while preserving hidden older sites.
     for (var index = 0; index < _catalogAdditions.length; index++) {
+      if (Sites.isRetired(_catalogAdditions[index])) continue;
       if (previous < index + 3 && seen.add(_catalogAdditions[index])) {
         updated.add(_catalogAdditions[index]);
       }

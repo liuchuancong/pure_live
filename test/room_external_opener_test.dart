@@ -8,16 +8,9 @@ import 'package:pure_live/modules/live_play/services/room_external_opener.dart';
 
 void main() {
   final newPlatformWebTargets = <String, (String, String)>{
-    'shopeelive': ('id:12345', 'https://live.shopee.co.id/share?from=live&session=12345'),
-    'vkvideolive': ('fixture_channel', 'https://live.vkvideo.ru/fixture_channel'),
-    'nimotv': ('2468', 'https://www.nimo.tv/live/2468'),
-    'dailymotion': ('x12345', 'https://www.dailymotion.com/video/x12345'),
-    'rumble': ('v7fngda-title', 'https://rumble.com/v7fngda-title.html'),
-    'goodgame': ('fixture_channel', 'https://goodgame.ru/fixture_channel'),
     'fc2live': ('12345', 'https://live.fc2.com/12345/'),
     'steambroadcast': ('76561198373527746', 'https://steamcommunity.com/broadcast/watch/76561198373527746'),
     'jdlive': ('12345', 'https://lives.jd.com/#/12345'),
-    'taobaolive': ('live:12345', 'https://h5.m.taobao.com/taolive/video.html?id=12345'),
     'kugoulive': ('12345', 'https://fanxing.kugou.com/12345'),
     'baidulive': ('123456', 'https://live.baidu.com/m/room/123456'),
     'sixroom': ('12345', 'https://v.6.cn/12345'),
@@ -45,24 +38,11 @@ void main() {
       expect(launches, [entry.value.$2]);
     });
   }
-  test('GoodGame player identity retains its player URL', () {
-    expect(
-      RoomExternalOpener.resolve('goodgame', LiveRoom(roomId: 'id:12345'))?.web,
-      'https://goodgame.ru/player?src=12345',
-    );
-  });
   test('new platform malformed identities never become shell targets', () {
     final invalid = <String, String>{
-      'shopeelive': 'id:zero',
-      'vkvideolive': 'login',
-      'nimotv': 'search',
-      'dailymotion': 'video',
-      'rumble': 'archive',
-      'goodgame': 'id:0',
       'fc2live': 'abc',
       'steambroadcast': '123',
       'jdlive': 'abc',
-      'taobaolive': 'live:0',
       'kugoulive': 'abc',
       'baidulive': '12345',
       'sixroom': '1',
@@ -73,7 +53,6 @@ void main() {
     }
   });
   final webTargets = {
-    'huajiao': 'https://h.huajiao.com/site/profile_12345.html',
     'yy': 'https://www.yy.com/12345',
     'bilibili': 'https://live.bilibili.com/12345',
     'douyin': 'https://live.douyin.com/12345',

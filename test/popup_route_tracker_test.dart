@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_floating/flutter_floating.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pure_live/player/utils/popup_route_tracker.dart';
 
@@ -59,4 +62,54 @@ void main() {
 
     floating.remove();
   });
+
+  testWidgets('the real floating overlay lets a menu underneath it receive taps', (tester) async {
+    final navigatorKey = GlobalKey<NavigatorState>();
+    String? selected;
+    await tester.pumpWidget(
+      MaterialApp(
+        navigatorKey: navigatorKey,
+        navigatorObservers: [PopupRouteTracker.instance],
+        home: const Scaffold(body: SizedBox.expand()),
+      ),
+    );
+
+    // flutter_floating wraps the child in an opaque drag detector, so fading
+    // the child alone left an invisible window swallowing the menu's taps.
+    final floating = FloatingOverlay(
+      const PopupAwareVisibility(
+        child: SizedBox(width: 300, height: 300, child: ColoredBox(color: Colors.black)),
+      ),
+      slideType: FloatingEdgeType.onLeftAndTop,
+      left: 0,
+      top: 0,
+    );
+    floating.open(tester.element(find.byType(Scaffold)));
+    final subscription = hideFloatingWhilePopupsOpen(floating);
+    await _settleFrames(tester);
+
+    showMenu<String>(
+      context: navigatorKey.currentContext!,
+      position: const RelativeRect.fromLTRB(10, 10, 10, 10),
+      items: const [PopupMenuItem(value: 'search', child: Text('search'))],
+    ).then((value) => selected = value);
+    await _settleFrames(tester);
+
+    await tester.tap(find.text('search'));
+    await _settleFrames(tester);
+    expect(selected, 'search');
+    expect(floating.isHidden, isFalse, reason: 'the floating window returns once the menu closes');
+
+    unawaited(subscription.cancel());
+    floating.close();
+    floating.dispose();
+    await _settleFrames(tester);
+  });
+}
+
+// The floating view keeps scheduling frames, so pumpAndSettle never returns.
+Future<void> _settleFrames(WidgetTester tester) async {
+  for (var i = 0; i < 5; i++) {
+    await tester.pump(const Duration(milliseconds: 200));
+  }
 }

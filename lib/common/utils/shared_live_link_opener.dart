@@ -25,7 +25,7 @@ class SharedLiveLinkOpener {
   final Future<void> Function() _waitForNavigator;
   final void Function(String) _notify;
 
-  static bool containsLiveLink(String text) => LiveUrlTool.containsSupportedLink(text);
+  static bool containsLiveLink(String text) => LiveUrlTool.containsSupportedLink(text) || Sites.isRetiredLink(text);
 
   Future<bool> open(String text) async {
     List<String> result;
@@ -35,7 +35,7 @@ class SharedLiveLinkOpener {
       result = const [];
     }
     if (result.length != 2 || result.first.trim().isEmpty || !Sites.isSupported(result[1])) {
-      _notify('toolbox_parse_failed');
+      _notify(Sites.isRetiredLink(text) ? 'platform_retired' : 'toolbox_parse_failed');
       return false;
     }
     final room = LiveRoom(

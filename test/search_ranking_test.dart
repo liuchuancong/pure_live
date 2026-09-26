@@ -112,28 +112,22 @@ void main() {
     });
   });
 
-  test('declares native and web-only platform search coverage', () {
+  test('declares native platform search coverage', () {
     expect(LiveSearchCapabilities.forPlatform('bilibili').mayIncludeOffline, isTrue);
     expect(LiveSearchCapabilities.forPlatform('twitch').mayIncludeOffline, isTrue);
     expect(LiveSearchCapabilities.forPlatform('soop').coverage, NativeSearchCoverage.liveOnly);
     expect(LiveSearchCapabilities.forPlatform('yy').supportsNativeSearch, isTrue);
-    expect(LiveSearchCapabilities.forPlatform('kuaishou').supportsNativeSearch, isFalse);
+    expect(LiveSearchCapabilities.forPlatform('kuaishou').coverage, NativeSearchCoverage.liveAndOffline);
+    expect(LiveSearchCapabilities.forPlatform('kuaishou').supportsWebSearch, isTrue);
     expect(LiveSearchCapabilities.forPlatform('iptv').supportsPagination, isFalse);
     expect(LiveSearchCapabilities.forPlatform('iptv').supportsWebSearch, isFalse);
   });
 
   test('every registered adapter with native search is exposed in the search UI', () {
     final expected = <String, (NativeSearchCoverage, bool)>{
-      Sites.shopeeLiveSite: (NativeSearchCoverage.liveAndOffline, false),
-      Sites.vkVideoLiveSite: (NativeSearchCoverage.liveAndOffline, true),
-      Sites.nimoTvSite: (NativeSearchCoverage.liveAndOffline, true),
-      Sites.dailymotionSite: (NativeSearchCoverage.liveAndOffline, true),
-      Sites.rumbleSite: (NativeSearchCoverage.liveAndOffline, true),
-      Sites.goodGameSite: (NativeSearchCoverage.liveAndOffline, true),
       Sites.fc2LiveSite: (NativeSearchCoverage.liveAndOffline, true),
       Sites.steamBroadcastSite: (NativeSearchCoverage.liveAndOffline, true),
       Sites.jdLiveSite: (NativeSearchCoverage.liveAndOffline, true),
-      Sites.taobaoLiveSite: (NativeSearchCoverage.roomLookup, false),
       Sites.kugouLiveSite: (NativeSearchCoverage.liveAndOffline, true),
       Sites.baiduLiveSite: (NativeSearchCoverage.roomLookup, false),
       Sites.sixRoomSite: (NativeSearchCoverage.liveAndOffline, false),
@@ -147,7 +141,7 @@ void main() {
       expect(actual.supportsWebSearch, isFalse, reason: entry.key);
     }
     for (final id in Sites.supportedSiteIds) {
-      expect(LiveSearchCapabilities.forPlatform(id).supportsNativeSearch, id != Sites.kuaishouSite, reason: id);
+      expect(LiveSearchCapabilities.forPlatform(id).supportsNativeSearch, isTrue, reason: id);
     }
   });
 }

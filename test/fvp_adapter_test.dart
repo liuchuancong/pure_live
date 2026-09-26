@@ -23,4 +23,20 @@ void main() {
     expect(FvpAdapter.videoDecoders(hardware: false), ['FFmpeg', 'dav1d']);
     expect(FvpAdapter.videoDecoders(hardware: true), contains('FFmpeg'));
   });
+
+  test('Android prefers OpenSL over AAudio; desktop keeps mdk defaults', () {
+    expect(FvpAdapter.audioBackends(android: true), ['OpenSL', 'AudioTrack', 'AAudio']);
+    expect(FvpAdapter.audioBackends(android: false), isNull);
+  });
+
+  test('legacy HEVC FLV hosts decode in software on Android only', () {
+    const legacy = 'https://china-pull-rtmp-17.17app.co/live/fixture.flv?x=1';
+    const other = 'https://hw.flv.huya.com/src/a.flv';
+    expect(FvpAdapter.videoDecodersFor(legacy, hardware: true, android: true), ['FFmpeg', 'dav1d']);
+    expect(FvpAdapter.videoDecodersFor(other, hardware: true, android: true), FvpAdapter.videoDecoders(hardware: true));
+    expect(
+      FvpAdapter.videoDecodersFor(legacy, hardware: true, android: false),
+      FvpAdapter.videoDecoders(hardware: true),
+    );
+  });
 }

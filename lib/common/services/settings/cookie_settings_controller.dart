@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:pure_live/get/get.dart';
 import 'package:pure_live/common/services/utils/hive_rx.dart';
+import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:pure_live/common/services/settings/bilibili_account_service.dart';
 import 'package:pure_live/common/services/settings/cookie_value.dart';
 
@@ -13,12 +16,13 @@ class CookieSettingsController extends GetxController {
   final RxString twitchCookie = hiveString('twitchCookie', '');
   final RxString soopCookie = hiveString('soopCookie', '');
   final RxString yyCookie = hiveString('yyCookie', '');
-  final RxString taobaoCookie = hiveString('taobaoCookie', '');
 
   @override
   void onInit() {
     super.onInit();
     _normalizeStoredCookies();
+    // Taobao Live was retired in 3.2.8; do not keep its account cookie.
+    unawaited(HivePrefUtil.remove('taobaoCookie'));
   }
 
   void _normalizeStoredCookies() {
@@ -31,7 +35,6 @@ class CookieSettingsController extends GetxController {
       twitchCookie,
       soopCookie,
       yyCookie,
-      taobaoCookie,
     ]) {
       final normalized = normalizeAccountCookie(cookie.v);
       if (normalized != cookie.v) cookie.v = normalized;
@@ -47,7 +50,6 @@ class CookieSettingsController extends GetxController {
     twitchCookie.v = '';
     soopCookie.v = '';
     yyCookie.v = '';
-    taobaoCookie.v = '';
     bilibiliUid.v = 0;
   }
 
@@ -62,7 +64,6 @@ class CookieSettingsController extends GetxController {
       'twitchCookie': twitchCookie.v,
       'soopCookie': soopCookie.v,
       'yyCookie': yyCookie.v,
-      'taobaoCookie': taobaoCookie.v,
     };
   }
 
@@ -78,7 +79,6 @@ class CookieSettingsController extends GetxController {
       'twitchCookie': normalizeAccountCookie((json['twitchCookie'] ?? '') as String),
       'soopCookie': normalizeAccountCookie((json['soopCookie'] ?? '') as String),
       'yyCookie': normalizeAccountCookie((json['yyCookie'] ?? '') as String),
-      'taobaoCookie': normalizeAccountCookie((json['taobaoCookie'] ?? '') as String),
     };
   }
 
@@ -93,7 +93,6 @@ class CookieSettingsController extends GetxController {
     twitchCookie.v = parsed['twitchCookie'];
     soopCookie.v = parsed['soopCookie'];
     yyCookie.v = parsed['yyCookie'];
-    taobaoCookie.v = parsed['taobaoCookie'];
 
     BiliBiliAccountService.instance.setCookie(bilibiliCookie.v);
     BiliBiliAccountService.instance.loadUserInfo();

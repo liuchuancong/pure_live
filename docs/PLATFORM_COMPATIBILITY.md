@@ -1,10 +1,13 @@
 # 平台接口与兼容性
 
+
+> **v3.2.8 起下线 11 个平台**：花椒（官方不再返回直播列表）、OPENREC / mellow-fan（接口 403、无目录）、TTingLive / FLEX TV（目录仅剩 1 个房间）、PopkonTV（目录以成人直播为主，详情不可用）、GoodGame（连接超时）、VK Video Live（播放地址与 IP 绑定，频繁 403）、Dailymotion（直播内容少，CDN 拒绝代理 IP）、Rumble（Cloudflare 人机验证）、NimoTV（依赖 WebView，CDN 间歇 403）、Shopee Live（反爬 WebView 会话、特殊 HEVC 编码，分享链接冷启动无法打开）、淘宝直播（无公开目录，仅链接）。依据：2026-09-26 全平台探针、近两个月维护记录与真机实测。下文中这些平台的说明仅作历史记录；已关注的这些主播仍保留，打开时提示平台已下线。
+
 本文记录 Pure Live 当前使用的直播接口、数据含义和本地验证方法。平台网页可能随时调整，合并接口改动前应执行一次探测脚本。
 
 ## 当前平台能力
 
-2026-09-22 按 `lib/core/sites.dart` 核对：当前源码注册 **45 个直播站点 + IPTV，共 46 个适配器**。这是源码注册数量，不是已发布包或完整验收数量。小红书、niconico、微博、SHOWROOM、CHZZK、Kick、17LIVE、LiveMe、TikTok LIVE、YouTube Live、Bigo Live、PandaTV、PopkonTV、Shopee Live、VK Video Live、NimoTV、Dailymotion、Rumble、GoodGame、FC2 Live、Steam Broadcasts、京东直播、淘宝直播、酷狗直播、百度直播、六间房直播和 LOOK 直播已接入应用入口；原生整体验收继续，当前候选与完整剩余范围以[验收状态](ACCEPTANCE_STATUS_3_2_0.md)为准。
+3.2.8 起按 `lib/core/sites.dart` 核对：当前源码注册 **34 个直播站点 + IPTV，共 35 个适配器**（2026-09-22 时为 45 站）。这是源码注册数量，不是已发布包或完整验收数量。小红书、niconico、微博、SHOWROOM、CHZZK、Kick、17LIVE、LiveMe、TikTok LIVE、YouTube Live、Bigo Live、PandaTV、PopkonTV、Shopee Live、VK Video Live、NimoTV、Dailymotion、Rumble、GoodGame、FC2 Live、Steam Broadcasts、京东直播、淘宝直播、酷狗直播、百度直播、六间房直播和 LOOK 直播已接入应用入口；原生整体验收继续，当前候选与完整剩余范围以[验收状态](ACCEPTANCE_STATUS_3_2_0.md)为准。
 
 2026-09-23 房间页“外部打开”也已与注册表对齐：此前 14 个新增站点缺少官方房间 URL 映射，操作会落到 `unavailable`；现在 45 个直播站点均有按稳定房间身份重建的官方目标，IPTV 不存在远端官方房间页。构造、无效 ID 与启动动作的定向证据见[外部打开覆盖审计](ROOM_EXTERNAL_OPEN_COVERAGE_AUDIT_2026_09_23.md)；这只是源码动作合同，外部浏览器/客户端实际落地仍待当前候选双端验证。
 
@@ -38,7 +41,7 @@ TwitCasting 新增公开目录、顶栏分类、详情/HLS三档、录制输入�
 | 斗鱼 | 动态读取移动端分类接口 | 原生直播间搜索，可返回未开播结果；可选本机账号 Cookie 用于取流及媒体请求 | WebSocket | 热度；所选画质与服务端确认档位分列，匿名请求可能降档 |
 | 虎牙 | 网站业务分类与动态游戏列表 | 原生搜索当前直播间 | `wsapi.huya.com` WebSocket，按 `live:<uid>`/`chat:<uid>` 注册房间组并解析批量推送 | 列表/详情/URI 8006 均为热度 |
 | 抖音 | 从直播首页动态提取分类 | 带网页签名参数的当前直播搜索 | WebSocket | 顶层/嵌套 `user_count` 为当前在线；`display_value/total_user` 为累计观看，缺少累计值时不再用在线值冒充 |
-| 快手 | 网站当前直播频道、动态子分类与推荐回放 | 网页搜索入口 | 移动端增量 feed，cursor 串行轮询、断开取消；已有真实评论补证 | 在线；房间页下播但卡片仍带播放地址时按录播处理 |
+| 快手 | 网站当前直播频道、动态子分类与推荐回放 | 主播搜索（含未开播，分页）；网页搜索入口保留 | 移动端增量 feed，cursor 串行轮询、断开取消；已有真实评论补证 | 在线；房间页下播但卡片仍带播放地址时按录播处理 |
 | 网易 CC | 动态游戏列表，保留网站顶层入口 | 原生主播/直播间搜索，可返回未开播结果 | 当前未接入 | `webcc_visitor/hot_score/visitor` 为同一热度口径；只有 `vision_visitor/online_num` 为并发人数 |
 | Twitch | 网站 GraphQL 标签与目录接口 | 原生频道搜索，可返回未开播频道 | Twitch IRC WebSocket；登录 Cookie 中的 `auth-token`/`login` 用于认证聊天 | `viewersCount` 为并发观看人数 |
 | SOOP Live | 官方分类与推荐接口 | 原生搜索当前直播间 | SOOP WebSocket；账号 Cookie 可选 | 推荐/搜索以 `total_view_cnt`（PC + 移动端）为并发人数；分类使用 `view_cnt`；`current_view_cnt` 仅是 PC 端分量 |

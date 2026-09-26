@@ -1,0 +1,33 @@
+cmake_minimum_required(VERSION 3.15)
+
+foreach(REQUIRED_VARIABLE DEPS_FILE MACRO_TEST_FILE SDK_BASE_URL TEST_ROOT)
+  if(NOT DEFINED ${REQUIRED_VARIABLE})
+    message(FATAL_ERROR "${REQUIRED_VARIABLE} is required")
+  endif()
+endforeach()
+
+set(BAD_SHA256 "0000000000000000000000000000000000000000000000000000000000000000")
+file(REMOVE_RECURSE "${TEST_ROOT}")
+file(MAKE_DIRECTORY "${TEST_ROOT}")
+execute_process(
+  COMMAND "${CMAKE_COMMAND}"
+    "-DDEPS_FILE=${DEPS_FILE}"
+    "-DFVP_DEPS_URL=${SDK_BASE_URL}"
+    "-DFVP_DEPS_SHA256=${BAD_SHA256}"
+    -P "${MACRO_TEST_FILE}"
+  WORKING_DIRECTORY "${TEST_ROOT}"
+  RESULT_VARIABLE BAD_HASH_RESULT
+  OUTPUT_VARIABLE BAD_HASH_OUTPUT
+  ERROR_VARIABLE BAD_HASH_ERROR
+)
+if(BAD_HASH_RESULT EQUAL 0)
+  message(FATAL_ERROR "fvp_setup_deps() accepted an incorrect SHA-256")
+endif()
+set(BAD_HASH_LOG "${BAD_HASH_OUTPUT}\n${BAD_HASH_ERROR}")
+if(NOT "${BAD_HASH_LOG}" MATCHES "SHA-256 mismatch")
+  message(FATAL_ERROR "Incorrect SHA-256 failed for an unexpected reason:\n${BAD_HASH_LOG}")
+endif()
+file(GLOB PART_FILES "${TEST_ROOT}/*.part")
+if(PART_FILES)
+  message(FATAL_ERROR "Partial macro integration download was not removed: ${PART_FILES}")
+endif()

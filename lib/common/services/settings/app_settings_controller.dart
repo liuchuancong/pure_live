@@ -17,8 +17,6 @@ class AppSettingsController extends GetxController {
     Sites.acfunSite,
     Sites.picartoSite,
     Sites.twitcastingSite,
-    Sites.openrecSite,
-    Sites.ttingSite,
   ];
 
   Worker? _refreshRateModeWorker;
@@ -96,11 +94,11 @@ class AppSettingsController extends GetxController {
       audienceMetricMigration.v = 5;
     }
     if (audienceMetricMigration.v < 6) {
-      if (!realOnlinePlatforms.contains(Sites.openrecSite)) realOnlinePlatforms.add(Sites.openrecSite);
+      // v6 enabled OPENREC, retired in 3.2.8.
       audienceMetricMigration.v = 6;
     }
     if (audienceMetricMigration.v < 7) {
-      if (!realOnlinePlatforms.contains(Sites.ttingSite)) realOnlinePlatforms.add(Sites.ttingSite);
+      // v7 enabled TTingLive, retired in 3.2.8.
       audienceMetricMigration.v = 7;
     }
     _repairRealOnlinePlatforms();

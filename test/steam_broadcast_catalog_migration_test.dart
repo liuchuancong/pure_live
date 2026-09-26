@@ -38,11 +38,11 @@ void main() {
       Sites.fc2LiveSite,
       Sites.steamBroadcastSite,
       Sites.jdLiveSite,
-      Sites.taobaoLiveSite,
     ];
     expect(favorites.hotAreasList.take(expectedPrefix.length), expectedPrefix);
     final migrated = favorites.hotAreasList.toList(growable: false);
     expect(migrated.toSet(), hasLength(migrated.length));
+    expect(migrated, isNot(anyOf(contains('goodgame'), contains('taobaolive'))), reason: 'retired platforms are not restored');
     expect(favorites.siteCatalogMigration.value, 38);
     favorites.hotAreasList.remove(Sites.steamBroadcastSite);
     await Hive.box<dynamic>('app_settings').flush();

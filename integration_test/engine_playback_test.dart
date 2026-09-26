@@ -1,6 +1,7 @@
 // Plays a real live stream through a player engine on a real runner:
 //   flutter test integration_test/engine_playback_test.dart --device-id=windows
-//     [--dart-define=PURELIVE_TEST_ENGINE=fvp|libmpv]   (default fvp)
+//     [--dart-define=PURELIVE_TEST_ENGINE=fvp|libmpv]   (default libmpv)
+// fvp is bundled on Android/iOS only; run it there with -d <device>.
 // fvp runs FvpAdapter. libmpv drives media_kit's Player without a
 // VideoController (mpv still demuxes and decodes) to check the bundled
 // libmpv: MediaKitAdapter's VideoController needs pumped frames, which this
@@ -48,7 +49,7 @@ void main() {
   });
   tearDownAll(Hive.close);
 
-  const engineName = String.fromEnvironment('PURELIVE_TEST_ENGINE', defaultValue: 'fvp');
+  const engineName = String.fromEnvironment('PURELIVE_TEST_ENGINE', defaultValue: 'libmpv');
   const sites = String.fromEnvironment('PURELIVE_FVP_SITES', defaultValue: 'bilibili,douyu,huya');
   for (final id in sites.split(',')) {
     testWidgets('$engineName plays a live $id room with video', (tester) async {
