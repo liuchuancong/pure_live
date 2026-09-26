@@ -49,6 +49,19 @@ class DouyuCookieController extends GetxController {
     }
   }
 
+  /// Whether the pasted cookie looks like the passport request's rather than a
+  /// page session: renewal credentials, and nothing that identifies a login.
+  static bool _hasCredentialFields(String cookie) {
+    const credentialFields = <String>[
+      'LTP0',
+      'acf_stk',
+      'acf_ccn',
+      'acf_ltkid',
+      'acf_ssid',
+    ];
+    return credentialFields.any((name) => _fieldOf(cookie, name) != null);
+  }
+
   /// Reads one field, tolerating a whole `Cookie: a=b; c=d` header line.
   static String? _fieldOf(String cookie, String name) {
     final header = cookie.replaceFirst(RegExp(r'^\s*Cookie:\s*', caseSensitive: false), '');
@@ -67,8 +80,25 @@ class DouyuCookieController extends GetxController {
     // it added something.
     final stored = cookies.douyuCookie.v;
     final pastedIsSession = DouyuUtils.sessionToken(normalized) != null;
-    final keepsStoredSession = !pastedIsSession && stored.isNotEmpty && DouyuUtils.sessionToken(stored) != null;
-    final effective = keepsStoredSession ? stored : normalized;
+    final keepsStoredSession = stored.isNotEmpty && DouyuUtils.sessionToken(stored) != null;
+
+    // A cookie with renewal credentials but no session of its own is the
+    // passport request's cookie. It is not a login cookie, and sending its
+    // fields (`acf_stk`, `acf_ccn`, `acf_ssid`, ...) to the play endpoints is
+    // what Douyu's edge answers with a bare 403 — so it is never stored as one.
+    final isCredentialPaste = !pastedIsSession && _hasCredentialFields(normalized);
+
+    if (isCredentialPaste) {
+      cookies.douyuLtp0.v = ltp0Controller.text.trim();
+      cookies.douyuDid.v = didController.text.trim();
+      // Keep whatever login is already stored; if there is none, say so instead
+      // of storing a cookie the play path cannot use.
+      if (!keepsStoredSession) cookies.douyuCookie.v = '';
+      ToastUtil.show(i18n('douyu_cookie_credentials_only'));
+      return;
+    }
+
+    final effective = (keepsStoredSession && !pastedIsSession) ? stored : normalized;
 
     cookieController.text = effective;
     cookies.douyuCookie.v = effective;
@@ -81,7 +111,7 @@ class DouyuCookieController extends GetxController {
         effective.isEmpty ? 0 : DateTime.now().millisecondsSinceEpoch ~/ 1000;
 
     ToastUtil.show(
-      keepsStoredSession ? i18n('douyu_cookie_credentials_absorbed') : _sessionSummary(effective),
+      (keepsStoredSession && !pastedIsSession) ? i18n('douyu_cookie_credentials_absorbed') : _sessionSummary(effective),
     );
   }
 

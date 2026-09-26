@@ -4,7 +4,17 @@ class HttpError extends Error {
   final int statusCode;
   final String message;
 
-  HttpError(this.message, {this.statusCode = 0});
+  /// What the server answered, when it was not a JSON API error.
+  ///
+  /// A rejected request (Douyu's edge answers 403 with a four-byte body) says
+  /// nothing through the status code alone, and the body plus the request id is
+  /// what makes such a failure diagnosable at all.
+  final String? responseBody;
+
+  /// Response headers worth keeping for diagnostics (`x-request-id`, rate limits).
+  final Map<String, String> responseHeaders;
+
+  HttpError(this.message, {this.statusCode = 0, this.responseBody, this.responseHeaders = const <String, String>{}});
 
   @override
   String toString() {

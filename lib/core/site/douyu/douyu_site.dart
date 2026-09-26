@@ -4,6 +4,8 @@ import 'package:pure_live/common/index.dart';
 import 'package:html_unescape/html_unescape.dart';
 import 'package:pure_live/model/live_category.dart';
 import 'package:pure_live/model/live_anchor_item.dart';
+import 'package:pure_live/core/common/core_log.dart';
+import 'package:pure_live/core/common/core_error.dart';
 import 'package:pure_live/core/common/http_client.dart';
 import 'package:pure_live/model/live_play_quality.dart';
 import 'package:pure_live/core/interface/live_site.dart';
@@ -302,6 +304,13 @@ class DouyuSite
         return parsePlayResponse(result);
       } catch (error) {
         lastError = error;
+        CoreLog.w(
+          'Douyu play request failed (attempt ${attempt + 1}): $error'
+          '${error is HttpError && error.statusCode != 0 ? ' status=${error.statusCode}' : ''}'
+          '${error is HttpError && error.responseBody != null ? ' body=${error.responseBody}' : ''}'
+          '${error is HttpError && error.responseHeaders['x-request-id'] != null ? ' requestId=${error.responseHeaders['x-request-id']}' : ''}'
+          ' | ${DouyuUtils.requestShape(roomId)}',
+        );
         // The first attempt is also the cheapest way to learn the cookie is
         // stale: renew it (the long-term key is the only thing that can) and let
         // the retry use the fresh one.
