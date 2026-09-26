@@ -451,6 +451,7 @@ class PlayerManager {
   VideoController? _videoController;
   final List<Future<void> Function()> _floatingResourceDisposers = <Future<void> Function()>[];
   Future<void>? _floatingCleanup;
+  StreamSubscription<int>? _floatingPopupSubscription;
   bool _appFloatingPrepared = false;
   bool _pipTransitionInFlight = false;
   int _pipTransitionRevision = 0;
@@ -3095,6 +3096,8 @@ class PlayerManager {
       return;
     }
     isFloating.value = true;
+    unawaited(_floatingPopupSubscription?.cancel());
+    _floatingPopupSubscription = hideFloatingWhilePopupsOpen(overlay);
     if (touchControls) {
       isHovered.value = true;
       resetHideTimer();
@@ -3104,6 +3107,8 @@ class PlayerManager {
   Future<void> closeAppFloating() async {
     _hideTimer?.cancel();
     _hideTimer = null;
+    unawaited(_floatingPopupSubscription?.cancel());
+    _floatingPopupSubscription = null;
     final cleanupInFlight = _floatingCleanup;
     if (cleanupInFlight != null) {
       await cleanupInFlight;
