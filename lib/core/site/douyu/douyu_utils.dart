@@ -45,13 +45,21 @@ class DouyuUtils {
 
   /// Cookie names a Douyu login is spread across.
   ///
-  /// `acf_jwt_token` is the session token and it is a JWT, so its own payload
-  /// says when it ends; some builds hand out `acf_auth` instead. `LTP0` is the
-  /// long-term key that lets the passport endpoint mint a fresh token without
-  /// asking the viewer to sign in again, and `dy_did` is the device the login
-  /// belongs to.
+  /// Douyu hands out two flavours and a pasted cookie is one of them:
+  ///
+  /// * **Web** (`www.douyu.com`): `dy_auth` is the session token. It is opaque
+  ///   — not a JWT — so its expiry cannot be read, and the web flow offers no
+  ///   `LTP0` to renew it with. `dy_accounts_main` and the `uid` inside
+  ///   `dy_teen_mode` are bystanders, not session state.
+  /// * **H5/app** (`m.douyu.com`): `acf_jwt_token` (or `acf_auth`) is the
+  ///   session token and it *is* a JWT, so its payload says when it ends;
+  ///   `LTP0` is the long-term key that lets the passport endpoint mint a fresh
+  ///   one without asking the viewer to sign in again.
+  ///
+  /// `dy_did` is the device the login belongs to in both flavours.
   static const String jwtTokenName = 'acf_jwt_token';
   static const String authTokenName = 'acf_auth';
+  static const String webAuthTokenName = 'dy_auth';
   static const String longTermTokenName = 'LTP0';
   static const String deviceIdName = 'dy_did';
 
@@ -180,8 +188,15 @@ class DouyuUtils {
     return null;
   }
 
-  /// The JWT the account cookie carries, if any.
-  static String? sessionToken(String cookie) => cookieField(cookie, jwtTokenName) ?? cookieField(cookie, authTokenName);
+  /// The session token the account cookie carries, if any.
+  ///
+  /// The web flavour's `dy_auth` counts: a pasted `www.douyu.com` cookie is a
+  /// real login, and reading only the H5 JWTs would show a signed-in viewer as
+  /// signed out.
+  static String? sessionToken(String cookie) =>
+      cookieField(cookie, jwtTokenName) ??
+      cookieField(cookie, authTokenName) ??
+      cookieField(cookie, webAuthTokenName);
 
   /// Decodes a JWT payload, or returns `null` when the token is not one.
   ///
@@ -222,9 +237,14 @@ class DouyuUtils {
   /// A missing token counts as expired: without one the request is a guest
   /// request whatever the cookie length says, and treating it as a session is
   /// what makes a stale cookie look like a successful login.
+  ///
+  /// A token whose expiry cannot be read (the web `dy_auth`) is not expired:
+  /// the app cannot know when it ends, and guessing "expired" would refuse a
+  /// login that still works.
   static bool isSessionExpired(String cookie) {
+    if (sessionToken(cookie) == null) return true;
     final expiry = sessionExpiry(cookie);
-    return expiry == null || !expiry.isAfter(DateTime.now());
+    return expiry != null && !expiry.isAfter(DateTime.now());
   }
 
   /// Whether [cookie] carries everything the passport endpoint needs to renew
@@ -242,8 +262,10 @@ class DouyuUtils {
 
     final at = now ?? DateTime.now();
     final expiry = sessionExpiry(normalized, now: at);
-    if (expiry == null) return DouyuSessionState.guest;
-    if (expiry.isAfter(at)) return DouyuSessionState.valid;
+    // A token with no readable expiry (the web `dy_auth`) is a valid session
+    // with an unknown end — not a guest, and not an expired one.
+    if (sessionToken(normalized) == null) return DouyuSessionState.guest;
+    if (expiry == null || expiry.isAfter(at)) return DouyuSessionState.valid;
     return canRefreshSession(normalized) ? DouyuSessionState.expiredRefreshable : DouyuSessionState.expired;
   }
 

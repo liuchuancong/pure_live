@@ -2053,5 +2053,6 @@
   "douyu_cookie_expired_refreshable": "Session expired at {time}; saved, and the next playback renews it with LTP0",
   "douyu_cookie_expired": "Session expired at {time} and the cookie has no LTP0: paste a fresh one",
   "douyu_session_renewable": "Session expired; renewed automatically on playback",
-  "douyu_session_needs_cookie": "Session is no longer valid; tap to paste a new cookie"
+  "douyu_session_needs_cookie": "Session is no longer valid; tap to paste a new cookie",
+  "douyu_cookie_valid_no_expiry": "Session is valid (this cookie carries no expiry; the web flow issues no LTP0)"
 }

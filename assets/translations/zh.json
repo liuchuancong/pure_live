@@ -2061,5 +2061,6 @@
   "douyu_cookie_expired_refreshable": "登录态已过期（{time}）；已保存，下次播放会自动用 LTP0 续期",
   "douyu_cookie_expired": "登录态已过期（{time}），且 Cookie 里没有 LTP0，需要重新获取",
   "douyu_session_renewable": "登录态已过期，播放时自动续期",
-  "douyu_session_needs_cookie": "登录态已失效，点按重新粘贴 Cookie"
+  "douyu_session_needs_cookie": "登录态已失效，点按重新粘贴 Cookie",
+  "douyu_cookie_valid_no_expiry": "登录态有效（该 Cookie 未提供到期时间，网页版不发 LTP0）"
 }
