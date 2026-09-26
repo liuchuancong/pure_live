@@ -6,7 +6,9 @@ import 'package:pure_live/core/sites.dart';
 void main() {
   test('lightweight logo lookup preserves registered artwork without creating adapters', () {
     expect(Sites.logoForId(' BILIBILI '), 'assets/images/bilibili_2.png');
-    expect(Sites.logoForId(' xiaohongshu '), 'assets/images/logo.png');
+    // Xiaohongshu gained artwork after this test was written upstream; the
+    // neutral fallback is now only reachable for retired platforms.
+    expect(Sites.logoForId(' xiaohongshu '), 'assets/images/xiaohongshu.png');
     for (final id in Sites.supportedSiteIds) {
       final asset = Sites.logoForId(id);
       expect(asset, Sites.of(id).logo, reason: id);

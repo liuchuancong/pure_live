@@ -2054,5 +2054,12 @@
   "notice_expand": "展开说明",
   "notice_collapse": "收起",
   "local_network_permission_denied": "未获得「本地网络」权限，局域网代理（如电脑上的 Clash）无法连接。请在系统设置 → 应用 → 纯粹直播 → 权限中允许。",
-  "platform_retired": "该平台已下线，无法再打开，可在关注列表中取消关注"
+  "platform_retired": "该平台已下线，无法再打开，可在关注列表中取消关注",
+  "douyu_cookie_cleared": "已清除斗鱼 Cookie",
+  "douyu_cookie_guest": "已保存，但 Cookie 里没有 acf_jwt_token：当前是游客身份，高清/超清不可用",
+  "douyu_cookie_valid": "登录态有效至 {time}",
+  "douyu_cookie_expired_refreshable": "登录态已过期（{time}）；已保存，下次播放会自动用 LTP0 续期",
+  "douyu_cookie_expired": "登录态已过期（{time}），且 Cookie 里没有 LTP0，需要重新获取",
+  "douyu_session_renewable": "登录态已过期，播放时自动续期",
+  "douyu_session_needs_cookie": "登录态已失效，点按重新粘贴 Cookie"
 }

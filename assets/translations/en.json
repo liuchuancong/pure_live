@@ -2046,5 +2046,12 @@
   "notice_expand": "Show details",
   "notice_collapse": "Show less",
   "local_network_permission_denied": "Local network access was not granted, so a LAN proxy (e.g. Clash on your PC) cannot be reached. Allow it in Settings > Apps > Pure Live > Permissions.",
-  "platform_retired": "This platform has been retired and can no longer be opened; you can unfollow it from your list"
+  "platform_retired": "This platform has been retired and can no longer be opened; you can unfollow it from your list",
+  "douyu_cookie_cleared": "Douyu cookie cleared",
+  "douyu_cookie_guest": "Saved, but there is no acf_jwt_token: this is a guest cookie, so HD/UHD are unavailable",
+  "douyu_cookie_valid": "Session valid until {time}",
+  "douyu_cookie_expired_refreshable": "Session expired at {time}; saved, and the next playback renews it with LTP0",
+  "douyu_cookie_expired": "Session expired at {time} and the cookie has no LTP0: paste a fresh one",
+  "douyu_session_renewable": "Session expired; renewed automatically on playback",
+  "douyu_session_needs_cookie": "Session is no longer valid; tap to paste a new cookie"
 }
