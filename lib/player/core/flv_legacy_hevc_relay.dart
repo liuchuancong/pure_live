@@ -73,7 +73,7 @@ class FlvLegacyHevcRelay {
 
   /// CDNs where codec-id-12 HEVC has been observed. On 17LIVE it depends on
   /// the broadcaster's encoder; AVC tags pass through the relay unchanged.
-  static const Set<String> _hostSuffixes = {'.livetech.shopee.co.id', '.livestream.shopee.co.id', '.17app.co'};
+  static const Set<String> _hostSuffixes = {'.17app.co'};
 
   final HttpServer _server;
   final Uri _upstream;

@@ -5,7 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:pure_live/player/core/flv_legacy_hevc_relay.dart';
 import 'package:pure_live/player/core/playback_source_transport.dart';
 
-const _upstream = 'http://play-hw-las.livetech.shopee.co.id/live/id-live-1.flv?auditkey=fixture';
+const _upstream = 'http://china-pull-rtmp-17.17app.co/live/fixture.flv?auditkey=fixture';
 
 Uint8List _tag(int type, int timestamp, List<int> body) {
   final out = BytesBuilder()
@@ -53,15 +53,15 @@ void main() {
     });
   });
 
-  test('only Shopee Live FLV hosts are routed through the relay', () {
-    expect(FlvLegacyHevcRelay.appliesTo('https://play-tx-las.livetech.shopee.co.id/live/a.flv?x=1'), isTrue);
+  test('only 17LIVE FLV hosts are routed through the relay', () {
     expect(FlvLegacyHevcRelay.appliesTo(_upstream), isTrue);
-    expect(FlvLegacyHevcRelay.appliesTo('https://play-spe.livestream.shopee.co.id/live/id-live-1-2.flv?x=1'), isTrue);
-    expect(FlvLegacyHevcRelay.appliesTo('https://play-tx-las.livetech.shopee.co.id/live/a.m3u8'), isFalse);
-    expect(FlvLegacyHevcRelay.appliesTo('https://livetech.shopee.co.id.evil.example/live/a.flv'), isFalse);
+    // Shopee Live was retired in 3.2.8.
+    expect(FlvLegacyHevcRelay.appliesTo('https://play-tx-las.livetech.shopee.co.id/live/a.flv?x=1'), isFalse);
+    expect(FlvLegacyHevcRelay.appliesTo('https://china-pull-rtmp-17.17app.co/live/a.m3u8'), isFalse);
+    expect(FlvLegacyHevcRelay.appliesTo('https://x.17app.co.evil.example/live/a.flv'), isFalse);
     expect(FlvLegacyHevcRelay.appliesTo('https://china-pull-rtmp-17.17app.co/live/abc.flv?t=1'), isTrue);
     expect(FlvLegacyHevcRelay.appliesTo('https://hw.flv.huya.com/src/a.flv'), isFalse);
-    expect(FlvLegacyHevcRelay.appliesTo('rtmp://play.livetech.shopee.co.id/live/a.flv'), isFalse);
+    expect(FlvLegacyHevcRelay.appliesTo('rtmp://china-pull-rtmp-17.17app.co/live/a.flv'), isFalse);
   });
 
   group('relay', () {
@@ -107,7 +107,7 @@ void main() {
 
     test('streams upstream FLV with only codec-12 video tags rewritten', () async {
       final relay = await FlvLegacyHevcRelay.start(_upstream, {
-        'Referer': 'https://live.shopee.co.id/',
+        'Referer': 'https://17.live/',
       }, findProxy: (_) => 'PROXY 127.0.0.1:${proxy.port}');
       expect(relay.inputUri.host, '127.0.0.1');
       final output = await fetch(relay.inputUri);
@@ -119,7 +119,7 @@ void main() {
         ..._tag(9, 33, [0xa1, ..._hvc1, 0, 0, 0, 0, 0, 0, 1, 0x02]),
       ]);
       expect(requests.single.uri.toString(), _upstream);
-      expect(requests.single.headers.value('referer'), 'https://live.shopee.co.id/');
+      expect(requests.single.headers.value('referer'), 'https://17.live/');
 
       // libmpv may reconnect; each local request gets a fresh upstream.
       await fetch(relay.inputUri);
@@ -152,14 +152,14 @@ void main() {
     await owner.open(
       url: _upstream,
       urls: const [_upstream],
-      headers: const {'Referer': 'https://live.shopee.co.id/'},
+      headers: const {'Referer': 'https://17.live/'},
       policy: null,
       nativeOpen: nativeOpen,
     );
     await owner.open(
       url: _upstream,
       urls: const [_upstream],
-      headers: const {'Referer': 'https://live.shopee.co.id/'},
+      headers: const {'Referer': 'https://17.live/'},
       policy: null,
       nativeOpen: nativeOpen,
       rewriteLegacyHevcFlv: true,

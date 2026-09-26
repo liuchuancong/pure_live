@@ -167,7 +167,7 @@ void main() {
   tearDown(Get.reset);
   tearDownAll(Hive.close);
 
-  for (final platform in [Sites.xiaohongshuSite, Sites.ttingSite, Sites.iptvSite, Sites.bilibiliSite]) {
+  for (final platform in [Sites.xiaohongshuSite, Sites.iptvSite, Sites.bilibiliSite]) {
     testWidgets('empty search action follows actual $platform capability', (tester) async {
       final c = await _mount(tester, platform: platform);
       final status = tester.widget<AppStatusView>(find.byType(AppStatusView));
@@ -272,19 +272,10 @@ void main() {
     Sites.inkeSite,
     Sites.missevanSite,
     Sites.twitcastingSite,
-    Sites.huajiaoSite,
     Sites.kilakilaSite,
-    Sites.openrecSite,
-    Sites.shopeeLiveSite,
-    Sites.vkVideoLiveSite,
-    Sites.nimoTvSite,
-    Sites.dailymotionSite,
-    Sites.rumbleSite,
-    Sites.goodGameSite,
     Sites.fc2LiveSite,
     Sites.steamBroadcastSite,
     Sites.jdLiveSite,
-    Sites.taobaoLiveSite,
     Sites.kugouLiveSite,
     Sites.baiduLiveSite,
     Sites.sixRoomSite,

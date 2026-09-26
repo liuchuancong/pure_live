@@ -81,43 +81,8 @@ class LiveSearchCapabilities {
       supportsPagination: true,
       supportsWebSearch: false,
     ),
-    Sites.popkonSite: LiveSearchCapability(
-      coverage: NativeSearchCoverage.liveAndOffline,
-      supportsPagination: false,
-      supportsWebSearch: false,
-    ),
     // These registered adapters already implement native search. Keep their
     // UI capability in sync with the actual exact-ID, snapshot or paged API.
-    Sites.shopeeLiveSite: LiveSearchCapability(
-      coverage: NativeSearchCoverage.liveAndOffline,
-      supportsPagination: false,
-      supportsWebSearch: false,
-    ),
-    Sites.vkVideoLiveSite: LiveSearchCapability(
-      coverage: NativeSearchCoverage.liveAndOffline,
-      supportsPagination: true,
-      supportsWebSearch: false,
-    ),
-    Sites.nimoTvSite: LiveSearchCapability(
-      coverage: NativeSearchCoverage.liveAndOffline,
-      supportsPagination: true,
-      supportsWebSearch: false,
-    ),
-    Sites.dailymotionSite: LiveSearchCapability(
-      coverage: NativeSearchCoverage.liveAndOffline,
-      supportsPagination: true,
-      supportsWebSearch: false,
-    ),
-    Sites.rumbleSite: LiveSearchCapability(
-      coverage: NativeSearchCoverage.liveAndOffline,
-      supportsPagination: true,
-      supportsWebSearch: false,
-    ),
-    Sites.goodGameSite: LiveSearchCapability(
-      coverage: NativeSearchCoverage.liveAndOffline,
-      supportsPagination: true,
-      supportsWebSearch: false,
-    ),
     Sites.fc2LiveSite: LiveSearchCapability(
       coverage: NativeSearchCoverage.liveAndOffline,
       supportsPagination: true,
@@ -131,11 +96,6 @@ class LiveSearchCapabilities {
     Sites.jdLiveSite: LiveSearchCapability(
       coverage: NativeSearchCoverage.liveAndOffline,
       supportsPagination: true,
-      supportsWebSearch: false,
-    ),
-    Sites.taobaoLiveSite: LiveSearchCapability(
-      coverage: NativeSearchCoverage.roomLookup,
-      supportsPagination: false,
       supportsWebSearch: false,
     ),
     Sites.kugouLiveSite: LiveSearchCapability(
@@ -163,11 +123,6 @@ class LiveSearchCapabilities {
       supportsPagination: false,
       supportsWebSearch: false,
     ),
-    Sites.ttingSite: LiveSearchCapability(
-      coverage: NativeSearchCoverage.channelLookup,
-      supportsPagination: false,
-      supportsWebSearch: false,
-    ),
     Sites.bilibiliSite: LiveSearchCapability(coverage: NativeSearchCoverage.liveAndOffline, supportsPagination: true),
     Sites.douyuSite: LiveSearchCapability(coverage: NativeSearchCoverage.liveAndOffline, supportsPagination: true),
     Sites.huyaSite: LiveSearchCapability(coverage: NativeSearchCoverage.liveOnly, supportsPagination: true),
@@ -185,16 +140,6 @@ class LiveSearchCapabilities {
     ),
     Sites.missevanSite: LiveSearchCapability(
       coverage: NativeSearchCoverage.liveAndOffline,
-      supportsPagination: true,
-      supportsWebSearch: false,
-    ),
-    Sites.openrecSite: LiveSearchCapability(
-      coverage: NativeSearchCoverage.channelLookup,
-      supportsPagination: false,
-      supportsWebSearch: false,
-    ),
-    Sites.huajiaoSite: LiveSearchCapability(
-      coverage: NativeSearchCoverage.showcaseSnapshot,
       supportsPagination: true,
       supportsWebSearch: false,
     ),

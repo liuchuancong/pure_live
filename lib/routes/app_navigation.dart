@@ -44,7 +44,7 @@ class AppNavigator {
     final platform = (liveRoom.platform?.trim() ?? '').toLowerCase();
     final roomId = liveRoom.roomId?.trim() ?? '';
     if (platform.isEmpty || roomId.isEmpty || !Sites.isSupported(platform)) {
-      ToastUtil.show(i18n('get_room_info_failed_retry'));
+      ToastUtil.show(i18n(Sites.isRetired(platform) ? 'platform_retired' : 'get_room_info_failed_retry'));
       return;
     }
     final normalizedRoom = liveRoom.platform == platform && liveRoom.roomId == roomId
@@ -76,7 +76,7 @@ class AppNavigator {
     final platform = (liveRoom.platform?.trim() ?? '').toLowerCase();
     final roomId = liveRoom.roomId?.trim() ?? '';
     if (platform.isEmpty || roomId.isEmpty || !Sites.isSupported(platform)) {
-      ToastUtil.show(i18n('get_room_info_failed_retry'));
+      ToastUtil.show(i18n(Sites.isRetired(platform) ? 'platform_retired' : 'get_room_info_failed_retry'));
       return;
     }
     final normalizedRoom = liveRoom.platform == platform && liveRoom.roomId == roomId

@@ -13,5 +13,9 @@ void main() {
       expect(File(asset).existsSync(), isTrue, reason: id);
     }
     expect(() => Sites.logoForId('unregistered'), throwsStateError);
+    // Saved follows of retired platforms still render a neutral badge.
+    expect(Sites.logoForId(' ShopeeLive '), 'assets/images/logo.png');
+    expect(Sites.isSupported('shopeelive'), isFalse);
+    expect(Sites.isRetired('HUAJIAO'), isTrue);
   });
 }

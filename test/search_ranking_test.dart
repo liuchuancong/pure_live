@@ -124,16 +124,9 @@ void main() {
 
   test('every registered adapter with native search is exposed in the search UI', () {
     final expected = <String, (NativeSearchCoverage, bool)>{
-      Sites.shopeeLiveSite: (NativeSearchCoverage.liveAndOffline, false),
-      Sites.vkVideoLiveSite: (NativeSearchCoverage.liveAndOffline, true),
-      Sites.nimoTvSite: (NativeSearchCoverage.liveAndOffline, true),
-      Sites.dailymotionSite: (NativeSearchCoverage.liveAndOffline, true),
-      Sites.rumbleSite: (NativeSearchCoverage.liveAndOffline, true),
-      Sites.goodGameSite: (NativeSearchCoverage.liveAndOffline, true),
       Sites.fc2LiveSite: (NativeSearchCoverage.liveAndOffline, true),
       Sites.steamBroadcastSite: (NativeSearchCoverage.liveAndOffline, true),
       Sites.jdLiveSite: (NativeSearchCoverage.liveAndOffline, true),
-      Sites.taobaoLiveSite: (NativeSearchCoverage.roomLookup, false),
       Sites.kugouLiveSite: (NativeSearchCoverage.liveAndOffline, true),
       Sites.baiduLiveSite: (NativeSearchCoverage.roomLookup, false),
       Sites.sixRoomSite: (NativeSearchCoverage.liveAndOffline, false),

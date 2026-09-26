@@ -53,9 +53,6 @@ void main() {
       'missevan',
       'inke',
       'kilakila',
-      'huajiao',
-      'openrec',
-      'ttinglive',
       'xiaohongshu',
       'niconico',
       'weibo',
@@ -76,11 +73,11 @@ void main() {
     await HivePrefUtil.setInt('audienceMetricMigration', 4);
     await HivePrefUtil.setStringList('realOnlinePlatforms', ['twitch']);
     final settings = Get.put(AppSettingsController());
-    expect(settings.realOnlinePlatforms, ['twitch', 'twitcasting', 'openrec', 'ttinglive']);
+    expect(settings.realOnlinePlatforms, ['twitch', 'twitcasting']);
     expect(settings.audienceMetricMigration.value, 7);
     settings.setRealOnlineEnabledFor('twitcasting', false);
     settings.onInit();
-    expect(settings.realOnlinePlatforms, ['twitch', 'openrec', 'ttinglive']);
+    expect(settings.realOnlinePlatforms, ['twitch']);
     expect(AppSettingsController.normalizeRealOnlinePlatforms([' TWITCASTING ', 'huya']), ['twitcasting']);
   });
 }

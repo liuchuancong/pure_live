@@ -106,11 +106,6 @@ class LiveRoom {
       hasTotalViewers: false,
       onlineAvailability: AudienceOnlineAvailability.roomList,
     ),
-    'openrec': AudiencePlatformCapability(
-      hasPopularity: false,
-      hasTotalViewers: false,
-      onlineAvailability: AudienceOnlineAvailability.roomList,
-    ),
     // SHOWROOM's view_num is session traffic and is not documented as a
     // concurrent audience. Keep it in the cumulative column.
     'showroom': AudiencePlatformCapability(
@@ -173,52 +168,17 @@ class LiveRoom {
     ),
     // PopkonTV documents `watchCnt` as the current audience while
     // `totalWatchCnt` is a separate cumulative session counter.
-    'popkontv': AudiencePlatformCapability(
-      hasPopularity: false,
-      hasTotalViewers: true,
-      onlineAvailability: AudienceOnlineAvailability.roomList,
-    ),
     // The homepage live feed and session detail expose `view_count` and
     // `viewer_count` respectively as the visible current audience metric.
-    'shopeelive': AudiencePlatformCapability(
-      hasPopularity: false,
-      hasTotalViewers: false,
-      onlineAvailability: AudienceOnlineAvailability.roomList,
-    ),
     // VK Video Live exposes `count.viewers` as concurrent viewers and
     // `count.views` as a separate cumulative stream metric.
-    'vkvideolive': AudiencePlatformCapability(
-      hasPopularity: false,
-      hasTotalViewers: true,
-      onlineAvailability: AudienceOnlineAvailability.roomList,
-    ),
     // The homepage card and mobile room bootstrap both expose current viewers.
-    'nimotv': AudiencePlatformCapability(
-      hasPopularity: false,
-      hasTotalViewers: false,
-      onlineAvailability: AudienceOnlineAvailability.roomList,
-    ),
     // The public API identifies live/offline state but exposes no verified
     // concurrent audience value. Historical views are not reused here.
-    'dailymotion': AudiencePlatformCapability(
-      hasPopularity: false,
-      hasTotalViewers: false,
-      onlineAvailability: AudienceOnlineAvailability.unsupported,
-    ),
     // Live directory cards expose a dedicated current-viewer badge. The
     // VideoObject interaction count is cumulative and stays in totalViewers.
-    'rumble': AudiencePlatformCapability(
-      hasPopularity: false,
-      hasTotalViewers: true,
-      onlineAvailability: AudienceOnlineAvailability.roomList,
-    ),
     // GoodGame's public directory and channel endpoint expose `viewers` as
     // the live audience. Rating and premium counters are separate concepts.
-    'goodgame': AudiencePlatformCapability(
-      hasPopularity: false,
-      hasTotalViewers: false,
-      onlineAvailability: AudienceOnlineAvailability.roomList,
-    ),
     // FC2 exposes current `count` and cumulative `total` independently in
     // both its public directory and member metadata.
     'fc2live': AudiencePlatformCapability(
@@ -242,11 +202,6 @@ class LiveRoom {
     ),
     // Taobao's live-detail viewCount is cumulative session traffic. It is not
     // a concurrent audience count; broadcaster fansNum remains separate.
-    'taobaolive': AudiencePlatformCapability(
-      hasPopularity: false,
-      hasTotalViewers: true,
-      onlineAvailability: AudienceOnlineAvailability.unsupported,
-    ),
     // Kugou keeps directory viewerNum/getViewerNum, platform hot and
     // broadcaster fansCount as three independent metrics.
     'kugoulive': AudiencePlatformCapability(
@@ -275,16 +230,6 @@ class LiveRoom {
       hasPopularity: true,
       hasTotalViewers: false,
       onlineAvailability: AudienceOnlineAvailability.roomList,
-    ),
-    'ttinglive': AudiencePlatformCapability(
-      hasPopularity: false,
-      hasTotalViewers: false,
-      onlineAvailability: AudienceOnlineAvailability.roomList,
-    ),
-    'huajiao': AudiencePlatformCapability(
-      hasPopularity: true,
-      hasTotalViewers: false,
-      onlineAvailability: AudienceOnlineAvailability.unsupported,
     ),
     'missevan': AudiencePlatformCapability(
       hasPopularity: true,

@@ -33,10 +33,11 @@ void main() {
     await HivePrefUtil.setInt('siteCatalogMigration', 32);
     await HivePrefUtil.setStringList('hotAreasList', [Sites.huyaSite, Sites.steamBroadcastSite]);
     final favorites = Get.put(FavoriteRoomController());
-    final expectedPrefix = [Sites.huyaSite, Sites.steamBroadcastSite, Sites.jdLiveSite, Sites.taobaoLiveSite];
+    final expectedPrefix = [Sites.huyaSite, Sites.steamBroadcastSite, Sites.jdLiveSite];
     expect(favorites.hotAreasList.take(expectedPrefix.length), expectedPrefix);
     final migrated = favorites.hotAreasList.toList(growable: false);
     expect(migrated.toSet(), hasLength(migrated.length));
+    expect(migrated, isNot(anyOf(contains('goodgame'), contains('taobaolive'))), reason: 'retired platforms are not restored');
     expect(favorites.siteCatalogMigration.value, 38);
     favorites.hotAreasList.remove(Sites.jdLiveSite);
     await Hive.box<dynamic>('app_settings').flush();

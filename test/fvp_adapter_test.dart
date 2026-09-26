@@ -30,12 +30,12 @@ void main() {
   });
 
   test('legacy HEVC FLV hosts decode in software on Android only', () {
-    const shopee = 'https://play-spe.livestream.shopee.co.id/live/id-live-1.flv?x=1';
+    const legacy = 'https://china-pull-rtmp-17.17app.co/live/fixture.flv?x=1';
     const other = 'https://hw.flv.huya.com/src/a.flv';
-    expect(FvpAdapter.videoDecodersFor(shopee, hardware: true, android: true), ['FFmpeg', 'dav1d']);
+    expect(FvpAdapter.videoDecodersFor(legacy, hardware: true, android: true), ['FFmpeg', 'dav1d']);
     expect(FvpAdapter.videoDecodersFor(other, hardware: true, android: true), FvpAdapter.videoDecoders(hardware: true));
     expect(
-      FvpAdapter.videoDecodersFor(shopee, hardware: true, android: false),
+      FvpAdapter.videoDecodersFor(legacy, hardware: true, android: false),
       FvpAdapter.videoDecoders(hardware: true),
     );
   });

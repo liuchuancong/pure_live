@@ -2,17 +2,13 @@ import 'package:pure_live/core/site/niconico/niconico_link.dart';
 import 'package:pure_live/core/site/weibo/weibo_api.dart';
 import 'package:pure_live/core/site/weibo/weibo_link.dart';
 import 'package:pure_live/core/site/niconico/niconico_watch.dart';
-import 'package:pure_live/core/site/tting/tting_link.dart';
 import 'package:pure_live/core/site/xiaohongshu/xiaohongshu_link.dart';
-import 'package:pure_live/core/site/openrec/openrec_link.dart';
-import 'package:pure_live/core/site/openrec/openrec_api.dart';
 import 'package:pure_live/common/models/live_room.dart';
 import 'package:pure_live/core/danmaku/douyin_danmaku.dart';
 import 'package:pure_live/core/danmaku/huya_danmaku.dart';
 import 'package:pure_live/core/site/inke/inke_site.dart';
 import 'package:pure_live/core/site/kilakila/kilakila_site.dart';
 import 'package:pure_live/core/sites.dart';
-import 'package:pure_live/core/site/huajiao/huajiao_link.dart';
 import 'package:pure_live/core/site/showroom/showroom_link.dart';
 import 'package:pure_live/core/site/chzzk/chzzk_link.dart';
 import 'package:pure_live/core/site/kick/kick_link.dart';
@@ -22,18 +18,10 @@ import 'package:pure_live/core/site/youtube/youtube_link.dart';
 import 'package:pure_live/core/site/bigo/bigo_link.dart';
 import 'package:pure_live/core/site/bigo/bigo_api.dart';
 import 'package:pure_live/core/site/pandalive/pandalive_link.dart';
-import 'package:pure_live/core/site/popkontv/popkontv_link.dart';
 import 'package:pure_live/core/site/seventeenlive/seventeenlive_link.dart';
-import 'package:pure_live/core/site/shopeelive/shopeelive_link.dart';
-import 'package:pure_live/core/site/vkvideolive/vkvideolive_link.dart';
-import 'package:pure_live/core/site/nimotv/nimotv_link.dart';
-import 'package:pure_live/core/site/dailymotion/dailymotion_link.dart';
-import 'package:pure_live/core/site/rumble/rumble_link.dart';
-import 'package:pure_live/core/site/goodgame/goodgame_link.dart';
 import 'package:pure_live/core/site/fc2live/fc2_link.dart';
 import 'package:pure_live/core/site/steambroadcast/steam_broadcast_link.dart';
 import 'package:pure_live/core/site/jdlive/jd_live_link.dart';
-import 'package:pure_live/core/site/taobaolive/taobao_live_link.dart';
 import 'package:pure_live/core/site/kugoulive/kugou_live_link.dart';
 import 'package:pure_live/core/site/baidulive/baidu_live_link.dart';
 import 'package:pure_live/core/site/sixroom/sixroom_link.dart';
@@ -143,38 +131,12 @@ class RoomExternalOpener {
         } on FormatException {
           return null;
         }
-      case Sites.popkonSite:
-        try {
-          return RoomExternalTarget(web: PopkonLink.url(id));
-        } on FormatException {
-          return null;
-        }
-      case Sites.shopeeLiveSite:
-        return _official(() => ShopeeLiveLink.url(id));
-      case Sites.vkVideoLiveSite:
-        return _official(() => VkVideoLiveLink.url(id));
-      case Sites.nimoTvSite:
-        return _official(() => NimoTvLink.url(id));
-      case Sites.dailymotionSite:
-        return _official(() => DailymotionLink.videoUrl(id));
-      case Sites.rumbleSite:
-        return _official(() => RumbleLink.videoUrl(id));
-      case Sites.goodGameSite:
-        final reference = GoodGameLink.parseReference(id);
-        if (reference == null) return null;
-        return _official(
-          () => reference.kind == GoodGameLinkKind.player
-              ? Uri.https('goodgame.ru', '/player', {'src': reference.value}).toString()
-              : GoodGameLink.channelUrl(reference.value),
-        );
       case Sites.fc2LiveSite:
         return _official(() => Fc2Link.channelUrl(id));
       case Sites.steamBroadcastSite:
         return _official(() => SteamBroadcastLink.watchUrl(id));
       case Sites.jdLiveSite:
         return _official(() => JdLiveLink.watchUrl(id));
-      case Sites.taobaoLiveSite:
-        return _official(() => TaobaoLiveLink.watchUrl(id));
       case Sites.kugouLiveSite:
         return _official(() => KugouLiveLink.watchUrl(id));
       case Sites.baiduLiveSite:
@@ -186,18 +148,6 @@ class RoomExternalOpener {
       case Sites.xiaohongshuSite:
         final broadcast = XiaohongshuLink.parse(id);
         return broadcast == null ? null : RoomExternalTarget(web: XiaohongshuLink.url(broadcast));
-      case Sites.ttingSite:
-        final channel = TtingLink.parse(id);
-        return channel == null ? null : RoomExternalTarget(web: TtingLink.url(channel));
-      case Sites.openrecSite:
-        try {
-          return RoomExternalTarget(web: OpenrecRoomKey.parse(id).url);
-        } on OpenrecException {
-          return null;
-        }
-      case Sites.huajiaoSite:
-        if (!HuajiaoLink.validId(id)) return null;
-        return RoomExternalTarget(web: HuajiaoLink.ownerUrl(id));
       case Sites.kilakilaSite:
         if (!RegExp(r'^[1-9][0-9]{0,31}$').hasMatch(id)) return null;
         return RoomExternalTarget(web: KilakilaSite.ownerUrl(id));

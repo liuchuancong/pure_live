@@ -1,7 +1,6 @@
 import 'package:pure_live/core/site/niconico/niconico_link.dart';
 import 'package:pure_live/core/site/weibo/weibo_link.dart';
 import 'package:pure_live/core/sites.dart';
-import 'package:pure_live/core/site/huajiao/huajiao_link.dart';
 import 'package:pure_live/core/site/picarto/picarto_api.dart';
 import 'package:pure_live/core/site/twitcasting/twitcasting_api.dart';
 import 'package:pure_live/core/site/missevan/missevan_api.dart';
@@ -15,13 +14,6 @@ import 'package:pure_live/core/site/tiktok/tiktok_link.dart';
 import 'package:pure_live/core/site/youtube/youtube_link.dart';
 import 'package:pure_live/core/site/bigo/bigo_link.dart';
 import 'package:pure_live/core/site/pandalive/pandalive_link.dart';
-import 'package:pure_live/core/site/popkontv/popkontv_link.dart';
-import 'package:pure_live/core/site/shopeelive/shopeelive_link.dart';
-import 'package:pure_live/core/site/vkvideolive/vkvideolive_link.dart';
-import 'package:pure_live/core/site/nimotv/nimotv_link.dart';
-import 'package:pure_live/core/site/dailymotion/dailymotion_link.dart';
-import 'package:pure_live/core/site/rumble/rumble_link.dart';
-import 'package:pure_live/core/site/goodgame/goodgame_link.dart';
 import 'package:pure_live/core/site/fc2live/fc2_link.dart';
 import 'package:pure_live/core/site/steambroadcast/steam_broadcast_link.dart';
 import 'package:pure_live/core/site/jdlive/jd_live_link.dart';
@@ -29,9 +21,7 @@ import 'package:pure_live/core/site/kugoulive/kugou_live_link.dart';
 import 'package:pure_live/core/site/baidulive/baidu_live_link.dart';
 import 'package:pure_live/core/site/sixroom/sixroom_link.dart';
 import 'package:pure_live/core/site/looklive/look_live_link.dart';
-import 'package:pure_live/core/site/taobaolive/taobao_live_link.dart';
 import 'package:pure_live/core/site/seventeenlive/seventeenlive_link.dart';
-import 'package:pure_live/core/site/tting/tting_link.dart';
 import 'package:pure_live/core/site/xiaohongshu/xiaohongshu_link.dart';
 
 class WebSearchRoomTarget {
@@ -72,16 +62,8 @@ class WebSearchRoomParser {
   static WebSearchRoomTarget? parse(String rawUrl) {
     final niconico = NiconicoLink.parse(rawUrl);
     if (niconico != null) return WebSearchRoomTarget(platform: Sites.niconicoSite, roomId: niconico);
-    final taobaoLive = TaobaoLiveLink.parse(rawUrl);
-    if (taobaoLive != null) {
-      return WebSearchRoomTarget(platform: Sites.taobaoLiveSite, roomId: taobaoLive.storageKey);
-    }
     // Broadcast shares need asynchronous owner lookup in LiveUrlTool. Only
     // verified owner links can be mapped synchronously to a durable app ID.
-    final huajiao = HuajiaoLink.parse(rawUrl);
-    if (huajiao?.kind == HuajiaoLinkKind.owner) {
-      return WebSearchRoomTarget(platform: Sites.huajiaoSite, roomId: huajiao!.id);
-    }
     final kilakila = KilakilaLink.parse(rawUrl.trim());
     if (kilakila?.kind == KilakilaLinkKind.owner) {
       return WebSearchRoomTarget(platform: Sites.kilakilaSite, roomId: kilakila!.id);
@@ -93,10 +75,6 @@ class WebSearchRoomParser {
     final xiaohongshu = XiaohongshuLink.parse(rawUrl);
     if (xiaohongshu != null) {
       return WebSearchRoomTarget(platform: Sites.xiaohongshuSite, roomId: xiaohongshu);
-    }
-    final tting = TtingLink.parse(rawUrl);
-    if (tting != null) {
-      return WebSearchRoomTarget(platform: Sites.ttingSite, roomId: '$tting');
     }
     final weibo = WeiboLink.parse(rawUrl);
     if (weibo != null) return WebSearchRoomTarget(platform: Sites.weiboSite, roomId: weibo);
@@ -128,32 +106,6 @@ class WebSearchRoomParser {
     if (bigo != null) return WebSearchRoomTarget(platform: Sites.bigoSite, roomId: bigo);
     final pandaLive = PandaLiveLink.parse(rawUrl);
     if (pandaLive != null) return WebSearchRoomTarget(platform: Sites.pandaLiveSite, roomId: pandaLive);
-    final popkon = PopkonLink.parse(rawUrl);
-    if (popkon != null) return WebSearchRoomTarget(platform: Sites.popkonSite, roomId: popkon.storageKey);
-    final shopeeLive = ShopeeLiveLink.parse(rawUrl);
-    if (shopeeLive != null) {
-      return WebSearchRoomTarget(platform: Sites.shopeeLiveSite, roomId: shopeeLive.storageKey);
-    }
-    final vkVideoLive = VkVideoLiveLink.parse(rawUrl);
-    if (vkVideoLive != null) {
-      return WebSearchRoomTarget(platform: Sites.vkVideoLiveSite, roomId: vkVideoLive.storageKey);
-    }
-    final nimoTv = NimoTvLink.parse(rawUrl);
-    if (nimoTv != null) {
-      return WebSearchRoomTarget(platform: Sites.nimoTvSite, roomId: nimoTv.storageKey);
-    }
-    final dailymotion = DailymotionLink.parseVideoId(rawUrl);
-    if (dailymotion != null) {
-      return WebSearchRoomTarget(platform: Sites.dailymotionSite, roomId: dailymotion);
-    }
-    final rumble = RumbleLink.parseVideoKey(rawUrl);
-    if (rumble != null) {
-      return WebSearchRoomTarget(platform: Sites.rumbleSite, roomId: rumble);
-    }
-    final goodGame = GoodGameLink.parse(rawUrl);
-    if (goodGame != null) {
-      return WebSearchRoomTarget(platform: Sites.goodGameSite, roomId: goodGame.storageKey);
-    }
     final fc2Live = Fc2Link.parseChannelId(rawUrl);
     if (fc2Live != null) {
       return WebSearchRoomTarget(platform: Sites.fc2LiveSite, roomId: fc2Live);

@@ -37,8 +37,6 @@ import 'package:pure_live/modules/tags/tag_management_binding.dart';
 import 'package:pure_live/modules/hot_areas/hot_areas_binding.dart';
 import 'package:pure_live/modules/shield/danmu_shield_binding.dart';
 import 'package:pure_live/modules/account/yy/yy_cookie_binding.dart';
-import 'package:pure_live/modules/account/taobao/taobao_cookie_binding.dart';
-import 'package:pure_live/modules/account/taobao/taobao_cookie_page.dart';
 import 'package:pure_live/modules/areas/favorite_areas_binding.dart';
 import 'package:pure_live/modules/account/soop/soop_cookie_page.dart';
 import 'package:pure_live/modules/account/huya/huya_cookie_page.dart';
@@ -175,12 +173,6 @@ class AppPages {
       bindings: [TwitchCookieBinding()],
     ),
     GetPage(name: RoutePath.kYyCookie, page: _smoothPage(() => const YyCookiePage()), bindings: [YyCookieBinding()]),
-
-    GetPage(
-      name: RoutePath.kTaobaoCookie,
-      page: _smoothPage(() => const TaobaoCookiePage()),
-      bindings: [TaobaoCookieBinding()],
-    ),
 
     GetPage(name: RoutePath.kSoop, page: _smoothPage(() => const SoopCookiePage()), bindings: [SoopCookieBinding()]),
 

@@ -70,7 +70,7 @@ class FvpAdapter
   static List<String>? audioBackends({bool? android}) =>
       (android ?? Platform.isAndroid) ? const ['OpenSL', 'AudioTrack', 'AAudio'] : null;
 
-  /// Legacy codec-id-12 HEVC FLV (Shopee Live, some 17LIVE) is rejected by
+  /// Legacy codec-id-12 HEVC FLV (some 17LIVE rooms) is rejected by
   /// some Android hardware decoders ("Unsupported input buffer": audio plays,
   /// every video frame is dropped) without an error that would advance mdk to
   /// the next decoder, so decode it in software there.
