@@ -17,6 +17,7 @@ import 'package:pure_live/modules/multiview/cells/multiview_frame_watchdog.dart'
 import 'package:pure_live/modules/multiview/danmaku/multiview_danmaku_session.dart';
 import 'package:pure_live/modules/multiview/models/multiview_models.dart';
 import 'package:pure_live/routes/route_observer_controller.dart';
+import 'package:pure_live/player/core/flv_splice_relay.dart';
 
 /// 房间对象 → 可播放源解析器。
 ///
@@ -182,6 +183,7 @@ class MultiviewController extends GetxController {
         lines: List.unmodifiable(nextUrls),
         qualities: choices,
         qualityIndex: appliedIndex < 0 ? qualityIndex : appliedIndex,
+        leaseFor: _leaseLookup(site, detail, applied, nextUrls),
         sourceQueryPolicies: resolution.sourceQueryPolicies,
       );
     }
@@ -209,6 +211,29 @@ class MultiviewController extends GetxController {
     );
   }
 
+  /// Leases of lines whose URL expires mid-stream (Douyu `expire=300`). The
+  /// cell relay renews the same line and quality before the CDN cuts it.
+  static MultiviewLeaseLookup? _leaseLookup(Site site, LiveRoom detail, LivePlayQuality quality, List<String> lines) {
+    final liveSite = site.liveSite;
+    if (liveSite is! LivePlayLeaseMetadata) return null;
+    final metadata = liveSite as LivePlayLeaseMetadata;
+    return (url) {
+      final refreshAt = metadata.getPlayUrlRefreshAt(url);
+      if (!FlvSpliceRelay.appliesTo(url, refreshAt: refreshAt)) return null;
+      final lineIndex = lines.indexOf(url);
+      return MultiviewSourceLease(
+        refreshAt: refreshAt!,
+        renew: (current) async {
+          final resolution = await liveSite.resolvePlayUrls(detail: detail, quality: quality);
+          final urls = resolution.urls;
+          if (urls.isEmpty) throw StateError('multiview: no renewed url for ${detail.platform}/${detail.roomId}');
+          final next = urls[(lineIndex < 0 ? 0 : lineIndex).clamp(0, urls.length - 1)];
+          return FlvLeasedSource(Uri.parse(next), refreshAt: metadata.getPlayUrlRefreshAt(next));
+        },
+      );
+    };
+  }
+
   static Future<void> _openCellSource(
     MultiviewCellPlayerHandle handle,
     MultiviewStreamSource source, {
@@ -224,6 +249,9 @@ class MultiviewController extends GetxController {
       return start ? consumer.startOwned(owned) : consumer.openOwned(owned);
     }
     final selected = url ?? source.url;
+    if (handle is MultiviewSourceLeaseHandle) {
+      (handle as MultiviewSourceLeaseHandle).setSourceLease(source.leaseFor?.call(selected));
+    }
     return start
         ? handle.start(url: selected, headers: source.headers, sourceQueryPolicy: source.sourceQueryPolicies[selected])
         : handle.open(url: selected, headers: source.headers, sourceQueryPolicy: source.sourceQueryPolicies[selected]);
@@ -325,6 +353,13 @@ class MultiviewController extends GetxController {
   /// player, which reports playing=false just before a source end, so it
   /// cannot tell a pause from a server that closed the stream.
   final List<bool> _playIntent = List<bool>.filled(MultiviewLayout.quad.capacity, false, growable: true);
+
+  /// Lease lookup of each cell's current quality, for line switches.
+  final List<MultiviewLeaseLookup?> _leaseLookups = List<MultiviewLeaseLookup?>.filled(
+    MultiviewLayout.quad.capacity,
+    null,
+    growable: true,
+  );
   static const int _maxRecoveriesPerWindow = 2;
   static const Duration _recoveryWindow = Duration(minutes: 3);
   final Stopwatch _recoveryClock = Stopwatch()..start();
@@ -526,6 +561,7 @@ class MultiviewController extends GetxController {
       _frameWatchdogs.removeLast()?.dispose();
       _sourceEndSubs.removeLast()?.cancel();
       _playIntent.removeLast();
+      _leaseLookups.removeLast();
       _frameStallRecoveries.removeLast();
       playingFlags.removeLast();
       cells.removeLast();
@@ -541,6 +577,7 @@ class MultiviewController extends GetxController {
       _frameWatchdogs.add(null);
       _sourceEndSubs.add(null);
       _playIntent.add(false);
+      _leaseLookups.add(null);
       _frameStallRecoveries.add(<Duration>[]);
     }
 
@@ -588,6 +625,7 @@ class MultiviewController extends GetxController {
     _frameWatchdogs.add(null);
     _sourceEndSubs.add(null);
     _playIntent.add(false);
+    _leaseLookups.add(null);
     _frameStallRecoveries.add(<Duration>[]);
   }
 
@@ -759,6 +797,7 @@ class MultiviewController extends GetxController {
     });
     playingFlags[cellIndex] = true;
     _playIntent[cellIndex] = true;
+    _leaseLookups[cellIndex] = source.leaseFor;
     _updateCell(
       cellIndex,
       cells[cellIndex].copyWith(
@@ -853,6 +892,7 @@ class MultiviewController extends GetxController {
       return;
     }
     if (_isStale(cellIndex, epoch)) return;
+    _leaseLookups[cellIndex] = next.leaseFor;
 
     _updateCell(
       cellIndex,
@@ -899,6 +939,9 @@ class MultiviewController extends GetxController {
     final epoch = _advanceCellEpoch(cellIndex);
     _stopFrameWatchdog(cellIndex);
     try {
+      if (handle is MultiviewSourceLeaseHandle) {
+        (handle as MultiviewSourceLeaseHandle).setSourceLease(_leaseLookups[cellIndex]?.call(state.lines[lineIndex]));
+      }
       await handle.open(
         url: state.lines[lineIndex],
         headers: state.headers,
@@ -1291,6 +1334,7 @@ class MultiviewController extends GetxController {
       playingFlags[cellIndex] = false;
     }
     _playIntent[cellIndex] = false;
+    _leaseLookups[cellIndex] = null;
     _updateCell(cellIndex, MultiviewCellState.empty(cellIndex));
     return handle;
   }

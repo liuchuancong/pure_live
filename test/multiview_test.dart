@@ -17,6 +17,7 @@ import 'package:pure_live/model/live_play_quality.dart';
 import 'package:pure_live/modules/multiview/cells/multiview_cell_player.dart';
 import 'package:pure_live/modules/multiview/models/multiview_models.dart';
 import 'package:pure_live/modules/multiview/multiview_controller.dart';
+import 'package:pure_live/player/core/flv_splice_relay.dart';
 
 /// 记录调用序列的假单格播放器。
 ///
@@ -28,8 +29,14 @@ class _RecordingPlayer
         MultiviewCellPlayerHandle,
         MultiviewNativeInputRouting,
         MultiviewFrameProgressHandle,
-        MultiviewSourceEndHandle {
+        MultiviewSourceEndHandle,
+        MultiviewSourceLeaseHandle {
   _RecordingPlayer(this._log, this.name);
+
+  /// Leases handed over before each start/open, in order.
+  final List<MultiviewSourceLease?> leases = [];
+  @override
+  void setSourceLease(MultiviewSourceLease? lease) => leases.add(lease);
 
   final List<String> _log;
   final String name;
@@ -231,6 +238,7 @@ class _Harness {
   final Set<String> qualityLoadFailures = <String>{};
   final Map<String, _FakeDanmaku> danmakuEngines = <String, _FakeDanmaku>{};
   final Map<String, double> savedRoomVolumes = <String, double>{};
+  final Map<String, MultiviewLeaseLookup> leaseLookups = <String, MultiviewLeaseLookup>{};
   int globalPauseCalls = 0;
   int playerSeq = 0;
   int danmakuSeq = 0;
@@ -292,6 +300,7 @@ class _Harness {
         return MultiviewStreamSource(url: nextLines[0], headers: const {'user-agent': 'test'}, lines: nextLines);
       },
       lines: lines,
+      leaseFor: leaseLookups[id],
     );
   }
 
@@ -1573,6 +1582,28 @@ void main() {
       expect(harness.players.length, 5);
       await endAt(const Duration(minutes: 15, seconds: 10));
       expect(harness.players.length, 5, reason: 'two recoveries within three minutes is the limit');
+      await controller.disposeAll();
+    });
+
+    testWidgets('an expiring line hands its lease to the cell on start and line switch', (tester) async {
+      final harness = _Harness();
+      final controller = harness.controller;
+      final leases = {
+        for (final line in ['https://stream/r1/原画', 'https://stream/r1/原画?line=1'])
+          line: MultiviewSourceLease(
+            refreshAt: DateTime.utc(2026, 9, 27, 12),
+            renew: (current) async => FlvLeasedSource(current.url),
+          ),
+      };
+      harness.leaseLookups['r1'] = (url) => leases[url];
+      await controller.assignRoom(0, _room('r1'));
+      await controller.assignRoom(1, _room('r2'));
+
+      expect(harness.players[0].leases, [same(leases['https://stream/r1/原画'])]);
+      expect(harness.players[1].leases, [isNull], reason: 'a room without expiring lines gets no lease');
+
+      await controller.setCellLine(0, 1);
+      expect(harness.players[0].leases.last, same(leases['https://stream/r1/原画?line=1']));
       await controller.disposeAll();
     });
 

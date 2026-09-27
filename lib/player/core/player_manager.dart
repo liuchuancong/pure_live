@@ -50,6 +50,7 @@ import 'package:pure_live/player/utils/media_kit_content_probe.dart';
 import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/danmaku/compact_danmaku_overlay.dart';
+import 'package:pure_live/player/core/flv_splice_relay.dart';
 
 typedef UnifiedPlayerCreator = FutureOr<UnifiedPlayer> Function(PlayerEngine engine);
 typedef WindowsPipEnter = Future<void> Function(double videoRatio);
@@ -283,6 +284,10 @@ class PlayerManager {
   LiveRoom? _sourceCohortRoom;
   PlaybackSource? _sourceCohortSource;
   final Map<UnifiedPlayer, PlaybackSourceTransport> _sourceTransports = Map.identity();
+
+  /// Players whose leased FLV source is renewed by [FlvSpliceRelay]. Their
+  /// lease needs no proactive credential refresh or reopen.
+  final Set<UnifiedPlayer> _splicedLeasePlayers = Set.identity();
   final PlaybackInputFactory? _sourceInputFactory;
 
   PlayerManager({
@@ -2265,6 +2270,15 @@ class PlayerManager {
       return player.setDataSource(input, inputs, inputHeaders, room: room, audioOnly: audioOnly);
     }
 
+    final refreshAt = _currentSourceRefreshAt;
+    final renewFlv = source is UrlPlaybackSource && sourceQueryPolicy == null
+        ? _flvLeaseRenewer(source.url, playUrls, refreshAt)
+        : null;
+    if (renewFlv != null) {
+      _splicedLeasePlayers.add(player);
+    } else {
+      _splicedLeasePlayers.remove(player);
+    }
     final sourceOpen = switch (source) {
       OwnedPlaybackSource() => transport.openOwned(createInput: source.createInput, nativeOpen: nativeOpen),
       UrlPlaybackSource() => transport.open(
@@ -2274,6 +2288,8 @@ class PlayerManager {
         policy: sourceQueryPolicy,
         nativeOpen: nativeOpen,
         rewriteLegacyHevcFlv: player is MediaKitAdapter,
+        refreshAt: refreshAt,
+        renewFlv: renewFlv,
       ),
     };
     try {
@@ -2298,7 +2314,33 @@ class PlayerManager {
   }
 
   Future<void> _closeSourceTransport(UnifiedPlayer player) async {
+    _splicedLeasePlayers.remove(player);
     await _sourceTransports.remove(player)?.close();
+  }
+
+  /// Resolves the next URL of the same line and quality for a leased FLV
+  /// source, or null when the source is not spliced.
+  FlvSourceRenewer? _flvLeaseRenewer(String url, List<String> playUrls, DateTime? refreshAt) {
+    final resolver = _sourceRefreshResolver;
+    if (resolver == null || !FlvSpliceRelay.appliesTo(url, refreshAt: refreshAt)) return null;
+    final lineIndex = playUrls.indexOf(url);
+    return (current) async {
+      final currentUrl = current.url.toString();
+      final refreshed = await _resolvePlaybackSource(
+        resolver,
+        PlaybackSourceRefreshRequest(
+          currentLineIndex: lineIndex < 0 ? 0 : lineIndex,
+          advanceLine: false,
+          currentUrl: currentUrl,
+          currentSource: UrlPlaybackSource(currentUrl),
+          currentQuality: _sourceSelectionForCurrentCohort()?.quality,
+        ),
+      );
+      final urls = refreshed.urls.map((item) => item.trim()).where((item) => item.isNotEmpty).toList(growable: false);
+      if (urls.isEmpty) throw StateError('No renewed FLV source');
+      final next = urls[refreshed.preferredLineIndex.clamp(0, urls.length - 1)];
+      return FlvLeasedSource(Uri.parse(next), refreshAt: refreshed.refreshAt);
+    };
   }
 
   void _cancelPendingSourceInputs() {
@@ -4576,6 +4618,8 @@ class PlayerManager {
     _proactiveSourceRefreshTimer = null;
     final refreshAt = _currentSourceRefreshAt;
     if (refreshAt == null || _sourceRefreshResolver == null || !_isPlayerEventCurrent(player, sessionId)) return;
+    // The splice relay renews this lease underneath the native connection.
+    if (_splicedLeasePlayers.contains(player)) return;
 
     final remaining = refreshAt.difference(DateTime.now().toUtc());
     final delay = remaining > const Duration(seconds: 1) ? remaining : const Duration(seconds: 1);
