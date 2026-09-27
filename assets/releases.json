@@ -9,8 +9,99 @@
       "avatar": "https://avatars.githubusercontent.com/u/39661556?v=4",
       "profile": "https://github.com/wzgrx"
     },
-    "changelog": "# Pure Live v3.2.10\n\nv3.2.10 build 4133 修复斗鱼直播间约 5 分钟后自动暂停，移植原项目近期的实用改动（平台图标、应用内下载更新、局域网设备同步、斗鱼登录续期等），并加入 3.2.9 预备的修复（3.2.9 未单独发布）。安卓新增 armeabi-v7a 与 x86_64 安装包。从维护分支 `claude` 发布；原项目改动逐项审查后移植，没有整体合并。\n\n## 修复\n\n- **斗鱼直播间播放约 5 分钟后自动暂停**（#35）：斗鱼给未登录用户的原画链接只有 5 分钟有效期（链接参数 `expire=300`，服务器在第 300 秒断开），多画面里断流后画面冻结、不会恢复。现在断流后会自动换新链接重连，并保留所选画质和线路；自动恢复的次数限制也改为「3 分钟内最多 2 次」，不会在第三次到期后停住。单个直播间原本就会在断流后重新取链接。登录斗鱼后（见下方「斗鱼登录续期」）可获得更长时效的链接。\n- **小窗播放时，首页右上角菜单点不动**：小窗的拖动手势层会拦截菜单项的点击。现在弹出菜单、对话框时整个小窗暂时隐藏，关闭后恢复；小窗默认位置也改到右下角（导航栏上方），不再挡住标签栏和输入框。\n- **竖屏直播双击全屏后控制栏挤成一团**（原项目 #886）：竖屏直播双击改为进入竖屏全屏，再双击退出；手机上再次点击画面即可收起控制栏。\n- **录制中显示的码率只有实际的几分之一**：改为按文件实际增长计算，并取几秒平均，不再忽高忽低。\n- **应用内更新下载链接失效**：以前按固定文件名拼接安装包地址，与本仓库实际发布的文件名不一致；现在从发布的真实文件列表里按平台和架构挑选安装包。\n\n## 新增与改进\n\n- **快手搜索**（原项目 #881）：快手网页端不再向未登录用户返回直播间，改为 App 内原生主播搜索，可搜到未开播主播并翻页。\n- **斗鱼登录续期**（移植自原项目）：按 Cookie 中的登录令牌判断是否真的已登录；可单独填写 LTP0 与 dy_did，登录快到期时自动续期，播放失败时强制续期一次；签名使用的设备号与登录设备一致，避免「登录了却被当游客」。\n- **局域网设备同步**（移植自原项目并加固）：同一网络下的设备可通过二维码或地址互相同步设置。每次开启生成 6 位配对码，对方必须输入；本机收到读取或写入请求时弹窗确认；账号 Cookie 默认不同步，需手动打开开关。\n- **平台图标**：34 个平台和 IPTV 都有独立图标。\n- **应用内下载更新**：可在「缓存与数据」中选择下载目录，下载完成后可直接打开所在文件夹。\n- **播放器设置**：解码器、视频输出、音频输出改为独立选择页，显示易读名称，只列出本平台可用的选项。\n- **电脑版**：横向平台标签支持鼠标滚轮和拖动；「新建独立播放窗口」会带上当前设置（代理、Cookie、关注）；设置分组标题与卡片左对齐。\n- **多画面**：窄屏时工具栏分两行显示。\n\n## 已知问题\n\n- 斗鱼未登录时原画仍是 5 分钟链接，到期时会有约 1～2 秒的重连。\n- armeabi-v7a 与 x86_64 安装包使用标准 libmpv（非本仓库自编的 FFmpeg 9 版本），这两种设备暂无真机测试。\n- 海外平台在 Clash 出口 IP 轮换时会被拒，请固定单个节点；Windows 版的应用内请求不跟随系统代理，海外站点需在「网络代理」中填写。\n- Linux 的 mpv 库需要系统有 `libva-wayland2`；Kick 仍被 Cloudflare 拦截。\n",
-    "files": []
+    "changelog": "# Pure Live v3.2.10\n\nv3.2.10 build 4133 修复斗鱼直播间约 5 分钟后自动暂停，移植原项目近期的实用改动（平台图标、应用内下载更新、局域网设备同步、斗鱼登录续期等），并加入 3.2.9 预备的修复（3.2.9 未单独发布）。安卓新增 armeabi-v7a 与 x86_64 安装包。从维护分支 `claude` 发布；原项目改动逐项审查后移植，没有整体合并。\n\n## 修复\n\n- **斗鱼直播间播放约 5 分钟后自动暂停**（#35）：斗鱼给未登录用户的原画链接只有 5 分钟有效期（链接参数 `expire=300`，服务器在第 300 秒断开），多画面里断流后画面冻结、不会恢复。现在断流后会自动换新链接重连，并保留所选画质和线路；自动恢复的次数限制也改为「3 分钟内最多 2 次」，不会在第三次到期后停住。单个直播间原本就会在断流后重新取链接。登录斗鱼后（见下方「斗鱼登录续期」）可获得更长时效的链接。\n- **小窗播放时，首页右上角菜单点不动**：小窗的拖动手势层会拦截菜单项的点击。现在弹出菜单、对话框时整个小窗暂时隐藏，关闭后恢复；小窗默认位置也改到右下角（导航栏上方），不再挡住标签栏和输入框。\n- **竖屏直播双击全屏后控制栏挤成一团**（原项目 #886）：竖屏直播双击改为进入竖屏全屏，再双击退出；手机上再次点击画面即可收起控制栏。\n- **录制中显示的码率只有实际的几分之一**：改为按文件实际增长计算，并取几秒平均，不再忽高忽低。\n- **应用内更新下载链接失效**：以前按固定文件名拼接安装包地址，与本仓库实际发布的文件名不一致；现在从发布的真实文件列表里按平台和架构挑选安装包。\n\n## 新增与改进\n\n- **快手搜索**（原项目 #881）：快手网页端不再向未登录用户返回直播间，改为 App 内原生主播搜索，可搜到未开播主播并翻页。\n- **斗鱼登录续期**（移植自原项目）：按 Cookie 中的登录令牌判断是否真的已登录；可单独填写 LTP0 与 dy_did，登录快到期时自动续期，播放失败时强制续期一次；签名使用的设备号与登录设备一致，避免「登录了却被当游客」。\n- **局域网设备同步**（移植自原项目并加固）：同一网络下的设备可通过二维码或地址互相同步设置。每次开启生成 6 位配对码，对方必须输入；本机收到读取或写入请求时弹窗确认；账号 Cookie 默认不同步，需手动打开开关。\n- **平台图标**：34 个平台和 IPTV 都有独立图标。\n- **应用内下载更新**：可在「缓存与数据」中选择下载目录，下载完成后可直接打开所在文件夹。\n- **播放器设置**：解码器、视频输出、音频输出改为独立选择页，显示易读名称，只列出本平台可用的选项。\n- **电脑版**：横向平台标签支持鼠标滚轮和拖动；「新建独立播放窗口」会带上当前设置（代理、Cookie、关注）；设置分组标题与卡片左对齐。\n- **多画面**：窄屏时工具栏分两行显示。\n\n## 已知问题\n\n- 斗鱼未登录时原画仍是 5 分钟链接，到期时会有约 1～2 秒的重连。\n- armeabi-v7a 与 x86_64 安装包使用标准 libmpv（非本仓库自编的 FFmpeg 9 版本），这两种设备暂无真机测试。\n- 海外平台在 Clash 出口 IP 轮换时会被拒，请固定单个节点；Windows 版的应用内请求不跟随系统代理，海外站点需在「网络代理」中填写。\n- Linux 的 mpv 库需要系统有 `libva-wayland2`；Kick 仍被 Cloudflare 拦截。\n\n## 验证\n\n- 全量测试：Windows 5042 通过；Linux 4952 通过、90 跳过；`flutter analyze` 无问题。\n- Windows（便携版）：多画面斗鱼原画（`expire=300`）从 10:05 播到 10:19，两次 300 秒断流都自动换链接重连；单个直播间连续跨过两次断流。第一版修复在这项实测中没有生效：media_kit 在流结束时先报「暂停」再报「结束」，恢复逻辑把它当成了用户暂停。已改为按每格的播放意图判断（42cbded2）。\n- 真机（REDMI K90，Android 17）：局域网同步无配对码或配对码错误返回 403，拒绝后返回 403 且页面保留，允许后返回的设置不含 Cookie；平台图标、播放器选项选择页、多画面窄屏工具栏。\n- Windows：平台标签鼠标滚轮横向滚动；深色模式下新建独立播放窗口继承设置。\n",
+    "files": [
+      {
+        "name": "ANDROID_SHA256SUM.txt",
+        "size": "0.00mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.2.10/ANDROID_SHA256SUM.txt"
+      },
+      {
+        "name": "BUILD_METADATA.json",
+        "size": "0.00mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.2.10/BUILD_METADATA.json"
+      },
+      {
+        "name": "PureLive-3.2.10-4133-debug-signed-android-arm64-v8a-release.apk",
+        "size": "137.79mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.2.10/PureLive-3.2.10-4133-debug-signed-android-arm64-v8a-release.apk"
+      },
+      {
+        "name": "PureLive-3.2.10-4133-debug-signed-android-armeabi-v7a-release.apk",
+        "size": "116.12mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.2.10/PureLive-3.2.10-4133-debug-signed-android-armeabi-v7a-release.apk"
+      },
+      {
+        "name": "PureLive-3.2.10-4133-debug-signed-android-x86_64-release.apk",
+        "size": "145.95mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.2.10/PureLive-3.2.10-4133-debug-signed-android-x86_64-release.apk"
+      },
+      {
+        "name": "PureLive-3.2.10-4133-ios-arm64-trollstore.ipa",
+        "size": "62.13mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.2.10/PureLive-3.2.10-4133-ios-arm64-trollstore.ipa"
+      },
+      {
+        "name": "PureLive-3.2.10-4133-ios-arm64-unsigned-app.zip",
+        "size": "61.57mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.2.10/PureLive-3.2.10-4133-ios-arm64-unsigned-app.zip"
+      },
+      {
+        "name": "PureLive-3.2.10-4133-linux-x64.tar.gz",
+        "size": "55.92mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.2.10/PureLive-3.2.10-4133-linux-x64.tar.gz"
+      },
+      {
+        "name": "PureLive-3.2.10-4133-macos-universal.dmg",
+        "size": "112.02mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.2.10/PureLive-3.2.10-4133-macos-universal.dmg"
+      },
+      {
+        "name": "PureLive-3.2.10-4133-macos-universal.zip",
+        "size": "99.87mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.2.10/PureLive-3.2.10-4133-macos-universal.zip"
+      },
+      {
+        "name": "PureLive-3.2.10-4133-windows-x64-portable.zip",
+        "size": "71.54mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.2.10/PureLive-3.2.10-4133-windows-x64-portable.zip"
+      },
+      {
+        "name": "PureLive-3.2.10-4133-windows-x64-setup.exe",
+        "size": "55.24mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.2.10/PureLive-3.2.10-4133-windows-x64-setup.exe"
+      },
+      {
+        "name": "SHA256SUMS.txt",
+        "size": "0.00mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.2.10/SHA256SUMS.txt"
+      },
+      {
+        "name": "WINDOWS_BUILD_METADATA.json",
+        "size": "0.00mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.2.10/WINDOWS_BUILD_METADATA.json"
+      },
+      {
+        "name": "WINDOWS_SHA256SUMS.txt",
+        "size": "0.00mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.2.10/WINDOWS_SHA256SUMS.txt"
+      }
+    ]
   },
   {
     "version": "3.2.8",
