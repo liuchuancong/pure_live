@@ -183,6 +183,31 @@ Android 手动云构建要求以下 Secrets：
 python .\tool\update_releases.py
 ```
 
+## 仓库与原生库地址（变量替换）
+
+所有 GitHub 地址都从 `.env` / `.env.prod` 派生，换 owner 或换仓库名不需要在多个文件里搜索替换：
+
+| 变量 | 作用 | 出现在 |
+| --- | --- | --- |
+| `PURELIVE_UPDATE_OWNER` / `PURELIVE_UPDATE_REPOSITORY` | 本仓库自身的发布 | `assets/version.json` 的 `download_url`、`assets/releases.json`、发布工作流的说明与附件链接、`audit-upstream.yml` 的对比远端 |
+| `PURELIVE_NATIVE_OWNER` / `PURELIVE_NATIVE_REPOSITORY` | 构建时下载的原生库（FFmpeg、libmpv）所在仓库 | `pubspec.yaml` 的 `ffmpeg_kit_extended_config`、`third_party/media_kit/hook/native_bundles.json`、`tool/prefetch_android_native.ps1` |
+| `PURELIVE_TV_REPOSITORY` | 发布说明里引用的 TV 端仓库 | 两个发布工作流的 Release 说明 |
+
+`PURELIVE_UPDATE_OWNER`/`PURELIVE_UPDATE_REPOSITORY` 另会生成 `lib/gen/env.g.dart`（运行时更新检查使用）：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tool/flutterw.ps1 pub run enven --env-files .env,.env.prod --class-name AppConfig
+```
+
+换名流程：
+
+1. 修改 `.env`、`.env.dev`、`.env.prod` 里对应的变量（三个文件保持一致）。
+2. 重新生成 `lib/gen/env.g.dart`（上面的命令）。
+3. `powershell -NoProfile -ExecutionPolicy Bypass -File tool/sync_owner_refs.ps1 -Apply` 改写派生文件。
+4. `tool/validate_build_policy.ps1` 通过；它会调用同一个脚本的检查模式，任何半途而废的替换（例如只改了 `pubspec.yaml` 没改预取脚本）都会让门禁失败。
+
+第三方地址不属于本仓库的镜像，脚本不会改写：`third_party/media_kit/hook/native_bundles.json` 里 Predidit 的 libmpv 构建、`tool/prefetch_android_native.ps1` 里 akashskypatel 的 ffmpeg-kit builders。`docs/` 下的历史记录同样保持原样。
+
 ## 发布检查清单
 
 1. 更新 `pubspec.yaml`、`assets/version.json` 与 `RELEASE_NOTES.md`。

@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param()
 
 $ErrorActionPreference = 'Stop'
@@ -711,6 +711,15 @@ $generatedEnvironment = Get-Content -LiteralPath (Join-Path $repoRoot 'lib\gen\e
 if ($environmentText -notmatch '(?m)^PURELIVE_UPDATE_OWNER=liuchuancong\s*$' -or
     $generatedEnvironment -notmatch "pureliveUpdateOwner = 'liuchuancong'") {
     throw 'Production and generated update repositories must both target liuchuancong/pure_live.'
+}
+
+# Owner and native-bundle URLs are derived from the .env file, so a rename is
+# one edit there plus `tool/sync_owner_refs.ps1 -Apply`. This is what keeps a
+# half-finished rename (some files moved, others not) from shipping.
+$ownerSync = Join-Path $PSScriptRoot 'sync_owner_refs.ps1'
+& powershell -NoProfile -ExecutionPolicy Bypass -File $ownerSync -EnvFile '.env.prod'
+if ($LASTEXITCODE -ne 0) {
+    throw 'Owner references are stale; run tool/sync_owner_refs.ps1 -Apply.'
 }
 
 Write-Host 'Build policy static validation passed.'
