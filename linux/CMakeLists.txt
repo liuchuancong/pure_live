@@ -135,6 +135,25 @@ install(DIRECTORY "${NATIVE_ASSETS_DIR}"
    DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
    COMPONENT Runtime)
 
+# libmpv also links libraries that minimal desktops may lack. Ship copies in
+# lib/fallback; LinuxMpvRuntime loads each by soname first, so a system copy
+# (and its VA-API driver paths) always wins and the bundled one only fills a
+# gap. The list must match lib/player/core/linux_mpv_runtime.dart.
+set(MPV_FALLBACK_LIBRARIES
+  libva.so.2 libva-drm.so.2 libva-x11.so.2 libva-wayland.so.2 libvdpau.so.1
+  libunwind.so.8 libarchive.so.13 libXss.so.1 libXv.so.1)
+foreach(soname ${MPV_FALLBACK_LIBRARIES})
+  find_file(MPV_FALLBACK_${soname} "${soname}"
+    PATHS /usr/lib/x86_64-linux-gnu /usr/lib64 /usr/lib NO_DEFAULT_PATH)
+  if(MPV_FALLBACK_${soname})
+    file(REAL_PATH "${MPV_FALLBACK_${soname}}" fallback_real)
+    install(FILES "${fallback_real}" RENAME "${soname}"
+      DESTINATION "${INSTALL_BUNDLE_LIB_DIR}/fallback" COMPONENT Runtime)
+  else()
+    message(WARNING "libmpv fallback ${soname} not found; the bundle will rely on the system copy")
+  endif()
+endforeach()
+
 # Fully re-copy the assets directory on each build to avoid having stale files
 # from a previous install.
 set(FLUTTER_ASSET_DIR_NAME "flutter_assets")

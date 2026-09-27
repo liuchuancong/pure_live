@@ -12,6 +12,7 @@ import 'package:pure_live/common/index.dart';
 import 'package:pure_live/player/adapters/media_kit_adapter.dart';
 import 'package:pure_live/player/core/playback_source_transport.dart';
 import 'package:pure_live/player/core/playback_proxy_policy.dart';
+import 'package:pure_live/player/core/linux_mpv_runtime.dart';
 
 /// multiview 单格播放器契约。
 ///
@@ -177,6 +178,7 @@ class _MediaKitCellPlayer implements MultiviewCellPlayerHandle, MultiviewNativeI
     HlsSourceQueryPolicy? sourceQueryPolicy,
   }) async {
     _checkLive();
+    LinuxMpvRuntime.ensureLoaded();
     MediaKit.ensureInitialized();
 
     final player = Player();

@@ -23,6 +23,7 @@ import 'package:pure_live/player/interface/media_kit_player_accessor.dart';
 import 'package:pure_live/player/core/player_error_classifier.dart';
 import 'package:pure_live/player/core/source_event_fence.dart';
 import 'package:pure_live/player/core/playback_proxy_policy.dart';
+import 'package:pure_live/player/core/linux_mpv_runtime.dart';
 
 @visibleForTesting
 ({int width, int height})? resolveMediaKitDisplaySize(VideoParams params) {
@@ -247,6 +248,7 @@ class MediaKitAdapter
     try {
       _stateSubject.add(PlayerState.initializing);
 
+      LinuxMpvRuntime.ensureLoaded();
       MediaKit.ensureInitialized();
       _player = Player();
 
