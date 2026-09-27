@@ -12,10 +12,13 @@ import 'package:pure_live/common/models/release_model.dart';
 import 'package:pure_live/modules/about/widgets/release_history_repository.dart';
 
 class VersionHistoryPage extends StatefulWidget {
-  const VersionHistoryPage({super.key, this.openExternalUrl, this.downloadRelease});
+  const VersionHistoryPage({super.key, this.openExternalUrl, this.downloadRelease, this.releaseLoader});
 
   final ReleaseHistoryExternalLauncher? openExternalUrl;
   final ReleaseHistoryDownloadHandler? downloadRelease;
+
+  /// Defaults to [ReleaseHistoryRepository.load]; tests supply fixed history.
+  final ReleaseHistoryLoader? releaseLoader;
 
   @override
   State<VersionHistoryPage> createState() => _VersionHistoryPageState();
@@ -47,7 +50,8 @@ class _VersionHistoryPageState extends State<VersionHistoryPage> {
     historyLoading.value = true;
     historyError.value = false;
     try {
-      final releases = await _repository.load(forceRefresh: forceRefresh);
+      final loader = widget.releaseLoader;
+      final releases = loader != null ? await loader() : await _repository.load(forceRefresh: forceRefresh);
       if (!mounted) return;
       allReleased.assignAll(releases);
       final preservedIndex = selectedVersion == null

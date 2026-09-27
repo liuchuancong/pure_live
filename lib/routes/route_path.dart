@@ -35,6 +35,7 @@ class RoutePath {
 
   /// 本地恢复
   static const kBackup = "/backup";
+  static const kRemoteSync = "/remote_sync";
 
   /// 关于
   static const kAbout = "/about";
@@ -112,6 +113,4 @@ class RoutePath {
   static const kIptv = "/iptv";
 
   static const kSettingsTags = '/settingTags';
-
-  static const kRemoteSync = '/remote_sync';
 }

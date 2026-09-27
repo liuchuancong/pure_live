@@ -105,8 +105,11 @@ void main() {
       expect(failures, isEmpty, reason: jsonEncode(rows));
       expect(scheduler.coverageIncomplete, false);
       expect(maximumActive, 1);
+      // The next reload follows a slow one straight away instead of adding
+      // another ~3 s interval. 1 s still separates the two while leaving room
+      // for scheduler latency under a loaded Windows full-suite run (233 ms seen).
       for (var i = 1; i < 4; i++) {
-        expect(rows[i]['startMs']! - rows[i - 1]['doneMs']!, lessThan(200));
+        expect(rows[i]['startMs']! - rows[i - 1]['doneMs']!, lessThan(1000));
       }
       expect(scheduler.publish('video', (r) => r.uri), contains('#EXT-X-MEDIA-SEQUENCE:0'));
     } finally {

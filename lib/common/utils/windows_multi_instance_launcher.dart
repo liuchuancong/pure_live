@@ -1,14 +1,11 @@
 import 'dart:io';
 import 'dart:convert';
+
 import 'package:path/path.dart' as p;
 import 'package:pure_live/get/get.dart';
 import 'package:pure_live/common/models/live_room.dart';
 import 'package:pure_live/common/services/settings/backup_controller.dart';
 
-
-/// Launches an isolated Windows player process.
-///
-/// Every process receives a unique `--instance` value, so Hive, player, PiP
 /// and window state are never shared concurrently. An optional compact room
 /// payload lets the new process open the selected live room immediately.
 ///
@@ -44,16 +41,26 @@ class WindowsMultiInstanceLauncher {
     return argument == null ? '' : sanitizeInstanceId(argument.substring(instancePrefix.length));
   }
 
-  static String? configFileFromArgs(List<String> args) {
+  static const String configDirectoryPrefix = 'pure_live_instance_';
+
+  /// The settings file handed over by [launch], or null.
+  ///
+  /// The file is imported and then deleted, so only a file this launcher could
+  /// have written is accepted: `<system temp>/pure_live_instance_*/<id>.json`
+  /// for this window's own instance id. Any other path is ignored.
+  static String? configFileFromArgs(List<String> args, {String? tempRoot}) {
     final argument = args.where((item) => item.startsWith(configPrefix)).firstOrNull;
-
     if (argument == null) return null;
-
     final path = argument.substring(configPrefix.length).trim();
-
-    if (path.isEmpty) return null;
-
-    return path;
+    final instanceId = instanceIdFromArgs(args);
+    if (path.isEmpty || instanceId.isEmpty) return null;
+    final normalized = p.normalize(p.absolute(path));
+    final root = p.normalize(p.absolute(tempRoot ?? Directory.systemTemp.path));
+    final parent = p.dirname(normalized);
+    if (p.dirname(parent) != root) return null;
+    if (!p.basename(parent).startsWith(configDirectoryPrefix)) return null;
+    if (p.basename(normalized) != '$instanceId.json') return null;
+    return normalized;
   }
 
   static LiveRoom? roomFromArgs(List<String> args) {
@@ -111,7 +118,7 @@ class WindowsMultiInstanceLauncher {
 
     final data = backupController.exportAllSettings(includeSensitiveData: true);
 
-    final directory = await Directory.systemTemp.createTemp('pure_live_instance_');
+    final directory = await Directory.systemTemp.createTemp(configDirectoryPrefix);
 
     final file = File(p.join(directory.path, '$instanceId.json'));
 

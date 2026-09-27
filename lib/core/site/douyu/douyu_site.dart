@@ -22,9 +22,46 @@ class DouyuSite
         LiveSiteRecordRoomResolver,
         LivePlayUrlResolver,
         LivePlayRecoveryResolver,
-        LivePlayUrlCursorResolver {
+        LivePlayUrlCursorResolver,
+        LivePlayLeaseMetadata {
   @override
   String id = Sites.douyuSite;
+
+  /// Anonymous original-quality URLs carry `expire=300`: the CDN closes the
+  /// stream 300 s after the URL was issued. The URL has no absolute time, so
+  /// the issue time is remembered when it is resolved.
+  static final Map<String, DateTime> _issuedAt = {};
+  static const Duration _leaseRefreshLead = Duration(seconds: 45);
+
+  static int? _expireSeconds(String url) {
+    final value = int.tryParse(Uri.tryParse(url)?.queryParameters['expire'] ?? '');
+    return value != null && value > 0 ? value : null;
+  }
+
+  static void _rememberIssued(String url, DateTime at) {
+    if (_expireSeconds(url) == null) return;
+    _issuedAt.remove(url);
+    _issuedAt[url] = at;
+    while (_issuedAt.length > 64) {
+      _issuedAt.remove(_issuedAt.keys.first);
+    }
+  }
+
+  @override
+  DateTime? getPlayUrlInvalidAt(String url, {DateTime? now}) {
+    final expire = _expireSeconds(url);
+    if (expire == null) return null;
+    return (_issuedAt[url] ?? now ?? DateTime.now()).toUtc().add(Duration(seconds: expire));
+  }
+
+  @override
+  DateTime? getPlayUrlRefreshAt(String url, {DateTime? now}) {
+    final invalidAt = getPlayUrlInvalidAt(url, now: now);
+    if (invalidAt == null) return null;
+    // Short leases keep three quarters of their lifetime.
+    final quarter = Duration(seconds: _expireSeconds(url)! ~/ 4);
+    return invalidAt.subtract(quarter < _leaseRefreshLead ? quarter : _leaseRefreshLead);
+  }
 
   @override
   String name = "斗鱼直播";
@@ -268,6 +305,7 @@ class DouyuSite
   }
 
   Future<LivePlayUrlResolution> resolvePlayUrl(String roomId, int rate, String cdn) async {
+    final issuedAt = DateTime.now().toUtc();
     final playData = await _requestPlayData(roomId, rate: rate, cdn: cdn);
     final rawRate = playData['rate'];
     // Unlike a bitrate, rate is an opaque integer identifier. Do not truncate
@@ -275,8 +313,10 @@ class DouyuSite
     final appliedRate = rawRate is num && rawRate.isFinite && rawRate == rawRate.roundToDouble()
         ? rawRate.toInt()
         : int.tryParse(rawRate?.toString().trim() ?? '');
+    final url = parsePlayUrl(playData);
+    _rememberIssued(url, issuedAt);
     return LivePlayUrlResolution(
-      urls: List<String>.unmodifiable([parsePlayUrl(playData)]),
+      urls: List<String>.unmodifiable([url]),
       appliedQualityData: appliedRate != null && appliedRate >= 0 ? appliedRate : null,
       qualityUnconfirmed: appliedRate == null || appliedRate < 0,
     );

@@ -298,6 +298,33 @@ void main() {
     }
   }, skip: !Platform.isWindows);
 
+  test('a Douyu expiring FLV plays through the splice relay and skips proactive refresh', () async {
+    const url = 'https://hdl.douyucdn2.cn/live/room.flv?wsAuth=a&expire=300&did=b';
+    final player = _RecoveryFakePlayer(PlayerEngine.mediaKit, (_) => null);
+    final manager = _manager({PlayerEngine.mediaKit: player})..configureDefaultEngine(PlayerEngine.mediaKit);
+    var resolves = 0;
+    try {
+      await manager.play(
+        url,
+        const [url],
+        const {},
+        room: LiveRoom(roomId: 'room', platform: 'douyu'),
+        sourceRefreshAt: DateTime.now().toUtc().add(const Duration(milliseconds: 200)),
+        sourceResolver: (_) async {
+          resolves++;
+          return const PlaybackSourceRefreshResult(urls: [url], preferredLineIndex: 0);
+        },
+      );
+      final input = Uri.parse(player.openedUrls.single);
+      expect(input.host, '127.0.0.1', reason: 'the native player reads the local splice relay');
+      expect(input.path, endsWith('/live.flv'));
+      await Future<void>.delayed(const Duration(milliseconds: 600));
+      expect(resolves, 0, reason: 'only the relay renews this lease, and only while it is being read');
+    } finally {
+      await manager.dispose();
+    }
+  });
+
   for (final dispose in [false, true]) {
     test(
       '${dispose ? 'dispose' : 'close dispatch'} retires pending input creation before it can start native playback',

@@ -21,50 +21,109 @@ class _RemoteSyncPageState extends State<RemoteSyncPage> {
   final TextEditingController addressController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    service.confirmRequest = _confirmIncoming;
+  }
+
+  @override
   void dispose() {
+    if (identical(service.confirmRequest, _confirmIncoming)) service.confirmRequest = null;
     addressController.dispose();
     super.dispose();
   }
 
-  Future<void> _sendToDevice(String ip, int port) async {
-    final success = await service.syncToAddress(ip, port);
+  /// Another device asks to read or overwrite this device's settings.
+  Future<bool> _confirmIncoming(String action, String remoteAddress) async {
+    if (!mounted) return false;
+    final allowed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(i18n('remote_sync')),
+        content: Text(
+          i18n(
+            action == 'import' ? 'remote_sync_incoming_import' : 'remote_sync_incoming_export',
+            args: {'address': remoteAddress},
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: Text(i18n('cancel'))),
+          FilledButton(onPressed: () => Navigator.of(dialogContext).pop(true), child: Text(i18n('confirm'))),
+        ],
+      ),
+      barrierDismissible: false,
+    );
+    return allowed == true;
+  }
 
-    if (!mounted) {
-      return;
+  /// The code is shown under the QR code on the other device.
+  Future<String?> _askPairingCode() async {
+    final controller = TextEditingController();
+    try {
+      final code = await showDialog<String>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(i18n('remote_sync_pairing_code')),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            keyboardType: TextInputType.number,
+            maxLength: RemoteSyncProtocol.pairingCodeLength,
+            decoration: InputDecoration(hintText: i18n('remote_sync_pairing_code_hint')),
+            onSubmitted: (value) => Navigator.of(dialogContext).pop(value),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: Text(i18n('cancel'))),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(controller.text),
+              child: Text(i18n('confirm')),
+            ),
+          ],
+        ),
+      );
+      final normalized = RemoteSyncProtocol.normalizePairingCode(code);
+      if (code == null) return null;
+      if (normalized.length != RemoteSyncProtocol.pairingCodeLength) {
+        ToastUtil.show(i18n('remote_sync_pairing_code_invalid'));
+        return null;
+      }
+      return normalized;
+    } finally {
+      controller.dispose();
     }
+  }
 
+  Future<void> _sendToDevice(String ip, int port, {String? code}) async {
+    final pairing = code ?? await _askPairingCode();
+    if (pairing == null) return;
+    final success = await service.syncToAddress(ip, port, pairing);
+    if (!mounted) return;
     ToastUtil.show(success ? i18n('remote_sync_send_success') : i18n('remote_sync_send_failed'));
   }
 
-  Future<void> _receiveFromDevice(String ip, int port) async {
-    final confirm = await Get.dialog<bool>(
-      AlertDialog(
+  Future<void> _receiveFromDevice(String ip, int port, {String? code}) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
         title: Text(i18n('remote_sync_receive')),
         content: Text(i18n('remote_sync_receive_confirm')),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(i18n('cancel'))),
-          FilledButton(onPressed: () => Navigator.of(context).pop(true), child: Text(i18n('confirm'))),
+          TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: Text(i18n('cancel'))),
+          FilledButton(onPressed: () => Navigator.of(dialogContext).pop(true), child: Text(i18n('confirm'))),
         ],
       ),
     );
+    if (confirm != true) return;
+    final pairing = code ?? await _askPairingCode();
+    if (pairing == null) return;
 
-    if (confirm != true) {
-      return;
-    }
-
-    final settings = await service.getRemoteSettings(ip, port);
-
+    final settings = await service.getRemoteSettings(ip, port, pairing);
     if (settings == null) {
       ToastUtil.show(i18n('remote_sync_receive_failed'));
       return;
     }
-
     final success = await _applyRemoteSettings(settings);
-
-    if (!mounted) {
-      return;
-    }
-
+    if (!mounted) return;
     ToastUtil.show(success ? i18n('remote_sync_receive_success') : i18n('remote_sync_receive_failed'));
   }
 
@@ -78,58 +137,47 @@ class _RemoteSyncPageState extends State<RemoteSyncPage> {
     }
   }
 
-  Future<void> _sendManual() async {
+  ({String ip, int port})? _manualAddress() {
     final value = addressController.text.trim();
-
     if (value.isEmpty) {
       ToastUtil.show(i18n('remote_sync_enter_address'));
-      return;
+      return null;
     }
-
-    final parsed = RemoteSyncService.to;
-
-    final success = await parsed.syncByAddress(value);
-
-    if (!mounted) {
-      return;
-    }
-
-    ToastUtil.show(success ? i18n('remote_sync_send_success') : i18n('remote_sync_send_failed'));
+    final parsed = RemoteSyncProtocol.parseHttpAddress(value);
+    if (parsed == null) ToastUtil.show(i18n('remote_sync_invalid_address'));
+    return parsed;
   }
 
   Future<void> _scanQr() async {
-    if (PlatformUtils.isDesktop) {
-      return;
-    }
-
+    if (PlatformUtils.isDesktop) return;
     final result = await Get.to<String>(() => const _RemoteSyncScannerPage());
-
-    if (result == null || result.trim().isEmpty) {
-      return;
-    }
+    if (!mounted || result == null || result.trim().isEmpty) return;
 
     final parsed = RemoteSyncProtocol.parseQr(result);
-
     if (parsed == null) {
       ToastUtil.show(i18n('remote_sync_invalid_qr'));
       return;
     }
 
-    final action = await Get.dialog<String>(
-      AlertDialog(
+    final action = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
         title: Text(i18n('remote_sync_select_action')),
         content: Text('${parsed.ip}:${parsed.port}'),
         actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop('receive'), child: Text(i18n('remote_sync_receive'))),
-          FilledButton(onPressed: () => Navigator.of(context).pop('send'), child: Text(i18n('remote_sync_send'))),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop('receive'),
+            child: Text(i18n('remote_sync_receive')),
+          ),
+          FilledButton(onPressed: () => Navigator.of(dialogContext).pop('send'), child: Text(i18n('remote_sync_send'))),
         ],
       ),
     );
 
     if (action == 'send') {
-      await _sendToDevice(parsed.ip, parsed.port);
+      await _sendToDevice(parsed.ip, parsed.port, code: parsed.code);
     } else if (action == 'receive') {
-      await _receiveFromDevice(parsed.ip, parsed.port);
+      await _receiveFromDevice(parsed.ip, parsed.port, code: parsed.code);
     }
   }
 
@@ -182,7 +230,22 @@ class _RemoteSyncPageState extends State<RemoteSyncPage> {
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 8),
+            if (service.pairingCode.value.isNotEmpty) ...[
+              Text(i18n('remote_sync_pairing_code')),
+              SelectableText(
+                service.pairingCode.value,
+                style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, letterSpacing: 6),
+              ),
+              const SizedBox(height: 8),
+            ],
             Text(i18n('remote_sync_scan_hint'), textAlign: TextAlign.center),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(i18n('remote_sync_include_accounts')),
+              subtitle: Text(i18n('remote_sync_include_accounts_hint')),
+              value: service.includeAccounts.value,
+              onChanged: (value) => service.includeAccounts.value = value,
+            ),
             const SizedBox(height: 12),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -302,7 +365,12 @@ class _RemoteSyncPageState extends State<RemoteSyncPage> {
             SizedBox(
               width: double.infinity,
               child: FilledButton.icon(
-                onPressed: service.isSyncing.value ? null : _sendManual,
+                onPressed: service.isSyncing.value
+                    ? null
+                    : () async {
+                        final parsed = _manualAddress();
+                        if (parsed != null) await _sendToDevice(parsed.ip, parsed.port);
+                      },
                 icon: const Icon(Icons.upload),
                 label: Text(i18n('remote_sync_send')),
               ),
@@ -314,16 +382,8 @@ class _RemoteSyncPageState extends State<RemoteSyncPage> {
                 onPressed: service.isSyncing.value
                     ? null
                     : () async {
-                        final value = addressController.text.trim();
-
-                        final parsed = RemoteSyncProtocol.parseHttpAddress(value);
-
-                        if (parsed == null) {
-                          ToastUtil.show(i18n('remote_sync_invalid_address'));
-                          return;
-                        }
-
-                        await _receiveFromDevice(parsed.ip, parsed.port);
+                        final parsed = _manualAddress();
+                        if (parsed != null) await _receiveFromDevice(parsed.ip, parsed.port);
                       },
                 icon: const Icon(Icons.download),
                 label: Text(i18n('remote_sync_receive')),

@@ -4,6 +4,7 @@ import 'package:media_kit_video/media_kit_video.dart';
 
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/model/live_play_quality.dart';
+import 'package:pure_live/player/core/flv_splice_relay.dart';
 
 /// 多画面布局枚举。
 ///
@@ -118,6 +119,17 @@ typedef MultiviewQualityLoader = Future<MultiviewStreamSource> Function(LivePlay
 /// 一并携带请求头，交给每格播放器在 open 时使用。
 /// qualities/qualityIndex/qualityLoader 支撑每格清晰度选择与换档：
 /// 解析时一并取回清晰度列表，loader 保留后续换档所需的最小上下文。
+/// An expiring line (Douyu anonymous original quality) and how to renew it.
+class MultiviewSourceLease {
+  const MultiviewSourceLease({required this.refreshAt, required this.renew});
+
+  final DateTime refreshAt;
+  final FlvSourceRenewer renew;
+}
+
+/// The lease of one line URL, or null when the line needs none.
+typedef MultiviewLeaseLookup = MultiviewSourceLease? Function(String url);
+
 class MultiviewStreamSource {
   const MultiviewStreamSource({
     required this.url,
@@ -128,6 +140,7 @@ class MultiviewStreamSource {
     this.lines = const <String>[],
     this.lineIndex = 0,
     this.sourceQueryPolicies = const <String, HlsSourceQueryPolicy>{},
+    this.leaseFor,
   }) : ownedSource = null;
 
   const MultiviewStreamSource.owned({
@@ -140,7 +153,8 @@ class MultiviewStreamSource {
        headers = const {},
        lines = const [],
        lineIndex = 0,
-       sourceQueryPolicies = const {};
+       sourceQueryPolicies = const {},
+       leaseFor = null;
 
   /// A public factory; the private URI stays inside the per-cell transport.
   final OwnedPlaybackSource? ownedSource;
@@ -168,6 +182,9 @@ class MultiviewStreamSource {
   final int lineIndex;
 
   final Map<String, HlsSourceQueryPolicy> sourceQueryPolicies;
+
+  /// Leases of expiring lines; the cell relay renews them without a reopen.
+  final MultiviewLeaseLookup? leaseFor;
 }
 
 /// multiview 单格的不可变状态快照。

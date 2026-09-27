@@ -2073,5 +2073,16 @@
   "douyu_cookie_tip_step2": "Step 2 · Renewal credentials: in the Network tab search passport.douyu.com, open that request and copy LTP0 and dy_did from its cookie — pasting it below fills both fields automatically.",
   "douyu_cookie_tip_lifetime": "The cookie lasts 7 days; once LTP0 and dy_did are set it is renewed before it expires, so there is nothing to paste again. Press \"Renew now\" to verify. The cookie is stored on this device only.",
   "douyu_cookie_credentials_absorbed": "LTP0 / dy_did taken from what you pasted; the stored login cookie was kept (that was the passport cookie, not the login one)",
-  "douyu_cookie_credentials_only": "That was the passport request cookie: LTP0 / dy_did were taken from it. It cannot be used for playback (Douyu's edge answers 403), so paste the page cookie (with dy_auth) as well."
+  "douyu_cookie_credentials_only": "That was the passport request cookie: LTP0 / dy_did were taken from it. It cannot be used for playback (Douyu's edge answers 403), so paste the page cookie (with dy_auth) as well.",
+  "remote_sync_pairing_code": "Pairing code",
+  "remote_sync_pairing_code_hint": "Enter the 6-digit code shown on the other device",
+  "remote_sync_pairing_code_invalid": "The pairing code has 6 digits",
+  "remote_sync_include_accounts": "Include account cookies",
+  "remote_sync_include_accounts_hint": "Sends or shares platform login cookies; turn on only between trusted devices",
+  "remote_sync_incoming_import": "{address} wants to replace this device's settings with its own. Allow?",
+  "remote_sync_incoming_export": "{address} wants to read this device's settings. Allow?",
+  "remote_sync_enter_address": "Enter the other device's address",
+  "remote_sync_invalid_qr": "Not a Pure Live sync QR code",
+  "start": "Start",
+  "stop": "Stop"
 }

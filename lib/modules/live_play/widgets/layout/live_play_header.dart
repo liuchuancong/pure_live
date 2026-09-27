@@ -29,8 +29,8 @@ class LivePlayHeader extends StatelessWidget implements PreferredSizeWidget {
     return Row(
       children: [
         Obx(() {
-          final avatar = controller.state.value.room.detail?.avatar;
-          return CommonAvatar(avatarUrl: avatar, radius: 16);
+          final detail = controller.state.value.room.detail;
+          return CommonAvatar(avatarUrl: detail?.avatar, radius: 16, fallbackName: detail?.nick);
         }),
         const SizedBox(width: 8),
         Expanded(

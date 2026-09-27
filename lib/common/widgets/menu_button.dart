@@ -53,6 +53,11 @@ class MenuButton extends GetView<AuthController> {
           padding: const EdgeInsets.symmetric(horizontal: 12),
           child: MenuListTile(leading: const Icon(Remix.cloud_line), text: i18n('backup_recover')),
         ),
+        PopupMenuItem(
+          value: 3,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: MenuListTile(leading: const Icon(Remix.cloud_line), text: i18n('backup_recover')),
+        ),
         if (Platform.isWindows && SettingsService.to.app.enableNewWindowPlay.v)
           PopupMenuItem(
             value: 4,

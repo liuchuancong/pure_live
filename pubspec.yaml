@@ -62,7 +62,7 @@ dependencies:
 
   # -------------------------- 音视频播放 --------------------------
   media_kit:
-    # Predidit/media-kit@d13fc22b vendored: Android libmpv rebuilt with
+    # Predidit/media-kit@803c4a27 vendored: Android and Linux libmpv rebuilt with
     # mpv 0.41.0 + FFmpeg 9.0.2 (hook/native_bundles.json); no Kazumi option.
     path: ./third_party/media_kit
   media_kit_video:
@@ -78,7 +78,8 @@ dependencies:
   # Platform URL overrides below select our verified FFmpeg 9.0.2 bundles;
   # prefetch gates pin the Android and Windows archive hashes.
   ffmpeg_kit_extended_flutter: 0.6.2
-  bonsoir: ^7.1.5 # 局域网同步
+  bonsoir: ^7.1.5 # LAN device discovery for settings sync
+
   flv_lzc:
     git: https://github.com/liuchuancong/flv_lzc.git
   # -------------------------- UI组件/界面样式 --------------------------

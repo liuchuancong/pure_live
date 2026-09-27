@@ -6,7 +6,6 @@ import 'package:pure_live/core/site/kilakila/kilakila_api.dart';
 import 'package:pure_live/core/site/kilakila/kilakila_link.dart';
 import 'package:pure_live/core/site/showroom/showroom_link.dart';
 import 'package:pure_live/core/site/chzzk/chzzk_link.dart';
-import 'package:pure_live/core/site/kick/kick_link.dart';
 import 'package:pure_live/core/site/liveme/liveme_api.dart';
 import 'package:pure_live/core/site/liveme/liveme_link.dart';
 import 'package:pure_live/core/site/tiktok/tiktok_api.dart';
@@ -110,7 +109,6 @@ class LiveUrlTool {
       }
       if (ShowroomLink.parse(raw) != null) return true;
       if (ChzzkLink.parse(raw) != null) return true;
-      if (KickLink.parse(raw) != null) return true;
       if (SeventeenLiveLink.parse(raw) != null) return true;
       if (LiveMeLink.parse(raw) != null) return true;
       if (TikTokLink.parse(raw) != null) return true;

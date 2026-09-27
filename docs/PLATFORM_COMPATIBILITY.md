@@ -3,11 +3,13 @@
 
 > **v3.2.8 起下线 11 个平台**：花椒（官方不再返回直播列表）、OPENREC / mellow-fan（接口 403、无目录）、TTingLive / FLEX TV（目录仅剩 1 个房间）、PopkonTV（目录以成人直播为主，详情不可用）、GoodGame（连接超时）、VK Video Live（播放地址与 IP 绑定，频繁 403）、Dailymotion（直播内容少，CDN 拒绝代理 IP）、Rumble（Cloudflare 人机验证）、NimoTV（依赖 WebView，CDN 间歇 403）、Shopee Live（反爬 WebView 会话、特殊 HEVC 编码，分享链接冷启动无法打开）、淘宝直播（无公开目录，仅链接）。依据：2026-09-26 全平台探针、近两个月维护记录与真机实测。下文中这些平台的说明仅作历史记录；已关注的这些主播仍保留，打开时提示平台已下线。
 
+> **v3.2.11 下线 Kick**：kick.com 的全部接口由 Cloudflare 按 TLS 指纹拦截，只能靠 Android 系统 TLS 与 Windows WinHTTP 两条原生通道绕过，Linux、macOS、iOS 无法使用，且随时可能失效。下文 Kick 的说明仅作历史记录。
+
 本文记录 Pure Live 当前使用的直播接口、数据含义和本地验证方法。平台网页可能随时调整，合并接口改动前应执行一次探测脚本。
 
 ## 当前平台能力
 
-3.2.8 起按 `lib/core/sites.dart` 核对：当前源码注册 **34 个直播站点 + IPTV，共 35 个适配器**（2026-09-22 时为 45 站）。这是源码注册数量，不是已发布包或完整验收数量。小红书、niconico、微博、SHOWROOM、CHZZK、Kick、17LIVE、LiveMe、TikTok LIVE、YouTube Live、Bigo Live、PandaTV、PopkonTV、Shopee Live、VK Video Live、NimoTV、Dailymotion、Rumble、GoodGame、FC2 Live、Steam Broadcasts、京东直播、淘宝直播、酷狗直播、百度直播、六间房直播和 LOOK 直播已接入应用入口；原生整体验收继续，当前候选与完整剩余范围以[验收状态](ACCEPTANCE_STATUS_3_2_0.md)为准。
+3.2.11 起按 `lib/core/sites.dart` 核对：当前源码注册 **33 个直播站点 + IPTV，共 34 个适配器**（2026-09-22 时为 45 站）。这是源码注册数量，不是已发布包或完整验收数量。小红书、niconico、微博、SHOWROOM、CHZZK、Kick、17LIVE、LiveMe、TikTok LIVE、YouTube Live、Bigo Live、PandaTV、PopkonTV、Shopee Live、VK Video Live、NimoTV、Dailymotion、Rumble、GoodGame、FC2 Live、Steam Broadcasts、京东直播、淘宝直播、酷狗直播、百度直播、六间房直播和 LOOK 直播已接入应用入口；原生整体验收继续，当前候选与完整剩余范围以[验收状态](ACCEPTANCE_STATUS_3_2_0.md)为准。
 
 2026-09-23 房间页“外部打开”也已与注册表对齐：此前 14 个新增站点缺少官方房间 URL 映射，操作会落到 `unavailable`；现在 45 个直播站点均有按稳定房间身份重建的官方目标，IPTV 不存在远端官方房间页。构造、无效 ID 与启动动作的定向证据见[外部打开覆盖审计](ROOM_EXTERNAL_OPEN_COVERAGE_AUDIT_2026_09_23.md)；这只是源码动作合同，外部浏览器/客户端实际落地仍待当前候选双端验证。
 

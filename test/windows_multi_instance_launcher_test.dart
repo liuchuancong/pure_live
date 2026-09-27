@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
+import 'package:path/path.dart' as p;
 import 'package:pure_live/common/models/live_room.dart';
 import 'package:pure_live/common/utils/windows_multi_instance_launcher.dart';
 
@@ -43,5 +46,37 @@ void main() {
     expect(decoded, isNotNull);
     expect(decoded!.effectiveLiveStatus, LiveStatus.offline);
     expect(decoded.status, isFalse);
+  });
+
+  test('only the settings file the launcher wrote is imported', () {
+    final temp = p.join(Directory.systemTemp.path, 'fixture-temp');
+    const id = 'window_42_1790000000';
+    List<String> args(String path, {String instance = id}) => [
+      '${WindowsMultiInstanceLauncher.instancePrefix}$instance',
+      '${WindowsMultiInstanceLauncher.configPrefix}$path',
+    ];
+    final handOver = p.join(temp, 'pure_live_instance_ab12', '$id.json');
+
+    expect(
+      WindowsMultiInstanceLauncher.configFileFromArgs(args(handOver), tempRoot: temp),
+      p.normalize(p.absolute(handOver)),
+    );
+    for (final path in [
+      p.join(Directory.systemTemp.path, 'elsewhere', 'settings.json'),
+      p.join(temp, 'other_ab12', '$id.json'),
+      p.join(temp, 'pure_live_instance_ab12', 'window_other.json'),
+      p.join(temp, 'pure_live_instance_ab12', '..', '..', 'etc', '$id.json'),
+      p.join(temp, '$id.json'),
+      '',
+    ]) {
+      expect(WindowsMultiInstanceLauncher.configFileFromArgs(args(path), tempRoot: temp), isNull, reason: path);
+    }
+    expect(
+      WindowsMultiInstanceLauncher.configFileFromArgs([
+        '${WindowsMultiInstanceLauncher.configPrefix}$handOver',
+      ], tempRoot: temp),
+      isNull,
+      reason: 'the main window never imports a hand-over file',
+    );
   });
 }

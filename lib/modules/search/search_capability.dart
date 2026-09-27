@@ -46,11 +46,6 @@ class LiveSearchCapabilities {
       supportsPagination: true,
       supportsWebSearch: false,
     ),
-    Sites.kickSite: LiveSearchCapability(
-      coverage: NativeSearchCoverage.liveAndOffline,
-      supportsPagination: false,
-      supportsWebSearch: false,
-    ),
     Sites.seventeenLiveSite: LiveSearchCapability(
       coverage: NativeSearchCoverage.liveOnly,
       supportsPagination: false,

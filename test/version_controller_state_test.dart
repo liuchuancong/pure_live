@@ -13,6 +13,7 @@ void main() {
     VersionUtil.latestUpdateLog = '';
     VersionUtil.latestAndroidAbis = const {};
     VersionUtil.latestWindowsMsixAvailable = false;
+    VersionUtil.latestAssets = [];
   });
 
   test('failed update check always leaves a retryable terminal state', () async {
@@ -51,7 +52,7 @@ void main() {
     expect(controller.androidArm64Url.value, isEmpty);
   });
 
-  test('missing feed build number is rejected instead of inventing asset names', () async {
+  test('download links come only from assets the release actually published', () async {
     VersionUtil.latestVersion = '3.2.0';
     VersionUtil.latestBuildNumber = null;
     VersionUtil.latestAndroidAbis = const {'arm64-v8a'};
@@ -63,17 +64,23 @@ void main() {
     await controller.checkNewVersion();
 
     expect(controller.loading.value, isFalse);
-    expect(controller.error.value, isTrue);
-    expect(controller.hasNewVersion.value, isFalse);
-    expect(controller.androidArm64Url.value, isEmpty);
+    expect(controller.error.value, isFalse);
+    expect(controller.hasNewVersion.value, isTrue);
+    expect(controller.androidArm64Url.value, isEmpty, reason: 'no asset list, no guessed file name');
     expect(controller.windowsSetupUrl.value, isEmpty);
   });
 
   test('valid update data compares against the package loaded by this controller', () async {
+    const base = 'https://github.com/wzgrx/pure_live/releases/download/v3.2.0';
     VersionUtil.latestVersion = '3.2.0';
     VersionUtil.latestBuildNumber = 5000;
     VersionUtil.latestUpdateLog = '# Pure Live 3.2.0';
     VersionUtil.latestAndroidAbis = const {'arm64-v8a'};
+    VersionUtil.latestAssets = [
+      {'name': 'android-arm64-v8a', 'url': '$base/PureLive-3.2.0-5000-debug-signed-android-arm64-v8a-release.apk'},
+      {'name': 'android-armeabi-v7a', 'url': '$base/PureLive-3.2.0-5000-android-armeabi-v7a-release.apk'},
+      {'name': 'windows-x64-setup.exe', 'url': '$base/PureLive-3.2.0-5000-windows-x64-setup.exe'},
+    ];
     final controller = VersionController(
       updateChecker: () async => true,
       packageInfoLoader: () async => localPackage(),
@@ -85,9 +92,9 @@ void main() {
     expect(controller.error.value, isFalse);
     expect(controller.hasNewVersion.value, isTrue);
     expect(controller.updateLog.value, '# Pure Live 3.2.0');
-    expect(controller.androidArm64Url.value, contains('/v3.2.0/PureLive-3.2.0-5000-android-arm64-v8a-release.apk'));
-    expect(controller.androidArmeabiV7aUrl.value, isEmpty);
-    expect(controller.windowsSetupUrl.value, contains('/v3.2.0/PureLive-3.2.0-5000-windows-x64-setup.exe'));
+    expect(controller.androidArm64Url.value, endsWith('-debug-signed-android-arm64-v8a-release.apk'));
+    expect(controller.androidArmeabiV7aUrl.value, isEmpty, reason: 'the feed does not declare armeabi-v7a');
+    expect(controller.windowsSetupUrl.value, endsWith('/PureLive-3.2.0-5000-windows-x64-setup.exe'));
   });
 
   test('version comparison handles prefixes, build metadata and malformed values', () {

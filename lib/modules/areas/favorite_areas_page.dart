@@ -4,6 +4,7 @@ import 'package:waterfall_flow/waterfall_flow.dart';
 import 'package:pure_live/modules/areas/widgets/area_card.dart';
 import 'package:pure_live/modules/areas/favorite_areas_controller.dart';
 
+
 class FavoriteAreasPage extends GetView<FavoriteAreasController> {
   const FavoriteAreasPage({super.key});
 

@@ -6,10 +6,12 @@ import 'package:pure_live/common/index.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:pure_live/player/core/playback_source.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
+import 'package:pure_live/player/core/linux_mpv_runtime.dart';
 import 'package:pure_live/player/adapters/media_kit_adapter.dart';
 import 'package:pure_live/player/core/playback_proxy_policy.dart';
 import 'package:pure_live/core/common/hls_source_query_policy.dart';
 import 'package:pure_live/player/core/playback_source_transport.dart';
+import 'package:pure_live/modules/multiview/models/multiview_models.dart';
 
 /// multiview 单格播放器契约。
 ///
@@ -78,6 +80,19 @@ abstract interface class MultiviewOwnedInputHandle {
   Future<void> openOwned(OwnedPlaybackSource source);
 }
 
+/// Optional lease for the next URL [MultiviewCellPlayerHandle.start] or
+/// [MultiviewCellPlayerHandle.open] receives; null clears it.
+abstract interface class MultiviewSourceLeaseHandle {
+  void setSourceLease(MultiviewSourceLease? lease);
+}
+
+/// Optional end-of-stream signal. A live source that the server closes (for
+/// example Douyu's anonymous original-quality links, which end after 300 s)
+/// leaves the player idle rather than stalled, so frame watching never fires.
+abstract interface class MultiviewSourceEndHandle {
+  Stream<void> get sourceEnded;
+}
+
 /// Optional Windows presentation progress; a playing transport alone does not
 /// prove that the visible texture is still advancing.
 abstract interface class MultiviewFrameProgressHandle {
@@ -98,7 +113,7 @@ typedef MultiviewCellPlayerFactory = MultiviewCellPlayerHandle Function({
 /// PlayerManager/GlobalPlayerService/PlayerPool。每格在构造时使用控制器按
 /// 当前布局计算的初始分辨率，Windows 挂载后由视图按实际 cell viewport
 /// 继续协商，避免共享渲染线程下多实例争抢全分辨率输出或大格沿用小纹理。
-class _MediaKitCellPlayer implements MultiviewCellPlayerHandle, MultiviewNativeInputRouting {
+class _MediaKitCellPlayer implements MultiviewCellPlayerHandle, MultiviewNativeInputRouting, MultiviewSourceEndHandle {
   _MediaKitCellPlayer({required this.renderWidth, required this.renderHeight});
   bool _disposed = false;
   bool _privateInput = false;
@@ -155,12 +170,20 @@ class _MediaKitCellPlayer implements MultiviewCellPlayerHandle, MultiviewNativeI
   }
 
   @override
+  Stream<void> get sourceEnded {
+    final player = _player;
+    if (player == null) return const Stream.empty();
+    return player.stream.completed.where((completed) => completed);
+  }
+
+  @override
   Future<void> start({
     required String url,
     required Map<String, String> headers,
     HlsSourceQueryPolicy? sourceQueryPolicy,
   }) async {
     _checkLive();
+    LinuxMpvRuntime.ensureLoaded();
     MediaKit.ensureInitialized();
 
     final player = Player();
@@ -270,7 +293,12 @@ abstract interface class MultiviewNativeInputRouting {
 /// Per-cell input ownership, shared with the main player's transport contract.
 /// The backend retains sole ownership of its video-controller release hook.
 class MultiviewCellPlayer
-    implements MultiviewCellPlayerHandle, MultiviewOwnedInputHandle, MultiviewFrameProgressHandle {
+    implements
+        MultiviewCellPlayerHandle,
+        MultiviewOwnedInputHandle,
+        MultiviewFrameProgressHandle,
+        MultiviewSourceEndHandle,
+        MultiviewSourceLeaseHandle {
   MultiviewCellPlayer({
     required int renderWidth,
     required int renderHeight,
@@ -291,6 +319,10 @@ class MultiviewCellPlayer
   bool _pendingOwned = false;
   OwnedPlaybackSource? _committedOwned;
   Future<void>? _resuming;
+  MultiviewSourceLease? _nextLease;
+
+  @override
+  void setSourceLease(MultiviewSourceLease? lease) => _nextLease = lease;
 
   @override
   VideoController? get videoController => _closed ? null : _backend.videoController;
@@ -302,6 +334,12 @@ class MultiviewCellPlayer
   double get volume => _backend.volume;
   @override
   Stream<bool> get playingStream => _backend.playingStream;
+  @override
+  Stream<void> get sourceEnded {
+    final backend = _backend;
+    if (_closed || backend is! MultiviewSourceEndHandle) return const Stream.empty();
+    return (backend as MultiviewSourceEndHandle).sourceEnded;
+  }
 
   Future<void> _open({
     required bool start,
@@ -315,6 +353,8 @@ class MultiviewCellPlayer
     if (start) _started = true;
     final generation = ++_generation;
     final immutableHeaders = Map<String, String>.unmodifiable(headers);
+    final lease = ownedSource == null ? _nextLease : null;
+    _nextLease = null;
     // Superseding a session acquisition cancels it before entering the native
     // serialization queue. Its late lease/cleanup still belongs to transport.
     final cancellation = _pendingOwned ? _transport.cancelPending() : Future<void>.value();
@@ -352,6 +392,8 @@ class MultiviewCellPlayer
             nativeOpen: nativeOpen,
             // Multiview cells always render through libmpv.
             rewriteLegacyHevcFlv: true,
+            refreshAt: lease?.refreshAt,
+            renewFlv: lease?.renew,
           );
         }
         _committedOwned = ownedSource;

@@ -1,5 +1,4 @@
 import 'site/yy/yy_site.dart';
-import 'site/kick/kick_site.dart';
 import 'site/bigo/bigo_site.dart';
 import 'site/inke/inke_site.dart';
 import 'site/soop/soop_site.dart';
@@ -64,7 +63,6 @@ class Sites {
   static const String xiaohongshuSite = 'xiaohongshu';
   static const String showroomSite = 'showroom';
   static const String chzzkSite = 'chzzk';
-  static const String kickSite = 'kick';
   static const String liveMeSite = 'liveme';
   static const String tiktokSite = 'tiktok';
   static const String youtubeSite = 'youtube';
@@ -100,7 +98,6 @@ class Sites {
     xiaohongshuSite,
     showroomSite,
     chzzkSite,
-    kickSite,
     liveMeSite,
     tiktokSite,
     youtubeSite,
@@ -147,7 +144,6 @@ class Sites {
     weiboSite: '$_assetRoot/weibo.png',
     showroomSite: '$_assetRoot/showroom.png',
     chzzkSite: '$_assetRoot/chzzk.png',
-    kickSite: '$_assetRoot/kick.png',
     pandaLiveSite: '$_assetRoot/panda.png',
     fc2LiveSite: '$_assetRoot/fc2.png',
     steamBroadcastSite: '$_assetRoot/steam.png',
@@ -165,7 +161,8 @@ class Sites {
 
   static bool isSupported(String id) => supportedSiteIds.contains(id.trim().toLowerCase());
 
-  /// Platforms removed in 3.2.8 (hard to maintain, niche or no longer usable).
+  /// Platforms removed in 3.2.8 (hard to maintain, niche or no longer usable)
+  /// and 3.2.11 (Kick: Cloudflare blocks it outside Android/Windows TLS).
   /// Saved follows, history and links for them stay readable and are shown as
   /// retired instead of failing as unknown.
   static const Set<String> retiredSiteIds = {
@@ -180,6 +177,7 @@ class Sites {
     'rumble',
     'goodgame',
     'taobaolive',
+    'kick',
   };
 
   static bool isRetired(String id) => retiredSiteIds.contains(id.trim().toLowerCase());
@@ -202,6 +200,7 @@ class Sites {
     'shopee.co.id',
     'taobao.com',
     'm.tb.cn',
+    'kick.com',
   };
 
   static bool isRetiredLink(String text) {
@@ -212,8 +211,6 @@ class Sites {
     return false;
   }
 
-  /// Read-only artwork lookup for frequently rebuilt room and multiview UI.
-  /// A badge must not allocate a platform adapter just to obtain its asset.
   static String logoForId(String id) {
     final normalizedId = id.trim().toLowerCase();
     // Retired platforms keep a neutral badge so saved follows still render.
@@ -297,7 +294,6 @@ class Sites {
         liveSite: ShowroomSite(),
       ),
       chzzkSite => Site(id: chzzkSite, name: i18n('site_chzzk'), logo: logoForId(chzzkSite), liveSite: ChzzkSite()),
-      kickSite => Site(id: kickSite, name: i18n('site_kick'), logo: logoForId(kickSite), liveSite: KickSite()),
       liveMeSite => Site(
         id: liveMeSite,
         name: i18n('site_liveme'),
@@ -402,7 +398,6 @@ class Sites {
       weiboSite,
       showroomSite,
       chzzkSite,
-      kickSite,
       liveMeSite,
       tiktokSite,
       youtubeSite,

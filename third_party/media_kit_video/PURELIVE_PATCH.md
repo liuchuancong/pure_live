@@ -1,7 +1,7 @@
 # PureLive media_kit_video patch
 
 - Upstream: `https://github.com/Predidit/media-kit.git`
-- Base commit: `d13fc22ba1b19b45de3090c2d1b0f8a541b585a0`
+- Base commit: `803c4a27912091db6f839d48d1b984a0d9f588c7` (2026-09-26, "fix(native): handle unavailable mpv properties safely"; `media_kit` follows the same commit)
 - Package version: `media_kit_video 1.2.5`
 - License: MIT; the upstream `LICENSE` is retained in this directory.
 

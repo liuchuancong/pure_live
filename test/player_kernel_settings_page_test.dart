@@ -48,6 +48,26 @@ void main() {
 
   tearDownAll(Hive.close);
 
+  testWidgets('decoder, renderer and audio output open a picker that stores the choice', (tester) async {
+    await _pumpKernelPage(tester, translations, size: const Size(900, 1400));
+
+    final decoderTile = find.text('Hardware Decoder (--hwdec)');
+    await tester.scrollUntilVisible(decoderTile, 120, scrollable: find.byType(Scrollable).first);
+    await tester.tap(decoderTile);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Off (software decoding)'), findsOneWidget);
+    expect(find.text('Vulkan (experimental)'), findsOneWidget);
+    await tester.tap(find.text('Off (software decoding)'));
+    await tester.pumpAndSettle();
+    expect(SettingsService.to.player.videoHardwareDecoder.v, 'no');
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    expect(find.text('Off (software decoding)'), findsOneWidget, reason: 'the tile shows the stored choice');
+    debugDefaultTargetPlatformOverride = null;
+  });
+
   testWidgets('Windows replaces a stale IJK or fvp preference and presents MPV as a fixed engine', (tester) async {
     await _pumpKernelPage(tester, translations, size: const Size(900, 900));
 
@@ -84,64 +104,55 @@ void main() {
     await _scrollPageUntilHitTestable(tester, videoOutputTitle);
     await tester.tap(videoOutputTitle.hitTestable());
     await tester.pumpAndSettle();
-    final dialog = find.byType(AlertDialog);
-    expect(dialog, findsOneWidget);
-    final lastOption = find.text('libmpv');
-    final dialogScrollable = find.descendant(of: dialog, matching: find.byType(Scrollable)).first;
-    await tester.scrollUntilVisible(lastOption, 100, scrollable: dialogScrollable);
+    // The option picker is its own page; its last entry must stay reachable.
+    final lastOption = find.text('libmpv (Flutter texture)');
+    await tester.scrollUntilVisible(lastOption, 100, scrollable: find.byType(Scrollable).last);
     await tester.pumpAndSettle();
     expect(tester.getRect(lastOption).bottom, lessThanOrEqualTo(480));
-    await tester.tap(find.ancestor(of: lastOption, matching: find.byType(RadioListTile<String>)));
+    await tester.tap(lastOption);
     await tester.pumpAndSettle();
     expect(SettingsService.to.player.videoOutputDriver.value, 'libmpv');
-    expect(dialog, findsNothing);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
 
     final audioOutputTitle = find.text('Audio Output Driver (--ao)');
     await _scrollPageUntilHitTestable(tester, audioOutputTitle);
-    final audioOutputValue = find.text('auto (Automatic fallback)');
+    final audioOutputValue = find.text('Auto');
     expect(tester.getRect(audioOutputValue).top, greaterThanOrEqualTo(tester.getRect(audioOutputTitle).bottom));
     expect(tester.takeException(), isNull);
     debugDefaultTargetPlatformOverride = null;
   }, skip: !Platform.isWindows);
 
-  testWidgets('Android audio output menu exposes only native fallback drivers', (tester) async {
+  testWidgets('Android audio output picker exposes only native fallback drivers', (tester) async {
     SettingsService.to.player.videoPlayerKey.v = 'mpv';
     SettingsService.to.player.audioOutputDriver.v = 'auto';
     await _pumpKernelPage(tester, translations, size: const Size(1200, 1600), platform: TargetPlatform.android);
 
     final audioOutputTitle = find.text('Audio Output Driver (--ao)');
     await _scrollPageUntilHitTestable(tester, audioOutputTitle);
-    expect(find.text('auto (Automatic fallback)'), findsOneWidget);
+    expect(find.text('Auto'), findsOneWidget);
     await tester.tap(audioOutputTitle.hitTestable());
     await tester.pumpAndSettle();
 
-    final dialog = find.byType(AlertDialog);
-    expect(dialog, findsOneWidget);
     for (final label in <String>[
-      'auto (Automatic fallback)',
-      'audiotrack (Android AudioTrack)',
-      'aaudio (Android 8.0+)',
-      'opensles (Legacy fallback)',
-      'null (No audio output)',
+      'Auto',
+      'AudioTrack (Android only)',
+      'AAudio (Android 8.0+)',
+      'OpenSL ES (Android only)',
+      'Null (no audio output)',
     ]) {
-      expect(find.descendant(of: dialog, matching: find.text(label)), findsOneWidget);
+      expect(find.text(label), findsOneWidget, reason: label);
     }
-    for (final desktopOnly in <String>['wasapi', 'coreaudio', 'alsa', 'pulse']) {
+    for (final desktopOnly in <String>['WASAPI', 'CoreAudio', 'ALSA', 'PulseAudio']) {
       expect(
-        find.descendant(
-          of: dialog,
-          matching: find.byWidgetPredicate((widget) => widget is Text && widget.data?.startsWith(desktopOnly) == true),
-        ),
+        find.byWidgetPredicate((widget) => widget is Text && widget.data?.startsWith(desktopOnly) == true),
         findsNothing,
       );
     }
 
-    await tester.tap(
-      find.ancestor(of: find.text('aaudio (Android 8.0+)'), matching: find.byType(RadioListTile<String>)),
-    );
+    await tester.tap(find.text('AAudio (Android 8.0+)'));
     await tester.pumpAndSettle();
     expect(SettingsService.to.player.audioOutputDriver.v, 'aaudio');
-    expect(dialog, findsNothing);
     expect(tester.takeException(), isNull);
     debugDefaultTargetPlatformOverride = null;
   }, skip: !Platform.isWindows);

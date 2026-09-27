@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:developer' as developer;
-
 import 'package:flutter/services.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
@@ -18,6 +17,7 @@ import 'package:pure_live/modules/multiview/widgets/multiview_room_picker.dart';
 import 'package:pure_live/modules/live_play/widgets/layout/live_play_back_scope.dart';
 import 'package:pure_live/modules/multiview/widgets/multiview_fullscreen_surface.dart';
 import 'package:pure_live/modules/multiview/danmaku/multiview_danmaku_settings_binding.dart';
+
 
 /// 页面显示状态机：normal（完整界面）→ immersive（隐藏工具条与侧板，
 /// 留悬浮恢复钮）→ fullscreen（仅保留安全区内的退出钮）。
@@ -463,6 +463,7 @@ class _MultiviewPageState extends State<MultiviewPage> {
       return Row(
         mainAxisSize: MainAxisSize.min,
         children: [
+          // 页级弹幕开关（连接管理在核心层，UI 只切显隐开关）。
           Obx(() {
             final enabled = controller.danmakuEnabled.value;
             final theme = Theme.of(context);
