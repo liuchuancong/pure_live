@@ -1,10 +1,10 @@
 import 'dart:convert';
-
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/update.dart';
 import 'package:pure_live/plugins/race_http.dart';
 import 'package:pure_live/core/common/http_client.dart';
 import 'package:pure_live/common/models/release_model.dart';
+
 
 typedef ReleaseHistoryExternalLauncher = Future<bool> Function(Uri uri);
 typedef ReleaseHistoryDownloadHandler = Future<void> Function(String url, {String? fileName});

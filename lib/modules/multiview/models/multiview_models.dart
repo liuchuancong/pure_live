@@ -1,10 +1,10 @@
-import 'package:pure_live/player/core/playback_source.dart';
-import 'package:pure_live/core/common/hls_source_query_policy.dart';
-import 'package:media_kit_video/media_kit_video.dart';
-
 import 'package:pure_live/common/index.dart';
+import 'package:media_kit_video/media_kit_video.dart';
 import 'package:pure_live/model/live_play_quality.dart';
+import 'package:pure_live/player/core/playback_source.dart';
 import 'package:pure_live/player/core/flv_splice_relay.dart';
+import 'package:pure_live/core/common/hls_source_query_policy.dart';
+
 
 /// 多画面布局枚举。
 ///

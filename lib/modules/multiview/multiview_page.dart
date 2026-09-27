@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:developer' as developer;
+
 import 'package:flutter/services.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
@@ -14,10 +15,8 @@ import 'package:pure_live/player/widgets/video_output_viewport_sizer.dart';
 import 'package:pure_live/modules/live_play/pages/danmaku_settings_page.dart';
 import 'package:pure_live/modules/multiview/widgets/focus_rail_visibility.dart';
 import 'package:pure_live/modules/multiview/widgets/multiview_room_picker.dart';
-import 'package:pure_live/modules/live_play/widgets/layout/live_play_back_scope.dart';
 import 'package:pure_live/modules/multiview/widgets/multiview_fullscreen_surface.dart';
 import 'package:pure_live/modules/multiview/danmaku/multiview_danmaku_settings_binding.dart';
-
 
 /// 页面显示状态机：normal（完整界面）→ immersive（隐藏工具条与侧板，
 /// 留悬浮恢复钮）→ fullscreen（仅保留安全区内的退出钮）。
@@ -129,7 +128,8 @@ class _MultiviewPageState extends State<MultiviewPage> {
   }
 
   /// 返回意图统一入口：非 normal 先回 normal，normal 走安全退出序列。
-  void _handleBackIntent() {
+  void _handleBackIntent({required bool didPop}) {
+    if (didPop) return;
     if (_displayMode != _DisplayMode.normal) {
       unawaited(_changeDisplayMode(_DisplayMode.normal));
       return;
@@ -351,9 +351,9 @@ class _MultiviewPageState extends State<MultiviewPage> {
 
   @override
   Widget build(BuildContext context) {
-    return LivePlayBackScope(
-      presentationActive: _displayMode != _DisplayMode.normal,
-      onExitPresentation: _handleBackIntent,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) => _handleBackIntent(didPop: didPop),
       child: switch (_displayMode) {
         _DisplayMode.normal => Scaffold(
           appBar: AppBar(
@@ -507,6 +507,7 @@ class _MultiviewPageState extends State<MultiviewPage> {
               onPressed: canAdjust ? () => _showVolumeSheet(selectedIndex) : null,
             );
           }),
+          // 小格自动降质联动：仅 focus 布局生效，非 focus 下置灰防误触。
           Obx(() {
             final isFocusLayout = controller.layout.value == MultiviewLayout.focus;
             final enabled = controller.smallCellsLowQuality.value;

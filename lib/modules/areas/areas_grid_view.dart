@@ -4,7 +4,6 @@ import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:pure_live/modules/areas/widgets/area_card.dart';
 import 'package:pure_live/modules/areas/areas_list_controller.dart';
 
-
 class AreaGridView extends StatefulWidget {
   final String tag;
   const AreaGridView(this.tag, {super.key});

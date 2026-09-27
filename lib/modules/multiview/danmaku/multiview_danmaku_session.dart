@@ -4,8 +4,8 @@ import 'dart:developer' as developer;
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
 import 'package:pure_live/modules/live_play/controllers/danmaku_message_gate.dart';
-import 'package:pure_live/modules/live_play/controllers/danmaku_similarity_filter.dart';
 import 'package:pure_live/modules/live_play/controllers/repeated_danmaku_filter.dart';
+import 'package:pure_live/modules/live_play/controllers/danmaku_similarity_filter.dart';
 
 /// 弹幕引擎工厂：按房间创建对应站点的 LiveDanmaku 实例。
 ///
