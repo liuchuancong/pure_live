@@ -10,6 +10,7 @@
 #include "include/media_kit_video/texture_gl.h"
 #include "include/media_kit_video/texture_sw.h"
 #include "include/media_kit_video/gl_render_thread.h"
+#include "../common/video_dimensions.h"
 
 #include <epoxy/egl.h>
 #include <gdk/gdkwayland.h>
@@ -390,46 +391,13 @@ guint8* video_output_get_pixel_buffer(VideoOutput* self) {
   return self->pixel_buffer;
 }
 
-// Reads rotation-corrected display dimensions from mpv's video-out-params.
-static void video_output_get_video_dimensions(VideoOutput* self,
-                                              gint64* out_width,
-                                              gint64* out_height) {
-  mpv_node params;
-  mpv_get_property(self->handle, "video-out-params", MPV_FORMAT_NODE, &params);
-
-  int64_t dw = 0, dh = 0, rotate = 0;
-  if (params.format == MPV_FORMAT_NODE_MAP) {
-    for (int32_t i = 0; i < params.u.list->num; i++) {
-      char* key = params.u.list->keys[i];
-      auto value = params.u.list->values[i];
-      if (value.format == MPV_FORMAT_INT64) {
-        if (strcmp(key, "dw") == 0) {
-          dw = value.u.int64;
-        }
-        if (strcmp(key, "dh") == 0) {
-          dh = value.u.int64;
-        }
-        if (strcmp(key, "rotate") == 0) {
-          rotate = value.u.int64;
-        }
-      }
-    }
-    mpv_free_node_contents(&params);
-  }
-
-  *out_width = rotate == 0 || rotate == 180 ? dw : dh;
-  *out_height = rotate == 0 || rotate == 180 ? dh : dw;
-}
-
 gint64 video_output_get_width(VideoOutput* self) {
   // Fixed width.
   if (self->width) {
     return self->width;
   }
 
-  gint64 width = 0;
-  gint64 height = 0;
-  video_output_get_video_dimensions(self, &width, &height);
+  const auto [width, height] = media_kit::GetVideoDimensions(self->handle);
 
   if (self->texture_sw != NULL) {
     // Clamp to S/W rendering limits while maintaining aspect ratio.
@@ -450,9 +418,7 @@ gint64 video_output_get_height(VideoOutput* self) {
     return self->height;
   }
 
-  gint64 width = 0;
-  gint64 height = 0;
-  video_output_get_video_dimensions(self, &width, &height);
+  const auto [width, height] = media_kit::GetVideoDimensions(self->handle);
 
   if (self->texture_sw != NULL) {
     // Clamp to S/W rendering limits while maintaining aspect ratio.

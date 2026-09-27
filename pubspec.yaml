@@ -62,7 +62,7 @@ dependencies:
 
   # -------------------------- 音视频播放 --------------------------
   media_kit:
-    # Predidit/media-kit@d13fc22b vendored: Android libmpv rebuilt with
+    # Predidit/media-kit@803c4a27 vendored: Android and Linux libmpv rebuilt with
     # mpv 0.41.0 + FFmpeg 9.0.2 (hook/native_bundles.json); no Kazumi option.
     path: ./third_party/media_kit
   media_kit_video:

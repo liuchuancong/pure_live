@@ -17,18 +17,18 @@ public enum MPVHelpers {
     _ handle: OpaquePointer
   ) -> MPVVideoOutParams {
     var node = mpv_node()
+    guard media_kit_mpv_get_property(handle, "video-out-params", MPV_FORMAT_NODE, &node) >= 0 else {
+      return MPVVideoOutParams.empty
+    }
     defer {
       media_kit_mpv_free_node_contents(&node)
     }
-
-    media_kit_mpv_get_property(handle, "video-out-params", MPV_FORMAT_NODE, &node)
-
-    if node.format != MPV_FORMAT_NODE_MAP {
+    guard node.format == MPV_FORMAT_NODE_MAP, let list = node.u.list else {
       return MPVVideoOutParams.empty
     }
 
-    let map: mpv_node_list = node.u.list!.pointee
-    if map.num == 0 {
+    let map = list.pointee
+    if map.num <= 0 {
       return MPVVideoOutParams.empty
     }
 

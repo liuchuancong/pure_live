@@ -1,6 +1,12 @@
 # 依赖与接口审计
 
-最近核验日期：2026-09-24
+最近核验日期：2026-09-27
+
+## 2026-09-27 media-kit 同步到上游最新提交
+
+- `Predidit/media-kit` 从 `d13fc22b` 升至当日 HEAD `803c4a27`（2026-09-26，安全处理 mpv 暂不可用的属性）：新增 `native_property.dart`，`real.dart` 的属性读取改为统一的安全封装；`media_kit_video` 的 Windows/Linux 视频输出改用公共的 `common/video_dimensions.h`，解码器查询和 Darwin 辅助代码同步更新。
+- 与本地补丁重叠的两个文件（`media_kit/lib/src/player/native/player/real.dart`、`media_kit_video/windows/video_output.cc`）以 `d13fc22b` 为基线三方合并，无冲突；合并前后本地补丁的差异逐行一致，与上游相比仍是同样的 26 个文件。上游测试目录照旧不收录。
+- 同步后 `pub.dev` 版本仍停在 media_kit 1.2.6（2025-12），本仓库继续使用自维护分支，原因见 `third_party/media_kit_video/PURELIVE_PATCH.md`。
 
 ## 2026-09-24 全量版本复核与升级进度
 
@@ -33,7 +39,7 @@ AGP 9.3.3 是 9.3 稳定补丁；Gradle 9.7.1 是本轮检查时的稳定版。�
 
 `flutter pub outdated` 已于 2026-09-24 在 Flutter 3.47.5 上重新复核，当前直接和传递依赖均为公开稳定最新版。直接依赖当前包括 `cached_network_image 4.0.2`、`dynamic_color 2.1.0`、`ffmpeg_kit_extended_flutter 0.6.2`、`flex_color_picker 4.0.0`、`loading_indicator 4.0.2`、`permission_handler 13.0.2`、`file_picker 13.1.0` 与 Syncfusion sliders `34.2.9`。`dynamic_color` 2.x 和图像/颜色组件采用独立 `material_ui`；应用在单一边界把其完整 Material 3 `ColorScheme` 转换为 Flutter 框架主题，并以字段完整性及组件渲染测试防止主题角色丢失。部分覆盖项用于跨越 Flutter SDK 或上游包的旧约束，必须以代码生成、分析、测试和原生构建证据验证；`code_assets` 的覆盖让 FFmpeg 钩子与新版媒体钩子共享 2.1.0 API。
 
-播放器依赖在本轮再次单独核验：`better_player_plus` 为 1.3.5 的 Built-in Kotlin 本地快照；项目使用的 `Predidit/media-kit` 固定到 `d13fc22ba1b19b45de3090c2d1b0f8a541b585a0`，`media_kit_video` 使用包含 Surface/音频模式和 Windows 画面进度修复的仓库副本。移除旧平台库插件后，由 `media_kit` 本身的 Native Assets 钩子选择并验证各平台 libmpv。
+播放器依赖在本轮再次单独核验：`better_player_plus` 为 1.3.5 的 Built-in Kotlin 本地快照；项目使用的 `Predidit/media-kit` 固定到 `803c4a27912091db6f839d48d1b984a0d9f588c7`（2026-09-27 由 `d13fc22b` 同步），`media_kit_video` 使用包含 Surface/音频模式和 Windows 画面进度修复的仓库副本。移除旧平台库插件后，由 `media_kit` 本身的 Native Assets 钩子选择并验证各平台 libmpv。
 
 2026-09-24 再查 `Predidit/media-kit` 的远端 HEAD 仍为 `d13fc22b`；其 Native Assets 清单引用的四组播放器原生资产，也分别对应各构建仓库当日最新公开发行标签：[Android v1.2.7](https://github.com/Predidit/libmpv-android-video-build/releases/tag/v1.2.7)、[Windows 202609151348](https://github.com/Predidit/libmpv-win32-video-cmake/releases/tag/202609151348)、[Linux 20260810](https://github.com/Predidit/libmpv-linux-build/releases/tag/20260810)、[Apple 0.6.8](https://github.com/Predidit/libmpv-darwin-build/releases/tag/0.6.8)。这里核对的是所选构建仓库的发布资产，并不将其标签号等同于底层 mpv 的源码版本。
 
