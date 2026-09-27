@@ -55,6 +55,16 @@ and height. Normal resize calls keep the upstream equality fast path. Together
 with the frame-progress fence, this prevents a 0×0 replacement output from
 being treated as presentation-ready after an overlay route or transport retry.
 
+## Deviations from the base commit
+
+All three copies of `MPVHelpers.swift` — `common/darwin/Classes/plugin/`,
+`ios/media_kit_video/Sources/media_kit_video/plugin/common/` and the macOS
+equivalent — carry the same guarded `getVideoOutParams`. The base commit fixed
+only the `common/darwin` copy, but this package's iOS and macOS podspecs compile
+the `Sources/` copies, so the older body (which force-unwraps `node.u.list`
+after a property query that may have failed) would have stayed live in whichever
+layout a build picks. Keep the three identical when replaying a new revision.
+
 ## Maintenance
 
 When updating the pinned media-kit revision:
