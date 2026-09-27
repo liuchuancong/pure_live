@@ -79,9 +79,10 @@ class _RecordingPlayer
   @override
   Stream<void> get sourceEnded => _sourceEndController.stream;
 
-  /// The server closed the live source: mpv reports completion and goes idle.
+  /// The server closed the live source. media_kit reports `eof-reached` as
+  /// playing=false first, then completed=true.
   void endSource() {
-    playing = false;
+    _setPlaying(false);
     _sourceEndController.add(null);
   }
 
@@ -1547,7 +1548,9 @@ void main() {
       await controller.disposeAll();
     });
 
-    testWidgets('a source that expires every five minutes keeps recovering; a tight failure loop stops', (tester) async {
+    testWidgets('a source that expires every five minutes keeps recovering; a tight failure loop stops', (
+      tester,
+    ) async {
       var elapsed = Duration.zero;
       final harness = _Harness(frameStallTimeout: const Duration(seconds: 10), frameElapsed: () => elapsed);
       final controller = harness.controller;

@@ -320,6 +320,11 @@ class MultiviewController extends GetxController {
     null,
     growable: true,
   );
+
+  /// Whether the user wants each cell playing. [playingFlags] follows the
+  /// player, which reports playing=false just before a source end, so it
+  /// cannot tell a pause from a server that closed the stream.
+  final List<bool> _playIntent = List<bool>.filled(MultiviewLayout.quad.capacity, false, growable: true);
   static const int _maxRecoveriesPerWindow = 2;
   static const Duration _recoveryWindow = Duration(minutes: 3);
   final Stopwatch _recoveryClock = Stopwatch()..start();
@@ -520,6 +525,7 @@ class MultiviewController extends GetxController {
       _playingSubs.removeLast()?.cancel();
       _frameWatchdogs.removeLast()?.dispose();
       _sourceEndSubs.removeLast()?.cancel();
+      _playIntent.removeLast();
       _frameStallRecoveries.removeLast();
       playingFlags.removeLast();
       cells.removeLast();
@@ -534,6 +540,7 @@ class MultiviewController extends GetxController {
       _playingSubs.add(null);
       _frameWatchdogs.add(null);
       _sourceEndSubs.add(null);
+      _playIntent.add(false);
       _frameStallRecoveries.add(<Duration>[]);
     }
 
@@ -580,6 +587,7 @@ class MultiviewController extends GetxController {
     _playingSubs.add(null);
     _frameWatchdogs.add(null);
     _sourceEndSubs.add(null);
+    _playIntent.add(false);
     _frameStallRecoveries.add(<Duration>[]);
   }
 
@@ -750,6 +758,7 @@ class MultiviewController extends GetxController {
       }
     });
     playingFlags[cellIndex] = true;
+    _playIntent[cellIndex] = true;
     _updateCell(
       cellIndex,
       cells[cellIndex].copyWith(
@@ -928,8 +937,10 @@ class MultiviewController extends GetxController {
     bool current() => !_isStale(cellIndex, epoch) && identical(_players[cellIndex], handle);
     try {
       if (handle.isPlaying) {
+        _playIntent[cellIndex] = false;
         await handle.pause();
       } else {
+        _playIntent[cellIndex] = true;
         // A closed owned session may require fresh network acquisition here.
         await handle.resume();
       }
@@ -1179,7 +1190,8 @@ class MultiviewController extends GetxController {
     MultiviewCellPlayerHandle handle, {
     bool sourceEnded = false,
   }) async {
-    if (_isStale(cellIndex, epoch) || !identical(_players[cellIndex], handle) || !playingFlags[cellIndex]) return;
+    if (_isStale(cellIndex, epoch) || !identical(_players[cellIndex], handle)) return;
+    if (!(sourceEnded ? _playIntent[cellIndex] : playingFlags[cellIndex])) return;
     if (!sourceEnded && (!_isCellFrameVisible(cellIndex) || !handle.isPlaying || !_isFramePresentationVisible())) {
       return;
     }
@@ -1278,6 +1290,7 @@ class MultiviewController extends GetxController {
     if (cellIndex < playingFlags.length) {
       playingFlags[cellIndex] = false;
     }
+    _playIntent[cellIndex] = false;
     _updateCell(cellIndex, MultiviewCellState.empty(cellIndex));
     return handle;
   }
