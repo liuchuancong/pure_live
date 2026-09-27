@@ -27,5 +27,8 @@ void main() {
     expect(Sites.isRetiredLink('https://notrumble.com.example.org/x'), isFalse);
     expect(Sites.isRetiredLink('https://www.nimo.tv/live/1'), isTrue);
     expect(Sites.isRetiredLink('https://m.tb.cn/h.abc'), isTrue);
+    expect(Sites.isRetiredLink('https://kick.com/xqc'), isTrue);
+    expect(Sites.isSupported('kick'), isFalse);
+    expect(Sites.isRetired('kick'), isTrue);
   });
 }

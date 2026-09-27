@@ -1,6 +1,5 @@
 import 'site/niconico/niconico_site.dart';
 import 'site/chzzk/chzzk_site.dart';
-import 'site/kick/kick_site.dart';
 import 'site/liveme/liveme_site.dart';
 import 'site/tiktok/tiktok_site.dart';
 import 'site/youtube/youtube_site.dart';
@@ -60,7 +59,6 @@ class Sites {
   static const String xiaohongshuSite = 'xiaohongshu';
   static const String showroomSite = 'showroom';
   static const String chzzkSite = 'chzzk';
-  static const String kickSite = 'kick';
   static const String liveMeSite = 'liveme';
   static const String tiktokSite = 'tiktok';
   static const String youtubeSite = 'youtube';
@@ -96,7 +94,6 @@ class Sites {
     xiaohongshuSite,
     showroomSite,
     chzzkSite,
-    kickSite,
     liveMeSite,
     tiktokSite,
     youtubeSite,
@@ -115,7 +112,8 @@ class Sites {
 
   static bool isSupported(String id) => supportedSiteIds.contains(id.trim().toLowerCase());
 
-  /// Platforms removed in 3.2.8 (hard to maintain, niche or no longer usable).
+  /// Platforms removed in 3.2.8 (hard to maintain, niche or no longer usable)
+  /// and 3.2.11 (Kick: Cloudflare blocks it outside Android/Windows TLS).
   /// Saved follows, history and links for them stay readable and are shown as
   /// retired instead of failing as unknown.
   static const Set<String> retiredSiteIds = {
@@ -130,6 +128,7 @@ class Sites {
     'rumble',
     'goodgame',
     'taobaolive',
+    'kick',
   };
 
   static bool isRetired(String id) => retiredSiteIds.contains(id.trim().toLowerCase());
@@ -152,6 +151,7 @@ class Sites {
     'shopee.co.id',
     'taobao.com',
     'm.tb.cn',
+    'kick.com',
   };
 
   static bool isRetiredLink(String text) {
@@ -191,7 +191,6 @@ class Sites {
     weiboSite: '$_assetRoot/weibo.png',
     showroomSite: '$_assetRoot/showroom.png',
     chzzkSite: '$_assetRoot/chzzk.png',
-    kickSite: '$_assetRoot/kick.png',
     pandaLiveSite: '$_assetRoot/panda.png',
     fc2LiveSite: '$_assetRoot/fc2.png',
     steamBroadcastSite: '$_assetRoot/steam.png',
@@ -241,7 +240,6 @@ class Sites {
     Site(id: weiboSite, name: i18n('site_weibo'), logo: logoForId(weiboSite), liveSite: WeiboSite()),
     Site(id: showroomSite, name: i18n('site_showroom'), logo: logoForId(showroomSite), liveSite: ShowroomSite()),
     Site(id: chzzkSite, name: i18n('site_chzzk'), logo: logoForId(chzzkSite), liveSite: ChzzkSite()),
-    Site(id: kickSite, name: i18n('site_kick'), logo: logoForId(kickSite), liveSite: KickSite()),
     Site(id: liveMeSite, name: i18n('site_liveme'), logo: logoForId(liveMeSite), liveSite: LiveMeSite()),
     Site(id: tiktokSite, name: i18n('site_tiktok'), logo: logoForId(tiktokSite), liveSite: TikTokSite()),
     Site(id: youtubeSite, name: i18n('site_youtube'), logo: logoForId(youtubeSite), liveSite: YouTubeSite()),
@@ -341,7 +339,6 @@ class Sites {
         liveSite: ShowroomSite(),
       ),
       chzzkSite => Site(id: chzzkSite, name: i18n('site_chzzk'), logo: logoForId(chzzkSite), liveSite: ChzzkSite()),
-      kickSite => Site(id: kickSite, name: i18n('site_kick'), logo: logoForId(kickSite), liveSite: KickSite()),
       liveMeSite => Site(
         id: liveMeSite,
         name: i18n('site_liveme'),

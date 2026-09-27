@@ -48,7 +48,7 @@
 - **3.2.0 真机验收**：发布后继续进行。部分编号大项仍在补充双端证据，进度与剩余缺口见 [3.2.0 验收入口](docs/ACCEPTANCE_3_2_0.md)。
 <!-- current-status-owner: docs/ACCEPTANCE_STATUS_3_2_0.md -->
 - **当前验收快照**：源码提交、候选包、设备状态、编号统计与剩余阻塞只在[当前状态快照](docs/ACCEPTANCE_STATUS_3_2_0.md)维护；分项状态与证据见[验收矩阵](docs/ACCEPTANCE_MATRIX_3_1_0.md)。README 不再复制逐批测试数量、候选哈希和待办时间线。
-- **平台范围**：v3.2.8 起支持 34 个直播站点 + IPTV（v3.2.0～v3.2.7 为 45 个）；注册不等于目录、搜索、播放、弹幕和录制均已完整验收，能力边界见[平台兼容性](docs/PLATFORM_COMPATIBILITY.md)。
+- **平台范围**：v3.2.11 起支持 33 个直播站点 + IPTV（v3.2.8～v3.2.10 为 34 个，v3.2.0～v3.2.7 为 45 个）；注册不等于目录、搜索、播放、弹幕和录制均已完整验收，能力边界见[平台兼容性](docs/PLATFORM_COMPATIBILITY.md)。
 - **当前源码版本号**：`3.2.10+4133`。候选包按源码 SHA 与验证记录识别，同一版本号不代表包含相同修订。
 - **Android / Android TV 安装要求**：Android 8.0 / API 26 及以上，提供 arm64-v8a、armeabi-v7a 与 x86_64 三种安装包，请按设备 CPU 选择（大多数手机为 arm64-v8a）。armeabi-v7a 与 x86_64 使用标准 libmpv，暂无真机测试。
 - **v3.0.0 上游源码基线**：`liuchuancong/pure_live@e808dcae`；完整记录见 `docs/STAGE_UPDATE_3_0_0.md`
@@ -66,7 +66,7 @@ Android 录制在创建任务和申请存储权限前检查目录：应用私有
 
 ## 📺 平台范围
 
-**版本边界**：[v3.1.8](https://github.com/wzgrx/pure_live/releases/tag/v3.1.8) 支持 **9 个直播站点 + IPTV**；[v3.2.0](https://github.com/wzgrx/pure_live/releases/tag/v3.2.0) 支持 **45 个直播站点 + IPTV**；v3.2.8 下线 11 个难维护或已不可用的平台后为 **34 个直播站点 + IPTV**。平台已注册不代表各站的目录、搜索、弹幕、播放与录制都已通过双端真机验收。各站实际能力和人数口径见[平台兼容性](docs/PLATFORM_COMPATIBILITY.md)，剩余验证见[当前状态](docs/ACCEPTANCE_STATUS_3_2_0.md)。
+**版本边界**：[v3.1.8](https://github.com/wzgrx/pure_live/releases/tag/v3.1.8) 支持 **9 个直播站点 + IPTV**；[v3.2.0](https://github.com/wzgrx/pure_live/releases/tag/v3.2.0) 支持 **45 个直播站点 + IPTV**；v3.2.8 下线 11 个难维护或已不可用的平台后为 **34 个直播站点 + IPTV**；v3.2.11 下线 Kick 后为 **33 个直播站点 + IPTV**。平台已注册不代表各站的目录、搜索、弹幕、播放与录制都已通过双端真机验收。各站实际能力和人数口径见[平台兼容性](docs/PLATFORM_COMPATIBILITY.md)，剩余验证见[当前状态](docs/ACCEPTANCE_STATUS_3_2_0.md)。
 
 | 阶段 | 平台 |
 | --- | --- |
@@ -174,8 +174,6 @@ Windows、Linux 使用 MPV Player（mpv 0.41 + FFmpeg 9）；Fvp 只在 Android 
 - 字体粗细与观看模板联动
 - 精确重复和相似文本两级过滤
 
-3.2.0 开发源码新增 Kick 公开聊天只读接入；确认房间订阅后显示远端评论。当前安装包尚未包含这项能力，双端真实消息验收仍待完成，详见[平台兼容性](docs/PLATFORM_COMPATIBILITY.md)。
-
 弹幕系统采用房间会话隔离、平台消息 ID 去重以及过期队列淘汰机制，减少切换直播间后出现：
 
 - 串房弹幕
@@ -247,7 +245,7 @@ Android 支持根据设备显示模式动态适配刷新率：
 - 粉丝数量
 - 直播状态筛选
 - YY、LiveMe、TikTok LIVE、YouTube Live、Bigo Live、PandaTV、FC2 Live、Steam Broadcasts、京东直播、酷狗直播、六间房直播等平台原生/本机搜索；百度直播支持精确房间号与官方链接查询，LOOK 直播支持精确房间号并在当前官网推荐页内筛选关键词，快手支持主播搜索
-- Bilibili、斗鱼、虎牙、抖音、快手、网易 CC、Twitch、SOOP、YY、AcFun、Picarto、TwitCasting、SHOWROOM、CHZZK、Kick、17LIVE、LiveMe、TikTok LIVE、YouTube Live、Bigo Live、PandaTV、FC2 Live、Steam Broadcasts、京东直播、酷狗直播、百度直播、六间房直播、LOOK 直播网页直播间识别
+- Bilibili、斗鱼、虎牙、抖音、快手、网易 CC、Twitch、SOOP、YY、AcFun、Picarto、TwitCasting、SHOWROOM、CHZZK、17LIVE、LiveMe、TikTok LIVE、YouTube Live、Bigo Live、PandaTV、FC2 Live、Steam Broadcasts、京东直播、酷狗直播、百度直播、六间房直播、LOOK 直播网页直播间识别
 
 同时提供本地互动系统。
 
@@ -288,7 +286,7 @@ Pure Live 会区分不同平台的观看数据口径：
 - 累计观看人数
 
 其中抖音、快手、网易 CC、Twitch、SOOP、AcFun、Picarto、TwitCasting、
-CHZZK、Kick、17LIVE、LiveMe、TikTok LIVE、YouTube Live、Bigo Live、PandaTV、FC2 Live、Steam Broadcasts、酷狗直播、百度直播和 LOOK 直播可以显示平台明确返回的并发人数。
+CHZZK、17LIVE、LiveMe、TikTok LIVE、YouTube Live、Bigo Live、PandaTV、FC2 Live、Steam Broadcasts、酷狗直播、百度直播和 LOOK 直播可以显示平台明确返回的并发人数。
 
 设置页会列出全部 34 个普通直播平台。虎牙、Bilibili、斗鱼、京东直播、六间房直播等平台按照公开数据实际提供的热度、
 累计观看或未知状态展示，不把这些字段混作并发人数；不支持并发人数的平台保留关闭态并显示口径说明。

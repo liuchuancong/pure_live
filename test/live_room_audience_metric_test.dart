@@ -60,9 +60,9 @@ void main() {
         expect(room.audienceValue(preferRealOnline: false, platformEnabled: false), isEmpty, reason: platform);
         expect(room.audienceType(preferRealOnline: false, platformEnabled: false), AudienceMetricType.unknown);
       }
-      final legacy = LiveRoom.fromJson({'platform': 'kick', 'roomId': 'creator'});
+      final legacy = LiveRoom.fromJson({'platform': 'chzzk', 'roomId': 'creator'});
       expect(legacy.audienceValue(preferRealOnline: false, platformEnabled: false), isEmpty);
-      final measured = LiveRoom(platform: 'kick', watching: '72');
+      final measured = LiveRoom(platform: 'chzzk', watching: '72');
       expect(measured.audienceValue(preferRealOnline: false, platformEnabled: false), '72');
     });
 

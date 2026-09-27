@@ -70,7 +70,7 @@ class FavoriteRoomController extends GetxController {
     Sites.weiboSite, // v14
     Sites.showroomSite, // v15
     Sites.chzzkSite, // v16
-    Sites.kickSite, // v17
+    'kick', // v17 (retired in 3.2.11; keeps later versions aligned)
     Sites.seventeenLiveSite, // v18
     Sites.liveMeSite, // v19
     Sites.tiktokSite, // v20
