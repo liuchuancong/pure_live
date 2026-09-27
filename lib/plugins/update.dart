@@ -97,14 +97,15 @@ Future<void> _showDownloadDialog(Uri uri, {String? fileName, required String res
         ? i18n('downloading_apk', args: {'version': VersionUtil.latestVersion})
         : i18n('downloading_app', args: {'app': resolvedFileName}),
   );
-  final cache = Get.find<CacheController>();
   await Get.dialog<void>(
     DownloadApkDialog(
       apkUrl: uri.toString(),
       version: VersionUtil.latestVersion,
       fileName: fileName == null ? null : resolvedFileName,
       downloadDirectoryProvider: CacheController.resolveDownloadDirectory,
-      showOpenFolder: cache.hasCustomDownloadDirectory,
+      // The folder action opens the folder the finished file sits in, which
+      // works for the default directory too (upstream 00183932).
+      showOpenFolder: true,
     ),
     barrierDismissible: false,
   );

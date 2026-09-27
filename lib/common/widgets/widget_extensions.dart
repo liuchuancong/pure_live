@@ -7,11 +7,13 @@ import 'package:pure_live/common/style/app_text_styles.dart';
 /// each row across the whole screen; narrower layouts are unaffected.
 const double settingsContentMaxWidth = 960;
 
+/// The block is centred, but fills that width so a group title stays aligned
+/// with the left edge of its card instead of being centred on its own.
 Widget _readableWidth(Widget child) => Align(
   alignment: Alignment.topCenter,
   child: ConstrainedBox(
     constraints: const BoxConstraints(maxWidth: settingsContentMaxWidth),
-    child: child,
+    child: SizedBox(width: double.infinity, child: child),
   ),
 );
 

@@ -44,7 +44,9 @@ void main() {
     final rect = await cardRect(tester, 1800);
     expect(rect.width, settingsContentMaxWidth);
     expect(rect.center.dx, closeTo(900, 1));
-    expect(tester.getRect(find.text('Group')).left, greaterThanOrEqualTo(rect.left));
+    // The title lines up with the card's left edge (upstream 00183932 noted
+    // it had been centred on its own).
+    expect(tester.getRect(find.text('Group')).left - rect.left, inInclusiveRange(0, 24));
   });
 
   testWidgets('settings cards still fill narrow windows', (tester) async {
