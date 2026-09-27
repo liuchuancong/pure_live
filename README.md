@@ -44,15 +44,15 @@
 - 每个完成的 Bug 修复批次默认递增版本，优先构建 Android `arm64-v8a` 正式更新包，并同步源码、版本标签、安装包与校验文件到本仓库 GitHub Release；其他平台仍按本轮明确范围串行构建。
 - 每次同步上游、分析 Bug 和审查原项目 Issue 的来源判定、根因、兼容、验证与回滚流程见[维护范围与问题处置策略](MAINTENANCE_POLICY.md)及[上游同步审查策略](UPSTREAM_REVIEW_POLICY.md)。
 
-- **最新稳定版**：[v3.2.10](https://github.com/wzgrx/pure_live/releases/tag/v3.2.10)，从维护分支 `claude` 发布，更新内容见[版本说明](RELEASE_NOTES.md)。
+- **最新稳定版**：[v3.2.11](https://github.com/wzgrx/pure_live/releases/tag/v3.2.11)，从维护分支 `claude` 发布，更新内容见[版本说明](RELEASE_NOTES.md)。
 - **3.2.0 真机验收**：发布后继续进行。部分编号大项仍在补充双端证据，进度与剩余缺口见 [3.2.0 验收入口](docs/ACCEPTANCE_3_2_0.md)。
 <!-- current-status-owner: docs/ACCEPTANCE_STATUS_3_2_0.md -->
 - **当前验收快照**：源码提交、候选包、设备状态、编号统计与剩余阻塞只在[当前状态快照](docs/ACCEPTANCE_STATUS_3_2_0.md)维护；分项状态与证据见[验收矩阵](docs/ACCEPTANCE_MATRIX_3_1_0.md)。README 不再复制逐批测试数量、候选哈希和待办时间线。
 - **平台范围**：v3.2.11 起支持 33 个直播站点 + IPTV（v3.2.8～v3.2.10 为 34 个，v3.2.0～v3.2.7 为 45 个）；注册不等于目录、搜索、播放、弹幕和录制均已完整验收，能力边界见[平台兼容性](docs/PLATFORM_COMPATIBILITY.md)。
-- **当前源码版本号**：`3.2.10+4133`。候选包按源码 SHA 与验证记录识别，同一版本号不代表包含相同修订。
+- **当前源码版本号**：`3.2.11+4134`。候选包按源码 SHA 与验证记录识别，同一版本号不代表包含相同修订。
 - **Android / Android TV 安装要求**：Android 8.0 / API 26 及以上，提供 arm64-v8a、armeabi-v7a 与 x86_64 三种安装包，请按设备 CPU 选择（大多数手机为 arm64-v8a）。armeabi-v7a 与 x86_64 使用标准 libmpv，暂无真机测试。
 - **v3.0.0 上游源码基线**：`liuchuancong/pure_live@e808dcae`；完整记录见 `docs/STAGE_UPDATE_3_0_0.md`
-- **本轮构建平台**：Android arm64-v8a / armeabi-v7a / x86_64、Windows x64 安装程序与便携 ZIP、Linux x64 便携 tar.gz、macOS Universal（ZIP / DMG，GitHub Actions）、iOS 未签名包与 TrollStore IPA（GitHub Actions）
+- **本轮构建平台**：Android arm64-v8a / armeabi-v7a / x86_64、Windows x64 安装程序与便携 ZIP；Linux、macOS 与 iOS 继续使用 v3.2.10 安装包
 - **质量门禁**：播放器来源/Surface/几何回归见 `docs/PLAYER_RECOVERY_AUDIT_3_0_15.md`，十个平台录制链路见 `docs/RECORDER_REPAIR_AUDIT_2026-08-27.md`
 
 本版本还会在启动、备份恢复和手动清理时剔除空平台、空房间号、`0/null/undefined/nan/none` 等无效关注记录，并按“平台 + 房间号”去重，避免损坏的历史收藏继续参与首页刷新。

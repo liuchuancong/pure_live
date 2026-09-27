@@ -1,10 +1,10 @@
 {
-  "version": "3.2.10",
-  "build_number": 4133,
-  "version_num": 302104133,
-  "version_desc": "- 修复斗鱼直播间约 5 分钟后自动暂停，断流后自动换链接重连。\n- 新增斗鱼登录续期、局域网设备同步、应用内下载更新、平台图标。\n- 修复小窗挡住菜单、竖屏双击全屏、录制码率显示；安卓新增 armv7 与 x86_64 安装包。",
+  "version": "3.2.11",
+  "build_number": 4134,
+  "version_num": 302114134,
+  "version_desc": "- 斗鱼原画不再每 5 分钟断流：到期前在后台换链接并按关键帧无缝接上，没有卡顿。\n- Android armv7 与 x86_64 改用自编 FFmpeg 9 播放库。\n- 下线 Kick（Cloudflare 拦截），现支持 33 个平台 + IPTV。",
   "prerelease": false,
-  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.2.10",
+  "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.2.11",
   "android_abis": [
     "arm64-v8a",
     "armeabi-v7a",
@@ -12,12 +12,12 @@
   ],
   "platforms": {
     "android": {
-      "version": "3.2.10",
-      "build_number": 4133,
-      "version_num": 302104133,
-      "version_desc": "- 修复斗鱼直播间约 5 分钟后自动暂停，断流后自动换链接重连。\n- 新增斗鱼登录续期、局域网设备同步、应用内下载更新、平台图标。\n- 修复小窗挡住菜单、竖屏双击全屏、录制码率显示；安卓新增 armv7 与 x86_64 安装包。",
+      "version": "3.2.11",
+      "build_number": 4134,
+      "version_num": 302114134,
+      "version_desc": "- 斗鱼原画不再每 5 分钟断流：到期前在后台换链接并按关键帧无缝接上，没有卡顿。\n- Android armv7 与 x86_64 改用自编 FFmpeg 9 播放库。\n- 下线 Kick（Cloudflare 拦截），现支持 33 个平台 + IPTV。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.2.10",
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.2.11",
       "android_abis": [
         "arm64-v8a",
         "armeabi-v7a",
@@ -25,12 +25,12 @@
       ]
     },
     "windows": {
-      "version": "3.2.10",
-      "build_number": 4133,
-      "version_num": 302104133,
-      "version_desc": "- 修复斗鱼直播间约 5 分钟后自动暂停，断流后自动换链接重连。\n- 新增斗鱼登录续期、局域网设备同步、应用内下载更新、平台图标。\n- 修复小窗挡住菜单、竖屏双击全屏、录制码率显示；安卓新增 armv7 与 x86_64 安装包。",
+      "version": "3.2.11",
+      "build_number": 4134,
+      "version_num": 302114134,
+      "version_desc": "- 斗鱼原画不再每 5 分钟断流：到期前在后台换链接并按关键帧无缝接上，没有卡顿。\n- Android armv7 与 x86_64 改用自编 FFmpeg 9 播放库。\n- 下线 Kick（Cloudflare 拦截），现支持 33 个平台 + IPTV。",
       "prerelease": false,
-      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.2.10",
+      "download_url": "https://github.com/wzgrx/pure_live/releases/tag/v3.2.11",
       "windows_msix_available": false
     },
     "linux": {
