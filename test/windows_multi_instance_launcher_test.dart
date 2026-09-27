@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
+import 'package:path/path.dart' as p;
 import 'package:pure_live/common/models/live_room.dart';
 import 'package:pure_live/common/utils/windows_multi_instance_launcher.dart';
 
@@ -46,30 +49,31 @@ void main() {
   });
 
   test('only the settings file the launcher wrote is imported', () {
-    const temp = '/tmp/fixture-temp';
+    final temp = p.join(Directory.systemTemp.path, 'fixture-temp');
     const id = 'window_42_1790000000';
     List<String> args(String path, {String instance = id}) => [
       '${WindowsMultiInstanceLauncher.instancePrefix}$instance',
       '${WindowsMultiInstanceLauncher.configPrefix}$path',
     ];
+    final handOver = p.join(temp, 'pure_live_instance_ab12', '$id.json');
 
     expect(
-      WindowsMultiInstanceLauncher.configFileFromArgs(args('$temp/pure_live_instance_ab12/$id.json'), tempRoot: temp),
-      '$temp/pure_live_instance_ab12/$id.json',
+      WindowsMultiInstanceLauncher.configFileFromArgs(args(handOver), tempRoot: temp),
+      p.normalize(p.absolute(handOver)),
     );
     for (final path in [
-      '/home/user/Documents/settings.json',
-      '$temp/other_ab12/$id.json',
-      '$temp/pure_live_instance_ab12/window_other.json',
-      '$temp/pure_live_instance_ab12/../../etc/$id.json',
-      '$temp/$id.json',
+      p.join(Directory.systemTemp.path, 'elsewhere', 'settings.json'),
+      p.join(temp, 'other_ab12', '$id.json'),
+      p.join(temp, 'pure_live_instance_ab12', 'window_other.json'),
+      p.join(temp, 'pure_live_instance_ab12', '..', '..', 'etc', '$id.json'),
+      p.join(temp, '$id.json'),
       '',
     ]) {
       expect(WindowsMultiInstanceLauncher.configFileFromArgs(args(path), tempRoot: temp), isNull, reason: path);
     }
     expect(
       WindowsMultiInstanceLauncher.configFileFromArgs([
-        '${WindowsMultiInstanceLauncher.configPrefix}$temp/pure_live_instance_ab12/$id.json',
+        '${WindowsMultiInstanceLauncher.configPrefix}$handOver',
       ], tempRoot: temp),
       isNull,
       reason: 'the main window never imports a hand-over file',
