@@ -71,7 +71,7 @@ void main() {
   });
 
   test('valid update data compares against the package loaded by this controller', () async {
-    const base = 'https://github.com/wzgrx/pure_live/releases/download/v3.2.0';
+    const base = 'https://github.com/liuchuancong/pure_live/releases/download/v3.2.0';
     VersionUtil.latestVersion = '3.2.0';
     VersionUtil.latestBuildNumber = 5000;
     VersionUtil.latestUpdateLog = '# Pure Live 3.2.0';

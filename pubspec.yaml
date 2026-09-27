@@ -80,7 +80,7 @@ dependencies:
   bonsoir: ^7.1.5 # LAN device discovery for settings sync
 
   flv_lzc:
-    git: https://github.com/liuchuancong/flv_lzc.git
+    path: plugins/flv_lzc # Vendored from liuchuancong/flv_lzc@030d611
   # -------------------------- UI组件/界面样式 --------------------------
   flutter_svg: ^2.2.1 # SVG图片渲染
   lottie: ^3.6.1 #动画
