@@ -9,8 +9,69 @@
       "avatar": "https://avatars.githubusercontent.com/u/39661556?v=4",
       "profile": "https://github.com/wzgrx"
     },
-    "changelog": "# Pure Live v3.2.11\n\nv3.2.11 build 4134 让斗鱼原画连续播放不再每 5 分钟断一次，Android 三种架构统一使用本仓库自编的 FFmpeg 9 播放库，并下线 Kick。本次只发布 Windows 与 Android 安装包。\n\n## 修复\n\n- **斗鱼原画每 5 分钟断流**（#35）：斗鱼给未登录用户的原画链接只有 5 分钟有效期，服务器在第 300 秒断开连接。3.2.10 在断开后重新连接，会有 1～2 秒卡顿。现在由本地续流服务在到期前约 45 秒取得新链接，旧连接继续播放，直到新连接到达一个旧连接还没播到的关键帧，再从该关键帧接上。两条链接的时间戳属于同一条时间线，播放器看到的是一条不间断的流：没有卡顿，没有重复或跳过的画面，也不会重新缓冲。单个直播间与多画面都已接入。若换链接失败（例如网络中断），仍回退到断流后自动重连。\n\n## 新增与改进\n\n- **Android armeabi-v7a 与 x86_64 改用自编播放库**：与 arm64-v8a 相同的 mpv 0.41.0 + FFmpeg 9.0.2，三种架构的解码能力一致（包括旧式 HEVC FLV），按 16 KB 对齐。\n- **Linux 不再需要手动安装 `libva-wayland2` 等库**：安装包自带 libmpv 依赖的 VA-API、VDPAU、libunwind、libarchive、XScrnSaver 与 Xv，系统已安装时优先使用系统版本。源码已包含，下次发布 Linux 包时生效（本次不发布 Linux 包）。\n\n## 平台调整\n\n- **下线 Kick**：kick.com 的全部接口由 Cloudflare 按 TLS 指纹拦截，只能靠 Android 与 Windows 的系统 TLS 通道绕过，Linux、macOS、iOS 无法使用，且随时可能失效。现在支持 **33 个直播平台 + IPTV**。已关注的 Kick 主播仍保留，打开时提示「该平台已下线」；分享的 kick.com 链接同样提示已下线。\n\n## 已知问题\n\n- 海外平台在 Clash 出口 IP 轮换时会被拒，请固定单个节点；Windows 版的应用内请求不跟随系统代理，海外站点需在「网络代理」中填写。\n- armeabi-v7a 与 x86_64 安装包暂无真机测试。\n",
-    "files": []
+    "changelog": "# Pure Live v3.2.11\n\nv3.2.11 build 4134 让斗鱼原画连续播放不再每 5 分钟断一次，Android 三种架构统一使用本仓库自编的 FFmpeg 9 播放库，并下线 Kick。本次只发布 Windows 与 Android 安装包。\n\n## 修复\n\n- **斗鱼原画每 5 分钟断流**（#35）：斗鱼给未登录用户的原画链接只有 5 分钟有效期，服务器在第 300 秒断开连接。3.2.10 在断开后重新连接，会有 1～2 秒卡顿。现在由本地续流服务在到期前约 45 秒取得新链接，旧连接继续播放，直到新连接到达一个旧连接还没播到的关键帧，再从该关键帧接上。两条链接的时间戳属于同一条时间线，播放器看到的是一条不间断的流：没有卡顿，没有重复或跳过的画面，也不会重新缓冲。单个直播间与多画面都已接入。若换链接失败（例如网络中断），仍回退到断流后自动重连。\n\n## 新增与改进\n\n- **Android armeabi-v7a 与 x86_64 改用自编播放库**：与 arm64-v8a 相同的 mpv 0.41.0 + FFmpeg 9.0.2，三种架构的解码能力一致（包括旧式 HEVC FLV），按 16 KB 对齐。\n- **Linux 不再需要手动安装 `libva-wayland2` 等库**：安装包自带 libmpv 依赖的 VA-API、VDPAU、libunwind、libarchive、XScrnSaver 与 Xv，系统已安装时优先使用系统版本。源码已包含，下次发布 Linux 包时生效（本次不发布 Linux 包）。\n\n## 平台调整\n\n- **下线 Kick**：kick.com 的全部接口由 Cloudflare 按 TLS 指纹拦截，只能靠 Android 与 Windows 的系统 TLS 通道绕过，Linux、macOS、iOS 无法使用，且随时可能失效。现在支持 **33 个直播平台 + IPTV**。已关注的 Kick 主播仍保留，打开时提示「该平台已下线」；分享的 kick.com 链接同样提示已下线。\n\n## 已知问题\n\n- 海外平台在 Clash 出口 IP 轮换时会被拒，请固定单个节点；Windows 版的应用内请求不跟随系统代理，海外站点需在「网络代理」中填写。\n- armeabi-v7a 与 x86_64 安装包暂无真机测试。\n\n## 验证\n\n- 全量测试：Windows 5044 通过；Linux 4954 通过、90 跳过；`flutter analyze` 无问题。\n- 真实斗鱼流探针（`tool/probes/douyu_splice_probe_test.dart`，每 60 秒换一次链接）：读取 150 秒、换源两次，视频解码时间戳最大间隔 34 毫秒（一帧），音频 24 毫秒，没有回退。\n- Windows（便携版）：单个直播间在打开后约 4 分钟换到新的 CDN 连接，旧连接随即关闭，前后每次截图画面都在变化；多画面斗鱼格子同样完成换源。\n- Android 的续流走与已在 REDMI K90 上验证过的 FLV 中继相同的 libmpv 本地回环路径，本次未单独做真机测试。\n",
+    "files": [
+      {
+        "name": "ANDROID_SHA256SUM.txt",
+        "size": "0.00mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.2.11/ANDROID_SHA256SUM.txt"
+      },
+      {
+        "name": "BUILD_METADATA.json",
+        "size": "0.00mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.2.11/BUILD_METADATA.json"
+      },
+      {
+        "name": "PureLive-3.2.11-4134-debug-signed-android-arm64-v8a-release.apk",
+        "size": "137.77mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.2.11/PureLive-3.2.11-4134-debug-signed-android-arm64-v8a-release.apk"
+      },
+      {
+        "name": "PureLive-3.2.11-4134-debug-signed-android-armeabi-v7a-release.apk",
+        "size": "116.66mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.2.11/PureLive-3.2.11-4134-debug-signed-android-armeabi-v7a-release.apk"
+      },
+      {
+        "name": "PureLive-3.2.11-4134-debug-signed-android-x86_64-release.apk",
+        "size": "146.55mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.2.11/PureLive-3.2.11-4134-debug-signed-android-x86_64-release.apk"
+      },
+      {
+        "name": "PureLive-3.2.11-4134-windows-x64-portable.zip",
+        "size": "71.51mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.2.11/PureLive-3.2.11-4134-windows-x64-portable.zip"
+      },
+      {
+        "name": "PureLive-3.2.11-4134-windows-x64-setup.exe",
+        "size": "55.23mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.2.11/PureLive-3.2.11-4134-windows-x64-setup.exe"
+      },
+      {
+        "name": "SHA256SUMS.txt",
+        "size": "0.00mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.2.11/SHA256SUMS.txt"
+      },
+      {
+        "name": "WINDOWS_BUILD_METADATA.json",
+        "size": "0.00mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.2.11/WINDOWS_BUILD_METADATA.json"
+      },
+      {
+        "name": "WINDOWS_SHA256SUMS.txt",
+        "size": "0.00mb",
+        "downloads": 0,
+        "url": "https://github.com/wzgrx/pure_live/releases/download/v3.2.11/WINDOWS_SHA256SUMS.txt"
+      }
+    ]
   },
   {
     "version": "3.2.10",
