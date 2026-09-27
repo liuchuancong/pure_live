@@ -9,15 +9,15 @@
       "library": "libmpv.so"
     },
     "android_arm": {
-      "url": "https://github.com/Predidit/libmpv-android-video-build/releases/download/v1.2.7/default-armeabi-v7a.jar",
-      "sha256": "7f522ed762ea6dfeba93a02e3837c5538790030b9965a03ed3a00276adc7b32c",
+      "url": "https://github.com/wzgrx/pure_live/releases/download/native-libmpv-android-0.41.0-ff9.0.2-b1/libmpv-android-0.41.0-ffmpeg-9.0.2-armeabi-v7a.jar",
+      "sha256": "59077eb6ed9c3553402b32efe83a855cb2e40bfffe4ae859704d543eb71fa513",
       "format": "zip",
       "root": "lib/armeabi-v7a",
       "library": "libmpv.so"
     },
     "android_x64": {
-      "url": "https://github.com/Predidit/libmpv-android-video-build/releases/download/v1.2.7/default-x86_64.jar",
-      "sha256": "aed0fffc99e5e554d48e1af90bc700133c25fbc02615bf1bf17db9299365c481",
+      "url": "https://github.com/wzgrx/pure_live/releases/download/native-libmpv-android-0.41.0-ff9.0.2-b1/libmpv-android-0.41.0-ffmpeg-9.0.2-x86_64.jar",
+      "sha256": "13d3fd72ddd78e21a6af5daa44c9753bc48131a1b24ec4701d49a8ce86b261e4",
       "format": "zip",
       "root": "lib/x86_64",
       "library": "libmpv.so"
