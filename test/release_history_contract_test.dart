@@ -82,7 +82,7 @@ void main() {
       final releases = ReleaseHistoryRepository.instance.parse(raw);
 
       expect(releases, hasLength(raw.length));
-      expect(releases.first.version, '3.2.9');
+      expect(releases.first.version, '3.2.10');
       expect(releases.every((release) => release.version.isNotEmpty), isTrue);
     });
 
