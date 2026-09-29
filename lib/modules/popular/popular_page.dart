@@ -1,7 +1,8 @@
 import 'popular_grid_view.dart';
-
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/widgets/common_appbar_actions.dart';
+
+
 
 class PopularPage extends GetView<PopularController> {
   const PopularPage({super.key});

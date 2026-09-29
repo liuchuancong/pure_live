@@ -17,6 +17,8 @@
   <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
   <!-- Internet access permissions. -->
   <uses-permission android:name="android.permission.INTERNET" />
+  <!-- Android 17: sockets to a LAN proxy (PC Clash, router) need this. -->
+  <uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK" />
   <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
   <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
   <uses-permission android:name="android.permission.FOREGROUND_SERVICE_REMOTE_MESSAGING" />

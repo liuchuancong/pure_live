@@ -471,6 +471,8 @@ class BackupController extends GetxController {
     }
   }
 
+  /// Imports the settings a new Windows window received from its launcher,
+  /// then removes the temporary file and its folder.
   Future<bool> recoverAndDelete(File file) async {
     try {
       if (!await file.exists()) {

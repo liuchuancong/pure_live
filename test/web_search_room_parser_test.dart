@@ -16,20 +16,11 @@ void main() {
       'https://play.sooplive.co.kr/streamer_1/123': (Sites.soopSite, 'streamer_1'),
       'https://www.yy.com/1382731151': (Sites.yySite, '1382731151'),
       'https://live.acfun.cn/live/42?from=search': (Sites.acfunSite, '42'),
-      'https://live.shopee.co.id/share?from=live&session=225239358': (Sites.shopeeLiveSite, 'id:225239358'),
-      'https://live.vkvideo.ru/HighMySide': (Sites.vkVideoLiveSite, 'highmyside'),
-      'https://www.nimo.tv/live/40972312': (Sites.nimoTvSite, '40972312'),
-      'https://www.dailymotion.com/video/x3b68jn': (Sites.dailymotionSite, 'x3b68jn'),
-      'https://rumble.com/v7fngda-rt-de-live-tv.html': (Sites.rumbleSite, 'v7fngda-rt-de-live-tv'),
-      'https://goodgame.ru/Verloin': (Sites.goodGameSite, 'verloin'),
-      'https://goodgame.ru/player?15365': (Sites.goodGameSite, 'id:15365'),
       'https://live.fc2.com/10608314/': (Sites.fc2LiveSite, '10608314'),
       'https://steamcommunity.com/broadcast/watch/76561198373527746': (Sites.steamBroadcastSite, '76561198373527746'),
       'https://lives.jd.com/#/48266468?origin=0': (Sites.jdLiveSite, '48266468'),
-      'https://h5.m.taobao.com/taolive/video.html?id=12345678901': (Sites.taobaoLiveSite, 'live:12345678901'),
       'https://www.xiaohongshu.com/livestream/1234567890123456789?source=share':
           (Sites.xiaohongshuSite, '1234567890123456789'),
-      'https://www.flextv.co.kr/channels/123456/live': (Sites.ttingSite, '123456'),
     };
 
     for (final entry in cases.entries) {
@@ -73,51 +64,11 @@ void main() {
     expect(await LiveUrlTool.parseLiveUrl('https://live.acfun.cn/search?keyword=huya.com'), isEmpty);
   });
 
-  test('Shopee Live official share links resolve to durable regional session IDs', () async {
-    expect(await LiveUrlTool.parseLiveUrl('Shopee Live https://live.shopee.co.id/share?from=live&session=225239358'), [
-      'id:225239358',
-      Sites.shopeeLiveSite,
-    ]);
-  });
 
-  test('VK Video Live current and legacy hosts resolve to a stable channel slug', () async {
-    expect(await LiveUrlTool.parseLiveUrl('VK https://live.vkvideo.ru/HighMySide'), [
-      'highmyside',
-      Sites.vkVideoLiveSite,
-    ]);
-    expect(await LiveUrlTool.parseLiveUrl('https://vkplay.live/HighMySide'), ['highmyside', Sites.vkVideoLiveSite]);
-  });
 
-  test('NimoTV numeric rooms and aliases resolve to stable channel keys', () async {
-    expect(await LiveUrlTool.parseLiveUrl('NimoTV https://www.nimo.tv/live/40972312'), ['40972312', Sites.nimoTvSite]);
-    expect(await LiveUrlTool.parseLiveUrl('https://m.nimo.tv/SBTCPotm'), ['sbtcpotm', Sites.nimoTvSite]);
-  });
 
-  test('Dailymotion video, live, embed and short links resolve to a stable video ID', () async {
-    for (final url in [
-      'https://www.dailymotion.com/video/x3b68jn',
-      'https://www.dailymotion.com/live/x3b68jn',
-      'https://www.dailymotion.com/embed/video/x3b68jn',
-      'https://dai.ly/x3b68jn',
-    ]) {
-      expect(await LiveUrlTool.parseLiveUrl(url), ['x3b68jn', Sites.dailymotionSite], reason: url);
-    }
-    expect(await LiveUrlTool.parseLiveUrl('https://www.dailymotion.com/CNEWS'), isEmpty);
-  });
 
-  test('Rumble public video links resolve without confusing embed or channel identities', () async {
-    const url = 'https://rumble.com/v7fngda-rt-de-live-tv.html?e9s=src_v1_blp';
-    expect(await LiveUrlTool.parseLiveUrl(url), ['v7fngda-rt-de-live-tv', Sites.rumbleSite]);
-    expect(await LiveUrlTool.parseLiveUrl('https://rumble.com/embed/v7dh3fs/'), isEmpty);
-    expect(await LiveUrlTool.parseLiveUrl('https://rumble.com/c/RTDE'), isEmpty);
-  });
 
-  test('GoodGame channel and player links resolve to durable channel or stream identities', () async {
-    expect(await LiveUrlTool.parseLiveUrl('https://goodgame.ru/Verloin'), ['verloin', Sites.goodGameSite]);
-    expect(await LiveUrlTool.parseLiveUrl('https://goodgame.ru/player?15365'), ['id:15365', Sites.goodGameSite]);
-    expect(await LiveUrlTool.parseLiveUrl('https://live.fc2.com/10608314/'), ['10608314', Sites.fc2LiveSite]);
-    expect(await LiveUrlTool.parseLiveUrl('https://goodgame.ru/streams'), isEmpty);
-  });
 
   test('Steam community watch links resolve to their durable SteamID64', () async {
     expect(
@@ -140,9 +91,4 @@ void main() {
     expect(await LiveUrlTool.parseLiveUrl('https://lives.jd.com/#/channel'), isEmpty);
   });
 
-  test('Taobao Live official room links resolve without a network request', () async {
-    const url = 'https://h5.m.taobao.com/taolive/video.html?id=12345678901';
-    expect(LiveUrlTool.containsSupportedLink('淘宝直播 $url'), isTrue);
-    expect(await LiveUrlTool.parseLiveUrl('淘宝直播 $url'), ['live:12345678901', Sites.taobaoLiveSite]);
-  });
 }

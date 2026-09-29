@@ -31,19 +31,18 @@ void main() {
 
   test('catalog thirty-one adds FC2 Live once and preserves a later hide', () async {
     await HivePrefUtil.setInt('siteCatalogMigration', 30);
-    await HivePrefUtil.setStringList('hotAreasList', [Sites.huyaSite, Sites.goodGameSite]);
+    await HivePrefUtil.setStringList('hotAreasList', [Sites.huyaSite, 'goodgame']);
     final favorites = Get.put(FavoriteRoomController());
     final expectedPrefix = [
       Sites.huyaSite,
-      Sites.goodGameSite,
       Sites.fc2LiveSite,
       Sites.steamBroadcastSite,
       Sites.jdLiveSite,
-      Sites.taobaoLiveSite,
     ];
     expect(favorites.hotAreasList.take(expectedPrefix.length), expectedPrefix);
     final migrated = favorites.hotAreasList.toList(growable: false);
     expect(migrated.toSet(), hasLength(migrated.length));
+    expect(migrated, isNot(anyOf(contains('goodgame'), contains('taobaolive'))), reason: 'retired platforms are not restored');
     expect(favorites.siteCatalogMigration.value, 38);
     favorites.hotAreasList.remove(Sites.fc2LiveSite);
     await Hive.box<dynamic>('app_settings').flush();

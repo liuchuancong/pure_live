@@ -4,6 +4,8 @@ import 'package:pure_live/common/index.dart';
 import 'package:html_unescape/html_unescape.dart';
 import 'package:pure_live/model/live_category.dart';
 import 'package:pure_live/model/live_anchor_item.dart';
+import 'package:pure_live/core/common/core_log.dart';
+import 'package:pure_live/core/common/core_error.dart';
 import 'package:pure_live/core/common/http_client.dart';
 import 'package:pure_live/model/live_play_quality.dart';
 import 'package:pure_live/core/interface/live_site.dart';
@@ -20,9 +22,46 @@ class DouyuSite
         LiveSiteRecordRoomResolver,
         LivePlayUrlResolver,
         LivePlayRecoveryResolver,
-        LivePlayUrlCursorResolver {
+        LivePlayUrlCursorResolver,
+        LivePlayLeaseMetadata {
   @override
   String id = Sites.douyuSite;
+
+  /// Anonymous original-quality URLs carry `expire=300`: the CDN closes the
+  /// stream 300 s after the URL was issued. The URL has no absolute time, so
+  /// the issue time is remembered when it is resolved.
+  static final Map<String, DateTime> _issuedAt = {};
+  static const Duration _leaseRefreshLead = Duration(seconds: 45);
+
+  static int? _expireSeconds(String url) {
+    final value = int.tryParse(Uri.tryParse(url)?.queryParameters['expire'] ?? '');
+    return value != null && value > 0 ? value : null;
+  }
+
+  static void _rememberIssued(String url, DateTime at) {
+    if (_expireSeconds(url) == null) return;
+    _issuedAt.remove(url);
+    _issuedAt[url] = at;
+    while (_issuedAt.length > 64) {
+      _issuedAt.remove(_issuedAt.keys.first);
+    }
+  }
+
+  @override
+  DateTime? getPlayUrlInvalidAt(String url, {DateTime? now}) {
+    final expire = _expireSeconds(url);
+    if (expire == null) return null;
+    return (_issuedAt[url] ?? now ?? DateTime.now()).toUtc().add(Duration(seconds: expire));
+  }
+
+  @override
+  DateTime? getPlayUrlRefreshAt(String url, {DateTime? now}) {
+    final invalidAt = getPlayUrlInvalidAt(url, now: now);
+    if (invalidAt == null) return null;
+    // Short leases keep three quarters of their lifetime.
+    final quarter = Duration(seconds: _expireSeconds(url)! ~/ 4);
+    return invalidAt.subtract(quarter < _leaseRefreshLead ? quarter : _leaseRefreshLead);
+  }
 
   @override
   String name = "斗鱼直播";
@@ -266,6 +305,7 @@ class DouyuSite
   }
 
   Future<LivePlayUrlResolution> resolvePlayUrl(String roomId, int rate, String cdn) async {
+    final issuedAt = DateTime.now().toUtc();
     final playData = await _requestPlayData(roomId, rate: rate, cdn: cdn);
     final rawRate = playData['rate'];
     // Unlike a bitrate, rate is an opaque integer identifier. Do not truncate
@@ -273,8 +313,10 @@ class DouyuSite
     final appliedRate = rawRate is num && rawRate.isFinite && rawRate == rawRate.roundToDouble()
         ? rawRate.toInt()
         : int.tryParse(rawRate?.toString().trim() ?? '');
+    final url = parsePlayUrl(playData);
+    _rememberIssued(url, issuedAt);
     return LivePlayUrlResolution(
-      urls: List<String>.unmodifiable([parsePlayUrl(playData)]),
+      urls: List<String>.unmodifiable([url]),
       appliedQualityData: appliedRate != null && appliedRate >= 0 ? appliedRate : null,
       qualityUnconfirmed: appliedRate == null || appliedRate < 0,
     );
@@ -284,6 +326,11 @@ class DouyuSite
     if (roomId.trim().isEmpty) {
       throw const DouyuPlayApiException('room id is empty');
     }
+    // A pasted cookie is good for seven days and then stops being a login:
+    // renew it here, on the path that actually needs one, instead of failing the
+    // room as a guest because the token aged out.
+    await DouyuUtils.ensureFreshSession();
+
     Object? lastError;
     for (var attempt = 0; attempt < 2; attempt++) {
       try {
@@ -297,6 +344,17 @@ class DouyuSite
         return parsePlayResponse(result);
       } catch (error) {
         lastError = error;
+        CoreLog.w(
+          'Douyu play request failed (attempt ${attempt + 1}): $error'
+          '${error is HttpError && error.statusCode != 0 ? ' status=${error.statusCode}' : ''}'
+          '${error is HttpError && error.responseBody != null ? ' body=${error.responseBody}' : ''}'
+          '${error is HttpError && error.responseHeaders['x-request-id'] != null ? ' requestId=${error.responseHeaders['x-request-id']}' : ''}'
+          ' | ${DouyuUtils.requestShape(roomId)}',
+        );
+        // The first attempt is also the cheapest way to learn the cookie is
+        // stale: renew it (the long-term key is the only thing that can) and let
+        // the retry use the fresh one.
+        await DouyuUtils.ensureFreshSession(force: true);
       }
     }
     throw DouyuPlayApiException('H5 play request failed after retry', cause: lastError);

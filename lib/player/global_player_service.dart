@@ -48,7 +48,9 @@ class GlobalPlayerService {
     playerManager = PlayerManager(
       fallbackManager: EngineFallbackManager(
         defaultEngine: defaultEngine,
-        supportedEngines: PlatformUtils.isMobile ? PlayerEngine.values : [PlayerEngine.mediaKit],
+        // Desktop keeps a single engine (the one the user chose) so a failure
+        // never switches engines behind the user's back, as before fvp.
+        supportedEngines: PlatformUtils.isMobile ? PlayerEngine.values : [defaultEngine],
       ),
       lineManager: LineFallbackManager(),
       suppressAutomaticFallbackAudio: () => isMpvAudioOutputDisabledForPlatform(

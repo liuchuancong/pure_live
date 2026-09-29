@@ -1,0 +1,17 @@
+# Files and directories created by pub.
+.dart_tool/
+.packages
+
+# Conventional directory for build output.
+build/
+
+# libMPV headers.
+
+headers/*
+
+# Others
+.vscode
+cover.jpg
+
+# Libraries should not include pubspec.lock, per https://dart.dev/guides/libraries/private-files#pubspeclock.
+/pubspec.lock

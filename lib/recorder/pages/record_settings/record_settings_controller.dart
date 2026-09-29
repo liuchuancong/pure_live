@@ -59,6 +59,9 @@ class RecordSettingsController extends GetxController {
   final autoStartOnBoot = hiveBool(RecorderKeys.autoStartOnBoot, RecorderConfig.defaultAutoStartOnBoot);
   final usePinyinForFolder = hiveBool(RecorderKeys.folderNamingStrategy, RecorderConfig.defaultUsePinyinForFolder);
 
+  /// Saves live chat beside each recorded video as `<file>.xml` (opt-in).
+  final recordDanmaku = hiveBool(RecorderKeys.recordDanmaku, RecorderConfig.defaultRecordDanmaku);
+
   /// 缓存限制开关
   final enableCacheLimit = hiveBool(RecorderKeys.enableCacheLimit, RecorderConfig.defaultEnableCacheLimit);
 

@@ -32,3 +32,15 @@ foreach ($case in @(
     if ($actual -ne $case.Expected) { throw "$($case.Name): expected $($case.Expected), got $actual" }
     Write-Output "PASS $($case.Name)"
 }
+
+foreach ($case in @(
+    @{ Name = 'foreground-target'; Text = 'topResumedActivity=ActivityRecord{1 u0 com.mystyle.purelive/.MainActivity t1}'; Expected = $true },
+    @{ Name = 'foreground-miui-home'; Text = 'topResumedActivity=ActivityRecord{1 u0 com.miui.home/.launcher.Launcher t1}'; Expected = $true },
+    @{ Name = 'foreground-other-app'; Text = 'topResumedActivity=ActivityRecord{1 u0 cn.kuwo.player/.MainActivity t1}'; Expected = $false },
+    @{ Name = 'foreground-target-prefix'; Text = 'topResumedActivity=ActivityRecord{1 u0 com.mystyle.purelive.other/.MainActivity t1}'; Expected = $false },
+    @{ Name = 'foreground-unknown'; Text = ''; Expected = $false }
+)) {
+    $actual = Test-AndroidForegroundAvailable -Foreground $case.Text
+    if ($actual -ne $case.Expected) { throw "$($case.Name): expected $($case.Expected), got $actual" }
+    Write-Output "PASS $($case.Name)"
+}

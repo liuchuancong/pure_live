@@ -1348,6 +1348,29 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
     }
   }
 
+  /// Double-tap on the video. A portrait live source that qualifies for the
+  /// portrait panel fullscreen enters (and leaves) that mode, like the
+  /// downward swipe; entering the regular fullscreen squeezed the landscape
+  /// control row into the portrait width (upstream #886).
+  Future<void> toggleFullScreenFromGesture() async {
+    if (_livePlayController.state.value.ui.screenMode == VideoMode.portraitFullscreen) {
+      return exitPortraitFullScreen();
+    }
+    final settings = _settingsService.player;
+    if (!GlobalPlayerState.to.isFullscreen.value &&
+        _livePlayController.state.value.ui.screenMode == VideoMode.normal &&
+        canEnterPortraitPanelFullscreen(
+          isPortraitSource: _playerManager.isVerticalVideo.value,
+          adaptationEnabled: settings.enablePortraitStreamAdaptation.v,
+          adaptiveHeightEnabled: settings.portraitAdaptiveHeight.v,
+          compatibilityLayout: settings.portraitLayoutMode == PortraitLayoutMode.compatibility,
+          mobilePlatform: Platform.isAndroid,
+        )) {
+      return enterPortraitFullScreen();
+    }
+    return toggleFullScreen();
+  }
+
   Future<void> enterFullScreen({bool forceLandscape = false}) async {
     final isMobile = Platform.isAndroid || Platform.isIOS;
     _fullscreenOrientationRestore.begin(restorePortraitOnExit: isMobile && forceLandscape);

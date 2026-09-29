@@ -59,15 +59,21 @@ void main() {
       expect(headers['cookie'], contains('acf_did=${DouyuUtils.deviceId}'));
     });
 
-    test('account Cookie fields preserve signer DID and discard duplicate device IDs', () {
+    test('the account Cookie device id signs and heads requests; duplicates and bad names are dropped', () {
+      // A login is issued to one device; signing with another makes Douyu
+      // answer as a guest (upstream 2e2cb0d4, after dart_simple_live).
       final header = DouyuUtils.cookieHeader(
-        accountCookie: 'Cookie: dy_did=other; acf_did=other; acf_auth=secret; token=a=b; bad name=no\r\n',
+        accountCookie: 'Cookie: dy_did=other; acf_did=other2; acf_auth=secret; token=a=b; bad name=no\r\n',
       );
-      expect(header, startsWith('dy_did=${DouyuUtils.deviceId}; acf_did=${DouyuUtils.deviceId}'));
+      expect(header, startsWith('dy_did=other; acf_did=other; '));
       expect(header, contains('acf_auth=secret'));
       expect(header, contains('token=a=b'));
-      expect(header, isNot(contains('other')));
+      expect('dy_did='.allMatches(header), hasLength(1));
+      expect(header, isNot(contains('other2')));
       expect(header, isNot(contains('bad name')));
+
+      final anonymous = DouyuUtils.cookieHeader(accountCookie: 'acf_auth=secret');
+      expect(anonymous, startsWith('dy_did=${DouyuUtils.deviceId}; acf_did=${DouyuUtils.deviceId}'));
     });
   });
 

@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:path/path.dart' as p;
 import 'package:pure_live/recorder/services/video_processor_service.dart';
 
 void main() {
@@ -36,9 +37,11 @@ void main() {
   });
 
   test('normal retries never merge segments from an older attempt', () {
+    // Host-native separators: basename() must see a directory on every OS.
+    final records = p.join(p.rootPrefix(Directory.systemTemp.absolute.path), 'records');
     final files = <File>[
-      File(r'C:\records\20260827_080000_001_000000.ts'),
-      File(r'C:\records\20260827_080001_002_000000.ts'),
+      File(p.join(records, '20260827_080000_001_000000.ts')),
+      File(p.join(records, '20260827_080001_002_000000.ts')),
     ];
 
     expect(
@@ -46,7 +49,7 @@ void main() {
         candidates: files,
         filePrefix: '20260827_080001_002',
       ).map((file) => file.path),
-      [r'C:\records\20260827_080001_002_000000.ts'],
+      [p.join(records, '20260827_080001_002_000000.ts')],
     );
     expect(VideoProcessorService.selectAttemptSegments(candidates: files, filePrefix: 'missing'), isEmpty);
     expect(

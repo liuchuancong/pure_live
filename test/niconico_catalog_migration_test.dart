@@ -29,12 +29,12 @@ void main() {
   });
   test('catalog twelve adds niconico and later Weibo once, preserving hidden sites and audience settings', () async {
     await HivePrefUtil.setInt('siteCatalogMigration', 12);
-    await HivePrefUtil.setStringList('hotAreasList', ['huya', 'ttinglive']);
+    await HivePrefUtil.setStringList('hotAreasList', ['huya']);
     await HivePrefUtil.setInt('audienceMetricMigration', 7);
     await HivePrefUtil.setStringList('realOnlinePlatforms', ['twitch']);
     final favorites = Get.put(FavoriteRoomController());
     final app = Get.put(AppSettingsController());
-    final expectedPrefix = ['huya', 'ttinglive', 'niconico', 'weibo'];
+    final expectedPrefix = ['huya', 'niconico', 'weibo'];
     expect(favorites.hotAreasList.take(expectedPrefix.length), expectedPrefix);
     final migrated = favorites.hotAreasList.toList(growable: false);
     expect(migrated.toSet(), hasLength(migrated.length));

@@ -54,3 +54,25 @@ String buildProxyDirective({required bool enabled, required String host, require
       : normalizedHost;
   return 'PROXY $endpointHost:$port';
 }
+
+/// Whether a proxy host is on the local network (a Clash instance on the PC,
+/// a soft router), which Android 17 gates behind ACCESS_LOCAL_NETWORK for apps
+/// targeting API 37. Loopback is the device itself and is not gated.
+bool isLocalNetworkProxyHost(String value) {
+  var host = normalizeProxyHost(value).toLowerCase();
+  if (host.startsWith('[') && host.endsWith(']')) host = host.substring(1, host.length - 1);
+  if (host.isEmpty) return false;
+  if (host.endsWith('.local') || host.endsWith('.lan') || host.endsWith('.home.arpa')) return true;
+  final v4 = RegExp(r'^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$').firstMatch(host);
+  if (v4 != null) {
+    final a = int.parse(v4.group(1)!);
+    final b = int.parse(v4.group(2)!);
+    if (a > 255 || b > 255) return false;
+    return a == 10 || (a == 172 && b >= 16 && b <= 31) || (a == 192 && b == 168) || (a == 169 && b == 254);
+  }
+  if (host.contains(':')) {
+    // IPv6 unique-local (fc00::/7) and link-local (fe80::/10).
+    return RegExp(r'^f[cd][0-9a-f]{0,2}:').hasMatch(host) || RegExp(r'^fe[89ab][0-9a-f]?:').hasMatch(host);
+  }
+  return false;
+}

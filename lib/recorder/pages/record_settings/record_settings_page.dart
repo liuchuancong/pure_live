@@ -47,6 +47,12 @@ class RecordSettingsPage extends GetView<RecordSettingsController> {
                 subtitle: i18n("use_pinyin_folder_desc"),
                 value: controller.usePinyinForFolder,
               ),
+              context.buildSwitchTile(
+                icon: Remix.chat_3_line,
+                title: i18n("record_danmaku"),
+                subtitle: i18n("record_danmaku_desc"),
+                value: controller.recordDanmaku,
+              ),
             ]),
             const SizedBox(height: 20),
             _buildCacheHeader(context, theme),

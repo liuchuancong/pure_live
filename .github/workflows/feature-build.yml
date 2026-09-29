@@ -49,7 +49,7 @@ on:
         description: Release tag (e.g. v1.0.0) – required if create_release is true
         required: true
         type: string
-        default: 'v3.1.8'
+        default: 'v3.2.11'
 
   push:
     tags:
@@ -67,7 +67,7 @@ concurrency:
 env:
   FLUTTER_VERSION: 3.47.5
   FLUTTER_LINUX_ARCHIVE: stable/linux/flutter_linux_3.47.5-stable.tar.xz
-  FLUTTER_LINUX_SHA256: 26cd99d3d94b1367e6b50535a18aeef0282c10a535bbe3ec493534dcdab75296
+  FLUTTER_LINUX_SHA256: 2132e990f236f8d22e7c6314b29a191a95b10d7cbcfec9b4e2e303d996652cbb
 
 # =========================================================
 # QUALITY
@@ -91,7 +91,7 @@ jobs:
       - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
         with:
           distribution: zulu
-          java-version: "25"
+          java-version: "26"
 
       - name: Install pinned Flutter SDK from the official archive
         shell: bash
@@ -161,7 +161,7 @@ jobs:
       - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
         with:
           distribution: zulu
-          java-version: "25"
+          java-version: "26"
           cache: gradle
 
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
@@ -223,6 +223,9 @@ jobs:
             --split-per-abi \
             --target-platform android-arm64 \
             --dart-define=PURELIVE_BUILD_SOURCE=github-manual
+
+      - name: Verify Android FFmpeg native bundle
+        run: python tool/verify_ffmpeg_native.py android build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
 
       # -----------------------------------------------------
       # Version
@@ -459,6 +462,10 @@ jobs:
             --platform windows `
             --targets exe,msix
 
+      - name: Verify Windows FFmpeg native bundle
+        shell: pwsh
+        run: python tool/verify_ffmpeg_native.py windows build/windows/x64/runner/Release/libffmpegkit.dll
+
       # -----------------------------------------------------
       # Rename
       # -----------------------------------------------------
@@ -679,6 +686,11 @@ jobs:
             --release \
             --dart-define=PURELIVE_BUILD_SOURCE=github-manual
 
+      - name: Verify Linux FFmpeg native bundle
+        run: |
+          python3 tool/verify_ffmpeg_native.py linux build/linux/x64/release/bundle --stage-linux
+          find build/linux/x64/release/bundle -type f -iname '*ffmpeg*' -print
+
       # -----------------------------------------------------
       # Version
       # -----------------------------------------------------
@@ -889,6 +901,7 @@ jobs:
           echo "=== macOS architecture ==="
 
           lipo -info "$executable"
+          python3 tool/verify_ffmpeg_native.py macos "$app_path"
 
       - name: Archive macOS application
         if: ${{ (github.event_name == 'push' && startsWith(github.ref_name, 'stage-macos-')) || inputs.build_macos }}
@@ -1016,6 +1029,14 @@ jobs:
 
           echo "Found iOS application:"
           echo "$app_path"
+
+      - name: Verify iOS FFmpeg runtime
+        if: ${{ github.event_name == 'push' || inputs.build_ios }}
+        run: |
+          binary="${{ steps.ios_app.outputs.app_path }}/Frameworks/ffmpegkit.framework/ffmpegkit"
+          file "$binary"
+          lipo -info "$binary"
+          python3 tool/verify_ffmpeg_native.py ios "${{ steps.ios_app.outputs.app_path }}"
 
       # -----------------------------------------------------
       # Original unsigned app

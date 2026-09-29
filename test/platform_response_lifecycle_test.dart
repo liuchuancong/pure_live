@@ -6,7 +6,6 @@ import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pure_live/core/common/http_client.dart' as shared;
 import 'package:pure_live/core/common/request_scope.dart';
-import 'package:pure_live/core/site/huajiao/huajiao_api.dart';
 import 'package:pure_live/core/site/inke/inke_api.dart';
 import 'package:pure_live/core/site/kilakila/kilakila_api.dart';
 import 'package:pure_live/core/site/missevan/missevan_api.dart';
@@ -14,7 +13,6 @@ import 'package:pure_live/core/site/picarto/picarto_api.dart';
 import 'package:pure_live/core/site/twitcasting/twitcasting_api.dart';
 import 'package:pure_live/core/site/xiaohongshu/xiaohongshu_api.dart';
 import 'package:pure_live/core/site/xiaohongshu/xiaohongshu_share.dart';
-import 'package:pure_live/core/site/zhanqi/zhanqi_api.dart';
 import 'package:pure_live/core/site/weibo/weibo_api.dart';
 
 typedef _Read = Future<Object?> Function(CancelToken?);
@@ -31,12 +29,6 @@ final _cases = <_Case>[
     read: (c) => XiaohongshuApi().room('123', cancel: c),
     body: '<script>window.__INITIAL_STATE__={"liveStream":{"pageStatus":"success","liveStatus":"end","roomData":{"roomInfo":{"status":3},"hostInfo":{}}}}</script>',
     cap: XiaohongshuShare.responseLimit,
-  ),
-  (
-    name: 'Zhanqi',
-    read: (c) => ZhanqiApi().directory(cancel: c),
-    body: '{"code":0,"data":{"cnt":0,"rooms":[]}}',
-    cap: ZhanqiApi.responseLimit,
   ),
   (
     name: 'Picarto',
@@ -68,12 +60,6 @@ final _cases = <_Case>[
     body: 'fixture',
     cap: 1024 * 1024,
   ),
-  (
-    name: 'Huajiao',
-    read: (c) => HuajiaoApi().owner('100', cancel: c),
-    body: '{"errno":0,"data":{"base":{"uid":100,"nickname":"Fixture"},"living":0}}',
-    cap: HuajiaoApi.responseLimit,
-  ),
 ];
 
 String _kind(Object? error) => switch (error) {
@@ -82,8 +68,6 @@ String _kind(Object? error) => switch (error) {
   KilakilaException e => e.kind.name,
   MissevanException e => e.kind.name,
   TwitcastingException e => e.kind.name,
-  HuajiaoException e => e.kind.name,
-  ZhanqiException e => e.kind.name,
   XiaohongshuException e => e.kind.name,
   WeiboException e => e.kind.name,
   _ => '${error.runtimeType}',

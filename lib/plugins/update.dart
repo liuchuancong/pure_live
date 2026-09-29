@@ -1,10 +1,10 @@
 import 'dart:io';
-
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/file_utils.dart';
 import 'package:pure_live/common/widgets/download_apk_dialog.dart';
 import 'package:pure_live/common/widgets/download_directory_dialog.dart';
 import 'package:pure_live/common/services/settings/cache_controller.dart';
+
 
 Uri? updateDownloadUri(String rawUrl) {
   final uri = FileUtils.parseHttpUrl(rawUrl);
@@ -97,14 +97,15 @@ Future<void> _showDownloadDialog(Uri uri, {String? fileName, required String res
         ? i18n('downloading_apk', args: {'version': VersionUtil.latestVersion})
         : i18n('downloading_app', args: {'app': resolvedFileName}),
   );
-  final cache = Get.find<CacheController>();
   await Get.dialog<void>(
     DownloadApkDialog(
       apkUrl: uri.toString(),
       version: VersionUtil.latestVersion,
       fileName: fileName == null ? null : resolvedFileName,
       downloadDirectoryProvider: CacheController.resolveDownloadDirectory,
-      showOpenFolder: cache.hasCustomDownloadDirectory,
+      // The folder action opens the folder the finished file sits in, which
+      // works for the default directory too (upstream 00183932).
+      showOpenFolder: true,
     ),
     barrierDismissible: false,
   );

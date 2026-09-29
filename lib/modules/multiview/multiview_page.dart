@@ -15,7 +15,6 @@ import 'package:pure_live/player/widgets/video_output_viewport_sizer.dart';
 import 'package:pure_live/modules/live_play/pages/danmaku_settings_page.dart';
 import 'package:pure_live/modules/multiview/widgets/focus_rail_visibility.dart';
 import 'package:pure_live/modules/multiview/widgets/multiview_room_picker.dart';
-import 'package:pure_live/modules/live_play/widgets/layout/live_play_back_scope.dart';
 import 'package:pure_live/modules/multiview/widgets/multiview_fullscreen_surface.dart';
 import 'package:pure_live/modules/multiview/danmaku/multiview_danmaku_settings_binding.dart';
 
@@ -129,7 +128,8 @@ class _MultiviewPageState extends State<MultiviewPage> {
   }
 
   /// 返回意图统一入口：非 normal 先回 normal，normal 走安全退出序列。
-  void _handleBackIntent() {
+  void _handleBackIntent({required bool didPop}) {
+    if (didPop) return;
     if (_displayMode != _DisplayMode.normal) {
       unawaited(_changeDisplayMode(_DisplayMode.normal));
       return;
@@ -351,9 +351,9 @@ class _MultiviewPageState extends State<MultiviewPage> {
 
   @override
   Widget build(BuildContext context) {
-    return LivePlayBackScope(
-      presentationActive: _displayMode != _DisplayMode.normal,
-      onExitPresentation: _handleBackIntent,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) => _handleBackIntent(didPop: didPop),
       child: switch (_displayMode) {
         _DisplayMode.normal => Scaffold(
           appBar: AppBar(
@@ -463,6 +463,7 @@ class _MultiviewPageState extends State<MultiviewPage> {
       return Row(
         mainAxisSize: MainAxisSize.min,
         children: [
+          // 页级弹幕开关（连接管理在核心层，UI 只切显隐开关）。
           Obx(() {
             final enabled = controller.danmakuEnabled.value;
             final theme = Theme.of(context);
@@ -478,6 +479,23 @@ class _MultiviewPageState extends State<MultiviewPage> {
             );
           }),
           Obx(() {
+            final muted = controller.allMuted.value;
+            final theme = Theme.of(context);
+            return IconButton(
+              key: const ValueKey('multiview-mute-all'),
+              tooltip: i18n(muted ? 'multiview_unmute_all' : 'multiview_mute_all'),
+              icon: Icon(
+                muted ? Remix.volume_mute_line : Remix.volume_vibrate_line,
+                size: 22,
+                color: muted ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant,
+              ),
+              onPressed: controller.toggleMuteAll,
+            );
+          }),
+          // The selected room volume is available in every layout. In focus
+          // mode the selected room is the large cell; in grid layouts it is
+          // the cell carrying audio focus.
+          Obx(() {
             final selectedIndex = controller.audioFocusIndexState.value;
             final canAdjust =
                 selectedIndex >= 0 &&
@@ -489,6 +507,7 @@ class _MultiviewPageState extends State<MultiviewPage> {
               onPressed: canAdjust ? () => _showVolumeSheet(selectedIndex) : null,
             );
           }),
+          // 小格自动降质联动：仅 focus 布局生效，非 focus 下置灰防误触。
           Obx(() {
             final isFocusLayout = controller.layout.value == MultiviewLayout.focus;
             final enabled = controller.smallCellsLowQuality.value;
@@ -985,7 +1004,7 @@ class _MultiviewCellView extends StatelessWidget {
               sourceWidth: videoController.player.stream.width,
               sourceHeight: videoController.player.stream.height,
               fit: BoxFit.contain,
-              onResize: (width, height, force) => videoController.setSize(width: width, height: height),
+              onResize: (width, height, force) => videoController.setSize(width: width, height: height, force: force),
               child: video,
             )
           : video;

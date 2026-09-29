@@ -37,13 +37,10 @@ void main() {
     await HivePrefUtil.persistBatch(() {
       settings = Get.put(FavoriteRoomController());
     });
-    expect(settings.hotAreasList.take(9), [
+    expect(settings.hotAreasList.take(6), [
       'huya',
       'inke',
       'kilakila',
-      'huajiao',
-      'openrec',
-      'ttinglive',
       'xiaohongshu',
       'niconico',
       'weibo',

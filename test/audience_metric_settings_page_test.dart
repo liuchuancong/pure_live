@@ -98,22 +98,6 @@ void main() {
     await tester.pumpAndSettle();
     expect(SettingsService.to.app.isRealOnlineEnabledFor('twitcasting'), isFalse);
     expect(tester.widget<SwitchListTile>(twitcasting).value, isFalse);
-    final openrec = find.byKey(const ValueKey('audience-platform-openrec'));
-    await tester.ensureVisible(openrec);
-    await tester.pumpAndSettle();
-    expect(tester.widget<SwitchListTile>(openrec).value, isTrue);
-    await tester.tap(openrec);
-    await tester.pumpAndSettle();
-    expect(SettingsService.to.app.isRealOnlineEnabledFor('openrec'), isFalse);
-    expect(tester.widget<SwitchListTile>(openrec).value, isFalse);
-    final tting = find.byKey(const ValueKey('audience-platform-ttinglive'));
-    await tester.ensureVisible(tting);
-    await tester.pumpAndSettle();
-    expect(tester.widget<SwitchListTile>(tting).value, isTrue);
-    await tester.tap(tting);
-    await tester.pumpAndSettle();
-    expect(SettingsService.to.app.isRealOnlineEnabledFor('ttinglive'), isFalse);
-    expect(tester.widget<SwitchListTile>(tting).value, isFalse);
     expect(tester.takeException(), isNull);
   });
 
@@ -214,9 +198,6 @@ void main() {
       'missevan': 'Missevan',
       'inke': 'Inke',
       'kilakila': 'Kilakila',
-      'huajiao': 'Huajiao',
-      'openrec': 'mellow-fan (OPENREC)',
-      'ttinglive': 'FLEX TV (TTingLive)',
       'xiaohongshu': 'Xiaohongshu',
       'niconico': 'niconico',
       'weibo': 'Weibo Live',
@@ -285,9 +266,6 @@ class _AudienceAssetLoader extends AssetLoader {
     'site_missevan': '猫耳 FM',
     'site_inke': '映客',
     'site_kilakila': '克拉克拉',
-    'site_huajiao': '花椒',
-    'site_openrec': 'mellow-fan (OPENREC)',
-    'site_ttinglive': 'FLEX TV (TTingLive)',
     'site_xiaohongshu': '小红书',
     'site_niconico': 'niconico',
     'site_weibo': '微博直播',
@@ -303,12 +281,9 @@ class _AudienceAssetLoader extends AssetLoader {
     'audience_acfun_detail': '列表提供在线数，作者搜索没有在线数',
     'audience_picarto_detail': '在线人数与累计观看分列',
     'audience_twitcasting_detail': '目录提供在线值，详情暂缺该值',
-    'audience_openrec_detail': '公开在线人数与累计值分开，隐藏时保持未知',
-    'audience_ttinglive_detail': '目录提供当前观看数，频道详情不提供',
     'audience_missevan_detail': '公开 score 是平台热度',
     'audience_inke_detail': '未提供已验证的观看人数',
     'audience_kilakila_detail': 'watchNumber 不作为并发人数',
-    'audience_huajiao_detail': '目录 heat 是平台热度',
     'audience_xiaohongshu_detail': '展示文本不作为并发人数',
     'audience_niconico_detail': 'watchCount 是累计观看',
     'audience_weibo_detail': '未提供已验证的观看人数',

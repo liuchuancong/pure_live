@@ -108,12 +108,6 @@ class SearchController extends GetxController {
         throw StateError('SHOWROOM web keyword search is not exposed');
       case Sites.xiaohongshuSite:
         throw StateError('Xiaohongshu supports exact broadcast-room lookup, not web keyword search');
-      case Sites.ttingSite:
-        throw StateError('TTing supports exact channel lookup, not web keyword search');
-      case Sites.openrecSite:
-        throw StateError('Openrec search is not integrated');
-      case Sites.huajiaoSite:
-        throw StateError('Huajiao search is not integrated');
       case Sites.kilakilaSite:
         return 'https://live.kilakila.cn/aboutus/serach/kw/$q';
       case Sites.inkeSite:
@@ -449,9 +443,7 @@ class SearchController extends GetxController {
       final capability = LiveSearchCapabilities.forPlatform(site.id);
       if (site.id == Sites.acfunSite) return i18n('search_coverage_acfun');
       if (site.id == Sites.weiboSite) return i18n('search_coverage_weibo');
-      if (site.id == Sites.huajiaoSite) return i18n('search_coverage_huajiao');
       if (site.id == Sites.kilakilaSite) return i18n('search_coverage_kilakila');
-      if (site.id == Sites.openrecSite) return i18n('search_coverage_openrec');
       return switch (capability.coverage) {
         NativeSearchCoverage.roomLookup => i18n('search_coverage_room_lookup', args: {'site': site.name}),
         NativeSearchCoverage.showcaseSnapshot => i18n('search_coverage_showcase_snapshot', args: {'site': site.name}),

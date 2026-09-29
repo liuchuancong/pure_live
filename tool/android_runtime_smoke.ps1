@@ -3,7 +3,11 @@ param(
     [string] $Serial,
     [string] $EvidenceDirectory,
     [string] $Package = 'com.mystyle.purelive',
-    [string] $Activity = '.MainActivity'
+    [string] $Activity = '.MainActivity',
+    [string] $ExpectedModel,
+    [string] $ExpectedDevice,
+    [switch] $AllowForegroundSwitch,
+    [switch] $AllowAppRestart
 )
 
 Set-StrictMode -Version Latest
@@ -173,10 +177,18 @@ $result = [ordered]@{
     package = $package
     checks = [ordered]@{}
 }
+$appOwned = $false
 
 try {
     $result.checks.deviceState = ((Invoke-Adb -AdbArguments @('get-state')) -join '').Trim()
     $result.checks.model = ((Invoke-Adb -AdbArguments @('shell', 'getprop', 'ro.product.model')) -join '').Trim()
+    $result.checks.deviceCode = ((Invoke-Adb -AdbArguments @('shell', 'getprop', 'ro.product.device')) -join '').Trim()
+    if ($ExpectedModel -and $result.checks.model -ne $ExpectedModel) {
+        throw "Android model mismatch: expected $ExpectedModel, observed $($result.checks.model)."
+    }
+    if ($ExpectedDevice -and $result.checks.deviceCode -ne $ExpectedDevice) {
+        throw "Android device mismatch: expected $ExpectedDevice, observed $($result.checks.deviceCode)."
+    }
     $result.checks.android = ((Invoke-Adb -AdbArguments @('shell', 'getprop', 'ro.build.version.release')) -join '').Trim()
     $result.checks.sdk = ((Invoke-Adb -AdbArguments @('shell', 'getprop', 'ro.build.version.sdk')) -join '').Trim()
     $result.checks.pageSizeBytes = [long](((Invoke-Adb -AdbArguments @('shell', 'getconf', 'PAGE_SIZE')) -join '').Trim())
@@ -191,7 +203,18 @@ try {
         $result.checks.installedVersionCode = [long]$Matches[1]
     }
     Save-Text 'display-before.txt' (Invoke-Adb -AdbArguments @('shell', 'dumpsys', 'display'))
-    Save-Text 'foreground-before.txt' (Get-Foreground)
+    $foregroundBefore = Get-Foreground
+    Save-Text 'foreground-before.txt' $foregroundBefore
+    $result.checks.foregroundBefore = $foregroundBefore
+    if (-not $AllowForegroundSwitch -and
+        -not (Test-AndroidForegroundAvailable -Foreground $foregroundBefore -Package $package)) {
+        throw "Another app is foreground; specify -AllowForegroundSwitch for an intentional UI batch: $foregroundBefore"
+    }
+    $existingPid = ((Invoke-Adb -AdbArguments @('shell', "pidof $package || true")) -join '').Trim()
+    $result.checks.processBefore = $existingPid
+    if ($existingPid -and -not $AllowAppRestart) {
+        throw "Pure Live is already running; specify -AllowAppRestart for an intentional cold-start batch: $existingPid"
+    }
 
     & (Join-Path $repo 'tool\android_ui.ps1') -Validate -Serial $serial | Out-File -LiteralPath (Join-Path $evidence 'ui-map-validation.txt') -Encoding utf8
 
@@ -202,6 +225,7 @@ try {
     Start-Sleep -Milliseconds 750
     Save-Text 'keyguard-after-wake.txt' (Invoke-Adb -AdbArguments @('shell', 'dumpsys', 'window', 'policy'))
 
+    $appOwned = $true
     Invoke-Adb -AdbArguments @('shell', 'am', 'force-stop', $package) | Out-Null
     $start = Invoke-Adb -AdbArguments @('shell', 'am', 'start', '-W', '-n', "$package/$activity")
     Save-Text 'cold-start.txt' $start
@@ -346,18 +370,20 @@ try {
     Save-UiDump 'home-after-room'
     $result.checks.returnedForeground = Get-Foreground
 } finally {
-    try { Invoke-Adb -AdbArguments @('shell', 'am', 'force-stop', $package) | Out-Null } catch {}
-    Start-Sleep -Seconds 2
-    $result.checks.processGoneAfterStop = $false
-    try {
-        $processResult = & $adb -s $serial shell pidof $package 2>&1
-        $processExitCode = $LASTEXITCODE
-        $processText = $processResult -join "`n"
-        Save-Text 'process-after-stop.txt' $processText
-        $result.checks.processAfterStopQueryExitCode = $processExitCode
-        $result.checks.processGoneAfterStop = Test-AndroidPidAbsent -ExitCode $processExitCode -Output $processText
-    } catch {
-        $result.checks.processAfterStopQueryError = $_.Exception.Message
+    if ($appOwned) {
+        try { Invoke-Adb -AdbArguments @('shell', 'am', 'force-stop', $package) | Out-Null } catch {}
+        Start-Sleep -Seconds 2
+        $result.checks.processGoneAfterStop = $false
+        try {
+            $processResult = & $adb -s $serial shell pidof $package 2>&1
+            $processExitCode = $LASTEXITCODE
+            $processText = $processResult -join "`n"
+            Save-Text 'process-after-stop.txt' $processText
+            $result.checks.processAfterStopQueryExitCode = $processExitCode
+            $result.checks.processGoneAfterStop = Test-AndroidPidAbsent -ExitCode $processExitCode -Output $processText
+        } catch {
+            $result.checks.processAfterStopQueryError = $_.Exception.Message
+        }
     }
     try { Save-Text 'wake-locks-after-stop.txt' (Invoke-Adb -AdbArguments @('shell', 'dumpsys', 'power')) } catch {}
     $result.completedAt = [DateTime]::Now.ToString('o')

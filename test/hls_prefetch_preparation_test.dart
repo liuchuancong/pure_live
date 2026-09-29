@@ -56,7 +56,10 @@ final class Origin {
   Future<void> close() async {
     await server.close(force: true);
     await subscription.cancel();
-    await Future.wait(jobs.toList());
+    // A handler whose client aborted mid-response can keep response.flush/close
+    // pending after the forced server close (seen under heavy load). The relay
+    // assertions are already done; do not let origin teardown hang the test.
+    await Future.wait(jobs.toList()).timeout(const Duration(seconds: 2), onTimeout: () => const <void>[]);
   }
 }
 

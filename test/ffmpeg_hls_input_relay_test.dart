@@ -8,6 +8,46 @@ import 'package:pure_live/get/get.dart';
 import 'package:pure_live/recorder/services/ffmpeg_hls_input_relay.dart';
 
 void main() {
+  test('suffix-less FC2 master and variant playlists are relayed as HLS (2026-09 format)', () async {
+    final origin = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+    final subscription = origin.listen((request) async {
+      final path = request.uri.path;
+      if (path == '/a/stream/1/0/master_playlist') {
+        request.response.headers.contentType = ContentType('application', 'x-mpegURL');
+        request.response.write('#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1000\n/a/stream/1/30/playlist?c=x\n');
+      } else if (path == '/a/stream/1/30/playlist') {
+        request.response.headers.contentType = ContentType('application', 'x-mpegURL');
+        request.response.write('#EXTM3U\n#EXT-X-TARGETDURATION:1\n#EXTINF:0.5,\n/a/stream/v1/1/30/data/7.ts?hash=y\n');
+      } else if (path == '/a/stream/v1/1/30/data/7.ts') {
+        request.response.add(List<int>.filled(188, 0x47));
+      } else {
+        request.response.statusCode = HttpStatus.notFound;
+      }
+      await request.response.close();
+    });
+    final relay = await FFmpegHlsInputRelay.startForArguments([
+      '-i',
+      'http://127.0.0.1:${origin.port}/a/stream/1/0/master_playlist?targets=30',
+    ], force: true);
+    expect(relay, isNotNull, reason: 'the FC2 master URL has no .m3u8 suffix');
+    final client = HttpClient();
+    try {
+      final master = await _readText(client, relay!.inputUri);
+      final variant = master.split('\n').firstWhere((line) => line.isNotEmpty && !line.startsWith('#'));
+      expect(variant, endsWith('.m3u8'), reason: 'FFmpeg must open the child as a playlist');
+      final playlist = await _readText(client, relay.inputUri.resolve(variant));
+      final segment = playlist.split('\n').firstWhere((line) => line.isNotEmpty && !line.startsWith('#'));
+      expect(segment, endsWith('.ts'));
+      final bytes = await _readBytes(client, relay.inputUri.resolve(segment));
+      expect(bytes, hasLength(188));
+    } finally {
+      client.close(force: true);
+      await relay?.close();
+      await origin.close(force: true);
+      await subscription.cancel();
+    }
+  });
+
   test('stop replaces a stalled refresh body with the last complete playlist', () async {
     var requests = 0;
     final partial = Completer<void>();

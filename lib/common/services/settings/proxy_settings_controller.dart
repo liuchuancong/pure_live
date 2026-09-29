@@ -1,6 +1,9 @@
+import 'dart:io';
+
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/core/common/http_client.dart';
 import 'package:pure_live/core/common/proxy_routing.dart' as proxy_routing;
+import 'package:pure_live/common/services/local_network_access.dart';
 
 class ProxySettingsController extends GetxController {
   static const int defaultProxyPort = proxy_routing.defaultProxyPort;
@@ -29,6 +32,26 @@ class ProxySettingsController extends GetxController {
     ever<bool>(enableAppProxy, (_) => _refreshDioConnections());
     ever<String>(appProxyHost, (_) => _refreshDioConnections());
     ever<int>(appProxyPort, (_) => _refreshDioConnections());
+
+    // Hosts are saved per keystroke; ask for local-network access once the
+    // user has stopped typing, and at start-up for an existing LAN proxy.
+    // The permission exists only on Android; other platforms get no timers.
+    if (Platform.isAndroid) {
+      const settle = Duration(seconds: 1);
+      debounce<bool>(enableProxy, (_) => _ensureLocalNetworkAccess(), time: settle);
+      debounce<String>(proxyHost, (_) => _ensureLocalNetworkAccess(), time: settle);
+      debounce<bool>(enableAppProxy, (_) => _ensureLocalNetworkAccess(), time: settle);
+      debounce<String>(appProxyHost, (_) => _ensureLocalNetworkAccess(), time: settle);
+      Future<void>.delayed(const Duration(seconds: 2), _ensureLocalNetworkAccess);
+    }
+  }
+
+  Future<void> _ensureLocalNetworkAccess() {
+    if (isClosed) return Future<void>.value();
+    return LocalNetworkAccess.ensureForProxies([
+      (enabled: enableAppProxy.v, host: appProxyHost.v),
+      (enabled: enableProxy.v, host: proxyHost.v),
+    ]);
   }
 
   void _refreshDioConnections() {

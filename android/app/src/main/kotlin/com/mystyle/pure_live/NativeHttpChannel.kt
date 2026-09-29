@@ -36,13 +36,16 @@ internal class NativeHttpChannel(binaryMessenger: BinaryMessenger) : MethodChann
     }
 
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
-        if (call.method != "postTwitchJson") {
-            result.notImplemented()
-            return
+        val handler: (MethodCall) -> Map<String, Any> = when (call.method) {
+            "postTwitchJson" -> ::executeTwitchPost
+            else -> {
+                result.notImplemented()
+                return
+            }
         }
         executor.execute {
             try {
-                val response = executeTwitchPost(call)
+                val response = handler(call)
                 mainHandler.post { result.success(response) }
             } catch (error: Throwable) {
                 mainHandler.post {

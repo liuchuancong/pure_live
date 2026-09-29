@@ -521,7 +521,9 @@ class FFmpegService {
       session
         ..recordedSeconds = recordedSeconds > session.recordedSeconds ? recordedSeconds : session.recordedSeconds
         ..fileSize = fileSize > session.fileSize ? fileSize : session.fileSize
-        ..bitrate = statistics.bitrate > 0 ? statistics.bitrate : session.bitrate
+        // FFmpeg divides by the source timestamp, which live inputs can push
+        // far ahead of wall time; the recorder measures file growth instead.
+        ..bitrate = !session.liveRecording && statistics.bitrate > 0 ? statistics.bitrate : session.bitrate
         ..speed = statistics.speed > 0 ? statistics.speed : session.speed
         ..fps = statistics.videoFps > 0 ? statistics.videoFps : session.fps
         ..lastUpdate = DateTime.now();
@@ -545,7 +547,7 @@ class FFmpegService {
             // recorder controller from source-PTS/sentinel timestamps.
             'time': session.liveRecording ? recordedSeconds * 1000 : statistics.time,
             'size': statistics.size,
-            'bitrate': statistics.bitrate,
+            'bitrate': session.liveRecording ? 0 : statistics.bitrate,
             'speed': statistics.speed,
             'fps': statistics.videoFps,
           },

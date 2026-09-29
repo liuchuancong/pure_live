@@ -1,6 +1,9 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
+/// A [TabBar] that desktop users can also scroll with the mouse wheel and by
+/// dragging with the mouse (from liuchuancong/pure_live). Touch behaviour and
+/// the given scroll physics are unchanged.
 class ScrollableTabBar extends StatefulWidget {
   final List<Widget> tabs;
   final TabController? controller;
@@ -83,93 +86,81 @@ class ScrollableTabBar extends StatefulWidget {
 }
 
 class _ScrollableTabBarState extends State<ScrollableTabBar> {
-  ScrollPosition? _position;
-
   @override
   Widget build(BuildContext context) {
     return Listener(
       onPointerSignal: widget.enableMouseWheel ? _handlePointerSignal : null,
-      child: NotificationListener<ScrollNotification>(
-        onNotification: _handleScrollNotification,
-        child: ScrollConfiguration(
-          behavior: const _CrossPlatformTabBarScrollBehavior(),
-          child: TabBar(
-            controller: widget.controller,
-            tabs: widget.tabs,
-            isScrollable: widget.isScrollable,
-            padding: widget.padding,
-            indicatorColor: widget.indicatorColor,
-            dividerColor: widget.dividerColor,
-            indicatorWeight: widget.indicatorWeight,
-            indicatorSize: widget.indicatorSize,
-            indicator: widget.indicator,
-            indicatorPadding: widget.indicatorPadding,
-            labelColor: widget.labelColor,
-            unselectedLabelColor: widget.unselectedLabelColor,
-            labelStyle: widget.labelStyle,
-            unselectedLabelStyle: widget.unselectedLabelStyle,
-            labelPadding: widget.labelPadding,
-            dividerHeight: widget.dividerHeight,
-            tabAlignment: widget.tabAlignment,
-            physics: widget.physics,
-            onTap: widget.onTap,
-            onHover: widget.onHover,
-            onFocusChange: widget.onFocusChange,
-            overlayColor: widget.overlayColor,
-            mouseCursor: widget.mouseCursor,
-            dragStartBehavior: widget.dragStartBehavior,
-            enableFeedback: widget.enableFeedback,
-            splashBorderRadius: widget.splashBorderRadius,
-            splashFactory: widget.splashFactory,
-          ),
+      child: ScrollConfiguration(
+        behavior: const _CrossPlatformTabBarScrollBehavior(),
+        child: TabBar(
+          controller: widget.controller,
+          tabs: widget.tabs,
+          isScrollable: widget.isScrollable,
+          padding: widget.padding,
+          indicatorColor: widget.indicatorColor,
+          dividerColor: widget.dividerColor,
+          indicatorWeight: widget.indicatorWeight,
+          indicatorSize: widget.indicatorSize,
+          indicator: widget.indicator,
+          indicatorPadding: widget.indicatorPadding,
+          labelColor: widget.labelColor,
+          unselectedLabelColor: widget.unselectedLabelColor,
+          labelStyle: widget.labelStyle,
+          unselectedLabelStyle: widget.unselectedLabelStyle,
+          labelPadding: widget.labelPadding,
+          dividerHeight: widget.dividerHeight,
+          tabAlignment: widget.tabAlignment,
+          physics: widget.physics,
+          onTap: widget.onTap,
+          onHover: widget.onHover,
+          onFocusChange: widget.onFocusChange,
+          overlayColor: widget.overlayColor,
+          mouseCursor: widget.mouseCursor,
+          dragStartBehavior: widget.dragStartBehavior,
+          enableFeedback: widget.enableFeedback,
+          splashBorderRadius: widget.splashBorderRadius,
+          splashFactory: widget.splashFactory,
         ),
       ),
     );
   }
 
-  bool _handleScrollNotification(ScrollNotification notification) {
-    if (notification.metrics.axis == Axis.horizontal) {
-      final scrollable = notification.context != null ? Scrollable.maybeOf(notification.context!) : null;
-
-      if (scrollable != null) {
-        _position = scrollable.position;
+  /// The tab strip's own horizontal scroll position, looked up on demand so
+  /// the very first wheel turn works (upstream waited for a scroll notification).
+  ScrollPosition? _tabPosition() {
+    ScrollPosition? found;
+    void visit(Element element) {
+      if (found != null) return;
+      if (element is StatefulElement && element.state is ScrollableState) {
+        final position = (element.state as ScrollableState).position;
+        if (position.axis == Axis.horizontal) {
+          found = position;
+          return;
+        }
       }
+      element.visitChildren(visit);
     }
 
-    return false;
+    if (mounted) (context as Element).visitChildren(visit);
+    return found;
   }
 
   void _handlePointerSignal(PointerSignalEvent event) {
-    if (event is! PointerScrollEvent) {
-      return;
-    }
-
-    final position = _position;
-
-    if (position == null || !position.hasContentDimensions) {
-      return;
-    }
-
-    double delta = event.scrollDelta.dx;
-
-    if (delta.abs() < 0.01) {
-      delta = event.scrollDelta.dy;
-    }
-
-    if (delta.abs() < 0.01) {
-      return;
-    }
-
-    final target = (position.pixels + delta * widget.mouseWheelScrollFactor).clamp(
-      position.minScrollExtent,
-      position.maxScrollExtent,
-    );
-
-    if ((target - position.pixels).abs() < 0.01) {
-      return;
-    }
-
-    position.animateTo(target.toDouble(), duration: widget.mouseWheelDuration, curve: widget.mouseWheelCurve);
+    if (event is! PointerScrollEvent) return;
+    final position = _tabPosition();
+    if (position == null || !position.hasContentDimensions || position.maxScrollExtent <= 0) return;
+    var delta = event.scrollDelta.dx;
+    if (delta.abs() < 0.01) delta = event.scrollDelta.dy;
+    if (delta.abs() < 0.01) return;
+    // Claim the event so the page behind the tabs does not scroll as well.
+    GestureBinding.instance.pointerSignalResolver.register(event, (_) {
+      final target = (position.pixels + delta * widget.mouseWheelScrollFactor).clamp(
+        position.minScrollExtent,
+        position.maxScrollExtent,
+      );
+      if ((target - position.pixels).abs() < 0.01) return;
+      position.animateTo(target.toDouble(), duration: widget.mouseWheelDuration, curve: widget.mouseWheelCurve);
+    });
   }
 }
 

@@ -307,6 +307,18 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.takeException(), null);
   });
+  testWidgets('desktop empty first page hides paging and jump buttons until content arrives', (tester) async {
+    final c = await _mount(tester, lang: 'en', size: const Size(900, 480), headers: false, state: 'empty');
+    expect(c.list, isEmpty);
+    expect(find.byType(DesktopPaginationBar), findsNothing);
+    expect(c.showBackToBottom.value, isFalse);
+    expect(c.showBackToTop.value, isFalse);
+    c.list.assignAll(List.generate(60, (i) => i));
+    c.pageEmpty.value = false;
+    await tester.pumpAndSettle();
+    expect(find.byType(DesktopPaginationBar), findsOneWidget);
+    expect(tester.takeException(), null);
+  });
   testWidgets('desktop paging opt-out leaves the whole content region available', (tester) async {
     await _mount(tester, lang: 'en', size: const Size(900, 320), headers: false, paging: false);
     expect(find.byType(DesktopPaginationBar), findsNothing);

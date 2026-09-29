@@ -5,6 +5,7 @@ import 'package:pure_live/modules/favorite/room_grid_view.dart';
 import 'package:pure_live/common/widgets/common_appbar_actions.dart';
 import 'package:pure_live/modules/tags/tag_management_controller.dart';
 
+
 class FavoritePage extends GetView<FavoriteController> {
   const FavoritePage({super.key});
 

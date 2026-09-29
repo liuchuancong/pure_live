@@ -70,3 +70,5 @@ K90 Pro 的后续网络证据排除了 YY CDN 和证书故障：设备无系统 
 - 错误的 `Sec-WebSocket-Accept` 被拒绝。
 
 单元测试只证明本地协议状态机和边界行为。Android 网络实机必须在共享设备 `purelive` lane 内，以当前在线 YY 房间验证：播放器有画面、录制文件增长且含 H264/AAC、弹幕 ready、退出后进程和临时录制状态清理。真实聊天另作为观测证据：已知活跃房间使用 `-RequireLiveDanmaku` 强制至少一条；普通随机房间若官方网页同期也没有 appid `31` 聊天，则记录为“本轮未观测”，不把安静房间误判为协议失败。
+
+2026-09-24 升级版 `31a3c964` 已保留数据安装在 K90 Pro，未切换其他应用前台时重跑只读网络探测（`local-artifacts/diagnostics/android-yy-network-20260924T094636544/summary.json`）：六个 YY 主机的 TCP 443 均可达，系统 HTTP 代理与 Private DNS 均未设置；`h5-sinchl.yy.com` 证书校验通过，标准 WebSocket Upgrade 与三个边缘 IPv4 地址均返回 HTTP 101。探针在升级后持续等待消息到 12 秒而退出 28，不是握手失败。该结果只排除本轮设备到 YY 边缘的基础网络阻断，仍需应用内播放、弹幕 ready、聊天和录制链路验收。

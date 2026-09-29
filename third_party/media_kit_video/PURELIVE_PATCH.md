@@ -1,7 +1,7 @@
 # PureLive media_kit_video patch
 
 - Upstream: `https://github.com/Predidit/media-kit.git`
-- Base commit: `d13fc22ba1b19b45de3090c2d1b0f8a541b585a0`
+- Base commit: `803c4a27912091db6f839d48d1b984a0d9f588c7` (2026-09-26, "fix(native): handle unavailable mpv properties safely"; `media_kit` follows the same commit)
 - Package version: `media_kit_video 1.2.5`
 - License: MIT; the upstream `LICENSE` is retained in this directory.
 
@@ -54,6 +54,16 @@ receives a viewport even when its controller cache still contains equal width
 and height. Normal resize calls keep the upstream equality fast path. Together
 with the frame-progress fence, this prevents a 0×0 replacement output from
 being treated as presentation-ready after an overlay route or transport retry.
+
+## Deviations from the base commit
+
+All three copies of `MPVHelpers.swift` — `common/darwin/Classes/plugin/`,
+`ios/media_kit_video/Sources/media_kit_video/plugin/common/` and the macOS
+equivalent — carry the same guarded `getVideoOutParams`. The base commit fixed
+only the `common/darwin` copy, but this package's iOS and macOS podspecs compile
+the `Sources/` copies, so the older body (which force-unwraps `node.u.list`
+after a property query that may have failed) would have stayed live in whichever
+layout a build picks. Keep the three identical when replaying a new revision.
 
 ## Maintenance
 

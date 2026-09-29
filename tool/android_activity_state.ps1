@@ -6,6 +6,19 @@ function Test-AndroidPidAbsent {
     return $ExitCode -in @(0, 1) -and [string]::IsNullOrWhiteSpace($Output)
 }
 
+function Test-AndroidForegroundAvailable {
+    param(
+        [Parameter(Mandatory = $true)][AllowEmptyString()][string] $Foreground,
+        [string] $Package = 'com.mystyle.purelive'
+    )
+
+    # An unknown foreground is not evidence that taking over the screen is okay.
+    if ([string]::IsNullOrWhiteSpace($Foreground)) { return $false }
+    $target = [regex]::Escape($Package) + '/'
+    $launcher = '(?:com\.miui\.home|com\.mi\.android\.globallauncher|com\.android\.launcher\w*|com\.google\.android\.apps\.nexuslauncher)/'
+    return $Foreground -match ('(?<![\w.])(?:' + $target + '|' + $launcher + ')')
+}
+
 function Test-AndroidTargetPictureInPicture {
     param(
         [Parameter(Mandatory = $true)][AllowEmptyString()][string] $ActivityDump,

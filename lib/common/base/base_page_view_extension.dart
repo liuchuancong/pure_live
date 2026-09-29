@@ -24,10 +24,16 @@ extension BasePageViewContentExtension<C extends BasePageScrollAndStateBone<T>, 
             children: [
               Expanded(child: contentBuilder(context, controller.list, controller.scrollController)),
               if (enableLoadMore)
-                DesktopPaginationBar(
-                  controller: controller,
-                  showSelector: showPageSizeSelector,
-                  options: pageSizeOptions,
+                // An empty first page shows its own empty state and retry
+                // action; paging controls there have nothing to page through.
+                Obx(
+                  () => controller.list.isEmpty && controller.currentPage <= 1
+                      ? const SizedBox.shrink()
+                      : DesktopPaginationBar(
+                          controller: controller,
+                          showSelector: showPageSizeSelector,
+                          options: pageSizeOptions,
+                        ),
                 ),
             ],
           ),

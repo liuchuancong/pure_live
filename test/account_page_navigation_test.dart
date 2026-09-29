@@ -193,7 +193,9 @@ void main() {
   });
 
   testWidgets('Douyu saved-session row labels local state and clears it on confirmation', (tester) async {
-    cookies.douyuCookie.value = 'acf_auth=fixture';
+    // The row follows the session the cookie carries, not its length: a token
+    // that is still valid is what "signed in" now means.
+    cookies.douyuCookie.value = _douyuSessionCookie();
     await _pumpAccountPage(tester, english);
     final douyu = find.text('Douyu');
     await _scrollPageUntilHitTestable(tester, douyu);
@@ -208,6 +210,37 @@ void main() {
     expect(cookies.douyuCookie.value, isEmpty);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('Douyu row asks for a new cookie when the stored one carries no session', (tester) async {
+    // A pasted cookie that never held a login (or one whose token expired with
+    // nothing to renew it with) is not a signed-in state, and the row says so
+    // instead of offering a logout for a session that does not exist.
+    cookies.douyuCookie.value = 'dy_did=test-device; acf_uid=42';
+
+    await _pumpAccountPage(tester, english);
+
+    final douyu = find.text('Douyu');
+    await _scrollPageUntilHitTestable(tester, douyu);
+    final tile = find.ancestor(of: douyu, matching: find.byType(ListTile));
+
+    expect(
+      find.descendant(of: tile, matching: find.text(english['douyu_session_needs_cookie'] as String)),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: tile, matching: find.text('Cookie saved on this device')),
+      findsNothing,
+    );
+    expect(tester.takeException(), isNull);
+  });
+}
+
+/// A Douyu cookie that is a real session: `acf_jwt_token` is a JWT and its
+/// `exp` is in the future.
+String _douyuSessionCookie({Duration validFor = const Duration(hours: 2)}) {
+  final expiresAt = DateTime.now().add(validFor).millisecondsSinceEpoch ~/ 1000;
+  final payload = base64Url.encode(utf8.encode(jsonEncode(<String, int>{'exp': expiresAt}))).replaceAll('=', '');
+  return 'dy_did=test-device; LTP0=long-term; acf_jwt_token=header.$payload.signature';
 }
 
 Future<void> _pumpAccountPage(WidgetTester tester, Map<String, dynamic> translations, {String locale = 'en'}) async {

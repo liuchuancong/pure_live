@@ -245,7 +245,7 @@ Future<void> _pumpLocalized(
 
 Future<void> _scrollUntilHitTestable(WidgetTester tester, Finder target) async {
   final scrollable = find.byType(Scrollable).first;
-  await tester.scrollUntilVisible(target, 100, scrollable: scrollable, maxScrolls: 60);
+  await tester.scrollUntilVisible(target, 100, scrollable: scrollable, maxScrolls: 120);
   await tester.pumpAndSettle();
   expect(target.hitTestable(), findsOneWidget);
 }

@@ -32,12 +32,12 @@ void main() {
 
   test('catalog thirteen adds only Weibo once and persists a later hide across a real Hive reopen', () async {
     await HivePrefUtil.setInt('siteCatalogMigration', 13);
-    await HivePrefUtil.setStringList('hotAreasList', ['huya', 'ttinglive']);
+    await HivePrefUtil.setStringList('hotAreasList', ['huya']);
     await HivePrefUtil.setInt('audienceMetricMigration', 7);
     await HivePrefUtil.setStringList('realOnlinePlatforms', ['twitch']);
     final favorites = Get.put(FavoriteRoomController());
     final app = Get.put(AppSettingsController());
-    final expectedPrefix = ['huya', 'ttinglive', 'weibo'];
+    final expectedPrefix = ['huya', 'weibo'];
     expect(favorites.hotAreasList.take(expectedPrefix.length), expectedPrefix);
     final migrated = favorites.hotAreasList.toList(growable: false);
     expect(migrated.toSet(), hasLength(migrated.length));

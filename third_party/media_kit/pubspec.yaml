@@ -1,0 +1,73 @@
+name: media_kit
+description: A cross-platform video player & audio player for Flutter & Dart. Performant, stable, feature-proof & modular.
+homepage: https://github.com/media-kit/media-kit
+repository: https://github.com/media-kit/media-kit
+version: 1.1.11
+
+screenshots:
+  - description: "package:media_kit running on Android (visible controls)"
+    path: screenshots/android_0.jpg
+  - description: "package:media_kit running on Android"
+    path: screenshots/android_1.jpg
+  - description: "package:media_kit running on iOS (visible controls)"
+    path: screenshots/ios_0.jpg
+  - description: "package:media_kit running on iOS"
+    path: screenshots/ios_1.jpg
+  - description: "package:media_kit running on macOS"
+    path: screenshots/macos.jpg
+  - description: "package:media_kit running on Microsoft Windows"
+    path: screenshots/windows.jpg
+  - description: "package:media_kit running on GNU/Linux"
+    path: screenshots/linux.jpg
+  - description: "package:media_kit running on web"
+    path: screenshots/web.jpg
+topics:
+  - video
+  - video-player
+  - audio
+  - audio-player
+  - cross-platform
+
+environment:
+  sdk: ">=3.10.0 <4.0.0"
+
+dependencies:
+  archive: ^4.0.0
+  crypto: ^3.0.3
+  xml: ^6.5.0
+  code_assets: ^2.1.0
+  hooks: ^2.2.0
+  native_toolchain_c: ^0.19.5
+  collection: ^1.17.0
+  http: ">=0.13.0 <2.0.0"
+  image: ^4.0.17
+  js: ^0.7.1
+  meta: ^1.8.0
+  path: ^1.8.0
+  safe_local_storage: ^2.0.1
+  synchronized: ^3.1.0
+  universal_platform: ^1.0.0+1
+  uri_parser: ^3.0.0
+  uuid: ">=2.0.0 <5.0.0"
+
+dev_dependencies:
+  test: ^1.24.1
+  lints: ^5.0.0
+
+ffigen:
+  name: MPV
+  output: bin/generated/libmpv/bindings.dart
+  headers:
+    entry-points:
+      - headers/client.h
+  dart-bool: true
+
+flutter:
+  plugin:
+    platforms:
+      android:
+        package: com.alexmercerind.media_kit
+        pluginClass: MediaKitPlugin
+  assets:
+    - path: assets/web/
+      platforms: [web]

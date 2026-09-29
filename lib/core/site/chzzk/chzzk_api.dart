@@ -251,7 +251,11 @@ class ChzzkApi {
   Future<ChzzkLive?> liveDetail(String channelId, ChzzkChannel owner, {CancelToken? cancel}) async {
     final id = _channelId(channelId);
     if (owner.id != id) throw const ChzzkException(ChzzkFailure.identity);
-    final content = await _get('/service/v2/channels/$id/live-detail', const {}, cancel);
+    // v2 now answers overseas-restricted lives with HTTP 500 / code 9004 and
+    // no detail at all; v3.1 (the web player's version) returns the same
+    // fields with krOnlyViewing set and no playback, which the room card
+    // already presents as a region notice.
+    final content = await _get('/service/v3.1/channels/$id/live-detail', const {}, cancel);
     if (content == null) return null;
     final detail = _object(content);
     final status = _text(detail['status']);

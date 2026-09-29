@@ -37,17 +37,20 @@ import 'package:pure_live/model/live_play_quality.dart';
 import 'package:pure_live/player/utils/fullscreen.dart';
 import 'package:flutter_floating/flutter_floating.dart';
 import 'package:pure_live/player/utils/player_consts.dart';
+import 'package:pure_live/player/utils/popup_route_tracker.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/core/site/huya/huya_transport_policy.dart';
 import 'package:pure_live/player/utils/pip_window_widget.dart';
 import 'package:pure_live/player/core/live_audio_service.dart';
 import 'package:pure_live/common/utils/latest_async_value_queue.dart';
+import 'package:pure_live/player/adapters/media_kit_adapter.dart';
 import 'package:pure_live/player/adapters/player_adapter_factory.dart';
 import 'package:pure_live/player/interface/media_kit_player_accessor.dart';
 import 'package:pure_live/player/utils/media_kit_content_probe.dart';
 import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/danmaku/compact_danmaku_overlay.dart';
+import 'package:pure_live/player/core/flv_splice_relay.dart';
 
 typedef UnifiedPlayerCreator = FutureOr<UnifiedPlayer> Function(PlayerEngine engine);
 typedef WindowsPipEnter = Future<void> Function(double videoRatio);
@@ -281,6 +284,10 @@ class PlayerManager {
   LiveRoom? _sourceCohortRoom;
   PlaybackSource? _sourceCohortSource;
   final Map<UnifiedPlayer, PlaybackSourceTransport> _sourceTransports = Map.identity();
+
+  /// Players whose leased FLV source is renewed by [FlvSpliceRelay]. Their
+  /// lease needs no proactive credential refresh or reopen.
+  final Set<UnifiedPlayer> _splicedLeasePlayers = Set.identity();
   final PlaybackInputFactory? _sourceInputFactory;
 
   PlayerManager({
@@ -449,6 +456,7 @@ class PlayerManager {
   VideoController? _videoController;
   final List<Future<void> Function()> _floatingResourceDisposers = <Future<void> Function()>[];
   Future<void>? _floatingCleanup;
+  StreamSubscription<int>? _floatingPopupSubscription;
   bool _appFloatingPrepared = false;
   bool _pipTransitionInFlight = false;
   int _pipTransitionRevision = 0;
@@ -891,9 +899,24 @@ class PlayerManager {
     final elapsed = DateTime.now().difference(since);
     final remaining = _portraitDetector.stabilityDelay - elapsed;
     final generation = _geometrySessionGeneration;
-    _geometryStabilityTimer = Timer(remaining.isNegative ? Duration.zero : remaining, () {
+    // Timer truncates to whole milliseconds, so an unrounded remainder fires
+    // up to 1 ms early. commitPending() then rejects the sample, and a decoder
+    // that reported its size only once stayed "unknown" forever. Round up.
+    final delay = remaining.isNegative
+        ? Duration.zero
+        : Duration(milliseconds: (remaining.inMicroseconds / Duration.microsecondsPerMillisecond).ceil() + 1);
+    _geometryStabilityTimer = Timer(delay, () {
       _geometryStabilityTimer = null;
       if (generation != _geometrySessionGeneration || _disposed || _isClosing) return;
+      final pendingSince = _portraitDetector.pendingSince;
+      if (pendingSince != null &&
+          _portraitDetector.hasPendingCandidate &&
+          DateTime.now().difference(pendingSince) < _portraitDetector.stabilityDelay) {
+        // Monotonic timers and the wall clock can still disagree (clock
+        // adjustments); retry rather than dropping the only sample.
+        _scheduleGeometryStabilityCommit();
+        return;
+      }
       final snapshot = _portraitDetector.commitPending();
       _publishVideoGeometry(snapshot);
       if (snapshot.isStable) _scheduleActiveContentProbe();
@@ -2247,6 +2270,15 @@ class PlayerManager {
       return player.setDataSource(input, inputs, inputHeaders, room: room, audioOnly: audioOnly);
     }
 
+    final refreshAt = _currentSourceRefreshAt;
+    final renewFlv = source is UrlPlaybackSource && sourceQueryPolicy == null
+        ? _flvLeaseRenewer(source.url, playUrls, refreshAt)
+        : null;
+    if (renewFlv != null) {
+      _splicedLeasePlayers.add(player);
+    } else {
+      _splicedLeasePlayers.remove(player);
+    }
     final sourceOpen = switch (source) {
       OwnedPlaybackSource() => transport.openOwned(createInput: source.createInput, nativeOpen: nativeOpen),
       UrlPlaybackSource() => transport.open(
@@ -2255,6 +2287,9 @@ class PlayerManager {
         headers: headers,
         policy: sourceQueryPolicy,
         nativeOpen: nativeOpen,
+        rewriteLegacyHevcFlv: player is MediaKitAdapter,
+        refreshAt: refreshAt,
+        renewFlv: renewFlv,
       ),
     };
     try {
@@ -2279,7 +2314,33 @@ class PlayerManager {
   }
 
   Future<void> _closeSourceTransport(UnifiedPlayer player) async {
+    _splicedLeasePlayers.remove(player);
     await _sourceTransports.remove(player)?.close();
+  }
+
+  /// Resolves the next URL of the same line and quality for a leased FLV
+  /// source, or null when the source is not spliced.
+  FlvSourceRenewer? _flvLeaseRenewer(String url, List<String> playUrls, DateTime? refreshAt) {
+    final resolver = _sourceRefreshResolver;
+    if (resolver == null || !FlvSpliceRelay.appliesTo(url, refreshAt: refreshAt)) return null;
+    final lineIndex = playUrls.indexOf(url);
+    return (current) async {
+      final currentUrl = current.url.toString();
+      final refreshed = await _resolvePlaybackSource(
+        resolver,
+        PlaybackSourceRefreshRequest(
+          currentLineIndex: lineIndex < 0 ? 0 : lineIndex,
+          advanceLine: false,
+          currentUrl: currentUrl,
+          currentSource: UrlPlaybackSource(currentUrl),
+          currentQuality: _sourceSelectionForCurrentCohort()?.quality,
+        ),
+      );
+      final urls = refreshed.urls.map((item) => item.trim()).where((item) => item.isNotEmpty).toList(growable: false);
+      if (urls.isEmpty) throw StateError('No renewed FLV source');
+      final next = urls[refreshed.preferredLineIndex.clamp(0, urls.length - 1)];
+      return FlvLeasedSource(Uri.parse(next), refreshAt: refreshed.refreshAt);
+    };
   }
 
   void _cancelPendingSourceInputs() {
@@ -2932,131 +2993,136 @@ class PlayerManager {
     floatingManager.createFloating(
       _floatTag,
       FloatingOverlay(
-        MouseRegion(
-          onEnter: (_) {
-            if (!touchControls && (Platform.isWindows || Platform.isMacOS)) isHovered.value = true;
-          },
-          onExit: (_) {
-            if (!touchControls && (Platform.isWindows || Platform.isMacOS)) isHovered.value = false;
-          },
-          child: Obx(() {
-            // The overlay is created before late decoder/frame evidence may
-            // settle. Keep its outer bounds on the same reactive geometry as
-            // the texture instead of freezing the entry-time 16:9 size.
-            videoPresentationRevision.value;
-            final floatingSize = resolveAppFloatingSize(aspectRatio: currentVideoRatio, maxSide: maxSide);
-            return Container(
-              width: floatingSize.width,
-              height: floatingSize.height,
-              clipBehavior: Clip.antiAlias,
-              decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), color: Colors.black),
-              child: Stack(
-                children: [
-                  Obx(
-                    () => Positioned.fill(
-                      child: isFloatingVideoVisible.value
-                          ? getVideoWidget(
-                              SettingsService.to.player.videoFitIndex.v,
-                              fitList: SettingsService.to.player.videoFitArray,
-                            )
-                          : const SizedBox.shrink(),
-                    ),
-                  ),
-                  Positioned.fill(child: _buildCompactDanmaku()),
-                  Positioned.fill(
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: () async {
-                        // Mobile overlays hide their controls after a short
-                        // delay.  Previously the next tap immediately opened
-                        // the room, so the close/pause controls could never be
-                        // revealed again without racing the three-second
-                        // timer.  Match native PiP behaviour: the first tap
-                        // reveals controls; a second tap resumes the room.
-                        if (touchControls && !isHovered.value) {
-                          isHovered.value = true;
-                          resetHideTimer();
-                          return;
-                        }
-                        final room = currentFloatRoom;
-                        if (room != null) {
-                          await AppNavigator.toLiveRoomDetail(liveRoom: room);
-                        }
-                      },
-                      child: const SizedBox.expand(),
-                    ),
-                  ),
-                  Center(
-                    child: Obx(
-                      () => AnimatedOpacity(
-                        opacity: isHovered.value ? 1 : 0,
-                        duration: const Duration(milliseconds: 200),
-                        child: IgnorePointer(
-                          ignoring: !isHovered.value,
-                          child: StreamBuilder<bool>(
-                            stream: onPlaying,
-                            initialData: isPlayingNow,
-                            builder: (context, snapshot) {
-                              var isPlay = snapshot.data ?? true;
-                              return IconButton(
-                                tooltip: i18n(isPlay ? 'multiview_pause' : 'multiview_play'),
-                                visualDensity: VisualDensity.standard,
-                                constraints: const BoxConstraints(
-                                  minWidth: kMinInteractiveDimension,
-                                  minHeight: kMinInteractiveDimension,
-                                ),
-                                iconSize: 42,
-                                style: IconButton.styleFrom(backgroundColor: Colors.black45),
-                                icon: Icon(
-                                  isPlay ? Icons.pause_circle_filled : Icons.play_circle_filled,
-                                  color: Colors.white,
-                                ),
-                                onPressed: () {
-                                  togglePlayPause();
-                                  resetHideTimer();
-                                },
-                              );
-                            },
-                          ),
-                        ),
+        // Stay out of the way of menus/dialogs opened after this entry.
+        PopupAwareVisibility(
+          child: MouseRegion(
+            onEnter: (_) {
+              if (!touchControls && (Platform.isWindows || Platform.isMacOS)) isHovered.value = true;
+            },
+            onExit: (_) {
+              if (!touchControls && (Platform.isWindows || Platform.isMacOS)) isHovered.value = false;
+            },
+            child: Obx(() {
+              // The overlay is created before late decoder/frame evidence may
+              // settle. Keep its outer bounds on the same reactive geometry as
+              // the texture instead of freezing the entry-time 16:9 size.
+              videoPresentationRevision.value;
+              final floatingSize = resolveAppFloatingSize(aspectRatio: currentVideoRatio, maxSide: maxSide);
+              return Container(
+                width: floatingSize.width,
+                height: floatingSize.height,
+                clipBehavior: Clip.antiAlias,
+                decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), color: Colors.black),
+                child: Stack(
+                  children: [
+                    Obx(
+                      () => Positioned.fill(
+                        child: isFloatingVideoVisible.value
+                            ? getVideoWidget(
+                                SettingsService.to.player.videoFitIndex.v,
+                                fitList: SettingsService.to.player.videoFitArray,
+                              )
+                            : const SizedBox.shrink(),
                       ),
                     ),
-                  ),
-                  Positioned(
-                    right: 4,
-                    top: 4,
-                    child: Obx(
-                      () => AnimatedOpacity(
-                        opacity: isHovered.value ? 1 : 0,
-                        duration: const Duration(milliseconds: 200),
-                        child: IgnorePointer(
-                          ignoring: !isHovered.value,
-                          child: IconButton(
-                            key: const ValueKey('app-floating-close-action'),
-                            tooltip: i18n('close'),
-                            visualDensity: VisualDensity.standard,
-                            constraints: const BoxConstraints.tightFor(
-                              width: kMinInteractiveDimension,
-                              height: kMinInteractiveDimension,
+                    Positioned.fill(child: _buildCompactDanmaku()),
+                    Positioned.fill(
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () async {
+                          // Mobile overlays hide their controls after a short
+                          // delay.  Previously the next tap immediately opened
+                          // the room, so the close/pause controls could never be
+                          // revealed again without racing the three-second
+                          // timer.  Match native PiP behaviour: the first tap
+                          // reveals controls; a second tap resumes the room.
+                          if (touchControls && !isHovered.value) {
+                            isHovered.value = true;
+                            resetHideTimer();
+                            return;
+                          }
+                          final room = currentFloatRoom;
+                          if (room != null) {
+                            await AppNavigator.toLiveRoomDetail(liveRoom: room);
+                          }
+                        },
+                        child: const SizedBox.expand(),
+                      ),
+                    ),
+                    Center(
+                      child: Obx(
+                        () => AnimatedOpacity(
+                          opacity: isHovered.value ? 1 : 0,
+                          duration: const Duration(milliseconds: 200),
+                          child: IgnorePointer(
+                            ignoring: !isHovered.value,
+                            child: StreamBuilder<bool>(
+                              stream: onPlaying,
+                              initialData: isPlayingNow,
+                              builder: (context, snapshot) {
+                                var isPlay = snapshot.data ?? true;
+                                return IconButton(
+                                  tooltip: i18n(isPlay ? 'multiview_pause' : 'multiview_play'),
+                                  visualDensity: VisualDensity.standard,
+                                  constraints: const BoxConstraints(
+                                    minWidth: kMinInteractiveDimension,
+                                    minHeight: kMinInteractiveDimension,
+                                  ),
+                                  iconSize: 42,
+                                  style: IconButton.styleFrom(backgroundColor: Colors.black45),
+                                  icon: Icon(
+                                    isPlay ? Icons.pause_circle_filled : Icons.play_circle_filled,
+                                    color: Colors.white,
+                                  ),
+                                  onPressed: () {
+                                    togglePlayPause();
+                                    resetHideTimer();
+                                  },
+                                );
+                              },
                             ),
-                            style: IconButton.styleFrom(backgroundColor: Colors.black45),
-                            icon: const Icon(Icons.close, color: Colors.white, size: 20),
-                            onPressed: () async {
-                              await stop();
-                            },
                           ),
                         ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-            );
-          }),
+                    Positioned(
+                      right: 4,
+                      top: 4,
+                      child: Obx(
+                        () => AnimatedOpacity(
+                          opacity: isHovered.value ? 1 : 0,
+                          duration: const Duration(milliseconds: 200),
+                          child: IgnorePointer(
+                            ignoring: !isHovered.value,
+                            child: IconButton(
+                              key: const ValueKey('app-floating-close-action'),
+                              tooltip: i18n('close'),
+                              visualDensity: VisualDensity.standard,
+                              constraints: const BoxConstraints.tightFor(
+                                width: kMinInteractiveDimension,
+                                height: kMinInteractiveDimension,
+                              ),
+                              style: IconButton.styleFrom(backgroundColor: Colors.black45),
+                              icon: const Icon(Icons.close, color: Colors.white, size: 20),
+                              onPressed: () async {
+                                await stop();
+                              },
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }),
+          ),
         ),
-        right: 50,
-        top: 100,
-        slideType: FloatingEdgeType.onRightAndTop,
+        // Bottom-right above the navigation bar: the old top-right spot sat
+        // on the tab row and the first field of most pages (search, links).
+        right: 16,
+        bottom: _floatingBottomOffset(),
+        slideType: FloatingEdgeType.onRightAndBottom,
         params: FloatingParams(isSnapToEdge: false, snapToEdgeSpace: 10, dragOpacity: 0.8),
       ),
     );
@@ -3074,15 +3140,26 @@ class PlayerManager {
       return;
     }
     isFloating.value = true;
+    unawaited(_floatingPopupSubscription?.cancel());
+    _floatingPopupSubscription = hideFloatingWhilePopupsOpen(overlay);
     if (touchControls) {
       isHovered.value = true;
       resetHideTimer();
     }
   }
 
+  static double _floatingBottomOffset() {
+    final context = Get.overlayContext;
+    final inset = context == null ? 0.0 : MediaQuery.viewPaddingOf(context).bottom;
+    // Material 3 NavigationBar height plus a small gap.
+    return inset + 80 + 16;
+  }
+
   Future<void> closeAppFloating() async {
     _hideTimer?.cancel();
     _hideTimer = null;
+    unawaited(_floatingPopupSubscription?.cancel());
+    _floatingPopupSubscription = null;
     final cleanupInFlight = _floatingCleanup;
     if (cleanupInFlight != null) {
       await cleanupInFlight;
@@ -4541,6 +4618,8 @@ class PlayerManager {
     _proactiveSourceRefreshTimer = null;
     final refreshAt = _currentSourceRefreshAt;
     if (refreshAt == null || _sourceRefreshResolver == null || !_isPlayerEventCurrent(player, sessionId)) return;
+    // The splice relay renews this lease underneath the native connection.
+    if (_splicedLeasePlayers.contains(player)) return;
 
     final remaining = refreshAt.difference(DateTime.now().toUtc());
     final delay = remaining > const Duration(seconds: 1) ? remaining : const Duration(seconds: 1);

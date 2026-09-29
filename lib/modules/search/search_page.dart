@@ -295,21 +295,76 @@ class _SearchOptions extends StatelessWidget {
                 children: [
                   Icon(Icons.info_outline_rounded, size: 16, color: theme.colorScheme.primary),
                   const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      controller.capabilityText,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                        height: 1.3,
-                      ),
-                    ),
-                  ),
+                  Expanded(child: _CapabilityNotice(text: controller.capabilityText)),
                 ],
               ),
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Coverage notes can run to several lines for the "all platforms" tab; show
+/// one line and let the user expand the rest instead of pushing results down.
+class _CapabilityNotice extends StatefulWidget {
+  const _CapabilityNotice({required this.text});
+  final String text;
+
+  @override
+  State<_CapabilityNotice> createState() => _CapabilityNoticeState();
+}
+
+class _CapabilityNoticeState extends State<_CapabilityNotice> {
+  bool _expanded = false;
+
+  @override
+  void didUpdateWidget(covariant _CapabilityNotice oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.text != widget.text) _expanded = false;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final style = theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant, height: 1.3);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final painter = TextPainter(
+          text: TextSpan(text: widget.text, style: style),
+          maxLines: 1,
+          textDirection: Directionality.of(context),
+          textScaler: MediaQuery.textScalerOf(context),
+        )..layout(maxWidth: constraints.maxWidth);
+        final overflows = painter.didExceedMaxLines;
+        painter.dispose();
+        final text = Text(
+          widget.text,
+          key: const ValueKey('search-capability-notice'),
+          style: style,
+          maxLines: _expanded ? null : 1,
+          overflow: _expanded ? TextOverflow.visible : TextOverflow.ellipsis,
+        );
+        if (!overflows) return text;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            text,
+            TextButton(
+              key: const ValueKey('search-capability-toggle'),
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.zero,
+                minimumSize: const Size(0, 32),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                visualDensity: VisualDensity.compact,
+              ),
+              onPressed: () => setState(() => _expanded = !_expanded),
+              child: Text(i18n(_expanded ? 'notice_collapse' : 'notice_expand')),
+            ),
+          ],
+        );
+      },
     );
   }
 }

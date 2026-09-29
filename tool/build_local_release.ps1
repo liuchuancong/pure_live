@@ -199,6 +199,14 @@ try {
         $buildExitCode = Invoke-PureLiveLoggedFlutter -Arguments $androidArgs -LogPath $commandLog
         Assert-PureLiveCommandSucceeded 'Android arm64 build' -ExitCode $buildExitCode
 
+        # The upstream Native Assets hook downloads URL overrides anew, even
+        # after prefetch. Verify the artifact that the hook actually consumed.
+        $androidFfmpegAar = Join-Path $repoRoot '.dart_tool\hooks_runner\shared\ffmpeg_kit_extended_flutter\build\ffmpeg_kit_cache\android\bundle-base-shared-lgpl-release.aar'
+        if (-not (Test-Path -LiteralPath $androidFfmpegAar -PathType Leaf) -or
+            (Get-FileHash -LiteralPath $androidFfmpegAar -Algorithm SHA256).Hash.ToLowerInvariant() -ne 'c6c9b1ff7be756b0fb587f98e05972ca4dae97e8275c22961b443b4fd5f49bf7') {
+            throw 'Android FFmpeg Kit hook artifact differs from the pinned n9.0.2 AAR.'
+        }
+
         $apkSource = Join-Path $repoRoot "build\app\outputs\flutter-apk\app-arm64-v8a-$configurationLower.apk"
         if (-not (Test-Path -LiteralPath $apkSource -PathType Leaf)) {
             throw "Expected Android artifact was not produced: $apkSource"
@@ -228,6 +236,18 @@ try {
         & (Join-Path $PSScriptRoot 'prefetch_android_native.ps1') -SkipAndroidMedia
         & (Join-Path $PSScriptRoot 'prefetch_windows_native.ps1')
 
+        # A debug run (flutter test integration_test / flutter run) leaves its
+        # JIT kernel_blob.bin in build\flutter_assets. Release builds do not
+        # delete it and the Windows CMake install copies that whole folder,
+        # so a stale 180 MB debug blob would ship. It is never a release input.
+        if ($Configuration -ne 'Debug') {
+            $staleKernelBlob = Join-Path $repoRoot 'build\flutter_assets\kernel_blob.bin'
+            if (Test-Path -LiteralPath $staleKernelBlob -PathType Leaf) {
+                Remove-Item -LiteralPath $staleKernelBlob -Force
+                Write-Host "Removed stale debug kernel blob: $staleKernelBlob"
+            }
+        }
+
         $windowsArgs = @(
             'build', 'windows', "--$configurationLower",
             "--build-name=$displayVersion", "--build-number=$buildNumber",
@@ -242,7 +262,21 @@ try {
         $buildExitCode = Invoke-PureLiveLoggedFlutter -Arguments $windowsArgs -LogPath $commandLog
         Assert-PureLiveCommandSucceeded 'Windows x64 build' -ExitCode $buildExitCode
 
+        $windowsFfmpegZip = Join-Path $repoRoot '.dart_tool\hooks_runner\shared\ffmpeg_kit_extended_flutter\build\ffmpeg_kit_cache\windows\bundle-base-windows-x86_64-shared-lgpl.zip'
+        if (-not (Test-Path -LiteralPath $windowsFfmpegZip -PathType Leaf) -or
+            (Get-FileHash -LiteralPath $windowsFfmpegZip -Algorithm SHA256).Hash.ToLowerInvariant() -ne 'e61684a91f7471ba00f1d5b36a24e93ab602ef72bd57000d94990e7e0c5dfe3a') {
+            throw 'Windows FFmpeg Kit hook artifact differs from the pinned n9.0.2 ZIP.'
+        }
+
         $windowsSource = Join-Path $repoRoot "build\windows\x64\runner\$configurationDirectory"
+        $ffmpegDll = Join-Path $windowsSource 'libffmpegkit.dll'
+        if (-not (Test-Path -LiteralPath $ffmpegDll -PathType Leaf)) {
+            throw "Windows FFmpeg Kit DLL is missing: $ffmpegDll"
+        }
+        $ffmpegDllHash = (Get-FileHash -LiteralPath $ffmpegDll -Algorithm SHA256).Hash.ToLowerInvariant()
+        if ($ffmpegDllHash -ne '302d978048f389dbb07f01c1a34a4988a92d1e3ebf0e960e2dd8314f83632b34') {
+            throw "Windows FFmpeg Kit DLL does not match the pinned n9.0.2 bundle: $ffmpegDllHash"
+        }
         $expectedPrefix = [IO.Path]::GetFullPath($repoRoot).TrimEnd('\') + '\'
         $windowsSourceFull = [IO.Path]::GetFullPath($windowsSource)
         if (-not $windowsSourceFull.StartsWith($expectedPrefix, [StringComparison]::OrdinalIgnoreCase)) {
@@ -352,6 +386,10 @@ try {
         }
         if (-not (Test-Path -LiteralPath (Join-Path $windowsPackageFull 'pure_live.exe') -PathType Leaf)) {
             throw 'The staged Windows package does not contain pure_live.exe.'
+        }
+        if ($Configuration -ne 'Debug' -and
+            (Test-Path -LiteralPath (Join-Path $windowsPackageFull 'data\flutter_assets\kernel_blob.bin') -PathType Leaf)) {
+            throw 'The staged Windows package contains a debug kernel_blob.bin.'
         }
         if ($Configuration -eq 'Release') {
             foreach ($runtimeFile in @('msvcp140.dll', 'vcruntime140.dll', 'vcruntime140_1.dll')) {

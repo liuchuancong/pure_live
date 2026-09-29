@@ -1,0 +1,19 @@
+group 'com.alexmercerind.media_kit'
+version '1.0'
+buildscript {
+    repositories { google(); mavenCentral() }
+    dependencies { classpath 'com.android.tools.build:gradle:8.13.0' }
+}
+apply plugin: 'com.android.library'
+android {
+    namespace 'com.alexmercerind.media_kit'
+    compileSdkVersion 36
+    defaultConfig {
+        minSdkVersion 21
+        consumerProguardFiles 'consumer-rules.pro'
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}

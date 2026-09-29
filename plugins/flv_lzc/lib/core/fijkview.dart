@@ -30,8 +30,13 @@ part of fijkplayer;
 /// The return widget is placed as one of [Stack]'s children.
 /// If change FijkView between normal mode and full screen mode, the panel would
 /// be rebuild. [data] can be used to pass value from different panel.
-typedef FijkPanelWidgetBuilder =
-    Widget Function(FijkPlayer player, FijkData data, BuildContext context, Size viewSize, Rect texturePos);
+typedef FijkPanelWidgetBuilder = Widget Function(
+  FijkPlayer player,
+  FijkData data,
+  BuildContext context,
+  Size viewSize,
+  Rect texturePos,
+);
 
 /// How a video should be inscribed into [FijkView].
 ///
@@ -470,7 +475,7 @@ class __InnerFijkViewState extends State<_InnerFijkView> {
   }
 
   Widget buildTexture() {
-    Widget tex = _textureId > 0 ? Texture(textureId: _textureId) : Container();
+    Widget tex = _textureId >= 0 ? Texture(textureId: _textureId) : Container();
     if (_degree != 0 && _textureId >= 0) {
       return RotatedBox(quarterTurns: _degree ~/ 90, child: tex);
     }

@@ -20,10 +20,7 @@ dependencies:
     sdk: flutter
 
   media_kit:
-    git:
-      url: https://github.com/Predidit/media-kit.git
-      ref: d13fc22ba1b19b45de3090c2d1b0f8a541b585a0
-      path: ./media_kit
+    path: ../media_kit
 
   synchronized: ^3.1.0
   wakelock_plus: 1.3.3

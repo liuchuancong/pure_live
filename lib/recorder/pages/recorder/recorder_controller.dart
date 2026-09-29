@@ -1,4 +1,5 @@
 import 'package:pure_live/core/interface/live_quality_discovery.dart';
+import 'package:pure_live/recorder/services/recording_bitrate_window.dart';
 import 'package:pure_live/recorder/services/live_input_recording_binding.dart';
 import 'package:pure_live/common/utils/play_quality_label.dart';
 
@@ -11,6 +12,7 @@ import 'dart:math' as math;
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
+import 'package:pure_live/core/danmaku/empty_danmaku.dart';
 import 'package:pure_live/core/interface/live_site.dart';
 import 'package:pure_live/core/site/huya/huya_transport_policy.dart';
 import 'package:pure_live/plugins/file_utils.dart';
@@ -27,6 +29,7 @@ import 'package:pure_live/recorder/services/cache_service.dart';
 import 'package:pure_live/recorder/services/ffmpeg_header_factory.dart';
 import 'package:pure_live/recorder/services/recorder_continuation_policy.dart';
 import 'package:pure_live/recorder/services/recorder_background_service.dart';
+import 'package:pure_live/recorder/services/recording_danmaku_service.dart';
 import 'package:pure_live/recorder/services/recording_output_metrics.dart';
 import 'package:pure_live/recorder/services/stream_resolver_service.dart';
 import 'package:pure_live/recorder/services/video_processor_service.dart';
@@ -124,7 +127,43 @@ class RecorderController extends GetxService {
     });
     _ffmpegSub = ffmpeg.stream.listen((event) => unawaited(_handleFFmpegEvent(event)));
     _pollingWorker = ever<bool>(settings.enablePolling, _onPollingChanged);
+    _danmakuTasksWorker = ever<List<LiveRecordTask>>(tasks, _danmakuRecorder.sync);
+    _danmakuSettingWorker = ever<bool>(settings.recordDanmaku, (_) => _danmakuRecorder.sync(tasks));
     unawaited(restoreAndAutoPoll());
+  }
+
+  /// Opt-in chat capture beside each attempt's video. It only observes task
+  /// snapshots, so chat failures never reach stream or FFmpeg handling.
+  late final RecordingDanmakuService _danmakuRecorder = RecordingDanmakuService(
+    enabled: () => settings.recordDanmaku.value,
+    connect: _connectRecordingDanmaku,
+  );
+  Worker? _danmakuTasksWorker;
+  Worker? _danmakuSettingWorker;
+
+  Future<RecordingDanmakuConnection?> _connectRecordingDanmaku(
+    LiveRecordTask task,
+    void Function(LiveMessage message) onMessage,
+  ) async {
+    if (!Sites.isSupported(task.platform)) return null;
+    final site = _siteResolver(task.platform);
+    final engine = site.getDanmaku();
+    if (engine is EmptyDanmaku) return null;
+    final room = await site.getRoomDetail(roomId: task.roomId, platform: task.platform);
+    engine.onMessage = onMessage;
+    try {
+      await engine.start(room.danmakuData).timeout(const Duration(seconds: 20));
+    } catch (_) {
+      engine.onMessage = null;
+      await engine.stop().catchError((Object _) {});
+      rethrow;
+    }
+    return RecordingDanmakuConnection(
+      stop: () async {
+        engine.onMessage = null;
+        await engine.stop();
+      },
+    );
   }
 
   Future<void> _handleFFmpegEvent(FFmpegEvent event) async {
@@ -333,8 +372,6 @@ class RecorderController extends GetxService {
       final activeNative = ffmpeg.getSession(task.taskId);
       final nativeSession = activeNative?.sessionId == sessionId ? activeNative : null;
       final attemptBytes = math.max(snapshot.bytes, nativeSession?.fileSize ?? 0);
-      final previous = monitor.previous;
-      monitor.previous = (bytes: attemptBytes, sampledAt: now);
       final mediaStarted = attemptBytes > 0 || nativeSession?.mediaStarted == true;
       if (!mediaStarted) return;
 
@@ -342,12 +379,8 @@ class RecorderController extends GetxService {
       final attempt = _attemptProgress[task.taskId] ?? const RecordingAttemptProgress(baseBytes: 0, baseSeconds: 0);
       final totalBytes = attempt.totalBytes(attemptBytes);
       if (totalBytes > task.fileSize) task.fileSize = totalBytes;
-      if (attemptBytes > previous.bytes) {
-        final elapsedMs = now.difference(previous.sampledAt).inMilliseconds;
-        if (elapsedMs > 0) {
-          task.bitrate = (attemptBytes - previous.bytes) * 8 / elapsedMs;
-        }
-      }
+      final windowBitrate = monitor.bitrate.add(attemptBytes, now);
+      if (windowBitrate != null) task.bitrate = windowBitrate;
       if (task.bitrate <= 0 && (nativeSession?.bitrate ?? 0) > 0) task.bitrate = nativeSession!.bitrate;
       final wallSeconds = now.difference(monitor.startedAt!).inSeconds;
       final attemptSeconds = math.max(wallSeconds, nativeSession?.recordedSeconds ?? 0);
@@ -1576,6 +1609,9 @@ class RecorderController extends GetxService {
     _startRequests.clear();
     _pollingWorker?.dispose();
     _pollingWorker = null;
+    _danmakuTasksWorker?.dispose();
+    _danmakuSettingWorker?.dispose();
+    unawaited(_danmakuRecorder.dispose());
     for (final request in _pollInFlight.values) {
       request.complete();
     }
@@ -1696,8 +1732,7 @@ class _RecorderPollRequest {
 }
 
 class _RecorderOutputMonitor {
-  _RecorderOutputMonitor({required this.task, required this.sessionId, required this.tracker})
-    : previous = (bytes: 0, sampledAt: DateTime.now());
+  _RecorderOutputMonitor({required this.task, required this.sessionId, required this.tracker});
 
   final LiveRecordTask task;
   final int sessionId;
@@ -1705,7 +1740,7 @@ class _RecorderOutputMonitor {
   Timer? timer;
   Completer<void>? sampling;
   bool finishing = false;
-  ({int bytes, DateTime sampledAt}) previous;
+  final bitrate = RecordingBitrateWindow();
   DateTime? startedAt;
 }
 

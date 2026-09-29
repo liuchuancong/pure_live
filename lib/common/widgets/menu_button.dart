@@ -1,9 +1,9 @@
 import 'dart:io';
+
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/modules/auth/auth_controller.dart';
 import 'package:pure_live/common/utils/windows_multi_instance_launcher.dart';
-
 
 class MenuButton extends GetView<AuthController> {
   const MenuButton({super.key});
@@ -17,10 +17,7 @@ class MenuButton extends GetView<AuthController> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       offset: const Offset(12, 0),
       position: PopupMenuPosition.under,
-      child: const SizedBox.square(
-        dimension: kMinInteractiveDimension,
-        child: Icon(Icons.menu_rounded),
-      ),
+      child: const SizedBox.square(dimension: kMinInteractiveDimension, child: Icon(Icons.menu_rounded)),
       onSelected: (int index) async {
         if (index == 4) {
           try {

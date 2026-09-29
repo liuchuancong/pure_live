@@ -1,13 +1,14 @@
 import 'dart:convert';
-
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/update.dart';
 import 'package:pure_live/plugins/race_http.dart';
 import 'package:pure_live/core/common/http_client.dart';
 import 'package:pure_live/common/models/release_model.dart';
 
+
 typedef ReleaseHistoryExternalLauncher = Future<bool> Function(Uri uri);
 typedef ReleaseHistoryDownloadHandler = Future<void> Function(String url, {String? fileName});
+typedef ReleaseHistoryLoader = Future<List<ReleaseModel>> Function();
 
 class ReleaseHistoryRepository {
   ReleaseHistoryRepository._();
@@ -89,10 +90,27 @@ class ReleaseHistoryRepository {
     }
     releases.sort((left, right) {
       final byDate = right.date.compareTo(left.date);
-      return byDate != 0 ? byDate : right.version.compareTo(left.version);
+      return byDate != 0 ? byDate : compareReleaseVersions(right.version, left.version);
     });
     return List.unmodifiable(releases);
   }
 
   Uri? webUri(String rawUrl) => updateDownloadUri(rawUrl);
+}
+
+/// Numeric comparison of dotted versions, so 3.2.10 sorts after 3.2.9 when two
+/// releases share a date. Non-numeric parts fall back to text order.
+int compareReleaseVersions(String left, String right) {
+  List<String> parts(String value) => value.trim().replaceFirst(RegExp(r'^[vV]'), '').split(RegExp(r'[.+-]'));
+  final a = parts(left);
+  final b = parts(right);
+  for (var i = 0; i < a.length || i < b.length; i++) {
+    final x = i < a.length ? a[i] : '0';
+    final y = i < b.length ? b[i] : '0';
+    final nx = int.tryParse(x);
+    final ny = int.tryParse(y);
+    final byPart = nx != null && ny != null ? nx.compareTo(ny) : x.compareTo(y);
+    if (byPart != 0) return byPart;
+  }
+  return 0;
 }

@@ -51,6 +51,7 @@ class RecorderConfig {
   static const defaultAutoStartOnBoot = false;
 
   static const defaultUsePinyinForFolder = false;
+  static const defaultRecordDanmaku = false;
 
   static const minSegmentTime = 60;
   static const maxSegmentTime = 3600;
