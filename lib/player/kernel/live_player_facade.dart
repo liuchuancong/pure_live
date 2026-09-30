@@ -1,6 +1,7 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
+import 'package:pure_live/get/get.dart';
 import 'package:media_core/media_core.dart';
 import 'package:media_core_live/media_core_live.dart';
 import 'package:media_core_media_kit/media_core_media_kit.dart';
@@ -66,6 +67,7 @@ final class LivePlayerFacade {
   void _bindController() {
     _stateSub = _controller.onStateChanged.listen((state) {
       _stateSubject.add(state);
+      _onStateChanged(state);
       final playing = state.playback == PlayerPlaybackState.playing;
       if (playing != _lastPlaying) {
         _lastPlaying = playing;
@@ -166,6 +168,63 @@ final class LivePlayerFacade {
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // 兼容面：与旧 PlayerManager 同名的成员，消费者按原名编译，切换即翻牌。
+  // ---------------------------------------------------------------------------
+
+  final RxBool hasError = false.obs;
+  final RxBool _audioOnlyMode = false.obs;
+  final RxBool isVerticalVideo = false.obs;
+  final _loadingSubject = StreamController<bool>.broadcast();
+  bool _lastLoading = false;
+
+  bool get isAudioOnlyMode => _audioOnlyMode.value;
+  bool get desiredAudioOnlyMode => _audioOnlyMode.value;
+  Stream<bool> get onLoading => _loadingSubject.stream;
+  Stream<FacadeStreamCommit?> get onSourceCommitted => _commitSubject.stream;
+  FacadeStreamCommit? get currentSourceCommit => commit;
+  bool isSourceCommitCurrent(FacadeStreamCommit value) => identical(value, commit);
+
+  Future<void> setAudioOnlyMode(bool audioOnly) async {
+    _audioOnlyMode.value = audioOnly;
+    await setAudioOnly(audioOnly);
+  }
+
+  /// 渲染出口：kernel 的通用视频视图（fit 由调用方给）。
+  Widget getVideoWidget(BoxFit fit) {
+    final handle = _controller.handle;
+    if (handle == null) return const SizedBox.expand();
+    return MediaPlayerView(handle: handle, fit: fit);
+  }
+
+  void changeVideoFit(BoxFit fit) {
+    final adapter = _controller.handle?.adapter;
+    if (adapter is MediaKitPlayerAdapter) {
+      adapter.videoConfig = adapter.videoConfig.copyWith(fit: fit);
+    }
+  }
+
+  dynamic get currentPlayer => _controller.handle;
+  LiveRoom? get currentFloatRoom => _room;
+  bool hasActivePlaybackSession(LiveRoom room) => _room == room && isPlayingNow;
+  bool get isCompactModeActive => false;
+  void refreshPortraitPresentationPolicy() {}
+  void attachVideoController(dynamic controller) {}
+  void detachVideoController(dynamic controller) {}
+  bool ownsVideoController(dynamic controller) => false;
+
+  void _onStateChanged(PlayerState state) {
+    final loading = state.playback == PlayerPlaybackState.buffering;
+    if (loading != _lastLoading) {
+      _lastLoading = loading;
+      _loadingSubject.add(loading);
+    }
+    final handle = _controller.handle;
+    final size = handle?.combinedSnapshot.geometry.videoSize;
+    final next = size != null && size.height > size.width;
+    if (next != isVerticalVideo.value) isVerticalVideo.value = next;
+  }
+
   Future<void> close() => _controller.close();
   Future<void> dispose() async {
     if (_disposed) return;
@@ -178,6 +237,7 @@ final class LivePlayerFacade {
     await _playingSubject.close();
     await _errorSubject.close();
     await _commitSubject.close();
+    await _loadingSubject.close();
   }
 }
 
