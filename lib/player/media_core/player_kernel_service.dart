@@ -1,5 +1,4 @@
 import 'package:media_core/media_core.dart';
-import 'package:media_core_fvp/media_core_fvp.dart';
 import 'package:pure_live/player/utils/fullscreen.dart';
 import 'package:media_core_floating/media_core_floating.dart';
 import 'package:media_core_media_kit/media_core_media_kit.dart';
@@ -29,7 +28,6 @@ class PlayerKernelService {
       )
       ..registerBackend(const IjkPlayerAdapterFactory().registration())
       ..registerBackend(const BetterPlayerAdapterFactory().registration())
-      ..registerBackend(const FvpAdapterFactory().registration(priority: 80))
       ..attachPresentation(
         PresentationDriverChain(
           bindings: [
