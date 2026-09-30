@@ -6,7 +6,7 @@ import 'package:pure_live/plugins/event_bus.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:pure_live/plugins/emoji_manager.dart';
 import 'package:pure_live/model/live_play_quality.dart';
-import 'package:pure_live/player/core/player_manager.dart';
+import 'package:pure_live/player/kernel/live_player_facade.dart';
 import 'package:pure_live/player/core/playback_source.dart';
 import 'package:pure_live/player/core/live_audio_service.dart';
 import 'package:pure_live/modules/live_play/states/ui_state.dart';
@@ -1093,7 +1093,7 @@ class LivePlayController extends GetxController
     try {
       // A normal route pop is not a floating-player handoff. Explicitly stop
       // the global source so decoder/network workers do not survive on the
-      // home page. PlayerManager keeps a short reopen grace window and then
+      // home page. LivePlayerFacade keeps a short reopen grace window and then
       // releases the native player completely.
       await GlobalPlayerService.instance.player.close();
     } finally {

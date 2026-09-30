@@ -13,7 +13,7 @@ import 'package:pure_live/model/live_play_quality.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:pure_live/player/core/playback_header_resolver.dart';
 import 'package:pure_live/player/utils/player_consts.dart';
-import 'package:pure_live/player/core/player_manager.dart';
+import 'package:pure_live/player/kernel/live_player_facade.dart';
 import 'package:pure_live/player/models/player_exception.dart';
 import 'package:pure_live/player/models/player_error_type.dart';
 import 'package:pure_live/core/interface/live_site.dart';
@@ -175,7 +175,7 @@ class PlayerController extends GetxController {
   final StreamSourceOpener? _streamSourceOpener;
   final OwnedStreamSourceOpener? _ownedStreamSourceOpener;
   final LiveInputPlaybackBinder _inputPlaybackBinder;
-  final PlayerManager? _streamPlayerManager;
+  final LivePlayerFacade? _streamPlayerManager;
   late final LatestAsyncValueQueue<bool> _audioModeTransitions;
   late Site currentSite;
   int _loadEpoch = 0;
@@ -236,7 +236,7 @@ class PlayerController extends GetxController {
     _applyOpenReceipt(manager, beforeRevision, room);
   }
 
-  void _applyOpenReceipt(PlayerManager manager, int beforeRevision, LiveRoom room) {
+  void _applyOpenReceipt(LivePlayerFacade manager, int beforeRevision, LiveRoom room) {
     if (manager.hasError.value) {
       throw PlayerException(message: 'Selected stream failed to open', type: PlayerErrorType.source);
     }

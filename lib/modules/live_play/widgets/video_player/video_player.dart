@@ -31,7 +31,7 @@ class _VideoPlayerState extends State<VideoPlayer> {
       return PlaybackFailureOverlay(
         hasError: hasError,
         onRetry: controller.refresh,
-        child: GlobalPlayerService.instance.player.getVideoWidget(
+        child: GlobalPlayerService.instance.player.getVideoWidgetCompat(
           SettingsService.to.player.videoFitIndex.v,
           fitList: SettingsService.to.player.videoFitArray,
           trackPipSource: true,

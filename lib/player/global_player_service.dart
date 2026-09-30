@@ -38,6 +38,7 @@ class GlobalPlayerService {
   Future<void> _initialize(PlayerEngine defaultEngine) async {
     playerManager = LivePlayerFacade(defaultEngine: defaultEngine);
     floating = FloatingPlayback(facade: playerManager);
+    playerManager.floating = floating;
     _initialized = true;
     log("GlobalPlayerService: kernel facade ready.", name: "GlobalPlayerService");
   }

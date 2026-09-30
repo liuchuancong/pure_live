@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'dart:async';
+
 import 'package:flutter/widgets.dart';
 import 'package:pure_live/get/get.dart';
 import 'package:media_core/media_core.dart';
@@ -7,6 +9,8 @@ import 'package:media_core_live/media_core_live.dart';
 import 'package:media_core_media_kit/media_core_media_kit.dart';
 import 'package:pure_live/common/models/live_room.dart';
 import 'package:pure_live/model/live_play_quality.dart';
+import 'package:pure_live/get/get.dart';
+import 'package:pure_live/player/kernel/floating_playback.dart';
 import 'package:pure_live/player/kernel/kernel_backend_ids.dart';
 import 'package:pure_live/player/media_core/player_kernel_service.dart';
 import 'package:pure_live/player/models/player_engine.dart';
@@ -93,8 +97,13 @@ final class LivePlayerFacade {
     LiveRoom? room,
     List<LivePlayQuality> qualities = const [],
     int currentQuality = 0,
+    bool audioOnly = false,
+    Future<void> Function()? sourceResolver,
+    DateTime? sourceRefreshAt,
+    Object? sourceSelection,
   }) async {
     if (_disposed) return;
+    if (audioOnly) await setAudioOnlyMode(true);
     final sourceUrl = url.trim();
     if (sourceUrl.isEmpty) throw ArgumentError('Remote playback source is empty');
 
@@ -165,6 +174,9 @@ final class LivePlayerFacade {
     _commitSubject.add(commit);
   }
 
+  Future<void> playSource(Object source, {LiveRoom? room, bool audioOnly = false, Object? sourceResolver, Object? sourceSelection}) =>
+      playOwned(source, room ?? _room ?? LiveRoom(platform: '', roomId: ''));
+
   Future<void> switchLine(int index) => _controller.switchLine(index);
   Future<void> retry() => _controller.retry();
   Future<void> togglePlayPause() => _controller.togglePlayPause();
@@ -174,7 +186,7 @@ final class LivePlayerFacade {
   Future<void> setAudioOnly(bool audioOnly) => _controller.setAudioOnly(audioOnly);
   void setPresentationVisible(bool visible) => _controller.setPresentationVisible(visible);
 
-  Future<void> switchEngine(PlayerEngine engine) async {
+  Future<void> switchEngine(PlayerEngine engine, {bool isManual = false, bool resumeCurrentSource = true}) async {
     preferredEngine = engine;
     onEngineChanged?.call(engine);
     final current = commit;
@@ -259,6 +271,92 @@ final class LivePlayerFacade {
     if (interceptor == null) return sources;
     final intercepted = await interceptor(sources);
     return intercepted.isEmpty ? sources : intercepted;
+  }
+
+  // ---- PiP / 悬浮 / 几何 / 呈现（兼容面续） ----
+
+  final RxBool isInPip = false.obs;
+  final RxBool isPipPreparing = false.obs;
+  final RxInt videoPresentationRevision = 0.obs;
+
+  /// 由 GlobalPlayerService 注入的悬浮会话。
+  late final FloatingPlayback floating;
+
+  bool get isAppFloatingActive => floating.isAppFloatingActive;
+  bool get shouldKeepDanmakuForAppFloating => floating.isAppFloatingActive;
+  void prepareAppFloating() => floating.prepare();
+  Future<void> showAppFloating({Widget Function(BuildContext)? danmakuBuilder}) =>
+      floating.showAppFloating(danmakuBuilder: danmakuBuilder);
+  Future<void> closeAppFloating() => floating.closeAppFloating();
+  void prepareRoomSessionReentry() => floating.prepare();
+  FacadeStreamCommit? consumeRoomSessionReentry() => floating.consumeRoomReentry();
+  void cancelRoomSessionReentry() => floating.cancelRoomReentry();
+  void setVideoPresentationVisible(bool visible) => setPresentationVisible(visible);
+
+  /// Android 系统 PiP：经 kernel 呈现链申请 pip 模式。
+  Future<void> enablePip() async {
+    isPipPreparing.value = true;
+    try {
+      final driver = kernel.presentationDriver;
+      if (driver != null) {
+        await driver.apply(handle?.id ?? PlayerId('pure-live'), PresentationRequest.pip());
+      }
+    } finally {
+      isPipPreparing.value = false;
+    }
+  }
+
+  /// PiP 紧凑面：视频 + 暂停 + 关闭。
+  Widget buildPiPOverlay() => Scaffold(
+    backgroundColor: Colors.transparent,
+    body: Stack(
+      children: [
+        GestureDetector(onDoubleTap: () => unawaited(enablePip()), child: getVideoWidget(BoxFit.contain)),
+        Center(
+          child: IconButton(
+            iconSize: 42,
+            style: IconButton.styleFrom(backgroundColor: Colors.black45),
+            icon: Icon(isPlayingNow ? Icons.pause_circle_filled : Icons.play_circle_filled, color: Colors.white),
+            onPressed: togglePlayPause,
+          ),
+        ),
+        Positioned(
+          right: 8,
+          top: 8,
+          child: IconButton(
+            icon: const Icon(Icons.close, color: Colors.white),
+            style: IconButton.styleFrom(backgroundColor: Colors.black45),
+            onPressed: () => unawaited(close()),
+          ),
+        ),
+      ],
+    ),
+  );
+
+  double get currentPresentationAspectRatio {
+    final size = handle?.combinedSnapshot.geometry.videoSize;
+    if (size == null || size.width <= 0 || size.height <= 0) return 16 / 9;
+    return size.width / size.height;
+  }
+
+  String get effectiveVideoOrientation =>
+      isVerticalVideo.value ? 'portrait' : 'landscape';
+
+  /// 旧渲染入口：fitIndex/fitList 或 BoxFit 都接受；其余旧参数为兼容保留。
+  Widget getVideoWidgetCompat(
+    Object fit, {
+    List<BoxFit>? fitList,
+    Widget? controls,
+    bool trackPipSource = false,
+    bool? audioOnlyOverride,
+    Color? surfaceColor,
+    double? videoViewportAspectRatio,
+    Object? portraitFullscreenDisplayMode,
+  }) {
+    final resolved = fit is int ? (fitList == null || fitList.isEmpty ? BoxFit.contain : fitList[fit.clamp(0, fitList.length - 1)]) : fit as BoxFit;
+    final video = getVideoWidget(resolved);
+    if (controls == null) return video;
+    return Stack(children: [Positioned.fill(child: video), controls]);
   }
 
   Future<void> close() => _controller.close();

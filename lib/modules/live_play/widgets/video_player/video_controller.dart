@@ -15,7 +15,7 @@ import 'package:pure_live/plugins/db_service.dart';
 import 'package:pure_live/player/utils/fullscreen.dart';
 import 'package:screen_brightness_platform_interface/screen_brightness_platform_interface.dart';
 import 'package:volume_controller/volume_controller.dart';
-import 'package:pure_live/player/core/player_manager.dart';
+import 'package:pure_live/player/kernel/live_player_facade.dart';
 import 'package:pure_live/player/core/portrait_stream_support.dart';
 import 'package:pure_live/modules/live_play/widgets/layout/portrait_fullscreen_interaction.dart';
 import 'package:pure_live/player/models/player_exception.dart';
@@ -349,7 +349,7 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
   final Battery _battery;
   final SettingsService _settingsService;
   final DbService _dbService;
-  final PlayerManager _playerManager;
+  final LivePlayerFacade? _playerManager;
   final LivePlayController _livePlayController;
   final EpgProgrammeLoader? _loadEpgProgrammes;
 
