@@ -145,6 +145,8 @@ dependencies:
     path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_ijk_player
   media_core_better_player:
     path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_better_player
+  media_core_logging:
+    path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_logging
   media_core_fvp:
     path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_fvp
 
