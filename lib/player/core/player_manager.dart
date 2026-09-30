@@ -35,6 +35,7 @@ import '../interface/unified_player_interface.dart';
 import 'package:pure_live/routes/app_navigation.dart';
 import 'package:pure_live/model/live_play_quality.dart';
 import 'package:pure_live/player/utils/fullscreen.dart';
+import 'package:pure_live/player/utils/windows_pip_driver.dart';
 import 'package:flutter_floating/flutter_floating.dart';
 import 'package:pure_live/player/utils/player_consts.dart';
 import 'package:pure_live/player/utils/popup_route_tracker.dart';
@@ -323,8 +324,8 @@ class PlayerManager {
     WindowsPipExit? windowsPipExit,
   }) : _androidFloatingOverride = androidFloating,
        _usesWindowsPipOverride = windowsPipEnter != null || windowsPipExit != null,
-       _windowsPipEnter = windowsPipEnter ?? WindowService().enterWinPiP,
-       _windowsPipExit = windowsPipExit ?? WindowService().exitWinPiP,
+       _windowsPipEnter = windowsPipEnter ?? pipDrivenWindowsPipEnter,
+       _windowsPipExit = windowsPipExit ?? pipDrivenWindowsPipExit,
        _playerCreator = playerCreator ?? PlayerAdapterFactory.create,
        _useHardStopOnExit = useHardStopOnExit ?? (() => SettingsService.to.player.useHardStopOnExit.v),
        _suppressAutomaticFallbackAudio = suppressAutomaticFallbackAudio ?? (() => false),
