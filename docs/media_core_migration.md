@@ -26,7 +26,7 @@
    - 换画质/线路 = 重新 `wall.assign(index, 新源)`(墙温复用播放器);租约 renew 闭包 = pure 侧重解析当前档位/线路。
    - **owned 私有协议源(bigo/fc2/niconico)双路径**:墙不支持自定义输入,这些房间继续走旧 `MultiviewCellPlayer`(文件保留),音频焦点同时驱动墙(setAudioFocus)与旧句柄(setMuted)。media_core 后续补 custom-protocol 输入通道后收敛为单路径。
    - 帧看门狗/multiview_frame_watchdog.dart 删除(墙的进度 tick 看门狗替代,跨平台,不依赖补丁版 media_kit_video)。setVisibleFocusSmallCells 保留为兼容 no-op。
-2. **Windows 画中画**:方向与原计划相反——pure_live `WindowHelper` 的多显示器/记忆位置/最小尺寸/置顶几何(490 行)比 `WindowManagerPipWindow` 通用实现完整,应把这份几何能力**移植进 media_core_pip**(扩充 `PipWindow`/`WindowManagerPipWindow`:display 感知、bounds 持久化钩子),然后 pure_live `WindowService` 的事务包装(capture/prepare/restore 回滚)保持,host 操作改注入自定义 `PipWindow` 给 `PipDriver`。`PipSessionController` 等 Wave 4 主播放器上 kernel 后再接。
-3. **Android 画中画**:`PlayerManager.prepareAppFloating/showAppFloating/closeAppFloating`(flutter_floating 应用内悬浮,~500 行)→ `PipDriver` + `FloatingSystemPip`(系统 PiP)。前置:核对 background_playback_service 与熄屏续播策略在系统 PiP 模式下的行为等价。
-4. **播放核心**:`PlayerManager`(5028 行)→ `PlayerKernel`/`PlayerHandle`/`RecoveryLadder`;engine fallback→adapter registry, line fallback→`RecoveryLadder.nextLine`, 后台策略→media_core_native 后台保活。最大的一块,放在 PiP/多画面稳定后。
+2. **Windows 画中画(已完成)**:`windows_pip_driver.dart` 用 `WindowsGeometryPipWindow implements PipWindow` 把 WindowHelper 的多显示器/记忆位置几何接到 media_core_pip 的 `PipDriver`,`PlayerManager` 的 `_windowsPipEnter/Exit` 默认值改走 `PipDriver.apply`(0f6156c7)。会话守卫与回滚仍在 PlayerManager。
+3. **Android 悬浮窗→系统 PiP(主路径已完成)**:返回键在播离开直播间改为拦截并 `enablePip()`(系统 PiP,路由驻留显示紧凑 UI),不再弹路由挂 flutter_floating overlay(add28849)。overlay 路径保留为兜底:应用内切换走的 pop、PiP 不可用/关闭时。后续如需彻底删除 overlay,需在根挂载 PiP 紧凑面(现有 `buildPiPOverlay` 未接线)。
+4. **播放核心**:`PlayerManager`(5028 行)→ `PlayerKernel`/`PlayerHandle`/`RecoveryLadder`;engine fallback→adapter registry, line fallback→`RecoveryLadder.nextLine`, 后台策略→media_core_native 后台保活。最大的一块。
    - media_core 待补:pure_live 的 `OwnedPlaybackSource`(bigo/fc2/niconico 私有协议输入)在 PlayerSource/adapter 层无表达——需在 media_core 增加 custom-protocol 输入通道(adapter 级注册,业务编解码留在 pure_live)。
