@@ -142,6 +142,8 @@ dependencies:
     path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_ijk_player
   media_core_better_player:
     path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_better_player
+  media_core_danmaku:
+    path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_danmaku
   media_core_mediasession:
     path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_mediasession
   media_core_logging:

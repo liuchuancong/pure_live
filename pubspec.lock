@@ -1427,7 +1427,7 @@ packages:
     source: path
     version: "0.1.0"
   media_core_danmaku:
-    dependency: transitive
+    dependency: "direct main"
     description:
       path: "C:\\/Users/XA-158/projects/flutter/media_core/packages/media_core_danmaku"
       relative: true

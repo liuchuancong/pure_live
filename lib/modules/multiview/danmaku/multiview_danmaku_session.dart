@@ -1,11 +1,9 @@
-import 'dart:async';
 import 'dart:developer' as developer;
-
+import 'dart:async';
+import 'package:media_core_danmaku/media_core_danmaku.dart';
+import 'package:pure_live/player/danmaku/live_message_normalization.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
-import 'package:pure_live/modules/live_play/controllers/danmaku_message_gate.dart';
-import 'package:pure_live/modules/live_play/controllers/repeated_danmaku_filter.dart';
-import 'package:pure_live/modules/live_play/controllers/danmaku_similarity_filter.dart';
 
 /// 弹幕引擎工厂：按房间创建对应站点的 LiveDanmaku 实例。
 ///
@@ -39,7 +37,7 @@ class MultiviewDanmakuSession {
   final void Function(LiveMessage message)? onChatMessage;
 
   final DanmakuMessageGate _messageGate = DanmakuMessageGate();
-  final RepeatedDanmakuFilter _repeatedFilter = RepeatedDanmakuFilter();
+  final DanmakuRepeatedFilter _repeatedFilter = DanmakuRepeatedFilter();
   final DanmakuSimilarityFilter _similarityFilter = DanmakuSimilarityFilter();
 
   LiveDanmaku? _engine;
@@ -193,7 +191,7 @@ class MultiviewDanmakuSession {
 
   void _handleChatMessage(LiveMessage msg) {
     if (msg.type != LiveMessageType.chat) return;
-    if (!_messageGate.accepts(msg)) return;
+    if (!_messageGate.accepts(normalizeLiveMessage(msg))) return;
     final favorite = SettingsService.to.fav;
     final user = msg.userName.trim().toLowerCase();
     if (user.isNotEmpty && favorite.blockedDanmakuUsers.v.contains(user)) return;
@@ -201,7 +199,7 @@ class MultiviewDanmakuSession {
     if (favorite.shieldList.v.any(text.contains)) return;
     final danmakuSettings = SettingsService.to.danmaku;
     if (!_repeatedFilter.accepts(
-      msg,
+      normalizeLiveMessage(msg),
       enabled: danmakuSettings.collapseRepeatedDanmaku.v,
       window: Duration(seconds: danmakuSettings.repeatedDanmakuWindowSeconds.v.clamp(1, 30)),
     )) {

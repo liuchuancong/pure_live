@@ -1,14 +1,13 @@
 import 'dart:async';
 
+import 'package:media_core_danmaku/media_core_danmaku.dart';
 import 'package:pure_live/common/index.dart';
+import 'package:pure_live/player/danmaku/live_message_normalization.dart';
 import 'package:pure_live/core/common/core_log.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
 import 'package:pure_live/core/danmaku/empty_danmaku.dart';
 import 'package:pure_live/modules/live_play/states/live_play_state.dart';
-import 'package:pure_live/modules/live_play/controllers/danmaku_message_gate.dart';
 import 'package:pure_live/modules/live_play/controllers/danmaku_session_host.dart';
-import 'package:pure_live/modules/live_play/controllers/repeated_danmaku_filter.dart';
-import 'package:pure_live/modules/live_play/controllers/danmaku_similarity_filter.dart';
 
 /// Owns exactly one room-bound danmaku session.
 ///
@@ -29,7 +28,7 @@ class DanmakuController extends GetxController {
   final Duration stopTimeout;
   final bool Function(LiveRoom room)? recoveryAllowed;
   final DanmakuMessageGate _messageGate = DanmakuMessageGate();
-  final RepeatedDanmakuFilter _repeatedMessageFilter = RepeatedDanmakuFilter();
+  final DanmakuRepeatedFilter _repeatedMessageFilter = DanmakuRepeatedFilter();
   final DanmakuSimilarityFilter _similarityFilter = DanmakuSimilarityFilter();
 
   LiveDanmaku? _liveDanmaku;
@@ -192,10 +191,10 @@ class DanmakuController extends GetxController {
     engine.onMessage = (msg) {
       if (!_acceptsCallback(engine, key, token)) return;
       if (msg.type == LiveMessageType.chat) {
-        if (!_messageGate.accepts(msg) || _isBlocked(msg)) return;
+        if (!_messageGate.accepts(normalizeLiveMessage(msg)) || _isBlocked(msg)) return;
         final danmakuSettings = SettingsService.to.danmaku;
         if (!_repeatedMessageFilter.accepts(
-          msg,
+      normalizeLiveMessage(msg),
           enabled: danmakuSettings.collapseRepeatedDanmaku.v,
           window: Duration(seconds: danmakuSettings.repeatedDanmakuWindowSeconds.v.clamp(1, 30)),
         )) {
