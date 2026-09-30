@@ -1,19 +1,17 @@
 import 'dart:async';
 
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:pure_live/get/get.dart';
-import 'package:media_core/media_core.dart';
 import 'package:media_core_live/media_core_live.dart';
-import 'package:media_core_media_kit/media_core_media_kit.dart';
 import 'package:pure_live/common/models/live_room.dart';
 import 'package:pure_live/model/live_play_quality.dart';
-import 'package:pure_live/get/get.dart';
-import 'package:pure_live/player/kernel/floating_playback.dart';
-import 'package:pure_live/player/kernel/kernel_backend_ids.dart';
-import 'package:pure_live/player/media_core/player_kernel_service.dart';
 import 'package:pure_live/player/models/player_engine.dart';
+import 'package:media_core_media_kit/media_core_media_kit.dart';
+import 'package:pure_live/player/kernel/floating_playback.dart';
+import 'package:media_core/media_core.dart';
+import 'package:pure_live/player/kernel/kernel_backend_ids.dart';
+import 'package:pure_live/player/core/portrait_stream_support.dart';
+import 'package:pure_live/player/media_core/player_kernel_service.dart';
 
 /// 直播播放门面：页面只跟它说话。
 ///
@@ -44,7 +42,7 @@ final class LivePlayerFacade {
 
   final _stateSubject = StreamController<PlayerState>.broadcast();
   final _playingSubject = StreamController<bool>.broadcast();
-  final _errorSubject = StreamController<PlayerFailure>.broadcast();
+  final _errorSubject = StreamController<PlayerException>.broadcast();
   final _commitSubject = StreamController<FacadeStreamCommit?>.broadcast();
 
   StreamSubscription<PlayerState>? _stateSub;
@@ -72,7 +70,8 @@ final class LivePlayerFacade {
 
   Stream<PlayerState> get onStateChanged => _stateSubject.stream;
   Stream<bool> get onPlaying => _playingSubject.stream;
-  Stream<PlayerFailure> get onError => _errorSubject.stream;
+  Stream<PlayerException> get onError => _errorSubject.stream;
+  Stream<PlayerFailure> get onKernelError => _controller.onError;
   Stream<FacadeStreamCommit?> get onCommitChanged => _commitSubject.stream;
 
   void _bindController() {
@@ -85,7 +84,16 @@ final class LivePlayerFacade {
         _playingSubject.add(playing);
       }
     });
-    _errorSub = _controller.onError.listen(_errorSubject.add);
+    _errorSub = _controller.onError.listen((failure) {
+      _errorSubject.add(
+        PlayerException(
+          code: failure.code,
+          message: failure.message,
+          cause: failure.cause,
+          stackTrace: failure.stackTrace,
+        ),
+      );
+    });
   }
 
   /// 打开一个房间源：[url] 当前线路, [playUrls] 全部线路（恢复梯的换线序）,
@@ -98,7 +106,7 @@ final class LivePlayerFacade {
     List<LivePlayQuality> qualities = const [],
     int currentQuality = 0,
     bool audioOnly = false,
-    Future<void> Function()? sourceResolver,
+    PlaybackSourceResolver? sourceResolver,
     DateTime? sourceRefreshAt,
     Object? sourceSelection,
   }) async {
@@ -163,7 +171,7 @@ final class LivePlayerFacade {
   void _publishCommit(String url, List<LivePlayQuality> qualities, int currentQuality) {
     final lineIndex = _lastLines.isEmpty ? 0 : _lastLines.indexOf(url).clamp(0, _lastLines.length - 1);
     commit = FacadeStreamCommit(
-      room: _room,
+      room: _room ?? LiveRoom(platform: '', roomId: ''),
       urls: _lastLines,
       currentUrl: url,
       currentLineIndex: lineIndex,
@@ -174,8 +182,14 @@ final class LivePlayerFacade {
     _commitSubject.add(commit);
   }
 
-  Future<void> playSource(Object source, {LiveRoom? room, bool audioOnly = false, Object? sourceResolver, Object? sourceSelection}) =>
-      playOwned(source, room ?? _room ?? LiveRoom(platform: '', roomId: ''));
+  Future<void> playSource(
+    Object source, {
+    LiveRoom? room,
+    bool audioOnly = false,
+    Object? sourceResolver,
+    Object? sourceSelection,
+    DateTime? sourceRefreshAt,
+  }) => playOwned(source, room ?? _room ?? LiveRoom(platform: '', roomId: ''));
 
   Future<void> switchLine(int index) => _controller.switchLine(index);
   Future<void> retry() => _controller.retry();
@@ -222,7 +236,8 @@ final class LivePlayerFacade {
   bool get isAudioOnlyMode => _audioOnlyMode.value;
   bool get desiredAudioOnlyMode => _audioOnlyMode.value;
   Stream<bool> get onLoading => _loadingSubject.stream;
-  Stream<FacadeStreamCommit?> get onSourceCommitted => _commitSubject.stream;
+  Stream<FacadeStreamCommit> get onSourceCommitted =>
+      _commitSubject.stream.where((commit) => commit != null).cast<FacadeStreamCommit>();
   FacadeStreamCommit? get currentSourceCommit => commit;
   bool isSourceCommitCurrent(FacadeStreamCommit value) => identical(value, commit);
 
@@ -238,7 +253,10 @@ final class LivePlayerFacade {
     return MediaPlayerView(handle: handle, fit: fit);
   }
 
-  void changeVideoFit(BoxFit fit) {
+  void changeVideoFit(Object fitOrIndex, {List<BoxFit>? fitList}) {
+    final fit = fitOrIndex is int
+        ? (fitList == null || fitList.isEmpty ? BoxFit.contain : fitList[fitOrIndex.clamp(0, fitList.length - 1)])
+        : fitOrIndex as BoxFit;
     final adapter = _controller.handle?.adapter;
     if (adapter is MediaKitPlayerAdapter) {
       adapter.videoConfig = adapter.videoConfig.copyWith(fit: fit);
@@ -264,6 +282,7 @@ final class LivePlayerFacade {
     final size = handle?.combinedSnapshot.geometry.videoSize;
     final next = size != null && size.height > size.width;
     if (next != isVerticalVideo.value) isVerticalVideo.value = next;
+    videoGeometryState.value = _computeVideoGeometry();
   }
 
   Future<List<PlayerSource>> _intercept(List<PlayerSource> sources) async {
@@ -284,12 +303,17 @@ final class LivePlayerFacade {
 
   bool get isAppFloatingActive => floating.isAppFloatingActive;
   bool get shouldKeepDanmakuForAppFloating => floating.isAppFloatingActive;
-  void prepareAppFloating() => floating.prepare();
+  void prepareAppFloating({Future<void> Function()? onClose, FacadeStreamCommit? session}) => floating.prepare();
   Future<void> showAppFloating({Widget Function(BuildContext)? danmakuBuilder}) =>
       floating.showAppFloating(danmakuBuilder: danmakuBuilder);
   Future<void> closeAppFloating() => floating.closeAppFloating();
-  void prepareRoomSessionReentry() => floating.prepare();
-  FacadeStreamCommit? consumeRoomSessionReentry() => floating.consumeRoomReentry();
+  void prepareRoomSessionReentry([LiveRoom? room]) => floating.prepare();
+  FacadeStreamCommit? consumeRoomSessionReentry([LiveRoom? room]) {
+    final seed = floating.consumeRoomReentry();
+    if (seed == null || room == null) return seed;
+    return seed.room.roomId == room.roomId ? seed : null;
+  }
+
   void cancelRoomSessionReentry() => floating.cancelRoomReentry();
   void setVideoPresentationVisible(bool visible) => setPresentationVisible(visible);
 
@@ -339,8 +363,35 @@ final class LivePlayerFacade {
     return size.width / size.height;
   }
 
-  String get effectiveVideoOrientation =>
-      isVerticalVideo.value ? 'portrait' : 'landscape';
+  VideoSourceOrientation get effectiveVideoOrientation =>
+      isVerticalVideo.value ? VideoSourceOrientation.portrait : VideoSourceOrientation.landscape;
+
+  final Rx<VideoGeometrySnapshot> videoGeometryState = Rx<VideoGeometrySnapshot>(const VideoGeometrySnapshot.unknown());
+
+  VideoGeometrySnapshot get videoGeometry => videoGeometryState.value;
+
+  VideoGeometrySnapshot _computeVideoGeometry() {
+    final size = handle?.combinedSnapshot.geometry.videoSize;
+    if (size == null || size.width <= 0 || size.height <= 0) {
+      return const VideoGeometrySnapshot.unknown();
+    }
+    final width = size.width.toInt();
+    final height = size.height.toInt();
+    final vertical = height > width;
+    final orientation = vertical ? VideoOrientationKind.portrait : VideoOrientationKind.landscape;
+    return VideoGeometrySnapshot(
+      width: width,
+      height: height,
+      aspectRatio: width / height,
+      orientation: orientation,
+      candidateOrientation: orientation,
+      stableSampleCount: 1,
+      confidence: 1,
+      observedAt: DateTime.now(),
+    );
+  }
+
+  Duration get audioModeSwitchTimeout => const Duration(seconds: 5);
 
   /// 旧渲染入口：fitIndex/fitList 或 BoxFit 都接受；其余旧参数为兼容保留。
   Widget getVideoWidgetCompat(
@@ -353,10 +404,17 @@ final class LivePlayerFacade {
     double? videoViewportAspectRatio,
     Object? portraitFullscreenDisplayMode,
   }) {
-    final resolved = fit is int ? (fitList == null || fitList.isEmpty ? BoxFit.contain : fitList[fit.clamp(0, fitList.length - 1)]) : fit as BoxFit;
+    final resolved = fit is int
+        ? (fitList == null || fitList.isEmpty ? BoxFit.contain : fitList[fit.clamp(0, fitList.length - 1)])
+        : fit as BoxFit;
     final video = getVideoWidget(resolved);
     if (controls == null) return video;
-    return Stack(children: [Positioned.fill(child: video), controls]);
+    return Stack(
+      children: [
+        Positioned.fill(child: video),
+        controls,
+      ],
+    );
   }
 
   Future<void> close() => _controller.close();
@@ -381,22 +439,26 @@ class FacadeStreamCommit {
   const FacadeStreamCommit({
     this.revision = 0,
     required this.room,
-    required this.urls,
-    required this.currentUrl,
-    required this.currentLineIndex,
-    required this.headers,
-    required this.qualities,
-    required this.currentQuality,
-    this.ownedSource,
+    List<String>? urls,
+    String? currentUrl,
+    this.currentLineIndex = 0,
+    this.headers = const {},
+    this.qualities = const [],
+    this.currentQuality = 0,
+    Object? source,
+    Object? ownedSource,
     this.isAudioOnly = false,
     this.isLiving = true,
     this.dataSource = '',
+    List<String>? playUrls,
     this.sourceQueryPolicies = const {},
     this.hasUseDefaultResolution = true,
-  });
+  }) : urls = urls ?? playUrls ?? const [],
+       currentUrl = currentUrl ?? dataSource,
+       ownedSource = source ?? ownedSource;
 
   final int revision;
-  final LiveRoom? room;
+  final LiveRoom room;
   final List<String> urls;
   final String currentUrl;
   final int currentLineIndex;
@@ -404,6 +466,7 @@ class FacadeStreamCommit {
   final List<LivePlayQuality> qualities;
   final int currentQuality;
   final Object? ownedSource;
+  List<String> get linesOrUrls => urls;
   final bool isAudioOnly;
   final bool isLiving;
   final String dataSource;
@@ -413,6 +476,7 @@ class FacadeStreamCommit {
   FacadeStreamCommit copyWith({
     String? dataSource,
     List<String>? playUrls,
+    Object? source,
     Object? ownedSource,
     Map<String, Object?>? sourceQueryPolicies,
     Map<String, String>? headers,
@@ -426,7 +490,7 @@ class FacadeStreamCommit {
     headers: headers ?? this.headers,
     qualities: qualities,
     currentQuality: currentQuality,
-    ownedSource: ownedSource ?? this.ownedSource,
+    ownedSource: source ?? ownedSource ?? this.ownedSource,
     isAudioOnly: isAudioOnly ?? this.isAudioOnly,
     isLiving: isLiving,
     dataSource: dataSource ?? this.dataSource,
@@ -438,18 +502,66 @@ class FacadeStreamCommit {
 /// 旧栈类型别名（消费者签名不变）。
 typedef RoomSessionSnapshot = FacadeStreamCommit;
 typedef PlaybackSourceCommitSnapshot = FacadeStreamCommit;
-typedef PlaybackSourceResolver = Future<Object?> Function(Object request);
+typedef PlaybackSourceResolver = Future<PlaybackSourceRefreshResult> Function(PlaybackSourceRefreshRequest request);
 
 extension FacadeStreamCommitLegacy on FacadeStreamCommit {
   List<String> get playUrls => urls;
   Object? get source => null;
   String get currentUrl_ => currentUrl;
   Map<String, Object?> get queryPolicies => sourceQueryPolicies;
+  PlaybackSourceQualitySelection? get selection =>
+      qualities.isEmpty ? null : PlaybackSourceQualitySelection(qualities: qualities, currentQuality: currentQuality);
+}
+
+@immutable
+class PlaybackSourceRefreshRequest {
+  const PlaybackSourceRefreshRequest({
+    required this.currentLineIndex,
+    required this.advanceLine,
+    required this.currentUrl,
+    this.currentSource,
+    this.currentQuality,
+  });
+  final int currentLineIndex;
+  final bool advanceLine;
+  final String? currentUrl;
+  final Object? currentSource;
+  final LivePlayQuality? currentQuality;
+}
+
+@immutable
+class PlaybackSourceRefreshResult {
+  const PlaybackSourceRefreshResult({
+    required this.urls,
+    required this.preferredLineIndex,
+    this.refreshAt,
+    this.invalidAt,
+    this.selection,
+  }) : ownedSource = null;
+
+  const PlaybackSourceRefreshResult.owned({required Object? source, this.refreshAt, this.invalidAt, this.selection})
+    : ownedSource = source,
+      urls = const [],
+      preferredLineIndex = 0;
+
+  final Object? ownedSource;
+  List<String> get linesOrUrls => urls;
+  bool get hasSources => ownedSource != null || urls.isNotEmpty;
+  final List<String> urls;
+  final int preferredLineIndex;
+  final DateTime? refreshAt;
+  final DateTime? invalidAt;
+  final PlaybackSourceQualitySelection? selection;
 }
 
 @immutable
 class PlaybackSourceQualitySelection {
-  const PlaybackSourceQualitySelection({required this.qualities, required this.currentQuality});
+  const PlaybackSourceQualitySelection({
+    required this.qualities,
+    required this.currentQuality,
+    this.sourceQueryPolicies = const {},
+  });
   final List<LivePlayQuality> qualities;
   final int currentQuality;
+  final Map<String, Object?> sourceQueryPolicies;
 }

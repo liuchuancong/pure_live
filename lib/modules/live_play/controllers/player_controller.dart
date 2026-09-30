@@ -1,27 +1,25 @@
 import 'dart:async';
 
 import 'package:dio/dio.dart';
-import 'package:pure_live/core/interface/live_quality_discovery.dart';
-import 'package:pure_live/player/core/live_input_playback_binding.dart';
-import 'package:pure_live/player/core/playback_source.dart';
-import 'package:pure_live/common/utils/play_quality_label.dart';
 
 import 'dart:developer' as developer;
 
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/model/live_play_quality.dart';
-import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:pure_live/player/core/playback_header_resolver.dart';
-import 'package:pure_live/player/utils/player_consts.dart';
-import 'package:pure_live/player/kernel/live_player_facade.dart';
-import 'package:pure_live/player/kernel/live_player_facade.dart' as facade_types show RoomSessionSnapshot, PlaybackSourceCommitSnapshot, PlaybackSourceResolver, PlaybackSourceQualitySelection;
-import 'package:pure_live/player/models/player_exception.dart';
-import 'package:pure_live/player/models/player_error_type.dart';
 import 'package:pure_live/core/interface/live_site.dart';
-import 'package:pure_live/core/common/hls_source_query_policy.dart';
-import 'package:pure_live/core/site/huya/huya_transport_policy.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:pure_live/player/utils/player_consts.dart';
+import 'package:pure_live/player/core/playback_source.dart';
+import 'package:media_core/media_core.dart' show PlayerException, PlayerErrorCode;
+import 'package:pure_live/common/utils/play_quality_label.dart';
+import 'package:pure_live/player/kernel/live_player_facade.dart';
 import 'package:pure_live/modules/live_play/states/load_type.dart';
+import 'package:pure_live/core/common/hls_source_query_policy.dart';
+import 'package:pure_live/player/core/playback_header_resolver.dart';
+import 'package:pure_live/core/site/huya/huya_transport_policy.dart';
+import 'package:pure_live/core/interface/live_quality_discovery.dart';
 import 'package:pure_live/common/utils/latest_async_value_queue.dart';
+import 'package:pure_live/player/core/live_input_playback_binding.dart';
 import 'package:pure_live/modules/live_play/states/live_play_state.dart';
 import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller.dart';
@@ -239,7 +237,7 @@ class PlayerController extends GetxController {
 
   void _applyOpenReceipt(LivePlayerFacade manager, int beforeRevision, LiveRoom room) {
     if (manager.hasError.value) {
-      throw PlayerException(message: 'Selected stream failed to open', type: PlayerErrorType.source);
+      throw PlayerException(code: PlayerErrorCode.sourceInvalid, message: 'Selected stream failed to open');
     }
     final commit = manager.currentSourceCommit;
     // A consumed pause/exit is normal lifecycle completion, not a source
@@ -396,7 +394,7 @@ class PlayerController extends GetxController {
       currentQuality: selection?.currentQuality,
       playUrls: commit.urls,
       ownedSource: commit.source is OwnedPlaybackSource ? commit.source as OwnedPlaybackSource : null,
-      sourceQueryPolicies: selection?.sourceQueryPolicies ?? const {},
+      sourceQueryPolicies: (selection?.sourceQueryPolicies ?? const {}) as Map<String, HlsSourceQueryPolicy>,
       currentLineIndex: commit.currentLineIndex,
     );
     _main.updateRoom(success: true, isLoading: false, loadError: null);
@@ -514,8 +512,8 @@ class PlayerController extends GetxController {
       qualites: qualities,
       currentQuality: currentQuality,
       playUrls: playUrls,
-      sourceQueryPolicies: session.sourceQueryPolicies,
-      ownedSource: session.ownedSource,
+      sourceQueryPolicies: session.sourceQueryPolicies as Map<String, HlsSourceQueryPolicy>? ?? const {},
+      ownedSource: session.ownedSource as OwnedPlaybackSource?,
       currentLineIndex: currentLineIndex,
       isCurrentRoomAudioOnly: manager.desiredAudioOnlyMode,
       hasUseDefaultResolution: session.hasUseDefaultResolution,
@@ -523,7 +521,7 @@ class PlayerController extends GetxController {
 
     final videoController = VideoController(
       room: session.room,
-      ownedSource: session.ownedSource,
+      ownedSource: session.ownedSource as OwnedPlaybackSource?,
       playUrs: playUrls,
       datasource: session.dataSource.isNotEmpty
           ? session.dataSource
@@ -547,7 +545,7 @@ class PlayerController extends GetxController {
       sourceSelection: PlaybackSourceQualitySelection(
         qualities: qualities,
         currentQuality: currentQuality,
-        sourceQueryPolicies: session.sourceQueryPolicies,
+        sourceQueryPolicies: session.sourceQueryPolicies as Map<String, HlsSourceQueryPolicy>? ?? const {},
       ),
       livePlayController: _videoSessionController,
       onSourceCommitted: applySourceCommit,
@@ -859,7 +857,7 @@ class PlayerController extends GetxController {
 
     try {
       if (controller == null) {
-        throw PlayerException(message: 'Room video controller is null', type: PlayerErrorType.lifecycle);
+        throw PlayerException(code: PlayerErrorCode.invalidState, message: 'Room video controller is null');
       }
       await controller.changeAudioOnlyMode(value);
 

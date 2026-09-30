@@ -1,15 +1,15 @@
 import 'dart:io';
 import 'dart:async';
 import 'dart:developer' as developer;
+
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/event_bus.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:pure_live/plugins/emoji_manager.dart';
 import 'package:pure_live/model/live_play_quality.dart';
-import 'package:pure_live/player/kernel/live_player_facade.dart';
-import 'package:pure_live/player/kernel/live_player_facade.dart' as facade_types show RoomSessionSnapshot, PlaybackSourceCommitSnapshot, PlaybackSourceResolver, PlaybackSourceQualitySelection;
 import 'package:pure_live/player/core/playback_source.dart';
 import 'package:pure_live/player/core/live_audio_service.dart';
+import 'package:pure_live/player/kernel/live_player_facade.dart';
 import 'package:pure_live/modules/live_play/states/ui_state.dart';
 import 'package:pure_live/modules/live_play/states/load_type.dart';
 import 'package:pure_live/core/common/hls_source_query_policy.dart';
@@ -29,7 +29,6 @@ import 'package:pure_live/modules/live_play/widgets/video_player/video_controlle
 import 'package:pure_live/modules/live_play/controllers/danmaku_presentation_recovery.dart';
 import 'package:pure_live/modules/live_play/widgets/local_interaction/local_interaction_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/local_interaction/local_message_delivery_queue.dart';
-
 
 // live_play_controller.dart
 
@@ -128,8 +127,8 @@ class LivePlayController extends GetxController
         qualites: restored?.qualities ?? const <LivePlayQuality>[],
         currentQuality: restored?.currentQuality ?? 0,
         playUrls: restored?.playUrls ?? const <String>[],
-        sourceQueryPolicies: restored?.sourceQueryPolicies ?? const {},
-        ownedSource: restored?.ownedSource,
+        sourceQueryPolicies: (restored?.sourceQueryPolicies ?? const {}) as Map<String, HlsSourceQueryPolicy>,
+        ownedSource: restored?.ownedSource as OwnedPlaybackSource?,
         currentLineIndex: restored?.currentLineIndex ?? 0,
         isCurrentRoomAudioOnly: initialAudioOnly,
         hasUseDefaultResolution: restored?.hasUseDefaultResolution ?? false,

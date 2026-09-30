@@ -725,7 +725,7 @@ class PortraitStreamDiagnosticsBadge extends StatelessWidget {
       final settings = SettingsService.to.player;
       if (!settings.showPortraitDiagnostics.v) return const SizedBox.shrink();
       final manager = GlobalPlayerService.instance.player;
-      final geometry = manager.videoGeometry.value;
+      final geometry = manager.videoGeometry;
       final roomOverride = settings.portraitOverrideForRoom(manager.currentFloatRoom);
       final orientation = manager.effectiveVideoOrientation;
       final pending = geometry.candidateOrientation != geometry.orientation;

@@ -1,5 +1,3 @@
-import 'package:pure_live/player/core/playback_source.dart';
-
 import 'dart:io';
 import 'dart:async';
 import 'dart:developer';
@@ -13,21 +11,21 @@ import 'package:flame_barrage/flame_barrage.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:pure_live/plugins/db_service.dart';
 import 'package:pure_live/player/utils/fullscreen.dart';
-import 'package:screen_brightness_platform_interface/screen_brightness_platform_interface.dart';
 import 'package:volume_controller/volume_controller.dart';
-import 'package:pure_live/player/kernel/live_player_facade.dart';
-import 'package:pure_live/player/kernel/live_player_facade.dart' as facade_types show RoomSessionSnapshot, PlaybackSourceCommitSnapshot, PlaybackSourceResolver, PlaybackSourceQualitySelection;
-import 'package:pure_live/player/core/portrait_stream_support.dart';
-import 'package:pure_live/modules/live_play/widgets/layout/portrait_fullscreen_interaction.dart';
-import 'package:pure_live/player/models/player_exception.dart';
+import 'package:pure_live/player/core/playback_source.dart';
+import 'package:media_core/media_core.dart' show PlayerException, PlayerErrorCode;
 import 'package:pure_live/player/models/player_error_type.dart';
-import 'package:pure_live/modules/live_play/states/load_type.dart';
+import 'package:pure_live/player/kernel/live_player_facade.dart';
 import 'package:pure_live/modules/live_play/states/ui_state.dart';
+import 'package:pure_live/modules/live_play/states/load_type.dart';
+import 'package:pure_live/player/core/portrait_stream_support.dart';
 import 'package:pure_live/core/iptv/local/database.dart' as database;
 import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/danmaku/danmaku_message_actions.dart';
 import 'package:pure_live/modules/live_play/widgets/danmaku/danmaku_settings_binding.dart';
+import 'package:screen_brightness_platform_interface/screen_brightness_platform_interface.dart';
+import 'package:pure_live/modules/live_play/widgets/layout/portrait_fullscreen_interaction.dart';
 
 typedef AudioOnlyCallback = Future<void> Function(bool value);
 
@@ -350,7 +348,7 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
   final Battery _battery;
   final SettingsService _settingsService;
   final DbService _dbService;
-  final LivePlayerFacade? _playerManager;
+  final LivePlayerFacade _playerManager;
   final LivePlayController _livePlayController;
   final EpgProgrammeLoader? _loadEpgProgrammes;
 
@@ -459,7 +457,7 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
     BoxFit fitMode = BoxFit.contain,
     Battery? battery,
     VolumeController? systemVolumeController,
-    PlayerManager? playerManager,
+    LivePlayerFacade? playerManager,
     SettingsService? settingsService,
     DbService? dbService,
     LivePlayController? livePlayController,
@@ -505,7 +503,7 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
   Future<void> initVideoController() async {
     _setStatus(PlayerStatus.loading);
     // Bind before opening the source. Native open/decode failures can arrive
-    // synchronously while PlayerManager.play is still awaiting the adapter;
+    // synchronously while LivePlayerFacade.play is still awaiting the adapter;
     // binding afterwards silently lost that only terminal event and then
     // overwrote the page with a false `playing` state.
     initPlayerListener();
@@ -515,7 +513,7 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
 
     if (reuseCurrentSession) {
       if (_playerManager.currentPlayer == null || _playerManager.currentFloatRoom != room) {
-        throw PlayerException(message: 'Retained room session is no longer available', type: PlayerErrorType.lifecycle);
+        throw PlayerException(code: PlayerErrorCode.invalidState, message: 'Retained room session is no longer available');
       }
       audioOnlyState.value = _playerManager.desiredAudioOnlyMode;
     } else {
@@ -744,7 +742,7 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
     _lastPlayerErrorSignature = signature;
     _lastPlayerErrorAt = now;
 
-    final errorMessage = switch (error.type) {
+    final errorMessage = switch (error.code.appType) {
       PlayerErrorType.network => i18n("error_network"),
       PlayerErrorType.source => i18n("error_source"),
       PlayerErrorType.codec => i18n("error_codec"),
