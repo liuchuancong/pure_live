@@ -11,6 +11,9 @@ analyzer:
     # Device captures, build records and one-off forensic helpers live here;
     # they are evidence artifacts rather than application source.
     - local-artifacts/**
+    # Opt-in external/native probes run standalone against device fixtures;
+    # they are not part of the app quality gate.
+    - tool/probes/**
     # Vendored upstream package (Predidit/media-kit@803c4a27); analyzed upstream.
     - third_party/media_kit/**
     - third_party/fvp/**

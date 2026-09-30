@@ -1,1 +1,0 @@
-Sanitized public Picarto detail/master responses observed 2026-09-07 05:58 UTC via local Clash. Names, title and image paths replaced; channel IDs, ordering, state flags and HLS attributes retained. No account credentials or media segments. Raw request evidence is in local-artifacts/reference/platform-inventory-20260907 (not committed).
