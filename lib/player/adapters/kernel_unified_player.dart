@@ -2,7 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:media_core/media_core.dart' as mc;
-import 'package:media_core_media_kit/media_core_media_kit.dart' show MediaKitPlayerAdapter;
+import 'package:media_core_better_player/media_core_video_player.dart' show kBetterPlayerBackendId;
+import 'package:media_core_fvp/media_core_fvp.dart' show kFvpPlayerBackendId;
+import 'package:media_core_ijk_player/media_core_ijk_player.dart' show kIjkPlayerBackendId;
+import 'package:media_core_media_kit/media_core_media_kit.dart'
+    show MediaKitPlayerAdapter, kMediaKitPlayerBackendId;
 import 'package:pure_live/common/models/live_room.dart';
 import 'package:pure_live/player/media_core/player_kernel_service.dart';
 import 'package:pure_live/player/models/player_engine.dart';
@@ -11,11 +15,9 @@ import 'package:pure_live/player/models/player_exception.dart';
 import 'package:pure_live/player/models/player_state.dart';
 import 'package:pure_live/player/interface/unified_player_interface.dart';
 
-/// [UnifiedPlayer] 的 media_core 桥：引擎实际是 kernel 的 [mc.PlayerHandle]。
-///
-/// setDataSource 的 playUrls 保留为线路候选（RecoveryLadder.nextLine 的
-/// 候选源），会话代际/命令串行化由 handle 提供；pure_live 侧的编解码软
-/// 回退与私有输入能力暂不实现，缺省时 manager 走通用回退。
+/// [UnifiedPlayer] 的 media_core 桥：引擎实际是 kernel 的 [mc.PlayerHandle]，
+/// 后端由 [backendId] 钉定（mpv/ijk/better_player/fvp），渲染走通用
+/// [mc.MediaPlayerView]。会话代际/命令串行化/恢复梯都在 handle 上。
 class KernelUnifiedPlayer extends UnifiedPlayer
     implements
         SourceTransitionAwarePlayer,
@@ -23,6 +25,11 @@ class KernelUnifiedPlayer extends UnifiedPlayer
         PrivateInputAwarePlayer,
         DecoderRecoveryAwarePlayer,
         AudioOutputSuppressionAwarePlayer {
+  KernelUnifiedPlayer({this.backendId = kMediaKitPlayerBackendId});
+
+  /// 本桥钉定的 kernel 后端 id。
+  final String backendId;
+
   mc.PlayerHandle? _handle;
   bool _audioOnly = false;
   bool _disposed = false;
@@ -41,7 +48,12 @@ class KernelUnifiedPlayer extends UnifiedPlayer
   StreamSubscription<mc.PlayerAdapterEvent>? _eventSub;
 
   @override
-  PlayerEngine get engine => PlayerEngine.mediaKit;
+  PlayerEngine get engine => switch (backendId) {
+    kIjkPlayerBackendId => PlayerEngine.fijk,
+    kBetterPlayerBackendId => PlayerEngine.exo,
+    kFvpPlayerBackendId => PlayerEngine.fvp,
+    _ => PlayerEngine.mediaKit,
+  };
 
   mc.PlayerHandle? get handle => _handle;
 
@@ -101,6 +113,7 @@ class KernelUnifiedPlayer extends UnifiedPlayer
     final handle = await PlayerKernelService.instance.kernel.create(
       source: source,
       config: mc.PlayerConfig(autoPlay: true, enableVideo: !_audioOnly, enableRecovery: true),
+      preferredBackend: backendId,
     );
     handle.setSourceCandidates(_candidateSources(source.uri.toString()));
     _handle = handle;

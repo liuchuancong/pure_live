@@ -44,6 +44,7 @@ import 'package:pure_live/core/site/huya/huya_transport_policy.dart';
 import 'package:pure_live/player/utils/pip_window_widget.dart';
 import 'package:pure_live/player/core/live_audio_service.dart';
 import 'package:pure_live/common/utils/latest_async_value_queue.dart';
+import 'package:media_core_media_kit/media_core_media_kit.dart' show kMediaKitPlayerBackendId;
 import 'package:pure_live/player/adapters/kernel_unified_player.dart';
 import 'package:pure_live/player/adapters/player_adapter_factory.dart';
 import 'package:pure_live/player/interface/media_kit_player_accessor.dart';
@@ -2295,7 +2296,7 @@ class PlayerManager {
         headers: headers,
         policy: sourceQueryPolicy,
         nativeOpen: nativeOpen,
-        rewriteLegacyHevcFlv: player is KernelUnifiedPlayer,
+        rewriteLegacyHevcFlv: player is KernelUnifiedPlayer && player.backendId == kMediaKitPlayerBackendId,
         refreshAt: refreshAt,
         renewFlv: renewFlv,
       ),

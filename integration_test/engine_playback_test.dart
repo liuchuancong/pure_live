@@ -22,7 +22,9 @@ import 'package:pure_live/core/interface/live_site.dart';
 import 'package:pure_live/core/sites.dart';
 import 'package:pure_live/get/get.dart';
 import 'package:media_kit/media_kit.dart';
-import 'package:pure_live/player/adapters/fvp_adapter.dart';
+import 'package:media_core_fvp/media_core_fvp.dart' show kFvpPlayerBackendId;
+import 'package:pure_live/player/adapters/kernel_unified_player.dart';
+import 'package:pure_live/player/media_core/player_kernel_service.dart';
 import 'package:pure_live/player/core/playback_header_resolver.dart';
 import 'package:pure_live/player/core/playback_proxy_policy.dart';
 
@@ -105,7 +107,8 @@ void main() {
           await player.open(Media(url, httpHeaders: headers));
           dispose = player.dispose;
         } else {
-          final adapter = FvpAdapter();
+          PlayerKernelService.ensureInitialized();
+          final adapter = KernelUnifiedPlayer(backendId: kFvpPlayerBackendId);
           await adapter.init();
           adapter.width.listen((w) => w == null ? null : sizes.add(w));
           adapter.onPlaying.listen((p) => playing = playing || p);
