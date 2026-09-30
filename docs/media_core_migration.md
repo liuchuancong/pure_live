@@ -20,8 +20,12 @@
 
 > media_core 处于开发阶段:下述缺口直接在 media_core 仓库补 API(只加通用能力,业务逻辑不进 media_core)。
 
-1. **多画面(方案已定:引擎换核,编排保留)**:不采用 media_core `MultiviewController` 整体接管——pure_live 的逐格画质/线路切换、签名 URL 租约续期(斗鱼匿名原画 300s 过期)、focus 轨道可见性门控、弹幕会话是纯业务编排,media_core 墙模型没有对应物;直接换墙会丢功能。改法:`multiview_cell_player.dart` 重写为 kernel `PlayerHandle` 句柄(仍实现现有 `MultiviewCellPlayerHandle` 接口,`videoController` 从 adapter 底层 mk.Player/VideoController 取,`handle.player` 已公开),控制器 1423 行零改动,页面 `_MultiviewCellView` 渲染换 `MediaPlayerView(handle:)` 或继续 media_kit Video。
-   - media_core 待补:①media_kit adapter 的 `videoFrameProgress` 心跳目前 Windows-only(`_frameProgressSupported`),Android 侧帧看门狗需要它——依赖 pure_live 补丁版 media_kit_video 的 frameRevision,把观察器扩展到 Android。渲染与句柄复用无缺口:`handle.adapter as PlayerVideo` 即视频输出,`(handle.adapter as MediaKitPlayerAdapter).videoController` 已公开底层控制器(已核实)。
+1. **多画面(进行中:整体移植到 media_core 墙)**:media_core_multiview 已补齐通用 API(本地提交 f6332a6):`MultiviewCellSource.expiresAt/renew`(签名 URL 由墙在每次(重)打开前续期)、`MultiviewCellStatus.paused`(看门狗跳过)、`pauseCell/resumeCell/setCellVolume/clearCellVolume`(播放/暂停按钮与房间音量记忆)。pure_live 侧重写 `multiview_controller.dart`:
+   - 布局映射:pure single/dual/quad → 同名;**pure focus(容量4..9) → 墙 nine(容量9)**,一大多小的视觉/语义由 pure 页面自持,墙的 `setVideoFocus` 只管画质偏好与音质优先格。
+   - 镜像填充:pure `cells`(MultiviewCellState)由墙 snapshot + 解析上下文填充;`videoController` 从 `(kernel.get(PlayerId(cell.playerId)).adapter as MediaKitPlayerAdapter).videoController` 取,**页面渲染零改动**(仍用 media_kit Video widget,不碰补丁 API)。
+   - 换画质/线路 = 重新 `wall.assign(index, 新源)`(墙温复用播放器);租约 renew 闭包 = pure 侧重解析当前档位/线路。
+   - **owned 私有协议源(bigo/fc2/niconico)双路径**:墙不支持自定义输入,这些房间继续走旧 `MultiviewCellPlayer`(文件保留),音频焦点同时驱动墙(setAudioFocus)与旧句柄(setMuted)。media_core 后续补 custom-protocol 输入通道后收敛为单路径。
+   - 帧看门狗/multiview_frame_watchdog.dart 删除(墙的进度 tick 看门狗替代,跨平台,不依赖补丁版 media_kit_video)。setVisibleFocusSmallCells 保留为兼容 no-op。
 2. **Windows 画中画**:方向与原计划相反——pure_live `WindowHelper` 的多显示器/记忆位置/最小尺寸/置顶几何(490 行)比 `WindowManagerPipWindow` 通用实现完整,应把这份几何能力**移植进 media_core_pip**(扩充 `PipWindow`/`WindowManagerPipWindow`:display 感知、bounds 持久化钩子),然后 pure_live `WindowService` 的事务包装(capture/prepare/restore 回滚)保持,host 操作改注入自定义 `PipWindow` 给 `PipDriver`。`PipSessionController` 等 Wave 4 主播放器上 kernel 后再接。
 3. **Android 画中画**:`PlayerManager.prepareAppFloating/showAppFloating/closeAppFloating`(flutter_floating 应用内悬浮,~500 行)→ `PipDriver` + `FloatingSystemPip`(系统 PiP)。前置:核对 background_playback_service 与熄屏续播策略在系统 PiP 模式下的行为等价。
 4. **播放核心**:`PlayerManager`(5028 行)→ `PlayerKernel`/`PlayerHandle`/`RecoveryLadder`;engine fallback→adapter registry, line fallback→`RecoveryLadder.nextLine`, 后台策略→media_core_native 后台保活。最大的一块,放在 PiP/多画面稳定后。
