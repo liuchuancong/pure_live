@@ -1427,6 +1427,13 @@ packages:
       relative: false
     source: path
     version: "0.1.0"
+  media_core_better_player:
+    dependency: "direct main"
+    description:
+      path: "C:/Users/XA-158/projects/flutter/media_core/packages/media_core_better_player"
+      relative: false
+    source: path
+    version: "0.1.0"
   media_core_danmaku:
     dependency: transitive
     description:
@@ -1434,10 +1441,31 @@ packages:
       relative: true
     source: path
     version: "0.1.0"
+  media_core_floating:
+    dependency: "direct main"
+    description:
+      path: "C:/Users/XA-158/projects/flutter/media_core/packages/media_core_floating"
+      relative: false
+    source: path
+    version: "0.1.0"
   media_core_fullscreen:
     dependency: "direct main"
     description:
       path: "C:/Users/XA-158/projects/flutter/media_core/packages/media_core_fullscreen"
+      relative: false
+    source: path
+    version: "0.1.0"
+  media_core_fvp:
+    dependency: "direct main"
+    description:
+      path: "C:/Users/XA-158/projects/flutter/media_core/packages/media_core_fvp"
+      relative: false
+    source: path
+    version: "0.1.0"
+  media_core_ijk_player:
+    dependency: "direct main"
+    description:
+      path: "C:/Users/XA-158/projects/flutter/media_core/packages/media_core_ijk_player"
       relative: false
     source: path
     version: "0.1.0"
@@ -1473,6 +1501,13 @@ packages:
     dependency: "direct main"
     description:
       path: "C:/Users/XA-158/projects/flutter/media_core/packages/media_core_pip"
+      relative: false
+    source: path
+    version: "0.1.0"
+  media_core_presentation:
+    dependency: "direct main"
+    description:
+      path: "C:/Users/XA-158/projects/flutter/media_core/packages/media_core_presentation"
       relative: false
     source: path
     version: "0.1.0"

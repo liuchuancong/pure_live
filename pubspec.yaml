@@ -141,6 +141,16 @@ dependencies:
     path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_fullscreen
   media_core_multiview:
     path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_multiview
+  media_core_presentation:
+    path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_presentation
+  media_core_floating:
+    path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_floating
+  media_core_ijk_player:
+    path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_ijk_player
+  media_core_better_player:
+    path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_better_player
+  media_core_fvp:
+    path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_fvp
 
   # -------------------------- 数据存储/数据库 --------------------------
   hive_ce: ^2.20.0 # Hive本地数据库
@@ -212,6 +222,10 @@ dependencies:
 dependency_overrides:
   floating:
     path: plugins/built_in_kotlin/floating # media_core_pip 与内置 AGP9 补丁共用
+  better_player_plus:
+    path: plugins/built_in_kotlin/better_player_plus # media_core_better_player 走内置 AGP9 补丁
+  flv_lzc:
+    path: plugins/flv_lzc # media_core_ijk_player 与应用共用 vendored 版
   media_kit:
     path: ./third_party/media_kit
   media_kit_video:
