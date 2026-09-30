@@ -3,6 +3,7 @@ import 'package:pure_live/player/utils/fullscreen.dart';
 import 'package:media_core_floating/media_core_floating.dart';
 import 'package:media_core_media_kit/media_core_media_kit.dart';
 import 'package:pure_live/player/utils/windows_pip_driver.dart';
+import 'package:pure_live/player/kernel/media_kit_live_properties.dart';
 import 'package:pure_live/player/kernel/owned_input_opener.dart';
 import 'package:media_core_ijk_player/media_core_ijk_player.dart';
 import 'package:media_core_logging/media_core_logging.dart' as mlog;
@@ -23,8 +24,12 @@ class PlayerKernelService {
   PlayerKernel get kernel {
     _kernel ??= PlayerKernel()
       ..registerBackend(
-        const MediaKitAdapterFactory(config: MediaKitPlayerConfig(customInputOpener: openOwnedInputOnKernelPlayer))
-            .registration(),
+        MediaKitAdapterFactory(
+          config: const MediaKitPlayerConfig(customInputOpener: openOwnedInputOnKernelPlayer),
+          // The app declares every tuning value it wants; the adapter applies
+          // only what it is told.
+          configure: (adapter) => adapter.config = MediaKitLiveProperties.applyTo(adapter.config),
+        ).registration(),
       )
       ..registerBackend(const IjkPlayerAdapterFactory().registration())
       ..registerBackend(const BetterPlayerAdapterFactory().registration())
