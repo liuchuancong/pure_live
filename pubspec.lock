@@ -106,13 +106,21 @@ packages:
     source: hosted
     version: "2.13.1"
   audio_service:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: audio_service
       sha256: "95f3267f3449eb5cf71c8fcf1d556f57af1e898e2dc5815fb168d1843653edb7"
       url: "https://pub.dev"
     source: hosted
     version: "0.18.19"
+  audio_service_mpris:
+    dependency: transitive
+    description:
+      name: audio_service_mpris
+      sha256: "8cb2ff2237f4cd2fd27f16451ed35b3aedc12df8a384435327c67a9f4d557ef4"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.2.1"
   audio_service_platform_interface:
     dependency: transitive
     description:
@@ -130,7 +138,7 @@ packages:
     source: hosted
     version: "0.1.4"
   audio_service_win:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: audio_service_win
       sha256: "677e25f447d3d49f537ea6f4fd36e9511acdc0badc6534c9cb92a205566ba12a"
@@ -138,7 +146,7 @@ packages:
     source: hosted
     version: "0.0.3"
   audio_session:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: audio_session
       sha256: f9e7711a0e24ca8b40f5d7ac374c3c6e55016f3157912badd18199cdbbca5c4d
@@ -1464,6 +1472,13 @@ packages:
     dependency: "direct main"
     description:
       path: "C:/Users/XA-158/projects/flutter/media_core/packages/media_core_media_kit"
+      relative: false
+    source: path
+    version: "0.1.0"
+  media_core_mediasession:
+    dependency: "direct main"
+    description:
+      path: "C:/Users/XA-158/projects/flutter/media_core/packages/media_core_mediasession"
       relative: false
     source: path
     version: "0.1.0"

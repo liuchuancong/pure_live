@@ -4,6 +4,7 @@ import 'package:media_core_floating/media_core_floating.dart';
 import 'package:media_core_fvp/media_core_fvp.dart';
 import 'package:media_core_ijk_player/media_core_ijk_player.dart';
 import 'package:media_core_logging/media_core_logging.dart' as mlog;
+import 'package:media_core_mediasession/media_core_mediasession.dart';
 import 'package:media_core_media_kit/media_core_media_kit.dart';
 import 'package:pure_live/player/adapters/kernel_owned_input.dart';
 import 'package:pure_live/player/utils/fullscreen.dart';
@@ -54,6 +55,7 @@ class PlayerKernelService {
     if (!const bool.fromEnvironment('dart.vm.product')) {
       mlog.MediaCoreLog.level = mlog.LogLevel.debug;
     }
-    instance.kernel;
+    // 系统媒体面：一次挂载，之后 kernel 的每个播放器自动上通知/SMTC/MPRIS。
+    await MediaSessionBootstrap.attachTo(instance.kernel, config: const MediaSessionConfig.video());
   }
 }

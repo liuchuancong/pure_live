@@ -1,70 +1,31 @@
+import 'dart:async';
+
 import 'dart:io';
 
 import 'package:pure_live/common/index.dart';
-import 'package:audio_service/audio_service.dart';
-import 'package:pure_live/common/global/platform_utils.dart';
-import 'package:pure_live/player/core/live_audio_handler.dart';
 import 'package:pure_live/player/core/background_playback_policy.dart';
 import 'package:pure_live/player/core/background_playback_service.dart';
 import 'package:pure_live/player/core/playback_lifecycle_coordinator.dart';
-import 'package:pure_live/player/interface/unified_player_interface.dart';
 import 'package:pure_live/common/services/settings/app_settings_controller.dart';
 
+/// 系统媒体面（通知 / 锁屏 / SMTC / MPRIS / 音频焦点 / 拔耳机暂停）由
+/// media_core_mediasession 在 kernel 层统一承载（见
+/// [PlayerKernelService.ensureInitialized] 的 attachTo）；本服务只剩
+/// pure_live 的编排残留：睡眠定时器与后台续播开关。
 class LiveAudioService {
-  static LiveAudioHandler? _handler;
-  static UnifiedPlayer? _boundPlayer;
-  static int? _boundSessionId;
-  static int _bindingRevision = 0;
-  static Future<LiveAudioHandler?>? _initializationFuture;
+  LiveAudioService._();
+
+  static Timer? _sleepTimer;
   static int _sleepMinutes = 60;
-  static Future<void> Function()? _playCommand;
   static Future<void> Function()? _pauseCommand;
-  static Future<void> Function()? _stopCommand;
-  static Future<PlaybackLifecyclePauseToken?> Function()? _pauseForInterruption;
-  static Future<bool> Function(PlaybackLifecyclePauseToken token)? _resumeFromInterruption;
 
   static bool get isSleepSessionActive => BackgroundPlaybackService.sleepSessionActive;
 
   static bool get shouldContinueInBackground => BackgroundPlaybackPolicy.shouldContinue(
     backgroundPlaybackEnabled: SettingsService.to.app.enableBackgroundPlay.v,
-    sleepSessionActive: BackgroundPlaybackService.sleepSessionActive,
+    sleepSessionActive: isSleepSessionActive,
     audioOnlySessionActive: BackgroundPlaybackService.audioOnlySessionActive,
   );
-
-  static Future<LiveAudioHandler?> _ensureInitialized() async {
-    if (_handler != null) return _handler;
-    final inFlight = _initializationFuture;
-    if (inFlight != null) return inFlight;
-
-    final initialization = _initializeHandler();
-    _initializationFuture = initialization;
-    try {
-      return await initialization;
-    } finally {
-      if (identical(_initializationFuture, initialization)) {
-        _initializationFuture = null;
-      }
-    }
-  }
-
-  static Future<LiveAudioHandler?> _initializeHandler() async {
-    final handler = await AudioService.init(
-      builder: () => LiveAudioHandler(),
-      config: AudioServiceConfig(
-        androidNotificationChannelId: 'com.mystyle.purelive.audio',
-        androidNotificationChannelName: i18n("audio_channel_name"),
-        androidNotificationOngoing: true,
-        // Keep the media foreground service alive across short interruptions
-        // so screen-off playback can resume without recreating the process.
-        androidStopForegroundOnPause: true,
-        androidNotificationClickStartsActivity: true,
-        notificationColor: Colors.blue,
-      ),
-    );
-    _handler = handler;
-    _applyPlaybackCommands(handler);
-    return handler;
-  }
 
   static void configurePlaybackCommands({
     required Future<void> Function() play,
@@ -73,131 +34,58 @@ class LiveAudioService {
     required Future<PlaybackLifecyclePauseToken?> Function() pauseForInterruption,
     required Future<bool> Function(PlaybackLifecyclePauseToken token) resumeFromInterruption,
   }) {
-    _playCommand = play;
     _pauseCommand = pause;
-    _stopCommand = stop;
-    _pauseForInterruption = pauseForInterruption;
-    _resumeFromInterruption = resumeFromInterruption;
-    final handler = _handler;
-    if (handler != null) _applyPlaybackCommands(handler);
-  }
-
-  static void _applyPlaybackCommands(LiveAudioHandler handler) {
-    final play = _playCommand;
-    final pause = _pauseCommand;
-    final stop = _stopCommand;
-    final pauseForInterruption = _pauseForInterruption;
-    final resumeFromInterruption = _resumeFromInterruption;
-    if (play == null ||
-        pause == null ||
-        stop == null ||
-        pauseForInterruption == null ||
-        resumeFromInterruption == null) {
-      return;
-    }
-    handler.configurePlaybackCommands(
-      play: play,
-      pause: pause,
-      stop: stop,
-      pauseForInterruption: pauseForInterruption,
-      resumeFromInterruption: resumeFromInterruption,
-    );
   }
 
   static Future<void> setPlayer(
-    UnifiedPlayer player, {
+    dynamic player, {
     required bool audioOnly,
     int? sessionId,
     bool Function()? isSourceCurrent,
     double Function()? targetVolume,
   }) async {
     if (isSourceCurrent?.call() == false) return;
-    final revision = ++_bindingRevision;
-    bool isCurrent() => revision == _bindingRevision && (isSourceCurrent?.call() ?? true);
-    if (!isCurrent()) return;
     BackgroundPlaybackService.audioOnlySessionActive = audioOnly;
-    if (PlatformUtils.isMobile || PlatformUtils.isMacOS) {
-      final handler = await _ensureInitialized();
-      if (!isCurrent()) return;
-      if (handler != null && (!identical(_boundPlayer, player) || _boundSessionId != sessionId)) {
-        await handler.setPlayer(player, isSourceCurrent: isSourceCurrent, targetVolume: targetVolume);
-        if (!isCurrent()) return;
-        _boundPlayer = player;
-        _boundSessionId = sessionId;
-      }
-    }
     await syncKeepAlive();
   }
 
   static Future<void> start(String roomId, String title, String author, String? cover) async {
-    final revision = _bindingRevision;
-    bool isCurrent() => revision == _bindingRevision && _boundPlayer != null && (_handler?.hasActiveBinding ?? false);
-    if (!PlatformUtils.isMobile && !PlatformUtils.isMacOS) return;
-    final handler = await _ensureInitialized();
-    if (handler == null || !isCurrent()) return;
-
-    final item = buildMediaItem(roomId: roomId, title: title, author: author, cover: cover);
-
-    try {
-      await handler.activateSession(isCurrent: isCurrent);
-    } catch (error, stackTrace) {
-      // Audio focus improves background continuity, but a vendor-specific
-      // session failure must not turn an otherwise playable room into an
-      // application-level playback failure.
-      debugPrint('Audio session activation failed: $error');
-      debugPrintStack(stackTrace: stackTrace);
+    if (BackgroundPlaybackService.sleepSessionActive) {
+      _armSleepTimer();
     }
-    if (!isCurrent()) return;
-    await handler.playMediaItem(item);
-    if (!isCurrent()) return;
-    handler.configureSleepTimer(BackgroundPlaybackService.sleepSessionActive ? Duration(minutes: _sleepMinutes) : null);
     await syncKeepAlive();
   }
 
-  static MediaItem buildMediaItem({
-    required String roomId,
-    required String title,
-    required String author,
-    String? cover,
-  }) {
-    return MediaItem(
-      id: roomId,
-      album: i18nOr("app_name", "PureLive"),
-      title: title,
-      artist: author,
-      artUri: (cover != null && cover.isNotEmpty) ? Uri.tryParse(cover) : null,
-    );
+  static Future<void> stop() async {
+    _cancelSleepTimer();
+    await syncKeepAlive();
   }
 
   static Future<void> configureSleepTimer({required bool enabled, required int minutes}) async {
     _sleepMinutes = minutes.clamp(1, AppSettingsController.maxSleepMinutes).toInt();
     BackgroundPlaybackService.sleepSessionActive = enabled;
-    _handler?.configureSleepTimer(enabled ? Duration(minutes: _sleepMinutes) : null);
-    await syncKeepAlive();
+    if (enabled) {
+      _armSleepTimer();
+    } else {
+      _cancelSleepTimer();
+    }
   }
 
-  static Future<void> stop() async {
-    ++_bindingRevision;
-    _boundPlayer = null;
-    _boundSessionId = null;
-    BackgroundPlaybackService.sleepSessionActive = false;
-    BackgroundPlaybackService.audioOnlySessionActive = false;
-    if (_handler == null) return;
-    if (!PlatformUtils.isMobile && !PlatformUtils.isMacOS) return;
-    await _handler!.releasePlayer();
+  static void _armSleepTimer() {
+    _cancelSleepTimer();
+    _sleepTimer = Timer(Duration(minutes: _sleepMinutes), () {
+      BackgroundPlaybackService.sleepSessionActive = false;
+      unawaited(_pauseCommand?.call());
+    });
   }
 
-  static Future<void> releaseKeepAlive() => BackgroundPlaybackService.setKeepAlive(false);
+  static void _cancelSleepTimer() {
+    _sleepTimer?.cancel();
+    _sleepTimer = null;
+  }
 
   static Future<void> configureBackgroundPlayback({required bool enabled}) {
-    final shouldKeepAlive =
-        (_handler?.playbackState.value.playing ?? false) &&
-        BackgroundPlaybackPolicy.shouldContinue(
-          backgroundPlaybackEnabled: enabled,
-          sleepSessionActive: BackgroundPlaybackService.sleepSessionActive,
-          audioOnlySessionActive: BackgroundPlaybackService.audioOnlySessionActive,
-        );
-    return BackgroundPlaybackService.setKeepAlive(shouldKeepAlive);
+    return BackgroundPlaybackService.setKeepAlive(enabled);
   }
 
   static Future<void> syncKeepAlive() {

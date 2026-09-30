@@ -70,9 +70,6 @@ dependencies:
   better_player_plus:
     path: plugins/built_in_kotlin/better_player_plus # Local AGP 9 Built‑in Kotlin patch
 
-  audio_service: ^0.18.18 # 后台音频服务
-  audio_service_win: ^0.0.3
-  audio_session: ^0.2.3 # 音频会话管理
   # Keep this exact: 0.6.2 preserves argv through FFmpeg/FFprobe/FFplay.
   # Platform URL overrides below select our verified FFmpeg 9.0.2 bundles;
   # prefetch gates pin the Android and Windows archive hashes.
@@ -145,6 +142,8 @@ dependencies:
     path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_ijk_player
   media_core_better_player:
     path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_better_player
+  media_core_mediasession:
+    path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_mediasession
   media_core_logging:
     path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_logging
   media_core_fvp:
