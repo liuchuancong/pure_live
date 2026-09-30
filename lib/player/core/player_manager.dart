@@ -45,6 +45,7 @@ import 'package:pure_live/player/utils/pip_window_widget.dart';
 import 'package:pure_live/player/core/live_audio_service.dart';
 import 'package:pure_live/common/utils/latest_async_value_queue.dart';
 import 'package:pure_live/player/adapters/media_kit_adapter.dart';
+import 'package:pure_live/player/adapters/kernel_unified_player.dart';
 import 'package:pure_live/player/adapters/player_adapter_factory.dart';
 import 'package:pure_live/player/interface/media_kit_player_accessor.dart';
 import 'package:pure_live/player/utils/media_kit_content_probe.dart';
@@ -326,7 +327,14 @@ class PlayerManager {
        _usesWindowsPipOverride = windowsPipEnter != null || windowsPipExit != null,
        _windowsPipEnter = windowsPipEnter ?? pipDrivenWindowsPipEnter,
        _windowsPipExit = windowsPipExit ?? pipDrivenWindowsPipExit,
-       _playerCreator = playerCreator ?? PlayerAdapterFactory.create,
+       _playerCreator =
+           playerCreator ??
+           ((engine) async {
+             if (engine == PlayerEngine.mediaKit && kKernelPlayerEnabled) {
+               return KernelUnifiedPlayer();
+             }
+             return PlayerAdapterFactory.create(engine);
+           }),
        _useHardStopOnExit = useHardStopOnExit ?? (() => SettingsService.to.player.useHardStopOnExit.v),
        _suppressAutomaticFallbackAudio = suppressAutomaticFallbackAudio ?? (() => false),
        _audioSessionStart =

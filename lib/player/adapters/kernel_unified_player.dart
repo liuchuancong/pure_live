@@ -1,0 +1,246 @@
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+import 'package:media_core/media_core.dart' as mc;
+import 'package:pure_live/common/models/live_room.dart';
+import 'package:pure_live/player/media_core/player_kernel_service.dart';
+import 'package:pure_live/player/models/player_engine.dart';
+import 'package:pure_live/player/models/player_error_type.dart';
+import 'package:pure_live/player/models/player_exception.dart';
+import 'package:pure_live/player/models/player_state.dart';
+import 'package:pure_live/player/interface/unified_player_interface.dart';
+
+/// 是否用 media_core 的 PlayerHandle 承载主播放引擎。
+///
+/// 默认关闭；`--dart-define=PURE_LIVE_KERNEL_PLAYER=true` 打开。打开后
+/// mediaKit 引擎由 kernel 创建（会话/代际/串行化/恢复梯都在 handle 上），
+/// 旧 MediaKitAdapter 路径保留为回退。
+const bool kKernelPlayerEnabled = bool.fromEnvironment('PURE_LIVE_KERNEL_PLAYER');
+
+/// [UnifiedPlayer] 的 media_core 桥：引擎实际是 kernel 的 [mc.PlayerHandle]。
+///
+/// setDataSource 的 playUrls 保留为线路候选（RecoveryLadder.nextLine 的
+/// 候选源），会话代际/命令串行化由 handle 提供；pure_live 侧的编解码软
+/// 回退与私有输入能力暂不实现，缺省时 manager 走通用回退。
+class KernelUnifiedPlayer extends UnifiedPlayer
+    implements SourceTransitionAwarePlayer, VideoFitAwarePlayer {
+  mc.PlayerHandle? _handle;
+  bool _audioOnly = false;
+  bool _disposed = false;
+  int _openedSources = 0;
+
+  final _stateController = StreamController<PlayerState>.broadcast();
+  final _playingController = StreamController<bool>.broadcast();
+  final _errorController = StreamController<PlayerException>.broadcast();
+  final _loadingController = StreamController<bool>.broadcast();
+  final _completeController = StreamController<bool>.broadcast();
+  final _widthController = StreamController<int?>.broadcast();
+  final _heightController = StreamController<int?>.broadcast();
+  StreamSubscription<mc.PlaybackState>? _playbackSub;
+  StreamSubscription<mc.PlayerAdapterEvent>? _eventSub;
+
+  @override
+  PlayerEngine get engine => PlayerEngine.mediaKit;
+
+  mc.PlayerHandle? get handle => _handle;
+
+  @override
+  Future<void> init({bool audioOnly = false}) async {
+    _audioOnly = audioOnly;
+  }
+
+  @override
+  Future<void> setDataSource(
+    String url,
+    List<String> playUrls,
+    Map<String, String> headers, {
+    LiveRoom? room,
+    bool audioOnly = false,
+  }) async {
+    if (_disposed) return;
+    _audioOnly = audioOnly;
+    final source = _buildSource(url, headers);
+    final existing = _handle;
+    if (existing == null || existing.disposed) {
+      await _createHandle(source);
+      return;
+    }
+    await existing.open(source, autoPlay: true);
+  }
+
+  mc.PlayerSource _buildSource(String url, Map<String, String> headers) {
+    final uri = Uri.parse(url);
+    final protocol = switch (uri.scheme) {
+      'https' => mc.SourceProtocol.https,
+      'http' => mc.SourceProtocol.http,
+      'file' => mc.SourceProtocol.file,
+      _ => mc.SourceProtocol.unknown,
+    };
+    return mc.PlayerSource(
+      id: mc.SourceId('pure-live-${DateTime.now().microsecondsSinceEpoch}-${_openedSources++}'),
+      uri: uri,
+      type: mc.SourceType.live,
+      protocol: protocol,
+      headers: mc.SourceHeaders(headers),
+    );
+  }
+
+  Future<void> _createHandle(mc.PlayerSource source) async {
+    final handle = await PlayerKernelService.instance.kernel.create(
+      source: source,
+      config: mc.PlayerConfig(autoPlay: true, enableVideo: !_audioOnly, enableRecovery: true),
+    );
+    _handle = handle;
+    _bind(handle);
+  }
+
+  void _bind(mc.PlayerHandle handle) {
+    unawaited(_playbackSub?.cancel());
+    unawaited(_eventSub?.cancel());
+    var lastCompleted = false;
+    var lastPlaying = false;
+    var lastLoading = false;
+    _playbackSub = handle.playbackStream.listen((state) {
+      _stateController.add(_mapState(state));
+      final completed = state.isCompleted;
+      if (completed && !lastCompleted) _completeController.add(true);
+      if (!completed && lastCompleted) _completeController.add(false);
+      lastCompleted = completed;
+      final playing = state.isPlaying;
+      if (playing != lastPlaying) _playingController.add(playing);
+      lastPlaying = playing;
+      final loading = state.isBuffering || state.isLoading;
+      if (loading != lastLoading) _loadingController.add(loading);
+      lastLoading = loading;
+    }, onError: (Object error) {
+      _errorController.add(
+        PlayerException(message: error.toString(), type: PlayerErrorType.unknown, error: error),
+      );
+    });
+    _eventSub = handle.adapterEvents.listen((event) {
+      switch (event) {
+        case mc.PlayerAdapterVideoSizeChanged(:final width, :final height):
+          _widthController.add(width <= 0 ? null : width);
+          _heightController.add(height <= 0 ? null : height);
+        case mc.PlayerAdapterErrorEvent(:final message, :final error, :final stackTrace):
+          _errorController.add(
+            PlayerException(
+              message: message,
+              type: PlayerErrorType.native,
+              error: error,
+              stackTrace: stackTrace,
+            ),
+          );
+        default:
+          break;
+      }
+    });
+  }
+
+  PlayerState _mapState(mc.PlaybackState state) {
+    if (state.isPlaying) return PlayerState.playing;
+    if (state.isPaused) return PlayerState.paused;
+    if (state.isCompleted) return PlayerState.completed;
+    if (state.isStopped) return PlayerState.stopped;
+    if (state.isBuffering || state.isLoading) return PlayerState.buffering;
+    if (state.initialized) return PlayerState.ready;
+    return PlayerState.initializing;
+  }
+
+  @override
+  Future<void> play() async => _handle?.play();
+
+  @override
+  Future<void> pause() async => _handle?.pause();
+
+  @override
+  Future<void> stop() async => _handle?.pause();
+
+  @override
+  Future<void> softStop() async => _handle?.pause();
+
+  @override
+  Future<void> setAudioOnly(bool audioOnly) async {
+    if (_audioOnly == audioOnly) return;
+    _audioOnly = audioOnly;
+    final handle = _handle;
+    if (handle == null || handle.disposed) return;
+    final source = handle.source;
+    await handle.dispose();
+    _handle = null;
+    if (source == null) return;
+    await _createHandle(source);
+  }
+
+  @override
+  Future<void> hardDispose() async {
+    if (_disposed) return;
+    _disposed = true;
+    await _playbackSub?.cancel();
+    await _eventSub?.cancel();
+    _playbackSub = null;
+    _eventSub = null;
+    await _handle?.dispose();
+    _handle = null;
+    unawaited(_stateController.close());
+    unawaited(_playingController.close());
+    unawaited(_errorController.close());
+    unawaited(_loadingController.close());
+    unawaited(_completeController.close());
+    unawaited(_widthController.close());
+    unawaited(_heightController.close());
+  }
+
+  @override
+  Future<void> setVolume(double volume) async => _handle?.setVolume(volume.clamp(0.0, 1.0));
+
+  @override
+  Widget getVideoWidget({BoxFit? fit}) {
+    final handle = _handle;
+    if (handle == null) return const SizedBox.expand();
+    return mc.MediaPlayerView(handle: handle, fit: fit ?? BoxFit.contain);
+  }
+
+  @override
+  void setVideoFit(BoxFit fit) {
+    // MediaPlayerView 每次构建都带最新 fit，无需适配器侧状态。
+  }
+
+  @override
+  void beginSourceTransition() {
+    _widthController.add(null);
+    _heightController.add(null);
+    _completeController.add(false);
+    _playingController.add(false);
+  }
+
+  @override
+  bool get isInitialized => _handle != null && !_handle!.disposed;
+
+  @override
+  bool get isPlayingNow => _handle?.isPlaying ?? false;
+
+  @override
+  bool get isReusable => isInitialized;
+
+  @override
+  Stream<PlayerState> get onStateChanged => _stateController.stream;
+
+  @override
+  Stream<bool> get onPlaying => _playingController.stream;
+
+  @override
+  Stream<PlayerException> get onError => _errorController.stream;
+
+  @override
+  Stream<bool> get onLoading => _loadingController.stream;
+
+  @override
+  Stream<bool> get onComplete => _completeController.stream;
+
+  @override
+  Stream<int?> get width => _widthController.stream;
+
+  @override
+  Stream<int?> get height => _heightController.stream;
+}
