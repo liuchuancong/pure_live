@@ -1458,6 +1458,13 @@ packages:
       relative: false
     source: path
     version: "0.1.0"
+  media_core_live:
+    dependency: "direct main"
+    description:
+      path: "C:/Users/XA-158/projects/flutter/media_core/packages/media_core_live"
+      relative: false
+    source: path
+    version: "0.1.0"
   media_core_logging:
     dependency: "direct main"
     description:

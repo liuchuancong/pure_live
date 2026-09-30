@@ -139,6 +139,8 @@ dependencies:
     path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_danmaku
   media_core_mediasession:
     path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_mediasession
+  media_core_live:
+    path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_live
   media_core_logging:
     path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_logging
   media_core_fvp:
