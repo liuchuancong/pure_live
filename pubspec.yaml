@@ -105,11 +105,7 @@ dependencies:
   windows_single_instance: ^1.2.0
   tray_manager: ^0.7.0 # 系统托盘管理
   flutter_acrylic: ^1.1.4 # 亚克力毛玻璃效果
-  screen_retriever:
-    git:
-      url: https://github.com/liuchuancong/screen_retriever.git
-      path: ./packages/screen_retriever
-      ref: b246b3963738d6cc159c921764c194c73dbdf2ad
+  screen_retriever: ^0.2.2
   win32: ^6.3.0 # Windows系统API
   android_intent_plus: ^6.0.0
 
@@ -208,7 +204,6 @@ dependencies:
   floating:
     path: plugins/built_in_kotlin/floating # Local AGP 9 Built‑in Kotlin patch
 
-  flutter_floating: ^2.0.1 # 悬浮窗
   qr: ^4.0.0 # Bilibili 登录二维码矩阵；绘制由应用控制
   easy_localization: ^3.0.8 #多语言
   app_links: ^7.2.1

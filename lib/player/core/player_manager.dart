@@ -36,7 +36,7 @@ import 'package:pure_live/routes/app_navigation.dart';
 import 'package:pure_live/model/live_play_quality.dart';
 import 'package:pure_live/player/utils/fullscreen.dart';
 import 'package:pure_live/player/utils/windows_pip_driver.dart';
-import 'package:flutter_floating/flutter_floating.dart';
+import 'package:media_core_floating/media_core_floating.dart';
 import 'package:pure_live/player/utils/player_consts.dart';
 import 'package:pure_live/player/utils/popup_route_tracker.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
@@ -434,7 +434,6 @@ class PlayerManager {
   _PendingPlayerError? _pendingPlayerError;
   int? _errorDedupeSession;
   final Set<String> _errorDedupeSignatures = <String>{};
-  static const String _floatTag = "global_video_player";
   Timer? _hideTimer;
   Timer? _sourceReadyTimer;
   Timer? _geometryObservationTimer;
@@ -458,6 +457,7 @@ class PlayerManager {
   final List<Future<void> Function()> _floatingResourceDisposers = <Future<void> Function()>[];
   Future<void>? _floatingCleanup;
   StreamSubscription<int>? _floatingPopupSubscription;
+  OverlayEntry? _appFloatingEntry;
   bool _appFloatingPrepared = false;
   bool _pipTransitionInFlight = false;
   int _pipTransitionRevision = 0;
@@ -2974,10 +2974,17 @@ class PlayerManager {
     // stale callback from mounting the old player on top of the new route.
     if (!_appFloatingPrepared || _floatingCleanup != null) return;
     isFloatingVideoVisible.value = true;
-    floatingManager.disposeFloating(_floatTag);
     _hideTimer?.cancel();
-    final maxSide = Platform.isWindows ? 350.0 : 220.0;
-    // This selects Flutter interaction behavior, not a native platform API.
+    final overlayContext = Get.overlayContext;
+    if (overlayContext == null) {
+      // Never keep decoding a session that has nowhere to render. This also
+      // releases the popped route's controllers when the root Overlay is gone.
+      isFloating.value = false;
+      unawaited(closeAppFloating().then((_) => close()));
+      return;
+    }
+    _removeAppFloatingEntry();
+
     final touchControls =
         defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS;
 
@@ -2990,12 +2997,34 @@ class PlayerManager {
       }
     }
 
-    isFloatingVideoVisible.value = true;
-    floatingManager.createFloating(
-      _floatTag,
-      FloatingOverlay(
-        // Stay out of the way of menus/dialogs opened after this entry.
-        PopupAwareVisibility(
+    // media_core_floating 的纯几何浮层：拖拽/贴边吸附/宽高比随视频，
+    // 展开与关闭由浮层自带控件承担；pure_live 只提供播放内容。
+    final maxSide = Platform.isWindows ? 350.0 : 220.0;
+    final ratio = currentVideoRatio;
+    final entry = OverlayEntry(
+      builder: (context) => PopupAwareVisibility(
+        child: FloatingWindowOverlay(
+          visible: isFloatingVideoVisible.stream,
+          initiallyVisible: true,
+          videoWidth: ratio.isFinite && ratio > 0 ? (ratio * 1000).round() : null,
+          videoHeight: ratio.isFinite && ratio > 0 ? 1000 : null,
+          onExpand: () async {
+            final room = currentFloatRoom;
+            if (room != null) {
+              await AppNavigator.toLiveRoomDetail(liveRoom: room);
+            }
+          },
+          onClose: () async => stop(),
+          placement: FloatingWindowPlacement(
+            config: FloatingPlacementConfig(
+              anchor: FloatingAnchor.bottomRight,
+              margin: MediaQuery.viewPaddingOf(overlayContext).bottom + 16,
+              width: maxSide,
+              height: maxSide,
+              snapToEdge: true,
+              draggable: true,
+            ),
+          ),
           child: MouseRegion(
             onEnter: (_) {
               if (!touchControls && (Platform.isWindows || Platform.isMacOS)) isHovered.value = true;
@@ -3004,52 +3033,19 @@ class PlayerManager {
               if (!touchControls && (Platform.isWindows || Platform.isMacOS)) isHovered.value = false;
             },
             child: Obx(() {
-              // The overlay is created before late decoder/frame evidence may
-              // settle. Keep its outer bounds on the same reactive geometry as
-              // the texture instead of freezing the entry-time 16:9 size.
-              videoPresentationRevision.value;
-              final floatingSize = resolveAppFloatingSize(aspectRatio: currentVideoRatio, maxSide: maxSide);
               return Container(
-                width: floatingSize.width,
-                height: floatingSize.height,
-                clipBehavior: Clip.antiAlias,
-                decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), color: Colors.black),
+                color: Colors.black,
                 child: Stack(
                   children: [
-                    Obx(
-                      () => Positioned.fill(
-                        child: isFloatingVideoVisible.value
-                            ? getVideoWidget(
-                                SettingsService.to.player.videoFitIndex.v,
-                                fitList: SettingsService.to.player.videoFitArray,
-                              )
-                            : const SizedBox.shrink(),
-                      ),
+                    Positioned.fill(
+                      child: isFloatingVideoVisible.value
+                          ? getVideoWidget(
+                              SettingsService.to.player.videoFitIndex.v,
+                              fitList: SettingsService.to.player.videoFitArray,
+                            )
+                          : const SizedBox.shrink(),
                     ),
                     Positioned.fill(child: _buildCompactDanmaku()),
-                    Positioned.fill(
-                      child: GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: () async {
-                          // Mobile overlays hide their controls after a short
-                          // delay.  Previously the next tap immediately opened
-                          // the room, so the close/pause controls could never be
-                          // revealed again without racing the three-second
-                          // timer.  Match native PiP behaviour: the first tap
-                          // reveals controls; a second tap resumes the room.
-                          if (touchControls && !isHovered.value) {
-                            isHovered.value = true;
-                            resetHideTimer();
-                            return;
-                          }
-                          final room = currentFloatRoom;
-                          if (room != null) {
-                            await AppNavigator.toLiveRoomDetail(liveRoom: room);
-                          }
-                        },
-                        child: const SizedBox.expand(),
-                      ),
-                    ),
                     Center(
                       child: Obx(
                         () => AnimatedOpacity(
@@ -3086,74 +3082,30 @@ class PlayerManager {
                         ),
                       ),
                     ),
-                    Positioned(
-                      right: 4,
-                      top: 4,
-                      child: Obx(
-                        () => AnimatedOpacity(
-                          opacity: isHovered.value ? 1 : 0,
-                          duration: const Duration(milliseconds: 200),
-                          child: IgnorePointer(
-                            ignoring: !isHovered.value,
-                            child: IconButton(
-                              key: const ValueKey('app-floating-close-action'),
-                              tooltip: i18n('close'),
-                              visualDensity: VisualDensity.standard,
-                              constraints: const BoxConstraints.tightFor(
-                                width: kMinInteractiveDimension,
-                                height: kMinInteractiveDimension,
-                              ),
-                              style: IconButton.styleFrom(backgroundColor: Colors.black45),
-                              icon: const Icon(Icons.close, color: Colors.white, size: 20),
-                              onPressed: () async {
-                                await stop();
-                              },
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
                   ],
                 ),
               );
             }),
           ),
         ),
-        // Bottom-right above the navigation bar: the old top-right spot sat
-        // on the tab row and the first field of most pages (search, links).
-        right: 16,
-        bottom: _floatingBottomOffset(),
-        slideType: FloatingEdgeType.onRightAndBottom,
-        params: FloatingParams(isSnapToEdge: false, snapToEdgeSpace: 10, dragOpacity: 0.8),
       ),
     );
-    final overlay = floatingManager.getFloating(_floatTag);
-    final overlayContext = Get.overlayContext;
-    if (overlayContext != null) {
-      overlay.open(overlayContext);
-    }
-    if (overlayContext == null || !overlay.isShowing) {
-      // Never keep decoding an invisible floating session. This also releases
-      // the popped route's controllers when the target Overlay disappeared
-      // during navigation.
-      isFloating.value = false;
-      unawaited(closeAppFloating().then((_) => close()));
-      return;
-    }
+    final overlayState = Overlay.maybeOf(overlayContext, rootOverlay: true) ?? Overlay.of(overlayContext);
+    overlayState.insert(entry);
+    _appFloatingEntry = entry;
     isFloating.value = true;
-    unawaited(_floatingPopupSubscription?.cancel());
-    _floatingPopupSubscription = hideFloatingWhilePopupsOpen(overlay);
     if (touchControls) {
       isHovered.value = true;
       resetHideTimer();
     }
   }
 
-  static double _floatingBottomOffset() {
-    final context = Get.overlayContext;
-    final inset = context == null ? 0.0 : MediaQuery.viewPaddingOf(context).bottom;
-    // Material 3 NavigationBar height plus a small gap.
-    return inset + 80 + 16;
+  void _removeAppFloatingEntry() {
+    final entry = _appFloatingEntry;
+    _appFloatingEntry = null;
+    if (entry != null && entry.mounted) {
+      entry.remove();
+    }
   }
 
   Future<void> closeAppFloating() async {
@@ -3166,28 +3118,19 @@ class PlayerManager {
       await cleanupInFlight;
       return;
     }
-    if (!_appFloatingPrepared &&
-        !isFloating.value &&
-        _floatingResourceDisposers.isEmpty &&
-        !floatingManager.containsFloating(_floatTag)) {
+    if (!_appFloatingPrepared && !isFloating.value && _floatingResourceDisposers.isEmpty && _appFloatingEntry == null) {
       return;
     }
 
     late final Future<void> cleanup;
     cleanup = () async {
-      final hadOverlay = floatingManager.containsFloating(_floatTag);
+      final hadOverlay = _appFloatingEntry != null;
       if (hadOverlay) {
         isFloatingVideoVisible.value = false;
-        // Hiding the native view normally takes one frame, but Android can
-        // stop producing vsync while the app backgrounds. Use the same bounded
-        // fence as the later unmount step so cleanup cannot retain a decoder,
-        // Surface and route subscriptions forever before it removes the
-        // overlay.
+        // Let the in-tree video widgets unsubscribe before the entry goes
+        // away, mirroring the bounded fence the flutter_floating path used.
         await _awaitBoundedWidgetUnmount();
-        // OverlayEntry.remove() schedules unmount for the next frame. Calling
-        // disposeFloating here would also dispose its controllers while the
-        // FloatingView is still subscribed to them.
-        floatingManager.getFloating(_floatTag).close();
+        _removeAppFloatingEntry();
       }
       isFloating.value = false;
       // Cancel a delayed showAppFloating callback immediately.
@@ -3198,9 +3141,6 @@ class PlayerManager {
       // before closing the old room's Rx values and player controllers.
       await _awaitBoundedWidgetUnmount();
 
-      if (hadOverlay && floatingManager.containsFloating(_floatTag)) {
-        floatingManager.disposeFloating(_floatTag);
-      }
       await _releaseAppFloatingResources();
       if (_pendingRoomReentry == null) {
         _appFloatingSession = null;
