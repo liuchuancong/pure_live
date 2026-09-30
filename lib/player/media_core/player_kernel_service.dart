@@ -4,6 +4,7 @@ import 'package:media_core_floating/media_core_floating.dart';
 import 'package:media_core_fvp/media_core_fvp.dart';
 import 'package:media_core_ijk_player/media_core_ijk_player.dart';
 import 'package:media_core_media_kit/media_core_media_kit.dart';
+import 'package:pure_live/player/adapters/kernel_owned_input.dart';
 import 'package:pure_live/player/utils/fullscreen.dart';
 import 'package:pure_live/player/utils/windows_pip_driver.dart';
 
@@ -18,7 +19,11 @@ class PlayerKernelService {
 
   PlayerKernel get kernel {
     _kernel ??= PlayerKernel()
-      ..registerBackend(const MediaKitAdapterFactory().registration())
+      ..registerBackend(
+        const MediaKitAdapterFactory(
+          config: MediaKitPlayerConfig(customInputOpener: openOwnedInputOnKernelPlayer),
+        ).registration(),
+      )
       ..registerBackend(const IjkPlayerAdapterFactory().registration())
       ..registerBackend(const BetterPlayerAdapterFactory().registration())
       ..registerBackend(const FvpAdapterFactory().registration(priority: 80))
