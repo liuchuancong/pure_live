@@ -1,3 +1,4 @@
+import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/modules/live_play/widgets/keyboard/video_keyboard.dart';
 import 'package:pure_live/modules/live_play/widgets/layout/live_play_back_scope.dart';
@@ -39,9 +40,22 @@ class LivePlayPage extends GetView<LivePlayController> {
       return LivePlayBackScope(
         presentationActive: presentationActive,
         onExitPresentation: controller.exitPresentationForSystemBack,
+        onBackRequest: _enterSystemPipOnBack,
         child: page,
       );
     });
+  }
+
+  /// 系统手势/返回键在播放中离开直播间：进系统 PiP 而不是弹路由挂悬浮窗。
+  /// PiP 不可用或未在播放时返回 false，返回键维持原有出房间行为。
+  Future<bool> _enterSystemPipOnBack() async {
+    if (!PlatformUtils.isAndroid) return false;
+    final manager = GlobalPlayerService.instance.player;
+    if (!SettingsService.to.player.floatPlay.v) return false;
+    if (manager.isInPip.value || manager.isPipPreparing.value) return false;
+    if (!manager.isPlayingNow) return false;
+    await manager.enablePip();
+    return manager.isInPip.value || manager.isPipPreparing.value;
   }
 
   Widget _withLocalGiftEffect(Widget child) {

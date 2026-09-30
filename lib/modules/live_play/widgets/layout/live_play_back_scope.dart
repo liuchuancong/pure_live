@@ -17,10 +17,16 @@ class LivePlayBackScope extends StatefulWidget {
     required this.presentationActive,
     required this.onExitPresentation,
     required this.child,
+    this.onBackRequest,
   });
 
   final bool presentationActive;
   final FutureOr<void> Function() onExitPresentation;
+
+  /// Runs before a normal-presentation back pops the room. Returning true
+  /// consumes the gesture (for example, entering system PiP keeps the route).
+  final FutureOr<bool> Function()? onBackRequest;
+
   final Widget child;
 
   @override
@@ -84,7 +90,10 @@ class _LivePlayBackScopeState extends State<LivePlayBackScope> {
       if (widget.presentationActive) {
         await widget.onExitPresentation();
       } else {
-        await navigator.maybePop();
+        final handled = await widget.onBackRequest?.call() ?? false;
+        if (!handled) {
+          await navigator.maybePop();
+        }
       }
     } finally {
       _handlingBack = false;
