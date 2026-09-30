@@ -32,7 +32,6 @@ import '../interface/unified_player_interface.dart';
 
 import 'package:pure_live/routes/app_navigation.dart';
 import 'package:pure_live/model/live_play_quality.dart';
-import 'package:pure_live/player/utils/fullscreen.dart';
 import 'package:pure_live/player/utils/windows_pip_driver.dart';
 import 'package:media_core_floating/media_core_floating.dart';
 import 'package:pure_live/player/utils/player_consts.dart';
@@ -2934,9 +2933,8 @@ class PlayerManager {
         if (!ownsTransition()) return;
         isInPip.value = false;
       } catch (error) {
-        if (error is WindowsPipExitFailure && !error.hostIsInPip && ownsTransition()) {
-          isInPip.value = false;
-        }
+        // 恢复失败时宿主窗口状态不确定，保持 isInPip 由后续系统事件纠正。
+        log('Windows PiP exit failed', error: error, name: 'PlayerManager');
         rethrow;
       } finally {
         if (revision == _pipTransitionRevision) {
