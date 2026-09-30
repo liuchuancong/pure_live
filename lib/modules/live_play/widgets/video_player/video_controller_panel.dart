@@ -83,6 +83,21 @@ bool shouldHandleVideoSurfaceTap({
   return localPosition.dy > guardedHeight && localPosition.dy < surfaceSize.height - guardedHeight;
 }
 
+/// Launcher home-gesture strip (swipe up to system desktop) at the bottom of
+/// mobile screens. Android/iOS deliver the pointer to the app first and cancel
+/// it once the launcher gesture is recognized, so a brightness/volume drag
+/// started inside the strip always ends with a half-applied volume/brightness
+/// change and no way to undo it. The strip never starts such a drag.
+const double systemHomeGestureZoneHeight = 48;
+
+/// Whether a surface-local drag start lies inside the launcher gesture strip.
+@visibleForTesting
+bool startsInSystemHomeGestureZone({required Offset localPosition, required Size surfaceSize}) {
+  if (surfaceSize.height <= 0) return false;
+  final zoneHeight = systemHomeGestureZoneHeight.clamp(0.0, surfaceSize.height / 3);
+  return localPosition.dy >= surfaceSize.height - zoneHeight;
+}
+
 const double portraitFullscreenBottomBarHeight = portraitFullscreenControlsHeight;
 
 @visibleForTesting
@@ -832,6 +847,7 @@ class BrightnessVolumnDargAreaState extends State<BrightnessVolumnDargArea> {
   double _updateDargVarVal = 1.0;
   bool _portraitRestoreGesture = false;
   double _portraitRestoreDistance = 0;
+  bool _systemGestureDrag = false;
 
   @override
   void dispose() {
@@ -903,6 +919,7 @@ class BrightnessVolumnDargAreaState extends State<BrightnessVolumnDargArea> {
 
   void _onVerticalDragStart(DragStartDetails details) {
     final size = context.size ?? MediaQuery.sizeOf(context);
+    _systemGestureDrag = startsInSystemHomeGestureZone(localPosition: details.localPosition, surfaceSize: size);
     _portraitRestoreGesture =
         controller.livePlayController.state.value.ui.screenMode == VideoMode.portraitFullscreen &&
         details.localPosition.dy >= size.height - portraitFullscreenRestoreGestureZone;
@@ -914,6 +931,7 @@ class BrightnessVolumnDargAreaState extends State<BrightnessVolumnDargArea> {
       _portraitRestoreDistance = (_portraitRestoreDistance - details.delta.dy).clamp(0.0, double.infinity).toDouble();
       return;
     }
+    if (_systemGestureDrag) return;
     unawaited(_onVerticalDragUpdate(details.localPosition, details.delta));
   }
 
@@ -926,6 +944,7 @@ class BrightnessVolumnDargAreaState extends State<BrightnessVolumnDargArea> {
         );
     _portraitRestoreGesture = false;
     _portraitRestoreDistance = 0;
+    _systemGestureDrag = false;
     if (shouldRestore) unawaited(controller.exitPortraitFullScreen());
   }
 
@@ -961,6 +980,7 @@ class BrightnessVolumnDargAreaState extends State<BrightnessVolumnDargArea> {
         onVerticalDragCancel: () {
           _portraitRestoreGesture = false;
           _portraitRestoreDistance = 0;
+          _systemGestureDrag = false;
         },
         child: Container(
           color: Colors.transparent,
