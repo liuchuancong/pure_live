@@ -6,10 +6,8 @@ import 'package:pure_live/common/index.dart';
 import 'package:pure_live/routes/app_navigation.dart';
 import 'package:pure_live/player/kernel/live_player_facade.dart';
 
-/// 应用内小窗播放会话：media_core_floating 的纯几何浮层 + 房间重入种子。
 ///
-/// 与旧栈的差异：没有 transport 快照合并——facade 的 [FacadeStreamCommit]
-/// 就是权威源快照，重入时直接读它。
+
 class FloatingPlayback {
   FloatingPlayback({required this.facade});
 
@@ -23,7 +21,6 @@ class FloatingPlayback {
   FacadeStreamCommit? _reentrySeed;
   bool _prepared = false;
 
-  /// 路由退出前置：记录当前源作为重入种子（房间相同时生效）。
   void prepare() {
     final commit = facade.commit;
     _reentrySeed = commit != null && commit.room == facade.room ? commit : null;
@@ -62,65 +59,63 @@ class FloatingPlayback {
     }
 
     final entry = OverlayEntry(
-      builder:
-          (context) => FloatingWindowOverlay(
-            visible: isFloatingVideoVisible.stream,
-            initiallyVisible: true,
-            onExpand: () async {
-              final room = facade.room;
-              if (room != null) await AppNavigator.toLiveRoomDetail(liveRoom: room);
-            },
-            onClose: () async => closeAppFloating(),
-            child: MouseRegion(
-              onEnter: (_) => isHovered.value = true,
-              onExit: (_) => isHovered.value = false,
-              child: Container(
-                color: Colors.black,
-                child: Stack(
-                  children: [
-                    Positioned.fill(
-                      child: Obx(
-                        () => isFloatingVideoVisible.value
-                            ? facade.getVideoWidget(BoxFit.contain)
-                            : const SizedBox.shrink(),
-                      ),
-                    ),
-                    if (danmakuBuilder != null) Positioned.fill(child: danmakuBuilder(context)),
-                    Center(
-                      child: Obx(
-                        () => AnimatedOpacity(
-                          opacity: isHovered.value ? 1 : 0,
-                          duration: const Duration(milliseconds: 200),
-                          child: IgnorePointer(
-                            ignoring: !isHovered.value,
-                            child: StreamBuilder<bool>(
-                              stream: facade.onPlaying,
-                              initialData: facade.isPlayingNow,
-                              builder: (context, snapshot) {
-                                final isPlay = snapshot.data ?? true;
-                                return IconButton(
-                                  iconSize: 42,
-                                  style: IconButton.styleFrom(backgroundColor: Colors.black45),
-                                  icon: Icon(
-                                    isPlay ? Icons.pause_circle_filled : Icons.play_circle_filled,
-                                    color: Colors.white,
-                                  ),
-                                  onPressed: () {
-                                    facade.togglePlayPause();
-                                    resetHideTimer();
-                                  },
-                                );
+      builder: (context) => FloatingWindowOverlay(
+        visible: isFloatingVideoVisible.stream,
+        initiallyVisible: true,
+        onExpand: () async {
+          final room = facade.room;
+          if (room != null) await AppNavigator.toLiveRoomDetail(liveRoom: room);
+        },
+        onClose: () async => closeAppFloating(),
+        child: MouseRegion(
+          onEnter: (_) => isHovered.value = true,
+          onExit: (_) => isHovered.value = false,
+          child: Container(
+            color: Colors.black,
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: Obx(
+                    () =>
+                        isFloatingVideoVisible.value ? facade.getVideoWidget(BoxFit.contain) : const SizedBox.shrink(),
+                  ),
+                ),
+                if (danmakuBuilder != null) Positioned.fill(child: danmakuBuilder(context)),
+                Center(
+                  child: Obx(
+                    () => AnimatedOpacity(
+                      opacity: isHovered.value ? 1 : 0,
+                      duration: const Duration(milliseconds: 200),
+                      child: IgnorePointer(
+                        ignoring: !isHovered.value,
+                        child: StreamBuilder<bool>(
+                          stream: facade.onPlaying,
+                          initialData: facade.isPlayingNow,
+                          builder: (context, snapshot) {
+                            final isPlay = snapshot.data ?? true;
+                            return IconButton(
+                              iconSize: 42,
+                              style: IconButton.styleFrom(backgroundColor: Colors.black45),
+                              icon: Icon(
+                                isPlay ? Icons.pause_circle_filled : Icons.play_circle_filled,
+                                color: Colors.white,
+                              ),
+                              onPressed: () {
+                                facade.togglePlayPause();
+                                resetHideTimer();
                               },
-                            ),
-                          ),
+                            );
+                          },
                         ),
                       ),
                     ),
-                  ],
+                  ),
                 ),
-              ),
+              ],
             ),
           ),
+        ),
+      ),
     );
     final overlay = Overlay.maybeOf(overlayContext, rootOverlay: true) ?? Overlay.of(overlayContext);
     overlay.insert(entry);

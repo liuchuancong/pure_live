@@ -1,4 +1,3 @@
-
 import 'package:flutter/widgets.dart';
 import 'package:pure_live/get/get.dart';
 
@@ -64,4 +63,3 @@ class PopupAwareVisibility extends StatelessWidget {
     });
   }
 }
-

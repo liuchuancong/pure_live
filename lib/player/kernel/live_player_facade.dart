@@ -13,11 +13,8 @@ import 'package:pure_live/player/kernel/kernel_backend_ids.dart';
 import 'package:pure_live/player/core/portrait_stream_support.dart';
 import 'package:pure_live/player/media_core/player_kernel_service.dart';
 
-/// 直播播放门面：页面只跟它说话。
 ///
-/// 架构与 pure_live_TV 同构：打开/换线/重试/看门狗/恢复编排全部是
-/// media_core_live `LivePlaybackController` 的；本文件只填 pure_live 业务——
-/// 画质表与线路下标的提交回执、owned 私有源 recipe、房间音量、引擎→后端映射。
+
 final class LivePlayerFacade {
   LivePlayerFacade({
     PlayerEngine defaultEngine = PlayerEngine.mediaKit,
@@ -29,14 +26,12 @@ final class LivePlayerFacade {
     _bindController();
   }
 
-  /// 源拦截钩子：签名 URL 租约/FLV relay 等宿主业务在打开前包装线路。
   Future<List<PlayerSource>> Function(List<PlayerSource> sources)? _interceptSources;
 
   static PlayerKernel get kernel => PlayerKernelService.instance.kernel;
 
   late final LivePlaybackController _controller;
 
-  /// 用户首选引擎；恢复梯换后端时经 [onEngineChanged] 通知页面。
   PlayerEngine preferredEngine;
   void Function(PlayerEngine engine)? onEngineChanged;
 
@@ -50,7 +45,6 @@ final class LivePlayerFacade {
   StreamSubscription<PlayerFailure>? _errorSub;
   bool _disposed = false;
 
-  /// 最近一次成功提交的源（权威画质/线路状态）。
   FacadeStreamCommit? commit;
   Map<String, String> _lastHeaders = const {};
   List<String> _lastLines = const [];
@@ -96,8 +90,6 @@ final class LivePlayerFacade {
     });
   }
 
-  /// 打开一个房间源：[url] 当前线路, [playUrls] 全部线路（恢复梯的换线序）,
-  /// [qualities]/[currentQuality] 画质表（提交回执供菜单渲染）。
   Future<void> play(
     String url,
     List<String> playUrls,
@@ -139,7 +131,6 @@ final class LivePlayerFacade {
     if (room != null) await setVolume(room.getSavedVolume().clamp(0.0, 1.0));
   }
 
-  /// owned 私有协议源（bigo/fc2/niconico）：recipe 走 custom-input 通道。
   Future<void> playOwned(
     Object recipe,
     LiveRoom room, {
@@ -224,7 +215,7 @@ final class LivePlayerFacade {
   }
 
   // ---------------------------------------------------------------------------
-  // 兼容面：与旧 PlayerManager 同名的成员，消费者按原名编译，切换即翻牌。
+
   // ---------------------------------------------------------------------------
 
   final RxBool hasError = false.obs;
@@ -246,7 +237,6 @@ final class LivePlayerFacade {
     await setAudioOnly(audioOnly);
   }
 
-  /// 渲染出口：kernel 的通用视频视图（fit 由调用方给）。
   Widget getVideoWidget(BoxFit fit) {
     final handle = _controller.handle;
     if (handle == null) return const SizedBox.expand();
@@ -292,13 +282,10 @@ final class LivePlayerFacade {
     return intercepted.isEmpty ? sources : intercepted;
   }
 
-  // ---- PiP / 悬浮 / 几何 / 呈现（兼容面续） ----
-
   final RxBool isInPip = false.obs;
   final RxBool isPipPreparing = false.obs;
   final RxInt videoPresentationRevision = 0.obs;
 
-  /// 由 GlobalPlayerService 注入的悬浮会话。
   late final FloatingPlayback floating;
 
   bool get isAppFloatingActive => floating.isAppFloatingActive;
@@ -317,7 +304,6 @@ final class LivePlayerFacade {
   void cancelRoomSessionReentry() => floating.cancelRoomReentry();
   void setVideoPresentationVisible(bool visible) => setPresentationVisible(visible);
 
-  /// Android 系统 PiP：经 kernel 呈现链申请 pip 模式。
   Future<void> enablePip() async {
     isPipPreparing.value = true;
     try {
@@ -330,7 +316,6 @@ final class LivePlayerFacade {
     }
   }
 
-  /// PiP 紧凑面：视频 + 暂停 + 关闭。
   Widget buildPiPOverlay() => Scaffold(
     backgroundColor: Colors.transparent,
     body: Stack(
@@ -393,7 +378,6 @@ final class LivePlayerFacade {
 
   Duration get audioModeSwitchTimeout => const Duration(seconds: 5);
 
-  /// 旧渲染入口：fitIndex/fitList 或 BoxFit 都接受；其余旧参数为兼容保留。
   Widget getVideoWidgetCompat(
     Object fit, {
     List<BoxFit>? fitList,
@@ -433,7 +417,6 @@ final class LivePlayerFacade {
   }
 }
 
-/// 源提交回执：画质表 + 线路的权威快照。
 @immutable
 class FacadeStreamCommit {
   const FacadeStreamCommit({
@@ -499,7 +482,6 @@ class FacadeStreamCommit {
   );
 }
 
-/// 旧栈类型别名（消费者签名不变）。
 typedef RoomSessionSnapshot = FacadeStreamCommit;
 typedef PlaybackSourceCommitSnapshot = FacadeStreamCommit;
 typedef PlaybackSourceResolver = Future<PlaybackSourceRefreshResult> Function(PlaybackSourceRefreshRequest request);

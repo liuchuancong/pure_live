@@ -109,7 +109,6 @@ class PlayerConsts {
     "rkmpp": "rkmpp",
   };
 
-  /// 可选硬件解码器
   static const List<Map<String, String>> hardwareDecodersList = [
     {'key': 'auto', 'nameEn': 'Any Available Decoder', 'nameZh': '启用任意可用解码器'},
     {'key': 'auto-safe', 'nameEn': 'Best Decoder', 'nameZh': '启用最佳解码器'},
@@ -138,7 +137,6 @@ class PlayerConsts {
     {'key': 'rkmpp', 'nameEn': 'Rockchip MPP (Selected Rockchip SoCs)', 'nameZh': 'Rockchip MPP（仅部分 Rockchip 芯片）'},
   ];
 
-  /// 可选音频输出驱动
   static const List<Map<String, String>> audioOutputDriversList = [
     {'key': 'auto', 'nameEn': 'Auto', 'nameZh': '自动选择'},
     {'key': 'null', 'nameEn': 'Null (No Audio Output)', 'nameZh': 'Null（不输出音频）'},
@@ -161,7 +159,6 @@ class PlayerConsts {
     {'key': 'libao', 'nameEn': 'libao (Cross-Platform)', 'nameZh': 'libao（跨平台）'},
   ];
 
-  /// 可选视频渲染器
   static const List<Map<String, String>> videoRenderersList = [
     {'key': 'auto', 'nameEn': 'Auto', 'nameZh': '自动选择'},
     {'key': 'gpu', 'nameEn': 'GPU', 'nameZh': 'GPU'},
@@ -181,7 +178,6 @@ class PlayerConsts {
     {'key': 'avfoundation', 'nameEn': 'AVFoundation (macOS / iOS)', 'nameZh': 'AVFoundation（macOS / iOS）'},
   ];
 
-  /// 超分辨率滤镜
   static const List<Map<String, String>> mpvAnime4KShaders = [
     {'key': 'Anime4K_Clamp_Highlights.glsl', 'nameEn': 'Clamp Highlights', 'nameZh': '高光限制'},
     {'key': 'Anime4K_Restore_CNN_VL.glsl', 'nameEn': 'CNN Restoration (VL)', 'nameZh': 'CNN 图像恢复（高质量）'},
@@ -191,7 +187,6 @@ class PlayerConsts {
     {'key': 'Anime4K_Upscale_CNN_x2_M.glsl', 'nameEn': 'CNN 2× Upscaling (Medium)', 'nameZh': 'CNN 2 倍放大（中等）'},
   ];
 
-  /// 超分辨率滤镜（轻量）
   static const List<Map<String, String>> mpvAnime4KShadersLite = [
     {'key': 'Anime4K_Clamp_Highlights.glsl', 'nameEn': 'Clamp Highlights', 'nameZh': '高光限制'},
     {'key': 'Anime4K_Restore_CNN_M.glsl', 'nameEn': 'CNN Restoration (Medium)', 'nameZh': 'CNN 图像恢复（中等）'},

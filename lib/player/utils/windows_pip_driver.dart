@@ -6,9 +6,6 @@ import 'package:pure_live/common/services/settings/window_size_controller.dart';
 import 'package:screen_retriever/screen_retriever.dart';
 import 'package:window_manager/window_manager.dart';
 
-/// Windows 小窗播放：media_core_pip 的 [DisplayAwarePipWindow] 承担全部
-/// 几何策略（多显示器、记忆位置、最小尺寸释放、回滚），pure_live 只通过
-/// 钩子提供设置持久化（rememberPipPosition / windowsPip 偏好）。
 final DisplayAwarePipWindow windowsPipWindow = DisplayAwarePipWindow(
   workAreasReader: _readWorkAreas,
   readSavedBounds: _readSavedBounds,
@@ -82,12 +79,10 @@ Future<void> pipDrivenWindowsPipExit() async {
   await windowsPipDriver.apply(mc.PlayerId('pure-live-windows-pip'), mc.PresentationRequest.normal());
 }
 
-/// PiP 中的置顶设置即时生效；非小窗态无操作。
 Future<void> setWindowsPipAlwaysOnTop(bool value) {
   return windowsPipWindow.setAlwaysOnTop(value);
 }
 
-/// 窗口几何采集：小窗态持久化小窗几何，正常态交给 [writeNormal]。
 Future<void> captureWindowsWindowGeometry(void Function(Size size) writeNormal) async {
   if (windowsPipWindow.isCompact) {
     await windowsPipWindow.captureGeometry();

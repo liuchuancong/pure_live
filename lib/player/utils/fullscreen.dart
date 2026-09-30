@@ -59,9 +59,6 @@ final FullscreenDriver fullscreenDriver = FullscreenDriver(
   desktopWindow: const PureLiveFullscreenWindow(),
 );
 
-/// 平台全屏与方向锁的宿主侧门面。桌面窗口全屏走 media_core 的
-/// [FullscreenDriver]（kernel 呈现链）；移动端按 media_core 的设计由宿主
-/// 隐藏系统 UI / 锁方向。
 class WindowService {
   static final WindowService _instance = WindowService._internal();
   factory WindowService() => _instance;
@@ -79,7 +76,6 @@ class WindowService {
     return supportsOrientationLockForLogicalDisplay(logicalSize);
   }
 
-  //横屏
   Future<void> landScape() async {
     dynamic document;
     try {
@@ -100,7 +96,6 @@ class WindowService {
     }
   }
 
-  //竖屏
   Future<void> verticalScreen() async {
     if (!_canApplyMobileOrientationLock()) return;
     await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
@@ -119,7 +114,6 @@ class WindowService {
     }
   }
 
-  //退出全屏显示
   Future<void> doExitFullScreen() async {
     dynamic document;
     try {

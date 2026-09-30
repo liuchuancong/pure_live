@@ -4,7 +4,6 @@ import 'package:pure_live/player/kernel/floating_playback.dart';
 import 'package:pure_live/player/kernel/live_player_facade.dart';
 import 'package:pure_live/player/models/player_engine.dart';
 
-/// 全局播放服务：media_core kernel + TV 式 facade。
 class GlobalPlayerService {
   GlobalPlayerService._();
 

@@ -17,7 +17,6 @@ class PlayerKernelService {
 
   static final FloatingDriver floatingDriver = FloatingDriver();
 
-  /// kernel 侧日志的内存环（恢复梯/墙/呈现决策都在这里），供排障页拉取。
   static mlog.MemoryLogSink? logRing;
 
   PlayerKernel? _kernel;

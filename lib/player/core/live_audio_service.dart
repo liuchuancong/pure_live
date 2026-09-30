@@ -8,10 +8,6 @@ import 'package:pure_live/player/core/background_playback_service.dart';
 import 'package:pure_live/player/core/playback_lifecycle_coordinator.dart';
 import 'package:pure_live/common/services/settings/app_settings_controller.dart';
 
-/// 系统媒体面（通知 / 锁屏 / SMTC / MPRIS / 音频焦点 / 拔耳机暂停）由
-/// media_core_mediasession 在 kernel 层统一承载（见
-/// [PlayerKernelService.ensureInitialized] 的 attachTo）；本服务只剩
-/// pure_live 的编排残留：睡眠定时器与后台续播开关。
 class LiveAudioService {
   LiveAudioService._();
 
