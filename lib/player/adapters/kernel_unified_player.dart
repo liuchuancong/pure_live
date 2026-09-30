@@ -11,12 +11,6 @@ import 'package:pure_live/player/models/player_exception.dart';
 import 'package:pure_live/player/models/player_state.dart';
 import 'package:pure_live/player/interface/unified_player_interface.dart';
 
-/// 是否用 media_core 的 PlayerHandle 承载主播放引擎。
-///
-/// 默认开启；`--dart-define=PURE_LIVE_KERNEL_PLAYER_DISABLED=true` 退回
-/// 旧 MediaKitAdapter 路径（桥验证期兜底）。
-const bool kKernelPlayerEnabled = !bool.fromEnvironment('PURE_LIVE_KERNEL_PLAYER_DISABLED');
-
 /// [UnifiedPlayer] 的 media_core 桥：引擎实际是 kernel 的 [mc.PlayerHandle]。
 ///
 /// setDataSource 的 playUrls 保留为线路候选（RecoveryLadder.nextLine 的
