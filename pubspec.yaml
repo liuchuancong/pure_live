@@ -128,6 +128,20 @@ dependencies:
   mobile_scanner:
     path: plugins/built_in_kotlin/mobile_scanner # Local AGP 9 Built‑in Kotlin patch
 
+  # -------------------------- 播放器核心 media_core --------------------------
+  media_core:
+    path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core
+  media_core_media_kit:
+    path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_media_kit
+  media_core_ui:
+    path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_ui
+  media_core_pip:
+    path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_pip
+  media_core_fullscreen:
+    path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_fullscreen
+  media_core_multiview:
+    path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_multiview
+
   # -------------------------- 数据存储/数据库 --------------------------
   hive_ce: ^2.20.0 # Hive本地数据库
   hive_ce_flutter: ^2.3.3 # Hive Flutter集成
@@ -196,8 +210,14 @@ dependencies:
 
 # 依赖覆盖（强制指定版本）
 dependency_overrides:
+  floating:
+    path: plugins/built_in_kotlin/floating # media_core_pip 与内置 AGP9 补丁共用
   media_kit:
     path: ./third_party/media_kit
+  media_kit_video:
+    path: ./third_party/media_kit_video # media_core_media_kit 走本地补丁版,而非上游 git
+  mime: ^2.0.0 # media_core 声明 ^1.0.6,统一到应用侧 2.x
+  equatable: ^3.0.0 # media_core 声明 ^2.1.0,统一到应用侧 3.x
   fvp:
     path: ./third_party/fvp
   # Keep the full dependency graph at current stable releases while upstream

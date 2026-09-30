@@ -1075,6 +1075,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "11.0.0"
+  freezed_annotation:
+    dependency: transitive
+    description:
+      name: freezed_annotation
+      sha256: "7294967ff0a6d98638e7acb774aac3af2550777accd8149c90af5b014e6d44d8"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.1.0"
   fuchsia_remote_debug_protocol:
     dependency: transitive
     description: flutter
@@ -1412,6 +1420,69 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.4.0"
+  media_core:
+    dependency: "direct main"
+    description:
+      path: "C:/Users/XA-158/projects/flutter/media_core/packages/media_core"
+      relative: false
+    source: path
+    version: "0.1.0"
+  media_core_danmaku:
+    dependency: transitive
+    description:
+      path: "C:\\/Users/XA-158/projects/flutter/media_core/packages/media_core_danmaku"
+      relative: true
+    source: path
+    version: "0.1.0"
+  media_core_fullscreen:
+    dependency: "direct main"
+    description:
+      path: "C:/Users/XA-158/projects/flutter/media_core/packages/media_core_fullscreen"
+      relative: false
+    source: path
+    version: "0.1.0"
+  media_core_logging:
+    dependency: transitive
+    description:
+      path: "C:\\/Users/XA-158/projects/flutter/media_core/packages/media_core_logging"
+      relative: true
+    source: path
+    version: "0.1.0"
+  media_core_media_kit:
+    dependency: "direct main"
+    description:
+      path: "C:/Users/XA-158/projects/flutter/media_core/packages/media_core_media_kit"
+      relative: false
+    source: path
+    version: "0.1.0"
+  media_core_memory:
+    dependency: transitive
+    description:
+      path: "C:\\/Users/XA-158/projects/flutter/media_core/packages/media_core_memory"
+      relative: true
+    source: path
+    version: "0.1.0"
+  media_core_multiview:
+    dependency: "direct main"
+    description:
+      path: "C:/Users/XA-158/projects/flutter/media_core/packages/media_core_multiview"
+      relative: false
+    source: path
+    version: "0.1.0"
+  media_core_pip:
+    dependency: "direct main"
+    description:
+      path: "C:/Users/XA-158/projects/flutter/media_core/packages/media_core_pip"
+      relative: false
+    source: path
+    version: "0.1.0"
+  media_core_ui:
+    dependency: "direct main"
+    description:
+      path: "C:/Users/XA-158/projects/flutter/media_core/packages/media_core_ui"
+      relative: false
+    source: path
+    version: "0.1.0"
   media_kit:
     dependency: "direct main"
     description:

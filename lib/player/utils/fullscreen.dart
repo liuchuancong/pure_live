@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
+import 'package:media_core/media_core.dart';
+import 'package:media_core_fullscreen/media_core_fullscreen.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/player/utils/window_helper.dart';
 import 'package:pure_live/modules/live_play/controllers/player_state.dart';
@@ -27,6 +29,32 @@ Future<void> enterDesktopFullscreen({
     await prepareWindowsFullscreen();
   }
   await setFullScreen(true);
+}
+
+final class PureLiveFullscreenWindow implements FullscreenWindow {
+  const PureLiveFullscreenWindow();
+
+  @override
+  Future<bool> get isFullscreen => windowManager.isFullScreen();
+
+  @override
+  Future<Rect> captureBounds() => windowManager.getBounds();
+
+  @override
+  Future<void> setFullscreen(bool value, {Rect? restoreBounds}) async {
+    if (value) {
+      await enterDesktopFullscreen(
+        isWindows: Platform.isWindows,
+        prepareWindowsFullscreen: () => windowManager.setTitleBarStyle(TitleBarStyle.hidden),
+        setFullScreen: windowManager.setFullScreen,
+      );
+      return;
+    }
+    await windowManager.setFullScreen(false);
+    if (restoreBounds != null) {
+      await windowManager.setBounds(restoreBounds);
+    }
+  }
 }
 
 @immutable
@@ -59,6 +87,11 @@ class WindowsPipExitFailure implements Exception {
 WindowPresentationSnapshot _captureWindowsPipPresentation() {
   return WindowPresentationSnapshot.capture(GlobalPlayerState.to);
 }
+
+final FullscreenDriver fullscreenDriver = FullscreenDriver(
+  config: const FullscreenConfig(restorePreviousBounds: false),
+  desktopWindow: const PureLiveFullscreenWindow(),
+);
 
 Future<void> _prepareWindowsPipPresentation() async {
   final state = GlobalPlayerState.to;
@@ -320,17 +353,15 @@ class WindowService {
 
   Future<void> doExitWindowFullScreen() async {
     if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
-      await windowManager.setFullScreen(false);
+      await fullscreenDriver.initialize();
+      await fullscreenDriver.apply(PlayerId('pure-live'), PresentationRequest.normal());
     }
   }
 
   Future<void> doEnterWindowFullScreen({bool enableEscListener = true, VoidCallback? onEsc}) async {
     if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
-      await enterDesktopFullscreen(
-        isWindows: Platform.isWindows,
-        prepareWindowsFullscreen: () => windowManager.setTitleBarStyle(TitleBarStyle.hidden),
-        setFullScreen: windowManager.setFullScreen,
-      );
+      await fullscreenDriver.initialize();
+      await fullscreenDriver.apply(PlayerId('pure-live'), PresentationRequest.fullscreen());
     }
   }
 }

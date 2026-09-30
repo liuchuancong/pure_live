@@ -20,6 +20,7 @@ import 'package:pure_live/common/global/platform/mobile_manager.dart';
 import 'package:pure_live/common/global/platform/desktop_manager.dart';
 import 'package:pure_live/recorder/services/recorder_proxy_routing.dart';
 import 'package:pure_live/common/services/settings/backup_controller.dart';
+import 'package:pure_live/player/media_core/player_kernel_service.dart';
 import 'package:pure_live/common/utils/windows_multi_instance_launcher.dart';
 import 'package:pure_live/common/services/utils/settings_upgrade_migration.dart';
 
@@ -84,6 +85,7 @@ class AppInitializer {
     // SettingsService was registered, then work on a later launch only because
     // the database/cache files had already been created.
     await InitialServices.init();
+    unawaited(PlayerKernelService.ensureInitialized());
     // A window opened by WindowsMultiInstanceLauncher starts from the opening
     // window's settings (proxy, cookies, follows) instead of an empty profile.
     final configFilePath = WindowsMultiInstanceLauncher.configFileFromArgs(args);
