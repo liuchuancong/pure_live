@@ -7,6 +7,9 @@ import 'package:media_core_fvp/media_core_fvp.dart' show kFvpPlayerBackendId;
 import 'package:media_core_ijk_player/media_core_ijk_player.dart' show kIjkPlayerBackendId;
 import 'package:media_core_media_kit/media_core_media_kit.dart'
     show MediaKitPlayerAdapter, kMediaKitPlayerBackendId;
+import 'package:media_kit/media_kit.dart' as mk;
+import 'package:media_kit_video/media_kit_video.dart' as mkv;
+import 'package:pure_live/player/interface/media_kit_player_accessor.dart';
 import 'package:pure_live/common/models/live_room.dart';
 import 'package:pure_live/player/media_core/player_kernel_service.dart';
 import 'package:pure_live/player/models/player_engine.dart';
@@ -24,7 +27,8 @@ class KernelUnifiedPlayer extends UnifiedPlayer
         VideoFitAwarePlayer,
         PrivateInputAwarePlayer,
         DecoderRecoveryAwarePlayer,
-        AudioOutputSuppressionAwarePlayer {
+        AudioOutputSuppressionAwarePlayer,
+        MediaKitPlayerAccessor {
   KernelUnifiedPlayer({this.backendId = kMediaKitPlayerBackendId});
 
   /// 本桥钉定的 kernel 后端 id。
@@ -244,6 +248,23 @@ class KernelUnifiedPlayer extends UnifiedPlayer
     _heightController.add(null);
     _completeController.add(false);
     _playingController.add(false);
+  }
+
+  // 竖屏内容探针的底层访问入口（仅 mpv 后端有实现；其他后端抛错，
+  // 探针调用方已用 `is MediaKitPlayerAccessor` 守卫——桥恒为 accessor，
+  // 所以这里显式区分后端）。
+  @override
+  mk.Player get mediaKitPlayer => _requireMediaKit().player;
+
+  @override
+  mkv.VideoController get mediaKitVideoController => _requireMediaKit().videoController ?? (throw StateError('video controller not created yet'));
+
+  MediaKitPlayerAdapter _requireMediaKit() {
+    final adapter = _mediaKitAdapter();
+    if (adapter == null) {
+      throw StateError('media_kit accessor is only available on the mpv backend (current: $backendId)');
+    }
+    return adapter;
   }
 
   MediaKitPlayerAdapter? _mediaKitAdapter() {

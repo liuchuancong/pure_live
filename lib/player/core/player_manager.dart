@@ -3866,6 +3866,14 @@ class PlayerManager {
       }
       if (!isStillRequired()) return;
 
+      // kernel 播放器的引擎回退由 handle 的 RecoveryLadder 决策（同后端重开
+      // → 换线路 → 换后端），manager 的外层引擎环只服务旧路径，双重恢复会让
+      // 两层各自换源。kernel 播放器把失败交给梯子后在此终止。
+      if (_currentPlayer is KernelUnifiedPlayer) {
+        log('kernel player owns recovery; skip manager engine fallback', name: 'PlayerManager');
+        return;
+      }
+
       if (fallbackManager.shouldFallback(error)) {
         final activeEngine = _runtimeEngine;
         if (activeEngine != null) {
