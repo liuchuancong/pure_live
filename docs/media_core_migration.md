@@ -8,6 +8,12 @@
 - **Kernel 引导** (7d3577fc):`lib/player/media_core/player_kernel_service.dart`,`AppInitializer.initialize` 中 `InitialServices.init()` 后 `unawaited(PlayerKernelService.ensureInitialized())`。注册后端:`const MediaKitAdapterFactory().registration()`(扩展方法在 media_kit 包内)。
 - **全屏** (7d3577fc):`WindowService.doEnterWindowFullScreen/doExitWindowFullScreen` 改走 `media_core_fullscreen` 的 `FullscreenDriver` + `PureLiveFullscreenWindow`(保留 Windows 隐藏标题栏防 frameless 守卫的时序);`FullscreenConfig(restorePreviousBounds: false)` 保持旧行为。移动端方向锁/沉浸式仍由 WindowService 自己做(media_core 设计即如此:mobile 全屏是宿主职责)。`enterDesktopFullscreen` 助手保留(test 依赖)。
 
+## 依赖与后端注册(e6415249)
+
+- 依赖面已补齐:media_core、media_core_media_kit、media_core_ui、media_core_pip、media_core_fullscreen、media_core_multiview、media_core_presentation、media_core_floating、media_core_ijk_player、media_core_better_player、media_core_fvp;overrides 增加 better_player_plus/flv_lzc 指向内置 AGP9/vendored 插件。
+- `PlayerKernelService` 注册四个后端:MediaKit(默认首选)、Ijk(flv_lzc,FLV/H.265 移动端)、BetterPlayer(video_player 生态)、Fvp(priority 80)。引擎选择交给 kernel 的 PlayerAdapterSelector 按协议/格式/直播能力打分。
+- **待接线(下一波)**:①应用内小窗兜底(showAppFloating 的 flutter_floating overlay)→ `media_core_floating` 的 FloatingWindowPresenter/FloatingWindowOverlay(纯几何拖拽/吸附),替换后 flutter_floating 可退场;②`media_core_presentation` 的 PresentationDriverChain 把 FullscreenDriver+PipDriver+FloatingDriver 链进 kernel(`kernel_presentation_adapter.dart`),呈现模式统一从 kernel 走;③PlayerManager → PlayerKernel/RecoveryLadder。
+
 ## 关键 API 速查(已核实)
 
 - `PlayerKernel()..registerBackend(const MediaKitAdapterFactory().registration())`;`kernel.create(source: PlayerSource(id: SourceId('x'), uri: ...), config: const PlayerConfig(autoPlay: true))` → `PlayerHandle`。
