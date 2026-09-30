@@ -186,15 +186,6 @@ class PlaybackSourceCommitSnapshot {
 
 typedef PlaybackSourceResolver = Future<PlaybackSourceRefreshResult> Function(PlaybackSourceRefreshRequest request);
 
-class _PlaybackCredentialPrefetch {
-  const _PlaybackCredentialPrefetch(this.sessionId, this.intentRevision, this.operation);
-
-  final int sessionId;
-  final int intentRevision;
-  final Future<bool> operation;
-
-  bool belongsTo(int session, int intent) => sessionId == session && intentRevision == intent;
-}
 
 enum _PlaybackSuspensionReason { lifecycle, audioInterruption }
 
@@ -251,28 +242,18 @@ class PlayerManager {
   int _playingRecoveryRevision = 0;
   final Set<_PlaybackSuspensionReason> _playbackSuspensions = <_PlaybackSuspensionReason>{};
   Timer? _continuityTimer;
-  Timer? _bufferingStallTimer;
-  Timer? _videoFrameStallTimer;
   final Stopwatch _videoFrameWatchdogClock = Stopwatch();
-  Duration? _videoFrameDeadline;
-  int _continuityRevision = 0;
   DateTime? _lastPresentedFrameAt;
   int _presentedFrameRevision = 0;
   bool _isClosing = false;
   int _sameEngineRecoveryAttempts = 0;
   int _sourceRefreshAttempts = 0;
-  int _transientLiveRetryAttempts = 0;
   PlaybackSourceResolver? _sourceRefreshResolver;
   Timer? _sourceRefreshAttemptResetTimer;
-  Timer? _transientLiveRetryTimer;
   // A timer can finish while its queued resolver/candidate still owns work.
   // Keep the operation alive until commit, cancellation or async completion.
   _PendingPlayerError? _transientLiveRetryOwner;
-  int _transientLiveRetryRevision = 0;
-  Timer? _proactiveSourceRefreshTimer;
   DateTime? _currentSourceRefreshAt;
-  PlaybackSourceRefreshResult? _prefetchedSourceRefresh;
-  _PlaybackCredentialPrefetch? _credentialPrefetch;
   final StreamController<PlaybackSourceCommitSnapshot> _sourceCommitController =
       StreamController<PlaybackSourceCommitSnapshot>.broadcast();
   PlaybackSourceCommitSnapshot? _currentSourceCommit;
@@ -513,7 +494,6 @@ class PlayerManager {
     }
     final token = (sessionId: _sessionId, intentRevision: _playbackIntentRevision);
     _playbackSuspensions.add(reason);
-    _cancelContinuityRecovery();
     _cancelVideoFrameStallRecovery();
     _cancelTransientLiveRetry();
     _sourceRefreshAttemptResetTimer?.cancel();
@@ -539,9 +519,6 @@ class PlayerManager {
     }
     if (_playbackSuspensions.isNotEmpty || isPlayingNow || player.isPlayingNow) return true;
     await player.play();
-    _armVideoFrameStallRecovery(player, token.sessionId);
-    _scheduleRecoveryBudgetReset(player, token.sessionId);
-    _scheduleProactiveSourceRefresh(player, token.sessionId);
     return !_disposed && !_isClosing && _sessionId == token.sessionId;
   }
 
@@ -1240,9 +1217,7 @@ class PlayerManager {
     }
     _playbackSuspensions.clear();
     _sameEngineRecoveryAttempts = 0;
-    _transientLiveRetryAttempts = 0;
     _cancelTransientLiveRetry();
-    _cancelContinuityRecovery();
     _cancelVideoFrameStallRecovery();
     final intentRevision = _playbackIntentRevision;
     return _enqueuePlayerLifecycle(() async {
@@ -1250,17 +1225,14 @@ class PlayerManager {
       final retainedCommit = _currentSourceCommit;
       final retainedResolver = _sourceRefreshResolver;
       var retainedAttempts = _sourceRefreshAttempts;
-      var retainedPrefetch = _prefetchedSourceRefresh;
       var replacedRefreshOwner = false;
       void replaceRefreshOwner() {
         if (!replacedRefreshOwner) {
           retainedAttempts = _sourceRefreshAttempts;
-          retainedPrefetch = _prefetchedSourceRefresh;
         }
         replacedRefreshOwner = true;
         _sourceRefreshResolver = sourceResolver;
         _sourceRefreshAttempts = 0;
-        _prefetchedSourceRefresh = null;
         _sourceRefreshAttemptResetTimer?.cancel();
         _sourceRefreshAttemptResetTimer = null;
       }
@@ -1292,10 +1264,8 @@ class PlayerManager {
             isSourceCommitCurrent(current)) {
           _sourceRefreshResolver = retainedResolver;
           _sourceRefreshAttempts = retainedAttempts;
-          _prefetchedSourceRefresh = retainedPrefetch;
           if (_playbackRequested && _playbackSuspensions.isEmpty && _currentPlayer != null) {
             _scheduleSourceRefreshAttemptReset(_currentPlayer!, _sessionId);
-            _scheduleProactiveSourceRefresh(_currentPlayer!, _sessionId);
           }
         }
       }
@@ -1343,8 +1313,6 @@ class PlayerManager {
     }
     if (isStillRequired?.call() == false) return;
     beforeSourceReplacement?.call();
-    _proactiveSourceRefreshTimer?.cancel();
-    _proactiveSourceRefreshTimer = null;
     _currentSourceRefreshAt = _effectiveSourceRefreshAt(sourceRefreshAt, url: url);
     await _playInternal(
       source,
@@ -1369,7 +1337,6 @@ class PlayerManager {
     final url = source.url;
     if (_disposed) return;
     _cancelIdlePlayerRelease();
-    _cancelContinuityRecovery();
     _cancelVideoFrameStallRecovery();
     _sourceReadyTimer?.cancel();
     _sourceReadyTimer = null;
@@ -1390,7 +1357,6 @@ class PlayerManager {
     if (roomChanged) {
       _sameEngineRecoveryAttempts = 0;
       _sourceRefreshAttempts = 0;
-      _transientLiveRetryAttempts = 0;
       _cancelTransientLiveRetry();
     }
     // Start a geometry generation for every new source, including quality and
@@ -1539,9 +1505,7 @@ class PlayerManager {
     _cancelPendingSourceInputs();
     _playbackSuspensions.clear();
     _sameEngineRecoveryAttempts = 0;
-    _transientLiveRetryAttempts = 0;
     _cancelTransientLiveRetry();
-    _cancelContinuityRecovery();
     final intentRevision = _playbackIntentRevision;
     return _enqueuePlayerLifecycle(() async {
       if (!_isPlaybackCommandCurrent(intentRevision) || _currentSource == null) return;
@@ -1635,7 +1599,6 @@ class PlayerManager {
         isVideoRestorePending.value = false;
         videoPresentationRevision.value++;
         _scheduleActiveContentProbe();
-        _armVideoFrameStallRecovery(player, transitionSessionId);
       }
     } catch (error, stackTrace) {
       if (!identical(_currentPlayer, player) || _disposed || _isClosing || transitionSessionId != _sessionId) {
@@ -1931,8 +1894,6 @@ class PlayerManager {
           _loadingSubject.add(false);
           _stateSubject.add(PlayerState.playing);
           hasError.value = false;
-          _armVideoFrameStallRecovery(candidate, sessionId);
-          _scheduleProactiveSourceRefresh(candidate, sessionId);
           _scheduleActiveContentProbe();
         } else {
           _playingSubject.add(false);
@@ -1949,7 +1910,6 @@ class PlayerManager {
       _errorDedupeSignatures.clear();
       videoKey.value = ValueKey("video_${DateTime.now().millisecondsSinceEpoch}");
       _scheduleAudioServiceSync(candidate, targetAudioOnly, room: currentFloatRoom, sessionId: sessionId);
-      _scheduleRecoveryBudgetReset(candidate, sessionId);
       if (openCurrentSource && source != null) {
         _publishSourceCommit(
           sessionId: sessionId,
@@ -2127,8 +2087,6 @@ class PlayerManager {
       videoPresentationRevision.value++;
       _scheduleAudioServiceSync(candidate, audioOnly, room: room, sessionId: newSessionId);
       _scheduleSourceRefreshAttemptReset(candidate, newSessionId);
-      _scheduleRecoveryBudgetReset(candidate, newSessionId);
-      _scheduleProactiveSourceRefresh(candidate, newSessionId);
       await _parkWindowsWarmStandby(oldPlayer, audioOnly: oldNativeAudioOnly);
       _publishSourceCommit(
         sessionId: newSessionId,
@@ -2423,9 +2381,6 @@ class PlayerManager {
     return room != null && room.isRecord != true && room.isCatchUp != true;
   }
 
-  bool _shouldMaintainPlayback(UnifiedPlayer player, int sessionId) {
-    return _shouldOwnContinuousPlayback(player, sessionId) && !_loadingSubject.value;
-  }
 
   bool _shouldOwnContinuousPlayback(UnifiedPlayer player, int sessionId) {
     return _isPlayerEventCurrent(player, sessionId) &&
@@ -2436,25 +2391,12 @@ class PlayerManager {
         !hasError.value;
   }
 
-  void _cancelContinuityRecovery() {
-    _continuityRevision++;
-    _continuityTimer?.cancel();
-    _continuityTimer = null;
-    _bufferingStallTimer?.cancel();
-    _bufferingStallTimer = null;
-  }
 
   void _cancelTransientLiveRetry() {
-    _transientLiveRetryRevision++;
-    _transientLiveRetryTimer?.cancel();
-    _transientLiveRetryTimer = null;
     _transientLiveRetryOwner = null;
   }
 
   void _cancelVideoFrameStallRecovery() {
-    _videoFrameStallTimer?.cancel();
-    _videoFrameStallTimer = null;
-    _videoFrameDeadline = null;
     _videoFrameWatchdogClock
       ..stop()
       ..reset();
@@ -2481,7 +2423,6 @@ class PlayerManager {
     }
     final player = _currentPlayer;
     if (player != null) {
-      _armVideoFrameStallRecovery(player, _sessionId);
     }
   }
 
@@ -2490,91 +2431,13 @@ class PlayerManager {
         (player as VideoFrameProgressAwarePlayer).supportsVideoFrameProgress;
   }
 
-  void _armVideoFrameStallRecovery(UnifiedPlayer player, int sessionId) {
-    if (videoFrameStallTimeout <= Duration.zero ||
-        !_videoPresentationVisible ||
-        _runtimeAudioOnly ||
-        !_supportsVideoFrameProgress(player) ||
-        !_shouldOwnContinuousPlayback(player, sessionId) ||
-        _loadingSubject.value ||
-        (!player.isPlayingNow && !isPlayingNow)) {
-      _cancelVideoFrameStallRecovery();
-      return;
-    }
-    // Progress notifications move a monotonic deadline, not a Timer allocation.
-    // Windows currently throttles them to 500 ms; other implementations may
-    // emit more often. Check the remaining time only when the one pending
-    // timer wakes, preserving the full timeout after the last notification
-    // independently of wall-clock adjustments and notification frequency.
-    _videoFrameWatchdogClock.start();
-    _videoFrameDeadline = _videoFrameWatchdogClock.elapsed + videoFrameStallTimeout;
-    if (_videoFrameStallTimer != null) return;
 
-    void checkDeadline() {
-      _videoFrameStallTimer = null;
-      if (!_videoPresentationVisible ||
-          _runtimeAudioOnly ||
-          !_shouldOwnContinuousPlayback(player, sessionId) ||
-          _loadingSubject.value ||
-          (!player.isPlayingNow && !isPlayingNow)) {
-        _cancelVideoFrameStallRecovery();
-        return;
-      }
-      final deadline = _videoFrameDeadline;
-      if (deadline == null) return;
-      final remaining = deadline - _videoFrameWatchdogClock.elapsed;
-      if (remaining > Duration.zero) {
-        _videoFrameStallTimer = Timer(remaining, checkDeadline);
-        return;
-      }
-      _cancelVideoFrameStallRecovery();
-      final observedFrameRevision = _presentedFrameRevision;
-      _schedulePlayerError(
-        PlayerException(
-          message: 'Live player remained active but presented no new video frame',
-          type: PlayerErrorType.source,
-          code: 'video_frame_stall_timeout',
-        ),
-        sessionId,
-        isStillRelevant: () =>
-            observedFrameRevision == _presentedFrameRevision &&
-            _videoPresentationVisible &&
-            !_runtimeAudioOnly &&
-            !_loadingSubject.value &&
-            (player.isPlayingNow || isPlayingNow),
-      );
-    }
-
-    _videoFrameStallTimer = Timer(videoFrameStallTimeout, checkDeadline);
-  }
-
-  void _scheduleRecoveryBudgetReset(UnifiedPlayer player, int sessionId) {
-    if (recoveryBudgetResetDelay <= Duration.zero ||
-        (_sourceRefreshAttempts == 0 && _sameEngineRecoveryAttempts == 0 && _transientLiveRetryAttempts == 0)) {
-      return;
-    }
-    _sourceRefreshAttemptResetTimer ??= Timer(recoveryBudgetResetDelay, () {
-      _sourceRefreshAttemptResetTimer = null;
-      if (!_isPlayerEventCurrent(player, sessionId) ||
-          !player.isPlayingNow ||
-          _loadingSubject.value ||
-          hasError.value ||
-          _playbackSuspensions.isNotEmpty) {
-        return;
-      }
-      _sourceRefreshAttempts = 0;
-      _sameEngineRecoveryAttempts = 0;
-      _transientLiveRetryAttempts = 0;
-      log('Sustained playback restored live recovery budgets', name: 'PlayerManager');
-    });
-  }
 
   void _notePresentedFrameProgress(UnifiedPlayer player, int sessionId) {
     if (!_isPlayerEventCurrent(player, sessionId)) return;
     _lastPresentedFrameAt = DateTime.now();
     _presentedFrameRevision++;
     _retireTransientLiveRetryForProgress(videoFrame: true);
-    _scheduleRecoveryBudgetReset(player, sessionId);
   }
 
   void _retireTransientLiveRetryForProgress({
@@ -2603,109 +2466,7 @@ class PlayerManager {
     hasError.value = false;
   }
 
-  void _scheduleBufferingStallRecovery(UnifiedPlayer player, int sessionId) {
-    if (bufferingStallTimeout <= Duration.zero ||
-        !_loadingSubject.value ||
-        !_shouldOwnContinuousPlayback(player, sessionId) ||
-        _bufferingStallTimer != null) {
-      return;
-    }
-    // Own one deadline per uninterrupted buffering episode. Playing/paused
-    // notifications do not prove media arrived; renewing the timer on each
-    // notification could postpone recovery indefinitely. Loading=false,
-    // explicit pause, a new source and disposal already cancel this owner.
-    final revision = ++_continuityRevision;
-    _bufferingStallTimer = Timer(bufferingStallTimeout, () {
-      _bufferingStallTimer = null;
-      if (revision != _continuityRevision ||
-          !_loadingSubject.value ||
-          !_shouldOwnContinuousPlayback(player, sessionId)) {
-        return;
-      }
-      _schedulePlayerError(
-        PlayerException(
-          message: 'Live playback remained buffered without media progress',
-          type: PlayerErrorType.source,
-          code: 'buffering_stall_timeout',
-        ),
-        sessionId,
-        isStillRelevant: () => revision == _continuityRevision && _loadingSubject.value,
-      );
-    });
-  }
 
-  void _scheduleContinuityRecovery(UnifiedPlayer player, int sessionId) {
-    if (!_shouldMaintainPlayback(player, sessionId) || player.isPlayingNow || isPlayingNow) return;
-    _continuityTimer?.cancel();
-    final revision = ++_continuityRevision;
-    _continuityTimer = Timer(unexpectedPauseGrace, () {
-      _continuityTimer = null;
-      unawaited(
-        _enqueuePlayerLifecycle(() async {
-          if (revision != _continuityRevision ||
-              !_shouldMaintainPlayback(player, sessionId) ||
-              player.isPlayingNow ||
-              isPlayingNow) {
-            return;
-          }
-          try {
-            // Some native live players briefly publish `playing=false` after
-            // an audio-focus hand-off or CDN discontinuity without raising an
-            // error. Reassert the existing source once before escalating to
-            // the normal line/engine recovery state machine.
-            // A native resume acknowledgement may itself stall when the
-            // decoder or platform channel is wedged. Bound this command before
-            // handing the failure to the finite source/line/engine recovery
-            // path; otherwise the lifecycle queue also blocks later work.
-            await player.play().timeout(unexpectedPauseFailureGrace);
-          } catch (error, stackTrace) {
-            _schedulePlayerError(
-              PlayerException(
-                message: 'Live playback did not resume after an unexpected pause',
-                type: PlayerErrorType.source,
-                code: 'unexpected_pause_resume_failed',
-                error: error,
-                stackTrace: stackTrace,
-              ),
-              sessionId,
-              isStillRelevant: () =>
-                  revision == _continuityRevision &&
-                  _shouldMaintainPlayback(player, sessionId) &&
-                  !player.isPlayingNow &&
-                  !isPlayingNow,
-            );
-            return;
-          }
-          if (player.isPlayingNow || isPlayingNow || !_shouldMaintainPlayback(player, sessionId)) return;
-          final confirmationRevision = ++_continuityRevision;
-          _continuityTimer = Timer(unexpectedPauseFailureGrace, () {
-            _continuityTimer = null;
-            if (confirmationRevision != _continuityRevision ||
-                !_shouldMaintainPlayback(player, sessionId) ||
-                player.isPlayingNow ||
-                isPlayingNow) {
-              return;
-            }
-            _schedulePlayerError(
-              PlayerException(
-                message: 'Live playback remained paused after the continuity retry',
-                type: PlayerErrorType.source,
-                code: 'unexpected_pause_timeout',
-              ),
-              sessionId,
-              isStillRelevant: () =>
-                  confirmationRevision == _continuityRevision &&
-                  _shouldMaintainPlayback(player, sessionId) &&
-                  !player.isPlayingNow &&
-                  !isPlayingNow,
-            );
-          });
-        }).catchError((Object error, StackTrace stackTrace) {
-          log('Unexpected-pause recovery failed: $error', name: 'PlayerManager', stackTrace: stackTrace);
-        }),
-      );
-    });
-  }
 
   Future<void> togglePlayPause() async {
     if (_currentPlayer == null) return;
@@ -2723,7 +2484,6 @@ class PlayerManager {
     _playbackIntentRevision++;
     _cancelPendingSourceInputs();
     _playbackSuspensions.clear();
-    _cancelContinuityRecovery();
     _cancelVideoFrameStallRecovery();
     _cancelTransientLiveRetry();
     _sourceRefreshAttemptResetTimer?.cancel();
@@ -2745,11 +2505,7 @@ class PlayerManager {
     _playbackIntentEstablished = true;
     _playbackIntentRevision++;
     _playbackSuspensions.clear();
-    _cancelContinuityRecovery();
     await player.play();
-    _armVideoFrameStallRecovery(player, _sessionId);
-    _scheduleRecoveryBudgetReset(player, _sessionId);
-    _scheduleProactiveSourceRefresh(player, _sessionId);
   }
 
   Future<void> stop() async {
@@ -3532,7 +3288,6 @@ class PlayerManager {
     _clearSourceCommitState();
     _cancelPendingSourceInputs();
     _playbackSuspensions.clear();
-    _cancelContinuityRecovery();
     _cancelVideoFrameStallRecovery();
     _cancelTransientLiveRetry();
     return _enqueuePlayerLifecycle(() async {
@@ -3552,13 +3307,9 @@ class PlayerManager {
     _audioModeVideoWarmTimer = null;
     _sourceRefreshAttemptResetTimer?.cancel();
     _sourceRefreshAttemptResetTimer = null;
-    _proactiveSourceRefreshTimer?.cancel();
-    _proactiveSourceRefreshTimer = null;
     _currentSourceRefreshAt = null;
     _sourceRefreshResolver = null;
     _sourceRefreshAttempts = 0;
-    _transientLiveRetryAttempts = 0;
-    _prefetchedSourceRefresh = null;
     _pendingRoomReentry = null;
     _appFloatingSession = null;
     _clearSourceCommitState();
@@ -3645,13 +3396,9 @@ class PlayerManager {
     _cancelTransientLiveRetry();
     _sourceRefreshAttemptResetTimer?.cancel();
     _sourceRefreshAttemptResetTimer = null;
-    _proactiveSourceRefreshTimer?.cancel();
-    _proactiveSourceRefreshTimer = null;
     _currentSourceRefreshAt = null;
     _sourceRefreshResolver = null;
     _sourceRefreshAttempts = 0;
-    _transientLiveRetryAttempts = 0;
-    _prefetchedSourceRefresh = null;
     _clearSourceCommitState();
     _sessionId++;
     await _clearSubscriptions();
@@ -3681,9 +3428,7 @@ class PlayerManager {
     _cancelPendingSourceInputs();
     _playbackSuspensions.clear();
     _sameEngineRecoveryAttempts = 0;
-    _transientLiveRetryAttempts = 0;
     _cancelTransientLiveRetry();
-    _cancelContinuityRecovery();
     final intentRevision = _playbackIntentRevision;
     return _enqueuePlayerLifecycle(() async {
       if (!_isPlaybackCommandCurrent(intentRevision)) return;
@@ -3710,7 +3455,6 @@ class PlayerManager {
       log('skip duplicated source-generation error: ${error.message}', name: 'PlayerManager');
       return;
     }
-    _cancelContinuityRecovery();
     _cancelVideoFrameStallRecovery();
     _cancelTransientLiveRetry();
     _sourceRefreshAttemptResetTimer?.cancel();
@@ -3800,17 +3544,6 @@ class PlayerManager {
       if (!isStillRequired()) return;
       // 网络/源错误的换线由 kernel 恢复梯 nextLine 决策（桥已上报），manager 不再并行换线。
 
-      // A presented-frame stall means the current transport is already no
-      // longer producing visible content. With alternate CDNs available,
-      // switching source on the existing engine is both faster and safer than
-      // opening the same signed URL concurrently on a replacement engine.
-      // The single-line case still gets the bounded same-engine recreation.
-      if (error.code == 'video_frame_stall_timeout' &&
-          await _tryRecreateCurrentEngineForStall(error, isStillRequired: isStillRequired)) {
-        return;
-      }
-      if (!isStillRequired()) return;
-
       final activePlayer = _currentPlayer;
       final currentDecoderSource = _currentSource;
       if (error.type == PlayerErrorType.codec &&
@@ -3831,21 +3564,12 @@ class PlayerManager {
       }
       if (!isStillRequired()) return;
 
-      // 引擎回退由 kernel 恢复梯 nextBackend 决策；manager 引擎环已删除。
-      if (!isStillRequired()) return;
-      if (_shouldRecreateCurrentEngine(error) &&
-          await _tryRecreateCurrentEngineForStall(error, isStillRequired: isStillRequired)) {
-        return;
-      }
-      if (!isStillRequired()) return;
       _isSwitchingDueToFallback = false;
-      if (_scheduleTransientLiveRetry(error)) return;
       _publishTerminalPlayerError(error);
     } catch (fallbackError, stackTrace) {
       _isSwitchingDueToFallback = false;
       if (!isStillRequired()) return;
       log('player recovery exhausted: $fallbackError', name: 'PlayerManager', stackTrace: stackTrace);
-      if (_scheduleTransientLiveRetry(error)) return;
       _publishTerminalPlayerError(fallbackError is PlayerException ? fallbackError : error);
     } finally {
       if (activeAtStart != null &&
@@ -3866,11 +3590,7 @@ class PlayerManager {
         _playingSubject.add(playing);
         _stateSubject.add(loading ? PlayerState.buffering : (playing ? PlayerState.playing : PlayerState.paused));
         if (loading) {
-          _scheduleBufferingStallRecovery(activeAtStart, request.sessionId);
         } else {
-          _armVideoFrameStallRecovery(activeAtStart, request.sessionId);
-          _scheduleContinuityRecovery(activeAtStart, request.sessionId);
-          _scheduleRecoveryBudgetReset(activeAtStart, request.sessionId);
         }
         _traceWindowsRecovery('retire-obsolete', error: error, sessionId: request.sessionId);
       }
@@ -3882,83 +3602,6 @@ class PlayerManager {
   /// same failing millisecond. Immediate line/engine recovery above still runs
   /// first. Only after it is exhausted do we schedule the finite backoff rounds
   /// configured by [transientLiveRetryDelays].
-  bool _scheduleTransientLiveRetry(PlayerException error) {
-    if ((error.type != PlayerErrorType.network && error.type != PlayerErrorType.source) ||
-        !_isContinuousLiveSource ||
-        !_playbackRequested ||
-        _playbackSuspensions.isNotEmpty ||
-        _currentSource == null ||
-        _transientLiveRetryAttempts >= transientLiveRetryDelays.length) {
-      return false;
-    }
-
-    final delay = transientLiveRetryDelays[_transientLiveRetryAttempts++];
-    final expectedSessionId = _sessionId;
-    final expectedIntentRevision = _playbackIntentRevision;
-    final expectedRoom = currentFloatRoom;
-    final expectedPlayer = _currentPlayer;
-    final revision = ++_transientLiveRetryRevision;
-    _transientLiveRetryTimer?.cancel();
-    _transientLiveRetryOwner = _PendingPlayerError(error: error, sessionId: expectedSessionId);
-    hasError.value = false;
-    _loadingSubject.add(true);
-    _stateSubject.add(PlayerState.buffering);
-    log('Immediate live recovery exhausted; retrying after ${delay.inMilliseconds} ms', name: 'PlayerManager');
-
-    bool isStillRequired() =>
-        revision == _transientLiveRetryRevision &&
-        !_disposed &&
-        !_isClosing &&
-        _playbackRequested &&
-        _playbackSuspensions.isEmpty &&
-        _playbackIntentRevision == expectedIntentRevision &&
-        _sessionId == expectedSessionId &&
-        identical(_currentPlayer, expectedPlayer) &&
-        currentFloatRoom == expectedRoom;
-
-    _transientLiveRetryTimer = Timer(delay, () {
-      _transientLiveRetryTimer = null;
-      if (!isStillRequired()) {
-        if (revision == _transientLiveRetryRevision) _transientLiveRetryOwner = null;
-        return;
-      }
-      unawaited(
-        _enqueuePlayerLifecycle(() async {
-              if (!isStillRequired()) return;
-
-              // A new recovery round receives fresh bounded line/engine budgets.
-              // The delayed-round budget itself remains monotonic until sustained
-              // playback proves the transport healthy again.
-              _sameEngineRecoveryAttempts = 0;
-              _sourceRefreshAttempts = 0;
-              _prefetchedSourceRefresh = null;
-              if (await _tryRefreshSignedPlaybackSource(isStillRequired: isStillRequired)) return;
-              if (!isStillRequired()) return;
-              final retrySource = _currentSource;
-              if (retrySource == null) return;
-              await _playInternal(
-                retrySource,
-                _currentPlayUrls,
-                _currentHeaders,
-                room: currentFloatRoom,
-                audioOnly: _runtimeAudioOnly,
-              );
-            })
-            .catchError((Object retryError, StackTrace stackTrace) {
-              log(
-                'Delayed live recovery failed: $retryError',
-                name: 'PlayerManager',
-                error: retryError,
-                stackTrace: stackTrace,
-              );
-            })
-            .whenComplete(() {
-              if (revision == _transientLiveRetryRevision) _transientLiveRetryOwner = null;
-            }),
-      );
-    });
-    return true;
-  }
 
   Future<bool> _tryRefreshSignedPlaybackSource({bool proactive = false, bool Function()? isStillRequired}) async {
     if (isStillRequired?.call() == false) return true;
@@ -3981,48 +3624,16 @@ class PlayerManager {
         _playbackSuspensions.isEmpty &&
         (isStillRequired?.call() ?? true);
     try {
-      PlaybackSourceRefreshResult refreshed;
-      if (!proactive) {
-        // A credential-only prefetch has no native ownership. An actual EOF
-        // can consume its result instead of launching a duplicate signer call,
-        // but a new room/intent must never wait for the old request.
-        final prefetch = _credentialPrefetch;
-        if (attempt == 0 && prefetch?.belongsTo(expectedSessionId, expectedIntentRevision) == true) {
-          await prefetch!.operation;
-          if (!requestIsCurrent()) return true;
-        }
-        final cached = _prefetchedSourceRefresh;
-        final invalidAt = cached?.invalidAt?.toUtc();
-        final cacheUsable =
-            cached != null && cached.hasSources && (invalidAt == null || invalidAt.isAfter(DateTime.now().toUtc()));
-        if (cacheUsable && attempt == 0) {
-          refreshed = cached;
-          _prefetchedSourceRefresh = null;
-        } else {
-          if (!cacheUsable) _prefetchedSourceRefresh = null;
-          refreshed = await _resolvePlaybackSource(
-            resolver,
-            PlaybackSourceRefreshRequest(
-              currentLineIndex: currentIndex < 0 ? 0 : currentIndex,
-              advanceLine: attempt > 0,
-              currentUrl: currentUrl,
-              currentSource: currentSource,
-              currentQuality: currentSelection?.quality,
-            ),
-          );
-        }
-      } else {
-        refreshed = await _resolvePlaybackSource(
-          resolver,
-          PlaybackSourceRefreshRequest(
-            currentLineIndex: currentIndex < 0 ? 0 : currentIndex,
-            advanceLine: false,
-            currentUrl: currentUrl,
-            currentSource: currentSource,
-            currentQuality: currentSelection?.quality,
-          ),
-        );
-      }
+      final refreshed = await _resolvePlaybackSource(
+        resolver,
+        PlaybackSourceRefreshRequest(
+          currentLineIndex: currentIndex < 0 ? 0 : currentIndex,
+          advanceLine: !proactive && attempt > 0,
+          currentUrl: currentUrl,
+          currentSource: currentSource,
+          currentQuality: currentSelection?.quality,
+        ),
+      );
       // A resolver may finish after pause, close or a newer playback request.
       // Consume stale recovery without handing it to the fallback/reopen path.
       if (!requestIsCurrent()) {
@@ -4049,7 +3660,6 @@ class PlayerManager {
           // presenting, then commit only after the candidate's first frame.
           // This reduces the black recovery interval. A ready candidate does
           // not prove timestamp alignment or a gap-free visible hand-off.
-          _prefetchedSourceRefresh = null;
           final activePlayer = _currentPlayer;
           if (activePlayer == null) return false;
           final handoffStopwatch = Stopwatch()..start();
@@ -4093,34 +3703,16 @@ class PlayerManager {
           );
           if (identical(_currentPlayer, activePlayer) && !_disposed && !_isClosing) {
             _currentSourceRefreshAt = DateTime.now().toUtc().add(const Duration(seconds: 10));
-            _scheduleProactiveSourceRefresh(activePlayer, _sessionId);
           }
           return false;
         }
         // Credential expiry is not necessarily an active transport deadline.
-        // Native Huya FLV (on Windows too) and other platforms keep the current
-        // connection while preparing credentials for an actual reconnect.
-        _prefetchedSourceRefresh = refreshed.ownedSource != null
-            ? PlaybackSourceRefreshResult.owned(
-                source: refreshed.ownedSource!,
-                refreshAt: refreshed.refreshAt?.toUtc(),
-                invalidAt: refreshed.invalidAt?.toUtc(),
-                selection: refreshedSelection,
-              )
-            : PlaybackSourceRefreshResult(
-                urls: List<String>.unmodifiable(urls),
-                preferredLineIndex: selectedIndex,
-                refreshAt: refreshed.refreshAt?.toUtc(),
-                invalidAt: refreshed.invalidAt?.toUtc(),
-                selection: refreshedSelection,
-              );
-        log('Prefetched signed playback lease without replacing the active transport', name: 'PlayerManager');
+        // Native Huya FLV keeps the current connection while preparing
+        // credentials for an actual reconnect.
         final nextRefreshAt = refreshed.refreshAt?.toUtc();
         _currentSourceRefreshAt = nextRefreshAt != null && nextRefreshAt.isAfter(DateTime.now().toUtc())
             ? nextRefreshAt
             : DateTime.now().toUtc().add(const Duration(seconds: 10));
-        final player = _currentPlayer;
-        if (player != null) _scheduleProactiveSourceRefresh(player, _sessionId);
         return true;
       }
       // URL equality only proves that the signer returned the same lease. It
@@ -4155,8 +3747,6 @@ class PlayerManager {
       log('Signed playback source refresh failed: $error', name: 'PlayerManager', error: error, stackTrace: stackTrace);
       if (proactive) {
         _currentSourceRefreshAt = DateTime.now().toUtc().add(const Duration(seconds: 10));
-        final player = _currentPlayer;
-        if (player != null) _scheduleProactiveSourceRefresh(player, _sessionId);
       }
       return false;
     }
@@ -4184,7 +3774,6 @@ class PlayerManager {
     _cancelTransientLiveRetry();
     _playbackRequested = false;
     _playbackSuspensions.clear();
-    _cancelContinuityRecovery();
     _cancelVideoFrameStallRecovery();
     _sourceReadyTimer?.cancel();
     _sourceReadyTimer = null;
@@ -4194,69 +3783,7 @@ class PlayerManager {
     _stateSubject.add(PlayerState.error);
   }
 
-  bool _shouldRecreateCurrentEngine(PlayerException error) {
-    if (error.type != PlayerErrorType.source) return false;
-    return const <String>{
-      'buffering_stall_timeout',
-      'live_source_completed',
-      'unexpected_pause_resume_failed',
-      'unexpected_pause_timeout',
-      'video_frame_stall_timeout',
-    }.contains(error.code);
-  }
 
-  Future<bool> _tryRecreateCurrentEngineForStall(PlayerException error, {bool Function()? isStillRequired}) async {
-    if (isStillRequired?.call() == false) return true;
-    if (!_shouldRecreateCurrentEngine(error) || _sameEngineRecoveryAttempts >= 1) return false;
-    final activeEngine = _runtimeEngine;
-    final activePlayer = _currentPlayer;
-    final currentSource = _currentSource;
-    if (activeEngine == null || activePlayer == null || currentSource == null) return false;
-    _sameEngineRecoveryAttempts++;
-    _traceWindowsRecovery('warm-swap-request', error: error, sessionId: _sessionId);
-    log('recover runtime live stall with a presentation-ready replacement', name: 'PlayerManager');
-    try {
-      // A successful `Player.open` only proves that libmpv accepted the URL. It
-      // does not prove that the CDN returned video or that the Windows renderer
-      // obtained a non-zero texture. Installing such a candidate destroyed the
-      // last presented frame and left the room permanently black with a 0x0
-      // `VideoOutput` when Huya returned 403/404 during token recovery.
-      //
-      // Windows media_kit exposes a native frame heartbeat, so use the same
-      // first-frame transaction as signed-source refreshes. The active player
-      // remains the presentation owner until the replacement has produced a
-      // real frame; a candidate which stays at 0x0 is disposed instead of being
-      // committed. Other platforms/engines retain the existing bounded recreate
-      // path because they do not expose an equivalent presentation fence.
-      if (PlatformUtils.isWindows && _supportsVideoFrameProgress(activePlayer)) {
-        return await _tryWarmSwapSource(
-          currentSource,
-          List<String>.from(_currentPlayUrls),
-          Map<String, String>.from(_currentHeaders),
-          room: currentFloatRoom,
-          audioOnly: _runtimeAudioOnly,
-          sourceRefreshAt: _currentSourceRefreshAt,
-          isStillRequired: isStillRequired,
-        );
-      }
-      await _switchEngineInternal(
-        activeEngine,
-        isManual: false,
-        audioOnly: _runtimeAudioOnly,
-        forceRecreate: true,
-        isStillRequired: isStillRequired,
-      );
-      return true;
-    } catch (recreateError, recreateStackTrace) {
-      log(
-        'same-engine recreation failed: $recreateError',
-        name: 'PlayerManager',
-        error: recreateError,
-        stackTrace: recreateStackTrace,
-      );
-      return false;
-    }
-  }
 
   bool _isPlayerEventCurrent(UnifiedPlayer player, int sessionId) {
     return _isSessionValid(sessionId) && identical(player, _currentPlayer);
@@ -4271,7 +3798,6 @@ class PlayerManager {
         frameAwarePlayer.onVideoFrameProgress.listen((_) {
           if (!_isPlayerEventCurrent(player, sessionId)) return;
           _notePresentedFrameProgress(player, sessionId);
-          _armVideoFrameStallRecovery(player, sessionId);
         }),
       );
     }
@@ -4294,20 +3820,15 @@ class PlayerManager {
             _continuityTimer?.cancel();
             _continuityTimer = null;
             _stateSubject.add(PlayerState.buffering);
-            _scheduleBufferingStallRecovery(player, sessionId);
           } else {
-            _cancelContinuityRecovery();
             _stateSubject.add(PlayerState.playing);
-            _armVideoFrameStallRecovery(player, sessionId);
           }
           if (_isSwitchingDueToFallback) {
             _isSwitchingDueToFallback = false;
           }
           _scheduleSourceRefreshAttemptReset(player, sessionId);
           if (!_supportsVideoFrameProgress(player) || _runtimeAudioOnly) {
-            _scheduleRecoveryBudgetReset(player, sessionId);
           }
-          _scheduleProactiveSourceRefresh(player, sessionId);
           _scheduleActiveContentProbe();
         } else {
           _cancelVideoFrameStallRecovery();
@@ -4329,9 +3850,7 @@ class PlayerManager {
           // authoritative state instead of leaving the stream buffered for
           // the rest of the room session.
           if (_loadingSubject.value) {
-            _scheduleBufferingStallRecovery(player, sessionId);
           } else {
-            _scheduleContinuityRecovery(player, sessionId);
           }
         }
       }),
@@ -4346,18 +3865,13 @@ class PlayerManager {
         _loadingSubject.add(event);
         if (event) {
           _cancelVideoFrameStallRecovery();
-          _cancelContinuityRecovery();
           if (_stateSubject.value != PlayerState.buffering) {
             _stateSubject.add(PlayerState.buffering);
           }
-          _scheduleBufferingStallRecovery(player, sessionId);
         } else {
-          _cancelContinuityRecovery();
           if (player.isPlayingNow || isPlayingNow) {
             _stateSubject.add(PlayerState.playing);
-            _armVideoFrameStallRecovery(player, sessionId);
           } else {
-            _scheduleContinuityRecovery(player, sessionId);
           }
         }
       }),
@@ -4372,7 +3886,6 @@ class PlayerManager {
             _playbackSuspensions.isEmpty &&
             _isContinuousLiveSource &&
             _stateSubject.value != PlayerState.preparing) {
-          _cancelContinuityRecovery();
           _schedulePlayerError(
             PlayerException(
               message: 'Live source ended unexpectedly',
@@ -4399,9 +3912,7 @@ class PlayerManager {
             if (_stateSubject.value != PlayerState.buffering) {
               _stateSubject.add(PlayerState.buffering);
             }
-            _scheduleBufferingStallRecovery(player, sessionId);
           } else {
-            _scheduleContinuityRecovery(player, sessionId);
           }
           return;
         }
@@ -4429,7 +3940,6 @@ class PlayerManager {
         _scheduleVideoGeometryObservation();
       }),
     );
-    _armVideoFrameStallRecovery(player, sessionId);
   }
 
   DateTime? _effectiveSourceRefreshAt(DateTime? advertisedRefreshAt, {required String? url}) {
@@ -4478,67 +3988,9 @@ class PlayerManager {
   }
 
   void _scheduleSourceRefreshAttemptReset(UnifiedPlayer player, int sessionId) {
-    _scheduleRecoveryBudgetReset(player, sessionId);
   }
 
-  void _scheduleProactiveSourceRefresh(UnifiedPlayer player, int sessionId) {
-    _proactiveSourceRefreshTimer?.cancel();
-    _proactiveSourceRefreshTimer = null;
-    final refreshAt = _currentSourceRefreshAt;
-    if (refreshAt == null || _sourceRefreshResolver == null || !_isPlayerEventCurrent(player, sessionId)) return;
-    // The splice relay renews this lease underneath the native connection.
-    if (_splicedLeasePlayers.contains(player)) return;
 
-    final remaining = refreshAt.difference(DateTime.now().toUtc());
-    final delay = remaining > const Duration(seconds: 1) ? remaining : const Duration(seconds: 1);
-    _proactiveSourceRefreshTimer = Timer(delay, () {
-      _proactiveSourceRefreshTimer = null;
-      if (!_isPlayerEventCurrent(player, sessionId) || !_playbackRequested || _playbackSuspensions.isNotEmpty) return;
-      final intentRevision = _playbackIntentRevision;
-      if (!PlatformUtils.isWindows || !HuyaTransportPolicy.hasShortTransportLease(_currentUrl ?? '')) {
-        // Fetching a standby credential is network work, not a player command.
-        // Holding the native queue here made slow HTTP block room changes and
-        // close even though the active native FLV transport remained healthy.
-        unawaited(_prefetchPlaybackCredential(player, sessionId, intentRevision));
-        return;
-      }
-      unawaited(
-        _enqueuePlayerLifecycle(() async {
-          if (!_isPlayerEventCurrent(player, sessionId) ||
-              intentRevision != _playbackIntentRevision ||
-              !_playbackRequested ||
-              _playbackSuspensions.isNotEmpty) {
-            return;
-          }
-          // Windows web/HLS compatibility handoffs still touch two native
-          // players and therefore retain serialized ownership.
-          await _tryRefreshSignedPlaybackSource(proactive: true);
-        }),
-      );
-    });
-  }
-
-  Future<void> _prefetchPlaybackCredential(UnifiedPlayer player, int sessionId, int intentRevision) async {
-    if (!_isPlayerEventCurrent(player, sessionId) ||
-        intentRevision != _playbackIntentRevision ||
-        !_playbackRequested ||
-        _playbackSuspensions.isNotEmpty ||
-        _credentialPrefetch?.belongsTo(sessionId, intentRevision) == true) {
-      return;
-    }
-    final prefetch = _PlaybackCredentialPrefetch(
-      sessionId,
-      intentRevision,
-      _tryRefreshSignedPlaybackSource(proactive: true),
-    );
-    _credentialPrefetch = prefetch;
-    try {
-      await prefetch.operation;
-    } finally {
-      // A new session may already have its own in-flight credential request.
-      if (identical(_credentialPrefetch, prefetch)) _credentialPrefetch = null;
-    }
-  }
 
   Future<void> dispose() async {
     if (_disposed) return;
@@ -4556,7 +4008,6 @@ class PlayerManager {
     _cancelPendingSourceInputs();
     _playbackRequested = false;
     _playbackSuspensions.clear();
-    _cancelContinuityRecovery();
     _cancelVideoFrameStallRecovery();
     _cancelTransientLiveRetry();
     _sessionId++;
@@ -4571,13 +4022,9 @@ class PlayerManager {
     _audioModeVideoWarmTimer?.cancel();
     _sourceRefreshAttemptResetTimer?.cancel();
     _sourceRefreshAttemptResetTimer = null;
-    _proactiveSourceRefreshTimer?.cancel();
-    _proactiveSourceRefreshTimer = null;
     _currentSourceRefreshAt = null;
     _sourceRefreshResolver = null;
     _sourceRefreshAttempts = 0;
-    _transientLiveRetryAttempts = 0;
-    _prefetchedSourceRefresh = null;
     _clearSourceCommitState();
     _cancelIdlePlayerRelease();
     await closeAppFloating();
