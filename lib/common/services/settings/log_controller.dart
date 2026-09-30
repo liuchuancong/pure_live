@@ -1,9 +1,12 @@
 import 'dart:async';
 
+import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 import 'package:pure_live/common/services/utils/hive_rx.dart';
 import 'package:pure_live/core/common/log.dart';
 import 'package:pure_live/get/get.dart';
+import 'package:media_core_logging/media_core_logging.dart' as mlog;
+import 'package:pure_live/player/media_core/player_kernel_service.dart';
 
 typedef LogStatusApplier = Future<bool> Function(bool enabled);
 
@@ -26,6 +29,8 @@ class LogController extends GetxController {
   bool? _pendingTarget;
   bool? _internalWrite;
   bool _lastConfirmedEnabled = false;
+  Timer? _kernelLogTimer;
+  int _kernelLogCursor = 0;
 
   static Function(Level, String)? onPrintLog;
 
@@ -77,11 +82,47 @@ class LogController extends GetxController {
     try {
       if (!await _applyLogStatus(enabled)) return _recordFailure(previous);
       _commitVerifiedState(enabled);
-      if (!enabled) _clearRuntimeEndpoint();
+      if (enabled) {
+        _startKernelLogPump();
+      } else {
+        _stopKernelLogPump();
+        _clearRuntimeEndpoint();
+      }
       if (!isClosed) _logStatusKey.v = '';
       return true;
     } catch (_) {
       return _recordFailure(previous);
+    }
+  }
+
+  /// media_core 的 kernel 日志环（恢复梯/墙/呈现决策）泵进应用日志缓冲，
+  /// 浏览器页即可观测；环被 clear 时游标归零接受重放。
+  void _startKernelLogPump() {
+    _stopKernelLogPump();
+    _drainKernelLogs();
+    _kernelLogTimer = Timer.periodic(const Duration(seconds: 2), (_) => _drainKernelLogs());
+  }
+
+  void _stopKernelLogPump() {
+    _kernelLogTimer?.cancel();
+    _kernelLogTimer = null;
+  }
+
+  void _drainKernelLogs() {
+    final ring = PlayerKernelService.logRing;
+    if (ring == null) return;
+    final records = ring.records;
+    if (_kernelLogCursor > records.length) {
+      _kernelLogCursor = 0;
+    }
+    while (_kernelLogCursor < records.length) {
+      final record = records[_kernelLogCursor++];
+      final color = switch (record.level) {
+        mlog.LogLevel.error => Colors.redAccent,
+        mlog.LogLevel.warning => Colors.orangeAccent,
+        _ => null,
+      };
+      Log.addDebugLog('[kernel:${record.category.name}] ${record.message}', color);
     }
   }
 
@@ -106,6 +147,7 @@ class LogController extends GetxController {
 
   @override
   void onClose() {
+    _stopKernelLogPump();
     _logStatusWorker?.dispose();
     _logStatusWorker = null;
     _pendingTarget = null;

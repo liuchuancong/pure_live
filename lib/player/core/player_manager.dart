@@ -4679,32 +4679,6 @@ class PlayerManager {
   }
 }
 
-/// Resolves application-floating bounds from the same aspect used by the
-/// normal player and Android PiP. Keeping this pure makes late portrait
-/// detection and size clamping deterministic in widget-free tests.
-@visibleForTesting
-Size resolveAppFloatingSize({
-  required double aspectRatio,
-  required double maxSide,
-  double minimumWidth = 120,
-  double portraitHeightFactor = 1.2,
-}) {
-  final safeMaxSide = maxSide.isFinite && maxSide > 0 ? maxSide : 220.0;
-  final safeMinimumWidth = minimumWidth.isFinite && minimumWidth > 0 ? minimumWidth : 120.0;
-  final ratio = aspectRatio.isFinite && aspectRatio > 0
-      ? aspectRatio.clamp(PortraitPresentationPolicy.androidPipMinimumAspectRatio, 4.0).toDouble()
-      : 16 / 9;
-  if (ratio >= 1) return Size(safeMaxSide, safeMaxSide / ratio);
-
-  var height = safeMaxSide * (portraitHeightFactor.isFinite && portraitHeightFactor > 0 ? portraitHeightFactor : 1.2);
-  var width = height * ratio;
-  if (width < safeMinimumWidth) {
-    width = safeMinimumWidth;
-    height = width / ratio;
-  }
-  return Size(width, height);
-}
-
 /// Returns the visible contain-fitted video bounds used as Android's PiP
 /// transition hint. The system expects this rectangle and the requested PiP
 /// aspect to describe the same pixels.
