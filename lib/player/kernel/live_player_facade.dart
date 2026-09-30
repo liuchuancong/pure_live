@@ -17,11 +17,18 @@ import 'package:pure_live/player/models/player_engine.dart';
 /// media_core_live `LivePlaybackController` 的；本文件只填 pure_live 业务——
 /// 画质表与线路下标的提交回执、owned 私有源 recipe、房间音量、引擎→后端映射。
 final class LivePlayerFacade {
-  LivePlayerFacade({PlayerEngine defaultEngine = PlayerEngine.mediaKit})
-    : preferredEngine = defaultEngine {
-    _controller = LivePlaybackController(kernel);
+  LivePlayerFacade({
+    PlayerEngine defaultEngine = PlayerEngine.mediaKit,
+    Future<List<PlayerSource>> Function(List<PlayerSource> sources)? interceptSources,
+    EngineFallbackSourceResolver? onEngineFallbackSources,
+  }) : preferredEngine = defaultEngine {
+    _interceptSources = interceptSources;
+    _controller = LivePlaybackController(kernel, onEngineFallbackSources: onEngineFallbackSources);
     _bindController();
   }
+
+  /// 源拦截钩子：签名 URL 租约/FLV relay 等宿主业务在打开前包装线路。
+  Future<List<PlayerSource>> Function(List<PlayerSource> sources)? _interceptSources;
 
   static PlayerKernel get kernel => PlayerKernelService.instance.kernel;
 
@@ -97,7 +104,18 @@ final class LivePlayerFacade {
     _lastLines = List<String>.unmodifiable(urls);
 
     await _controller.play(
-      LiveSourceRequest.fromUrls(urls, headers: headers, title: room?.title),
+      LiveSourceRequest(
+        sources: await _intercept([
+          for (final url in urls)
+            PlayerSource(
+              id: SourceId('live-$url'),
+              uri: Uri.parse(url),
+              type: SourceType.live,
+              headers: SourceHeaders(headers),
+            ),
+        ]),
+        title: room?.title,
+      ),
       preferredBackend: backendIdOfEngine(preferredEngine),
     );
     _publishCommit(sourceUrl, qualities, currentQuality);
@@ -117,7 +135,7 @@ final class LivePlayerFacade {
     _lastLines = const [];
     await _controller.play(
       LiveSourceRequest(
-        sources: [
+        sources: await _intercept([
           PlayerSource(
             id: SourceId('owned-${room.identityKey}'),
             uri: Uri(scheme: 'owned', path: room.identityKey),
@@ -125,7 +143,7 @@ final class LivePlayerFacade {
             protocol: SourceProtocol.custom,
             metadata: <String, Object?>{kMediaKitCustomInputKey: recipe},
           ),
-        ],
+        ]),
       ),
       preferredBackend: backendIdOfEngine(preferredEngine),
     );
@@ -162,7 +180,18 @@ final class LivePlayerFacade {
     final current = commit;
     if (current != null && current.urls.isNotEmpty) {
       await _controller.play(
-        LiveSourceRequest.fromUrls(current.urls, headers: current.headers, title: _room?.title),
+        LiveSourceRequest(
+          sources: await _intercept([
+            for (final url in current.urls)
+              PlayerSource(
+                id: SourceId('live-$url'),
+                uri: Uri.parse(url),
+                type: SourceType.live,
+                headers: SourceHeaders(current.headers),
+              ),
+          ]),
+          title: _room?.title,
+        ),
         preferredBackend: backendIdOfEngine(engine),
       );
     }
@@ -223,6 +252,13 @@ final class LivePlayerFacade {
     final size = handle?.combinedSnapshot.geometry.videoSize;
     final next = size != null && size.height > size.width;
     if (next != isVerticalVideo.value) isVerticalVideo.value = next;
+  }
+
+  Future<List<PlayerSource>> _intercept(List<PlayerSource> sources) async {
+    final interceptor = _interceptSources;
+    if (interceptor == null) return sources;
+    final intercepted = await interceptor(sources);
+    return intercepted.isEmpty ? sources : intercepted;
   }
 
   Future<void> close() => _controller.close();
