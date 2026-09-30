@@ -10,7 +10,7 @@ import 'package:pure_live/common/global/platform/desktop_tray_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:pure_live/routes/app_navigation.dart';
 import 'package:flutter_acrylic/flutter_acrylic.dart';
-import 'package:pure_live/player/utils/window_helper.dart';
+import 'package:pure_live/player/utils/windows_pip_driver.dart';
 import 'package:pure_live/common/utils/hive_pref_util.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/plugins/share_command_handler.dart';
@@ -811,7 +811,7 @@ mixin DesktopWindowMixin<T extends StatefulWidget> on State<T> implements Window
 
   Future<void> _captureWindowGeometry() async {
     if (Platform.isWindows) {
-      await WindowHelper.instance.captureWindowGeometry(_sizeController.updateSize);
+      await captureWindowsWindowGeometry(_sizeController.updateSize);
       return;
     }
     _sizeController.updateSize(await windowManager.getSize());

@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/player/utils/player_consts.dart';
-import 'package:pure_live/player/utils/window_helper.dart';
+import 'package:pure_live/player/utils/windows_pip_driver.dart';
 import 'package:pure_live/player/core/live_audio_service.dart';
 import 'package:pure_live/modules/settings/pages/font_family_manager_page.dart';
 import 'package:pure_live/common/services/settings/app_settings_controller.dart';
@@ -401,7 +401,7 @@ class _VideoSettingsPageState extends State<VideoSettingsPage> {
     final player = SettingsService.to.player;
     if (player.isClosed || player.windowsPipAlwaysOnTop.v == enabled) return;
     final previous = player.windowsPipAlwaysOnTop.v;
-    final setAlwaysOnTop = widget.pipAlwaysOnTopSetterOverride ?? WindowHelper.instance.setPiPAlwaysOnTop;
+    final setAlwaysOnTop = widget.pipAlwaysOnTopSetterOverride ?? setWindowsPipAlwaysOnTop;
     setState(() {
       _pipAlwaysOnTopBusy = true;
       _pipAlwaysOnTopErrorText = null;

@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:media_core/media_core.dart';
 import 'package:media_core_fullscreen/media_core_fullscreen.dart';
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/player/utils/window_helper.dart';
+import 'package:pure_live/player/utils/windows_pip_driver.dart';
 import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
 
@@ -142,8 +142,8 @@ class WindowService {
   WindowService._internal()
     : this._withDependencies(
         Platform.isWindows,
-        WindowHelper.instance.enterPiP,
-        WindowHelper.instance.exitPiP,
+        pipDrivenWindowsPipEnter,
+        pipDrivenWindowsPipExit,
         _captureWindowsPipPresentation,
         _prepareWindowsPipPresentation,
         _restoreWindowsPipPresentation,
