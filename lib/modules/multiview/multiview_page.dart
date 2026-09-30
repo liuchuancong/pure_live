@@ -5,10 +5,13 @@ import 'package:flutter/services.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:flame_barrage/flame_barrage.dart';
+import 'package:media_core_media_kit/media_core_media_kit.dart' show MediaKitPlayerAdapter;
+import 'package:media_core/media_core.dart' show PlayerId;
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:pure_live/player/utils/fullscreen.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/modules/multiview/multiview_controller.dart';
+import 'package:pure_live/player/media_core/player_kernel_service.dart';
 import 'package:pure_live/modules/multiview/models/multiview_models.dart';
 import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 import 'package:pure_live/player/widgets/video_output_viewport_sizer.dart';
@@ -892,6 +895,16 @@ class _MultiviewPageState extends State<MultiviewPage> {
     final status = state.status;
     return _MultiviewCellView(
       key: _cellKey(index),
+      cellIndex: index,
+      onRenderResize: (width, height) async {
+        final wallCell = controller.wallCellAt(index);
+        final playerId = wallCell?.playerId;
+        final handle = playerId == null ? null : PlayerKernelService.instance.kernel.get(PlayerId(playerId));
+        final adapter = handle?.adapter;
+        if (adapter is MediaKitPlayerAdapter) {
+          await adapter.setRenderTargetSize(width: width, height: height);
+        }
+      },
       state: state,
       isAudioFocus: controller.audioFocusIndex == index && status == MultiviewCellStatus.playing,
       isPickTarget: _targetCell == index && isMultiviewCellAssignable(status),
@@ -944,6 +957,8 @@ class _MultiviewCellView extends StatelessWidget {
     required this.onRetry,
     required this.barrageController,
     required this.onSelectQuality,
+    required this.cellIndex,
+    required this.onRenderResize,
     this.showDanmaku = false,
     this.showQualityEntry = false,
   });
@@ -958,6 +973,10 @@ class _MultiviewCellView extends StatelessWidget {
   /// 在大画面上层叠弹幕；由页面按 danmakuEnabled 折算后传入。
   final bool showDanmaku;
   final BarrageController barrageController;
+
+  final int cellIndex;
+
+  final Future<void> Function(int width, int height) onRenderResize;
 
   /// 是否显示清晰度入口（仅 focus 布局大画面为 true）。
   final bool showQualityEntry;
@@ -1004,7 +1023,7 @@ class _MultiviewCellView extends StatelessWidget {
               sourceWidth: videoController.player.stream.width,
               sourceHeight: videoController.player.stream.height,
               fit: BoxFit.contain,
-              onResize: (width, height, force) => videoController.setSize(width: width, height: height, force: force),
+              onResize: (width, height, force) => onRenderResize(width, height),
               child: video,
             )
           : video;

@@ -1046,21 +1046,9 @@ class PlayerManager {
       portraitFallback: effectiveVideoOrientation == VideoSourceOrientation.portrait,
     );
     if (_lastAppliedPipAspectRatio != null && (_lastAppliedPipAspectRatio! - pipRatio.value).abs() < 0.004) return;
-    try {
-      await floating.update(
-        aspectRatio: Rational(pipRatio.width, pipRatio.height),
-        sourceRectHint: _currentPipSourceRect(contentAspectRatio: pipRatio.value),
-      );
-      if (generation != _pipGeometryUpdateGeneration || !isInPip.value || _disposed || _isClosing) return;
-      _lastAppliedPipAspectRatio = pipRatio.value;
-    } catch (error, stackTrace) {
-      log(
-        'Update active PiP geometry failed: $error',
-        name: 'PlayerManager.VideoGeometry',
-        error: error,
-        stackTrace: stackTrace,
-      );
-    }
+    // media_core_pip 的 FloatingSystemPip 在进入时下发比例（hosted floating 6.0
+    // 不支持活跃会话改比例）；这里只记录期望值，系统事件回落后重进 PiP 生效。
+    _lastAppliedPipAspectRatio = pipRatio.value;
   }
 
   Future<UnifiedPlayer> _createPlayer(

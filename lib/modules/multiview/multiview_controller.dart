@@ -310,6 +310,13 @@ class MultiviewController extends GetxController {
 
   RxInt get audioFocusIndexState => _audioFocusIndex;
 
+  /// 暴露墙内指定格的 playerId（Windows 视口重设需要定位 kernel 播放器）。
+  wall.MultiviewCell? wallCellAt(int index) {
+    final controller = _wall;
+    if (controller == null || index >= controller.cells.length) return null;
+    return controller.cells[index];
+  }
+
   bool get canAddCell => layout.value == MultiviewLayout.focus && cells.length < maxCellCount;
 
   @override

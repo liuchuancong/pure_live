@@ -17,7 +17,12 @@ class MediaKitContentProbe {
   static const int analysisWidth = 192;
 
   static Future<ActiveVideoContentObservation?> capture(MediaKitPlayerAccessor accessor) async {
-    final encoded = await accessor.mediaKitPlayer.safeScreenshot(format: 'image/jpeg', includeLibassSubtitles: false);
+    final Uint8List? encoded;
+    try {
+      encoded = await accessor.mediaKitPlayer.screenshot(format: 'image/jpeg', includeLibassSubtitles: false);
+    } catch (_) {
+      return null;
+    }
     if (encoded == null || encoded.isEmpty) return null;
 
     ui.Codec? codec;

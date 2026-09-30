@@ -7,6 +7,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   dynamic_color
   ffmpeg_kit_extended_flutter
   flutter_acrylic
+  fvp
   gtk
   media_kit_video
   screen_retriever_linux

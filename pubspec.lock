@@ -178,12 +178,13 @@ packages:
     source: hosted
     version: "1.4.0"
   better_player_plus:
-    dependency: "direct main"
+    dependency: transitive
     description:
-      path: "plugins/built_in_kotlin/better_player_plus"
-      relative: true
-    source: path
-    version: "1.3.5"
+      name: better_player_plus
+      sha256: "49c02ec4d975cf0da3f55c3bf07a4eb3eeab2b417790d8fa3e29a77947cb02f1"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.4.1"
   bonsoir:
     dependency: "direct main"
     description:
@@ -240,14 +241,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.2"
-  bordered_text:
-    dependency: "direct main"
-    description:
-      name: bordered_text
-      sha256: "5c0599064a1787a5fd3257c9d097bfb99cad7cf2299d0593ed1493699c8529a0"
-      url: "https://pub.dev"
-    source: hosted
-    version: "3.0.2"
   brotli:
     dependency: "direct main"
     description:
@@ -828,10 +821,10 @@ packages:
     dependency: "direct main"
     description:
       name: flame_barrage
-      sha256: "704a7eeacee75ceb4dd1ab006bf7b0de97e5cf00174e27d2001ba65191d751e8"
+      sha256: "7e590e42f225f134bf05e222de3199b6e1692f3898aa4c0396bb7bd6d79bcc58"
       url: "https://pub.dev"
     source: hosted
-    version: "0.0.7"
+    version: "0.0.8"
   flex_color_picker:
     dependency: "direct main"
     description:
@@ -851,9 +844,10 @@ packages:
   floating:
     dependency: "direct main"
     description:
-      path: "plugins/built_in_kotlin/floating"
-      relative: true
-    source: path
+      name: floating
+      sha256: e51ce1dbcab3ea83da0ad1b07f2091b99c0e8680184c780a000567f41234d454
+      url: "https://pub.dev"
+    source: hosted
     version: "6.0.0"
   flutter:
     dependency: "direct main"
@@ -1055,9 +1049,11 @@ packages:
   flv_lzc:
     dependency: "direct main"
     description:
-      path: "plugins/flv_lzc"
-      relative: true
-    source: path
+      path: "."
+      ref: HEAD
+      resolved-ref: "162030d642857109048a8e6858d502b8d73c754a"
+      url: "https://github.com/liuchuancong/flv_lzc.git"
+    source: git
     version: "1.0.4+purelive.2"
   font_awesome_flutter:
     dependency: "direct main"
@@ -1089,11 +1085,12 @@ packages:
     source: hosted
     version: "1.2.0"
   fvp:
-    dependency: "direct main"
+    dependency: transitive
     description:
-      path: "third_party/fvp"
-      relative: true
-    source: path
+      name: fvp
+      sha256: c6db09d88a6c84ba84fb047b4082a03987199e968273da9ad051660e18cfca55
+      url: "https://pub.dev"
+    source: hosted
     version: "0.38.1"
   get_it:
     dependency: transitive
@@ -1520,17 +1517,19 @@ packages:
   media_kit:
     dependency: "direct main"
     description:
-      path: "third_party/media_kit"
-      relative: true
-    source: path
-    version: "1.1.11"
+      name: media_kit
+      sha256: ae9e79597500c7ad6083a3c7b7b7544ddabfceacce7ae5c9709b0ec16a5d6643
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.2.6"
   media_kit_video:
     dependency: "direct main"
     description:
-      path: "third_party/media_kit_video"
-      relative: true
-    source: path
-    version: "1.2.5"
+      name: media_kit_video
+      sha256: "813858c3fe84eb46679eb698695f60665e2bfbef757766fac4d2e683f926e15a"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.3.1"
   meta:
     dependency: "direct main"
     description:
@@ -1638,18 +1637,18 @@ packages:
     dependency: "direct main"
     description:
       name: package_info_plus
-      sha256: "127e1751e37ffb2ff4658beeaca77bad0c27bf5f932bd3a501c2296926d4b481"
+      sha256: "16eee997588c60225bda0488b6dcfac69280a6b7a3cf02c741895dd370a02968"
       url: "https://pub.dev"
     source: hosted
-    version: "10.2.1"
+    version: "8.3.1"
   package_info_plus_platform_interface:
     dependency: transitive
     description:
       name: package_info_plus_platform_interface
-      sha256: db762cb2f4f25ee60fb6359773861b0f199e00b90d237bd85a76a1e806b46ef4
+      sha256: "202a487f08836a592a6bd4f901ac69b3a8f146af552bbd14407b6b41e1c3f086"
       url: "https://pub.dev"
     source: hosted
-    version: "4.1.0"
+    version: "3.2.1"
   path:
     dependency: "direct main"
     description:
@@ -1965,12 +1964,11 @@ packages:
   screen_retriever:
     dependency: "direct main"
     description:
-      path: "packages/screen_retriever"
-      ref: b246b3963738d6cc159c921764c194c73dbdf2ad
-      resolved-ref: b246b3963738d6cc159c921764c194c73dbdf2ad
-      url: "https://github.com/liuchuancong/screen_retriever.git"
-    source: git
-    version: "0.2.0"
+      name: screen_retriever
+      sha256: ace919117a7520c13a50a6259e60c4a0d4cbe98809468792a91b5c5adada2aa6
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.2.2"
   screen_retriever_linux:
     dependency: transitive
     description:
@@ -2555,18 +2553,10 @@ packages:
     dependency: "direct main"
     description:
       name: wakelock_plus
-      sha256: "22b3e7e937721de70e63c85e7139f4ac781dc22863b9262431a53ac030eb074b"
+      sha256: "61713aa82b7f85c21c9f4cd0a148abd75f38a74ec645fcb1e446f882c82fd09b"
       url: "https://pub.dev"
     source: hosted
-    version: "1.8.0"
-  wakelock_plus_ohos:
-    dependency: transitive
-    description:
-      name: wakelock_plus_ohos
-      sha256: b22af297411555b5ec0fe43ec2960cd5f019dd23b83853214ebe6dcc97b337bd
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.0.3"
+    version: "1.3.3"
   wakelock_plus_platform_interface:
     dependency: transitive
     description:
@@ -2635,10 +2625,10 @@ packages:
     dependency: "direct main"
     description:
       name: win32
-      sha256: a0b93865d5644f11cf6a8c3f6db909f1ec168958b5805f6cc684adea957cd63d
+      sha256: d7cb55e04cd34096cd3a79b3330245f54cb96a370a1c27adb3c84b917de8b08e
       url: "https://pub.dev"
     source: hosted
-    version: "6.4.0"
+    version: "5.15.0"
   win32_registry:
     dependency: "direct main"
     description:
