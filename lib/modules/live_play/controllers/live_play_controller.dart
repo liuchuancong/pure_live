@@ -7,6 +7,7 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:pure_live/plugins/emoji_manager.dart';
 import 'package:pure_live/model/live_play_quality.dart';
 import 'package:pure_live/player/kernel/live_player_facade.dart';
+import 'package:pure_live/player/kernel/live_player_facade.dart' as facade_types show RoomSessionSnapshot, PlaybackSourceCommitSnapshot, PlaybackSourceResolver, PlaybackSourceQualitySelection;
 import 'package:pure_live/player/core/playback_source.dart';
 import 'package:pure_live/player/core/live_audio_service.dart';
 import 'package:pure_live/modules/live_play/states/ui_state.dart';

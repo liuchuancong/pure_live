@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'dart:async';
 
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:pure_live/get/get.dart';
 import 'package:media_core/media_core.dart';
 import 'package:media_core_live/media_core_live.dart';
@@ -379,6 +379,7 @@ final class LivePlayerFacade {
 @immutable
 class FacadeStreamCommit {
   const FacadeStreamCommit({
+    this.revision = 0,
     required this.room,
     required this.urls,
     required this.currentUrl,
@@ -386,13 +387,69 @@ class FacadeStreamCommit {
     required this.headers,
     required this.qualities,
     required this.currentQuality,
+    this.ownedSource,
+    this.isAudioOnly = false,
+    this.isLiving = true,
+    this.dataSource = '',
+    this.sourceQueryPolicies = const {},
+    this.hasUseDefaultResolution = true,
   });
 
+  final int revision;
   final LiveRoom? room;
   final List<String> urls;
   final String currentUrl;
   final int currentLineIndex;
   final Map<String, String> headers;
+  final List<LivePlayQuality> qualities;
+  final int currentQuality;
+  final Object? ownedSource;
+  final bool isAudioOnly;
+  final bool isLiving;
+  final String dataSource;
+  final Map<String, Object?> sourceQueryPolicies;
+  final bool hasUseDefaultResolution;
+
+  FacadeStreamCommit copyWith({
+    String? dataSource,
+    List<String>? playUrls,
+    Object? ownedSource,
+    Map<String, Object?>? sourceQueryPolicies,
+    Map<String, String>? headers,
+    bool? isAudioOnly,
+  }) => FacadeStreamCommit(
+    revision: revision,
+    room: room,
+    urls: playUrls ?? urls,
+    currentUrl: dataSource ?? currentUrl,
+    currentLineIndex: currentLineIndex,
+    headers: headers ?? this.headers,
+    qualities: qualities,
+    currentQuality: currentQuality,
+    ownedSource: ownedSource ?? this.ownedSource,
+    isAudioOnly: isAudioOnly ?? this.isAudioOnly,
+    isLiving: isLiving,
+    dataSource: dataSource ?? this.dataSource,
+    sourceQueryPolicies: sourceQueryPolicies ?? this.sourceQueryPolicies,
+    hasUseDefaultResolution: hasUseDefaultResolution,
+  );
+}
+
+/// 旧栈类型别名（消费者签名不变）。
+typedef RoomSessionSnapshot = FacadeStreamCommit;
+typedef PlaybackSourceCommitSnapshot = FacadeStreamCommit;
+typedef PlaybackSourceResolver = Future<Object?> Function(Object request);
+
+extension FacadeStreamCommitLegacy on FacadeStreamCommit {
+  List<String> get playUrls => urls;
+  Object? get source => null;
+  String get currentUrl_ => currentUrl;
+  Map<String, Object?> get queryPolicies => sourceQueryPolicies;
+}
+
+@immutable
+class PlaybackSourceQualitySelection {
+  const PlaybackSourceQualitySelection({required this.qualities, required this.currentQuality});
   final List<LivePlayQuality> qualities;
   final int currentQuality;
 }

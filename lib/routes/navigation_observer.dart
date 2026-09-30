@@ -4,6 +4,7 @@ import 'dart:developer';
 import 'package:flutter/scheduler.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/player/kernel/live_player_facade.dart';
+import 'package:pure_live/player/kernel/live_player_facade.dart' as facade_types show RoomSessionSnapshot, PlaybackSourceCommitSnapshot, PlaybackSourceResolver, PlaybackSourceQualitySelection;
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/player/utils/fullscreen.dart' show WindowService;
 import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';

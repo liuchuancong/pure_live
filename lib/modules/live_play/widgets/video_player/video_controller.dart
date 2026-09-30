@@ -16,6 +16,7 @@ import 'package:pure_live/player/utils/fullscreen.dart';
 import 'package:screen_brightness_platform_interface/screen_brightness_platform_interface.dart';
 import 'package:volume_controller/volume_controller.dart';
 import 'package:pure_live/player/kernel/live_player_facade.dart';
+import 'package:pure_live/player/kernel/live_player_facade.dart' as facade_types show RoomSessionSnapshot, PlaybackSourceCommitSnapshot, PlaybackSourceResolver, PlaybackSourceQualitySelection;
 import 'package:pure_live/player/core/portrait_stream_support.dart';
 import 'package:pure_live/modules/live_play/widgets/layout/portrait_fullscreen_interaction.dart';
 import 'package:pure_live/player/models/player_exception.dart';
