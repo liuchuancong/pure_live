@@ -14,6 +14,13 @@
 - `PlayerKernelService` 注册四个后端:MediaKit(默认首选)、Ijk(flv_lzc,FLV/H.265 移动端)、BetterPlayer(video_player 生态)、Fvp(priority 80)。引擎选择交给 kernel 的 PlayerAdapterSelector 按协议/格式/直播能力打分。
 - **待接线(下一波)**:①应用内小窗兜底(showAppFloating 的 flutter_floating overlay)→ `media_core_floating` 的 FloatingWindowPresenter/FloatingWindowOverlay(纯几何拖拽/吸附),替换后 flutter_floating 可退场;②`media_core_presentation` 的 PresentationDriverChain 把 FullscreenDriver+PipDriver+FloatingDriver 链进 kernel(`kernel_presentation_adapter.dart`),呈现模式统一从 kernel 走;③PlayerManager → PlayerKernel/RecoveryLadder。
 
+## ③波次进度
+
+- **①悬浮窗→media_core_floating(完成,5abe5b38)**:showAppFloating 以 OverlayEntry 挂 `FloatingWindowOverlay`(拖拽/吸附/视频宽高比/自带展开关闭控件),pure_live 只供内容与设置钩子;flutter_floating 插件连同 popup-hide 助手一并退场。
+- **②presentation 链入 kernel(完成,4ebc1599)**:`PlayerKernelService` 向 kernel `attachPresentation(PresentationDriverChain)`——fullscreen/windowFullscreen→FullscreenDriver、pip→windows PipDriver、floating→FloatingDriver。呈现请求可经 kernel 下发。
+- **③a custom-protocol 通道(media_core 本地 b55e825)**:`PlayerSource.metadata[kMediaKitCustomInputKey]` 携带宿主 recipe,`MediaKitPlayerConfig.customInputOpener` 在已绑定的 player 上打开它;缺 opener 抛错交由 RecoveryLadder 反应。pure_live 的 OwnedPlaybackSource/FFmpeg relay 逻辑留在宿主闭包里。
+- **③b PlayerManager 主拆解(待做)**:5028 行 → `PlayerKernel.create`/`PlayerHandle`/`RecoveryLadder`。映射:engine fallback→adapter registry 打分选择(四后端已注册)、line fallback→`RecoveryLadder.nextLine`(候选源列表)、后台保活→`media_core_native`、签名 URL 刷新→RecoveryLadder 的换后端前刷新钩子、owned 源→custom-input recipe。完成后多画面旧引擎双路径(multiview_cell_player)与 lib/player/adapters 旧栈删除。
+
 ## 关键 API 速查(已核实)
 
 - `PlayerKernel()..registerBackend(const MediaKitAdapterFactory().registration())`;`kernel.create(source: PlayerSource(id: SourceId('x'), uri: ...), config: const PlayerConfig(autoPlay: true))` → `PlayerHandle`。
