@@ -1,4 +1,0 @@
-# mdk-sdk archives and extractions are fetched by cmake/deps.cmake at build time.
-mdk-sdk*
-**/mdk-sdk*/
-android/.cxx/
