@@ -4,12 +4,8 @@ import 'package:flutter/foundation.dart';
 
 import 'core/player_manager.dart';
 import 'models/player_engine.dart';
-import 'core/line_fallback_manager.dart';
-import 'core/engine_fallback_manager.dart';
 import 'core/live_audio_service.dart';
 import 'core/playback_lifecycle_coordinator.dart';
-
-import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/common/services/settings_service.dart';
 import 'package:pure_live/player/utils/mpv_platform_profile.dart';
 
@@ -46,13 +42,6 @@ class GlobalPlayerService {
   Future<void> _initialize(PlayerEngine defaultEngine) async {
     // 1. Instantiate the Orchestrator with all its specialized managers
     playerManager = PlayerManager(
-      fallbackManager: EngineFallbackManager(
-        defaultEngine: defaultEngine,
-        // Desktop keeps a single engine (the one the user chose) so a failure
-        // never switches engines behind the user's back, as before fvp.
-        supportedEngines: PlatformUtils.isMobile ? PlayerEngine.values : [defaultEngine],
-      ),
-      lineManager: LineFallbackManager(),
       suppressAutomaticFallbackAudio: () => isMpvAudioOutputDisabledForPlatform(
         customOutput: SettingsService.to.player.customPlayerOutput.value,
         configuredDriver: SettingsService.to.player.audioOutputDriver.value,

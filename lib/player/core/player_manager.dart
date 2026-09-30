@@ -8,12 +8,10 @@ import 'package:pure_live/core/common/hls_source_query_policy.dart';
 import 'playback_source_transport.dart';
 import 'playback_source.dart';
 
-import 'line_fallback_manager.dart';
 import 'live_stream_geometry_hint.dart';
 import 'portrait_stream_support.dart';
 import '../models/player_state.dart';
 import '../models/player_engine.dart';
-import 'engine_fallback_manager.dart';
 import 'playback_lifecycle_coordinator.dart';
 
 import 'package:floating/floating.dart';
@@ -202,8 +200,6 @@ class _PlaybackCredentialPrefetch {
 enum _PlaybackSuspensionReason { lifecycle, audioInterruption }
 
 class PlayerManager {
-  final EngineFallbackManager fallbackManager;
-  final LineFallbackManager lineManager;
   final Duration audioModeSwitchTimeout;
   final Duration sourceOpenTimeout;
   final Duration sourceRefreshTimeout;
@@ -293,8 +289,6 @@ class PlayerManager {
   final PlaybackInputFactory? _sourceInputFactory;
 
   PlayerManager({
-    required this.fallbackManager,
-    required this.lineManager,
     this.audioModeSwitchTimeout = const Duration(seconds: 5),
     this.sourceOpenTimeout = const Duration(seconds: 18),
     this.sourceRefreshTimeout = const Duration(seconds: 12),
@@ -1395,8 +1389,6 @@ class PlayerManager {
 
     final roomChanged = room != currentFloatRoom;
     if (roomChanged) {
-      lineManager.reset();
-      fallbackManager.resetAll();
       _sameEngineRecoveryAttempts = 0;
       _sourceRefreshAttempts = 0;
       _transientLiveRetryAttempts = 0;
@@ -1940,8 +1932,6 @@ class PlayerManager {
           _loadingSubject.add(false);
           _stateSubject.add(PlayerState.playing);
           hasError.value = false;
-          if (source.url != null) lineManager.markSuccess(source.url!);
-          fallbackManager.reset(engine);
           _armVideoFrameStallRecovery(candidate, sessionId);
           _scheduleProactiveSourceRefresh(candidate, sessionId);
           _scheduleActiveContentProbe();
@@ -2576,8 +2566,6 @@ class PlayerManager {
       _sourceRefreshAttempts = 0;
       _sameEngineRecoveryAttempts = 0;
       _transientLiveRetryAttempts = 0;
-      lineManager.reset();
-      fallbackManager.resetAll();
       log('Sustained playback restored live recovery budgets', name: 'PlayerManager');
     });
   }
@@ -3633,7 +3621,6 @@ class PlayerManager {
   }
 
   Future<void> softStop() async {
-    lineManager.reset();
     try {
       if (_stateSubject.value == PlayerState.error) {
         await _hardDisposeInternal();
@@ -3669,7 +3656,6 @@ class PlayerManager {
     _prefetchedSourceRefresh = null;
     _clearSourceCommitState();
     _sessionId++;
-    lineManager.reset();
     await _clearSubscriptions();
     await _disposeWindowsWarmStandby();
     final player = _currentPlayer;
@@ -3814,26 +3800,7 @@ class PlayerManager {
         return;
       }
       if (!isStillRequired()) return;
-      final currentUrl = _currentUrl;
-      if ((error.type == PlayerErrorType.network || error.type == PlayerErrorType.source) &&
-          currentUrl != null &&
-          _currentPlayUrls.length > 1) {
-        lineManager.markFailed(currentUrl);
-        if (lineManager.hasAvailable(_currentPlayUrls)) {
-          final nextLine = lineManager.next(_currentPlayUrls);
-          if (nextLine != currentUrl) {
-            log('recover playback with next line', name: 'PlayerManager');
-            await _playInternal(
-              UrlPlaybackSource(nextLine),
-              _currentPlayUrls,
-              _currentHeaders,
-              room: currentFloatRoom,
-              audioOnly: _runtimeAudioOnly,
-            );
-            return;
-          }
-        }
-      }
+      // 网络/源错误的换线由 kernel 恢复梯 nextLine 决策（桥已上报），manager 不再并行换线。
 
       // A presented-frame stall means the current transport is already no
       // longer producing visible content. With alternate CDNs available,
@@ -3866,53 +3833,7 @@ class PlayerManager {
       }
       if (!isStillRequired()) return;
 
-      // kernel 播放器的引擎回退由 handle 的 RecoveryLadder 决策（同后端重开
-      // → 换线路 → 换后端），manager 的外层引擎环只服务旧路径，双重恢复会让
-      // 两层各自换源。kernel 播放器把失败交给梯子后在此终止。
-      if (_currentPlayer is KernelUnifiedPlayer) {
-        log('kernel player owns recovery; skip manager engine fallback', name: 'PlayerManager');
-        return;
-      }
-
-      if (fallbackManager.shouldFallback(error)) {
-        final activeEngine = _runtimeEngine;
-        if (activeEngine != null) {
-          var engineCursor = activeEngine;
-          var engineError = error;
-          while (true) {
-            final nextEngine = await fallbackManager.fallback(engineCursor, engineError);
-            if (!isStillRequired()) return;
-            if (nextEngine == engineCursor) break;
-            log('recover playback with engine: ${engineCursor.name} -> ${nextEngine.name}', name: 'PlayerManager');
-            _isSwitchingDueToFallback = true;
-            try {
-              await _switchEngineInternal(
-                nextEngine,
-                isManual: false,
-                audioOnly: _runtimeAudioOnly,
-                isStillRequired: isStillRequired,
-              );
-            } catch (switchError, stackTrace) {
-              // Initialization can fail before the replacement engine owns a
-              // source. Continue through the remaining engines instead of
-              // leaving the old engine marked as switching forever.
-              _isSwitchingDueToFallback = false;
-              if (!isStillRequired()) return;
-              engineCursor = nextEngine;
-              engineError = switchError is PlayerException
-                  ? switchError
-                  : PlayerException(
-                      message: 'Switch engine failed: $switchError',
-                      type: PlayerErrorType.initialization,
-                      error: switchError,
-                      stackTrace: stackTrace,
-                    );
-              continue;
-            }
-            return;
-          }
-        }
-      }
+      // 引擎回退由 kernel 恢复梯 nextBackend 决策；manager 引擎环已删除。
       if (!isStillRequired()) return;
       if (_shouldRecreateCurrentEngine(error) &&
           await _tryRecreateCurrentEngineForStall(error, isStillRequired: isStillRequired)) {
@@ -3940,7 +3861,6 @@ class PlayerManager {
         // earlier real failures, but refund this uncommitted transaction.
         _sourceRefreshAttempts = sourceAttemptsAtStart;
         _sameEngineRecoveryAttempts = engineAttemptsAtStart;
-        fallbackManager.reset(activeAtStart.engine);
         _isSwitchingDueToFallback = false;
         final loading = _playbackRequested && _playbackSuspensions.isEmpty && _nativeLoading;
         final playing = activeAtStart.isPlayingNow;
@@ -4014,9 +3934,6 @@ class PlayerManager {
               _sameEngineRecoveryAttempts = 0;
               _sourceRefreshAttempts = 0;
               _prefetchedSourceRefresh = null;
-              lineManager.reset();
-              fallbackManager.resetAll();
-
               if (await _tryRefreshSignedPlaybackSource(isStillRequired: isStillRequired)) return;
               if (!isStillRequired()) return;
               final retrySource = _currentSource;
@@ -4385,10 +4302,6 @@ class PlayerManager {
             _stateSubject.add(PlayerState.playing);
             _armVideoFrameStallRecovery(player, sessionId);
           }
-          final currentUrl = _currentUrl;
-          if (currentUrl != null) lineManager.markSuccess(currentUrl);
-          final runtimeEngine = _runtimeEngine;
-          if (runtimeEngine != null) fallbackManager.reset(runtimeEngine);
           if (_isSwitchingDueToFallback) {
             _isSwitchingDueToFallback = false;
           }
