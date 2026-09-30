@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:media_core/media_core.dart' as mc;
+import 'package:media_core_media_kit/media_core_media_kit.dart' show MediaKitPlayerAdapter;
 import 'package:pure_live/common/models/live_room.dart';
 import 'package:pure_live/player/media_core/player_kernel_service.dart';
 import 'package:pure_live/player/models/player_engine.dart';
@@ -12,10 +13,9 @@ import 'package:pure_live/player/interface/unified_player_interface.dart';
 
 /// 是否用 media_core 的 PlayerHandle 承载主播放引擎。
 ///
-/// 默认关闭；`--dart-define=PURE_LIVE_KERNEL_PLAYER=true` 打开。打开后
-/// mediaKit 引擎由 kernel 创建（会话/代际/串行化/恢复梯都在 handle 上），
-/// 旧 MediaKitAdapter 路径保留为回退。
-const bool kKernelPlayerEnabled = bool.fromEnvironment('PURE_LIVE_KERNEL_PLAYER');
+/// 默认开启；`--dart-define=PURE_LIVE_KERNEL_PLAYER_DISABLED=true` 退回
+/// 旧 MediaKitAdapter 路径（桥验证期兜底）。
+const bool kKernelPlayerEnabled = !bool.fromEnvironment('PURE_LIVE_KERNEL_PLAYER_DISABLED');
 
 /// [UnifiedPlayer] 的 media_core 桥：引擎实际是 kernel 的 [mc.PlayerHandle]。
 ///
@@ -23,7 +23,12 @@ const bool kKernelPlayerEnabled = bool.fromEnvironment('PURE_LIVE_KERNEL_PLAYER'
 /// 候选源），会话代际/命令串行化由 handle 提供；pure_live 侧的编解码软
 /// 回退与私有输入能力暂不实现，缺省时 manager 走通用回退。
 class KernelUnifiedPlayer extends UnifiedPlayer
-    implements SourceTransitionAwarePlayer, VideoFitAwarePlayer {
+    implements
+        SourceTransitionAwarePlayer,
+        VideoFitAwarePlayer,
+        PrivateInputAwarePlayer,
+        DecoderRecoveryAwarePlayer,
+        AudioOutputSuppressionAwarePlayer {
   mc.PlayerHandle? _handle;
   bool _audioOnly = false;
   bool _disposed = false;
@@ -232,6 +237,34 @@ class KernelUnifiedPlayer extends UnifiedPlayer
     _heightController.add(null);
     _completeController.add(false);
     _playingController.add(false);
+  }
+
+  MediaKitPlayerAdapter? _mediaKitAdapter() {
+    final handle = _handle;
+    if (handle == null || handle.disposed) return null;
+    final adapter = handle.adapter;
+    return adapter is MediaKitPlayerAdapter ? adapter : null;
+  }
+
+  @override
+  void setPrivateInput(bool value, {String? sourceIdentity}) {
+    // 回环输入绕过原生代理；kernel adapter 在下一次 open 前应用。
+    _mediaKitAdapter()?.setPrivateInput(value);
+  }
+
+  @override
+  Future<bool> prepareSoftwareDecoderFallback(PlayerException error) async {
+    final adapter = _mediaKitAdapter();
+    if (adapter == null) return false;
+    // 只准备下一次 open 用软解；重开由 manager 的既有同源重试驱动，
+    // 走 handle.open 的串行化路径。
+    adapter.prepareSoftwareDecoderFallback();
+    return true;
+  }
+
+  @override
+  void setAudioOutputSuppressed(bool suppressed) {
+    unawaited(_mediaKitAdapter()?.setAudioOutputSuppressed(suppressed));
   }
 
   @override
