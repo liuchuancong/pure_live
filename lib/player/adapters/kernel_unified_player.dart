@@ -28,6 +28,8 @@ class KernelUnifiedPlayer extends UnifiedPlayer
   bool _audioOnly = false;
   bool _disposed = false;
   int _openedSources = 0;
+  List<String> _lineCandidates = const <String>[];
+  Map<String, String> _headers = const <String, String>{};
 
   final _stateController = StreamController<PlayerState>.broadcast();
   final _playingController = StreamController<bool>.broadcast();
@@ -59,13 +61,24 @@ class KernelUnifiedPlayer extends UnifiedPlayer
   }) async {
     if (_disposed) return;
     _audioOnly = audioOnly;
+    _lineCandidates = List<String>.unmodifiable(playUrls);
+    _headers = Map<String, String>.unmodifiable(headers);
     final source = _buildSource(url, headers);
     final existing = _handle;
     if (existing == null || existing.disposed) {
       await _createHandle(source);
       return;
     }
+    existing.setSourceCandidates(_candidateSources(url));
     await existing.open(source, autoPlay: true);
+  }
+
+  /// 线路候选（不含当前线路）：RecoveryLadder 的 nextLine 备选源。
+  List<mc.PlayerSource> _candidateSources(String currentUrl) {
+    return [
+      for (final line in _lineCandidates)
+        if (line != currentUrl) _buildSource(line, _headers),
+    ];
   }
 
   mc.PlayerSource _buildSource(String url, Map<String, String> headers) {
@@ -90,6 +103,7 @@ class KernelUnifiedPlayer extends UnifiedPlayer
       source: source,
       config: mc.PlayerConfig(autoPlay: true, enableVideo: !_audioOnly, enableRecovery: true),
     );
+    handle.setSourceCandidates(_candidateSources(source.uri.toString()));
     _handle = handle;
     _bind(handle);
   }
@@ -123,6 +137,12 @@ class KernelUnifiedPlayer extends UnifiedPlayer
           _widthController.add(width <= 0 ? null : width);
           _heightController.add(height <= 0 ? null : height);
         case mc.PlayerAdapterErrorEvent(:final message, :final error, :final stackTrace):
+          // 错误上报进 RecoveryLadder：候选线路/后端由 handle 的候选提供者
+          // 决定，梯子决策经 recoveryEvents 观测；应用流只收展示用异常。
+          handle.reportFailure(
+            mc.RecoveryFailure.fromMessage(message, error: error, stackTrace: stackTrace),
+            source: mc.RecoveryFailureSource.adapter,
+          );
           _errorController.add(
             PlayerException(
               message: message,
