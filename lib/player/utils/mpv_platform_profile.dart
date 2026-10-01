@@ -63,7 +63,7 @@ const Map<String, String> _windowsAudioOutputDrivers = <String, String>{
   'auto': 'auto（引擎默认）',
   'wasapi': 'wasapi（Windows 默认，推荐）',
   'win32': 'win32（waveOut 旧通道）',
-  'sdl2': 'sdl2',
+  'sdl': 'sdl（跨平台兜底）',
   'pcm': 'pcm（转储到文件）',
   'null': 'null（无声音）',
 };
@@ -88,14 +88,14 @@ const Map<String, String> _macosAudioOutputDrivers = <String, String>{
 // that cannot read GPU textures directly (some vf chains, screenshots on
 // some paths).
 const Map<String, String> _windowsHardwareDecoders = <String, String>{
-  'no': 'no（软解）',
-  'auto': 'auto（全部尝试）',
-  'auto-safe': 'auto-safe（白名单，推荐）',
+  'no': 'no',
+  'auto-safe': 'auto-safe',
+  'auto': 'auto',
   'auto-copy': 'auto-copy',
-  'd3d11va': 'd3d11va（Direct3D 11）',
+  'd3d11va': 'd3d11va',
   'd3d11va-copy': 'd3d11va-copy',
-  'nvdec': 'nvdec（NVIDIA）',
-  'nvdec-copy': 'nvdec-copy（NVIDIA）',
+  'nvdec': 'nvdec',
+  'nvdec-copy': 'nvdec-copy',
 };
 
 const Map<String, String> _linuxHardwareDecoders = <String, String>{
