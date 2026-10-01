@@ -196,17 +196,20 @@ class KilakilaSite extends LiveSite
   }
 
   @override
-  Future<LiveRoom> getRoomDetail({required String roomId, required String platform}) =>
-      _detail(roomId, platform, playback: true);
+  Future<LiveRoom> getRoomDetailForRoom(LiveRoom room) async {
+    final roomId = room.roomId;
+    final platform = room.platform;
+    if (roomId == null || roomId.isEmpty || platform == null || platform.isEmpty) {
+      return room;
+    }
+    return _detail(roomId, platform, playback: true);
+  }
   @override
   Future<LiveRoom> getRoomDetailForRecording({required String roomId, required String platform}) =>
       _detail(roomId, platform, playback: true);
   @override
   Future<LiveRoom> getRoomDetailForRefresh({required String roomId, required String platform}) =>
       _detail(roomId, platform, playback: false);
-  @override
-  Future<bool> getLiveStatus({required String platform, required String roomId}) async =>
-      (await getRoomDetailForRefresh(roomId: roomId, platform: platform)).isLiveNow;
   @override
   Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom detail}) async {
     if (detail.platform != id ||
@@ -231,7 +234,7 @@ class KilakilaSite extends LiveSite
     required LiveRoom detail,
     required LivePlayQuality quality,
   }) async {
-    final fresh = await getRoomDetail(roomId: detail.roomId ?? '', platform: detail.platform ?? '');
+    final fresh = await getRoomDetailForRoom(detail);
     return LivePlayUrlResolution(
       urls: await getPlayUrls(detail: fresh, quality: quality),
       appliedQualityData: quality.selectionId,
