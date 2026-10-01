@@ -69,7 +69,7 @@ class DanmakuViewingPreset {
     ),
     DanmakuViewingPreset(
       id: 'default',
-      labelKey: 'reset',
+      labelKey: 'danmaku_template_default',
       area: 1,
       top: 0,
       bottom: 0,
