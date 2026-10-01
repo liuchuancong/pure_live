@@ -229,7 +229,7 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
             context,
             kind: MpvOptionKind.scale,
             title: i18n("scale_kernel"),
-            icon: Remix.frames_line,
+            icon: Remix.layout_masonry_line,
             value: SettingsService.to.player.scale,
           ),
           _optionTile(
