@@ -33,27 +33,39 @@ const Map<String, String> _iosHardwareDecoders = <String, String>{
 /// native window on top of the app — the "mpv window pops up over the
 /// live room" report. The richer table stays available to standalone
 /// mpv consumers, not to the embedded player settings.
-// 'null' is deliberately NOT offered: with the embedded libmpv render
-// context, vo=null silences video while audio keeps playing — the exact
-// "sound but no picture" failure. Windowed drivers (gpu/...) are excluded
-// for the same reason: mpv opens its own window over the app.
+// Per the mpv manual. The embedded player renders through libmpv's render
+// API (the Flutter texture); windowed drivers draw into mpv's own window and
+// are offered with an explicit warning label for users who want them anyway
+// (D3D11 interop performance, standalone-style rendering). Each entry's
+// second value is the severity marker consumed by the settings UI.
+const Map<String, String> _windowsVideoOutputDrivers = <String, String>{
+  'libmpv': 'ok',
+  'gpu': 'window',
+  'gpu-next': 'window',
+  'direct3d': 'window',
+  'null': 'novideo',
+};
+
 const Map<String, String> _desktopVideoOutputDrivers = <String, String>{
-  'auto': 'auto',
   'libmpv': 'libmpv',
 };
 
 Map<String, String> mpvVideoOutputDriversForPlatform(TargetPlatform platform) {
   if (platform == TargetPlatform.iOS) return _iosVideoOutputDrivers;
   if (platform == TargetPlatform.android) return PlayerConsts.videoOutputDrivers;
+  if (platform == TargetPlatform.windows) return _windowsVideoOutputDrivers;
   return _desktopVideoOutputDrivers;
 }
 
+// mpv manual, audio output drivers on Windows: wasapi (default since
+// mpv 0.30), win32 (waveOut, legacy), sdl2, pcm (dump), null.
 const Map<String, String> _windowsAudioOutputDrivers = <String, String>{
-  'auto': 'auto',
-  'wasapi': 'wasapi (Windows 推荐)',
-  'win32': 'win32 (Legacy)',
-  'sdl': 'sdl',
-  'null': 'null (不输出音频)',
+  'auto': 'auto（引擎默认）',
+  'wasapi': 'wasapi（Windows 默认，推荐）',
+  'win32': 'win32（waveOut 旧通道）',
+  'sdl2': 'sdl2',
+  'pcm': 'pcm（转储到文件）',
+  'null': 'null（无声音）',
 };
 
 const Map<String, String> _linuxAudioOutputDrivers = <String, String>{
@@ -71,14 +83,19 @@ const Map<String, String> _macosAudioOutputDrivers = <String, String>{
   'null': 'null (不输出音频)',
 };
 
+// mpv manual, hardware decoding on Windows (d3d11 / nvdec family).
+// copy variants decode into system memory: slower, but required by filters
+// that cannot read GPU textures directly (some vf chains, screenshots on
+// some paths).
 const Map<String, String> _windowsHardwareDecoders = <String, String>{
-  'auto': 'auto',
-  'auto-safe': 'auto-safe',
+  'no': 'no（软解）',
+  'auto': 'auto（全部尝试）',
+  'auto-safe': 'auto-safe（白名单，推荐）',
   'auto-copy': 'auto-copy',
-  'd3d11va': 'd3d11va',
+  'd3d11va': 'd3d11va（Direct3D 11）',
   'd3d11va-copy': 'd3d11va-copy',
-  'nvdec': 'nvdec',
-  'nvdec-copy': 'nvdec-copy',
+  'nvdec': 'nvdec（NVIDIA）',
+  'nvdec-copy': 'nvdec-copy（NVIDIA）',
 };
 
 const Map<String, String> _linuxHardwareDecoders = <String, String>{

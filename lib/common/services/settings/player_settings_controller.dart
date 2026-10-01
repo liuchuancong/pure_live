@@ -191,7 +191,7 @@ class PlayerSettingsController extends GetxController {
   late final RxString videoOutputDriver = 'auto'.obs;
   late final RxString audioOutputDriver = 'auto'.obs;
   late final RxString videoHardwareDecoder = 'auto-safe'.obs;
-  late final RxString videoSync = 'auto'.obs;
+  late final RxString videoSync = 'audio'.obs;
   late final RxBool interpolation = false.obs;
   late final RxString scale = 'lanczos'.obs;
   late final RxString deinterlace = 'auto'.obs;
@@ -352,6 +352,9 @@ class PlayerSettingsController extends GetxController {
   }
 
   void _normalizeMpvSettingsForPlatform(TargetPlatform platform) {
+    // mpv has no 'auto' value for --video-sync; its default is 'audio'.
+    // Migrate segments saved while the settings page spelled it 'auto'.
+    if (videoSync.v == 'auto') videoSync.v = 'audio';
 
     final normalizedVideoOutput = normalizeMpvVideoOutputDriverForPlatform(videoOutputDriver.v, platform);
     if (videoOutputDriver.v != normalizedVideoOutput) videoOutputDriver.v = normalizedVideoOutput;
