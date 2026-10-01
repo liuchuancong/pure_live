@@ -2100,5 +2100,13 @@
   "player_guide_title": "播放搭配指南",
   "player_guide_subtitle": "名词解释 · 各平台推荐搭配 · 症状对照",
   "player_output_locked_by_preset": "已由当前方案锁定",
-  "super_resolution_hint": "基于 Anime4K 的实时超分, 仅桌面 GPU 可实时运行; 当前仅 Windows 生效"
+  "super_resolution_hint": "基于 Anime4K 的实时超分, 仅桌面 GPU 可实时运行; 当前仅 Windows 生效",
+  "video_sync": "视频同步模式 (--video-sync)",
+  "interpolation": "运动插帧 (--interpolation)",
+  "scale_kernel": "放大算法 (--scale)",
+  "deinterlace": "反交错 (--deinterlace)",
+  "hwdec_codecs": "硬解编码范围 (--hwdec-codecs)",
+  "audio_exclusive": "音频独占 (--audio-exclusive)",
+  "interpolation_hint": "需配合\"显示重采样\"同步模式; 提升平移画面平滑度, 消耗 GPU",
+  "audio_exclusive_hint": "独占 WASAPI 设备, 其他应用将无法出声"
 }

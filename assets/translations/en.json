@@ -2092,5 +2092,13 @@
   "player_guide_title": "Playback Guide",
   "player_guide_subtitle": "Glossary · Platform picks · Symptom table",
   "player_output_locked_by_preset": "Locked by the active preset",
-  "super_resolution_hint": "Realtime Anime4K upscaling for desktop GPUs; currently Windows only"
+  "super_resolution_hint": "Realtime Anime4K upscaling for desktop GPUs; currently Windows only",
+  "video_sync": "Video sync mode (--video-sync)",
+  "interpolation": "Motion interpolation (--interpolation)",
+  "scale_kernel": "Upscale kernel (--scale)",
+  "deinterlace": "Deinterlace (--deinterlace)",
+  "hwdec_codecs": "HW-decode codecs (--hwdec-codecs)",
+  "audio_exclusive": "Audio exclusive (--audio-exclusive)",
+  "interpolation_hint": "Needs display-resample sync; smoother panning, GPU cost",
+  "audio_exclusive_hint": "Exclusive WASAPI device, other apps go silent"
 }

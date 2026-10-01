@@ -1,7 +1,17 @@
 import 'package:flutter/foundation.dart';
 import 'package:pure_live/player/utils/mpv_platform_profile.dart';
 
-enum MpvOptionKind { videoOutput, audioOutput, hardwareDecoder }
+enum MpvOptionKind {
+  videoOutput,
+  audioOutput,
+  hardwareDecoder,
+  videoSync,
+  interpolation,
+  scale,
+  deinterlace,
+  hwdecCodecs,
+  audioExclusive,
+}
 
 typedef MpvOption = ({String key, String label});
 
@@ -74,16 +84,83 @@ const Map<String, (String, String)> _hardwareDecoderLabels = {
   'rkmpp': ('Rockchip MPP（仅部分 Rockchip 芯片）', 'Rockchip MPP (selected Rockchip SoCs)'),
 };
 
-Map<String, String> _allowed(MpvOptionKind kind, TargetPlatform platform) => switch (kind) {
-  MpvOptionKind.videoOutput => mpvVideoOutputDriversForPlatform(platform),
-  MpvOptionKind.audioOutput => mpvAudioOutputDriversForPlatform(platform),
-  MpvOptionKind.hardwareDecoder => mpvHardwareDecodersForPlatform(platform),
-};
+Map<String, String> _allowed(MpvOptionKind kind, TargetPlatform platform) {
+  final android = platform == TargetPlatform.android;
+  final desktop = !android && platform != TargetPlatform.iOS;
+  final windows = platform == TargetPlatform.windows;
+
+  return switch (kind) {
+    MpvOptionKind.videoOutput => mpvVideoOutputDriversForPlatform(platform),
+    MpvOptionKind.audioOutput => mpvAudioOutputDriversForPlatform(platform),
+    MpvOptionKind.hardwareDecoder => mpvHardwareDecodersForPlatform(platform),
+    MpvOptionKind.videoSync => const {
+      'auto': 'auto',
+      'display-resample': 'display-resample',
+      'audio-resample': 'audio-resample',
+      'display-resample-vdrop': 'display-resample-vdrop',
+      'display-vdrop': 'display-vdrop',
+    },
+    MpvOptionKind.interpolation => const {'no': 'no', 'yes': 'yes'},
+    MpvOptionKind.scale => desktop
+        ? const {
+            'lanczos': 'lanczos',
+            'ewa_lanczossharp': 'ewa_lanczossharp',
+            'bicubic_catmull_rom': 'bicubic_catmull_rom',
+            'spline16': 'spline16',
+            'spline36': 'spline36',
+            'bilinear': 'bilinear',
+          }
+        : const {'lanczos': 'lanczos', 'bilinear': 'bilinear'},
+    MpvOptionKind.deinterlace => const {'auto': 'auto', 'no': 'no', 'yes': 'yes'},
+    MpvOptionKind.hwdecCodecs => android
+        ? const {
+            'h264,hevc': 'h264,hevc',
+            'h264,hevc,vp9': 'h264,hevc,vp9',
+            'all': 'all',
+          }
+        : const {'all': 'all', 'h264,hevc': 'h264,hevc', 'h264,hevc,vp9,av1': 'h264,hevc,vp9,av1'},
+    MpvOptionKind.audioExclusive => windows ? const {'no': 'no', 'yes': 'yes'} : const {},
+  };
+}
 
 Map<String, (String, String)> _labels(MpvOptionKind kind) => switch (kind) {
   MpvOptionKind.videoOutput => _videoOutputLabels,
   MpvOptionKind.audioOutput => _audioOutputLabels,
   MpvOptionKind.hardwareDecoder => _hardwareDecoderLabels,
+  MpvOptionKind.videoSync => {
+    'auto': ('自动（音频为时钟）', 'Auto (audio clock)'),
+    'display-resample': ('显示重采样（最平滑，吃 GPU）', 'Display resample (smoothest, GPU heavy)'),
+    'audio-resample': ('音频重采样（低 GPU）', 'Audio resample (low GPU)'),
+    'display-resample-vdrop': ('显示重采样+丢帧', 'Display resample + vdrop'),
+    'display-vdrop': ('显示丢帧', 'Display vdrop'),
+  },
+  MpvOptionKind.interpolation => {
+    'no': ('关闭', 'Off'),
+    'yes': ('开启（配合显示重采样）', 'On (with display-resample)'),
+  },
+  MpvOptionKind.scale => {
+    'lanczos': ('Lanczos（均衡）', 'Lanczos (balanced)'),
+    'ewa_lanczossharp': ('EWA Lanczos Sharp（最锐利，最吃 GPU）', 'EWA Lanczos Sharp (sharpest, heavy)'),
+    'bicubic_catmull_rom': ('Catmull-Rom 双三次', 'Bicubic Catmull-Rom'),
+    'spline16': ('Spline16（快）', 'Spline16 (fast)'),
+    'spline36': ('Spline36', 'Spline36'),
+    'bilinear': ('双线性（最快，最糊）', 'Bilinear (fastest, soft)'),
+  },
+  MpvOptionKind.deinterlace => {
+    'auto': ('自动', 'Auto'),
+    'no': ('关闭', 'Off'),
+    'yes': ('开启（隔行源才需要）', 'On (interlaced sources only)'),
+  },
+  MpvOptionKind.hwdecCodecs => {
+    'all': ('全部编码格式', 'All codecs'),
+    'h264,hevc': ('H264 + HEVC', 'H264 + HEVC'),
+    'h264,hevc,vp9': ('H264 + HEVC + VP9', 'H264 + HEVC + VP9'),
+    'h264,hevc,vp9,av1': ('H264 + HEVC + VP9 + AV1', 'H264 + HEVC + VP9 + AV1'),
+  },
+  MpvOptionKind.audioExclusive => {
+    'no': ('共享模式', 'Shared mode'),
+    'yes': ('独占模式（可能有更好的音质，其他应用无法出声）', 'Exclusive (other apps go silent)'),
+  },
 };
 
 /// The stored value as the player will use it on [platform].
@@ -91,6 +168,12 @@ String normalizedMpvOption(MpvOptionKind kind, String value, TargetPlatform plat
   MpvOptionKind.videoOutput => normalizeMpvVideoOutputDriverForPlatform(value, platform),
   MpvOptionKind.audioOutput => normalizeMpvAudioOutputDriverForPlatform(value, platform),
   MpvOptionKind.hardwareDecoder => normalizeMpvHardwareDecoderForPlatform(value, platform),
+  MpvOptionKind.videoSync => value,
+  MpvOptionKind.interpolation => value,
+  MpvOptionKind.scale => value,
+  MpvOptionKind.deinterlace => value,
+  MpvOptionKind.hwdecCodecs => value,
+  MpvOptionKind.audioExclusive => value,
 };
 
 String mpvOptionLabel(MpvOptionKind kind, String key, TargetPlatform platform, {required bool zh}) {

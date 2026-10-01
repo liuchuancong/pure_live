@@ -129,6 +129,12 @@ class PlayerSettingsController extends GetxController {
     videoOutputDriver.v = segment.videoOutputDriver;
     audioOutputDriver.v = segment.audioOutputDriver;
     videoHardwareDecoder.v = segment.videoHardwareDecoder;
+    videoSync.v = segment.videoSync;
+    interpolation.v = segment.interpolation == 'yes';
+    scale.v = segment.scale;
+    deinterlace.v = segment.deinterlace;
+    hwdecCodecs.v = segment.hwdecCodecs;
+    audioExclusive.v = segment.audioExclusive == 'yes';
   }
 
   /// Persists the view fields back into the current segment.
@@ -169,6 +175,12 @@ class PlayerSettingsController extends GetxController {
   late final RxString videoOutputDriver = 'auto'.obs;
   late final RxString audioOutputDriver = 'auto'.obs;
   late final RxString videoHardwareDecoder = 'auto-safe'.obs;
+  late final RxString videoSync = 'auto'.obs;
+  late final RxBool interpolation = false.obs;
+  late final RxString scale = 'lanczos'.obs;
+  late final RxString deinterlace = 'auto'.obs;
+  late final RxString hwdecCodecs = 'all'.obs;
+  late final RxBool audioExclusive = false.obs;
 
   PlayerSettingsController() {
     _loadSegments();
@@ -179,6 +191,12 @@ class PlayerSettingsController extends GetxController {
     videoOutputDriver.listen((_) => persist());
     audioOutputDriver.listen((_) => persist());
     videoHardwareDecoder.listen((_) => persist());
+    videoSync.listen((_) => persist());
+    interpolation.listen((_) => persist());
+    scale.listen((_) => persist());
+    deinterlace.listen((_) => persist());
+    hwdecCodecs.listen((_) => persist());
+    audioExclusive.listen((_) => persist());
   }
 
   final RxBool floatPlay = hiveBool('floatPlay', false);

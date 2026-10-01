@@ -9,6 +9,8 @@ import 'package:pure_live/player/kernel/player_preset.dart';
 import 'package:pure_live/player/models/player_engine.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/player/utils/mpv_option_labels.dart';
+import 'dart:io';
+
 import 'package:pure_live/modules/settings/pages/mpv_option_page.dart';
 import 'package:pure_live/modules/settings/pages/player_guide_page.dart';
 import 'package:pure_live/modules/settings/pages/player_preset_page.dart';
@@ -204,6 +206,59 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
               locked: locked.contains('hwdec'),
             );
           }),
+
+          // Platform-gated advanced tuning: interpolation and the richer
+          // scale menu are desktop-GPU features; audio-exclusive is a
+          // Windows WASAPI switch.
+          if (!Platform.isAndroid && !Platform.isIOS)
+            _optionTile(
+              context,
+              kind: MpvOptionKind.videoSync,
+              title: i18n("video_sync"),
+              icon: Remix.timer_flash_line,
+              value: SettingsService.to.player.videoSync,
+            ),
+          if (!Platform.isAndroid && !Platform.isIOS)
+            context.buildSwitchTile(
+              icon: Remix.artboard_line,
+              title: i18n('interpolation'),
+              subtitle: i18n('interpolation_hint'),
+              value: SettingsService.to.player.interpolation,
+            ),
+          _optionTile(
+            context,
+            kind: MpvOptionKind.scale,
+            title: i18n("scale_kernel"),
+            icon: Remix.frames_line,
+            value: SettingsService.to.player.scale,
+          ),
+          _optionTile(
+            context,
+            kind: MpvOptionKind.deinterlace,
+            title: i18n("deinterlace"),
+            icon: Remix.layout_grid_line,
+            value: SettingsService.to.player.deinterlace,
+          ),
+          if (Platform.isAndroid || Platform.isWindows)
+            Obx(() {
+              final player = SettingsService.to.player;
+              if (!player.enableCodec.v) return const SizedBox.shrink();
+
+              return _optionTile(
+                context,
+                kind: MpvOptionKind.hwdecCodecs,
+                title: i18n("hwdec_codecs"),
+                icon: Remix.file_list_3_line,
+                value: player.hwdecCodecs,
+              );
+            }),
+          if (Platform.isWindows)
+            context.buildSwitchTile(
+              icon: Remix.headphone_line,
+              title: i18n('audio_exclusive'),
+              subtitle: i18n('audio_exclusive_hint'),
+              value: SettingsService.to.player.audioExclusive,
+            ),
         ]),
       ],
     );

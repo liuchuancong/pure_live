@@ -150,6 +150,15 @@ abstract final class MediaKitLiveProperties {
       }
     }
 
+    options.addAll(<EngineOption>[
+      if (segment.videoSync != 'auto') EngineOption('video-sync', segment.videoSync),
+      if (segment.interpolation != 'no') EngineOption('interpolation', 'yes'),
+      if (segment.scale != 'lanczos') EngineOption('scale', segment.scale),
+      if (segment.deinterlace != 'auto') EngineOption('deinterlace', segment.deinterlace),
+      if (segment.hwdecCodecs != 'all') EngineOption('hwdec-codecs', segment.hwdecCodecs),
+      if (segment.audioExclusive != 'no') EngineOption('audio-exclusive', 'yes'),
+    ]);
+
     final audio = segment.audioOutputDriver;
     if (audio.trim().isNotEmpty && audio.trim() != 'auto') {
       options.add(EngineOption('ao', audio));
