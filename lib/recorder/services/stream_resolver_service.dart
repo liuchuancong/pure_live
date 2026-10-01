@@ -135,7 +135,7 @@ class StreamResolverService extends GetxService {
                 roomId: normalizedRoomId,
                 platform: normalizedPlatform,
               )
-            : await site.getRoomDetail(roomId: normalizedRoomId, platform: normalizedPlatform);
+            : await site.getRoomDetailForRoom(LiveRoom(roomId: normalizedRoomId, platform: normalizedPlatform));
       } catch (error) {
         discoveryScope?.checkActive();
         // UI room loaders commonly preserve the previous card on request

@@ -702,7 +702,7 @@ class LivePlayController extends GetxController
     beginRoomMetadataLoad();
 
     try {
-      final fetchedRoom = await currentSite.liveSite.getRoomDetail(roomId: roomId, platform: requestedPlatform);
+      final fetchedRoom = await currentSite.liveSite.getRoomDetailForRoom(requestedRoom);
 
       var liveRoom = fetchedRoom.withAudienceFallbackFrom(requestedRoom);
       liveRoom = liveRoom.fillFromDetail(requestedRoom);

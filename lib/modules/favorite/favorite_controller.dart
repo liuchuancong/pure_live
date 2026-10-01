@@ -813,7 +813,7 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
       final liveSite = siteCache.putIfAbsent(platform, () => createRoomRefreshSite(platform));
       final operation = liveSite is LiveSiteRoomRefresher
           ? (liveSite as LiveSiteRoomRefresher).getRoomDetailForRefresh(roomId: roomId, platform: platform)
-          : liveSite.getRoomDetail(roomId: roomId, platform: platform);
+          : liveSite.getRoomDetailForRoom(room.normalizedIdentityCopy());
       final result = await operation.timeout(_roomRefreshTimeout);
       if (isClosed) return null;
       _refreshFailureCooldown.remove(key);
