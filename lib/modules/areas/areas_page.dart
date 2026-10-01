@@ -27,7 +27,23 @@ class AreasPage extends GetView<AreasController> {
                 controller: controller.tabController,
                 isScrollable: true,
                 physics: const PureLiveBoundedScrollPhysics(),
-                tabs: availableSitesList.map((e) => Tab(text: e.name)).toList(),
+                tabs: availableSitesList
+                    .map(
+                      (e) => Tab(
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(4),
+                              child: Image.asset(Sites.logoForId(e.id), width: 18, height: 18),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(e.name),
+                          ],
+                        ),
+                      ),
+                    )
+                    .toList(),
               ),
             ),
             body: TabBarView(
