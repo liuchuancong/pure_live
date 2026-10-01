@@ -636,7 +636,7 @@ class YYSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResol
     if (roomId == null || roomId.isEmpty || platform == null || platform.isEmpty) {
       return room;
     }
-    final fresh = await getRoomDetail(roomId: roomId, platform: platform);
+    final fresh = await _resolveDetail(roomId, platform);
     // Pad response gaps from the room the caller already holds. fillFromDetail
     // covers nick/avatar/area; the cover is padded explicitly because a blank
     // cover is the most visible symptom of a partial profile response.
@@ -648,8 +648,13 @@ class YYSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResol
     return padded;
   }
 
+  // Transitional shim: removed together with the pair-based detail API on
+  // LiveSite (class implements LiveSite, so the member must exist until then).
   @override
-  Future<LiveRoom> getRoomDetail({required String platform, required String roomId}) async {
+  Future<LiveRoom> getRoomDetail({required String platform, required String roomId}) =>
+      getRoomDetailForRoom(LiveRoom(roomId: roomId, platform: platform));
+
+  Future<LiveRoom> _resolveDetail(String roomId, String platform) async {
     try {
       return await _fetchRoomDetail(platform: platform, roomId: roomId);
     } catch (e) {

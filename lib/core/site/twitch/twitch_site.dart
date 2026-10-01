@@ -18,13 +18,16 @@ import 'package:pure_live/core/utils/live_quality_label.dart';
 class TwitchSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResolver {
 
   @override
+  // A failed lookup is not an offline channel: reporting it as offline showed
+  // "not live" for live channels whenever Twitch or the proxy failed, with no
+  // retry. Let the room page present the load error like other platforms.
   Future<LiveRoom> getRoomDetailForRoom(LiveRoom room) {
     final roomId = room.roomId;
     final platform = room.platform;
     if (roomId == null || roomId.isEmpty || platform == null || platform.isEmpty) {
       return Future.value(room);
     }
-    return getRoomDetail(platform: platform, roomId: roomId);
+    return _loadRoomDetail(roomId);
   }
   @override
   String id = Sites.twitchSite;
@@ -535,7 +538,7 @@ class TwitchSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomR
   @override
   Future<bool> getLiveStatus({required String platform, required String roomId}) async {
     try {
-      var detail = await getRoomDetail(platform: platform, roomId: roomId);
+      var detail = await getRoomDetailForRoom(LiveRoom(roomId: roomId, platform: platform));
       return detail.isLiveNow;
     } catch (e) {
       return false;
@@ -699,11 +702,11 @@ class TwitchSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomR
     return items;
   }
 
+  // Transitional shim: removed together with the pair-based detail API on
+  // LiveSite (class implements LiveSite, so the member must exist until then).
   @override
-  // A failed lookup is not an offline channel: reporting it as offline showed
-  // "not live" for live channels whenever Twitch or the proxy failed, with no
-  // retry. Let the room page present the load error like other platforms.
-  Future<LiveRoom> getRoomDetail({required String platform, required String roomId}) => _loadRoomDetail(roomId);
+  Future<LiveRoom> getRoomDetail({required String platform, required String roomId}) =>
+      getRoomDetailForRoom(LiveRoom(roomId: roomId, platform: platform));
 
   @override
   Future<LiveRoom> getRoomDetailForRefresh({required String platform, required String roomId}) {

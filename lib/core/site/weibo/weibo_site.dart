@@ -138,24 +138,23 @@ class WeiboSite extends LiveSite
     notice: [if (detail.access != WeiboAccess.public) i18n('weibo_restricted'), i18n('weibo_room_scope')].join('\n'),
     data: detail,
   );
-  @override
-  Future<LiveRoom> getRoomDetail({required String roomId, required String platform}) async =>
+  Future<LiveRoom> _resolveDetail(String roomId, String platform) async =>
       _room(await _api.detail(_id(roomId, platform)));
   @override
+  Future<LiveRoom> getRoomDetailForRoom(LiveRoom room) async {
+    final roomId = room.roomId;
+    final platform = room.platform;
+    if (roomId == null || roomId.isEmpty || platform == null || platform.isEmpty) {
+      return room;
+    }
+    return _resolveDetail(roomId, platform);
+  }
+  @override
   Future<LiveRoom> getRoomDetailForRecording({required String roomId, required String platform}) =>
-      getRoomDetail(roomId: roomId, platform: platform);
+      _resolveDetail(roomId, platform);
   @override
   Future<LiveRoom> getRoomDetailForRefresh({required String roomId, required String platform}) =>
-      getRoomDetail(roomId: roomId, platform: platform);
-  @override
-  Future<bool> getLiveStatus({required String platform, required String roomId}) async {
-    final room = await getRoomDetailForRefresh(roomId: roomId, platform: platform);
-    if (room.liveStatus == LiveStatus.unknown) {
-      final data = _detail(room);
-      throw WeiboException(data.access == WeiboAccess.public ? WeiboFailure.unknownState : WeiboFailure.access);
-    }
-    return room.isLiveNow;
-  }
+      _resolveDetail(roomId, platform);
 
   @override
   Future<List<LiveRoom>> searchRooms(String keyword, {int page = 1, int pageSize = 30}) =>
