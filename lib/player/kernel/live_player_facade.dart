@@ -281,6 +281,7 @@ final class LivePlayerFacade {
   bool hasActivePlaybackSession(LiveRoom room) => _room == room && isPlayingNow;
   bool get isCompactModeActive => false;
   void refreshPortraitPresentationPolicy() {}
+
   /// The video controller that currently owns playback (volume, status
   /// arbitration). Attached when a room's controller is constructed and
   /// detached on dispose; `ownsVideoController` gates the controller's
@@ -351,6 +352,16 @@ final class LivePlayerFacade {
     });
     isPipPreparing.value = true;
     try {
+      // The kernel chain forwards requests without lifecycle calls. The
+      // mobile path only installs its system-pip implementation and starts
+      // observing the platform status stream during initialize(); without it
+      // every pip request throws "no system pip implementation" and the
+      // Android back gesture silently falls back to leaving the room.
+      await windowsPipDriver.initialize();
+      // Both platforms size the small window from the video's shape. Mobile
+      // refuses to enter PiP at all without a positive size.
+      final ratio = currentPresentationAspectRatio;
+      windowsPipDriver.onVideoSize((ratio * 1000).round(), 1000);
       final driver = kernel.presentationDriver;
       if (driver != null) {
         await driver.apply(handle?.id ?? PlayerId('pure-live'), PresentationRequest.pip());
@@ -384,9 +395,7 @@ final class LivePlayerFacade {
           child: getVideoWidget(BoxFit.contain),
         ),
         if (_activeVideoController != null)
-          Positioned.fill(
-            child: CompactDanmakuOverlay(controller: _activeVideoController),
-          ),
+          Positioned.fill(child: CompactDanmakuOverlay(controller: _activeVideoController)),
         Positioned(
           right: 8,
           top: 8,
@@ -461,13 +470,7 @@ final class LivePlayerFacade {
     // infinite constraints — MediaPlayerView's AspectRatio then throws
     // "BoxConstraints forces an infinite width and height" every frame and
     // the room shows nothing.
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        video,
-        controls,
-      ],
-    );
+    return Stack(fit: StackFit.expand, children: [video, controls]);
   }
 
   Future<void> close() => _controller.close();

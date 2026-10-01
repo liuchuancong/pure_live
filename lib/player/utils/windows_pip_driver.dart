@@ -1,5 +1,4 @@
 import 'package:flutter/painting.dart' show Offset, Rect, Size;
-import 'package:media_core/media_core.dart' as mc;
 import 'package:media_core_pip/media_core_pip.dart';
 import 'package:pure_live/common/services/settings_service.dart';
 import 'package:pure_live/common/services/settings/window_size_controller.dart';
@@ -65,18 +64,6 @@ PipSavedBounds? _readSavedBounds() {
 
 void _writeSavedBounds(Size size, Offset position, String displayId) {
   SettingsService.to.window.windowsPip.update(size, position, displayId);
-}
-
-Future<void> pipDrivenWindowsPipEnter(double videoRatio) async {
-  await windowsPipDriver.initialize();
-  final ratio = videoRatio.isFinite && videoRatio > 0 ? videoRatio : 16 / 9;
-  windowsPipDriver.onVideoSize((ratio * 1000).round(), 1000);
-  await windowsPipDriver.apply(mc.PlayerId('pure-live-windows-pip'), mc.PresentationRequest.pip());
-}
-
-Future<void> pipDrivenWindowsPipExit() async {
-  await windowsPipDriver.initialize();
-  await windowsPipDriver.apply(mc.PlayerId('pure-live-windows-pip'), mc.PresentationRequest.normal());
 }
 
 Future<void> setWindowsPipAlwaysOnTop(bool value) {
