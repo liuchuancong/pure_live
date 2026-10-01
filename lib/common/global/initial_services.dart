@@ -30,7 +30,11 @@ class InitialServices {
   }
 
   static void initLazyControllers() {
-    Get.lazyPut(() => FavoriteController(), fenix: true);
+    // Permanent on purpose: entering a live room pushes a route and GetX's
+    // smart management tears the controller down; with fenix it comes back
+    // fresh and the follow list jumps from page 3 back to page 1 on return.
+    // A permanent instance keeps the pagination state across that round trip.
+    Get.put<FavoriteController>(FavoriteController(), permanent: true);
     Get.lazyPut(() => ChannelDetailController(), fenix: true);
     Get.lazyPut(() => PopularController(), fenix: true);
     Get.lazyPut(() => AreasController(), fenix: true);
