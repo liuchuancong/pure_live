@@ -7,6 +7,7 @@ import 'package:pure_live/common/models/live_room.dart';
 import 'package:pure_live/model/live_play_quality.dart';
 import 'package:pure_live/player/models/player_engine.dart';
 import 'package:media_core_media_kit/media_core_media_kit.dart';
+import 'package:pure_live/modules/live_play/widgets/danmaku/compact_danmaku_overlay.dart';
 import 'package:pure_live/player/kernel/floating_playback.dart';
 import 'package:media_core/media_core.dart';
 import 'package:pure_live/player/kernel/kernel_backend_ids.dart';
@@ -251,6 +252,11 @@ final class LivePlayerFacade {
   }
 
   dynamic get currentPlayer => _controller.handle;
+
+  /// The live room's [VideoController], when one is attached. Used by the
+  /// floating-window and picture-in-picture overlays to mount the compact
+  /// danmaku surface.
+  dynamic get activeVideoController => _activeVideoController;
   LiveRoom? get currentFloatRoom => _room;
   bool hasActivePlaybackSession(LiveRoom room) => _room == room && isPlayingNow;
   bool get isCompactModeActive => false;
@@ -339,6 +345,10 @@ final class LivePlayerFacade {
           onTap: togglePlayPause,
           child: getVideoWidget(BoxFit.contain),
         ),
+        if (_activeVideoController != null)
+          Positioned.fill(
+            child: CompactDanmakuOverlay(controller: _activeVideoController),
+          ),
         Positioned(
           right: 8,
           top: 8,

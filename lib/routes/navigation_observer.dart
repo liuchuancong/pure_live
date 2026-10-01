@@ -5,6 +5,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/player/kernel/live_player_facade.dart';
+import 'package:pure_live/modules/live_play/widgets/danmaku/compact_danmaku_overlay.dart';
 import 'package:pure_live/player/utils/fullscreen.dart' show WindowService;
 import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/layout/live_play_video.dart' show shouldFloatAfterLivePlayExit;
@@ -120,7 +121,16 @@ class LiveRouteObserver extends RouteObserver<PageRoute<dynamic>> {
   }) {
     final routeExitCompleted = _waitForRouteExit(route);
     controller.prepareAppFloating(routeUnmounted: routeExitCompleted);
-    unawaited(routeExitCompleted.then((_) => playerManager.showAppFloating()));
+    unawaited(
+      routeExitCompleted.then((_) {
+        final videoController = controller.state.value.player.videoController;
+        playerManager.showAppFloating(
+          danmakuBuilder: videoController == null
+              ? null
+              : (context) => CompactDanmakuOverlay(controller: videoController),
+        );
+      }),
+    );
   }
 
   Future<void> _waitForRouteExit(Route<dynamic> route) {
