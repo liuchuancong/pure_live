@@ -116,7 +116,7 @@ class IptvSite implements LiveSite, LiveSiteRecordRoomResolver {
     if (roomId == null || roomId.isEmpty || platform == null || platform.isEmpty) {
       return room;
     }
-    final fresh = await getRoomDetail(roomId: roomId, platform: platform);
+    final fresh = await _loadDetail(roomId);
     // Pad response gaps from the room the caller already holds. fillFromDetail
     // covers nick/avatar/area; the cover is padded explicitly because a blank
     // cover is the most visible symptom of a partial profile response.
@@ -128,8 +128,13 @@ class IptvSite implements LiveSite, LiveSiteRecordRoomResolver {
     return padded;
   }
 
+  // Transitional shim: removed together with the pair-based detail API on
+  // LiveSite (class implements LiveSite, so the member must exist until then).
   @override
-  Future<LiveRoom> getRoomDetail({required String platform, required String roomId}) async {
+  Future<LiveRoom> getRoomDetail({required String platform, required String roomId}) =>
+      getRoomDetailForRoom(LiveRoom(roomId: roomId, platform: platform));
+
+  Future<LiveRoom> _loadDetail(String roomId) async {
     final db = Get.find<DbService>().db;
     final channel = await db.getChannelById(roomId);
     if (channel == null) {
@@ -161,6 +166,14 @@ class IptvSite implements LiveSite, LiveSiteRecordRoomResolver {
     }
 
     return _buildLiveRoom(channel, nowProg, epgId: finalEpgChannelId);
+  }
+
+  @override
+  Future<LiveRoom> getRoomDetailForRecording({required String platform, required String roomId}) {
+    // Imported channels already store their playback URL as room data. The
+    // database lookup is authoritative and does not use a presentation
+    // fallback, so the same loader is the strict recording contract.
+    return _loadDetail(roomId);
   }
 
   Future<String?> _resolveEpgChannelId(Channel channel, String currentEpgSourceId) async {
@@ -242,14 +255,6 @@ class IptvSite implements LiveSite, LiveSiteRecordRoomResolver {
     }
 
     return finalEpgChannelId;
-  }
-
-  @override
-  Future<LiveRoom> getRoomDetailForRecording({required String platform, required String roomId}) {
-    // Imported channels already store their playback URL as room data. The
-    // database lookup is authoritative and does not use a presentation
-    // fallback, so the same loader is the strict recording contract.
-    return getRoomDetail(platform: platform, roomId: roomId);
   }
 
   LiveRoom _buildLiveRoom(Channel channel, EpgProgramme? prog, {String? epgId}) {
