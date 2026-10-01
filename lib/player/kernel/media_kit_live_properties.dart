@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:media_core/media_core.dart';
 import 'package:media_core_media_kit/media_core_media_kit.dart';
 import 'package:pure_live/player/kernel/player_preset.dart';
-import 'package:media_kit_video/media_kit_video.dart' as mkv;
+import 'package:media_core_media_kit/media_core_media_kit.dart' as mkv;
 import 'package:pure_live/common/index.dart';
 
 /// mpv properties for live rooms, owned by the app.

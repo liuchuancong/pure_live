@@ -842,7 +842,7 @@ packages:
     source: hosted
     version: "5.0.1"
   floating:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: floating
       sha256: e51ce1dbcab3ea83da0ad1b07f2091b99c0e8680184c780a000567f41234d454
@@ -1047,7 +1047,7 @@ packages:
     source: hosted
     version: "0.17.4"
   flv_lzc:
-    dependency: "direct main"
+    dependency: transitive
     description:
       path: "."
       ref: HEAD
@@ -1507,21 +1507,23 @@ packages:
     source: path
     version: "0.1.0"
   media_kit:
-    dependency: "direct main"
+    dependency: transitive
     description:
-      name: media_kit
-      sha256: ae9e79597500c7ad6083a3c7b7b7544ddabfceacce7ae5c9709b0ec16a5d6643
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.2.6"
+      path: media_kit
+      ref: "803c4a27912091db6f839d48d1b984a0d9f588c7"
+      resolved-ref: "803c4a27912091db6f839d48d1b984a0d9f588c7"
+      url: "https://github.com/Predidit/media-kit.git"
+    source: git
+    version: "1.1.11"
   media_kit_video:
-    dependency: "direct main"
+    dependency: transitive
     description:
-      name: media_kit_video
-      sha256: "813858c3fe84eb46679eb698695f60665e2bfbef757766fac4d2e683f926e15a"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.3.1"
+      path: media_kit_video
+      ref: "803c4a27912091db6f839d48d1b984a0d9f588c7"
+      resolved-ref: "803c4a27912091db6f839d48d1b984a0d9f588c7"
+      url: "https://github.com/Predidit/media-kit.git"
+    source: git
+    version: "1.2.5"
   meta:
     dependency: "direct main"
     description:
@@ -2509,6 +2511,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.8.1"
+  wakelock_plus_ohos:
+    dependency: transitive
+    description:
+      name: wakelock_plus_ohos
+      sha256: b22af297411555b5ec0fe43ec2960cd5f019dd23b83853214ebe6dcc97b337bd
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.3"
   wakelock_plus_platform_interface:
     dependency: transitive
     description:
