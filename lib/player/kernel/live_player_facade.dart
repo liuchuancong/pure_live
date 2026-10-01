@@ -35,12 +35,12 @@ final class LivePlayerFacade {
   PlayerEngine preferredEngine;
   void Function(PlayerEngine engine)? onEngineChanged;
 
-  final _stateSubject = StreamController<PlayerState>.broadcast();
+  final _stateSubject = StreamController<PlayerCoreState>.broadcast();
   final _playingSubject = StreamController<bool>.broadcast();
   final _errorSubject = StreamController<PlayerException>.broadcast();
   final _commitSubject = StreamController<FacadeStreamCommit?>.broadcast();
 
-  StreamSubscription<PlayerState>? _stateSub;
+  StreamSubscription<PlayerCoreState>? _stateSub;
   StreamSubscription<bool>? _playingSub;
   StreamSubscription<PlayerFailure>? _errorSub;
   bool _disposed = false;
@@ -62,7 +62,7 @@ final class LivePlayerFacade {
   int get currentQuality => commit?.currentQuality ?? 0;
   Map<String, String> get sourceQueryPolicies => const {};
 
-  Stream<PlayerState> get onStateChanged => _stateSubject.stream;
+  Stream<PlayerCoreState> get onStateChanged => _stateSubject.stream;
   Stream<bool> get onPlaying => _playingSubject.stream;
   Stream<PlayerException> get onError => _errorSubject.stream;
   Stream<PlayerFailure> get onKernelError => _controller.onError;
@@ -247,10 +247,7 @@ final class LivePlayerFacade {
     final fit = fitOrIndex is int
         ? (fitList == null || fitList.isEmpty ? BoxFit.contain : fitList[fitOrIndex.clamp(0, fitList.length - 1)])
         : fitOrIndex as BoxFit;
-    final adapter = _controller.handle?.adapter;
-    if (adapter is MediaKitPlayerAdapter) {
-      adapter.videoConfig = adapter.videoConfig.copyWith(fit: fit);
-    }
+    (_controller.handle?.adapter as PlayerVideo?)?.setVideoFit(fit);
   }
 
   dynamic get currentPlayer => _controller.handle;
@@ -262,7 +259,7 @@ final class LivePlayerFacade {
   void detachVideoController(dynamic controller) {}
   bool ownsVideoController(dynamic controller) => false;
 
-  void _onStateChanged(PlayerState state) {
+  void _onStateChanged(PlayerCoreState state) {
     final loading = state.playback == PlayerPlaybackState.buffering;
     if (loading != _lastLoading) {
       _lastLoading = loading;

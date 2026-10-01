@@ -8,7 +8,7 @@ import 'package:pure_live/player/kernel/owned_input_opener.dart';
 import 'package:media_core_ijk_player/media_core_ijk_player.dart';
 import 'package:media_core_logging/media_core_logging.dart' as mlog;
 import 'package:media_core_mediasession/media_core_mediasession.dart';
-import 'package:media_core_better_player/media_core_video_player.dart';
+import 'package:media_core_better_player/media_core_better_player.dart';
 
 class PlayerKernelService {
   PlayerKernelService._();
@@ -25,13 +25,13 @@ class PlayerKernelService {
     _kernel ??= PlayerKernel()
       ..registerBackend(
         MediaKitAdapterFactory(
-          config: const MediaKitPlayerConfig(customInputOpener: openOwnedInputOnKernelPlayer),
+          customInputOpener: openOwnedInputOnKernelPlayer,
           // The app declares every tuning value it wants; the adapter applies
           // only what it is told.
-          configure: (adapter) => adapter.config = MediaKitLiveProperties.applyTo(adapter.config),
+          configure: MediaKitLiveProperties.applyTo,
         ).registration(),
       )
-      ..registerBackend(const IjkPlayerAdapterFactory().registration())
+      ..registerBackend(const FlvLzcPlayerAdapterFactory().registration())
       ..registerBackend(const BetterPlayerAdapterFactory().registration())
       ..attachPresentation(
         PresentationDriverChain(

@@ -1404,105 +1404,105 @@ packages:
   media_core:
     dependency: "direct main"
     description:
-      path: "C:/Users/XA-158/projects/flutter/media_core/packages/media_core"
+      path: "F:/media_core/packages/media_core"
       relative: false
     source: path
     version: "0.1.0"
   media_core_better_player:
     dependency: "direct main"
     description:
-      path: "C:/Users/XA-158/projects/flutter/media_core/packages/media_core_better_player"
+      path: "F:/media_core/packages/media_core_better_player"
       relative: false
     source: path
     version: "0.1.0"
   media_core_danmaku:
     dependency: "direct main"
     description:
-      path: "C:\\/Users/XA-158/projects/flutter/media_core/packages/media_core_danmaku"
-      relative: true
+      path: "F:/media_core/packages/media_core_danmaku"
+      relative: false
     source: path
     version: "0.1.0"
   media_core_floating:
     dependency: "direct main"
     description:
-      path: "C:/Users/XA-158/projects/flutter/media_core/packages/media_core_floating"
+      path: "F:/media_core/packages/media_core_floating"
       relative: false
     source: path
     version: "0.1.0"
   media_core_fullscreen:
     dependency: "direct main"
     description:
-      path: "C:/Users/XA-158/projects/flutter/media_core/packages/media_core_fullscreen"
+      path: "F:/media_core/packages/media_core_fullscreen"
       relative: false
     source: path
     version: "0.1.0"
   media_core_ijk_player:
     dependency: "direct main"
     description:
-      path: "C:/Users/XA-158/projects/flutter/media_core/packages/media_core_ijk_player"
+      path: "F:/media_core/packages/media_core_ijk_player"
       relative: false
     source: path
     version: "0.1.0"
   media_core_live:
     dependency: "direct main"
     description:
-      path: "C:/Users/XA-158/projects/flutter/media_core/packages/media_core_live"
+      path: "F:/media_core/packages/media_core_live"
       relative: false
     source: path
     version: "0.1.0"
   media_core_logging:
     dependency: "direct main"
     description:
-      path: "C:\\/Users/XA-158/projects/flutter/media_core/packages/media_core_logging"
-      relative: true
+      path: "F:/media_core/packages/media_core_logging"
+      relative: false
     source: path
     version: "0.1.0"
   media_core_media_kit:
     dependency: "direct main"
     description:
-      path: "C:/Users/XA-158/projects/flutter/media_core/packages/media_core_media_kit"
+      path: "F:/media_core/packages/media_core_media_kit"
       relative: false
     source: path
     version: "0.1.0"
   media_core_mediasession:
     dependency: "direct main"
     description:
-      path: "C:/Users/XA-158/projects/flutter/media_core/packages/media_core_mediasession"
+      path: "F:/media_core/packages/media_core_mediasession"
       relative: false
     source: path
     version: "0.1.0"
   media_core_memory:
     dependency: transitive
     description:
-      path: "C:\\/Users/XA-158/projects/flutter/media_core/packages/media_core_memory"
+      path: "../../media_core/packages/media_core_memory"
       relative: true
     source: path
     version: "0.1.0"
   media_core_multiview:
     dependency: "direct main"
     description:
-      path: "C:/Users/XA-158/projects/flutter/media_core/packages/media_core_multiview"
+      path: "F:/media_core/packages/media_core_multiview"
       relative: false
     source: path
     version: "0.1.0"
   media_core_pip:
     dependency: "direct main"
     description:
-      path: "C:/Users/XA-158/projects/flutter/media_core/packages/media_core_pip"
+      path: "F:/media_core/packages/media_core_pip"
       relative: false
     source: path
     version: "0.1.0"
   media_core_presentation:
     dependency: "direct main"
     description:
-      path: "C:/Users/XA-158/projects/flutter/media_core/packages/media_core_presentation"
+      path: "F:/media_core/packages/media_core_presentation"
       relative: false
     source: path
     version: "0.1.0"
   media_core_ui:
     dependency: "direct main"
     description:
-      path: "C:/Users/XA-158/projects/flutter/media_core/packages/media_core_ui"
+      path: "F:/media_core/packages/media_core_ui"
       relative: false
     source: path
     version: "0.1.0"

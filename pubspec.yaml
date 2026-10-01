@@ -105,44 +105,41 @@ dependencies:
   device_info_plus: ^13.1.0 # 设备信息
 
   mobile_scanner:
-    path: plugins/built_in_kotlin/mobile_scanner # Local AGP 9 Built‑in Kotlin patch
+    path: plugins/built_in_kotlin/mobile_scanner
 
-  # -------------------------- 播放器核心 media_core --------------------------
-  # 传递依赖,但源码直接 import;版本源以 dependency_overrides 对齐 media_core
+  # 播放器引擎直依赖：源码直接 import（owned-input opener、纹理/视图、快照）
   media_kit: ^1.2.0
   media_kit_video: ^1.2.0
-  floating: ^6.0.0
   flv_lzc: ^1.0.0
   wakelock_plus: ^1.8.0
-
   media_core:
-    path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core
+    path: F:/media_core/packages/media_core
   media_core_media_kit:
-    path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_media_kit
+    path: F:/media_core/packages/media_core_media_kit
   media_core_ui:
-    path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_ui
+    path: F:/media_core/packages/media_core_ui
   media_core_pip:
-    path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_pip
+    path: F:/media_core/packages/media_core_pip
   media_core_fullscreen:
-    path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_fullscreen
+    path: F:/media_core/packages/media_core_fullscreen
   media_core_multiview:
-    path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_multiview
+    path: F:/media_core/packages/media_core_multiview
   media_core_presentation:
-    path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_presentation
+    path: F:/media_core/packages/media_core_presentation
   media_core_floating:
-    path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_floating
+    path: F:/media_core/packages/media_core_floating
   media_core_ijk_player:
-    path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_ijk_player
+    path: F:/media_core/packages/media_core_ijk_player
   media_core_better_player:
-    path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_better_player
+    path: F:/media_core/packages/media_core_better_player
   media_core_danmaku:
-    path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_danmaku
+    path: F:/media_core/packages/media_core_danmaku
   media_core_mediasession:
-    path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_mediasession
+    path: F:/media_core/packages/media_core_mediasession
   media_core_live:
-    path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_live
+    path: F:/media_core/packages/media_core_live
   media_core_logging:
-    path: C:/Users/XA-158/projects/flutter/media_core/packages/media_core_logging
+    path: F:/media_core/packages/media_core_logging
 
   # -------------------------- 数据存储/数据库 --------------------------
   hive_ce: ^2.20.0 # Hive本地数据库
@@ -205,13 +202,6 @@ dependencies:
 
 # 依赖覆盖（强制指定版本）
 dependency_overrides:
-  # 传递依赖,但源码直接 import(尺寸/常亮/PiP 客户端);源一律对齐 media_core
-  media_kit: ^1.0.0
-  media_kit_video: ^1.0.0
-  floating: ^6.0.0
-  flv_lzc:
-    git:
-      url: https://github.com/liuchuancong/flv_lzc.git
   _fe_analyzer_shared: 108.0.0
   analyzer: 14.4.0
   cli_util: 0.6.0

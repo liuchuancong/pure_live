@@ -1,6 +1,8 @@
 import 'dart:io';
 
+import 'package:media_core/media_core.dart';
 import 'package:media_core_media_kit/media_core_media_kit.dart';
+import 'package:media_kit_video/media_kit_video.dart' as mkv;
 import 'package:pure_live/common/index.dart';
 
 /// mpv properties for live rooms, owned by the app.
@@ -99,24 +101,51 @@ abstract final class MediaKitLiveProperties {
     return pick.isEmpty || pick == 'auto' ? null : pick;
   }
 
-  /// Builds the adapter config the app wants: same object, host-declared
-  /// options and the live property contract on top.
-  static MediaKitPlayerConfig applyTo(MediaKitPlayerConfig config) {
+  /// The native controller configuration the app's settings spell out.
+  ///
+  /// vo/hwdec are engine names passed verbatim; every tuning property
+  /// travels through [engineOptions] instead.
+  static mkv.VideoControllerConfiguration buildVideoControllerConfiguration() {
     final settings = SettingsService.to.player;
-    // The Android compat pick is a client decision now: the adapter applies
-    // whatever vo/hwdec/surface flags it is handed, so the mode is spelled out
-    // here rather than baked into the package.
     final compat = settings.playerCompatMode.v && Platform.isAndroid;
-    return config.copyWith(
-      videoOutputDriver: compat ? 'mediacodec_embed' : settings.videoOutputDriver.v,
-      videoHardwareDecoder: compat ? 'mediacodec' : _hostDecoder,
-      customPlayerOutput: compat || settings.customPlayerOutput.v,
-      enableAndroidSurfaceProducer: compat ? false : config.enableAndroidSurfaceProducer,
-      androidAttachSurfaceAfterVideoParameters: config.androidAttachSurfaceAfterVideoParameters,
-      enableCodec: settings.enableCodec.v,
-      audioOutputDriver: _hostAudioOutput,
-      enableRtxVsr: settings.enableRtxVsr.v,
-      extraProperties: build(),
+    final decoder = compat ? 'mediacodec' : _hostDecoder;
+
+    return mkv.VideoControllerConfiguration(
+      vo: compat ? 'mediacodec_embed' : _normalizeVo(settings.videoOutputDriver.v),
+      hwdec: decoder,
+      enableHardwareAcceleration: settings.enableCodec.v,
     );
+  }
+
+  /// Normalises the app's vo pick; empty/auto leaves the engine default.
+  static String? _normalizeVo(String pick) {
+    final value = pick.trim();
+    return value.isEmpty || value == 'auto' ? null : value;
+  }
+
+  /// The full runtime option list handed to the adapter.
+  ///
+  /// The mpv tuning table first, then the host's audio pick — a later
+  /// option for the same property wins.
+  static List<EngineOption> engineOptions() {
+    final options = <EngineOption>[
+      for (final entry in build().entries) EngineOption(entry.key, entry.value),
+    ];
+
+    final audio = _hostAudioOutput;
+    if (audio != null) {
+      options.add(EngineOption('ao', audio));
+    }
+
+    return options;
+  }
+
+  /// Applies the app's current settings to a freshly created adapter.
+  ///
+  /// Called from the factory's `configure` hook: the adapter stashes the
+  /// options until its engine exists, so nothing is lost when the kernel
+  /// initializes later.
+  static void applyTo(MediaKitPlayerAdapter adapter) {
+    adapter.applyEngineOptions(engineOptions());
   }
 }
