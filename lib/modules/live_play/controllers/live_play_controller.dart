@@ -90,6 +90,24 @@ class LivePlayController extends GetxController
   late final String _controllerTag;
   RoomSessionSnapshot? _reentrySession;
 
+  /// Defensive conversion for the reentry snapshot's policies: the snapshot
+  /// stores them as `Map<String, Object?>`, and a blind cast throws
+  /// `_ConstMap is not Map<String, HlsSourceQueryPolicy>` on the hot path.
+  static Map<String, HlsSourceQueryPolicy> _asQueryPolicies(Object? raw) {
+    if (raw is Map<String, HlsSourceQueryPolicy>) {
+      return raw;
+    }
+
+    if (raw is Map) {
+      return <String, HlsSourceQueryPolicy>{
+        for (final entry in raw.entries)
+          if (entry.value is HlsSourceQueryPolicy) entry.key as String: entry.value as HlsSourceQueryPolicy,
+      };
+    }
+
+    return const <String, HlsSourceQueryPolicy>{};
+  }
+
   static const int _maxDanmakuHistory = 500;
   static const int _maxPendingDanmakuBatch = 200;
   // The on-video barrage receives messages directly from DanmakuController.
@@ -127,7 +145,7 @@ class LivePlayController extends GetxController
         qualites: restored?.qualities ?? const <LivePlayQuality>[],
         currentQuality: restored?.currentQuality ?? 0,
         playUrls: restored?.playUrls ?? const <String>[],
-        sourceQueryPolicies: (restored?.sourceQueryPolicies ?? const <String, HlsSourceQueryPolicy>{}),
+        sourceQueryPolicies: _asQueryPolicies(restored?.sourceQueryPolicies),
         ownedSource: restored?.ownedSource as OwnedPlaybackSource?,
         currentLineIndex: restored?.currentLineIndex ?? 0,
         isCurrentRoomAudioOnly: initialAudioOnly,
