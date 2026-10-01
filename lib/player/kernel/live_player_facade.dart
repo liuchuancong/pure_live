@@ -331,14 +331,13 @@ final class LivePlayerFacade {
     backgroundColor: Colors.transparent,
     body: Stack(
       children: [
-        GestureDetector(onDoubleTap: () => unawaited(enablePip()), child: getVideoWidget(BoxFit.contain)),
-        Center(
-          child: IconButton(
-            iconSize: 42,
-            style: IconButton.styleFrom(backgroundColor: Colors.black45),
-            icon: Icon(isPlayingNow ? Icons.pause_circle_filled : Icons.play_circle_filled, color: Colors.white),
-            onPressed: togglePlayPause,
-          ),
+        GestureDetector(
+          // True picture-in-picture is chrome-less: double-tap leaves, single
+          // tap toggles playback. No persistent center button — that read as
+          // "the whole app shrunk into a small window".
+          onDoubleTap: () => unawaited(enablePip()),
+          onTap: togglePlayPause,
+          child: getVideoWidget(BoxFit.contain),
         ),
         Positioned(
           right: 8,
