@@ -33,10 +33,13 @@ const Map<String, String> _iosHardwareDecoders = <String, String>{
 /// native window on top of the app — the "mpv window pops up over the
 /// live room" report. The richer table stays available to standalone
 /// mpv consumers, not to the embedded player settings.
+// 'null' is deliberately NOT offered: with the embedded libmpv render
+// context, vo=null silences video while audio keeps playing — the exact
+// "sound but no picture" failure. Windowed drivers (gpu/...) are excluded
+// for the same reason: mpv opens its own window over the app.
 const Map<String, String> _desktopVideoOutputDrivers = <String, String>{
   'auto': 'auto',
   'libmpv': 'libmpv',
-  'null': 'null',
 };
 
 Map<String, String> mpvVideoOutputDriversForPlatform(TargetPlatform platform) {

@@ -171,7 +171,9 @@ class PlayerSettingsController extends GetxController {
     final segment = _segmentForCurrent().copyWith(
       presetId: id,
       enableCodec: detail.enableCodec,
-      customPlayerOutput: detail.vo != null,
+      // A preset that pins hwdec alone (RTX: d3d11va) needs the custom-output
+      // gate armed as well, otherwise the pick never reaches the engine.
+      customPlayerOutput: detail.vo != null || detail.hwdec != null,
       videoOutputDriver: detail.vo ?? 'auto',
       videoHardwareDecoder: detail.hwdec ?? 'auto-safe',
     );

@@ -117,8 +117,16 @@ abstract final class MediaKitLiveProperties {
   static mkv.VideoControllerConfiguration buildVideoControllerConfiguration() {
     final segment = _output;
 
+    // With the embedded render context only libmpv draws into the Flutter
+    // texture. 'auto' (engine default) maps to no explicit vo; anything else
+    // a stale segment may still carry ('null', windowed drivers) is dropped —
+    // those produce sound-without-picture or a rogue mpv window.
+    final vo = segment.customPlayerOutput && segment.videoOutputDriver.trim() == 'libmpv'
+        ? 'libmpv'
+        : null;
+
     return mkv.VideoControllerConfiguration(
-      vo: segment.customPlayerOutput ? _normalize(segment.videoOutputDriver) : null,
+      vo: vo,
       hwdec: segment.customPlayerOutput ? _normalize(segment.videoHardwareDecoder) : null,
       enableHardwareAcceleration: segment.enableCodec,
     );
