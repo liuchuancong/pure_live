@@ -569,7 +569,7 @@ class HuyaSite
     if (roomId == null || roomId.isEmpty || platform == null || platform.isEmpty) {
       return room;
     }
-    final fresh = await getRoomDetail(roomId: roomId, platform: platform);
+    final fresh = await _loadRoomDetail(platform: platform, roomId: roomId, allowUiFallback: true);
     // Pad whatever the profile endpoint left empty (avatar/cover/nick drift
     // between responses) with the fields the room already carries, so a
     // partial response never blanks the UI. fillFromDetail covers
@@ -583,9 +583,11 @@ class HuyaSite
     return padded;
   }
 
+  // Transitional shim: removed together with the pair-based detail API on
+  // LiveSite (class implements LiveSite, so the member must exist until then).
   @override
   Future<LiveRoom> getRoomDetail({required String platform, required String roomId}) {
-    return _loadRoomDetail(platform: platform, roomId: roomId, allowUiFallback: true);
+    return getRoomDetailForRoom(LiveRoom(roomId: roomId, platform: platform));
   }
 
   @override
@@ -1072,7 +1074,7 @@ class HuyaSite
   @override
   Future<List<LiveSuperChatMessage>> getSuperChatMessage({required String roomId}) async {
     List<LiveSuperChatMessage> ls = [];
-    LiveRoom detail = await getRoomDetail(roomId: roomId, platform: Sites.huyaSite);
+    LiveRoom detail = await getRoomDetailForRoom(LiveRoom(roomId: roomId, platform: Sites.huyaSite));
     HuyaDanmakuArgs args = detail.danmakuData as HuyaDanmakuArgs;
     if (args.topSid != 0) {
       ls = await getHuyaSuperChatMessageList(lPid: args.topSid, first: true);

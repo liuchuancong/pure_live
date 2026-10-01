@@ -214,8 +214,14 @@ final class Fc2Site extends LiveSite
       _room(await _api.room(_identity(roomId, platform)), includeMedia: includeMedia);
 
   @override
-  Future<LiveRoom> getRoomDetail({required String roomId, required String platform}) =>
-      _detail(roomId, platform, includeMedia: true);
+  Future<LiveRoom> getRoomDetailForRoom(LiveRoom room) async {
+    final roomId = room.roomId;
+    final platform = room.platform;
+    if (roomId == null || roomId.isEmpty || platform == null || platform.isEmpty) {
+      return room;
+    }
+    return _detail(roomId, platform, includeMedia: true);
+  }
 
   @override
   Future<LiveRoom> getRoomDetailForRefresh({required String roomId, required String platform}) =>
@@ -224,13 +230,6 @@ final class Fc2Site extends LiveSite
   @override
   Future<LiveRoom> getRoomDetailForRecording({required String roomId, required String platform}) =>
       _detail(roomId, platform, includeMedia: true);
-
-  @override
-  Future<bool> getLiveStatus({required String platform, required String roomId}) async {
-    final room = await getRoomDetailForRefresh(roomId: roomId, platform: platform);
-    if (room.effectiveLiveStatus == LiveStatus.unknown) throw const Fc2Exception(Fc2Failure.access);
-    return room.isLiveNow;
-  }
 
   Fc2Room _snapshot(LiveRoom detail) {
     final channelId = _identity(detail.roomId ?? '', detail.platform ?? '');
