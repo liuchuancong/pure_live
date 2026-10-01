@@ -279,7 +279,12 @@ final class LivePlayerFacade {
   dynamic get activeVideoController => _activeVideoController;
   LiveRoom? get currentFloatRoom => _room;
   bool hasActivePlaybackSession(LiveRoom room) => _room == room && isPlayingNow;
-  bool get isCompactModeActive => false;
+
+  /// True while the video surface is presented compactly — the system/desktop
+  /// picture-in-picture or the in-app small window. The danmaku layer reads
+  /// this per message to decide whether the compact barrage surface is fed;
+  /// a hardcoded false starves both overlays of danmaku entirely.
+  bool get isCompactModeActive => isInPip.value || floating.isAppFloatingActive;
   void refreshPortraitPresentationPolicy() {}
 
   /// The video controller that currently owns playback (volume, status
@@ -387,9 +392,9 @@ final class LivePlayerFacade {
       fit: StackFit.expand,
       children: [
         GestureDetector(
-          // True picture-in-picture is chrome-less: double-tap leaves, single
-          // tap toggles playback. No persistent center button — that read as
-          // "the whole app shrunk into a small window".
+          // The video surface itself stays gesture-first: single tap toggles
+          // playback, double tap leaves PiP. The control bar below is the
+          // always-visible equivalent for viewers who never guess gestures.
           onDoubleTap: () => unawaited(exitPip()),
           onTap: togglePlayPause,
           child: getVideoWidget(BoxFit.contain),
@@ -397,22 +402,57 @@ final class LivePlayerFacade {
         if (_activeVideoController != null)
           Positioned.fill(child: CompactDanmakuOverlay(controller: _activeVideoController)),
         Positioned(
+          left: 8,
           right: 8,
-          top: 8,
-          child: IconButton(
-            icon: const Icon(Icons.close, color: Colors.white),
-            style: IconButton.styleFrom(backgroundColor: Colors.black45),
-            // Leaving the presentation first: closing playback alone would
-            // strand the window in its shrunk frameless state.
-            onPressed: () async {
-              await exitPip();
-              await close();
-            },
+          bottom: 8,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              StreamBuilder<bool>(
+                stream: onPlaying,
+                initialData: isPlayingNow,
+                builder: (context, snapshot) {
+                  final isPlay = snapshot.data ?? true;
+                  return _pipControlButton(
+                    icon: isPlay ? Icons.pause_circle_filled : Icons.play_circle_filled,
+                    semanticLabel: isPlay ? '暂停' : '播放',
+                    onTap: togglePlayPause,
+                  );
+                },
+              ),
+              const SizedBox(width: 6),
+              _pipControlButton(icon: Icons.open_in_full, semanticLabel: '回到直播间', onTap: exitPip),
+              const SizedBox(width: 6),
+              _pipControlButton(
+                icon: Icons.close,
+                semanticLabel: '关闭',
+                onTap: () async {
+                  // Leaving the presentation first: closing playback alone
+                  // would strand the window in its shrunk frameless state.
+                  await exitPip();
+                  await close();
+                },
+              ),
+            ],
           ),
         ),
       ],
     ),
   );
+
+  Widget _pipControlButton({
+    required IconData icon,
+    required String semanticLabel,
+    required Future<void> Function() onTap,
+  }) {
+    return IconButton(
+      iconSize: 22,
+      tooltip: semanticLabel,
+      style: IconButton.styleFrom(backgroundColor: Colors.black45, foregroundColor: Colors.white),
+      icon: Icon(icon),
+      onPressed: () => unawaited(onTap()),
+    );
+  }
 
   double get currentPresentationAspectRatio {
     final size = handle?.combinedSnapshot.geometry.videoSize;
