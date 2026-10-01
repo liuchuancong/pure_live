@@ -13,6 +13,7 @@ import 'package:media_core/media_core.dart';
 import 'package:pure_live/player/kernel/kernel_backend_ids.dart';
 import 'package:pure_live/player/core/portrait_stream_support.dart';
 import 'package:pure_live/player/media_core/player_kernel_service.dart';
+import 'package:pure_live/player/utils/windows_pip_driver.dart';
 
 ///
 
@@ -321,6 +322,7 @@ final class LivePlayerFacade {
   final RxBool isInPip = false.obs;
   final RxBool isPipPreparing = false.obs;
   final RxInt videoPresentationRevision = 0.obs;
+  StreamSubscription<bool>? _pipStateSub;
 
   late final FloatingPlayback floating;
 
@@ -341,6 +343,12 @@ final class LivePlayerFacade {
   void setVideoPresentationVisible(bool visible) => setPresentationVisible(visible);
 
   Future<void> enablePip() async {
+    _pipStateSub ??= windowsPipDriver.onPipChanged.listen((pip) {
+      // The pip driver is the authority on whether the presentation is
+      // active; without this bridge the room UI never learns the window
+      // changed and keeps rendering the full room inside the shrunk frame.
+      isInPip.value = pip;
+    });
     isPipPreparing.value = true;
     try {
       final driver = kernel.presentationDriver;
@@ -349,6 +357,14 @@ final class LivePlayerFacade {
       }
     } finally {
       isPipPreparing.value = false;
+    }
+  }
+
+  /// Leaves picture-in-picture and restores the window.
+  Future<void> exitPip() async {
+    final driver = kernel.presentationDriver;
+    if (driver != null) {
+      await driver.apply(handle?.id ?? PlayerId('pure-live'), PresentationRequest.normal());
     }
   }
 
@@ -363,7 +379,7 @@ final class LivePlayerFacade {
           // True picture-in-picture is chrome-less: double-tap leaves, single
           // tap toggles playback. No persistent center button — that read as
           // "the whole app shrunk into a small window".
-          onDoubleTap: () => unawaited(enablePip()),
+          onDoubleTap: () => unawaited(exitPip()),
           onTap: togglePlayPause,
           child: getVideoWidget(BoxFit.contain),
         ),
@@ -377,7 +393,12 @@ final class LivePlayerFacade {
           child: IconButton(
             icon: const Icon(Icons.close, color: Colors.white),
             style: IconButton.styleFrom(backgroundColor: Colors.black45),
-            onPressed: () => unawaited(close()),
+            // Leaving the presentation first: closing playback alone would
+            // strand the window in its shrunk frameless state.
+            onPressed: () async {
+              await exitPip();
+              await close();
+            },
           ),
         ),
       ],

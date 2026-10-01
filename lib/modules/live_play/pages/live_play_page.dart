@@ -54,8 +54,15 @@ class LivePlayPage extends GetView<LivePlayController> {
     if (!SettingsService.to.player.floatPlay.v) return false;
     if (manager.isInPip.value || manager.isPipPreparing.value) return false;
     if (!manager.isPlayingNow) return false;
-    await manager.enablePip();
-    return manager.isInPip.value || manager.isPipPreparing.value;
+    try {
+      await manager.enablePip();
+      // enablePip completing without throwing means the presentation driver
+      // applied the pip request; isInPip itself flips on the driver's change
+      // stream one microtask later.
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
   Widget _withLocalGiftEffect(Widget child) {
