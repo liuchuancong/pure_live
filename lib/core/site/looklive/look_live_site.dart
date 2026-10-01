@@ -214,8 +214,14 @@ final class LookLiveSite extends LiveSite
   }
 
   @override
-  Future<LiveRoom> getRoomDetail({required String roomId, required String platform}) =>
-      _detail(roomId, platform, includeMedia: true);
+  Future<LiveRoom> getRoomDetailForRoom(LiveRoom room) async {
+    final roomId = room.roomId;
+    final platform = room.platform;
+    if (roomId == null || roomId.isEmpty || platform == null || platform.isEmpty) {
+      return room;
+    }
+    return _detail(roomId, platform, includeMedia: true);
+  }
 
   @override
   Future<LiveRoom> getRoomDetailForRecording({required String roomId, required String platform}) =>
@@ -224,13 +230,6 @@ final class LookLiveSite extends LiveSite
   @override
   Future<LiveRoom> getRoomDetailForRefresh({required String roomId, required String platform}) =>
       _detail(roomId, platform, includeMedia: false);
-
-  @override
-  Future<bool> getLiveStatus({required String platform, required String roomId}) async {
-    final detail = await getRoomDetailForRefresh(roomId: roomId, platform: platform);
-    if (detail.effectiveLiveStatus == LiveStatus.unknown) throw const LookLiveException(LookLiveFailure.access);
-    return detail.isLiveNow;
-  }
 
   LookLiveRoom _snapshot(LiveRoom detail) {
     final roomId = _roomId(detail.roomId ?? '', detail.platform ?? '');
