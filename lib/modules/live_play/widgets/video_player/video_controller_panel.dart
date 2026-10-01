@@ -1458,7 +1458,7 @@ class BottomActionBar extends StatelessWidget {
                   }
                   final compact = constraints.maxWidth < 760;
                   final left = _buildLeftActions(compact: fullscreen && compact);
-                  final right = _buildRightActions(compact: fullscreen && compact);
+                  final right = _buildRightActions(compact: compact);
 
                   if (fullscreen) {
                     return Padding(
@@ -1579,14 +1579,20 @@ class BottomActionBar extends StatelessWidget {
   }
 
   Widget _buildRightActions({required bool compact, bool includeExpand = true}) {
+    final portraitPinned =
+        GlobalPlayerState.to.isFullscreen.value && GlobalPlayerService.instance.player.isVerticalVideo.value;
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         if (GlobalPlayerState.to.isWindowFullscreen.value || GlobalPlayerState.to.isFullscreen.value) ...[
           FullscreenStreamSelectorButton(controller: controller),
         ],
-        if (PlatformUtils.isMobile) PortraitFullscreenDisplayModeButton(controller: controller),
-        if (PlatformUtils.isMobile) PortraitOrientationButton(controller: controller),
+        // These two belong to the PORTRAIT fullscreen bar. Rendering them in
+        // a landscape room's inline bar is what pushed the fullscreen button
+        // off-screen after the video-fit option landed (v3.15 report).
+        if (PlatformUtils.isMobile && portraitPinned) PortraitFullscreenDisplayModeButton(controller: controller),
+        if (PlatformUtils.isMobile && portraitPinned) PortraitOrientationButton(controller: controller),
         if (!compact) VideoFitSetting(controller: controller),
         if (Platform.isWindows) OverlayVolumeControl(controller: controller),
         if (Platform.isWindows && controller.supportWindowFull && !GlobalPlayerState.to.isFullscreen.value)
