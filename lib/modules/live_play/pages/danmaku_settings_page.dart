@@ -293,6 +293,8 @@ class _DanmakuSettingsContentState extends State<DanmakuSettingsContent> {
                 display: controller.danmakuMaxVisibleCount.value.toString(),
                 semanticValueBuilder: (value) => value.toInt().toString(),
                 onChanged: (v) => controller.danmakuMaxVisibleCount.v = v.toInt(),
+                labelColor: labelColor,
+                digitColor: digitColor,
               ),
               _slider(
                 theme,
@@ -303,6 +305,8 @@ class _DanmakuSettingsContentState extends State<DanmakuSettingsContent> {
                 display: "${controller.pipDanmakuDuration.value}s",
                 semanticValueBuilder: (value) => '${value.toInt()}s',
                 onChanged: (v) => controller.pipDanmakuDuration.v = v.toInt(),
+                labelColor: labelColor,
+                digitColor: digitColor,
               ),
               _slider(
                 theme,

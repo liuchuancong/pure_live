@@ -393,6 +393,10 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
   @override
   final danmakuOpacity = 1.0.obs;
   @override
+  final danmakuMaxVisibleCount = 48.obs;
+  @override
+  final pipDanmakuDuration = 4.obs;
+  @override
   final enableDanmakuStroke = true.obs;
   @override
   final danmakuFps = 60.obs;
