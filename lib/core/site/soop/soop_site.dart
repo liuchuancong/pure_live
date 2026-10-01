@@ -345,7 +345,16 @@ class SoopSite extends LiveSite implements LiveSiteRoomRefresher, LiveSiteRecord
   }
 
   @override
-  Future<LiveRoom> getRoomDetail({required String platform, required String roomId}) async {
+  Future<LiveRoom> getRoomDetailForRoom(LiveRoom room) async {
+    final roomId = room.roomId;
+    final platform = room.platform;
+    if (roomId == null || roomId.isEmpty || platform == null || platform.isEmpty) {
+      return room;
+    }
+    return _resolveDetail(roomId);
+  }
+
+  Future<LiveRoom> _resolveDetail(String roomId) async {
     try {
       Map<dynamic, dynamic> playerLiveApiFuture = await getPlayerLiveApiData(roomId: roomId);
       var danmakuFuture = geDanmakuArgs(playerLiveApiFuture, roomId);
