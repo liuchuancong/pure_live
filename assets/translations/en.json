@@ -2105,5 +2105,6 @@
   "max_visible_count": "Max on-screen danmaku",
   "pip_danmaku_duration": "PiP danmaku speed (seconds)",
   "danmaku_template_default": "Full-screen",
-  "danmaku_preset_hint": "Full-screen = danmaku covers the entire video; other presets use the top region only"
+  "danmaku_preset_hint": "Full-screen = danmaku covers the entire video; other presets use the top region only",
+  "player_guide_entries": "entries"
 }

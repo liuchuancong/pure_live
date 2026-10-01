@@ -2113,5 +2113,6 @@
   "max_visible_count": "同屏最大弹幕条数",
   "pip_danmaku_duration": "小窗弹幕速度(横穿秒数)",
   "danmaku_template_default": "全屏全量",
-  "danmaku_preset_hint": "全屏全量=弹幕铺满整个画面; 其它预设只占用顶部区域"
+  "danmaku_preset_hint": "全屏全量=弹幕铺满整个画面; 其它预设只占用顶部区域",
+  "player_guide_entries": "条说明"
 }
