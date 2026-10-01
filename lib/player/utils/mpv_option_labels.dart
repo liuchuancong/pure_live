@@ -18,18 +18,18 @@ typedef MpvOption = ({String key, String label});
 // Readable names adapted from liuchuancong/pure_live. Only keys the platform
 // profile accepts are ever offered; an unnamed key shows the profile's label.
 const Map<String, (String, String)> _videoOutputLabels = {
-  'gpu': ('GPU', 'GPU'),
-  'gpu-next': ('GPU Next', 'GPU Next'),
-  'libmpv': ('libmpv（Flutter 纹理）', 'libmpv (Flutter texture)'),
-  'direct3d': ('Direct3D（仅 Windows）', 'Direct3D (Windows only)'),
-  'sdl': ('SDL', 'SDL'),
+  'libmpv': ('libmpv（内嵌 Flutter 纹理，默认）', 'libmpv (embedded Flutter texture, default)'),
+  'gpu': ('gpu（⚠ 独立 mpv 窗口，完整着色含 RTX 滤镜）', 'gpu (⚠ standalone mpv window, full shading incl. RTX)'),
+  'gpu-next': ('gpu-next（⚠ 独立窗口，libplacebo 新管线，支持 HDR）', 'gpu-next (⚠ standalone, libplacebo pipeline, HDR)'),
+  'direct3d': ('direct3d（⚠ 独立窗口，旧 D3D9 兼容）', 'direct3d (⚠ standalone, legacy D3D9)'),
+  'null': ('null（⚠ 不渲染画面，只有声音）', 'null (⚠ no video, audio only)'),
+  'sdl': ('SDL（⚠ 独立窗口）', 'SDL (⚠ standalone window)'),
   'mediacodec_embed': ('MediaCodec Embed（仅 Android）', 'MediaCodec Embed (Android only)'),
   'vaapi': ('VA-API（仅 Linux）', 'VA-API (Linux only)'),
   'vdpau': ('VDPAU（仅 Linux）', 'VDPAU (Linux only)'),
   'dmabuf-wayland': ('DMABUF Wayland（仅 Linux）', 'DMABUF Wayland (Linux only)'),
   'x11': ('X11（仅 Linux）', 'X11 (Linux only)'),
   'xv': ('XVideo（仅 Linux）', 'XVideo (Linux only)'),
-  'null': ('Null（不输出视频）', 'Null (no video output)'),
 };
 
 const Map<String, (String, String)> _audioOutputLabels = {
