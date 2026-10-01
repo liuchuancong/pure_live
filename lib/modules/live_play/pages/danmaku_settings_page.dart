@@ -128,7 +128,11 @@ class _DanmakuSettingsContentState extends State<DanmakuSettingsContent> {
                     ),
                     label: Text(i18n(preset.labelKey)),
                     onSelected: (_) => _applyPreset(preset),
-                  ),
+                  ),            Padding(
+              padding: const EdgeInsets.only(top: 6, left: 4),
+              child: Text(i18n('danmaku_preset_hint'), style: theme.textTheme.bodySmall),
+            ),
+
                 OutlinedButton.icon(
                   onPressed: _saveTemplate,
                   style: OutlinedButton.styleFrom(
