@@ -1,20 +1,18 @@
-
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 import 'package:pure_live/core/common/proxy_routing.dart';
-import 'package:pure_live/modules/settings/pages/player_guide_page.dart';
-import 'package:pure_live/modules/settings/pages/player_super_resolution_page.dart';
-import 'package:pure_live/modules/settings/pages/player_preset_page.dart';
-import 'package:pure_live/player/kernel/player_preset.dart';
-import 'package:pure_live/player/super_resolution.dart';
 import 'package:pure_live/player/utils/player_consts.dart';
+import 'package:pure_live/player/kernel/player_preset.dart';
 import 'package:pure_live/player/models/player_engine.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/player/utils/mpv_option_labels.dart';
 import 'package:pure_live/modules/settings/pages/mpv_option_page.dart';
+import 'package:pure_live/modules/settings/pages/player_guide_page.dart';
+import 'package:pure_live/modules/settings/pages/player_preset_page.dart';
+import 'package:pure_live/modules/settings/pages/player_super_resolution_page.dart';
 import 'package:pure_live/common/services/settings/player_settings_controller.dart';
 
 class PlayerKernelSettingsPage extends GetView<SettingsService> {
@@ -223,13 +221,14 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
       () => context.buildTile(
         icon: locked ? Remix.lock_line : icon,
         title: title,
-        subtitle: (locked ? i18n('player_output_locked_by_preset') + ' · ' : '') +
+        subtitle:
+            (locked ? '${i18n('player_output_locked_by_preset')} · ' : '') +
             mpvOptionLabel(
-          kind,
-          normalizedMpvOption(kind, value.value, defaultTargetPlatform),
-          defaultTargetPlatform,
-          zh: Get.locale?.languageCode == 'zh',
-        ),
+              kind,
+              normalizedMpvOption(kind, value.value, defaultTargetPlatform),
+              defaultTargetPlatform,
+              zh: Get.locale?.languageCode == 'zh',
+            ),
         trailing: const Icon(Remix.arrow_right_s_line),
         onTap: () => Get.to(() => MpvOptionPage(kind: kind, title: title, value: value)),
       ),
@@ -370,49 +369,6 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
   // 代理设置弹窗（替换为统一SwitchTile）
   void showProxySettingsDialog(BuildContext context) {
     showDialog(context: context, builder: (context) => const _PlayerProxySettingsDialog());
-  }
-  /// One-click preset cards: a complete, explained recipe per row.
-  Widget _buildPresetSection(BuildContext context) {
-    final settings = SettingsService.to.player;
-    final theme = Theme.of(context);
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 5, 12, 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(left: 4, bottom: 8),
-            child: Row(
-              children: [
-                Icon(Remix.magic_line, size: 18, color: theme.colorScheme.primary),
-                const SizedBox(width: 8),
-                Text(i18n('player_preset_section'), style: theme.textTheme.titleSmall),
-              ],
-            ),
-          ),
-          for (final preset in PlayerPresetId.values)
-            if (preset.availableOnCurrentPlatform)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Card(
-                  margin: EdgeInsets.zero,
-                  child: ListTile(
-                    title: Text(preset.nameZh),
-                    subtitle: Text(preset.descriptionZh, style: theme.textTheme.bodySmall),
-                    trailing: Obx(() {
-                      final active = settings.currentPreset == preset;
-                      return active
-                          ? Icon(Remix.checkbox_circle_fill, color: theme.colorScheme.primary)
-                          : const Icon(Remix.checkbox_blank_circle_line);
-                    }),
-                    onTap: () => settings.applyPreset(preset),
-                  ),
-                ),
-              ),
-        ],
-      ),
-    );
   }
 }
 

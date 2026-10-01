@@ -1,5 +1,4 @@
-import 'package:flutter/material.dart';
-
+import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/player/super_resolution.dart';
 
@@ -33,7 +32,8 @@ class PlayerSuperResolutionPage extends GetView<SettingsService> {
                   title: Text(mode.label, style: theme.textTheme.titleMedium),
                   subtitle: Text(mode.descriptionZh, style: theme.textTheme.bodySmall),
                   trailing: Obx(() {
-                    final active = SuperResolutionMode.fromName(SettingsService.to.player.superResolutionMode.v) == mode;
+                    final active =
+                        SuperResolutionMode.fromName(SettingsService.to.player.superResolutionMode.v) == mode;
                     return active
                         ? Icon(Remix.checkbox_circle_fill, color: theme.colorScheme.primary)
                         : const Icon(Remix.checkbox_blank_circle_line);

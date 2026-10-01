@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/player/kernel/player_preset.dart';

@@ -167,6 +167,17 @@ class PlayerSettingsController extends GetxController {
   late final RxString audioOutputDriver = 'auto'.obs;
   late final RxString videoHardwareDecoder = 'auto'.obs;
 
+  PlayerSettingsController() {
+    _loadSegments();
+    reloadOutputView();
+    void persist() => _persistOutputView();
+    enableCodec.listen((_) => persist());
+    customPlayerOutput.listen((_) => persist());
+    videoOutputDriver.listen((_) => persist());
+    audioOutputDriver.listen((_) => persist());
+    videoHardwareDecoder.listen((_) => persist());
+  }
+
   final RxBool floatPlay = hiveBool('floatPlay', false);
   final RxBool windowsPipAlwaysOnTop = hiveBool('windowsPipAlwaysOnTop', false);
   // Kept as an inert compatibility field for old backups. Audio-only is now

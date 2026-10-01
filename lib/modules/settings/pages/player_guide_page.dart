@@ -1,19 +1,11 @@
 import 'dart:io';
 
-import 'package:flutter/material.dart';
-
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/player/kernel/player_preset.dart';
 
 /// A matching guide: which preset and output picks fit which platform
 /// and situation. Pure documentation — nothing here mutates settings.
 class PlayerGuidePage extends StatelessWidget {
   const PlayerGuidePage({super.key});
-
-  static const Map<String, String> _hardwareDecoderZh = {
-    'auto': '自动选择解码器',
-    'null': '不输出音频',
-  };
 
   @override
   Widget build(BuildContext context) {
