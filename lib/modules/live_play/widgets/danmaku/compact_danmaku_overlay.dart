@@ -73,6 +73,7 @@ class CompactDanmakuOverlay extends StatelessWidget {
                   maxVisibleCount: maxVisibleCount,
                   maxPendingCount: 36,
                   maxPendingAge: const Duration(seconds: 3),
+                  fixedDuration: Duration(seconds: settings.pipDanmakuDuration.v),
                   emitInterval: emitInterval,
                   overlapSafeGap: metrics.overlapSafeGap,
                   // PiP only exposes a handful of tracks. Keeping desktop-size

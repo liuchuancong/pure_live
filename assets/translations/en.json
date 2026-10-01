@@ -2101,5 +2101,7 @@
   "audio_exclusive": "Audio exclusive (--audio-exclusive)",
   "interpolation_hint": "Needs display-resample sync; smoother panning, GPU cost",
   "audio_exclusive_hint": "Exclusive WASAPI device, other apps go silent",
-  "recorder_no_valid_segments": "No valid segments to merge (recording is empty)"
+  "recorder_no_valid_segments": "No valid segments to merge (recording is empty)",
+  "max_visible_count": "Max on-screen danmaku",
+  "pip_danmaku_duration": "PiP danmaku speed (seconds)"
 }

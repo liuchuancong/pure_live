@@ -65,6 +65,10 @@ class DanmakuSettingsController extends GetxController {
   final RxInt danmakuFontWeight = hiveInt('danmakuFontWeight', defaultDanmakuFontWeight);
   final RxDouble danmakuFontBorder = hiveDouble('danmakuFontBorder', defaultDanmakuFontBorder);
   final RxDouble danmakuOpacity = hiveDouble('danmakuOpacity', defaultDanmakuOpacity);
+  /// Same-screen cap forwarded to FlameBarrageWidget.maxVisibleCount.
+  final RxInt danmakuMaxVisibleCount = hiveInt('danmakuMaxVisibleCount', 48);
+  /// Small-window speed: the fixed travel duration of one barrage line.
+  final RxInt pipDanmakuDuration = hiveInt('pipDanmakuDuration', 4);
   final RxBool enableDanmakuDisplay = hiveBool('enableDanmakuDisplay', true);
   final RxBool enableDanmakuStroke = hiveBool('enableDanmakuStroke', true);
   final RxInt danmakuFps = hiveInt('danmakuFps', defaultDanmakuFps);
@@ -184,6 +188,8 @@ class DanmakuSettingsController extends GetxController {
       'noEmojiMode': noEmojiMode.v,
       'danmakuTopArea': danmakuTopArea.v,
       'danmakuArea': danmakuArea.v,
+      'danmakuMaxVisibleCount': danmakuMaxVisibleCount.v,
+      'pipDanmakuDuration': pipDanmakuDuration.v,
       'danmakuBottomArea': danmakuBottomArea.v,
       'danmakuSpeed': danmakuSpeed.v,
       'danmakuFontSize': danmakuFontSize.v,

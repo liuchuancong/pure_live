@@ -813,7 +813,7 @@ class DanmakuViewer extends StatelessWidget {
           fps: settings.danmakuAutoFps.v
               ? settings.resolvedDanmakuFps(refreshRateMode: SettingsService.to.app.refreshRateMode)
               : controller.danmakuFps.value.clamp(30, 240).toInt(),
-          maxVisibleCount: 48,
+          maxVisibleCount: SettingsService.to.danmaku.danmakuMaxVisibleCount.value,
           maxPendingCount: 120,
           maxPendingAge: const Duration(seconds: 5),
           fontFamily: controller.danmakuFontFamilyName.value,

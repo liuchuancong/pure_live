@@ -2109,5 +2109,7 @@
   "audio_exclusive": "音频独占 (--audio-exclusive)",
   "interpolation_hint": "需配合\"显示重采样\"同步模式; 提升平移画面平滑度, 消耗 GPU",
   "audio_exclusive_hint": "独占 WASAPI 设备, 其他应用将无法出声",
-  "recorder_no_valid_segments": "没有可合并的有效分段(录制内容为空)"
+  "recorder_no_valid_segments": "没有可合并的有效分段(录制内容为空)",
+  "max_visible_count": "同屏最大弹幕条数",
+  "pip_danmaku_duration": "小窗弹幕速度(横穿秒数)"
 }
