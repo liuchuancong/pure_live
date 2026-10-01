@@ -114,80 +114,86 @@ class PlayerEngineOutput {
 extension PlayerPresetDetail on PlayerPresetId {
   /// Display name.
   String get nameZh => switch (this) {
-        PlayerPresetId.balanced => '标准均衡',
-        PlayerPresetId.compat => 'Android 兼容',
-        PlayerPresetId.rtxVsr => 'RTX 超分',
-        PlayerPresetId.lowEnd => '低配流畅',
-        PlayerPresetId.stableNetwork => '弱网稳定',
-        PlayerPresetId.lowLatency => '低延迟',
-      };
+    PlayerPresetId.balanced => '标准（引擎默认）',
+    PlayerPresetId.compat => 'Android 硬解兼容',
+    PlayerPresetId.rtxVsr => 'RTX 视频超分辨率',
+    PlayerPresetId.lowEnd => '低配流畅',
+    PlayerPresetId.stableNetwork => '弱网稳定',
+    PlayerPresetId.lowLatency => '低延迟',
+  };
 
   /// One-paragraph explanation shown on the guide page.
   String get descriptionZh => switch (this) {
-        PlayerPresetId.balanced =>
-          '全部交给引擎自己决定, 仅附加直播所需的解复用与缓存调优。'
+    PlayerPresetId.balanced =>
+      '全部交给引擎自己决定, 仅附加直播所需的解复用与缓存调优。'
           '大多数设备和网络下这是最稳的选择, 也是其它预设的基线。',
-        PlayerPresetId.compat =>
-          'Android 上改用 mediacodec_embed 直出表面并强制 mediacodec 硬解。'
+    PlayerPresetId.compat =>
+      'Android 上改用 mediacodec_embed 直出表面并强制 mediacodec 硬解。'
           '适合默认 gl/ffmpeg 路径出现花屏、绿屏或音画不同步的机型。',
-        PlayerPresetId.rtxVsr =>
-          'Windows + NVIDIA 显卡专用: d3d11va 硬解并启用 RTX Video Super '
+    PlayerPresetId.rtxVsr =>
+      'Windows + NVIDIA 显卡专用: d3d11va 硬解并启用 RTX Video Super '
           'Resolution 超分滤镜, 把低清晰度源放大到高分辨率屏幕上观看。',
-        PlayerPresetId.lowEnd =>
-          '软解线程数上限 2、lowres 降采样、跳过非参考帧环路滤波、缩小缓冲。'
+    PlayerPresetId.lowEnd =>
+      '软解线程数上限 2、lowres 降采样、跳过非参考帧环路滤波、缩小缓冲。'
           '把 CPU 交给画面本身, 适合核显或老机器。',
-        PlayerPresetId.stableNetwork =>
-          '加大解复用缓冲与预读、开启强制可拖动与重连退避。'
+    PlayerPresetId.stableNetwork =>
+      '加大解复用缓冲与预读、开启强制可拖动与重连退避。'
           '用内存换卡顿, 适合跨网、跨运营商或信号边缘的直播源。',
-        PlayerPresetId.lowLatency =>
-          '最小缓冲 + 解码/渲染双端丢帧, 牺牲抗抖动换低延迟。'
+    PlayerPresetId.lowLatency =>
+      '最小缓冲 + 解码/渲染双端丢帧, 牺牲抗抖动换低延迟。'
           '适合追赛事直播、连麦互动等时效优先的场景。',
-      };
+  };
 
   /// Whether this preset applies on the current platform at all.
   bool get availableOnCurrentPlatform => switch (this) {
-        PlayerPresetId.compat => Platform.isAndroid,
-        PlayerPresetId.rtxVsr => Platform.isWindows,
-        _ => true,
-      };
+    PlayerPresetId.compat => Platform.isAndroid,
+    PlayerPresetId.rtxVsr => Platform.isWindows,
+    _ => true,
+  };
 
   /// Manual output picks the preset implies (null = leave the segment's
   /// own value / engine default).
   ({String? vo, String? hwdec, bool? enableCodec}) get outputOverride => switch (this) {
-        PlayerPresetId.compat => (vo: 'mediacodec_embed', hwdec: 'mediacodec', enableCodec: true),
-        PlayerPresetId.rtxVsr => (vo: null, hwdec: 'd3d11va', enableCodec: true),
-        PlayerPresetId.lowEnd => (vo: null, hwdec: null, enableCodec: false),
-        _ => (vo: null, hwdec: null, enableCodec: null),
+    PlayerPresetId.compat => (vo: 'mediacodec_embed', hwdec: 'mediacodec', enableCodec: true),
+    PlayerPresetId.rtxVsr => (vo: null, hwdec: 'd3d11va', enableCodec: true),
+    PlayerPresetId.lowEnd => (vo: null, hwdec: null, enableCodec: false),
+    _ => (vo: null, hwdec: null, enableCodec: null),
+  };
+
+  /// Output picks this preset takes over, so the settings page can mark
+  /// the matching tiles as locked instead of pretending they are free.
+  Set<String> get lockedOutputKeys => switch (this) {
+        PlayerPresetId.compat => const {'vo', 'hwdec'},
+        PlayerPresetId.rtxVsr => const {'hwdec'},
+        _ => const {},
       };
 
   /// mpv properties layered on top of the app's live tuning table when
   /// this preset is active. Empty for the balanced baseline.
   Map<String, String> get extraProperties => switch (this) {
-        PlayerPresetId.rtxVsr => const <String, String>{
-            'vf': 'd3d11vpp=scale=2:scaling-mode=nvidia',
-          },
-        PlayerPresetId.lowEnd => const <String, String>{
-            'vd-lavc-threads': '2',
-            'vd-lavc-o': 'lowres=1',
-            'vd-lavc-skiploopfilter': 'nonref',
-            'audio-buffer': '0.4',
-            'demuxer-max-bytes': '41943040',
-            'demuxer-readahead-secs': '4',
-          },
-        PlayerPresetId.stableNetwork => const <String, String>{
-            'cache-secs': '120',
-            'demuxer-readahead-secs': '30',
-            'stream-lavf-o': 'reconnect=1,reconnect_streamed=1,reconnect_on_network_error=1,reconnect_delay_max=7',
-          },
-        PlayerPresetId.lowLatency => const <String, String>{
-            'cache': 'no',
-            'demuxer-readahead-secs': '1',
-            'cache-pause': 'no',
-            'framedrop': 'decoder+vo',
-            'network-timeout': '8',
-          },
-        _ => const <String, String>{},
-      };
+    PlayerPresetId.rtxVsr => const <String, String>{'vf': 'd3d11vpp=scale=2:scaling-mode=nvidia'},
+    PlayerPresetId.lowEnd => const <String, String>{
+      'vd-lavc-threads': '2',
+      'vd-lavc-o': 'lowres=1',
+      'vd-lavc-skiploopfilter': 'nonref',
+      'audio-buffer': '0.4',
+      'demuxer-max-bytes': '41943040',
+      'demuxer-readahead-secs': '4',
+    },
+    PlayerPresetId.stableNetwork => const <String, String>{
+      'cache-secs': '120',
+      'demuxer-readahead-secs': '30',
+      'stream-lavf-o': 'reconnect=1,reconnect_streamed=1,reconnect_on_network_error=1,reconnect_delay_max=7',
+    },
+    PlayerPresetId.lowLatency => const <String, String>{
+      'cache': 'no',
+      'demuxer-readahead-secs': '1',
+      'cache-pause': 'no',
+      'framedrop': 'decoder+vo',
+      'network-timeout': '8',
+    },
+    _ => const <String, String>{},
+  };
 }
 
 /// Platform groups a settings segment can be stored under.

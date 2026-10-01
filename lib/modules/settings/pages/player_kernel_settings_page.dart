@@ -5,6 +5,8 @@ import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 import 'package:pure_live/core/common/proxy_routing.dart';
+import 'package:pure_live/modules/settings/pages/player_guide_page.dart';
+import 'package:pure_live/modules/settings/pages/player_preset_page.dart';
 import 'package:pure_live/player/kernel/player_preset.dart';
 import 'package:pure_live/player/super_resolution.dart';
 import 'package:pure_live/player/utils/player_consts.dart';
@@ -90,7 +92,20 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
                 if (PlayerConsts.engines[activeKey] != PlayerEngine.mediaKit) return const SizedBox.shrink();
                 return Column(
                   children: [
-                    _buildPresetSection(context),
+                    context.buildTile(
+                      icon: Remix.magic_line,
+                      title: i18n('player_preset_section'),
+                      subtitle: i18n('player_preset_hint'),
+                      trailing: const Icon(Remix.arrow_right_s_line),
+                      onTap: () => Get.to(() => const PlayerPresetPage()),
+                    ),
+                    context.buildTile(
+                      icon: Remix.guide_line,
+                      title: i18n('player_guide_title'),
+                      subtitle: i18n('player_guide_subtitle'),
+                      trailing: const Icon(Remix.arrow_right_s_line),
+                      onTap: () => Get.to(() => const PlayerGuidePage()),
+                    ),
                     _buildSuperResolutionSection(context),
                   ],
                 );
@@ -149,13 +164,17 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
             title: i18n("custom_output_hwdec"),
             value: SettingsService.to.player.customPlayerOutput,
           ),
-          _optionTile(
-            context,
-            kind: MpvOptionKind.videoOutput,
-            title: i18n("video_output_driver"),
-            icon: Remix.movie_line,
-            value: SettingsService.to.player.videoOutputDriver,
-          ),
+          Obx(() {
+            final locked = SettingsService.to.player.currentPreset.lockedOutputKeys;
+            return _optionTile(
+              context,
+              kind: MpvOptionKind.videoOutput,
+              title: i18n("video_output_driver"),
+              icon: Remix.movie_line,
+              value: SettingsService.to.player.videoOutputDriver,
+              locked: locked.contains('vo'),
+            );
+          }),
           _optionTile(
             context,
             kind: MpvOptionKind.audioOutput,
@@ -163,13 +182,23 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
             icon: Remix.volume_up_line,
             value: SettingsService.to.player.audioOutputDriver,
           ),
-          _optionTile(
-            context,
-            kind: MpvOptionKind.hardwareDecoder,
-            title: i18n("hardware_decoder"),
-            icon: Remix.cpu_line,
-            value: SettingsService.to.player.videoHardwareDecoder,
-          ),
+          Obx(() {
+            final player = SettingsService.to.player;
+            final locked = player.currentPreset.lockedOutputKeys;
+            // The decoder pick exists only while hardware acceleration is on:
+            // turning the switch off IS the "no hardware decoder" state, so a
+            // separate disabled entry would duplicate it.
+            if (!player.enableCodec.v) return const SizedBox.shrink();
+
+            return _optionTile(
+              context,
+              kind: MpvOptionKind.hardwareDecoder,
+              title: i18n("hardware_decoder"),
+              icon: Remix.cpu_line,
+              value: player.videoHardwareDecoder,
+              locked: locked.contains('hwdec'),
+            );
+          }),
         ]),
       ],
     );
@@ -181,12 +210,14 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
     required String title,
     required IconData icon,
     required RxString value,
+    bool locked = false,
   }) {
     return Obx(
       () => context.buildTile(
-        icon: icon,
+        icon: locked ? Remix.lock_line : icon,
         title: title,
-        subtitle: mpvOptionLabel(
+        subtitle: (locked ? i18n('player_output_locked_by_preset') + ' · ' : '') +
+            mpvOptionLabel(
           kind,
           normalizedMpvOption(kind, value.value, defaultTargetPlatform),
           defaultTargetPlatform,

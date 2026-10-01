@@ -2086,7 +2086,10 @@
   "start": "Start",
   "stop": "Stop",
   "player_preset_section": "One-Click Playback Presets",
-  "player_preset_hint": "Each preset is stored per engine and per platform, independently",
+  "player_preset_hint": "Stored per engine and per platform, independently",
   "super_resolution_section": "Super Resolution (Anime4K)",
-  "remote_sync_pick_sections": "Pick sections to sync"
+  "remote_sync_pick_sections": "Pick sections to sync",
+  "player_guide_title": "Playback Guide",
+  "player_guide_subtitle": "Glossary · Platform picks · Symptom table",
+  "player_output_locked_by_preset": "Locked by the active preset"
 }

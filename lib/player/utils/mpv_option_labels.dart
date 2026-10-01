@@ -99,7 +99,29 @@ String mpvOptionLabel(MpvOptionKind kind, String key, TargetPlatform platform, {
   return _allowed(kind, platform)[key] ?? key;
 }
 
-/// Options the settings page may offer on [platform], in the profile's order.
-List<MpvOption> mpvOptionsForPlatform(MpvOptionKind kind, TargetPlatform platform, {required bool zh}) => [
-  for (final key in _allowed(kind, platform).keys) (key: key, label: mpvOptionLabel(kind, key, platform, zh: zh)),
-];
+/// Options the settings page may offer on [platform].
+///
+/// Ordering contract: `auto` first, the disable entry (`no`/`null`) second,
+/// then everything else. The hardware-decoder list omits `no` entirely —
+/// disabling hardware acceleration is the hardware-acceleration switch's
+/// job, not a decoder choice, so the two never duplicate.
+List<MpvOption> mpvOptionsForPlatform(MpvOptionKind kind, TargetPlatform platform, {required bool zh}) {
+  final all = <MpvOption>[
+    for (final key in _allowed(kind, platform).keys) (key: key, label: mpvOptionLabel(kind, key, platform, zh: zh)),
+  ];
+
+  final head = <MpvOption>[];
+  for (final key in ['auto', 'no', 'null']) {
+    final matches = all.where((entry) => entry.key == key).toList();
+    if (matches.isNotEmpty) {
+      head.add(matches.first);
+      all.remove(matches.first);
+    }
+  }
+
+  if (kind == MpvOptionKind.hardwareDecoder) {
+    all.removeWhere((entry) => entry.key == 'no');
+  }
+
+  return [...head, ...all];
+}
