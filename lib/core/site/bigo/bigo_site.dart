@@ -180,8 +180,14 @@ final class BigoSite extends LiveSite
       _room(await _api.studioRoom(siteId: _identity(roomId, platform)), includeMedia: includeMedia);
 
   @override
-  Future<LiveRoom> getRoomDetail({required String roomId, required String platform}) =>
-      _detail(roomId, platform, includeMedia: true);
+  Future<LiveRoom> getRoomDetailForRoom(LiveRoom room) async {
+    final roomId = room.roomId;
+    final platform = room.platform;
+    if (roomId == null || roomId.isEmpty || platform == null || platform.isEmpty) {
+      return room;
+    }
+    return _detail(roomId, platform, includeMedia: true);
+  }
 
   @override
   Future<LiveRoom> getRoomDetailForRefresh({required String roomId, required String platform}) =>
@@ -190,13 +196,6 @@ final class BigoSite extends LiveSite
   @override
   Future<LiveRoom> getRoomDetailForRecording({required String roomId, required String platform}) =>
       _detail(roomId, platform, includeMedia: true);
-
-  @override
-  Future<bool> getLiveStatus({required String platform, required String roomId}) async {
-    final room = await getRoomDetailForRefresh(roomId: roomId, platform: platform);
-    if (room.effectiveLiveStatus == LiveStatus.unknown) throw const BigoException(BigoFailure.unknownState);
-    return room.isLiveNow;
-  }
 
   @override
   Future<List<LiveRoom>> searchRooms(String keyword, {int page = 1, int pageSize = 30}) =>
