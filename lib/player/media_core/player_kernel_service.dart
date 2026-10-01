@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:media_core/media_core.dart';
 import 'package:pure_live/player/utils/fullscreen.dart';
 import 'package:media_core_floating/media_core_floating.dart';
 import 'package:media_core_media_kit/media_core_media_kit.dart';
+import 'package:pure_live/player/global_player_service.dart';
+import 'package:pure_live/common/services/settings/player_settings_controller.dart';
 import 'package:pure_live/player/utils/windows_pip_driver.dart';
 import 'package:pure_live/player/kernel/media_kit_live_properties.dart';
 import 'package:pure_live/player/kernel/owned_input_opener.dart';
@@ -51,6 +55,23 @@ class PlayerKernelService {
 
   static Future<void> ensureInitialized() async {
     MediaKitPlayerAdapter.ensureInitialized();
+
+    // Output settings ride two rails: mpv-property changes (hwdec, tuning
+    // table, shaders, ao, ...) apply to the live engine through engine
+    // options; a render-context change (vo / custom-output switch) needs a
+    // same-backend engine rebuild, which preserves source, position and
+    // play intent.
+    PlayerSettingsController.outputSettingsDispatcher = ({required bool rebuild}) {
+      final handle = GlobalPlayerService.instance.player.handle;
+      if (handle == null) return;
+
+      if (rebuild) {
+        unawaited(handle.rebuildEngine(reason: 'video output settings changed'));
+        return;
+      }
+
+      unawaited(MediaKitLiveProperties.engineOptions().then((options) => handle.applyEngineOptions(options)));
+    };
     logRing = mlog.MediaCoreLog.attachMemorySink(capacity: 500);
     if (!const bool.fromEnvironment('dart.vm.product')) {
       mlog.MediaCoreLog.level = mlog.LogLevel.debug;

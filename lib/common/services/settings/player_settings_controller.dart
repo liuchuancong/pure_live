@@ -31,6 +31,14 @@ String normalizeVideoPlayerKeyForPlatform(String key, TargetPlatform platform) {
 String get _defaultVideoPlayerKey => defaultVideoPlayerKeyForPlatform(defaultTargetPlatform);
 
 class PlayerSettingsController extends GetxController {
+  /// Player-layer hook, installed by PlayerKernelService at startup.
+  ///
+  /// Invoked whenever a live-appliable output setting changes. `rebuild`
+  /// marks that the change cannot take effect on a running engine (the
+  /// mpv render context is bound to the video output driver) and the
+  /// engine must be rebuilt to pick it up.
+  static void Function({required bool rebuild})? outputSettingsDispatcher;
+
   static const int defaultVideoFitIndex = 0;
 
   final List<Worker> _workers = [];
@@ -191,6 +199,7 @@ class PlayerSettingsController extends GetxController {
     videoOutputDriver.listen((_) => persist());
     audioOutputDriver.listen((_) => persist());
     videoHardwareDecoder.listen((_) => persist());
+    _installOutputDispatcher();
     videoSync.listen((_) => persist());
     interpolation.listen((_) => persist());
     scale.listen((_) => persist());
@@ -309,6 +318,29 @@ class PlayerSettingsController extends GetxController {
 
     final cellularResolution = resolvedPreferResolutionCellular;
     if (preferResolutionCellular.v != cellularResolution) preferResolutionCellular.v = cellularResolution;
+  }
+
+  /// Previous values of the render-context settings, to tell a live
+  /// property update apart from one that needs an engine rebuild.
+  String _lastVo = 'libmpv';
+  bool _lastCustomOutput = false;
+
+  void _installOutputDispatcher() {
+    void dispatch() {
+      final hook = outputSettingsDispatcher;
+      if (hook == null) return;
+
+      final voChanged = videoOutputDriver.v != _lastVo || customPlayerOutput.v != _lastCustomOutput;
+      _lastVo = videoOutputDriver.v;
+      _lastCustomOutput = customPlayerOutput.v;
+
+      hook(rebuild: voChanged);
+    }
+
+    enableCodec.listen((_) => dispatch());
+    videoHardwareDecoder.listen((_) => dispatch());
+    videoOutputDriver.listen((_) => dispatch());
+    customPlayerOutput.listen((_) => dispatch());
   }
 
   void _normalizeMpvSettingsForPlatform(TargetPlatform platform) {
