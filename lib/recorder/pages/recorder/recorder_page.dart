@@ -261,17 +261,7 @@ class _TaskCard extends GetView<RecorderController> {
             height: 90,
             child: coverUrl.isEmpty
                 ? const ColoredBox(color: Colors.black12)
-                : CachedNetworkImage(
-                    imageUrl: coverUrl,
-                    cacheKey: coverUrl,
-                    cacheManager: CustomImageCacheManager.instance,
-                    httpHeaders: networkImageHeaders(coverUrl),
-                    fit: BoxFit.cover,
-
-                    fadeInDuration: Duration.zero,
-                    fadeOutDuration: Duration.zero,
-                    errorWidget: (_, _, _) => const ColoredBox(color: Colors.black12),
-                  ),
+                : _RecorderNetworkImage(url: task.cover, size: const Size(150, 90)),
           ),
           Positioned(
             left: 8,
@@ -525,9 +515,16 @@ class _TaskCard extends GetView<RecorderController> {
                         children: [
                           CircleAvatar(
                             radius: 12,
-                            backgroundImage: normalizeNetworkImageUrl(task.avatar).isNotEmpty
-                                ? NetworkImage(normalizeNetworkImageUrl(task.avatar))
-                                : null,
+                            backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                            child: ClipOval(
+                              child: SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: normalizeNetworkImageUrl(task.avatar).isEmpty
+                                    ? Icon(Icons.person_rounded, size: 14, color: theme.colorScheme.outline)
+                                    : _RecorderNetworkImage(url: task.avatar, size: const Size(24, 24)),
+                              ),
+                            ),
                           ),
                           const SizedBox(width: 7),
                           Expanded(
@@ -840,3 +837,49 @@ class _EmptyView extends StatelessWidget {
     );
   }
 }
+
+
+/// Recorder-cover/avatar image with anti-leech headers and a one-shot
+/// cache-bust retry: platform CDNs sign or expire URLs, and a failure
+/// cached under the same key would otherwise stick for the whole session.
+class _RecorderNetworkImage extends StatelessWidget {
+  const _RecorderNetworkImage({required this.url, this.size});
+
+  final String url;
+  final Size? size;
+
+  @override
+  Widget build(BuildContext context) {
+    final resolved = normalizeNetworkImageUrl(url);
+    if (resolved.isEmpty) {
+      return const ColoredBox(color: Colors.black12);
+    }
+
+    return CachedNetworkImage(
+      imageUrl: resolved,
+      cacheKey: resolved,
+      cacheManager: CustomImageCacheManager.instance,
+      httpHeaders: networkImageHeaders(resolved),
+      fit: BoxFit.cover,
+      fadeInDuration: Duration.zero,
+      fadeOutDuration: Duration.zero,
+      errorWidget: (context, _, _) {
+        CustomImageCacheManager.instance.removeFile(resolved);
+        // Rebuild once without the cached entry so the network fetch retries
+        // with fresh CDN state. The key change prevents an immediate re-read
+        // of the same failed cache row.
+        return CachedNetworkImage(
+          imageUrl: resolved,
+          cacheKey: '$resolved#retry',
+          cacheManager: CustomImageCacheManager.instance,
+          httpHeaders: networkImageHeaders(resolved),
+          fit: BoxFit.cover,
+          fadeInDuration: Duration.zero,
+          fadeOutDuration: Duration.zero,
+          errorWidget: (_, _, _) => const ColoredBox(color: Colors.black12),
+        );
+      },
+    );
+  }
+}
+
