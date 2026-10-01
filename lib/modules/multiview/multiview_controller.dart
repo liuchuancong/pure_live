@@ -97,7 +97,7 @@ class MultiviewController extends GetxController {
             roomId: room.roomId!,
             platform: platform,
           )
-        : await liveSite.getRoomDetail(roomId: room.roomId!, platform: platform);
+        : await liveSite.getRoomDetailForRoom(room);
     discoveryScope?.checkActive();
     if (detail.isExplicitlyOfflineNow) {
       throw MultiviewRoomOffline(detail);

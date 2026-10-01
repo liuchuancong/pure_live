@@ -305,7 +305,7 @@ class LivePlayController extends GetxController
     final platform = previous.platform;
     if (roomId == null || platform == null) return;
     try {
-      final fetched = await currentSite.liveSite.getRoomDetail(roomId: roomId, platform: platform);
+      final fetched = await currentSite.liveSite.getRoomDetailForRoom(previous);
       if (isClosed) return;
       final current = state.value.room.detail;
       if (current?.roomId != roomId || current?.platform != platform) return;

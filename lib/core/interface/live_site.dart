@@ -220,6 +220,22 @@ class LiveSite {
     return Future.value(<LiveRoom>[]);
   }
 
+  /// Room-first detail fetch for callers that already hold a [LiveRoom].
+  ///
+  /// Equivalent to [getRoomDetail] by default. Adapters MAY override it to
+  /// reuse fields the room already carries (cached link, resolved ids,
+  /// avatar/cover) instead of re-deriving them from platform + roomId.
+  /// Callers keep [getRoomDetail] for places that only have the pair (deep
+  /// links, persisted history, recorder tasks restored from disk).
+  Future<LiveRoom> getRoomDetailForRoom(LiveRoom room) async {
+    final roomId = room.roomId;
+    final platform = room.platform;
+    if (roomId == null || roomId.isEmpty || platform == null || platform.isEmpty) {
+      return room;
+    }
+    return getRoomDetail(roomId: roomId, platform: platform);
+  }
+
   Future<LiveRoom> getRoomDetail({required String roomId, required String platform}) async {
     return Future.value(
       LiveRoom(

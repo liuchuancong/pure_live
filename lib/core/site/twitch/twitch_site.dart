@@ -16,6 +16,16 @@ import 'package:pure_live/core/utils/twitch/twitch_web_integrity.dart';
 import 'package:pure_live/core/utils/live_quality_label.dart';
 
 class TwitchSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResolver {
+
+  @override
+  Future<LiveRoom> getRoomDetailForRoom(LiveRoom room) {
+    final roomId = room.roomId;
+    final platform = room.platform;
+    if (roomId == null || roomId.isEmpty || platform == null || platform.isEmpty) {
+      return Future.value(room);
+    }
+    return getRoomDetail(platform: platform, roomId: roomId);
+  }
   @override
   String id = Sites.twitchSite;
 

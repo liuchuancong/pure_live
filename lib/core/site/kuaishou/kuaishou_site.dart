@@ -386,6 +386,16 @@ class KuaishowSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoo
   }
 
   @override
+  Future<LiveRoom> getRoomDetailForRoom(LiveRoom room) {
+    final roomId = room.roomId;
+    final platform = room.platform;
+    if (roomId == null || roomId.isEmpty || platform == null || platform.isEmpty) {
+      return Future.value(room);
+    }
+    return getRoomDetail(roomId: roomId, platform: platform);
+  }
+
+  @override
   Future<LiveRoom> getRoomDetail({required String platform, required String roomId}) async {
     try {
       final loaded = await _loadRoom(roomId, includePlaybackData: true, ensureSession: true);

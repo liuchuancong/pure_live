@@ -259,6 +259,16 @@ class CCSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResol
   }
 
   @override
+  Future<LiveRoom> getRoomDetailForRoom(LiveRoom room) {
+    final roomId = room.roomId;
+    final platform = room.platform;
+    if (roomId == null || roomId.isEmpty || platform == null || platform.isEmpty) {
+      return Future.value(room);
+    }
+    return getRoomDetail(roomId: roomId, platform: platform);
+  }
+
+  @override
   Future<LiveRoom> getRoomDetail({required String platform, required String roomId}) async {
     try {
       return await _loadRoomDetail(roomId);
