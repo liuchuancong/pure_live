@@ -42,7 +42,7 @@ class PlayerEngineOutput {
     this.enableCodec = true,
     this.customPlayerOutput = false,
     this.videoOutputDriver = 'auto',
-    this.videoHardwareDecoder = 'auto',
+    this.videoHardwareDecoder = 'auto-safe',
     this.audioOutputDriver = 'auto',
   });
 
@@ -104,7 +104,7 @@ class PlayerEngineOutput {
       enableCodec: json['enableCodec'] is bool ? json['enableCodec'] as bool : true,
       customPlayerOutput: json['customPlayerOutput'] is bool ? json['customPlayerOutput'] as bool : false,
       videoOutputDriver: json['videoOutputDriver'] is String ? json['videoOutputDriver'] as String : 'auto',
-      videoHardwareDecoder: json['videoHardwareDecoder'] is String ? json['videoHardwareDecoder'] as String : 'auto',
+      videoHardwareDecoder: json['videoHardwareDecoder'] is String ? json['videoHardwareDecoder'] as String : 'auto-safe',
       audioOutputDriver: json['audioOutputDriver'] is String ? json['audioOutputDriver'] as String : 'auto',
     );
   }

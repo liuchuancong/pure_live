@@ -10,7 +10,10 @@ import 'package:pure_live/player/utils/mpv_platform_profile.dart';
 import 'package:pure_live/player/utils/player_consts.dart';
 
 @visibleForTesting
-String defaultVideoPlayerKeyForPlatform(TargetPlatform platform) => platform == TargetPlatform.iOS ? 'ijk' : 'mpv';
+/// mpv is the default engine on every platform: it has the widest codec
+/// coverage, the recovery ladder works on it and the tuning table is
+/// engine-spelled for it. ijk/exo stay selectable where available.
+String defaultVideoPlayerKeyForPlatform(TargetPlatform platform) => 'mpv';
 
 List<String> availableVideoPlayerKeysForPlatform(TargetPlatform platform) =>
     platform == TargetPlatform.android || platform == TargetPlatform.iOS
@@ -150,7 +153,7 @@ class PlayerSettingsController extends GetxController {
       enableCodec: detail.enableCodec,
       customPlayerOutput: detail.vo != null,
       videoOutputDriver: detail.vo ?? 'auto',
-      videoHardwareDecoder: detail.hwdec ?? 'auto',
+      videoHardwareDecoder: detail.hwdec ?? 'auto-safe',
     );
 
     _writeSegment(segment);
@@ -165,7 +168,7 @@ class PlayerSettingsController extends GetxController {
   late final RxBool customPlayerOutput = false.obs;
   late final RxString videoOutputDriver = 'auto'.obs;
   late final RxString audioOutputDriver = 'auto'.obs;
-  late final RxString videoHardwareDecoder = 'auto'.obs;
+  late final RxString videoHardwareDecoder = 'auto-safe'.obs;
 
   PlayerSettingsController() {
     _loadSegments();
