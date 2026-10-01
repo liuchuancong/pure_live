@@ -336,6 +336,9 @@ final class LivePlayerFacade {
   Widget buildPiPOverlay() => Scaffold(
     backgroundColor: Colors.transparent,
     body: Stack(
+      // expand keeps MediaPlayerView off infinite constraints if this
+      // Scaffold's body is ever composed inside a loose/unbounded ancestor.
+      fit: StackFit.expand,
       children: [
         GestureDetector(
           // True picture-in-picture is chrome-less: double-tap leaves, single
@@ -413,9 +416,15 @@ final class LivePlayerFacade {
         : fit as BoxFit;
     final video = getVideoWidget(resolved);
     if (controls == null) return video;
+    // expand is load-bearing: a default (loose) Stack sizes itself to the
+    // non-positioned child, and in an unbounded ancestor that hands the video
+    // infinite constraints — MediaPlayerView's AspectRatio then throws
+    // "BoxConstraints forces an infinite width and height" every frame and
+    // the room shows nothing.
     return Stack(
+      fit: StackFit.expand,
       children: [
-        Positioned.fill(child: video),
+        video,
         controls,
       ],
     );
