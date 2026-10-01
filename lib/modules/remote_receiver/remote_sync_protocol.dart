@@ -63,7 +63,7 @@ class RemoteSyncProtocol {
       'type': syncType,
       'version': 1,
       'settings': settings,
-      ?'sections': sections,
+      'sections': ?sections,
     };
   }
 
