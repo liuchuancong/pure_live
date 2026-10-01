@@ -1,7 +1,9 @@
 import 'package:flutter/painting.dart' show Offset, Rect, Size;
+import 'package:media_core/media_core.dart' show PresentationLifecycleHooks;
 import 'package:media_core_pip/media_core_pip.dart';
 import 'package:pure_live/common/services/settings_service.dart';
 import 'package:pure_live/common/services/settings/window_size_controller.dart';
+import 'package:pure_live/core/common/core_log.dart';
 import 'package:screen_retriever/screen_retriever.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -13,7 +15,18 @@ final DisplayAwarePipWindow windowsPipWindow = DisplayAwarePipWindow(
   normalMinSize: const Size(WindowSizeController.minWindowWidth, WindowSizeController.minWindowHeight),
 );
 
-final PipDriver windowsPipDriver = PipDriver(desktopWindow: windowsPipWindow);
+final PipDriver windowsPipDriver = PipDriver(
+  desktopWindow: windowsPipWindow,
+  // Transition diagnostics: the native restore path is exactly four style/
+  // placement calls, and when a viewer reports a broken window after a
+  // transition these four lines say which leg never ran.
+  lifecycleHooks: PresentationLifecycleHooks(
+    beforeEnter: (_) async => CoreLog.i('pip: entering the desktop small window'),
+    afterEnter: (_) async => CoreLog.i('pip: entered the desktop small window'),
+    beforeExit: (_) async => CoreLog.i('pip: leaving the desktop small window'),
+    afterExit: (_) async => CoreLog.i('pip: left the desktop small window'),
+  ),
+);
 
 Future<List<PipWorkArea>> _readWorkAreas() async {
   final displays = await screenRetriever.getAllDisplays();
