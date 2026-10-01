@@ -40,30 +40,87 @@ class PlayerSettingsController extends GetxController {
   // ---------------------------------------------------------------------------
   // Engine x platform output segments
   //
-  // Every engine keeps its own output settings per platform group, so an
-  // Android pick never leaks onto Windows. The Rx fields below are the
-  // live view of the segment for the *current* engine and platform —
-  // settings pages bind to them unchanged; switching engine or platform
-  // reloads them via [reloadOutputView].
+  // Every engine keeps its own output settings per platform group. The map
+  // is the single source of truth and lives under one hive key; the Rx
+  // fields below are an in-memory projection of the segment for the
+  // *current* engine and platform. Backups carry the whole map, so a
+  // restore overwrites each platform's segment directly instead of
+  // rerouting writes through the view fields.
   // ---------------------------------------------------------------------------
 
-  String get _outputSegmentKey => 'engineOutput.$videoPlayerKeyKey.${platformGroupName()}';
+  static const String _engineOutputsKey = 'engineOutputs';
 
-  /// Raw key of the selected engine (view fields bind to its segment).
-  String get videoPlayerKeyKey => videoPlayerKey.v;
+  final Map<String, Map<String, PlayerEngineOutput>> _engineOutputs = <String, Map<String, PlayerEngineOutput>>{};
 
-  PlayerEngineOutput _readSegment() {
-    final raw = hiveString(_outputSegmentKey, '')();
-    return raw.isEmpty ? const PlayerEngineOutput() : PlayerEngineOutput.fromJson(raw);
+  Map<String, PlayerEngineOutput> _segmentsOf(String engineKey) {
+    return _engineOutputs.putIfAbsent(engineKey, () => <String, PlayerEngineOutput>{});
+  }
+
+  PlayerEngineOutput _segmentForCurrent() {
+    return _segmentsOf(videoPlayerKey.v)[platformGroupName()] ?? const PlayerEngineOutput();
   }
 
   void _writeSegment(PlayerEngineOutput segment) {
-    hiveString(_outputSegmentKey, '').v = segment.toJson().toString();
+    _segmentsOf(videoPlayerKey.v)[platformGroupName()] = segment;
+    _persistSegments();
+  }
+
+  void _persistSegments() {
+    hiveString(_engineOutputsKey, '').v = jsonEncode(<String, dynamic>{
+      for (final engine in _engineOutputs.entries)
+        engine.key: <String, dynamic>{
+          for (final segment in engine.value.entries) segment.key: segment.value.toJson(),
+        },
+    });
+  }
+
+  void _loadSegments() {
+    final raw = hiveString(_engineOutputsKey, '')();
+    if (raw.isEmpty) return;
+
+    try {
+      final decoded = jsonDecode(raw) as Map<String, dynamic>;
+      for (final engine in decoded.entries) {
+        if (engine.value is! Map) continue;
+        _segmentsOf(engine.key).addEntries([
+          for (final platform in (engine.value as Map).entries)
+            MapEntry(platform.key as String, PlayerEngineOutput.fromJson(platform.value)),
+        ]);
+      }
+    } catch (_) {
+      // A corrupt map resets to defaults; the view fields below then show
+      // the balanced segment.
+    }
+  }
+
+  /// Serialized form for backups: every engine x platform segment.
+  Map<String, dynamic> engineOutputsToJson() => <String, dynamic>{
+    for (final engine in _engineOutputs.entries)
+      engine.key: <String, dynamic>{
+        for (final segment in engine.value.entries) segment.key: segment.value.toJson(),
+      },
+  };
+
+  /// Restores segments from a backup. Platforms present in the backup are
+  /// overwritten as a whole; platforms absent keep their local settings.
+  void engineOutputsFromJson(Object? json) {
+    if (json is! Map) return;
+
+    for (final engine in json.entries) {
+      if (engine.value is! Map) continue;
+      _segmentsOf(engine.key as String).addEntries([
+        for (final platform in (engine.value as Map).entries)
+          MapEntry(platform.key as String, PlayerEngineOutput.fromJson(platform.value)),
+      ]);
+    }
+
+    _persistSegments();
+    reloadOutputView();
   }
 
   /// Reloads the view fields from the current engine x platform segment.
   void reloadOutputView() {
-    final segment = _readSegment();
+    final segment = _segmentForCurrent();
     enableCodec.v = segment.enableCodec;
     customPlayerOutput.v = segment.customPlayerOutput;
     videoOutputDriver.v = segment.videoOutputDriver;
@@ -75,7 +132,7 @@ class PlayerSettingsController extends GetxController {
   void _persistOutputView() {
     _writeSegment(
       PlayerEngineOutput(
-        presetId: _readSegment().presetId,
+        presetId: _segmentForCurrent().presetId,
         enableCodec: enableCodec.v,
         customPlayerOutput: customPlayerOutput.v,
         videoOutputDriver: videoOutputDriver.v,
@@ -88,7 +145,7 @@ class PlayerSettingsController extends GetxController {
   /// Applies a one-click preset to the current engine x platform segment.
   void applyPreset(PlayerPresetId id) {
     final detail = id.outputOverride;
-    final segment = _readSegment().copyWith(
+    final segment = _segmentForCurrent().copyWith(
       presetId: id,
       enableCodec: detail.enableCodec,
       customPlayerOutput: detail.vo != null,
@@ -101,27 +158,14 @@ class PlayerSettingsController extends GetxController {
   }
 
   /// The preset currently active on the current engine x platform.
-  PlayerPresetId get currentPreset => _readSegment().presetId;
+  PlayerPresetId get currentPreset => _segmentForCurrent().presetId;
 
-  // View fields over the current segment (kept as Rx so existing pages
-  // keep binding). Writes are persisted back per segment.
-  late final RxBool enableCodec = hiveBool('view.enableCodec', true);
-  late final RxBool customPlayerOutput = hiveBool('view.customPlayerOutput', false);
-  late final RxString videoOutputDriver = hiveString('view.videoOutputDriver', 'auto');
-  late final RxString audioOutputDriver = hiveString('view.audioOutputDriver', 'auto');
-  late final RxString videoHardwareDecoder = hiveString('view.videoHardwareDecoder', 'auto');
-
-  PlayerSettingsController() {
-    reloadOutputView();
-
-    void persist() => _persistOutputView();
-
-    enableCodec.listen((_) => persist());
-    customPlayerOutput.listen((_) => persist());
-    videoOutputDriver.listen((_) => persist());
-    audioOutputDriver.listen((_) => persist());
-    videoHardwareDecoder.listen((_) => persist());
-  }
+  // In-memory projection of the current segment; never persisted directly.
+  late final RxBool enableCodec = true.obs;
+  late final RxBool customPlayerOutput = false.obs;
+  late final RxString videoOutputDriver = 'auto'.obs;
+  late final RxString audioOutputDriver = 'auto'.obs;
+  late final RxString videoHardwareDecoder = 'auto'.obs;
 
   final RxBool floatPlay = hiveBool('floatPlay', false);
   final RxBool windowsPipAlwaysOnTop = hiveBool('windowsPipAlwaysOnTop', false);
@@ -345,6 +389,7 @@ class PlayerSettingsController extends GetxController {
 
   Map<String, dynamic> toJson() {
     return {
+      'engineOutputs': engineOutputsToJson(),
       'videoFitIndex': resolvedVideoFitIndex,
       'videoPlayerKey': videoPlayerKey.v,
       'preferResolution': resolvedPreferResolution,
@@ -459,6 +504,7 @@ class PlayerSettingsController extends GetxController {
     showPortraitDiagnostics.v = parsed['showPortraitDiagnostics'];
     portraitRoomOverrides.assignAll(parsed['portraitRoomOverrides']);
     _persistPortraitRoomOverrides();
+    engineOutputsFromJson(json['engineOutputs']);
   }
 
   static Map<String, dynamic> extractConfig(Map<String, dynamic>? rootConfig) {
