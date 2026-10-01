@@ -93,10 +93,54 @@ class _RemoteSyncPageState extends State<RemoteSyncPage> {
     }
   }
 
+  /// Section picker shown before any sync send or receive.
+  Future<List<String>?> _pickSections(List<String> available) async {
+    final selected = {...available};
+
+    final ok = await Get.dialog<bool>(
+      AlertDialog(
+        title: Text(i18n('remote_sync_pick_sections')),
+        content: StatefulBuilder(
+          builder: (context, setState) => SizedBox(
+            width: 320,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  for (final key in available)
+                    CheckboxListTile(
+                      dense: true,
+                      title: Text(key),
+                      value: selected.contains(key),
+                      onChanged: (on) => setState(() {
+                        if (on == true) {
+                          selected.add(key);
+                        } else {
+                          selected.remove(key);
+                        }
+                      }),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Get.back<bool>(result: false), child: Text(i18n('cancel'))),
+          TextButton(onPressed: () => Get.back<bool>(result: true), child: Text(i18n('confirm'))),
+        ],
+      ),
+      barrierDismissible: false,
+    );
+
+    return ok == true ? selected.toList(growable: false) : null;
+  }
+
   Future<void> _sendToDevice(String ip, int port, {String? code}) async {
-    final pairing = code ?? await _askPairingCode();
-    if (pairing == null) return;
-    final success = await service.syncToAddress(ip, port, pairing);
+    final sections = await _pickSections(service.exportSectionNames());
+    if (sections == null) return;
+
+    final success = await service.syncToAddress(ip, port, code, sections: sections);
     if (!mounted) return;
     ToastUtil.show(success ? i18n('remote_sync_send_success') : i18n('remote_sync_send_failed'));
   }

@@ -603,7 +603,7 @@ class RemoteSyncService extends GetxController {
 
       isSyncing.value = true;
 
-      final success = await _applyRemoteSettings(Map<String, dynamic>.from(settings));
+      final success = await applyRemoteSettings(Map<String, dynamic>.from(settings));
 
       isSyncing.value = false;
 
@@ -632,6 +632,19 @@ class RemoteSyncService extends GetxController {
     } catch (_) {
       return false;
     }
+  }
+
+  /// Applies only the sections the receiver ticked.
+  Future<bool> applyRemoteSettings(Map<String, dynamic> settings) async {
+    final received = settings['sections'] is List ? (settings['sections'] as List).cast<String>() : null;
+    final picked = (received == null || received.isEmpty)
+        ? settings
+        : <String, dynamic>{
+            for (final key in received)
+              if (settings.containsKey(key)) key: settings[key],
+          };
+
+    return _applyRemoteSettings(picked);
   }
 
   Future<bool> _applyRemoteSettings(Map<String, dynamic> settings) async {
@@ -982,7 +995,12 @@ class RemoteSyncService extends GetxController {
     return syncToAddress(device.ip, device.port, code);
   }
 
-  Future<bool> syncToAddress(String ip, int port, String code) async {
+  /// Top-level section names of a local backup, for the picker UI.
+  List<String> exportSectionNames() {
+    return Get.find<BackupController>().exportAllSettings(includeSensitiveData: includeAccounts.value).keys.toList();
+  }
+
+  Future<bool> syncToAddress(String ip, int port, String? code, {List<String>? sections}) async {
     if (_disposed || isSyncing.value) {
       return false;
     }
@@ -993,6 +1011,14 @@ class RemoteSyncService extends GetxController {
       final backup = Get.find<BackupController>();
 
       final settings = backup.exportAllSettings(includeSensitiveData: includeAccounts.value);
+
+      // Only the sections the sender ticked travel the wire.
+      final payload = (sections == null || sections.isEmpty)
+          ? settings
+          : <String, dynamic>{
+              for (final key in sections)
+                if (settings.containsKey(key)) key: settings[key],
+            };
 
       final client = HttpClient();
 
@@ -1005,9 +1031,11 @@ class RemoteSyncService extends GetxController {
         );
 
         request.headers.contentType = ContentType('application', 'json', charset: 'utf-8');
-        request.headers.set(RemoteSyncProtocol.pairingHeader, RemoteSyncProtocol.normalizePairingCode(code));
+        if (code != null) {
+          request.headers.set(RemoteSyncProtocol.pairingHeader, RemoteSyncProtocol.normalizePairingCode(code));
+        }
 
-        request.write(jsonEncode(RemoteSyncProtocol.settingsPacket(settings: settings)));
+        request.write(jsonEncode(RemoteSyncProtocol.settingsPacket(settings: payload, sections: sections)));
 
         final response = await request.close();
 

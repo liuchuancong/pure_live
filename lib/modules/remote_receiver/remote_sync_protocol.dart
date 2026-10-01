@@ -58,8 +58,13 @@ class RemoteSyncProtocol {
     };
   }
 
-  static Map<String, dynamic> settingsPacket({required Map<String, dynamic> settings}) {
-    return {'type': syncType, 'version': 1, 'settings': settings};
+  static Map<String, dynamic> settingsPacket({required Map<String, dynamic> settings, List<String>? sections}) {
+    return {
+      'type': syncType,
+      'version': 1,
+      'settings': settings,
+      ?'sections': sections,
+    };
   }
 
   static ({String ip, int port})? parseHttpAddress(String value) {
