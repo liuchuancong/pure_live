@@ -2092,5 +2092,7 @@
   "remote_sync_enter_address": "请输入对方设备的地址",
   "remote_sync_invalid_qr": "不是纯粹直播的同步二维码",
   "start": "开始",
-  "stop": "停止"
+  "stop": "停止",
+  "player_preset_section": "一键播放方案",
+  "player_preset_hint": "每个方案按“当前引擎 × 当前平台”独立保存, 互不影响"
 }

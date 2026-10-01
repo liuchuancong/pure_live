@@ -2084,5 +2084,7 @@
   "remote_sync_enter_address": "Enter the other device's address",
   "remote_sync_invalid_qr": "Not a Pure Live sync QR code",
   "start": "Start",
-  "stop": "Stop"
+  "stop": "Stop",
+  "player_preset_section": "One-Click Playback Presets",
+  "player_preset_hint": "Each preset is stored per engine and per platform, independently"
 }

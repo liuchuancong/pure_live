@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:media_core/media_core.dart';
 import 'package:media_core_media_kit/media_core_media_kit.dart';
+import 'package:pure_live/player/kernel/player_preset.dart';
 import 'package:media_kit_video/media_kit_video.dart' as mkv;
 import 'package:pure_live/common/index.dart';
 
@@ -87,53 +88,61 @@ abstract final class MediaKitLiveProperties {
     return properties;
   }
 
-  /// The decoder the app's settings picked, or null to let mpv decide.
-  static String? get _hostDecoder {
+  /// The effective output segment for the current engine and platform.
+  static PlayerEngineOutput get _output {
     final settings = SettingsService.to.player;
-    if (!settings.customPlayerOutput.v) return null;
-    final pick = settings.videoHardwareDecoder.v.trim();
-    return pick.isEmpty || pick == 'auto' ? null : pick;
+    final segment = PlayerEngineOutput(
+      presetId: settings.currentPreset,
+      enableCodec: settings.enableCodec.v,
+      customPlayerOutput: settings.customPlayerOutput.v,
+      videoOutputDriver: settings.videoOutputDriver.v,
+      videoHardwareDecoder: settings.videoHardwareDecoder.v,
+      audioOutputDriver: settings.audioOutputDriver.v,
+    );
+    final detail = segment.presetId.outputOverride;
+
+    return segment.copyWith(
+      enableCodec: detail.enableCodec ?? segment.enableCodec,
+      customPlayerOutput: detail.vo != null ? true : segment.customPlayerOutput,
+      videoOutputDriver: detail.vo ?? segment.videoOutputDriver,
+      videoHardwareDecoder: detail.hwdec ?? segment.videoHardwareDecoder,
+    );
   }
 
-  static String? get _hostAudioOutput {
-    final settings = SettingsService.to.player;
-    final pick = settings.audioOutputDriver.v.trim();
-    return pick.isEmpty || pick == 'auto' ? null : pick;
-  }
-
-  /// The native controller configuration the app's settings spell out.
+  /// The native controller configuration the segment spells out.
   ///
   /// vo/hwdec are engine names passed verbatim; every tuning property
   /// travels through [engineOptions] instead.
   static mkv.VideoControllerConfiguration buildVideoControllerConfiguration() {
-    final settings = SettingsService.to.player;
-    final compat = settings.playerCompatMode.v && Platform.isAndroid;
-    final decoder = compat ? 'mediacodec' : _hostDecoder;
+    final segment = _output;
 
     return mkv.VideoControllerConfiguration(
-      vo: compat ? 'mediacodec_embed' : _normalizeVo(settings.videoOutputDriver.v),
-      hwdec: decoder,
-      enableHardwareAcceleration: settings.enableCodec.v,
+      vo: segment.customPlayerOutput ? _normalize(segment.videoOutputDriver) : null,
+      hwdec: segment.customPlayerOutput ? _normalize(segment.videoHardwareDecoder) : null,
+      enableHardwareAcceleration: segment.enableCodec,
     );
   }
 
-  /// Normalises the app's vo pick; empty/auto leaves the engine default.
-  static String? _normalizeVo(String pick) {
+  /// Normalises a pick; empty/auto leaves the engine default.
+  static String? _normalize(String pick) {
     final value = pick.trim();
     return value.isEmpty || value == 'auto' ? null : value;
   }
 
   /// The full runtime option list handed to the adapter.
   ///
-  /// The mpv tuning table first, then the host's audio pick — a later
-  /// option for the same property wins.
+  /// The live tuning table first, then the preset's own properties, then
+  /// the segment's audio pick — a later option for the same property wins.
   static List<EngineOption> engineOptions() {
+    final segment = _output;
+    final properties = <String, String>{...build(), ...segment.presetId.extraProperties};
+
     final options = <EngineOption>[
-      for (final entry in build().entries) EngineOption(entry.key, entry.value),
+      for (final entry in properties.entries) EngineOption(entry.key, entry.value),
     ];
 
-    final audio = _hostAudioOutput;
-    if (audio != null) {
+    final audio = segment.audioOutputDriver;
+    if (audio.trim().isNotEmpty && audio.trim() != 'auto') {
       options.add(EngineOption('ao', audio));
     }
 

@@ -1,5 +1,4 @@
-import 'package:media_kit/media_kit.dart';
-import 'package:media_kit_video/media_kit_video.dart';
+import 'package:media_core_media_kit/media_core_media_kit.dart';
 
 abstract interface class MediaKitPlayerAccessor {
   Player get mediaKitPlayer;

@@ -1,4 +1,3 @@
-import 'dart:io';
 
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
@@ -6,6 +5,7 @@ import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 import 'package:pure_live/core/common/proxy_routing.dart';
+import 'package:pure_live/player/kernel/player_preset.dart';
 import 'package:pure_live/player/utils/player_consts.dart';
 import 'package:pure_live/player/models/player_engine.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
@@ -87,12 +87,7 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
                   defaultTargetPlatform,
                 );
                 if (PlayerConsts.engines[activeKey] != PlayerEngine.mediaKit) return const SizedBox.shrink();
-                return context.buildSwitchTile(
-                  icon: Remix.image_edit_line,
-                  title: i18n('enable_rtx_vsr'),
-                  subtitle: i18n('enable_rtx_vsr_subtitle'),
-                  value: SettingsService.to.player.enableRtxVsr,
-                );
+                return _buildPresetSection(context);
               }),
             context.buildSwitchTile(
               icon: Remix.shut_down_line,
@@ -123,13 +118,6 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Padding(padding: EdgeInsets.only(left: 16, right: 16, bottom: 0, top: 12), child: Divider()),
-        if (Platform.isAndroid)
-          context.buildSwitchTile(
-            icon: Remix.shield_check_line,
-            title: i18n('compat_mode'),
-            subtitle: i18n('compat_mode_subtitle'),
-            value: SettingsService.to.player.playerCompatMode,
-          ),
         Padding(
           padding: const EdgeInsets.fromLTRB(12, 5, 12, 4),
           child: Row(
@@ -338,6 +326,49 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
   // 代理设置弹窗（替换为统一SwitchTile）
   void showProxySettingsDialog(BuildContext context) {
     showDialog(context: context, builder: (context) => const _PlayerProxySettingsDialog());
+  }
+  /// One-click preset cards: a complete, explained recipe per row.
+  Widget _buildPresetSection(BuildContext context) {
+    final settings = SettingsService.to.player;
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 5, 12, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(left: 4, bottom: 8),
+            child: Row(
+              children: [
+                Icon(Remix.magic_line, size: 18, color: theme.colorScheme.primary),
+                const SizedBox(width: 8),
+                Text(i18n('player_preset_section'), style: theme.textTheme.titleSmall),
+              ],
+            ),
+          ),
+          for (final preset in PlayerPresetId.values)
+            if (preset.availableOnCurrentPlatform)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Card(
+                  margin: EdgeInsets.zero,
+                  child: ListTile(
+                    title: Text(preset.nameZh),
+                    subtitle: Text(preset.descriptionZh, style: theme.textTheme.bodySmall),
+                    trailing: Obx(() {
+                      final active = settings.currentPreset == preset;
+                      return active
+                          ? Icon(Remix.checkbox_circle_fill, color: theme.colorScheme.primary)
+                          : const Icon(Remix.checkbox_blank_circle_line);
+                    }),
+                    onTap: () => settings.applyPreset(preset),
+                  ),
+                ),
+              ),
+        ],
+      ),
+    );
   }
 }
 

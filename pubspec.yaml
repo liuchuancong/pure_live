@@ -110,7 +110,6 @@ dependencies:
   # 播放器引擎直依赖：源码直接 import（owned-input opener、纹理/视图、快照）
   media_kit: ^1.2.0
   media_kit_video: ^1.2.0
-  flv_lzc: ^1.0.0
   wakelock_plus: ^1.8.0
   media_core:
     path: F:/media_core/packages/media_core

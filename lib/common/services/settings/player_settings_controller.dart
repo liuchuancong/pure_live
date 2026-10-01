@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/consts/app_consts.dart';
 import 'package:pure_live/player/core/portrait_stream_support.dart';
+import 'package:pure_live/player/kernel/player_preset.dart';
 import 'package:pure_live/player/utils/mpv_platform_profile.dart';
 import 'package:pure_live/player/utils/player_consts.dart';
 
@@ -35,16 +36,94 @@ class PlayerSettingsController extends GetxController {
   final RxString preferResolution = hiveString('preferResolution', PlayerConsts.resolutions.first);
   final RxString preferResolutionCellular = hiveString('preferResolutionCellular', PlayerConsts.resolutions.first);
 
-  final RxBool enableCodec = hiveBool('enableCodec', true);
-  final RxBool playerCompatMode = hiveBool('playerCompatMode', false);
-  final RxBool customPlayerOutput = hiveBool('customPlayerOutput', false);
-  final RxString videoOutputDriver = hiveString('videoOutputDriver', 'gpu');
-  final RxString audioOutputDriver = hiveString('audioOutputDriver', 'auto');
-  final RxString videoHardwareDecoder = hiveString('videoHardwareDecoder', 'auto');
+  // ---------------------------------------------------------------------------
+  // Engine x platform output segments
+  //
+  // Every engine keeps its own output settings per platform group, so an
+  // Android pick never leaks onto Windows. The Rx fields below are the
+  // live view of the segment for the *current* engine and platform —
+  // settings pages bind to them unchanged; switching engine or platform
+  // reloads them via [reloadOutputView].
+  // ---------------------------------------------------------------------------
+
+  String get _outputSegmentKey => 'engineOutput.$videoPlayerKeyKey.${platformGroupName()}';
+
+  /// Raw key of the selected engine (view fields bind to its segment).
+  String get videoPlayerKeyKey => videoPlayerKey.v;
+
+  PlayerEngineOutput _readSegment() {
+    final raw = hiveString(_outputSegmentKey, '')();
+    return raw.isEmpty ? const PlayerEngineOutput() : PlayerEngineOutput.fromJson(raw);
+  }
+
+  void _writeSegment(PlayerEngineOutput segment) {
+    hiveString(_outputSegmentKey, '').v = segment.toJson().toString();
+  }
+
+  /// Reloads the view fields from the current engine x platform segment.
+  void reloadOutputView() {
+    final segment = _readSegment();
+    enableCodec.v = segment.enableCodec;
+    customPlayerOutput.v = segment.customPlayerOutput;
+    videoOutputDriver.v = segment.videoOutputDriver;
+    audioOutputDriver.v = segment.audioOutputDriver;
+    videoHardwareDecoder.v = segment.videoHardwareDecoder;
+  }
+
+  /// Persists the view fields back into the current segment.
+  void _persistOutputView() {
+    _writeSegment(
+      PlayerEngineOutput(
+        presetId: _readSegment().presetId,
+        enableCodec: enableCodec.v,
+        customPlayerOutput: customPlayerOutput.v,
+        videoOutputDriver: videoOutputDriver.v,
+        videoHardwareDecoder: videoHardwareDecoder.v,
+        audioOutputDriver: audioOutputDriver.v,
+      ),
+    );
+  }
+
+  /// Applies a one-click preset to the current engine x platform segment.
+  void applyPreset(PlayerPresetId id) {
+    final detail = id.outputOverride;
+    final segment = _readSegment().copyWith(
+      presetId: id,
+      enableCodec: detail.enableCodec,
+      customPlayerOutput: detail.vo != null,
+      videoOutputDriver: detail.vo ?? 'auto',
+      videoHardwareDecoder: detail.hwdec ?? 'auto',
+    );
+
+    _writeSegment(segment);
+    reloadOutputView();
+  }
+
+  /// The preset currently active on the current engine x platform.
+  PlayerPresetId get currentPreset => _readSegment().presetId;
+
+  // View fields over the current segment (kept as Rx so existing pages
+  // keep binding). Writes are persisted back per segment.
+  late final RxBool enableCodec = hiveBool('view.enableCodec', true);
+  late final RxBool customPlayerOutput = hiveBool('view.customPlayerOutput', false);
+  late final RxString videoOutputDriver = hiveString('view.videoOutputDriver', 'auto');
+  late final RxString audioOutputDriver = hiveString('view.audioOutputDriver', 'auto');
+  late final RxString videoHardwareDecoder = hiveString('view.videoHardwareDecoder', 'auto');
+
+  PlayerSettingsController() {
+    reloadOutputView();
+
+    void persist() => _persistOutputView();
+
+    enableCodec.listen((_) => persist());
+    customPlayerOutput.listen((_) => persist());
+    videoOutputDriver.listen((_) => persist());
+    audioOutputDriver.listen((_) => persist());
+    videoHardwareDecoder.listen((_) => persist());
+  }
 
   final RxBool floatPlay = hiveBool('floatPlay', false);
   final RxBool windowsPipAlwaysOnTop = hiveBool('windowsPipAlwaysOnTop', false);
-  final RxBool enableRtxVsr = hiveBool('enableRtxVsr', false);
   // Kept as an inert compatibility field for old backups. Audio-only is now
   // room-scoped and controlled by the headphone action or ASMR auto-start.
   final RxBool audioOnly = false.obs;
@@ -154,8 +233,6 @@ class PlayerSettingsController extends GetxController {
   }
 
   void _normalizeMpvSettingsForPlatform(TargetPlatform platform) {
-    if (platform != TargetPlatform.android && playerCompatMode.v) playerCompatMode.v = false;
-    if (platform != TargetPlatform.windows && enableRtxVsr.v) enableRtxVsr.v = false;
 
     final normalizedVideoOutput = normalizeMpvVideoOutputDriverForPlatform(videoOutputDriver.v, platform);
     if (videoOutputDriver.v != normalizedVideoOutput) videoOutputDriver.v = normalizedVideoOutput;
@@ -254,12 +331,10 @@ class PlayerSettingsController extends GetxController {
 
   void resetMpvPlayerSettings() {
     enableCodec.v = true;
-    playerCompatMode.v = false;
     customPlayerOutput.v = false;
     videoOutputDriver.v = defaultMpvVideoOutputDriverForPlatform(defaultTargetPlatform);
     audioOutputDriver.v = 'auto';
     videoHardwareDecoder.v = 'auto';
-    enableRtxVsr.v = false;
     preferResolution.v = PlayerConsts.resolutions.first;
     preferResolutionCellular.v = PlayerConsts.resolutions.first;
     useHardStopOnExit.v = false;
@@ -272,14 +347,12 @@ class PlayerSettingsController extends GetxController {
       'preferResolution': resolvedPreferResolution,
       'preferResolutionCellular': resolvedPreferResolutionCellular,
       'enableCodec': enableCodec.v,
-      'playerCompatMode': playerCompatMode.v,
       'customPlayerOutput': customPlayerOutput.v,
       'videoOutputDriver': videoOutputDriver.v,
       'audioOutputDriver': audioOutputDriver.v,
       'videoHardwareDecoder': videoHardwareDecoder.v,
       'floatPlay': floatPlay.v,
       'windowsPipAlwaysOnTop': windowsPipAlwaysOnTop.v,
-      'enableRtxVsr': enableRtxVsr.v,
       'audioOnly': false,
       'useHardStopOnExit': useHardStopOnExit.v,
       'enablePortraitStreamAdaptation': enablePortraitStreamAdaptation.v,
@@ -312,9 +385,6 @@ class PlayerSettingsController extends GetxController {
         typed<String>(json['preferResolutionCellular'] ?? PlayerConsts.resolutions.first),
       ),
       'enableCodec': typed<bool>(json['enableCodec'] ?? true),
-      'playerCompatMode': defaultTargetPlatform == TargetPlatform.android
-          ? typed<bool>(json['playerCompatMode'] ?? false)
-          : false,
       'customPlayerOutput': typed<bool>(json['customPlayerOutput'] ?? false),
       'videoOutputDriver': normalizeMpvVideoOutputDriverForPlatform(
         typed<String>(json['videoOutputDriver'] ?? defaultMpvVideoOutputDriverForPlatform(defaultTargetPlatform)),
@@ -330,9 +400,6 @@ class PlayerSettingsController extends GetxController {
       ),
       'floatPlay': typed<bool>(json['floatPlay'] ?? false),
       'windowsPipAlwaysOnTop': typed<bool>(json['windowsPipAlwaysOnTop'] ?? false),
-      'enableRtxVsr': defaultTargetPlatform == TargetPlatform.windows
-          ? typed<bool>(json['enableRtxVsr'] ?? false)
-          : false,
       'audioOnly': typed<bool>(false),
       'useHardStopOnExit': typed<bool>(json['useHardStopOnExit'] ?? false),
       'enablePortraitStreamAdaptation': typed<bool>(json['enablePortraitStreamAdaptation'] ?? true),
@@ -370,14 +437,12 @@ class PlayerSettingsController extends GetxController {
     preferResolution.v = parsed['preferResolution'];
     preferResolutionCellular.v = parsed['preferResolutionCellular'];
     enableCodec.v = parsed['enableCodec'];
-    playerCompatMode.v = parsed['playerCompatMode'];
     customPlayerOutput.v = parsed['customPlayerOutput'];
     videoOutputDriver.v = parsed['videoOutputDriver'];
     audioOutputDriver.v = parsed['audioOutputDriver'];
     videoHardwareDecoder.v = parsed['videoHardwareDecoder'];
     floatPlay.v = parsed['floatPlay'];
     windowsPipAlwaysOnTop.v = parsed['windowsPipAlwaysOnTop'];
-    enableRtxVsr.v = parsed['enableRtxVsr'];
     audioOnly.v = parsed['audioOnly'];
     useHardStopOnExit.v = parsed['useHardStopOnExit'];
     enablePortraitStreamAdaptation.v = parsed['enablePortraitStreamAdaptation'];
@@ -408,7 +473,6 @@ class PlayerSettingsController extends GetxController {
         (player['preferResolutionCellular'] ?? PlayerConsts.resolutions.first) as String,
       ),
       'enableCodec': player['enableCodec'] ?? true,
-      'playerCompatMode': defaultTargetPlatform == TargetPlatform.android ? player['playerCompatMode'] ?? false : false,
       'customPlayerOutput': player['customPlayerOutput'] ?? false,
       'videoOutputDriver': normalizeMpvVideoOutputDriverForPlatform(
         (player['videoOutputDriver'] ?? defaultMpvVideoOutputDriverForPlatform(defaultTargetPlatform)) as String,
@@ -428,7 +492,6 @@ class PlayerSettingsController extends GetxController {
       // this setting moved to WindowSizeController. New exports store it in
       // the windowSize section.
       'rememberPipPosition': player['rememberPipPosition'] ?? true,
-      'enableRtxVsr': defaultTargetPlatform == TargetPlatform.windows ? player['enableRtxVsr'] ?? false : false,
       'audioOnly': false,
       'useHardStopOnExit': player['useHardStopOnExit'] ?? false,
       'enablePortraitStreamAdaptation': player['enablePortraitStreamAdaptation'] ?? true,
