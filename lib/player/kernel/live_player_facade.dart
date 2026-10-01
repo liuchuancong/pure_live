@@ -255,9 +255,23 @@ final class LivePlayerFacade {
   bool hasActivePlaybackSession(LiveRoom room) => _room == room && isPlayingNow;
   bool get isCompactModeActive => false;
   void refreshPortraitPresentationPolicy() {}
-  void attachVideoController(dynamic controller) {}
-  void detachVideoController(dynamic controller) {}
-  bool ownsVideoController(dynamic controller) => false;
+  /// The video controller that currently owns playback (volume, status
+  /// arbitration). Attached when a room's controller is constructed and
+  /// detached on dispose; `ownsVideoController` gates the controller's
+  /// init path — a false answer makes it return before opening the media.
+  dynamic _activeVideoController;
+
+  void attachVideoController(dynamic controller) {
+    _activeVideoController = controller;
+  }
+
+  void detachVideoController(dynamic controller) {
+    if (identical(_activeVideoController, controller)) {
+      _activeVideoController = null;
+    }
+  }
+
+  bool ownsVideoController(dynamic controller) => identical(_activeVideoController, controller);
 
   void _onStateChanged(PlayerCoreState state) {
     final loading = state.playback == PlayerPlaybackState.buffering;
