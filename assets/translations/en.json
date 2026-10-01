@@ -2086,5 +2086,6 @@
   "start": "Start",
   "stop": "Stop",
   "player_preset_section": "One-Click Playback Presets",
-  "player_preset_hint": "Each preset is stored per engine and per platform, independently"
+  "player_preset_hint": "Each preset is stored per engine and per platform, independently",
+  "super_resolution_section": "Super Resolution (Anime4K)"
 }

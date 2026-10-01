@@ -5,6 +5,7 @@ import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/consts/app_consts.dart';
 import 'package:pure_live/player/core/portrait_stream_support.dart';
 import 'package:pure_live/player/kernel/player_preset.dart';
+import 'package:pure_live/player/super_resolution.dart';
 import 'package:pure_live/player/utils/mpv_platform_profile.dart';
 import 'package:pure_live/player/utils/player_consts.dart';
 
@@ -128,6 +129,8 @@ class PlayerSettingsController extends GetxController {
   // room-scoped and controlled by the headphone action or ASMR auto-start.
   final RxBool audioOnly = false.obs;
   final RxBool useHardStopOnExit = hiveBool('useHardStopOnExit', false);
+  /// Anime4K super-resolution mode (Windows/desktop GPUs only).
+  final RxString superResolutionMode = hiveString('superResolutionMode', SuperResolutionMode.off.name);
 
   // Portrait-source presentation. These are deliberately separate from the
   // device orientation and from the global danmaku style.

@@ -2094,5 +2094,6 @@
   "start": "开始",
   "stop": "停止",
   "player_preset_section": "一键播放方案",
-  "player_preset_hint": "每个方案按“当前引擎 × 当前平台”独立保存, 互不影响"
+  "player_preset_hint": "每个方案按“当前引擎 × 当前平台”独立保存, 互不影响",
+  "super_resolution_section": "超分辨率 (Anime4K)"
 }

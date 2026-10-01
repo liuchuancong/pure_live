@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:media_core/media_core.dart';
 import 'package:media_core_media_kit/media_core_media_kit.dart';
 import 'package:pure_live/player/kernel/player_preset.dart';
+import 'package:pure_live/player/super_resolution.dart';
 import 'package:media_core_media_kit/media_core_media_kit.dart' as mkv;
 import 'package:pure_live/common/index.dart';
 
@@ -133,13 +134,21 @@ abstract final class MediaKitLiveProperties {
   ///
   /// The live tuning table first, then the preset's own properties, then
   /// the segment's audio pick — a later option for the same property wins.
-  static List<EngineOption> engineOptions() {
+  static Future<List<EngineOption>> engineOptions() async {
     final segment = _output;
     final properties = <String, String>{...build(), ...segment.presetId.extraProperties};
 
     final options = <EngineOption>[
       for (final entry in properties.entries) EngineOption(entry.key, entry.value),
     ];
+
+    if (superResolutionAvailable) {
+      final shader = await superResolutionOption(_superResolution, await getApplicationSupportDirectory());
+
+      if (shader != null) {
+        options.add(shader);
+      }
+    }
 
     final audio = segment.audioOutputDriver;
     if (audio.trim().isNotEmpty && audio.trim() != 'auto') {
@@ -154,7 +163,13 @@ abstract final class MediaKitLiveProperties {
   /// Called from the factory's `configure` hook: the adapter stashes the
   /// options until its engine exists, so nothing is lost when the kernel
   /// initializes later.
-  static void applyTo(MediaKitPlayerAdapter adapter) {
-    adapter.applyEngineOptions(engineOptions());
+  static Future<void> applyTo(MediaKitPlayerAdapter adapter) async {
+    adapter.applyEngineOptions(await engineOptions());
   }
+
+  /// Whether the super-resolution shaders should mount on this machine.
+  static bool get superResolutionAvailable => Platform.isWindows;
+
+  static SuperResolutionMode get _superResolution =>
+      SuperResolutionMode.fromName(SettingsService.to.player.superResolutionMode.v);
 }
