@@ -61,6 +61,11 @@ class PlayerSettingsController extends GetxController {
 
   static const String _engineOutputsKey = 'engineOutputs';
 
+  /// Bumped on every segment write so preset/segment UI can react: the
+  /// segments map itself is a plain in-memory structure, an [Obx] that
+  /// only reads `currentPreset` would never rebuild.
+  final RxInt outputSegmentRevision = 0.obs;
+
   final Map<String, Map<String, PlayerEngineOutput>> _engineOutputs = <String, Map<String, PlayerEngineOutput>>{};
 
   Map<String, PlayerEngineOutput> _segmentsOf(String engineKey) {
@@ -77,6 +82,7 @@ class PlayerSettingsController extends GetxController {
   }
 
   void _persistSegments() {
+    outputSegmentRevision.v++;
     hiveString(_engineOutputsKey, '').v = jsonEncode(<String, dynamic>{
       for (final engine in _engineOutputs.entries)
         engine.key: <String, dynamic>{
@@ -180,7 +186,7 @@ class PlayerSettingsController extends GetxController {
   // In-memory projection of the current segment; never persisted directly.
   late final RxBool enableCodec = true.obs;
   late final RxBool customPlayerOutput = false.obs;
-  late final RxString videoOutputDriver = 'libmpv'.obs;
+  late final RxString videoOutputDriver = 'auto'.obs;
   late final RxString audioOutputDriver = 'auto'.obs;
   late final RxString videoHardwareDecoder = 'auto-safe'.obs;
   late final RxString videoSync = 'auto'.obs;

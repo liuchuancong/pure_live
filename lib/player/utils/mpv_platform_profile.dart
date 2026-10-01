@@ -34,7 +34,9 @@ const Map<String, String> _iosHardwareDecoders = <String, String>{
 /// live room" report. The richer table stays available to standalone
 /// mpv consumers, not to the embedded player settings.
 const Map<String, String> _desktopVideoOutputDrivers = <String, String>{
+  'auto': 'auto',
   'libmpv': 'libmpv',
+  'null': 'null',
 };
 
 Map<String, String> mpvVideoOutputDriversForPlatform(TargetPlatform platform) {
@@ -43,17 +45,68 @@ Map<String, String> mpvVideoOutputDriversForPlatform(TargetPlatform platform) {
   return _desktopVideoOutputDrivers;
 }
 
+const Map<String, String> _windowsAudioOutputDrivers = <String, String>{
+  'auto': 'auto',
+  'wasapi': 'wasapi (Windows 推荐)',
+  'win32': 'win32 (Legacy)',
+  'sdl': 'sdl',
+  'null': 'null (不输出音频)',
+};
+
+const Map<String, String> _linuxAudioOutputDrivers = <String, String>{
+  'auto': 'auto',
+  'alsa': 'alsa',
+  'pipewire': 'pipewire',
+  'sdl': 'sdl',
+  'null': 'null (不输出音频)',
+};
+
+const Map<String, String> _macosAudioOutputDrivers = <String, String>{
+  'auto': 'auto',
+  'audiounit': 'audiounit',
+  'sdl': 'sdl',
+  'null': 'null (不输出音频)',
+};
+
+const Map<String, String> _windowsHardwareDecoders = <String, String>{
+  'auto': 'auto',
+  'auto-safe': 'auto-safe',
+  'auto-copy': 'auto-copy',
+  'd3d11va': 'd3d11va',
+  'd3d11va-copy': 'd3d11va-copy',
+  'nvdec': 'nvdec',
+  'nvdec-copy': 'nvdec-copy',
+};
+
+const Map<String, String> _linuxHardwareDecoders = <String, String>{
+  'auto': 'auto',
+  'auto-safe': 'auto-safe',
+  'auto-copy': 'auto-copy',
+  'vaapi': 'vaapi',
+  'vaapi-copy': 'vaapi-copy',
+  'vdpau': 'vdpau',
+  'nvdec': 'nvdec',
+  'nvdec-copy': 'nvdec-copy',
+};
+
 Map<String, String> mpvAudioOutputDriversForPlatform(TargetPlatform platform) => switch (platform) {
   TargetPlatform.android => _androidAudioOutputDrivers,
   TargetPlatform.iOS => _iosAudioOutputDrivers,
+  TargetPlatform.windows => _windowsAudioOutputDrivers,
+  TargetPlatform.macOS => _macosAudioOutputDrivers,
+  TargetPlatform.linux => _linuxAudioOutputDrivers,
   _ => PlayerConsts.audioOutputDrivers,
 };
 
-Map<String, String> mpvHardwareDecodersForPlatform(TargetPlatform platform) =>
-    platform == TargetPlatform.iOS ? _iosHardwareDecoders : PlayerConsts.hardwareDecoder;
+Map<String, String> mpvHardwareDecodersForPlatform(TargetPlatform platform) => switch (platform) {
+  TargetPlatform.android => PlayerConsts.hardwareDecoder,
+  TargetPlatform.iOS || TargetPlatform.macOS => _iosHardwareDecoders,
+  TargetPlatform.windows => _windowsHardwareDecoders,
+  TargetPlatform.linux => _linuxHardwareDecoders,
+  _ => PlayerConsts.hardwareDecoder,
+};
 
-String defaultMpvVideoOutputDriverForPlatform(TargetPlatform platform) =>
-    platform == TargetPlatform.android ? 'libmpv' : 'libmpv';
+String defaultMpvVideoOutputDriverForPlatform(TargetPlatform platform) => 'auto';
 
 String normalizeMpvVideoOutputDriverForPlatform(String value, TargetPlatform platform) => _normalizeMpvOption(
   value,

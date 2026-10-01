@@ -33,6 +33,7 @@ class PlayerPresetPage extends GetView<SettingsService> {
                     title: Text(preset.nameZh, style: theme.textTheme.titleMedium),
                     subtitle: Text(preset.descriptionZh, style: theme.textTheme.bodySmall),
                     trailing: Obx(() {
+                      final _ = SettingsService.to.player.outputSegmentRevision.value;
                       final active = SettingsService.to.player.currentPreset == preset;
                       return active
                           ? Icon(Remix.checkbox_circle_fill, color: theme.colorScheme.primary)
