@@ -391,7 +391,7 @@ class DouyinSite implements LiveSite, LiveSiteRecordRoomResolver {
     if (roomId == null || roomId.isEmpty || platform == null || platform.isEmpty) {
       return room;
     }
-    final fresh = await getRoomDetail(roomId: roomId, platform: platform);
+    final fresh = await _resolveDetail(roomId);
     // Pad whatever the profile endpoint left empty (avatar/cover/nick drift
     // between responses) with the fields the room already carries, so a
     // partial response never blanks the UI. fillFromDetail covers
@@ -405,8 +405,13 @@ class DouyinSite implements LiveSite, LiveSiteRecordRoomResolver {
     return padded;
   }
 
+  // Transitional shim: removed together with the pair-based detail API on
+  // LiveSite (class implements LiveSite, so the member must exist until then).
   @override
-  Future<LiveRoom> getRoomDetail({required String platform, required String roomId}) async {
+  Future<LiveRoom> getRoomDetail({required String platform, required String roomId}) =>
+      getRoomDetailForRoom(LiveRoom(roomId: roomId, platform: platform));
+
+  Future<LiveRoom> _resolveDetail(String roomId) async {
     if (roomId.length <= 16) {
       return await getRoomDetailByWebRid(roomId);
     }
@@ -417,7 +422,7 @@ class DouyinSite implements LiveSite, LiveSiteRecordRoomResolver {
   Future<LiveRoom> getRoomDetailForRecording({required String platform, required String roomId}) {
     // Both the API and HTML paths propagate their final error and retain the
     // stream_url envelope required to resolve every advertised sdk_key.
-    return getRoomDetail(platform: platform, roomId: roomId);
+    return _resolveDetail(roomId);
   }
 
   Future<LiveRoom> getRoomDetailByRoomId(String roomId) async {
@@ -880,7 +885,7 @@ class DouyinSite implements LiveSite, LiveSiteRecordRoomResolver {
 
   @override
   Future<bool> getLiveStatus({required String platform, required String roomId}) async {
-    var result = await getRoomDetail(roomId: roomId, platform: platform);
+    var result = await getRoomDetailForRoom(LiveRoom(roomId: roomId, platform: platform));
     return result.status!;
   }
 
