@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:flutter/material.dart';
+
 
 import 'package:pure_live/common/index.dart';
 
@@ -226,7 +226,7 @@ class _PlayerGuidePageState extends State<PlayerGuidePage> {
               margin: const EdgeInsets.only(bottom: 10),
               clipBehavior: Clip.antiAlias,
               child: ExpansionTile(
-                key: PageStorageKey('guide-' + i.toString()),
+                key: PageStorageKey('guide-$i'),
                 initiallyExpanded: i == 0,
                 leading: Icon(chapters[i].icon, color: theme.colorScheme.primary),
                 title: Text(chapters[i].title(_zh), style: theme.textTheme.titleMedium),
