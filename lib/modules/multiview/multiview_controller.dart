@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:developer' as developer;
+
 import 'package:pure_live/common/index.dart';
 import 'package:flame_barrage/flame_barrage.dart';
 import 'package:pure_live/model/live_play_quality.dart';
@@ -93,11 +94,8 @@ class MultiviewController extends GetxController {
     final platform = room.platform!;
     final liveSite = site.liveSite;
     final detail = liveSite is LiveSiteRecordRoomResolver
-        ? await (liveSite as LiveSiteRecordRoomResolver).getRoomDetailForRecording(
-            roomId: room.roomId!,
-            platform: platform,
-          )
-        : await liveSite.getRoomDetailForRoom(room);
+        ? await (liveSite as LiveSiteRecordRoomResolver).getRoomDetailForRecording(room)
+        : await liveSite.getRoomDetail(room);
     discoveryScope?.checkActive();
     if (detail.isExplicitlyOfflineNow) {
       throw MultiviewRoomOffline(detail);
@@ -236,7 +234,6 @@ class MultiviewController extends GetxController {
   final RxBool danmakuEnabled = false.obs;
   final BarrageController barrageController = BarrageController();
 
-
   final MultiviewStreamResolver? _streamResolver;
   final Site Function(String) _siteFor;
   final Map<int, LiveQualityDiscoveryScope> _discoveryScopes = {};
@@ -281,10 +278,7 @@ class MultiviewController extends GetxController {
     final host = mc.KernelPoolPlayerHost(PlayerKernelService.instance.kernel);
     final controller = wall.MultiviewController(
       players: host,
-      config: wall.MultiviewConfig.defaults.copyWith(
-        layout: _wallLayout(layout.value),
-        maxCells: maxCellCount,
-      ),
+      config: wall.MultiviewConfig.defaults.copyWith(layout: _wallLayout(layout.value), maxCells: maxCellCount),
     );
     _wall = controller;
     _wallSub = controller.onChanged.listen((_) => _syncFromWall());
@@ -394,7 +388,10 @@ class MultiviewController extends GetxController {
       var playing = wallCell.isPlaying;
       switch (status) {
         case MultiviewCellStatus.playing:
-          _updateCell(index, cells[index].copyWith(status: status, clearError: true, videoController: _wallVideo(index)));
+          _updateCell(
+            index,
+            cells[index].copyWith(status: status, clearError: true, videoController: _wallVideo(index)),
+          );
         case MultiviewCellStatus.resolving:
           if (cells[index].status == MultiviewCellStatus.empty) continue;
           _updateCell(index, cells[index].copyWith(status: status));
@@ -489,7 +486,10 @@ class MultiviewController extends GetxController {
     final mapped = _wallLayout(newLayout);
     if (controller.config.layout == mapped) return;
     await controller.updateConfig(
-      controller.config.copyWith(layout: mapped, maxCells: newLayout == MultiviewLayout.focus ? maxCellCount : mapped.capacity),
+      controller.config.copyWith(
+        layout: mapped,
+        maxCells: newLayout == MultiviewLayout.focus ? maxCellCount : mapped.capacity,
+      ),
     );
   }
 
@@ -681,7 +681,6 @@ class MultiviewController extends GetxController {
     }
     unawaited(_syncDanmakuSession());
   }
-
 
   /// 墙路径源：URL/请求头/租约到期与续期闭包全部由 pure_live 业务供给。
   /// owned 私有协议源走 custom-input recipe（createInput 闭包即 recipe），

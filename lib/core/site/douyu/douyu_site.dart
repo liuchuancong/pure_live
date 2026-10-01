@@ -479,13 +479,10 @@ class DouyuSite
   }
 
   @override
-  Future<LiveRoom> getRoomDetailForRoom(LiveRoom room) async {
-    final roomId = room.roomId;
-    final platform = room.platform;
-    if (roomId == null || roomId.isEmpty || platform == null || platform.isEmpty) {
-      return room;
-    }
-    final fresh = await _resolveDetail(roomId, platform);
+  Future<LiveRoom> getRoomDetail(LiveRoom room) async {
+    final identity = room.detailIdentity;
+    if (identity == null) return room;
+    final fresh = await _resolveDetail(identity.roomId, identity.platform);
     // Pad whatever the profile endpoint left empty (avatar/cover/nick drift
     // between responses) with the fields the room already carries, so a
     // partial response never blanks the UI. fillFromDetail covers
@@ -498,12 +495,6 @@ class DouyuSite
     }
     return padded;
   }
-
-  // Transitional shim: removed together with the pair-based detail API on
-  // LiveSite (class implements LiveSite, so the member must exist until then).
-  @override
-  Future<LiveRoom> getRoomDetail({required String platform, required String roomId}) =>
-      getRoomDetailForRoom(LiveRoom(roomId: roomId, platform: platform));
 
   Future<LiveRoom> _resolveDetail(String roomId, String platform) async {
     try {
@@ -525,19 +516,23 @@ class DouyuSite
   }
 
   @override
-  Future<LiveRoom> getRoomDetailForRefresh({required String platform, required String roomId}) async {
-    final roomInfo = await _fetchRoomInfo(roomId);
+  Future<LiveRoom> getRoomDetailForRefresh(LiveRoom room) async {
+    final identity = room.detailIdentity;
+    if (identity == null) return room;
+    final roomInfo = await _fetchRoomInfo(identity.roomId);
 
-    return _buildRoom(roomInfo, roomId: roomId);
+    return _buildRoom(roomInfo, roomId: identity.roomId);
   }
 
   @override
-  Future<LiveRoom> getRoomDetailForRecording({required String platform, required String roomId}) async {
+  Future<LiveRoom> getRoomDetailForRecording(LiveRoom room) async {
+    final identity = room.detailIdentity;
+    if (identity == null) return room;
     // Do not use getRoomDetail here: its UI fallback converts a failed betard
     // request into an offline room, which previously stopped recording before
     // Douyu signing/getH5PlayV1 was reached.
-    final roomInfo = await _fetchRoomInfo(roomId);
-    return _buildRoom(roomInfo, roomId: roomId);
+    final roomInfo = await _fetchRoomInfo(identity.roomId);
+    return _buildRoom(roomInfo, roomId: identity.roomId);
   }
 
   Future<Map<dynamic, dynamic>> _fetchRoomInfo(String roomId) async {
@@ -671,12 +666,6 @@ class DouyuSite
     }
 
     return items;
-  }
-
-  @override
-  Future<bool> getLiveStatus({required String platform, required String roomId}) async {
-    var roomInfo = await _fetchRoomInfo(roomId);
-    return isLiveRoomPayload(roomInfo);
   }
 
   int parseHotNum(String hn) {

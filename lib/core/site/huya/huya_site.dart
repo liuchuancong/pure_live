@@ -316,7 +316,7 @@ class HuyaSite
 
     // Reacquire the room snapshot and build a fresh signature. HLS uses its
     // own AntiCode; FLV first obtains independent native WUP material.
-    final refreshedDetail = await getRoomDetailForRecording(platform: platform, roomId: roomId);
+    final refreshedDetail = await getRoomDetailForRecording(LiveRoom(roomId: roomId, platform: platform));
     if (refreshedDetail.isExplicitlyOfflineNow) {
       return LivePlayUrlResolution(urls: const <String>[], appliedQualityData: quality.selectionId);
     }
@@ -563,13 +563,10 @@ class HuyaSite
   }
 
   @override
-  Future<LiveRoom> getRoomDetailForRoom(LiveRoom room) async {
-    final roomId = room.roomId;
-    final platform = room.platform;
-    if (roomId == null || roomId.isEmpty || platform == null || platform.isEmpty) {
-      return room;
-    }
-    final fresh = await _loadRoomDetail(platform: platform, roomId: roomId, allowUiFallback: true);
+  Future<LiveRoom> getRoomDetail(LiveRoom room) async {
+    final identity = room.detailIdentity;
+    if (identity == null) return room;
+    final fresh = await _loadRoomDetail(platform: identity.platform, roomId: identity.roomId, allowUiFallback: true);
     // Pad whatever the profile endpoint left empty (avatar/cover/nick drift
     // between responses) with the fields the room already carries, so a
     // partial response never blanks the UI. fillFromDetail covers
@@ -583,16 +580,11 @@ class HuyaSite
     return padded;
   }
 
-  // Transitional shim: removed together with the pair-based detail API on
-  // LiveSite (class implements LiveSite, so the member must exist until then).
   @override
-  Future<LiveRoom> getRoomDetail({required String platform, required String roomId}) {
-    return getRoomDetailForRoom(LiveRoom(roomId: roomId, platform: platform));
-  }
-
-  @override
-  Future<LiveRoom> getRoomDetailForRecording({required String platform, required String roomId}) {
-    return _loadRoomDetail(platform: platform, roomId: roomId, allowUiFallback: false);
+  Future<LiveRoom> getRoomDetailForRecording(LiveRoom room) async {
+    final identity = room.detailIdentity;
+    if (identity == null) return room;
+    return _loadRoomDetail(platform: identity.platform, roomId: identity.roomId, allowUiFallback: false);
   }
 
   Future<LiveRoom> _loadRoomDetail({
@@ -823,13 +815,15 @@ class HuyaSite
   }
 
   @override
-  Future<LiveRoom> getRoomDetailForRefresh({required String platform, required String roomId}) async {
+  Future<LiveRoom> getRoomDetailForRefresh(LiveRoom room) async {
+    final identity = room.detailIdentity;
+    if (identity == null) return room;
     final resultText = await HttpClient.instance.getText(
       'https://mp.huya.com/cache.php',
       queryParameters: <String, dynamic>{
         'm': 'Live',
         'do': 'profileRoom',
-        'roomid': roomId,
+        'roomid': identity.roomId,
         'showSecret': 1,
         '_': DateTime.now().millisecondsSinceEpoch,
       },
@@ -863,7 +857,7 @@ class HuyaSite
       popularity: audience.popularity,
       onlineViewers: audience.onlineViewers,
       audienceMetricType: AudienceMetricType.popularity,
-      roomId: roomId,
+      roomId: identity.roomId,
       area: liveData['gameFullName']?.toString() ?? '',
       title: liveData['introduction']?.toString() ?? '',
       nick: profile['nick']?.toString() ?? '',
@@ -874,7 +868,7 @@ class HuyaSite
       status: liveStatus == LiveStatus.live,
       liveStatus: liveStatus,
       platform: Sites.huyaSite,
-      link: 'https://www.huya.com/$roomId',
+      link: 'https://www.huya.com/${identity.roomId}',
     );
   }
 
@@ -970,12 +964,6 @@ class HuyaSite
       items.add(anchorItem);
     }
     return items;
-  }
-
-  @override
-  Future<bool> getLiveStatus({required String platform, required String roomId}) async {
-    final room = await getRoomDetailForRefresh(platform: platform, roomId: roomId);
-    return room.isLiveNow;
   }
 
   /// 匿名登录获取uid
@@ -1074,7 +1062,7 @@ class HuyaSite
   @override
   Future<List<LiveSuperChatMessage>> getSuperChatMessage({required String roomId}) async {
     List<LiveSuperChatMessage> ls = [];
-    LiveRoom detail = await getRoomDetailForRoom(LiveRoom(roomId: roomId, platform: Sites.huyaSite));
+    LiveRoom detail = await getRoomDetail(LiveRoom(roomId: roomId, platform: Sites.huyaSite));
     HuyaDanmakuArgs args = detail.danmakuData as HuyaDanmakuArgs;
     if (args.topSid != 0) {
       ls = await getHuyaSuperChatMessageList(lPid: args.topSid, first: true);

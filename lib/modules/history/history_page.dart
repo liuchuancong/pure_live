@@ -43,9 +43,8 @@ class _HistoryPageState extends State<HistoryPage> {
           return room;
         }
         try {
-          final newRoom =
-              await (widget.loadRoom?.call(room) ?? Sites.of(platform).liveSite.getRoomDetailForRoom(room))
-                  .timeout(const Duration(seconds: 12));
+          final newRoom = await (widget.loadRoom?.call(room) ?? Sites.of(platform).liveSite.getRoomDetail(room))
+              .timeout(const Duration(seconds: 12));
           return preserveHistoryMetadata(newRoom, room);
         } catch (_) {
           result = false;

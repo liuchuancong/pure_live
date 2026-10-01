@@ -305,7 +305,7 @@ class LivePlayController extends GetxController
     final platform = previous.platform;
     if (roomId == null || platform == null) return;
     try {
-      final fetched = await currentSite.liveSite.getRoomDetailForRoom(previous);
+      final fetched = await currentSite.liveSite.getRoomDetail(previous);
       if (isClosed) return;
       final current = state.value.room.detail;
       if (current?.roomId != roomId || current?.platform != platform) return;
@@ -702,7 +702,7 @@ class LivePlayController extends GetxController
     beginRoomMetadataLoad();
 
     try {
-      final fetchedRoom = await currentSite.liveSite.getRoomDetailForRoom(requestedRoom);
+      final fetchedRoom = await currentSite.liveSite.getRoomDetail(requestedRoom);
 
       var liveRoom = fetchedRoom.withAudienceFallbackFrom(requestedRoom);
       liveRoom = liveRoom.fillFromDetail(requestedRoom);

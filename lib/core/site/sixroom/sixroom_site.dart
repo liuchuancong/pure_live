@@ -192,22 +192,25 @@ final class SixRoomSite extends LiveSite
   }
 
   @override
-  Future<LiveRoom> getRoomDetailForRoom(LiveRoom room) async {
-    final roomId = room.roomId;
-    final platform = room.platform;
-    if (roomId == null || roomId.isEmpty || platform == null || platform.isEmpty) {
-      return room;
-    }
-    return _detail(roomId, platform, includeMedia: true);
+  Future<LiveRoom> getRoomDetail(LiveRoom room) async {
+    final identity = room.detailIdentity;
+    if (identity == null) return room;
+    return _detail(identity.roomId, identity.platform, includeMedia: true);
   }
 
   @override
-  Future<LiveRoom> getRoomDetailForRecording({required String roomId, required String platform}) =>
-      _detail(roomId, platform, includeMedia: true);
+  Future<LiveRoom> getRoomDetailForRecording(LiveRoom room) async {
+    final identity = room.detailIdentity;
+    if (identity == null) return room;
+    return _detail(identity.roomId, identity.platform, includeMedia: true);
+  }
 
   @override
-  Future<LiveRoom> getRoomDetailForRefresh({required String roomId, required String platform}) =>
-      _detail(roomId, platform, includeMedia: false);
+  Future<LiveRoom> getRoomDetailForRefresh(LiveRoom room) async {
+    final identity = room.detailIdentity;
+    if (identity == null) return room;
+    return _detail(identity.roomId, identity.platform, includeMedia: false);
+  }
 
   SixRoomRoom _snapshot(LiveRoom detail) {
     final roomId = _roomId(detail.roomId ?? '', detail.platform ?? '');

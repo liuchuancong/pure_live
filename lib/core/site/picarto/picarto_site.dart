@@ -81,16 +81,17 @@ class PicartoSite extends LiveSite
   }) => _api.searchProfiles(keyword, page: page, pageSize: pageSize, cancel: cancel);
 
   @override
-  Future<LiveRoom> getRoomDetailForRefresh({required String roomId, required String platform}) async =>
-      (await _api.detail(roomId)).room;
+  Future<LiveRoom> getRoomDetailForRefresh(LiveRoom room) async {
+    final identity = room.detailIdentity;
+    if (identity == null) return room;
+    return (await _api.detail(identity.roomId)).room;
+  }
+
   @override
-  Future<LiveRoom> getRoomDetailForRoom(LiveRoom room) async {
-    final roomId = room.roomId;
-    final platform = room.platform;
-    if (roomId == null || roomId.isEmpty || platform == null || platform.isEmpty) {
-      return room;
-    }
-    return _resolveDetail(roomId);
+  Future<LiveRoom> getRoomDetail(LiveRoom room) async {
+    final identity = room.detailIdentity;
+    if (identity == null) return room;
+    return _resolveDetail(identity.roomId);
   }
 
   Future<LiveRoom> _resolveDetail(String roomId) async {
@@ -100,8 +101,12 @@ class PicartoSite extends LiveSite
   }
 
   @override
-  Future<LiveRoom> getRoomDetailForRecording({required String roomId, required String platform}) =>
-      _resolveDetail(roomId);
+  Future<LiveRoom> getRoomDetailForRecording(LiveRoom room) async {
+    final identity = room.detailIdentity;
+    if (identity == null) return room;
+    return _resolveDetail(identity.roomId);
+  }
+
   @override
   Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom detail}) async {
     if (detail.isExplicitlyOfflineNow) return [];
@@ -124,7 +129,7 @@ class PicartoSite extends LiveSite
     required LiveRoom detail,
     required LivePlayQuality quality,
   }) async {
-    final fresh = await getRoomDetailForRoom(detail);
+    final fresh = await getRoomDetail(detail);
     return LivePlayUrlResolution(
       urls: await getPlayUrls(detail: fresh, quality: quality),
       appliedQualityData: quality.selectionId,

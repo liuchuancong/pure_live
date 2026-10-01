@@ -110,13 +110,10 @@ class IptvSite implements LiveSite, LiveSiteRecordRoomResolver {
   // =========================================================
 
   @override
-  Future<LiveRoom> getRoomDetailForRoom(LiveRoom room) async {
-    final roomId = room.roomId;
-    final platform = room.platform;
-    if (roomId == null || roomId.isEmpty || platform == null || platform.isEmpty) {
-      return room;
-    }
-    final fresh = await _loadDetail(roomId);
+  Future<LiveRoom> getRoomDetail(LiveRoom room) async {
+    final identity = room.detailIdentity;
+    if (identity == null) return room;
+    final fresh = await _loadDetail(identity.roomId);
     // Pad response gaps from the room the caller already holds. fillFromDetail
     // covers nick/avatar/area; the cover is padded explicitly because a blank
     // cover is the most visible symptom of a partial profile response.
@@ -127,12 +124,6 @@ class IptvSite implements LiveSite, LiveSiteRecordRoomResolver {
     }
     return padded;
   }
-
-  // Transitional shim: removed together with the pair-based detail API on
-  // LiveSite (class implements LiveSite, so the member must exist until then).
-  @override
-  Future<LiveRoom> getRoomDetail({required String platform, required String roomId}) =>
-      getRoomDetailForRoom(LiveRoom(roomId: roomId, platform: platform));
 
   Future<LiveRoom> _loadDetail(String roomId) async {
     final db = Get.find<DbService>().db;
@@ -169,11 +160,13 @@ class IptvSite implements LiveSite, LiveSiteRecordRoomResolver {
   }
 
   @override
-  Future<LiveRoom> getRoomDetailForRecording({required String platform, required String roomId}) {
+  Future<LiveRoom> getRoomDetailForRecording(LiveRoom room) async {
+    final identity = room.detailIdentity;
+    if (identity == null) return room;
     // Imported channels already store their playback URL as room data. The
     // database lookup is authoritative and does not use a presentation
     // fallback, so the same loader is the strict recording contract.
-    return _loadDetail(roomId);
+    return _loadDetail(identity.roomId);
   }
 
   Future<String?> _resolveEpgChannelId(Channel channel, String currentEpgSourceId) async {
@@ -353,15 +346,6 @@ class IptvSite implements LiveSite, LiveSiteRecordRoomResolver {
 
   @override
   LiveDanmaku getDanmaku() => EmptyDanmaku();
-
-  // =========================================================
-  // 直播状态
-  // =========================================================
-
-  @override
-  Future<bool> getLiveStatus({required String platform, required String roomId}) async {
-    return true;
-  }
 
   // =========================================================
   // 超级留言

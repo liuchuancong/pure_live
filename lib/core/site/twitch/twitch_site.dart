@@ -16,19 +16,16 @@ import 'package:pure_live/core/utils/twitch/twitch_web_integrity.dart';
 import 'package:pure_live/core/utils/live_quality_label.dart';
 
 class TwitchSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResolver {
-
   @override
   // A failed lookup is not an offline channel: reporting it as offline showed
   // "not live" for live channels whenever Twitch or the proxy failed, with no
   // retry. Let the room page present the load error like other platforms.
-  Future<LiveRoom> getRoomDetailForRoom(LiveRoom room) {
-    final roomId = room.roomId;
-    final platform = room.platform;
-    if (roomId == null || roomId.isEmpty || platform == null || platform.isEmpty) {
-      return Future.value(room);
-    }
-    return _loadRoomDetail(roomId);
+  Future<LiveRoom> getRoomDetail(LiveRoom room) {
+    final identity = room.detailIdentity;
+    if (identity == null) return Future.value(room);
+    return _loadRoomDetail(identity.roomId);
   }
+
   @override
   String id = Sites.twitchSite;
 
@@ -536,16 +533,6 @@ class TwitchSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomR
   LiveDanmaku getDanmaku() => TwitchDanmaku();
 
   @override
-  Future<bool> getLiveStatus({required String platform, required String roomId}) async {
-    try {
-      var detail = await getRoomDetailForRoom(LiveRoom(roomId: roomId, platform: platform));
-      return detail.isLiveNow;
-    } catch (e) {
-      return false;
-    }
-  }
-
-  @override
   Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom detail}) async {
     List<LivePlayQuality> qualities = <LivePlayQuality>[];
     if (!detail.isLiveNow) return qualities;
@@ -702,20 +689,18 @@ class TwitchSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomR
     return items;
   }
 
-  // Transitional shim: removed together with the pair-based detail API on
-  // LiveSite (class implements LiveSite, so the member must exist until then).
   @override
-  Future<LiveRoom> getRoomDetail({required String platform, required String roomId}) =>
-      getRoomDetailForRoom(LiveRoom(roomId: roomId, platform: platform));
-
-  @override
-  Future<LiveRoom> getRoomDetailForRefresh({required String platform, required String roomId}) {
-    return _loadRoomDetail(roomId);
+  Future<LiveRoom> getRoomDetailForRefresh(LiveRoom room) async {
+    final identity = room.detailIdentity;
+    if (identity == null) return room;
+    return _loadRoomDetail(identity.roomId);
   }
 
   @override
-  Future<LiveRoom> getRoomDetailForRecording({required String platform, required String roomId}) {
-    return _loadRoomDetail(roomId);
+  Future<LiveRoom> getRoomDetailForRecording(LiveRoom room) async {
+    final identity = room.detailIdentity;
+    if (identity == null) return room;
+    return _loadRoomDetail(identity.roomId);
   }
 
   Future<LiveRoom> _loadRoomDetail(String roomId) async {

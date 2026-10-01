@@ -149,7 +149,7 @@ class RecorderController extends GetxService {
     final site = _siteResolver(task.platform);
     final engine = site.getDanmaku();
     if (engine is EmptyDanmaku) return null;
-    final room = await site.getRoomDetailForRoom(LiveRoom(roomId: task.roomId, platform: task.platform));
+    final room = await site.getRoomDetail(LiveRoom(roomId: task.roomId, platform: task.platform));
     engine.onMessage = onMessage;
     try {
       await engine.start(room.danmakuData).timeout(const Duration(seconds: 20));
@@ -1351,8 +1351,10 @@ class RecorderController extends GetxService {
     try {
       final site = _siteResolver(task.platform);
       final response = site is LiveSiteRoomRefresher
-          ? (site as LiveSiteRoomRefresher).getRoomDetailForRefresh(roomId: task.roomId, platform: task.platform)
-          : site.getRoomDetailForRoom(LiveRoom(roomId: task.roomId, platform: task.platform));
+          ? (site as LiveSiteRoomRefresher).getRoomDetailForRefresh(
+              LiveRoom(roomId: task.roomId, platform: task.platform),
+            )
+          : site.getRoomDetail(LiveRoom(roomId: task.roomId, platform: task.platform));
       // This bounds controller waiting, not the adapter's underlying socket.
       // A late success/error remains isolated by request ownership.
       final room = await response.timeout(_pollTimeout);

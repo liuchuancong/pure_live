@@ -345,13 +345,10 @@ class SoopSite extends LiveSite implements LiveSiteRoomRefresher, LiveSiteRecord
   }
 
   @override
-  Future<LiveRoom> getRoomDetailForRoom(LiveRoom room) async {
-    final roomId = room.roomId;
-    final platform = room.platform;
-    if (roomId == null || roomId.isEmpty || platform == null || platform.isEmpty) {
-      return room;
-    }
-    return _resolveDetail(roomId);
+  Future<LiveRoom> getRoomDetail(LiveRoom room) async {
+    final identity = room.detailIdentity;
+    if (identity == null) return room;
+    return _resolveDetail(identity.roomId);
   }
 
   Future<LiveRoom> _resolveDetail(String roomId) async {
@@ -380,8 +377,10 @@ class SoopSite extends LiveSite implements LiveSiteRoomRefresher, LiveSiteRecord
   }
 
   @override
-  Future<LiveRoom> getRoomDetailForRefresh({required String platform, required String roomId}) async {
-    final data = await getPlayerLiveApiData(roomId: roomId);
+  Future<LiveRoom> getRoomDetailForRefresh(LiveRoom room) async {
+    final identity = room.detailIdentity;
+    if (identity == null) return room;
+    final data = await getPlayerLiveApiData(roomId: identity.roomId);
     final channel = data['CHANNEL'];
     if (channel is! Map) {
       throw const FormatException('SOOP channel metadata is missing');
@@ -393,10 +392,10 @@ class SoopSite extends LiveSite implements LiveSiteRoomRefresher, LiveSiteRecord
     }
     if (resultCode == 0) {
       // SOOP documents zero as an explicit no-live response.
-      return LiveRoom(roomId: roomId, platform: Sites.soopSite, status: false, liveStatus: LiveStatus.offline);
+      return LiveRoom(roomId: identity.roomId, platform: Sites.soopSite, status: false, liveStatus: LiveStatus.offline);
     }
     if (resultCode == -2) {
-      return LiveRoom(roomId: roomId, platform: Sites.soopSite, status: false, liveStatus: LiveStatus.banned);
+      return LiveRoom(roomId: identity.roomId, platform: Sites.soopSite, status: false, liveStatus: LiveStatus.banned);
     }
     if (resultCode != 1) {
       // Login/session and malformed business responses are not proof that the
@@ -404,27 +403,29 @@ class SoopSite extends LiveSite implements LiveSiteRoomRefresher, LiveSiteRecord
       throw StateError('SOOP room metadata returned code $resultCode');
     }
     // Favourite cards do not need websocket credentials or playback signing.
-    return getLiveRoomByApi(data, null, roomId);
+    return getLiveRoomByApi(data, null, identity.roomId);
   }
 
   @override
-  Future<LiveRoom> getRoomDetailForRecording({required String platform, required String roomId}) async {
+  Future<LiveRoom> getRoomDetailForRecording(LiveRoom room) async {
+    final identity = room.detailIdentity;
+    if (identity == null) return room;
     // The player API response contains viewpreset/rmd/cdn/bno, all of which
     // are required later to sign the selected recording URL. Skip websocket
     // credentials but keep the complete playback envelope.
-    final data = await getPlayerLiveApiData(roomId: roomId);
+    final data = await getPlayerLiveApiData(roomId: identity.roomId);
     final channel = data['CHANNEL'];
     if (channel is! Map) throw const FormatException('SOOP recording metadata is missing');
     final rawCode = channel['RESULT'];
     final resultCode = rawCode is num ? rawCode.toInt() : int.tryParse(rawCode?.toString() ?? '');
     if (resultCode == 0) {
-      return LiveRoom(roomId: roomId, platform: Sites.soopSite, status: false, liveStatus: LiveStatus.offline);
+      return LiveRoom(roomId: identity.roomId, platform: Sites.soopSite, status: false, liveStatus: LiveStatus.offline);
     }
     if (resultCode == -2) {
-      return LiveRoom(roomId: roomId, platform: Sites.soopSite, status: false, liveStatus: LiveStatus.banned);
+      return LiveRoom(roomId: identity.roomId, platform: Sites.soopSite, status: false, liveStatus: LiveStatus.banned);
     }
     if (resultCode != 1) throw StateError('SOOP recording metadata returned code $resultCode');
-    return getLiveRoomByApi(data, null, roomId);
+    return getLiveRoomByApi(data, null, identity.roomId);
   }
 
   Future<LiveRoom> getLiveRoomByApi(

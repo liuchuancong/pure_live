@@ -220,28 +220,25 @@ class LiveSite {
     return Future.value(<LiveRoom>[]);
   }
 
-  /// Room-first detail fetch for callers that already hold a [LiveRoom].
+  /// Room-detail fetch. The [room] carries the request identity (platform +
+  /// roomId) and any locally known metadata.
   ///
-  /// Equivalent to [getRoomDetail] by default. Adapters MAY override it to
-  /// reuse fields the room already carries (cached link, resolved ids,
-  /// avatar/cover) instead of re-deriving them from platform + roomId.
-  /// Callers keep [getRoomDetail] for places that only have the pair (deep
-  /// links, persisted history, recorder tasks restored from disk).
-  Future<LiveRoom> getRoomDetailForRoom(LiveRoom room) async {
+  /// Adapters MAY reuse fields the room already carries (cached link, resolved
+  /// ids, avatar/cover) and pad partial responses from it instead of
+  /// re-deriving everything from the identity. Callers that only hold the
+  /// identity (deep links, persisted history, recorder tasks restored from
+  /// disk) pass a `LiveRoom(roomId: ..., platform: ...)` stub.
+  Future<LiveRoom> getRoomDetail(LiveRoom room) async {
     final roomId = room.roomId;
     final platform = room.platform;
     if (roomId == null || roomId.isEmpty || platform == null || platform.isEmpty) {
       return room;
     }
-    return getRoomDetail(roomId: roomId, platform: platform);
-  }
-
-  Future<LiveRoom> getRoomDetail({required String roomId, required String platform}) async {
     return Future.value(
       LiveRoom(
         cover: '',
         watching: '',
-        roomId: '',
+        roomId: roomId,
         // The base implementation has no platform evidence. Treat it as
         // pending/unknown instead of fabricating an authoritative offline
         // response; concrete adapters must explicitly report offline/banned.
@@ -263,10 +260,6 @@ class LiveSite {
 
   Future<List<String>> getPlayUrls({required LiveRoom detail, required LivePlayQuality quality}) async {
     return Future.value(<String>[]);
-  }
-
-  Future<bool> getLiveStatus({required String platform, required String roomId}) async {
-    return Future.value(false);
   }
 
   Future<List<LiveSuperChatMessage>> getSuperChatMessage({required String roomId}) async {
@@ -324,7 +317,7 @@ extension LiveSitePlayUrlResolution on LiveSite {
 /// calls without changing the full room-entry contract for every site
 /// implementation.
 abstract interface class LiveSiteRoomRefresher {
-  Future<LiveRoom> getRoomDetailForRefresh({required String roomId, required String platform});
+  Future<LiveRoom> getRoomDetailForRefresh(LiveRoom room);
 }
 
 /// Strict, playback-complete room lookup used before a recording starts.
@@ -344,5 +337,5 @@ abstract interface class LiveSiteRoomRefresher {
 /// * return an explicit offline/banned room only when the platform said so;
 /// * retain every field required by [LiveSite.getPlayQualites].
 abstract interface class LiveSiteRecordRoomResolver {
-  Future<LiveRoom> getRoomDetailForRecording({required String roomId, required String platform});
+  Future<LiveRoom> getRoomDetailForRecording(LiveRoom room);
 }

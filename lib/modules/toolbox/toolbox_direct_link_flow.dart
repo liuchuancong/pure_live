@@ -30,7 +30,7 @@ class ToolBoxDirectLinkFlow {
       return;
     }
     final site = _siteFor(platform);
-    final detail = await scope.wait(() => site.getRoomDetailForRoom(room.normalizedIdentityCopy()));
+    final detail = await scope.wait(() => site.getRoomDetail(room.normalizedIdentityCopy()));
     final qualities = site is LiveQualityDiscovery
         ? await scope.waitCancellable((cancel) => site.discoverPlayQualities(detail: detail, cancel: cancel))
         : await scope.wait(() => site.discoverPlayQualities(detail: detail, cancel: scope.cancelToken));

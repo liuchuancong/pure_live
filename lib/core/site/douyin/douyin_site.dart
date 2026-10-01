@@ -385,13 +385,10 @@ class DouyinSite implements LiveSite, LiveSiteRecordRoomResolver {
   }
 
   @override
-  Future<LiveRoom> getRoomDetailForRoom(LiveRoom room) async {
-    final roomId = room.roomId;
-    final platform = room.platform;
-    if (roomId == null || roomId.isEmpty || platform == null || platform.isEmpty) {
-      return room;
-    }
-    final fresh = await _resolveDetail(roomId);
+  Future<LiveRoom> getRoomDetail(LiveRoom room) async {
+    final identity = room.detailIdentity;
+    if (identity == null) return room;
+    final fresh = await _resolveDetail(identity.roomId);
     // Pad whatever the profile endpoint left empty (avatar/cover/nick drift
     // between responses) with the fields the room already carries, so a
     // partial response never blanks the UI. fillFromDetail covers
@@ -405,12 +402,6 @@ class DouyinSite implements LiveSite, LiveSiteRecordRoomResolver {
     return padded;
   }
 
-  // Transitional shim: removed together with the pair-based detail API on
-  // LiveSite (class implements LiveSite, so the member must exist until then).
-  @override
-  Future<LiveRoom> getRoomDetail({required String platform, required String roomId}) =>
-      getRoomDetailForRoom(LiveRoom(roomId: roomId, platform: platform));
-
   Future<LiveRoom> _resolveDetail(String roomId) async {
     if (roomId.length <= 16) {
       return await getRoomDetailByWebRid(roomId);
@@ -419,10 +410,12 @@ class DouyinSite implements LiveSite, LiveSiteRecordRoomResolver {
   }
 
   @override
-  Future<LiveRoom> getRoomDetailForRecording({required String platform, required String roomId}) {
+  Future<LiveRoom> getRoomDetailForRecording(LiveRoom room) async {
+    final identity = room.detailIdentity;
+    if (identity == null) return room;
     // Both the API and HTML paths propagate their final error and retain the
     // stream_url envelope required to resolve every advertised sdk_key.
-    return _resolveDetail(roomId);
+    return _resolveDetail(identity.roomId);
   }
 
   Future<LiveRoom> getRoomDetailByRoomId(String roomId) async {
@@ -881,12 +874,6 @@ class DouyinSite implements LiveSite, LiveSiteRecordRoomResolver {
   @override
   Future<List<LiveAnchorItem>> searchAnchors(String keyword, {int page = 1, int pageSize = 30}) async {
     throw Exception("抖音暂不支持搜索主播，请直接搜索直播间");
-  }
-
-  @override
-  Future<bool> getLiveStatus({required String platform, required String roomId}) async {
-    var result = await getRoomDetailForRoom(LiveRoom(roomId: roomId, platform: platform));
-    return result.status!;
   }
 
   @override

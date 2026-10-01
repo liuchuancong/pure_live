@@ -532,6 +532,17 @@ class LiveRoom {
     return normalizedPlatformId == platform.trim().toLowerCase() && normalizedRoomId == roomId.trim();
   }
 
+  /// Parsed room identity for the detail/refresh/recording site contracts, or
+  /// null when either part is missing. These contracts accept a [LiveRoom]
+  /// instead of a (roomId, platform) pair and must not fabricate a request
+  /// without both parts.
+  ({String roomId, String platform})? get detailIdentity {
+    final roomId = this.roomId;
+    final platform = this.platform;
+    if (roomId == null || roomId.isEmpty || platform == null || platform.isEmpty) return null;
+    return (roomId: roomId, platform: platform);
+  }
+
   LiveRoom normalizedIdentityCopy() {
     if (platform == normalizedPlatformId && roomId == normalizedRoomId) return this;
     return copyWith(platform: normalizedPlatformId, roomId: normalizedRoomId);

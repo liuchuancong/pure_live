@@ -629,13 +629,10 @@ class BiliBiliSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoo
   }
 
   @override
-  Future<LiveRoom> getRoomDetailForRoom(LiveRoom room) async {
-    final roomId = room.roomId;
-    final platform = room.platform;
-    if (roomId == null || roomId.isEmpty || platform == null || platform.isEmpty) {
-      return room;
-    }
-    final fresh = await _resolveDetail(roomId, platform);
+  Future<LiveRoom> getRoomDetail(LiveRoom room) async {
+    final identity = room.detailIdentity;
+    if (identity == null) return room;
+    final fresh = await _resolveDetail(identity.roomId, identity.platform);
     // Pad whatever the profile endpoint left empty (avatar/cover/nick drift
     // between responses) with the fields the room already carries, so a
     // partial response never blanks the UI. fillFromDetail covers
@@ -648,12 +645,6 @@ class BiliBiliSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoo
     }
     return padded;
   }
-
-  // Transitional shim: removed together with the pair-based detail API on
-  // LiveSite (class implements LiveSite, so the member must exist until then).
-  @override
-  Future<LiveRoom> getRoomDetail({required String platform, required String roomId}) =>
-      getRoomDetailForRoom(LiveRoom(roomId: roomId, platform: platform));
 
   Future<LiveRoom> _resolveDetail(String roomId, String platform) async {
     try {
@@ -707,19 +698,21 @@ class BiliBiliSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoo
   }
 
   @override
-  Future<LiveRoom> getRoomDetailForRefresh({required String platform, required String roomId}) async {
-    final roomInfo = await getRoomInfo(roomId: roomId);
+  Future<LiveRoom> getRoomDetailForRefresh(LiveRoom room) async {
+    final identity = room.detailIdentity;
+    if (identity == null) return room;
+    final roomInfo = await getRoomInfo(roomId: identity.roomId);
     // Card verification deliberately skips getDanmuInfo. Chat credentials are
     // short-lived and useful only after the user enters this room.
-    return _buildRoom(roomInfo, roomId: roomId);
+    return _buildRoom(roomInfo, roomId: identity.roomId);
   }
 
   @override
-  Future<LiveRoom> getRoomDetailForRecording({required String platform, required String roomId}) {
+  Future<LiveRoom> getRoomDetailForRecording(LiveRoom room) {
     // Bilibili playback is resolved from the canonical room id by a separate
     // API, so the strict metadata-only room still contains everything the
     // recorder needs and avoids an unrelated danmaku credential request.
-    return getRoomDetailForRefresh(platform: platform, roomId: roomId);
+    return getRoomDetailForRefresh(room);
   }
 
   LiveRoom _buildRoom(Map<String, dynamic> roomInfo, {required String roomId, Object? danmakuData}) {
@@ -820,16 +813,6 @@ class BiliBiliSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoo
       items.add(anchorItem);
     }
     return items;
-  }
-
-  @override
-  Future<bool> getLiveStatus({required String platform, required String roomId}) async {
-    var result = await HttpClient.instance.getJson(
-      "https://api.live.bilibili.com/room/v1/Room/get_info",
-      queryParameters: {"room_id": roomId},
-      header: await getHeader(),
-    );
-    return int.tryParse(result['data']?['live_status']?.toString() ?? '') == 1;
   }
 
   @override
