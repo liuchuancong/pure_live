@@ -2099,5 +2099,6 @@
   "remote_sync_pick_sections": "勾选要同步的内容",
   "player_guide_title": "播放搭配指南",
   "player_guide_subtitle": "名词解释 · 各平台推荐搭配 · 症状对照",
-  "player_output_locked_by_preset": "已由当前方案锁定"
+  "player_output_locked_by_preset": "已由当前方案锁定",
+  "super_resolution_hint": "基于 Anime4K 的实时超分, 仅桌面 GPU 可实时运行; 当前仅 Windows 生效"
 }

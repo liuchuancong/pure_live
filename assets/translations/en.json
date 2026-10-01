@@ -2091,5 +2091,6 @@
   "remote_sync_pick_sections": "Pick sections to sync",
   "player_guide_title": "Playback Guide",
   "player_guide_subtitle": "Glossary · Platform picks · Symptom table",
-  "player_output_locked_by_preset": "Locked by the active preset"
+  "player_output_locked_by_preset": "Locked by the active preset",
+  "super_resolution_hint": "Realtime Anime4K upscaling for desktop GPUs; currently Windows only"
 }

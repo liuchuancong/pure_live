@@ -6,6 +6,7 @@ import 'package:pure_live/common/index.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 import 'package:pure_live/core/common/proxy_routing.dart';
 import 'package:pure_live/modules/settings/pages/player_guide_page.dart';
+import 'package:pure_live/modules/settings/pages/player_super_resolution_page.dart';
 import 'package:pure_live/modules/settings/pages/player_preset_page.dart';
 import 'package:pure_live/player/kernel/player_preset.dart';
 import 'package:pure_live/player/super_resolution.dart';
@@ -106,7 +107,13 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
                       trailing: const Icon(Remix.arrow_right_s_line),
                       onTap: () => Get.to(() => const PlayerGuidePage()),
                     ),
-                    _buildSuperResolutionSection(context),
+                    context.buildTile(
+                      icon: Remix.rhythm_line,
+                      title: i18n('super_resolution_section'),
+                      subtitle: i18n('super_resolution_hint'),
+                      trailing: const Icon(Remix.arrow_right_s_line),
+                      onTap: () => Get.to(() => const PlayerSuperResolutionPage()),
+                    ),
                   ],
                 );
               }),
@@ -363,48 +370,6 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
   // 代理设置弹窗（替换为统一SwitchTile）
   void showProxySettingsDialog(BuildContext context) {
     showDialog(context: context, builder: (context) => const _PlayerProxySettingsDialog());
-  }
-  /// Anime4K super-resolution picker: off / efficiency / quality.
-  Widget _buildSuperResolutionSection(BuildContext context) {
-    final settings = SettingsService.to.player;
-    final theme = Theme.of(context);
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(left: 4, bottom: 8),
-            child: Row(
-              children: [
-                Icon(Remix.rhythm_line, size: 18, color: theme.colorScheme.primary),
-                const SizedBox(width: 8),
-                Text(i18n('super_resolution_section'), style: theme.textTheme.titleSmall),
-              ],
-            ),
-          ),
-          for (final mode in SuperResolutionMode.values)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Card(
-                margin: EdgeInsets.zero,
-                child: ListTile(
-                  title: Text(mode.label),
-                  subtitle: Text(mode.descriptionZh, style: theme.textTheme.bodySmall),
-                  trailing: Obx(() {
-                    final active = SuperResolutionMode.fromName(settings.superResolutionMode.v) == mode;
-                    return active
-                        ? Icon(Remix.checkbox_circle_fill, color: theme.colorScheme.primary)
-                        : const Icon(Remix.checkbox_blank_circle_line);
-                  }),
-                  onTap: () => settings.superResolutionMode.v = mode.name,
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
   }
   /// One-click preset cards: a complete, explained recipe per row.
   Widget _buildPresetSection(BuildContext context) {
