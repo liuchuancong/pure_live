@@ -629,13 +629,17 @@ class BiliBiliSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoo
   }
 
   @override
-  Future<LiveRoom> getRoomDetailForRoom(LiveRoom room) {
+  Future<LiveRoom> getRoomDetailForRoom(LiveRoom room) async {
     final roomId = room.roomId;
     final platform = room.platform;
     if (roomId == null || roomId.isEmpty || platform == null || platform.isEmpty) {
-      return Future.value(room);
+      return room;
     }
-    return getRoomDetail(roomId: roomId, platform: platform);
+    final fresh = await getRoomDetail(roomId: roomId, platform: platform);
+    // Pad whatever the profile endpoint left empty (avatar/cover/nick drift
+    // between responses) with the fields the room already carries, so a
+    // partial response never blanks the UI.
+    return fresh.fillFromDetail(room);
   }
 
   @override
