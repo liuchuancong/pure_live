@@ -157,16 +157,20 @@ class NiconicoSite extends LiveSite
   }
 
   @override
-  Future<LiveRoom> getRoomDetail({required String roomId, required String platform}) => _detail(roomId, platform);
+  Future<LiveRoom> getRoomDetailForRoom(LiveRoom room) async {
+    final roomId = room.roomId;
+    final platform = room.platform;
+    if (roomId == null || roomId.isEmpty || platform == null || platform.isEmpty) {
+      return room;
+    }
+    return _detail(roomId, platform);
+  }
   @override
   Future<LiveRoom> getRoomDetailForRefresh({required String roomId, required String platform}) =>
       _detail(roomId, platform);
   @override
   Future<LiveRoom> getRoomDetailForRecording({required String roomId, required String platform}) =>
       _detail(roomId, platform);
-  @override
-  Future<bool> getLiveStatus({required String platform, required String roomId}) async =>
-      (await _detail(roomId, platform)).isLiveNow;
 
   @override
   Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom detail}) => discoverPlayQualitiesRaw(detail: detail);
