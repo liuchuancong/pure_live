@@ -127,7 +127,7 @@ class LivePlayController extends GetxController
         qualites: restored?.qualities ?? const <LivePlayQuality>[],
         currentQuality: restored?.currentQuality ?? 0,
         playUrls: restored?.playUrls ?? const <String>[],
-        sourceQueryPolicies: (restored?.sourceQueryPolicies ?? const {}) as Map<String, HlsSourceQueryPolicy>,
+        sourceQueryPolicies: (restored?.sourceQueryPolicies ?? const <String, HlsSourceQueryPolicy>{}),
         ownedSource: restored?.ownedSource as OwnedPlaybackSource?,
         currentLineIndex: restored?.currentLineIndex ?? 0,
         isCurrentRoomAudioOnly: initialAudioOnly,
