@@ -53,6 +53,12 @@ final class LivePlayerFacade {
 
   LiveRoom? get room => _room;
   PlayerHandle? get handle => _controller.handle;
+
+  /// Kernel-side handle lifecycle: emitted when an engine is attached and
+  /// when the current one is released. Video surfaces follow this to mount
+  /// as soon as the engine exists instead of waiting for an unrelated
+  /// rebuild.
+  Stream<PlayerHandle?> get onHandleChanged => _controller.onHandleChanged;
   bool get hasPlaybackSource => commit != null;
   bool get isPlayingNow => _playingSubject.hasListener && _lastPlaying;
   bool _lastPlaying = false;
@@ -239,9 +245,22 @@ final class LivePlayerFacade {
   }
 
   Widget getVideoWidget(BoxFit fit) {
-    final handle = _controller.handle;
-    if (handle == null) return const SizedBox.expand();
-    return MediaPlayerView(handle: handle, fit: fit);
+    // The room UI mounts before the kernel finishes creating its engine, so
+    // the first call usually sees no handle yet. The widget has to follow the
+    // kernel's handle stream: a widget built once at mount would stay black
+    // forever — nothing else re-reads the attached handle — until a full
+    // subtree remount (fullscreen toggle, PiP) forced a rebuild.
+    return StreamBuilder<PlayerHandle?>(
+      stream: _controller.onHandleChanged.distinct(),
+      initialData: _controller.handle,
+      builder: (context, snapshot) {
+        // Read the getter, not the snapshot: a released engine replays its
+        // old handle on the stream, and the getter is the only source of truth.
+        final handle = _controller.handle;
+        if (handle == null) return const SizedBox.expand();
+        return MediaPlayerView(handle: handle, fit: fit);
+      },
+    );
   }
 
   void changeVideoFit(Object fitOrIndex, {List<BoxFit>? fitList}) {
