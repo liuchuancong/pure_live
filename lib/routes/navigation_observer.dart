@@ -123,6 +123,14 @@ class LiveRouteObserver extends RouteObserver<PageRoute<dynamic>> {
     controller.prepareAppFloating(routeUnmounted: routeExitCompleted);
     unawaited(
       routeExitCompleted.then((_) {
+        // Race guard: opening another live room or the multiview grid right
+        // after leaving this one closes the floating window synchronously in
+        // their enter hooks — but this delayed callback then runs afterwards
+        // and pops the window back up over the new page. If we are already
+        // back in a player surface, the user moved on; stay closed.
+        final current = Get.currentRoute;
+        if (current == RoutePath.kLivePlay || current == RoutePath.kMultiview) return;
+
         final videoController = controller.state.value.player.videoController;
         playerManager.showAppFloating(
           danmakuBuilder: videoController == null
