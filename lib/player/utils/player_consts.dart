@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:pure_live/player/models/player_engine.dart';
 
+import 'package:media_core_media_kit/media_core_media_kit.dart' as mk;
+
 class PlayerConsts {
   static const String defaultKey = 'mpv';
 
@@ -42,74 +44,18 @@ class PlayerConsts {
     "Variant": const Color(0xFF3700B3),
     "Secondary": const Color(0xFF03DAC6),
   };
-  static const videoOutputDrivers = {
-    "gpu": "gpu",
-    "gpu-next": "gpu-next",
-    "xv": "xv (X11 only)",
-    "x11": "x11 (X11 only)",
-    "vdpau": "vdpau (X11 only)",
-    "direct3d": "direct3d (Windows only)",
-    "sdl": "sdl",
-    "dmabuf-wayland": "dmabuf-wayland",
-    "vaapi": "vaapi",
-    "null": "null",
-    "libmpv": "libmpv",
-    "mediacodec_embed": "mediacodec_embed (Android only)",
-  };
+  
 
-  static const audioOutputDrivers = {
-    "null": "null (No audio output)",
-    "pulse": "pulse (Linux, uses PulseAudio)",
-    "pipewire": "pipewire (Linux, via Pulse compatibility or native)",
-    "alsa": "alsa (Linux only)",
-    "oss": "oss (Linux only)",
-    "jack": "jack (Linux/macOS, low-latency audio)",
-    "directsound": "directsound (Windows only)",
-    "wasapi": "wasapi (Windows only)",
-    "winmm": "winmm (Windows only, legacy API)",
-    "audiounit": "audiounit (iOS only)",
-    "coreaudio": "coreaudio (macOS only)",
-    "opensles": "opensles (Android only)",
-    "audiotrack": "audiotrack (Android only)",
-    "aaudio": "aaudio (Android only)",
-    "pcm": "pcm (Cross-platform)",
-    "sdl": "sdl (Cross-platform, via SDL library)",
-    "openal": "openal (Cross-platform, OpenAL backend)",
-    "libao": "libao (Cross-platform, uses libao library)",
-    "auto": "auto (Automatic fallback)",
-  };
+  
 
-  static const hardwareDecoder = {
-    "no": "no",
-    "auto": "auto",
-    "auto-safe": "auto-safe",
-    "yes": "yes",
-    "auto-copy": "auto-copy",
-    "d3d11va": "d3d11va",
-    "d3d11va-copy": "d3d11va-copy",
-    "videotoolbox": "videotoolbox",
-    "videotoolbox-copy": "videotoolbox-copy",
-    "vaapi": "vaapi",
-    "vaapi-copy": "vaapi-copy",
-    "nvdec": "nvdec",
-    "nvdec-copy": "nvdec-copy",
-    "drm": "drm",
-    "drm-copy": "drm-copy",
-    "vulkan": "vulkan",
-    "vulkan-copy": "vulkan-copy",
-    "dxva2": "dxva2",
-    "dxva2-copy": "dxva2-copy",
-    "vdpau": "vdpau",
-    "vdpau-copy": "vdpau-copy",
-    "mediacodec": "mediacodec",
-    "mediacodec-copy": "mediacodec-copy",
-    "cuda": "cuda",
-    "cuda-copy": "cuda-copy",
-    "crystalhd": "crystalhd",
-    "rkmpp": "rkmpp",
-  };
+  
 
-  static const List<Map<String, String>> hardwareDecodersList = [
+    // mpv 词表 (vo/ao/hwdec) 转发自 media_core 的 PlayerConsts, 单一事实来源.
+  static Map<String, String> get videoOutputDrivers => mk.PlayerConsts.videoOutputDrivers;
+  static Map<String, String> get audioOutputDrivers => mk.PlayerConsts.audioOutputDrivers;
+  static Map<String, String> get hardwareDecoder => mk.PlayerConsts.hardwareDecoder;
+
+static const List<Map<String, String>> hardwareDecodersList = [
     {'key': 'auto', 'nameEn': 'Any Available Decoder', 'nameZh': '启用任意可用解码器'},
     {'key': 'auto-safe', 'nameEn': 'Best Decoder', 'nameZh': '启用最佳解码器'},
     {'key': 'auto-copy', 'nameEn': 'Best Decoder with Copy-Back', 'nameZh': '启用带拷贝功能的最佳解码器'},
