@@ -167,8 +167,11 @@ abstract final class MediaKitLiveProperties {
       if (segment.audioExclusive != 'no') EngineOption('audio-exclusive', 'yes'),
     ]);
 
+    // The manual ao pick rides the same custom-output gate as vo/hwdec:
+    // with the switch off, the engine default applies and the settings UI
+    // does not show the pick at all.
     final audio = segment.audioOutputDriver;
-    if (audio.trim().isNotEmpty && audio.trim() != 'auto') {
+    if (segment.customPlayerOutput && audio.trim().isNotEmpty && audio.trim() != 'auto') {
       options.add(EngineOption('ao', audio));
     }
 

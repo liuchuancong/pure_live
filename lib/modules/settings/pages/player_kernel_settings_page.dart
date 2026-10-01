@@ -172,38 +172,51 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
             value: SettingsService.to.player.customPlayerOutput,
           ),
           Obx(() {
-            final locked = SettingsService.to.player.currentPreset.lockedOutputKeys;
+            final player = SettingsService.to.player;
+            // Manual output picks only take effect while the custom-output
+            // switch is armed — hiding them mirrors that honestly, the same
+            // way the decoder pick disappears with hardware acceleration off.
+            if (!player.customPlayerOutput.v) return const SizedBox.shrink();
+
+            final _ = player.outputSegmentRevision.value; // preset application refreshes locked state
             return _optionTile(
               context,
               kind: MpvOptionKind.videoOutput,
               title: i18n("video_output_driver"),
               icon: Remix.movie_line,
-              value: SettingsService.to.player.videoOutputDriver,
-              locked: locked.contains('vo'),
+              value: player.videoOutputDriver,
+              locked: player.currentPreset.lockedOutputKeys.contains('vo'),
             );
           }),
-          _optionTile(
-            context,
-            kind: MpvOptionKind.audioOutput,
-            title: i18n("audio_output_driver"),
-            icon: Remix.volume_up_line,
-            value: SettingsService.to.player.audioOutputDriver,
-          ),
           Obx(() {
             final player = SettingsService.to.player;
-            final locked = player.currentPreset.lockedOutputKeys;
+            if (!player.customPlayerOutput.v) return const SizedBox.shrink();
+
+            final _ = player.outputSegmentRevision.value;
+            return _optionTile(
+              context,
+              kind: MpvOptionKind.audioOutput,
+              title: i18n("audio_output_driver"),
+              icon: Remix.volume_up_line,
+              value: player.audioOutputDriver,
+              locked: player.currentPreset.lockedOutputKeys.contains('ao'),
+            );
+          }),
+          Obx(() {
+            final player = SettingsService.to.player;
             // The decoder pick exists only while hardware acceleration is on:
             // turning the switch off IS the "no hardware decoder" state, so a
             // separate disabled entry would duplicate it.
             if (!player.enableCodec.v) return const SizedBox.shrink();
 
+            final _ = player.outputSegmentRevision.value;
             return _optionTile(
               context,
               kind: MpvOptionKind.hardwareDecoder,
               title: i18n("hardware_decoder"),
               icon: Remix.cpu_line,
               value: player.videoHardwareDecoder,
-              locked: locked.contains('hwdec'),
+              locked: player.currentPreset.lockedOutputKeys.contains('hwdec'),
             );
           }),
 
