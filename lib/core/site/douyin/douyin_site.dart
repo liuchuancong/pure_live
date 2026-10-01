@@ -394,8 +394,15 @@ class DouyinSite implements LiveSite, LiveSiteRecordRoomResolver {
     final fresh = await getRoomDetail(roomId: roomId, platform: platform);
     // Pad whatever the profile endpoint left empty (avatar/cover/nick drift
     // between responses) with the fields the room already carries, so a
-    // partial response never blanks the UI.
-    return fresh.fillFromDetail(room);
+    // partial response never blanks the UI. fillFromDetail covers
+    // nick/avatar/area; the cover is padded explicitly because a blank
+    // cover is the most visible symptom of a partial profile response.
+    final padded = fresh.fillFromDetail(room);
+    final existingCover = room.cover ?? '';
+    if ((padded.cover == null || padded.cover!.isEmpty) && existingCover.isNotEmpty) {
+      return padded.copyWith(cover: existingCover);
+    }
+    return padded;
   }
 
   @override

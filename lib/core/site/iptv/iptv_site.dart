@@ -110,13 +110,22 @@ class IptvSite implements LiveSite, LiveSiteRecordRoomResolver {
   // =========================================================
 
   @override
-  Future<LiveRoom> getRoomDetailForRoom(LiveRoom room) {
+  Future<LiveRoom> getRoomDetailForRoom(LiveRoom room) async {
     final roomId = room.roomId;
     final platform = room.platform;
     if (roomId == null || roomId.isEmpty || platform == null || platform.isEmpty) {
-      return Future.value(room);
+      return room;
     }
-    return getRoomDetail(roomId: roomId, platform: platform);
+    final fresh = await getRoomDetail(roomId: roomId, platform: platform);
+    // Pad response gaps from the room the caller already holds. fillFromDetail
+    // covers nick/avatar/area; the cover is padded explicitly because a blank
+    // cover is the most visible symptom of a partial profile response.
+    final padded = fresh.fillFromDetail(room);
+    final existingCover = room.cover ?? '';
+    if ((padded.cover == null || padded.cover!.isEmpty) && existingCover.isNotEmpty) {
+      return padded.copyWith(cover: existingCover);
+    }
+    return padded;
   }
 
   @override
