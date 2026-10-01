@@ -28,8 +28,20 @@ const Map<String, String> _iosHardwareDecoders = <String, String>{
 /// media_kit owns the iOS Flutter texture through `vo=libmpv`. Android exposes
 /// only drivers compiled into the bundled libmpv instead of mixing Windows and
 /// Linux choices into the phone settings menu.
-Map<String, String> mpvVideoOutputDriversForPlatform(TargetPlatform platform) =>
-    platform == TargetPlatform.iOS ? _iosVideoOutputDrivers : PlayerConsts.videoOutputDrivers;
+/// Desktop libmpv is the ONLY vo that renders into the Flutter texture;
+/// windowed drivers (gpu/gpu-next/direct3d/...) make mpv open its own
+/// native window on top of the app — the "mpv window pops up over the
+/// live room" report. The richer table stays available to standalone
+/// mpv consumers, not to the embedded player settings.
+const Map<String, String> _desktopVideoOutputDrivers = <String, String>{
+  'libmpv': 'libmpv',
+};
+
+Map<String, String> mpvVideoOutputDriversForPlatform(TargetPlatform platform) {
+  if (platform == TargetPlatform.iOS) return _iosVideoOutputDrivers;
+  if (platform == TargetPlatform.android) return PlayerConsts.videoOutputDrivers;
+  return _desktopVideoOutputDrivers;
+}
 
 Map<String, String> mpvAudioOutputDriversForPlatform(TargetPlatform platform) => switch (platform) {
   TargetPlatform.android => _androidAudioOutputDrivers,
@@ -41,7 +53,7 @@ Map<String, String> mpvHardwareDecodersForPlatform(TargetPlatform platform) =>
     platform == TargetPlatform.iOS ? _iosHardwareDecoders : PlayerConsts.hardwareDecoder;
 
 String defaultMpvVideoOutputDriverForPlatform(TargetPlatform platform) =>
-    platform == TargetPlatform.iOS ? 'libmpv' : 'gpu';
+    platform == TargetPlatform.android ? 'libmpv' : 'libmpv';
 
 String normalizeMpvVideoOutputDriverForPlatform(String value, TargetPlatform platform) => _normalizeMpvOption(
   value,

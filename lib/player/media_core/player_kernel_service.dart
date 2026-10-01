@@ -26,6 +26,7 @@ class PlayerKernelService {
       ..registerBackend(
         MediaKitAdapterFactory(
           customInputOpener: openOwnedInputOnKernelPlayer,
+          videoControllerConfiguration: MediaKitLiveProperties.buildVideoControllerConfiguration(),
           // The app declares every tuning value it wants; the adapter applies
           // only what it is told.
           configure: MediaKitLiveProperties.applyTo,

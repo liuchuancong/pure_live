@@ -172,7 +172,7 @@ class PlayerSettingsController extends GetxController {
   // In-memory projection of the current segment; never persisted directly.
   late final RxBool enableCodec = true.obs;
   late final RxBool customPlayerOutput = false.obs;
-  late final RxString videoOutputDriver = 'auto'.obs;
+  late final RxString videoOutputDriver = 'libmpv'.obs;
   late final RxString audioOutputDriver = 'auto'.obs;
   late final RxString videoHardwareDecoder = 'auto-safe'.obs;
   late final RxString videoSync = 'auto'.obs;
