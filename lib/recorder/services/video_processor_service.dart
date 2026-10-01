@@ -162,14 +162,32 @@ class VideoProcessorService extends GetxService {
           segments.any((file) => file.path.toLowerCase().endsWith(RecordingSegmentClock.segmentSuffix)) ||
           await journal.exists();
       String manifest;
+      // Retry storms after a streamer's broadcast ends can leave zero-byte
+      // or half-flushed segments behind; they must not sink the whole merge.
+      // Dropping them keeps the recorded material playable.
+      final validSegments = <File>[];
+      for (final segment in segments) {
+        try {
+          if (await segment.length() > 0) validSegments.add(segment);
+        } on FileSystemException {
+          // Vanished after the snapshot: FFmpeg reports it if it matters.
+        }
+      }
+
+      if (validSegments.isEmpty) {
+        log('Merge skipped for $taskId: every segment is empty');
+        _emitFailed(taskId, i18n('recorder_no_valid_segments'));
+        return false;
+      }
+
       if (usesClock) {
         try {
           // A missing/partial/foreign journal and a mixed old/new TS snapshot
           // all fail before native IO. Never infer a duration or drop a tail.
-          for (final segment in segments) {
+          for (final segment in validSegments) {
             if (await segment.length() <= 0) throw const FormatException('Recording clock empty segment');
           }
-          final clock = await RecordingSegmentClock.read(journal, prefix: resolvedFilePrefix, segments: segments);
+          final clock = await RecordingSegmentClock.read(journal, prefix: resolvedFilePrefix, segments: validSegments);
           manifest = clock.toConcatManifest();
           clockJournal = journal;
         } on FileSystemException {
@@ -183,10 +201,10 @@ class VideoProcessorService extends GetxService {
       } else {
         // Legacy timestamps already contain per-child normalization. Applying
         // the new zero-inpoint contract would shift those old recordings again.
-        manifest = buildConcatManifest(segments.map((segment) => p.absolute(segment.path)));
+        manifest = buildConcatManifest(validSegments.map((segment) => p.absolute(segment.path)));
       }
       var inputBytes = 0;
-      for (final segment in segments) {
+      for (final segment in validSegments) {
         try {
           inputBytes += await segment.length();
         } on FileSystemException {
@@ -196,7 +214,7 @@ class VideoProcessorService extends GetxService {
       }
       if (operation.cancelled) return false;
 
-      log('$taskId: ${i18n("video_ts_total", args: {"count": segments.length.toString()})}');
+      log('$taskId: ${i18n("video_ts_total", args: {"count": validSegments.length.toString()})}');
       _emit(VideoProcessEvent(taskId: taskId, type: VideoProcessEventType.started));
 
       listFile = File(p.join(tsDirectory.path, '.$resolvedFilePrefix.ffconcat'));

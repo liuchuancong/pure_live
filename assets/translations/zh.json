@@ -2108,5 +2108,6 @@
   "hwdec_codecs": "硬解编码范围 (--hwdec-codecs)",
   "audio_exclusive": "音频独占 (--audio-exclusive)",
   "interpolation_hint": "需配合\"显示重采样\"同步模式; 提升平移画面平滑度, 消耗 GPU",
-  "audio_exclusive_hint": "独占 WASAPI 设备, 其他应用将无法出声"
+  "audio_exclusive_hint": "独占 WASAPI 设备, 其他应用将无法出声",
+  "recorder_no_valid_segments": "没有可合并的有效分段(录制内容为空)"
 }

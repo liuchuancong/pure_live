@@ -71,15 +71,21 @@ class RecorderContinuationPolicy {
   }
 
   /// A live-stream EOF after FFmpeg has opened the media does not prove that
-  /// the room went offline. Keep resolving a fresh signed URL with bounded
-  /// delay instead of moving the task into the much slower offline poll loop.
+  /// the room went offline, so a few fast reconnects are worth trying first.
+  /// But a streamer ending the broadcast keeps producing EOFs (and 404s on
+  /// every refreshed URL) forever: once the retry budget is spent — EOF
+  /// included — the task moves to the offline poll loop, which simply waits
+  /// for the next broadcast instead of hammering the CDN and piling up
+  /// empty segments that later break the merge.
   static bool shouldEnterPollingAfterRetryLimit({
     required int retryCount,
     required int maximumRetries,
     required bool unexpectedEof,
   }) {
-    if (unexpectedEof) return false;
-    return retryCount >= maximumRetries.clamp(1, 100);
+    // EOF reconnects use the fast schedule; give them a bounded count of
+    // their own before falling back to polling.
+    final budget = unexpectedEof ? maximumRetries.clamp(1, 100) * 2 : maximumRetries.clamp(1, 100);
+    return retryCount >= budget;
   }
 
   /// Starts acquiring the replacement a few seconds before the active input

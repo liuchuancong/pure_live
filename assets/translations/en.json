@@ -2100,5 +2100,6 @@
   "hwdec_codecs": "HW-decode codecs (--hwdec-codecs)",
   "audio_exclusive": "Audio exclusive (--audio-exclusive)",
   "interpolation_hint": "Needs display-resample sync; smoother panning, GPU cost",
-  "audio_exclusive_hint": "Exclusive WASAPI device, other apps go silent"
+  "audio_exclusive_hint": "Exclusive WASAPI device, other apps go silent",
+  "recorder_no_valid_segments": "No valid segments to merge (recording is empty)"
 }
