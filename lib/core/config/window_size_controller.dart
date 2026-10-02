@@ -19,8 +19,31 @@ class WindowPipGeometry {
   /// Stores the PiP window vertical position.
   final RxDouble windowsPipY = hiveDouble('windows_pip_y', 0.0);
 
+  /// 竖屏源的整套几何。
+  ///
+  /// 横屏记住的矩形套到竖屏源上必然是错的（16:9 的框里放竖屏画面只剩黑边），
+  /// 所以横竖屏各记一套，切换源方向时不需要每次手动调整。键名沿用 2026-08-27
+  /// 就存在的 `windows_pip_portrait_*`，那套实现在后续某次合并里被丢掉了。
+  final RxString portraitDisplayId = hiveString('windows_pip_portrait_display_id', '');
+
+  /// Stores the portrait PiP window width.
+  final RxDouble portraitWidth = hiveDouble('windows_pip_portrait_width', 0.0);
+
+  /// Stores the portrait PiP window height.
+  final RxDouble portraitHeight = hiveDouble('windows_pip_portrait_height', 0.0);
+
+  /// Stores the portrait PiP window horizontal position.
+  final RxDouble portraitX = hiveDouble('windows_pip_portrait_x', 0.0);
+
+  /// Stores the portrait PiP window vertical position.
+  final RxDouble portraitY = hiveDouble('windows_pip_portrait_y', 0.0);
+
   bool get isValid {
     return displayId.v.trim().isNotEmpty && hasValidBounds;
+  }
+
+  bool get portraitIsValid {
+    return portraitDisplayId.v.trim().isNotEmpty && portraitHasValidBounds;
   }
 
   bool get hasValidBounds {
@@ -32,9 +55,22 @@ class WindowPipGeometry {
         windowsPipY.v.isFinite;
   }
 
+  bool get portraitHasValidBounds {
+    return portraitWidth.v.isFinite &&
+        portraitHeight.v.isFinite &&
+        portraitWidth.v > 0 &&
+        portraitHeight.v > 0 &&
+        portraitX.v.isFinite &&
+        portraitY.v.isFinite;
+  }
+
   Size get size => Size(windowsPipWidth.v, windowsPipHeight.v);
 
+  Size get portraitSize => Size(portraitWidth.v, portraitHeight.v);
+
   Offset get position => Offset(windowsPipX.v, windowsPipY.v);
+
+  Offset get portraitPosition => Offset(portraitX.v, portraitY.v);
 
   void update(Size size, Offset position, String displayId) {
     if (!size.isFinite || size.isEmpty || !position.isFinite || displayId.trim().isEmpty) {
@@ -54,12 +90,39 @@ class WindowPipGeometry {
     );
   }
 
+  void updatePortrait(Size size, Offset position, String displayId) {
+    if (!size.isFinite || size.isEmpty || !position.isFinite || displayId.trim().isEmpty) {
+      return;
+    }
+
+    _assignPortrait(
+      WindowSizeController.normalizePipPortraitGeometry({
+        'windowsPipPortrait': {
+          'displayId': displayId,
+          'windowsPipPortraitWidth': size.width,
+          'windowsPipPortraitHeight': size.height,
+          'windowsPipPortraitX': position.dx,
+          'windowsPipPortraitY': position.dy,
+        },
+      }),
+    );
+  }
+
   void clear() {
     displayId.v = '';
     windowsPipWidth.v = 0.0;
     windowsPipHeight.v = 0.0;
     windowsPipX.v = 0.0;
     windowsPipY.v = 0.0;
+    clearPortrait();
+  }
+
+  void clearPortrait() {
+    portraitDisplayId.v = '';
+    portraitWidth.v = 0.0;
+    portraitHeight.v = 0.0;
+    portraitX.v = 0.0;
+    portraitY.v = 0.0;
   }
 
   Map<String, dynamic> toJson() {
@@ -74,8 +137,24 @@ class WindowPipGeometry {
     });
   }
 
+  Map<String, dynamic> portraitToJson() {
+    return WindowSizeController.normalizePipPortraitGeometry({
+      'windowsPipPortrait': {
+        'displayId': portraitDisplayId.v,
+        'windowsPipPortraitWidth': portraitWidth.v,
+        'windowsPipPortraitHeight': portraitHeight.v,
+        'windowsPipPortraitX': portraitX.v,
+        'windowsPipPortraitY': portraitY.v,
+      },
+    });
+  }
+
   void fromJson(Map<String, dynamic> json) {
     _assign(WindowSizeController.normalizePipGeometry(json, strict: true));
+  }
+
+  void fromPortraitJson(Map<String, dynamic> json) {
+    _assignPortrait(WindowSizeController.normalizePipPortraitGeometry(json, strict: true));
   }
 
   void repairStored() {
@@ -88,6 +167,14 @@ class WindowPipGeometry {
     windowsPipHeight.v = values['windowsPipHeight'] as double;
     windowsPipX.v = values['windowsPipX'] as double;
     windowsPipY.v = values['windowsPipY'] as double;
+  }
+
+  void _assignPortrait(Map<String, dynamic> values) {
+    portraitDisplayId.v = values['displayId'] as String;
+    portraitWidth.v = values['windowsPipPortraitWidth'] as double;
+    portraitHeight.v = values['windowsPipPortraitHeight'] as double;
+    portraitX.v = values['windowsPipPortraitX'] as double;
+    portraitY.v = values['windowsPipPortraitY'] as double;
   }
 }
 
@@ -177,6 +264,7 @@ class WindowSizeController extends GetxController {
       'storedHeight': resolvedStoredHeight,
       'rememberPipPosition': rememberPipPosition.v,
       'windowsPip': windowsPip.toJson(),
+      'windowsPipPortrait': windowsPip.portraitToJson(),
     };
   }
 
@@ -185,6 +273,7 @@ class WindowSizeController extends GetxController {
     _writeStoredSize(Size(parsed['storedWidth'] as double, parsed['storedHeight'] as double));
     rememberPipPosition.v = parsed['rememberPipPosition'];
     windowsPip.fromJson(parsed['windowsPip']);
+    windowsPip.fromPortraitJson(parsed['windowsPipPortrait']);
   }
 
   static Map<String, dynamic> parseConfig(Map<String, dynamic> json) {
@@ -195,6 +284,7 @@ class WindowSizeController extends GetxController {
       'storedHeight': height,
       'rememberPipPosition': json['rememberPipPosition'] as bool? ?? true,
       'windowsPip': normalizePipGeometry(json, strict: true),
+      'windowsPipPortrait': normalizePipPortraitGeometry(json, strict: true),
     };
   }
 
@@ -206,12 +296,14 @@ class WindowSizeController extends GetxController {
       'rememberPipPosition': windowSize['rememberPipPosition'] ?? player['rememberPipPosition'] ?? true,
     });
     final pip = parsed['windowsPip'] as Map<String, dynamic>;
+    final portraitPip = parsed['windowsPipPortrait'] as Map<String, dynamic>;
 
     return {
       'storedWidth': parsed['storedWidth'],
       'storedHeight': parsed['storedHeight'],
       'rememberPipPosition': parsed['rememberPipPosition'],
       'windowsPip': pip,
+      'windowsPipPortrait': portraitPip,
       // Keep the legacy aliases in extracted configuration so older backup
       // editors and downgrade imports preserve the rectangle losslessly.
       'windowsPipDisplayId': pip['displayId'],
@@ -219,6 +311,11 @@ class WindowSizeController extends GetxController {
       'windowsPipHeight': pip['windowsPipHeight'],
       'windowsPipX': pip['windowsPipX'],
       'windowsPipY': pip['windowsPipY'],
+      'windowsPipPortraitDisplayId': portraitPip['displayId'],
+      'windowsPipPortraitWidth': portraitPip['windowsPipPortraitWidth'],
+      'windowsPipPortraitHeight': portraitPip['windowsPipPortraitHeight'],
+      'windowsPipPortraitX': portraitPip['windowsPipPortraitX'],
+      'windowsPipPortraitY': portraitPip['windowsPipPortraitY'],
     };
   }
 
@@ -246,6 +343,23 @@ class WindowSizeController extends GetxController {
       windowSize['windowsPip'] = pip;
     }
 
+    if (updateFields.keys.any(_isLegacyPipPortraitGeometryKey)) {
+      final pip = normalizePipPortraitGeometry(windowSize);
+      const aliases = <String, String>{
+        'windowsPipPortraitDisplayId': 'displayId',
+        'windowsPipPortraitWidth': 'windowsPipPortraitWidth',
+        'windowsPipPortraitHeight': 'windowsPipPortraitHeight',
+        'windowsPipPortraitX': 'windowsPipPortraitX',
+        'windowsPipPortraitY': 'windowsPipPortraitY',
+      };
+      for (final alias in aliases.entries) {
+        if (updateFields.containsKey(alias.key)) {
+          pip[alias.value] = updateFields[alias.key];
+        }
+      }
+      windowSize['windowsPipPortrait'] = pip;
+    }
+
     rootConfig['windowSize'] = windowSize;
 
     return rootConfig;
@@ -257,6 +371,13 @@ class WindowSizeController extends GetxController {
       key == 'windowsPipHeight' ||
       key == 'windowsPipX' ||
       key == 'windowsPipY';
+
+  static bool _isLegacyPipPortraitGeometryKey(String key) =>
+      key == 'windowsPipPortraitDisplayId' ||
+      key == 'windowsPipPortraitWidth' ||
+      key == 'windowsPipPortraitHeight' ||
+      key == 'windowsPipPortraitX' ||
+      key == 'windowsPipPortraitY';
 
   static double normalizeStoredWidth(num value) {
     return _normalizeStoredDimension(value, fallback: defaultWindowWidth, min: minWindowWidth);
@@ -275,40 +396,75 @@ class WindowSizeController extends GetxController {
   }
 
   static Map<String, dynamic> normalizePipGeometry(Map<String, dynamic> windowSize, {bool strict = false}) {
-    final nested = windowSize['windowsPip'];
+    return _normalizePipRect(windowSize, section: 'windowsPip', prefix: 'windowsPip', strict: strict);
+  }
+
+  /// 竖屏源的 PiP 矩形。
+  ///
+  /// 与横屏那套共用同一段校验（[_normalizePipRect] 只按前缀取键），所以两套的有限性、
+  /// 上下限与清零规则不会再分叉——2026-08-27 加过的那套竖屏几何就是在一处合并里被整个
+  /// 丢掉的。旧版本把竖屏字段平铺在 `windowsPip` 段里（`portraitWidth` 等），这里一并
+  /// 作为备选键读回，那时的备份仍然可用。
+  static Map<String, dynamic> normalizePipPortraitGeometry(Map<String, dynamic> windowSize, {bool strict = false}) {
+    return _normalizePipRect(
+      windowSize,
+      section: 'windowsPipPortrait',
+      prefix: 'windowsPipPortrait',
+      legacyPrefix: 'portrait',
+      strict: strict,
+    );
+  }
+
+  static Map<String, dynamic> _normalizePipRect(
+    Map<String, dynamic> windowSize, {
+    required String section,
+    required String prefix,
+    String? legacyPrefix,
+    bool strict = false,
+  }) {
+    final nested = windowSize[section];
     if (strict && nested != null && nested is! Map) throw const FormatException('Invalid PiP rectangle');
     final pip = nested is Map ? Map<String, dynamic>.from(nested) : const <String, dynamic>{};
+    final legacy = legacyPrefix == null || windowSize['windowsPip'] is! Map
+        ? const <String, dynamic>{}
+        : Map<String, dynamic>.from(windowSize['windowsPip'] as Map);
 
-    double number(String key) {
-      final value = pip[key] ?? windowSize[key];
+    double number(String suffix) {
+      final value =
+          pip['$prefix$suffix'] ??
+          (legacyPrefix == null ? null : legacy['$legacyPrefix$suffix']) ??
+          windowSize['$prefix$suffix'];
       if (strict && value != null && (value is! num || !value.isFinite)) {
-        throw FormatException('Invalid PiP coordinate: $key');
+        throw FormatException('Invalid PiP coordinate: $prefix$suffix');
       }
       return value is num ? value.toDouble() : 0.0;
     }
 
-    final displayValue = pip['displayId'] ?? windowSize['windowsPipDisplayId'];
+    final displayValue =
+        pip['displayId'] ??
+        (legacyPrefix == null ? null : legacy['${legacyPrefix}DisplayId']) ??
+        windowSize['${prefix}DisplayId'];
     final displayId = strict ? (displayValue as String? ?? '') : (displayValue?.toString() ?? '');
-    final width = number('windowsPipWidth');
-    final height = number('windowsPipHeight');
-    final x = number('windowsPipX');
-    final y = number('windowsPipY');
+    final width = number('Width');
+    final height = number('Height');
+    final x = number('X');
+    final y = number('Y');
     if (!width.isFinite || !height.isFinite || !x.isFinite || !y.isFinite || width <= 0 || height <= 0) {
-      return const {
+      return <String, dynamic>{
         'displayId': '',
-        'windowsPipWidth': 0.0,
-        'windowsPipHeight': 0.0,
-        'windowsPipX': 0.0,
-        'windowsPipY': 0.0,
+        '${prefix}Width': 0.0,
+        '${prefix}Height': 0.0,
+        '${prefix}X': 0.0,
+        '${prefix}Y': 0.0,
       };
     }
 
-    return {
+    return <String, dynamic>{
       'displayId': displayId.trim(),
-      'windowsPipWidth': width.clamp(0.0, maxWindowDimension).toDouble(),
-      'windowsPipHeight': height.clamp(0.0, maxWindowDimension).toDouble(),
-      'windowsPipX': x,
-      'windowsPipY': y,
+      '${prefix}Width': width.clamp(0.0, maxWindowDimension).toDouble(),
+      '${prefix}Height': height.clamp(0.0, maxWindowDimension).toDouble(),
+      '${prefix}X': x,
+      '${prefix}Y': y,
     };
   }
 
