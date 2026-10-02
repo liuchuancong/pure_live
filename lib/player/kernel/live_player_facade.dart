@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:pure_live/get/get.dart';
 import 'package:media_core_live/media_core_live.dart';
@@ -419,77 +420,10 @@ final class LivePlayerFacade {
     }
   }
 
-  Widget buildPiPOverlay() => Scaffold(
-    backgroundColor: Colors.transparent,
-    body: Stack(
-      // expand keeps MediaPlayerView off infinite constraints if this
-      // Scaffold's body is ever composed inside a loose/unbounded ancestor.
-      fit: StackFit.expand,
-      children: [
-        GestureDetector(
-          // The video surface itself stays gesture-first: single tap toggles
-          // playback, double tap leaves PiP, and a drag hands the pointer to
-          // the native caption-drag loop — the compact window has no title
-          // bar, so a surface-initiated drag is the only way to move it.
-          onDoubleTap: () => unawaited(exitPip()),
-          onTap: togglePlayPause,
-          onPanStart: (_) => unawaited(windowsPipWindow.startDragging()),
-          child: getVideoWidget(BoxFit.contain),
-        ),
-        if (_activeVideoController != null)
-          Positioned.fill(child: CompactDanmakuOverlay(controller: _activeVideoController)),
-        Positioned(
-          left: 8,
-          right: 8,
-          top: 8,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              StreamBuilder<bool>(
-                stream: onPlaying,
-                initialData: isPlayingNow,
-                builder: (context, snapshot) {
-                  final isPlay = snapshot.data ?? true;
-                  return _pipControlButton(
-                    icon: isPlay ? Icons.pause_circle_filled : Icons.play_circle_filled,
-                    semanticLabel: isPlay ? '暂停' : '播放',
-                    onTap: togglePlayPause,
-                  );
-                },
-              ),
-              const SizedBox(width: 6),
-              _pipControlButton(icon: Icons.open_in_full, semanticLabel: '回到直播间', onTap: exitPip),
-              const SizedBox(width: 6),
-              _pipControlButton(
-                icon: Icons.close,
-                semanticLabel: '关闭',
-                onTap: () async {
-                  // Leaving the presentation first: closing playback alone
-                  // would strand the window in its shrunk frameless state.
-                  await exitPip();
-                  await close();
-                },
-              ),
-            ],
-          ),
-        ),
-      ],
-    ),
+  Widget buildPiPOverlay() => _PipOverlayView(
+    facade: this,
+    danmaku: _activeVideoController != null ? CompactDanmakuOverlay(controller: _activeVideoController) : null,
   );
-
-  Widget _pipControlButton({
-    required IconData icon,
-    required String semanticLabel,
-    required Future<void> Function() onTap,
-  }) {
-    return IconButton(
-      iconSize: 22,
-      tooltip: semanticLabel,
-      style: IconButton.styleFrom(backgroundColor: Colors.black45, foregroundColor: Colors.white),
-      icon: Icon(icon),
-      onPressed: () => unawaited(onTap()),
-    );
-  }
 
   double get currentPresentationAspectRatio {
     final size = handle?.combinedSnapshot.geometry.videoSize;
@@ -695,4 +629,143 @@ class PlaybackSourceQualitySelection {
   final List<LivePlayQuality> qualities;
   final int currentQuality;
   final Map<String, Object?> sourceQueryPolicies;
+}
+
+/// The desktop/system PiP surface: hover reveals the controls (a large
+/// centered play/pause plus corner actions), the video corners are rounded,
+/// and the pointer drag hands the window to the native move loop. Touch
+/// platforms keep the controls always visible — there is no hover there.
+class _PipOverlayView extends StatefulWidget {
+  const _PipOverlayView({required this.facade, required this.danmaku});
+
+  final LivePlayerFacade facade;
+  final Widget? danmaku;
+
+  @override
+  State<_PipOverlayView> createState() => _PipOverlayViewState();
+}
+
+class _PipOverlayViewState extends State<_PipOverlayView> {
+  bool _hovered = false;
+
+  bool get _isTouchDevice {
+    return defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS;
+  }
+
+  bool get _showControls => _isTouchDevice || _hovered;
+
+  @override
+  Widget build(BuildContext context) {
+    final facade = widget.facade;
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: Stack(
+          // expand keeps MediaPlayerView off infinite constraints if this
+          // Scaffold's body is ever composed inside a loose/unbounded ancestor.
+          fit: StackFit.expand,
+          children: [
+            // Rounded video corners: the window itself is rounded by the
+            // desktop backend; the clip keeps the surface corners soft even
+            // where the system does not round (older Windows).
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  GestureDetector(
+                    // The video surface stays gesture-first: single tap
+                    // toggles playback, double tap leaves PiP, and a drag
+                    // hands the pointer to the native caption-drag loop —
+                    // the compact window has no title bar, so a
+                    // surface-initiated drag is the only way to move it.
+                    onDoubleTap: () => unawaited(facade.exitPip()),
+                    onTap: facade.togglePlayPause,
+                    onPanStart: (_) => unawaited(windowsPipWindow.startDragging()),
+                    child: facade.getVideoWidget(BoxFit.contain),
+                  ),
+                  if (widget.danmaku != null) Positioned.fill(child: widget.danmaku!),
+                ],
+              ),
+            ),
+            // Hover-revealed center play/pause: large enough to hit from a
+            // small floating window without aiming.
+            Center(
+              child: IgnorePointer(
+                ignoring: !_showControls,
+                child: AnimatedOpacity(
+                  opacity: _showControls ? 1 : 0,
+                  duration: const Duration(milliseconds: 160),
+                  child: StreamBuilder<bool>(
+                    stream: facade.onPlaying,
+                    initialData: facade.isPlayingNow,
+                    builder: (context, snapshot) {
+                      final isPlay = snapshot.data ?? true;
+                      return IconButton.filledTonal(
+                        iconSize: 56,
+                        tooltip: isPlay ? '暂停' : '播放',
+                        style: IconButton.styleFrom(backgroundColor: Colors.black45, foregroundColor: Colors.white),
+                        icon: Icon(isPlay ? Icons.pause_rounded : Icons.play_arrow_rounded),
+                        onPressed: facade.togglePlayPause,
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
+            // Corner actions share the hover reveal.
+            Positioned(
+              right: 8,
+              top: 8,
+              child: IgnorePointer(
+                ignoring: !_showControls,
+                child: AnimatedOpacity(
+                  opacity: _showControls ? 1 : 0,
+                  duration: const Duration(milliseconds: 160),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _pipControlButton(
+                        icon: Icons.open_in_full_rounded,
+                        semanticLabel: '回到直播间',
+                        onTap: facade.exitPip,
+                      ),
+                      const SizedBox(width: 6),
+                      _pipControlButton(
+                        icon: Icons.close_rounded,
+                        semanticLabel: '关闭',
+                        onTap: () async {
+                          // Leaving the presentation first: closing playback
+                          // alone would strand the window in its shrunk
+                          // frameless state.
+                          await facade.exitPip();
+                          await facade.close();
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _pipControlButton({
+    required IconData icon,
+    required String semanticLabel,
+    required Future<void> Function() onTap,
+  }) {
+    return IconButton(
+      iconSize: 26,
+      tooltip: semanticLabel,
+      style: IconButton.styleFrom(backgroundColor: Colors.black45, foregroundColor: Colors.white),
+      icon: Icon(icon),
+      onPressed: () => unawaited(onTap()),
+    );
+  }
 }
