@@ -14,12 +14,12 @@ import 'package:pure_live/core/live/empty_danmaku.dart';
 import 'package:pure_live/core/live/live_danmaku.dart';
 import 'package:pure_live/domains/iptv/data/services/auto_sync_scheduler.dart';
 import 'package:pure_live/core/network/http_header_policy.dart';
-import 'package:pure_live/domains/live/data/platforms/sites.dart';
 import 'package:pure_live/domains/iptv/data/iptv_settings_controller.dart';
+import 'package:pure_live/core/consts/platform_ids.dart';
 
 class IptvSite implements LiveSite, LiveSiteRecordRoomResolver {
   @override
-  String id = Sites.iptvSite;
+  String id = PlatformIds.iptv;
 
   @override
   String name = '网络';
@@ -49,7 +49,7 @@ class IptvSite implements LiveSite, LiveSiteRecordRoomResolver {
               areaPic: ch.tvgLogo ?? '',
               typeName: provider.name,
               areaType: provider.id,
-              platform: Sites.iptvSite,
+              platform: PlatformIds.iptv,
             ),
           );
         }
@@ -90,7 +90,7 @@ class IptvSite implements LiveSite, LiveSiteRecordRoomResolver {
         avatar: defaultAvatar,
         status: true,
         liveStatus: LiveStatus.live,
-        platform: Sites.iptvSite,
+        platform: PlatformIds.iptv,
         link: ch.streamUrl,
         data: ch.streamUrl,
         epgId: epgId,
@@ -143,7 +143,7 @@ class IptvSite implements LiveSite, LiveSiteRecordRoomResolver {
           notice: '',
           status: true,
           liveStatus: LiveStatus.live,
-          platform: Sites.iptvSite,
+          platform: PlatformIds.iptv,
           link: roomId,
           data: roomId,
         );
@@ -261,7 +261,7 @@ class IptvSite implements LiveSite, LiveSiteRecordRoomResolver {
       avatar: defaultAvatar,
       status: true,
       liveStatus: LiveStatus.live,
-      platform: Sites.iptvSite,
+      platform: PlatformIds.iptv,
       link: channel.streamUrl,
       data: channel.streamUrl,
       epgId: epgId,
@@ -301,7 +301,7 @@ class IptvSite implements LiveSite, LiveSiteRecordRoomResolver {
           notice: '',
           status: true,
           liveStatus: LiveStatus.live,
-          platform: Sites.iptvSite,
+          platform: PlatformIds.iptv,
           link: ch.streamUrl,
           data: ch.streamUrl,
           catchUpMode: ch.catchupMode,
@@ -385,7 +385,7 @@ class IptvSite implements LiveSite, LiveSiteRecordRoomResolver {
         avatar: defaultAvatar,
         status: true,
         liveStatus: LiveStatus.live,
-        platform: Sites.iptvSite,
+        platform: PlatformIds.iptv,
         link: ch.streamUrl,
         data: ch.streamUrl,
         catchUpMode: ch.catchupMode,

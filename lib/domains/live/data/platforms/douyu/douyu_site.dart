@@ -10,7 +10,7 @@ import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
 import 'package:pure_live/core/live/live_site.dart';
 import 'package:pure_live/domains/live/data/platforms/douyu/douyu_danmaku.dart';
-import 'package:pure_live/domains/live/data/platforms/douyu/douyu_utils.dart';
+import 'package:pure_live/core/network/douyu_utils.dart';
 import 'package:pure_live/core/live/live_danmaku.dart';
 import 'package:pure_live/core/utils/live_quality_label.dart';
 import 'package:pure_live/domains/live/data/platforms/sites.dart';

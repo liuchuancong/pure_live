@@ -37,7 +37,7 @@ import 'package:pure_live/domains/live/data/platforms/cc/cc_site.dart';
 
 import 'steambroadcast/steam_broadcast_site.dart';
 
-import 'package:pure_live/domains/live/data/platforms/iptv/iptv_site.dart';
+import 'package:pure_live/domains/iptv/data/platforms/iptv_site.dart';
 import 'package:pure_live/domains/live/data/platforms/twitch/twitch_site.dart';
 import 'package:pure_live/domains/live/data/platforms/kuaishou/kuaishou_site.dart';
 import 'package:pure_live/domains/live/data/platforms/bilibili/bilibili_site.dart';

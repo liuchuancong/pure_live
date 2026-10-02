@@ -1,7 +1,7 @@
 import 'package:pure_live/domains/live/data/platforms/xiaohongshu/xiaohongshu_api.dart';
 import 'package:pure_live/domains/live/data/platforms/bilibili/bilibili_site.dart';
 import 'package:pure_live/domains/live/data/platforms/douyin/douyin_site.dart';
-import 'package:pure_live/domains/live/data/platforms/douyu/douyu_utils.dart';
+import 'package:pure_live/core/network/douyu_utils.dart';
 import 'package:pure_live/domains/live/data/platforms/huya/huya_site.dart';
 import 'package:pure_live/domains/live/data/platforms/twitch/twitch_site.dart';
 import 'package:pure_live/domains/live/data/platforms/acfun/acfun_api.dart';
