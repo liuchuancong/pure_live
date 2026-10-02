@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:pure_live/player/utils/player_consts.dart';
 
-const Map<String, String> _iosVideoOutputDrivers = <String, String>{'libmpv': 'libmpv'};
+const Map<String, String> _iosVideoOutputDrivers = <String, String>{'auto': 'ok', 'libmpv': 'libmpv'};
 const Map<String, String> _iosAudioOutputDrivers = <String, String>{
   'auto': 'auto',
   'audiounit': 'audiounit (iOS only)',
@@ -39,6 +39,7 @@ const Map<String, String> _iosHardwareDecoders = <String, String>{
 // (D3D11 interop performance, standalone-style rendering). Each entry's
 // second value is the severity marker consumed by the settings UI.
 const Map<String, String> _windowsVideoOutputDrivers = <String, String>{
+  'auto': 'ok',
   'libmpv': 'ok',
   'gpu': 'window',
   'gpu-next': 'window',
@@ -47,6 +48,7 @@ const Map<String, String> _windowsVideoOutputDrivers = <String, String>{
 };
 
 const Map<String, String> _desktopVideoOutputDrivers = <String, String>{
+  'auto': 'ok',
   'libmpv': 'libmpv',
 };
 

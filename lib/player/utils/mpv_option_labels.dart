@@ -18,6 +18,7 @@ typedef MpvOption = ({String key, String label});
 // Readable names adapted from liuchuancong/pure_live. Only keys the platform
 // profile accepts are ever offered; an unnamed key shows the profile's label.
 const Map<String, (String, String)> _videoOutputLabels = {
+  'auto': ('auto（跟随 mpv 默认，推荐）', 'Auto (follow mpv default, recommended)'),
   'libmpv': ('libmpv（内嵌 Flutter 纹理，默认）', 'libmpv (embedded Flutter texture, default)'),
   'gpu': ('gpu（⚠ 独立 mpv 窗口，完整着色含 RTX 滤镜）', 'gpu (⚠ standalone mpv window, full shading incl. RTX)'),
   'gpu-next': ('gpu-next（⚠ 独立窗口，libplacebo 新管线，支持 HDR）', 'gpu-next (⚠ standalone, libplacebo pipeline, HDR)'),
