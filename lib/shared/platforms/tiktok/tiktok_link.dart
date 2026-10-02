@@ -67,5 +67,21 @@ class TikTokLink {
     return value == 'vm.tiktok.com' || value == 'vt.tiktok.com';
   }
 
+  /// 短链（`vm.tiktok.com` / `vt.tiktok.com`）的 http(s) 地址：单段路径、无
+  /// userinfo/端口/片段，否则 null。它要跟跳转后才能得到真正的房间链接。
+  static Uri? shortUri(String raw) {
+    final uri = Uri.tryParse(raw.trim());
+    if (uri == null ||
+        (uri.scheme != 'http' && uri.scheme != 'https') ||
+        uri.userInfo.isNotEmpty ||
+        uri.hasPort ||
+        uri.hasFragment ||
+        !isShortHost(uri.host)) {
+      return null;
+    }
+    final segments = uri.pathSegments.where((value) => value.isNotEmpty).toList(growable: false);
+    return segments.length == 1 ? uri : null;
+  }
+
   static bool _officialHost(String host) => host == 'tiktok.com' || host == 'www.tiktok.com' || host == 'm.tiktok.com';
 }

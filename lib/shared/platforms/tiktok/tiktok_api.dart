@@ -293,46 +293,63 @@ class TikTokApi {
     return _username(_object(data['owner'])['display_id']);
   }
 
+  /// 读一个 stream_data 容器（`streamData`/`hevcStreamData`）：一档里每个协议
+  /// 一条线路，读不出来的地址只丢那条线（上游 22-6）。
+  static void _readContainer(Object? value, String fallbackCodec, Map<String, _TikTokStreamBuilder> builders) {
+    final container = _object(value);
+    final pull = _object(container['pull_data']);
+    final raw = _optionalText(pull['stream_data']);
+    if (raw.isEmpty || raw.length > 4 * 1024 * 1024) return;
+    final decoded = _object(_decode(raw));
+    final qualities = _object(decoded['data']);
+    if (qualities.length > 32) throw const TikTokException(TikTokFailure.schema);
+    for (final entry in qualities.entries) {
+      final qualityId = _qualityId(entry.key);
+      if (qualityId == 'ao') continue;
+      final main = _object(_object(entry.value)['main']);
+      final sdkRaw = _optionalText(main['sdk_params']);
+      final sdk = sdkRaw.isEmpty ? <String, dynamic>{} : _object(_decode(sdkRaw));
+      final codec = _codec(sdk['VCodec'] ?? sdk['v_codec'], fallbackCodec);
+      final resolution = _resolution(sdk['resolution']);
+      final bitrate = _optionalNonNegativeInt(sdk['vbitrate']);
+      for (final protocol in const ['flv', 'hls']) {
+        final rawUrl = _optionalText(main[protocol]);
+        if (rawUrl.isEmpty) continue;
+        final Uri uri;
+        try {
+          uri = _mediaUri(rawUrl);
+        } on TikTokException {
+          continue;
+        }
+        final id = '$codec:$qualityId:$protocol';
+        final builder = builders.putIfAbsent(
+          id,
+          () => _TikTokStreamBuilder(
+            id: id,
+            qualityId: qualityId,
+            protocol: protocol,
+            codec: codec,
+            resolution: resolution,
+            bitrate: bitrate,
+          ),
+        );
+        if (builder.resolution.isEmpty && resolution.isNotEmpty) builder.resolution = resolution;
+        builder.bitrate ??= bitrate;
+        if (!builder.urls.contains(uri)) builder.urls.add(uri);
+      }
+    }
+  }
+
   static List<TikTokStream> _streams(Map<String, dynamic> room) {
     final builders = <String, _TikTokStreamBuilder>{};
     void readContainer(Object? value, String fallbackCodec) {
       if (value == null) return;
-      final container = _object(value);
-      final pull = _object(container['pull_data']);
-      final raw = _optionalText(pull['stream_data']);
-      if (raw.isEmpty || raw.length > 4 * 1024 * 1024) return;
-      final decoded = _object(_decode(raw));
-      final qualities = _object(decoded['data']);
-      if (qualities.length > 32) throw const TikTokException(TikTokFailure.schema);
-      for (final entry in qualities.entries) {
-        final qualityId = _qualityId(entry.key);
-        if (qualityId == 'ao') continue;
-        final main = _object(_object(entry.value)['main']);
-        final sdkRaw = _optionalText(main['sdk_params']);
-        final sdk = sdkRaw.isEmpty ? <String, dynamic>{} : _object(_decode(sdkRaw));
-        final codec = _codec(sdk['VCodec'] ?? sdk['v_codec'], fallbackCodec);
-        final resolution = _resolution(sdk['resolution']);
-        final bitrate = _optionalNonNegativeInt(sdk['vbitrate']);
-        for (final protocol in const ['flv', 'hls']) {
-          final rawUrl = _optionalText(main[protocol]);
-          if (rawUrl.isEmpty) continue;
-          final uri = _mediaUri(rawUrl);
-          final id = '$codec:$qualityId:$protocol';
-          final builder = builders.putIfAbsent(
-            id,
-            () => _TikTokStreamBuilder(
-              id: id,
-              qualityId: qualityId,
-              protocol: protocol,
-              codec: codec,
-              resolution: resolution,
-              bitrate: bitrate,
-            ),
-          );
-          if (builder.resolution.isEmpty && resolution.isNotEmpty) builder.resolution = resolution;
-          builder.bitrate ??= bitrate;
-          if (!builder.urls.contains(uri)) builder.urls.add(uri);
-        }
+      // 坏容器/坏档位只损失它自己（上游 22-6）：一个读不出来的 stream_data
+      // 不能让整次详情解析失败。
+      try {
+        _readContainer(value, fallbackCodec, builders);
+      } on TikTokException {
+        return;
       }
     }
 

@@ -38,7 +38,7 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | missevan / kilakila / acfun | 8 | 三站均已摘取（见下） |
 | jdlive / looklive / steambroadcast / twitcasting / showroom / sixroom / baidulive | 7 | 七站均已摘取（见下） |
 | cc | 5 | 本轮已摘取（见下） |
-| tiktok | 5 | 待办 |
+| tiktok | 5 | 本轮已摘取（见下） |
 | inke / xiaohongshu / weibo / liveme | 4 | 四站均已摘取（见下） |
 
 ## bilibili
@@ -500,3 +500,17 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | 16-3 | 每个 `quality_type` 一档（HD，页面叫「原画」），线路是 H.264 在前、H.265 在后，各编解码内 FLV 先于 HLS | 未做：清晰度发现 |
 | 16-4 | 破坏规则的拉流行被跳过 | 未做 |
 | 16-5 | 主播资料 | 上游也阻塞（重定向到验证码/登录页，网页直播 API 无签名返回 406） |
+
+## tiktok
+
+上游相关提交：`0e2a4ed03`（M4.U.22，22-1 至 22-7）。
+
+| 项 | 内容 | 本仓状态 |
+| --- | --- | --- |
+| 22-5 | 搜索跟短链跳转（`vm.tiktok.com` / `vt.tiktok.com`，最多 3 次） | **已同步**：此前 `isShortHost` 有定义但从没被用过，粘贴短链既不是官方链接也不是用户名，什么都搜不到 |
+| 22-6 | 只填卡片的字段不再让整次回答失败；坏容器/坏档位/坏地址只损失它自己 | **已同步**：容器级与地址级各自容错，坏地址只丢那条线路 |
+| 22-1 | 受限直播（私密账号/订阅可见/付费）是在播 + 限制种类，播放时说明谁可以看 | 未做：本仓目前显示为封禁（`LiveStatus.banned`），需限制模型 |
+| 22-2 / 22-4 | 每个档位+编解码一档，FLV 先于 HLS，按站点命名（`options.qualities`、原画、` · H.265`） | 未做：清晰度发现 |
+| 22-3 | `preferH264`（默认开）把 H.264 档位排前 | 未做 |
+| startedAt | 在播时取 `liveRoom.startTime` | 未做：`LiveRoom` 缺字段 |
+| 22-8 | 匿名目录接口 | 上游也阻塞（需要签名或登录） |

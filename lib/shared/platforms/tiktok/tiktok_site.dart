@@ -9,6 +9,7 @@ import 'package:pure_live/shared/platforms/live_site.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
 import 'package:pure_live/core/utils/i18n.dart';
 import 'package:pure_live/shared/platforms/live_external_room.dart';
+import 'package:pure_live/shared/platforms/live_short_link_session.dart';
 
 import 'tiktok_api.dart';
 import 'tiktok_link.dart';
@@ -35,9 +36,16 @@ class TikTokSite extends LiveSite
     }
   }
 
-  TikTokSite({TikTokApi? api}) : _api = api ?? TikTokApi();
+  TikTokSite({TikTokApi? api, this.shortLinkClientFactory}) : _api = api ?? TikTokApi();
 
   final TikTokApi _api;
+
+  /// 短链解析用的客户端工厂（测试注入用；必须是新客户端，不能是全局单例）。
+  final Dio Function()? shortLinkClientFactory;
+
+  /// 短链最多跟 3 次跳转（上游 22-5）。
+  static const int _maxShortLinkRedirects = 3;
+  static const Duration _shortLinkTimeout = Duration(seconds: 12);
 
   @override
   String get id => 'tiktok';
@@ -140,7 +148,16 @@ class TikTokSite extends LiveSite
     CancelToken? cancel,
   }) async {
     if (page != 1 || pageSize < 1) return [];
-    final reference = TikTokLink.parseOrUsername(keyword);
+    // 短链（vm./vt.tiktok.com）要跟跳转才能拿到房间（上游 22-5）：此前它既不是
+    // 官方链接也不是用户名，于是粘贴短链什么都搜不到。
+    final short = TikTokLink.shortUri(keyword);
+    final TikTokLink? reference;
+    if (short == null) {
+      reference = TikTokLink.parseOrUsername(keyword);
+    } else {
+      final resolved = await _followShortLink(short);
+      reference = resolved == null ? null : TikTokLink.parse(resolved);
+    }
     if (reference == null) return [];
     try {
       final username = await _api.resolveReference(reference, cancel: cancel);
@@ -148,6 +165,27 @@ class TikTokSite extends LiveSite
     } on TikTokException catch (error) {
       if (error.kind == TikTokFailure.missing) return [];
       rethrow;
+    }
+  }
+
+  /// 跟短链跳转，最多 [_maxShortLinkRedirects] 次，返回最终地址；跟不动时返回
+  /// 已经到达的那个地址（null 表示整条链都读不到）。
+  Future<String?> _followShortLink(Uri start) async {
+    final session = LiveShortLinkSession(timeout: _shortLinkTimeout, clientFactory: shortLinkClientFactory);
+    try {
+      var current = start;
+      for (var hop = 0; hop < _maxShortLinkRedirects; hop++) {
+        final response = await session
+            .get(current)
+            .timeout(_shortLinkTimeout, onTimeout: () => null);
+        if (response == null) return null;
+        final target = LiveShortLinkSession.redirectTarget(current, response);
+        if (target == null) return current.toString();
+        current = target;
+      }
+      return current.toString();
+    } finally {
+      session.close();
     }
   }
 
