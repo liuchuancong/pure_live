@@ -22,14 +22,19 @@ class AppBackgroundLayer extends StatelessWidget {
     final controller = BackgroundController.to;
     return Obx(() {
       final config = controller.config.v;
-      if (!config.hasBackground) return child;
-
+      final bool hasBackground = config.hasBackground;
+      // The tree keeps its shape whether or not a wallpaper is set: the layer
+      // used to return `child` on its own and a Stack around it otherwise, so
+      // applying or clearing a background swapped the widget type above the
+      // Navigator and deactivated that whole subtree (title bar included) for a
+      // frame. An empty placeholder keeps `child` at the same position, and the
+      // empty frame paints nothing - which is what returning `child` was for.
       return Stack(
         fit: StackFit.expand,
-        children: [
-          _BackgroundSurface(config: config, controller: controller),
+        children: <Widget>[
+          if (hasBackground) _BackgroundSurface(config: config, controller: controller) else const SizedBox.shrink(),
           // The mask exists to keep page text readable over a photo or video.
-          ColoredBox(color: _maskColor(config, Theme.of(context))),
+          if (hasBackground) ColoredBox(color: _maskColor(config, Theme.of(context))) else const SizedBox.shrink(),
           child,
         ],
       );
