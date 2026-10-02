@@ -225,11 +225,10 @@ class PlayerSettingsController extends GetxController {
   /// small window for landscape streams (the height for portrait ones); the
   /// short side always follows the video's aspect.
   ///
-  /// [windowsPipMinWidth] / [windowsPipMinHeight] are inert on Windows today:
-  /// `media_core_pip` never reads `PipConfig.minWidth` / `minHeight`, and the
-  /// Win32 backend has no native minimum size (`setMinimumSize` is a no-op), so
-  /// the sliders change nothing. Kept as compatibility fields for old backups
-  /// until the package implements a real floor.
+  /// [windowsPipMinWidth] / [windowsPipMinHeight] are the floor the viewer can
+  /// drag the compact window down to: `media_core_pip` applies them as the
+  /// window's minimum size for the duration of the small window and restores
+  /// the host's normal minimum on exit. They only affect the small window.
   final RxDouble windowsPipBaseSize = hiveDouble('windowsPipBaseSize', 360.0);
   final RxDouble windowsPipMinWidth = hiveDouble('windowsPipMinWidth', 140.0);
   final RxDouble windowsPipMinHeight = hiveDouble('windowsPipMinHeight', 90.0);

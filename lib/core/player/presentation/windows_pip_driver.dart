@@ -37,7 +37,19 @@ final PipDriver windowsPipDriver = PipDriver(
   // placement calls, and when a viewer reports a broken window after a
   // transition these four lines say which leg never ran.
   lifecycleHooks: PresentationLifecycleHooks(
-    beforeEnter: (_) async => CoreLog.i('pip: entering the desktop small window'),
+    // The resolved policy is logged, not just the transition: "the window keeps
+    // snapping back to the video shape" and "the floor is not the number I set"
+    // are indistinguishable from the outside, and the two settings that decide
+    // them live in the driver's config rather than in the request.
+    beforeEnter: (_) async {
+      final config = windowsPipDriver.config;
+      CoreLog.i(
+        'pip: entering the desktop small window '
+        'lockAspectRatio=${config.lockAspectRatio} '
+        'min=${config.minWidth.round()}x${config.minHeight.round()} '
+        'base=${config.width.round()}',
+      );
+    },
     afterEnter: (_) async {
       CoreLog.i('pip: entered the desktop small window');
       await _logPipGeometry();
