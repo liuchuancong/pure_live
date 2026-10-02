@@ -663,6 +663,19 @@ class _PipOverlayView extends StatefulWidget {
 class _PipOverlayViewState extends State<_PipOverlayView> {
   bool _hovered = false;
 
+  @override
+  void initState() {
+    super.initState();
+    // Entering PiP from fullscreen: the adapter's viewport fit is shared
+    // state, and the fullscreen page may have left it at the user's fill/crop
+    // preference — a cropped, magnified picture inside the compact window.
+    // The compact face always shows the whole picture; re-assert contain
+    // after the frame settles (the room's own view is gone by then).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) widget.facade.changeVideoFit(BoxFit.contain);
+    });
+  }
+
   bool get _isTouchDevice {
     return defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS;
   }
