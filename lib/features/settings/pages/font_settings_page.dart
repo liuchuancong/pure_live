@@ -1,6 +1,6 @@
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/services/settings/font_settings_controller.dart';
+import 'package:pure_live/core/config/font_settings_controller.dart';
 
 class FontSettingsPage extends StatefulWidget {
   const FontSettingsPage({super.key});

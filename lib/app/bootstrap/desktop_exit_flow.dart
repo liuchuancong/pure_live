@@ -3,8 +3,8 @@ import 'dart:io';
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/platform/desktop_tray_service.dart';
 import 'package:pure_live/core/storage/hive_pref_util.dart';
-import 'package:pure_live/features/account/bilibili/web_login_controller.dart';
-import 'package:pure_live/services/settings/exit_settings_controller.dart';
+import 'package:pure_live/domains/account/presentation/account/bilibili/web_login_controller.dart';
+import 'package:pure_live/core/config/exit_settings_controller.dart';
 
 /// 桌面端的退出流程：先把设置落盘、清掉 B 站网页登录态，再按用户偏好决定是真的
 /// 退出进程还是收进托盘。退出确认弹窗属于这条流程的一部分，所以和它放在一起。

@@ -12,18 +12,19 @@ import 'package:pure_live/core/logging/core_log.dart';
 import 'package:pure_live/core/models/live_anchor_item.dart';
 import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
-import 'package:pure_live/core/contracts/live_site.dart';
+import 'package:pure_live/domains/live/domain/live_site.dart';
 import 'package:pure_live/domains/live/data/platforms/huya/huya_danmaku.dart';
 import 'package:pure_live/core/release/github_mirror.dart';
 import 'package:pure_live/core/tars/base_tars_http.dart';
-import 'package:pure_live/core/contracts/live_danmaku.dart';
+import 'package:pure_live/domains/live/domain/live_danmaku.dart';
 import 'package:pure_live/core/tars/get_cdn_token_ex_req.dart';
 import 'package:pure_live/core/tars/get_cdn_token_ex_resp.dart';
 import 'package:pure_live/domains/live/data/platforms/huya/huya_request_params.dart';
 import 'package:pure_live/domains/live/data/platforms/huya/huya_transport_policy.dart';
 import 'package:pure_live/domains/live/data/platforms/huya/huya_utils.dart' as huya_utils;
-import 'package:pure_live/features/live/playback/controllers/player_controller.dart';
 import 'package:pure_live/core/utils/live_quality_label.dart';
+import 'package:pure_live/domains/live/data/platforms/sites.dart';
+import 'package:pure_live/domains/live/domain/current_live_room.dart';
 
 class HuyaSite
     implements
@@ -744,12 +745,9 @@ class HuyaSite
       if (!allowUiFallback) {
         throw const FormatException('Huya room playback metadata is unavailable');
       }
-      if (Get.isRegistered<PlayerController>()) {
-        final PlayerController playerController = Get.find<PlayerController>();
-        final currentRoom = playerController.currentRoom;
-        if (currentRoom?.hasSameIdentity(LiveRoom(roomId: roomId, platform: platform)) == true) {
-          return currentRoom!.getLiveRoomWithError();
-        }
+      final currentRoom = CurrentLiveRoom.value;
+      if (currentRoom?.hasSameIdentity(LiveRoom(roomId: roomId, platform: platform)) == true) {
+        return currentRoom!.getLiveRoomWithError();
       }
       return LiveRoom(roomId: roomId, platform: platform).getLiveRoomWithError();
     }

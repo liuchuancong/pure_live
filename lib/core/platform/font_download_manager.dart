@@ -7,7 +7,7 @@ import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/core/models/font_model.dart';
 import 'package:pure_live/core/release/github_mirror.dart';
 import 'package:pure_live/core/platform/app_path_manager.dart';
-import 'package:pure_live/services/settings/cache_controller.dart';
+import 'package:pure_live/core/config/cache_controller.dart';
 import 'package:pure_live/core/models/download_state.dart';
 
 class FontDownloadManager {

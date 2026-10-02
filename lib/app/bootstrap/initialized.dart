@@ -14,15 +14,15 @@ import 'package:pure_live/core/storage/hive_pref_util.dart';
 import 'package:pure_live/core/network/web_socket_util.dart';
 import 'package:pure_live/core/platform/platform_utils.dart';
 import 'package:pure_live/app/bootstrap/initial_services.dart';
-import 'package:pure_live/features/recorder/ffmpeg/ffmpeg_manager.dart';
+import 'package:pure_live/domains/recorder/data/ffmpeg/ffmpeg_manager.dart';
 import 'package:windows_single_instance/windows_single_instance.dart';
 import 'package:pure_live/core/platform/mobile_manager.dart';
 import 'package:pure_live/core/platform/desktop_manager.dart';
-import 'package:pure_live/features/recorder/services/recorder_proxy_routing.dart';
-import 'package:pure_live/services/settings/backup_controller.dart';
-import 'package:pure_live/player/kernel/player_kernel_service.dart';
+import 'package:pure_live/domains/recorder/data/services/recorder_proxy_routing.dart';
+import 'package:pure_live/core/config/backup_controller.dart';
+import 'package:pure_live/core/player/kernel/player_kernel_service.dart';
 import 'package:pure_live/core/platform/windows_multi_instance_launcher.dart';
-import 'package:pure_live/services/migration/settings_upgrade_migration.dart';
+import 'package:pure_live/core/config/migrations/settings_upgrade_migration.dart';
 
 /// Keep decoded cover/avatar memory bounded independently from the encoded
 /// HTTP/disk cache. A 960x540 RGBA cover is roughly 2 MiB after decoding, so

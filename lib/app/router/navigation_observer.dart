@@ -4,11 +4,12 @@ import 'dart:developer';
 import 'package:flutter/scheduler.dart';
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/platform/platform_utils.dart';
-import 'package:pure_live/player/kernel/live_player_facade.dart';
-import 'package:pure_live/features/live/playback/widgets/danmaku/compact_danmaku_overlay.dart';
-import 'package:pure_live/player/presentation/fullscreen_window.dart' show WindowService;
-import 'package:pure_live/features/live/playback/controllers/live_play_controller.dart';
-import 'package:pure_live/features/live/playback/widgets/layout/live_play_video.dart' show shouldFloatAfterLivePlayExit;
+import 'package:pure_live/domains/live/domain/live_player_facade.dart';
+import 'package:pure_live/domains/live/presentation/playback/widgets/danmaku/compact_danmaku_overlay.dart';
+import 'package:pure_live/core/player/presentation/fullscreen_window.dart' show WindowService;
+import 'package:pure_live/domains/live/presentation/playback/controllers/live_play_controller.dart';
+import 'package:pure_live/domains/live/presentation/playback/widgets/layout/live_play_video.dart' show shouldFloatAfterLivePlayExit;
+import 'package:pure_live/domains/live/domain/global_player_service.dart';
 
 class LiveRouteObserver extends RouteObserver<PageRoute<dynamic>> {
   @override
@@ -159,11 +160,3 @@ class LiveRouteObserver extends RouteObserver<PageRoute<dynamic>> {
   }
 }
 
-/// 记录当前路由名，供需要判断页面是否在前台的模块读取。
-class RouteObserverController extends GetxController {
-  static RouteObserverController get to => Get.find();
-  final currentRoute = ''.obs;
-  void updateRoute(String? route) {
-    currentRoute.value = route ?? "";
-  }
-}

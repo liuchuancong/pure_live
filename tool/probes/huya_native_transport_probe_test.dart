@@ -6,8 +6,8 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pure_live/domains/live/data/platforms/huya/huya_site.dart';
 import 'package:pure_live/domains/live/data/platforms/huya/huya_transport_policy.dart';
-import 'package:pure_live/player/core/playback_header_resolver.dart';
-import 'package:pure_live/player/utils/live_buffer_policy.dart';
+import 'package:pure_live/domains/live/data/playback_header_resolver.dart';
+import 'package:pure_live/core/player/utils/live_buffer_policy.dart';
 
 void main() {
   test(

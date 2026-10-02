@@ -4,7 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:pure_live/core/stream/hls_master_selection.dart';
 import 'package:pure_live/core/network/request_scope.dart';
 import 'package:pure_live/core/network/web_socket_util.dart';
-import 'package:pure_live/features/recorder/services/niconico_hls_input.dart'
+import 'package:pure_live/domains/recorder/data/services/niconico_hls_input.dart'
     show NiconicoSeatFactory, NiconicoMasterReader, readNiconicoMaster;
 
 import 'niconico_api.dart';

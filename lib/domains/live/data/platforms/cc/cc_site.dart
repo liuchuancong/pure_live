@@ -6,12 +6,13 @@ import 'package:pure_live/domains/live/data/platforms/cc/cc_catalog.dart';
 import 'package:pure_live/core/models/live_anchor_item.dart';
 import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
-import 'package:pure_live/core/contracts/live_site.dart';
-import 'package:pure_live/core/contracts/empty_danmaku.dart';
-import 'package:pure_live/core/contracts/live_danmaku.dart';
-import 'package:pure_live/features/live/playback/controllers/player_controller.dart';
+import 'package:pure_live/domains/live/domain/live_site.dart';
+import 'package:pure_live/domains/live/data/empty_danmaku.dart';
+import 'package:pure_live/domains/live/domain/live_danmaku.dart';
 import 'package:pure_live/core/utils/live_quality_label.dart';
-import 'package:pure_live/core/contracts/live_directory.dart';
+import 'package:pure_live/domains/live/domain/live_directory.dart';
+import 'package:pure_live/domains/live/data/platforms/sites.dart';
+import 'package:pure_live/domains/live/domain/current_live_room.dart';
 
 class CCSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResolver, LiveSiteCategoryDirectoryProvider {
   @override
@@ -280,12 +281,9 @@ class CCSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResol
     try {
       return await _loadRoomDetail(roomId);
     } catch (e) {
-      if (Get.isRegistered<PlayerController>()) {
-        final PlayerController playerController = Get.find<PlayerController>();
-        final currentRoom = playerController.currentRoom;
-        if (currentRoom?.hasSameIdentity(LiveRoom(roomId: roomId, platform: platform)) == true) {
-          return currentRoom!.getLiveRoomWithError();
-        }
+      final currentRoom = CurrentLiveRoom.value;
+      if (currentRoom?.hasSameIdentity(LiveRoom(roomId: roomId, platform: platform)) == true) {
+        return currentRoom!.getLiveRoomWithError();
       }
       return LiveRoom(roomId: roomId, platform: platform).getLiveRoomWithError();
     }

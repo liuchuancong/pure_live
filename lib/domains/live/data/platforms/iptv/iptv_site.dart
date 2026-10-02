@@ -1,19 +1,20 @@
 import 'dart:developer';
 
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/core/iptv/local/db_service.dart';
+import 'package:pure_live/domains/iptv/data/local/db_service.dart';
 import 'package:pure_live/core/platform/file_utils.dart';
 import 'package:pure_live/core/models/live_category.dart';
 import 'package:pure_live/core/models/live_anchor_item.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
-import 'package:pure_live/core/iptv/local/database.dart';
-import 'package:pure_live/core/contracts/live_site.dart';
-import 'package:pure_live/core/iptv/iptv_repository.dart';
-import 'package:pure_live/core/iptv/fuzzy_match.dart';
-import 'package:pure_live/core/contracts/empty_danmaku.dart';
-import 'package:pure_live/core/contracts/live_danmaku.dart';
-import 'package:pure_live/core/iptv/services/auto_sync_scheduler.dart';
+import 'package:pure_live/domains/iptv/data/local/database.dart';
+import 'package:pure_live/domains/live/domain/live_site.dart';
+import 'package:pure_live/domains/iptv/data/iptv_repository.dart';
+import 'package:pure_live/domains/iptv/domain/fuzzy_match.dart';
+import 'package:pure_live/domains/live/data/empty_danmaku.dart';
+import 'package:pure_live/domains/live/domain/live_danmaku.dart';
+import 'package:pure_live/domains/iptv/data/services/auto_sync_scheduler.dart';
 import 'package:pure_live/core/network/http_header_policy.dart';
+import 'package:pure_live/domains/live/data/platforms/sites.dart';
 
 class IptvSite implements LiveSite, LiveSiteRecordRoomResolver {
   @override

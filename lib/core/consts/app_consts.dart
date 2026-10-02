@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:pure_live/get/get.dart';
-import 'package:pure_live/domains/live/data/platforms/sites.dart';
 import 'package:flex_color_picker/flex_color_picker.dart';
 
 enum HomeMenu {
@@ -19,7 +18,6 @@ enum HomeMenu {
 
 class AppConsts {
   static const String defaultLoadingStyleKey = 'default';
-  static final List<String> supportSites = Sites.supportSites.map((e) => e.id).toList();
   static const Set<String> supportAndroidAbis = {'arm64-v8a', 'armeabi-v7a', 'x86_64'};
   // 主题模式映射
   static const Map<String, ThemeMode> themeModes = {

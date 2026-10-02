@@ -7,7 +7,7 @@ import 'package:pure_live/core/models/live_area.dart';
 import 'package:pure_live/core/models/live_room.dart';
 import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/core/network/request_scope.dart';
-import 'package:pure_live/core/contracts/live_directory.dart';
+import 'package:pure_live/domains/live/domain/live_directory.dart';
 
 enum PicartoFailure { transport, access, rateLimited, service, notFound, schema, cancelled, qualityUnavailable }
 

@@ -5,8 +5,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
-import 'package:pure_live/features/recorder/ffmpeg/ffmpeg_manager.dart';
-import 'package:pure_live/features/recorder/ffmpeg/ffmpeg_types.dart';
+import 'package:pure_live/domains/recorder/data/ffmpeg/ffmpeg_manager.dart';
+import 'package:pure_live/domains/recorder/data/ffmpeg/ffmpeg_types.dart';
 
 import 'frame_hash_timeline.dart';
 

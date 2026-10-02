@@ -3,7 +3,7 @@ import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/platform/file_utils.dart';
 import 'package:pure_live/core/widgets/download_apk_dialog.dart';
 import 'package:pure_live/core/widgets/download_directory_dialog.dart';
-import 'package:pure_live/services/settings/cache_controller.dart';
+import 'package:pure_live/core/config/cache_controller.dart';
 
 
 Uri? updateDownloadUri(String rawUrl) {

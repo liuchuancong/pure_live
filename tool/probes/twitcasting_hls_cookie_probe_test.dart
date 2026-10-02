@@ -8,8 +8,8 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pure_live/domains/live/data/platforms/twitcasting/twitcasting_api.dart';
-import 'package:pure_live/features/recorder/services/ffmpeg_hls_input_relay.dart';
-import 'package:pure_live/features/recorder/services/recorder_proxy_routing.dart';
+import 'package:pure_live/domains/recorder/data/services/ffmpeg_hls_input_relay.dart';
+import 'package:pure_live/domains/recorder/data/services/recorder_proxy_routing.dart';
 
 void main() {
   test(

@@ -1,19 +1,22 @@
 import 'dart:developer' as developer;
 
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/core/iptv/local/db_service.dart';
+import 'package:pure_live/domains/iptv/data/local/db_service.dart';
 import 'package:pure_live/core/storage/hive_pref_util.dart';
-import 'package:pure_live/features/auth/auth_controller.dart';
-import 'package:pure_live/services/settings/iptv_settings_controller.dart';
-import 'package:pure_live/features/recorder/services/cache_service.dart';
-import 'package:pure_live/features/recorder/consts/recorder_config.dart';
-import 'package:pure_live/features/recorder/consts/recorder_keys.dart';
-import 'package:pure_live/app/router/navigation_observer.dart';
-import 'package:pure_live/features/recorder/services/stream_resolver_service.dart';
-import 'package:pure_live/features/recorder/pages/recorder/recorder_controller.dart';
-import 'package:pure_live/core/iptv/services/channel_detail_controller.dart';
-import 'package:pure_live/features/recorder/pages/record_settings/record_settings_controller.dart';
-import 'package:pure_live/features/live/playback/widgets/local_interaction/local_interaction_controller.dart';
+import 'package:pure_live/domains/account/presentation/auth/auth_controller.dart';
+import 'package:pure_live/core/config/iptv_settings_controller.dart';
+import 'package:pure_live/domains/recorder/data/services/cache_service.dart';
+import 'package:pure_live/domains/recorder/data/consts/recorder_config.dart';
+import 'package:pure_live/domains/recorder/data/consts/recorder_keys.dart';
+import 'package:pure_live/domains/recorder/data/services/stream_resolver_service.dart';
+import 'package:pure_live/domains/recorder/presentation/pages/recorder/recorder_controller.dart';
+import 'package:pure_live/domains/iptv/presentation/channel_detail_controller.dart';
+import 'package:pure_live/domains/recorder/data/record_settings_controller.dart';
+import 'package:pure_live/domains/live/presentation/playback/widgets/local_interaction/local_interaction_controller.dart';
+import 'package:pure_live/domains/wallpaper/domain/background_controller.dart';
+import 'package:pure_live/domains/live/presentation/favorite/favorite_controller.dart';
+import 'package:pure_live/domains/live/presentation/popular/popular_controller.dart';
+import 'package:pure_live/domains/live/presentation/areas/areas_controller.dart';
 
 class InitialServices {
   static void initGlobalServices() {
@@ -53,6 +56,9 @@ class InitialServices {
     final db = DbService();
     await db.init();
     Get.put<DbService>(db, permanent: true);
+    // 长生命周期 Provider 在 App 装配层注册：Core 不认识具体业务域。
+    Get.lazyPut(() => BackgroundController(), fenix: true);
+
   }
 
   static Future<void> init() async {

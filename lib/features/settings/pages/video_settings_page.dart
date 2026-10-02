@@ -1,12 +1,12 @@
 import 'package:flutter/foundation.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/player/kernel/player_consts.dart';
-import 'package:pure_live/player/presentation/windows_pip_driver.dart';
-import 'package:pure_live/player/core/live_audio_service.dart';
+import 'package:pure_live/core/player/kernel/player_consts.dart';
+import 'package:pure_live/core/player/presentation/windows_pip_driver.dart';
+import 'package:pure_live/core/player/core/live_audio_service.dart';
 import 'package:pure_live/features/settings/pages/font_family_manager_page.dart';
-import 'package:pure_live/services/settings/app_settings_controller.dart';
-import 'package:pure_live/services/settings/player_settings_controller.dart';
+import 'package:pure_live/core/config/app_settings_controller.dart';
+import 'package:pure_live/core/config/player_settings_controller.dart';
 import 'package:pure_live/features/settings/pages/portrait_live_settings_page.dart';
 import 'package:pure_live/features/settings/pages/audience_metric_settings_page.dart';
 

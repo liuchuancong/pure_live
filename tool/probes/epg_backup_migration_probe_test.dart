@@ -5,7 +5,7 @@ import 'package:crypto/crypto.dart';
 import 'package:drift/drift.dart' as drift;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:pure_live/core/iptv/local/database.dart';
+import 'package:pure_live/domains/iptv/data/local/database.dart';
 
 typedef _Rows = Map<String, List<Map<String, Object?>>>;
 

@@ -6,14 +6,14 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce/hive.dart';
 import 'package:path/path.dart' as p;
-import 'package:pure_live/services/settings/log_controller.dart';
+import 'package:pure_live/core/config/log_controller.dart';
 import 'package:pure_live/core/storage/hive_pref_util.dart';
 import 'package:pure_live/get/get.dart';
-import 'package:pure_live/features/recorder/ffmpeg/ffmpeg_command_builder.dart';
-import 'package:pure_live/features/recorder/ffmpeg/ffmpeg_manager.dart';
-import 'package:pure_live/features/recorder/ffmpeg/ffmpeg_types.dart';
-import 'package:pure_live/features/recorder/services/ffmpeg_flv_input_relay.dart';
-import 'package:pure_live/features/recorder/services/video_processor_service.dart';
+import 'package:pure_live/domains/recorder/data/ffmpeg/ffmpeg_command_builder.dart';
+import 'package:pure_live/domains/recorder/data/ffmpeg/ffmpeg_manager.dart';
+import 'package:pure_live/domains/recorder/data/ffmpeg/ffmpeg_types.dart';
+import 'package:pure_live/domains/recorder/data/services/ffmpeg_flv_input_relay.dart';
+import 'package:pure_live/domains/recorder/data/services/video_processor_service.dart';
 
 void main() {
   test(

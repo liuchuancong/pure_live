@@ -10,13 +10,13 @@ import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce/hive.dart';
-import 'package:pure_live/services/settings_service.dart';
+import 'package:pure_live/core/config/settings_service.dart';
 import 'package:pure_live/core/storage/hive_pref_util.dart';
-import 'package:pure_live/core/contracts/live_quality_discovery.dart';
-import 'package:pure_live/core/contracts/live_site.dart';
+import 'package:pure_live/domains/live/domain/live_quality_discovery.dart';
+import 'package:pure_live/domains/live/domain/live_site.dart';
 import 'package:pure_live/domains/live/data/platforms/sites.dart';
 import 'package:pure_live/get/get.dart';
-import 'package:pure_live/player/core/flv_splice_relay.dart';
+import 'package:pure_live/domains/live/data/stream/flv_splice_relay.dart';
 
 void main() {
   final enabled = Platform.environment['PURELIVE_SPLICE_PROBE'] == '1';

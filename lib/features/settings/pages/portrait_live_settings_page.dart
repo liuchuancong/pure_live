@@ -1,7 +1,8 @@
 import 'dart:io';
 
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/player/core/portrait_stream_support.dart';
+import 'package:pure_live/core/player/core/portrait_stream_support.dart';
+import 'package:pure_live/domains/live/domain/global_player_service.dart';
 
 class PortraitLiveSettingsPage extends StatelessWidget {
   const PortraitLiveSettingsPage({super.key, this.presentationRefreshOverride});

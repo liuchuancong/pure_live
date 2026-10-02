@@ -1,5 +1,5 @@
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/services/settings/app_settings_controller.dart';
+import 'package:pure_live/core/config/app_settings_controller.dart';
 
 class AudienceMetricSettingsPage extends StatelessWidget {
   const AudienceMetricSettingsPage({super.key});

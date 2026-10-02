@@ -7,13 +7,13 @@ import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pure_live/core/network/http_client.dart';
-import 'package:pure_live/core/contracts/live_site.dart';
+import 'package:pure_live/domains/live/domain/live_site.dart';
 import 'package:pure_live/domains/live/data/platforms/niconico/niconico_api.dart';
 import 'package:pure_live/domains/live/data/platforms/niconico/niconico_quality_catalog.dart';
 import 'package:pure_live/domains/live/data/platforms/niconico/niconico_session.dart';
 import 'package:pure_live/domains/live/data/platforms/niconico/niconico_site.dart';
 import 'package:pure_live/domains/live/data/platforms/niconico/niconico_stream.dart';
-import 'package:pure_live/features/recorder/services/niconico_hls_input.dart';
+import 'package:pure_live/domains/recorder/data/services/niconico_hls_input.dart';
 
 void main() {
   test(

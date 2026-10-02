@@ -8,7 +8,7 @@ import 'package:pure_live/core/models/font_model.dart';
 import 'package:pure_live/core/platform/platform_utils.dart';
 import 'package:pure_live/core/platform/font_download_manager.dart';
 import 'package:pure_live/core/platform/app_path_manager.dart';
-import 'package:pure_live/services/settings/cache_controller.dart';
+import 'package:pure_live/core/config/cache_controller.dart';
 import 'package:pure_live/core/models/download_state.dart';
 
 class FontFamilyManagerPage extends GetView<SettingsService> {

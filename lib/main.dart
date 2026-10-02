@@ -7,19 +7,23 @@ import 'package:pure_live/core/platform/file_utils.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:pure_live/app/bootstrap/initialized.dart';
 import 'package:material_ui/material_ui.dart' as material;
-import 'package:pure_live/player/kernel/player_consts.dart';
+import 'package:pure_live/core/player/kernel/player_consts.dart';
 import 'package:pure_live/app/router/navigation_observer.dart';
-import 'package:pure_live/player/models/player_engine.dart';
+import 'package:pure_live/core/player/models/player_engine.dart';
 import 'package:pure_live/core/platform/platform_utils.dart';
 import 'package:pure_live/core/utils/shared_media_intake.dart';
-import 'package:pure_live/player/presentation/popup_route_tracker.dart';
+import 'package:pure_live/core/player/presentation/popup_route_tracker.dart';
 import 'package:pure_live/core/platform/share_command_handler.dart';
-import 'package:pure_live/core/link/shared_live_link_opener.dart';
-import 'package:pure_live/features/wallpaper/app_background.dart';
-import 'package:pure_live/core/iptv/services/epg_import_manager.dart';
+import 'package:pure_live/domains/live/data/link/shared_live_link_opener.dart';
+import 'package:pure_live/domains/wallpaper/presentation/app_background.dart';
+import 'package:pure_live/domains/iptv/data/services/epg_import_manager.dart';
 import 'package:pure_live/core/platform/desktop_manager.dart';
-import 'package:pure_live/core/iptv/services/iptv_import_manager.dart';
-import 'package:pure_live/services/settings/player_settings_controller.dart';
+import 'package:pure_live/domains/iptv/data/services/iptv_import_manager.dart';
+import 'package:pure_live/core/config/player_settings_controller.dart';
+import 'package:pure_live/domains/wallpaper/domain/background_controller.dart';
+import 'package:pure_live/domains/live/presentation/favorite/favorite_controller.dart';
+import 'package:pure_live/domains/live/domain/global_player_service.dart';
+import 'package:pure_live/app/router/app_pages.dart';
 
 void main(List<String> args) async {
   // Flutter abbreviates every framework error after the first one. In release
@@ -97,7 +101,7 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
     // the room page is popped and inside the floating window, where a route
     // observer would never see it.
     _wallpaperHandoffSub = GlobalPlayerService.instance.player.onPlaying.listen((playing) {
-      unawaited(SettingsService.to.bg.setPlaybackActive(playing));
+      unawaited(BackgroundController.to.setPlaybackActive(playing));
     });
   }
 
@@ -204,7 +208,7 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
           // the pages must stop painting their own colour for it to show. Only
           // this boolean is read here, so dragging the mask or blur slider does
           // not rebuild the whole app.
-          final wallpaperOwnsCanvas = SettingsService.to.bg.occupiesCanvas.value;
+          final wallpaperOwnsCanvas = BackgroundController.to.occupiesCanvas.value;
           if (wallpaperOwnsCanvas) {
             lightTheme = lightTheme.copyWith(scaffoldBackgroundColor: Colors.transparent);
             darkTheme = darkTheme.copyWith(scaffoldBackgroundColor: Colors.transparent);

@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/player/kernel/mpv_option_labels.dart';
+import 'package:pure_live/core/player/kernel/mpv_option_labels.dart';
 
 /// Full-page picker for one mpv output/decoder option (layout after
 /// liuchuancong/pure_live's decoder, renderer and audio pages).

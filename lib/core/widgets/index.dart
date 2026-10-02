@@ -1,7 +1,7 @@
 library;
 
-export './room_card.dart';
-export './room_card_layout.dart';
+export '../../domains/live/presentation/widgets/room_card.dart';
+export '../../domains/live/presentation/widgets/room_card_layout.dart';
 export './empty_view.dart';
 export './custom_icons.dart';
 export './menu_button.dart';

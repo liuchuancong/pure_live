@@ -9,12 +9,13 @@ import 'package:pure_live/core/models/live_anchor_item.dart';
 import 'package:pure_live/core/network/fake_user_agent.dart';
 import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
-import 'package:pure_live/core/contracts/live_site.dart';
+import 'package:pure_live/domains/live/domain/live_site.dart';
 import 'package:pure_live/domains/live/data/platforms/kuaishou/kuaishou_danmaku.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
-import 'package:pure_live/core/contracts/live_danmaku.dart';
-import 'package:pure_live/features/live/playback/controllers/player_controller.dart';
+import 'package:pure_live/domains/live/domain/live_danmaku.dart';
 import 'package:pure_live/core/utils/live_quality_label.dart';
+import 'package:pure_live/domains/live/data/platforms/sites.dart';
+import 'package:pure_live/domains/live/domain/current_live_room.dart';
 
 class KuaishouSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResolver {
   @override
@@ -426,9 +427,9 @@ class KuaishouSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoo
   LiveRoom? _matchingCurrentRoom({required LiveRoom liveroom}) {
     final roomId = liveroom.roomId ?? '';
     final platform = liveroom.platform ?? '';
-    if (!Get.isRegistered<PlayerController>()) return null;
-    final current = Get.find<PlayerController>().currentRoom;
-    if (current?.hasSameIdentity(LiveRoom(roomId: roomId, platform: platform)) == true) return current;
+    final current = CurrentLiveRoom.value;
+    if (current == null) return null;
+    if (current.hasSameIdentity(LiveRoom(roomId: roomId, platform: platform))) return current;
     return null;
   }
 

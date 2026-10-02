@@ -8,8 +8,8 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:media_kit/media_kit.dart' as mk;
-import 'package:pure_live/player/adapters/media_kit_adapter.dart';
-import 'package:pure_live/player/utils/live_buffer_policy.dart';
+import 'package:pure_live/core/player/adapters/media_kit_adapter.dart';
+import 'package:pure_live/core/player/utils/live_buffer_policy.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

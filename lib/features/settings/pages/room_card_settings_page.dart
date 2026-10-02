@@ -1,6 +1,6 @@
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/services/settings/room_card_settings_controller.dart';
+import 'package:pure_live/core/config/room_card_settings_controller.dart';
 
 class RoomCardSettingsPage extends StatefulWidget {
   const RoomCardSettingsPage({super.key});

@@ -5,7 +5,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
-import 'package:pure_live/features/recorder/services/ffmpeg_hls_input_relay.dart';
+import 'package:pure_live/domains/recorder/data/services/ffmpeg_hls_input_relay.dart';
 
 void main() {
   test(

@@ -6,21 +6,21 @@ import 'dart:io' as io;
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:pure_live/services/settings/log_controller.dart';
+import 'package:pure_live/core/config/log_controller.dart';
 import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/domains/live/data/platforms/niconico/niconico_watch.dart';
 import 'package:pure_live/get/get.dart';
-import 'package:pure_live/player/core/niconico_playback_input.dart';
-import 'package:pure_live/player/core/player_manager.dart';
-import 'package:pure_live/player/core/engine_fallback_manager.dart';
-import 'package:pure_live/player/core/line_fallback_manager.dart';
-import 'package:pure_live/player/models/player_engine.dart';
+import 'package:pure_live/core/player/core/niconico_playback_input.dart';
+import 'package:pure_live/core/player/core/player_manager.dart';
+import 'package:pure_live/core/player/core/engine_fallback_manager.dart';
+import 'package:pure_live/core/player/core/line_fallback_manager.dart';
+import 'package:pure_live/core/player/models/player_engine.dart';
 import 'package:pure_live/core/models/live_room.dart';
-import 'package:pure_live/features/live/playback/controllers/player_state.dart';
+import 'package:pure_live/domains/live/presentation/playback/controllers/player_state.dart';
 
 import '../../test/support/owned_source_test_player.dart';
 
-import 'package:pure_live/features/recorder/services/niconico_hls_input.dart';
+import 'package:pure_live/domains/recorder/data/services/niconico_hls_input.dart';
 
 import 'niconico_capture_contract.dart';
 import 'niconico_relay_probe_test.dart' show QuietNiconicoProbeLogController, runNiconicoNativeStage;

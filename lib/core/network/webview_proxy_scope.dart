@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
-import 'package:pure_live/services/settings_service.dart';
+import 'package:pure_live/core/config/settings_service.dart';
 
 /// Runs headless-WebView work behind the user's application proxy.
 ///

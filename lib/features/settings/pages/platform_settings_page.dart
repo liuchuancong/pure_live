@@ -1,5 +1,6 @@
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/core/index.dart';
+import 'package:pure_live/domains/live/data/platforms/sites.dart';
 
 class PlatformSettingsPage extends GetView<SettingsService> {
   const PlatformSettingsPage({super.key});

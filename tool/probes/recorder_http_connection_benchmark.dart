@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:pure_live/features/recorder/services/cancellable_http_connections.dart';
+import 'package:pure_live/domains/recorder/data/services/cancellable_http_connections.dart';
 
 // Local throughput comparison, not Android energy/performance acceptance.
 // Certificate trust is restricted to the committed localhost test fixture.

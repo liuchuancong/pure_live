@@ -1,6 +1,6 @@
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/features/live/playback/widgets/local_interaction/local_interaction_controller.dart';
-import 'package:pure_live/features/live/playback/widgets/local_interaction/local_danmaku_style_editor.dart';
+import 'package:pure_live/domains/live/presentation/playback/widgets/local_interaction/local_interaction_controller.dart';
+import 'package:pure_live/domains/live/presentation/playback/widgets/local_interaction/local_danmaku_style_editor.dart';
 
 class LocalInteractionSettingsPage extends StatefulWidget {
   const LocalInteractionSettingsPage({super.key});

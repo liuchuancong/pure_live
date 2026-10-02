@@ -5,7 +5,7 @@ import 'package:dio/dio.dart';
 import 'package:pure_live/core/network/core_error.dart';
 import 'package:pure_live/core/network/custom_interceptor.dart';
 import 'package:pure_live/core/network/proxy_routing.dart';
-import 'package:pure_live/services/settings_service.dart';
+import 'package:pure_live/core/config/settings_service.dart';
 
 class HttpClient {
   static const Duration _connectTimeout = Duration(seconds: 20);

@@ -1,0 +1,11 @@
+import 'package:pure_live/domains/live/data/playback_header_resolver.dart';
+
+class FFmpegHeaderFactory {
+  static Future<Map<String, String>> build({
+    required String platform,
+    String roomId = '',
+    Map<String, String> roomHeaders = const <String, String>{},
+  }) {
+    return PlaybackHeaderResolver.resolve(platform: platform, roomId: roomId, roomHeaders: roomHeaders);
+  }
+}

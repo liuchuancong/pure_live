@@ -3,7 +3,7 @@ import 'package:pure_live/get/get.dart';
 import 'package:pure_live/core/network/image_cache_manager.dart';
 import 'package:pure_live/core/network/network_image_url.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:pure_live/services/settings_service.dart';
+import 'package:pure_live/core/config/settings_service.dart';
 
 class CommonAvatar extends StatelessWidget {
   final String? avatarUrl;

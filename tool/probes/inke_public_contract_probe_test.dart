@@ -11,7 +11,7 @@ import 'package:pure_live/domains/live/data/platforms/inke/inke_api.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
 import 'package:pure_live/domains/live/data/platforms/sites.dart';
 import 'package:pure_live/domains/live/data/platforms/inke/inke_site.dart';
-import 'package:pure_live/features/recorder/services/stream_resolver_service.dart';
+import 'package:pure_live/domains/recorder/data/services/stream_resolver_service.dart';
 
 void main() {
   test(

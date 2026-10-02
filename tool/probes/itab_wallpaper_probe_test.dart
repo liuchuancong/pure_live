@@ -5,9 +5,9 @@ import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pure_live/core/network/http_client.dart';
-import 'package:pure_live/services/background/wallpaper_catalog.dart';
-import 'package:pure_live/services/background/local_wallpapers.dart';
-import 'package:pure_live/services/background/wallpaper_repository.dart';
+import 'package:pure_live/domains/wallpaper/domain/wallpaper_catalog.dart';
+import 'package:pure_live/domains/wallpaper/data/local_wallpapers.dart';
+import 'package:pure_live/domains/wallpaper/data/wallpaper_repository.dart';
 
 /// Live check of the iTab wallpaper endpoints the background browser reads.
 ///

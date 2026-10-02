@@ -2,11 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/services.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
-import 'package:pure_live/features/toolbox/toolbox_action_scope.dart';
-import 'package:pure_live/features/toolbox/toolbox_direct_link_flow.dart';
+import 'package:pure_live/core/utils/action_scope.dart';
+import 'package:pure_live/domains/live/data/direct_link_flow.dart';
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/app/router/app_navigation.dart';
-import 'package:pure_live/core/link/live_url_tool.dart';
+import 'package:pure_live/domains/live/data/link/live_url_tool.dart';
+import 'package:pure_live/domains/live/data/platforms/sites.dart';
 
 enum ToolBoxAction { jump, directLink }
 
@@ -16,10 +16,10 @@ class ToolBoxController extends GetxController {
     Future<void> Function(LiveRoom)? openRoom,
     this.obtainLink,
     void Function(String)? notify,
-    ToolBoxDirectLinkFlow? directLinkFlow,
+    LiveDirectLinkFlow? directLinkFlow,
     this.actionTimeout = const Duration(seconds: 12),
   }) : _openRoom = openRoom ?? ((room) => AppNavigator.toLiveRoomDetail(liveRoom: room)),
-       _directLinkFlow = directLinkFlow ?? ToolBoxDirectLinkFlow(),
+       _directLinkFlow = directLinkFlow ?? LiveDirectLinkFlow(),
        _notify = notify ?? ((key) => ToastUtil.show(i18n(key))) {
     roomJumpToController.addListener(_roomEdited);
     getUrlController.addListener(_urlEdited);
@@ -28,10 +28,10 @@ class ToolBoxController extends GetxController {
   final Future<List<String>> Function(String)? parseLink;
   final Future<void> Function(LiveRoom) _openRoom;
   final Future<void> Function(String)? obtainLink;
-  final ToolBoxDirectLinkFlow _directLinkFlow;
+  final LiveDirectLinkFlow _directLinkFlow;
   final Duration actionTimeout;
   final action = Rx<ToolBoxAction?>(null);
-  ToolBoxActionScope? _scope;
+  ActionScope? _scope;
   Route<dynamic>? _ownedDialog;
   bool get isBusy => action.value != null;
   final void Function(String) _notify;
@@ -59,7 +59,7 @@ class ToolBoxController extends GetxController {
     String text,
     ToolBoxAction kind,
     BuildContext? context,
-    Future<void> Function(String, ToolBoxActionScope) run,
+    Future<void> Function(String, ActionScope) run,
   ) async {
     if (_disposed || isClosed || isBusy) return;
     text = text.trim();
@@ -68,7 +68,7 @@ class ToolBoxController extends GetxController {
       return;
     }
     final sourceRoute = context == null ? null : ModalRoute.of(context);
-    final scope = ToolBoxActionScope(
+    final scope = ActionScope(
       timeout: actionTimeout,
       ownerAlive: () =>
           !_disposed &&
@@ -80,7 +80,7 @@ class ToolBoxController extends GetxController {
     action.value = kind;
     try {
       await run(text, scope);
-    } on ToolBoxActionCancelled {
+    } on ActionCancelled {
       // Editing, cancelling and leaving are user intent, not failures.
     } catch (_) {
       if (scope.isActive) _notify(kind == ToolBoxAction.jump ? 'toolbox_parse_failed' : 'toolbox_get_url_failed');
@@ -93,7 +93,7 @@ class ToolBoxController extends GetxController {
     }
   }
 
-  Future<LiveRoom?> _resolve(String text, ToolBoxActionScope scope) async {
+  Future<LiveRoom?> _resolve(String text, ActionScope scope) async {
     final result = await scope.wait(
       () => parseLink?.call(text) ?? LiveUrlTool.parseLiveUrl(text, cancelToken: scope.cancelToken),
     );
@@ -135,7 +135,7 @@ class ToolBoxController extends GetxController {
         }
         final room = await _resolve(text, scope);
         if (room == null) return;
-        if (context == null || !context.mounted) throw const ToolBoxActionCancelled();
+        if (context == null || !context.mounted) throw const ActionCancelled();
         FocusManager.instance.primaryFocus?.unfocus();
         await _directLinkFlow.run(
           liveroom: room,
@@ -161,7 +161,7 @@ class ToolBoxController extends GetxController {
 
   Future<T?> _choose<T>(
     BuildContext context,
-    ToolBoxActionScope scope, {
+    ActionScope scope, {
     required String title,
     required List<T> items,
     required String Function(T, int) label,

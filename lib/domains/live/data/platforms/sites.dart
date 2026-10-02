@@ -3,7 +3,7 @@ import 'bigo/bigo_site.dart';
 import 'inke/inke_site.dart';
 import 'soop/soop_site.dart';
 import 'huya/huya_site.dart';
-import 'package:pure_live/core/contracts/live_site.dart';
+import 'package:pure_live/domains/live/domain/live_site.dart';
 import 'chzzk/chzzk_site.dart';
 import 'fc2live/fc2_site.dart';
 import 'weibo/weibo_site.dart';

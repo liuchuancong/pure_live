@@ -7,16 +7,17 @@ import 'package:url_launcher/url_launcher_string.dart';
 
 import 'package:pure_live/core/platform/platform_utils.dart';
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/services/settings/player_settings_controller.dart';
+import 'package:pure_live/core/config/player_settings_controller.dart';
 import 'package:pure_live/core/network/proxy_routing.dart';
-import 'package:pure_live/player/kernel/player_preset.dart';
-import 'package:pure_live/player/models/player_engine.dart';
-import 'package:pure_live/player/kernel/mpv_option_labels.dart';
-import 'package:pure_live/player/kernel/player_consts.dart';
+import 'package:pure_live/core/player/kernel/player_preset.dart';
+import 'package:pure_live/core/player/models/player_engine.dart';
+import 'package:pure_live/core/player/kernel/mpv_option_labels.dart';
+import 'package:pure_live/core/player/kernel/player_consts.dart';
 import 'package:pure_live/features/settings/pages/mpv_option_page.dart';
 import 'package:pure_live/features/settings/pages/player_guide_page.dart';
 import 'package:pure_live/features/settings/pages/player_preset_page.dart';
 import 'package:pure_live/features/settings/pages/player_super_resolution_page.dart';
+import 'package:pure_live/domains/live/domain/global_player_service.dart';
 
 class PlayerKernelSettingsPage extends GetView<SettingsService> {
   const PlayerKernelSettingsPage({super.key});

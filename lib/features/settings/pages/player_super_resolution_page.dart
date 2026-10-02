@@ -1,6 +1,6 @@
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/player/super_resolution.dart';
+import 'package:pure_live/core/player/super_resolution.dart';
 
 /// Anime4K super-resolution: off / efficiency / quality, one card each.
 ///

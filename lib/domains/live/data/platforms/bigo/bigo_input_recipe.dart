@@ -1,4 +1,4 @@
-import 'package:pure_live/core/contracts/live_input_recipe.dart';
+import 'package:pure_live/domains/live/domain/live_input_recipe.dart';
 
 import 'bigo_api.dart';
 

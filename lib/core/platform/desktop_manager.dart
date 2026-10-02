@@ -8,16 +8,15 @@ import 'package:pure_live/core/index.dart';
 import 'package:pure_live/app/bootstrap/desktop_exit_flow.dart';
 import 'package:pure_live/core/platform/desktop_tray_service.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:pure_live/app/router/app_navigation.dart';
 import 'package:flutter_acrylic/flutter_acrylic.dart';
-import 'package:pure_live/player/presentation/windows_pip_driver.dart';
+import 'package:pure_live/core/player/presentation/windows_pip_driver.dart';
 import 'package:pure_live/core/storage/hive_pref_util.dart';
 import 'package:pure_live/core/platform/platform_utils.dart';
 import 'package:pure_live/core/platform/share_command_codec.dart';
-import 'package:pure_live/app/router/navigation_observer.dart';
 import 'package:pure_live/core/platform/share_command_handler.dart';
 import 'package:pure_live/core/widgets/share_command_import_dialog.dart';
-import 'package:pure_live/services/settings/window_size_controller.dart';
+import 'package:pure_live/core/config/window_size_controller.dart';
+import 'package:pure_live/domains/live/domain/global_player_service.dart';
 
 class DesktopTrayMenuCoordinator {
   Future<void>? _activeTransaction;

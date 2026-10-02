@@ -6,9 +6,9 @@ import 'package:dio/dio.dart';
 import 'package:meta/meta.dart';
 import 'package:pure_live/core/logging/core_log.dart';
 import 'package:pure_live/core/network/http_client.dart';
-import 'package:pure_live/services/settings/cookie_sanitizer.dart';
+import 'package:pure_live/core/config/cookie_sanitizer.dart';
 import 'package:pure_live/core/storage/hive_rx.dart';
-import 'package:pure_live/services/settings_service.dart';
+import 'package:pure_live/core/config/settings_service.dart';
 
 /// How much of a login a stored Douyu cookie actually carries.
 ///

@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/widgets.dart';
 import 'package:pure_live/core/models/app_refresh_rate_mode.dart';
-import 'package:pure_live/services/display_mode_service.dart';
+import 'package:pure_live/core/config/display_mode_service.dart';
 import 'package:pure_live/core/utils/latest_async_value_queue.dart';
 
 /// Coordinates the selected power-saving, balanced or performance policy.

@@ -1,7 +1,7 @@
 import 'package:remixicon/remixicon.dart';
 import 'package:flutter/services.dart';
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/services/settings/page_settings_controller.dart';
+import 'package:pure_live/core/config/page_settings_controller.dart';
 
 class PageSettingsPage extends GetView<SettingsService> {
   const PageSettingsPage({super.key});

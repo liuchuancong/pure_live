@@ -7,15 +7,16 @@ import 'package:pure_live/core/logging/core_log.dart';
 import 'package:pure_live/core/models/live_anchor_item.dart';
 import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
-import 'package:pure_live/core/contracts/live_site.dart';
+import 'package:pure_live/domains/live/domain/live_site.dart';
 import 'package:pure_live/core/utils/type_cast.dart';
 import 'package:pure_live/domains/live/data/platforms/douyin/douyin_danmaku.dart';
 import 'package:pure_live/domains/live/data/platforms/douyin/douyin_audience.dart';
-import 'package:pure_live/core/contracts/live_danmaku.dart';
+import 'package:pure_live/domains/live/domain/live_danmaku.dart';
 import 'package:pure_live/domains/live/data/platforms/douyin/douyin_search.dart';
 import 'package:pure_live/domains/live/data/platforms/douyin/douyin_utils.dart';
 import 'package:pure_live/domains/live/data/platforms/douyin/douyin_request_params.dart';
 import 'package:pure_live/core/utils/live_quality_label.dart';
+import 'package:pure_live/domains/live/data/platforms/sites.dart';
 
 class DouyinSite implements LiveSite, LiveSiteRecordRoomResolver {
   @override

@@ -6,9 +6,9 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:pure_live/core/logging/app_log.dart';
 import 'package:pure_live/core/platform/file_utils.dart';
 import 'package:pure_live/features/backup/scan_page.dart';
-import 'package:pure_live/features/auth/auth_controller.dart';
+import 'package:pure_live/domains/account/presentation/auth/auth_controller.dart';
 import 'package:pure_live/features/backup/backup_recovery_service.dart';
-import 'package:pure_live/services/settings/log_controller.dart';
+import 'package:pure_live/core/config/log_controller.dart';
 
 
 class BackupPage extends StatefulWidget {

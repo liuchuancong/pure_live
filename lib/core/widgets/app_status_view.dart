@@ -4,7 +4,7 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:pure_live/core/utils/i18n.dart';
 import 'package:loading_indicator/loading_indicator.dart';
 import 'package:pure_live/core/theme/app_text_styles.dart';
-import 'package:pure_live/services/settings_service.dart';
+import 'package:pure_live/core/config/settings_service.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 
 enum AppStatusType { loading, empty, error }

@@ -8,13 +8,13 @@ import 'dart:io' as io;
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:pure_live/services/settings/log_controller.dart';
+import 'package:pure_live/core/config/log_controller.dart';
 import 'package:pure_live/get/get.dart';
 import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/domains/live/data/platforms/niconico/niconico_api.dart';
 import 'package:pure_live/domains/live/data/platforms/niconico/niconico_watch.dart';
-import 'package:pure_live/features/recorder/services/ffmpeg_hls_input_relay.dart';
-import 'package:pure_live/features/recorder/services/niconico_hls_input.dart';
+import 'package:pure_live/domains/recorder/data/services/ffmpeg_hls_input_relay.dart';
+import 'package:pure_live/domains/recorder/data/services/niconico_hls_input.dart';
 
 import 'niconico_capture_contract.dart';
 

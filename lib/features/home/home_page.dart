@@ -5,17 +5,20 @@ import 'dart:developer';
 import 'package:flutter/services.dart';
 import 'package:pure_live/core/index.dart';
 import 'package:move_to_desktop/move_to_desktop.dart';
-import 'package:pure_live/app/router/app_navigation.dart';
 import 'package:pure_live/core/consts/app_consts.dart';
-import 'package:pure_live/features/live/areas/areas_page.dart';
+import 'package:pure_live/domains/live/presentation/areas/areas_page.dart';
 import 'package:pure_live/features/home/mobile_view.dart';
 import 'package:pure_live/features/home/tablet_view.dart';
 import 'package:pure_live/app/bootstrap/initialized.dart';
-import 'package:pure_live/player/models/player_engine.dart';
-import 'package:pure_live/features/live/popular/popular_page.dart';
-import 'package:pure_live/features/live/favorite/favorite_page.dart';
+import 'package:pure_live/core/player/models/player_engine.dart';
+import 'package:pure_live/domains/live/presentation/popular/popular_page.dart';
+import 'package:pure_live/domains/live/presentation/favorite/favorite_page.dart';
 import 'package:pure_live/features/about/widgets/version_dialog.dart';
-import 'package:pure_live/features/recorder/pages/recorder/recorder_page.dart';
+import 'package:pure_live/domains/recorder/presentation/pages/recorder/recorder_page.dart';
+import 'package:pure_live/domains/live/presentation/favorite/favorite_controller.dart';
+import 'package:pure_live/domains/live/domain/global_player_service.dart';
+import 'package:pure_live/domains/live/presentation/popular/popular_controller.dart';
+import 'package:pure_live/domains/live/presentation/areas/areas_controller.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({
