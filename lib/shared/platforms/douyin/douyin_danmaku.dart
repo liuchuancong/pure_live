@@ -231,7 +231,10 @@ class DouyinDanmaku implements LiveDanmaku {
     final resolvedMessageId = commonMessageId.isNotEmpty && commonMessageId != '0'
         ? commonMessageId
         : (envelopeMessageId == '0' ? '' : envelopeMessageId);
-    final rawCreateTime = chatMessage.hasCommon() ? chatMessage.common.createTime.toInt() : 0;
+    // 上游 B-5：录制帧里常常只有 `ChatMessage.eventTime`，没有 `Common.createTime`，
+    // 只用后者会让这些消息没有时间。
+    final commonTime = chatMessage.hasCommon() ? chatMessage.common.createTime.toInt() : 0;
+    final rawCreateTime = commonTime > 0 ? commonTime : chatMessage.eventTime.toInt();
     final sentAt = rawCreateTime <= 0
         ? null
         : DateTime.fromMillisecondsSinceEpoch(rawCreateTime > 100000000000 ? rawCreateTime : rawCreateTime * 1000);
@@ -254,15 +257,22 @@ class DouyinDanmaku implements LiveDanmaku {
 
   void unPackWebcastRoomUserSeqMessage(List<int> payload) {
     var roomUserSeqMessage = RoomUserSeqMessage.fromBuffer(payload);
-    final onlineText = roomUserSeqMessage.onlineUserForAnchor;
-    if (!RegExp(r'[0-9]').hasMatch(onlineText)) return;
-    final online = LiveRoom.parseAudienceNumber(onlineText);
+    // 上游 REG-DOUYIN-008：`total` 是精确的当前在线数，优先用它；展示文本
+    // `onlineUserForAnchor`（30.6万）是分桶后的近似值，只在没有 total 时退回。
+    // `totalUser` 是累计人数，任何时候都不能当成在线数。
+    final exactTotal = roomUserSeqMessage.total.toInt();
+    final int online;
+    if (exactTotal > 0) {
+      online = exactTotal;
+    } else {
+      final onlineText = roomUserSeqMessage.onlineUserForAnchor;
+      if (!RegExp(r'[0-9]').hasMatch(onlineText)) return;
+      online = LiveRoom.parseAudienceNumber(onlineText);
+    }
 
     onMessage?.call(
       LiveMessage(
         type: LiveMessageType.online,
-        // totalUser is cumulative. onlineUserForAnchor is the concurrent
-        // audience field shown to the anchor and must be kept separate.
         data: LiveAudienceUpdate(kind: LiveAudienceMetricKind.onlineViewers, value: online),
         color: LiveMessageColor.white,
         message: "",

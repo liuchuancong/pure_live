@@ -480,7 +480,7 @@ class DouyinSite
       status: roomStatus,
       link: "https://live.douyin.com/$webRid",
       platform: PlatformIds.douyin,
-      area: '',
+      area: _detailArea(room, null),
       liveStatus: roomStatus ? LiveStatus.live : LiveStatus.offline,
       introduction: owner["signature"].toString(),
       notice: "",
@@ -492,6 +492,40 @@ class DouyinSite
       ),
       data: room["stream_url"],
     );
+  }
+
+  /// 抖音的直播判定（上游 4-1）：`room.status` 优先（2 = 直播中），它缺失时才看
+  /// 信封里的 `room_status`（0 = 直播中，其余为已结束），两者都没有则按 3.x 视为
+  /// 未开播。
+  static bool _douyinIsLive(dynamic room, dynamic envelope) {
+    final status = int.tryParse(room is Map ? (room['status']?.toString() ?? '') : '');
+    if (status != null) return status == 2;
+    final roomStatus = int.tryParse(envelope is Map ? (envelope['room_status']?.toString() ?? '') : '');
+    return roomStatus == 0;
+  }
+
+  /// 详情里的分区（上游 M4.D）：优先游戏名
+  /// （`game_data.game_tag_info.game_tag_name`），否则取 `partition_road_map`
+  /// 里最具体的一层标题（子分区，再到分区）。3.x 这里一律留空，于是游戏房在
+  /// 房间里看不到分区。
+  static String _detailArea(dynamic room, dynamic roadMap) {
+    String? title(dynamic node) {
+      final partition = node is Map ? node['partition'] : null;
+      final value = partition is Map ? partition['title']?.toString().trim() : null;
+      return value == null || value.isEmpty ? null : value;
+    }
+
+    final gameData = room is Map ? room['game_data'] : null;
+    final gameTagInfo = gameData is Map ? gameData['game_tag_info'] : null;
+    final gameName = gameTagInfo is Map ? gameTagInfo['game_tag_name']?.toString().trim() : null;
+    for (final candidate in [
+      gameName,
+      title(roadMap is Map ? roadMap['sub_partition'] : null),
+      title(roadMap),
+    ]) {
+      if (candidate != null && candidate.isNotEmpty) return candidate;
+    }
+    return '';
   }
 
   /// 通过WebRid获取直播间信息
@@ -522,7 +556,9 @@ class DouyinSite
 
     var owner = roomData["owner"];
 
-    final roomStatus = int.tryParse(roomData['status']?.toString() ?? '') == 2;
+    // 上游 4-1：enter 的 room 没有 status 时用 `data.room_status` 判定（0 为直播中），
+    // 两者都没有则按 3.x 视为未开播；status 存在时以它为准。
+    final roomStatus = _douyinIsLive(roomData, data);
     final totalViewers = roomStatus ? douyinTotalViewers(roomData) : '';
     final onlineViewers = roomStatus ? douyinOnlineViewers(roomData) : '';
     final nativeAudience = totalViewers.isNotEmpty ? totalViewers : onlineViewers;
@@ -545,7 +581,7 @@ class DouyinSite
       liveStatus: roomStatus ? LiveStatus.live : LiveStatus.offline,
       link: "https://live.douyin.com/$webRid",
       platform: PlatformIds.douyin,
-      area: '',
+      area: _detailArea(roomData, data["partition_road_map"]),
       introduction: owner?["signature"]?.toString() ?? "",
       notice: "",
       danmakuData: DouyinDanmakuArgs(

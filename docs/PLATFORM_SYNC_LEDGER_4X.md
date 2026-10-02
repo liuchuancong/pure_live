@@ -22,7 +22,7 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | 站点 | 提交数 | 状态 |
 | --- | --- | --- |
 | bilibili | 24 | 进行中（见下） |
-| douyin | 20 | 待办 |
+| douyin | 20 | 本轮已摘取（见下） |
 | kuaishou | 16 | 待办 |
 | youtube | 15 | 待办 |
 | huya | 15 | 本轮已摘取（见下） |
@@ -109,3 +109,18 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 
 本次落地：`huya_site.dart` 的 `getSubCategores`、`searchRooms`、`searchAnchors`
 三处补上 `user-agent: kUserAgent`（本仓已有同一个移动端 UA 常量）。
+
+## douyin
+
+上游相关提交：
+
+| 提交 | 内容 | 本仓状态 |
+| --- | --- | --- |
+| `68de720c2` / `107bd1aa7` | 4-1：enter 的 room 无 `status` 时由 `data.room_status` 判定（0 直播 / 其余下播），status 存在时以它为准 | **已同步**：`_douyinIsLive()` |
+| `59602ec7b` | 详情分区取游戏名（`game_data.game_tag_info.game_tag_name`），否则 `partition_road_map` 最具体一层标题 | **已同步**：`_detailArea()`，webRid 与 roomId 两条详情路径都用它（此前一律留空） |
+| `95b769763` | 在线人数优先用 `RoomUserSeqMessage.total`（精确值），展示文本 `onlineUserForAnchor` 只作退回 | **已同步** |
+| `95b769763` | 聊天时间退回 `ChatMessage.eventTime`（录制帧常只有它） | **已同步** |
+| `59602ec7b` | 开播时间：enter 无 `startedAt` 时补一次 reflow（最多 3 秒，按 room_id 记忆） | 未做：本仓 `LiveRoom` 没有该字段，且要多一次请求 |
+| `49ea1ccc4` | 游戏分区与更完整的推荐页分页 | 分区已随 `_detailArea()` 覆盖；推荐页分页未对照 |
+| `03aa04354` | 关注一个新开播（换场后跟随） | 未做：属播放会话与弹幕重连策略 |
+| `95b769763` | 套接字拆除不再等待 cancel（可能挂住） | 未做：属本仓自己的 `web_socket_util` 生命周期 |
