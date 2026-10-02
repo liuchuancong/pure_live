@@ -2,7 +2,7 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:pure_live/player/core/portrait_stream_support.dart';
-import 'package:pure_live/player/interface/media_kit_player_accessor.dart';
+import 'package:pure_live/player/core/media_kit_player_accessor.dart';
 import 'package:pure_live/player/utils/active_video_content_analyzer.dart';
 
 /// Captures one decoder frame and downsizes it before active-content analysis.

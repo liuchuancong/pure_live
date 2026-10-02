@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:media_core/media_core.dart';
-import 'package:pure_live/player/utils/fullscreen.dart';
+import 'package:pure_live/player/utils/fullscreen_window.dart';
 import 'package:pure_live/player/global_player_service.dart';
 import 'package:media_core_floating/media_core_floating.dart';
 import 'package:media_core_media_kit/media_core_media_kit.dart';

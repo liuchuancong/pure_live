@@ -6,7 +6,7 @@ import 'package:pure_live/services/utils/hive_rx.dart';
 import 'package:pure_live/core/common/log.dart';
 import 'package:pure_live/get/get.dart';
 import 'package:media_core_logging/media_core_logging.dart' as mlog;
-import 'package:pure_live/player/media_core/player_kernel_service.dart';
+import 'package:pure_live/player/kernel/player_kernel_service.dart';
 
 typedef LogStatusApplier = Future<bool> Function(bool enabled);
 

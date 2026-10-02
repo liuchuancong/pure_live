@@ -13,7 +13,7 @@ import 'package:media_core_media_kit/media_core_media_kit.dart';
 import 'package:media_core_multiview/media_core_multiview.dart' as wall;
 import 'package:pure_live/core/contracts/live_quality_discovery.dart';
 import 'package:pure_live/player/core/live_input_playback_binding.dart';
-import 'package:pure_live/player/media_core/player_kernel_service.dart';
+import 'package:pure_live/player/kernel/player_kernel_service.dart';
 import 'package:pure_live/modules/live/multiview/models/multiview_models.dart';
 import 'package:pure_live/modules/live/playback/controllers/player_controller.dart';
 import 'package:pure_live/modules/live/multiview/danmaku/multiview_danmaku_session.dart';

@@ -20,7 +20,7 @@ import 'package:pure_live/core/platform/mobile_manager.dart';
 import 'package:pure_live/core/platform/desktop_manager.dart';
 import 'package:pure_live/features/recorder/services/recorder_proxy_routing.dart';
 import 'package:pure_live/services/settings/backup_controller.dart';
-import 'package:pure_live/player/media_core/player_kernel_service.dart';
+import 'package:pure_live/player/kernel/player_kernel_service.dart';
 import 'package:pure_live/core/utils/windows_multi_instance_launcher.dart';
 import 'package:pure_live/services/utils/settings_upgrade_migration.dart';
 

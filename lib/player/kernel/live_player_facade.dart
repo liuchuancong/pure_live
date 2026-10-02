@@ -13,8 +13,8 @@ import 'package:pure_live/player/kernel/floating_playback.dart';
 import 'package:pure_live/player/utils/windows_pip_driver.dart';
 import 'package:pure_live/player/kernel/kernel_backend_ids.dart';
 import 'package:pure_live/player/core/portrait_stream_support.dart';
-import 'package:pure_live/player/media_core/player_kernel_service.dart';
-import 'package:pure_live/player/utils/fullscreen.dart' show fullscreenDriver;
+import 'package:pure_live/player/kernel/player_kernel_service.dart';
+import 'package:pure_live/player/utils/fullscreen_window.dart' show fullscreenDriver;
 import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
 import 'package:pure_live/modules/live/playback/widgets/danmaku/compact_danmaku_overlay.dart';
 
