@@ -1,0 +1,9 @@
+import 'package:pure_live/core/index.dart';
+import 'package:pure_live/features/account/huya/huya_cookie_controller.dart';
+
+class HuyaCookieBinding extends Binding {
+  @override
+  List<Bind> dependencies() {
+    return [Bind.lazyPut(() => HuyaCookieController())];
+  }
+}

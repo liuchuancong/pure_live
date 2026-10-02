@@ -3,8 +3,8 @@ import 'dart:async';
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
 import 'package:pure_live/modules/live_play/dialogs/live_dlna_dialog.dart';
-import 'package:pure_live/modules/toolbox/toolbox_action_scope.dart';
-import 'package:pure_live/modules/toolbox/toolbox_direct_link_flow.dart';
+import 'package:pure_live/features/toolbox/toolbox_action_scope.dart';
+import 'package:pure_live/features/toolbox/toolbox_direct_link_flow.dart';
 
 /// One route-owned action shared by the player's menu and control bar.
 class KnownRoomLinkDialog extends StatefulWidget {

@@ -1,5 +1,5 @@
 import 'package:pure_live/get/get.dart';
-import 'package:pure_live/modules/tags/tag_management_controller.dart';
+import 'package:pure_live/modules/live/tags/tag_management_controller.dart';
 import 'package:pure_live/services/settings/log_controller.dart';
 import 'package:pure_live/services/settings/cache_controller.dart';
 import 'package:pure_live/services/settings/backup_controller.dart';

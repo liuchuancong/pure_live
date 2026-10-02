@@ -10,7 +10,7 @@ import 'package:pure_live/core/utils/githup_mirror.dart';
 import 'package:pure_live/core/models/release_model.dart';
 import 'package:pure_live/core/platform/platform_utils.dart';
 import 'package:pure_live/core/utils/release_asset_urls.dart';
-import 'package:pure_live/modules/about/widgets/release_history_repository.dart';
+import 'package:pure_live/features/about/widgets/release_history_repository.dart';
 
 class VersionUtil {
   static PackageInfo? _packageInfo;

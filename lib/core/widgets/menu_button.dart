@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/modules/auth/auth_controller.dart';
+import 'package:pure_live/features/auth/auth_controller.dart';
 import 'package:pure_live/core/utils/windows_multi_instance_launcher.dart';
 
 class MenuButton extends GetView<AuthController> {
