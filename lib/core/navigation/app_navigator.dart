@@ -4,9 +4,9 @@ import 'dart:developer';
 
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/widgets/app_prompt_dialogs.dart';
-import 'package:pure_live/domains/live/data/platforms/cc/cc_catalog.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:pure_live/domains/live/data/platforms/sites.dart';
+import 'package:pure_live/core/navigation/official_category_policy.dart';
 import 'package:pure_live/domains/live/domain/global_player_service.dart';
 
 /// APP页面跳转封装
@@ -18,9 +18,9 @@ class AppNavigator {
 
   /// 跳转至分类详情
   static Future<void> toCategoryDetail({required Site site, required LiveArea category}) async {
-    if (CCCatalog.isOfficialEntry(category)) {
+    if (OfficialCategoryPolicy.isOfficial(category)) {
       if (_openingOfficialCategory) return;
-      final uri = site.id == Sites.ccSite ? CCCatalog.officialEntryUri(category) : null;
+      final uri = site.id == Sites.ccSite ? OfficialCategoryPolicy.uriFor(category) : null;
       if (uri == null) {
         ToastUtil.show(i18n('external_browser_not_opened'));
         return;

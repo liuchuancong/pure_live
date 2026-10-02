@@ -1,4 +1,4 @@
-import '../../../domains/live/data/stream/playback_source_transport.dart';
+import 'package:pure_live/core/player/core/playback_input_lease.dart';
 
 /// A selected source, distinct from the ephemeral URI opened by a native
 /// consumer. Owned recipes must retain neither a route nor a live input.

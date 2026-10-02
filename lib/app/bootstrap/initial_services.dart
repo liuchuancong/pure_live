@@ -5,6 +5,8 @@ import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/release/release_history_source.dart';
 import 'package:pure_live/core/platform/multi_instance_settings_source.dart';
 import 'package:pure_live/core/platform/desktop_exit_port.dart';
+import 'package:pure_live/core/navigation/official_category_policy.dart';
+import 'package:pure_live/domains/live/data/platforms/cc/cc_catalog.dart';
 import 'package:pure_live/app/bootstrap/desktop_exit_flow.dart';
 import 'package:pure_live/core/config/app_settings_controller.dart';
 import 'package:pure_live/core/config/cache_controller.dart';
@@ -155,6 +157,9 @@ class InitialServices {
     // 桌面退出流程含业务与对话框，留在 App；Core 的托盘/关窗入口只调端口。
     DesktopExitPort.exitApplication = DesktopExitFlow.exitDesktopApplication;
     DesktopExitPort.showExitDialog = DesktopExitFlow.showExitDialog;
+    // 「官方分类入口」的判定与目标地址来自 CC 目录。
+    OfficialCategoryPolicy.isOfficialCategory = CCCatalog.isOfficialEntry;
+    OfficialCategoryPolicy.officialCategoryUri = CCCatalog.officialEntryUri;
     // Huya 播放 UA 是站点适配器的启动预热；原先挂在 Core 的 StartupController
     // onInit 上，让 Core 反向认识了业务域。
     unawaited(HuyaSite().getHuYaUA());

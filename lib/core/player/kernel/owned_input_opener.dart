@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:dio/dio.dart';
 import 'package:media_core_media_kit/media_core_media_kit.dart' as mk;
-import 'package:pure_live/domains/live/data/stream/playback_source_transport.dart';
+import 'package:pure_live/core/player/core/playback_input_lease.dart';
 
 typedef OwnedInputRecipe = Future<PlaybackInputLease> Function(CancelToken cancel);
 
