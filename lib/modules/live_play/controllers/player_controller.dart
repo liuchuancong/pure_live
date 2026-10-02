@@ -394,7 +394,7 @@ class PlayerController extends GetxController {
       currentQuality: selection?.currentQuality,
       playUrls: commit.urls,
       ownedSource: commit.source is OwnedPlaybackSource ? commit.source as OwnedPlaybackSource : null,
-      sourceQueryPolicies: (selection?.sourceQueryPolicies ?? const {}) as Map<String, HlsSourceQueryPolicy>,
+      sourceQueryPolicies: selection?.sourceQueryPolicies ?? const {},
       currentLineIndex: commit.currentLineIndex,
     );
     _main.updateRoom(success: true, isLoading: false, loadError: null);
@@ -512,7 +512,7 @@ class PlayerController extends GetxController {
       qualites: qualities,
       currentQuality: currentQuality,
       playUrls: playUrls,
-      sourceQueryPolicies: session.sourceQueryPolicies as Map<String, HlsSourceQueryPolicy>? ?? const {},
+      sourceQueryPolicies: session.sourceQueryPolicies,
       ownedSource: session.ownedSource as OwnedPlaybackSource?,
       currentLineIndex: currentLineIndex,
       isCurrentRoomAudioOnly: manager.desiredAudioOnlyMode,
@@ -545,7 +545,7 @@ class PlayerController extends GetxController {
       sourceSelection: PlaybackSourceQualitySelection(
         qualities: qualities,
         currentQuality: currentQuality,
-        sourceQueryPolicies: session.sourceQueryPolicies as Map<String, HlsSourceQueryPolicy>? ?? const {},
+        sourceQueryPolicies: session.sourceQueryPolicies,
       ),
       livePlayController: _videoSessionController,
       onSourceCommitted: applySourceCommit,

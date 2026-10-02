@@ -1,21 +1,22 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:pure_live/get/get.dart';
+import 'package:media_core/media_core.dart';
 import 'package:media_core_live/media_core_live.dart';
 import 'package:pure_live/core/models/live_room.dart';
-import 'package:pure_live/core/models/live_play_quality.dart';
 import 'package:pure_live/player/models/player_engine.dart';
+import 'package:pure_live/core/common/hls_source_query_policy.dart';
+import 'package:pure_live/core/models/live_play_quality.dart';
 import 'package:media_core_media_kit/media_core_media_kit.dart';
-import 'package:pure_live/modules/live_play/widgets/danmaku/compact_danmaku_overlay.dart';
 import 'package:pure_live/player/kernel/floating_playback.dart';
-import 'package:media_core/media_core.dart';
+import 'package:pure_live/player/utils/windows_pip_driver.dart';
 import 'package:pure_live/player/kernel/kernel_backend_ids.dart';
 import 'package:pure_live/player/core/portrait_stream_support.dart';
 import 'package:pure_live/player/media_core/player_kernel_service.dart';
 import 'package:pure_live/player/utils/fullscreen.dart' show fullscreenDriver;
-import 'package:pure_live/player/utils/windows_pip_driver.dart';
+import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
+import 'package:pure_live/modules/live_play/widgets/danmaku/compact_danmaku_overlay.dart';
 
 ///
 
@@ -559,7 +560,7 @@ class FacadeStreamCommit {
   final bool isAudioOnly;
   final bool isLiving;
   final String dataSource;
-  final Map<String, Object?> sourceQueryPolicies;
+  final Map<String, HlsSourceQueryPolicy> sourceQueryPolicies;
   final bool hasUseDefaultResolution;
 
   FacadeStreamCommit copyWith({
@@ -567,7 +568,7 @@ class FacadeStreamCommit {
     List<String>? playUrls,
     Object? source,
     Object? ownedSource,
-    Map<String, Object?>? sourceQueryPolicies,
+    Map<String, HlsSourceQueryPolicy>? sourceQueryPolicies,
     Map<String, String>? headers,
     bool? isAudioOnly,
   }) => FacadeStreamCommit(
@@ -596,7 +597,7 @@ extension FacadeStreamCommitLegacy on FacadeStreamCommit {
   List<String> get playUrls => urls;
   Object? get source => null;
   String get currentUrl_ => currentUrl;
-  Map<String, Object?> get queryPolicies => sourceQueryPolicies;
+  Map<String, HlsSourceQueryPolicy> get queryPolicies => sourceQueryPolicies;
   PlaybackSourceQualitySelection? get selection =>
       qualities.isEmpty ? null : PlaybackSourceQualitySelection(qualities: qualities, currentQuality: currentQuality);
 }
@@ -651,7 +652,7 @@ class PlaybackSourceQualitySelection {
   });
   final List<LivePlayQuality> qualities;
   final int currentQuality;
-  final Map<String, Object?> sourceQueryPolicies;
+  final Map<String, HlsSourceQueryPolicy> sourceQueryPolicies;
 }
 
 /// The desktop/system PiP surface: hover reveals the controls (a large
