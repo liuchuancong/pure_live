@@ -144,7 +144,11 @@ final class LivePlayerFacade {
       ),
       preferredBackend: backendIdOfEngine(preferredEngine),
     );
-    _publishCommit(sourceUrl, qualities, currentQuality);
+    // The commit carries the platform's line order — the list the line
+    // selector, the label and the next-line cycling are all written against.
+    // `_lastLines` above is the kernel's fallback preference (selected first)
+    // and must not leak into it, or every commit would report line 1.
+    _publishCommit(sourceUrl, playUrls, qualities, currentQuality);
     if (room != null) await setVolume(room.getSavedVolume().clamp(0.0, 1.0));
   }
 
@@ -172,15 +176,18 @@ final class LivePlayerFacade {
       ),
       preferredBackend: backendIdOfEngine(preferredEngine),
     );
-    _publishCommit('owned:${room.identityKey}', qualities, currentQuality);
+    _publishCommit('owned:${room.identityKey}', const [], qualities, currentQuality);
     await setVolume(room.getSavedVolume().clamp(0.0, 1.0));
   }
 
-  void _publishCommit(String url, List<LivePlayQuality> qualities, int currentQuality) {
-    final lineIndex = _lastLines.isEmpty ? 0 : _lastLines.indexOf(url).clamp(0, _lastLines.length - 1);
+  void _publishCommit(String url, List<String> uiLines, List<LivePlayQuality> qualities, int currentQuality) {
+    // `uiLines` is the platform-ordered line list; the index is the line the
+    // selector highlighted. Deriving it from `_lastLines` (kernel fallback
+    // order, selected line first) would report line 1 for every commit.
+    final lineIndex = uiLines.isEmpty ? 0 : uiLines.indexOf(url).clamp(0, uiLines.length - 1);
     commit = FacadeStreamCommit(
       room: _room ?? LiveRoom(platform: '', roomId: ''),
-      urls: _lastLines,
+      urls: List<String>.unmodifiable(uiLines),
       currentUrl: url,
       currentLineIndex: lineIndex,
       headers: _lastHeaders,
@@ -213,10 +220,15 @@ final class LivePlayerFacade {
     onEngineChanged?.call(engine);
     final current = commit;
     if (current != null && current.urls.isNotEmpty) {
+      // commit.urls is the platform-ordered line list; the playing line stays
+      // the kernel's first candidate across the engine rebuild.
+      final lines = current.currentUrl.isEmpty
+          ? current.urls
+          : <String>[current.currentUrl, ...current.urls.where((url) => url != current.currentUrl)];
       await _controller.play(
         LiveSourceRequest(
           sources: await _intercept([
-            for (final url in current.urls)
+            for (final url in lines)
               PlayerSource(
                 id: SourceId('live-$url'),
                 uri: Uri.parse(url),
