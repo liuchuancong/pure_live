@@ -2170,5 +2170,6 @@
   "wallpaper_fetch_failed": "Could not fetch a picture, try again",
   "wallpaper_video_play_failed": "Playback failed",
   "background_invalid_gradient": "This gradient is incomplete",
-  "background_no_category": "Nothing in this source"
+  "background_no_category": "Nothing in this source",
+  "wallpaper_mask": "Mask"
 }

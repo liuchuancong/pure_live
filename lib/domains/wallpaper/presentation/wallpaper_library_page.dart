@@ -19,7 +19,13 @@ class WallpaperLibraryPage extends StatelessWidget {
     final List<WallpaperSource> sources = WallpaperRepository.instance.loadCatalog().imageSources;
 
     return Scaffold(
-      appBar: AppBar(title: Text(i18n('wallpaper_library'))),
+      // Transparent so the wallpaper painted behind the navigator stays visible.
+      backgroundColor: Colors.transparent,
+      appBar: AppBar(
+        title: Text(i18n('wallpaper_library')),
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+      ),
       body: sources.isEmpty
           ? AppStatusView(type: AppStatusType.empty, title: i18n('background_catalog_empty'), subtitle: '')
           : ListView(

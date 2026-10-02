@@ -70,10 +70,13 @@ class _WallpaperPreviewPageState extends State<WallpaperPreviewPage> {
   bool _apiLoading = false;
 
   /// Catalogue mode: set when "next" ran past the loaded rows and the advance
-  /// has to wait for the next slice to arrive.
+  /// has to wait for the next slice to arrive (a phone appends; desktop turns
+  /// pages instead, which is [_pendingPage]).
   bool _waitingForPage = false;
+  int? _pendingPage;
+  bool _landOnLastItem = false;
 
-  WallpaperGridController? _controller;
+  BasePageScrollAndStateBone<WallpaperItem>? _controller;
 
   /// Live-wallpaper playback. The player exists only for the video kind and is
   /// released with the page.
@@ -124,7 +127,7 @@ class _WallpaperPreviewPageState extends State<WallpaperPreviewPage> {
     // to ask for this source (a deep link, or a grid that was not the opener).
     final controller = WallpaperPagingStore.instance.obtain(source, group);
     _controller = controller;
-    if (controller.list.isEmpty) unawaited(controller.refresh());
+    if (controller.list.isEmpty && !controller.loadding.value) unawaited(controller.loadData());
   }
 
   BackgroundController get _background => BackgroundController.to;
@@ -209,8 +212,6 @@ class _WallpaperPreviewPageState extends State<WallpaperPreviewPage> {
       if (!_apiLoading) unawaited(_fetchApiImage());
       return;
     }
-    if (items.length < 2) return;
-
     final int next = _index + 1;
     if (next < items.length) {
       setState(() => _index = next);
@@ -218,12 +219,20 @@ class _WallpaperPreviewPageState extends State<WallpaperPreviewPage> {
       return;
     }
     final controller = _controller;
-    if (controller != null && controller.canLoadMore.value) {
-      _waitingForPage = true;
-      unawaited(controller.loadMore());
+    if (controller == null || !controller.canLoadMore.value || controller.loadding.value) {
+      if (items.isNotEmpty) setState(() => _index = 0);
       return;
     }
-    setState(() => _index = 0);
+    if (controller.usesDesktopPagination) {
+      // A numbered page replaces the list, so advancing means opening the next
+      // page and landing on its first entry.
+      _pendingPage = controller.currentPage + 1;
+      _landOnLastItem = false;
+      unawaited(controller.goToPage(_pendingPage!));
+      return;
+    }
+    _waitingForPage = true;
+    unawaited(controller.loadMoreData());
   }
 
   void _previous(List<WallpaperItem> items) {
@@ -231,17 +240,28 @@ class _WallpaperPreviewPageState extends State<WallpaperPreviewPage> {
       _next(items);
       return;
     }
-    if (items.length < 2) return;
-    setState(() => _index = _index <= 0 ? items.length - 1 : _index - 1);
+    if (_index > 0) {
+      setState(() => _index -= 1);
+      return;
+    }
+    final controller = _controller;
+    if (controller != null && controller.usesDesktopPagination && controller.currentPage > 1) {
+      _pendingPage = controller.currentPage - 1;
+      _landOnLastItem = true;
+      unawaited(controller.goToPage(_pendingPage!));
+      return;
+    }
+    if (items.isNotEmpty) setState(() => _index = items.length - 1);
   }
 
-  /// Pulls the next slice in when the cursor approaches the end of the buffer.
+  /// Keeps a phone's appending list ahead of the cursor: desktop pages are
+  /// discrete and load through [_pendingPage] instead.
   void _prefetch(List<WallpaperItem> items) {
     final controller = _controller;
-    if (controller == null) return;
+    if (controller == null || controller.usesDesktopPagination) return;
     if (!controller.canLoadMore.value || controller.loadding.value) return;
     if (_index < items.length - 3) return;
-    unawaited(controller.loadMore());
+    unawaited(controller.loadMoreData());
   }
 
   Future<void> _apply(WallpaperItem item) async {
@@ -290,19 +310,85 @@ class _WallpaperPreviewPageState extends State<WallpaperPreviewPage> {
     }
   }
 
-  void _cycleFit() {
-    final int current = kWallpaperFitModes.indexOf(_background.state.boxFit);
-    _background.setBoxFit(kWallpaperFitModes[(current + 1) % kWallpaperFitModes.length]);
+  /// Fill mode, picked from a dialog.
+  ///
+  /// The bar used to cycle through the values on every tap, which made a
+  /// specific mode a matter of counting taps.
+  Future<void> _pickFit() async {
+    final BoxFit? picked = await _pickOption<BoxFit>(
+      title: i18n('wallpaper_fit_mode'),
+      icon: Remix.aspect_ratio_line,
+      options: kWallpaperFitModes,
+      current: _background.state.boxFit,
+      labelOf: wallpaperFitLabel,
+    );
+    if (picked != null) _background.setBoxFit(picked);
   }
 
-  void _cycleBlur() {
-    final int current = wallpaperBlurIndex(_background.state.blurSigma);
-    _background.setBlurSigma(kWallpaperBlurSteps[(current + 1) % kWallpaperBlurSteps.length]);
+  Future<void> _pickBlur() async {
+    final double current = kWallpaperBlurSteps[wallpaperBlurIndex(_background.state.blurSigma)];
+    final double? picked = await _pickOption<double>(
+      title: i18n('wallpaper_blur'),
+      icon: Remix.blur_off_line,
+      options: kWallpaperBlurSteps,
+      current: current,
+      labelOf: wallpaperBlurLabel,
+    );
+    if (picked != null) _background.setBlurSigma(picked);
   }
 
-  void _cycleMask() {
-    final int current = wallpaperMaskIndex(_background.state.maskOpacity);
-    _background.setMaskOpacity(kWallpaperMaskSteps[(current + 1) % kWallpaperMaskSteps.length]);
+  Future<void> _pickMask() async {
+    final double current = kWallpaperMaskSteps[wallpaperMaskIndex(_background.state.maskOpacity)];
+    final double? picked = await _pickOption<double>(
+      title: i18n('wallpaper_mask'),
+      icon: Remix.contrast_2_line,
+      options: kWallpaperMaskSteps,
+      current: current,
+      labelOf: wallpaperMaskLabel,
+    );
+    if (picked != null) _background.setMaskOpacity(picked);
+  }
+
+  /// A modal list of [options]; the one in force is ticked.
+  Future<T?> _pickOption<T>({
+    required String title,
+    required IconData icon,
+    required List<T> options,
+    required T current,
+    required String Function(T) labelOf,
+  }) {
+    final ColorScheme colors = Theme.of(context).colorScheme;
+    return showDialog<T>(
+      context: context,
+      builder: (BuildContext dialogContext) => AlertDialog(
+        title: Row(
+          children: <Widget>[
+            Icon(icon, size: 20),
+            const SizedBox(width: 8),
+            Expanded(child: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis)),
+          ],
+        ),
+        contentPadding: const EdgeInsets.symmetric(vertical: 8),
+        content: SizedBox(
+          width: 320,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: options.length,
+            itemBuilder: (context, index) {
+              final T option = options[index];
+              final bool selected = option == current;
+              return ListTile(
+                dense: true,
+                title: Text(labelOf(option)),
+                trailing: selected ? Icon(Remix.check_line, color: colors.primary) : null,
+                onTap: () => Navigator.of(dialogContext).pop(option),
+              );
+            },
+          ),
+        ),
+        actions: <Widget>[TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: Text(i18n('cancel')))],
+      ),
+    );
   }
 
   @override
@@ -318,6 +404,22 @@ class _WallpaperPreviewPageState extends State<WallpaperPreviewPage> {
         _waitingForPage = false;
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) setState(() => _index += 1);
+        });
+      }
+      // A desktop page change replaces the list under us; land on its first (or
+      // last, when stepping back) entry as soon as it has arrived.
+      final int? pendingPage = _pendingPage;
+      if (pendingPage != null &&
+          controller != null &&
+          controller.currentPage == pendingPage &&
+          !controller.loadding.value) {
+        _pendingPage = null;
+        final bool landOnLast = _landOnLastItem;
+        _landOnLastItem = false;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          final int length = controller.list.length;
+          setState(() => _index = landOnLast && length > 0 ? length - 1 : 0);
         });
       }
 
@@ -423,15 +525,10 @@ class _WallpaperPreviewPageState extends State<WallpaperPreviewPage> {
 
   Widget _buildActionBar(List<WallpaperItem> items, WallpaperItem item) {
     final BackgroundConfig background = _background.state;
-    return Container(
+    // No scrim behind the bar: the wallpaper is what the user is judging, and a
+    // black gradient across its bottom hides exactly the part they look at.
+    return Padding(
       padding: const EdgeInsets.fromLTRB(16, 40, 16, 20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.bottomCenter,
-          end: Alignment.topCenter,
-          colors: <Color>[Colors.black.withValues(alpha: 0.72), Colors.transparent],
-        ),
-      ),
       child: Wrap(
         spacing: 10,
         runSpacing: 10,
@@ -465,17 +562,17 @@ class _WallpaperPreviewPageState extends State<WallpaperPreviewPage> {
           _PreviewAction(
             icon: Remix.aspect_ratio_line,
             label: wallpaperFitLabel(background.boxFit),
-            onPressed: _cycleFit,
+            onPressed: () => unawaited(_pickFit()),
           ),
           _PreviewAction(
             icon: Remix.blur_off_line,
             label: wallpaperBlurLabel(background.blurSigma),
-            onPressed: _cycleBlur,
+            onPressed: () => unawaited(_pickBlur()),
           ),
           _PreviewAction(
             icon: Remix.contrast_2_line,
             label: wallpaperMaskLabel(background.maskOpacity),
-            onPressed: _cycleMask,
+            onPressed: () => unawaited(_pickMask()),
           ),
           _PreviewAction(
             icon: Remix.check_line,

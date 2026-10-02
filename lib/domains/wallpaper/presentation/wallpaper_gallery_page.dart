@@ -19,14 +19,24 @@ class WallpaperGalleryPage extends StatelessWidget {
     final WallpaperSource? source = WallpaperRepository.instance.loadCatalog().sourceById(sourceId);
     if (source == null) {
       return Scaffold(
-        appBar: AppBar(title: Text(i18n('wallpaper_library'))),
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: Text(i18n('wallpaper_library')),
+          backgroundColor: Colors.transparent,
+          surfaceTintColor: Colors.transparent,
+        ),
         body: AppStatusView(type: AppStatusType.empty, title: i18n('background_no_category'), subtitle: ''),
       );
     }
 
     final List<WallpaperGroup> groups = source.visibleGroups;
     return Scaffold(
-      appBar: AppBar(title: Text(source.localizedName(context.locale.languageCode))),
+      backgroundColor: Colors.transparent,
+      appBar: AppBar(
+        title: Text(source.localizedName(context.locale.languageCode)),
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+      ),
       body: groups.isEmpty
           ? AppStatusView(type: AppStatusType.empty, title: i18n('background_no_category'), subtitle: '')
           : ListView(

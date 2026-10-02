@@ -2178,5 +2178,6 @@
   "wallpaper_fetch_failed": "取图失败，请重试",
   "wallpaper_video_play_failed": "视频播放失败",
   "background_invalid_gradient": "这个渐变数据不完整",
-  "background_no_category": "该来源暂无内容"
+  "background_no_category": "该来源暂无内容",
+  "wallpaper_mask": "遮罩"
 }

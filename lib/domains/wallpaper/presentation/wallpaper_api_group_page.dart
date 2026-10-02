@@ -21,14 +21,24 @@ class WallpaperApiGroupPage extends StatelessWidget {
     }
     if (group == null) {
       return Scaffold(
-        appBar: AppBar(title: Text(i18n('wallpaper_api_group'))),
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: Text(i18n('wallpaper_api_group')),
+          backgroundColor: Colors.transparent,
+          surfaceTintColor: Colors.transparent,
+        ),
         body: AppStatusView(type: AppStatusType.empty, title: i18n('background_no_category'), subtitle: ''),
       );
     }
 
     final WallpaperApiGroup resolved = group;
     return Scaffold(
-      appBar: AppBar(title: Text(resolved.localizedName(context.locale.languageCode))),
+      backgroundColor: Colors.transparent,
+      appBar: AppBar(
+        title: Text(resolved.localizedName(context.locale.languageCode)),
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
         children: <Widget>[
