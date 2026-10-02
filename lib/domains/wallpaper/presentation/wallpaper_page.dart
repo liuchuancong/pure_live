@@ -2,15 +2,20 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/models/background_config.dart';
-import 'package:pure_live/domains/wallpaper/presentation/wallpaper_library.dart';
-import 'package:pure_live/domains/wallpaper/domain/wallpaper_catalog.dart';
 import 'package:pure_live/domains/wallpaper/data/wallpaper_media_store.dart';
-import 'package:pure_live/domains/wallpaper/data/wallpaper_repository.dart';
-import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/domains/wallpaper/domain/background_controller.dart';
+import 'package:pure_live/domains/wallpaper/domain/wallpaper_catalog.dart';
+import 'package:pure_live/domains/wallpaper/presentation/wallpaper_api_page.dart';
+import 'package:pure_live/domains/wallpaper/presentation/wallpaper_items_page.dart';
+import 'package:pure_live/domains/wallpaper/presentation/wallpaper_library_page.dart';
+import 'package:remixicon/remixicon.dart';
 
-/// Background settings: the wallpaper in use, how it is drawn, and where to get
-/// a new one.
+/// Background settings: what the background is, how it is drawn, and where to
+/// get a new one.
+///
+/// Each source is its own page: the library and the random-API list are large
+/// enough that rebuilding them as part of this screen would make opening the
+/// settings cost a network round trip per source.
 ///
 /// The page keeps its own scaffold transparent so the layer it is configuring
 /// stays visible behind the controls - changing a mask or a blur takes effect
@@ -34,9 +39,6 @@ class _WallpaperPageState extends State<WallpaperPage> {
   ];
 
   final TextEditingController _urlController = TextEditingController();
-  final List<WallpaperSource> _sources = WallpaperRepository.instance.loadCatalog().sources;
-
-  late WallpaperSource _source = _sources.first;
 
   @override
   void dispose() {
@@ -103,6 +105,39 @@ class _WallpaperPageState extends State<WallpaperPage> {
           ),
 
           const SizedBox(height: 20),
+          context.buildGroupTitle(i18n('wallpaper_source_group')),
+          context.buildModernCard([
+            context.buildTile(
+              icon: Remix.blur_off_line,
+              title: i18n('wallpaper_solid_color'),
+              subtitle: i18n('wallpaper_solid_color_subtitle'),
+              trailing: const Icon(Remix.arrow_right_s_line),
+              onTap: () => Get.to<void>(() => const WallpaperItemsPage(sourceId: WallpaperSourceIds.solidColor)),
+            ),
+            context.buildTile(
+              icon: Remix.movie_line,
+              title: i18n('wallpaper_video_wallpaper'),
+              subtitle: i18n('wallpaper_video_subtitle'),
+              trailing: const Icon(Remix.arrow_right_s_line),
+              onTap: () => Get.to<void>(() => const WallpaperItemsPage(sourceId: WallpaperSourceIds.video)),
+            ),
+            context.buildTile(
+              icon: Remix.image_2_line,
+              title: i18n('wallpaper_library'),
+              subtitle: i18n('wallpaper_library_entry_subtitle'),
+              trailing: const Icon(Remix.arrow_right_s_line),
+              onTap: () => Get.to<void>(() => const WallpaperLibraryPage()),
+            ),
+            context.buildTile(
+              icon: Remix.magic_line,
+              title: i18n('wallpaper_api_group'),
+              subtitle: i18n('wallpaper_api_entry_subtitle'),
+              trailing: const Icon(Remix.arrow_right_s_line),
+              onTap: () => Get.to<void>(() => const WallpaperApiPage()),
+            ),
+          ]),
+
+          const SizedBox(height: 20),
           context.buildGroupTitle(i18n('wallpaper_from_device')),
           context.buildModernCard([
             context.buildTile(
@@ -128,23 +163,6 @@ class _WallpaperPageState extends State<WallpaperPage> {
               },
             ),
           ]),
-
-          const SizedBox(height: 20),
-          context.buildGroupTitle(i18n('wallpaper_library')),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (final source in _sources)
-                ChoiceChip(
-                  label: Text(source.localizedName(languageCode)),
-                  selected: source.id == _source.id,
-                  onSelected: (_) => setState(() => _source = source),
-                ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          WallpaperLibraryView(key: ValueKey<String>(_source.id), source: _source),
         ],
       ),
     );
