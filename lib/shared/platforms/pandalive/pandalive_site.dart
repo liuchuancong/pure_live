@@ -23,6 +23,7 @@ class PandaLiveSite extends LiveSite
         LiveSiteRecordRoomResolver,
         LivePlayUrlResolver,
         LivePlayRecoveryResolver,
+        LivePlayLeaseMetadata,
         LiveSiteExternalRoomResolver {
   /// 该站点自己的官方房间地址（网页与可选的客户端 scheme）。
   @override
@@ -88,7 +89,7 @@ class PandaLiveSite extends LiveSite
     cover: room.cover,
     area: room.category,
     link: PandaLiveLink.url(room.userId),
-    liveStatus: LiveStatus.live,
+    liveStatus: room.isRerun ? LiveStatus.replay : LiveStatus.live,
     onlineViewers: room.onlineViewers?.toString(),
     totalViewers: null,
     followers: room.followers?.toString(),
@@ -112,7 +113,8 @@ class PandaLiveSite extends LiveSite
     area: room.category,
     link: PandaLiveLink.url(room.userId),
     liveStatus: switch (room.state) {
-      PandaLiveState.live => LiveStatus.live,
+      // 录播重播按直播推流，但状态是回放（上游 M4.U.25）。
+      PandaLiveState.live => room.isRerun ? LiveStatus.replay : LiveStatus.live,
       PandaLiveState.offline => LiveStatus.offline,
       PandaLiveState.unknown => LiveStatus.unknown,
     },
@@ -289,11 +291,39 @@ class PandaLiveSite extends LiveSite
     final selectionId = quality.selectionId.toString();
     for (final stream in room.streams) {
       if (stream.id == selectionId) {
-        return LivePlayUrlResolution(urls: [stream.uri.toString()], appliedQualityData: selectionId);
+        final url = stream.uri.toString();
+        _rememberIssued(url, DateTime.now());
+        return LivePlayUrlResolution(urls: [url], appliedQualityData: selectionId);
       }
     }
     throw const PandaLiveException(PandaLiveFailure.mediaUnavailable);
   }
+
+  /// Amazon IVS 的 variant 播放列表 URL 只在签发后一段时间内有效（实测 34 分钟
+  /// 还能取到，87 分钟已 403），过期后播放会直接卡死。令牌本身是不透明的，读不出
+  /// 到期时间，所以按"签发后 30 分钟刷新"处理（上游 50d9e9fd4）。
+  static const Duration _variantRefreshLead = Duration(minutes: 30);
+
+  /// URL → 解析时的时间。只保留最近 32 条，避免长时间播放无界增长。
+  static final Map<String, DateTime> _issuedAt = {};
+
+  static void _rememberIssued(String url, DateTime at) {
+    _issuedAt.remove(url);
+    _issuedAt[url] = at;
+    while (_issuedAt.length > 32) {
+      _issuedAt.remove(_issuedAt.keys.first);
+    }
+  }
+
+  @override
+  DateTime? getPlayUrlRefreshAt(String url, {DateTime? now}) {
+    final issued = _issuedAt[url];
+    return issued?.toUtc().add(_variantRefreshLead);
+  }
+
+  /// 令牌不透明，读不出到期时间：只有刷新时间，没有失效时间。
+  @override
+  DateTime? getPlayUrlInvalidAt(String url, {DateTime? now}) => null;
 
   @override
   Future<LivePlayUrlResolution> resolvePlayUrlsRaw({required LiveRoom liveroom, required LivePlayQuality quality}) =>

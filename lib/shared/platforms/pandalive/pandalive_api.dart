@@ -48,6 +48,7 @@ final class PandaLiveCard {
     required this.followers,
     required this.isAdult,
     required this.isPassword,
+    this.isRerun = false,
   });
 
   final String userId;
@@ -61,6 +62,10 @@ final class PandaLiveCard {
   final int? followers;
   final bool isAdult;
   final bool isPassword;
+
+  /// 在播但其实是录播重播（`onAirType`/`liveType` 为 `rec`，标题带 `[녹]`）。
+  /// 它按直播推流、照常可播，但状态是回放（上游 M4.U.25；3.x 显示为直播中）。
+  final bool isRerun;
 }
 
 final class PandaLiveDirectoryPage {
@@ -114,6 +119,7 @@ final class PandaLiveRoom {
     required this.state,
     required this.access,
     required Iterable<PandaLiveStream> streams,
+    this.isRerun = false,
   }) : streams = List.unmodifiable(streams);
 
   final String userId;
@@ -129,6 +135,9 @@ final class PandaLiveRoom {
   final PandaLiveState state;
   final PandaLiveAccess access;
   final List<PandaLiveStream> streams;
+
+  /// 录播重播（见 [PandaLiveCard.isRerun]）：在播，但状态是回放。
+  final bool isRerun;
 }
 
 typedef PandaLiveRequest = Future<({int status, String body})> Function(
@@ -442,8 +451,13 @@ class PandaLiveApi {
       followers: _optionalNonNegativeInt(data['fanCnt']),
       isAdult: _bool(data['isAdult']) ?? false,
       isPassword: _bool(data['isPw']) ?? false,
+      isRerun: isRerun(data),
     );
   }
+
+  /// 在播的这条是不是录播重播：`onAirType` 或 `liveType` 为 `rec`（上游 M4.U.25）。
+  static bool isRerun(Map<String, dynamic> media) =>
+      _text(media['onAirType']) == 'rec' || _text(media['liveType']) == 'rec';
 
   static PandaLiveRoom parseSearchProfile(Map<String, dynamic> profile) {
     final userId = _userId(profile['userId']);
@@ -492,6 +506,7 @@ class PandaLiveApi {
           : _bool(media['isPw']) == true
           ? PandaLiveAccess.password
           : PandaLiveAccess.public,
+      isRerun: isRerun(media),
       streams: const [],
     );
   }
@@ -582,6 +597,7 @@ class PandaLiveApi {
     state: PandaLiveState.live,
     access: access,
     streams: const [],
+    isRerun: isRerun(media),
   );
 
   static PandaLiveRoom _liveRoom(
@@ -604,6 +620,7 @@ class PandaLiveApi {
     state: PandaLiveState.live,
     access: PandaLiveAccess.public,
     streams: streams,
+    isRerun: isRerun(media),
   );
 
   static void _validateMediaIdentity(Map<String, dynamic> media, String userId, int userIndex) {

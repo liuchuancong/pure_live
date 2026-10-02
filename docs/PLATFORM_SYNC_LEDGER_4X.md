@@ -29,7 +29,7 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | douyu | 14 | 本轮已摘取（见下） |
 | yy | 12 | 本轮已摘取（见下） |
 | niconico | 11 | 待办 |
-| pandalive / picarto / seventeenlive | 11 | 待办 |
+| pandalive / picarto / seventeenlive | 11 | pandalive 本轮已摘取（见下）；picarto / seventeenlive 待办 |
 | twitch | 10 | 本轮已摘取（见下） |
 | soop | 10 | 本轮已摘取（见下） |
 | chzzk | 10 | 本轮已摘取（见下） |
@@ -256,3 +256,15 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | 29-4 | 手机分享页 `mfanxing.kugou.com/...?roomId=` 也识别为房间 | 未做：链接解析 |
 | 29-6 | 聊天/限制/目录文案改写 | 未做：文案 |
 | 29-5 | 酷狗直播弹幕本体（3.x 与 v4 归档都没有，靠站点脚本与匿名只读会话逆出） | 未做：整套新引擎，属新功能批次 |
+
+## pandalive
+
+上游相关提交：`50d9e9fd4`、`fc5008aa8`、`dd06718f6`（M4.U.25）。
+
+| 项 | 内容 | 本仓状态 |
+| --- | --- | --- |
+| `50d9e9fd4` | Amazon IVS 的 variant 播放列表 URL 会过期（实测 34 分钟还能取、87 分钟已 403），线路要带"签发后 30 分钟刷新"的租约 | **已同步**：`PandaLiveSite` 实现 `LivePlayLeaseMetadata`，解析时记录签发时间；令牌不透明，只有刷新时间、没有失效时间 |
+| `fc5008aa8` | 在播但 `onAirType`/`liveType` 为 `rec` 的是录播重播（标题带 `[녹]`）：状态是回放，照常可播 | **已同步**：`isRerun` 进两个模型，目录卡与详情都按回放上报（3.x 显示为直播中） |
+| 25-1 / 25-3 / 25-4 / 25-5 | 目录补新主播区、`playCnt` 记入累计观看、房间链接改 `/play/<id>`、清晰度 id 去掉 30fps 后缀且原画在前 | 未做：目录/字段/链接与画质命名，需逐条对照 |
+| 25-2 | 弹幕参数 `PandaLiveDanmakuArgs`（`getDanmaku()` 仍是空） | 未做：本仓 pandalive 没有弹幕引擎 |
+| `19f59f525` | 房间公告去掉"远端聊天尚待接入" | 无需：本仓确实还没接 PandaTV 聊天，公告与现状一致 |
