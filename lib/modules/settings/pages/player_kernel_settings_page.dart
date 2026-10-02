@@ -9,6 +9,7 @@ import 'package:pure_live/player/kernel/player_preset.dart';
 import 'package:pure_live/player/models/player_engine.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/player/utils/mpv_option_labels.dart';
+
 import 'dart:io';
 
 import 'package:pure_live/modules/settings/pages/mpv_option_page.dart';
@@ -158,12 +159,13 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
                   style: AppTextStyles.t16Bold.copyWith(color: theme.colorScheme.primary),
                 ),
               ),
+              _buildResetButton(theme),
             ],
           ),
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          child: _buildMpvWarningAndReset(context, theme),
+          child: _buildMpvWarning(context, theme),
         ),
         context.buildModernCard([
           context.buildSwitchTile(
@@ -303,7 +305,31 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
     );
   }
 
-  Widget _buildMpvWarningAndReset(BuildContext context, ThemeData theme) {
+  Widget _buildResetButton(ThemeData theme) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(8),
+      onTap: () => SettingsService.to.player.resetMpvPlayerSettings(),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: kMinInteractiveDimension),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Remix.refresh_line, size: 14, color: Colors.red),
+              const SizedBox(width: 4),
+              Text(
+                i18n("reset"),
+                style: const TextStyle(color: Colors.red, fontWeight: FontWeight.w600),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMpvWarning(BuildContext context, ThemeData theme) {
     final warning = Wrap(
       crossAxisAlignment: WrapCrossAlignment.center,
       spacing: 4,
@@ -335,48 +361,7 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
         ),
       ],
     );
-    final reset = InkWell(
-      borderRadius: BorderRadius.circular(8),
-      onTap: () => SettingsService.to.player.resetMpvPlayerSettings(),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: kMinInteractiveDimension),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Remix.refresh_line, size: 14, color: Colors.red),
-              const SizedBox(width: 4),
-              Flexible(
-                child: Text(
-                  i18n("reset"),
-                  style: const TextStyle(color: Colors.red, fontWeight: FontWeight.w600),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final stack = constraints.maxWidth < 420 || MediaQuery.textScalerOf(context).scale(13) > 18;
-        if (stack) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [warning, const SizedBox(height: 12), reset],
-          );
-        }
-        return Row(
-          children: [
-            Expanded(child: warning),
-            const SizedBox(width: 12),
-            reset,
-          ],
-        );
-      },
-    );
+    return Padding(padding: const EdgeInsets.only(top: 12), child: warning);
   }
 
   // 播放器选择弹窗

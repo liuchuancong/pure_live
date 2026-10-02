@@ -1,5 +1,8 @@
 import 'dart:io';
 
+import 'package:remixicon/remixicon.dart';
+import 'package:url_launcher/url_launcher_string.dart';
+
 import 'package:pure_live/common/index.dart';
 
 /// The player manual: concepts, every setting and what it does, organized
@@ -206,6 +209,38 @@ class _PlayerGuidePageState extends State<PlayerGuidePage> {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
             children: [
+              Card(
+                margin: const EdgeInsets.only(bottom: 10),
+                clipBehavior: Clip.antiAlias,
+                child: InkWell(
+                  onTap: () => launchUrlString('https://mpv.io/manual/', mode: LaunchMode.externalApplication),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    child: Row(
+                      children: [
+                        Icon(Icons.open_in_new_rounded, size: 20, color: theme.colorScheme.primary),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(_zh ? 'mpv 官方文档' : 'mpv official manual', style: theme.textTheme.titleSmall),
+                              const SizedBox(height: 2),
+                              Text(
+                                _zh
+                                    ? 'mpv.io/manual —— 全部选项的权威说明（英文）'
+                                    : 'mpv.io/manual — the authoritative reference for every option (English)',
+                                style: theme.textTheme.bodySmall,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Icon(Remix.arrow_right_s_line, size: 18),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
               Card(
                 margin: const EdgeInsets.only(bottom: 12),
                 child: Padding(
