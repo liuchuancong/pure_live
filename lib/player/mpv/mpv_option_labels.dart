@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-import 'package:pure_live/player/utils/mpv_platform_profile.dart';
+import 'package:pure_live/player/mpv/mpv_platform_profile.dart';
 
 enum MpvOptionKind {
   videoOutput,

@@ -1,6 +1,6 @@
 import 'package:pure_live/core/widgets/refresh_indicators.dart';
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/core/base/base_controller.dart';
+import 'package:pure_live/core/pagination/base_controller.dart';
 import 'package:pure_live/core/platform/platform_utils.dart';
 
 class BasePageView<C extends BasePageScrollAndStateBone<T>, T> extends StatelessWidget {

@@ -8,7 +8,7 @@ import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
 import 'package:pure_live/core/contracts/live_site.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:pure_live/player/utils/player_consts.dart';
+import 'package:pure_live/player/kernel/player_consts.dart';
 import 'package:pure_live/player/core/playback_source.dart';
 import 'package:media_core/media_core.dart' show PlayerException, PlayerErrorCode;
 import 'package:pure_live/core/utils/live_quality_label.dart';

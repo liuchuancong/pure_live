@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-import 'package:pure_live/player/utils/player_consts.dart';
+import 'package:pure_live/player/kernel/player_consts.dart';
 
 const Map<String, String> _iosVideoOutputDrivers = <String, String>{'auto': 'ok', 'libmpv': 'libmpv'};
 const Map<String, String> _iosAudioOutputDrivers = <String, String>{

@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/features/live/popular/popular_grid_controller.dart';
-import 'package:pure_live/core/base/live_directory_controller.dart';
+import 'package:pure_live/core/pagination/live_directory_controller.dart';
 import 'package:pure_live/core/contracts/live_directory.dart';
 
 class PopularController extends GetxController with GetTickerProviderStateMixin {

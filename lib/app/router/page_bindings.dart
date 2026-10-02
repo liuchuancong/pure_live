@@ -6,7 +6,7 @@ library;
 
 import 'package:pure_live/core/index.dart' hide SearchController;
 
-import 'package:pure_live/core/base/live_directory_controller.dart';
+import 'package:pure_live/core/pagination/live_directory_controller.dart';
 import 'package:pure_live/core/contracts/live_directory.dart';
 import 'package:pure_live/features/account/account_controller.dart';
 import 'package:pure_live/features/account/douyin/douyin_cookie_controller.dart';

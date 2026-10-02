@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/widgets.dart';
-import 'package:pure_live/player/utils/video_output_size_policy.dart';
+import 'package:pure_live/player/presentation/video_output_size_policy.dart';
 
 typedef VideoOutputResizeCallback = Future<void> Function(int width, int height, bool force);
 

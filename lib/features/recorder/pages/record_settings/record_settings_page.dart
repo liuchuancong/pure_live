@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/player/utils/player_consts.dart';
+import 'package:pure_live/player/kernel/player_consts.dart';
 import 'package:pure_live/features/recorder/consts/recorder_config.dart';
 import 'package:pure_live/features/recorder/pages/record_settings/record_settings_controller.dart';
 

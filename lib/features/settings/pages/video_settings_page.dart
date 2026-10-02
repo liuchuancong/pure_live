@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/player/utils/player_consts.dart';
-import 'package:pure_live/player/utils/windows_pip_driver.dart';
+import 'package:pure_live/player/kernel/player_consts.dart';
+import 'package:pure_live/player/presentation/windows_pip_driver.dart';
 import 'package:pure_live/player/core/live_audio_service.dart';
 import 'package:pure_live/features/settings/pages/font_family_manager_page.dart';
 import 'package:pure_live/services/settings/app_settings_controller.dart';

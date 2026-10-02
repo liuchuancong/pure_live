@@ -10,7 +10,7 @@ import 'package:pure_live/core/platform/desktop_tray_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:pure_live/app/router/app_navigation.dart';
 import 'package:flutter_acrylic/flutter_acrylic.dart';
-import 'package:pure_live/player/utils/windows_pip_driver.dart';
+import 'package:pure_live/player/presentation/windows_pip_driver.dart';
 import 'package:pure_live/core/storage/hive_pref_util.dart';
 import 'package:pure_live/core/platform/platform_utils.dart';
 import 'package:pure_live/core/platform/share_command_codec.dart';

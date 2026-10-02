@@ -33,4 +33,4 @@ export 'theme/app_text_styles.dart';
 export 'widgets/widget_extensions.dart';
 export 'widgets/scrollable_tab_bar.dart';
 export 'package:pure_live/core/storage/hive_rx.dart';
-export 'package:pure_live/core/base/index.dart';
+export 'package:pure_live/core/pagination/index.dart';

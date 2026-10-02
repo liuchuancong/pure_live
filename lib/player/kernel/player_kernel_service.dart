@@ -1,11 +1,11 @@
 import 'dart:async';
 
 import 'package:media_core/media_core.dart';
-import 'package:pure_live/player/utils/fullscreen_window.dart';
+import 'package:pure_live/player/presentation/fullscreen_window.dart';
 import 'package:pure_live/player/global_player_service.dart';
 import 'package:media_core_floating/media_core_floating.dart';
 import 'package:media_core_media_kit/media_core_media_kit.dart';
-import 'package:pure_live/player/utils/windows_pip_driver.dart';
+import 'package:pure_live/player/presentation/windows_pip_driver.dart';
 import 'package:pure_live/player/kernel/owned_input_opener.dart';
 import 'package:media_core_ijk_player/media_core_ijk_player.dart';
 import 'package:media_core_logging/media_core_logging.dart' as mlog;

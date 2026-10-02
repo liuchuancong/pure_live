@@ -7,7 +7,7 @@ import 'package:pure_live/core/index.dart';
 import 'package:flame_barrage/flame_barrage.dart';
 import 'package:media_core/media_core.dart' show PlayerId;
 import 'package:media_core_media_kit/media_core_media_kit.dart';
-import 'package:pure_live/player/utils/fullscreen_window.dart';
+import 'package:pure_live/player/presentation/fullscreen_window.dart';
 import 'package:pure_live/core/platform/platform_utils.dart';
 import 'package:pure_live/features/live/multiview/multiview_controller.dart';
 import 'package:pure_live/player/kernel/player_kernel_service.dart';
