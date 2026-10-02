@@ -1,4 +1,4 @@
-import 'package:pure_live/core/l10n/i18n.dart';
+import 'package:pure_live/core/utils/i18n.dart';
 
 class HttpError extends Error {
   final int statusCode;

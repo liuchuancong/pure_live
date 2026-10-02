@@ -15,7 +15,7 @@ import 'package:pure_live/core/models/live_play_quality.dart';
 import 'package:pure_live/core/contracts/live_site.dart';
 import 'package:pure_live/platforms/huya/huya_danmaku.dart';
 import 'package:pure_live/core/release/github_mirror.dart';
-import 'package:pure_live/core/tars/net/base_tars_http.dart';
+import 'package:pure_live/core/tars/base_tars_http.dart';
 import 'package:pure_live/core/contracts/live_danmaku.dart';
 import 'package:pure_live/core/tars/get_cdn_token_ex_req.dart';
 import 'package:pure_live/core/tars/get_cdn_token_ex_resp.dart';

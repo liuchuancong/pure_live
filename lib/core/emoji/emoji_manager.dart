@@ -2,7 +2,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/services.dart';
 import 'package:flame_barrage/flame_barrage.dart';
-import 'package:pure_live/core/emoji/models/unified_emoji_model.dart';
+import 'package:pure_live/core/emoji/unified_emoji_model.dart';
 
 class EmojiManager {
   static final EmojiManager instance = EmojiManager._internal();

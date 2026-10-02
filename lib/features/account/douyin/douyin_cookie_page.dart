@@ -1,6 +1,6 @@
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/features/account/douyin/douyin_cookie_controller.dart';
-import 'package:pure_live/features/account/widgets/account_cookie_editor.dart';
+import 'package:pure_live/features/account/account_cookie_editor.dart';
 
 class DouyinCookiePage extends GetView<DouyinCookieController> {
   const DouyinCookiePage({super.key});

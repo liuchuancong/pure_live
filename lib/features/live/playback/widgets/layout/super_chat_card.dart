@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:remixicon/remixicon.dart';
-import 'package:pure_live/core/l10n/i18n.dart';
+import 'package:pure_live/core/utils/i18n.dart';
 import 'package:pure_live/core/widgets/toast_util.dart';
 import 'package:pure_live/core/models/live_message.dart';
 

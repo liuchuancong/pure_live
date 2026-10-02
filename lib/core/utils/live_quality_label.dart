@@ -1,4 +1,4 @@
-import 'package:pure_live/core/l10n/i18n.dart';
+import 'package:pure_live/core/utils/i18n.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
 /// Converts platform SDK quality codes into stable user-facing Chinese labels
 /// without changing the opaque identifier used to request that stream.

@@ -5,7 +5,7 @@ import 'package:pure_live/core/index.dart';
 import 'package:pure_live/player/core/live_message_normalization.dart';
 import 'package:pure_live/core/logging/core_log.dart';
 import 'package:pure_live/core/contracts/live_danmaku.dart';
-import 'package:pure_live/core/danmaku/empty_danmaku.dart';
+import 'package:pure_live/core/contracts/empty_danmaku.dart';
 import 'package:pure_live/features/live/playback/states/live_play_state.dart';
 import 'package:pure_live/features/live/playback/controllers/danmaku_session_host.dart';
 

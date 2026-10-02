@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:pure_live/get/get.dart';
 import 'package:pure_live/core/iptv/local/db_service.dart';
 import 'package:pure_live/core/platform/file_utils.dart';
-import 'package:pure_live/core/l10n/i18n.dart';
+import 'package:pure_live/core/utils/i18n.dart';
 import 'package:pure_live/core/widgets/toast_util.dart';
 import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/core/platform/app_path_manager.dart';

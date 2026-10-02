@@ -1,6 +1,6 @@
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/features/account/douyu/douyu_cookie_controller.dart';
-import 'package:pure_live/features/account/widgets/account_cookie_editor.dart';
+import 'package:pure_live/features/account/account_cookie_editor.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// Where the renewal key and the device id are found.

@@ -6,7 +6,7 @@ import 'package:pure_live/core/consts/app_consts.dart';
 import 'package:pure_live/player/core/portrait_stream_support.dart';
 import 'package:pure_live/player/kernel/player_preset.dart';
 import 'package:pure_live/player/super_resolution.dart';
-import 'package:pure_live/player/mpv/mpv_platform_profile.dart';
+import 'package:pure_live/player/kernel/mpv_platform_profile.dart';
 import 'package:pure_live/player/kernel/player_consts.dart';
 
 @visibleForTesting

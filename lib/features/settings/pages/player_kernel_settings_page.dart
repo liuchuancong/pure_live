@@ -11,7 +11,7 @@ import 'package:pure_live/services/settings/player_settings_controller.dart';
 import 'package:pure_live/core/network/proxy_routing.dart';
 import 'package:pure_live/player/kernel/player_preset.dart';
 import 'package:pure_live/player/models/player_engine.dart';
-import 'package:pure_live/player/mpv/mpv_option_labels.dart';
+import 'package:pure_live/player/kernel/mpv_option_labels.dart';
 import 'package:pure_live/player/kernel/player_consts.dart';
 import 'package:pure_live/features/settings/pages/mpv_option_page.dart';
 import 'package:pure_live/features/settings/pages/player_guide_page.dart';

@@ -1,7 +1,7 @@
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/core/index.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
-import 'package:pure_live/features/live/areas/widgets/area_card.dart';
+import 'package:pure_live/features/live/areas/area_card.dart';
 import 'package:pure_live/features/live/areas/favorite_areas_controller.dart';
 
 

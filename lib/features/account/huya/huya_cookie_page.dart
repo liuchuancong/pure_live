@@ -1,6 +1,6 @@
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/features/account/huya/huya_cookie_controller.dart';
-import 'package:pure_live/features/account/widgets/account_cookie_editor.dart';
+import 'package:pure_live/features/account/account_cookie_editor.dart';
 
 class HuyaCookiePage extends GetView<HuyaCookieController> {
   const HuyaCookiePage({super.key});

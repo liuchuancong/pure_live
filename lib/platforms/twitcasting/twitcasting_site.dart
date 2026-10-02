@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:pure_live/core/models/live_area.dart';
 import 'package:pure_live/core/models/live_room.dart';
-import 'package:pure_live/core/danmaku/empty_danmaku.dart';
+import 'package:pure_live/core/contracts/empty_danmaku.dart';
 import 'package:pure_live/core/contracts/live_danmaku.dart';
 import 'package:pure_live/core/contracts/live_search.dart';
 import 'package:pure_live/core/contracts/live_site.dart';

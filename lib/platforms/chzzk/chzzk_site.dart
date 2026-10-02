@@ -5,14 +5,14 @@ import 'package:pure_live/core/models/live_area.dart';
 import 'package:pure_live/core/models/live_room.dart';
 import 'package:pure_live/core/stream/hls_master_selection.dart';
 import 'package:pure_live/core/network/request_scope.dart';
-import 'package:pure_live/core/danmaku/empty_danmaku.dart';
+import 'package:pure_live/core/contracts/empty_danmaku.dart';
 import 'package:pure_live/core/contracts/live_danmaku.dart';
 import 'package:pure_live/core/contracts/live_directory.dart';
 import 'package:pure_live/core/contracts/live_search.dart';
 import 'package:pure_live/core/contracts/live_site.dart';
 import 'package:pure_live/core/models/live_category.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
-import 'package:pure_live/core/l10n/i18n.dart';
+import 'package:pure_live/core/utils/i18n.dart';
 
 import 'chzzk_api.dart';
 import 'chzzk_link.dart';

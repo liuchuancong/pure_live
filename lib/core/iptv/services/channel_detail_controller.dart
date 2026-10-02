@@ -6,7 +6,7 @@ import '../models/epg.dart' as epg;
 
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/iptv/local/db_service.dart';
-import 'package:pure_live/core/iptv/core/fuzzy_match.dart';
+import 'package:pure_live/core/iptv/fuzzy_match.dart';
 import 'package:pure_live/core/iptv/local/database.dart' as database;
 
 class EpgChannelMatchCache {
