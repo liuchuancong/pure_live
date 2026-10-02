@@ -41,10 +41,15 @@ class MultiviewDanmakuSettingsBinding implements DanmakuSettingsBinding {
   RxDouble get danmakuOpacity => _s.danmakuOpacity;
 
   @override
+  RxBool get pipDanmakuScaleAuto => _s.pipDanmakuScaleAuto;
+
+  @override
+  RxDouble get pipDanmakuScaleValue => _s.pipDanmakuScaleValue;
+
+  @override
   RxInt get danmakuMaxVisibleCount => _s.danmakuMaxVisibleCount;
 
   @override
-  RxInt get pipDanmakuDuration => _s.pipDanmakuDuration;
 
   @override
   RxBool get enableDanmakuStroke => _s.enableDanmakuStroke;

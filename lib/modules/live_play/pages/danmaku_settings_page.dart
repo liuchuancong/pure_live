@@ -2,7 +2,6 @@ import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/consts/app_consts.dart';
 import 'package:syncfusion_flutter_sliders/sliders.dart';
 import 'package:pure_live/core/widgets/count_button.dart';
-import 'package:pure_live/modules/settings/pages/pip_danmaku_settings_page.dart';
 import 'package:pure_live/modules/live_play/widgets/danmaku/danmaku_viewing_preset.dart';
 import 'package:pure_live/modules/live_play/widgets/danmaku/danmaku_settings_binding.dart';
 import 'package:pure_live/modules/live_play/widgets/local_interaction/local_interaction_controller.dart';
@@ -302,18 +301,6 @@ class _DanmakuSettingsContentState extends State<DanmakuSettingsContent> {
               ),
               _slider(
                 theme,
-                title: i18n("pip_danmaku_duration"),
-                value: controller.pipDanmakuDuration.value.toDouble(),
-                min: 2,
-                max: 12,
-                display: "${controller.pipDanmakuDuration.value}s",
-                semanticValueBuilder: (value) => '${value.toInt()}s',
-                onChanged: (v) => controller.pipDanmakuDuration.v = v.toInt(),
-                labelColor: labelColor,
-                digitColor: digitColor,
-              ),
-              _slider(
-                theme,
                 title: i18n("speed"),
                 value: controller.danmakuSpeed.value.toDouble(),
                 min: 20,
@@ -357,6 +344,27 @@ class _DanmakuSettingsContentState extends State<DanmakuSettingsContent> {
                 onChanged: (v) => controller.enableDanmakuStroke.value = v,
                 labelColor: labelColor,
               ),
+              _switch(
+                theme,
+                title: i18n("pip_danmaku_scale_auto"),
+                subtitle: i18n("pip_danmaku_scale_auto_subtitle"),
+                value: controller.pipDanmakuScaleAuto.value,
+                onChanged: (v) => controller.pipDanmakuScaleAuto.value = v,
+                labelColor: labelColor,
+              ),
+              if (!controller.pipDanmakuScaleAuto.value)
+                _slider(
+                  theme,
+                  title: i18n("pip_danmaku_scale"),
+                  value: controller.pipDanmakuScaleValue.value,
+                  min: 0.5,
+                  max: 3.0,
+                  display: 'x${controller.pipDanmakuScaleValue.value.toStringAsFixed(2)}',
+                  semanticValueBuilder: (value) => 'x${value.toStringAsFixed(2)}',
+                  onChanged: (v) => controller.pipDanmakuScaleValue.value = v,
+                  labelColor: labelColor,
+                  digitColor: digitColor,
+                ),
               _slider(
                 theme,
                 title: i18n("stroke"),
@@ -451,11 +459,7 @@ class _DanmakuSettingsContentState extends State<DanmakuSettingsContent> {
           ),
           const SizedBox(height: 20),
 
-          if (widget.includePipSettings) ...[
-            const PipDanmakuSettingsSection(),
-            const SizedBox(height: 24),
-          ] else
-            const SizedBox(height: 12),
+          const SizedBox(height: 12),
         ],
       ),
     );

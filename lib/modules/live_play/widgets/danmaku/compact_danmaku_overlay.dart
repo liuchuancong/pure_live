@@ -3,6 +3,14 @@ import 'package:pure_live/core/utils/compact_danmaku_metrics.dart';
 import 'package:flame_barrage/flame_barrage.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller.dart';
 
+/// The compact (picture-in-picture / small-window) danmaku surface.
+///
+/// It renders with the MAIN danmaku configuration — size, weight, speed,
+/// opacity, area, density all come from the regular danmaku settings — so
+/// there is exactly one place to tune how danmaku looks. What compact mode
+/// adds is a single scale factor: "auto" follows the window width against a
+/// 350px reference so text stays proportional in a resizable window, or the
+/// user pins a multiplier on top.
 class CompactDanmakuOverlay extends StatelessWidget {
   const CompactDanmakuOverlay({super.key, required this.controller});
 
@@ -22,16 +30,16 @@ class CompactDanmakuOverlay extends StatelessWidget {
       // later, outside GetX dependency collection, so deferred reads would
       // leave the active PiP overlay on its previous style until another UI
       // rebuild happened.
-      final autoScale = settings.pipDanmakuAutoScale.v;
-      final noEmojiMode = settings.pipDanmakuNoEmojiMode.v;
-      final configuredFontSize = settings.pipDanmakuFontSize.v;
-      final configuredFontWeight = settings.pipDanmakuFontWeight.value;
-      final area = settings.pipDanmakuArea.v;
-      final speed = settings.pipDanmakuSpeed.v;
-      final opacity = settings.pipDanmakuOpacity.v;
+      final scaleAuto = settings.pipDanmakuScaleAuto.v;
+      final fixedScale = settings.pipDanmakuScaleValue.v;
+      final noEmojiMode = settings.noEmojiMode.v;
+      final configuredFontSize = settings.danmakuFontSize.v;
+      final configuredFontWeight = settings.danmakuFontWeight.value;
+      final area = settings.danmakuArea.v;
+      final speed = settings.danmakuSpeed.v;
+      final opacity = settings.danmakuOpacity.v;
       final fps = settings.resolvedDanmakuFps(pip: true, refreshRateMode: SettingsService.to.app.refreshRateMode);
-      final maxVisibleCount = settings.pipDanmakuMaxVisibleCount.v;
-      final emitInterval = settings.pipDanmakuEmitInterval.v;
+      final maxVisibleCount = settings.danmakuMaxVisibleCount.v;
       final fontFamily = controller.danmakuFontFamilyName.value;
       final showStroke = controller.enableDanmakuStroke.value;
       final strokeWidth = controller.danmakuFontBorder.value;
@@ -48,9 +56,10 @@ class CompactDanmakuOverlay extends StatelessWidget {
             final width = constraints.maxWidth.isFinite ? constraints.maxWidth : 350.0;
             final metrics = CompactDanmakuMetrics.resolve(
               width: width,
-              autoScale: autoScale,
+              autoScale: scaleAuto,
               configuredFontSize: configuredFontSize,
               configuredSpeed: speed,
+              fixedScale: scaleAuto ? 1.0 : fixedScale,
             );
 
             return RepaintBoundary(
@@ -73,8 +82,9 @@ class CompactDanmakuOverlay extends StatelessWidget {
                   maxVisibleCount: maxVisibleCount,
                   maxPendingCount: 36,
                   maxPendingAge: const Duration(seconds: 3),
-                  fixedDuration: Duration(seconds: settings.pipDanmakuDuration.v),
-                  emitInterval: emitInterval,
+                  fixedDuration: Duration(seconds: 4),
+                  // The old per-pip emit-interval setting is gone; the main
+                  // surface's pacing applies here too.
                   overlapSafeGap: metrics.overlapSafeGap,
                   // PiP only exposes a handful of tracks. Keeping desktop-size
                   // pools here retained hundreds of paragraphs/pictures after

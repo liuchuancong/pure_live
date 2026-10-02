@@ -24,13 +24,16 @@ final class CompactDanmakuMetrics {
     required bool autoScale,
     required double configuredFontSize,
     required double configuredSpeed,
+    double fixedScale = 1.0,
   }) {
     final safeWidth = width.isFinite && width > 0 ? width : referenceWidth;
-    // The scale tracks the window in BOTH directions: shrinking eases off at
-    // 0.65 so a tiny window stays readable, and growing keeps scaling up —
-    // a danmaku layer frozen at the 350px reference size while the window
-    // doubles looked lost in an enlarged picture-in-picture.
-    final scale = autoScale ? (safeWidth / referenceWidth).clamp(0.65, 2.0).toDouble() : 1.0;
+    // Auto tracks the window in BOTH directions: shrinking eases off at
+    // 0.65 so a tiny window stays readable, and growing keeps scaling up.
+    // A host may instead pin the scale (the "compact danmaku scale" setting);
+    // the fixed factor then rides on top of the width-derived auto value so
+    // the user's number stays meaningful across window sizes.
+    final autoScaleFactor = autoScale ? (safeWidth / referenceWidth).clamp(0.65, 2.0).toDouble() : 1.0;
+    final scale = (autoScaleFactor * fixedScale).clamp(0.5, 4.0).toDouble();
     final fontSize = configuredFontSize * scale;
 
     // flame_barrage allocates tracks with at least fontSize + 10, but paints

@@ -24,9 +24,11 @@ abstract interface class DanmakuSettingsBinding {
 
   RxInt get danmakuMaxVisibleCount;
 
-  RxInt get pipDanmakuDuration;
-
   RxDouble get danmakuOpacity;
+
+  RxBool get pipDanmakuScaleAuto;
+
+  RxDouble get pipDanmakuScaleValue;
 
   RxBool get enableDanmakuStroke;
 

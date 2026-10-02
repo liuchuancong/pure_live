@@ -65,10 +65,9 @@ class DanmakuSettingsController extends GetxController {
   final RxInt danmakuFontWeight = hiveInt('danmakuFontWeight', defaultDanmakuFontWeight);
   final RxDouble danmakuFontBorder = hiveDouble('danmakuFontBorder', defaultDanmakuFontBorder);
   final RxDouble danmakuOpacity = hiveDouble('danmakuOpacity', defaultDanmakuOpacity);
+
   /// Same-screen cap forwarded to FlameBarrageWidget.maxVisibleCount.
   final RxInt danmakuMaxVisibleCount = hiveInt('danmakuMaxVisibleCount', 48);
-  /// Small-window speed: the fixed travel duration of one barrage line.
-  final RxInt pipDanmakuDuration = hiveInt('pipDanmakuDuration', 4);
   final RxBool enableDanmakuDisplay = hiveBool('enableDanmakuDisplay', true);
   final RxBool enableDanmakuStroke = hiveBool('enableDanmakuStroke', true);
   final RxInt danmakuFps = hiveInt('danmakuFps', defaultDanmakuFps);
@@ -81,21 +80,15 @@ class DanmakuSettingsController extends GetxController {
   final RxString savedDanmakuTemplate = hiveString('savedDanmakuTemplate', '');
   final RxString danmakuFontFamilyName = hiveString('danmakuFontFamilyName', 'Default');
   final RxBool enablePipDanmaku = hiveBool('enablePipDanmaku', defaultEnablePipDanmaku);
-  final RxBool pipDanmakuAutoScale = hiveBool('pipDanmakuAutoScale', defaultPipDanmakuAutoScale);
-  // Keep the upstream storage key for existing users while exposing a
-  // consistently-spelled Dart API and backup key.
-  final RxBool pipDanmakuNoEmojiMode = hiveBool('pipDanmaNoEmojiMode', defaultPipDanmakuNoEmojiMode);
-  final RxBool pipDanmakuUseOriginalColor = hiveBool('pipDanmakuUseOriginalColor', defaultPipDanmakuUseOriginalColor);
-  final RxInt pipDanmakuColor = hiveInt('pipDanmakuColor', defaultPipDanmakuColor);
-  final RxDouble pipDanmakuFontSize = hiveDouble('pipDanmakuFontSize', defaultPipDanmakuFontSize);
-  final RxInt pipDanmakuFontWeight = hiveInt('pipDanmakuFontWeight', defaultPipDanmakuFontWeight);
-  final RxDouble pipDanmakuSpeed = hiveDouble('pipDanmakuSpeed', defaultPipDanmakuSpeed);
-  final RxDouble pipDanmakuOpacity = hiveDouble('pipDanmakuOpacity', defaultPipDanmakuOpacity);
-  final RxDouble pipDanmakuArea = hiveDouble('pipDanmakuArea', defaultPipDanmakuArea);
-  final RxInt pipDanmakuMaxVisibleCount = hiveInt('pipDanmakuMaxVisibleCount', defaultPipDanmakuMaxVisibleCount);
-  final RxDouble pipDanmakuEmitInterval = hiveDouble('pipDanmakuEmitInterval', defaultPipDanmakuEmitInterval);
-  final RxInt pipDanmakuFps = hiveInt('pipDanmakuFps', defaultPipDanmakuFps);
-  final RxBool pipDanmakuAutoFps = hiveBool('pipDanmakuAutoFps', defaultPipDanmakuAutoFps);
+
+  /// Scale factor applied on top of the main danmaku config when rendering
+  /// the compact (picture-in-picture / small-window) surface. `null` means
+  /// auto: the factor follows the compact window's width against the 350px
+  /// reference. A number pins the factor explicitly.
+  /// The old per-pip config cohort (font size, speed, opacity, ...) was
+  /// folded into the main danmaku settings; these Hive keys are legacy.
+  final RxBool pipDanmakuScaleAuto = hiveBool('pipDanmakuAutoScale', true);
+  final RxDouble pipDanmakuScaleValue = hiveDouble('pipDanmakuScaleValue', 1.0);
 
   // Douyu sometimes emits legitimate room-local chat packets without either
   // decoration/fan marker. Preserve them unless the user explicitly enables
@@ -125,7 +118,6 @@ class DanmakuSettingsController extends GetxController {
     danmakuFontBorder.v = _boundedDouble(danmakuFontBorder.v, fallback: defaultDanmakuFontBorder, min: 0, max: 4);
     danmakuOpacity.v = _boundedDouble(danmakuOpacity.v, fallback: defaultDanmakuOpacity, min: 0, max: 1);
     danmakuFps.v = _boundedInt(danmakuFps.v, fallback: defaultDanmakuFps, min: 30, max: 240);
-    pipDanmakuFontWeight.v = normalizeFontWeight(pipDanmakuFontWeight.v);
     danmakuSimilarityThreshold.v = danmakuSimilarityThreshold.v.clamp(50, 100).toInt();
     danmakuSimilarityCacheDuration.v = danmakuSimilarityCacheDuration.v.clamp(1, 60).toInt();
     danmakuSimilarityMaxCacheSize.v = danmakuSimilarityMaxCacheSize.v.clamp(20, 1000).toInt();
@@ -137,9 +129,10 @@ class DanmakuSettingsController extends GetxController {
   }
 
   int resolvedDanmakuFps({bool pip = false, AppRefreshRateMode refreshRateMode = AppRefreshRateMode.powerSaving}) {
-    final auto = pip ? pipDanmakuAutoFps.v : danmakuAutoFps.v;
-    final configured = pip ? pipDanmakuFps.v : danmakuFps.v;
-    if (!auto) return configured.clamp(pip ? 15 : 30, 240).toInt();
+    // The compact surface shares the main danmaku FPS policy.
+    final auto = danmakuAutoFps.v;
+    final configured = danmakuFps.v;
+    if (!auto) return configured.clamp(30, 240).toInt();
     return resolveAdaptiveDanmakuFps(DisplayModeService.info.value, pip: pip, refreshRateMode: refreshRateMode);
   }
 
@@ -165,23 +158,6 @@ class DanmakuSettingsController extends GetxController {
     };
   }
 
-  void resetPipDanmaku() {
-    enablePipDanmaku.v = defaultEnablePipDanmaku;
-    pipDanmakuAutoScale.v = defaultPipDanmakuAutoScale;
-    pipDanmakuNoEmojiMode.v = defaultPipDanmakuNoEmojiMode;
-    pipDanmakuUseOriginalColor.v = defaultPipDanmakuUseOriginalColor;
-    pipDanmakuColor.v = defaultPipDanmakuColor;
-    pipDanmakuFontSize.v = defaultPipDanmakuFontSize;
-    pipDanmakuFontWeight.v = defaultPipDanmakuFontWeight;
-    pipDanmakuSpeed.v = defaultPipDanmakuSpeed;
-    pipDanmakuOpacity.v = defaultPipDanmakuOpacity;
-    pipDanmakuArea.v = defaultPipDanmakuArea;
-    pipDanmakuMaxVisibleCount.v = defaultPipDanmakuMaxVisibleCount;
-    pipDanmakuEmitInterval.v = defaultPipDanmakuEmitInterval;
-    pipDanmakuFps.v = defaultPipDanmakuFps;
-    pipDanmakuAutoFps.v = defaultPipDanmakuAutoFps;
-  }
-
   Map<String, dynamic> toJson() {
     return {
       'hideDanmaku': hideDanmaku.v,
@@ -189,7 +165,6 @@ class DanmakuSettingsController extends GetxController {
       'danmakuTopArea': danmakuTopArea.v,
       'danmakuArea': danmakuArea.v,
       'danmakuMaxVisibleCount': danmakuMaxVisibleCount.v,
-      'pipDanmakuDuration': pipDanmakuDuration.v,
       'danmakuBottomArea': danmakuBottomArea.v,
       'danmakuSpeed': danmakuSpeed.v,
       'danmakuFontSize': danmakuFontSize.v,
@@ -207,19 +182,8 @@ class DanmakuSettingsController extends GetxController {
       'repeatedDanmakuWindowSeconds': repeatedDanmakuWindowSeconds.v,
       'savedDanmakuTemplate': savedDanmakuTemplate.v,
       'enablePipDanmaku': enablePipDanmaku.v,
-      'pipDanmakuAutoScale': pipDanmakuAutoScale.v,
-      'pipDanmakuNoEmojiMode': pipDanmakuNoEmojiMode.v,
-      'pipDanmakuUseOriginalColor': pipDanmakuUseOriginalColor.v,
-      'pipDanmakuColor': pipDanmakuColor.v,
-      'pipDanmakuFontSize': pipDanmakuFontSize.v,
-      'pipDanmakuFontWeight': pipDanmakuFontWeight.v,
-      'pipDanmakuSpeed': pipDanmakuSpeed.v,
-      'pipDanmakuOpacity': pipDanmakuOpacity.v,
-      'pipDanmakuArea': pipDanmakuArea.v,
-      'pipDanmakuMaxVisibleCount': pipDanmakuMaxVisibleCount.v,
-      'pipDanmakuEmitInterval': pipDanmakuEmitInterval.v,
-      'pipDanmakuFps': pipDanmakuFps.v,
-      'pipDanmakuAutoFps': pipDanmakuAutoFps.v,
+      'pipDanmakuAutoScale': pipDanmakuScaleAuto.v,
+      'pipDanmakuScaleValue': pipDanmakuScaleValue.v,
       'filterDouyuSuspectedAutomatedMessages': filterDouyuSuspectedAutomatedMessages.v,
       'enableDanmakuSimilarityFilter': enableDanmakuSimilarityFilter.v,
       'danmakuSimilarityThreshold': danmakuSimilarityThreshold.v,
@@ -267,35 +231,10 @@ class DanmakuSettingsController extends GetxController {
       ),
       'savedDanmakuTemplate': typed<String>(json['savedDanmakuTemplate']?.toString() ?? ''),
       'enablePipDanmaku': typed<bool>(json['enablePipDanmaku'] ?? defaultEnablePipDanmaku),
-      'pipDanmakuAutoScale': typed<bool>(json['pipDanmakuAutoScale'] ?? defaultPipDanmakuAutoScale),
-      'pipDanmakuNoEmojiMode': typed<bool>(
-        json['pipDanmakuNoEmojiMode'] ?? json['pipDanmaNoEmojiMode'] ?? defaultPipDanmakuNoEmojiMode,
+      'pipDanmakuAutoScale': typed<bool>(json['pipDanmakuAutoScale'] ?? true),
+      'pipDanmakuScaleValue': typed<double>(
+        (json['pipDanmakuScaleValue'] ?? 1.0).toDouble().clamp(0.5, 3.0).toDouble(),
       ),
-      'pipDanmakuUseOriginalColor': typed<bool>(
-        json['pipDanmakuUseOriginalColor'] ?? defaultPipDanmakuUseOriginalColor,
-      ),
-      'pipDanmakuColor': typed<int>(json['pipDanmakuColor']?.toInt() ?? defaultPipDanmakuColor),
-      'pipDanmakuFontSize': typed<double>(
-        (json['pipDanmakuFontSize'] ?? defaultPipDanmakuFontSize).toDouble().clamp(8.0, 24.0).toDouble(),
-      ),
-      'pipDanmakuFontWeight': typed<int>(normalizeFontWeight(json['pipDanmakuFontWeight'])),
-      'pipDanmakuSpeed': typed<double>(
-        (json['pipDanmakuSpeed'] ?? defaultPipDanmakuSpeed).toDouble().clamp(20.0, 400.0).toDouble(),
-      ),
-      'pipDanmakuOpacity': typed<double>(
-        (json['pipDanmakuOpacity'] ?? defaultPipDanmakuOpacity).toDouble().clamp(0.1, 1.0).toDouble(),
-      ),
-      'pipDanmakuArea': typed<double>(
-        (json['pipDanmakuArea'] ?? defaultPipDanmakuArea).toDouble().clamp(0.1, 1.0).toDouble(),
-      ),
-      'pipDanmakuMaxVisibleCount': typed<int>(
-        (json['pipDanmakuMaxVisibleCount'] ?? defaultPipDanmakuMaxVisibleCount).toInt().clamp(1, 20).toInt(),
-      ),
-      'pipDanmakuEmitInterval': typed<double>(
-        (json['pipDanmakuEmitInterval'] ?? defaultPipDanmakuEmitInterval).toDouble().clamp(0.05, 2.0).toDouble(),
-      ),
-      'pipDanmakuFps': typed<int>((json['pipDanmakuFps'] ?? defaultPipDanmakuFps).toInt().clamp(15, 240).toInt()),
-      'pipDanmakuAutoFps': typed<bool>(json['pipDanmakuAutoFps'] ?? defaultPipDanmakuAutoFps),
       'filterDouyuSuspectedAutomatedMessages': typed<bool>(
         json['filterDouyuSuspectedAutomatedMessages'] ?? defaultFilterDouyuSuspectedAutomatedMessages,
       ),
@@ -337,19 +276,8 @@ class DanmakuSettingsController extends GetxController {
     repeatedDanmakuWindowSeconds.v = parsed['repeatedDanmakuWindowSeconds'];
     savedDanmakuTemplate.v = parsed['savedDanmakuTemplate'];
     enablePipDanmaku.v = parsed['enablePipDanmaku'];
-    pipDanmakuAutoScale.v = parsed['pipDanmakuAutoScale'];
-    pipDanmakuNoEmojiMode.v = parsed['pipDanmakuNoEmojiMode'];
-    pipDanmakuUseOriginalColor.v = parsed['pipDanmakuUseOriginalColor'];
-    pipDanmakuColor.v = parsed['pipDanmakuColor'];
-    pipDanmakuFontSize.v = parsed['pipDanmakuFontSize'];
-    pipDanmakuFontWeight.v = parsed['pipDanmakuFontWeight'];
-    pipDanmakuSpeed.v = parsed['pipDanmakuSpeed'];
-    pipDanmakuOpacity.v = parsed['pipDanmakuOpacity'];
-    pipDanmakuArea.v = parsed['pipDanmakuArea'];
-    pipDanmakuMaxVisibleCount.v = parsed['pipDanmakuMaxVisibleCount'];
-    pipDanmakuEmitInterval.v = parsed['pipDanmakuEmitInterval'];
-    pipDanmakuFps.v = parsed['pipDanmakuFps'];
-    pipDanmakuAutoFps.v = parsed['pipDanmakuAutoFps'];
+    pipDanmakuScaleAuto.v = parsed['pipDanmakuAutoScale'];
+    pipDanmakuScaleValue.v = parsed['pipDanmakuScaleValue'];
     filterDouyuSuspectedAutomatedMessages.v = parsed['filterDouyuSuspectedAutomatedMessages'];
     enableDanmakuSimilarityFilter.v = parsed['enableDanmakuSimilarityFilter'];
     danmakuSimilarityThreshold.v = parsed['danmakuSimilarityThreshold'];

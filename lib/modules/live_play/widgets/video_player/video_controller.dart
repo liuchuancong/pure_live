@@ -221,9 +221,8 @@ class DanmakuManager {
     }
 
     if (settings.enablePipDanmaku.v && isCompactMode) {
-      final compactColor = msg.isLocal || settings.pipDanmakuUseOriginalColor.v
-          ? originalColor
-          : Color(settings.pipDanmakuColor.v);
+      // The compact surface renders with the main danmaku config; messages
+      // keep their original color (the old per-pip recolor setting is gone).
       pipController.send(
         BarrageItem(
           content: msg.message,
@@ -232,7 +231,7 @@ class DanmakuManager {
             LiveMessagePlacement.bottom => BarrageType.bottomFixed,
             _ => BarrageType.scroll,
           },
-          textColor: compactColor,
+          textColor: originalColor,
           fontSize: localStyle?.fontSize,
           fontWeight: localStyle == null ? null : FontWeight(localStyle.fontWeight),
           fontStyle: localStyle?.italic == true ? FontStyle.italic : null,
@@ -392,9 +391,11 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
   @override
   final danmakuOpacity = 1.0.obs;
   @override
-  final danmakuMaxVisibleCount = 48.obs;
+  final pipDanmakuScaleAuto = true.obs;
   @override
-  final pipDanmakuDuration = 4.obs;
+  final pipDanmakuScaleValue = 1.0.obs;
+  @override
+  final danmakuMaxVisibleCount = 48.obs;
   @override
   final enableDanmakuStroke = true.obs;
   @override

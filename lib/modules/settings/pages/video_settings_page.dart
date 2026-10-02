@@ -7,7 +7,6 @@ import 'package:pure_live/player/core/live_audio_service.dart';
 import 'package:pure_live/modules/settings/pages/font_family_manager_page.dart';
 import 'package:pure_live/services/settings/app_settings_controller.dart';
 import 'package:pure_live/services/settings/player_settings_controller.dart';
-import 'package:pure_live/modules/settings/pages/pip_danmaku_settings_page.dart';
 import 'package:pure_live/modules/settings/pages/portrait_live_settings_page.dart';
 import 'package:pure_live/modules/settings/pages/audience_metric_settings_page.dart';
 
@@ -268,13 +267,6 @@ class _VideoSettingsPageState extends State<VideoSettingsPage> {
               subtitle: i18n('show_danmaku_subtitle'),
               value: SettingsService.to.danmaku.enableDanmakuDisplay,
               icon: Remix.chat_smile_2_line,
-            ),
-            context.buildTile(
-              icon: Remix.picture_in_picture_2_line,
-              title: i18n('pip_danmaku'),
-              subtitle: i18n('pip_danmaku_desc'),
-              trailing: const Icon(Icons.chevron_right_rounded),
-              onTap: () => Get.to(() => const PipDanmakuSettingsPage()),
             ),
             Obx(
               () => context.buildTile(
