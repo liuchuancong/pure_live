@@ -1706,6 +1706,8 @@
   "windows_pip_base_size": "Compact window base size (long side)",
   "windows_pip_min_width": "Compact window minimum width",
   "windows_pip_min_height": "Compact window minimum height",
+  "windows_pip_free_aspect": "Free compact-window shape",
+  "windows_pip_free_aspect_subtitle": "When on, the height and width can be changed independently; the picture is fitted and keeps bars on the side the shape does not match. When off, the window always matches the video shape",
   "windows_pip_remember_position_subtitle": "Restore the last adjusted bounds and keep them visible on the available displays",
   "windows_pip_reset_position": "Reset PiP position and size",
   "windows_pip_reset_position_subtitle": "Clear the saved bounds and reopen PiP at the lower-right of the display containing the app",

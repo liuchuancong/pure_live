@@ -215,10 +215,21 @@ class PlayerSettingsController extends GetxController {
   final RxBool floatPlay = hiveBool('floatPlay', false);
   final RxBool windowsPipAlwaysOnTop = hiveBool('windowsPipAlwaysOnTop', false);
 
+  /// 小窗是否可以不按视频比例自由拉伸（仅 Windows 小窗）。
+  ///
+  /// 默认关闭时小窗始终等于视频形状，画面没有黑边；开启后可以单独压扁或拉窄窗口，
+  /// 画面按比例适配，在不等的一侧留黑边。
+  final RxBool windowsPipFreeAspect = hiveBool('windowsPipFreeAspect', false);
+
   /// Compact-window size policy. [windowsPipBaseSize] is the long side of the
   /// small window for landscape streams (the height for portrait ones); the
-  /// short side always follows the video's aspect. The floors clamp how far
-  /// the viewer can shrink it.
+  /// short side always follows the video's aspect.
+  ///
+  /// [windowsPipMinWidth] / [windowsPipMinHeight] are inert on Windows today:
+  /// `media_core_pip` never reads `PipConfig.minWidth` / `minHeight`, and the
+  /// Win32 backend has no native minimum size (`setMinimumSize` is a no-op), so
+  /// the sliders change nothing. Kept as compatibility fields for old backups
+  /// until the package implements a real floor.
   final RxDouble windowsPipBaseSize = hiveDouble('windowsPipBaseSize', 360.0);
   final RxDouble windowsPipMinWidth = hiveDouble('windowsPipMinWidth', 140.0);
   final RxDouble windowsPipMinHeight = hiveDouble('windowsPipMinHeight', 90.0);
@@ -481,6 +492,7 @@ class PlayerSettingsController extends GetxController {
       'videoHardwareDecoder': videoHardwareDecoder.v,
       'floatPlay': floatPlay.v,
       'windowsPipAlwaysOnTop': windowsPipAlwaysOnTop.v,
+      'windowsPipFreeAspect': windowsPipFreeAspect.v,
       'windowsPipBaseSize': windowsPipBaseSize.v,
       'windowsPipMinWidth': windowsPipMinWidth.v,
       'windowsPipMinHeight': windowsPipMinHeight.v,
@@ -531,6 +543,7 @@ class PlayerSettingsController extends GetxController {
       ),
       'floatPlay': typed<bool>(json['floatPlay'] ?? false),
       'windowsPipAlwaysOnTop': typed<bool>(json['windowsPipAlwaysOnTop'] ?? false),
+      'windowsPipFreeAspect': typed<bool>(json['windowsPipFreeAspect'] ?? false),
       'windowsPipBaseSize': typed<double>((json['windowsPipBaseSize'] ?? 360.0).toDouble().clamp(200.0, 720.0)),
       'windowsPipMinWidth': typed<double>((json['windowsPipMinWidth'] ?? 140.0).toDouble().clamp(100.0, 320.0)),
       'windowsPipMinHeight': typed<double>((json['windowsPipMinHeight'] ?? 90.0).toDouble().clamp(60.0, 240.0)),
@@ -577,6 +590,7 @@ class PlayerSettingsController extends GetxController {
     videoHardwareDecoder.v = parsed['videoHardwareDecoder'];
     floatPlay.v = parsed['floatPlay'];
     windowsPipAlwaysOnTop.v = parsed['windowsPipAlwaysOnTop'];
+    windowsPipFreeAspect.v = parsed['windowsPipFreeAspect'];
     windowsPipBaseSize.v = parsed['windowsPipBaseSize'];
     windowsPipMinWidth.v = parsed['windowsPipMinWidth'];
     windowsPipMinHeight.v = parsed['windowsPipMinHeight'];
@@ -626,6 +640,7 @@ class PlayerSettingsController extends GetxController {
       ),
       'floatPlay': player['floatPlay'] ?? false,
       'windowsPipAlwaysOnTop': player['windowsPipAlwaysOnTop'] ?? false,
+      'windowsPipFreeAspect': player['windowsPipFreeAspect'] ?? false,
       // Compatibility-only input for backups created before the ownership of
       // this setting moved to WindowSizeController. New exports store it in
       // the windowSize section.

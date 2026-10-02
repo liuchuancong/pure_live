@@ -287,6 +287,18 @@ class _VideoSettingsPageState extends State<VideoSettingsPage> {
                 ),
               ),
             ],
+            if (_isWindows)
+              context.buildSwitchTile(
+                title: i18n('windows_pip_free_aspect'),
+                subtitle: i18n('windows_pip_free_aspect_subtitle'),
+                value: SettingsService.to.player.windowsPipFreeAspect,
+                icon: Remix.aspect_ratio_line,
+                isLong: true,
+                onChanged: (value) {
+                  SettingsService.to.player.windowsPipFreeAspect.v = value;
+                  _syncPipConfig();
+                },
+              ),
             if (_isWindows) const _WindowsPipResetTile(),
 
             context.buildSwitchTile(

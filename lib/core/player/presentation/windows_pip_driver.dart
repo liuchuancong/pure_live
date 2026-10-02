@@ -23,6 +23,9 @@ PipConfig pipConfigFromSettings() {
     height: settings.windowsPipBaseSize.value * 9 / 16,
     minWidth: settings.windowsPipMinWidth.value,
     minHeight: settings.windowsPipMinHeight.value,
+    // 自由比例：不锁定视频形状，用户可以单独压高度或拉宽度（画面按比例适配留黑边）。
+    // 默认关闭＝窗口始终等于视频形状。
+    lockAspectRatio: !settings.windowsPipFreeAspect.value,
     title: 'Pure Live',
   );
 }

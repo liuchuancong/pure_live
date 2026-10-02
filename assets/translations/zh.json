@@ -1706,6 +1706,8 @@
   "windows_pip_base_size": "画中画基准尺寸（长边）",
   "windows_pip_min_width": "画中画最小宽度",
   "windows_pip_min_height": "画中画最小高度",
+  "windows_pip_free_aspect": "小窗自由比例",
+  "windows_pip_free_aspect_subtitle": "开启后可单独压小高度或拉宽窗口；画面按比例适配，形状不符的一侧会留黑边。关闭时窗口始终等于视频形状",
   "windows_pip_remember_position_subtitle": "下次进入小窗时恢复上次调整的尺寸与位置，并自动校正到当前可用显示器",
   "windows_pip_reset_position": "重置小窗位置和大小",
   "windows_pip_reset_position_subtitle": "清除已保存的小窗尺寸与位置，下次从应用所在显示器右下角打开",
