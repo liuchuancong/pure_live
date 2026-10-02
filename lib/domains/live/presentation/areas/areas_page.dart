@@ -5,6 +5,7 @@ import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/widgets/common_appbar_actions.dart';
 import 'package:pure_live/domains/live/presentation/areas/areas_controller.dart';
 import 'package:pure_live/domains/live/data/platforms/sites.dart';
+import 'package:pure_live/domains/live/presentation/widgets/platform_tab.dart';
 
 class AreasPage extends GetView<AreasController> {
   const AreasPage({super.key});
@@ -29,23 +30,7 @@ class AreasPage extends GetView<AreasController> {
                 controller: controller.tabController,
                 isScrollable: true,
                 physics: const PureLiveBoundedScrollPhysics(),
-                tabs: availableSitesList
-                    .map(
-                      (e) => Tab(
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(4),
-                              child: Image.asset(Sites.logoForId(e.id), width: 18, height: 18),
-                            ),
-                            const SizedBox(width: 6),
-                            Text(e.name),
-                          ],
-                        ),
-                      ),
-                    )
-                    .toList(),
+                tabs: availableSitesList.map((e) => PlatformTab(site: e)).toList(),
               ),
             ),
             body: TabBarView(

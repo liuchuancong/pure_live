@@ -169,6 +169,9 @@ class Sites {
   /// Root directory for all platform artwork.
   static const String _assetRoot = 'assets/images';
 
+  /// Logo of the "all platforms" entry that [availableSites] can prepend.
+  static const String allLogo = '$_assetRoot/all.png';
+
   /// Keep all platform logos in one place.
   ///
   /// Every supported platform must resolve to its own asset here; the generic
@@ -502,7 +505,7 @@ class Sites {
       }
     }
     if (containsAll) {
-      result.insert(0, Site(id: allSite, name: i18n("site_all"), logo: "$_assetRoot/all.png", liveSite: LiveSite()));
+      result.insert(0, Site(id: allSite, name: i18n("site_all"), logo: allLogo, liveSite: LiveSite()));
     }
     return result;
   }

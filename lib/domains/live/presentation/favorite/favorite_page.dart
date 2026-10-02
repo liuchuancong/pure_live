@@ -7,6 +7,7 @@ import 'package:pure_live/domains/live/presentation/tags/tag_management_controll
 import 'package:pure_live/domains/live/presentation/favorite/favorite_controller.dart';
 import 'package:pure_live/domains/live/data/platforms/sites.dart';
 import 'package:pure_live/domains/live/data/favorite_room_controller.dart';
+import 'package:pure_live/domains/live/presentation/widgets/platform_tab.dart';
 
 class FavoritePage extends GetView<FavoriteController> {
   const FavoritePage({super.key});
@@ -129,7 +130,7 @@ class _FavoriteSiteTabsState extends State<_FavoriteSiteTabs> with SingleTickerP
           controller: _tabController,
           isScrollable: true,
           physics: const PureLiveBoundedScrollPhysics(),
-          tabs: availableSitesList.map((e) => Tab(text: e.name)).toList(),
+          tabs: availableSitesList.map((e) => PlatformTab(site: e)).toList(),
         ),
         FavoriteTagStrip(
           tags: controller.visibleTags,

@@ -4,6 +4,7 @@ import 'package:pure_live/domains/live/presentation/search/search_ranking.dart';
 import 'package:pure_live/domains/live/presentation/search/search_controller.dart' as pure_live;
 import 'package:pure_live/domains/live/presentation/search/search_platform_strip.dart';
 import 'package:pure_live/domains/live/presentation/widgets/room_card.dart';
+import 'package:pure_live/domains/live/data/platforms/sites.dart';
 
 ScrollPhysics resolveSearchResultScrollPhysics(TargetPlatform platform) {
   return switch (platform) {
@@ -52,6 +53,7 @@ class SearchPage extends GetView<pure_live.SearchController> {
           child: Obx(
             () => SearchPlatformStrip(
               labels: [i18n('site_all'), ...controller.sites.map((site) => site.name)],
+              logos: [Sites.allLogo, ...controller.sites.map((site) => site.logo)],
               selectedIndex: controller.index.v,
               onSelected: controller.selectPlatform,
             ),

@@ -4,7 +4,7 @@ import 'package:waterfall_flow/waterfall_flow.dart';
 import 'package:pure_live/domains/live/presentation/areas/area_card.dart';
 import 'package:pure_live/domains/live/presentation/areas/favorite_areas_controller.dart';
 import 'package:pure_live/domains/live/data/platforms/sites.dart';
-
+import 'package:pure_live/domains/live/presentation/widgets/platform_tab.dart';
 
 class FavoriteAreasPage extends GetView<FavoriteAreasController> {
   const FavoriteAreasPage({super.key});
@@ -101,23 +101,7 @@ class _FavoriteAreaSiteTabsState extends State<_FavoriteAreaSiteTabs> with Singl
           onTap: (index) => widget.controller.selectSite(index, widget.sites[index].id),
           isScrollable: true,
           physics: const PureLiveBoundedScrollPhysics(),
-          tabs: widget.sites
-            .map<Widget>(
-              (site) => Tab(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(4),
-                      child: Image.asset(Sites.logoForId(site.id), width: 18, height: 18),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(site.name),
-                  ],
-                ),
-              ),
-            )
-            .toList(growable: false),
+          tabs: widget.sites.map<Widget>((site) => PlatformTab(site: site)).toList(growable: false),
         ),
         Expanded(
           child: TabBarView(

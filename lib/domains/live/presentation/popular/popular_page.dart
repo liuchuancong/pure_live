@@ -1,9 +1,9 @@
 import 'popular_grid_view.dart';
+
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/widgets/common_appbar_actions.dart';
 import 'package:pure_live/domains/live/presentation/popular/popular_controller.dart';
-
-
+import 'package:pure_live/domains/live/presentation/widgets/platform_tab.dart';
 
 class PopularPage extends GetView<PopularController> {
   const PopularPage({super.key});
@@ -31,7 +31,7 @@ class PopularPage extends GetView<PopularController> {
                 controller: controller.tabController,
                 isScrollable: true,
                 physics: const PureLiveBoundedScrollPhysics(),
-                tabs: sites.map((e) => Tab(text: e.name)).toList(),
+                tabs: sites.map((e) => PlatformTab(site: e)).toList(),
               ),
             ),
             body: TabBarView(
