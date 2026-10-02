@@ -17,10 +17,23 @@ import 'package:pure_live/core/config/cookie_settings_controller.dart';
 import 'package:pure_live/core/consts/platform_ids.dart';
 import 'package:pure_live/shared/platforms/live_danmaku_capability.dart';
 import 'package:pure_live/shared/platforms/bilibili/bilibili_danmaku_capability.dart';
+import 'package:pure_live/shared/platforms/live_external_room.dart';
 
 class BiliBiliSite
     with LiveDanmakuCapabilityDefaults, BilibiliDanmakuCapability
-    implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResolver, LivePlayUrlResolver {
+    implements
+        LiveSite,
+        LiveSiteRoomRefresher,
+        LiveSiteRecordRoomResolver,
+        LivePlayUrlResolver,
+        LiveSiteExternalRoomResolver {
+  /// 该站点自己的官方房间地址（网页与可选的客户端 scheme）。
+  @override
+  RoomExternalTarget? externalRoomTarget(LiveRoom liveroom) {
+    final path = Uri.encodeComponent(id);
+    return RoomExternalTarget(web: 'https://live.bilibili.com/$path', native: 'bilibili://live/$path');
+  }
+
   @override
   String id = PlatformIds.bilibili;
 

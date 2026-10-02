@@ -10,6 +10,8 @@ import 'package:pure_live/shared/platforms/live_danmaku.dart';
 import 'package:pure_live/shared/platforms/live_site.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
 import 'package:pure_live/core/utils/i18n.dart';
+import 'package:pure_live/shared/platforms/live_external_room.dart';
+import 'package:pure_live/shared/platforms/niconico/niconico_link.dart';
 
 import 'niconico_api.dart';
 import 'niconico_contract.dart';
@@ -37,7 +39,20 @@ class NiconicoSite extends LiveSite
         LiveSiteRecordRoomResolver,
         LivePlayUrlResolver,
         LivePlayRecoveryResolver,
-        LivePlayUrlCursorResolver {
+        LivePlayUrlCursorResolver,
+        LiveSiteExternalRoomResolver {
+  /// 该站点自己的官方房间地址（网页与可选的客户端 scheme）。
+  @override
+  RoomExternalTarget? externalRoomTarget(LiveRoom liveroom) {
+    final id = sanitizedExternalRoomId(liveroom.roomId);
+    if (id == null) return null;
+    try {
+      return RoomExternalTarget(web: NiconicoLink.url(id));
+    } on NiconicoException {
+      return null;
+    }
+  }
+
   /// [readMaster] is supplied by the composition root: the reader is built on the
   /// recorder's HLS relay, which the shared layer must not depend on.
   NiconicoSite({

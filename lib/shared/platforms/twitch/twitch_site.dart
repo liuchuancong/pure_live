@@ -16,8 +16,16 @@ import 'package:pure_live/shared/platforms/twitch/twitch_web_integrity.dart';
 import 'package:pure_live/core/utils/live_quality_label.dart';
 import 'package:pure_live/core/config/cookie_settings_controller.dart';
 import 'package:pure_live/core/consts/platform_ids.dart';
+import 'package:pure_live/shared/platforms/live_external_room.dart';
 
-class TwitchSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResolver {
+class TwitchSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResolver, LiveSiteExternalRoomResolver {
+  /// 该站点自己的官方房间地址（网页与可选的客户端 scheme）。
+  @override
+  RoomExternalTarget? externalRoomTarget(LiveRoom liveroom) {
+    final path = Uri.encodeComponent(id);
+    return RoomExternalTarget(web: 'https://www.twitch.tv/$path');
+  }
+
   @override
   // A failed lookup is not an offline channel: reporting it as offline showed
   // "not live" for live channels whenever Twitch or the proxy failed, with no

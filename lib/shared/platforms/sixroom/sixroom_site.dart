@@ -9,6 +9,7 @@ import 'package:pure_live/shared/platforms/live_site.dart';
 import 'package:pure_live/core/models/live_category.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
 import 'package:pure_live/core/utils/i18n.dart';
+import 'package:pure_live/shared/platforms/live_external_room.dart';
 
 import 'sixroom_api.dart';
 import 'sixroom_link.dart';
@@ -21,7 +22,16 @@ final class SixRoomSite extends LiveSite
         LiveSiteRoomRefresher,
         LiveSiteRecordRoomResolver,
         LivePlayUrlResolver,
-        LivePlayRecoveryResolver {
+        LivePlayRecoveryResolver,
+        LiveSiteExternalRoomResolver {
+  /// 该站点自己的官方房间地址（网页与可选的客户端 scheme）。
+  @override
+  RoomExternalTarget? externalRoomTarget(LiveRoom liveroom) {
+    final id = sanitizedExternalRoomId(liveroom.roomId);
+    if (id == null) return null;
+    return officialExternalRoom(() => SixRoomLink.watchUrl(id));
+  }
+
   SixRoomSite({SixRoomApi? api}) : _api = api ?? SixRoomApi();
 
   final SixRoomApi _api;

@@ -8,6 +8,7 @@ import 'package:pure_live/shared/platforms/live_search.dart';
 import 'package:pure_live/shared/platforms/live_site.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
 import 'package:pure_live/core/utils/i18n.dart';
+import 'package:pure_live/shared/platforms/live_external_room.dart';
 
 import 'youtube_api.dart';
 import 'youtube_link.dart';
@@ -21,7 +22,20 @@ class YouTubeSite extends LiveSite
         LiveSiteRecordRoomResolver,
         LivePlayUrlResolver,
         LivePlayRecoveryResolver,
-        LivePlayLeaseMetadata {
+        LivePlayLeaseMetadata,
+        LiveSiteExternalRoomResolver {
+  /// 该站点自己的官方房间地址（网页与可选的客户端 scheme）。
+  @override
+  RoomExternalTarget? externalRoomTarget(LiveRoom liveroom) {
+    final id = sanitizedExternalRoomId(liveroom.roomId);
+    if (id == null) return null;
+    try {
+      return RoomExternalTarget(web: YouTubeLink.videoUrl(id));
+    } on FormatException {
+      return null;
+    }
+  }
+
   YouTubeSite({YouTubeApi? api}) : _api = api ?? YouTubeApi();
 
   final YouTubeApi _api;

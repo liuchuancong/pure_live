@@ -1,209 +1,21 @@
-import 'package:pure_live/shared/platforms/niconico/niconico_link.dart';
-import 'package:pure_live/shared/platforms/weibo/weibo_api.dart';
-import 'package:pure_live/shared/platforms/weibo/weibo_link.dart';
-import 'package:pure_live/shared/platforms/niconico/niconico_watch.dart';
-import 'package:pure_live/shared/platforms/xiaohongshu/xiaohongshu_link.dart';
 import 'package:pure_live/core/models/live_room.dart';
-import 'package:pure_live/shared/platforms/douyin/douyin_danmaku.dart';
-import 'package:pure_live/shared/platforms/huya/huya_danmaku.dart';
-import 'package:pure_live/shared/platforms/inke/inke_site.dart';
-import 'package:pure_live/shared/platforms/kilakila/kilakila_site.dart';
 import 'package:pure_live/domains/live/data/platforms/sites.dart';
-import 'package:pure_live/shared/platforms/showroom/showroom_link.dart';
-import 'package:pure_live/shared/platforms/chzzk/chzzk_link.dart';
-import 'package:pure_live/shared/platforms/liveme/liveme_link.dart';
-import 'package:pure_live/shared/platforms/tiktok/tiktok_link.dart';
-import 'package:pure_live/shared/platforms/youtube/youtube_link.dart';
-import 'package:pure_live/shared/platforms/bigo/bigo_link.dart';
-import 'package:pure_live/shared/platforms/bigo/bigo_api.dart';
-import 'package:pure_live/shared/platforms/pandalive/pandalive_link.dart';
-import 'package:pure_live/shared/platforms/seventeenlive/seventeenlive_link.dart';
-import 'package:pure_live/shared/platforms/fc2live/fc2_link.dart';
-import 'package:pure_live/shared/platforms/steambroadcast/steam_broadcast_link.dart';
-import 'package:pure_live/shared/platforms/jdlive/jd_live_link.dart';
-import 'package:pure_live/shared/platforms/kugoulive/kugou_live_link.dart';
-import 'package:pure_live/shared/platforms/baidulive/baidu_live_link.dart';
-import 'package:pure_live/shared/platforms/sixroom/sixroom_link.dart';
-import 'package:pure_live/shared/platforms/looklive/look_live_link.dart';
+import 'package:pure_live/shared/platforms/live_external_room.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 
 enum RoomExternalOpenResult { opened, unavailable, failed, cancelled }
 
-/// Resolved once per user action. Never passes a relative/empty URL to the OS.
-class RoomExternalTarget {
-  const RoomExternalTarget({required this.web, this.native});
-  final String web;
-  final String? native;
-}
-
-typedef RoomExternalLauncher = Future<bool> Function(String url);
-
 class RoomExternalOpener {
-  static RoomExternalTarget? _official(String Function() build) {
-    try {
-      return RoomExternalTarget(web: build());
-    } on FormatException {
-      return null;
-    }
-  }
-
-  static String? _id(String? value) {
-    final id = value?.trim();
-    if (id == null || id.isEmpty || id == '.' || id == '..' || RegExp(r'[\s\x00-\x1f/\\?#%]').hasMatch(id)) {
-      return null;
-    }
-    return id;
-  }
-
+  /// 解析房间的官方地址。
+  ///
+  /// 每个站点的域名、分享参数、客户端 scheme 与 id 校验都属于站点自己
+  /// （见 `LiveSiteExternalRoomResolver`）；这里不再维护 `case Sites.xSite:` 分支。
+  /// 站点没实现能力接口时按"没有官方页面"处理——例如 IPTV 只有媒体地址。
   static RoomExternalTarget? resolve(String site, LiveRoom liveroom) {
-    if (site == Sites.inkeSite) {
-      // Preserve Inke's verified UID/broadcast link and official-home fallback.
-      return RoomExternalTarget(web: InkeSite.externalRoomUrl(liveroom));
-    }
-    final id = _id(liveroom.roomId);
-    if (id == null) return null;
-    final path = Uri.encodeComponent(id);
-    switch (site) {
-      case Sites.weiboSite:
-        try {
-          return RoomExternalTarget(web: WeiboLink.url(id));
-        } on WeiboException {
-          return null;
-        }
-      case Sites.niconicoSite:
-        try {
-          return RoomExternalTarget(web: NiconicoLink.url(id));
-        } on NiconicoException {
-          return null;
-        }
-      case Sites.showroomSite:
-        try {
-          return RoomExternalTarget(web: ShowroomLink.roomUrl(id));
-        } on FormatException {
-          return null;
-        }
-      case Sites.chzzkSite:
-        try {
-          return RoomExternalTarget(web: ChzzkLink.url(id));
-        } on FormatException {
-          return null;
-        }
-      case Sites.seventeenLiveSite:
-        try {
-          return RoomExternalTarget(web: SeventeenLiveLink.url(id));
-        } on FormatException {
-          return null;
-        }
-      case Sites.liveMeSite:
-        try {
-          return RoomExternalTarget(web: LiveMeLink.url(id));
-        } on FormatException {
-          return null;
-        }
-      case Sites.tiktokSite:
-        try {
-          return RoomExternalTarget(web: TikTokLink.url(id));
-        } on FormatException {
-          return null;
-        }
-      case Sites.youtubeSite:
-        try {
-          return RoomExternalTarget(web: YouTubeLink.videoUrl(id));
-        } on FormatException {
-          return null;
-        }
-      case Sites.bigoSite:
-        try {
-          return RoomExternalTarget(web: BigoLink.url(id));
-        } on BigoException {
-          return null;
-        }
-      case Sites.pandaLiveSite:
-        try {
-          return RoomExternalTarget(web: PandaLiveLink.url(id));
-        } on FormatException {
-          return null;
-        }
-      case Sites.fc2LiveSite:
-        return _official(() => Fc2Link.channelUrl(id));
-      case Sites.steamBroadcastSite:
-        return _official(() => SteamBroadcastLink.watchUrl(id));
-      case Sites.jdLiveSite:
-        return _official(() => JdLiveLink.watchUrl(id));
-      case Sites.kugouLiveSite:
-        return _official(() => KugouLiveLink.watchUrl(id));
-      case Sites.baiduLiveSite:
-        return _official(() => BaiduLiveLink.watchUrl(id));
-      case Sites.sixRoomSite:
-        return _official(() => SixRoomLink.watchUrl(id));
-      case Sites.lookLiveSite:
-        return _official(() => LookLiveLink.watchUrl(id));
-      case Sites.xiaohongshuSite:
-        final broadcast = XiaohongshuLink.parse(id);
-        return broadcast == null ? null : RoomExternalTarget(web: XiaohongshuLink.url(broadcast));
-      case Sites.kilakilaSite:
-        if (!RegExp(r'^[1-9][0-9]{0,31}$').hasMatch(id)) return null;
-        return RoomExternalTarget(web: KilakilaSite.ownerUrl(id));
-      case Sites.yySite:
-        if (!RegExp(r'^[0-9]+$').hasMatch(id)) return null;
-        return RoomExternalTarget(web: 'https://www.yy.com/$path');
-      case Sites.bilibiliSite:
-        return RoomExternalTarget(web: 'https://live.bilibili.com/$path', native: 'bilibili://live/$path');
-      case Sites.douyinSite:
-        final args = liveroom.danmakuData;
-        final webId = args is DouyinDanmakuArgs ? _id(args.webRid) ?? id : id;
-        final nativeId = args is DouyinDanmakuArgs ? _id(args.roomId) : null;
-        return RoomExternalTarget(
-          web: 'https://live.douyin.com/${Uri.encodeComponent(webId)}',
-          native: nativeId == null ? null : 'snssdk1128://webcast_room?room_id=${Uri.encodeComponent(nativeId)}',
-        );
-      case Sites.huyaSite:
-        final args = liveroom.danmakuData;
-        return RoomExternalTarget(
-          web: 'https://www.huya.com/$path',
-          // Keep the existing native protocol mapping; missing optional chat
-          // metadata must not prevent the independent official webpage action.
-          native: args is HuyaDanmakuArgs && args.subSid > 0
-              ? 'yykiwi://homepage/index.html?banneraction=https%3A%2F%2Fdiy-front.cdn.huya.com%2Fzt%2Ffrontpage%2Fcc%2Fupdate.html%3Fhyaction%3Dlive%26channelid%3D${args.subSid}%26subid%3D${args.subSid}%26liveuid%3D${args.subSid}%26screentype%3D1%26sourcetype%3D0%26fromapp%3Dhuya_wap%252Fclick%252Fopen_app_guide%26&fromapp=huya_wap/click/open_app_guide'
-              : null,
-        );
-      case Sites.douyuSite:
-        return RoomExternalTarget(
-          web: 'https://www.douyu.com/$path',
-          native: 'douyulink://?type=90001&schemeUrl=douyuapp%3A%2F%2Froom%3FliveType%3D0%26rid%3D$path',
-        );
-      case Sites.ccSite:
-        final user = _id(liveroom.userId);
-        return RoomExternalTarget(
-          web: 'https://cc.163.com/$path',
-          native: user == null ? null : 'cc://join-room/$path/${Uri.encodeComponent(user)}/',
-        );
-      case Sites.twitchSite:
-        return RoomExternalTarget(web: 'https://www.twitch.tv/$path');
-      case Sites.soopSite:
-        return RoomExternalTarget(web: 'https://play.sooplive.co.kr/$path');
-      case Sites.picartoSite:
-        return RoomExternalTarget(web: 'https://picarto.tv/$path');
-      case Sites.twitcastingSite:
-        return RoomExternalTarget(web: 'https://twitcasting.tv/$path');
-      case Sites.missevanSite:
-        return RoomExternalTarget(web: 'https://fm.missevan.com/live/$path');
-      case Sites.acfunSite:
-        return RoomExternalTarget(web: 'https://live.acfun.cn/live/$path');
-      case Sites.kuaishouSite:
-        final stream = liveroom.link?.trim() ?? '';
-        final encoded = Uri.encodeQueryComponent(stream);
-        return RoomExternalTarget(
-          web: 'https://live.kuaishou.com/u/$path',
-          native: stream.isEmpty
-              ? null
-              : 'kwai://liveaggregatesquare?liveStreamId=$encoded&recoStreamId=$encoded&recoLiveStreamId=$encoded&liveSquareSource=28&path=/rest/n/live/feed/sharePage/slide/more&mt_product=H5_OUTSIDE_CLIENT_SHARE',
-        );
-      default:
-        // IPTV has media locations, not an official room webpage. Never forward
-        // an arbitrary imported link or an empty string as a shell target.
-        return null;
-    }
+    final id = site.trim().toLowerCase();
+    if (id.isEmpty || !Sites.isSupported(id) || Sites.isRetired(id)) return null;
+    final Object liveSite = Sites.of(id).liveSite;
+    return liveSite is LiveSiteExternalRoomResolver ? liveSite.externalRoomTarget(liveroom) : null;
   }
 
   static Future<bool> _launch(String url) => launchUrlString(url, mode: LaunchMode.externalApplication);
@@ -243,3 +55,5 @@ class RoomExternalOpener {
     return opened ? RoomExternalOpenResult.opened : RoomExternalOpenResult.failed;
   }
 }
+
+typedef RoomExternalLauncher = Future<bool> Function(String url);

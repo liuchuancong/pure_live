@@ -9,6 +9,7 @@ import 'package:pure_live/shared/platforms/live_site.dart';
 import 'package:pure_live/core/models/live_category.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
 import 'package:pure_live/core/utils/i18n.dart';
+import 'package:pure_live/shared/platforms/live_external_room.dart';
 
 import 'bigo_api.dart';
 import 'bigo_input_recipe.dart';
@@ -22,7 +23,20 @@ final class BigoSite extends LiveSite
         LiveSiteRoomRefresher,
         LiveSiteRecordRoomResolver,
         LivePlayUrlResolver,
-        LivePlayRecoveryResolver {
+        LivePlayRecoveryResolver,
+        LiveSiteExternalRoomResolver {
+  /// 该站点自己的官方房间地址（网页与可选的客户端 scheme）。
+  @override
+  RoomExternalTarget? externalRoomTarget(LiveRoom liveroom) {
+    final id = sanitizedExternalRoomId(liveroom.roomId);
+    if (id == null) return null;
+    try {
+      return RoomExternalTarget(web: BigoLink.url(id));
+    } on BigoException {
+      return null;
+    }
+  }
+
   BigoSite({BigoApi? api}) : _api = api ?? BigoApi();
 
   final BigoApi _api;

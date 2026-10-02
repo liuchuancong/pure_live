@@ -9,6 +9,7 @@ import 'package:pure_live/shared/platforms/live_search.dart';
 import 'package:pure_live/shared/platforms/live_site.dart';
 import 'package:pure_live/core/models/live_category.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
+import 'package:pure_live/shared/platforms/live_external_room.dart';
 
 import 'inke_api.dart';
 
@@ -20,7 +21,15 @@ class InkeSite extends LiveSite
         LiveSiteRecordRoomResolver,
         LivePlayRecoveryResolver,
         LiveCancellableSearch,
-        LiveSearchPaginationPolicy {
+        LiveSearchPaginationPolicy,
+        LiveSiteExternalRoomResolver {
+  /// 该站点自己的官方房间地址（网页与可选的客户端 scheme）。
+  @override
+  RoomExternalTarget? externalRoomTarget(LiveRoom liveroom) {
+    // Preserve Inke's verified UID/broadcast link and official-home fallback.
+    return RoomExternalTarget(web: InkeSite.externalRoomUrl(liveroom));
+  }
+
   InkeSite({InkeApi? api}) : _api = api ?? InkeApi();
   final InkeApi _api;
 

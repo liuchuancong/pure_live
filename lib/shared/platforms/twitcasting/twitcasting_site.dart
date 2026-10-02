@@ -7,11 +7,24 @@ import 'package:pure_live/shared/platforms/live_search.dart';
 import 'package:pure_live/shared/platforms/live_site.dart';
 import 'package:pure_live/core/models/live_category.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
+import 'package:pure_live/shared/platforms/live_external_room.dart';
 
 import 'twitcasting_api.dart';
 
 class TwitcastingSite extends LiveSite
-    implements LiveSiteRoomRefresher, LiveSiteRecordRoomResolver, LivePlayRecoveryResolver, LiveCancellableSearch {
+    implements
+        LiveSiteRoomRefresher,
+        LiveSiteRecordRoomResolver,
+        LivePlayRecoveryResolver,
+        LiveCancellableSearch,
+        LiveSiteExternalRoomResolver {
+  /// 该站点自己的官方房间地址（网页与可选的客户端 scheme）。
+  @override
+  RoomExternalTarget? externalRoomTarget(LiveRoom liveroom) {
+    final path = Uri.encodeComponent(id);
+    return RoomExternalTarget(web: 'https://twitcasting.tv/$path');
+  }
+
   TwitcastingSite({TwitcastingApi? api}) : _api = api ?? TwitcastingApi();
   final TwitcastingApi _api;
   @override

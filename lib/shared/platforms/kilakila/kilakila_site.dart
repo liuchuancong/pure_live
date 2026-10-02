@@ -9,6 +9,7 @@ import 'package:pure_live/shared/platforms/live_search.dart';
 import 'package:pure_live/shared/platforms/live_site.dart';
 import 'package:pure_live/core/models/live_category.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
+import 'package:pure_live/shared/platforms/live_external_room.dart';
 
 import 'kilakila_api.dart';
 import 'kilakila_link.dart';
@@ -22,7 +23,17 @@ class KilakilaSite extends LiveSite
         LiveSiteRecordRoomResolver,
         LivePlayRecoveryResolver,
         LiveCancellableSearch,
-        LiveSearchPaginationPolicy {
+        LiveSearchPaginationPolicy,
+        LiveSiteExternalRoomResolver {
+  /// 该站点自己的官方房间地址（网页与可选的客户端 scheme）。
+  @override
+  RoomExternalTarget? externalRoomTarget(LiveRoom liveroom) {
+    final id = sanitizedExternalRoomId(liveroom.roomId);
+    if (id == null) return null;
+    if (!RegExp(r'^[1-9][0-9]{0,31}$').hasMatch(id)) return null;
+    return RoomExternalTarget(web: KilakilaSite.ownerUrl(id));
+  }
+
   KilakilaSite({KilakilaApi? api}) : _api = api ?? KilakilaApi();
   final KilakilaApi _api;
   @override

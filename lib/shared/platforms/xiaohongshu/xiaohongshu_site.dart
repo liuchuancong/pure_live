@@ -8,6 +8,7 @@ import 'package:pure_live/shared/platforms/live_directory.dart';
 import 'package:pure_live/shared/platforms/live_site.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
 import 'package:pure_live/core/utils/i18n.dart';
+import 'package:pure_live/shared/platforms/live_external_room.dart';
 
 import 'xiaohongshu_api.dart';
 import 'xiaohongshu_link.dart';
@@ -20,7 +21,17 @@ class XiaohongshuSite extends LiveSite
         LiveSiteRoomRefresher,
         LiveSiteRecordRoomResolver,
         LivePlayUrlResolver,
-        LivePlayRecoveryResolver {
+        LivePlayRecoveryResolver,
+        LiveSiteExternalRoomResolver {
+  /// 该站点自己的官方房间地址（网页与可选的客户端 scheme）。
+  @override
+  RoomExternalTarget? externalRoomTarget(LiveRoom liveroom) {
+    final id = sanitizedExternalRoomId(liveroom.roomId);
+    if (id == null) return null;
+    final broadcast = XiaohongshuLink.parse(id);
+    return broadcast == null ? null : RoomExternalTarget(web: XiaohongshuLink.url(broadcast));
+  }
+
   XiaohongshuSite({XiaohongshuApi? api, this.shortLinkClientFactory}) : _api = api ?? XiaohongshuApi();
   final XiaohongshuApi _api;
   final Dio Function()? shortLinkClientFactory;

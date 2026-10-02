@@ -20,10 +20,25 @@ import 'package:pure_live/core/config/cookie_settings_controller.dart';
 import 'package:pure_live/core/consts/platform_ids.dart';
 import 'package:pure_live/shared/platforms/live_danmaku_capability.dart';
 import 'package:pure_live/shared/platforms/douyin/douyin_danmaku_capability.dart';
+import 'package:pure_live/shared/platforms/live_external_room.dart';
 
 class DouyinSite
     with LiveDanmakuCapabilityDefaults, DouyinDanmakuCapability
-    implements LiveSite, LiveSiteRecordRoomResolver {
+    implements LiveSite, LiveSiteRecordRoomResolver, LiveSiteExternalRoomResolver {
+  /// 该站点自己的官方房间地址（网页与可选的客户端 scheme）。
+  @override
+  RoomExternalTarget? externalRoomTarget(LiveRoom liveroom) {
+    final id = sanitizedExternalRoomId(liveroom.roomId);
+    if (id == null) return null;
+    final args = liveroom.danmakuData;
+    final webId = args is DouyinDanmakuArgs ? sanitizedExternalRoomId(args.webRid) ?? id : id;
+    final nativeId = args is DouyinDanmakuArgs ? sanitizedExternalRoomId(args.roomId) : null;
+    return RoomExternalTarget(
+      web: 'https://live.douyin.com/${Uri.encodeComponent(webId)}',
+      native: nativeId == null ? null : 'snssdk1128://webcast_room?room_id=${Uri.encodeComponent(nativeId)}',
+    );
+  }
+
   @override
   String id = PlatformIds.douyin;
 

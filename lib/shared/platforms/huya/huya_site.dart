@@ -28,6 +28,7 @@ import 'package:pure_live/core/config/cookie_settings_controller.dart';
 import 'package:pure_live/core/consts/platform_ids.dart';
 import 'package:pure_live/shared/platforms/live_danmaku_capability.dart';
 import 'package:pure_live/shared/platforms/huya/huya_danmaku_capability.dart';
+import 'package:pure_live/shared/platforms/live_external_room.dart';
 
 class HuyaSite
     with LiveDanmakuCapabilityDefaults, HuyaDanmakuCapability
@@ -37,7 +38,23 @@ class HuyaSite
         LiveSiteRecordRoomResolver,
         LivePlayUrlCursorResolver,
         LivePlayRecoveryResolver,
-        LivePlayLeaseMetadata {
+        LivePlayLeaseMetadata,
+        LiveSiteExternalRoomResolver {
+  /// 该站点自己的官方房间地址（网页与可选的客户端 scheme）。
+  @override
+  RoomExternalTarget? externalRoomTarget(LiveRoom liveroom) {
+    final path = Uri.encodeComponent(id);
+    final args = liveroom.danmakuData;
+    return RoomExternalTarget(
+      web: 'https://www.huya.com/$path',
+      // Keep the existing native protocol mapping; missing optional chat
+      // metadata must not prevent the independent official webpage action.
+      native: args is HuyaDanmakuArgs && args.subSid > 0
+          ? 'yykiwi://homepage/index.html?banneraction=https%3A%2F%2Fdiy-front.cdn.huya.com%2Fzt%2Ffrontpage%2Fcc%2Fupdate.html%3Fhyaction%3Dlive%26channelid%3D${args.subSid}%26subid%3D${args.subSid}%26liveuid%3D${args.subSid}%26screentype%3D1%26sourcetype%3D0%26fromapp%3Dhuya_wap%252Fclick%252Fopen_app_guide%26&fromapp=huya_wap/click/open_app_guide'
+          : null,
+    );
+  }
+
   @override
   String id = PlatformIds.huya;
   static const baseUrl = HuyaRequestParams.baseUrl;

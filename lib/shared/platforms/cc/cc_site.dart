@@ -15,10 +15,27 @@ import 'package:pure_live/shared/platforms/current_live_room.dart';
 import 'package:pure_live/core/consts/platform_ids.dart';
 import 'package:pure_live/shared/platforms/live_danmaku_capability.dart';
 import 'package:pure_live/shared/platforms/cc/cc_danmaku_capability.dart';
+import 'package:pure_live/shared/platforms/live_external_room.dart';
 
 class CCSite
     with LiveDanmakuCapabilityDefaults, CcDanmakuCapability
-    implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResolver, LiveSiteCategoryDirectoryProvider {
+    implements
+        LiveSite,
+        LiveSiteRoomRefresher,
+        LiveSiteRecordRoomResolver,
+        LiveSiteCategoryDirectoryProvider,
+        LiveSiteExternalRoomResolver {
+  /// 该站点自己的官方房间地址（网页与可选的客户端 scheme）。
+  @override
+  RoomExternalTarget? externalRoomTarget(LiveRoom liveroom) {
+    final path = Uri.encodeComponent(id);
+    final user = sanitizedExternalRoomId(liveroom.userId);
+    return RoomExternalTarget(
+      web: 'https://cc.163.com/$path',
+      native: user == null ? null : 'cc://join-room/$path/${Uri.encodeComponent(user)}/',
+    );
+  }
+
   @override
   late final LiveSiteDirectoryPager categoryDirectory = _CCCategoryDirectory(this);
 

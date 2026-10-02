@@ -9,6 +9,7 @@ import 'package:pure_live/shared/platforms/live_site.dart';
 import 'package:pure_live/core/models/live_category.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
 import 'package:pure_live/core/utils/i18n.dart';
+import 'package:pure_live/shared/platforms/live_external_room.dart';
 
 import 'picarto_api.dart';
 import 'picarto_hls.dart';
@@ -19,7 +20,15 @@ class PicartoSite extends LiveSite
         LiveSiteRecordRoomResolver,
         LivePlayRecoveryResolver,
         LiveSiteDirectoryPager,
-        LiveCancellableSearch {
+        LiveCancellableSearch,
+        LiveSiteExternalRoomResolver {
+  /// 该站点自己的官方房间地址（网页与可选的客户端 scheme）。
+  @override
+  RoomExternalTarget? externalRoomTarget(LiveRoom liveroom) {
+    final path = Uri.encodeComponent(id);
+    return RoomExternalTarget(web: 'https://picarto.tv/$path');
+  }
+
   PicartoSite({PicartoApi? api}) : _api = api ?? PicartoApi();
   final PicartoApi _api;
   @override

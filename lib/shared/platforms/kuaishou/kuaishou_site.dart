@@ -17,8 +17,24 @@ import 'package:pure_live/core/utils/live_quality_label.dart';
 import 'package:pure_live/shared/platforms/current_live_room.dart';
 import 'package:pure_live/core/config/cookie_settings_controller.dart';
 import 'package:pure_live/core/consts/platform_ids.dart';
+import 'package:pure_live/shared/platforms/live_external_room.dart';
 
-class KuaishouSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResolver {
+class KuaishouSite
+    implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResolver, LiveSiteExternalRoomResolver {
+  /// 该站点自己的官方房间地址（网页与可选的客户端 scheme）。
+  @override
+  RoomExternalTarget? externalRoomTarget(LiveRoom liveroom) {
+    final path = Uri.encodeComponent(id);
+    final stream = liveroom.link?.trim() ?? '';
+    final encoded = Uri.encodeQueryComponent(stream);
+    return RoomExternalTarget(
+      web: 'https://live.kuaishou.com/u/$path',
+      native: stream.isEmpty
+          ? null
+          : 'kwai://liveaggregatesquare?liveStreamId=$encoded&recoStreamId=$encoded&recoLiveStreamId=$encoded&liveSquareSource=28&path=/rest/n/live/feed/sharePage/slide/more&mt_product=H5_OUTSIDE_CLIENT_SHARE',
+    );
+  }
+
   @override
   String id = PlatformIds.kuaishou;
 

@@ -17,6 +17,7 @@ import 'package:pure_live/shared/platforms/current_live_room.dart';
 import 'package:pure_live/core/consts/platform_ids.dart';
 import 'package:pure_live/shared/platforms/live_danmaku_capability.dart';
 import 'package:pure_live/shared/platforms/douyu/douyu_danmaku_capability.dart';
+import 'package:pure_live/shared/platforms/live_external_room.dart';
 
 class DouyuSite
     with LiveDanmakuCapabilityDefaults, DouyuDanmakuCapability
@@ -27,7 +28,18 @@ class DouyuSite
         LivePlayUrlResolver,
         LivePlayRecoveryResolver,
         LivePlayUrlCursorResolver,
-        LivePlayLeaseMetadata {
+        LivePlayLeaseMetadata,
+        LiveSiteExternalRoomResolver {
+  /// 该站点自己的官方房间地址（网页与可选的客户端 scheme）。
+  @override
+  RoomExternalTarget? externalRoomTarget(LiveRoom liveroom) {
+    final path = Uri.encodeComponent(id);
+    return RoomExternalTarget(
+      web: 'https://www.douyu.com/$path',
+      native: 'douyulink://?type=90001&schemeUrl=douyuapp%3A%2F%2Froom%3FliveType%3D0%26rid%3D$path',
+    );
+  }
+
   @override
   String id = PlatformIds.douyu;
 

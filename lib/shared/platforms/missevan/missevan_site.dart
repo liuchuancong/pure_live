@@ -8,6 +8,7 @@ import 'package:pure_live/shared/platforms/live_search.dart';
 import 'package:dio/dio.dart';
 import 'package:pure_live/core/models/live_category.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
+import 'package:pure_live/shared/platforms/live_external_room.dart';
 
 import 'missevan_api.dart';
 
@@ -21,7 +22,15 @@ class MissevanSite extends LiveSite
         LivePlayLeaseMetadata,
         LiveSiteDirectoryPager,
         LiveCancellableSearch,
-        LiveSearchPaginationPolicy {
+        LiveSearchPaginationPolicy,
+        LiveSiteExternalRoomResolver {
+  /// 该站点自己的官方房间地址（网页与可选的客户端 scheme）。
+  @override
+  RoomExternalTarget? externalRoomTarget(LiveRoom liveroom) {
+    final path = Uri.encodeComponent(id);
+    return RoomExternalTarget(web: 'https://fm.missevan.com/live/$path');
+  }
+
   MissevanSite({MissevanApi? api}) : _api = api ?? MissevanApi();
   final MissevanApi _api;
   @override

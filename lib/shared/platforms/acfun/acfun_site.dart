@@ -6,6 +6,7 @@ import 'package:pure_live/shared/platforms/live_site.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
 import 'package:pure_live/core/models/live_category.dart';
 import 'package:pure_live/core/models/live_anchor_item.dart';
+import 'package:pure_live/shared/platforms/live_external_room.dart';
 
 import 'acfun_api.dart';
 import 'acfun_directory.dart';
@@ -14,7 +15,18 @@ import 'acfun_search.dart';
 /// Anonymous AcFun live directory, author search, playback and recording.
 /// Remote chat is not integrated; the session UI reports this separately.
 class AcfunSite extends LiveSite
-    implements LiveSiteRoomRefresher, LiveSiteRecordRoomResolver, LivePlayRecoveryResolver {
+    implements
+        LiveSiteRoomRefresher,
+        LiveSiteRecordRoomResolver,
+        LivePlayRecoveryResolver,
+        LiveSiteExternalRoomResolver {
+  /// 该站点自己的官方房间地址（网页与可选的客户端 scheme）。
+  @override
+  RoomExternalTarget? externalRoomTarget(LiveRoom liveroom) {
+    final path = Uri.encodeComponent(id);
+    return RoomExternalTarget(web: 'https://live.acfun.cn/live/$path');
+  }
+
   AcfunSite({AcfunApi? api, AcfunDirectory? directory, AcfunSearchClient? search})
     : _api = api ?? _sharedApi,
       _directory = directory ?? (api == null ? _sharedDirectory : AcfunDirectory(api: api)),
