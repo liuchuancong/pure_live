@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
 
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 import 'package:pure_live/model/live_category.dart';
 import 'package:pure_live/platforms/cc/cc_catalog.dart';
 import 'package:pure_live/model/live_anchor_item.dart';

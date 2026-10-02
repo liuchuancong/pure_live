@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:pure_live/gen/env.g.dart';
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/common/log.dart';
 import 'package:pure_live/plugins/race_http.dart';
 import 'package:pure_live/core/consts/app_consts.dart';

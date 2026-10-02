@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 typedef VersionUpdateChecker = Future<bool> Function();

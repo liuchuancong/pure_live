@@ -1,4 +1,4 @@
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 import 'package:pure_live/services/settings/app_settings_controller.dart';
 
 class AudienceMetricSettingsPage extends StatelessWidget {

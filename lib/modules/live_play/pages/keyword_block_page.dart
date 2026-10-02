@@ -1,4 +1,4 @@
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 import 'package:pure_live/services/settings/favorite_room_controller.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:syncfusion_flutter_sliders/sliders.dart';

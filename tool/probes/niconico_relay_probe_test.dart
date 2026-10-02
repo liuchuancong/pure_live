@@ -8,7 +8,7 @@ import 'dart:io' as io;
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:pure_live/common/services/settings/log_controller.dart';
+import 'package:pure_live/services/settings/log_controller.dart';
 import 'package:pure_live/get/get.dart';
 import 'package:pure_live/core/common/http_client.dart';
 import 'package:pure_live/platforms/niconico/niconico_api.dart';

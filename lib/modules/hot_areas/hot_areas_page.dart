@@ -1,5 +1,5 @@
 import 'package:remixicon/remixicon.dart';
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 import 'package:pure_live/modules/hot_areas/hot_areas_controller.dart';
 
 class HotAreasPage extends GetView<HotAreasController> {

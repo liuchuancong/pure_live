@@ -5,7 +5,7 @@ import 'dart:developer';
 import 'iptv_programme_policy.dart';
 
 import 'package:flutter/scheduler.dart';
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 import 'package:battery_plus/battery_plus.dart';
 import 'package:flame_barrage/flame_barrage.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';

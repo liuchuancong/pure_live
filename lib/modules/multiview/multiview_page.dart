@@ -3,7 +3,7 @@ import 'dart:developer' as developer;
 
 import 'package:flutter/services.dart';
 import 'package:remixicon/remixicon.dart';
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 import 'package:flame_barrage/flame_barrage.dart';
 import 'package:media_core/media_core.dart' show PlayerId;
 import 'package:media_core_media_kit/media_core_media_kit.dart';

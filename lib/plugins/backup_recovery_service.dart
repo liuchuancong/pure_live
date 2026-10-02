@@ -3,7 +3,7 @@ import 'dart:convert';
 
 import 'file_utils.dart';
 
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:date_format/date_format.dart' hide S;
 import 'package:uuid/uuid.dart';

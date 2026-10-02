@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:remixicon/remixicon.dart';
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 import 'package:pure_live/player/utils/player_consts.dart';
 import 'package:pure_live/player/utils/windows_pip_driver.dart';
 import 'package:pure_live/player/core/live_audio_service.dart';

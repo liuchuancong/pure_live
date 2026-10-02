@@ -1,4 +1,4 @@
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/utils/hive_pref_util.dart';
 import 'package:pure_live/modules/tags/live_tag.dart';
 import 'package:synchronized/synchronized.dart';

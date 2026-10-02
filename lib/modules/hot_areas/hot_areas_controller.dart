@@ -1,4 +1,4 @@
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 
 class HotAreasController extends GetxController {
   final sites = <Site>[].obs;

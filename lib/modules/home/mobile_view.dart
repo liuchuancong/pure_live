@@ -1,5 +1,5 @@
 import 'package:remixicon/remixicon.dart';
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/consts/app_consts.dart';
 
 class HomeMobileView extends StatelessWidget {

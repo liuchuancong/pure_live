@@ -1,4 +1,4 @@
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 import 'package:pure_live/services/settings/cookie_value.dart';
 import 'package:pure_live/platforms/douyu/douyu_utils.dart';
 

@@ -3,7 +3,7 @@ import 'dart:async';
 import 'dart:developer';
 
 import 'package:flutter/services.dart';
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 import 'package:move_to_desktop/move_to_desktop.dart';
 import 'package:pure_live/routes/app_navigation.dart';
 import 'package:pure_live/core/consts/app_consts.dart';

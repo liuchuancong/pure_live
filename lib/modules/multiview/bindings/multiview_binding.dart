@@ -1,4 +1,4 @@
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 import 'package:pure_live/modules/multiview/multiview_controller.dart';
 
 /// 多画面同看页绑定。

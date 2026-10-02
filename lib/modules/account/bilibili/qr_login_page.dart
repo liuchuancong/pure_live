@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 import 'package:pure_live/modules/account/bilibili/bilibili_login_qr_code.dart';
 import 'package:pure_live/modules/account/bilibili/qr_login_controller.dart';
 import 'package:remixicon/remixicon.dart';

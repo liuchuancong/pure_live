@@ -4,7 +4,7 @@ import 'dart:developer';
 
 import 'package:pure_live/core/platform/app_path_manager.dart';
 
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 import 'package:pure_live/plugins/global.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:pure_live/plugins/cache_manager.dart';

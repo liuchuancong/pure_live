@@ -1,4 +1,4 @@
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 import 'package:pure_live/modules/live_play/pages/super_chat_page.dart';
 import 'package:pure_live/modules/live_play/pages/keyword_block_page.dart';
 import 'package:pure_live/modules/live_play/pages/danmaku_settings_page.dart';

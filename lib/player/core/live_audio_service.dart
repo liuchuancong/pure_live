@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'dart:io';
 
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 import 'package:pure_live/player/core/background_playback_policy.dart';
 import 'package:pure_live/player/core/background_playback_service.dart';
 import 'package:pure_live/player/core/playback_lifecycle_coordinator.dart';

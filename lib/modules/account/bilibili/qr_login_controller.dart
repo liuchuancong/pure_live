@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 import 'package:pure_live/services/settings/bilibili_account_service.dart';
 import 'package:pure_live/services/settings/cookie_value.dart';
 import 'package:pure_live/core/common/http_client.dart';

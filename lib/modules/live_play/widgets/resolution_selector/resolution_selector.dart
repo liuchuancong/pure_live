@@ -1,5 +1,5 @@
 import 'package:pure_live/core/utils/play_quality_label.dart';
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 import 'package:pure_live/modules/live_play/states/load_type.dart';
 import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
 

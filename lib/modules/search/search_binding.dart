@@ -1,5 +1,5 @@
 import 'search_controller.dart';
-import 'package:pure_live/common/index.dart' hide SearchController;
+import 'package:pure_live/core/index.dart' hide SearchController;
 
 class SearchBinding extends Binding {
   @override

@@ -1,5 +1,5 @@
 import 'package:remixicon/remixicon.dart';
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 import 'package:pure_live/modules/live_play/widgets/layout/super_chat_card.dart';
 
 class SuperChatPage extends StatelessWidget {

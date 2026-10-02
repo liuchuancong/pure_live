@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:pure_live/core/platform/platform_utils.dart';
 

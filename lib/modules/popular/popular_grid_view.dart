@@ -1,6 +1,6 @@
 import 'package:remixicon/remixicon.dart';
 import 'package:flutter/rendering.dart' show ScrollCacheExtent;
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 
 class PopularGridView extends StatelessWidget {
   final String tag;

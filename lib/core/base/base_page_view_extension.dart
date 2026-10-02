@@ -1,6 +1,6 @@
 import 'package:pure_live/plugins/global.dart';
 import 'package:flutter/services.dart';
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 
 extension BasePageViewContentExtension<C extends BasePageScrollAndStateBone<T>, T> on BasePageView<C, T> {
   Widget buildActualContent(BuildContext context, bool isDesktop) {

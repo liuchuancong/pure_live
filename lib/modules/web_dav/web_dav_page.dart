@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:mime/mime.dart';
 import 'package:remixicon/remixicon.dart';
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 import 'package:webdav_client/webdav_client.dart' as webdav;
 import 'package:pure_live/services/settings/backup_controller.dart';
 import 'package:pure_live/modules/web_dav/web_dav_help.dart';

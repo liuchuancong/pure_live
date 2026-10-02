@@ -3,7 +3,7 @@ import 'dart:io';
 import 'dart:developer' as developer;
 
 import 'package:remixicon/remixicon.dart';
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/utils/live_url_tool.dart';
 import 'package:pure_live/core/utils/share_command_handler.dart';
 import 'package:pure_live/modules/live_play/dialogs/play_other.dart';

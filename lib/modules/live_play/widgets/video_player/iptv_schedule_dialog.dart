@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:remixicon/remixicon.dart';
 
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/iptv/local/database.dart' as database;
 import 'package:pure_live/modules/live_play/widgets/video_player/iptv_programme_policy.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller.dart';

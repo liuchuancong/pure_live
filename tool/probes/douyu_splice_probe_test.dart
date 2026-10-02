@@ -10,7 +10,7 @@ import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce/hive.dart';
-import 'package:pure_live/common/services/settings_service.dart';
+import 'package:pure_live/services/settings_service.dart';
 import 'package:pure_live/core/utils/hive_pref_util.dart';
 import 'package:pure_live/core/interface/live_quality_discovery.dart';
 import 'package:pure_live/core/interface/live_site.dart';

@@ -1,5 +1,5 @@
 import 'package:remixicon/remixicon.dart';
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
 import 'package:pure_live/modules/auth/models/user_item.dart';
 import 'package:pure_live/modules/auth/utils/firebase_manager.dart';

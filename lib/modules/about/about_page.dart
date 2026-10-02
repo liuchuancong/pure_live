@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:pure_live/core/platform/platform_utils.dart';
 import 'package:remixicon/remixicon.dart'; // 🌟 Imported Remix Icons pack

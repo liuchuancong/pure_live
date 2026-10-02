@@ -1,6 +1,6 @@
 import 'package:rxdart/rxdart.dart';
-import 'package:pure_live/common/index.dart';
-import 'package:pure_live/services/medels/refresh_config_model.dart';
+import 'package:pure_live/core/index.dart';
+import 'package:pure_live/services/models/refresh_config_model.dart';
 
 class RefreshConfigController extends GetxController {
   static const int defaultRefreshInterval = 30;

@@ -1,4 +1,4 @@
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 
 /// User answer to the download-directory prompt shown before an app update
 /// starts downloading.

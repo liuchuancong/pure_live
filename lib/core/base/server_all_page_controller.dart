@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 
 abstract class ServerAllPageController<T> extends BasePageScrollAndStateBone<T> {
   List<T>? _rawAllData;

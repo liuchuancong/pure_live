@@ -5,7 +5,7 @@ import 'package:media_core_media_kit/media_core_media_kit.dart';
 import 'package:pure_live/player/kernel/player_preset.dart';
 import 'package:pure_live/player/super_resolution.dart';
 import 'package:media_core_media_kit/media_core_media_kit.dart' as mkv;
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 
 /// mpv properties for live rooms, owned by the app.
 ///

@@ -1,4 +1,4 @@
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/interface/live_directory.dart';
 
 String areaRoomsControllerTag(Site site, LiveArea area) => site.liveSite is LiveSiteDirectoryPager

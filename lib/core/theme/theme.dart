@@ -1,4 +1,4 @@
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/platform/platform_utils.dart';
 
 const PageTransitionsTheme appPageTransitionsTheme = PageTransitionsTheme(

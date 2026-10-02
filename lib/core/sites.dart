@@ -25,7 +25,7 @@ import '../platforms/pandalive/pandalive_site.dart';
 import '../platforms/kugoulive/kugou_live_site.dart';
 import '../platforms/baidulive/baidu_live_site.dart';
 
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 
 import '../platforms/xiaohongshu/xiaohongshu_site.dart';
 import '../platforms/twitcasting/twitcasting_site.dart';

@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 import 'package:stop_watch_timer/stop_watch_timer.dart';
 
 class TimerController extends GetxController {

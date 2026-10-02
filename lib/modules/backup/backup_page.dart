@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:remixicon/remixicon.dart';
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:pure_live/core/common/log.dart';
 import 'package:pure_live/plugins/file_utils.dart';

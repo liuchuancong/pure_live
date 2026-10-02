@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:remixicon/remixicon.dart';
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 import 'package:pure_live/services/settings/cookie_value.dart';
 
 export 'package:pure_live/services/settings/cookie_value.dart' show normalizeAccountCookie;

@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:remixicon/remixicon.dart';
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 import 'package:pure_live/modules/tags/live_tag.dart';
 import 'package:pure_live/modules/tags/tag_management_controller.dart';
 import 'package:flutter_reorderable_grid_view/widgets/reorderable_builder.dart';

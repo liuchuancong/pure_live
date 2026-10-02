@@ -9,7 +9,7 @@ import 'package:pure_live/core/iptv/models/channel.dart' as model;
 import 'playlist_channel_reconciler.dart';
 
 import 'package:drift/drift.dart' as drift;
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:synchronized/synchronized.dart';
 import 'package:pure_live/plugins/file_utils.dart';

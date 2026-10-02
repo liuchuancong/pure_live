@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/services.dart';
 import 'package:remixicon/remixicon.dart';
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 import 'package:pure_live/plugins/update.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:markdown_widget/widget/all.dart';

@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 import 'package:pure_live/plugins/event_bus.dart';
 import 'package:pure_live/plugins/cache_manager.dart';
 import 'package:cached_network_image/cached_network_image.dart';

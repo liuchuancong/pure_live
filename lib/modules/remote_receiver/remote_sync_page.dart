@@ -1,5 +1,5 @@
 import 'package:remixicon/remixicon.dart';
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:pure_live/core/platform/platform_utils.dart';
 import 'package:pure_live/core/widgets/qr_code_widget.dart';

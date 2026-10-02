@@ -4,7 +4,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 import 'package:pure_live/services/settings/log_controller.dart';
 import 'package:pure_live/core/common/log.dart';
 import 'package:pure_live/modules/search/web_search_room_parser.dart';

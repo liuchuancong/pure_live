@@ -2,7 +2,7 @@ import 'dart:io';
 import 'dart:convert';
 import 'dart:developer' as developer;
 
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 import 'package:pure_live/firebase_options.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';

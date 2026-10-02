@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:media_core/media_core.dart';
 import 'package:media_core_fullscreen/media_core_fullscreen.dart';
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 
 @visibleForTesting
 bool supportsOrientationLockForLogicalDisplay(Size logicalDisplaySize) {

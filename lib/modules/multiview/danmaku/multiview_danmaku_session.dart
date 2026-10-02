@@ -2,7 +2,7 @@ import 'dart:developer' as developer;
 import 'dart:async';
 import 'package:media_core_danmaku/media_core_danmaku.dart';
 import 'package:pure_live/player/danmaku/live_message_normalization.dart';
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
 
 /// 弹幕引擎工厂：按房间创建对应站点的 LiveDanmaku 实例。

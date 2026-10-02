@@ -1,6 +1,6 @@
 import 'dart:developer' as developer;
 
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:pure_live/modules/auth/auth_controller.dart';
 import 'package:pure_live/modules/auth/components/firebase_email_auth.dart';

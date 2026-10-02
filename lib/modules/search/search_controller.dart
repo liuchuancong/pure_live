@@ -5,7 +5,7 @@ import 'package:dio/dio.dart';
 import 'package:pure_live/core/common/request_scope.dart';
 import 'package:pure_live/core/interface/live_search.dart';
 
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 import 'package:pure_live/modules/search/search_capability.dart';
 import 'package:pure_live/modules/search/search_ranking.dart';
 import 'package:url_launcher/url_launcher.dart';

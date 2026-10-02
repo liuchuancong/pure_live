@@ -1,4 +1,4 @@
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 
 /// Applies the same audience policy used by favourites, search and room
 /// pickers to a platform's popular list. Server recommendation order is still

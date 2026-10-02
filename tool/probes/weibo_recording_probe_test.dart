@@ -9,7 +9,7 @@ import 'package:dio/io.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce/hive.dart';
 import 'package:path/path.dart' as p;
-import 'package:pure_live/common/services/settings/log_controller.dart';
+import 'package:pure_live/services/settings/log_controller.dart';
 import 'package:pure_live/core/utils/hive_pref_util.dart';
 import 'package:pure_live/core/common/http_client.dart' as app_http;
 import 'package:pure_live/core/interface/live_site.dart';

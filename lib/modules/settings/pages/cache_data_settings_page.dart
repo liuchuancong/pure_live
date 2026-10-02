@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:remixicon/remixicon.dart';
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 import 'package:pure_live/plugins/file_utils.dart';
 import 'package:pure_live/services/settings/cache_controller.dart';
 

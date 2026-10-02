@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:remixicon/remixicon.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 
 /// The player manual: concepts, every setting and what it does, organized in
 /// collapsible chapters. Pure documentation — nothing here mutates state.

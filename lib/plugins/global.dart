@@ -1,4 +1,4 @@
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 
 typedef _RefreshLayout = ({double height, double? width, TextStyle? textStyle, TextStyle? messageStyle});
 

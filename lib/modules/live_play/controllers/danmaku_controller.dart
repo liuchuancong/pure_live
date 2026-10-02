@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:media_core_danmaku/media_core_danmaku.dart';
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 import 'package:pure_live/player/danmaku/live_message_normalization.dart';
 import 'package:pure_live/core/common/core_log.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';

@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 
 @immutable
 class DanmakuState {

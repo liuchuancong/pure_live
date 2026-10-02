@@ -2,7 +2,7 @@ import 'dart:io';
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 import 'package:pure_live/plugins/file_utils.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:pure_live/app/bootstrap/initialized.dart';

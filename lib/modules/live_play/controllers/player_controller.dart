@@ -4,7 +4,7 @@ import 'package:dio/dio.dart';
 
 import 'dart:developer' as developer;
 
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 import 'package:pure_live/model/live_play_quality.dart';
 import 'package:pure_live/core/interface/live_site.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';

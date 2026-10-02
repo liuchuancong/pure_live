@@ -8,7 +8,7 @@ import 'package:pure_live/core/models/font_model.dart';
 import 'package:pure_live/core/utils/githup_mirror.dart';
 import 'package:pure_live/core/platform/app_path_manager.dart';
 import 'package:pure_live/services/settings/cache_controller.dart';
-import 'package:pure_live/services/medels/download_status.dart';
+import 'package:pure_live/services/models/download_status.dart';
 
 class FontDownloadManager {
   FontDownloadManager._();

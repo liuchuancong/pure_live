@@ -23,7 +23,7 @@ import 'package:pure_live/platforms/sixroom/sixroom_link.dart';
 import 'package:pure_live/platforms/looklive/look_live_link.dart';
 import 'package:pure_live/platforms/seventeenlive/seventeenlive_link.dart';
 
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/utils/live_short_link_session.dart';
 import 'package:pure_live/core/interface/live_site.dart';
 import 'package:pure_live/modules/live_play/dialogs/known_room_link_dialog.dart';

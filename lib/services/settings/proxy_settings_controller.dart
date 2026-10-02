@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/common/http_client.dart';
 import 'package:pure_live/core/common/proxy_routing.dart' as proxy_routing;
 import 'package:pure_live/services/local_network_access.dart';

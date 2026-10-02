@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:remixicon/remixicon.dart';
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 import 'package:pure_live/plugins/event_bus.dart';
 
 class FavoriteFloatingButton extends StatefulWidget {

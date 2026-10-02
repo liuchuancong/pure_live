@@ -3,7 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/services.dart';
 import 'package:remixicon/remixicon.dart';
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 import 'package:pure_live/services/settings/exit_settings_controller.dart';
 import 'package:pure_live/services/settings/window_size_controller.dart';
 import 'package:stop_watch_timer/stop_watch_timer.dart';

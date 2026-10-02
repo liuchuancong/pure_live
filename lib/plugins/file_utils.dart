@@ -3,7 +3,7 @@ import 'dart:math';
 
 import 'package:path/path.dart' as p;
 import 'package:open_filex/open_filex.dart';
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';

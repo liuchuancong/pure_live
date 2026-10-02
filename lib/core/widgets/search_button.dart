@@ -1,4 +1,4 @@
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 
 class SearchButton extends StatelessWidget {
   const SearchButton({super.key});

@@ -4,7 +4,7 @@ import 'dart:developer';
 import '../models/channel.dart';
 import '../models/epg.dart' as epg;
 
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 import 'package:pure_live/plugins/db_service.dart';
 import 'package:pure_live/core/iptv/core/fuzzy_match.dart';
 import 'package:pure_live/core/iptv/local/database.dart' as database;

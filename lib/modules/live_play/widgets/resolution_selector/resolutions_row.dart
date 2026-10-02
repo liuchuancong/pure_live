@@ -2,7 +2,7 @@ import 'audience_info.dart';
 import 'line_selector.dart';
 import 'resolution_selector.dart';
 
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
 
 class ResolutionsRow extends StatelessWidget {

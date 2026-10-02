@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 import 'package:pure_live/services/settings/bilibili_account_service.dart';
 import 'package:pure_live/services/settings/cookie_value.dart';
 

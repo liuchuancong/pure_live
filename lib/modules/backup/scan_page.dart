@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:mobile_scanner/mobile_scanner.dart';
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 import 'package:pure_live/plugins/backup_recovery_service.dart';
 
 typedef ScanCodeDetector = Future<void> Function(BarcodeCapture capture);

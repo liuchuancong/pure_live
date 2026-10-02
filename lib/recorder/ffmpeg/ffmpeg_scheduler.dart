@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:developer';
 import 'dart:collection';
 
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 import 'package:pure_live/recorder/pages/record_settings/record_settings_controller.dart';
 
 class FFmpegScheduler {

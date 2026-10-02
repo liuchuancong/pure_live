@@ -1,6 +1,6 @@
 import 'package:pure_live/core/interface/live_quality_discovery.dart';
 import 'package:pure_live/core/interface/live_input_recipe.dart';
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/interface/live_site.dart';
 import 'package:pure_live/model/live_play_quality.dart';
 import 'package:pure_live/player/utils/player_consts.dart';

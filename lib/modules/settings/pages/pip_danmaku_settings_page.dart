@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/utils/compact_danmaku_metrics.dart';
 import 'package:pure_live/modules/settings/widgets/app_color_picker_dialog.dart';
 import 'package:pure_live/core/consts/app_consts.dart';

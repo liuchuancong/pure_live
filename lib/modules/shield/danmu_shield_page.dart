@@ -1,4 +1,4 @@
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 import 'package:pure_live/services/settings/favorite_room_controller.dart';
 import 'package:pure_live/modules/shield/danmu_shield_controller.dart';
 import 'package:remixicon/remixicon.dart';

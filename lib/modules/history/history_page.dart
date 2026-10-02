@@ -1,4 +1,4 @@
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 import 'package:pure_live/services/settings/history_controller.dart';
 import 'package:pure_live/services/settings/refresh_config_controller.dart';
 import 'package:pure_live/plugins/global.dart';

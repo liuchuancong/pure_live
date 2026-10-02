@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:dlna_dart/dlna.dart';
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 
 abstract interface class DlnaCastDevice {
   String get id;

@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 
 enum LoaderType { spinner, dots, progressBar }
 

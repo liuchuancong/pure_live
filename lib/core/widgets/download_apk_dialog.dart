@@ -7,7 +7,7 @@ import 'package:dio/dio.dart';
 import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as path;
 import 'package:open_filex/open_filex.dart';
-import 'package:pure_live/common/index.dart';
+import 'package:pure_live/core/index.dart';
 import 'package:pure_live/plugins/file_utils.dart';
 import 'package:pure_live/services/settings/cache_controller.dart';
 
