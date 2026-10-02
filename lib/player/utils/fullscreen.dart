@@ -88,7 +88,7 @@ class WindowService {
           DeviceOrientation.landscapeRight,
         ]);
       } else if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
-        await doEnterWindowFullScreen();
+        await doEnterFullScreen();
       }
     } catch (exception, stacktrace) {
       debugPrint(exception.toString());
@@ -107,53 +107,30 @@ class WindowService {
   }
 
   Future<void> doEnterFullScreen() async {
-    if (Platform.isAndroid || Platform.isIOS) {
-      await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-      // The driver's mobile branch is pure state tracking (the platform call
-      // above is the whole presentation). Routing the mode through the driver
-      // keeps every fullscreen consumer on one source of truth, exactly like
-      // the desktop branch.
-      await fullscreenDriver.initialize();
-      await fullscreenDriver.apply(PlayerId('pure-live'), PresentationRequest.fullscreen());
-    } else {
-      await doEnterWindowFullScreen();
-    }
+    if (kIsWeb) return;
+    // One driver request serves both platform families: the driver performs
+    // the desktop window transition (through PureLiveFullscreenWindow, with
+    // its frameless guard) and the mobile immersive switch itself.
+    await fullscreenDriver.initialize();
+    await fullscreenDriver.apply(PlayerId('pure-live'), PresentationRequest.fullscreen());
   }
 
   Future<void> doExitFullScreen() async {
-    dynamic document;
     try {
-      if (kIsWeb) {
-        document.exitFullscreen();
-      } else if (Platform.isAndroid || Platform.isIOS) {
-        await SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: SystemUiOverlay.values);
-        await Future.microtask(() {});
+      if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+        // Host-owned policy on mobile: the status bar styling and the
+        // orientation release are this app's theming and orientation rules.
+        // The system UI mode itself is restored by the driver below.
         SystemChrome.setSystemUIOverlayStyle(
           const SystemUiOverlayStyle(statusBarIconBrightness: Brightness.dark, statusBarBrightness: Brightness.light),
         );
         await SystemChrome.setPreferredOrientations(const <DeviceOrientation>[]);
-        await fullscreenDriver.initialize();
-        await fullscreenDriver.apply(PlayerId('pure-live'), PresentationRequest.normal());
-      } else if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
-        await doExitWindowFullScreen();
       }
+      await fullscreenDriver.initialize();
+      await fullscreenDriver.apply(PlayerId('pure-live'), PresentationRequest.normal());
     } catch (exception, stacktrace) {
       debugPrint(exception.toString());
       debugPrint(stacktrace.toString());
-    }
-  }
-
-  Future<void> doExitWindowFullScreen() async {
-    if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
-      await fullscreenDriver.initialize();
-      await fullscreenDriver.apply(PlayerId('pure-live'), PresentationRequest.normal());
-    }
-  }
-
-  Future<void> doEnterWindowFullScreen({bool enableEscListener = true, VoidCallback? onEsc}) async {
-    if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
-      await fullscreenDriver.initialize();
-      await fullscreenDriver.apply(PlayerId('pure-live'), PresentationRequest.fullscreen());
     }
   }
 }
