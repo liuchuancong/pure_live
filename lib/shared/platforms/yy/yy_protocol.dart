@@ -38,6 +38,9 @@ class YyProtocolBatch {
 
   final List<Uint8List> outbound;
   final List<YyChatMessage> chats;
+
+  /// app 103 报告的本频道热度；没有就是 null。
+  int? popularity;
   bool becameReady;
   String? failure;
   final List<String> warnings;
@@ -220,6 +223,11 @@ class YyProtocolSession {
   static const _userGroupMessageUri = 533080;
   static const _bySidMessageUri = 28760;
   static const _textChatUri = 3104600;
+
+  /// app 103 的频道热度（上游 M4.D）。
+  static const _audienceAppId = 103;
+  static const _popularityUri = 3139586;
+  static const _chatAppId = 31;
   static const _subscribeAppIdsUri = 538456;
 
   final int topSid;
@@ -415,15 +423,34 @@ class YyProtocolSession {
   }
 
   void _consumeServiceMessage(int appId, Uint8List message, YyProtocolBatch batch) {
-    if (phase != YyProtocolPhase.joined || appId != 31) return;
+    if (phase != YyProtocolPhase.joined || (appId != _chatAppId && appId != _audienceAppId)) return;
+    // app 103 里还混着礼物与进场消息，这里不读；比一个包头还短的消息（上游
+    // S08-live 样本被抹掉标识后就是空的）没有可读内容。
+    if (appId == _audienceAppId && message.length < 10) return;
     try {
       final reader = YyProtocolReader(message, hasHeader: true);
-      if (reader.uri != _textChatUri) return;
-      final chat = _readChat(reader);
-      if (chat != null) batch.chats.add(chat);
+      if (appId == _chatAppId) {
+        if (reader.uri != _textChatUri) return;
+        final chat = _readChat(reader);
+        if (chat != null) batch.chats.add(chat);
+        return;
+      }
+      if (reader.uri != _popularityUri) return;
+      final heat = _readPopularity(reader);
+      if (heat != null) batch.popularity = heat;
     } on FormatException catch (error) {
-      batch.warnings.add('YY 聊天消息格式异常：$error');
+      batch.warnings.add(appId == _chatAppId ? 'YY 聊天消息格式异常：$error' : 'YY 人气消息格式异常：$error');
     }
+  }
+
+  /// app 103 的 `3139586`：`u32` 频道热度（与列表/详情里的 users 同一口径）、
+  /// `u32` 固定 1、`u32` 顶层频道号（别的频道丢弃）、`u32` 略低的一个数。
+  /// 上游 M4.D：按热度上报，不把它当成在线人数。
+  int? _readPopularity(YyProtocolReader reader) {
+    final heat = reader.readUint32();
+    reader.readUint32();
+    if (reader.readUint32() != topSid) return null;
+    return heat;
   }
 
   YyChatMessage? _readChat(YyProtocolReader reader) {

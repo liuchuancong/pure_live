@@ -264,7 +264,7 @@ class YYSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResol
       items.add(
         LiveRoom(
           roomId: item['sid']?.toString() ?? '',
-          title: item['desc']?.toString() ?? '',
+          title: _title(item['desc']),
           cover: validImgUrl(item['thumb2']?.toString() ?? ''),
           nick: item['name']?.toString() ?? '',
           userId: item['uid']?.toString() ?? '',
@@ -578,11 +578,11 @@ class YYSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResol
     for (final item in data) {
       final users = item['users']?.toString() ?? '';
       final biz = item['biz']?.toString() ?? '';
-      final area = bizAreaNameMap[biz] ?? biz;
+      final area = areaNameForBiz(biz);
       items.add(
         LiveRoom(
           roomId: item['sid']?.toString() ?? '',
-          title: item['desc']?.toString() ?? '',
+          title: _title(item['desc']),
           cover: validImgUrl(item['thumb2']?.toString() ?? ''),
           nick: item['name']?.toString() ?? '',
           userId: item['uid']?.toString() ?? '',
@@ -635,8 +635,40 @@ class YYSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResol
   Future<String> getAreaNameByBiz(String biz) async {
     final map = await getBizAreaNameMap();
 
-    return map[biz] ?? '';
+    return map[biz] ?? presetBizAreaNames[biz] ?? '';
   }
+
+  /// 分区名预置表：不带列表模块的分区（页面里 `biz` 为 null）留不住"从分区页
+  /// 学到的名字"，直接进房时只能靠这张表。上游 M13.16 实测 11 个有房间的分区
+  /// 共 82 个详情得出：综合 的房间自报 `zonghe`（其它分区不用这个键），手机直播
+  /// 的房间带的是内容分区的键（talk、dance…）。学到的名字仍优先。
+  static const Map<String, String> presetBizAreaNames = {
+    'sing': '音乐',
+    'talk': '脱口秀',
+    'dance': '舞蹈',
+    'red': '户外',
+    'pretty': '颜值',
+    'mc': '喊麦',
+    'sport': '体育',
+    // 二次元分区页列的是 car 模块。
+    'car': '二次元',
+    'game': '王者荣耀',
+    'zonghe': '综合',
+  };
+
+  /// 房间标题：YY 给没有标题的房间填的是 `<昵称> 正在直播`，这个后缀在列表与
+  /// 详情里只是噪音（搜索的 `channelName`、列表/详情的 `desc` 是同一个值），
+  /// 去掉后缀只留昵称；其它标题原样保留（上游 6-2）。
+  static String _title(Object? value) {
+    final text = value?.toString() ?? '';
+    if (!text.endsWith(_liveTitleSuffix)) return text;
+    return text.substring(0, text.length - _liveTitleSuffix.length).trim();
+  }
+
+  static const String _liveTitleSuffix = '正在直播';
+
+  /// 房间分区名：从分区页学到的优先，其次预置表，最后退回原始 `biz`。
+  String areaNameForBiz(String biz) => bizAreaNameMap[biz] ?? presetBizAreaNames[biz] ?? biz;
 
   /// ============================================================
   /// 房间详情
@@ -713,7 +745,7 @@ class YYSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResol
     final biz = item['biz']?.toString() ?? '';
     return LiveRoom(
       roomId: item['sid']?.toString() ?? roomId,
-      title: item['desc']?.toString() ?? '',
+      title: _title(item['desc']),
       cover: validImgUrl(item['thumb2']?.toString() ?? ''),
       nick: item['name']?.toString() ?? '',
       userId: item['uid']?.toString() ?? '',
@@ -721,7 +753,7 @@ class YYSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResol
       popularity: item['users']?.toString() ?? '',
       audienceMetricType: AudienceMetricType.popularity,
       avatar: validImgUrl(item['avatar']?.toString() ?? ''),
-      area: bizAreaNameMap[biz] ?? biz,
+      area: areaNameForBiz(biz),
       liveStatus: LiveStatus.live,
       status: true,
       platform: PlatformIds.yy,
@@ -756,7 +788,7 @@ class YYSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResol
       items.add(
         LiveRoom(
           roomId: roomId,
-          title: item['channelName']?.toString() ?? '',
+          title: _title(item['channelName']),
           cover: validImgUrl(item['posterurl']?.toString() ?? ''),
           nick: item['name']?.toString() ?? '',
           userId: item['uid']?.toString() ?? '',
@@ -764,7 +796,7 @@ class YYSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResol
           popularity: users,
           audienceMetricType: AudienceMetricType.popularity,
           avatar: validImgUrl(item['headurl']?.toString() ?? ''),
-          area: bizAreaNameMap[item['biz']?.toString() ?? ''] ?? item['biz']?.toString() ?? '',
+          area: areaNameForBiz(item['biz']?.toString() ?? ''),
           liveStatus: isLive ? LiveStatus.live : LiveStatus.offline,
           status: isLive,
           platform: PlatformIds.yy,

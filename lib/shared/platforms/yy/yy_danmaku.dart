@@ -181,6 +181,20 @@ class YyDanmaku implements LiveDanmaku {
         ),
       );
     }
+    // app 103 的频道热度：与列表/详情里的 users 同一口径，按热度上报，
+    // 不当成在线人数（上游 M4.D）。
+    final popularity = batch.popularity;
+    if (popularity != null) {
+      onMessage?.call(
+        LiveMessage(
+          type: LiveMessageType.online,
+          data: LiveAudienceUpdate(kind: LiveAudienceMetricKind.popularity, value: popularity),
+          color: LiveMessageColor.white,
+          message: '',
+          userName: '',
+        ),
+      );
+    }
     final failure = batch.failure;
     if (failure != null) {
       _handshakeTimer?.cancel();
