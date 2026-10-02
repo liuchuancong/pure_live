@@ -61,6 +61,17 @@ class Sites {
     String Function(Uri) findProxy,
   ) => Future.error(StateError('Sites.niconicoMasterReader 未绑定：请在 App 装配层注入 readNiconicoMaster。'));
 
+  /// 每次调用时解析，而不是在构造适配器时取值。
+  ///
+  /// 适配器实例会被 [_supportedSites] 缓存，如果在 App 装配层绑定之前就取到兜底，
+  /// 那一份"未绑定"会被永久缓存下来。这里只做解析转发，因此与初始化顺序无关。
+  static Future<String> _resolveNiconicoMaster(
+    Uri source,
+    String? Function(Uri) cookies,
+    CancelToken cancel,
+    String Function(Uri) findProxy,
+  ) => (niconicoMasterReader ?? _missingNiconicoMasterReader)(source, cookies, cancel, findProxy);
+
   static const String weiboSite = 'weibo';
   static const String niconicoSite = 'niconico';
   static const String allSite = "all";
@@ -253,7 +264,7 @@ class Sites {
         id: niconicoSite,
         name: 'niconico',
         logo: logoForId(niconicoSite),
-        liveSite: NiconicoSite(readMaster: niconicoMasterReader ?? _missingNiconicoMasterReader),
+        liveSite: NiconicoSite(readMaster: _resolveNiconicoMaster),
       ),
       bilibiliSite => Site(
         id: bilibiliSite,
