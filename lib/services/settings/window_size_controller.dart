@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pure_live/get/get.dart';
-import 'package:pure_live/common/services/utils/hive_rx.dart';
+import 'package:pure_live/services/utils/hive_rx.dart';
 
 //  需要指定显示到哪一个屏幕 可能存在多个显示屏
 class WindowPipGeometry {

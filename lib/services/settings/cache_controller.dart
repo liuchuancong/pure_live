@@ -4,9 +4,9 @@ import 'dart:io';
 import 'package:path/path.dart' as p;
 import 'package:flutter/foundation.dart';
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/common/global/app_path_manager.dart';
+import 'package:pure_live/core/platform/app_path_manager.dart';
 import 'package:pure_live/core/utils/hive_pref_util.dart';
-import 'package:pure_live/common/services/settings/refresh_config_controller.dart';
+import 'package:pure_live/services/settings/refresh_config_controller.dart';
 import 'package:pure_live/plugins/cache_manager.dart';
 
 typedef CacheDirectoryResolver = Future<List<Directory>> Function();

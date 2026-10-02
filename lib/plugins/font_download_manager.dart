@@ -6,9 +6,9 @@ import 'package:pure_live/plugins/race_http.dart';
 import 'package:pure_live/core/common/http_client.dart';
 import 'package:pure_live/core/models/font_model.dart';
 import 'package:pure_live/core/utils/githup_mirror.dart';
-import 'package:pure_live/common/global/app_path_manager.dart';
-import 'package:pure_live/common/services/settings/cache_controller.dart';
-import 'package:pure_live/common/services/medels/download_status.dart';
+import 'package:pure_live/core/platform/app_path_manager.dart';
+import 'package:pure_live/services/settings/cache_controller.dart';
+import 'package:pure_live/services/medels/download_status.dart';
 
 class FontDownloadManager {
   FontDownloadManager._();

@@ -7,7 +7,7 @@ import 'package:uuid/uuid.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:path/path.dart' as p;
-import 'package:pure_live/common/global/app_path_manager.dart';
+import 'package:pure_live/core/platform/app_path_manager.dart';
 
 part 'database.g.dart';
 

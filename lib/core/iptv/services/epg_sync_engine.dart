@@ -9,7 +9,7 @@ import 'package:pure_live/plugins/file_utils.dart';
 import 'package:pure_live/plugins/locale_helper.dart';
 import 'package:pure_live/core/utils/toast_util.dart';
 import 'package:pure_live/core/common/http_client.dart';
-import 'package:pure_live/common/global/app_path_manager.dart';
+import 'package:pure_live/core/platform/app_path_manager.dart';
 import 'package:pure_live/core/iptv/local/database.dart' as database;
 import 'package:pure_live/core/iptv/services/epg_import_manager.dart';
 

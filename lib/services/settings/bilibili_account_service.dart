@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/core/models/bilibili_user_info_page.dart';
-import 'package:pure_live/common/services/settings/cookie_value.dart';
+import 'package:pure_live/services/settings/cookie_value.dart';
 import 'package:pure_live/core/common/http_client.dart';
 
 typedef BilibiliAccountLoader = Future<Map<String, dynamic>?> Function(String cookie);

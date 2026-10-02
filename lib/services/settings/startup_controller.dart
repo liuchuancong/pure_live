@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:developer' as dev;
 
-import 'package:pure_live/common/global/win_auto_start.dart';
-import 'package:pure_live/common/services/utils/hive_rx.dart';
+import 'package:pure_live/core/platform/win_auto_start.dart';
+import 'package:pure_live/services/utils/hive_rx.dart';
 import 'package:pure_live/platforms/huya/huya_site.dart';
 import 'package:pure_live/get/get.dart';
 

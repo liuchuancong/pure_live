@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:pure_live/common/services/settings/room_card_settings_controller.dart';
+import 'package:pure_live/services/settings/room_card_settings_controller.dart';
 
 /// Shared geometry for `RoomCard` and fixed-extent room grids.
 ///

@@ -5,11 +5,11 @@ import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/file_utils.dart';
 import 'package:pure_live/core/models/font_model.dart';
-import 'package:pure_live/common/global/platform_utils.dart';
+import 'package:pure_live/core/platform/platform_utils.dart';
 import 'package:pure_live/plugins/font_download_manager.dart';
-import 'package:pure_live/common/global/app_path_manager.dart';
-import 'package:pure_live/common/services/settings/cache_controller.dart';
-import 'package:pure_live/common/services/medels/download_status.dart';
+import 'package:pure_live/core/platform/app_path_manager.dart';
+import 'package:pure_live/services/settings/cache_controller.dart';
+import 'package:pure_live/services/medels/download_status.dart';
 
 class FontFamilyManagerPage extends GetView<SettingsService> {
   final bool isDanmakuSettings;

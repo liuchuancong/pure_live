@@ -10,7 +10,7 @@ import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/event_bus.dart';
 import 'package:flame_barrage/flame_barrage.dart';
 import 'package:pure_live/core/utils/live_url_tool.dart';
-import 'package:pure_live/common/global/platform_utils.dart';
+import 'package:pure_live/core/platform/platform_utils.dart';
 import 'package:pure_live/modules/live_play/states/load_type.dart';
 import 'package:pure_live/modules/live_play/states/ui_state.dart';
 import 'package:pure_live/modules/live_play/dialogs/play_other.dart';

@@ -4,7 +4,7 @@ import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
-import 'package:pure_live/common/global/app_path_manager.dart';
+import 'package:pure_live/core/platform/app_path_manager.dart';
 
 /// Provides a deterministic CA database to FFmpeg builds that use OpenSSL.
 ///

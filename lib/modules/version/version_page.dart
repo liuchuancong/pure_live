@@ -6,7 +6,7 @@ import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/update.dart';
 import 'package:markdown_widget/widget/all.dart';
 import 'package:markdown_widget/config/configs.dart';
-import 'package:pure_live/common/global/platform_utils.dart';
+import 'package:pure_live/core/platform/platform_utils.dart';
 import 'package:pure_live/modules/version/version_controller.dart';
 
 typedef VersionDownloadHandler = Future<void> Function(String url, {String? fileName});

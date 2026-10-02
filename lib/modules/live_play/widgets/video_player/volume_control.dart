@@ -2,9 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:pure_live/plugins/locale_helper.dart';
-import 'package:pure_live/common/global/platform_utils.dart';
-import 'package:pure_live/common/services/utils/hive_rx.dart';
-import 'package:pure_live/common/services/settings_service.dart';
+import 'package:pure_live/core/platform/platform_utils.dart';
+import 'package:pure_live/services/utils/hive_rx.dart';
+import 'package:pure_live/services/settings_service.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller.dart';
 
 class OverlayVolumeControl extends StatefulWidget {

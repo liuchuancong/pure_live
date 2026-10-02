@@ -6,7 +6,7 @@ import 'package:flame_barrage/flame_barrage.dart';
 import 'package:pure_live/model/live_play_quality.dart';
 import 'package:pure_live/core/interface/live_site.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
-import 'package:pure_live/common/global/platform_utils.dart';
+import 'package:pure_live/core/platform/platform_utils.dart';
 import 'package:pure_live/player/core/flv_splice_relay.dart';
 import 'package:media_core/media_core.dart' as mc;
 import 'package:media_core_media_kit/media_core_media_kit.dart';

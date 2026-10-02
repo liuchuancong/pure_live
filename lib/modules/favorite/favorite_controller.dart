@@ -8,7 +8,7 @@ import 'package:pure_live/modules/tags/live_tag.dart';
 import 'package:pure_live/core/interface/live_site.dart';
 import 'package:pure_live/modules/tags/tag_management_controller.dart';
 import 'package:pure_live/modules/favorite/favorite_startup_policy.dart';
-import 'package:pure_live/common/services/settings/refresh_config_controller.dart';
+import 'package:pure_live/services/settings/refresh_config_controller.dart';
 
 class FavoriteController extends LocalReactivePageController<LiveRoom>
     with GetTickerProviderStateMixin, WidgetsBindingObserver {

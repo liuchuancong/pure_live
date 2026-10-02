@@ -8,7 +8,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:date_format/date_format.dart' hide S;
 import 'package:uuid/uuid.dart';
 import 'package:pure_live/core/common/http_client.dart';
-import 'package:pure_live/common/services/settings/backup_controller.dart';
+import 'package:pure_live/services/settings/backup_controller.dart';
 
 class BackupRecoveryService {
   Future<String?> createAppSettingsBackup(String backupDirectory) async {

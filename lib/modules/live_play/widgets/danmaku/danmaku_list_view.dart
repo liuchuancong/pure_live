@@ -8,7 +8,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:flame_barrage/flame_barrage.dart';
-import 'package:pure_live/common/global/platform_utils.dart';
+import 'package:pure_live/core/platform/platform_utils.dart';
 import 'package:pure_live/modules/live_play/states/ui_state.dart';
 import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/danmaku/danmaku_message_actions.dart';

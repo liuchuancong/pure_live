@@ -1,4 +1,4 @@
-import 'package:pure_live/common/global/platform_utils.dart';
+import 'package:pure_live/core/platform/platform_utils.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/modules/live_play/widgets/keyboard/video_keyboard.dart';
 import 'package:pure_live/modules/live_play/widgets/layout/live_play_back_scope.dart';

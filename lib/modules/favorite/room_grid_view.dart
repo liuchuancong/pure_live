@@ -1,6 +1,6 @@
 import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/common/global/platform_utils.dart';
+import 'package:pure_live/core/platform/platform_utils.dart';
 
 @visibleForTesting
 bool shouldWrapFavoritePullToRefresh({required double viewportWidth, required bool isMobilePlatform}) {

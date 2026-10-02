@@ -1,5 +1,5 @@
 import 'package:pure_live/platforms/xiaohongshu/xiaohongshu_api.dart';
-import 'package:pure_live/common/services/settings_service.dart';
+import 'package:pure_live/services/settings_service.dart';
 import 'package:pure_live/platforms/bilibili/bilibili_site.dart';
 import 'package:pure_live/platforms/douyin/douyin_site.dart';
 import 'package:pure_live/platforms/douyu/douyu_utils.dart';

@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:pure_live/common/global/platform_utils.dart';
+import 'package:pure_live/core/platform/platform_utils.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/core/utils/hive_pref_util.dart';
 

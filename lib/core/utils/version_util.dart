@@ -8,7 +8,7 @@ import 'package:pure_live/core/consts/app_consts.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:pure_live/core/utils/githup_mirror.dart';
 import 'package:pure_live/core/models/release_model.dart';
-import 'package:pure_live/common/global/platform_utils.dart';
+import 'package:pure_live/core/platform/platform_utils.dart';
 import 'package:pure_live/core/utils/release_asset_urls.dart';
 import 'package:pure_live/modules/about/widgets/release_history_repository.dart';
 

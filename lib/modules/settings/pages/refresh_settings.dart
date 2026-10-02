@@ -1,6 +1,6 @@
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/common/services/settings/refresh_config_controller.dart';
+import 'package:pure_live/services/settings/refresh_config_controller.dart';
 
 class RefreshSettingsPage extends GetView<RefreshConfigController> {
   const RefreshSettingsPage({super.key});

@@ -6,7 +6,7 @@ import 'package:pure_live/common/index.dart';
 import 'package:pure_live/player/core/background_playback_policy.dart';
 import 'package:pure_live/player/core/background_playback_service.dart';
 import 'package:pure_live/player/core/playback_lifecycle_coordinator.dart';
-import 'package:pure_live/common/services/settings/app_settings_controller.dart';
+import 'package:pure_live/services/settings/app_settings_controller.dart';
 
 class LiveAudioService {
   LiveAudioService._();

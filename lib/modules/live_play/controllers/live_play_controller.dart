@@ -20,7 +20,7 @@ import 'package:pure_live/recorder/pages/recorder/recorder_controller.dart';
 import 'package:pure_live/modules/live_play/controllers/timer_controller.dart';
 import 'package:pure_live/modules/live_play/services/room_external_opener.dart';
 import 'package:pure_live/modules/live_play/controllers/player_controller.dart';
-import 'package:pure_live/common/services/settings/app_settings_controller.dart';
+import 'package:pure_live/services/settings/app_settings_controller.dart';
 import 'package:pure_live/modules/live_play/controllers/danmaku_controller.dart';
 import 'package:pure_live/modules/live_play/controllers/danmaku_session_host.dart';
 import 'package:pure_live/modules/live_play/widgets/danmaku/danmaku_list_view.dart';

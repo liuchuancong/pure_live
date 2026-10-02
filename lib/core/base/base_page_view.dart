@@ -1,7 +1,7 @@
 import 'package:pure_live/plugins/global.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/core/base/base_controller.dart';
-import 'package:pure_live/common/global/platform_utils.dart';
+import 'package:pure_live/core/platform/platform_utils.dart';
 
 class BasePageView<C extends BasePageScrollAndStateBone<T>, T> extends StatelessWidget {
   final C controller;

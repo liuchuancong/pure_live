@@ -4,7 +4,7 @@ import 'dart:ui' as ui;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/gestures.dart';
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/common/global/platform_utils.dart';
+import 'package:pure_live/core/platform/platform_utils.dart';
 import 'package:pure_live/modules/live_play/states/ui_state.dart';
 import 'package:pure_live/player/core/portrait_stream_support.dart';
 import 'package:pure_live/modules/live_play/widgets/danmaku/danmaku_tab.dart';

@@ -5,7 +5,7 @@ import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/db_service.dart';
 import 'package:pure_live/plugins/file_utils.dart';
 import 'package:pure_live/core/common/http_client.dart';
-import 'package:pure_live/common/global/app_path_manager.dart';
+import 'package:pure_live/core/platform/app_path_manager.dart';
 import 'package:pure_live/core/iptv/local/database.dart' as database;
 import 'package:pure_live/core/iptv/services/iptv_import_manager.dart';
 

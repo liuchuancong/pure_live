@@ -18,7 +18,7 @@ import 'package:pure_live/core/common/http_client.dart';
 import 'package:charset_converter/charset_converter.dart';
 import 'package:pure_live/core/iptv/parsers/m3u_parser.dart';
 import 'package:pure_live/core/iptv/parsers/txt_parser.dart';
-import 'package:pure_live/common/global/app_path_manager.dart';
+import 'package:pure_live/core/platform/app_path_manager.dart';
 import 'package:pure_live/core/iptv/local/database.dart' as database;
 
 class IptvImportManager {

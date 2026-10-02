@@ -2,7 +2,7 @@ library;
 
 export '../core/index.dart';
 export '../core/models/index.dart';
-export 'services/index.dart';
+export '../services/index.dart';
 export '../core/theme/index.dart';
 export '../core/utils/index.dart';
 export '../core/utils/string_to_boolean.dart';
@@ -37,5 +37,5 @@ export '../core/theme/app_text_styles.dart';
 export '../core/widgets/widget_extensions.dart';
 export '../core/widgets/scrollable_tab_bar.dart';
 
-export 'package:pure_live/common/services/utils/hive_rx.dart';
+export 'package:pure_live/services/utils/hive_rx.dart';
 export 'package:pure_live/core/base/index.dart';

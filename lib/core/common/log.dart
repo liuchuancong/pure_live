@@ -10,8 +10,8 @@ import 'package:pure_live/plugins/utils.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:pure_live/common/global/app_path_manager.dart';
-import 'package:pure_live/common/services/settings/log_controller.dart';
+import 'package:pure_live/core/platform/app_path_manager.dart';
+import 'package:pure_live/services/settings/log_controller.dart';
 
 enum LogBrowserRequestAction { page, clear, methodNotAllowed, forbidden, notFound }
 

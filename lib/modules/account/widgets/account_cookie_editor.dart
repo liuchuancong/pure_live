@@ -2,9 +2,9 @@ import 'dart:async';
 
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/common/services/settings/cookie_value.dart';
+import 'package:pure_live/services/settings/cookie_value.dart';
 
-export 'package:pure_live/common/services/settings/cookie_value.dart' show normalizeAccountCookie;
+export 'package:pure_live/services/settings/cookie_value.dart' show normalizeAccountCookie;
 
 /// Decoration every account-cookie input uses.
 ///

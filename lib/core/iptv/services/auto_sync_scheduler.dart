@@ -3,7 +3,7 @@ import 'dart:developer';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/db_service.dart';
 import 'package:pure_live/core/iptv/local/database.dart';
-import 'package:pure_live/common/global/app_path_manager.dart';
+import 'package:pure_live/core/platform/app_path_manager.dart';
 import 'package:pure_live/core/iptv/services/epg_sync_engine.dart';
 import 'package:pure_live/core/iptv/services/iptv_sync_engine.dart';
 import 'package:pure_live/core/iptv/services/epg_import_manager.dart';

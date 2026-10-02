@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:pure_live/get/get.dart';
-import 'package:pure_live/common/services/utils/hive_rx.dart';
+import 'package:pure_live/services/utils/hive_rx.dart';
 
 class PageSettingsController extends GetxController {
   static const int minPageSize = 1;

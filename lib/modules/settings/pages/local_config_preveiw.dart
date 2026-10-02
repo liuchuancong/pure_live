@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter_json/flutter_json.dart';
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/common/services/settings/backup_controller.dart';
+import 'package:pure_live/services/settings/backup_controller.dart';
 import 'package:remixicon/remixicon.dart';
 
 class LocalConfigPreviewPage extends StatefulWidget {

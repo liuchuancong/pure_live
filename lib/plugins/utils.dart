@@ -1,10 +1,10 @@
 import 'dart:io';
 
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/common/global/platform/desktop_tray_service.dart';
+import 'package:pure_live/core/platform/desktop_tray_service.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:pure_live/core/utils/hive_pref_util.dart';
-import 'package:pure_live/common/services/settings/exit_settings_controller.dart';
+import 'package:pure_live/services/settings/exit_settings_controller.dart';
 import 'package:pure_live/modules/account/bilibili/web_login_controller.dart';
 
 class Utils {

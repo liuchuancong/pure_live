@@ -10,7 +10,7 @@ import 'package:pure_live/core/consts/app_consts.dart';
 import 'package:pure_live/modules/areas/areas_page.dart';
 import 'package:pure_live/modules/home/mobile_view.dart';
 import 'package:pure_live/modules/home/tablet_view.dart';
-import 'package:pure_live/common/global/initialized.dart';
+import 'package:pure_live/app/bootstrap/initialized.dart';
 import 'package:pure_live/player/models/player_engine.dart';
 import 'package:pure_live/modules/popular/popular_page.dart';
 import 'package:pure_live/modules/favorite/favorite_page.dart';

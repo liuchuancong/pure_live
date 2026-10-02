@@ -1,5 +1,5 @@
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/common/services/settings/cookie_value.dart';
+import 'package:pure_live/services/settings/cookie_value.dart';
 
 class TwitchCookieBindingCookieController extends GetxController {
   final TextEditingController cookieController = TextEditingController();

@@ -9,7 +9,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:pure_live/core/utils/share_command_handler.dart';
 import 'package:pure_live/modules/tags/tag_management_controller.dart';
 import 'package:pure_live/plugins/event_bus.dart';
-import 'package:pure_live/common/services/settings/room_card_settings_controller.dart';
+import 'package:pure_live/services/settings/room_card_settings_controller.dart';
 
 double _roomTagTextScale(BuildContext context) {
   final style = AppTextStyles.t13;

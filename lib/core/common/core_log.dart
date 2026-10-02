@@ -2,7 +2,7 @@ import 'log.dart';
 
 import 'package:logger/logger.dart';
 import 'package:pure_live/get/get.dart';
-import 'package:pure_live/common/services/settings/log_controller.dart';
+import 'package:pure_live/services/settings/log_controller.dart';
 
 class CoreLog {
   static Function(Level, String)? onPrintLog;
