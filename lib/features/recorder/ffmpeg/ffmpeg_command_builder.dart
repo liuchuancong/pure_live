@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:pure_live/recorder/services/recording_segment_clock.dart';
+import 'package:pure_live/features/recorder/services/recording_segment_clock.dart';
 
 class FFmpegCommandBuilder {
   static const String _protocolWhitelist = 'httpproxy,udp,rtp,rtsp,rtmp,rtmps,srt,tcp,tls,data,file,http,https,crypto';

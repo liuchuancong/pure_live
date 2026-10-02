@@ -4,12 +4,12 @@ import 'dart:io';
 
 import 'package:path/path.dart' as p;
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/recorder/ffmpeg/ffmpeg_event.dart';
-import 'package:pure_live/recorder/ffmpeg/ffmpeg_manager.dart';
-import 'package:pure_live/recorder/ffmpeg/ffmpeg_types.dart';
-import 'package:pure_live/recorder/models/live_record_task.dart';
-import 'package:pure_live/recorder/services/cache_service.dart';
-import 'package:pure_live/recorder/services/recording_segment_clock.dart';
+import 'package:pure_live/features/recorder/ffmpeg/ffmpeg_event.dart';
+import 'package:pure_live/features/recorder/ffmpeg/ffmpeg_manager.dart';
+import 'package:pure_live/features/recorder/ffmpeg/ffmpeg_types.dart';
+import 'package:pure_live/features/recorder/models/live_record_task.dart';
+import 'package:pure_live/features/recorder/services/cache_service.dart';
+import 'package:pure_live/features/recorder/services/recording_segment_clock.dart';
 
 class VideoProcessorService extends GetxService {
   VideoProcessorService._internal() : _ffmpeg = FFmpegManager.to, _completionTimeoutOverride = null;

@@ -13,7 +13,7 @@ import 'package:pure_live/platforms/niconico/niconico_quality_catalog.dart';
 import 'package:pure_live/platforms/niconico/niconico_session.dart';
 import 'package:pure_live/platforms/niconico/niconico_site.dart';
 import 'package:pure_live/platforms/niconico/niconico_stream.dart';
-import 'package:pure_live/recorder/services/niconico_hls_input.dart';
+import 'package:pure_live/features/recorder/services/niconico_hls_input.dart';
 
 void main() {
   test(

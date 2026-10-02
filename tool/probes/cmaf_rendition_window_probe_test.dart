@@ -9,10 +9,10 @@ import 'package:path/path.dart' as p;
 import 'package:pure_live/services/settings/log_controller.dart';
 import 'package:pure_live/core/utils/hive_pref_util.dart';
 import 'package:pure_live/get/get.dart';
-import 'package:pure_live/recorder/ffmpeg/ffmpeg_command_builder.dart';
-import 'package:pure_live/recorder/ffmpeg/ffmpeg_manager.dart';
-import 'package:pure_live/recorder/services/recorder_proxy_routing.dart';
-import 'package:pure_live/recorder/services/ffmpeg_hls_input_relay.dart';
+import 'package:pure_live/features/recorder/ffmpeg/ffmpeg_command_builder.dart';
+import 'package:pure_live/features/recorder/ffmpeg/ffmpeg_manager.dart';
+import 'package:pure_live/features/recorder/services/recorder_proxy_routing.dart';
+import 'package:pure_live/features/recorder/services/ffmpeg_hls_input_relay.dart';
 
 String _window(String source, int skip) {
   final lines = const LineSplitter().convert(source).toList();

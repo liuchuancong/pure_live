@@ -20,7 +20,7 @@ import 'package:pure_live/modules/live/playback/controllers/player_state.dart';
 
 import '../../test/support/owned_source_test_player.dart';
 
-import 'package:pure_live/recorder/services/niconico_hls_input.dart';
+import 'package:pure_live/features/recorder/services/niconico_hls_input.dart';
 
 import 'niconico_capture_contract.dart';
 import 'niconico_relay_probe_test.dart' show QuietNiconicoProbeLogController, runNiconicoNativeStage;

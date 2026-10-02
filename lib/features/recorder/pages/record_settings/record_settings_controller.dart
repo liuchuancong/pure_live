@@ -5,9 +5,9 @@ import 'dart:developer' as developer;
 import 'package:pure_live/core/index.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:pure_live/core/plugins/file_utils.dart';
-import 'package:pure_live/recorder/consts/recorder_keys.dart';
-import 'package:pure_live/recorder/consts/recorder_config.dart';
-import 'package:pure_live/recorder/services/cache_service.dart';
+import 'package:pure_live/features/recorder/consts/recorder_keys.dart';
+import 'package:pure_live/features/recorder/consts/recorder_config.dart';
+import 'package:pure_live/features/recorder/services/cache_service.dart';
 
 typedef RecordDirectoryPicker = Future<String?> Function();
 

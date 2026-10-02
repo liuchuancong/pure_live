@@ -1,5 +1,5 @@
 import 'dart:developer' as developer;
-import 'package:pure_live/recorder/ffmpeg/ffmpeg_types.dart';
+import 'package:pure_live/features/recorder/ffmpeg/ffmpeg_types.dart';
 
 class FFmpegEvent {
   final String taskId;

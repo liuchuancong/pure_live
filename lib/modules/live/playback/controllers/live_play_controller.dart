@@ -16,7 +16,7 @@ import 'package:pure_live/core/common/hls_source_query_policy.dart';
 import 'package:pure_live/modules/live/playback/states/room_state.dart';
 import 'package:pure_live/modules/live/playback/states/player_state.dart';
 import 'package:pure_live/modules/live/playback/states/live_play_state.dart';
-import 'package:pure_live/recorder/pages/recorder/recorder_controller.dart';
+import 'package:pure_live/features/recorder/pages/recorder/recorder_controller.dart';
 import 'package:pure_live/modules/live/playback/controllers/timer_controller.dart';
 import 'package:pure_live/modules/live/playback/services/room_external_opener.dart';
 import 'package:pure_live/modules/live/playback/controllers/player_controller.dart';

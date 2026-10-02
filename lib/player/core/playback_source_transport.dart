@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:dio/dio.dart';
 import 'package:pure_live/core/common/hls_source_query_policy.dart';
-import 'package:pure_live/recorder/services/ffmpeg_hls_input_relay.dart';
+import 'package:pure_live/features/recorder/services/ffmpeg_hls_input_relay.dart';
 import 'package:pure_live/player/core/flv_splice_relay.dart';
 
 import 'flv_legacy_hevc_relay.dart';

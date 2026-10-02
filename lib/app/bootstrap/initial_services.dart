@@ -5,14 +5,14 @@ import 'package:pure_live/core/plugins/db_service.dart';
 import 'package:pure_live/core/utils/hive_pref_util.dart';
 import 'package:pure_live/features/auth/auth_controller.dart';
 import 'package:pure_live/services/settings/iptv_settings_controller.dart';
-import 'package:pure_live/recorder/services/cache_service.dart';
-import 'package:pure_live/recorder/consts/recorder_config.dart';
-import 'package:pure_live/recorder/consts/recorder_keys.dart';
+import 'package:pure_live/features/recorder/services/cache_service.dart';
+import 'package:pure_live/features/recorder/consts/recorder_config.dart';
+import 'package:pure_live/features/recorder/consts/recorder_keys.dart';
 import 'package:pure_live/app/router/route_observer_controller.dart';
-import 'package:pure_live/recorder/services/stream_resolver_service.dart';
-import 'package:pure_live/recorder/pages/recorder/recorder_controller.dart';
+import 'package:pure_live/features/recorder/services/stream_resolver_service.dart';
+import 'package:pure_live/features/recorder/pages/recorder/recorder_controller.dart';
 import 'package:pure_live/core/iptv/services/channel_detail_controller.dart';
-import 'package:pure_live/recorder/pages/record_settings/record_settings_controller.dart';
+import 'package:pure_live/features/recorder/pages/record_settings/record_settings_controller.dart';
 import 'package:pure_live/modules/live/playback/widgets/local_interaction/local_interaction_controller.dart';
 
 class InitialServices {

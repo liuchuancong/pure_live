@@ -11,12 +11,12 @@ import 'package:pure_live/core/models/live_room.dart';
 import 'package:pure_live/services/settings/log_controller.dart';
 import 'package:pure_live/core/utils/hive_pref_util.dart';
 import 'package:pure_live/get/get.dart';
-import 'package:pure_live/recorder/ffmpeg/ffmpeg_command_builder.dart';
-import 'package:pure_live/recorder/ffmpeg/ffmpeg_manager.dart';
-import 'package:pure_live/recorder/ffmpeg/ffmpeg_types.dart';
-import 'package:pure_live/recorder/models/live_record_task.dart';
-import 'package:pure_live/recorder/services/recording_segment_clock.dart';
-import 'package:pure_live/recorder/services/video_processor_service.dart';
+import 'package:pure_live/features/recorder/ffmpeg/ffmpeg_command_builder.dart';
+import 'package:pure_live/features/recorder/ffmpeg/ffmpeg_manager.dart';
+import 'package:pure_live/features/recorder/ffmpeg/ffmpeg_types.dart';
+import 'package:pure_live/features/recorder/models/live_record_task.dart';
+import 'package:pure_live/features/recorder/services/recording_segment_clock.dart';
+import 'package:pure_live/features/recorder/services/video_processor_service.dart';
 
 import 'frame_hash_timeline.dart';
 import 'recording_clock_probe_support.dart';

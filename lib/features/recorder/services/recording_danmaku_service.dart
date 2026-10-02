@@ -4,8 +4,8 @@ import 'dart:io';
 
 import 'package:path/path.dart' as p;
 import 'package:pure_live/core/models/live_message.dart';
-import 'package:pure_live/recorder/models/live_record_task.dart';
-import 'package:pure_live/recorder/models/record_status.dart';
+import 'package:pure_live/features/recorder/models/live_record_task.dart';
+import 'package:pure_live/features/recorder/models/record_status.dart';
 
 /// A live chat connection owned by one recording task.
 class RecordingDanmakuConnection {

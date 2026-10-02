@@ -1,6 +1,6 @@
 import 'package:pure_live/core/contracts/live_quality_discovery.dart';
-import 'package:pure_live/recorder/services/recording_bitrate_window.dart';
-import 'package:pure_live/recorder/services/live_input_recording_binding.dart';
+import 'package:pure_live/features/recorder/services/recording_bitrate_window.dart';
+import 'package:pure_live/features/recorder/services/live_input_recording_binding.dart';
 import 'package:pure_live/core/utils/play_quality_label.dart';
 
 import 'dart:async';
@@ -16,23 +16,23 @@ import 'package:pure_live/core/danmaku/empty_danmaku.dart';
 import 'package:pure_live/core/contracts/live_site.dart';
 import 'package:pure_live/platforms/huya/huya_transport_policy.dart';
 import 'package:pure_live/core/plugins/file_utils.dart';
-import 'package:pure_live/recorder/consts/recorder_keys.dart';
-import 'package:pure_live/recorder/ffmpeg/ffmpeg_command_builder.dart';
-import 'package:pure_live/recorder/ffmpeg/ffmpeg_event.dart';
-import 'package:pure_live/recorder/ffmpeg/ffmpeg_manager.dart';
-import 'package:pure_live/recorder/ffmpeg/ffmpeg_scheduler.dart';
-import 'package:pure_live/recorder/ffmpeg/ffmpeg_types.dart';
-import 'package:pure_live/recorder/models/live_record_task.dart';
-import 'package:pure_live/recorder/models/record_status.dart';
-import 'package:pure_live/recorder/pages/record_settings/record_settings_controller.dart';
-import 'package:pure_live/recorder/services/cache_service.dart';
-import 'package:pure_live/recorder/services/ffmpeg_header_factory.dart';
-import 'package:pure_live/recorder/services/recorder_continuation_policy.dart';
-import 'package:pure_live/recorder/services/recorder_background_service.dart';
-import 'package:pure_live/recorder/services/recording_danmaku_service.dart';
-import 'package:pure_live/recorder/services/recording_output_metrics.dart';
-import 'package:pure_live/recorder/services/stream_resolver_service.dart';
-import 'package:pure_live/recorder/services/video_processor_service.dart';
+import 'package:pure_live/features/recorder/consts/recorder_keys.dart';
+import 'package:pure_live/features/recorder/ffmpeg/ffmpeg_command_builder.dart';
+import 'package:pure_live/features/recorder/ffmpeg/ffmpeg_event.dart';
+import 'package:pure_live/features/recorder/ffmpeg/ffmpeg_manager.dart';
+import 'package:pure_live/features/recorder/ffmpeg/ffmpeg_scheduler.dart';
+import 'package:pure_live/features/recorder/ffmpeg/ffmpeg_types.dart';
+import 'package:pure_live/features/recorder/models/live_record_task.dart';
+import 'package:pure_live/features/recorder/models/record_status.dart';
+import 'package:pure_live/features/recorder/pages/record_settings/record_settings_controller.dart';
+import 'package:pure_live/features/recorder/services/cache_service.dart';
+import 'package:pure_live/features/recorder/services/ffmpeg_header_factory.dart';
+import 'package:pure_live/features/recorder/services/recorder_continuation_policy.dart';
+import 'package:pure_live/features/recorder/services/recorder_background_service.dart';
+import 'package:pure_live/features/recorder/services/recording_danmaku_service.dart';
+import 'package:pure_live/features/recorder/services/recording_output_metrics.dart';
+import 'package:pure_live/features/recorder/services/stream_resolver_service.dart';
+import 'package:pure_live/features/recorder/services/video_processor_service.dart';
 
 class RecorderController extends GetxService {
   RecorderController([this._outputMetrics = const RecordingOutputMetrics()])

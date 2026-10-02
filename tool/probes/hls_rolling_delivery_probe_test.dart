@@ -10,16 +10,16 @@ import 'package:path/path.dart' as p;
 import 'package:pure_live/services/settings/log_controller.dart';
 import 'package:pure_live/core/utils/hive_pref_util.dart';
 import 'package:pure_live/get/get.dart';
-import 'package:pure_live/recorder/ffmpeg/ffmpeg_command_builder.dart';
-import 'package:pure_live/recorder/ffmpeg/ffmpeg_manager.dart';
-import 'package:pure_live/recorder/services/ffmpeg_hls_input_relay.dart';
-import 'package:pure_live/recorder/services/hls_body_reader.dart';
-import 'package:pure_live/recorder/services/hls_prefetch_pool.dart';
-import 'package:pure_live/recorder/services/hls_prefetch_plan.dart';
-import 'package:pure_live/recorder/services/hls_prefetch_scheduler.dart';
-import 'package:pure_live/recorder/services/hls_session_cookies.dart';
-import 'package:pure_live/recorder/services/hls_upstream_client.dart';
-import 'package:pure_live/recorder/services/recorder_proxy_routing.dart';
+import 'package:pure_live/features/recorder/ffmpeg/ffmpeg_command_builder.dart';
+import 'package:pure_live/features/recorder/ffmpeg/ffmpeg_manager.dart';
+import 'package:pure_live/features/recorder/services/ffmpeg_hls_input_relay.dart';
+import 'package:pure_live/features/recorder/services/hls_body_reader.dart';
+import 'package:pure_live/features/recorder/services/hls_prefetch_pool.dart';
+import 'package:pure_live/features/recorder/services/hls_prefetch_plan.dart';
+import 'package:pure_live/features/recorder/services/hls_prefetch_scheduler.dart';
+import 'package:pure_live/features/recorder/services/hls_session_cookies.dart';
+import 'package:pure_live/features/recorder/services/hls_upstream_client.dart';
+import 'package:pure_live/features/recorder/services/recorder_proxy_routing.dart';
 
 import 'media_packet_timeline.dart';
 

@@ -2,12 +2,12 @@ import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/plugins/cache_manager.dart';
 import 'package:pure_live/app/router/app_navigation.dart';
-import 'package:pure_live/recorder/models/record_status.dart';
+import 'package:pure_live/features/recorder/models/record_status.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:pure_live/recorder/models/live_record_task.dart';
-import 'package:pure_live/recorder/models/recorder_task_ordering.dart';
-import 'package:pure_live/recorder/widgets/recorder_bounded_scroll.dart';
-import 'package:pure_live/recorder/pages/recorder/recorder_controller.dart';
+import 'package:pure_live/features/recorder/models/live_record_task.dart';
+import 'package:pure_live/features/recorder/models/recorder_task_ordering.dart';
+import 'package:pure_live/features/recorder/widgets/recorder_bounded_scroll.dart';
+import 'package:pure_live/features/recorder/pages/recorder/recorder_controller.dart';
 
 class RecorderPage extends GetView<RecorderController> {
   const RecorderPage({super.key});

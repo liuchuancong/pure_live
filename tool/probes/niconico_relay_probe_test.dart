@@ -13,8 +13,8 @@ import 'package:pure_live/get/get.dart';
 import 'package:pure_live/core/common/http_client.dart';
 import 'package:pure_live/platforms/niconico/niconico_api.dart';
 import 'package:pure_live/platforms/niconico/niconico_watch.dart';
-import 'package:pure_live/recorder/services/ffmpeg_hls_input_relay.dart';
-import 'package:pure_live/recorder/services/niconico_hls_input.dart';
+import 'package:pure_live/features/recorder/services/ffmpeg_hls_input_relay.dart';
+import 'package:pure_live/features/recorder/services/niconico_hls_input.dart';
 
 import 'niconico_capture_contract.dart';
 

@@ -1,7 +1,7 @@
 import 'package:pure_live/core/contracts/live_quality_discovery.dart';
 import 'package:pure_live/core/contracts/live_input_recipe.dart';
-import 'package:pure_live/recorder/services/owned_record_input.dart';
-import 'package:pure_live/recorder/services/ffmpeg_hls_input_relay.dart';
+import 'package:pure_live/features/recorder/services/owned_record_input.dart';
+import 'package:pure_live/features/recorder/services/ffmpeg_hls_input_relay.dart';
 
 // Opt-in loopback native acceptance through the real user recording controller.
 // Only the source resolver and storage root are fixtures; capture, sampling,
@@ -17,17 +17,17 @@ import 'package:pure_live/services/settings/log_controller.dart';
 import 'package:pure_live/core/utils/hive_pref_util.dart';
 import 'package:pure_live/get/get.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
-import 'package:pure_live/recorder/ffmpeg/ffmpeg_manager.dart';
-import 'package:pure_live/recorder/ffmpeg/ffmpeg_scheduler.dart';
-import 'package:pure_live/recorder/ffmpeg/ffmpeg_types.dart';
-import 'package:pure_live/recorder/models/live_record_task.dart';
-import 'package:pure_live/recorder/models/record_status.dart';
-import 'package:pure_live/recorder/pages/record_settings/record_settings_controller.dart';
-import 'package:pure_live/recorder/pages/recorder/recorder_controller.dart';
-import 'package:pure_live/recorder/services/cache_service.dart';
-import 'package:pure_live/recorder/services/recorder_proxy_routing.dart';
-import 'package:pure_live/recorder/services/stream_resolver_service.dart';
-import 'package:pure_live/recorder/services/video_processor_service.dart';
+import 'package:pure_live/features/recorder/ffmpeg/ffmpeg_manager.dart';
+import 'package:pure_live/features/recorder/ffmpeg/ffmpeg_scheduler.dart';
+import 'package:pure_live/features/recorder/ffmpeg/ffmpeg_types.dart';
+import 'package:pure_live/features/recorder/models/live_record_task.dart';
+import 'package:pure_live/features/recorder/models/record_status.dart';
+import 'package:pure_live/features/recorder/pages/record_settings/record_settings_controller.dart';
+import 'package:pure_live/features/recorder/pages/recorder/recorder_controller.dart';
+import 'package:pure_live/features/recorder/services/cache_service.dart';
+import 'package:pure_live/features/recorder/services/recorder_proxy_routing.dart';
+import 'package:pure_live/features/recorder/services/stream_resolver_service.dart';
+import 'package:pure_live/features/recorder/services/video_processor_service.dart';
 
 import 'media_packet_timeline.dart';
 

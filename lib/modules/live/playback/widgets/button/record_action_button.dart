@@ -4,9 +4,9 @@ import 'record_action_content.dart';
 
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/recorder/models/record_status.dart';
-import 'package:pure_live/recorder/models/live_record_task.dart';
-import 'package:pure_live/recorder/pages/recorder/recorder_controller.dart';
+import 'package:pure_live/features/recorder/models/record_status.dart';
+import 'package:pure_live/features/recorder/models/live_record_task.dart';
+import 'package:pure_live/features/recorder/pages/recorder/recorder_controller.dart';
 
 class RecordActionButton extends StatefulWidget {
   const RecordActionButton({

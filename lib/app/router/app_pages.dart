@@ -41,7 +41,7 @@ import 'package:pure_live/modules/live/areas/favorite_areas_binding.dart';
 import 'package:pure_live/features/account/soop/soop_cookie_page.dart';
 import 'package:pure_live/features/account/huya/huya_cookie_page.dart';
 import 'package:pure_live/modules/live/area_rooms/area_rooms_binding.dart';
-import 'package:pure_live/recorder/pages/recorder/recorder_page.dart';
+import 'package:pure_live/features/recorder/pages/recorder/recorder_page.dart';
 import 'package:pure_live/features/account/bilibili/qr_login_page.dart';
 import 'package:pure_live/modules/live/playback/pages/live_play_page.dart';
 import 'package:pure_live/features/account/douyu/douyu_cookie_page.dart';
@@ -49,7 +49,7 @@ import 'package:pure_live/features/account/bilibili/bilibili_bindings.dart';
 import 'package:pure_live/features/account/bilibili/web_login_page.dart';
 import 'package:pure_live/features/account/soop/soop_cookie_binding.dart';
 import 'package:pure_live/features/account/huya/huya_cookie_binding.dart';
-import 'package:pure_live/recorder/pages/recorder/recorder_binding.dart';
+import 'package:pure_live/features/recorder/pages/recorder/recorder_binding.dart';
 import 'package:pure_live/features/remote_receiver/remote_sync_page.dart';
 import 'package:pure_live/features/account/twitch/twitch_cookie_page.dart';
 import 'package:pure_live/features/account/douyin/douyin_cookie_page.dart';
@@ -61,8 +61,8 @@ import 'package:pure_live/modules/live/multiview/bindings/multiview_binding.dart
 import 'package:pure_live/features/account/douyin/douyin_cookie_binding.dart';
 import 'package:pure_live/features/account/kuaishou/kuaishou_cookie_page.dart';
 import 'package:pure_live/features/account/kuaishou/kuaishou_cookie_binding.dart';
-import 'package:pure_live/recorder/pages/record_settings/record_settings_page.dart';
-import 'package:pure_live/recorder/pages/record_settings/record_settings_binding.dart';
+import 'package:pure_live/features/recorder/pages/record_settings/record_settings_page.dart';
+import 'package:pure_live/features/recorder/pages/record_settings/record_settings_binding.dart';
 
 // auth
 

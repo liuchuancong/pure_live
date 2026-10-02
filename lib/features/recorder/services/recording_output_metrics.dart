@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:path/path.dart' as p;
-import 'package:pure_live/recorder/services/recording_segment_clock.dart';
+import 'package:pure_live/features/recorder/services/recording_segment_clock.dart';
 
 class RecordingOutputSnapshot {
   const RecordingOutputSnapshot({required this.bytes, required this.segmentCount, this.latestModified});

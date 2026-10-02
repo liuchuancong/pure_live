@@ -1,5 +1,5 @@
-import 'package:pure_live/recorder/models/record_status.dart';
-import 'package:pure_live/recorder/models/live_record_task.dart';
+import 'package:pure_live/features/recorder/models/record_status.dart';
+import 'package:pure_live/features/recorder/models/live_record_task.dart';
 
 /// Stable ordering for the recording centre.
 ///

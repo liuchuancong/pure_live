@@ -1,6 +1,6 @@
 import 'package:pure_live/core/models/live_room.dart';
-import 'package:pure_live/recorder/models/record_status.dart';
-import 'package:pure_live/recorder/services/recorder_diagnostics.dart';
+import 'package:pure_live/features/recorder/models/record_status.dart';
+import 'package:pure_live/features/recorder/services/recorder_diagnostics.dart';
 
 class LiveRecordTask {
   /// =========================

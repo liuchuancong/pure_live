@@ -15,7 +15,7 @@ import 'package:pure_live/player/models/player_engine.dart';
 import 'package:pure_live/modules/live/popular/popular_page.dart';
 import 'package:pure_live/modules/live/favorite/favorite_page.dart';
 import 'package:pure_live/features/about/widgets/version_dialog.dart';
-import 'package:pure_live/recorder/pages/recorder/recorder_page.dart';
+import 'package:pure_live/features/recorder/pages/recorder/recorder_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({
