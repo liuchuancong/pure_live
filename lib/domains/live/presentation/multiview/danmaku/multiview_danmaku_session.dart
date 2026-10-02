@@ -4,7 +4,7 @@ import 'dart:async';
 import 'package:media_core_danmaku/media_core_danmaku.dart';
 import 'package:pure_live/core/player/core/live_message_normalization.dart';
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/core/live/live_danmaku.dart';
+import 'package:pure_live/shared/platforms/live_danmaku.dart';
 import 'package:pure_live/domains/live/data/platforms/sites.dart';
 import 'package:pure_live/domains/live/data/favorite_room_controller.dart';
 

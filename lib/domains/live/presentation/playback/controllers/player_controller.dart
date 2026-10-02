@@ -6,7 +6,7 @@ import 'dart:developer' as developer;
 
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
-import 'package:pure_live/core/live/live_site.dart';
+import 'package:pure_live/shared/platforms/live_site.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:pure_live/core/player/kernel/player_consts.dart';
 import 'package:pure_live/core/player/core/playback_source.dart';
@@ -16,8 +16,8 @@ import 'package:pure_live/domains/live/domain/live_player_facade.dart';
 import 'package:pure_live/domains/live/presentation/playback/states/player_state.dart';
 import 'package:pure_live/core/stream/hls_source_query_policy.dart';
 import 'package:pure_live/domains/live/data/playback_header_resolver.dart';
-import 'package:pure_live/domains/live/data/platforms/huya/huya_transport_policy.dart';
-import 'package:pure_live/core/live/live_quality_discovery.dart';
+import 'package:pure_live/shared/platforms/huya/huya_transport_policy.dart';
+import 'package:pure_live/shared/platforms/live_quality_discovery.dart';
 import 'package:pure_live/core/utils/latest_async_value_queue.dart';
 import 'package:pure_live/domains/live/domain/live_input_playback_binder.dart';
 import 'package:pure_live/domains/live/presentation/playback/states/live_play_state.dart';
@@ -25,7 +25,7 @@ import 'package:pure_live/domains/live/presentation/playback/controllers/live_pl
 import 'package:pure_live/domains/live/presentation/playback/widgets/video_player/video_controller.dart';
 import 'package:pure_live/domains/live/data/platforms/sites.dart';
 import 'package:pure_live/domains/live/domain/global_player_service.dart';
-import 'package:pure_live/domains/live/domain/current_live_room.dart';
+import 'package:pure_live/shared/platforms/current_live_room.dart';
 
 typedef StreamSourceOpener = Future<void> Function(
   String url,

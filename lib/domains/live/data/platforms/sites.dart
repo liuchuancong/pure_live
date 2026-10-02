@@ -1,50 +1,66 @@
-import 'yy/yy_site.dart';
-import 'bigo/bigo_site.dart';
-import 'inke/inke_site.dart';
-import 'soop/soop_site.dart';
-import 'huya/huya_site.dart';
+import 'package:pure_live/shared/platforms/yy/yy_site.dart';
+import 'package:dio/dio.dart';
+import 'package:pure_live/shared/platforms/bigo/bigo_site.dart';
+import 'package:pure_live/shared/platforms/inke/inke_site.dart';
+import 'package:pure_live/shared/platforms/soop/soop_site.dart';
+import 'package:pure_live/shared/platforms/huya/huya_site.dart';
 
-import 'package:pure_live/core/live/live_site.dart';
+import 'package:pure_live/shared/platforms/live_site.dart';
 
-import 'chzzk/chzzk_site.dart';
-import 'fc2live/fc2_site.dart';
-import 'weibo/weibo_site.dart';
-import 'acfun/acfun_site.dart';
-import 'douyu/douyu_site.dart';
-import 'liveme/liveme_site.dart';
-import 'tiktok/tiktok_site.dart';
-import 'douyin/douyin_site.dart';
-import 'jdlive/jd_live_site.dart';
-import 'youtube/youtube_site.dart';
-import 'sixroom/sixroom_site.dart';
-import 'picarto/picarto_site.dart';
-import 'niconico/niconico_site.dart';
-import 'showroom/showroom_site.dart';
-import 'missevan/missevan_site.dart';
-import 'kilakila/kilakila_site.dart';
-import 'looklive/look_live_site.dart';
-import 'pandalive/pandalive_site.dart';
-import 'kugoulive/kugou_live_site.dart';
-import 'baidulive/baidu_live_site.dart';
+import 'package:pure_live/shared/platforms/chzzk/chzzk_site.dart';
+import 'package:pure_live/shared/platforms/fc2live/fc2_site.dart';
+import 'package:pure_live/shared/platforms/weibo/weibo_site.dart';
+import 'package:pure_live/shared/platforms/acfun/acfun_site.dart';
+import 'package:pure_live/shared/platforms/douyu/douyu_site.dart';
+import 'package:pure_live/shared/platforms/liveme/liveme_site.dart';
+import 'package:pure_live/shared/platforms/tiktok/tiktok_site.dart';
+import 'package:pure_live/shared/platforms/douyin/douyin_site.dart';
+import 'package:pure_live/shared/platforms/jdlive/jd_live_site.dart';
+import 'package:pure_live/shared/platforms/youtube/youtube_site.dart';
+import 'package:pure_live/shared/platforms/sixroom/sixroom_site.dart';
+import 'package:pure_live/shared/platforms/picarto/picarto_site.dart';
+import 'package:pure_live/shared/platforms/niconico/niconico_site.dart';
+import 'package:pure_live/shared/platforms/niconico/niconico_contract.dart';
+import 'package:pure_live/shared/platforms/showroom/showroom_site.dart';
+import 'package:pure_live/shared/platforms/missevan/missevan_site.dart';
+import 'package:pure_live/shared/platforms/kilakila/kilakila_site.dart';
+import 'package:pure_live/shared/platforms/looklive/look_live_site.dart';
+import 'package:pure_live/shared/platforms/pandalive/pandalive_site.dart';
+import 'package:pure_live/shared/platforms/kugoulive/kugou_live_site.dart';
+import 'package:pure_live/shared/platforms/baidulive/baidu_live_site.dart';
 
 import 'package:pure_live/core/index.dart';
 
-import 'xiaohongshu/xiaohongshu_site.dart';
-import 'twitcasting/twitcasting_site.dart';
-import 'seventeenlive/seventeenlive_site.dart';
+import 'package:pure_live/shared/platforms/xiaohongshu/xiaohongshu_site.dart';
+import 'package:pure_live/shared/platforms/twitcasting/twitcasting_site.dart';
+import 'package:pure_live/shared/platforms/seventeenlive/seventeenlive_site.dart';
 
-import 'package:pure_live/domains/live/data/platforms/cc/cc_site.dart';
+import 'package:pure_live/shared/platforms/cc/cc_site.dart';
 
-import 'steambroadcast/steam_broadcast_site.dart';
+import 'package:pure_live/shared/platforms/steambroadcast/steam_broadcast_site.dart';
 
 import 'package:pure_live/domains/iptv/data/platforms/iptv_site.dart';
-import 'package:pure_live/domains/live/data/platforms/twitch/twitch_site.dart';
-import 'package:pure_live/domains/live/data/platforms/kuaishou/kuaishou_site.dart';
-import 'package:pure_live/domains/live/data/platforms/bilibili/bilibili_site.dart';
+import 'package:pure_live/shared/platforms/twitch/twitch_site.dart';
+import 'package:pure_live/shared/platforms/kuaishou/kuaishou_site.dart';
+import 'package:pure_live/shared/platforms/bilibili/bilibili_site.dart';
 import 'package:pure_live/domains/live/data/favorite_room_controller.dart';
 import 'package:pure_live/core/consts/platform_ids.dart';
 
 class Sites {
+  /// Niconico 的 master 播放列表读取器。
+  ///
+  /// 实现建在 recorder 的 HLS 中继上，注册表不该认识录制域，因此由 App 装配层
+  /// 在启动时绑定（见 InitialServices）。未绑定就使用 Niconico 画质目录会立即抛出
+  /// 明确错误，而不是静默拿到空画质。
+  static NiconicoMasterReader? niconicoMasterReader;
+
+  static Future<String> _missingNiconicoMasterReader(
+    Uri source,
+    String? Function(Uri) cookies,
+    CancelToken cancel,
+    String Function(Uri) findProxy,
+  ) => Future.error(StateError('Sites.niconicoMasterReader 未绑定：请在 App 装配层注入 readNiconicoMaster。'));
+
   static const String weiboSite = 'weibo';
   static const String niconicoSite = 'niconico';
   static const String allSite = "all";
@@ -57,7 +73,7 @@ class Sites {
   static const String iptvSite = PlatformIds.iptv;
   static const String twitchSite = PlatformIds.twitch;
   static const String soopSite = PlatformIds.soop;
-  static const String yySite = 'yy';
+  static const String yySite = PlatformIds.yy;
   static const String acfunSite = PlatformIds.acfun;
   static const String picartoSite = PlatformIds.picarto;
   static const String twitcastingSite = PlatformIds.twitcasting;
@@ -233,7 +249,12 @@ class Sites {
     final normalizedId = id.trim().toLowerCase();
     return switch (normalizedId) {
       weiboSite => Site(id: weiboSite, name: i18n('site_weibo'), logo: logoForId(weiboSite), liveSite: WeiboSite()),
-      niconicoSite => Site(id: niconicoSite, name: 'niconico', logo: logoForId(niconicoSite), liveSite: NiconicoSite()),
+      niconicoSite => Site(
+        id: niconicoSite,
+        name: 'niconico',
+        logo: logoForId(niconicoSite),
+        liveSite: NiconicoSite(readMaster: niconicoMasterReader ?? _missingNiconicoMasterReader),
+      ),
       bilibiliSite => Site(
         id: bilibiliSite,
         name: i18n("site_bilibili"),

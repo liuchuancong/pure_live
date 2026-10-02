@@ -1,12 +1,12 @@
 import 'package:dio/dio.dart';
-import 'package:pure_live/core/live/live_input_recipe.dart';
-import 'package:pure_live/domains/live/data/platforms/bigo/bigo_api.dart';
-import 'package:pure_live/domains/live/data/platforms/bigo/bigo_input_recipe.dart';
-import 'package:pure_live/domains/live/data/platforms/fc2live/fc2_api.dart';
-import 'package:pure_live/domains/live/data/platforms/fc2live/fc2_input_recipe.dart';
-import 'package:pure_live/domains/live/data/platforms/niconico/niconico_api.dart';
-import 'package:pure_live/domains/live/data/platforms/niconico/niconico_input_recipe.dart';
-import 'package:pure_live/domains/live/data/platforms/niconico/niconico_watch.dart';
+import 'package:pure_live/shared/platforms/live_input_recipe.dart';
+import 'package:pure_live/shared/platforms/bigo/bigo_api.dart';
+import 'package:pure_live/shared/platforms/bigo/bigo_input_recipe.dart';
+import 'package:pure_live/shared/platforms/fc2live/fc2_api.dart';
+import 'package:pure_live/shared/platforms/fc2live/fc2_input_recipe.dart';
+import 'package:pure_live/shared/platforms/niconico/niconico_api.dart';
+import 'package:pure_live/shared/platforms/niconico/niconico_input_recipe.dart';
+import 'package:pure_live/shared/platforms/niconico/niconico_watch.dart';
 
 import 'bigo_hls_input.dart';
 import 'fc2_hls_input.dart';

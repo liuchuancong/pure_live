@@ -5,7 +5,7 @@ import 'package:pure_live/domains/live/presentation/areas/category_artwork.dart'
 import 'package:pure_live/core/network/image_cache_manager.dart';
 import 'package:pure_live/domains/live/presentation/areas/area_pic_mapper.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:pure_live/domains/live/data/platforms/cc/cc_catalog.dart';
+import 'package:pure_live/shared/platforms/cc/cc_catalog.dart';
 import 'package:pure_live/domains/live/data/platforms/sites.dart';
 
 /// Keeps the fixed category grid tall enough for both one-line labels when

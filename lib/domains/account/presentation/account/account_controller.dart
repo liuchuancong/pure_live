@@ -4,7 +4,7 @@ import 'package:pure_live/core/index.dart';
 import 'package:pure_live/domains/account/data/bilibili_account_service.dart';
 import 'package:pure_live/core/network/cookie_sanitizer.dart';
 import 'package:pure_live/core/logging/app_log.dart';
-import 'package:pure_live/domains/live/data/platforms/douyin/douyin_site.dart';
+import 'package:pure_live/shared/platforms/douyin/douyin_site.dart';
 import 'package:pure_live/core/widgets/app_prompt_dialogs.dart';
 import 'package:pure_live/core/config/cookie_settings_controller.dart';
 

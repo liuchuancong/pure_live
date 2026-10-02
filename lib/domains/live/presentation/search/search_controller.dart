@@ -3,7 +3,7 @@ import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:pure_live/core/network/request_scope.dart';
-import 'package:pure_live/domains/live/domain/live_search.dart';
+import 'package:pure_live/shared/platforms/live_search.dart';
 
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/domains/live/presentation/search/search_capability.dart';

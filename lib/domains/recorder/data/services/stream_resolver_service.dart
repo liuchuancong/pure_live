@@ -1,7 +1,7 @@
-import 'package:pure_live/core/live/live_quality_discovery.dart';
-import 'package:pure_live/core/live/live_input_recipe.dart';
+import 'package:pure_live/shared/platforms/live_quality_discovery.dart';
+import 'package:pure_live/shared/platforms/live_input_recipe.dart';
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/core/live/live_site.dart';
+import 'package:pure_live/shared/platforms/live_site.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
 import 'package:pure_live/core/player/kernel/player_consts.dart';
 import 'package:pure_live/core/stream/hls_source_query_policy.dart';

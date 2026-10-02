@@ -6,7 +6,7 @@ import 'package:pure_live/core/release/release_history_source.dart';
 import 'package:pure_live/core/platform/multi_instance_settings_source.dart';
 import 'package:pure_live/core/platform/desktop_exit_port.dart';
 import 'package:pure_live/core/navigation/official_category_policy.dart';
-import 'package:pure_live/domains/live/data/platforms/cc/cc_catalog.dart';
+import 'package:pure_live/shared/platforms/cc/cc_catalog.dart';
 import 'package:pure_live/app/bootstrap/desktop_exit_flow.dart';
 import 'package:pure_live/core/config/app_settings_controller.dart';
 import 'package:pure_live/core/config/cache_controller.dart';
@@ -28,9 +28,11 @@ import 'package:pure_live/core/storage/hive_pref_util.dart';
 import 'package:pure_live/domains/account/data/bilibili_account_service.dart';
 import 'package:pure_live/domains/account/presentation/auth/auth_controller.dart';
 import 'package:pure_live/core/config/cookie_settings_controller.dart';
+import 'package:pure_live/domains/live/data/platforms/sites.dart';
+import 'package:pure_live/domains/recorder/data/services/niconico_hls_input.dart' show readNiconicoMaster;
 import 'package:pure_live/domains/live/data/favorite_room_controller.dart';
 import 'package:pure_live/domains/live/data/history_controller.dart';
-import 'package:pure_live/domains/live/data/platforms/huya/huya_site.dart';
+import 'package:pure_live/shared/platforms/huya/huya_site.dart';
 import 'package:pure_live/domains/live/presentation/tags/tag_management_controller.dart';
 import 'package:pure_live/domains/iptv/data/iptv_settings_controller.dart';
 import 'package:pure_live/features/about/widgets/release_history_repository.dart';
@@ -51,6 +53,10 @@ import 'package:pure_live/domains/live/presentation/areas/areas_controller.dart'
 
 class InitialServices {
   static void initGlobalServices() {
+    // 站点注册表不认识的实现由 App 装配层注入：Niconico 的 master 读取器建在
+    // recorder 的 HLS 中继上。必须早于任何 Sites 访问，否则适配器会被缓存成未绑定
+    // 状态。
+    Sites.niconicoMasterReader = readNiconicoMaster;
     // 全局/域长生命周期 Provider 都由 App 装配层注册。Core 的设置门面
     // SettingsService 只做类型化访问，不再自己 lazyPut 依赖，因此 Core 不会
     // 反向依赖 Domains/Features。

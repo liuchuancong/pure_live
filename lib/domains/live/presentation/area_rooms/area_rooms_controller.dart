@@ -1,5 +1,5 @@
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/domains/live/domain/live_directory.dart';
+import 'package:pure_live/shared/platforms/live_directory.dart';
 import 'package:pure_live/domains/live/data/platforms/sites.dart';
 
 String areaRoomsControllerTag(Site site, LiveArea area) => site.liveSite is LiveSiteDirectoryPager

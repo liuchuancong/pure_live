@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/domains/live/presentation/popular/popular_grid_controller.dart';
 import 'package:pure_live/domains/live/presentation/pagination/live_directory_controller.dart';
-import 'package:pure_live/domains/live/domain/live_directory.dart';
+import 'package:pure_live/shared/platforms/live_directory.dart';
 import 'package:pure_live/domains/live/data/platforms/sites.dart';
 import 'package:pure_live/domains/live/data/favorite_room_controller.dart';
 
