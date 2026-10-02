@@ -14,7 +14,7 @@ import 'package:pure_live/player/utils/windows_pip_driver.dart';
 import 'package:pure_live/core/utils/hive_pref_util.dart';
 import 'package:pure_live/core/platform/platform_utils.dart';
 import 'package:pure_live/core/platform/share_command_codec.dart';
-import 'package:pure_live/app/router/route_observer_controller.dart';
+import 'package:pure_live/app/router/navigation_observer.dart';
 import 'package:pure_live/core/platform/share_command_handler.dart';
 import 'package:pure_live/core/widgets/share_command_import_dialog.dart';
 import 'package:pure_live/services/settings/window_size_controller.dart';

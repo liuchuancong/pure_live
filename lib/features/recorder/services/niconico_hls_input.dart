@@ -13,7 +13,7 @@ import 'owned_record_input.dart';
 import 'cancellable_http_connections.dart';
 import 'ffmpeg_hls_input_relay.dart';
 import 'hls_body_reader.dart';
-import 'hls_session_cookies.dart';
+import 'package:pure_live/core/common/hls_session_cookies.dart';
 import 'hls_upstream_client.dart';
 
 typedef NiconicoSeatFactory = Future<NiconicoSession> Function(

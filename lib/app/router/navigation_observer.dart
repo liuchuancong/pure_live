@@ -158,3 +158,12 @@ class LiveRouteObserver extends RouteObserver<PageRoute<dynamic>> {
     }
   }
 }
+
+/// 记录当前路由名，供需要判断页面是否在前台的模块读取。
+class RouteObserverController extends GetxController {
+  static RouteObserverController get to => Get.find();
+  final currentRoute = ''.obs;
+  void updateRoute(String? route) {
+    currentRoute.value = route ?? "";
+  }
+}

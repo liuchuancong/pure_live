@@ -2,7 +2,7 @@ import 'dart:core';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'tars_struct.dart';
-import 'tars_decode_exception.dart';
+import 'package:pure_live/core/tars/codec/tars_exceptions.dart';
 import 'package:pure_live/core/common/log.dart';
 
 class HeadData {

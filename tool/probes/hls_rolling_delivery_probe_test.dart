@@ -17,7 +17,7 @@ import 'package:pure_live/features/recorder/services/hls_body_reader.dart';
 import 'package:pure_live/features/recorder/services/hls_prefetch_pool.dart';
 import 'package:pure_live/features/recorder/services/hls_prefetch_plan.dart';
 import 'package:pure_live/features/recorder/services/hls_prefetch_scheduler.dart';
-import 'package:pure_live/features/recorder/services/hls_session_cookies.dart';
+import 'package:pure_live/core/common/hls_session_cookies.dart';
 import 'package:pure_live/features/recorder/services/hls_upstream_client.dart';
 import 'package:pure_live/features/recorder/services/recorder_proxy_routing.dart';
 

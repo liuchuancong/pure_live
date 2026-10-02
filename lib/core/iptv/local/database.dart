@@ -1,13 +1,13 @@
 import 'dart:io';
 
 import 'tables.dart';
-import 'epg_channel_identity.dart';
 
 import 'package:uuid/uuid.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:path/path.dart' as p;
 import 'package:pure_live/core/platform/app_path_manager.dart';
+import 'dart:convert';
 
 part 'database.g.dart';
 
@@ -653,3 +653,6 @@ class FailoverGroupMembership {
   final int priority;
   const FailoverGroupMembership({required this.group, required this.priority});
 }
+
+/// 无冲突的数据库主键；feed 里的 TVG id 仍单独保留以便精确匹配。
+String epgChannelKey(String sourceId, String channelId) => 'epg:${jsonEncode([sourceId, channelId])}';

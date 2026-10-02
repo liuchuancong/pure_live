@@ -6,7 +6,7 @@ import 'package:dio/dio.dart';
 import 'package:meta/meta.dart';
 import 'package:pure_live/core/common/core_log.dart';
 import 'package:pure_live/core/common/http_client.dart';
-import 'package:pure_live/services/settings/cookie_value.dart';
+import 'package:pure_live/services/settings/cookie_sanitizer.dart';
 import 'package:pure_live/services/utils/hive_rx.dart';
 import 'package:pure_live/services/settings_service.dart';
 

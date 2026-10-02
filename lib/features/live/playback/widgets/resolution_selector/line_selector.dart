@@ -1,5 +1,5 @@
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/features/live/playback/states/reload_data_type.dart';
+import 'package:pure_live/features/live/playback/states/player_state.dart';
 import 'package:pure_live/features/live/playback/controllers/live_play_controller.dart';
 
 class LineSelector extends StatelessWidget {

@@ -10,7 +10,7 @@ import 'package:pure_live/core/common/log.dart';
 import 'package:pure_live/core/common/hls_source_query_policy.dart';
 import 'package:pure_live/core/common/hls_master_selection.dart';
 
-import 'hls_session_cookies.dart';
+import 'package:pure_live/core/common/hls_session_cookies.dart';
 import 'hls_media_spool.dart';
 import 'hls_body_reader.dart';
 import 'hls_upstream_client.dart';

@@ -1,5 +1,5 @@
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/services/settings/cookie_value.dart';
+import 'package:pure_live/services/settings/cookie_sanitizer.dart';
 
 class YyCookieBindingCookieController extends GetxController {
   final TextEditingController cookieController = TextEditingController();

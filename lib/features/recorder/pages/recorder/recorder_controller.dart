@@ -1,7 +1,7 @@
 import 'package:pure_live/core/contracts/live_quality_discovery.dart';
 import 'package:pure_live/features/recorder/services/recording_bitrate_window.dart';
-import 'package:pure_live/features/recorder/services/live_input_recording_binding.dart';
-import 'package:pure_live/core/utils/play_quality_label.dart';
+import 'package:pure_live/features/recorder/services/live_input_recording_binder.dart';
+import 'package:pure_live/core/utils/live_quality_label.dart';
 
 import 'dart:async';
 import 'dart:convert';

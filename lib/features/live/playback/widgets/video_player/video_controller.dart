@@ -17,12 +17,12 @@ import 'package:media_core/media_core.dart' show PlayerException, PlayerErrorCod
 import 'package:pure_live/player/models/player_error_type.dart';
 import 'package:pure_live/player/kernel/live_player_facade.dart';
 import 'package:pure_live/features/live/playback/states/ui_state.dart';
-import 'package:pure_live/features/live/playback/states/reload_data_type.dart';
+import 'package:pure_live/features/live/playback/states/player_state.dart';
 import 'package:pure_live/player/core/portrait_stream_support.dart';
 import 'package:pure_live/core/iptv/local/database.dart' as database;
 import 'package:pure_live/features/live/playback/controllers/live_play_controller.dart';
 import 'package:pure_live/features/live/playback/widgets/danmaku/danmaku_message_actions.dart';
-import 'package:pure_live/features/live/playback/widgets/danmaku/danmaku_settings_binding.dart';
+import 'package:pure_live/features/live/playback/widgets/danmaku/danmaku_settings_source.dart';
 import 'package:screen_brightness_platform_interface/screen_brightness_platform_interface.dart';
 import 'package:pure_live/features/live/playback/widgets/layout/portrait_fullscreen_interaction.dart';
 
@@ -333,7 +333,7 @@ Future<void> exitFullscreenWithOrientationRestore({
   await releaseOrientation();
 }
 
-class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
+class VideoController with ChangeNotifier implements DanmakuSettingsSource {
   // 常量定义
   // Two seconds was shorter than the orientation animation plus an
   // accessibility scan on phones, so controls could disappear before a user
@@ -1331,7 +1331,7 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
     clearListener();
     await _playerManager.close();
     await destory();
-    await _livePlayController.onInitPlayerState(reloadDataType: ReloadDataType.refreash);
+    await _livePlayController.onInitPlayerState(reloadDataType: ReloadDataType.refresh);
   }
 
   Future<void> changeLine() async {

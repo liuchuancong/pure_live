@@ -12,7 +12,7 @@ import 'package:media_core/media_core.dart' as mc;
 import 'package:media_core_media_kit/media_core_media_kit.dart';
 import 'package:media_core_multiview/media_core_multiview.dart' as wall;
 import 'package:pure_live/core/contracts/live_quality_discovery.dart';
-import 'package:pure_live/player/core/live_input_playback_binding.dart';
+import 'package:pure_live/player/core/live_input_playback_binder.dart';
 import 'package:pure_live/player/kernel/player_kernel_service.dart';
 import 'package:pure_live/features/live/multiview/models/multiview_models.dart';
 import 'package:pure_live/features/live/playback/controllers/player_controller.dart';

@@ -3,12 +3,12 @@ import 'package:pure_live/core/consts/app_consts.dart';
 import 'package:syncfusion_flutter_sliders/sliders.dart';
 import 'package:pure_live/core/widgets/count_button.dart';
 import 'package:pure_live/features/live/playback/widgets/danmaku/danmaku_viewing_preset.dart';
-import 'package:pure_live/features/live/playback/widgets/danmaku/danmaku_settings_binding.dart';
+import 'package:pure_live/features/live/playback/widgets/danmaku/danmaku_settings_source.dart';
 import 'package:pure_live/features/live/playback/widgets/local_interaction/local_interaction_controller.dart';
 
 class DanmakuSettingsPage extends StatelessWidget {
   const DanmakuSettingsPage({super.key, required this.controller});
-  final DanmakuSettingsBinding controller;
+  final DanmakuSettingsSource controller;
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +29,7 @@ class DanmakuSettingsContent extends StatefulWidget {
     this.includePipSettings = true,
   });
 
-  final DanmakuSettingsBinding controller;
+  final DanmakuSettingsSource controller;
   final bool embedded;
   final bool includePipSettings;
 
@@ -40,7 +40,7 @@ class DanmakuSettingsContent extends StatefulWidget {
 class _DanmakuSettingsContentState extends State<DanmakuSettingsContent> {
   late final ScrollController _scrollController;
 
-  DanmakuSettingsBinding get controller => widget.controller;
+  DanmakuSettingsSource get controller => widget.controller;
 
   @override
   void initState() {

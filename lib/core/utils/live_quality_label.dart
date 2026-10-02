@@ -1,3 +1,5 @@
+import 'package:pure_live/core/l10n/i18n.dart';
+import 'package:pure_live/core/models/live_play_quality.dart';
 /// Converts platform SDK quality codes into stable user-facing Chinese labels
 /// without changing the opaque identifier used to request that stream.
 class LiveQualityLabel {
@@ -118,4 +120,11 @@ class LiveQualityLabel {
     }
     return '${(bitsPerSecond / 1000).round()} Kbps';
   }
+}
+
+/// 当前码流的本地化说明，不作为请求游标标识。
+extension PlayQualityLabel on LivePlayQuality {
+  String get playbackLabel => isPlaybackUnconfirmed
+      ? i18nOr('quality_playback_unconfirmed', 'Unconfirmed · $quality', args: {'quality': quality})
+      : quality;
 }

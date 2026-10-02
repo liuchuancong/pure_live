@@ -4,7 +4,7 @@ import 'package:pure_live/get/get.dart';
 import 'package:pure_live/services/utils/hive_rx.dart';
 import 'package:pure_live/core/utils/hive_pref_util.dart';
 import 'package:pure_live/services/account/bilibili_account_service.dart';
-import 'package:pure_live/services/settings/cookie_value.dart';
+import 'package:pure_live/services/settings/cookie_sanitizer.dart';
 
 class CookieSettingsController extends GetxController {
   final RxString bilibiliCookie = hiveString('bilibiliCookie', '');

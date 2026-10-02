@@ -1,4 +1,4 @@
-import 'package:pure_live/core/utils/play_quality_label.dart';
+import 'package:pure_live/core/utils/live_quality_label.dart';
 
 import 'dart:io';
 import 'dart:async';
@@ -11,7 +11,7 @@ import 'package:pure_live/core/utils/event_bus.dart';
 import 'package:flame_barrage/flame_barrage.dart';
 import 'package:pure_live/core/utils/live_url_tool.dart';
 import 'package:pure_live/core/platform/platform_utils.dart';
-import 'package:pure_live/features/live/playback/states/reload_data_type.dart';
+import 'package:pure_live/features/live/playback/states/player_state.dart';
 import 'package:pure_live/features/live/playback/states/ui_state.dart';
 import 'package:pure_live/features/live/playback/dialogs/play_other.dart';
 import 'package:pure_live/features/live/playback/pages/danmaku_settings_page.dart';
@@ -21,7 +21,7 @@ import 'package:pure_live/features/live/playback/widgets/video_player/volume_con
 import 'package:pure_live/features/live/playback/widgets/video_player/video_controller.dart';
 import 'package:pure_live/features/live/playback/widgets/video_player/portrait_playback_picker_dialog.dart';
 import 'package:pure_live/features/live/playback/widgets/video_player/iptv_schedule_dialog.dart';
-import 'package:pure_live/features/live/playback/widgets/danmaku/danmaku_settings_binding.dart';
+import 'package:pure_live/features/live/playback/widgets/danmaku/danmaku_settings_source.dart';
 import 'package:pure_live/features/live/playback/widgets/local_interaction/local_danmaku_style_editor.dart';
 import 'package:pure_live/player/core/portrait_stream_support.dart';
 import 'package:pure_live/features/live/playback/widgets/layout/portrait_fullscreen_interaction.dart';
@@ -2163,7 +2163,7 @@ class _VideoFitSettingState extends State<VideoFitSetting> {
 class SettingsPanel extends StatelessWidget {
   const SettingsPanel({super.key, required this.controller});
 
-  final DanmakuSettingsBinding controller;
+  final DanmakuSettingsSource controller;
 
   @override
   Widget build(BuildContext context) {

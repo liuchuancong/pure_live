@@ -2,7 +2,7 @@
 
 import 'dart:typed_data';
 
-import 'tars_encode_exception.dart';
+import 'package:pure_live/core/tars/codec/tars_exceptions.dart';
 import 'tars_struct.dart';
 
 class TarsDisplayer {

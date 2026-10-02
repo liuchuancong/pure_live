@@ -17,7 +17,7 @@ import 'package:pure_live/features/live/playback/pages/danmaku_settings_page.dar
 import 'package:pure_live/features/live/multiview/widgets/focus_rail_visibility.dart';
 import 'package:pure_live/features/live/multiview/widgets/multiview_room_picker.dart';
 import 'package:pure_live/features/live/multiview/widgets/multiview_fullscreen_surface.dart';
-import 'package:pure_live/features/live/multiview/danmaku/multiview_danmaku_settings_binding.dart';
+import 'package:pure_live/features/live/multiview/danmaku/multiview_danmaku_settings_source.dart';
 
 /// 页面显示状态机：normal（完整界面）→ immersive（隐藏工具条与侧板，
 /// 留悬浮恢复钮）→ fullscreen（仅保留安全区内的退出钮）。
@@ -870,14 +870,14 @@ class _MultiviewPageState extends State<MultiviewPage> {
   }
 
   /// 弹幕设置面板：复用 live_play 官方面板（含位置预设/显示区域），
-  /// 经 [MultiviewDanmakuSettingsBinding] 透传全局设置。
+  /// 经 [MultiviewDanmakuSettingsSource] 透传全局设置。
   void _showDanmakuSettings() {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       builder: (sheetContext) => SizedBox(
         height: MediaQuery.of(sheetContext).size.height * 0.72,
-        child: DanmakuSettingsContent(controller: MultiviewDanmakuSettingsBinding(), embedded: true),
+        child: DanmakuSettingsContent(controller: MultiviewDanmakuSettingsSource(), embedded: true),
       ),
     );
   }

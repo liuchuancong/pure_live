@@ -8,7 +8,7 @@ import 'package:pure_live/services/settings/iptv_settings_controller.dart';
 import 'package:pure_live/features/recorder/services/cache_service.dart';
 import 'package:pure_live/features/recorder/consts/recorder_config.dart';
 import 'package:pure_live/features/recorder/consts/recorder_keys.dart';
-import 'package:pure_live/app/router/route_observer_controller.dart';
+import 'package:pure_live/app/router/navigation_observer.dart';
 import 'package:pure_live/features/recorder/services/stream_resolver_service.dart';
 import 'package:pure_live/features/recorder/pages/recorder/recorder_controller.dart';
 import 'package:pure_live/core/iptv/services/channel_detail_controller.dart';

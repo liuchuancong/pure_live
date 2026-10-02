@@ -129,3 +129,6 @@ class PlayerState {
     hasUseDefaultResolution,
   );
 }
+
+/// 一次房间数据重载的原因。
+enum ReloadDataType { refresh, changeLine, changeQuality }

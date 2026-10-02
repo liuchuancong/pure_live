@@ -1,5 +1,4 @@
 // models
-export 'package:pure_live/core/base/paging_mode.dart';
 // interface
 export 'package:pure_live/core/base/base_page_scroll_bone.dart';
 // views

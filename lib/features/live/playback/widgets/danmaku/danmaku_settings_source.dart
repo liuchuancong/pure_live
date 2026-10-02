@@ -5,7 +5,7 @@ import 'package:pure_live/get/get.dart';
 ///
 /// Keeping the UI dependent on this small contract prevents fullscreen from
 /// growing a second set of ranges, defaults and persistence behaviour.
-abstract interface class DanmakuSettingsBinding {
+abstract interface class DanmakuSettingsSource {
   RxBool get noEmojiMode;
 
   RxDouble get danmakuArea;

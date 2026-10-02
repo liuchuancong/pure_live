@@ -11,7 +11,6 @@ import 'package:pure_live/player/utils/player_consts.dart';
 import 'package:pure_live/app/router/navigation_observer.dart';
 import 'package:pure_live/player/models/player_engine.dart';
 import 'package:pure_live/core/platform/platform_utils.dart';
-import 'package:pure_live/app/router/route_observer_controller.dart';
 import 'package:pure_live/core/utils/shared_media_intake.dart';
 import 'package:pure_live/player/utils/popup_route_tracker.dart';
 import 'package:pure_live/core/platform/share_command_handler.dart';

@@ -11,12 +11,13 @@ import 'package:pure_live/core/models/live_play_quality.dart';
 import 'package:media_core_media_kit/media_core_media_kit.dart';
 import 'package:pure_live/player/kernel/floating_playback.dart';
 import 'package:pure_live/player/utils/windows_pip_driver.dart';
-import 'package:pure_live/player/kernel/kernel_backend_ids.dart';
 import 'package:pure_live/player/core/portrait_stream_support.dart';
 import 'package:pure_live/player/kernel/player_kernel_service.dart';
 import 'package:pure_live/player/utils/fullscreen_window.dart' show fullscreenDriver;
 import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
 import 'package:pure_live/features/live/playback/widgets/danmaku/compact_danmaku_overlay.dart';
+import 'package:media_core_better_player/media_core_better_player.dart' show kBetterPlayerBackendId;
+import 'package:media_core_ijk_player/media_core_ijk_player.dart' show kIjkPlayerBackendId;
 
 ///
 
@@ -815,3 +816,10 @@ class _PipOverlayViewState extends State<_PipOverlayView> {
     );
   }
 }
+
+/// 引擎枚举到 media_core 后端 id 的映射，播放器工厂按 id 选实现。
+String backendIdOfEngine(PlayerEngine engine) => switch (engine) {
+  PlayerEngine.mediaKit => kMediaKitPlayerBackendId,
+  PlayerEngine.fijk => kIjkPlayerBackendId,
+  PlayerEngine.exo => kBetterPlayerBackendId,
+};

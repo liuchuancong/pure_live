@@ -11,10 +11,9 @@ import 'package:pure_live/player/core/playback_source.dart';
 import 'package:pure_live/player/core/live_audio_service.dart';
 import 'package:pure_live/player/kernel/live_player_facade.dart';
 import 'package:pure_live/features/live/playback/states/ui_state.dart';
-import 'package:pure_live/features/live/playback/states/reload_data_type.dart';
+import 'package:pure_live/features/live/playback/states/player_state.dart';
 import 'package:pure_live/core/common/hls_source_query_policy.dart';
 import 'package:pure_live/features/live/playback/states/room_state.dart';
-import 'package:pure_live/features/live/playback/states/player_state.dart';
 import 'package:pure_live/features/live/playback/states/live_play_state.dart';
 import 'package:pure_live/features/recorder/pages/recorder/recorder_controller.dart';
 import 'package:pure_live/features/live/playback/controllers/timer_controller.dart';
@@ -668,7 +667,7 @@ class LivePlayController extends GetxController
   }
 
   Future<LiveRoom> onInitPlayerState({
-    ReloadDataType reloadDataType = ReloadDataType.refreash,
+    ReloadDataType reloadDataType = ReloadDataType.refresh,
     int line = 0,
     bool isReCalculate = true,
   }) async {
@@ -916,7 +915,7 @@ class LivePlayController extends GetxController
     await EmojiManager.instance.preload(newRoom.platform!);
 
     await onInitPlayerState(
-      reloadDataType: newRoom.platform == Sites.bilibiliSite ? ReloadDataType.changeLine : ReloadDataType.refreash,
+      reloadDataType: newRoom.platform == Sites.bilibiliSite ? ReloadDataType.changeLine : ReloadDataType.refresh,
     );
   }
 
