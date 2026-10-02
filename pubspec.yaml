@@ -284,7 +284,9 @@ flutter:
     - family: CustomIcons
       fonts:
         - asset: assets/icons/CustomIcons.ttf
-
+    - family: MI_Sans_Regular
+      fonts:
+        - asset: assets/fonts/MiSans-Regular.ttf
 # FFmpeg配置
 ffmpeg_kit_extended_config:
   type: base

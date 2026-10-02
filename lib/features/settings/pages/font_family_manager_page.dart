@@ -5,7 +5,6 @@ import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/platform/file_utils.dart';
 import 'package:pure_live/core/models/font_model.dart';
-import 'package:pure_live/core/platform/platform_utils.dart';
 import 'package:pure_live/core/platform/font_download_manager.dart';
 import 'package:pure_live/core/platform/app_path_manager.dart';
 import 'package:pure_live/core/config/cache_controller.dart';
@@ -346,7 +345,7 @@ class FontFamilyManagerPage extends GetView<SettingsService> {
             ),
           ),
           title: Text(
-            PlatformUtils.isWindows ? "Microsoft YaHei" : i18n("font_system_default"),
+            "MI Sans",
             style: isDefaultActive
                 ? AppTextStyles.t14Bold.copyWith(color: theme.colorScheme.primary)
                 : AppTextStyles.t14SemiBold,

@@ -15,9 +15,9 @@ const PageTransitionsTheme appPageTransitionsTheme = PageTransitionsTheme(
 /// Resolves the app-wide font without overriding a platform's native default.
 ///
 /// Downloaded fonts are registered under their persisted IDs and therefore
-/// take precedence. Windows deliberately keeps Microsoft YaHei as its stable
-/// CJK default; Android and the remaining platforms use a null family so
-/// Flutter follows the device's own system font and fallback chain.
+/// take precedence. The bundled MI Sans is the app-wide default on every
+/// platform: it ships with CJK coverage, so no platform needs to fall back
+/// to a system font (Microsoft YaHei on Windows, device defaults elsewhere).
 String? resolveAppFontFamily({
   required String selectedName,
   required Iterable<String> customFonts,
@@ -26,10 +26,7 @@ String? resolveAppFontFamily({
   if (customFonts.contains(selectedName)) {
     return selectedName;
   }
-  if (isWindows) {
-    return 'Microsoft YaHei';
-  }
-  return null;
+  return 'MI_Sans_Regular';
 }
 
 class MyTheme {

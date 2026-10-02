@@ -165,7 +165,7 @@ class FontSettingsController extends GetxController {
     if (fontList.isEmpty) {
       return;
     }
-    if (id == 'Microsoft YaHei') {
+    if (id == 'Microsoft YaHei' || id == 'MI_Sans_Regular') {
       curFontModel.value = fontList.firstWhere((e) => e.id == 'Default', orElse: () => fontList.first);
       fontState.value = DownloadState.notDownloaded;
     } else {
@@ -188,27 +188,19 @@ class FontSettingsController extends GetxController {
           }
           if (!loaded) {
             fontState.value = DownloadState.notDownloaded;
-            fontFamilyName.v = Platform.isWindows ? 'Microsoft YaHei' : 'Default';
+            fontFamilyName.v = 'MI_Sans_Regular';
             await HivePrefUtil.setString('fontFamilyName', fontFamilyName.v);
             fontFamilyFileName.v = '';
             await HivePrefUtil.setString('fontFamilyFileName', '');
-            if (fontFamilyName.v == 'Microsoft YaHei') {
-              curFontModel.value = fontList.firstWhere((e) => e.id == 'Default', orElse: () => fontList.first);
-            } else {
-              curFontModel.value = fontList.firstWhere((e) => e.id == fontFamilyName.v, orElse: () => fontList.first);
-            }
+            curFontModel.value = fontList.firstWhere((e) => e.id == 'Default', orElse: () => fontList.first);
           }
         } else {
           fontState.value = DownloadState.notDownloaded;
-          fontFamilyName.v = Platform.isWindows ? 'Microsoft YaHei' : 'Default';
+          fontFamilyName.v = 'MI_Sans_Regular';
           await HivePrefUtil.setString('fontFamilyName', fontFamilyName.v);
           fontFamilyFileName.v = '';
           await HivePrefUtil.setString('fontFamilyFileName', '');
-          if (fontFamilyName.v == 'Microsoft YaHei') {
-            curFontModel.value = fontList.firstWhere((e) => e.id == 'Default', orElse: () => fontList.first);
-          } else {
-            curFontModel.value = fontList.firstWhere((e) => e.id == fontFamilyName.v, orElse: () => fontList.first);
-          }
+          curFontModel.value = fontList.firstWhere((e) => e.id == 'Default', orElse: () => fontList.first);
         }
       }
     }
@@ -217,7 +209,7 @@ class FontSettingsController extends GetxController {
     final danmakuController = Get.find<DanmakuSettingsController>();
     final danmakuId = danmakuController.danmakuFontFamilyName.v;
 
-    if (danmakuId != 'Default' && danmakuId != id && danmakuId != 'Microsoft YaHei') {
+    if (danmakuId != 'Default' && danmakuId != id && danmakuId != 'MI_Sans_Regular') {
       final danmakuDownloaded = await FontDownloadManager.instance.checkFontDownloaded(danmakuId);
       if (danmakuDownloaded) {
         var loaded = await FontDownloadManager.instance.loadFont(danmakuId, fileName: danmakuFontFamilyFileName.v);
