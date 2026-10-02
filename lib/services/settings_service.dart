@@ -9,7 +9,7 @@ import 'package:pure_live/services/settings/startup_controller.dart';
 import 'package:pure_live/services/settings/window_size_controller.dart';
 import 'package:pure_live/services/settings/app_settings_controller.dart';
 import 'package:pure_live/services/settings/page_settings_controller.dart';
-import 'package:pure_live/services/settings/bilibili_account_service.dart';
+import 'package:pure_live/services/account/bilibili_account_service.dart';
 import 'package:pure_live/services/settings/favorite_room_controller.dart';
 import 'package:pure_live/services/settings/exit_settings_controller.dart';
 import 'package:pure_live/services/settings/font_settings_controller.dart';

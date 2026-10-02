@@ -9,7 +9,7 @@ import 'package:pure_live/core/plugins/font_download_manager.dart';
 import 'package:pure_live/core/platform/app_path_manager.dart';
 import 'package:pure_live/services/settings/cache_controller.dart';
 import 'package:pure_live/core/utils/hive_pref_util.dart';
-import 'package:pure_live/services/models/download_status.dart';
+import 'package:pure_live/core/models/download_status.dart';
 import 'package:pure_live/services/settings/danmaku_settings_controller.dart';
 import 'package:pure_live/get/get_navigation/src/root/get_root.dart';
 
