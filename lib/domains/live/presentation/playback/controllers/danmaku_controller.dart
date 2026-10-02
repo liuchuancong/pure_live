@@ -9,6 +9,7 @@ import 'package:pure_live/domains/live/data/empty_danmaku.dart';
 import 'package:pure_live/domains/live/presentation/playback/states/live_play_state.dart';
 import 'package:pure_live/domains/live/presentation/playback/controllers/danmaku_session_host.dart';
 import 'package:pure_live/domains/live/data/platforms/sites.dart';
+import 'package:pure_live/domains/live/data/favorite_room_controller.dart';
 
 /// Owns exactly one room-bound danmaku session.
 ///
@@ -57,10 +58,11 @@ class DanmakuController extends GetxController {
   void onInit() {
     super.onInit();
     final settings = SettingsService.to;
-    _settingsWorker = everAll([
-      settings.danmaku.hideDanmaku,
-    ], (_) => unawaited(_syncConnectionForSettings()));
-    _filterWorker = everAll([settings.fav.blockedDanmakuUsers, settings.fav.shieldList], (_) => _refreshFilters());
+    _settingsWorker = everAll([settings.danmaku.hideDanmaku], (_) => unawaited(_syncConnectionForSettings()));
+    _filterWorker = everAll([
+      FavoriteRoomController.to.blockedDanmakuUsers,
+      FavoriteRoomController.to.shieldList,
+    ], (_) => _refreshFilters());
     final dm = settings.danmaku;
     _similarityFilterWorker = everAll([
       dm.enableDanmakuSimilarityFilter,
@@ -194,7 +196,7 @@ class DanmakuController extends GetxController {
         if (!_messageGate.accepts(normalizeLiveMessage(msg)) || _isBlocked(msg)) return;
         final danmakuSettings = SettingsService.to.danmaku;
         if (!_repeatedMessageFilter.accepts(
-      normalizeLiveMessage(msg),
+          normalizeLiveMessage(msg),
           enabled: danmakuSettings.collapseRepeatedDanmaku.v,
           window: Duration(seconds: danmakuSettings.repeatedDanmakuWindowSeconds.v.clamp(1, 30)),
         )) {
@@ -256,7 +258,7 @@ class DanmakuController extends GetxController {
   }
 
   void _refreshFilters() {
-    final favorite = SettingsService.to.fav;
+    final favorite = FavoriteRoomController.to;
     _blockedUsers = favorite.blockedDanmakuUsers
         .map((user) => user.trim().toLowerCase())
         .where((user) => user.isNotEmpty)

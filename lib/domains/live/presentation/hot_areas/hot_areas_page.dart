@@ -1,6 +1,7 @@
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/domains/live/presentation/hot_areas/hot_areas_controller.dart';
+import 'package:pure_live/domains/live/data/favorite_room_controller.dart';
 
 class HotAreasPage extends GetView<HotAreasController> {
   const HotAreasPage({super.key});
@@ -20,7 +21,7 @@ class HotAreasPage extends GetView<HotAreasController> {
           context.buildGroupTitle(i18n('platform_display')),
           Obx(() {
             if (controller.sites.isEmpty) return const SizedBox.shrink();
-            final visibleCount = SettingsService.to.fav.hotAreasList.length;
+            final visibleCount = FavoriteRoomController.to.hotAreasList.length;
 
             return Container(
               clipBehavior: Clip.antiAlias,

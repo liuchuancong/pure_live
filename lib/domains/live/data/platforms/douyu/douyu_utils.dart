@@ -6,9 +6,9 @@ import 'package:dio/dio.dart';
 import 'package:meta/meta.dart';
 import 'package:pure_live/core/logging/core_log.dart';
 import 'package:pure_live/core/network/http_client.dart';
-import 'package:pure_live/core/config/cookie_sanitizer.dart';
+import 'package:pure_live/core/network/cookie_sanitizer.dart';
 import 'package:pure_live/core/storage/hive_rx.dart';
-import 'package:pure_live/core/config/settings_service.dart';
+import 'package:pure_live/core/config/cookie_settings_controller.dart';
 
 /// How much of a login a stored Douyu cookie actually carries.
 ///
@@ -222,9 +222,7 @@ class DouyuUtils {
   /// real login, and reading only the H5 JWTs would show a signed-in viewer as
   /// signed out.
   static String? sessionToken(String cookie) =>
-      cookieField(cookie, jwtTokenName) ??
-      cookieField(cookie, authTokenName) ??
-      cookieField(cookie, webAuthTokenName);
+      cookieField(cookie, jwtTokenName) ?? cookieField(cookie, authTokenName) ?? cookieField(cookie, webAuthTokenName);
 
   /// Decodes a JWT payload, or returns `null` when the token is not one.
   ///
@@ -297,11 +295,7 @@ class DouyuUtils {
   /// Either source counts: a viewer who pasted everything into the cookie box,
   /// and one who filled the two passport fields separately (which is where they
   /// actually come from) must both work.
-  static ({String? longTerm, String? did}) refreshCredentials(
-    String cookie, {
-    String? longTerm,
-    String? did,
-  }) {
+  static ({String? longTerm, String? did}) refreshCredentials(String cookie, {String? longTerm, String? did}) {
     final resolvedLongTerm = _nonBlank(longTerm) ?? _nonBlank(cookieField(cookie, longTermTokenName)) ?? _storedLtp0();
     // No fallback to the process DID here: a renewal must present the device the
     // login was issued for, and inventing one would only make the passport
@@ -324,7 +318,7 @@ class DouyuUtils {
 
   static String? _storedLtp0() {
     try {
-      return _nonBlank(SettingsService.to.cookieManager.douyuLtp0.v);
+      return _nonBlank(CookieSettingsController.to.douyuLtp0.v);
     } catch (_) {
       return null;
     }
@@ -332,7 +326,7 @@ class DouyuUtils {
 
   static String? _storedDid() {
     try {
-      return _nonBlank(SettingsService.to.cookieManager.douyuDid.v);
+      return _nonBlank(CookieSettingsController.to.douyuDid.v);
     } catch (_) {
       return null;
     }
@@ -496,7 +490,7 @@ class DouyuUtils {
       return;
     }
     try {
-      final cookies = SettingsService.to.cookieManager;
+      final cookies = CookieSettingsController.to;
       cookies.douyuCookie.v = cookie;
       // Remember when, or the seven-day rule has nothing to count from.
       cookies.douyuCookieSavedAt.v = savedAt.millisecondsSinceEpoch ~/ 1000;
@@ -574,7 +568,7 @@ class DouyuUtils {
   /// point, and the app says "unknown" instead of inventing one.
   static DateTime? storedSessionSavedAt({int? savedAtSeconds}) {
     try {
-      final seconds = savedAtSeconds ?? SettingsService.to.cookieManager.douyuCookieSavedAt.v;
+      final seconds = savedAtSeconds ?? CookieSettingsController.to.douyuCookieSavedAt.v;
       return seconds > 0 ? DateTime.fromMillisecondsSinceEpoch(seconds * 1000) : null;
     } catch (_) {
       return null;
@@ -583,7 +577,7 @@ class DouyuUtils {
 
   static String _configuredAccountCookie() {
     try {
-      return SettingsService.to.cookieManager.douyuCookie.value;
+      return CookieSettingsController.to.douyuCookie.value;
     } catch (_) {
       return '';
     }

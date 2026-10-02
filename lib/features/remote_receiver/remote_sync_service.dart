@@ -1,15 +1,15 @@
 import 'dart:io';
 import 'dart:async';
 import 'dart:convert';
+
 import 'package:bonsoir/bonsoir.dart';
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/storage/hive_pref_util.dart';
 import 'package:pure_live/core/platform/platform_utils.dart';
 import 'package:pure_live/core/platform/local_network_access.dart';
-import 'package:pure_live/core/config/backup_controller.dart';
+import 'package:pure_live/features/backup/backup_controller.dart';
 import 'package:pure_live/features/remote_receiver/remote_sync_device.dart';
 import 'package:pure_live/features/remote_receiver/remote_sync_protocol.dart';
-
 
 class RemoteSyncService extends GetxController {
   static RemoteSyncService get to => Get.find<RemoteSyncService>();

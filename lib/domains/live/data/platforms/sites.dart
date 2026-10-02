@@ -3,7 +3,9 @@ import 'bigo/bigo_site.dart';
 import 'inke/inke_site.dart';
 import 'soop/soop_site.dart';
 import 'huya/huya_site.dart';
+
 import 'package:pure_live/domains/live/domain/live_site.dart';
+
 import 'chzzk/chzzk_site.dart';
 import 'fc2live/fc2_site.dart';
 import 'weibo/weibo_site.dart';
@@ -39,6 +41,7 @@ import 'package:pure_live/domains/live/data/platforms/iptv/iptv_site.dart';
 import 'package:pure_live/domains/live/data/platforms/twitch/twitch_site.dart';
 import 'package:pure_live/domains/live/data/platforms/kuaishou/kuaishou_site.dart';
 import 'package:pure_live/domains/live/data/platforms/bilibili/bilibili_site.dart';
+import 'package:pure_live/domains/live/data/favorite_room_controller.dart';
 
 class Sites {
   static const String weiboSite = 'weibo';
@@ -432,7 +435,7 @@ class Sites {
   }
 
   List<Site> availableSites({bool containsAll = false}) {
-    final List<String> savedIds = SettingsService.to.fav.hotAreasList.v;
+    final List<String> savedIds = FavoriteRoomController.to.hotAreasList.v;
     final supportedById = {for (final site in supportSites) site.id: site};
     final List<Site> result = [];
     final seen = <String>{};

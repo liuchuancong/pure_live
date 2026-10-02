@@ -6,6 +6,7 @@ import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:pure_live/core/widgets/keep_alive_wrapper.dart';
 import 'package:pure_live/domains/live/data/platforms/sites.dart';
+import 'package:pure_live/domains/live/data/favorite_room_controller.dart';
 
 class AreasRoomPage extends StatefulWidget {
   final Site site;
@@ -105,7 +106,7 @@ class _FavoriteAreaFloatingButtonState extends State<FavoriteAreaFloatingButton>
   Future<void> _toggleFavorite({required LiveArea target, required bool isFavorite}) async {
     if (_busy) return;
     setState(() => _busy = true);
-    final favorites = SettingsService.to.fav;
+    final favorites = FavoriteRoomController.to;
     try {
       if (!isFavorite) {
         await favorites.addAreaDurably(target);
@@ -198,7 +199,7 @@ class _FavoriteAreaFloatingButtonState extends State<FavoriteAreaFloatingButton>
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final isFavorite = SettingsService.to.fav.isFavoriteArea(area);
+      final isFavorite = FavoriteRoomController.to.isFavoriteArea(area);
       final rawAreaName = area.areaName?.trim() ?? '';
       final displayName = rawAreaName.isEmpty ? i18n('unnamed_area') : rawAreaName;
 

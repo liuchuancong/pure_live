@@ -1,5 +1,4 @@
 import 'package:pure_live/domains/live/data/platforms/xiaohongshu/xiaohongshu_api.dart';
-import 'package:pure_live/core/config/settings_service.dart';
 import 'package:pure_live/domains/live/data/platforms/bilibili/bilibili_site.dart';
 import 'package:pure_live/domains/live/data/platforms/douyin/douyin_site.dart';
 import 'package:pure_live/domains/live/data/platforms/douyu/douyu_utils.dart';
@@ -21,6 +20,8 @@ import 'package:pure_live/domains/live/data/platforms/bigo/bigo_api.dart';
 import 'package:pure_live/domains/live/data/platforms/pandalive/pandalive_api.dart';
 import 'package:pure_live/domains/live/data/platforms/seventeenlive/seventeenlive_api.dart';
 import 'package:pure_live/core/network/http_header_policy.dart';
+import 'package:pure_live/core/config/cookie_settings_controller.dart';
+import 'package:pure_live/domains/iptv/data/iptv_settings_controller.dart';
 
 /// Resolves the HTTP headers used to read a platform's media stream.
 ///
@@ -51,7 +52,7 @@ class PlaybackHeaderResolver {
 
     switch (normalizedPlatform) {
       case Sites.bilibiliSite:
-        final cookie = _configuredCookie((settings) => settings.cookieManager.bilibiliCookie.value);
+        final cookie = _configuredCookie((cookies) => cookies.bilibiliCookie.value);
         final anonymousCookie = <String>[
           if (BiliBiliSite.buvid3.isNotEmpty) 'buvid3=${BiliBiliSite.buvid3}',
           if (BiliBiliSite.buvid4.isNotEmpty) 'buvid4=${BiliBiliSite.buvid4}',
@@ -73,7 +74,7 @@ class PlaybackHeaderResolver {
         // the stream. Falling back here avoids a second network request solely
         // for headers and keeps deterministic callers offline-safe.
         final userAgent = HuyaSite.playUserAgent ?? HuyaSite.nativePlayUserAgent;
-        final cookie = _configuredCookie((settings) => settings.cookieManager.huyaCookie.value);
+        final cookie = _configuredCookie((cookies) => cookies.huyaCookie.value);
         headers = <String, String>{
           'user-agent': userAgent,
           'origin': 'https://www.huya.com',
@@ -82,7 +83,7 @@ class PlaybackHeaderResolver {
         };
         break;
       case Sites.douyinSite:
-        final configuredCookie = _configuredCookie((settings) => settings.cookieManager.douyinCookie.value);
+        final configuredCookie = _configuredCookie((cookies) => cookies.douyinCookie.value);
         final cookie = configuredCookie.isNotEmpty ? configuredCookie : DouyinSite.cookie.trim();
         headers = <String, String>{
           'user-agent': _desktopUserAgent,
@@ -94,7 +95,7 @@ class PlaybackHeaderResolver {
         };
         break;
       case Sites.kuaishouSite:
-        final cookie = _configuredCookie((settings) => settings.cookieManager.kuaishouCookie.value);
+        final cookie = _configuredCookie((cookies) => cookies.kuaishouCookie.value);
         headers = <String, String>{
           'user-agent': _kuaishouUserAgent,
           'origin': 'https://live.kuaishou.com',
@@ -112,7 +113,7 @@ class PlaybackHeaderResolver {
         };
         break;
       case Sites.twitchSite:
-        final cookie = _configuredCookie((settings) => settings.cookieManager.twitchCookie.value);
+        final cookie = _configuredCookie((cookies) => cookies.twitchCookie.value);
         headers = <String, String>{
           'user-agent': TwitchSite.defaultUa,
           'origin': TwitchSite.baseUrl,
@@ -121,7 +122,7 @@ class PlaybackHeaderResolver {
         };
         break;
       case Sites.soopSite:
-        final cookie = _configuredCookie((settings) => settings.cookieManager.soopCookie.value);
+        final cookie = _configuredCookie((cookies) => cookies.soopCookie.value);
         headers = <String, String>{
           'user-agent': _desktopUserAgent,
           'origin': 'https://www.sooplive.co.kr',
@@ -132,7 +133,7 @@ class PlaybackHeaderResolver {
         };
         break;
       case Sites.yySite:
-        final cookie = _configuredCookie((settings) => settings.cookieManager.yyCookie.value);
+        final cookie = _configuredCookie((cookies) => cookies.yyCookie.value);
         headers = <String, String>{
           'origin': 'https://www.yy.com',
           'referer': 'https://www.yy.com/',
@@ -141,7 +142,7 @@ class PlaybackHeaderResolver {
         };
         break;
       case Sites.iptvSite:
-        final userAgent = _configuredValue((settings) => settings.iptv.customIptvUserAgent.value);
+        final userAgent = _configuredValue(() => IptvSettingsController.to.customIptvUserAgent.value);
         headers = <String, String>{
           if (userAgent.isNotEmpty) 'user-agent': userAgent,
           ...HttpHeaderPolicy.normalize(roomHeaders),
@@ -199,11 +200,12 @@ class PlaybackHeaderResolver {
     return HttpHeaderPolicy.normalize(headers);
   }
 
-  static String _configuredCookie(String Function(SettingsService settings) read) => _configuredValue(read);
+  static String _configuredCookie(String Function(CookieSettingsController cookies) read) =>
+      _configuredValue(() => read(CookieSettingsController.to));
 
-  static String _configuredValue(String Function(SettingsService settings) read) {
+  static String _configuredValue(String Function() read) {
     try {
-      return read(SettingsService.to).trim();
+      return read().trim();
     } catch (_) {
       return '';
     }

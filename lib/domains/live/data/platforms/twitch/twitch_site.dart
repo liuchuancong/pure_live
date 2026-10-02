@@ -15,6 +15,7 @@ import 'package:pure_live/domains/live/data/platforms/twitch/twitch_models.dart'
 import 'package:pure_live/domains/live/data/platforms/twitch/twitch_web_integrity.dart';
 import 'package:pure_live/core/utils/live_quality_label.dart';
 import 'package:pure_live/domains/live/data/platforms/sites.dart';
+import 'package:pure_live/core/config/cookie_settings_controller.dart';
 
 class TwitchSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResolver {
   @override
@@ -22,7 +23,6 @@ class TwitchSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomR
   // "not live" for live channels whenever Twitch or the proxy failed, with no
   // retry. Let the room page present the load error like other platforms.
   Future<LiveRoom> getRoomDetail(LiveRoom liveroom) {
-    
     if (liveroom.detailIdentity == null) return Future.value(liveroom);
     return _loadRoomDetail(liveroom.roomId!);
   }
@@ -66,7 +66,7 @@ class TwitchSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomR
     // /integrity endpoint (matching Twitch's web flow and Streamlink).
     headers['Device-Id'] = _deviceId;
     headers.remove('X-Device-Id');
-    final cookie = SettingsService.to.cookieManager.twitchCookie.v.trim();
+    final cookie = CookieSettingsController.to.twitchCookie.v.trim();
     if (cookie.isNotEmpty && !_bypassStoredSessionForIntegrity) {
       headers['Cookie'] = cookie;
       final authToken = extractAuthToken(cookie);
@@ -692,14 +692,12 @@ class TwitchSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomR
 
   @override
   Future<LiveRoom> getRoomDetailForRefresh(LiveRoom liveroom) async {
-    
     if (liveroom.detailIdentity == null) return liveroom;
     return _loadRoomDetail(liveroom.roomId!);
   }
 
   @override
   Future<LiveRoom> getRoomDetailForRecording(LiveRoom liveroom) async {
-    
     if (liveroom.detailIdentity == null) return liveroom;
     return _loadRoomDetail(liveroom.roomId!);
   }

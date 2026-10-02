@@ -15,6 +15,7 @@ import 'package:pure_live/domains/live/domain/live_danmaku.dart';
 import 'package:pure_live/domains/iptv/data/services/auto_sync_scheduler.dart';
 import 'package:pure_live/core/network/http_header_policy.dart';
 import 'package:pure_live/domains/live/data/platforms/sites.dart';
+import 'package:pure_live/domains/iptv/data/iptv_settings_controller.dart';
 
 class IptvSite implements LiveSite, LiveSiteRecordRoomResolver {
   @override
@@ -71,7 +72,7 @@ class IptvSite implements LiveSite, LiveSiteRecordRoomResolver {
     final ch = await db.getChannelById(category.areaId!);
     if (ch == null) return [];
 
-    final epgId = await _resolveEpgChannelId(ch, SettingsService.to.iptv.selectedSourceId.v);
+    final epgId = await _resolveEpgChannelId(ch, IptvSettingsController.to.selectedSourceId.v);
     EpgProgramme? nowProg;
     if (epgId != null) {
       final nowList = await db.getNowPlaying([epgId]);
@@ -112,7 +113,6 @@ class IptvSite implements LiveSite, LiveSiteRecordRoomResolver {
 
   @override
   Future<LiveRoom> getRoomDetail(LiveRoom liveroom) async {
-    
     if (liveroom.detailIdentity == null) return liveroom;
     final fresh = await _loadDetail(liveroom.roomId!);
     // Pad response gaps from the room the caller already holds. fillFromDetail
@@ -149,7 +149,7 @@ class IptvSite implements LiveSite, LiveSiteRecordRoomResolver {
         );
       }
     }
-    final finalEpgChannelId = await _resolveEpgChannelId(channel, SettingsService.to.iptv.selectedSourceId.v);
+    final finalEpgChannelId = await _resolveEpgChannelId(channel, IptvSettingsController.to.selectedSourceId.v);
 
     EpgProgramme? nowProg;
     if (finalEpgChannelId != null) {
@@ -162,7 +162,6 @@ class IptvSite implements LiveSite, LiveSiteRecordRoomResolver {
 
   @override
   Future<LiveRoom> getRoomDetailForRecording(LiveRoom liveroom) async {
-    
     if (liveroom.detailIdentity == null) return liveroom;
     // Imported channels already store their playback URL as room data. The
     // database lookup is authoritative and does not use a presentation

@@ -7,6 +7,7 @@ import 'package:pure_live/core/storage/hive_pref_util.dart';
 import 'package:synchronized/synchronized.dart';
 
 class WebDavController extends GetxController {
+  static WebDavController get to => Get.find();
   static const String _currentConfigKey = 'currentWebDavConfig';
   static const String _configsKey = 'webDavConfigs';
 

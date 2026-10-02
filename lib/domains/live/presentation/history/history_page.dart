@@ -28,7 +28,7 @@ class _HistoryPageState extends State<HistoryPage> {
 
   Future<void> _refreshHistory() async {
     bool result = true;
-    final history = SettingsService.to.history;
+    final history = HistoryController.to;
     final list = List<LiveRoom>.from(history.historyRooms.v);
     final concurrency = RefreshConfigController.normalizeMaxConcurrentRefresh(
       SettingsService.to.refreshConfig.maxConcurrentRefresh.v,
@@ -73,12 +73,12 @@ class _HistoryPageState extends State<HistoryPage> {
   void _showHistoryLimitDialog(BuildContext context) {
     showDialog<void>(
       context: context,
-      builder: (_) => _HistoryLimitDialog(controller: SettingsService.to.history),
+      builder: (_) => _HistoryLimitDialog(controller: HistoryController.to),
     );
   }
 
   Future<void> _clearHistory() async {
-    final controller = SettingsService.to.history;
+    final controller = HistoryController.to;
     if (_historyMutationBusy || controller.historyRooms.v.isEmpty || !mounted) return;
     final snapshot = List<LiveRoom>.from(controller.historyRooms.v);
     setState(() => _historyMutationBusy = true);
@@ -100,8 +100,10 @@ class _HistoryPageState extends State<HistoryPage> {
   }
 
   Future<void> _deleteHistoryRoom(LiveRoom liveroom) async {
-    final controller = SettingsService.to.history;
-    if (_historyMutationBusy || !mounted || !controller.historyRooms.v.any((entry) => identical(entry, liveroom))) return;
+    final controller = HistoryController.to;
+    if (_historyMutationBusy || !mounted || !controller.historyRooms.v.any((entry) => identical(entry, liveroom))) {
+      return;
+    }
     final title = _historyRoomLabel(liveroom);
     setState(() => _historyMutationBusy = true);
     try {
@@ -167,7 +169,7 @@ class _HistoryPageState extends State<HistoryPage> {
       appBar: AppBar(
         centerTitle: true,
         title: Obx(() {
-          final controller = SettingsService.to.history;
+          final controller = HistoryController.to;
           return Text(
             '${i18n("history")} '
             '(${controller.historyRooms.v.length}/${_historyLimitLabel(controller.historyLimit.v)})',
@@ -180,7 +182,7 @@ class _HistoryPageState extends State<HistoryPage> {
             onPressed: () => _showHistoryLimitDialog(context),
           ),
           Obx(() {
-            if (SettingsService.to.history.historyRooms.v.isEmpty) return const SizedBox.shrink();
+            if (HistoryController.to.historyRooms.v.isEmpty) return const SizedBox.shrink();
             return IconButton(
               tooltip: i18n("clear_history"),
               icon: const Icon(Icons.delete_forever),
@@ -191,7 +193,7 @@ class _HistoryPageState extends State<HistoryPage> {
       ),
       body: Obx(() {
         const dense = true;
-        final rooms = SettingsService.to.history.historyRooms.v;
+        final rooms = HistoryController.to.historyRooms.v;
         return LayoutBuilder(
           builder: (context, constraint) {
             final width = constraint.maxWidth;

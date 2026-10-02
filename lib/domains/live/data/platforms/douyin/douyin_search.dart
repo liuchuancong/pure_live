@@ -5,6 +5,7 @@ import 'package:pure_live/core/logging/core_log.dart';
 import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/domains/live/data/platforms/douyin/douyin_audience.dart';
 import 'package:pure_live/domains/live/data/platforms/sites.dart';
+import 'package:pure_live/core/config/cookie_settings_controller.dart';
 
 class DouyinSearch {
   static const String host = 'https://live.douyin.com';
@@ -27,7 +28,7 @@ class DouyinSearch {
       return _cookie;
     }
 
-    final configuredCookie = SettingsService.to.cookieManager.douyinCookie.v.trim();
+    final configuredCookie = CookieSettingsController.to.douyinCookie.v.trim();
 
     if (configuredCookie.isNotEmpty) {
       _configuredCookieSnapshot = configuredCookie;

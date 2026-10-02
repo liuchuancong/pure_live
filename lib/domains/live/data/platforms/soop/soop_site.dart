@@ -11,6 +11,7 @@ import 'package:pure_live/domains/live/domain/live_danmaku.dart';
 import 'package:pure_live/core/utils/live_quality_label.dart';
 import 'package:pure_live/domains/live/data/platforms/sites.dart';
 import 'package:pure_live/domains/live/domain/current_live_room.dart';
+import 'package:pure_live/core/config/cookie_settings_controller.dart';
 
 class SoopSite extends LiveSite implements LiveSiteRoomRefresher, LiveSiteRecordRoomResolver {
   @override
@@ -191,7 +192,7 @@ class SoopSite extends LiveSite implements LiveSiteRoomRefresher, LiveSiteRecord
       'Sec-Fetch-Mode': 'cors',
       'Sec-Fetch-Site': 'same-site',
       "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
-      "Cookie": SettingsService.to.cookieManager.soopCookie.value,
+      "Cookie": CookieSettingsController.to.soopCookie.value,
     };
   }
 
@@ -347,7 +348,6 @@ class SoopSite extends LiveSite implements LiveSiteRoomRefresher, LiveSiteRecord
 
   @override
   Future<LiveRoom> getRoomDetail(LiveRoom liveroom) async {
-    
     if (liveroom.detailIdentity == null) return liveroom;
     return _resolveDetail(liveroom.roomId!);
   }
@@ -374,7 +374,6 @@ class SoopSite extends LiveSite implements LiveSiteRoomRefresher, LiveSiteRecord
 
   @override
   Future<LiveRoom> getRoomDetailForRefresh(LiveRoom liveroom) async {
-    
     if (liveroom.detailIdentity == null) return liveroom;
     final data = await getPlayerLiveApiData(roomId: liveroom.roomId!);
     final channel = data['CHANNEL'];
@@ -404,7 +403,6 @@ class SoopSite extends LiveSite implements LiveSiteRoomRefresher, LiveSiteRecord
 
   @override
   Future<LiveRoom> getRoomDetailForRecording(LiveRoom liveroom) async {
-    
     if (liveroom.detailIdentity == null) return liveroom;
     // The player API response contains viewpreset/rmd/cdn/bno, all of which
     // are required later to sign the selected recording URL. Skip websocket

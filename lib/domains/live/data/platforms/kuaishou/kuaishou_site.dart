@@ -16,6 +16,7 @@ import 'package:pure_live/domains/live/domain/live_danmaku.dart';
 import 'package:pure_live/core/utils/live_quality_label.dart';
 import 'package:pure_live/domains/live/data/platforms/sites.dart';
 import 'package:pure_live/domains/live/domain/current_live_room.dart';
+import 'package:pure_live/core/config/cookie_settings_controller.dart';
 
 class KuaishouSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResolver {
   @override
@@ -388,7 +389,6 @@ class KuaishouSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoo
 
   @override
   Future<LiveRoom> getRoomDetail(LiveRoom liveroom) async {
-    
     if (liveroom.detailIdentity == null) return liveroom;
     final fresh = await _resolveDetail(liveroom);
     // Pad response gaps from the room the caller already holds. fillFromDetail
@@ -412,13 +412,17 @@ class KuaishouSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoo
       // The public recommendation feed intentionally includes replay cards.
       // Their room page reports offline but the selected card carries signed
       // replay URLs. Preserve that matching card as an explicit recording.
-      final current = _matchingCurrentRoom(liveroom: LiveRoom(roomId: roomId, platform: platform));
+      final current = _matchingCurrentRoom(
+        liveroom: LiveRoom(roomId: roomId, platform: platform),
+      );
       if (current != null && parsePlayQualities(current.data).isNotEmpty) {
         return current.copyWith(status: true, liveStatus: LiveStatus.live, isRecord: true);
       }
       return loaded;
     } catch (e) {
-      final currentRoom = _matchingCurrentRoom(liveroom: LiveRoom(roomId: roomId, platform: platform));
+      final currentRoom = _matchingCurrentRoom(
+        liveroom: LiveRoom(roomId: roomId, platform: platform),
+      );
       if (currentRoom != null) return currentRoom.getLiveRoomWithError();
       return LiveRoom(roomId: roomId, platform: platform).getLiveRoomWithError();
     }
@@ -435,7 +439,6 @@ class KuaishouSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoo
 
   @override
   Future<LiveRoom> getRoomDetailForRefresh(LiveRoom liveroom) async {
-    
     if (liveroom.detailIdentity == null) return liveroom;
     try {
       // The room page is normally available anonymously. Start with that one
@@ -449,7 +452,6 @@ class KuaishouSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoo
 
   @override
   Future<LiveRoom> getRoomDetailForRecording(LiveRoom liveroom) async {
-    
     if (liveroom.detailIdentity == null) return liveroom;
     final loaded = await _loadRoom(liveroom.roomId!, includePlaybackData: true, ensureSession: true);
     if (loaded.isLiveNow) return loaded;
@@ -521,12 +523,12 @@ class KuaishouSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoo
   }
 
   String get _effectiveCookie {
-    final configuredCookie = SettingsService.to.cookieManager.kuaishouCookie.v.trim();
+    final configuredCookie = CookieSettingsController.to.kuaishouCookie.v.trim();
     return configuredCookie.isNotEmpty ? configuredCookie : cookie;
   }
 
   Future<void> _ensureSession(String url) async {
-    if (SettingsService.to.cookieManager.kuaishouCookie.v.trim().isNotEmpty) return;
+    if (CookieSettingsController.to.kuaishouCookie.v.trim().isNotEmpty) return;
     final updatedAt = _sessionUpdatedAt;
     if (cookie.isNotEmpty && updatedAt != null && DateTime.now().difference(updatedAt) < _sessionLifetime) return;
     final pending = _sessionBootstrap;

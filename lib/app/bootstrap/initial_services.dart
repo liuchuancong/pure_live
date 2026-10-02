@@ -1,10 +1,32 @@
 import 'dart:developer' as developer;
 
 import 'package:pure_live/core/index.dart';
+import 'package:pure_live/core/config/app_settings_controller.dart';
+import 'package:pure_live/core/config/cache_controller.dart';
+import 'package:pure_live/core/config/danmaku_settings_controller.dart';
+import 'package:pure_live/core/config/exit_settings_controller.dart';
+import 'package:pure_live/core/config/font_settings_controller.dart';
+import 'package:pure_live/core/config/log_controller.dart';
+import 'package:pure_live/core/config/page_settings_controller.dart';
+import 'package:pure_live/core/config/player_settings_controller.dart';
+import 'package:pure_live/core/config/proxy_settings_controller.dart';
+import 'package:pure_live/core/config/refresh_config_controller.dart';
+import 'package:pure_live/core/config/room_card_settings_controller.dart';
+import 'package:pure_live/core/config/startup_controller.dart';
+import 'package:pure_live/core/config/theme_settings_controller.dart';
+import 'package:pure_live/core/config/volume_settings_controller.dart';
+import 'package:pure_live/core/config/window_size_controller.dart';
 import 'package:pure_live/domains/iptv/data/local/db_service.dart';
 import 'package:pure_live/core/storage/hive_pref_util.dart';
+import 'package:pure_live/domains/account/data/bilibili_account_service.dart';
 import 'package:pure_live/domains/account/presentation/auth/auth_controller.dart';
-import 'package:pure_live/core/config/iptv_settings_controller.dart';
+import 'package:pure_live/core/config/cookie_settings_controller.dart';
+import 'package:pure_live/domains/live/data/favorite_room_controller.dart';
+import 'package:pure_live/domains/live/data/history_controller.dart';
+import 'package:pure_live/domains/live/presentation/tags/tag_management_controller.dart';
+import 'package:pure_live/domains/iptv/data/iptv_settings_controller.dart';
+import 'package:pure_live/features/backup/backup_controller.dart';
+import 'package:pure_live/features/web_dav/web_dav_settings_controller.dart';
 import 'package:pure_live/domains/recorder/data/services/cache_service.dart';
 import 'package:pure_live/domains/recorder/data/consts/recorder_config.dart';
 import 'package:pure_live/domains/recorder/data/consts/recorder_keys.dart';
@@ -20,15 +42,52 @@ import 'package:pure_live/domains/live/presentation/areas/areas_controller.dart'
 
 class InitialServices {
   static void initGlobalServices() {
+    // 全局/域长生命周期 Provider 都由 App 装配层注册。Core 的设置门面
+    // SettingsService 只做类型化访问，不再自己 lazyPut 依赖，因此 Core 不会
+    // 反向依赖 Domains/Features。
     Get.put(SettingsService(), permanent: true);
-    // Register IPTV only after SettingsService has finished its own onInit.
-    // Creating this controller from inside SettingsService.onInit can re-enter
-    // the dependency container during a cold Hive migration and stall the
-    // first frame. A direct, post-registration owner also avoids the old
+    _registerCoreSettings();
+    _registerDomainSettings();
+    // Register IPTV outside the settings registration above. Creating this
+    // controller from inside another controller's onInit can re-enter the
+    // dependency container during a cold Hive migration and stall the first
+    // frame. A direct, post-registration owner also avoids the old
     // lazy-then-permanent collision in GetX.
     Get.put(IptvSettingsController(), permanent: true);
     Get.put(LocalInteractionController(), permanent: true);
     Get.put(RouteObserverController(), permanent: true);
+  }
+
+  /// 平台级偏好：归属 Core，经 SettingsService 门面访问。
+  static void _registerCoreSettings() {
+    Get.lazyPut(() => StartupController(), fenix: true);
+    Get.lazyPut(() => AppSettingsController(), fenix: true);
+    Get.lazyPut(() => ThemeSettingsController(), fenix: true);
+    Get.lazyPut(() => RoomCardSettingsController(), fenix: true);
+    Get.lazyPut(() => WindowSizeController(), fenix: true);
+    Get.lazyPut(() => ProxySettingsController(), fenix: true);
+    Get.lazyPut(() => PlayerSettingsController(), fenix: true);
+    Get.lazyPut(() => DanmakuSettingsController(), fenix: true);
+    Get.lazyPut(() => VolumeSettingsController(), fenix: true);
+    Get.lazyPut(() => RefreshConfigController(), fenix: true);
+    Get.lazyPut(() => CacheController(), fenix: true);
+    Get.lazyPut(() => PageSettingsController(), fenix: true);
+    Get.lazyPut(() => FontSettingsController(), fenix: true);
+    Get.lazyPut(() => LogController(), fenix: true);
+    // 跨平台共享的 Cookie 凭据存储：所有站点适配器与播放头解析都读它，
+    // 因此是 Core 基础设施，而不是 account 业务域私有状态。
+    Get.lazyPut(() => CookieSettingsController(), fenix: true);
+    Get.put(ExitSettingsController(), permanent: true);
+  }
+
+  /// 业务域与轻量页面的设置 Provider：由所属层提供 `XxxController.to`。
+  static void _registerDomainSettings() {
+    Get.lazyPut(() => HistoryController(), fenix: true);
+    Get.lazyPut(() => FavoriteRoomController(), fenix: true);
+    Get.lazyPut(() => WebDavController(), fenix: true);
+    Get.lazyPut(() => BackupController(), fenix: true);
+    Get.lazyPut(() => TagManagementController(), fenix: true);
+    Get.lazyPut(() => BiliBiliAccountService(), fenix: true);
   }
 
   static void initLazyControllers() {
@@ -58,7 +117,6 @@ class InitialServices {
     Get.put<DbService>(db, permanent: true);
     // 长生命周期 Provider 在 App 装配层注册：Core 不认识具体业务域。
     Get.lazyPut(() => BackgroundController(), fenix: true);
-
   }
 
   static Future<void> init() async {

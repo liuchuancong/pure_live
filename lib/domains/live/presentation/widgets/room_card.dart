@@ -10,6 +10,7 @@ import 'package:pure_live/domains/live/presentation/tags/tag_management_controll
 import 'package:pure_live/core/utils/event_bus.dart';
 import 'package:pure_live/core/config/room_card_settings_controller.dart';
 import 'package:pure_live/domains/live/data/platforms/sites.dart';
+import 'package:pure_live/domains/live/data/favorite_room_controller.dart';
 
 double _roomTagTextScale(BuildContext context) {
   final style = AppTextStyles.t13;
@@ -177,7 +178,7 @@ class RoomCard extends StatelessWidget {
   void onLongPress(BuildContext context) {
     final TagManagementController tagController = Get.find<TagManagementController>();
     final theme = Theme.of(context);
-    final bool isFollowed = SettingsService.to.fav.isFavorite(room);
+    final bool isFollowed = FavoriteRoomController.to.isFavorite(room);
 
     unawaited(
       showDialog<void>(
@@ -240,7 +241,7 @@ class RoomCard extends StatelessWidget {
                       anchorName: room.nick ?? '',
                       onConfirm: () async {
                         try {
-                          final favorites = SettingsService.to.fav;
+                          final favorites = FavoriteRoomController.to;
                           final changed = await favorites.addRoomDurably(room);
                           if (changed) EventBus.instance.emit('changeFavorite', true);
                           if (context.mounted && favorites.isFavorite(room)) {
@@ -1245,7 +1246,7 @@ class _FollowButtonState extends State<FollowButton> {
     if (_busy) return;
     setState(() => _busy = true);
 
-    final favorites = SettingsService.to.fav;
+    final favorites = FavoriteRoomController.to;
     try {
       if (!isFavorite) {
         final changed = await favorites.addRoomDurably(widget.room);
@@ -1291,7 +1292,7 @@ class _FollowButtonState extends State<FollowButton> {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final favoriteRooms = SettingsService.to.fav.favoriteRooms.value;
+      final favoriteRooms = FavoriteRoomController.to.favoriteRooms.value;
       final isFavorite = favoriteRooms.any((candidate) => candidate.hasSameIdentity(widget.room));
 
       return FilledButton.tonal(

@@ -1,5 +1,6 @@
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/core/config/cookie_sanitizer.dart';
+import 'package:pure_live/core/network/cookie_sanitizer.dart';
+import 'package:pure_live/core/config/cookie_settings_controller.dart';
 
 class HuyaCookieController extends GetxController {
   final TextEditingController cookieController = TextEditingController();
@@ -7,13 +8,13 @@ class HuyaCookieController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    cookieController.text = SettingsService.to.cookieManager.huyaCookie.v;
+    cookieController.text = CookieSettingsController.to.huyaCookie.v;
   }
 
   void setCookie(String cookie) {
     final normalized = normalizeAccountCookie(cookie);
     cookieController.text = normalized;
-    SettingsService.to.cookieManager.huyaCookie.v = normalized;
+    CookieSettingsController.to.huyaCookie.v = normalized;
   }
 
   @override

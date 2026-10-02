@@ -8,6 +8,7 @@ import 'package:pure_live/domains/iptv/data/services/epg_sync_engine.dart';
 import 'package:pure_live/domains/iptv/data/services/iptv_sync_engine.dart';
 import 'package:pure_live/domains/iptv/data/services/epg_import_manager.dart';
 import 'package:pure_live/domains/iptv/data/services/iptv_import_manager.dart';
+import 'package:pure_live/domains/iptv/data/iptv_settings_controller.dart';
 
 class AutoSyncScheduler {
   static final AutoSyncScheduler instance = AutoSyncScheduler._internal();
@@ -17,10 +18,10 @@ class AutoSyncScheduler {
   final IptvResourceLoadGate _defaultEpgResourcesGate = IptvResourceLoadGate();
 
   Future<void> checkAndExecuteAutoSync() async {
-    if (!SettingsService.to.iptv.isAutoSyncEnabled.v) return;
+    if (!IptvSettingsController.to.isAutoSyncEnabled.v) return;
 
     final db = Get.find<DbService>().db;
-    final int hoursInterval = SettingsService.to.iptv.normalizeCurrentAutoSyncHours();
+    final int hoursInterval = IptvSettingsController.to.normalizeCurrentAutoSyncHours();
     final Duration checkInterval = Duration(hours: hoursInterval);
 
     try {
@@ -60,13 +61,13 @@ class AutoSyncScheduler {
       forceUpdate: true,
       showTips: false,
     );
-    if (SettingsService.to.iptv.selectedSourceId.v.isEmpty) {
+    if (IptvSettingsController.to.selectedSourceId.v.isEmpty) {
       final db = Get.find<DbService>().db;
       List<EpgSource> epgSources = await db.getAllEpgSources();
-      if (epgSources.isNotEmpty && SettingsService.to.iptv.selectedSourceId.v.isEmpty) {
+      if (epgSources.isNotEmpty && IptvSettingsController.to.selectedSourceId.v.isEmpty) {
         final activeSource = epgSources.first;
-        SettingsService.to.iptv.selectedSourceId.v = activeSource.id;
-        SettingsService.to.iptv.selectedSourceName.v = activeSource.name;
+        IptvSettingsController.to.selectedSourceId.v = activeSource.id;
+        IptvSettingsController.to.selectedSourceName.v = activeSource.name;
       }
     }
   }

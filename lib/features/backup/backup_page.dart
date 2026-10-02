@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/core/index.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -9,7 +10,7 @@ import 'package:pure_live/features/backup/scan_page.dart';
 import 'package:pure_live/domains/account/presentation/auth/auth_controller.dart';
 import 'package:pure_live/features/backup/backup_recovery_service.dart';
 import 'package:pure_live/core/config/log_controller.dart';
-
+import 'package:pure_live/features/backup/backup_controller.dart';
 
 class BackupPage extends StatefulWidget {
   const BackupPage({super.key});
@@ -22,7 +23,7 @@ enum _BackupAction { create, createFavorites, restore, restoreFavorites, directo
 
 class _BackupPageState extends State<BackupPage> {
   final LogController logController = LogController.to;
-  String get backupDirectory => SettingsService.to.backup.backupDirectory.v;
+  String get backupDirectory => BackupController.to.backupDirectory.v;
   _BackupAction? _backupAction;
 
   Future<void> _runBackupAction(

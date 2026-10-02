@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/utils/event_bus.dart';
+import 'package:pure_live/domains/live/data/favorite_room_controller.dart';
 
 class FavoriteFloatingButton extends StatefulWidget {
   const FavoriteFloatingButton({super.key, required this.room, this.compact = false});
@@ -23,7 +24,7 @@ class _FavoriteFloatingButtonState extends State<FavoriteFloatingButton> {
     setState(() => _pending = true);
     try {
       if (!isFavorite) {
-        if (await SettingsService.to.fav.addRoomDurably(targetRoom)) {
+        if (await FavoriteRoomController.to.addRoomDurably(targetRoom)) {
           EventBus.instance.emit('changeFavorite', true);
         }
         return;
@@ -39,7 +40,7 @@ class _FavoriteFloatingButtonState extends State<FavoriteFloatingButton> {
           ],
         ),
       );
-      if (confirmed == true && await SettingsService.to.fav.removeRoomDurably(targetRoom)) {
+      if (confirmed == true && await FavoriteRoomController.to.removeRoomDurably(targetRoom)) {
         EventBus.instance.emit('changeFavorite', true);
       }
     } catch (error) {
@@ -55,7 +56,7 @@ class _FavoriteFloatingButtonState extends State<FavoriteFloatingButton> {
     return Obx(() {
       // Explicitly observe the persisted list. The former EventBus + local
       // setState path missed canonical room-id changes and external updates.
-      final favoriteRooms = SettingsService.to.fav.favoriteRooms.value;
+      final favoriteRooms = FavoriteRoomController.to.favoriteRooms.value;
       final isFavorite = favoriteRooms.any((candidate) => candidate.hasSameIdentity(widget.room));
       final label = i18n(isFavorite ? 'followed' : 'follow');
 

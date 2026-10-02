@@ -29,6 +29,8 @@ import 'package:pure_live/domains/live/presentation/playback/widgets/local_inter
 import 'package:pure_live/domains/live/presentation/playback/widgets/local_interaction/local_message_delivery_queue.dart';
 import 'package:pure_live/domains/live/data/platforms/sites.dart';
 import 'package:pure_live/domains/live/domain/global_player_service.dart';
+import 'package:pure_live/domains/live/data/favorite_room_controller.dart';
+import 'package:pure_live/domains/live/data/history_controller.dart';
 
 // live_play_controller.dart
 
@@ -784,7 +786,7 @@ class LivePlayController extends GetxController
 
   Future<void> _updateFavoriteRoomSnapshot(LiveRoom liveroom) async {
     try {
-      if (await SettingsService.to.fav.updateRoomDurably(liveroom)) {
+      if (await FavoriteRoomController.to.updateRoomDurably(liveroom)) {
         EventBus.instance.emit('refresh_room_changed', true);
       }
     } catch (error, stackTrace) {
@@ -799,7 +801,7 @@ class LivePlayController extends GetxController
 
   Future<void> _addRoomToHistory(LiveRoom liveroom) async {
     try {
-      await SettingsService.to.history.addRoomToHistoryDurably(liveroom);
+      await HistoryController.to.addRoomToHistoryDurably(liveroom);
     } catch (error, stackTrace) {
       developer.log('Persist room history failed', name: 'LivePlayController', error: error, stackTrace: stackTrace);
     }

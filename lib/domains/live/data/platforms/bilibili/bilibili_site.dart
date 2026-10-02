@@ -14,6 +14,7 @@ import 'package:pure_live/domains/live/data/platforms/bilibili/bilibili_danmaku.
 import 'package:pure_live/core/utils/live_quality_label.dart';
 import 'package:pure_live/domains/live/data/platforms/sites.dart';
 import 'package:pure_live/domains/live/domain/current_live_room.dart';
+import 'package:pure_live/core/config/cookie_settings_controller.dart';
 
 class BiliBiliSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResolver, LivePlayUrlResolver {
   @override
@@ -21,8 +22,8 @@ class BiliBiliSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoo
 
   @override
   String name = "哔哩哔哩直播";
-  String get cookie => SettingsService.to.cookieManager.bilibiliCookie.v;
-  int get userId => SettingsService.to.cookieManager.bilibiliUid.v;
+  String get cookie => CookieSettingsController.to.bilibiliCookie.v;
+  int get userId => CookieSettingsController.to.bilibiliUid.v;
   @override
   LiveDanmaku getDanmaku() => BiliBiliDanmaku();
 
@@ -141,7 +142,10 @@ class BiliBiliSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoo
   }
 
   @override
-  Future<LivePlayUrlResolution> resolvePlayUrlsRaw({required LiveRoom liveroom, required LivePlayQuality quality}) async {
+  Future<LivePlayUrlResolution> resolvePlayUrlsRaw({
+    required LiveRoom liveroom,
+    required LivePlayQuality quality,
+  }) async {
     try {
       final result = await _requestPlayInfo(liveroom: liveroom, qualityData: quality.data);
 
@@ -631,7 +635,6 @@ class BiliBiliSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoo
 
   @override
   Future<LiveRoom> getRoomDetail(LiveRoom liveroom) async {
-    
     if (liveroom.detailIdentity == null) return liveroom;
     final fresh = await _resolveDetail(liveroom);
     // Pad whatever the profile endpoint left empty (avatar/cover/nick drift
@@ -699,7 +702,6 @@ class BiliBiliSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoo
 
   @override
   Future<LiveRoom> getRoomDetailForRefresh(LiveRoom liveroom) async {
-    
     if (liveroom.detailIdentity == null) return liveroom;
     final roomInfo = await getRoomInfo(roomId: liveroom.roomId!);
     // Card verification deliberately skips getDanmuInfo. Chat credentials are

@@ -2,6 +2,8 @@ import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/widgets/common_avatar.dart';
 import 'package:pure_live/domains/live/data/platforms/sites.dart';
+import 'package:pure_live/domains/live/data/favorite_room_controller.dart';
+import 'package:pure_live/domains/live/data/history_controller.dart';
 
 /// 选台数据来源。
 enum _PickerSource { favorites, history }
@@ -48,8 +50,8 @@ class _MultiviewRoomPickerState extends State<MultiviewRoomPicker> {
 
   List<LiveRoom> _roomsFor(_PickerSource source) {
     final raw = switch (source) {
-      _PickerSource.favorites => SettingsService.to.fav.favoriteRooms.v,
-      _PickerSource.history => SettingsService.to.history.historyRooms.v,
+      _PickerSource.favorites => FavoriteRoomController.to.favoriteRooms.v,
+      _PickerSource.history => HistoryController.to.historyRooms.v,
     };
 
     final query = _query.trim().toLowerCase();

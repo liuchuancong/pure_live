@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/domains/account/data/bilibili_account_service.dart';
-import 'package:pure_live/core/config/cookie_sanitizer.dart';
+import 'package:pure_live/core/network/cookie_sanitizer.dart';
 
 const String bilibiliWebLoginUrl = 'https://passport.bilibili.com/login';
 

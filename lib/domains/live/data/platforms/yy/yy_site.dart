@@ -12,6 +12,7 @@ import 'package:pure_live/domains/live/domain/live_danmaku.dart';
 import 'package:pure_live/core/utils/live_quality_label.dart';
 import 'package:pure_live/domains/live/data/platforms/sites.dart';
 import 'package:pure_live/domains/live/domain/current_live_room.dart';
+import 'package:pure_live/core/config/cookie_settings_controller.dart';
 
 class YYSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResolver {
   static const String _streamSdkVersion = '5.23.0-beta.2';
@@ -32,7 +33,7 @@ class YYSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResol
   /// ============================================================
 
   Map<String, String> getHeaders() {
-    final cookie = SettingsService.to.cookieManager.yyCookie.v.trim();
+    final cookie = CookieSettingsController.to.yyCookie.v.trim();
     return {
       'Accept': '*/*',
       'Origin': 'https://www.yy.com',
@@ -632,7 +633,6 @@ class YYSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResol
 
   @override
   Future<LiveRoom> getRoomDetail(LiveRoom liveroom) async {
-    
     if (liveroom.detailIdentity == null) return liveroom;
     final fresh = await _resolveDetail(liveroom);
     // Pad response gaps from the room the caller already holds. fillFromDetail
@@ -650,7 +650,9 @@ class YYSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResol
     final roomId = liveroom.roomId ?? '';
     final platform = liveroom.platform ?? '';
     try {
-      return await _fetchRoomDetail(liveroom: LiveRoom(roomId: roomId, platform: platform));
+      return await _fetchRoomDetail(
+        liveroom: LiveRoom(roomId: roomId, platform: platform),
+      );
     } catch (e) {
       CoreLog.error(e);
       final currentRoom = CurrentLiveRoom.value;
@@ -667,14 +669,12 @@ class YYSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResol
 
   @override
   Future<LiveRoom> getRoomDetailForRefresh(LiveRoom liveroom) async {
-    
     if (liveroom.detailIdentity == null) return liveroom;
     return _fetchRoomDetail(liveroom: liveroom);
   }
 
   @override
   Future<LiveRoom> getRoomDetailForRecording(LiveRoom liveroom) async {
-    
     if (liveroom.detailIdentity == null) return liveroom;
     return _fetchRoomDetail(liveroom: liveroom);
   }

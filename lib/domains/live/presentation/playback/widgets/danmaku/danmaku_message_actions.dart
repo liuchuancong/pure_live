@@ -33,7 +33,7 @@ class DanmakuMessageActions {
                   title: Text(i18n('block_danmaku_user')),
                   subtitle: Text(message.userName, maxLines: 1, overflow: TextOverflow.ellipsis),
                   onTap: () {
-                    SettingsService.to.fav.addBlockedDanmakuUser(message.userName);
+                    FavoriteRoomController.to.addBlockedDanmakuUser(message.userName);
                     if (!controller.isClosed) {
                       controller.removeDanmakuWhere(
                         (item) => item.userName.trim().toLowerCase() == message.userName.trim().toLowerCase(),
@@ -71,7 +71,7 @@ class DanmakuMessageActions {
       builder: (_) => _DanmakuKeywordDialog(initialText: message),
     );
     if (keyword == null || keyword.isEmpty) return;
-    SettingsService.to.fav.addShieldList(keyword);
+    FavoriteRoomController.to.addShieldList(keyword);
     if (!controller.isClosed) {
       controller.removeDanmakuWhere((item) => item.message.toLowerCase().contains(keyword.toLowerCase()));
     }

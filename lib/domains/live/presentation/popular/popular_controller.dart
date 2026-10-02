@@ -5,6 +5,7 @@ import 'package:pure_live/domains/live/presentation/popular/popular_grid_control
 import 'package:pure_live/core/pagination/live_directory_controller.dart';
 import 'package:pure_live/domains/live/domain/live_directory.dart';
 import 'package:pure_live/domains/live/data/platforms/sites.dart';
+import 'package:pure_live/domains/live/data/favorite_room_controller.dart';
 
 class PopularController extends GetxController with GetTickerProviderStateMixin {
   late TabController tabController;
@@ -26,7 +27,7 @@ class PopularController extends GetxController with GetTickerProviderStateMixin 
 
     _initTabController(isFirstLoad: true);
 
-    _hotAreasWorker = debounce(SettingsService.to.fav.hotAreasList, (_) {
+    _hotAreasWorker = debounce(FavoriteRoomController.to.hotAreasList, (_) {
       if (_isClosing) return;
       _initTabController(isFirstLoad: false);
     }, time: const Duration(milliseconds: 150));
@@ -165,7 +166,7 @@ class PopularController extends GetxController with GetTickerProviderStateMixin 
         : null;
 
     if (isFirstLoad) {
-      final preferPlatform = SettingsService.to.fav.preferPlatform.v;
+      final preferPlatform = FavoriteRoomController.to.preferPlatform.v;
       final pIndex = newSites.indexWhere((e) => e.id == preferPlatform);
       index = pIndex == -1 ? 0 : pIndex;
     } else if (oldSiteId != null) {

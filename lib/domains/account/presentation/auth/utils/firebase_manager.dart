@@ -10,7 +10,7 @@ import 'package:win32_registry/win32_registry.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:pure_live/domains/account/presentation/auth/auth_controller.dart';
-import 'package:pure_live/core/config/backup_controller.dart';
+import 'package:pure_live/features/backup/backup_controller.dart';
 import 'package:pure_live/domains/live/presentation/favorite/favorite_controller.dart';
 
 class _FirebaseAuthSessionChanged implements Exception {

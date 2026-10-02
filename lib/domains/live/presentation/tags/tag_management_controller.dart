@@ -6,6 +6,7 @@ import 'package:synchronized/synchronized.dart';
 enum TagNameValidation { valid, empty, duplicate }
 
 class TagManagementController extends GetxController {
+  static TagManagementController get to => Get.find();
   static const String _storageKey = 'user_custom_tags_v5';
   static const String _roomTagsMappingKey = 'room_to_tags_mapping_v1';
   final RxMap<String, List<String>> roomTagsMap = <String, List<String>>{}.obs;

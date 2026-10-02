@@ -7,6 +7,7 @@ import 'package:synchronized/synchronized.dart';
 import 'package:pure_live/domains/live/data/platforms/sites.dart';
 
 class FavoriteRoomController extends GetxController {
+  static FavoriteRoomController get to => Get.find();
   static const int maxShieldKeywordLength = 40;
   static const String _favoriteRoomsStorageKey = 'favoriteRooms';
   static const String _favoriteAreasStorageKey = 'favoriteAreas';

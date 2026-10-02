@@ -1,9 +1,10 @@
 import 'dart:io';
 import 'dart:async';
+
 import 'package:pure_live/core/index.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb;
 import 'package:pure_live/domains/account/presentation/auth/utils/firebase_manager.dart';
-
+import 'package:pure_live/domains/live/data/favorite_room_controller.dart';
 
 class FirebaseAuthControllerBackend {
   const FirebaseAuthControllerBackend();
@@ -33,7 +34,7 @@ class FirebaseAuthControllerBackend {
     final manager = FirebaseManager.getInstance();
     final canDownload = await manager.loadUploadConfig(expectedUserId: userId, rethrowFailures: true);
     if (!canDownload) return;
-    final wantLoad = SettingsService.to.fav.favoriteRooms.v.isEmpty;
+    final wantLoad = FavoriteRoomController.to.favoriteRooms.v.isEmpty;
     if (wantLoad) {
       await manager.downloadConfig(
         expectedUserId: userId,

@@ -3,7 +3,7 @@ import 'package:pure_live/core/index.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:pure_live/core/platform/platform_utils.dart';
 import 'package:pure_live/core/widgets/qr_code_widget.dart';
-import 'package:pure_live/core/config/backup_controller.dart';
+import 'package:pure_live/features/backup/backup_controller.dart';
 import 'package:pure_live/features/remote_receiver/remote_sync_device.dart';
 import 'package:pure_live/features/remote_receiver/remote_sync_service.dart';
 import 'package:pure_live/features/remote_receiver/remote_sync_protocol.dart';

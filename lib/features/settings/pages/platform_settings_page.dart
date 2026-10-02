@@ -1,6 +1,7 @@
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/domains/live/data/platforms/sites.dart';
+import 'package:pure_live/domains/live/data/favorite_room_controller.dart';
 
 class PlatformSettingsPage extends GetView<SettingsService> {
   const PlatformSettingsPage({super.key});
@@ -35,7 +36,7 @@ class PlatformSettingsPage extends GetView<SettingsService> {
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     Text(
-                      _platformLabel(SettingsService.to.fav.preferPlatform.value),
+                      _platformLabel(FavoriteRoomController.to.preferPlatform.value),
                       style: AppTextStyles.t14.copyWith(color: Theme.of(context).hintColor.withValues(alpha: 0.75)),
                     ),
                     Icon(
@@ -97,7 +98,7 @@ class _PreferPlatformSelectorDialogState extends State<_PreferPlatformSelectorDi
   List<Site> _visibleSites() {
     final seen = <String>{};
     final result = <Site>[];
-    for (final rawId in SettingsService.to.fav.hotAreasList) {
+    for (final rawId in FavoriteRoomController.to.hotAreasList) {
       final id = rawId.trim().toLowerCase();
       if (!seen.add(id) || !Sites.isSupported(id)) continue;
       // Searching must not reconstruct every adapter on each keystroke.
@@ -146,10 +147,10 @@ class _PreferPlatformSelectorDialogState extends State<_PreferPlatformSelectorDi
                 );
               }
               return RadioGroup<String>(
-                groupValue: SettingsService.to.fav.preferPlatform.value,
+                groupValue: FavoriteRoomController.to.preferPlatform.value,
                 onChanged: (value) {
                   if (value == null) return;
-                  SettingsService.to.fav.changePreferPlatform(value);
+                  FavoriteRoomController.to.changePreferPlatform(value);
                   Navigator.of(context).pop();
                 },
                 child: Column(

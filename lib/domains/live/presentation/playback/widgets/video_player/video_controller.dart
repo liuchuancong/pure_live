@@ -27,6 +27,7 @@ import 'package:screen_brightness_platform_interface/screen_brightness_platform_
 import 'package:pure_live/domains/live/presentation/playback/widgets/layout/portrait_fullscreen_interaction.dart';
 import 'package:pure_live/domains/live/domain/global_player_service.dart';
 import 'package:pure_live/domains/live/data/platforms/sites.dart';
+import 'package:pure_live/domains/iptv/data/iptv_settings_controller.dart';
 
 typedef AudioOnlyCallback = Future<void> Function(bool value);
 
@@ -284,7 +285,6 @@ class DanmakuManager {
   }
 
   int get heldDanmakuCount => controller.pausedCount + pipController.pausedCount;
-  
 
   void dispose() {
     _persistVisualSettings();
@@ -1055,7 +1055,6 @@ class VideoController with ChangeNotifier implements DanmakuSettingsSource {
 
   bool _danmakuHeld = false;
 
-
   void clearPipDanmaku() => pipDanmakuController.clear();
 
   void clearDanmaku() {
@@ -1070,7 +1069,7 @@ class VideoController with ChangeNotifier implements DanmakuSettingsSource {
     final loadEpoch = ++_epgLoadEpoch;
     if (_isDisposed) return;
     final normalizedEpgId = epgId?.trim() ?? '';
-    final sourceId = _settingsService.iptv.selectedSourceId.v.trim();
+    final sourceId = IptvSettingsController.to.selectedSourceId.v.trim();
     scheduleLoadFailed.value = false;
     if (normalizedEpgId.isEmpty || sourceId.isEmpty) {
       scheduleLoading.value = false;
@@ -1112,7 +1111,9 @@ class VideoController with ChangeNotifier implements DanmakuSettingsSource {
   }
 
   bool _isEpgLoadCurrent(int loadEpoch, String sourceId) {
-    return !_isDisposed && loadEpoch == _epgLoadEpoch && _settingsService.iptv.selectedSourceId.v.trim() == sourceId;
+    return !_isDisposed &&
+        loadEpoch == _epgLoadEpoch &&
+        IptvSettingsController.to.selectedSourceId.v.trim() == sourceId;
   }
 
   Future<List<database.EpgProgramme>> _fetchEpgProgrammes({

@@ -1,12 +1,13 @@
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/domains/live/data/platforms/sites.dart';
+import 'package:pure_live/domains/live/data/favorite_room_controller.dart';
 
 class HotAreasController extends GetxController {
   final sites = <Site>[].obs;
 
   @override
   void onInit() {
-    final savedIds = SettingsService.to.fav.hotAreasList.v;
+    final savedIds = FavoriteRoomController.to.hotAreasList.v;
     final supported = Sites.supportSites;
 
     List<String> orderIds = List.from(savedIds);
@@ -28,11 +29,11 @@ class HotAreasController extends GetxController {
   Color get themeColor => SettingsService.to.theme.themeColor;
 
   bool isSiteVisible(String id) {
-    return SettingsService.to.fav.hotAreasList.v.contains(id);
+    return FavoriteRoomController.to.hotAreasList.v.contains(id);
   }
 
   void onChanged(String id, bool value) {
-    List<String> currentList = List.from(SettingsService.to.fav.hotAreasList.v);
+    List<String> currentList = List.from(FavoriteRoomController.to.hotAreasList.v);
     if (value) {
       if (!currentList.contains(id)) {
         currentList.add(id);
@@ -46,9 +47,9 @@ class HotAreasController extends GetxController {
       currentList.remove(id);
     }
 
-    final currentPreference = SettingsService.to.fav.preferPlatform.v;
+    final currentPreference = FavoriteRoomController.to.preferPlatform.v;
     if (currentList.isNotEmpty && !currentList.contains(currentPreference)) {
-      SettingsService.to.fav.preferPlatform.v = currentList.first;
+      FavoriteRoomController.to.preferPlatform.v = currentList.first;
     }
 
     List<Site> sortedSites = [];
@@ -64,12 +65,12 @@ class HotAreasController extends GetxController {
     }
 
     sites.assignAll(sortedSites);
-    SettingsService.to.fav.hotAreasList.v = currentList;
+    FavoriteRoomController.to.hotAreasList.v = currentList;
   }
 
   void onReorder(int oldIndex, int newIndex) {
     if (oldIndex < 0 || oldIndex >= sites.length) return;
-    final currentSavedIds = List<String>.from(SettingsService.to.fav.hotAreasList.v);
+    final currentSavedIds = List<String>.from(FavoriteRoomController.to.hotAreasList.v);
     if (currentSavedIds.length <= 1 || !currentSavedIds.contains(sites[oldIndex].id)) return;
     if (newIndex < 0) return;
     if (newIndex > oldIndex) {
@@ -83,6 +84,6 @@ class HotAreasController extends GetxController {
     final hiddenSites = sites.where((site) => !visibleIds.contains(site.id)).toList(growable: false);
     sites.assignAll([...visibleSites, ...hiddenSites]);
     final newOrderSavedIds = visibleSites.map((site) => site.id).toList(growable: false);
-    SettingsService.to.fav.hotAreasList.v = newOrderSavedIds;
+    FavoriteRoomController.to.hotAreasList.v = newOrderSavedIds;
   }
 }

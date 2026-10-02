@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'package:path/path.dart' as p;
 import 'package:pure_live/get/get.dart';
 import 'package:pure_live/core/models/live_room.dart';
-import 'package:pure_live/core/config/backup_controller.dart';
+import 'package:pure_live/features/backup/backup_controller.dart';
 
 /// and window state are never shared concurrently. An optional compact room
 /// payload lets the new process open the selected live room immediately.

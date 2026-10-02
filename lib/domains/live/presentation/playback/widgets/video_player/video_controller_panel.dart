@@ -29,6 +29,7 @@ import 'package:pure_live/domains/live/presentation/playback/widgets/layout/bott
 import 'package:pure_live/domains/live/presentation/playback/widgets/layout/control_hover_region.dart';
 import 'package:pure_live/domains/live/domain/global_player_service.dart';
 import 'package:pure_live/domains/live/data/platforms/sites.dart';
+import 'package:pure_live/domains/live/data/favorite_room_controller.dart';
 
 @visibleForTesting
 enum TopActionLeadingSlot { back, datetime, battery }
@@ -2047,8 +2048,8 @@ class _FavoriteButtonState extends State<FavoriteButton> {
     controller.enableController();
     try {
       final changed = isFavorite
-          ? await SettingsService.to.fav.removeRoomDurably(controller.room)
-          : await SettingsService.to.fav.addRoomDurably(controller.room);
+          ? await FavoriteRoomController.to.removeRoomDurably(controller.room)
+          : await FavoriteRoomController.to.addRoomDurably(controller.room);
       if (changed) EventBus.instance.emit('changeFavorite', true);
     } catch (error) {
       debugPrint('Favorite room change failed: $error');
@@ -2062,7 +2063,7 @@ class _FavoriteButtonState extends State<FavoriteButton> {
   Widget build(BuildContext context) {
     return Obx(() {
       final room = widget.controller.room;
-      final favoriteRooms = SettingsService.to.fav.favoriteRooms.value;
+      final favoriteRooms = FavoriteRoomController.to.favoriteRooms.value;
       final isFavorite = favoriteRooms.any((candidate) => candidate.hasSameIdentity(room));
       final actionLabel = i18n(isFavorite ? 'unfollow' : 'follow');
       return Semantics(

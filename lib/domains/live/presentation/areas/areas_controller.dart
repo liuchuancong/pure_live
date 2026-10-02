@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/domains/live/presentation/areas/areas_list_controller.dart';
 import 'package:pure_live/domains/live/data/platforms/sites.dart';
+import 'package:pure_live/domains/live/data/favorite_room_controller.dart';
 
 class AreasController extends GetxController with GetTickerProviderStateMixin {
   late TabController tabController;
@@ -22,7 +23,7 @@ class AreasController extends GetxController with GetTickerProviderStateMixin {
 
     _initTabController(isFirstLoad: true);
 
-    _hotAreasWorker = ever(SettingsService.to.fav.hotAreasList, (_) => _refreshTabs());
+    _hotAreasWorker = ever(FavoriteRoomController.to.hotAreasList, (_) => _refreshTabs());
   }
 
   @override
@@ -91,7 +92,7 @@ class AreasController extends GetxController with GetTickerProviderStateMixin {
     }
 
     if (isFirstLoad) {
-      final preferPlatform = SettingsService.to.fav.preferPlatform.v;
+      final preferPlatform = FavoriteRoomController.to.preferPlatform.v;
 
       final pIndex = sites.indexWhere((e) => e.id == preferPlatform);
 

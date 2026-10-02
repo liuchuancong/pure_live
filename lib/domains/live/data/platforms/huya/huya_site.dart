@@ -25,6 +25,7 @@ import 'package:pure_live/domains/live/data/platforms/huya/huya_utils.dart' as h
 import 'package:pure_live/core/utils/live_quality_label.dart';
 import 'package:pure_live/domains/live/data/platforms/sites.dart';
 import 'package:pure_live/domains/live/domain/current_live_room.dart';
+import 'package:pure_live/core/config/cookie_settings_controller.dart';
 
 class HuyaSite
     implements
@@ -205,7 +206,7 @@ class HuyaSite
         "gameId": category.areaId,
         "page": page,
       },
-      header: {"user-agent": kUserAgent, "Cookie": SettingsService.to.cookieManager.huyaCookie.v},
+      header: {"user-agent": kUserAgent, "Cookie": CookieSettingsController.to.huyaCookie.v},
     );
     var result = json.decode(resultText);
     var items = <LiveRoom>[];
@@ -524,7 +525,7 @@ class HuyaSite
         queryParameters: {"m": "LiveList", "do": "getLiveListByPage", "tagAll": 0, "page": page},
         header: {
           "user-agent": kUserAgent,
-          "Cookie": SettingsService.to.cookieManager.huyaCookie.v,
+          "Cookie": CookieSettingsController.to.huyaCookie.v,
           "Origin": "https://www.huya.com",
           "Referer": "https://www.huya.com/",
         },
@@ -565,7 +566,6 @@ class HuyaSite
 
   @override
   Future<LiveRoom> getRoomDetail(LiveRoom liveroom) async {
-    
     if (liveroom.detailIdentity == null) return liveroom;
     final fresh = await _loadRoomDetail(liveroom: liveroom, allowUiFallback: true);
     // Pad whatever the profile endpoint left empty (avatar/cover/nick drift
@@ -583,7 +583,6 @@ class HuyaSite
 
   @override
   Future<LiveRoom> getRoomDetailForRecording(LiveRoom liveroom) async {
-    
     if (liveroom.detailIdentity == null) return liveroom;
     return _loadRoomDetail(liveroom: liveroom, allowUiFallback: false);
   }
@@ -611,7 +610,7 @@ class HuyaSite
         'Sec-Fetch-Mode': 'cors',
         'Sec-Fetch-Site': 'same-site',
         "user-agent": kUserAgent,
-        "Cookie": SettingsService.to.cookieManager.huyaCookie.v,
+        "Cookie": CookieSettingsController.to.huyaCookie.v,
         'Cache-Control': 'no-cache',
         'Pragma': 'no-cache',
       },
@@ -621,7 +620,10 @@ class HuyaSite
     final responseData = result is Map && result['data'] is Map ? result['data'] as Map : null;
     final normalizedLiveState = responseData?['liveStatus']?.toString().trim().toUpperCase() ?? '';
     if (statusCode == 200 && responseData != null && isExplicitOfflineState(responseData['liveStatus'])) {
-      return _buildInactiveRoom(responseData, liveroom: LiveRoom(roomId: roomId, platform: platform));
+      return _buildInactiveRoom(
+        responseData,
+        liveroom: LiveRoom(roomId: roomId, platform: platform),
+      );
     }
     if (statusCode == 200 && responseData != null && responseData['stream'] != null) {
       dynamic data = responseData;
@@ -814,7 +816,6 @@ class HuyaSite
 
   @override
   Future<LiveRoom> getRoomDetailForRefresh(LiveRoom liveroom) async {
-    
     if (liveroom.detailIdentity == null) return liveroom;
     final resultText = await HttpClient.instance.getText(
       'https://mp.huya.com/cache.php',
@@ -833,7 +834,7 @@ class HuyaSite
         'Sec-Fetch-Mode': 'cors',
         'Sec-Fetch-Site': 'same-site',
         'user-agent': kUserAgent,
-        'Cookie': SettingsService.to.cookieManager.huyaCookie.v,
+        'Cookie': CookieSettingsController.to.huyaCookie.v,
         'Cache-Control': 'no-cache',
         'Pragma': 'no-cache',
       },
@@ -988,7 +989,7 @@ class HuyaSite
   /// the viewer. The official web client uses `yyuid` for an account session
   /// and the UID returned by `anonymousLogin` otherwise.
   Future<HuyaViewerIdentity> resolveViewerIdentity({String? cookie}) async {
-    final resolvedCookie = cookie ?? SettingsService.to.cookieManager.huyaCookie.v;
+    final resolvedCookie = cookie ?? CookieSettingsController.to.huyaCookie.v;
     final accountUid = parseViewerUidFromCookie(resolvedCookie);
     if (accountUid != null) {
       return HuyaViewerIdentity(uid: accountUid, guid: _viewerGuid, isAnonymous: false);
@@ -1210,7 +1211,7 @@ class HuyaSite
   }
 
   Future<HuyaCdnTokenLease> _fetchCdnTokenInfoEx(HuyaLineModel line, HuyaViewerIdentity viewer) async {
-    final cookie = SettingsService.to.cookieManager.huyaCookie.v.trim();
+    final cookie = CookieSettingsController.to.huyaCookie.v.trim();
     final request = buildPlaybackTokenRequest(line, viewer, cookie: cookie);
     final tokenClient = createCdnTokenClient(<String, String>{
       'Origin': baseUrl,

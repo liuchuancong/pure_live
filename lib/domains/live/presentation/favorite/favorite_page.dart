@@ -6,7 +6,7 @@ import 'package:pure_live/core/widgets/common_appbar_actions.dart';
 import 'package:pure_live/domains/live/presentation/tags/tag_management_controller.dart';
 import 'package:pure_live/domains/live/presentation/favorite/favorite_controller.dart';
 import 'package:pure_live/domains/live/data/platforms/sites.dart';
-
+import 'package:pure_live/domains/live/data/favorite_room_controller.dart';
 
 class FavoritePage extends GetView<FavoriteController> {
   const FavoritePage({super.key});
@@ -285,7 +285,7 @@ class _FavoriteEmptyState extends StatelessWidget {
     return Obx(() {
       final statusIndex = controller.tabOnlineIndex.value;
       final totalForSite = controller.favoriteCountForSite(siteId);
-      final globalTotal = SettingsService.to.fav.favoriteRooms.v.length;
+      final globalTotal = FavoriteRoomController.to.favoriteRooms.v.length;
       final offlineForSite = controller.favoriteCountForSite(siteId, statusIndex: 2);
 
       if (globalTotal == 0) {

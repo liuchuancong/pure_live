@@ -1,12 +1,13 @@
 import 'dart:async';
+
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/utils/event_bus.dart';
 import 'package:pure_live/core/network/image_cache_manager.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:pure_live/domains/live/presentation/playback/controllers/live_play_controller.dart';
 import 'package:pure_live/domains/live/presentation/playback/widgets/content_first_panel_layout.dart';
-
-
+import 'package:pure_live/domains/live/data/favorite_room_controller.dart';
+import 'package:pure_live/domains/live/data/history_controller.dart';
 
 class PlayOther extends StatefulWidget {
   const PlayOther({required this.controller, super.key});
@@ -40,7 +41,7 @@ class _PlayOtherState extends State<PlayOther> with SingleTickerProviderStateMix
   }
 
   void _updateRooms() {
-    final allRooms = SettingsService.to.fav.favoriteRooms.v;
+    final allRooms = FavoriteRoomController.to.favoriteRooms.v;
 
     final liveList = allRooms.where((room) => room.isLiveNow && room.isRecord == false).toList()
       ..sort(_compareAudience);
@@ -48,7 +49,7 @@ class _PlayOtherState extends State<PlayOther> with SingleTickerProviderStateMix
       ..sort(_compareAudience);
     onlineRooms.assignAll(liveList);
     recordingRooms.assignAll(recordList);
-    historyRooms.assignAll(SettingsService.to.history.historyRooms.v);
+    historyRooms.assignAll(HistoryController.to.historyRooms.v);
 
     loadingFinish.value = true;
     refreshing.value = false;

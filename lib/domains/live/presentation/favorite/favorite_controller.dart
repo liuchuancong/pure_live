@@ -11,6 +11,7 @@ import 'package:pure_live/domains/live/presentation/favorite/favorite_startup_po
 import 'package:pure_live/core/config/refresh_config_controller.dart';
 import 'package:pure_live/domains/live/data/platforms/sites.dart';
 import 'package:pure_live/domains/live/domain/global_player_service.dart';
+import 'package:pure_live/domains/live/data/favorite_room_controller.dart';
 
 class FavoriteController extends LocalReactivePageController<LiveRoom>
     with GetTickerProviderStateMixin, WidgetsBindingObserver {
@@ -66,7 +67,7 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
   /// Keeps the favourites platform rail focused on platforms that actually
   /// have saved rooms. The aggregate tab remains available for an empty list
   /// and for cross-platform browsing.
-  List<Site> get availableFavoriteSites => favoriteSitesForRooms(SettingsService.to.fav.favoriteRooms.v);
+  List<Site> get availableFavoriteSites => favoriteSitesForRooms(FavoriteRoomController.to.favoriteRooms.v);
 
   List<Site> favoriteSitesForRooms(Iterable<LiveRoom> rooms) {
     final available = Sites().availableSites(containsAll: true);
@@ -85,10 +86,10 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
 
     tabController = TabController(length: 3, vsync: this, animationDuration: pureLiveTabTransitionDuration);
     WidgetsBinding.instance.addObserver(this);
-    tagController.migrateLegacyRoomTagKeys(SettingsService.to.fav.favoriteRooms.v);
+    tagController.migrateLegacyRoomTagKeys(FavoriteRoomController.to.favoriteRooms.v);
 
     _workers.add(
-      ever(SettingsService.to.fav.favoriteRooms, (_) {
+      ever(FavoriteRoomController.to.favoriteRooms, (_) {
         if (isClosed) return;
         _favoriteSnapshotTimer?.cancel();
         // Own the delayed action as well as its subscription: disposing a
@@ -310,11 +311,11 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
   }
 
   List<LiveRoom> getAllRooms() {
-    return List<LiveRoom>.from(SettingsService.to.fav.favoriteRooms.v);
+    return List<LiveRoom>.from(FavoriteRoomController.to.favoriteRooms.v);
   }
 
   List<LiveRoom> getFilteredRoomsIgnoringLiveStatus() {
-    final List<LiveRoom> source = List<LiveRoom>.from(SettingsService.to.fav.favoriteRooms.v);
+    final List<LiveRoom> source = List<LiveRoom>.from(FavoriteRoomController.to.favoriteRooms.v);
 
     final currentAvailableSites = availableFavoriteSites;
     if (tabSiteIndex.value < 0 || tabSiteIndex.value >= currentAvailableSites.length) {
@@ -396,7 +397,7 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
 
   int favoriteCountForSite(String siteId, {int? statusIndex}) {
     final Iterable<LiveRoom> source = statusIndex == null
-        ? SettingsService.to.fav.favoriteRooms.v
+        ? FavoriteRoomController.to.favoriteRooms.v
         : switch (statusIndex) {
             0 => onlineRooms,
             1 => replayRooms,
@@ -412,7 +413,7 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
     if (isClosed) return;
     final preview = roomSnapshot == null ? _verificationPreview : null;
     final List<LiveRoom> roomsBase = List<LiveRoom>.from(
-      roomSnapshot ?? preview?.rooms ?? SettingsService.to.fav.favoriteRooms.v,
+      roomSnapshot ?? preview?.rooms ?? FavoriteRoomController.to.favoriteRooms.v,
     );
     _lastSyncedFavoriteSnapshot = _favoriteSnapshotSignature(roomsBase);
     final nextOnline = preview != null
@@ -491,7 +492,7 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
   }
 
   bool _isCurrentFavoriteSnapshotSynced() {
-    return _lastSyncedFavoriteSnapshot == _favoriteSnapshotSignature(SettingsService.to.fav.favoriteRooms.v);
+    return _lastSyncedFavoriteSnapshot == _favoriteSnapshotSignature(FavoriteRoomController.to.favoriteRooms.v);
   }
 
   int _favoriteSnapshotSignature(Iterable<LiveRoom> rooms) {
@@ -659,7 +660,7 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
   }
 
   Future<void> _refreshPersistedRoomsOnStartupInternal() async {
-    final persisted = List<LiveRoom>.from(SettingsService.to.fav.favoriteRooms.v);
+    final persisted = List<LiveRoom>.from(FavoriteRoomController.to.favoriteRooms.v);
     _verificationPreview = buildFavoriteVerificationPreview(persisted);
     isVerifyingFavorites.value = true;
     if (persisted.isNotEmpty) {
@@ -723,7 +724,7 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
         if (refreshEpoch != _refreshEpoch || isClosed) return;
 
         try {
-          await SettingsService.to.fav.mutateRoomsDurably((latest) {
+          await FavoriteRoomController.to.mutateRoomsDurably((latest) {
             final merged = invalidateUnverified
                 ? mergeAuthoritativeFavoriteRefresh(latest, rooms.map(favoriteRoomIdentity), updates)
                 : mergeFavoriteRoomUpdates(latest, updates);

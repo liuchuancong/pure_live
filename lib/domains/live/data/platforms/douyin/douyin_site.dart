@@ -17,6 +17,7 @@ import 'package:pure_live/domains/live/data/platforms/douyin/douyin_utils.dart';
 import 'package:pure_live/domains/live/data/platforms/douyin/douyin_request_params.dart';
 import 'package:pure_live/core/utils/live_quality_label.dart';
 import 'package:pure_live/domains/live/data/platforms/sites.dart';
+import 'package:pure_live/core/config/cookie_settings_controller.dart';
 
 class DouyinSite implements LiveSite, LiveSiteRecordRoomResolver {
   @override
@@ -47,8 +48,8 @@ class DouyinSite implements LiveSite, LiveSiteRecordRoomResolver {
     try {
       if (cookie.isNotEmpty) {
         return {...headers, "cookie": cookie};
-      } else if (SettingsService.to.cookieManager.douyinCookie.v.isNotEmpty) {
-        cookie = SettingsService.to.cookieManager.douyinCookie.v;
+      } else if (CookieSettingsController.to.douyinCookie.v.isNotEmpty) {
+        cookie = CookieSettingsController.to.douyinCookie.v;
         return {...headers, "cookie": cookie};
       }
 
@@ -387,7 +388,6 @@ class DouyinSite implements LiveSite, LiveSiteRecordRoomResolver {
 
   @override
   Future<LiveRoom> getRoomDetail(LiveRoom liveroom) async {
-    
     if (liveroom.detailIdentity == null) return liveroom;
     final fresh = await _resolveDetail(liveroom.roomId!);
     // Pad whatever the profile endpoint left empty (avatar/cover/nick drift
@@ -412,7 +412,6 @@ class DouyinSite implements LiveSite, LiveSiteRecordRoomResolver {
 
   @override
   Future<LiveRoom> getRoomDetailForRecording(LiveRoom liveroom) async {
-    
     if (liveroom.detailIdentity == null) return liveroom;
     // Both the API and HTML paths propagate their final error and retain the
     // stream_url envelope required to resolve every advertised sdk_key.

@@ -2,9 +2,9 @@ import 'dart:async';
 
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/core/config/cookie_sanitizer.dart';
+import 'package:pure_live/core/network/cookie_sanitizer.dart';
 
-export 'package:pure_live/core/config/cookie_sanitizer.dart' show normalizeAccountCookie;
+export 'package:pure_live/core/network/cookie_sanitizer.dart' show normalizeAccountCookie;
 
 /// Decoration every account-cookie input uses.
 ///
@@ -188,10 +188,7 @@ class _AccountCookieEditorPageState extends State<AccountCookieEditorPage> {
                             scrollPadding: const EdgeInsets.only(bottom: 120),
                             decoration: accountCookieFieldDecoration(theme, hintText: widget.hintText),
                           ),
-                          for (final field in widget.extraFields) ...<Widget>[
-                            const SizedBox(height: 12),
-                            field,
-                          ],
+                          for (final field in widget.extraFields) ...<Widget>[const SizedBox(height: 12), field],
                           const SizedBox(height: 16),
                           FilledButton.icon(
                             key: const ValueKey('account-cookie-save'),

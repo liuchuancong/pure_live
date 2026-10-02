@@ -1,4 +1,5 @@
 import 'package:pure_live/core/index.dart';
+import 'package:pure_live/domains/live/data/favorite_room_controller.dart';
 
 class DanmuShieldController extends GetxController {
   final TextEditingController textEditingController = TextEditingController();
@@ -10,14 +11,14 @@ class DanmuShieldController extends GetxController {
       return;
     }
 
-    SettingsService.to.fav.addShieldList(text);
+    FavoriteRoomController.to.addShieldList(text);
     textEditingController.clear();
   }
 
   Color get themeColor => SettingsService.to.theme.themeColor;
 
   void remove(String keyword) {
-    final favorites = SettingsService.to.fav;
+    final favorites = FavoriteRoomController.to;
     favorites.removeShieldList(favorites.shieldList.indexOf(keyword));
   }
 

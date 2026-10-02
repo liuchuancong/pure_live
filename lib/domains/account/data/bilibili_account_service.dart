@@ -3,8 +3,9 @@ import 'dart:async';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/models/bilibili_user_info_page.dart';
-import 'package:pure_live/core/config/cookie_sanitizer.dart';
+import 'package:pure_live/core/network/cookie_sanitizer.dart';
 import 'package:pure_live/core/network/http_client.dart';
+import 'package:pure_live/core/config/cookie_settings_controller.dart';
 
 typedef BilibiliAccountLoader = Future<Map<String, dynamic>?> Function(String cookie);
 typedef BrowserCookieClearer = Future<void> Function();
@@ -38,7 +39,7 @@ class BiliBiliAccountService extends GetxController {
   int _loadRevision = 0;
   bool _closed = false;
 
-  String get currentCookie => normalizeAccountCookie(SettingsService.to.cookieManager.bilibiliCookie.v);
+  String get currentCookie => normalizeAccountCookie(CookieSettingsController.to.bilibiliCookie.v);
 
   @override
   void onInit() {
@@ -47,7 +48,7 @@ class BiliBiliAccountService extends GetxController {
     final cookie = currentCookie;
     logined.value = cookie.isNotEmpty;
     if (cookie.isEmpty) _clearLocalAccountState();
-    _cookieWorker = ever<String>(SettingsService.to.cookieManager.bilibiliCookie, _handleCookieChanged);
+    _cookieWorker = ever<String>(CookieSettingsController.to.bilibiliCookie, _handleCookieChanged);
     if (cookie.isNotEmpty) {
       _initialLoadTimer = Timer(initialLoadDelay, () => unawaited(loadUserInfo()));
     }
@@ -58,7 +59,7 @@ class BiliBiliAccountService extends GetxController {
     _initialLoadTimer = null;
     final normalized = normalizeAccountCookie(value);
     if (normalized != value) {
-      SettingsService.to.cookieManager.bilibiliCookie.v = normalized;
+      CookieSettingsController.to.bilibiliCookie.v = normalized;
       return;
     }
     final hasCurrentLoad = normalized.isNotEmpty && _activeLoadCookie == normalized && _activeLoad != null;
@@ -120,7 +121,7 @@ class BiliBiliAccountService extends GetxController {
         return false;
       }
       name.value = accountName;
-      SettingsService.to.cookieManager.bilibiliUid.value = info.mid ?? 0;
+      CookieSettingsController.to.bilibiliUid.value = info.mid ?? 0;
       logined.value = true;
       return true;
     } catch (_) {
@@ -135,7 +136,7 @@ class BiliBiliAccountService extends GetxController {
 
   void setCookie(String cookie) {
     final normalized = normalizeAccountCookie(cookie);
-    final storedCookie = SettingsService.to.cookieManager.bilibiliCookie;
+    final storedCookie = CookieSettingsController.to.bilibiliCookie;
     if (storedCookie.v == normalized) {
       logined.value = normalized.isNotEmpty;
       if (normalized.isEmpty) {
@@ -164,7 +165,7 @@ class BiliBiliAccountService extends GetxController {
     _initialLoadTimer?.cancel();
     _initialLoadTimer = null;
     _loadRevision++;
-    SettingsService.to.cookieManager.bilibiliCookie.v = '';
+    CookieSettingsController.to.bilibiliCookie.v = '';
     logined.value = false;
     _clearLocalAccountState();
     try {
@@ -176,7 +177,7 @@ class BiliBiliAccountService extends GetxController {
 
   void _clearLocalAccountState() {
     name.value = '';
-    SettingsService.to.cookieManager.bilibiliUid.value = 0;
+    CookieSettingsController.to.bilibiliUid.value = 0;
   }
 
   @override

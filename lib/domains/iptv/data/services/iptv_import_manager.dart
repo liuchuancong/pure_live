@@ -19,6 +19,7 @@ import 'package:charset_converter/charset_converter.dart';
 import 'package:pure_live/domains/iptv/data/parsers/m3u_parser.dart';
 import 'package:pure_live/domains/iptv/data/parsers/txt_parser.dart';
 import 'package:pure_live/core/platform/app_path_manager.dart';
+import 'package:pure_live/domains/iptv/data/iptv_settings_controller.dart';
 import 'package:pure_live/domains/iptv/data/local/database.dart' as database;
 
 class IptvImportManager {
@@ -343,7 +344,7 @@ class IptvImportManager {
                 type: ext.substring(1),
                 url: drift.Value(sourceUrl),
                 lastRefresh: drift.Value(DateTime.now()),
-                isAutoUpdate: drift.Value(url.isNotEmpty && SettingsService.to.iptv.isAutoSyncEnabled.value),
+                isAutoUpdate: drift.Value(url.isNotEmpty && IptvSettingsController.to.isAutoSyncEnabled.value),
               ),
             );
           } else {
@@ -433,7 +434,7 @@ class IptvImportManager {
 
   Future<void> _rebuildEpgMappings({required String providerId}) async {
     final db = Get.find<DbService>().db;
-    final selected = SettingsService.to.iptv.selectedSourceId;
+    final selected = IptvSettingsController.to.selectedSourceId;
     final sourceId = selected.value;
     if (sourceId.isEmpty) return;
     bool sourceChanged = false;

@@ -5,6 +5,7 @@ import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/logging/core_log.dart';
 import 'package:pure_live/core/network/web_socket_util.dart';
 import 'package:pure_live/domains/live/domain/live_danmaku.dart';
+import 'package:pure_live/core/config/cookie_settings_controller.dart';
 
 class TwitchDanmaku implements LiveDanmaku {
   WebScoketUtils? webScoketUtils;
@@ -74,7 +75,7 @@ class TwitchDanmaku implements LiveDanmaku {
   }
 
   void joinRoom(String roomId) {
-    final cookie = SettingsService.to.cookieManager.twitchCookie.v;
+    final cookie = CookieSettingsController.to.twitchCookie.v;
     final cookieValues = _parseCookie(cookie);
     final token = cookieValues['auth-token']?.trim() ?? '';
     final login = cookieValues['login']?.trim().toLowerCase() ?? '';

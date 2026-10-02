@@ -4,9 +4,10 @@ import 'package:pure_live/get/get.dart';
 import 'package:pure_live/core/storage/hive_rx.dart';
 import 'package:pure_live/core/storage/hive_pref_util.dart';
 import 'package:pure_live/domains/account/data/bilibili_account_service.dart';
-import 'package:pure_live/core/config/cookie_sanitizer.dart';
+import 'package:pure_live/core/network/cookie_sanitizer.dart';
 
 class CookieSettingsController extends GetxController {
+  static CookieSettingsController get to => Get.find();
   final RxString bilibiliCookie = hiveString('bilibiliCookie', '');
   final RxInt bilibiliUid = hiveInt('bilibiliUid', 0);
   final RxString huyaCookie = hiveString('huyaCookie', '');

@@ -1,10 +1,12 @@
 import 'dart:developer' as developer;
 import 'dart:async';
+
 import 'package:media_core_danmaku/media_core_danmaku.dart';
 import 'package:pure_live/core/player/core/live_message_normalization.dart';
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/domains/live/domain/live_danmaku.dart';
 import 'package:pure_live/domains/live/data/platforms/sites.dart';
+import 'package:pure_live/domains/live/data/favorite_room_controller.dart';
 
 /// 弹幕引擎工厂：按房间创建对应站点的 LiveDanmaku 实例。
 ///
@@ -193,7 +195,7 @@ class MultiviewDanmakuSession {
   void _handleChatMessage(LiveMessage msg) {
     if (msg.type != LiveMessageType.chat) return;
     if (!_messageGate.accepts(normalizeLiveMessage(msg))) return;
-    final favorite = SettingsService.to.fav;
+    final favorite = FavoriteRoomController.to;
     final user = msg.userName.trim().toLowerCase();
     if (user.isNotEmpty && favorite.blockedDanmakuUsers.v.contains(user)) return;
     final text = msg.message.toLowerCase();

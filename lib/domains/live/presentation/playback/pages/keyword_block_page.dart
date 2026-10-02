@@ -48,7 +48,7 @@ class _KeywordBlockPageState extends State<KeywordBlockPage> {
       return;
     }
 
-    settingsService.fav.addShieldList(keyword);
+    FavoriteRoomController.to.addShieldList(keyword);
 
     textEditingController.clear();
     _focusNode.requestFocus();
@@ -157,7 +157,9 @@ class _KeywordBlockPageState extends State<KeywordBlockPage> {
   }
 
   Widget _buildBlockedSliver(ThemeData theme, {required bool users}) {
-    final values = List<String>.from(users ? settingsService.fav.blockedDanmakuUsers : settingsService.fav.shieldList);
+    final values = List<String>.from(
+      users ? FavoriteRoomController.to.blockedDanmakuUsers : FavoriteRoomController.to.shieldList,
+    );
     if (values.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
     final title = users
         ? i18n('blocked_danmaku_users', args: {'count': '${values.length}'})
@@ -174,7 +176,7 @@ class _KeywordBlockPageState extends State<KeywordBlockPage> {
               text: values[index],
               icon: users ? Icons.person_off_rounded : Icons.filter_alt_off_rounded,
               onRemove: () {
-                final favorites = settingsService.fav;
+                final favorites = FavoriteRoomController.to;
                 // Resolve the rendered value against current preferences, not a stale index.
                 final current = users ? favorites.blockedDanmakuUsers : favorites.shieldList;
                 final currentIndex = current.indexOf(values[index]);
