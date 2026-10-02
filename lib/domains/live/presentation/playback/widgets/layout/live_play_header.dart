@@ -1,7 +1,7 @@
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/widgets/common_avatar.dart';
 import 'package:pure_live/domains/live/presentation/playback/controllers/live_play_controller.dart';
-import 'package:pure_live/domains/live/presentation/playback/widgets/button/record_action_button.dart';
+import 'package:pure_live/domains/recorder/presentation/widgets/record_action_button.dart';
 import 'package:pure_live/domains/live/presentation/playback/widgets/button/live_play_menu_button.dart';
 import 'package:pure_live/domains/live/presentation/playback/widgets/button/favorite_floating_button.dart';
 
