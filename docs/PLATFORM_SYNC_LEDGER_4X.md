@@ -33,7 +33,7 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | twitch | 10 | 本轮已摘取（见下） |
 | soop | 10 | 本轮已摘取（见下） |
 | chzzk | 10 | 本轮已摘取（见下） |
-| kugoulive | 10 | 待办 |
+| kugoulive | 10 | 本轮已摘取（见下） |
 | bigo / fc2live | 9 | 待办 |
 | missevan / kilakila / acfun | 8 | 待办 |
 | jdlive / looklive / steambroadcast / twitcasting / showroom / sixroom / baidulive | 7 | 待办 |
@@ -242,3 +242,17 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | 20-9 | 进房/录制只读 channel + live-detail（4→2 次请求），清晰度同时读两个 master | 未做：请求数与清晰度发现 |
 | 20-10 | 回放提示文案 | 未做：文案 |
 | 20-2 / 弹幕 | 弹幕参数带频道 id；CHZZK 弹幕本体 | 未做：本仓 `getDanmaku()` 仍是 `EmptyDanmaku`，要接得整套 live chat |
+
+## kugoulive
+
+上游相关提交：`53adeb466`（M4.U.29）。
+
+| 项 | 内容 | 本仓状态 |
+| --- | --- | --- |
+| 根因 | `limitType` 是公开聊天限制（谁能发言），不是观看限制：被限制的房间照样推流，3.x 把它们当未知并拒绝播放 | **已同步**：不再产生 `restricted` 状态，房间按 `liveType`/`liveSessionId` 判定。枚举值保留（UI 分支还在，只是不会命中） |
+| 29-1 | 卡片上任何正的状态值都算在播（6 是手机/游戏直播） | **已同步**：`> 0` 即 live |
+| 29-2 | 房间信息没有直播标题（`publicMesg`/`privateMesg` 是聊天公告），详情留空标题并保留调用方标题，公告排进 notice | **已同步**：`KugouLiveRoom` 新增 `notice`；详情用 `fillFromDetail(liveroom)` 保留卡片标题 |
+| 29-3 | 搜索行只在直播中且大于 0 时计观众数 | 未做：待核 |
+| 29-4 | 手机分享页 `mfanxing.kugou.com/...?roomId=` 也识别为房间 | 未做：链接解析 |
+| 29-6 | 聊天/限制/目录文案改写 | 未做：文案 |
+| 29-5 | 酷狗直播弹幕本体（3.x 与 v4 归档都没有，靠站点脚本与匿名只读会话逆出） | 未做：整套新引擎，属新功能批次 |

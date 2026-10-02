@@ -100,6 +100,8 @@ final class KugouLiveSite extends LiveSite
     final primary = online ?? popularity;
     final notice = <String>[
       if (room.state == KugouLiveState.restricted) i18n('kugoulive_restricted_notice'),
+      // 聊天公告排在平台说明之前（上游 29-2）。
+      if (room.notice.isNotEmpty) room.notice,
       i18n('kugoulive_chat_notice'),
     ];
     return LiveRoom(
@@ -211,7 +213,8 @@ final class KugouLiveSite extends LiveSite
     final known = _known[normalized];
     if (known != null) room = room.enrich(known);
     _known[normalized] = room;
-    return _room(room, includeMedia: includeMedia);
+    // 详情没有直播标题，保留调用方（卡片/关注）那份的标题（上游 29-2）。
+    return _room(room, includeMedia: includeMedia).fillFromDetail(liveroom);
   }
 
   @override
