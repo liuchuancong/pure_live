@@ -26,7 +26,7 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | kuaishou | 16 | 待办 |
 | youtube | 15 | 待办 |
 | huya | 15 | 待办 |
-| douyu | 14 | 待办 |
+| douyu | 14 | 本轮已摘取（见下） |
 | yy | 12 | 待办 |
 | niconico | 11 | 待办 |
 | pandalive / picarto / seventeenlive | 11 | 待办 |
@@ -71,3 +71,24 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
   本仓轮播从头播放。
 - 弹幕的新消息类型（撤回/公告/礼物/表情/粉丝牌）需要先扩展
   `LiveMessage` 模型与渲染层，属于跨站点的公共改动，留到专用批次。
+
+## douyu
+
+上游相关提交：
+
+| 提交 | 内容 | 本仓状态 |
+| --- | --- | --- |
+| `398f68f87` | 房间 `rss` 包（`ss@=0`）表示本房间下播，结束这一路弹幕 | **已同步** |
+| `8eca75a32` | 分区图标空 `icon` 时退到 `smallIcon`/`pic` | **已同步** |
+| `8eca75a32` | `dgb` 礼物包上报为 gift 消息 | 未做：上游自己也是"只上报不显示"，本仓弹幕层不渲染 gift，单独做等于死代码 |
+| `20c9ea20e` | `expire=0` 的 FLV 强制续期（构造开关，默认关） | 未做：上游默认关闭，且本仓没有这个设置项；本仓对 `expire<=0` 仍视为无租约 |
+| `20c9ea20e` | `startedAt` 取 betard `show_time` | 未做：本仓 `LiveRoom` 没有该字段 |
+| `20c9ea20e` | 别名大小写不敏感（`lpl`/`LPL` 同一 rid） | 待评估：需要本仓的房间身份归一化一起改 |
+| `bedce82aa` | 登录会话状态与 passport 续期 | 未做：属 cookie 仓储（本仓有 `douyu_cookie_controller`/`douyu_utils` 自己的实现），不在站点适配器范围 |
+
+本次落地：
+
+1. `douyu_danmaku.dart`：`rss` + `ss@=0` 且 `rid` 为本房间（缺 `rid` 不拦）时，
+   先 `stop()` 再回调 `onClose('直播已结束')`，弹幕不再挂在一个已结束的房间上。
+2. `douyu_site.dart`：`_areaPicture()` 依次取 `icon`/`smallIcon`/`pic`，
+   并走本仓的 `normalizeNetworkImageUrl`。

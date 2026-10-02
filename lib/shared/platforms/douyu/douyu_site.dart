@@ -99,7 +99,9 @@ class DouyuSite
       subCateList.where((x) => x["cate1Id"] == cate1Id).forEach((element) {
         subCategories.add(
           LiveArea(
-            areaPic: element["icon"].toString(),
+            // `icon` 可能是空的（上游样本 S01-cate-list-2026-10：辐射：避难所Online），
+            // 依次退到 `smallIcon`、`pic`，否则分区在列表里没有图。
+            areaPic: _areaPicture(element),
             areaId: element["cate2Id"].toString(),
             typeName: cate1Name.toString(),
             areaType: cate1Id.toString(),
@@ -113,6 +115,16 @@ class DouyuSite
     categories.sort((a, b) => int.parse(a.id).compareTo(int.parse(b.id)));
 
     return categories;
+  }
+
+  /// 分区图标：`icon` 空时退到 `smallIcon`，再退到 `pic`。
+  static String _areaPicture(dynamic area) {
+    if (area is! Map) return '';
+    for (final key in const ['icon', 'smallIcon', 'pic']) {
+      final url = normalizeNetworkImageUrl(area[key]?.toString());
+      if (url.isNotEmpty) return url;
+    }
+    return '';
   }
 
   Future<List<LiveArea>> getSubCategories(LiveCategory liveCategory) async {

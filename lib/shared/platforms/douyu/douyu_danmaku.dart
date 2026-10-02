@@ -49,6 +49,14 @@ class DouyuDanmaku implements LiveDanmaku {
   @visibleForTesting
   void debugSetRoomId(String roomId) => _roomId = roomId;
 
+  /// 包里的 `rid` 是不是本房间。缺 `rid`（或本端还不知道房间号）时不拦。
+  bool _isThisRoomPacket(String? packetRoomId) {
+    final packet = packetRoomId?.trim() ?? '';
+    final current = _roomId.trim();
+    if (packet.isEmpty || current.isEmpty) return true;
+    return packet == current;
+  }
+
   @override
   Future start(dynamic args) async {
     final generation = ++_generation;
@@ -118,6 +126,15 @@ class DouyuDanmaku implements LiveDanmaku {
       var jsonData = sttToJObject(result);
 
       var type = jsonData["type"]?.toString();
+      // 直播结束：斗鱼的 rss 包（`ss@=0`）明确表示本房间已下播。收到它就结束这一路
+      // 弹幕，而不是继续挂着等心跳超时——上游 C-6 的同一处理。开播包（`ss@=1`）
+      // 与别的房间的包都不报。
+      if (type == "rss" && jsonData["ss"]?.toString() == "0" && _isThisRoomPacket(jsonData["rid"]?.toString())) {
+        final close = onClose;
+        unawaited(stop());
+        close?.call("直播已结束");
+        return;
+      }
       var fans = jsonData["if"] ?? '0'.toString();
       LiveMessage? liveMsg;
       if (type == "chatmsg" && fans == '1') {
