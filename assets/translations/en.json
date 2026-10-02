@@ -1300,6 +1300,8 @@
   "mpv_advanced_settings": "MPV Advanced Settings",
   "mpv_warning_text": "Adjusting core parameters may cause playback issues. See ",
   "mpv_official_docs": "MPV Official Docs",
+  "mpv_settings_reset": "Restore MPV advanced defaults",
+  "mpv_settings_reset_confirm": "Video and audio output drivers, hardware decoder, sync mode, scale kernel, deinterlace, hardware-decoded codec list and audio exclusive will all return to their defaults.",
   "custom_output_hwdec": "Custom Driver & Hardware Acceleration",
   "video_output_driver": "Video Output Driver (--vo)",
   "audio_output_driver": "Audio Output Driver (--ao)",

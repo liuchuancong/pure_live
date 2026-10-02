@@ -1300,6 +1300,8 @@
   "mpv_advanced_settings": "MPV 高级设置",
   "mpv_warning_text": "调整内核参数可能导致播放异常，详情请参考 ",
   "mpv_official_docs": "MPV 官方文档",
+  "mpv_settings_reset": "恢复 MPV 高级设置默认值",
+  "mpv_settings_reset_confirm": "视频输出驱动、音频输出驱动、硬件解码器、同步模式、放大算法、反交错、硬解编码白名单和音频独占都会恢复为默认值。",
   "custom_output_hwdec": "自定义驱动与硬件加速",
   "video_output_driver": "视频输出驱动(--vo)",
   "audio_output_driver": "音频输出驱动(--ao)",

@@ -1,22 +1,22 @@
-import 'package:flutter/services.dart';
-import 'package:flutter/foundation.dart';
-import 'package:remixicon/remixicon.dart';
-import 'package:pure_live/common/index.dart';
-import 'package:url_launcher/url_launcher_string.dart';
-import 'package:pure_live/core/common/proxy_routing.dart';
-import 'package:pure_live/player/utils/player_consts.dart';
-import 'package:pure_live/player/kernel/player_preset.dart';
-import 'package:pure_live/player/models/player_engine.dart';
-import 'package:pure_live/common/global/platform_utils.dart';
-import 'package:pure_live/player/utils/mpv_option_labels.dart';
-
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
+import 'package:remixicon/remixicon.dart';
+import 'package:url_launcher/url_launcher_string.dart';
+
+import 'package:pure_live/common/global/platform_utils.dart';
+import 'package:pure_live/common/index.dart';
+import 'package:pure_live/common/services/settings/player_settings_controller.dart';
+import 'package:pure_live/core/common/proxy_routing.dart';
+import 'package:pure_live/player/kernel/player_preset.dart';
+import 'package:pure_live/player/models/player_engine.dart';
+import 'package:pure_live/player/utils/mpv_option_labels.dart';
+import 'package:pure_live/player/utils/player_consts.dart';
 import 'package:pure_live/modules/settings/pages/mpv_option_page.dart';
 import 'package:pure_live/modules/settings/pages/player_guide_page.dart';
 import 'package:pure_live/modules/settings/pages/player_preset_page.dart';
 import 'package:pure_live/modules/settings/pages/player_super_resolution_page.dart';
-import 'package:pure_live/common/services/settings/player_settings_controller.dart';
 
 class PlayerKernelSettingsPage extends GetView<SettingsService> {
   const PlayerKernelSettingsPage({super.key});
@@ -34,103 +34,65 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
           context.buildGroupTitle(i18n("core_kernel_settings")),
-          context.buildModernCard([
-            Obx(() {
-              final activeKey = normalizeVideoPlayerKeyForPlatform(
-                SettingsService.to.player.videoPlayerKey.v,
-                defaultTargetPlatform,
-              );
-              String activeI18nKey = PlayerConsts.names[activeKey] ?? PlayerConsts.names[PlayerConsts.defaultKey]!;
-
-              return context.buildTile(
+          // One Obx for the engine: the kernel name, the proxy row and the
+          // mpv-only group all key off the same value.
+          Obx(() {
+            final activeKey = _activePlayerKey();
+            final engine = PlayerConsts.engines[activeKey];
+            return context.buildModernCard([
+              context.buildTile(
                 icon: Remix.toggle_line,
                 title: i18n("kernel_switch"),
                 subtitle: i18n(canSwitchPlayer ? "kernel_switch_subtitle" : "kernel_fixed_subtitle"),
                 onTap: canSwitchPlayer ? () => showVideoSetDialog(context) : null,
                 trailing: Text(
-                  i18n(activeI18nKey),
+                  i18n(PlayerConsts.names[activeKey] ?? PlayerConsts.names[PlayerConsts.defaultKey]!),
                   style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.w600),
                 ),
                 stackTrailingOnNarrow: true,
-              );
-            }),
-            Obx(() {
-              final activeKey = normalizeVideoPlayerKeyForPlatform(
-                SettingsService.to.player.videoPlayerKey.v,
-                defaultTargetPlatform,
-              );
-              if (PlayerConsts.engines[activeKey] == PlayerEngine.exo) {
-                return const SizedBox.shrink();
-              }
-
-              return context.buildTile(
-                icon: Remix.global_line,
-                title: i18n("network_proxy"),
-                subtitle: i18n("network_proxy_subtitle"),
-                onTap: () => showProxySettingsDialog(context),
-                trailing: Text(
-                  SettingsService.to.proxy.enableProxy.v ? i18n("enabled") : i18n("disabled"),
-                  style: AppTextStyles.t13.copyWith(
-                    color: SettingsService.to.proxy.enableProxy.v ? theme.colorScheme.primary : theme.hintColor,
-                    fontWeight: FontWeight.w600,
-                  ),
+              ),
+              if (engine != PlayerEngine.exo) _proxyTile(context, theme),
+              context.buildSwitchTile(
+                icon: Remix.speed_up_line,
+                title: i18n('enable_codec'),
+                subtitle: i18n("gpu_decode"),
+                value: SettingsService.to.player.enableCodec,
+              ),
+              // RTX VSR, the presets and the manual are mpv features; other
+              // engines ignore the filter chain they configure.
+              if (PlatformUtils.isWindows && engine == PlayerEngine.mediaKit) ...[
+                context.buildTile(
+                  icon: Remix.magic_line,
+                  title: i18n('player_preset_section'),
+                  subtitle: i18n('player_preset_hint'),
+                  trailing: const Icon(Remix.arrow_right_s_line),
+                  onTap: () => Get.to(() => const PlayerPresetPage()),
                 ),
-                stackTrailingOnNarrow: true,
-              );
-            }),
-            context.buildSwitchTile(
-              icon: Remix.speed_up_line,
-              title: i18n('enable_codec'),
-              subtitle: i18n("gpu_decode"),
-              value: SettingsService.to.player.enableCodec,
-            ),
-            // RTX VSR is an mpv d3d11vpp filter; other engines ignore it.
-            if (PlatformUtils.isWindows)
-              Obx(() {
-                final activeKey = normalizeVideoPlayerKeyForPlatform(
-                  SettingsService.to.player.videoPlayerKey.v,
-                  defaultTargetPlatform,
-                );
-                if (PlayerConsts.engines[activeKey] != PlayerEngine.mediaKit) return const SizedBox.shrink();
-                return Column(
-                  children: [
-                    context.buildTile(
-                      icon: Remix.magic_line,
-                      title: i18n('player_preset_section'),
-                      subtitle: i18n('player_preset_hint'),
-                      trailing: const Icon(Remix.arrow_right_s_line),
-                      onTap: () => Get.to(() => const PlayerPresetPage()),
-                    ),
-                    context.buildTile(
-                      icon: Remix.guide_line,
-                      title: i18n('player_guide_title'),
-                      subtitle: i18n('player_guide_subtitle'),
-                      trailing: const Icon(Remix.arrow_right_s_line),
-                      onTap: () => Get.to(() => const PlayerGuidePage()),
-                    ),
-                    context.buildTile(
-                      icon: Remix.rhythm_line,
-                      title: i18n('super_resolution_section'),
-                      subtitle: i18n('super_resolution_hint'),
-                      trailing: const Icon(Remix.arrow_right_s_line),
-                      onTap: () => Get.to(() => const PlayerSuperResolutionPage()),
-                    ),
-                  ],
-                );
-              }),
-            context.buildSwitchTile(
-              icon: Remix.shut_down_line,
-              title: i18n('force_destroy_player'),
-              subtitle: i18n('force_destroy_player_subtitle'),
-              value: SettingsService.to.player.useHardStopOnExit,
-            ),
-          ]),
+                context.buildTile(
+                  icon: Remix.guide_line,
+                  title: i18n('player_guide_title'),
+                  subtitle: i18n('player_guide_subtitle'),
+                  trailing: const Icon(Remix.arrow_right_s_line),
+                  onTap: () => Get.to(() => const PlayerGuidePage()),
+                ),
+                context.buildTile(
+                  icon: Remix.rhythm_line,
+                  title: i18n('super_resolution_section'),
+                  subtitle: i18n('super_resolution_hint'),
+                  trailing: const Icon(Remix.arrow_right_s_line),
+                  onTap: () => Get.to(() => const PlayerSuperResolutionPage()),
+                ),
+              ],
+              context.buildSwitchTile(
+                icon: Remix.shut_down_line,
+                title: i18n('force_destroy_player'),
+                subtitle: i18n('force_destroy_player_subtitle'),
+                value: SettingsService.to.player.useHardStopOnExit,
+              ),
+            ]);
+          }),
           Obx(() {
-            final activeKey = normalizeVideoPlayerKeyForPlatform(
-              SettingsService.to.player.videoPlayerKey.v,
-              defaultTargetPlatform,
-            );
-            if (PlayerConsts.engines[activeKey] != PlayerEngine.mediaKit) {
+            if (PlayerConsts.engines[_activePlayerKey()] != PlayerEngine.mediaKit) {
               return const SizedBox.shrink();
             }
             return _buildMpvSettings(context);
@@ -141,32 +103,37 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
     );
   }
 
+  String _activePlayerKey() =>
+      normalizeVideoPlayerKeyForPlatform(SettingsService.to.player.videoPlayerKey.v, defaultTargetPlatform);
+
+  /// The proxy state is read inside its own Obx so toggling it does not rebuild
+  /// the whole kernel card.
+  Widget _proxyTile(BuildContext context, ThemeData theme) {
+    return Obx(
+      () => context.buildTile(
+        icon: Remix.global_line,
+        title: i18n("network_proxy"),
+        subtitle: i18n("network_proxy_subtitle"),
+        onTap: () => showProxySettingsDialog(context),
+        trailing: Text(
+          SettingsService.to.proxy.enableProxy.v ? i18n("enabled") : i18n("disabled"),
+          style: AppTextStyles.t13.copyWith(
+            color: SettingsService.to.proxy.enableProxy.v ? theme.colorScheme.primary : theme.hintColor,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        stackTrailingOnNarrow: true,
+      ),
+    );
+  }
+
   Widget _buildMpvSettings(BuildContext context) {
     final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(padding: EdgeInsets.only(left: 16, right: 16, bottom: 0, top: 12), child: Divider()),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(12, 5, 12, 4),
-          child: Row(
-            children: [
-              Icon(Remix.equalizer_line, size: 18, color: theme.colorScheme.primary),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  i18n("mpv_advanced_settings"),
-                  style: AppTextStyles.t16Bold.copyWith(color: theme.colorScheme.primary),
-                ),
-              ),
-              _buildResetButton(theme),
-            ],
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          child: _buildMpvWarning(context, theme),
-        ),
+        _buildMpvSectionHeader(context, theme),
+        Padding(padding: const EdgeInsets.fromLTRB(8, 0, 8, 6), child: _buildMpvNotice(context, theme)),
         context.buildModernCard([
           context.buildSwitchTile(
             icon: Remix.code_box_line,
@@ -279,6 +246,72 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
     );
   }
 
+  Widget _buildMpvSectionHeader(BuildContext context, ThemeData theme) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 16),
+      child: Row(
+        children: [
+          Expanded(child: context.buildGroupTitle(i18n("mpv_advanced_settings"))),
+          TextButton.icon(
+            onPressed: () => _confirmResetMpvSettings(context),
+            icon: const Icon(Remix.refresh_line, size: 16),
+            label: Text(i18n("reset"), style: const TextStyle(fontWeight: FontWeight.w600)),
+            style: TextButton.styleFrom(foregroundColor: theme.colorScheme.error),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _confirmResetMpvSettings(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(i18n('mpv_settings_reset')),
+        content: Text(i18n('mpv_settings_reset_confirm')),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: Text(i18n('cancel'))),
+          FilledButton(onPressed: () => Navigator.of(dialogContext).pop(true), child: Text(i18n('reset'))),
+        ],
+      ),
+    );
+    if (confirmed == true) SettingsService.to.player.resetMpvPlayerSettings();
+  }
+
+  Widget _buildMpvNotice(BuildContext context, ThemeData theme) {
+    return Wrap(
+      crossAxisAlignment: WrapCrossAlignment.start,
+      spacing: 2,
+      children: [
+        Text(
+          i18n("mpv_warning_text"),
+          style: AppTextStyles.t12.copyWith(color: theme.hintColor.withValues(alpha: 0.85)),
+        ),
+        InkWell(
+          borderRadius: BorderRadius.circular(4),
+          onTap: () => launchUrlString("https://mpv.io/manual/", mode: LaunchMode.externalApplication),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: kMinInteractiveDimension),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  i18n("mpv_official_docs"),
+                  style: AppTextStyles.t12.copyWith(
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.w600,
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _optionTile(
     BuildContext context, {
     required MpvOptionKind kind,
@@ -305,121 +338,47 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
     );
   }
 
-  Widget _buildResetButton(ThemeData theme) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(8),
-      onTap: () => SettingsService.to.player.resetMpvPlayerSettings(),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: kMinInteractiveDimension),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Remix.refresh_line, size: 14, color: Colors.red),
-              const SizedBox(width: 4),
-              Text(
-                i18n("reset"),
-                style: const TextStyle(color: Colors.red, fontWeight: FontWeight.w600),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMpvWarning(BuildContext context, ThemeData theme) {
-    final warning = Wrap(
-      crossAxisAlignment: WrapCrossAlignment.center,
-      spacing: 4,
-      children: [
-        Text(
-          i18n("mpv_warning_text"),
-          style: AppTextStyles.t12.copyWith(color: theme.hintColor.withValues(alpha: 0.65)),
-        ),
-        InkWell(
-          borderRadius: BorderRadius.circular(4),
-          onTap: () => launchUrlString("https://mpv.io"),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(minHeight: kMinInteractiveDimension),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: Align(
-                alignment: Alignment.center,
-                child: Text(
-                  i18n("mpv_official_docs"),
-                  style: AppTextStyles.t12.copyWith(
-                    color: theme.colorScheme.primary,
-                    fontWeight: FontWeight.w600,
-                    decoration: TextDecoration.underline,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-    return Padding(padding: const EdgeInsets.only(top: 12), child: warning);
-  }
-
-  // 播放器选择弹窗
   void showVideoSetDialog(BuildContext pageContext) {
     final playerKeys = availableVideoPlayerKeysForPlatform(defaultTargetPlatform);
     if (playerKeys.length <= 1) return;
 
-    showDialog(
+    showDialog<void>(
       context: pageContext,
-      builder: (BuildContext context) {
+      builder: (dialogContext) {
+        void select(String? key) {
+          final engine = PlayerConsts.engines[key];
+          if (engine == null) return;
+          SettingsService.to.player.videoPlayerKey.v = key!;
+          GlobalPlayerService.instance.player.switchEngine(engine, isManual: true);
+          Navigator.of(dialogContext).pop();
+        }
+
         return SimpleDialog(
           title: Text(i18n("change_player")),
           children: [
-            Obx(() {
-              final activeKey = normalizeVideoPlayerKeyForPlatform(
-                SettingsService.to.player.videoPlayerKey.v,
-                defaultTargetPlatform,
-              );
-
-              return RadioGroup<String>(
-                groupValue: activeKey,
-                onChanged: (String? key) {
-                  if (key != null && PlayerConsts.engines.containsKey(key)) {
-                    SettingsService.to.player.videoPlayerKey.v = key;
-                    GlobalPlayerService.instance.player.switchEngine(PlayerConsts.engines[key]!, isManual: true);
-                    Navigator.of(context).pop();
-                  }
-                },
+            Obx(
+              () => RadioGroup<String>(
+                groupValue: _activePlayerKey(),
+                onChanged: select,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
-                  children: playerKeys.map<Widget>((itemKey) {
-                    final i18nKey = PlayerConsts.names[itemKey]!;
-                    return ListTile(
-                      leading: Radio<String>(value: itemKey, activeColor: Theme.of(context).colorScheme.primary),
-                      title: Text(i18n(i18nKey), style: AppTextStyles.t15),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                      onTap: () {
-                        if (PlayerConsts.engines.containsKey(itemKey)) {
-                          SettingsService.to.player.videoPlayerKey.v = itemKey;
-                          GlobalPlayerService.instance.player.switchEngine(
-                            PlayerConsts.engines[itemKey]!,
-                            isManual: true,
-                          );
-                          Navigator.of(context).pop();
-                        }
-                      },
-                    );
-                  }).toList(),
+                  children: [
+                    for (final itemKey in playerKeys)
+                      RadioListTile<String>(
+                        value: itemKey,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                        title: Text(i18n(PlayerConsts.names[itemKey]!), style: AppTextStyles.t15),
+                      ),
+                  ],
                 ),
-              );
-            }),
+              ),
+            ),
           ],
         );
       },
     );
   }
 
-  // 代理设置弹窗（替换为统一SwitchTile）
   void showProxySettingsDialog(BuildContext context) {
     showDialog(context: context, builder: (context) => const _PlayerProxySettingsDialog());
   }
