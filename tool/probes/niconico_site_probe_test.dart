@@ -7,7 +7,7 @@ import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pure_live/core/common/http_client.dart';
-import 'package:pure_live/core/interface/live_site.dart';
+import 'package:pure_live/core/contracts/live_site.dart';
 import 'package:pure_live/platforms/niconico/niconico_api.dart';
 import 'package:pure_live/platforms/niconico/niconico_quality_catalog.dart';
 import 'package:pure_live/platforms/niconico/niconico_session.dart';

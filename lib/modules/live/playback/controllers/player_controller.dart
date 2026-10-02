@@ -6,7 +6,7 @@ import 'dart:developer' as developer;
 
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
-import 'package:pure_live/core/interface/live_site.dart';
+import 'package:pure_live/core/contracts/live_site.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:pure_live/player/utils/player_consts.dart';
 import 'package:pure_live/player/core/playback_source.dart';
@@ -17,7 +17,7 @@ import 'package:pure_live/modules/live/playback/states/reload_data_type.dart';
 import 'package:pure_live/core/common/hls_source_query_policy.dart';
 import 'package:pure_live/player/core/playback_header_resolver.dart';
 import 'package:pure_live/platforms/huya/huya_transport_policy.dart';
-import 'package:pure_live/core/interface/live_quality_discovery.dart';
+import 'package:pure_live/core/contracts/live_quality_discovery.dart';
 import 'package:pure_live/core/utils/latest_async_value_queue.dart';
 import 'package:pure_live/player/core/live_input_playback_binding.dart';
 import 'package:pure_live/modules/live/playback/states/live_play_state.dart';

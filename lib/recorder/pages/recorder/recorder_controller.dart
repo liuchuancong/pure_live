@@ -1,4 +1,4 @@
-import 'package:pure_live/core/interface/live_quality_discovery.dart';
+import 'package:pure_live/core/contracts/live_quality_discovery.dart';
 import 'package:pure_live/recorder/services/recording_bitrate_window.dart';
 import 'package:pure_live/recorder/services/live_input_recording_binding.dart';
 import 'package:pure_live/core/utils/play_quality_label.dart';
@@ -13,7 +13,7 @@ import 'package:device_info_plus/device_info_plus.dart';
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/utils/hive_pref_util.dart';
 import 'package:pure_live/core/danmaku/empty_danmaku.dart';
-import 'package:pure_live/core/interface/live_site.dart';
+import 'package:pure_live/core/contracts/live_site.dart';
 import 'package:pure_live/platforms/huya/huya_transport_policy.dart';
 import 'package:pure_live/core/plugins/file_utils.dart';
 import 'package:pure_live/recorder/consts/recorder_keys.dart';

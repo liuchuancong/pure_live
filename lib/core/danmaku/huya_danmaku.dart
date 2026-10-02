@@ -7,7 +7,7 @@ import 'package:pure_live/platforms/huya/huya_utils.dart';
 import 'package:pure_live/core/models/live_message.dart';
 import 'package:pure_live/core/tars/codec/tars_struct.dart';
 import 'package:pure_live/core/common/web_socket_util.dart';
-import 'package:pure_live/core/interface/live_danmaku.dart';
+import 'package:pure_live/core/contracts/live_danmaku.dart';
 import 'package:pure_live/core/tars/codec/tars_input_stream.dart';
 import 'package:pure_live/core/tars/codec/tars_output_stream.dart';
 

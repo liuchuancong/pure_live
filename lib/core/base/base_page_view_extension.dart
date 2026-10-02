@@ -1,4 +1,4 @@
-import 'package:pure_live/core/plugins/global.dart';
+import 'package:pure_live/core/widgets/refresh_indicators.dart';
 import 'package:flutter/services.dart';
 import 'package:pure_live/core/index.dart';
 

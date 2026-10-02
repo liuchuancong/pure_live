@@ -1,4 +1,4 @@
-import 'package:pure_live/core/interface/live_quality_discovery.dart';
+import 'package:pure_live/core/contracts/live_quality_discovery.dart';
 
 // Opt-in Windows native recording through the production RecorderController.
 // Preserve stopped TS before the normal MP4 finalizer removes it, so container

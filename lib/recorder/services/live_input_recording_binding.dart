@@ -1,5 +1,5 @@
 import 'package:dio/dio.dart';
-import 'package:pure_live/core/interface/live_input_recipe.dart';
+import 'package:pure_live/core/contracts/live_input_recipe.dart';
 import 'package:pure_live/platforms/bigo/bigo_api.dart';
 import 'package:pure_live/platforms/bigo/bigo_input_recipe.dart';
 import 'package:pure_live/platforms/fc2live/fc2_api.dart';

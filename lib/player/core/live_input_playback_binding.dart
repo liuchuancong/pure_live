@@ -1,4 +1,4 @@
-import 'package:pure_live/core/interface/live_input_recipe.dart';
+import 'package:pure_live/core/contracts/live_input_recipe.dart';
 
 import 'playback_source.dart';
 

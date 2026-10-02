@@ -1,5 +1,5 @@
-import 'package:pure_live/core/interface/live_quality_discovery.dart';
-import 'package:pure_live/core/interface/live_input_recipe.dart';
+import 'package:pure_live/core/contracts/live_quality_discovery.dart';
+import 'package:pure_live/core/contracts/live_input_recipe.dart';
 import 'package:pure_live/recorder/services/owned_record_input.dart';
 import 'package:pure_live/recorder/services/ffmpeg_hls_input_relay.dart';
 

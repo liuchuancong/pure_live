@@ -1,7 +1,7 @@
-import 'package:pure_live/core/interface/live_quality_discovery.dart';
+import 'package:pure_live/core/contracts/live_quality_discovery.dart';
 import 'package:flutter/services.dart';
 import 'package:pure_live/core/models/live_room.dart';
-import 'package:pure_live/core/interface/live_site.dart';
+import 'package:pure_live/core/contracts/live_site.dart';
 import 'package:pure_live/platforms/sites.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
 import 'package:pure_live/features/toolbox/toolbox_action_scope.dart';

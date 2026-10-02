@@ -1,13 +1,13 @@
-import 'package:pure_live/core/interface/live_search.dart';
-import 'package:pure_live/core/interface/live_quality_discovery.dart';
+import 'package:pure_live/core/contracts/live_search.dart';
+import 'package:pure_live/core/contracts/live_quality_discovery.dart';
 import 'package:dio/dio.dart';
 import 'package:pure_live/core/models/live_area.dart';
-import 'package:pure_live/core/interface/live_directory.dart';
+import 'package:pure_live/core/contracts/live_directory.dart';
 import 'package:pure_live/core/models/live_category.dart';
 import 'package:pure_live/core/models/live_room.dart';
 import 'package:pure_live/core/danmaku/empty_danmaku.dart';
-import 'package:pure_live/core/interface/live_danmaku.dart';
-import 'package:pure_live/core/interface/live_site.dart';
+import 'package:pure_live/core/contracts/live_danmaku.dart';
+import 'package:pure_live/core/contracts/live_site.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
 import 'package:pure_live/core/plugins/locale_helper.dart';
 

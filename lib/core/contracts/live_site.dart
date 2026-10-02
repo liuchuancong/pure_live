@@ -5,7 +5,7 @@ import 'package:pure_live/core/models/live_room.dart';
 import 'package:pure_live/core/danmaku/empty_danmaku.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
 import 'package:pure_live/core/models/live_message.dart';
-import 'package:pure_live/core/interface/live_danmaku.dart';
+import 'package:pure_live/core/contracts/live_danmaku.dart';
 import 'package:pure_live/core/common/hls_source_query_policy.dart';
 
 import 'live_input_recipe.dart';
