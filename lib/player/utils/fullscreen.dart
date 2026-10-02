@@ -55,7 +55,12 @@ final class PureLiveFullscreenWindow implements FullscreenWindow {
 }
 
 final FullscreenDriver fullscreenDriver = FullscreenDriver(
-  config: const FullscreenConfig(restorePreviousBounds: false),
+  // Restoring the pre-fullscreen bounds is load-bearing beyond fullscreen
+  // itself: entering picture-in-picture releases fullscreen first, and the
+  // PiP backend captures the window state at that moment. Without the
+  // restore, that state is the screen-sized window, and both the PiP exit
+  // and the next fullscreen exit bring the window back screen-sized.
+  config: const FullscreenConfig(restorePreviousBounds: true),
   desktopWindow: const PureLiveFullscreenWindow(),
 );
 
