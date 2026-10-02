@@ -10,8 +10,8 @@ import 'package:pure_live/domains/wallpaper/domain/background_controller.dart';
 ///
 /// Mounted once, in the root `MaterialApp.builder`, so every page shares it.
 /// With no wallpaper selected the layer paints nothing and the themed scaffold
-/// colours show, which is why the theme only goes transparent while
-/// [BackgroundConfig.hasBackground] is true (see `main.dart`).
+/// colours show, which is why the pages only go transparent while
+/// [BackgroundConfig.hasBackground] is true (see [WallpaperCanvasTransparency]).
 class AppBackgroundLayer extends StatelessWidget {
   const AppBackgroundLayer({super.key, required this.child});
 
@@ -43,9 +43,56 @@ class AppBackgroundLayer extends StatelessWidget {
 
   /// A light palette needs a light wash over artwork: darkening it would leave
   /// the dark text unreadable.
+  ///
+  /// Read from the brightness rather than from `scaffoldBackgroundColor`: pages
+  /// below [WallpaperCanvasTransparency] see a transparent scaffold colour, and
+  /// the mask must not flip to black just because a picture owns the canvas.
   static Color _maskColor(BackgroundConfig config, ThemeData theme) {
-    final bool lightSurface = theme.scaffoldBackgroundColor.computeLuminance() > 0.5;
+    final bool lightSurface = theme.brightness == Brightness.light;
     return (lightSurface ? Colors.white : Colors.black).withValues(alpha: config.maskOpacity);
+  }
+}
+
+/// Stops the pages from painting their own canvas while a wallpaper is set.
+///
+/// The transparency has to be applied in the tree rather than through the app
+/// theme: GetX reads the `GetMaterialApp(theme:)` argument only once - its
+/// `GetRootState.didUpdateWidget` is commented out - so `theme:` / `darkTheme:`
+/// edits made after startup never reach a page, and the wallpaper used to be
+/// visible only on screens that hard-coded a transparent background.
+///
+/// This sits directly above the Navigator and below the desktop title bar, so
+/// every route, dialog and menu inherits it. It keeps one widget shape in both
+/// states, so toggling a wallpaper never remounts the Navigator.
+class WallpaperCanvasTransparency extends StatelessWidget {
+  const WallpaperCanvasTransparency({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = BackgroundController.to;
+    return Obx(() => WallpaperCanvasTheme(ownsCanvas: controller.occupiesCanvas.value, child: child));
+  }
+}
+
+/// The pure half of [WallpaperCanvasTransparency]: a [Theme] with a transparent
+/// scaffold colour while a wallpaper owns the canvas.
+///
+/// Split out so the decision can be tested without a storage-backed controller.
+class WallpaperCanvasTheme extends StatelessWidget {
+  const WallpaperCanvasTheme({super.key, required this.ownsCanvas, required this.child});
+
+  final bool ownsCanvas;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    return Theme(
+      data: ownsCanvas ? theme.copyWith(scaffoldBackgroundColor: Colors.transparent) : theme,
+      child: child,
+    );
   }
 }
 

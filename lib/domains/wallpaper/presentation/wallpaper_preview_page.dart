@@ -482,7 +482,10 @@ class _WallpaperPreviewPageState extends State<WallpaperPreviewPage> {
 
   Widget _buildMask(BackgroundConfig background) {
     if (background.maskOpacity <= 0) return const SizedBox.shrink();
-    final bool lightSurface = Theme.of(context).scaffoldBackgroundColor.computeLuminance() > 0.5;
+    // Same derivation as the real layer (`AppBackgroundLayer._maskColor`): this
+    // page sits below the canvas-transparency override, so its scaffold colour
+    // is transparent and cannot say how bright the theme is.
+    final bool lightSurface = Theme.of(context).brightness == Brightness.light;
     return ColoredBox(color: (lightSurface ? Colors.white : Colors.black).withValues(alpha: background.maskOpacity));
   }
 

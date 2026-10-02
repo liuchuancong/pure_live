@@ -45,13 +45,30 @@
 完整可见。**应用动作只发生在预览页**，浏览网格不再一点就换背景；随机图源只有
 字节、没有 URL，落盘后再按本地图片应用。
 
-背景设置的所有子页（壁纸库、分类、网格、随机图源、随机图源分组）都用透明
-`Scaffold`，`AppBackgroundLayer` 画的壁纸在页面背后保持可见。
+## 背景如何贯穿全 App
+
+`AppBackgroundLayer` 画在 Navigator 之后（`main.dart` 的 `MaterialApp.builder`），
+但页面默认会用自己的 `scaffoldBackgroundColor` 盖住它，因此在两层之间插了
+`WallpaperCanvasTransparency`：有壁纸时它把 `Theme.scaffoldBackgroundColor`
+改成透明，所有路由、弹窗、菜单都继承，没壁纸时原样返回同一个 `Theme`（形制
+不变，切换壁纸不会重挂 Navigator）。
+
+不能靠改 `GetMaterialApp(theme:)`：GetX 只在启动时读一次该参数
+（`GetRootState.didUpdateWidget` 被注释掉了），运行期改主题到不了页面——此前
+壁纸只在那几个硬编码透明 `Scaffold` 的背景设置子页里可见就是这个原因。
+
+桌面端 `WallpaperCanvasTransparency` 在标题栏**之内**：标题栏保留真实主题色，
+窗口按钮在任意图片上都可读；若要让壁纸也铺到标题栏下面，需要另行调整
+`DesktopManager.buildWithTitleBar` 的层级。
+
+背景设置的所有子页（壁纸库、分类、网格、随机图源、随机图源分组）也各自用透明
+`Scaffold`，与上面的统一机制互为兜底。
 
 ## 验证与边界
 
 - `flutter analyze --no-pub`：无问题。
 - `tool/validate_architecture.py --strict`：0 未批准违规、21 已批准、0 过期条目。
-- 仓库 `test/` 为空，本次没有可跑的 Dart/Widget 测试；静态检查覆盖编译与分层。
+- `test/domains/`：`area_display_config_test.dart`（5 例）与
+  `wallpaper_canvas_transparency_test.dart`（3 例）全部通过。
 - 仍需真机自测：随机图源的取图成功率（各 API 可用性会随时间变化）、
   视频壁纸下载与播放、续页节奏、以及取消/退出时的解码器释放。

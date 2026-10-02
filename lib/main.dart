@@ -1,4 +1,4 @@
-import 'dart:io';
+﻿import 'dart:io';
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
@@ -204,10 +204,10 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
           }
           _applyDynamicTheme(lightDynamic, darkDynamic, lightTheme, darkTheme);
 
-          // A wallpaper is painted behind the navigator by [AppBackgroundLayer];
-          // the pages must stop painting their own colour for it to show. Only
-          // this boolean is read here, so dragging the mask or blur slider does
-          // not rebuild the whole app.
+          // A wallpaper is painted behind the navigator by [AppBackgroundLayer].
+          // The pages are made transparent by [WallpaperCanvasTransparency] in
+          // the builder below, not by the theme: GetX reads `theme:` only once,
+          // at startup, so a runtime change here never reaches a page.
           final wallpaperOwnsCanvas = BackgroundController.to.occupiesCanvas.value;
           if (wallpaperOwnsCanvas) {
             lightTheme = lightTheme.copyWith(scaffoldBackgroundColor: Colors.transparent);
@@ -236,17 +236,25 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
             builder: FlutterSmartDialog.init(
               builder: (context, child) {
                 Widget resultWidget = child ?? const SizedBox.shrink();
-                if (PlatformUtils.isDesktopNotMac) {
-                  resultWidget = DesktopManager.buildWithTitleBar(resultWidget);
-                } else if (Platform.isAndroid) {
+                if (Platform.isAndroid) {
                   resultWidget = AdaptiveRefreshRateScope(
                     mode: SettingsService.to.app.refreshRateMode,
                     child: resultWidget,
                   );
                 }
+                // Wallpaper first, then the canvas transparency that lets it
+                // show through every page, then the desktop title bar on top:
+                // the title bar must keep the real theme colour so its window
+                // controls stay readable over any picture.
+                resultWidget = WallpaperCanvasTransparency(
+                  child: MaterialUiThemeBridge(child: AppBackgroundLayer(child: resultWidget)),
+                );
+                if (PlatformUtils.isDesktopNotMac) {
+                  resultWidget = DesktopManager.buildWithTitleBar(resultWidget);
+                }
                 return MediaQuery(
                   data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(currentFactor)),
-                  child: MaterialUiThemeBridge(child: AppBackgroundLayer(child: resultWidget)),
+                  child: resultWidget,
                 );
               },
             ),
