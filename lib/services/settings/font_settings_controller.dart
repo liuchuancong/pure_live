@@ -11,6 +11,7 @@ import 'package:pure_live/services/settings/cache_controller.dart';
 import 'package:pure_live/core/utils/hive_pref_util.dart';
 import 'package:pure_live/services/models/download_status.dart';
 import 'package:pure_live/services/settings/danmaku_settings_controller.dart';
+import 'package:pure_live/get/get_navigation/src/root/get_root.dart';
 
 class FontSettingsController extends GetxController {
   static const defaultFontFamilyName = 'Default';
@@ -347,6 +348,12 @@ class FontSettingsController extends GetxController {
   }
 
   void refreshSystemTheme() {
+    // The everAll worker fires during controller registration — before
+    // GetMaterialApp mounts — and Get.theme dereferences the root navigator,
+    // which throws ("GetRoot is not part of the tree") rather than answering
+    // null. The first ThemeData already reads the initialized settings, so
+    // an early fire has nothing to refresh; re-run once the navigator exists.
+    if (!GetRootState.isMounted) return;
     final theme = MyTheme(primaryColor: Get.theme.primaryColor);
     Get.changeTheme(Get.isDarkMode ? theme.darkThemeData : theme.lightThemeData);
   }

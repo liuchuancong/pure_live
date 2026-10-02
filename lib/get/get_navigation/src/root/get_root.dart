@@ -1,5 +1,6 @@
 import '../../../get.dart';
 import '../router_report.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
@@ -302,6 +303,12 @@ class GetRoot extends StatefulWidget {
 
 class GetRootState extends State<GetRoot> with WidgetsBindingObserver {
   static GetRootState? _controller;
+
+  /// Whether the root navigator is mounted. Hosts whose controllers fire
+  /// navigation-dependent work during registration (before GetMaterialApp
+  /// exists) gate on this instead of catching the [controller] throw.
+  static bool get isMounted => _controller != null;
+
   static GetRootState get controller {
     if (_controller == null) {
       throw Exception('GetRoot is not part of the three');
