@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:pure_live/platforms/sites.dart';
+import 'package:pure_live/domains/live/data/platforms/sites.dart';
 
 class UnifiedEmojiModel {
   final String primaryKey;

@@ -1,6 +1,6 @@
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/services/settings/cookie_sanitizer.dart';
-import 'package:pure_live/platforms/douyu/douyu_utils.dart';
+import 'package:pure_live/domains/live/data/platforms/douyu/douyu_utils.dart';
 
 class DouyuCookieController extends GetxController {
   final TextEditingController cookieController = TextEditingController();

@@ -5,8 +5,8 @@ import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pure_live/core/network/http_client.dart';
-import 'package:pure_live/platforms/kilakila/kilakila_api.dart';
-import 'package:pure_live/platforms/kilakila/kilakila_link.dart';
+import 'package:pure_live/domains/live/data/platforms/kilakila/kilakila_api.dart';
+import 'package:pure_live/domains/live/data/platforms/kilakila/kilakila_link.dart';
 
 void main() {
   test(

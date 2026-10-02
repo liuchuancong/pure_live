@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:pure_live/platforms/huya/huya_site.dart';
+import 'package:pure_live/domains/live/data/platforms/huya/huya_site.dart';
 
 void main() {
   test('production Huya site uses the bounded HTTPS message board', () async {

@@ -5,8 +5,8 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:pure_live/platforms/acfun/acfun_api.dart';
-import 'package:pure_live/platforms/acfun/acfun_site.dart';
+import 'package:pure_live/domains/live/data/platforms/acfun/acfun_api.dart';
+import 'package:pure_live/domains/live/data/platforms/acfun/acfun_site.dart';
 
 void main() {
   test(

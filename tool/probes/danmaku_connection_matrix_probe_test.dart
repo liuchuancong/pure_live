@@ -19,7 +19,7 @@ import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/core/network/web_socket_util.dart';
 import 'package:pure_live/core/contracts/live_danmaku.dart';
 import 'package:pure_live/core/contracts/live_site.dart';
-import 'package:pure_live/platforms/sites.dart';
+import 'package:pure_live/domains/live/data/platforms/sites.dart';
 import 'package:pure_live/get/get.dart';
 
 void main() {

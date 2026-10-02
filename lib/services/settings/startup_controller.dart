@@ -3,7 +3,7 @@ import 'dart:developer' as dev;
 
 import 'package:pure_live/core/platform/win_auto_start.dart';
 import 'package:pure_live/core/storage/hive_rx.dart';
-import 'package:pure_live/platforms/huya/huya_site.dart';
+import 'package:pure_live/domains/live/data/platforms/huya/huya_site.dart';
 import 'package:pure_live/get/get.dart';
 
 typedef StartupStateReader = FutureOr<bool> Function();

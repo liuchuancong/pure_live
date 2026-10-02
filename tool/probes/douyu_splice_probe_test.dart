@@ -14,7 +14,7 @@ import 'package:pure_live/services/settings_service.dart';
 import 'package:pure_live/core/storage/hive_pref_util.dart';
 import 'package:pure_live/core/contracts/live_quality_discovery.dart';
 import 'package:pure_live/core/contracts/live_site.dart';
-import 'package:pure_live/platforms/sites.dart';
+import 'package:pure_live/domains/live/data/platforms/sites.dart';
 import 'package:pure_live/get/get.dart';
 import 'package:pure_live/player/core/flv_splice_relay.dart';
 

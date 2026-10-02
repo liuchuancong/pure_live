@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
-import 'package:pure_live/platforms/bigo/bigo_api.dart';
-import 'package:pure_live/platforms/bigo/bigo_hls_protection.dart';
+import 'package:pure_live/domains/live/data/platforms/bigo/bigo_api.dart';
+import 'package:pure_live/domains/live/data/platforms/bigo/bigo_hls_protection.dart';
 
 import 'ffmpeg_hls_input_relay.dart';
 import 'owned_record_input.dart';

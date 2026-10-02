@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/platforms/douyu/douyu_utils.dart';
+import 'package:pure_live/domains/live/data/platforms/douyu/douyu_utils.dart';
 import 'package:pure_live/features/account/account_controller.dart';
 import 'package:pure_live/services/account/bilibili_account_service.dart';
 

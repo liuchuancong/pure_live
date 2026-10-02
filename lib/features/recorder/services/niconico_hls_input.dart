@@ -5,9 +5,9 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:pure_live/core/stream/hls_master_selection.dart';
-import 'package:pure_live/platforms/niconico/niconico_session.dart';
-import 'package:pure_live/platforms/niconico/niconico_stream.dart';
-import 'package:pure_live/platforms/niconico/niconico_watch.dart';
+import 'package:pure_live/domains/live/data/platforms/niconico/niconico_session.dart';
+import 'package:pure_live/domains/live/data/platforms/niconico/niconico_stream.dart';
+import 'package:pure_live/domains/live/data/platforms/niconico/niconico_watch.dart';
 
 import 'owned_record_input.dart';
 import 'cancellable_http_connections.dart';

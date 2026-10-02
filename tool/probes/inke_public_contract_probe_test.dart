@@ -7,10 +7,10 @@ import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pure_live/core/network/http_client.dart';
-import 'package:pure_live/platforms/inke/inke_api.dart';
+import 'package:pure_live/domains/live/data/platforms/inke/inke_api.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
-import 'package:pure_live/platforms/sites.dart';
-import 'package:pure_live/platforms/inke/inke_site.dart';
+import 'package:pure_live/domains/live/data/platforms/sites.dart';
+import 'package:pure_live/domains/live/data/platforms/inke/inke_site.dart';
 import 'package:pure_live/features/recorder/services/stream_resolver_service.dart';
 
 void main() {

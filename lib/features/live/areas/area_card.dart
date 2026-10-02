@@ -6,7 +6,7 @@ import 'package:pure_live/core/network/image_cache_manager.dart';
 import 'package:pure_live/app/router/app_navigation.dart';
 import 'package:pure_live/features/live/areas/area_pic_mapper.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:pure_live/platforms/cc/cc_catalog.dart';
+import 'package:pure_live/domains/live/data/platforms/cc/cc_catalog.dart';
 
 /// Keeps the fixed category grid tall enough for both one-line labels when
 /// accessibility text scaling is enabled.

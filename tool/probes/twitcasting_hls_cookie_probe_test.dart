@@ -7,7 +7,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:pure_live/platforms/twitcasting/twitcasting_api.dart';
+import 'package:pure_live/domains/live/data/platforms/twitcasting/twitcasting_api.dart';
 import 'package:pure_live/features/recorder/services/ffmpeg_hls_input_relay.dart';
 import 'package:pure_live/features/recorder/services/recorder_proxy_routing.dart';
 

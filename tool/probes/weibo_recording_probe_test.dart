@@ -13,7 +13,7 @@ import 'package:pure_live/services/settings/log_controller.dart';
 import 'package:pure_live/core/storage/hive_pref_util.dart';
 import 'package:pure_live/core/network/http_client.dart' as app_http;
 import 'package:pure_live/core/contracts/live_site.dart';
-import 'package:pure_live/platforms/weibo/weibo_site.dart';
+import 'package:pure_live/domains/live/data/platforms/weibo/weibo_site.dart';
 import 'package:pure_live/get/get.dart';
 import 'package:pure_live/features/recorder/ffmpeg/ffmpeg_command_builder.dart';
 import 'package:pure_live/features/recorder/ffmpeg/ffmpeg_manager.dart';

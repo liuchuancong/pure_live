@@ -8,9 +8,9 @@ import 'package:dio/io.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/core/contracts/live_site.dart';
-import 'package:pure_live/platforms/missevan/missevan_api.dart';
-import 'package:pure_live/platforms/missevan/missevan_site.dart';
-import 'package:pure_live/platforms/sites.dart';
+import 'package:pure_live/domains/live/data/platforms/missevan/missevan_api.dart';
+import 'package:pure_live/domains/live/data/platforms/missevan/missevan_site.dart';
+import 'package:pure_live/domains/live/data/platforms/sites.dart';
 import 'package:pure_live/features/recorder/services/stream_resolver_service.dart';
 
 void main() {

@@ -4,7 +4,7 @@ import 'dart:developer';
 
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/widgets/app_prompt_dialogs.dart';
-import 'package:pure_live/platforms/cc/cc_catalog.dart';
+import 'package:pure_live/domains/live/data/platforms/cc/cc_catalog.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// APP页面跳转封装

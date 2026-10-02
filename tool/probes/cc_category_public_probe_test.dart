@@ -6,7 +6,7 @@ import 'package:dio/io.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pure_live/core/models/live_area.dart';
 import 'package:pure_live/core/network/http_client.dart';
-import 'package:pure_live/platforms/cc/cc_site.dart';
+import 'package:pure_live/domains/live/data/platforms/cc/cc_site.dart';
 
 void main() {
   test(
