@@ -5,7 +5,7 @@ import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:pure_live/core/common/http_client.dart';
 import 'package:pure_live/core/common/request_scope.dart';
-import 'package:pure_live/core/site/niconico/niconico_watch.dart';
+import 'package:pure_live/platforms/niconico/niconico_watch.dart';
 
 typedef NiconicoRequest = Future<({int status, String body})> Function(Uri uri, CancelToken cancel);
 

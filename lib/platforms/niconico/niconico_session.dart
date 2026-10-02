@@ -4,8 +4,8 @@ import 'dart:io' as io;
 
 import 'package:dio/dio.dart';
 import 'package:pure_live/core/common/web_socket_util.dart';
-import 'package:pure_live/core/site/niconico/niconico_stream.dart';
-import 'package:pure_live/core/site/niconico/niconico_watch.dart';
+import 'package:pure_live/platforms/niconico/niconico_stream.dart';
+import 'package:pure_live/platforms/niconico/niconico_watch.dart';
 import 'package:web_socket_channel/io.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 

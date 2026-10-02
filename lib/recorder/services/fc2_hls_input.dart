@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
-import 'package:pure_live/core/site/fc2live/fc2_api.dart';
-import 'package:pure_live/core/site/fc2live/fc2_control_session.dart';
+import 'package:pure_live/platforms/fc2live/fc2_api.dart';
+import 'package:pure_live/platforms/fc2live/fc2_control_session.dart';
 
 import 'ffmpeg_hls_input_relay.dart';
 import 'owned_record_input.dart';

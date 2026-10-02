@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/core/common/core_log.dart';
 import 'package:pure_live/core/common/http_client.dart';
-import 'package:pure_live/core/site/douyin/douyin_audience.dart';
+import 'package:pure_live/platforms/douyin/douyin_audience.dart';
 
 class DouyinSearch {
   static const String host = 'https://live.douyin.com';

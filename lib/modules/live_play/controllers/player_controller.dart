@@ -16,7 +16,7 @@ import 'package:pure_live/player/kernel/live_player_facade.dart';
 import 'package:pure_live/modules/live_play/states/load_type.dart';
 import 'package:pure_live/core/common/hls_source_query_policy.dart';
 import 'package:pure_live/player/core/playback_header_resolver.dart';
-import 'package:pure_live/core/site/huya/huya_transport_policy.dart';
+import 'package:pure_live/platforms/huya/huya_transport_policy.dart';
 import 'package:pure_live/core/interface/live_quality_discovery.dart';
 import 'package:pure_live/common/utils/latest_async_value_queue.dart';
 import 'package:pure_live/player/core/live_input_playback_binding.dart';
