@@ -36,10 +36,10 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | kugoulive | 10 | 本轮已摘取（见下） |
 | bigo / fc2live | 9 | 待办 |
 | missevan / kilakila / acfun | 8 | missevan、kilakila 本轮已摘取（见下）；acfun 待办 |
-| jdlive / looklive / steambroadcast / twitcasting / showroom / sixroom / baidulive | 7 | 待办 |
+| jdlive / looklive / steambroadcast / twitcasting / showroom / sixroom / baidulive | 7 | steambroadcast 本轮已摘取（见下）；其余待办 |
 | cc | 5 | 本轮已摘取（见下） |
 | tiktok | 5 | 待办 |
-| inke / xiaohongshu / weibo / liveme | 4 | 待办 |
+| inke / xiaohongshu / weibo / liveme | 4 | weibo 本轮已摘取（见下）；其余待办 |
 
 ## bilibili
 
@@ -318,3 +318,31 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | 15-2 | 在播房用 `onlineNumber` 当在线人数、`watchNumber` 当累计听众 | 未做：本仓目前 `watching` 留空、观众口径 unknown |
 | 15-3 | 时间线在第 100 页 / 空页 / 连续 3 页没有新主播时结束 | 未做：分页终止条件 |
 | 弹幕 | KilaKila 弹幕本体（礼物、付费提问） | 未做：新功能批次 |
+
+## weibo
+
+上游相关提交：`de3404bbe`（M4.U.18，18-1 至 18-9）。
+
+| 项 | 内容 | 本仓状态 |
+| --- | --- | --- |
+| 18-1 | 推荐快照请求 `count=100`（约 51 行） | **已同步**：此前 `count=10` |
+| 18-2 | 快照里的卡片都是在播 | **已同步**：目录卡片按直播中上报，此前一律 unknown |
+| 18-3 | `status` 5（已结束）是下播 | **已同步**：`WeiboBroadcastState.offline` |
+| 18-4 | 受限/关闭的房间保留状态并带限制种类（appOnly/私密/付费） | 未做：限制模型 |
+| 18-5 | 公开回放播 `replay_origin_url`，作为「原画」档（id replay） | 未做：回放取流 |
+| 18-6 | 头像优先 1024px；标题与昵称解码 HTML 字符引用 | 未做 |
+| 18-8 / 18-9 | 坏行逐条跳过；分享文本与搜索里的 t.cn 短链解析 | 未做 |
+| 18-10 | 关注主播 | 上游也阻塞（需要访客 cookie） |
+
+## steambroadcast
+
+上游相关提交：`42067b5d7`（M4.U.27，27-1 至 27-7）。
+
+| 项 | 内容 | 本仓状态 |
+| --- | --- | --- |
+| 27-1 | 头像用 184px 的 `<hash>_full.jpg`，Steam 默认头像（问号）视为没有头像 | **已同步**：`_avatar()` 重写，此前只认 `avatars.akamai.steamstatic.com` 且原样返回 32px 地址 |
+| 27-2 | 名字与头像取 mini profile，标题/游戏/封面取 getbroadcastinfo；占位文案留空 | 未做：请求编排 |
+| 27-4 | `/profiles/<id>` 直接是房间；`/id/<name>` 经 `?xml=1` 解析 | 未做：链接解析 |
+| 27-5 | 记住的卡片只在房间直播中填补观众数 | 未做 |
+| 27-7 | 校验过的 master 每个 variant 加一档（1080p60、720p…） | 未做：清晰度分档 |
+| 限制/状态 | `user_restricted` 按封禁、`missing_subscription` 按订阅可见、`is_replay` 按回放 | 未做：状态与限制模型 |

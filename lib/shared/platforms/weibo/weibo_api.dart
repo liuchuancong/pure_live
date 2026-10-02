@@ -23,7 +23,9 @@ enum WeiboFailure {
 
 enum WeiboAccess { public, restricted, disabled }
 
-enum WeiboBroadcastState { live, replay, unknown }
+/// 播出状态。快照里列的都是在播，所以目录卡片一律 [live]（上游 18-2）；
+/// 详情里 `status` 5 是已结束（上游 18-3），1 在播、3 回放。
+enum WeiboBroadcastState { live, offline, replay, unknown }
 
 class WeiboException implements Exception {
   const WeiboException(this.kind);
@@ -184,7 +186,7 @@ class WeiboApi {
   /// Finite anonymous recommendation snapshot, not search or a pagination API.
   Future<List<WeiboDirectoryCard>> directory({CancelToken? cancel}) => _scope(
     cancel,
-    (token) async => parseDirectory(await _read('/l/!/2/wblive/pc_recommend/list.json?count=10&uid=', token)),
+    (token) async => parseDirectory(await _read('/l/!/2/wblive/pc_recommend/list.json?count=100&uid=', token)),
   );
 
   Future<WeiboLiveDetail> detail(String liveId, {int? expectedOwnerId, CancelToken? cancel}) {
@@ -312,6 +314,7 @@ class WeiboApi {
         : switch (status) {
             1 => WeiboBroadcastState.live,
             3 => WeiboBroadcastState.replay,
+            5 => WeiboBroadcastState.offline,
             _ => WeiboBroadcastState.unknown,
           };
     final urls = <String>{};

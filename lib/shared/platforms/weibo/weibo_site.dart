@@ -92,7 +92,9 @@ class WeiboSite extends LiveSite
           title: card.nickname,
           cover: card.cover,
           link: WeiboLink.url(card.liveId),
-          liveStatus: LiveStatus.unknown,
+          // 快照里列出的都是在播的直播（上游 18-2）。
+          liveStatus: LiveStatus.live,
+          status: true,
           audienceMetricType: AudienceMetricType.unknown,
           watching: '',
           notice: i18n('weibo_room_scope'),
@@ -146,6 +148,7 @@ class WeiboSite extends LiveSite
     link: WeiboLink.url(detail.liveId),
     liveStatus: switch (detail.state) {
       WeiboBroadcastState.live => LiveStatus.live,
+      WeiboBroadcastState.offline => LiveStatus.offline,
       WeiboBroadcastState.replay => LiveStatus.replay,
       WeiboBroadcastState.unknown => LiveStatus.unknown,
     },

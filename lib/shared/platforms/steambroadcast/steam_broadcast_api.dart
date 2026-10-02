@@ -436,18 +436,32 @@ class SteamBroadcastApi {
     return uri.toString();
   }
 
+  /// Steam 的头像：`avatars.*.steamstatic.com/<hash>.jpg`（卡片上只有 32px）
+  /// 取它的 184px 版本 `<hash>_full.jpg`；Steam 的默认头像（问号）等同于没有
+  /// 头像。其它合法的 https 地址原样返回（上游 27-1；3.x 只认
+  /// `avatars.akamai.steamstatic.com`，现在 Steam 也从 fastly 提供）。
   static String _avatar(Object? value) {
     final raw = _optionalText(value);
     final uri = Uri.tryParse(raw);
     if (uri == null ||
         uri.scheme != 'https' ||
+        uri.host.isEmpty ||
         uri.userInfo.isNotEmpty ||
-        uri.hasFragment ||
-        uri.host.toLowerCase() != 'avatars.akamai.steamstatic.com') {
+        uri.hasFragment) {
       return '';
     }
-    return uri.toString();
+    final host = uri.host.toLowerCase();
+    if (!host.startsWith('avatars.') || !host.endsWith('.steamstatic.com')) return uri.toString();
+    final hash = _steamAvatarPath.firstMatch(uri.path)?.group(1);
+    if (hash == null) return uri.toString();
+    if (hash == _steamDefaultAvatar) return '';
+    return Uri.https(uri.authority, '/${hash}_full.jpg').toString();
   }
+
+  /// Steam 的默认头像（问号）：等同于没有头像。
+  static const String _steamDefaultAvatar = 'fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb';
+
+  static final RegExp _steamAvatarPath = RegExp(r'^/([0-9a-f]{40})(?:_medium|_full)?\.jpg$');
 
   static bool _isMediaHost(String host) {
     final value = host.toLowerCase();
