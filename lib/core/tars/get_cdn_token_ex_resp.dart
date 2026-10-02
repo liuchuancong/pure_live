@@ -1,7 +1,7 @@
-import 'package:pure_live/pkg/tars/codec/tars_struct.dart';
-import 'package:pure_live/pkg/tars/codec/tars_displayer.dart';
-import 'package:pure_live/pkg/tars/codec/tars_input_stream.dart';
-import 'package:pure_live/pkg/tars/codec/tars_output_stream.dart';
+import 'package:pure_live/core/tars/codec/tars_struct.dart';
+import 'package:pure_live/core/tars/codec/tars_displayer.dart';
+import 'package:pure_live/core/tars/codec/tars_input_stream.dart';
+import 'package:pure_live/core/tars/codec/tars_output_stream.dart';
 // ignore_for_file: no_leading_underscores_for_local_identifiers
 
 class GetCdnTokenExResp extends TarsStruct {

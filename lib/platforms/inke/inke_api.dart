@@ -8,7 +8,7 @@ import 'package:pure_live/core/models/live_room.dart';
 import 'package:pure_live/core/common/http_client.dart';
 import 'package:pure_live/core/common/request_scope.dart';
 import 'package:pure_live/core/interface/live_directory.dart';
-import 'package:pure_live/model/live_play_quality.dart';
+import 'package:pure_live/core/models/live_play_quality.dart';
 
 enum InkeFailure { transport, access, rateLimited, service, notFound, schema, cancelled, mediaUnavailable }
 

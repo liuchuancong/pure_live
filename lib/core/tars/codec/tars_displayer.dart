@@ -2,8 +2,8 @@
 
 import 'dart:typed_data';
 
-import './tars_encode_exception.dart';
-import './tars_struct.dart';
+import 'tars_encode_exception.dart';
+import 'tars_struct.dart';
 
 class TarsDisplayer {
   late StringBuffer sb;

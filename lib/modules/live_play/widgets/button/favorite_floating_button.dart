@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/plugins/event_bus.dart';
+import 'package:pure_live/core/plugins/event_bus.dart';
 
 class FavoriteFloatingButton extends StatefulWidget {
   const FavoriteFloatingButton({super.key, required this.room, this.compact = false});

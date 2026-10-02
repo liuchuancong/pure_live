@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:pure_live/model/live_play_quality.dart';
+import 'package:pure_live/core/models/live_play_quality.dart';
 
 import 'picarto_api.dart';
 

@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:pure_live/gen/env.g.dart';
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/common/log.dart';
-import 'package:pure_live/plugins/race_http.dart';
+import 'package:pure_live/core/plugins/race_http.dart';
 import 'package:pure_live/core/consts/app_consts.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:pure_live/core/utils/githup_mirror.dart';

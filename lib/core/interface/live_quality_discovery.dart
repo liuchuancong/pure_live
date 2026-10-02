@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:dio/dio.dart';
 import 'package:pure_live/core/models/live_room.dart';
-import 'package:pure_live/model/live_play_quality.dart';
+import 'package:pure_live/core/models/live_play_quality.dart';
 
 import 'live_site.dart';
 

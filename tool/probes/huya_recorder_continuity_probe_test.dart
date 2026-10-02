@@ -16,7 +16,7 @@ import 'package:pure_live/core/common/hls_source_query_policy.dart';
 import 'package:pure_live/platforms/huya/huya_site.dart';
 import 'package:pure_live/platforms/huya/huya_transport_policy.dart';
 import 'package:pure_live/get/get.dart';
-import 'package:pure_live/model/live_play_quality.dart';
+import 'package:pure_live/core/models/live_play_quality.dart';
 import 'package:pure_live/recorder/ffmpeg/ffmpeg_event.dart';
 import 'package:pure_live/recorder/ffmpeg/ffmpeg_manager.dart';
 import 'package:pure_live/recorder/ffmpeg/ffmpeg_scheduler.dart';

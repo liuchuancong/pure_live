@@ -2,13 +2,13 @@ import 'dart:async';
 
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/plugins/cache_manager.dart';
-import 'package:pure_live/routes/app_navigation.dart';
+import 'package:pure_live/core/plugins/cache_manager.dart';
+import 'package:pure_live/app/router/app_navigation.dart';
 import 'package:pure_live/core/widgets/common_avatar.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:pure_live/core/utils/share_command_handler.dart';
 import 'package:pure_live/modules/tags/tag_management_controller.dart';
-import 'package:pure_live/plugins/event_bus.dart';
+import 'package:pure_live/core/plugins/event_bus.dart';
 import 'package:pure_live/services/settings/room_card_settings_controller.dart';
 
 double _roomTagTextScale(BuildContext context) {

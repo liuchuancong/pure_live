@@ -7,7 +7,7 @@ import 'package:crypto/crypto.dart';
 import 'package:flutter/services.dart';
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/platform/platform_utils.dart';
-import 'package:pure_live/plugins/share_command_handler.dart';
+import 'package:pure_live/core/plugins/share_command_handler.dart';
 import 'package:share_plus/share_plus.dart';
 
 typedef ShareClipboardReader = Future<String?> Function();

@@ -2,11 +2,11 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:logger/logger.dart';
-import 'package:pure_live/pkg/tars/tup/const.dart';
-import 'package:pure_live/pkg/tars/tup/tup_response.dart';
-import 'package:pure_live/pkg/tars/tup/tars_uni_packet.dart';
-import 'package:pure_live/pkg/tars/codec/tars_input_stream.dart';
-import 'package:pure_live/pkg/tars/tup/tup_result_exception.dart';
+import 'package:pure_live/core/tars/tup/const.dart';
+import 'package:pure_live/core/tars/tup/tup_response.dart';
+import 'package:pure_live/core/tars/tup/tars_uni_packet.dart';
+import 'package:pure_live/core/tars/codec/tars_input_stream.dart';
+import 'package:pure_live/core/tars/tup/tup_result_exception.dart';
 
 //tup网络请求封装
 //注意:只支持 PACKET_TYPE_TUP3 = 3 类型的封包

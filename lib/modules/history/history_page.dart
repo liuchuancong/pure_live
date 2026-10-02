@@ -1,7 +1,7 @@
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/services/settings/history_controller.dart';
 import 'package:pure_live/services/settings/refresh_config_controller.dart';
-import 'package:pure_live/plugins/global.dart';
+import 'package:pure_live/core/plugins/global.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
 
 class HistoryPage extends StatefulWidget {

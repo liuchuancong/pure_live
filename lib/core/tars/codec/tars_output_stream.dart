@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
-import './tars_struct.dart';
-import './tars_encode_exception.dart';
+import 'tars_struct.dart';
+import 'tars_encode_exception.dart';
 import 'package:pure_live/core/common/log.dart';
 
 class BinaryWriter {

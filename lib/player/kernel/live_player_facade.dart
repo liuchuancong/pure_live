@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:pure_live/get/get.dart';
 import 'package:media_core_live/media_core_live.dart';
 import 'package:pure_live/core/models/live_room.dart';
-import 'package:pure_live/model/live_play_quality.dart';
+import 'package:pure_live/core/models/live_play_quality.dart';
 import 'package:pure_live/player/models/player_engine.dart';
 import 'package:media_core_media_kit/media_core_media_kit.dart';
 import 'package:pure_live/modules/live_play/widgets/danmaku/compact_danmaku_overlay.dart';

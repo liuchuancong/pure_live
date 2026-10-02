@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/plugins/file_utils.dart';
-import 'package:pure_live/plugins/db_service.dart';
+import 'package:pure_live/core/plugins/file_utils.dart';
+import 'package:pure_live/core/plugins/db_service.dart';
 import 'package:pure_live/core/iptv/local/database.dart' as database;
 import 'package:pure_live/core/iptv/services/epg_sync_engine.dart';
 import 'package:pure_live/core/iptv/services/epg_import_manager.dart';

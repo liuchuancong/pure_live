@@ -3,7 +3,7 @@ import 'dart:developer' as developer;
 
 import 'package:pure_live/core/index.dart';
 import 'package:synchronized/synchronized.dart';
-import 'package:pure_live/plugins/event_bus.dart';
+import 'package:pure_live/core/plugins/event_bus.dart';
 import 'package:pure_live/modules/tags/live_tag.dart';
 import 'package:pure_live/core/interface/live_site.dart';
 import 'package:pure_live/modules/tags/tag_management_controller.dart';

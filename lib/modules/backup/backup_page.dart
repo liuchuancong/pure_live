@@ -4,10 +4,10 @@ import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/core/index.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:pure_live/core/common/log.dart';
-import 'package:pure_live/plugins/file_utils.dart';
+import 'package:pure_live/core/plugins/file_utils.dart';
 import 'package:pure_live/modules/backup/scan_page.dart';
 import 'package:pure_live/modules/auth/auth_controller.dart';
-import 'package:pure_live/plugins/backup_recovery_service.dart';
+import 'package:pure_live/core/plugins/backup_recovery_service.dart';
 import 'package:pure_live/services/settings/log_controller.dart';
 
 

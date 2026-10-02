@@ -1,7 +1,7 @@
 import 'package:pure_live/player/core/playback_source.dart';
 import 'package:flutter/foundation.dart';
 import 'package:pure_live/core/common/hls_source_query_policy.dart';
-import 'package:pure_live/model/live_play_quality.dart';
+import 'package:pure_live/core/models/live_play_quality.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller.dart';
 
 /// Resolves the route-scoped video controller for a partial player-state update.

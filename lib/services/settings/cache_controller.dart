@@ -7,7 +7,7 @@ import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/platform/app_path_manager.dart';
 import 'package:pure_live/core/utils/hive_pref_util.dart';
 import 'package:pure_live/services/settings/refresh_config_controller.dart';
-import 'package:pure_live/plugins/cache_manager.dart';
+import 'package:pure_live/core/plugins/cache_manager.dart';
 
 typedef CacheDirectoryResolver = Future<List<Directory>> Function();
 typedef CacheDirectoryPurger = Future<bool> Function(Directory directory);

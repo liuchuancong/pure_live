@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/plugins/file_utils.dart';
+import 'package:pure_live/core/plugins/file_utils.dart';
 import 'package:pure_live/core/widgets/download_apk_dialog.dart';
 import 'package:pure_live/core/widgets/download_directory_dialog.dart';
 import 'package:pure_live/services/settings/cache_controller.dart';

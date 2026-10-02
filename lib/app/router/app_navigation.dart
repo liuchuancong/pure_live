@@ -3,7 +3,7 @@ import 'dart:async';
 import 'dart:developer';
 
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/plugins/utils.dart';
+import 'package:pure_live/core/plugins/utils.dart';
 import 'package:pure_live/platforms/cc/cc_catalog.dart';
 import 'package:url_launcher/url_launcher.dart';
 

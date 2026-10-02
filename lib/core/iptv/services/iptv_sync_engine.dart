@@ -2,8 +2,8 @@ import 'dart:io';
 
 import 'package:path/path.dart' as p;
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/plugins/db_service.dart';
-import 'package:pure_live/plugins/file_utils.dart';
+import 'package:pure_live/core/plugins/db_service.dart';
+import 'package:pure_live/core/plugins/file_utils.dart';
 import 'package:pure_live/core/common/http_client.dart';
 import 'package:pure_live/core/platform/app_path_manager.dart';
 import 'package:pure_live/core/iptv/local/database.dart' as database;

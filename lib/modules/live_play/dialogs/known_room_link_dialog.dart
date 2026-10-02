@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/model/live_play_quality.dart';
+import 'package:pure_live/core/models/live_play_quality.dart';
 import 'package:pure_live/modules/live_play/dialogs/live_dlna_dialog.dart';
 import 'package:pure_live/modules/toolbox/toolbox_action_scope.dart';
 import 'package:pure_live/modules/toolbox/toolbox_direct_link_flow.dart';

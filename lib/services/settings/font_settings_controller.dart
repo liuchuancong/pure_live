@@ -5,7 +5,7 @@ import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/models/font_model.dart';
-import 'package:pure_live/plugins/font_download_manager.dart';
+import 'package:pure_live/core/plugins/font_download_manager.dart';
 import 'package:pure_live/core/platform/app_path_manager.dart';
 import 'package:pure_live/services/settings/cache_controller.dart';
 import 'package:pure_live/core/utils/hive_pref_util.dart';

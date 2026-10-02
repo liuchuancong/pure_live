@@ -1,10 +1,10 @@
 import 'dart:core';
 import 'dart:typed_data';
-import 'package:pure_live/pkg/tars/codec/tars_struct.dart';
-import 'package:pure_live/pkg/tars/codec/tars_displayer.dart';
-import 'package:pure_live/pkg/tars/codec/tars_input_stream.dart';
-import 'package:pure_live/pkg/tars/codec/tars_output_stream.dart';
-import 'package:pure_live/pkg/tars/codec/tars_deep_copyable.dart';
+import 'package:pure_live/core/tars/codec/tars_struct.dart';
+import 'package:pure_live/core/tars/codec/tars_displayer.dart';
+import 'package:pure_live/core/tars/codec/tars_input_stream.dart';
+import 'package:pure_live/core/tars/codec/tars_output_stream.dart';
+import 'package:pure_live/core/tars/codec/tars_deep_copyable.dart';
 // ignore_for_file: non_constant_identifier_names, avoid_renaming_method_parameters, no_leading_underscores_for_local_identifiers
 
 class RequestPacket extends TarsStruct {

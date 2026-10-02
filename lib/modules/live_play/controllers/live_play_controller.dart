@@ -3,10 +3,10 @@ import 'dart:async';
 import 'dart:developer' as developer;
 
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/plugins/event_bus.dart';
+import 'package:pure_live/core/plugins/event_bus.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
-import 'package:pure_live/plugins/emoji_manager.dart';
-import 'package:pure_live/model/live_play_quality.dart';
+import 'package:pure_live/core/plugins/emoji_manager.dart';
+import 'package:pure_live/core/models/live_play_quality.dart';
 import 'package:pure_live/player/core/playback_source.dart';
 import 'package:pure_live/player/core/live_audio_service.dart';
 import 'package:pure_live/player/kernel/live_player_facade.dart';

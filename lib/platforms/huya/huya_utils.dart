@@ -4,7 +4,7 @@ import 'huya_request_params.dart';
 
 import 'package:pure_live/core/tars/types.dart';
 import 'package:pure_live/core/models/live_message.dart';
-import 'package:pure_live/pkg/tars/net/base_tars_http.dart';
+import 'package:pure_live/core/tars/net/base_tars_http.dart';
 import 'package:pure_live/core/tars/get_game_event_message_board_rsp.dart';
 import 'package:pure_live/core/tars/get_game_event_message_board_req.dart';
 

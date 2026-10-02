@@ -8,7 +8,7 @@ import 'package:pure_live/platforms/soop/soop_site.dart';
 import 'package:pure_live/core/common/utils/list_util.dart';
 import 'package:pure_live/core/common/web_socket_util.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
-import 'package:pure_live/core/utils/yy/yy_web_socket_channel.dart';
+import 'package:pure_live/platforms/yy/yy_web_socket_channel.dart';
 
 class SoopDanmakuArgs {
   String url;

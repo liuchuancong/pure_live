@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/utils/live_url_tool.dart';
-import 'package:pure_live/routes/app_navigation.dart';
+import 'package:pure_live/app/router/app_navigation.dart';
 
 typedef SharedLiveLinkParser = Future<List<String>> Function(String text);
 typedef SharedLiveRoomOpener = Future<void> Function(LiveRoom liveroom);

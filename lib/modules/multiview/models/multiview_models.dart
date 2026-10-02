@@ -1,5 +1,5 @@
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/model/live_play_quality.dart';
+import 'package:pure_live/core/models/live_play_quality.dart';
 import 'package:pure_live/player/core/playback_source.dart';
 import 'package:pure_live/player/core/flv_splice_relay.dart';
 import 'package:media_core_media_kit/media_core_media_kit.dart';

@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:media_core_floating/media_core_floating.dart';
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/routes/app_navigation.dart';
+import 'package:pure_live/app/router/app_navigation.dart';
 import 'package:pure_live/player/kernel/live_player_facade.dart';
 
 ///

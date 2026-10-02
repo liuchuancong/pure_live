@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:pure_live/plugins/locale_helper.dart';
+import 'package:pure_live/core/plugins/locale_helper.dart';
 import 'package:pure_live/core/platform/platform_utils.dart';
 import 'package:pure_live/services/utils/hive_rx.dart';
 import 'package:pure_live/services/settings_service.dart';

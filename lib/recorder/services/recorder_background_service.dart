@@ -3,7 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/services.dart';
 import 'package:pure_live/core/utils/latest_async_value_queue.dart';
-import 'package:pure_live/plugins/locale_helper.dart';
+import 'package:pure_live/core/plugins/locale_helper.dart';
 
 class RecorderBackgroundException implements Exception {
   const RecorderBackgroundException(this.reason);

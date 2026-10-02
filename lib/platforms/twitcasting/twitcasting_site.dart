@@ -5,8 +5,8 @@ import 'package:pure_live/core/danmaku/empty_danmaku.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
 import 'package:pure_live/core/interface/live_search.dart';
 import 'package:pure_live/core/interface/live_site.dart';
-import 'package:pure_live/model/live_category.dart';
-import 'package:pure_live/model/live_play_quality.dart';
+import 'package:pure_live/core/models/live_category.dart';
+import 'package:pure_live/core/models/live_play_quality.dart';
 
 import 'twitcasting_api.dart';
 

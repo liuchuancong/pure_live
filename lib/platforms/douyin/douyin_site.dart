@@ -2,19 +2,19 @@ import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/model/live_category.dart';
+import 'package:pure_live/core/models/live_category.dart';
 import 'package:pure_live/core/common/core_log.dart';
-import 'package:pure_live/model/live_anchor_item.dart';
+import 'package:pure_live/core/models/live_anchor_item.dart';
 import 'package:pure_live/core/common/http_client.dart';
-import 'package:pure_live/model/live_play_quality.dart';
+import 'package:pure_live/core/models/live_play_quality.dart';
 import 'package:pure_live/core/interface/live_site.dart';
 import 'package:pure_live/core/common/convert_helper.dart';
 import 'package:pure_live/core/danmaku/douyin_danmaku.dart';
 import 'package:pure_live/platforms/douyin/douyin_audience.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
 import 'package:pure_live/platforms/douyin/douyin_search.dart';
-import 'package:pure_live/core/utils/douyin/douyin_utils.dart';
-import 'package:pure_live/core/utils/douyin/douyin_request_params.dart';
+import 'package:pure_live/platforms/douyin/douyin_utils.dart';
+import 'package:pure_live/platforms/douyin/douyin_request_params.dart';
 import 'package:pure_live/core/utils/live_quality_label.dart';
 
 class DouyinSite implements LiveSite, LiveSiteRecordRoomResolver {

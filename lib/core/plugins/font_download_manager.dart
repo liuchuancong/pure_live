@@ -2,7 +2,7 @@ import 'dart:developer';
 import 'dart:io' hide HttpClient;
 
 import 'package:flutter/services.dart';
-import 'package:pure_live/plugins/race_http.dart';
+import 'package:pure_live/core/plugins/race_http.dart';
 import 'package:pure_live/core/common/http_client.dart';
 import 'package:pure_live/core/models/font_model.dart';
 import 'package:pure_live/core/utils/githup_mirror.dart';

@@ -8,8 +8,8 @@ import 'package:pure_live/core/index.dart';
 import 'package:pure_live/services/settings/log_controller.dart';
 import 'package:pure_live/core/common/log.dart';
 import 'package:pure_live/modules/search/web_search_room_parser.dart';
-import 'package:pure_live/plugins/utils.dart';
-import 'package:pure_live/routes/app_navigation.dart';
+import 'package:pure_live/core/plugins/utils.dart';
+import 'package:pure_live/app/router/app_navigation.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 enum WebSearchViewStatus { loading, ready, failed }

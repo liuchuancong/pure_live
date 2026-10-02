@@ -1,5 +1,5 @@
-import 'package:pure_live/model/live_play_quality.dart';
-import 'package:pure_live/plugins/locale_helper.dart';
+import 'package:pure_live/core/models/live_play_quality.dart';
+import 'package:pure_live/core/plugins/locale_helper.dart';
 
 /// Localized active-stream evidence, never used as a request/cursor identity.
 extension PlayQualityLabel on LivePlayQuality {

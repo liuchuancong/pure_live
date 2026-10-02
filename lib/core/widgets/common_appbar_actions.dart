@@ -1,6 +1,6 @@
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/routes/app_navigation.dart';
+import 'package:pure_live/app/router/app_navigation.dart';
 
 class CommonAppBarActions extends StatelessWidget {
   const CommonAppBarActions({super.key});

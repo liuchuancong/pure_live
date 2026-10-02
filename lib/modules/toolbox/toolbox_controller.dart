@@ -1,11 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/services.dart';
-import 'package:pure_live/model/live_play_quality.dart';
+import 'package:pure_live/core/models/live_play_quality.dart';
 import 'package:pure_live/modules/toolbox/toolbox_action_scope.dart';
 import 'package:pure_live/modules/toolbox/toolbox_direct_link_flow.dart';
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/routes/app_navigation.dart';
+import 'package:pure_live/app/router/app_navigation.dart';
 import 'package:pure_live/core/utils/live_url_tool.dart';
 
 enum ToolBoxAction { jump, directLink }

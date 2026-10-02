@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:pure_live/core/models/live_room.dart';
 import 'package:pure_live/core/interface/live_site.dart';
 import 'package:pure_live/core/sites.dart';
-import 'package:pure_live/model/live_play_quality.dart';
+import 'package:pure_live/core/models/live_play_quality.dart';
 import 'package:pure_live/modules/toolbox/toolbox_action_scope.dart';
 
 class ToolBoxDirectLinkFlow {

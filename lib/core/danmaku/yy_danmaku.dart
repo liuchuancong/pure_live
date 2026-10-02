@@ -6,8 +6,8 @@ import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/common/core_log.dart';
 import 'package:pure_live/core/common/web_socket_util.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
-import 'package:pure_live/core/utils/yy/yy_protocol.dart';
-import 'package:pure_live/core/utils/yy/yy_web_socket_channel.dart';
+import 'package:pure_live/platforms/yy/yy_protocol.dart';
+import 'package:pure_live/platforms/yy/yy_web_socket_channel.dart';
 import 'package:uuid/uuid.dart';
 
 class YyDanmakuArgs {

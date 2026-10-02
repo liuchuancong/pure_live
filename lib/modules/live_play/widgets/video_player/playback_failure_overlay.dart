@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:pure_live/plugins/locale_helper.dart';
+import 'package:pure_live/core/plugins/locale_helper.dart';
 
 /// Terminal failure stays actionable without replacing the native video subtree.
 class PlaybackFailureOverlay extends StatefulWidget {

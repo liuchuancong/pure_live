@@ -1,11 +1,11 @@
 import 'dart:developer';
 
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/plugins/db_service.dart';
-import 'package:pure_live/plugins/file_utils.dart';
-import 'package:pure_live/model/live_category.dart';
-import 'package:pure_live/model/live_anchor_item.dart';
-import 'package:pure_live/model/live_play_quality.dart';
+import 'package:pure_live/core/plugins/db_service.dart';
+import 'package:pure_live/core/plugins/file_utils.dart';
+import 'package:pure_live/core/models/live_category.dart';
+import 'package:pure_live/core/models/live_anchor_item.dart';
+import 'package:pure_live/core/models/live_play_quality.dart';
 import 'package:pure_live/core/iptv/local/database.dart';
 import 'package:pure_live/core/interface/live_site.dart';
 import 'package:pure_live/core/iptv/iptv_repository.dart';

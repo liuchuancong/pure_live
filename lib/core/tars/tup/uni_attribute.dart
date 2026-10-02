@@ -2,10 +2,10 @@ import 'dart:core';
 import 'const.dart';
 import 'dart:typed_data';
 import 'object_create_exception.dart';
-import 'package:pure_live/pkg/tars/codec/tars_struct.dart';
-import 'package:pure_live/pkg/tars/codec/tars_input_stream.dart';
-import 'package:pure_live/pkg/tars/codec/tars_output_stream.dart';
-import 'package:pure_live/pkg/tars/tup/basic_class_type_util.dart';
+import 'package:pure_live/core/tars/codec/tars_struct.dart';
+import 'package:pure_live/core/tars/codec/tars_input_stream.dart';
+import 'package:pure_live/core/tars/codec/tars_output_stream.dart';
+import 'package:pure_live/core/tars/tup/basic_class_type_util.dart';
 
 class UniAttribute extends TarsStruct {
   /// 精简版tup，PACKET_TYPE_TUP3类型

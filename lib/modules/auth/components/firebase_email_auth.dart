@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/plugins/utils.dart';
+import 'package:pure_live/core/plugins/utils.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';

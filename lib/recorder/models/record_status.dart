@@ -1,4 +1,4 @@
-import 'package:pure_live/plugins/locale_helper.dart';
+import 'package:pure_live/core/plugins/locale_helper.dart';
 
 enum RecordStatus {
   queued, // 排队中（达到并发上限）

@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/plugins/event_bus.dart';
-import 'package:pure_live/plugins/cache_manager.dart';
+import 'package:pure_live/core/plugins/event_bus.dart';
+import 'package:pure_live/core/plugins/cache_manager.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/content_first_panel_layout.dart';

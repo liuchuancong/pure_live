@@ -1,12 +1,12 @@
 import 'dart:convert';
 
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/model/live_category.dart';
+import 'package:pure_live/core/models/live_category.dart';
 import 'package:pure_live/core/common/core_log.dart';
-import 'package:pure_live/model/live_anchor_item.dart';
+import 'package:pure_live/core/models/live_anchor_item.dart';
 import 'package:pure_live/core/danmaku/yy_danmaku.dart';
 import 'package:pure_live/core/common/http_client.dart';
-import 'package:pure_live/model/live_play_quality.dart';
+import 'package:pure_live/core/models/live_play_quality.dart';
 import 'package:pure_live/core/interface/live_site.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
 import 'package:pure_live/core/utils/live_quality_label.dart';

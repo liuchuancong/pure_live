@@ -2,9 +2,9 @@ import 'dart:math' as math;
 
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/utils/category_artwork.dart';
-import 'package:pure_live/plugins/cache_manager.dart';
-import 'package:pure_live/routes/app_navigation.dart';
-import 'package:pure_live/plugins/area_pic_mapper.dart';
+import 'package:pure_live/core/plugins/cache_manager.dart';
+import 'package:pure_live/app/router/app_navigation.dart';
+import 'package:pure_live/core/plugins/area_pic_mapper.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:pure_live/platforms/cc/cc_catalog.dart';
 
