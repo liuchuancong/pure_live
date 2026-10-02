@@ -149,7 +149,11 @@ final class LivePlayerFacade {
     // selector, the label and the next-line cycling are all written against.
     // `_lastLines` above is the kernel's fallback preference (selected first)
     // and must not leak into it, or every commit would report line 1.
-    _publishCommit(sourceUrl, playUrls, qualities, currentQuality);
+    // The caller's sourceSelection (the quality confirmation from the stream
+    // switch) is authoritative: dropping it left the quality label pinned on
+    // the first entry after every switch.
+    final committed = sourceSelection is PlaybackSourceQualitySelection ? sourceSelection : null;
+    _publishCommit(sourceUrl, playUrls, committed?.qualities ?? qualities, committed?.currentQuality ?? currentQuality);
     if (room != null) await setVolume(room.getSavedVolume().clamp(0.0, 1.0));
   }
 
@@ -158,6 +162,7 @@ final class LivePlayerFacade {
     LiveRoom room, {
     List<LivePlayQuality> qualities = const [],
     int currentQuality = 0,
+    Object? sourceSelection,
   }) async {
     if (_disposed) return;
     _room = room;
@@ -177,7 +182,13 @@ final class LivePlayerFacade {
       ),
       preferredBackend: backendIdOfEngine(preferredEngine),
     );
-    _publishCommit('owned:${room.identityKey}', const [], qualities, currentQuality);
+    final committed = sourceSelection is PlaybackSourceQualitySelection ? sourceSelection : null;
+    _publishCommit(
+      'owned:${room.identityKey}',
+      const [],
+      committed?.qualities ?? qualities,
+      committed?.currentQuality ?? currentQuality,
+    );
     await setVolume(room.getSavedVolume().clamp(0.0, 1.0));
   }
 
@@ -205,7 +216,11 @@ final class LivePlayerFacade {
     Object? sourceResolver,
     Object? sourceSelection,
     DateTime? sourceRefreshAt,
-  }) => playOwned(source, room ?? _room ?? LiveRoom(platform: '', roomId: ''));
+  }) => playOwned(
+    source,
+    room ?? _room ?? LiveRoom(platform: '', roomId: ''),
+    sourceSelection: sourceSelection,
+  );
 
   Future<void> switchLine(int index) => _controller.switchLine(index);
   Future<void> retry() => _controller.retry();
