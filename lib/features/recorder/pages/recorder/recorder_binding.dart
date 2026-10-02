@@ -1,9 +1,0 @@
-import 'package:pure_live/core/index.dart';
-import 'package:pure_live/features/recorder/pages/recorder/recorder_controller.dart';
-
-class RecorderBinding extends Binding {
-  @override
-  List<Bind> dependencies() {
-    return [Bind.lazyPut(() => RecorderController())];
-  }
-}
