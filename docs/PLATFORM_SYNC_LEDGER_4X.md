@@ -36,7 +36,7 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | kugoulive | 10 | 本轮已摘取（见下） |
 | bigo / fc2live | 9 | 两站本轮均已摘取（见下） |
 | missevan / kilakila / acfun | 8 | 三站均已摘取（见下） |
-| jdlive / looklive / steambroadcast / twitcasting / showroom / sixroom / baidulive | 7 | steambroadcast、showroom、sixroom 本轮已摘取（见下）；其余待办 |
+| jdlive / looklive / steambroadcast / twitcasting / showroom / sixroom / baidulive | 7 | steambroadcast、showroom、sixroom、twitcasting、baidulive 已摘取（见下）；jdlive、looklive 待办 |
 | cc | 5 | 本轮已摘取（见下） |
 | tiktok | 5 | 待办 |
 | inke / xiaohongshu / weibo / liveme | 4 | weibo、liveme 本轮已摘取（见下）；inke / xiaohongshu 待办 |
@@ -427,3 +427,28 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | 10-1 | 资料链接（`www.acfun.cn/u/<id>`、`acfun.cn/u/<id>`、旧 `.aspx`、`m.acfun.cn/upPage/<id>`）直接是房间 | 未做：链接识别（另一层） |
 | 10-3 | 列表/进房/刷新/录制详情的 `startedAt` 取 `createTime` | 未做：`LiveRoom` 缺字段 |
 | 10-4 / 10-5 | 弹幕参数 `AcfunDanmakuArgs`；付费节目是在播 + 限制 | 未做：弹幕引擎与限制模型 |
+
+## baidulive
+
+上游相关提交：`646cd5fd8`（M4.U.30，30-1 至 30-10）。
+
+| 项 | 内容 | 本仓状态 |
+| --- | --- | --- |
+| 30-9 | `flv-live.bdstatic.com` 必须用 http 播（它的 https 证书与主机名不匹配） | **已同步**：该主机保持/降为 http，其余允许主机仍 http→https |
+| 30-8 | http 房间链接也接受（默认端口按 scheme 判定） | **已同步** |
+| 30-1 / 30-2 | 清晰度按档位（原画 + 各高度），平台当前 CDN 作为备份线路；H.265 单列一档 | 未做：清晰度发现 |
+| 30-4 | 已结束的直播是回放，播它的录像（`replay_list`/`video_hevc`） | 未做：回放取流 |
+| 30-5 | 付费/禁止/封禁保留状态并标 paid/unplayable | 未做：限制模型 |
+| 30-6 / 30-7 | 推荐与 rec 频道各自独立 feed 会话；简介取 `video.description` | 未做 |
+
+## twitcasting
+
+上游相关提交：`cbff9fd76`（M4.U.12，12-1 至 12-5）。
+
+| 项 | 内容 | 本仓状态 |
+| --- | --- | --- |
+| 12-1 | 房间标题取直播的 telop（播放器标题下方那行，排除话题标签），没有才退 `twitter:title`；`twitter:description` 不再作退路 | **已同步**：此前只读 `twitter:title`，于是播放页标题永远是 "Live #…" 而不是主播写的 telop |
+| 12-2 | 关注刷新与状态检查只问 `streamserver.php`（约 1KB，而非 110KB 频道页） | 未做：请求编排 |
+| 12-3 | 直播详情在 `danmakuData` 带 `TwitcastingDanmakuArgs` | 未做：弹幕引擎 |
+| 12-4 | 搜索一次请求，之后按关键词 30 秒快照裁剪 | 未做：分页缓存 |
+| 12-5 | 私有直播在搜索里是在播 + 限制 | 未做：限制模型 |

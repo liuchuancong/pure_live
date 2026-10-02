@@ -409,12 +409,19 @@ class BaiduLiveApi {
     var uri = Uri.tryParse(raw.trim());
     if (uri == null) return null;
     final host = uri.host.toLowerCase();
-    if (uri.scheme == 'http' && _allowedMediaHost(host)) uri = uri.replace(scheme: 'https');
+    // `flv-live.bdstatic.com` 的 https 证书与主机名不匹配，必须用 http 播
+    // （上游 30-9）；其余允许的主机保持 http 升 https。
+    if (host == 'flv-live.bdstatic.com') {
+      if (uri.scheme == 'https' && !uri.hasPort) uri = uri.replace(scheme: 'http');
+    } else if (uri.scheme == 'http' && _allowedMediaHost(host)) {
+      uri = uri.replace(scheme: 'https');
+    }
     final extension = protocol == 'hls' ? '.m3u8' : '.flv';
-    if (uri.scheme != 'https' ||
+    final defaultPort = uri.scheme == 'http' ? 80 : 443;
+    if (!(uri.scheme == 'https' || uri.scheme == 'http') ||
         uri.userInfo.isNotEmpty ||
         uri.hasFragment ||
-        (uri.hasPort && uri.port != 443) ||
+        (uri.hasPort && uri.port != defaultPort) ||
         !_allowedMediaHost(host) ||
         !uri.path.startsWith('/live/') ||
         !uri.path.toLowerCase().endsWith(extension) ||

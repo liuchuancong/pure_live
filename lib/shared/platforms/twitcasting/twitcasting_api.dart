@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
+import 'package:html/dom.dart' show Text;
 import 'package:html/parser.dart' as html;
 import 'package:pure_live/core/models/live_area.dart';
 import 'package:pure_live/core/models/live_room.dart';
@@ -362,12 +363,21 @@ class TwitcastingApi {
     final movie = object(stream['movie']);
     if (movie['live'] is! bool) throw const TwitcastingException(TwitcastingFailure.schema);
     final live = movie['live'] == true;
+    // 标题优先取直播的 telop（播放器标题下方那行）。只取该元素自己的文本节点，
+    // 话题标签在子元素里，天然被排除；没有 telop 才退回页面的 `twitter:title`
+    // （上游 12-1）。`twitter:description` 不再作为退路：没有 telop 时它是主播
+    // 的简介。
+    final telopTag = document.querySelector('.tw-player-page-title-description');
+    final telop = telopTag == null
+        ? ''
+        : telopTag.nodes.whereType<Text>().map((node) => node.text).join().trim();
+    final twitterTitle = document.querySelector('meta[name="twitter:title"]')?.attributes['content']?.trim() ?? '';
     final room = LiveRoom(
       platform: 'twitcasting',
       roomId: channel,
       userId: channel,
       link: '$origin/$channel',
-      title: document.querySelector('meta[name="twitter:title"]')?.attributes['content'] ?? '',
+      title: telop.isNotEmpty ? telop : twitterTitle,
       nick: document.querySelector('.tw-user-nav2-name')?.text.trim() ?? channel,
       avatar: picture(document.querySelector('.tw-user-nav2-icon img')?.attributes['src']),
       cover: picture(document.querySelector('meta[property="og:image"]')?.attributes['content']),
