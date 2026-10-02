@@ -35,7 +35,7 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | chzzk | 10 | 本轮已摘取（见下） |
 | kugoulive | 10 | 本轮已摘取（见下） |
 | bigo / fc2live | 9 | 待办 |
-| missevan / kilakila / acfun | 8 | 待办 |
+| missevan / kilakila / acfun | 8 | missevan、kilakila 本轮已摘取（见下）；acfun 待办 |
 | jdlive / looklive / steambroadcast / twitcasting / showroom / sixroom / baidulive | 7 | 待办 |
 | cc | 5 | 本轮已摘取（见下） |
 | tiktok | 5 | 待办 |
@@ -296,3 +296,25 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
   本仓 niconico 的弹幕是 v3 的评论实现，要换就得整套接。
 
 因此 niconico 留待"身份模型"或"弹幕新功能"批次，与 youtube 的频道模型一起做。
+
+## missevan
+
+上游相关提交：`e0495b3e5` 一类（M4.U.13，13-1 至 13-4）。
+
+| 项 | 内容 | 本仓状态 |
+| --- | --- | --- |
+| 13-1 | 只有一档「原画」（id 10000），线路是 FLV 在前、HLS 作为备份 | **已同步**：此前拆成 HLS/FLV 两个档，界面上是两个条目，档内也没有 FLV→HLS 回退 |
+| 13-1 | 每档线路带 `expires` 租约 | 无需：本仓 `MissevanSite` 早已实现 `LivePlayLeaseMetadata` |
+| 13-2 | 弹幕参数 `MissevanDanmakuArgs`（`getDanmaku()` 仍是空） | 未做：本仓没有 Missevan 弹幕引擎 |
+| 13-3 | 目录按 namespace 分组（分区 / 团播） | 未做 |
+
+## kilakila
+
+上游相关提交：`47f0e2ac8` 一类（M4.U.15，15-1 至 15-4）。
+
+| 项 | 内容 | 本仓状态 |
+| --- | --- | --- |
+| 15-1 | 资料卡没有在播节目、以及 status 10（已结束）按未开播处理，其余未知状态保持 unknown | **已同步**：三处（资料详情、资料卡、房间快照） |
+| 15-2 | 在播房用 `onlineNumber` 当在线人数、`watchNumber` 当累计听众 | 未做：本仓目前 `watching` 留空、观众口径 unknown |
+| 15-3 | 时间线在第 100 页 / 空页 / 连续 3 页没有新主播时结束 | 未做：分页终止条件 |
+| 弹幕 | KilaKila 弹幕本体（礼物、付费提问） | 未做：新功能批次 |

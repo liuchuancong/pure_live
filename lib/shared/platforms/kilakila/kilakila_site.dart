@@ -59,7 +59,13 @@ class KilakilaSite extends LiveSite
     watching: '',
     audienceMetricType: AudienceMetricType.unknown,
     status: snapshot.isLive ? true : null,
-    liveStatus: snapshot.isLive ? LiveStatus.live : LiveStatus.unknown,
+    // status 10 是"已结束"：明确的结束状态按未开播处理，其余未知状态保持
+    // unknown（上游 15-1）。
+    liveStatus: snapshot.isLive
+        ? LiveStatus.live
+        : snapshot.statusCode == 10
+        ? LiveStatus.offline
+        : LiveStatus.unknown,
     // watchNumber has no verified concurrent-viewer semantics. Broadcast IDs
     // and signed media remain ephemeral; favorites/backup retain only the UID.
     data: snapshot.media.isEmpty
@@ -80,8 +86,8 @@ class KilakilaSite extends LiveSite
     link: ownerUrl(owner.userId),
     watching: '',
     audienceMetricType: AudienceMetricType.unknown,
-    status: null,
-    liveStatus: LiveStatus.unknown,
+    status: false,
+    liveStatus: LiveStatus.offline,
   );
 
   int _type(LiveArea? category) {
@@ -189,7 +195,7 @@ class KilakilaSite extends LiveSite
     final owner = await _api.owner(uid);
     final current = owner.currentRoom;
     if (current == null) {
-      // No advertised broadcast is not an authoritative offline declaration.
+      // 主播资料卡上没有在播节目就是下播（上游 15-1：此前保留 unknown）。
       return LiveRoom(
         platform: id,
         roomId: owner.userId,
@@ -199,8 +205,8 @@ class KilakilaSite extends LiveSite
         link: ownerUrl(owner.userId),
         watching: '',
         audienceMetricType: AudienceMetricType.unknown,
-        status: null,
-        liveStatus: LiveStatus.unknown,
+        status: false,
+        liveStatus: LiveStatus.offline,
       );
     }
     if (!playback) return _room(current);

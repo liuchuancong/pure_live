@@ -320,24 +320,24 @@ class MissevanApi {
       return room; // Search metadata and offline rooms never inspect stale channel URLs.
     }
     final channel = _object(row['channel']);
-    final qualities = <LivePlayQuality>[];
-    for (final kind in ['hls', 'flv']) {
-      final raw = channel['${kind}_pull_url'];
-      if (raw == null || raw == '') continue;
-      final url = mediaUrl(_text(raw), kind: kind);
-      qualities.add(
-        LivePlayQuality(
-          id: kind,
-          quality: kind.toUpperCase(),
-          sort: 2 - qualities.length,
-          data: List<String>.unmodifiable([url]),
-        ),
-      );
+    // 上游 13-1：只有一个「原画」档（id 是拉流地址里的 qn，10000），它的线路是
+    // FLV 在前、HLS 作为备份。此前拆成 HLS/FLV 两个档，界面上是两个条目，
+    // 而且同一个档内部没有 FLV→HLS 的线路回退。
+    final lines = <String>[];
+    void addLine(Object? raw, String kind) {
+      final value = _text(raw);
+      if (value.isEmpty) return;
+      lines.add(mediaUrl(value, kind: kind));
     }
-    if (qualities.isEmpty) throw const MissevanException(MissevanFailure.schema);
+
+    addLine(channel['flv_pull_url'], 'flv');
+    addLine(channel['hls_pull_url'], 'hls');
+    if (lines.isEmpty) throw const MissevanException(MissevanFailure.schema);
     // Do not infer audio-only from the platform: sampled broadcasts contain
     // AAC plus 16x16 H.264. Let actual media track evidence drive the player.
-    room.data = List<LivePlayQuality>.unmodifiable(qualities);
+    room.data = List<LivePlayQuality>.unmodifiable([
+      LivePlayQuality(id: 10000, quality: '原画', sort: 1, data: List<String>.unmodifiable(lines)),
+    ]);
     return room;
   }
 
