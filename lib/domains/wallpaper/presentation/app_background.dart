@@ -88,12 +88,35 @@ class WallpaperCanvasTheme extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
+    final ThemeData base = Theme.of(context);
     return Theme(
-      data: ownsCanvas ? theme.copyWith(scaffoldBackgroundColor: Colors.transparent) : theme,
+      data: ownsCanvas
+          ? base.copyWith(
+              scaffoldBackgroundColor: Colors.transparent,
+              pageTransitionsTheme: wallpaperPageTransitions(base.pageTransitionsTheme),
+            )
+          : base,
       child: child,
     );
   }
+}
+
+/// The app's transitions, minus the opaque colour painted between two routes.
+///
+/// The M3 fade-forwards transition draws `ColorScheme.surface` behind a page
+/// while it fades out, so a fading page never exposes black. That box is opaque
+/// and covers the wallpaper, which is why entering a page flashed the theme
+/// colour; while the picture owns the canvas it can be transparent, because the
+/// picture itself is already behind every route.
+PageTransitionsTheme wallpaperPageTransitions(PageTransitionsTheme source) {
+  return PageTransitionsTheme(
+    builders: <TargetPlatform, PageTransitionsBuilder>{
+      for (final MapEntry<TargetPlatform, PageTransitionsBuilder> entry in source.builders.entries)
+        entry.key: entry.value is FadeForwardsPageTransitionsBuilder
+            ? const FadeForwardsPageTransitionsBuilder(backgroundColor: Colors.transparent)
+            : entry.value,
+    },
+  );
 }
 
 /// Applies a Gaussian blur to media backgrounds (picture or video frame).

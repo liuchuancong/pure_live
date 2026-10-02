@@ -54,4 +54,58 @@ void main() {
     expect(identical(before, after), isTrue, reason: 'the subtree is updated in place, not rebuilt');
     expect(Theme.of(after).scaffoldBackgroundColor, Colors.transparent);
   });
+
+  testWidgets('the fade-forwards box between two routes stops painting the theme colour', (tester) async {
+    // The transition paints `ColorScheme.surface` behind a page while it fades
+    // out; over a wallpaper that box is the flash seen on every page entry.
+    late ThemeData theme;
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData(
+          pageTransitionsTheme: const PageTransitionsTheme(
+            builders: <TargetPlatform, PageTransitionsBuilder>{
+              TargetPlatform.windows: FadeForwardsPageTransitionsBuilder(),
+            },
+          ),
+        ),
+        home: WallpaperCanvasTheme(
+          ownsCanvas: true,
+          child: Builder(
+            builder: (context) {
+              theme = Theme.of(context);
+              return const Scaffold(body: SizedBox.shrink());
+            },
+          ),
+        ),
+      ),
+    );
+
+    final PageTransitionsBuilder builder = theme.pageTransitionsTheme.builders[TargetPlatform.windows]!;
+    expect(builder, isA<FadeForwardsPageTransitionsBuilder>());
+    expect((builder as FadeForwardsPageTransitionsBuilder).backgroundColor, Colors.transparent);
+  });
+
+  testWidgets('without a wallpaper the transitions are left exactly as they are', (tester) async {
+    const PageTransitionsTheme original = PageTransitionsTheme(
+      builders: <TargetPlatform, PageTransitionsBuilder>{TargetPlatform.windows: FadeForwardsPageTransitionsBuilder()},
+    );
+    late ThemeData theme;
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData(pageTransitionsTheme: original),
+        home: WallpaperCanvasTheme(
+          ownsCanvas: false,
+          child: Builder(
+            builder: (context) {
+              theme = Theme.of(context);
+              return const Scaffold(body: SizedBox.shrink());
+            },
+          ),
+        ),
+      ),
+    );
+
+    final PageTransitionsBuilder builder = theme.pageTransitionsTheme.builders[TargetPlatform.windows]!;
+    expect((builder as FadeForwardsPageTransitionsBuilder).backgroundColor, isNull);
+  });
 }
