@@ -173,10 +173,29 @@ class SeventeenLiveSite extends LiveSite
         rethrow;
       }
     }
-    final query = keyword.trim();
-    if (query.isEmpty || query.length > 100 || Uri.tryParse(query)?.hasScheme == true) return [];
+    final query = _searchKeyword(keyword);
+    if (query.isEmpty || _isUrl(query)) return [];
     final rooms = await _api.searchCurrentLive(query, cancel: cancel);
     return rooms.take(pageSize).map((room) => _card(room, includeMedia: false)).toList(growable: false);
+  }
+
+  /// 只有 `<scheme>://…` 才算网址、才不拿去搜索：`Re:Zero` 这类带冒号的关键词
+  /// 是要搜的（上游 33-5；3.x 把带 scheme 的都当成网址，于是搜不到）。
+  static final RegExp _urlPattern = RegExp('^[a-z][a-z0-9+.-]*://', caseSensitive: false);
+
+  static bool _isUrl(String text) => _urlPattern.hasMatch(text.trim());
+
+  /// 送出去的关键词：裁剪空白，超过 100 个 UTF-16 单元就截断（不切断代理对），
+  /// 再裁剪一次（上游 33-5；3.x 遇到更长的就什么都搜不到）。
+  static String _searchKeyword(String keyword) {
+    var text = keyword.trim();
+    if (text.length > 100) {
+      var end = 100;
+      final last = text.codeUnitAt(end - 1);
+      if (last >= 0xD800 && last <= 0xDBFF) end--;
+      text = text.substring(0, end).trim();
+    }
+    return text;
   }
 
   SeventeenLiveRoom _snapshot(LiveRoom liveroom) {

@@ -112,9 +112,10 @@ class AcfunSite extends LiveSite
     if (type == null || categoryId == null || (category.platform != null && category.platform != id)) {
       throw const AcfunApiException(AcfunFailureKind.schema);
     }
-    return _rooms(
-      await _directory.page(page: page, count: pageSize, filters: AcfunCategoryFilter.encode(type, categoryId)),
-    );
+    // 「全部」（filter 0）列的是全站直播，与推荐完全相同，不带 filter 请求
+    // （上游 10-2：目录里已不再列出它，但存下来的旧条目仍要能打开）。
+    final filters = categoryId == AcfunApi.allFilterId ? null : AcfunCategoryFilter.encode(type, categoryId);
+    return _rooms(await _directory.page(page: page, count: pageSize, filters: filters));
   }
 
   @override

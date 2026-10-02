@@ -29,13 +29,13 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | douyu | 14 | 本轮已摘取（见下） |
 | yy | 12 | 本轮已摘取（见下） |
 | niconico | 11 | 待办 |
-| pandalive / picarto / seventeenlive | 11 | pandalive、picarto 本轮已摘取（见下）；seventeenlive 待办 |
+| pandalive / picarto / seventeenlive | 11 | pandalive、picarto 已摘取（见下）；seventeenlive 本轮已摘取（见下） |
 | twitch | 10 | 本轮已摘取（见下） |
 | soop | 10 | 本轮已摘取（见下） |
 | chzzk | 10 | 本轮已摘取（见下） |
 | kugoulive | 10 | 本轮已摘取（见下） |
 | bigo / fc2live | 9 | 两站本轮均已摘取（见下） |
-| missevan / kilakila / acfun | 8 | missevan、kilakila 本轮已摘取（见下）；acfun 待办 |
+| missevan / kilakila / acfun | 8 | 三站均已摘取（见下） |
 | jdlive / looklive / steambroadcast / twitcasting / showroom / sixroom / baidulive | 7 | steambroadcast、showroom、sixroom 本轮已摘取（见下）；其余待办 |
 | cc | 5 | 本轮已摘取（见下） |
 | tiktok | 5 | 待办 |
@@ -403,3 +403,27 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | 31-4 | 推荐与歌/舞/聊/派对分区改用 App 移动端列表 | 未做：目录来源 |
 | 31-5 | 记忆卡片的流行度/开播时间/限制只在同一场直播在播时使用 | 未做 |
 | 统一规则 | 私密/黑屏是在播 + 限制（不是未知/下播） | 未做：限制模型 |
+
+## seventeenlive
+
+上游相关提交：`6d4743f84`（M4.U.33，33-1 至 33-7）。
+
+| 项 | 内容 | 本仓状态 |
+| --- | --- | --- |
+| 33-6 | `www.17.live`（会跳到 17.live）也是房间链接 | **已同步**：此前只认 `17.live` |
+| 33-5 | 只有 `<scheme>://…` 才算网址，`Re:Zero` 这类带冒号的关键词要搜；关键词超过 100 个 UTF-16 单元截断（不切断代理对） | **已同步**：此前任何带 scheme 的都当网址（`Re:Zero` 搜不到），超长关键词直接返回空 |
+| 33-1 | 目录按地区（JP/TW/HK）与 sections 接口 | 未做：目录来源 |
+| 33-2 | 3.x 的 standard 就是主播源流：id `source`、名为「原画」、sort 500 | 未做：本仓仍是 standard/100，需要与 id 迁移一起做 |
+| 33-7 | 在播时 `startedAt` 取 `beginTime` | 未做：`LiveRoom` 缺字段 |
+| 限制 | `premiumContent` 锁定的直播是在播 + 限制（有源但不播） | 未做：限制模型 |
+
+## acfun
+
+上游相关提交：`bd9760d7e`（M4.U.10，10-1 至 10-5）。
+
+| 项 | 内容 | 本仓状态 |
+| --- | --- | --- |
+| 10-2 | 目录不列「全部」（filter 0，它与推荐相同）；存下来的「全部」分区按推荐（不带 filter）读取 | **已同步**：`allFilterId` + 分类过滤 + 目录请求不带 filter |
+| 10-1 | 资料链接（`www.acfun.cn/u/<id>`、`acfun.cn/u/<id>`、旧 `.aspx`、`m.acfun.cn/upPage/<id>`）直接是房间 | 未做：链接识别（另一层） |
+| 10-3 | 列表/进房/刷新/录制详情的 `startedAt` 取 `createTime` | 未做：`LiveRoom` 缺字段 |
+| 10-4 / 10-5 | 弹幕参数 `AcfunDanmakuArgs`；付费节目是在播 + 限制 | 未做：弹幕引擎与限制模型 |

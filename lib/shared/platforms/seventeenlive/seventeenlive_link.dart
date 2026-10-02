@@ -1,3 +1,7 @@
+/// 网站主机：`www.17.live` 会跳到 `17.live`，两个都算房间链接（上游 33-6；
+/// 3.x 只认 `17.live`）。
+const Set<String> _webHosts = {'17.live', 'www.17.live'};
+
 class SeventeenLiveLink {
   const SeventeenLiveLink._();
 
@@ -6,7 +10,7 @@ class SeventeenLiveLink {
     if (uri == null ||
         (uri.scheme != 'http' && uri.scheme != 'https') ||
         uri.userInfo.isNotEmpty ||
-        uri.host.toLowerCase() != '17.live') {
+        !_webHosts.contains(uri.host.toLowerCase())) {
       return null;
     }
     final segments = uri.pathSegments.where((value) => value.isNotEmpty).toList(growable: false);

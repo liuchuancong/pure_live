@@ -199,6 +199,9 @@ class AcfunApi {
         if (type == null || type < 0 || id == null || id < 0 || name.isEmpty) {
           throw const AcfunApiException(AcfunFailureKind.schema);
         }
+        // 「全部」列的是全站直播，与推荐相同，不作为分区列出（上游 10-2；
+        // 3.x 会列出来）。
+        if (id == allFilterId) continue;
         result.putIfAbsent((
           type,
           id,
@@ -207,6 +210,9 @@ class AcfunApi {
     }
     return List.unmodifiable(result.values);
   }
+
+  /// 「全部」的 filter id：它列的是全站直播（推荐），不是一个分区（上游 10-2）。
+  static const int allFilterId = 0;
 
   Future<Map<String, dynamic>> roomInfo(String authorId) async {
     final id = normalizeAuthorId(authorId);
