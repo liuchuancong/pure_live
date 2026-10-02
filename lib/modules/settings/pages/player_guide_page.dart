@@ -1,7 +1,5 @@
 import 'dart:io';
 
-
-
 import 'package:pure_live/common/index.dart';
 
 /// The player manual: concepts, every setting and what it does, organized
@@ -199,95 +197,131 @@ class _PlayerGuidePageState extends State<PlayerGuidePage> {
 
     return Scaffold(
       appBar: AppBar(title: Text(_zh ? '播放指南' : 'Player Guide')),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
-        children: [
-          Card(
-            margin: const EdgeInsets.only(bottom: 12),
-            child: Padding(
-              padding: const EdgeInsets.all(14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(_zh ? '这本手册怎么用' : 'How to use this manual', style: theme.textTheme.titleMedium),
-                  const SizedBox(height: 6),
-                  Text(
-                    _zh
-                        ? '遇到问题先看「症状对照」；想理解某个设置是什么，在「基础概念」和各章里查。'
-                        : 'Start from the symptom table; look up any setting in the glossary chapter.',
-                    style: theme.textTheme.bodySmall,
-                  ),
-                ],
-              ),
-            ),
-          ),
-          for (var i = 0; i < chapters.length; i++)
-            Card(
-              margin: const EdgeInsets.only(bottom: 10),
-              clipBehavior: Clip.antiAlias,
-              child: ExpansionTile(
-                key: PageStorageKey('guide-$i'),
-                initiallyExpanded: i == 0,
-                leading: Icon(chapters[i].icon, color: theme.colorScheme.primary),
-                title: Text(chapters[i].title(_zh), style: theme.textTheme.titleMedium),
-                subtitle: Text(
-                  i18n('player_guide_entries', args: {'count': chapters[i].entries.length.toString()}),
-                  style: theme.textTheme.bodySmall,
-                ),
-                childrenPadding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
-                children: [
-                  const Divider(height: 1),
-                  for (final entry in chapters[i].entries)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Wrap(
-                            spacing: 6,
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            children: [
-                              if (entry.key.isNotEmpty)
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: theme.colorScheme.primaryContainer,
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: Text(
-                                    entry.key,
-                                    style: theme.textTheme.labelSmall?.copyWith(
-                                      fontFamily: 'monospace',
-                                      color: theme.colorScheme.onPrimaryContainer,
-                                    ),
-                                  ),
-                                )
-                              else
-                                Text(entry.text(_zh), style: theme.textTheme.titleSmall),
-                              if (entry.badge != null)
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    border: Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.4)),
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: Text(
-                                    entry.badge!,
-                                    style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.outline),
-                                  ),
-                                ),
-                            ],
-                          ),
-                          if (entry.key.isNotEmpty) ...[
-                            const SizedBox(height: 4),
-                            Text(entry.text(_zh), style: theme.textTheme.bodySmall?.copyWith(height: 1.45)),
+      // Desktop windows stretch the list across the whole shell; a capped
+      // column pinned to the left keeps prose lines readable.
+      body: Align(
+        alignment: Alignment.topLeft,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 860),
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
+            children: [
+              Card(
+                margin: const EdgeInsets.only(bottom: 12),
+                child: Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(Icons.menu_book_rounded, color: theme.colorScheme.primary),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(_zh ? '这本手册怎么用' : 'How to use this manual', style: theme.textTheme.titleMedium),
+                            const SizedBox(height: 6),
+                            Text(
+                              _zh
+                                  ? '遇到问题先看「症状对照」；想理解某个设置是什么，在「基础概念」和各章里查。'
+                                  : 'Start from the symptom table; look up any setting in the glossary chapter.',
+                              style: theme.textTheme.bodyMedium?.copyWith(height: 1.5),
+                            ),
                           ],
-                        ],
+                        ),
                       ),
+                    ],
+                  ),
+                ),
+              ),
+              for (var i = 0; i < chapters.length; i++)
+                Card(
+                  margin: const EdgeInsets.only(bottom: 10),
+                  clipBehavior: Clip.antiAlias,
+                  child: ExpansionTile(
+                    key: PageStorageKey('guide-$i'),
+                    initiallyExpanded: i == 0,
+                    leading: Icon(chapters[i].icon, color: theme.colorScheme.primary),
+                    title: Text(chapters[i].title(_zh), style: theme.textTheme.titleMedium),
+                    subtitle: Text(
+                      i18n('player_guide_entries', args: {'count': chapters[i].entries.length.toString()}),
+                      style: theme.textTheme.bodySmall,
                     ),
-                ],
+                    childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    children: [
+                      const Divider(height: 1),
+                      for (final entry in chapters[i].entries) _GuideEntryView(entry: entry, zh: _zh),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// One manual row. `--mpv` option names render as monospace chips; every
+/// other key is a human phrase and renders as a plain heading — long Chinese
+/// labels inside a tiny monospace chip were unreadable.
+class _GuideEntryView extends StatelessWidget {
+  const _GuideEntryView({required this.entry, required this.zh});
+
+  final _GuideEntry entry;
+  final bool zh;
+
+  bool get _isOptionKey => entry.key.startsWith('--');
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final heading = _isOptionKey
+        ? Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primaryContainer,
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Text(
+              entry.key,
+              style: theme.textTheme.labelMedium?.copyWith(
+                fontFamily: 'monospace',
+                color: theme.colorScheme.onPrimaryContainer,
               ),
             ),
+          )
+        : Text(entry.key, style: theme.textTheme.titleSmall);
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              heading,
+              if (entry.badge != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.4)),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    entry.badge!,
+                    style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.outline),
+                  ),
+                ),
+            ],
+          ),
+          if (entry.text(zh).isNotEmpty) ...[
+            const SizedBox(height: 5),
+            Text(entry.text(zh), style: theme.textTheme.bodyMedium?.copyWith(height: 1.55)),
+          ],
         ],
       ),
     );
