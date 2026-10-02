@@ -136,3 +136,15 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | `ab456b879` | 开播时间取卡片 `statrtTime`（epoch 毫秒） | 未做：本仓 `LiveRoom` 没有该字段 |
 | `ab456b879` | 限制 `unplayable`（平台说在播但没有任何可播清晰度） | 未做：本仓没有限制模型 |
 | `4f1a8b4a8` | 快手卡片标题之外的 Twitch 部分 | 见 twitch 章节 |
+
+## 跨站点公共
+
+| 上游提交 | 内容 | 本仓状态 |
+| --- | --- | --- |
+| `aadad46ef` | 平台留在"原本有图"位置的不可见占位字符（快手标题里的 U+FFFC 会画成 "OBJ"）在创建时就清掉：房间的 title/nick/introduction/notice、弹幕的消息与用户名 | **已同步**（房间与弹幕消息两层）；超级留言文本未覆盖 |
+
+本仓实现：新增叶子文件 `lib/core/utils/invisible_placeholders.dart`
+（刻意不依赖任何东西，模型层不用为一条正则拉进 UI 依赖链），
+`LiveRoom` 构造函数与 `fromJson`、`LiveMessage` 构造函数各自应用。
+保留零宽空格/连接符/U+FEFF 与替换符 U+FFFD，只去掉对象替换符、
+行间注记符、非字符与 C0/C1 控制符（制表与换行除外）。

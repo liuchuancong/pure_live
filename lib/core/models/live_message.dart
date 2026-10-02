@@ -1,3 +1,5 @@
+import 'package:pure_live/core/utils/invisible_placeholders.dart';
+
 enum LiveMessageType {
   /// 聊天
   chat,
@@ -106,9 +108,9 @@ class LiveMessage {
 
   LiveMessage({
     required this.type,
-    required this.userName,
+    required String userName,
     this.userId = "",
-    required this.message,
+    required String message,
     this.data,
     required this.color,
     this.userLevel = "",
@@ -118,7 +120,10 @@ class LiveMessage {
     this.messageId = "",
     this.sentAt,
     this.style,
-  });
+  }) : userName = stripInvisiblePlaceholders(userName),
+       // 弹幕文本同样清掉不可见占位字符：平台在"原本有图"的位置留下的 U+FFFC
+       // 等字符，字体画出来是方块（上游 M13.16 在弹幕运行时统一处理）。
+       message = stripInvisiblePlaceholders(message);
 }
 
 class LiveMessageColor {

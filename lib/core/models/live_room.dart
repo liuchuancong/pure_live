@@ -1,5 +1,6 @@
 import 'package:pure_live/core/player/core/live_room_volume_manager.dart';
 import 'package:pure_live/core/network/http_header_policy.dart';
+import 'package:pure_live/core/utils/invisible_placeholders.dart';
 
 /// 房间的播出状态。
 ///
@@ -325,8 +326,8 @@ class LiveRoom {
     this.roomId,
     this.userId,
     this.link,
-    this.title = '',
-    this.nick = '',
+    String? title,
+    String? nick,
     this.avatar = '',
     this.cover = '',
     this.area,
@@ -342,8 +343,8 @@ class LiveRoom {
     this.danmakuData,
     this.isRecord = false,
     this.status = false,
-    this.notice,
-    this.introduction,
+    String? notice,
+    String? introduction,
     this.epgId,
     this.currentProgramme,
     this.currentProgrammeDescription,
@@ -359,14 +360,21 @@ class LiveRoom {
     this.lastWatchedAt,
     List<String>? tagIds,
   }) : liveStatus = liveStatus ?? _legacyStatusToLiveStatus(status: status, isRecord: isRecord),
-       tagIds = tagIds ?? [];
+       tagIds = tagIds ?? [],
+       // 平台留下的不可见占位字符（快手标题里的 U+FFFC 会画成 "OBJ"）在创建时就
+       // 清掉：这样每个平台、以及已经存进收藏/历史的那份文本都被覆盖到，不用各
+       // 站点自己处理（上游 M13.16 的同一做法）。
+       title = stripInvisiblePlaceholders(title ?? ''),
+       nick = stripInvisiblePlaceholders(nick ?? ''),
+       introduction = stripInvisiblePlaceholdersOrNull(introduction),
+       notice = stripInvisiblePlaceholdersOrNull(notice);
 
   LiveRoom.fromJson(Map<String, dynamic> json)
     : roomId = json['roomId'] ?? '',
       userId = json['userId'] ?? '',
-      title = json['title'] ?? '',
+      title = stripInvisiblePlaceholders(json['title'] ?? ''),
       link = json['link'] ?? '',
-      nick = json['nick'] ?? '',
+      nick = stripInvisiblePlaceholders(json['nick'] ?? ''),
       avatar = json['avatar'] ?? '',
       cover = json['cover'] ?? '',
       area = json['area'] ?? '',
@@ -383,8 +391,8 @@ class LiveRoom {
       tagIds = List<String>.from(json['tagIds'] ?? []),
       liveStatus = _liveStatusFromJson(json),
       status = json['status'] ?? false,
-      notice = json['notice'] ?? '',
-      introduction = json['introduction'] ?? '',
+      notice = stripInvisiblePlaceholders(json['notice'] ?? ''),
+      introduction = stripInvisiblePlaceholders(json['introduction'] ?? ''),
       isRecord = json['isRecord'] ?? false,
       epgId = json['epgId'] ?? '',
       currentProgramme = json['currentProgramme'] ?? '',
