@@ -1318,13 +1318,15 @@ BarrageConfig _buildBarrageConfig() {
     baseSpeed: settings.danmakuSpeed.v,
     opacity: settings.danmakuOpacity.v,
     fontWeight: FontWeight(settings.danmakuFontWeight.v),
+    letterSpacing: settings.danmakuLetterSpacing.v,
     strokeWidth: settings.danmakuFontBorder.v,
     showStroke: settings.enableDanmakuStroke.v,
     noEmojiMode: settings.noEmojiMode.v,
+    realtimeMode: settings.danmakuRealtimeMode.v,
     fps: settings.danmakuAutoFps.v
         ? settings.resolvedDanmakuFps(refreshRateMode: SettingsService.to.app.refreshRateMode)
         : settings.danmakuFps.v.clamp(30, 240).toInt(),
-    maxVisibleCount: 48,
+    maxVisibleCount: settings.danmakuMaxVisibleCount.v,
     maxPendingCount: 120,
     maxPendingAge: const Duration(seconds: 5),
     fontFamily: settings.danmakuFontFamilyName.v,

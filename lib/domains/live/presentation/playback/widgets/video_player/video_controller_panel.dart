@@ -21,6 +21,7 @@ import 'package:pure_live/domains/live/presentation/playback/widgets/video_playe
 import 'package:pure_live/domains/live/presentation/playback/widgets/video_player/portrait_playback_picker_dialog.dart';
 import 'package:pure_live/domains/live/presentation/playback/widgets/video_player/iptv_schedule_dialog.dart';
 import 'package:pure_live/domains/live/presentation/playback/widgets/danmaku/danmaku_settings_source.dart';
+import 'package:pure_live/domains/live/presentation/playback/widgets/danmaku/portrait_danmaku_policy.dart';
 import 'package:pure_live/domains/live/presentation/playback/widgets/local_interaction/local_danmaku_style_editor.dart';
 import 'package:pure_live/core/player/core/portrait_stream_support.dart';
 import 'package:pure_live/domains/live/presentation/playback/widgets/layout/portrait_fullscreen_interaction.dart';
@@ -202,9 +203,10 @@ class _VideoControllerPanelState extends State<VideoControllerPanel> {
                 ),
                 Obx(() {
                   final manager = GlobalPlayerService.instance.player;
-                  final hideForPortrait =
-                      manager.isVerticalVideo.value &&
-                      SettingsService.to.player.portraitDanmakuMode == PortraitDanmakuMode.hidden;
+                  final hideForPortrait = PortraitDanmakuPolicy.hidesDanmaku(
+                    isVerticalVideo: manager.isVerticalVideo.value,
+                    mode: SettingsService.to.player.portraitDanmakuMode,
+                  );
                   return Offstage(
                     offstage: controller.hideDanmaku.value || hideForPortrait,
                     child: DanmakuViewer(key: controller.danmuKey, controller: controller),
@@ -795,12 +797,11 @@ class DanmakuViewer extends StatelessWidget {
       final settings = SettingsService.to.danmaku;
       final playerSettings = SettingsService.to.player;
       final portraitSource = GlobalPlayerService.instance.player.isVerticalVideo.value;
-      final portraitMode = portraitSource ? playerSettings.portraitDanmakuMode : PortraitDanmakuMode.followGlobal;
-      final effectiveArea = switch (portraitMode) {
-        PortraitDanmakuMode.upperQuarter => controller.danmakuArea.value.clamp(0.0, 0.25).toDouble(),
-        PortraitDanmakuMode.reduced => controller.danmakuArea.value.clamp(0.0, 0.50).toDouble(),
-        _ => controller.danmakuArea.value,
-      };
+      final effectiveArea = PortraitDanmakuPolicy.effectiveArea(
+        configuredArea: controller.danmakuArea.value,
+        isVerticalVideo: portraitSource,
+        mode: playerSettings.portraitDanmakuMode,
+      );
       return FlameBarrageWidget(
         controller: controller.danmakuController,
         // Video gestures own the full surface and forward only hits on actual
