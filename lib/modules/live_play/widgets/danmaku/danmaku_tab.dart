@@ -25,14 +25,14 @@ class DanmakuTabView extends GetView<LivePlayController> {
                 controller: controller.tabController,
                 physics: const PureLiveBoundedScrollPhysics(),
                 children: [
-                  SettingsService.to.danmaku.enableDanmakuDisplay.v
-                      ? DanmakuListView(room: state.room.detail!, controller: controller)
-                      : Center(
+                  SettingsService.to.danmaku.hideDanmaku.v
+                      ? Center(
                           child: Padding(
                             padding: const EdgeInsets.all(24),
                             child: Text(i18n('danmaku_display_disabled_hint'), textAlign: TextAlign.center),
                           ),
-                        ),
+                        )
+                      : DanmakuListView(room: state.room.detail!, controller: controller),
                   // RxList mutations do not invalidate this outer Obx unless
                   // its value is read while building. Snapshot it here so new
                   // SC entries appear immediately without switching tabs.

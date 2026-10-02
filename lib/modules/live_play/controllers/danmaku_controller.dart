@@ -57,8 +57,7 @@ class DanmakuController extends GetxController {
     super.onInit();
     final settings = SettingsService.to;
     _settingsWorker = everAll([
-      settings.danmaku.enableDanmakuDisplay,
-      settings.danmaku.enablePipDanmaku,
+      settings.danmaku.hideDanmaku,
     ], (_) => unawaited(_syncConnectionForSettings()));
     _filterWorker = everAll([settings.fav.blockedDanmakuUsers, settings.fav.shieldList], (_) => _refreshFilters());
     final dm = settings.danmaku;
@@ -326,7 +325,7 @@ class DanmakuController extends GetxController {
     const except = [Sites.iptvSite, Sites.ccSite];
     final settings = SettingsService.to.danmaku;
     try {
-      if (except.contains(room.platform) || (!settings.enableDanmakuDisplay.v && !settings.enablePipDanmaku.v)) {
+      if (except.contains(room.platform) || settings.hideDanmaku.v) {
         await stopDanmaku();
       } else {
         await connectRoom(room);
@@ -353,7 +352,7 @@ class DanmakuController extends GetxController {
     if (override != null) return override(liveroom);
     const except = [Sites.iptvSite, Sites.ccSite];
     final settings = SettingsService.to.danmaku;
-    return !except.contains(liveroom.platform) && (settings.enableDanmakuDisplay.v || settings.enablePipDanmaku.v);
+    return !except.contains(liveroom.platform) && !settings.hideDanmaku.v;
   }
 
   String _roomKey(LiveRoom liveroom) => '${liveroom.platform ?? ''}:${liveroom.roomId ?? ''}';

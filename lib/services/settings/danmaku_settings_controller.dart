@@ -14,7 +14,6 @@ class DanmakuSettingsController extends GetxController {
   static const double defaultDanmakuOpacity = 1.0;
   static const int defaultDanmakuFps = 60;
   static const bool defaultDanmakuAutoFps = true;
-  static const bool defaultEnablePipDanmaku = true;
   static const bool defaultPipDanmakuAutoScale = true;
   static const bool defaultPipDanmakuUseOriginalColor = true;
   static const int defaultPipDanmakuColor = 0xFFFFFFFF;
@@ -68,7 +67,6 @@ class DanmakuSettingsController extends GetxController {
 
   /// Same-screen cap forwarded to FlameBarrageWidget.maxVisibleCount.
   final RxInt danmakuMaxVisibleCount = hiveInt('danmakuMaxVisibleCount', 48);
-  final RxBool enableDanmakuDisplay = hiveBool('enableDanmakuDisplay', true);
   final RxBool enableDanmakuStroke = hiveBool('enableDanmakuStroke', true);
 
   /// Burst dispatch: flush the waiting queue on every logic frame instead
@@ -85,7 +83,6 @@ class DanmakuSettingsController extends GetxController {
   final RxInt danmakuInteractionMigration = hiveInt('danmakuInteractionMigration', 0);
   final RxString savedDanmakuTemplate = hiveString('savedDanmakuTemplate', '');
   final RxString danmakuFontFamilyName = hiveString('danmakuFontFamilyName', 'Default');
-  final RxBool enablePipDanmaku = hiveBool('enablePipDanmaku', defaultEnablePipDanmaku);
 
   /// Scale factor applied on top of the main danmaku config when rendering
   /// the compact (picture-in-picture / small-window) surface. `null` means
@@ -180,7 +177,6 @@ class DanmakuSettingsController extends GetxController {
       'danmakuLetterSpacing': danmakuLetterSpacing.v,
       'danmakuRealtimeMode': danmakuRealtimeMode.v,
       'danmakuOpacity': danmakuOpacity.v,
-      'enableDanmakuDisplay': enableDanmakuDisplay.v,
       'danmakuFontFamilyName': danmakuFontFamilyName.v,
       'enableDanmakuStroke': enableDanmakuStroke.v,
       'danmakuFps': danmakuFps.v,
@@ -190,7 +186,6 @@ class DanmakuSettingsController extends GetxController {
       'collapseRepeatedDanmaku': collapseRepeatedDanmaku.v,
       'repeatedDanmakuWindowSeconds': repeatedDanmakuWindowSeconds.v,
       'savedDanmakuTemplate': savedDanmakuTemplate.v,
-      'enablePipDanmaku': enablePipDanmaku.v,
       'pipDanmakuAutoScale': pipDanmakuScaleAuto.v,
       'pipDanmakuScaleValue': pipDanmakuScaleValue.v,
       'filterDouyuSuspectedAutomatedMessages': filterDouyuSuspectedAutomatedMessages.v,
@@ -227,7 +222,6 @@ class DanmakuSettingsController extends GetxController {
       'danmakuOpacity': typed<double>(
         _boundedDouble(json['danmakuOpacity'], fallback: defaultDanmakuOpacity, min: 0, max: 1),
       ),
-      'enableDanmakuDisplay': typed<bool>(json['enableDanmakuDisplay'] ?? true),
       'danmakuFontFamilyName': typed<String>(json['danmakuFontFamilyName'] ?? 'Default'),
       'enableDanmakuStroke': typed<bool>(json['enableDanmakuStroke'] ?? true),
       'danmakuFps': typed<int>(_boundedInt(json['danmakuFps'], fallback: defaultDanmakuFps, min: 30, max: 240)),
@@ -239,7 +233,6 @@ class DanmakuSettingsController extends GetxController {
         (json['repeatedDanmakuWindowSeconds'] ?? 5).toInt().clamp(1, 30).toInt(),
       ),
       'savedDanmakuTemplate': typed<String>(json['savedDanmakuTemplate']?.toString() ?? ''),
-      'enablePipDanmaku': typed<bool>(json['enablePipDanmaku'] ?? defaultEnablePipDanmaku),
       'pipDanmakuAutoScale': typed<bool>(json['pipDanmakuAutoScale'] ?? true),
       'pipDanmakuScaleValue': typed<double>(
         (json['pipDanmakuScaleValue'] ?? 1.0).toDouble().clamp(0.5, 3.0).toDouble(),
@@ -276,7 +269,6 @@ class DanmakuSettingsController extends GetxController {
     danmakuLetterSpacing.v = parsed['danmakuLetterSpacing'];
     danmakuRealtimeMode.v = parsed['danmakuRealtimeMode'];
     danmakuOpacity.v = parsed['danmakuOpacity'];
-    enableDanmakuDisplay.v = parsed['enableDanmakuDisplay'];
     danmakuFontFamilyName.v = parsed['danmakuFontFamilyName'];
     enableDanmakuStroke.v = parsed['enableDanmakuStroke'];
     danmakuFps.v = parsed['danmakuFps'];
@@ -286,7 +278,6 @@ class DanmakuSettingsController extends GetxController {
     collapseRepeatedDanmaku.v = parsed['collapseRepeatedDanmaku'];
     repeatedDanmakuWindowSeconds.v = parsed['repeatedDanmakuWindowSeconds'];
     savedDanmakuTemplate.v = parsed['savedDanmakuTemplate'];
-    enablePipDanmaku.v = parsed['enablePipDanmaku'];
     pipDanmakuScaleAuto.v = parsed['pipDanmakuAutoScale'];
     pipDanmakuScaleValue.v = parsed['pipDanmakuScaleValue'];
     filterDouyuSuspectedAutomatedMessages.v = parsed['filterDouyuSuspectedAutomatedMessages'];
@@ -319,7 +310,6 @@ class DanmakuSettingsController extends GetxController {
         max: 4,
       ),
       'danmakuOpacity': _boundedDouble(danmaku['danmakuOpacity'], fallback: defaultDanmakuOpacity, min: 0, max: 1),
-      'enableDanmakuDisplay': danmaku['enableDanmakuDisplay'] ?? true,
       'danmakuFontFamilyName': danmaku['danmakuFontFamilyName'] ?? 'Default',
       'enableDanmakuStroke': danmaku['enableDanmakuStroke'] ?? true,
       'danmakuFps': _boundedInt(danmaku['danmakuFps'], fallback: defaultDanmakuFps, min: 30, max: 240),
@@ -329,7 +319,6 @@ class DanmakuSettingsController extends GetxController {
       'collapseRepeatedDanmaku': danmaku['collapseRepeatedDanmaku'] ?? false,
       'repeatedDanmakuWindowSeconds': (danmaku['repeatedDanmakuWindowSeconds'] ?? 5).toInt().clamp(1, 30).toInt(),
       'savedDanmakuTemplate': danmaku['savedDanmakuTemplate']?.toString() ?? '',
-      'enablePipDanmaku': danmaku['enablePipDanmaku'] ?? defaultEnablePipDanmaku,
       'pipDanmakuAutoScale': danmaku['pipDanmakuAutoScale'] ?? defaultPipDanmakuAutoScale,
       'pipDanmakuNoEmojiMode':
           danmaku['pipDanmakuNoEmojiMode'] ?? danmaku['pipDanmaNoEmojiMode'] ?? defaultPipDanmakuNoEmojiMode,

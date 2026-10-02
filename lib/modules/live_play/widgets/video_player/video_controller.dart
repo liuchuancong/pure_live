@@ -189,7 +189,7 @@ class DanmakuManager {
     final originalColor = Color.fromARGB(255, msg.color.r, msg.color.g, msg.color.b);
     final localStyle = msg.isLocal ? msg.style : null;
     final settings = settingsService.danmaku;
-    if (settings.enableDanmakuDisplay.v && !videoController.hideDanmaku.value) {
+    if (!videoController.hideDanmaku.value) {
       controller.send(
         BarrageItem(
           content: msg.message,
@@ -226,7 +226,7 @@ class DanmakuManager {
       );
     }
 
-    if (settings.enablePipDanmaku.v && isCompactMode) {
+    if (isCompactMode) {
       // The compact surface renders with the main danmaku config; messages
       // keep their original color (the old per-pip recolor setting is gone).
       pipController.send(

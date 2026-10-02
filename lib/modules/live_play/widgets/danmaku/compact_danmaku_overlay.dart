@@ -20,9 +20,8 @@ class CompactDanmakuOverlay extends StatelessWidget {
   Widget build(BuildContext context) {
     return Obx(() {
       final settings = SettingsService.to.danmaku;
-      final enabled = settings.enablePipDanmaku.v;
       final hidden = controller.hideDanmaku.value;
-      if (!enabled || hidden) {
+      if (hidden) {
         return const SizedBox.shrink();
       }
 

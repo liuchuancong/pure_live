@@ -1583,7 +1583,7 @@ class BottomActionBar extends StatelessWidget {
         PlayPauseButton(controller: controller),
         if (!compact) RefreshButton(controller: controller),
         if (!compact) FavoriteButton(controller: controller),
-        if (SettingsService.to.danmaku.enableDanmakuDisplay.v) ...[
+        if (!SettingsService.to.danmaku.hideDanmaku.value) ...[
           DanmakuButton(controller: controller),
           SettingsButton(controller: controller),
         ],
