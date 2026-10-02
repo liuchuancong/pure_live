@@ -23,7 +23,7 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | --- | --- | --- |
 | bilibili | 24 | 进行中（见下） |
 | douyin | 20 | 本轮已摘取（见下） |
-| kuaishou | 16 | 待办 |
+| kuaishou | 16 | 本轮已摘取（见下） |
 | youtube | 15 | 待办 |
 | huya | 15 | 本轮已摘取（见下） |
 | douyu | 14 | 本轮已摘取（见下） |
@@ -124,3 +124,15 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | `49ea1ccc4` | 游戏分区与更完整的推荐页分页 | 分区已随 `_detailArea()` 覆盖；推荐页分页未对照 |
 | `03aa04354` | 关注一个新开播（换场后跟随） | 未做：属播放会话与弹幕重连策略 |
 | `95b769763` | 套接字拆除不再等待 cancel（可能挂住） | 未做：属本仓自己的 `web_socket_util` 生命周期 |
+
+## kuaishou
+
+上游相关提交：
+
+| 提交 | 内容 | 本仓状态 |
+| --- | --- | --- |
+| `c5ebffe2e` | H.265 里 H.264 没有的档位（4K、蓝光质臻）也列出：名字/id 带 ` · H.265`，排在所有 H.264 档位之后 | **已同步**：`parsePlayQualities()` 两套都收，按（编码优先、档位从高到低）排序 |
+| `4f1a8b4a8` | A-3：房间页没有直播标题时，`fillFromDetail` 保留卡片标题 | **已同步**：`LiveRoom.fillFromDetail` 补上 `title`（本仓此前只填 area/nick/avatar） |
+| `ab456b879` | 开播时间取卡片 `statrtTime`（epoch 毫秒） | 未做：本仓 `LiveRoom` 没有该字段 |
+| `ab456b879` | 限制 `unplayable`（平台说在播但没有任何可播清晰度） | 未做：本仓没有限制模型 |
+| `4f1a8b4a8` | 快手卡片标题之外的 Twitch 部分 | 见 twitch 章节 |

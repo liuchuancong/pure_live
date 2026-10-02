@@ -921,6 +921,9 @@ extension LiveRoomExtension on LiveRoom {
     if (liveroom == null) return this;
 
     return copyWith(
+      // 上游 A-3：详情页没有标题时保留手上那份的标题（快手房间页本身就没有直播
+      // 标题），此前标题会被详情里的空值覆盖成空。
+      title: _getValueIfEmpty(title, liveroom.title),
       area: _getValueIfEmpty(area, liveroom.area),
       nick: _getValueIfEmpty(nick, liveroom.nick),
       avatar: _getValueIfEmpty(avatar, liveroom.avatar),

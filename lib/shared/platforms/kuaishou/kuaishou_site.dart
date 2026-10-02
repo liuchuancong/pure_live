@@ -201,49 +201,69 @@ class KuaishouSite
   /// Room pages expose `{h264: ..., hevc: ...}` while list/replay entries are
   /// usually `[<direct adaptationSet descriptor>]`. Multiple descriptors can
   /// represent CDN lines, so URLs of the same quality are merged and deduped.
+  ///
+  /// H.265 里可能有 H.264 没有的档位（4K、蓝光质臻）：3.x 的规则是一旦有
+  /// H.264 就整块丢掉 H.265，于是这些档位永远列不出来。两套都列，H.265 档位在
+  /// 名字与 id 上带 ` · H.265`，并排在所有 H.264 档位之后（上游 M4.D）。
   static List<LivePlayQuality> parsePlayQualities(dynamic raw) {
     final descriptors = raw is List ? raw : <dynamic>[raw];
-    final merged = <String, ({String name, int sort, List<String> urls})>{};
+    final merged = <String, ({String name, int sort, int codecRank, List<String> urls})>{};
 
     for (final rawDescriptor in descriptors) {
       if (rawDescriptor is! Map) continue;
-      dynamic descriptor = rawDescriptor;
-
-      // Prefer AVC for broad hardware compatibility. HEVC is a fallback when
-      // the platform omits AVC rather than an additional duplicate quality set.
-      for (final codec in const ['h264', 'avc', 'hevc', 'h265']) {
+      final sets = <({String suffix, int codecRank, dynamic descriptor})>[];
+      // Prefer AVC for broad hardware compatibility；HEVC 作为另一套档位列出，
+      // 不再因为存在 AVC 就整块丢弃。
+      for (final codec in const ['h264', 'avc']) {
         final candidate = rawDescriptor[codec];
         if (_representationsOf(candidate).isNotEmpty) {
-          descriptor = candidate;
+          sets.add((suffix: '', codecRank: 0, descriptor: candidate));
           break;
         }
       }
-
-      for (final item in _representationsOf(descriptor)) {
-        if (item is! Map) continue;
-        final url = item['url']?.toString().trim() ?? '';
-        if (Uri.tryParse(url)?.isAbsolute != true || (!url.startsWith('http://') && !url.startsWith('https://'))) {
-          continue;
+      for (final codec in const ['hevc', 'h265']) {
+        final candidate = rawDescriptor[codec];
+        if (_representationsOf(candidate).isNotEmpty) {
+          sets.add((suffix: ' · H.265', codecRank: 1, descriptor: candidate));
+          break;
         }
-        final sort = _asInt(item['level']) ?? _asInt(item['bitrate']) ?? 0;
-        final name = item['name']?.toString().trim().isNotEmpty == true
-            ? item['name'].toString().trim()
-            : item['shortName']?.toString().trim().isNotEmpty == true
-            ? item['shortName'].toString().trim()
-            : item['qualityType']?.toString().trim().isNotEmpty == true
-            ? item['qualityType'].toString().trim()
-            : '清晰度 $sort';
-        final key = '$name\u0000$sort';
-        final existing = merged[key];
-        if (existing == null) {
-          merged[key] = (name: name, sort: sort, urls: <String>[url]);
-        } else if (!existing.urls.contains(url)) {
-          existing.urls.add(url);
+      }
+      if (sets.isEmpty) sets.add((suffix: '', codecRank: 0, descriptor: rawDescriptor));
+
+      for (final set in sets) {
+        for (final item in _representationsOf(set.descriptor)) {
+          if (item is! Map) continue;
+          final url = item['url']?.toString().trim() ?? '';
+          if (Uri.tryParse(url)?.isAbsolute != true || (!url.startsWith('http://') && !url.startsWith('https://'))) {
+            continue;
+          }
+          final sort = _asInt(item['level']) ?? _asInt(item['bitrate']) ?? 0;
+          final rawName = item['name']?.toString().trim().isNotEmpty == true
+              ? item['name'].toString().trim()
+              : item['shortName']?.toString().trim().isNotEmpty == true
+              ? item['shortName'].toString().trim()
+              : item['qualityType']?.toString().trim().isNotEmpty == true
+              ? item['qualityType'].toString().trim()
+              : '清晰度 $sort';
+          final name = set.suffix.isEmpty ? rawName : '$rawName${set.suffix}';
+          final key = '$name\u0000$sort';
+          final existing = merged[key];
+          if (existing == null) {
+            merged[key] = (name: name, sort: sort, codecRank: set.codecRank, urls: <String>[url]);
+          } else if (!existing.urls.contains(url)) {
+            existing.urls.add(url);
+          }
         }
       }
     }
 
-    final qualities = merged.values
+    // H.264 档位在前，H.265 在后；同一编码内按档位从高到低。
+    final entries = merged.values.toList(growable: false)
+      ..sort((a, b) {
+        if (a.codecRank != b.codecRank) return a.codecRank.compareTo(b.codecRank);
+        return b.sort.compareTo(a.sort);
+      });
+    return entries
         .map(
           (entry) => LivePlayQuality(
             quality: LiveQualityLabel.normalize(
@@ -257,8 +277,6 @@ class KuaishouSite
           ),
         )
         .toList(growable: false);
-    qualities.sort((a, b) => b.sort.compareTo(a.sort));
-    return qualities;
   }
 
   static List<dynamic> _representationsOf(dynamic descriptor) {
