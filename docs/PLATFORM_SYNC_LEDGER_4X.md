@@ -31,7 +31,8 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | niconico | 11 | 待办 |
 | pandalive / picarto / seventeenlive | 11 | 待办 |
 | twitch | 10 | 本轮已摘取（见下） |
-| kugoulive / soop / chzzk | 10 | 待办 |
+| soop | 10 | 本轮已摘取（见下） |
+| kugoulive / chzzk | 10 | 待办 |
 | bigo / fc2live | 9 | 待办 |
 | missevan / kilakila / acfun | 8 | 待办 |
 | jdlive / looklive / steambroadcast / twitcasting / showroom / sixroom / baidulive | 7 | 待办 |
@@ -208,3 +209,18 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | 8-8 | usher 带 `supported_codecs`（按引擎解码能力） | 未做：本仓没有 preferH264 之类的播放设置 |
 | B-7 | Twitch 被拒 Cookie 只上报一次（新接口 `LiveSiteCookieRefusals`） | 未做：本仓没有该接口 |
 | 弹幕 | `RECONNECT`、撤回、公告、Cookie 过期 | 未做：与跨站点弹幕消息类型批次一起做 |
+
+## soop
+
+上游相关提交：`046a5866d`（M4.U.7，7-1 至 7-7）、`7ea69383c`。
+
+| 项 | 内容 | 本仓状态 |
+| --- | --- | --- |
+| 7-2 | 标题与昵称解码 HTML 实体（卡片、详情、主播站） | **已同步**：`_display()` 用在列表/分类/搜索/详情四处 |
+| 7-3 | 搜索卡片分区读 `broad_cate_name`（`standard_broad_cate_name` 现在的回答已不带） | **已同步**：`broad_cate_name` 优先，再退旧字段 |
+| 7-6 | CHIP 拼出的聊天主机在 sooplive.com | 无需：本仓已是 `chat-<...>.sooplive.co.kr` |
+| 7-4 | RESULT 0 / -2 在进房时是 offline / banned | 无需：本仓详情与录制路径都已这样处理 |
+| 7-1 | 清晰度命名：`hd4k`(720p) 是「超清」、`hd8k` 是「蓝光」，顺序在原画之后 | 未做：要与本仓 `LiveQualityLabel` 的映射逐条对照后再改 |
+| 7-5 | 进房同时读 station API（头像、标语、观众数）、未知主播 NotFound | 未做：多一次请求与新字段 |
+| 7-7 | `afreecatv.com` 链接也算房间 | 未做：外部链接识别 |
+| 弹幕 | 走代理、`1/-1/bar` 文本、发送者 id（B-6） | 未做：与跨站点弹幕批次一起做 |

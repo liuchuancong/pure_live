@@ -9,6 +9,7 @@ import 'package:pure_live/shared/platforms/live_site.dart';
 import 'package:pure_live/shared/platforms/soop/soop_danmaku.dart';
 import 'package:pure_live/shared/platforms/live_danmaku.dart';
 import 'package:pure_live/core/utils/live_quality_label.dart';
+import 'package:html_unescape/html_unescape.dart';
 import 'package:pure_live/shared/platforms/current_live_room.dart';
 import 'package:pure_live/core/config/cookie_settings_controller.dart';
 import 'package:pure_live/core/consts/platform_ids.dart';
@@ -227,9 +228,9 @@ class SoopSite extends LiveSite
       final viewerCount = parseOnlineViewers(Map<dynamic, dynamic>.from(item as Map));
       var roomItem = LiveRoom(
         roomId: item["user_id"] ?? '',
-        title: item['broad_title'] ?? '',
+        title: _display(item['broad_title']),
         cover: validImgUrl(item['thumbnail'] ?? ''),
-        nick: item["user_nick"].toString(),
+        nick: _display(item["user_nick"]),
         watching: viewerCount,
         onlineViewers: viewerCount,
         audienceMetricType: AudienceMetricType.onlineViewers,
@@ -338,9 +339,9 @@ class SoopSite extends LiveSite
       final viewerCount = parseOnlineViewers(Map<dynamic, dynamic>.from(item as Map));
       var roomItem = LiveRoom(
         roomId: roomId,
-        title: item['broad_title'] ?? '',
+        title: _display(item['broad_title']),
         cover: validImgUrl(item['broad_thumb'] ?? ''),
-        nick: item["user_nick"].toString(),
+        nick: _display(item["user_nick"]),
         watching: viewerCount,
         onlineViewers: viewerCount,
         audienceMetricType: AudienceMetricType.onlineViewers,
@@ -451,6 +452,14 @@ class SoopSite extends LiveSite
     return getLiveRoomByApi(data, null, liveroom.roomId!);
   }
 
+  /// 展示用文本：SOOP 的标题与昵称带 HTML 实体（`&amp;` 之类），先解码再展示
+  /// （上游 7-2）。
+  static String _display(Object? value) {
+    final text = value?.toString().trim() ?? '';
+    if (text.isEmpty || !text.contains('&')) return text;
+    return HtmlUnescape().convert(text);
+  }
+
   Future<LiveRoom> getLiveRoomByApi(
     Map<dynamic, dynamic> playerLiveApiData,
     SoopDanmakuArgs? danmakuArgs,
@@ -503,8 +512,8 @@ class SoopSite extends LiveSite
       roomId: jsonObj["BJID"].toString(),
       userId: bno,
       area: area,
-      title: jsonObj["TITLE"].toString(),
-      nick: nick,
+      title: _display(jsonObj["TITLE"]),
+      nick: _display(nick),
       avatar: avatar,
       introduction: '',
       notice: '',
@@ -685,15 +694,17 @@ class SoopSite extends LiveSite
     for (var item in queryList) {
       var cover = item["broad_img"].toString();
       var userId = item["user_id"].toString();
-      var title = item["broad_title"]?.toString() ?? "";
-      var area = item["standard_broad_cate_name"]?.toString() ?? "";
+      var title = _display(item["broad_title"]);
+      // `standard_broad_cate_name` 现在的回答已经不带，退回它之前先读
+      // `broad_cate_name`（上游 7-3）。
+      var area = _display(item["broad_cate_name"] ?? item["standard_broad_cate_name"]);
       final viewerCount = parseOnlineViewers(Map<dynamic, dynamic>.from(item as Map));
 
       var roomItem = LiveRoom(
         roomId: userId,
         title: title,
         cover: validImgUrl(cover),
-        nick: item["user_nick"].toString(),
+        nick: _display(item["user_nick"]),
         area: area,
         status: true,
         liveStatus: LiveStatus.live,
