@@ -2,7 +2,7 @@ import 'package:flutter/painting.dart' show Offset, Rect, Size;
 import 'package:flutter/widgets.dart' show WidgetsBinding;
 import 'package:media_core/media_core.dart' show PresentationLifecycleHooks;
 import 'package:media_core_pip/media_core_pip.dart';
-import 'package:pure_live/core/player/presentation/pip_source_orientation.dart';
+import 'package:pure_live/core/player/presentation/compact_source_orientation.dart';
 import 'package:pure_live/core/config/settings_service.dart';
 import 'package:pure_live/core/config/window_size_controller.dart';
 import 'package:pure_live/core/logging/core_log.dart';
@@ -116,7 +116,7 @@ PipSavedBounds? _readSavedBounds() {
   final pip = windowSettings.windowsPip;
   if (!windowSettings.rememberPipPosition.value) return null;
   // 横竖屏各一套：横屏记住的矩形套到竖屏源上只剩黑边，所以按当前源方向选。
-  if (PipSourceOrientation.isPortrait) {
+  if (CompactSourceOrientation.isPortrait) {
     if (!pip.portraitHasValidBounds) return null;
     return PipSavedBounds(
       displayId: pip.portraitDisplayId.value,
@@ -142,7 +142,7 @@ PipSavedBounds? _readSavedBounds() {
 
 void _writeSavedBounds(Size size, Offset position, String displayId) {
   final pip = SettingsService.to.window.windowsPip;
-  if (PipSourceOrientation.isPortrait) {
+  if (CompactSourceOrientation.isPortrait) {
     pip.updatePortrait(size, position, displayId);
     return;
   }

@@ -6,7 +6,7 @@ import 'package:pure_live/core/release/release_history_source.dart';
 import 'package:pure_live/core/platform/multi_instance_settings_source.dart';
 import 'package:pure_live/core/platform/desktop_exit_port.dart';
 import 'package:pure_live/core/navigation/official_category_policy.dart';
-import 'package:pure_live/core/player/presentation/pip_source_orientation.dart';
+import 'package:pure_live/core/player/presentation/compact_source_orientation.dart';
 import 'package:pure_live/domains/live/domain/global_player_service.dart';
 import 'package:pure_live/shared/platforms/cc/cc_catalog.dart';
 import 'package:pure_live/app/bootstrap/desktop_exit_flow.dart';
@@ -169,11 +169,11 @@ class InitialServices {
     OfficialCategoryPolicy.isOfficialCategory = CCCatalog.isOfficialEntry;
     OfficialCategoryPolicy.officialCategoryUri = CCCatalog.officialEntryUri;
     // 小窗几何按横竖屏两套记忆，方向判定归播放器（画面尺寸），Core 只声明端口。
-    PipSourceOrientation.read = () {
+    CompactSourceOrientation.read = () {
       final player = GlobalPlayerService.instance.player;
       final size = player.handle?.combinedSnapshot.geometry.videoSize;
       if (size == null) return player.isVerticalVideo.value;
-      return PipSourceOrientation.isPortraitSize(size.width.toDouble(), size.height.toDouble());
+      return CompactSourceOrientation.isPortraitSize(size.width.toDouble(), size.height.toDouble());
     };
     // Huya 播放 UA 是站点适配器的启动预热；原先挂在 Core 的 StartupController
     // onInit 上，让 Core 反向认识了业务域。

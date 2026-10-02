@@ -617,6 +617,9 @@ class _WindowsPipResetTileState extends State<_WindowsPipResetTile> {
       );
       if (confirmed != true || !mounted || window.isClosed) return;
       window.clearWindowsPipGeometry();
+      // 应用内悬浮窗的位置与尺寸也一起清：同一个按钮说的是「小窗位置和大小」，
+      // 只清系统小窗那套会让悬浮窗继续从旧位置弹出。
+      SettingsService.to.player.floatWindowGeometry.value = '';
       ToastUtil.show(i18n('windows_pip_reset_position_success'));
     } finally {
       if (mounted) setState(() => _resetBusy = false);

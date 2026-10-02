@@ -213,6 +213,12 @@ class PlayerSettingsController extends GetxController {
   }
 
   final RxBool floatPlay = hiveBool('floatPlay', false);
+
+  /// 应用内悬浮窗记住的位置与尺寸（横竖屏各一套），JSON 编码。
+  ///
+  /// 坐标是应用表面内的逻辑坐标；`media_core_floating` 在恢复时会按当前表面重新夹取，
+  /// 所以旋转或改变窗口大小之后不会把悬浮窗丢到看不见的地方。
+  final RxString floatWindowGeometry = hiveString('floatWindowGeometry', '');
   final RxBool windowsPipAlwaysOnTop = hiveBool('windowsPipAlwaysOnTop', false);
 
   /// 小窗是否可以不按视频比例自由拉伸（仅 Windows 小窗）。
@@ -490,6 +496,7 @@ class PlayerSettingsController extends GetxController {
       'audioOutputDriver': audioOutputDriver.v,
       'videoHardwareDecoder': videoHardwareDecoder.v,
       'floatPlay': floatPlay.v,
+      'floatWindowGeometry': floatWindowGeometry.v,
       'windowsPipAlwaysOnTop': windowsPipAlwaysOnTop.v,
       'windowsPipFreeAspect': windowsPipFreeAspect.v,
       'windowsPipBaseSize': windowsPipBaseSize.v,
@@ -541,6 +548,7 @@ class PlayerSettingsController extends GetxController {
         defaultTargetPlatform,
       ),
       'floatPlay': typed<bool>(json['floatPlay'] ?? false),
+      'floatWindowGeometry': typed<String>(json['floatWindowGeometry']?.toString() ?? ''),
       'windowsPipAlwaysOnTop': typed<bool>(json['windowsPipAlwaysOnTop'] ?? false),
       'windowsPipFreeAspect': typed<bool>(json['windowsPipFreeAspect'] ?? false),
       'windowsPipBaseSize': typed<double>((json['windowsPipBaseSize'] ?? 360.0).toDouble().clamp(200.0, 720.0)),
@@ -588,6 +596,7 @@ class PlayerSettingsController extends GetxController {
     audioOutputDriver.v = parsed['audioOutputDriver'];
     videoHardwareDecoder.v = parsed['videoHardwareDecoder'];
     floatPlay.v = parsed['floatPlay'];
+    floatWindowGeometry.v = parsed['floatWindowGeometry'];
     windowsPipAlwaysOnTop.v = parsed['windowsPipAlwaysOnTop'];
     windowsPipFreeAspect.v = parsed['windowsPipFreeAspect'];
     windowsPipBaseSize.v = parsed['windowsPipBaseSize'];
@@ -638,6 +647,7 @@ class PlayerSettingsController extends GetxController {
         defaultTargetPlatform,
       ),
       'floatPlay': player['floatPlay'] ?? false,
+      'floatWindowGeometry': player['floatWindowGeometry']?.toString() ?? '',
       'windowsPipAlwaysOnTop': player['windowsPipAlwaysOnTop'] ?? false,
       'windowsPipFreeAspect': player['windowsPipFreeAspect'] ?? false,
       // Compatibility-only input for backups created before the ownership of

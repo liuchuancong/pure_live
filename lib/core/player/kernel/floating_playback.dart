@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:pure_live/core/index.dart';
+import 'package:pure_live/core/config/float_window_geometry.dart';
+import 'package:pure_live/core/player/presentation/compact_source_orientation.dart';
 import 'package:media_core_floating/media_core_floating.dart';
 import 'package:pure_live/domains/live/domain/live_player_facade.dart';
 
@@ -88,6 +90,10 @@ class FloatingPlayback {
             resizableByDrag: true,
           ),
         ),
+        // 上次显示时的位置与尺寸（按当前源方向选一套）；组件会按当前表面重新夹取，
+        // 所以旋转或改窗口大小之后不会把悬浮窗放到看不见的地方。
+        initialRect: _rememberedFloatRect(),
+        onRectChanged: _rememberFloatRect,
         child: _FloatingSurface(
           facade: facade,
           onExit: () async {
@@ -103,6 +109,22 @@ class FloatingPlayback {
     overlay.insert(entry);
     _entry = entry;
     isFloating.value = true;
+  }
+
+  /// 悬浮窗上次显示时的矩形；方向由 Core 端口决定（Core 不能反向依赖 live 域）。
+  Rect? _rememberedFloatRect() {
+    final geometry = FloatWindowGeometry.decode(SettingsService.to.player.floatWindowGeometry.value);
+    return geometry.forPortrait(CompactSourceOrientation.isPortrait);
+  }
+
+  /// 记住刚稳定下来的矩形：拖动/缩放结束与隐藏时各报一次。
+  void _rememberFloatRect(Rect rect) {
+    if (!rect.isFinite || rect.isEmpty) return;
+    final settings = SettingsService.to.player;
+    final geometry = FloatWindowGeometry.decode(settings.floatWindowGeometry.value);
+    settings.floatWindowGeometry.value = geometry
+        .withRect(isPortrait: CompactSourceOrientation.isPortrait, rect: rect)
+        .encode();
   }
 
   Future<void> closeAppFloating() async {
