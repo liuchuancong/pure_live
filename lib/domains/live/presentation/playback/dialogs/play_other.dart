@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/utils/event_bus.dart';
 import 'package:pure_live/core/network/image_cache_manager.dart';
+import 'package:pure_live/core/widgets/common_avatar.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:pure_live/domains/live/presentation/playback/controllers/live_play_controller.dart';
 import 'package:pure_live/domains/live/presentation/playback/widgets/content_first_panel_layout.dart';
@@ -232,23 +233,26 @@ class _PlayOtherState extends State<PlayOther> with SingleTickerProviderStateMix
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        // 换台面板沿用旧版布局：窄面板单列大卡、封面固定 16:9、底部信息条固定
-        // 高度，卡片放不下就滚动 —— 不再把封面压扁去凑满两行。封面比例是列表
-        // 里最快被认出来的信息，压扁之后一屏看着更"齐"，但一张图都认不出。
         const padding = 10.0;
         const spacing = 8.0;
-        // 内容宽 ≥520 时两列；再窄就是单列大卡。旧版按这个宽度分档，
-        // 而不是按卡片最小可读宽度：手机横屏的右半面板只有一列可读。
-        const twoColumnMinimumWidth = 520.0;
-        // 底部信息条固定 48；只有无障碍大字号确实需要更高时才让出空间，
-        // 否则标题与昵称会被裁掉。
+        // 两种形态按面板内容宽分档，不按"卡片能不能读"分档：手机横屏的右半面板
+        // 只有 370~410 宽，塞卡片要么一列太宽、要么两列小到看不清封面，所以
+        // 窄面板一行一个主播（头像 + 房间名/主播名），平板与桌面才用封面卡片。
+        const cardModeMinimumWidth = 520.0;
+        // 底部信息条固定 48；只有无障碍大字号确实需要更高时才让出空间。
         final infoHeight = math.max(48.0, textMetrics.cardFooterHeight);
+        // 头像行固定 72；同样只在大字号下长高，避免房间名/主播名被裁。
+        final avatarRowHeight = textMetrics.mobileRowHeight;
 
         final availableWidth = math.max(0.0, constraints.maxWidth - padding * 2);
-        final columns = availableWidth >= twoColumnMinimumWidth ? 2 : 1;
+        final cardMode = availableWidth >= cardModeMinimumWidth;
+        final columns = cardMode ? 2 : 1;
         final cardWidth = math.max(0.0, (availableWidth - spacing * (columns - 1)) / columns);
-        // 16:9 封面 + 信息条；极小视口下兜一个最小高度，避免负数进入网格代理。
-        final cardHeight = math.max(80.0, cardWidth * 9 / 16 + infoHeight);
+        // 卡片：16:9 封面 + 信息条；头像行：固定行高。极小视口兜一个最小高度，
+        // 避免负数进入网格代理。
+        final rowExtent = cardMode
+            ? math.max(80.0, cardWidth * 9 / 16 + infoHeight)
+            : avatarRowHeight;
 
         return GridView.builder(
           key: ValueKey(history ? 'watch-history-grid' : 'live-room-grid'),
@@ -256,7 +260,7 @@ class _PlayOtherState extends State<PlayOther> with SingleTickerProviderStateMix
           physics: const PureLiveScrollPhysics(),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: columns,
-            mainAxisExtent: cardHeight,
+            mainAxisExtent: rowExtent,
             mainAxisSpacing: spacing,
             crossAxisSpacing: spacing,
           ),
@@ -267,6 +271,7 @@ class _PlayOtherState extends State<PlayOther> with SingleTickerProviderStateMix
             return _RoomSwitchCard(
               room: room,
               history: history,
+              cardMode: cardMode,
               infoHeight: infoHeight,
               onTap: () {
                 Navigator.of(context).pop();
@@ -310,6 +315,7 @@ class _RoomSwitchCard extends StatelessWidget {
   const _RoomSwitchCard({
     required this.room,
     required this.history,
+    required this.cardMode,
     required this.infoHeight,
     required this.onTap,
   });
@@ -317,7 +323,10 @@ class _RoomSwitchCard extends StatelessWidget {
   final LiveRoom room;
   final bool history;
 
-  /// 底部标题/昵称信息条的固定高度。
+  /// true = 封面卡片（平板/桌面），false = 头像行（窄面板）。
+  final bool cardMode;
+
+  /// 卡片底部标题/昵称信息条的固定高度；头像行不使用。
   final double infoHeight;
   final VoidCallback onTap;
 
@@ -364,20 +373,121 @@ class _RoomSwitchCard extends StatelessWidget {
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(12),
+            child: cardMode
+                ? _buildCardLayout(context, meta: meta, title: title, nick: nick)
+                : _buildAvatarLayout(context, meta: meta, title: title, nick: nick),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 平板/桌面：16:9 封面 + 底部房间名/主播名的封面卡片。
+  Widget _buildCardLayout(BuildContext context, {required String meta, required String title, required String nick}) {
+    return Column(
+      children: [
+        Expanded(child: _RoomSwitchCover(room: room, meta: meta)),
+        RoomSwitchCardDetails(
+          height: infoHeight,
+          title: title,
+          nick: nick.isEmpty ? i18n('unknown') : nick,
+        ),
+      ],
+    );
+  }
+
+  /// 窄面板（手机横屏的右半屏）：一行一个主播 —— 头像 + 房间名/主播名，
+  /// 右侧是平台标签与观众数（历史页签下是观看时间）。
+  ///
+  /// 这个宽度下封面卡片没有出路：一列太宽、两列小到认不出封面，
+  /// 头像行反而一眼能认出是谁在播。
+  Widget _buildAvatarLayout(BuildContext context, {required String meta, required String title, required String nick}) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final platform = room.platform?.trim().toLowerCase() ?? '';
+    final displayNick = nick.isEmpty ? i18n('unknown') : nick;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      child: Row(
+        children: [
+          CommonAvatar(avatarUrl: room.avatar, fallbackName: nick, dense: true),
+          const SizedBox(width: 12),
+          Expanded(
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Expanded(
-                  child: _RoomSwitchCover(room: room, meta: meta),
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700),
                 ),
-                RoomSwitchCardDetails(
-                  height: infoHeight,
-                  title: title,
-                  nick: nick.isEmpty ? i18n('unknown') : nick,
+                const SizedBox(height: 2),
+                Text(
+                  displayNick,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.labelSmall?.copyWith(color: colors.onSurfaceVariant),
                 ),
               ],
             ),
           ),
-        ),
+          const SizedBox(width: 8),
+          // Flexible 而非固定宽度：平台标签与观看时间最长时可省略号收尾，
+          // 否则一行放不下时整行溢出（Expanded 只保护中间那段文字）。
+          Flexible(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                if (platform.isNotEmpty) ...[
+                  _PlatformTag(platform: platform),
+                  const SizedBox(height: 3),
+                ],
+                Text(
+                  meta,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: history ? colors.onSurfaceVariant : Colors.orange.shade700,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 头像行右侧的平台标签：站点本地化名称的小胶囊。
+class _PlatformTag extends StatelessWidget {
+  const _PlatformTag({required this.platform});
+
+  final String platform;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: colors.surfaceContainerHighest.withValues(alpha: .75),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: colors.outline.withValues(alpha: .2), width: .5),
+      ),
+      child: Text(
+        i18n('site_$platform'),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: Theme.of(
+          context,
+        ).textTheme.labelSmall?.copyWith(color: colors.onSurfaceVariant, fontSize: 10, fontWeight: FontWeight.w600),
       ),
     );
   }

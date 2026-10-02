@@ -216,12 +216,19 @@ class RoomHistoryTextMetrics {
     required this.headerHeight,
     required this.tabBarHeight,
     required this.cardFooterHeight,
+    required this.mobileRowHeight,
     required this.scrollTabs,
   });
 
   final double headerHeight;
   final double tabBarHeight;
   final double cardFooterHeight;
+
+  /// 头像行的行高：上下内边距 + 房间名行 + 2 间距 + 主播名行。
+  ///
+  /// 默认字号下算出来是 50，取 72 就是旧版的固定行高；无障碍大字号时才长高，
+  /// 否则房间名与主播名会被 72px 裁掉。
+  final double mobileRowHeight;
   final bool scrollTabs;
 }
 
@@ -241,13 +248,15 @@ RoomHistoryTextMetrics resolveRoomHistoryTextMetrics({
   double lineExtent(double fontSize, double lineHeight) => textScaler.scale(fontSize) * lineHeight;
 
   final tabLineExtent = lineExtent(tabFontSize, tabLineHeight);
+  final titleLineExtent = lineExtent(titleFontSize, titleLineHeight);
   final detailLineExtent = lineExtent(detailFontSize, detailLineHeight);
   return RoomHistoryTextMetrics(
     headerHeight: math.max(contentFirstPanelHeaderActionExtent, lineExtent(headerFontSize, headerLineHeight) + 8),
     tabBarHeight: math.max(contentFirstPanelHeaderActionExtent, tabLineExtent + 10),
     // Six pixels are consumed by the vertical padding; two more absorb text
     // metric rounding across fonts and device pixel ratios.
-    cardFooterHeight: math.max(36, lineExtent(titleFontSize, titleLineHeight) + detailLineExtent + 8),
+    cardFooterHeight: math.max(36, titleLineExtent + detailLineExtent + 8),
+    mobileRowHeight: math.max(72, 16 + titleLineExtent + 2 + detailLineExtent),
     scrollTabs: textScaler.scale(tabFontSize) > tabFontSize * 1.01,
   );
 }
