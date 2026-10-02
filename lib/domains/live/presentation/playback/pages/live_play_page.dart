@@ -27,13 +27,22 @@ class LivePlayPage extends GetView<LivePlayController> {
 
       final content = _withLocalGiftEffect(child);
 
+      // The room is black by design - but a wallpaper is meant to run through
+      // the whole app, so the windowed canvas steps aside while one is showing.
+      // Presentation modes (fullscreen, PiP, portrait placement) keep their own
+      // opaque backdrop: there the video is the only subject on screen.
+      final bool wallpaperOwnsCanvas = AppCanvasScope.ownedByBackgroundOf(context);
+      final Color canvasColor = wallpaperOwnsCanvas && !isInPip && !presentationActive
+          ? Colors.transparent
+          : Colors.black;
+
       // Keep desktop route shortcuts mounted even when metadata loading ends
       // in an offline/error placeholder before a VideoController exists.
       // Otherwise the visible back button works while Escape silently does
       // nothing on exactly those failure states.
       final page = VideoKeyboardShortcuts(
         controller: videoController,
-        child: Container(color: Colors.black, width: double.infinity, height: double.infinity, child: content),
+        child: Container(color: canvasColor, width: double.infinity, height: double.infinity, child: content),
       );
 
       return LivePlayBackScope(

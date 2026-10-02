@@ -89,14 +89,19 @@ class WallpaperCanvasTheme extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ThemeData base = Theme.of(context);
-    return Theme(
-      data: ownsCanvas
-          ? base.copyWith(
-              scaffoldBackgroundColor: Colors.transparent,
-              pageTransitionsTheme: wallpaperPageTransitions(base.pageTransitionsTheme),
-            )
-          : base,
-      child: child,
+    // The scope tells pages that keep a deliberate backdrop of their own (the
+    // live room is black) that the picture is behind them now.
+    return AppCanvasScope(
+      ownedByBackground: ownsCanvas,
+      child: Theme(
+        data: ownsCanvas
+            ? base.copyWith(
+                scaffoldBackgroundColor: Colors.transparent,
+                pageTransitionsTheme: wallpaperPageTransitions(base.pageTransitionsTheme),
+              )
+            : base,
+        child: child,
+      ),
     );
   }
 }
