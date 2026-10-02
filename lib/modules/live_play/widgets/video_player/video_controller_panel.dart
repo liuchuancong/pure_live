@@ -255,8 +255,14 @@ class _VideoControllerPanelState extends State<VideoControllerPanel> {
                       controller.enableController();
                       return;
                     }
+                    // Tap-and-hold pins the barrage under the finger; the
+                    // message-actions menu opens as before, and releasing
+                    // (with the menu closed) resumes the held message.
+                    controller.pauseDanmakuAt(details.globalPosition);
                     controller.handleDanmakuPointer(details.globalPosition, longPress: true);
                   },
+                  onLongPressEnd: (_) => controller.resumeHeldDanmaku(),
+                  onLongPressCancel: () => controller.resumeHeldDanmaku(),
                   onDoubleTap: () {
                     if (!controller.showLocked.value) {
                       GlobalPlayerService.instance.player.isWindowFullscreen.value
@@ -806,9 +812,17 @@ class DanmakuViewer extends StatelessWidget {
           baseSpeed: controller.danmakuSpeed.value,
           opacity: controller.danmakuOpacity.value,
           fontWeight: FontWeight(controller.danmakuFontWeight.value),
+          letterSpacing: controller.danmakuLetterSpacing.value,
           strokeWidth: controller.danmakuFontBorder.value,
           showStroke: controller.enableDanmakuStroke.value,
           noEmojiMode: controller.noEmojiMode.value,
+          // Burst dispatch: waiting messages hit the screen the moment they
+          // arrive instead of trailing the pacing queue.
+          realtimeMode: controller.danmakuRealtimeMode.value,
+          // One GPU-resident bitmap per visible message — the single most
+          // effective switch on low-end GPUs re-rasterizing stroked CJK text
+          // every frame.
+          rasterizeItems: true,
           fps: settings.danmakuAutoFps.v
               ? settings.resolvedDanmakuFps(refreshRateMode: SettingsService.to.app.refreshRateMode)
               : controller.danmakuFps.value.clamp(30, 240).toInt(),

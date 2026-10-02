@@ -83,6 +83,8 @@ class DanmakuManager {
     videoController.danmakuFontSize.value = dm.danmakuFontSize.v;
     videoController.danmakuFontWeight.value = dm.danmakuFontWeight.v;
     videoController.danmakuFontBorder.value = dm.danmakuFontBorder.v;
+    videoController.danmakuRealtimeMode.value = dm.danmakuRealtimeMode.v;
+    videoController.danmakuLetterSpacing.value = dm.danmakuLetterSpacing.v;
     videoController.danmakuOpacity.value = dm.danmakuOpacity.v;
     videoController.enableDanmakuStroke.value = dm.enableDanmakuStroke.v;
     videoController.danmakuFps.value = dm.danmakuFps.v;
@@ -99,6 +101,8 @@ class DanmakuManager {
       videoController.danmakuFontSize,
       videoController.danmakuFontWeight,
       videoController.danmakuFontBorder,
+      videoController.danmakuLetterSpacing,
+      videoController.danmakuRealtimeMode,
       videoController.danmakuOpacity,
       videoController.enableDanmakuStroke,
       videoController.danmakuFps,
@@ -166,6 +170,8 @@ class DanmakuManager {
     dm.danmakuFontSize.v = videoController.danmakuFontSize.value;
     dm.danmakuFontWeight.v = videoController.danmakuFontWeight.value;
     dm.danmakuFontBorder.v = videoController.danmakuFontBorder.value.toDouble();
+    dm.danmakuLetterSpacing.v = videoController.danmakuLetterSpacing.value;
+    dm.danmakuRealtimeMode.v = videoController.danmakuRealtimeMode.value;
     dm.danmakuOpacity.v = videoController.danmakuOpacity.value;
     dm.enableDanmakuStroke.v = videoController.enableDanmakuStroke.value;
     dm.danmakuFps.v = videoController.danmakuFps.value;
@@ -258,6 +264,25 @@ class DanmakuManager {
     if (!enabled) return false;
     return controller.triggerItemAt(position.dx, position.dy, longPress: longPress);
   }
+
+  /// Tap-and-hold: pins the message under the pointer — it neither scrolls
+  /// nor expires until [resumeHeldDanmaku]. Returns the held item, or null
+  /// when nothing was hit (or tap interaction is off).
+  Object? pauseDanmakuAt(Offset position) {
+    final settings = settingsService.danmaku;
+    if (!settings.enableDanmakuTapInteraction.v) return null;
+    return controller.pauseItemAt(position.dx, position.dy);
+  }
+
+  /// Releases every message held by [pauseDanmakuAt]; they continue from
+  /// where they stopped. Safe to call with nothing held.
+  void resumeHeldDanmaku() {
+    controller.resumeAllPaused();
+    pipController.resumeAllPaused();
+  }
+
+  int get heldDanmakuCount => controller.pausedCount + pipController.pausedCount;
+  
 
   void dispose() {
     _persistVisualSettings();
@@ -388,6 +413,10 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
   final danmakuFontWeight = FontWeight.w500.value.obs;
   @override
   final danmakuFontBorder = 1.5.obs;
+  @override
+  final danmakuRealtimeMode = false.obs;
+  @override
+  final danmakuLetterSpacing = 0.0.obs;
   @override
   final danmakuOpacity = 1.0.obs;
   @override
@@ -999,6 +1028,31 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
     }
     return _danmakuManager.handlePointer(localPosition, longPress: longPress);
   }
+
+  /// Tap-and-hold on a barrage pins it in place. Called from the long-press
+  /// start; the matching end/cancel releases every held message.
+  void pauseDanmakuAt(Offset globalPosition) {
+    final renderObject = danmuKey.currentContext?.findRenderObject();
+    if (renderObject is! RenderBox || !renderObject.hasSize) return;
+    final localPosition = renderObject.globalToLocal(globalPosition);
+    if (localPosition.dx < 0 ||
+        localPosition.dy < 0 ||
+        localPosition.dx > renderObject.size.width ||
+        localPosition.dy > renderObject.size.height) {
+      return;
+    }
+    _danmakuHeld = _danmakuManager.pauseDanmakuAt(localPosition) != null;
+  }
+
+  /// Releases messages pinned by [pauseDanmakuAt].
+  void resumeHeldDanmaku() {
+    if (!_danmakuHeld) return;
+    _danmakuHeld = false;
+    _danmakuManager.resumeHeldDanmaku();
+  }
+
+  bool _danmakuHeld = false;
+
 
   void clearPipDanmaku() => pipDanmakuController.clear();
 

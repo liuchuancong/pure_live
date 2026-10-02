@@ -70,6 +70,11 @@ class DanmakuSettingsController extends GetxController {
   final RxInt danmakuMaxVisibleCount = hiveInt('danmakuMaxVisibleCount', 48);
   final RxBool enableDanmakuDisplay = hiveBool('enableDanmakuDisplay', true);
   final RxBool enableDanmakuStroke = hiveBool('enableDanmakuStroke', true);
+  /// Burst dispatch: flush the waiting queue on every logic frame instead
+  /// of pacing by emit-interval, so burst messages appear the moment they
+  /// arrive (denser screen during bursts).
+  final RxBool danmakuRealtimeMode = hiveBool('danmakuRealtimeMode', false);
+  final RxDouble danmakuLetterSpacing = hiveDouble('danmakuLetterSpacing', 0.0);
   final RxInt danmakuFps = hiveInt('danmakuFps', defaultDanmakuFps);
   final RxBool danmakuAutoFps = hiveBool('danmakuAutoFps', defaultDanmakuAutoFps);
   final RxBool enableDanmakuTapInteraction = hiveBool('enableDanmakuTapInteraction', true);
@@ -116,6 +121,7 @@ class DanmakuSettingsController extends GetxController {
     danmakuFontSize.v = _boundedDouble(danmakuFontSize.v, fallback: defaultDanmakuFontSize, min: 10, max: 30);
     danmakuFontWeight.v = normalizeFontWeight(danmakuFontWeight.v);
     danmakuFontBorder.v = _boundedDouble(danmakuFontBorder.v, fallback: defaultDanmakuFontBorder, min: 0, max: 4);
+    danmakuLetterSpacing.v = _boundedDouble(danmakuLetterSpacing.v, fallback: 0.0, min: -2, max: 8);
     danmakuOpacity.v = _boundedDouble(danmakuOpacity.v, fallback: defaultDanmakuOpacity, min: 0, max: 1);
     danmakuFps.v = _boundedInt(danmakuFps.v, fallback: defaultDanmakuFps, min: 30, max: 240);
     danmakuSimilarityThreshold.v = danmakuSimilarityThreshold.v.clamp(50, 100).toInt();
@@ -170,6 +176,8 @@ class DanmakuSettingsController extends GetxController {
       'danmakuFontSize': danmakuFontSize.v,
       'danmakuFontWeight': danmakuFontWeight.v,
       'danmakuFontBorder': danmakuFontBorder.v,
+      'danmakuLetterSpacing': danmakuLetterSpacing.v,
+      'danmakuRealtimeMode': danmakuRealtimeMode.v,
       'danmakuOpacity': danmakuOpacity.v,
       'enableDanmakuDisplay': enableDanmakuDisplay.v,
       'danmakuFontFamilyName': danmakuFontFamilyName.v,
@@ -264,6 +272,8 @@ class DanmakuSettingsController extends GetxController {
     danmakuFontSize.v = parsed['danmakuFontSize'];
     danmakuFontWeight.v = parsed['danmakuFontWeight'];
     danmakuFontBorder.v = parsed['danmakuFontBorder'];
+    danmakuLetterSpacing.v = parsed['danmakuLetterSpacing'];
+    danmakuRealtimeMode.v = parsed['danmakuRealtimeMode'];
     danmakuOpacity.v = parsed['danmakuOpacity'];
     enableDanmakuDisplay.v = parsed['enableDanmakuDisplay'];
     danmakuFontFamilyName.v = parsed['danmakuFontFamilyName'];

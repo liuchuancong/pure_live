@@ -38,6 +38,12 @@ class MultiviewDanmakuSettingsBinding implements DanmakuSettingsBinding {
   RxDouble get danmakuFontBorder => _s.danmakuFontBorder;
 
   @override
+  RxBool get danmakuRealtimeMode => _s.danmakuRealtimeMode;
+
+  @override
+  RxDouble get danmakuLetterSpacing => _s.danmakuLetterSpacing;
+
+  @override
   RxDouble get danmakuOpacity => _s.danmakuOpacity;
 
   @override

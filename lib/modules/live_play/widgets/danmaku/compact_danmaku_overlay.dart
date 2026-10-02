@@ -69,6 +69,7 @@ class CompactDanmakuOverlay extends StatelessWidget {
                   fontSize: metrics.fontSize,
                   fontWeight: FontWeight(typography.fontWeight),
                   fontFamily: typography.fontFamily,
+                  letterSpacing: settings.danmakuLetterSpacing.value * metrics.scale,
                   area: area,
                   baseSpeed: metrics.baseSpeed,
                   opacity: opacity,
@@ -83,8 +84,8 @@ class CompactDanmakuOverlay extends StatelessWidget {
                   maxPendingCount: 36,
                   maxPendingAge: const Duration(seconds: 3),
                   fixedDuration: Duration(seconds: 4),
-                  // The old per-pip emit-interval setting is gone; the main
-                  // surface's pacing applies here too.
+                  realtimeMode: settings.danmakuRealtimeMode.value,
+                  rasterizeItems: true,
                   overlapSafeGap: metrics.overlapSafeGap,
                   // PiP only exposes a handful of tracks. Keeping desktop-size
                   // pools here retained hundreds of paragraphs/pictures after

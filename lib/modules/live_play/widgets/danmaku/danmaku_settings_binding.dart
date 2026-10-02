@@ -22,6 +22,10 @@ abstract interface class DanmakuSettingsBinding {
 
   RxDouble get danmakuFontBorder;
 
+  RxBool get danmakuRealtimeMode;
+
+  RxDouble get danmakuLetterSpacing;
+
   RxInt get danmakuMaxVisibleCount;
 
   RxDouble get danmakuOpacity;
