@@ -2,13 +2,13 @@ import 'dart:async';
 
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/core/plugins/cache_manager.dart';
+import 'package:pure_live/core/network/image_cache_manager.dart';
 import 'package:pure_live/app/router/app_navigation.dart';
 import 'package:pure_live/core/widgets/common_avatar.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:pure_live/core/utils/share_command_handler.dart';
+import 'package:pure_live/core/platform/share_command_handler.dart';
 import 'package:pure_live/features/live/tags/tag_management_controller.dart';
-import 'package:pure_live/core/plugins/event_bus.dart';
+import 'package:pure_live/core/utils/event_bus.dart';
 import 'package:pure_live/services/settings/room_card_settings_controller.dart';
 
 double _roomTagTextScale(BuildContext context) {
@@ -83,7 +83,7 @@ class RoomCard extends StatelessWidget {
             imageUrl: coverUrl,
             cacheKey: epoch == 0 ? coverUrl : '$coverUrl#$epoch',
             httpHeaders: networkImageHeaders(coverUrl),
-            cacheManager: CustomImageCacheManager.instance,
+            cacheManager: AppImageCacheManager.instance,
             fit: BoxFit.cover,
             filterQuality: FilterQuality.low,
             memCacheWidth: cacheWidth,

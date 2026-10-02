@@ -5,7 +5,7 @@ import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/core/plugins/utils.dart';
+import 'package:pure_live/app/bootstrap/desktop_exit_flow.dart';
 import 'package:pure_live/core/platform/desktop_tray_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:pure_live/app/router/app_navigation.dart';
@@ -13,9 +13,9 @@ import 'package:flutter_acrylic/flutter_acrylic.dart';
 import 'package:pure_live/player/utils/windows_pip_driver.dart';
 import 'package:pure_live/core/utils/hive_pref_util.dart';
 import 'package:pure_live/core/platform/platform_utils.dart';
-import 'package:pure_live/core/plugins/share_command_handler.dart';
+import 'package:pure_live/core/platform/share_command_codec.dart';
 import 'package:pure_live/app/router/route_observer_controller.dart';
-import 'package:pure_live/core/utils/share_command_handler.dart';
+import 'package:pure_live/core/platform/share_command_handler.dart';
 import 'package:pure_live/core/widgets/share_command_import_dialog.dart';
 import 'package:pure_live/services/settings/window_size_controller.dart';
 
@@ -200,7 +200,7 @@ class DesktopManager {
           break;
 
         case 'exit_app':
-          await Utils.exitDesktopApplication();
+          await DesktopExitFlow.exitDesktopApplication();
           break;
       }
     } catch (e) {
@@ -211,7 +211,7 @@ class DesktopManager {
   static Future<void> handleWindowClose() async {
     if (!PlatformUtils.isDesktop) return;
 
-    await Utils.showExitDialog();
+    await DesktopExitFlow.showExitDialog();
   }
 
   static Future<void> handleTrayIconClick() async {

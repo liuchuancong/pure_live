@@ -7,7 +7,7 @@ import 'package:pure_live/core/platform/app_path_manager.dart';
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/widgets/refresh_indicators.dart';
 import 'package:hive_ce_flutter/hive_flutter.dart';
-import 'package:pure_live/core/plugins/cache_manager.dart';
+import 'package:pure_live/core/network/image_cache_manager.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:pure_live/core/common/proxy_routing.dart';
 import 'package:pure_live/core/utils/hive_pref_util.dart';
@@ -109,7 +109,7 @@ class AppInitializer {
         port: proxy.appProxyPort.v,
       );
     });
-    await CustomImageCacheManager.initialize(
+    await AppImageCacheManager.initialize(
       proxyDirectiveProvider: () {
         final proxy = SettingsService.to.proxy;
         return buildProxyDirective(

@@ -5,7 +5,7 @@ import 'package:pure_live/services/account/bilibili_account_service.dart';
 import 'package:pure_live/services/settings/cookie_value.dart';
 import 'package:pure_live/core/common/log.dart';
 import 'package:pure_live/platforms/douyin/douyin_site.dart';
-import 'package:pure_live/core/plugins/utils.dart';
+import 'package:pure_live/core/widgets/app_prompt_dialogs.dart';
 import 'package:pure_live/app/router/app_navigation.dart';
 
 typedef DouyinAccountLoader = Future<Map<String, dynamic>> Function(String cookie);
@@ -51,7 +51,7 @@ class AccountController extends GetxController {
 
   Future<void> bilibiliTap() async {
     if (BiliBiliAccountService.instance.logined.value) {
-      final result = await Utils.showAlertDialog(i18n('logout_bilibili_confirm'), title: i18n('logout'));
+      final result = await AppPromptDialogs.showAlertDialog(i18n('logout_bilibili_confirm'), title: i18n('logout'));
       if (result) await BiliBiliAccountService.instance.logout();
     } else {
       AppNavigator.toBiliBiliLogin();

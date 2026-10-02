@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pure_live/get/get.dart';
-import 'package:pure_live/core/plugins/cache_manager.dart';
+import 'package:pure_live/core/network/image_cache_manager.dart';
 import 'package:pure_live/core/utils/network_image_url.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:pure_live/services/settings_service.dart';
@@ -47,7 +47,7 @@ class CommonAvatar extends StatelessWidget {
             imageUrl: normalizedAvatarUrl,
             cacheKey: epoch == 0 ? normalizedAvatarUrl : '$normalizedAvatarUrl#$epoch',
             httpHeaders: networkImageHeaders(normalizedAvatarUrl),
-            cacheManager: CustomImageCacheManager.instance,
+            cacheManager: AppImageCacheManager.instance,
             fit: BoxFit.cover,
             filterQuality: FilterQuality.low,
             memCacheWidth: (size * MediaQuery.devicePixelRatioOf(context)).round().clamp(48, 256).toInt(),

@@ -6,7 +6,6 @@ import 'package:logger/logger.dart';
 import 'package:path/path.dart' as path;
 import 'package:flutter/foundation.dart';
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/core/plugins/utils.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -16,6 +15,7 @@ import 'package:pure_live/services/settings/log_controller.dart';
 enum LogBrowserRequestAction { page, clear, methodNotAllowed, forbidden, notFound }
 
 class Log {
+  static final DateFormat _timeFormat = DateFormat('HH:mm:ss');
   static const int maxDebugEntries = 2000;
   static const String browserClearActionHeader = 'X-PureLive-Log-Action';
   static const Map<String, String> browserSecurityHeaders = {
@@ -193,7 +193,7 @@ class Log {
         ? '<tr><td class="empty-state" colspan="2">No logs in this session.</td></tr>'
         : _allLogs
               .map((log) {
-                final timeStr = Utils.timeFormat.format(log.datetime);
+                final timeStr = _timeFormat.format(log.datetime);
                 String typeClass = 'info';
                 if (log.color == Colors.red) {
                   typeClass = 'error';
@@ -509,7 +509,7 @@ class Log {
     if (localLoggingEnabled) writeLog(content, Level.info);
   }
 
-  static String get _currentTime => Utils.timeFormat.format(DateTime.now());
+  static String get _currentTime => _timeFormat.format(DateTime.now());
 }
 
 class _NullOutput extends LogOutput {

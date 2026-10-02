@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/core/plugins/backup_recovery_service.dart';
+import 'package:pure_live/features/backup/backup_recovery_service.dart';
 
 typedef ScanCodeDetector = Future<void> Function(BarcodeCapture capture);
 typedef ScanCodeScannerBuilder = Widget Function(

@@ -7,7 +7,7 @@ import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/platform/app_path_manager.dart';
 import 'package:pure_live/core/utils/hive_pref_util.dart';
 import 'package:pure_live/services/settings/refresh_config_controller.dart';
-import 'package:pure_live/core/plugins/cache_manager.dart';
+import 'package:pure_live/core/network/image_cache_manager.dart';
 
 typedef CacheDirectoryResolver = Future<List<Directory>> Function();
 typedef CacheDirectoryPurger = Future<bool> Function(Directory directory);
@@ -211,11 +211,11 @@ class CacheController extends GetxController {
     final manager = AppPathManager();
     return [
       for (final name in CacheStoragePolicy.localDirectoryNames) await manager.getDir(name),
-      await CustomImageCacheManager.cacheDirectory(),
+      await AppImageCacheManager.cacheDirectory(),
     ];
   }
 
-  static Future<void> _clearDefaultEncodedImageCache() => CustomImageCacheManager.instance.emptyCache();
+  static Future<void> _clearDefaultEncodedImageCache() => AppImageCacheManager.instance.emptyCache();
 
   static Future<bool> _purgeDirectory(Directory directory) async {
     try {

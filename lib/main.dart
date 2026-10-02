@@ -3,7 +3,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/core/plugins/file_utils.dart';
+import 'package:pure_live/core/platform/file_utils.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:pure_live/app/bootstrap/initialized.dart';
 import 'package:material_ui/material_ui.dart' as material;
@@ -14,7 +14,7 @@ import 'package:pure_live/core/platform/platform_utils.dart';
 import 'package:pure_live/app/router/route_observer_controller.dart';
 import 'package:pure_live/core/utils/shared_media_intake.dart';
 import 'package:pure_live/player/utils/popup_route_tracker.dart';
-import 'package:pure_live/core/utils/share_command_handler.dart';
+import 'package:pure_live/core/platform/share_command_handler.dart';
 import 'package:pure_live/core/utils/shared_live_link_opener.dart';
 import 'package:pure_live/features/wallpaper/app_background.dart';
 import 'package:pure_live/core/iptv/services/epg_import_manager.dart';

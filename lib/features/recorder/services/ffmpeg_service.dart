@@ -11,7 +11,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:pure_live/core/common/log.dart';
 import 'package:pure_live/core/common/hls_source_query_policy.dart';
-import 'package:pure_live/core/plugins/locale_helper.dart';
+import 'package:pure_live/core/l10n/i18n.dart';
 import 'package:pure_live/features/recorder/ffmpeg/ffmpeg_event.dart';
 import 'package:pure_live/features/recorder/ffmpeg/ffmpeg_types.dart';
 import 'package:pure_live/features/recorder/services/ffmpeg_hls_input_relay.dart';

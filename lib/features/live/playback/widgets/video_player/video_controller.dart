@@ -9,7 +9,7 @@ import 'package:pure_live/core/index.dart';
 import 'package:battery_plus/battery_plus.dart';
 import 'package:flame_barrage/flame_barrage.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
-import 'package:pure_live/core/plugins/db_service.dart';
+import 'package:pure_live/core/iptv/local/db_service.dart';
 import 'package:pure_live/player/utils/fullscreen_window.dart';
 import 'package:volume_controller/volume_controller.dart';
 import 'package:pure_live/player/core/playback_source.dart';

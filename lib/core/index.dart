@@ -26,7 +26,7 @@ export 'package:pure_live/app/router/route_path.dart';
 export 'package:share_handler/share_handler.dart';
 export 'package:window_manager/window_manager.dart';
 export 'package:pure_live/player/global_player_service.dart';
-export 'package:pure_live/core/plugins/locale_helper.dart';
+export 'package:pure_live/core/l10n/i18n.dart';
 export 'package:pure_live/get/get.dart' hide VoidCallback;
 export 'widgets/app_status_view.dart';
 export 'theme/app_text_styles.dart';

@@ -1,7 +1,7 @@
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/utils/category_artwork.dart';
 import 'package:pure_live/features/live/area_rooms/area_rooms_controller.dart';
-import 'package:pure_live/core/plugins/cache_manager.dart';
+import 'package:pure_live/core/network/image_cache_manager.dart';
 import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:pure_live/core/widgets/keep_alive_wrapper.dart';
@@ -165,7 +165,7 @@ class _FavoriteAreaFloatingButtonState extends State<FavoriteAreaFloatingButton>
             ? CachedNetworkImage(
                 imageUrl: pictureUrl,
                 cacheKey: pictureUrl,
-                cacheManager: CustomImageCacheManager.instance,
+                cacheManager: AppImageCacheManager.instance,
                 httpHeaders: networkImageHeaders(pictureUrl),
                 width: 32,
                 height: 32,

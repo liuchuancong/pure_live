@@ -6,7 +6,7 @@ import 'package:crypto/crypto.dart';
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/tars/types.dart';
 import 'package:pure_live/core/common/log.dart';
-import 'package:pure_live/core/plugins/race_http.dart';
+import 'package:pure_live/core/network/race_http.dart';
 import 'package:pure_live/core/models/live_category.dart';
 import 'package:pure_live/core/common/core_log.dart';
 import 'package:pure_live/core/models/live_anchor_item.dart';

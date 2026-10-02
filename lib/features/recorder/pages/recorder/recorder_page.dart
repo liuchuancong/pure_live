@@ -1,6 +1,6 @@
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/core/plugins/cache_manager.dart';
+import 'package:pure_live/core/network/image_cache_manager.dart';
 import 'package:pure_live/app/router/app_navigation.dart';
 import 'package:pure_live/features/recorder/models/record_status.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -858,20 +858,20 @@ class _RecorderNetworkImage extends StatelessWidget {
     return CachedNetworkImage(
       imageUrl: resolved,
       cacheKey: resolved,
-      cacheManager: CustomImageCacheManager.instance,
+      cacheManager: AppImageCacheManager.instance,
       httpHeaders: networkImageHeaders(resolved),
       fit: BoxFit.cover,
       fadeInDuration: Duration.zero,
       fadeOutDuration: Duration.zero,
       errorWidget: (context, _, _) {
-        CustomImageCacheManager.instance.removeFile(resolved);
+        AppImageCacheManager.instance.removeFile(resolved);
         // Rebuild once without the cached entry so the network fetch retries
         // with fresh CDN state. The key change prevents an immediate re-read
         // of the same failed cache row.
         return CachedNetworkImage(
           imageUrl: resolved,
           cacheKey: '$resolved#retry',
-          cacheManager: CustomImageCacheManager.instance,
+          cacheManager: AppImageCacheManager.instance,
           httpHeaders: networkImageHeaders(resolved),
           fit: BoxFit.cover,
           fadeInDuration: Duration.zero,

@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:http/io_client.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
-class CustomImageCacheManager {
+class AppImageCacheManager {
   static const String key = 'pureLiveImagesV2';
   static String Function()? _proxyDirectiveProvider;
 

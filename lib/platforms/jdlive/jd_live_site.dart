@@ -8,7 +8,7 @@ import 'package:pure_live/core/contracts/live_search.dart';
 import 'package:pure_live/core/contracts/live_site.dart';
 import 'package:pure_live/core/models/live_category.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
-import 'package:pure_live/core/plugins/locale_helper.dart';
+import 'package:pure_live/core/l10n/i18n.dart';
 
 import 'jd_live_api.dart';
 import 'jd_live_link.dart';

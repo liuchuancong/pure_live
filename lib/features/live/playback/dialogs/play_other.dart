@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/core/plugins/event_bus.dart';
-import 'package:pure_live/core/plugins/cache_manager.dart';
+import 'package:pure_live/core/utils/event_bus.dart';
+import 'package:pure_live/core/network/image_cache_manager.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:pure_live/features/live/playback/controllers/live_play_controller.dart';
 import 'package:pure_live/features/live/playback/widgets/content_first_panel_layout.dart';
@@ -456,7 +456,7 @@ class _RoomSwitchCover extends StatelessWidget {
               return CachedNetworkImage(
                 imageUrl: url,
                 httpHeaders: networkImageHeaders(url),
-                cacheManager: CustomImageCacheManager.instance,
+                cacheManager: AppImageCacheManager.instance,
                 fit: BoxFit.cover,
                 filterQuality: FilterQuality.low,
                 memCacheWidth: cacheWidth,

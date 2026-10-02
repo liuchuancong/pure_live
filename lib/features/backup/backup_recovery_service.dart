@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'dart:convert';
 
-import 'file_utils.dart';
+import '../../core/platform/file_utils.dart';
 
 import 'package:pure_live/core/index.dart';
 import 'package:file_picker/file_picker.dart';

@@ -2,7 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/models/background_config.dart';
-import 'package:pure_live/core/plugins/cache_manager.dart';
+import 'package:pure_live/core/network/image_cache_manager.dart';
 import 'package:pure_live/services/background/wallpaper_catalog.dart';
 import 'package:pure_live/services/background/wallpaper_repository.dart';
 import 'package:remixicon/remixicon.dart';
@@ -330,7 +330,7 @@ class _Artwork extends StatelessWidget {
     return CachedNetworkImage(
       imageUrl: thumb,
       fit: BoxFit.cover,
-      cacheManager: CustomImageCacheManager.instance,
+      cacheManager: AppImageCacheManager.instance,
       placeholder: (context, url) => const ColoredBox(color: Color(0xFF20222A)),
       errorWidget: (context, url, error) => const Center(child: Icon(Remix.error_warning_line, color: Colors.white54)),
     );

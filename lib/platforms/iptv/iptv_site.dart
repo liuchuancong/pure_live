@@ -1,8 +1,8 @@
 import 'dart:developer';
 
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/core/plugins/db_service.dart';
-import 'package:pure_live/core/plugins/file_utils.dart';
+import 'package:pure_live/core/iptv/local/db_service.dart';
+import 'package:pure_live/core/platform/file_utils.dart';
 import 'package:pure_live/core/models/live_category.dart';
 import 'package:pure_live/core/models/live_anchor_item.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';

@@ -8,7 +8,7 @@ import 'package:media_core_media_kit/media_core_media_kit.dart';
 import 'package:pure_live/core/consts/background_source.dart';
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/models/background_config.dart';
-import 'package:pure_live/core/plugins/cache_manager.dart';
+import 'package:pure_live/core/network/image_cache_manager.dart';
 import 'package:pure_live/services/background/wallpaper_catalog.dart';
 import 'package:pure_live/services/background/wallpaper_media_store.dart';
 
@@ -316,7 +316,7 @@ class BackgroundController extends GetxController {
         return FileImage(File(state.imagePath));
       case BackgroundSource.networkImage:
         if (state.imageUrl.isEmpty) return null;
-        return CachedNetworkImageProvider(state.imageUrl, cacheManager: CustomImageCacheManager.instance);
+        return CachedNetworkImageProvider(state.imageUrl, cacheManager: AppImageCacheManager.instance);
       default:
         return null;
     }

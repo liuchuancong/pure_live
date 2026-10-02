@@ -15,7 +15,7 @@ import 'package:pure_live/core/utils/hive_pref_util.dart';
 import 'package:pure_live/core/danmaku/empty_danmaku.dart';
 import 'package:pure_live/core/contracts/live_site.dart';
 import 'package:pure_live/platforms/huya/huya_transport_policy.dart';
-import 'package:pure_live/core/plugins/file_utils.dart';
+import 'package:pure_live/core/platform/file_utils.dart';
 import 'package:pure_live/features/recorder/consts/recorder_keys.dart';
 import 'package:pure_live/features/recorder/ffmpeg/ffmpeg_command_builder.dart';
 import 'package:pure_live/features/recorder/ffmpeg/ffmpeg_event.dart';

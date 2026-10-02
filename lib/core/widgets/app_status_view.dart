@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:pure_live/get/get.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
-import 'package:pure_live/core/plugins/locale_helper.dart';
+import 'package:pure_live/core/l10n/i18n.dart';
 import 'package:loading_indicator/loading_indicator.dart';
 import 'package:pure_live/core/theme/app_text_styles.dart';
 import 'package:pure_live/services/settings_service.dart';

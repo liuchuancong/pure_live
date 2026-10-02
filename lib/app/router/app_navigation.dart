@@ -3,7 +3,7 @@ import 'dart:async';
 import 'dart:developer';
 
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/core/plugins/utils.dart';
+import 'package:pure_live/core/widgets/app_prompt_dialogs.dart';
 import 'package:pure_live/platforms/cc/cc_catalog.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -96,7 +96,7 @@ class AppNavigator {
   static Future toBiliBiliLogin() async {
     var contents = [i18n("sms_login"), i18n("qrcode_login")];
     if (Platform.isAndroid || Platform.isIOS) {
-      var result = await Utils.showOptionDialog(contents, '', title: i18n("select_login_method"));
+      var result = await AppPromptDialogs.showOptionDialog(contents, '', title: i18n("select_login_method"));
       if (result == i18n("sms_login")) {
         await Get.toNamed(RoutePath.kBiliBiliWebLogin);
       } else if (result == i18n("qrcode_login")) {

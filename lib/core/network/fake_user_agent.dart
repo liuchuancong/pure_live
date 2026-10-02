@@ -25,35 +25,35 @@ class FakeUserAgent {
       "device": "macOS",
       "browser": "Chrome",
       "version": chromeVersion,
-      "v": chromeVersion.split('.')[0]
+      "v": chromeVersion.split('.')[0],
     });
     userAgents.add({
       "userAgent": generateMacSafariUa,
       "device": "macOS",
       "browser": "Safari",
       "version": sarariVersion,
-      "v": sarariVersion.split('.')[0]
+      "v": sarariVersion.split('.')[0],
     });
     userAgents.add({
       "userAgent": generateWindowsChromeUa,
       "device": "Windows",
       "browser": "Chrome",
       "version": chromeVersion,
-      "v": chromeVersion.split('.')[0]
+      "v": chromeVersion.split('.')[0],
     });
     userAgents.add({
       "userAgent": generateWindowsEdgeUa,
       "device": "Windows",
       "browser": "Edge",
       "version": edgeVersion,
-      "v": edgeVersion.split('.')[0]
+      "v": edgeVersion.split('.')[0],
     });
     userAgents.add({
       "userAgent": generateLinuxChromeUa,
       "device": "Linux",
       "browser": "Chrome",
       "version": chromeVersion,
-      "v": chromeVersion.split('.')[0]
+      "v": chromeVersion.split('.')[0],
     });
 
     return userAgents[Random().nextInt(userAgents.length)];
@@ -82,7 +82,7 @@ class FakeUserAgent {
     "107.0.5304",
     "108.0.5359",
     "109.0.5414",
-    "110.0.5481"
+    "110.0.5481",
   ];
 
   static List<String> sarariVersions = [
@@ -108,7 +108,7 @@ class FakeUserAgent {
     "107.0.5304",
     "108.0.5359",
     "109.0.5414",
-    "110.0.5481"
+    "110.0.5481",
   ];
 
   static List<String> edgeVersions = [
@@ -146,7 +146,7 @@ class FakeUserAgent {
     "97.0.1072.55",
     "96.0.1054.62",
     "96.0.1054.36",
-    "95.0.1020.32"
+    "95.0.1020.32",
   ];
 
   static List<String> macOSDevicesVersions = ["13.1", "12.6.2", "11.7.2", "10.15.7", "10.14.6", "10.13.6"];
