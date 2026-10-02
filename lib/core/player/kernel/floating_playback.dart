@@ -1,9 +1,9 @@
 import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:pure_live/core/index.dart';
 import 'package:media_core_floating/media_core_floating.dart';
 import 'package:pure_live/domains/live/domain/live_player_facade.dart';
-
 
 ///
 
@@ -18,10 +18,34 @@ class FloatingPlayback {
   FacadeStreamCommit? _reentrySeed;
   bool _prepared = false;
 
-  void prepare() {
+  /// 房间侧登记的收尾动作（停弹幕、释放 VideoController 等）。
+  ///
+  /// 只有用户主动关闭悬浮窗时才执行：进入房间路由时的让位关闭必须保留这些资源，
+  /// 房间页面还要接着用同一个播放器继续播。
+  final List<Future<void> Function()> _pendingOwners = <Future<void> Function()>[];
+
+  void prepare({Future<void> Function()? onClose}) {
+    if (onClose != null) _pendingOwners.add(onClose);
     final commit = facade.commit;
     _reentrySeed = commit != null && commit.room == facade.room ? commit : null;
     _prepared = true;
+  }
+
+  /// 用户点悬浮窗的"关闭"：先停播放器，再收起悬浮层并执行房间侧收尾。
+  ///
+  /// 顺序与上游一致（先 close 再收起）；[closeAppFloating] 单独调用只收起悬浮层，
+  /// 不停止播放——那条路径用于进入房间路由/打开别的直播间时让位。
+  Future<void> stopFloatingPlayback() async {
+    await facade.close();
+    await closeAppFloating();
+  }
+
+  Future<void> _releasePendingOwners() async {
+    final owners = List<Future<void> Function()>.from(_pendingOwners);
+    _pendingOwners.clear();
+    for (final owner in owners) {
+      await owner();
+    }
   }
 
   FacadeStreamCommit? consumeRoomReentry() {
@@ -70,7 +94,7 @@ class FloatingPlayback {
             final room = facade.room;
             if (room != null) await AppNavigator.toLiveRoomDetail(liveRoom: room);
           },
-          onClose: closeAppFloating,
+          onClose: stopFloatingPlayback,
           danmakuBuilder: danmakuBuilder,
         ),
       ),
@@ -91,6 +115,10 @@ class FloatingPlayback {
       entry.remove();
     }
     isFloating.value = false;
+    // 房间侧收尾随悬浮窗一起结束（上游同样在收起时释放这些所有者）。放在这里
+    // 而不是只放在"用户点关闭"路径：让位给房间路由/多画面的关闭也必须释放，
+    // 否则旧房间的弹幕连接与 VideoController 会留到下一次关闭才被误执行。
+    await _releasePendingOwners();
   }
 }
 
@@ -102,12 +130,7 @@ class FloatingPlayback {
 /// the primary action and sits centered at a size a thumb can hit; the escape
 /// and close actions stay in the corner.
 class _FloatingSurface extends StatefulWidget {
-  const _FloatingSurface({
-    required this.facade,
-    required this.onExit,
-    required this.onClose,
-    this.danmakuBuilder,
-  });
+  const _FloatingSurface({required this.facade, required this.onExit, required this.onClose, this.danmakuBuilder});
 
   final LivePlayerFacade facade;
   final Future<void> Function() onExit;
@@ -173,7 +196,9 @@ class _FloatingSurfaceState extends State<_FloatingSurface> {
             ),
           ),
           if (danmaku != null) Positioned.fill(child: danmaku(context)),
-          Positioned.fill(child: GestureDetector(behavior: HitTestBehavior.opaque, onTap: _tapSurface)),
+          Positioned.fill(
+            child: GestureDetector(behavior: HitTestBehavior.opaque, onTap: _tapSurface),
+          ),
           IgnorePointer(
             ignoring: !_showControls,
             child: AnimatedOpacity(
@@ -211,11 +236,7 @@ class _FloatingSurfaceState extends State<_FloatingSurface> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    _cornerButton(
-                      icon: Icons.open_in_full_rounded,
-                      semanticLabel: '回到直播间',
-                      onTap: widget.onExit,
-                    ),
+                    _cornerButton(icon: Icons.open_in_full_rounded, semanticLabel: '回到直播间', onTap: widget.onExit),
                     const SizedBox(width: 4),
                     _cornerButton(icon: Icons.close_rounded, semanticLabel: '关闭', onTap: widget.onClose),
                   ],
@@ -228,7 +249,11 @@ class _FloatingSurfaceState extends State<_FloatingSurface> {
     );
   }
 
-  Widget _cornerButton({required IconData icon, required String semanticLabel, required Future<void> Function() onTap}) {
+  Widget _cornerButton({
+    required IconData icon,
+    required String semanticLabel,
+    required Future<void> Function() onTap,
+  }) {
     return IconButton(
       iconSize: 20,
       visualDensity: VisualDensity.compact,

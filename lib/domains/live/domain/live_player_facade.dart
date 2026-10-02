@@ -395,7 +395,9 @@ final class LivePlayerFacade {
 
   bool get isAppFloatingActive => floating.isAppFloatingActive;
   bool get shouldKeepDanmakuForAppFloating => floating.isAppFloatingActive;
-  void prepareAppFloating({Future<void> Function()? onClose, FacadeStreamCommit? session}) => floating.prepare();
+  void prepareAppFloating({Future<void> Function()? onClose, FacadeStreamCommit? session}) =>
+      // onClose 必须转交：悬浮窗被用户关闭时要停弹幕并释放房间侧资源。
+      floating.prepare(onClose: onClose);
   Future<void> showAppFloating({Widget Function(BuildContext)? danmakuBuilder}) =>
       floating.showAppFloating(danmakuBuilder: danmakuBuilder);
   Future<void> closeAppFloating() => floating.closeAppFloating();
