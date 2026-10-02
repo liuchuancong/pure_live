@@ -1,4 +1,5 @@
 import 'package:flutter/painting.dart' show Offset, Rect, Size;
+import 'package:flutter/widgets.dart' show WidgetsBinding;
 import 'package:media_core/media_core.dart' show PresentationLifecycleHooks;
 import 'package:media_core_pip/media_core_pip.dart';
 import 'package:pure_live/common/services/settings_service.dart';
@@ -22,11 +23,34 @@ final PipDriver windowsPipDriver = PipDriver(
   // transition these four lines say which leg never ran.
   lifecycleHooks: PresentationLifecycleHooks(
     beforeEnter: (_) async => CoreLog.i('pip: entering the desktop small window'),
-    afterEnter: (_) async => CoreLog.i('pip: entered the desktop small window'),
+    afterEnter: (_) async {
+      CoreLog.i('pip: entered the desktop small window');
+      await _logPipGeometry();
+    },
     beforeExit: (_) async => CoreLog.i('pip: leaving the desktop small window'),
     afterExit: (_) async => CoreLog.i('pip: left the desktop small window'),
   ),
 );
+
+/// Window frame vs the size Flutter is actually laying out at.
+///
+/// A compact window that keeps rendering the pre-fullscreen scene shows the
+/// symptom (a cropped picture) while every style call reports success, and the
+/// only way to tell that apart from a fit problem is to compare the two.
+Future<void> _logPipGeometry() async {
+  try {
+    final bounds = await windowManager.getBounds();
+    final view = WidgetsBinding.instance.platformDispatcher.views.first;
+    final logical = view.physicalSize / view.devicePixelRatio;
+    CoreLog.i(
+      'pip: geometry window=${bounds.width.round()}x${bounds.height.round()} '
+      'view=${logical.width.round()}x${logical.height.round()} '
+      'dpr=${view.devicePixelRatio} fullscreen=${await windowManager.isFullScreen()}',
+    );
+  } catch (error) {
+    CoreLog.e('pip: geometry probe failed: $error', StackTrace.current);
+  }
+}
 
 Future<List<PipWorkArea>> _readWorkAreas() async {
   final displays = await screenRetriever.getAllDisplays();
