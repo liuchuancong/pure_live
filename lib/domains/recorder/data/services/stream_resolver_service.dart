@@ -1,7 +1,7 @@
-import 'package:pure_live/domains/live/domain/live_quality_discovery.dart';
-import 'package:pure_live/domains/live/domain/live_input_recipe.dart';
+import 'package:pure_live/core/live/live_quality_discovery.dart';
+import 'package:pure_live/core/live/live_input_recipe.dart';
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/domains/live/domain/live_site.dart';
+import 'package:pure_live/core/live/live_site.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
 import 'package:pure_live/core/player/kernel/player_consts.dart';
 import 'package:pure_live/core/stream/hls_source_query_policy.dart';
@@ -104,7 +104,14 @@ class StreamResolverService extends GetxService {
 
   final RecorderLiveSiteResolver _siteResolver;
 
-  Future<ResolvedRecordStream> resolveStream({required LiveRoom liveroom, required String preferredQuality, String? previousQualityId, int? previousLineIndex, bool renewCurrent = false, LiveQualityDiscoveryScope? discoveryScope}) async {
+  Future<ResolvedRecordStream> resolveStream({
+    required LiveRoom liveroom,
+    required String preferredQuality,
+    String? previousQualityId,
+    int? previousLineIndex,
+    bool renewCurrent = false,
+    LiveQualityDiscoveryScope? discoveryScope,
+  }) async {
     final roomId = liveroom.roomId ?? '';
     final platform = liveroom.platform ?? '';
     discoveryScope?.checkActive();

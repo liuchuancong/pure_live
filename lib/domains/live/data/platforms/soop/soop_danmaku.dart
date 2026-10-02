@@ -7,7 +7,7 @@ import 'package:pure_live/core/logging/core_log.dart';
 import 'package:pure_live/domains/live/data/platforms/soop/soop_site.dart';
 import 'package:pure_live/core/utils/list_util.dart';
 import 'package:pure_live/core/network/web_socket_util.dart';
-import 'package:pure_live/domains/live/domain/live_danmaku.dart';
+import 'package:pure_live/core/live/live_danmaku.dart';
 import 'package:pure_live/domains/live/data/platforms/yy/yy_web_socket_channel.dart';
 import 'package:pure_live/domains/live/data/platforms/sites.dart';
 

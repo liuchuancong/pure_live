@@ -13,7 +13,7 @@ import 'package:pure_live/core/logging/core_log.dart';
 import 'package:pure_live/core/models/live_message.dart';
 import 'package:pure_live/core/utils/type_cast.dart';
 import 'package:pure_live/core/network/web_socket_util.dart';
-import 'package:pure_live/domains/live/domain/live_danmaku.dart';
+import 'package:pure_live/core/live/live_danmaku.dart';
 
 class BiliBiliDanmakuArgs {
   final int roomId;

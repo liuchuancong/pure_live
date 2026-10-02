@@ -1,11 +1,10 @@
-import 'package:pure_live/domains/live/domain/live_quality_discovery.dart';
+import 'package:pure_live/core/live/live_quality_discovery.dart';
 import 'package:flutter/services.dart';
 import 'package:pure_live/core/models/live_room.dart';
-import 'package:pure_live/domains/live/domain/live_site.dart';
+import 'package:pure_live/core/live/live_site.dart';
 import 'package:pure_live/domains/live/data/platforms/sites.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
 import 'package:pure_live/core/utils/action_scope.dart';
-
 
 class LiveDirectLinkFlow {
   LiveDirectLinkFlow({LiveSite Function(String)? siteFor, Future<void> Function(String)? copyText})

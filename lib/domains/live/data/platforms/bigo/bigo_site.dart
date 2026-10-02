@@ -1,11 +1,11 @@
 import 'package:dio/dio.dart';
 import 'package:pure_live/core/models/live_area.dart';
 import 'package:pure_live/core/models/live_room.dart';
-import 'package:pure_live/domains/live/data/empty_danmaku.dart';
-import 'package:pure_live/domains/live/domain/live_danmaku.dart';
+import 'package:pure_live/core/live/empty_danmaku.dart';
+import 'package:pure_live/core/live/live_danmaku.dart';
 import 'package:pure_live/domains/live/domain/live_directory.dart';
 import 'package:pure_live/domains/live/domain/live_search.dart';
-import 'package:pure_live/domains/live/domain/live_site.dart';
+import 'package:pure_live/core/live/live_site.dart';
 import 'package:pure_live/core/models/live_category.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
 import 'package:pure_live/core/utils/i18n.dart';
@@ -183,21 +183,18 @@ final class BigoSite extends LiveSite
 
   @override
   Future<LiveRoom> getRoomDetail(LiveRoom liveroom) async {
-    
     if (liveroom.detailIdentity == null) return liveroom;
     return _detail(liveroom, includeMedia: true);
   }
 
   @override
   Future<LiveRoom> getRoomDetailForRefresh(LiveRoom liveroom) async {
-    
     if (liveroom.detailIdentity == null) return liveroom;
     return _detail(liveroom, includeMedia: false);
   }
 
   @override
   Future<LiveRoom> getRoomDetailForRecording(LiveRoom liveroom) async {
-    
     if (liveroom.detailIdentity == null) return liveroom;
     return _detail(liveroom, includeMedia: true);
   }
@@ -272,7 +269,10 @@ final class BigoSite extends LiveSite
   }
 
   @override
-  Future<LivePlayUrlResolution> resolvePlayUrlsRaw({required LiveRoom liveroom, required LivePlayQuality quality}) async {
+  Future<LivePlayUrlResolution> resolvePlayUrlsRaw({
+    required LiveRoom liveroom,
+    required LivePlayQuality quality,
+  }) async {
     final siteId = _identity(liveroom);
     if (liveroom.isExplicitlyOfflineNow) throw const BigoException(BigoFailure.notLive);
     if (quality.selectionId != 'live' || (await getPlayQualites(liveroom: liveroom)).isEmpty) {

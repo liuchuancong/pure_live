@@ -6,7 +6,7 @@ import 'dart:developer' as developer;
 
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
-import 'package:pure_live/domains/live/domain/live_site.dart';
+import 'package:pure_live/core/live/live_site.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:pure_live/core/player/kernel/player_consts.dart';
 import 'package:pure_live/core/player/core/playback_source.dart';
@@ -17,7 +17,7 @@ import 'package:pure_live/domains/live/presentation/playback/states/player_state
 import 'package:pure_live/core/stream/hls_source_query_policy.dart';
 import 'package:pure_live/domains/live/data/playback_header_resolver.dart';
 import 'package:pure_live/domains/live/data/platforms/huya/huya_transport_policy.dart';
-import 'package:pure_live/domains/live/domain/live_quality_discovery.dart';
+import 'package:pure_live/core/live/live_quality_discovery.dart';
 import 'package:pure_live/core/utils/latest_async_value_queue.dart';
 import 'package:pure_live/domains/live/domain/live_input_playback_binder.dart';
 import 'package:pure_live/domains/live/presentation/playback/states/live_play_state.dart';
@@ -480,7 +480,12 @@ class PlayerController extends GetxController {
     if (roomId.isEmpty) return null;
     invalidateLoad();
     final loadEpoch = _loadEpoch;
-    final controller = await setPlayer(roomId: roomId, expectedRoom: liveroom, expectedSite: site, loadEpoch: loadEpoch);
+    final controller = await setPlayer(
+      roomId: roomId,
+      expectedRoom: liveroom,
+      expectedSite: site,
+      loadEpoch: loadEpoch,
+    );
     if (controller == null) return null;
     try {
       await controller.initialization;
@@ -536,7 +541,11 @@ class PlayerController extends GetxController {
       currentQuality: currentQuality,
       isAudioOnly: manager.desiredAudioOnlyMode,
       reuseCurrentSession: true,
-      sourceResolver: _buildSourceResolver(site: currentSite, liveroom: session.room, quality: qualities[currentQuality]),
+      sourceResolver: _buildSourceResolver(
+        site: currentSite,
+        liveroom: session.room,
+        quality: qualities[currentQuality],
+      ),
       sourceRefreshAt: session.ownedSource == null
           ? _getSourceRefreshAt(
               site: currentSite,
@@ -777,7 +786,11 @@ class PlayerController extends GetxController {
         currentQuality: selection.qualityIndex,
         sourceQueryPolicies: resolution.sourceQueryPolicies,
       );
-      final resolver = _buildSourceResolver(site: site, liveroom: room, quality: before.qualites[selection.qualityIndex]);
+      final resolver = _buildSourceResolver(
+        site: site,
+        liveroom: room,
+        quality: before.qualites[selection.qualityIndex],
+      );
       if (owned != null) {
         await (_ownedStreamSourceOpener ?? _openOwnedGlobalStream)(
           owned,

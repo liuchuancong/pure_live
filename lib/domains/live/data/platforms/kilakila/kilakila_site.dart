@@ -2,11 +2,11 @@ import 'package:dio/dio.dart';
 import 'package:pure_live/core/index.dart' show i18n;
 import 'package:pure_live/core/models/live_area.dart';
 import 'package:pure_live/core/models/live_room.dart';
-import 'package:pure_live/domains/live/data/empty_danmaku.dart';
-import 'package:pure_live/domains/live/domain/live_danmaku.dart';
+import 'package:pure_live/core/live/empty_danmaku.dart';
+import 'package:pure_live/core/live/live_danmaku.dart';
 import 'package:pure_live/domains/live/domain/live_directory.dart';
 import 'package:pure_live/domains/live/domain/live_search.dart';
-import 'package:pure_live/domains/live/domain/live_site.dart';
+import 'package:pure_live/core/live/live_site.dart';
 import 'package:pure_live/core/models/live_category.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
 
@@ -199,21 +199,18 @@ class KilakilaSite extends LiveSite
 
   @override
   Future<LiveRoom> getRoomDetail(LiveRoom liveroom) async {
-    
     if (liveroom.detailIdentity == null) return liveroom;
     return _detail(liveroom, playback: true);
   }
 
   @override
   Future<LiveRoom> getRoomDetailForRecording(LiveRoom liveroom) async {
-    
     if (liveroom.detailIdentity == null) return liveroom;
     return _detail(liveroom, playback: true);
   }
 
   @override
   Future<LiveRoom> getRoomDetailForRefresh(LiveRoom liveroom) async {
-    
     if (liveroom.detailIdentity == null) return liveroom;
     return _detail(liveroom, playback: false);
   }

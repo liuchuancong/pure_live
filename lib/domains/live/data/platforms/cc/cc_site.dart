@@ -6,9 +6,9 @@ import 'package:pure_live/domains/live/data/platforms/cc/cc_catalog.dart';
 import 'package:pure_live/core/models/live_anchor_item.dart';
 import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
-import 'package:pure_live/domains/live/domain/live_site.dart';
-import 'package:pure_live/domains/live/data/empty_danmaku.dart';
-import 'package:pure_live/domains/live/domain/live_danmaku.dart';
+import 'package:pure_live/core/live/live_site.dart';
+import 'package:pure_live/core/live/empty_danmaku.dart';
+import 'package:pure_live/core/live/live_danmaku.dart';
 import 'package:pure_live/core/utils/live_quality_label.dart';
 import 'package:pure_live/domains/live/domain/live_directory.dart';
 import 'package:pure_live/domains/live/data/platforms/sites.dart';
@@ -261,7 +261,6 @@ class CCSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResol
 
   @override
   Future<LiveRoom> getRoomDetail(LiveRoom liveroom) async {
-    
     if (liveroom.detailIdentity == null) return liveroom;
     final fresh = await _resolveDetail(liveroom);
     // Pad response gaps from the room the caller already holds. fillFromDetail
@@ -291,7 +290,6 @@ class CCSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResol
 
   @override
   Future<LiveRoom> getRoomDetailForRefresh(LiveRoom liveroom) async {
-    
     if (liveroom.detailIdentity == null) return liveroom;
     // Propagate transport/shape errors to the favourite verifier. Treating a
     // failed request as an authoritative offline response corrupts the card
@@ -301,7 +299,6 @@ class CCSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResol
 
   @override
   Future<LiveRoom> getRoomDetailForRecording(LiveRoom liveroom) async {
-    
     if (liveroom.detailIdentity == null) return liveroom;
     return _loadRoomDetail(liveroom.roomId!);
   }

@@ -4,7 +4,7 @@ import 'inke/inke_site.dart';
 import 'soop/soop_site.dart';
 import 'huya/huya_site.dart';
 
-import 'package:pure_live/domains/live/domain/live_site.dart';
+import 'package:pure_live/core/live/live_site.dart';
 
 import 'chzzk/chzzk_site.dart';
 import 'fc2live/fc2_site.dart';
@@ -48,13 +48,13 @@ class Sites {
   static const String weiboSite = 'weibo';
   static const String niconicoSite = 'niconico';
   static const String allSite = "all";
-  static const String bilibiliSite = "bilibili";
-  static const String douyuSite = "douyu";
-  static const String huyaSite = "huya";
+  static const String bilibiliSite = PlatformIds.bilibili;
+  static const String douyuSite = PlatformIds.douyu;
+  static const String huyaSite = PlatformIds.huya;
   static const String douyinSite = PlatformIds.douyin;
   static const String kuaishouSite = PlatformIds.kuaishou;
   static const String ccSite = PlatformIds.cc;
-  static const String iptvSite = "iptv";
+  static const String iptvSite = PlatformIds.iptv;
   static const String twitchSite = PlatformIds.twitch;
   static const String soopSite = PlatformIds.soop;
   static const String yySite = 'yy';

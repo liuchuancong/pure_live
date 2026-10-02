@@ -13,4 +13,8 @@ abstract final class PlatformIds {
   static const String acfun = 'acfun';
   static const String picarto = 'picarto';
   static const String twitcasting = 'twitcasting';
+  static const String bilibili = 'bilibili';
+  static const String douyu = 'douyu';
+  static const String huya = 'huya';
+  static const String iptv = 'iptv';
 }

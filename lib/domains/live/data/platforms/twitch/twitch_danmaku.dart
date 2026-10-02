@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/logging/core_log.dart';
 import 'package:pure_live/core/network/web_socket_util.dart';
-import 'package:pure_live/domains/live/domain/live_danmaku.dart';
+import 'package:pure_live/core/live/live_danmaku.dart';
 import 'package:pure_live/core/config/cookie_settings_controller.dart';
 
 class TwitchDanmaku implements LiveDanmaku {

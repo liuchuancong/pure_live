@@ -5,7 +5,7 @@ import 'package:pure_live/core/index.dart';
 import 'package:synchronized/synchronized.dart';
 import 'package:pure_live/core/utils/event_bus.dart';
 import 'package:pure_live/domains/live/presentation/tags/live_tag.dart';
-import 'package:pure_live/domains/live/domain/live_site.dart';
+import 'package:pure_live/core/live/live_site.dart';
 import 'package:pure_live/domains/live/presentation/tags/tag_management_controller.dart';
 import 'package:pure_live/domains/live/presentation/favorite/favorite_startup_policy.dart';
 import 'package:pure_live/core/config/refresh_config_controller.dart';

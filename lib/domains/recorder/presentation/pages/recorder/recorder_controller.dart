@@ -1,4 +1,4 @@
-import 'package:pure_live/domains/live/domain/live_quality_discovery.dart';
+import 'package:pure_live/core/live/live_quality_discovery.dart';
 import 'package:pure_live/domains/recorder/data/services/recording_bitrate_window.dart';
 import 'package:pure_live/domains/recorder/data/services/live_input_recording_binder.dart';
 import 'package:pure_live/core/utils/live_quality_label.dart';
@@ -12,8 +12,8 @@ import 'dart:math' as math;
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/storage/hive_pref_util.dart';
-import 'package:pure_live/domains/live/data/empty_danmaku.dart';
-import 'package:pure_live/domains/live/domain/live_site.dart';
+import 'package:pure_live/core/live/empty_danmaku.dart';
+import 'package:pure_live/core/live/live_site.dart';
 import 'package:pure_live/domains/live/data/platforms/huya/huya_transport_policy.dart';
 import 'package:pure_live/core/platform/file_utils.dart';
 import 'package:pure_live/domains/recorder/data/consts/recorder_keys.dart';
@@ -693,7 +693,9 @@ class RecorderController extends GetxService {
 
   Future<LiveRecordTask?> addTask({required LiveRoom liveroom, bool startImmediately = true}) async {
     if (_isClosing || !await requestStoragePermission() || _isClosing) return null;
-    final existing = tasks.firstWhereOrNull((task) => task.roomId == liveroom.roomId && task.platform == liveroom.platform);
+    final existing = tasks.firstWhereOrNull(
+      (task) => task.roomId == liveroom.roomId && task.platform == liveroom.platform,
+    );
     if (existing != null) return existing;
 
     final task = LiveRecordTask.fromRoom(liveroom);

@@ -8,10 +8,10 @@ import 'package:pure_live/core/logging/core_log.dart';
 import 'package:pure_live/core/network/core_error.dart';
 import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
-import 'package:pure_live/domains/live/domain/live_site.dart';
+import 'package:pure_live/core/live/live_site.dart';
 import 'package:pure_live/domains/live/data/platforms/douyu/douyu_danmaku.dart';
 import 'package:pure_live/domains/live/data/platforms/douyu/douyu_utils.dart';
-import 'package:pure_live/domains/live/domain/live_danmaku.dart';
+import 'package:pure_live/core/live/live_danmaku.dart';
 import 'package:pure_live/core/utils/live_quality_label.dart';
 import 'package:pure_live/domains/live/data/platforms/sites.dart';
 import 'package:pure_live/domains/live/domain/current_live_room.dart';
@@ -248,7 +248,10 @@ class DouyuSite
   }
 
   @override
-  Future<LivePlayUrlResolution> resolvePlayUrlsRaw({required LiveRoom liveroom, required LivePlayQuality quality}) async {
+  Future<LivePlayUrlResolution> resolvePlayUrlsRaw({
+    required LiveRoom liveroom,
+    required LivePlayQuality quality,
+  }) async {
     final rawData = quality.data;
     final roomId = liveroom.roomId?.trim() ?? '';
     if (rawData is! DouyuPlayData || roomId.isEmpty) return const LivePlayUrlResolution(urls: []);
@@ -481,7 +484,6 @@ class DouyuSite
 
   @override
   Future<LiveRoom> getRoomDetail(LiveRoom liveroom) async {
-    
     if (liveroom.detailIdentity == null) return liveroom;
     final fresh = await _resolveDetail(liveroom);
     // Pad whatever the profile endpoint left empty (avatar/cover/nick drift
@@ -505,7 +507,6 @@ class DouyuSite
 
       return _buildRoom(roomInfo, roomId: roomId);
     } catch (e) {
-
       final currentRoom = CurrentLiveRoom.value;
       if (currentRoom?.hasSameIdentity(LiveRoom(roomId: roomId, platform: platform)) == true) {
         return currentRoom!.getLiveRoomWithError();
@@ -517,7 +518,6 @@ class DouyuSite
 
   @override
   Future<LiveRoom> getRoomDetailForRefresh(LiveRoom liveroom) async {
-    
     if (liveroom.detailIdentity == null) return liveroom;
     final roomInfo = await _fetchRoomInfo(liveroom.roomId!);
     return _buildRoom(roomInfo, roomId: liveroom.roomId!);
@@ -525,7 +525,6 @@ class DouyuSite
 
   @override
   Future<LiveRoom> getRoomDetailForRecording(LiveRoom liveroom) async {
-    
     if (liveroom.detailIdentity == null) return liveroom;
     // Do not use getRoomDetail here: its UI fallback converts a failed betard
     // request into an offline room, which previously stopped recording before

@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:pure_live/core/models/live_room.dart';
 
-import 'live_site.dart';
+import 'package:pure_live/core/live/live_site.dart';
 
 /// Optional search transport cancellation. Implementations forward the token
 /// without closing a shared client. Legacy adapters keep their existing API.

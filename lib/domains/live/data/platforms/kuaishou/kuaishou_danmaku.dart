@@ -6,7 +6,7 @@ import 'package:dio/dio.dart';
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/logging/core_log.dart';
 import 'package:pure_live/core/network/http_client.dart';
-import 'package:pure_live/domains/live/domain/live_danmaku.dart';
+import 'package:pure_live/core/live/live_danmaku.dart';
 
 class KuaishouDanmakuArgs {
   const KuaishouDanmakuArgs({required this.liveStreamId, this.cookie = ''});

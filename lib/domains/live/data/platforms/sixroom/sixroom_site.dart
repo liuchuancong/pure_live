@@ -1,11 +1,11 @@
 import 'package:dio/dio.dart';
 import 'package:pure_live/core/models/live_area.dart';
 import 'package:pure_live/core/models/live_room.dart';
-import 'package:pure_live/domains/live/data/empty_danmaku.dart';
-import 'package:pure_live/domains/live/domain/live_danmaku.dart';
+import 'package:pure_live/core/live/empty_danmaku.dart';
+import 'package:pure_live/core/live/live_danmaku.dart';
 import 'package:pure_live/domains/live/domain/live_directory.dart';
 import 'package:pure_live/domains/live/domain/live_search.dart';
-import 'package:pure_live/domains/live/domain/live_site.dart';
+import 'package:pure_live/core/live/live_site.dart';
 import 'package:pure_live/core/models/live_category.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
 import 'package:pure_live/core/utils/i18n.dart';
@@ -163,7 +163,13 @@ final class SixRoomSite extends LiveSite
     if (roomId != null) {
       if (page != 1) return const [];
       try {
-        return [await _detail(LiveRoom(roomId: roomId, platform: id), includeMedia: false, cancel: cancel)];
+        return [
+          await _detail(
+            LiveRoom(roomId: roomId, platform: id),
+            includeMedia: false,
+            cancel: cancel,
+          ),
+        ];
       } on SixRoomException catch (error) {
         if (error.kind == SixRoomFailure.missing) return const [];
         rethrow;
@@ -195,21 +201,18 @@ final class SixRoomSite extends LiveSite
 
   @override
   Future<LiveRoom> getRoomDetail(LiveRoom liveroom) async {
-    
     if (liveroom.detailIdentity == null) return liveroom;
     return _detail(liveroom, includeMedia: true);
   }
 
   @override
   Future<LiveRoom> getRoomDetailForRecording(LiveRoom liveroom) async {
-    
     if (liveroom.detailIdentity == null) return liveroom;
     return _detail(liveroom, includeMedia: true);
   }
 
   @override
   Future<LiveRoom> getRoomDetailForRefresh(LiveRoom liveroom) async {
-    
     if (liveroom.detailIdentity == null) return liveroom;
     return _detail(liveroom, includeMedia: false);
   }

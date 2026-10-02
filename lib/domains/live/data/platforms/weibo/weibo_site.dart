@@ -1,11 +1,11 @@
 import 'package:dio/dio.dart';
 import 'package:pure_live/core/models/live_area.dart';
 import 'package:pure_live/core/models/live_room.dart';
-import 'package:pure_live/domains/live/data/empty_danmaku.dart';
-import 'package:pure_live/domains/live/domain/live_danmaku.dart';
+import 'package:pure_live/core/live/empty_danmaku.dart';
+import 'package:pure_live/core/live/live_danmaku.dart';
 import 'package:pure_live/domains/live/domain/live_directory.dart';
 import 'package:pure_live/domains/live/domain/live_search.dart';
-import 'package:pure_live/domains/live/domain/live_site.dart';
+import 'package:pure_live/core/live/live_site.dart';
 import 'package:pure_live/core/models/live_category.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
 import 'package:pure_live/core/utils/i18n.dart';
@@ -140,25 +140,21 @@ class WeiboSite extends LiveSite
     notice: [if (detail.access != WeiboAccess.public) i18n('weibo_restricted'), i18n('weibo_room_scope')].join('\n'),
     data: detail,
   );
-  Future<LiveRoom> _resolveDetail(LiveRoom liveroom) async =>
-      _room(await _api.detail(_id(liveroom)));
+  Future<LiveRoom> _resolveDetail(LiveRoom liveroom) async => _room(await _api.detail(_id(liveroom)));
   @override
   Future<LiveRoom> getRoomDetail(LiveRoom liveroom) async {
-    
     if (liveroom.detailIdentity == null) return liveroom;
     return _resolveDetail(liveroom);
   }
 
   @override
   Future<LiveRoom> getRoomDetailForRecording(LiveRoom liveroom) async {
-    
     if (liveroom.detailIdentity == null) return liveroom;
     return _resolveDetail(liveroom);
   }
 
   @override
   Future<LiveRoom> getRoomDetailForRefresh(LiveRoom liveroom) async {
-    
     if (liveroom.detailIdentity == null) return liveroom;
     return _resolveDetail(liveroom);
   }

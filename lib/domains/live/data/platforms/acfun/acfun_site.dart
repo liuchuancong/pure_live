@@ -1,8 +1,8 @@
 import 'package:pure_live/core/models/live_room.dart';
 import 'package:pure_live/core/models/live_area.dart';
-import 'package:pure_live/domains/live/data/empty_danmaku.dart';
-import 'package:pure_live/domains/live/domain/live_danmaku.dart';
-import 'package:pure_live/domains/live/domain/live_site.dart';
+import 'package:pure_live/core/live/empty_danmaku.dart';
+import 'package:pure_live/core/live/live_danmaku.dart';
+import 'package:pure_live/core/live/live_site.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
 import 'package:pure_live/core/models/live_category.dart';
 import 'package:pure_live/core/models/live_anchor_item.dart';
@@ -122,7 +122,6 @@ class AcfunSite extends LiveSite
 
   @override
   Future<LiveRoom> getRoomDetailForRefresh(LiveRoom liveroom) async {
-    
     if (liveroom.detailIdentity == null) return liveroom;
     final id = AcfunApi.normalizeAuthorId(liveroom.roomId!);
     return parseRoom(await _api.roomInfo(id), id);

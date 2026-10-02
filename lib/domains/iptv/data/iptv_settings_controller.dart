@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/domains/iptv/data/services/auto_sync_scheduler.dart';
-import 'package:pure_live/domains/live/data/platforms/sites.dart';
 import 'package:pure_live/domains/live/data/favorite_room_controller.dart';
+import 'package:pure_live/core/consts/platform_ids.dart';
 
 class IptvSettingsController extends GetxController {
   static IptvSettingsController get to => Get.find();
@@ -37,7 +37,7 @@ class IptvSettingsController extends GetxController {
     normalizeCurrentAutoSyncHours();
     if (!isAutoSyncEnabled.v) return;
     _startupSyncTimer = Timer(3.seconds, () {
-      final iptvEnabled = FavoriteRoomController.to.hotAreasList.v.contains(Sites.iptvSite);
+      final iptvEnabled = FavoriteRoomController.to.hotAreasList.v.contains(PlatformIds.iptv);
       if (!shouldRunBackgroundStartupSync(iptvEnabled: iptvEnabled, autoSyncEnabled: isAutoSyncEnabled.v)) return;
       unawaited(AutoSyncScheduler.instance.checkAndExecuteAutoSync());
     });

@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:pure_live/core/models/live_message.dart';
 import 'package:pure_live/core/network/web_socket_util.dart';
-import 'package:pure_live/domains/live/domain/live_danmaku.dart';
+import 'package:pure_live/core/live/live_danmaku.dart';
 
 // ignore_for_file: no_leading_underscores_for_local_identifiers
 

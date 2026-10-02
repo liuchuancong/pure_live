@@ -1,4 +1,4 @@
-import 'package:pure_live/domains/live/domain/live_input_recipe.dart';
+import 'package:pure_live/core/live/live_input_recipe.dart';
 
 import 'niconico_watch.dart';
 
