@@ -1,21 +1,20 @@
 import 'package:dio/dio.dart';
-
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/core/models/live_category.dart';
-import 'package:pure_live/shared/platforms/cc/cc_catalog.dart';
-import 'package:pure_live/core/models/live_anchor_item.dart';
 import 'package:pure_live/core/network/http_client.dart';
-import 'package:pure_live/core/models/live_play_quality.dart';
+import 'package:pure_live/core/consts/platform_ids.dart';
+import 'package:pure_live/core/models/live_category.dart';
 import 'package:pure_live/shared/platforms/live_site.dart';
-import 'package:pure_live/shared/platforms/empty_danmaku.dart';
+import 'package:pure_live/core/models/live_anchor_item.dart';
+import 'package:pure_live/core/models/live_play_quality.dart';
 import 'package:pure_live/shared/platforms/live_danmaku.dart';
 import 'package:pure_live/core/utils/live_quality_label.dart';
+import 'package:pure_live/shared/platforms/cc/cc_catalog.dart';
+import 'package:pure_live/shared/platforms/empty_danmaku.dart';
 import 'package:pure_live/shared/platforms/live_directory.dart';
 import 'package:pure_live/shared/platforms/current_live_room.dart';
-import 'package:pure_live/core/consts/platform_ids.dart';
+import 'package:pure_live/shared/platforms/live_external_room.dart';
 import 'package:pure_live/shared/platforms/live_danmaku_capability.dart';
 import 'package:pure_live/shared/platforms/cc/cc_danmaku_capability.dart';
-import 'package:pure_live/shared/platforms/live_external_room.dart';
 
 class CCSite
     with LiveDanmakuCapabilityDefaults, CcDanmakuCapability
@@ -131,11 +130,14 @@ class CCSite
               : AudienceMetricType.onlineViewers,
           avatar: text(item['purl']),
           area: text(item['game_name']).isNotEmpty ? text(item['game_name']) : text(item['gamename']),
-          liveStatus: status == 1
-              ? LiveStatus.live
-              : status == 0
-              ? LiveStatus.offline
-              : LiveStatus.unknown,
+          liveStatus: _onAirStatus(
+            status == 1
+                ? LiveStatus.live
+                : status == 0
+                ? LiveStatus.offline
+                : LiveStatus.unknown,
+            item['title'],
+          ),
           status: status == 1,
           platform: PlatformIds.cc,
         ),
@@ -267,8 +269,9 @@ class CCSite
               ? AudienceMetricType.popularity
               : AudienceMetricType.onlineViewers,
           avatar: item["purl"],
-          area: item["game_name"] ?? '',
-          liveStatus: LiveStatus.live,
+          // 推荐卡片只有 `gamename` 这一个分区字段（上游 9-2）。
+          area: item["gamename"] ?? item["game_name"] ?? '',
+          liveStatus: _onAirStatus(LiveStatus.live, item["title"]),
           status: true,
           platform: PlatformIds.cc,
         );
@@ -356,13 +359,19 @@ class CCSite
       introduction: roomInfo["personal_label"],
       notice: roomInfo["personal_label"],
       status: live,
-      liveStatus: live ? LiveStatus.live : LiveStatus.offline,
+      liveStatus: _onAirStatus(live ? LiveStatus.live : LiveStatus.offline, roomInfo["title"]),
       platform: PlatformIds.cc,
       link: roomInfo['m3u8'],
       userId: roomInfo['cid'].toString(),
       data: roomInfo["quickplay"] ?? roomInfo["stream_list"],
     );
   }
+
+  /// [status] 之外的一条规则：在播但标题以「【重播】」开头的房间，是官方录播活动
+  /// 的重播——它是回放，但和直播一样可以播（上游 9-3）。CC 没有别的字段能区分：
+  /// `capture_type`、`mode` 之类与真实直播完全一致。
+  static LiveStatus _onAirStatus(LiveStatus status, Object? title) =>
+      status == LiveStatus.live && (title?.toString() ?? '').trimLeft().startsWith('【重播】') ? LiveStatus.replay : status;
 
   /// CC exposes two different audience scales in the same payload:
   /// `webcc_visitor`/`hot_score`/`visitor` are aliases for the large platform
@@ -402,9 +411,12 @@ class CCSite
         title: item["title"],
         cover: item["portrait"],
         nick: item["nickname"].toString(),
-        area: item["game_name"] ?? '',
+        area: item["gamename"] ?? item["game_name"] ?? '',
         status: item['status'] == 1,
-        liveStatus: item['status'] != null && item['status'] == 1 ? LiveStatus.live : LiveStatus.offline,
+        liveStatus: _onAirStatus(
+          item['status'] != null && item['status'] == 1 ? LiveStatus.live : LiveStatus.offline,
+          item["title"],
+        ),
         avatar: item["portrait"].toString(),
         watching: item["follower_num"].toString(),
         followers: item["follower_num"].toString(),
