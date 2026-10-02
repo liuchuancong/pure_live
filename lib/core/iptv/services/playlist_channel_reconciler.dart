@@ -4,7 +4,7 @@ import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 import 'package:pure_live/core/iptv/local/database.dart' as db;
 import 'package:pure_live/core/iptv/models/channel.dart' as model;
-import 'package:pure_live/core/common/http_header_policy.dart';
+import 'package:pure_live/core/network/http_header_policy.dart';
 
 /// Preserve durable IDs by unambiguous feed identity, never String.hashCode.
 /// Combined stream/name matches precede URL-independent matches for rotating

@@ -1,8 +1,8 @@
 import 'dart:convert';
 
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/services/utils/backup_migration_util.dart';
-import 'package:pure_live/core/utils/hive_pref_util.dart';
+import 'package:pure_live/services/migration/backup_migration_util.dart';
+import 'package:pure_live/core/storage/hive_pref_util.dart';
 import 'package:synchronized/synchronized.dart';
 
 const int defaultHistoryLimit = 50;

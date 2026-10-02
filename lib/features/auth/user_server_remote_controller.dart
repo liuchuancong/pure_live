@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/core/common/log.dart';
+import 'package:pure_live/core/logging/app_log.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:pure_live/features/auth/auth_controller.dart';
 import 'package:pure_live/features/auth/models/user_item.dart';

@@ -14,7 +14,7 @@ import 'package:media_core/media_core.dart' show PlayerException, PlayerErrorCod
 import 'package:pure_live/core/utils/live_quality_label.dart';
 import 'package:pure_live/player/kernel/live_player_facade.dart';
 import 'package:pure_live/features/live/playback/states/player_state.dart';
-import 'package:pure_live/core/common/hls_source_query_policy.dart';
+import 'package:pure_live/core/stream/hls_source_query_policy.dart';
 import 'package:pure_live/player/core/playback_header_resolver.dart';
 import 'package:pure_live/platforms/huya/huya_transport_policy.dart';
 import 'package:pure_live/core/contracts/live_quality_discovery.dart';

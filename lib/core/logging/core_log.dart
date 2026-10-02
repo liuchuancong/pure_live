@@ -1,4 +1,4 @@
-import 'log.dart';
+import 'app_log.dart';
 
 import 'package:logger/logger.dart';
 import 'package:pure_live/get/get.dart';

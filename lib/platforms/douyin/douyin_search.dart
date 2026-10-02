@@ -1,8 +1,8 @@
 import 'dart:convert';
 
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/core/common/core_log.dart';
-import 'package:pure_live/core/common/http_client.dart';
+import 'package:pure_live/core/logging/core_log.dart';
+import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/platforms/douyin/douyin_audience.dart';
 
 class DouyinSearch {

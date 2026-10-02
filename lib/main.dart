@@ -14,7 +14,7 @@ import 'package:pure_live/core/platform/platform_utils.dart';
 import 'package:pure_live/core/utils/shared_media_intake.dart';
 import 'package:pure_live/player/utils/popup_route_tracker.dart';
 import 'package:pure_live/core/platform/share_command_handler.dart';
-import 'package:pure_live/core/utils/shared_live_link_opener.dart';
+import 'package:pure_live/core/link/shared_live_link_opener.dart';
 import 'package:pure_live/features/wallpaper/app_background.dart';
 import 'package:pure_live/core/iptv/services/epg_import_manager.dart';
 import 'package:pure_live/core/platform/desktop_manager.dart';

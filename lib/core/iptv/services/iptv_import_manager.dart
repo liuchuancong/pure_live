@@ -14,7 +14,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:synchronized/synchronized.dart';
 import 'package:pure_live/core/platform/file_utils.dart';
 import 'package:pure_live/core/iptv/local/db_service.dart';
-import 'package:pure_live/core/common/http_client.dart';
+import 'package:pure_live/core/network/http_client.dart';
 import 'package:charset_converter/charset_converter.dart';
 import 'package:pure_live/core/iptv/parsers/m3u_parser.dart';
 import 'package:pure_live/core/iptv/parsers/txt_parser.dart';

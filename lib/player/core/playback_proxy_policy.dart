@@ -1,5 +1,5 @@
 import 'package:pure_live/services/settings_service.dart';
-import 'package:pure_live/core/common/proxy_routing.dart';
+import 'package:pure_live/core/network/proxy_routing.dart';
 
 /// Media transport settings, deliberately independent of the application/API
 /// proxy used by recording's existing HTTP relay.

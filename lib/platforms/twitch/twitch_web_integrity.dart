@@ -4,7 +4,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
-import 'package:pure_live/core/utils/webview_proxy_scope.dart';
+import 'package:pure_live/core/network/webview_proxy_scope.dart';
 
 class TwitchWebIntegrityToken {
   const TwitchWebIntegrityToken({required this.token, required this.expiration});

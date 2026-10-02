@@ -3,10 +3,10 @@ import 'dart:convert';
 
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/models/live_category.dart';
-import 'package:pure_live/core/common/core_log.dart';
+import 'package:pure_live/core/logging/core_log.dart';
 import 'package:pure_live/core/models/live_anchor_item.dart';
-import 'package:pure_live/core/common/android_native_http.dart';
-import 'package:pure_live/core/common/http_client.dart';
+import 'package:pure_live/core/network/android_native_http.dart';
+import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
 import 'package:pure_live/core/contracts/live_site.dart';
 import 'package:pure_live/platforms/twitch/twitch_danmaku.dart';

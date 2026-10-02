@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/core/index.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:pure_live/core/common/log.dart';
+import 'package:pure_live/core/logging/app_log.dart';
 import 'package:pure_live/core/platform/file_utils.dart';
 import 'package:pure_live/features/backup/scan_page.dart';
 import 'package:pure_live/features/auth/auth_controller.dart';

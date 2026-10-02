@@ -8,7 +8,7 @@ import 'package:url_launcher/url_launcher_string.dart';
 import 'package:pure_live/core/platform/platform_utils.dart';
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/services/settings/player_settings_controller.dart';
-import 'package:pure_live/core/common/proxy_routing.dart';
+import 'package:pure_live/core/network/proxy_routing.dart';
 import 'package:pure_live/player/kernel/player_preset.dart';
 import 'package:pure_live/player/models/player_engine.dart';
 import 'package:pure_live/player/utils/mpv_option_labels.dart';

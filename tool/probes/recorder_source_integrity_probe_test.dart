@@ -8,7 +8,7 @@ import 'package:hive_ce/hive.dart';
 import 'package:path/path.dart' as p;
 import 'package:pure_live/core/models/live_room.dart';
 import 'package:pure_live/services/settings/log_controller.dart';
-import 'package:pure_live/core/utils/hive_pref_util.dart';
+import 'package:pure_live/core/storage/hive_pref_util.dart';
 import 'package:pure_live/get/get.dart';
 import 'package:pure_live/features/recorder/models/live_record_task.dart';
 import 'package:pure_live/features/recorder/services/video_processor_service.dart';

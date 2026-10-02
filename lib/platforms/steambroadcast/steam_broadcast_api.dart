@@ -5,8 +5,8 @@ import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:html/dom.dart';
 import 'package:html/parser.dart' as html_parser;
-import 'package:pure_live/core/common/http_client.dart';
-import 'package:pure_live/core/common/request_scope.dart';
+import 'package:pure_live/core/network/http_client.dart';
+import 'package:pure_live/core/network/request_scope.dart';
 
 import 'steam_broadcast_link.dart';
 

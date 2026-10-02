@@ -12,7 +12,7 @@ import 'package:pure_live/player/core/live_audio_service.dart';
 import 'package:pure_live/player/kernel/live_player_facade.dart';
 import 'package:pure_live/features/live/playback/states/ui_state.dart';
 import 'package:pure_live/features/live/playback/states/player_state.dart';
-import 'package:pure_live/core/common/hls_source_query_policy.dart';
+import 'package:pure_live/core/stream/hls_source_query_policy.dart';
 import 'package:pure_live/features/live/playback/states/room_state.dart';
 import 'package:pure_live/features/live/playback/states/live_play_state.dart';
 import 'package:pure_live/features/recorder/pages/recorder/recorder_controller.dart';

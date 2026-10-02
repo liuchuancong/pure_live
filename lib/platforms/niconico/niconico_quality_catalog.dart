@@ -1,9 +1,9 @@
 import 'dart:async';
 
 import 'package:dio/dio.dart';
-import 'package:pure_live/core/common/hls_master_selection.dart';
-import 'package:pure_live/core/common/request_scope.dart';
-import 'package:pure_live/core/common/web_socket_util.dart';
+import 'package:pure_live/core/stream/hls_master_selection.dart';
+import 'package:pure_live/core/network/request_scope.dart';
+import 'package:pure_live/core/network/web_socket_util.dart';
 import 'package:pure_live/features/recorder/services/niconico_hls_input.dart'
     show NiconicoSeatFactory, NiconicoMasterReader, readNiconicoMaster;
 

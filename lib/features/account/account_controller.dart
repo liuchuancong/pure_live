@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/services/account/bilibili_account_service.dart';
 import 'package:pure_live/services/settings/cookie_sanitizer.dart';
-import 'package:pure_live/core/common/log.dart';
+import 'package:pure_live/core/logging/app_log.dart';
 import 'package:pure_live/platforms/douyin/douyin_site.dart';
 import 'package:pure_live/core/widgets/app_prompt_dialogs.dart';
 import 'package:pure_live/app/router/app_navigation.dart';

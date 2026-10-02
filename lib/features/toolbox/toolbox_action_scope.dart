@@ -1,4 +1,4 @@
-import 'package:pure_live/core/common/request_scope.dart';
+import 'package:pure_live/core/network/request_scope.dart';
 
 import 'dart:async';
 

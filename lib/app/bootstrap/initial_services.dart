@@ -2,7 +2,7 @@ import 'dart:developer' as developer;
 
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/iptv/local/db_service.dart';
-import 'package:pure_live/core/utils/hive_pref_util.dart';
+import 'package:pure_live/core/storage/hive_pref_util.dart';
 import 'package:pure_live/features/auth/auth_controller.dart';
 import 'package:pure_live/services/settings/iptv_settings_controller.dart';
 import 'package:pure_live/features/recorder/services/cache_service.dart';

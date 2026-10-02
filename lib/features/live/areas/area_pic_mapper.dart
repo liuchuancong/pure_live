@@ -1,9 +1,9 @@
 import 'dart:convert';
 
-import 'package:pure_live/core/utils/category_artwork.dart';
+import 'package:pure_live/features/live/areas/category_artwork.dart';
 import 'package:pure_live/core/models/live_category.dart';
 import 'package:string_similarity/string_similarity.dart';
-import 'package:pure_live/core/utils/hive_pref_util.dart';
+import 'package:pure_live/core/storage/hive_pref_util.dart';
 
 class AreaPicMapper {
   static final Map<String, String> _picMap = {};

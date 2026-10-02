@@ -8,10 +8,10 @@ import 'proto/douyin.pb.dart';
 
 import 'package:crypto/crypto.dart';
 import 'package:pure_live/platforms/douyin/douyin_xbogus.dart';
-import 'package:pure_live/core/common/core_log.dart';
+import 'package:pure_live/core/logging/core_log.dart';
 import 'package:pure_live/core/models/live_message.dart';
 import 'package:pure_live/core/models/live_room.dart';
-import 'package:pure_live/core/common/web_socket_util.dart';
+import 'package:pure_live/core/network/web_socket_util.dart';
 import 'package:pure_live/core/contracts/live_danmaku.dart';
 import 'package:pure_live/platforms/douyin/douyin_request_params.dart';
 

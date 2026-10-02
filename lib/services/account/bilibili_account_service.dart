@@ -4,7 +4,7 @@ import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/models/bilibili_user_info_page.dart';
 import 'package:pure_live/services/settings/cookie_sanitizer.dart';
-import 'package:pure_live/core/common/http_client.dart';
+import 'package:pure_live/core/network/http_client.dart';
 
 typedef BilibiliAccountLoader = Future<Map<String, dynamic>?> Function(String cookie);
 typedef BrowserCookieClearer = Future<void> Function();

@@ -4,7 +4,7 @@ import 'package:media_core/media_core.dart' show PresentationLifecycleHooks;
 import 'package:media_core_pip/media_core_pip.dart';
 import 'package:pure_live/services/settings_service.dart';
 import 'package:pure_live/services/settings/window_size_controller.dart';
-import 'package:pure_live/core/common/core_log.dart';
+import 'package:pure_live/core/logging/core_log.dart';
 import 'package:screen_retriever/screen_retriever.dart';
 import 'package:window_manager/window_manager.dart';
 

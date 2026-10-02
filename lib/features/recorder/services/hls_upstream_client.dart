@@ -3,13 +3,13 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:pure_live/core/common/hls_source_query_policy.dart';
+import 'package:pure_live/core/stream/hls_source_query_policy.dart';
 
 import 'hls_body_reader.dart';
 import 'hls_http_body_metadata.dart';
 import 'hls_prefetch_pool.dart';
 import 'hls_retained_window.dart';
-import 'package:pure_live/core/common/hls_session_cookies.dart';
+import 'package:pure_live/core/stream/hls_session_cookies.dart';
 
 /// Shared production/prefetch HTTP policy. The caller owns HttpClient,
 /// connectionFactory, proxy/TLS configuration and the returned response body.

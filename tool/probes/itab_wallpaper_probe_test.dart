@@ -4,7 +4,7 @@ import 'dart:io' as io;
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:pure_live/core/common/http_client.dart';
+import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/services/background/wallpaper_catalog.dart';
 import 'package:pure_live/services/background/local_wallpapers.dart';
 import 'package:pure_live/services/background/wallpaper_repository.dart';

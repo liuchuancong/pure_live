@@ -4,7 +4,7 @@ import 'dart:async';
 
 import 'package:pure_live/features/recorder/ffmpeg/ffmpeg_event.dart';
 import 'package:pure_live/features/recorder/services/ffmpeg_service.dart';
-import 'package:pure_live/core/common/hls_source_query_policy.dart';
+import 'package:pure_live/core/stream/hls_source_query_policy.dart';
 import 'package:pure_live/features/recorder/services/ffmpeg_hls_input_relay.dart';
 import 'package:pure_live/features/recorder/services/ffmpeg_flv_input_relay.dart';
 

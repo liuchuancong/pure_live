@@ -3,7 +3,7 @@ import 'package:pure_live/core/models/live_play_quality.dart';
 import 'package:pure_live/player/core/playback_source.dart';
 import 'package:pure_live/player/core/flv_splice_relay.dart';
 import 'package:media_core_media_kit/media_core_media_kit.dart';
-import 'package:pure_live/core/common/hls_source_query_policy.dart';
+import 'package:pure_live/core/stream/hls_source_query_policy.dart';
 
 /// 多画面布局枚举。
 ///

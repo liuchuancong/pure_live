@@ -1,6 +1,6 @@
 import 'recorder_keys.dart';
 
-import 'package:pure_live/core/utils/hive_pref_util.dart';
+import 'package:pure_live/core/storage/hive_pref_util.dart';
 import 'package:pure_live/player/utils/player_consts.dart';
 import 'package:pure_live/features/recorder/models/record_file_item.dart';
 

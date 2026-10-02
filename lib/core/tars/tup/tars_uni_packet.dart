@@ -1,7 +1,7 @@
 import 'const.dart';
 import 'dart:typed_data';
 import 'uni_packet.dart';
-import 'package:pure_live/core/common/log.dart';
+import 'package:pure_live/core/logging/app_log.dart';
 
 class TarsUniPacket extends UniPacket {
   TarsUniPacket() {

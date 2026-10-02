@@ -7,7 +7,7 @@ import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pure_live/services/settings/log_controller.dart';
-import 'package:pure_live/core/common/http_client.dart';
+import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/platforms/niconico/niconico_watch.dart';
 import 'package:pure_live/get/get.dart';
 import 'package:pure_live/player/core/niconico_playback_input.dart';

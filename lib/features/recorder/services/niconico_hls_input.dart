@@ -4,7 +4,7 @@ import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:pure_live/core/common/hls_master_selection.dart';
+import 'package:pure_live/core/stream/hls_master_selection.dart';
 import 'package:pure_live/platforms/niconico/niconico_session.dart';
 import 'package:pure_live/platforms/niconico/niconico_stream.dart';
 import 'package:pure_live/platforms/niconico/niconico_watch.dart';
@@ -13,7 +13,7 @@ import 'owned_record_input.dart';
 import 'cancellable_http_connections.dart';
 import 'ffmpeg_hls_input_relay.dart';
 import 'hls_body_reader.dart';
-import 'package:pure_live/core/common/hls_session_cookies.dart';
+import 'package:pure_live/core/stream/hls_session_cookies.dart';
 import 'hls_upstream_client.dart';
 
 typedef NiconicoSeatFactory = Future<NiconicoSession> Function(

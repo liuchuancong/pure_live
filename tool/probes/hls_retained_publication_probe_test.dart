@@ -10,7 +10,7 @@ import 'package:pure_live/features/recorder/services/hls_body_reader.dart';
 import 'package:pure_live/features/recorder/services/hls_prefetch_pool.dart';
 import 'package:pure_live/features/recorder/services/hls_retained_manifest.dart';
 import 'package:pure_live/features/recorder/services/hls_retained_window.dart';
-import 'package:pure_live/core/common/hls_session_cookies.dart';
+import 'package:pure_live/core/stream/hls_session_cookies.dart';
 import 'package:pure_live/features/recorder/services/hls_upstream_client.dart';
 
 void main() {

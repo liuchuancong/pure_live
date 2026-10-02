@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:pure_live/get/get.dart';
-import 'package:pure_live/core/utils/hive_pref_util.dart';
+import 'package:pure_live/core/storage/hive_pref_util.dart';
 
 final _persistCurrentValue = Expando<void Function()>('hive-persist-current');
 

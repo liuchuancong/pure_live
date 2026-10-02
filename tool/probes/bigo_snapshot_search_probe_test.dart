@@ -5,7 +5,7 @@ import 'dart:io' as io;
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:pure_live/core/common/http_client.dart';
+import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/platforms/bigo/bigo_site.dart';
 import 'package:pure_live/platforms/sites.dart';
 

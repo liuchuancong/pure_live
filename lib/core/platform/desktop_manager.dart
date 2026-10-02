@@ -11,7 +11,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:pure_live/app/router/app_navigation.dart';
 import 'package:flutter_acrylic/flutter_acrylic.dart';
 import 'package:pure_live/player/utils/windows_pip_driver.dart';
-import 'package:pure_live/core/utils/hive_pref_util.dart';
+import 'package:pure_live/core/storage/hive_pref_util.dart';
 import 'package:pure_live/core/platform/platform_utils.dart';
 import 'package:pure_live/core/platform/share_command_codec.dart';
 import 'package:pure_live/app/router/navigation_observer.dart';

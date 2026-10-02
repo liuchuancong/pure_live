@@ -4,7 +4,7 @@ import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/models/live_category.dart';
 import 'package:pure_live/platforms/cc/cc_catalog.dart';
 import 'package:pure_live/core/models/live_anchor_item.dart';
-import 'package:pure_live/core/common/http_client.dart';
+import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
 import 'package:pure_live/core/contracts/live_site.dart';
 import 'package:pure_live/core/danmaku/empty_danmaku.dart';

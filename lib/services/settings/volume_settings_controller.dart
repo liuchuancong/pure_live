@@ -2,7 +2,7 @@ import 'dart:io';
 import 'dart:convert';
 
 import 'package:pure_live/get/get.dart';
-import 'package:pure_live/services/utils/hive_rx.dart';
+import 'package:pure_live/core/storage/hive_rx.dart';
 
 class VolumeSettingsController extends GetxController {
   final RxDouble defaultMobileVolume = hiveDouble('defaultMobileVolume', 0.5);

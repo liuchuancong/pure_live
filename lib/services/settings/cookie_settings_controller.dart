@@ -1,8 +1,8 @@
 import 'dart:async';
 
 import 'package:pure_live/get/get.dart';
-import 'package:pure_live/services/utils/hive_rx.dart';
-import 'package:pure_live/core/utils/hive_pref_util.dart';
+import 'package:pure_live/core/storage/hive_rx.dart';
+import 'package:pure_live/core/storage/hive_pref_util.dart';
 import 'package:pure_live/services/account/bilibili_account_service.dart';
 import 'package:pure_live/services/settings/cookie_sanitizer.dart';
 

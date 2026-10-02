@@ -1,5 +1,5 @@
 import 'package:dio/dio.dart';
-import 'package:pure_live/core/common/log.dart';
+import 'package:pure_live/core/logging/app_log.dart';
 
 class CustomLogInterceptor extends Interceptor {
   CustomLogInterceptor({void Function(String, StackTrace)? errorLogger}) : _errorLogger = errorLogger ?? Log.e;

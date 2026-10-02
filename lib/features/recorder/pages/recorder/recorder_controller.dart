@@ -11,7 +11,7 @@ import 'dart:math' as math;
 
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/core/utils/hive_pref_util.dart';
+import 'package:pure_live/core/storage/hive_pref_util.dart';
 import 'package:pure_live/core/danmaku/empty_danmaku.dart';
 import 'package:pure_live/core/contracts/live_site.dart';
 import 'package:pure_live/platforms/huya/huya_transport_policy.dart';

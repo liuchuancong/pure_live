@@ -8,8 +8,8 @@ import 'package:pointycastle/block/aes.dart';
 import 'package:pointycastle/block/modes/cbc.dart';
 import 'package:pointycastle/padded_block_cipher/padded_block_cipher_impl.dart';
 import 'package:pointycastle/paddings/pkcs7.dart';
-import 'package:pure_live/core/common/http_client.dart';
-import 'package:pure_live/core/common/request_scope.dart';
+import 'package:pure_live/core/network/http_client.dart';
+import 'package:pure_live/core/network/request_scope.dart';
 
 import 'look_live_link.dart';
 

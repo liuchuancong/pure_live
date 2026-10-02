@@ -3,8 +3,8 @@ import 'dart:convert';
 
 import 'package:pure_live/get/get.dart';
 import 'package:synchronized/synchronized.dart';
-import 'package:pure_live/core/utils/hive_pref_util.dart';
-import 'package:pure_live/services/utils/hive_rx.dart';
+import 'package:pure_live/core/storage/hive_pref_util.dart';
+import 'package:pure_live/core/storage/hive_rx.dart';
 import 'package:pure_live/features/live/tags/tag_management_controller.dart';
 import 'package:pure_live/services/settings/web_dav_controller.dart';
 import 'package:pure_live/services/settings/history_controller.dart';

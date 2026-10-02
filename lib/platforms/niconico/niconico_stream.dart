@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:pure_live/core/common/hls_session_cookies.dart';
+import 'package:pure_live/core/stream/hls_session_cookies.dart';
 import 'package:pure_live/platforms/niconico/niconico_watch.dart';
 
 /// One revocable stream grant. Cookies never enter the shared Dio/account jar.

@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/services/account/bilibili_account_service.dart';
 import 'package:pure_live/services/settings/cookie_sanitizer.dart';
-import 'package:pure_live/core/common/http_client.dart';
+import 'package:pure_live/core/network/http_client.dart';
 
 enum QRStatus { loading, unscanned, scanned, verifying, verified, expired, failed }
 

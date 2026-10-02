@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/platform/desktop_tray_service.dart';
-import 'package:pure_live/core/utils/hive_pref_util.dart';
+import 'package:pure_live/core/storage/hive_pref_util.dart';
 import 'package:pure_live/features/account/bilibili/web_login_controller.dart';
 import 'package:pure_live/services/settings/exit_settings_controller.dart';
 

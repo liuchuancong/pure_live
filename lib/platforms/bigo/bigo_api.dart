@@ -4,8 +4,8 @@ import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:pure_live/core/common/http_client.dart';
-import 'package:pure_live/core/common/request_scope.dart';
+import 'package:pure_live/core/network/http_client.dart';
+import 'package:pure_live/core/network/request_scope.dart';
 
 import 'bigo_token.dart';
 

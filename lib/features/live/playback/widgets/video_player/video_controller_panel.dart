@@ -9,7 +9,7 @@ import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/utils/event_bus.dart';
 import 'package:flame_barrage/flame_barrage.dart';
-import 'package:pure_live/core/utils/live_url_tool.dart';
+import 'package:pure_live/core/link/live_url_tool.dart';
 import 'package:pure_live/core/platform/platform_utils.dart';
 import 'package:pure_live/features/live/playback/states/player_state.dart';
 import 'package:pure_live/features/live/playback/states/ui_state.dart';

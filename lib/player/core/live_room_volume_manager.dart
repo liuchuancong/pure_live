@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:pure_live/core/models/live_room.dart';
 import 'package:pure_live/services/settings/volume_settings_controller.dart';
-import 'package:pure_live/services/utils/hive_rx.dart';
+import 'package:pure_live/core/storage/hive_rx.dart';
 import 'package:pure_live/services/settings_service.dart';
 
 class LiveRoomVolumeManager {

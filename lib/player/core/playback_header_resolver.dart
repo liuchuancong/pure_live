@@ -20,7 +20,7 @@ import 'package:pure_live/platforms/youtube/youtube_api.dart';
 import 'package:pure_live/platforms/bigo/bigo_api.dart';
 import 'package:pure_live/platforms/pandalive/pandalive_api.dart';
 import 'package:pure_live/platforms/seventeenlive/seventeenlive_api.dart';
-import 'package:pure_live/core/common/http_header_policy.dart';
+import 'package:pure_live/core/network/http_header_policy.dart';
 
 /// Resolves the HTTP headers used to read a platform's media stream.
 ///

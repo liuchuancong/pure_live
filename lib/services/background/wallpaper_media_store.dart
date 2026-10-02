@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:media_core_media_kit/media_core_media_kit.dart';
 import 'package:path/path.dart' as p;
-import 'package:pure_live/core/common/http_client.dart';
+import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/core/platform/app_path_manager.dart';
 
 /// The file cache behind wallpaper backgrounds.

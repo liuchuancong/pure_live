@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:pure_live/core/iptv/models/channel.dart';
 import 'package:pure_live/core/iptv/parsers/playlist_parse_result.dart';
-import 'package:pure_live/core/common/http_header_policy.dart';
+import 'package:pure_live/core/network/http_header_policy.dart';
 
 /// Parses M3U and M3U Plus playlist formats.
 ///

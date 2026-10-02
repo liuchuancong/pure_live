@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/features/version/app_update_flow.dart';
 import 'package:pure_live/core/network/race_http.dart';
-import 'package:pure_live/core/common/http_client.dart';
+import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/core/models/release_model.dart';
 
 

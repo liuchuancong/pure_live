@@ -3,9 +3,9 @@ import 'dart:io' hide HttpClient;
 
 import 'package:flutter/services.dart';
 import 'package:pure_live/core/network/race_http.dart';
-import 'package:pure_live/core/common/http_client.dart';
+import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/core/models/font_model.dart';
-import 'package:pure_live/core/utils/github_mirror.dart';
+import 'package:pure_live/core/release/github_mirror.dart';
 import 'package:pure_live/core/platform/app_path_manager.dart';
 import 'package:pure_live/services/settings/cache_controller.dart';
 import 'package:pure_live/core/models/download_state.dart';

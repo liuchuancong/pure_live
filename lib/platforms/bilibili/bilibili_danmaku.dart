@@ -7,12 +7,12 @@ import 'dart:typed_data';
 import 'package:brotli/brotli.dart';
 import 'package:flutter/foundation.dart';
 
-import 'package:pure_live/core/common/binary_writer.dart';
+import 'package:pure_live/core/utils/binary_writer.dart';
 
-import 'package:pure_live/core/common/core_log.dart';
+import 'package:pure_live/core/logging/core_log.dart';
 import 'package:pure_live/core/models/live_message.dart';
-import 'package:pure_live/core/common/type_cast.dart';
-import 'package:pure_live/core/common/web_socket_util.dart';
+import 'package:pure_live/core/utils/type_cast.dart';
+import 'package:pure_live/core/network/web_socket_util.dart';
 import 'package:pure_live/core/contracts/live_danmaku.dart';
 
 class BiliBiliDanmakuArgs {

@@ -8,7 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hive_ce/hive.dart';
 import 'package:path/path.dart' as p;
 import 'package:pure_live/services/settings/log_controller.dart';
-import 'package:pure_live/core/utils/hive_pref_util.dart';
+import 'package:pure_live/core/storage/hive_pref_util.dart';
 import 'package:pure_live/get/get.dart';
 import 'package:pure_live/features/recorder/ffmpeg/ffmpeg_command_builder.dart';
 import 'package:pure_live/features/recorder/ffmpeg/ffmpeg_manager.dart';

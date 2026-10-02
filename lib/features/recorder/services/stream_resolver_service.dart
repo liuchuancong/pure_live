@@ -4,7 +4,7 @@ import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/contracts/live_site.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
 import 'package:pure_live/player/utils/player_consts.dart';
-import 'package:pure_live/core/common/hls_source_query_policy.dart';
+import 'package:pure_live/core/stream/hls_source_query_policy.dart';
 
 enum StreamErrorType { roomNotFound, notLive, noQuality, cdnFailed, networkError, loginExpired, banned, unknown }
 

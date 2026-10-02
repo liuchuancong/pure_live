@@ -1,6 +1,6 @@
 import 'package:pure_live/player/core/playback_source.dart';
 import 'package:flutter/foundation.dart';
-import 'package:pure_live/core/common/hls_source_query_policy.dart';
+import 'package:pure_live/core/stream/hls_source_query_policy.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
 import 'package:pure_live/features/live/playback/widgets/video_player/video_controller.dart';
 

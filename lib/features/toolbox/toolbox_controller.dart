@@ -6,7 +6,7 @@ import 'package:pure_live/features/toolbox/toolbox_action_scope.dart';
 import 'package:pure_live/features/toolbox/toolbox_direct_link_flow.dart';
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/app/router/app_navigation.dart';
-import 'package:pure_live/core/utils/live_url_tool.dart';
+import 'package:pure_live/core/link/live_url_tool.dart';
 
 enum ToolBoxAction { jump, directLink }
 

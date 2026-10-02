@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'dart:io' as io;
 
 import 'package:dio/dio.dart';
-import 'package:pure_live/core/common/web_socket_util.dart';
+import 'package:pure_live/core/network/web_socket_util.dart';
 import 'package:pure_live/platforms/niconico/niconico_stream.dart';
 import 'package:pure_live/platforms/niconico/niconico_watch.dart';
 import 'package:web_socket_channel/io.dart';

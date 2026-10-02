@@ -32,5 +32,5 @@ export 'widgets/app_status_view.dart';
 export 'theme/app_text_styles.dart';
 export 'widgets/widget_extensions.dart';
 export 'widgets/scrollable_tab_bar.dart';
-export 'package:pure_live/services/utils/hive_rx.dart';
+export 'package:pure_live/core/storage/hive_rx.dart';
 export 'package:pure_live/core/base/index.dart';

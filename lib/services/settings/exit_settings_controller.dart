@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:pure_live/get/get.dart';
 import 'package:flutter_exit_app/flutter_exit_app.dart';
 import 'package:stop_watch_timer/stop_watch_timer.dart';
-import 'package:pure_live/services/utils/hive_rx.dart';
+import 'package:pure_live/core/storage/hive_rx.dart';
 
 class ExitSettingsController extends GetxController {
   static const String exitAction = 'exit';

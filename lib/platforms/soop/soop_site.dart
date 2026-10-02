@@ -2,8 +2,8 @@ import 'dart:convert';
 
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/models/live_category.dart';
-import 'package:pure_live/core/common/core_log.dart';
-import 'package:pure_live/core/common/http_client.dart';
+import 'package:pure_live/core/logging/core_log.dart';
+import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
 import 'package:pure_live/core/contracts/live_site.dart';
 import 'package:pure_live/platforms/soop/soop_danmaku.dart';

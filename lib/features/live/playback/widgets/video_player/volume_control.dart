@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:pure_live/core/l10n/i18n.dart';
 import 'package:pure_live/core/platform/platform_utils.dart';
-import 'package:pure_live/services/utils/hive_rx.dart';
+import 'package:pure_live/core/storage/hive_rx.dart';
 import 'package:pure_live/services/settings_service.dart';
 import 'package:pure_live/features/live/playback/widgets/video_player/video_controller.dart';
 
