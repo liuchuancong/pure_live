@@ -213,6 +213,10 @@ class _Grid extends StatelessWidget {
     // marking the in-use card does not need a listener per card.
     return Obx(() {
       final controller = BackgroundController.to;
+      // The flags are resolved *here*, not inside `itemBuilder`: that callback
+      // runs lazily during layout, after this builder has already returned, so
+      // an observable read there subscribes to nothing and `Obx` throws.
+      final selected = List<bool>.generate(items.length, (index) => controller.usesWallpaper(items[index]));
       return GridView.builder(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
@@ -226,7 +230,7 @@ class _Grid extends StatelessWidget {
         itemBuilder: (context, index) => _WallpaperCard(
           item: items[index],
           kind: kind,
-          selected: controller.usesWallpaper(items[index]),
+          selected: selected[index],
           onTap: () => onApply(items[index]),
         ),
       );
