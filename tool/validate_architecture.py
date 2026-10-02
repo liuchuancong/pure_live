@@ -27,6 +27,8 @@ BASELINE below is the approved-exception ledger: it lists the exact couplings th
 are known and still unmigrated, so the checker can gate new ones in CI while the
 shared-layer migration proceeds. One finding is one line. Fix the coupling, run
 --list-baseline, and delete that line - never add to this list casually.
+A ledger line whose coupling no longer exists is "stale" and also fails --strict,
+so the ledger cannot rot into blanket cover for a reintroduced coupling.
 """
 
 from __future__ import annotations
@@ -46,7 +48,6 @@ BASELINE: frozenset[str] = frozenset({
     'core -> domains/live/domain/global_player_service.dart   [core/player/kernel/player_kernel_service.dart]',
     'core -> domains/live/domain/live_player_facade.dart   [core/player/kernel/floating_playback.dart]',
     'domains/account -> domains/live/data/favorite_room_controller.dart   [domains/account/presentation/auth/auth_controller.dart]',
-    'domains/account -> domains/live/data/platforms/douyin/douyin_site.dart   [domains/account/presentation/account/account_controller.dart]',
     'domains/account -> domains/live/presentation/favorite/favorite_controller.dart   [domains/account/presentation/auth/utils/firebase_manager.dart]',
     'domains/account -> features/backup/backup_controller.dart   [domains/account/presentation/auth/utils/firebase_manager.dart]',
     'domains/iptv -> domains/live/data/favorite_room_controller.dart   [domains/iptv/data/iptv_settings_controller.dart]',
@@ -57,24 +58,8 @@ BASELINE: frozenset[str] = frozenset({
     'domains/live -> domains/iptv/data/local/db_service.dart   [domains/live/presentation/playback/widgets/video_player/video_controller.dart]',
     'domains/live -> domains/iptv/data/platforms/iptv_site.dart   [domains/live/data/platforms/sites.dart]',
     'domains/live -> domains/recorder/data/services/ffmpeg_hls_input_relay.dart   [domains/live/data/stream/playback_source_transport.dart]',
-    'domains/live -> domains/recorder/data/services/niconico_hls_input.dart   [domains/live/data/platforms/niconico/niconico_quality_catalog.dart]',
     'domains/live -> domains/recorder/presentation/pages/recorder/recorder_controller.dart   [domains/live/presentation/playback/controllers/live_play_controller.dart]',
     'domains/live -> domains/recorder/presentation/widgets/record_action_button.dart   [domains/live/presentation/playback/widgets/layout/live_play_header.dart]',
-    'domains/recorder -> domains/live/data/platforms/bigo/bigo_api.dart   [domains/recorder/data/services/bigo_hls_input.dart]',
-    'domains/recorder -> domains/live/data/platforms/bigo/bigo_api.dart   [domains/recorder/data/services/live_input_recording_binder.dart]',
-    'domains/recorder -> domains/live/data/platforms/bigo/bigo_hls_protection.dart   [domains/recorder/data/services/bigo_hls_input.dart]',
-    'domains/recorder -> domains/live/data/platforms/bigo/bigo_input_recipe.dart   [domains/recorder/data/services/live_input_recording_binder.dart]',
-    'domains/recorder -> domains/live/data/platforms/fc2live/fc2_api.dart   [domains/recorder/data/services/fc2_hls_input.dart]',
-    'domains/recorder -> domains/live/data/platforms/fc2live/fc2_api.dart   [domains/recorder/data/services/live_input_recording_binder.dart]',
-    'domains/recorder -> domains/live/data/platforms/fc2live/fc2_control_session.dart   [domains/recorder/data/services/fc2_hls_input.dart]',
-    'domains/recorder -> domains/live/data/platforms/fc2live/fc2_input_recipe.dart   [domains/recorder/data/services/live_input_recording_binder.dart]',
-    'domains/recorder -> domains/live/data/platforms/huya/huya_transport_policy.dart   [domains/recorder/presentation/pages/recorder/recorder_controller.dart]',
-    'domains/recorder -> domains/live/data/platforms/niconico/niconico_api.dart   [domains/recorder/data/services/live_input_recording_binder.dart]',
-    'domains/recorder -> domains/live/data/platforms/niconico/niconico_input_recipe.dart   [domains/recorder/data/services/live_input_recording_binder.dart]',
-    'domains/recorder -> domains/live/data/platforms/niconico/niconico_session.dart   [domains/recorder/data/services/niconico_hls_input.dart]',
-    'domains/recorder -> domains/live/data/platforms/niconico/niconico_stream.dart   [domains/recorder/data/services/niconico_hls_input.dart]',
-    'domains/recorder -> domains/live/data/platforms/niconico/niconico_watch.dart   [domains/recorder/data/services/live_input_recording_binder.dart]',
-    'domains/recorder -> domains/live/data/platforms/niconico/niconico_watch.dart   [domains/recorder/data/services/niconico_hls_input.dart]',
     'domains/recorder -> domains/live/data/platforms/sites.dart   [domains/recorder/data/services/stream_resolver_service.dart]',
     'domains/recorder -> domains/live/data/platforms/sites.dart   [domains/recorder/presentation/pages/recorder/recorder_controller.dart]',
     'domains/recorder -> domains/live/data/playback_header_resolver.dart   [domains/recorder/data/services/ffmpeg_header_factory.dart]',
@@ -192,6 +177,9 @@ def main() -> int:
     hard, soft = collect()
     unknown_hard = [f for f in hard if f not in BASELINE]
     baselined = len(hard) - len(unknown_hard)
+    # A ledger line whose coupling no longer exists must be deleted, otherwise the
+    # ledger silently rots and later re-introduces the coupling unnoticed.
+    stale = sorted(BASELINE - set(hard))
 
     if list_baseline:
         print('BASELINE: frozenset[str] = frozenset({')
@@ -203,15 +191,20 @@ def main() -> int:
     for finding in unknown_hard:
         print(finding)
 
+    if stale:
+        print('\nstale BASELINE entries (coupling already fixed - delete these lines):')
+        for finding in stale:
+            print(f'  {finding}')
+
     if show_soft:
         for finding in soft:
             print(finding)
 
     print(
         f'\nhard violations: {len(unknown_hard)} unapproved + {baselined} approved'
-        f'   soft advisories: {len(soft)}'
+        f'   stale ledger entries: {len(stale)}   soft advisories: {len(soft)}'
     )
-    if strict and unknown_hard:
+    if strict and (unknown_hard or stale):
         return 1
     return 0
 

@@ -9,9 +9,21 @@
 
 ## Project map
 
-- `lib/core/`: platform APIs, stream resolution, danmaku protocols.
-- `lib/player/`, `lib/modules/live_play/`: player adapters, lifecycle and playback UI.
-- `lib/common/`, `lib/modules/`: settings, persistence, shared UI and feature pages.
+Layering is `app -> core, shared, domains, features`; `core -> nothing above`;
+`shared -> core, shared`; `domains/X -> core, shared, domains/X`;
+`features -> core, shared, domains`. Within a domain:
+`presentation -> domain (abstractions)`, `data -> domain (abstractions)`.
+`tool/validate_architecture.py --strict` enforces this and runs in CI
+(`.github/workflows/architecture.yml`).
+
+- `lib/app/`: bootstrap, DI assembly, router. No business implementation.
+- `lib/core/`: platform APIs, player kernel, settings/credential store, common UI.
+- `lib/shared/platforms/`: the site adapters (bilibili, douyu, huya, ...) and the
+  platform contract (`live_site`, `live_danmaku`, `live_directory`, ...) that
+  playback, recording and account all use.
+- `lib/domains/`: business domains (live, iptv, account, recorder, wallpaper),
+  each self-contained as `data` + `domain` + `presentation`.
+- `lib/features/`: lightweight independent pages.
 - `test/`: deterministic Dart/Widget tests; `tool/probes/`: opt-in external/native probes.
 - `tool/`: local quality/build/release entrypoints; `docs/`: feature and acceptance evidence.
 - `android/`, `windows/`: primary targets; other platform directories remain community-verified.
