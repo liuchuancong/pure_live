@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
+import 'package:html_unescape/html_unescape.dart';
 import 'package:pure_live/core/models/live_area.dart';
 import 'package:pure_live/core/models/live_room.dart';
 import 'package:pure_live/core/network/http_client.dart';
@@ -112,6 +113,13 @@ class PicartoApi {
   }
 
   static String text(Object? raw) => raw is String ? raw.trim() : '';
+
+  /// 搜索资料里的简介：`bio`，HTML 实体解码后为空则不给（上游 11-5）。
+  static String? _bio(Map<String, dynamic> profile) {
+    final raw = text(profile['bio']);
+    if (raw.isEmpty) return null;
+    return raw.contains('&') ? HtmlUnescape().convert(raw).trim() : raw;
+  }
   static int? integer(Object? raw) => raw is int ? raw : (raw is String ? int.tryParse(raw) : null);
   static String imageUrl(Object? raw) {
     final value = text(raw);
@@ -227,6 +235,8 @@ class PicartoApi {
           watching: '',
           followers: followers == null ? '' : '$followers',
           audienceMetricType: AudienceMetricType.unknown,
+          // 搜索结果没有直播标题/封面/观众数，简介取资料的 bio（上游 11-5）。
+          introduction: _bio(profile),
           status: online,
           liveStatus: online ? LiveStatus.live : LiveStatus.offline,
         ),

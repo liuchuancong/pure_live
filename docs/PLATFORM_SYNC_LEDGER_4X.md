@@ -29,7 +29,7 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | douyu | 14 | 本轮已摘取（见下） |
 | yy | 12 | 本轮已摘取（见下） |
 | niconico | 11 | 待办 |
-| pandalive / picarto / seventeenlive | 11 | pandalive 本轮已摘取（见下）；picarto / seventeenlive 待办 |
+| pandalive / picarto / seventeenlive | 11 | pandalive、picarto 本轮已摘取（见下）；seventeenlive 待办 |
 | twitch | 10 | 本轮已摘取（见下） |
 | soop | 10 | 本轮已摘取（见下） |
 | chzzk | 10 | 本轮已摘取（见下） |
@@ -268,3 +268,19 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | 25-1 / 25-3 / 25-4 / 25-5 | 目录补新主播区、`playCnt` 记入累计观看、房间链接改 `/play/<id>`、清晰度 id 去掉 30fps 后缀且原画在前 | 未做：目录/字段/链接与画质命名，需逐条对照 |
 | 25-2 | 弹幕参数 `PandaLiveDanmakuArgs`（`getDanmaku()` 仍是空） | 未做：本仓 pandalive 没有弹幕引擎 |
 | `19f59f525` | 房间公告去掉"远端聊天尚待接入" | 无需：本仓确实还没接 PandaTV 聊天，公告与现状一致 |
+
+## picarto
+
+上游相关提交：`f12fb7262`（M4.U.11）、`664aaf5b6`、`863bbf99c`（弹幕）。
+
+| 项 | 内容 | 本仓状态 |
+| --- | --- | --- |
+| 11-5 | 搜索卡片的简介取资料 `bio`（HTML 实体解码） | **已同步**：`_bio()` |
+| `664aaf5b6` | 房间 id 用平台自己的拼写（`TheBaker`），否则关注身份对不上 | 无需：本仓已用详情返回的 `name` 作 `roomId`/`nick` |
+| 11-1 | 恢复播放时若播放列表已没有所请求的档位，播最好的一档并如实上报 | 未做：恢复路径的档位回退 |
+| 11-2 | 关注刷新不再查边缘/multistream/流名（进房与录制仍查） | 未做：请求深度 |
+| 11-3 | 坏分区/探索行/别的分区行/坏搜索结果直接跳过 | 未做 |
+| 11-4 | 清晰度按高度再按码率排序，「HLS Auto」显示为「自动」 | 未做 |
+| 11-6 | 下播详情用自己最后一场的缩略图当封面 | 未做 |
+| 11-9 | 私密频道按 private 限制展示 | 未做：限制模型 |
+| `863bbf99c` 等 | Picarto 弹幕本体 | 未做：新功能批次 |
