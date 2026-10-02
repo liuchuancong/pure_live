@@ -15,8 +15,11 @@ import 'package:pure_live/shared/platforms/live_danmaku.dart';
 import 'package:pure_live/core/utils/live_quality_label.dart';
 import 'package:pure_live/shared/platforms/current_live_room.dart';
 import 'package:pure_live/core/consts/platform_ids.dart';
+import 'package:pure_live/shared/platforms/live_danmaku_capability.dart';
+import 'package:pure_live/shared/platforms/douyu/douyu_danmaku_capability.dart';
 
 class DouyuSite
+    with LiveDanmakuCapabilityDefaults, DouyuDanmakuCapability
     implements
         LiveSite,
         LiveSiteRoomRefresher,

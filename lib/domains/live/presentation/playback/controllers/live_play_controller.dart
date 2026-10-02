@@ -5,7 +5,7 @@ import 'dart:developer' as developer;
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/utils/event_bus.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
-import 'package:pure_live/domains/live/data/emoji/emoji_manager.dart';
+import 'package:pure_live/shared/platforms/emoji_manager.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
 import 'package:pure_live/core/player/core/playback_source.dart';
 import 'package:pure_live/core/player/core/live_audio_service.dart';
@@ -271,7 +271,7 @@ class LivePlayController extends GetxController
 
   Future<void> _preloadEmoji() async {
     emojiCache.clear();
-    await EmojiManager().preload(site);
+    await EmojiManager().preload(site, Sites.danmakuCapability(site)?.parseDanmakuEmoji);
   }
 
   Future<void> _resumeCurrentRoomSession(RoomSessionSnapshot session) async {
@@ -916,7 +916,10 @@ class LivePlayController extends GetxController
       await danmakuController.replaceDanmaku(currentSite.liveSite.getDanmaku());
     }
 
-    await EmojiManager.instance.preload(newRoom.platform!);
+    await EmojiManager.instance.preload(
+      newRoom.platform!,
+      Sites.danmakuCapability(newRoom.platform)?.parseDanmakuEmoji,
+    );
 
     await onInitPlayerState(
       reloadDataType: newRoom.platform == Sites.bilibiliSite ? ReloadDataType.changeLine : ReloadDataType.refresh,

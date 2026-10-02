@@ -190,6 +190,8 @@ class DanmakuController extends GetxController {
   }
 
   void _installCallbacks(LiveDanmaku engine, LiveRoom liveroom, String key, int token) {
+    // 站点能力在会话安装时解析一次，不要放到每条弹幕的热路径上。
+    final danmakuCapability = Sites.danmakuCapability(liveroom.platform);
     engine.onMessage = (msg) {
       if (!_acceptsCallback(engine, key, token)) return;
       if (msg.type == LiveMessageType.chat) {
@@ -207,11 +209,13 @@ class DanmakuController extends GetxController {
             !_similarityFilter.shouldDisplay(msg.message)) {
           return;
         }
-        if (!_maskedNameNoticeShown &&
-            liveroom.platform == Sites.bilibiliSite &&
-            RegExp(r'\*{2,}|＊{2,}').hasMatch(msg.userName)) {
-          _maskedNameNoticeShown = true;
-          _addStatusMessage(i18n('bilibili_guest_name_masked'));
+        // 站点专有的昵称提示（例如 B 站游客昵称被打码）由站点自己判定。
+        if (!_maskedNameNoticeShown) {
+          final userNameNoticeKey = danmakuCapability?.danmakuUserNameNoticeKey(msg.userName);
+          if (userNameNoticeKey != null) {
+            _maskedNameNoticeShown = true;
+            _addStatusMessage(i18n(userNameNoticeKey));
+          }
         }
         _main.addDanmakuMessage(msg);
         _state.player.videoController?.sendDanmaku(msg);
@@ -325,10 +329,9 @@ class DanmakuController extends GetxController {
     if (!_initialized) return;
     final room = _state.room.detail;
     if (room == null) return;
-    const except = [Sites.iptvSite, Sites.ccSite];
     final settings = SettingsService.to.danmaku;
     try {
-      if (except.contains(room.platform) || settings.hideDanmaku.v) {
+      if (!_connectsDanmaku(room.platform) || settings.hideDanmaku.v) {
         await stopDanmaku();
       } else {
         await connectRoom(room);
@@ -350,12 +353,16 @@ class DanmakuController extends GetxController {
     await connectRoom(liveroom);
   }
 
+  /// 站点是否在该房间建立弹幕连接。
+  ///
+  /// 由站点自己的能力声明（默认连接）；通用弹幕代码不再维护平台例外名单。
+  bool _connectsDanmaku(String? platform) => Sites.danmakuCapability(platform)?.connectsDanmakuOnRoomEntry ?? true;
+
   bool _isRecoveryAllowed(LiveRoom liveroom) {
     final override = recoveryAllowed;
     if (override != null) return override(liveroom);
-    const except = [Sites.iptvSite, Sites.ccSite];
     final settings = SettingsService.to.danmaku;
-    return !except.contains(liveroom.platform) && !settings.hideDanmaku.v;
+    return _connectsDanmaku(liveroom.platform) && !settings.hideDanmaku.v;
   }
 
   String _roomKey(LiveRoom liveroom) => '${liveroom.platform ?? ''}:${liveroom.roomId ?? ''}';

@@ -45,6 +45,8 @@ import 'package:pure_live/shared/platforms/kuaishou/kuaishou_site.dart';
 import 'package:pure_live/shared/platforms/bilibili/bilibili_site.dart';
 import 'package:pure_live/domains/live/data/favorite_room_controller.dart';
 import 'package:pure_live/core/consts/platform_ids.dart';
+import 'package:pure_live/shared/platforms/empty_danmaku.dart';
+import 'package:pure_live/shared/platforms/live_danmaku_capability.dart';
 
 class Sites {
   /// Niconico 的 master 播放列表读取器。
@@ -71,6 +73,25 @@ class Sites {
     CancelToken cancel,
     String Function(Uri) findProxy,
   ) => (niconicoMasterReader ?? _missingNiconicoMasterReader)(source, cookies, cancel, findProxy);
+
+  /// 站点是否提供远程弹幕传输。
+  ///
+  /// 由站点自己的弹幕引擎实现决定，通用代码不再维护平台名单：返回
+  /// [EmptyDanmaku] 的站点没有引擎，因此也不会被当成多画面聊天源。
+  static bool supportsDanmakuTransport(String? platform) {
+    final id = platform?.trim().toLowerCase() ?? '';
+    if (id.isEmpty || !isSupported(id) || isRetired(id)) return false;
+    return of(id).liveSite.getDanmaku() is! EmptyDanmaku;
+  }
+
+  /// 站点的弹幕细节能力；站点未实现 [LiveDanmakuCapability] 时为 null。
+  static LiveDanmakuCapability? danmakuCapability(String? platform) {
+    final id = platform?.trim().toLowerCase() ?? '';
+    if (id.isEmpty || !isSupported(id) || isRetired(id)) return null;
+    // 声明为 Object：LiveSite 与能力接口无关，声明成 LiveSite 时 Dart 不会提升类型。
+    final Object site = of(id).liveSite;
+    return site is LiveDanmakuCapability ? site : null;
+  }
 
   static const String weiboSite = 'weibo';
   static const String niconicoSite = 'niconico';

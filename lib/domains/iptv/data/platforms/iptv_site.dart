@@ -16,8 +16,12 @@ import 'package:pure_live/domains/iptv/data/services/auto_sync_scheduler.dart';
 import 'package:pure_live/core/network/http_header_policy.dart';
 import 'package:pure_live/domains/iptv/data/iptv_settings_controller.dart';
 import 'package:pure_live/core/consts/platform_ids.dart';
+import 'package:pure_live/shared/platforms/live_danmaku_capability.dart';
+import 'package:pure_live/domains/iptv/data/platforms/iptv_danmaku_capability.dart';
 
-class IptvSite implements LiveSite, LiveSiteRecordRoomResolver {
+class IptvSite
+    with LiveDanmakuCapabilityDefaults, IptvDanmakuCapability
+    implements LiveSite, LiveSiteRecordRoomResolver {
   @override
   String id = PlatformIds.iptv;
 

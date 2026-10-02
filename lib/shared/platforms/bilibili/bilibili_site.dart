@@ -15,8 +15,12 @@ import 'package:pure_live/core/utils/live_quality_label.dart';
 import 'package:pure_live/shared/platforms/current_live_room.dart';
 import 'package:pure_live/core/config/cookie_settings_controller.dart';
 import 'package:pure_live/core/consts/platform_ids.dart';
+import 'package:pure_live/shared/platforms/live_danmaku_capability.dart';
+import 'package:pure_live/shared/platforms/bilibili/bilibili_danmaku_capability.dart';
 
-class BiliBiliSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResolver, LivePlayUrlResolver {
+class BiliBiliSite
+    with LiveDanmakuCapabilityDefaults, BilibiliDanmakuCapability
+    implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResolver, LivePlayUrlResolver {
   @override
   String id = PlatformIds.bilibili;
 
