@@ -171,6 +171,22 @@ class BackgroundController extends GetxController {
     }
   }
 
+  /// Applies a picture that arrived as bytes rather than as an address.
+  ///
+  /// A random-image API answers a different picture per request, so there is no
+  /// URL to store: the bytes are written into the wallpaper directory and applied
+  /// as a local picture, which also makes the choice survive a restart.
+  Future<bool> applyNetworkImageBytes(Uint8List bytes) async {
+    try {
+      final path = await WallpaperMediaStore.saveImageBytes(bytes);
+      setLocalImage(path);
+      return true;
+    } catch (error) {
+      log('Wallpaper image save failed: $error', name: 'BackgroundController');
+      return false;
+    }
+  }
+
   void _apply(BackgroundConfig next) {
     final previous = state;
     config.v = next;
