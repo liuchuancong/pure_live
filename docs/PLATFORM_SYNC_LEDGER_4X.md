@@ -34,9 +34,9 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | soop | 10 | 本轮已摘取（见下） |
 | chzzk | 10 | 本轮已摘取（见下） |
 | kugoulive | 10 | 本轮已摘取（见下） |
-| bigo / fc2live | 9 | fc2live 本轮已摘取（见下）；bigo 待办 |
+| bigo / fc2live | 9 | 两站本轮均已摘取（见下） |
 | missevan / kilakila / acfun | 8 | missevan、kilakila 本轮已摘取（见下）；acfun 待办 |
-| jdlive / looklive / steambroadcast / twitcasting / showroom / sixroom / baidulive | 7 | steambroadcast、showroom 本轮已摘取（见下）；其余待办 |
+| jdlive / looklive / steambroadcast / twitcasting / showroom / sixroom / baidulive | 7 | steambroadcast、showroom、sixroom 本轮已摘取（见下）；其余待办 |
 | cc | 5 | 本轮已摘取（见下） |
 | tiktok | 5 | 待办 |
 | inke / xiaohongshu / weibo / liveme | 4 | weibo、liveme 本轮已摘取（见下）；inke / xiaohongshu 待办 |
@@ -379,3 +379,27 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | 26-1 / 26-2 | 清晰度按档位（`fc2live:<channel>:<id>`）与 `hlsPlaylists` 读全部播放列表 | 未做：清晰度发现 |
 | 26-9 | 受限直播是在播 + 限制（`is_limited`），播放被拒 | 未做：状态与限制模型 |
 | 其它 | startedAt（`start_time`/`start`）、控制权交接 | 未做 |
+
+## bigo
+
+上游相关提交：`f4688d9f7`（M4.U.24，24-1、24-2、24-4 至 24-7）。
+
+| 项 | 内容 | 本仓状态 |
+| --- | --- | --- |
+| 24-1 | 房间封面是直播间截图（下播时是上一场那张），头像仍是头像并作为封面兜底 | **已同步**（详情路径）：新增 `BigoStudioRoom.snapshot`，封面优先用它；此前封面直接拿头像，卡片显示的是主播头像而不是画面。目录卡片按上游同样是 cover 即 avatar，无需改 |
+| 24-2 | 上锁的列表行仍列出、在播并标 password；`passRoom`/`isPaidShow` 是在播 + 限制 | 未做：限制模型 |
+| 24-4 / 24-5 | 令牌复用（关注刷新与状态检查复用 30 分钟）与目录列表 30 秒缓存 | 未做：请求编排与缓存 |
+| 24-6 | 坏行/重复行只丢自己 | 未做 |
+
+## sixroom
+
+上游相关提交：`8e55bea2c`（M4.U.31，31-1 至 31-5）。
+
+| 项 | 内容 | 本仓状态 |
+| --- | --- | --- |
+| 31-3 | 搜索卡片带页面直播标记（`i.live`）为在播；没有标记但链接指向 `/profile/` 为未开播；否则未知 | **已同步**：此前一律 unknown |
+| 31-1 | 详情与刷新用主播自己的头像（`inroom roominfo.uoption.picuser`） | 无需：本仓已用 `headPicUrl`/`picuser` |
+| 31-2 | 详情标题在名字之前先退到主播签名 | 未做 |
+| 31-4 | 推荐与歌/舞/聊/派对分区改用 App 移动端列表 | 未做：目录来源 |
+| 31-5 | 记忆卡片的流行度/开播时间/限制只在同一场直播在播时使用 | 未做 |
+| 统一规则 | 私密/黑屏是在播 + 限制（不是未知/下播） | 未做：限制模型 |

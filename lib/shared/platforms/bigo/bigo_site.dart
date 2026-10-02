@@ -173,7 +173,9 @@ final class BigoSite extends LiveSite
       title: room.title.isEmpty ? room.nickname : room.title,
       nick: room.nickname,
       avatar: room.avatar ?? '',
-      cover: room.avatar ?? '',
+      // 封面用直播间截图，头像兜底（上游 24-1）：3.x 与改前都拿头像当封面，
+      // 于是直播间卡片显示的是主播头像而不是画面。
+      cover: room.snapshot.isNotEmpty ? room.snapshot : (room.avatar ?? ''),
       area: room.category.isEmpty ? name : room.category,
       link: BigoLink.url(status.canonicalSiteId),
       liveStatus: liveStatus,

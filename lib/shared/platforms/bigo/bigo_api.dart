@@ -90,6 +90,7 @@ class BigoStudioRoom {
     required this.category,
     required this.avatar,
     required this.hls,
+    this.snapshot = '',
   });
 
   final BigoStudioStatus status;
@@ -98,6 +99,9 @@ class BigoStudioRoom {
   final String title;
   final String category;
   final String? avatar;
+
+  /// 直播间截图（下播时是上一场的那张）；封面优先用它，头像兜底（上游 24-1）。
+  final String snapshot;
   final Uri? hls;
 }
 
@@ -435,6 +439,9 @@ class BigoApi {
     final category = data['gameTitle'] == null ? '' : _text(data['gameTitle']);
     final rawAvatar = data['avatar'];
     final avatar = rawAvatar == null || rawAvatar == '' ? null : _httpsUri(_text(rawAvatar)).toString();
+    // 快照放宽到 http(s)（上游 `_picture`）：读不出来就当作没有，不能因为一张图
+    // 让整次详情解析失败。
+    final snapshot = _picture(data['snapshot'] == null ? '' : _text(data['snapshot']));
     final rawHls = data['hls_src'];
     final hls = rawHls == null || rawHls == '' ? null : _httpsUri(_text(rawHls), hls: true);
     if (status.access != BigoAccess.public && hls != null) throw const BigoException(BigoFailure.schema);
@@ -446,8 +453,23 @@ class BigoApi {
       title: title,
       category: category,
       avatar: avatar,
+      snapshot: snapshot,
       hls: hls,
     );
+  }
+
+  /// 宽松的图片地址（快照）：http(s)、有 host、无 userinfo/fragment，否则空串。
+  static String _picture(String source) {
+    if (source.isEmpty) return '';
+    final uri = Uri.tryParse(source);
+    if (uri == null ||
+        (uri.scheme != 'http' && uri.scheme != 'https') ||
+        uri.host.isEmpty ||
+        uri.userInfo.isNotEmpty ||
+        uri.hasFragment) {
+      return '';
+    }
+    return uri.toString();
   }
 
   static Uri _httpsUri(String source, {bool hls = false}) {
