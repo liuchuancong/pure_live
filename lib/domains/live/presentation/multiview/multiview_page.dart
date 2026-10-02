@@ -14,6 +14,7 @@ import 'package:pure_live/core/player/kernel/player_kernel_service.dart';
 import 'package:pure_live/domains/live/presentation/multiview/models/multiview_models.dart';
 import 'package:pure_live/domains/live/presentation/multiview/widgets/video_output_viewport_sizer.dart';
 import 'package:pure_live/domains/live/presentation/playback/pages/danmaku_settings_page.dart';
+import 'package:pure_live/domains/live/presentation/playback/widgets/danmaku/portrait_danmaku_policy.dart';
 import 'package:pure_live/domains/live/presentation/multiview/widgets/focus_rail_visibility.dart';
 import 'package:pure_live/domains/live/presentation/multiview/widgets/multiview_room_picker.dart';
 import 'package:pure_live/domains/live/presentation/multiview/widgets/multiview_fullscreen_surface.dart';
@@ -1035,22 +1036,7 @@ class _MultiviewCellView extends StatelessWidget {
           if (showDanmaku)
             Positioned.fill(
               child: IgnorePointer(
-                // 独立 Obx：_buildBarrageConfig 在订阅作用域内读取全部弹幕
-                // 设置 Rx（字号/速度/透明度/区域/描边/字体/FPS），全局设置
-                // 变化即时重绘弹幕层（对照 live_play DanmakuViewer 整段
-                // Obx 包裹的做法）。格子子树的 build 不在父级 Obx 作用域内，
-                // 不包裹则设置变化永远不会触达这里。
-                child: Obx(() {
-                  // refreshRateMode 是由该 Rx 派生的普通 getter，
-                  // 显式订阅其响应源以覆盖自动帧率模式切换。
-                  SettingsService.to.app.refreshRateModeName.v;
-                  return FlameBarrageWidget(
-                    controller: barrageController,
-                    enablePointerEvents: false,
-                    config: _buildBarrageConfig(),
-                    emojiAtlas: EmojiAtlas.instance,
-                  );
-                }),
+                child: _MultiviewDanmakuLayer(controller: videoController, barrageController: barrageController),
               ),
             ),
           Positioned(
@@ -1303,17 +1289,73 @@ class _AudioFocusBadge extends StatelessWidget {
   }
 }
 
+/// 大画面弹幕层。
+///
+/// 独立 Obx：[_buildBarrageConfig] 在订阅作用域内读取全部弹幕设置 Rx
+/// （字号/速度/透明度/区域/描边/字体/FPS），全局设置变化即时重绘弹幕层
+/// （对照 live_play DanmakuViewer 整段 Obx 包裹的做法）。格子子树的 build
+/// 不在父级 Obx 作用域内，不包裹则设置变化永远不会触达这里。
+///
+/// 竖屏判定用这一格自己的源宽高，而不是主播放器的方向：多画面里每一路直播
+/// 都是独立的一格，拿主播放器的方向代替会让「竖屏弹幕：隐藏/收窄」在真正
+/// 竖屏的小格里失效、在横屏小格里误伤。
+class _MultiviewDanmakuLayer extends StatelessWidget {
+  const _MultiviewDanmakuLayer({required this.controller, required this.barrageController});
+
+  final VideoController controller;
+  final BarrageController barrageController;
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<int?>(
+      stream: controller.player.stream.width,
+      initialData: controller.player.state.width,
+      builder: (context, width) => StreamBuilder<int?>(
+        stream: controller.player.stream.height,
+        initialData: controller.player.state.height,
+        builder: (context, height) => _buildLayer(width.data, height.data),
+      ),
+    );
+  }
+
+  Widget _buildLayer(int? width, int? height) {
+    return Obx(() {
+      // refreshRateMode 是由该 Rx 派生的普通 getter，
+      // 显式订阅其响应源以覆盖自动帧率模式切换。
+      SettingsService.to.app.refreshRateModeName.v;
+      // 宽高都有才判定方向；只有一路已知时按横屏处理（与主播放器
+      // 「拿不到几何就不当竖屏」的保守判定一致）。
+      final isVerticalVideo = width != null && height != null && width > 0 && height > 0 && height > width;
+      final mode = SettingsService.to.player.portraitDanmakuMode;
+      if (PortraitDanmakuPolicy.hidesDanmaku(isVerticalVideo: isVerticalVideo, mode: mode)) {
+        return const SizedBox.shrink();
+      }
+      return FlameBarrageWidget(
+        controller: barrageController,
+        enablePointerEvents: false,
+        config: _buildBarrageConfig(isVerticalVideo: isVerticalVideo),
+        emojiAtlas: EmojiAtlas.instance,
+      );
+    });
+  }
+}
+
 /// 大画面弹幕配置。
 ///
 /// 结构照抄 live_play 的 DanmakuViewer（video_controller_panel.dart）既有
 /// 配置；字号/速度/区域等取全局弹幕设置默认值，池容量沿用同组常量。
-BarrageConfig _buildBarrageConfig() {
+/// 竖屏源按 [PortraitDanmakuPolicy] 与房间画面收窄同一份显示区域。
+BarrageConfig _buildBarrageConfig({required bool isVerticalVideo}) {
   final settings = SettingsService.to.danmaku;
   return BarrageConfig(
     emitInterval: 0.05,
     fontSize: settings.danmakuFontSize.v,
     topAreaDistance: settings.danmakuTopArea.v,
-    area: settings.danmakuArea.v,
+    area: PortraitDanmakuPolicy.effectiveArea(
+      configuredArea: settings.danmakuArea.v,
+      isVerticalVideo: isVerticalVideo,
+      mode: SettingsService.to.player.portraitDanmakuMode,
+    ),
     bottomAreaDistance: settings.danmakuBottomArea.v,
     baseSpeed: settings.danmakuSpeed.v,
     opacity: settings.danmakuOpacity.v,
@@ -1335,6 +1377,9 @@ BarrageConfig _buildBarrageConfig() {
     pictureCacheMaxSize: 96,
     barragePoolMaxSize: 72,
     textCacheMaxSize: 320,
+    // 弹幕层缩在一个格子里，设备安全区（状态栏/挖孔）是整屏概念，套到格子里
+    // 只会把弹幕整体推下去；小窗弹幕层同样关掉它。
+    safeArea: false,
   );
 }
 

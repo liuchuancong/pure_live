@@ -236,6 +236,13 @@ class MultiviewController extends GetxController {
   final RxInt _audioFocusIndex = 0.obs;
   final RxBool allMuted = false.obs;
   final RxBool smallCellsLowQuality = false.obs;
+
+  /// 页级弹幕开关。
+  ///
+  /// 不再自持「默认关闭」：普通直播间默认就显示弹幕（全局 `hideDanmaku` 默认关），
+  /// 多画面此前默认关，于是同一个应用里两种播放形态的默认行为分裂——多画面
+  /// 进来永远没有弹幕。这里与全局设置双向同步（见 [onInit]），开关语义、
+  /// 持久化与普通直播间一致。
   final RxBool danmakuEnabled = false.obs;
   final BarrageController barrageController = BarrageController();
 
@@ -270,6 +277,27 @@ class MultiviewController extends GetxController {
 
   /// 每格墙路径的解析上下文（画质表/换档闭包/线路/租约）。
   final Map<int, MultiviewStreamSource> _sourceContexts = {};
+
+  /// 弹幕就绪房间缓存：房间身份键 → 带弹幕连接票据的房间。
+  ///
+  /// 选台面板只提供本地关注/历史里的房间快照，而 `LiveRoom.toJson` 有意不持久化
+  /// `danmakuData`（弹幕票据是短时效凭据，见 [LiveRoom.toJson]）。于是重启后多画面
+  /// 拿到的房间必然没有弹幕参数，[MultiviewDanmakuSession.supportsRoom] 直接为假——
+  /// 弹幕永远连不上。这里在真正要连弹幕时按普通直播间的同一入口
+  /// （`LiveSite.getRoomDetail`，它会带回弹幕票据）补一次，并按房间缓存。
+  final Map<String, LiveRoom> _danmakuRooms = {};
+
+  /// 进行中的弹幕房间补取，同一房间并发只发一次请求。
+  final Map<String, Future<LiveRoom>> _danmakuRoomLoads = {};
+
+  /// 弹幕房间缓存上限；超出后整片丢弃重建，避免长时间多画面巡台无界增长。
+  static const int _danmakuRoomCacheLimit = 16;
+
+  /// 弹幕会话同步代次：焦点/布局/开关连续变化时丢弃迟到的旧房间连接。
+  int _danmakuSyncEpoch = 0;
+
+  /// 当前聊天房间键；用于在换房间时清掉上一路的弹幕。
+  String? _danmakuRoomKey;
 
   /// 每格会话音量镜像（房间音量记忆）。
   final Map<int, double> _volumes = {};
@@ -335,6 +363,15 @@ class MultiviewController extends GetxController {
       everAll([danmakuEnabled, layout, focusedCellIndex, _audioFocusIndex], (_) => unawaited(_syncDanmakuSession())),
     );
     _rxWorkers.add(ever(smallCellsLowQuality, (_) => unawaited(_reconcileSmallCellQualities())));
+    // 弹幕开关与普通直播间共用全局设置：默认跟随 `hideDanmaku`（默认关 = 显示），
+    // 两处开关互相写回，多画面不再有自己的一套默认值。
+    danmakuEnabled.value = !SettingsService.to.danmaku.hideDanmaku.v;
+    _rxWorkers.add(ever(danmakuEnabled, (enabled) => SettingsService.to.danmaku.hideDanmaku.value = !enabled));
+    _rxWorkers.add(
+      ever(SettingsService.to.danmaku.hideDanmaku, (hidden) {
+        if (danmakuEnabled.value == hidden) danmakuEnabled.value = !hidden;
+      }),
+    );
   }
 
   Future<void> _reconcileSmallCellQualities() async {
@@ -361,13 +398,25 @@ class MultiviewController extends GetxController {
   }
 
   Future<void> _syncDanmakuSession() async {
+    final token = ++_danmakuSyncEpoch;
     try {
       final room = danmakuEnabled.value && cells.isNotEmpty ? cells[_selectedCellIndex].room : null;
-      if (room == null || !MultiviewDanmakuSession.supportsRoom(room)) {
+      final platform = room?.platform;
+      if (room == null || platform == null || !MultiviewDanmakuSession.isSupportedPlatform(platform)) {
+        _retargetDanmakuLayer(null);
         await _danmakuSession.disconnect();
         return;
       }
-      await _danmakuSession.connect(room);
+      final ready = await _danmakuReadyRoom(room);
+      // 焦点/布局/开关可能在等待期间又变过；迟到的旧房间不得把弹幕拉回去。
+      if (token != _danmakuSyncEpoch) return;
+      if (!MultiviewDanmakuSession.supportsRoom(ready)) {
+        _retargetDanmakuLayer(null);
+        await _danmakuSession.disconnect();
+        return;
+      }
+      _retargetDanmakuLayer(ready.identityKey);
+      await _danmakuSession.connect(ready);
     } catch (error, stackTrace) {
       developer.log(
         'MultiviewController: danmaku session sync failed',
@@ -375,6 +424,55 @@ class MultiviewController extends GetxController {
         error: error,
         stackTrace: stackTrace,
       );
+    }
+  }
+
+  /// 换聊天房间时清掉上一路弹幕：否则上一个直播间的消息会继续在新房间画面上滚动。
+  void _retargetDanmakuLayer(String? key) {
+    if (_danmakuRoomKey == key) return;
+    _danmakuRoomKey = key;
+    barrageController.clear();
+  }
+
+  /// 取回带着弹幕连接票据的房间；已有票据时原样返回。
+  ///
+  /// 与普通直播间走同一个入口（`getRoomDetail`），不另建解析逻辑；失败时退回
+  /// 原房间，弹幕不可用不得影响播放主链路。
+  Future<LiveRoom> _danmakuReadyRoom(LiveRoom room) {
+    if (MultiviewDanmakuSession.supportsRoom(room)) return Future<LiveRoom>.value(room);
+    final platform = room.platform;
+    if (platform == null || !MultiviewDanmakuSession.isSupportedPlatform(platform)) {
+      return Future<LiveRoom>.value(room);
+    }
+    final key = room.identityKey;
+    final cached = _danmakuRooms[key];
+    if (cached != null) return Future<LiveRoom>.value(cached);
+    final pending = _danmakuRoomLoads[key];
+    if (pending != null) return pending;
+    final future = _loadDanmakuRoom(room, platform, key);
+    _danmakuRoomLoads[key] = future;
+    return future;
+  }
+
+  Future<LiveRoom> _loadDanmakuRoom(LiveRoom room, String platform, String key) async {
+    try {
+      final detail = await _siteFor(platform).liveSite.getRoomDetail(room);
+      if (MultiviewDanmakuSession.supportsRoom(detail)) {
+        if (_danmakuRooms.length >= _danmakuRoomCacheLimit) _danmakuRooms.clear();
+        _danmakuRooms[key] = detail;
+        return detail;
+      }
+      return room;
+    } catch (error, stackTrace) {
+      developer.log(
+        'MultiviewController: danmaku room detail failed for $key',
+        name: 'MultiviewController',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      return room;
+    } finally {
+      _danmakuRoomLoads.remove(key);
     }
   }
 
