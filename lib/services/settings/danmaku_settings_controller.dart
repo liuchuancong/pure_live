@@ -1,7 +1,7 @@
 import 'package:pure_live/get/get.dart';
 import 'package:pure_live/services/utils/hive_rx.dart';
-import 'package:pure_live/core/models/app_refresh_rate_mode.dart';
 import 'package:pure_live/services/display_mode_service.dart';
+import 'package:pure_live/core/models/app_refresh_rate_mode.dart';
 
 class DanmakuSettingsController extends GetxController {
   static const double defaultDanmakuTopArea = 0.0;
@@ -70,6 +70,7 @@ class DanmakuSettingsController extends GetxController {
   final RxInt danmakuMaxVisibleCount = hiveInt('danmakuMaxVisibleCount', 48);
   final RxBool enableDanmakuDisplay = hiveBool('enableDanmakuDisplay', true);
   final RxBool enableDanmakuStroke = hiveBool('enableDanmakuStroke', true);
+
   /// Burst dispatch: flush the waiting queue on every logic frame instead
   /// of pacing by emit-interval, so burst messages appear the moment they
   /// arrive (denser screen during bursts).
@@ -93,7 +94,7 @@ class DanmakuSettingsController extends GetxController {
   /// The old per-pip config cohort (font size, speed, opacity, ...) was
   /// folded into the main danmaku settings; these Hive keys are legacy.
   final RxBool pipDanmakuScaleAuto = hiveBool('pipDanmakuAutoScale', true);
-  final RxDouble pipDanmakuScaleValue = hiveDouble('pipDanmakuScaleValue', 1.0);
+  final RxDouble pipDanmakuScaleValue = hiveDouble('pipDanmakuScaleValue', 0.4);
 
   // Douyu sometimes emits legitimate room-local chat packets without either
   // decoration/fan marker. Preserve them unless the user explicitly enables

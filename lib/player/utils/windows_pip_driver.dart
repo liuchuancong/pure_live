@@ -16,8 +16,20 @@ final DisplayAwarePipWindow windowsPipWindow = DisplayAwarePipWindow(
   normalMinSize: const Size(WindowSizeController.minWindowWidth, WindowSizeController.minWindowHeight),
 );
 
+PipConfig pipConfigFromSettings() {
+  final settings = SettingsService.to.player;
+  return PipConfig.defaults.copyWith(
+    width: settings.windowsPipBaseSize.value,
+    height: settings.windowsPipBaseSize.value * 9 / 16,
+    minWidth: settings.windowsPipMinWidth.value,
+    minHeight: settings.windowsPipMinHeight.value,
+    title: 'Pure Live',
+  );
+}
+
 final PipDriver windowsPipDriver = PipDriver(
   desktopWindow: windowsPipWindow,
+  config: pipConfigFromSettings(),
   // Transition diagnostics: the native restore path is exactly four style/
   // placement calls, and when a viewer reports a broken window after a
   // transition these four lines say which leg never ran.

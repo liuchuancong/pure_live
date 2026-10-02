@@ -85,9 +85,7 @@ class PlayerSettingsController extends GetxController {
     outputSegmentRevision.v++;
     hiveString(_engineOutputsKey, '').v = jsonEncode(<String, dynamic>{
       for (final engine in _engineOutputs.entries)
-        engine.key: <String, dynamic>{
-          for (final segment in engine.value.entries) segment.key: segment.value.toJson(),
-        },
+        engine.key: <String, dynamic>{for (final segment in engine.value.entries) segment.key: segment.value.toJson()},
     });
   }
 
@@ -113,9 +111,7 @@ class PlayerSettingsController extends GetxController {
   /// Serialized form for backups: every engine x platform segment.
   Map<String, dynamic> engineOutputsToJson() => <String, dynamic>{
     for (final engine in _engineOutputs.entries)
-      engine.key: <String, dynamic>{
-        for (final segment in engine.value.entries) segment.key: segment.value.toJson(),
-      },
+      engine.key: <String, dynamic>{for (final segment in engine.value.entries) segment.key: segment.value.toJson()},
   };
 
   /// Restores segments from a backup. Platforms present in the backup are
@@ -218,10 +214,19 @@ class PlayerSettingsController extends GetxController {
 
   final RxBool floatPlay = hiveBool('floatPlay', false);
   final RxBool windowsPipAlwaysOnTop = hiveBool('windowsPipAlwaysOnTop', false);
+
+  /// Compact-window size policy. [windowsPipBaseSize] is the long side of the
+  /// small window for landscape streams (the height for portrait ones); the
+  /// short side always follows the video's aspect. The floors clamp how far
+  /// the viewer can shrink it.
+  final RxDouble windowsPipBaseSize = hiveDouble('windowsPipBaseSize', 360.0);
+  final RxDouble windowsPipMinWidth = hiveDouble('windowsPipMinWidth', 140.0);
+  final RxDouble windowsPipMinHeight = hiveDouble('windowsPipMinHeight', 90.0);
   // Kept as an inert compatibility field for old backups. Audio-only is now
   // room-scoped and controlled by the headphone action or ASMR auto-start.
   final RxBool audioOnly = false.obs;
   final RxBool useHardStopOnExit = hiveBool('useHardStopOnExit', false);
+
   /// Anime4K super-resolution mode (Windows/desktop GPUs only).
   final RxString superResolutionMode = hiveString('superResolutionMode', SuperResolutionMode.off.name);
 
@@ -476,6 +481,9 @@ class PlayerSettingsController extends GetxController {
       'videoHardwareDecoder': videoHardwareDecoder.v,
       'floatPlay': floatPlay.v,
       'windowsPipAlwaysOnTop': windowsPipAlwaysOnTop.v,
+      'windowsPipBaseSize': windowsPipBaseSize.v,
+      'windowsPipMinWidth': windowsPipMinWidth.v,
+      'windowsPipMinHeight': windowsPipMinHeight.v,
       'audioOnly': false,
       'useHardStopOnExit': useHardStopOnExit.v,
       'enablePortraitStreamAdaptation': enablePortraitStreamAdaptation.v,
@@ -523,6 +531,9 @@ class PlayerSettingsController extends GetxController {
       ),
       'floatPlay': typed<bool>(json['floatPlay'] ?? false),
       'windowsPipAlwaysOnTop': typed<bool>(json['windowsPipAlwaysOnTop'] ?? false),
+      'windowsPipBaseSize': typed<double>((json['windowsPipBaseSize'] ?? 360.0).toDouble().clamp(200.0, 720.0)),
+      'windowsPipMinWidth': typed<double>((json['windowsPipMinWidth'] ?? 140.0).toDouble().clamp(100.0, 320.0)),
+      'windowsPipMinHeight': typed<double>((json['windowsPipMinHeight'] ?? 90.0).toDouble().clamp(60.0, 240.0)),
       'audioOnly': typed<bool>(false),
       'useHardStopOnExit': typed<bool>(json['useHardStopOnExit'] ?? false),
       'enablePortraitStreamAdaptation': typed<bool>(json['enablePortraitStreamAdaptation'] ?? true),
@@ -566,6 +577,9 @@ class PlayerSettingsController extends GetxController {
     videoHardwareDecoder.v = parsed['videoHardwareDecoder'];
     floatPlay.v = parsed['floatPlay'];
     windowsPipAlwaysOnTop.v = parsed['windowsPipAlwaysOnTop'];
+    windowsPipBaseSize.v = parsed['windowsPipBaseSize'];
+    windowsPipMinWidth.v = parsed['windowsPipMinWidth'];
+    windowsPipMinHeight.v = parsed['windowsPipMinHeight'];
     audioOnly.v = parsed['audioOnly'];
     useHardStopOnExit.v = parsed['useHardStopOnExit'];
     enablePortraitStreamAdaptation.v = parsed['enablePortraitStreamAdaptation'];

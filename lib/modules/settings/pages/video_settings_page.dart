@@ -240,6 +240,53 @@ class _VideoSettingsPageState extends State<VideoSettingsPage> {
                   SettingsService.to.window.rememberPipPosition.v = value;
                 },
               ),
+            if (_isWindows) ...[
+              Obx(
+                () => context.buildSliderTile(
+                  context,
+                  icon: Remix.aspect_ratio_line,
+                  title: i18n('windows_pip_base_size'),
+                  value: SettingsService.to.player.windowsPipBaseSize.v,
+                  min: 200.0,
+                  max: 720.0,
+                  displayValue: '${SettingsService.to.player.windowsPipBaseSize.v.round()} px',
+                  onChanged: (val) {
+                    SettingsService.to.player.windowsPipBaseSize.v = double.parse(val.toStringAsFixed(0));
+                    _syncPipConfig();
+                  },
+                ),
+              ),
+              Obx(
+                () => context.buildSliderTile(
+                  context,
+                  icon: Remix.arrow_down_double_line,
+                  title: i18n('windows_pip_min_width'),
+                  value: SettingsService.to.player.windowsPipMinWidth.v,
+                  min: 100.0,
+                  max: 320.0,
+                  displayValue: '${SettingsService.to.player.windowsPipMinWidth.v.round()} px',
+                  onChanged: (val) {
+                    SettingsService.to.player.windowsPipMinWidth.v = double.parse(val.toStringAsFixed(0));
+                    _syncPipConfig();
+                  },
+                ),
+              ),
+              Obx(
+                () => context.buildSliderTile(
+                  context,
+                  icon: Remix.arrow_up_double_line,
+                  title: i18n('windows_pip_min_height'),
+                  value: SettingsService.to.player.windowsPipMinHeight.v,
+                  min: 60.0,
+                  max: 240.0,
+                  displayValue: '${SettingsService.to.player.windowsPipMinHeight.v.round()} px',
+                  onChanged: (val) {
+                    SettingsService.to.player.windowsPipMinHeight.v = double.parse(val.toStringAsFixed(0));
+                    _syncPipConfig();
+                  },
+                ),
+              ),
+            ],
             if (_isWindows) const _WindowsPipResetTile(),
 
             context.buildSwitchTile(
@@ -385,6 +432,12 @@ class _VideoSettingsPageState extends State<VideoSettingsPage> {
 
   bool _canCommitAsmrMode(AppSettingsController app) {
     return mounted && !app.isClosed && ModalRoute.of(context)?.isActive == true;
+  }
+
+  /// Pushes size-policy changes into the pip driver live: the next compact
+  /// window uses the new base size and floors without leaving settings.
+  void _syncPipConfig() {
+    windowsPipDriver.updateConfig(pipConfigFromSettings());
   }
 
   Future<void> _changePipAlwaysOnTop(bool enabled) async {
