@@ -119,14 +119,8 @@ class InkeSite extends LiveSite
     }
     if (page != 1) return const [];
     try {
-      final room = await _api.detail(uid, playback: false, cancel: cancel);
-      if (room.isExplicitlyOfflineNow) {
-        // The public no-current-broadcast response has no profile metadata.
-        // Keep the search card identifiable without inventing a nickname.
-        room.title = 'UID $uid';
-        room.nick = 'UID $uid';
-      }
-      return [room];
+      // 详情缺名字时就留空：平台名与 "UID <uid>" 这类占位都不编（上游统一规则）。
+      return [await _api.detail(uid, playback: false, cancel: cancel)];
     } on InkeException catch (error) {
       if (error.kind == InkeFailure.notFound) return const [];
       rethrow;

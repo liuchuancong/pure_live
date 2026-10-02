@@ -26,7 +26,7 @@ final class LookLiveException implements Exception {
 
 enum LookLiveKind { video, audio }
 
-enum LookLiveState { live, offline, restricted, unknown }
+enum LookLiveState { live, offline, banned, unknown }
 
 final class LookLiveVariant {
   const LookLiveVariant({required this.id, required this.protocol, required this.uri});
@@ -279,10 +279,13 @@ class LookLiveApi {
     if (returnedId != id) throw const LookLiveException(LookLiveFailure.identity);
     final info = _object(data['roomInfo']);
     final liveType = _integer(info['liveType']);
+    // LOOK 的网页客户端把 -10 叫 FORBID：它与 -4（违规整改中）都是封禁；-2 是
+    // 未开播（上游 32-2；3.x 一律 unknown）。封禁的房间不是"直播中"，但状态查询
+    // 本身不该失败，播放时再说明原因。
     final state = switch (_integer(data['liveStatus'])) {
       1 => LookLiveState.live,
-      0 || -1 => LookLiveState.offline,
-      -10 => LookLiveState.restricted,
+      0 || -1 || -2 => LookLiveState.offline,
+      -10 || -4 => LookLiveState.banned,
       _ => LookLiveState.unknown,
     };
     if (liveType != 1 && liveType != 2) throw const LookLiveException(LookLiveFailure.schema);

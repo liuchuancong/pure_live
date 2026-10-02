@@ -100,7 +100,7 @@ final class LookLiveSite extends LiveSite
     final online = room.currentViewers?.toString();
     final popularity = room.popularity?.toString();
     final notices = <String>[
-      if (room.state == LookLiveState.restricted) i18n('looklive_restricted_notice'),
+      if (room.state == LookLiveState.banned) i18n('looklive_restricted_notice'),
       if (room.isAppOnly) i18n('looklive_app_only_notice'),
       i18n('looklive_chat_notice'),
     ];
@@ -117,7 +117,8 @@ final class LookLiveSite extends LiveSite
       liveStatus: switch (room.state) {
         LookLiveState.live => LiveStatus.live,
         LookLiveState.offline => LiveStatus.offline,
-        LookLiveState.restricted || LookLiveState.unknown => LiveStatus.unknown,
+        LookLiveState.banned => LiveStatus.banned,
+        LookLiveState.unknown => LiveStatus.unknown,
       },
       watching: online ?? popularity ?? '',
       onlineViewers: online,

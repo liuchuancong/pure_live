@@ -36,10 +36,10 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | kugoulive | 10 | 本轮已摘取（见下） |
 | bigo / fc2live | 9 | 两站本轮均已摘取（见下） |
 | missevan / kilakila / acfun | 8 | 三站均已摘取（见下） |
-| jdlive / looklive / steambroadcast / twitcasting / showroom / sixroom / baidulive | 7 | steambroadcast、showroom、sixroom、twitcasting、baidulive 已摘取（见下）；jdlive、looklive 待办 |
+| jdlive / looklive / steambroadcast / twitcasting / showroom / sixroom / baidulive | 7 | 七站均已摘取（见下） |
 | cc | 5 | 本轮已摘取（见下） |
 | tiktok | 5 | 待办 |
-| inke / xiaohongshu / weibo / liveme | 4 | weibo、liveme 本轮已摘取（见下）；inke / xiaohongshu 待办 |
+| inke / xiaohongshu / weibo / liveme | 4 | weibo、liveme、inke 已摘取（见下）；xiaohongshu 待办 |
 
 ## bilibili
 
@@ -452,3 +452,39 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | 12-3 | 直播详情在 `danmakuData` 带 `TwitcastingDanmakuArgs` | 未做：弹幕引擎 |
 | 12-4 | 搜索一次请求，之后按关键词 30 秒快照裁剪 | 未做：分页缓存 |
 | 12-5 | 私有直播在搜索里是在播 + 限制 | 未做：限制模型 |
+
+## jdlive
+
+上游相关提交：`c315d897e`（M4.U.28，28-1 至 28-7）。
+
+| 项 | 内容 | 本仓状态 |
+| --- | --- | --- |
+| 28-2 | 播放回答里没有的名字就留空：不编 "JD Live"、不把直播 id 当店铺账号、不拿封面当头像 | **已同步**：`nick`/`title` 不再写占位，详情靠列表卡片的记忆（`enrich`）补齐 |
+| 28-3 | 封面是列表卡片的 `indexImage`；播放回答的 `blurredImg` 是背景图 | **部分同步**：不再把 `blurredImg` 当封面（卡片封面经 `enrich` 保留）；背景字段本仓模型没有 |
+| 28-1 | 精选列表的分页（`currentCount` 前进、空页结束） | 未做：分页 |
+| 28-4 / 28-5 | FLV 退到 `pcVideoUrl`；线路带网页媒体头 | 未做 |
+| 统一规则 | status 3 是回放并播 JD Cloud 录像；appOnly 是在播 + 限制 | 未做：回放取流与限制模型 |
+
+## looklive
+
+上游相关提交：`fc65a5286`（M4.U.32，32-1 至 32-6）。
+
+| 项 | 内容 | 本仓状态 |
+| --- | --- | --- |
+| 32-2 | `liveStatus` `-10`（FORBID）与 `-4`（违规整改）是封禁，`-2` 是未开播（3.x 一律 unknown） | **已同步**：`LookLiveState.banned` 取代 `restricted`，状态查询本身不再当未知 |
+| 32-1 | 合并目录记住每个列表结束的页，不再重复请求 | 未做：分页缓存 |
+| 32-3 / 32-6 | 线路带网页媒体头；坏地址只损失那一条线路 | 未做 |
+| 32-4 / 32-5 | 列表卡片的流类型取 `liveData.type`；记忆卡片只在直播中填热度与观众数 | 未做 |
+
+## inke
+
+上游相关提交：`26fa56da3`（M4.U.14，14-1 至 14-6）。
+
+| 项 | 内容 | 本仓状态 |
+| --- | --- | --- |
+| 统一规则 | 去掉 "UID <uid>" 这类占位名 | **已同步**：详情缺名字时留空，不编占位 |
+| 14-1 / 14-2 | 推荐与昵称搜索改读 App 热榜（`simpleall`） | 未做：目录来源 |
+| 14-3 | `numbers.real` 是并发观众、`online_users` 是热度 | 未做：需要新字段与解析 |
+| 14-4 | 进房/刷新/录制补 App 的 `now_publish`（标题、封面、观众、开播时间、线路） | 未做 |
+| 14-5 | Zego 原始流（HEVC）作为「原画」档 | 未做：清晰度发现 |
+| 统一规则 | 去掉占位标题「正在直播中」 | 未做（本仓未使用该占位） |

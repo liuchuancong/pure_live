@@ -257,11 +257,14 @@ class JdLiveApi {
     }
     return JdLiveRoom(
       liveId: liveId,
+      // 播放回答里没有的字段就留空（上游 28-2）：不编 "JD Live" 这种占位名、
+      // 不把直播 id 当成店铺账号、不拿模糊图当封面或头像。详情由列表卡片的
+      // 记忆（enrich）补齐名字与封面。
       authorId: '',
-      nick: 'JD Live',
-      title: 'JD Live',
+      nick: '',
+      title: '',
       avatar: '',
-      cover: _image(data['blurredImg']),
+      cover: '',
       totalViews: null,
       state: state,
       hls: hls,
