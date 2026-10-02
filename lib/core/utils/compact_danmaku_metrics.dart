@@ -26,21 +26,25 @@ final class CompactDanmakuMetrics {
     required double configuredSpeed,
   }) {
     final safeWidth = width.isFinite && width > 0 ? width : referenceWidth;
-    final scale = autoScale ? (safeWidth / referenceWidth).clamp(0.65, 1.0).toDouble() : 1.0;
+    // The scale tracks the window in BOTH directions: shrinking eases off at
+    // 0.65 so a tiny window stays readable, and growing keeps scaling up —
+    // a danmaku layer frozen at the 350px reference size while the window
+    // doubles looked lost in an enlarged picture-in-picture.
+    final scale = autoScale ? (safeWidth / referenceWidth).clamp(0.65, 2.0).toDouble() : 1.0;
     final fontSize = configuredFontSize * scale;
 
     // flame_barrage allocates tracks with at least fontSize + 10, but paints
     // their Y offsets with the configured trackHeight. Supplying that same
     // minimum keeps allocation and rendering geometry identical.
-    final trackHeight = math.max(fontSize * 1.8, fontSize + 10).clamp(18.0, 44.0).toDouble();
+    final trackHeight = math.max(fontSize * 1.8, fontSize + 10).clamp(18.0, 88.0).toDouble();
 
     return CompactDanmakuMetrics._(
       scale: scale,
       fontSize: fontSize,
       baseSpeed: configuredSpeed * scale,
       trackHeight: trackHeight,
-      emojiSize: (fontSize * 1.35).clamp(14.0, 32.0).toDouble(),
-      overlapSafeGap: (fontSize * 1.5).clamp(16.0, 40.0).toDouble(),
+      emojiSize: (fontSize * 1.35).clamp(14.0, 64.0).toDouble(),
+      overlapSafeGap: (fontSize * 1.5).clamp(16.0, 80.0).toDouble(),
     );
   }
 
