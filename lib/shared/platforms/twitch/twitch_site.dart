@@ -530,7 +530,8 @@ class TwitchSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomR
         shortName: node["slug"],
         areaType: liveCategory.id,
         platform: id,
-        areaPic: (node["avatarURL"] ?? "").toString().replaceFirst("https://", "https://i2.wp.com/"),
+        // 图片直连 Twitch 的图片 CDN，不再改写成第三方代理 i2.wp.com（上游 8-7）。
+        areaPic: (node["avatarURL"] ?? "").toString(),
         typeName: liveCategory.name,
       );
       subs.add(subCategory);
@@ -855,10 +856,9 @@ class TwitchSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomR
           title: node["title"]?.toString() ?? '',
           cover: (node["previewImageURL"] ?? "")
               .toString()
-              .replaceFirst("https://", "https://i2.wp.com/")
               .appendTxt("?&t=${DateTime.now().millisecondsSinceEpoch ~/ 1000}"),
           nick: broadcaster["displayName"]?.toString() ?? login,
-          avatar: (broadcaster["profileImageURL"] ?? "").toString().replaceFirst("https://", "https://i2.wp.com/"),
+          avatar: (broadcaster["profileImageURL"] ?? "").toString(),
           watching: (node["viewersCount"] ?? 0).toString(),
           onlineViewers: (node["viewersCount"] ?? 0).toString(),
           audienceMetricType: AudienceMetricType.onlineViewers,
@@ -916,10 +916,9 @@ class TwitchSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomR
         title: node["broadcastSettings"]["title"],
         cover: (node["stream"]?["previewImageURL"] ?? "")
             .toString()
-            .replaceFirst("https://", "https://i2.wp.com/")
             .appendTxt("?&t=${DateTime.now().millisecondsSinceEpoch ~/ 1000}"),
         nick: node["displayName"],
-        avatar: node["profileImageURL"].replaceFirst("https://", "https://i2.wp.com/"),
+        avatar: node["profileImageURL"].toString(),
         watching: (node["stream"]?["viewersCount"] ?? 0).toString(),
         onlineViewers: (node["stream"]?["viewersCount"] ?? 0).toString(),
         audienceMetricType: AudienceMetricType.onlineViewers,
@@ -1003,16 +1002,19 @@ class TwitchSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomR
           _ => false,
         };
         var title = user?.lastBroadcast?.title ?? "";
+        // 在播时详情封面用直播截图，而不是主播头像（上游 8-5）：头像不是这场
+        // 直播的画面；分区取所玩游戏的显示名（上游 8-2）。
+        final previewCover = user?.stream?.previewImageUrl ?? '';
         var liveRoom = LiveRoom(
           roomId: list[index].roomId,
           title: title,
-          cover: user?.profileImageUrl ?? "",
+          cover: online && previewCover.isNotEmpty ? previewCover : (user?.profileImageUrl ?? ""),
           nick: userOrError?.displayName ?? "",
           avatar: user?.profileImageUrl ?? "",
           watching: online ? user!.stream!.viewersCount.toString() : "0",
           onlineViewers: online ? user!.stream!.viewersCount.toString() : "0",
           audienceMetricType: AudienceMetricType.onlineViewers,
-          area: "",
+          area: user?.stream?.game?.displayName ?? "",
           status: online,
           liveStatus: online ? LiveStatus.live : LiveStatus.offline,
           platform: PlatformIds.twitch,

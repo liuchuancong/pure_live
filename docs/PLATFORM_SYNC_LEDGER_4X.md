@@ -27,14 +27,16 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | youtube | 15 | 待办（本轮评估：主要是新增 YouTube 聊天与新频道模型，见下） |
 | huya | 15 | 本轮已摘取（见下） |
 | douyu | 14 | 本轮已摘取（见下） |
-| yy | 12 | 待办 |
+| yy | 12 | 本轮已摘取（见下） |
 | niconico | 11 | 待办 |
 | pandalive / picarto / seventeenlive | 11 | 待办 |
-| kugoulive / soop / chzzk / twitch | 10 | 待办 |
+| twitch | 10 | 本轮已摘取（见下） |
+| kugoulive / soop / chzzk | 10 | 待办 |
 | bigo / fc2live | 9 | 待办 |
 | missevan / kilakila / acfun | 8 | 待办 |
 | jdlive / looklive / steambroadcast / twitcasting / showroom / sixroom / baidulive | 7 | 待办 |
-| cc / tiktok | 5 | 待办 |
+| cc | 5 | 本轮已摘取（见下） |
+| tiktok | 5 | 待办 |
 | inke / xiaohongshu / weibo / liveme | 4 | 待办 |
 
 ## bilibili
@@ -190,3 +192,19 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | `c991163f0` | 小视频页没有 pageInfo 时返回空而不是报错 | 未做 |
 | `784ca749e` | 移动端 HLS 优先、刷新请求数 | 无需：本仓即 3.x 行为 |
 | `4a825d7da` 其余 | `flvFirst` 开关、搜索去后缀之外的分区归一、FLV 多线路 gear 复核 | 未做：开关/线路策略，按需再做 |
+
+## twitch
+
+上游相关提交：`5d9911bdd`（M4.U.8，8-1 至 8-8）、`4f1a8b4a8`（B-7、8-8）。
+
+| 项 | 内容 | 本仓状态 |
+| --- | --- | --- |
+| 8-7 | 图片直连 Twitch 图片 CDN，不再改写成第三方代理 `i2.wp.com`（分类图、头像、列表封面/详情封面共 4 处） | **已同步**。风险：若境内直连 `static-cdn.jtvnw.net` 不通，Twitch 图片会空；这条是上游明确批准的改动，要回退只需把那 4 处的 `replaceFirst` 加回来 |
+| 8-7 | 媒体线路不再携带登录 Cookie（CDN 授权在 usher 签名里） | **已同步**：`playback_header_resolver` 的 twitch 分支去掉 cookie，只留 UA/Origin/Referer |
+| 8-5 | 在播时详情封面用直播截图，而不是主播头像 | **已同步** |
+| 8-2 | 详情分区取所玩游戏的 `displayName`（此前是空字符串） | **已同步** |
+| 8-4 | 详情带频道简介 | 未做：GraphQL 查询与 `User` 模型都要加 `description` |
+| 8-1 / 8-3 / 8-6 | 搜索游标分页、语言筛选与推荐、未知目录视为 NotFound | 未做：分页/推荐策略与错误类型 |
+| 8-8 | usher 带 `supported_codecs`（按引擎解码能力） | 未做：本仓没有 preferH264 之类的播放设置 |
+| B-7 | Twitch 被拒 Cookie 只上报一次（新接口 `LiveSiteCookieRefusals`） | 未做：本仓没有该接口 |
+| 弹幕 | `RECONNECT`、撤回、公告、Cookie 过期 | 未做：与跨站点弹幕消息类型批次一起做 |

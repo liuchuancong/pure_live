@@ -113,12 +113,12 @@ class PlaybackHeaderResolver {
         };
         break;
       case Sites.twitchSite:
-        final cookie = _configuredCookie((cookies) => cookies.twitchCookie.value);
+        // 不把登录 Cookie 发给视频 CDN（上游 8-7）：媒体线路的授权在 usher 返回
+        // 的签名里，CDN 不需要账号 Cookie，发过去等于把登录凭据交给第三方。
         headers = <String, String>{
           'user-agent': TwitchSite.defaultUa,
           'origin': TwitchSite.baseUrl,
           'referer': normalizedRoomId.isEmpty ? '${TwitchSite.baseUrl}/' : '${TwitchSite.baseUrl}/$normalizedRoomId',
-          if (cookie.isNotEmpty) 'cookie': cookie,
         };
         break;
       case Sites.soopSite:
