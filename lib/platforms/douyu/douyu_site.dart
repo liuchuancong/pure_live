@@ -13,7 +13,7 @@ import 'package:pure_live/platforms/douyu/douyu_danmaku.dart';
 import 'package:pure_live/platforms/douyu/douyu_utils.dart';
 import 'package:pure_live/core/contracts/live_danmaku.dart';
 import 'package:pure_live/core/utils/live_quality_label.dart';
-import 'package:pure_live/modules/live/playback/controllers/player_controller.dart';
+import 'package:pure_live/features/live/playback/controllers/player_controller.dart';
 
 class DouyuSite
     implements

@@ -1,6 +1,6 @@
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/modules/live/iptv/iptv_page.dart';
+import 'package:pure_live/features/live/iptv/iptv_page.dart';
 import 'package:pure_live/features/backup/backup_page.dart';
 import 'package:pure_live/features/settings/pages/refresh_settings_page.dart';
 import 'package:pure_live/features/settings/pages/theme_settings_page.dart';

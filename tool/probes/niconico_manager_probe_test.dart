@@ -16,7 +16,7 @@ import 'package:pure_live/player/core/engine_fallback_manager.dart';
 import 'package:pure_live/player/core/line_fallback_manager.dart';
 import 'package:pure_live/player/models/player_engine.dart';
 import 'package:pure_live/core/models/live_room.dart';
-import 'package:pure_live/modules/live/playback/controllers/player_state.dart';
+import 'package:pure_live/features/live/playback/controllers/player_state.dart';
 
 import '../../test/support/owned_source_test_player.dart';
 
