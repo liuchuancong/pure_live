@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/features/web_dav/webdav_config.dart';
+import 'package:pure_live/features/web_dav/web_dav_config.dart';
 import 'package:pure_live/services/utils/backup_migration_util.dart';
 import 'package:pure_live/core/utils/hive_pref_util.dart';
 import 'package:synchronized/synchronized.dart';

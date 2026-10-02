@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pure_live/get/get.dart';
-import 'package:pure_live/core/sites.dart';
+import 'package:pure_live/platforms/sites.dart';
 import 'package:flex_color_picker/flex_color_picker.dart';
 
 enum HomeMenu {

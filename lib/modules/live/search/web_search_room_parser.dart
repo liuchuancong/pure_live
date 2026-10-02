@@ -1,4 +1,4 @@
-import 'package:pure_live/core/sites.dart';
+import 'package:pure_live/platforms/sites.dart';
 import 'package:pure_live/platforms/inke/inke_api.dart';
 import 'package:pure_live/platforms/bigo/bigo_link.dart';
 import 'package:pure_live/platforms/weibo/weibo_link.dart';

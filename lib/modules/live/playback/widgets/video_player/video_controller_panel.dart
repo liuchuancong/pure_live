@@ -11,7 +11,7 @@ import 'package:pure_live/core/plugins/event_bus.dart';
 import 'package:flame_barrage/flame_barrage.dart';
 import 'package:pure_live/core/utils/live_url_tool.dart';
 import 'package:pure_live/core/platform/platform_utils.dart';
-import 'package:pure_live/modules/live/playback/states/load_type.dart';
+import 'package:pure_live/modules/live/playback/states/reload_data_type.dart';
 import 'package:pure_live/modules/live/playback/states/ui_state.dart';
 import 'package:pure_live/modules/live/playback/dialogs/play_other.dart';
 import 'package:pure_live/modules/live/playback/pages/danmaku_settings_page.dart';

@@ -6,7 +6,7 @@ import 'package:pure_live/platforms/douyu/douyu_utils.dart';
 import 'package:pure_live/platforms/huya/huya_site.dart';
 import 'package:pure_live/platforms/twitch/twitch_site.dart';
 import 'package:pure_live/platforms/acfun/acfun_api.dart';
-import 'package:pure_live/core/sites.dart';
+import 'package:pure_live/platforms/sites.dart';
 import 'package:pure_live/platforms/picarto/picarto_api.dart';
 import 'package:pure_live/platforms/twitcasting/twitcasting_api.dart';
 import 'package:pure_live/platforms/missevan/missevan_api.dart';

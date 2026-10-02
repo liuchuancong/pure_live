@@ -16,7 +16,7 @@ import 'package:pure_live/core/interface/live_danmaku.dart';
 import 'package:pure_live/modules/live/playback/controllers/player_controller.dart';
 import 'package:pure_live/core/utils/live_quality_label.dart';
 
-class KuaishowSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResolver {
+class KuaishouSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResolver {
   @override
   String id = Sites.kuaishouSite;
 

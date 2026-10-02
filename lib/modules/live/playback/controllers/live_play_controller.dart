@@ -11,7 +11,7 @@ import 'package:pure_live/player/core/playback_source.dart';
 import 'package:pure_live/player/core/live_audio_service.dart';
 import 'package:pure_live/player/kernel/live_player_facade.dart';
 import 'package:pure_live/modules/live/playback/states/ui_state.dart';
-import 'package:pure_live/modules/live/playback/states/load_type.dart';
+import 'package:pure_live/modules/live/playback/states/reload_data_type.dart';
 import 'package:pure_live/core/common/hls_source_query_policy.dart';
 import 'package:pure_live/modules/live/playback/states/room_state.dart';
 import 'package:pure_live/modules/live/playback/states/player_state.dart';

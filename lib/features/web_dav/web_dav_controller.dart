@@ -5,8 +5,8 @@ import 'package:pure_live/core/index.dart';
 import 'package:date_format/date_format.dart';
 import 'package:uuid/uuid.dart';
 import 'package:webdav_client/webdav_client.dart' as webdav;
-import 'package:pure_live/features/web_dav/webdav_config.dart';
-import 'package:pure_live/features/web_dav/webdav_service.dart';
+import 'package:pure_live/features/web_dav/web_dav_config.dart';
+import 'package:pure_live/features/web_dav/web_dav_service.dart';
 import 'package:pure_live/services/settings/backup_controller.dart';
 import 'package:pure_live/services/settings/web_dav_controller.dart';
 

@@ -13,7 +13,7 @@ import 'package:pure_live/player/core/playback_source.dart';
 import 'package:media_core/media_core.dart' show PlayerException, PlayerErrorCode;
 import 'package:pure_live/core/utils/play_quality_label.dart';
 import 'package:pure_live/player/kernel/live_player_facade.dart';
-import 'package:pure_live/modules/live/playback/states/load_type.dart';
+import 'package:pure_live/modules/live/playback/states/reload_data_type.dart';
 import 'package:pure_live/core/common/hls_source_query_policy.dart';
 import 'package:pure_live/player/core/playback_header_resolver.dart';
 import 'package:pure_live/platforms/huya/huya_transport_policy.dart';

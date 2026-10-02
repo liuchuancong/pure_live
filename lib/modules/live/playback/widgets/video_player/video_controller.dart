@@ -17,7 +17,7 @@ import 'package:media_core/media_core.dart' show PlayerException, PlayerErrorCod
 import 'package:pure_live/player/models/player_error_type.dart';
 import 'package:pure_live/player/kernel/live_player_facade.dart';
 import 'package:pure_live/modules/live/playback/states/ui_state.dart';
-import 'package:pure_live/modules/live/playback/states/load_type.dart';
+import 'package:pure_live/modules/live/playback/states/reload_data_type.dart';
 import 'package:pure_live/player/core/portrait_stream_support.dart';
 import 'package:pure_live/core/iptv/local/database.dart' as database;
 import 'package:pure_live/modules/live/playback/controllers/live_play_controller.dart';

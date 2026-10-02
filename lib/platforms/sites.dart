@@ -1,39 +1,39 @@
-import '../platforms/yy/yy_site.dart';
-import '../platforms/bigo/bigo_site.dart';
-import '../platforms/inke/inke_site.dart';
-import '../platforms/soop/soop_site.dart';
-import '../platforms/huya/huya_site.dart';
-import 'interface/live_site.dart';
-import '../platforms/chzzk/chzzk_site.dart';
-import '../platforms/fc2live/fc2_site.dart';
-import '../platforms/weibo/weibo_site.dart';
-import '../platforms/acfun/acfun_site.dart';
-import '../platforms/douyu/douyu_site.dart';
-import '../platforms/liveme/liveme_site.dart';
-import '../platforms/tiktok/tiktok_site.dart';
-import '../platforms/douyin/douyin_site.dart';
-import '../platforms/jdlive/jd_live_site.dart';
-import '../platforms/youtube/youtube_site.dart';
-import '../platforms/sixroom/sixroom_site.dart';
-import '../platforms/picarto/picarto_site.dart';
-import '../platforms/niconico/niconico_site.dart';
-import '../platforms/showroom/showroom_site.dart';
-import '../platforms/missevan/missevan_site.dart';
-import '../platforms/kilakila/kilakila_site.dart';
-import '../platforms/looklive/look_live_site.dart';
-import '../platforms/pandalive/pandalive_site.dart';
-import '../platforms/kugoulive/kugou_live_site.dart';
-import '../platforms/baidulive/baidu_live_site.dart';
+import 'yy/yy_site.dart';
+import 'bigo/bigo_site.dart';
+import 'inke/inke_site.dart';
+import 'soop/soop_site.dart';
+import 'huya/huya_site.dart';
+import 'package:pure_live/core/interface/live_site.dart';
+import 'chzzk/chzzk_site.dart';
+import 'fc2live/fc2_site.dart';
+import 'weibo/weibo_site.dart';
+import 'acfun/acfun_site.dart';
+import 'douyu/douyu_site.dart';
+import 'liveme/liveme_site.dart';
+import 'tiktok/tiktok_site.dart';
+import 'douyin/douyin_site.dart';
+import 'jdlive/jd_live_site.dart';
+import 'youtube/youtube_site.dart';
+import 'sixroom/sixroom_site.dart';
+import 'picarto/picarto_site.dart';
+import 'niconico/niconico_site.dart';
+import 'showroom/showroom_site.dart';
+import 'missevan/missevan_site.dart';
+import 'kilakila/kilakila_site.dart';
+import 'looklive/look_live_site.dart';
+import 'pandalive/pandalive_site.dart';
+import 'kugoulive/kugou_live_site.dart';
+import 'baidulive/baidu_live_site.dart';
 
 import 'package:pure_live/core/index.dart';
 
-import '../platforms/xiaohongshu/xiaohongshu_site.dart';
-import '../platforms/twitcasting/twitcasting_site.dart';
-import '../platforms/seventeenlive/seventeenlive_site.dart';
+import 'xiaohongshu/xiaohongshu_site.dart';
+import 'twitcasting/twitcasting_site.dart';
+import 'seventeenlive/seventeenlive_site.dart';
 
 import 'package:pure_live/platforms/cc/cc_site.dart';
 
-import '../platforms/steambroadcast/steam_broadcast_site.dart';
+import 'steambroadcast/steam_broadcast_site.dart';
 
 import 'package:pure_live/platforms/iptv/iptv_site.dart';
 import 'package:pure_live/platforms/twitch/twitch_site.dart';
@@ -248,7 +248,7 @@ class Sites {
         id: kuaishouSite,
         name: i18n("site_kuaishou"),
         logo: logoForId(kuaishouSite),
-        liveSite: KuaishowSite(),
+        liveSite: KuaishouSite(),
       ),
       ccSite => Site(id: ccSite, name: i18n("site_cc"), logo: logoForId(ccSite), liveSite: CCSite()),
       twitchSite => Site(

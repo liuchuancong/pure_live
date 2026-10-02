@@ -1,6 +1,6 @@
 library;
 
-export 'sites.dart';
+export '../platforms/sites.dart';
 
 export 'models/index.dart';
 export '../services/index.dart';

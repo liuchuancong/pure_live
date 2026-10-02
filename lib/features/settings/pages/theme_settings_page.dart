@@ -4,7 +4,7 @@ import 'package:pure_live/core/consts/app_consts.dart';
 import 'package:pure_live/services/settings/font_settings_controller.dart';
 import 'package:pure_live/services/settings/theme_settings_controller.dart';
 import 'package:flex_color_picker/flex_color_picker.dart';
-import 'package:pure_live/features/settings/pages/page_settings.dart';
+import 'package:pure_live/features/settings/pages/page_settings_page.dart';
 import 'package:pure_live/features/settings/pages/font_settings_page.dart';
 import 'package:pure_live/features/settings/pages/font_family_manager_page.dart';
 import 'package:pure_live/features/settings/pages/loading_style_settings_page.dart';

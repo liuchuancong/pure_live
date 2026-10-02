@@ -8,7 +8,7 @@ import 'package:pure_live/core/danmaku/douyin_danmaku.dart';
 import 'package:pure_live/core/danmaku/huya_danmaku.dart';
 import 'package:pure_live/platforms/inke/inke_site.dart';
 import 'package:pure_live/platforms/kilakila/kilakila_site.dart';
-import 'package:pure_live/core/sites.dart';
+import 'package:pure_live/platforms/sites.dart';
 import 'package:pure_live/platforms/showroom/showroom_link.dart';
 import 'package:pure_live/platforms/chzzk/chzzk_link.dart';
 import 'package:pure_live/platforms/liveme/liveme_link.dart';

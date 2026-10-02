@@ -8,7 +8,7 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
 import 'package:pure_live/core/common/http_client.dart' as app_http;
-import 'package:pure_live/core/sites.dart';
+import 'package:pure_live/platforms/sites.dart';
 
 import 'package:ffmpeg_kit_extended_flutter/ffmpeg_kit_extended_flutter.dart';
 import 'package:flutter_test/flutter_test.dart';
