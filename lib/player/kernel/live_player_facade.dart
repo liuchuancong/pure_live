@@ -416,10 +416,12 @@ final class LivePlayerFacade {
       children: [
         GestureDetector(
           // The video surface itself stays gesture-first: single tap toggles
-          // playback, double tap leaves PiP. The control bar below is the
-          // always-visible equivalent for viewers who never guess gestures.
+          // playback, double tap leaves PiP, and a drag hands the pointer to
+          // the native caption-drag loop — the compact window has no title
+          // bar, so a surface-initiated drag is the only way to move it.
           onDoubleTap: () => unawaited(exitPip()),
           onTap: togglePlayPause,
+          onPanStart: (_) => unawaited(windowsPipWindow.startDragging()),
           child: getVideoWidget(BoxFit.contain),
         ),
         if (_activeVideoController != null)
@@ -427,7 +429,7 @@ final class LivePlayerFacade {
         Positioned(
           left: 8,
           right: 8,
-          bottom: 8,
+          top: 8,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
