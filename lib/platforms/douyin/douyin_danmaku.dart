@@ -7,7 +7,7 @@ import 'package:meta/meta.dart';
 import 'proto/douyin.pb.dart';
 
 import 'package:crypto/crypto.dart';
-import 'package:pure_live/core/danmaku/xbogus.dart';
+import 'package:pure_live/platforms/douyin/douyin_xbogus.dart';
 import 'package:pure_live/core/common/core_log.dart';
 import 'package:pure_live/core/models/live_message.dart';
 import 'package:pure_live/core/models/live_room.dart';

@@ -6,7 +6,7 @@ import 'package:pure_live/core/common/core_log.dart';
 import 'package:pure_live/core/common/http_client.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
 import 'package:pure_live/core/contracts/live_site.dart';
-import 'package:pure_live/core/danmaku/soop_danmaku.dart';
+import 'package:pure_live/platforms/soop/soop_danmaku.dart';
 import 'package:pure_live/core/contracts/live_danmaku.dart';
 import 'package:pure_live/modules/live/playback/controllers/player_controller.dart';
 import 'package:pure_live/core/utils/live_quality_label.dart';

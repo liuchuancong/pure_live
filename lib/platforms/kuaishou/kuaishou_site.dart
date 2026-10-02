@@ -10,7 +10,7 @@ import 'package:pure_live/core/plugins/fake_useragent.dart';
 import 'package:pure_live/core/common/http_client.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
 import 'package:pure_live/core/contracts/live_site.dart';
-import 'package:pure_live/core/danmaku/kuaishou_danmaku.dart';
+import 'package:pure_live/platforms/kuaishou/kuaishou_danmaku.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
 import 'package:pure_live/core/contracts/live_danmaku.dart';
 import 'package:pure_live/modules/live/playback/controllers/player_controller.dart';

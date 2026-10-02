@@ -9,7 +9,7 @@ import 'package:pure_live/core/common/android_native_http.dart';
 import 'package:pure_live/core/common/http_client.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
 import 'package:pure_live/core/contracts/live_site.dart';
-import 'package:pure_live/core/danmaku/twitch_danmaku.dart';
+import 'package:pure_live/platforms/twitch/twitch_danmaku.dart';
 import 'package:pure_live/core/contracts/live_danmaku.dart';
 import 'package:pure_live/platforms/twitch/twitch_models.dart';
 import 'package:pure_live/platforms/twitch/twitch_web_integrity.dart';

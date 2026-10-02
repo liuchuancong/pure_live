@@ -7,7 +7,7 @@ import 'dart:typed_data';
 import 'package:brotli/brotli.dart';
 import 'package:flutter/foundation.dart';
 
-import '../common/binary_writer.dart';
+import 'package:pure_live/core/common/binary_writer.dart';
 
 import 'package:pure_live/core/common/core_log.dart';
 import 'package:pure_live/core/models/live_message.dart';

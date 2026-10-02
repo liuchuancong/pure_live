@@ -13,7 +13,7 @@ import 'package:pure_live/core/models/live_anchor_item.dart';
 import 'package:pure_live/core/common/http_client.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
 import 'package:pure_live/core/contracts/live_site.dart';
-import 'package:pure_live/core/danmaku/huya_danmaku.dart';
+import 'package:pure_live/platforms/huya/huya_danmaku.dart';
 import 'package:pure_live/core/utils/github_mirror.dart';
 import 'package:pure_live/core/tars/net/base_tars_http.dart';
 import 'package:pure_live/core/contracts/live_danmaku.dart';

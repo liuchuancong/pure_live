@@ -9,7 +9,7 @@ import 'package:pure_live/core/common/http_client.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
 import 'package:pure_live/core/contracts/live_site.dart';
 import 'package:pure_live/core/common/convert_helper.dart';
-import 'package:pure_live/core/danmaku/douyin_danmaku.dart';
+import 'package:pure_live/platforms/douyin/douyin_danmaku.dart';
 import 'package:pure_live/platforms/douyin/douyin_audience.dart';
 import 'package:pure_live/core/contracts/live_danmaku.dart';
 import 'package:pure_live/platforms/douyin/douyin_search.dart';
