@@ -290,6 +290,20 @@ class CustomTitleBar extends StatelessWidget {
       final currentRouteIskSplash = currentRoute == RoutePath.kSplash;
       final currentSize = SettingsService.to.window.windowSize.value;
       final showSizeText = SettingsService.to.window.isTracking.value;
+      // Styles come from the theme captured above, not from `AppTextStyles`:
+      // that resolves through the app-wide context, which is momentarily
+      // inactive while a route is replaced - and this Obx rebuilds from a
+      // microtask, so it can land in exactly that window.
+      final appNameStyle = (theme.textTheme.bodyMedium ?? const TextStyle()).copyWith(
+        fontSize: SettingsService.to.font.fontSizeBodyMedium.v,
+        fontWeight: FontWeight.w600,
+        color: iconColor,
+        decoration: TextDecoration.none,
+      );
+      final sizeTextStyle = (theme.textTheme.bodySmall ?? const TextStyle()).copyWith(
+        fontSize: SettingsService.to.font.fontSizeBodySmall.v,
+        color: iconColor.withValues(alpha: 0.6),
+      );
 
       return Container(
         height: 32,
@@ -313,12 +327,8 @@ class CustomTitleBar extends StatelessWidget {
                             'The system browser did not open. Check the default browser settings.',
                           ),
                           appName: i18nOr('app_name', 'PureLive'),
-                          appNameStyle: AppTextStyles.t13.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: iconColor,
-                            decoration: TextDecoration.none,
-                          ),
-                          sizeTextStyle: AppTextStyles.t12.copyWith(color: iconColor.withValues(alpha: 0.6)),
+                          appNameStyle: appNameStyle,
+                          sizeTextStyle: sizeTextStyle,
                           projectUri: Uri.parse(VersionUtil.projectUrl),
                           iconColor: iconColor,
                           hoverColor: isDark

@@ -4,8 +4,29 @@ import 'package:pure_live/core/config/font_settings_controller.dart';
 class AppTextStyles {
   AppTextStyles._();
 
-  static TextTheme get _base => Get.theme.textTheme;
-  static ColorScheme get _colors => Get.theme.colorScheme;
+  /// Styles are resolved through the app-wide context, which is the navigator's
+  /// context - not the caller's.
+  ///
+  /// That context is momentarily inactive while a route is being replaced, and
+  /// GetX's `Obx` schedules its rebuild in a microtask, so a widget can be asked
+  /// to rebuild in exactly that window. `Theme.of` on an inactive element throws
+  /// "Looking up a deactivated widget's ancestor is unsafe"; falling back to the
+  /// framework defaults keeps that invisible frame from becoming a crash, and
+  /// the very next frame resolves the real theme again.
+  static BuildContext? get _context {
+    final context = Get.context;
+    if (context == null || !context.mounted) return null;
+    return context;
+  }
+
+  /// Resolved once: it is only ever used for an invisible frame.
+  static final ThemeData _fallbackTheme = ThemeData.fallback();
+
+  static TextTheme get _base => _context == null ? _fallbackTheme.textTheme : Theme.of(_context!).textTheme;
+
+  static ColorScheme get _colors => _context == null ? _fallbackTheme.colorScheme : Theme.of(_context!).colorScheme;
+
+  static Color get _hintColor => _context == null ? _fallbackTheme.hintColor : Theme.of(_context!).hintColor;
 
   static FontSettingsController get _settings => SettingsService.to.font;
 
@@ -13,13 +34,13 @@ class AppTextStyles {
   static TextStyle get t11 => (_base.bodySmall ?? const TextStyle()).copyWith(fontSize: _settings.fontSizeBodySmall.v);
   static TextStyle get t11Medium => t11.copyWith(fontWeight: FontWeight.w500);
   static TextStyle get t11Bold => t11.copyWith(fontWeight: FontWeight.w700);
-  static TextStyle get t11Muted => t11.copyWith(color: Get.theme.hintColor.withValues(alpha: 0.6));
+  static TextStyle get t11Muted => t11.copyWith(color: _hintColor.withValues(alpha: 0.6));
   static TextStyle get t11Primary => t11.copyWith(color: _colors.primary, fontWeight: FontWeight.w600);
 
   static TextStyle get t12 => (_base.bodySmall ?? const TextStyle()).copyWith(fontSize: _settings.fontSizeBodySmall.v);
   static TextStyle get t12Medium => t12.copyWith(fontWeight: FontWeight.w500);
   static TextStyle get t12Bold => t12.copyWith(fontWeight: FontWeight.w700);
-  static TextStyle get t12Muted => t12.copyWith(color: Get.theme.hintColor);
+  static TextStyle get t12Muted => t12.copyWith(color: _hintColor);
   static TextStyle get t12Primary => t12.copyWith(color: _colors.primary, fontWeight: FontWeight.w600);
   static TextStyle get t12Error => t12.copyWith(color: _colors.error);
 
@@ -29,7 +50,7 @@ class AppTextStyles {
   static TextStyle get t13Medium => t13.copyWith(fontWeight: FontWeight.w500);
   static TextStyle get t13SemiBold => t13.copyWith(fontWeight: FontWeight.w600);
   static TextStyle get t13Bold => t13.copyWith(fontWeight: FontWeight.w700);
-  static TextStyle get t13Muted => t13.copyWith(color: Get.theme.hintColor);
+  static TextStyle get t13Muted => t13.copyWith(color: _hintColor);
   static TextStyle get t13Primary => t13.copyWith(color: _colors.primary);
 
   // 🌟 3. 加粗段落正文 (Body Large)：直接动态绑定你设置的 fontSizeBodyLarge 变量
@@ -37,7 +58,7 @@ class AppTextStyles {
   static TextStyle get t14Medium => t14.copyWith(fontWeight: FontWeight.w500);
   static TextStyle get t14SemiBold => t14.copyWith(fontWeight: FontWeight.w600);
   static TextStyle get t14Bold => t14.copyWith(fontWeight: FontWeight.w700);
-  static TextStyle get t14Muted => t14.copyWith(color: Get.theme.hintColor);
+  static TextStyle get t14Muted => t14.copyWith(color: _hintColor);
   static TextStyle get t14Primary => t14.copyWith(color: _colors.primary);
 
   // 🌟 4. 中号卡片标题 (Title Medium)：直接动态绑定你设置的 fontSizeTitleMedium 变量
