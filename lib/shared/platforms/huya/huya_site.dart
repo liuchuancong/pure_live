@@ -196,6 +196,8 @@ class HuyaSite
     var result = await HttpClient.instance.getJson(
       "https://live.cdn.huya.com/liveconfig/game/bussLive",
       queryParameters: {"bussType": liveCategory.id},
+      // 不带 UA 会被虎牙回 HTTP 403 "Not allowed"（上游 M4.D）：分组树整棵拉不到。
+      header: {"user-agent": kUserAgent},
     );
 
     List<LiveArea> subs = [];
@@ -919,6 +921,8 @@ class HuyaSite
         "rows": effectivePageSize,
         "start": (page - 1) * effectivePageSize,
       },
+      // 搜索同样要求 UA，否则 HTTP 403 "Not allowed"（上游 M4.D）。
+      header: {"user-agent": kUserAgent},
     );
     var result = json.decode(resultText);
     var items = <LiveRoom>[];
@@ -970,6 +974,8 @@ class HuyaSite
         "rows": pageSize,
         "start": (page - 1) * pageSize,
       },
+      // 与房间搜索同一条接口，同样需要 UA（上游 M4.D）。
+      header: {"user-agent": kUserAgent},
     );
     var result = json.decode(resultText);
     var items = <LiveAnchorItem>[];
