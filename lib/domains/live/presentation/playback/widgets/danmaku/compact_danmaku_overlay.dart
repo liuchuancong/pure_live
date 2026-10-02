@@ -6,11 +6,12 @@ import 'package:pure_live/domains/live/presentation/playback/widgets/video_playe
 /// The compact (picture-in-picture / small-window) danmaku surface.
 ///
 /// It renders with the MAIN danmaku configuration — size, weight, speed,
-/// opacity, area, density all come from the regular danmaku settings — so
-/// there is exactly one place to tune how danmaku looks. What compact mode
-/// adds is a single scale factor: "auto" follows the window width against a
-/// 350px reference so text stays proportional in a resizable window, or the
-/// user pins a multiplier on top.
+/// opacity, area, top/bottom insets, density all come from the regular danmaku
+/// settings — so there is exactly one place to tune how danmaku looks. What
+/// compact mode adds is a single scale factor: "auto" follows the window width
+/// against a 350px reference so text stays proportional in a resizable window,
+/// or the user pins a multiplier on top. Only the compact-specific pool sizes
+/// and admission interval differ from the room's renderer.
 class CompactDanmakuOverlay extends StatelessWidget {
   const CompactDanmakuOverlay({super.key, required this.controller});
 
@@ -35,6 +36,10 @@ class CompactDanmakuOverlay extends StatelessWidget {
       final configuredFontSize = settings.danmakuFontSize.v;
       final configuredFontWeight = settings.danmakuFontWeight.value;
       final area = settings.danmakuArea.v;
+      // 距离顶部/底部是主弹幕设置里的绝对像素内缩，主画面、多画面和控制面板都传了它们；
+      // 小窗这一层此前漏传，于是同一个设置在小窗里完全没有效果。
+      final topAreaDistance = settings.danmakuTopArea.v;
+      final bottomAreaDistance = settings.danmakuBottomArea.v;
       final speed = settings.danmakuSpeed.v;
       final opacity = settings.danmakuOpacity.v;
       final fps = settings.resolvedDanmakuFps(pip: true, refreshRateMode: SettingsService.to.app.refreshRateMode);
@@ -70,6 +75,8 @@ class CompactDanmakuOverlay extends StatelessWidget {
                   fontFamily: typography.fontFamily,
                   letterSpacing: settings.danmakuLetterSpacing.value * metrics.scale,
                   area: area,
+                  topAreaDistance: topAreaDistance,
+                  bottomAreaDistance: bottomAreaDistance,
                   baseSpeed: metrics.baseSpeed,
                   opacity: opacity,
                   showStroke: typography.showStroke,
