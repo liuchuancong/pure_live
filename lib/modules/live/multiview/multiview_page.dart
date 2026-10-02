@@ -13,7 +13,7 @@ import 'package:pure_live/modules/live/multiview/multiview_controller.dart';
 import 'package:pure_live/player/media_core/player_kernel_service.dart';
 import 'package:pure_live/modules/live/multiview/models/multiview_models.dart';
 import 'package:pure_live/player/widgets/video_output_viewport_sizer.dart';
-import 'package:pure_live/modules/live_play/pages/danmaku_settings_page.dart';
+import 'package:pure_live/modules/live/playback/pages/danmaku_settings_page.dart';
 import 'package:pure_live/modules/live/multiview/widgets/focus_rail_visibility.dart';
 import 'package:pure_live/modules/live/multiview/widgets/multiview_room_picker.dart';
 import 'package:pure_live/modules/live/multiview/widgets/multiview_fullscreen_surface.dart';

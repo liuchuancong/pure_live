@@ -15,7 +15,7 @@ import 'package:pure_live/core/interface/live_quality_discovery.dart';
 import 'package:pure_live/player/core/live_input_playback_binding.dart';
 import 'package:pure_live/player/media_core/player_kernel_service.dart';
 import 'package:pure_live/modules/live/multiview/models/multiview_models.dart';
-import 'package:pure_live/modules/live_play/controllers/player_controller.dart';
+import 'package:pure_live/modules/live/playback/controllers/player_controller.dart';
 import 'package:pure_live/modules/live/multiview/danmaku/multiview_danmaku_session.dart';
 
 /// 房间对象 → 可播放源解析器。

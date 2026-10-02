@@ -12,7 +12,7 @@ import 'package:pure_live/core/common/convert_helper.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
 import 'package:pure_live/core/danmaku/bilibili_danmaku.dart';
 import 'package:pure_live/core/utils/live_quality_label.dart';
-import 'package:pure_live/modules/live_play/controllers/player_controller.dart';
+import 'package:pure_live/modules/live/playback/controllers/player_controller.dart';
 
 class BiliBiliSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResolver, LivePlayUrlResolver {
   @override

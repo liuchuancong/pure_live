@@ -13,7 +13,7 @@ import 'package:pure_live/recorder/services/stream_resolver_service.dart';
 import 'package:pure_live/recorder/pages/recorder/recorder_controller.dart';
 import 'package:pure_live/core/iptv/services/channel_detail_controller.dart';
 import 'package:pure_live/recorder/pages/record_settings/record_settings_controller.dart';
-import 'package:pure_live/modules/live_play/widgets/local_interaction/local_interaction_controller.dart';
+import 'package:pure_live/modules/live/playback/widgets/local_interaction/local_interaction_controller.dart';
 
 class InitialServices {
   static void initGlobalServices() {

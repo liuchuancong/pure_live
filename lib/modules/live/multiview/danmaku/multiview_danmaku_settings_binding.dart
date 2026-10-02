@@ -1,5 +1,5 @@
 import 'package:pure_live/services/settings/danmaku_settings_controller.dart';
-import 'package:pure_live/modules/live_play/widgets/danmaku/danmaku_settings_binding.dart';
+import 'package:pure_live/modules/live/playback/widgets/danmaku/danmaku_settings_binding.dart';
 import 'package:pure_live/core/index.dart';
 
 /// multiview 的弹幕设置面板状态适配器。

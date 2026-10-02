@@ -5,10 +5,10 @@ import 'package:flutter/scheduler.dart';
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/platform/platform_utils.dart';
 import 'package:pure_live/player/kernel/live_player_facade.dart';
-import 'package:pure_live/modules/live_play/widgets/danmaku/compact_danmaku_overlay.dart';
+import 'package:pure_live/modules/live/playback/widgets/danmaku/compact_danmaku_overlay.dart';
 import 'package:pure_live/player/utils/fullscreen.dart' show WindowService;
-import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
-import 'package:pure_live/modules/live_play/widgets/layout/live_play_video.dart' show shouldFloatAfterLivePlayExit;
+import 'package:pure_live/modules/live/playback/controllers/live_play_controller.dart';
+import 'package:pure_live/modules/live/playback/widgets/layout/live_play_video.dart' show shouldFloatAfterLivePlayExit;
 
 class LiveRouteObserver extends RouteObserver<PageRoute<dynamic>> {
   @override

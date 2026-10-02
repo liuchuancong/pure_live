@@ -16,7 +16,7 @@ import 'package:pure_live/player/core/portrait_stream_support.dart';
 import 'package:pure_live/player/media_core/player_kernel_service.dart';
 import 'package:pure_live/player/utils/fullscreen.dart' show fullscreenDriver;
 import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
-import 'package:pure_live/modules/live_play/widgets/danmaku/compact_danmaku_overlay.dart';
+import 'package:pure_live/modules/live/playback/widgets/danmaku/compact_danmaku_overlay.dart';
 
 ///
 

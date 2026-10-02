@@ -26,7 +26,7 @@ import 'package:pure_live/platforms/seventeenlive/seventeenlive_link.dart';
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/utils/live_short_link_session.dart';
 import 'package:pure_live/core/interface/live_site.dart';
-import 'package:pure_live/modules/live_play/dialogs/known_room_link_dialog.dart';
+import 'package:pure_live/modules/live/playback/dialogs/known_room_link_dialog.dart';
 import 'package:pure_live/features/toolbox/toolbox_direct_link_flow.dart';
 import 'package:pure_live/modules/live/search/web_search_room_parser.dart';
 

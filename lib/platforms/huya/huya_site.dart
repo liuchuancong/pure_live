@@ -22,7 +22,7 @@ import 'package:pure_live/core/tars/get_cdn_token_ex_resp.dart';
 import 'package:pure_live/platforms/huya/huya_request_params.dart';
 import 'package:pure_live/platforms/huya/huya_transport_policy.dart';
 import 'package:pure_live/platforms/huya/huya_utils.dart' as huya_utils;
-import 'package:pure_live/modules/live_play/controllers/player_controller.dart';
+import 'package:pure_live/modules/live/playback/controllers/player_controller.dart';
 import 'package:pure_live/core/utils/live_quality_label.dart';
 
 class HuyaSite
