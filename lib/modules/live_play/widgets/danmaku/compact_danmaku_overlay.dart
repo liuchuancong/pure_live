@@ -1,5 +1,5 @@
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/common/utils/compact_danmaku_metrics.dart';
+import 'package:pure_live/core/utils/compact_danmaku_metrics.dart';
 import 'package:flame_barrage/flame_barrage.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller.dart';
 

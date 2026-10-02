@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:pure_live/get/get.dart';
 import 'package:pure_live/common/services/utils/hive_rx.dart';
-import 'package:pure_live/common/utils/hive_pref_util.dart';
+import 'package:pure_live/core/utils/hive_pref_util.dart';
 import 'package:pure_live/common/services/settings/bilibili_account_service.dart';
 import 'package:pure_live/common/services/settings/cookie_value.dart';
 

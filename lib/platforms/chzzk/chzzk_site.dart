@@ -1,8 +1,8 @@
 import 'dart:async';
 
 import 'package:dio/dio.dart';
-import 'package:pure_live/common/models/live_area.dart';
-import 'package:pure_live/common/models/live_room.dart';
+import 'package:pure_live/core/models/live_area.dart';
+import 'package:pure_live/core/models/live_room.dart';
 import 'package:pure_live/core/common/hls_master_selection.dart';
 import 'package:pure_live/core/common/request_scope.dart';
 import 'package:pure_live/core/danmaku/empty_danmaku.dart';

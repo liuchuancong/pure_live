@@ -8,14 +8,14 @@ import 'package:dio/io.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pure_live/common/services/settings/log_controller.dart';
 import 'package:pure_live/core/common/http_client.dart';
-import 'package:pure_live/core/site/niconico/niconico_watch.dart';
+import 'package:pure_live/platforms/niconico/niconico_watch.dart';
 import 'package:pure_live/get/get.dart';
 import 'package:pure_live/player/core/niconico_playback_input.dart';
 import 'package:pure_live/player/core/player_manager.dart';
 import 'package:pure_live/player/core/engine_fallback_manager.dart';
 import 'package:pure_live/player/core/line_fallback_manager.dart';
 import 'package:pure_live/player/models/player_engine.dart';
-import 'package:pure_live/common/models/live_room.dart';
+import 'package:pure_live/core/models/live_room.dart';
 import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 
 import '../../test/support/owned_source_test_player.dart';

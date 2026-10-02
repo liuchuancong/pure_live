@@ -3,8 +3,8 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart' show listEquals;
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/common/consts/app_consts.dart';
-import 'package:pure_live/common/utils/hive_pref_util.dart';
+import 'package:pure_live/core/consts/app_consts.dart';
+import 'package:pure_live/core/utils/hive_pref_util.dart';
 
 class AppSettingsController extends GetxController {
   static const int maxSleepMinutes = 525600;

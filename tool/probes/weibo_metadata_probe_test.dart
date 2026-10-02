@@ -5,10 +5,10 @@ import 'dart:io' as io;
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:pure_live/common/models/live_room.dart';
+import 'package:pure_live/core/models/live_room.dart';
 import 'package:pure_live/core/common/http_client.dart';
-import 'package:pure_live/core/site/weibo/weibo_api.dart';
-import 'package:pure_live/core/site/weibo/weibo_site.dart';
+import 'package:pure_live/platforms/weibo/weibo_api.dart';
+import 'package:pure_live/platforms/weibo/weibo_site.dart';
 
 void main() {
   test(

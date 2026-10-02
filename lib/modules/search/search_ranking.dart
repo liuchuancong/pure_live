@@ -1,4 +1,4 @@
-import 'package:pure_live/common/models/live_room.dart';
+import 'package:pure_live/core/models/live_room.dart';
 
 enum LiveSearchSortMode { smart, platform, audience, followers }
 

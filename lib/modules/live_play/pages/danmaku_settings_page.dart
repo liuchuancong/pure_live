@@ -1,7 +1,7 @@
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/common/consts/app_consts.dart';
+import 'package:pure_live/core/consts/app_consts.dart';
 import 'package:syncfusion_flutter_sliders/sliders.dart';
-import 'package:pure_live/common/widgets/count_button.dart';
+import 'package:pure_live/core/widgets/count_button.dart';
 import 'package:pure_live/modules/settings/pages/pip_danmaku_settings_page.dart';
 import 'package:pure_live/modules/live_play/widgets/danmaku/danmaku_viewing_preset.dart';
 import 'package:pure_live/modules/live_play/widgets/danmaku/danmaku_settings_binding.dart';

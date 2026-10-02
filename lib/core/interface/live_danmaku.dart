@@ -1,5 +1,5 @@
 import 'package:meta/meta.dart';
-import 'package:pure_live/common/models/live_message.dart';
+import 'package:pure_live/core/models/live_message.dart';
 
 abstract class LiveDanmaku {
   Function(LiveMessage msg)? onMessage;

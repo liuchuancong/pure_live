@@ -8,8 +8,8 @@ import 'package:dio/io.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pure_live/core/common/http_client.dart';
 import 'package:pure_live/core/interface/live_site.dart';
-import 'package:pure_live/core/site/twitcasting/twitcasting_api.dart';
-import 'package:pure_live/core/site/twitcasting/twitcasting_site.dart';
+import 'package:pure_live/platforms/twitcasting/twitcasting_api.dart';
+import 'package:pure_live/platforms/twitcasting/twitcasting_site.dart';
 import 'package:pure_live/recorder/services/stream_resolver_service.dart';
 
 void main() {

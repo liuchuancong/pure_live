@@ -3,7 +3,7 @@ import 'package:pure_live/platforms/weibo/weibo_api.dart';
 import 'package:pure_live/platforms/weibo/weibo_link.dart';
 import 'package:pure_live/platforms/niconico/niconico_watch.dart';
 import 'package:pure_live/platforms/xiaohongshu/xiaohongshu_link.dart';
-import 'package:pure_live/common/models/live_room.dart';
+import 'package:pure_live/core/models/live_room.dart';
 import 'package:pure_live/core/danmaku/douyin_danmaku.dart';
 import 'package:pure_live/core/danmaku/huya_danmaku.dart';
 import 'package:pure_live/platforms/inke/inke_site.dart';

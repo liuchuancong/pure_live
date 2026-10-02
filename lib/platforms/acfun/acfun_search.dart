@@ -2,7 +2,7 @@ import 'dart:math';
 
 import 'package:dio/dio.dart';
 import 'package:html/parser.dart' as html;
-import 'package:pure_live/common/models/live_room.dart';
+import 'package:pure_live/core/models/live_room.dart';
 import 'package:pure_live/core/common/http_client.dart';
 
 import 'acfun_api.dart';

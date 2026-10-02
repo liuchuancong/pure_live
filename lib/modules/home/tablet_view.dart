@@ -1,7 +1,7 @@
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/routes/app_navigation.dart';
-import 'package:pure_live/common/consts/app_consts.dart';
+import 'package:pure_live/core/consts/app_consts.dart';
 
 class HomeTabletView extends StatelessWidget {
   final Widget body;

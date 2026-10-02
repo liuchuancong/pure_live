@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:path/path.dart' as p;
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/common/utils/hive_pref_util.dart';
+import 'package:pure_live/core/utils/hive_pref_util.dart';
 import 'package:pure_live/recorder/consts/recorder_keys.dart';
 import 'package:pure_live/recorder/services/path_helper.dart';
 import 'package:pure_live/common/global/app_path_manager.dart';

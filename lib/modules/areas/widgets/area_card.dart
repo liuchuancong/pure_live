@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/common/utils/category_artwork.dart';
+import 'package:pure_live/core/utils/category_artwork.dart';
 import 'package:pure_live/plugins/cache_manager.dart';
 import 'package:pure_live/routes/app_navigation.dart';
 import 'package:pure_live/plugins/area_pic_mapper.dart';

@@ -1,6 +1,6 @@
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/common/widgets/common_avatar.dart';
+import 'package:pure_live/core/widgets/common_avatar.dart';
 
 /// 选台数据来源。
 enum _PickerSource { favorites, history }

@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
-import 'package:pure_live/common/models/live_room.dart';
+import 'package:pure_live/core/models/live_room.dart';
 import 'package:pure_live/core/interface/live_directory.dart';
 
 import 'niconico_api.dart';

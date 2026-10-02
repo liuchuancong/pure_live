@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:pure_live/common/style/app_text_styles.dart';
+import 'package:pure_live/core/theme/app_text_styles.dart';
 
 class CountButton extends StatefulWidget {
   const CountButton({

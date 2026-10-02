@@ -1,6 +1,6 @@
 import 'package:remixicon/remixicon.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
-import 'package:pure_live/common/consts/app_consts.dart';
+import 'package:pure_live/core/consts/app_consts.dart';
 import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:loading_indicator/loading_indicator.dart';
 import 'package:pure_live/common/index.dart' hide Indicator;

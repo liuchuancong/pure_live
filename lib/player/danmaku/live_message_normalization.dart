@@ -1,5 +1,5 @@
 import 'package:media_core_danmaku/media_core_danmaku.dart';
-import 'package:pure_live/common/models/live_message.dart';
+import 'package:pure_live/core/models/live_message.dart';
 
 ///
 

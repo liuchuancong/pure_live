@@ -3,7 +3,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:bonsoir/bonsoir.dart';
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/common/utils/hive_pref_util.dart';
+import 'package:pure_live/core/utils/hive_pref_util.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/common/services/local_network_access.dart';
 import 'package:pure_live/common/services/settings/backup_controller.dart';

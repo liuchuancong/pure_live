@@ -14,7 +14,7 @@ import 'package:pure_live/core/common/http_client.dart';
 import 'package:pure_live/model/live_play_quality.dart';
 import 'package:pure_live/core/interface/live_site.dart';
 import 'package:pure_live/core/danmaku/huya_danmaku.dart';
-import 'package:pure_live/common/utils/githup_mirror.dart';
+import 'package:pure_live/core/utils/githup_mirror.dart';
 import 'package:pure_live/pkg/tars/net/base_tars_http.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
 import 'package:pure_live/core/tars/get_cdn_token_ex_req.dart';

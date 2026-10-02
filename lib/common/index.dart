@@ -1,12 +1,12 @@
 library;
 
 export '../core/index.dart';
-export 'models/index.dart';
+export '../core/models/index.dart';
 export 'services/index.dart';
-export 'style/index.dart';
-export 'utils/index.dart';
-export 'utils/string_to_boolean.dart';
-export 'widgets/index.dart';
+export '../core/theme/index.dart';
+export '../core/utils/index.dart';
+export '../core/utils/string_to_boolean.dart';
+export '../core/widgets/index.dart';
 
 export 'package:flutter_color/flutter_color.dart';
 export 'package:flutter/material.dart';
@@ -23,7 +23,7 @@ export 'package:pure_live/routes/app_pages.dart';
 export 'package:path_provider/path_provider.dart';
 export 'package:dynamic_color/dynamic_color.dart';
 
-export 'styles/dynamic_color_adapter.dart';
+export '../core/theme/dynamic_color_adapter.dart';
 
 export 'package:pure_live/routes/route_path.dart';
 export 'package:share_handler/share_handler.dart';
@@ -32,10 +32,10 @@ export 'package:pure_live/player/global_player_service.dart';
 export 'package:pure_live/plugins/locale_helper.dart';
 export 'package:pure_live/get/get.dart' hide VoidCallback;
 
-export './widgets/app_status_view.dart';
-export './style/app_text_styles.dart';
-export './widgets/widget_extensions.dart';
-export './widgets/scrollable_tab_bar.dart';
+export '../core/widgets/app_status_view.dart';
+export '../core/theme/app_text_styles.dart';
+export '../core/widgets/widget_extensions.dart';
+export '../core/widgets/scrollable_tab_bar.dart';
 
 export 'package:pure_live/common/services/utils/hive_rx.dart';
-export 'package:pure_live/common/base/index.dart';
+export 'package:pure_live/core/base/index.dart';

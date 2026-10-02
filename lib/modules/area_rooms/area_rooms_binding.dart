@@ -1,6 +1,6 @@
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/modules/area_rooms/area_rooms_controller.dart';
-import 'package:pure_live/common/base/live_directory_controller.dart';
+import 'package:pure_live/core/base/live_directory_controller.dart';
 import 'package:pure_live/core/interface/live_directory.dart';
 
 class AreaRoomsBinding extends Binding {

@@ -1,9 +1,9 @@
 import 'dart:convert';
 
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/common/consts/app_consts.dart';
+import 'package:pure_live/core/consts/app_consts.dart';
 import 'package:pure_live/common/services/utils/backup_migration_util.dart';
-import 'package:pure_live/common/utils/hive_pref_util.dart';
+import 'package:pure_live/core/utils/hive_pref_util.dart';
 import 'package:synchronized/synchronized.dart';
 
 class FavoriteRoomController extends GetxController {

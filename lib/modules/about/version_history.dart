@@ -7,7 +7,7 @@ import 'package:pure_live/plugins/update.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:markdown_widget/widget/all.dart';
 import 'package:markdown_widget/config/configs.dart';
-import 'package:pure_live/common/models/release_model.dart';
+import 'package:pure_live/core/models/release_model.dart';
 import 'package:pure_live/modules/about/widgets/release_history_repository.dart';
 
 

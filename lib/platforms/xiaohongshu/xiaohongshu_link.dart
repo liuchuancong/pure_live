@@ -1,4 +1,4 @@
-import 'package:pure_live/common/utils/live_short_link_session.dart';
+import 'package:pure_live/core/utils/live_short_link_session.dart';
 
 import 'xiaohongshu_api.dart';
 import 'xiaohongshu_share.dart';

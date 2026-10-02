@@ -7,7 +7,7 @@ import 'package:meta/meta.dart';
 import '../common/binary_writer.dart';
 
 import 'package:pure_live/core/common/core_log.dart';
-import 'package:pure_live/common/models/live_message.dart';
+import 'package:pure_live/core/models/live_message.dart';
 import 'package:pure_live/core/common/web_socket_util.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
 

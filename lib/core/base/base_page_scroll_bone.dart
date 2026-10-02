@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/common/base/base_controller.dart';
+import 'package:pure_live/core/base/base_controller.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 
 abstract class BasePageScrollAndStateBone<T> extends BaseController {

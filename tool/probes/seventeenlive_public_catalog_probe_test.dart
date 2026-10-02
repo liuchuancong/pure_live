@@ -6,7 +6,7 @@ import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pure_live/core/common/http_client.dart';
-import 'package:pure_live/core/site/seventeenlive/seventeenlive_site.dart';
+import 'package:pure_live/platforms/seventeenlive/seventeenlive_site.dart';
 import 'package:pure_live/core/sites.dart';
 
 void main() {

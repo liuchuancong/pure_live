@@ -4,7 +4,7 @@ import 'package:path/path.dart' as p;
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/plugins/file_utils.dart';
-import 'package:pure_live/common/models/font_model.dart';
+import 'package:pure_live/core/models/font_model.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/plugins/font_download_manager.dart';
 import 'package:pure_live/common/global/app_path_manager.dart';

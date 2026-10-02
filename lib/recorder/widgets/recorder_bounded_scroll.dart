@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:pure_live/common/widgets/pure_live_scroll_physics.dart';
+import 'package:pure_live/core/widgets/pure_live_scroll_physics.dart';
 
 /// A fixed, adaptive status selector.
 ///

@@ -4,9 +4,9 @@ import 'dart:io' as io;
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:pure_live/common/models/live_area.dart';
+import 'package:pure_live/core/models/live_area.dart';
 import 'package:pure_live/core/common/http_client.dart';
-import 'package:pure_live/core/site/cc/cc_site.dart';
+import 'package:pure_live/platforms/cc/cc_site.dart';
 
 void main() {
   test(

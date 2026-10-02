@@ -1,4 +1,4 @@
-import 'package:pure_live/common/models/live_area.dart';
+import 'package:pure_live/core/models/live_area.dart';
 import 'package:pure_live/model/live_category.dart';
 
 /// The public game registry supplies artwork/names, not live categories.

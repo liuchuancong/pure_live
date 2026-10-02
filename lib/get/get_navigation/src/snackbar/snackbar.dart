@@ -3,7 +3,7 @@ import 'dart:async';
 import '../../get_navigation.dart';
 import 'package:flutter/material.dart';
 import '../../../get_core/get_core.dart';
-import 'package:pure_live/common/style/app_text_styles.dart';
+import 'package:pure_live/core/theme/app_text_styles.dart';
 
 typedef OnTap = void Function(GetSnackBar snack);
 typedef OnHover = void Function(GetSnackBar snack, SnackHoverState snackHoverState);

@@ -6,7 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:pure_live/common/index.dart';
 import 'package:move_to_desktop/move_to_desktop.dart';
 import 'package:pure_live/routes/app_navigation.dart';
-import 'package:pure_live/common/consts/app_consts.dart';
+import 'package:pure_live/core/consts/app_consts.dart';
 import 'package:pure_live/modules/areas/areas_page.dart';
 import 'package:pure_live/modules/home/mobile_view.dart';
 import 'package:pure_live/modules/home/tablet_view.dart';

@@ -1,5 +1,5 @@
 import 'package:flutter/painting.dart';
-import 'package:pure_live/common/utils/network_image_url.dart';
+import 'package:pure_live/core/utils/network_image_url.dart';
 
 // Verified meta/data assets, not a heuristic for arbitrary tall covers. New
 // filenames keep the ordinary cover layout until their frame contract is known.

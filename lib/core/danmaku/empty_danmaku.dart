@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:pure_live/common/models/live_message.dart';
+import 'package:pure_live/core/models/live_message.dart';
 import 'package:pure_live/core/common/web_socket_util.dart';
 import 'package:pure_live/core/interface/live_danmaku.dart';
 

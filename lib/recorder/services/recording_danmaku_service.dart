@@ -3,7 +3,7 @@ import 'dart:collection';
 import 'dart:io';
 
 import 'package:path/path.dart' as p;
-import 'package:pure_live/common/models/live_message.dart';
+import 'package:pure_live/core/models/live_message.dart';
 import 'package:pure_live/recorder/models/live_record_task.dart';
 import 'package:pure_live/recorder/models/record_status.dart';
 

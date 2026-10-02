@@ -7,7 +7,7 @@ import 'package:pure_live/get/get.dart';
 import 'package:pure_live/plugins/db_service.dart';
 import 'package:pure_live/plugins/file_utils.dart';
 import 'package:pure_live/plugins/locale_helper.dart';
-import 'package:pure_live/common/utils/toast_util.dart';
+import 'package:pure_live/core/utils/toast_util.dart';
 import 'package:pure_live/core/common/http_client.dart';
 import 'package:pure_live/common/global/app_path_manager.dart';
 import 'package:pure_live/core/iptv/local/database.dart' as database;

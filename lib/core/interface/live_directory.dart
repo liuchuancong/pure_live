@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
-import 'package:pure_live/common/models/live_area.dart';
-import 'package:pure_live/common/models/live_room.dart';
+import 'package:pure_live/core/models/live_area.dart';
+import 'package:pure_live/core/models/live_room.dart';
 
 /// Optional native-page contract. Row count is NOT pagination evidence: a
 /// server may inject recommendations or the adapter may exclude closed rooms.

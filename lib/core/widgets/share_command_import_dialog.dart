@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:pure_live/common/models/live_room.dart';
-import 'package:pure_live/common/widgets/common_avatar.dart';
+import 'package:pure_live/core/models/live_room.dart';
+import 'package:pure_live/core/widgets/common_avatar.dart';
 import 'package:pure_live/plugins/locale_helper.dart';
 
 class ShareCommandImportDialog extends StatelessWidget {

@@ -6,7 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'windows_portable_path_provider.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:win32_registry/win32_registry.dart';
-import 'package:pure_live/common/utils/windows_multi_instance_launcher.dart';
+import 'package:pure_live/core/utils/windows_multi_instance_launcher.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 
 

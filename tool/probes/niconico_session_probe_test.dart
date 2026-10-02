@@ -10,9 +10,9 @@ import 'package:dio/io.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pure_live/core/common/http_client.dart';
 import 'package:pure_live/core/common/web_socket_util.dart';
-import 'package:pure_live/core/site/niconico/niconico_api.dart';
-import 'package:pure_live/core/site/niconico/niconico_session.dart';
-import 'package:pure_live/core/site/niconico/niconico_stream.dart';
+import 'package:pure_live/platforms/niconico/niconico_api.dart';
+import 'package:pure_live/platforms/niconico/niconico_session.dart';
+import 'package:pure_live/platforms/niconico/niconico_stream.dart';
 
 void main() {
   test('probe preserves NONE and resolves ordinary identity keys', () {

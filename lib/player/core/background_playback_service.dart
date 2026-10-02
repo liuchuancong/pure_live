@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/services.dart';
-import 'package:pure_live/common/utils/latest_async_value_queue.dart';
+import 'package:pure_live/core/utils/latest_async_value_queue.dart';
 
 /// Holds Android CPU/Wi-Fi resources only while user-initiated background
 /// playback is active. The foreground media service remains the primary

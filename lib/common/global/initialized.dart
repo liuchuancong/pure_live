@@ -10,7 +10,7 @@ import 'package:hive_ce_flutter/hive_flutter.dart';
 import 'package:pure_live/plugins/cache_manager.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:pure_live/core/common/proxy_routing.dart';
-import 'package:pure_live/common/utils/hive_pref_util.dart';
+import 'package:pure_live/core/utils/hive_pref_util.dart';
 import 'package:pure_live/core/common/web_socket_util.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/common/global/initial_services.dart';
@@ -21,7 +21,7 @@ import 'package:pure_live/common/global/platform/desktop_manager.dart';
 import 'package:pure_live/recorder/services/recorder_proxy_routing.dart';
 import 'package:pure_live/common/services/settings/backup_controller.dart';
 import 'package:pure_live/player/media_core/player_kernel_service.dart';
-import 'package:pure_live/common/utils/windows_multi_instance_launcher.dart';
+import 'package:pure_live/core/utils/windows_multi_instance_launcher.dart';
 import 'package:pure_live/common/services/utils/settings_upgrade_migration.dart';
 
 /// Keep decoded cover/avatar memory bounded independently from the encoded

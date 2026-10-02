@@ -1,5 +1,5 @@
 import 'package:dio/dio.dart';
-import 'package:pure_live/common/models/live_room.dart';
+import 'package:pure_live/core/models/live_room.dart';
 
 import 'live_site.dart';
 

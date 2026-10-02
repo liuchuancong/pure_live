@@ -3,7 +3,7 @@ import 'dart:io';
 
 import 'package:hive_ce/hive.dart';
 import 'package:path/path.dart' as p;
-import 'package:pure_live/common/models/live_area.dart';
+import 'package:pure_live/core/models/live_area.dart';
 
 class SettingsUpgradeReport {
   const SettingsUpgradeReport({

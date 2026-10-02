@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import 'package:pure_live/common/models/live_message.dart';
-import 'package:pure_live/common/models/live_room.dart';
+import 'package:pure_live/core/models/live_message.dart';
+import 'package:pure_live/core/models/live_room.dart';
 
 class LocalMessageDelivery {
   const LocalMessageDelivery({

@@ -1,7 +1,7 @@
 import 'package:pure_live/core/interface/live_quality_discovery.dart';
 import 'package:pure_live/recorder/services/recording_bitrate_window.dart';
 import 'package:pure_live/recorder/services/live_input_recording_binding.dart';
-import 'package:pure_live/common/utils/play_quality_label.dart';
+import 'package:pure_live/core/utils/play_quality_label.dart';
 
 import 'dart:async';
 import 'dart:convert';
@@ -11,7 +11,7 @@ import 'dart:math' as math;
 
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/common/utils/hive_pref_util.dart';
+import 'package:pure_live/core/utils/hive_pref_util.dart';
 import 'package:pure_live/core/danmaku/empty_danmaku.dart';
 import 'package:pure_live/core/interface/live_site.dart';
 import 'package:pure_live/platforms/huya/huya_transport_policy.dart';

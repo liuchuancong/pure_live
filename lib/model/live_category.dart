@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:pure_live/common/models/index.dart';
+import 'package:pure_live/core/models/index.dart';
 
 class LiveCategory {
   final String name;

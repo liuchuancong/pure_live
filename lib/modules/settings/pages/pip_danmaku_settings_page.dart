@@ -1,12 +1,12 @@
 import 'dart:math' as math;
 
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/common/utils/compact_danmaku_metrics.dart';
+import 'package:pure_live/core/utils/compact_danmaku_metrics.dart';
 import 'package:pure_live/modules/settings/widgets/app_color_picker_dialog.dart';
-import 'package:pure_live/common/consts/app_consts.dart';
+import 'package:pure_live/core/consts/app_consts.dart';
 import 'package:syncfusion_flutter_sliders/sliders.dart';
 import 'package:flex_color_picker/flex_color_picker.dart';
-import 'package:pure_live/common/widgets/count_button.dart';
+import 'package:pure_live/core/widgets/count_button.dart';
 import 'package:flame_barrage/flame_barrage.dart';
 
 class PipDanmakuSettingsPage extends StatelessWidget {

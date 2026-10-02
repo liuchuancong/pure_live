@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:pure_live/common/widgets/app_status_view.dart';
+import 'package:pure_live/core/widgets/app_status_view.dart';
 
 class EmptyView extends StatelessWidget {
   final String? title;

@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/plugins/locale_helper.dart';
-import 'package:pure_live/common/utils/toast_util.dart';
-import 'package:pure_live/common/models/live_message.dart';
+import 'package:pure_live/core/utils/toast_util.dart';
+import 'package:pure_live/core/models/live_message.dart';
 
 class SuperChatCard extends StatefulWidget {
   final LiveSuperChatMessage message;
