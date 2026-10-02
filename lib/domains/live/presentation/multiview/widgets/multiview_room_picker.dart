@@ -200,16 +200,19 @@ class _LiveStatusBadge extends StatelessWidget {
     final status = room.effectiveLiveStatus;
     final isLive = status == LiveStatus.live;
     final isReplay = status == LiveStatus.replay;
+    final isCarousel = status == LiveStatus.carousel;
     final isPending = status == LiveStatus.unknown;
     final color = isLive
         ? const Color(0xFF31C24C)
-        : isReplay
+        : isReplay || isCarousel
         ? theme.colorScheme.tertiary
         : theme.colorScheme.onSurfaceVariant.withValues(alpha: isPending ? 0.5 : 0.35);
     final labelKey = isLive
         ? 'live_now'
         : isReplay
         ? 'replay'
+        : isCarousel
+        ? 'carousel'
         : isPending
         ? 'favorite_status_unknown'
         : 'offline';

@@ -1,7 +1,14 @@
 import 'package:pure_live/core/player/core/live_room_volume_manager.dart';
 import 'package:pure_live/core/network/http_header_policy.dart';
 
-enum LiveStatus { live, offline, replay, unknown, banned }
+/// 房间的播出状态。
+///
+/// [carousel] 是平台明确的"轮播"：主播不在，房间在循环播放旧视频（B 站
+/// `live_status` 2）。它既不是直播也不是下播——此前被并进 [offline]，
+/// 于是可播放的轮播房被当成未开播拒掉。
+///
+/// 注意：状态按 `index` 持久化（见 [LiveRoom.toJson]），新增值必须追加在末尾。
+enum LiveStatus { live, offline, replay, unknown, banned, carousel }
 
 enum AudienceMetricType { popularity, onlineViewers, totalViewers, followers, unknown }
 
@@ -515,7 +522,14 @@ class LiveRoom {
 
   bool get isLiveNow => effectiveLiveStatus == LiveStatus.live;
 
-  bool get isPlayableNow => effectiveLiveStatus == LiveStatus.live || effectiveLiveStatus == LiveStatus.replay;
+  /// 可以尝试打开播放源的状态：直播、回放，以及轮播（B 站的轮播房会给出
+  /// 循环播放的视频源，主播不在也不该被当成未开播拒掉）。
+  bool get isPlayableNow =>
+      effectiveLiveStatus == LiveStatus.live ||
+      effectiveLiveStatus == LiveStatus.replay ||
+      effectiveLiveStatus == LiveStatus.carousel;
+
+  bool get isCarouselNow => effectiveLiveStatus == LiveStatus.carousel;
 
   bool get isExplicitlyOfflineNow =>
       effectiveLiveStatus == LiveStatus.offline || effectiveLiveStatus == LiveStatus.banned;

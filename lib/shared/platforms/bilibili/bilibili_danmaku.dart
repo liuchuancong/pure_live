@@ -315,6 +315,9 @@ class BiliBiliDanmaku implements LiveDanmaku {
     if (operation == 3) {
       if (body.length < 4) return;
       final online = readInt(body, 0, 4);
+      // 游客拿到的热度是占位值 1（上游 REG-BILIBILI-015）：房间详情里的真实热度
+      // 不能被它顶掉，否则一进房人气就掉到 1。
+      if (online <= 1) return;
       onMessage?.call(
         LiveMessage(
           type: LiveMessageType.online,

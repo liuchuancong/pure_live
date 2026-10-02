@@ -150,6 +150,9 @@ class BiliBiliSite
   @override
   Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom liveroom}) async {
     final result = await _requestPlayInfo(liveroom: liveroom, qualityData: 0);
+    // 轮播房（live_status 2）的 getRoomPlayInfo 不带 playurl_info：它播的是
+    // 循环视频，清晰度只有平台给的那一档，不是空列表。
+    if (isCarouselResponse(result)) return [carouselQuality];
     return parsePlayQualities(result);
   }
 
@@ -165,12 +168,111 @@ class BiliBiliSite
   }) async {
     try {
       final result = await _requestPlayInfo(liveroom: liveroom, qualityData: quality.data);
+      if (isCarouselResponse(result)) return await _resolveCarouselVideo(liveroom);
 
       return parsePlayUrlResolution(result, requestedQualityData: quality.data);
     } catch (e) {
       throw Exception(e.toString());
     }
   }
+
+  /// 轮播房的取流路径：`getRoundPlayVideo` 拿到正在循环的稿件，再用
+  /// `x/player/playurl`（html5）取可直接播放的 MP4 分段。
+  ///
+  /// 与上游一致：轮播不做"先看房间状态再决定要不要解析"，只要平台给源就播。
+  /// 唯一的差别是本仓请求头按平台统一注入（Referer 为 live.bilibili.com），
+  /// 上游这里用的是视频页 Referer —— 若某些 CDN 拒收，会表现为轮播起播失败。
+  Future<LivePlayUrlResolution> _resolveCarouselVideo(LiveRoom liveroom) async {
+    final header = await getHeader();
+    final round = await HttpClient.instance.getJson(
+      "https://api.live.bilibili.com/live/getRoundPlayVideo",
+      queryParameters: {"room_id": liveroom.roomId},
+      header: header,
+    );
+    final video = parseRoundPlayVideo(round);
+    final play = await HttpClient.instance.getJson(
+      "https://api.bilibili.com/x/player/playurl",
+      queryParameters: {
+        "bvid": video.bvid,
+        "cid": '${video.cid}',
+        "qn": "80",
+        "fnval": "0",
+        "fnver": "0",
+        "fourk": "1",
+        "platform": "html5",
+        "high_quality": "1",
+      },
+      header: header,
+    );
+    final urls = parseVideoPlayUrls(play);
+    if (urls.isEmpty) throw const FormatException('Bilibili 轮播视频没有可播放地址');
+    return LivePlayUrlResolution(urls: urls, appliedQualityData: carouselQualityId);
+  }
+
+  /// 轮播房那一档清晰度（平台不提供分档，游客最高 480P）。
+  static const String carouselQualityId = 'carousel';
+
+  static final LivePlayQuality carouselQuality = LivePlayQuality(
+    quality: '轮播',
+    id: carouselQualityId,
+    data: carouselQualityId,
+  );
+
+  /// 这份 `getRoomPlayInfo` 回答是不是"轮播且本客户端没有直播流"。
+  static bool isCarouselResponse(dynamic response) {
+    if (response is! Map || response['code'] != 0) return false;
+    final data = response['data'];
+    if (data is! Map || data['playurl_info'] != null) return false;
+    return _status(data['live_status']) == LiveStatus.carousel;
+  }
+
+  /// `getRoundPlayVideo` 的 `data`：正在轮播的稿件与分 P。
+  ///
+  /// 回答自带的 `play_url` 已经失效（会跳到错误页），这里不读它。没有
+  /// `bvid` 或 `cid`（没有在轮播，或房间已开播）视为无源。
+  static ({String bvid, int cid}) parseRoundPlayVideo(dynamic response) {
+    if (response is! Map) throw const FormatException('Bilibili round play response is not an object');
+    if (response['code'] != 0) {
+      throw StateError('Bilibili getRoundPlayVideo code=${response['code']}: ${response['message']}');
+    }
+    final data = response['data'];
+    final bvid = data is Map ? (data['bvid']?.toString().trim() ?? '') : '';
+    final cid = data is Map ? (int.tryParse(data['cid']?.toString() ?? '') ?? 0) : 0;
+    if (!_bvidPattern.hasMatch(bvid) || cid <= 0) {
+      throw const FormatException('Bilibili getRoundPlayVideo: 没有正在轮播的视频');
+    }
+    return (bvid: bvid, cid: cid);
+  }
+
+  static final RegExp _bvidPattern = RegExp(r'^BV[0-9A-Za-z]{10}$');
+
+  /// `x/player/playurl` 的分段地址：每段的 `url` 与 `backup_url`。
+  static List<String> parseVideoPlayUrls(dynamic response) {
+    if (response is! Map) throw const FormatException('Bilibili video play response is not an object');
+    if (response['code'] != 0) {
+      throw StateError('Bilibili x/player/playurl code=${response['code']}: ${response['message']}');
+    }
+    final data = response['data'];
+    final urls = <String>[];
+    if (data is Map) {
+      for (final part in (data['durl'] as List?) ?? const []) {
+        if (part is! Map) continue;
+        for (final raw in [part['url'], ...(part['backup_url'] as List? ?? const [])]) {
+          final url = raw?.toString().trim() ?? '';
+          if (!url.startsWith('http')) continue;
+          if (!urls.contains(url)) urls.add(url);
+        }
+      }
+    }
+    return List.unmodifiable(urls);
+  }
+
+  /// `live_status`：1 直播、2 轮播、其余下播。
+  static LiveStatus _status(Object? value) => switch (int.tryParse(value?.toString() ?? '')) {
+    1 => LiveStatus.live,
+    2 => LiveStatus.carousel,
+    _ => LiveStatus.offline,
+  };
 
   Future<dynamic> _requestPlayInfo({required LiveRoom liveroom, required Object? qualityData}) async {
     return HttpClient.instance.getJson(
@@ -739,7 +841,8 @@ class BiliBiliSite
   }
 
   LiveRoom _buildRoom(Map<String, dynamic> roomInfo, {required String roomId, Object? danmakuData}) {
-    final live = int.tryParse(roomInfo['room_info']?['live_status']?.toString() ?? '') == 1;
+    final state = _status(roomInfo['room_info']?['live_status']);
+    final live = state == LiveStatus.live;
     return LiveRoom(
       roomId: roomId,
       title: roomInfo["room_info"]["title"].toString(),
@@ -751,7 +854,7 @@ class BiliBiliSite
       audienceMetricType: AudienceMetricType.popularity,
       area: roomInfo['room_info']?['area_name'] ?? '',
       status: live,
-      liveStatus: live ? LiveStatus.live : LiveStatus.offline,
+      liveStatus: state,
       link: "https://live.bilibili.com/$roomId",
       introduction: roomInfo["room_info"]["description"].toString(),
       notice: "",
@@ -794,7 +897,7 @@ class BiliBiliSite
         popularity: item["online"].toString(),
         followers: item["attentions"]?.toString() ?? '',
         audienceMetricType: AudienceMetricType.popularity,
-        liveStatus: int.tryParse(item['live_status']?.toString() ?? '') == 1 ? LiveStatus.live : LiveStatus.offline,
+        liveStatus: _status(item['live_status']),
         area: item["cate_name"].toString(),
         status: int.tryParse(item['live_status']?.toString() ?? '') == 1,
         avatar: "https:${item["uface"]}@400w.jpg",
