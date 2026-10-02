@@ -171,7 +171,9 @@ class KilakilaSite extends LiveSite
     }
   }
 
-  Future<LiveRoom> _detail(String uid, String platform, {required bool playback}) async {
+  Future<LiveRoom> _detail(LiveRoom liveroom, {required bool playback}) async {
+    final uid = liveroom.roomId ?? '';
+    final platform = liveroom.platform ?? '';
     if (platform != id) throw const KilakilaException(KilakilaFailure.schema);
     final owner = await _api.owner(uid);
     final current = owner.currentRoom;
@@ -196,40 +198,40 @@ class KilakilaSite extends LiveSite
   }
 
   @override
-  Future<LiveRoom> getRoomDetail(LiveRoom room) async {
-    final identity = room.detailIdentity;
-    if (identity == null) return room;
-    return _detail(identity.roomId, identity.platform, playback: true);
+  Future<LiveRoom> getRoomDetail(LiveRoom liveroom) async {
+    
+    if (liveroom.detailIdentity == null) return liveroom;
+    return _detail(liveroom, playback: true);
   }
 
   @override
-  Future<LiveRoom> getRoomDetailForRecording(LiveRoom room) async {
-    final identity = room.detailIdentity;
-    if (identity == null) return room;
-    return _detail(identity.roomId, identity.platform, playback: true);
+  Future<LiveRoom> getRoomDetailForRecording(LiveRoom liveroom) async {
+    
+    if (liveroom.detailIdentity == null) return liveroom;
+    return _detail(liveroom, playback: true);
   }
 
   @override
-  Future<LiveRoom> getRoomDetailForRefresh(LiveRoom room) async {
-    final identity = room.detailIdentity;
-    if (identity == null) return room;
-    return _detail(identity.roomId, identity.platform, playback: false);
+  Future<LiveRoom> getRoomDetailForRefresh(LiveRoom liveroom) async {
+    
+    if (liveroom.detailIdentity == null) return liveroom;
+    return _detail(liveroom, playback: false);
   }
 
   @override
-  Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom detail}) async {
-    if (detail.platform != id ||
-        !detail.isLiveNow ||
-        detail.data is! List<LivePlayQuality> ||
-        (detail.data as List).isEmpty) {
+  Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom liveroom}) async {
+    if (liveroom.platform != id ||
+        !liveroom.isLiveNow ||
+        liveroom.data is! List<LivePlayQuality> ||
+        (liveroom.data as List).isEmpty) {
       throw const KilakilaException(KilakilaFailure.mediaUnavailable);
     }
-    return List.unmodifiable(detail.data as List<LivePlayQuality>);
+    return List.unmodifiable(liveroom.data as List<LivePlayQuality>);
   }
 
   @override
-  Future<List<String>> getPlayUrls({required LiveRoom detail, required LivePlayQuality quality}) async {
-    for (final current in await getPlayQualites(detail: detail)) {
+  Future<List<String>> getPlayUrls({required LiveRoom liveroom, required LivePlayQuality quality}) async {
+    for (final current in await getPlayQualites(liveroom: liveroom)) {
       if (current.selectionId == quality.selectionId) return List.unmodifiable(current.data as List<String>);
     }
     throw const KilakilaException(KilakilaFailure.mediaUnavailable);
@@ -237,12 +239,12 @@ class KilakilaSite extends LiveSite
 
   @override
   Future<LivePlayUrlResolution> resolvePlayUrlsForRecoveryRaw({
-    required LiveRoom detail,
+    required LiveRoom liveroom,
     required LivePlayQuality quality,
   }) async {
-    final fresh = await getRoomDetail(detail);
+    final fresh = await getRoomDetail(liveroom);
     return LivePlayUrlResolution(
-      urls: await getPlayUrls(detail: fresh, quality: quality),
+      urls: await getPlayUrls(liveroom: fresh, quality: quality),
       appliedQualityData: quality.selectionId,
     );
   }

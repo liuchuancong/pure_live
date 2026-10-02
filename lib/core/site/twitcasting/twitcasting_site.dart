@@ -49,43 +49,45 @@ class TwitcastingSite extends LiveSite
     CancelToken? cancel,
   }) => _api.searchLives(keyword, page: page, pageSize: pageSize, cancel: cancel);
 
-  Future<LiveRoom> _resolveDetail(String roomId, String platform) {
+  Future<LiveRoom> _resolveDetail(LiveRoom liveroom) {
+    final roomId = liveroom.roomId ?? '';
+    final platform = liveroom.platform ?? '';
     if (platform != id) throw const TwitcastingException(TwitcastingFailure.schema);
     return _api.detail(roomId);
   }
 
   @override
-  Future<LiveRoom> getRoomDetail(LiveRoom room) async {
-    final identity = room.detailIdentity;
-    if (identity == null) return room;
-    return _resolveDetail(identity.roomId, identity.platform);
+  Future<LiveRoom> getRoomDetail(LiveRoom liveroom) async {
+    
+    if (liveroom.detailIdentity == null) return liveroom;
+    return _resolveDetail(liveroom);
   }
 
   @override
-  Future<LiveRoom> getRoomDetailForRefresh(LiveRoom room) async {
-    final identity = room.detailIdentity;
-    if (identity == null) return room;
-    return _resolveDetail(identity.roomId, identity.platform);
+  Future<LiveRoom> getRoomDetailForRefresh(LiveRoom liveroom) async {
+    
+    if (liveroom.detailIdentity == null) return liveroom;
+    return _resolveDetail(liveroom);
   }
 
   @override
-  Future<LiveRoom> getRoomDetailForRecording(LiveRoom room) async {
-    final identity = room.detailIdentity;
-    if (identity == null) return room;
-    return _resolveDetail(identity.roomId, identity.platform);
+  Future<LiveRoom> getRoomDetailForRecording(LiveRoom liveroom) async {
+    
+    if (liveroom.detailIdentity == null) return liveroom;
+    return _resolveDetail(liveroom);
   }
 
   @override
-  Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom detail}) async {
-    if (detail.platform != id) throw const TwitcastingException(TwitcastingFailure.schema);
-    if (detail.isExplicitlyOfflineNow) return [];
-    if (detail.data is! List<LivePlayQuality>) throw const TwitcastingException(TwitcastingFailure.schema);
-    return List.unmodifiable(detail.data as List<LivePlayQuality>);
+  Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom liveroom}) async {
+    if (liveroom.platform != id) throw const TwitcastingException(TwitcastingFailure.schema);
+    if (liveroom.isExplicitlyOfflineNow) return [];
+    if (liveroom.data is! List<LivePlayQuality>) throw const TwitcastingException(TwitcastingFailure.schema);
+    return List.unmodifiable(liveroom.data as List<LivePlayQuality>);
   }
 
   @override
-  Future<List<String>> getPlayUrls({required LiveRoom detail, required LivePlayQuality quality}) async {
-    for (final current in await getPlayQualites(detail: detail)) {
+  Future<List<String>> getPlayUrls({required LiveRoom liveroom, required LivePlayQuality quality}) async {
+    for (final current in await getPlayQualites(liveroom: liveroom)) {
       if (current.selectionId == quality.selectionId) return List.unmodifiable(current.data as List<String>);
     }
     throw const TwitcastingException(TwitcastingFailure.qualityUnavailable);
@@ -93,12 +95,12 @@ class TwitcastingSite extends LiveSite
 
   @override
   Future<LivePlayUrlResolution> resolvePlayUrlsForRecoveryRaw({
-    required LiveRoom detail,
+    required LiveRoom liveroom,
     required LivePlayQuality quality,
   }) async {
-    final fresh = await getRoomDetail(detail);
+    final fresh = await getRoomDetail(liveroom);
     return LivePlayUrlResolution(
-      urls: await getPlayUrls(detail: fresh, quality: quality),
+      urls: await getPlayUrls(liveroom: fresh, quality: quality),
       appliedQualityData: quality.selectionId,
     );
   }

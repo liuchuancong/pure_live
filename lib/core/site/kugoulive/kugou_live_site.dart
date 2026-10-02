@@ -165,7 +165,7 @@ final class KugouLiveSite extends LiveSite
     if (roomId != null) {
       if (page != 1) return const [];
       try {
-        return [await _detail(roomId, id, includeMedia: false, cancel: cancel)];
+        return [await _detail(LiveRoom(roomId: roomId, platform: id), includeMedia: false, cancel: cancel)];
       } on KugouLiveException catch (error) {
         if (error.kind == KugouLiveFailure.missing) return const [];
         rethrow;
@@ -178,7 +178,9 @@ final class KugouLiveSite extends LiveSite
     return rooms.skip(start).take(pageSize).map((room) => _room(room, includeMedia: false)).toList(growable: false);
   }
 
-  String _roomId(String roomId, String platform) {
+  String _roomId(LiveRoom liveroom) {
+    final roomId = liveroom.roomId ?? '';
+    final platform = liveroom.platform ?? '';
     if (platform.trim().toLowerCase() != id) {
       throw const KugouLiveException(KugouLiveFailure.identity);
     }
@@ -187,8 +189,8 @@ final class KugouLiveSite extends LiveSite
     return value;
   }
 
-  Future<LiveRoom> _detail(String roomId, String platform, {required bool includeMedia, CancelToken? cancel}) async {
-    final normalized = _roomId(roomId, platform);
+  Future<LiveRoom> _detail(LiveRoom liveroom, {required bool includeMedia, CancelToken? cancel}) async {
+    final normalized = _roomId(liveroom);
     var room = await _api.room(normalized, includeMedia: includeMedia, cancel: cancel);
     final known = _known[normalized];
     if (known != null) room = room.enrich(known);
@@ -197,29 +199,29 @@ final class KugouLiveSite extends LiveSite
   }
 
   @override
-  Future<LiveRoom> getRoomDetail(LiveRoom room) async {
-    final identity = room.detailIdentity;
-    if (identity == null) return room;
-    return _detail(identity.roomId, identity.platform, includeMedia: true);
+  Future<LiveRoom> getRoomDetail(LiveRoom liveroom) async {
+    
+    if (liveroom.detailIdentity == null) return liveroom;
+    return _detail(liveroom, includeMedia: true);
   }
 
   @override
-  Future<LiveRoom> getRoomDetailForRecording(LiveRoom room) async {
-    final identity = room.detailIdentity;
-    if (identity == null) return room;
-    return _detail(identity.roomId, identity.platform, includeMedia: true);
+  Future<LiveRoom> getRoomDetailForRecording(LiveRoom liveroom) async {
+    
+    if (liveroom.detailIdentity == null) return liveroom;
+    return _detail(liveroom, includeMedia: true);
   }
 
   @override
-  Future<LiveRoom> getRoomDetailForRefresh(LiveRoom room) async {
-    final identity = room.detailIdentity;
-    if (identity == null) return room;
-    return _detail(identity.roomId, identity.platform, includeMedia: false);
+  Future<LiveRoom> getRoomDetailForRefresh(LiveRoom liveroom) async {
+    
+    if (liveroom.detailIdentity == null) return liveroom;
+    return _detail(liveroom, includeMedia: false);
   }
 
-  KugouLiveRoom _snapshot(LiveRoom detail) {
-    final roomId = _roomId(detail.roomId ?? '', detail.platform ?? '');
-    final room = detail.data;
+  KugouLiveRoom _snapshot(LiveRoom liveroom) {
+    final roomId = _roomId(liveroom);
+    final room = liveroom.data;
     if (room is! KugouLiveRoom || room.roomId != roomId) {
       throw const KugouLiveException(KugouLiveFailure.identity);
     }
@@ -230,10 +232,10 @@ final class KugouLiveSite extends LiveSite
   }
 
   @override
-  Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom detail}) async {
-    _roomId(detail.roomId ?? '', detail.platform ?? '');
-    if (detail.isExplicitlyOfflineNow) return const [];
-    final room = _snapshot(detail);
+  Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom liveroom}) async {
+    _roomId(liveroom);
+    if (liveroom.isExplicitlyOfflineNow) return const [];
+    final room = _snapshot(liveroom);
     return List.unmodifiable(
       room.variants.map(
         (variant) => LivePlayQuality(
@@ -248,9 +250,9 @@ final class KugouLiveSite extends LiveSite
     );
   }
 
-  Future<LivePlayUrlResolution> _resolve(LiveRoom detail, LivePlayQuality quality, {required bool refresh}) async {
-    var room = _snapshot(detail);
-    if (refresh) room = _snapshot(await _detail(room.roomId, id, includeMedia: true));
+  Future<LivePlayUrlResolution> _resolve(LiveRoom liveroom, LivePlayQuality quality, {required bool refresh}) async {
+    var room = _snapshot(liveroom);
+    if (refresh) room = _snapshot(await _detail(LiveRoom(roomId: room.roomId, platform: id), includeMedia: true));
     final selectionId = quality.selectionId.toString();
     for (final variant in room.variants) {
       if (variant.id != selectionId) continue;
@@ -263,18 +265,18 @@ final class KugouLiveSite extends LiveSite
   }
 
   @override
-  Future<LivePlayUrlResolution> resolvePlayUrlsRaw({required LiveRoom detail, required LivePlayQuality quality}) =>
-      _resolve(detail, quality, refresh: false);
+  Future<LivePlayUrlResolution> resolvePlayUrlsRaw({required LiveRoom liveroom, required LivePlayQuality quality}) =>
+      _resolve(liveroom, quality, refresh: false);
 
   @override
   Future<LivePlayUrlResolution> resolvePlayUrlsForRecoveryRaw({
-    required LiveRoom detail,
+    required LiveRoom liveroom,
     required LivePlayQuality quality,
-  }) => _resolve(detail, quality, refresh: true);
+  }) => _resolve(liveroom, quality, refresh: true);
 
   @override
-  Future<List<String>> getPlayUrls({required LiveRoom detail, required LivePlayQuality quality}) async =>
-      (await _resolve(detail, quality, refresh: false)).urls;
+  Future<List<String>> getPlayUrls({required LiveRoom liveroom, required LivePlayQuality quality}) async =>
+      (await _resolve(liveroom, quality, refresh: false)).urls;
 
   @override
   DateTime? getPlayUrlRefreshAt(String url, {DateTime? now}) => KugouLiveApi.mediaRefreshAt(url, now: now);

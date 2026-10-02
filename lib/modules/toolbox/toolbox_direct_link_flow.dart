@@ -15,7 +15,7 @@ class ToolBoxDirectLinkFlow {
   final Future<void> Function(String) _copyText;
 
   Future<void> run({
-    required LiveRoom room,
+    required LiveRoom liveroom,
     required ToolBoxActionScope scope,
     required Future<LivePlayQuality?> Function(List<LivePlayQuality>) chooseQuality,
     required Future<String?> Function(List<String>) chooseLine,
@@ -23,17 +23,17 @@ class ToolBoxDirectLinkFlow {
     Future<void> Function(String)? useUrl,
   }) async {
     scope.checkActive();
-    final platform = room.normalizedPlatformId;
-    final roomId = room.normalizedRoomId;
+    final platform = liveroom.normalizedPlatformId;
+    final roomId = liveroom.normalizedRoomId;
     if (platform.isEmpty || roomId.isEmpty || !Sites.isSupported(platform)) {
       notify('toolbox_parse_failed');
       return;
     }
     final site = _siteFor(platform);
-    final detail = await scope.wait(() => site.getRoomDetail(room.normalizedIdentityCopy()));
+    final detail = await scope.wait(() => site.getRoomDetail(liveroom.normalizedIdentityCopy()));
     final qualities = site is LiveQualityDiscovery
-        ? await scope.waitCancellable((cancel) => site.discoverPlayQualities(detail: detail, cancel: cancel))
-        : await scope.wait(() => site.discoverPlayQualities(detail: detail, cancel: scope.cancelToken));
+        ? await scope.waitCancellable((cancel) => site.discoverPlayQualities(liveroom: detail, cancel: cancel))
+        : await scope.wait(() => site.discoverPlayQualities(liveroom: detail, cancel: scope.cancelToken));
     if (qualities.isEmpty) {
       notify('toolbox_quality_failed');
       return;
@@ -41,7 +41,7 @@ class ToolBoxDirectLinkFlow {
     // User choices have no timer. Only network/platform operations are timed.
     final quality = await scope.wait(() => chooseQuality(qualities), timed: false);
     if (quality == null || !qualities.contains(quality)) return;
-    final resolution = await scope.wait(() => site.resolvePlayUrls(detail: detail, quality: quality));
+    final resolution = await scope.wait(() => site.resolvePlayUrls(liveroom: detail, quality: quality));
     // Owned inputs are playable, but their private relay URI belongs to an
     // in-app session. Do not acquire a seat or export a native-only address.
     if (resolution.inputRecipe != null) {

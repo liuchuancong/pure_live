@@ -159,9 +159,9 @@ class FavoriteRoomController extends GetxController {
     return true;
   }
 
-  bool _isValidFavoriteRoom(LiveRoom room) {
-    final platform = room.normalizedPlatformId.trim();
-    final roomId = room.normalizedRoomId.trim().toLowerCase();
+  bool _isValidFavoriteRoom(LiveRoom liveroom) {
+    final platform = liveroom.normalizedPlatformId.trim();
+    final roomId = liveroom.normalizedRoomId.trim().toLowerCase();
 
     if (platform.isEmpty || roomId.isEmpty) {
       return false;
@@ -256,16 +256,16 @@ class FavoriteRoomController extends GetxController {
     return true;
   }
 
-  bool isFavorite(LiveRoom room) {
-    return favoriteRooms.v.any((candidate) => candidate.hasSameIdentity(room));
+  bool isFavorite(LiveRoom liveroom) {
+    return favoriteRooms.v.any((candidate) => candidate.hasSameIdentity(liveroom));
   }
 
   bool isFavoriteArea(LiveArea area) {
     return favoriteAreas.v.any((candidate) => candidate.hasSameIdentity(area));
   }
 
-  bool addRoom(LiveRoom room) {
-    final normalized = room.normalizedIdentityCopy();
+  bool addRoom(LiveRoom liveroom) {
+    final normalized = liveroom.normalizedIdentityCopy();
 
     if (!_isValidFavoriteRoom(normalized)) {
       return false;
@@ -282,17 +282,17 @@ class FavoriteRoomController extends GetxController {
     return true;
   }
 
-  Future<bool> addRoomDurably(LiveRoom room) {
+  Future<bool> addRoomDurably(LiveRoom liveroom) {
     return _favoriteMutationLock.synchronized(() async {
       final before = List<LiveRoom>.from(favoriteRooms.v);
-      if (!addRoom(room)) return false;
+      if (!addRoom(liveroom)) return false;
       await _persistRoomsOrRollback(before);
       return true;
     });
   }
 
-  bool removeRoom(LiveRoom room) {
-    final index = favoriteRooms.v.indexWhere((candidate) => candidate.hasSameIdentity(room));
+  bool removeRoom(LiveRoom liveroom) {
+    final index = favoriteRooms.v.indexWhere((candidate) => candidate.hasSameIdentity(liveroom));
 
     if (index < 0) return false;
 
@@ -303,17 +303,17 @@ class FavoriteRoomController extends GetxController {
     return true;
   }
 
-  Future<bool> removeRoomDurably(LiveRoom room) {
+  Future<bool> removeRoomDurably(LiveRoom liveroom) {
     return _favoriteMutationLock.synchronized(() async {
       final before = List<LiveRoom>.from(favoriteRooms.v);
-      if (!removeRoom(room)) return false;
+      if (!removeRoom(liveroom)) return false;
       await _persistRoomsOrRollback(before);
       return true;
     });
   }
 
-  bool updateRoom(LiveRoom room) {
-    final normalized = room.normalizedIdentityCopy();
+  bool updateRoom(LiveRoom liveroom) {
+    final normalized = liveroom.normalizedIdentityCopy();
 
     if (!_isValidFavoriteRoom(normalized)) {
       return false;
@@ -330,10 +330,10 @@ class FavoriteRoomController extends GetxController {
     return true;
   }
 
-  Future<bool> updateRoomDurably(LiveRoom room) {
+  Future<bool> updateRoomDurably(LiveRoom liveroom) {
     return _favoriteMutationLock.synchronized(() async {
       final before = List<LiveRoom>.from(favoriteRooms.v);
-      if (!updateRoom(room)) return false;
+      if (!updateRoom(liveroom)) return false;
       await _persistRoomsOrRollback(before);
       return true;
     });
@@ -485,7 +485,9 @@ class FavoriteRoomController extends GetxController {
     blockedDanmakuUsers.assignAll(updated);
   }
 
-  LiveRoom? getRoomById(String roomId, String platform) {
+  LiveRoom? getRoomById(LiveRoom liveroom) {
+    final roomId = liveroom.roomId ?? '';
+    final platform = liveroom.platform ?? '';
     final identity = '${platform.trim().toLowerCase()}:${roomId.trim()}';
 
     for (final room in favoriteRooms.v) {
@@ -596,10 +598,10 @@ class FavoriteRoomController extends GetxController {
     };
   }
 
-  static bool _isValidFavoriteRoomStatic(LiveRoom room) {
-    final platform = room.normalizedPlatformId.trim();
+  static bool _isValidFavoriteRoomStatic(LiveRoom liveroom) {
+    final platform = liveroom.normalizedPlatformId.trim();
 
-    final roomId = room.normalizedRoomId.trim().toLowerCase();
+    final roomId = liveroom.normalizedRoomId.trim().toLowerCase();
 
     if (platform.isEmpty || roomId.isEmpty) {
       return false;

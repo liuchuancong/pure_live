@@ -33,7 +33,9 @@ class XiaohongshuSite extends LiveSite
   @override
   LiveDanmaku getDanmaku() => EmptyDanmaku();
 
-  String _roomId(String roomId, String platform) {
+  String _roomId(LiveRoom liveroom) {
+    final roomId = liveroom.roomId ?? '';
+    final platform = liveroom.platform ?? '';
     if (platform != id) throw const XiaohongshuException(XiaohongshuFailure.identity);
     return XiaohongshuShare.validateRoomId(roomId);
   }
@@ -78,28 +80,28 @@ class XiaohongshuSite extends LiveSite
     data: includeMedia ? share : null,
   );
 
-  Future<LiveRoom> _loadDetail(String roomId, String platform, {required bool includeMedia}) async =>
-      _room(await _api.room(_roomId(roomId, platform)), includeMedia: includeMedia);
+  Future<LiveRoom> _loadDetail(LiveRoom liveroom, {required bool includeMedia}) async =>
+      _room(await _api.room(_roomId(liveroom)), includeMedia: includeMedia);
 
   @override
-  Future<LiveRoom> getRoomDetail(LiveRoom room) async {
-    final identity = room.detailIdentity;
-    if (identity == null) return room;
-    return _loadDetail(identity.roomId, identity.platform, includeMedia: true);
+  Future<LiveRoom> getRoomDetail(LiveRoom liveroom) async {
+    
+    if (liveroom.detailIdentity == null) return liveroom;
+    return _loadDetail(liveroom, includeMedia: true);
   }
 
   @override
-  Future<LiveRoom> getRoomDetailForRefresh(LiveRoom room) async {
-    final identity = room.detailIdentity;
-    if (identity == null) return room;
-    return _loadDetail(identity.roomId, identity.platform, includeMedia: false);
+  Future<LiveRoom> getRoomDetailForRefresh(LiveRoom liveroom) async {
+    
+    if (liveroom.detailIdentity == null) return liveroom;
+    return _loadDetail(liveroom, includeMedia: false);
   }
 
   @override
-  Future<LiveRoom> getRoomDetailForRecording(LiveRoom room) async {
-    final identity = room.detailIdentity;
-    if (identity == null) return room;
-    final detail = await _loadDetail(identity.roomId, identity.platform, includeMedia: true);
+  Future<LiveRoom> getRoomDetailForRecording(LiveRoom liveroom) async {
+    
+    if (liveroom.detailIdentity == null) return liveroom;
+    final detail = await _loadDetail(liveroom, includeMedia: true);
     if (!detail.isExplicitlyOfflineNow) _snapshot(detail);
     return detail;
   }
@@ -124,16 +126,16 @@ class XiaohongshuSite extends LiveSite
     }
   }
 
-  XiaohongshuShare _snapshot(LiveRoom detail) {
-    final roomId = _roomId(detail.roomId ?? '', detail.platform ?? '');
-    final data = detail.data;
+  XiaohongshuShare _snapshot(LiveRoom liveroom) {
+    final roomId = _roomId(liveroom);
+    final data = liveroom.data;
     if (data is! XiaohongshuShare || data.requestedRoomId != roomId) {
       throw const XiaohongshuException(XiaohongshuFailure.identity);
     }
-    if (data.reportedLive == false || detail.isExplicitlyOfflineNow) {
+    if (data.reportedLive == false || liveroom.isExplicitlyOfflineNow) {
       throw const XiaohongshuException(XiaohongshuFailure.notLive);
     }
-    if (data.reportedLive != true || !detail.isLiveNow) {
+    if (data.reportedLive != true || !liveroom.isLiveNow) {
       throw const XiaohongshuException(XiaohongshuFailure.mediaUnavailable);
     }
     if (data.responseRoomId != roomId) throw const XiaohongshuException(XiaohongshuFailure.identity);
@@ -144,10 +146,10 @@ class XiaohongshuSite extends LiveSite
 
   static String _qualityId(XiaohongshuStream stream) => '${stream.codec}:${stream.quality}';
   @override
-  Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom detail}) async {
-    _roomId(detail.roomId ?? '', detail.platform ?? '');
-    if (detail.isExplicitlyOfflineNow) return [];
-    final data = _snapshot(detail);
+  Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom liveroom}) async {
+    _roomId(liveroom);
+    if (liveroom.isExplicitlyOfflineNow) return [];
+    final data = _snapshot(liveroom);
     final qualities = <String, LivePlayQuality>{};
     for (final source in data.streams) {
       final key = _qualityId(source);
@@ -159,8 +161,8 @@ class XiaohongshuSite extends LiveSite
     return List.unmodifiable(qualities.values);
   }
 
-  Future<LivePlayUrlResolution> _resolve(LiveRoom detail, LivePlayQuality quality, {required bool refresh}) async {
-    var data = _snapshot(detail);
+  Future<LivePlayUrlResolution> _resolve(LiveRoom liveroom, LivePlayQuality quality, {required bool refresh}) async {
+    var data = _snapshot(liveroom);
     if (refresh) {
       data = _snapshot(await getRoomDetail(LiveRoom(roomId: data.requestedRoomId, platform: id)));
     }
@@ -173,14 +175,14 @@ class XiaohongshuSite extends LiveSite
   }
 
   @override
-  Future<LivePlayUrlResolution> resolvePlayUrlsRaw({required LiveRoom detail, required LivePlayQuality quality}) =>
-      _resolve(detail, quality, refresh: false);
+  Future<LivePlayUrlResolution> resolvePlayUrlsRaw({required LiveRoom liveroom, required LivePlayQuality quality}) =>
+      _resolve(liveroom, quality, refresh: false);
   @override
   Future<LivePlayUrlResolution> resolvePlayUrlsForRecoveryRaw({
-    required LiveRoom detail,
+    required LiveRoom liveroom,
     required LivePlayQuality quality,
-  }) => _resolve(detail, quality, refresh: true);
+  }) => _resolve(liveroom, quality, refresh: true);
   @override
-  Future<List<String>> getPlayUrls({required LiveRoom detail, required LivePlayQuality quality}) async =>
-      (await resolvePlayUrlsRaw(detail: detail, quality: quality)).urls;
+  Future<List<String>> getPlayUrls({required LiveRoom liveroom, required LivePlayQuality quality}) async =>
+      (await resolvePlayUrlsRaw(liveroom: liveroom, quality: quality)).urls;
 }

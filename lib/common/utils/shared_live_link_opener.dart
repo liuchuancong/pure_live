@@ -5,7 +5,7 @@ import 'package:pure_live/common/utils/live_url_tool.dart';
 import 'package:pure_live/routes/app_navigation.dart';
 
 typedef SharedLiveLinkParser = Future<List<String>> Function(String text);
-typedef SharedLiveRoomOpener = Future<void> Function(LiveRoom room);
+typedef SharedLiveRoomOpener = Future<void> Function(LiveRoom liveroom);
 
 /// Opens a live room from text shared by a platform app, using the same
 /// resolution as the toolbox's "jump to room" (short links included).

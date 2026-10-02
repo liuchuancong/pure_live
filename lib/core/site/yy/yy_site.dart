@@ -274,18 +274,18 @@ class YYSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResol
   /// 获取直播流
   /// ============================================================
 
-  ({String cid, String sid}) _channelIds(LiveRoom detail) {
-    final danmakuArgs = detail.danmakuData;
+  ({String cid, String sid}) _channelIds(LiveRoom liveroom) {
+    final danmakuArgs = liveroom.danmakuData;
     if (danmakuArgs is YyDanmakuArgs && danmakuArgs.topSid > 0) {
       return (cid: danmakuArgs.topSid.toString(), sid: danmakuArgs.subSid.toString());
     }
-    final roomId = detail.roomId?.trim() ?? '';
+    final roomId = liveroom.roomId?.trim() ?? '';
     return (cid: roomId, sid: roomId);
   }
 
-  Future<Map<String, dynamic>> getLiveStreamObj({required LiveRoom detail, required String qn}) async {
+  Future<Map<String, dynamic>> getLiveStreamObj({required LiveRoom liveroom, required String qn}) async {
     final sequence = DateTime.now().millisecondsSinceEpoch;
-    final channel = _channelIds(detail);
+    final channel = _channelIds(liveroom);
     final cid = channel.sid;
     final sid = channel.sid;
     final body = jsonEncode({
@@ -372,8 +372,8 @@ class YYSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResol
     }
   }
 
-  Future<Map<String, dynamic>?> _getMobileHlsStream({required LiveRoom detail, required String rate}) async {
-    final channel = _channelIds(detail);
+  Future<Map<String, dynamic>?> _getMobileHlsStream({required LiveRoom liveroom, required String rate}) async {
+    final channel = _channelIds(liveroom);
     final response = await HttpClient.instance.getText(
       'https://interface.yy.com/hls/new/get/${channel.cid}/${channel.sid}/$rate',
       queryParameters: const {'source': 'wapyy', 'callback': ''},
@@ -388,11 +388,11 @@ class YYSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResol
     return parseMobileHlsPayload(response);
   }
 
-  Future<List<LivePlayQuality>> _getMobileHlsQualities({required LiveRoom detail}) async {
+  Future<List<LivePlayQuality>> _getMobileHlsQualities({required LiveRoom liveroom}) async {
     final responses = await Future.wait(
       _mobileHlsRates.map((rate) async {
         try {
-          return (rate: rate, payload: await _getMobileHlsStream(detail: detail, rate: rate));
+          return (rate: rate, payload: await _getMobileHlsStream(liveroom: liveroom, rate: rate));
         } catch (error) {
           CoreLog.w('YY mobile HLS quality $rate failed: $error');
           return (rate: rate, payload: null);
@@ -432,9 +432,9 @@ class YYSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResol
   /// ============================================================
 
   @override
-  Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom detail}) async {
+  Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom liveroom}) async {
     try {
-      final qualities = parsePlayQualities(await getLiveStreamObj(detail: detail, qn: '1'));
+      final qualities = parsePlayQualities(await getLiveStreamObj(liveroom: liveroom, qn: '1'));
       if (qualities.isNotEmpty) return qualities;
       CoreLog.w('YY stream manager returned no qualities; using the mobile HLS source.');
     } catch (error) {
@@ -442,7 +442,7 @@ class YYSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResol
       // ErrAuthNotPass while the anonymous mobile HLS route remains playable.
       CoreLog.w('YY stream manager failed; using the mobile HLS source: $error');
     }
-    return _getMobileHlsQualities(detail: detail);
+    return _getMobileHlsQualities(liveroom: liveroom);
   }
 
   @visibleForTesting
@@ -498,7 +498,7 @@ class YYSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResol
   /// ============================================================
 
   @override
-  Future<List<String>> getPlayUrls({required LiveRoom detail, required LivePlayQuality quality}) async {
+  Future<List<String>> getPlayUrls({required LiveRoom liveroom, required LivePlayQuality quality}) async {
     final qn = quality.data?.toString() ?? '';
 
     if (qn.isEmpty) {
@@ -507,19 +507,19 @@ class YYSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResol
 
     if (qn.startsWith(_mobileHlsPrefix)) {
       final rate = qn.substring(_mobileHlsPrefix.length);
-      final payload = await _getMobileHlsStream(detail: detail, rate: rate);
+      final payload = await _getMobileHlsStream(liveroom: liveroom, rate: rate);
       final url = payload?['hls']?.toString().trim() ?? '';
       return url.isEmpty ? const <String>[] : <String>[url];
     }
 
     try {
-      final urls = parsePlayUrls(await getLiveStreamObj(detail: detail, qn: qn));
+      final urls = parsePlayUrls(await getLiveStreamObj(liveroom: liveroom, qn: qn));
       if (urls.isNotEmpty) return urls;
     } catch (error) {
       CoreLog.w('YY stream URL request failed; retrying through mobile HLS: $error');
     }
     final fallbackRate = quality.sort >= 2000 ? _mobileHlsRates.last : _mobileHlsRates.first;
-    final payload = await _getMobileHlsStream(detail: detail, rate: fallbackRate);
+    final payload = await _getMobileHlsStream(liveroom: liveroom, rate: fallbackRate);
     final url = payload?['hls']?.toString().trim() ?? '';
     return url.isEmpty ? const <String>[] : <String>[url];
   }
@@ -630,30 +630,32 @@ class YYSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResol
   /// ============================================================
 
   @override
-  Future<LiveRoom> getRoomDetail(LiveRoom room) async {
-    final identity = room.detailIdentity;
-    if (identity == null) return room;
-    final fresh = await _resolveDetail(identity.roomId, identity.platform);
+  Future<LiveRoom> getRoomDetail(LiveRoom liveroom) async {
+    
+    if (liveroom.detailIdentity == null) return liveroom;
+    final fresh = await _resolveDetail(liveroom);
     // Pad response gaps from the room the caller already holds. fillFromDetail
     // covers nick/avatar/area; the cover is padded explicitly because a blank
     // cover is the most visible symptom of a partial profile response.
-    final padded = fresh.fillFromDetail(room);
-    final existingCover = room.cover ?? '';
+    final padded = fresh.fillFromDetail(liveroom);
+    final existingCover = liveroom.cover ?? '';
     if ((padded.cover == null || padded.cover!.isEmpty) && existingCover.isNotEmpty) {
       return padded.copyWith(cover: existingCover);
     }
     return padded;
   }
 
-  Future<LiveRoom> _resolveDetail(String roomId, String platform) async {
+  Future<LiveRoom> _resolveDetail(LiveRoom liveroom) async {
+    final roomId = liveroom.roomId ?? '';
+    final platform = liveroom.platform ?? '';
     try {
-      return await _fetchRoomDetail(platform: platform, roomId: roomId);
+      return await _fetchRoomDetail(liveroom: LiveRoom(roomId: roomId, platform: platform));
     } catch (e) {
       CoreLog.error(e);
       if (Get.isRegistered<PlayerController>()) {
         final PlayerController playerController = Get.find<PlayerController>();
         final currentRoom = playerController.currentRoom;
-        if (currentRoom?.hasIdentity(platform: platform, roomId: roomId) == true) {
+        if (currentRoom?.hasSameIdentity(LiveRoom(roomId: roomId, platform: platform)) == true) {
           return currentRoom!.getLiveRoomWithError();
         }
       }
@@ -666,20 +668,22 @@ class YYSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResol
   /// ============================================================
 
   @override
-  Future<LiveRoom> getRoomDetailForRefresh(LiveRoom room) async {
-    final identity = room.detailIdentity;
-    if (identity == null) return room;
-    return _fetchRoomDetail(platform: identity.platform, roomId: identity.roomId);
+  Future<LiveRoom> getRoomDetailForRefresh(LiveRoom liveroom) async {
+    
+    if (liveroom.detailIdentity == null) return liveroom;
+    return _fetchRoomDetail(liveroom: liveroom);
   }
 
   @override
-  Future<LiveRoom> getRoomDetailForRecording(LiveRoom room) async {
-    final identity = room.detailIdentity;
-    if (identity == null) return room;
-    return _fetchRoomDetail(platform: identity.platform, roomId: identity.roomId);
+  Future<LiveRoom> getRoomDetailForRecording(LiveRoom liveroom) async {
+    
+    if (liveroom.detailIdentity == null) return liveroom;
+    return _fetchRoomDetail(liveroom: liveroom);
   }
 
-  Future<LiveRoom> _fetchRoomDetail({required String platform, required String roomId}) async {
+  Future<LiveRoom> _fetchRoomDetail({required LiveRoom liveroom}) async {
+    final roomId = liveroom.roomId ?? '';
+    final platform = liveroom.platform ?? '';
     final response = decode(
       await HttpClient.instance.getJson(
         'https://www.yy.com/api/liveInfoDetail/$roomId/$roomId/0',
@@ -796,7 +800,7 @@ class YYSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResol
   }
 
   @override
-  Future<List<LiveSuperChatMessage>> getSuperChatMessage({required String roomId}) {
+  Future<List<LiveSuperChatMessage>> getSuperChatMessage({required LiveRoom liveroom}) {
     //尚不支持
     return Future.value([]);
   }

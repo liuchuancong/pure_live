@@ -8,7 +8,7 @@ import 'package:pure_live/core/interface/live_danmaku.dart';
 /// 弹幕引擎工厂：按房间创建对应站点的 LiveDanmaku 实例。
 ///
 /// 生产环境绑定站点适配器的 getDanmaku()；测试注入记录调用的假引擎。
-typedef MultiviewDanmakuEngineFactory = LiveDanmaku Function(LiveRoom room);
+typedef MultiviewDanmakuEngineFactory = LiveDanmaku Function(LiveRoom liveroom);
 
 /// multiview 大画面弹幕会话管理器（精简自建）。
 ///
@@ -65,17 +65,17 @@ class MultiviewDanmakuSession {
   }
 
   /// 房间是否具备建会话的最小条件（平台支持且携带弹幕连接参数）。
-  static bool supportsRoom(LiveRoom room) {
-    if (!isSupportedPlatform(room.platform)) return false;
-    final data = room.danmakuData;
+  static bool supportsRoom(LiveRoom liveroom) {
+    if (!isSupportedPlatform(liveroom.platform)) return false;
+    final data = liveroom.danmakuData;
     if (data == null) return false;
     if (data is String && data.isEmpty) return false;
     return true;
   }
 
   /// 建立或切换到 [room] 的会话；同键且健康时幂等返回。
-  Future<void> connect(LiveRoom room) {
-    final key = '${room.platform ?? ''}:${room.roomId ?? ''}';
+  Future<void> connect(LiveRoom liveroom) {
+    final key = '${liveroom.platform ?? ''}:${liveroom.roomId ?? ''}';
     if (_sessionKey == key && (_engine?.isConnected ?? false)) {
       return Future<void>.value();
     }
@@ -87,13 +87,13 @@ class MultiviewDanmakuSession {
       await _disconnectInternal();
       if (request != _epoch) return;
 
-      final engine = engineFactory(room);
+      final engine = engineFactory(liveroom);
       // 立即登记为当前引擎：后续切换/断开才能正确停止它。
       _engine = engine;
       final token = request;
-      _installCallbacks(engine, room, key, token);
+      _installCallbacks(engine, liveroom, key, token);
       try {
-        await engine.start(room.danmakuData).timeout(startTimeout);
+        await engine.start(liveroom.danmakuData).timeout(startTimeout);
       } catch (error, stackTrace) {
         developer.log(
           'MultiviewDanmakuSession: connect failed for $key',
@@ -144,7 +144,7 @@ class MultiviewDanmakuSession {
     await _stopEngineQuietly(engine);
   }
 
-  void _installCallbacks(LiveDanmaku engine, LiveRoom room, String key, int token) {
+  void _installCallbacks(LiveDanmaku engine, LiveRoom liveroom, String key, int token) {
     _messageGate.clear();
     _repeatedFilter.clear();
     _similarityFilter.clear();

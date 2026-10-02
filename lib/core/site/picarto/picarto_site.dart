@@ -81,17 +81,17 @@ class PicartoSite extends LiveSite
   }) => _api.searchProfiles(keyword, page: page, pageSize: pageSize, cancel: cancel);
 
   @override
-  Future<LiveRoom> getRoomDetailForRefresh(LiveRoom room) async {
-    final identity = room.detailIdentity;
-    if (identity == null) return room;
-    return (await _api.detail(identity.roomId)).room;
+  Future<LiveRoom> getRoomDetailForRefresh(LiveRoom liveroom) async {
+    
+    if (liveroom.detailIdentity == null) return liveroom;
+    return (await _api.detail(liveroom.roomId!)).room;
   }
 
   @override
-  Future<LiveRoom> getRoomDetail(LiveRoom room) async {
-    final identity = room.detailIdentity;
-    if (identity == null) return room;
-    return _resolveDetail(identity.roomId);
+  Future<LiveRoom> getRoomDetail(LiveRoom liveroom) async {
+    
+    if (liveroom.detailIdentity == null) return liveroom;
+    return _resolveDetail(liveroom.roomId!);
   }
 
   Future<LiveRoom> _resolveDetail(String roomId) async {
@@ -101,24 +101,24 @@ class PicartoSite extends LiveSite
   }
 
   @override
-  Future<LiveRoom> getRoomDetailForRecording(LiveRoom room) async {
-    final identity = room.detailIdentity;
-    if (identity == null) return room;
-    return _resolveDetail(identity.roomId);
+  Future<LiveRoom> getRoomDetailForRecording(LiveRoom liveroom) async {
+    
+    if (liveroom.detailIdentity == null) return liveroom;
+    return _resolveDetail(liveroom.roomId!);
   }
 
   @override
-  Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom detail}) async {
-    if (detail.isExplicitlyOfflineNow) return [];
-    if (detail.platform != id || detail.data is! List<LivePlayQuality>) {
+  Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom liveroom}) async {
+    if (liveroom.isExplicitlyOfflineNow) return [];
+    if (liveroom.platform != id || liveroom.data is! List<LivePlayQuality>) {
       throw const PicartoException(PicartoFailure.schema);
     }
-    return List.unmodifiable(detail.data as List<LivePlayQuality>);
+    return List.unmodifiable(liveroom.data as List<LivePlayQuality>);
   }
 
   @override
-  Future<List<String>> getPlayUrls({required LiveRoom detail, required LivePlayQuality quality}) async {
-    for (final current in await getPlayQualites(detail: detail)) {
+  Future<List<String>> getPlayUrls({required LiveRoom liveroom, required LivePlayQuality quality}) async {
+    for (final current in await getPlayQualites(liveroom: liveroom)) {
       if (current.selectionId == quality.selectionId) return List.unmodifiable(current.data as List<String>);
     }
     throw const PicartoException(PicartoFailure.qualityUnavailable);
@@ -126,12 +126,12 @@ class PicartoSite extends LiveSite
 
   @override
   Future<LivePlayUrlResolution> resolvePlayUrlsForRecoveryRaw({
-    required LiveRoom detail,
+    required LiveRoom liveroom,
     required LivePlayQuality quality,
   }) async {
-    final fresh = await getRoomDetail(detail);
+    final fresh = await getRoomDetail(liveroom);
     return LivePlayUrlResolution(
-      urls: await getPlayUrls(detail: fresh, quality: quality),
+      urls: await getPlayUrls(liveroom: fresh, quality: quality),
       appliedQualityData: quality.selectionId,
     );
   }

@@ -23,14 +23,17 @@ import 'package:pure_live/modules/multiview/danmaku/multiview_danmaku_session.da
 /// 复用站点适配器既有入口（getRoomDetail/getPlayQualites/getPlayUrls），
 /// 禁止在 multiview 内复制解析逻辑；测试注入假实现。
 /// [preferLowest] 为小格自动降质联动服务：true 时默认取最低档（列表末项）。
-typedef MultiviewStreamResolver = Future<MultiviewStreamSource> Function(LiveRoom room, {required bool preferLowest});
+typedef MultiviewStreamResolver = Future<MultiviewStreamSource> Function(
+  LiveRoom liveroom, {
+  required bool preferLowest,
+});
 
 /// 进入 multiview 时暂停全局播放器的钩子。
 typedef MultiviewGlobalPauseHook = Future<void> Function();
 
 /// Loads and saves the per-room volume used by multiview.
-typedef MultiviewRoomVolumeLoader = double Function(LiveRoom room);
-typedef MultiviewRoomVolumeSaver = Future<void> Function(LiveRoom room, double volume);
+typedef MultiviewRoomVolumeLoader = double Function(LiveRoom liveroom);
+typedef MultiviewRoomVolumeSaver = Future<void> Function(LiveRoom liveroom, double volume);
 
 /// 多画面同看控制器。
 ///
@@ -72,50 +75,50 @@ class MultiviewController extends GetxController {
   final Duration Function()? frameWatchdogElapsed;
 
   Future<MultiviewStreamSource> _defaultStreamResolver(
-    LiveRoom room, {
+    LiveRoom liveroom, {
     required bool preferLowest,
     required LiveQualityDiscoveryScope discoveryScope,
   }) => resolveStreamForSite(
-    room,
-    site: _siteFor(room.platform!),
+    liveroom,
+    site: _siteFor(liveroom.platform!),
     preferLowest: preferLowest,
     discoveryScope: discoveryScope,
   );
 
   @visibleForTesting
   static Future<MultiviewStreamSource> resolveStreamForSite(
-    LiveRoom room, {
+    LiveRoom liveroom, {
     required Site site,
     required bool preferLowest,
     LiveInputPlaybackBinder bindOwnedInput = bindLiveInputForPlayback,
     LiveQualityDiscoveryScope? discoveryScope,
   }) async {
     discoveryScope?.checkActive();
-    final platform = room.platform!;
+    final platform = liveroom.platform!;
     final liveSite = site.liveSite;
     final detail = liveSite is LiveSiteRecordRoomResolver
-        ? await (liveSite as LiveSiteRecordRoomResolver).getRoomDetailForRecording(room)
-        : await liveSite.getRoomDetail(room);
+        ? await (liveSite as LiveSiteRecordRoomResolver).getRoomDetailForRecording(liveroom)
+        : await liveSite.getRoomDetail(liveroom);
     discoveryScope?.checkActive();
     if (detail.isExplicitlyOfflineNow) {
       throw MultiviewRoomOffline(detail);
     }
     if (!detail.isPlayableNow) {
-      throw StateError('multiview: room status is ${detail.effectiveLiveStatus.name} for $platform/${room.roomId}');
+      throw StateError('multiview: room status is ${detail.effectiveLiveStatus.name} for $platform/${liveroom.roomId}');
     }
     final qualities = discoveryScope == null
-        ? await liveSite.discoverPlayQualities(detail: detail)
+        ? await liveSite.discoverPlayQualities(liveroom: detail)
         : await discoveryScope.discover(liveSite, detail);
     if (qualities.isEmpty) {
-      throw StateError('multiview: no play qualities for $platform/${room.roomId}');
+      throw StateError('multiview: no play qualities for $platform/${liveroom.roomId}');
     }
 
     final qualityIndex = preferLowest ? qualities.length - 1 : 0;
     Future<MultiviewStreamSource> loadQuality(LivePlayQuality quality) async {
-      final resolution = await site.liveSite.resolvePlayUrls(detail: detail, quality: quality);
+      final resolution = await site.liveSite.resolvePlayUrls(liveroom: detail, quality: quality);
       final nextUrls = resolution.urls;
       if (!resolution.hasSources) {
-        throw StateError('multiview: no play urls for $platform/${room.roomId} @ ${quality.quality}');
+        throw StateError('multiview: no play urls for $platform/${liveroom.roomId} @ ${quality.quality}');
       }
       final applied = resolveAppliedPlayQuality(qualities: qualities, requested: quality, resolution: resolution);
       final choices = List<LivePlayQuality>.unmodifiable([
@@ -131,7 +134,7 @@ class MultiviewController extends GetxController {
           qualityIndex: appliedIndex < 0 ? qualityIndex : appliedIndex,
         );
       }
-      final headers = await PlayerController.resolvePlaybackHeaders(site: site, room: detail);
+      final headers = await PlayerController.resolvePlaybackHeaders(site: site, liveroom: detail);
       return MultiviewStreamSource(
         url: nextUrls.first,
         headers: Map.unmodifiable(headers),
@@ -166,7 +169,7 @@ class MultiviewController extends GetxController {
     );
   }
 
-  static MultiviewLeaseLookup? _leaseLookup(Site site, LiveRoom detail, LivePlayQuality quality, List<String> lines) {
+  static MultiviewLeaseLookup? _leaseLookup(Site site, LiveRoom liveroom, LivePlayQuality quality, List<String> lines) {
     final liveSite = site.liveSite;
     if (liveSite is! LivePlayLeaseMetadata) return null;
     final metadata = liveSite as LivePlayLeaseMetadata;
@@ -177,9 +180,9 @@ class MultiviewController extends GetxController {
       return MultiviewSourceLease(
         refreshAt: refreshAt!,
         renew: (current) async {
-          final resolution = await liveSite.resolvePlayUrls(detail: detail, quality: quality);
+          final resolution = await liveSite.resolvePlayUrls(liveroom: liveroom, quality: quality);
           final urls = resolution.urls;
-          if (urls.isEmpty) throw StateError('multiview: no renewed url for ${detail.platform}/${detail.roomId}');
+          if (urls.isEmpty) throw StateError('multiview: no renewed url for ${liveroom.platform}/${liveroom.roomId}');
           final next = urls[(lineIndex < 0 ? 0 : lineIndex).clamp(0, urls.length - 1)];
           return FlvLeasedSource(Uri.parse(next), refreshAt: metadata.getPlayUrlRefreshAt(next));
         },
@@ -187,14 +190,14 @@ class MultiviewController extends GetxController {
     };
   }
 
-  static LiveDanmaku _defaultDanmakuEngineFactory(LiveRoom room) {
-    return Sites.of(room.platform!).liveSite.getDanmaku();
+  static LiveDanmaku _defaultDanmakuEngineFactory(LiveRoom liveroom) {
+    return Sites.of(liveroom.platform!).liveSite.getDanmaku();
   }
 
-  static double _defaultRoomVolumeLoader(LiveRoom room) => room.getSavedVolume();
+  static double _defaultRoomVolumeLoader(LiveRoom liveroom) => liveroom.getSavedVolume();
 
-  static Future<void> _defaultRoomVolumeSaver(LiveRoom room, double volume) {
-    return room.saveCurrentVolume(volume);
+  static Future<void> _defaultRoomVolumeSaver(LiveRoom liveroom, double volume) {
+    return liveroom.saveCurrentVolume(volume);
   }
 
   static Future<void> _defaultPauseGlobalPlayback() async {
@@ -576,15 +579,15 @@ class MultiviewController extends GetxController {
   // 分配
   // ---------------------------------------------------------------------------
 
-  Future<void> assignRoom(int cellIndex, LiveRoom room, {bool fromFrameRecovery = false}) async {
+  Future<void> assignRoom(int cellIndex, LiveRoom liveroom, {bool fromFrameRecovery = false}) async {
     if (_closed || isClosed) return;
     RangeError.checkValidIndex(cellIndex, cells, 'cellIndex');
-    final targetRoom = room.normalizedIdentityCopy();
+    final targetRoom = liveroom.normalizedIdentityCopy();
     if (targetRoom.normalizedPlatformId.isEmpty || !Sites.isSupported(targetRoom.normalizedPlatformId)) {
-      throw ArgumentError.value(room.platform, 'room.platform', 'Unsupported live platform');
+      throw ArgumentError.value(liveroom.platform, 'room.platform', 'Unsupported live platform');
     }
     if (targetRoom.normalizedRoomId.isEmpty) {
-      throw ArgumentError.value(room.roomId, 'room.roomId', 'Room id is required');
+      throw ArgumentError.value(liveroom.roomId, 'room.roomId', 'Room id is required');
     }
 
     _cancelDiscovery(cellIndex);

@@ -387,15 +387,13 @@ class LiveUrlTool {
 
   static Future<void> getPlayUrlByRoomId({
     required BuildContext context,
-    required String roomId,
-    required String platform,
+    required LiveRoom liveroom,
     LiveSite Function(String)? siteFor,
     bool Function()? isCurrentRoom,
     void Function(String)? notify,
   }) => _showKnownRoomAction(
     context: context,
-    roomId: roomId,
-    platform: platform,
+    liveroom: liveroom,
     cast: false,
     siteFor: siteFor,
     isCurrentRoom: isCurrentRoom,
@@ -404,16 +402,14 @@ class LiveUrlTool {
 
   static Future<void> castPlayUrlByRoomId({
     required BuildContext context,
-    required String roomId,
-    required String platform,
+    required LiveRoom liveroom,
     LiveSite Function(String)? siteFor,
     bool Function()? isCurrentRoom,
     void Function(String)? notify,
     Future<void> Function(String)? openCast,
   }) => _showKnownRoomAction(
     context: context,
-    roomId: roomId,
-    platform: platform,
+    liveroom: liveroom,
     cast: true,
     siteFor: siteFor,
     isCurrentRoom: isCurrentRoom,
@@ -423,8 +419,7 @@ class LiveUrlTool {
 
   static Future<void> _showKnownRoomAction({
     required BuildContext context,
-    required String roomId,
-    required String platform,
+    required LiveRoom liveroom,
     required bool cast,
     LiveSite Function(String)? siteFor,
     bool Function()? isCurrentRoom,
@@ -432,9 +427,9 @@ class LiveUrlTool {
     Future<void> Function(String)? openCast,
   }) {
     if (!context.mounted) return Future.value();
+    final roomId = (liveroom.roomId ?? '').trim();
+    final platform = (liveroom.platform ?? '').trim().toLowerCase();
     final showNotice = notify ?? ((String key) => ToastUtil.show(i18n(key)));
-    roomId = roomId.trim();
-    platform = platform.trim().toLowerCase();
     if (roomId.isEmpty || platform.isEmpty) {
       showNotice('toolbox_empty_link');
       return Future.value();
@@ -445,7 +440,7 @@ class LiveUrlTool {
     }
     return KnownRoomLinkDialog.show(
       context: context,
-      room: LiveRoom(roomId: roomId, platform: platform),
+      liveroom: LiveRoom(roomId: roomId, platform: platform),
       cast: cast,
       flow: ToolBoxDirectLinkFlow(siteFor: siteFor),
       isCurrentRoom: isCurrentRoom ?? (() => true),

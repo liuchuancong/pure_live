@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:pure_live/common/models/live_message.dart';
+import 'package:pure_live/common/models/live_room.dart';
 
 class LocalMessageDelivery {
   const LocalMessageDelivery({
@@ -19,7 +20,9 @@ class LocalMessageDelivery {
   /// stream-detail/quality request. Player retries and quality or line changes
   /// advance the room-load request generation while the user is still in the
   /// same room, so request epochs must not invalidate a queued local echo.
-  bool matchesRoom({required String? roomId, required String? platform}) {
+  bool matchesRoom({required LiveRoom liveroom}) {
+    final roomId = liveroom.roomId ?? '';
+    final platform = liveroom.platform ?? '';
     return this.roomId == roomId && this.platform == platform;
   }
 }

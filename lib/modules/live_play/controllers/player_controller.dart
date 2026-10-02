@@ -28,7 +28,7 @@ typedef StreamSourceOpener = Future<void> Function(
   String url,
   List<String> playUrls,
   Map<String, String> headers,
-  LiveRoom room,
+  LiveRoom liveroom,
   bool audioOnly,
   PlaybackSourceResolver? sourceResolver,
   DateTime? sourceRefreshAt,
@@ -37,7 +37,7 @@ typedef StreamSourceOpener = Future<void> Function(
 
 typedef OwnedStreamSourceOpener = Future<void> Function(
   OwnedPlaybackSource source,
-  LiveRoom room,
+  LiveRoom liveroom,
   bool audioOnly,
   PlaybackSourceResolver? resolver,
   PlaybackSourceQualitySelection selection,
@@ -140,7 +140,7 @@ abstract interface class PlayerSessionHost {
 
   bool get isClosed;
 
-  void updateRoom({LiveRoom? detail, bool? isLiving, bool? success, bool? isLoading, String? loadError});
+  void updateRoom({LiveRoom? liveroom, bool? isLiving, bool? success, bool? isLoading, String? loadError});
 
   void updatePlayer({
     VideoController? videoController,
@@ -195,7 +195,7 @@ class PlayerController extends GetxController {
     String url,
     List<String> playUrls,
     Map<String, String> headers,
-    LiveRoom room,
+    LiveRoom liveroom,
     bool audioOnly,
     PlaybackSourceResolver? sourceResolver,
     DateTime? sourceRefreshAt,
@@ -207,18 +207,18 @@ class PlayerController extends GetxController {
       url,
       playUrls,
       headers,
-      room: room,
+      liveroom: liveroom,
       audioOnly: audioOnly,
       sourceResolver: sourceResolver,
       sourceRefreshAt: sourceRefreshAt,
       sourceSelection: sourceSelection,
     );
-    _applyOpenReceipt(manager, beforeRevision, room);
+    _applyOpenReceipt(manager, beforeRevision, liveroom);
   }
 
   Future<void> _openOwnedGlobalStream(
     OwnedPlaybackSource source,
-    LiveRoom room,
+    LiveRoom liveroom,
     bool audioOnly,
     PlaybackSourceResolver? resolver,
     PlaybackSourceQualitySelection selection,
@@ -227,15 +227,15 @@ class PlayerController extends GetxController {
     final beforeRevision = manager.currentSourceCommit?.revision ?? 0;
     await manager.playSource(
       source,
-      room: room,
+      liveroom: liveroom,
       audioOnly: audioOnly,
       sourceResolver: resolver,
       sourceSelection: selection,
     );
-    _applyOpenReceipt(manager, beforeRevision, room);
+    _applyOpenReceipt(manager, beforeRevision, liveroom);
   }
 
-  void _applyOpenReceipt(LivePlayerFacade manager, int beforeRevision, LiveRoom room) {
+  void _applyOpenReceipt(LivePlayerFacade manager, int beforeRevision, LiveRoom liveroom) {
     if (manager.hasError.value) {
       throw PlayerException(code: PlayerErrorCode.sourceInvalid, message: 'Selected stream failed to open');
     }
@@ -246,8 +246,8 @@ class PlayerController extends GetxController {
     if (commit == null ||
         commit.revision <= beforeRevision ||
         !manager.isSourceCommitCurrent(commit) ||
-        commit.room.roomId != room.roomId ||
-        commit.room.platform != room.platform) {
+        commit.room.roomId != liveroom.roomId ||
+        commit.room.platform != liveroom.platform) {
       throw const _StreamSelectionCancelled();
     }
     // The broadcast listener may not have delivered yet. Applying the same
@@ -269,36 +269,36 @@ class PlayerController extends GetxController {
     _qualityCancel = null;
   }
 
-  bool _isLoadCurrent(int epoch, LiveRoom room, Site site) {
+  bool _isLoadCurrent(int epoch, LiveRoom liveroom, Site site) {
     final current = currentRoom;
     return !_closed &&
         !isClosed &&
         !_main.isClosed &&
         epoch == _loadEpoch &&
         currentSite.id == site.id &&
-        current?.roomId == room.roomId &&
-        current?.platform == room.platform;
+        current?.roomId == liveroom.roomId &&
+        current?.platform == liveroom.platform;
   }
 
   /// 解析指定站点/房间的播放请求头（单一事实来源）。
   ///
   /// 主房间路径（[getHeaders]）与 multiview 每格解析器共用此入口，
   /// 保证 Cookie/UA/Referer 等鉴权头逻辑不发生漂移。
-  static Future<Map<String, String>> resolvePlaybackHeaders({required Site site, required LiveRoom? room}) async {
+  static Future<Map<String, String>> resolvePlaybackHeaders({required Site site, required LiveRoom? liveroom}) async {
     return PlaybackHeaderResolver.resolve(
       platform: site.id,
-      roomId: room?.roomId ?? '',
-      roomHeaders: room?.httpHeaders ?? const <String, String>{},
+      roomId: liveroom?.roomId ?? '',
+      roomHeaders: liveroom?.httpHeaders ?? const <String, String>{},
     );
   }
 
   Future<Map<String, String>> getHeaders({Site? expectedSite, LiveRoom? expectedRoom}) {
-    return resolvePlaybackHeaders(site: expectedSite ?? currentSite, room: expectedRoom ?? currentRoom);
+    return resolvePlaybackHeaders(site: expectedSite ?? currentSite, liveroom: expectedRoom ?? currentRoom);
   }
 
   PlaybackSourceResolver? _buildSourceResolver({
     required Site site,
-    required LiveRoom room,
+    required LiveRoom liveroom,
     required LivePlayQuality quality,
   }) {
     final liveSite = site.liveSite;
@@ -324,7 +324,7 @@ class PlayerController extends GetxController {
         requestedIndex = choices.length;
         choices.add(requested);
       }
-      final resolution = await liveSite.resolvePlayUrlsForRecovery(detail: room, quality: requested);
+      final resolution = await liveSite.resolvePlayUrlsForRecovery(liveroom: liveroom, quality: requested);
       final urls = resolution.urls;
       final input = resolution.inputRecipe;
       if (input != null) {
@@ -445,7 +445,7 @@ class PlayerController extends GetxController {
       isAudioOnly: playerState.isCurrentRoomAudioOnly,
       sourceResolver: _buildSourceResolver(
         site: site,
-        room: room,
+        liveroom: room,
         quality: playerState.qualites[playerState.currentQuality.clamp(0, playerState.qualites.length - 1)],
       ),
       sourceRefreshAt: playerState.ownedSource == null
@@ -472,20 +472,20 @@ class PlayerController extends GetxController {
   /// directly used to omit the load epoch that protects ordinary sources.
   /// A room switch could therefore attach the older direct source after the
   /// new room had already invalidated playback work.
-  Future<VideoController?> setDirectPlayer({required LiveRoom room, required Site site}) async {
-    final roomId = room.normalizedRoomId;
+  Future<VideoController?> setDirectPlayer({required LiveRoom liveroom, required Site site}) async {
+    final roomId = liveroom.normalizedRoomId;
     if (roomId.isEmpty) return null;
     invalidateLoad();
     final loadEpoch = _loadEpoch;
-    final controller = await setPlayer(roomId: roomId, expectedRoom: room, expectedSite: site, loadEpoch: loadEpoch);
+    final controller = await setPlayer(roomId: roomId, expectedRoom: liveroom, expectedSite: site, loadEpoch: loadEpoch);
     if (controller == null) return null;
     try {
       await controller.initialization;
     } catch (_) {
-      if (!_isLoadCurrent(loadEpoch, room, site)) return null;
+      if (!_isLoadCurrent(loadEpoch, liveroom, site)) return null;
       rethrow;
     }
-    if (!_isLoadCurrent(loadEpoch, room, site) || controller.status == PlayerStatus.disposed) return null;
+    if (!_isLoadCurrent(loadEpoch, liveroom, site) || controller.status == PlayerStatus.disposed) return null;
     return controller.status == PlayerStatus.error ? null : controller;
   }
 
@@ -533,7 +533,7 @@ class PlayerController extends GetxController {
       currentQuality: currentQuality,
       isAudioOnly: manager.desiredAudioOnlyMode,
       reuseCurrentSession: true,
-      sourceResolver: _buildSourceResolver(site: currentSite, room: session.room, quality: qualities[currentQuality]),
+      sourceResolver: _buildSourceResolver(site: currentSite, liveroom: session.room, quality: qualities[currentQuality]),
       sourceRefreshAt: session.ownedSource == null
           ? _getSourceRefreshAt(
               site: currentSite,
@@ -555,11 +555,11 @@ class PlayerController extends GetxController {
     return videoController;
   }
 
-  Future<List<LivePlayQuality>> _discoverQualities(Site site, LiveRoom room, CancelToken cancel) async {
+  Future<List<LivePlayQuality>> _discoverQualities(Site site, LiveRoom liveroom, CancelToken cancel) async {
     final cleanup = Completer<void>();
     if (site.liveSite is LiveQualityDiscovery) _qualityRequests.add(cleanup.future);
     try {
-      return await site.liveSite.discoverPlayQualities(detail: room, cancel: cancel);
+      return await site.liveSite.discoverPlayQualities(liveroom: liveroom, cancel: cancel);
     } finally {
       if (identical(_qualityCancel, cancel)) _qualityCancel = null;
       _qualityRequests.remove(cleanup.future);
@@ -594,7 +594,7 @@ class PlayerController extends GetxController {
       }
       if (!_isLoadCurrent(loadEpoch, room, site)) return;
 
-      await _getPlayUrl(loadEpoch: loadEpoch, room: room, site: site);
+      await _getPlayUrl(loadEpoch: loadEpoch, liveroom: room, site: site);
     } catch (error, stackTrace) {
       if (!_isLoadCurrent(loadEpoch, room, site)) return;
       developer.log(
@@ -634,16 +634,16 @@ class PlayerController extends GetxController {
     _main.updatePlayer(currentQuality: targetIndex, hasUseDefaultResolution: true);
   }
 
-  Future<void> _getPlayUrl({required int loadEpoch, required LiveRoom room, required Site site}) async {
-    if (!_isLoadCurrent(loadEpoch, room, site)) return;
+  Future<void> _getPlayUrl({required int loadEpoch, required LiveRoom liveroom, required Site site}) async {
+    if (!_isLoadCurrent(loadEpoch, liveroom, site)) return;
     final playerState = _state.player;
     if (playerState.qualites.isEmpty || playerState.currentQuality >= playerState.qualites.length) return;
 
     final resolution = await site.liveSite.resolvePlayUrls(
-      detail: room,
+      liveroom: liveroom,
       quality: playerState.qualites[playerState.currentQuality],
     );
-    if (!_isLoadCurrent(loadEpoch, room, site)) return;
+    if (!_isLoadCurrent(loadEpoch, liveroom, site)) return;
 
     if (!resolution.hasSources) {
       ToastUtil.show(i18n('cannot_read_play_url'));
@@ -667,12 +667,12 @@ class PlayerController extends GetxController {
       currentLineIndex: lineIndex,
     );
     final controller = await setPlayer(
-      roomId: room.roomId!,
-      expectedRoom: room,
+      roomId: liveroom.roomId!,
+      expectedRoom: liveroom,
       expectedSite: site,
       loadEpoch: loadEpoch,
     );
-    if (controller == null || !_isLoadCurrent(loadEpoch, room, site)) return;
+    if (controller == null || !_isLoadCurrent(loadEpoch, liveroom, site)) return;
     _main.updateRoom(success: true);
   }
 
@@ -714,9 +714,9 @@ class PlayerController extends GetxController {
       final requestedQualityValue = before.qualites[requestedQuality];
       final refreshSignedSource = site.liveSite is LivePlayRecoveryResolver;
       final resolution = refreshSignedSource
-          ? await site.liveSite.resolvePlayUrlsForRecovery(detail: room, quality: requestedQualityValue)
+          ? await site.liveSite.resolvePlayUrlsForRecovery(liveroom: room, quality: requestedQualityValue)
           : type == ReloadDataType.changeQuality || before.ownedSource != null
-          ? await site.liveSite.resolvePlayUrls(detail: room, quality: requestedQualityValue)
+          ? await site.liveSite.resolvePlayUrls(liveroom: room, quality: requestedQualityValue)
           : LivePlayUrlResolution.withSourcePolicies(
               urls: List<String>.from(before.playUrls),
               sourceQueryPolicies: before.sourceQueryPolicies,
@@ -774,7 +774,7 @@ class PlayerController extends GetxController {
         currentQuality: selection.qualityIndex,
         sourceQueryPolicies: resolution.sourceQueryPolicies,
       );
-      final resolver = _buildSourceResolver(site: site, room: room, quality: before.qualites[selection.qualityIndex]);
+      final resolver = _buildSourceResolver(site: site, liveroom: room, quality: before.qualites[selection.qualityIndex]);
       if (owned != null) {
         await (_ownedStreamSourceOpener ?? _openOwnedGlobalStream)(
           owned,

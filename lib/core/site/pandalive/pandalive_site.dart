@@ -208,42 +208,44 @@ class PandaLiveSite extends LiveSite
     return List.unmodifiable(rooms);
   }
 
-  String _userId(String roomId, String platform) {
+  String _userId(LiveRoom liveroom) {
+    final roomId = liveroom.roomId ?? '';
+    final platform = liveroom.platform ?? '';
     if (platform.trim().toLowerCase() != id) throw const PandaLiveException(PandaLiveFailure.identity);
     final userId = PandaLiveLink.normalizeUserId(roomId);
     if (userId == null) throw const PandaLiveException(PandaLiveFailure.identity);
     return userId;
   }
 
-  Future<LiveRoom> _detail(String roomId, String platform, {required bool includeMedia}) async {
-    final data = await _api.room(_userId(roomId, platform), resolveMedia: includeMedia);
+  Future<LiveRoom> _detail(LiveRoom liveroom, {required bool includeMedia}) async {
+    final data = await _api.room(_userId(liveroom), resolveMedia: includeMedia);
     return _room(data, includeMedia: includeMedia);
   }
 
   @override
-  Future<LiveRoom> getRoomDetail(LiveRoom room) async {
-    final identity = room.detailIdentity;
-    if (identity == null) return room;
-    return _detail(identity.roomId, identity.platform, includeMedia: true);
+  Future<LiveRoom> getRoomDetail(LiveRoom liveroom) async {
+    
+    if (liveroom.detailIdentity == null) return liveroom;
+    return _detail(liveroom, includeMedia: true);
   }
 
   @override
-  Future<LiveRoom> getRoomDetailForRecording(LiveRoom room) async {
-    final identity = room.detailIdentity;
-    if (identity == null) return room;
-    return _detail(identity.roomId, identity.platform, includeMedia: true);
+  Future<LiveRoom> getRoomDetailForRecording(LiveRoom liveroom) async {
+    
+    if (liveroom.detailIdentity == null) return liveroom;
+    return _detail(liveroom, includeMedia: true);
   }
 
   @override
-  Future<LiveRoom> getRoomDetailForRefresh(LiveRoom room) async {
-    final identity = room.detailIdentity;
-    if (identity == null) return room;
-    return _detail(identity.roomId, identity.platform, includeMedia: false);
+  Future<LiveRoom> getRoomDetailForRefresh(LiveRoom liveroom) async {
+    
+    if (liveroom.detailIdentity == null) return liveroom;
+    return _detail(liveroom, includeMedia: false);
   }
 
-  PandaLiveRoom _snapshot(LiveRoom detail) {
-    final userId = _userId(detail.roomId ?? '', detail.platform ?? '');
-    final data = detail.data;
+  PandaLiveRoom _snapshot(LiveRoom liveroom) {
+    final userId = _userId(liveroom);
+    final data = liveroom.data;
     if (data is! PandaLiveRoom || data.userId.toLowerCase() != userId.toLowerCase()) {
       throw const PandaLiveException(PandaLiveFailure.identity);
     }
@@ -254,9 +256,9 @@ class PandaLiveSite extends LiveSite
   }
 
   @override
-  Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom detail}) async {
-    if (detail.isExplicitlyOfflineNow) return [];
-    final room = _snapshot(detail);
+  Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom liveroom}) async {
+    if (liveroom.isExplicitlyOfflineNow) return [];
+    final room = _snapshot(liveroom);
     return List.unmodifiable(
       room.streams.map(
         (stream) => LivePlayQuality(
@@ -268,8 +270,8 @@ class PandaLiveSite extends LiveSite
     );
   }
 
-  Future<LivePlayUrlResolution> _resolve(LiveRoom detail, LivePlayQuality quality, {required bool refresh}) async {
-    var room = _snapshot(detail);
+  Future<LivePlayUrlResolution> _resolve(LiveRoom liveroom, LivePlayQuality quality, {required bool refresh}) async {
+    var room = _snapshot(liveroom);
     if (refresh) {
       room = _snapshot(await getRoomDetail(LiveRoom(roomId: room.userId, platform: id)));
     }
@@ -283,16 +285,16 @@ class PandaLiveSite extends LiveSite
   }
 
   @override
-  Future<LivePlayUrlResolution> resolvePlayUrlsRaw({required LiveRoom detail, required LivePlayQuality quality}) =>
-      _resolve(detail, quality, refresh: false);
+  Future<LivePlayUrlResolution> resolvePlayUrlsRaw({required LiveRoom liveroom, required LivePlayQuality quality}) =>
+      _resolve(liveroom, quality, refresh: false);
 
   @override
   Future<LivePlayUrlResolution> resolvePlayUrlsForRecoveryRaw({
-    required LiveRoom detail,
+    required LiveRoom liveroom,
     required LivePlayQuality quality,
-  }) => _resolve(detail, quality, refresh: true);
+  }) => _resolve(liveroom, quality, refresh: true);
 
   @override
-  Future<List<String>> getPlayUrls({required LiveRoom detail, required LivePlayQuality quality}) async =>
-      (await _resolve(detail, quality, refresh: false)).urls;
+  Future<List<String>> getPlayUrls({required LiveRoom liveroom, required LivePlayQuality quality}) async =>
+      (await _resolve(liveroom, quality, refresh: false)).urls;
 }

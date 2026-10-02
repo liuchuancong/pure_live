@@ -645,7 +645,7 @@ mixin DesktopWindowMixin<T extends StatefulWidget> on State<T> implements Window
     final room = LiveRoom.fromJson(roomMap).normalizedIdentityCopy();
     _isDialogOpen = true;
     try {
-      final enterRoom = await ShareCommandImportDialog.show(context: navigatorContext, room: room);
+      final enterRoom = await ShareCommandImportDialog.show(context: navigatorContext, liveroom: room);
       if (enterRoom == true && mounted) {
         AppNavigator.toLiveRoomDetail(liveRoom: room);
       }

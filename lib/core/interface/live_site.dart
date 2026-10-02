@@ -142,7 +142,7 @@ List<String> normalizeResolvedPlayUrls(Iterable<String> urls) {
 /// Bilibili can implement this contract because guest requests may be
 /// downgraded even when a higher `qn` was requested.
 abstract interface class LivePlayUrlResolver {
-  Future<LivePlayUrlResolution> resolvePlayUrlsRaw({required LiveRoom detail, required LivePlayQuality quality});
+  Future<LivePlayUrlResolution> resolvePlayUrlsRaw({required LiveRoom liveroom, required LivePlayQuality quality});
 }
 
 /// Optional cursor contract for adapters that must make a separate network
@@ -155,7 +155,7 @@ abstract interface class LivePlayUrlResolver {
 /// the platform's advertised lines.
 abstract interface class LivePlayUrlCursorResolver {
   Future<LivePlayUrlResolution> resolvePlayUrlAtRaw({
-    required LiveRoom detail,
+    required LiveRoom liveroom,
     required LivePlayQuality quality,
     required int lineIndex,
   });
@@ -169,7 +169,7 @@ abstract interface class LivePlayUrlCursorResolver {
 /// this contract and can reopen an already-expired source indefinitely.
 abstract interface class LivePlayRecoveryResolver {
   Future<LivePlayUrlResolution> resolvePlayUrlsForRecoveryRaw({
-    required LiveRoom detail,
+    required LiveRoom liveroom,
     required LivePlayQuality quality,
   });
 }
@@ -228,11 +228,11 @@ class LiveSite {
   /// re-deriving everything from the identity. Callers that only hold the
   /// identity (deep links, persisted history, recorder tasks restored from
   /// disk) pass a `LiveRoom(roomId: ..., platform: ...)` stub.
-  Future<LiveRoom> getRoomDetail(LiveRoom room) async {
-    final roomId = room.roomId;
-    final platform = room.platform;
+  Future<LiveRoom> getRoomDetail(LiveRoom liveroom) async {
+    final roomId = liveroom.roomId;
+    final platform = liveroom.platform;
     if (roomId == null || roomId.isEmpty || platform == null || platform.isEmpty) {
-      return room;
+      return liveroom;
     }
     return Future.value(
       LiveRoom(
@@ -254,15 +254,15 @@ class LiveSite {
     );
   }
 
-  Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom detail}) async {
+  Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom liveroom}) async {
     return Future.value(<LivePlayQuality>[]);
   }
 
-  Future<List<String>> getPlayUrls({required LiveRoom detail, required LivePlayQuality quality}) async {
+  Future<List<String>> getPlayUrls({required LiveRoom liveroom, required LivePlayQuality quality}) async {
     return Future.value(<String>[]);
   }
 
-  Future<List<LiveSuperChatMessage>> getSuperChatMessage({required String roomId}) async {
+  Future<List<LiveSuperChatMessage>> getSuperChatMessage({required LiveRoom liveroom}) async {
     return Future.value([]);
   }
 }
@@ -275,36 +275,36 @@ class LiveSite {
 /// Other adapters continue using [LiveSite.getPlayUrls] and assume that
 /// the requested quality was applied.
 extension LiveSitePlayUrlResolution on LiveSite {
-  Future<LivePlayUrlResolution> resolvePlayUrls({required LiveRoom detail, required LivePlayQuality quality}) async {
+  Future<LivePlayUrlResolution> resolvePlayUrls({required LiveRoom liveroom, required LivePlayQuality quality}) async {
     final site = this;
 
     if (site is LivePlayUrlResolver) {
       final resolver = site as LivePlayUrlResolver;
 
-      final resolution = await resolver.resolvePlayUrlsRaw(detail: detail, quality: quality);
+      final resolution = await resolver.resolvePlayUrlsRaw(liveroom: liveroom, quality: quality);
 
       return resolution.normalized();
     }
 
     return LivePlayUrlResolution(
-      urls: normalizeResolvedPlayUrls(await getPlayUrls(detail: detail, quality: quality)),
+      urls: normalizeResolvedPlayUrls(await getPlayUrls(liveroom: liveroom, quality: quality)),
       appliedQualityData: quality.selectionId,
     );
   }
 
   Future<LivePlayUrlResolution> resolvePlayUrlsForRecovery({
-    required LiveRoom detail,
+    required LiveRoom liveroom,
     required LivePlayQuality quality,
   }) async {
     final site = this;
     if (site is LivePlayRecoveryResolver) {
       final resolution = await (site as LivePlayRecoveryResolver).resolvePlayUrlsForRecoveryRaw(
-        detail: detail,
+        liveroom: liveroom,
         quality: quality,
       );
       return resolution.normalized();
     }
-    return resolvePlayUrls(detail: detail, quality: quality);
+    return resolvePlayUrls(liveroom: liveroom, quality: quality);
   }
 }
 
@@ -317,7 +317,7 @@ extension LiveSitePlayUrlResolution on LiveSite {
 /// calls without changing the full room-entry contract for every site
 /// implementation.
 abstract interface class LiveSiteRoomRefresher {
-  Future<LiveRoom> getRoomDetailForRefresh(LiveRoom room);
+  Future<LiveRoom> getRoomDetailForRefresh(LiveRoom liveroom);
 }
 
 /// Strict, playback-complete room lookup used before a recording starts.
@@ -337,5 +337,5 @@ abstract interface class LiveSiteRoomRefresher {
 /// * return an explicit offline/banned room only when the platform said so;
 /// * retain every field required by [LiveSite.getPlayQualites].
 abstract interface class LiveSiteRecordRoomResolver {
-  Future<LiveRoom> getRoomDetailForRecording(LiveRoom room);
+  Future<LiveRoom> getRoomDetailForRecording(LiveRoom liveroom);
 }

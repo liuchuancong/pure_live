@@ -23,13 +23,13 @@ List<T> applyHistoryLimit<T>(Iterable<T> values, int limit) {
 
 List<LiveRoom> upsertHistoryRoom(
   List<LiveRoom> current,
-  LiveRoom room, {
+  LiveRoom liveroom, {
   required int watchedAt,
   int limit = defaultHistoryLimit,
 }) {
   final maxLength = normalizeHistoryLimit(limit);
-  final next = List<LiveRoom>.from(current)..removeWhere((entry) => entry.hasSameIdentity(room));
-  next.insert(0, room.normalizedIdentityCopy().copyWith(lastWatchedAt: watchedAt));
+  final next = List<LiveRoom>.from(current)..removeWhere((entry) => entry.hasSameIdentity(liveroom));
+  next.insert(0, liveroom.normalizedIdentityCopy().copyWith(lastWatchedAt: watchedAt));
   if (maxLength != unlimitedHistoryLimit && next.length > maxLength) {
     next.removeRange(maxLength, next.length);
   }
@@ -100,24 +100,24 @@ class HistoryController extends GetxController {
     });
   }
 
-  void addRoomToHistory(LiveRoom room) {
+  void addRoomToHistory(LiveRoom liveroom) {
     historyRooms.v = upsertHistoryRoom(
       historyRooms.v,
-      room,
+      liveroom,
       watchedAt: DateTime.now().millisecondsSinceEpoch,
       limit: historyLimit.v,
     );
   }
 
-  Future<bool> addRoomToHistoryDurably(LiveRoom room) {
+  Future<bool> addRoomToHistoryDurably(LiveRoom liveroom) {
     return _mutateRoomsDurably(
       (current) =>
-          upsertHistoryRoom(current, room, watchedAt: DateTime.now().millisecondsSinceEpoch, limit: historyLimit.v),
+          upsertHistoryRoom(current, liveroom, watchedAt: DateTime.now().millisecondsSinceEpoch, limit: historyLimit.v),
     );
   }
 
-  void removeRoomFromHistory(LiveRoom room) {
-    historyRooms.v = List<LiveRoom>.from(historyRooms.v)..removeWhere((entry) => entry.hasSameIdentity(room));
+  void removeRoomFromHistory(LiveRoom liveroom) {
+    historyRooms.v = List<LiveRoom>.from(historyRooms.v)..removeWhere((entry) => entry.hasSameIdentity(liveroom));
   }
 
   void removeRoomFromHistoryAt(int index) {

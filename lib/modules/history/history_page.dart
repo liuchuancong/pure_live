@@ -7,7 +7,7 @@ import 'package:waterfall_flow/waterfall_flow.dart';
 class HistoryPage extends StatefulWidget {
   const HistoryPage({super.key, this.loadRoom});
 
-  final Future<LiveRoom> Function(LiveRoom room)? loadRoom;
+  final Future<LiveRoom> Function(LiveRoom liveroom)? loadRoom;
   @override
   State<HistoryPage> createState() => _HistoryPageState();
 }
@@ -98,10 +98,10 @@ class _HistoryPageState extends State<HistoryPage> {
     }
   }
 
-  Future<void> _deleteHistoryRoom(LiveRoom room) async {
+  Future<void> _deleteHistoryRoom(LiveRoom liveroom) async {
     final controller = SettingsService.to.history;
-    if (_historyMutationBusy || !mounted || !controller.historyRooms.v.any((entry) => identical(entry, room))) return;
-    final title = _historyRoomLabel(room);
+    if (_historyMutationBusy || !mounted || !controller.historyRooms.v.any((entry) => identical(entry, liveroom))) return;
+    final title = _historyRoomLabel(liveroom);
     setState(() => _historyMutationBusy = true);
     try {
       final confirmed = await _showDestructiveConfirmation(
@@ -110,7 +110,7 @@ class _HistoryPageState extends State<HistoryPage> {
         actionLabel: i18n('delete'),
       );
       if (confirmed && mounted && !controller.isClosed) {
-        await controller.clearHistorySnapshotDurably([room]);
+        await controller.clearHistorySnapshotDurably([liveroom]);
       }
     } catch (error) {
       debugPrint('Deleting history item failed: $error');
@@ -235,8 +235,8 @@ class _HistoryPageState extends State<HistoryPage> {
 
 String _historyLimitLabel(int limit) => limit == unlimitedHistoryLimit ? i18n('history_unlimited') : '$limit';
 
-String _historyRoomLabel(LiveRoom room) {
-  for (final candidate in [room.title, room.nick, room.roomId]) {
+String _historyRoomLabel(LiveRoom liveroom) {
+  for (final candidate in [liveroom.title, liveroom.nick, liveroom.roomId]) {
     final value = candidate?.trim() ?? '';
     if (value.isNotEmpty) return value;
   }

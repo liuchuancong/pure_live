@@ -103,11 +103,11 @@ class _RecordActionButtonState extends State<RecordActionButton> {
         task.status == RecordStatus.preparing;
   }
 
-  Future<void> _handlePressed(BuildContext context, LiveRoom room) async {
+  Future<void> _handlePressed(BuildContext context, LiveRoom liveroom) async {
     if (_busy) return;
     setState(() => _busy = true);
     try {
-      final initialTask = _findTask(room);
+      final initialTask = _findTask(liveroom);
       final action = await _showActionDialog(
         context,
         exists: initialTask != null,
@@ -115,17 +115,17 @@ class _RecordActionButtonState extends State<RecordActionButton> {
       );
 
       if (!mounted || action == null) return;
-      final task = _findTask(room);
+      final task = _findTask(liveroom);
       final exists = task != null;
       final isRunning = _isTaskRunning(task);
 
       switch (action) {
         case "start":
-          await _startRecording(room: room, task: task, exists: exists, isRunning: isRunning);
+          await _startRecording(liveroom: liveroom, task: task, exists: exists, isRunning: isRunning);
           break;
 
         case "monitor":
-          await _addMonitor(room: room, exists: exists);
+          await _addMonitor(liveroom: liveroom, exists: exists);
           break;
 
         case "stop":
@@ -145,12 +145,12 @@ class _RecordActionButtonState extends State<RecordActionButton> {
     }
   }
 
-  LiveRecordTask? _findTask(LiveRoom room) => widget.recorderController.tasks.firstWhereOrNull(
-    (task) => task.platform == room.platform && task.roomId == room.roomId,
+  LiveRecordTask? _findTask(LiveRoom liveroom) => widget.recorderController.tasks.firstWhereOrNull(
+    (task) => task.platform == liveroom.platform && task.roomId == liveroom.roomId,
   );
 
   Future<void> _startRecording({
-    required LiveRoom room,
+    required LiveRoom liveroom,
     required LiveRecordTask? task,
     required bool exists,
     required bool isRunning,
@@ -167,15 +167,15 @@ class _RecordActionButtonState extends State<RecordActionButton> {
     // addTask owns the first transition into the scheduler. Starting it again
     // from the button created two competing intents and made first-attempt
     // failures difficult to classify.
-    await widget.recorderController.addTask(room: room, startImmediately: true);
+    await widget.recorderController.addTask(liveroom: liveroom, startImmediately: true);
   }
 
-  Future<void> _addMonitor({required LiveRoom room, required bool exists}) async {
+  Future<void> _addMonitor({required LiveRoom liveroom, required bool exists}) async {
     if (exists) {
       return;
     }
 
-    final task = await widget.recorderController.addTask(room: room, startImmediately: false);
+    final task = await widget.recorderController.addTask(liveroom: liveroom, startImmediately: false);
     if (task != null) ToastUtil.show(i18n("record_task_added"));
   }
 

@@ -171,33 +171,35 @@ final class BigoSite extends LiveSite
     );
   }
 
-  String _identity(String roomId, String platform) {
+  String _identity(LiveRoom liveroom) {
+    final roomId = liveroom.roomId ?? '';
+    final platform = liveroom.platform ?? '';
     if (platform.trim().toLowerCase() != id) throw const BigoException(BigoFailure.identity);
     return BigoApi.validateSiteId(roomId);
   }
 
-  Future<LiveRoom> _detail(String roomId, String platform, {required bool includeMedia}) async =>
-      _room(await _api.studioRoom(siteId: _identity(roomId, platform)), includeMedia: includeMedia);
+  Future<LiveRoom> _detail(LiveRoom liveroom, {required bool includeMedia}) async =>
+      _room(await _api.studioRoom(siteId: _identity(liveroom)), includeMedia: includeMedia);
 
   @override
-  Future<LiveRoom> getRoomDetail(LiveRoom room) async {
-    final identity = room.detailIdentity;
-    if (identity == null) return room;
-    return _detail(identity.roomId, identity.platform, includeMedia: true);
+  Future<LiveRoom> getRoomDetail(LiveRoom liveroom) async {
+    
+    if (liveroom.detailIdentity == null) return liveroom;
+    return _detail(liveroom, includeMedia: true);
   }
 
   @override
-  Future<LiveRoom> getRoomDetailForRefresh(LiveRoom room) async {
-    final identity = room.detailIdentity;
-    if (identity == null) return room;
-    return _detail(identity.roomId, identity.platform, includeMedia: false);
+  Future<LiveRoom> getRoomDetailForRefresh(LiveRoom liveroom) async {
+    
+    if (liveroom.detailIdentity == null) return liveroom;
+    return _detail(liveroom, includeMedia: false);
   }
 
   @override
-  Future<LiveRoom> getRoomDetailForRecording(LiveRoom room) async {
-    final identity = room.detailIdentity;
-    if (identity == null) return room;
-    return _detail(identity.roomId, identity.platform, includeMedia: true);
+  Future<LiveRoom> getRoomDetailForRecording(LiveRoom liveroom) async {
+    
+    if (liveroom.detailIdentity == null) return liveroom;
+    return _detail(liveroom, includeMedia: true);
   }
 
   @override
@@ -257,11 +259,11 @@ final class BigoSite extends LiveSite
   }
 
   @override
-  Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom detail}) async {
-    final siteId = _identity(detail.roomId ?? '', detail.platform ?? '');
-    if (detail.isExplicitlyOfflineNow) return const [];
-    final room = detail.data;
-    if (detail.effectiveLiveStatus != LiveStatus.live ||
+  Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom liveroom}) async {
+    final siteId = _identity(liveroom);
+    if (liveroom.isExplicitlyOfflineNow) return const [];
+    final room = liveroom.data;
+    if (liveroom.effectiveLiveStatus != LiveStatus.live ||
         room is! BigoStudioRoom ||
         room.status.canonicalSiteId != siteId) {
       throw const BigoException(BigoFailure.mediaUnavailable);
@@ -270,10 +272,10 @@ final class BigoSite extends LiveSite
   }
 
   @override
-  Future<LivePlayUrlResolution> resolvePlayUrlsRaw({required LiveRoom detail, required LivePlayQuality quality}) async {
-    final siteId = _identity(detail.roomId ?? '', detail.platform ?? '');
-    if (detail.isExplicitlyOfflineNow) throw const BigoException(BigoFailure.notLive);
-    if (quality.selectionId != 'live' || (await getPlayQualites(detail: detail)).isEmpty) {
+  Future<LivePlayUrlResolution> resolvePlayUrlsRaw({required LiveRoom liveroom, required LivePlayQuality quality}) async {
+    final siteId = _identity(liveroom);
+    if (liveroom.isExplicitlyOfflineNow) throw const BigoException(BigoFailure.notLive);
+    if (quality.selectionId != 'live' || (await getPlayQualites(liveroom: liveroom)).isEmpty) {
       throw const BigoException(BigoFailure.mediaUnavailable);
     }
     return LivePlayUrlResolution.owned(input: BigoInputRecipe(siteId), appliedQualityData: 'live');
@@ -281,13 +283,13 @@ final class BigoSite extends LiveSite
 
   @override
   Future<LivePlayUrlResolution> resolvePlayUrlsForRecoveryRaw({
-    required LiveRoom detail,
+    required LiveRoom liveroom,
     required LivePlayQuality quality,
-  }) => resolvePlayUrlsRaw(detail: detail, quality: quality);
+  }) => resolvePlayUrlsRaw(liveroom: liveroom, quality: quality);
 
   @override
-  Future<List<String>> getPlayUrls({required LiveRoom detail, required LivePlayQuality quality}) async {
-    await resolvePlayUrlsRaw(detail: detail, quality: quality);
+  Future<List<String>> getPlayUrls({required LiveRoom liveroom, required LivePlayQuality quality}) async {
+    await resolvePlayUrlsRaw(liveroom: liveroom, quality: quality);
     return const [];
   }
 }

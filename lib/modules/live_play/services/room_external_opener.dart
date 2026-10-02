@@ -55,12 +55,12 @@ class RoomExternalOpener {
     return id;
   }
 
-  static RoomExternalTarget? resolve(String site, LiveRoom room) {
+  static RoomExternalTarget? resolve(String site, LiveRoom liveroom) {
     if (site == Sites.inkeSite) {
       // Preserve Inke's verified UID/broadcast link and official-home fallback.
-      return RoomExternalTarget(web: InkeSite.externalRoomUrl(room));
+      return RoomExternalTarget(web: InkeSite.externalRoomUrl(liveroom));
     }
-    final id = _id(room.roomId);
+    final id = _id(liveroom.roomId);
     if (id == null) return null;
     final path = Uri.encodeComponent(id);
     switch (site) {
@@ -150,7 +150,7 @@ class RoomExternalOpener {
       case Sites.bilibiliSite:
         return RoomExternalTarget(web: 'https://live.bilibili.com/$path', native: 'bilibili://live/$path');
       case Sites.douyinSite:
-        final args = room.danmakuData;
+        final args = liveroom.danmakuData;
         final webId = args is DouyinDanmakuArgs ? _id(args.webRid) ?? id : id;
         final nativeId = args is DouyinDanmakuArgs ? _id(args.roomId) : null;
         return RoomExternalTarget(
@@ -158,7 +158,7 @@ class RoomExternalOpener {
           native: nativeId == null ? null : 'snssdk1128://webcast_room?room_id=${Uri.encodeComponent(nativeId)}',
         );
       case Sites.huyaSite:
-        final args = room.danmakuData;
+        final args = liveroom.danmakuData;
         return RoomExternalTarget(
           web: 'https://www.huya.com/$path',
           // Keep the existing native protocol mapping; missing optional chat
@@ -173,7 +173,7 @@ class RoomExternalOpener {
           native: 'douyulink://?type=90001&schemeUrl=douyuapp%3A%2F%2Froom%3FliveType%3D0%26rid%3D$path',
         );
       case Sites.ccSite:
-        final user = _id(room.userId);
+        final user = _id(liveroom.userId);
         return RoomExternalTarget(
           web: 'https://cc.163.com/$path',
           native: user == null ? null : 'cc://join-room/$path/${Uri.encodeComponent(user)}/',
@@ -191,7 +191,7 @@ class RoomExternalOpener {
       case Sites.acfunSite:
         return RoomExternalTarget(web: 'https://live.acfun.cn/live/$path');
       case Sites.kuaishouSite:
-        final stream = room.link?.trim() ?? '';
+        final stream = liveroom.link?.trim() ?? '';
         final encoded = Uri.encodeQueryComponent(stream);
         return RoomExternalTarget(
           web: 'https://live.kuaishou.com/u/$path',
@@ -210,7 +210,7 @@ class RoomExternalOpener {
 
   static Future<RoomExternalOpenResult> open({
     required String site,
-    required LiveRoom room,
+    required LiveRoom liveroom,
     required bool android,
     RoomExternalLauncher? launch,
     bool Function()? isCurrent,
@@ -218,7 +218,7 @@ class RoomExternalOpener {
   }) async {
     bool current() => isCurrent?.call() ?? true;
     if (!current()) return RoomExternalOpenResult.cancelled;
-    final target = resolve(site, room);
+    final target = resolve(site, liveroom);
     if (target == null) return RoomExternalOpenResult.unavailable;
     final launcher = launch ?? _launch;
     Future<bool> attempt(String url) async {

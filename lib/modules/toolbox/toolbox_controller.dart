@@ -138,7 +138,7 @@ class ToolBoxController extends GetxController {
         if (context == null || !context.mounted) throw const ToolBoxActionCancelled();
         FocusManager.instance.primaryFocus?.unfocus();
         await _directLinkFlow.run(
-          room: room,
+          liveroom: room,
           scope: scope,
           chooseQuality: (qualities) => _choose<LivePlayQuality>(
             context,

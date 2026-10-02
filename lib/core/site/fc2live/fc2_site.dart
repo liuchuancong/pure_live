@@ -203,69 +203,71 @@ final class Fc2Site extends LiveSite
     return _page(matches, page, pageSize).map((room) => _room(room, includeMedia: false)).toList(growable: false);
   }
 
-  String _identity(String roomId, String platform) {
+  String _identity(LiveRoom liveroom) {
+    final roomId = liveroom.roomId ?? '';
+    final platform = liveroom.platform ?? '';
     if (platform.trim().toLowerCase() != id) throw const Fc2Exception(Fc2Failure.identity);
     final channelId = Fc2Link.parseChannelId(roomId);
     if (channelId == null) throw const Fc2Exception(Fc2Failure.identity);
     return channelId;
   }
 
-  Future<LiveRoom> _detail(String roomId, String platform, {required bool includeMedia}) async =>
-      _room(await _api.room(_identity(roomId, platform)), includeMedia: includeMedia);
+  Future<LiveRoom> _detail(LiveRoom liveroom, {required bool includeMedia}) async =>
+      _room(await _api.room(_identity(liveroom)), includeMedia: includeMedia);
 
   @override
-  Future<LiveRoom> getRoomDetail(LiveRoom room) async {
-    final identity = room.detailIdentity;
-    if (identity == null) return room;
-    return _detail(identity.roomId, identity.platform, includeMedia: true);
+  Future<LiveRoom> getRoomDetail(LiveRoom liveroom) async {
+    if (liveroom.detailIdentity == null) return liveroom;
+    return _detail(liveroom, includeMedia: true);
   }
 
   @override
-  Future<LiveRoom> getRoomDetailForRefresh(LiveRoom room) async {
-    final identity = room.detailIdentity;
-    if (identity == null) return room;
-    return _detail(identity.roomId, identity.platform, includeMedia: false);
+  Future<LiveRoom> getRoomDetailForRefresh(LiveRoom liveroom) async {
+    if (liveroom.detailIdentity == null) return liveroom;
+    return _detail(liveroom, includeMedia: false);
   }
 
   @override
-  Future<LiveRoom> getRoomDetailForRecording(LiveRoom room) async {
-    final identity = room.detailIdentity;
-    if (identity == null) return room;
-    return _detail(identity.roomId, identity.platform, includeMedia: true);
+  Future<LiveRoom> getRoomDetailForRecording(LiveRoom liveroom) async {
+    if (liveroom.detailIdentity == null) return liveroom;
+    return _detail(liveroom, includeMedia: true);
   }
 
-  Fc2Room _snapshot(LiveRoom detail) {
-    final channelId = _identity(detail.roomId ?? '', detail.platform ?? '');
-    final room = detail.data;
-    if (detail.effectiveLiveStatus != LiveStatus.live || room is! Fc2Room || room.channelId != channelId) {
+  Fc2Room _snapshot(LiveRoom liveroom) {
+    final channelId = _identity(liveroom);
+    final room = liveroom.data;
+    if (liveroom.effectiveLiveStatus != LiveStatus.live || room is! Fc2Room || room.channelId != channelId) {
       throw const Fc2Exception(Fc2Failure.schema);
     }
     return room;
   }
 
   @override
-  Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom detail}) async {
-    if (detail.isExplicitlyOfflineNow) return const [];
-    _snapshot(detail);
+  Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom liveroom}) async {
+    if (liveroom.isExplicitlyOfflineNow) return const [];
+    _snapshot(liveroom);
     return [LivePlayQuality(id: 'auto', quality: i18n('fc2live_quality_auto'))];
   }
 
   @override
-  Future<LivePlayUrlResolution> resolvePlayUrlsRaw({required LiveRoom detail, required LivePlayQuality quality}) async {
-    final room = _snapshot(detail);
+  Future<LivePlayUrlResolution> resolvePlayUrlsRaw({
+    required LiveRoom liveroom,
+    required LivePlayQuality quality,
+  }) async {
+    final room = _snapshot(liveroom);
     if (quality.selectionId != 'auto') throw const Fc2Exception(Fc2Failure.schema);
     return LivePlayUrlResolution.owned(input: Fc2InputRecipe(room.channelId), appliedQualityData: 'auto');
   }
 
   @override
   Future<LivePlayUrlResolution> resolvePlayUrlsForRecoveryRaw({
-    required LiveRoom detail,
+    required LiveRoom liveroom,
     required LivePlayQuality quality,
-  }) => resolvePlayUrlsRaw(detail: detail, quality: quality);
+  }) => resolvePlayUrlsRaw(liveroom: liveroom, quality: quality);
 
   @override
-  Future<List<String>> getPlayUrls({required LiveRoom detail, required LivePlayQuality quality}) async {
-    await resolvePlayUrlsRaw(detail: detail, quality: quality);
+  Future<List<String>> getPlayUrls({required LiveRoom liveroom, required LivePlayQuality quality}) async {
+    await resolvePlayUrlsRaw(liveroom: liveroom, quality: quality);
     return const [];
   }
 }

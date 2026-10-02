@@ -30,7 +30,7 @@ class KnownRoomLinkDialog extends StatefulWidget {
 
   static Future<void> show({
     required BuildContext context,
-    required LiveRoom room,
+    required LiveRoom liveroom,
     required bool cast,
     required ToolBoxDirectLinkFlow flow,
     required bool Function() isCurrentRoom,
@@ -46,7 +46,7 @@ class KnownRoomLinkDialog extends StatefulWidget {
     final route = DialogRoute<void>(
       context: context,
       builder: (_) => KnownRoomLinkDialog(
-        room: room,
+        room: liveroom,
         cast: cast,
         flow: flow,
         isCurrentRoom: isCurrentRoom,
@@ -113,7 +113,7 @@ class _KnownRoomLinkDialogState extends State<KnownRoomLinkDialog> {
   Future<void> _run() async {
     try {
       await widget.flow.run(
-        room: widget.room,
+        liveroom: widget.room,
         scope: _scope,
         notify: widget.notify,
         chooseQuality: (items) =>

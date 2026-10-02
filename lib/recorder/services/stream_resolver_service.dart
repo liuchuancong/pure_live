@@ -103,15 +103,9 @@ class StreamResolverService extends GetxService {
 
   final RecorderLiveSiteResolver _siteResolver;
 
-  Future<ResolvedRecordStream> resolveStream({
-    required String roomId,
-    required String platform,
-    required String preferredQuality,
-    String? previousQualityId,
-    int? previousLineIndex,
-    bool renewCurrent = false,
-    LiveQualityDiscoveryScope? discoveryScope,
-  }) async {
+  Future<ResolvedRecordStream> resolveStream({required LiveRoom liveroom, required String preferredQuality, String? previousQualityId, int? previousLineIndex, bool renewCurrent = false, LiveQualityDiscoveryScope? discoveryScope}) async {
+    final roomId = liveroom.roomId ?? '';
+    final platform = liveroom.platform ?? '';
     discoveryScope?.checkActive();
     final normalizedPlatform = platform.trim().toLowerCase();
     final normalizedRoomId = roomId.trim();
@@ -158,7 +152,7 @@ class StreamResolverService extends GetxService {
       late final List<LivePlayQuality> qualities;
       try {
         qualities = discoveryScope == null
-            ? await site.discoverPlayQualities(detail: detail)
+            ? await site.discoverPlayQualities(liveroom: detail)
             : await discoveryScope.discover(site, detail);
       } on StreamException {
         discoveryScope?.checkActive();
@@ -198,7 +192,7 @@ class StreamResolverService extends GetxService {
             final renewed = await _resolveQuality(
               discoveryScope: discoveryScope,
               site: site,
-              detail: detail,
+              liveroom: detail,
               orderedQualities: orderedQualities,
               requestedQuality: orderedQualities[previousQualityIndex],
               lineIndex: usesLineCursor ? (previousLineIndex ?? 0).clamp(0, 1 << 20).toInt() : null,
@@ -222,7 +216,7 @@ class StreamResolverService extends GetxService {
           previousResolution = await _resolveQuality(
             discoveryScope: discoveryScope,
             site: site,
-            detail: detail,
+            liveroom: detail,
             orderedQualities: orderedQualities,
             requestedQuality: orderedQualities[previousQualityIndex],
             lineIndex: usesLineCursor ? nextLine : null,
@@ -247,7 +241,7 @@ class StreamResolverService extends GetxService {
           final resolved = await _resolveQuality(
             discoveryScope: discoveryScope,
             site: site,
-            detail: detail,
+            liveroom: detail,
             orderedQualities: orderedQualities,
             requestedQuality: orderedQualities[qualityIndex],
             lineIndex: usesLineCursor ? 0 : null,
@@ -265,7 +259,7 @@ class StreamResolverService extends GetxService {
               ? await _resolveQuality(
                   discoveryScope: discoveryScope,
                   site: site,
-                  detail: detail,
+                  liveroom: detail,
                   orderedQualities: orderedQualities,
                   requestedQuality: orderedQualities[previousQualityIndex],
                   lineIndex: 0,
@@ -347,7 +341,7 @@ class StreamResolverService extends GetxService {
 
   static Future<_ResolvedQuality> _resolveQuality({
     required LiveSite site,
-    required LiveRoom detail,
+    required LiveRoom liveroom,
     required List<LivePlayQuality> orderedQualities,
     required LivePlayQuality requestedQuality,
     int? lineIndex,
@@ -356,11 +350,11 @@ class StreamResolverService extends GetxService {
     discoveryScope?.checkActive();
     final resolution = site is LivePlayUrlCursorResolver && lineIndex != null
         ? await (site as LivePlayUrlCursorResolver).resolvePlayUrlAtRaw(
-            detail: detail,
+            liveroom: liveroom,
             quality: requestedQuality,
             lineIndex: lineIndex,
           )
-        : await site.resolvePlayUrls(detail: detail, quality: requestedQuality);
+        : await site.resolvePlayUrls(liveroom: liveroom, quality: requestedQuality);
     discoveryScope?.checkActive();
     final seen = <String>{};
     final validUrls = resolution.urls
@@ -382,7 +376,7 @@ class StreamResolverService extends GetxService {
       inputRecipe: lineIndex == null || lineIndex == 0 ? resolution.inputRecipe : null,
       urls: validUrls,
       sourceQueryPolicies: resolution.sourceQueryPolicies,
-      httpHeaders: detail.httpHeaders,
+      httpHeaders: liveroom.httpHeaders,
       refreshTimes: validUrls.map((url) => leaseMetadata?.getPlayUrlRefreshAt(url)?.toUtc()).toList(growable: false),
       invalidTimes: validUrls.map((url) => leaseMetadata?.getPlayUrlInvalidAt(url)?.toUtc()).toList(growable: false),
       lineIndexes: lineIndex == null

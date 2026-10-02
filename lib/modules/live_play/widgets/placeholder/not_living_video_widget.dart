@@ -139,8 +139,8 @@ class NotLivingVideoWidget extends StatelessWidget {
   }
 }
 
-String _offlineRoomTitle(LiveRoom room) {
-  for (final candidate in [room.title, room.nick, room.roomId]) {
+String _offlineRoomTitle(LiveRoom liveroom) {
+  for (final candidate in [liveroom.title, liveroom.nick, liveroom.roomId]) {
     final value = candidate?.trim() ?? '';
     if (value.isNotEmpty) return value;
   }

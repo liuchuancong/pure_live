@@ -690,12 +690,12 @@ class RecorderController extends GetxService {
 
   Future<bool> _canWriteRecordDirectory() => CacheService.to.canWriteRecordDir();
 
-  Future<LiveRecordTask?> addTask({required LiveRoom room, bool startImmediately = true}) async {
+  Future<LiveRecordTask?> addTask({required LiveRoom liveroom, bool startImmediately = true}) async {
     if (_isClosing || !await requestStoragePermission() || _isClosing) return null;
-    final existing = tasks.firstWhereOrNull((task) => task.roomId == room.roomId && task.platform == room.platform);
+    final existing = tasks.firstWhereOrNull((task) => task.roomId == liveroom.roomId && task.platform == liveroom.platform);
     if (existing != null) return existing;
 
-    final task = LiveRecordTask.fromRoom(room);
+    final task = LiveRecordTask.fromRoom(liveroom);
     tasks.add(task);
     updateTask(task);
     // "Start now" is an explicit user intent. Do not gate it on the room card's
@@ -869,8 +869,7 @@ class RecorderController extends GetxService {
       final resolved = prefetchedStillValid
           ? prefetched.stream
           : await StreamResolverService.to.resolveStream(
-              roomId: task.roomId,
-              platform: task.platform,
+              liveroom: LiveRoom(roomId: task.roomId, platform: task.platform),
               preferredQuality: settings.defaultQuality.value,
               previousQualityId: previousQualityId,
               previousLineIndex: previousLineIndex,
@@ -1117,8 +1116,7 @@ class RecorderController extends GetxService {
     DateTime? nextRefreshAt;
     try {
       final renewed = await StreamResolverService.to.resolveStream(
-        roomId: task.roomId,
-        platform: task.platform,
+        liveroom: LiveRoom(roomId: task.roomId, platform: task.platform),
         preferredQuality: settings.defaultQuality.value,
         previousQualityId: task.selectedQualityId,
         previousLineIndex: task.selectedLineIndex,

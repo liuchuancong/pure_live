@@ -171,10 +171,10 @@ class LiveRecordTask {
   /// 从房间创建
   /// =========================
 
-  factory LiveRecordTask.fromRoom(LiveRoom room) {
-    final roomId = room.roomId ?? "";
+  factory LiveRecordTask.fromRoom(LiveRoom liveroom) {
+    final roomId = liveroom.roomId ?? "";
 
-    final platform = room.platform ?? "";
+    final platform = liveroom.platform ?? "";
 
     return LiveRecordTask(
       taskId: "${platform}_$roomId",
@@ -183,22 +183,22 @@ class LiveRecordTask {
 
       platform: platform,
 
-      title: room.title ?? "",
+      title: liveroom.title ?? "",
 
-      nick: room.nick ?? "",
+      nick: liveroom.nick ?? "",
 
-      avatar: room.avatar ?? "",
+      avatar: liveroom.avatar ?? "",
 
-      cover: room.cover ?? "",
+      cover: liveroom.cover ?? "",
 
-      watching: room.watching ?? "0",
-      audienceMetricType: room.effectiveAudienceMetricType,
+      watching: liveroom.watching ?? "0",
+      audienceMetricType: liveroom.effectiveAudienceMetricType,
 
-      followers: room.followers ?? "0",
+      followers: liveroom.followers ?? "0",
 
-      liveStatus: room.liveStatus ?? LiveStatus.unknown,
+      liveStatus: liveroom.liveStatus ?? LiveStatus.unknown,
 
-      isRecord: room.isRecord ?? false,
+      isRecord: liveroom.isRecord ?? false,
 
       createTime: DateTime.now(),
       wasStoppedByUser: false,
@@ -209,24 +209,24 @@ class LiveRecordTask {
   /// 更新房间信息
   /// =========================
 
-  void updateFromRoom(LiveRoom room) {
-    title = room.title ?? title;
+  void updateFromRoom(LiveRoom liveroom) {
+    title = liveroom.title ?? title;
 
-    nick = room.nick ?? nick;
+    nick = liveroom.nick ?? nick;
 
-    avatar = room.avatar ?? avatar;
+    avatar = liveroom.avatar ?? avatar;
 
-    cover = room.cover ?? cover;
+    cover = liveroom.cover ?? cover;
 
-    watching = room.watching ?? watching;
+    watching = liveroom.watching ?? watching;
 
-    audienceMetricType = room.effectiveAudienceMetricType;
+    audienceMetricType = liveroom.effectiveAudienceMetricType;
 
-    followers = room.followers ?? followers;
+    followers = liveroom.followers ?? followers;
 
-    liveStatus = room.liveStatus ?? liveStatus;
+    liveStatus = liveroom.liveStatus ?? liveStatus;
 
-    isRecord = room.isRecord ?? isRecord;
+    isRecord = liveroom.isRecord ?? isRecord;
   }
 
   /// =========================

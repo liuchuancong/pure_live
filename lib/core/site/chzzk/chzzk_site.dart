@@ -229,7 +229,9 @@ class ChzzkSite extends LiveSite
     return qualities;
   }
 
-  Future<LiveRoom> _detail(String channelId, String platform, {required bool playback}) async {
+  Future<LiveRoom> _detail(LiveRoom liveroom, {required bool playback}) async {
+    final channelId = liveroom.roomId ?? '';
+    final platform = liveroom.platform ?? '';
     if (platform.trim().toLowerCase() != id) throw const ChzzkException(ChzzkFailure.identity);
     final room = await _api.room(channelId);
     final live = room.live;
@@ -250,40 +252,40 @@ class ChzzkSite extends LiveSite
   }
 
   @override
-  Future<LiveRoom> getRoomDetail(LiveRoom room) async {
-    final identity = room.detailIdentity;
-    if (identity == null) return room;
-    return _detail(identity.roomId, identity.platform, playback: true);
+  Future<LiveRoom> getRoomDetail(LiveRoom liveroom) async {
+    
+    if (liveroom.detailIdentity == null) return liveroom;
+    return _detail(liveroom, playback: true);
   }
 
   @override
-  Future<LiveRoom> getRoomDetailForRecording(LiveRoom room) async {
-    final identity = room.detailIdentity;
-    if (identity == null) return room;
-    return _detail(identity.roomId, identity.platform, playback: true);
+  Future<LiveRoom> getRoomDetailForRecording(LiveRoom liveroom) async {
+    
+    if (liveroom.detailIdentity == null) return liveroom;
+    return _detail(liveroom, playback: true);
   }
 
   @override
-  Future<LiveRoom> getRoomDetailForRefresh(LiveRoom room) async {
-    final identity = room.detailIdentity;
-    if (identity == null) return room;
-    return _detail(identity.roomId, identity.platform, playback: false);
+  Future<LiveRoom> getRoomDetailForRefresh(LiveRoom liveroom) async {
+    
+    if (liveroom.detailIdentity == null) return liveroom;
+    return _detail(liveroom, playback: false);
   }
 
   @override
-  Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom detail}) async {
-    if (detail.platform != id) throw const ChzzkException(ChzzkFailure.identity);
-    if (detail.isExplicitlyOfflineNow) return [];
-    final data = detail.data;
-    if (data is! _ChzzkPlayback || data.channelId != detail.roomId || data.qualities.isEmpty) {
+  Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom liveroom}) async {
+    if (liveroom.platform != id) throw const ChzzkException(ChzzkFailure.identity);
+    if (liveroom.isExplicitlyOfflineNow) return [];
+    final data = liveroom.data;
+    if (data is! _ChzzkPlayback || data.channelId != liveroom.roomId || data.qualities.isEmpty) {
       throw const ChzzkException(ChzzkFailure.mediaUnavailable);
     }
     return data.qualities;
   }
 
   @override
-  Future<List<String>> getPlayUrls({required LiveRoom detail, required LivePlayQuality quality}) async {
-    for (final current in await getPlayQualites(detail: detail)) {
+  Future<List<String>> getPlayUrls({required LiveRoom liveroom, required LivePlayQuality quality}) async {
+    for (final current in await getPlayQualites(liveroom: liveroom)) {
       if (current.selectionId == quality.selectionId) return List.unmodifiable(current.data as List<String>);
     }
     throw const ChzzkException(ChzzkFailure.mediaUnavailable);
@@ -291,12 +293,12 @@ class ChzzkSite extends LiveSite
 
   @override
   Future<LivePlayUrlResolution> resolvePlayUrlsForRecoveryRaw({
-    required LiveRoom detail,
+    required LiveRoom liveroom,
     required LivePlayQuality quality,
   }) async {
-    final fresh = await getRoomDetail(detail);
+    final fresh = await getRoomDetail(liveroom);
     return LivePlayUrlResolution(
-      urls: await getPlayUrls(detail: fresh, quality: quality),
+      urls: await getPlayUrls(liveroom: fresh, quality: quality),
       appliedQualityData: quality.selectionId,
     );
   }

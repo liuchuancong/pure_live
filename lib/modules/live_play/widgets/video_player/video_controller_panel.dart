@@ -1857,16 +1857,16 @@ class DanmakuButton extends StatelessWidget {
   }
 }
 
-String _liveRoomTitle(LiveRoom room) {
-  for (final candidate in [room.title, room.nick, room.roomId]) {
+String _liveRoomTitle(LiveRoom liveroom) {
+  for (final candidate in [liveroom.title, liveroom.nick, liveroom.roomId]) {
     final value = candidate?.trim() ?? '';
     if (value.isNotEmpty) return value;
   }
   return i18n('untitled_room');
 }
 
-String? _liveProgramme(LiveRoom room) {
-  final programme = room.currentProgramme?.trim() ?? '';
+String? _liveProgramme(LiveRoom liveroom) {
+  final programme = liveroom.currentProgramme?.trim() ?? '';
   return programme.isEmpty ? null : programme;
 }
 
@@ -2003,8 +2003,7 @@ class CastButton extends StatelessWidget {
         controller.enableController();
         LiveUrlTool.castPlayUrlByRoomId(
           context: context,
-          roomId: controller.room.roomId ?? '',
-          platform: controller.room.platform ?? '',
+          liveroom: controller.room,
           isCurrentRoom: () => controller.status != PlayerStatus.disposed,
         );
       },

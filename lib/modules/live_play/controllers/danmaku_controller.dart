@@ -26,7 +26,7 @@ class DanmakuController extends GetxController {
   final DanmakuSessionHost _main;
   final Duration startTimeout;
   final Duration stopTimeout;
-  final bool Function(LiveRoom room)? recoveryAllowed;
+  final bool Function(LiveRoom liveroom)? recoveryAllowed;
   final DanmakuMessageGate _messageGate = DanmakuMessageGate();
   final DanmakuRepeatedFilter _repeatedMessageFilter = DanmakuRepeatedFilter();
   final DanmakuSimilarityFilter _similarityFilter = DanmakuSimilarityFilter();
@@ -96,9 +96,9 @@ class DanmakuController extends GetxController {
     });
   }
 
-  bool needReconnect(LiveRoom room) {
+  bool needReconnect(LiveRoom liveroom) {
     if (!_initialized) return true;
-    final key = _roomKey(room);
+    final key = _roomKey(liveroom);
     if (_connectingKey == key) return false;
     return _sessionKey != key || !_sessionSettled;
   }
@@ -113,8 +113,8 @@ class DanmakuController extends GetxController {
   /// Android PiP. A matching but disconnected session is rebuilt without
   /// clearing the already-rendered history. This avoids creating a guaranteed
   /// packet gap by tearing down a healthy websocket on every PiP return.
-  Future<void> connectRoom(LiveRoom room, {bool force = false}) {
-    final key = _roomKey(room);
+  Future<void> connectRoom(LiveRoom liveroom, {bool force = false}) {
+    final key = _roomKey(liveroom);
     if (!_initialized) return Future<void>.value();
     final healthyMatchingSession = _sessionKey == key && _sessionSettled;
     // This fast path is deliberately before the request epoch increment. A
@@ -152,13 +152,13 @@ class DanmakuController extends GetxController {
       final token = ++_sessionToken;
       _maskedNameNoticeShown = false;
       _connectingKey = key;
-      _installCallbacks(engine, room, key, token);
+      _installCallbacks(engine, liveroom, key, token);
 
-      if (room.isRecord == true) _addStatusMessage(i18n('recording_mode_notice'));
+      if (liveroom.isRecord == true) _addStatusMessage(i18n('recording_mode_notice'));
       _addStatusMessage(i18n('connect_danmaku_server'));
 
       try {
-        await engine.start(room.danmakuData).timeout(startTimeout);
+        await engine.start(liveroom.danmakuData).timeout(startTimeout);
       } catch (error, stackTrace) {
         CoreLog.e(error.toString(), stackTrace);
         if (_acceptsCallback(engine, key, token)) {
@@ -187,7 +187,7 @@ class DanmakuController extends GetxController {
     });
   }
 
-  void _installCallbacks(LiveDanmaku engine, LiveRoom room, String key, int token) {
+  void _installCallbacks(LiveDanmaku engine, LiveRoom liveroom, String key, int token) {
     engine.onMessage = (msg) {
       if (!_acceptsCallback(engine, key, token)) return;
       if (msg.type == LiveMessageType.chat) {
@@ -206,7 +206,7 @@ class DanmakuController extends GetxController {
           return;
         }
         if (!_maskedNameNoticeShown &&
-            room.platform == Sites.bilibiliSite &&
+            liveroom.platform == Sites.bilibiliSite &&
             RegExp(r'\*{2,}|＊{2,}').hasMatch(msg.userName)) {
           _maskedNameNoticeShown = true;
           _addStatusMessage(i18n('bilibili_guest_name_masked'));
@@ -239,7 +239,7 @@ class DanmakuController extends GetxController {
       if (!_acceptsCallback(engine, key, token)) return;
       _connectingKey = null;
       _sessionKey = key;
-      _main.updateDanmakuRoomId(room.roomId?.toString());
+      _main.updateDanmakuRoomId(liveroom.roomId?.toString());
       _addStatusMessage(i18n('danmaku_connected'));
     };
   }
@@ -339,24 +339,24 @@ class DanmakuController extends GetxController {
   /// Repairs a room connection after a native presentation/lifecycle change.
   /// Settings and platform exclusions remain authoritative, so this cannot
   /// accidentally open a socket when danmaku is disabled.
-  Future<void> recoverRoomConnection(LiveRoom room) async {
+  Future<void> recoverRoomConnection(LiveRoom liveroom) async {
     if (!_initialized) return;
-    if (!_isRecoveryAllowed(room)) {
+    if (!_isRecoveryAllowed(liveroom)) {
       await stopDanmaku();
       return;
     }
-    await connectRoom(room);
+    await connectRoom(liveroom);
   }
 
-  bool _isRecoveryAllowed(LiveRoom room) {
+  bool _isRecoveryAllowed(LiveRoom liveroom) {
     final override = recoveryAllowed;
-    if (override != null) return override(room);
+    if (override != null) return override(liveroom);
     const except = [Sites.iptvSite, Sites.ccSite];
     final settings = SettingsService.to.danmaku;
-    return !except.contains(room.platform) && (settings.enableDanmakuDisplay.v || settings.enablePipDanmaku.v);
+    return !except.contains(liveroom.platform) && (settings.enableDanmakuDisplay.v || settings.enablePipDanmaku.v);
   }
 
-  String _roomKey(LiveRoom room) => '${room.platform ?? ''}:${room.roomId ?? ''}';
+  String _roomKey(LiveRoom liveroom) => '${liveroom.platform ?? ''}:${liveroom.roomId ?? ''}';
 
   Future<void> _serialize(Future<void> Function() operation) {
     final next = _operationTail.then((_) => operation());

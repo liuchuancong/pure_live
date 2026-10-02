@@ -26,9 +26,9 @@ class InkeSite extends LiveSite
 
   /// Official room pages need both the durable UID and a broadcast ID. Older
   /// favorites/offline metadata can lack the latter; do not invent a room URL.
-  static String externalRoomUrl(LiveRoom room) {
-    final uri = Uri.tryParse(room.link?.trim() ?? '');
-    if (uri != null && room.platform == 'inke' && room.roomId != null && InkeApi.roomFromUri(uri) == room.roomId) {
+  static String externalRoomUrl(LiveRoom liveroom) {
+    final uri = Uri.tryParse(liveroom.link?.trim() ?? '');
+    if (uri != null && liveroom.platform == 'inke' && liveroom.roomId != null && InkeApi.roomFromUri(uri) == liveroom.roomId) {
       try {
         final ids = uri.queryParametersAll['id'];
         if (ids?.length == 1 && RegExp(r'^[0-9]{1,32}$').hasMatch(ids!.single)) return uri.toString();
@@ -121,7 +121,9 @@ class InkeSite extends LiveSite
     }
   }
 
-  Future<LiveRoom> _detail(String roomId, String platform, {required bool playback}) async {
+  Future<LiveRoom> _detail(LiveRoom liveroom, {required bool playback}) async {
+    final roomId = liveroom.roomId ?? '';
+    final platform = liveroom.platform ?? '';
     if (platform != id) throw const InkeException(InkeFailure.schema);
     try {
       return await _api.detail(roomId, playback: playback);
@@ -134,39 +136,39 @@ class InkeSite extends LiveSite
   }
 
   @override
-  Future<LiveRoom> getRoomDetail(LiveRoom room) async {
-    final identity = room.detailIdentity;
-    if (identity == null) return room;
-    return _detail(identity.roomId, identity.platform, playback: true);
+  Future<LiveRoom> getRoomDetail(LiveRoom liveroom) async {
+    
+    if (liveroom.detailIdentity == null) return liveroom;
+    return _detail(liveroom, playback: true);
   }
 
   @override
-  Future<LiveRoom> getRoomDetailForRecording(LiveRoom room) async {
-    final identity = room.detailIdentity;
-    if (identity == null) return room;
-    return _detail(identity.roomId, identity.platform, playback: true);
+  Future<LiveRoom> getRoomDetailForRecording(LiveRoom liveroom) async {
+    
+    if (liveroom.detailIdentity == null) return liveroom;
+    return _detail(liveroom, playback: true);
   }
 
   @override
-  Future<LiveRoom> getRoomDetailForRefresh(LiveRoom room) async {
-    final identity = room.detailIdentity;
-    if (identity == null) return room;
-    return _detail(identity.roomId, identity.platform, playback: false);
+  Future<LiveRoom> getRoomDetailForRefresh(LiveRoom liveroom) async {
+    
+    if (liveroom.detailIdentity == null) return liveroom;
+    return _detail(liveroom, playback: false);
   }
 
   @override
-  Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom detail}) async {
-    if (detail.platform != id) throw const InkeException(InkeFailure.schema);
-    if (detail.isExplicitlyOfflineNow) return [];
-    if (!detail.isLiveNow || detail.data is! List<LivePlayQuality> || (detail.data as List).isEmpty) {
+  Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom liveroom}) async {
+    if (liveroom.platform != id) throw const InkeException(InkeFailure.schema);
+    if (liveroom.isExplicitlyOfflineNow) return [];
+    if (!liveroom.isLiveNow || liveroom.data is! List<LivePlayQuality> || (liveroom.data as List).isEmpty) {
       throw const InkeException(InkeFailure.schema);
     }
-    return List.unmodifiable(detail.data as List<LivePlayQuality>);
+    return List.unmodifiable(liveroom.data as List<LivePlayQuality>);
   }
 
   @override
-  Future<List<String>> getPlayUrls({required LiveRoom detail, required LivePlayQuality quality}) async {
-    for (final current in await getPlayQualites(detail: detail)) {
+  Future<List<String>> getPlayUrls({required LiveRoom liveroom, required LivePlayQuality quality}) async {
+    for (final current in await getPlayQualites(liveroom: liveroom)) {
       if (current.selectionId == quality.selectionId) return List.unmodifiable(current.data as List<String>);
     }
     throw const InkeException(InkeFailure.mediaUnavailable);
@@ -174,12 +176,12 @@ class InkeSite extends LiveSite
 
   @override
   Future<LivePlayUrlResolution> resolvePlayUrlsForRecoveryRaw({
-    required LiveRoom detail,
+    required LiveRoom liveroom,
     required LivePlayQuality quality,
   }) async {
-    final fresh = await getRoomDetail(detail);
+    final fresh = await getRoomDetail(liveroom);
     return LivePlayUrlResolution(
-      urls: await getPlayUrls(detail: fresh, quality: quality),
+      urls: await getPlayUrls(liveroom: fresh, quality: quality),
       appliedQualityData: quality.selectionId,
     );
   }

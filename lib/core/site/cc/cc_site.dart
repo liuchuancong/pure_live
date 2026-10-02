@@ -125,8 +125,8 @@ class CCSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResol
   }
 
   @override
-  Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom detail}) {
-    final rawData = detail.data;
+  Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom liveroom}) {
+    final rawData = liveroom.data;
     if (rawData is! Map) return Future.value(const <LivePlayQuality>[]);
     final qualities = <LivePlayQuality>[];
     var reflect = {
@@ -151,7 +151,7 @@ class CCSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResol
       final preferredLines = <String>[];
       final otherLines = <String>[];
       cdn.forEach((line, lineValue) {
-        final baseUrl = detail.link?.trim() ?? '';
+        final baseUrl = liveroom.link?.trim() ?? '';
         final url = isLiveStream && baseUrl.isNotEmpty
             ? _resolveLiveCdnUrl(baseUrl, lineValue)
             : _normalizeDirectUrl(lineValue);
@@ -216,7 +216,7 @@ class CCSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResol
   }
 
   @override
-  Future<List<String>> getPlayUrls({required LiveRoom detail, required LivePlayQuality quality}) async {
+  Future<List<String>> getPlayUrls({required LiveRoom liveroom, required LivePlayQuality quality}) async {
     final data = quality.data;
     if (data is! List) return const <String>[];
     return data.map((item) => item.toString().trim()).where((url) => url.isNotEmpty).toList(growable: false);
@@ -259,29 +259,31 @@ class CCSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResol
   }
 
   @override
-  Future<LiveRoom> getRoomDetail(LiveRoom room) async {
-    final identity = room.detailIdentity;
-    if (identity == null) return room;
-    final fresh = await _resolveDetail(identity.roomId, identity.platform);
+  Future<LiveRoom> getRoomDetail(LiveRoom liveroom) async {
+    
+    if (liveroom.detailIdentity == null) return liveroom;
+    final fresh = await _resolveDetail(liveroom);
     // Pad response gaps from the room the caller already holds. fillFromDetail
     // covers nick/avatar/area; the cover is padded explicitly because a blank
     // cover is the most visible symptom of a partial profile response.
-    final padded = fresh.fillFromDetail(room);
-    final existingCover = room.cover ?? '';
+    final padded = fresh.fillFromDetail(liveroom);
+    final existingCover = liveroom.cover ?? '';
     if ((padded.cover == null || padded.cover!.isEmpty) && existingCover.isNotEmpty) {
       return padded.copyWith(cover: existingCover);
     }
     return padded;
   }
 
-  Future<LiveRoom> _resolveDetail(String roomId, String platform) async {
+  Future<LiveRoom> _resolveDetail(LiveRoom liveroom) async {
+    final roomId = liveroom.roomId ?? '';
+    final platform = liveroom.platform ?? '';
     try {
       return await _loadRoomDetail(roomId);
     } catch (e) {
       if (Get.isRegistered<PlayerController>()) {
         final PlayerController playerController = Get.find<PlayerController>();
         final currentRoom = playerController.currentRoom;
-        if (currentRoom?.hasIdentity(platform: platform, roomId: roomId) == true) {
+        if (currentRoom?.hasSameIdentity(LiveRoom(roomId: roomId, platform: platform)) == true) {
           return currentRoom!.getLiveRoomWithError();
         }
       }
@@ -290,20 +292,20 @@ class CCSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResol
   }
 
   @override
-  Future<LiveRoom> getRoomDetailForRefresh(LiveRoom room) async {
-    final identity = room.detailIdentity;
-    if (identity == null) return room;
+  Future<LiveRoom> getRoomDetailForRefresh(LiveRoom liveroom) async {
+    
+    if (liveroom.detailIdentity == null) return liveroom;
     // Propagate transport/shape errors to the favourite verifier. Treating a
     // failed request as an authoritative offline response corrupts the card
     // state and hides the failure from the retry policy.
-    return _loadRoomDetail(identity.roomId);
+    return _loadRoomDetail(liveroom.roomId!);
   }
 
   @override
-  Future<LiveRoom> getRoomDetailForRecording(LiveRoom room) async {
-    final identity = room.detailIdentity;
-    if (identity == null) return room;
-    return _loadRoomDetail(identity.roomId);
+  Future<LiveRoom> getRoomDetailForRecording(LiveRoom liveroom) async {
+    
+    if (liveroom.detailIdentity == null) return liveroom;
+    return _loadRoomDetail(liveroom.roomId!);
   }
 
   Future<LiveRoom> _loadRoomDetail(String roomId) async {
@@ -414,7 +416,7 @@ class CCSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResol
   }
 
   @override
-  Future<List<LiveSuperChatMessage>> getSuperChatMessage({required String roomId}) {
+  Future<List<LiveSuperChatMessage>> getSuperChatMessage({required LiveRoom liveroom}) {
     //尚不支持
     return Future.value([]);
   }

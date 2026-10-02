@@ -56,7 +56,7 @@ FavoriteVerificationPreview buildFavoriteVerificationPreview(Iterable<LiveRoom> 
   return FavoriteVerificationPreview._(rooms: pending, onlineRooms: online, replayRooms: replay, offlineRooms: offline);
 }
 
-String favoriteRoomIdentity(LiveRoom room) => room.identityKey;
+String favoriteRoomIdentity(LiveRoom liveroom) => liveroom.identityKey;
 
 /// Keeps local favourite identity stable when a platform response exposes a
 /// different canonical/live-session id. The fresh id is useful inside a full

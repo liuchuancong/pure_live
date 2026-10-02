@@ -50,12 +50,12 @@ class TagManagementController extends GetxController {
     return _stateMutationLock.synchronized(() => HivePrefUtil.setAnyPref(_roomTagsMappingKey, snapshot));
   }
 
-  Future<void> setRoomTags(LiveRoom room, List<String> newTagIds) async {
+  Future<void> setRoomTags(LiveRoom liveroom, List<String> newTagIds) async {
     await _stateMutationLock.synchronized(() async {
       final before = _snapshotState();
-      final roomKey = room.identityKey;
+      final roomKey = liveroom.identityKey;
       final normalizedTagIds = _normalizeTagIds(newTagIds);
-      final legacyKey = room.normalizedRoomId;
+      final legacyKey = liveroom.normalizedRoomId;
       if (legacyKey.isNotEmpty && legacyKey != roomKey) {
         roomTagsMap.remove(legacyKey);
       }
@@ -117,8 +117,8 @@ class TagManagementController extends GetxController {
     }
   }
 
-  List<String> getTagsForRoom(LiveRoom room) {
-    return roomTagsMap[room.identityKey] ?? roomTagsMap[room.normalizedRoomId] ?? [];
+  List<String> getTagsForRoom(LiveRoom liveroom) {
+    return roomTagsMap[liveroom.identityKey] ?? roomTagsMap[liveroom.normalizedRoomId] ?? [];
   }
 
   Future<bool> addTag(String name, String description) {

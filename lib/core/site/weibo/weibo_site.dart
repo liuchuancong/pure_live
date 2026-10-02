@@ -49,7 +49,9 @@ class WeiboSite extends LiveSite
     if (cancel?.isCancelled == true) throw const WeiboException(WeiboFailure.cancelled);
   }
 
-  String _id(String roomId, String platform) {
+  String _id(LiveRoom liveroom) {
+    final roomId = liveroom.roomId ?? '';
+    final platform = liveroom.platform ?? '';
     if (platform != id) throw const WeiboException(WeiboFailure.identity);
     return WeiboApi.validateLiveId(roomId);
   }
@@ -138,27 +140,27 @@ class WeiboSite extends LiveSite
     notice: [if (detail.access != WeiboAccess.public) i18n('weibo_restricted'), i18n('weibo_room_scope')].join('\n'),
     data: detail,
   );
-  Future<LiveRoom> _resolveDetail(String roomId, String platform) async =>
-      _room(await _api.detail(_id(roomId, platform)));
+  Future<LiveRoom> _resolveDetail(LiveRoom liveroom) async =>
+      _room(await _api.detail(_id(liveroom)));
   @override
-  Future<LiveRoom> getRoomDetail(LiveRoom room) async {
-    final identity = room.detailIdentity;
-    if (identity == null) return room;
-    return _resolveDetail(identity.roomId, identity.platform);
+  Future<LiveRoom> getRoomDetail(LiveRoom liveroom) async {
+    
+    if (liveroom.detailIdentity == null) return liveroom;
+    return _resolveDetail(liveroom);
   }
 
   @override
-  Future<LiveRoom> getRoomDetailForRecording(LiveRoom room) async {
-    final identity = room.detailIdentity;
-    if (identity == null) return room;
-    return _resolveDetail(identity.roomId, identity.platform);
+  Future<LiveRoom> getRoomDetailForRecording(LiveRoom liveroom) async {
+    
+    if (liveroom.detailIdentity == null) return liveroom;
+    return _resolveDetail(liveroom);
   }
 
   @override
-  Future<LiveRoom> getRoomDetailForRefresh(LiveRoom room) async {
-    final identity = room.detailIdentity;
-    if (identity == null) return room;
-    return _resolveDetail(identity.roomId, identity.platform);
+  Future<LiveRoom> getRoomDetailForRefresh(LiveRoom liveroom) async {
+    
+    if (liveroom.detailIdentity == null) return liveroom;
+    return _resolveDetail(liveroom);
   }
 
   @override
@@ -191,10 +193,10 @@ class WeiboSite extends LiveSite
     return directory.rooms.where((room) => (room.nick ?? '').toLowerCase().contains(query)).take(pageSize).toList();
   }
 
-  WeiboLiveDetail _detail(LiveRoom room) {
-    _id(room.roomId ?? '', room.platform ?? '');
-    final detail = room.data;
-    if (detail is! WeiboLiveDetail || detail.liveId != room.roomId || '${detail.ownerId}' != room.userId) {
+  WeiboLiveDetail _detail(LiveRoom liveroom) {
+    _id(liveroom);
+    final detail = liveroom.data;
+    if (detail is! WeiboLiveDetail || detail.liveId != liveroom.roomId || '${detail.ownerId}' != liveroom.userId) {
       throw const WeiboException(WeiboFailure.identity);
     }
     return detail;
@@ -208,8 +210,8 @@ class WeiboSite extends LiveSite
   }
 
   @override
-  Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom detail}) async {
-    final data = _detail(detail);
+  Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom liveroom}) async {
+    final data = _detail(liveroom);
     if (data.state == WeiboBroadcastState.replay) return [];
     _live(data);
     return List.unmodifiable([
@@ -221,8 +223,8 @@ class WeiboSite extends LiveSite
     ]);
   }
 
-  Future<LivePlayUrlResolution> _resolve(LiveRoom detail, LivePlayQuality quality) async {
-    final data = _detail(detail);
+  Future<LivePlayUrlResolution> _resolve(LiveRoom liveroom, LivePlayQuality quality) async {
+    final data = _detail(liveroom);
     _live(data);
     final choice = quality.data;
     if (quality.selectionId != 'original' ||
@@ -239,14 +241,14 @@ class WeiboSite extends LiveSite
   }
 
   @override
-  Future<LivePlayUrlResolution> resolvePlayUrlsRaw({required LiveRoom detail, required LivePlayQuality quality}) =>
-      _resolve(detail, quality);
+  Future<LivePlayUrlResolution> resolvePlayUrlsRaw({required LiveRoom liveroom, required LivePlayQuality quality}) =>
+      _resolve(liveroom, quality);
   @override
   Future<LivePlayUrlResolution> resolvePlayUrlsForRecoveryRaw({
-    required LiveRoom detail,
+    required LiveRoom liveroom,
     required LivePlayQuality quality,
-  }) => _resolve(detail, quality);
+  }) => _resolve(liveroom, quality);
   @override
-  Future<List<String>> getPlayUrls({required LiveRoom detail, required LivePlayQuality quality}) async =>
-      (await _resolve(detail, quality)).urls;
+  Future<List<String>> getPlayUrls({required LiveRoom liveroom, required LivePlayQuality quality}) async =>
+      (await _resolve(liveroom, quality)).urls;
 }

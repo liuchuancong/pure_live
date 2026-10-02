@@ -154,8 +154,8 @@ class DouyuSite
   }
 
   @override
-  Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom detail}) async {
-    final roomId = detail.roomId ?? '';
+  Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom liveroom}) async {
+    final roomId = liveroom.roomId ?? '';
     final playData = await _requestPlayData(roomId);
     final cdns = parseCdnCodes(playData);
     cdns.sort((a, b) {
@@ -213,19 +213,19 @@ class DouyuSite
   }
 
   @override
-  Future<List<String>> getPlayUrls({required LiveRoom detail, required LivePlayQuality quality}) async {
-    return (await resolvePlayUrlsRaw(detail: detail, quality: quality)).urls;
+  Future<List<String>> getPlayUrls({required LiveRoom liveroom, required LivePlayQuality quality}) async {
+    return (await resolvePlayUrlsRaw(liveroom: liveroom, quality: quality)).urls;
   }
 
   @override
   Future<LivePlayUrlResolution> resolvePlayUrlsForRecoveryRaw({
-    required LiveRoom detail,
+    required LiveRoom liveroom,
     required LivePlayQuality quality,
   }) async {
     // Both the signed URL and advertised CDN set can change while a live
     // connection is paused. Refresh the metadata, then ask for the committed
     // rate with those current CDNs rather than reopening the old URL cohort.
-    final qualities = await getPlayQualites(detail: detail);
+    final qualities = await getPlayQualites(liveroom: liveroom);
     if (qualities.isEmpty) return const LivePlayUrlResolution(urls: <String>[]);
     final requestedId = quality.selectionId.toString();
     final matching = qualities.where((item) => item.selectionId.toString() == requestedId).firstOrNull;
@@ -243,13 +243,13 @@ class DouyuSite
     // A no-longer-advertised rate can still be accepted or downgraded by the
     // server. Preserve that acknowledgement for the successful-source commit;
     // never label a fallback using only the requested rate.
-    return resolvePlayUrlsRaw(detail: detail, quality: request);
+    return resolvePlayUrlsRaw(liveroom: liveroom, quality: request);
   }
 
   @override
-  Future<LivePlayUrlResolution> resolvePlayUrlsRaw({required LiveRoom detail, required LivePlayQuality quality}) async {
+  Future<LivePlayUrlResolution> resolvePlayUrlsRaw({required LiveRoom liveroom, required LivePlayQuality quality}) async {
     final rawData = quality.data;
-    final roomId = detail.roomId?.trim() ?? '';
+    final roomId = liveroom.roomId?.trim() ?? '';
     if (rawData is! DouyuPlayData || roomId.isEmpty) return const LivePlayUrlResolution(urls: []);
     final data = rawData;
     // Each CDN may acknowledge a different rate. A single UI quality label
@@ -285,7 +285,7 @@ class DouyuSite
 
   @override
   Future<LivePlayUrlResolution> resolvePlayUrlAtRaw({
-    required LiveRoom detail,
+    required LiveRoom liveroom,
     required LivePlayQuality quality,
     required int lineIndex,
   }) async {
@@ -293,7 +293,7 @@ class DouyuSite
     if (data is! DouyuPlayData || lineIndex < 0 || lineIndex >= data.cdns.length) {
       return const LivePlayUrlResolution(urls: <String>[]);
     }
-    final roomId = detail.roomId?.trim() ?? '';
+    final roomId = liveroom.roomId?.trim() ?? '';
     if (roomId.isEmpty) {
       return const LivePlayUrlResolution(urls: <String>[]);
     }
@@ -479,24 +479,26 @@ class DouyuSite
   }
 
   @override
-  Future<LiveRoom> getRoomDetail(LiveRoom room) async {
-    final identity = room.detailIdentity;
-    if (identity == null) return room;
-    final fresh = await _resolveDetail(identity.roomId, identity.platform);
+  Future<LiveRoom> getRoomDetail(LiveRoom liveroom) async {
+    
+    if (liveroom.detailIdentity == null) return liveroom;
+    final fresh = await _resolveDetail(liveroom);
     // Pad whatever the profile endpoint left empty (avatar/cover/nick drift
     // between responses) with the fields the room already carries, so a
     // partial response never blanks the UI. fillFromDetail covers
     // nick/avatar/area; the cover is padded explicitly because a blank
     // cover is the most visible symptom of a partial profile response.
-    final padded = fresh.fillFromDetail(room);
-    final existingCover = room.cover ?? '';
+    final padded = fresh.fillFromDetail(liveroom);
+    final existingCover = liveroom.cover ?? '';
     if ((padded.cover == null || padded.cover!.isEmpty) && existingCover.isNotEmpty) {
       return padded.copyWith(cover: existingCover);
     }
     return padded;
   }
 
-  Future<LiveRoom> _resolveDetail(String roomId, String platform) async {
+  Future<LiveRoom> _resolveDetail(LiveRoom liveroom) async {
+    final roomId = liveroom.roomId ?? '';
+    final platform = liveroom.platform ?? '';
     try {
       final roomInfo = await _fetchRoomInfo(roomId);
 
@@ -506,7 +508,7 @@ class DouyuSite
         final PlayerController playerController = Get.find<PlayerController>();
 
         final currentRoom = playerController.currentRoom;
-        if (currentRoom?.hasIdentity(platform: platform, roomId: roomId) == true) {
+        if (currentRoom?.hasSameIdentity(LiveRoom(roomId: roomId, platform: platform)) == true) {
           return currentRoom!.getLiveRoomWithError();
         }
       }
@@ -516,23 +518,22 @@ class DouyuSite
   }
 
   @override
-  Future<LiveRoom> getRoomDetailForRefresh(LiveRoom room) async {
-    final identity = room.detailIdentity;
-    if (identity == null) return room;
-    final roomInfo = await _fetchRoomInfo(identity.roomId);
-
-    return _buildRoom(roomInfo, roomId: identity.roomId);
+  Future<LiveRoom> getRoomDetailForRefresh(LiveRoom liveroom) async {
+    
+    if (liveroom.detailIdentity == null) return liveroom;
+    final roomInfo = await _fetchRoomInfo(liveroom.roomId!);
+    return _buildRoom(roomInfo, roomId: liveroom.roomId!);
   }
 
   @override
-  Future<LiveRoom> getRoomDetailForRecording(LiveRoom room) async {
-    final identity = room.detailIdentity;
-    if (identity == null) return room;
+  Future<LiveRoom> getRoomDetailForRecording(LiveRoom liveroom) async {
+    
+    if (liveroom.detailIdentity == null) return liveroom;
     // Do not use getRoomDetail here: its UI fallback converts a failed betard
     // request into an offline room, which previously stopped recording before
     // Douyu signing/getH5PlayV1 was reached.
-    final roomInfo = await _fetchRoomInfo(identity.roomId);
-    return _buildRoom(roomInfo, roomId: identity.roomId);
+    final roomInfo = await _fetchRoomInfo(liveroom.roomId!);
+    return _buildRoom(roomInfo, roomId: liveroom.roomId!);
   }
 
   Future<Map<dynamic, dynamic>> _fetchRoomInfo(String roomId) async {
@@ -683,7 +684,7 @@ class DouyuSite
   }
 
   @override
-  Future<List<LiveSuperChatMessage>> getSuperChatMessage({required String roomId}) {
+  Future<List<LiveSuperChatMessage>> getSuperChatMessage({required LiveRoom liveroom}) {
     return Future.value([]);
   }
 }

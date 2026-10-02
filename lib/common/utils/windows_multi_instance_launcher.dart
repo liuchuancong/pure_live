@@ -88,25 +88,25 @@ class WindowsMultiInstanceLauncher {
     }
   }
 
-  static String encodeRoomArgument(LiveRoom room) {
+  static String encodeRoomArgument(LiveRoom liveroom) {
     final payload = <String, dynamic>{
-      'roomId': room.roomId,
-      'userId': room.userId,
-      'title': room.title,
-      'nick': room.nick,
-      'avatar': room.avatar,
-      'cover': room.cover,
-      'area': room.area,
-      'watching': room.watching,
-      'audienceMetricType': room.effectiveAudienceMetricType.name,
-      'popularity': room.popularity,
-      'onlineViewers': room.onlineViewers,
-      'totalViewers': room.totalViewers,
-      'followers': room.followers,
-      'platform': room.platform,
-      'liveStatus': room.effectiveLiveStatus.index,
-      'isRecord': room.isRecord,
-      'status': room.isLiveNow,
+      'roomId': liveroom.roomId,
+      'userId': liveroom.userId,
+      'title': liveroom.title,
+      'nick': liveroom.nick,
+      'avatar': liveroom.avatar,
+      'cover': liveroom.cover,
+      'area': liveroom.area,
+      'watching': liveroom.watching,
+      'audienceMetricType': liveroom.effectiveAudienceMetricType.name,
+      'popularity': liveroom.popularity,
+      'onlineViewers': liveroom.onlineViewers,
+      'totalViewers': liveroom.totalViewers,
+      'followers': liveroom.followers,
+      'platform': liveroom.platform,
+      'liveStatus': liveroom.effectiveLiveStatus.index,
+      'isRecord': liveroom.isRecord,
+      'status': liveroom.isLiveNow,
     };
 
     return '$roomPrefix'
@@ -128,7 +128,7 @@ class WindowsMultiInstanceLauncher {
   }
 
   static List<String> buildArguments({
-    LiveRoom? room,
+    LiveRoom? liveroom,
     String? instanceId,
     String? configFile,
     int? processId,
@@ -142,11 +142,11 @@ class WindowsMultiInstanceLauncher {
     return <String>[
       '$instancePrefix$id',
       if (configFile != null) '$configPrefix$configFile',
-      if (room != null) encodeRoomArgument(room),
+      if (liveroom != null) encodeRoomArgument(liveroom),
     ];
   }
 
-  static Future<void> launch({LiveRoom? room}) async {
+  static Future<void> launch({LiveRoom? liveroom}) async {
     if (!Platform.isWindows) return;
 
     final timestampMicros = DateTime.now().microsecondsSinceEpoch;
@@ -162,7 +162,7 @@ class WindowsMultiInstanceLauncher {
 
       await Process.start(
         executable,
-        buildArguments(room: room, instanceId: id, configFile: configFile.path),
+        buildArguments(liveroom: liveroom, instanceId: id, configFile: configFile.path),
         workingDirectory: p.dirname(executable),
         mode: ProcessStartMode.detached,
       );

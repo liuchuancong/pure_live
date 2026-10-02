@@ -110,15 +110,15 @@ class IptvSite implements LiveSite, LiveSiteRecordRoomResolver {
   // =========================================================
 
   @override
-  Future<LiveRoom> getRoomDetail(LiveRoom room) async {
-    final identity = room.detailIdentity;
-    if (identity == null) return room;
-    final fresh = await _loadDetail(identity.roomId);
+  Future<LiveRoom> getRoomDetail(LiveRoom liveroom) async {
+    
+    if (liveroom.detailIdentity == null) return liveroom;
+    final fresh = await _loadDetail(liveroom.roomId!);
     // Pad response gaps from the room the caller already holds. fillFromDetail
     // covers nick/avatar/area; the cover is padded explicitly because a blank
     // cover is the most visible symptom of a partial profile response.
-    final padded = fresh.fillFromDetail(room);
-    final existingCover = room.cover ?? '';
+    final padded = fresh.fillFromDetail(liveroom);
+    final existingCover = liveroom.cover ?? '';
     if ((padded.cover == null || padded.cover!.isEmpty) && existingCover.isNotEmpty) {
       return padded.copyWith(cover: existingCover);
     }
@@ -160,13 +160,13 @@ class IptvSite implements LiveSite, LiveSiteRecordRoomResolver {
   }
 
   @override
-  Future<LiveRoom> getRoomDetailForRecording(LiveRoom room) async {
-    final identity = room.detailIdentity;
-    if (identity == null) return room;
+  Future<LiveRoom> getRoomDetailForRecording(LiveRoom liveroom) async {
+    
+    if (liveroom.detailIdentity == null) return liveroom;
     // Imported channels already store their playback URL as room data. The
     // database lookup is authoritative and does not use a presentation
     // fallback, so the same loader is the strict recording contract.
-    return _loadDetail(identity.roomId);
+    return _loadDetail(liveroom.roomId!);
   }
 
   Future<String?> _resolveEpgChannelId(Channel channel, String currentEpgSourceId) async {
@@ -321,8 +321,8 @@ class IptvSite implements LiveSite, LiveSiteRecordRoomResolver {
   // =========================================================
 
   @override
-  Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom detail}) async {
-    final url = detail.data?.toString().trim() ?? '';
+  Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom liveroom}) async {
+    final url = liveroom.data?.toString().trim() ?? '';
     if (url.isEmpty) return const <LivePlayQuality>[];
     return [
       LivePlayQuality(quality: '默认', id: 'default', sort: 1, data: <String>[url]),
@@ -334,7 +334,7 @@ class IptvSite implements LiveSite, LiveSiteRecordRoomResolver {
   // =========================================================
 
   @override
-  Future<List<String>> getPlayUrls({required LiveRoom detail, required LivePlayQuality quality}) async {
+  Future<List<String>> getPlayUrls({required LiveRoom liveroom, required LivePlayQuality quality}) async {
     final data = quality.data;
     if (data is! List) return const <String>[];
     return data.map((item) => item.toString().trim()).where((url) => url.isNotEmpty).toList(growable: false);
@@ -352,7 +352,7 @@ class IptvSite implements LiveSite, LiveSiteRecordRoomResolver {
   // =========================================================
 
   @override
-  Future<List<LiveSuperChatMessage>> getSuperChatMessage({required String roomId}) async {
+  Future<List<LiveSuperChatMessage>> getSuperChatMessage({required LiveRoom liveroom}) async {
     return [];
   }
 

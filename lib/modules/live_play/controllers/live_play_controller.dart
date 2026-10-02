@@ -31,7 +31,7 @@ import 'package:pure_live/modules/live_play/widgets/local_interaction/local_mess
 
 // live_play_controller.dart
 
-typedef IptvPlayerStarter = Future<bool> Function(LiveRoom room);
+typedef IptvPlayerStarter = Future<bool> Function(LiveRoom liveroom);
 
 enum IptvPlaybackSwitchResult { started, superseded, failed }
 
@@ -294,7 +294,7 @@ class LivePlayController extends GetxController
       return;
     }
 
-    updateRoom(detail: session.room, isLiving: session.isLiving, success: true, isLoading: false, loadError: null);
+    updateRoom(liveroom: session.room, isLiving: session.isLiving, success: true, isLoading: false, loadError: null);
     await _syncDanmakuConnection(session.room);
     unawaited(_refreshResumedRoomMetadata(session.room));
   }
@@ -313,7 +313,7 @@ class LivePlayController extends GetxController
       if (fetched.isLiveStatusPending) return;
       final refreshed = fetched.withAudienceFallbackFrom(current!);
       final isLiving = refreshed.isPlayableNow;
-      updateRoom(detail: refreshed, isLiving: isLiving, success: true, isLoading: false);
+      updateRoom(liveroom: refreshed, isLiving: isLiving, success: true, isLoading: false);
     } catch (error, stackTrace) {
       // The already-playing session stays usable when a metadata refresh fails.
       developer.log(
@@ -325,15 +325,15 @@ class LivePlayController extends GetxController
     }
   }
 
-  Future<void> getSuperChatMessage(String roomId, {required String? platform, required int loadEpoch}) async {
-    if (!_isRoomLoadCurrent(loadEpoch, roomId, platform)) return;
+  Future<void> getSuperChatMessage(LiveRoom liveroom, {required int loadEpoch}) async {
+    if (!_isRoomLoadCurrent(loadEpoch, liveroom)) return;
     final liveSite = currentSite.liveSite;
     try {
-      final sc = await liveSite.getSuperChatMessage(roomId: roomId);
-      if (isClosed || _ownerClosed || !_isRoomLoadCurrent(loadEpoch, roomId, platform)) return;
+      final sc = await liveSite.getSuperChatMessage(liveroom: liveroom);
+      if (isClosed || _ownerClosed || !_isRoomLoadCurrent(loadEpoch, liveroom)) return;
       addBatchSuperChat(sc);
     } catch (e) {
-      if (!isClosed && !_ownerClosed && _isRoomLoadCurrent(loadEpoch, roomId, platform)) {
+      if (!isClosed && !_ownerClosed && _isRoomLoadCurrent(loadEpoch, liveroom)) {
         addSystemMessage("SC读取失败");
       }
     }
@@ -433,10 +433,10 @@ class LivePlayController extends GetxController
   }
 
   @override
-  void updateRoom({LiveRoom? detail, bool? isLiving, bool? success, bool? isLoading, String? loadError}) {
+  void updateRoom({LiveRoom? liveroom, bool? isLiving, bool? success, bool? isLoading, String? loadError}) {
     state.value = state.value.copyWith(
       room: state.value.room.copyWith(
-        detail: detail,
+        detail: liveroom,
         isLiving: isLiving,
         success: success,
         isLoading: isLoading,
@@ -567,7 +567,7 @@ class LivePlayController extends GetxController
       LiveAudienceMetricKind.onlineViewers => detail.copyWith(onlineViewers: text),
       LiveAudienceMetricKind.totalViewers => detail.copyWith(totalViewers: text),
     };
-    updateRoom(detail: candidate.withAudienceFallbackFrom(detail));
+    updateRoom(liveroom: candidate.withAudienceFallbackFrom(detail));
   }
 
   void emitLocalMessage(LiveMessage msg, {required bool showAsDanmaku, Duration delay = Duration.zero}) {
@@ -587,10 +587,7 @@ class LivePlayController extends GetxController
 
   void _deliverLocalMessage(LocalMessageDelivery delivery) {
     final currentRoom = state.value.room.detail;
-    if (isClosed ||
-        _ownerClosed ||
-        currentRoom == null ||
-        !delivery.matchesRoom(roomId: currentRoom.roomId, platform: currentRoom.platform)) {
+    if (isClosed || _ownerClosed || currentRoom == null || !delivery.matchesRoom(liveroom: currentRoom)) {
       return;
     }
     final msg = delivery.message;
@@ -705,8 +702,8 @@ class LivePlayController extends GetxController
 
       var liveRoom = fetchedRoom.withAudienceFallbackFrom(requestedRoom);
       liveRoom = liveRoom.fillFromDetail(requestedRoom);
-      if (!_isRoomLoadCurrent(loadEpoch, roomId, requestedPlatform)) return liveRoom;
-      updateRoom(detail: liveRoom);
+      if (!_isRoomLoadCurrent(loadEpoch, liveRoom)) return liveRoom;
+      updateRoom(liveroom: liveRoom);
 
       if (currentSite.id == Sites.iptvSite) {
         await _initIptvPlayer(liveRoom, loadEpoch: loadEpoch);
@@ -723,7 +720,7 @@ class LivePlayController extends GetxController
       final liveStatus = liveRoom.isPlayableNow;
 
       if (liveStatus) {
-        unawaited(getSuperChatMessage(roomId, platform: requestedPlatform, loadEpoch: loadEpoch));
+        unawaited(getSuperChatMessage(liveRoom, loadEpoch: loadEpoch));
         await _handleLiveRoom(liveRoom, loadEpoch: loadEpoch);
       } else {
         await _handleNotLiveRoom(liveRoom);
@@ -732,14 +729,16 @@ class LivePlayController extends GetxController
       updateRoom(isLoading: false);
       return liveRoom;
     } catch (e) {
-      if (!_isRoomLoadCurrent(loadEpoch, roomId, requestedPlatform)) return LiveRoom();
+      if (!_isRoomLoadCurrent(loadEpoch, requestedRoom)) return LiveRoom();
       updateRoom(isLoading: false, loadError: e.toString());
       ToastUtil.show(i18n('get_room_info_failed_retry'));
       return LiveRoom();
     }
   }
 
-  bool _isRoomLoadCurrent(int epoch, String roomId, String? platform) {
+  bool _isRoomLoadCurrent(int epoch, LiveRoom liveroom) {
+    final roomId = liveroom.roomId ?? '';
+    final platform = liveroom.platform ?? '';
     final current = state.value.room.detail;
     return epoch == _roomLoadEpoch && current?.roomId == roomId && current?.platform == platform;
   }
@@ -796,9 +795,9 @@ class LivePlayController extends GetxController
     _restoreQualityAndLines();
   }
 
-  Future<void> _updateFavoriteRoomSnapshot(LiveRoom room) async {
+  Future<void> _updateFavoriteRoomSnapshot(LiveRoom liveroom) async {
     try {
-      if (await SettingsService.to.fav.updateRoomDurably(room)) {
+      if (await SettingsService.to.fav.updateRoomDurably(liveroom)) {
         EventBus.instance.emit('refresh_room_changed', true);
       }
     } catch (error, stackTrace) {
@@ -811,9 +810,9 @@ class LivePlayController extends GetxController
     }
   }
 
-  Future<void> _addRoomToHistory(LiveRoom room) async {
+  Future<void> _addRoomToHistory(LiveRoom liveroom) async {
     try {
-      await SettingsService.to.history.addRoomToHistoryDurably(room);
+      await SettingsService.to.history.addRoomToHistoryDurably(liveroom);
     } catch (error, stackTrace) {
       developer.log('Persist room history failed', name: 'LivePlayController', error: error, stackTrace: stackTrace);
     }
@@ -855,7 +854,7 @@ class LivePlayController extends GetxController
   Future<IptvPlaybackSwitchResult> _initIptvPlayer(LiveRoom liveRoom, {required int loadEpoch}) async {
     final link = liveRoom.link?.trim() ?? '';
     if (link.isEmpty || liveRoom.normalizedRoomId.isEmpty) {
-      if (_isRoomLoadCurrent(loadEpoch, liveRoom.roomId!, liveRoom.platform)) {
+      if (_isRoomLoadCurrent(loadEpoch, liveRoom)) {
         updateRoom(success: false, isLoading: false, loadError: i18n('invalid_play_url'));
         ToastUtil.show(i18n('invalid_play_url'));
       }
@@ -865,7 +864,7 @@ class LivePlayController extends GetxController
     updatePlayer(qualites: [LivePlayQuality(quality: '原画')], currentQuality: 0, currentLineIndex: 0);
 
     final started = await _switchToUrl(link, expectedRoom: liveRoom);
-    if (!_isRoomLoadCurrent(loadEpoch, liveRoom.roomId!, liveRoom.platform)) {
+    if (!_isRoomLoadCurrent(loadEpoch, liveRoom)) {
       return IptvPlaybackSwitchResult.superseded;
     }
 
@@ -920,7 +919,7 @@ class LivePlayController extends GetxController
     );
     updatePlayer(isCurrentRoomAudioOnly: autoStartAsmr);
 
-    updateRoom(detail: newRoom);
+    updateRoom(liveroom: newRoom);
     currentSite = Sites.of(newRoom.platform!);
     playerController.initSite(currentSite);
 
@@ -953,7 +952,7 @@ class LivePlayController extends GetxController
     try {
       final result = await RoomExternalOpener.open(
         site: site,
-        room: detail,
+        liveroom: detail,
         android: Platform.isAndroid,
         isCurrent: isCurrent,
         onBrowserFallback: () => ToastUtil.show(i18n('open_app_failed_fallback_browser')),
@@ -983,7 +982,7 @@ class LivePlayController extends GetxController
       catchUpEnd: endTime,
     );
 
-    updateRoom(detail: updatedRoom);
+    updateRoom(liveroom: updatedRoom);
     return _switchToUrl(normalizedUrl, expectedRoom: updatedRoom);
   }
 
@@ -998,7 +997,7 @@ class LivePlayController extends GetxController
     }
 
     final liveRoom = currentRoom.withoutCatchUp();
-    updateRoom(detail: liveRoom);
+    updateRoom(liveroom: liveRoom);
     return _switchToUrl(liveUrl, expectedRoom: liveRoom);
   }
 
@@ -1010,7 +1009,7 @@ class LivePlayController extends GetxController
       final injectedStarter = _iptvPlayerStarter;
       final started = injectedStarter != null
           ? await injectedStarter(expectedRoom)
-          : await playerController.setDirectPlayer(room: expectedRoom, site: currentSite) != null;
+          : await playerController.setDirectPlayer(liveroom: expectedRoom, site: currentSite) != null;
       if (!_isIptvPlaybackCurrent(playbackEpoch, expectedRoom)) {
         return IptvPlaybackSwitchResult.superseded;
       }

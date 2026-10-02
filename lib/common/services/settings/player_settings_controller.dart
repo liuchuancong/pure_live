@@ -366,14 +366,14 @@ class PlayerSettingsController extends GetxController {
     if (videoHardwareDecoder.v != normalizedHardwareDecoder) videoHardwareDecoder.v = normalizedHardwareDecoder;
   }
 
-  PortraitOrientationOverride portraitOverrideForRoom(LiveRoom? room) {
-    if (room == null || room.identityKey == ':') return PortraitOrientationOverride.automatic;
-    final value = _sessionPortraitRoomOverrides[room.identityKey] ?? portraitRoomOverrides[room.identityKey];
+  PortraitOrientationOverride portraitOverrideForRoom(LiveRoom? liveroom) {
+    if (liveroom == null || liveroom.identityKey == ':') return PortraitOrientationOverride.automatic;
+    final value = _sessionPortraitRoomOverrides[liveroom.identityKey] ?? portraitRoomOverrides[liveroom.identityKey];
     return _enumByName(PortraitOrientationOverride.values, value, PortraitOrientationOverride.automatic);
   }
 
-  void setPortraitOverrideForRoom(LiveRoom room, PortraitOrientationOverride value, {required bool remember}) {
-    final key = room.identityKey;
+  void setPortraitOverrideForRoom(LiveRoom liveroom, PortraitOrientationOverride value, {required bool remember}) {
+    final key = liveroom.identityKey;
     if (key == ':') return;
     _sessionPortraitRoomOverrides.remove(key);
     if (value == PortraitOrientationOverride.automatic) {

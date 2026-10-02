@@ -121,28 +121,28 @@ class AcfunSite extends LiveSite
   ];
 
   @override
-  Future<LiveRoom> getRoomDetailForRefresh(LiveRoom room) async {
-    final identity = room.detailIdentity;
-    if (identity == null) return room;
-    final id = AcfunApi.normalizeAuthorId(identity.roomId);
+  Future<LiveRoom> getRoomDetailForRefresh(LiveRoom liveroom) async {
+    
+    if (liveroom.detailIdentity == null) return liveroom;
+    final id = AcfunApi.normalizeAuthorId(liveroom.roomId!);
     return parseRoom(await _api.roomInfo(id), id);
   }
 
   @override
-  Future<LiveRoom> getRoomDetail(LiveRoom room) async {
-    if (room.detailIdentity == null) return room;
-    final fresh = await getRoomDetailForRefresh(room);
+  Future<LiveRoom> getRoomDetail(LiveRoom liveroom) async {
+    if (liveroom.detailIdentity == null) return liveroom;
+    final fresh = await getRoomDetailForRefresh(liveroom);
     if (fresh.liveStatus == LiveStatus.live) fresh.data = await _api.playback(fresh.roomId!);
     return fresh;
   }
 
   @override
-  Future<LiveRoom> getRoomDetailForRecording(LiveRoom room) => getRoomDetail(room);
+  Future<LiveRoom> getRoomDetailForRecording(LiveRoom liveroom) => getRoomDetail(liveroom);
 
   @override
-  Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom detail}) async {
-    if (detail.liveStatus != LiveStatus.live) return [];
-    final data = detail.data;
+  Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom liveroom}) async {
+    if (liveroom.liveStatus != LiveStatus.live) return [];
+    final data = liveroom.data;
     if (data is! AcfunPlayback) throw const AcfunApiException(AcfunFailureKind.schema);
     return [
       for (final quality in data.qualities)
@@ -151,8 +151,8 @@ class AcfunSite extends LiveSite
   }
 
   @override
-  Future<List<String>> getPlayUrls({required LiveRoom detail, required LivePlayQuality quality}) async {
-    final data = detail.data;
+  Future<List<String>> getPlayUrls({required LiveRoom liveroom, required LivePlayQuality quality}) async {
+    final data = liveroom.data;
     if (data is! AcfunPlayback) throw const AcfunApiException(AcfunFailureKind.schema);
     for (final current in data.qualities) {
       if (current.id == quality.selectionId) return current.urls;
@@ -162,11 +162,11 @@ class AcfunSite extends LiveSite
 
   @override
   Future<LivePlayUrlResolution> resolvePlayUrlsForRecoveryRaw({
-    required LiveRoom detail,
+    required LiveRoom liveroom,
     required LivePlayQuality quality,
   }) async {
-    final fresh = await getRoomDetail(detail);
-    final urls = await getPlayUrls(detail: fresh, quality: quality);
+    final fresh = await getRoomDetail(liveroom);
+    final urls = await getPlayUrls(liveroom: fresh, quality: quality);
     return LivePlayUrlResolution(urls: urls, appliedQualityData: quality.selectionId);
   }
 }

@@ -85,7 +85,7 @@ class _InAppWebSearchBrowser implements WebSearchBrowser {
 
 typedef WebSearchExternalLauncher = Future<bool> Function(Uri uri);
 typedef WebSearchRoomConfirmation = Future<bool?> Function(WebSearchRoomTarget target);
-typedef WebSearchRoomOpener = Future<void> Function(LiveRoom room);
+typedef WebSearchRoomOpener = Future<void> Function(LiveRoom liveroom);
 typedef WebSearchCookieFlusher = Future<void> Function();
 typedef WebSearchNotice = void Function(String localizationKey);
 
@@ -520,8 +520,8 @@ class WebSearchController extends GetxController {
     );
   }
 
-  static Future<void> _defaultOpenRoom(LiveRoom room) {
-    return AppNavigator.offAndToRoomDetail(liveRoom: room);
+  static Future<void> _defaultOpenRoom(LiveRoom liveroom) {
+    return AppNavigator.offAndToRoomDetail(liveRoom: liveroom);
   }
 
   static Future<void> _defaultFlushCookies() {

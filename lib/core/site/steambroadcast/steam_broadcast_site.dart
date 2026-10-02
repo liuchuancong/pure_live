@@ -147,7 +147,7 @@ final class SteamBroadcastSite extends LiveSite
     if (steamId != null) {
       if (page != 1) return [];
       try {
-        return [await _detail(steamId, id, includeMedia: false, cancel: cancel)];
+        return [await _detail(LiveRoom(roomId: steamId, platform: id), includeMedia: false, cancel: cancel)];
       } on SteamBroadcastException catch (error) {
         if (error.kind == SteamBroadcastFailure.missing) return [];
         rethrow;
@@ -169,15 +169,17 @@ final class SteamBroadcastSite extends LiveSite
         .toList(growable: false);
   }
 
-  String _steamId(String roomId, String platform) {
+  String _steamId(LiveRoom liveroom) {
+    final roomId = liveroom.roomId ?? '';
+    final platform = liveroom.platform ?? '';
     if (platform.trim().toLowerCase() != id) throw const SteamBroadcastException(SteamBroadcastFailure.identity);
     final value = SteamBroadcastLink.parseSteamId(roomId);
     if (value == null) throw const SteamBroadcastException(SteamBroadcastFailure.identity);
     return value;
   }
 
-  Future<LiveRoom> _detail(String roomId, String platform, {required bool includeMedia, CancelToken? cancel}) async {
-    final steamId = _steamId(roomId, platform);
+  Future<LiveRoom> _detail(LiveRoom liveroom, {required bool includeMedia, CancelToken? cancel}) async {
+    final steamId = _steamId(liveroom);
     var room = await _api.room(steamId, includeMedia: includeMedia, cancel: cancel);
     final known = _known[steamId];
     if (known != null) room = room.enrich(known);
@@ -186,29 +188,29 @@ final class SteamBroadcastSite extends LiveSite
   }
 
   @override
-  Future<LiveRoom> getRoomDetail(LiveRoom room) async {
-    final identity = room.detailIdentity;
-    if (identity == null) return room;
-    return _detail(identity.roomId, identity.platform, includeMedia: true);
+  Future<LiveRoom> getRoomDetail(LiveRoom liveroom) async {
+    
+    if (liveroom.detailIdentity == null) return liveroom;
+    return _detail(liveroom, includeMedia: true);
   }
 
   @override
-  Future<LiveRoom> getRoomDetailForRecording(LiveRoom room) async {
-    final identity = room.detailIdentity;
-    if (identity == null) return room;
-    return _detail(identity.roomId, identity.platform, includeMedia: true);
+  Future<LiveRoom> getRoomDetailForRecording(LiveRoom liveroom) async {
+    
+    if (liveroom.detailIdentity == null) return liveroom;
+    return _detail(liveroom, includeMedia: true);
   }
 
   @override
-  Future<LiveRoom> getRoomDetailForRefresh(LiveRoom room) async {
-    final identity = room.detailIdentity;
-    if (identity == null) return room;
-    return _detail(identity.roomId, identity.platform, includeMedia: false);
+  Future<LiveRoom> getRoomDetailForRefresh(LiveRoom liveroom) async {
+    
+    if (liveroom.detailIdentity == null) return liveroom;
+    return _detail(liveroom, includeMedia: false);
   }
 
-  SteamBroadcastRoom _snapshot(LiveRoom detail) {
-    final steamId = _steamId(detail.roomId ?? '', detail.platform ?? '');
-    final room = detail.data;
+  SteamBroadcastRoom _snapshot(LiveRoom liveroom) {
+    final steamId = _steamId(liveroom);
+    final room = liveroom.data;
     if (room is! SteamBroadcastRoom || room.steamId != steamId || room.state != SteamBroadcastState.live) {
       throw const SteamBroadcastException(SteamBroadcastFailure.mediaUnavailable);
     }
@@ -217,32 +219,32 @@ final class SteamBroadcastSite extends LiveSite
   }
 
   @override
-  Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom detail}) async {
-    if (detail.isExplicitlyOfflineNow) return const [];
-    _snapshot(detail);
+  Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom liveroom}) async {
+    if (liveroom.isExplicitlyOfflineNow) return const [];
+    _snapshot(liveroom);
     return [LivePlayQuality(id: 'auto', quality: i18n('steambroadcast_quality_auto'))];
   }
 
-  Future<LivePlayUrlResolution> _resolve(LiveRoom detail, LivePlayQuality quality, {required bool refresh}) async {
-    var room = _snapshot(detail);
+  Future<LivePlayUrlResolution> _resolve(LiveRoom liveroom, LivePlayQuality quality, {required bool refresh}) async {
+    var room = _snapshot(liveroom);
     if (quality.selectionId != 'auto') throw const SteamBroadcastException(SteamBroadcastFailure.schema);
     if (refresh) {
-      room = _snapshot(await _detail(room.steamId, id, includeMedia: true));
+      room = _snapshot(await _detail(LiveRoom(roomId: room.steamId, platform: id), includeMedia: true));
     }
     return LivePlayUrlResolution(urls: [room.master!.toString()], appliedQualityData: 'auto');
   }
 
   @override
-  Future<LivePlayUrlResolution> resolvePlayUrlsRaw({required LiveRoom detail, required LivePlayQuality quality}) =>
-      _resolve(detail, quality, refresh: false);
+  Future<LivePlayUrlResolution> resolvePlayUrlsRaw({required LiveRoom liveroom, required LivePlayQuality quality}) =>
+      _resolve(liveroom, quality, refresh: false);
 
   @override
   Future<LivePlayUrlResolution> resolvePlayUrlsForRecoveryRaw({
-    required LiveRoom detail,
+    required LiveRoom liveroom,
     required LivePlayQuality quality,
-  }) => _resolve(detail, quality, refresh: true);
+  }) => _resolve(liveroom, quality, refresh: true);
 
   @override
-  Future<List<String>> getPlayUrls({required LiveRoom detail, required LivePlayQuality quality}) async =>
-      (await _resolve(detail, quality, refresh: false)).urls;
+  Future<List<String>> getPlayUrls({required LiveRoom liveroom, required LivePlayQuality quality}) async =>
+      (await _resolve(liveroom, quality, refresh: false)).urls;
 }

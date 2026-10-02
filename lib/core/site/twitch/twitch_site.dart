@@ -20,10 +20,10 @@ class TwitchSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomR
   // A failed lookup is not an offline channel: reporting it as offline showed
   // "not live" for live channels whenever Twitch or the proxy failed, with no
   // retry. Let the room page present the load error like other platforms.
-  Future<LiveRoom> getRoomDetail(LiveRoom room) {
-    final identity = room.detailIdentity;
-    if (identity == null) return Future.value(room);
-    return _loadRoomDetail(identity.roomId);
+  Future<LiveRoom> getRoomDetail(LiveRoom liveroom) {
+    
+    if (liveroom.detailIdentity == null) return Future.value(liveroom);
+    return _loadRoomDetail(liveroom.roomId!);
   }
 
   @override
@@ -533,16 +533,16 @@ class TwitchSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomR
   LiveDanmaku getDanmaku() => TwitchDanmaku();
 
   @override
-  Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom detail}) async {
+  Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom liveroom}) async {
     List<LivePlayQuality> qualities = <LivePlayQuality>[];
-    if (!detail.isLiveNow) return qualities;
+    if (!liveroom.isLiveNow) return qualities;
 
     var liveGpl = buildPersistedRequest(
       "PlaybackAccessToken",
       "ed230aa1e33e07eebb8928504583da78a5173989fadfb1ac94be06a04f3cdbe9",
       {
         "isLive": true,
-        "login": detail.roomId,
+        "login": liveroom.roomId,
         "isVod": false,
         "vodID": "",
         "playerType": "site",
@@ -574,7 +574,7 @@ class TwitchSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomR
       "token": token,
       "transcode_mode": "cbr_v1",
     };
-    var m3u8Url = "https://usher.ttvnw.net/api/channel/hls/${detail.roomId}.m3u8";
+    var m3u8Url = "https://usher.ttvnw.net/api/channel/hls/${liveroom.roomId}.m3u8";
     var content = await HttpClient.instance.getText(m3u8Url, queryParameters: params, header: headers);
 
     return parseMasterPlaylist(content, masterUri: Uri.parse(m3u8Url));
@@ -674,7 +674,7 @@ class TwitchSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomR
   }
 
   @override
-  Future<List<String>> getPlayUrls({required LiveRoom detail, required LivePlayQuality quality}) async {
+  Future<List<String>> getPlayUrls({required LiveRoom liveroom, required LivePlayQuality quality}) async {
     final data = quality.data;
     if (data is! List) return const <String>[];
     return data.map((item) => item.toString().trim()).where((url) => url.isNotEmpty).toList(growable: false);
@@ -690,17 +690,17 @@ class TwitchSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomR
   }
 
   @override
-  Future<LiveRoom> getRoomDetailForRefresh(LiveRoom room) async {
-    final identity = room.detailIdentity;
-    if (identity == null) return room;
-    return _loadRoomDetail(identity.roomId);
+  Future<LiveRoom> getRoomDetailForRefresh(LiveRoom liveroom) async {
+    
+    if (liveroom.detailIdentity == null) return liveroom;
+    return _loadRoomDetail(liveroom.roomId!);
   }
 
   @override
-  Future<LiveRoom> getRoomDetailForRecording(LiveRoom room) async {
-    final identity = room.detailIdentity;
-    if (identity == null) return room;
-    return _loadRoomDetail(identity.roomId);
+  Future<LiveRoom> getRoomDetailForRecording(LiveRoom liveroom) async {
+    
+    if (liveroom.detailIdentity == null) return liveroom;
+    return _loadRoomDetail(liveroom.roomId!);
   }
 
   Future<LiveRoom> _loadRoomDetail(String roomId) async {
@@ -936,7 +936,7 @@ class TwitchSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomR
   }
 
   @override
-  Future<List<LiveSuperChatMessage>> getSuperChatMessage({required String roomId}) {
+  Future<List<LiveSuperChatMessage>> getSuperChatMessage({required LiveRoom liveroom}) {
     return Future.value([]);
   }
 

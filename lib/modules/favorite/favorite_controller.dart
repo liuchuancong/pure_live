@@ -556,8 +556,8 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
     );
   }
 
-  int _getRoomTagScore(LiveRoom room) {
-    final ids = tagController.getTagsForRoom(room);
+  int _getRoomTagScore(LiveRoom liveroom) {
+    final ids = tagController.getTagsForRoom(liveroom);
     if (ids.isEmpty) return 0;
 
     int highest = 0;
@@ -797,29 +797,29 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
   }
 
   Future<LiveRoom?> _refreshOneRoom(
-    LiveRoom room,
+    LiveRoom liveroom,
     Map<String, LiveSite> siteCache, {
     required bool bypassFailureCooldown,
   }) async {
-    final key = _roomKey(room);
+    final key = _roomKey(liveroom);
     final failedAt = _refreshFailureCooldown[key];
     if (!bypassFailureCooldown && failedAt != null && _now().difference(failedAt) < _refreshFailureRetryAfter) {
       return null;
     }
 
     try {
-      final platform = room.normalizedPlatformId;
+      final platform = liveroom.normalizedPlatformId;
       final liveSite = siteCache.putIfAbsent(platform, () => createRoomRefreshSite(platform));
       final operation = liveSite is LiveSiteRoomRefresher
-          ? (liveSite as LiveSiteRoomRefresher).getRoomDetailForRefresh(room.normalizedIdentityCopy())
-          : liveSite.getRoomDetail(room.normalizedIdentityCopy());
+          ? (liveSite as LiveSiteRoomRefresher).getRoomDetailForRefresh(liveroom.normalizedIdentityCopy())
+          : liveSite.getRoomDetail(liveroom.normalizedIdentityCopy());
       final result = await operation.timeout(_roomRefreshTimeout);
       if (isClosed) return null;
       _refreshFailureCooldown.remove(key);
       return result;
     } catch (error, stackTrace) {
       if (isClosed) return null;
-      final key = _roomKey(room);
+      final key = _roomKey(liveroom);
       _refreshFailureCooldown[key] = _now();
 
       if (error is FormatException && error.message == 'Huya room metadata is unavailable') {
@@ -837,5 +837,5 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
     }
   }
 
-  String _roomKey(LiveRoom room) => favoriteRoomIdentity(room);
+  String _roomKey(LiveRoom liveroom) => favoriteRoomIdentity(liveroom);
 }

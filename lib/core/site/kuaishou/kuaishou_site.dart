@@ -170,8 +170,8 @@ class KuaishowSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoo
   }
 
   @override
-  Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom detail}) async {
-    final qualities = parsePlayQualities(detail.data);
+  Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom liveroom}) async {
+    final qualities = parsePlayQualities(liveroom.data);
     if (qualities.isEmpty) {
       throw StateError('Kuaishou room has no playable live or replay stream');
     }
@@ -257,7 +257,7 @@ class KuaishowSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoo
   }
 
   @override
-  Future<List<String>> getPlayUrls({required LiveRoom detail, required LivePlayQuality quality}) async {
+  Future<List<String>> getPlayUrls({required LiveRoom liveroom, required LivePlayQuality quality}) async {
     final data = quality.data;
     if (data is String && data.isNotEmpty) return <String>[data];
     if (data is List) {
@@ -386,22 +386,24 @@ class KuaishowSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoo
   }
 
   @override
-  Future<LiveRoom> getRoomDetail(LiveRoom room) async {
-    final identity = room.detailIdentity;
-    if (identity == null) return room;
-    final fresh = await _resolveDetail(identity.roomId, identity.platform);
+  Future<LiveRoom> getRoomDetail(LiveRoom liveroom) async {
+    
+    if (liveroom.detailIdentity == null) return liveroom;
+    final fresh = await _resolveDetail(liveroom);
     // Pad response gaps from the room the caller already holds. fillFromDetail
     // covers nick/avatar/area; the cover is padded explicitly because a blank
     // cover is the most visible symptom of a partial profile response.
-    final padded = fresh.fillFromDetail(room);
-    final existingCover = room.cover ?? '';
+    final padded = fresh.fillFromDetail(liveroom);
+    final existingCover = liveroom.cover ?? '';
     if ((padded.cover == null || padded.cover!.isEmpty) && existingCover.isNotEmpty) {
       return padded.copyWith(cover: existingCover);
     }
     return padded;
   }
 
-  Future<LiveRoom> _resolveDetail(String roomId, String platform) async {
+  Future<LiveRoom> _resolveDetail(LiveRoom liveroom) async {
+    final roomId = liveroom.roomId ?? '';
+    final platform = liveroom.platform ?? '';
     try {
       final loaded = await _loadRoom(roomId, includePlaybackData: true, ensureSession: true);
       if (loaded.isLiveNow) return loaded;
@@ -409,51 +411,52 @@ class KuaishowSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoo
       // The public recommendation feed intentionally includes replay cards.
       // Their room page reports offline but the selected card carries signed
       // replay URLs. Preserve that matching card as an explicit recording.
-      final current = _matchingCurrentRoom(platform: platform, roomId: roomId);
+      final current = _matchingCurrentRoom(liveroom: LiveRoom(roomId: roomId, platform: platform));
       if (current != null && parsePlayQualities(current.data).isNotEmpty) {
         return current.copyWith(status: true, liveStatus: LiveStatus.live, isRecord: true);
       }
       return loaded;
     } catch (e) {
-      final currentRoom = _matchingCurrentRoom(platform: platform, roomId: roomId);
+      final currentRoom = _matchingCurrentRoom(liveroom: LiveRoom(roomId: roomId, platform: platform));
       if (currentRoom != null) return currentRoom.getLiveRoomWithError();
       return LiveRoom(roomId: roomId, platform: platform).getLiveRoomWithError();
     }
   }
 
-  LiveRoom? _matchingCurrentRoom({required String platform, required String roomId}) {
+  LiveRoom? _matchingCurrentRoom({required LiveRoom liveroom}) {
+    final roomId = liveroom.roomId ?? '';
+    final platform = liveroom.platform ?? '';
     if (!Get.isRegistered<PlayerController>()) return null;
     final current = Get.find<PlayerController>().currentRoom;
-    if (current?.hasIdentity(platform: platform, roomId: roomId) == true) return current;
+    if (current?.hasSameIdentity(LiveRoom(roomId: roomId, platform: platform)) == true) return current;
     return null;
   }
 
   @override
-  Future<LiveRoom> getRoomDetailForRefresh(LiveRoom room) async {
-    final identity = room.detailIdentity;
-    if (identity == null) return room;
+  Future<LiveRoom> getRoomDetailForRefresh(LiveRoom liveroom) async {
+    
+    if (liveroom.detailIdentity == null) return liveroom;
     try {
       // The room page is normally available anonymously. Start with that one
       // request; bootstrap/register a device once and retry only when the site
       // actually requires a session for this network.
-      return await _loadRoom(identity.roomId, includePlaybackData: false, ensureSession: false);
+      return await _loadRoom(liveroom.roomId!, includePlaybackData: false, ensureSession: false);
     } catch (_) {
-      return _loadRoom(identity.roomId, includePlaybackData: false, ensureSession: true);
+      return _loadRoom(liveroom.roomId!, includePlaybackData: false, ensureSession: true);
     }
   }
 
   @override
-  Future<LiveRoom> getRoomDetailForRecording(LiveRoom room) async {
-    final identity = room.detailIdentity;
-    if (identity == null) return room;
-    final loaded = await _loadRoom(identity.roomId, includePlaybackData: true, ensureSession: true);
+  Future<LiveRoom> getRoomDetailForRecording(LiveRoom liveroom) async {
+    
+    if (liveroom.detailIdentity == null) return liveroom;
+    final loaded = await _loadRoom(liveroom.roomId!, includePlaybackData: true, ensureSession: true);
     if (loaded.isLiveNow) return loaded;
-
     // Recommendation cards can represent a replay whose room page reports
     // offline. Preserve only a matching card with an actual playable stream;
     // transport/shape failures above still propagate to the recorder retry
     // policy instead of masquerading as offline.
-    final current = _matchingCurrentRoom(platform: identity.platform, roomId: identity.roomId);
+    final current = _matchingCurrentRoom(liveroom: liveroom);
     if (current != null && parsePlayQualities(current.data).isNotEmpty) {
       return current.copyWith(status: true, liveStatus: LiveStatus.live, isRecord: true);
     }
@@ -604,7 +607,7 @@ class KuaishowSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoo
   }
 
   @override
-  Future<List<LiveSuperChatMessage>> getSuperChatMessage({required String roomId}) {
+  Future<List<LiveSuperChatMessage>> getSuperChatMessage({required LiveRoom liveroom}) {
     //尚不支持
     return Future.value([]);
   }

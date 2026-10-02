@@ -239,10 +239,10 @@ class _MultiviewPageState extends State<MultiviewPage> {
     }
   }
 
-  void _pickRoom(LiveRoom room) {
+  void _pickRoom(LiveRoom liveroom) {
     // 防御性钳制：布局切换与选台回调竞态时，提交下标必须仍在当前容量内。
     final target = _targetCell.clamp(0, controller.cells.length - 1);
-    unawaited(controller.assignRoom(target, room));
+    unawaited(controller.assignRoom(target, liveroom));
     _advanceTarget(target);
   }
 
@@ -1235,9 +1235,9 @@ class _MultiviewCellView extends StatelessWidget {
   }
 }
 
-String _multiviewRoomLabel(LiveRoom? room) {
-  if (room == null) return '';
-  for (final candidate in [room.nick, room.title, room.roomId]) {
+String _multiviewRoomLabel(LiveRoom? liveroom) {
+  if (liveroom == null) return '';
+  for (final candidate in [liveroom.nick, liveroom.title, liveroom.roomId]) {
     final value = candidate?.trim() ?? '';
     if (value.isNotEmpty) return value;
   }

@@ -35,7 +35,7 @@ class MultiviewRoomPicker extends StatefulWidget {
   final int cellIndex;
 
   /// 点选直播间后的回调；由页面负责调用 assignRoom 并关闭弹层。
-  final void Function(LiveRoom room) onPicked;
+  final void Function(LiveRoom liveroom) onPicked;
 
   @override
   State<MultiviewRoomPicker> createState() => _MultiviewRoomPickerState();

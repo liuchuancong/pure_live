@@ -237,8 +237,8 @@ class HuyaSite
   }
 
   @override
-  Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom detail}) {
-    final data = detail.data;
+  Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom liveroom}) {
+    final data = liveroom.data;
     if (data is! HuyaUrlDataModel) return Future.value(const <LivePlayQuality>[]);
     return Future.value(parsePlayQualities(data));
   }
@@ -275,7 +275,7 @@ class HuyaSite
   }
 
   @override
-  Future<List<String>> getPlayUrls({required LiveRoom detail, required LivePlayQuality quality}) async {
+  Future<List<String>> getPlayUrls({required LiveRoom liveroom, required LivePlayQuality quality}) async {
     final data = quality.data;
     if (data is! Map) return const <String>[];
     final bitRate = int.tryParse(data['bitRate']?.toString() ?? '');
@@ -307,11 +307,11 @@ class HuyaSite
 
   @override
   Future<LivePlayUrlResolution> resolvePlayUrlsForRecoveryRaw({
-    required LiveRoom detail,
+    required LiveRoom liveroom,
     required LivePlayQuality quality,
   }) async {
-    final roomId = detail.roomId?.trim() ?? '';
-    final platform = detail.platform?.trim().isNotEmpty == true ? detail.platform! : Sites.huyaSite;
+    final roomId = liveroom.roomId?.trim() ?? '';
+    final platform = liveroom.platform?.trim().isNotEmpty == true ? liveroom.platform! : Sites.huyaSite;
     if (roomId.isEmpty) return LivePlayUrlResolution(urls: const <String>[], appliedQualityData: quality.selectionId);
 
     // Reacquire the room snapshot and build a fresh signature. HLS uses its
@@ -320,7 +320,7 @@ class HuyaSite
     if (refreshedDetail.isExplicitlyOfflineNow) {
       return LivePlayUrlResolution(urls: const <String>[], appliedQualityData: quality.selectionId);
     }
-    final refreshedQualities = await getPlayQualites(detail: refreshedDetail);
+    final refreshedQualities = await getPlayQualites(liveroom: refreshedDetail);
     if (refreshedQualities.isEmpty) {
       return LivePlayUrlResolution(urls: const <String>[], appliedQualityData: quality.selectionId);
     }
@@ -330,14 +330,14 @@ class HuyaSite
       orElse: () => refreshedQualities.first,
     );
     return LivePlayUrlResolution(
-      urls: await getPlayUrls(detail: refreshedDetail, quality: refreshedQuality),
+      urls: await getPlayUrls(liveroom: refreshedDetail, quality: refreshedQuality),
       appliedQualityData: refreshedQuality.selectionId,
     );
   }
 
   @override
   Future<LivePlayUrlResolution> resolvePlayUrlAtRaw({
-    required LiveRoom detail,
+    required LiveRoom liveroom,
     required LivePlayQuality quality,
     required int lineIndex,
   }) async {
@@ -563,17 +563,17 @@ class HuyaSite
   }
 
   @override
-  Future<LiveRoom> getRoomDetail(LiveRoom room) async {
-    final identity = room.detailIdentity;
-    if (identity == null) return room;
-    final fresh = await _loadRoomDetail(platform: identity.platform, roomId: identity.roomId, allowUiFallback: true);
+  Future<LiveRoom> getRoomDetail(LiveRoom liveroom) async {
+    
+    if (liveroom.detailIdentity == null) return liveroom;
+    final fresh = await _loadRoomDetail(liveroom: liveroom, allowUiFallback: true);
     // Pad whatever the profile endpoint left empty (avatar/cover/nick drift
     // between responses) with the fields the room already carries, so a
     // partial response never blanks the UI. fillFromDetail covers
     // nick/avatar/area; the cover is padded explicitly because a blank
     // cover is the most visible symptom of a partial profile response.
-    final padded = fresh.fillFromDetail(room);
-    final existingCover = room.cover ?? '';
+    final padded = fresh.fillFromDetail(liveroom);
+    final existingCover = liveroom.cover ?? '';
     if ((padded.cover == null || padded.cover!.isEmpty) && existingCover.isNotEmpty) {
       return padded.copyWith(cover: existingCover);
     }
@@ -581,17 +581,15 @@ class HuyaSite
   }
 
   @override
-  Future<LiveRoom> getRoomDetailForRecording(LiveRoom room) async {
-    final identity = room.detailIdentity;
-    if (identity == null) return room;
-    return _loadRoomDetail(platform: identity.platform, roomId: identity.roomId, allowUiFallback: false);
+  Future<LiveRoom> getRoomDetailForRecording(LiveRoom liveroom) async {
+    
+    if (liveroom.detailIdentity == null) return liveroom;
+    return _loadRoomDetail(liveroom: liveroom, allowUiFallback: false);
   }
 
-  Future<LiveRoom> _loadRoomDetail({
-    required String platform,
-    required String roomId,
-    required bool allowUiFallback,
-  }) async {
+  Future<LiveRoom> _loadRoomDetail({required LiveRoom liveroom, required bool allowUiFallback}) async {
+    final roomId = liveroom.roomId ?? '';
+    final platform = liveroom.platform ?? '';
     var resultText = await HttpClient.instance.getText(
       'https://mp.huya.com/cache.php',
       queryParameters: <String, dynamic>{
@@ -622,7 +620,7 @@ class HuyaSite
     final responseData = result is Map && result['data'] is Map ? result['data'] as Map : null;
     final normalizedLiveState = responseData?['liveStatus']?.toString().trim().toUpperCase() ?? '';
     if (statusCode == 200 && responseData != null && isExplicitOfflineState(responseData['liveStatus'])) {
-      return _buildInactiveRoom(responseData, platform: platform, roomId: roomId);
+      return _buildInactiveRoom(responseData, liveroom: LiveRoom(roomId: roomId, platform: platform));
     }
     if (statusCode == 200 && responseData != null && responseData['stream'] != null) {
       dynamic data = responseData;
@@ -749,7 +747,7 @@ class HuyaSite
       if (Get.isRegistered<PlayerController>()) {
         final PlayerController playerController = Get.find<PlayerController>();
         final currentRoom = playerController.currentRoom;
-        if (currentRoom?.hasIdentity(platform: platform, roomId: roomId) == true) {
+        if (currentRoom?.hasSameIdentity(LiveRoom(roomId: roomId, platform: platform)) == true) {
           return currentRoom!.getLiveRoomWithError();
         }
       }
@@ -773,7 +771,9 @@ class HuyaSite
     };
   }
 
-  LiveRoom _buildInactiveRoom(Map<dynamic, dynamic> data, {required String platform, required String roomId}) {
+  LiveRoom _buildInactiveRoom(Map<dynamic, dynamic> data, {required LiveRoom liveroom}) {
+    final roomId = liveroom.roomId ?? '';
+    final platform = liveroom.platform ?? '';
     final liveData = data['liveData'] is Map
         ? Map<String, dynamic>.from(data['liveData'] as Map)
         : const <String, dynamic>{};
@@ -815,15 +815,15 @@ class HuyaSite
   }
 
   @override
-  Future<LiveRoom> getRoomDetailForRefresh(LiveRoom room) async {
-    final identity = room.detailIdentity;
-    if (identity == null) return room;
+  Future<LiveRoom> getRoomDetailForRefresh(LiveRoom liveroom) async {
+    
+    if (liveroom.detailIdentity == null) return liveroom;
     final resultText = await HttpClient.instance.getText(
       'https://mp.huya.com/cache.php',
       queryParameters: <String, dynamic>{
         'm': 'Live',
         'do': 'profileRoom',
-        'roomid': identity.roomId,
+        'roomid': liveroom.roomId,
         'showSecret': 1,
         '_': DateTime.now().millisecondsSinceEpoch,
       },
@@ -857,7 +857,7 @@ class HuyaSite
       popularity: audience.popularity,
       onlineViewers: audience.onlineViewers,
       audienceMetricType: AudienceMetricType.popularity,
-      roomId: identity.roomId,
+      roomId: liveroom.roomId,
       area: liveData['gameFullName']?.toString() ?? '',
       title: liveData['introduction']?.toString() ?? '',
       nick: profile['nick']?.toString() ?? '',
@@ -868,7 +868,7 @@ class HuyaSite
       status: liveStatus == LiveStatus.live,
       liveStatus: liveStatus,
       platform: Sites.huyaSite,
-      link: 'https://www.huya.com/${identity.roomId}',
+      link: 'https://www.huya.com/${liveroom.roomId}',
     );
   }
 
@@ -1060,7 +1060,8 @@ class HuyaSite
   }
 
   @override
-  Future<List<LiveSuperChatMessage>> getSuperChatMessage({required String roomId}) async {
+  Future<List<LiveSuperChatMessage>> getSuperChatMessage({required LiveRoom liveroom}) async {
+    final roomId = liveroom.roomId ?? '';
     List<LiveSuperChatMessage> ls = [];
     LiveRoom detail = await getRoomDetail(LiveRoom(roomId: roomId, platform: Sites.huyaSite));
     HuyaDanmakuArgs args = detail.danmakuData as HuyaDanmakuArgs;

@@ -8,10 +8,10 @@ class ShareCommandImportDialog extends StatelessWidget {
 
   final LiveRoom room;
 
-  static Future<bool?> show({required BuildContext context, required LiveRoom room}) {
+  static Future<bool?> show({required BuildContext context, required LiveRoom liveroom}) {
     return showDialog<bool>(
       context: context,
-      builder: (_) => ShareCommandImportDialog(room: room),
+      builder: (_) => ShareCommandImportDialog(room: liveroom),
     );
   }
 

@@ -49,17 +49,17 @@ class LiveSearchRanking {
     return '${a.platform}:${a.roomId}'.compareTo('${b.platform}:${b.roomId}');
   }
 
-  static int _isLive(LiveRoom room) => room.isLiveNow ? 1 : 0;
+  static int _isLive(LiveRoom liveroom) => liveroom.isLiveNow ? 1 : 0;
 
-  static int _platformRank(LiveRoom room, Map<String, int> platformRanks) {
-    return platformRanks[room.normalizedPlatformId] ?? platformRanks.length;
+  static int _platformRank(LiveRoom liveroom, Map<String, int> platformRanks) {
+    return platformRanks[liveroom.normalizedPlatformId] ?? platformRanks.length;
   }
 
-  static int _followers(LiveRoom room) {
-    final explicit = LiveRoom.parseAudienceNumber(room.followers);
+  static int _followers(LiveRoom liveroom) {
+    final explicit = LiveRoom.parseAudienceNumber(liveroom.followers);
     if (explicit > 0) return explicit;
-    if (room.effectiveAudienceMetricType == AudienceMetricType.followers) {
-      return LiveRoom.parseAudienceNumber(room.watching);
+    if (liveroom.effectiveAudienceMetricType == AudienceMetricType.followers) {
+      return LiveRoom.parseAudienceNumber(liveroom.watching);
     }
     return 0;
   }

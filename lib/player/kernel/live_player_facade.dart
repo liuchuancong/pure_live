@@ -112,7 +112,7 @@ final class LivePlayerFacade {
     String url,
     List<String> playUrls,
     Map<String, String> headers, {
-    LiveRoom? room,
+    LiveRoom? liveroom,
     List<LivePlayQuality> qualities = const [],
     int currentQuality = 0,
     bool audioOnly = false,
@@ -126,7 +126,7 @@ final class LivePlayerFacade {
     if (sourceUrl.isEmpty) throw ArgumentError('Remote playback source is empty');
 
     final urls = <String>[sourceUrl, ...playUrls.where((value) => value != sourceUrl)];
-    _room = room;
+    _room = liveroom;
     _lastHeaders = Map<String, String>.unmodifiable(headers);
     _lastLines = List<String>.unmodifiable(urls);
 
@@ -141,7 +141,7 @@ final class LivePlayerFacade {
               headers: SourceHeaders(headers),
             ),
         ]),
-        title: room?.title,
+        title: liveroom?.title,
       ),
       preferredBackend: backendIdOfEngine(preferredEngine),
     );
@@ -154,26 +154,26 @@ final class LivePlayerFacade {
     // the first entry after every switch.
     final committed = sourceSelection is PlaybackSourceQualitySelection ? sourceSelection : null;
     _publishCommit(sourceUrl, playUrls, committed?.qualities ?? qualities, committed?.currentQuality ?? currentQuality);
-    if (room != null) await setVolume(room.getSavedVolume().clamp(0.0, 1.0));
+    if (liveroom != null) await setVolume(liveroom.getSavedVolume().clamp(0.0, 1.0));
   }
 
   Future<void> playOwned(
     Object recipe,
-    LiveRoom room, {
+    LiveRoom liveroom, {
     List<LivePlayQuality> qualities = const [],
     int currentQuality = 0,
     Object? sourceSelection,
   }) async {
     if (_disposed) return;
-    _room = room;
+    _room = liveroom;
     _lastHeaders = const {};
     _lastLines = const [];
     await _controller.play(
       LiveSourceRequest(
         sources: await _intercept([
           PlayerSource(
-            id: SourceId('owned-${room.identityKey}'),
-            uri: Uri(scheme: 'owned', path: room.identityKey),
+            id: SourceId('owned-${liveroom.identityKey}'),
+            uri: Uri(scheme: 'owned', path: liveroom.identityKey),
             type: SourceType.live,
             protocol: SourceProtocol.custom,
             metadata: <String, Object?>{kMediaKitCustomInputKey: recipe},
@@ -184,12 +184,12 @@ final class LivePlayerFacade {
     );
     final committed = sourceSelection is PlaybackSourceQualitySelection ? sourceSelection : null;
     _publishCommit(
-      'owned:${room.identityKey}',
+      'owned:${liveroom.identityKey}',
       const [],
       committed?.qualities ?? qualities,
       committed?.currentQuality ?? currentQuality,
     );
-    await setVolume(room.getSavedVolume().clamp(0.0, 1.0));
+    await setVolume(liveroom.getSavedVolume().clamp(0.0, 1.0));
   }
 
   void _publishCommit(String url, List<String> uiLines, List<LivePlayQuality> qualities, int currentQuality) {
@@ -211,14 +211,14 @@ final class LivePlayerFacade {
 
   Future<void> playSource(
     Object source, {
-    LiveRoom? room,
+    LiveRoom? liveroom,
     bool audioOnly = false,
     Object? sourceResolver,
     Object? sourceSelection,
     DateTime? sourceRefreshAt,
   }) => playOwned(
     source,
-    room ?? _room ?? LiveRoom(platform: '', roomId: ''),
+    liveroom ?? _room ?? LiveRoom(platform: '', roomId: ''),
     sourceSelection: sourceSelection,
   );
 
@@ -315,7 +315,7 @@ final class LivePlayerFacade {
   /// danmaku surface.
   dynamic get activeVideoController => _activeVideoController;
   LiveRoom? get currentFloatRoom => _room;
-  bool hasActivePlaybackSession(LiveRoom room) => _room == room && isPlayingNow;
+  bool hasActivePlaybackSession(LiveRoom liveroom) => _room == liveroom && isPlayingNow;
 
   /// True while the video surface is presented compactly — the system/desktop
   /// picture-in-picture or the in-app small window. The danmaku layer reads
@@ -352,6 +352,14 @@ final class LivePlayerFacade {
     final size = handle?.combinedSnapshot.geometry.videoSize;
     final next = size != null && size.height > size.width;
     if (next != isVerticalVideo.value) isVerticalVideo.value = next;
+    // The compact window is shaped from the aspect it was fed when PiP began.
+    // A live stream often reports its real size only after the first frame, and
+    // a room can switch between landscape and portrait, so keep feeding it:
+    // otherwise the window keeps the old shape and the picture arrives with
+    // black bars that the shape snap then locks in.
+    if (size != null && size.width > 0 && size.height > 0) {
+      windowsPipDriver.onVideoSize((size.width / size.height * 1000).round(), 1000);
+    }
     videoGeometryState.value = _computeVideoGeometry();
   }
 
@@ -389,11 +397,11 @@ final class LivePlayerFacade {
   Future<void> showAppFloating({Widget Function(BuildContext)? danmakuBuilder}) =>
       floating.showAppFloating(danmakuBuilder: danmakuBuilder);
   Future<void> closeAppFloating() => floating.closeAppFloating();
-  void prepareRoomSessionReentry([LiveRoom? room]) => floating.prepare();
-  FacadeStreamCommit? consumeRoomSessionReentry([LiveRoom? room]) {
+  void prepareRoomSessionReentry([LiveRoom? liveroom]) => floating.prepare();
+  FacadeStreamCommit? consumeRoomSessionReentry([LiveRoom? liveroom]) {
     final seed = floating.consumeRoomReentry();
-    if (seed == null || room == null) return seed;
-    return seed.room.roomId == room.roomId ? seed : null;
+    if (seed == null || liveroom == null) return seed;
+    return seed.room.roomId == liveroom.roomId ? seed : null;
   }
 
   void cancelRoomSessionReentry() => floating.cancelRoomReentry();

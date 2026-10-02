@@ -385,17 +385,17 @@ class DouyinSite implements LiveSite, LiveSiteRecordRoomResolver {
   }
 
   @override
-  Future<LiveRoom> getRoomDetail(LiveRoom room) async {
-    final identity = room.detailIdentity;
-    if (identity == null) return room;
-    final fresh = await _resolveDetail(identity.roomId);
+  Future<LiveRoom> getRoomDetail(LiveRoom liveroom) async {
+    
+    if (liveroom.detailIdentity == null) return liveroom;
+    final fresh = await _resolveDetail(liveroom.roomId!);
     // Pad whatever the profile endpoint left empty (avatar/cover/nick drift
     // between responses) with the fields the room already carries, so a
     // partial response never blanks the UI. fillFromDetail covers
     // nick/avatar/area; the cover is padded explicitly because a blank
     // cover is the most visible symptom of a partial profile response.
-    final padded = fresh.fillFromDetail(room);
-    final existingCover = room.cover ?? '';
+    final padded = fresh.fillFromDetail(liveroom);
+    final existingCover = liveroom.cover ?? '';
     if ((padded.cover == null || padded.cover!.isEmpty) && existingCover.isNotEmpty) {
       return padded.copyWith(cover: existingCover);
     }
@@ -410,12 +410,12 @@ class DouyinSite implements LiveSite, LiveSiteRecordRoomResolver {
   }
 
   @override
-  Future<LiveRoom> getRoomDetailForRecording(LiveRoom room) async {
-    final identity = room.detailIdentity;
-    if (identity == null) return room;
+  Future<LiveRoom> getRoomDetailForRecording(LiveRoom liveroom) async {
+    
+    if (liveroom.detailIdentity == null) return liveroom;
     // Both the API and HTML paths propagate their final error and retain the
     // stream_url envelope required to resolve every advertised sdk_key.
-    return _resolveDetail(identity.roomId);
+    return _resolveDetail(liveroom.roomId!);
   }
 
   Future<LiveRoom> getRoomDetailByRoomId(String roomId) async {
@@ -680,8 +680,8 @@ class DouyinSite implements LiveSite, LiveSiteRecordRoomResolver {
   }
 
   @override
-  Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom detail}) async {
-    return parseStreamQualities(detail.data);
+  Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom liveroom}) async {
+    return parseStreamQualities(liveroom.data);
   }
 
   /// Resolves Douyin qualities by their stable `sdk_key`.
@@ -861,7 +861,7 @@ class DouyinSite implements LiveSite, LiveSiteRecordRoomResolver {
   };
 
   @override
-  Future<List<String>> getPlayUrls({required LiveRoom detail, required LivePlayQuality quality}) async {
+  Future<List<String>> getPlayUrls({required LiveRoom liveroom, required LivePlayQuality quality}) async {
     final data = quality.data;
     return data is List ? data.map((url) => url.toString()).where((url) => url.isNotEmpty).toList(growable: false) : [];
   }
@@ -877,7 +877,7 @@ class DouyinSite implements LiveSite, LiveSiteRecordRoomResolver {
   }
 
   @override
-  Future<List<LiveSuperChatMessage>> getSuperChatMessage({required String roomId}) {
+  Future<List<LiveSuperChatMessage>> getSuperChatMessage({required LiveRoom liveroom}) {
     return Future.value(<LiveSuperChatMessage>[]);
   }
 

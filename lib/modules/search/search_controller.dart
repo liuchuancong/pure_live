@@ -402,11 +402,11 @@ class SearchController extends GetxController {
     }
   }
 
-  String _roomKey(LiveRoom room) {
-    final platform = room.platform?.trim().toLowerCase() ?? 'unknown';
-    final roomId = room.roomId?.trim() ?? '';
+  String _roomKey(LiveRoom liveroom) {
+    final platform = liveroom.platform?.trim().toLowerCase() ?? 'unknown';
+    final roomId = liveroom.roomId?.trim() ?? '';
     if (roomId.isNotEmpty) return '$platform:$roomId';
-    return '$platform:${room.nick?.trim()}:${room.title?.trim()}';
+    return '$platform:${liveroom.nick?.trim()}:${liveroom.title?.trim()}';
   }
 
   bool get hasFilteredOfflineResults => _rawResults.isNotEmpty && results.isEmpty && !includeOffline.v;

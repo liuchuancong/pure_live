@@ -99,8 +99,7 @@ class LivePlayMenuButton extends StatelessWidget {
 
     LiveUrlTool.castPlayUrlByRoomId(
       context: context,
-      roomId: detail?.roomId ?? '',
-      platform: detail?.platform ?? '',
+      liveroom: detail ?? LiveRoom(roomId: '', platform: ''),
       isCurrentRoom: () =>
           !controller.isClosed &&
           detail != null &&
@@ -125,8 +124,7 @@ class LivePlayMenuButton extends StatelessWidget {
 
     LiveUrlTool.getPlayUrlByRoomId(
       context: context,
-      roomId: detail.roomId ?? '',
-      platform: detail.platform ?? '',
+      liveroom: detail,
       isCurrentRoom: () =>
           !controller.isClosed && (controller.state.value.room.detail?.hasSameIdentity(detail) ?? false),
     );
@@ -172,7 +170,7 @@ class LivePlayMenuButton extends StatelessWidget {
       return;
     }
 
-    WindowsMultiInstanceLauncher.launch(room: detail).catchError((Object error, StackTrace stackTrace) {
+    WindowsMultiInstanceLauncher.launch(liveroom: detail).catchError((Object error, StackTrace stackTrace) {
       developer.log(
         'Open live room in a new Windows instance failed',
         name: 'LivePlayPage',

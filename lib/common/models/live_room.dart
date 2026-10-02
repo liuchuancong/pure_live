@@ -528,10 +528,6 @@ class LiveRoom {
 
   bool hasSameIdentity(LiveRoom other) => identityKey == other.identityKey;
 
-  bool hasIdentity({required String platform, required String roomId}) {
-    return normalizedPlatformId == platform.trim().toLowerCase() && normalizedRoomId == roomId.trim();
-  }
-
   /// Parsed room identity for the detail/refresh/recording site contracts, or
   /// null when either part is missing. These contracts accept a [LiveRoom]
   /// instead of a (roomId, platform) pair and must not fabricate a request
@@ -560,11 +556,11 @@ class LiveRoom {
   }
 
   double getSavedVolume() {
-    return LiveRoomVolumeManager.getRoomVolume(platform ?? 'UNKNOWN', roomId ?? '');
+    return LiveRoomVolumeManager.getRoomVolume(this);
   }
 
   Future<void> saveCurrentVolume(double volume) async {
-    await LiveRoomVolumeManager.saveRoomVolume(platform ?? 'UNKNOWN', roomId ?? '', volume);
+    await LiveRoomVolumeManager.saveRoomVolume(this, volume);
   }
 
   Map<String, dynamic> toJson() {
@@ -907,13 +903,13 @@ extension LiveRoomExtension on LiveRoom {
     return liveRoom;
   }
 
-  LiveRoom fillFromDetail(LiveRoom? detail) {
-    if (detail == null) return this;
+  LiveRoom fillFromDetail(LiveRoom? liveroom) {
+    if (liveroom == null) return this;
 
     return copyWith(
-      area: _getValueIfEmpty(area, detail.area),
-      nick: _getValueIfEmpty(nick, detail.nick),
-      avatar: _getValueIfEmpty(avatar, detail.avatar),
+      area: _getValueIfEmpty(area, liveroom.area),
+      nick: _getValueIfEmpty(nick, liveroom.nick),
+      avatar: _getValueIfEmpty(avatar, liveroom.avatar),
     );
   }
 

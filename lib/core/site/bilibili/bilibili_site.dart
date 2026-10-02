@@ -129,20 +129,20 @@ class BiliBiliSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoo
   }
 
   @override
-  Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom detail}) async {
-    final result = await _requestPlayInfo(detail: detail, qualityData: 0);
+  Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom liveroom}) async {
+    final result = await _requestPlayInfo(liveroom: liveroom, qualityData: 0);
     return parsePlayQualities(result);
   }
 
   @override
-  Future<List<String>> getPlayUrls({required LiveRoom detail, required LivePlayQuality quality}) async {
-    return (await resolvePlayUrlsRaw(detail: detail, quality: quality)).urls;
+  Future<List<String>> getPlayUrls({required LiveRoom liveroom, required LivePlayQuality quality}) async {
+    return (await resolvePlayUrlsRaw(liveroom: liveroom, quality: quality)).urls;
   }
 
   @override
-  Future<LivePlayUrlResolution> resolvePlayUrlsRaw({required LiveRoom detail, required LivePlayQuality quality}) async {
+  Future<LivePlayUrlResolution> resolvePlayUrlsRaw({required LiveRoom liveroom, required LivePlayQuality quality}) async {
     try {
-      final result = await _requestPlayInfo(detail: detail, qualityData: quality.data);
+      final result = await _requestPlayInfo(liveroom: liveroom, qualityData: quality.data);
 
       return parsePlayUrlResolution(result, requestedQualityData: quality.data);
     } catch (e) {
@@ -150,11 +150,11 @@ class BiliBiliSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoo
     }
   }
 
-  Future<dynamic> _requestPlayInfo({required LiveRoom detail, required Object? qualityData}) async {
+  Future<dynamic> _requestPlayInfo({required LiveRoom liveroom, required Object? qualityData}) async {
     return HttpClient.instance.getJson(
       "https://api.live.bilibili.com/xlive/web-room/v2/index/getRoomPlayInfo",
       queryParameters: {
-        "room_id": detail.roomId,
+        "room_id": liveroom.roomId,
         "protocol": "0,1",
         "format": "0,1,2",
         "codec": "0",
@@ -629,24 +629,26 @@ class BiliBiliSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoo
   }
 
   @override
-  Future<LiveRoom> getRoomDetail(LiveRoom room) async {
-    final identity = room.detailIdentity;
-    if (identity == null) return room;
-    final fresh = await _resolveDetail(identity.roomId, identity.platform);
+  Future<LiveRoom> getRoomDetail(LiveRoom liveroom) async {
+    
+    if (liveroom.detailIdentity == null) return liveroom;
+    final fresh = await _resolveDetail(liveroom);
     // Pad whatever the profile endpoint left empty (avatar/cover/nick drift
     // between responses) with the fields the room already carries, so a
     // partial response never blanks the UI. fillFromDetail covers
     // nick/avatar/area; the cover is padded explicitly because a blank
     // cover is the most visible symptom of a partial profile response.
-    final padded = fresh.fillFromDetail(room);
-    final existingCover = room.cover ?? '';
+    final padded = fresh.fillFromDetail(liveroom);
+    final existingCover = liveroom.cover ?? '';
     if ((padded.cover == null || padded.cover!.isEmpty) && existingCover.isNotEmpty) {
       return padded.copyWith(cover: existingCover);
     }
     return padded;
   }
 
-  Future<LiveRoom> _resolveDetail(String roomId, String platform) async {
+  Future<LiveRoom> _resolveDetail(LiveRoom liveroom) async {
+    final roomId = liveroom.roomId ?? '';
+    final platform = liveroom.platform ?? '';
     try {
       var roomInfo = await getRoomInfo(roomId: roomId);
       var realRoomId = roomInfo["room_info"]["room_id"].toString();
@@ -680,7 +682,7 @@ class BiliBiliSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoo
       if (Get.isRegistered<PlayerController>()) {
         final PlayerController playerController = Get.find<PlayerController>();
         final currentRoom = playerController.currentRoom;
-        if (currentRoom?.hasIdentity(platform: platform, roomId: roomId) == true) {
+        if (currentRoom?.hasSameIdentity(LiveRoom(roomId: roomId, platform: platform)) == true) {
           return currentRoom!.getLiveRoomWithError();
         }
       }
@@ -698,21 +700,21 @@ class BiliBiliSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoo
   }
 
   @override
-  Future<LiveRoom> getRoomDetailForRefresh(LiveRoom room) async {
-    final identity = room.detailIdentity;
-    if (identity == null) return room;
-    final roomInfo = await getRoomInfo(roomId: identity.roomId);
+  Future<LiveRoom> getRoomDetailForRefresh(LiveRoom liveroom) async {
+    
+    if (liveroom.detailIdentity == null) return liveroom;
+    final roomInfo = await getRoomInfo(roomId: liveroom.roomId!);
     // Card verification deliberately skips getDanmuInfo. Chat credentials are
     // short-lived and useful only after the user enters this room.
-    return _buildRoom(roomInfo, roomId: identity.roomId);
+    return _buildRoom(roomInfo, roomId: liveroom.roomId!);
   }
 
   @override
-  Future<LiveRoom> getRoomDetailForRecording(LiveRoom room) {
+  Future<LiveRoom> getRoomDetailForRecording(LiveRoom liveroom) {
     // Bilibili playback is resolved from the canonical room id by a separate
     // API, so the strict metadata-only room still contains everything the
     // recorder needs and avoids an unrelated danmaku credential request.
-    return getRoomDetailForRefresh(room);
+    return getRoomDetailForRefresh(liveroom);
   }
 
   LiveRoom _buildRoom(Map<String, dynamic> roomInfo, {required String roomId, Object? danmakuData}) {
@@ -816,7 +818,8 @@ class BiliBiliSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoo
   }
 
   @override
-  Future<List<LiveSuperChatMessage>> getSuperChatMessage({required String roomId}) async {
+  Future<List<LiveSuperChatMessage>> getSuperChatMessage({required LiveRoom liveroom}) async {
+    final roomId = liveroom.roomId ?? '';
     var result = await HttpClient.instance.getJson(
       "https://api.live.bilibili.com/av/v1/SuperChat/getMessageList",
       queryParameters: {"room_id": roomId},

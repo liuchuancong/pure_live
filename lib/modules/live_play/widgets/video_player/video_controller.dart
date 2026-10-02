@@ -579,7 +579,7 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
     if (owned != null) {
       await _playerManager.playSource(
         owned,
-        room: room,
+        liveroom: room,
         audioOnly: isAudioOnly,
         sourceResolver: sourceResolver,
         sourceRefreshAt: sourceRefreshAt,
@@ -591,7 +591,7 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
       datasource,
       playUrs,
       headers,
-      room: room,
+      liveroom: room,
       audioOnly: isAudioOnly,
       sourceResolver: sourceResolver,
       sourceRefreshAt: sourceRefreshAt,

@@ -123,13 +123,15 @@ class NiconicoSite extends LiveSite
     return (await _directory.search(keyword, page: page, cancel: cancel)).rooms;
   }
 
-  String _identity(String roomId, String platform) {
+  String _identity(LiveRoom liveroom) {
+    final roomId = liveroom.roomId ?? '';
+    final platform = liveroom.platform ?? '';
     if (platform != id) throw const NiconicoException(NiconicoFailure.identity);
     return NiconicoWatch.validateProgramId(roomId);
   }
 
-  Future<LiveRoom> _detail(String roomId, String platform) async {
-    final programId = _identity(roomId, platform);
+  Future<LiveRoom> _detail(LiveRoom liveroom) async {
+    final programId = _identity(liveroom);
     final watch = await _api.room(programId);
     final notice = switch (watch.access) {
       NiconicoAccess.loginRequired => i18n('niconico_login_required'),
@@ -157,34 +159,34 @@ class NiconicoSite extends LiveSite
   }
 
   @override
-  Future<LiveRoom> getRoomDetail(LiveRoom room) async {
-    final identity = room.detailIdentity;
-    if (identity == null) return room;
-    return _detail(identity.roomId, identity.platform);
+  Future<LiveRoom> getRoomDetail(LiveRoom liveroom) async {
+    
+    if (liveroom.detailIdentity == null) return liveroom;
+    return _detail(liveroom);
   }
 
   @override
-  Future<LiveRoom> getRoomDetailForRefresh(LiveRoom room) async {
-    final identity = room.detailIdentity;
-    if (identity == null) return room;
-    return _detail(identity.roomId, identity.platform);
+  Future<LiveRoom> getRoomDetailForRefresh(LiveRoom liveroom) async {
+    
+    if (liveroom.detailIdentity == null) return liveroom;
+    return _detail(liveroom);
   }
 
   @override
-  Future<LiveRoom> getRoomDetailForRecording(LiveRoom room) async {
-    final identity = room.detailIdentity;
-    if (identity == null) return room;
-    return _detail(identity.roomId, identity.platform);
+  Future<LiveRoom> getRoomDetailForRecording(LiveRoom liveroom) async {
+    
+    if (liveroom.detailIdentity == null) return liveroom;
+    return _detail(liveroom);
   }
 
   @override
-  Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom detail}) => discoverPlayQualitiesRaw(detail: detail);
+  Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom liveroom}) => discoverPlayQualitiesRaw(liveroom: liveroom);
 
   @override
-  Future<List<LivePlayQuality>> discoverPlayQualitiesRaw({required LiveRoom detail, CancelToken? cancel}) async {
+  Future<List<LivePlayQuality>> discoverPlayQualitiesRaw({required LiveRoom liveroom, CancelToken? cancel}) async {
     if (cancel?.isCancelled == true) throw cancel!.cancelError!;
-    final programId = _identity(detail.roomId ?? '', detail.platform ?? '');
-    if (detail.isExplicitlyOfflineNow) return const [];
+    final programId = _identity(liveroom);
+    if (liveroom.isExplicitlyOfflineNow) return const [];
     final choices = await _catalog.load(programId, cancel: cancel);
     return List.unmodifiable([
       for (final choice in choices)
@@ -193,9 +195,9 @@ class NiconicoSite extends LiveSite
   }
 
   @override
-  Future<LivePlayUrlResolution> resolvePlayUrlsRaw({required LiveRoom detail, required LivePlayQuality quality}) async {
-    final programId = _identity(detail.roomId ?? '', detail.platform ?? '');
-    if (detail.isExplicitlyOfflineNow) throw const NiconicoException(NiconicoFailure.notLive);
+  Future<LivePlayUrlResolution> resolvePlayUrlsRaw({required LiveRoom liveroom, required LivePlayQuality quality}) async {
+    final programId = _identity(liveroom);
+    if (liveroom.isExplicitlyOfflineNow) throw const NiconicoException(NiconicoFailure.notLive);
     final choice = quality.data;
     if (choice is! _Choice || choice.programId != programId || quality.selectionId != choice.quality.id) {
       throw const NiconicoException(NiconicoFailure.identity);
@@ -211,23 +213,23 @@ class NiconicoSite extends LiveSite
   }
 
   @override
-  Future<List<String>> getPlayUrls({required LiveRoom detail, required LivePlayQuality quality}) async {
-    await resolvePlayUrlsRaw(detail: detail, quality: quality);
+  Future<List<String>> getPlayUrls({required LiveRoom liveroom, required LivePlayQuality quality}) async {
+    await resolvePlayUrlsRaw(liveroom: liveroom, quality: quality);
     return const [];
   }
 
   @override
   Future<LivePlayUrlResolution> resolvePlayUrlsForRecoveryRaw({
-    required LiveRoom detail,
+    required LiveRoom liveroom,
     required LivePlayQuality quality,
-  }) => resolvePlayUrlsRaw(detail: detail, quality: quality);
+  }) => resolvePlayUrlsRaw(liveroom: liveroom, quality: quality);
   @override
   Future<LivePlayUrlResolution> resolvePlayUrlAtRaw({
-    required LiveRoom detail,
+    required LiveRoom liveroom,
     required LivePlayQuality quality,
     required int lineIndex,
   }) {
     if (lineIndex != 0) return Future.value(const LivePlayUrlResolution(urls: []));
-    return resolvePlayUrlsRaw(detail: detail, quality: quality);
+    return resolvePlayUrlsRaw(liveroom: liveroom, quality: quality);
   }
 }

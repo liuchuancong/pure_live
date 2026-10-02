@@ -171,15 +171,15 @@ class ShareCommandHandler {
     }
   }
 
-  Future<bool> onShareRoomPressed(LiveRoom room) async {
+  Future<bool> onShareRoomPressed(LiveRoom liveroom) async {
     final Map<String, dynamic> shareMap = {
-      'platform': room.platform,
-      'roomId': room.roomId,
-      'title': room.title,
-      'link': room.link,
-      'cover': room.cover,
-      'avatar': room.avatar,
-      'nick': room.nick,
+      'platform': liveroom.platform,
+      'roomId': liveroom.roomId,
+      'title': liveroom.title,
+      'link': liveroom.link,
+      'cover': liveroom.cover,
+      'avatar': liveroom.avatar,
+      'nick': liveroom.nick,
     };
     if (!_hasUsableRoomIdentity(shareMap)) {
       _notifySafely(_notifyFailure, 'share_failed');
