@@ -3,11 +3,17 @@ import 'dart:async';
 import 'package:pure_live/get/get.dart';
 import 'package:pure_live/core/storage/hive_rx.dart';
 import 'package:pure_live/core/storage/hive_pref_util.dart';
-import 'package:pure_live/domains/account/data/bilibili_account_service.dart';
 import 'package:pure_live/core/network/cookie_sanitizer.dart';
 
 class CookieSettingsController extends GetxController {
   static CookieSettingsController get to => Get.find();
+
+  /// 恢复 Cookie 后的账号联动端口。
+  ///
+  /// 账号域（BiliBiliAccountService）的具体实现由 App 装配层绑定
+  /// （见 InitialServices._bindCorePorts）；Core 的凭据存储因此不认识业务域。
+  static void Function()? onRestored;
+
   final RxString bilibiliCookie = hiveString('bilibiliCookie', '');
   final RxInt bilibiliUid = hiveInt('bilibiliUid', 0);
   final RxString huyaCookie = hiveString('huyaCookie', '');
@@ -124,8 +130,7 @@ class CookieSettingsController extends GetxController {
     soopCookie.v = parsed['soopCookie'];
     yyCookie.v = parsed['yyCookie'];
 
-    BiliBiliAccountService.instance.setCookie(bilibiliCookie.v);
-    BiliBiliAccountService.instance.loadUserInfo();
+    onRestored?.call();
   }
 
   static Map<String, dynamic> extractConfig(Map<String, dynamic>? rootConfig) {

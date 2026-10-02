@@ -5,19 +5,19 @@ import 'package:flutter/foundation.dart' show listEquals;
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/consts/app_consts.dart';
 import 'package:pure_live/core/storage/hive_pref_util.dart';
-import 'package:pure_live/domains/live/data/platforms/sites.dart';
+import 'package:pure_live/core/consts/platform_ids.dart';
 
 class AppSettingsController extends GetxController {
   static const int maxSleepMinutes = 525600;
   static const List<String> defaultRealOnlinePlatforms = [
-    Sites.douyinSite,
-    Sites.kuaishouSite,
-    Sites.ccSite,
-    Sites.twitchSite,
-    Sites.soopSite,
-    Sites.acfunSite,
-    Sites.picartoSite,
-    Sites.twitcastingSite,
+    PlatformIds.douyin,
+    PlatformIds.kuaishou,
+    PlatformIds.cc,
+    PlatformIds.twitch,
+    PlatformIds.soop,
+    PlatformIds.acfun,
+    PlatformIds.picarto,
+    PlatformIds.twitcasting,
   ];
 
   Worker? _refreshRateModeWorker;
@@ -83,15 +83,15 @@ class AppSettingsController extends GetxController {
       audienceMetricMigration.v = 2;
     }
     if (audienceMetricMigration.v < 3) {
-      if (!realOnlinePlatforms.contains(Sites.acfunSite)) realOnlinePlatforms.add(Sites.acfunSite);
+      if (!realOnlinePlatforms.contains(PlatformIds.acfun)) realOnlinePlatforms.add(PlatformIds.acfun);
       audienceMetricMigration.v = 3;
     }
     if (audienceMetricMigration.v < 4) {
-      if (!realOnlinePlatforms.contains(Sites.picartoSite)) realOnlinePlatforms.add(Sites.picartoSite);
+      if (!realOnlinePlatforms.contains(PlatformIds.picarto)) realOnlinePlatforms.add(PlatformIds.picarto);
       audienceMetricMigration.v = 4;
     }
     if (audienceMetricMigration.v < 5) {
-      if (!realOnlinePlatforms.contains(Sites.twitcastingSite)) realOnlinePlatforms.add(Sites.twitcastingSite);
+      if (!realOnlinePlatforms.contains(PlatformIds.twitcasting)) realOnlinePlatforms.add(PlatformIds.twitcasting);
       audienceMetricMigration.v = 5;
     }
     if (audienceMetricMigration.v < 6) {

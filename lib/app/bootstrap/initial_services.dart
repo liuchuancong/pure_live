@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:developer' as developer;
 
 import 'package:pure_live/core/index.dart';
+import 'package:pure_live/core/release/release_history_source.dart';
 import 'package:pure_live/core/config/app_settings_controller.dart';
 import 'package:pure_live/core/config/cache_controller.dart';
 import 'package:pure_live/core/config/danmaku_settings_controller.dart';
@@ -23,8 +25,10 @@ import 'package:pure_live/domains/account/presentation/auth/auth_controller.dart
 import 'package:pure_live/core/config/cookie_settings_controller.dart';
 import 'package:pure_live/domains/live/data/favorite_room_controller.dart';
 import 'package:pure_live/domains/live/data/history_controller.dart';
+import 'package:pure_live/domains/live/data/platforms/huya/huya_site.dart';
 import 'package:pure_live/domains/live/presentation/tags/tag_management_controller.dart';
 import 'package:pure_live/domains/iptv/data/iptv_settings_controller.dart';
+import 'package:pure_live/features/about/widgets/release_history_repository.dart';
 import 'package:pure_live/features/backup/backup_controller.dart';
 import 'package:pure_live/features/web_dav/web_dav_settings_controller.dart';
 import 'package:pure_live/domains/recorder/data/services/cache_service.dart';
@@ -122,12 +126,29 @@ class InitialServices {
   static Future<void> init() async {
     await initDb();
     initGlobalServices();
+    _bindCorePorts();
     // Load and register the persisted custom font before MyApp builds its
     // first ThemeData. This makes the selection survive a full process restart.
     await SettingsService.to.font.ensureInitialized();
     await _migrateRoomScopedAudioOnly();
     initLazyControllers();
     _initHeavyServicesInBackground();
+  }
+
+  /// 把 Features/Domains 的实现接到 Core 定义的接口上。
+  ///
+  /// Core 只声明抽象，反向依赖由此消除：具体实现留在各自层，由 App 装配层绑定。
+  static void _bindCorePorts() {
+    ReleaseHistorySource.provider = ({bool forceRefresh = false}) =>
+        ReleaseHistoryRepository.instance.load(forceRefresh: forceRefresh);
+    // Cookie 恢复后刷新 B 站账号会话：时序与原先 Core 内的直接调用一致。
+    CookieSettingsController.onRestored = () {
+      BiliBiliAccountService.instance.setCookie(CookieSettingsController.to.bilibiliCookie.v);
+      BiliBiliAccountService.instance.loadUserInfo();
+    };
+    // Huya 播放 UA 是站点适配器的启动预热；原先挂在 Core 的 StartupController
+    // onInit 上，让 Core 反向认识了业务域。
+    unawaited(HuyaSite().getHuYaUA());
   }
 
   /// Retire the legacy global default so an old backup or persisted value can

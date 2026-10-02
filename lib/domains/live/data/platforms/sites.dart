@@ -42,6 +42,7 @@ import 'package:pure_live/domains/live/data/platforms/twitch/twitch_site.dart';
 import 'package:pure_live/domains/live/data/platforms/kuaishou/kuaishou_site.dart';
 import 'package:pure_live/domains/live/data/platforms/bilibili/bilibili_site.dart';
 import 'package:pure_live/domains/live/data/favorite_room_controller.dart';
+import 'package:pure_live/core/consts/platform_ids.dart';
 
 class Sites {
   static const String weiboSite = 'weibo';
@@ -50,16 +51,16 @@ class Sites {
   static const String bilibiliSite = "bilibili";
   static const String douyuSite = "douyu";
   static const String huyaSite = "huya";
-  static const String douyinSite = "douyin";
-  static const String kuaishouSite = "kuaishou";
-  static const String ccSite = "cc";
+  static const String douyinSite = PlatformIds.douyin;
+  static const String kuaishouSite = PlatformIds.kuaishou;
+  static const String ccSite = PlatformIds.cc;
   static const String iptvSite = "iptv";
-  static const String twitchSite = "twitch";
-  static const String soopSite = 'soop';
+  static const String twitchSite = PlatformIds.twitch;
+  static const String soopSite = PlatformIds.soop;
   static const String yySite = 'yy';
-  static const String acfunSite = 'acfun';
-  static const String picartoSite = 'picarto';
-  static const String twitcastingSite = 'twitcasting';
+  static const String acfunSite = PlatformIds.acfun;
+  static const String picartoSite = PlatformIds.picarto;
+  static const String twitcastingSite = PlatformIds.twitcasting;
   static const String missevanSite = 'missevan';
   static const String inkeSite = 'inke';
   static const String kilakilaSite = 'kilakila';

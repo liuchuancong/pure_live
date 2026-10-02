@@ -2,10 +2,9 @@ import 'dart:io';
 
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/domains/account/presentation/auth/auth_controller.dart';
 import 'package:pure_live/core/platform/windows_multi_instance_launcher.dart';
 
-class MenuButton extends GetView<AuthController> {
+class MenuButton extends StatelessWidget {
   const MenuButton({super.key});
 
   final menuRoutes = const [RoutePath.kSettings, RoutePath.kAbout, RoutePath.kHistory, RoutePath.kBackup];

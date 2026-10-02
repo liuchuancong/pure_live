@@ -10,7 +10,7 @@ import 'package:pure_live/core/release/github_mirror.dart';
 import 'package:pure_live/core/models/release_model.dart';
 import 'package:pure_live/core/platform/platform_utils.dart';
 import 'package:pure_live/core/release/release_asset_urls.dart';
-import 'package:pure_live/features/about/widgets/release_history_repository.dart';
+import 'package:pure_live/core/release/release_history_source.dart';
 
 class VersionUtil {
   static PackageInfo? _packageInfo;
@@ -132,7 +132,7 @@ class VersionUtil {
       return;
     }
     try {
-      final releases = await ReleaseHistoryRepository.instance.load(forceRefresh: true);
+      final releases = await ReleaseHistorySource.load(forceRefresh: true);
       ReleaseModel? currentRelease;
       for (final release in releases) {
         if (_normalizeVersion(release.version) == version) {

@@ -4,6 +4,7 @@ import 'package:pure_live/core/config/refresh_config_controller.dart';
 import 'package:pure_live/core/widgets/refresh_indicators.dart';
 import 'package:waterfall_flow/waterfall_flow.dart';
 import 'package:pure_live/domains/live/data/platforms/sites.dart';
+import 'package:pure_live/domains/live/presentation/widgets/room_card.dart';
 
 class HistoryPage extends StatefulWidget {
   const HistoryPage({super.key, this.loadRoom});

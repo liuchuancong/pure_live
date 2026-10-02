@@ -7,6 +7,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:pure_live/core/widgets/keep_alive_wrapper.dart';
 import 'package:pure_live/domains/live/data/platforms/sites.dart';
 import 'package:pure_live/domains/live/data/favorite_room_controller.dart';
+import 'package:pure_live/domains/live/presentation/widgets/room_card.dart';
+import 'package:pure_live/domains/live/presentation/widgets/room_card_layout.dart';
 
 class AreasRoomPage extends StatefulWidget {
   final Site site;

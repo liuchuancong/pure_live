@@ -11,6 +11,7 @@ import 'package:pure_live/core/utils/event_bus.dart';
 import 'package:pure_live/core/config/room_card_settings_controller.dart';
 import 'package:pure_live/domains/live/data/platforms/sites.dart';
 import 'package:pure_live/domains/live/data/favorite_room_controller.dart';
+import 'package:pure_live/domains/live/presentation/widgets/room_card_layout.dart';
 
 double _roomTagTextScale(BuildContext context) {
   final style = AppTextStyles.t13;

@@ -3,6 +3,7 @@ import 'package:pure_live/core/index.dart';
 import 'package:pure_live/domains/live/presentation/search/search_ranking.dart';
 import 'package:pure_live/domains/live/presentation/search/search_controller.dart' as pure_live;
 import 'package:pure_live/domains/live/presentation/search/search_platform_strip.dart';
+import 'package:pure_live/domains/live/presentation/widgets/room_card.dart';
 
 ScrollPhysics resolveSearchResultScrollPhysics(TargetPlatform platform) {
   return switch (platform) {
