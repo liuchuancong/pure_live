@@ -34,12 +34,12 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | soop | 10 | 本轮已摘取（见下） |
 | chzzk | 10 | 本轮已摘取（见下） |
 | kugoulive | 10 | 本轮已摘取（见下） |
-| bigo / fc2live | 9 | 待办 |
+| bigo / fc2live | 9 | fc2live 本轮已摘取（见下）；bigo 待办 |
 | missevan / kilakila / acfun | 8 | missevan、kilakila 本轮已摘取（见下）；acfun 待办 |
-| jdlive / looklive / steambroadcast / twitcasting / showroom / sixroom / baidulive | 7 | steambroadcast 本轮已摘取（见下）；其余待办 |
+| jdlive / looklive / steambroadcast / twitcasting / showroom / sixroom / baidulive | 7 | steambroadcast、showroom 本轮已摘取（见下）；其余待办 |
 | cc | 5 | 本轮已摘取（见下） |
 | tiktok | 5 | 待办 |
-| inke / xiaohongshu / weibo / liveme | 4 | weibo 本轮已摘取（见下）；其余待办 |
+| inke / xiaohongshu / weibo / liveme | 4 | weibo、liveme 本轮已摘取（见下）；inke / xiaohongshu 待办 |
 
 ## bilibili
 
@@ -346,3 +346,36 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | 27-5 | 记住的卡片只在房间直播中填补观众数 | 未做 |
 | 27-7 | 校验过的 master 每个 variant 加一档（1080p60、720p…） | 未做：清晰度分档 |
 | 限制/状态 | `user_restricted` 按封禁、`missing_subscription` 按订阅可见、`is_replay` 按回放 | 未做：状态与限制模型 |
+
+## liveme
+
+上游相关提交：`996421c3e`（M4.U.21，21-1 至 21-8）。
+
+| 项 | 内容 | 本仓状态 |
+| --- | --- | --- |
+| 21-4 | 搜索行 `is_live` 0 对所有 project 都是未开播 | **已同步**：此前只信主 liveme 项目的 0，federated 项目的 0 被留成 pending |
+| 21-3 | 直播房间简介取资料的 `usign` | 未做 |
+| 21-5 | 去掉 `LiveMeState.restricted`：私密/付费是在播 + 限制种类 | 未做：限制模型 |
+| 21-8 | `wsABStime` = 开播时间 + 10h/24h | 未做：开播时间 |
+| startedAt / 限制 | 统一规则里的 `vtime` 开播时间与 none/private/paid | 未做：`LiveRoom` 缺字段 |
+
+## showroom
+
+上游相关提交：`021709665`（M4.U.19，19-1 至 19-4）。
+
+| 项 | 内容 | 本仓状态 |
+| --- | --- | --- |
+| 19-4 | 未开播的房间没有观众数（`view_num` 是上一场残留） | **已同步**：详情里非在播时清空 watching/totalViewers |
+| 19-x | 直播详情在 `danmakuData` 带 `live_info`（主机限 showroom-live.com） | 未做：弹幕参数 |
+| 19-x | 限制 none/其它（非 0 时留 null）与 `current_live_started_at` | 未做：`LiveRoom` 缺字段 |
+
+## fc2live
+
+上游相关提交：`cb4f450af`（M4.U.26，26-1 至 26-9）。
+
+| 项 | 内容 | 本仓状态 |
+| --- | --- | --- |
+| 26-8 | 未开播的详情没有观众数 | **已同步**：非在播时清空 watching/onlineViewers/totalViewers 与观众口径 |
+| 26-1 / 26-2 | 清晰度按档位（`fc2live:<channel>:<id>`）与 `hlsPlaylists` 读全部播放列表 | 未做：清晰度发现 |
+| 26-9 | 受限直播是在播 + 限制（`is_limited`），播放被拒 | 未做：状态与限制模型 |
+| 其它 | startedAt（`start_time`/`start`）、控制权交接 | 未做 |

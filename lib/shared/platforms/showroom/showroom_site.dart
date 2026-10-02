@@ -206,7 +206,8 @@ class ShowroomSite extends LiveSite
 
   LiveRoom _detailCard(ShowroomRoom room) {
     final profile = room.profile;
-    final audience = profile.totalViewers?.toString();
+    // 未开播的房间没有观众数（上游 19-4）：`view_num` 是上一场的残留。
+    final audience = profile.isLive ? profile.totalViewers?.toString() : null;
     final qualities = room.streams.map(_quality).toList(growable: false)
       ..sort((left, right) {
         final rank = right.sort.compareTo(left.sort);

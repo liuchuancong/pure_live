@@ -310,7 +310,6 @@ class LiveMeApi {
       final shortId = _shortId(row['short_id']);
       if (!seen.add(shortId)) continue;
       final nickname = _firstText([row['nickname'], row['uname']]);
-      final project = _optionalText(row['project']).toLowerCase();
       final isLive = _integer(row['is_live']);
       rooms.add(
         LiveMeRoom(
@@ -328,12 +327,11 @@ class LiveMeApi {
           totalViewers: null,
           heat: null,
           likes: null,
-          // The federated emolm/alive/highlive projects may report is_live=0
-          // while their public LiveMe room is active. Keep those rows pending
-          // until room lookup; the primary liveme project has reliable zeros.
+          // `is_live` 0 就是未开播，对所有 project 一致（上游 21-4）：此前只信
+          // 主 liveme 项目的 0，federated 项目的 0 被留成 pending。
           state: isLive == 1
               ? LiveMeState.live
-              : isLive == 0 && project == 'liveme'
+              : isLive == 0
               ? LiveMeState.offline
               : LiveMeState.unknown,
           streams: const [],

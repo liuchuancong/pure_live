@@ -124,7 +124,9 @@ final class Fc2Site extends LiveSite
       Fc2State.offline => LiveStatus.offline,
       Fc2State.restricted => LiveStatus.unknown,
     };
-    final viewers = room.currentViewers?.toString();
+    // 未开播的详情没有观众数（上游 26-8）：`count`/`total` 是上一场的残留。
+    final viewers = room.state == Fc2State.live ? room.currentViewers?.toString() : null;
+    final totalViewers = room.state == Fc2State.live ? room.totalViewers?.toString() : null;
     return LiveRoom(
       platform: 'fc2live',
       roomId: room.channelId,
@@ -138,7 +140,7 @@ final class Fc2Site extends LiveSite
       liveStatus: liveStatus,
       watching: viewers ?? '',
       onlineViewers: viewers,
-      totalViewers: room.totalViewers?.toString(),
+      totalViewers: totalViewers,
       audienceMetricType: viewers == null ? AudienceMetricType.unknown : AudienceMetricType.onlineViewers,
       notice: room.state == Fc2State.restricted
           ? i18n('fc2live_access_restricted')
