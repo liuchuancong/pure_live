@@ -3,14 +3,11 @@ import 'package:pure_live/core/index.dart';
 import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:pure_live/domains/live/presentation/areas/area_card.dart';
 import 'package:pure_live/domains/live/presentation/areas/areas_list_controller.dart';
-import 'package:pure_live/domains/live/data/platforms/sites.dart';
 
 class AreaGridView extends StatefulWidget {
   final String tag;
   const AreaGridView(this.tag, {super.key});
   AreasListController get controller => Get.find<AreasListController>(tag: tag);
-
-  bool get isFlatten => tag == Sites.douyinSite;
 
   @override
   State<AreaGridView> createState() => _AreaGridViewState();
@@ -25,18 +22,39 @@ class _AreaGridViewState extends State<AreaGridView> with TickerProviderStateMix
   ScrollController _scrollControllerFor(String categoryId) =>
       _categoryScrollControllers.putIfAbsent(categoryId, () => createPureLiveScrollController());
 
+  /// Whether the directory renders as one flat grid.
+  ///
+  /// The decision lives on the controller because it depends on the catalogue
+  /// the server returned (see `area_display_config.dart`), not only on the
+  /// platform id, so the tab layer has to follow the data.
+  bool get _flatten => widget.controller.isFlatten;
+
   @override
   void initState() {
     super.initState();
-    if (!widget.isFlatten) {
-      _listWorker = ever(widget.controller.categories, (_) => _createTabController());
-      _createTabController();
-      widget.controller.tabIndex.addListener(_handleExternalIndexChange);
-    }
+    _listWorker = ever(widget.controller.categories, (_) => _syncCategoryTabs());
+    _syncCategoryTabs();
+    widget.controller.tabIndex.addListener(_handleExternalIndexChange);
   }
 
-  void _createTabController() {
-    if (widget.isFlatten) return;
+  /// Keeps the second tab bar in step with the site's display mode.
+  ///
+  /// Flat sites drop the tab controller entirely; a site whose refreshed
+  /// catalogue gained groups gets one built on the spot.
+  void _syncCategoryTabs() {
+    if (_flatten) {
+      if (_tabController != null) {
+        _tabController!.removeListener(_handleInternalTabChange);
+        _tabController!.dispose();
+        _tabController = null;
+        widget.controller.bindActiveScrollController(null);
+        if (mounted) setState(() {});
+      }
+      // The per-category controllers only ever back tabbed PageView children.
+      _retireRemovedCategories(const <String>{});
+      return;
+    }
+
     final list = widget.controller.categories;
     final recreateTabs = _tabController?.length != list.length;
     if (recreateTabs || list.isEmpty) {
@@ -111,14 +129,12 @@ class _AreaGridViewState extends State<AreaGridView> with TickerProviderStateMix
 
   @override
   void dispose() {
-    if (!widget.isFlatten) {
-      widget.controller.bindActiveScrollController(null);
-      widget.controller.tabIndex.removeListener(_handleExternalIndexChange);
-      _listWorker?.dispose();
-      if (_tabController != null) {
-        _tabController!.removeListener(_handleInternalTabChange);
-        _tabController!.dispose();
-      }
+    widget.controller.bindActiveScrollController(null);
+    widget.controller.tabIndex.removeListener(_handleExternalIndexChange);
+    _listWorker?.dispose();
+    if (_tabController != null) {
+      _tabController!.removeListener(_handleInternalTabChange);
+      _tabController!.dispose();
     }
     for (final controller in _categoryScrollControllers.values) {
       controller.dispose();
@@ -133,7 +149,7 @@ class _AreaGridViewState extends State<AreaGridView> with TickerProviderStateMix
 
   @override
   Widget build(BuildContext context) {
-    if (widget.isFlatten) {
+    if (_flatten) {
       return BasePageView<AreasListController, LiveArea>(
         controller: widget.controller,
         enableRefresh: true,

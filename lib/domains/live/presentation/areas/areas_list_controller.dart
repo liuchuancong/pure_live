@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/models/live_category.dart';
+import 'package:pure_live/domains/live/presentation/areas/area_display_config.dart';
 import 'package:pure_live/domains/live/presentation/areas/area_pic_mapper.dart';
 import 'package:pure_live/domains/live/data/platforms/sites.dart';
 
@@ -14,7 +15,14 @@ class AreasListController extends ServerAllPageController<LiveArea> {
 
   List<LiveArea> _flattenRawAllData = [];
 
-  bool get isFlatten => site.id == Sites.douyinSite;
+  /// Whether this platform's directory renders as one flat grid.
+  ///
+  /// The flag is decided by the catalogue the server just returned rather than
+  /// by the previous one: the "a single top-level category flattens by itself"
+  /// rule can only be evaluated against fresh data.
+  late bool _flatten = isFlatAreaSite(site.id);
+
+  bool get isFlatten => _flatten;
 
   @override
   bool get showInlineError => site.id == Sites.ccSite;
@@ -43,8 +51,9 @@ class AreasListController extends ServerAllPageController<LiveArea> {
 
     _serverRawBackup.clear();
 
-    if (isFlatten) {
-      _flattenRawAllData = channels.expand((e) => e.children).toList();
+    _flatten = shouldFlattenCategories(site.id, channels);
+    if (_flatten) {
+      _flattenRawAllData = flattenCategories(channels);
       categories.assignAll(channels);
       return _flattenRawAllData;
     } else {
