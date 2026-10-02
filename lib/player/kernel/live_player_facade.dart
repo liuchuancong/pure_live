@@ -666,11 +666,10 @@ class _PipOverlayViewState extends State<_PipOverlayView> {
   @override
   void initState() {
     super.initState();
-    // Entering PiP from fullscreen: the adapter's viewport fit is shared
-    // state, and the fullscreen page may have left it at the user's fill/crop
-    // preference — a cropped, magnified picture inside the compact window.
-    // The compact face always shows the whole picture; re-assert contain
-    // after the frame settles (the room's own view is gone by then).
+    _reassertContain();
+  }
+
+  void _reassertContain() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) widget.facade.changeVideoFit(BoxFit.contain);
     });
@@ -685,6 +684,16 @@ class _PipOverlayViewState extends State<_PipOverlayView> {
   @override
   Widget build(BuildContext context) {
     final facade = widget.facade;
+    // The adapter's viewport fit is shared state across every view of this
+    // handle: the fullscreen page may have left it at the user's fit-height
+    // preference, and fit-height in a compact window whose shape differs
+    // from the video overflows and crops the picture. The compact face
+    // always shows the whole picture; re-assert contain on every rebuild
+    // (the adapter notifier dedupes no-op writes). Leaving PiP remounts the
+    // room's own view, which re-applies the user's preference.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) facade.changeVideoFit(BoxFit.contain);
+    });
     return MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
