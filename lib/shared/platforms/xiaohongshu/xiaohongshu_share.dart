@@ -143,9 +143,9 @@ class XiaohongshuShare {
 
   static XiaohongshuShare parseState(Map<String, dynamic> state, {required String roomId}) {
     validateRoomId(roomId);
-    // The frontend uses the same page error for network, missing-room and
-    // restricted responses. Its generic message does not prove any one cause.
-    if (state['pageStatus'] == 'error') throw const XiaohongshuException(XiaohongshuFailure.api);
+    // 页面的 `pageStatus: error` 就是平台自己的「房间不存在」（NotFound），等价于
+    // HTTP 404（上游 16-1：搜索遇到它返回空，进房与刷新仍然如实报 NotFound）。
+    if (state['pageStatus'] == 'error') throw const XiaohongshuException(XiaohongshuFailure.missing);
     if (state['pageStatus'] != 'success') throw const XiaohongshuException(XiaohongshuFailure.schema);
     final data = _object(state['roomData']);
     final room = _object(data['roomInfo']);

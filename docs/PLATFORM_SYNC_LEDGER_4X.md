@@ -39,7 +39,7 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | jdlive / looklive / steambroadcast / twitcasting / showroom / sixroom / baidulive | 7 | 七站均已摘取（见下） |
 | cc | 5 | 本轮已摘取（见下） |
 | tiktok | 5 | 待办 |
-| inke / xiaohongshu / weibo / liveme | 4 | weibo、liveme、inke 已摘取（见下）；xiaohongshu 待办 |
+| inke / xiaohongshu / weibo / liveme | 4 | 四站均已摘取（见下） |
 
 ## bilibili
 
@@ -488,3 +488,15 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | 14-4 | 进房/刷新/录制补 App 的 `now_publish`（标题、封面、观众、开播时间、线路） | 未做 |
 | 14-5 | Zego 原始流（HEVC）作为「原画」档 | 未做：清晰度发现 |
 | 统一规则 | 去掉占位标题「正在直播中」 | 未做（本仓未使用该占位） |
+
+## xiaohongshu
+
+上游相关提交：`fc41c1a1d`（M4.U.16，16-1 至 16-4）。
+
+| 项 | 内容 | 本仓状态 |
+| --- | --- | --- |
+| 16-1 | 分享页 `pageStatus: error` 就是平台自己的「房间不存在」（等价 404）：搜索遇到它返回空，进房与刷新仍如实报 NotFound | **已同步**：此前一律当成笼统的 api 失败，于是搜索一个不存在的房间会抛错而不是返回空 |
+| 16-2 | App 深链只要求恰好一个 `room_id`，`source` 不再必需 | **已同步** |
+| 16-3 | 每个 `quality_type` 一档（HD，页面叫「原画」），线路是 H.264 在前、H.265 在后，各编解码内 FLV 先于 HLS | 未做：清晰度发现 |
+| 16-4 | 破坏规则的拉流行被跳过 | 未做 |
+| 16-5 | 主播资料 | 上游也阻塞（重定向到验证码/登录页，网页直播 API 无签名返回 406） |

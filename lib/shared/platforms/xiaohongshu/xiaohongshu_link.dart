@@ -22,9 +22,9 @@ class XiaohongshuLink {
       return null;
     }
     try {
+      // 只要求恰好一个 `room_id`；`source` 不再必需（上游 16-2）。
       final room = uri.queryParametersAll['room_id'];
-      final source = uri.queryParametersAll['source'];
-      if (room?.length != 1 || source?.length != 1 || source!.single.trim().isEmpty) return null;
+      if (room?.length != 1) return null;
       final id = room!.single;
       return RegExp(r'^[1-9][0-9]{0,19}$').hasMatch(id) ? id : null;
     } on FormatException {
