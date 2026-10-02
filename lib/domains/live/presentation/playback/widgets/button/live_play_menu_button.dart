@@ -4,7 +4,6 @@ import 'dart:developer' as developer;
 
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/domains/live/data/link/live_url_tool.dart';
 import 'package:pure_live/core/platform/share_command_handler.dart';
 import 'package:pure_live/domains/live/presentation/playback/dialogs/play_other.dart';
 import 'package:pure_live/domains/live/presentation/playback/dialogs/room_timer_dialog.dart';
@@ -12,6 +11,7 @@ import 'package:pure_live/core/platform/windows_multi_instance_launcher.dart';
 import 'package:pure_live/domains/live/presentation/playback/dialogs/room_volume_dialog.dart';
 import 'package:pure_live/domains/live/presentation/playback/controllers/live_play_controller.dart';
 import 'package:pure_live/domains/live/presentation/playback/widgets/local_interaction/local_interaction_sheet.dart';
+import 'package:pure_live/domains/live/presentation/playback/dialogs/known_room_link_dialog.dart';
 
 class LivePlayMenuButton extends StatelessWidget {
   const LivePlayMenuButton({super.key, required this.controller});
@@ -97,7 +97,7 @@ class LivePlayMenuButton extends StatelessWidget {
   void _castScreen(BuildContext context) {
     final detail = controller.state.value.room.detail;
 
-    LiveUrlTool.castPlayUrlByRoomId(
+    KnownRoomLinkDialog.castPlayUrlByRoomId(
       context: context,
       liveroom: detail ?? LiveRoom(roomId: '', platform: ''),
       isCurrentRoom: () =>
@@ -122,7 +122,7 @@ class LivePlayMenuButton extends StatelessWidget {
       return;
     }
 
-    LiveUrlTool.getPlayUrlByRoomId(
+    KnownRoomLinkDialog.getPlayUrlByRoomId(
       context: context,
       liveroom: detail,
       isCurrentRoom: () =>

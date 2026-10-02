@@ -9,7 +9,7 @@ import 'package:pure_live/core/consts/app_consts.dart';
 import 'package:pure_live/domains/live/presentation/areas/areas_page.dart';
 import 'package:pure_live/features/home/mobile_view.dart';
 import 'package:pure_live/features/home/tablet_view.dart';
-import 'package:pure_live/app/bootstrap/initialized.dart';
+import 'package:pure_live/core/platform/initial_room_handoff.dart';
 import 'package:pure_live/core/player/models/player_engine.dart';
 import 'package:pure_live/domains/live/presentation/popular/popular_page.dart';
 import 'package:pure_live/domains/live/presentation/favorite/favorite_page.dart';
@@ -83,7 +83,7 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin,
         SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
       }
 
-      final initialRoom = AppInitializer().takeInitialRoom();
+      final initialRoom = InitialRoomHandoff.take();
       if (initialRoom != null && mounted) {
         // MyApp prepares the global manager asynchronously while leaving the
         // native decoder cold. Reusing that same initialization Future keeps a

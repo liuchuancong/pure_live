@@ -5,6 +5,8 @@ import 'package:pure_live/core/models/live_play_quality.dart';
 import 'package:pure_live/domains/live/presentation/playback/dialogs/live_dlna_dialog.dart';
 import 'package:pure_live/core/utils/action_scope.dart';
 import 'package:pure_live/domains/live/data/direct_link_flow.dart';
+import 'package:pure_live/domains/live/data/platforms/sites.dart';
+import 'package:pure_live/domains/live/domain/live_site.dart';
 
 /// One route-owned action shared by the player's menu and control bar.
 class KnownRoomLinkDialog extends StatefulWidget {
@@ -27,6 +29,74 @@ class KnownRoomLinkDialog extends StatefulWidget {
   final Route<dynamic>? sourceRoute;
   final Future<void> Function(String)? openCast;
   static final _active = <NavigatorState, Future<void>>{};
+
+  /// 播放页菜单/控制栏发起：按已知直播间解析播放直链。
+  static Future<void> getPlayUrlByRoomId({
+    required BuildContext context,
+    required LiveRoom liveroom,
+    LiveSite Function(String)? siteFor,
+    bool Function()? isCurrentRoom,
+    void Function(String)? notify,
+  }) => _showKnownRoomAction(
+    context: context,
+    liveroom: liveroom,
+    cast: false,
+    siteFor: siteFor,
+    isCurrentRoom: isCurrentRoom,
+    notify: notify,
+  );
+
+  /// 播放页菜单/控制栏发起：按已知直播间投屏。
+  static Future<void> castPlayUrlByRoomId({
+    required BuildContext context,
+    required LiveRoom liveroom,
+    LiveSite Function(String)? siteFor,
+    bool Function()? isCurrentRoom,
+    void Function(String)? notify,
+    Future<void> Function(String)? openCast,
+  }) => _showKnownRoomAction(
+    context: context,
+    liveroom: liveroom,
+    cast: true,
+    siteFor: siteFor,
+    isCurrentRoom: isCurrentRoom,
+    notify: notify,
+    openCast: openCast,
+  );
+
+  /// 这两个入口原先挂在数据层的 LiveUrlTool 上，却要弹对话框——
+  /// 属于页面动作，随对话框一起留在 presentation。
+  static Future<void> _showKnownRoomAction({
+    required BuildContext context,
+    required LiveRoom liveroom,
+    required bool cast,
+    LiveSite Function(String)? siteFor,
+    bool Function()? isCurrentRoom,
+    void Function(String)? notify,
+    Future<void> Function(String)? openCast,
+  }) {
+    if (!context.mounted) return Future.value();
+    final roomId = (liveroom.roomId ?? '').trim();
+    final platform = (liveroom.platform ?? '').trim().toLowerCase();
+    final showNotice = notify ?? ((String key) => ToastUtil.show(i18n(key)));
+    if (roomId.isEmpty || platform.isEmpty) {
+      showNotice('toolbox_empty_link');
+      return Future.value();
+    }
+    if (!Sites.isSupported(platform)) {
+      showNotice('toolbox_parse_failed');
+      return Future.value();
+    }
+    return KnownRoomLinkDialog.show(
+      context: context,
+      liveroom: LiveRoom(roomId: roomId, platform: platform),
+      cast: cast,
+      flow: LiveDirectLinkFlow(siteFor: siteFor),
+      isCurrentRoom: isCurrentRoom ?? (() => true),
+      notify: showNotice,
+      openCast: openCast,
+    );
+  }
 
   static Future<void> show({
     required BuildContext context,

@@ -5,7 +5,7 @@ import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/app/bootstrap/desktop_exit_flow.dart';
+import 'package:pure_live/core/platform/desktop_exit_port.dart';
 import 'package:pure_live/core/platform/desktop_tray_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_acrylic/flutter_acrylic.dart';
@@ -199,7 +199,7 @@ class DesktopManager {
           break;
 
         case 'exit_app':
-          await DesktopExitFlow.exitDesktopApplication();
+          await DesktopExitPort.requestExit();
           break;
       }
     } catch (e) {
@@ -210,7 +210,7 @@ class DesktopManager {
   static Future<void> handleWindowClose() async {
     if (!PlatformUtils.isDesktop) return;
 
-    await DesktopExitFlow.showExitDialog();
+    await DesktopExitPort.requestExitDialog();
   }
 
   static Future<void> handleTrayIconClick() async {

@@ -3,6 +3,9 @@ import 'dart:developer' as developer;
 
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/release/release_history_source.dart';
+import 'package:pure_live/core/platform/multi_instance_settings_source.dart';
+import 'package:pure_live/core/platform/desktop_exit_port.dart';
+import 'package:pure_live/app/bootstrap/desktop_exit_flow.dart';
 import 'package:pure_live/core/config/app_settings_controller.dart';
 import 'package:pure_live/core/config/cache_controller.dart';
 import 'package:pure_live/core/config/danmaku_settings_controller.dart';
@@ -146,6 +149,12 @@ class InitialServices {
       BiliBiliAccountService.instance.setCookie(CookieSettingsController.to.bilibiliCookie.v);
       BiliBiliAccountService.instance.loadUserInfo();
     };
+    // 多实例新窗口的初始设置由备份控制器导出；"快照内容"属于 Features。
+    MultiInstanceSettingsSource.exporter = ({required bool includeSensitiveData}) =>
+        BackupController.to.exportAllSettings(includeSensitiveData: includeSensitiveData);
+    // 桌面退出流程含业务与对话框，留在 App；Core 的托盘/关窗入口只调端口。
+    DesktopExitPort.exitApplication = DesktopExitFlow.exitDesktopApplication;
+    DesktopExitPort.showExitDialog = DesktopExitFlow.showExitDialog;
     // Huya 播放 UA 是站点适配器的启动预热；原先挂在 Core 的 StartupController
     // onInit 上，让 Core 反向认识了业务域。
     unawaited(HuyaSite().getHuYaUA());

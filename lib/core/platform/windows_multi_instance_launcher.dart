@@ -2,9 +2,8 @@ import 'dart:io';
 import 'dart:convert';
 
 import 'package:path/path.dart' as p;
-import 'package:pure_live/get/get.dart';
 import 'package:pure_live/core/models/live_room.dart';
-import 'package:pure_live/features/backup/backup_controller.dart';
+import 'package:pure_live/core/platform/multi_instance_settings_source.dart';
 
 /// and window state are never shared concurrently. An optional compact room
 /// payload lets the new process open the selected live room immediately.
@@ -114,9 +113,7 @@ class WindowsMultiInstanceLauncher {
   }
 
   static Future<File> _createConfigFile(String instanceId) async {
-    final backupController = Get.find<BackupController>();
-
-    final data = backupController.exportAllSettings(includeSensitiveData: true);
+    final data = MultiInstanceSettingsSource.export(includeSensitiveData: true);
 
     final directory = await Directory.systemTemp.createTemp(configDirectoryPrefix);
 

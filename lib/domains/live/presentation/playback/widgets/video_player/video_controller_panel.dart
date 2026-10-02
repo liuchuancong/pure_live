@@ -9,7 +9,6 @@ import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/utils/event_bus.dart';
 import 'package:flame_barrage/flame_barrage.dart';
-import 'package:pure_live/domains/live/data/link/live_url_tool.dart';
 import 'package:pure_live/core/platform/platform_utils.dart';
 import 'package:pure_live/domains/live/presentation/playback/states/player_state.dart';
 import 'package:pure_live/domains/live/presentation/playback/states/ui_state.dart';
@@ -30,6 +29,7 @@ import 'package:pure_live/domains/live/presentation/playback/widgets/layout/cont
 import 'package:pure_live/domains/live/domain/global_player_service.dart';
 import 'package:pure_live/domains/live/data/platforms/sites.dart';
 import 'package:pure_live/domains/live/data/favorite_room_controller.dart';
+import 'package:pure_live/domains/live/presentation/playback/dialogs/known_room_link_dialog.dart';
 
 @visibleForTesting
 enum TopActionLeadingSlot { back, datetime, battery }
@@ -2018,7 +2018,7 @@ class CastButton extends StatelessWidget {
       color: Colors.white,
       onPressed: () {
         controller.enableController();
-        LiveUrlTool.castPlayUrlByRoomId(
+        KnownRoomLinkDialog.castPlayUrlByRoomId(
           context: context,
           liveroom: controller.room,
           isCurrentRoom: () => controller.status != PlayerStatus.disposed,
