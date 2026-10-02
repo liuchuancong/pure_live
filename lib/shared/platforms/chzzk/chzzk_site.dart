@@ -88,7 +88,9 @@ class ChzzkSite extends LiveSite
     httpHeaders: ChzzkApi.mediaHeaders,
   );
 
-  static LiveRoom _channelCard(ChzzkChannel channel) => LiveRoom(
+  /// [channel] 的卡片。当进房详情的 live-detail 说没开播时用 [forceOffline]：
+  /// 频道的 `openLive` 可能还停在 true，但没开播就是没开播（上游 20-7）。
+  static LiveRoom _channelCard(ChzzkChannel channel, {bool forceOffline = false}) => LiveRoom(
     platform: 'chzzk',
     roomId: channel.id,
     userId: channel.id,
@@ -99,7 +101,7 @@ class ChzzkSite extends LiveSite
     followers: channel.followers?.toString(),
     introduction: channel.description,
     link: ChzzkLink.url(channel.id),
-    liveStatus: channel.isLive ? LiveStatus.live : LiveStatus.offline,
+    liveStatus: forceOffline || !channel.isLive ? LiveStatus.offline : LiveStatus.live,
   );
 
   @override
@@ -186,6 +188,10 @@ class ChzzkSite extends LiveSite
   Future<List<LiveRoom>> getCategoryRooms(LiveArea category, {int page = 1, int pageSize = 30}) async =>
       (await getDirectoryPage(page: page, category: category)).rooms;
 
+  /// 搜索每页固定 20 行（上游 20-5）：服务端无论请求多少都回 20 行，按调用方的
+  /// 页长算 offset 会漏掉中间的房间。
+  static const int searchPageSize = 20;
+
   @override
   Future<List<LiveRoom>> searchRooms(String keyword, {int page = 1, int pageSize = 30}) =>
       searchRoomsCancellable(keyword, page: page, pageSize: pageSize);
@@ -198,7 +204,12 @@ class ChzzkSite extends LiveSite
     CancelToken? cancel,
   }) async {
     if (page < 1 || pageSize < 1 || pageSize > 30) return [];
-    final channels = await _api.searchChannels(keyword, offset: (page - 1) * pageSize, size: pageSize, cancel: cancel);
+    final channels = await _api.searchChannels(
+      keyword,
+      offset: (page - 1) * searchPageSize,
+      size: searchPageSize,
+      cancel: cancel,
+    );
     return channels.map(_channelCard).toList(growable: false);
   }
 
@@ -249,7 +260,7 @@ class ChzzkSite extends LiveSite
     if (platform.trim().toLowerCase() != id) throw const ChzzkException(ChzzkFailure.identity);
     final room = await _api.room(channelId);
     final live = room.live;
-    if (live == null || !live.isLive) return _channelCard(room.channel);
+    if (live == null || !live.isLive) return _channelCard(room.channel, forceOffline: true);
     final qualities = playback && live.media.isNotEmpty ? await _qualities(live) : <LivePlayQuality>[];
     final detail = _liveCard(live)
       ..followers = room.channel.followers?.toString()

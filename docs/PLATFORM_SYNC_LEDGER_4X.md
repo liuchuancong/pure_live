@@ -32,7 +32,8 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | pandalive / picarto / seventeenlive | 11 | 待办 |
 | twitch | 10 | 本轮已摘取（见下） |
 | soop | 10 | 本轮已摘取（见下） |
-| kugoulive / chzzk | 10 | 待办 |
+| chzzk | 10 | 本轮已摘取（见下） |
+| kugoulive | 10 | 待办 |
 | bigo / fc2live | 9 | 待办 |
 | missevan / kilakila / acfun | 8 | 待办 |
 | jdlive / looklive / steambroadcast / twitcasting / showroom / sixroom / baidulive | 7 | 待办 |
@@ -224,3 +225,20 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | 7-5 | 进房同时读 station API（头像、标语、观众数）、未知主播 NotFound | 未做：多一次请求与新字段 |
 | 7-7 | `afreecatv.com` 链接也算房间 | 未做：外部链接识别 |
 | 弹幕 | 走代理、`1/-1/bar` 文本、发送者 id（B-6） | 未做：与跨站点弹幕批次一起做 |
+
+## chzzk
+
+上游相关提交：`8cc5fc996`（M4.U.20，20-1 至 20-10）。
+
+| 项 | 内容 | 本仓状态 |
+| --- | --- | --- |
+| 20-4 | 频道页 `chzzk.naver.com/<id>`（后面最多一个页签）也是这个频道 | **已同步**：`ChzzkLink.parse` 同时接受 `/live/<id>` 与 `/<id>[/<页签>]` |
+| 20-5 | 关键词超过 100 个 UTF-16 单元时截断（不切断代理对），不是拒绝 | **已同步**：`ChzzkApi.searchKeyword()` |
+| 20-5 | 搜索每页固定 20 行 | **已同步**：页长与 offset 都用 `searchPageSize = 20`（服务端无论请求多少都回 20 行，按调用方页长算 offset 会漏房间） |
+| 20-7 | live-detail 说没开播就是下播，不管频道的 `openLive` | **已同步**：`_channelCard(forceOffline: true)` |
+| 20-6 | 游标之后的分页要 30 行（游标是排他的） | 无需：本仓已按 `size + 1` 请求再裁剪 |
+| 20-1 | 目录改用平台自己的分区页（GAME/ENTERTAINMENT/SPORTS/ETC 等，最多 4 次请求） | 未做：本仓目前只有一个"公开目录"分区 |
+| 20-8 | `blindType` ABROAD 也按地区限制（卡片与详情都带地区提示） | 部分：本仓已有 `krOnlyViewing` 与地区提示，ABROAD 分支未加 |
+| 20-9 | 进房/录制只读 channel + live-detail（4→2 次请求），清晰度同时读两个 master | 未做：请求数与清晰度发现 |
+| 20-10 | 回放提示文案 | 未做：文案 |
+| 20-2 / 弹幕 | 弹幕参数带频道 id；CHZZK 弹幕本体 | 未做：本仓 `getDanmaku()` 仍是 `EmptyDanmaku`，要接得整套 live chat |

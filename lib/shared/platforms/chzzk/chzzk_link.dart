@@ -9,10 +9,21 @@ class ChzzkLink {
         uri.host.toLowerCase() != 'chzzk.naver.com') {
       return null;
     }
-    final segments = uri.pathSegments.where((value) => value.isNotEmpty).toList(growable: false);
-    if (segments.length != 2 || segments.first != 'live') return null;
-    final id = segments[1].trim().toLowerCase();
-    return RegExp(r'^[a-f0-9]{32}$').hasMatch(id) ? id : null;
+    final List<String> segments;
+    try {
+      segments = uri.pathSegments.where((value) => value.isNotEmpty).toList(growable: false);
+    } on FormatException {
+      return null;
+    }
+    // 直播页 `/live/<id>`，以及频道页 `/<id>`（后面最多跟一个页签，如
+    // `/<id>/videos`）都是这个频道（上游 20-4，3.x 只认前者）。
+    final candidate = switch (segments) {
+      ['live', final id] => id,
+      [final id] || [final id, _] => id,
+      _ => null,
+    };
+    final id = candidate?.trim().toLowerCase();
+    return id != null && RegExp(r'^[a-f0-9]{32}$').hasMatch(id) ? id : null;
   }
 
   static String url(String channelId) {

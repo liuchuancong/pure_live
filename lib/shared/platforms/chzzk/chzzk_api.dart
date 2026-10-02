@@ -220,14 +220,31 @@ class ChzzkApi {
     return ChzzkDirectoryPage(lives: rows, nextCursor: nextCursor, hasMore: nextCursor != null && rows.isNotEmpty);
   }
 
+  /// 搜索关键词最长 100 个 UTF-16 单元；更长时截断而不是拒绝（上游 20-5，
+  /// 3.x 是拒绝）。
+  static const int maxKeywordLength = 100;
+
+  /// 送去搜索的关键词：裁剪空白，超过 [maxKeywordLength] 就截断（不切断代理对），
+  /// 再裁剪一次；没有可搜的内容时返回空串。
+  static String searchKeyword(String keyword) {
+    var text = keyword.trim();
+    if (text.length > maxKeywordLength) {
+      var end = maxKeywordLength;
+      final last = text.codeUnitAt(end - 1);
+      if (last >= 0xD800 && last <= 0xDBFF) end--;
+      text = text.substring(0, end).trim();
+    }
+    return text;
+  }
+
   Future<List<ChzzkChannel>> searchChannels(
     String keyword, {
     int offset = 0,
     int size = 30,
     CancelToken? cancel,
   }) async {
-    final query = keyword.trim();
-    if (query.isEmpty || query.length > 100 || offset < 0 || offset > 1000000 || size < 1 || size > 30) {
+    final query = searchKeyword(keyword);
+    if (query.isEmpty || offset < 0 || offset > 1000000 || size < 1 || size > 30) {
       throw const ChzzkException(ChzzkFailure.schema);
     }
     final content = _object(
