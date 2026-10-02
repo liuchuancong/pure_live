@@ -284,3 +284,15 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | 11-6 | 下播详情用自己最后一场的缩略图当封面 | 未做 |
 | 11-9 | 私密频道按 private 限制展示 | 未做：限制模型 |
 | `863bbf99c` 等 | Picarto 弹幕本体 | 未做：新功能批次 |
+
+## niconico（本轮仅评估）
+
+上游 11 个提交里，站点侧是两类大改动，不适合零散摘取：
+
+- 17-1 / 17-2：**房间即主播**（`user/<id>`、`ch<n>`，官方节目保持 lv；
+  列表与搜索按 `providerType` 映射，链接还要认 http、`sp.live.nicovideo.jp`
+  与 `nico.ms`）。这是身份模型改动，牵动本仓的房间身份、关注与历史。
+- `bc9e8dd89` / `67dba6d24` / `6c5ded04c`：NDGR 评论引擎与公告/礼物，
+  本仓 niconico 的弹幕是 v3 的评论实现，要换就得整套接。
+
+因此 niconico 留待"身份模型"或"弹幕新功能"批次，与 youtube 的频道模型一起做。
