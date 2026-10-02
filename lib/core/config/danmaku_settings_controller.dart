@@ -28,6 +28,14 @@ class DanmakuSettingsController extends GetxController {
   static const bool defaultPipDanmakuAutoFps = true;
   static const bool defaultNoEmojiMode = false;
   static const bool defaultPipDanmakuNoEmojiMode = false;
+
+  /// 小窗弹幕比例的取值区间：只做缩小，1.0 表示与主弹幕同样大小。
+  ///
+  /// 小窗比房间画面小，弹幕不该比主画面更大；滑块、恢复备份的钳制和小窗渲染策略
+  /// 共用这两个常量，避免三处各写一份范围而漂移。
+  static const double pipDanmakuScaleMin = 0.4;
+  static const double pipDanmakuScaleMax = 1.0;
+  static const double defaultPipDanmakuScaleValue = 0.4;
   // Completeness is the safe default: `dms` and `if` are optional decoration
   // markers rather than a protocol-level visibility contract. Users can still
   // opt into the heuristic when they prefer a quieter room feed.
@@ -91,7 +99,7 @@ class DanmakuSettingsController extends GetxController {
   /// The old per-pip config cohort (font size, speed, opacity, ...) was
   /// folded into the main danmaku settings; these Hive keys are legacy.
   final RxBool pipDanmakuScaleAuto = hiveBool('pipDanmakuAutoScale', true);
-  final RxDouble pipDanmakuScaleValue = hiveDouble('pipDanmakuScaleValue', 0.4);
+  final RxDouble pipDanmakuScaleValue = hiveDouble('pipDanmakuScaleValue', defaultPipDanmakuScaleValue);
 
   // Douyu sometimes emits legitimate room-local chat packets without either
   // decoration/fan marker. Preserve them unless the user explicitly enables
@@ -235,7 +243,11 @@ class DanmakuSettingsController extends GetxController {
       'savedDanmakuTemplate': typed<String>(json['savedDanmakuTemplate']?.toString() ?? ''),
       'pipDanmakuAutoScale': typed<bool>(json['pipDanmakuAutoScale'] ?? true),
       'pipDanmakuScaleValue': typed<double>(
-        (json['pipDanmakuScaleValue'] ?? 1.0).toDouble().clamp(0.5, 3.0).toDouble(),
+        // 只做缩小：>1 会让小窗弹幕比主弹幕还大，与设置意图相反。
+        (json['pipDanmakuScaleValue'] ?? defaultPipDanmakuScaleValue)
+            .toDouble()
+            .clamp(pipDanmakuScaleMin, pipDanmakuScaleMax)
+            .toDouble(),
       ),
       'filterDouyuSuspectedAutomatedMessages': typed<bool>(
         json['filterDouyuSuspectedAutomatedMessages'] ?? defaultFilterDouyuSuspectedAutomatedMessages,

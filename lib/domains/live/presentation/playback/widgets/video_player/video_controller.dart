@@ -421,10 +421,13 @@ class VideoController with ChangeNotifier implements DanmakuSettingsSource {
   final danmakuLetterSpacing = 0.0.obs;
   @override
   final danmakuOpacity = 1.0.obs;
+  // 小窗弹幕比例不属于播放器会话：紧凑弹幕层直接读设置单例，这里若再持有一份影子
+  // 字段，设置页的写入既不落盘也不影响小窗（改成 0.5 完全无效）。直接委托单例，
+  // 写入即持久化，渲染端读到同一份值。
   @override
-  final pipDanmakuScaleAuto = true.obs;
+  RxBool get pipDanmakuScaleAuto => SettingsService.to.danmaku.pipDanmakuScaleAuto;
   @override
-  final pipDanmakuScaleValue = 1.0.obs;
+  RxDouble get pipDanmakuScaleValue => SettingsService.to.danmaku.pipDanmakuScaleValue;
   @override
   final danmakuMaxVisibleCount = 48.obs;
   @override

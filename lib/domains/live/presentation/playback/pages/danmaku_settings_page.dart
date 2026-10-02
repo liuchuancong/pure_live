@@ -1,4 +1,5 @@
 import 'package:pure_live/core/index.dart';
+import 'package:pure_live/core/config/danmaku_settings_controller.dart';
 import 'package:pure_live/core/consts/app_consts.dart';
 import 'package:syncfusion_flutter_sliders/sliders.dart';
 import 'package:pure_live/core/widgets/count_button.dart';
@@ -127,10 +128,11 @@ class _DanmakuSettingsContentState extends State<DanmakuSettingsContent> {
                     ),
                     label: Text(i18n(preset.labelKey)),
                     onSelected: (_) => _applyPreset(preset),
-                  ),            Padding(
-              padding: const EdgeInsets.only(top: 6, left: 4),
-              child: Text(i18n('danmaku_preset_hint'), style: theme.textTheme.bodySmall),
-            ),
+                  ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 6, left: 4),
+                  child: Text(i18n('danmaku_preset_hint'), style: theme.textTheme.bodySmall),
+                ),
 
                 OutlinedButton.icon(
                   onPressed: _saveTemplate,
@@ -377,8 +379,9 @@ class _DanmakuSettingsContentState extends State<DanmakuSettingsContent> {
                   theme,
                   title: i18n("pip_danmaku_scale"),
                   value: controller.pipDanmakuScaleValue.value,
-                  min: 0.5,
-                  max: 3.0,
+                  // 只做缩小：小窗弹幕不应比主画面弹幕更大。
+                  min: DanmakuSettingsController.pipDanmakuScaleMin,
+                  max: DanmakuSettingsController.pipDanmakuScaleMax,
                   display: 'x${controller.pipDanmakuScaleValue.value.toStringAsFixed(2)}',
                   semanticValueBuilder: (value) => 'x${value.toStringAsFixed(2)}',
                   onChanged: (v) => controller.pipDanmakuScaleValue.value = v,

@@ -1,5 +1,7 @@
 import 'dart:math' as math;
 
+import 'package:pure_live/core/config/danmaku_settings_controller.dart';
+
 /// Geometry shared by the live compact danmaku renderer and its settings
 /// preview.
 ///
@@ -27,13 +29,18 @@ final class CompactDanmakuMetrics {
     double fixedScale = 1.0,
   }) {
     final safeWidth = width.isFinite && width > 0 ? width : referenceWidth;
-    // Auto tracks the window in BOTH directions: shrinking eases off at
-    // 0.65 so a tiny window stays readable, and growing keeps scaling up.
+    // The compact window is smaller than the room, so compact danmaku only ever
+    // shrinks: the width-derived factor is capped at 1.0, because a window wider
+    // than the reference used to scale text *past* the main configuration and
+    // made the small window's danmaku bigger than the room's.
+    //
     // A host may instead pin the scale (the "compact danmaku scale" setting);
-    // the fixed factor then rides on top of the width-derived auto value so
-    // the user's number stays meaningful across window sizes.
-    final autoScaleFactor = autoScale ? (safeWidth / referenceWidth).clamp(0.65, 2.0).toDouble() : 1.0;
-    final scale = (autoScaleFactor * fixedScale).clamp(0.5, 4.0).toDouble();
+    // the fixed factor then rides on top of the width-derived auto value so the
+    // user's number stays meaningful across window sizes.
+    final autoScaleFactor = autoScale ? (safeWidth / referenceWidth).clamp(0.65, 1.0).toDouble() : 1.0;
+    final scale = (autoScaleFactor * fixedScale)
+        .clamp(DanmakuSettingsController.pipDanmakuScaleMin, DanmakuSettingsController.pipDanmakuScaleMax)
+        .toDouble();
     final fontSize = configuredFontSize * scale;
 
     // flame_barrage allocates tracks with at least fontSize + 10, but paints
