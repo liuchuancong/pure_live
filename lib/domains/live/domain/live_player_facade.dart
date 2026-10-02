@@ -64,6 +64,16 @@ final class LivePlayerFacade {
   List<String> _lastLines = const [];
   LiveRoom? _room;
 
+  /// 源提交代次，每次发布递增。
+  ///
+  /// 两个消费者（`PlayerController.applySourceCommit` 与 `VideoController`
+  /// 的 `_handleSourceCommit`）都用 `commit.revision <= 已应用代次` 丢弃过期提交。
+  /// 这个代次必须由这里发：默认值恒为 0 时，守卫 `0 <= 0` 会**整批丢掉**每一次提交，
+  /// 房间首次加载看不出来（它走显式的 `updatePlayer`），但切换清晰度/线路时
+  /// `_applyOpenReceipt` 会把提交当成过期回执而抛 `_StreamSelectionCancelled`——
+  /// 切换过程照跑、状态永不回写、界面停在旧选项。
+  int _commitRevision = 0;
+
   LiveRoom? get room => _room;
   PlayerHandle? get handle => _controller.handle;
 
@@ -200,6 +210,7 @@ final class LivePlayerFacade {
     // order, selected line first) would report line 1 for every commit.
     final lineIndex = uiLines.isEmpty ? 0 : uiLines.indexOf(url).clamp(0, uiLines.length - 1);
     commit = FacadeStreamCommit(
+      revision: ++_commitRevision,
       room: _room ?? LiveRoom(platform: '', roomId: ''),
       urls: List<String>.unmodifiable(uiLines),
       currentUrl: url,
