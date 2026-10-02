@@ -13,6 +13,7 @@ import 'package:media_core/media_core.dart';
 import 'package:pure_live/player/kernel/kernel_backend_ids.dart';
 import 'package:pure_live/player/core/portrait_stream_support.dart';
 import 'package:pure_live/player/media_core/player_kernel_service.dart';
+import 'package:pure_live/player/utils/fullscreen.dart' show fullscreenDriver;
 import 'package:pure_live/player/utils/windows_pip_driver.dart';
 
 ///
@@ -26,6 +27,14 @@ final class LivePlayerFacade {
     _interceptSources = interceptSources;
     _controller = LivePlaybackController(kernel, onEngineFallbackSources: onEngineFallbackSources);
     _bindController();
+    // The fullscreen driver is the single source of truth for the fullscreen
+    // presentation; the Rx mirror only makes it observable to GetX widgets.
+    fullscreenDriver.onFullscreenChanged.listen((_) => _syncSystemFullscreenFromDriver());
+    _syncSystemFullscreenFromDriver();
+  }
+
+  void _syncSystemFullscreenFromDriver() {
+    isSystemFullscreen.value = fullscreenDriver.isSystemFullscreen;
   }
 
   Future<List<PlayerSource>> Function(List<PlayerSource> sources)? _interceptSources;
@@ -329,6 +338,20 @@ final class LivePlayerFacade {
   final RxBool isPipPreparing = false.obs;
   final RxInt videoPresentationRevision = 0.obs;
   StreamSubscription<bool>? _pipStateSub;
+
+  /// System fullscreen — immersive + orientation lock on mobile, window
+  /// fullscreen on desktop. Mirrored from the fullscreen driver, which every
+  /// presentation transition routes through; the mirror replaces the deleted
+  /// GlobalPlayerState hand-synced flags. Manual writes stay meaningful as
+  /// timing aids (the title-bar shell must hide before the native
+  /// transition), and the next driver event re-states the truth.
+  final RxBool isSystemFullscreen = false.obs;
+
+  /// Widescreen room layout. Pure UI state — the presentation drivers have no
+  /// notion of it, so unlike [isSystemFullscreen] this is never mirrored.
+  final RxBool isWindowFullscreen = false.obs;
+
+  bool get fullscreenUI => isSystemFullscreen.value || isWindowFullscreen.value;
 
   late final FloatingPlayback floating;
 

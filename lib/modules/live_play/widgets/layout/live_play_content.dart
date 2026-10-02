@@ -7,7 +7,6 @@ import 'package:pure_live/common/index.dart';
 import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/modules/live_play/states/ui_state.dart';
 import 'package:pure_live/player/core/portrait_stream_support.dart';
-import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 import 'package:pure_live/modules/live_play/widgets/danmaku/danmaku_tab.dart';
 import 'package:pure_live/modules/live_play/widgets/layout/live_play_video.dart';
 import 'package:pure_live/modules/live_play/widgets/layout/live_play_header.dart';
@@ -593,8 +592,8 @@ class LivePlayContent extends StatelessWidget {
       if (!state.room.success || controller.site == Sites.iptvSite) {
         return const SizedBox.shrink();
       }
-      final globalState = GlobalPlayerState.to;
-      if (globalState.isFullscreen.value || globalState.isWindowFullscreen.value) {
+      final player = GlobalPlayerService.instance.player;
+      if (player.isSystemFullscreen.value || player.isWindowFullscreen.value) {
         return const SizedBox.shrink();
       }
       return const DanmakuTabView();

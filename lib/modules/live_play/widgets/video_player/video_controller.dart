@@ -20,7 +20,6 @@ import 'package:pure_live/modules/live_play/states/ui_state.dart';
 import 'package:pure_live/modules/live_play/states/load_type.dart';
 import 'package:pure_live/player/core/portrait_stream_support.dart';
 import 'package:pure_live/core/iptv/local/database.dart' as database;
-import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/danmaku/danmaku_message_actions.dart';
 import 'package:pure_live/modules/live_play/widgets/danmaku/danmaku_settings_binding.dart';
@@ -517,7 +516,10 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
 
     if (reuseCurrentSession) {
       if (_playerManager.currentPlayer == null || _playerManager.currentFloatRoom != room) {
-        throw PlayerException(code: PlayerErrorCode.invalidState, message: 'Retained room session is no longer available');
+        throw PlayerException(
+          code: PlayerErrorCode.invalidState,
+          message: 'Retained room session is no longer available',
+        );
       }
       audioOnlyState.value = _playerManager.desiredAudioOnlyMode;
     } else {
@@ -640,7 +642,7 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
   void _enterFullscreenMode() {
     _livePlayController.setFullScreen();
     enterFullScreen();
-    GlobalPlayerState.to.isFullscreen.value = true;
+    GlobalPlayerService.instance.player.isSystemFullscreen.value = true;
     enableController();
   }
 
@@ -1318,7 +1320,7 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
       restorePortrait: WindowService().verticalScreen,
       releaseOrientation: WindowService().followSystemOrientation,
     );
-    GlobalPlayerState.to.isFullscreen.value = false;
+    GlobalPlayerService.instance.player.isSystemFullscreen.value = false;
   }
 
   bool _fullscreenTransitioning = false;
@@ -1335,10 +1337,10 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
       enableController();
     });
 
-    GlobalPlayerState.to.isWindowFullscreen.value = false;
+    GlobalPlayerService.instance.player.isWindowFullscreen.value = false;
 
     try {
-      if (GlobalPlayerState.to.isFullscreen.value) {
+      if (GlobalPlayerService.instance.player.isSystemFullscreen.value) {
         _livePlayController.setNormalScreen();
         await exitFullScreen();
       } else {
@@ -1360,7 +1362,7 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
       return exitPortraitFullScreen();
     }
     final settings = _settingsService.player;
-    if (!GlobalPlayerState.to.isFullscreen.value &&
+    if (!GlobalPlayerService.instance.player.isSystemFullscreen.value &&
         _livePlayController.state.value.ui.screenMode == VideoMode.normal &&
         canEnterPortraitPanelFullscreen(
           isPortraitSource: _playerManager.isVerticalVideo.value,
@@ -1378,7 +1380,7 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
     final isMobile = Platform.isAndroid || Platform.isIOS;
     _fullscreenOrientationRestore.begin(restorePortraitOnExit: isMobile && forceLandscape);
     await WindowService().doEnterFullScreen();
-    GlobalPlayerState.to.isFullscreen.value = true;
+    GlobalPlayerService.instance.player.isSystemFullscreen.value = true;
 
     // Desktop full screen is already handled by window_manager above. Calling
     // landScape there issued a second setFullScreen(true) while the first
@@ -1403,7 +1405,7 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
     _fullscreenTransitioning = true;
     showLocked.value = false;
     stopHideController();
-    GlobalPlayerState.to.isWindowFullscreen.value = false;
+    GlobalPlayerService.instance.player.isWindowFullscreen.value = false;
     try {
       _livePlayController.setFullScreen();
       await enterFullScreen(forceLandscape: true);
@@ -1421,7 +1423,7 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
     final settings = _settingsService.player;
     if (_fullscreenTransitioning ||
         _livePlayController.state.value.ui.screenMode != VideoMode.normal ||
-        GlobalPlayerState.to.isFullscreen.value ||
+        GlobalPlayerService.instance.player.isSystemFullscreen.value ||
         !canEnterPortraitPanelFullscreen(
           isPortraitSource: _playerManager.isVerticalVideo.value,
           adaptationEnabled: settings.enablePortraitStreamAdaptation.v,
@@ -1434,7 +1436,7 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
     _fullscreenTransitioning = true;
     showLocked.value = false;
     stopHideController();
-    GlobalPlayerState.to.isWindowFullscreen.value = false;
+    GlobalPlayerService.instance.player.isWindowFullscreen.value = false;
     try {
       _livePlayController.setPortraitFullScreen();
       await WindowService().doEnterFullScreen();
@@ -1450,7 +1452,7 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
         await exitFullScreen();
         return;
       }
-      GlobalPlayerState.to.isFullscreen.value = true;
+      GlobalPlayerService.instance.player.isSystemFullscreen.value = true;
       await WindowService().verticalScreen();
       enableController();
     } finally {
@@ -1473,7 +1475,11 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
   }
 
   Future<void> applyFullscreenOrientationPolicy() async {
-    if (_isDisposed || !GlobalPlayerState.to.isFullscreen.value || !(Platform.isAndroid || Platform.isIOS)) return;
+    if (_isDisposed ||
+        !GlobalPlayerService.instance.player.isSystemFullscreen.value ||
+        !(Platform.isAndroid || Platform.isIOS)) {
+      return;
+    }
     if (_livePlayController.state.value.ui.screenMode == VideoMode.portraitFullscreen) {
       if (!_playerManager.isVerticalVideo.value) {
         await exitPortraitFullScreen();
@@ -1506,14 +1512,14 @@ class VideoController with ChangeNotifier implements DanmakuSettingsBinding {
       enableController();
     });
 
-    if (GlobalPlayerState.to.isWindowFullscreen.value) {
+    if (GlobalPlayerService.instance.player.isWindowFullscreen.value) {
       _livePlayController.setNormalScreen();
-      GlobalPlayerState.to.isWindowFullscreen.value = false;
+      GlobalPlayerService.instance.player.isWindowFullscreen.value = false;
     } else {
       _livePlayController.setWidescreen();
-      GlobalPlayerState.to.isWindowFullscreen.value = true;
+      GlobalPlayerService.instance.player.isWindowFullscreen.value = true;
     }
-    GlobalPlayerState.to.isFullscreen.value = false;
+    GlobalPlayerService.instance.player.isSystemFullscreen.value = false;
     enableController();
   }
 

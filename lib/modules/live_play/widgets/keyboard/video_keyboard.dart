@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/services.dart';
 import 'package:pure_live/common/index.dart';
-import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller.dart';
 
 class VideoKeyboardShortcuts extends StatelessWidget {
@@ -18,13 +17,13 @@ class VideoKeyboardShortcuts extends StatelessWidget {
     if (ModalRoute.of(context)?.isCurrent == false) return;
 
     switch (resolveEscapePresentationAction(
-      pip: GlobalPlayerState.to.isPipMode.value,
+      pip: GlobalPlayerService.instance.player.isInPip.value,
       // A room which failed before creating its VideoController can still
       // inherit a stale global presentation flag.  It has no controller with
       // which to exit that presentation, so Escape must retain its route-pop
       // contract instead of becoming a dead key.
-      fullscreen: controller != null && GlobalPlayerState.to.isFullscreen.value,
-      widescreen: controller != null && GlobalPlayerState.to.isWindowFullscreen.value,
+      fullscreen: controller != null && GlobalPlayerService.instance.player.isSystemFullscreen.value,
+      widescreen: controller != null && GlobalPlayerService.instance.player.isWindowFullscreen.value,
     )) {
       case EscapePresentationAction.exitFullscreen:
         controller!.toggleFullScreen();

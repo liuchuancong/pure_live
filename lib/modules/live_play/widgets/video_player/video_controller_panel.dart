@@ -14,7 +14,6 @@ import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/modules/live_play/states/load_type.dart';
 import 'package:pure_live/modules/live_play/states/ui_state.dart';
 import 'package:pure_live/modules/live_play/dialogs/play_other.dart';
-import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 import 'package:pure_live/modules/live_play/pages/danmaku_settings_page.dart';
 import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/content_first_panel_layout.dart';
@@ -260,7 +259,7 @@ class _VideoControllerPanelState extends State<VideoControllerPanel> {
                   },
                   onDoubleTap: () {
                     if (!controller.showLocked.value) {
-                      GlobalPlayerState.to.isWindowFullscreen.value
+                      GlobalPlayerService.instance.player.isWindowFullscreen.value
                           ? controller.toggleWindowFullScreen()
                           : controller.toggleFullScreenFromGesture();
                     }
@@ -344,7 +343,7 @@ class TopActionBar extends StatelessWidget {
             child: Row(
               children: [
                 for (final slot in resolveTopActionLeadingSlots(
-                  fullscreen: GlobalPlayerState.to.fullscreenUI,
+                  fullscreen: GlobalPlayerService.instance.player.fullscreenUI,
                   android: PlatformUtils.isAndroid,
                 ))
                   switch (slot) {
@@ -400,7 +399,7 @@ class TopActionBar extends StatelessWidget {
                     onPressed: () => _showSchedule(context),
                   ),
                 for (final slot in resolveTopActionTrailingSlots(
-                  fullscreen: GlobalPlayerState.to.fullscreenUI,
+                  fullscreen: GlobalPlayerService.instance.player.fullscreenUI,
                   android: PlatformUtils.isAndroid,
                   windows: PlatformUtils.isWindows,
                 ))
@@ -436,7 +435,7 @@ class TopActionBar extends StatelessWidget {
                       controller: controller,
                     ),
                     TopActionTrailingSlot.pip => PIPButton(
-                      key: GlobalPlayerState.to.fullscreenUI
+                      key: GlobalPlayerService.instance.player.fullscreenUI
                           ? const ValueKey('fullscreen-pip-shortcut')
                           : const ValueKey('playback-action-pip'),
                       controller: controller,
@@ -566,7 +565,7 @@ class BackButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return IconButton(
       tooltip: i18n('exit_fullscreen'),
-      onPressed: () => GlobalPlayerState.to.isWindowFullscreen.value
+      onPressed: () => GlobalPlayerService.instance.player.isWindowFullscreen.value
           ? controller.toggleWindowFullScreen()
           : controller.toggleFullScreen(),
       constraints: const BoxConstraints(minWidth: kMinInteractiveDimension, minHeight: kMinInteractiveDimension),
@@ -1035,7 +1034,7 @@ class LockButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Obx(
       () => AnimatedOpacity(
-        opacity: (GlobalPlayerState.to.fullscreenUI && controller.showController.value) ? 0.9 : 0.0,
+        opacity: (GlobalPlayerService.instance.player.fullscreenUI && controller.showController.value) ? 0.9 : 0.0,
         duration: const Duration(milliseconds: 300),
         child: Align(
           alignment: Alignment.centerRight,
@@ -1452,7 +1451,7 @@ class BottomActionBar extends StatelessWidget {
               ),
               child: LayoutBuilder(
                 builder: (context, constraints) {
-                  final fullscreen = GlobalPlayerState.to.fullscreenUI;
+                  final fullscreen = GlobalPlayerService.instance.player.fullscreenUI;
                   if (portraitFullscreen) {
                     return _buildPortraitFullscreenLayout();
                   }
@@ -1486,7 +1485,7 @@ class BottomActionBar extends StatelessWidget {
                   // The inline bar scrolls when a phone is too narrow for
                   // every action. Fullscreen stays pinned outside the scroll
                   // view: as the last item it used to be clipped off-screen.
-                  final pinExpand = !GlobalPlayerState.to.isWindowFullscreen.value;
+                  final pinExpand = !GlobalPlayerService.instance.player.isWindowFullscreen.value;
                   final inlineRight = _buildRightActions(compact: false, includeExpand: !pinExpand);
                   return Row(
                     children: [
@@ -1554,7 +1553,7 @@ class BottomActionBar extends StatelessWidget {
                 const Spacer(),
                 if (PlatformUtils.isMobile) PortraitFullscreenDisplayModeButton(controller: controller),
                 if (PlatformUtils.isMobile) PortraitOrientationButton(controller: controller),
-                if (!GlobalPlayerState.to.isWindowFullscreen.value) ExpandButton(controller: controller),
+                if (!GlobalPlayerService.instance.player.isWindowFullscreen.value) ExpandButton(controller: controller),
               ],
             ),
           ),
@@ -1580,12 +1579,14 @@ class BottomActionBar extends StatelessWidget {
 
   Widget _buildRightActions({required bool compact, bool includeExpand = true}) {
     final portraitPinned =
-        GlobalPlayerState.to.isFullscreen.value && GlobalPlayerService.instance.player.isVerticalVideo.value;
+        GlobalPlayerService.instance.player.isSystemFullscreen.value &&
+        GlobalPlayerService.instance.player.isVerticalVideo.value;
 
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (GlobalPlayerState.to.isWindowFullscreen.value || GlobalPlayerState.to.isFullscreen.value) ...[
+        if (GlobalPlayerService.instance.player.isWindowFullscreen.value ||
+            GlobalPlayerService.instance.player.isSystemFullscreen.value) ...[
           FullscreenStreamSelectorButton(controller: controller),
         ],
         // These two belong to the PORTRAIT fullscreen bar. Rendering them in
@@ -1595,9 +1596,12 @@ class BottomActionBar extends StatelessWidget {
         if (PlatformUtils.isMobile && portraitPinned) PortraitOrientationButton(controller: controller),
         if (!compact) VideoFitSetting(controller: controller),
         if (Platform.isWindows) OverlayVolumeControl(controller: controller),
-        if (Platform.isWindows && controller.supportWindowFull && !GlobalPlayerState.to.isFullscreen.value)
+        if (Platform.isWindows &&
+            controller.supportWindowFull &&
+            !GlobalPlayerService.instance.player.isSystemFullscreen.value)
           ExpandWindowButton(controller: controller),
-        if (includeExpand && !GlobalPlayerState.to.isWindowFullscreen.value) ExpandButton(controller: controller),
+        if (includeExpand && !GlobalPlayerService.instance.player.isWindowFullscreen.value)
+          ExpandButton(controller: controller),
       ],
     );
   }
@@ -1913,7 +1917,7 @@ class ExpandWindowButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final expanded = GlobalPlayerState.to.isWindowFullscreen.value;
+      final expanded = GlobalPlayerService.instance.player.isWindowFullscreen.value;
       return IconButton(
         key: const ValueKey('player-window-expand-action'),
         tooltip: i18n(playerWindowActionLabelKey(expanded)),
@@ -1937,7 +1941,7 @@ class ExpandButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final expanded = GlobalPlayerState.to.isFullscreen.value;
+      final expanded = GlobalPlayerService.instance.player.isSystemFullscreen.value;
       return IconButton(
         key: const ValueKey('player-fullscreen-action'),
         tooltip: i18n(fullscreenActionLabelKey(expanded)),

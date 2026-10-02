@@ -10,7 +10,6 @@ import 'package:pure_live/recorder/consts/recorder_config.dart';
 import 'package:pure_live/recorder/consts/recorder_keys.dart';
 import 'package:pure_live/routes/route_observer_controller.dart';
 import 'package:pure_live/recorder/services/stream_resolver_service.dart';
-import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 import 'package:pure_live/recorder/pages/recorder/recorder_controller.dart';
 import 'package:pure_live/core/iptv/services/channel_detail_controller.dart';
 import 'package:pure_live/recorder/pages/record_settings/record_settings_controller.dart';
@@ -38,7 +37,6 @@ class InitialServices {
     Get.lazyPut(() => ChannelDetailController(), fenix: true);
     Get.lazyPut(() => PopularController(), fenix: true);
     Get.lazyPut(() => AreasController(), fenix: true);
-    Get.lazyPut(() => GlobalPlayerState(), fenix: true);
 
     // LivePlayController exposes recording actions in the room app bar.  It
     // can therefore be opened before the delayed heavy-service warm-up runs

@@ -4,7 +4,6 @@ import 'package:pure_live/modules/live_play/widgets/keyboard/video_keyboard.dart
 import 'package:pure_live/modules/live_play/widgets/layout/live_play_back_scope.dart';
 import 'package:pure_live/modules/live_play/widgets/layout/live_play_content.dart';
 import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
-import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 import 'package:pure_live/modules/live_play/states/ui_state.dart';
 
 class LivePlayPage extends GetView<LivePlayController> {
@@ -19,10 +18,9 @@ class LivePlayPage extends GetView<LivePlayController> {
       final state = controller.state.value;
       final mode = state.ui.screenMode;
       final videoController = state.player.videoController;
-      final globalState = GlobalPlayerState.to;
+      final player = GlobalPlayerService.instance.player;
       final presentationActive =
-          !isInPip &&
-          (mode != VideoMode.normal || globalState.isFullscreen.value || globalState.isWindowFullscreen.value);
+          !isInPip && (mode != VideoMode.normal || player.isSystemFullscreen.value || player.isWindowFullscreen.value);
 
       final child = LivePlayContent(controller: controller, isInPip: isInPip, mode: mode);
 

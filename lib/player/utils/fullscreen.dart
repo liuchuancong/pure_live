@@ -109,6 +109,12 @@ class WindowService {
   Future<void> doEnterFullScreen() async {
     if (Platform.isAndroid || Platform.isIOS) {
       await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+      // The driver's mobile branch is pure state tracking (the platform call
+      // above is the whole presentation). Routing the mode through the driver
+      // keeps every fullscreen consumer on one source of truth, exactly like
+      // the desktop branch.
+      await fullscreenDriver.initialize();
+      await fullscreenDriver.apply(PlayerId('pure-live'), PresentationRequest.fullscreen());
     } else {
       await doEnterWindowFullScreen();
     }
@@ -126,6 +132,8 @@ class WindowService {
           const SystemUiOverlayStyle(statusBarIconBrightness: Brightness.dark, statusBarBrightness: Brightness.light),
         );
         await SystemChrome.setPreferredOrientations(const <DeviceOrientation>[]);
+        await fullscreenDriver.initialize();
+        await fullscreenDriver.apply(PlayerId('pure-live'), PresentationRequest.normal());
       } else if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
         await doExitWindowFullScreen();
       }

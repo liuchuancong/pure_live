@@ -17,7 +17,6 @@ import 'package:pure_live/plugins/share_command_handler.dart';
 import 'package:pure_live/routes/route_observer_controller.dart';
 import 'package:pure_live/common/utils/share_command_handler.dart';
 import 'package:pure_live/common/widgets/share_command_import_dialog.dart';
-import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 import 'package:pure_live/common/services/settings/window_size_controller.dart';
 
 class DesktopTrayMenuCoordinator {
@@ -127,8 +126,8 @@ class DesktopManager {
       initialEntries: [
         OverlayEntry(
           builder: (_) => Obx(() {
-            final fullscreen = GlobalPlayerState.to.isFullscreen.value;
-            final pipMode = GlobalPlayerState.to.isPipMode.value;
+            final fullscreen = GlobalPlayerService.instance.player.isSystemFullscreen.value;
+            final pipMode = GlobalPlayerService.instance.player.isInPip.value;
             return Column(
               children: [
                 if (!fullscreen && !pipMode) const CustomTitleBar(),
@@ -285,7 +284,7 @@ class CustomTitleBar extends StatelessWidget {
           );
 
     return Obx(() {
-      final isFullscreen = GlobalPlayerState.to.isWindowFullscreen.value;
+      final isFullscreen = GlobalPlayerService.instance.player.isWindowFullscreen.value;
       final bgColor = isFullscreen || isDark ? Colors.black : theme.scaffoldBackgroundColor;
       final iconColor = isFullscreen || isDark ? Colors.white.withValues(alpha: 0.75) : Colors.black;
       final currentRoute = RouteObserverController.to.currentRoute.value;

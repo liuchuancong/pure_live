@@ -12,7 +12,6 @@ import 'package:pure_live/common/global/platform_utils.dart';
 import 'package:pure_live/modules/multiview/multiview_controller.dart';
 import 'package:pure_live/player/media_core/player_kernel_service.dart';
 import 'package:pure_live/modules/multiview/models/multiview_models.dart';
-import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 import 'package:pure_live/player/widgets/video_output_viewport_sizer.dart';
 import 'package:pure_live/modules/live_play/pages/danmaku_settings_page.dart';
 import 'package:pure_live/modules/multiview/widgets/focus_rail_visibility.dart';
@@ -123,7 +122,7 @@ class _MultiviewPageState extends State<MultiviewPage> {
     if (_displayMode == _DisplayMode.fullscreen) {
       // 页面在全屏态被系统直接销毁时，必须复位桌面壳标题栏标志，
       // 否则整个应用壳的自绘标题栏永久消失。
-      GlobalPlayerState.to.isFullscreen.value = false;
+      GlobalPlayerService.instance.player.isSystemFullscreen.value = false;
       unawaited(_restoreSystemFullscreen());
     }
     super.dispose();
@@ -187,7 +186,7 @@ class _MultiviewPageState extends State<MultiviewPage> {
       if (enterSystemFullscreen) {
         // 桌面壳自绘标题栏由该全局标志控制显隐（DesktopManager.buildWithTitleBar），
         // multiview 全屏必须与 live_play 同步置位，否则标题栏残留。
-        GlobalPlayerState.to.isFullscreen.value = true;
+        GlobalPlayerService.instance.player.isSystemFullscreen.value = true;
         await WindowService().doEnterFullScreen();
         // 手机端进入全屏自动横屏（与普通模式播放的全屏一致）；
         // 退出时 doExitFullScreen 统一解锁方向，无需在此处理。
@@ -195,7 +194,7 @@ class _MultiviewPageState extends State<MultiviewPage> {
           await WindowService().landScape();
         }
       } else {
-        GlobalPlayerState.to.isFullscreen.value = false;
+        GlobalPlayerService.instance.player.isSystemFullscreen.value = false;
         await _restoreSystemFullscreen();
       }
     } catch (error, stackTrace) {

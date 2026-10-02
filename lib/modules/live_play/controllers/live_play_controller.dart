@@ -16,7 +16,6 @@ import 'package:pure_live/core/common/hls_source_query_policy.dart';
 import 'package:pure_live/modules/live_play/states/room_state.dart';
 import 'package:pure_live/modules/live_play/states/player_state.dart';
 import 'package:pure_live/modules/live_play/states/live_play_state.dart';
-import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 import 'package:pure_live/recorder/pages/recorder/recorder_controller.dart';
 import 'package:pure_live/modules/live_play/controllers/timer_controller.dart';
 import 'package:pure_live/modules/live_play/services/room_external_opener.dart';
@@ -409,26 +408,26 @@ class LivePlayController extends GetxController
     if (_handlingSystemBackPresentation || isClosed || _ownerClosed) return;
     _handlingSystemBackPresentation = true;
 
-    final globalState = GlobalPlayerState.to;
+    final player = GlobalPlayerService.instance.player;
     final mode = state.value.ui.screenMode;
-    final wasFullscreen = globalState.isFullscreen.value || requiresSystemFullscreenExit(mode);
+    final wasFullscreen = player.isSystemFullscreen.value || requiresSystemFullscreenExit(mode);
     try {
       setNormalScreen();
-      globalState.isWindowFullscreen.value = false;
+      player.isWindowFullscreen.value = false;
 
       if (wasFullscreen) {
         final videoController = state.value.player.videoController;
         if (videoController != null) {
           await videoController.exitFullScreen();
         } else {
-          globalState.isFullscreen.value = false;
+          player.isSystemFullscreen.value = false;
         }
       } else {
-        globalState.isFullscreen.value = false;
+        player.isSystemFullscreen.value = false;
       }
     } finally {
-      globalState.isFullscreen.value = false;
-      globalState.isWindowFullscreen.value = false;
+      player.isSystemFullscreen.value = false;
+      player.isWindowFullscreen.value = false;
       _handlingSystemBackPresentation = false;
     }
   }
@@ -786,8 +785,8 @@ class LivePlayController extends GetxController
     clearSuperChats();
     updateRoom(success: false, isLiving: false);
     setNormalScreen();
-    GlobalPlayerState.to.isFullscreen.value = false;
-    GlobalPlayerState.to.isWindowFullscreen.value = false;
+    GlobalPlayerService.instance.player.isSystemFullscreen.value = false;
+    GlobalPlayerService.instance.player.isWindowFullscreen.value = false;
     if (liveRoom.platform != Sites.iptvSite) {
       await _updateFavoriteRoomSnapshot(liveRoom);
     }
@@ -830,8 +829,8 @@ class LivePlayController extends GetxController
     if (Get.currentRoute == '/live_play') {
       ToastUtil.show(i18n('get_room_info_failed_retry'));
       setNormalScreen();
-      GlobalPlayerState.to.isFullscreen.value = false;
-      GlobalPlayerState.to.isWindowFullscreen.value = false;
+      GlobalPlayerService.instance.player.isSystemFullscreen.value = false;
+      GlobalPlayerService.instance.player.isWindowFullscreen.value = false;
     }
   }
 

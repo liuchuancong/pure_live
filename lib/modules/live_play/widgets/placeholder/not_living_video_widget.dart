@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:pure_live/common/index.dart';
 import 'package:pure_live/modules/live_play/dialogs/play_other.dart';
-import 'package:pure_live/modules/live_play/controllers/player_state.dart';
 import 'package:pure_live/modules/live_play/controllers/live_play_controller.dart';
 import 'package:pure_live/modules/live_play/widgets/video_player/video_controller_panel.dart';
 
@@ -44,7 +43,7 @@ class NotLivingVideoWidget extends StatelessWidget {
       ),
       child: Row(
         children: [
-          if (GlobalPlayerState.to.fullscreenUI) _buildBackButton(),
+          if (GlobalPlayerService.instance.player.fullscreenUI) _buildBackButton(),
 
           Expanded(
             child: Padding(
@@ -59,7 +58,7 @@ class NotLivingVideoWidget extends StatelessWidget {
             ),
           ),
 
-          if (GlobalPlayerState.to.fullscreenUI) ...[
+          if (GlobalPlayerService.instance.player.fullscreenUI) ...[
             IconButton(
               icon: const Icon(Icons.swap_horiz_outlined),
               tooltip: i18n('switch_live_room'),
@@ -99,9 +98,9 @@ class NotLivingVideoWidget extends StatelessWidget {
   void _exitFullscreen() {
     controller.setNormalScreen();
 
-    GlobalPlayerState.to.isFullscreen.value = false;
+    GlobalPlayerService.instance.player.isSystemFullscreen.value = false;
 
-    GlobalPlayerState.to.isWindowFullscreen.value = false;
+    GlobalPlayerService.instance.player.isWindowFullscreen.value = false;
   }
 
   Widget _buildContent() {
