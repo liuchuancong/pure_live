@@ -4,7 +4,7 @@ import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 
-import 'package:pure_live/domains/recorder/data/services/ffmpeg_flv_input_relay.dart';
+import 'package:pure_live/core/stream/ffmpeg_flv_input_relay.dart';
 
 /// Rewrites legacy "codec id 12" HEVC FLV video tags into Enhanced FLV.
 ///

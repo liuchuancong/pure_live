@@ -18,7 +18,7 @@ import 'package:pure_live/domains/recorder/data/ffmpeg/ffmpeg_manager.dart';
 import 'package:windows_single_instance/windows_single_instance.dart';
 import 'package:pure_live/core/platform/mobile_manager.dart';
 import 'package:pure_live/core/platform/desktop_manager.dart';
-import 'package:pure_live/domains/recorder/data/services/recorder_proxy_routing.dart';
+import 'package:pure_live/core/stream/upstream_proxy_routing.dart';
 import 'package:pure_live/features/backup/backup_controller.dart';
 import 'package:pure_live/core/player/kernel/player_kernel_service.dart';
 import 'package:pure_live/core/platform/windows_multi_instance_launcher.dart';
@@ -87,7 +87,7 @@ class AppInitializer {
       final restored = await Get.find<BackupController>().recoverAndDelete(File(configFilePath));
       log('Windows multi-instance settings ${restored ? 'restored' : 'restore failed'}: $configFilePath');
     }
-    configureRecorderProxyRouting((_) {
+    configureUpstreamProxyRouting((_) {
       final proxy = SettingsService.to.proxy;
       return buildProxyDirective(
         enabled: proxy.enableAppProxy.v,

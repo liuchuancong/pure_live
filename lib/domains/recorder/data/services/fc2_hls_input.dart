@@ -4,7 +4,8 @@ import 'package:pure_live/domains/live/data/platforms/fc2live/fc2_control_sessio
 
 import 'ffmpeg_hls_input_relay.dart';
 import 'owned_record_input.dart';
-import 'recorder_proxy_routing.dart';
+
+import 'package:pure_live/core/stream/upstream_proxy_routing.dart';
 
 typedef Fc2RelayFactory = Future<FFmpegHlsInputRelay?> Function(
   Uri source, {
@@ -37,7 +38,7 @@ final class Fc2HlsInput implements OwnedRecordInput {
     String channelId, {
     required bool recording,
     Fc2Api? api,
-    String Function(Uri) findProxy = resolveRecorderProxyDirective,
+    String Function(Uri) findProxy = resolveUpstreamProxyDirective,
     CancelToken? cancel,
     Fc2SessionOpener openSession = Fc2ControlSession.open,
     Fc2RelayFactory? createRelay,

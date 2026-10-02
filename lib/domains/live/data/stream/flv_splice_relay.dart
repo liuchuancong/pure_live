@@ -5,7 +5,7 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
-import 'package:pure_live/domains/recorder/data/services/ffmpeg_flv_input_relay.dart' show FlvInputFramer;
+import 'package:pure_live/core/stream/ffmpeg_flv_input_relay.dart' show FlvInputFramer;
 
 /// A live FLV source whose URL stops working at a known time (Douyu's
 /// anonymous original quality: `expire=300`, the CDN closes the stream after

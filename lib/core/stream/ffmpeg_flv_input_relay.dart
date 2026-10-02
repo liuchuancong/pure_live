@@ -4,7 +4,7 @@ import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 
-import 'recorder_proxy_routing.dart';
+import 'package:pure_live/core/stream/upstream_proxy_routing.dart';
 
 /// Explicit, attempt-local evidence only. Normal recording allocates no capture.
 /// Bytes are copied after submission to the native reader, before socket flush;
@@ -117,7 +117,7 @@ class FFmpegFlvInputRelay {
       }
     }
     final client = HttpClient()
-      ..findProxy = resolveRecorderProxyDirective
+      ..findProxy = resolveUpstreamProxyDirective
       ..connectionTimeout = const Duration(seconds: 15)
       ..autoUncompress = true;
     try {

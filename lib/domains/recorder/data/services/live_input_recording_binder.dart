@@ -12,7 +12,8 @@ import 'bigo_hls_input.dart';
 import 'fc2_hls_input.dart';
 import 'niconico_hls_input.dart';
 import 'owned_record_input.dart';
-import 'recorder_proxy_routing.dart';
+
+import 'package:pure_live/core/stream/upstream_proxy_routing.dart';
 
 typedef LiveInputRecordingBinder = OwnedRecordSource Function(LiveInputRecipe recipe);
 typedef NiconicoRecordInputOpener = Future<OwnedRecordInput> Function(
@@ -34,7 +35,7 @@ OwnedRecordSource bindLiveInputForRecording(LiveInputRecipe recipe) => switch (r
 OwnedRecordSource bindBigoRecording(
   BigoInputRecipe recipe, {
   BigoApi? api,
-  String Function(Uri) findProxy = resolveRecorderProxyDirective,
+  String Function(Uri) findProxy = resolveUpstreamProxyDirective,
 }) => OwnedRecordSource(
   identity: recipe.identity,
   createInput: (cancel) =>
@@ -44,7 +45,7 @@ OwnedRecordSource bindBigoRecording(
 OwnedRecordSource bindFc2Recording(
   Fc2InputRecipe recipe, {
   Fc2Api? api,
-  String Function(Uri) findProxy = resolveRecorderProxyDirective,
+  String Function(Uri) findProxy = resolveUpstreamProxyDirective,
 }) => OwnedRecordSource(
   identity: recipe.identity,
   createInput: (cancel) =>
@@ -54,7 +55,7 @@ OwnedRecordSource bindFc2Recording(
 OwnedRecordSource bindNiconicoRecording(
   NiconicoInputRecipe recipe, {
   NiconicoApi? api,
-  String Function(Uri) findProxy = resolveRecorderProxyDirective,
+  String Function(Uri) findProxy = resolveUpstreamProxyDirective,
   NiconicoRecordInputOpener openInput = NiconicoHlsInput.open,
 }) {
   final client = api ?? NiconicoApi();

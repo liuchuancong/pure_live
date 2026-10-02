@@ -4,7 +4,8 @@ import 'package:pure_live/domains/live/data/platforms/bigo/bigo_hls_protection.d
 
 import 'ffmpeg_hls_input_relay.dart';
 import 'owned_record_input.dart';
-import 'recorder_proxy_routing.dart';
+
+import 'package:pure_live/core/stream/upstream_proxy_routing.dart';
 
 typedef BigoRelayFactory = Future<FFmpegHlsInputRelay?> Function(
   Uri source, {
@@ -28,7 +29,7 @@ final class BigoHlsInput implements OwnedRecordInput {
     String siteId, {
     required bool recording,
     BigoApi? api,
-    String Function(Uri) findProxy = resolveRecorderProxyDirective,
+    String Function(Uri) findProxy = resolveUpstreamProxyDirective,
     CancelToken? cancel,
     BigoRelayFactory? createRelay,
   }) async {

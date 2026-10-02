@@ -11,6 +11,7 @@ import 'package:pure_live/core/stream/hls_source_query_policy.dart';
 import 'package:pure_live/core/stream/hls_master_selection.dart';
 
 import 'package:pure_live/core/stream/hls_session_cookies.dart';
+
 import 'hls_media_spool.dart';
 import 'hls_body_reader.dart';
 import 'hls_upstream_client.dart';
@@ -19,7 +20,8 @@ import 'hls_prefetch_scheduler.dart';
 import 'hls_prefetch_plan.dart';
 import 'hls_retained_window.dart';
 import 'cancellable_http_connections.dart';
-import 'recorder_proxy_routing.dart';
+
+import 'package:pure_live/core/stream/upstream_proxy_routing.dart';
 
 part 'hls_relay_diagnostics.dart';
 part 'hls_relay_prefetch.dart';
@@ -255,7 +257,7 @@ class FFmpegHlsInputRelay {
     final connections = CancellableHttpConnections();
     final client = HttpClient()
       ..connectionFactory = connections.connect
-      ..findProxy = findProxy ?? resolveRecorderProxyDirective
+      ..findProxy = findProxy ?? resolveUpstreamProxyDirective
       ..connectionTimeout = _connectionTimeout
       ..idleTimeout = const Duration(seconds: 20)
       ..autoUncompress = true;

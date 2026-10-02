@@ -15,7 +15,7 @@ import 'package:pure_live/core/utils/i18n.dart';
 import 'package:pure_live/domains/recorder/data/ffmpeg/ffmpeg_event.dart';
 import 'package:pure_live/domains/recorder/data/ffmpeg/ffmpeg_types.dart';
 import 'package:pure_live/domains/recorder/data/services/ffmpeg_hls_input_relay.dart';
-import 'package:pure_live/domains/recorder/data/services/ffmpeg_flv_input_relay.dart';
+import 'package:pure_live/core/stream/ffmpeg_flv_input_relay.dart';
 import 'package:pure_live/domains/recorder/data/services/ffmpeg_tls_trust_store.dart';
 import 'package:pure_live/domains/recorder/data/services/recording_segment_clock.dart';
 
