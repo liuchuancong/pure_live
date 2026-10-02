@@ -614,7 +614,9 @@ class PIPButton extends StatelessWidget {
             ? null
             : () async {
                 try {
-                  await manager.enablePip();
+                  // 先退出全屏/窗口全屏再请求小窗：直接 enablePip 会让窗口保持
+                  // 系统全屏，小窗里渲染的仍是全屏布局。
+                  await controller.livePlayController.enterPipPresentation();
                 } catch (_) {
                   ToastUtil.show(i18n('pip_enter_failed'));
                 }

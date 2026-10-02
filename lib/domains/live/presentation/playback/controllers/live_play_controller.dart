@@ -421,6 +421,23 @@ class LivePlayController extends GetxController
     }
   }
 
+  /// 进入系统画中画：先退出全屏 / 窗口全屏，再请求小窗。
+  ///
+  /// 全屏必须先退出，而且不能指望内核呈现链去做：`WindowService` 直接驱动全屏
+  /// 驱动，链的 `_active` 始终是空的，于是「先释放上一个驱动」那一步不会执行，
+  /// 窗口保持系统全屏——小窗尺寸与画面适配叠在全屏窗口上（画面被裁、全屏控件留在
+  /// 小窗里），退出小窗恢复的也是全屏几何。窗口全屏是应用内布局模式，同样先回到
+  /// 普通模式，否则小窗里渲染的是宽屏布局。
+  Future<void> enterPipPresentation() async {
+    final player = GlobalPlayerService.instance.player;
+    if (player.isSystemFullscreen.value ||
+        player.isWindowFullscreen.value ||
+        state.value.ui.screenMode != VideoMode.normal) {
+      await exitPresentationForSystemBack();
+    }
+    await player.enablePip();
+  }
+
   @override
   void updateRoom({LiveRoom? liveroom, bool? isLiving, bool? success, bool? isLoading, String? loadError}) {
     state.value = state.value.copyWith(

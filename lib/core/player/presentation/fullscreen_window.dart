@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:media_core/media_core.dart';
 import 'package:media_core_fullscreen/media_core_fullscreen.dart';
 import 'package:pure_live/core/index.dart';
+import 'package:pure_live/core/player/kernel/player_kernel_service.dart';
 
 @visibleForTesting
 bool supportsOrientationLockForLogicalDisplay(Size logicalDisplaySize) {
@@ -117,7 +118,7 @@ class WindowService {
     // the desktop window transition (through PureLiveFullscreenWindow, with
     // its frameless guard) and the mobile immersive switch itself.
     await fullscreenDriver.initialize();
-    await fullscreenDriver.apply(PlayerId('pure-live'), PresentationRequest.fullscreen());
+    await _applyPresentation(PresentationRequest.fullscreen());
   }
 
   Future<void> doExitFullScreen() async {
@@ -132,10 +133,32 @@ class WindowService {
         await SystemChrome.setPreferredOrientations(const <DeviceOrientation>[]);
       }
       await fullscreenDriver.initialize();
-      await fullscreenDriver.apply(PlayerId('pure-live'), PresentationRequest.normal());
+      await _applyPresentation(PresentationRequest.normal());
     } catch (exception, stacktrace) {
       debugPrint(exception.toString());
       debugPrint(stacktrace.toString());
     }
+  }
+
+  /// Routes a mode request through the kernel presentation chain.
+  ///
+  /// The chain is the only owner of "the previous mode leaves first"
+  /// (`PresentationDriverChain._active`). Driving [fullscreenDriver] directly —
+  /// which is what the two transitions below used to do — left that bookkeeping
+  /// empty, so the chain never released fullscreen when picture-in-picture was
+  /// requested: the window stayed system-fullscreen while the small window
+  /// applied its own size and picture fit on top of it (cropped picture, the
+  /// fullscreen controls inside the small window), and leaving the small window
+  /// restored fullscreen geometry. The comment on [fullscreenDriver]'s config
+  /// has always described the intended release; this is what makes it happen.
+  ///
+  /// A host whose kernel is not attached yet still gets the direct call.
+  Future<void> _applyPresentation(PresentationRequest request) async {
+    final driver = PlayerKernelService.instance.kernel.presentationDriver;
+    if (driver != null) {
+      await driver.apply(PlayerId('pure-live'), request);
+      return;
+    }
+    await fullscreenDriver.apply(PlayerId('pure-live'), request);
   }
 }

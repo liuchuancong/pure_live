@@ -54,7 +54,8 @@ class LivePlayPage extends GetView<LivePlayController> {
     if (manager.isInPip.value || manager.isPipPreparing.value) return false;
     if (!manager.isPlayingNow) return false;
     try {
-      await manager.enablePip();
+      // 走同一条入口：全屏中按返回进小窗时也要先退出全屏。
+      await controller.enterPipPresentation();
       // enablePip completing without throwing means the presentation driver
       // applied the pip request; isInPip itself flips on the driver's change
       // stream one microtask later.
