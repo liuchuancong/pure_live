@@ -16,6 +16,7 @@ import 'package:pure_live/core/utils/shared_media_intake.dart';
 import 'package:pure_live/player/utils/popup_route_tracker.dart';
 import 'package:pure_live/core/utils/share_command_handler.dart';
 import 'package:pure_live/core/utils/shared_live_link_opener.dart';
+import 'package:pure_live/features/wallpaper/app_background.dart';
 import 'package:pure_live/core/iptv/services/epg_import_manager.dart';
 import 'package:pure_live/core/platform/desktop_manager.dart';
 import 'package:pure_live/core/iptv/services/iptv_import_manager.dart';
@@ -90,7 +91,18 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
       defaultEngine = targetEngine;
     }
     await GlobalPlayerService.instance.initialize(defaultEngine: defaultEngine);
+
+    // A wallpaper and a live stream cannot share the decoder, so the background
+    // hands its player over for as long as playback runs. The engine is the
+    // source of truth here rather than the route stack: playback continues after
+    // the room page is popped and inside the floating window, where a route
+    // observer would never see it.
+    _wallpaperHandoffSub = GlobalPlayerService.instance.player.onPlaying.listen((playing) {
+      unawaited(SettingsService.to.bg.setPlaybackActive(playing));
+    });
   }
+
+  StreamSubscription<bool>? _wallpaperHandoffSub;
 
   @override
   void dispose() {
@@ -99,6 +111,8 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
     }
     final receiver = _sharedMediaReceiver;
     if (receiver != null) unawaited(receiver.dispose());
+    unawaited(_wallpaperHandoffSub?.cancel());
+    _wallpaperHandoffSub = null;
     unawaited(GlobalPlayerService.instance.dispose());
     super.dispose();
   }
@@ -187,6 +201,16 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
           }
           _applyDynamicTheme(lightDynamic, darkDynamic, lightTheme, darkTheme);
 
+          // A wallpaper is painted behind the navigator by [AppBackgroundLayer];
+          // the pages must stop painting their own colour for it to show. Only
+          // this boolean is read here, so dragging the mask or blur slider does
+          // not rebuild the whole app.
+          final wallpaperOwnsCanvas = SettingsService.to.bg.occupiesCanvas.value;
+          if (wallpaperOwnsCanvas) {
+            lightTheme = lightTheme.copyWith(scaffoldBackgroundColor: Colors.transparent);
+            darkTheme = darkTheme.copyWith(scaffoldBackgroundColor: Colors.transparent);
+          }
+
           return GetMaterialApp(
             // The localized title is rendered by CustomTitleBar. A stable
             // application title avoids asking EasyLocalization for a key
@@ -219,7 +243,7 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
                 }
                 return MediaQuery(
                   data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(currentFactor)),
-                  child: MaterialUiThemeBridge(child: resultWidget),
+                  child: MaterialUiThemeBridge(child: AppBackgroundLayer(child: resultWidget)),
                 );
               },
             ),

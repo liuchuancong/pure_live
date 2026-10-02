@@ -4,6 +4,7 @@ import 'package:pure_live/modules/live/iptv/iptv_page.dart';
 import 'package:pure_live/features/backup/backup_page.dart';
 import 'package:pure_live/features/settings/pages/refresh_settings_page.dart';
 import 'package:pure_live/features/settings/pages/theme_settings_page.dart';
+import 'package:pure_live/features/wallpaper/wallpaper_page.dart';
 import 'package:pure_live/features/settings/pages/video_settings_page.dart';
 import 'package:pure_live/features/settings/pages/local_config_preview_page.dart';
 import 'package:pure_live/features/settings/pages/general_settings_page.dart';
@@ -59,6 +60,12 @@ class SettingsPage extends GetView<SettingsService> {
               title: i18n("theme_customization"),
               subtitle: i18n("theme_customization_desc"),
               onTap: () => Get.to(() => const ThemeSettingsPage()),
+            ),
+            context.buildTile(
+              icon: Remix.image_line,
+              title: i18n("ui_background_settings"),
+              subtitle: i18n("background_entry_subtitle"),
+              onTap: () => Get.to(() => const WallpaperPage()),
             ),
           ]),
 

@@ -18,6 +18,7 @@ import 'package:pure_live/services/settings/exit_settings_controller.dart';
 import 'package:pure_live/services/settings/page_settings_controller.dart';
 import 'package:pure_live/services/settings/refresh_config_controller.dart';
 import 'package:pure_live/services/settings/theme_settings_controller.dart';
+import 'package:pure_live/services/background/background_controller.dart';
 import 'package:pure_live/services/settings/proxy_settings_controller.dart';
 import 'package:pure_live/services/settings/player_settings_controller.dart';
 import 'package:pure_live/services/settings/volume_settings_controller.dart';
@@ -78,6 +79,7 @@ class BackupController extends GetxController {
       'tags': Get.find<TagManagementController>().exportToJson(),
       'refresh': Get.find<RefreshConfigController>().toJson(),
       'page': Get.find<PageSettingsController>().toJson(),
+      'background': Get.find<BackgroundController>().toJson(),
     };
 
     if (includeSensitiveData) {
@@ -136,6 +138,7 @@ class BackupController extends GetxController {
     'startup': StartupController.extractConfig(null).keys.toSet(),
     'refresh': RefreshConfigController.extractConfig(null).keys.toSet(),
     'page': PageSettingsController.extractConfig(null).keys.toSet(),
+    'background': BackgroundController.extractConfig(null).keys.toSet(),
     'tags': {'tags', 'roomTagsMap'},
   };
 
@@ -195,6 +198,7 @@ class BackupController extends GetxController {
       'history': HistoryController.parseConfig,
       'webdav': WebDavController.parseConfig,
       'page': PageSettingsController.parseConfig,
+      'background': BackgroundController.parseConfig,
     };
     for (final entry in parsers.entries) {
       if (version == null) {
@@ -280,6 +284,12 @@ class BackupController extends GetxController {
 
     Get.find<PageSettingsController>().fromJson(Map<String, dynamic>.from(data['page'] ?? {}));
 
+    // Only when present: a backup taken before the background feature existed
+    // must not wipe the wallpaper the device is using.
+    if (data.containsKey('background')) {
+      Get.find<BackgroundController>().fromJson(Map<String, dynamic>.from(data['background'] ?? {}));
+    }
+
     if (!Get.isRegistered<TagManagementController>()) {
       Get.put(TagManagementController());
     }
@@ -312,6 +322,7 @@ class BackupController extends GetxController {
       'startup',
       'refresh',
       'page',
+      'background',
       'tags',
     ];
     for (final name in sections) {

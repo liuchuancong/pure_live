@@ -22,6 +22,7 @@ import 'package:pure_live/services/settings/cookie_settings_controller.dart';
 import 'package:pure_live/services/settings/volume_settings_controller.dart';
 import 'package:pure_live/services/settings/danmaku_settings_controller.dart';
 import 'package:pure_live/services/settings/room_card_settings_controller.dart';
+import 'package:pure_live/services/background/background_controller.dart';
 
 class SettingsService extends GetxService {
   static SettingsService get to => Get.find<SettingsService>();
@@ -48,6 +49,9 @@ class SettingsService extends GetxService {
   PageSettingsController get page => Get.find<PageSettingsController>();
   LogController get log => Get.find<LogController>();
   TagManagementController get tagManagement => Get.find<TagManagementController>();
+
+  /// App background (wallpaper) configuration and its video decoder.
+  BackgroundController get bg => Get.find<BackgroundController>();
 
   @override
   void onInit() {
@@ -77,6 +81,7 @@ class SettingsService extends GetxService {
     Get.lazyPut(() => BiliBiliAccountService(), fenix: true);
     Get.lazyPut(() => FontSettingsController(), fenix: true);
     Get.lazyPut(() => LogController(), fenix: true);
+    Get.lazyPut(() => BackgroundController(), fenix: true);
 
     Get.put(ExitSettingsController(), permanent: true);
   }
