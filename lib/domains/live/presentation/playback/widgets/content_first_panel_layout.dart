@@ -216,14 +216,12 @@ class RoomHistoryTextMetrics {
     required this.headerHeight,
     required this.tabBarHeight,
     required this.cardFooterHeight,
-    required this.minimumCoverHeight,
     required this.scrollTabs,
   });
 
   final double headerHeight;
   final double tabBarHeight;
   final double cardFooterHeight;
-  final double minimumCoverHeight;
   final bool scrollTabs;
 }
 
@@ -250,55 +248,6 @@ RoomHistoryTextMetrics resolveRoomHistoryTextMetrics({
     // Six pixels are consumed by the vertical padding; two more absorb text
     // metric rounding across fonts and device pixel ratios.
     cardFooterHeight: math.max(36, lineExtent(titleFontSize, titleLineHeight) + detailLineExtent + 8),
-    // Top badge: 7 offset + 6 vertical padding. Bottom gradient label: 22
-    // top padding + 8 bottom padding. Four pixels keep them visually apart.
-    minimumCoverHeight: math.max(60, 7 + detailLineExtent + 6 + 4 + detailLineExtent + 30),
     scrollTabs: textScaler.scale(tabFontSize) > tabFontSize * 1.01,
   );
-}
-
-/// Keeps two rows of two room cards inside the standard-text history viewport.
-///
-/// Cards retain a natural 16:9 cover whenever space permits, then give a small
-/// amount of cover height back before allowing the fourth card to be clipped.
-/// Accessibility-sized fixed regions take priority and make the grid scroll.
-double resolveRoomHistoryCardHeight({
-  required Size contentSize,
-  required int columns,
-  double padding = 6,
-  double spacing = 5,
-  double footerHeight = 36,
-  double minimumCoverHeight = 60,
-}) {
-  final usableWidth = math.max(0.0, contentSize.width - padding * 2 - spacing * (columns - 1));
-  final cardWidth = usableWidth / math.max(1, columns);
-  final naturalHeight = cardWidth * 9 / 16 + footerHeight;
-  final accessibleMinimumHeight = footerHeight + minimumCoverHeight;
-  final maximumHeight = math.max(310.0, accessibleMinimumHeight);
-  if (columns < 2) {
-    return math.max(naturalHeight, accessibleMinimumHeight).clamp(118.0, maximumHeight).toDouble();
-  }
-
-  final twoRowHeight = (contentSize.height - padding * 2 - spacing) / 2;
-  final minimumHeight = math.min(112.0, naturalHeight);
-  final compactHeight = math.max(minimumHeight, math.min(naturalHeight, twoRowHeight));
-  return math.max(accessibleMinimumHeight, compactHeight).clamp(96.0, maximumHeight).toDouble();
-}
-
-/// Selects the room-history grid from the actual panel content width instead
-/// of a desktop-oriented breakpoint.
-///
-/// The landscape dialog deliberately occupies the right half of a phone. Two
-/// compact 168 px cards fit comfortably in the common 360–430 logical-pixel
-/// pane; genuinely narrow panes retain one readable column.
-int resolveRoomHistoryColumns(
-  double contentWidth, {
-  double padding = 6,
-  double spacing = 5,
-  double minimumCardWidth = 168,
-}) {
-  if (!contentWidth.isFinite || contentWidth <= 0) return 1;
-  final usableWidth = math.max(0.0, contentWidth - padding * 2);
-  final twoColumnMinimum = minimumCardWidth * 2 + spacing;
-  return usableWidth >= twoColumnMinimum ? 2 : 1;
 }

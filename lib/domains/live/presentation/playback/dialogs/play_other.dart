@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/utils/event_bus.dart';
@@ -231,17 +232,23 @@ class _PlayOtherState extends State<PlayOther> with SingleTickerProviderStateMix
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        const padding = 6.0;
-        const spacing = 5.0;
-        final columns = resolveRoomHistoryColumns(constraints.maxWidth, padding: padding, spacing: spacing);
-        final cardHeight = resolveRoomHistoryCardHeight(
-          contentSize: Size(constraints.maxWidth, constraints.maxHeight),
-          columns: columns,
-          padding: padding,
-          spacing: spacing,
-          footerHeight: textMetrics.cardFooterHeight,
-          minimumCoverHeight: textMetrics.minimumCoverHeight,
-        );
+        // 换台面板沿用旧版布局：窄面板单列大卡、封面固定 16:9、底部信息条固定
+        // 高度，卡片放不下就滚动 —— 不再把封面压扁去凑满两行。封面比例是列表
+        // 里最快被认出来的信息，压扁之后一屏看着更"齐"，但一张图都认不出。
+        const padding = 10.0;
+        const spacing = 8.0;
+        // 内容宽 ≥520 时两列；再窄就是单列大卡。旧版按这个宽度分档，
+        // 而不是按卡片最小可读宽度：手机横屏的右半面板只有一列可读。
+        const twoColumnMinimumWidth = 520.0;
+        // 底部信息条固定 48；只有无障碍大字号确实需要更高时才让出空间，
+        // 否则标题与昵称会被裁掉。
+        final infoHeight = math.max(48.0, textMetrics.cardFooterHeight);
+
+        final availableWidth = math.max(0.0, constraints.maxWidth - padding * 2);
+        final columns = availableWidth >= twoColumnMinimumWidth ? 2 : 1;
+        final cardWidth = math.max(0.0, (availableWidth - spacing * (columns - 1)) / columns);
+        // 16:9 封面 + 信息条；极小视口下兜一个最小高度，避免负数进入网格代理。
+        final cardHeight = math.max(80.0, cardWidth * 9 / 16 + infoHeight);
 
         return GridView.builder(
           key: ValueKey(history ? 'watch-history-grid' : 'live-room-grid'),
@@ -260,7 +267,7 @@ class _PlayOtherState extends State<PlayOther> with SingleTickerProviderStateMix
             return _RoomSwitchCard(
               room: room,
               history: history,
-              textMetrics: textMetrics,
+              infoHeight: infoHeight,
               onTap: () {
                 Navigator.of(context).pop();
                 widget.controller.switchRoom(room);
@@ -300,11 +307,18 @@ class _CompactTab extends StatelessWidget {
 }
 
 class _RoomSwitchCard extends StatelessWidget {
-  const _RoomSwitchCard({required this.room, required this.history, required this.textMetrics, required this.onTap});
+  const _RoomSwitchCard({
+    required this.room,
+    required this.history,
+    required this.infoHeight,
+    required this.onTap,
+  });
 
   final LiveRoom room;
   final bool history;
-  final RoomHistoryTextMetrics textMetrics;
+
+  /// 底部标题/昵称信息条的固定高度。
+  final double infoHeight;
   final VoidCallback onTap;
 
   String _historyLabel() {
@@ -356,7 +370,7 @@ class _RoomSwitchCard extends StatelessWidget {
                   child: _RoomSwitchCover(room: room, meta: meta),
                 ),
                 RoomSwitchCardDetails(
-                  height: textMetrics.cardFooterHeight,
+                  height: infoHeight,
                   title: title,
                   nick: nick.isEmpty ? i18n('unknown') : nick,
                 ),
