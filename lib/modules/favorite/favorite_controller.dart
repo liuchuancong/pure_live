@@ -185,6 +185,13 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (isClosed) return;
     if (state != AppLifecycleState.resumed) {
+      // The desktop picture-in-picture window steals the main window's focus
+      // when it is opened or clicked; the paused/hidden that follows is a
+      // focus change, not "left the app", and must not arm the resume
+      // refresh.
+      if (Get.isRegistered<GlobalPlayerService>() && GlobalPlayerService.instance.player.isInPip.value) {
+        return;
+      }
       _cancelPendingResumeRefresh();
       return;
     }

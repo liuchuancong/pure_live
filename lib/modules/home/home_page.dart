@@ -141,6 +141,14 @@ class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin,
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused || state == AppLifecycleState.hidden) {
+      // The desktop picture-in-picture window steals the main window's focus
+      // when it is opened or clicked; the main window then reports paused/
+      // hidden although the app never left the screen. Recording that as
+      // "backgrounded" made returning to the main window fire the resume
+      // refresh on every pip interaction.
+      if (Get.isRegistered<GlobalPlayerService>() && GlobalPlayerService.instance.player.isInPip.value) {
+        return;
+      }
       _resumeRefreshTimer?.cancel();
       _backgroundedAt ??= DateTime.now();
       return;
