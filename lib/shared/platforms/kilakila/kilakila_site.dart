@@ -2,7 +2,6 @@ import 'package:dio/dio.dart';
 import 'package:pure_live/core/index.dart' show i18n;
 import 'package:pure_live/core/models/live_area.dart';
 import 'package:pure_live/core/models/live_room.dart';
-import 'package:pure_live/shared/platforms/empty_danmaku.dart';
 import 'package:pure_live/shared/platforms/live_danmaku.dart';
 import 'package:pure_live/shared/platforms/live_directory.dart';
 import 'package:pure_live/shared/platforms/live_search.dart';
@@ -12,6 +11,7 @@ import 'package:pure_live/core/models/live_play_quality.dart';
 import 'package:pure_live/shared/platforms/live_external_room.dart';
 
 import 'kilakila_api.dart';
+import 'kilakila_danmaku.dart';
 import 'kilakila_link.dart';
 
 /// App identities are anchor UIDs, never one-broadcast IDs or display numbers.
@@ -43,7 +43,7 @@ class KilakilaSite extends LiveSite
   @override
   String get directoryNoticeKey => 'kilakila_directory_scope';
   @override
-  LiveDanmaku getDanmaku() => EmptyDanmaku();
+  LiveDanmaku getDanmaku() => KilakilaDanmaku();
 
   static String ownerUrl(String uid) => '${KilakilaApi.ownerOrigin}/index/roomuser/uid/${KilakilaApi.id(uid)}';
 
@@ -68,6 +68,10 @@ class KilakilaSite extends LiveSite
         : LiveStatus.unknown,
     // watchNumber has no verified concurrent-viewer semantics. Broadcast IDs
     // and signed media remain ephemeral; favorites/backup retain only the UID.
+    // 弹幕参数（上游 M5.13）：socket 的 query 用**房间号**挑直播；在播且有房间号时给。
+    danmakuData: snapshot.isLive && snapshot.roomId.trim().isNotEmpty
+        ? KilakilaDanmakuArgs(roomId: snapshot.roomId)
+        : null,
     data: snapshot.media.isEmpty
         ? null
         : [
