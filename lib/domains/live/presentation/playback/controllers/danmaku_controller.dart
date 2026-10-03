@@ -5,6 +5,7 @@ import 'package:media_core_danmaku/media_core_danmaku.dart';
 import 'package:pure_live/shared/platforms/live_danmaku.dart';
 import 'package:pure_live/shared/platforms/empty_danmaku.dart';
 import 'package:pure_live/domains/live/data/platforms/sites.dart';
+import 'package:pure_live/domains/live/data/platforms/danmaku_emote_loader.dart';
 import 'package:pure_live/domains/live/data/favorite_room_controller.dart';
 import 'package:pure_live/core/player/core/live_message_normalization.dart';
 import 'package:pure_live/domains/live/presentation/playback/states/live_play_state.dart';
@@ -218,6 +219,8 @@ class DanmakuController extends GetxController {
           }
         }
         _main.addDanmakuMessage(msg);
+        // 画面弹幕要把表情画成图片：引擎只认已解码的图，取图与解码在这里做。
+        if (msg.emotes.isNotEmpty) DanmakuEmoteLoader.instance.ensureRegistered(msg.emotes);
         _state.player.videoController?.sendDanmaku(msg);
       } else if (msg.type == LiveMessageType.online) {
         _main.updateRuntimeAudience(msg.data);
