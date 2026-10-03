@@ -89,7 +89,7 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | --- | --- | --- |
 | `398f68f87` | 房间 `rss` 包（`ss@=0`）表示本房间下播，结束这一路弹幕 | **已同步** |
 | `8eca75a32` | 分区图标空 `icon` 时退到 `smallIcon`/`pic` | **已同步** |
-| `8eca75a32` | `dgb` 礼物包上报为 gift 消息 | 未做：上游自己也是"只上报不显示"，本仓弹幕层不渲染 gift，单独做等于死代码 |
+| `8eca75a32` | `dgb` 礼物包上报为 gift 消息 | **已同步**：礼物消息现在会进弹幕列表展示 |
 | `20c9ea20e` | `expire=0` 的 FLV 强制续期（构造开关，默认关） | 未做：上游默认关闭，且本仓没有这个设置项；本仓对 `expire<=0` 仍视为无租约 |
 | `20c9ea20e` | `startedAt` 取 betard `show_time` | **已同步**：在播时 `show_time`（Unix 秒）填进 `LiveRoom.startedAt`（房间详情路径） |
 | `20c9ea20e` | 别名大小写不敏感（`lpl`/`LPL` 同一 rid） | 待评估：需要本仓的房间身份归一化一起改 |
@@ -110,7 +110,7 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | --- | --- | --- |
 | `ce7de2d01` | 搜索与分组树必须带 User-Agent，否则 HTTP 403 `Not allowed` | **已同步** |
 | `ce7de2d01` | `preferH264` 开关（关闭时 FLV 线路要 `codec=265`） | 未做：本仓没有该播放设置项，且默认行为（`codec=264`）与上游默认一致 |
-| `ce7de2d01` | `uri 6501` 礼物包上报为 gift | 未做：同斗鱼，本仓弹幕层不渲染 gift |
+| `ce7de2d01` | `uri 6501` 礼物包上报为 gift | **已同步**：礼物消息进弹幕列表展示（同斗鱼） |
 | `dc2080a18` | REPLAY 房播放录制（`liveData.hls` + `moment/getMomentContent` 的清晰度）、`startedAt`、付费/密码房限制 | **部分同步**：搜索卡片的付费标记 `isRoomPay`（true→paid / false→none / 缺失→null）已接；**REPLAY 录制取流、`startedAt`、详情里的付费/密码房限制（`isRoomPay`/`isPayRoom`/`isSecret`）仍未做**（需要新接口与字段） |
 | `9c8da06e1` | REPLAY 房保持 replay 状态 | 无需：本仓 `huya_site.dart` 已把 `REPLAY` 映射为 `LiveStatus.replay` |
 | `5a9fa6a5e` | 公告板取 headline，下播关闭弹幕run | 部分待做：弹幕 run 结束与斗鱼同类，但要先确认本仓虎牙弹幕的对应包 |
@@ -157,7 +157,7 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | bilibili | `81733c1e6` | 撤回与公告 | 公告回执**已有**；撤回**需跨层**（新消息类型 + 渲染层移除） |
 | bilibili | `40dc22279` | 打码昵称不能用于屏蔽 | **已摘**（屏蔽侧）；菜单与启动清理未做 |
 | douyu | `398f68f87` | `rss`+`ss@=0` 表示下播，结束这一路 | **已摘**（本轮目标之前） |
-| douyu | `8eca75a32` | `dgb` 礼物包上报为 gift | **不做**：本仓弹幕层不渲染 gift，上游也只上报不显示 |
+| douyu | `8eca75a32` | `dgb` 礼物包上报为 gift | **已做**：礼物消息进弹幕列表展示 |
 | huya | `5a9fa6a5e` | 公告栏头条（headline board）+ 下播结束这一路 | 待评估：头条展示需弹幕层支持；"下播结束"可能可摘 |
 | huya | `8613f92bd` | 单片推送带 `lMsgId` | 待评估：本仓 huya 引擎是否有对应去重/串联逻辑 |
 | kuaishou | `fffd28b31` | 消息带上表情图片（M13.16） | **需跨层（已核实）**：上游是给 `LiveMessage` 加 `emotes`（`LiveEmote`：文本里的编码 + 对应图片），并把房间页 `pcLive.webConfig.emojiPanel`（207 个编码）经 `KuaishouDanmakuArgs.emotes` 传进解码器；本仓 `LiveMessage` 没有该字段（弹幕显示侧另有 `UnifiedEmojiModel`/`DanmakuEmojiParser` 机制，可作为落地路径，但要动公共消息模型） |

@@ -223,6 +223,12 @@ class DanmakuController extends GetxController {
         _main.updateRuntimeAudience(msg.data);
       } else if (msg.type == LiveMessageType.superChat) {
         _main.addAddSuperChat(msg);
+      } else if (msg.type == LiveMessageType.gift) {
+        // 平台礼物（如 B 站 SEND_GIFT/COMBO_SEND/GUARD_BUY）：进弹幕列表展示。
+        // 上游 4.x 只上报不显示；本仓列表本来就按消息类型渲染，所以直接显示出来，
+        // 但**不**触发礼物特效（特效应由本机互动或站点自己的开关决定）。
+        if (_isBlocked(msg)) return;
+        _main.addDanmakuMessage(msg);
       } else if (msg.type == LiveMessageType.retraction) {
         final target = msg.data;
         if (target is LiveRetraction) _main.removeRetractedMessages(target);

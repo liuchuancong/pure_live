@@ -15,6 +15,33 @@ import 'package:pure_live/core/utils/type_cast.dart';
 import 'package:pure_live/core/network/web_socket_util.dart';
 import 'package:pure_live/shared/platforms/live_danmaku.dart';
 
+/// 一条礼物（`SEND_GIFT`/`COMBO_SEND`/`GUARD_BUY`）的内容，放在礼物消息的
+/// `data` 里（上游 bilibili 4-x 的 `BilibiliGift`）。
+class BilibiliGift {
+  const BilibiliGift({
+    required this.id,
+    required this.name,
+    required this.count,
+    this.goldCoins = 0,
+    this.comboId = '',
+  });
+
+  /// `giftId`/`gift_id`；缺失或 0 时为空串。
+  final String id;
+
+  /// `giftName`/`gift_name`（小心心、舰长……）。
+  final String name;
+
+  /// 这条给了多少，至少 1（连击取 `total_num`，上舰取月数）。
+  final int count;
+
+  /// 价值多少金瓜子（1000 = 1 元）；免费（银瓜子）礼物或缺失为 0。
+  final int goldCoins;
+
+  /// `batch_combo_id`：同一次连击的每条消息共享它。
+  final String comboId;
+}
+
 class BiliBiliDanmakuArgs {
   final int roomId;
   final String token;
@@ -442,6 +469,16 @@ class BiliBiliDanmaku implements LiveDanmaku {
             ),
           );
         }
+      } else if (cmd == "SEND_GIFT" || cmd == "COMBO_SEND") {
+        // 礼物：`SEND_GIFT`（`giftName`/`num`/gold `total_coin`）与 `COMBO_SEND`
+        // （`gift_name`/`total_num`/`combo_total_coin`），两者都有 `uid`/`uname`/
+        // `batch_combo_id`（上游 bilibili 4-x 的 `_gift`）。
+        final gift = _giftMessage(obj["data"], combo: cmd == "COMBO_SEND");
+        if (gift != null) onMessage?.call(gift);
+      } else if (cmd == "GUARD_BUY") {
+        // 上舰：`gift_name` 买了 `num` 个月，每月 `price` 金瓜子（上游 `_guard`）。
+        final guard = _guardMessage(obj["data"]);
+        if (guard != null) onMessage?.call(guard);
       } else if (cmd == "SUPER_CHAT_MESSAGE") {
         if (obj["data"] == null) {
           return;
@@ -489,6 +526,72 @@ class BiliBiliDanmaku implements LiveDanmaku {
     } catch (e) {
       CoreLog.error(e);
     }
+  }
+
+  /// `SEND_GIFT` / `COMBO_SEND` → 一条 [LiveMessageType.gift]，文本 `<名称> ×<数量>`，
+  /// `data` 里带 [BilibiliGift]；没有礼物名时不产生消息（上游 bilibili 4-x）。
+  static LiveMessage? _giftMessage(dynamic raw, {required bool combo}) {
+    if (raw is! Map) return null;
+    final name = (combo ? raw['gift_name'] : raw['giftName'])?.toString().trim() ?? '';
+    if (name.isEmpty) return null;
+    final rawCount = int.tryParse((combo ? raw['total_num'] : raw['num'])?.toString() ?? '') ?? 0;
+    final count = rawCount > 0 ? rawCount : 1;
+    final rawCoins = combo
+        ? int.tryParse(raw['combo_total_coin']?.toString() ?? '')
+        : (raw['coin_type'] == 'gold' ? int.tryParse(raw['total_coin']?.toString() ?? '') : null);
+    final rawSentAt = combo ? null : int.tryParse(raw['timestamp']?.toString() ?? '');
+    return LiveMessage(
+      type: LiveMessageType.gift,
+      userName: raw['uname']?.toString() ?? '',
+      userId: raw['uid']?.toString() ?? '',
+      message: '$name ×$count',
+      messageId: combo || (raw['tid']?.toString().trim() ?? '').isEmpty
+          ? ''
+          : 'bilibili:gift:${raw['tid'].toString().trim()}',
+      color: LiveMessageColor.white,
+      sentAt: rawSentAt == null || rawSentAt <= 0 || rawSentAt >= 100000000000
+          ? null
+          : DateTime.fromMillisecondsSinceEpoch(rawSentAt * 1000),
+      data: BilibiliGift(
+        id: _giftId(combo ? raw['gift_id'] : raw['giftId']),
+        name: name,
+        count: count,
+        goldCoins: rawCoins != null && rawCoins > 0 ? rawCoins : 0,
+        comboId: raw['batch_combo_id']?.toString() ?? '',
+      ),
+    );
+  }
+
+  /// `GUARD_BUY` → 上舰同样是礼物消息（上游 bilibili 4-x）。
+  static LiveMessage? _guardMessage(dynamic raw) {
+    if (raw is! Map) return null;
+    final name = raw['gift_name']?.toString().trim() ?? '';
+    if (name.isEmpty) return null;
+    final rawCount = int.tryParse(raw['num']?.toString() ?? '') ?? 0;
+    final months = rawCount > 0 ? rawCount : 1;
+    final price = int.tryParse(raw['price']?.toString() ?? '') ?? 0;
+    final rawSentAt = int.tryParse(raw['start_time']?.toString() ?? '');
+    return LiveMessage(
+      type: LiveMessageType.gift,
+      userName: raw['username']?.toString() ?? '',
+      userId: raw['uid']?.toString() ?? '',
+      message: '$name ×$months',
+      color: LiveMessageColor.white,
+      sentAt: rawSentAt == null || rawSentAt <= 0 || rawSentAt >= 100000000000
+          ? null
+          : DateTime.fromMillisecondsSinceEpoch(rawSentAt * 1000),
+      data: BilibiliGift(
+        id: _giftId(raw['gift_id']),
+        name: name,
+        count: months,
+        goldCoins: price > 0 ? price * months : 0,
+      ),
+    );
+  }
+
+  static String _giftId(Object? raw) {
+    final id = raw?.toString().trim() ?? '';
+    return id == '0' ? '' : id;
   }
 
   void _acknowledgeIfRequired(dynamic packet) {
