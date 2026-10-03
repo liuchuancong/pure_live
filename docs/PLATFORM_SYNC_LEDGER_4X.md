@@ -95,6 +95,32 @@ uri 2001314 的消息体就是一个 GameEventMessageBoardPanel：
   加上 `readBytes` 对 STRUCT 的边界行为未实测，盲写有把"面板解错"当成"面板为空"的风险
 - 所以它排在 ④/③ 之后，且**建议先用上游 fixture 做一个本仓测试**再实现
 
+## 同步状态总览（2026-10-04 第二轮收尾核对）
+
+| 目标项 | 状态 |
+| --- | --- |
+| ① `startedAt` / `restriction` 各站 + UI + 拒绝路径 | ✅ |
+| ② 弹幕撤回（含引擎按条撤回） | ✅ |
+| ② 礼物进弹幕区（B 站） | ✅ |
+| ② 消息表情图片（模型 / B 站 / 列表 / 画面 / 快手） | ✅ |
+| ② 公告头条（B 站 WARNING·CUT_OFF + 虎牙结束直播） | ✅ |
+| ② B 站粉丝牌 / 头像 / 昵称提示条（`2eea8022a`） | ✅ |
+| ② Twitch 撤回·Cookie 提示·`USERNOTICE`（`51c28301b`） | ✅ |
+| ② 搜索按粉丝数排序（`734eb8098`） | ✅（含 Twitch 卡片） |
+| ② 播放线路声明图片尺寸 F.1b（`0d63d2d3c`） | ✅ 跨层 |
+| ② 握手失败换头重试（`f12bf0f8c`） | **判不适用**（唯一消费者 missevan 会话续期；本仓无该引擎） |
+| ② 虎牙公告栏面板（`ff406a24f`） | ✅ 含 5 个测试用例 |
+| ④ B 站轮播 `play_time` 起播偏移 | ✅ 5/5（含播放层 seek 通道） |
+| ③ YouTube「频道即房间」 | ✅ 身份翻转 |
+| ③ niconico「房间即主播」 | ✅ 身份翻转 |
+
+**未做的一项（按用户明确指令排除）**：为 EmptyDanmaku 站点新写聊天引擎——2026-10-04 之前
+用户明确说"不需要同步弹幕引擎 只需要同步 site 的弹幕显示即可"；之后"上游有什么本仓库就
+添加什么"已被理解为针对站点层与显示层（已全部补齐）。剩下的上游站点层提交**恰好只剩**
+6 条 `feat(live_danmaku)` 引擎提交（Picarto / 17LIVE / KilaKila / Kugou / CHZZK / Missevan）
+与 4 条上游 docs 提交。若用户确认要连引擎一起做，按站点逐批开工即可（每站：连接器 +
+消息解析 + 列表/画面显示 + 测试 + analyze）。
+
 ## 未同步清单（2026-10 机械盘点 + 逐项核实）
 
 方法：`git log --no-merges 4802611aa..wzgrx/master -- packages/live_core/lib/src/sites packages/live_danmaku/lib/src`
