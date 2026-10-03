@@ -8,6 +8,7 @@ import 'package:pure_live/core/models/live_room.dart';
 import 'package:pure_live/core/player/models/player_engine.dart';
 import 'package:pure_live/core/stream/hls_source_query_policy.dart';
 import 'package:pure_live/core/player/core/playback_source_hints.dart';
+import 'package:pure_live/core/player/core/audio_only_mode_policy.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
 import 'package:pure_live/shared/platforms/live_site.dart' show LiveStreamFacts;
 import 'package:pure_live/domains/live/domain/playback_source_interceptor.dart';
@@ -139,7 +140,10 @@ final class LivePlayerFacade {
     Object? sourceSelection,
   }) async {
     if (_disposed) return;
-    if (audioOnly) await setAudioOnlyMode(true);
+    // 起播时就是纯音频的只有一条路：助眠会话自动进入（手动切换发生在起播之后，
+    // 而重进已保留的会话走 _resumeCurrentRoomSession，不会回到这里）。那条路要
+    // 真省电，所以关掉视频轨。
+    if (audioOnly) await setAudioOnlyMode(true, stopVideoDecoding: true);
     final sourceUrl = url.trim();
     if (sourceUrl.isEmpty) throw ArgumentError('Remote playback source is empty');
 
@@ -327,9 +331,14 @@ final class LivePlayerFacade {
   FacadeStreamCommit? get currentSourceCommit => commit;
   bool isSourceCommitCurrent(FacadeStreamCommit value) => identical(value, commit);
 
-  Future<void> setAudioOnlyMode(bool audioOnly) async {
+  /// 进出纯音频模式。默认只改标记（画面由 [getVideoWidgetCompat] 盖住，视频继续
+  /// 解码），`stopVideoDecoding: true` 才真的关视频轨——那是助眠会话省电的路。
+  /// 退出时无论进来时走的哪条路都会恢复视频轨，见 [audioOnlyStopsVideoDecoding]。
+  Future<void> setAudioOnlyMode(bool audioOnly, {bool stopVideoDecoding = false}) async {
     _audioOnlyMode.value = audioOnly;
-    await setAudioOnly(audioOnly);
+    if (audioOnlyStopsVideoDecoding(entering: audioOnly, stopVideoDecoding: stopVideoDecoding)) {
+      await setAudioOnly(audioOnly);
+    }
   }
 
   Widget getVideoWidget(BoxFit fit) {
@@ -575,7 +584,7 @@ final class LivePlayerFacade {
     List<BoxFit>? fitList,
     Widget? controls,
     bool trackPipSource = false,
-    bool? audioOnlyOverride,
+    Widget? audioOnlyPresentation,
     Color? surfaceColor,
     double? videoViewportAspectRatio,
     Object? portraitFullscreenDisplayMode,
@@ -584,13 +593,18 @@ final class LivePlayerFacade {
         ? (fitList == null || fitList.isEmpty ? BoxFit.contain : fitList[fit.clamp(0, fitList.length - 1)])
         : fit as BoxFit;
     final video = getVideoWidget(resolved);
-    if (controls == null) return video;
+    // 纯音频模式**盖住**画面而不是把它换掉：视频组件必须留在树上继续解码，
+    // 否则切回视频要重建纹理、重新等首帧（media_kit 卸载 Video 就会释放纹理），
+    // 而且帧心跳一断，帧停滞看门狗会把好好在播的房间判成卡死。
+    // 它排在控制层下面，耳机按钮仍然点得到。
+    final children = <Widget>[video, ?audioOnlyPresentation, ?controls];
+    if (children.length == 1) return video;
     // expand is load-bearing: a default (loose) Stack sizes itself to the
     // non-positioned child, and in an unbounded ancestor that hands the video
     // infinite constraints — MediaPlayerView's AspectRatio then throws
     // "BoxConstraints forces an infinite width and height" every frame and
     // the room shows nothing.
-    return Stack(fit: StackFit.expand, children: [video, controls]);
+    return Stack(fit: StackFit.expand, children: children);
   }
 
   Future<void> close() async {

@@ -1338,7 +1338,7 @@
   "player_fvp": "Fvp Player",
   "audio_only_mode": "Audio Only Mode",
   "restoring_live_video": "Restoring live video",
-  "audio_only_mode_subtitle": "A manual foreground switch keeps video decode warm for instant restore; background and automatic sleep sessions disable it to save power. The original stream remains connected, so data usage usually changes little",
+  "audio_only_mode_subtitle": "A manual switch only covers the picture — video keeps decoding, so switching back is instant. Only the automatic sleep session turns video decoding off to save power. The original stream stays connected, so data usage usually changes little",
   "change_danmaku_font_family": "Change Danmaku Font",
   "window_close": "Close window",
   "window_maximize_restore": "Maximize or restore window",

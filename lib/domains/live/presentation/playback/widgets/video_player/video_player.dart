@@ -1,6 +1,7 @@
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/player/core/portrait_stream_support.dart';
 import 'package:pure_live/domains/live/presentation/playback/widgets/video_player/video_controller.dart';
+import 'package:pure_live/domains/live/presentation/playback/widgets/video_player/audio_only_presentation.dart';
 import 'package:pure_live/domains/live/presentation/playback/widgets/video_player/video_controller_panel.dart';
 import 'package:pure_live/domains/live/presentation/playback/widgets/video_player/playback_failure_overlay.dart';
 import 'package:pure_live/domains/live/domain/global_player_service.dart';
@@ -36,7 +37,7 @@ class _VideoPlayerState extends State<VideoPlayer> {
           SettingsService.to.player.videoFitIndex.v,
           fitList: SettingsService.to.player.videoFitArray,
           trackPipSource: true,
-          audioOnlyOverride: audioOnly,
+          audioOnlyPresentation: audioOnly ? AudioOnlyPresentation(room: controller.room) : null,
           controls: VideoControllerPanel(controller: controller),
           surfaceColor: widget.surfaceColor,
           videoViewportAspectRatio: widget.videoViewportAspectRatio,

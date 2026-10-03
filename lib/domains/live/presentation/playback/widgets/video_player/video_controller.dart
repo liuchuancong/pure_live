@@ -638,22 +638,20 @@ class VideoController with ChangeNotifier implements DanmakuSettingsSource {
     );
   }
 
-  /// Rebinds the existing room controller to a freshly-created native player.
+  /// 进出纯音频模式。
   ///
-  /// The UI controller deliberately survives this operation. Recreating it on
-  /// every headphone tap used to give the replacement button a separate
-  /// transition lock while the previous native player was still shutting down,
-  /// so repeated audio/video taps could overlap and replace the video area with
-  /// Flutter's release-mode error widget.
+  /// UI 控制器在这一趟里刻意存活：以前每次点耳机都重建它，替换按钮会拿到另一把
+  /// 过渡锁，而上一个原生播放器还在关，连点就会让视频区变成 Flutter 的 release
+  /// 错误组件。
   Future<void> changeAudioOnlyMode(bool value) async {
     if (_isDisposed || isAudioOnly == value) return;
     final previous = isAudioOnly;
     final enteringAudioMode = value && !previous;
     if (enteringAudioMode) {
-      // Present the stable room-level audio UI before the Android native track
-      // command completes. mpv reports buffering while it drops the video
-      // decoder; leaving the old video presentation visible during that window
-      // looked like an endless spinner even though audio kept playing.
+      // 进入是纯 UI 的：视频继续解码，只是被 AudioOnlyPresentation 盖住，所以状态
+      // 可以立刻置上，画面与"切回视频"都是即时的。
+      // 退出则可能真要把视频轨打开回来（助眠会话进来时关过），mpv 那会儿会报
+      // buffering；等原生命令期间保持音频 UI，否则那段窗口看起来像转不完圈。
       audioOnlyState.value = true;
     }
     try {
