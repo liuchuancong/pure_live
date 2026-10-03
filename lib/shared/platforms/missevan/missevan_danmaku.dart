@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
-import 'dart:typed_data';
 
 import 'package:brotli/brotli.dart';
+import 'package:flutter/foundation.dart';
 import 'package:pure_live/core/logging/core_log.dart';
 import 'package:pure_live/core/models/live_message.dart';
 import 'package:pure_live/core/network/http_client.dart';
@@ -102,9 +102,11 @@ class MissevanDanmaku extends LiveDanmaku {
           header: const <String, String>{'Referer': '$_origin/', 'Origin': _origin},
         );
         if (generation != _generation) return null;
-        final raw = response.headers.value('set-cookie') ?? '';
-        final value = RegExp(r'FM_SESS=([^;,\s]+)').firstMatch(raw)?.group(1)?.trim() ?? '';
-        if (value.isNotEmpty) return value;
+        // 猫耳一次下发两个 Set-Cookie（`FM_SESS` 与 `FM_SESS.sig`），dio 的
+        // `headers.value()` 在多于一个值时直接抛异常，三次重试会全部吃掉，
+        // 表现成"拿不到游客会话"。逐条找，和上游一致。
+        final value = sessionCookie(response.headers['set-cookie'] ?? const <String>[]);
+        if (value != null) return value;
         _lastFailure = 'HTTP ${response.statusCode}';
       } catch (error) {
         _lastFailure = '$error';
@@ -113,9 +115,25 @@ class MissevanDanmaku extends LiveDanmaku {
     return null;
   }
 
+  /// `Set-Cookie` 整组头里的 `FM_SESS` 值；`FM_SESS.sig` 不需要。
+  ///
+  /// 入参是整组而不是单个拼接值：猫耳同时下发 `FM_SESS` 和 `FM_SESS.sig`，
+  /// 而 dio 的 `Headers.value()` 遇到多个同名头会抛异常。
+  @visibleForTesting
+  static String? sessionCookie(Iterable<String> setCookie) {
+    for (final header in setCookie) {
+      final value = _sessionCookie.firstMatch(header)?.group(1)?.trim();
+      if (value != null && value.isNotEmpty) return value;
+    }
+    return null;
+  }
+
+  static final RegExp _sessionCookie = RegExp(r'^\s*FM_SESS=([^;]*)');
+
   Uri _endpoint() {
     final roomId = _args?.roomId ?? '';
-    final fallback = Uri.parse('wss://im.missevan.com/ws').replace(queryParameters: <String, String>{'room_id': roomId});
+    final fallback = Uri.parse('wss://im.missevan.com/ws')
+        .replace(queryParameters: <String, String>{'room_id': roomId});
     final url = _args?.url;
     if (url == null) return fallback;
     if (url.scheme != 'wss' ||
