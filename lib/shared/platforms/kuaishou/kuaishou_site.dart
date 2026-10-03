@@ -507,6 +507,29 @@ class KuaishouSite
     return loaded;
   }
 
+  /// 房间页的房间状态里取表情表（上游 4-x 的 `emojiTable`）：
+  /// `pcConfig.pcConfig.config["pcLive.webConfig.emojiPanel"]` 的
+  /// `[笑哭] → 图片`（2026-10-01 约 207 个编码）。编码必须是 `[...]` 形式，地址
+  /// 走规范化，取不到地址的条目跳过。
+  static Map<String, String> _emojiTable(Map<String, dynamic> state) {
+    Map<dynamic, dynamic> fields(Object? value) =>
+        value is Map ? value : const <dynamic, dynamic>{};
+    final pcConfig = fields(state['pcConfig']);
+    final inner = fields(pcConfig['pcConfig']);
+    final config = fields(inner['config']);
+    final panel = config['pcLive.webConfig.emojiPanel'];
+    if (panel is! Map || panel.isEmpty) return const <String, String>{};
+    final table = <String, String>{};
+    for (final entry in panel.entries) {
+      final code = entry.key;
+      if (code is! String || code.length <= 2 || !code.startsWith('[') || !code.endsWith(']')) continue;
+      final url = normalizeNetworkImageUrl(entry.value?.toString());
+      if (url.isEmpty || !url.startsWith('http')) continue;
+      table[code] = url;
+    }
+    return Map.unmodifiable(table);
+  }
+
   Future<LiveRoom> _loadRoom(String roomId, {required bool includePlaybackData, required bool ensureSession}) async {
     final url = "https://live.kuaishou.com/u/$roomId";
     if (ensureSession) await _ensureSession(url);
@@ -545,7 +568,11 @@ class KuaishouSite
       link: liveStreamId,
       danmakuData: liveStreamId.isEmpty
           ? null
-          : KuaishouDanmakuArgs(liveStreamId: liveStreamId, cookie: _effectiveCookie),
+          : KuaishouDanmakuArgs(
+              liveStreamId: liveStreamId,
+              cookie: _effectiveCookie,
+              emotes: _emojiTable(jsonObj),
+            ),
       data: includePlaybackData ? liveStream["playUrls"] : null,
     );
   }
