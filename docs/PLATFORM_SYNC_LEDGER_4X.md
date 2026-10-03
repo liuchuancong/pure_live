@@ -57,6 +57,32 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | 握手失败钩子（`f12bf0f8c`，`onHandshakeFailure`：可换新会话头重试） | **架构不同**：上游是 5.x 的 `DanmakuSocketConnection`，本仓是 `WebScoketUtils`；本仓无"失败后换头重试"通道（missevan 之类靠会话续期的站点用得上） |
 | 各站聊天连接器的 notice（17LIVE 暂停/结束、Picarto chip tips、missevan、CHZZK 等） | **不适用**：这些站点在本仓没有引擎（用户早前决定不新增引擎，待确认是否改为全做） |
 
+## 待实施：虎牙 2001314 通知自带留言板面板（C-9，省请求）
+
+上游 `5a9fa6a5e` 的取法（**已从上游测试的写入器逐字段抄下，可直接照做**）：
+
+```
+uri 2001314 的消息体就是一个 GameEventMessageBoardPanel：
+  tag 0: 头部 struct { tag 2: int 0 }
+  tag 1: 条目列表，每条：
+      0: struct 用户 { 1: 昵称(string), 2: '' }
+      1: 文本(string)
+      2: 花费(int)
+      4: 累计(int)
+      5: 倒计时(int)
+      9: 留言 id(int)
+  tag 2: int 0
+```
+
+规则：
+- 能解出 `tag 1` 是列表 → 它就是面板：**每条留言立刻作为醒目留言上报**（与补拉共用"每次连接只报一次"），
+  **空列表表示留言板已空，不再发请求**
+- 消息体缺失/为空/不是 Tars/没有 tag 1 列表 → 照旧后台补拉（0、0.6、1.8、4 s 的窗口，本仓已有）
+- 本仓要动的地方：`huya_danmaku.dart` 的 `uri == 2001314` 分支（现在只调
+  `_scheduleSuperChatRefresh`）+ 用 `TarsInputStream` 读嵌套 struct/list（本仓已有该读取器），
+  再把条目映射成本仓的醒目留言消息并走既有的去重集合
+- 价值：每条通知少 1–4 个 HTTP 请求（**是优化不是修复**，所以排在 ④/③ 之后）
+
 ## 未同步清单（2026-10 机械盘点 + 逐项核实）
 
 方法：`git log --no-merges 4802611aa..wzgrx/master -- packages/live_core/lib/src/sites packages/live_danmaku/lib/src`
@@ -71,7 +97,7 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | `0d63d2d3c` | 播放线路"声明图片尺寸"（F.1b，core+player） | **已做**：抖音档位解析平台声明的画面尺寸（`main.width/height` → `sdk_params.width/height` → `sdk_params.resolution` → 描述里的 `resolution`，尺寸 120–16384、宽高比 0.30–3.50）→ `LivePlayQuality.declaredAspectRatio` → `LivePlayUrlResolution` → `PlaybackSourceQualitySelection` → `LivePlayerFacade.currentPresentationAspectRatio` 在解码器报出真实尺寸前用它排版（没有才退回 16:9） |
 | `51c28301b` | Twitch `RECONNECT`、撤回（`CLEARMSG`）、公告（`NOTICE`）、过期 cookie | **已完成**：撤回（`7c8b7f599`）、Cookie 失效提示 + 匿名回退（`22f659782`）、`USERNOTICE` 订阅/续订/赠送/突袭/公告（进列表当通知；观众附带的话作为该观众的聊天紧跟其后）；`RECONNECT` 与 cookie 解析本仓早有 |
 | `f12bf0f8c` | socket 运行时"握手失败"钩子（M5.F B-1） | **待核**：`web_socket_util.dart` 有握手实现，未确认是否把失败单独上报 |
-| `ff406a24f` | 虎牙公告栏面板（通知自带 board 时省一次请求） | **未做**（结束直播 `uri 8001` 已做 `133725ed7`） |
+| `ff406a24f` | 虎牙公告栏面板（通知自带 board 时省一次请求） | **未做（已把上游结构抄下来，见下）**：本仓现在是"收到 2001314 通知 → 后台补拉留言板（带重试窗口）"，功能正确、只是每条通知多 1–4 个请求 |
 | `734eb8098` | 搜索按平台上报的粉丝数排序 | **基本已同步**：本仓早有 `LiveSearchSortMode.followers`（`search_ranking.dart`，粉丝 → 人气 → 平台顺序），且 bilibili/kuaishou/cc/chzzk/acfun/baidulive/kugoulive/liveme/picarto/17LIVE 等搜索卡片都填了 `followers`；本轮补上 **Twitch** 搜索卡片（`node.followers.totalCount`，持久化查询给了才有） |
 
 ### B. 不适用：用户已决定不为 EmptyDanmaku 站点新写聊天引擎
