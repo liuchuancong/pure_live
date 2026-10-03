@@ -17,8 +17,8 @@ import 'package:pure_live/core/config/settings_service.dart';
 import 'package:pure_live/core/storage/hive_pref_util.dart';
 import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/core/network/web_socket_util.dart';
-import 'package:pure_live/domains/live/domain/live_danmaku.dart';
-import 'package:pure_live/domains/live/domain/live_site.dart';
+import 'package:pure_live/shared/platforms/live_danmaku.dart';
+import 'package:pure_live/shared/platforms/live_site.dart';
 import 'package:pure_live/domains/live/data/platforms/sites.dart';
 import 'package:pure_live/get/get.dart';
 
@@ -109,7 +109,12 @@ void main() {
   );
 }
 
-const _supportedProbePlatforms = <String>{Sites.bilibiliSite, Sites.huyaSite, Sites.douyinSite};
+const _supportedProbePlatforms = <String>{
+  Sites.bilibiliSite,
+  Sites.huyaSite,
+  Sites.douyinSite,
+  Sites.sixRoomSite,
+};
 
 Future<Map<String, Object?>> _probePlatform(
   String platform,
@@ -121,7 +126,7 @@ Future<Map<String, Object?>> _probePlatform(
   LiveDanmaku? engine;
   try {
     final site = Sites.of(platform).liveSite;
-    final detail = await _findCurrentRoom(site, platform);
+    final detail = await _findCurrentRoom(site);
     engine = site.getDanmaku();
     var readyCount = 0;
     var reconnectCount = 0;
@@ -174,14 +179,14 @@ Future<Map<String, Object?>> _probePlatform(
   }
 }
 
-Future<LiveRoom> _findCurrentRoom(LiveSite site, String platform) async {
+Future<LiveRoom> _findCurrentRoom(LiveSite site) async {
   final candidates = await site.getRecommendRooms(page: 1, pageSize: 20).timeout(const Duration(seconds: 30));
   Object? lastError;
   for (final room in candidates.where((room) => room.isLiveNow && room.normalizedRoomId.isNotEmpty).take(6)) {
     try {
-      final detail = await site
-          .getRoomDetail(roomId: room.normalizedRoomId, platform: platform)
-          .timeout(const Duration(seconds: 25));
+      // 交给站点自己的详情路径：`danmakuData` 是详情阶段才拼出来的（sixroom 的
+      // 主播用户 id、chzzk 的聊天频道 id 都在那里），探针不该自己重建房间。
+      final detail = await site.getRoomDetail(room).timeout(const Duration(seconds: 25));
       if (detail.isLiveNow && detail.danmakuData != null) return detail;
     } catch (error) {
       lastError = error;
