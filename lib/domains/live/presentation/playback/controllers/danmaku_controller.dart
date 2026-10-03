@@ -1,15 +1,15 @@
 import 'dart:async';
-
-import 'package:media_core_danmaku/media_core_danmaku.dart';
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/core/player/core/live_message_normalization.dart';
 import 'package:pure_live/core/logging/core_log.dart';
+import 'package:media_core_danmaku/media_core_danmaku.dart';
 import 'package:pure_live/shared/platforms/live_danmaku.dart';
 import 'package:pure_live/shared/platforms/empty_danmaku.dart';
-import 'package:pure_live/domains/live/presentation/playback/states/live_play_state.dart';
-import 'package:pure_live/domains/live/presentation/playback/controllers/danmaku_session_host.dart';
 import 'package:pure_live/domains/live/data/platforms/sites.dart';
 import 'package:pure_live/domains/live/data/favorite_room_controller.dart';
+import 'package:pure_live/core/player/core/live_message_normalization.dart';
+import 'package:pure_live/domains/live/presentation/playback/states/live_play_state.dart';
+import 'package:pure_live/domains/live/presentation/playback/controllers/danmaku_session_host.dart';
+
 
 /// Owns exactly one room-bound danmaku session.
 ///
@@ -254,9 +254,14 @@ class DanmakuController extends GetxController {
     return token == _sessionToken && identical(_liveDanmaku, engine) && (_sessionKey == key || _connectingKey == key);
   }
 
+  /// 打码昵称（B 站游客看到的是「观***」这类）：它**不能**用来屏蔽。按整名匹配
+  /// 的屏蔽表会把所有被打码成同一形态的观众一起挡掉（上游 40dc22279 / 审计 B-1），
+  /// 所以打码名既不参与匹配，也不会被存进屏蔽表。
+  static final RegExp _maskedName = RegExp(r'\*{2,}|＊{2,}');
+
   bool _isBlocked(LiveMessage message) {
     final user = message.userName.trim().toLowerCase();
-    if (user.isNotEmpty && _blockedUsers.contains(user)) return true;
+    if (user.isNotEmpty && !_maskedName.hasMatch(user) && _blockedUsers.contains(user)) return true;
     final text = message.message.toLowerCase();
     return _blockedKeywords.any(text.contains);
   }
@@ -266,6 +271,8 @@ class DanmakuController extends GetxController {
     _blockedUsers = favorite.blockedDanmakuUsers
         .map((user) => user.trim().toLowerCase())
         .where((user) => user.isNotEmpty)
+        // 历史/导入进来的打码名一并忽略：它们本来会误伤其他观众。
+        .where((user) => !_maskedName.hasMatch(user))
         .toSet();
     _blockedKeywords = favorite.shieldList
         .map((keyword) => keyword.trim().toLowerCase())
