@@ -1,7 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:pure_live/core/models/live_area.dart';
 import 'package:pure_live/core/models/live_room.dart';
-import 'package:pure_live/shared/platforms/empty_danmaku.dart';
 import 'package:pure_live/shared/platforms/live_danmaku.dart';
 import 'package:pure_live/shared/platforms/live_directory.dart';
 import 'package:pure_live/shared/platforms/live_search.dart';
@@ -11,6 +10,7 @@ import 'package:pure_live/core/utils/i18n.dart';
 import 'package:pure_live/shared/platforms/live_external_room.dart';
 
 import 'seventeenlive_api.dart';
+import 'seventeenlive_danmaku.dart';
 import 'seventeenlive_link.dart';
 
 class SeventeenLiveSite extends LiveSite
@@ -49,7 +49,7 @@ class SeventeenLiveSite extends LiveSite
   String get directoryNoticeKey => 'seventeen_directory_scope';
 
   @override
-  LiveDanmaku getDanmaku() => EmptyDanmaku();
+  LiveDanmaku getDanmaku() => SeventeenLiveDanmaku();
 
   @override
   Future<LiveDirectoryPage> getDirectoryPageAtCursor({
@@ -117,6 +117,10 @@ class SeventeenLiveSite extends LiveSite
     audienceMetricType: AudienceMetricType.onlineViewers,
     notice: i18n('seventeen_age_notice'),
     httpHeaders: SeventeenLiveApi.mediaHeaders(room.roomId),
+    // 弹幕参数（上游 M5.29）：房间号就是 Ably 的频道名；在播时给。
+    danmakuData: room.state == SeventeenLiveState.live
+        ? SeventeenLiveDanmakuArgs(roomId: room.roomId)
+        : null,
     data: includeMedia ? room : null,
   );
 
