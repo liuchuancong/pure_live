@@ -108,7 +108,7 @@ uri 2001314 的消息体就是一个 GameEventMessageBoardPanel：
 | `2eea8022a` 剩余 | 游客/登录失效提示（列表顶部一行 + 去登录） | **已做**：列表顶部常驻提示条（游客 → `bilibili_guest_names_hidden` + 「去登录」；已登录但收到打码名 → `bilibili_login_expired_short` + 「重新登录」），按钮走 `AppNavigator.toBiliBiliLogin()`；i18n 四个 key 中英都加 |
 | `0d63d2d3c` | 播放线路"声明图片尺寸"（F.1b，core+player） | **已做**：抖音档位解析平台声明的画面尺寸（`main.width/height` → `sdk_params.width/height` → `sdk_params.resolution` → 描述里的 `resolution`，尺寸 120–16384、宽高比 0.30–3.50）→ `LivePlayQuality.declaredAspectRatio` → `LivePlayUrlResolution` → `PlaybackSourceQualitySelection` → `LivePlayerFacade.currentPresentationAspectRatio` 在解码器报出真实尺寸前用它排版（没有才退回 16:9） |
 | `51c28301b` | Twitch `RECONNECT`、撤回（`CLEARMSG`）、公告（`NOTICE`）、过期 cookie | **已完成**：撤回（`7c8b7f599`）、Cookie 失效提示 + 匿名回退（`22f659782`）、`USERNOTICE` 订阅/续订/赠送/突袭/公告（进列表当通知；观众附带的话作为该观众的聊天紧跟其后）；`RECONNECT` 与 cookie 解析本仓早有 |
-| `f12bf0f8c` | socket 运行时"握手失败"钩子（M5.F B-1） | **待核**：`web_socket_util.dart` 有握手实现，未确认是否把失败单独上报 |
+| `f12bf0f8c` | socket 运行时"握手失败"钩子（M5.F B-1） | **不适用（无消费者）**：上游这个钩子唯一的用户是 **missevan 的会话续期**（握手被拒后换新 cookie 再试）；本仓的 `WebScoketUtils` 在构造时拿 `headers`、没有"每次握手取头"的通道，而本仓又没有 missevan 聊天引擎（EmptyDanmaku，用户决定不新增引擎）。此时移植就是**没有调用方的死代码**。若将来按"包含引擎"补 missevan，再连同这个钩子一起做 |
 | `ff406a24f` | 虎牙公告栏面板（通知自带 board 时省一次请求） | **未做（已把上游结构抄下来，见下）**：本仓现在是"收到 2001314 通知 → 后台补拉留言板（带重试窗口）"，功能正确、只是每条通知多 1–4 个请求 |
 | `734eb8098` | 搜索按平台上报的粉丝数排序 | **基本已同步**：本仓早有 `LiveSearchSortMode.followers`（`search_ranking.dart`，粉丝 → 人气 → 平台顺序），且 bilibili/kuaishou/cc/chzzk/acfun/baidulive/kugoulive/liveme/picarto/17LIVE 等搜索卡片都填了 `followers`；本轮补上 **Twitch** 搜索卡片（`node.followers.totalCount`，持久化查询给了才有） |
 
