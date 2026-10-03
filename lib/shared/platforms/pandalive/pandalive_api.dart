@@ -120,6 +120,8 @@ final class PandaLiveRoom {
     required this.access,
     required Iterable<PandaLiveStream> streams,
     this.isRerun = false,
+    this.chatChannel = '',
+    this.chatToken = '',
   }) : streams = List.unmodifiable(streams);
 
   final String userId;
@@ -135,6 +137,11 @@ final class PandaLiveRoom {
   final PandaLiveState state;
   final PandaLiveAccess access;
   final List<PandaLiveStream> streams;
+
+  /// `live/play` 给的 Centrifugo 聊天标识与令牌（上游 M5.21）：`channel` 是主播编号
+  /// （不是数字时用主播 userId），令牌约 30 分钟过期；没有就是没有聊天。
+  final String chatChannel;
+  final String chatToken;
 
   /// 录播重播（见 [PandaLiveCard.isRerun]）：在播，但状态是回放。
   final bool isRerun;
@@ -431,7 +438,17 @@ class PandaLiveApi {
         final manifest = await _read('GET', master, null, referer, token, manifest: true);
         final streams = parseManifest(master, manifest);
         if (streams.isEmpty) throw const PandaLiveException(PandaLiveFailure.mediaUnavailable);
-        return _liveRoom(userId, profileIndex, profile, playMedia, streams);
+        // 聊天标识与令牌（上游 M5.21）：`channel` 不是数字时用主播 userId。
+        final rawChannel = play['channel']?.toString().trim() ?? '';
+        return _liveRoom(
+          userId,
+          profileIndex,
+          profile,
+          playMedia,
+          streams,
+          rawChannel.isEmpty ? userId : rawChannel,
+          _optionalText(play['token']),
+        );
       });
 
   static PandaLiveCard parseCard(Map<String, dynamic> data) {
@@ -606,6 +623,8 @@ class PandaLiveApi {
     Map<String, dynamic> profile,
     Map<String, dynamic> media,
     List<PandaLiveStream> streams,
+    String chatChannel,
+    String chatToken,
   ) => PandaLiveRoom(
     userId: userId,
     userIndex: userIndex,
@@ -621,6 +640,8 @@ class PandaLiveApi {
     access: PandaLiveAccess.public,
     streams: streams,
     isRerun: isRerun(media),
+    chatChannel: chatChannel,
+    chatToken: chatToken,
   );
 
   static void _validateMediaIdentity(Map<String, dynamic> media, String userId, int userIndex) {

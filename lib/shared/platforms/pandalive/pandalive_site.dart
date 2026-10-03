@@ -1,4 +1,5 @@
 import 'pandalive_api.dart';
+import 'pandalive_danmaku.dart';
 import 'pandalive_link.dart';
 
 import 'package:dio/dio.dart';
@@ -10,7 +11,6 @@ import 'package:pure_live/shared/platforms/live_site.dart';
 import 'package:pure_live/shared/platforms/live_search.dart';
 import 'package:pure_live/shared/platforms/live_danmaku.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
-import 'package:pure_live/shared/platforms/empty_danmaku.dart';
 import 'package:pure_live/shared/platforms/live_directory.dart';
 import 'package:pure_live/shared/platforms/live_external_room.dart';
 
@@ -51,7 +51,7 @@ class PandaLiveSite extends LiveSite
   String get directoryNoticeKey => 'pandalive_directory_scope';
 
   @override
-  LiveDanmaku getDanmaku() => EmptyDanmaku();
+  LiveDanmaku getDanmaku() => PandaLiveDanmaku();
 
   @override
   Future<List<LiveCategory>> getCategores(int page, int pageSize) async => page == 1
@@ -130,6 +130,14 @@ class PandaLiveSite extends LiveSite
       PandaLiveAccess.restricted => i18n('pandalive_restricted_notice'),
     },
     httpHeaders: PandaLiveApi.mediaHeaders(room.userId),
+    // 弹幕参数（上游 M5.21）：live/play 给的聊天频道与令牌；没有就只读地看直播。
+    danmakuData: room.chatToken.isEmpty
+        ? null
+        : PandaLiveDanmakuArgs(
+            userId: room.userId,
+            channel: room.chatChannel.isEmpty ? room.userId : room.chatChannel,
+            token: room.chatToken,
+          ),
     data: includeMedia ? room : null,
   );
 
