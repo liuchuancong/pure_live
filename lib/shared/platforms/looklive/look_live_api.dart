@@ -244,6 +244,34 @@ class LookLiveApi {
     return _object(root['data']);
   }
 
+  /// 聊天服务器地址请求（上游 M5.28）：`POST /weapi/livestream/chat/address`，payload
+  /// `{liveRoomNo, os: 0}`（和别的请求一样加密）。
+  static const String chatAddressPath = '/weapi/livestream/chat/address';
+
+  static final RegExp _chatAddress = RegExp(
+    r'^([a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+):([0-9]{1,5})$',
+  );
+
+  /// 回答里 `data.address` 给的聊天服务器（`host:port`），按回答顺序；不是主机名加
+  /// 端口的条目跳过，一个可用的都没有就当作回答读不懂（上游 `ApiChanged`）。
+  Future<List<({String host, int port})>> chatServers(String roomId, {CancelToken? cancel}) async {
+    final id = LookLiveLink.requireRoomId(roomId);
+    final data = await _post(chatAddressPath, <String, Object?>{'liveRoomNo': id, 'os': 0}, cancel: cancel);
+    final rows = data['address'];
+    if (rows is! List) throw const LookLiveException(LookLiveFailure.schema);
+    final servers = <({String host, int port})>[];
+    for (final raw in rows) {
+      final text = raw?.toString().trim().toLowerCase() ?? '';
+      final match = _chatAddress.firstMatch(text);
+      if (match == null) continue;
+      final port = int.tryParse(match.group(4)!);
+      if (port == null || port < 1 || port > 65535) continue;
+      servers.add((host: match.group(1)!, port: port));
+    }
+    if (servers.isEmpty) throw const LookLiveException(LookLiveFailure.schema);
+    return List.unmodifiable(servers);
+  }
+
   Future<LookLivePage> directory({required LookLiveKind kind, int page = 1, CancelToken? cancel}) async {
     if (page < 1 || page > 10000) throw const LookLiveException(LookLiveFailure.schema);
     final path = kind == LookLiveKind.audio
