@@ -80,6 +80,22 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 
 ## 待实施：niconico 房间即主播（③ 的剩余部分）
 
+**已做（2026-10）**：
+- 节目链接形态：`http` / `sp.live.nicovideo.jp` / `nico.ms/lv…`（`abb4c7269`）
+- 主播链接可打开：`watch/user/<id>`、`watch/ch<n>`、`www.nicovideo.jp/user/<id>`、
+  `ch.nicovideo.jp/ch<n>` → 一次 watch 页请求换成"当前在播的节目号"（`bb1f6fbae`）；
+  **房间身份仍是节目号**，存量收藏/历史不受影响
+
+**剩余（= 身份翻转本身，无中间态）**：上游 `NiconicoApi.roomIdOf`
+（`niconico_api.dart:465`）按 `providerType` 决定房间身份——
+`community`/`user` + `userId` → `user/<id>`，`channel` + `channelId` → 频道房间 id，
+其余（含 `official`）→ 节目号。本仓 `niconico_directory.dart:88` **已经**按同一集合
+校验 `providerType`（`{community, channel, official}`），但一律 `roomId: id`（节目号）。
+
+也就是说：本仓与上游在这条上的差别**就是身份模型本身**，没有"只做映射不动身份"的
+中间步骤。要做就得连迁移一起做（见上文 YouTube 一节的迁移路线 A/B），收益是
+"同一主播/频道的多场节目归为一个房间"，代价是存量 key 迁移与"回看某一场"的语义变化。
+
 ## 待实施：B 站轮播 `play_time` 起播偏移（方案已定）
 
 上游语义：`getRoundPlayVideo` 的 `data.play_time` 是**已经播过的秒数**，播放应从那里开始
