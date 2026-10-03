@@ -448,6 +448,44 @@ curl 对照实测：`init.2.mp4` **不带 cookie → 401，带上 → 200（1095
 测试 `test/domains/live/live_input_playback_binding_test.dart` 钉两条边：三种配方各自绑出正确身份且不开
 席位；未装配抛 `UnsupportedError`、装配后委托。75 项全绿，Analyze 0 项，`--strict` 无新增硬边。
 
+### Steam 起播失败：清扫的验证窗比它自己声明的截止日期更紧（2026-10-04，已修在 media_core `c6f5917`）
+
+日志（同一份里有两个房间，对照价值比单独一个高）：
+
+- Steam（`cache1-tyo3.steamcontent.com`）：`opened` 02:19:03.930 → `disposing player` 02:19:12.053
+  （**8.1 秒**），紧跟 `live sweep exhausted | sources=1 enginesTried=1` 与
+  `StateError: … opened but never played (position frozen at 0ms for 8s)`。
+- 这 8.1 秒里 mpv 在做什么，日志写得清清楚楚：master 清单 → **四个变体清单**
+  （`160000/audio`、`6000000/video`、`1500000/video`、`500000/video`）→ audio init → audio 16690 →
+  video init → video 16690 → 再回头重开 `6000000`、`1500000`……**到被杀掉都还在探测**。Steam 的 master
+  不带 `CODECS`，lavf 无法剪枝，只能把每一路都打开并读一段才知道选谁。
+- 关键的一点：**这段时间里既没有 buffering 事件也没有 position 事件**。所以"引擎还在干活"这件事在传输层
+  没有任何信号可读——我原本打算按 buffering 延长验证窗，被这段日志推翻了，没有采用。
+- 对照 pandalive（AWS IVS，单变体）：`opened` 02:17:45.987 → 首个 position 02:17:52.828，
+  **6.8 秒，8 秒窗里只剩 1.2 秒余量**；之后还有 `End buffering (waited 2.751994 secs)`。
+
+根因不在本仓：media_core_live 的清扫用自己的私有常量 `_verificationWindow = 8s` 验证候选，而同一模块的
+`LiveWatchdogs.sourceReadyTimeout = 18s` 声明的是**同一个问题**（打开了但没在播）的容忍度——而且那个看门狗
+只在验证通过之后才 arm，两者从不重叠。同一个问题两个截止日期，更紧的那个碰巧赢了，于是"还在探测"被判成
+"死了"。修法是删掉第二个截止日期：验证直接用 `sourceReadyTimeout`，`0` 表示连验证一起关掉（与看门狗同义）。
+测试改成缩短截止日期而不是干等生产值 18 秒，拒绝那条用例从 18 秒降到 0.6 秒，49 项全绿。
+
+**还有第二个贡献者，而且它说明用户跑的是旧构建**：Steam 那段日志里 `force-seekable="no"` 之后紧跟
+`="yes"`、`cache-pause="no"` 之后紧跟 `="yes"`、`http-proxy` 被写了两次——正是属性所有权修复
+（`build()` 与 `applyToSource` 不再重叠）**之前**的样子。也就是说清单源仍在跑 `cache-pause: yes` +
+`cache-pause-wait: 4`，探测完还要再等 4 秒缓存才肯走表；HEAD 上清单源是 `no`/`no`。**必须先热重启
+（大写 R）或重跑，否则这次 media_core 的修复也看不到效果。**
+
+**18 秒够不够 Steam，日志证明不了**（它在 8.1 秒被杀，没跑到探测结束）。若仍然失败，日志现在会写
+`position frozen at 0ms for 18s`，那就是探测本身没走完，下一个杠杆是**每请求成本**而不是这道闸门。
+
+**同时更正上一条里的一处不实**：我写过"media_kit 注册了 stream callback"。查证结果是——本仓、media_core、
+media_kit（Predidit fork 与 pub 1.2.6）的 Dart 与随包源码里**都没有** `mpv_stream_cb_add_ro` 或任何
+`stream_cb` 注册点；日志里的 `stream_callback/v: Opening <https URL>` 只能说明 libmpv 侧确实走了客户端
+注册的 stream_cb 协议（这正是 lavf 打出 `Disabling http_persistent/http_multiple due to custom io_open`
+的原因），但注册者在预编译的 libmpv/native 层里，我没找到。观测成立、归因未证实，那条"在 media_kit 侧
+不注册 stream callback"的待办因此要先改成"先找到注册者"。
+
 
 ### 还没声明的站点（上游有 format/codec，本仓待补）
 
