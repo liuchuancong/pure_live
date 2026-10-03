@@ -2,8 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io' show ZLibDecoder;
 import 'dart:math';
-import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:pure_live/core/logging/core_log.dart';
 import 'package:pure_live/core/models/live_message.dart';
 import 'package:pure_live/core/network/http_client.dart';
@@ -23,7 +23,8 @@ class SixRoomDanmakuArgs {
 /// 六间房的聊天（上游 M5.27）：房间页的私有聊天 socket，按网页对游客的做法匿名加入。
 ///
 /// - `GET /room/getChat.php?rid=<主播用户 id>` 取 `*.6rooms.com` 的服务器列表，
-///   逐个尝试（服务端每次打乱顺序）
+///   逐个尝试（服务端每次打乱顺序）；响应体是 JSON 但 mime 报的是 `text/html`，
+///   所以按文本取回来自己解（见 [parseChatServers]）
 /// - 打开后发 `command=login`（`uid` 是 1800000000～1899999999 的随机游客号，
 ///   `encpass` 为空，`roomid` 是主播的用户 id）；6 秒没等到 `login.success` 换下一台
 /// - 登录成功后 1 秒开始、之后每 16 秒发网页的 `noop` 心跳
@@ -114,14 +115,34 @@ class SixRoomDanmaku extends LiveDanmaku {
 
   Future<void> _refreshServers(int generation) async {
     final rid = _args?.userId ?? '';
-    final response = await HttpClient.instance.getJson(
+    final body = await HttpClient.instance.getText(
       '$_origin/room/getChat.php',
       queryParameters: <String, String>{'rid': rid},
       header: _headers(),
     );
     if (generation != _generation) return;
+    final servers = parseChatServers(body);
+    _servers
+      ..clear()
+      ..addAll(servers);
+  }
+
+  /// `getChat.php` 的响应体 → `*.6rooms.com:<port>` 聊天服务器列表。
+  ///
+  /// 入参是**文本**：这个接口回的是 `Content-Type: text/html; charset=UTF-8`，
+  /// 而 dio 只在 JSON mime 下才解码，所以 `getJson` 拿到的一直是字符串。曾经这里
+  /// 问的是 `response is Map`——永远为假，服务器列表永远是空的，弹幕于是永远停在
+  /// "连接失败，正在重试"。解码放在这里而不是依赖 HTTP 层的 mime 判断，就是这个
+  /// 坑的栅栏（`sixroom_danmaku_servers_test.dart` 用真实响应头钉住它）。
+  ///
+  /// 端口按主播不同（实测 5490 / 5590 / 5690），服务端每次还会打乱顺序，所以
+  /// 列表要按房间取、按顺序轮询。坏响应直接抛给 `_loop` 重试，比静默返回空列表
+  /// 诚实。
+  @visibleForTesting
+  static List<String> parseChatServers(String body) {
+    final response = json.decode(body);
     final websock = response is Map ? response['websock'] : null;
-    if (websock is! List) return;
+    if (websock is! List) return const <String>[];
     final servers = <String>[];
     for (final entry in websock) {
       final value = entry?.toString().trim() ?? '';
@@ -134,9 +155,7 @@ class SixRoomDanmaku extends LiveDanmaku {
       if (servers.contains(value)) continue;
       servers.add(value);
     }
-    _servers
-      ..clear()
-      ..addAll(servers);
+    return servers;
   }
 
   Future<void> _joinServer(String server, int generation) async {

@@ -1124,6 +1124,51 @@ facade 存 `_pendingSeekAt` → 在既有状态监听里 `_tryApplyPendingSeek()
 | 31-5 | 记忆卡片的流行度/开播时间/限制只在同一场直播在播时使用 | 未做 |
 | 统一规则 | 私密/黑屏是在播 + 限制（不是未知/下播） | **已同步**：私密 → private、黑屏 → unplayable，状态改按**在播**上报（此前是未知） |
 
+### 弹幕从来没连上过：接口谎报 mime，`getJson` 拿到的是字符串（2026-10-04，已修）
+
+症状是弹幕区一直刷「六间房弹幕连接失败，正在重试」。那句话只出现在 `_loop` 的 catch 里，而 catch 里唯一会抛
+的是取聊天服务器列表那一次请求——于是逐段实测：
+
+- `GET https://v.6.cn/room/getChat.php?rid=<主播用户 id>` → **200**，体是
+  `{"a":[],"b":[],"websock":["snbjg1.6rooms.com:5490",…]}`，任何 UA 都一样，`rid` 传错值也照样给列表。
+- `wss://snbjg2.6rooms.com:5490` 握手 103ms（走 Clash 124ms），`command=login` 后 34ms 收到
+  `enc=no / command=result / content=login.success`，随后持续下发 `enc=yes` 的 `receivemessage`。
+
+两条腿都是好的，问题在中间那一步的**响应头**：`Content-Type: text/html; charset=UTF-8`。dio 只在 JSON mime
+下才解码（`Transformer.isJsonMimeType`），所以 `getJson` 返回的是**字符串**；`_refreshServers` 问的是
+`response is Map`，永远为假 → 静默 `return` → 服务器列表永远空 → `_loop` 抛
+`StateError('六间房：没有取到聊天服务器')` → 每 1~8 秒重报一次"连接失败"。**这个站的弹幕一次也没连上过。**
+
+修：按文本取（`getText`）、解码放进 `parseChatServers(String body)`（`@visibleForTesting`）。坏响应现在抛
+`FormatException` 交给重试并在日志里留下真因，不再伪装成"站点没给服务器"。
+测试 `test/shared/platforms/sixroom_danmaku_servers_test.dart` 用**真实响应头**回放（stub 适配器回
+`text/html`），第一条就钉住"`getJson` 对这个接口给的是 String 而不是 Map"；另有 host/port 白名单与坏响应
+两条。生产链路用修好的矩阵探针跑通：`roomId=58018 readyCount=1 reconnectCount=0 terminalCloseCount=0
+chatCount=1 connectedAtEnd=true`（20 秒观测，`chatCount=1` 说明 DEFLATE + `( ) @` 变体 Base64 + `typeID`
+过滤这条解码链在真实帧上是通的）。
+
+**同一类陷阱的排查结果**（按各站自己的请求头实测 mime；只有 200/JSON 才算证明）：
+
+| 站点 | 端点 | mime | 结论 |
+| --- | --- | --- | --- |
+| sixroom | `v.6.cn/room/getChat.php` | **text/html** | 曾经坏，已修 |
+| chzzk | `routing.chat.naver.com/routing/getRouting` | application/json | 正常 |
+| bigo | `ta.bigo.tv/…/getWebSocketLink` | application/json | 正常 |
+| kugou | `fx1.service.kugou.com/socket_scheduler/…address.jsonp` | application/json | 正常（`.jsonp` 后缀但回 JSON） |
+| picarto | `ptvintern.picarto.tv/ptvapi` | application/json | 正常 |
+| seventeenlive | `api-dsa.17app.co/api/v1/messenger/auth` | application/json | 正常 |
+| jdlive | `api.m.jd.com/api` | application/json | 正常——**但只在带上 `Origin`/`Referer: live.jd.com` 与完整表单时**；裸请求回的是 `text/plain`。mime 探测必须复刻真实请求头，否则会得到相反结论 |
+| kuaishou | `livev.m.chenzhongtech.com/…` | 未证明（要 cookie 与 `liveStreamId`） | 结构上安全：`parseFeedPayload` 对 String 反复 `jsonDecode` |
+| twitcasting | `twitcasting.tv/eventpubsuburl.php` | 未证明（`movie_id=0` 只拿到 400 text/html） | 待核：同样是 PHP 栈，和 6.cn 同族，下一个最可能踩坑的 |
+| steambroadcast | `steamcommunity.com/broadcast/getchatinfo/` | 未证明（无效 steamid 只拿到 500 + application/json） | 待核 |
+
+**顺带修好的工具**：`tool/probes/danmaku_connection_matrix_probe_test.dart` 之前根本编译不过——两个导入还指着
+搬家前的 `domains/live/domain/live_{danmaku,site}.dart`，`getRoomDetail` 也还在用旧的
+`(roomId:, platform:)` 具名签名（现在是 `getRoomDetail(LiveRoom)`）。改成把发现的房间原样交给站点自己的详情
+路径（`danmakuData` 是详情阶段才拼出来的，探针不该自己重建房间），并把 sixroom 加进受支持列表。
+探针里那屏 `Localization key [sixroom_chat_notice] not found` 是**探针环境**没加载翻译资源，五个键在
+`assets/translations/{zh,en}.json` 里都在，不是产品缺陷。
+
 ## seventeenlive
 
 上游相关提交：`6d4743f84`（M4.U.33，33-1 至 33-7）。
