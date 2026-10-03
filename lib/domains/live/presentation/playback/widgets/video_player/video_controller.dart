@@ -202,6 +202,8 @@ class DanmakuManager {
           },
           userId: msg.userId,
           userName: msg.userName,
+          // 引擎不读它，但宿主撤回时要按这个 id 把这一条撤下来。
+          id: msg.messageId,
           textColor: originalColor,
           fontSize: localStyle?.fontSize,
           fontWeight: localStyle == null ? null : FontWeight(localStyle.fontWeight),
@@ -1033,6 +1035,24 @@ class VideoController with ChangeNotifier implements DanmakuSettingsSource {
 
   void sendDanmaku(LiveMessage msg) {
     _danmakuManager.sendDanmaku(msg, _playerManager.isPlayingNow, _playerManager.isCompactModeActive);
+  }
+
+  /// 平台撤回了弹幕：按目标把已上屏（或还在等轨道）的消息按条撤下来
+  /// （`flame_barrage` 的 `retractWhere`）。撤回全部时调用方直接用
+  /// [clearDanmaku]，这里只处理按观众/按消息 id 两种目标。
+  int retractDanmaku(bool Function(LiveMessage message) predicate) {
+    return _danmakuManager.controller.retractWhere(
+      (item) => predicate(
+        LiveMessage(
+          type: LiveMessageType.chat,
+          userName: item.userName ?? '',
+          userId: item.userId ?? '',
+          messageId: item.id ?? '',
+          message: item.content,
+          color: LiveMessageColor.white,
+        ),
+      ),
+    );
   }
 
   bool handleDanmakuPointer(Offset globalPosition, {required bool longPress}) {

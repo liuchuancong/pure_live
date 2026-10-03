@@ -820,10 +820,9 @@ packages:
   flame_barrage:
     dependency: "direct main"
     description:
-      name: flame_barrage
-      sha256: "7e590e42f225f134bf05e222de3199b6e1692f3898aa4c0396bb7bd6d79bcc58"
-      url: "https://pub.dev"
-    source: hosted
+      path: "E:/software/flame_barrage"
+      relative: false
+    source: path
     version: "0.0.8"
   flex_color_picker:
     dependency: "direct main"
