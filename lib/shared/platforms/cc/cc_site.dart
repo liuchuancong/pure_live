@@ -274,6 +274,9 @@ class CCSite
           liveStatus: _onAirStatus(LiveStatus.live, item["title"]),
           status: true,
           platform: PlatformIds.cc,
+          // 推荐卡片同样带开播时间与"有档位即无限制"（上游 cc 9-x）。
+          startedAt: _startedAt(_onAirStatus(LiveStatus.live, item['title']), item),
+          restriction: _restriction(_onAirStatus(LiveStatus.live, item['title']), item),
         );
         items.add(roomItem);
       }
@@ -364,7 +367,39 @@ class CCSite
       link: roomInfo['m3u8'],
       userId: roomInfo['cid'].toString(),
       data: roomInfo["quickplay"] ?? roomInfo["stream_list"],
+      // 在播/回放时带开播时间与"有档位即无限制"（上游 cc 9-x）。
+      startedAt: _startedAt(_onAirStatus(live ? LiveStatus.live : LiveStatus.offline, roomInfo['title']), roomInfo),
+      restriction: _restriction(
+        _onAirStatus(live ? LiveStatus.live : LiveStatus.offline, roomInfo['title']),
+        roomInfo,
+      ),
     );
+  }
+
+  /// 在播/回放时的限制：回答里带档位列表（`stream_list` 非空，或给了
+  /// `quickplay`）就是**无限制** —— 平台把流给任何人；否则这次回答没说（null）。
+  /// CC 这些回答里没有付费/私密/密码状态（上游 cc 9-x）。
+  static LiveRestriction? _restriction(LiveStatus status, Map room) {
+    if (status != LiveStatus.live && status != LiveStatus.replay) return null;
+    final streamList = room['stream_list'];
+    final quickplay = room['quickplay'];
+    final hasTiers = (streamList is List && streamList.isNotEmpty) || quickplay != null;
+    return hasTiers ? LiveRestriction.none : null;
+  }
+
+  /// 在播/回放时 `startat`（北京时间 `yyyy-MM-dd HH:mm:ss`）对应的开播时间；
+  /// 不在播时那是上一场的，所以不给（上游 cc 9-x）。
+  static DateTime? _startedAt(LiveStatus status, Map room) {
+    if (status != LiveStatus.live && status != LiveStatus.replay) return null;
+    final raw = room['startat']?.toString().trim() ?? '';
+    final match = RegExp(r'^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})$').firstMatch(raw);
+    if (match == null) return null;
+    final parts = [for (var index = 1; index <= 6; index++) int.tryParse(match.group(index) ?? '')];
+    if (parts.any((value) => value == null)) return null;
+    final year = parts[0]!;
+    if (year < 2000) return null;
+    // `startat` 是北京时间（UTC+8），转成 UTC 存。
+    return DateTime.utc(year, parts[1]!, parts[2]!, parts[3]!, parts[4]!, parts[5]!).subtract(const Duration(hours: 8));
   }
 
   /// [status] 之外的一条规则：在播但标题以「【重播】」开头的房间，是官方录播活动

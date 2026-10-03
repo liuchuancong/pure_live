@@ -183,7 +183,7 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | 9-1 | 清晰度改由 `video_play_url` 给出（服务端档位、`vbrname_mapping` 命名、hs/ali 双线路 + auth_key 租约），失败再退回 3.x 的 redirect playlist | 未做：整块换掉本仓的清晰度发现，需要连播放一起验，留作单独批次 |
 | 9-4 | 目录改用移动端 `gamecategory` API（4 分类 106 分区） | 未做 |
 | 9-5/9-6/9-7 | 搜索卡片亮封面与热度、详情关注数、关注刷新走 `recommendbyccid` | 未做：属列表/详情字段与刷新路径 |
-| 开播时间 / 限制 | `startat`（北京时间）与"有档位即无限制" | 未做：本仓 `LiveRoom` 没有这些字段 |
+| 开播时间 / 限制 | `startat`（北京时间）与"有档位即无限制" | **已同步**（详情与推荐卡片）：在播/回放时把 `startat`（北京时间 → UTC）填进 `startedAt`；`stream_list` 非空或给了 `quickplay` → 无限制，否则 null（CC 这些回答里没有付费/私密状态） |
 
 ## yy
 
