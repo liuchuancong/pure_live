@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
+import 'package:pure_live/core/models/live_room.dart';
 import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/core/network/request_scope.dart';
 
@@ -69,6 +70,7 @@ final class BaiduLiveRoom {
     required this.followers,
     required this.state,
     required Iterable<BaiduLiveVariant> variants,
+    this.restriction,
   }) : variants = List.unmodifiable(variants);
 
   final String roomId;
@@ -82,6 +84,9 @@ final class BaiduLiveRoom {
   final int? followers;
   final BaiduLiveState state;
   final List<BaiduLiveVariant> variants;
+
+  /// 付费/禁止访问/无可播档位等的限制种类（上游 30-5）；null 表示这次回答没说。
+  final LiveRestriction? restriction;
 
   BaiduLiveRoom enrich(BaiduLiveRoom known) => BaiduLiveRoom(
     roomId: roomId,
@@ -402,6 +407,7 @@ class BaiduLiveApi {
       followers: _nonNegative(command['real_fans_num'] ?? host['fans']),
       state: state,
       variants: variants,
+      restriction: _detailRestriction(command, state, variants),
     );
   }
 
@@ -538,11 +544,8 @@ class BaiduLiveApi {
   }
 
   static BaiduLiveState _detailState(Map<String, Object?> command) {
-    if ((_integer(command['has_pay_service']) ?? 0) > 0 ||
-        (_integer(command['is_forbidden_url']) ?? 0) > 0 ||
-        (_integer(command['ban_status']) ?? 0) > 0) {
-      return BaiduLiveState.restricted;
-    }
+    // 付费/禁止访问/封禁不再改状态：它们仍然是在播（或回放），只是带限制种类
+    // （上游 30-5）。此前一律返回 restricted，于是房间显示为"未知"。
     return switch (_integer(command['status'])) {
       0 => BaiduLiveState.live,
       -1 || 1 => BaiduLiveState.preview,
@@ -550,6 +553,23 @@ class BaiduLiveApi {
       3 => BaiduLiveState.replay,
       _ => BaiduLiveState.unknown,
     };
+  }
+
+  /// 详情的限制种类（上游 30-5）：禁止访问/封禁 → unplayable，付费 → paid，
+  /// 在播或回放却一个档位都没有 → unplayable，其余在播/回放 → none，
+  /// 其它状态 → null（没说）。
+  static LiveRestriction? _detailRestriction(
+    Map<String, Object?> command,
+    BaiduLiveState state,
+    List<BaiduLiveVariant> variants,
+  ) {
+    if (state != BaiduLiveState.live && state != BaiduLiveState.replay) return null;
+    if ((_integer(command['is_forbidden_url']) ?? 0) > 0 || (_integer(command['ban_status']) ?? 0) > 0) {
+      return LiveRestriction.unplayable;
+    }
+    if ((_integer(command['has_pay_service']) ?? 0) > 0) return LiveRestriction.paid;
+    if (variants.isEmpty) return LiveRestriction.unplayable;
+    return LiveRestriction.none;
   }
 
   static bool _allowedMediaHost(String host) =>

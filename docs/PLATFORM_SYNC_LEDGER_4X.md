@@ -443,7 +443,7 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | 30-8 | http 房间链接也接受（默认端口按 scheme 判定） | **已同步** |
 | 30-1 / 30-2 | 清晰度按档位（原画 + 各高度），平台当前 CDN 作为备份线路；H.265 单列一档 | 未做：清晰度发现 |
 | 30-4 | 已结束的直播是回放，播它的录像（`replay_list`/`video_hevc`） | 未做：回放取流 |
-| 30-5 | 付费/禁止/封禁保留状态并标 paid/unplayable | 未做：限制模型 |
+| 30-5 | 付费/禁止/封禁保留状态并标 paid/unplayable | **已同步**：禁止访问/封禁→unplayable、付费→paid、在播或回放却没有档位→unplayable、其余→none；这些不再把状态改成"未知"（详情路径） |
 | 30-6 / 30-7 | 推荐与 rec 频道各自独立 feed 会话；简介取 `video.description` | 未做 |
 
 ## twitcasting

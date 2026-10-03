@@ -143,7 +143,8 @@ final class BaiduLiveSite extends LiveSite
   static LiveRoom _room(BaiduLiveRoom room, {required bool includeMedia}) {
     final online = room.currentViewers?.toString();
     final notice = <String>[
-      if (room.state == BaiduLiveState.restricted) i18n('baidulive_restricted_notice'),
+      if (room.restriction != null && room.restriction != LiveRestriction.none)
+        i18n('baidulive_restricted_notice'),
       i18n('baidulive_chat_notice'),
     ];
     return LiveRoom(
@@ -158,9 +159,14 @@ final class BaiduLiveSite extends LiveSite
       link: BaiduLiveLink.watchUrl(room.roomId),
       liveStatus: switch (room.state) {
         BaiduLiveState.live => LiveStatus.live,
-        BaiduLiveState.preview || BaiduLiveState.offline || BaiduLiveState.replay => LiveStatus.offline,
+        BaiduLiveState.replay => LiveStatus.replay,
+        BaiduLiveState.preview || BaiduLiveState.offline => LiveStatus.offline,
         BaiduLiveState.restricted || BaiduLiveState.unknown => LiveStatus.unknown,
       },
+      // 付费/禁止访问是在播 + 限制（上游 30-5），播放时才说明原因。
+      restriction: room.state == BaiduLiveState.live || room.state == BaiduLiveState.replay
+          ? room.restriction
+          : null,
       watching: online ?? '',
       onlineViewers: online,
       followers: room.followers?.toString(),
