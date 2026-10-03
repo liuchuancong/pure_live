@@ -859,6 +859,12 @@ class DouyinSite
           id: key.toLowerCase(),
           sort: sort,
           data: List<String>.unmodifiable(urls),
+          // 平台为这一档声明的画面尺寸（上游 F.1b）：解码器报出真实尺寸前用它排版。
+          declaredAspectRatio: _declaredAspectRatio(
+            main: main is Map ? main : null,
+            descriptor: descriptor,
+            sdkParams: sdkParams,
+          ),
         ),
       );
     }
@@ -929,6 +935,42 @@ class DouyinSite
     'MD' => 1000000,
     _ => 0,
   };
+
+  /// 平台为这一档声明的画面宽高比（上游 F.1b）：依次看
+  /// `main.width/height`、`main.sdk_params.width/height`、`sdk_params.resolution`、
+  /// 档位描述里的 `resolution`。尺寸要在 120–16384 之间、宽高比在 0.30–3.50 之间，
+  /// 否则不算（`stream_orientation` 与顶层 `extra.width/height` 从不读，和 3.x 一致）。
+  static double? _declaredAspectRatio({
+    required Map<dynamic, dynamic>? main,
+    required Map<dynamic, dynamic> descriptor,
+    required Map<dynamic, dynamic> sdkParams,
+  }) {
+    ({int width, int height})? fromResolution(Object? value) {
+      final match = RegExp(r'(\d{2,5})\s*[xX×*]\s*(\d{2,5})').firstMatch(value?.toString() ?? '');
+      if (match == null) return null;
+      return _plausibleSize(int.tryParse(match[1]!), int.tryParse(match[2]!));
+    }
+
+    final sdkResolution = sdkParams['resolution'];
+    final descriptorResolution = descriptor['resolution'];
+    final size =
+        _plausibleSizeValues(main?['width'], main?['height']) ??
+        _plausibleSizeValues(sdkParams['width'], sdkParams['height']) ??
+        fromResolution(sdkResolution) ??
+        fromResolution(descriptorResolution);
+    return size == null ? null : size.width / size.height;
+  }
+
+  static ({int width, int height})? _plausibleSizeValues(Object? rawWidth, Object? rawHeight) =>
+      _plausibleSize(int.tryParse(rawWidth?.toString() ?? ''), int.tryParse(rawHeight?.toString() ?? ''));
+
+  static ({int width, int height})? _plausibleSize(int? width, int? height) {
+    if (width == null || height == null || width < 120 || height < 120 || width > 16384 || height > 16384) {
+      return null;
+    }
+    final ratio = width / height;
+    return ratio < 0.30 || ratio > 3.50 ? null : (width: width, height: height);
+  }
 
   @override
   Future<List<String>> getPlayUrls({required LiveRoom liveroom, required LivePlayQuality quality}) async {

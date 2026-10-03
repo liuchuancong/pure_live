@@ -165,6 +165,7 @@ final class LivePlayerFacade {
     // switch) is authoritative: dropping it left the quality label pinned on
     // the first entry after every switch.
     final committed = sourceSelection is PlaybackSourceQualitySelection ? sourceSelection : null;
+    _declaredAspectRatio = committed?.declaredAspectRatio;
     _publishCommit(sourceUrl, playUrls, committed?.qualities ?? qualities, committed?.currentQuality ?? currentQuality);
     if (liveroom != null) await setVolume(liveroom.getSavedVolume().clamp(0.0, 1.0));
   }
@@ -465,9 +466,15 @@ final class LivePlayerFacade {
 
   double get currentPresentationAspectRatio {
     final size = handle?.combinedSnapshot.geometry.videoSize;
-    if (size == null || size.width <= 0 || size.height <= 0) return 16 / 9;
+    if (size == null || size.width <= 0 || size.height <= 0) {
+      // 解码器还没报尺寸：用平台声明的宽高比排版（上游 F.1b），没有才退回 16:9。
+      return _declaredAspectRatio ?? 16 / 9;
+    }
     return size.width / size.height;
   }
+
+  /// 平台为当前档声明的画面宽高比（上游 F.1b）；没声明时为 null。
+  double? _declaredAspectRatio;
 
   VideoSourceOrientation get effectiveVideoOrientation =>
       isVerticalVideo.value ? VideoSourceOrientation.portrait : VideoSourceOrientation.landscape;
@@ -672,10 +679,14 @@ class PlaybackSourceQualitySelection {
     required this.qualities,
     required this.currentQuality,
     this.sourceQueryPolicies = const {},
+    this.declaredAspectRatio,
   });
   final List<LivePlayQuality> qualities;
   final int currentQuality;
   final Map<String, HlsSourceQueryPolicy> sourceQueryPolicies;
+
+  /// 平台为这一档声明的画面宽高比（上游 F.1b），null 表示没声明。
+  final double? declaredAspectRatio;
 }
 
 /// The desktop/system PiP surface: hover reveals the controls (a large

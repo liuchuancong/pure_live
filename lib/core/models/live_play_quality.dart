@@ -18,7 +18,18 @@ class LivePlayQuality {
   /// requested name/id. Missing acknowledgements must not rename request data.
   final bool isPlaybackUnconfirmed;
 
-  LivePlayQuality({required this.quality, this.data, this.id, this.sort = 0, this.isPlaybackUnconfirmed = false});
+  LivePlayQuality({
+    required this.quality,
+    this.data,
+    this.id,
+    this.sort = 0,
+    this.isPlaybackUnconfirmed = false,
+    this.declaredAspectRatio,
+  });
+
+  /// 平台为这一档声明的画面宽高比（上游 F.1b 的"声明图片尺寸"）。解码器报出真实
+  /// 尺寸之前用它排版；平台没声明时为 null。
+  final double? declaredAspectRatio;
 
   LivePlayQuality withPlaybackUnconfirmed(bool value) => value == isPlaybackUnconfirmed
       ? this

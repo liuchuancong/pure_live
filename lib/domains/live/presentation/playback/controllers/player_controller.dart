@@ -360,6 +360,8 @@ class PlayerController extends GetxController {
         preferredLineIndex: preferredIndex,
         selection: PlaybackSourceQualitySelection(
           sourceQueryPolicies: resolution.sourceQueryPolicies,
+          // 平台声明的画面宽高比（上游 F.1b）：解码器报出真实尺寸前按它排版。
+          declaredAspectRatio: resolution.declaredAspectRatio,
           qualities: _qualityChoicesWithConfirmation(choices, requestedIndex, resolution),
           currentQuality: resolveAppliedQualityIndex(
             qualities: choices,
