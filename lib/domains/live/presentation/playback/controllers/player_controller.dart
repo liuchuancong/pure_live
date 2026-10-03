@@ -373,6 +373,8 @@ class PlayerController extends GetxController {
         invalidAt: liveSite is LivePlayLeaseMetadata
             ? (liveSite as LivePlayLeaseMetadata).getPlayUrlInvalidAt(urls[preferredIndex])
             : null,
+        // 轮播房的起播位置（点播稿件，直播/回放恒为 0）。
+        startAt: resolution.startAt,
       );
     };
   }

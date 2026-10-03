@@ -640,12 +640,18 @@ class PlaybackSourceRefreshResult {
     this.refreshAt,
     this.invalidAt,
     this.selection,
+    this.startAt = Duration.zero,
   }) : ownedSource = null;
 
-  const PlaybackSourceRefreshResult.owned({required Object? source, this.refreshAt, this.invalidAt, this.selection})
-    : ownedSource = source,
-      urls = const [],
-      preferredLineIndex = 0;
+  const PlaybackSourceRefreshResult.owned({
+    required Object? source,
+    this.refreshAt,
+    this.invalidAt,
+    this.selection,
+    this.startAt = Duration.zero,
+  }) : ownedSource = source,
+       urls = const [],
+       preferredLineIndex = 0;
 
   final Object? ownedSource;
   List<String> get linesOrUrls => urls;
@@ -655,6 +661,9 @@ class PlaybackSourceRefreshResult {
   final DateTime? refreshAt;
   final DateTime? invalidAt;
   final PlaybackSourceQualitySelection? selection;
+
+  /// 起播位置（点播稿件式的源才有：B 站轮播房的 `play_time`）。直播/回放恒为 0。
+  final Duration startAt;
 }
 
 @immutable

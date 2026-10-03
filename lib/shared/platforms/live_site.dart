@@ -24,15 +24,20 @@ import 'live_input_recipe.dart';
 /// [LivePlayQuality.selectionId] for platforms whose URL response has no
 /// separate acknowledgement.
 class LivePlayUrlResolution {
-  const LivePlayUrlResolution({required this.urls, this.appliedQualityData, this.qualityUnconfirmed = false})
-    : sourceQueryPolicies = const {},
-      inputRecipe = null;
+  const LivePlayUrlResolution({
+    required this.urls,
+    this.appliedQualityData,
+    this.qualityUnconfirmed = false,
+    this.startAt = Duration.zero,
+  }) : sourceQueryPolicies = const {},
+       inputRecipe = null;
 
   /// An owned input is a real source but has no exportable media URL.
   const LivePlayUrlResolution.owned({
     required LiveInputRecipe input,
     this.appliedQualityData,
     this.qualityUnconfirmed = false,
+    this.startAt = Duration.zero,
   }) : inputRecipe = input,
        urls = const [],
        sourceQueryPolicies = const {};
@@ -42,7 +47,12 @@ class LivePlayUrlResolution {
     required this.sourceQueryPolicies,
     this.appliedQualityData,
     this.qualityUnconfirmed = false,
+    this.startAt = Duration.zero,
   }) : inputRecipe = null;
+
+  /// 起播位置：只有"点播稿件"式的源用得上（B 站轮播房播的是循环稿件，
+  /// `getRoundPlayVideo` 的 `play_time` 是已经播过的秒数）。直播/回放恒为 0。
+  final Duration startAt;
 
   /// Policy-bearing sources are copied and validated together. Keys identify
   /// exact signed URLs, never only CDN positions or quality labels.
@@ -51,6 +61,7 @@ class LivePlayUrlResolution {
     required Map<String, HlsSourceQueryPolicy> sourceQueryPolicies,
     Object? appliedQualityData,
     bool qualityUnconfirmed = false,
+    Duration startAt = Duration.zero,
   }) {
     final normalized = normalizeResolvedPlayUrls(urls);
     final policies = <String, HlsSourceQueryPolicy>{};
@@ -66,6 +77,7 @@ class LivePlayUrlResolution {
       sourceQueryPolicies: Map.unmodifiable(policies),
       appliedQualityData: appliedQualityData,
       qualityUnconfirmed: qualityUnconfirmed,
+      startAt: startAt,
     );
   }
 
@@ -76,6 +88,7 @@ class LivePlayUrlResolution {
           sourceQueryPolicies: sourceQueryPolicies,
           appliedQualityData: appliedQualityData,
           qualityUnconfirmed: qualityUnconfirmed,
+          startAt: startAt,
         );
 
   final List<String> urls;

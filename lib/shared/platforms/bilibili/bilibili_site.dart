@@ -206,7 +206,8 @@ class BiliBiliSite
     );
     final urls = parseVideoPlayUrls(play);
     if (urls.isEmpty) throw const FormatException('Bilibili 轮播视频没有可播放地址');
-    return LivePlayUrlResolution(urls: urls, appliedQualityData: carouselQualityId);
+    // 就从轮播当前进度接着播（上游 M7.1）。
+    return LivePlayUrlResolution(urls: urls, appliedQualityData: carouselQualityId, startAt: video.start);
   }
 
   /// 轮播房那一档清晰度（平台不提供分档，游客最高 480P）。
@@ -229,8 +230,9 @@ class BiliBiliSite
   /// `getRoundPlayVideo` 的 `data`：正在轮播的稿件与分 P。
   ///
   /// 回答自带的 `play_url` 已经失效（会跳到错误页），这里不读它。没有
-  /// `bvid` 或 `cid`（没有在轮播，或房间已开播）视为无源。
-  static ({String bvid, int cid}) parseRoundPlayVideo(dynamic response) {
+  /// `bvid` 或 `cid`（没有在轮播，或房间已开播）视为无源。`play_time` 是已经播过
+  /// 的秒数，作为起播位置返回；非数字或 ≤0 从 0 开始（上游 M7.1）。
+  static ({String bvid, int cid, Duration start}) parseRoundPlayVideo(dynamic response) {
     if (response is! Map) throw const FormatException('Bilibili round play response is not an object');
     if (response['code'] != 0) {
       throw StateError('Bilibili getRoundPlayVideo code=${response['code']}: ${response['message']}');
@@ -241,7 +243,8 @@ class BiliBiliSite
     if (!_bvidPattern.hasMatch(bvid) || cid <= 0) {
       throw const FormatException('Bilibili getRoundPlayVideo: 没有正在轮播的视频');
     }
-    return (bvid: bvid, cid: cid);
+    final played = data is Map ? (int.tryParse(data['play_time']?.toString() ?? '') ?? 0) : 0;
+    return (bvid: bvid, cid: cid, start: Duration(seconds: played > 0 ? played : 0));
   }
 
   static final RegExp _bvidPattern = RegExp(r'^BV[0-9A-Za-z]{10}$');

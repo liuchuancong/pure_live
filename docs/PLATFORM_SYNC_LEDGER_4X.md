@@ -61,13 +61,13 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 
 实施步骤（按顺序，一处不漏）：
 1. `bilibili_site.dart`：`parseRoundPlayVideo` 多返回 `start`（`Duration`，非数字/≤0 → 0）；
-   `_resolveCarouselVideo` 放进 `LivePlayUrlResolution`
-2. `live_site.dart`：`LivePlayUrlResolution` 新增 `startAt`（默认 `Duration.zero`，向后兼容）
+   `_resolveCarouselVideo` 放进 `LivePlayUrlResolution` —— **已做**（`c101b0f0` 一类提交）
+2. `live_site.dart`：`LivePlayUrlResolution` 新增 `startAt`（默认 `Duration.zero`，向后兼容）—— **已做**
 3. `player_controller.dart`：`PlaybackSourceRefreshResult` 带上 `startAt`（与现有
-   `refreshAt`/`invalidAt` 同一处、同一条通道）
-4. 结果消费处（source commit → open）：把 `startAt` 交给源/播放会话
+   `refreshAt`/`invalidAt` 同一处、同一条通道）—— **已做**
+4. 结果消费处（source commit → open）：把 `startAt` 交给源/播放会话 —— **未做**
 5. 播放器：open 完成后的第一个状态事件里 `if (startAt > 0) seek(startAt)`，**每条源只做一次**
-   （重连/切档不重复跳）
+   （重连/切档不重复跳）—— **未做**
 
 验证要求：全仓 `flutter analyze --no-pub` + `tool/validate_architecture.py --strict`；
 真机确认需观察轮播房首帧是否落在当前进度上。
