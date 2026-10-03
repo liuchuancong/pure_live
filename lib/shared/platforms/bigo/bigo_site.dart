@@ -1,7 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:pure_live/core/models/live_area.dart';
 import 'package:pure_live/core/models/live_room.dart';
-import 'package:pure_live/shared/platforms/empty_danmaku.dart';
 import 'package:pure_live/shared/platforms/live_danmaku.dart';
 import 'package:pure_live/shared/platforms/live_directory.dart';
 import 'package:pure_live/shared/platforms/live_search.dart';
@@ -12,6 +11,7 @@ import 'package:pure_live/core/utils/i18n.dart';
 import 'package:pure_live/shared/platforms/live_external_room.dart';
 
 import 'bigo_api.dart';
+import 'bigo_danmaku.dart';
 import 'bigo_input_recipe.dart';
 import 'bigo_link.dart';
 
@@ -53,7 +53,7 @@ final class BigoSite extends LiveSite
   String get directoryNoticeKey => 'bigo_directory_scope';
 
   @override
-  LiveDanmaku getDanmaku() => EmptyDanmaku();
+  LiveDanmaku getDanmaku() => BigoDanmaku();
 
   Future<List<BigoDirectoryCard>> _directory({CancelToken? cancel}) {
     if (cancel != null) return _api.directory(cancel: cancel);
@@ -190,6 +190,14 @@ final class BigoSite extends LiveSite
       totalViewers: null,
       notice: notice,
       httpHeaders: BigoApi.headers,
+      // 弹幕参数（上游 M5.20）：在播、有房间号、不是密码房（聊天要密码）时给。
+      danmakuData: liveStatus == LiveStatus.live && (room.roomId ?? '').isNotEmpty && restriction != LiveRestriction.password
+          ? BigoDanmakuArgs(
+              siteId: status.canonicalSiteId,
+              ownerId: status.ownerId,
+              roomId: room.roomId!,
+            )
+          : null,
       data: includeMedia && liveStatus == LiveStatus.live ? room : null,
     );
   }
