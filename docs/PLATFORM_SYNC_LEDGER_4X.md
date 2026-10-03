@@ -46,6 +46,17 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | tiktok | 5 | 本轮已摘取（见下） |
 | inke / xiaohongshu / weibo / liveme | 4 | 四站均已摘取（见下） |
 
+### F. 用户提示（错误/状态）同步清单（用户 2026-10-04 追加要求："用户提示也同步一下，比如出现了什么错误"）
+| 上游提示 | 本仓现状 |
+| --- | --- |
+| Twitch「Cookie 已失效，已改为匿名接收，请重新填写」 | **已做**：`NOTICE … Login authentication failed / Login unsuccessful` → `LiveMessageType.notice`（一次 connect 一次），并让后续握手改用匿名（`i18n: twitch_cookie_expired_notice`） |
+| 虎牙「直播已结束」（`EndLiveNotice`） | **已做**（`133725ed7`） |
+| B 站警告 / 切断直播 | **已做**（`6e79b8bda`） |
+| B 站「访客/登录失效」昵称提示条 | **已做**（`c2aca612b`） |
+| 各站 danmaku 关闭原因（`DanmakuCloseReason` + detail，如 `Broadcast ended`） | **部分**：各引擎有 `onClose("服务器连接失败…")`；未逐站对齐上游文案 |
+| 握手失败钩子（`f12bf0f8c`，`onHandshakeFailure`：可换新会话头重试） | **架构不同**：上游是 5.x 的 `DanmakuSocketConnection`，本仓是 `WebScoketUtils`；本仓无"失败后换头重试"通道（missevan 之类靠会话续期的站点用得上） |
+| 各站聊天连接器的 notice（17LIVE 暂停/结束、Picarto chip tips、missevan、CHZZK 等） | **不适用**：这些站点在本仓没有引擎（用户早前决定不新增引擎，待确认是否改为全做） |
+
 ## 未同步清单（2026-10 机械盘点 + 逐项核实）
 
 方法：`git log --no-merges 4802611aa..wzgrx/master -- packages/live_core/lib/src/sites packages/live_danmaku/lib/src`

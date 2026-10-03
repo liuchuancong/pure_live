@@ -1684,6 +1684,7 @@
   "danmaku_best_preset_desc": "最佳观看：弹幕只占画面顶部约 20%，速度与密度适中，避免遮挡主体内容。",
   "danmaku_realtime_hint": "本页调整会立即作用于上方直播画面；保存当前模板只用于以后快速恢复。",
   "danmaku_no_emoji": "纯文字模式（隐藏表情）",
+  "twitch_cookie_expired_notice": "Twitch 的 Cookie 已失效，弹幕已改为匿名接收，请重新填写 Twitch Cookie",
   "twitch_cookie_hint": "粘贴 Twitch Cookie",
   "twitch_cookie_tip": "登录 Twitch 网页并进入任意直播间，在浏览器开发者工具的网络请求中复制完整 Cookie；其中 auth-token 与 login 用于读取聊天。Cookie 仅保存在本机。",
   "site_twitch": "Twitch",

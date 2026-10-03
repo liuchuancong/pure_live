@@ -1684,6 +1684,7 @@
   "danmaku_best_preset_desc": "Best viewing uses about the top 20% of the picture with moderate speed and density.",
   "danmaku_realtime_hint": "Changes apply to the live picture immediately. Save Current only creates a reusable restore point.",
   "danmaku_no_emoji": "Pure text mode (hide emoji)",
+  "twitch_cookie_expired_notice": "The Twitch Cookie has expired, so chat switched to anonymous. Please fill in the Twitch Cookie again",
   "twitch_cookie_hint": "Paste the Twitch Cookie",
   "twitch_cookie_tip": "Sign in to Twitch and open a live channel, then copy the complete Cookie from a browser developer-tools network request. The auth-token and login fields are used to read chat. The Cookie stays on this device.",
   "site_twitch": "Twitch",

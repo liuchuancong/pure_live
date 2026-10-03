@@ -11,6 +11,10 @@ class TwitchDanmaku implements LiveDanmaku {
   WebScoketUtils? webScoketUtils;
   bool _connected = false;
 
+  /// 登录被拒过：这次连接之后不再用这份登录（上游 B-7）。
+  bool _loginRefused = false;
+  bool _loginRefusedReported = false;
+
   @override
   bool get isConnected => _connected;
 
@@ -48,6 +52,9 @@ class TwitchDanmaku implements LiveDanmaku {
 
   @override
   Future start(args) async {
+    // 每次进房重新开始：这次的连接重新用参数里的登录（上游 B-7）。
+    _loginRefused = false;
+    _loginRefusedReported = false;
     webScoketUtils = WebScoketUtils(
       url: serverUrl,
       heartBeatTime: heartbeatTime,
@@ -79,7 +86,7 @@ class TwitchDanmaku implements LiveDanmaku {
     final cookieValues = _parseCookie(cookie);
     final token = cookieValues['auth-token']?.trim() ?? '';
     final login = cookieValues['login']?.trim().toLowerCase() ?? '';
-    final authenticated = token.isNotEmpty && login.isNotEmpty;
+    final authenticated = token.isNotEmpty && login.isNotEmpty && !_loginRefused;
     final user = authenticated ? login : "justinfan${1000 + Random.secure().nextInt(99000)}";
     webScoketUtils
       ?..sendMessage(authenticated ? "PASS oauth:$token" : "PASS SCHMOOPIIE")
@@ -114,12 +121,37 @@ class TwitchDanmaku implements LiveDanmaku {
         // respond to PING according to https://dev.twitch.tv/docs/irc/#keepalive-messages
         webScoketUtils?.sendMessage(data.replaceFirst("PING", "PONG").trim());
       }
+      // 登录被拒（`NOTICE ... Login authentication failed` / `Login unsuccessful`）：
+      // 报一次用户提示，并让这次连接之后改用匿名（上游 B-7 候选 4：一次 connect 只说
+      // 一次；下一次 connect 会重新用参数里的登录，再被拒就再说一次）。
+      if (_isLoginRefusal(data)) {
+        _loginRefused = true;
+        if (!_loginRefusedReported) {
+          _loginRefusedReported = true;
+          onMessage?.call(
+            LiveMessage(
+              type: LiveMessageType.notice,
+              userName: '',
+              message: i18n('twitch_cookie_expired_notice'),
+              color: LiveMessageColor.white,
+            ),
+          );
+        }
+        return;
+      }
       for (final message in parseMessages(data)) {
         onMessage?.call(message);
       }
     } catch (e) {
       CoreLog.error(e);
     }
+  }
+
+  /// 这条 IRC 帧是不是"登录被拒"。Twitch 用 `NOTICE` 回这两句（大小写不敏感）。
+  static bool _isLoginRefusal(String data) {
+    if (!data.toUpperCase().contains('NOTICE')) return false;
+    final text = data.toLowerCase();
+    return text.contains('login authentication failed') || text.contains('login unsuccessful');
   }
 
   /// Parses complete Twitch IRC frames. Kept separate from socket delivery so
