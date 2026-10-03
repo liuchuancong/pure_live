@@ -373,7 +373,7 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | --- | --- | --- |
 | 19-4 | 未开播的房间没有观众数（`view_num` 是上一场残留） | **已同步**：详情里非在播时清空 watching/totalViewers |
 | 19-x | 直播详情在 `danmakuData` 带 `live_info`（主机限 showroom-live.com） | 未做：弹幕参数 |
-| 19-x | 限制 none/其它（非 0 时留 null）与 `current_live_started_at` | 限制 **已同步**（`premium_room_type` 0→none，其它留 null，不猜成付费）；`current_live_started_at` 未做 |
+| 19-x | 限制 none/其它（非 0 时留 null）与 `current_live_started_at` | 限制 **已同步**（`premium_room_type` 0→none，其它留 null，不猜成付费）；`current_live_started_at` **已同步**（`/api/room/profile` 里给了就读，转 UTC；该字段只在直播详情出现，读不到即 null） |
 
 ## fc2live
 

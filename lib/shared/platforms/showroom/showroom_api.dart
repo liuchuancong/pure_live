@@ -117,6 +117,7 @@ class ShowroomProfile {
     required this.description,
     required this.isLive,
     this.restriction,
+    this.startedAt,
   });
 
   final int roomId;
@@ -129,6 +130,10 @@ class ShowroomProfile {
   final int? totalViewers;
   final String description;
   final bool isLive;
+
+  /// `current_live_started_at`（Unix 秒）对应的本场开播时间；只有直播详情会给
+  /// （上游 19-x）。读不出来或不在 2000–2100 年就是 null。
+  final DateTime? startedAt;
 
   /// 见 [ShowroomLive.restriction]。
   final LiveRestriction? restriction;
@@ -145,6 +150,7 @@ class ShowroomProfile {
     description: description,
     isLive: value,
     restriction: restriction,
+    startedAt: startedAt,
   );
 }
 
@@ -304,7 +310,17 @@ class ShowroomApi {
       description: _optionalText(data['description']),
       isLive: _bool(data['is_onlive']),
       restriction: restrictionOf(data['premium_room_type']),
+      startedAt: _startedAt(data['current_live_started_at']),
     );
+  }
+
+  /// `current_live_started_at`（Unix 秒）→ UTC；读不出来或不在 2000–2100 年时
+  /// 返回 null（上游 19-x 的 `startTime` 规则）。
+  static DateTime? _startedAt(Object? value) {
+    final seconds = _optionalNonNegativeInt(value);
+    if (seconds == null || seconds <= 0) return null;
+    final time = DateTime.fromMillisecondsSinceEpoch(seconds * 1000, isUtc: true);
+    return time.year >= 2000 && time.year <= 2100 ? time : null;
   }
 
   Future<bool> liveStatus(int roomId, {CancelToken? cancel}) async {

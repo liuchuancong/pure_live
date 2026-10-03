@@ -231,6 +231,7 @@ class ShowroomSite extends LiveSite
       introduction: profile.description,
       liveStatus: profile.isLive ? LiveStatus.live : LiveStatus.offline,
       restriction: profile.isLive ? profile.restriction : null,
+      startedAt: profile.isLive ? profile.startedAt : null,
       data: profile.isLive && qualities.isNotEmpty ? _ShowroomPlayback('${profile.roomId}', qualities) : null,
       httpHeaders: ShowroomApi.mediaHeaders,
     );
