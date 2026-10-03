@@ -362,6 +362,8 @@ class PlayerController extends GetxController {
           sourceQueryPolicies: resolution.sourceQueryPolicies,
           // 平台声明的画面宽高比（上游 F.1b）：解码器报出真实尺寸前按它排版。
           declaredAspectRatio: resolution.declaredAspectRatio,
+          // 轮播房的起播位置（上游 M7.1）：播放器在时长就绪后 seek 一次。
+          startAt: resolution.startAt,
           qualities: _qualityChoicesWithConfirmation(choices, requestedIndex, resolution),
           currentQuality: resolveAppliedQualityIndex(
             qualities: choices,

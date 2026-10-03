@@ -102,6 +102,8 @@ final class LivePlayerFacade {
     _stateSub = _controller.onStateChanged.listen((state) {
       _stateSubject.add(state);
       _onStateChanged(state);
+      // 轮播房的起播位置（上游 M7.1）：时长一就绪就 seek 一次。
+      _tryApplyPendingSeek();
       final playing = state.playback == PlayerPlaybackState.playing;
       if (playing != _lastPlaying) {
         _lastPlaying = playing;
@@ -166,6 +168,8 @@ final class LivePlayerFacade {
     // the first entry after every switch.
     final committed = sourceSelection is PlaybackSourceQualitySelection ? sourceSelection : null;
     _declaredAspectRatio = committed?.declaredAspectRatio;
+    // 轮播房的起播位置：本条源重新武装，等时长就绪后 seek 一次。
+    _pendingSeekAt = committed?.startAt;
     _publishCommit(sourceUrl, playUrls, committed?.qualities ?? qualities, committed?.currentQuality ?? currentQuality);
     if (liveroom != null) await setVolume(liveroom.getSavedVolume().clamp(0.0, 1.0));
   }
@@ -476,6 +480,27 @@ final class LivePlayerFacade {
   /// 平台为当前档声明的画面宽高比（上游 F.1b）；没声明时为 null。
   double? _declaredAspectRatio;
 
+  /// 待应用的起播位置（上游 M7.1：B 站轮播房的 `play_time`）。只对"点播稿件"式的源
+  /// 有效；**每条源只 seek 一次**，换档/重连/中继重开都不会重放。
+  Duration? _pendingSeekAt;
+
+  /// 时长就绪后把待应用的起播位置落下去。时长还没报（或比起点还短）就先等着——
+  /// 有的解码器会忽略过早的 seek。
+  void _tryApplyPendingSeek() {
+    final pending = _pendingSeekAt;
+    if (pending == null || pending <= Duration.zero) return;
+    final player = handle;
+    if (player == null) return;
+    if (player.playback.duration <= pending) return;
+    _pendingSeekAt = null;
+    unawaited(
+      player.seek(pending).catchError((Object error, StackTrace stackTrace) {
+        // 起播位置落不下去不该影响播放本身：记一条日志就够。
+        debugPrint('Seek to the declared start failed: $error');
+      }),
+    );
+  }
+
   VideoSourceOrientation get effectiveVideoOrientation =>
       isVerticalVideo.value ? VideoSourceOrientation.portrait : VideoSourceOrientation.landscape;
 
@@ -680,6 +705,7 @@ class PlaybackSourceQualitySelection {
     required this.currentQuality,
     this.sourceQueryPolicies = const {},
     this.declaredAspectRatio,
+    this.startAt = Duration.zero,
   });
   final List<LivePlayQuality> qualities;
   final int currentQuality;
@@ -687,6 +713,9 @@ class PlaybackSourceQualitySelection {
 
   /// 平台为这一档声明的画面宽高比（上游 F.1b），null 表示没声明。
   final double? declaredAspectRatio;
+
+  /// 起播位置（上游 M7.1：B 站轮播房的 `play_time`）；直播/回放为 0。
+  final Duration startAt;
 }
 
 /// The desktop/system PiP surface: hover reveals the controls (a large

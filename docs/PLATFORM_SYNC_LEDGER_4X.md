@@ -219,9 +219,16 @@ chat/comment/PK/礼物/付费问答/撤回/公告）——这些站点在本仓�
 2. `live_site.dart`：`LivePlayUrlResolution` 新增 `startAt`（默认 `Duration.zero`，向后兼容）—— **已做**
 3. `player_controller.dart`：`PlaybackSourceRefreshResult` 带上 `startAt`（与现有
    `refreshAt`/`invalidAt` 同一处、同一条通道）—— **已做**
-4. 结果消费处（source commit → open）：把 `startAt` 交给源/播放会话 —— **未做**
+4. 结果消费处（source commit → open）：把 `startAt` 交给源/播放会话 —— **已做**
 5. 播放器：open 完成后的第一个状态事件里 `if (startAt > 0) seek(startAt)`，**每条源只做一次**
-   （重连/切档不重复跳）—— **未做**
+   （重连/切档不重复跳）—— **已做**
+
+**第 4-5 步落地要点（2026-10）**：`PlayerHandle` **本来就有** `Future<void> seek(Duration)`
+（在 `media_core` 的 `player_handle_playback.dart` 这个 part 里，所以早先按
+`player_handle.dart` 搜 `Future<` 时没看到），**不需要改 media_core**。实现：
+`PlaybackSourceQualitySelection.startAt`（与 F.1b 的 `declaredAspectRatio` 同一条通道）→
+facade 存 `_pendingSeekAt` → 在既有状态监听里 `_tryApplyPendingSeek()`：**时长 > 起点** 才
+`seek` 并清空（每条源一次；换档/重连/中继重开都不重放），失败只记日志。
 
 **第 4-5 步的关键障碍（2026-10 实测）**：本仓 `lib/` 里**没有任何 seek 调用**
 （`seek`/`jumpTo`/`setPosition` 全量搜索只命中滚动、菜单与 M3U 解析），也就是说
