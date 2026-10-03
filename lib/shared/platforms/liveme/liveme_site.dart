@@ -85,9 +85,11 @@ class LiveMeSite extends LiveSite
       liveStatus: switch (room.state) {
         LiveMeState.live => LiveStatus.live,
         LiveMeState.offline => LiveStatus.offline,
-        LiveMeState.restricted => LiveStatus.banned,
         LiveMeState.unknown => LiveStatus.unknown,
       },
+      // 受限的直播仍然是"在播"（上游 21-5），播放时才说明原因。
+      restriction: room.state == LiveMeState.live ? room.restriction : null,
+      startedAt: room.startedAt,
       watching: heat ?? '',
       popularity: heat ?? '',
       onlineViewers: room.currentViewers?.toString(),

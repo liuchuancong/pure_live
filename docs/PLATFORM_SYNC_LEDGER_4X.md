@@ -355,9 +355,9 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | --- | --- | --- |
 | 21-4 | 搜索行 `is_live` 0 对所有 project 都是未开播 | **已同步**：此前只信主 liveme 项目的 0，federated 项目的 0 被留成 pending |
 | 21-3 | 直播房间简介取资料的 `usign` | 未做 |
-| 21-5 | 去掉 `LiveMeState.restricted`：私密/付费是在播 + 限制种类 | 未做：限制模型 |
-| 21-8 | `wsABStime` = 开播时间 + 10h/24h | 未做：开播时间 |
-| startedAt / 限制 | 统一规则里的 `vtime` 开播时间与 none/private/paid | 未做：`LiveRoom` 缺字段 |
+| 21-5 | 去掉 `LiveMeState.restricted`：私密/付费是在播 + 限制种类 | **已同步**：`ispvt` 1 → private、`livebptype` 7 或 Paid broadcast 标签 → paid；受限仍照常列出，受限时不读流 |
+| 21-8 | `wsABStime` = 开播时间 + 10h/24h | **已同步**：`vtime` 读作开播时间（秒或毫秒，UTC） |
+| startedAt / 限制 | 统一规则里的 `vtime` 开播时间与 none/private/paid | **已同步**（见 21-5 / 21-8） |
 
 ## showroom
 

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
+import 'package:pure_live/core/models/live_room.dart';
 import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/core/network/request_scope.dart';
 
@@ -31,7 +32,10 @@ class LiveMeException implements Exception {
   String toString() => 'LiveMe ${kind.name}';
 }
 
-enum LiveMeState { live, offline, restricted, unknown }
+/// 直播状态。受限不再是状态：私密/付费的直播仍然是 [live]，只是带上
+/// [LiveRestriction]（上游 21-5）。
+enum LiveMeState { live, offline, unknown }
+
 
 class LiveMeStream {
   LiveMeStream({required this.qualityId, required this.protocol, required Iterable<Uri> urls})
@@ -60,6 +64,8 @@ class LiveMeRoom {
     required this.likes,
     required this.state,
     required Iterable<LiveMeStream> streams,
+    this.restriction = LiveRestriction.none,
+    this.startedAt,
   }) : streams = List.unmodifiable(streams);
 
   final String shortId;
@@ -77,6 +83,13 @@ class LiveMeRoom {
   final int? heat;
   final int? likes;
   final LiveMeState state;
+
+  /// 谁可以看这场直播：`ispvt` 1 是私密，`livebptype` 7 或标签写着
+  /// "Paid broadcast" 是付费（上游 21-5：受限的直播仍然是"在播"）。
+  final LiveRestriction restriction;
+
+  /// `vtime`（`wsABStime` 是开播时间 + 10h/24h，上游 21-8）转成的 UTC 时间。
+  final DateTime? startedAt;
   final List<LiveMeStream> streams;
 }
 
@@ -273,7 +286,8 @@ class LiveMeApi {
       // fail below.
       if (video['ushortid'] == null) continue;
       final room = _videoRoom(video, includeMedia: false);
-      if (room.state != LiveMeState.restricted && seen.add(room.shortId)) rooms.add(room);
+      // 受限的直播也照常列出（上游 21-5：它仍是"在播"，只是标了限制种类）。
+      if (seen.add(room.shortId)) rooms.add(room);
     }
     return LiveMeDirectoryPage(rooms: rooms, hasMore: _integer(data['next_page']) == 1);
   }
@@ -466,17 +480,13 @@ class LiveMeApi {
         (expectedVideoId != null && videoId != expectedVideoId)) {
       throw const LiveMeException(LiveMeFailure.identity);
     }
-    final restricted =
-        _integer(video['ispvt']) == 1 ||
-        _integer(video['livebptype']) == 7 ||
-        _optionalText(video['hot_label_v2'] is Map ? _object(video['hot_label_v2'])['text'] : null).toLowerCase() ==
-            'paid broadcast';
+    // 受限不再是"状态"：直播仍是直播，只是标明谁可以看（上游 21-5；3.x 与改前
+    // 显示为受限/封禁，并把房间挡在搜索结果之外）。
+    final restriction = restrictionOf(video);
     final online = _integer(video['online']);
     final status = _integer(video['status']);
     final roomState = _integer(video['roomstate']);
-    final state = restricted
-        ? LiveMeState.restricted
-        : online == 1 && status == 0 && roomState == 0
+    final state = online == 1 && status == 0 && roomState == 0
         ? LiveMeState.live
         : online == 0 || (status != null && status != 0) || (roomState != null && roomState != 0)
         ? LiveMeState.offline
@@ -499,8 +509,48 @@ class LiveMeApi {
       heat: state == LiveMeState.live ? _optionalNonNegativeInt(video['heat']) : null,
       likes: _optionalNonNegativeInt(video['likenum']),
       state: state,
-      streams: state == LiveMeState.live && includeMedia ? _streams(video) : const [],
+      restriction: restriction,
+      startedAt: state == LiveMeState.live ? _startedAt(video['vtime']) : null,
+      // 受限的直播不读流（读了也播不了，上游只在无限制时读）。
+      streams: state == LiveMeState.live && includeMedia && restriction == LiveRestriction.none
+          ? _streams(video)
+          : const [],
     );
+  }
+
+  /// `video_info` 的限制种类，按网页客户端自己的规则：`ispvt` 1 是私密；
+  /// `livebptype` 7 或标签文本 "Paid broadcast"（大小写无关）是付费；其余无限制
+  /// （上游 21-5）。
+  static LiveRestriction restrictionOf(Map<String, dynamic> video) {
+    if (_integer(video['ispvt']) == 1) return LiveRestriction.private;
+    if (_integer(video['livebptype']) == 7) return LiveRestriction.paid;
+    final label = video['hot_label_v2'];
+    final text = label is Map
+        ? _optionalText(_object(label)['text'])
+        : _paidLabelText(_optionalText(label));
+    if (text.toLowerCase() == 'paid broadcast') return LiveRestriction.paid;
+    return LiveRestriction.none;
+  }
+
+  /// `hot_label_v2` 可能是 JSON 文本（平台原样发的）也可能是对象；读不出来就当
+  /// 它什么都没说。
+  static String _paidLabelText(String raw) {
+    if (raw.isEmpty || !raw.trimLeft().startsWith('{')) return raw;
+    try {
+      final decoded = jsonDecode(raw);
+      return decoded is Map ? _optionalText(decoded['text']) : '';
+    } on FormatException {
+      return '';
+    }
+  }
+
+  /// `vtime`：秒或毫秒的 epoch，转成 UTC；读不出来就是 null。
+  static DateTime? _startedAt(Object? value) {
+    final raw = _integer(value);
+    if (raw == null || raw <= 0) return null;
+    final millis = raw > 100000000000 ? raw : raw * 1000;
+    final time = DateTime.fromMillisecondsSinceEpoch(millis, isUtc: true);
+    return time.year >= 2000 && time.year <= 2100 ? time : null;
   }
 
   static LiveMeRoom _offlineRoom(_LiveMeProfile profile, {required String expectedShortId}) {
