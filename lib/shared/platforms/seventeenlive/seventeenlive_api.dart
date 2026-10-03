@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
+import 'package:pure_live/core/models/live_room.dart';
 import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/core/network/request_scope.dart';
 
@@ -61,6 +62,7 @@ class SeventeenLiveRoom {
     required this.audioOnly,
     required this.state,
     required this.streams,
+    this.restriction,
   });
 
   final String roomId;
@@ -76,6 +78,10 @@ class SeventeenLiveRoom {
   final bool audioOnly;
   final SeventeenLiveState state;
   final List<SeventeenLiveStream> streams;
+
+  /// 谁可以看这场直播（见 [SeventeenLiveApi.restrictionOf]）；锁定的直播仍然是在播，
+  /// null 表示这次回答没说限制。
+  final LiveRestriction? restriction;
 }
 
 typedef SeventeenLiveRequest = Future<({int status, String body})> Function(Uri uri, CancelToken? cancel);
@@ -292,6 +298,10 @@ class SeventeenLiveApi {
       0 => SeventeenLiveState.offline,
       _ => SeventeenLiveState.unknown,
     };
+    // 网页客户端的 isLocked 规则：`premiumType` 不是 0 且没被 `paymentInfo.paid`
+    // 解锁的就是锁定的直播（匿名观众从没付过费）。锁定的直播仍然是"在播"，只是
+    // 本客户端播不了（上游 33-x）。
+    final restriction = restrictionOf(data['premiumContent']);
     final nickname = _firstText([user['displayName'], user['openID']]);
     final title = _optionalText(data['caption']);
     final streams = includeStreams && state == SeventeenLiveState.live ? _streams(data) : const <SeventeenLiveStream>[];
@@ -309,7 +319,27 @@ class SeventeenLiveApi {
       audioOnly: _integer(data['audioOnly']) == 1,
       state: state,
       streams: streams,
+      restriction: restriction,
     );
+  }
+
+  /// 直播的限制种类（上游 33-x 的 `isLocked` 规则）：没有 `premiumContent`
+  /// （房间回答里省略、搜索行写 null）或 `premiumType` 为 0 是
+  /// [LiveRestriction.none]；1（PAID）是 [LiveRestriction.paid]，2（ARMY，主播的
+  /// 军团成员）是 [LiveRestriction.subscribersOnly]，其它（3、NEW_USER 及以后）
+  /// 是 [LiveRestriction.unplayable]；不是对象则读不出来（null）。
+  static LiveRestriction? restrictionOf(Object? premium) {
+    if (premium == null) return LiveRestriction.none;
+    if (premium is! Map) return null;
+    final content = _object(premium);
+    final type = _integer(content['premiumType']) ?? 0;
+    final payment = content['paymentInfo'];
+    if (type == 0 || (payment is Map && _object(payment)['paid'] == true)) return LiveRestriction.none;
+    return switch (type) {
+      1 => LiveRestriction.paid,
+      2 => LiveRestriction.subscribersOnly,
+      _ => LiveRestriction.unplayable,
+    };
   }
 
   static List<SeventeenLiveStream> _streams(Map<String, dynamic> data) {

@@ -415,7 +415,7 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | 33-1 | 目录按地区（JP/TW/HK）与 sections 接口 | 未做：目录来源 |
 | 33-2 | 3.x 的 standard 就是主播源流：id `source`、名为「原画」、sort 500 | 未做：本仓仍是 standard/100，需要与 id 迁移一起做 |
 | 33-7 | 在播时 `startedAt` 取 `beginTime` | 未做：`LiveRoom` 缺字段 |
-| 限制 | `premiumContent` 锁定的直播是在播 + 限制（有源但不播） | 未做：限制模型 |
+| 限制 | `premiumContent` 锁定的直播是在播 + 限制（有源但不播） | **已同步**：`premiumType` 1→paid、2→subscribersOnly、其它→unplayable（0 或被 `paymentInfo.paid` 解锁→none，读不出来→null）；锁定时状态仍是**直播** |
 
 ## acfun
 
