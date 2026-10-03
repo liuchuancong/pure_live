@@ -10,10 +10,23 @@ Map<String, String> _properties(String url, {String? declared}) =>
 
 void main() {
   group('按源决定的引擎属性', () {
-    test('上游 HLS 指死解复用器，跳过格式探测', () {
+    test('上游 HLS 指死解复用器，并撤掉点播那套缓存假设', () {
       expect(_properties('https://cdn.example.com/live/index.m3u8'), {
         'http-proxy': _proxy,
         'demuxer-lavf-format': 'hls',
+        // 直播清单读到边缘就没有更多数据，cache-pause-wait 要的 4 秒永远凑不齐。
+        'force-seekable': 'no',
+        'cache-pause': 'no',
+      });
+    });
+
+    test('渐进式源保留可拖动与自动暂停', () {
+      // 数据连续到达，缓存目标凑得齐；B 站轮播房还要靠 seek 落到声明的起播位置。
+      expect(_properties('https://cdn.example.com/live/room.flv'), {
+        'http-proxy': _proxy,
+        'demuxer-lavf-format': '',
+        'force-seekable': 'yes',
+        'cache-pause': 'yes',
       });
     });
 
@@ -38,13 +51,20 @@ void main() {
     test('本机输入既不送代理也不猜容器', () {
       // 回环中继：代理转发本机端口既多一跳，也会被拒绝本地目标的代理打死；
       // 而 Dart 重写的 HEVC FLV 中继输出的根本不是 HLS，指死解复用器只会打死它。
-      for (final url in [
-        'http://127.0.0.1:4321/ingest/index.m3u8',
-        'http://localhost:4321/live.flv',
-        'http://[::1]:4321/index.m3u8',
-      ]) {
-        expect(_properties(url), {'http-proxy': '', 'demuxer-lavf-format': ''}, reason: url);
-      }
+      expect(_properties('http://127.0.0.1:4321/ingest/index.m3u8'), {
+        'http-proxy': '',
+        'demuxer-lavf-format': '',
+        // 内容仍然是直播清单，缓存策略照样要撤掉点播那套假设。
+        'force-seekable': 'no',
+        'cache-pause': 'no',
+      });
+      expect(_properties('http://localhost:4321/live.flv'), {
+        'http-proxy': '',
+        'demuxer-lavf-format': '',
+        'force-seekable': 'yes',
+        'cache-pause': 'yes',
+      });
+      expect(_properties('http://[::1]:4321/index.m3u8')['http-proxy'], '');
       expect(isPrivatePlaybackInput(Uri(scheme: 'owned', path: 'room')), isTrue);
     });
 

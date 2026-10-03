@@ -11,6 +11,7 @@ import 'package:media_core_floating/media_core_floating.dart';
 import 'package:media_core_media_kit/media_core_media_kit.dart' hide PlayerConsts;
 import 'package:pure_live/core/player/presentation/windows_pip_driver.dart';
 import 'package:pure_live/core/player/kernel/owned_input_opener.dart';
+import 'package:pure_live/core/player/kernel/mpv_log_forwarder.dart';
 import 'package:media_core_ijk_player/media_core_ijk_player.dart';
 import 'package:media_core_logging/media_core_logging.dart' as mlog;
 import 'package:media_core_mediasession/media_core_mediasession.dart';
@@ -39,9 +40,15 @@ class PlayerKernelService {
     final kernel = PlayerKernel()
       ..registerBackend(
         MediaKitAdapterFactory(
+          playerConfiguration: MediaKitLiveProperties.playerConfiguration(),
           customInputOpener: openOwnedInputOnKernelPlayer,
-          // 装配期的选项整个引擎一份；代理和容器格式是每条源一份，只能在打开前写。
-          beforeOpen: MediaKitLiveProperties.applyToSource,
+          // 装配期的选项整个引擎一份；代理、容器格式和直播缓存策略是每条源一份，
+          // 只能在打开前写。mpv 日志转发也挂在这里——这是不改 media_core 又能拿到
+          // 引擎实例的唯一时机。
+          beforeOpen: (player, source) async {
+            attachMpvLogForwarder(player);
+            await MediaKitLiveProperties.applyToSource(player, source);
+          },
           videoControllerConfigurationBuilder: MediaKitLiveProperties.buildVideoControllerConfiguration,
           // The app declares every tuning value it wants; the adapter applies
           // only what it is told.

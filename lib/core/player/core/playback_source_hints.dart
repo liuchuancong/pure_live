@@ -26,6 +26,9 @@ String? declaredStreamFormatOf(PlayerSource source) {
 /// 的代价，而 Dart 重写的 HEVC FLV 中继输出的就不是 HLS）。
 bool isPrivatePlaybackInput(Uri uri) {
   if (!const {'http', 'https'}.contains(uri.scheme.toLowerCase())) return true;
-  final host = uri.host.toLowerCase();
-  return host == 'localhost' || host == '::1' || host.startsWith('127.');
+  var host = uri.host.toLowerCase();
+  if (host == 'localhost' || host.startsWith('127.')) return true;
+  // IPv6 字面量的方括号在不同 Uri 实现里可能留着，两种都认。
+  if (host.startsWith('[') && host.endsWith(']')) host = host.substring(1, host.length - 1);
+  return host == '::1';
 }

@@ -199,6 +199,15 @@ abstract final class MediaKitLiveProperties {
     adapter.applyEngineOptions(await engineOptions());
   }
 
+  /// The native player configuration; only the log level differs from media_kit's
+  /// defaults, since passing this object at all means restating them.
+  static mkv.PlayerConfiguration playerConfiguration() => mkv.PlayerConfiguration(
+    // mpv 自己的日志默认只产出 error 级别，而且没人订阅（见 attachMpvLogForwarder）。
+    // 直播卡顿的一手证据——清单重载失败、分片的 HTTP 状态、cache-pause 为什么暂停
+    // ——都在 warn/v 级别里。发布构建收到 warn，调试构建收到 v。
+    logLevel: const bool.fromEnvironment('dart.vm.product') ? mkv.MPVLogLevel.warn : mkv.MPVLogLevel.v,
+  );
+
   /// 按源决定的 mpv 属性。
   ///
   /// 装配期那张表整个引擎生命周期只有一份，而这两项每条源都不一样：本机输入不能
@@ -210,16 +219,22 @@ abstract final class MediaKitLiveProperties {
     required String proxy,
   }) {
     final bool privateInput = isPrivatePlaybackInput(uri);
-    // 声明优先，其次 URL 形状（Twitch 那种把签名塞进路径的 `/v1/playlist/….m3u8`
-    // 也认得出）。本机输入两者都不看：探测本机几乎不要钱，而 Dart 重写的 HEVC FLV
-    // 中继输出的根本不是 HLS，指死解复用器只会把它打死。
-    final String? format = privateInput ? null : declaredFormat ?? (isHlsManifestUri(uri) ? 'hls' : null);
+    // 声明优先，其次 URL 形状（Twitch 那种把签名塞进路径里的 `/v1/playlist/….m3u8`
+    // 两种判据都认得出）。
+    final bool playlist = (declaredFormat ?? (isHlsManifestUri(uri) ? 'hls' : null)) == 'hls';
     return <String, String>{
       'http-proxy': privateInput ? '' : proxy,
       // 指死解复用器就跳过了 mpv 的格式探测：2MB 的 probesize 在高延迟线路上正好
       // 吃掉"8 秒卡在 0ms 判死"的那份起播预算。空串是清除——引擎是跨源复用的，
-      // 上一条源强制的 hls 不能漏到这一条 FLV 上。
-      'demuxer-lavf-format': format == 'hls' ? 'hls' : '',
+      // 上一条源强制的 hls 不能漏到这一条 FLV 上。本机输入不猜：探测本机不要钱，
+      // 而 Dart 重写的 HEVC FLV 中继输出的根本不是 HLS。
+      'demuxer-lavf-format': playlist && !privateInput ? 'hls' : '',
+      // 直播清单读到边缘就没有更多数据了，点播那套"可拖动 + 缓存低了自动暂停"的
+      // 假设在这里只会把播放器停住：cache-pause-wait 要的 4 秒永远凑不齐，而
+      // force-seekable 正是让 mpv 把直播当成可拖动流、从而启用 cache-pause 的那一步。
+      // 渐进式的 FLV/TS 数据连续到达，缓存目标凑得齐，保留原样。
+      'force-seekable': playlist ? 'no' : 'yes',
+      'cache-pause': playlist ? 'no' : 'yes',
     };
   }
 
