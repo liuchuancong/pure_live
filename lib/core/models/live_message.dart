@@ -142,6 +142,10 @@ class LiveMessage {
   final DateTime? sentAt;
   final LiveMessageStyle? style;
 
+  /// 文本里出现的表情图片（上游 4.x 的 `LiveMessage.emotes`）：平台能给出
+  /// "编码 → 图片"时填上，渲染层可以把它画成图而不是一段文字。默认空。
+  final List<LiveEmote> emotes;
+
   LiveMessage({
     required this.type,
     required String userName,
@@ -156,10 +160,36 @@ class LiveMessage {
     this.messageId = "",
     this.sentAt,
     this.style,
+    this.emotes = const <LiveEmote>[],
   }) : userName = stripInvisiblePlaceholders(userName),
        // 弹幕文本同样清掉不可见占位字符：平台在"原本有图"的位置留下的 U+FFFC
        // 等字符，字体画出来是方块（上游 M13.16 在弹幕运行时统一处理）。
        message = stripInvisiblePlaceholders(message);
+}
+
+/// 文本里的一个表情（上游 4.x 的 `LiveEmote`）：[code] 是文本中出现的编码
+/// （如 `[笑哭]`、`{:name:}`），[url] 是它的图片地址。
+class LiveEmote {
+  const LiveEmote({required this.code, required this.url});
+
+  /// 文本里的编码，原样匹配。
+  final String code;
+
+  /// 表情图片地址（http/https）。
+  final String url;
+
+  /// 从平台给的映射里挑出 [text] 中真正出现的编码。
+  static List<LiveEmote> inText(String text, Map<String, String> codes) {
+    if (text.isEmpty || codes.isEmpty) return const <LiveEmote>[];
+    final found = <LiveEmote>[];
+    for (final entry in codes.entries) {
+      final code = entry.key;
+      final url = entry.value;
+      if (code.isEmpty || url.isEmpty) continue;
+      if (text.contains(code)) found.add(LiveEmote(code: code, url: url));
+    }
+    return List.unmodifiable(found);
+  }
 }
 
 class LiveMessageColor {
