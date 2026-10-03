@@ -1,7 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:pure_live/core/models/live_area.dart';
 import 'package:pure_live/core/models/live_room.dart';
-import 'package:pure_live/shared/platforms/empty_danmaku.dart';
 import 'package:pure_live/shared/platforms/live_danmaku.dart';
 import 'package:pure_live/shared/platforms/live_directory.dart';
 import 'package:pure_live/shared/platforms/live_search.dart';
@@ -12,6 +11,8 @@ import 'package:pure_live/core/utils/i18n.dart';
 import 'package:pure_live/shared/platforms/live_external_room.dart';
 
 import 'look_live_api.dart';
+import 'look_live_danmaku.dart';
+import 'look_live_link_danmaku.dart';
 import 'look_live_link.dart';
 
 final class LookLiveSite extends LiveSite
@@ -47,7 +48,7 @@ final class LookLiveSite extends LiveSite
   String get directoryNoticeKey => 'looklive_directory_scope';
 
   @override
-  LiveDanmaku getDanmaku() => EmptyDanmaku();
+  LiveDanmaku getDanmaku() => LookLiveDanmaku();
 
   @override
   Future<List<LiveCategory>> getCategores(int page, int pageSize) async {
@@ -128,6 +129,13 @@ final class LookLiveSite extends LiveSite
           : (popularity != null ? AudienceMetricType.popularity : AudienceMetricType.unknown),
       notice: notices.join('\n'),
       httpHeaders: LookLiveApi.mediaHeaders(room.roomId),
+      // 弹幕参数（上游 M5.28）：房间号用来问聊天服务器，聊天室号用来登录。
+      danmakuData: room.state == LookLiveState.live
+          ? LookLiveDanmakuArgs(
+              roomId: room.roomId,
+              chatroomId: room.chatroomId.isEmpty ? room.roomId : room.chatroomId,
+            )
+          : null,
       data: includeMedia ? room : null,
     );
   }

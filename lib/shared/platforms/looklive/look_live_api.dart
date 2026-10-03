@@ -51,11 +51,15 @@ final class LookLiveRoom {
     required this.popularity,
     required this.currentViewers,
     required Iterable<LookLiveVariant> variants,
+    this.chatroomId = '',
   }) : variants = List.unmodifiable(variants);
 
   final String roomId;
   final String userId;
   final String sessionId;
+
+  /// 房间详情里 `roomInfo.roomId`（聊天室号，登录用它）；没有就是空串。
+  final String chatroomId;
   final String title;
   final String nick;
   final String avatar;
@@ -321,6 +325,7 @@ class LookLiveApi {
       roomId: id,
       userId: _identifier(anchor['userId']),
       sessionId: _identifier(info['id']),
+      chatroomId: _text(info['roomId']),
       title: _text(info['title']),
       nick: _text(anchor['nickName']),
       avatar: _picture(anchor['avatarUrl']),
