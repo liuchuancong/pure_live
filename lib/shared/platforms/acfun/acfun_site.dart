@@ -70,7 +70,17 @@ class AcfunSite extends LiveSite
       // （paidShowUserBuyStatus 不会是 true）。有付费字段但没有演出 → 无限制；
       // 完全没有这两个字段 → 平台没说（null）（上游 10-5）。
       restriction: live ? _restriction(data) : null,
+      // 在播时 `createTime`（epoch 毫秒）就是这场直播的开播时间（上游 10-3）。
+      startedAt: live ? _startedAt(data['createTime']) : null,
     );
+  }
+
+  /// `createTime`：epoch 毫秒（13 位），读不出来或不是合理时间就不给
+  /// （上游 10-3 的同一规则）。
+  static DateTime? _startedAt(Object? value) {
+    final raw = AcfunApi.integer(value);
+    if (raw == null || raw < 1000000000000 || raw >= 10000000000000) return null;
+    return DateTime.fromMillisecondsSinceEpoch(raw, isUtc: true);
   }
 
   /// `live/info`（与列表卡片同形）里的限制：
