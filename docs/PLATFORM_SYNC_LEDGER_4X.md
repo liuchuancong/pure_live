@@ -53,7 +53,7 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | 提交 | 内容 | 本仓状态 |
 | --- | --- | --- |
 | `0811c21f7` | 心跳人气占位值 1 不再顶掉详情里的真实热度（REG-BILIBILI-015） | **已同步** |
-| `12d03ac89` | `live_status` 2 = 轮播（详情/刷新/搜索）、`startedAt`、付费房限制 | **部分同步**：状态与轮播取流已做；**付费房限制已做**（`special_type` 1 且在播 → paid，其它取值 → none，字段缺失 → null）；`startedAt` 未做 |
+| `12d03ac89` | `live_status` 2 = 轮播（详情/刷新/搜索）、`startedAt`、付费房限制 | **部分同步**：状态与轮播取流已做；付费房限制已做（`special_type` 1 且在播 → paid）；**`startedAt` 详情已做**（`room_info.live_start_time` → UTC），搜索行的 `live_time`（北京时间文本）与轮播 `play_time` 起点未做 |
 | `8d7da2dfc` | 轮播视频播放（`getRoundPlayVideo` + `x/player/playurl`）、`LivePlayUrlResolution.start` | **部分同步**：取流已做；`start` 起点（`play_time` 续播）未做 |
 | `81733c1e6` | 游客可用分区页、搜索分区标签、弹幕撤回与公告 | 待办 |
 | `e8a00e0d4` | 弹幕在线人数与礼物上报 | 待办 |

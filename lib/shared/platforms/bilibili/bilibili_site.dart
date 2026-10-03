@@ -864,7 +864,18 @@ class BiliBiliSite
       // 在播时是 paid；没有这个字段说明平台没说（上游 bilibili 4-x 的
       // `_restriction`）。
       restriction: _paidRestriction(roomInfo['room_info']?['special_type'], live: live),
+      // 在播时 `room_info.live_start_time`（Unix 秒）就是这场直播的开播时间
+      // （上游 bilibili 4-x）。
+      startedAt: live ? _unixTime(roomInfo['room_info']?['live_start_time']) : null,
     );
+  }
+
+  /// Unix 秒 → UTC；读不出来或不在 2000–2100 年则不给。
+  static DateTime? _unixTime(Object? value) {
+    final seconds = value is num ? value.toInt() : int.tryParse(value?.toString().trim() ?? '');
+    if (seconds == null || seconds <= 0) return null;
+    final time = DateTime.fromMillisecondsSinceEpoch(seconds * 1000, isUtc: true);
+    return time.year >= 2000 && time.year <= 2100 ? time : null;
   }
 
   /// `special_type` 1 且正在直播 → [LiveRestriction.paid]；其它取值 → 无限制；
