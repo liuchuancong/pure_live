@@ -1,6 +1,5 @@
 import 'package:pure_live/core/models/live_room.dart';
 import 'package:pure_live/core/models/live_area.dart';
-import 'package:pure_live/shared/platforms/empty_danmaku.dart';
 import 'package:pure_live/shared/platforms/live_danmaku.dart';
 import 'package:pure_live/shared/platforms/live_site.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
@@ -11,6 +10,7 @@ import 'package:pure_live/shared/platforms/live_external_room.dart';
 import 'acfun_api.dart';
 import 'acfun_danmaku.dart';
 import 'acfun_directory.dart';
+import 'acfun_link_danmaku.dart';
 import 'acfun_search.dart';
 
 /// Anonymous AcFun live directory, author search, playback and recording.
@@ -44,7 +44,7 @@ class AcfunSite extends LiveSite
   @override
   String get name => 'AcFun 直播';
   @override
-  LiveDanmaku getDanmaku() => EmptyDanmaku();
+  LiveDanmaku getDanmaku() => AcfunLinkDanmaku();
 
   static LiveRoom parseRoom(Map<String, dynamic> data, String roomId) {
     final live = AcfunApi.validateRoomInfo(data, roomId);
@@ -175,20 +175,26 @@ class AcfunSite extends LiveSite
       fresh.data = playback;
       // 弹幕参数（上游 M5.9 / M4.10）：进房时拿到的访客会话与票据，连接本身不再发请求。
       if (playback.tickets.isNotEmpty) {
-        final visitor = await _api.visitorCredentials();
-        fresh.danmakuData = AcfunDanmakuArgs(
-          authorId: AcfunApi.normalizeAuthorId(fresh.roomId!),
-          liveId: playback.liveId,
-          userId: visitor.userId,
-          deviceId: visitor.did,
-          visitorToken: visitor.token,
-          security: visitor.security,
-          tickets: playback.tickets,
-          enterRoomAttach: playback.enterRoomAttach,
-        );
+        fresh.danmakuData = await _danmakuArgs(AcfunApi.normalizeAuthorId(fresh.roomId!), playback);
       }
     }
     return fresh;
+  }
+
+  /// 弹幕参数：会话 + 票据；`refresh` 用于票据过期或直播状态变化后重取一份。
+  Future<AcfunDanmakuArgs> _danmakuArgs(String authorId, AcfunPlayback playback) async {
+    final visitor = await _api.visitorCredentials();
+    return AcfunDanmakuArgs(
+      authorId: authorId,
+      liveId: playback.liveId,
+      userId: visitor.userId,
+      deviceId: visitor.did,
+      visitorToken: visitor.token,
+      security: visitor.security,
+      tickets: playback.tickets,
+      enterRoomAttach: playback.enterRoomAttach,
+      refresh: () async => _danmakuArgs(authorId, await _api.playback(authorId)),
+    );
   }
 
   @override

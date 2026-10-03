@@ -10,6 +10,7 @@ class AcfunDanmakuArgs {
     required this.security,
     required this.tickets,
     this.enterRoomAttach = '',
+    this.refresh,
   });
 
   /// 房间（主播 id）。
@@ -31,4 +32,7 @@ class AcfunDanmakuArgs {
 
   /// 进房时原样回带的 `enterRoomAttach`。
   final String enterRoomAttach;
+
+  /// 重新取一份访客会话与票据（票据会过期；每次重连从新会话开始）。
+  final Future<AcfunDanmakuArgs> Function()? refresh;
 }
