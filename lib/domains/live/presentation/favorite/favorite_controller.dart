@@ -50,7 +50,6 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
   // events from rotation/PiP while keeping room state current.
   static const Duration _resumeRefreshStaleAfter = Duration(seconds: 15);
   static const Duration _roomRefreshTimeout = Duration(seconds: 10);
-
   final onlineRooms = <LiveRoom>[].obs;
   final offlineRooms = <LiveRoom>[].obs;
   final replayRooms = <LiveRoom>[].obs;
@@ -786,11 +785,20 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
     // state while the bounded I/O workers refresh several cards concurrently.
     final siteCache = <String, LiveSite>{};
     final pendingUpdates = <String, LiveRoom>{};
+    // One entry per room that could not be refreshed. They are reported as a
+    // single summary line below: a stack trace per room used to bury the log
+    // whenever several rooms were offline, rate-limited or timing out at once.
+    final failedRooms = <String>[];
     final results = await boundedAsyncMap<LiveRoom, ({String key, LiveRoom room})>(
       valid,
       maxConcurrent: concurrency,
       task: (room) async {
-        final updated = await _refreshOneRoom(room, siteCache, bypassFailureCooldown: bypassFailureCooldown);
+        final updated = await _refreshOneRoom(
+          room,
+          siteCache,
+          bypassFailureCooldown: bypassFailureCooldown,
+          failedRooms: failedRooms,
+        );
         if (updated == null) return null;
         // Match by the requested favourite identity, not a canonical id that a
         // platform may return (Douyin room ids, for example, can change to the
@@ -800,6 +808,12 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
       shouldCancel: () => refreshEpoch != _refreshEpoch || isClosed,
     );
     if (refreshEpoch != _refreshEpoch || isClosed) return const <String, LiveRoom>{};
+    if (failedRooms.isNotEmpty) {
+      developer.log(
+        'Favorite refresh failed for ${failedRooms.length} room(s): ${summarizeFavoriteRefreshFailures(failedRooms)}',
+        name: 'FavoriteController',
+      );
+    }
     for (final update in results.whereType<({String key, LiveRoom room})>()) {
       pendingUpdates[update.key] = update.room;
     }
@@ -810,10 +824,13 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
     LiveRoom liveroom,
     Map<String, LiveSite> siteCache, {
     required bool bypassFailureCooldown,
+    required List<String> failedRooms,
   }) async {
     final key = _roomKey(liveroom);
     final failedAt = _refreshFailureCooldown[key];
     if (!bypassFailureCooldown && failedAt != null && _now().difference(failedAt) < _refreshFailureRetryAfter) {
+      // Suppressed by the retry cooldown: the room already failed a moment ago,
+      // so it is not reported again.
       return null;
     }
 
@@ -829,23 +846,57 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
       return result;
     } catch (error, stackTrace) {
       if (isClosed) return null;
-      final key = _roomKey(liveroom);
       _refreshFailureCooldown[key] = _now();
 
+      final label = _refreshFailureLabel(liveroom);
       if (error is FormatException && error.message == 'Huya room metadata is unavailable') {
-        developer.log('Favorite room unavailable: $key', name: 'FavoriteController');
+        failedRooms.add('$label（unavailable）');
+      } else if (error is Exception) {
+        // Routine: a room went offline, a platform rate-limited us, the request
+        // timed out or the body could not be parsed. The reason type is enough
+        // to tell them apart, and the summary line above names the room.
+        failedRooms.add('$label（${error.runtimeType}）');
       } else {
+        // Not an Exception: a programming error. Keep the full report.
         developer.log(
-          'Favorite room refresh failed: $key',
+          'Favorite room refresh error: $label',
           name: 'FavoriteController',
           error: error,
           stackTrace: stackTrace,
         );
+        failedRooms.add('$label（${error.runtimeType}）');
       }
 
       return null;
     }
   }
 
+  /// The name a user recognises plus the platform/room identity, for one log
+  /// entry: `小明（douyin/123456）`.
+  String _refreshFailureLabel(LiveRoom liveroom) {
+    final String platform = liveroom.normalizedPlatformId;
+    final String roomId = liveroom.roomId?.trim() ?? '';
+    final String nick = liveroom.nick?.trim() ?? '';
+    final String title = liveroom.title?.trim() ?? '';
+    final String name = nick.isNotEmpty ? nick : title;
+    final String identity = roomId.isEmpty
+        ? platform
+        : platform.isEmpty
+        ? roomId
+        : '$platform/$roomId';
+    return name.isEmpty ? identity : '$name（$identity）';
+  }
+
   String _roomKey(LiveRoom liveroom) => favoriteRoomIdentity(liveroom);
+}
+
+/// One line naming the rooms a refresh pass could not update.
+///
+/// The list is capped: a pass over a large favourites list with no network used
+/// to emit a stack trace per room, which hid everything else in the log.
+String summarizeFavoriteRefreshFailures(List<String> failures, {int max = 6}) {
+  if (failures.isEmpty) return '';
+  final String head = failures.take(max).join(' · ');
+  final int hidden = failures.length - max;
+  return hidden <= 0 ? head : '$head · …(+$hidden)';
 }
