@@ -6,6 +6,7 @@ import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/utils/event_bus.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:pure_live/shared/platforms/emoji_manager.dart';
+import 'package:pure_live/shared/platforms/live_site.dart' show LiveStreamFacts;
 import 'package:pure_live/core/models/live_play_quality.dart';
 import 'package:pure_live/core/player/core/playback_source.dart';
 import 'package:pure_live/core/player/core/live_audio_service.dart';
@@ -134,6 +135,7 @@ class LivePlayController extends GetxController
         currentQuality: restored?.currentQuality ?? 0,
         playUrls: restored?.playUrls ?? const <String>[],
         sourceQueryPolicies: restored?.sourceQueryPolicies ?? const {},
+        streamFacts: restored?.streamFacts ?? const {},
         ownedSource: restored?.ownedSource as OwnedPlaybackSource?,
         currentLineIndex: restored?.currentLineIndex ?? 0,
         isCurrentRoomAudioOnly: initialAudioOnly,
@@ -459,6 +461,7 @@ class LivePlayController extends GetxController
     int? currentQuality,
     List<String>? playUrls,
     Map<String, HlsSourceQueryPolicy>? sourceQueryPolicies,
+    Map<String, LiveStreamFacts>? streamFacts,
     OwnedPlaybackSource? ownedSource,
     bool clearOwnedSource = false,
     int? currentLineIndex,
@@ -480,6 +483,7 @@ class LivePlayController extends GetxController
         currentQuality: currentQuality,
         playUrls: playUrls,
         sourceQueryPolicies: sourceQueryPolicies,
+        streamFacts: streamFacts,
         ownedSource: ownedSource,
         clearOwnedSource: clearOwnedSource,
         currentLineIndex: currentLineIndex,
@@ -834,9 +838,8 @@ class LivePlayController extends GetxController
       LiveRestriction.password => i18n('restriction_password'),
       LiveRestriction.adult => i18n('restriction_adult'),
       LiveRestriction.unplayable => i18n('restriction_unplayable'),
-      LiveRestriction.none => room.effectiveLiveStatus == LiveStatus.banned
-          ? i18n('server_error_retry_later')
-          : i18n('stream_not_live'),
+      LiveRestriction.none =>
+        room.effectiveLiveStatus == LiveStatus.banned ? i18n('server_error_retry_later') : i18n('stream_not_live'),
     };
   }
 
@@ -1134,6 +1137,7 @@ class LivePlayController extends GetxController
               currentQuality: current.player.currentQuality,
               playUrls: List<String>.unmodifiable(current.player.playUrls),
               sourceQueryPolicies: Map<String, HlsSourceQueryPolicy>.unmodifiable(current.player.sourceQueryPolicies),
+              streamFacts: Map<String, LiveStreamFacts>.unmodifiable(current.player.streamFacts),
               ownedSource: current.player.ownedSource,
               currentLineIndex: current.player.currentLineIndex,
               headers: Map<String, String>.unmodifiable(current.player.videoController?.headers ?? const {}),

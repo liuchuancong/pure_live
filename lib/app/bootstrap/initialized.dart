@@ -21,6 +21,8 @@ import 'package:pure_live/core/platform/desktop_manager.dart';
 import 'package:pure_live/core/stream/upstream_proxy_routing.dart';
 import 'package:pure_live/core/player/core/ingest_ffmpeg_registry.dart';
 import 'package:pure_live/domains/recorder/data/services/ffmpeg_ingest_starter.dart';
+import 'package:pure_live/domains/live/data/stream/ingest_source_interceptor.dart';
+import 'package:pure_live/domains/live/domain/global_player_service.dart';
 import 'package:pure_live/features/backup/backup_controller.dart';
 import 'package:pure_live/core/player/kernel/player_kernel_service.dart';
 import 'package:pure_live/core/platform/windows_multi_instance_launcher.dart';
@@ -101,6 +103,11 @@ class AppInitializer {
     // player does; they run on the recorder's FFmpegKit build instead of linking
     // a second runtime.
     configureIngestFfmpegStarter(ffmpegKitIngestStarter);
+    // The player hands its candidate sources to this interceptor before opening
+    // them, so a line the engine cannot parse is remuxed over loopback instead of
+    // failing. Registered here rather than in the domain: the domain only knows
+    // the abstraction, and the FFmpeg runtime above is what makes it work.
+    GlobalPlayerService.sourceInterceptorFactory = IngestSourceInterceptor.new;
     configureWebSocketProxyRouting((_) {
       final proxy = SettingsService.to.proxy;
       return buildProxyDirective(

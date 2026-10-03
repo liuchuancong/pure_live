@@ -152,6 +152,7 @@ abstract interface class PlayerSessionHost {
     int? currentQuality,
     List<String>? playUrls,
     Map<String, HlsSourceQueryPolicy>? sourceQueryPolicies,
+    Map<String, LiveStreamFacts>? streamFacts,
     OwnedPlaybackSource? ownedSource,
     bool clearOwnedSource = false,
     int? currentLineIndex,
@@ -360,6 +361,7 @@ class PlayerController extends GetxController {
         preferredLineIndex: preferredIndex,
         selection: PlaybackSourceQualitySelection(
           sourceQueryPolicies: resolution.sourceQueryPolicies,
+          streamFacts: resolution.streamFacts,
           // 平台声明的画面宽高比（上游 F.1b）：解码器报出真实尺寸前按它排版。
           declaredAspectRatio: resolution.declaredAspectRatio,
           // 轮播房的起播位置（上游 M7.1）：播放器在时长就绪后 seek 一次。
@@ -404,6 +406,7 @@ class PlayerController extends GetxController {
       playUrls: commit.urls,
       ownedSource: commit.source is OwnedPlaybackSource ? commit.source as OwnedPlaybackSource : null,
       sourceQueryPolicies: selection?.sourceQueryPolicies ?? const {},
+      streamFacts: commit.streamFacts,
       currentLineIndex: commit.currentLineIndex,
     );
     _main.updateRoom(success: true, isLoading: false, loadError: null);
@@ -462,6 +465,7 @@ class PlayerController extends GetxController {
           : null,
       sourceSelection: PlaybackSourceQualitySelection(
         sourceQueryPolicies: playerState.sourceQueryPolicies,
+        streamFacts: playerState.streamFacts,
         qualities: playerState.qualites,
         currentQuality: playerState.currentQuality,
       ),
@@ -527,6 +531,7 @@ class PlayerController extends GetxController {
       currentQuality: currentQuality,
       playUrls: playUrls,
       sourceQueryPolicies: session.sourceQueryPolicies,
+      streamFacts: session.streamFacts,
       ownedSource: session.ownedSource as OwnedPlaybackSource?,
       currentLineIndex: currentLineIndex,
       isCurrentRoomAudioOnly: manager.desiredAudioOnlyMode,
@@ -564,6 +569,7 @@ class PlayerController extends GetxController {
         qualities: qualities,
         currentQuality: currentQuality,
         sourceQueryPolicies: session.sourceQueryPolicies,
+        streamFacts: session.streamFacts,
       ),
       livePlayController: _videoSessionController,
       onSourceCommitted: applySourceCommit,
@@ -681,6 +687,7 @@ class PlayerController extends GetxController {
       playUrls: List<String>.unmodifiable(resolution.urls),
       ownedSource: owned,
       sourceQueryPolicies: resolution.sourceQueryPolicies,
+      streamFacts: resolution.streamFacts,
       currentQuality: appliedQuality,
       currentLineIndex: lineIndex,
     );
@@ -738,6 +745,7 @@ class PlayerController extends GetxController {
           : LivePlayUrlResolution.withSourcePolicies(
               urls: List<String>.from(before.playUrls),
               sourceQueryPolicies: before.sourceQueryPolicies,
+              streamFacts: before.streamFacts,
               appliedQualityData: before.qualites[before.currentQuality].selectionId,
               qualityUnconfirmed: before.qualitySafe.isPlaybackUnconfirmed,
             );
@@ -791,6 +799,7 @@ class PlayerController extends GetxController {
         qualities: committedChoices,
         currentQuality: selection.qualityIndex,
         sourceQueryPolicies: resolution.sourceQueryPolicies,
+        streamFacts: resolution.streamFacts,
       );
       final resolver = _buildSourceResolver(
         site: site,
@@ -825,6 +834,7 @@ class PlayerController extends GetxController {
           playUrls: immutableUrls,
           ownedSource: owned,
           sourceQueryPolicies: resolution.sourceQueryPolicies,
+          streamFacts: resolution.streamFacts,
           currentLineIndex: selection.lineIndex,
           hasUseDefaultResolution: true,
         );
@@ -847,6 +857,7 @@ class PlayerController extends GetxController {
             playUrls: before.playUrls,
             ownedSource: before.ownedSource,
             sourceQueryPolicies: before.sourceQueryPolicies,
+            streamFacts: before.streamFacts,
             currentLineIndex: before.currentLineIndex,
             hasUseDefaultResolution: before.hasUseDefaultResolution,
           );

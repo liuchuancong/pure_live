@@ -176,26 +176,47 @@ kick、kilakila、pandalive、picarto、seventeenlive、showroom、sixroom、ste
 - 测试：`test/shared/platforms/live_stream_facts_test.dart`（10 个用例：判定映射、resolution 只保留本次线路、
   百度 HEVC 档位解析、TwitCasting 声明与"站外主机不声明"）。`flutter analyze` 0 项。
 
-### 阻塞点：转流实现当前没有调用方（接线之后才真正生效）
+### 接线已落地（2026-10-04）：`interceptSources` 接上，中继真的生效
 
-`domains/live/data/stream/playback_source_transport.dart`（清单探测 + `FfmpegIngestRelay` + `FlvSpliceRelay` +
-`FlvLegacyHevcRelay` + 租约生命周期，382 行）自从播放改走 `media_core_live` 的
-`LivePlaybackController.play(LiveSourceRequest)` 之后**没有任何调用方**：`LivePlayerFacade` 的
-`interceptSources` 钩子（构造参数）全仓没人传，`PlaybackSourceTransport(` 也没有实例化点。也就是说今天的
-直播取流是 URL + headers 直接进引擎，清单改写 / HEVC 转封装 / 到期拼接都不生效（多窗页另有自己的
-`FlvSpliceRelay` 用法）。接线方案（下一步，需要真机或桌面跑一次真实流验证）：
+`domains/live/data/stream/playback_source_transport.dart`（清单探测 + `FfmpegIngestRelay` +
+`FlvLegacyHevcRelay` + 租约生命周期）自从播放改走 `media_core_live` 的
+`LivePlaybackController.play(LiveSourceRequest)` 之后一直没有调用方：`LivePlayerFacade` 的
+`interceptSources` 钩子全仓没人传，`PlaybackSourceTransport(` 也没有实例化点。也就是说直播取流是
+URL + headers 直接进引擎，清单改写与 HEVC 转封装都不生效。现在接上了：
 
-1. 给 transport 加一个只准备输入的入口：
-   `Future<PlaybackInputLease?> prepare({url, headers, facts, policy, refreshAt, renewFlv})`，内部复用已有的
-   `_createIngestRelay/_createFfmpegRelay/_createSpliceRelay/_createLegacyHevcRelay`，把租约登记进
-   `_pending/_active`，`close()` 时释放；
-2. 在建 facade 的地方（`GlobalPlayerService._initialize`）传 `interceptSources:`，对每条 live `PlayerSource`
-   调 `prepare`：拿到租约就用回环 URI 换掉原 URI（回环不需要 headers），拿不到或出异常就**原样直连**——
-   最坏情况等于今天的行为，不会让播放变差；
-3. 事实来源：`LivePlayUrlResolution.streamFacts[url]`，随提交一起传到 facade（`FacadeStreamCommit` 需要加一个字段）；
-4. 释放点：facade 的 stop / replace / dispose 调 `transport.close()`；
-5. 接好之后，`playback_ingest_needs.dart` 的主机名表降级为"未声明主机的兜底"，`FlvLegacyHevcRelay` 的
-   Dart 重写路径保留为"没有 FFmpeg 运行时"时的降级。
+- **domain 抽象** `domains/live/domain/playback_source_interceptor.dart`：`PlaybackSourceInterception`
+  （候选源 + `streamFacts` + `sourceQueryPolicies`）与 `PlaybackSourceInterceptor`
+  （`intercept` / `release` / `close`）。domain 只认这个形状，不认识 FFmpeg。
+- **data 实现** `domains/live/data/stream/ingest_source_interceptor.dart`：**只接第一条**线路（内核按顺序
+  打开，第一条就是选中的线路，后面几条只是失败兜底；每条都起中继等于 N 个 FFmpeg 进程和 N 个端口）。
+  拿到租约就把回环 URI 换进 `PlayerSource.uri` 并丢掉只属于上游的鉴权头；拿不到、起不来或抛异常一律
+  **原样直连**，播放不会因为接线变差。`owned:` 配方与本地文件不接线。
+- **transport**：旧播放器的原生派发口 `open(nativeOpen:)` 已无调用方，换成
+  `prepare({url, headers, facts, policy}) -> PlaybackInputLease?`。决策链不变：声明了事实就信事实
+  （省掉每次 HLS 起播的清单探测）；没声明才探测清单，读不到再退回主机名兜底表 +
+  `FlvLegacyHevcRelay.appliesTo` 的已知 HEVC CDN。`manifestRelay` → `_createIngestRelay`，
+  `ffmpegRelay` → `_createFfmpegRelay`，没有 FFmpeg 运行时才退回 Dart 的 FLV 标签重写。
+  新增 `release()`（停止播放时放掉中继但不关闭所有者）；被顶替的租约**多活一轮**再释放，
+  因为接线发生在 `_controller.play()` 之前，引擎可能还在读旧的回环地址。
+- **事实通路**：`LivePlayUrlResolution.streamFacts` → `PlayerState.streamFacts`（与
+  `sourceQueryPolicies` 同一条规则：换了 URL 列表而没给新声明就清空）→
+  `PlaybackSourceQualitySelection.streamFacts` → `LivePlayerFacade.play/switchEngine` →
+  `FacadeStreamCommit.streamFacts`（悬浮窗重进、换引擎都还能重新决策）。
+- **装配点** `app/bootstrap/initialized.dart`：
+  `GlobalPlayerService.sourceInterceptorFactory = IngestSourceInterceptor.new`，紧挨着
+  `configureIngestFfmpegStarter(ffmpegKitIngestStarter)`——FFmpeg 运行时本来就注册好了，缺的只是这一根线。
+- **释放点**：`LivePlayerFacade.close()` → `release()`（离开房间、关悬浮窗、PiP 关闭都走这里），
+  `dispose()` → `close()`。
+- 测试：`test/domains/live/ingest_source_interceptor_test.dart`（5 个用例：只换第一条并丢鉴权头、
+  不需要中继时原样返回、中继抛异常退回直连、`owned:` 不接线、release/close 分别落到 transport）。
+  `test/{core,domains,shared}` 57 项全绿，`flutter analyze` 0 项，
+  `tool/validate_architecture.py --strict` 通过。
+
+**还没接的**：`FlvSpliceRelay`（签名 URL 到期后在一条连续流下面换地址）需要先有一个
+`PlaybackSourceResolver` → `FlvSourceRenewer` 的适配器；多窗页目前自己用它。
+
+**还没验证的**：真实流上的 FFmpeg 回环转封装。要桌面/真机各跑一次（HEVC FLV 与裸名子清单），
+看 `PlaybackIngest` 日志里的 `relay <上游> -> http://127.0.0.1:<port>/...` 是否出现且能起播。
 
 ### 还没声明的站点（上游有 format/codec，本仓待补）
 

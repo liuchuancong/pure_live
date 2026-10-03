@@ -8,6 +8,8 @@ import 'package:pure_live/core/models/live_room.dart';
 import 'package:pure_live/core/player/models/player_engine.dart';
 import 'package:pure_live/core/stream/hls_source_query_policy.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
+import 'package:pure_live/shared/platforms/live_site.dart' show LiveStreamFacts;
+import 'package:pure_live/domains/live/domain/playback_source_interceptor.dart';
 import 'package:media_core_media_kit/media_core_media_kit.dart';
 import 'package:pure_live/core/player/kernel/floating_playback.dart';
 import 'package:pure_live/core/player/presentation/windows_pip_driver.dart';
@@ -24,10 +26,10 @@ import 'package:media_core_ijk_player/media_core_ijk_player.dart' show kIjkPlaye
 final class LivePlayerFacade {
   LivePlayerFacade({
     PlayerEngine defaultEngine = PlayerEngine.mediaKit,
-    Future<List<PlayerSource>> Function(List<PlayerSource> sources)? interceptSources,
+    PlaybackSourceInterceptor? sourceInterceptor,
     EngineFallbackSourceResolver? onEngineFallbackSources,
   }) : preferredEngine = defaultEngine {
-    _interceptSources = interceptSources;
+    _sourceInterceptor = sourceInterceptor;
     _controller = LivePlaybackController(kernel, onEngineFallbackSources: onEngineFallbackSources);
     _bindController();
     // The fullscreen driver is the single source of truth for the fullscreen
@@ -40,7 +42,8 @@ final class LivePlayerFacade {
     isSystemFullscreen.value = fullscreenDriver.isSystemFullscreen;
   }
 
-  Future<List<PlayerSource>> Function(List<PlayerSource> sources)? _interceptSources;
+  /// 取流接线（FFmpeg 转封装 / manifest 重写）。app 启动时装配，null 时直连播放。
+  PlaybackSourceInterceptor? _sourceInterceptor;
 
   static PlayerKernel get kernel => PlayerKernelService.instance.kernel;
 
@@ -144,17 +147,28 @@ final class LivePlayerFacade {
     _lastHeaders = Map<String, String>.unmodifiable(headers);
     _lastLines = List<String>.unmodifiable(urls);
 
+    // The caller's sourceSelection (the quality confirmation from the stream
+    // switch) is authoritative: dropping it left the quality label pinned on the
+    // first entry after every switch. It also carries the platform's per-line
+    // stream facts, which is what the ingest wiring decides from.
+    final committed = sourceSelection is PlaybackSourceQualitySelection ? sourceSelection : null;
+    final streamFacts = committed?.streamFacts ?? const <String, LiveStreamFacts>{};
+
     await _controller.play(
       LiveSourceRequest(
-        sources: await _intercept([
-          for (final url in urls)
-            PlayerSource(
-              id: SourceId('live-$url'),
-              uri: Uri.parse(url),
-              type: SourceType.live,
-              headers: SourceHeaders(headers),
-            ),
-        ]),
+        sources: await _intercept(
+          [
+            for (final url in urls)
+              PlayerSource(
+                id: SourceId('live-$url'),
+                uri: Uri.parse(url),
+                type: SourceType.live,
+                headers: SourceHeaders(headers),
+              ),
+          ],
+          streamFacts: streamFacts,
+          sourceQueryPolicies: committed?.sourceQueryPolicies ?? const {},
+        ),
         title: liveroom?.title,
       ),
       preferredBackend: backendIdOfEngine(preferredEngine),
@@ -163,14 +177,16 @@ final class LivePlayerFacade {
     // selector, the label and the next-line cycling are all written against.
     // `_lastLines` above is the kernel's fallback preference (selected first)
     // and must not leak into it, or every commit would report line 1.
-    // The caller's sourceSelection (the quality confirmation from the stream
-    // switch) is authoritative: dropping it left the quality label pinned on
-    // the first entry after every switch.
-    final committed = sourceSelection is PlaybackSourceQualitySelection ? sourceSelection : null;
     _declaredAspectRatio = committed?.declaredAspectRatio;
     // 轮播房的起播位置：本条源重新武装，等时长就绪后 seek 一次。
     _pendingSeekAt = committed?.startAt;
-    _publishCommit(sourceUrl, playUrls, committed?.qualities ?? qualities, committed?.currentQuality ?? currentQuality);
+    _publishCommit(
+      sourceUrl,
+      playUrls,
+      committed?.qualities ?? qualities,
+      committed?.currentQuality ?? currentQuality,
+      streamFacts: streamFacts,
+    );
     if (liveroom != null) await setVolume(liveroom.getSavedVolume().clamp(0.0, 1.0));
   }
 
@@ -209,7 +225,13 @@ final class LivePlayerFacade {
     await setVolume(liveroom.getSavedVolume().clamp(0.0, 1.0));
   }
 
-  void _publishCommit(String url, List<String> uiLines, List<LivePlayQuality> qualities, int currentQuality) {
+  void _publishCommit(
+    String url,
+    List<String> uiLines,
+    List<LivePlayQuality> qualities,
+    int currentQuality, {
+    Map<String, LiveStreamFacts> streamFacts = const {},
+  }) {
     // `uiLines` is the platform-ordered line list; the index is the line the
     // selector highlighted. Deriving it from `_lastLines` (kernel fallback
     // order, selected line first) would report line 1 for every commit.
@@ -223,6 +245,7 @@ final class LivePlayerFacade {
       headers: _lastHeaders,
       qualities: List<LivePlayQuality>.unmodifiable(qualities),
       currentQuality: currentQuality,
+      streamFacts: streamFacts,
     );
     _commitSubject.add(commit);
   }
@@ -261,15 +284,19 @@ final class LivePlayerFacade {
           : <String>[current.currentUrl, ...current.urls.where((url) => url != current.currentUrl)];
       await _controller.play(
         LiveSourceRequest(
-          sources: await _intercept([
-            for (final url in lines)
-              PlayerSource(
-                id: SourceId('live-$url'),
-                uri: Uri.parse(url),
-                type: SourceType.live,
-                headers: SourceHeaders(current.headers),
-              ),
-          ]),
+          sources: await _intercept(
+            [
+              for (final url in lines)
+                PlayerSource(
+                  id: SourceId('live-$url'),
+                  uri: Uri.parse(url),
+                  type: SourceType.live,
+                  headers: SourceHeaders(current.headers),
+                ),
+            ],
+            streamFacts: current.streamFacts,
+            sourceQueryPolicies: current.sourceQueryPolicies,
+          ),
           title: _room?.title,
         ),
         preferredBackend: backendIdOfEngine(engine),
@@ -381,10 +408,17 @@ final class LivePlayerFacade {
     videoGeometryState.value = _computeVideoGeometry();
   }
 
-  Future<List<PlayerSource>> _intercept(List<PlayerSource> sources) async {
-    final interceptor = _interceptSources;
+  Future<List<PlayerSource>> _intercept(
+    List<PlayerSource> sources, {
+    Map<String, LiveStreamFacts> streamFacts = const {},
+    Map<String, HlsSourceQueryPolicy> sourceQueryPolicies = const {},
+  }) async {
+    final interceptor = _sourceInterceptor;
     if (interceptor == null) return sources;
-    final intercepted = await interceptor(sources);
+    // 接线自己保证不会抛：起不了中继就原样返回直连源。
+    final intercepted = await interceptor.intercept(
+      PlaybackSourceInterception(sources: sources, streamFacts: streamFacts, sourceQueryPolicies: sourceQueryPolicies),
+    );
     return intercepted.isEmpty ? sources : intercepted;
   }
 
@@ -554,10 +588,16 @@ final class LivePlayerFacade {
     return Stack(fit: StackFit.expand, children: [video, controls]);
   }
 
-  Future<void> close() => _controller.close();
+  Future<void> close() async {
+    // 停止播放就要放掉中继：FFmpeg 进程和回环端口不能等到下一次开播或退出才释放。
+    await _sourceInterceptor?.release();
+    await _controller.close();
+  }
+
   Future<void> dispose() async {
     if (_disposed) return;
     _disposed = true;
+    await _sourceInterceptor?.close();
     await _stateSub?.cancel();
     await _playingSub?.cancel();
     await _errorSub?.cancel();
@@ -588,6 +628,7 @@ class FacadeStreamCommit {
     this.dataSource = '',
     List<String>? playUrls,
     this.sourceQueryPolicies = const {},
+    this.streamFacts = const {},
     this.hasUseDefaultResolution = true,
   }) : urls = urls ?? playUrls ?? const [],
        currentUrl = currentUrl ?? dataSource,
@@ -607,6 +648,10 @@ class FacadeStreamCommit {
   final bool isLiving;
   final String dataSource;
   final Map<String, HlsSourceQueryPolicy> sourceQueryPolicies;
+
+  /// 平台为这批线路声明的容器/编码事实（`LivePlayUrlResolution.streamFacts`）。
+  /// 随提交保留：换引擎、悬浮窗重进都要用它重新决定要不要本地中继。
+  final Map<String, LiveStreamFacts> streamFacts;
   final bool hasUseDefaultResolution;
 
   FacadeStreamCommit copyWith({
@@ -615,6 +660,7 @@ class FacadeStreamCommit {
     Object? source,
     Object? ownedSource,
     Map<String, HlsSourceQueryPolicy>? sourceQueryPolicies,
+    Map<String, LiveStreamFacts>? streamFacts,
     Map<String, String>? headers,
     bool? isAudioOnly,
   }) => FacadeStreamCommit(
@@ -631,6 +677,7 @@ class FacadeStreamCommit {
     isLiving: isLiving,
     dataSource: dataSource ?? this.dataSource,
     sourceQueryPolicies: sourceQueryPolicies ?? this.sourceQueryPolicies,
+    streamFacts: streamFacts ?? this.streamFacts,
     hasUseDefaultResolution: hasUseDefaultResolution,
   );
 }
@@ -644,8 +691,14 @@ extension FacadeStreamCommitLegacy on FacadeStreamCommit {
   Object? get source => null;
   String get currentUrl_ => currentUrl;
   Map<String, HlsSourceQueryPolicy> get queryPolicies => sourceQueryPolicies;
-  PlaybackSourceQualitySelection? get selection =>
-      qualities.isEmpty ? null : PlaybackSourceQualitySelection(qualities: qualities, currentQuality: currentQuality);
+  PlaybackSourceQualitySelection? get selection => qualities.isEmpty
+      ? null
+      : PlaybackSourceQualitySelection(
+          qualities: qualities,
+          currentQuality: currentQuality,
+          sourceQueryPolicies: sourceQueryPolicies,
+          streamFacts: streamFacts,
+        );
 }
 
 @immutable
@@ -704,12 +757,16 @@ class PlaybackSourceQualitySelection {
     required this.qualities,
     required this.currentQuality,
     this.sourceQueryPolicies = const {},
+    this.streamFacts = const {},
     this.declaredAspectRatio,
     this.startAt = Duration.zero,
   });
   final List<LivePlayQuality> qualities;
   final int currentQuality;
   final Map<String, HlsSourceQueryPolicy> sourceQueryPolicies;
+
+  /// 平台为这一档每条线路声明的容器/编码事实；取流接线据此决定要不要本地中继。
+  final Map<String, LiveStreamFacts> streamFacts;
 
   /// 平台为这一档声明的画面宽高比（上游 F.1b），null 表示没声明。
   final double? declaredAspectRatio;
