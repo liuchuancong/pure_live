@@ -42,11 +42,15 @@ class LiveRetraction {
   final bool all;
 
   /// 这条消息是否被本撤回命中（按用户、按 id 或全清）。
-  bool matches({String? user, String? messageId}) {
+  ///
+  /// [userId] 与 [userName] 都给：平台给的"用户"可能是 uid（B 站、Twitch）也可能是
+  /// 昵称，两边都比一次才不会被平台差异漏掉；比较不看大小写。
+  bool matches({String? userId, String? userName, String? messageId}) {
     if (all) return true;
-    final target = userId;
-    if (target != null && user != null && user.trim().toLowerCase() == target.trim().toLowerCase()) {
-      return true;
+    final target = this.userId?.trim().toLowerCase();
+    if (target != null && target.isNotEmpty) {
+      if (userId != null && userId.trim().toLowerCase() == target) return true;
+      if (userName != null && userName.trim().toLowerCase() == target) return true;
     }
     final id = this.messageId;
     return id != null && messageId != null && messageId == id;

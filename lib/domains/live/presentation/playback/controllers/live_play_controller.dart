@@ -547,12 +547,14 @@ class LivePlayController extends GetxController
     if (isClosed) return;
     // 聊天列表与画面弹幕都按目标（观众/单条 id/全部）撤下去；画面侧靠引擎的
     // `BarrageController.retractWhere`（本仓依赖的 flame_barrage 已支持按条撤回）。
-    removeDanmakuWhere((message) => target.matches(user: message.userName, messageId: message.messageId));
+    removeDanmakuWhere(
+      (message) => target.matches(userId: message.userId, userName: message.userName, messageId: message.messageId),
+    );
     if (target.all) {
       clearRenderedDanmaku();
     } else {
       state.value.player.videoController?.retractDanmaku(
-        (message) => target.matches(user: message.userName, messageId: message.messageId),
+        (message) => target.matches(userId: message.userId, userName: message.userName, messageId: message.messageId),
       );
     }
   }

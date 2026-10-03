@@ -128,7 +128,7 @@ class TwitchDanmaku implements LiveDanmaku {
     final messages = <LiveMessage>[];
     for (final rawLine in data.split(RegExp(r'\r?\n'))) {
       final line = rawLine.trim();
-      if (!line.contains(' PRIVMSG ')) continue;
+      if (line.isEmpty) continue;
 
       final tags = <String, String>{};
       if (line.startsWith('@')) {
@@ -141,6 +141,29 @@ class TwitchDanmaku implements LiveDanmaku {
           }
         }
       }
+
+      // 管理员删除单条（`CLEARMSG`）与禁言/封禁/清屏（`CLEARCHAT`）都是撤回
+      // （上游 B-7）：按消息 id、按用户 id、清屏全部撤；只有登录名没有 id 的跳过
+      // ——聊天里没有登录名，对不上，也绝不能当成清屏。
+      if (line.contains(' CLEARMSG ')) {
+        final targetId = (tags['target-msg-id'] ?? '').trim();
+        if (targetId.isNotEmpty) messages.add(_retraction(LiveRetraction.message(targetId)));
+        continue;
+      }
+      if (line.contains(' CLEARCHAT ')) {
+        final targetUser = (tags['target-user-id'] ?? '').trim();
+        if (targetUser.isNotEmpty) {
+          messages.add(_retraction(LiveRetraction.user(targetUser)));
+          continue;
+        }
+        final commandEnd = line.indexOf(' CLEARCHAT ');
+        final paramStart = line.indexOf(' :', commandEnd);
+        if (paramStart >= 0 && line.substring(paramStart + 2).trim().isNotEmpty) continue;
+        messages.add(_retraction(const LiveRetraction.all()));
+        continue;
+      }
+
+      if (!line.contains(' PRIVMSG ')) continue;
 
       final messageStart = line.indexOf(' :', line.indexOf(' PRIVMSG '));
       if (messageStart < 0) continue;
@@ -167,6 +190,14 @@ class TwitchDanmaku implements LiveDanmaku {
     }
     return messages;
   }
+
+  static LiveMessage _retraction(LiveRetraction target) => LiveMessage(
+    type: LiveMessageType.retraction,
+    userName: '',
+    message: '',
+    color: LiveMessageColor.white,
+    data: target,
+  );
 
   static String _decodeTag(String value) => value
       .replaceAll(r'\s', ' ')
