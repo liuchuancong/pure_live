@@ -600,6 +600,34 @@ jdlive 与百度直播的日志里都是 `Set property: http-header-fields=[]`�
 而不是句柄上真正生效的开关，于是明明被播放方关掉了还打印 `true`（media_core `b934b81`）。
 
 
+### Cookie 配置面审计（2026-10-04，已修一处）
+
+顺着请求头那条线核了一遍 cookie：**配置面与上游 4.x 完全一致**，上游用 `cookie/<site>` 通用键 +
+`CookieVault`（`live_store/lib/src/secrets.dart`），实际用到的站点是
+`bilibili douyin douyu huya kuaishou soop twitch yy` —— 与本仓 `CookieSettingsController` 的八个字段一一对应，
+没有缺的平台。逐条核过的同步点：
+
+| 环节 | 结论 |
+| --- | --- |
+| 站点 API | 八家都从 `CookieSettingsController` 读（斗鱼经 `DouyuUtils.cookieHeader()`，它还负责把 `dy_did`/`acf_did` 与签名用的 DID 对齐） |
+| 播放请求头 | 七家在 `PlaybackHeaderResolver` 的分支里；斗鱼走 `DouyuUtils.playbackHeaders`；**twitch 故意不发给视频 CDN**（授权在 usher 签名里，把登录 Cookie 交给第三方 CDN 是上游 8-7 的明确决定） |
+| 弹幕 | bilibili 的 `danmakuData` 带 `headers['cookie'] ?? cookie`；twitch 聊天读 `twitchCookie` |
+| 录制 / 多画面 | 都经 `PlaybackHeaderResolver`（`ffmpeg_header_factory`、`resolvePlaybackHeaders`），与主房间同源 |
+| 中继 | 上游方向带 cookie；回环那一跳 `headers: SourceHeaders.empty`，**登录 Cookie 不会发给 127.0.0.1** |
+| 归一化 | 七个 cookie 编辑页 + 扫码/网页登录都在保存时 `normalizeAccountCookie` |
+| 导入导出 | `toJson` / `parseConfig` / `fromJson` 十二个字段双向对称（备份的分节字段集就是从 `extractConfig` 推的），已加测试钉住 |
+
+**修掉的一处**：斗鱼登出只清 `douyuCookie`，把 `douyuLtp0`（passport 长期续期密钥）、`douyuDid`、
+`douyuCookieSavedAt` 留在本地——也会跟着"含敏感数据"的备份一起导出。续期需要非空 cookie 才会发请求
+（`refreshSession` 提前返回），所以不是一个活着的 bug，是凭据卫生问题。四个字段现在由
+`clearDouyuSession()` 一处清，`clearAllCookies()` 也复用它；cookie 编辑页那条"只粘了凭据"的分支
+照旧保留 ltp0/did（那条路本来就没存会话）。测试 `test/core/config/cookie_settings_test.dart`。
+
+**记下来但没动的两处**：`clearAllCookies()` **全仓无调用点**——界面里没有"清除所有账号"的入口；
+`_normalizeStoredCookies()` 不覆盖 `douyuLtp0`/`douyuDid`，而 `parseConfig` 覆盖（所有写入点都 trim 过，
+所以无害，只是不对称）。
+
+
 ### 还没声明的站点（上游有 format/codec，本仓待补）
 
 **已补（2026-10-04 同批）**：bilibili（直播 `flv`/`ts`/`fmp4` 线路按 `parsePlayUrlResolution` 里的
