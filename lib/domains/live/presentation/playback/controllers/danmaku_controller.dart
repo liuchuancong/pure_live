@@ -274,6 +274,10 @@ class DanmakuController extends GetxController {
   /// 所以打码名既不参与匹配，也不会被存进屏蔽表。
   static final RegExp _maskedName = RegExp(r'\*{2,}|＊{2,}');
 
+  /// 是否已经见到过打码昵称（B 站游客连接、或登录失效后的存储登录都会这样）。
+  /// 弹幕列表用它决定要不要在顶部常驻一行"昵称被隐藏 · 去登录"（上游 2eea8022a）。
+  bool get sawMaskedName => _maskedNameNoticeShown;
+
   bool _isBlocked(LiveMessage message) {
     final user = message.userName.trim().toLowerCase();
     if (user.isNotEmpty && !_maskedName.hasMatch(user) && _blockedUsers.contains(user)) return true;

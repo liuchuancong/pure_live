@@ -56,7 +56,7 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | 上游提交 | 内容 | 本仓现状（已核实） |
 | --- | --- | --- |
 | `2eea8022a` 剩余 | 发送者头像 `user.base.face` → `DanmakuSender(avatar)` | **已做（`c9...`）**：`LiveMessage.avatar` + B 站 `_avatar()`（`base.face` → `origin_info.face`，`hdslb.com` 取 96×96）+ 列表画圆形头像（取不到不占位） |
-| `2eea8022a` 剩余 | 游客/登录失效提示（列表顶部一行 + 去登录） | **部分**：本仓已有等价的一次性提示（站点能力 `danmakuUserNameNoticeKey` → 状态行，如 `bilibili_guest_name_masked`）；**未做**上游那种**常驻提示条 + 「去登录」按钮**（需 `DanmakuController` 暴露 hint + 列表加条 + `AppNavigator.toBiliBiliLogin()`） |
+| `2eea8022a` 剩余 | 游客/登录失效提示（列表顶部一行 + 去登录） | **已做**：列表顶部常驻提示条（游客 → `bilibili_guest_names_hidden` + 「去登录」；已登录但收到打码名 → `bilibili_login_expired_short` + 「重新登录」），按钮走 `AppNavigator.toBiliBiliLogin()`；i18n 四个 key 中英都加 |
 | `0d63d2d3c` | 播放线路"声明图片尺寸"（F.1b，core+player） | **无**：全仓搜不到 `pictureWidth`/`pictureHeight`/`declaredPicture` |
 | `51c28301b` | Twitch `RECONNECT`、撤回（`CLEARMSG`）、公告（`NOTICE`）、过期 cookie | **撤回已做（`4e1e...`）**：`CLEARMSG` → 按消息 id 撤、`CLEARCHAT` → 按 `target-user-id` 撤 / 清屏撤全部、只有登录名没有 id 的跳过；`RECONNECT` 与 cookie 解析本仓早有。**未做**：`USERNOTICE`（订阅/突袭/公告展示）与「Cookie 已失效」提示 |
 | `f12bf0f8c` | socket 运行时"握手失败"钩子（M5.F B-1） | **待核**：`web_socket_util.dart` 有握手实现，未确认是否把失败单独上报 |
@@ -74,9 +74,13 @@ chat/comment/PK/礼物/付费问答/撤回/公告）——这些站点在本仓�
 - Kick（`3381dac14` 恢复 Kick、`96e032864` Pusher 公共聊天）：本仓无 `kick` 目录
 - Kugou 的 PK 聊天（`7f8ee2553`）：本仓有 `kugoulive` 目录但没有弹幕引擎（同 B 类）
 
-### D. 上游做了、本仓按用户决定不做（已记账）
-- YouTube / niconico 房间身份翻转（③）
-- B 站轮播 `play_time` 起播偏移第 4-5 步（需新增播放层 seek 通道）
+### D. 之前搁置、**按用户 2026-10-04 最新指令恢复要做**（"上游做了本仓库也做"）
+用户撤销了 2026-10-04 早些时候"就此收尾（不做身份翻转、轮播偏移停在 3/5）"的选择
+（当时是点错选项），改为：**上游做了的本仓都要做**。因此下面两项重新进入待办：
+- **B 站轮播 `play_time` 起播偏移第 4-5 步**：需先在产品层新增 seek 通道
+  （`LivePlayerFacade → 适配器 seek`），再在 open 后首个状态事件 seek 一次
+- **YouTube 频道即房间 / niconico 房间即主播**：包含收藏/历史旧 key 的迁移
+  （惰性升级或一次性迁移），迁移策略见上文 ③ 一节
 
 ### E. 本次会话已同步（供对照）
 `2eea8022a`（粉丝牌）、`40dc22279`（打码名不可屏蔽）、`fffd28b31`（表情图片）、
@@ -103,12 +107,11 @@ chat/comment/PK/礼物/付费问答/撤回/公告）——这些站点在本仓�
 收益：同一频道/主播换场后收藏、历史、多画面指向同一房间；代价：存量 key 需迁移或惰性升级，
 "回看某一场"的语义变化。不做则现状功能等价（能打开、能播、能看弹幕），只是每场是新房间。
 
-**用户决定（2026-10）**：选 **A —— 就此收尾**。即：
-- **不做**身份翻转：YouTube 维持"功能已等价"（`resolveReference` 能把频道解析成当前直播），
-  niconico 维持"房间 = 节目号"，主播链接经一次请求落到当前节目
-- ④ 轮播 `play_time` 起播偏移**停在 3/5**，按"**需新增播放层 seek 通道**"记账
-  （本仓 `lib/` 目前没有任何 seek 调用），不再实施
-- 其余项均已落地并有提交与验证记录，见上表
+**用户决定（2026-10-04，已更正）**：早些时候选的 A（就此收尾）**是点错**；用户随后明确
+指令「**上游做了 本仓库也做，上游有什么本仓库就添加什么**」。因此：
+- **要做**身份翻转：YouTube 房间身份改为频道、niconico 改为主播（含旧 key 迁移）
+- **要做** ④ 轮播 `play_time` 起播偏移第 4-5 步（先加播放层 seek 通道）
+- 其余项照旧推进
 
 ## 待实施：③ 身份模型（YouTube 频道即房间 / niconico 房间即主播）
 
