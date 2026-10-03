@@ -55,7 +55,7 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | `0811c21f7` | 心跳人气占位值 1 不再顶掉详情里的真实热度（REG-BILIBILI-015） | **已同步** |
 | `12d03ac89` | `live_status` 2 = 轮播（详情/刷新/搜索）、`startedAt`、付费房限制 | **部分同步**：状态与轮播取流已做；付费房限制已做（`special_type` 1 且在播 → paid）；**`startedAt` 详情已做**（`room_info.live_start_time` → UTC），搜索行的 `live_time`（北京时间文本）与轮播 `play_time` 起点未做 |
 | `8d7da2dfc` | 轮播视频播放（`getRoundPlayVideo` + `x/player/playurl`）、`LivePlayUrlResolution.start` | **部分同步**：取流已做；`start` 起点（`play_time` 续播）未做 |
-| `81733c1e6` | 游客可用分区页、搜索分区标签、弹幕撤回与公告 | 待办 |
+| `81733c1e6` | 游客可用分区页、搜索分区标签、弹幕撤回与公告 | **部分**：公告的 op-24 回执本仓**早已有**（`_acknowledgeIfRequired`）；**撤回未做** —— 它要新增 `LiveMessageType.retraction` + `LiveRetraction` 数据类 + 弹幕渲染层按目标（用户/单条/全部）移除已上屏消息，属跨层改动（core 模型 → 弹幕 UI），不是站点层能单独完成的；分区页/搜索标签待对照 |
 | `e8a00e0d4` | 弹幕在线人数与礼物上报 | 待办 |
 | `2eea8022a` | 游客名提示、粉丝牌与头像 | 待办 |
 | `fffd28b31` | 弹幕消息携带表情图 | 待办（需要 `LiveMessage` 模型扩展） |
