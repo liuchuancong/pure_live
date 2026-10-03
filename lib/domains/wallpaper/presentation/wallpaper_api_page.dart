@@ -16,7 +16,6 @@ class WallpaperApiPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final String languageCode = context.locale.languageCode;
     return Scaffold(
-      backgroundColor: Colors.transparent,
       appBar: AppBar(title: Text(i18n('wallpaper_api_group'))),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),

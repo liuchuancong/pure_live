@@ -52,7 +52,6 @@ class _WallpaperPageState extends State<WallpaperPage> {
     final languageCode = context.locale.languageCode;
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
       appBar: AppBar(title: Text(i18n('ui_background_settings'))),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 32),
