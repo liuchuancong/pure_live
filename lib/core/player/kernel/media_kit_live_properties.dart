@@ -1,8 +1,10 @@
 import 'dart:io';
+import 'dart:developer' as developer;
 
 import 'package:media_core/media_core.dart';
 import 'package:media_core_media_kit/media_core_media_kit.dart';
 import 'package:pure_live/core/player/kernel/player_preset.dart';
+import 'package:pure_live/core/player/core/playback_proxy_policy.dart';
 import 'package:pure_live/core/player/super_resolution.dart';
 import 'package:media_core_media_kit/media_core_media_kit.dart' as mkv;
 import 'package:pure_live/core/index.dart';
@@ -59,9 +61,21 @@ abstract final class MediaKitLiveProperties {
       'framedrop': 'decoder+vo',
     };
 
+    // 播放器代理必须落到引擎上：直连播放时只有引擎自己会去连上游，而中继路径
+    // 早就通过 PlaybackProxyPolicy 拿到了代理，唯独直连这条没有——必须代理才
+    // 可达的 CDN（Twitch 的 playlist.ttvnw.net 直连握手要 9 秒以上）会在
+    // "8 秒卡在 0ms" 的看门狗之前连不上，报 NO_PLAYABLE_STREAM。
+    // 空串即"不用代理"，与 owned_input_opener 对私有输入清除代理的语义一致。
+    final String proxy = PlaybackProxyPolicy.currentNativeUrl(privateInput: false);
+    properties['http-proxy'] = proxy;
+    // 应用代理与播放器代理是两套开关，界面之外看不出播放器这一套到底生没生效，
+    // 而"能列出房间却播不动"正是它没生效的样子，所以每次装配都记一行。
+    developer.log(proxy.isEmpty ? 'direct (no player or system proxy)' : proxy, name: 'PlaybackProxy');
+
     if (_lowEnd) {
       properties['audio-buffer'] = '0.4';
-      properties['stream-lavf-o'] = 'reconnect=1,reconnect_streamed=1,reconnect_on_network_error=1,reconnect_delay_max=2';
+      properties['stream-lavf-o'] =
+          'reconnect=1,reconnect_streamed=1,reconnect_on_network_error=1,reconnect_delay_max=2';
     }
 
     if (Platform.isAndroid) {
@@ -121,9 +135,7 @@ abstract final class MediaKitLiveProperties {
     // texture. 'auto' (engine default) maps to no explicit vo; anything else
     // a stale segment may still carry ('null', windowed drivers) is dropped —
     // those produce sound-without-picture or a rogue mpv window.
-    final vo = segment.customPlayerOutput && segment.videoOutputDriver.trim() == 'libmpv'
-        ? 'libmpv'
-        : null;
+    final vo = segment.customPlayerOutput && segment.videoOutputDriver.trim() == 'libmpv' ? 'libmpv' : null;
 
     return mkv.VideoControllerConfiguration(
       vo: vo,
@@ -146,9 +158,7 @@ abstract final class MediaKitLiveProperties {
     final segment = _output;
     final properties = <String, String>{...build(), ...segment.presetId.extraProperties};
 
-    final options = <EngineOption>[
-      for (final entry in properties.entries) EngineOption(entry.key, entry.value),
-    ];
+    final options = <EngineOption>[for (final entry in properties.entries) EngineOption(entry.key, entry.value)];
 
     if (superResolutionAvailable) {
       final shader = await superResolutionOption(_superResolution, await getApplicationSupportDirectory());

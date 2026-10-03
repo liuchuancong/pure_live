@@ -218,6 +218,53 @@ URL + headers 直接进引擎，清单改写与 HEVC 转封装都不生效。现
 **还没验证的**：真实流上的 FFmpeg 回环转封装。要桌面/真机各跑一次（HEVC FLV 与裸名子清单），
 看 `PlaybackIngest` 日志里的 `relay <上游> -> http://127.0.0.1:<port>/...` 是否出现且能起播。
 
+### 顺带查出的播放器代理断线（2026-10-04，Twitch 播不动）
+
+接线后第一次真机验证 Twitch：清单探测正常（`children=14 absolute=14 -> direct`），mpv 也真的解码出
+1920×1080、位置跑到 22166ms，然后 `bufferingStallTimeout`，之后每次重开都是 `Failed to open` →
+`NO_PLAYABLE_STREAM`。实测这台机器到 `apn12.playlist.ttvnw.net`：**直连握手 9.3 秒，经本机 7897
+代理 0.48 秒**；而 media_core 的重开验证窗口是"8 秒卡在 0ms 判死"，9.3 秒的握手永远过不了。
+
+根因不在取流接线：**播放器代理（`enableProxy`）从来没接到引擎上**。`PlaybackProxyPolicy` 全仓只有
+中继代码在读，`MediaKitLiveProperties` 里没有任何 `http-proxy`，`owned_input_opener` 只会把它设成空串。
+这个开关对直连播放一直是死的——应用代理（`enableAppProxy`）只覆盖 dio，所以症状是"能列出房间、
+能读到清单，播放器就是连不上"。
+
+修（参考 Kazumi `player_playback_controller.dart` 的同一段逻辑）：
+
+- `MediaKitLiveProperties.build()` 输出 mpv 的 `http-proxy`，取自
+  `PlaybackProxyPolicy.currentNativeUrl(privateInput: false)`；**始终带这个键**，空串即"不用代理"，
+  这样关掉开关能清掉上一次的值，语义与 `owned_input_opener` 对私有输入清除代理一致。media_core 会把
+  引擎初始化前压入的选项 stash 到第一时刻，所以装配期的值确实落地。
+- `ProxySettingsController` 的开关/主机/端口变化 → `playerProxyDispatcher` → `PlayerKernelService`
+  把引擎选项写回正在运行的引擎，不用重启应用（对齐应用代理改完即时重建 dio 的行为）。
+- `core/platform/windows_system_proxy.dart`：没有单独配置播放器代理时**跟随 Windows 系统代理**
+  （WinINET 的 `ProxyEnable`/`ProxyServer`；`ProxyEnable=0` 时残留的 `ProxyServer` 不算数；只配 PAC
+  视为无代理，一段脚本压不成播放器的一个端点）。用 `win32_registry` 按需读，不缓存不监视——读取点只有
+  引擎装配与建立中继两处，缓存换来的只是一份会过期的状态。Kazumi 那 150 行 `RegNotifyChangeKeyValue`
+  + `RegisterWaitForSingleObject` 的 FFI 监视器没搬。
+- `[PlaybackProxy]` 每次装配记一行：从界面外面看不出播放器这一套代理到底生没生效。
+- **没搬的**：Kazumi 只有一套代理（dio 与播放器共用 `proxyEnable`/`proxyUrl`），本仓是刻意分开的两套。
+  让 dio 也跟随系统代理会把国内平台一起送进代理（这次日志里 douyu/douyin 的收藏刷新已经在超时），
+  所以只接了播放器这一侧。
+- 测试：`test/core/platform/windows_system_proxy_test.dart`（`ProxyServer` 两种写法、https 优先、
+  scheme 前缀/IPv6/尾随路径容错、socks/ftp 与残缺值一律不认）、
+  `test/core/player/playback_proxy_policy_test.dart`（私有输入不给代理；`http-proxy` 始终在，值要么
+  空串要么 `http://` 端点）。`test/{core,domains,shared}` 63 项全绿，Analyze 0 项，
+  `validate_architecture.py --strict` 通过。
+
+**已知约束**：ffmpeg/libmpv **不会**对 `127.0.0.1` 绕过代理（拿死代理实测会失败），所以播放器代理开着时，
+FFmpeg 回环中继的那一跳本地流量也会经过代理。本机 Clash 能正常回连（已实测），但一个拒绝本地目标的远端
+代理会把中继打死。真要兜底，得让中继源走 `kMediaKitCustomInputKey` 那条自有输入路径（`owned_input_opener`
+会先清代理再打开），代价是把取流接线绑死在 media_kit 一家。
+
+**这台机器的实际状态**（`reg query HKCU\Software\Microsoft\Windows\CurrentVersion\Internet Settings`）：
+`ProxyEnable=0`、残留 `ProxyServer=127.0.0.1:7890`，而 Clash 实际在听 **7897**。所以"跟随系统代理"这一路
+对它无效，必须在「播放器代理」里手填 `127.0.0.1:7897`。这也正好说明 `ProxyEnable` 为什么必须优先：
+照抄残留的 `ProxyServer` 会把 mpv 指到一个没人听的端口。
+
+**还没验证的**：填好播放器代理后 Twitch 是否能稳定播下去（以及国内平台经代理是否变慢）。
+
 ### 还没声明的站点（上游有 format/codec，本仓待补）
 
 **已补（2026-10-04 同批）**：bilibili（直播 `flv`/`ts`/`fmp4` 线路按 `parsePlayUrlResolution` 里的

@@ -17,6 +17,7 @@ import 'package:media_core_mediasession/media_core_mediasession.dart';
 import 'package:pure_live/core/player/kernel/media_kit_live_properties.dart';
 import 'package:media_core_better_player/media_core_better_player.dart';
 import 'package:pure_live/core/config/player_settings_controller.dart';
+import 'package:pure_live/core/config/proxy_settings_controller.dart';
 
 class PlayerKernelService {
   PlayerKernelService._();
@@ -84,6 +85,14 @@ class PlayerKernelService {
         unawaited(handle.rebuildEngine(reason: 'video output settings changed'));
         return;
       }
+      unawaited(MediaKitLiveProperties.engineOptions().then((options) => handle.applyEngineOptions(options)));
+    };
+
+    // 播放器代理是引擎属性（mpv 的 `http-proxy`），不是 dio 的连接池：改完开关
+    // 直接写回正在运行的引擎，对下一次打开生效，不打断当前这条流。
+    ProxySettingsController.playerProxyDispatcher = () {
+      final handle = GlobalPlayerService.instance.player.handle;
+      if (handle == null) return;
       unawaited(MediaKitLiveProperties.engineOptions().then((options) => handle.applyEngineOptions(options)));
     };
     logRing = mlog.MediaCoreLog.attachMemorySink(capacity: 500);
