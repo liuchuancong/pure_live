@@ -16,6 +16,9 @@ enum LiveMessageType {
   /// 撤回：平台收回已发过的弹幕（上游 bilibili 的 `RECALL`/超话删除）。
   /// 它不是一条要显示的弹幕，而是让显示层把命中的消息撤下去。
   retraction,
+
+  /// 系统公告：平台对房间的提示（如 B 站 `WARNING` 警告、`CUT_OFF` 切断直播）。
+  notice,
 }
 
 /// 撤回的目标（上游 4.x 的 `LiveRetraction`）：

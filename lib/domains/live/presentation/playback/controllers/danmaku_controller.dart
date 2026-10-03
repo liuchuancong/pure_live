@@ -232,6 +232,9 @@ class DanmakuController extends GetxController {
         // 但**不**触发礼物特效（特效应由本机互动或站点自己的开关决定）。
         if (_isBlocked(msg)) return;
         _main.addDanmakuMessage(msg);
+      } else if (msg.type == LiveMessageType.notice) {
+        // 平台公告（如 B 站警告/切断直播）：作为系统消息显示在弹幕列表里。
+        if (msg.message.isNotEmpty) _main.addSystemMessage(msg.message);
       } else if (msg.type == LiveMessageType.retraction) {
         final target = msg.data;
         if (target is LiveRetraction) _main.removeRetractedMessages(target);

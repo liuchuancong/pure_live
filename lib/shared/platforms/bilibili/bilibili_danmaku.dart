@@ -482,6 +482,19 @@ class BiliBiliDanmaku implements LiveDanmaku {
         // 上舰：`gift_name` 买了 `num` 个月，每月 `price` 金瓜子（上游 `_guard`）。
         final guard = _guardMessage(obj["data"]);
         if (guard != null) onMessage?.call(guard);
+      } else if (cmd == "WARNING" || cmd == "CUT_OFF") {
+        // 平台公告：`WARNING` 是管理员警告，`CUT_OFF` 是切断直播；两者都把自己的
+        // 原因放在 `msg` 里（上游 bilibili 4-x 的 `_notify`）。
+        final reason = obj["msg"]?.toString().trim() ?? '';
+        final lead = cmd == "WARNING" ? "直播间收到警告" : "直播被切断";
+        onMessage?.call(
+          LiveMessage(
+            type: LiveMessageType.notice,
+            userName: '',
+            message: reason.isEmpty ? lead : '$lead：$reason',
+            color: LiveMessageColor.white,
+          ),
+        );
       } else if (cmd == "SUPER_CHAT_MESSAGE") {
         if (obj["data"] == null) {
           return;
