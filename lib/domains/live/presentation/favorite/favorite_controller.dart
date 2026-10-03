@@ -848,32 +848,29 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
       if (isClosed) return null;
       _refreshFailureCooldown[key] = _now();
 
-      final label = _refreshFailureLabel(liveroom);
-      if (error is FormatException && error.message == 'Huya room metadata is unavailable') {
-        failedRooms.add('$label（unavailable）');
-      } else if (error is Exception) {
-        // Routine: a room went offline, a platform rate-limited us, the request
-        // timed out or the body could not be parsed. The reason type is enough
-        // to tell them apart, and the summary line above names the room.
-        failedRooms.add('$label（${error.runtimeType}）');
-      } else {
+      final String reason = error is FormatException && error.message == 'Huya room metadata is unavailable'
+          ? 'unavailable'
+          : error.runtimeType.toString();
+      if (error is! Exception) {
         // Not an Exception: a programming error. Keep the full report.
         developer.log(
-          'Favorite room refresh error: $label',
+          'Favorite room refresh error: ${_refreshFailureLabel(liveroom, reason)}',
           name: 'FavoriteController',
           error: error,
           stackTrace: stackTrace,
         );
-        failedRooms.add('$label（${error.runtimeType}）');
       }
+      // Routine failure (a room went offline, a platform rate-limited us, the
+      // request timed out, the body could not be parsed): the summary line names
+      // the room and the reason type is enough to tell them apart.
+      failedRooms.add(_refreshFailureLabel(liveroom, reason));
 
       return null;
     }
   }
 
-  /// The name a user recognises plus the platform/room identity, for one log
-  /// entry: `小明（douyin/123456）`.
-  String _refreshFailureLabel(LiveRoom liveroom) {
+  /// One entry for the failure summary: `小明（douyin/123456，TimeoutException）`.
+  String _refreshFailureLabel(LiveRoom liveroom, String reason) {
     final String platform = liveroom.normalizedPlatformId;
     final String roomId = liveroom.roomId?.trim() ?? '';
     final String nick = liveroom.nick?.trim() ?? '';
@@ -884,7 +881,12 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
         : platform.isEmpty
         ? roomId
         : '$platform/$roomId';
-    return name.isEmpty ? identity : '$name（$identity）';
+    final String detail = identity.isEmpty
+        ? reason
+        : reason.isEmpty
+        ? identity
+        : '$identity，$reason';
+    return name.isEmpty ? detail : '$name（$detail）';
   }
 
   String _roomKey(LiveRoom liveroom) => favoriteRoomIdentity(liveroom);
