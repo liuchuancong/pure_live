@@ -953,10 +953,33 @@ class HuyaSite
         popularity: item["game_total_count"].toString(),
         audienceMetricType: AudienceMetricType.popularity,
         platform: PlatformIds.huya,
+        // 搜索卡片同样带付费标记（上游 huya 4-x）。
+        restriction: _huyaPayRestriction(item),
       );
       items.add(roomItem);
     }
     return items;
+  }
+
+  /// 虎牙列表/搜索卡片的付费标记 `isRoomPay`（上游 huya 4-x）：true → paid，
+  /// false → 无限制，缺失/读不出来 → null（平台没说）。
+  static LiveRestriction? _huyaPayRestriction(Map item) {
+    final raw = item['isRoomPay'];
+    final paid = raw is bool
+        ? raw
+        : raw is num
+        ? raw != 0
+        : raw == null || raw.toString().isEmpty
+        ? null
+        : int.tryParse(raw.toString()) != null
+        ? int.parse(raw.toString()) != 0
+        : raw.toString().toLowerCase() == 'true'
+        ? true
+        : raw.toString().toLowerCase() == 'false'
+        ? false
+        : null;
+    if (paid == null) return null;
+    return paid ? LiveRestriction.paid : LiveRestriction.none;
   }
 
   @override

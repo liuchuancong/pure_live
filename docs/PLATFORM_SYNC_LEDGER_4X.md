@@ -111,7 +111,7 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | `ce7de2d01` | 搜索与分组树必须带 User-Agent，否则 HTTP 403 `Not allowed` | **已同步** |
 | `ce7de2d01` | `preferH264` 开关（关闭时 FLV 线路要 `codec=265`） | 未做：本仓没有该播放设置项，且默认行为（`codec=264`）与上游默认一致 |
 | `ce7de2d01` | `uri 6501` 礼物包上报为 gift | 未做：同斗鱼，本仓弹幕层不渲染 gift |
-| `dc2080a18` | REPLAY 房播放录制（`liveData.hls` + `moment/getMomentContent` 的清晰度）、`startedAt`、付费/密码房限制 | 未做：一整块新能力，需要新接口与新字段 |
+| `dc2080a18` | REPLAY 房播放录制（`liveData.hls` + `moment/getMomentContent` 的清晰度）、`startedAt`、付费/密码房限制 | **部分同步**：搜索卡片的付费标记 `isRoomPay`（true→paid / false→none / 缺失→null）已接；**REPLAY 录制取流、`startedAt`、详情里的付费/密码房限制（`isRoomPay`/`isPayRoom`/`isSecret`）仍未做**（需要新接口与字段） |
 | `9c8da06e1` | REPLAY 房保持 replay 状态 | 无需：本仓 `huya_site.dart` 已把 `REPLAY` 映射为 `LiveStatus.replay` |
 | `5a9fa6a5e` | 公告板取 headline，下播关闭弹幕run | 部分待做：弹幕 run 结束与斗鱼同类，但要先确认本仓虎牙弹幕的对应包 |
 | `8613f92bd` | 单条推送携带 `lMsgId`（撤回需要） | 待做：与撤回消息类型一起做 |
