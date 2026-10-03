@@ -57,9 +57,13 @@
 （`GetRootState.didUpdateWidget` 被注释掉了），运行期改主题到不了页面——此前
 壁纸只在那几个硬编码透明 `Scaffold` 的背景设置子页里可见就是这个原因。
 
-桌面端 `WallpaperCanvasTransparency` 在标题栏**之内**：标题栏保留真实主题色，
-窗口按钮在任意图片上都可读；若要让壁纸也铺到标题栏下面，需要另行调整
-`DesktopManager.buildWithTitleBar` 的层级。
+桌面端壁纸层包住标题栏，图片铺到窗口顶边；标题栏与左侧导航栏保留一层
+`kWallpaperSurfaceOpacity`（0.55）的半透明洗色，控件在任何图片上都可读。
+
+页面 chrome（卡片、AppBar、左右导航栏、chips、桌面分页条）同样按该常量洗淡
+（`wallpaperChromeTheme`）。**弹窗、下拉菜单、弹出面板不洗**：它们从
+`colorScheme` 取默认底色，而这条路径特意保持不变——菜单/对话框透出图片只会
+更难读。改透明度只动 `kWallpaperSurfaceOpacity` 一个常量。
 
 背景设置的所有子页（壁纸库、分类、网格、随机图源、随机图源分组）也各自用透明
 `Scaffold`，与上面的统一机制互为兜底。

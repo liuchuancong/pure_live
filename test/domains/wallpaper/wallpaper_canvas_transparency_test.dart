@@ -34,19 +34,34 @@ void main() {
     final ThemeData theme = await _themeUnder(tester, ownsCanvas: false);
     expect(theme.scaffoldBackgroundColor, _themeScaffold);
     expect(theme.colorScheme.surface.a, 1.0);
+    expect(theme.appBarTheme.backgroundColor, isNull);
+    expect(theme.cardTheme.color, isNull);
   });
 
-  testWidgets('surfaces are washed while a wallpaper shows, text stays opaque', (tester) async {
+  testWidgets('page chrome is washed while a wallpaper shows', (tester) async {
     final ThemeData theme = await _themeUnder(tester, ownsCanvas: true);
 
-    expect(theme.colorScheme.surface.a, closeTo(kWallpaperSurfaceOpacity, 0.001));
-    expect(theme.colorScheme.surfaceContainerLow.a, closeTo(kWallpaperSurfaceOpacity, 0.001));
-    expect(theme.colorScheme.surfaceContainerHighest.a, closeTo(kWallpaperSurfaceOpacity, 0.001));
     expect(theme.canvasColor.a, closeTo(kWallpaperSurfaceOpacity, 0.001));
     expect(theme.cardColor.a, closeTo(kWallpaperSurfaceOpacity, 0.001));
+    expect(theme.appBarTheme.backgroundColor?.a, closeTo(kWallpaperSurfaceOpacity, 0.001));
+    expect(theme.navigationRailTheme.backgroundColor?.a, closeTo(kWallpaperSurfaceOpacity, 0.001));
+    expect(theme.navigationBarTheme.backgroundColor?.a, closeTo(kWallpaperSurfaceOpacity, 0.001));
+    expect(theme.cardTheme.color?.a, closeTo(kWallpaperSurfaceOpacity, 0.001));
+    expect(theme.chipTheme.backgroundColor?.a, closeTo(kWallpaperSurfaceOpacity, 0.001));
+  });
 
+  testWidgets('dialogs, menus and sheets keep their opaque surfaces', (tester) async {
+    // Explicit feedback: a picture behind a popup menu or a dialog reads as
+    // noise, so the colour scheme those overlays resolve from stays untouched.
+    final ThemeData theme = await _themeUnder(tester, ownsCanvas: true);
+
+    expect(theme.colorScheme.surface.a, 1.0);
+    expect(theme.colorScheme.surfaceContainer.a, 1.0, reason: 'popup menu background');
+    expect(theme.colorScheme.surfaceContainerHigh.a, 1.0, reason: 'dialog background');
+    expect(theme.colorScheme.surfaceContainerLow.a, 1.0, reason: 'bottom sheet background');
+    expect(theme.dialogTheme.backgroundColor, isNull, reason: 'stock M3 dialog colour');
+    expect(theme.popupMenuTheme.color, isNull, reason: 'stock M3 menu colour');
     expect(theme.colorScheme.onSurface.a, 1.0, reason: 'text keeps full contrast');
-    expect(theme.colorScheme.onSurfaceVariant.a, 1.0);
     expect(theme.colorScheme.primary, ThemeData().colorScheme.primary, reason: 'semantic colours untouched');
   });
 

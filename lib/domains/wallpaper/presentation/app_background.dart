@@ -96,40 +96,38 @@ class WallpaperCanvasTheme extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ThemeData base = Theme.of(context);
-    return Theme(
-      data: ownsCanvas
-          ? base.copyWith(
-              scaffoldBackgroundColor: Colors.transparent,
-              pageTransitionsTheme: wallpaperPageTransitions(base.pageTransitionsTheme),
-              // Cards, tab strips, rails, menus and bars all take their colour
-              // from the neutral surface family; washing that family is what
-              // stops them from covering the picture with flat white.
-              colorScheme: wallpaperSurfaceColors(base.colorScheme),
-              canvasColor: base.canvasColor.withValues(alpha: kWallpaperSurfaceOpacity),
-              cardColor: base.cardColor.withValues(alpha: kWallpaperSurfaceOpacity),
-            )
-          : base,
-      child: child,
-    );
+    return Theme(data: ownsCanvas ? wallpaperChromeTheme(base) : base, child: child);
   }
 }
 
-/// The neutral surface family, washed so a wallpaper reads through it.
+/// The theme pages use while a wallpaper owns the canvas.
 ///
-/// Only the neutral surfaces change: the semantic colours (primary, error, the
-/// tinted containers) and every `onSurface` stay opaque, so text, icons and
-/// selection states keep their contrast.
-ColorScheme wallpaperSurfaceColors(ColorScheme scheme) {
+/// Only the page chrome is washed - cards, app bars, the rails, chips and the
+/// paging bar - so the picture reads through them. The colour scheme itself is
+/// left alone on purpose: dialogs, popup menus, dropdowns and sheets take their
+/// stock opaque surfaces from it, and a picture showing through a menu is
+/// unreadable rather than pretty (explicit user feedback).
+ThemeData wallpaperChromeTheme(ThemeData base) {
+  final ColorScheme scheme = base.colorScheme;
   Color wash(Color color) => color.withValues(alpha: kWallpaperSurfaceOpacity);
-  return scheme.copyWith(
-    surface: wash(scheme.surface),
-    surfaceDim: wash(scheme.surfaceDim),
-    surfaceBright: wash(scheme.surfaceBright),
-    surfaceContainerLowest: wash(scheme.surfaceContainerLowest),
-    surfaceContainerLow: wash(scheme.surfaceContainerLow),
-    surfaceContainer: wash(scheme.surfaceContainer),
-    surfaceContainerHigh: wash(scheme.surfaceContainerHigh),
-    surfaceContainerHighest: wash(scheme.surfaceContainerHighest),
+  return base.copyWith(
+    scaffoldBackgroundColor: Colors.transparent,
+    pageTransitionsTheme: wallpaperPageTransitions(base.pageTransitionsTheme),
+    // `Material` widgets without a colour of their own paint this one.
+    canvasColor: wash(base.canvasColor),
+    // The desktop paging bar paints `cardColor`.
+    cardColor: wash(base.cardColor),
+    appBarTheme: base.appBarTheme.copyWith(backgroundColor: wash(base.appBarTheme.backgroundColor ?? scheme.surface)),
+    navigationRailTheme: base.navigationRailTheme.copyWith(
+      backgroundColor: wash(base.navigationRailTheme.backgroundColor ?? scheme.surface),
+    ),
+    navigationBarTheme: base.navigationBarTheme.copyWith(
+      backgroundColor: wash(base.navigationBarTheme.backgroundColor ?? scheme.surface),
+    ),
+    cardTheme: base.cardTheme.copyWith(color: wash(base.cardTheme.color ?? scheme.surfaceContainerLow)),
+    chipTheme: base.chipTheme.copyWith(
+      backgroundColor: wash(base.chipTheme.backgroundColor ?? scheme.surfaceContainerLow),
+    ),
   );
 }
 
