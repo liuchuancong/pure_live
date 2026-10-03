@@ -37,6 +37,15 @@ abstract final class MediaKitLiveProperties {
   }
 
   /// The full property map handed to the adapter's `extraProperties`.
+  ///
+  /// Only properties that are the same for every source belong here. Anything
+  /// that depends on the source being opened — the proxy, the container, the
+  /// live-playlist cache policy — is written by [applyToSource] instead, because
+  /// two writers for one property do not have a deterministic order: the
+  /// factory's `configure` hook takes a `void` callback, so the future returned
+  /// here is dropped and these writes can land *after* a source has opened.
+  /// A Twitch reproduction showed exactly that, with the per-source
+  /// `force-seekable=no` overwritten by this table's `yes` a few lines later.
   static Map<String, String> build() {
     final properties = <String, String>{
       'protocol_whitelist': 'httpproxy,udp,rtp,tcp,tls,data,file,http,https,crypto,rtmp,rtmps,rtsp,srt',
@@ -46,7 +55,6 @@ abstract final class MediaKitLiveProperties {
       // Drop a failing hw decoder after one bad frame.
       'hwdec-software-fallback': '1',
       // Network cache-secs takes precedence over the smaller base readahead.
-      'force-seekable': 'yes',
       'cache': 'yes',
       'cache-on-disk': 'no',
       'cache-secs': cacheSeconds.toString(),
@@ -55,24 +63,13 @@ abstract final class MediaKitLiveProperties {
       // Past media must not borrow the unused forward reserve.
       'demuxer-donate-buffer': 'no',
       'demuxer-readahead-secs': readaheadSeconds.toString(),
-      // Refill-then-resume: wait for a healthy buffer after a stall.
-      'cache-pause': 'yes',
+      // Refill-then-resume: wait for a healthy buffer after a stall. Whether it
+      // is enabled at all is a per-source decision (see [sourceProperties]).
       'cache-pause-wait': cachePauseWaitSeconds.toString(),
       'demuxer-thread': 'yes',
       // Drop late frames instead of stacking lag.
       'framedrop': 'decoder+vo',
     };
-
-    // 播放器代理必须落到引擎上：直连播放时只有引擎自己会去连上游，而中继路径
-    // 早就通过 PlaybackProxyPolicy 拿到了代理，唯独直连这条没有——必须代理才
-    // 可达的 CDN（Twitch 的 playlist.ttvnw.net 直连握手要 9 秒以上）会在
-    // "8 秒卡在 0ms" 的看门狗之前连不上，报 NO_PLAYABLE_STREAM。
-    // 空串即"不用代理"，与 owned_input_opener 对私有输入清除代理的语义一致。
-    final String proxy = PlaybackProxyPolicy.currentNativeUrl(privateInput: false);
-    properties['http-proxy'] = proxy;
-    // 应用代理与播放器代理是两套开关，界面之外看不出播放器这一套到底生没生效，
-    // 而"能列出房间却播不动"正是它没生效的样子，所以每次装配都记一行。
-    developer.log(proxy.isEmpty ? 'direct (no player or system proxy)' : proxy, name: 'PlaybackProxy');
 
     if (_lowEnd) {
       properties['audio-buffer'] = '0.4';
@@ -250,6 +247,9 @@ abstract final class MediaKitLiveProperties {
       declaredFormat: declaredStreamFormatOf(source),
       proxy: PlaybackProxyPolicy.currentNativeUrl(privateInput: false),
     );
+    // 应用代理与播放器代理是两套开关，界面之外看不出播放器这一套到底生没生效，
+    // 而"能列出房间却播不动"正是它没生效的样子，所以每条源都记一行。
+    developer.log('${source.uri.host} -> $properties', name: 'PlaybackProxy');
     for (final entry in properties.entries) {
       await platform.setProperty(entry.key, entry.value);
     }

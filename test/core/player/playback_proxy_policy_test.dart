@@ -12,13 +12,16 @@ void main() {
       expect(PlaybackProxyPolicy.nativeUrl('DIRECT', privateInput: false), '');
     });
 
-    test('引擎属性里始终带 http-proxy，值要么是空串要么是 mpv 认的 http 端点', () {
-      // 空串而不是缺键：mpv 把空串读作"不用代理"，这样关掉开关能清掉上一次的值。
-      // 具体值不钉死——它来自本机设置，没配播放器代理时还会跟随 Windows 系统代理。
+    test('装配表不得声明按源属性，否则和 beforeOpen 抢同一把钥匙', () {
+      // 工厂的 configure 收的是 void 回调，装配表的 Future 没人 await，它的写入
+      // 可能落在某条源打开之后。同一个属性有两个所有者，谁最后生效就是随机的——
+      // Twitch 那次复现里，按源写的 force-seekable=no 就被这张表的 yes 盖掉了。
       final properties = MediaKitLiveProperties.build();
-      expect(properties.containsKey('http-proxy'), isTrue);
-      final value = properties['http-proxy']!;
-      expect(value.isEmpty || value.startsWith('http://'), isTrue, reason: 'mpv 只认 http:// 形式的代理端点');
+      for (final key in const ['http-proxy', 'demuxer-lavf-format', 'force-seekable', 'cache-pause']) {
+        expect(properties.containsKey(key), isFalse, reason: key);
+      }
+      // 与 cache-pause 配套的等待时长是全局的，留在表里。
+      expect(properties.containsKey('cache-pause-wait'), isTrue);
     });
   });
 }

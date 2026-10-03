@@ -342,6 +342,47 @@ position 22066ms 在走）→ 约 1 秒后进入缓冲 → 12 秒 `bufferingStal
 `isPrivatePlaybackInput` 顺手补了 IPv6 字面量的方括号（`Uri.host` 在不同实现里可能带 `[]`）。
 测试 **69 项**全绿（新增"渐进式源保留可拖动与自动暂停"，回环那条改成区分 HLS 与 FLV 输出），Analyze 0 项。
 
+### Twitch 复现第三轮：能播了，但**不是因为上一条的假设**（2026-10-04）
+
+mpv 日志接出来之后的第一手证据（`apn11`，同一房间，1080p60 h264 + aac，d3d11va 硬解，结尾连续
+`hls: Opening '<URL>' for reading` 说明分片在持续拉取）：
+
+- `lavf/v: Found 'hls' at score=100 size=0 (forced).` —— 按源指死解复用器**确实生效**。
+- `Set property: force-seekable="no"` 之后紧跟 `Set property: force-seekable="yes"`；
+  `cache-pause="no"` 之后紧跟 `cache-pause="yes"` —— **按源写的值被装配表覆盖了**，最终生效的还是旧值。
+
+所以"能播"和 cache-pause 那个假设无关（它根本没落地）。上一条记的假设**被推翻**，真正查到的是另一个 bug：
+
+**一个属性有两个所有者，而且顺序不确定。** 工厂的 `configure` 收的是 `void Function(adapter)`，而
+`MediaKitLiveProperties.applyTo` 是 `Future<void>`，它的 Future 被直接丢掉；`engineOptions()` 内部还要
+await 超分着色器的准备，于是装配表是在**打开已经开始之后**才逐条写进去的，和 `beforeOpen` 钩子的写入
+交错。谁最后落地取决于时序——日志里就是钩子先写 `no`、装配表后写 `yes`。
+
+修法不是去排序，而是**让两者不再重叠**：`build()` 只保留对所有源都一样的属性，凡是按源不同的
+（`http-proxy`、`demuxer-lavf-format`、`force-seekable`、`cache-pause`）一律只由 `applyToSource` 写。
+重叠消失之后那个竞态就无害了。回归测试直接钉这条不变量：装配表里出现这四个键就失败。
+
+**代价，明说**：`http-proxy` 不再随装配表走，所以上一轮加的 `playerProxyDispatcher`（改开关立刻写回运行
+中的引擎）成了空转，已删除。播放器代理现在**在下一次打开源时生效**——改完开关要重进房间。之前说的
+"改完立刻生效"不成立了，这是消除竞态付的代价。
+
+**另一条一手证据，比 cache-pause 更可能解释那几次间歇性卡顿**：
+
+```
+ffmpeg/demuxer/warn: hls: Disabling http_persistent due to custom io_open.
+ffmpeg/demuxer/warn: hls: Disabling http_multiple due to custom io_open.
+```
+
+media_kit 注册了 stream callback（日志里的 `stream_callback/v: Opening`），lavf 的 HLS 解复用器因此关掉了
+连接复用与并发拉取——**每个分片都是一条新连接**，走代理时还多一次 CONNECT。1080p60 的源流约 6–8 Mbps、
+2 秒一片，代理节点稍微一抖就供不上。这和同一批日志里 douyu/douyin/huya 经代理刷新全部超时是同一件事：
+节点吞吐不足。要根治得在 media_kit 侧看能不能不注册 stream callback（`http-header-fields` 已经能带请求头，
+日志里可见），这条留给 media_core。
+
+**结论**：Twitch 起播问题已解决（播放器代理 + 按源指死解复用器）；间歇性卡顿的根因指向代理节点吞吐与
+HLS 无连接复用，不是本仓的判定逻辑。`sourceResolver` 那条断线（卡住之后无法用新签名 URL 恢复）仍然待做
+——它决定的是"卡一下之后能不能自己爬起来"。
+
 ### 还没声明的站点（上游有 format/codec，本仓待补）
 
 **已补（2026-10-04 同批）**：bilibili（直播 `flv`/`ts`/`fmp4` 线路按 `parsePlayUrlResolution` 里的

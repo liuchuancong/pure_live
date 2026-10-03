@@ -8,11 +8,6 @@ import 'package:pure_live/core/platform/local_network_access.dart';
 class ProxySettingsController extends GetxController {
   static const int defaultProxyPort = proxy_routing.defaultProxyPort;
 
-  /// 播放器代理的变化要立刻落到正在运行的引擎上（mpv 的 `http-proxy` 属性）。
-  /// 应用代理改的是 dio 的连接池，播放器代理改的是引擎属性，两者都得即时生效，
-  /// 否则用户改完开关还要重启应用。装配点在 `PlayerKernelService`。
-  static void Function()? playerProxyDispatcher;
-
   final RxBool enableProxy = hiveBool('enableProxy', false);
   final RxString proxyHost = hiveString('proxyHost', '');
   final RxInt proxyPort = hiveInt('proxyPort', defaultProxyPort);
@@ -38,10 +33,6 @@ class ProxySettingsController extends GetxController {
     ever<String>(appProxyHost, (_) => _refreshDioConnections());
     ever<int>(appProxyPort, (_) => _refreshDioConnections());
 
-    ever<bool>(enableProxy, (_) => _dispatchPlayerProxy());
-    ever<String>(proxyHost, (_) => _dispatchPlayerProxy());
-    ever<int>(proxyPort, (_) => _dispatchPlayerProxy());
-
     // Hosts are saved per keystroke; ask for local-network access once the
     // user has stopped typing, and at start-up for an existing LAN proxy.
     // The permission exists only on Android; other platforms get no timers.
@@ -66,12 +57,6 @@ class ProxySettingsController extends GetxController {
   void _refreshDioConnections() {
     try {
       HttpClient.instance.rebuildDio();
-    } catch (_) {}
-  }
-
-  void _dispatchPlayerProxy() {
-    try {
-      playerProxyDispatcher?.call();
     } catch (_) {}
   }
 
