@@ -345,7 +345,7 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | 27-4 | `/profiles/<id>` 直接是房间；`/id/<name>` 经 `?xml=1` 解析 | 未做：链接解析 |
 | 27-5 | 记住的卡片只在房间直播中填补观众数 | 未做 |
 | 27-7 | 校验过的 master 每个 variant 加一档（1080p60、720p…） | 未做：清晰度分档 |
-| 限制/状态 | `user_restricted` 按封禁、`missing_subscription` 按订阅可见、`is_replay` 按回放 | 未做：状态与限制模型 |
+| 限制/状态 | `user_restricted` 按封禁、`missing_subscription` 按订阅可见、`is_replay` 按回放 | **已同步**：`user_restricted`→banned、`missing_subscription`→在播+subscribersOnly、`is_replay`→replay（回放也用平台给的 master） |
 
 ## liveme
 

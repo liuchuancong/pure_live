@@ -85,8 +85,11 @@ final class SteamBroadcastSite extends LiveSite
     final viewers = room.currentViewers?.toString();
     final status = switch (room.state) {
       SteamBroadcastState.live => LiveStatus.live,
+      SteamBroadcastState.replay => LiveStatus.replay,
       SteamBroadcastState.offline => LiveStatus.offline,
-      SteamBroadcastState.restricted || SteamBroadcastState.unknown => LiveStatus.unknown,
+      // `user_restricted` 是主播账号被限制，按封禁；`unknown` 保持未知。
+      SteamBroadcastState.restricted => LiveStatus.banned,
+      SteamBroadcastState.unknown => LiveStatus.unknown,
     };
     return LiveRoom(
       platform: 'steambroadcast',
@@ -99,6 +102,10 @@ final class SteamBroadcastSite extends LiveSite
       area: room.game.isEmpty ? 'Steam Community' : room.game,
       link: SteamBroadcastLink.watchUrl(room.steamId),
       liveStatus: status,
+      // `missing_subscription` 是在播 + 订阅者专属（上游 27-x）。
+      restriction: room.state == SteamBroadcastState.live || room.state == SteamBroadcastState.replay
+          ? room.restriction
+          : null,
       watching: viewers ?? '',
       onlineViewers: viewers,
       audienceMetricType: viewers == null ? AudienceMetricType.unknown : AudienceMetricType.onlineViewers,

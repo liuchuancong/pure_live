@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:html/dom.dart';
 import 'package:html/parser.dart' as html_parser;
+import 'package:pure_live/core/models/live_room.dart';
 import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/core/network/request_scope.dart';
 
@@ -31,7 +32,7 @@ final class SteamBroadcastException implements Exception {
   String toString() => 'Steam Broadcast ${kind.name}';
 }
 
-enum SteamBroadcastState { live, offline, restricted, unknown }
+enum SteamBroadcastState { live, offline, restricted, replay, unknown }
 
 final class SteamBroadcastRoom {
   const SteamBroadcastRoom({
@@ -44,6 +45,7 @@ final class SteamBroadcastRoom {
     required this.currentViewers,
     required this.state,
     required this.master,
+    this.restriction,
   });
 
   final String steamId;
@@ -56,6 +58,10 @@ final class SteamBroadcastRoom {
   final SteamBroadcastState state;
   final Uri? master;
 
+  /// 谁可以看（上游 27-x）：`ready` 是 none，`missing_subscription` 是
+  /// subscribersOnly（在播但只给订阅者），其它回答没说就是 null。
+  final LiveRestriction? restriction;
+
   SteamBroadcastRoom enrich(SteamBroadcastRoom known) => SteamBroadcastRoom(
     steamId: steamId,
     broadcaster: broadcaster == steamId || broadcaster == 'Steam broadcaster' ? known.broadcaster : broadcaster,
@@ -66,6 +72,7 @@ final class SteamBroadcastRoom {
     currentViewers: currentViewers ?? known.currentViewers,
     state: state,
     master: master,
+    restriction: restriction ?? known.restriction,
   );
 }
 
@@ -302,19 +309,30 @@ class SteamBroadcastApi {
   static SteamBroadcastRoom parseBroadcastJson(Object? value, {required String steamId, required String broadcaster}) {
     final root = _object(value);
     final success = _string(root['success']).toLowerCase();
+    // `missing_subscription` 是"只给订阅者看"的**在播**直播（上游 27-x）：
+    // 它仍然带 master（平台给订阅者的），本客户端按限制拒绝播放。
+    final isReplay = root['is_replay'] == true;
     final state = switch (success) {
-      'ready' => SteamBroadcastState.live,
+      'ready' => isReplay ? SteamBroadcastState.replay : SteamBroadcastState.live,
+      'missing_subscription' => SteamBroadcastState.live,
       'unavailable' || 'offline' || 'not_live' || 'no_broadcast' => SteamBroadcastState.offline,
       'user_restricted' => SteamBroadcastState.restricted,
       'waiting' || 'waiting_to_start' || 'waiting_for_start' => SteamBroadcastState.unknown,
       _ => SteamBroadcastState.unknown,
     };
+    final LiveRestriction? restriction = switch (success) {
+      'ready' => LiveRestriction.none,
+      'missing_subscription' => LiveRestriction.subscribersOnly,
+      _ => null,
+    };
     Uri? master;
-    if (state == SteamBroadcastState.live) {
+    if (state == SteamBroadcastState.live || state == SteamBroadcastState.replay) {
       final raw = _string(root['hls_url']);
       master = _mediaUri(raw, steamId);
-      if (master == null) throw const SteamBroadcastException(SteamBroadcastFailure.schema);
-      master = _appendCdnAuth(master, root['cdn_auth_url_parameters']);
+      if (master == null && state == SteamBroadcastState.live && success == 'ready') {
+        throw const SteamBroadcastException(SteamBroadcastFailure.schema);
+      }
+      if (master != null) master = _appendCdnAuth(master, root['cdn_auth_url_parameters']);
     }
     final title = _optionalText(root['title']);
     return SteamBroadcastRoom(
@@ -327,6 +345,7 @@ class SteamBroadcastApi {
       currentViewers: _nonNegativeInt(root['num_viewers']),
       state: state,
       master: master,
+      restriction: restriction,
     );
   }
 
