@@ -284,7 +284,13 @@ class CustomTitleBar extends StatelessWidget {
 
     return Obx(() {
       final isFullscreen = GlobalPlayerService.instance.player.isWindowFullscreen.value;
-      final bgColor = isFullscreen || isDark ? Colors.black : theme.scaffoldBackgroundColor;
+      // With a wallpaper behind it, the title bar keeps a translucent wash of
+      // the colour it would otherwise paint: the picture reaches the top edge of
+      // the window while the app name and the window controls stay readable over
+      // any artwork.
+      final Color titleBarColor = isFullscreen || isDark ? Colors.black : theme.scaffoldBackgroundColor;
+      final bool wallpaperBehind = !isFullscreen && AppCanvasScope.ownedByBackgroundOf(context);
+      final bgColor = wallpaperBehind ? titleBarColor.withValues(alpha: 0.62) : titleBarColor;
       final iconColor = isFullscreen || isDark ? Colors.white.withValues(alpha: 0.75) : Colors.black;
       final currentRoute = RouteObserverController.to.currentRoute.value;
       final currentRouteIskSplash = currentRoute == RoutePath.kSplash;

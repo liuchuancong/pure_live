@@ -242,16 +242,16 @@ class _MyAppState extends State<MyApp> with DesktopWindowMixin {
                     child: resultWidget,
                   );
                 }
-                // Wallpaper first, then the canvas transparency that lets it
-                // show through every page, then the desktop title bar on top:
-                // the title bar must keep the real theme colour so its window
-                // controls stay readable over any picture.
-                resultWidget = WallpaperCanvasTransparency(
-                  child: MaterialUiThemeBridge(child: AppBackgroundLayer(child: resultWidget)),
-                );
+                // The wallpaper layer wraps the desktop title bar as well, so the
+                // picture reaches the top edge of the window; the chrome keeps a
+                // translucent wash of its own colour for readability. The canvas
+                // transparency stays inside the title bar: the chrome reads the
+                // real theme colours.
+                resultWidget = WallpaperCanvasTransparency(child: MaterialUiThemeBridge(child: resultWidget));
                 if (PlatformUtils.isDesktopNotMac) {
                   resultWidget = DesktopManager.buildWithTitleBar(resultWidget);
                 }
+                resultWidget = AppBackgroundLayer(child: resultWidget);
                 return MediaQuery(
                   data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(currentFactor)),
                   child: resultWidget,

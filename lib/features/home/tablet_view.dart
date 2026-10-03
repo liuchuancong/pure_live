@@ -86,6 +86,13 @@ class HomeTabletView extends StatelessWidget {
                 NavigationRail(
                   groupAlignment: 0.9,
                   labelType: NavigationRailLabelType.all,
+                  // The rail paints an opaque surface of its own, which would
+                  // hide a wallpaper. A translucent wash keeps the icons and
+                  // labels readable while the picture shows through to the left
+                  // edge.
+                  backgroundColor: AppCanvasScope.ownedByBackgroundOf(context)
+                      ? Theme.of(context).colorScheme.surface.withValues(alpha: 0.62)
+                      : null,
                   leading: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [

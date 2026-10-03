@@ -29,14 +29,21 @@ class AppBackgroundLayer extends StatelessWidget {
       // Navigator and deactivated that whole subtree (title bar included) for a
       // frame. An empty placeholder keeps `child` at the same position, and the
       // empty frame paints nothing - which is what returning `child` was for.
-      return Stack(
-        fit: StackFit.expand,
-        children: <Widget>[
-          if (hasBackground) _BackgroundSurface(config: config, controller: controller) else const SizedBox.shrink(),
-          // The mask exists to keep page text readable over a photo or video.
-          if (hasBackground) ColoredBox(color: _maskColor(config, Theme.of(context))) else const SizedBox.shrink(),
-          child,
-        ],
+      //
+      // The layer also publishes [AppCanvasScope]: it wraps the desktop title
+      // bar too, so the chrome above the pages can let the picture through
+      // without importing this domain.
+      return AppCanvasScope(
+        ownedByBackground: hasBackground,
+        child: Stack(
+          fit: StackFit.expand,
+          children: <Widget>[
+            if (hasBackground) _BackgroundSurface(config: config, controller: controller) else const SizedBox.shrink(),
+            // The mask exists to keep page text readable over a photo or video.
+            if (hasBackground) ColoredBox(color: _maskColor(config, Theme.of(context))) else const SizedBox.shrink(),
+            child,
+          ],
+        ),
       );
     });
   }
@@ -89,19 +96,14 @@ class WallpaperCanvasTheme extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ThemeData base = Theme.of(context);
-    // The scope tells pages that keep a deliberate backdrop of their own (the
-    // live room is black) that the picture is behind them now.
-    return AppCanvasScope(
-      ownedByBackground: ownsCanvas,
-      child: Theme(
-        data: ownsCanvas
-            ? base.copyWith(
-                scaffoldBackgroundColor: Colors.transparent,
-                pageTransitionsTheme: wallpaperPageTransitions(base.pageTransitionsTheme),
-              )
-            : base,
-        child: child,
-      ),
+    return Theme(
+      data: ownsCanvas
+          ? base.copyWith(
+              scaffoldBackgroundColor: Colors.transparent,
+              pageTransitionsTheme: wallpaperPageTransitions(base.pageTransitionsTheme),
+            )
+          : base,
+      child: child,
     );
   }
 }
