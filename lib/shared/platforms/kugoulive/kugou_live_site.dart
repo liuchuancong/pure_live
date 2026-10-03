@@ -1,7 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:pure_live/core/models/live_area.dart';
 import 'package:pure_live/core/models/live_room.dart';
-import 'package:pure_live/shared/platforms/empty_danmaku.dart';
 import 'package:pure_live/shared/platforms/live_danmaku.dart';
 import 'package:pure_live/shared/platforms/live_directory.dart';
 import 'package:pure_live/shared/platforms/live_search.dart';
@@ -12,6 +11,8 @@ import 'package:pure_live/core/utils/i18n.dart';
 import 'package:pure_live/shared/platforms/live_external_room.dart';
 
 import 'kugou_live_api.dart';
+import 'kugou_live_danmaku.dart';
+import 'kugou_live_link_danmaku.dart';
 import 'kugou_live_link.dart';
 
 final class KugouLiveSite extends LiveSite
@@ -49,7 +50,7 @@ final class KugouLiveSite extends LiveSite
   String get directoryNoticeKey => 'kugoulive_directory_scope';
 
   @override
-  LiveDanmaku getDanmaku() => EmptyDanmaku();
+  LiveDanmaku getDanmaku() => KugouLiveLinkDanmaku();
 
   @override
   Future<List<LiveCategory>> getCategores(int page, int pageSize) async {
@@ -130,6 +131,8 @@ final class KugouLiveSite extends LiveSite
           : AudienceMetricType.unknown,
       notice: notice.join('\n'),
       httpHeaders: KugouLiveApi.mediaHeaders(room.roomId),
+      // 弹幕参数（上游 M5.25）：房间号；在播时给。
+      danmakuData: room.state == KugouLiveState.live ? KugouLiveDanmakuArgs(roomId: room.roomId) : null,
       data: includeMedia ? room : null,
     );
   }
