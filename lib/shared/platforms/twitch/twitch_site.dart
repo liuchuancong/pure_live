@@ -1017,6 +1017,8 @@ class TwitchSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomR
           area: user?.stream?.game?.displayName ?? "",
           status: online,
           liveStatus: online ? LiveStatus.live : LiveStatus.offline,
+          // 在播时 stream.createdAt 就是这场直播的开播时间（上游 8-x）。
+          startedAt: online ? _startedAt(user?.stream?.createdAt) : null,
           platform: PlatformIds.twitch,
           link: "$baseUrl/${list[index].roomId}",
           danmakuData: list[index].roomId,
@@ -1032,5 +1034,12 @@ class TwitchSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomR
       index++;
     }
     return roomList;
+  }
+
+  /// Twitch 的 `createdAt`（ISO 8601）转成 UTC；读不出来就不给。
+  static DateTime? _startedAt(Object? value) {
+    final raw = value?.toString().trim() ?? '';
+    if (raw.isEmpty) return null;
+    return DateTime.tryParse(raw)?.toUtc();
   }
 }
