@@ -757,6 +757,10 @@ class LivePlayController extends GetxController
       return liveRoom;
     } catch (e) {
       if (!_isRoomLoadCurrent(loadEpoch, requestedRoom)) return LiveRoom();
+      // 这个 catch 兜住的不只是房间信息：取清晰度、绑定自有输入都在这条路上，
+      // 而 toast 只会说"获取直播间信息失败"。不留一行日志，下一次故障就得靠猜
+      // 分辨到底是元数据还是播放阶段坏的。
+      developer.log('Room load failed: $e', name: 'LivePlayController');
       updateRoom(isLoading: false, loadError: e.toString());
       ToastUtil.show(i18n('get_room_info_failed_retry'));
       return LiveRoom();
