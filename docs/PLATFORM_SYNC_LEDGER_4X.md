@@ -550,6 +550,56 @@ HEAD 上清单源是 `cache-pause: no`（`cache-pause-wait` 留着但不再触�
 `"yes"`、`http-proxy` 写两次）。
 
 
+### LOOK「有的房间能播有的不能」：房间是幽灵，顺带查出七个站的请求头被丢了（2026-10-04）
+
+日志里那间房（`pull0583d674.live.126.net`）的 404 是**真的**：应用自己的探测请求先拿到 404
+（`⛔ [HTTP Error] [badResponse] Response Code: 404`，285ms），mpv 随后
+`ffmpeg/warn: https: HTTP error 404 Not Found` → `Failed to open …`。两边一致，不是播放器的问题。
+
+新增探针 `tool/probes/looklive_media_headers_probe_test.dart`（opt-in，只报状态码与字节数，不落 URL）
+按应用自己的链路抽了 4 个在播房间 × 2 条线路，每条**带头 / 不带头各请一次**：
+
+| 房间 | 线路 | 带声明头 | 不带头 |
+| --- | --- | --- | --- |
+| 21623631 | hls / flv | 200（442B）/ 200（17206B） | 200 / 200 |
+| **95878198** | **hls** | **404（17B）** | **404** |
+| **95878198** | **flv** | **200，30 秒 0 字节** | **200，0 字节** |
+| 217327486 | hls / flv | 200（604B）/ 200（17101B） | 200 / 200 |
+| 18430854 | hls / flv | 200（484B）/ 200（3457B） | 200 / 200 |
+
+汇总：`linesProbed=8 headerSensitiveLines=0 ghostLines=2`。两条结论：
+
+1. **`liveStatus=1` 不保证 CDN 上有流。** 95878198 的详情接口照样说在播（否则探针会跳过它），
+   而 HLS 是 404、FLV 连上了却一个字节都不给。这就是"有的房间能播有的不能"的原因——**在房间，不在我们**。
+   客户端无法把不存在的流播出来；能改善的只有报错的诚实度（见下）。
+2. **请求头对这个 404 没有影响**：8 条线路带头与不带头的状态码、字节数完全一致。所以"补上 Referer 就能播"
+   这个猜测**被探针推翻了**，不作为修法。
+
+**但顺着 `http-header-fields=[]` 查出一个真缺陷**：`PlaybackHeaderResolver.resolve` 是一张按平台分支的表，
+分支里没有的站点一律落到 `default: headers = {}`——**房间自己声明的 `httpHeaders` 被丢掉**（入参
+`roomHeaders` 只有 IPTV 那一支用了）。声明了媒体头却不在表里的有七个站：
+**looklive、jdlive、baidulive、sixroom、kugoulive、fc2live、steambroadcast**。它们的 CDN 一个头都收不到，
+jdlive 与百度直播的日志里都是 `Set property: http-header-fields=[]`。
+
+修的是默认分支而不是补七个 case：只有站点自己知道该拿哪个 id 拼 Referer（jdlive 用 `liveId`、liveme 用
+`shortId`、tiktok 用 `username`、steam 用 `steamId`），解析器手上只有 `roomId`，重建会拼错。默认分支改成
+透传 `roomHeaders`，**新增站点不必再来登记**。表里已有的 25 支不动（它们要合并设置项里的 Cookie/自定义 UA）。
+测试 `test/domains/live/playback_header_resolver_test.dart` 钉四条边：无专属规则的站透传声明（用 LOOK 真实的
+`mediaHeaders` 与 `https://look.163.com/live?id=123456`）、有专属规则的站不被房间声明覆盖、IPTV 仍然是
+"自定义 UA + 每频道头"合并、什么都没声明时还是空表（不凭空造头）。
+
+**留一条未证实的疑点，不顺手改**：pandalive / liveme / tiktok / youtube 在表里用 `roomId` 重建 Referer，
+而房间上声明的是 `userId` / `shortId` / `username` / `videoId`。若这几家的 `roomId` 与那个 id 不是同一个值，
+它们现在发出去的 Referer 就是错的——但四个站目前都能播，没有证据说明它有害，所以只记不改。
+
+**报错诚实度这条是真修了**（media_core `9828998`）：会话第一次打开永远是 staged，而 staged 播放器在 commit
+之前没有适配器订阅，于是"打开就失败"的引擎错误没人听见——验证等满整个窗口，最后报
+`opened but never played (position frozen at 0ms for 8s)`，把 CDN 的 404 说成了流卡住。现在 staged 期间只订阅
+错误事件（播放状态与看门狗照旧不接，避免未 commit 的引擎污染界面），LOOK 这种情况会**立刻**失败并带上
+`Failed to open …` 的真因。顺带修了 `player_handle_adapter.dart` 那行日志：它报的 `recoveryEnabled` 是配置默认值
+而不是句柄上真正生效的开关，于是明明被播放方关掉了还打印 `true`（media_core `b934b81`）。
+
+
 ### 还没声明的站点（上游有 format/codec，本仓待补）
 
 **已补（2026-10-04 同批）**：bilibili（直播 `flv`/`ts`/`fmp4` 线路按 `parsePlayUrlResolution` 里的

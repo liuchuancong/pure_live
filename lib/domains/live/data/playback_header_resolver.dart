@@ -194,7 +194,17 @@ class PlaybackHeaderResolver {
         headers = PandaLiveApi.mediaHeaders(roomId);
         break;
       default:
-        headers = const <String, String>{};
+        // 站点自己在房间上声明的媒体请求头就是权威：只有它知道该拿哪个 id 拼
+        // Referer（jdlive 用 `liveId`、liveme 用 `shortId`、tiktok 用 `username`、
+        // steam 用 `steamId`），而这里手上只有 `roomId`，重建只会拼错。
+        //
+        // 曾经这个分支给的是空表，于是**声明了 `httpHeaders` 却不在上面 switch 里**
+        // 的七个站（looklive、jdlive、baidulive、sixroom、kugoulive、fc2live、
+        // steambroadcast）一个头都发不出去——mpv 日志里就是
+        // `Set property: http-header-fields=[]`，而网易 LOOK 的 CDN 对没有
+        // Referer/Origin 的请求按边缘节点不同返回 404，表现就是"有的房间能播、
+        // 有的不能"。新增站点不需要再来这里登记：声明在房间上即可。
+        headers = roomHeaders;
     }
 
     return HttpHeaderPolicy.normalize(headers);
