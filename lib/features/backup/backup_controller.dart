@@ -26,8 +26,6 @@ import 'package:pure_live/core/config/cookie_settings_controller.dart';
 import 'package:pure_live/core/config/danmaku_settings_controller.dart';
 import 'package:pure_live/core/config/room_card_settings_controller.dart';
 
-enum BackupRestoreScope { all, favorites }
-
 class BackupController extends GetxController {
   static BackupController get to => Get.find();
 
@@ -54,7 +52,7 @@ class BackupController extends GetxController {
     });
   }
 
-  Map<String, dynamic> exportAllSettings({bool includeSensitiveData = true}) {
+  Map<String, dynamic> exportAllSettings({bool includeSensitiveData = true, Iterable<String>? sections}) {
     if (!Get.isRegistered<TagManagementController>()) {
       Get.put(TagManagementController());
     }
@@ -86,20 +84,14 @@ class BackupController extends GetxController {
       data['webdav'] = Get.find<WebDavController>().toJson();
       data['cookie'] = Get.find<CookieSettingsController>().toJson();
     }
-    return data;
-  }
 
-  /// Portable follow-list payload: no device preferences, cookies or credentials.
-  Map<String, dynamic> exportFavoriteSettings() {
-    final favorite = Get.find<FavoriteRoomController>();
-    return {
-      'backupVersion': backupVersion,
-      'backupScope': 'favorites',
-      'favorite': {
-        'favoriteRooms': favorite.favoriteRooms.v.map((room) => room.toJson()).toList(growable: false),
-        'favoriteAreas': favorite.favoriteAreas.v.map((area) => area.toJson()).toList(growable: false),
-      },
-    };
+    final filtered = filterBackupSections(data, sections);
+    if (!identical(filtered, data)) {
+      // 勾选结果决定这份备份到底有没有带凭据，标记必须跟着走。
+      filtered['sensitiveDataIncluded'] =
+          includeSensitiveData && (filtered.containsKey('webdav') || filtered.containsKey('cookie'));
+    }
+    return filtered;
   }
 
   /// Removes credentials and session cookies before a backup leaves the device.
@@ -110,6 +102,49 @@ class BackupController extends GetxController {
     result['sensitiveDataIncluded'] = false;
     return result;
   }
+
+  /// 备份里可单独勾选的顶层模块，顺序即选择页的显示顺序。
+  ///
+  /// 与 [_sectionKeys] 同一个来源：新增一个 section，选择页与导入校验会一起看到它。
+  static List<String> get sectionNames => List<String>.unmodifiable(_sectionKeys.keys);
+
+  /// 电视端推送支持的模块：`/api/setSettings` 是扁平负载，只认这几段。
+  static const List<String> tvSectionNames = <String>['danmaku', 'favorite', 'history', 'iptv', 'cookie'];
+
+  /// [data] 里实际带了的模块，顺序同 [sectionNames]。
+  static List<String> presentSections(Map<String, dynamic> data) {
+    return [
+      for (final name in _sectionKeys.keys)
+        if (data.containsKey(name)) name,
+    ];
+  }
+
+  /// 读取备份文件里实际带了的模块；解析不出本程序的备份返回 null。
+  ///
+  /// 返回空列表表示这是一份旧版扁平备份（没有模块划分），调用方只能整份恢复。
+  static Future<List<String>?> readBackupSections(File file) async {
+    try {
+      final data = jsonDecode(await file.readAsString());
+      if (data is! Map) return null;
+      return presentSections(Map<String, dynamic>.from(data));
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// 只保留勾选的模块。`sections` 为 null 表示不过滤（整份使用）。
+  ///
+  /// 版本这类元字段永远保留，否则过滤后的备份自己就读不出来了。
+  static Map<String, dynamic> filterBackupSections(Map<String, dynamic> data, Iterable<String>? sections) {
+    if (sections == null) return data;
+    final selected = sections.toSet();
+    return <String, dynamic>{
+      for (final entry in data.entries)
+        if (_metaKeys.contains(entry.key) || selected.contains(entry.key)) entry.key: entry.value,
+    };
+  }
+
+  static const Set<String> _metaKeys = <String>{'backupVersion', 'backupScope', 'sensitiveDataIncluded'};
 
   // Derive recognized wire keys from the existing canonical configuration
   // extractors, rather than maintaining another list of hundreds of fields.
@@ -170,7 +205,11 @@ class BackupController extends GetxController {
     if (!recognized) throw const FormatException('No recognized backup settings');
   }
 
-  void importAllSettings(Map<String, dynamic> data) {
+  void importAllSettings(Map<String, dynamic> data, {Iterable<String>? sections}) {
+    _importSettings(filterBackupSections(data, sections));
+  }
+
+  void _importSettings(Map<String, dynamic> data) {
     if (data['backupScope'] == 'favorites') {
       throw const FormatException('Favorites-only backup requires favorites restore');
     }
@@ -363,12 +402,8 @@ class BackupController extends GetxController {
     }
   }
 
-  Future<bool> backup(File file) async {
-    return _writeBackup(file, exportAllSettings());
-  }
-
-  Future<bool> backupFavorites(File file) async {
-    return _writeBackup(file, exportFavoriteSettings());
+  Future<bool> backup(File file, {Iterable<String>? sections}) async {
+    return _writeBackup(file, exportAllSettings(sections: sections));
   }
 
   Future<bool> _writeBackup(File file, Map<String, dynamic> data) async {
@@ -415,32 +450,11 @@ class BackupController extends GetxController {
     }
   }
 
-  Future<void> restoreAllSettings(Map<String, dynamic> data) async {
+  Future<void> restoreAllSettings(Map<String, dynamic> data, {Iterable<String>? sections}) async {
     if (data['backupScope'] == 'favorites') {
       throw const FormatException('Favorites-only backup requires favorites restore');
     }
-    await _persistRestore(() => importAllSettings(data));
-  }
-
-  Future<void> restoreFavoriteSettings(Map<String, dynamic> data) async {
-    await _persistRestore(() {
-      final version = data['backupVersion'];
-      if (version != null && (version is! int || version < 1)) {
-        throw const FormatException('Invalid backup version');
-      }
-
-      final Map<String, dynamic> favorite;
-      if (version == null) {
-        favorite = data;
-      } else {
-        final section = data['favorite'];
-        if (section is! Map || section.keys.any((key) => key is! String)) {
-          throw const FormatException('Invalid backup section: favorite');
-        }
-        favorite = Map<String, dynamic>.from(section);
-      }
-      Get.find<FavoriteRoomController>().restoreFavoriteLists(favorite);
-    });
+    await _persistRestore(() => importAllSettings(data, sections: sections));
   }
 
   Future<void> _persistRestore(void Function() restore) async {
@@ -465,7 +479,7 @@ class BackupController extends GetxController {
     }
   }
 
-  Future<bool> recover(File file) async {
+  Future<bool> recover(File file, {Iterable<String>? sections}) async {
     try {
       final json = await file.readAsString();
       final data = jsonDecode(json);
@@ -474,7 +488,7 @@ class BackupController extends GetxController {
         return false;
       }
 
-      await restoreAllSettings(data);
+      await restoreAllSettings(data, sections: sections);
 
       return true;
     } catch (_) {
@@ -513,19 +527,18 @@ class BackupController extends GetxController {
     }
   }
 
-  Map<String, dynamic> exportToTVSettings({bool includeSensitiveData = true}) {
-    final danmaku = Get.find<DanmakuSettingsController>().toJson();
-    final iptv = Get.find<IptvSettingsController>().toJson();
-    final favorite = Get.find<FavoriteRoomController>().toJson();
-    final history = Get.find<HistoryController>().toJson();
+  Map<String, dynamic> exportToTVSettings({bool includeSensitiveData = true, Iterable<String>? sections}) {
+    final selected = sections?.toSet();
+    bool wanted(String name) => selected == null || selected.contains(name);
 
-    final data = <String, dynamic>{
-      ...danmaku,
-      ...favorite,
-      ...history,
-      'customIptvUserAgent': iptv['customIptvUserAgent'],
-    };
-    if (includeSensitiveData) {
+    final data = <String, dynamic>{};
+    if (wanted('danmaku')) data.addAll(Get.find<DanmakuSettingsController>().toJson());
+    if (wanted('favorite')) data.addAll(Get.find<FavoriteRoomController>().toJson());
+    if (wanted('history')) data.addAll(Get.find<HistoryController>().toJson());
+    if (wanted('iptv')) {
+      data['customIptvUserAgent'] = Get.find<IptvSettingsController>().toJson()['customIptvUserAgent'];
+    }
+    if (includeSensitiveData && wanted('cookie')) {
       data.addAll(Get.find<CookieSettingsController>().toJson());
     }
     return data;

@@ -9,25 +9,24 @@ import 'package:pure_live/core/index.dart';
 import 'package:battery_plus/battery_plus.dart';
 import 'package:flame_barrage/flame_barrage.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
-import 'package:pure_live/domains/iptv/data/local/db_service.dart';
-import 'package:pure_live/core/player/presentation/fullscreen_window.dart';
 import 'package:volume_controller/volume_controller.dart';
 import 'package:pure_live/core/player/core/playback_source.dart';
-import 'package:media_core/media_core.dart' show PlayerException, PlayerErrorCode;
-import 'package:pure_live/core/player/models/player_error_type.dart';
+import 'package:pure_live/domains/live/data/platforms/sites.dart';
+import 'package:pure_live/domains/iptv/data/local/db_service.dart';
 import 'package:pure_live/domains/live/domain/live_player_facade.dart';
+import 'package:pure_live/core/player/core/portrait_stream_support.dart';
+import 'package:pure_live/domains/live/domain/global_player_service.dart';
+import 'package:pure_live/core/player/presentation/fullscreen_window.dart';
+import 'package:pure_live/domains/iptv/data/iptv_settings_controller.dart';
+import 'package:pure_live/domains/iptv/data/local/database.dart' as database;
+import 'package:media_core/media_core.dart' show ErrorClassifier, PlayerErrorCategory, PlayerErrorCode, PlayerException;
 import 'package:pure_live/domains/live/presentation/playback/states/ui_state.dart';
 import 'package:pure_live/domains/live/presentation/playback/states/player_state.dart';
-import 'package:pure_live/core/player/core/portrait_stream_support.dart';
-import 'package:pure_live/domains/iptv/data/local/database.dart' as database;
+import 'package:screen_brightness_platform_interface/screen_brightness_platform_interface.dart';
 import 'package:pure_live/domains/live/presentation/playback/controllers/live_play_controller.dart';
 import 'package:pure_live/domains/live/presentation/playback/widgets/danmaku/danmaku_message_actions.dart';
 import 'package:pure_live/domains/live/presentation/playback/widgets/danmaku/danmaku_settings_source.dart';
-import 'package:screen_brightness_platform_interface/screen_brightness_platform_interface.dart';
 import 'package:pure_live/domains/live/presentation/playback/widgets/layout/portrait_fullscreen_interaction.dart';
-import 'package:pure_live/domains/live/domain/global_player_service.dart';
-import 'package:pure_live/domains/live/data/platforms/sites.dart';
-import 'package:pure_live/domains/iptv/data/iptv_settings_controller.dart';
 
 typedef AudioOnlyCallback = Future<void> Function(bool value);
 
@@ -86,7 +85,7 @@ class DanmakuManager {
     videoController.danmakuFontSize.value = dm.danmakuFontSize.v;
     videoController.danmakuFontWeight.value = dm.danmakuFontWeight.v;
     videoController.danmakuFontBorder.value = dm.danmakuFontBorder.v;
-    videoController.danmakuRealtimeMode.value = dm.danmakuRealtimeMode.v;
+    videoController.danmakuMassMode.value = dm.danmakuMassMode.v;
     videoController.danmakuLetterSpacing.value = dm.danmakuLetterSpacing.v;
     videoController.danmakuOpacity.value = dm.danmakuOpacity.v;
     videoController.enableDanmakuStroke.value = dm.enableDanmakuStroke.v;
@@ -105,7 +104,7 @@ class DanmakuManager {
       videoController.danmakuFontWeight,
       videoController.danmakuFontBorder,
       videoController.danmakuLetterSpacing,
-      videoController.danmakuRealtimeMode,
+      videoController.danmakuMassMode,
       videoController.danmakuOpacity,
       videoController.enableDanmakuStroke,
       videoController.danmakuFps,
@@ -174,7 +173,7 @@ class DanmakuManager {
     dm.danmakuFontWeight.v = videoController.danmakuFontWeight.value;
     dm.danmakuFontBorder.v = videoController.danmakuFontBorder.value.toDouble();
     dm.danmakuLetterSpacing.v = videoController.danmakuLetterSpacing.value;
-    dm.danmakuRealtimeMode.v = videoController.danmakuRealtimeMode.value;
+    dm.danmakuMassMode.v = videoController.danmakuMassMode.value;
     dm.danmakuOpacity.v = videoController.danmakuOpacity.value;
     dm.enableDanmakuStroke.v = videoController.enableDanmakuStroke.value;
     dm.danmakuFps.v = videoController.danmakuFps.value;
@@ -416,7 +415,7 @@ class VideoController with ChangeNotifier implements DanmakuSettingsSource {
   @override
   final danmakuFontBorder = 1.5.obs;
   @override
-  final danmakuRealtimeMode = false.obs;
+  final danmakuMassMode = false.obs;
   @override
   final danmakuLetterSpacing = 0.0.obs;
   @override
@@ -429,7 +428,10 @@ class VideoController with ChangeNotifier implements DanmakuSettingsSource {
   @override
   RxDouble get pipDanmakuScaleValue => SettingsService.to.danmaku.pipDanmakuScaleValue;
   @override
-  final danmakuMaxVisibleCount = 48.obs;
+  // 同屏条数同 pipDanmakuScale* 一个道理：渲染端读的始终是设置单例，这里再持一份
+  // 影子字段（旧值是固定的 48）会让设置页的滑块既不落盘也不影响画面。直接委托。
+  @override
+  RxInt get danmakuMaxVisibleCount => SettingsService.to.danmaku.danmakuMaxVisibleCount;
   @override
   final enableDanmakuStroke = true.obs;
   @override
@@ -783,15 +785,23 @@ class VideoController with ChangeNotifier implements DanmakuSettingsSource {
     _lastPlayerErrorSignature = signature;
     _lastPlayerErrorAt = now;
 
-    final errorMessage = switch (error.code.appType) {
-      PlayerErrorType.network => i18n("error_network"),
-      PlayerErrorType.source => i18n("error_source"),
-      PlayerErrorType.codec => i18n("error_codec"),
-      PlayerErrorType.native => i18n("error_native"),
-      PlayerErrorType.initialization => i18n("error_initialization"),
-      PlayerErrorType.texture => i18n("error_texture"),
-      PlayerErrorType.lifecycle => i18n("error_lifecycle"),
-      PlayerErrorType.unknown => i18n("error_unknown"),
+    final errorMessage = switch (ErrorClassifier.classify(error.code)) {
+      PlayerErrorCategory.network ||
+      PlayerErrorCategory.http ||
+      PlayerErrorCategory.authentication ||
+      PlayerErrorCategory.security ||
+      PlayerErrorCategory.timeout => i18n("error_network"),
+      PlayerErrorCategory.source => i18n("error_source"),
+      PlayerErrorCategory.decoder || PlayerErrorCategory.demuxer || PlayerErrorCategory.media => i18n("error_codec"),
+      PlayerErrorCategory.renderer ||
+      PlayerErrorCategory.geometry ||
+      PlayerErrorCategory.presentation => i18n("error_texture"),
+      PlayerErrorCategory.adapter ||
+      PlayerErrorCategory.backend ||
+      PlayerErrorCategory.audio => i18n("error_initialization"),
+      PlayerErrorCategory.lifecycle || PlayerErrorCategory.state => i18n("error_lifecycle"),
+      PlayerErrorCategory.unknown => i18n("error_unknown"),
+      _ => i18n("error_native"),
     };
 
     ToastUtil.show(errorMessage);
@@ -1005,7 +1015,11 @@ class VideoController with ChangeNotifier implements DanmakuSettingsSource {
         showStroke: enableDanmakuStroke.value,
         noEmojiMode: noEmojiMode.value,
         fps: resolvedFps,
-        maxVisibleCount: 48,
+        // 这份 Config 会直接推进已挂载的引擎（帧回调阶段），面板 widget 的重建在
+        // 同一帧的 build 阶段随后覆盖它。海量模式的三个字段两边必须一致，否则
+        // 只靠 updateDanmaku 触发的那次（例如刷新率变化）会把海量模式悄悄改回去。
+        realtimeMode: danmakuMassMode.value,
+        maxVisibleCount: settings.effectiveMaxVisibleCount,
         maxPendingCount: 120,
         maxPendingAge: const Duration(seconds: 5),
         barragePoolMaxSize: 72,

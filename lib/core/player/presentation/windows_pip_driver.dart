@@ -24,6 +24,9 @@ PipConfig pipConfigFromSettings() {
     height: settings.windowsPipBaseSize.value * 9 / 16,
     minWidth: settings.windowsPipMinWidth.value,
     minHeight: settings.windowsPipMinHeight.value,
+    // 小窗保留任务栏按钮：画中画期间主窗口只是缩小，观众仍要能在任务栏上找到并切回它
+    // （隐藏任务栏/Alt-Tab 是企业版画中画的惯例，这里不采用）。
+    skipTaskbar: false,
     // 自由比例：不锁定视频形状，用户可以单独压高度或拉宽度（画面按比例适配留黑边）。
     // 默认关闭＝窗口始终等于视频形状。
     lockAspectRatio: !settings.windowsPipFreeAspect.value,

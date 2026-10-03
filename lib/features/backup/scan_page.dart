@@ -2,7 +2,9 @@ import 'dart:async';
 
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:pure_live/core/index.dart';
+import 'package:pure_live/features/backup/backup_controller.dart';
 import 'package:pure_live/features/backup/backup_recovery_service.dart';
+import 'package:pure_live/features/backup/backup_section_picker.dart';
 
 typedef ScanCodeDetector = Future<void> Function(BarcodeCapture capture);
 typedef ScanCodeScannerBuilder = Widget Function(
@@ -10,7 +12,7 @@ typedef ScanCodeScannerBuilder = Widget Function(
   MobileScannerController controller,
   ScanCodeDetector onDetect,
 );
-typedef ScanCodeSyncCallback = Future<bool> Function(String address);
+typedef ScanCodeSyncCallback = Future<bool?> Function(String address);
 typedef ScanCodeControllerFactory = MobileScannerController Function({required bool torchEnabled});
 
 /// Returns a canonical HTTP(S) origin for a TV settings-sync QR code.
@@ -80,8 +82,17 @@ class _ScanCodePageState extends State<ScanCodePage> {
     return widget.controllerFactory?.call(torchEnabled: false) ?? MobileScannerController(torchEnabled: false);
   }
 
-  Future<bool> _syncSettings(String address) {
-    return widget.syncSettings?.call(address) ?? BackupRecoveryService().pushSettingsToRemoteServer(address);
+  Future<bool?> _syncSettings(String address) async {
+    final custom = widget.syncSettings;
+    if (custom != null) return custom(address);
+    if (!mounted) return null;
+    // 推送哪些模块由观众在模块页勾选；取消返回 null，不算一次失败的同步。
+    final sections = await pickBackupSections(
+      direction: BackupSectionDirection.export,
+      available: BackupController.tvSectionNames,
+    );
+    if (sections == null) return null;
+    return BackupRecoveryService().pushSettingsToRemoteServer(address, sections: sections);
   }
 
   Future<void> _disposeController(MobileScannerController controller) async {
@@ -280,13 +291,24 @@ class _ScanCodePageState extends State<ScanCodePage> {
     });
 
     var result = false;
+    bool? cancelled;
     try {
-      result = await _syncSettings(address);
+      final outcome = await _syncSettings(address);
+      if (outcome == null) {
+        cancelled = true;
+      } else {
+        result = outcome;
+      }
     } catch (error, stackTrace) {
       debugPrint('TV settings synchronization failed: $error\n$stackTrace');
     }
 
     if (!mounted || operation != _operationGeneration) return;
+    if (cancelled == true) {
+      // 观众在模块页取消：重新起一次扫码，不报失败。
+      await _restartScanner();
+      return;
+    }
     ToastUtil.show(result ? i18n('sync_success') : i18n('sync_failed'));
     setState(() {
       isSuccess = result;

@@ -22,7 +22,7 @@ abstract interface class DanmakuSettingsSource {
 
   RxDouble get danmakuFontBorder;
 
-  RxBool get danmakuRealtimeMode;
+  RxBool get danmakuMassMode;
 
   RxDouble get danmakuLetterSpacing;
 

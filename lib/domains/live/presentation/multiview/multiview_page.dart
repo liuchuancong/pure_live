@@ -1364,11 +1364,11 @@ BarrageConfig _buildBarrageConfig({required bool isVerticalVideo}) {
     strokeWidth: settings.danmakuFontBorder.v,
     showStroke: settings.enableDanmakuStroke.v,
     noEmojiMode: settings.noEmojiMode.v,
-    realtimeMode: settings.danmakuRealtimeMode.v,
+    realtimeMode: settings.danmakuMassMode.v,
     fps: settings.danmakuAutoFps.v
         ? settings.resolvedDanmakuFps(refreshRateMode: SettingsService.to.app.refreshRateMode)
         : settings.danmakuFps.v.clamp(30, 240).toInt(),
-    maxVisibleCount: settings.danmakuMaxVisibleCount.v,
+    maxVisibleCount: settings.effectiveMaxVisibleCount,
     maxPendingCount: 120,
     maxPendingAge: const Duration(seconds: 5),
     fontFamily: settings.danmakuFontFamilyName.v,

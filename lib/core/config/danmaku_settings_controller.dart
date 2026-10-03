@@ -77,10 +77,22 @@ class DanmakuSettingsController extends GetxController {
   final RxInt danmakuMaxVisibleCount = hiveInt('danmakuMaxVisibleCount', 48);
   final RxBool enableDanmakuStroke = hiveBool('enableDanmakuStroke', true);
 
-  /// Burst dispatch: flush the waiting queue on every logic frame instead
-  /// of pacing by emit-interval, so burst messages appear the moment they
-  /// arrive (denser screen during bursts).
-  final RxBool danmakuRealtimeMode = hiveBool('danmakuRealtimeMode', false);
+  /// 海量模式：弹幕到达立即上屏（不再按 emit-interval 排队），同时同屏条数不再
+  /// 受 [danmakuMaxVisibleCount] 截断 —— 真实上限交给轨道排布与画面几何。
+  ///
+  /// Hive 键沿用旧名 `danmakuRealtimeMode`（原「突发即时显示」），这样老用户已经
+  /// 打开过的选择在升级后依然生效。
+  final RxBool danmakuMassMode = hiveBool('danmakuRealtimeMode', false);
+
+  /// 海量模式生效时的同屏上限。
+  ///
+  /// 这个数不是密度策略，只是把 `maxVisibleCount` 这道闸门抬到轨道几何之上：
+  /// 真正能同时上屏多少条仍由轨道间距、字号和画面高度决定。
+  static const int massModeMaxVisibleCount = 1000;
+
+  /// 当前生效的同屏上限：海量模式不再受设置里的条数限制。
+  int get effectiveMaxVisibleCount => danmakuMassMode.v ? massModeMaxVisibleCount : danmakuMaxVisibleCount.v;
+
   final RxDouble danmakuLetterSpacing = hiveDouble('danmakuLetterSpacing', 0.0);
   final RxInt danmakuFps = hiveInt('danmakuFps', defaultDanmakuFps);
   final RxBool danmakuAutoFps = hiveBool('danmakuAutoFps', defaultDanmakuAutoFps);
@@ -183,7 +195,8 @@ class DanmakuSettingsController extends GetxController {
       'danmakuFontWeight': danmakuFontWeight.v,
       'danmakuFontBorder': danmakuFontBorder.v,
       'danmakuLetterSpacing': danmakuLetterSpacing.v,
-      'danmakuRealtimeMode': danmakuRealtimeMode.v,
+      // 备份键沿用旧名，老备份里的取值仍还原成海量模式。
+      'danmakuRealtimeMode': danmakuMassMode.v,
       'danmakuOpacity': danmakuOpacity.v,
       'danmakuFontFamilyName': danmakuFontFamilyName.v,
       'enableDanmakuStroke': enableDanmakuStroke.v,
@@ -227,6 +240,13 @@ class DanmakuSettingsController extends GetxController {
       'danmakuFontBorder': typed<double>(
         _boundedDouble(json['danmakuFontBorder'], fallback: defaultDanmakuFontBorder, min: 0, max: 4),
       ),
+      // fromJson 会读这两个键；漏在返回表里就是 null 赋值给 RxDouble/RxBool，
+      // 恢复备份会在这一行抛错并中断整段导入。
+      'danmakuLetterSpacing': typed<double>(
+        _boundedDouble(json['danmakuLetterSpacing'], fallback: 0.0, min: -2, max: 8),
+      ),
+      // 备份键沿用旧名，键名不变才能读回老备份。
+      'danmakuRealtimeMode': typed<bool>(json['danmakuRealtimeMode'] ?? false),
       'danmakuOpacity': typed<double>(
         _boundedDouble(json['danmakuOpacity'], fallback: defaultDanmakuOpacity, min: 0, max: 1),
       ),
@@ -279,7 +299,7 @@ class DanmakuSettingsController extends GetxController {
     danmakuFontWeight.v = parsed['danmakuFontWeight'];
     danmakuFontBorder.v = parsed['danmakuFontBorder'];
     danmakuLetterSpacing.v = parsed['danmakuLetterSpacing'];
-    danmakuRealtimeMode.v = parsed['danmakuRealtimeMode'];
+    danmakuMassMode.v = parsed['danmakuRealtimeMode'];
     danmakuOpacity.v = parsed['danmakuOpacity'];
     danmakuFontFamilyName.v = parsed['danmakuFontFamilyName'];
     enableDanmakuStroke.v = parsed['enableDanmakuStroke'];

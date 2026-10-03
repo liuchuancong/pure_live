@@ -822,9 +822,8 @@ class DanmakuViewer extends StatelessWidget {
           strokeWidth: controller.danmakuFontBorder.value,
           showStroke: controller.enableDanmakuStroke.value,
           noEmojiMode: controller.noEmojiMode.value,
-          // Burst dispatch: waiting messages hit the screen the moment they
-          // arrive instead of trailing the pacing queue.
-          realtimeMode: controller.danmakuRealtimeMode.value,
+          // 海量模式：消息到达即上屏（不再跟排队节奏），且同屏条数不受设置截断。
+          realtimeMode: controller.danmakuMassMode.value,
           // One GPU-resident bitmap per visible message — the single most
           // effective switch on low-end GPUs re-rasterizing stroked CJK text
           // every frame.
@@ -832,7 +831,7 @@ class DanmakuViewer extends StatelessWidget {
           fps: settings.danmakuAutoFps.v
               ? settings.resolvedDanmakuFps(refreshRateMode: SettingsService.to.app.refreshRateMode)
               : controller.danmakuFps.value.clamp(30, 240).toInt(),
-          maxVisibleCount: SettingsService.to.danmaku.danmakuMaxVisibleCount.value,
+          maxVisibleCount: SettingsService.to.danmaku.effectiveMaxVisibleCount,
           maxPendingCount: 120,
           maxPendingAge: const Duration(seconds: 5),
           fontFamily: controller.danmakuFontFamilyName.value,

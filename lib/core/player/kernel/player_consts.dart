@@ -14,6 +14,15 @@ class PlayerConsts {
 
   static const Map<String, String> names = {'mpv': 'player_mpv', 'ijk': 'player_ijk', 'exo': 'player_exo'};
 
+  /// 是否提供 ijk / better_player 这类移动端后端。
+  ///
+  /// mpv(libmpv) 全平台发布；ijk(flv_lzc) 与 exo(better_player) 只有移动端
+  /// 适配器。内核注册（`PlayerKernelService`）与引擎选择列表
+  /// （`availableVideoPlayerKeysForPlatform`）共用这一个判定，避免"界面上选不到
+  /// 但内核里注册着"或反过来的漂移。
+  static bool mobileOnlyEnginesAvailable(TargetPlatform platform) =>
+      platform == TargetPlatform.android || platform == TargetPlatform.iOS;
+
   static String getKeyByI18nKey(String i18nKey) {
     return names.entries.firstWhere((e) => e.value == i18nKey, orElse: () => names.entries.first).key;
   }
@@ -44,18 +53,13 @@ class PlayerConsts {
     "Variant": const Color(0xFF3700B3),
     "Secondary": const Color(0xFF03DAC6),
   };
-  
 
-  
-
-  
-
-    // mpv 词表 (vo/ao/hwdec) 转发自 media_core 的 PlayerConsts, 单一事实来源.
+  // mpv 词表 (vo/ao/hwdec) 转发自 media_core 的 PlayerConsts, 单一事实来源.
   static Map<String, String> get videoOutputDrivers => mk.PlayerConsts.videoOutputDrivers;
   static Map<String, String> get audioOutputDrivers => mk.PlayerConsts.audioOutputDrivers;
   static Map<String, String> get hardwareDecoder => mk.PlayerConsts.hardwareDecoder;
 
-static const List<Map<String, String>> hardwareDecodersList = [
+  static const List<Map<String, String>> hardwareDecodersList = [
     {'key': 'auto', 'nameEn': 'Any Available Decoder', 'nameZh': '启用任意可用解码器'},
     {'key': 'auto-safe', 'nameEn': 'Best Decoder', 'nameZh': '启用最佳解码器'},
     {'key': 'auto-copy', 'nameEn': 'Best Decoder with Copy-Back', 'nameZh': '启用带拷贝功能的最佳解码器'},

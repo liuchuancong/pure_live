@@ -5,6 +5,7 @@ import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/core/index.dart';
 import 'package:webdav_client/webdav_client.dart' as webdav;
 import 'package:pure_live/features/backup/backup_controller.dart';
+import 'package:pure_live/features/backup/backup_section_picker.dart';
 import 'package:pure_live/features/web_dav/web_dav_help.dart';
 import 'package:pure_live/features/web_dav/web_dav_config.dart';
 import 'package:pure_live/features/web_dav/web_dav_controller.dart';
@@ -88,7 +89,7 @@ class _WebDavPageState extends State<WebDavPage> {
       endDrawer: _buildDrawer(context),
       floatingActionButton: Obx(
         () => FloatingActionButton(
-          onPressed: controller.canUpload ? () => controller.uploadConfigSettings() : null,
+          onPressed: controller.canUpload ? _uploadWithSections : null,
           tooltip: i18n(controller.isUploading.value ? 'webdav_uploading' : 'webdav_upload_current'),
           child: controller.isUploading.value
               ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
@@ -191,15 +192,21 @@ class _WebDavPageState extends State<WebDavPage> {
     danger: true,
   );
 
-  Future<bool> _showFileRestoreDialog(webdav.File file, BackupRestoreScope scope) {
-    final favoritesOnly = scope == BackupRestoreScope.favorites;
+  /// 先勾模块再上传：Cookie / WebDAV 也在模块页里，默认勾选。
+  Future<void> _uploadWithSections() async {
+    final sections = await pickBackupSections(
+      direction: BackupSectionDirection.export,
+      available: BackupController.sectionNames,
+    );
+    if (sections == null) return;
+    await controller.uploadConfigSettings(sections: sections);
+  }
+
+  Future<bool> _showFileRestoreDialog(webdav.File file) {
     return _showConfirmation(
-      title: i18n(favoritesOnly ? 'webdav_restore_favorites' : 'recover_backup'),
-      message: favoritesOnly
-          ? '${i18n("webdav_confirm_restore_favorites_item", args: {"name": _fileDisplayName(file)})} '
-                '${i18n("webdav_favorites_unchanged_hint")}'
-          : i18n("webdav_confirm_restore_item", args: {"name": _fileDisplayName(file)}),
-      confirmLabel: i18n(favoritesOnly ? 'webdav_restore_favorites' : 'recover_backup'),
+      title: i18n('recover_backup'),
+      message: i18n("webdav_confirm_restore_item", args: {"name": _fileDisplayName(file)}),
+      confirmLabel: i18n('recover_backup'),
     );
   }
 
@@ -267,8 +274,6 @@ class _WebDavPageState extends State<WebDavPage> {
               _scaffoldKey.currentState?.openEndDrawer();
             } else if (value == 3) {
               Get.to(() => const WebDavHelpPage());
-            } else if (value == 4) {
-              controller.uploadConfigSettings(scope: BackupRestoreScope.favorites);
             }
           },
           itemBuilder: (BuildContext context) => [
@@ -283,11 +288,6 @@ class _WebDavPageState extends State<WebDavPage> {
             PopupMenuItem(
               value: 3,
               child: MenuListTile(leading: const Icon(Remix.question_line), text: i18n("webdav_help_tutorial")),
-            ),
-            PopupMenuItem(
-              value: 4,
-              enabled: controller.canUpload,
-              child: Text(i18n('webdav_upload_favorites'), softWrap: true),
             ),
           ],
         ),
@@ -517,10 +517,8 @@ class _WebDavPageState extends State<WebDavPage> {
             ),
           ),
           itemBuilder: (context) => [
-            if (file.isDir != true) ...[
+            if (file.isDir != true)
               PopupMenuItem(value: 'RestoreAll', child: Text(i18n("webdav_restore_all_settings"))),
-              PopupMenuItem(value: 'RestoreFavorites', child: Text(i18n("webdav_restore_favorites"))),
-            ],
             PopupMenuItem(value: 'Delete', child: Text(i18n("webdav_delete"))),
           ],
           onSelected: (value) {
@@ -528,15 +526,9 @@ class _WebDavPageState extends State<WebDavPage> {
               unawaited(
                 controller.downloadFile(
                   file,
-                  confirmRestore: () => _showFileRestoreDialog(file, BackupRestoreScope.all),
-                ),
-              );
-            } else if (value == 'RestoreFavorites') {
-              unawaited(
-                controller.downloadFile(
-                  file,
-                  scope: BackupRestoreScope.favorites,
-                  confirmRestore: () => _showFileRestoreDialog(file, BackupRestoreScope.favorites),
+                  confirmRestore: () => _showFileRestoreDialog(file),
+                  selectSections: (available) =>
+                      pickBackupSections(direction: BackupSectionDirection.import, available: available),
                 ),
               );
             } else if (value == 'Delete') {

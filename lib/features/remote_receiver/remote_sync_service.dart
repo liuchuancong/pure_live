@@ -28,12 +28,6 @@ class RemoteSyncService extends GetxController {
 
   final RxList<RemoteSyncDevice> devices = <RemoteSyncDevice>[].obs;
 
-  /// Code the other device must present; regenerated whenever the server starts.
-  final RxString pairingCode = ''.obs;
-
-  /// Account cookies travel only when the user opts in on this device.
-  final RxBool includeAccounts = false.obs;
-
   /// Asks the user whether [remoteAddress] may read ('export') or overwrite
   /// ('import') this device's settings. Requests are refused without it.
   Future<bool> Function(String action, String remoteAddress)? confirmRequest;
@@ -103,7 +97,7 @@ class RemoteSyncService extends GetxController {
       return '';
     }
 
-    return RemoteSyncProtocol.createQrUri(ip: localIp.value, port: localPort.value, code: pairingCode.value).toString();
+    return RemoteSyncProtocol.createQrUri(ip: localIp.value, port: localPort.value).toString();
   }
 
   String get broadcastName {
@@ -174,7 +168,6 @@ class RemoteSyncService extends GetxController {
   /// Stops serving and discovery; [start] can resume. Only [onClose] disposes.
   Future<void> stop() async {
     _running = false;
-    pairingCode.value = '';
 
     _broadcastTimer?.cancel();
     _broadcastTimer = null;
@@ -409,7 +402,6 @@ class RemoteSyncService extends GetxController {
     }
 
     _server = server;
-    pairingCode.value = RemoteSyncProtocol.newPairingCode();
     localPort.value = port;
     isServerRunning.value = true;
 
@@ -501,14 +493,8 @@ class RemoteSyncService extends GetxController {
   // ---------------------------------------------------------------------------
 
   Future<void> _handleSettings(HttpRequest request) async {
-    if (!RemoteSyncProtocol.pairingCodesMatch(
-      pairingCode.value,
-      request.headers.value(RemoteSyncProtocol.pairingHeader),
-    )) {
-      request.response.statusCode = HttpStatus.forbidden;
-      await _writeResponse(request.response, {'code': 403, 'msg': 'Pairing code required', 'data': false});
-      return;
-    }
+    // No pairing code: whoever can reach this port still has to be approved on
+    // this device for the request to touch any settings.
     final action = switch (request.method) {
       'GET' => 'export',
       'POST' => 'import',
@@ -543,7 +529,7 @@ class RemoteSyncService extends GetxController {
     try {
       final backup = Get.find<BackupController>();
 
-      final settings = backup.exportAllSettings(includeSensitiveData: includeAccounts.value);
+      final settings = backup.exportAllSettings();
 
       await _writeResponse(request.response, {'code': 200, 'msg': 'ok', 'data': settings});
     } catch (_) {
@@ -634,17 +620,10 @@ class RemoteSyncService extends GetxController {
     }
   }
 
-  /// Applies only the sections the receiver ticked.
-  Future<bool> applyRemoteSettings(Map<String, dynamic> settings) async {
-    final received = settings['sections'] is List ? (settings['sections'] as List).cast<String>() : null;
-    final picked = (received == null || received.isEmpty)
-        ? settings
-        : <String, dynamic>{
-            for (final key in received)
-              if (settings.containsKey(key)) key: settings[key],
-          };
-
-    return _applyRemoteSettings(picked);
+  /// Applies the received payload, narrowed to [sections] when the receiver
+  /// ticked a subset on the module page.
+  Future<bool> applyRemoteSettings(Map<String, dynamic> settings, {Iterable<String>? sections}) async {
+    return _applyRemoteSettings(BackupController.filterBackupSections(settings, sections));
   }
 
   Future<bool> _applyRemoteSettings(Map<String, dynamic> settings) async {
@@ -991,16 +970,16 @@ class RemoteSyncService extends GetxController {
   // Send settings
   // ---------------------------------------------------------------------------
 
-  Future<bool> syncToDevice(RemoteSyncDevice device, String code) {
-    return syncToAddress(device.ip, device.port, code);
+  Future<bool> syncToDevice(RemoteSyncDevice device, {List<String>? sections}) {
+    return syncToAddress(device.ip, device.port, sections: sections);
   }
 
   /// Top-level section names of a local backup, for the picker UI.
   List<String> exportSectionNames() {
-    return Get.find<BackupController>().exportAllSettings(includeSensitiveData: includeAccounts.value).keys.toList();
+    return BackupController.sectionNames;
   }
 
-  Future<bool> syncToAddress(String ip, int port, String? code, {List<String>? sections}) async {
+  Future<bool> syncToAddress(String ip, int port, {List<String>? sections}) async {
     if (_disposed || isSyncing.value) {
       return false;
     }
@@ -1010,15 +989,8 @@ class RemoteSyncService extends GetxController {
     try {
       final backup = Get.find<BackupController>();
 
-      final settings = backup.exportAllSettings(includeSensitiveData: includeAccounts.value);
-
-      // Only the sections the sender ticked travel the wire.
-      final payload = (sections == null || sections.isEmpty)
-          ? settings
-          : <String, dynamic>{
-              for (final key in sections)
-                if (settings.containsKey(key)) key: settings[key],
-            };
+      // 只把发送端勾选的模块发出去（Cookie / WebDAV 也在模块页里，默认勾选）。
+      final payload = backup.exportAllSettings(sections: sections);
 
       final client = HttpClient();
 
@@ -1031,9 +1003,6 @@ class RemoteSyncService extends GetxController {
         );
 
         request.headers.contentType = ContentType('application', 'json', charset: 'utf-8');
-        if (code != null) {
-          request.headers.set(RemoteSyncProtocol.pairingHeader, RemoteSyncProtocol.normalizePairingCode(code));
-        }
 
         request.write(jsonEncode(RemoteSyncProtocol.settingsPacket(settings: payload, sections: sections)));
 
@@ -1104,7 +1073,7 @@ class RemoteSyncService extends GetxController {
   // This uses GET /settings, not GET /status.
   // ---------------------------------------------------------------------------
 
-  Future<Map<String, dynamic>?> getRemoteSettings(String ip, int port, String code) async {
+  Future<Map<String, dynamic>?> getRemoteSettings(String ip, int port) async {
     if (_disposed) {
       return null;
     }
@@ -1119,7 +1088,6 @@ class RemoteSyncService extends GetxController {
             '${RemoteSyncProtocol.apiSettings}',
           ),
         );
-        request.headers.set(RemoteSyncProtocol.pairingHeader, RemoteSyncProtocol.normalizePairingCode(code));
 
         final response = await request.close();
 
@@ -1158,9 +1126,9 @@ class RemoteSyncService extends GetxController {
   // Address / QR
   // ---------------------------------------------------------------------------
 
-  Future<bool> syncByAddress(String value, String code) async {
+  Future<bool> syncByAddress(String value) async {
     final parsed = RemoteSyncProtocol.parseHttpAddress(value);
     if (parsed == null) return false;
-    return syncToAddress(parsed.ip, parsed.port, code);
+    return syncToAddress(parsed.ip, parsed.port);
   }
 }

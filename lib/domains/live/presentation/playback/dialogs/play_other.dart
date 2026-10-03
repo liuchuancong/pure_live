@@ -3,13 +3,13 @@ import 'dart:math' as math;
 
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/utils/event_bus.dart';
-import 'package:pure_live/core/network/image_cache_manager.dart';
 import 'package:pure_live/core/widgets/common_avatar.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:pure_live/core/network/image_cache_manager.dart';
+import 'package:pure_live/domains/live/data/history_controller.dart';
+import 'package:pure_live/domains/live/data/favorite_room_controller.dart';
 import 'package:pure_live/domains/live/presentation/playback/controllers/live_play_controller.dart';
 import 'package:pure_live/domains/live/presentation/playback/widgets/content_first_panel_layout.dart';
-import 'package:pure_live/domains/live/data/favorite_room_controller.dart';
-import 'package:pure_live/domains/live/data/history_controller.dart';
 
 class PlayOther extends StatefulWidget {
   const PlayOther({required this.controller, super.key});
@@ -250,9 +250,7 @@ class _PlayOtherState extends State<PlayOther> with SingleTickerProviderStateMix
         final cardWidth = math.max(0.0, (availableWidth - spacing * (columns - 1)) / columns);
         // 卡片：16:9 封面 + 信息条；头像行：固定行高。极小视口兜一个最小高度，
         // 避免负数进入网格代理。
-        final rowExtent = cardMode
-            ? math.max(80.0, cardWidth * 9 / 16 + infoHeight)
-            : avatarRowHeight;
+        final rowExtent = cardMode ? math.max(80.0, cardWidth * 9 / 16 + infoHeight) : avatarRowHeight;
 
         return GridView.builder(
           key: ValueKey(history ? 'watch-history-grid' : 'live-room-grid'),
@@ -386,12 +384,10 @@ class _RoomSwitchCard extends StatelessWidget {
   Widget _buildCardLayout(BuildContext context, {required String meta, required String title, required String nick}) {
     return Column(
       children: [
-        Expanded(child: _RoomSwitchCover(room: room, meta: meta)),
-        RoomSwitchCardDetails(
-          height: infoHeight,
-          title: title,
-          nick: nick.isEmpty ? i18n('unknown') : nick,
+        Expanded(
+          child: _RoomSwitchCover(room: room, meta: meta),
         ),
+        RoomSwitchCardDetails(height: infoHeight, title: title, nick: nick.isEmpty ? i18n('unknown') : nick),
       ],
     );
   }
@@ -434,30 +430,22 @@ class _RoomSwitchCard extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: 8),
-          // Flexible 而非固定宽度：平台标签与观看时间最长时可省略号收尾，
-          // 否则一行放不下时整行溢出（Expanded 只保护中间那段文字）。
-          Flexible(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                if (platform.isNotEmpty) ...[
-                  _PlatformTag(platform: platform),
-                  const SizedBox(height: 3),
-                ],
-                Text(
-                  meta,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: history ? colors.onSurfaceVariant : Colors.orange.shade700,
-                    fontWeight: FontWeight.w600,
-                  ),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              if (platform.isNotEmpty) ...[_PlatformTag(platform: platform), const SizedBox(height: 3)],
+              Text(
+                meta,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: history ? colors.onSurfaceVariant : Colors.orange.shade700,
+                  fontWeight: FontWeight.w600,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ],
       ),
@@ -485,9 +473,8 @@ class _PlatformTag extends StatelessWidget {
         i18n('site_$platform'),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: Theme.of(
-          context,
-        ).textTheme.labelSmall?.copyWith(color: colors.onSurfaceVariant, fontSize: 10, fontWeight: FontWeight.w600),
+        style: Theme.of(context).textTheme.labelSmall
+            ?.copyWith(color: colors.onSurfaceVariant, fontSize: 10, fontWeight: FontWeight.w600),
       ),
     );
   }

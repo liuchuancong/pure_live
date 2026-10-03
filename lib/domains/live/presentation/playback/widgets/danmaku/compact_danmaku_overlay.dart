@@ -57,7 +57,7 @@ class CompactDanmakuOverlay extends StatelessWidget {
       final speed = settings.danmakuSpeed.v;
       final opacity = settings.danmakuOpacity.v;
       final fps = settings.resolvedDanmakuFps(pip: true, refreshRateMode: SettingsService.to.app.refreshRateMode);
-      final maxVisibleCount = settings.danmakuMaxVisibleCount.v;
+      final maxVisibleCount = settings.effectiveMaxVisibleCount;
       final fontFamily = controller.danmakuFontFamilyName.value;
       final showStroke = controller.enableDanmakuStroke.value;
       final strokeWidth = controller.danmakuFontBorder.value;
@@ -104,7 +104,7 @@ class CompactDanmakuOverlay extends StatelessWidget {
                   maxPendingCount: 36,
                   maxPendingAge: const Duration(seconds: 3),
                   fixedDuration: Duration(seconds: 4),
-                  realtimeMode: settings.danmakuRealtimeMode.value,
+                  realtimeMode: settings.danmakuMassMode.value,
                   rasterizeItems: true,
                   overlapSafeGap: metrics.overlapSafeGap,
                   // PiP only exposes a handful of tracks. Keeping desktop-size

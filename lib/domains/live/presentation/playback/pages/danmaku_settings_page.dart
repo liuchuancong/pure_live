@@ -353,10 +353,10 @@ class _DanmakuSettingsContentState extends State<DanmakuSettingsContent> {
               ),
               _switch(
                 theme,
-                title: i18n("danmaku_realtime_mode"),
-                subtitle: i18n("danmaku_realtime_mode_subtitle"),
-                value: controller.danmakuRealtimeMode.value,
-                onChanged: (v) => controller.danmakuRealtimeMode.value = v,
+                title: i18n("danmaku_mass_mode"),
+                subtitle: i18n("danmaku_mass_mode_subtitle"),
+                value: controller.danmakuMassMode.value,
+                onChanged: (v) => controller.danmakuMassMode.value = v,
                 labelColor: labelColor,
               ),
               _switch(

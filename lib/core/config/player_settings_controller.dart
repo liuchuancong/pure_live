@@ -16,7 +16,7 @@ import 'package:pure_live/core/player/kernel/player_consts.dart';
 String defaultVideoPlayerKeyForPlatform(TargetPlatform platform) => 'mpv';
 
 List<String> availableVideoPlayerKeysForPlatform(TargetPlatform platform) =>
-    platform == TargetPlatform.android || platform == TargetPlatform.iOS
+    PlayerConsts.mobileOnlyEnginesAvailable(platform)
     ? PlayerConsts.engines.keys.toList(growable: false)
     // Desktop ships libmpv only; IJK and Exo are mobile-only.
     : const <String>['mpv'];

@@ -38,7 +38,7 @@ class MultiviewDanmakuSettingsSource implements DanmakuSettingsSource {
   RxDouble get danmakuFontBorder => _s.danmakuFontBorder;
 
   @override
-  RxBool get danmakuRealtimeMode => _s.danmakuRealtimeMode;
+  RxBool get danmakuMassMode => _s.danmakuMassMode;
 
   @override
   RxDouble get danmakuLetterSpacing => _s.danmakuLetterSpacing;
@@ -56,7 +56,6 @@ class MultiviewDanmakuSettingsSource implements DanmakuSettingsSource {
   RxInt get danmakuMaxVisibleCount => _s.danmakuMaxVisibleCount;
 
   @override
-
   @override
   RxBool get enableDanmakuStroke => _s.enableDanmakuStroke;
 

@@ -1,10 +1,14 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 import 'package:media_core/media_core.dart';
+import 'package:pure_live/core/player/kernel/player_consts.dart';
 import 'package:pure_live/core/player/presentation/fullscreen_window.dart';
 import 'package:pure_live/domains/live/domain/global_player_service.dart';
 import 'package:media_core_floating/media_core_floating.dart';
-import 'package:media_core_media_kit/media_core_media_kit.dart';
+// media_core_media_kit 里也有一个 PlayerConsts（mpv 词表）；本文件用的是本包的
+// 引擎表，隐藏同名导入以消除歧义。
+import 'package:media_core_media_kit/media_core_media_kit.dart' hide PlayerConsts;
 import 'package:pure_live/core/player/presentation/windows_pip_driver.dart';
 import 'package:pure_live/core/player/kernel/owned_input_opener.dart';
 import 'package:media_core_ijk_player/media_core_ijk_player.dart';
@@ -26,7 +30,12 @@ class PlayerKernelService {
   PlayerKernel? _kernel;
 
   PlayerKernel get kernel {
-    _kernel ??= PlayerKernel()
+    _kernel ??= _buildKernel();
+    return _kernel!;
+  }
+
+  PlayerKernel _buildKernel() {
+    final kernel = PlayerKernel()
       ..registerBackend(
         MediaKitAdapterFactory(
           customInputOpener: openOwnedInputOnKernelPlayer,
@@ -35,22 +44,29 @@ class PlayerKernelService {
           // only what it is told.
           configure: MediaKitLiveProperties.applyTo,
         ).registration(),
-      )
-      ..registerBackend(const FlvLzcPlayerAdapterFactory().registration())
-      ..registerBackend(const BetterPlayerAdapterFactory().registration())
-      ..attachPresentation(
-        PresentationDriverChain(
-          bindings: [
-            PresentationDriverBinding(
-              modes: {PresentationMode.fullscreen, PresentationMode.windowFullscreen},
-              driver: fullscreenDriver,
-            ),
-            PresentationDriverBinding(modes: {PresentationMode.pip}, driver: windowsPipDriver),
-            PresentationDriverBinding(modes: {PresentationMode.floating}, driver: floatingDriver),
-          ],
-        ),
       );
-    return _kernel!;
+
+    // ijk 与 better_player 只在移动端注册：桌面端发布的只有 libmpv，引擎选择里
+    // 也没有这两个键。判定与选择列表共用 PlayerConsts.mobileOnlyEnginesAvailable，
+    // 所以不会出现"界面选得到但内核没注册"。
+    if (PlayerConsts.mobileOnlyEnginesAvailable(defaultTargetPlatform)) {
+      kernel
+        ..registerBackend(const FlvLzcPlayerAdapterFactory().registration())
+        ..registerBackend(const BetterPlayerAdapterFactory().registration());
+    }
+
+    return kernel..attachPresentation(
+      PresentationDriverChain(
+        bindings: [
+          PresentationDriverBinding(
+            modes: {PresentationMode.fullscreen, PresentationMode.windowFullscreen},
+            driver: fullscreenDriver,
+          ),
+          PresentationDriverBinding(modes: {PresentationMode.pip}, driver: windowsPipDriver),
+          PresentationDriverBinding(modes: {PresentationMode.floating}, driver: floatingDriver),
+        ],
+      ),
+    );
   }
 
   static Future<void> ensureInitialized() async {

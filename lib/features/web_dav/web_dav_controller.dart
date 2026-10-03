@@ -322,8 +322,8 @@ class WebDavPageController extends GetxController {
     return buildPath(name);
   }
 
-  /// Upload a full backup or a portable follow-list-only payload.
-  Future<void> uploadConfigSettings({BackupRestoreScope scope = BackupRestoreScope.all}) async {
+  /// Upload the modules the viewer ticked on the module page.
+  Future<void> uploadConfigSettings({Iterable<String>? sections}) async {
     final service = _webdavService;
     final epoch = _serviceEpoch;
     if (service == null || !_ownsService(service, epoch) || !canUpload) return;
@@ -332,13 +332,9 @@ class WebDavPageController extends GetxController {
     try {
       final dateStr = formatDate(_now(), [yyyy, '-', mm, '-', dd, 'T', HH, '_', nn, '_', ss]);
       // Timestamp-only names overwrite earlier backups within the same second.
-      final prefix = scope == BackupRestoreScope.favorites ? 'purelive_favorites' : 'purelive';
-      final fileName = '${prefix}_${dateStr}_${const Uuid().v4()}.txt';
+      final fileName = 'purelive_${dateStr}_${const Uuid().v4()}.txt';
 
-      final data = switch (scope) {
-        BackupRestoreScope.all => _backupController.exportAllSettings(),
-        BackupRestoreScope.favorites => _backupController.exportFavoriteSettings(),
-      };
+      final data = _backupController.exportAllSettings(sections: sections);
       final content = jsonEncode(data);
       final bytes = utf8.encode(content);
 
@@ -346,9 +342,7 @@ class WebDavPageController extends GetxController {
       await service.writeFile(remotePath, bytes);
       if (!_ownsService(service, epoch)) return;
 
-      _feedback(
-        i18n(scope == BackupRestoreScope.favorites ? 'webdav_upload_favorites_success' : 'webdav_upload_success'),
-      );
+      _feedback(i18n('webdav_upload_success'));
       if (dirPath.value == path) await loadFiles();
     } catch (e) {
       if (!_ownsService(service, epoch)) return;
@@ -381,10 +375,12 @@ class WebDavPageController extends GetxController {
   }
 
   /// 下载并恢复配置（走新备份系统）
+  ///
+  /// 下载后再让调用方按文件里实际存在的模块勾选一次：勾掉的模块不会落到本机。
   Future<void> downloadFile(
     webdav.File file, {
-    BackupRestoreScope scope = BackupRestoreScope.all,
     required Future<bool> Function() confirmRestore,
+    required Future<List<String>?> Function(List<String> available) selectSections,
   }) async {
     final service = _webdavService;
     final epoch = _serviceEpoch;
@@ -397,10 +393,7 @@ class WebDavPageController extends GetxController {
         !canStartFileAction) {
       return;
     }
-    fileActionLabelKey.value = switch (scope) {
-      BackupRestoreScope.all => 'webdav_restoring',
-      BackupRestoreScope.favorites => 'webdav_restoring_favorites',
-    };
+    fileActionLabelKey.value = 'webdav_restoring';
     try {
       final result = await confirmRestore();
       if (!result || !_ownsService(service, epoch) || dirPath.value != path) return;
@@ -409,19 +402,18 @@ class WebDavPageController extends GetxController {
       if (!_ownsService(service, epoch) || dirPath.value != path) return;
       final data = jsonDecode(utf8.decode(bytes));
       final backup = Map<String, dynamic>.from(data as Map);
-      switch (scope) {
-        case BackupRestoreScope.all:
-          await _backupController.restoreAllSettings(backup);
-        case BackupRestoreScope.favorites:
-          await _backupController.restoreFavoriteSettings(backup);
+
+      final available = BackupController.presentSections(backup);
+      List<String>? sections;
+      if (available.isNotEmpty) {
+        sections = await selectSections(available);
+        if (sections == null) return;
+        if (!_ownsService(service, epoch) || dirPath.value != path) return;
       }
+
+      await _backupController.restoreAllSettings(backup, sections: sections);
       if (!_ownsService(service, epoch) || dirPath.value != path) return;
-      _feedback(
-        i18n(switch (scope) {
-          BackupRestoreScope.all => 'webdav_sync_success',
-          BackupRestoreScope.favorites => 'webdav_sync_favorites_success',
-        }),
-      );
+      _feedback(i18n('webdav_sync_success'));
     } catch (e) {
       if (!_ownsService(service, epoch) || dirPath.value != path) return;
       _feedback('${i18n("webdav_download_failed")}: $e', isError: true);

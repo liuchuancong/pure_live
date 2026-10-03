@@ -1,5 +1,3 @@
-import 'dart:math';
-
 class RemoteSyncProtocol {
   static const int defaultHttpPort = 39888;
   static const int discoveryPort = 39889;
@@ -10,33 +8,14 @@ class RemoteSyncProtocol {
   static const String apiStatus = '/api/remote-sync/status';
   static const String apiSettings = '/api/remote-sync/settings';
 
-  /// Every settings request carries the pairing code shown on the target
-  /// device; without it the target answers 403. Settings include login
-  /// cookies, so being on the same network must not be enough.
-  static const String pairingHeader = 'x-purelive-pairing';
-  static const int pairingCodeLength = 6;
-
-  static String newPairingCode([Random? random]) {
-    final generator = random ?? Random.secure();
-    return List.generate(pairingCodeLength, (_) => generator.nextInt(10)).join();
-  }
-
-  static String normalizePairingCode(String? value) => (value ?? '').replaceAll(RegExp(r'\s'), '');
-
-  /// Constant-time comparison so response timing does not leak the code.
-  static bool pairingCodesMatch(String? expected, String? provided) {
-    final a = normalizePairingCode(expected);
-    final b = normalizePairingCode(provided);
-    if (a.length != pairingCodeLength || b.length != a.length) return false;
-    var diff = 0;
-    for (var i = 0; i < a.length; i++) {
-      diff |= a.codeUnitAt(i) ^ b.codeUnitAt(i);
-    }
-    return diff == 0;
-  }
-
-  static Uri createQrUri({required String ip, required int port, required String code}) {
-    return Uri(scheme: 'purelive', host: ip, port: port, path: '/sync', queryParameters: {'code': code});
+  /// QR code for this device's sync endpoint: address and port only.
+  ///
+  /// A 6-digit pairing code used to travel here as well. It is gone on purpose:
+  /// the device that owns the settings authorizes each request with its own
+  /// on-screen confirmation (see `RemoteSyncService.confirmRequest`), which is
+  /// the same gate for a scanned QR and a typed address.
+  static Uri createQrUri({required String ip, required int port}) {
+    return Uri(scheme: 'purelive', host: ip, port: port, path: '/sync');
   }
 
   static Map<String, dynamic> discoveryPacket({
@@ -59,12 +38,7 @@ class RemoteSyncProtocol {
   }
 
   static Map<String, dynamic> settingsPacket({required Map<String, dynamic> settings, List<String>? sections}) {
-    return {
-      'type': syncType,
-      'version': 1,
-      'settings': settings,
-      'sections': ?sections,
-    };
+    return {'type': syncType, 'version': 1, 'settings': settings, 'sections': ?sections};
   }
 
   static ({String ip, int port})? parseHttpAddress(String value) {
@@ -84,18 +58,20 @@ class RemoteSyncProtocol {
     }
   }
 
-  /// Parses a sync QR code; its pairing code is null for a bare address.
-  static ({String ip, int port, String? code})? parseQr(String value) {
+  /// Parses a sync QR code, or a bare `host:port` as an address.
+  ///
+  /// A QR produced by an older version carries an extra `code` query parameter;
+  /// it is ignored, so both shapes of code scan into the same endpoint.
+  static ({String ip, int port})? parseQr(String value) {
     final text = value.trim();
     if (text.isEmpty) return null;
     if (text.startsWith('purelive:')) {
       final uri = Uri.tryParse(text);
       if (uri == null || uri.host.isEmpty || !uri.hasPort) return null;
-      final code = normalizePairingCode(uri.queryParameters['code']);
-      return (ip: uri.host, port: uri.port, code: code.length == pairingCodeLength ? code : null);
+      return (ip: uri.host, port: uri.port);
     }
     // A bare "host:port" is not a valid URI on its own; read it as an address.
     final address = parseHttpAddress(text);
-    return address == null ? null : (ip: address.ip, port: address.port, code: null);
+    return address == null ? null : (ip: address.ip, port: address.port);
   }
 }

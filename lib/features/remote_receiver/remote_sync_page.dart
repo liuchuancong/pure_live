@@ -4,6 +4,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:pure_live/core/platform/platform_utils.dart';
 import 'package:pure_live/core/widgets/qr_code_widget.dart';
 import 'package:pure_live/features/backup/backup_controller.dart';
+import 'package:pure_live/features/backup/backup_section_picker.dart';
 import 'package:pure_live/features/remote_receiver/remote_sync_device.dart';
 import 'package:pure_live/features/remote_receiver/remote_sync_service.dart';
 import 'package:pure_live/features/remote_receiver/remote_sync_protocol.dart';
@@ -56,96 +57,19 @@ class _RemoteSyncPageState extends State<RemoteSyncPage> {
     return allowed == true;
   }
 
-  /// The code is shown under the QR code on the other device.
-  Future<String?> _askPairingCode() async {
-    final controller = TextEditingController();
-    try {
-      final code = await showDialog<String>(
-        context: context,
-        builder: (dialogContext) => AlertDialog(
-          title: Text(i18n('remote_sync_pairing_code')),
-          content: TextField(
-            controller: controller,
-            autofocus: true,
-            keyboardType: TextInputType.number,
-            maxLength: RemoteSyncProtocol.pairingCodeLength,
-            decoration: InputDecoration(hintText: i18n('remote_sync_pairing_code_hint')),
-            onSubmitted: (value) => Navigator.of(dialogContext).pop(value),
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.of(dialogContext).pop(), child: Text(i18n('cancel'))),
-            FilledButton(
-              onPressed: () => Navigator.of(dialogContext).pop(controller.text),
-              child: Text(i18n('confirm')),
-            ),
-          ],
-        ),
-      );
-      final normalized = RemoteSyncProtocol.normalizePairingCode(code);
-      if (code == null) return null;
-      if (normalized.length != RemoteSyncProtocol.pairingCodeLength) {
-        ToastUtil.show(i18n('remote_sync_pairing_code_invalid'));
-        return null;
-      }
-      return normalized;
-    } finally {
-      controller.dispose();
-    }
-  }
-
-  /// Section picker shown before any sync send or receive.
-  Future<List<String>?> _pickSections(List<String> available) async {
-    final selected = {...available};
-
-    final ok = await Get.dialog<bool>(
-      AlertDialog(
-        title: Text(i18n('remote_sync_pick_sections')),
-        content: StatefulBuilder(
-          builder: (context, setState) => SizedBox(
-            width: 320,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  for (final key in available)
-                    CheckboxListTile(
-                      dense: true,
-                      title: Text(key),
-                      value: selected.contains(key),
-                      onChanged: (on) => setState(() {
-                        if (on == true) {
-                          selected.add(key);
-                        } else {
-                          selected.remove(key);
-                        }
-                      }),
-                    ),
-                ],
-              ),
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Get.back<bool>(result: false), child: Text(i18n('cancel'))),
-          TextButton(onPressed: () => Get.back<bool>(result: true), child: Text(i18n('confirm'))),
-        ],
-      ),
-      barrierDismissible: false,
+  Future<void> _sendToDevice(String ip, int port) async {
+    final sections = await pickBackupSections(
+      direction: BackupSectionDirection.export,
+      available: service.exportSectionNames(),
     );
-
-    return ok == true ? selected.toList(growable: false) : null;
-  }
-
-  Future<void> _sendToDevice(String ip, int port, {String? code}) async {
-    final sections = await _pickSections(service.exportSectionNames());
     if (sections == null) return;
 
-    final success = await service.syncToAddress(ip, port, code, sections: sections);
+    final success = await service.syncToAddress(ip, port, sections: sections);
     if (!mounted) return;
     ToastUtil.show(success ? i18n('remote_sync_send_success') : i18n('remote_sync_send_failed'));
   }
 
-  Future<void> _receiveFromDevice(String ip, int port, {String? code}) async {
+  Future<void> _receiveFromDevice(String ip, int port) async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -158,27 +82,24 @@ class _RemoteSyncPageState extends State<RemoteSyncPage> {
       ),
     );
     if (confirm != true) return;
-    final pairing = code ?? await _askPairingCode();
-    if (pairing == null) return;
 
-    final settings = await service.getRemoteSettings(ip, port, pairing);
+    final settings = await service.getRemoteSettings(ip, port);
     if (settings == null) {
       ToastUtil.show(i18n('remote_sync_receive_failed'));
       return;
     }
-    final success = await _applyRemoteSettings(settings);
+
+    // 对方发来的模块清单决定这里能勾什么；勾选之外的一律不落到本机。
+    final available = BackupController.presentSections(settings);
+    List<String>? sections;
+    if (available.isNotEmpty) {
+      sections = await pickBackupSections(direction: BackupSectionDirection.import, available: available);
+      if (sections == null) return;
+    }
+
+    final success = await service.applyRemoteSettings(settings, sections: sections);
     if (!mounted) return;
     ToastUtil.show(success ? i18n('remote_sync_receive_success') : i18n('remote_sync_receive_failed'));
-  }
-
-  Future<bool> _applyRemoteSettings(Map<String, dynamic> settings) async {
-    try {
-      final backup = Get.find<BackupController>();
-      backup.importAllSettings(settings);
-      return true;
-    } catch (_) {
-      return false;
-    }
   }
 
   ({String ip, int port})? _manualAddress() {
@@ -219,9 +140,9 @@ class _RemoteSyncPageState extends State<RemoteSyncPage> {
     );
 
     if (action == 'send') {
-      await _sendToDevice(parsed.ip, parsed.port, code: parsed.code);
+      await _sendToDevice(parsed.ip, parsed.port);
     } else if (action == 'receive') {
-      await _receiveFromDevice(parsed.ip, parsed.port, code: parsed.code);
+      await _receiveFromDevice(parsed.ip, parsed.port);
     }
   }
 
@@ -274,22 +195,7 @@ class _RemoteSyncPageState extends State<RemoteSyncPage> {
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 8),
-            if (service.pairingCode.value.isNotEmpty) ...[
-              Text(i18n('remote_sync_pairing_code')),
-              SelectableText(
-                service.pairingCode.value,
-                style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, letterSpacing: 6),
-              ),
-              const SizedBox(height: 8),
-            ],
             Text(i18n('remote_sync_scan_hint'), textAlign: TextAlign.center),
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              title: Text(i18n('remote_sync_include_accounts')),
-              subtitle: Text(i18n('remote_sync_include_accounts_hint')),
-              value: service.includeAccounts.value,
-              onChanged: (value) => service.includeAccounts.value = value,
-            ),
             const SizedBox(height: 12),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
