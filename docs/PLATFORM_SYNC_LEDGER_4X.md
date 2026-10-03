@@ -79,9 +79,21 @@ uri 2001314 的消息体就是一个 GameEventMessageBoardPanel：
   **空列表表示留言板已空，不再发请求**
 - 消息体缺失/为空/不是 Tars/没有 tag 1 列表 → 照旧后台补拉（0、0.6、1.8、4 s 的窗口，本仓已有）
 - 本仓要动的地方：`huya_danmaku.dart` 的 `uri == 2001314` 分支（现在只调
-  `_scheduleSuperChatRefresh`）+ 用 `TarsInputStream` 读嵌套 struct/list（本仓已有该读取器），
-  再把条目映射成本仓的醒目留言消息并走既有的去重集合
-- 价值：每条通知少 1–4 个 HTTP 请求（**是优化不是修复**，所以排在 ④/③ 之后）
+  `_scheduleSuperChatRefresh`）+ 用本仓自己的 Tars API 读面板：
+  - 根：`TarsInputStream(Uint8List.fromList(payload))`；条目列表
+    `stream.readList<_Entry>(<[_Entry()]>, 1, false)`（`readList` 内部用模板实例的
+    `readFrom` 逐个解码，见 `lib/core/tars/codec/tars_input_stream.dart:554`）
+  - 嵌套用户 struct：`_User()..readFrom(TarsInputStream(s.readBytes(0, false)))`
+    （与既有生成代码同一手法，见 `huya_danmaku.dart` 里读 push 的 `readBytes`）
+  - 需要一个只读的 `TarsStruct` 子类（`readFrom` + 占位的 `writeTo`/`displayAsString`）
+  - 条目字段 → 复用 `huya_utils.dart:76-86` 的映射（`messageId: 'huya:<tag9>'`、
+    `startTime = now + countdown - total`、`endTime = now + countdown`、`price = cost`、
+    `userName = 昵称`、`message = 文本`），再走既有的 `_rememberSuperChat` 去重与上报
+  - 解析失败/没有 tag 1 列表 → 照旧补拉（try/catch 包住，异常不影响既有路径）
+- 价值：每条通知少 1–4 个 HTTP 请求（**是优化不是修复**）。停在这一步的原因：字段索引
+  虽已从上游测试的写入器逐字段抄下，但本仓**没有 S19-headline 那样的 fixture** 可验证；
+  加上 `readBytes` 对 STRUCT 的边界行为未实测，盲写有把"面板解错"当成"面板为空"的风险
+- 所以它排在 ④/③ 之后，且**建议先用上游 fixture 做一个本仓测试**再实现
 
 ## 未同步清单（2026-10 机械盘点 + 逐项核实）
 
