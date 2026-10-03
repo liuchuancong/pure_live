@@ -26,4 +26,25 @@ class NiconicoLink {
 
   static String url(String programId) =>
       'https://live.nicovideo.jp/watch/${NiconicoWatch.validateProgramId(programId)}';
+
+  static final RegExp _userPage = RegExp(r'^https?://www\.nicovideo\.jp/user/([1-9][0-9]{0,17})(?:[/?#][^\s]*)?$');
+  static final RegExp _broadcasterLink = RegExp(
+    r'^https?://(?:live\.nicovideo\.jp|sp\.live\.nicovideo\.jp)/watch/((?:user/[1-9][0-9]{0,17})|(?:ch[1-9][0-9]{0,17}))(?:[/?#][^\s]*)?$',
+  );
+  static final RegExp _channelPage = RegExp(
+    r'^https?://ch\.nicovideo\.jp/(ch[1-9][0-9]{0,17})(?:/(?:live|video)?)?(?:[/?#][^\s]*)?$',
+  );
+
+  /// 主播链接（上游 17-2）：`live.nicovideo.jp/watch/user/<id>` 与 `…/watch/ch<n>`
+  /// （`sp.` 同样）、用户页 `www.nicovideo.jp/user/<id>`、频道页 `ch.nicovideo.jp/ch<n>`
+  /// （可带一个小写子页，如 `/live`）。返回主播身份（`user/<id>` 或 `ch<n>`），
+  /// 需要一次 watch 页请求才能换成当前节目号。自定义频道名（`ch.nicovideo.jp/<name>`）
+  /// 不在其中。
+  static String? parseBroadcaster(String raw) {
+    final value = raw.trim();
+    if (value.length > 2048) return null;
+    final user = _userPage.firstMatch(value)?.group(1);
+    if (user != null) return 'user/$user';
+    return _broadcasterLink.firstMatch(value)?.group(1) ?? _channelPage.firstMatch(value)?.group(1);
+  }
 }
