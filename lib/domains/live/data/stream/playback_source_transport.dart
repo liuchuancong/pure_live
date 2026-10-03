@@ -82,26 +82,35 @@ class PlaybackSourceTransport {
   }
 
   /// Serves a rewritten manifest tree from loopback: every child the player sees
-  /// is already an absolute URL, so a bare `media.95.mp4` can no longer become a
-  /// Windows path on the way to the demuxer.
+  /// is already an absolute loopback URL, so neither a bare `media.95.mp4` nor an
+  /// absolute path `/tc.livehls/...` can become a Windows path on the way to the
+  /// demuxer.
+  ///
+  /// The provider's session cookie travels with the tree. TwitCasting hands one
+  /// out *with the manifest* (`lvhls_ssid_<movie>`, scoped to the stream path,
+  /// ten minutes) and answers a segment request that lacks it with 401 — so a
+  /// relay that drops it reads the playlist fine and then starves on the first
+  /// segment. Every other relay here already fetched upstream through the
+  /// player's proxy; this one is the last that did not.
   static Future<PlaybackInputLease> _createIngestRelay(
     String url,
     Map<String, String> headers, {
     String? rootManifest,
     Uri Function(Uri)? childUriPolicy,
-    bool sessionCookies = false,
     HlsSourceQueryPolicy? matchesPolicy,
   }) async {
     final Uri source = Uri.parse(url);
     if (matchesPolicy != null && !matchesPolicy.matchesSource(source)) {
       throw const FormatException('Playback query policy does not match selected input');
     }
+    final directive = PlaybackProxyPolicy.currentDirective();
     final relay = await LoopbackIngestRelay.start(
       source: source,
       headers: headers,
       rootManifest: rootManifest,
       childUriPolicy: childUriPolicy,
-      sessionCookies: sessionCookies,
+      sessionCookies: true,
+      findProxy: (_) => directive,
     );
     return PlaybackInputLease(relay.inputUri, relay.close, isUsable: () => !relay.isClosed);
   }
@@ -199,8 +208,7 @@ class PlaybackSourceTransport {
       // child requests, so the player only ever sees absolute loopback URLs.
       final PlaybackInputFactory? legacyFactory = _createInput;
       if (legacyFactory == null && manifest) {
-        return (_) =>
-            _createIngestRelay(url, frozen, childUriPolicy: policy.apply, sessionCookies: true, matchesPolicy: policy);
+        return (_) => _createIngestRelay(url, frozen, childUriPolicy: policy.apply, matchesPolicy: policy);
       }
       return (_) {
         if (!policy.matchesSource(source)) {

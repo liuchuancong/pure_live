@@ -383,6 +383,50 @@ media_kit 注册了 stream callback（日志里的 `stream_callback/v: Opening`�
 HLS 无连接复用，不是本仓的判定逻辑。`sourceResolver` 那条断线（卡住之后无法用新签名 URL 恢复）仍然待做
 ——它决定的是"卡一下之后能不能自己爬起来"。
 
+### TwitCasting 401：清单下发的会话 cookie 被中继丢掉了（2026-10-04，已修）
+
+接线之后第一次真正跑到 manifestRelay：中继起来了、mpv 也读到了改写后的清单
+（`Found 'hls' at score=100 size=428`），然后
+
+```
+hls: Failed to open an initialization section in playlist 0
+hls: Failed to read segment header for probing: Server returned 401 Unauthorized
+```
+
+401 是**上游返回的**（`LoopbackIngestRelay` 只转发状态码），而清单那一次是 200——同一个客户端、同一套
+请求头，差别只在 URL。用真实房间复现（`streamserver.php?target=<channel>&mode=client&player=pc_web` →
+`tc-hls.streams.high`）拿到清单的响应头：
+
+```
+Set-Cookie: lvhls_ssid_841801664=db5bc7f9…; Path=/tc.livehls/v1/streams/841801664/hls/; Max-Age=600; HttpOnly
+```
+
+curl 对照实测：`init.2.mp4` **不带 cookie → 401，带上 → 200（1095 字节）**。这正是
+`IngestNeed.sessionCookies` 文档描述的情形（provider 随清单发 cookie，子请求要继承），而
+`_createIngestRelay` 在 manifest 改写这条路上一直传 `sessionCookies: false`——只有带查询令牌策略的那条
+路传了 true。
+
+修：`_createIngestRelay` 恒定 `sessionCookies: true`，参数删掉（两个调用点现在同值）。中继的 cookie jar
+本来就按源站钉死、有上限、只在同一 origin 内回放，这正是浏览器对一棵 HLS 树的做法，没有"要不要开"的
+分歧点。
+
+顺带补上最后一处不一致：`LoopbackIngestRelay` 之前**没有** `findProxy`，所以四条中继里唯独它绕开播放器
+代理直连上游（media_core_ingest 已加参数，`_createIngestRelay` 传
+`PlaybackProxyPolicy.currentDirective()`）。这次能读到清单是因为 TwitCasting 从本机直连可达，属于运气。
+
+**声明里的一处不实也改了**：`tc-hls` 的子条目实测是**绝对路径**
+`/tc.livehls/v1/streams/<movie>/hls/<tier>/media.1744.mp4`（`#EXT-X-MAP` 的 `init.*.mp4` 同样），不是原先
+注释写的裸名 `media.95.mp4`。两者对原生解析器一样致命（丢了清单地址就变成 `\tc.livehls\…` 这样的本地
+路径），所以 `LiveStreamFacts` 的字段从 `relativeChildren` 改名为 `unresolvedChildren`，一个 bool 覆盖两种
+形态；`IngestNeed.relativeChildren` 与 `HlsManifestKind.relativeChildren` 是 media_core_ingest 的名字，
+没动。兜底表 `playback_ingest_needs.dart` 的 TwitCasting 注释同步改成实测形态。
+
+测试：`test/domains/live/loopback_relay_session_cookie_test.dart` 起一个仿 TwitCasting 的本机 provider
+（清单 200 + Set-Cookie、子条目绝对路径、分片无 cookie 就 401），走 `transport.prepare()` 拿到回环租约，
+再读改写后的清单与 `#EXT-X-MAP` 子条目，断言子条目已换成本机地址、分片 200、且 provider 只在带 cookie 时
+被命中。**把 `sessionCookies` 改回 false，这个测试就以 401 失败**（已实测），和线上症状一模一样。
+`test/{core,domains,shared}` 70 项全绿，两个仓库 Analyze 0 项。
+
 ### 还没声明的站点（上游有 format/codec，本仓待补）
 
 **已补（2026-10-04 同批）**：bilibili（直播 `flv`/`ts`/`fmp4` 线路按 `parsePlayUrlResolution` 里的
