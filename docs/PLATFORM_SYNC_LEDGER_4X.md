@@ -55,8 +55,8 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 ### A. 真正还没同步（建议做）
 | 上游提交 | 内容 | 本仓现状（已核实） |
 | --- | --- | --- |
-| `2eea8022a` 剩余 | 发送者头像 `user.base.face` → `DanmakuSender(avatar)` | **无**：消息模型里没有"发送者头像"载体（粉丝牌部分已做 `41dfe0616`） |
-| `2eea8022a` 剩余 | 游客/登录失效提示（列表顶部一行 + 去登录） | **无** |
+| `2eea8022a` 剩余 | 发送者头像 `user.base.face` → `DanmakuSender(avatar)` | **已做（`c9...`）**：`LiveMessage.avatar` + B 站 `_avatar()`（`base.face` → `origin_info.face`，`hdslb.com` 取 96×96）+ 列表画圆形头像（取不到不占位） |
+| `2eea8022a` 剩余 | 游客/登录失效提示（列表顶部一行 + 去登录） | **部分**：本仓已有等价的一次性提示（站点能力 `danmakuUserNameNoticeKey` → 状态行，如 `bilibili_guest_name_masked`）；**未做**上游那种**常驻提示条 + 「去登录」按钮**（需 `DanmakuController` 暴露 hint + 列表加条 + `AppNavigator.toBiliBiliLogin()`） |
 | `0d63d2d3c` | 播放线路"声明图片尺寸"（F.1b，core+player） | **无**：全仓搜不到 `pictureWidth`/`pictureHeight`/`declaredPicture` |
 | `51c28301b` | Twitch `RECONNECT`、撤回（`CLEARMSG`）、公告（`NOTICE`）、过期 cookie | **撤回已做（`4e1e...`）**：`CLEARMSG` → 按消息 id 撤、`CLEARCHAT` → 按 `target-user-id` 撤 / 清屏撤全部、只有登录名没有 id 的跳过；`RECONNECT` 与 cookie 解析本仓早有。**未做**：`USERNOTICE`（订阅/突袭/公告展示）与「Cookie 已失效」提示 |
 | `f12bf0f8c` | socket 运行时"握手失败"钩子（M5.F B-1） | **待核**：`web_socket_util.dart` 有握手实现，未确认是否把失败单独上报 |

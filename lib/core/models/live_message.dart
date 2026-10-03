@@ -137,6 +137,9 @@ class LiveMessage {
 
   /// 粉丝牌子名
   final String fansName;
+
+  /// 发送者头像地址（上游 2eea8022a 的 `DanmakuSender.avatar`）；平台不给时为空。
+  final String avatar;
   final bool isLocal;
 
   /// Stable identifier supplied by the platform when available. It is used to
@@ -163,6 +166,7 @@ class LiveMessage {
     this.userLevel = "",
     this.fansLevel = "",
     this.fansName = "",
+    this.avatar = "",
     this.isLocal = false,
     this.messageId = "",
     this.sentAt,

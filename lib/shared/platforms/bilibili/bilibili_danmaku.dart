@@ -459,6 +459,8 @@ class BiliBiliDanmaku implements LiveDanmaku {
               // 粉丝牌：rich user 的 medal，或旧格式 info[3]（上游 2eea8022a）。
               fansName: medal.name,
               fansLevel: medal.level,
+              // 发送者头像（rich user 的 base.face / origin_info.face）。
+              avatar: _avatar(metadata),
             );
             onMessage?.call(liveMsg);
           }
@@ -636,6 +638,28 @@ class BiliBiliDanmaku implements LiveDanmaku {
   static String _medalLevel(Object? raw) {
     final value = int.tryParse(raw?.toString() ?? '') ?? 0;
     return value > 0 ? '$value' : '';
+  }
+
+  /// 发送者头像（上游 `2eea8022a`）：`user.base.face`，否则 `base.origin_info.face`；
+  /// 必须是 http(s)，`hdslb.com` 上还要按 96×96 取（聊天最多画 32dp）。游客看到的
+  /// 头像未打码。没有就返回空串。
+  static String _avatar(List<dynamic> metadata) {
+    final rich = metadata.length > 15 ? _asJsonObject(metadata[15]) : null;
+    if (rich is! Map) return '';
+    final rawUser = rich['user'];
+    final user = rawUser is Map ? rawUser : rich;
+    final base = user['base'];
+    if (base is! Map) return '';
+    var url = _pictureUrl(base['face']);
+    if (url.isEmpty) {
+      final origin = base['origin_info'];
+      if (origin is Map) url = _pictureUrl(origin['face']);
+    }
+    if (url.isEmpty) return '';
+    final uri = Uri.tryParse(url);
+    if (uri == null) return '';
+    final small = (uri.host == 'hdslb.com' || uri.host.endsWith('.hdslb.com')) && !uri.path.contains('@');
+    return small ? '$url@96w_96h.jpg' : url;
   }
 
   /// 一条聊天里的表情图片（上游 bilibili 4-x 的 `emotes`，M13.16）：贴纸

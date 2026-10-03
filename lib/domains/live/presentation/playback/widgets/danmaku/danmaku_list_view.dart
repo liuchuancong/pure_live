@@ -504,6 +504,23 @@ class DanmakuItem extends StatelessWidget {
                     child: Text.rich(
                       TextSpan(
                         children: [
+                          // 发送者头像（上游 2eea8022a）：平台给了才画，取不到就什么都不占。
+                          if (danmaku.avatar.isNotEmpty)
+                            WidgetSpan(
+                              alignment: PlaceholderAlignment.middle,
+                              child: Padding(
+                                padding: const EdgeInsets.only(right: 4),
+                                child: ClipOval(
+                                  child: Image.network(
+                                    danmaku.avatar,
+                                    width: 16,
+                                    height: 16,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+                                  ),
+                                ),
+                              ),
+                            ),
                           // 粉丝牌（上游 2eea8022a）：有名字才画，等级为空时只画名字。
                           if (danmaku.fansName.isNotEmpty)
                             WidgetSpan(
