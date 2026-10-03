@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer' as developer;
 
 import 'package:dio/dio.dart';
 import 'package:media_core_ingest/media_core_ingest.dart';
@@ -8,6 +9,7 @@ import 'package:pure_live/domains/live/data/stream/flv_splice_relay.dart';
 
 import 'flv_legacy_hevc_relay.dart';
 import 'playback_ingest_needs.dart';
+import 'playback_manifest_probe.dart';
 
 import 'package:pure_live/core/player/core/playback_proxy_policy.dart';
 import 'package:pure_live/core/player/core/playback_input_lease.dart';
@@ -93,8 +95,12 @@ class PlaybackSourceTransport {
   /// Serves a rewritten manifest tree from loopback: every child the player sees
   /// is already an absolute URL, so a bare `media.95.mp4` can no longer become a
   /// Windows path on the way to the demuxer.
-  static Future<PlaybackInputLease> _createIngestRelay(String url, Map<String, String> headers) async {
-    final relay = await LoopbackIngestRelay.start(source: Uri.parse(url), headers: headers);
+  static Future<PlaybackInputLease> _createIngestRelay(
+    String url,
+    Map<String, String> headers, {
+    String? rootManifest,
+  }) async {
+    final relay = await LoopbackIngestRelay.start(source: Uri.parse(url), headers: headers, rootManifest: rootManifest);
     return PlaybackInputLease(relay.inputUri, relay.close, isUsable: () => !relay.isClosed);
   }
 
@@ -113,24 +119,43 @@ class PlaybackSourceTransport {
     bool rewriteLegacyHevcFlv = false,
     DateTime? refreshAt,
     FlvSourceRenewer? renewFlv,
-  }) {
+  }) async {
     final legacyFactory = _createInput;
-    // A provider that only knows how to list its children by bare or
-    // absolute-path name cannot be handed to the native resolver: it loses the
-    // manifest URL and looks for the children next to itself. Rewrite the tree
-    // over loopback instead (media_core_ingest).
+    // Decide from the manifest itself rather than from a per-platform list: a
+    // manifest whose children are bare names (`media.95.mp4`) or absolute paths
+    // cannot be handed to the native resolver, because a reader that loses the
+    // manifest URL looks for them next to itself and turns them into local paths
+    // (`No protocol handler found to open URL \tc.livehls\...\media.95.mp4`).
+    // A manifest that already writes absolute URLs is handed over untouched.
     final Uri? ingestSource = Uri.tryParse(url);
-    final Set<IngestNeed> ingestNeeds = ingestSource == null ? const <IngestNeed>{} : playbackIngestNeeds(ingestSource);
-    if (policy == null && ingestNeeds.isNotEmpty && isHlsManifestUri(ingestSource!)) {
-      final IngestPlan plan = resolveIngestPlan(needs: ingestNeeds);
-      if (plan.strategy == IngestStrategy.manifestRelay) {
+    if (policy == null && ingestSource != null && isHlsManifestUri(ingestSource)) {
+      final PlaybackManifestProbe? probe = await probePlaybackManifest(
+        url,
+        headers: Map<String, String>.unmodifiable(headers),
+      );
+      // A provider we could not read still gets its declared needs applied, so a
+      // known-quirky host does not regress just because one read failed.
+      final Set<IngestNeed> needs = probe?.kind.requiresRewrite == true
+          ? const <IngestNeed>{IngestNeed.relativeChildren}
+          : probe == null
+          ? playbackIngestNeeds(ingestSource)
+          : const <IngestNeed>{};
+      if (probe != null) {
+        developer.log(
+          'manifest ${ingestSource.host}: ${probe.kind.describe()} -> '
+          '${needs.isEmpty ? 'direct' : 'loopback rewrite'}',
+          name: 'PlaybackIngest',
+        );
+      }
+      if (resolveIngestPlan(needs: needs).strategy == IngestStrategy.manifestRelay) {
         return _open(
           url: url,
           urls: urls,
           headers: headers,
           nativeOpen: nativeOpen,
           joinCreationOnCancel: true,
-          createInput: (_) => _createIngestRelay(url, Map<String, String>.unmodifiable(headers)),
+          createInput: (_) =>
+              _createIngestRelay(url, Map<String, String>.unmodifiable(headers), rootManifest: probe?.body),
         );
       }
     }
