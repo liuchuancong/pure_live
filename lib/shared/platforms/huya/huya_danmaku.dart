@@ -224,6 +224,23 @@ class HuyaDanmaku implements LiveDanmaku {
       // awaiting the HTTP call also serializes unrelated websocket messages.
       // Reconcile in the background with a small bounded retry window instead.
       _scheduleSuperChatRefresh(_generation);
+    } else if (uri == 8001) {
+      // `EndLiveNotice`：主播结束直播（Tars 字段 0 是 lPresenterUid，0 表示没点名）。
+      // 服务器不会关掉这条 socket，3.x 也忽略了它，于是房间一直停在"直播中"
+      // （上游 C-10）。这里照虎牙网页客户端的行为结束这一路弹幕。
+      var presenterUid = 0;
+      try {
+        final raw = TarsInputStream(Uint8List.fromList(payload)).read(0, 0, false);
+        presenterUid = raw is int ? raw : 0;
+      } catch (_) {
+        // 不是结束通知：当作没收到。
+        return;
+      }
+      final mine = danmakuArgs.uid;
+      if (presenterUid == 0 || presenterUid == mine) {
+        onClose?.call("直播已结束");
+        await stop();
+      }
     }
   }
 
