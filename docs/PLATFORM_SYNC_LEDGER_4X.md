@@ -199,11 +199,14 @@ kick、kilakila、pandalive、picarto、seventeenlive、showroom、sixroom、ste
 
 ### 还没声明的站点（上游有 format/codec，本仓待补）
 
-bilibili（mp4 轮播线路是 `other`）、iptv（`.ts` 与 udpxy 是 `other`，上游 `f5ab30e79`）、inke（flv/avc）、
-sixroom（flv + 每条线路自己的 codec）、bigo / chzzk / huya / pandalive / picarto / seventeenlive / showroom /
-steambroadcast / twitch / yy / kilakila（hls 或 flv，多数只是标注，不改变直连判定）。
-其中**会改变行为**的只有三个：iptv 的 `.ts`/udpxy 与 bilibili 的 mp4 轮播线路（都不再被当成清单去探测），
-以及 sixroom 若给出 hevc 线路（→ FFmpeg 转封装）。其余属于补全声明，供录制端与将来的线路选择使用。
+**已补（2026-10-04 同批）**：bilibili（直播 `flv`/`ts`/`fmp4` 线路按 `parsePlayUrlResolution` 里的
+`format_name`+`codec_name` 声明，`ts`/`fmp4` 与轮播稿件的 mp4 都是 `other`，不再被当清单探测）、
+iptv（`iptvStreamFormat()`：`.m3u8`→清单，`.ts`/`/udp/`/`rtp:`/`udp:`/`rtsp:`→`other`，认不出的不声明、
+照旧探测；上游 `f5ab30e79` 的同一判断）。测试见 `live_stream_facts_test.dart` 的"B 站与 IPTV 的线路声明"。
+
+**待补**：sixroom（flv + 每条线路自己的 codec，若给出 hevc 就要走 FFmpeg 转封装）、inke（flv/avc）、
+bigo / chzzk / huya / pandalive / picarto / seventeenlive / showroom / steambroadcast / twitch / yy / kilakila
+（hls 或 flv，多数只是标注，不改变直连判定，价值在录制端与将来的线路选择）。
 
 ### 明确不做
 

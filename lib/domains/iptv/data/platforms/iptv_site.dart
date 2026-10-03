@@ -21,7 +21,7 @@ import 'package:pure_live/domains/iptv/data/platforms/iptv_danmaku_capability.da
 
 class IptvSite
     with LiveDanmakuCapabilityDefaults, IptvDanmakuCapability
-    implements LiveSite, LiveSiteRecordRoomResolver {
+    implements LiveSite, LiveSiteRecordRoomResolver, LivePlayStreamFacts {
   @override
   String id = PlatformIds.iptv;
 
@@ -344,6 +344,21 @@ class IptvSite
     return data.map((item) => item.toString().trim()).where((url) => url.isNotEmpty).toList(growable: false);
   }
 
+  /// 播放列表里的线路五花八门：`.m3u8` 是清单，`.ts` 与 udpxy/RTP 代理是"一条 HTTP
+  /// 响应、容器看首字节"（上游 `f5ab30e79` 的 `StreamFormat.other`）。声明出来，
+  /// 取流侧就不会把 MPEG-TS 的媒体体当清单去解析。
+  @override
+  Map<String, LiveStreamFacts> declareStreamFacts(List<String> urls) {
+    final facts = <String, LiveStreamFacts>{};
+    for (final url in urls) {
+      final format = iptvStreamFormat(url);
+      if (format != null) {
+        facts[url] = (format: format, codec: null, relativeChildren: false);
+      }
+    }
+    return facts;
+  }
+
   // =========================================================
   // 弹幕
   // =========================================================
@@ -401,4 +416,17 @@ class IptvSite
     }).toList();
     return items;
   }
+}
+
+/// IPTV 线路的容器归类：`.m3u8` 是清单；`.ts`、udpxy（`/udp/…`）与 `rtp://`/`udp://`
+/// 组播是"一条响应、容器看首字节"；认不出来的返回 null，让取流侧照旧探测。
+LiveStreamFormat? iptvStreamFormat(String url) {
+  final uri = Uri.tryParse(url.trim());
+  if (uri == null) return null;
+  final scheme = uri.scheme.toLowerCase();
+  if (scheme == 'rtp' || scheme == 'udp' || scheme == 'rtsp') return LiveStreamFormat.other;
+  final path = uri.path.toLowerCase();
+  if (path.endsWith('.m3u8') || path.endsWith('.m3u')) return LiveStreamFormat.hls;
+  if (path.endsWith('.ts') || path.contains('/udp/')) return LiveStreamFormat.other;
+  return null;
 }

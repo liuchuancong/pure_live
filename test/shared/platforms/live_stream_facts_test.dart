@@ -2,6 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:media_core_ingest/media_core_ingest.dart';
 import 'package:pure_live/domains/live/data/stream/live_stream_ingest.dart';
 import 'package:pure_live/shared/platforms/baidulive/baidu_live_api.dart';
+import 'package:pure_live/domains/iptv/data/platforms/iptv_site.dart';
+import 'package:pure_live/shared/platforms/bilibili/bilibili_site.dart';
 import 'package:pure_live/shared/platforms/live_site.dart';
 import 'package:pure_live/shared/platforms/twitcasting/twitcasting_site.dart';
 
@@ -139,6 +141,81 @@ void main() {
       final facts = TwitcastingSite().declareStreamFacts(['https://cdn.example.com/room.m3u8']);
 
       expect(facts, isEmpty);
+    });
+  });
+  group('B 站与 IPTV 的线路声明', () {
+    test('B 站直播线路带上容器与编码，flv 之外的单条响应算 other', () {
+      Map<String, Object?> codec(String name, String format, String base, String host) => <String, Object?>{
+        'codec_name': name,
+        'current_qn': 10000,
+        'base_url': base,
+        'url_info': [
+          {'host': host, 'extra': '?expires=1'},
+        ],
+      };
+
+      final resolution = BiliBiliSite.parsePlayUrlResolution({
+        'code': 0,
+        'data': {
+          'playurl_info': {
+            'playurl': {
+              'stream': [
+                {
+                  'protocol_name': 'http_stream',
+                  'format': [
+                    {
+                      'format_name': 'flv',
+                      'codec': [codec('avc', 'flv', '/live-bvc/avc.flv', 'https://cn-gotcha01.bilivideo.com')],
+                    },
+                    {
+                      'format_name': 'ts',
+                      'codec': [codec('hevc', 'ts', '/live-bvc/hevc.ts', 'https://cn-gotcha01.bilivideo.com')],
+                    },
+                  ],
+                },
+              ],
+            },
+          },
+        },
+      }, requestedQualityData: '10000');
+
+      expect(resolution.urls, hasLength(2));
+      expect(resolution.streamFacts.keys.toSet(), resolution.urls.toSet());
+
+      final flv = resolution.streamFacts.entries.firstWhere((entry) => entry.key.endsWith('avc.flv?expires=1'));
+      expect(flv.value.format, LiveStreamFormat.flv);
+      expect(flv.value.codec, 'avc');
+      expect(requiresFfmpegRemux(flv.value), isFalse);
+
+      final ts = resolution.streamFacts.entries.firstWhere((entry) => entry.key.endsWith('hevc.ts?expires=1'));
+      expect(ts.value.format, LiveStreamFormat.other);
+      expect(ts.value.codec, 'hevc');
+      // MPEG-TS 里的 HEVC 是标准组合，播放器自己就能解，不该白付一次转封装。
+      expect(requiresFfmpegRemux(ts.value), isFalse);
+      expect(isDeclaredManifest(ts.value, Uri.parse(ts.key)), isFalse);
+    });
+
+    test('IPTV 把 ts 与 udpxy 归为 other，m3u8 归为清单，认不出的不声明', () {
+      expect(iptvStreamFormat('http://192.168.1.10:4022/udp/239.0.0.1:5000'), LiveStreamFormat.other);
+      expect(iptvStreamFormat('http://cdn.example.com/live/channel.ts'), LiveStreamFormat.other);
+      expect(iptvStreamFormat('rtp://239.0.0.1:5000'), LiveStreamFormat.other);
+      expect(iptvStreamFormat('http://cdn.example.com/live/index.m3u8'), LiveStreamFormat.hls);
+      expect(iptvStreamFormat('http://cdn.example.com/live/stream'), isNull);
+
+      final facts = IptvSite().declareStreamFacts([
+        'http://192.168.1.10:4022/udp/239.0.0.1:5000',
+        'http://cdn.example.com/live/index.m3u8',
+        'http://cdn.example.com/live/stream',
+      ]);
+      expect(facts.keys, hasLength(2), reason: '认不出容器的那条不声明，交给探测');
+      expect(facts['http://192.168.1.10:4022/udp/239.0.0.1:5000']?.format, LiveStreamFormat.other);
+      expect(
+        isDeclaredManifest(
+          facts['http://cdn.example.com/live/index.m3u8'],
+          Uri.parse('http://cdn.example.com/live/index.m3u8'),
+        ),
+        isTrue,
+      );
     });
   });
 }

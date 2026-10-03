@@ -207,7 +207,15 @@ class BiliBiliSite
     final urls = parseVideoPlayUrls(play);
     if (urls.isEmpty) throw const FormatException('Bilibili 轮播视频没有可播放地址');
     // 就从轮播当前进度接着播（上游 M7.1）。
-    return LivePlayUrlResolution(urls: urls, appliedQualityData: carouselQualityId, startAt: video.start);
+    return LivePlayUrlResolution(
+      urls: urls,
+      appliedQualityData: carouselQualityId,
+      startAt: video.start,
+      // 轮播房播的是循环稿件（mp4/fmp4 单条 HTTP 响应），不是清单。
+      streamFacts: {
+        for (final url in urls) url: (format: LiveStreamFormat.other, codec: null, relativeChildren: false),
+      },
+    );
   }
 
   /// 轮播房那一档清晰度（平台不提供分档，游客最高 480P）。
@@ -388,11 +396,33 @@ class BiliBiliSite
     final appliedQn = candidates.first.currentQn;
     final seen = <String>{};
     final urls = <String>[];
+    final facts = <String, LiveStreamFacts>{};
     for (final candidate in candidates) {
       if (candidate.currentQn != appliedQn || !seen.add(candidate.url)) continue;
       urls.add(candidate.url);
+      // 线路自带容器与编码：B 站直播是单条 HTTP 响应（flv / ts / fmp4），容器由首字节
+      // 决定，不是清单；取流侧据此不去把媒体体当清单探测，HEVC 才走 FFmpeg 转封装。
+      final codec = candidate.codec.toLowerCase();
+      facts[candidate.url] = (
+        format: _streamFormatOf(candidate.format, candidate.url),
+        codec: codec.isEmpty ? null : codec,
+        relativeChildren: false,
+      );
     }
-    return LivePlayUrlResolution(urls: List.unmodifiable(urls), appliedQualityData: appliedQn);
+    return LivePlayUrlResolution(
+      urls: List.unmodifiable(urls),
+      appliedQualityData: appliedQn,
+      streamFacts: Map.unmodifiable(facts),
+    );
+  }
+
+  /// `flv` 就是 FLV；真正的 HLS 清单按清单处理；其余（`ts`、`fmp4`、轮播的 mp4）
+  /// 都是"一条 HTTP 响应，容器看首字节"，与上游 4.x 的 `StreamFormat.other` 同义。
+  static LiveStreamFormat _streamFormatOf(String format, String url) {
+    final normalized = format.toLowerCase();
+    if (normalized == 'flv') return LiveStreamFormat.flv;
+    if (normalized == 'hls' || url.toLowerCase().contains('.m3u8')) return LiveStreamFormat.hls;
+    return LiveStreamFormat.other;
   }
 
   static Map<dynamic, dynamic> _playUrlPayload(dynamic response) {
@@ -884,9 +914,7 @@ class BiliBiliSite
   /// `special_type` 1 且正在直播 → [LiveRestriction.paid]；其它取值 → 无限制；
   /// 字段缺失或读不出来 → null（平台没说）。
   static LiveRestriction? _paidRestriction(Object? specialType, {required bool live}) {
-    final value = specialType is num
-        ? specialType.toInt()
-        : int.tryParse(specialType?.toString().trim() ?? '');
+    final value = specialType is num ? specialType.toInt() : int.tryParse(specialType?.toString().trim() ?? '');
     if (value == null) return null;
     if (value == 1 && live) return LiveRestriction.paid;
     return LiveRestriction.none;
