@@ -85,7 +85,7 @@ class _WallpaperItemsPageState extends State<WallpaperItemsPage> {
       // The wallpaper painted by AppBackgroundLayer stays visible behind the
       // grid; only the tiles themselves are opaque.
       backgroundColor: Colors.transparent,
-      appBar: AppBar(title: Text(title), backgroundColor: Colors.transparent, surfaceTintColor: Colors.transparent),
+      appBar: AppBar(title: Text(title)),
       body: source == null || group == null || controller == null
           ? AppStatusView(type: AppStatusType.empty, title: i18n('background_no_category'), subtitle: '')
           : BasePageView<BasePageScrollAndStateBone<WallpaperItem>, WallpaperItem>(

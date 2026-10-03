@@ -20,11 +20,7 @@ class WallpaperGalleryPage extends StatelessWidget {
     if (source == null) {
       return Scaffold(
         backgroundColor: Colors.transparent,
-        appBar: AppBar(
-          title: Text(i18n('wallpaper_library')),
-          backgroundColor: Colors.transparent,
-          surfaceTintColor: Colors.transparent,
-        ),
+        appBar: AppBar(title: Text(i18n('wallpaper_library'))),
         body: AppStatusView(type: AppStatusType.empty, title: i18n('background_no_category'), subtitle: ''),
       );
     }
@@ -32,11 +28,7 @@ class WallpaperGalleryPage extends StatelessWidget {
     final List<WallpaperGroup> groups = source.visibleGroups;
     return Scaffold(
       backgroundColor: Colors.transparent,
-      appBar: AppBar(
-        title: Text(source.localizedName(context.locale.languageCode)),
-        backgroundColor: Colors.transparent,
-        surfaceTintColor: Colors.transparent,
-      ),
+      appBar: AppBar(title: Text(source.localizedName(context.locale.languageCode))),
       body: groups.isEmpty
           ? AppStatusView(type: AppStatusType.empty, title: i18n('background_no_category'), subtitle: '')
           : ListView(

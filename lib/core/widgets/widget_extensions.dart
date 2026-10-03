@@ -84,7 +84,11 @@ extension AppLayoutFactory on BuildContext {
 
     return Material(
       clipBehavior: Clip.antiAlias,
-      color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.15),
+      // The theme's card colour when it has one: while a wallpaper owns the
+      // canvas the card colour is washed to stay readable, and the settings list
+      // must look exactly like the background list. Without a wallpaper this
+      // falls back to the light wash this card has always used.
+      color: theme.cardTheme.color ?? theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.15),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
         side: BorderSide(color: theme.dividerColor.withValues(alpha: 0.05), width: 0.5),

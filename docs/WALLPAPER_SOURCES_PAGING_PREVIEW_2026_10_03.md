@@ -60,10 +60,18 @@
 桌面端壁纸层包住标题栏，图片铺到窗口顶边；标题栏与左侧导航栏保留一层
 `kWallpaperSurfaceOpacity`（0.55）的半透明洗色，控件在任何图片上都可读。
 
-页面 chrome（卡片、AppBar、左右导航栏、chips、桌面分页条）同样按该常量洗淡
-（`wallpaperChromeTheme`）。**弹窗、下拉菜单、弹出面板不洗**：它们从
-`colorScheme` 取默认底色，而这条路径特意保持不变——菜单/对话框透出图片只会
-更难读。改透明度只动 `kWallpaperSurfaceOpacity` 一个常量。
+页面 chrome（AppBar、左右导航栏、chips、桌面分页条）按
+`kWallpaperSurfaceOpacity`（0.55）洗淡；**卡片按 `kWallpaperCardOpacity`
+（0.82）**洗得更实——卡片承载正文，既要在图片的亮部/暗部上看起来一致，也要保证
+文字对比度。设置页与背景设置页的行卡片（`buildModernCard`）读的就是主题卡片色，
+所以两页观感一致。**弹窗、下拉菜单、弹出面板不洗**：它们从 `colorScheme` 取默认
+底色，而这条路径特意保持不变——菜单/对话框透出图片只会更难读。改透明度只动上面
+两个常量。
+
+页面切换用的是「先淡出、后淡入」的过渡（`WallpaperFadeThroughTransitionsBuilder`）：
+旧页面在新页面出现前就完全淡出，中途只剩壁纸。M3 的 fade-forwards 是交叉淡化，
+底衬不透明会闪主题色、透明又会让两个半透明页面叠在一起（浅色主题闪白、深色主题
+闪黑）。
 
 背景设置的所有子页（壁纸库、分类、网格、随机图源、随机图源分组）也各自用透明
 `Scaffold`，与上面的统一机制互为兜底。

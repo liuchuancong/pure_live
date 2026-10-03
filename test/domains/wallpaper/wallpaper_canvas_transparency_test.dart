@@ -44,12 +44,20 @@ void main() {
     final ThemeData theme = await _themeUnder(tester, ownsCanvas: true);
 
     expect(theme.canvasColor.a, closeTo(kWallpaperSurfaceOpacity, 0.001));
-    expect(theme.cardColor.a, closeTo(kWallpaperSurfaceOpacity, 0.001));
     expect(theme.appBarTheme.backgroundColor?.a, closeTo(kWallpaperSurfaceOpacity, 0.001));
     expect(theme.navigationRailTheme.backgroundColor?.a, closeTo(kWallpaperSurfaceOpacity, 0.001));
     expect(theme.navigationBarTheme.backgroundColor?.a, closeTo(kWallpaperSurfaceOpacity, 0.001));
-    expect(theme.cardTheme.color?.a, closeTo(kWallpaperSurfaceOpacity, 0.001));
     expect(theme.chipTheme.backgroundColor?.a, closeTo(kWallpaperSurfaceOpacity, 0.001));
+  });
+
+  testWidgets('cards stay much more solid than the chrome', (tester) async {
+    // Cards carry the text: a card must read the same over a bright and a dark
+    // part of the picture, and the settings list reads this colour too.
+    final ThemeData theme = await _themeUnder(tester, ownsCanvas: true);
+
+    expect(theme.cardTheme.color?.a, closeTo(kWallpaperCardOpacity, 0.001));
+    expect(theme.cardColor.a, closeTo(kWallpaperCardOpacity, 0.001));
+    expect(kWallpaperCardOpacity, greaterThan(kWallpaperSurfaceOpacity));
   });
 
   testWidgets('dialogs, menus and sheets keep their opaque surfaces', (tester) async {

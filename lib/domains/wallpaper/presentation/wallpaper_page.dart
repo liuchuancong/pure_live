@@ -53,11 +53,7 @@ class _WallpaperPageState extends State<WallpaperPage> {
 
     return Scaffold(
       backgroundColor: Colors.transparent,
-      appBar: AppBar(
-        title: Text(i18n('ui_background_settings')),
-        backgroundColor: Colors.transparent,
-        surfaceTintColor: Colors.transparent,
-      ),
+      appBar: AppBar(title: Text(i18n('ui_background_settings'))),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 32),
         children: [

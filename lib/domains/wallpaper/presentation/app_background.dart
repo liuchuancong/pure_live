@@ -103,21 +103,23 @@ class WallpaperCanvasTheme extends StatelessWidget {
 
 /// The theme pages use while a wallpaper owns the canvas.
 ///
-/// Only the page chrome is washed - cards, app bars, the rails, chips and the
-/// paging bar - so the picture reads through them. The colour scheme itself is
+/// The page chrome is washed so the picture reads through it; cards are washed
+/// much less, because they carry the text a user reads and must look the same
+/// over a bright and a dark part of the same picture. The colour scheme itself is
 /// left alone on purpose: dialogs, popup menus, dropdowns and sheets take their
 /// stock opaque surfaces from it, and a picture showing through a menu is
 /// unreadable rather than pretty (explicit user feedback).
 ThemeData wallpaperChromeTheme(ThemeData base) {
   final ColorScheme scheme = base.colorScheme;
   Color wash(Color color) => color.withValues(alpha: kWallpaperSurfaceOpacity);
+  Color washCard(Color color) => color.withValues(alpha: kWallpaperCardOpacity);
   return base.copyWith(
     scaffoldBackgroundColor: Colors.transparent,
     pageTransitionsTheme: wallpaperPageTransitions,
     // `Material` widgets without a colour of their own paint this one.
     canvasColor: wash(base.canvasColor),
     // The desktop paging bar paints `cardColor`.
-    cardColor: wash(base.cardColor),
+    cardColor: washCard(base.cardColor),
     appBarTheme: base.appBarTheme.copyWith(backgroundColor: wash(base.appBarTheme.backgroundColor ?? scheme.surface)),
     navigationRailTheme: base.navigationRailTheme.copyWith(
       backgroundColor: wash(base.navigationRailTheme.backgroundColor ?? scheme.surface),
@@ -125,7 +127,9 @@ ThemeData wallpaperChromeTheme(ThemeData base) {
     navigationBarTheme: base.navigationBarTheme.copyWith(
       backgroundColor: wash(base.navigationBarTheme.backgroundColor ?? scheme.surface),
     ),
-    cardTheme: base.cardTheme.copyWith(color: wash(base.cardTheme.color ?? scheme.surfaceContainerLow)),
+    // `buildModernCard` (the settings and background lists) reads this colour,
+    // so both lists stay identical over any picture.
+    cardTheme: base.cardTheme.copyWith(color: washCard(base.cardTheme.color ?? scheme.surfaceContainerLow)),
     chipTheme: base.chipTheme.copyWith(
       backgroundColor: wash(base.chipTheme.backgroundColor ?? scheme.surfaceContainerLow),
     ),
