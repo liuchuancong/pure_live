@@ -353,7 +353,7 @@ class IptvSite
     for (final url in urls) {
       final format = iptvStreamFormat(url);
       if (format != null) {
-        facts[url] = (format: format, codec: null, relativeChildren: false);
+        facts[url] = (format: format, codec: null, unresolvedChildren: false);
       }
     }
     return facts;

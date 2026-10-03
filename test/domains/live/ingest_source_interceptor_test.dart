@@ -71,8 +71,8 @@ void main() {
             _source(backup),
           ],
           streamFacts: const {
-            primary: (format: LiveStreamFormat.hls, codec: null, relativeChildren: true),
-            backup: (format: LiveStreamFormat.hls, codec: null, relativeChildren: false),
+            primary: (format: LiveStreamFormat.hls, codec: null, unresolvedChildren: true),
+            backup: (format: LiveStreamFormat.hls, codec: null, unresolvedChildren: false),
           },
           sourceQueryPolicies: {primary: HlsSourceQueryPolicy.fromSource(Uri.parse(primary))},
         ),
@@ -86,7 +86,7 @@ void main() {
       expect(transport.prepareCalls, 1);
       expect(transport.requestedUrl, primary);
       expect(transport.requestedHeaders, {'Cookie': 'a=b'});
-      expect(transport.requestedFacts?.relativeChildren, isTrue);
+      expect(transport.requestedFacts?.unresolvedChildren, isTrue);
       expect(transport.requestedPolicy, isNotNull);
     });
 

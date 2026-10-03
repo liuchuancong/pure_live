@@ -118,14 +118,18 @@ class TwitcastingSite extends LiveSite
     );
   }
 
-  /// `tc-hls` 的子清单写的是裸名（`media.95.mp4`）：原生解析器一旦丢了清单地址，
-  /// 就会把它们当成自己旁边的本地文件（`No protocol handler found to open URL
-  /// \tc.livehls\...\media.95.mp4`）。声明出来，取流侧就直接走回环改写，
-  /// 不必先探测一次清单。
+  /// `tc-hls` 的子条目写的是**绝对路径**（`/tc.livehls/v1/streams/<movie>/hls/<tier>/media.1744.mp4`，
+  /// `#EXT-X-MAP` 的 `init.*.mp4` 同样）：原生解析器一旦丢了清单地址，就会把它们当成
+  /// 自己旁边的本地文件（`No protocol handler found to open URL \tc.livehls\...\media.95.mp4`）。
+  /// 声明出来，取流侧直接走回环改写，不必先探测一次清单。
+  ///
+  /// 同一场直播的清单还会下发一个会话 cookie（`lvhls_ssid_<movie>`，限定在该流路径下、
+  /// 十分钟），分片请求不带它就 **401**——2026-10-04 实测：不带 401、带上 200。所以回环
+  /// 中继必须把清单拿到的 cookie 带到子请求上（`LoopbackIngestRelay` 的 `sessionCookies`）。
   @override
   Map<String, LiveStreamFacts> declareStreamFacts(List<String> urls) => <String, LiveStreamFacts>{
     for (final url in urls)
-      if (_isTwitCastingHost(url)) url: (format: LiveStreamFormat.hls, codec: null, relativeChildren: true),
+      if (_isTwitCastingHost(url)) url: (format: LiveStreamFormat.hls, codec: null, unresolvedChildren: true),
   };
 
   static bool _isTwitCastingHost(String url) {

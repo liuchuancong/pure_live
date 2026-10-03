@@ -20,7 +20,7 @@ Set<IngestNeed> ingestNeedsFor(LiveStreamFacts? facts) {
   if (facts.format == LiveStreamFormat.flv && codec == 'hevc') {
     needs.add(IngestNeed.legacyContainer);
   }
-  if (facts.relativeChildren) needs.add(IngestNeed.relativeChildren);
+  if (facts.unresolvedChildren) needs.add(IngestNeed.relativeChildren);
   return Set<IngestNeed>.unmodifiable(needs);
 }
 

@@ -247,10 +247,14 @@ enum LiveStreamFormat { flv, hls, other }
 
 /// What a site knows about one of its own play lines.
 ///
-/// [codec] is `avc` or `hevc` when the platform says so; [relativeChildren]
-/// marks an HLS playlist whose children are bare names, which a native resolver
-/// that loses the manifest URL cannot read.
-typedef LiveStreamFacts = ({LiveStreamFormat format, String? codec, bool relativeChildren});
+/// [codec] is `avc` or `hevc` when the platform says so. [unresolvedChildren]
+/// marks an HLS playlist whose children a native resolver cannot use as they
+/// stand — either bare names (`media.95.mp4`) or absolute paths
+/// (`/tc.livehls/...`). Both fail the same way: a reader that no longer knows the
+/// manifest URL resolves them against itself and hands the demuxer a Windows
+/// path. Which of the two it is changes nothing downstream, so one bool covers
+/// both.
+typedef LiveStreamFacts = ({LiveStreamFormat format, String? codec, bool unresolvedChildren});
 
 /// Optional per-line stream declaration for sites on the default resolve path.
 ///

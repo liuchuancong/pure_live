@@ -317,7 +317,7 @@ final class BaiduLiveSite extends LiveSite
         appliedQualityData: variant.id,
         // 线路自带容器与编码：HEVC-in-FLV 因此在取流侧走 FFmpeg 转封装，
         // 播放器与录制端都不需要认平台（上游 4.x 的 LivePlayLine.format/codec）。
-        streamFacts: {for (final url in urls) url: (format: format, codec: variant.codec, relativeChildren: false)},
+        streamFacts: {for (final url in urls) url: (format: format, codec: variant.codec, unresolvedChildren: false)},
       );
     }
     throw const BaiduLiveException(BaiduLiveFailure.mediaUnavailable);

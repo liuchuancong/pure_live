@@ -10,7 +10,7 @@ import 'package:pure_live/shared/platforms/twitcasting/twitcasting_site.dart';
 void main() {
   group('线路事实决定转流方式', () {
     test('FLV 里的 HEVC 交给本机 FFmpeg 转封装', () {
-      const facts = (format: LiveStreamFormat.flv, codec: 'hevc', relativeChildren: false);
+      const facts = (format: LiveStreamFormat.flv, codec: 'hevc', unresolvedChildren: false);
 
       expect(ingestNeedsFor(facts), contains(IngestNeed.legacyContainer));
       expect(requiresFfmpegRemux(facts), isTrue);
@@ -18,7 +18,7 @@ void main() {
     });
 
     test('裸名子清单走回环改写，不动 FFmpeg', () {
-      const facts = (format: LiveStreamFormat.hls, codec: null, relativeChildren: true);
+      const facts = (format: LiveStreamFormat.hls, codec: null, unresolvedChildren: true);
 
       expect(ingestNeedsFor(facts), contains(IngestNeed.relativeChildren));
       expect(requiresManifestRelay(facts), isTrue);
@@ -27,8 +27,8 @@ void main() {
 
     test('普通 AVC 线路保持直连', () {
       for (final facts in [
-        (format: LiveStreamFormat.hls, codec: 'avc', relativeChildren: false),
-        (format: LiveStreamFormat.flv, codec: 'avc', relativeChildren: false),
+        (format: LiveStreamFormat.hls, codec: 'avc', unresolvedChildren: false),
+        (format: LiveStreamFormat.flv, codec: 'avc', unresolvedChildren: false),
       ]) {
         expect(ingestNeedsFor(facts), isEmpty);
         expect(requiresFfmpegRemux(facts), isFalse);
@@ -37,7 +37,7 @@ void main() {
     });
 
     test('声明为 other 的单条 HTTP 流不当清单探测', () {
-      const facts = (format: LiveStreamFormat.other, codec: null, relativeChildren: false);
+      const facts = (format: LiveStreamFormat.other, codec: null, unresolvedChildren: false);
       final uri = Uri.parse('http://192.168.1.1:4022/udp/239.0.0.1:5000');
 
       expect(isDeclaredManifest(facts, uri), isFalse);
@@ -61,11 +61,11 @@ void main() {
         urls: [kept],
         sourceQueryPolicies: const {},
         streamFacts: const {
-          kept: (format: LiveStreamFormat.flv, codec: 'hevc', relativeChildren: false),
+          kept: (format: LiveStreamFormat.flv, codec: 'hevc', unresolvedChildren: false),
           'https://cdn.example.com/live/other.flv': (
             format: LiveStreamFormat.flv,
             codec: 'hevc',
-            relativeChildren: false,
+            unresolvedChildren: false,
           ),
         },
       );
@@ -114,13 +114,13 @@ void main() {
       expect(hevc.map((variant) => variant.id), containsAll(<String>['flv:1080:hevc', 'flv:0:hevc']));
 
       // 站点声明的事实因此把这条线路判给 FFmpeg
-      final facts = (format: LiveStreamFormat.flv, codec: hevc.first.codec, relativeChildren: false);
+      final facts = (format: LiveStreamFormat.flv, codec: hevc.first.codec, unresolvedChildren: false);
       expect(requiresFfmpegRemux(facts), isTrue);
 
       final avc = room.variants.where((variant) => variant.codec == 'avc').toList();
       expect(avc, isNotEmpty);
       expect(
-        requiresFfmpegRemux((format: LiveStreamFormat.flv, codec: avc.first.codec, relativeChildren: false)),
+        requiresFfmpegRemux((format: LiveStreamFormat.flv, codec: avc.first.codec, unresolvedChildren: false)),
         isFalse,
       );
     });
@@ -132,7 +132,7 @@ void main() {
       ]);
 
       expect(facts.keys, hasLength(2));
-      expect(facts.values.every((value) => value.relativeChildren), isTrue);
+      expect(facts.values.every((value) => value.unresolvedChildren), isTrue);
       expect(facts.values.every((value) => value.format == LiveStreamFormat.hls), isTrue);
       expect(facts.entries.every((entry) => requiresManifestRelay(entry.value)), isTrue);
     });

@@ -213,7 +213,7 @@ class BiliBiliSite
       startAt: video.start,
       // 轮播房播的是循环稿件（mp4/fmp4 单条 HTTP 响应），不是清单。
       streamFacts: {
-        for (final url in urls) url: (format: LiveStreamFormat.other, codec: null, relativeChildren: false),
+        for (final url in urls) url: (format: LiveStreamFormat.other, codec: null, unresolvedChildren: false),
       },
     );
   }
@@ -406,7 +406,7 @@ class BiliBiliSite
       facts[candidate.url] = (
         format: _streamFormatOf(candidate.format, candidate.url),
         codec: codec.isEmpty ? null : codec,
-        relativeChildren: false,
+        unresolvedChildren: false,
       );
     }
     return LivePlayUrlResolution(
