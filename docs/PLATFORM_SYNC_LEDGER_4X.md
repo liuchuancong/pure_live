@@ -46,6 +46,32 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | tiktok | 5 | 本轮已摘取（见下） |
 | inke / xiaohongshu / weibo / liveme | 4 | 四站均已摘取（见下） |
 
+## 待实施：B 站轮播 `play_time` 起播偏移（方案已定）
+
+上游语义：`getRoundPlayVideo` 的 `data.play_time` 是**已经播过的秒数**，播放应从那里开始
+（非数字/负数从 0 开始；回答自带的 `play_url` 是死链，不读）。
+
+已核实的三层现状：
+- 站点层：`parseRoundPlayVideo` 只返回 `(bvid, cid)`，丢掉了 `play_time`；
+  `LivePlayUrlResolution` 没有起播位置字段
+- 本仓播放层：`PlaybackSource`（`UrlPlaybackSource`/`OwnedPlaybackSource`）没有位置字段，
+  整条 playback 路径搜不到 `seek`/`startPosition`
+- `F:\media_core`：`PlayerAdapter` 有 `open(PlayerSource)` 与 `seek(Duration)`，
+  但 **`open` 不接受起播位置**，只能"打开完成后 seek 一次"
+
+实施步骤（按顺序，一处不漏）：
+1. `bilibili_site.dart`：`parseRoundPlayVideo` 多返回 `start`（`Duration`，非数字/≤0 → 0）；
+   `_resolveCarouselVideo` 放进 `LivePlayUrlResolution`
+2. `live_site.dart`：`LivePlayUrlResolution` 新增 `startAt`（默认 `Duration.zero`，向后兼容）
+3. `player_controller.dart`：`PlaybackSourceRefreshResult` 带上 `startAt`（与现有
+   `refreshAt`/`invalidAt` 同一处、同一条通道）
+4. 结果消费处（source commit → open）：把 `startAt` 交给源/播放会话
+5. 播放器：open 完成后的第一个状态事件里 `if (startAt > 0) seek(startAt)`，**每条源只做一次**
+   （重连/切档不重复跳）
+
+验证要求：全仓 `flutter analyze --no-pub` + `tool/validate_architecture.py --strict`；
+真机确认需观察轮播房首帧是否落在当前进度上。
+
 ## bilibili
 
 上游相关提交（按时间）：
@@ -54,7 +80,7 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | --- | --- | --- |
 | `0811c21f7` | 心跳人气占位值 1 不再顶掉详情里的真实热度（REG-BILIBILI-015） | **已同步** |
 | `12d03ac89` | `live_status` 2 = 轮播（详情/刷新/搜索）、`startedAt`、付费房限制 | **部分同步**：状态与轮播取流已做；付费房限制已做（`special_type` 1 且在播 → paid）；**`startedAt` 详情已做**（`room_info.live_start_time` → UTC），搜索行的 `live_time`（北京时间文本）与轮播 `play_time` 起点未做 |
-| `8d7da2dfc` | 轮播视频播放（`getRoundPlayVideo` + `x/player/playurl`）、`LivePlayUrlResolution.start` | **部分同步**：取流已做；`start` 起点（`play_time` 续播）未做 |
+| `8d7da2dfc` | 轮播视频播放（`getRoundPlayVideo` + `x/player/playurl`）、`LivePlayUrlResolution.start` | **部分同步**：取流已做；`start` 起点（`play_time` 续播）未做 —— 方案已定，见下 |
 | `81733c1e6` | 游客可用分区页、搜索分区标签、弹幕撤回与公告 | **已同步（撤回与公告）**：公告的 op-24 回执本仓早有；**撤回整条链路已打通** —— 公共模型 `LiveMessageType.retraction` + `LiveRetraction`（观众/单条 id/全部）、B 站解析（`RECALL_DANMU_MSG` 排在 `DANMU_MSG` 前、`recall_type` 2/3、`SUPER_CHAT_MESSAGE_DELETE` 按 id）、显示层（聊天列表 `removeDanmakuWhere` + 画面弹幕按条撤下）。为让画面也能按条撤，引擎侧在 `E:\software\flame_barrage` 新增 `BarrageItem.id` 与 `BarrageController.retractWhere`（该仓库提交 `efada9c`），`pure_live` 改为该仓库的路径依赖。分区页/搜索标签待对照 |
 | `e8a00e0d4` | 弹幕在线人数与礼物上报 | 待办 |
 | `2eea8022a` | 游客名提示、粉丝牌与头像 | 待办 |
