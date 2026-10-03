@@ -66,17 +66,23 @@ class YouTubeSite extends LiveSite
 
   LiveRoom _card(YouTubeRoom room, {required bool includeMedia}) {
     final current = room.currentViewers?.toString();
+    // 房间身份是**频道**（上游 4.x"频道即房间"）：换场直播后仍是同一个房间，收藏与
+    // 历史因此跨场一致。当前这场直播只是它的属性（`data` 里的 `videoId`）。
+    final channelId = room.channelId.trim();
+    final roomId = channelId.isEmpty ? room.videoId : channelId;
     return LiveRoom(
       platform: id,
-      roomId: room.videoId,
-      userId: room.channelId,
+      roomId: roomId,
+      userId: channelId,
       nick: room.author,
       title: room.title,
       avatar: room.thumbnail,
       cover: room.thumbnail,
       area: room.category.isEmpty ? 'YouTube Live' : room.category,
       introduction: room.description,
-      link: YouTubeLink.videoUrl(room.videoId),
+      link: channelId.isEmpty
+          ? YouTubeLink.videoUrl(room.videoId)
+          : 'https://www.youtube.com/channel/$channelId/live',
       liveStatus: switch (room.state) {
         YouTubeState.live => LiveStatus.live,
         YouTubeState.offline => LiveStatus.offline,
@@ -92,17 +98,26 @@ class YouTubeSite extends LiveSite
     );
   }
 
-  String _videoId(LiveRoom liveroom) {
+  /// 取流要的是**当前在播的视频**：详情里已经有了（`data.videoId`）；旧收藏/搜索结果
+  /// 里是视频 id 时直接用；房间身份是频道（`UC…` 或 `@handle`）时，用一次频道页请求
+  /// 换出它当前在播的那一场。
+  Future<String> _videoId(LiveRoom liveroom) async {
     final roomId = liveroom.roomId ?? '';
     final platform = liveroom.platform ?? '';
     if (platform.trim().toLowerCase() != id) throw const YouTubeException(YouTubeFailure.identity);
+    final data = liveroom.data;
+    if (data is YouTubeRoom && data.videoId.isNotEmpty) return data.videoId;
     final normalized = YouTubeLink.normalizeVideoId(roomId);
-    if (normalized == null) throw const YouTubeException(YouTubeFailure.identity);
-    return normalized;
+    if (normalized != null) return normalized;
+    final reference = YouTubeLink.parse(
+      roomId.startsWith('@') ? 'https://www.youtube.com/$roomId' : 'https://www.youtube.com/channel/$roomId',
+    );
+    if (reference == null) throw const YouTubeException(YouTubeFailure.identity);
+    return _api.resolveReference(reference);
   }
 
   Future<LiveRoom> _detail(LiveRoom liveroom, {required bool includeMedia}) async {
-    final data = await _api.room(_videoId(liveroom), includeMedia: includeMedia);
+    final data = await _api.room(await _videoId(liveroom), includeMedia: includeMedia);
     if (includeMedia && data.state == YouTubeState.live && data.streams.isEmpty) {
       throw const YouTubeException(YouTubeFailure.mediaUnavailable);
     }
@@ -151,11 +166,14 @@ class YouTubeSite extends LiveSite
   }
 
   YouTubeRoom _snapshot(LiveRoom liveroom) {
-    final roomId = _videoId(liveroom);
     final data = liveroom.data;
-    if (data is! YouTubeRoom || data.videoId != roomId || data.channelId != liveroom.userId) {
-      throw const YouTubeException(YouTubeFailure.identity);
-    }
+    if (data is! YouTubeRoom) throw const YouTubeException(YouTubeFailure.identity);
+    // 房间身份可能是频道（新条目）或视频 id（旧收藏/搜索结果）：两种都认，但必须是
+    // 这一份详情自己的。
+    final identity = liveroom.roomId ?? '';
+    final matchesChannel = data.channelId.isNotEmpty && identity == data.channelId;
+    final matchesVideo = identity == data.videoId;
+    if (!matchesChannel && !matchesVideo) throw const YouTubeException(YouTubeFailure.identity);
     if (data.state == YouTubeState.unknown) throw const YouTubeException(YouTubeFailure.unknownState);
     if (data.state != YouTubeState.live || liveroom.isExplicitlyOfflineNow || data.streams.isEmpty) {
       throw const YouTubeException(YouTubeFailure.mediaUnavailable);
@@ -187,7 +205,8 @@ class YouTubeSite extends LiveSite
   Future<LivePlayUrlResolution> _resolve(LiveRoom liveroom, LivePlayQuality quality, {required bool refresh}) async {
     var room = _snapshot(liveroom);
     if (refresh) {
-      room = _snapshot(await getRoomDetail(LiveRoom(roomId: room.videoId, platform: id)));
+      // 保持房间身份（频道或视频 id）：频道的房间重新解析它当前在播的那一场。
+      room = _snapshot(await getRoomDetail(LiveRoom(roomId: liveroom.roomId, platform: id)));
     }
     final qualityId = quality.selectionId.toString();
     for (final stream in room.streams) {

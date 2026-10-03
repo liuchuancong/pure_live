@@ -133,7 +133,7 @@ chat/comment/PK/礼物/付费问答/撤回/公告）——这些站点在本仓�
 | ② 礼物进弹幕区 | **完成（B 站）** | 解析 `SEND_GIFT`/`COMBO_SEND`/`GUARD_BUY` + 列表分支（`11a47144e`）；其余站点的 gift 上报可复用同一分支 |
 | ② 消息表情图片 | **完成** | 模型 `43540cc10`、B 站解析 `9fb1ef1da`、列表渲染 `c4699764d`、画面渲染 `f587c26a3`、快手表情表 `c217b86bc` + `dffed3f69` |
 | ② 公告头条 | **完成（B 站 + 虎牙结束通知）** | `LiveMessageType.notice` + B 站 `WARNING`/`CUT_OFF`（`6e79b8bda`）；虎牙 `uri 8001` 结束直播（`133725ed7`）。虎牙 board 面板解析（通知自带面板时省一次请求）属优化，未做 |
-| ③ YouTube 频道即房间 | **功能已等价，身份未翻转** | 链接层有 `YouTubeLinkKind.channel`；`resolveReference` 能把频道解析成当前直播。翻转身份需连迁移一起做，建议不做（见下） |
+| ③ YouTube 频道即房间 | **已做（身份翻转）** | `_card` 的房间身份改为频道（`room.channelId`，没有才退回视频 id），链接给频道直播页；取流要的视频 id 由 `_videoId()` 给出（详情里的 `data.videoId` → 旧 key 的视频 id → 频道身份则用 `resolveReference` 换当前在播）；`_snapshot` 同时认频道与视频两种 key；刷新保持原房间身份 |
 | ③ niconico 房间即主播 | **部分**：链接形态与主播链接可打开已完成（`abb4c7269`、`bb1f6fbae`）；**身份翻转未做**（与列表 `providerType` 映射是同一件事，需连迁移一起做） |
 | ④ bilibili 付费房限制 | **完成** | `7f31d7756` |
 | ④ bilibili 详情开播时间 | **完成** | `021741490` |
