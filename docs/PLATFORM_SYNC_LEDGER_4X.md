@@ -109,7 +109,7 @@ uri 2001314 的消息体就是一个 GameEventMessageBoardPanel：
 | `0d63d2d3c` | 播放线路"声明图片尺寸"（F.1b，core+player） | **已做**：抖音档位解析平台声明的画面尺寸（`main.width/height` → `sdk_params.width/height` → `sdk_params.resolution` → 描述里的 `resolution`，尺寸 120–16384、宽高比 0.30–3.50）→ `LivePlayQuality.declaredAspectRatio` → `LivePlayUrlResolution` → `PlaybackSourceQualitySelection` → `LivePlayerFacade.currentPresentationAspectRatio` 在解码器报出真实尺寸前用它排版（没有才退回 16:9） |
 | `51c28301b` | Twitch `RECONNECT`、撤回（`CLEARMSG`）、公告（`NOTICE`）、过期 cookie | **已完成**：撤回（`7c8b7f599`）、Cookie 失效提示 + 匿名回退（`22f659782`）、`USERNOTICE` 订阅/续订/赠送/突袭/公告（进列表当通知；观众附带的话作为该观众的聊天紧跟其后）；`RECONNECT` 与 cookie 解析本仓早有 |
 | `f12bf0f8c` | socket 运行时"握手失败"钩子（M5.F B-1） | **不适用（无消费者）**：上游这个钩子唯一的用户是 **missevan 的会话续期**（握手被拒后换新 cookie 再试）；本仓的 `WebScoketUtils` 在构造时拿 `headers`、没有"每次握手取头"的通道，而本仓又没有 missevan 聊天引擎（EmptyDanmaku，用户决定不新增引擎）。此时移植就是**没有调用方的死代码**。若将来按"包含引擎"补 missevan，再连同这个钩子一起做 |
-| `ff406a24f` | 虎牙公告栏面板（通知自带 board 时省一次请求） | **未做（已把上游结构抄下来，见下）**：本仓现在是"收到 2001314 通知 → 后台补拉留言板（带重试窗口）"，功能正确、只是每条通知多 1–4 个请求 |
+| `ff406a24f` | 虎牙公告栏面板（通知自带 board 时省一次请求） | **已做**：`uri 2001314` 的消息体先当留言板面板解（`GameEventMessageBoardPanel`）；是面板就直接上报它的条目（空面板 = 留言板已空，不再请求），不是面板（没有 tag 1 列表 / 解不开 / 空 body）才照旧后台补拉。字段映射与 WUP 补拉抽成共用的 `huyaSuperChatsFromPanel`，去重仍走既有 `_rememberSuperChat`；新增 `test/shared/platforms/huya_headline_panel_test.dart`（5 个用例，用本仓 Tars 写入器拼面板，不依赖上游 fixture） |
 | `734eb8098` | 搜索按平台上报的粉丝数排序 | **基本已同步**：本仓早有 `LiveSearchSortMode.followers`（`search_ranking.dart`，粉丝 → 人气 → 平台顺序），且 bilibili/kuaishou/cc/chzzk/acfun/baidulive/kugoulive/liveme/picarto/17LIVE 等搜索卡片都填了 `followers`；本轮补上 **Twitch** 搜索卡片（`node.followers.totalCount`，持久化查询给了才有） |
 
 ### B. 不适用：用户已决定不为 EmptyDanmaku 站点新写聊天引擎

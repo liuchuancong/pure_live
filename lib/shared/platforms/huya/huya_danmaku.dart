@@ -10,6 +10,7 @@ import 'package:pure_live/core/network/web_socket_util.dart';
 import 'package:pure_live/shared/platforms/live_danmaku.dart';
 import 'package:pure_live/core/tars/codec/tars_input_stream.dart';
 import 'package:pure_live/core/tars/codec/tars_output_stream.dart';
+import 'package:pure_live/core/tars/game_event_message_board_panel.dart';
 
 // ignore_for_file: no_leading_underscores_for_local_identifiers
 
@@ -219,6 +220,25 @@ class HuyaDanmaku implements LiveDanmaku {
         ),
       );
     } else if (uri == 2001314) {
+      // 头条通知（`uri 2001314`）的消息体**可能**就是留言板面板（上游 C-9）：是面板就
+      // 直接用它的条目（每条留言立刻上报，空面板表示留言板已空、不必再请求），不是
+      // 面板才照旧后台补拉。
+      final fromPanel = HuyaDanmaku.superChatsFromPanel(payload);
+      if (fromPanel != null) {
+        for (final chat in fromPanel) {
+          if (!_rememberSuperChat(chat)) continue;
+          onMessage?.call(
+            LiveMessage(
+              type: LiveMessageType.superChat,
+              userName: 'SUPER_CHAT_MESSAGE',
+              message: 'SUPER_CHAT_MESSAGE',
+              color: LiveMessageColor.white,
+              data: chat,
+            ),
+          );
+        }
+        return;
+      }
       // The notification can arrive before the message-board WUP result is
       // updated. Fetching once here loses that SC until a manual room refresh;
       // awaiting the HTTP call also serializes unrelated websocket messages.
@@ -242,6 +262,24 @@ class HuyaDanmaku implements LiveDanmaku {
         await stop();
       }
     }
+  }
+
+  /// `uri 2001314` 的消息体当留言板面板解（上游 C-9）：是面板就返回它的条目
+  /// （**空列表表示留言板已空**，调用方不必再请求），不是面板返回 null（调用方照旧
+  /// 后台补拉）。字段映射与 WUP 补拉共用 `huyaSuperChatsFromPanel`。
+  @visibleForTesting
+  static List<LiveSuperChatMessage>? superChatsFromPanel(List<int> payload, {DateTime? now}) {
+    if (payload.isEmpty) return null;
+    final GameEventMessageBoardPanel panel;
+    try {
+      final bytes = Uint8List.fromList(payload);
+      // 不是面板（连 tag 1 的列表都没有）时不能当成"留言板已空"，那样会丢掉醒目留言。
+      if (!TarsInputStream(bytes).skipToTag(1)) return null;
+      panel = GameEventMessageBoardPanel()..readFrom(TarsInputStream(bytes));
+    } catch (_) {
+      return null;
+    }
+    return huyaSuperChatsFromPanel(panel, now: now);
   }
 
   void _scheduleSuperChatRefresh(int generation) {
