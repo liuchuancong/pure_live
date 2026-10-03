@@ -9,6 +9,7 @@ import 'package:pure_live/core/models/live_room.dart';
 import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/core/network/request_scope.dart';
 import 'package:pure_live/shared/platforms/live_directory.dart';
+import 'picarto_danmaku.dart';
 
 enum PicartoFailure { transport, access, rateLimited, service, notFound, schema, cancelled, qualityUnavailable }
 
@@ -348,6 +349,8 @@ class PicartoApi {
       liveStatus: online ? LiveStatus.live : LiveStatus.offline,
       // 平台明说 private 就按 private，明说不是就 none，没说就 null（上游 11-9）。
       restriction: private is bool ? (private ? LiveRestriction.private : LiveRestriction.none) : null,
+      // 弹幕参数（上游 M5.10）：频道名，用来换匿名 JWT；在播才有。
+      danmakuData: online ? PicartoDanmakuArgs(channelName: name) : null,
     );
   }
 
