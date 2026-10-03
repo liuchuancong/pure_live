@@ -6,6 +6,7 @@ import 'package:dio/dio.dart';
 import 'package:pure_live/core/models/live_area.dart';
 import 'package:pure_live/core/models/live_room.dart';
 import 'package:pure_live/core/network/http_client.dart';
+import 'missevan_danmaku.dart';
 import 'package:pure_live/core/network/request_scope.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
 
@@ -298,6 +299,8 @@ class MissevanApi {
       // evidence of concurrent viewers; attention_count is followers only.
       status: open == 1,
       liveStatus: open == 1 ? LiveStatus.live : LiveStatus.offline,
+      // 弹幕参数（上游 M5.12）：直播间号；在播时才给。
+      danmakuData: open == 1 ? MissevanDanmakuArgs(roomId: id) : null,
     );
   }
 
