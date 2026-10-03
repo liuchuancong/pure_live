@@ -46,6 +46,43 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | tiktok | 5 | 本轮已摘取（见下） |
 | inke / xiaohongshu / weibo / liveme | 4 | 四站均已摘取（见下） |
 
+## 未同步清单（2026-10 机械盘点 + 逐项核实）
+
+方法：`git log --no-merges 4802611aa..wzgrx/master -- packages/live_core/lib/src/sites packages/live_danmaku/lib/src`
+共 **204** 条站点层提交，其中 **131** 条在本文档里没有按 SHA 出现（本文档按主题而非逐 SHA 记账）。
+按主题分类并逐项核实后：
+
+### A. 真正还没同步（建议做）
+| 上游提交 | 内容 | 本仓现状（已核实） |
+| --- | --- | --- |
+| `2eea8022a` 剩余 | 发送者头像 `user.base.face` → `DanmakuSender(avatar)` | **无**：消息模型里没有"发送者头像"载体（粉丝牌部分已做 `41dfe0616`） |
+| `2eea8022a` 剩余 | 游客/登录失效提示（列表顶部一行 + 去登录） | **无** |
+| `0d63d2d3c` | 播放线路"声明图片尺寸"（F.1b，core+player） | **无**：全仓搜不到 `pictureWidth`/`pictureHeight`/`declaredPicture` |
+| `51c28301b` | Twitch `RECONNECT`、撤回（`CLEARMSG`）、公告（`NOTICE`）、过期 cookie | **部分**：`onReconnect` 与 cookie 解析已有；**未见** `CLEARMSG`/`CLEARCHAT` 撤回与 `NOTICE` 公告处理 |
+| `f12bf0f8c` | socket 运行时"握手失败"钩子（M5.F B-1） | **待核**：`web_socket_util.dart` 有握手实现，未确认是否把失败单独上报 |
+| `ff406a24f` | 虎牙公告栏面板（通知自带 board 时省一次请求） | **未做**（结束直播 `uri 8001` 已做 `133725ed7`） |
+| `734eb8098` | 搜索按平台上报的粉丝数排序 | **待核**：模型有 `followers` 字段，搜索排序未见使用 |
+
+### B. 不适用：用户已决定不为 EmptyDanmaku 站点新写聊天引擎
+所有 M5.x/M5.F "新增某站聊天引擎"（BIGO、Kugou、LOOK、百度、六间房、JD、Steam、FC2、
+PandaTV、CHZZK、SHOWROOM、KilaKila、Missevan、TwitCasting、AcFun、17LIVE、Picarto 等的
+chat/comment/PK/礼物/付费问答/撤回/公告）——这些站点在本仓是 `EmptyDanmaku`（本仓只有 8 个
+引擎：bilibili、douyin、douyu、huya、kuaishou、soop、twitch、yy）。**但这些站点的站点层
+改动（限制、开播时间、取流等）已在前一个 goal 同步。**
+
+### C. 不适用：本仓没有该站点
+- Kick（`3381dac14` 恢复 Kick、`96e032864` Pusher 公共聊天）：本仓无 `kick` 目录
+- Kugou 的 PK 聊天（`7f8ee2553`）：本仓有 `kugoulive` 目录但没有弹幕引擎（同 B 类）
+
+### D. 上游做了、本仓按用户决定不做（已记账）
+- YouTube / niconico 房间身份翻转（③）
+- B 站轮播 `play_time` 起播偏移第 4-5 步（需新增播放层 seek 通道）
+
+### E. 本次会话已同步（供对照）
+`2eea8022a`（粉丝牌）、`40dc22279`（打码名不可屏蔽）、`fffd28b31`（表情图片）、
+`aadad46ef`（占位字符）、`8d7da2dfc`（轮播取流）、`81733c1e6`（撤回与公告）、
+`8eca75a32`/`ce7de2d01`（礼物进弹幕区）、`1ceb4f290`（撤回/公告消息模型）
+
 ## 同步状态总览（2026-10 收尾核对）
 
 | 目标项 | 状态 | 证据 / 提交 |
