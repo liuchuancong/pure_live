@@ -195,6 +195,24 @@ class TwitchDanmaku implements LiveDanmaku {
         continue;
       }
 
+      if (line.contains(' USERNOTICE ')) {
+        // 订阅、续订、赠送、突袭、管理员的公告（上游 B-7 候选 3）：按 `msg-id`
+        // 分类，`sharedchatnotice` 再看 `source-msg-id`。公告的文字在行尾参数里
+        // （它的 `system-msg` 是空的），其余用 `system-msg`。
+        final msgId = (tags['msg-id'] ?? '').trim();
+        final kind = msgId == 'sharedchatnotice' ? (tags['source-msg-id'] ?? '').trim() : msgId;
+        final paramStart = line.indexOf(' :', line.indexOf(' USERNOTICE '));
+        final attached = paramStart < 0 ? '' : line.substring(paramStart + 2).trim();
+        final isAnnouncement = kind == 'announcement';
+        final text = isAnnouncement ? attached : (tags['system-msg'] ?? '').trim();
+        if (text.isNotEmpty) messages.add(_noticeFromTags(text, tags));
+        // 观众附带的话（续订留言、连续观看时说的话）作为这个观众的一条聊天紧跟其后，
+        // 于是它同样能被 CLEARMSG/CLEARCHAT 撤回、同样飞过画面。公告的文字已经是通知，
+        // 不再重复成聊天。
+        if (!isAnnouncement && attached.isNotEmpty) messages.add(_chatFromTags(attached, tags));
+        continue;
+      }
+
       if (!line.contains(' PRIVMSG ')) continue;
 
       final messageStart = line.indexOf(' :', line.indexOf(' PRIVMSG '));
@@ -230,6 +248,48 @@ class TwitchDanmaku implements LiveDanmaku {
     color: LiveMessageColor.white,
     data: target,
   );
+
+  /// 订阅/突袭/公告这一类由 `USERNOTICE` 来的提示：进弹幕列表当系统消息显示。
+  /// 带上 `id`/`user-id`/时间/颜色，于是 `CLEARMSG`、`CLEARCHAT` 一样能撤回它。
+  static LiveMessage _noticeFromTags(String text, Map<String, String> tags) {
+    final timestamp = int.tryParse(tags['tmi-sent-ts'] ?? '');
+    return LiveMessage(
+      type: LiveMessageType.notice,
+      userName: _displayName(tags),
+      userId: tags['user-id'] ?? '',
+      messageId: tags['id'] ?? '',
+      message: text,
+      sentAt: timestamp == null ? null : DateTime.fromMillisecondsSinceEpoch(timestamp),
+      color: _color(tags),
+    );
+  }
+
+  /// 通知里观众附带的那句话（续订留言等）——按一条普通聊天处理。
+  static LiveMessage _chatFromTags(String content, Map<String, String> tags) {
+    final timestamp = int.tryParse(tags['tmi-sent-ts'] ?? '');
+    return LiveMessage(
+      type: LiveMessageType.chat,
+      message: content,
+      userName: _displayName(tags),
+      userId: tags['user-id'] ?? '',
+      messageId: tags['id'] ?? '',
+      sentAt: timestamp == null ? null : DateTime.fromMillisecondsSinceEpoch(timestamp),
+      color: _color(tags),
+    );
+  }
+
+  static String _displayName(Map<String, String> tags) {
+    final display = tags['display-name']?.trim() ?? '';
+    if (display.isNotEmpty) return display;
+    final login = tags['login']?.trim() ?? '';
+    return login.isEmpty ? 'Twitch' : login;
+  }
+
+  static LiveMessageColor _color(Map<String, String> tags) {
+    final colorText = (tags['color'] ?? '').replaceFirst('#', '');
+    final value = int.tryParse(colorText, radix: 16) ?? 0xFFFFFF;
+    return LiveMessageColor.numberToColor(value);
+  }
 
   static String _decodeTag(String value) => value
       .replaceAll(r'\s', ' ')
