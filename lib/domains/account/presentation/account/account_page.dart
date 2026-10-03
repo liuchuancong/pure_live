@@ -171,7 +171,8 @@ class AccountPage extends GetView<AccountController> {
                     ? _showLogoutDialog(
                         context,
                         accountName: i18n('site_douyu'),
-                        onConfirm: () => cookie.douyuCookie.v = '',
+                        // 整组一起清：只抹 cookie 会把长期续期密钥留在本地与备份里。
+                        onConfirm: cookie.clearDouyuSession,
                       )
                     // A cookie that no longer holds a session is replaced, not
                     // signed out of: the editor is where the viewer fixes it.
