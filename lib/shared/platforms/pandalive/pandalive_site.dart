@@ -1,18 +1,18 @@
-import 'package:dio/dio.dart';
-import 'package:pure_live/core/models/live_area.dart';
-import 'package:pure_live/core/models/live_room.dart';
-import 'package:pure_live/shared/platforms/empty_danmaku.dart';
-import 'package:pure_live/shared/platforms/live_danmaku.dart';
-import 'package:pure_live/shared/platforms/live_directory.dart';
-import 'package:pure_live/shared/platforms/live_search.dart';
-import 'package:pure_live/shared/platforms/live_site.dart';
-import 'package:pure_live/core/models/live_category.dart';
-import 'package:pure_live/core/models/live_play_quality.dart';
-import 'package:pure_live/core/utils/i18n.dart';
-import 'package:pure_live/shared/platforms/live_external_room.dart';
-
 import 'pandalive_api.dart';
 import 'pandalive_link.dart';
+
+import 'package:dio/dio.dart';
+import 'package:pure_live/core/utils/i18n.dart';
+import 'package:pure_live/core/models/live_area.dart';
+import 'package:pure_live/core/models/live_room.dart';
+import 'package:pure_live/core/models/live_category.dart';
+import 'package:pure_live/shared/platforms/live_site.dart';
+import 'package:pure_live/shared/platforms/live_search.dart';
+import 'package:pure_live/shared/platforms/live_danmaku.dart';
+import 'package:pure_live/core/models/live_play_quality.dart';
+import 'package:pure_live/shared/platforms/empty_danmaku.dart';
+import 'package:pure_live/shared/platforms/live_directory.dart';
+import 'package:pure_live/shared/platforms/live_external_room.dart';
 
 class PandaLiveSite extends LiveSite
     implements

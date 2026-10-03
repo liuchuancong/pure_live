@@ -95,9 +95,17 @@ class _BackupSectionPickerPageState extends State<BackupSectionPickerPage> {
               ],
             ),
           ),
-          const SizedBox(height: 20),
-          SafeArea(
-            top: false,
+          const SizedBox(height: 12),
+        ],
+      ),
+      // 确认按钮固定在底部：模块多起来时列表会滚动，按钮不该跟着滚走。
+      bottomNavigationBar: Material(
+        color: theme.colorScheme.surface,
+        child: SafeArea(
+          top: false,
+          minimum: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+          child: SizedBox(
+            width: double.infinity,
             child: FilledButton(
               key: const ValueKey('backup-section-confirm'),
               onPressed: _selected.isEmpty
@@ -106,8 +114,7 @@ class _BackupSectionPickerPageState extends State<BackupSectionPickerPage> {
               child: Text(i18n('confirm')),
             ),
           ),
-          const SizedBox(height: 24),
-        ],
+        ),
       ),
     );
   }
