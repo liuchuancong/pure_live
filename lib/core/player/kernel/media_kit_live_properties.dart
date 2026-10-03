@@ -2,9 +2,11 @@ import 'dart:io';
 import 'dart:developer' as developer;
 
 import 'package:media_core/media_core.dart';
+import 'package:media_core_ingest/media_core_ingest.dart' show isHlsManifestUri;
 import 'package:media_core_media_kit/media_core_media_kit.dart';
 import 'package:pure_live/core/player/kernel/player_preset.dart';
 import 'package:pure_live/core/player/core/playback_proxy_policy.dart';
+import 'package:pure_live/core/player/core/playback_source_hints.dart';
 import 'package:pure_live/core/player/super_resolution.dart';
 import 'package:media_core_media_kit/media_core_media_kit.dart' as mkv;
 import 'package:pure_live/core/index.dart';
@@ -195,6 +197,47 @@ abstract final class MediaKitLiveProperties {
   /// initializes later.
   static Future<void> applyTo(MediaKitPlayerAdapter adapter) async {
     adapter.applyEngineOptions(await engineOptions());
+  }
+
+  /// 按源决定的 mpv 属性。
+  ///
+  /// 装配期那张表整个引擎生命周期只有一份，而这两项每条源都不一样：本机输入不能
+  /// 走代理，容器格式只有解析播放地址的平台知道。[proxy] 由调用方从
+  /// `PlaybackProxyPolicy` 取好再传进来，判定本身就是纯函数。
+  static Map<String, String> sourceProperties({
+    required Uri uri,
+    required String? declaredFormat,
+    required String proxy,
+  }) {
+    final bool privateInput = isPrivatePlaybackInput(uri);
+    // 声明优先，其次 URL 形状（Twitch 那种把签名塞进路径的 `/v1/playlist/….m3u8`
+    // 也认得出）。本机输入两者都不看：探测本机几乎不要钱，而 Dart 重写的 HEVC FLV
+    // 中继输出的根本不是 HLS，指死解复用器只会把它打死。
+    final String? format = privateInput ? null : declaredFormat ?? (isHlsManifestUri(uri) ? 'hls' : null);
+    return <String, String>{
+      'http-proxy': privateInput ? '' : proxy,
+      // 指死解复用器就跳过了 mpv 的格式探测：2MB 的 probesize 在高延迟线路上正好
+      // 吃掉"8 秒卡在 0ms 判死"的那份起播预算。空串是清除——引擎是跨源复用的，
+      // 上一条源强制的 hls 不能漏到这一条 FLV 上。
+      'demuxer-lavf-format': format == 'hls' ? 'hls' : '',
+    };
+  }
+
+  /// 把 [sourceProperties] 写到即将打开这条源的引擎上。
+  ///
+  /// 挂在 media_kit 适配器的 `beforeOpen`：引擎已经存在、还没拿到 URL，属性正好
+  /// 落在这次打开上，而且在打开窗口之外，引擎事件不会被误判成打开失败。
+  static Future<void> applyToSource(Player player, PlayerSource source) async {
+    final platform = player.platform;
+    if (platform is! NativePlayer) return;
+    final properties = sourceProperties(
+      uri: source.uri,
+      declaredFormat: declaredStreamFormatOf(source),
+      proxy: PlaybackProxyPolicy.currentNativeUrl(privateInput: false),
+    );
+    for (final entry in properties.entries) {
+      await platform.setProperty(entry.key, entry.value);
+    }
   }
 
   /// Whether the super-resolution shaders should mount on this machine.

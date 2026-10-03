@@ -7,6 +7,7 @@ import 'package:media_core_live/media_core_live.dart';
 import 'package:pure_live/core/models/live_room.dart';
 import 'package:pure_live/core/player/models/player_engine.dart';
 import 'package:pure_live/core/stream/hls_source_query_policy.dart';
+import 'package:pure_live/core/player/core/playback_source_hints.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
 import 'package:pure_live/shared/platforms/live_site.dart' show LiveStreamFacts;
 import 'package:pure_live/domains/live/domain/playback_source_interceptor.dart';
@@ -164,6 +165,9 @@ final class LivePlayerFacade {
                 uri: Uri.parse(url),
                 type: SourceType.live,
                 headers: SourceHeaders(headers),
+                // 平台解析播放地址时就知道每条线路的容器；随源带过去，引擎就不必
+                // 靠探测去猜——探测耗时在高延迟线路上正好吃掉起播预算。
+                metadata: playbackStreamFormatMetadata(streamFacts[url]?.format.name),
               ),
           ],
           streamFacts: streamFacts,
@@ -292,6 +296,7 @@ final class LivePlayerFacade {
                   uri: Uri.parse(url),
                   type: SourceType.live,
                   headers: SourceHeaders(current.headers),
+                  metadata: playbackStreamFormatMetadata(current.streamFacts[url]?.format.name),
                 ),
             ],
             streamFacts: current.streamFacts,

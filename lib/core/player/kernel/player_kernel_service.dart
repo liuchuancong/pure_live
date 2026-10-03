@@ -40,6 +40,8 @@ class PlayerKernelService {
       ..registerBackend(
         MediaKitAdapterFactory(
           customInputOpener: openOwnedInputOnKernelPlayer,
+          // 装配期的选项整个引擎一份；代理和容器格式是每条源一份，只能在打开前写。
+          beforeOpen: MediaKitLiveProperties.applyToSource,
           videoControllerConfigurationBuilder: MediaKitLiveProperties.buildVideoControllerConfiguration,
           // The app declares every tuning value it wants; the adapter applies
           // only what it is told.

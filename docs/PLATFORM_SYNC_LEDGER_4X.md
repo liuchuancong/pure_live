@@ -253,10 +253,59 @@ URL + headers 直接进引擎，清单改写与 HEVC 转封装都不生效。现
   空串要么 `http://` 端点）。`test/{core,domains,shared}` 63 项全绿，Analyze 0 项，
   `validate_architecture.py --strict` 通过。
 
-**已知约束**：ffmpeg/libmpv **不会**对 `127.0.0.1` 绕过代理（拿死代理实测会失败），所以播放器代理开着时，
-FFmpeg 回环中继的那一跳本地流量也会经过代理。本机 Clash 能正常回连（已实测），但一个拒绝本地目标的远端
-代理会把中继打死。真要兜底，得让中继源走 `kMediaKitCustomInputKey` 那条自有输入路径（`owned_input_opener`
-会先清代理再打开），代价是把取流接线绑死在 media_kit 一家。
+**曾经记在这里的约束已经修掉了**：ffmpeg/libmpv 不会对 `127.0.0.1` 绕过代理（拿死代理实测会失败），所以
+播放器代理开着时 FFmpeg 回环中继的那一跳本地流量也会经过代理——本机 Clash 能回连，但一个拒绝本地目标的
+远端代理会把中继打死。现在代理改成**按源**写（见下一节），本机输入一律清空 `http-proxy`，
+`owned_input_opener` 里那句重复的清除也删掉了，判定只有一处所有者。
+
+### 按源写引擎属性：容器格式指死解复用器 + 本机输入不走代理
+
+装配期的引擎选项整个生命周期只有一份，而"这条源是什么容器""这条源是不是本机中继"每条都不一样。
+media_core 的 `PlayerAdapterBase.onBeforeOpen` 本来就是"为即将打开的源准备引擎选项"的位置（引擎已存在、
+还没拿到 URL、且在打开窗口之外），所以给 `media_core_media_kit` 加了一个注入钩子：
+`MediaKitAdapterFactory(beforeOpen: (player, source) → …)`，适配器在自己的 `onBeforeOpen` 末尾调用它。
+参考 Kazumi `player_playback_controller.dart` 在源是 HLS 时写 `demuxer-lavf-format: hls` 的做法。
+
+- `core/player/core/playback_source_hints.dart`：`kPlaybackStreamFormatKey`（平台声明的容器格式随
+  `PlayerSource.metadata` 走，值是 `LiveStreamFormat` 的名字——Core 不能反向依赖 shared 的枚举，所以只认
+  字符串）、`playbackStreamFormatMetadata()` / `declaredStreamFormatOf()`、`isPrivatePlaybackInput(uri)`
+  （回环主机或非 http(s) 协议即本机输入）。
+- `MediaKitLiveProperties.sourceProperties({uri, declaredFormat, proxy})` 是纯函数，代理由调用方注入：
+  本机输入 → `http-proxy` 清空且不猜容器；否则 `http-proxy` 取播放器代理，容器按**声明优先、URL 形状兜底**
+  决定是不是 `hls`。`demuxer-lavf-format` 不成立时写空串而不是省略——引擎跨源复用，上一条源强制的 hls
+  不能漏到这一条 FLV 上。
+- 收益：跳过 mpv 的格式探测。我们同时设了 `demuxer-lavf-probesize: 2097152`，在高延迟线路上探测耗时正好
+  吃掉"8 秒卡在 0ms 判死"的起播预算——Twitch 那次失败里探测和握手是叠在一起的。
+- 声明从哪来：`LivePlayerFacade.play/switchEngine` 用刚接好的 `LivePlayUrlResolution.streamFacts` 按 URL
+  贴进 metadata；没声明的源退回 `isHlsManifestUri`（Twitch 那种把签名塞进路径的 `/v1/playlist/….m3u8`
+  两种判据都认）。中继换源走 `copyWith`，metadata 原样保留，而回环 URI 会让判定直接落到"本机输入"。
+- 测试：`test/core/player/media_kit_source_properties_test.dart`（上游 HLS 指死解复用器、声明优先于 URL
+  形状、非 HLS 清空强制值、三类本机输入既不送代理也不猜容器、metadata 往返）。
+  pure_live `test/{core,domains,shared}` **68 项全绿**、Analyze 0 项；media_core 全工作区 Analyze 0 项，
+  `media_core` **280 项**、`media_core_live` **46 项**全绿（这两个包要用 `flutter test`，`dart test`
+  会因为 `dart:ui` 加载失败，不是回归）。
+
+### 卡住之后永远起不来：签名 URL 的重新解析根本没接线（2026-10-04，Twitch 复现）
+
+代理生效（日志里 `[PlaybackProxy] http://127.0.0.1:7897`）之后 Twitch 仍然：起播成功（1920×1080、
+position 22066ms 在走）→ 约 1 秒后进入缓冲 → 12 秒 `bufferingStallTimeout` → 之后每次重开都
+`Failed to open`，永久死掉。看门狗不是元凶（`bufferingStallTimeout` 的语义就是"一次连续缓冲超过 12 秒"，
+它报的是真事）；**结构性问题在恢复路径**：
+
+1. media_core 的 `onEngineFallbackSources` 注释写得很清楚——"很多直播 URL 是签名且一次性的，第一个引擎
+   那次尝试就把它用掉了，所以这里通常要重新取一份新线路"。但它只在**切换到下一个引擎之前**被调用，
+   而 Windows 上只注册了 mpv 一个引擎（日志 `registered=[mpv]`），`_engineIndex + 1 >= _engines.length`
+   直接返回 false，这个钩子**永远不会被调用**，于是 `sources=1 enginesTried=1` 就 sweep exhausted。
+2. 就算它会被调用也没用：`GlobalPlayerService._initialize` 从来没传 `onEngineFallbackSources`，而
+   `LivePlayerFacade.play(sourceResolver:)` / `playSource(sourceResolver:)` 收下了这个解析器却**从不使用**
+   （全文件只在参数列表里出现过）。`PlayerController._buildSourceResolver` 造出来的东西一路传到 facade
+   就断了——和 `interceptSources` 是同一类断线。
+3. 看门狗驱动的恢复是"重开当前这条线路"（日志 `candidate failed: … (reopen of the playing line)`），
+   用的还是那个已经死掉的签名 URL，3 秒内 `Failed to open`，然后无限循环。
+4. `VideoController._handlePlayerError` 只把错误分类成一句 toast，没有任何重新解析或重试。
+
+**待做**：把 `sourceResolver` 接上——播放失败（尤其 `NO_PLAYABLE_STREAM`）时用它取一份新线路再重放，
+而不是重放同一个签名 URL。这是把"一次瞬时卡顿"变成"永久黑屏"的那一步，比调看门狗阈值重要得多。
 
 **这台机器的实际状态**（`reg query HKCU\Software\Microsoft\Windows\CurrentVersion\Internet Settings`）：
 `ProxyEnable=0`、残留 `ProxyServer=127.0.0.1:7890`，而 Clash 实际在听 **7897**。所以"跟随系统代理"这一路

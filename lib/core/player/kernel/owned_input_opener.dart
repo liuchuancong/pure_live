@@ -32,8 +32,8 @@ Future<void> openOwnedInputOnKernelPlayer(dynamic player, Object recipe) async {
   final lease = await owned(CancelToken());
   state.active = lease;
   try {
-    final platform = mkPlayer.platform as dynamic;
-    await platform.setProperty('http-proxy', '');
+    // 代理与容器格式由 beforeOpen 钩子按源统一决定（自有输入的 `owned:` 协议属于
+    // 本机输入，那里会把 http-proxy 清空），这里不再重复一次判定。
     await mkPlayer.open(mk.Media(lease.uri.toString()), play: true);
   } catch (error) {
     if (identical(state.active, lease)) {
