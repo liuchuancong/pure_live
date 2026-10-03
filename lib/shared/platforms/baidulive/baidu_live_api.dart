@@ -9,6 +9,7 @@ import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/core/network/request_scope.dart';
 
 import 'baidu_live_link.dart';
+import 'baidu_live_danmaku.dart';
 
 enum BaiduLiveFailure {
   transport,
@@ -71,6 +72,7 @@ final class BaiduLiveRoom {
     required this.state,
     required Iterable<BaiduLiveVariant> variants,
     this.restriction,
+    this.danmakuArgs,
   }) : variants = List.unmodifiable(variants);
 
   final String roomId;
@@ -87,6 +89,9 @@ final class BaiduLiveRoom {
 
   /// 付费/禁止访问/无可播档位等的限制种类（上游 30-5）；null 表示这次回答没说。
   final LiveRestriction? restriction;
+
+  /// 弹幕参数（上游 M5.26）：房间命令给的消息列表与轮询间隔；没有就是没有弹幕。
+  final BaiduLiveDanmakuArgs? danmakuArgs;
 
   BaiduLiveRoom enrich(BaiduLiveRoom known) => BaiduLiveRoom(
     roomId: roomId,
@@ -408,6 +413,31 @@ class BaiduLiveApi {
       state: state,
       variants: variants,
       restriction: _detailRestriction(command, state, variants),
+      danmakuArgs: danmakuArgs(command, video, roomId: roomId),
+    );
+  }
+
+  /// 房间命令 371 给的弹幕参数（上游 M5.26）：三条消息列表（聊天 / 可靠 / 主播）与
+  /// 轮询间隔（限制在 1–10 秒，缺省 5 秒）；没有合规的聊天列表就没有参数
+  /// （仍然可以只读地进房，只是没有弹幕）。
+  static BaiduLiveDanmakuArgs? danmakuArgs(Map<dynamic, dynamic> command, Map<dynamic, dynamic> video, {required String roomId}) {
+    String firstText(List<Object?> values) {
+      for (final value in values) {
+        if (_text(value).trim().isNotEmpty) return _text(value).trim();
+      }
+      return '';
+    }
+
+    final chat = firstText([command['chat_msg_hls_url'], video['msg_hls_url']]);
+    if (chat.isEmpty) return null;
+    final rawInterval = _integer(command['msg_hls_pull_internal_in_second'] ?? video['msg_hls_pull_internal_in_second']);
+    final seconds = rawInterval == null || rawInterval <= 0 ? 5 : rawInterval.clamp(1, 10);
+    return BaiduLiveDanmakuArgs(
+      chatListUrl: chat,
+      reliableListUrl: firstText([command['reliable_msg_hls_url']]),
+      hostListUrl: firstText([command['host_msg_hls_url']]),
+      pollInterval: Duration(seconds: seconds),
+      roomId: roomId,
     );
   }
 

@@ -95,6 +95,16 @@ uri 2001314 的消息体就是一个 GameEventMessageBoardPanel：
   加上 `readBytes` 对 STRUCT 的边界行为未实测，盲写有把"面板解错"当成"面板为空"的风险
 - 所以它排在 ④/③ 之后，且**建议先用上游 fixture 做一个本仓测试**再实现
 
+## 聊天引擎移植（用户 2026-10-04 指令"开工"后新增批次）
+
+上游为 EmptyDanmaku 站点写的聊天引擎逐个移植；每站：传输/连接器 + 消息解析 + 列表与画面
+显示（复用已有的 `LiveMessageType`/通知/撤回管线）+ 尽量补测试。
+
+| 站点 | 上游提交 | 本仓状态 |
+| --- | --- | --- |
+| **Baidu Live** | `cdb9504e3`（M5.26） | **已做**：`baidu_live_danmaku.dart` 轮询房间命令给的 HLS 风格消息列表（m3u8 → gzip JSON 分片），文本 / 在线人数(101) / 礼物(107 + `service_info`，`BaiduLiveGift`) 三类；`BaiduLiveApi.danmakuArgs()` 从房间命令取三条列表与轮询间隔（1–10 s，缺省 5 s），站点 `danmakuData` + `getDanmaku()` 接上；分片按地址去重、失败重试 3 次、主播列表 404 容忍 |
+| TwitCasting / Kugou / Steam / JD / Six Rooms / LOOK / FC2 / PandaTV / BIGO / AcFun / CHZZK / SHOWROOM / KilaKila / Missevan / 17LIVE / Picarto | M5.x / M5.F | 待做（逐个开批次） |
+
 ## 同步状态总览（2026-10-04 第二轮收尾核对）
 
 | 目标项 | 状态 |
