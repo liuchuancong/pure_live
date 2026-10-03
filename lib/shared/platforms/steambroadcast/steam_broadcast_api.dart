@@ -46,6 +46,7 @@ final class SteamBroadcastRoom {
     required this.state,
     required this.master,
     this.restriction,
+    this.broadcastId = '',
   });
 
   final String steamId;
@@ -61,6 +62,10 @@ final class SteamBroadcastRoom {
   /// 谁可以看（上游 27-x）：`ready` 是 none，`missing_subscription` 是
   /// subscribersOnly（在播但只给订阅者），其它回答没说就是 null。
   final LiveRestriction? restriction;
+
+  /// `getbroadcastmpd` 给的"当前这一场"（上游 M5.23）：弹幕用它取聊天日志；未开播时
+  /// 为空，连接会自己再请求一次。
+  final String broadcastId;
 
   SteamBroadcastRoom enrich(SteamBroadcastRoom known) => SteamBroadcastRoom(
     steamId: steamId,
@@ -346,6 +351,7 @@ class SteamBroadcastApi {
       state: state,
       master: master,
       restriction: restriction,
+      broadcastId: _optionalText(root['broadcastid']),
     );
   }
 

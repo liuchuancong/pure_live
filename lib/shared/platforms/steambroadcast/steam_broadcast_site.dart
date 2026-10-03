@@ -1,7 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:pure_live/core/models/live_area.dart';
 import 'package:pure_live/core/models/live_room.dart';
-import 'package:pure_live/shared/platforms/empty_danmaku.dart';
 import 'package:pure_live/shared/platforms/live_danmaku.dart';
 import 'package:pure_live/shared/platforms/live_directory.dart';
 import 'package:pure_live/shared/platforms/live_search.dart';
@@ -10,6 +9,7 @@ import 'package:pure_live/core/models/live_category.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
 import 'package:pure_live/core/utils/i18n.dart';
 import 'package:pure_live/shared/platforms/live_external_room.dart';
+import 'steam_broadcast_danmaku.dart';
 
 import 'steam_broadcast_api.dart';
 import 'steam_broadcast_link.dart';
@@ -47,7 +47,7 @@ final class SteamBroadcastSite extends LiveSite
   String get directoryNoticeKey => 'steambroadcast_directory_scope';
 
   @override
-  LiveDanmaku getDanmaku() => EmptyDanmaku();
+  LiveDanmaku getDanmaku() => SteamBroadcastDanmaku();
 
   @override
   Future<List<LiveCategory>> getCategores(int page, int pageSize) async => page == 1 && pageSize > 0
@@ -113,6 +113,8 @@ final class SteamBroadcastSite extends LiveSite
           ? i18n('steambroadcast_restricted_notice')
           : i18n('steambroadcast_chat_notice'),
       httpHeaders: SteamBroadcastApi.mediaHeaders(room.steamId),
+      // 弹幕参数（上游 M5.23）：主播 Steam id + 这一场的 id（没有就由连接自己请求）。
+      danmakuData: SteamBroadcastDanmakuArgs(steamId: room.steamId, broadcastId: room.broadcastId),
       data: includeMedia ? room : null,
     );
   }
