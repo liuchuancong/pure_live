@@ -10,6 +10,7 @@ import 'package:pure_live/core/models/live_room.dart';
 import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/core/network/request_scope.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
+import 'twitcasting_danmaku.dart';
 
 enum TwitcastingFailure { transport, access, rateLimited, service, notFound, schema, cancelled, qualityUnavailable }
 
@@ -423,6 +424,8 @@ class TwitcastingApi {
     }
     final movieId = integer(movie['id']);
     if (movieId == null || movieId <= 0) throw const TwitcastingException(TwitcastingFailure.schema);
+    // 弹幕用这一场的 movie id（屏幕名不是它；上游 M5.11）。
+    room.danmakuData = TwitcastingDanmakuArgs(movieId: movieId);
     final streams = object(object(stream['tc-hls'])['streams']);
     final qualities = <LivePlayQuality>[];
     for (final key in ['high', 'medium', 'low']) {

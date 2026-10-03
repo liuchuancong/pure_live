@@ -103,6 +103,7 @@ uri 2001314 的消息体就是一个 GameEventMessageBoardPanel：
 | 站点 | 上游提交 | 本仓状态 |
 | --- | --- | --- |
 | **Baidu Live** | `cdb9504e3`（M5.26） | **已做**：`baidu_live_danmaku.dart` 轮询房间命令给的 HLS 风格消息列表（m3u8 → gzip JSON 分片），文本 / 在线人数(101) / 礼物(107 + `service_info`，`BaiduLiveGift`) 三类；`BaiduLiveApi.danmakuArgs()` 从房间命令取三条列表与轮询间隔（1–10 s，缺省 5 s），站点 `danmakuData` + `getDanmaku()` 接上；分片按地址去重、失败重试 3 次、主播列表 404 容忍 |
+| **TwitCasting** | `a4cb9a72e`（M5.11） | **已做**：`twitcasting_danmaku.dart` 每次握手先 POST `eventpubsuburl.php`（表单 `movie_id`）换一条带签名的 wss 地址（只收 `wss://…twitcasting.tv/…`），再连；帧是 JSON 数组（或单个对象），只上报 `comment`（`message` 去空白、用户名 `author.name` → `screenName`、id 加 `twitcasting:` 前缀、`createdAt` 毫秒），按事件 id 去重 400 条；30 秒无消息换 socket、失败按 1–8 秒退避重取地址；站点把详情的 `movie.id` 放进 `danmakuData` |
 | TwitCasting / Kugou / Steam / JD / Six Rooms / LOOK / FC2 / PandaTV / BIGO / AcFun / CHZZK / SHOWROOM / KilaKila / Missevan / 17LIVE / Picarto | M5.x / M5.F | 待做（逐个开批次） |
 
 ## 同步状态总览（2026-10-04 第二轮收尾核对）
