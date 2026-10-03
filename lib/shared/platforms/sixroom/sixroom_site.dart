@@ -1,11 +1,11 @@
 import 'package:dio/dio.dart';
 import 'package:pure_live/core/models/live_area.dart';
 import 'package:pure_live/core/models/live_room.dart';
-import 'package:pure_live/shared/platforms/empty_danmaku.dart';
 import 'package:pure_live/shared/platforms/live_danmaku.dart';
 import 'package:pure_live/shared/platforms/live_directory.dart';
 import 'package:pure_live/shared/platforms/live_search.dart';
 import 'package:pure_live/shared/platforms/live_site.dart';
+import 'six_room_danmaku.dart';
 import 'package:pure_live/core/models/live_category.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
 import 'package:pure_live/core/utils/i18n.dart';
@@ -47,7 +47,7 @@ final class SixRoomSite extends LiveSite
   String get directoryNoticeKey => 'sixroom_directory_scope';
 
   @override
-  LiveDanmaku getDanmaku() => EmptyDanmaku();
+  LiveDanmaku getDanmaku() => SixRoomDanmaku();
 
   @override
   Future<List<LiveCategory>> getCategores(int page, int pageSize) async {
@@ -122,6 +122,11 @@ final class SixRoomSite extends LiveSite
       audienceMetricType: popularity == null ? AudienceMetricType.unknown : AudienceMetricType.popularity,
       notice: notices.join('\n'),
       httpHeaders: SixRoomApi.mediaHeaders(room.roomId),
+      // 弹幕参数（上游 M5.27）：主播用户 id 决定聊天服务器与登录的 roomid；房间号
+      // 只用来做 Referer。没有用户 id 就不连弹幕。
+      danmakuData: room.userId.trim().isEmpty
+          ? null
+          : SixRoomDanmakuArgs(roomId: room.roomId, userId: room.userId.trim()),
       data: includeMedia ? room : null,
     );
   }
