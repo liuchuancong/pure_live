@@ -46,6 +46,26 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | tiktok | 5 | 本轮已摘取（见下） |
 | inke / xiaohongshu / weibo / liveme | 4 | 四站均已摘取（见下） |
 
+## 同步状态总览（2026-10 收尾核对）
+
+| 目标项 | 状态 | 证据 / 提交 |
+| --- | --- | --- |
+| ① `startedAt` 与 `restriction` 接入各站点 + UI + 拒绝路径 | **完成** | `restriction:` 39 处、`startedAt:` 20 处（`lib/shared/platforms/**`）；`LiveRestriction` 枚举与 `effectiveRestriction` 在 `core/models/live_room.dart`；拒绝路径 `live_play_controller.dart:790/818` + `_roomStateMessage`；`restriction_*` 文案在 `assets/i18n/{zh,en}.json` |
+| ② 弹幕撤回 | **完成** | 模型 `LiveMessageType.retraction` + `LiveRetraction`（`89248f0ff`）、B 站解析（`0533df81b`）、显示层（`db09fc212`）、引擎按条撤回 `retractWhere`（flame_barrage `efada9c`）+ 本仓接线（`4966ca1ce`） |
+| ② 礼物进弹幕区 | **完成（B 站）** | 解析 `SEND_GIFT`/`COMBO_SEND`/`GUARD_BUY` + 列表分支（`11a47144e`）；其余站点的 gift 上报可复用同一分支 |
+| ② 消息表情图片 | **完成** | 模型 `43540cc10`、B 站解析 `9fb1ef1da`、列表渲染 `c4699764d`、画面渲染 `f587c26a3`、快手表情表 `c217b86bc` + `dffed3f69` |
+| ② 公告头条 | **完成（B 站 + 虎牙结束通知）** | `LiveMessageType.notice` + B 站 `WARNING`/`CUT_OFF`（`6e79b8bda`）；虎牙 `uri 8001` 结束直播（`133725ed7`）。虎牙 board 面板解析（通知自带面板时省一次请求）属优化，未做 |
+| ③ YouTube 频道即房间 | **功能已等价，身份未翻转** | 链接层有 `YouTubeLinkKind.channel`；`resolveReference` 能把频道解析成当前直播。翻转身份需连迁移一起做，建议不做（见下） |
+| ③ niconico 房间即主播 | **部分**：链接形态与主播链接可打开已完成（`abb4c7269`、`bb1f6fbae`）；**身份翻转未做**（与列表 `providerType` 映射是同一件事，需连迁移一起做） |
+| ④ bilibili 付费房限制 | **完成** | `7f31d7756` |
+| ④ bilibili 详情开播时间 | **完成** | `021741490` |
+| ④ bilibili 新增弹幕事件 | **完成** | 撤回 / 贴纸表情 / 礼物 / 公告，见上 |
+| ④ bilibili 轮播 `play_time` 起播偏移 | **3/5**：站点解析 + 契约 + 播放层结果已做（`4291990b6`）；第 4-5 步需**新增播放层 seek 通道**（本仓 `lib/` 里没有任何 seek 调用），已记账 |
+
+**待用户决策（唯一）**：是否翻转 YouTube / niconico 的**房间身份**（视频/节目 → 频道/主播）。
+收益：同一频道/主播换场后收藏、历史、多画面指向同一房间；代价：存量 key 需迁移或惰性升级，
+"回看某一场"的语义变化。不做则现状功能等价（能打开、能播、能看弹幕），只是每场是新房间。
+
 ## 待实施：③ 身份模型（YouTube 频道即房间 / niconico 房间即主播）
 
 2026-10 实测本仓现状（与上游 4.x 的身份模型对照）：
