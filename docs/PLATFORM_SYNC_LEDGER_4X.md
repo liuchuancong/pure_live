@@ -72,7 +72,7 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | `51c28301b` | Twitch `RECONNECT`、撤回（`CLEARMSG`）、公告（`NOTICE`）、过期 cookie | **已完成**：撤回（`7c8b7f599`）、Cookie 失效提示 + 匿名回退（`22f659782`）、`USERNOTICE` 订阅/续订/赠送/突袭/公告（进列表当通知；观众附带的话作为该观众的聊天紧跟其后）；`RECONNECT` 与 cookie 解析本仓早有 |
 | `f12bf0f8c` | socket 运行时"握手失败"钩子（M5.F B-1） | **待核**：`web_socket_util.dart` 有握手实现，未确认是否把失败单独上报 |
 | `ff406a24f` | 虎牙公告栏面板（通知自带 board 时省一次请求） | **未做**（结束直播 `uri 8001` 已做 `133725ed7`） |
-| `734eb8098` | 搜索按平台上报的粉丝数排序 | **待核**：模型有 `followers` 字段，搜索排序未见使用 |
+| `734eb8098` | 搜索按平台上报的粉丝数排序 | **基本已同步**：本仓早有 `LiveSearchSortMode.followers`（`search_ranking.dart`，粉丝 → 人气 → 平台顺序），且 bilibili/kuaishou/cc/chzzk/acfun/baidulive/kugoulive/liveme/picarto/17LIVE 等搜索卡片都填了 `followers`；本轮补上 **Twitch** 搜索卡片（`node.followers.totalCount`，持久化查询给了才有） |
 
 ### B. 不适用：用户已决定不为 EmptyDanmaku 站点新写聊天引擎
 所有 M5.x/M5.F "新增某站聊天引擎"（BIGO、Kugou、LOOK、百度、六间房、JD、Steam、FC2、

@@ -918,6 +918,9 @@ class TwitchSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomR
             .toString()
             .appendTxt("?&t=${DateTime.now().millisecondsSinceEpoch ~/ 1000}"),
         nick: node["displayName"],
+        // 搜索的持久化查询能给出频道粉丝数时用上，于是"按粉丝"排序对 Twitch 也有效
+        // （上游 F-SRC-01 的七个平台之一）；查询没给就是空，不影响其它字段。
+        followers: node["followers"]?["totalCount"]?.toString() ?? '',
         avatar: node["profileImageURL"].toString(),
         watching: (node["stream"]?["viewersCount"] ?? 0).toString(),
         onlineViewers: (node["stream"]?["viewersCount"] ?? 0).toString(),
