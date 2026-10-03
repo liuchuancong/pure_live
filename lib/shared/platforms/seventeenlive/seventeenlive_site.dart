@@ -110,6 +110,7 @@ class SeventeenLiveSite extends LiveSite
     },
     // 被 premiumContent 锁定的直播仍然是在播（上游 33-x），播放时才说明原因。
     restriction: room.state == SeventeenLiveState.live ? room.restriction : null,
+    startedAt: room.startedAt,
     watching: '',
     onlineViewers: room.liveViewers?.toString(),
     totalViewers: room.sessionViewers?.toString(),

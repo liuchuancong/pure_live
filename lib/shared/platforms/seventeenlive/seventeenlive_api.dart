@@ -63,6 +63,7 @@ class SeventeenLiveRoom {
     required this.state,
     required this.streams,
     this.restriction,
+    this.startedAt,
   });
 
   final String roomId;
@@ -82,6 +83,9 @@ class SeventeenLiveRoom {
   /// 谁可以看这场直播（见 [SeventeenLiveApi.restrictionOf]）；锁定的直播仍然是在播，
   /// null 表示这次回答没说限制。
   final LiveRestriction? restriction;
+
+  /// `beginTime`（Unix 秒）对应的开播时间，仅直播时有意义（上游 33-7）。
+  final DateTime? startedAt;
 }
 
 typedef SeventeenLiveRequest = Future<({int status, String body})> Function(Uri uri, CancelToken? cancel);
@@ -320,7 +324,18 @@ class SeventeenLiveApi {
       state: state,
       streams: streams,
       restriction: restriction,
+      // `beginTime`（Unix 秒）就是这场直播的开播时间（上游 33-7）。
+      startedAt: state == SeventeenLiveState.live ? _startTime(data['beginTime']) : null,
     );
+  }
+
+  /// Unix 秒或毫秒转 UTC；超出 2000–2100 或读不出来返回 null。
+  static DateTime? _startTime(Object? value) {
+    final raw = _integer(value);
+    if (raw == null || raw <= 0) return null;
+    final millis = raw > 100000000000 ? raw : raw * 1000;
+    final time = DateTime.fromMillisecondsSinceEpoch(millis, isUtc: true);
+    return time.year >= 2000 && time.year <= 2100 ? time : null;
   }
 
   /// 直播的限制种类（上游 33-x 的 `isLocked` 规则）：没有 `premiumContent`
