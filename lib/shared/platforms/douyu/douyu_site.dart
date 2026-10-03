@@ -605,7 +605,17 @@ class DouyuSite
       platform: PlatformIds.douyu,
       link: "https://www.douyu.com/$roomId",
       isRecord: replay,
+      // 在播时 `show_time`（Unix 秒）就是这场直播的开播时间（上游 douyu 4-x）。
+      startedAt: live ? _startedAt(roomInfo['show_time']) : null,
     );
+  }
+
+  /// 斗鱼的 `show_time`：Unix 秒；读不出来或超出 2000–2100 年就不给。
+  static DateTime? _startedAt(Object? value) {
+    final seconds = _asInt(value);
+    if (seconds == null || seconds <= 0) return null;
+    final time = DateTime.fromMillisecondsSinceEpoch(seconds * 1000, isUtc: true);
+    return time.year >= 2000 && time.year <= 2100 ? time : null;
   }
 
   @visibleForTesting

@@ -91,7 +91,7 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | `8eca75a32` | 分区图标空 `icon` 时退到 `smallIcon`/`pic` | **已同步** |
 | `8eca75a32` | `dgb` 礼物包上报为 gift 消息 | 未做：上游自己也是"只上报不显示"，本仓弹幕层不渲染 gift，单独做等于死代码 |
 | `20c9ea20e` | `expire=0` 的 FLV 强制续期（构造开关，默认关） | 未做：上游默认关闭，且本仓没有这个设置项；本仓对 `expire<=0` 仍视为无租约 |
-| `20c9ea20e` | `startedAt` 取 betard `show_time` | 未做：本仓 `LiveRoom` 没有该字段 |
+| `20c9ea20e` | `startedAt` 取 betard `show_time` | **已同步**：在播时 `show_time`（Unix 秒）填进 `LiveRoom.startedAt`（房间详情路径） |
 | `20c9ea20e` | 别名大小写不敏感（`lpl`/`LPL` 同一 rid） | 待评估：需要本仓的房间身份归一化一起改 |
 | `bedce82aa` | 登录会话状态与 passport 续期 | 未做：属 cookie 仓储（本仓有 `douyu_cookie_controller`/`douyu_utils` 自己的实现），不在站点适配器范围 |
 
