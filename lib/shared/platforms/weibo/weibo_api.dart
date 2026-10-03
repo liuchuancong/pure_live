@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
+import 'package:pure_live/core/models/live_room.dart';
 import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/core/network/request_scope.dart';
 
@@ -309,14 +310,14 @@ class WeiboApi {
         : limit != 0
         ? WeiboAccess.restricted
         : WeiboAccess.public;
-    final state = access != WeiboAccess.public
-        ? WeiboBroadcastState.unknown
-        : switch (status) {
-            1 => WeiboBroadcastState.live,
-            3 => WeiboBroadcastState.replay,
-            5 => WeiboBroadcastState.offline,
-            _ => WeiboBroadcastState.unknown,
-          };
+    // 受限/关闭播放的房间仍然保留平台说的状态（上游 18-4）：此前一律被改成
+    // unknown，于是受限的直播既不是在播也不是下播。
+    final state = switch (status) {
+      1 => WeiboBroadcastState.live,
+      3 => WeiboBroadcastState.replay,
+      5 => WeiboBroadcastState.offline,
+      _ => WeiboBroadcastState.unknown,
+    };
     final urls = <String>{};
     if (state == WeiboBroadcastState.live) {
       for (final key in ['live_origin_flv_url', 'live_origin_hls_url']) {
@@ -340,5 +341,35 @@ class WeiboApi {
       height: _number(item['height']),
       mediaUrls: List.unmodifiable(urls),
     );
+  }
+
+  /// `watch_limit` 的取值（上游 18-4）：8 仅 App、10/11 私密、12 付费。
+  static const int appOnlyLimit = 8;
+  static const int friendsOnlyLimit = 10;
+  static const int selfOnlyLimit = 11;
+  static const int paidLimit = 12;
+
+  /// 非 0 的 `watch_limit` 是什么限制：8 仅 App，10/11 私密，12 付费，其它取值
+  /// （观察到过 9）是分不出来的 [LiveRestriction.unplayable]。
+  static LiveRestriction restrictionOfLimit(int watchLimit) => switch (watchLimit) {
+    appOnlyLimit => LiveRestriction.appOnly,
+    friendsOnlyLimit || selfOnlyLimit => LiveRestriction.private,
+    paidLimit => LiveRestriction.paid,
+    _ => LiveRestriction.unplayable,
+  };
+
+  /// 这条直播/回放的限制（上游 18-4），其它状态返回 null（平台没说）：
+  /// 受限 → [restrictionOfLimit]；播放开关关掉 → unplayable；公开 → 无限制，
+  /// 但"在播却没有媒体地址"与"回放却没有录像"是 unplayable。
+  static LiveRestriction? restrictionOf(WeiboLiveDetail detail) {
+    if (detail.state != WeiboBroadcastState.live && detail.state != WeiboBroadcastState.replay) return null;
+    return switch (detail.access) {
+      WeiboAccess.restricted => restrictionOfLimit(detail.watchLimit),
+      WeiboAccess.disabled => LiveRestriction.unplayable,
+      // 本仓还没有回放录像（`replay_origin_url`）取流，所以回放一律是 unplayable。
+      WeiboAccess.public => detail.state == WeiboBroadcastState.live && detail.mediaUrls.isNotEmpty
+          ? LiveRestriction.none
+          : LiveRestriction.unplayable,
+    };
   }
 }

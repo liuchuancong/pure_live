@@ -200,6 +200,8 @@ class ShowroomSite extends LiveSite
       totalViewers: audience,
       audienceMetricType: AudienceMetricType.totalViewers,
       liveStatus: LiveStatus.live,
+      // `premium_room_type` 为 0 是人人可看的普通直播（上游 19-x）。
+      restriction: live.restriction,
       httpHeaders: ShowroomApi.mediaHeaders,
     );
   }
@@ -228,6 +230,7 @@ class ShowroomSite extends LiveSite
       audienceMetricType: AudienceMetricType.totalViewers,
       introduction: profile.description,
       liveStatus: profile.isLive ? LiveStatus.live : LiveStatus.offline,
+      restriction: profile.isLive ? profile.restriction : null,
       data: profile.isLive && qualities.isNotEmpty ? _ShowroomPlayback('${profile.roomId}', qualities) : null,
       httpHeaders: ShowroomApi.mediaHeaders,
     );

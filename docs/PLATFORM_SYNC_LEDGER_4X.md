@@ -138,7 +138,7 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | `c5ebffe2e` | H.265 里 H.264 没有的档位（4K、蓝光质臻）也列出：名字/id 带 ` · H.265`，排在所有 H.264 档位之后 | **已同步**：`parsePlayQualities()` 两套都收，按（编码优先、档位从高到低）排序 |
 | `4f1a8b4a8` | A-3：房间页没有直播标题时，`fillFromDetail` 保留卡片标题 | **已同步**：`LiveRoom.fillFromDetail` 补上 `title`（本仓此前只填 area/nick/avatar） |
 | `ab456b879` | 开播时间取卡片 `statrtTime`（epoch 毫秒） | 未做：本仓 `LiveRoom` 没有该字段 |
-| `ab456b879` | 限制 `unplayable`（平台说在播但没有任何可播清晰度） | 未做：本仓没有限制模型 |
+| `ab456b879` | 限制 `unplayable`（平台说在播但没有任何可播清晰度） | **已同步**：在播房间按 `playUrls` 是否有可播档位给 none/unplayable（三处房间构建都接了） |
 | `4f1a8b4a8` | 快手卡片标题之外的 Twitch 部分 | 见 twitch 章节 |
 
 ## 跨站点公共
@@ -328,7 +328,7 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | 18-1 | 推荐快照请求 `count=100`（约 51 行） | **已同步**：此前 `count=10` |
 | 18-2 | 快照里的卡片都是在播 | **已同步**：目录卡片按直播中上报，此前一律 unknown |
 | 18-3 | `status` 5（已结束）是下播 | **已同步**：`WeiboBroadcastState.offline` |
-| 18-4 | 受限/关闭的房间保留状态并带限制种类（appOnly/私密/付费） | 未做：限制模型 |
+| 18-4 | 受限/关闭的房间保留状态并带限制种类（appOnly/私密/付费） | **已同步**：状态不再被改成 unknown；`watch_limit` 8→appOnly、10/11→private、12→paid、其它→unplayable，关闭播放→unplayable；公开但在播无地址/回放无录像→unplayable |
 | 18-5 | 公开回放播 `replay_origin_url`，作为「原画」档（id replay） | 未做：回放取流 |
 | 18-6 | 头像优先 1024px；标题与昵称解码 HTML 字符引用 | 未做 |
 | 18-8 / 18-9 | 坏行逐条跳过；分享文本与搜索里的 t.cn 短链解析 | 未做 |
@@ -367,7 +367,7 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | --- | --- | --- |
 | 19-4 | 未开播的房间没有观众数（`view_num` 是上一场残留） | **已同步**：详情里非在播时清空 watching/totalViewers |
 | 19-x | 直播详情在 `danmakuData` 带 `live_info`（主机限 showroom-live.com） | 未做：弹幕参数 |
-| 19-x | 限制 none/其它（非 0 时留 null）与 `current_live_started_at` | 未做：`LiveRoom` 缺字段 |
+| 19-x | 限制 none/其它（非 0 时留 null）与 `current_live_started_at` | 限制 **已同步**（`premium_room_type` 0→none，其它留 null，不猜成付费）；`current_live_started_at` 未做 |
 
 ## fc2live
 

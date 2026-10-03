@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
+import 'package:pure_live/core/models/live_room.dart';
 import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/core/network/request_scope.dart';
 
@@ -60,6 +61,7 @@ class ShowroomLive {
     required this.totalViewers,
     required this.telop,
     required Iterable<ShowroomStream> streams,
+    this.restriction,
   }) : streams = List.unmodifiable(streams);
 
   final int roomId;
@@ -72,6 +74,10 @@ class ShowroomLive {
   final int? totalViewers;
   final String telop;
   final List<ShowroomStream> streams;
+
+  /// `premium_room_type` 说明的限制（上游 19-x）：0 是普通直播、人人可看 →
+  /// [LiveRestriction.none]；其它取值没有记录说明是什么，留 null（未知）。
+  final LiveRestriction? restriction;
 }
 
 class ShowroomGenre {
@@ -110,6 +116,7 @@ class ShowroomProfile {
     required this.totalViewers,
     required this.description,
     required this.isLive,
+    this.restriction,
   });
 
   final int roomId;
@@ -123,6 +130,9 @@ class ShowroomProfile {
   final String description;
   final bool isLive;
 
+  /// 见 [ShowroomLive.restriction]。
+  final LiveRestriction? restriction;
+
   ShowroomProfile withLiveStatus(bool value) => ShowroomProfile(
     roomId: roomId,
     roomUrlKey: roomUrlKey,
@@ -134,6 +144,7 @@ class ShowroomProfile {
     totalViewers: totalViewers,
     description: description,
     isLive: value,
+    restriction: restriction,
   );
 }
 
@@ -292,6 +303,7 @@ class ShowroomApi {
       totalViewers: _optionalNonNegativeInt(data['view_num']),
       description: _optionalText(data['description']),
       isLive: _bool(data['is_onlive']),
+      restriction: restrictionOf(data['premium_room_type']),
     );
   }
 
@@ -372,8 +384,15 @@ class ShowroomApi {
       totalViewers: _optionalNonNegativeInt(data['view_num']),
       telop: _optionalText(data['telop']),
       streams: streams,
+      restriction: restrictionOf(data['premium_room_type']),
     );
   }
+
+  /// `premium_room_type` 说明的限制（上游 19-x）：0 是普通直播、人人可看 →
+  /// [LiveRestriction.none]；其它取值没有记录说明是什么，返回 null（未知，不能
+  /// 凭空猜成付费 —— 样本里所有房间都是 0，包括排了付费直播的房间）。
+  static LiveRestriction? restrictionOf(Object? premiumRoomType) =>
+      _optionalNonNegativeInt(premiumRoomType) == 0 ? LiveRestriction.none : null;
 
   static Map<String, dynamic> _object(Object? value) {
     if (value is! Map) throw const ShowroomException(ShowroomFailure.schema);

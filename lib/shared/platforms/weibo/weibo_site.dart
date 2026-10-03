@@ -152,6 +152,8 @@ class WeiboSite extends LiveSite
       WeiboBroadcastState.replay => LiveStatus.replay,
       WeiboBroadcastState.unknown => LiveStatus.unknown,
     },
+    // 受限/关闭播放的直播仍然是在播，带限制种类（上游 18-4）。
+    restriction: WeiboApi.restrictionOf(detail),
     audienceMetricType: AudienceMetricType.unknown,
     watching: '',
     notice: [if (detail.access != WeiboAccess.public) i18n('weibo_restricted'), i18n('weibo_room_scope')].join('\n'),

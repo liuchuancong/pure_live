@@ -181,6 +181,7 @@ class KuaishouSite
             ? null
             : KuaishouDanmakuArgs(liveStreamId: liveStreamId, cookie: _effectiveCookie),
         data: item["playUrls"],
+        restriction: _liveRestriction(item["playUrls"]),
       );
       items.add(roomItem);
     }
@@ -205,6 +206,11 @@ class KuaishouSite
   /// H.265 里可能有 H.264 没有的档位（4K、蓝光质臻）：3.x 的规则是一旦有
   /// H.264 就整块丢掉 H.265，于是这些档位永远列不出来。两套都列，H.265 档位在
   /// 名字与 id 上带 ` · H.265`，并排在所有 H.264 档位之后（上游 M4.D）。
+  /// 在播房间的限制：`playUrls` 里有可播档位就是无限制，一个都没有就是
+  /// [LiveRestriction.unplayable]（上游：平台说在播却没给这个客户端可播的流）。
+  static LiveRestriction _liveRestriction(dynamic playUrls) =>
+      parsePlayQualities(playUrls).isEmpty ? LiveRestriction.unplayable : LiveRestriction.none;
+
   static List<LivePlayQuality> parsePlayQualities(dynamic raw) {
     final descriptors = raw is List ? raw : <dynamic>[raw];
     final merged = <String, ({String name, int sort, int codecRank, List<String> urls})>{};
@@ -338,6 +344,7 @@ class KuaishouSite
                   ? null
                   : KuaishouDanmakuArgs(liveStreamId: liveStreamId, cookie: _effectiveCookie),
               data: titem["playUrls"],
+              restriction: _liveRestriction(titem["playUrls"]),
             );
             items.add(roomItems);
           }
@@ -532,6 +539,8 @@ class KuaishouSite
       notice: description,
       status: live,
       liveStatus: live ? LiveStatus.live : LiveStatus.offline,
+      // 在播但一个可播清晰度都没有：仍然是"在播"，只是本客户端播不了（上游）。
+      restriction: live ? _liveRestriction(liveStream["playUrls"]) : null,
       platform: PlatformIds.kuaishou,
       link: liveStreamId,
       danmakuData: liveStreamId.isEmpty
