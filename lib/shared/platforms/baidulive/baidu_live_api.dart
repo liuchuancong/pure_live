@@ -420,7 +420,11 @@ class BaiduLiveApi {
   /// 房间命令 371 给的弹幕参数（上游 M5.26）：三条消息列表（聊天 / 可靠 / 主播）与
   /// 轮询间隔（限制在 1–10 秒，缺省 5 秒）；没有合规的聊天列表就没有参数
   /// （仍然可以只读地进房，只是没有弹幕）。
-  static BaiduLiveDanmakuArgs? danmakuArgs(Map<dynamic, dynamic> command, Map<dynamic, dynamic> video, {required String roomId}) {
+  static BaiduLiveDanmakuArgs? danmakuArgs(
+    Map<dynamic, dynamic> command,
+    Map<dynamic, dynamic> video, {
+    required String roomId,
+  }) {
     String firstText(List<Object?> values) {
       for (final value in values) {
         if (_text(value).trim().isNotEmpty) return _text(value).trim();
@@ -430,7 +434,9 @@ class BaiduLiveApi {
 
     final chat = firstText([command['chat_msg_hls_url'], video['msg_hls_url']]);
     if (chat.isEmpty) return null;
-    final rawInterval = _integer(command['msg_hls_pull_internal_in_second'] ?? video['msg_hls_pull_internal_in_second']);
+    final rawInterval = _integer(
+      command['msg_hls_pull_internal_in_second'] ?? video['msg_hls_pull_internal_in_second'],
+    );
     final seconds = rawInterval == null || rawInterval <= 0 ? 5 : rawInterval.clamp(1, 10);
     return BaiduLiveDanmakuArgs(
       chatListUrl: chat,
@@ -489,6 +495,9 @@ class BaiduLiveApi {
       add(_text(urls['avc_flv']), 'flv', resolution, 'avc');
       add(_text(urls['flv']), 'flv', resolution, 'avc');
       add(_text(urls['hls']), 'hls', resolution, 'avc');
+      // 上游 4.x 的 HEVC 档位：同一档里另给一条 hevc_flv，编码不同、容器仍是 FLV，
+      // 取流侧靠线路声明的 codec 决定要不要 FFmpeg 转封装。
+      add(_text(urls['hevc_flv']), 'flv', resolution, 'hevc');
     }
 
     final urlList = _list(video['url_list']);
@@ -508,6 +517,8 @@ class BaiduLiveApi {
       add(_text(video['live_flv_url']), 'flv', 0, 'avc');
       add(_text(video['live_flv_url_origin']), 'flv', 0, 'avc');
     }
+    // 源站 HEVC 线路（上游 `hevc_url`）：没有档位表时也会出现。
+    add(_text(video['hevc_url']), 'flv', 0, 'hevc');
 
     final variants =
         grouped.entries

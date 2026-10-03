@@ -30,6 +30,7 @@ class LivePlayUrlResolution {
     this.qualityUnconfirmed = false,
     this.startAt = Duration.zero,
     this.declaredAspectRatio,
+    this.streamFacts = const {},
   }) : sourceQueryPolicies = const {},
        inputRecipe = null;
 
@@ -42,6 +43,7 @@ class LivePlayUrlResolution {
     this.declaredAspectRatio,
   }) : inputRecipe = input,
        urls = const [],
+       streamFacts = const {},
        sourceQueryPolicies = const {};
 
   LivePlayUrlResolution._({
@@ -51,6 +53,7 @@ class LivePlayUrlResolution {
     this.qualityUnconfirmed = false,
     this.startAt = Duration.zero,
     this.declaredAspectRatio,
+    this.streamFacts = const {},
   }) : inputRecipe = null;
 
   /// 起播位置：只有"点播稿件"式的源用得上（B 站轮播房播的是循环稿件，
@@ -70,6 +73,7 @@ class LivePlayUrlResolution {
     bool qualityUnconfirmed = false,
     Duration startAt = Duration.zero,
     double? declaredAspectRatio,
+    Map<String, LiveStreamFacts> streamFacts = const {},
   }) {
     final normalized = normalizeResolvedPlayUrls(urls);
     final policies = <String, HlsSourceQueryPolicy>{};
@@ -80,6 +84,12 @@ class LivePlayUrlResolution {
       }
       policies[entry.key] = entry.value;
     }
+    // A fact about a line that is not part of this resolution would silently
+    // steer the wrong source, so undeclared and stale entries are dropped.
+    final facts = <String, LiveStreamFacts>{
+      for (final entry in streamFacts.entries)
+        if (normalized.contains(entry.key)) entry.key: entry.value,
+    };
     return LivePlayUrlResolution._(
       urls: normalized,
       sourceQueryPolicies: Map.unmodifiable(policies),
@@ -87,6 +97,7 @@ class LivePlayUrlResolution {
       qualityUnconfirmed: qualityUnconfirmed,
       startAt: startAt,
       declaredAspectRatio: declaredAspectRatio,
+      streamFacts: Map.unmodifiable(facts),
     );
   }
 
@@ -99,6 +110,7 @@ class LivePlayUrlResolution {
           qualityUnconfirmed: qualityUnconfirmed,
           startAt: startAt,
           declaredAspectRatio: declaredAspectRatio,
+          streamFacts: streamFacts,
         );
 
   final List<String> urls;
@@ -107,6 +119,17 @@ class LivePlayUrlResolution {
   bool get hasSources => lineCount > 0;
   final Object? appliedQualityData;
   final Map<String, HlsSourceQueryPolicy> sourceQueryPolicies;
+
+  /// Per-line container/codec facts, keyed by the exact URL they describe.
+  ///
+  /// Playback turns these into the ingest decision (hand the URL over as-is,
+  /// rewrite the manifest over loopback, or remux with FFmpeg) instead of
+  /// branching per platform inside the player. Empty means "nothing declared",
+  /// which keeps the probe and the host table as the fallback.
+  final Map<String, LiveStreamFacts> streamFacts;
+
+  /// The declared facts for [url], or null when the site did not declare any.
+  LiveStreamFacts? factsFor(String url) => streamFacts[url];
 
   /// An adapter expected an acknowledgement but the response did not contain a
   /// usable one. False preserves the legacy contract for platforms with no ack.
@@ -215,6 +238,31 @@ abstract interface class LivePlayLeaseMetadata {
   DateTime? getPlayUrlInvalidAt(String url, {DateTime? now});
 }
 
+/// Container of one play line.
+///
+/// Mirrors the upstream 4.x `StreamFormat`: `other` is a single HTTP(S) response
+/// whose container is only told by its first bytes (IPTV MPEG-TS, udpxy, an FLV
+/// or MP4 line without a matching path suffix).
+enum LiveStreamFormat { flv, hls, other }
+
+/// What a site knows about one of its own play lines.
+///
+/// [codec] is `avc` or `hevc` when the platform says so; [relativeChildren]
+/// marks an HLS playlist whose children are bare names, which a native resolver
+/// that loses the manifest URL cannot read.
+typedef LiveStreamFacts = ({LiveStreamFormat format, String? codec, bool relativeChildren});
+
+/// Optional per-line stream declaration for sites on the default resolve path.
+///
+/// Playback decides "hand the URL over, rewrite the manifest over loopback, or
+/// remux with FFmpeg" from these facts instead of from a per-platform branch in
+/// the player. Sites that build their own [LivePlayUrlResolution] put the facts
+/// on it directly; sites on the default path implement this instead. Returning
+/// an empty map keeps the probe and the host table as the fallback.
+abstract interface class LivePlayStreamFacts {
+  Map<String, LiveStreamFacts> declareStreamFacts(List<String> urls);
+}
+
 class LiveSite {
   String id = "";
   String name = "";
@@ -309,11 +357,15 @@ extension LiveSitePlayUrlResolution on LiveSite {
       return resolution.normalized();
     }
 
+    final urls = normalizeResolvedPlayUrls(await getPlayUrls(liveroom: liveroom, quality: quality));
     return LivePlayUrlResolution(
-      urls: normalizeResolvedPlayUrls(await getPlayUrls(liveroom: liveroom, quality: quality)),
+      urls: urls,
       appliedQualityData: quality.selectionId,
       // 平台这一档声明的画面宽高比（上游 F.1b），没有就是 null。
       declaredAspectRatio: quality.declaredAspectRatio,
+      streamFacts: site is LivePlayStreamFacts
+          ? (site as LivePlayStreamFacts).declareStreamFacts(urls)
+          : const <String, LiveStreamFacts>{},
     );
   }
 

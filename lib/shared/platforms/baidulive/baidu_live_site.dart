@@ -143,8 +143,7 @@ final class BaiduLiveSite extends LiveSite
   static LiveRoom _room(BaiduLiveRoom room, {required bool includeMedia}) {
     final online = room.currentViewers?.toString();
     final notice = <String>[
-      if (room.restriction != null && room.restriction != LiveRestriction.none)
-        i18n('baidulive_restricted_notice'),
+      if (room.restriction != null && room.restriction != LiveRestriction.none) i18n('baidulive_restricted_notice'),
       i18n('baidulive_chat_notice'),
     ];
     return LiveRoom(
@@ -164,9 +163,7 @@ final class BaiduLiveSite extends LiveSite
         BaiduLiveState.restricted || BaiduLiveState.unknown => LiveStatus.unknown,
       },
       // 付费/禁止访问是在播 + 限制（上游 30-5），播放时才说明原因。
-      restriction: room.state == BaiduLiveState.live || room.state == BaiduLiveState.replay
-          ? room.restriction
-          : null,
+      restriction: room.state == BaiduLiveState.live || room.state == BaiduLiveState.replay ? room.restriction : null,
       watching: online ?? '',
       onlineViewers: online,
       followers: room.followers?.toString(),
@@ -313,9 +310,14 @@ final class BaiduLiveSite extends LiveSite
     final selectionId = quality.selectionId.toString();
     for (final variant in room.variants) {
       if (variant.id != selectionId) continue;
+      final urls = variant.urls.map((uri) => uri.toString()).toList(growable: false);
+      final format = variant.protocol == 'hls' ? LiveStreamFormat.hls : LiveStreamFormat.flv;
       return LivePlayUrlResolution(
-        urls: variant.urls.map((uri) => uri.toString()).toList(growable: false),
+        urls: urls,
         appliedQualityData: variant.id,
+        // 线路自带容器与编码：HEVC-in-FLV 因此在取流侧走 FFmpeg 转封装，
+        // 播放器与录制端都不需要认平台（上游 4.x 的 LivePlayLine.format/codec）。
+        streamFacts: {for (final url in urls) url: (format: format, codec: variant.codec, relativeChildren: false)},
       );
     }
     throw const BaiduLiveException(BaiduLiveFailure.mediaUnavailable);

@@ -146,6 +146,71 @@ uri 2001314 的消息体就是一个 GameEventMessageBoardPanel：
 与 4 条上游 docs 提交。若用户确认要连引擎一起做，按站点逐批开工即可（每站：连接器 +
 消息解析 + 列表/画面显示 + 测试 + analyze）。
 
+## 取流：线路自描述 + FFmpeg 转封装（2026-10-04 开工）
+
+用户指定方向：**不跟着上游改播放器**，继续用 media_core，需要转的流用 FFmpeg 转好再喂给播放器。
+
+### 上游怎么做的
+
+4.x 把"一条播放线路"做成自描述的 `LivePlayLine`（`packages/live_core/lib/src/play_line.dart`）：
+`url` + `headers` + `format`(flv/hls/other) + `codec`(avc/hevc) + `lineId` + `lease`(refreshAt/expiresAt/
+cutsConnection) + `width`/`height`。上游自己的注释说得很直白：3.x 把请求头和租约放在播放器里按平台写的
+`PlaybackHeaderResolver` 与 `LivePlayLeaseMetadata` 能力上，4.x 让线路自己描述自己，于是"播放器与录制端
+不再需要按平台写代码"。上游有 18 个站点声明了 format/codec：baidulive、bigo、bilibili、chzzk、huya、inke、
+kick、kilakila、pandalive、picarto、seventeenlive、showroom、sixroom、steambroadcast、twitcasting、twitch、yy。
+
+### 本仓怎么落
+
+不引入 `LivePlayLine`（那要同时动 34 个适配器、契约、播放端与录制端），改为在既有契约上加**每线路事实**：
+
+- `shared/platforms/live_site.dart`：`LiveStreamFormat{flv,hls,other}` +
+  `typedef LiveStreamFacts = ({format, codec, relativeChildren})`；`LivePlayUrlResolution.streamFacts`
+  （url → 事实；`withSourcePolicies` 会丢掉不属于本次解析的键）+ `factsFor(url)`；走默认解析路径的站点
+  实现 `LivePlayStreamFacts.declareStreamFacts(urls)`，契约扩展里自动带上。
+- `domains/live/data/stream/live_stream_ingest.dart`：事实 → `IngestNeed` → `IngestPlan`（复用
+  media_core_ingest 的 `resolveIngestPlan`）。flv+hevc → `legacyContainer` → **ffmpegRelay**（本机 FFmpeg
+  转封装成回环 HLS 再喂 media_core）；hls+relativeChildren → **manifestRelay**；`other` 不当清单去探测；
+  其余**直连**——转流要一个进程、一个端口和 1–3 秒起播，不能默认开。
+- 已声明的站点：**baidulive**（顺带补上游的 HEVC 档位：档位里的 `hevc_flv` 与源站 `hevc_url`，编码写进线路
+  事实）、**twitcasting**（`tc-hls` 的裸名子清单，原来只靠 `playback_ingest_needs.dart` 的主机名表）。
+- 测试：`test/shared/platforms/live_stream_facts_test.dart`（10 个用例：判定映射、resolution 只保留本次线路、
+  百度 HEVC 档位解析、TwitCasting 声明与"站外主机不声明"）。`flutter analyze` 0 项。
+
+### 阻塞点：转流实现当前没有调用方（接线之后才真正生效）
+
+`domains/live/data/stream/playback_source_transport.dart`（清单探测 + `FfmpegIngestRelay` + `FlvSpliceRelay` +
+`FlvLegacyHevcRelay` + 租约生命周期，382 行）自从播放改走 `media_core_live` 的
+`LivePlaybackController.play(LiveSourceRequest)` 之后**没有任何调用方**：`LivePlayerFacade` 的
+`interceptSources` 钩子（构造参数）全仓没人传，`PlaybackSourceTransport(` 也没有实例化点。也就是说今天的
+直播取流是 URL + headers 直接进引擎，清单改写 / HEVC 转封装 / 到期拼接都不生效（多窗页另有自己的
+`FlvSpliceRelay` 用法）。接线方案（下一步，需要真机或桌面跑一次真实流验证）：
+
+1. 给 transport 加一个只准备输入的入口：
+   `Future<PlaybackInputLease?> prepare({url, headers, facts, policy, refreshAt, renewFlv})`，内部复用已有的
+   `_createIngestRelay/_createFfmpegRelay/_createSpliceRelay/_createLegacyHevcRelay`，把租约登记进
+   `_pending/_active`，`close()` 时释放；
+2. 在建 facade 的地方（`GlobalPlayerService._initialize`）传 `interceptSources:`，对每条 live `PlayerSource`
+   调 `prepare`：拿到租约就用回环 URI 换掉原 URI（回环不需要 headers），拿不到或出异常就**原样直连**——
+   最坏情况等于今天的行为，不会让播放变差；
+3. 事实来源：`LivePlayUrlResolution.streamFacts[url]`，随提交一起传到 facade（`FacadeStreamCommit` 需要加一个字段）；
+4. 释放点：facade 的 stop / replace / dispose 调 `transport.close()`；
+5. 接好之后，`playback_ingest_needs.dart` 的主机名表降级为"未声明主机的兜底"，`FlvLegacyHevcRelay` 的
+   Dart 重写路径保留为"没有 FFmpeg 运行时"时的降级。
+
+### 还没声明的站点（上游有 format/codec，本仓待补）
+
+bilibili（mp4 轮播线路是 `other`）、iptv（`.ts` 与 udpxy 是 `other`，上游 `f5ab30e79`）、inke（flv/avc）、
+sixroom（flv + 每条线路自己的 codec）、bigo / chzzk / huya / pandalive / picarto / seventeenlive / showroom /
+steambroadcast / twitch / yy / kilakila（hls 或 flv，多数只是标注，不改变直连判定）。
+其中**会改变行为**的只有三个：iptv 的 `.ts`/udpxy 与 bilibili 的 mp4 轮播线路（都不再被当成清单去探测），
+以及 sixroom 若给出 hevc 线路（→ FFmpeg 转封装）。其余属于补全声明，供录制端与将来的线路选择使用。
+
+### 明确不做
+
+上游 4.x 的 `live_media` / `live_player` 整包（plans、routes、loopback relay、transport、fallbacks、media_kit
+fork、mpv engine、playback session）不搬：本仓播放走 media_core + media_core_live，转流走 media_core_ingest
+的 FFmpeg 回环，职责已经对上；搬整包等于换播放栈。
+
 ## 未同步清单（2026-10 机械盘点 + 逐项核实）
 
 方法：`git log --no-merges 4802611aa..wzgrx/master -- packages/live_core/lib/src/sites packages/live_danmaku/lib/src`

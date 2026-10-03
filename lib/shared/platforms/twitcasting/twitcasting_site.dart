@@ -17,6 +17,7 @@ class TwitcastingSite extends LiveSite
         LiveSiteRecordRoomResolver,
         LivePlayRecoveryResolver,
         LiveCancellableSearch,
+        LivePlayStreamFacts,
         LiveSiteExternalRoomResolver {
   /// 该站点自己的官方房间地址（网页与可选的客户端 scheme）。
   @override
@@ -109,9 +110,26 @@ class TwitcastingSite extends LiveSite
     required LivePlayQuality quality,
   }) async {
     final fresh = await getRoomDetail(liveroom);
+    final urls = await getPlayUrls(liveroom: fresh, quality: quality);
     return LivePlayUrlResolution(
-      urls: await getPlayUrls(liveroom: fresh, quality: quality),
+      urls: urls,
       appliedQualityData: quality.selectionId,
+      streamFacts: declareStreamFacts(urls),
     );
+  }
+
+  /// `tc-hls` 的子清单写的是裸名（`media.95.mp4`）：原生解析器一旦丢了清单地址，
+  /// 就会把它们当成自己旁边的本地文件（`No protocol handler found to open URL
+  /// \tc.livehls\...\media.95.mp4`）。声明出来，取流侧就直接走回环改写，
+  /// 不必先探测一次清单。
+  @override
+  Map<String, LiveStreamFacts> declareStreamFacts(List<String> urls) => <String, LiveStreamFacts>{
+    for (final url in urls)
+      if (_isTwitCastingHost(url)) url: (format: LiveStreamFormat.hls, codec: null, relativeChildren: true),
+  };
+
+  static bool _isTwitCastingHost(String url) {
+    final host = Uri.tryParse(url)?.host.toLowerCase() ?? '';
+    return host == 'twitcasting.tv' || host.endsWith('.twitcasting.tv');
   }
 }
