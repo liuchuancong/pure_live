@@ -5,7 +5,6 @@ import 'package:pure_live/core/models/live_area.dart';
 import 'package:pure_live/core/models/live_room.dart';
 import 'package:pure_live/core/stream/hls_master_selection.dart';
 import 'package:pure_live/core/network/request_scope.dart';
-import 'package:pure_live/shared/platforms/empty_danmaku.dart';
 import 'package:pure_live/shared/platforms/live_danmaku.dart';
 import 'package:pure_live/shared/platforms/live_directory.dart';
 import 'package:pure_live/shared/platforms/live_search.dart';
@@ -16,6 +15,7 @@ import 'package:pure_live/core/utils/i18n.dart';
 import 'package:pure_live/shared/platforms/live_external_room.dart';
 
 import 'chzzk_api.dart';
+import 'chzzk_danmaku.dart';
 import 'chzzk_link.dart';
 
 class _ChzzkPlayback {
@@ -69,7 +69,7 @@ class ChzzkSite extends LiveSite
   String get directoryNoticeKey => 'chzzk_directory_scope';
 
   @override
-  LiveDanmaku getDanmaku() => EmptyDanmaku();
+  LiveDanmaku getDanmaku() => ChzzkDanmaku();
 
   static LiveRoom _liveCard(ChzzkLive live) => LiveRoom(
     platform: 'chzzk',
@@ -86,6 +86,10 @@ class ChzzkSite extends LiveSite
     audienceMetricType: AudienceMetricType.onlineViewers,
     notice: live.adult ? i18n('chzzk_adult_notice') : null,
     httpHeaders: ChzzkApi.mediaHeaders,
+    // 弹幕参数（上游 M5.16）：这一场的聊天频道；没有就不连弹幕。
+    danmakuData: live.chatChannelId.isEmpty
+        ? null
+        : ChzzkDanmakuArgs(chatChannelId: live.chatChannelId, channelId: live.channel.id),
   );
 
   /// [channel] 的卡片。当进房详情的 live-detail 说没开播时用 [forceOffline]：

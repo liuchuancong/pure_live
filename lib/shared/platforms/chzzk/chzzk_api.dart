@@ -58,6 +58,7 @@ class ChzzkLive {
     required this.isLive,
     required this.timeMachineActive,
     required Iterable<ChzzkMedia> media,
+    this.chatChannelId = '',
   }) : media = List.unmodifiable(media);
 
   final int liveId;
@@ -70,6 +71,9 @@ class ChzzkLive {
   final bool regionRestricted;
   final bool isLive;
   final bool timeMachineActive;
+
+  /// 这一场的聊天频道（上游 M5.16）：每场直播换一个，弹幕用它加入；没有就是没有弹幕。
+  final String chatChannelId;
   final List<ChzzkMedia> media;
 }
 
@@ -302,6 +306,7 @@ class ChzzkApi {
       isLive: isLive,
       timeMachineActive: _bool(detail['timeMachineActive']),
       media: media,
+      chatChannelId: isLive ? _optionalText(detail['chatChannelId']) : '',
     );
   }
 
