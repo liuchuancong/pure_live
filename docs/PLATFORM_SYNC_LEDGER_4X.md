@@ -426,6 +426,28 @@ curl 对照实测：`init.2.mp4` **不带 cookie → 401，带上 → 200（1095
 再读改写后的清单与 `#EXT-X-MAP` 子条目，断言子条目已换成本机地址、分片 200、且 provider 只在带 cookie 时
 被命中。**把 `sessionCookies` 改回 false，这个测试就以 401 失败**（已实测），和线上症状一模一样。
 `test/{core,domains,shared}` 70 项全绿，两个仓库 Analyze 0 项。
+### 自有输入的播放绑定被我 10-01 的清理删空了（2026-10-04 恢复）
+
+`992479049`（"清理 core 死代码——已退役平台的播放输入"）删掉了 bigo/fc2/niconico 三个
+`*PlaybackInput` 与 `live_input_playback_binding.dart` 里的对应 case，理由是"无任何引用"。这个判断错了：
+引用是**间接**的——三个站点适配器至今仍在 `resolvePlayUrls` 里返回
+`LivePlayUrlResolution.owned(input: XxxInputRecipe(...))`，而消费配方的 switch 被删空之后，
+`bindLiveInputForPlayback` 对任何配方都抛 `UnsupportedError`。表现是进房即
+`Play quality loading failed (UnsupportedError)`（niconico 先被撞见，bigo/fc2 同样坏）。
+录制侧没事：`live_input_recording_binder.dart` 那份 switch 一直在。
+
+恢复方式跟着录制侧的形状走：三个 opener + switch 放进
+`domains/recorder/data/services/live_input_playback_binding.dart`（它适配的是那里的
+`XxxHlsInput.open(recording:)`；放进直播域会新增三条跨域硬边）。直播域的
+`live_input_playback_binder.dart` 只留函数形状与装配点 `configureLiveInputPlaybackBinder`，由
+`app/bootstrap/initialized.dart` 安装实现——和取流接线、播放器代理同一种装配法。未装配时绑定抛异常
+而不是静默直连：这类站点没有可直连的 URL，静默只会把故障换成更难看的样子。
+
+两个 opt-in 探针（`niconico_playback_probe_test.dart`、`niconico_manager_probe_test.dart`）还在 import
+被删的 `core/player/core/niconico_playback_input.dart`，已改指新位置。
+测试 `test/domains/live/live_input_playback_binding_test.dart` 钉两条边：三种配方各自绑出正确身份且不开
+席位；未装配抛 `UnsupportedError`、装配后委托。75 项全绿，Analyze 0 项，`--strict` 无新增硬边。
+
 
 ### 还没声明的站点（上游有 format/codec，本仓待补）
 

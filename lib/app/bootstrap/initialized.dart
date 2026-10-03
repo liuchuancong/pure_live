@@ -23,6 +23,8 @@ import 'package:pure_live/core/player/core/ingest_ffmpeg_registry.dart';
 import 'package:pure_live/domains/recorder/data/services/ffmpeg_ingest_starter.dart';
 import 'package:pure_live/domains/live/data/stream/ingest_source_interceptor.dart';
 import 'package:pure_live/domains/live/domain/global_player_service.dart';
+import 'package:pure_live/domains/live/domain/live_input_playback_binder.dart';
+import 'package:pure_live/domains/recorder/data/services/live_input_playback_binding.dart';
 import 'package:pure_live/features/backup/backup_controller.dart';
 import 'package:pure_live/core/player/kernel/player_kernel_service.dart';
 import 'package:pure_live/core/platform/windows_multi_instance_launcher.dart';
@@ -108,6 +110,9 @@ class AppInitializer {
     // failing. Registered here rather than in the domain: the domain only knows
     // the abstraction, and the FFmpeg runtime above is what makes it work.
     GlobalPlayerService.sourceInterceptorFactory = IngestSourceInterceptor.new;
+    // 自有输入（niconico/bigo/fc2 的席位获取）的播放绑定同样在启动时装配：
+    // 直播域只保留函数形状，实现坐在录制域的数据层。
+    configureLiveInputPlaybackBinder(bindSiteInputForPlayback);
     configureWebSocketProxyRouting((_) {
       final proxy = SettingsService.to.proxy;
       return buildProxyDirective(

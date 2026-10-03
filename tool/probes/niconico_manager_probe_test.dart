@@ -10,7 +10,7 @@ import 'package:pure_live/core/config/log_controller.dart';
 import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/domains/live/data/platforms/niconico/niconico_watch.dart';
 import 'package:pure_live/get/get.dart';
-import 'package:pure_live/core/player/core/niconico_playback_input.dart';
+import 'package:pure_live/domains/recorder/data/services/live_input_playback_binding.dart';
 import 'package:pure_live/core/player/core/player_manager.dart';
 import 'package:pure_live/core/player/core/engine_fallback_manager.dart';
 import 'package:pure_live/core/player/core/line_fallback_manager.dart';
