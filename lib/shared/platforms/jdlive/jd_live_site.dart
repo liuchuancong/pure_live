@@ -87,7 +87,7 @@ final class JdLiveSite extends LiveSite
     final status = switch (room.state) {
       JdLiveState.live => LiveStatus.live,
       JdLiveState.preview || JdLiveState.offline || JdLiveState.replay => LiveStatus.offline,
-      JdLiveState.restricted || JdLiveState.paused || JdLiveState.unknown => LiveStatus.unknown,
+      JdLiveState.paused || JdLiveState.unknown => LiveStatus.unknown,
     };
     return LiveRoom(
       platform: 'jdlive',
@@ -100,9 +100,11 @@ final class JdLiveSite extends LiveSite
       area: 'JD Live',
       link: JdLiveLink.watchUrl(room.liveId),
       liveStatus: status,
+      // 仅 App 可看/在播但没有地址：仍然是"在播"，标出限制种类（上游统一规则）。
+      restriction: status == LiveStatus.live ? room.restriction : null,
       totalViewers: total,
       audienceMetricType: total == null ? AudienceMetricType.unknown : AudienceMetricType.totalViewers,
-      notice: room.state == JdLiveState.restricted ? i18n('jdlive_restricted_notice') : i18n('jdlive_chat_notice'),
+      notice: room.appOnly ? i18n('jdlive_restricted_notice') : i18n('jdlive_chat_notice'),
       httpHeaders: JdLiveApi.mediaHeaders(room.liveId),
       data: includeMedia ? room : null,
     );

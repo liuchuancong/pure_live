@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
+import 'package:pure_live/core/models/live_room.dart';
 import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/core/network/request_scope.dart';
 
@@ -19,7 +20,7 @@ final class JdLiveException implements Exception {
   String toString() => 'JD Live ${kind.name}';
 }
 
-enum JdLiveState { live, preview, offline, replay, paused, restricted, unknown }
+enum JdLiveState { live, preview, offline, replay, paused, unknown }
 
 final class JdLiveRoom {
   const JdLiveRoom({
@@ -33,6 +34,8 @@ final class JdLiveRoom {
     required this.state,
     required this.hls,
     required this.flv,
+    this.appOnly = false,
+    this.restriction = LiveRestriction.none,
   });
 
   final String liveId;
@@ -46,6 +49,13 @@ final class JdLiveRoom {
   final Uri? hls;
   final Uri? flv;
 
+  /// `secret` 1：只在京东 App 里可看（不再是"受限状态"）。
+  final bool appOnly;
+
+  /// 谁可以播这场直播：仅 App 可看 → [LiveRestriction.appOnly]，在播却没有
+  /// 任何地址 → [LiveRestriction.unplayable]，其余无限制。
+  final LiveRestriction restriction;
+
   JdLiveRoom enrich(JdLiveRoom known) => JdLiveRoom(
     liveId: liveId,
     authorId: authorId.isEmpty ? known.authorId : authorId,
@@ -57,6 +67,8 @@ final class JdLiveRoom {
     state: state,
     hls: hls,
     flv: flv,
+    appOnly: appOnly,
+    restriction: restriction,
   );
 }
 
@@ -233,7 +245,7 @@ class JdLiveApi {
           avatar: _image(item['userPic']),
           cover: _image(item['indexImage']),
           totalViews: _nonNegativeInt(item['pv']),
-          state: _state(status, secret: 0),
+          state: _state(status),
           hls: null,
           flv: null,
         ),
@@ -249,12 +261,17 @@ class JdLiveApi {
     if (liveId == null) throw const JdLiveException(JdLiveFailure.identity);
     final data = _responseData(value);
     if (_id(data['liveId']) != liveId) throw const JdLiveException(JdLiveFailure.identity);
-    final state = _state(_int(data['status']), secret: _int(data['secret']) ?? 0);
+    final appOnly = _int(data['secret']) == 1;
+    final state = _state(_int(data['status']));
     final hls = _mediaUri(data['h5VideoUrl'], extension: '.m3u8');
     final flv = _mediaUri(data['videoUrl'], extension: '.flv');
-    if (state == JdLiveState.live && (hls == null || flv == null || _streamKey(hls) != _streamKey(flv))) {
+    // 两个地址都在但指向不同的流，说明这份回答自相矛盾。
+    if (state == JdLiveState.live && hls != null && flv != null && _streamKey(hls) != _streamKey(flv)) {
       throw const JdLiveException(JdLiveFailure.schema);
     }
+    // 在播但一个地址都没有：仍然是"在播"，只是本客户端播不了（上游 28-4），
+    // 此前直接抛 schema 让整个房间读不出来。
+    final unplayable = state == JdLiveState.live && hls == null && flv == null;
     return JdLiveRoom(
       liveId: liveId,
       // 播放回答里没有的字段就留空（上游 28-2）：不编 "JD Live" 这种占位名、
@@ -269,6 +286,13 @@ class JdLiveApi {
       state: state,
       hls: hls,
       flv: flv,
+      appOnly: appOnly,
+      // `secret` 不再是状态：仅 App 可看是限制种类（上游）。
+      restriction: appOnly
+          ? LiveRestriction.appOnly
+          : unplayable
+          ? LiveRestriction.unplayable
+          : LiveRestriction.none,
     );
   }
 
@@ -312,8 +336,9 @@ class JdLiveApi {
     return _object(root['data']);
   }
 
-  static JdLiveState _state(int? status, {required int secret}) {
-    if (secret == 1) return JdLiveState.restricted;
+  /// 3.x 与改前的状态：`secret` 不再是状态（上游：它是 [JdLiveRoom.appOnly] 的
+  /// 标记，见 [JdLiveRoom.restriction]）。
+  static JdLiveState _state(int? status) {
     return switch (status) {
       1 => JdLiveState.live,
       0 => JdLiveState.preview,

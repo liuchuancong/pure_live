@@ -145,6 +145,8 @@ final class BigoSite extends LiveSite
       area: 'Bigo Live',
       link: BigoLink.url(card.siteId),
       liveStatus: LiveStatus.live,
+      // 上锁的列表行照常列出、也算在播，只是标成密码房（上游 24-2）。
+      restriction: card.locked ? LiveRestriction.password : null,
       watching: viewers ?? '',
       onlineViewers: viewers,
       totalViewers: null,
@@ -156,9 +158,12 @@ final class BigoSite extends LiveSite
 
   LiveRoom _room(BigoStudioRoom room, {required bool includeMedia}) {
     final status = room.status;
+    final restriction = BigoApi.restrictionOf(status, hasMedia: room.hls != null);
     final liveStatus = switch ((status.access, status.reportedAlive, room.hls)) {
       (BigoAccess.public, true, Uri()) => LiveStatus.live,
       (BigoAccess.public, false, _) => LiveStatus.offline,
+      // 受限的直播仍然是"在播"（上游 24-2）：只有公开且明确不在播才是下播。
+      (_, true, _) => LiveStatus.live,
       _ => LiveStatus.unknown,
     };
     final notice = switch (status.access) {
@@ -179,6 +184,8 @@ final class BigoSite extends LiveSite
       area: room.category.isEmpty ? name : room.category,
       link: BigoLink.url(status.canonicalSiteId),
       liveStatus: liveStatus,
+      // 限制种类：登录/密码房/付费房/公开但拿不到地址（上游 24-2）。
+      restriction: liveStatus == LiveStatus.live ? restriction : null,
       onlineViewers: null,
       totalViewers: null,
       notice: notice,

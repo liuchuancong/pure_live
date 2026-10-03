@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:pure_live/core/models/live_room.dart';
 import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/core/network/request_scope.dart';
 
@@ -71,6 +72,8 @@ class BigoStudioStatus {
     required this.reportedAlive,
     required this.roomStatus,
     required this.roomType,
+    this.password = false,
+    this.paid = false,
   });
   final String requestedSiteId;
   final String canonicalSiteId;
@@ -79,6 +82,12 @@ class BigoStudioStatus {
   final bool? reportedAlive;
   final int roomStatus;
   final String roomType;
+
+  /// `passRoom`：房间密码。
+  final bool password;
+
+  /// `isPaidShow` 为 1：付费直播。
+  final bool paid;
 }
 
 class BigoStudioRoom {
@@ -419,8 +428,19 @@ class BigoApi {
       reportedAlive: access == BigoAccess.public ? alive : null,
       roomStatus: _number(data['roomStatus']),
       roomType: _text(data['roomType']),
+      password: password,
+      paid: paid == '1',
     );
   }
+
+  /// 这场直播的限制种类（上游 24-2）：要登录的是 [LiveRestriction.needsLogin]；
+  /// 受限的按 `passRoom` 区分密码房与付费房；公开但拿不到播放地址的
+  /// （`hls` 为空）是 [LiveRestriction.unplayable]。受限的直播仍然是"在播"。
+  static LiveRestriction restrictionOf(BigoStudioStatus status, {required bool hasMedia}) => switch (status.access) {
+    BigoAccess.loginRequired => LiveRestriction.needsLogin,
+    BigoAccess.restricted => status.password ? LiveRestriction.password : LiveRestriction.paid,
+    BigoAccess.public => hasMedia ? LiveRestriction.none : LiveRestriction.unplayable,
+  };
 
   static BigoStudioRoom parseStudioRoom(Map<String, dynamic> json, {required String siteId, int? expectedOwnerId}) {
     validateSiteId(siteId);

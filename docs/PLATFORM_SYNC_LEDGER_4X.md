@@ -387,7 +387,7 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | 项 | 内容 | 本仓状态 |
 | --- | --- | --- |
 | 24-1 | 房间封面是直播间截图（下播时是上一场那张），头像仍是头像并作为封面兜底 | **已同步**（详情路径）：新增 `BigoStudioRoom.snapshot`，封面优先用它；此前封面直接拿头像，卡片显示的是主播头像而不是画面。目录卡片按上游同样是 cover 即 avatar，无需改 |
-| 24-2 | 上锁的列表行仍列出、在播并标 password；`passRoom`/`isPaidShow` 是在播 + 限制 | 未做：限制模型 |
+| 24-2 | 上锁的列表行仍列出、在播并标 password；`passRoom`/`isPaidShow` 是在播 + 限制 | **已同步**：登录→needsLogin、密码房→password、付费房→paid、公开但无播放地址→unplayable；受限房状态改为**在播**（此前为未知） |
 | 24-4 / 24-5 | 令牌复用（关注刷新与状态检查复用 30 分钟）与目录列表 30 秒缓存 | 未做：请求编排与缓存 |
 | 24-6 | 坏行/重复行只丢自己 | 未做 |
 
@@ -463,7 +463,7 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | 28-3 | 封面是列表卡片的 `indexImage`；播放回答的 `blurredImg` 是背景图 | **部分同步**：不再把 `blurredImg` 当封面（卡片封面经 `enrich` 保留）；背景字段本仓模型没有 |
 | 28-1 | 精选列表的分页（`currentCount` 前进、空页结束） | 未做：分页 |
 | 28-4 / 28-5 | FLV 退到 `pcVideoUrl`；线路带网页媒体头 | 未做 |
-| 统一规则 | status 3 是回放并播 JD Cloud 录像；appOnly 是在播 + 限制 | 未做：回放取流与限制模型 |
+| 统一规则 | status 3 是回放并播 JD Cloud 录像；appOnly 是在播 + 限制 | **appOnly/unplayable 已同步**（`secret` 1 → appOnly；在播无地址 → unplayable，此前直接抛 schema）；**回放取录像仍未做**（需要新的录像字段与解析） |
 
 ## looklive
 
