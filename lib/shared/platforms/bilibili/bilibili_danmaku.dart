@@ -7,6 +7,7 @@ import 'dart:typed_data';
 import 'package:brotli/brotli.dart';
 import 'package:flutter/foundation.dart';
 
+import 'package:pure_live/core/network/network_image_url.dart';
 import 'package:pure_live/core/utils/binary_writer.dart';
 
 import 'package:pure_live/core/logging/core_log.dart';
@@ -452,6 +453,8 @@ class BiliBiliDanmaku implements LiveDanmaku {
               color: color == 0 ? LiveMessageColor.white : LiveMessageColor.numberToColor(color),
               messageId: rawNonce.isEmpty ? '' : 'bilibili:$rawNonce',
               sentAt: sentAt,
+              // 贴纸与内联表情（上游 M13.16）。
+              emotes: _emotes(message, metadata),
             );
             onMessage?.call(liveMsg);
           }
@@ -592,6 +595,50 @@ class BiliBiliDanmaku implements LiveDanmaku {
   static String _giftId(Object? raw) {
     final id = raw?.toString().trim() ?? '';
     return id == '0' ? '' : id;
+  }
+
+  /// 一条聊天里的表情图片（上游 bilibili 4-x 的 `emotes`，M13.16）：贴纸
+  /// （`info[0][12]` 为 1，图片在 `info[0][13].url`）就是整条消息；否则取内联
+  /// 编码（`[dog]`）中出现在文本里的那些，映射来自 `info[0][15].extra.emots`。
+  static List<LiveEmote> _emotes(String text, List<dynamic> meta) {
+    if (text.isEmpty) return const <LiveEmote>[];
+    final sticker = meta.length > 13 ? meta[13] : null;
+    if (meta.length > 12 && meta[12] == 1 && sticker is Map) {
+      final url = _pictureUrl(sticker['url']);
+      return url.isEmpty ? const <LiveEmote>[] : [LiveEmote(code: text, url: url)];
+    }
+    var rich = meta.length > 15 ? meta[15] : null;
+    if (rich is String) rich = _decodeJsonObject(rich);
+    final extra = rich is Map ? _asJsonObject(rich['extra']) : null;
+    final emots = extra is Map ? extra['emots'] : null;
+    if (emots is! Map || emots.isEmpty) return const <LiveEmote>[];
+    final codes = <String, String>{};
+    for (final entry in emots.entries) {
+      final code = entry.key;
+      final value = entry.value;
+      if (code is! String || code.isEmpty || value is! Map) continue;
+      final url = _pictureUrl(value['url']);
+      if (url.isNotEmpty) codes[code] = url;
+    }
+    return LiveEmote.inText(text, codes);
+  }
+
+  static Object? _decodeJsonObject(String raw) {
+    final text = raw.trim();
+    if (!text.startsWith('{')) return null;
+    try {
+      return json.decode(text);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static Object? _asJsonObject(Object? value) => value is Map ? value : (value is String ? _decodeJsonObject(value) : null);
+
+  /// 表情图片地址：能规范化成 http(s) 就用它，否则当作没有。
+  static String _pictureUrl(Object? raw) {
+    final value = normalizeNetworkImageUrl(raw?.toString());
+    return value.startsWith('http') ? value : '';
   }
 
   void _acknowledgeIfRequired(dynamic packet) {
