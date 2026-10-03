@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pure_live/core/theme/app_canvas_scope.dart';
@@ -86,9 +88,27 @@ void main() {
     expect(Theme.of(after).scaffoldBackgroundColor, Colors.transparent);
   });
 
-  testWidgets('the fade-forwards box between two routes stops painting the theme colour', (tester) async {
-    // The transition paints `ColorScheme.surface` behind a page while it fades
-    // out; over a wallpaper that box is the flash seen on every page entry.
+  testWidgets('the two pages of a push never share the screen', (tester) async {
+    // The stock fade-forwards backdrop is an opaque `ColorScheme.surface`
+    // (a flash of the theme colour over a wallpaper) and a transparent one
+    // ghosts both translucent pages over each other (a white flash in a light
+    // theme, black in a dark one). The picture owns the canvas, so the covered
+    // page must be gone before the new one appears.
+    for (double t = 0.0; t <= 1.0001; t += 0.05) {
+      final double incoming = WallpaperFadeThroughTransitionsBuilder.incomingOpacity(t);
+      final double outgoing = WallpaperFadeThroughTransitionsBuilder.outgoingOpacity(t);
+      expect(incoming + outgoing, lessThanOrEqualTo(1.0 + 1e-9), reason: 'overlap at t=$t');
+      // Nothing opaque hides the picture in between: there is a moment where
+      // both pages are invisible and only the wallpaper is on screen.
+      expect(math.min(incoming, outgoing), lessThan(0.5));
+    }
+    expect(WallpaperFadeThroughTransitionsBuilder.incomingOpacity(0.0), 0.0);
+    expect(WallpaperFadeThroughTransitionsBuilder.incomingOpacity(1.0), 1.0);
+    expect(WallpaperFadeThroughTransitionsBuilder.outgoingOpacity(0.0), 1.0);
+    expect(WallpaperFadeThroughTransitionsBuilder.outgoingOpacity(1.0), 0.0);
+  });
+
+  testWidgets('a wallpaper canvas carries the fade-through transitions', (tester) async {
     late ThemeData theme;
     await tester.pumpWidget(
       MaterialApp(
@@ -111,9 +131,17 @@ void main() {
       ),
     );
 
-    final PageTransitionsBuilder builder = theme.pageTransitionsTheme.builders[TargetPlatform.windows]!;
-    expect(builder, isA<FadeForwardsPageTransitionsBuilder>());
-    expect((builder as FadeForwardsPageTransitionsBuilder).backgroundColor, Colors.transparent);
+    for (final TargetPlatform platform in <TargetPlatform>[
+      TargetPlatform.android,
+      TargetPlatform.windows,
+      TargetPlatform.iOS,
+    ]) {
+      expect(
+        theme.pageTransitionsTheme.builders[platform],
+        isA<WallpaperFadeThroughTransitionsBuilder>(),
+        reason: 'platform $platform',
+      );
+    }
   });
 
   testWidgets('without a wallpaper the transitions are left exactly as they are', (tester) async {

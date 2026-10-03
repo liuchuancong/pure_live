@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:media_core_media_kit/media_core_media_kit.dart';
@@ -112,7 +113,7 @@ ThemeData wallpaperChromeTheme(ThemeData base) {
   Color wash(Color color) => color.withValues(alpha: kWallpaperSurfaceOpacity);
   return base.copyWith(
     scaffoldBackgroundColor: Colors.transparent,
-    pageTransitionsTheme: wallpaperPageTransitions(base.pageTransitionsTheme),
+    pageTransitionsTheme: wallpaperPageTransitions,
     // `Material` widgets without a colour of their own paint this one.
     canvasColor: wash(base.canvasColor),
     // The desktop paging bar paints `cardColor`.
@@ -131,22 +132,65 @@ ThemeData wallpaperChromeTheme(ThemeData base) {
   );
 }
 
-/// The app's transitions, minus the opaque colour painted between two routes.
+/// Page transitions for a canvas that is a picture.
 ///
-/// The M3 fade-forwards transition draws `ColorScheme.surface` behind a page
-/// while it fades out, so a fading page never exposes black. That box is opaque
-/// and covers the wallpaper, which is why entering a page flashed the theme
-/// colour; while the picture owns the canvas it can be transparent, because the
-/// picture itself is already behind every route.
-PageTransitionsTheme wallpaperPageTransitions(PageTransitionsTheme source) {
-  return PageTransitionsTheme(
-    builders: <TargetPlatform, PageTransitionsBuilder>{
-      for (final MapEntry<TargetPlatform, PageTransitionsBuilder> entry in source.builders.entries)
-        entry.key: entry.value is FadeForwardsPageTransitionsBuilder
-            ? const FadeForwardsPageTransitionsBuilder(backgroundColor: Colors.transparent)
-            : entry.value,
-    },
-  );
+/// The M3 fade-forwards transition cross-fades the two routes: it fades the old
+/// page out while the new one fades in, over an opaque backdrop so a fading page
+/// never exposes black. Neither half works once the canvas is a wallpaper:
+///
+/// * with the stock opaque backdrop, entering a page flashed the theme colour;
+/// * with a transparent one, both pages are translucent and on screen at the
+///   same time, so the old page ghosts over the new one - which reads as a white
+///   flash in a light theme and a black one in a dark theme.
+///
+/// This fades the old page out *before* the new page fades in, so only the
+/// picture is on screen in between.
+const PageTransitionsTheme wallpaperPageTransitions = PageTransitionsTheme(
+  builders: <TargetPlatform, PageTransitionsBuilder>{
+    TargetPlatform.android: WallpaperFadeThroughTransitionsBuilder(),
+    TargetPlatform.iOS: WallpaperFadeThroughTransitionsBuilder(),
+    TargetPlatform.macOS: WallpaperFadeThroughTransitionsBuilder(),
+    TargetPlatform.windows: WallpaperFadeThroughTransitionsBuilder(),
+    TargetPlatform.linux: WallpaperFadeThroughTransitionsBuilder(),
+    TargetPlatform.fuchsia: WallpaperFadeThroughTransitionsBuilder(),
+  },
+);
+
+class WallpaperFadeThroughTransitionsBuilder extends PageTransitionsBuilder {
+  const WallpaperFadeThroughTransitionsBuilder();
+
+  /// The covered page is gone by here.
+  static const double handover = 0.45;
+
+  static const Curve _outgoingCurve = Interval(0.0, handover, curve: Curves.easeIn);
+  static const Curve _incomingCurve = Interval(handover, 1.0, curve: Curves.easeOut);
+
+  /// How visible the route being pushed is at [t] of its own animation.
+  static double incomingOpacity(double t) => _incomingCurve.transform(t.clamp(0.0, 1.0));
+
+  /// How visible a covered route is at [t] of its secondary animation.
+  static double outgoingOpacity(double t) => 1.0 - _outgoingCurve.transform(t.clamp(0.0, 1.0));
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T>? route,
+    BuildContext? context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    // A route is limited both by its own fade-in and by being covered: the
+    // minimum of the two keeps the two pages from ever being on screen together,
+    // and makes a pop the exact reverse of a push.
+    return AnimatedBuilder(
+      animation: Listenable.merge(<Listenable>[animation, secondaryAnimation]),
+      builder: (BuildContext context, Widget? inner) => Opacity(
+        opacity: math.min(incomingOpacity(animation.value), outgoingOpacity(secondaryAnimation.value)),
+        child: inner,
+      ),
+      child: child,
+    );
+  }
 }
 
 /// Applies a Gaussian blur to media backgrounds (picture or video frame).
