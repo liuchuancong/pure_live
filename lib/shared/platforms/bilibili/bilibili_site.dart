@@ -860,7 +860,22 @@ class BiliBiliSite
       notice: "",
       platform: PlatformIds.bilibili,
       danmakuData: danmakuData,
+      // `room_info.special_type`：1 是付费房（门票），0 普通，2 拜年祭房。付费房
+      // 在播时是 paid；没有这个字段说明平台没说（上游 bilibili 4-x 的
+      // `_restriction`）。
+      restriction: _paidRestriction(roomInfo['room_info']?['special_type'], live: live),
     );
+  }
+
+  /// `special_type` 1 且正在直播 → [LiveRestriction.paid]；其它取值 → 无限制；
+  /// 字段缺失或读不出来 → null（平台没说）。
+  static LiveRestriction? _paidRestriction(Object? specialType, {required bool live}) {
+    final value = specialType is num
+        ? specialType.toInt()
+        : int.tryParse(specialType?.toString().trim() ?? '');
+    if (value == null) return null;
+    if (value == 1 && live) return LiveRestriction.paid;
+    return LiveRestriction.none;
   }
 
   @override
