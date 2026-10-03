@@ -9,10 +9,14 @@ import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/shared/platforms/live_danmaku.dart';
 
 class KuaishouDanmakuArgs {
-  const KuaishouDanmakuArgs({required this.liveStreamId, this.cookie = ''});
+  const KuaishouDanmakuArgs({required this.liveStreamId, this.cookie = '', this.emotes = const <String, String>{}});
 
   final String liveStreamId;
   final String cookie;
+
+  /// 站点的表情表：评论里写的编码（`[笑哭]`）→ 它的图片（https），来自房间页
+  /// （上游 4-x 的 `emojiTable`）；房间是从卡片打开、没读页面时为空。
+  final Map<String, String> emotes;
 }
 
 typedef KuaishouFeedFetcher = Future<dynamic> Function(
@@ -134,7 +138,7 @@ class KuaishouDanmaku implements LiveDanmaku {
     try {
       final raw = await _fetcher(args, _cursor, cancelToken);
       if (generation != _generation || cancelToken.isCancelled) return;
-      final batch = parseFeedPayload(raw);
+      final batch = parseFeedPayload(raw, emotes: args.emotes);
       if (batch.cursor.isNotEmpty) _cursor = batch.cursor;
       _reconnectAttempts = 0;
 
@@ -245,7 +249,7 @@ class KuaishouDanmaku implements LiveDanmaku {
     Error.throwWithStackTrace(lastError!, lastStackTrace!);
   }
 
-  static KuaishouFeedBatch parseFeedPayload(dynamic raw) {
+  static KuaishouFeedBatch parseFeedPayload(dynamic raw, {Map<String, String> emotes = const <String, String>{}}) {
     dynamic payload = raw;
     for (var depth = 0; depth < 3 && payload is String; depth++) {
       payload = jsonDecode(payload);
@@ -284,6 +288,8 @@ class KuaishouDanmaku implements LiveDanmaku {
             messageId: 'kuaishou:${rawId.isEmpty ? digest : rawId}',
             sentAt: timestamp == null ? null : DateTime.fromMillisecondsSinceEpoch(timestamp),
             color: LiveMessageColor.white,
+            // 评论里的编码在房间页的表情表里能查到图片（上游 M13.16）。
+            emotes: emotes.isEmpty ? const <LiveEmote>[] : LiveEmote.inText(content, emotes),
           ),
         );
       }
