@@ -1,7 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:pure_live/core/models/live_area.dart';
 import 'package:pure_live/core/models/live_room.dart';
-import 'package:pure_live/shared/platforms/empty_danmaku.dart';
 import 'package:pure_live/shared/platforms/live_danmaku.dart';
 import 'package:pure_live/shared/platforms/live_directory.dart';
 import 'package:pure_live/shared/platforms/live_search.dart';
@@ -12,6 +11,7 @@ import 'package:pure_live/core/utils/i18n.dart';
 import 'package:pure_live/shared/platforms/live_external_room.dart';
 
 import 'jd_live_api.dart';
+import 'jd_live_danmaku.dart';
 import 'jd_live_link.dart';
 
 final class JdLiveSite extends LiveSite
@@ -48,7 +48,7 @@ final class JdLiveSite extends LiveSite
   String get directoryNoticeKey => 'jdlive_directory_scope';
 
   @override
-  LiveDanmaku getDanmaku() => EmptyDanmaku();
+  LiveDanmaku getDanmaku() => JdLiveDanmaku();
 
   @override
   Future<List<LiveCategory>> getCategores(int page, int pageSize) async => page == 1 && pageSize > 0
@@ -106,6 +106,8 @@ final class JdLiveSite extends LiveSite
       audienceMetricType: total == null ? AudienceMetricType.unknown : AudienceMetricType.totalViewers,
       notice: room.appOnly ? i18n('jdlive_restricted_notice') : i18n('jdlive_chat_notice'),
       httpHeaders: JdLiveApi.mediaHeaders(room.liveId),
+      // 弹幕参数（上游 M5.24）：直播间号；在播时给。
+      danmakuData: status == LiveStatus.live ? JdLiveDanmakuArgs(liveId: room.liveId) : null,
       data: includeMedia ? room : null,
     );
   }
