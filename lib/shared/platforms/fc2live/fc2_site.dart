@@ -119,14 +119,13 @@ final class Fc2Site extends LiveSite
   }
 
   static LiveRoom _room(Fc2Room room, {required bool includeMedia}) {
-    final liveStatus = switch (room.state) {
-      Fc2State.live => LiveStatus.live,
-      Fc2State.offline => LiveStatus.offline,
-      Fc2State.restricted => LiveStatus.unknown,
-    };
+    // 受限的直播仍然是"在播"（上游 26-9）：状态是直播，另带限制种类，
+    // 播放时才说明原因。
+    final live = room.state != Fc2State.offline;
+    final liveStatus = live ? LiveStatus.live : LiveStatus.offline;
     // 未开播的详情没有观众数（上游 26-8）：`count`/`total` 是上一场的残留。
-    final viewers = room.state == Fc2State.live ? room.currentViewers?.toString() : null;
-    final totalViewers = room.state == Fc2State.live ? room.totalViewers?.toString() : null;
+    final viewers = live ? room.currentViewers?.toString() : null;
+    final totalViewers = live ? room.totalViewers?.toString() : null;
     return LiveRoom(
       platform: 'fc2live',
       roomId: room.channelId,
@@ -138,6 +137,8 @@ final class Fc2Site extends LiveSite
       area: room.categoryName,
       link: Fc2Link.channelUrl(room.channelId),
       liveStatus: liveStatus,
+      restriction: live ? room.restriction : null,
+      startedAt: live ? room.startedAt : null,
       watching: viewers ?? '',
       onlineViewers: viewers,
       totalViewers: totalViewers,

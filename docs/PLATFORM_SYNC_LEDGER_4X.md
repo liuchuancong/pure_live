@@ -377,8 +377,8 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | --- | --- | --- |
 | 26-8 | 未开播的详情没有观众数 | **已同步**：非在播时清空 watching/onlineViewers/totalViewers 与观众口径 |
 | 26-1 / 26-2 | 清晰度按档位（`fc2live:<channel>:<id>`）与 `hlsPlaylists` 读全部播放列表 | 未做：清晰度发现 |
-| 26-9 | 受限直播是在播 + 限制（`is_limited`），播放被拒 | 未做：状态与限制模型 |
-| 其它 | startedAt（`start_time`/`start`）、控制权交接 | 未做 |
+| 26-9 | 受限直播是在播 + 限制（`is_limited`），播放被拒 | **已同步**：`is_limited`→unplayable、`fee`/`ticketid`/`ticket_only`→paid、`login_only`→needsLogin（目录行看 `pay`/`tid`/`login`）；受限时状态为**直播**而非未知 |
+| 其它 | startedAt（`start_time`/`start`）、控制权交接 | startedAt **已同步**（在播时带入 `LiveRoom.startedAt`）；控制权交接未做 |
 
 ## bigo
 
