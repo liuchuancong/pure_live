@@ -155,10 +155,16 @@ class ShowroomProfile {
 }
 
 class ShowroomRoom {
-  ShowroomRoom(this.profile, Iterable<ShowroomStream> streams) : streams = List.unmodifiable(streams);
+  ShowroomRoom(this.profile, Iterable<ShowroomStream> streams, {this.chatHost = '', this.chatKey = ''})
+    : streams = List.unmodifiable(streams);
 
   final ShowroomProfile profile;
   final List<ShowroomStream> streams;
+
+  /// 评论服务器与这一场的订阅键（上游 M5.15）：`live_info` 的 `bcsvr_host` 与
+  /// `bcsvr_key`；没有就是没有弹幕。
+  final String chatHost;
+  final String chatKey;
 }
 
 /// Public SHOWROOM web contracts. The directory is a complete snapshot rather
@@ -362,10 +368,39 @@ class ShowroomApi {
     final roomId = await resolveRoomId(reference, cancel: cancel);
     final results = await Future.wait<Object>([profile(roomId, cancel: cancel), liveStatus(roomId, cancel: cancel)]);
     final profileResult = (results[0] as ShowroomProfile).withLiveStatus(results[1] as bool);
-    if (!playback || !profileResult.isLive) return ShowroomRoom(profileResult, const []);
+    if (!profileResult.isLive) return ShowroomRoom(profileResult, const []);
+    // 评论服务器与订阅键（上游 M5.15）：直播中才有。
+    final chat = await commentServer(roomId, cancel: cancel);
+    if (!playback) return ShowroomRoom(profileResult, const [], chatHost: chat.host, chatKey: chat.key);
     final media = await streams(roomId, cancel: cancel);
     if (media.isEmpty) throw const ShowroomException(ShowroomFailure.mediaUnavailable);
-    return ShowroomRoom(profileResult, media);
+    return ShowroomRoom(profileResult, media, chatHost: chat.host, chatKey: chat.key);
+  }
+
+  /// `live_info` 的 `bcsvr_host` / `bcsvr_key`（上游 M5.15）：主机必须是
+  /// `showroom-live.com` 或它的子域名（小写、不带端口与路径），键不超过 256 字、
+  /// 不含空白与控制字符（含制表符，否则能借订阅帧拼出别的命令）。
+  Future<({String host, String key})> commentServer(int roomId, {CancelToken? cancel}) async {
+    if (roomId <= 0) return (host: '', key: '');
+    final data = _object(await _get('/api/live/live_info', {'room_id': '$roomId'}, cancel));
+    return (host: commentHost(data['bcsvr_host']), key: commentKey(data['bcsvr_key']));
+  }
+
+  static String commentHost(Object? raw) {
+    final value = _optionalText(raw).trim().toLowerCase();
+    if (value.isEmpty) return '';
+    if (value.contains('/') || value.contains(':') || value.contains(' ')) return '';
+    if (value != 'showroom-live.com' && !value.endsWith('.showroom-live.com')) return '';
+    return value;
+  }
+
+  static String commentKey(Object? raw) {
+    final value = _optionalText(raw).trim();
+    if (value.isEmpty || value.length > 256) return '';
+    for (final code in value.codeUnits) {
+      if (code <= 0x20 || code == 0x7f) return '';
+    }
+    return value;
   }
 
   static ShowroomLive _live(Map<String, dynamic> data) {

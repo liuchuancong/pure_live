@@ -1,7 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:pure_live/core/models/live_area.dart';
 import 'package:pure_live/core/models/live_room.dart';
-import 'package:pure_live/shared/platforms/empty_danmaku.dart';
 import 'package:pure_live/shared/platforms/live_danmaku.dart';
 import 'package:pure_live/shared/platforms/live_directory.dart';
 import 'package:pure_live/shared/platforms/live_search.dart';
@@ -13,6 +12,7 @@ import 'package:pure_live/shared/platforms/live_external_room.dart';
 import 'package:pure_live/shared/platforms/showroom/showroom_link.dart';
 
 import 'showroom_api.dart';
+import 'showroom_danmaku.dart';
 
 class _ShowroomPlayback {
   _ShowroomPlayback(this.roomId, Iterable<LivePlayQuality> qualities) : qualities = List.unmodifiable(qualities);
@@ -58,7 +58,7 @@ class ShowroomSite extends LiveSite
   String get directoryNoticeKey => 'showroom_directory_scope';
 
   @override
-  LiveDanmaku getDanmaku() => EmptyDanmaku();
+  LiveDanmaku getDanmaku() => ShowroomDanmaku();
 
   Future<ShowroomCatalog> _catalog({CancelToken? cancel}) {
     if (cancel != null) return _api.catalog(cancel: cancel);
@@ -233,6 +233,10 @@ class ShowroomSite extends LiveSite
       restriction: profile.isLive ? profile.restriction : null,
       startedAt: profile.isLive ? profile.startedAt : null,
       data: profile.isLive && qualities.isNotEmpty ? _ShowroomPlayback('${profile.roomId}', qualities) : null,
+      // 弹幕参数（上游 M5.15）：直播中且有评论服务器与订阅键时给。
+      danmakuData: profile.isLive && room.chatHost.isNotEmpty && room.chatKey.isNotEmpty
+          ? ShowroomDanmakuArgs(roomId: profile.roomId, host: room.chatHost, key: room.chatKey)
+          : null,
       httpHeaders: ShowroomApi.mediaHeaders,
     );
   }
