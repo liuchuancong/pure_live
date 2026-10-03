@@ -487,6 +487,33 @@ media_kit（Predidit fork 与 pub 1.2.6）的 Dart 与随包源码里**都没有
 不注册 stream callback"的待办因此要先改成"先找到注册者"。
 
 
+### jdlive「播两秒停一下再继续」：同一个属性覆盖，第一次落在回环中继上（2026-10-04，HEAD 已修）
+
+和 pandalive 那条是同一个缺陷，但这次的源是**回环中继**，所以覆盖的代价比直连更具体。日志
+（`zt-pull-ai.jdcloud.com`，`children=1 relative=1 → loopback rewrite`，
+`relay → http://127.0.0.1:52166/i1vzuev527t3f0hjrjln40ek/root.m3u8`）：
+
+- 按源写入是对的：`http-proxy=""`、`force-seekable="no"`、`cache-pause="no"`（`root.m3u8` 认作清单）。
+- 紧接着装配表把它们全盖回去：`force-seekable="yes"`、`cache-pause="yes"`、`cache-pause-wait="4"`，
+  **还有 `http-proxy="http://127.0.0.1:7897"`**——于是 `lavf/v: Could not set AVOption
+  http_proxy='http://127.0.0.1:7897'` 出现在 `http://127.0.0.1:52166/…r0.ts` 的子请求上：
+  **每个回环分片都被送去 Clash 绕一圈再回到本机**（ffmpeg 默认不会为 127.0.0.1 跳过代理，此前已实测）。
+- 症状机制就在起播那三行：`playback restart complete @ 0.067` → `positionMs=233` →
+  `Enter buffering (buffer went from 100% -> 0%)` → 0%→1%→5%→22%→48%→98% →
+  `End buffering (waited 4.227554 secs)`。**4.23 秒 ≈ `cache-pause-wait: 4`**：mpv 播完手上那一片之后
+  自己停下来，等凑满 4 秒缓存才继续——这就是用户看到的「播两秒、停、再接着播」。pandalive 同一份日志里的
+  `End buffering (waited 2.751994 secs)` 是同一件事的另一次。
+
+HEAD 上清单源是 `cache-pause: no`（`cache-pause-wait` 留着但不再触发），回环源额外拿到 `http-proxy: ''`；
+`test/core/player/media_kit_source_properties_test.dart` 的「本机输入既不送代理也不猜容器」正是钉
+`http://127.0.0.1:4321/ingest/index.m3u8` 这个形状（`http-proxy=''`、`force-seekable='no'`、
+`cache-pause='no'`）。**所以 jdlive 不需要改代码，需要的是把运行的构建换到 HEAD。**
+
+诚实的边界：jdlive 上游清单只挂 1 个分片，播放器本来就贴着直播边缘跑，下一片到达前的短暂等待不会完全消失；
+消失的是那 4 秒的**主动**等待。若热重启后仍有卡顿，下一个要查的是中继的清单刷新节奏，不是缓存策略——
+那需要一份新日志才能判断。
+
+
 ### 还没声明的站点（上游有 format/codec，本仓待补）
 
 **已补（2026-10-04 同批）**：bilibili（直播 `flv`/`ts`/`fmp4` 线路按 `parsePlayUrlResolution` 里的
