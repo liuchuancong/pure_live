@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:pure_live/core/theme/app_canvas_scope.dart';
 import 'package:pure_live/domains/wallpaper/presentation/app_background.dart';
 
 const Color _themeScaffold = Color(0xFF123456);
@@ -32,6 +33,21 @@ void main() {
   testWidgets('without a wallpaper the theme scaffold colour is untouched', (tester) async {
     final ThemeData theme = await _themeUnder(tester, ownsCanvas: false);
     expect(theme.scaffoldBackgroundColor, _themeScaffold);
+    expect(theme.colorScheme.surface.a, 1.0);
+  });
+
+  testWidgets('surfaces are washed while a wallpaper shows, text stays opaque', (tester) async {
+    final ThemeData theme = await _themeUnder(tester, ownsCanvas: true);
+
+    expect(theme.colorScheme.surface.a, closeTo(kWallpaperSurfaceOpacity, 0.001));
+    expect(theme.colorScheme.surfaceContainerLow.a, closeTo(kWallpaperSurfaceOpacity, 0.001));
+    expect(theme.colorScheme.surfaceContainerHighest.a, closeTo(kWallpaperSurfaceOpacity, 0.001));
+    expect(theme.canvasColor.a, closeTo(kWallpaperSurfaceOpacity, 0.001));
+    expect(theme.cardColor.a, closeTo(kWallpaperSurfaceOpacity, 0.001));
+
+    expect(theme.colorScheme.onSurface.a, 1.0, reason: 'text keeps full contrast');
+    expect(theme.colorScheme.onSurfaceVariant.a, 1.0);
+    expect(theme.colorScheme.primary, ThemeData().colorScheme.primary, reason: 'semantic colours untouched');
   });
 
   testWidgets('the wrapper keeps one widget shape while the state flips', (tester) async {

@@ -101,11 +101,36 @@ class WallpaperCanvasTheme extends StatelessWidget {
           ? base.copyWith(
               scaffoldBackgroundColor: Colors.transparent,
               pageTransitionsTheme: wallpaperPageTransitions(base.pageTransitionsTheme),
+              // Cards, tab strips, rails, menus and bars all take their colour
+              // from the neutral surface family; washing that family is what
+              // stops them from covering the picture with flat white.
+              colorScheme: wallpaperSurfaceColors(base.colorScheme),
+              canvasColor: base.canvasColor.withValues(alpha: kWallpaperSurfaceOpacity),
+              cardColor: base.cardColor.withValues(alpha: kWallpaperSurfaceOpacity),
             )
           : base,
       child: child,
     );
   }
+}
+
+/// The neutral surface family, washed so a wallpaper reads through it.
+///
+/// Only the neutral surfaces change: the semantic colours (primary, error, the
+/// tinted containers) and every `onSurface` stay opaque, so text, icons and
+/// selection states keep their contrast.
+ColorScheme wallpaperSurfaceColors(ColorScheme scheme) {
+  Color wash(Color color) => color.withValues(alpha: kWallpaperSurfaceOpacity);
+  return scheme.copyWith(
+    surface: wash(scheme.surface),
+    surfaceDim: wash(scheme.surfaceDim),
+    surfaceBright: wash(scheme.surfaceBright),
+    surfaceContainerLowest: wash(scheme.surfaceContainerLowest),
+    surfaceContainerLow: wash(scheme.surfaceContainerLow),
+    surfaceContainer: wash(scheme.surfaceContainer),
+    surfaceContainerHigh: wash(scheme.surfaceContainerHigh),
+    surfaceContainerHighest: wash(scheme.surfaceContainerHighest),
+  );
 }
 
 /// The app's transitions, minus the opaque colour painted between two routes.

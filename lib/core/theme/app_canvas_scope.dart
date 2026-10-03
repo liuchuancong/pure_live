@@ -1,5 +1,13 @@
 import 'package:flutter/widgets.dart';
 
+/// Opacity of surfaces and chrome while a background picture owns the canvas.
+///
+/// Low enough that the picture reads through cards, tab strips and bars, high
+/// enough that text on them keeps its contrast. One value, used by the wallpaper
+/// theme (cards, tab bars, rails, menus), the desktop title bar and the desktop
+/// navigation rail.
+const double kWallpaperSurfaceOpacity = 0.55;
+
 /// Marks a subtree whose pages must not paint their own canvas.
 ///
 /// The background layer paints the app wallpaper behind the Navigator. Pages

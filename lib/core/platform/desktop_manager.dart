@@ -290,7 +290,7 @@ class CustomTitleBar extends StatelessWidget {
       // any artwork.
       final Color titleBarColor = isFullscreen || isDark ? Colors.black : theme.scaffoldBackgroundColor;
       final bool wallpaperBehind = !isFullscreen && AppCanvasScope.ownedByBackgroundOf(context);
-      final bgColor = wallpaperBehind ? titleBarColor.withValues(alpha: 0.62) : titleBarColor;
+      final bgColor = wallpaperBehind ? titleBarColor.withValues(alpha: kWallpaperSurfaceOpacity) : titleBarColor;
       final iconColor = isFullscreen || isDark ? Colors.white.withValues(alpha: 0.75) : Colors.black;
       final currentRoute = RouteObserverController.to.currentRoute.value;
       final currentRouteIskSplash = currentRoute == RoutePath.kSplash;
