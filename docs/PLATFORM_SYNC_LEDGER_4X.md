@@ -146,7 +146,30 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | `ab456b879` | 限制 `unplayable`（平台说在播但没有任何可播清晰度） | **已同步**：在播房间按 `playUrls` 是否有可播档位给 none/unplayable（三处房间构建都接了） |
 | `4f1a8b4a8` | 快手卡片标题之外的 Twitch 部分 | 见 twitch 章节 |
 
-## 跨站点公共
+## 批次 ② 核查表：已有引擎站点的弹幕改动
+
+本仓有弹幕引擎的 8 站（bilibili、douyu、huya、douyin、kuaishou、soop、twitch、yy），
+把上游 `packages/live_danmaku/lib/src/sites/<site>.dart` 的改动逐条分类
+（不含 docs 与"refactored from v3"这类重写）：
+
+| 站点 | 上游提交 | 内容 | 判定 |
+| --- | --- | --- | --- |
+| bilibili | `81733c1e6` | 撤回与公告 | 公告回执**已有**；撤回**需跨层**（新消息类型 + 渲染层移除） |
+| bilibili | `40dc22279` | 打码昵称不能用于屏蔽 | **已摘**（屏蔽侧）；菜单与启动清理未做 |
+| douyu | `398f68f87` | `rss`+`ss@=0` 表示下播，结束这一路 | **已摘**（本轮目标之前） |
+| douyu | `8eca75a32` | `dgb` 礼物包上报为 gift | **不做**：本仓弹幕层不渲染 gift，上游也只上报不显示 |
+| huya | `5a9fa6a5e` | 公告栏头条（headline board）+ 下播结束这一路 | 待评估：头条展示需弹幕层支持；"下播结束"可能可摘 |
+| huya | `8613f92bd` | 单片推送带 `lMsgId` | 待评估：本仓 huya 引擎是否有对应去重/串联逻辑 |
+| kuaishou | `fffd28b31` | 消息带上表情图片（M13.16） | **可摘**：本仓已有 `danmaku_emoji.dart` 与快手引擎 |
+| soop | `083fac138` | `1`/`-1`/`bar` 文本、发送者 id、走代理的聊天 | **可摘**：纯站点层解析 |
+| yy | `c991163f0` | 从弹幕上报热度（M4.D） | **已摘**（YY 热度字段），其余（分区列出/占位主播）见 YY 小节 |
+| kuaishou/twitch/douyin | `84b9fe205` 等 | 生命周期/监听释放 | **不适用**（本仓无 `ConnectorBase`） |
+
+结论：②"纯站点层可摘"的只剩 **kuaishou 表情图片**、**soop 文本与发送者 id**、
+**huya 下播结束/`lMsgId`** 三类；撤回、礼物展示、头条公告都要动本仓公共弹幕层，
+需要另行确认。
+
+
 
 | 上游提交 | 内容 | 本仓状态 |
 | --- | --- | --- |
