@@ -374,7 +374,38 @@ class BiliBiliDanmaku implements LiveDanmaku {
       var obj = json.decode(jsonMessage);
       _acknowledgeIfRequired(obj);
       var cmd = obj["cmd"].toString();
-      if (cmd.contains("DANMU_MSG")) {
+      // 撤回要排在 DANMU_MSG 之前：`RECALL_DANMU_MSG` 里也含 `DANMU_MSG`，否则会被
+      // 当成一条普通聊天（上游 bilibili 4-x）。
+      if (cmd == "RECALL_DANMU_MSG") {
+        final data = obj["data"];
+        if (data is Map) {
+          final recallType = int.tryParse(data["recall_type"]?.toString() ?? '');
+          final LiveRetraction? target;
+          if (recallType == 2) {
+            final uinfo = data["uinfo"];
+            final uid = (uinfo is Map ? int.tryParse(uinfo["uid"]?.toString() ?? '') : null) ??
+                int.tryParse(data["target_id"]?.toString() ?? '');
+            // uid 0 是游客看到的占位（所有人都被打成 0），撤它等于撤所有人。
+            target = uid == null || uid <= 0 ? null : LiveRetraction.user('$uid');
+          } else if (recallType == 3) {
+            target = const LiveRetraction.all();
+          } else {
+            // 0 是"什么都没撤"，1 是单条（网页播放器自己也不在这里处理）。
+            target = null;
+          }
+          if (target != null) {
+            onMessage?.call(
+              LiveMessage(
+                type: LiveMessageType.retraction,
+                userName: '',
+                message: '',
+                color: LiveMessageColor.white,
+                data: target,
+              ),
+            );
+          }
+        }
+      } else if (cmd.contains("DANMU_MSG")) {
         if (obj["info"] != null && obj["info"].length != 0) {
           var message = obj["info"][1].toString();
           var color = asT<int?>(obj["info"][0][3]) ?? 0;
@@ -430,9 +461,30 @@ class BiliBiliDanmaku implements LiveDanmaku {
           userName: "SUPER_CHAT_MESSAGE",
           message: "SUPER_CHAT_MESSAGE",
           color: LiveMessageColor.white,
+          // 同一条醒目留言的 id：稍后 `SUPER_CHAT_MESSAGE_DELETE` 按它撤回
+          // （上游 bilibili 4-x）。
+          messageId: obj["data"]["id"] == null ? '' : 'bilibili:${obj["data"]["id"]}',
           data: sc,
         );
         onMessage?.call(liveMsg);
+      } else if (cmd == "SUPER_CHAT_MESSAGE_DELETE") {
+        // 被退款/下架的醒目留言：按 id 逐条撤回（上游 bilibili 4-x）。
+        final ids = obj["data"] is Map ? obj["data"]["ids"] : null;
+        if (ids is List) {
+          for (final raw in ids) {
+            final id = raw?.toString().trim() ?? '';
+            if (id.isEmpty) continue;
+            onMessage?.call(
+              LiveMessage(
+                type: LiveMessageType.retraction,
+                userName: '',
+                message: '',
+                color: LiveMessageColor.white,
+                data: LiveRetraction.message('bilibili:$id'),
+              ),
+            );
+          }
+        }
       }
     } catch (e) {
       CoreLog.error(e);
