@@ -9,6 +9,7 @@ import 'package:pure_live/core/models/live_anchor_item.dart';
 import 'package:pure_live/shared/platforms/live_external_room.dart';
 
 import 'acfun_api.dart';
+import 'acfun_danmaku.dart';
 import 'acfun_directory.dart';
 import 'acfun_search.dart';
 
@@ -169,7 +170,24 @@ class AcfunSite extends LiveSite
   Future<LiveRoom> getRoomDetail(LiveRoom liveroom) async {
     if (liveroom.detailIdentity == null) return liveroom;
     final fresh = await getRoomDetailForRefresh(liveroom);
-    if (fresh.liveStatus == LiveStatus.live) fresh.data = await _api.playback(fresh.roomId!);
+    if (fresh.liveStatus == LiveStatus.live) {
+      final playback = await _api.playback(fresh.roomId!);
+      fresh.data = playback;
+      // 弹幕参数（上游 M5.9 / M4.10）：进房时拿到的访客会话与票据，连接本身不再发请求。
+      if (playback.tickets.isNotEmpty) {
+        final visitor = await _api.visitorCredentials();
+        fresh.danmakuData = AcfunDanmakuArgs(
+          authorId: AcfunApi.normalizeAuthorId(fresh.roomId!),
+          liveId: playback.liveId,
+          userId: visitor.userId,
+          deviceId: visitor.did,
+          visitorToken: visitor.token,
+          security: visitor.security,
+          tickets: playback.tickets,
+          enterRoomAttach: playback.enterRoomAttach,
+        );
+      }
+    }
     return fresh;
   }
 

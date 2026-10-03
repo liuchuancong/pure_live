@@ -57,17 +57,31 @@ class AcfunStreamQuality {
 }
 
 class AcfunPlayback {
-  const AcfunPlayback({required this.liveId, required this.qualities});
+  const AcfunPlayback({
+    required this.liveId,
+    required this.qualities,
+    this.tickets = const <String>[],
+    this.enterRoomAttach = '',
+  });
   final String liveId;
   final List<AcfunStreamQuality> qualities;
+
+  /// `availableTickets`：进聊天室要用的票据（上游 M4.10 留给弹幕模块）。
+  final List<String> tickets;
+
+  /// `enterRoomAttach`：进房时原样回带。
+  final String enterRoomAttach;
 }
 
 class _VisitorSession {
-  const _VisitorSession(this.did, this.userId, this.token, this.expiresAt);
+  const _VisitorSession(this.did, this.userId, this.token, this.expiresAt, {this.security = ''});
   final String did;
   final String userId;
   final String token;
   final DateTime expiresAt;
+
+  /// `acSecurity`：聊天链路注册时用的 Base64 AES-128 密钥；没有就是空串（只影响弹幕）。
+  final String security;
 }
 
 /// Public, anonymous AcFun protocol. Directory/refresh reads never log in;
@@ -260,7 +274,13 @@ class AcfunApi {
     final userId = normalizeAuthorId(text(data['userId']));
     final token = text(data['acfun.api.visitor_st']);
     if (token.isEmpty) throw const AcfunApiException(AcfunFailureKind.schema);
-    final session = _VisitorSession(did, userId, token, _clock().add(const Duration(minutes: 5)));
+    final session = _VisitorSession(
+      did,
+      userId,
+      token,
+      _clock().add(const Duration(minutes: 5)),
+      security: text(data['acSecurity']),
+    );
     _visitor = session;
     return session;
   }
@@ -290,7 +310,27 @@ class AcfunApi {
     final payload = object(data['data']);
     final liveId = text(payload['liveId']);
     if (liveId.isEmpty) throw const AcfunApiException(AcfunFailureKind.schema);
-    return AcfunPlayback(liveId: liveId, qualities: parseQualities(payload['videoPlayRes']));
+    // 弹幕要用的票据与进房附带串（上游 M4.10 留给弹幕模块）。
+    final tickets = <String>[];
+    final rawTickets = payload['availableTickets'];
+    if (rawTickets is List) {
+      for (final entry in rawTickets) {
+        final value = text(entry).trim();
+        if (value.isNotEmpty) tickets.add(value);
+      }
+    }
+    return AcfunPlayback(
+      liveId: liveId,
+      qualities: parseQualities(payload['videoPlayRes']),
+      tickets: List.unmodifiable(tickets),
+      enterRoomAttach: text(payload['enterRoomAttach']),
+    );
+  }
+
+  /// 当前访客会话（弹幕参数要用它的 `acSecurity` 与 token）；没有就先登录。
+  Future<({String userId, String did, String token, String security})> visitorCredentials() async {
+    final session = await _session();
+    return (userId: session.userId, did: session.did, token: session.token, security: session.security);
   }
 
   static List<AcfunStreamQuality> parseQualities(Object? raw) {
