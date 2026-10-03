@@ -3,7 +3,6 @@ import 'dart:developer' as developer;
 
 import 'package:dio/dio.dart';
 import 'package:media_core_ingest/media_core_ingest.dart';
-import 'package:pure_live/core/stream/hls_source_query_policy.dart';
 import 'package:pure_live/domains/recorder/data/services/ffmpeg_hls_input_relay.dart';
 import 'package:pure_live/domains/live/data/stream/flv_splice_relay.dart';
 
@@ -102,8 +101,21 @@ class PlaybackSourceTransport {
     String url,
     Map<String, String> headers, {
     String? rootManifest,
+    Uri Function(Uri)? childUriPolicy,
+    bool sessionCookies = false,
+    HlsSourceQueryPolicy? matchesPolicy,
   }) async {
-    final relay = await LoopbackIngestRelay.start(source: Uri.parse(url), headers: headers, rootManifest: rootManifest);
+    final Uri source = Uri.parse(url);
+    if (matchesPolicy != null && !matchesPolicy.matchesSource(source)) {
+      throw const FormatException('Playback query policy does not match selected input');
+    }
+    final relay = await LoopbackIngestRelay.start(
+      source: source,
+      headers: headers,
+      rootManifest: rootManifest,
+      childUriPolicy: childUriPolicy,
+      sessionCookies: sessionCookies,
+    );
     return PlaybackInputLease(relay.inputUri, relay.close, isUsable: () => !relay.isClosed);
   }
 
@@ -142,11 +154,10 @@ class PlaybackSourceTransport {
     // (`No protocol handler found to open URL \tc.livehls\...\media.95.mp4`).
     // A manifest that already writes absolute URLs is handed over untouched.
     final Uri? ingestSource = Uri.tryParse(url);
-    if (policy == null && ingestSource != null && isHlsManifestUri(ingestSource)) {
-      final PlaybackManifestProbe? probe = await probePlaybackManifest(
-        url,
-        headers: Map<String, String>.unmodifiable(headers),
-      );
+    final bool sourceIsManifest = ingestSource != null && isHlsManifestUri(ingestSource);
+    PlaybackManifestProbe? probe;
+    if (policy == null && sourceIsManifest) {
+      probe = await probePlaybackManifest(url, headers: Map<String, String>.unmodifiable(headers));
       // A provider we could not read still gets its declared needs applied, so a
       // known-quirky host does not regress just because one read failed.
       final Set<IngestNeed> needs = probe?.kind.requiresRewrite == true
@@ -207,6 +218,25 @@ class PlaybackSourceTransport {
         nativeOpen: nativeOpen,
         joinCreationOnCancel: true,
         createInput: (_) => _createLegacyHevcRelay(url, Map<String, String>.unmodifiable(headers)),
+      );
+    }
+    if (policy != null && legacyFactory == null && sourceIsManifest) {
+      // An HLS source with a query-token policy goes through the same ingest
+      // relay as a rewritten manifest: the policy is applied to the *upstream*
+      // child requests, so the player only ever sees absolute loopback URLs.
+      return _open(
+        url: url,
+        urls: urls,
+        headers: headers,
+        nativeOpen: nativeOpen,
+        joinCreationOnCancel: true,
+        createInput: (_) => _createIngestRelay(
+          url,
+          Map<String, String>.unmodifiable(headers),
+          childUriPolicy: policy.apply,
+          sessionCookies: true,
+          matchesPolicy: policy,
+        ),
       );
     }
     return _open(
