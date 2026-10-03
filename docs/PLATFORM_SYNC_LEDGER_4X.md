@@ -46,6 +46,29 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | tiktok | 5 | 本轮已摘取（见下） |
 | inke / xiaohongshu / weibo / liveme | 4 | 四站均已摘取（见下） |
 
+## 待实施：③ 身份模型（YouTube 频道即房间 / niconico 房间即主播）
+
+2026-10 实测本仓现状（与上游 4.x 的身份模型对照）：
+
+| 站点 | 本仓现状 | 上游 4.x | 差异 |
+| --- | --- | --- | --- |
+| YouTube | `roomId = videoId`（`youtube_site.dart:71`），`userId = channelId`（:72），链接是视频链接（:79） | **房间 = 频道**：频道是房间身份，当前直播只是它的属性 | **身份要翻转**：`roomId` 改成频道（handle/`UC…`），视频变成"当前节目"属性 |
+| YouTube（链接层） | `youtube_link.dart` **已经有** `YouTubeLinkKind.channel`（`@handle` 与 `UC…`，含 `channelPath`） | 频道链接是房间链接 | 链接层基本就绪，缺的是"房间身份也用频道" |
+| niconico | 只认 `https://live.nicovideo.jp/watch/<id>`（`niconico_link.dart:7`），id 必须是节目号（`NiconicoWatch.validateProgramId`） | **房间 = 主播**：`watch/user/<id>`、`watch/ch<n>`；官方节目保持 lv | 要接受主播链接形态，并让房间身份是主播 id |
+
+**共同影响面（两个站点一样）**：收藏、观看历史、标签、刷新合并、多画面选房都以
+`LiveRoom.roomId`（+`platform`）为 key，翻转身份意味着**存量条目（按 videoId/节目号存）与新条目（按频道/主播存）不一致**，必须给出迁移或兼容策略：
+
+- 方案 A（稳妥）：新身份为主，读取旧条目时按"该 videoId/节目号属于哪个频道/主播"惰性升级
+- 方案 B（激进）：一次性迁移本地库
+- 无论哪种，都需要站点提供"由旧 id 找新 id"的一次解析（YouTube 用 `videos?id=` 拿
+  `channelId`，niconico 用 watch 页拿主播）
+
+实施顺序建议（先易后难）：
+1. **YouTube**：链接层已就绪 → 站点侧把 `roomId` 改为频道，`data` 里保留当前 videoId 供取流；补"频道 → 当前直播"的解析与列表/搜索按频道去重
+2. **niconico**：先加主播链接形态（`watch/user`、`watch/ch`、`ch.nicovideo.jp`），再把房间身份从节目号改为主播 id（官方节目保持 lv），最后补列表/搜索按 `providerType` 映射
+3. 两者都要接一套**旧 key → 新 key 的惰性升级**，并在账本记下取舍
+
 ## 待实施：B 站轮播 `play_time` 起播偏移（方案已定）
 
 上游语义：`getRoundPlayVideo` 的 `data.play_time` 是**已经播过的秒数**，播放应从那里开始
