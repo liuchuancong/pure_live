@@ -11,6 +11,11 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 （`LiveSiteExternalRoomResolver`、`LivePlayLeaseMetadata` 租约续期、
 `w_rid` 签名、游客名屏蔽、FLV splice relay 等）。
 
+> **范围（用户指定）**：**不**为 EmptyDanmaku 的站点新写聊天/弹幕引擎；只同步
+> **站点侧的弹幕显示相关改动**（已有引擎的连接参数、消息解析与展示，礼物/公告/
+> 撤回在弹幕区的呈现）以及房间详情/画质/取流与线路解析、状态与限制。
+> 因此各站点小节里"弹幕本体/新引擎"一类未做项属于**明确不做**，不再是待办。
+
 - 本仓最后合并 wzgrx 的点：`4802611aa`（2026-09-27，3.x 树）。
 - 该点之后 wzgrx 有 1290 个提交，其中 **328** 个动过平台/弹幕包。
 - 其中真正的站点 `fix` 只有十几个，其余是 4.x 新功能（超级留言、礼物上报、
