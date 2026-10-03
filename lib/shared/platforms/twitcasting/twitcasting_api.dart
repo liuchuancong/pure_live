@@ -252,6 +252,8 @@ class TwitcastingApi {
           audienceMetricType: AudienceMetricType.onlineViewers,
           status: true,
           liveStatus: LiveStatus.live,
+          // 上了锁的直播仍然是"在播"，只是需要房间密码（上游 12-x）。
+          restriction: row['is_locked'] == true ? LiveRestriction.password : LiveRestriction.none,
         ),
       );
     }
@@ -306,11 +308,23 @@ class TwitcastingApi {
           channelUri.hasQuery ||
           channelUri.hasFragment ||
           channelUri.pathSegments.length != 1 ||
-          movieUri.pathSegments.length != 3 ||
-          row.querySelector('.tw-movie-thumbnail2-badge[data-status="live"]') == null ||
-          row.querySelector('.tw-movie-thumbnail2-image-wrapper[data-can-play="true"]') == null) {
-        throw const TwitcastingException(TwitcastingFailure.schema);
+          movieUri.pathSegments.length != 3) {
+        // 读不出来的行只丢它自己（上游：坏行不该让整页搜索失败）。
+        continue;
       }
+      // 不是"正在直播"的行不列出来；播放包装不存在时，徽章写着 private 的就是
+      // 私密直播，其它的说明平台没给可播的流（上游 12-5）。
+      if (row.querySelector('.tw-movie-thumbnail2-badge[data-status="live"]') == null) continue;
+      final playable = row.querySelector('.tw-movie-thumbnail2-image-wrapper[data-can-play="true"]') != null;
+      final private = !playable &&
+          row
+                  .querySelectorAll('.tw-movie-thumbnail2-badge')
+                  .any((badge) => badge.text.trim().toLowerCase() == 'private');
+      final restriction = playable
+          ? LiveRestriction.none
+          : private
+          ? LiveRestriction.private
+          : LiveRestriction.unplayable;
       final channel = channelName(channelUri.pathSegments.single);
       final movie = integer(movieUri.pathSegments.last);
       if (movieUri.pathSegments[0].toLowerCase() != channel ||
@@ -334,6 +348,7 @@ class TwitcastingApi {
           audienceMetricType: AudienceMetricType.unknown,
           status: true,
           liveStatus: LiveStatus.live,
+          restriction: restriction,
         ),
       );
     }
@@ -343,7 +358,22 @@ class TwitcastingApi {
   Future<LiveRoom> detail(String input, {bool includeMedia = true, CancelToken? cancel}) async {
     final channel = channelName(input);
     final page = await read(Uri.parse('$origin/$channel'), cancel: cancel);
-    if (page.contains('Enter the secret word to access')) throw const TwitcastingException(TwitcastingFailure.access);
+    // 要"合言葉"的直播仍然是"在播"，只是本客户端播不了（上游 12-x）：此前直接抛
+    // access，于是连房间信息都看不到。
+    if (page.contains('Enter the secret word to access')) {
+      return LiveRoom(
+        platform: 'twitcasting',
+        roomId: channel,
+        userId: channel,
+        link: '$origin/$channel',
+        nick: channel,
+        watching: '',
+        audienceMetricType: AudienceMetricType.unknown,
+        status: true,
+        liveStatus: LiveStatus.live,
+        restriction: LiveRestriction.password,
+      );
+    }
     final document = html.parse(page);
     final creators = document.querySelectorAll('meta[name="twitter:creator"]');
     if (creators.length != 1 || channelName(creators.single.attributes['content'] ?? '') != channel) {

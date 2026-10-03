@@ -282,7 +282,7 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | 11-3 | 坏分区/探索行/别的分区行/坏搜索结果直接跳过 | 未做 |
 | 11-4 | 清晰度按高度再按码率排序，「HLS Auto」显示为「自动」 | 未做 |
 | 11-6 | 下播详情用自己最后一场的缩略图当封面 | 未做 |
-| 11-9 | 私密频道按 private 限制展示 | 未做：限制模型 |
+| 11-9 | 私密频道按 private 限制展示 | **已同步**：不再抛 access，房间照常返回并标 `LiveRestriction.private`（`private` 字段不是布尔才留 null），私密频道也不去问播放列表 |
 | `863bbf99c` 等 | Picarto 弹幕本体 | 未做：新功能批次 |
 
 ## niconico（本轮仅评估）
@@ -451,7 +451,7 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | 12-2 | 关注刷新与状态检查只问 `streamserver.php`（约 1KB，而非 110KB 频道页） | 未做：请求编排 |
 | 12-3 | 直播详情在 `danmakuData` 带 `TwitcastingDanmakuArgs` | 未做：弹幕引擎 |
 | 12-4 | 搜索一次请求，之后按关键词 30 秒快照裁剪 | 未做：分页缓存 |
-| 12-5 | 私有直播在搜索里是在播 + 限制 | 未做：限制模型 |
+| 12-5 | 私有直播在搜索里是在播 + 限制 | **已同步**：搜索行按播放包装与徽章判定 none/private/unplayable；不是"正在直播"的行不列出，坏行只丢自己（此前一行坏数据会让整页搜索失败）。要"合言葉"的直播也不再抛 access，而是返回带 `password` 限制的房间 |
 
 ## jdlive
 
