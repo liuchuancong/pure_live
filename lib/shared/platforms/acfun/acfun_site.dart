@@ -66,7 +66,22 @@ class AcfunSite extends LiveSite
       followers: AcfunApi.text(user['fanCountValue']),
       status: live,
       liveStatus: live ? LiveStatus.live : LiveStatus.offline,
+      // 付费演出（paidShowUuid）按在播 + paid 上报；匿名观众永远没买过
+      // （paidShowUserBuyStatus 不会是 true）。有付费字段但没有演出 → 无限制；
+      // 完全没有这两个字段 → 平台没说（null）（上游 10-5）。
+      restriction: live ? _restriction(data) : null,
     );
+  }
+
+  /// `live/info`（与列表卡片同形）里的限制：
+  /// - `paidShowUuid` 非空 → 买过是 none，否则 paid；
+  /// - 只有 `paidShowUserBuyStatus`（没有演出）→ none；
+  /// - 两个都没有 → null（这次回答没说限制）。
+  static LiveRestriction? _restriction(Map<String, dynamic> data) {
+    if (AcfunApi.text(data['paidShowUuid']).isNotEmpty) {
+      return data['paidShowUserBuyStatus'] == true ? LiveRestriction.none : LiveRestriction.paid;
+    }
+    return data.containsKey('paidShowUserBuyStatus') ? LiveRestriction.none : null;
   }
 
   @override

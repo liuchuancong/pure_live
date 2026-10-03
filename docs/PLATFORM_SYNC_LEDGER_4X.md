@@ -431,7 +431,7 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | 10-2 | 目录不列「全部」（filter 0，它与推荐相同）；存下来的「全部」分区按推荐（不带 filter）读取 | **已同步**：`allFilterId` + 分类过滤 + 目录请求不带 filter |
 | 10-1 | 资料链接（`www.acfun.cn/u/<id>`、`acfun.cn/u/<id>`、旧 `.aspx`、`m.acfun.cn/upPage/<id>`）直接是房间 | 未做：链接识别（另一层） |
 | 10-3 | 列表/进房/刷新/录制详情的 `startedAt` 取 `createTime` | 未做：`LiveRoom` 缺字段 |
-| 10-4 / 10-5 | 弹幕参数 `AcfunDanmakuArgs`；付费节目是在播 + 限制 | 未做：弹幕引擎与限制模型 |
+| 10-4 / 10-5 | 弹幕参数 `AcfunDanmakuArgs`；付费节目是在播 + 限制 | 付费限制 **已同步**（`paidShowUuid` 存在且未购买 → paid，在播 + 限制）；弹幕参数**不做**（按范围决定，不新增弹幕引擎） |
 
 ## baidulive
 
