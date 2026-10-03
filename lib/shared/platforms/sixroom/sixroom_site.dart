@@ -111,8 +111,11 @@ final class SixRoomSite extends LiveSite
       liveStatus: switch (room.state) {
         SixRoomState.live => LiveStatus.live,
         SixRoomState.offline => LiveStatus.offline,
-        SixRoomState.restricted || SixRoomState.unknown => LiveStatus.unknown,
+        // 私密/黑屏仍然是"在播"，只是带限制种类（上游 31-x）。
+        SixRoomState.restricted => LiveStatus.live,
+        SixRoomState.unknown => LiveStatus.unknown,
       },
+      restriction: room.state == SixRoomState.restricted ? room.restriction : null,
       watching: popularity ?? '',
       popularity: popularity,
       followers: room.followers?.toString(),

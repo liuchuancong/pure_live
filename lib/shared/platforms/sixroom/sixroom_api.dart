@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:html/parser.dart' as html_parser;
+import 'package:pure_live/core/models/live_room.dart';
 import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/core/network/request_scope.dart';
 
@@ -60,6 +61,7 @@ final class SixRoomRoom {
     required this.followers,
     required this.state,
     required Iterable<SixRoomVariant> variants,
+    this.restriction,
   }) : variants = List.unmodifiable(variants);
 
   final String roomId;
@@ -73,6 +75,10 @@ final class SixRoomRoom {
   final int? popularity;
   final int? followers;
   final SixRoomState state;
+
+  /// 私密房间 → [LiveRestriction.private]，黑屏（整改/封禁画面）→
+  /// [LiveRestriction.unplayable]；普通房间为 null（平台没说限制）。
+  final LiveRestriction? restriction;
   final List<SixRoomVariant> variants;
 
   SixRoomRoom enrich(SixRoomRoom known) => SixRoomRoom(
@@ -426,6 +432,13 @@ class SixRoomApi {
     final flvTitle = _string(liveInfo['flvtitle']);
     final privateRoom = _truthy(content['isPriveRoom']);
     final blackScreen = _text(_map(content['blackScreenInfo'])?['msg']);
+    // 私密房间与黑屏（平台在整改/封禁画面）仍然是"在播"，只是带限制种类
+    // （上游 31-x）：私密 → private，黑屏 → unplayable；黑屏的文案单独保留。
+    final restriction = privateRoom
+        ? LiveRestriction.private
+        : blackScreen.isNotEmpty
+        ? LiveRestriction.unplayable
+        : null;
     final state = privateRoom || blackScreen.isNotEmpty
         ? SixRoomState.restricted
         : liveId.isNotEmpty && flvTitle.isNotEmpty
@@ -462,6 +475,7 @@ class SixRoomApi {
       followers: _integer(params['fans_num']),
       state: state,
       variants: variants,
+      restriction: restriction,
     );
   }
 
