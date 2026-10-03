@@ -160,7 +160,7 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | douyu | `8eca75a32` | `dgb` 礼物包上报为 gift | **不做**：本仓弹幕层不渲染 gift，上游也只上报不显示 |
 | huya | `5a9fa6a5e` | 公告栏头条（headline board）+ 下播结束这一路 | 待评估：头条展示需弹幕层支持；"下播结束"可能可摘 |
 | huya | `8613f92bd` | 单片推送带 `lMsgId` | 待评估：本仓 huya 引擎是否有对应去重/串联逻辑 |
-| kuaishou | `fffd28b31` | 消息带上表情图片（M13.16） | **可摘**：本仓已有 `danmaku_emoji.dart` 与快手引擎 |
+| kuaishou | `fffd28b31` | 消息带上表情图片（M13.16） | **需跨层（已核实）**：上游是给 `LiveMessage` 加 `emotes`（`LiveEmote`：文本里的编码 + 对应图片），并把房间页 `pcLive.webConfig.emojiPanel`（207 个编码）经 `KuaishouDanmakuArgs.emotes` 传进解码器；本仓 `LiveMessage` 没有该字段（弹幕显示侧另有 `UnifiedEmojiModel`/`DanmakuEmojiParser` 机制，可作为落地路径，但要动公共消息模型） |
 | soop | `083fac138` | `1`/`-1`/`bar` 文本、发送者 id、走代理的聊天 | **可摘**：纯站点层解析 |
 | yy | `c991163f0` | 从弹幕上报热度（M4.D） | **已摘**（YY 热度字段），其余（分区列出/占位主播）见 YY 小节 |
 | kuaishou/twitch/douyin | `84b9fe205` 等 | 生命周期/监听释放 | **不适用**（本仓无 `ConnectorBase`） |
