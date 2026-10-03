@@ -493,7 +493,9 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | 14-3 | `numbers.real` 是并发观众、`online_users` 是热度 | 未做：需要新字段与解析 |
 | 14-4 | 进房/刷新/录制补 App 的 `now_publish`（标题、封面、观众、开播时间、线路） | 未做 |
 | 14-5 | Zego 原始流（HEVC）作为「原画」档 | 未做：清晰度发现 |
-| 统一规则 | 去掉占位标题「正在直播中」 | 未做（本仓未使用该占位） |
+| 统一规则 | `startedAt`、限制 none（App 给线路时） | `startedAt` **已同步**（详情 `start_time` → UTC）；限制种类未做（需要新字段） |
+| 统一规则 | 去掉占位标题「正在直播中」 | 无需：本仓未使用该占位 |
+
 
 ## xiaohongshu
 
