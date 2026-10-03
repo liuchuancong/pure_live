@@ -54,6 +54,7 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | --- | --- | --- | --- |
 | YouTube | `roomId = videoId`（`youtube_site.dart:71`），`userId = channelId`（:72），链接是视频链接（:79） | **房间 = 频道**：频道是房间身份，当前直播只是它的属性 | **身份要翻转**：`roomId` 改成频道（handle/`UC…`），视频变成"当前节目"属性 |
 | YouTube（链接层） | `youtube_link.dart` **已经有** `YouTubeLinkKind.channel`（`@handle` 与 `UC…`，含 `channelPath`） | 频道链接是房间链接 | 链接层基本就绪，缺的是"房间身份也用频道" |
+| YouTube（解析层，2026-10 补测） | `YouTubeApi.resolveReference()`（`youtube_api.dart:172`）**已经能把频道引用解析成"该频道当前在播的视频"**（依次看重定向、canonical、`ytInitialPlayerResponse.videoDetails`、`ytInitialData` 里的直播 id；没有在播就 `notLive`）；搜索/打开链接都走它 | 上游同样需要这一步 | **功能性等价已经具备**：粘频道链接就能打开它当前的直播 |
 | niconico | 只认 `https://live.nicovideo.jp/watch/<id>`（`niconico_link.dart:7`），id 必须是节目号（`NiconicoWatch.validateProgramId`） | **房间 = 主播**：`watch/user/<id>`、`watch/ch<n>`；官方节目保持 lv | 要接受主播链接形态，并让房间身份是主播 id |
 
 **共同影响面（两个站点一样）**：收藏、观看历史、标签、刷新合并、多画面选房都以
@@ -68,6 +69,16 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 1. **YouTube**：链接层已就绪 → 站点侧把 `roomId` 改为频道，`data` 里保留当前 videoId 供取流；补"频道 → 当前直播"的解析与列表/搜索按频道去重
 2. **niconico**：先加主播链接形态（`watch/user`、`watch/ch`、`ch.nicovideo.jp`），再把房间身份从节目号改为主播 id（官方节目保持 lv），最后补列表/搜索按 `providerType` 映射
 3. 两者都要接一套**旧 key → 新 key 的惰性升级**，并在账本记下取舍
+
+**2026-10 复评（重要修正）**：YouTube 这一项**功能上已等价**——链接层有频道形态，`resolveReference` 能把频道解析成当前直播，搜索/打开都可用；与上游的差别**只剩"存下来的身份"**（本仓 `roomId=videoId`，上游是频道）。因此：
+
+- 收益：同一频道换场后收藏/历史仍指向同一房间（跨场一致）
+- 代价：收藏/历史/标签/多画面选片全部按 `roomId` 存的**存量数据要迁移或惰性升级**；且"房间回放/回看上一场"的语义会变
+- 结论：**建议暂不做身份翻转**（功能等价、迁移风险高），按"仅身份不同，功能已具备"记账；
+  若将来要做，按上面第 3 条先定迁移策略
+- niconico 无此捷径：本仓只认节目号链接，连"粘主播链接"都不支持，**必须做**
+
+## 待实施：niconico 房间即主播（③ 的剩余部分）
 
 ## 待实施：B 站轮播 `play_time` 起播偏移（方案已定）
 
