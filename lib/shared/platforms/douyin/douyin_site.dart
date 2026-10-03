@@ -482,6 +482,8 @@ class DouyinSite
       platform: PlatformIds.douyin,
       area: _detailArea(room, null),
       liveStatus: roomStatus ? LiveStatus.live : LiveStatus.offline,
+      // 在播时 `start_time`（秒）优先，缺失才退 `create_time`（上游 4-x）。
+      startedAt: roomStatus ? _douyinStartedAt(room) : null,
       introduction: owner["signature"].toString(),
       notice: "",
       danmakuData: DouyinDanmakuArgs(
@@ -502,6 +504,19 @@ class DouyinSite
     if (status != null) return status == 2;
     final roomStatus = int.tryParse(envelope is Map ? (envelope['room_status']?.toString() ?? '') : '');
     return roomStatus == 0;
+  }
+
+  /// 抖音的开播时间：`start_time`（秒）优先，缺失才退 `create_time`；两个都读不出来
+  /// 或不在 2000–2100 年就不给（上游 4-x）。
+  static DateTime? _douyinStartedAt(dynamic room) {
+    if (room is! Map) return null;
+    for (final key in const ['start_time', 'create_time']) {
+      final seconds = int.tryParse(room[key]?.toString() ?? '');
+      if (seconds == null || seconds <= 0) continue;
+      final time = DateTime.fromMillisecondsSinceEpoch(seconds * 1000, isUtc: true);
+      if (time.year >= 2000 && time.year <= 2100) return time;
+    }
+    return null;
   }
 
   /// 详情里的分区（上游 M4.D）：优先游戏名
