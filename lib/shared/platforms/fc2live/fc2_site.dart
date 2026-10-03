@@ -1,7 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:pure_live/core/models/live_area.dart';
 import 'package:pure_live/core/models/live_room.dart';
-import 'package:pure_live/shared/platforms/empty_danmaku.dart';
 import 'package:pure_live/shared/platforms/live_danmaku.dart';
 import 'package:pure_live/shared/platforms/live_directory.dart';
 import 'package:pure_live/shared/platforms/live_search.dart';
@@ -14,6 +13,7 @@ import 'package:pure_live/shared/platforms/live_external_room.dart';
 import 'fc2_api.dart';
 import 'fc2_input_recipe.dart';
 import 'fc2_link.dart';
+import 'fc2_live_danmaku.dart';
 
 final class Fc2Site extends LiveSite
     implements
@@ -49,7 +49,7 @@ final class Fc2Site extends LiveSite
   String get directoryNoticeKey => 'fc2live_directory_scope';
 
   @override
-  LiveDanmaku getDanmaku() => EmptyDanmaku();
+  LiveDanmaku getDanmaku() => Fc2LiveDanmaku();
 
   Future<Fc2Directory> _directory({CancelToken? cancel}) {
     if (cancel != null) return _api.directory(cancel: cancel);
@@ -149,6 +149,8 @@ final class Fc2Site extends LiveSite
           ? i18n('fc2live_adult_notice')
           : i18n('fc2live_chat_notice'),
       httpHeaders: Fc2Api.mediaHeaders(room.channelId),
+      // 弹幕参数（上游 M5.22）：频道号；授权由连接每次握手现取。
+      danmakuData: liveStatus == LiveStatus.live ? Fc2LiveDanmakuArgs(channelId: room.channelId) : null,
       data: includeMedia && liveStatus == LiveStatus.live ? room : null,
     );
   }
