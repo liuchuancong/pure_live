@@ -145,16 +145,23 @@ class NiconicoSite extends LiveSite
     return (await _directory.search(keyword, page: page, cancel: cancel)).rooms;
   }
 
+  /// 房间身份：节目号（`lv…`）或主播身份（`user/<id>`、`ch<n>`——上游 4.x 的
+  /// "房间即主播"）。两种都收，旧收藏里的节目号照旧可用。
   String _identity(LiveRoom liveroom) {
     final roomId = liveroom.roomId ?? '';
     final platform = liveroom.platform ?? '';
     if (platform != id) throw const NiconicoException(NiconicoFailure.identity);
-    return NiconicoWatch.validateProgramId(roomId);
+    if (NiconicoApi.isProgramId(roomId) || NiconicoApi.isBroadcasterRoomId(roomId)) return roomId;
+    throw const NiconicoException(NiconicoFailure.identity);
   }
 
+  /// 取流与清晰度要的是**节目号**：主播身份先换成它当前在播的节目（一次 watch 页）。
+  Future<String> _programIdOf(String roomId) async =>
+      NiconicoApi.isProgramId(roomId) ? roomId : await _api.resolveBroadcasterProgram(roomId);
+
   Future<LiveRoom> _detail(LiveRoom liveroom) async {
-    final programId = _identity(liveroom);
-    final watch = await _api.room(programId);
+    final roomId = _identity(liveroom);
+    final watch = await _api.room(roomId);
     final notice = switch (watch.access) {
       NiconicoAccess.loginRequired => i18n('niconico_login_required'),
       NiconicoAccess.regionRestricted => i18n('niconico_region_restricted'),
@@ -163,12 +170,13 @@ class NiconicoSite extends LiveSite
     };
     return LiveRoom(
       platform: id,
-      roomId: programId,
+      // 保留传进来的房间身份：主播房间换场后还是同一个房间。
+      roomId: roomId,
       title: watch.title,
       nick: watch.broadcaster,
       cover: watch.cover ?? '',
       avatar: watch.avatar ?? '',
-      link: '${NiconicoApi.origin}/watch/$programId',
+      link: NiconicoLink.url(roomId),
       liveStatus: watch.status == NiconicoStatus.onAir ? LiveStatus.live : LiveStatus.offline,
       totalViewers: watch.reportedWatchCount?.toString(),
       audienceMetricType: AudienceMetricType.totalViewers,
@@ -205,7 +213,7 @@ class NiconicoSite extends LiveSite
   @override
   Future<List<LivePlayQuality>> discoverPlayQualitiesRaw({required LiveRoom liveroom, CancelToken? cancel}) async {
     if (cancel?.isCancelled == true) throw cancel!.cancelError!;
-    final programId = _identity(liveroom);
+    final programId = await _programIdOf(_identity(liveroom));
     if (liveroom.isExplicitlyOfflineNow) return const [];
     final choices = await _catalog.load(programId, cancel: cancel);
     return List.unmodifiable([
@@ -219,7 +227,7 @@ class NiconicoSite extends LiveSite
     required LiveRoom liveroom,
     required LivePlayQuality quality,
   }) async {
-    final programId = _identity(liveroom);
+    final programId = await _programIdOf(_identity(liveroom));
     if (liveroom.isExplicitlyOfflineNow) throw const NiconicoException(NiconicoFailure.notLive);
     final choice = quality.data;
     if (choice is! _Choice || choice.programId != programId || quality.selectionId != choice.quality.id) {

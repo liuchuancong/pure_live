@@ -184,11 +184,17 @@ chat/comment/PK/礼物/付费问答/撤回/公告）——这些站点在本仓�
 
 ## 待实施：niconico 房间即主播（③ 的剩余部分）
 
-**已做（2026-10）**：
+**已做（2026-10，含身份翻转）**：
 - 节目链接形态：`http` / `sp.live.nicovideo.jp` / `nico.ms/lv…`（`abb4c7269`）
-- 主播链接可打开：`watch/user/<id>`、`watch/ch<n>`、`www.nicovideo.jp/user/<id>`、
-  `ch.nicovideo.jp/ch<n>` → 一次 watch 页请求换成"当前在播的节目号"（`bb1f6fbae`）；
-  **房间身份仍是节目号**，存量收藏/历史不受影响
+- 主播链接可打开（`bb1f6fbae`）
+- **身份翻转（房间即主播）**：`niconico_directory.dart` 按上游 `roomIdOf` 给房间身份
+  ——`community`/`user` + 用户 id → `user/<id>`，`channel` + 频道 id → `ch<n>`，其余
+  （含 `official`，官方节目不是它频道的房间）→ 节目号；`NiconicoApi.room` 两种身份都收
+  （主播身份先换出当前在播的节目再读页面）；`NiconicoLink.url` 按身份给链接；
+  站点 `_identity` 两种都收，取流/清晰度走 `_programIdOf`（主播 → 节目）；
+  主播链接不再需要请求（房间身份就是主播）
+- **迁移**：新条目用主播身份；**旧收藏/历史里的节目号照旧可用**（站点两种都收），
+  所以不需要一次性的数据迁移；同一直播的两种 key 会并存，直到用户重新收藏
 
 **剩余（= 身份翻转本身，无中间态）**：上游 `NiconicoApi.roomIdOf`
 （`niconico_api.dart:465`）按 `providerType` 决定房间身份——

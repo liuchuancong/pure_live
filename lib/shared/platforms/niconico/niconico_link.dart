@@ -1,3 +1,4 @@
+import 'niconico_api.dart';
 import 'niconico_watch.dart';
 
 /// 节目链接的形态（上游 17-2）：`live.nicovideo.jp/watch/lv…`（3.x 的形态），
@@ -24,8 +25,12 @@ class NiconicoLink {
     }
   }
 
-  static String url(String programId) =>
-      'https://live.nicovideo.jp/watch/${NiconicoWatch.validateProgramId(programId)}';
+  /// 房间链接：主播身份的房间是 `…/watch/user/<id>`、`…/watch/ch<n>`（上游 4.x
+  /// "房间即主播"），节目号仍是 `…/watch/lv…`。
+  static String url(String roomId) {
+    if (NiconicoApi.isBroadcasterRoomId(roomId)) return '${NiconicoApi.origin}/watch/$roomId';
+    return '${NiconicoApi.origin}/watch/${NiconicoWatch.validateProgramId(roomId)}';
+  }
 
   static final RegExp _userPage = RegExp(r'^https?://www\.nicovideo\.jp/user/([1-9][0-9]{0,17})(?:[/?#][^\s]*)?$');
   static final RegExp _broadcasterLink = RegExp(

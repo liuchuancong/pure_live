@@ -99,9 +99,17 @@ class NiconicoDirectory {
     }
     icon ??= social is Map ? social['thumbnailUrl'] : null;
     final count = _count(_object(row['statistics'])['watchCount']);
+    // 房间身份（上游 4.x 的 "房间即主播"）：社区/用户节目归到主播 `user/<id>`，
+    // 频道的归到 `ch<n>`，官方节目仍是节目号——同一个主播换场后还是同一个房间。
+    final roomId = _roomIdOf(
+      programId: id,
+      providerType: row['providerType'],
+      userId: provider is Map ? provider[search ? 'programProviderId' : 'id'] : null,
+      channelId: social is Map ? social['id'] : null,
+    );
     return LiveRoom(
       platform: 'niconico',
-      roomId: id,
+      roomId: roomId,
       title: _text(row['title']),
       nick: _text(nick),
       avatar: NiconicoWatch.publicImage(icon) ?? '',
@@ -114,6 +122,26 @@ class NiconicoDirectory {
       totalViewers: count?.toString(),
       audienceMetricType: AudienceMetricType.totalViewers,
     );
+  }
+
+  /// 房间身份（上游 `NiconicoApi.roomIdOf`）：`community`/`user` + 用户 id →
+  /// `user/<id>`；`channel` + 频道 id → `ch<n>`；其余（含 `official`，官方节目不是
+  /// 它频道的房间）→ 节目号。
+  static String _roomIdOf({
+    required String programId,
+    required Object? providerType,
+    required Object? userId,
+    required Object? channelId,
+  }) {
+    final user = userId?.toString() ?? '';
+    if ((providerType == 'community' || providerType == 'user') &&
+        RegExp(r'^[1-9][0-9]{0,17}$').hasMatch(user)) {
+      return 'user/$user';
+    }
+    if (providerType == 'channel' && channelId is String && NiconicoApi.isBroadcasterRoomId(channelId)) {
+      return channelId;
+    }
+    return programId;
   }
 
   static Map<String, dynamic> _object(Object? value) {
