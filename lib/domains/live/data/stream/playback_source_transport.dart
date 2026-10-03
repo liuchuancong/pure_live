@@ -9,6 +9,9 @@ import 'package:pure_live/domains/live/data/stream/flv_splice_relay.dart';
 
 import 'flv_legacy_hevc_relay.dart';
 import 'playback_ingest_needs.dart';
+
+import 'package:pure_live/core/player/core/ingest_ffmpeg_registry.dart';
+
 import 'playback_manifest_probe.dart';
 
 import 'package:pure_live/core/player/core/playback_proxy_policy.dart';
@@ -104,6 +107,17 @@ class PlaybackSourceTransport {
     return PlaybackInputLease(relay.inputUri, relay.close, isUsable: () => !relay.isClosed);
   }
 
+  /// Remuxes an upstream the player cannot parse: FFmpeg reads it once and the
+  /// player reads a plain local playlist instead.
+  static Future<PlaybackInputLease> _createFfmpegRelay(String url, Map<String, String> headers) async {
+    final relay = await FfmpegIngestRelay.start(
+      source: Uri.parse(url),
+      startFfmpeg: startIngestFfmpeg,
+      headers: headers,
+    );
+    return PlaybackInputLease(relay.inputUri, relay.close);
+  }
+
   /// [rewriteLegacyHevcFlv] is for libmpv consumers only: its FFmpeg 7.1 does
   /// not know codec-id-12 HEVC FLV, so known CDNs go through a local rewrite.
   ///
@@ -170,6 +184,19 @@ class PlaybackSourceTransport {
         nativeOpen: nativeOpen,
         joinCreationOnCancel: true,
         createInput: (_) => _createSpliceRelay(url, Map<String, String>.unmodifiable(headers), refreshAt!, renewFlv),
+      );
+    }
+    if (policy == null && rewriteLegacyHevcFlv && FlvLegacyHevcRelay.appliesTo(url) && ingestFfmpegAvailable) {
+      // libmpv's FFmpeg cannot parse codec-id-12 HEVC FLV. Instead of rewriting
+      // FLV tags in Dart, let FFmpeg remux it into a local HLS tree the player
+      // can read; the tag rewriter is only kept for hosts without a runtime.
+      return _open(
+        url: url,
+        urls: urls,
+        headers: headers,
+        nativeOpen: nativeOpen,
+        joinCreationOnCancel: true,
+        createInput: (_) => _createFfmpegRelay(url, Map<String, String>.unmodifiable(headers)),
       );
     }
     if (policy == null && rewriteLegacyHevcFlv && FlvLegacyHevcRelay.appliesTo(url)) {

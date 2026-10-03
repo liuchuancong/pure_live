@@ -19,6 +19,8 @@ import 'package:windows_single_instance/windows_single_instance.dart';
 import 'package:pure_live/core/platform/mobile_manager.dart';
 import 'package:pure_live/core/platform/desktop_manager.dart';
 import 'package:pure_live/core/stream/upstream_proxy_routing.dart';
+import 'package:pure_live/core/player/core/ingest_ffmpeg_registry.dart';
+import 'package:pure_live/domains/recorder/data/services/ffmpeg_ingest_starter.dart';
 import 'package:pure_live/features/backup/backup_controller.dart';
 import 'package:pure_live/core/player/kernel/player_kernel_service.dart';
 import 'package:pure_live/core/platform/windows_multi_instance_launcher.dart';
@@ -95,6 +97,10 @@ class AppInitializer {
         port: proxy.appProxyPort.v,
       );
     });
+    // The ingest pipelines remux a source FFmpeg understands better than the
+    // player does; they run on the recorder's FFmpegKit build instead of linking
+    // a second runtime.
+    configureIngestFfmpegStarter(ffmpegKitIngestStarter);
     configureWebSocketProxyRouting((_) {
       final proxy = SettingsService.to.proxy;
       return buildProxyDirective(
