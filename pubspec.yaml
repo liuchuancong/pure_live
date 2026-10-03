@@ -127,6 +127,8 @@ dependencies:
     path: F:/media_core/packages/media_core_fullscreen
   media_core_multiview:
     path: F:/media_core/packages/media_core_multiview
+  media_core_ingest:
+    path: F:/media_core/packages/media_core_ingest
   media_core_presentation:
     path: F:/media_core/packages/media_core_presentation
   media_core_floating:
