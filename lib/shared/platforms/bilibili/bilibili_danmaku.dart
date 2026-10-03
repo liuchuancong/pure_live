@@ -445,6 +445,7 @@ class BiliBiliDanmaku implements LiveDanmaku {
             final sentAt = rawTimestamp == null
                 ? null
                 : DateTime.fromMillisecondsSinceEpoch(rawTimestamp > 100000000000 ? rawTimestamp : rawTimestamp * 1000);
+            final medal = _medal(metadata, obj["info"].length > 3 ? obj["info"][3] : null);
             var liveMsg = LiveMessage(
               type: LiveMessageType.chat,
               userName: username,
@@ -455,6 +456,9 @@ class BiliBiliDanmaku implements LiveDanmaku {
               sentAt: sentAt,
               // 贴纸与内联表情（上游 M13.16）。
               emotes: _emotes(message, metadata),
+              // 粉丝牌：rich user 的 medal，或旧格式 info[3]（上游 2eea8022a）。
+              fansName: medal.name,
+              fansLevel: medal.level,
             );
             onMessage?.call(liveMsg);
           }
@@ -608,6 +612,30 @@ class BiliBiliDanmaku implements LiveDanmaku {
   static String _giftId(Object? raw) {
     final id = raw?.toString().trim() ?? '';
     return id == '0' ? '' : id;
+  }
+
+  /// 发送者戴的粉丝牌（上游 `2eea8022a`）：先看 `info[0][15]` 里的
+  /// `user.medal{name, level}`，否则退到旧格式 `info[3]`（`[level, name, …]`）。
+  /// 没有名字就没有粉丝牌；等级不是正数时留空。游客看到的粉丝牌是**未打码**的。
+  static ({String name, String level}) _medal(List<dynamic> metadata, Object? legacy) {
+    final rich = metadata.length > 15 ? _asJsonObject(metadata[15]) : null;
+    final rawUser = rich is Map ? rich['user'] : null;
+    final user = rawUser is Map ? rawUser : rich;
+    final medal = user is Map ? user['medal'] : null;
+    final name = medal is Map ? (medal['name']?.toString().trim() ?? '') : '';
+    if (name.isNotEmpty) {
+      return (name: name, level: _medalLevel(medal is Map ? medal['level'] : null));
+    }
+    if (legacy is List && legacy.length > 1) {
+      final legacyName = legacy[1]?.toString().trim() ?? '';
+      if (legacyName.isNotEmpty) return (name: legacyName, level: _medalLevel(legacy[0]));
+    }
+    return (name: '', level: '');
+  }
+
+  static String _medalLevel(Object? raw) {
+    final value = int.tryParse(raw?.toString() ?? '') ?? 0;
+    return value > 0 ? '$value' : '';
   }
 
   /// 一条聊天里的表情图片（上游 bilibili 4-x 的 `emotes`，M13.16）：贴纸

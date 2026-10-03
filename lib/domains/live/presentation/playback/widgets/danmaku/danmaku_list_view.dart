@@ -504,6 +504,30 @@ class DanmakuItem extends StatelessWidget {
                     child: Text.rich(
                       TextSpan(
                         children: [
+                          // 粉丝牌（上游 2eea8022a）：有名字才画，等级为空时只画名字。
+                          if (danmaku.fansName.isNotEmpty)
+                            WidgetSpan(
+                              alignment: PlaceholderAlignment.middle,
+                              child: Container(
+                                margin: const EdgeInsets.only(right: 4),
+                                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                decoration: BoxDecoration(
+                                  color: textColor.withValues(alpha: 0.18),
+                                  borderRadius: BorderRadius.circular(3),
+                                ),
+                                child: Text(
+                                  danmaku.fansLevel.isEmpty
+                                      ? danmaku.fansName
+                                      : '${danmaku.fansName} ${danmaku.fansLevel}',
+                                  style: AppTextStyles.t14.copyWith(
+                                    fontSize: 10,
+                                    height: 1.2,
+                                    fontWeight: FontWeight.w600,
+                                    color: textColor,
+                                  ),
+                                ),
+                              ),
+                            ),
                           TextSpan(
                             text: "${danmaku.userName}: ",
                             style: AppTextStyles.t14.copyWith(fontWeight: FontWeight.w700, color: textColor),
