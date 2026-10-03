@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
+import 'package:pure_live/core/models/live_room.dart';
 import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/core/network/request_scope.dart';
 
@@ -30,7 +31,17 @@ class TikTokException implements Exception {
   String toString() => 'TikTok ${kind.name}';
 }
 
-enum TikTokState { live, offline, restricted, unknown }
+enum TikTokState {
+  /// `status` 2：正在直播。
+  live,
+
+  /// `status` 4：未开播。
+  offline,
+
+  /// 其它状态或没有状态。
+  unknown,
+}
+
 
 class TikTokStream {
   TikTokStream({
@@ -70,6 +81,8 @@ class TikTokRoom {
     required this.verified,
     required this.state,
     required Iterable<TikTokStream> streams,
+    this.restriction = LiveRestriction.none,
+    this.startedAt,
   }) : streams = List.unmodifiable(streams);
 
   final String username;
@@ -87,6 +100,13 @@ class TikTokRoom {
   final int? totalViewers;
   final bool verified;
   final TikTokState state;
+
+  /// 谁可以看这场直播（仅 [state] 为 [TikTokState.live] 时有意义）：私密账号、
+  /// 订阅者专属、付费（上游 22-1：受限的直播仍然是"在播"）。
+  final LiveRestriction restriction;
+
+  /// `liveRoom.startTime`（Unix 秒）转成的 UTC 时间。
+  final DateTime? startedAt;
   final List<TikTokStream> streams;
 }
 
@@ -242,17 +262,11 @@ class TikTokApi {
     if (actualUsername != username) throw const TikTokException(TikTokFailure.identity);
 
     final liveStatus = _integer(live['status'] ?? user['status']);
-    final paidValue = live['paidEvent'];
-    final paid = paidValue == null || (paidValue is List && paidValue.isEmpty)
-        ? <String, dynamic>{}
-        : _object(paidValue);
-    final restricted =
-        _optionalBool(user['secret']) == true ||
-        _integer(live['liveSubOnly']) == 1 ||
-        (_integer(paid['paid_type']) ?? 0) > 0;
-    final state = restricted
-        ? TikTokState.restricted
-        : liveStatus == 2
+    // 受限的直播仍然是"在播"，只是标明谁可以看（上游 22-1；3.x 与改前显示为
+    // 封禁）：私密账号 → private，`liveSubOnly` 1 → subscribersOnly，
+    // `paidEvent.paid_type` > 0 → paid。
+    final restriction = restrictionOf(user, live);
+    final state = liveStatus == 2
         ? TikTokState.live
         : liveStatus == 4
         ? TikTokState.offline
@@ -276,8 +290,36 @@ class TikTokApi {
       totalViewers: state == TikTokState.live ? _optionalNonNegativeInt(roomStats['enterCount']) : null,
       verified: _optionalBool(user['verified']) ?? false,
       state: state,
-      streams: state == TikTokState.live && includeMedia ? _streams(live) : const [],
+      restriction: state == TikTokState.live ? restriction : LiveRestriction.none,
+      startedAt: state == TikTokState.live ? startTime(live['startTime']) : null,
+      // 受限的直播不再读流（读了也播不了，上游只在无限制时读）。
+      streams: state == TikTokState.live && includeMedia && restriction == LiveRestriction.none
+          ? _streams(live)
+          : const [],
     );
+  }
+
+  /// 谁可以看这场直播，按 3.x 的检查顺序：私密账号（`user.secret`）→ private，
+  /// `liveRoom.liveSubOnly` 为 1 → subscribersOnly，`paidEvent.paid_type` 大于 0
+  /// → paid；否则 none（上游 22-1）。
+  static LiveRestriction restrictionOf(Map<String, dynamic> user, Map<String, dynamic> live) {
+    if (_optionalBool(user['secret']) == true) return LiveRestriction.private;
+    if (_integer(live['liveSubOnly']) == 1) return LiveRestriction.subscribersOnly;
+    final paidValue = live['paidEvent'];
+    final paid = paidValue == null || (paidValue is List && paidValue.isEmpty)
+        ? <String, dynamic>{}
+        : _object(paidValue);
+    if ((_integer(paid['paid_type']) ?? 0) > 0) return LiveRestriction.paid;
+    return LiveRestriction.none;
+  }
+
+  /// `liveRoom.startTime`（Unix 秒）转成 UTC 时间；缺失、不是整数或超出
+  /// 2000–2100 年时返回 null（上游同一规则）。
+  static DateTime? startTime(Object? value) {
+    final seconds = _integer(value);
+    if (seconds == null) return null;
+    final time = DateTime.fromMillisecondsSinceEpoch(seconds * 1000, isUtc: true);
+    return time.year >= 2000 && time.year <= 2100 ? time : null;
   }
 
   Future<String> _usernameFromRoomId(String rawRoomId, {CancelToken? cancel}) async {

@@ -2188,5 +2188,14 @@
   "wallpaper_video_play_failed": "视频播放失败",
   "background_invalid_gradient": "这个渐变数据不完整",
   "background_no_category": "该来源暂无内容",
-  "wallpaper_mask": "遮罩"
+  "wallpaper_mask": "遮罩",
+  "restriction_needs_login": "该直播需要登录后才能观看。",
+  "restriction_paid": "该直播为付费内容。",
+  "restriction_subscribers_only": "该直播仅主播的订阅者或会员可看。",
+  "restriction_private": "该直播为私密直播。",
+  "restriction_app_only": "该直播仅可在平台官方 App 内观看。",
+  "restriction_region_blocked": "该直播在当前地区不可观看。",
+  "restriction_password": "该直播需要房间密码。",
+  "restriction_adult": "该直播需要先完成平台的年龄验证。",
+  "restriction_unplayable": "平台没有向本客户端提供可播放的流。"
 }

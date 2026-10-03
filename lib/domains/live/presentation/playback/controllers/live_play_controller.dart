@@ -770,6 +770,11 @@ class LivePlayController extends GetxController
         name: 'LivePlayController',
         stackTrace: stackTrace,
       );
+      // 受限的直播在这里才会失败（站点读不到流是正常的），要按限制种类说明原因，
+      // 而不是只把界面置成失败。
+      if (liveRoom.isRestricted) {
+        ToastUtil.show(_roomStateMessage(liveRoom));
+      }
       updateRoom(success: false);
     }
   }
@@ -795,10 +800,27 @@ class LivePlayController extends GetxController
     if (liveRoom.platform != Sites.iptvSite) {
       await _updateFavoriteRoomSnapshot(liveRoom);
     }
-    ToastUtil.show(
-      liveRoom.effectiveLiveStatus == LiveStatus.banned ? i18n('server_error_retry_later') : i18n('stream_not_live'),
-    );
+    ToastUtil.show(_roomStateMessage(liveRoom));
     _restoreQualityAndLines();
+  }
+
+  /// 房间播不了时的说明：平台标了限制就按限制种类说明原因（"受限=仍在播，
+  /// 只是这个客户端看不到"），否则才说未开播/稍后重试。
+  String _roomStateMessage(LiveRoom room) {
+    return switch (room.effectiveRestriction) {
+      LiveRestriction.needsLogin => i18n('restriction_needs_login'),
+      LiveRestriction.paid => i18n('restriction_paid'),
+      LiveRestriction.subscribersOnly => i18n('restriction_subscribers_only'),
+      LiveRestriction.private => i18n('restriction_private'),
+      LiveRestriction.appOnly => i18n('restriction_app_only'),
+      LiveRestriction.regionBlocked => i18n('restriction_region_blocked'),
+      LiveRestriction.password => i18n('restriction_password'),
+      LiveRestriction.adult => i18n('restriction_adult'),
+      LiveRestriction.unplayable => i18n('restriction_unplayable'),
+      LiveRestriction.none => room.effectiveLiveStatus == LiveStatus.banned
+          ? i18n('server_error_retry_later')
+          : i18n('stream_not_live'),
+    };
   }
 
   Future<void> _updateFavoriteRoomSnapshot(LiveRoom liveroom) async {

@@ -2180,5 +2180,14 @@
   "wallpaper_video_play_failed": "Playback failed",
   "background_invalid_gradient": "This gradient is incomplete",
   "background_no_category": "Nothing in this source",
-  "wallpaper_mask": "Mask"
+  "wallpaper_mask": "Mask",
+  "restriction_needs_login": "Sign in to watch this broadcast.",
+  "restriction_paid": "This broadcast is paid content.",
+  "restriction_subscribers_only": "Only the channel's subscribers or members can watch this broadcast.",
+  "restriction_private": "This broadcast is private.",
+  "restriction_app_only": "This broadcast plays only in the platform's own app.",
+  "restriction_region_blocked": "This broadcast is not available in the current region.",
+  "restriction_password": "This broadcast needs a room password.",
+  "restriction_adult": "This broadcast needs the platform's age check first.",
+  "restriction_unplayable": "The platform gave this client no playable stream."
 }

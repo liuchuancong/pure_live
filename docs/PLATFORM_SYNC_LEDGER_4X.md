@@ -509,8 +509,21 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 | --- | --- | --- |
 | 22-5 | 搜索跟短链跳转（`vm.tiktok.com` / `vt.tiktok.com`，最多 3 次） | **已同步**：此前 `isShortHost` 有定义但从没被用过，粘贴短链既不是官方链接也不是用户名，什么都搜不到 |
 | 22-6 | 只填卡片的字段不再让整次回答失败；坏容器/坏档位/坏地址只损失它自己 | **已同步**：容器级与地址级各自容错，坏地址只丢那条线路 |
-| 22-1 | 受限直播（私密账号/订阅可见/付费）是在播 + 限制种类，播放时说明谁可以看 | 未做：本仓目前显示为封禁（`LiveStatus.banned`），需限制模型 |
+| 22-1 | 受限直播（私密账号/订阅可见/付费）是在播 + 限制种类，播放时说明谁可以看 | **已同步**：`TikTokState.restricted` 取消，改为 `LiveRestriction.private/subscribersOnly/paid`；受限时不读流，播放时按种类说明原因 |
 | 22-2 / 22-4 | 每个档位+编解码一档，FLV 先于 HLS，按站点命名（`options.qualities`、原画、` · H.265`） | 未做：清晰度发现 |
 | 22-3 | `preferH264`（默认开）把 H.264 档位排前 | 未做 |
 | startedAt | 在播时取 `liveRoom.startTime` | 未做：`LiveRoom` 缺字段 |
 | 22-8 | 匿名目录接口 | 上游也阻塞（需要签名或登录） |
+
+## 模型扩展批次（startedAt / restriction）
+
+4.x 把两个跨站点的字段做进了 `LiveRoom`，本仓此前没有，于是十几个站点的条目都卡在这里。
+本轮已把模型与消费端补上：
+
+| 部分 | 内容 | 状态 |
+| --- | --- | --- |
+| 模型 | `LiveRestriction { none, needsLogin, paid, subscribersOnly, private, appOnly, regionBlocked, password, adult, unplayable }`，按 **名称** 存进 JSON（不认识的名称读成 `none`，可任意新增） | **已完成** |
+| 模型 | `LiveRoom.startedAt`（UTC，JSON 支持 ISO 8601 与 epoch 毫秒）与 `LiveRoom.restriction`、`effectiveRestriction`/`isRestricted`；`copyWith` 与 `fillFromDetail` 都会带上（详情没提时保留手上那份） | **已完成** |
+| 播放 | 房间播不了时按限制种类给文案（登录/付费/订阅/私密/仅 App/地区/密码/成人/无可播流）；受限直播在取流阶段的失败也会给出原因，不再只是静默置为失败 | **已完成** |
+| 文案 | `restriction_*` 九个键（zh + en） | **已完成** |
+| 站点 | **tiktok** 已接入（22-1）。其余站点按各自上游行继续接（见各站点小节） | 进行中 |

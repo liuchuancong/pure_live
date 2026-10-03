@@ -11,6 +11,46 @@ import 'package:pure_live/core/utils/invisible_placeholders.dart';
 /// 注意：状态按 `index` 持久化（见 [LiveRoom.toJson]），新增值必须追加在末尾。
 enum LiveStatus { live, offline, replay, unknown, banned, carousel }
 
+/// 一个在播房间里"为什么不能直接播"的原因（上游 4.x 的统一口径）：列表与房间
+/// 页仍显示为在播并标出种类，播放时才说明原因。
+///
+/// 按 **名称** 存进房间 JSON（见 [LiveRoom.toJson]），所以可以任意位置新增种类；
+/// 本版本不认识的名称读成 [none]。
+enum LiveRestriction {
+  /// 没有限制。
+  none,
+
+  /// 需要登录才能看。
+  needsLogin,
+
+  /// 付费直播或门票。
+  paid,
+
+  /// 仅主播的订阅者/会员可见。
+  subscribersOnly,
+
+  /// 私密或仅好友可见。
+  private,
+
+  /// 只在平台自家 App 内可看。
+  appOnly,
+
+  /// 当前地区不可看。
+  regionBlocked,
+
+  /// 房间密码保护。
+  password,
+
+  /// 平台年龄验证后的成人内容。
+  adult,
+
+  /// 平台说在播（或有回放）却没给这个客户端任何流。
+  unplayable;
+
+  /// 按名称取限制种类；不认识的名称按 [none] 处理。
+  static LiveRestriction fromName(Object? name) => values.asNameMap()[name] ?? none;
+}
+
 enum AudienceMetricType { popularity, onlineViewers, totalViewers, followers, unknown }
 
 enum AudienceOnlineAvailability { unsupported, roomRealtime, roomList }
@@ -321,6 +361,13 @@ class LiveRoom {
   /// Local epoch-millisecond timestamp used by the viewing-history UI.
   int? lastWatchedAt;
 
+  /// 本场直播的开播时间（UTC）。平台没给就是 null。
+  DateTime? startedAt;
+
+  /// 平台明确说明的观看限制。null 表示这次回答没有提限制；
+  /// [LiveRestriction.none] 表示平台被问过且确实没有限制。
+  LiveRestriction? restriction;
+
   // 添加未命名的默认构造函数
   LiveRoom({
     this.roomId,
@@ -358,9 +405,12 @@ class LiveRoom {
     this.catchUpCorrectionHours,
     this.httpHeaders = const <String, String>{},
     this.lastWatchedAt,
+    DateTime? startedAt,
+    this.restriction,
     List<String>? tagIds,
   }) : liveStatus = liveStatus ?? _legacyStatusToLiveStatus(status: status, isRecord: isRecord),
        tagIds = tagIds ?? [],
+       startedAt = startedAt?.toUtc(),
        // 平台留下的不可见占位字符（快手标题里的 U+FFFC 会画成 "OBJ"）在创建时就
        // 清掉：这样每个平台、以及已经存进收藏/历史的那份文本都被覆盖到，不用各
        // 站点自己处理（上游 M13.16 的同一做法）。
@@ -406,7 +456,9 @@ class LiveRoom {
       catchUpDays = _finiteDoubleFromJson(json['catchUpDays']),
       catchUpCorrectionHours = _finiteDoubleFromJson(json['catchUpCorrectionHours']),
       httpHeaders = HttpHeaderPolicy.normalize(json['httpHeaders'] is Map ? json['httpHeaders'] as Map : null),
-      lastWatchedAt = json['lastWatchedAt'] is num ? (json['lastWatchedAt'] as num).toInt() : null {
+      lastWatchedAt = json['lastWatchedAt'] is num ? (json['lastWatchedAt'] as num).toInt() : null,
+      startedAt = _timeFromJson(json['startedAt']),
+      restriction = json['restriction'] == null ? null : LiveRestriction.fromName(json['restriction']) {
     // Earlier builds stored Huya's userCount/URI 8006 popularity in the
     // concurrent-viewer field. Current captures confirm both are popularity.
     if (normalizedPlatformId == 'huya' && _hasExplicitAudienceValue(onlineViewers)) {
@@ -456,6 +508,8 @@ class LiveRoom {
     double? catchUpCorrectionHours,
     Map<String, String>? httpHeaders,
     int? lastWatchedAt,
+    DateTime? startedAt,
+    LiveRestriction? restriction,
     List<String>? tagIds,
   }) {
     return LiveRoom(
@@ -494,6 +548,8 @@ class LiveRoom {
       catchUpCorrectionHours: catchUpCorrectionHours ?? this.catchUpCorrectionHours,
       httpHeaders: httpHeaders ?? this.httpHeaders,
       lastWatchedAt: lastWatchedAt ?? this.lastWatchedAt,
+      startedAt: startedAt ?? this.startedAt,
+      restriction: restriction ?? this.restriction,
       tagIds: tagIds ?? this.tagIds,
     );
   }
@@ -501,6 +557,12 @@ class LiveRoom {
   String get normalizedPlatformId => platform?.trim().toLowerCase() ?? '';
 
   String get normalizedRoomId => roomId?.trim() ?? '';
+
+  /// 当前生效的限制种类：平台没提过限制就当作 [LiveRestriction.none]。
+  LiveRestriction get effectiveRestriction => restriction ?? LiveRestriction.none;
+
+  /// 平台是否明确标出了限制（用于卡片上的标记）。
+  bool get isRestricted => effectiveRestriction != LiveRestriction.none;
 
   bool get isCatchUpActive => isCatchUp == true || (catchUpUrl?.trim().isNotEmpty ?? false);
 
@@ -622,7 +684,25 @@ class LiveRoom {
       'catchUpCorrectionHours': catchUpCorrectionHours,
       'httpHeaders': HttpHeaderPolicy.normalize(httpHeaders),
       'lastWatchedAt': lastWatchedAt,
+      // v4 键：开播时间按 ISO 8601（UTC）存，限制按名称存；旧备份没有这两个键，
+      // 读出来就是 null。
+      'startedAt': startedAt?.toIso8601String(),
+      'restriction': restriction?.name,
     };
+  }
+
+  /// 开播时间：ISO 8601 文本或 epoch 毫秒都能读（上游 4.x 的同一规则），
+  /// 一律转成 UTC。
+  static DateTime? _timeFromJson(Object? value) {
+    if (value is num) {
+      final millis = value.toInt();
+      return millis > 0 ? DateTime.fromMillisecondsSinceEpoch(millis, isUtc: true) : null;
+    }
+    if (value is String && value.isNotEmpty) {
+      final parsed = DateTime.tryParse(value);
+      return parsed?.toUtc();
+    }
+    return null;
   }
 
   static LiveStatus? _legacyStatusToLiveStatus({required bool? status, required bool? isRecord}) {
@@ -935,6 +1015,9 @@ extension LiveRoomExtension on LiveRoom {
       area: _getValueIfEmpty(area, liveroom.area),
       nick: _getValueIfEmpty(nick, liveroom.nick),
       avatar: _getValueIfEmpty(avatar, liveroom.avatar),
+      // 限制与开播时间：详情没提时保留手上那份（卡片/关注里已存的值）。
+      restriction: restriction ?? liveroom.restriction,
+      startedAt: startedAt ?? liveroom.startedAt,
     );
   }
 

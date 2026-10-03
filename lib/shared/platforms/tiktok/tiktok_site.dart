@@ -88,9 +88,11 @@ class TikTokSite extends LiveSite
       liveStatus: switch (room.state) {
         TikTokState.live => LiveStatus.live,
         TikTokState.offline => LiveStatus.offline,
-        TikTokState.restricted => LiveStatus.banned,
         TikTokState.unknown => LiveStatus.unknown,
       },
+      // 受限的直播仍然是"在播"（上游 22-1），播放时才说明谁可以看。
+      restriction: room.state == TikTokState.live ? room.restriction : null,
+      startedAt: room.startedAt,
       watching: current ?? '',
       onlineViewers: current,
       totalViewers: room.totalViewers?.toString(),
@@ -112,7 +114,12 @@ class TikTokSite extends LiveSite
 
   Future<LiveRoom> _detail(LiveRoom liveroom, {required bool includeMedia}) async {
     final data = await _api.room(_roomId(liveroom), includeMedia: includeMedia);
-    if (includeMedia && data.state == TikTokState.live && data.streams.isEmpty) {
+    // 受限的直播不在这里就报错：房间是按"在播 + 限制"返回的，播放时才说明原因
+    // （上游 22-1）。无限制的直播没有流才是取流失败。
+    if (includeMedia &&
+        data.state == TikTokState.live &&
+        data.restriction == LiveRestriction.none &&
+        data.streams.isEmpty) {
       throw const TikTokException(TikTokFailure.mediaUnavailable);
     }
     return _card(data, includeMedia: includeMedia);
