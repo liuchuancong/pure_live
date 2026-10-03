@@ -542,6 +542,16 @@ class LivePlayController extends GetxController
     if (next.length != danmakuMessages.length) danmakuMessages.assignAll(next);
   }
 
+  @override
+  void removeRetractedMessages(LiveRetraction target) {
+    if (isClosed) return;
+    // 聊天列表按目标（观众/单条 id/全部）撤下去；画面弹幕用的是第三方
+    // flame_barrage，它只提供整屏 clear，没有按条移除，所以"撤回全部"同时清屏，
+    // 按观众/按 id 只能影响列表与之后不再追加（已在账本写明这一限制）。
+    removeDanmakuWhere((message) => target.matches(user: message.userName, messageId: message.messageId));
+    if (target.all) clearRenderedDanmaku();
+  }
+
   Future<void> _onRoomPlaybackTimerEnded() async {
     updateUI(closeTimeFlag: false);
     await GlobalPlayerService.instance.player.pause();

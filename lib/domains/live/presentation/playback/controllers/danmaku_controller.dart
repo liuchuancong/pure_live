@@ -223,6 +223,9 @@ class DanmakuController extends GetxController {
         _main.updateRuntimeAudience(msg.data);
       } else if (msg.type == LiveMessageType.superChat) {
         _main.addAddSuperChat(msg);
+      } else if (msg.type == LiveMessageType.retraction) {
+        final target = msg.data;
+        if (target is LiveRetraction) _main.removeRetractedMessages(target);
       }
     };
 
