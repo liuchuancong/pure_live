@@ -69,6 +69,18 @@ workspace（`packages/live_core` 平台层、`live_danmaku` 弹幕、`live_net` 
 5. 播放器：open 完成后的第一个状态事件里 `if (startAt > 0) seek(startAt)`，**每条源只做一次**
    （重连/切档不重复跳）—— **未做**
 
+**第 4-5 步的关键障碍（2026-10 实测）**：本仓 `lib/` 里**没有任何 seek 调用**
+（`seek`/`jumpTo`/`setPosition` 全量搜索只命中滚动、菜单与 M3U 解析），也就是说
+播放层**没有向应用暴露 seek**；`media_core` 的 `PlayerAdapter.seek(Duration)` 虽有，
+但要先在"应用 → facade → adapter"之间打通一条 seek 通道。因此这两步不是"补两处调用"，
+而是**新增播放层能力**，方案需要先定：
+
+- 通道放哪：`LivePlayerFacade` 暴露 `seekTo(Duration)`，经 `_playerManager` 落到 adapter
+- 谁来调用：`VideoController._handleSourceCommit` 里记下"本次源带 `startAt`"，
+  在**首个 position/duration 事件**里调用一次（`duration > startAt` 才调），并用
+  revision/source identity 保证"每条源一次"
+- 播放中继（FLV splice relay）/重连/换档都必须显式跳过，否则会把直播拉回起点
+
 验证要求：全仓 `flutter analyze --no-pub` + `tool/validate_architecture.py --strict`；
 真机确认需观察轮播房首帧是否落在当前进度上。
 
