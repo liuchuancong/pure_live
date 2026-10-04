@@ -7,14 +7,13 @@ import 'package:media_core_live/media_core_live.dart';
 import 'package:pure_live/core/models/live_room.dart';
 import 'package:pure_live/core/player/models/player_engine.dart';
 import 'package:pure_live/core/stream/hls_source_query_policy.dart';
-import 'package:pure_live/core/player/core/playback_source_hints.dart';
 import 'package:pure_live/core/player/core/audio_only_mode_policy.dart';
 import 'package:pure_live/core/player/core/dummy_video_policy.dart';
 import 'package:pure_live/core/player/core/playback_source.dart';
-import 'package:pure_live/core/player/kernel/owned_input_opener.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
 import 'package:pure_live/shared/platforms/live_site.dart' show LiveStreamFacts;
 import 'package:pure_live/domains/live/domain/playback_source_interceptor.dart';
+import 'package:pure_live/domains/live/domain/playback_source_refresh.dart';
 import 'package:media_core_media_kit/media_core_media_kit.dart';
 import 'package:pure_live/core/player/kernel/floating_playback.dart';
 import 'package:pure_live/core/player/presentation/windows_pip_driver.dart';
@@ -29,13 +28,18 @@ import 'package:media_core_ijk_player/media_core_ijk_player.dart' show kIjkPlaye
 ///
 
 final class LivePlayerFacade {
-  LivePlayerFacade({
-    PlayerEngine defaultEngine = PlayerEngine.mediaKit,
-    PlaybackSourceInterceptor? sourceInterceptor,
-    EngineFallbackSourceResolver? onEngineFallbackSources,
-  }) : preferredEngine = defaultEngine {
+  LivePlayerFacade({PlayerEngine defaultEngine = PlayerEngine.mediaKit, PlaybackSourceInterceptor? sourceInterceptor})
+    : preferredEngine = defaultEngine {
     _sourceInterceptor = sourceInterceptor;
-    _controller = LivePlaybackController(kernel, onEngineFallbackSources: onEngineFallbackSources);
+    // Both refresh questions — "the lines died, give me new ones" and "the
+    // engine is changing, give me lines it can use" — have one answer: ask the
+    // platform again. The engine id the second port passes adds nothing the
+    // resolver could act on, since a refreshed plan is rebuilt from the room.
+    _controller = LivePlaybackController(
+      kernel,
+      onRecoverySources: _refreshSources,
+      onEngineFallbackSources: (nextEngine, current) => _refreshSources(current),
+    );
     _bindController();
     // The fullscreen driver is the single source of truth for the fullscreen
     // presentation; the Rx mirror only makes it observable to GetX widgets.
@@ -49,6 +53,14 @@ final class LivePlayerFacade {
 
   /// 取流接线（FFmpeg 转封装 / manifest 重写）。app 启动时装配，null 时直连播放。
   PlaybackSourceInterceptor? _sourceInterceptor;
+
+  /// 向平台重新取播放地址的入口。null 表示这个平台不签地址（站点没实现
+  /// `LivePlayRecoveryResolver`），恢复只能重开手上那条。
+  ///
+  /// 签名地址按平台的钟过期，不按播放器的钟：卡顿恢复若只重开旧地址，就是把
+  /// 服务端已经拒掉的东西再问一遍，整个 sweep 会烧在一个过期签名上，最后报成
+  /// "没有可播的流"。
+  PlaybackSourceResolver? _sourceResolver;
 
   static PlayerKernel get kernel => PlayerKernelService.instance.kernel;
 
@@ -143,6 +155,9 @@ final class LivePlayerFacade {
     Object? sourceSelection,
   }) async {
     if (_disposed) return;
+    // 先收下刷新入口再起播：起播路径上有 await，而恢复任务可能在任意一次 await
+    // 期间问过来，那时它必须拿到这一次播放的 resolver，不能是上一间房的。
+    _sourceResolver = sourceResolver;
     // 起播时就是纯音频的只有一条路：助眠会话自动进入（手动切换发生在起播之后，
     // 而重进已保留的会话走 _resumeCurrentRoomSession，不会回到这里）。那条路要
     // 真省电，所以关掉视频轨。
@@ -165,18 +180,7 @@ final class LivePlayerFacade {
     await _controller.play(
       LiveSourceRequest(
         sources: await _intercept(
-          [
-            for (final url in urls)
-              PlayerSource(
-                id: SourceId('live-$url'),
-                uri: Uri.parse(url),
-                type: SourceType.live,
-                headers: SourceHeaders(headers),
-                // 平台解析播放地址时就知道每条线路的容器；随源带过去，引擎就不必
-                // 靠探测去猜——探测耗时在高延迟线路上正好吃掉起播预算。
-                metadata: playbackStreamFormatMetadata(streamFacts[url]?.format.name),
-              ),
-          ],
+          livePlanSources(urls, headers: headers, streamFacts: streamFacts),
           streamFacts: streamFacts,
           sourceQueryPolicies: committed?.sourceQueryPolicies ?? const {},
         ),
@@ -207,27 +211,18 @@ final class LivePlayerFacade {
     List<LivePlayQuality> qualities = const [],
     int currentQuality = 0,
     Object? sourceSelection,
+    bool audioOnly = false,
+    PlaybackSourceResolver? sourceResolver,
   }) async {
     if (_disposed) return;
+    _sourceResolver = sourceResolver;
+    // 助眠会话自动进入的那条路（和 play 同理）：真要省电就得关掉视频轨。
+    if (audioOnly) await setAudioOnlyMode(true, stopVideoDecoding: true);
     _room = liveroom;
     _lastHeaders = const {};
     _lastLines = const [];
     await _controller.play(
-      LiveSourceRequest(
-        sources: await _intercept([
-          PlayerSource(
-            id: SourceId('owned-${liveroom.identityKey}'),
-            uri: Uri(scheme: 'owned', path: liveroom.identityKey),
-            type: SourceType.live,
-            protocol: SourceProtocol.custom,
-            // 元数据里放的必须是**打开输入的函数**：media_kit 的 customInputOpener
-            // 只认它（多画面那条路一直是 `owned.createInput`）。把整个
-            // OwnedPlaybackSource 塞进去，opener 会以
-            // "Not an owned-input recipe" 拒绝，房间直接打不开。
-            metadata: <String, Object?>{kMediaKitCustomInputKey: customInputMetadataOf(source)},
-          ),
-        ]),
-      ),
+      LiveSourceRequest(sources: await _intercept([ownedPlanSource(source, liveroom)])),
       preferredBackend: backendIdOfEngine(preferredEngine),
     );
     final committed = sourceSelection is PlaybackSourceQualitySelection ? sourceSelection : null;
@@ -269,17 +264,23 @@ final class LivePlayerFacade {
     _commitSubject.add(commit);
   }
 
+  /// 自有输入的起播入口。
+  ///
+  /// [sourceRefreshAt] 只是随请求带过来：租约到期前主动换地址（上游的预取腿）
+  /// 还没接，过期后由恢复路径重新向平台取地址。
   Future<void> playSource(
     OwnedPlaybackSource source, {
     LiveRoom? liveroom,
     bool audioOnly = false,
-    Object? sourceResolver,
+    PlaybackSourceResolver? sourceResolver,
     Object? sourceSelection,
     DateTime? sourceRefreshAt,
   }) => playOwned(
     source,
     liveroom ?? _room ?? LiveRoom(platform: '', roomId: ''),
     sourceSelection: sourceSelection,
+    audioOnly: audioOnly,
+    sourceResolver: sourceResolver,
   );
 
   Future<void> switchLine(int index) => _controller.switchLine(index);
@@ -304,16 +305,7 @@ final class LivePlayerFacade {
       await _controller.play(
         LiveSourceRequest(
           sources: await _intercept(
-            [
-              for (final url in lines)
-                PlayerSource(
-                  id: SourceId('live-$url'),
-                  uri: Uri.parse(url),
-                  type: SourceType.live,
-                  headers: SourceHeaders(current.headers),
-                  metadata: playbackStreamFormatMetadata(current.streamFacts[url]?.format.name),
-                ),
-            ],
+            livePlanSources(lines, headers: current.headers, streamFacts: current.streamFacts),
             streamFacts: current.streamFacts,
             sourceQueryPolicies: current.sourceQueryPolicies,
           ),
@@ -451,6 +443,66 @@ final class LivePlayerFacade {
       PlaybackSourceInterception(sources: sources, streamFacts: streamFacts, sourceQueryPolicies: sourceQueryPolicies),
     );
     return intercepted.isEmpty ? sources : intercepted;
+  }
+
+  /// 恢复期的取地址刷新：把内核手上那批刚死掉的源换成平台新给的一批。
+  ///
+  /// 内核传进来的 [current] 只用来满足端口签名：问平台要新地址需要的是房间、
+  /// 清晰度和线路，那些在提交里；而 [current] 里的 URI 在接过中继之后已经是
+  /// 回环地址，不是平台那条了。
+  ///
+  /// 返回空表就是"没有更新的可给"——平台不签地址、答复已过期、或者接线换不出
+  /// 源；这几种情况内核都照旧重开原来的源。resolver 自己抛出去反而更好：内核
+  /// 那一侧会带上恢复分类记一条警告，落进应用的日志环里。恢复不能因为刷新失败
+  /// 而失败，卡顿本身才是那次任务要处理的事。
+  ///
+  /// 换源成功必须重新发布提交：提交是内核之外唯一能读到的播放描述，线路选择器
+  /// 数的是它的 `urls`，换引擎、悬浮窗和重进房间都靠 `currentUrl`/`headers`/
+  /// `ownedSource` 重建源。只换地址不改提交，这几处就会继续指着平台已经拒掉的
+  /// 签名地址。
+  Future<List<PlayerSource>> _refreshSources(List<PlayerSource> current) async {
+    final resolver = _sourceResolver;
+    final committed = commit;
+    final room = _room;
+    if (resolver == null || committed == null || room == null || _disposed) return const [];
+
+    final fenceRevision = _commitRevision;
+    final result = await resolver(sourceRefreshRequestFor(committed));
+    // 刷新是一次网络往返，期间用户可能已经换房、换档或退出——那些命令都会发布
+    // 自己的提交，代次一动就说明这份答复描述的不是当前这次播放了。
+    if (!canAdoptSourceRefresh(
+      disposed: _disposed,
+      sameRoom: identical(_room, room),
+      revisionMoved: _commitRevision != fenceRevision,
+      result: result,
+    )) {
+      return const [];
+    }
+
+    final refreshed = await refreshedPlaybackCommit(
+      result,
+      committed: committed,
+      room: room,
+      // 和首次起播走同一条接线：刷新过的源要是绕开中继，需要中继的那些流正好
+      // 就在恢复的路上被降级成直连。
+      intercept: (sources) => _intercept(
+        sources,
+        streamFacts: result.selection?.streamFacts ?? const {},
+        sourceQueryPolicies: result.selection?.sourceQueryPolicies ?? const {},
+      ),
+    );
+    if (refreshed.sources.isEmpty) return const [];
+
+    _lastLines = refreshed.lines;
+    _publishCommit(
+      refreshed.currentUrl,
+      refreshed.urls,
+      refreshed.qualities,
+      refreshed.currentQuality,
+      streamFacts: refreshed.streamFacts,
+      source: refreshed.ownedSource,
+    );
+    return refreshed.sources;
   }
 
   final RxBool isInPip = false.obs;

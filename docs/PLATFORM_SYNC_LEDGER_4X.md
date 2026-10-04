@@ -313,8 +313,37 @@ position 22066ms 在走）→ 约 1 秒后进入缓冲 → 12 秒 `bufferingStal
    用的还是那个已经死掉的签名 URL，3 秒内 `Failed to open`，然后无限循环。
 4. `VideoController._handlePlayerError` 只把错误分类成一句 toast，没有任何重新解析或重试。
 
-**待做**：把 `sourceResolver` 接上——播放失败（尤其 `NO_PLAYABLE_STREAM`）时用它取一份新线路再重放，
-而不是重放同一个签名 URL。这是把"一次瞬时卡顿"变成"永久黑屏"的那一步，比调看门狗阈值重要得多。
+**已做（2026-10-04）**：`sourceResolver` 接上了，走的是**恢复路径**而不是失败路径——失败路径要等 sweep 把
+所有候选烧完才轮到它，那时画面已经黑了；恢复路径在重开之前问一次，一次瞬时卡顿就还是一次瞬时卡顿。
+
+- media_core_live 新增 `RecoverySourceResolver onRecoverySources`：恢复任务（看门狗卡顿 / 适配器报错）在
+  `_sweep(startAtCurrent: true)` **之前**先问调用方，拿到的列表按偏好序整体替换 `_sources`、`_sourceIndex`
+  归 0；空列表 = 照旧重开原线路；resolver 抛异常也照旧（记一条 `LogCategory.recovery` 警告）。答复用
+  `_playGeneration` 栅栏：`play`/`switchLine`/`retry`/`pause`/`close`/`dispose` 都在排队前 bump 它，所以一次
+  迟到的刷新不会把用户刚点的那次播放的线路换掉。
+- `LivePlayerFacade` 用**一个实现**回答两个端口（`onRecoverySources` 与 `onEngineFallbackSources`）：换引擎
+  那次刷新问的是同一件事——"给我一份平台现在认的线路"，多出来的引擎 id 对 resolver 没有意义。顺带删掉
+  facade 构造器上那个从来没人传的 `onEngineFallbackSources` 形参：上面第 2 条断线的根源就是它——构造期
+  根本不知道要播哪个房间，宿主没法在那里给出 resolver。
+- 刷新成功必须**重新发布提交**：`switchLine` 数的是内核那份列表、界面读的是提交那份、换引擎和悬浮窗重进靠
+  `currentUrl`/`ownedSource` 重建源。只换地址不改提交，这三处会继续指着平台已经拒掉的签名。
+- 纯逻辑抽到 `domains/live/domain/playback_source_refresh.dart`（偏好线路排序、请求构造、采纳栅栏、源构造、
+  提交构造），`play`/`switchEngine`/`playOwned` 那三处 `PlayerSource(...)` 复制粘贴合并成 `livePlanSources` /
+  `ownedPlanSource`；FC2 那次"metadata 里必须是输入工厂而不是源"的教训也钉在 `ownedPlanSource` 上。
+- 顺带接上 `playSource` 收下却丢掉的 `audioOnly`：助眠会话进自有输入的房间（fc2 等）以前不会关视频轨。
+- 测试：media_core_live `recovery source refresh` 3 项（新线路真的被打开 / 迟到答复被丢弃 / resolver 抛异常
+  仍重开原线路）。mutation 逐个验过：删掉刷新调用 → 第 1 项失败（`askedWith` 为空）；删掉代次栅栏 →
+  第 2 项失败（`stale.example` 进了内核）；删掉 catch → 第 3 项失败（只开了 1 次源，恢复整个没跑）。
+  pure_live `test/domains/live/playback_source_refresh_test.dart` 16 项，4 个 mutation（不把偏好线路移到首位 /
+  删提交代次栅栏 / metadata 放 source 而不是 factory / 绕过取流接线）各自打破对应用例。
+  `media_core_live` 全套 53 项全绿、pure_live 全仓 Analyze 0 项、`validate_architecture.py --strict`
+  0 未批准硬边。
+- 用户手点重试那条路本来就会自愈：`VideoController.refresh` → `onInitPlayerState(refresh)` →
+  `getPlayQualites()` 全量重解析。内核的 `retry()` 在 app 里没有调用点。
+- 仍未接：① 租约到期前**主动**预取（上游 `session._schedulePrefetch` 那条腿）——`sourceRefreshAt` 依旧只是
+  随请求带着没人读，所以地址过期时观众会先看到一次卡顿再自愈，而不是无缝换地址；② facade 里
+  `_refreshSources` 的编排（栅栏判定、重新发布提交）没有自动化覆盖，它要真内核才能跑，纯逻辑部分已单独测过；
+  ③ 中继自己的续租（上游 `LineRenewer`）仍未接，`FlvSpliceRelay` 那条腿还是老样子。
 
 **这台机器的实际状态**（`reg query HKCU\Software\Microsoft\Windows\CurrentVersion\Internet Settings`）：
 `ProxyEnable=0`、残留 `ProxyServer=127.0.0.1:7890`，而 Clash 实际在听 **7897**。所以"跟随系统代理"这一路
