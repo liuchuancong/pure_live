@@ -457,6 +457,26 @@ curl 对照实测：`init.2.mp4` **不带 cookie → 401，带上 → 200（1095
 测试 `test/domains/live/live_input_playback_binding_test.dart` 钉两条边：三种配方各自绑出正确身份且不开
 席位；未装配抛 `UnsupportedError`、装配后委托。75 项全绿，Analyze 0 项，`--strict` 无新增硬边。
 
+**恢复之后才露出来的第二层（2026-10-04 晚，已修 `e05675c5c`）**：FC2 进房报
+`Invalid argument (recipe): Not an owned-input recipe: Instance of 'OwnedPlaybackSource'`。
+`playOwned(Object recipe, …)` 把收到的对象原样塞进 `metadata[kMediaKitCustomInputKey]`，而
+media_kit 适配器把它交给 `customInputOpener` → `asOwnedInputRecipe` 只认**函数**。多画面那条路一直给的
+是 `owned.createInput`，所以只有房间这条路坏。
+
+**归因要说清楚**：这个类型不匹配**早于**上面那次清理——`3ac0012d8` 时 `playOwned` 就已经是
+`Object recipe` + 原样入 metadata，而 binder 的 typedef 那时已经返回 `OwnedPlaybackSource`。清理删掉 case
+之后抛的 `UnsupportedError` 恰好把它盖住了，恢复 case 才让老问题重新露头。所以是两层缺陷叠在一起，
+不是我恢复时新引入的。
+
+修：`playOwned`/`playSource` 收紧成 `OwnedPlaybackSource`（编译器挡住签名），metadata 的值只由
+`customInputMetadataOf(source)` 一处产出、房间与多画面两条路共用（元数据是 `Map<String, Object?>`，
+放错对象不是编译错误而是运行时拒绝，所以两端各钉一条测试）。
+
+**顺带挖出同一条路上的第二个哑弹**：`FacadeStreamCommitLegacy.source` 是重构留下的
+`Object? get source => null;`——`player_controller` 正是靠 `commit.source is OwnedPlaybackSource`
+取自有源的，于是**永远取不到**，房间会话快照里没有 ownedSource，悬浮窗/重进房间就无法重建输入。
+改成 `_publishCommit` 带上 source、消费端读真实存在的 `ownedSource` 字段，那个说谎的 shim 删掉。
+
 ### Steam 起播失败：清扫的验证窗比它自己声明的截止日期更紧（2026-10-04，已修在 media_core `c6f5917`）
 
 日志（同一份里有两个房间，对照价值比单独一个高）：
