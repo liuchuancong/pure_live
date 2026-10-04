@@ -1,0 +1,19 @@
+/// 解码出来的画面是不是一路"占位视频"（dummy video track）而不是真的画面。
+///
+/// 猫耳 FM 的直播流里带一路 16×16 的 h264 占位视频，真内容是音频；按画面拉伸
+/// 铺满就是一片纯色，用户看到的就是"蓝屏/绿屏"。
+///
+/// 判据用**短边**：占位轨是为了"有一路视频"而不是为了看，两个方向都只有十几个
+/// 像素；真实画面再竖也不会短到这个地步（竖屏 1080×2280 的短边是 1080，最低的
+/// 144p 也还有 144）。
+///
+/// 尺寸未知（解码器还没报）不算占位：那会儿该显示的是加载态，不是封面。
+bool isDummyVideoSize({required int width, required int height}) {
+  if (width <= 0 || height <= 0) return false;
+  final shortSide = width < height ? width : height;
+  return shortSide <= dummyVideoShortSideLimit;
+}
+
+/// 短边上限（像素）。32 给 16×16 的占位轨留了一倍余量，同时离任何真实档位都还
+/// 很远，所以这个阈值不需要按平台分表。
+const int dummyVideoShortSideLimit = 32;

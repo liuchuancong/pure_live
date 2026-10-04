@@ -9,6 +9,7 @@ import 'package:pure_live/core/player/models/player_engine.dart';
 import 'package:pure_live/core/stream/hls_source_query_policy.dart';
 import 'package:pure_live/core/player/core/playback_source_hints.dart';
 import 'package:pure_live/core/player/core/audio_only_mode_policy.dart';
+import 'package:pure_live/core/player/core/dummy_video_policy.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
 import 'package:pure_live/shared/platforms/live_site.dart' show LiveStreamFacts;
 import 'package:pure_live/domains/live/domain/playback_source_interceptor.dart';
@@ -320,6 +321,10 @@ final class LivePlayerFacade {
   final RxBool hasError = false.obs;
   final RxBool _audioOnlyMode = false.obs;
   final RxBool isVerticalVideo = false.obs;
+
+  /// 当前解码出来的画面是一路占位视频（例如猫耳 FM 的 16×16 h264），不是真画面。
+  /// 展示层据此改显房间封面，见 [isDummyVideoSize]。
+  final RxBool isDummyVideo = false.obs;
   final _loadingSubject = StreamController<bool>.broadcast();
   bool _lastLoading = false;
 
@@ -411,6 +416,8 @@ final class LivePlayerFacade {
     final size = handle?.combinedSnapshot.geometry.videoSize;
     final next = size != null && size.height > size.width;
     if (next != isVerticalVideo.value) isVerticalVideo.value = next;
+    final dummy = size != null && isDummyVideoSize(width: size.width, height: size.height);
+    if (dummy != isDummyVideo.value) isDummyVideo.value = dummy;
     // The compact window is shaped from the aspect it was fed when PiP began.
     // A live stream often reports its real size only after the first frame, and
     // a room can switch between landscape and portrait, so keep feeding it:
@@ -584,7 +591,7 @@ final class LivePlayerFacade {
     List<BoxFit>? fitList,
     Widget? controls,
     bool trackPipSource = false,
-    Widget? audioOnlyPresentation,
+    Widget? pictureCover,
     Color? surfaceColor,
     double? videoViewportAspectRatio,
     Object? portraitFullscreenDisplayMode,
@@ -593,11 +600,12 @@ final class LivePlayerFacade {
         ? (fitList == null || fitList.isEmpty ? BoxFit.contain : fitList[fit.clamp(0, fitList.length - 1)])
         : fit as BoxFit;
     final video = getVideoWidget(resolved);
-    // 纯音频模式**盖住**画面而不是把它换掉：视频组件必须留在树上继续解码，
-    // 否则切回视频要重建纹理、重新等首帧（media_kit 卸载 Video 就会释放纹理），
-    // 而且帧心跳一断，帧停滞看门狗会把好好在播的房间判成卡死。
-    // 它排在控制层下面，耳机按钮仍然点得到。
-    final children = <Widget>[video, ?audioOnlyPresentation, ?controls];
+    // 需要时**盖住**画面而不是把它换掉：视频组件必须留在树上继续解码，否则切回
+    // 视频要重建纹理、重新等首帧（media_kit 卸载 Video 就会释放纹理），而且帧
+    // 心跳一断，帧停滞看门狗会把好好在播的房间判成卡死。盖子有两种：纯音频模式
+    // 的卡片，和占位视频轨时的房间封面（见 [isDummyVideo]）。
+    // 盖子排在控制层下面，按钮仍然点得到。
+    final children = <Widget>[video, ?pictureCover, ?controls];
     if (children.length == 1) return video;
     // expand is load-bearing: a default (loose) Stack sizes itself to the
     // non-positioned child, and in an unbounded ancestor that hands the video

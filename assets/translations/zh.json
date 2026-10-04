@@ -1341,6 +1341,7 @@
   "player_exo": "Exo播放器",
   "player_fvp": "Fvp播放器",
   "audio_only_mode": "纯音频模式",
+  "dummy_video_cover_notice": "该直播源没有真画面，已改为显示房间封面",
   "restoring_live_video": "正在恢复实时画面",
   "audio_only_mode_subtitle": "手动切换只是把画面盖住，视频仍在解码，切回即时恢复；退到后台或助眠会话时才关闭视频解码省电。原直播源不变，通常不会明显减少流量",
   "change_danmaku_font_family": "更换弹幕字体",

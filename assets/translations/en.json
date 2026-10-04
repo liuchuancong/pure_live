@@ -1341,6 +1341,7 @@
   "player_exo": "Exo Player",
   "player_fvp": "Fvp Player",
   "audio_only_mode": "Audio Only Mode",
+  "dummy_video_cover_notice": "This stream carries no real picture; showing the room cover instead",
   "restoring_live_video": "Restoring live video",
   "audio_only_mode_subtitle": "A manual switch only covers the picture — video keeps decoding, so switching back is instant. Video decoding is turned off in the background and during sleep sessions to save power. The original stream stays connected, so data usage usually changes little",
   "change_danmaku_font_family": "Change Danmaku Font",
