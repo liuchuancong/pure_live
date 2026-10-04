@@ -340,6 +340,11 @@ position 22066ms 在走）→ 约 1 秒后进入缓冲 → 12 秒 `bufferingStal
   0 未批准硬边。
 - 用户手点重试那条路本来就会自愈：`VideoController.refresh` → `onInitPlayerState(refresh)` →
   `getPlayQualites()` 全量重解析。内核的 `retry()` 在 app 里没有调用点。
+- 刷新没有再套一层超时：上游给这次调用套了 `timings.sourceRefresh`（12s），而我们的平台请求本来就受
+  `HttpClient` 的 dio 超时约束（connect/receive/send 各 20s），问题"平台多久内必须给出新地址"已经有答案了。
+  再加一个更紧的就是同一个问题两个截止时间、更紧的那个偷偷生效——和这轮修掉的 Steam 那处是同一种错。
+  代价是恢复任务最坏会被一次挂死的请求占住约 40s，期间用户命令排在单槽队列后面（暂停/退出不能取消正在跑的
+  任务，只能取消排队中的）。
 - 仍未接：① 租约到期前**主动**预取（上游 `session._schedulePrefetch` 那条腿）——`sourceRefreshAt` 依旧只是
   随请求带着没人读，所以地址过期时观众会先看到一次卡顿再自愈，而不是无缝换地址；② facade 里
   `_refreshSources` 的编排（栅栏判定、重新发布提交）没有自动化覆盖，它要真内核才能跑，纯逻辑部分已单独测过；
