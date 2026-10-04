@@ -9,6 +9,7 @@ import 'package:pure_live/domains/live/presentation/playback/states/ui_state.dar
 import 'package:pure_live/core/player/core/portrait_stream_support.dart';
 import 'package:pure_live/domains/live/presentation/playback/widgets/danmaku/danmaku_tab.dart';
 import 'package:pure_live/domains/live/presentation/playback/widgets/layout/live_play_video.dart';
+import 'package:pure_live/domains/live/presentation/playback/widgets/video_player/picture_cover.dart';
 import 'package:pure_live/domains/live/presentation/playback/widgets/layout/live_play_header.dart';
 import 'package:pure_live/domains/live/presentation/playback/controllers/live_play_controller.dart';
 import 'package:pure_live/domains/live/presentation/playback/widgets/resolution_selector/resolutions_row.dart';
@@ -491,7 +492,22 @@ class LivePlayContent extends StatelessWidget {
     if (isInPip) {
       return Theme(
         data: ThemeData.dark(),
-        child: Container(key: const ValueKey('pip'), color: Colors.transparent, child: manager.buildPiPOverlay()),
+        child: Container(
+          key: const ValueKey('pip'),
+          color: Colors.transparent,
+          // 紧凑小窗是另一棵子树，不会继承房间视图的盖子；选哪一层由同一个判定给。
+          child: manager.buildPiPOverlay(
+            pictureCover: Obx(
+              () =>
+                  pictureCoverFor(
+                    audioOnly: manager.isAudioOnlyMode,
+                    dummyVideo: manager.isDummyVideo.value,
+                    room: controller.state.value.room.detail,
+                  ) ??
+                  const SizedBox.shrink(),
+            ),
+          ),
+        ),
       );
     }
 

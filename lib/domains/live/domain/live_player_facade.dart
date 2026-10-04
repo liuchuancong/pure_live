@@ -518,8 +518,13 @@ final class LivePlayerFacade {
     }
   }
 
-  Widget buildPiPOverlay() => _PipOverlayView(
+  /// 紧凑小窗（画中画）的那棵树。
+  ///
+  /// [pictureCover] 由调用方决定：这里是 domain，不认识展示层的盖子长什么样，
+  /// 而 PiP 是另一棵子树，不会自动继承房间视图的那一层。
+  Widget buildPiPOverlay({Widget? pictureCover}) => _PipOverlayView(
     facade: this,
+    pictureCover: pictureCover,
     danmaku: _activeVideoController != null ? CompactDanmakuOverlay(controller: _activeVideoController) : null,
   );
 
@@ -807,10 +812,13 @@ class PlaybackSourceQualitySelection {
 /// and the pointer drag hands the window to the native move loop. Touch
 /// platforms keep the controls always visible — there is no hover there.
 class _PipOverlayView extends StatefulWidget {
-  const _PipOverlayView({required this.facade, required this.danmaku});
+  const _PipOverlayView({required this.facade, required this.danmaku, this.pictureCover});
 
   final LivePlayerFacade facade;
   final Widget? danmaku;
+
+  /// 盖住画面的那一层（纯音频卡片 / 占位视频轨的房间封面），由展示层决定。
+  final Widget? pictureCover;
 
   @override
   State<_PipOverlayView> createState() => _PipOverlayViewState();
@@ -879,6 +887,10 @@ class _PipOverlayViewState extends State<_PipOverlayView> {
                     onPanStart: (_) => unawaited(windowsPipWindow.startDragging()),
                     child: facade.getVideoWidget(BoxFit.contain),
                   ),
+                  // 盖子自己 IgnorePointer，命中会落到下面那个 GestureDetector 上，
+                  // 所以单击暂停、双击退出、拖动移动窗口都照旧。弹幕留在盖子之上：
+                  // 纯音频时也还看得见聊天。
+                  ?widget.pictureCover,
                   if (widget.danmaku != null) Positioned.fill(child: widget.danmaku!),
                 ],
               ),
