@@ -50,6 +50,21 @@ void main() {
       expect(cookies.bilibiliUid.v, 12345);
     });
 
+    test('只剩斗鱼续期凭据时也算"还有账号"，清除入口才可点', () {
+      expect(cookies.hasAnyCredential, isFalse);
+
+      // 登出只抹了 cookie、把 ltp0 留下的那种半干净状态：界面上要看得出来
+      // 还有凭据没清，否则"清除所有账号"是灰的，用户以为已经干净了。
+      cookies.douyuLtp0.v = 'long-term-passport-key';
+      expect(cookies.hasAnyCredential, isTrue);
+
+      cookies.clearDouyuSession();
+      expect(cookies.hasAnyCredential, isFalse);
+
+      cookies.yyCookie.v = 'yy-session';
+      expect(cookies.hasAnyCredential, isTrue);
+    });
+
     test('清空所有账号与斗鱼那组共用一份定义，不漏配套字段', () {
       cookies.bilibiliCookie.v = 'SESSDATA=xxx';
       cookies.bilibiliUid.v = 12345;

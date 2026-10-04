@@ -65,6 +65,29 @@ class CookieSettingsController extends GetxController {
     }
   }
 
+  /// 还存不存在任何登录凭据。
+  ///
+  /// 「清除所有账号」按它决定可不可点：没东西可清的时候给一个能点的破坏性按钮，
+  /// 只会让人怀疑自己是不是没登出干净。斗鱼的续期凭据也算——它单独留着就是
+  /// 登出没登出的那种状态。
+  bool get hasAnyCredential {
+    for (final value in <RxString>[
+      bilibiliCookie,
+      huyaCookie,
+      douyuCookie,
+      douyuLtp0,
+      douyuDid,
+      douyinCookie,
+      kuaishouCookie,
+      twitchCookie,
+      soopCookie,
+      yyCookie,
+    ]) {
+      if (value.v.isNotEmpty) return true;
+    }
+    return false;
+  }
+
   /// 斗鱼这一组是一个会话，不是一个字段。
   ///
   /// `douyuLtp0` 是 passport 的长期续期密钥，`douyuDid` 是它绑定的设备号：
