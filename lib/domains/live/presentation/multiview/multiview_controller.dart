@@ -14,6 +14,7 @@ import 'package:media_core_multiview/media_core_multiview.dart' as wall;
 import 'package:pure_live/shared/platforms/live_quality_discovery.dart';
 import 'package:pure_live/domains/live/domain/live_input_playback_binder.dart';
 import 'package:pure_live/core/player/kernel/player_kernel_service.dart';
+import 'package:pure_live/core/player/kernel/owned_input_opener.dart';
 import 'package:pure_live/domains/live/presentation/multiview/models/multiview_models.dart';
 import 'package:pure_live/domains/live/presentation/playback/controllers/player_controller.dart';
 import 'package:pure_live/domains/live/presentation/multiview/danmaku/multiview_danmaku_session.dart';
@@ -795,7 +796,7 @@ class MultiviewController extends GetxController {
     final uri = owned == null ? Uri.parse(source.url) : Uri(scheme: 'owned', path: owned.identity);
     final metadata = owned == null
         ? const <String, Object?>{}
-        : <String, Object?>{kMediaKitCustomInputKey: owned.createInput};
+        : <String, Object?>{kMediaKitCustomInputKey: customInputMetadataOf(owned)};
     return wall.MultiviewCellSource(
       source: mc.PlayerSource(
         id: mc.SourceId('multiview-$cellIndex-${owned?.identity ?? source.url.hashCode}'),

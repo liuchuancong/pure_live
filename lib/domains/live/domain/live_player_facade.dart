@@ -10,6 +10,8 @@ import 'package:pure_live/core/stream/hls_source_query_policy.dart';
 import 'package:pure_live/core/player/core/playback_source_hints.dart';
 import 'package:pure_live/core/player/core/audio_only_mode_policy.dart';
 import 'package:pure_live/core/player/core/dummy_video_policy.dart';
+import 'package:pure_live/core/player/core/playback_source.dart';
+import 'package:pure_live/core/player/kernel/owned_input_opener.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
 import 'package:pure_live/shared/platforms/live_site.dart' show LiveStreamFacts;
 import 'package:pure_live/domains/live/domain/playback_source_interceptor.dart';
@@ -200,7 +202,7 @@ final class LivePlayerFacade {
   }
 
   Future<void> playOwned(
-    Object recipe,
+    OwnedPlaybackSource source,
     LiveRoom liveroom, {
     List<LivePlayQuality> qualities = const [],
     int currentQuality = 0,
@@ -218,7 +220,11 @@ final class LivePlayerFacade {
             uri: Uri(scheme: 'owned', path: liveroom.identityKey),
             type: SourceType.live,
             protocol: SourceProtocol.custom,
-            metadata: <String, Object?>{kMediaKitCustomInputKey: recipe},
+            // 元数据里放的必须是**打开输入的函数**：media_kit 的 customInputOpener
+            // 只认它（多画面那条路一直是 `owned.createInput`）。把整个
+            // OwnedPlaybackSource 塞进去，opener 会以
+            // "Not an owned-input recipe" 拒绝，房间直接打不开。
+            metadata: <String, Object?>{kMediaKitCustomInputKey: customInputMetadataOf(source)},
           ),
         ]),
       ),
@@ -230,6 +236,8 @@ final class LivePlayerFacade {
       const [],
       committed?.qualities ?? qualities,
       committed?.currentQuality ?? currentQuality,
+      // 自有输入没有可复用的 URL，悬浮窗/重进房间只能靠这个 source 重建输入。
+      source: source,
     );
     await setVolume(liveroom.getSavedVolume().clamp(0.0, 1.0));
   }
@@ -240,6 +248,7 @@ final class LivePlayerFacade {
     List<LivePlayQuality> qualities,
     int currentQuality, {
     Map<String, LiveStreamFacts> streamFacts = const {},
+    Object? source,
   }) {
     // `uiLines` is the platform-ordered line list; the index is the line the
     // selector highlighted. Deriving it from `_lastLines` (kernel fallback
@@ -255,12 +264,13 @@ final class LivePlayerFacade {
       qualities: List<LivePlayQuality>.unmodifiable(qualities),
       currentQuality: currentQuality,
       streamFacts: streamFacts,
+      source: source,
     );
     _commitSubject.add(commit);
   }
 
   Future<void> playSource(
-    Object source, {
+    OwnedPlaybackSource source, {
     LiveRoom? liveroom,
     bool audioOnly = false,
     Object? sourceResolver,
@@ -720,7 +730,6 @@ typedef PlaybackSourceResolver = Future<PlaybackSourceRefreshResult> Function(Pl
 
 extension FacadeStreamCommitLegacy on FacadeStreamCommit {
   List<String> get playUrls => urls;
-  Object? get source => null;
   String get currentUrl_ => currentUrl;
   Map<String, HlsSourceQueryPolicy> get queryPolicies => sourceQueryPolicies;
   PlaybackSourceQualitySelection? get selection => qualities.isEmpty

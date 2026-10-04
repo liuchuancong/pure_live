@@ -404,7 +404,7 @@ class PlayerController extends GetxController {
       qualites: selection?.qualities,
       currentQuality: selection?.currentQuality,
       playUrls: commit.urls,
-      ownedSource: commit.source is OwnedPlaybackSource ? commit.source as OwnedPlaybackSource : null,
+      ownedSource: commit.ownedSource is OwnedPlaybackSource ? commit.ownedSource as OwnedPlaybackSource : null,
       sourceQueryPolicies: selection?.sourceQueryPolicies ?? const {},
       streamFacts: commit.streamFacts,
       currentLineIndex: commit.currentLineIndex,
