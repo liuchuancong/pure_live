@@ -418,7 +418,8 @@ final class LivePlayerFacade {
     final size = handle?.combinedSnapshot.geometry.videoSize;
     final next = size != null && size.height > size.width;
     if (next != isVerticalVideo.value) isVerticalVideo.value = next;
-    final dummy = size != null && isDummyVideoSize(width: size.width, height: size.height);
+    final dummy = (size != null && isDummyVideoSize(width: size.width, height: size.height)) ||
+        isAudioOnlyPlatform(_room?.platform);
     if (dummy != isDummyVideo.value) isDummyVideo.value = dummy;
     // The compact window is shaped from the aspect it was fed when PiP began.
     // A live stream often reports its real size only after the first frame, and
