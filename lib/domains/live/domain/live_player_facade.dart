@@ -537,7 +537,11 @@ final class LivePlayerFacade {
   double get currentPresentationAspectRatio {
     final size = handle?.combinedSnapshot.geometry.videoSize;
     if (size == null || size.width <= 0 || size.height <= 0) {
-      return _declaredAspectRatio ?? 16 / 9;
+      // 尺寸快照还没到时不能一律按 16:9 报：竖屏流会拿到一个横屏 PiP 窗口，
+      // contain 缩放后四周全是黑边。声明的比例优先，都没有时按已观察到的
+      // 方向（isVerticalVideo 由帧尺寸事件驱动）兜底。
+      if (_declaredAspectRatio != null) return _declaredAspectRatio!;
+      return isVerticalVideo.value ? 9 / 16 : 16 / 9;
     }
     return size.width / size.height;
   }
@@ -865,17 +869,24 @@ class _PipOverlayViewState extends State<_PipOverlayView> {
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  GestureDetector(
-                    // The video surface stays gesture-first: single tap
-                    // toggles playback, double tap leaves PiP, and a drag
-                    // hands the pointer to the native caption-drag loop —
-                    // the compact window has no title bar, so a
-                    // surface-initiated drag is the only way to move it.
-                    onDoubleTap: () => unawaited(facade.exitPip()),
-                    onTap: facade.togglePlayPause,
-                    onPanStart: (_) => unawaited(windowsPipWindow.startDragging()),
-                    child: facade.getVideoWidget(BoxFit.contain),
-                  ),
+                  // 触屏端（Android/iOS 系统 PiP）不挂任何手势识别器：Flutter
+                  // 一旦消费了拖动，系统的 PiP 窗口就收不到事件，窗口拖不动、
+                  // 单击也不会弹出系统的播放/关闭菜单。让系统全权处理。
+                  // 桌面小窗没有系统手势，surface 手势是唯一的操作入口。
+                  if (_isTouchDevice)
+                    facade.getVideoWidget(BoxFit.contain)
+                  else
+                    GestureDetector(
+                      // The video surface stays gesture-first: single tap
+                      // toggles playback, double tap leaves PiP, and a drag
+                      // hands the pointer to the native caption-drag loop —
+                      // the compact window has no title bar, so a
+                      // surface-initiated drag is the only way to move it.
+                      onDoubleTap: () => unawaited(facade.exitPip()),
+                      onTap: facade.togglePlayPause,
+                      onPanStart: (_) => unawaited(windowsPipWindow.startDragging()),
+                      child: facade.getVideoWidget(BoxFit.contain),
+                    ),
                   ?widget.pictureCover,
                   if (widget.danmaku != null) Positioned.fill(child: widget.danmaku!),
                 ],
