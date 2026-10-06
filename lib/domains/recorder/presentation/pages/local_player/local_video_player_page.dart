@@ -428,7 +428,7 @@ class _RecordingActions extends StatelessWidget {
             IconButton(
               color: color,
               tooltip: i18n('recorder_local_player_title'),
-              icon: const Icon(Remix.play_list_line),
+              icon: const Icon(Icons.playlist_play_rounded),
               onPressed: () => _showPlaylist(context, controller),
             ),
         ],
@@ -480,13 +480,21 @@ class _MobileLayoutState extends State<_MobileLayout> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
       backgroundColor: Colors.black,
       body: Obx(() {
         // Scanning the folder is the only true "nothing to show yet" state; once
         // a file is open the player surface itself carries its own loading.
         if (controller.isLoading.value && controller.videoFiles.isEmpty) {
-          return const Center(child: CircularProgressIndicator());
+          // Folder scan: a small themed indicator on the video's own black, not
+          // a full-screen white spinner page.
+          return Center(
+            child: SizedBox.square(
+              dimension: 28,
+              child: CircularProgressIndicator(strokeWidth: 2.5, color: theme.colorScheme.primary),
+            ),
+          );
         }
         if (controller.videoFiles.isEmpty) {
           return SafeArea(child: _emptyState(context, controller, onDark: true));

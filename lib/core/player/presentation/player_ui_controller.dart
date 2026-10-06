@@ -156,7 +156,10 @@ class PlayerGestureLayerState extends State<PlayerGestureLayer> {
   static const double _sensitivity = 0.25;
 
   Timer? _hideTimer;
-  bool _visible = true;
+
+  /// Hidden until the first drag: a HUD that greets the viewer with
+  /// "brightness 100%" before any gesture happened is just noise.
+  bool _visible = false;
   PlayerDragSide _side = PlayerDragSide.brightness;
   double _value = 1;
   bool _systemGesture = false;
