@@ -27,6 +27,7 @@ class FloatingPlayback {
   }
 
   Future<void> stopFloatingPlayback() async {
+    facade.clearFloatingDanmaku();
     await facade.close();
     await closeAppFloating();
   }
@@ -82,6 +83,11 @@ class FloatingPlayback {
               height: 214,
               minWidth: 200,
               minHeight: 112,
+              // The half-screen cap the library ships with made left/right
+              // resize look broken on a phone: 200 min width on a 400 px surface
+              // left the width clamped to one value. The window may use the
+              // whole surface and is still clamped inside it.
+              maxWidthFraction: 1.0,
               // Every edge and corner resizes, freely: the viewer picks the
               // width and the height, and the window keeps what they chose.
               resizableByDrag: true,

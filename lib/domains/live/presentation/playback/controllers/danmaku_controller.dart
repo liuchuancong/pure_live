@@ -6,6 +6,7 @@ import 'package:pure_live/shared/platforms/live_danmaku.dart';
 import 'package:pure_live/shared/platforms/empty_danmaku.dart';
 import 'package:pure_live/domains/live/data/platforms/sites.dart';
 import 'package:pure_live/domains/live/data/platforms/danmaku_emote_loader.dart';
+import 'package:pure_live/domains/live/domain/global_player_service.dart';
 import 'package:pure_live/domains/live/data/favorite_room_controller.dart';
 import 'package:pure_live/core/player/core/live_message_normalization.dart';
 import 'package:pure_live/domains/live/presentation/playback/states/live_play_state.dart';
@@ -217,7 +218,15 @@ class DanmakuController extends GetxController {
         }
         _main.addDanmakuMessage(msg);
         if (msg.emotes.isNotEmpty) DanmakuEmoteLoader.instance.ensureRegistered(msg.emotes);
-        _state.player.videoController?.sendDanmaku(msg);
+        final room = _state.player.videoController;
+        if (room != null) {
+          room.sendDanmaku(msg);
+        } else {
+          // The room's controller is gone (the small window outlived its route)
+          // while this session still delivers: feed the window's own pool so the
+          // channel keeps showing danmaku.
+          GlobalPlayerService.instance.player.sendFloatingDanmakuIfOrphaned(msg);
+        }
       } else if (msg.type == LiveMessageType.online) {
         _main.updateRuntimeAudience(msg.data);
       } else if (msg.type == LiveMessageType.superChat) {

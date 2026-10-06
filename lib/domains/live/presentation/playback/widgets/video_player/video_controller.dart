@@ -499,7 +499,10 @@ class VideoController with ChangeNotifier implements DanmakuSettingsSource {
 
   void _initControllers() {
     danmakuController = BarrageController();
-    pipDanmakuController = BarrageController();
+    // The small window renders the facade's pool: it outlives this controller, so a
+    // pool created here disappeared with the room's route and left the window with
+    // a picture and no danmaku.
+    pipDanmakuController = _playerManager.floatingDanmaku;
     _danmakuManager = DanmakuManager(
       controller: danmakuController,
       pipController: pipDanmakuController,

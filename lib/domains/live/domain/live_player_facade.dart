@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:pure_live/get/get.dart';
 import 'package:media_core/media_core.dart';
 import 'package:media_core_live/media_core_live.dart';
+import 'package:flame_barrage/flame_barrage.dart';
+import 'package:pure_live/core/models/live_message.dart';
 import 'package:pure_live/core/models/live_room.dart';
 import 'package:pure_live/core/player/models/player_engine.dart';
 import 'package:pure_live/core/stream/hls_source_query_policy.dart';
@@ -478,20 +480,47 @@ final class LivePlayerFacade {
 
   bool get isAppFloatingActive => floating.isAppFloatingActive;
   bool get shouldKeepDanmakuForAppFloating => floating.isAppFloatingActive;
+
+  /// The small window's danmaku pool.
+  ///
+  /// The facade owns it, not the room's controller: the window outlives the
+  /// room's route, and a pool that dies with the page is exactly why the window
+  /// used to show a picture with no danmaku. The room's controller renders into
+  /// this same pool while it is alive, so the styling path is unchanged.
+  final BarrageController floatingDanmaku = BarrageController();
+
+  /// Feeds the small window when no room controller is left to do it (the
+  /// pipeline is still running, its controller is gone). No-op otherwise, so a
+  /// line is never drawn twice.
+  void sendFloatingDanmakuIfOrphaned(LiveMessage msg) {
+    if (_activeVideoController != null || !floating.isAppFloatingActive) return;
+    floatingDanmaku.send(
+      BarrageItem(
+        content: msg.message,
+        type: BarrageType.scroll,
+        textColor: Color.fromARGB(255, msg.color.r, msg.color.g, msg.color.b),
+      ),
+    );
+  }
+
+  void clearFloatingDanmaku() {
+    floatingDanmaku.clear();
+  }
+
   void prepareAppFloating({Future<void> Function()? onClose, FacadeStreamCommit? session}) =>
       floating.prepare(onClose: onClose);
 
   /// The danmaku surface of the in-app small window.
   ///
-  /// Resolved when the overlay builds, not when the window is asked for: the
-  /// window outlives the room's route, so a controller captured at request time
-  /// can already be gone by the first frame. [activeVideoController] is the
-  /// controller the facade still has attached, which is the one that owns
-  /// playback (and therefore the compact barrage controller) while floating.
+  /// The pool is the facade's, so the surface keeps rendering whether or not the
+  /// room's controller is still alive; the controller is only consulted for the
+  /// room's own style.
   Widget buildFloatingDanmaku(BuildContext context) {
     final controller = activeVideoController;
-    if (controller is room_surface.VideoController) return CompactDanmakuOverlay(controller: controller);
-    return const SizedBox.shrink();
+    return CompactDanmakuOverlay(
+      controller: controller is room_surface.VideoController ? controller : null,
+      barrage: floatingDanmaku,
+    );
   }
 
   Future<void> showAppFloating({Widget Function(BuildContext)? danmakuBuilder}) =>
