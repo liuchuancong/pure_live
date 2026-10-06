@@ -19,6 +19,7 @@ import 'package:windows_single_instance/windows_single_instance.dart';
 import 'package:pure_live/core/platform/mobile_manager.dart';
 import 'package:pure_live/core/platform/desktop_manager.dart';
 import 'package:pure_live/core/stream/upstream_proxy_routing.dart';
+import 'package:pure_live/core/player/core/playback_proxy_policy.dart';
 import 'package:pure_live/core/player/core/ingest_ffmpeg_registry.dart';
 import 'package:pure_live/domains/recorder/data/services/ffmpeg_ingest_starter.dart';
 import 'package:pure_live/domains/live/data/stream/ingest_source_interceptor.dart';
@@ -93,7 +94,9 @@ class AppInitializer {
       final restored = await Get.find<BackupController>().recoverAndDelete(File(configFilePath));
       log('Windows multi-instance settings ${restored ? 'restored' : 'restore failed'}: $configFilePath');
     }
-    configureUpstreamProxyRouting((_) {
+    configureUpstreamProxyRouting((uri) {
+      // 代理出口会被 CDN 拒绝吐流的主机（Steam 广播清单 200、分片 410）直连取。
+      if (playsDirectBehindProxy(uri)) return 'DIRECT';
       final proxy = SettingsService.to.proxy;
       return buildProxyDirective(
         enabled: proxy.enableAppProxy.v,

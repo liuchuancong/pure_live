@@ -220,7 +220,8 @@ abstract final class MediaKitLiveProperties {
     // 两种判据都认得出）。
     final bool playlist = (declaredFormat ?? (isHlsManifestUri(uri) ? 'hls' : null)) == 'hls';
     return <String, String>{
-      'http-proxy': privateInput ? '' : proxy,
+      // 本机输入不送代理；代理出口会被 CDN 拒绝吐流的主机（Steam 广播）也强制直连。
+      'http-proxy': privateInput || playsDirectBehindProxy(uri) ? '' : proxy,
       // 指死解复用器就跳过了 mpv 的格式探测：2MB 的 probesize 在高延迟线路上正好
       // 吃掉"8 秒卡在 0ms 判死"的那份起播预算。空串是清除——引擎是跨源复用的，
       // 上一条源强制的 hls 不能漏到这一条 FLV 上。本机输入不猜：探测本机不要钱，

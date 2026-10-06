@@ -2,6 +2,19 @@ import 'package:pure_live/core/config/settings_service.dart';
 import 'package:pure_live/core/network/proxy_routing.dart';
 import 'package:pure_live/core/platform/windows_system_proxy.dart';
 
+/// 代理出口后面会拒绝吐流、而直连可达的媒体主机后缀。
+///
+/// Steam 广播 CDN（`*.steamcontent.com`）按请求 IP 做缓存会话亲和：代理出口拉
+/// master/变体清单都是 200，分片却答 410 Gone；直连同一分片 200。Steam 的 CDN
+/// 本身直连可达，所以这条线路不该进代理。
+const List<String> proxyDirectHostSuffixes = ['steamcontent.com'];
+
+/// [uri] 的主机是否命中 [proxyDirectHostSuffixes]。
+bool playsDirectBehindProxy(Uri uri) {
+  final host = uri.host.toLowerCase();
+  return proxyDirectHostSuffixes.any((suffix) => host == suffix || host.endsWith('.$suffix'));
+}
+
 /// Media transport settings, deliberately independent of the application/API
 /// proxy used by recording's existing HTTP relay.
 class PlaybackProxyPolicy {
