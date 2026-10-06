@@ -22,7 +22,6 @@ class XiaohongshuLink {
       return null;
     }
     try {
-      // 只要求恰好一个 `room_id`；`source` 不再必需（上游 16-2）。
       final room = uri.queryParametersAll['room_id'];
       if (room?.length != 1) return null;
       final id = room!.single;
@@ -73,17 +72,46 @@ class XiaohongshuLink {
 
   static Uri? shortUri(String raw) {
     final uri = _webUri(raw);
-    if (uri == null || uri.host != 'xhslink.com' || !RegExp(r'^/(?:m/)?[A-Za-z0-9]{1,64}/?$').hasMatch(uri.path)) {
+    if (uri == null ||
+        uri.host != 'xhslink.com' ||
+        !RegExp(r'^/(?:[A-Za-z]{1,4}/)?[A-Za-z0-9]{1,64}/?$').hasMatch(uri.path)) {
       return null;
     }
     return uri;
+  }
+
+  /// 分享文案是"文字 + 链接 + 文字"（`#xxx正在直播… https://xhslink.com/o/xxx
+  /// 复制本条信息…`），入口原本只认纯链接或裸房间号，整段粘贴什么都搜不到。
+  /// 从文本里抽链接：碰到空白或中文标点即停，再剪掉粘在尾部的句点。
+  static final RegExp _urlInText = RegExp(r'https?://[^\s，。；！？、【】《》「」『』（）·…]+');
+
+  static List<String> extractUrls(String raw) {
+    if (raw.length > 8192) return const [];
+    final urls = <String>[];
+    for (final match in _urlInText.allMatches(raw)) {
+      var url = match.group(0)!;
+      while (url.length > 1 && url.endsWith('.')) {
+        url = url.substring(0, url.length - 1);
+      }
+      urls.add(url);
+    }
+    return urls;
   }
 
   static Future<String?> resolve(String raw, {required LiveShortLinkSession session}) async {
     if (session.isClosed) return null;
     final direct = parse(raw);
     if (direct != null) return direct;
-    var current = shortUri(raw);
+    // 文本里抽出的链接先按本站直播间链接解析，再当短链跟跳。
+    Uri? current = shortUri(raw);
+    if (current == null) {
+      for (final candidate in extractUrls(raw)) {
+        final room = parse(candidate);
+        if (room != null) return room;
+        current = shortUri(candidate);
+        if (current != null) break;
+      }
+    }
     while (current != null && !session.isClosed) {
       final response = await session.get(current, headers: XiaohongshuApi.headers);
       if (session.isClosed ||
