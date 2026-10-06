@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 import 'package:media_core/media_core.dart';
 import 'package:pure_live/core/player/kernel/player_consts.dart';
 import 'package:pure_live/core/player/presentation/fullscreen_window.dart';
+import 'package:pure_live/core/player/presentation/kernel_floating_window_presenter.dart';
 import 'package:pure_live/domains/live/domain/global_player_service.dart';
 import 'package:media_core_floating/media_core_floating.dart';
 import 'package:media_core_media_kit/media_core_media_kit.dart' hide PlayerConsts;
@@ -56,7 +57,7 @@ class PlayerKernelService {
         ..registerBackend(const BetterPlayerAdapterFactory().registration());
     }
 
-    return kernel..attachPresentation(
+    kernel.attachPresentation(
       PresentationDriverChain(
         bindings: [
           PresentationDriverBinding(
@@ -68,6 +69,13 @@ class PlayerKernelService {
         ],
       ),
     );
+    // The driver ships with a null presenter, so a `floating` request was
+    // silently dropped. Install the host surface so any host that calls
+    // kernel.enterFloating (the local video player) actually opens a window for
+    // that handle. The live room's own floating path never reaches the driver,
+    // so this only enables the kernel-driven path.
+    floatingDriver.updatePresenter(KernelFloatingWindowPresenter(kernel: kernel, driver: floatingDriver));
+    return kernel;
   }
 
   static Future<void> ensureInitialized() async {

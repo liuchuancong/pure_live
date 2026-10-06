@@ -319,6 +319,14 @@ final class LocalVideoPlayerController extends GetxController {
     unawaited(_savePosition());
     _stateSub?.cancel();
     _transportSub?.cancel();
+    // Leave the small window before the handle goes away; an open overlay
+    // pointing at a disposed player would linger showing black and never be
+    // removed. exitFloating drives the driver back to normal, which hides the
+    // host presenter's overlay entry.
+    final openHandle = _feed?.handle;
+    if (openHandle != null && !openHandle.disposed) {
+      unawaited(_kernel.exitFloating(openHandle.id));
+    }
     _feed?.dispose();
     _feed = null;
     super.onClose();
