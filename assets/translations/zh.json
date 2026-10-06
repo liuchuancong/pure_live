@@ -2218,5 +2218,10 @@
   "local_player_seek_forward": "前进 10 秒",
   "local_player_files": "共 {count} 个录像",
   "local_player_file_open_failed": "无法打开该录像",
-  "local_player_folder_empty_action": "打开录像目录"
+  "local_player_folder_empty_action": "打开录像目录",
+  "hide_danmaku": "关闭弹幕",
+  "pip_window_play": "画中画播放",
+  "recording_fit_contain": "原始",
+  "recording_fit_cover": "铺满",
+  "recording_fit_fill": "拉伸"
 }

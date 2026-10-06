@@ -17,9 +17,12 @@ import 'package:pure_live/domains/live/domain/live_player_facade.dart';
 import 'package:pure_live/core/player/core/portrait_stream_support.dart';
 import 'package:pure_live/domains/live/domain/global_player_service.dart';
 import 'package:pure_live/core/player/presentation/fullscreen_window.dart';
+import 'package:pure_live/core/player/presentation/danmaku/player_danmaku_surface.dart';
+import 'package:pure_live/core/player/presentation/player_ui_controller.dart';
 import 'package:pure_live/domains/iptv/data/iptv_settings_controller.dart';
 import 'package:pure_live/domains/iptv/data/local/database.dart' as database;
-import 'package:media_core/media_core.dart' show ErrorClassifier, PlayerErrorCategory, PlayerErrorCode, PlayerException;
+import 'package:media_core/media_core.dart'
+    show ErrorClassifier, PlayerErrorCategory, PlayerErrorCode, PlayerException, PlayerHandle;
 import 'package:pure_live/domains/live/presentation/playback/states/ui_state.dart';
 import 'package:pure_live/domains/live/presentation/playback/states/player_state.dart';
 import 'package:screen_brightness_platform_interface/screen_brightness_platform_interface.dart';
@@ -87,7 +90,7 @@ class DanmakuManager {
     videoController.danmakuOpacity.value = dm.danmakuOpacity.v;
     videoController.enableDanmakuStroke.value = dm.enableDanmakuStroke.v;
     videoController.danmakuFps.value = dm.danmakuFps.v;
-    videoController.danmakuFontFamilyName.value = dm.danmakuFontFamilyName.v;
+    videoController.roomDanmakuFontFamily.value = dm.danmakuFontFamilyName.v;
 
     workers.add(ever<bool>(videoController.hideDanmaku, (data) => dm.hideDanmaku.v = data));
 
@@ -104,7 +107,7 @@ class DanmakuManager {
       videoController.danmakuOpacity,
       videoController.enableDanmakuStroke,
       videoController.danmakuFps,
-      videoController.danmakuFontFamilyName,
+      videoController.roomDanmakuFontFamily,
       videoController.noEmojiMode,
     ];
 
@@ -173,7 +176,7 @@ class DanmakuManager {
     dm.danmakuOpacity.v = videoController.danmakuOpacity.value;
     dm.enableDanmakuStroke.v = videoController.enableDanmakuStroke.value;
     dm.danmakuFps.v = videoController.danmakuFps.value;
-    dm.danmakuFontFamilyName.v = videoController.danmakuFontFamilyName.value;
+    dm.danmakuFontFamilyName.v = videoController.roomDanmakuFontFamily.value;
     dm.noEmojiMode.v = videoController.noEmojiMode.value;
     _settingsDirty = false;
   }
@@ -331,7 +334,7 @@ Future<void> exitFullscreenWithOrientationRestore({
   await releaseOrientation();
 }
 
-class VideoController with ChangeNotifier implements DanmakuSettingsSource {
+class VideoController with ChangeNotifier implements DanmakuSettingsSource, PlayerUiController {
   // Two seconds was shorter than the orientation animation plus an
   // accessibility scan on phones, so controls could disappear before a user
   // reached Fullscreen or the local composer. Four seconds matches common
@@ -423,7 +426,15 @@ class VideoController with ChangeNotifier implements DanmakuSettingsSource {
   final enableDanmakuStroke = true.obs;
   @override
   final danmakuFps = 60.obs;
-  final danmakuFontFamilyName = ''.obs;
+  /// The room's own font override, if it has one.
+  ///
+  /// Named for the room rather than for the interface's `danmakuFontFamilyName`
+  /// because the two answer different questions: this is "what did this room ask
+  /// for", the interface member is "what should the shared renderer draw".
+  final roomDanmakuFontFamily = ''.obs;
+
+  @override
+  String? get danmakuFontFamilyName => roomDanmakuFontFamily.value;
 
   final RxList<database.EpgProgramme> currentChannelSchedule = <database.EpgProgramme>[].obs;
   final scheduleLoading = false.obs;
@@ -1578,6 +1589,92 @@ class VideoController with ChangeNotifier implements DanmakuSettingsSource {
   }
 
   bool _resourcesDestroyed = false;
+
+  // ---------------------------------------------------------------------------
+  // PlayerUiController: what the shared Core player surface drives.
+  //
+  // The room has no transport of its own to invent here — a live stream has no
+  // duration and no speed — so these forward to the facade that already owns
+  // playback and to the platform brightness/volume the room already used. The
+  // point of the interface is that the gesture layer, the progress bar and the
+  // "leave the picture" control live once, in Core, instead of twice.
+  // ---------------------------------------------------------------------------
+
+  PlayerHandle? get _uiHandle => _playerManager.handle;
+
+  @override
+  bool get uiIsPlaying => _playerManager.isPlayingNow;
+
+  @override
+  Duration get uiPosition => _uiHandle?.position ?? Duration.zero;
+
+  /// A live stream reports no length, which is what makes a shared progress bar
+  /// fall back to "live" instead of drawing an empty track.
+  @override
+  Duration get uiDuration => Duration.zero;
+
+  @override
+  double get uiRate => _uiHandle?.rate ?? 1;
+
+  @override
+  Future<void> uiPlay() async {
+    if (!_playerManager.isPlayingNow) await _playerManager.togglePlayPause();
+  }
+
+  @override
+  Future<void> uiPause() async {
+    if (_playerManager.isPlayingNow) await _playerManager.togglePlayPause();
+  }
+
+  /// Seeking a live stream is a reconnect, not a scrub; the room's own quality
+  /// and line controls are the supported way to change what is playing.
+  @override
+  Future<void> uiSeekTo(Duration position) async {}
+
+  @override
+  Future<void> uiSetRate(double rate) async {}
+
+  @override
+  Future<bool> uiRequestExit() async {
+    if (GlobalPlayerService.instance.player.isWindowFullscreen.value) {
+      toggleWindowFullScreen();
+      return true;
+    }
+    await toggleFullScreen();
+    return true;
+  }
+
+  @override
+  Future<double?> uiVolume() => volume();
+
+  @override
+  Future<void> uiSetVolume(double value) => setVolume(value);
+
+  @override
+  Future<double?> uiBrightness() async {
+    if (!PlatformHelper.supportsBrightness) return null;
+    try {
+      return await brightness();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  @override
+  Future<void> uiSetBrightness(double value) => setBrightness(value);
+
+  @override
+  bool get uiSupportsBrightnessGesture => PlatformHelper.supportsBrightness;
+
+  /// The room's own danmaku surface: the pool this controller owns, drawn by the
+  /// shared renderer with the room's overrides.
+  @override
+  Widget? buildDanmakuSurface(BuildContext context) => PlayerDanmakuSurface(
+    key: danmuKey,
+    controller: danmakuController,
+    settings: this,
+    isVerticalVideo: _playerManager.isVerticalVideo.value,
+  );
 
   @override
   void dispose() {

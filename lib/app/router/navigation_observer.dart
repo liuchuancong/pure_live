@@ -6,6 +6,7 @@ import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/platform/platform_utils.dart';
 import 'package:pure_live/domains/live/domain/live_player_facade.dart';
 import 'package:pure_live/core/player/kernel/floating_handle_keeper.dart';
+import 'package:pure_live/core/player/kernel/player_kernel_service.dart';
 import 'package:pure_live/core/player/presentation/fullscreen_window.dart' show WindowService;
 import 'package:pure_live/domains/live/presentation/playback/controllers/live_play_controller.dart';
 import 'package:pure_live/domains/live/presentation/playback/widgets/layout/live_play_video.dart' show shouldFloatAfterLivePlayExit;
@@ -47,18 +48,20 @@ class LiveRouteObserver extends RouteObserver<PageRoute<dynamic>> {
     playerManager.setVideoPresentationVisible(true);
     unawaited(playerManager.closeAppFloating());
     // A recording handed to the small window is taken back: two videos cannot
-    // share the surface (or the audio).
-    unawaited(FloatingHandleKeeper.instance.releaseCurrent());
+    // share the surface (or the audio). Reclaiming also closes the window
+    // itself, not just the player behind it.
+    unawaited(FloatingHandleKeeper.reclaimCurrent(PlayerKernelService.instance.kernel));
   }
 
   /// Watching a recording on its own page.
   ///
   /// The live small window would otherwise keep playing over it while both hold
   /// audio, and a recording that was floating is taken back by the page that
-  /// owns it.
+  /// owns it — the window included, so the new page is not covered by a window
+  /// whose player was just disposed.
   void _onLocalVideoPlayerEnter() {
     unawaited(GlobalPlayerService.instance.player.closeAppFloating());
-    unawaited(FloatingHandleKeeper.instance.releaseCurrent());
+    unawaited(FloatingHandleKeeper.reclaimCurrent(PlayerKernelService.instance.kernel));
   }
 
   void _onMultiviewEnter() {
@@ -146,6 +149,10 @@ class LiveRouteObserver extends RouteObserver<PageRoute<dynamic>> {
         // back in a player surface, the user moved on; stay closed.
         final current = Get.currentRoute;
         if (current == RoutePath.kLivePlay || current == RoutePath.kMultiview) return;
+        // The recording player is the same statement for the other player: a
+        // room that returned to the small window after the viewer already
+        // opened a recording would run its audio over the recording's.
+        if (current == RoutePath.kLocalVideoPlayer) return;
 
         // The small window's danmaku is the facade's business: it resolves the
         // controller that still owns playback when the overlay builds, while a

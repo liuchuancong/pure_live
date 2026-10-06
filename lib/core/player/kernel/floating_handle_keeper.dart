@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:media_core/media_core.dart' show PlayerId, PlayerKernel;
+
 /// Keeps a player handle alive after the page that opened it is gone.
 ///
 /// The small window is driven by the kernel's [FloatingDriver], but the player
@@ -60,5 +62,24 @@ final class FloatingHandleKeeper {
     final id = _currentId;
     if (id == null) return;
     await release(id);
+  }
+
+  /// Takes the small window down: the driver leaves the mode (which hides the
+  /// host's overlay) and the handle is released.
+  ///
+  /// [releaseCurrent] alone only disposes the player. The window itself is the
+  /// driver's, so a viewer who floats a recording and then opens the recorder's
+  /// player was left with an invisible window still on screen — the picture went
+  /// black because its player was gone, but the overlay stayed and kept eating
+  /// its corner of the surface. Anything that takes the surface back calls this.
+  ///
+  /// Returns whether a window was actually up.
+  static Future<bool> reclaimCurrent(PlayerKernel kernel) async {
+    final keeper = instance;
+    final id = keeper._currentId;
+    if (id == null) return false;
+    await kernel.exitFloating(PlayerId(id));
+    await keeper.release(id);
+    return true;
   }
 }

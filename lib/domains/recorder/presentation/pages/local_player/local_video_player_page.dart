@@ -6,16 +6,18 @@ import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/platform/platform_utils.dart';
 import 'package:pure_live/core/player/kernel/player_kernel_service.dart';
+import 'package:pure_live/core/player/presentation/player_ui_controller.dart';
 import 'package:pure_live/domains/recorder/presentation/pages/local_player/local_video_player_controller.dart';
 
 /// One recording, played.
 ///
-/// The layout is built around what a viewer of a recording actually does:
-/// scrub, jump a few seconds, change speed, start the next file, or leave the
-/// page and keep watching in the small window. The transport controls are the
-/// page's own — the video surface is plain picture — so the same bar serves the
-/// phone layout and the desktop one, and the small window button lives on it
-/// rather than in a menu.
+/// The page carries only what is specific to a *recording*: the file list, the
+/// folder actions, the replayed chat. Everything a player surface does is the
+/// shared Core one — [PlayerGestureLayer] for brightness/volume/scroll,
+/// [PlayerUiController] for the transport, and [MediaCorePlayerView]'s own bar
+/// for play/pause, skip, timeline, speed, fullscreen and picture-in-picture. A
+/// live room drives exactly the same three; the difference between the two pages
+/// is where the media comes from, not how it is watched.
 class LocalVideoPlayerPage extends GetView<LocalVideoPlayerController> {
   const LocalVideoPlayerPage({super.key});
 
@@ -29,16 +31,6 @@ class LocalVideoPlayerPage extends GetView<LocalVideoPlayerController> {
 // ---------------------------------------------------------------------------
 // Shared pieces
 // ---------------------------------------------------------------------------
-
-String _clock(Duration value) {
-  final total = value.inSeconds < 0 ? 0 : value.inSeconds;
-  final hours = total ~/ 3600;
-  final minutes = (total % 3600) ~/ 60;
-  final seconds = total % 60;
-  final mm = minutes.toString().padLeft(2, '0');
-  final ss = seconds.toString().padLeft(2, '0');
-  return hours > 0 ? '$hours:$mm:$ss' : '$mm:$ss';
-}
 
 String _sizeOf(File file) {
   try {
@@ -62,7 +54,13 @@ String _modifiedOf(File file) {
   }
 }
 
-/// The video itself: no built-in bars, the page draws its own.
+/// The video surface: the shared gesture layer over the library's own player.
+///
+/// The gesture layer sits *above* the picture so a drag anywhere on it means
+/// brightness or volume even while the library's bars are on screen, and the
+/// replayed chat is drawn between the two. No second transport bar is built
+/// here on purpose: the library's bar is the same one every other surface in the
+/// app shows.
 class _VideoSurface extends StatelessWidget {
   const _VideoSurface({required this.controller, this.keyboardShortcuts = false});
 
@@ -76,174 +74,36 @@ class _VideoSurface extends StatelessWidget {
         final handle = controller.handle;
         if (handle == null) return const ColoredBox(color: Colors.black);
         final kernel = PlayerKernelService.instance.kernel;
-        return MediaCorePlayerView(
-          handle: handle,
-          actions: KernelPlayerControlActions(kernel: kernel, playerId: handle.id),
-          fit: BoxFit.contain,
-          showControls: false,
-          keepControlsWhilePaused: true,
-          keyboardShortcuts: keyboardShortcuts,
+        return PlayerGestureLayer(
+          controller: controller,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              MediaCorePlayerView(
+                handle: handle,
+                actions: KernelPlayerControlActions(kernel: kernel, playerId: handle.id),
+                fit: BoxFit.contain,
+                // The library's bar carries play/pause, skip, the timeline,
+                // speed, fullscreen and picture-in-picture; the page adds only
+                // the recording-specific actions on top.
+                showControls: true,
+                keepControlsWhilePaused: true,
+                keyboardShortcuts: keyboardShortcuts,
+                onTapVideo: controller.togglePlayPause,
+              ),
+              // The build is inside the `Obx` on purpose: `buildDanmakuSurface`
+              // reads whether the recording carries chat and whether the viewer
+              // switched danmaku off, and a builder with no observable at all is
+              // an error in GetX rather than a static surface.
+              Obx(
+                () => Positioned.fill(
+                  child: controller.buildDanmakuSurface(context) ?? const SizedBox.shrink(),
+                ),
+              ),
+            ],
+          ),
         );
       },
-    );
-  }
-}
-
-/// Scrub bar with the two clocks on either side.
-class _ProgressRow extends StatelessWidget {
-  const _ProgressRow({required this.controller});
-
-  final LocalVideoPlayerController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    return Obx(() {
-      final duration = controller.duration.value;
-      final position = controller.position.value;
-      final max = duration.inMilliseconds.toDouble();
-      final value = max <= 0 ? 0.0 : position.inMilliseconds.clamp(0, duration.inMilliseconds).toDouble();
-      return Row(
-        children: [
-          SizedBox(
-            width: 46,
-            child: Text(
-              _clock(position),
-              style: const TextStyle(fontSize: 11, color: Colors.white70, fontFeatures: [FontFeature.tabularFigures()]),
-            ),
-          ),
-          Expanded(
-            child: SliderTheme(
-              data: SliderTheme.of(context).copyWith(
-                trackHeight: 2.5,
-                thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
-                overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
-                activeTrackColor: Theme.of(context).colorScheme.primary,
-                inactiveTrackColor: Colors.white24,
-                thumbColor: Theme.of(context).colorScheme.primary,
-              ),
-              child: Slider(
-                value: value,
-                max: max <= 0 ? 1 : max,
-                onChanged: max <= 0 ? null : (v) => controller.seekTo(Duration(milliseconds: v.round())),
-              ),
-            ),
-          ),
-          SizedBox(
-            width: 46,
-            child: Text(
-              _clock(duration),
-              textAlign: TextAlign.right,
-              style: const TextStyle(fontSize: 11, color: Colors.white70, fontFeatures: [FontFeature.tabularFigures()]),
-            ),
-          ),
-        ],
-      );
-    });
-  }
-}
-
-/// Previous / back 10 / play / forward 10 / next, plus speed and the small
-/// window. Sizes are thumb-friendly on touch and compact on desktop.
-class _TransportButtons extends StatelessWidget {
-  const _TransportButtons({required this.controller, this.compact = false});
-
-  final LocalVideoPlayerController controller;
-  final bool compact;
-
-  @override
-  Widget build(BuildContext context) {
-    final iconSize = compact ? 22.0 : 26.0;
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        IconButton(
-          iconSize: iconSize,
-          color: Colors.white,
-          disabledColor: Colors.white24,
-          tooltip: i18n('recorder_local_player_previous'),
-          icon: const Icon(Remix.skip_back_fill),
-          onPressed: controller.hasPrevious ? () => unawaited(controller.previous()) : null,
-        ),
-        IconButton(
-          iconSize: iconSize - 4,
-          color: Colors.white,
-          tooltip: i18n('local_player_seek_back'),
-          icon: const Icon(Remix.replay_10_fill),
-          onPressed: () => unawaited(controller.seekBy(const Duration(seconds: -10))),
-        ),
-        Obx(
-          () => IconButton.filled(
-            iconSize: compact ? 30 : 34,
-            style: IconButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.black),
-            tooltip: controller.isPlaying.value ? i18n('local_player_pause') : i18n('local_player_play'),
-            icon: Icon(controller.isPlaying.value ? Icons.pause_rounded : Icons.play_arrow_rounded),
-            onPressed: () => unawaited(controller.togglePlayPause()),
-          ),
-        ),
-        IconButton(
-          iconSize: iconSize - 4,
-          color: Colors.white,
-          tooltip: i18n('local_player_seek_forward'),
-          icon: const Icon(Remix.forward_10_fill),
-          onPressed: () => unawaited(controller.seekBy(const Duration(seconds: 10))),
-        ),
-        IconButton(
-          iconSize: iconSize,
-          color: Colors.white,
-          disabledColor: Colors.white24,
-          tooltip: i18n('recorder_local_player_next'),
-          icon: const Icon(Remix.skip_forward_fill),
-          onPressed: controller.hasNext ? () => unawaited(controller.next()) : null,
-        ),
-      ],
-    );
-  }
-}
-
-/// `1.25x` chip that cycles through the supported rates.
-class _SpeedChip extends StatelessWidget {
-  const _SpeedChip({required this.controller});
-
-  final LocalVideoPlayerController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    return Obx(
-      () => TextButton(
-        onPressed: () => unawaited(controller.cycleRate()),
-        style: TextButton.styleFrom(
-          foregroundColor: Colors.white,
-          backgroundColor: Colors.white12,
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-          minimumSize: const Size(0, 30),
-          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        ),
-        child: Text(
-          '${controller.playbackRate.value}x',
-          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-        ),
-      ),
-    );
-  }
-}
-
-/// The small-window button: hands this recording to the in-app floating window
-/// and leaves the page, which is the whole point of floating it.
-class _FloatButton extends StatelessWidget {
-  const _FloatButton({required this.controller, this.compact = false});
-
-  final LocalVideoPlayerController controller;
-  final bool compact;
-
-  @override
-  Widget build(BuildContext context) {
-    return IconButton(
-      iconSize: compact ? 20 : 22,
-      color: Colors.white,
-      tooltip: i18n('float_window_play'),
-      icon: const Icon(Remix.picture_in_picture_2_line),
-      onPressed: () => unawaited(controller.enterFloating()),
     );
   }
 }
@@ -426,6 +286,11 @@ class _FileRow extends StatelessWidget {
 }
 
 /// The recording list, used as the desktop panel and inside the phone sheet.
+///
+/// Every reactive read sits inside an `Obx`: `videoFiles` is an observable list,
+/// so the builder attaches to it and the list stays live as files are recorded
+/// or deleted — a builder with no observable at all is an error in GetX, not an
+/// empty list.
 class _PlaylistPanel extends StatelessWidget {
   const _PlaylistPanel({required this.controller, this.dense = false, this.onPicked});
 
@@ -513,8 +378,52 @@ Widget _emptyState(BuildContext context, LocalVideoPlayerController controller, 
   );
 }
 
+/// Puts the recording into the system picture-in-picture window.
+///
+/// The controller drives the same Core transition the live room uses, so the
+/// window is shaped, placed and remembered identically; a platform without a
+/// working implementation reports it instead of failing silently.
+Future<void> _enterRecordingPip(LocalVideoPlayerController controller) async {
+  try {
+    await controller.enterPip();
+  } catch (_) {
+    ToastUtil.show(i18n('pip_enter_failed'));
+  }
+}
+
+/// A danmaku on/off chip, offered only while the recording carries chat.
+class _DanmakuChip extends StatelessWidget {
+  const _DanmakuChip({required this.onDark, required this.enabled, required this.onChanged});
+
+  final bool onDark;
+  final bool enabled;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final background = onDark ? Colors.white12 : Theme.of(context).colorScheme.surfaceContainerHighest;
+    final foreground = onDark ? Colors.white : Theme.of(context).colorScheme.onSurfaceVariant;
+    return TextButton.icon(
+      onPressed: () => onChanged(!enabled),
+      style: TextButton.styleFrom(
+        foregroundColor: foreground,
+        backgroundColor: background,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        minimumSize: const Size(0, 30),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      ),
+      icon: Icon(enabled ? Remix.chat_1_fill : Remix.chat_off_line, size: 15),
+      label: Text(
+        enabled ? i18n('hide_danmaku') : i18n('show_danmaku'),
+        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+      ),
+    );
+  }
+}
+
 // ---------------------------------------------------------------------------
-// Phone: picture first, controls over it
+// Phone: the picture owns the screen, the recording's own chrome floats over it
 // ---------------------------------------------------------------------------
 
 class _MobileLayout extends StatefulWidget {
@@ -527,45 +436,9 @@ class _MobileLayout extends StatefulWidget {
 }
 
 class _MobileLayoutState extends State<_MobileLayout> {
-  static const Duration _autoHideAfter = Duration(seconds: 4);
-
-  bool _controlsVisible = true;
-  Timer? _hideTimer;
-  late final PageController _pages = PageController(initialPage: widget.controller.currentIndex.value);
-
-  @override
-  void initState() {
-    super.initState();
-    _restartAutoHide();
-  }
-
-  @override
-  void dispose() {
-    _hideTimer?.cancel();
-    _pages.dispose();
-    super.dispose();
-  }
-
-  void _toggleControls() {
-    setState(() => _controlsVisible = !_controlsVisible);
-    _restartAutoHide();
-  }
-
-  /// Any interaction keeps the bars up for another few seconds.
-  void _poke() {
-    if (!_controlsVisible) setState(() => _controlsVisible = true);
-    _restartAutoHide();
-  }
-
-  void _restartAutoHide() {
-    _hideTimer?.cancel();
-    _hideTimer = Timer(_autoHideAfter, () {
-      if (mounted) setState(() => _controlsVisible = false);
-    });
-  }
+  LocalVideoPlayerController get controller => widget.controller;
 
   void _showPlaylist() {
-    _poke();
     showModalBottomSheet(
       context: context,
       backgroundColor: Theme.of(context).colorScheme.surface,
@@ -573,14 +446,13 @@ class _MobileLayoutState extends State<_MobileLayout> {
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(18))),
       builder: (_) => SizedBox(
         height: MediaQuery.sizeOf(context).height * 0.62,
-        child: _PlaylistPanel(controller: widget.controller, dense: true, onPicked: () => Navigator.of(context).pop()),
+        child: _PlaylistPanel(controller: controller, dense: true, onPicked: () => Navigator.of(context).pop()),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final controller = widget.controller;
     return Scaffold(
       backgroundColor: Colors.black,
       body: Obx(() {
@@ -593,144 +465,92 @@ class _MobileLayoutState extends State<_MobileLayout> {
         return Stack(
           fit: StackFit.expand,
           children: [
-            PageView.builder(
-              scrollDirection: Axis.vertical,
-              itemCount: controller.videoFiles.length,
-              controller: _pages,
-              onPageChanged: (i) => unawaited(controller.showIndex(i)),
-              itemBuilder: (_, i) => GetBuilder<LocalVideoPlayerController>(
-                builder: (_) => controller.currentIndex.value == i
-                    ? _VideoSurface(controller: controller)
-                    : const ColoredBox(color: Colors.black),
-              ),
-            ),
-            // Tap anywhere to bring the bars back or send them away.
-            Positioned.fill(
-              child: GestureDetector(
-                behavior: HitTestBehavior.translucent,
-                onTap: _toggleControls,
-                onDoubleTap: () => unawaited(controller.togglePlayPause()),
-              ),
-            ),
-            IgnorePointer(
-              ignoring: !_controlsVisible,
-              child: AnimatedOpacity(
-                opacity: _controlsVisible ? 1 : 0,
-                duration: const Duration(milliseconds: 180),
-                child: Column(
-                  children: [
-                    _topBar(context, controller),
-                    const Spacer(),
-                    _bottomBar(context, controller),
-                  ],
-                ),
-              ),
-            ),
+            _VideoSurface(controller: controller),
+            _topBar(context),
           ],
         );
       }),
     );
   }
 
-  Widget _topBar(BuildContext context, LocalVideoPlayerController controller) {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Colors.black87, Colors.transparent],
-        ),
-      ),
-      child: SafeArea(
-        bottom: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(4, 4, 8, 12),
-          child: Row(
-            children: [
-              IconButton(
-                color: Colors.white,
-                icon: const Icon(Icons.arrow_back_rounded),
-                onPressed: () => Get.back(),
-              ),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      controller.roomTitle ?? i18n('recorder_local_player_title'),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
-                    ),
-                    Obx(
-                      () => Text(
-                        controller.roomNick == null || controller.roomNick!.isEmpty
-                            ? i18n('local_player_files', args: {'count': '${controller.videoFiles.length}'})
-                            : '${controller.roomNick} · ${controller.currentIndex.value + 1}/${controller.videoFiles.length}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(color: Colors.white70, fontSize: 11),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              _FloatButton(controller: controller, compact: true),
-              IconButton(
-                color: Colors.white,
-                tooltip: i18n('recorder_local_player_title'),
-                icon: const Icon(Remix.play_list_line),
-                onPressed: _showPlaylist,
-              ),
-            ],
+  /// Back, the file list, the two presentation exits and the danmaku switch.
+  ///
+  /// Kept to a single row over the picture: the library's bar already owns
+  /// play/pause, skip, the timeline and fullscreen, and a second transport row
+  /// would be the duplication this page exists to avoid.
+  Widget _topBar(BuildContext context) {
+    return Align(
+      alignment: Alignment.topCenter,
+      child: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Colors.black87, Colors.transparent],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _bottomBar(BuildContext context, LocalVideoPlayerController controller) {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.bottomCenter,
-          end: Alignment.topCenter,
-          colors: [Colors.black87, Colors.transparent],
-        ),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(8, 20, 8, 6),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Obx(
-                () => Text(
-                  controller.currentFileName,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: Colors.white70, fontSize: 11),
+        child: SafeArea(
+          bottom: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(4, 4, 8, 12),
+            child: Row(
+              children: [
+                IconButton(
+                  color: Colors.white,
+                  icon: const Icon(Icons.arrow_back_rounded),
+                  onPressed: () => Get.back(),
                 ),
-              ),
-              const SizedBox(height: 2),
-              _ProgressRow(controller: controller),
-              Row(
-                children: [
-                  const Spacer(),
-                  _TransportButtons(controller: controller),
-                  const Spacer(),
-                ],
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  _SpeedChip(controller: controller),
-                  const SizedBox(width: 8),
-                ],
-              ),
-            ],
+                Expanded(
+                  child: Obx(
+                    () => Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          controller.roomTitle ?? i18n('recorder_local_player_title'),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
+                        ),
+                        Text(
+                          '${controller.currentIndex.value + 1}/${controller.videoFiles.length}  ${controller.currentFileName}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(color: Colors.white70, fontSize: 11),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Obx(
+                  () => controller.hasDanmaku.value
+                      ? _DanmakuChip(
+                          onDark: true,
+                          enabled: !SettingsService.to.danmaku.hideDanmaku.value,
+                          onChanged: (value) => SettingsService.to.danmaku.hideDanmaku.value = !value,
+                        )
+                      : const SizedBox.shrink(),
+                ),
+                IconButton(
+                  color: Colors.white,
+                  tooltip: i18n('pip_window_play'),
+                  icon: const Icon(Remix.picture_in_picture_line),
+                  onPressed: () => unawaited(_enterRecordingPip(controller)),
+                ),
+                IconButton(
+                  color: Colors.white,
+                  tooltip: i18n('float_window_play'),
+                  icon: const Icon(Remix.picture_in_picture_2_line),
+                  onPressed: () => unawaited(controller.enterFloating()),
+                ),
+                IconButton(
+                  color: Colors.white,
+                  tooltip: i18n('recorder_local_player_title'),
+                  icon: const Icon(Remix.play_list_line),
+                  onPressed: _showPlaylist,
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -776,6 +596,26 @@ class _DesktopLayout extends StatelessWidget {
           ),
         ),
         actions: [
+          Obx(
+            () => controller.hasDanmaku.value
+                ? _DanmakuChip(
+                    onDark: false,
+                    enabled: !SettingsService.to.danmaku.hideDanmaku.value,
+                    onChanged: (value) => SettingsService.to.danmaku.hideDanmaku.value = !value,
+                  )
+                : const SizedBox.shrink(),
+          ),
+          const SizedBox(width: 6),
+          IconButton(
+            tooltip: i18n('pip_window_play'),
+            icon: const Icon(Remix.picture_in_picture_line),
+            onPressed: () => unawaited(_enterRecordingPip(controller)),
+          ),
+          IconButton(
+            tooltip: i18n('float_window_play'),
+            icon: const Icon(Remix.picture_in_picture_2_line),
+            onPressed: () => unawaited(controller.enterFloating()),
+          ),
           IconButton(
             tooltip: i18n('recorder_open_task_folder'),
             icon: const Icon(Remix.folder_open_line),
@@ -794,22 +634,15 @@ class _DesktopLayout extends StatelessWidget {
         return Row(
           children: [
             Expanded(
-              child: Column(
-                children: [
-                  Expanded(
-                    child: Container(
-                      margin: const EdgeInsets.fromLTRB(12, 12, 12, 0),
-                      clipBehavior: Clip.antiAlias,
-                      decoration: BoxDecoration(
-                        color: Colors.black,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: theme.dividerColor.withValues(alpha: 0.25)),
-                      ),
-                      child: _VideoSurface(controller: controller, keyboardShortcuts: true),
-                    ),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: ColoredBox(
+                    color: Colors.black,
+                    child: _VideoSurface(controller: controller, keyboardShortcuts: true),
                   ),
-                  _desktopControls(context, controller),
-                ],
+                ),
               ),
             ),
             const VerticalDivider(width: 1),
@@ -821,84 +654,5 @@ class _DesktopLayout extends StatelessWidget {
         );
       }),
     );
-  }
-
-  Widget _desktopControls(BuildContext context, LocalVideoPlayerController controller) {
-    final theme = Theme.of(context);
-    return Container(
-      margin: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SliderTheme(
-            data: SliderTheme.of(context).copyWith(
-              trackHeight: 3,
-              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
-              overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
-            ),
-            child: _desktopProgress(controller, theme),
-          ),
-          Row(
-            children: [
-              _TransportButtons(controller: controller, compact: true),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Obx(
-                  () => Text(
-                    controller.currentFileName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant),
-                  ),
-                ),
-              ),
-              _SpeedChip(controller: controller),
-              const SizedBox(width: 4),
-              IconButton(
-                iconSize: 20,
-                tooltip: i18n('float_window_play'),
-                icon: const Icon(Remix.picture_in_picture_2_line),
-                onPressed: () => unawaited(controller.enterFloating()),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// The desktop bar draws its own clocks next to a theme-coloured track, so it
-  /// does not reuse the phone row's white-on-black colours.
-  Widget _desktopProgress(LocalVideoPlayerController controller, ThemeData theme) {
-    return Obx(() {
-      final duration = controller.duration.value;
-      final position = controller.position.value;
-      final max = duration.inMilliseconds.toDouble();
-      final value = max <= 0 ? 0.0 : position.inMilliseconds.clamp(0, duration.inMilliseconds).toDouble();
-      return Row(
-        children: [
-          Text(
-            _clock(position),
-            style: TextStyle(fontSize: 11, color: theme.colorScheme.onSurfaceVariant),
-          ),
-          Expanded(
-            child: Slider(
-              value: value,
-              max: max <= 0 ? 1 : max,
-              onChanged: max <= 0 ? null : (v) => controller.seekTo(Duration(milliseconds: v.round())),
-            ),
-          ),
-          Text(
-            _clock(duration),
-            style: TextStyle(fontSize: 11, color: theme.colorScheme.onSurfaceVariant),
-          ),
-        ],
-      );
-    });
   }
 }

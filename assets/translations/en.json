@@ -2218,5 +2218,10 @@
   "local_player_seek_forward": "Forward 10 seconds",
   "local_player_files": "{count} recordings",
   "local_player_file_open_failed": "This recording cannot be opened",
-  "local_player_folder_empty_action": "Open the recording folder"
+  "local_player_folder_empty_action": "Open the recording folder",
+  "hide_danmaku": "Hide Danmaku",
+  "pip_window_play": "Play in picture-in-picture",
+  "recording_fit_contain": "Original",
+  "recording_fit_cover": "Fill",
+  "recording_fit_fill": "Stretch"
 }

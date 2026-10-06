@@ -1,56 +1,13 @@
-import 'package:pure_live/core/config/danmaku_settings_controller.dart';
-import 'package:pure_live/domains/live/presentation/playback/widgets/danmaku/danmaku_settings_source.dart';
-import 'package:pure_live/core/index.dart';
+/// Multiview's danmaku configuration is the global one.
+///
+/// The four cells have no room of their own to override a font or a stroke, so
+/// this is the Core settings source rather than a second forwarding copy of it.
+/// The alias keeps the multiview-specific name the page and its tests use.
+library;
 
-class MultiviewDanmakuSettingsSource implements DanmakuSettingsSource {
-  DanmakuSettingsController get _s => SettingsService.to.danmaku;
+import 'package:pure_live/core/player/presentation/danmaku/danmaku_surface_settings.dart';
 
-  @override
-  RxBool get noEmojiMode => _s.noEmojiMode;
+export 'package:pure_live/core/player/presentation/danmaku/danmaku_surface_settings.dart'
+    show SettingsDanmakuSource;
 
-  @override
-  RxDouble get danmakuArea => _s.danmakuArea;
-
-  @override
-  RxDouble get danmakuTopArea => _s.danmakuTopArea;
-
-  @override
-  RxDouble get danmakuBottomArea => _s.danmakuBottomArea;
-
-  @override
-  RxDouble get danmakuSpeed => _s.danmakuSpeed;
-
-  @override
-  RxDouble get danmakuFontSize => _s.danmakuFontSize;
-
-  @override
-  RxInt get danmakuFontWeight => _s.danmakuFontWeight;
-
-  @override
-  RxDouble get danmakuFontBorder => _s.danmakuFontBorder;
-
-  @override
-  RxBool get danmakuMassMode => _s.danmakuMassMode;
-
-  @override
-  RxDouble get danmakuLetterSpacing => _s.danmakuLetterSpacing;
-
-  @override
-  RxDouble get danmakuOpacity => _s.danmakuOpacity;
-
-  @override
-  RxBool get pipDanmakuScaleAuto => _s.pipDanmakuScaleAuto;
-
-  @override
-  RxDouble get pipDanmakuScaleValue => _s.pipDanmakuScaleValue;
-
-  @override
-  RxInt get danmakuMaxVisibleCount => _s.danmakuMaxVisibleCount;
-
-  @override
-  @override
-  RxBool get enableDanmakuStroke => _s.enableDanmakuStroke;
-
-  @override
-  RxInt get danmakuFps => _s.danmakuFps;
-}
+typedef MultiviewDanmakuSettingsSource = SettingsDanmakuSource;

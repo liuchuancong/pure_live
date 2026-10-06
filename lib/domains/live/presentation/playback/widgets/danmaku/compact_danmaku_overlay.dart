@@ -1,4 +1,4 @@
-import 'package:pure_live/core/index.dart';
+﻿import 'package:pure_live/core/index.dart';
 import 'package:pure_live/domains/live/domain/global_player_service.dart';
 import 'package:pure_live/domains/live/presentation/playback/widgets/danmaku/compact_danmaku_metrics.dart';
 import 'package:pure_live/domains/live/presentation/playback/widgets/danmaku/portrait_danmaku_policy.dart';
@@ -75,7 +75,7 @@ class CompactDanmakuOverlay extends StatelessWidget {
       final opacity = settings.danmakuOpacity.v;
       final fps = settings.resolvedDanmakuFps(pip: true, refreshRateMode: SettingsService.to.app.refreshRateMode);
       final maxVisibleCount = settings.effectiveMaxVisibleCount;
-      final fontFamily = room?.danmakuFontFamilyName.value ?? settings.danmakuFontFamilyName.v;
+      final fontFamily = room?.roomDanmakuFontFamily.value ?? settings.danmakuFontFamilyName.v;
       final showStroke = room?.enableDanmakuStroke.value ?? settings.enableDanmakuStroke.v;
       final strokeWidth = room?.danmakuFontBorder.value ?? settings.danmakuFontBorder.v;
       final typography = CompactDanmakuTypography.resolve(

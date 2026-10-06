@@ -2,15 +2,22 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flame_barrage/flame_barrage.dart';
 import 'package:media_core/media_core.dart' hide PlatformUtils;
 import 'package:media_core_feed/media_core_feed.dart';
 import 'package:media_core_list_playback/media_core_list_playback.dart';
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/platform/file_utils.dart';
 import 'package:pure_live/core/platform/platform_utils.dart';
+import 'package:screen_brightness_platform_interface/screen_brightness_platform_interface.dart';
 import 'package:pure_live/core/player/kernel/floating_handle_keeper.dart';
 import 'package:pure_live/core/player/kernel/player_kernel_service.dart';
+import 'package:pure_live/core/player/presentation/danmaku/danmaku_surface_settings.dart';
+import 'package:pure_live/core/player/presentation/danmaku/player_danmaku_surface.dart';
+import 'package:pure_live/core/player/presentation/player_presentation_actions.dart';
+import 'package:pure_live/core/player/presentation/player_ui_controller.dart';
 import 'package:pure_live/core/storage/hive_pref_util.dart';
+import 'package:pure_live/domains/recorder/presentation/pages/local_player/recording_danmaku_track.dart';
 
 /// Persistent [PlaybackProgressStore] backed by Hive.
 ///
@@ -78,7 +85,7 @@ final class HivePlaybackProgressStore implements PlaybackProgressStore {
   }
 }
 
-final class LocalVideoPlayerController extends GetxController {
+final class LocalVideoPlayerController extends GetxController implements PlayerUiController {
   LocalVideoPlayerController({required this.directory, this.roomTitle, this.roomNick});
 
   final String directory;
@@ -89,13 +96,26 @@ final class LocalVideoPlayerController extends GetxController {
   static const _progressKeyPrefix = 'local_player_progress_';
   static const defaultRates = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
 
-  final List<File> videoFiles = <File>[];
+  /// Reactive on purpose: the page renders the list inside `Obx`, and a plain
+  /// list would leave those builders with no observable to attach to — which
+  /// GetX reports as an error rather than as a stale list. Mutate it in place
+  /// (`addAll`, `removeAt`, index assignment) and the list notifies by itself.
+  final RxList<File> videoFiles = RxList<File>();
   final currentIndex = 0.obs;
   final isLoading = true.obs;
   final isPlaying = false.obs;
   final playbackRate = 1.0.obs;
   final position = Duration.zero.obs;
   final duration = Duration.zero.obs;
+
+  /// Whether the recording being played carries chat (a `<prefix>.xml` beside
+  /// it), which is what the danmaku button is offered for.
+  final hasDanmaku = false.obs;
+
+  /// The replayed chat of the current recording; see [RecordingDanmakuPlayer].
+  final BarrageController danmakuController = BarrageController();
+  RecordingDanmakuPlayer? _danmakuPlayer;
+  RecordingDanmakuTrack? _danmakuTrack;
 
   PlayerKernel get _kernel => PlayerKernelService.instance.kernel;
   FeedPlayerController? _feed;
@@ -110,6 +130,16 @@ final class LocalVideoPlayerController extends GetxController {
   bool get hasNext => currentIndex.value < videoFiles.length - 1;
   bool get hasPrevious => currentIndex.value > 0;
   String get currentFileName => videoFiles.isEmpty ? '' : videoFiles[currentIndex.value].uri.pathSegments.last;
+
+  /// The current picture's shape, used to size a "fill the screen" surface.
+  ///
+  /// Falls back to 16:9 until the first frame reports a size, which is the shape
+  /// a recording from a live room almost always has.
+  double get videoAspectRatio {
+    final size = _feed?.handle?.combinedSnapshot.geometry.videoSize;
+    if (size == null || size.width <= 0 || size.height <= 0) return 16 / 9;
+    return size.width / size.height;
+  }
 
   @override
   void onInit() {
@@ -158,6 +188,7 @@ final class LocalVideoPlayerController extends GetxController {
         .toList();
 
     _feed = FeedPlayerController(_kernel, preloadAhead: !PlatformUtils.isMobile);
+    _danmakuPlayer = RecordingDanmakuPlayer(controller: danmakuController);
     _stateSub = _feed!.onItemStateChanged.listen(_onItemState);
     _transportSub = _feed!.onPlaybackStateChanged.listen(_onTransport);
     _feed!.onIndexChanged.listen((i) => currentIndex.value = i);
@@ -182,27 +213,75 @@ final class LocalVideoPlayerController extends GetxController {
     return 0;
   }
 
-  Future<void> resumePosition() async {
+  Future<Duration?> resumePosition() async {
     final store = _progressStore;
     final handle = _feed?.handle;
-    if (store == null || handle == null || videoFiles.isEmpty) return;
+    if (store == null || handle == null || videoFiles.isEmpty) return null;
     final file = videoFiles[currentIndex.value];
     final saved = await store.positionOf(file.path);
     if (saved != null && saved.inSeconds > 5 && saved < handle.duration - const Duration(seconds: 10)) {
       await handle.seek(saved);
+      return saved;
     }
+    return null;
+  }
+
+  /// Starts parsing the chat file that belongs to the recording at [index].
+  ///
+  /// Reading and parsing run off the critical path: the video opens first and
+  /// the chat appears a moment later, and a recording without a chat file simply
+  /// leaves [hasDanmaku] false.
+  Future<void> _loadDanmakuFor(int index) async {
+    final player = _danmakuPlayer;
+    if (player == null) return;
+    if (index < 0 || index >= videoFiles.length) {
+      _danmakuTrack = null;
+      hasDanmaku.value = false;
+      player.use(null);
+      return;
+    }
+    // Drop the previous file's chat immediately: showing it over the new video
+    // for the length of a file read looks like the wrong recording's chat.
+    _danmakuTrack = null;
+    hasDanmaku.value = false;
+    player.clear();
+    final chat = RecordingDanmakuTrack.chatFileFor(videoFiles[index]);
+    if (chat == null) {
+      player.use(null);
+      return;
+    }
+    final track = await RecordingDanmakuTrack.load(chat);
+    if (isClosed) return;
+    // A slow read must not attach the previous file's chat to this one.
+    if (currentIndex.value != index) return;
+    _danmakuTrack = track.isEmpty ? null : track;
+    hasDanmaku.value = _danmakuTrack != null;
+    player.use(_danmakuTrack);
+    // The video is usually already playing by now, and its next transport
+    // sample lands within a few hundred milliseconds; re-aligning here only
+    // matters when the viewer resumed from a saved position and the sample
+    // arrives before the parse finishes.
+    player.seekTo(_feed?.handle?.position.inMilliseconds ?? 0);
   }
 
   void _onItemState(FeedItemState state) {
     isPlaying.value = state == FeedItemState.playing;
     if (state == FeedItemState.playing) {
-      unawaited(resumePosition());
+      final index = currentIndex.value;
+      unawaited(
+        resumePosition().then((resumed) {
+          if (isClosed) return;
+          unawaited(_loadDanmakuFor(index));
+          _danmakuPlayer?.seekTo((resumed ?? Duration.zero).inMilliseconds);
+        }),
+      );
     }
   }
 
   void _onTransport(PlayerTransportState transport) {
     position.value = transport.position;
     duration.value = transport.duration;
+    _danmakuPlayer?.position(transport.position.inMilliseconds);
   }
 
   Future<void> showIndex(int index) async {
@@ -233,6 +312,9 @@ final class LocalVideoPlayerController extends GetxController {
     final duration = handle.duration;
     final clamped = target < Duration.zero ? Duration.zero : (target > duration ? duration : target);
     await handle.seek(clamped);
+    // Replayed chat is position-driven: a seek must move the cursor too, or the
+    // next sample looks like a 40-minute jump and the whole recording replays.
+    _danmakuPlayer?.seekTo(clamped.inMilliseconds);
   }
 
   Future<void> setRate(double rate) async {
@@ -311,6 +393,7 @@ final class LocalVideoPlayerController extends GetxController {
             .toList(),
         initialIndex: nextIndex,
       );
+      unawaited(_loadDanmakuFor(nextIndex));
     } else if (index < currentIndex.value) {
       currentIndex.value--;
     }
@@ -348,6 +431,114 @@ final class LocalVideoPlayerController extends GetxController {
     if (Get.currentRoute == RoutePath.kLocalVideoPlayer) Get.back();
   }
 
+  /// The system picture-in-picture window, the same presentation the live room
+  /// uses ("小窗播放" on Android, the compact always-on-top window on Windows).
+  ///
+  /// The transitions themselves are Core's ([enterSystemPip]); this only says
+  /// which player and which picture shape they apply to.
+  Future<void> enterPip() async {
+    final handle = _feed?.handle;
+    if (handle == null || handle.disposed) return;
+    final size = handle.combinedSnapshot.geometry.videoSize;
+    await enterSystemPip(
+      _kernel,
+      playerId: handle.id,
+      videoWidth: size?.width.round() ?? 0,
+      videoHeight: size?.height.round() ?? 0,
+    );
+  }
+
+  /// Leaves picture-in-picture and restores the window.
+  Future<void> exitPip() async {
+    final handle = _feed?.handle;
+    if (handle == null) return;
+    await exitSystemPip(_kernel, playerId: handle.id);
+  }
+
+  // ---------------------------------------------------------------------------
+  // PlayerUiController: what the shared Core player surface drives.
+  // ---------------------------------------------------------------------------
+
+  @override
+  bool get uiIsPlaying => isPlaying.value;
+
+  @override
+  Duration get uiPosition => position.value;
+
+  @override
+  Duration get uiDuration => duration.value;
+
+  @override
+  double get uiRate => playbackRate.value;
+
+  @override
+  Future<void> uiPlay() async {
+    await _feed?.play();
+  }
+
+  @override
+  Future<void> uiPause() async {
+    await _feed?.pause();
+  }
+
+  @override
+  Future<void> uiSeekTo(Duration target) => seekTo(target);
+
+  @override
+  Future<void> uiSetRate(double rate) => setRate(rate);
+
+  /// "Leave the picture" on a recording means the small window, which is what
+  /// the live room's own exit control offers first (fullscreen is a separate
+  /// button in the library's bar and stays available on its own).
+  @override
+  Future<bool> uiRequestExit() async {
+    await enterFloating();
+    return true;
+  }
+
+  @override
+  Future<double?> uiVolume() async => _feed?.handle?.volume;
+
+  @override
+  Future<void> uiSetVolume(double value) async {
+    await _feed?.handle?.setVolume(value.clamp(0.0, 1.0));
+  }
+
+  @override
+  Future<double?> uiBrightness() async {
+    if (!platformSupportsBrightness) return null;
+    try {
+      return await ScreenBrightnessPlatform.instance.application;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  @override
+  Future<void> uiSetBrightness(double value) async {
+    if (!platformSupportsBrightness) return;
+    try {
+      await ScreenBrightnessPlatform.instance.setApplicationScreenBrightness(value.clamp(0.0, 1.0));
+    } catch (_) {
+      // A platform that refuses the write must not take the gesture down.
+    }
+  }
+
+  @override
+  bool get uiSupportsBrightnessGesture => platformSupportsBrightness;
+
+  /// The replayed chat of the recording, drawn by the same Core renderer the
+  /// live room uses.
+  @override
+  Widget? buildDanmakuSurface(BuildContext context) {
+    if (!hasDanmaku.value || SettingsService.to.danmaku.hideDanmaku.value) return null;
+    return PlayerDanmakuSurface(
+      controller: danmakuController,
+      settings: const SettingsDanmakuSource(),
+      isVerticalVideo: false,
+    );
+  }
+
   /// Whether the feed now belongs to the small window rather than this page.
   bool _handedToFloating = false;
 
@@ -358,6 +549,7 @@ final class LocalVideoPlayerController extends GetxController {
       // saver alone, and keep the window up while the page disappears.
       _stateSub?.cancel();
       _transportSub?.cancel();
+      _danmakuPlayer?.clear();
       super.onClose();
       return;
     }
@@ -365,6 +557,7 @@ final class LocalVideoPlayerController extends GetxController {
     unawaited(_savePosition());
     _stateSub?.cancel();
     _transportSub?.cancel();
+    _danmakuPlayer?.clear();
     // Leave the small window before the handle goes away; an open overlay
     // pointing at a disposed player would linger showing black and never be
     // removed. exitFloating drives the driver back to normal, which hides the
