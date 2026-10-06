@@ -498,8 +498,6 @@ final class LivePlayerFacade {
   final List<BarrageItem> _floatingDanmakuBacklog = <BarrageItem>[];
   Timer? _floatingDanmakuFlushTimer;
 
-  /// How many lines this facade has handed to the small window (diagnostics).
-  int floatingDanmakuSent = 0;
 
   /// Feeds the small window's own pool.
   ///
@@ -524,7 +522,6 @@ final class LivePlayerFacade {
       textColor: Color.fromARGB(255, msg.color.r, msg.color.g, msg.color.b),
       fixedDuration: placement == null ? null : const Duration(seconds: 4),
     );
-    floatingDanmakuSent++;
     if (floatingDanmaku.engine == null) {
       if (_floatingDanmakuBacklog.length >= 200) _floatingDanmakuBacklog.removeAt(0);
       _floatingDanmakuBacklog.add(item);

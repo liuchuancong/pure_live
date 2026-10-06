@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/player/presentation/compact_source_orientation.dart';
-import 'package:pure_live/domains/live/domain/global_player_service.dart';
 import 'package:pure_live/core/config/float_window_geometry.dart';
 import 'package:media_core_floating/media_core_floating.dart';
 import 'package:pure_live/domains/live/domain/live_player_facade.dart';
@@ -227,25 +226,6 @@ class _FloatingSurfaceState extends State<_FloatingSurface> {
             ),
           ),
           if (danmaku != null) Positioned.fill(child: danmaku(context)),
-          // TEMPORARY diagnostics: read the numbers in the small window and
-          // report them back. `emit` counts lines handed to the window's pool,
-          // `live` is the pool's on-screen count, `eng` says whether a renderer
-          // attached (false = the danmaku surface never mounted), `room` the
-          // room's own pool state.
-          Positioned(
-            left: 4,
-            top: 2,
-            child: IgnorePointer(
-              child: Text(
-                'dm ${facade.floatingDanmakuSent}/${facade.floatingDanmaku.totalEmitted}'
-                ' live=${facade.floatingDanmaku.activeItemCount}'
-                ' eng=${facade.floatingDanmaku.engine != null}'
-                ' hidden=${SettingsService.to.danmaku.hideDanmaku.v}'
-                ' v=${GlobalPlayerService.instance.player.isVerticalVideo.value}',
-                style: const TextStyle(color: Color(0xCC00FF88), fontSize: 9, height: 1),
-              ),
-            ),
-          ),
           Positioned.fill(
             child: GestureDetector(behavior: HitTestBehavior.opaque, onTap: _tapSurface),
           ),
