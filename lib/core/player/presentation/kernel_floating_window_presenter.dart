@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:pure_live/core/player/kernel/floating_handle_keeper.dart';
 import 'package:pure_live/get/get.dart';
 import 'package:media_core_floating/media_core_floating.dart';
 import 'package:media_core/media_core.dart' show MediaPlayerView, PlayerId, PlayerKernel;
@@ -48,8 +49,19 @@ final class KernelFloatingWindowPresenter implements FloatingWindowPresenter {
             resizableByDrag: true,
           ),
         ),
-        onExpand: () => unawaited(kernel.exitFloating(playerId)),
-        onClose: () => unawaited(kernel.exitFloating(playerId)),
+        // Leave the window: the driver goes back to normal (which hides this
+        // entry) and the keeper releases the handle the page handed over, so a
+        // feed that outlived its page is disposed exactly once, here. Expanding
+        // asks the host for the full page back instead of only closing.
+        onExpand: () async {
+          await kernel.exitFloating(playerId);
+          await FloatingHandleKeeper.instance.expand(playerId.value);
+          await FloatingHandleKeeper.instance.release(playerId.value);
+        },
+        onClose: () async {
+          await kernel.exitFloating(playerId);
+          await FloatingHandleKeeper.instance.release(playerId.value);
+        },
         child: _KernelFloatingSurface(kernel: kernel, playerId: playerId),
       ),
     );

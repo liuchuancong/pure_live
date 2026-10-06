@@ -2205,5 +2205,18 @@
   "restriction_region_blocked": "This broadcast is not available in the current region.",
   "restriction_password": "This broadcast needs a room password.",
   "restriction_adult": "This broadcast needs the platform's age check first.",
-  "restriction_unplayable": "The platform gave this client no playable stream."
+  "restriction_unplayable": "The platform gave this client no playable stream.",
+  "local_player_rename": "Rename",
+  "local_player_rename_hint": "Enter a new file name",
+  "local_player_rename_failed": "Rename failed",
+  "local_player_delete": "Delete",
+  "local_player_delete_confirm": "Delete {name}? This cannot be undone.",
+  "local_player_delete_failed": "Delete failed",
+  "local_player_play": "Play",
+  "local_player_pause": "Pause",
+  "local_player_seek_back": "Back 10 seconds",
+  "local_player_seek_forward": "Forward 10 seconds",
+  "local_player_files": "{count} recordings",
+  "local_player_file_open_failed": "This recording cannot be opened",
+  "local_player_folder_empty_action": "Open the recording folder"
 }

@@ -5,6 +5,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/platform/platform_utils.dart';
 import 'package:pure_live/domains/live/domain/live_player_facade.dart';
+import 'package:pure_live/core/player/kernel/floating_handle_keeper.dart';
 import 'package:pure_live/core/player/presentation/fullscreen_window.dart' show WindowService;
 import 'package:pure_live/domains/live/presentation/playback/controllers/live_play_controller.dart';
 import 'package:pure_live/domains/live/presentation/playback/widgets/layout/live_play_video.dart' show shouldFloatAfterLivePlayExit;
@@ -20,6 +21,8 @@ class LiveRouteObserver extends RouteObserver<PageRoute<dynamic>> {
         break;
       case RoutePath.kMultiview:
         _onMultiviewEnter();
+      case RoutePath.kLocalVideoPlayer:
+        _onLocalVideoPlayerEnter();
       case RoutePath.kRecordPage:
         _setVideoLayerVisible(false);
         break;
@@ -43,6 +46,19 @@ class LiveRouteObserver extends RouteObserver<PageRoute<dynamic>> {
     final playerManager = GlobalPlayerService.instance.player;
     playerManager.setVideoPresentationVisible(true);
     unawaited(playerManager.closeAppFloating());
+    // A recording handed to the small window is taken back: two videos cannot
+    // share the surface (or the audio).
+    unawaited(FloatingHandleKeeper.instance.releaseCurrent());
+  }
+
+  /// Watching a recording on its own page.
+  ///
+  /// The live small window would otherwise keep playing over it while both hold
+  /// audio, and a recording that was floating is taken back by the page that
+  /// owns it.
+  void _onLocalVideoPlayerEnter() {
+    unawaited(GlobalPlayerService.instance.player.closeAppFloating());
+    unawaited(FloatingHandleKeeper.instance.releaseCurrent());
   }
 
   void _onMultiviewEnter() {

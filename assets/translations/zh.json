@@ -2205,5 +2205,18 @@
   "restriction_region_blocked": "该直播在当前地区不可观看。",
   "restriction_password": "该直播需要房间密码。",
   "restriction_adult": "该直播需要先完成平台的年龄验证。",
-  "restriction_unplayable": "平台没有向本客户端提供可播放的流。"
+  "restriction_unplayable": "平台没有向本客户端提供可播放的流。",
+  "local_player_rename": "重命名",
+  "local_player_rename_hint": "输入新的文件名",
+  "local_player_rename_failed": "重命名失败",
+  "local_player_delete": "删除",
+  "local_player_delete_confirm": "确定删除 {name}？此操作不可撤销。",
+  "local_player_delete_failed": "删除失败",
+  "local_player_play": "播放",
+  "local_player_pause": "暂停",
+  "local_player_seek_back": "后退 10 秒",
+  "local_player_seek_forward": "前进 10 秒",
+  "local_player_files": "共 {count} 个录像",
+  "local_player_file_open_failed": "无法打开该录像",
+  "local_player_folder_empty_action": "打开录像目录"
 }

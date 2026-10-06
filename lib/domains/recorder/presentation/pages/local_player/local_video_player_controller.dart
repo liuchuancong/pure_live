@@ -8,6 +8,7 @@ import 'package:media_core_list_playback/media_core_list_playback.dart';
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/platform/file_utils.dart';
 import 'package:pure_live/core/platform/platform_utils.dart';
+import 'package:pure_live/core/player/kernel/floating_handle_keeper.dart';
 import 'package:pure_live/core/player/kernel/player_kernel_service.dart';
 import 'package:pure_live/core/storage/hive_pref_util.dart';
 
@@ -223,11 +224,14 @@ final class LocalVideoPlayerController extends GetxController {
     }
   }
 
-  Future<void> seekBy(Duration offset) async {
+  Future<void> seekBy(Duration offset) => seekTo((_feed?.handle?.position ?? Duration.zero) + offset);
+
+  /// Seeks to an absolute position, clamped to the file.
+  Future<void> seekTo(Duration target) async {
     final handle = _feed?.handle;
     if (handle == null) return;
-    final target = handle.position + offset;
-    final clamped = target < Duration.zero ? Duration.zero : (target > handle.duration ? handle.duration : target);
+    final duration = handle.duration;
+    final clamped = target < Duration.zero ? Duration.zero : (target > duration ? duration : target);
     await handle.seek(clamped);
   }
 
@@ -313,8 +317,50 @@ final class LocalVideoPlayerController extends GetxController {
     update();
   }
 
+  /// Hands the current video to the in-app small window and leaves the page.
+  ///
+  /// The feed is the player's owner, and this controller dies with its route:
+  /// without the handover the window would show a handle that the page's
+  /// disposal released a frame later. [FloatingHandleKeeper] owns it from here
+  /// until the window is expanded or closed.
+  Future<void> enterFloating() async {
+    final feed = _feed;
+    final handle = feed?.handle;
+    if (feed == null || handle == null || handle.disposed) return;
+    await _savePosition();
+    _handedToFloating = true;
+    FloatingHandleKeeper.instance.own(
+      handle.id.value,
+      () async {
+        _feed?.dispose();
+        _feed = null;
+      },
+      // Expanding the window means "give me the page back", so it reopens this
+      // folder's player; the file itself resumes from the saved position.
+      onExpand: () async {
+        Get.toNamed(
+          RoutePath.kLocalVideoPlayer,
+          arguments: <String, dynamic>{'dir': directory, 'title': roomTitle, 'nick': roomNick},
+        );
+      },
+    );
+    await _kernel.enterFloating(handle.id);
+    if (Get.currentRoute == RoutePath.kLocalVideoPlayer) Get.back();
+  }
+
+  /// Whether the feed now belongs to the small window rather than this page.
+  bool _handedToFloating = false;
+
   @override
   void onClose() {
+    if (_handedToFloating) {
+      // The window is showing this feed: leave the handle and the position
+      // saver alone, and keep the window up while the page disappears.
+      _stateSub?.cancel();
+      _transportSub?.cancel();
+      super.onClose();
+      return;
+    }
     _positionSaver?.cancel();
     unawaited(_savePosition());
     _stateSub?.cancel();
