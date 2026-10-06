@@ -2,9 +2,11 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'dart:io' as io;
+
 import 'package:dio/dio.dart';
+import 'package:dio/io.dart';
 import 'package:pure_live/core/models/live_room.dart';
-import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/core/network/request_scope.dart';
 import 'package:pure_live/core/network/site_transport_failure.dart';
 
@@ -189,9 +191,26 @@ class ShowroomApi {
 
   final ShowroomRequest _request;
 
+  /// Dedicated HTTP client that connects directly (no app proxy).
+  /// showroom-live.com is a Japanese service; routing through the app proxy
+  /// (which typically exits from a different region) causes the TLS
+  /// handshake to fail with a HandshakeException.
+  static Dio? _directDio;
+
+  static Dio get _direct => _directDio ??=
+      Dio(BaseOptions(connectTimeout: const Duration(seconds: 15), receiveTimeout: const Duration(seconds: 20)))
+        ..httpClientAdapter = IOHttpClientAdapter(
+          createHttpClient: () {
+            final client = io.HttpClient();
+            // No findProxy: connect directly, bypassing the app proxy.
+            client.badCertificateCallback = (_, _, _) => false;
+            return client;
+          },
+        );
+
   static Future<({int status, String body})> _defaultRequest(Uri uri, CancelToken? cancel) =>
       withRequestCancellation(cancel, (transport) async {
-        final response = await HttpClient.instance.dio.get<ResponseBody>(
+        final response = await _direct.get<ResponseBody>(
           uri.toString(),
           cancelToken: transport,
           options: Options(
