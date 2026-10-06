@@ -89,6 +89,9 @@ class _VideoSurface extends StatelessWidget {
                 // speed, fullscreen and picture-in-picture; the page adds only
                 // the recording-specific actions on top.
                 showControls: true,
+                // The page draws its own header over the picture; the library's
+                // top bar would stack a second title row in the same corner.
+                showTopBar: false,
                 keepControlsWhilePaused: true,
                 keyboardShortcuts: keyboardShortcuts,
                 onTapVideo: controller.togglePlayPause,
@@ -542,7 +545,7 @@ class _PortraitTopBar extends StatelessWidget {
           ),
         ),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(4, 4, 8, 12),
+          padding: EdgeInsets.fromLTRB(4, 4 + MediaQuery.paddingOf(context).top, 8, 12),
           child: Row(
             children: [
               IconButton(color: Colors.white, icon: const Icon(Icons.arrow_back_rounded), onPressed: () => Get.back()),
