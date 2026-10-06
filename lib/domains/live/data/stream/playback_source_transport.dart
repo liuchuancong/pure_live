@@ -48,6 +48,11 @@ class PlaybackSourceTransport {
   bool _closed = false;
   Future<void>? _closing;
 
+  /// 全局播放代理指令，但代理出口会被 CDN 拒吐流的主机（Steam 广播按请求 IP
+  /// 做缓存亲和：代理拉清单 200、分片 410）逐条直连。
+  static String _perHostProxy(Uri uri) =>
+      playsDirectBehindProxy(uri) ? 'DIRECT' : PlaybackProxyPolicy.currentDirective();
+
   static Future<PlaybackInputLease> _createRelay(
     String url,
     Map<String, String> headers,
@@ -61,7 +66,6 @@ class PlaybackSourceTransport {
         throw const FormatException('Invalid playback input header');
       }
     }
-    final directive = PlaybackProxyPolicy.currentDirective();
     final relay = await FFmpegHlsInputRelay.startForArguments(
       [
         if (headers.isNotEmpty) ...['-headers', headers.entries.map((e) => '${e.key}: ${e.value}\r\n').join()],
@@ -69,15 +73,14 @@ class PlaybackSourceTransport {
         url,
       ],
       sourceQueryPolicy: policy,
-      findProxy: (_) => directive,
+      findProxy: _perHostProxy,
     );
     if (relay == null) throw const FormatException('Expected a policy-bound HLS input');
     return PlaybackInputLease(relay.inputUri, relay.close);
   }
 
   static Future<PlaybackInputLease> _createLegacyHevcRelay(String url, Map<String, String> headers) async {
-    final directive = PlaybackProxyPolicy.currentDirective();
-    final relay = await FlvLegacyHevcRelay.start(url, headers, findProxy: (_) => directive);
+    final relay = await FlvLegacyHevcRelay.start(url, headers, findProxy: _perHostProxy);
     return PlaybackInputLease(relay.inputUri, relay.close, isUsable: () => !relay.isClosed);
   }
 
@@ -103,14 +106,13 @@ class PlaybackSourceTransport {
     if (matchesPolicy != null && !matchesPolicy.matchesSource(source)) {
       throw const FormatException('Playback query policy does not match selected input');
     }
-    final directive = PlaybackProxyPolicy.currentDirective();
     final relay = await LoopbackIngestRelay.start(
       source: source,
       headers: headers,
       rootManifest: rootManifest,
       childUriPolicy: childUriPolicy,
       sessionCookies: true,
-      findProxy: (_) => directive,
+      findProxy: _perHostProxy,
     );
     return PlaybackInputLease(relay.inputUri, relay.close, isUsable: () => !relay.isClosed);
   }

@@ -9,6 +9,7 @@ import 'package:pure_live/core/models/live_category.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
 import 'package:pure_live/core/utils/i18n.dart';
 import 'package:pure_live/shared/platforms/live_external_room.dart';
+
 import 'steam_broadcast_danmaku.dart';
 
 import 'steam_broadcast_api.dart';
@@ -253,7 +254,16 @@ final class SteamBroadcastSite extends LiveSite
     if (refresh) {
       room = _snapshot(await _detail(LiveRoom(roomId: room.steamId, platform: id), includeMedia: true));
     }
-    return LivePlayUrlResolution(urls: [room.master!.toString()], appliedQualityData: 'auto');
+    final master = room.master!.toString();
+    // mpv 自己的网络栈读这条 CDN 会确定性挂死（清单能读、分片打开后 18 秒无进展，
+    // 代理与直连都复现；Dart HTTP 读同一棵树全部正常），所以声明子地址不可由原生
+    // 解析器直读，让线路走回环清单中继 —— 与 TwitCasting 同一机制。
+    return LivePlayUrlResolution.withSourcePolicies(
+      urls: [master],
+      sourceQueryPolicies: const {},
+      appliedQualityData: 'auto',
+      streamFacts: {master: (format: LiveStreamFormat.hls, codec: null, unresolvedChildren: true)},
+    );
   }
 
   @override
