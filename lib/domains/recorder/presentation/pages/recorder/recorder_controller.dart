@@ -131,15 +131,22 @@ class RecorderController extends GetxService {
     _danmakuTasksWorker = ever<List<LiveRecordTask>>(tasks, _danmakuRecorder.sync);
     _danmakuSettingWorker = ever<bool>(settings.recordDanmaku, (_) => _danmakuRecorder.sync(tasks));
     unawaited(restoreAndAutoPoll());
-    unawaited(_warnIfPrivateRecordDir());
+    // 不在 onInit 里弹私有目录警告：RecorderController 随直播间页惰性初始化，
+    // 自动弹窗会变成"一进直播间就弹"。改为点录制时检查（见 [ensureRecordDirUsable]）。
   }
 
   bool _privateDirWarningShown = false;
 
-  Future<void> _warnIfPrivateRecordDir() async {
-    if (_privateDirWarningShown || _isClosing) return;
+  /// 录制入口的就绪检查：录制目录落在 Android 应用私有目录时，其它应用读不到
+  /// 录制文件。只在用户真正点录制时提示一次，弹窗的"更改"跳录制设置页选目录。
+  ///
+  /// 返回 true 表示可以继续本次录制（目录可用，或用户选择忽略/已完成处理）。
+  Future<bool> ensureRecordDirUsable() async {
+    if (_isClosing) return false;
     final isPrivate = await CacheService.to.isRecordDirPrivate();
-    if (!isPrivate || _isClosing || _privateDirWarningShown) return;
+    if (!isPrivate || _isClosing) return true;
+    // 同一次会话只问一遍；用户选择忽略后不再打断后续录制。
+    if (_privateDirWarningShown) return true;
     _privateDirWarningShown = true;
     final change = await Get.dialog<bool>(
       AlertDialog(
@@ -152,9 +159,9 @@ class RecorderController extends GetxService {
       ),
       barrierDismissible: false,
     );
-    if (change == true && !_isClosing) {
-      await settings.pickRecordDir();
-    }
+    if (change != true || _isClosing) return true;
+    await Get.toNamed(RoutePath.kRecordSettings);
+    return true;
   }
 
   /// Opt-in chat capture beside each attempt's video. It only observes task
