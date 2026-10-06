@@ -2,12 +2,15 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'dart:io' as io;
+
 import 'package:dio/dio.dart';
+import 'package:dio/io.dart';
 import 'package:pure_live/core/models/live_room.dart';
-import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/core/network/request_scope.dart';
 
 import 'fc2_link.dart';
+
 import 'package:pure_live/core/network/site_transport_failure.dart';
 
 enum Fc2Failure { transport, access, missing, rateLimited, service, schema, identity, cancelled, offline }
@@ -114,6 +117,18 @@ class Fc2Api {
   final Fc2Request _request;
   final Duration deadline;
 
+  /// Dedicated HTTP client that connects directly (no app proxy).
+  /// live.fc2.com is a Japanese service; routing through the app proxy
+  /// causes TLS handshake or connection failures.
+  static io.HttpClient? _directClient;
+  static Dio? _directDio;
+
+  static Dio get _direct {
+    return _directDio ??= Dio(
+      BaseOptions(connectTimeout: const Duration(seconds: 15), receiveTimeout: const Duration(seconds: 25)),
+    )..httpClientAdapter = IOHttpClientAdapter(createHttpClient: () => _directClient ??= io.HttpClient());
+  }
+
   static Future<({int status, String body})> _defaultRequest(
     Uri uri,
     Map<String, String> requestHeaders,
@@ -123,7 +138,7 @@ class Fc2Api {
     final encoded = form.entries
         .map((entry) => '${Uri.encodeQueryComponent(entry.key)}=${Uri.encodeQueryComponent(entry.value)}')
         .join('&');
-    final response = await HttpClient.instance.dio.post<ResponseBody>(
+    final response = await _direct.post<ResponseBody>(
       uri.toString(),
       data: encoded,
       cancelToken: cancel,
