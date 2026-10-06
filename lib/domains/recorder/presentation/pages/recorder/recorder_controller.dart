@@ -148,14 +148,24 @@ class RecorderController extends GetxService {
     // 同一次会话只问一遍；用户选择忽略后不再打断后续录制。
     if (_privateDirWarningShown) return true;
     _privateDirWarningShown = true;
+    // 按钮用对话框自己的 BuildContext 走原生 Navigator.pop，只弹对话框这一层。
+    // Get.back 弹的是 GetX 全局导航栈的顶层路由，直播间在栈里时会被误弹退出。
     final change = await Get.dialog<bool>(
-      AlertDialog(
-        title: Text(i18n('recorder_private_dir_title')),
-        content: Text(i18n('recorder_private_dir_message')),
-        actions: [
-          TextButton(onPressed: () => Get.back(result: false), child: Text(i18n('recorder_private_dir_ignore'))),
-          FilledButton(onPressed: () => Get.back(result: true), child: Text(i18n('recorder_private_dir_change'))),
-        ],
+      Builder(
+        builder: (dialogContext) => AlertDialog(
+          title: Text(i18n('recorder_private_dir_title')),
+          content: Text(i18n('recorder_private_dir_message')),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: Text(i18n('recorder_private_dir_ignore')),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: Text(i18n('recorder_private_dir_change')),
+            ),
+          ],
+        ),
       ),
       barrierDismissible: false,
     );
