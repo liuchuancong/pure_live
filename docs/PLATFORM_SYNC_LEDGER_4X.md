@@ -710,7 +710,7 @@ jdlive 与百度直播的日志里都是 `Set property: http-header-fields=[]`�
   适配器不强行套，它们漏出的原始 `DioException` 由第二个形状接住。
 - `PlayerController.streamMetadataFailureKey`：两处 `read_video_failed`（取清晰度、切档）改成按上面判定，
   新增 `site_unreachable`（应用层代理没开：直连，站点请求不经代理）与 `site_unreachable_via_proxy`
-  （已开：说这条节点到不到得了，不再劝人开代理）。
+  （已开：说这条节点到不到得了，不再劝人开代理）。同日并发那笔 showroom 修复给出同一条路的另一种根因——Clash 改写 TLS，它的证书不在 dart 的信任链里，于是 `_via_proxy` 那句把两种可能都写上。
 - 测试 `test/core/network/site_transport_failure_test.dart`（6 项，含一条**扫源码**的守卫：凡 failure enum
   里有 transport 的异常类都必须声明接口，摘掉 niconico 的 `implements` 会立刻变红）与
   `test/domains/live/stream_metadata_failure_key_test.dart`（2 项）。全仓 138 项全绿。

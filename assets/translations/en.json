@@ -648,7 +648,7 @@
   "site_iptv": "Network",
   "site_kuaishou": "Kuaishou",
   "site_unreachable": "Cannot reach the site. Site requests go through the app-level proxy, which is off.",
-  "site_unreachable_via_proxy": "Cannot reach the site: the app-level proxy is on, so check that this node can reach it.",  "sleep_timer": "Sleep Timer",
+  "site_unreachable_via_proxy": "Cannot reach the site with the app-level proxy on: check the node reaches it, or that the proxy is not re-signing TLS.",  "sleep_timer": "Sleep Timer",
   "sms_login": "SMS Login",
   "speed": "Scroll speed (pixels/second)",
   "danmaku_mass_mode": "Mass mode",
