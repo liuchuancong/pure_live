@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:html/parser.dart' as html;
+import 'package:pure_live/core/network/site_transport_failure.dart';
 
 enum NiconicoFailure {
   transport,
@@ -17,9 +18,11 @@ enum NiconicoFailure {
   cleanup,
 }
 
-class NiconicoException implements Exception {
+class NiconicoException implements Exception, SiteTransportFailure {
   const NiconicoException(this.kind);
   final NiconicoFailure kind;
+  @override
+  bool get isSiteUnreachable => kind == NiconicoFailure.transport;
   @override
   String toString() => 'Niconico ${kind.name}';
 }

@@ -10,6 +10,7 @@ import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/core/network/request_scope.dart';
 
 import 'steam_broadcast_link.dart';
+import 'package:pure_live/core/network/site_transport_failure.dart';
 
 enum SteamBroadcastFailure {
   transport,
@@ -23,11 +24,13 @@ enum SteamBroadcastFailure {
   mediaUnavailable,
 }
 
-final class SteamBroadcastException implements Exception {
+final class SteamBroadcastException implements Exception, SiteTransportFailure {
   const SteamBroadcastException(this.kind);
 
   final SteamBroadcastFailure kind;
 
+  @override
+  bool get isSiteUnreachable => kind == SteamBroadcastFailure.transport;
   @override
   String toString() => 'Steam Broadcast ${kind.name}';
 }

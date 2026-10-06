@@ -8,6 +8,7 @@ import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/core/network/request_scope.dart';
 
 import 'kilakila_link.dart';
+import 'package:pure_live/core/network/site_transport_failure.dart';
 
 enum KilakilaFailure {
   transport,
@@ -23,9 +24,11 @@ enum KilakilaFailure {
   mediaUnavailable,
 }
 
-class KilakilaException implements Exception {
+class KilakilaException implements Exception, SiteTransportFailure {
   const KilakilaException(this.kind);
   final KilakilaFailure kind;
+  @override
+  bool get isSiteUnreachable => kind == KilakilaFailure.transport;
   @override
   String toString() => 'Kilakila ${kind.name}';
 }

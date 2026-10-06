@@ -9,14 +9,17 @@ import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/core/network/request_scope.dart';
 
 import 'sixroom_link.dart';
+import 'package:pure_live/core/network/site_transport_failure.dart';
 
 enum SixRoomFailure { transport, access, missing, rateLimited, service, schema, identity, cancelled, mediaUnavailable }
 
-final class SixRoomException implements Exception {
+final class SixRoomException implements Exception, SiteTransportFailure {
   const SixRoomException(this.kind);
 
   final SixRoomFailure kind;
 
+  @override
+  bool get isSiteUnreachable => kind == SixRoomFailure.transport;
   @override
   String toString() => 'Six Rooms ${kind.name}';
 }

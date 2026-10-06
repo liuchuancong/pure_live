@@ -8,14 +8,17 @@ import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/core/network/request_scope.dart';
 
 import 'fc2_link.dart';
+import 'package:pure_live/core/network/site_transport_failure.dart';
 
 enum Fc2Failure { transport, access, missing, rateLimited, service, schema, identity, cancelled, offline }
 
-final class Fc2Exception implements Exception {
+final class Fc2Exception implements Exception, SiteTransportFailure {
   const Fc2Exception(this.kind);
 
   final Fc2Failure kind;
 
+  @override
+  bool get isSiteUnreachable => kind == Fc2Failure.transport;
   @override
   String toString() => 'FC2 Live ${kind.name}';
 }

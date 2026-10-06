@@ -7,6 +7,7 @@ import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/core/network/request_scope.dart';
 
 import 'youtube_link.dart';
+import 'package:pure_live/core/network/site_transport_failure.dart';
 
 enum YouTubeFailure {
   transport,
@@ -22,11 +23,13 @@ enum YouTubeFailure {
   mediaUnavailable,
 }
 
-class YouTubeException implements Exception {
+class YouTubeException implements Exception, SiteTransportFailure {
   const YouTubeException(this.kind);
 
   final YouTubeFailure kind;
 
+  @override
+  bool get isSiteUnreachable => kind == YouTubeFailure.transport;
   @override
   String toString() => 'YouTube ${kind.name}';
 }

@@ -8,6 +8,7 @@ import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/core/network/request_scope.dart';
 
 import 'tiktok_link.dart';
+import 'package:pure_live/core/network/site_transport_failure.dart';
 
 enum TikTokFailure {
   transport,
@@ -22,11 +23,13 @@ enum TikTokFailure {
   mediaUnavailable,
 }
 
-class TikTokException implements Exception {
+class TikTokException implements Exception, SiteTransportFailure {
   const TikTokException(this.kind);
 
   final TikTokFailure kind;
 
+  @override
+  bool get isSiteUnreachable => kind == TikTokFailure.transport;
   @override
   String toString() => 'TikTok ${kind.name}';
 }

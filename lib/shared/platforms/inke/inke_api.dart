@@ -9,13 +9,16 @@ import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/core/network/request_scope.dart';
 import 'package:pure_live/shared/platforms/live_directory.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
+import 'package:pure_live/core/network/site_transport_failure.dart';
 
 enum InkeFailure { transport, access, rateLimited, service, notFound, schema, cancelled, mediaUnavailable }
 
-class InkeException implements Exception {
+class InkeException implements Exception, SiteTransportFailure {
   const InkeException(this.kind, {this.message});
   final InkeFailure kind;
   final String? message;
+  @override
+  bool get isSiteUnreachable => kind == InkeFailure.transport;
   @override
   String toString() => message ?? 'Inke ${kind.name}';
 }

@@ -7,6 +7,7 @@ import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/core/network/request_scope.dart';
 
 import 'pandalive_link.dart';
+import 'package:pure_live/core/network/site_transport_failure.dart';
 
 enum PandaLiveFailure {
   transport,
@@ -23,10 +24,12 @@ enum PandaLiveFailure {
   mediaUnavailable,
 }
 
-class PandaLiveException implements Exception {
+class PandaLiveException implements Exception, SiteTransportFailure {
   const PandaLiveException(this.kind);
   final PandaLiveFailure kind;
 
+  @override
+  bool get isSiteUnreachable => kind == PandaLiveFailure.transport;
   @override
   String toString() => 'PandaTV ${kind.name}';
 }

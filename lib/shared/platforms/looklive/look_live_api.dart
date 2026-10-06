@@ -12,14 +12,17 @@ import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/core/network/request_scope.dart';
 
 import 'look_live_link.dart';
+import 'package:pure_live/core/network/site_transport_failure.dart';
 
 enum LookLiveFailure { transport, access, missing, rateLimited, service, schema, identity, cancelled, mediaUnavailable }
 
-final class LookLiveException implements Exception {
+final class LookLiveException implements Exception, SiteTransportFailure {
   const LookLiveException(this.kind);
 
   final LookLiveFailure kind;
 
+  @override
+  bool get isSiteUnreachable => kind == LookLiveFailure.transport;
   @override
   String toString() => 'LOOK Live ${kind.name}';
 }

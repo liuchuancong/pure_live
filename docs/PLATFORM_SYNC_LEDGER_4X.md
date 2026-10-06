@@ -682,6 +682,42 @@ jdlive 与百度直播的日志里都是 `Set property: http-header-fields=[]`�
 所以无害，只是不对称）。
 
 
+### 站点连不上却报成「读取视频信息失败」：两个代理开关的管辖范围没人说（2026-10-05，已修）
+
+日志（niconico 房间）末尾：
+
+```
+⛔ [HTTP Error] [unknown] [Time:530ms]  Underlying Type: HandshakeException
+⛔ Request Origin: https://live.nicovideo.jp   Response Code: none
+⛔ Request Header Keys: [Referer,User-Agent]
+[PlayerController] Play quality loading failed (NiconicoException)
+```
+
+`Response Code: none` + `HandshakeException` 说的是**握手都没成**，不是房间读不出。而同一份日志里
+`[PlaybackProxy] ... http-proxy: http://127.0.0.1:7897` 说明播放器代理是开着的——可它管不到这条路：
+站点页面与 API 请求走的是 `enableAppProxy`（dio、websock、中继上游取流、图片全都归它，见
+`initialized.dart` 里三处 `configureXxxProxyRouting`），只有 `registered=[mpv]` 那条拉流走 `enableProxy`。
+应用层代理没开时站点请求按 `buildProxyDirective` 直连，nicovideo 直连就被掐。
+
+**缺陷不在网络，在归因**：24 个站点适配器的 failure enum 里 `transport` 就是"平台没答话"这一档（HTTP 状态
+各归 access/missing/rateLimited/service，读不出才算 transport），但消费端把它和"房间信息读不出"混成同一句
+`read_video_failed`。观众据此去找坏掉的适配器，而该动的是一个设置。
+
+- `core/network/site_transport_failure.dart`：`SiteTransportFailure` 接口 + `isUnreachableSiteFailure(error)`，
+  认三种形状——适配器自己声明的、dio 分类过的连接类错误、以及 **dio 没分类的那一种**（它只把
+  `SocketException` 映射成连接错误，TLS 被掐是 `unknown` 里裹着 `HandshakeException`，正是日志的形状）。
+- 24 个站点异常类机械实现该接口（`kind == XFailure.transport`）；`douyu`/`twitch` 这类没有 kind 枚举的
+  适配器不强行套，它们漏出的原始 `DioException` 由第二个形状接住。
+- `PlayerController.streamMetadataFailureKey`：两处 `read_video_failed`（取清晰度、切档）改成按上面判定，
+  新增 `site_unreachable`（应用层代理没开：直连，站点请求不经代理）与 `site_unreachable_via_proxy`
+  （已开：说这条节点到不到得了，不再劝人开代理）。
+- 测试 `test/core/network/site_transport_failure_test.dart`（6 项，含一条**扫源码**的守卫：凡 failure enum
+  里有 transport 的异常类都必须声明接口，摘掉 niconico 的 `implements` 会立刻变红）与
+  `test/domains/live/stream_metadata_failure_key_test.dart`（2 项）。全仓 138 项全绿。
+- **这条修改只改提示，不改网络路径**：niconico 能不能进房取决于用户是否打开「应用层代理」。要不要让站点
+  请求在播放器代理开着时跟着走同一条，是产品决定——该设置的说明写着"关闭时软件完全使用 DIRECT 直连，
+  避免系统网络探测导致的启动慢"，回退会违背它，所以先不动。
+
 ### 还没声明的站点（上游有 format/codec，本仓待补）
 
 **已补（2026-10-04 同批）**：bilibili（直播 `flv`/`ts`/`fmp4` 线路按 `parsePlayUrlResolution` 里的

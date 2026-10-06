@@ -9,12 +9,15 @@ import 'package:pure_live/core/network/http_client.dart';
 import 'missevan_danmaku.dart';
 import 'package:pure_live/core/network/request_scope.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
+import 'package:pure_live/core/network/site_transport_failure.dart';
 
 enum MissevanFailure { transport, access, rateLimited, service, notFound, schema, cancelled, qualityUnavailable }
 
-class MissevanException implements Exception {
+class MissevanException implements Exception, SiteTransportFailure {
   const MissevanException(this.kind);
   final MissevanFailure kind;
+  @override
+  bool get isSiteUnreachable => kind == MissevanFailure.transport;
   @override
   String toString() => 'Missevan ${kind.name}';
 }

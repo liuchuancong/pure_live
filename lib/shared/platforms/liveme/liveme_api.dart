@@ -9,6 +9,7 @@ import 'package:pure_live/core/network/request_scope.dart';
 
 import 'liveme_link.dart';
 import 'liveme_signer.dart';
+import 'package:pure_live/core/network/site_transport_failure.dart';
 
 enum LiveMeFailure {
   transport,
@@ -23,11 +24,13 @@ enum LiveMeFailure {
   mediaUnavailable,
 }
 
-class LiveMeException implements Exception {
+class LiveMeException implements Exception, SiteTransportFailure {
   const LiveMeException(this.kind);
 
   final LiveMeFailure kind;
 
+  @override
+  bool get isSiteUnreachable => kind == LiveMeFailure.transport;
   @override
   String toString() => 'LiveMe ${kind.name}';
 }

@@ -6,6 +6,7 @@ import 'package:dio/dio.dart';
 import 'package:pure_live/core/models/live_room.dart';
 import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/core/network/request_scope.dart';
+import 'package:pure_live/core/network/site_transport_failure.dart';
 
 enum ShowroomFailure {
   transport,
@@ -20,11 +21,13 @@ enum ShowroomFailure {
   mediaUnavailable,
 }
 
-class ShowroomException implements Exception {
+class ShowroomException implements Exception, SiteTransportFailure {
   const ShowroomException(this.kind);
 
   final ShowroomFailure kind;
 
+  @override
+  bool get isSiteUnreachable => kind == ShowroomFailure.transport;
   @override
   String toString() => 'Showroom ${kind.name}';
 }

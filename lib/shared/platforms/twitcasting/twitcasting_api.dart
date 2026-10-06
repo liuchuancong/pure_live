@@ -11,12 +11,15 @@ import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/core/network/request_scope.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
 import 'twitcasting_danmaku.dart';
+import 'package:pure_live/core/network/site_transport_failure.dart';
 
 enum TwitcastingFailure { transport, access, rateLimited, service, notFound, schema, cancelled, qualityUnavailable }
 
-class TwitcastingException implements Exception {
+class TwitcastingException implements Exception, SiteTransportFailure {
   const TwitcastingException(this.kind);
   final TwitcastingFailure kind;
+  @override
+  bool get isSiteUnreachable => kind == TwitcastingFailure.transport;
   @override
   String toString() => 'TwitCasting ${kind.name}';
 }

@@ -9,6 +9,7 @@ import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/core/network/request_scope.dart';
 
 import 'bigo_token.dart';
+import 'package:pure_live/core/network/site_transport_failure.dart';
 
 enum BigoFailure {
   transport,
@@ -27,9 +28,11 @@ enum BigoFailure {
 
 enum BigoAccess { public, loginRequired, restricted }
 
-class BigoException implements Exception {
+class BigoException implements Exception, SiteTransportFailure {
   const BigoException(this.kind);
   final BigoFailure kind;
+  @override
+  bool get isSiteUnreachable => kind == BigoFailure.transport;
   @override
   String toString() => 'Bigo ${kind.name}';
 }

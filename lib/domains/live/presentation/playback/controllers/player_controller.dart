@@ -10,6 +10,7 @@ import 'package:pure_live/shared/platforms/live_site.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:pure_live/core/player/kernel/player_consts.dart';
 import 'package:pure_live/core/player/core/playback_source.dart';
+import 'package:pure_live/core/network/site_transport_failure.dart';
 import 'package:media_core/media_core.dart' show PlayerException, PlayerErrorCode;
 import 'package:pure_live/core/utils/live_quality_label.dart';
 import 'package:pure_live/domains/live/domain/live_player_facade.dart';
@@ -108,6 +109,21 @@ List<LivePlayQuality> _qualityChoicesWithConfirmation(
   ]);
 }
 
+
+/// Which message a failed stream-metadata request deserves.
+///
+/// A site adapter's `transport` failure says the platform never gave a usable
+/// answer — that is a statement about reaching the platform, not about the
+/// room. Which leg broke matters here, because the two proxy switches are easy
+/// to confuse: 播放器代理 covers the engine fetching the media, while 应用层代理 is
+/// what the page and API calls that produced that address go through. Reporting
+/// the second one as "读取视频信息失败" sends the viewer looking for a broken
+/// adapter instead of the setting that governs it.
+@visibleForTesting
+String streamMetadataFailureKey({required Object error, required bool appProxyEnabled}) =>
+    isUnreachableSiteFailure(error)
+        ? (appProxyEnabled ? 'site_unreachable_via_proxy' : 'site_unreachable')
+        : 'read_video_failed';
 @visibleForTesting
 List<LivePlayQuality> normalizePlayQualities(Iterable<LivePlayQuality> qualities) {
   final unique = <LivePlayQuality>[];
@@ -626,7 +642,10 @@ class PlayerController extends GetxController {
         name: 'PlayerController',
         stackTrace: stackTrace,
       );
-      ToastUtil.show(i18n('read_video_failed'));
+      ToastUtil.show(i18n(streamMetadataFailureKey(
+        error: error,
+        appProxyEnabled: SettingsService.to.proxy.enableAppProxy.v,
+      )));
       _main.updateRoom(success: false);
     }
   }
@@ -869,7 +888,10 @@ class PlayerController extends GetxController {
             error: error,
             stackTrace: stackTrace,
           );
-          ToastUtil.show(i18n('read_video_failed'));
+          ToastUtil.show(i18n(streamMetadataFailureKey(
+            error: error,
+            appProxyEnabled: SettingsService.to.proxy.enableAppProxy.v,
+          )));
         }
       }
       return false;

@@ -8,14 +8,17 @@ import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/core/network/request_scope.dart';
 
 import 'jd_live_link.dart';
+import 'package:pure_live/core/network/site_transport_failure.dart';
 
 enum JdLiveFailure { transport, access, missing, rateLimited, service, schema, identity, cancelled, mediaUnavailable }
 
-final class JdLiveException implements Exception {
+final class JdLiveException implements Exception, SiteTransportFailure {
   const JdLiveException(this.kind);
 
   final JdLiveFailure kind;
 
+  @override
+  bool get isSiteUnreachable => kind == JdLiveFailure.transport;
   @override
   String toString() => 'JD Live ${kind.name}';
 }

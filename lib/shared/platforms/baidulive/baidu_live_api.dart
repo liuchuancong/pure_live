@@ -10,6 +10,7 @@ import 'package:pure_live/core/network/request_scope.dart';
 
 import 'baidu_live_link.dart';
 import 'baidu_live_danmaku.dart';
+import 'package:pure_live/core/network/site_transport_failure.dart';
 
 enum BaiduLiveFailure {
   transport,
@@ -23,11 +24,13 @@ enum BaiduLiveFailure {
   mediaUnavailable,
 }
 
-final class BaiduLiveException implements Exception {
+final class BaiduLiveException implements Exception, SiteTransportFailure {
   const BaiduLiveException(this.kind);
 
   final BaiduLiveFailure kind;
 
+  @override
+  bool get isSiteUnreachable => kind == BaiduLiveFailure.transport;
   @override
   String toString() => 'Baidu Live ${kind.name}';
 }

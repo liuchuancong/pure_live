@@ -6,6 +6,7 @@ import 'package:dio/dio.dart';
 import 'package:pure_live/core/models/live_room.dart';
 import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/core/network/request_scope.dart';
+import 'package:pure_live/core/network/site_transport_failure.dart';
 
 enum WeiboFailure {
   transport,
@@ -28,9 +29,11 @@ enum WeiboAccess { public, restricted, disabled }
 /// 详情里 `status` 5 是已结束（上游 18-3），1 在播、3 回放。
 enum WeiboBroadcastState { live, offline, replay, unknown }
 
-class WeiboException implements Exception {
+class WeiboException implements Exception, SiteTransportFailure {
   const WeiboException(this.kind);
   final WeiboFailure kind;
+  @override
+  bool get isSiteUnreachable => kind == WeiboFailure.transport;
   @override
   String toString() => 'Weibo ${kind.name}';
 }

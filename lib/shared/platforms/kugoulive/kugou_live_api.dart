@@ -7,6 +7,7 @@ import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/core/network/request_scope.dart';
 
 import 'kugou_live_link.dart';
+import 'package:pure_live/core/network/site_transport_failure.dart';
 
 enum KugouLiveFailure {
   transport,
@@ -20,11 +21,13 @@ enum KugouLiveFailure {
   mediaUnavailable,
 }
 
-final class KugouLiveException implements Exception {
+final class KugouLiveException implements Exception, SiteTransportFailure {
   const KugouLiveException(this.kind);
 
   final KugouLiveFailure kind;
 
+  @override
+  bool get isSiteUnreachable => kind == KugouLiveFailure.transport;
   @override
   String toString() => 'Kugou Live ${kind.name}';
 }

@@ -10,12 +10,15 @@ import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/core/network/request_scope.dart';
 import 'package:pure_live/shared/platforms/live_directory.dart';
 import 'picarto_danmaku.dart';
+import 'package:pure_live/core/network/site_transport_failure.dart';
 
 enum PicartoFailure { transport, access, rateLimited, service, notFound, schema, cancelled, qualityUnavailable }
 
-class PicartoException implements Exception {
+class PicartoException implements Exception, SiteTransportFailure {
   const PicartoException(this.kind);
   final PicartoFailure kind;
+  @override
+  bool get isSiteUnreachable => kind == PicartoFailure.transport;
   @override
   String toString() => 'Picarto ${kind.name}';
 }
