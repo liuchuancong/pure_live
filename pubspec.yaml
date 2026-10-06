@@ -60,8 +60,7 @@ dependencies:
   # 本地引擎仓库（与下面 F:/media_core 同款绝对路径依赖）：本仓用到了它 0.0.8 上
   # 新增的宿主撤回接口 `BarrageController.retractWhere`（弹幕撤回要按条撤下已上屏
   # 的消息），pub.dev 上的 0.0.8 还没有这个接口。
-  flame_barrage:
-    path: E:/software/flame_barrage
+  flame_barrage: ^0.0.9
 
   # Keep this exact: 0.6.2 preserves argv through FFmpeg/FFprobe/FFplay.
   # Platform URL overrides below select our verified FFmpeg 9.0.2 bundles;
