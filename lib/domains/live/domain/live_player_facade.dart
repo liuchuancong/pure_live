@@ -829,7 +829,9 @@ class _PipOverlayViewState extends State<_PipOverlayView> {
     return defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS;
   }
 
-  bool get _showControls => _isTouchDevice || _hovered;
+  // 触屏（移动端）的画中画不显示任何 UI 控件：窗口小，控件只会挡住画面，
+  // 系统的 PiP 窗口本身就带播放/暂停和全屏手势。桌面保留 hover 显隐。
+  bool get _showControls => !_isTouchDevice && _hovered;
 
   @override
   Widget build(BuildContext context) {
@@ -856,9 +858,10 @@ class _PipOverlayViewState extends State<_PipOverlayView> {
           children: [
             // Rounded video corners: the window itself is rounded by the
             // desktop backend; the clip keeps the surface corners soft even
-            // where the system does not round (older Windows).
+            // where the system does not round (older Windows). 移动端的系统
+            // PiP 窗口是方的且自己管理外观，别再裁圆角——圆角会切掉画面四角。
             ClipRRect(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: _isTouchDevice ? BorderRadius.zero : BorderRadius.circular(12),
               child: Stack(
                 fit: StackFit.expand,
                 children: [
