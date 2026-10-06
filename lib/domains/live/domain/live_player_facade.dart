@@ -484,21 +484,33 @@ final class LivePlayerFacade {
   /// The small window's danmaku pool.
   ///
   /// The facade owns it, not the room's controller: the window outlives the
-  /// room's route, and a pool that dies with the page is exactly why the window
-  /// used to show a picture with no danmaku. The room's controller renders into
-  /// this same pool while it is alive, so the styling path is unchanged.
+  /// room's route, and a pool that died with the page is exactly why the window
+  /// used to show a picture with no danmaku.
   final BarrageController floatingDanmaku = BarrageController();
 
-  /// Feeds the small window when no room controller is left to do it (the
-  /// pipeline is still running, its controller is gone). No-op otherwise, so a
-  /// line is never drawn twice.
-  void sendFloatingDanmakuIfOrphaned(LiveMessage msg) {
-    if (_activeVideoController != null || !floating.isAppFloatingActive) return;
+  /// Feeds the small window's own pool.
+  ///
+  /// Called for every chat line the session delivers, so the window's danmaku
+  /// never depends on the room's controller still being alive: the pool and the
+  /// feed are both the facade's. The room's full-size surface and PiP keep their
+  /// own pools, so a line is never drawn twice.
+  void sendFloatingDanmaku(LiveMessage msg) {
+    if (!floating.isAppFloatingActive) return;
+    if (msg.message.trim().isEmpty) return;
+    final placement = msg.isLocal ? msg.style?.placement : null;
     floatingDanmaku.send(
       BarrageItem(
         content: msg.message,
-        type: BarrageType.scroll,
+        type: switch (placement) {
+          LiveMessagePlacement.top => BarrageType.topFixed,
+          LiveMessagePlacement.bottom => BarrageType.bottomFixed,
+          _ => BarrageType.scroll,
+        },
+        userId: msg.userId,
+        userName: msg.userName,
+        id: msg.messageId,
         textColor: Color.fromARGB(255, msg.color.r, msg.color.g, msg.color.b),
+        fixedDuration: placement == null ? null : const Duration(seconds: 4),
       ),
     );
   }

@@ -218,15 +218,11 @@ class DanmakuController extends GetxController {
         }
         _main.addDanmakuMessage(msg);
         if (msg.emotes.isNotEmpty) DanmakuEmoteLoader.instance.ensureRegistered(msg.emotes);
-        final room = _state.player.videoController;
-        if (room != null) {
-          room.sendDanmaku(msg);
-        } else {
-          // The room's controller is gone (the small window outlived its route)
-          // while this session still delivers: feed the window's own pool so the
-          // channel keeps showing danmaku.
-          GlobalPlayerService.instance.player.sendFloatingDanmakuIfOrphaned(msg);
-        }
+        // The room's surface and PiP render from the room controller's own pools;
+        // the in-app small window renders the facade's pool and is fed here, so it
+        // keeps showing danmaku whether or not the room's controller still exists.
+        _state.player.videoController?.sendDanmaku(msg);
+        GlobalPlayerService.instance.player.sendFloatingDanmaku(msg);
       } else if (msg.type == LiveMessageType.online) {
         _main.updateRuntimeAudience(msg.data);
       } else if (msg.type == LiveMessageType.superChat) {
