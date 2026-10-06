@@ -140,7 +140,19 @@ class BigoApi {
   static const origin = 'https://ta.bigo.tv/official_website';
   static const securityOrigin = 'https://sec.bigo.sg/v1/webjs';
   static const webOrigin = 'https://www.bigo.tv';
-  static const headers = {'Origin': webOrigin, 'Referer': '$webOrigin/', 'User-Agent': 'Mozilla/5.0'};
+
+  /// 请求指纹必须是完整浏览器形态。Bigo 的 WAF 按客户端指纹发降级响应：裸
+  /// `Mozilla/5.0` 之前在 `www.bigo.tv` 的 API 上直接 418，`getInternalStudioInfo`
+  /// 则回 `needLogin:true` 的空壳答案——同一台机器、同一出口 IP，网页能播而应用
+  /// "无法获取房间详情"的差异就在这里。
+  static const headers = {
+    'Origin': webOrigin,
+    'Referer': '$webOrigin/',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36',
+    'Accept': 'application/json, text/javascript, */*; q=0.01',
+    'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+    'X-Requested-With': 'XMLHttpRequest',
+  };
   static const responseLimit = 1024 * 1024;
   final BigoRequest _request;
   final BigoTokenDataBuilder _tokenDataBuilder;
