@@ -718,6 +718,39 @@ jdlive 与百度直播的日志里都是 `Set property: http-header-fields=[]`�
   请求在播放器代理开着时跟着走同一条，是产品决定——该设置的说明写着"关闭时软件完全使用 DIRECT 直连，
   避免系统网络探测导致的启动慢"，回退会违背它，所以先不动。
 
+### chzzk 1080p：改写后的清单能开，子分片却没人回答（2026-10-05，已修在 media_core `1d656cf`）
+
+日志形状：
+
+```
+[PlaybackIngest] manifest livecloud.akamaized.net: children=16 absolute=0 relative=16 … -> loopback rewrite
+[PlaybackIngest] livecloud.akamaized.net -> http://127.0.0.1:57047/<secret>/root.m3u8
+[mpv] ffmpeg/demuxer/v: hls: Opening 'http://127.0.0.1:57047/<secret>/r0.m4s' for reading
+[mpv] ffmpeg/demuxer/v: hls: Opening 'http://127.0.0.1:57047/<secret>/rd.m4v' for reading
+                        ← 到这里再没有任何一字节，也没有一条错误
+[media_core/recovery] candidate failed … opened but never played (position frozen at 0ms for 18s)
+```
+
+第二条候选退回直连上游 URL，`[PlaybackProxy] livecloud.akamaized.net -> {http-proxy: http://127.0.0.1:7897}`
+之后是 `httpproxy: Stream ends prematurely at 0` + `tls: IO error`——代理接受了 CONNECT 却没把隧道打通。
+
+**第一处无效状态在回环中继自己**：`LoopbackIngestRelay` 给清单读了截止时间（`manifestTimeout`），子请求却两处
+`await` 都没兜——响应头没到、或正文到一半停住，中继就一直等着，而 mpv 对"一个字节都没有"没有自己的钟，
+于是判词落在流上（"opened but never played"），真正的失败（这条子请求我们没取完）一条日志都没留下。
+修法是把截止时间补到子请求上：**按字节间隔算，不按总时长**（直播分片可以很大，大不等于卡住），
+默认 10s——刻意落在 sweep 那 18s 验证窗之内，否则判词先到、原因后到。响应还没开始时按 502 回答，
+正文已经开了头的就把这条连接提前结束，那是引擎能动作的信号。测试
+`media_core_ingest/test/loopback_stalled_child_test.dart`（2 项，摘掉任一处 `.timeout` 就会挂到 30s 测试上限）。
+
+**没动的一处，需要用户决定**：这台机器上同一个 host 的两条腿走的是两个开关——清单是探测阶段用
+dio（应用层代理，此处未开=直连）读成功的，中继随后取子分片用的却是 `PlaybackProxyPolicy.currentDirective()`
+（播放器代理 7897），而日志证明这条路对这个 host 是坏的。本仓所有其它中继上游取流
+（`ffmpeg_flv_input_relay`/`flv_splice_relay`/`flv_legacy_hevc_relay`/录制侧 hls input）用的都是
+`resolveUpstreamProxyDirective`＝应用层代理，只有这一个例外。把它对齐过去**这次就能播**，但会反过来伤到
+"只开播放器代理、站点必须经它才可达"的那种配置（清单由 host 表判定、没有探测兜底时就是这么走的），
+所以不在这一轮里单方面改。眼下这台机器的可行动作是：`livecloud.akamaized.net` 直连可达（探测已证明），
+把播放器代理对该 host 留在直连即可播放。
+
 ### 还没声明的站点（上游有 format/codec，本仓待补）
 
 **已补（2026-10-04 同批）**：bilibili（直播 `flv`/`ts`/`fmp4` 线路按 `parsePlayUrlResolution` 里的
