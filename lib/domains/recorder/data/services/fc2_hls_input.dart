@@ -12,6 +12,7 @@ typedef Fc2RelayFactory = Future<FFmpegHlsInputRelay?> Function(
   required bool recording,
   required String Function(Uri) findProxy,
   required String channelId,
+  String? sessionCookie,
 });
 
 typedef Fc2SessionOpener = Future<Fc2ControlSession> Function(
@@ -55,6 +56,7 @@ final class Fc2HlsInput implements OwnedRecordInput {
         recording: recording,
         findProxy: findProxy,
         channelId: session.channelId,
+        sessionCookie: session.sessionCookie,
       );
       if (relay == null) throw const Fc2Exception(Fc2Failure.schema);
       if (cancel?.isCancelled == true) {
@@ -73,12 +75,14 @@ final class Fc2HlsInput implements OwnedRecordInput {
     required bool recording,
     required String Function(Uri) findProxy,
     required String channelId,
+    String? sessionCookie,
   }) => FFmpegHlsInputRelay.startForArguments(
     [
       '-rw_timeout',
       '20000000',
       '-headers',
       Fc2Api.mediaHeaders(channelId).entries.map((entry) => '${entry.key}: ${entry.value}\r\n').join(),
+      if (sessionCookie != null) ...['-headers', 'Cookie: $sessionCookie\r\n'],
       '-i',
       source.toString(),
     ],

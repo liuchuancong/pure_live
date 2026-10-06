@@ -27,6 +27,7 @@ final class Fc2ControlSession {
   Fc2ControlSession._({
     required this.channelId,
     required this.master,
+    required this.sessionCookie,
     required this._channel,
     required this._subscription,
     required this._closeTransport,
@@ -37,6 +38,7 @@ final class Fc2ControlSession {
 
   final String channelId;
   final Uri master;
+  final String sessionCookie;
   final WebSocketChannel _channel;
   final StreamSubscription<dynamic> _subscription;
   final FutureOr<void> Function() _closeTransport;
@@ -126,6 +128,7 @@ final class Fc2ControlSession {
       return Fc2ControlSession._(
         channelId: grant.channelId,
         master: master,
+        sessionCookie: 'l_ortkn=${grant.orz}',
         channel: socket.channel,
         subscription: subscription,
         closeTransport: socket.closeTransport,
