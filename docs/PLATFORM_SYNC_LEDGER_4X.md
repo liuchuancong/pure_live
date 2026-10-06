@@ -1529,3 +1529,32 @@ chatCount=1 connectedAtEnd=true`（20 秒观测，`chatCount=1` 说明 DEFLATE +
 | 播放 | 房间播不了时按限制种类给文案（登录/付费/订阅/私密/仅 App/地区/密码/成人/无可播流）；受限直播在取流阶段的失败也会给出原因，不再只是静默置为失败 | **已完成** |
 | 文案 | `restriction_*` 九个键（zh + en） | **已完成** |
 | 站点 | **tiktok** 已接入（22-1）。其余站点按各自上游行继续接（见各站点小节） | 进行中 |
+
+## 共用播放器层（直播 = 录像，同一套控制）
+
+用户要求录像播放页"和直播表现一样"，追查后确认：`live_play` 的控制层不是通用播放器
+UI，`VideoController`（1466 行，构造要 `LiveRoom` + datasource + 清晰度 + EPG）与
+`VideoControllerPanel`（2098 行，含清晰度/CDN/录制按钮）都绑死直播间，加上
+`domains/X` 不能依赖别的域，直接复用是硬违规。所以把真正与房间无关的部分抽到
+`lib/core/player/presentation/`，两边接同一份。
+
+| 组件 | 位置 | 谁在用 |
+| --- | --- | --- |
+| `PlayerUiController`（接口）+ `PlayerGestureLayer`（左亮度/右音量/滚轮/系统手势带避让） | `core/player/presentation/player_ui_controller.dart` | 直播 `VideoController` 实现该接口；录像 `LocalVideoPlayerController` 实现该接口 |
+| `enterSystemPip` / `exitSystemPip` / `enterPlayerFullscreen` / `exitPlayerFullscreen` | `core/player/presentation/player_presentation_actions.dart` | 直播 `LivePlayerFacade.enablePip`、录像 `enterPip`（窗口尺寸/方向/位置记忆共用） |
+| `PlayerDanmakuSurface` + `DanmakuSettingsSource` / `SettingsDanmakuSource` / `PortraitDanmakuPolicy` | `core/player/presentation/danmaku/` | 直播 `DanmakuViewer`、multiview settings source、录像页 |
+
+删除的重复实现：直播面板里的 `BrightnessVolumnDargArea`（300 行）与 `DanmakuViewer`
+（57 行），录像页自制的进度条/传输行/速度 chip，录像页自制的弹幕渲染（80 行）。
+live 侧旧导入路径（`danmaku_settings_source.dart`、`portrait_danmaku_policy.dart`、
+`multiview_danmaku_settings_source.dart`）保留为转发 export，是搬家不是复制。
+
+顺手修掉的运行时异常：`_PlaylistPanel` 的 `Obx` 只读普通 `List` 导致 GetX
+ObxError + 99625px 溢出（`videoFiles` 改为 `RxList`）；小窗播放中点开录像后窗口
+覆盖层残留（`FloatingHandleKeeper.reclaimCurrent` 先 `exitFloating` 再释放句柄）。
+
+录像弹幕：录制时可选落盘的 `<prefix>.xml`（B 站格式）由
+`recording_danmaku_track.dart` 解析并按播放位置回放，seek 移动游标而不是补发。
+
+批次：`555c0bbd3`。验证：`flutter analyze --no-pub lib test` 干净、`flutter test`
+165 全过、`validate_architecture.py --strict` 0 未批准违规。**未做设备验收。**
