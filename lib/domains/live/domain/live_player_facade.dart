@@ -26,7 +26,8 @@ import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatf
 import 'package:pure_live/domains/live/presentation/playback/widgets/danmaku/compact_danmaku_overlay.dart';
 // media_kit exports its own `VideoController`, so the room's controller needs a
 // prefix to be named at all here.
-import 'package:pure_live/domains/live/presentation/playback/widgets/video_player/video_controller.dart' as room_surface;
+import 'package:pure_live/domains/live/presentation/playback/widgets/video_player/video_controller.dart'
+    as room_surface;
 import 'package:media_core_better_player/media_core_better_player.dart' show kBetterPlayerBackendId;
 import 'package:media_core_ijk_player/media_core_ijk_player.dart' show kIjkPlayerBackendId;
 
@@ -77,6 +78,7 @@ final class LivePlayerFacade {
 
   FacadeStreamCommit? commit;
   Map<String, String> _lastHeaders = const {};
+
   /// Kernel preference order: the line swept first, the rest behind it.
   List<String> _lastLines = const [];
   LiveRoom? _room;
@@ -163,7 +165,19 @@ final class LivePlayerFacade {
     await _controller.play(
       LiveSourceRequest(
         sources: await _intercept(
-          livePlanSources(urls, headers: headers, streamFacts: streamFacts),
+          livePlanSources(
+            urls,
+            headers: headers,
+            streamFacts: streamFacts,
+            // The rotation-room start is seeked to once, on first open only, so
+            // these lines must stay force-seekable; ordinary live lines get no
+            // stamp and drop force-seekable (see MediaKitLiveProperties).
+            startAt: committed?.startAt ?? Duration.zero,
+            // What the status-bar notification and the lock screen show: the
+            // room the viewer opened, not the stream URL's file name.
+            title: liveroom == null ? null : liveSourceTitle(liveroom),
+            artUri: liveroom == null ? null : liveSourceArtUri(liveroom),
+          ),
           streamFacts: streamFacts,
           sourceQueryPolicies: committed?.sourceQueryPolicies ?? const {},
         ),
@@ -281,7 +295,13 @@ final class LivePlayerFacade {
       await _controller.play(
         LiveSourceRequest(
           sources: await _intercept(
-            livePlanSources(lines, headers: current.headers, streamFacts: current.streamFacts),
+            livePlanSources(
+              lines,
+              headers: current.headers,
+              streamFacts: current.streamFacts,
+              title: _room == null ? null : liveSourceTitle(_room!),
+              artUri: _room == null ? null : liveSourceArtUri(_room!),
+            ),
             streamFacts: current.streamFacts,
             sourceQueryPolicies: current.sourceQueryPolicies,
           ),
@@ -389,7 +409,8 @@ final class LivePlayerFacade {
     final size = handle?.combinedSnapshot.geometry.videoSize;
     final next = size != null && size.height > size.width;
     if (next != isVerticalVideo.value) isVerticalVideo.value = next;
-    final dummy = (size != null && isDummyVideoSize(width: size.width, height: size.height)) ||
+    final dummy =
+        (size != null && isDummyVideoSize(width: size.width, height: size.height)) ||
         isAudioOnlyPlatform(_room?.platform);
     if (dummy != isDummyVideo.value) isDummyVideo.value = dummy;
     // The compact window is shaped from the aspect it was fed when PiP began.
@@ -498,7 +519,6 @@ final class LivePlayerFacade {
   final List<BarrageItem> _floatingDanmakuBacklog = <BarrageItem>[];
   Timer? _floatingDanmakuFlushTimer;
 
-
   /// Feeds the small window's own pool.
   ///
   /// Called for every chat line the session delivers, so the window's danmaku
@@ -525,10 +545,7 @@ final class LivePlayerFacade {
     if (floatingDanmaku.engine == null) {
       if (_floatingDanmakuBacklog.length >= 200) _floatingDanmakuBacklog.removeAt(0);
       _floatingDanmakuBacklog.add(item);
-      _floatingDanmakuFlushTimer ??= Timer.periodic(
-        const Duration(milliseconds: 200),
-        (_) => _flushFloatingDanmaku(),
-      );
+      _floatingDanmakuFlushTimer ??= Timer.periodic(const Duration(milliseconds: 200), (_) => _flushFloatingDanmaku());
       return;
     }
     floatingDanmaku.send(item);

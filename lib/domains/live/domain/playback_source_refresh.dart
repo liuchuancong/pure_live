@@ -46,6 +46,32 @@ bool canAdoptSourceRefresh({
   required PlaybackSourceRefreshResult result,
 }) => !disposed && sameRoom && !revisionMoved && result.hasSources;
 
+/// The name a system media surface shows for [room].
+///
+/// The status-bar notification and the lock screen take their title from the
+/// player source, and a live source carries no title of its own: without this
+/// the notification fell back to the stream URL's last path segment — a
+/// `index.m3u8` or a CDN token where the viewer expects the room they opened.
+String liveSourceTitle(LiveRoom room) {
+  final title = room.title?.trim() ?? '';
+  if (title.isNotEmpty) return title;
+  return room.nick?.trim() ?? '';
+}
+
+/// The artwork a system media surface shows for [room], when the platform gave
+/// a usable http(s) cover.
+String liveSourceArtUri(LiveRoom room) {
+  for (final candidate in <String?>[room.cover, room.avatar]) {
+    final value = candidate?.trim() ?? '';
+    if (value.isEmpty) continue;
+    final uri = Uri.tryParse(value);
+    if (uri != null && (uri.scheme == 'http' || uri.scheme == 'https') && uri.host.isNotEmpty) {
+      return value;
+    }
+  }
+  return '';
+}
+
 /// Candidate lines for a URL plan, shared by first open, engine switch and
 /// refresh: without the declared container the engine has to probe for it.
 ///
@@ -54,11 +80,16 @@ bool canAdoptSourceRefresh({
 /// engine hook can keep those lines seekable while ordinary live lines — for
 /// which a seek can only fail — are not. Only the first open carries it; engine
 /// switch and refresh re-open at the live edge with no pending seek.
+///
+/// [title] and [artUri] are what the system media surfaces show while this
+/// source plays; the caller passes the room it belongs to.
 List<PlayerSource> livePlanSources(
   List<String> lines, {
   required Map<String, String> headers,
   required Map<String, LiveStreamFacts> streamFacts,
   Duration startAt = Duration.zero,
+  String? title,
+  String? artUri,
 }) => List<PlayerSource>.unmodifiable(<PlayerSource>[
   for (final url in lines)
     PlayerSource(
@@ -66,9 +97,11 @@ List<PlayerSource> livePlanSources(
       uri: Uri.parse(url),
       type: SourceType.live,
       headers: SourceHeaders(headers),
+      title: title == null || title.isEmpty ? null : title,
       metadata: <String, Object?>{
         ...playbackStreamFormatMetadata(streamFacts[url]?.format.name),
         ...playbackSeekStartMetadata(startAt),
+        if (artUri != null && artUri.isNotEmpty) 'artUri': artUri,
       },
     ),
 ]);
@@ -80,7 +113,11 @@ PlayerSource ownedPlanSource(OwnedPlaybackSource source, LiveRoom room) => Playe
   uri: Uri(scheme: 'owned', path: room.identityKey),
   type: SourceType.live,
   protocol: SourceProtocol.custom,
-  metadata: <String, Object?>{kMediaKitCustomInputKey: customInputMetadataOf(source)},
+  title: liveSourceTitle(room).isEmpty ? null : liveSourceTitle(room),
+  metadata: <String, Object?>{
+    kMediaKitCustomInputKey: customInputMetadataOf(source),
+    if (liveSourceArtUri(room).isNotEmpty) 'artUri': liveSourceArtUri(room),
+  },
 );
 
 /// The commit a refresh answer turns into.
@@ -151,7 +188,15 @@ Future<RefreshedPlaybackCommit> refreshedPlaybackCommit(
   final streamFacts = selection?.streamFacts ?? const <String, LiveStreamFacts>{};
 
   return RefreshedPlaybackCommit(
-    sources: await intercept(livePlanSources(lines, headers: committed.headers, streamFacts: streamFacts)),
+    sources: await intercept(
+      livePlanSources(
+        lines,
+        headers: committed.headers,
+        streamFacts: streamFacts,
+        title: liveSourceTitle(room),
+        artUri: liveSourceArtUri(room),
+      ),
+    ),
     currentUrl: lines.first,
     // The commit reports the platform order and derives its index from
     // currentUrl, so the selector stays on the line being watched.
