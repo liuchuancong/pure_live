@@ -660,7 +660,8 @@
   "site_iptv": "网络",
   "site_kuaishou": "快手",
   "site_unreachable": "连不上站点：站点请求走「应用层代理」，当前未启用",
-  "site_unreachable_via_proxy": "连不上站点：应用层代理已开启，请确认该节点能访问这个站点（代理改写 TLS 也会握手失败）",  "sleep_timer": "定时关闭",
+  "site_unreachable_via_proxy": "连不上站点：应用层代理已开启，请确认该节点能访问这个站点（代理改写 TLS 也会握手失败）",
+  "sleep_timer": "定时关闭",
   "sms_login": "短信登陆",
   "speed": "滚动速度（像素/秒）",
   "danmaku_mass_mode": "海量模式",
@@ -2221,6 +2222,7 @@
   "local_player_folder_empty_action": "打开录像目录",
   "hide_danmaku": "关闭弹幕",
   "pip_window_play": "画中画播放",
+  "fullscreen_watch": "全屏观看",
   "recording_fit_contain": "原始",
   "recording_fit_cover": "铺满",
   "recording_fit_fill": "拉伸"

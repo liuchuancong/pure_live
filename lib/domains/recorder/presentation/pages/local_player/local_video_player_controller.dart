@@ -7,6 +7,7 @@ import 'package:media_core/media_core.dart' hide PlatformUtils;
 import 'package:media_core_feed/media_core_feed.dart';
 import 'package:media_core_list_playback/media_core_list_playback.dart';
 import 'package:pure_live/core/index.dart';
+import 'package:pure_live/core/config/danmaku_settings_controller.dart';
 import 'package:pure_live/core/platform/file_utils.dart';
 import 'package:pure_live/core/platform/platform_utils.dart';
 import 'package:screen_brightness_platform_interface/screen_brightness_platform_interface.dart';
@@ -14,6 +15,7 @@ import 'package:pure_live/core/player/kernel/floating_handle_keeper.dart';
 import 'package:pure_live/core/player/kernel/player_kernel_service.dart';
 import 'package:pure_live/core/player/presentation/danmaku/danmaku_surface_settings.dart';
 import 'package:pure_live/core/player/presentation/danmaku/player_danmaku_surface.dart';
+import 'package:pure_live/core/player/presentation/fullscreen_window.dart' show WindowService;
 import 'package:pure_live/core/player/presentation/player_presentation_actions.dart';
 import 'package:pure_live/core/player/presentation/player_ui_controller.dart';
 import 'package:pure_live/core/storage/hive_pref_util.dart';
@@ -85,7 +87,15 @@ final class HivePlaybackProgressStore implements PlaybackProgressStore {
   }
 }
 
-final class LocalVideoPlayerController extends GetxController implements PlayerUiController {
+/// The recording player's controller.
+///
+/// It implements both shared contracts Core's player surface talks to:
+/// [PlayerUiController] (transport, gestures, the danmaku surface) and
+/// [DanmakuSettingsSource] (the danmaku configuration its barrage renders with).
+/// A recording has no room, so the danmaku values are the global settings
+/// themselves — the same numbers the panel edits, which is what makes the
+/// recording and the room show one barrage style.
+final class LocalVideoPlayerController extends GetxController implements PlayerUiController, DanmakuSettingsSource {
   LocalVideoPlayerController({required this.directory, this.roomTitle, this.roomNick});
 
   final String directory;
@@ -183,12 +193,7 @@ final class LocalVideoPlayerController extends GetxController implements PlayerU
 
     final sources = videoFiles
         .map(
-          (f) => PlayerSource(
-            id: SourceId(f.path),
-            uri: f.uri,
-            type: SourceType.file,
-            title: f.uri.pathSegments.last,
-          ),
+          (f) => PlayerSource(id: SourceId(f.path), uri: f.uri, type: SourceType.file, title: f.uri.pathSegments.last),
         )
         .toList();
 
@@ -394,7 +399,10 @@ final class LocalVideoPlayerController extends GetxController implements PlayerU
       currentIndex.value = nextIndex;
       await _feed?.load(
         videoFiles
-            .map((f) => PlayerSource(id: SourceId(f.path), uri: f.uri, type: SourceType.file, title: f.uri.pathSegments.last))
+            .map(
+              (f) =>
+                  PlayerSource(id: SourceId(f.path), uri: f.uri, type: SourceType.file, title: f.uri.pathSegments.last),
+            )
             .toList(),
         initialIndex: nextIndex,
       );
@@ -453,6 +461,13 @@ final class LocalVideoPlayerController extends GetxController implements PlayerU
     );
   }
 
+  /// "全屏观看": lock to landscape. The portrait layout shows the picture over
+  /// a context panel; in landscape the same page renders the fullscreen shape
+  /// (picture owns the screen), so an orientation lock is the whole transition.
+  Future<void> enterLandscapeFullscreen() async {
+    await WindowService().landScape();
+  }
+
   /// Leaves picture-in-picture and restores the window.
   Future<void> exitPip() async {
     final handle = _feed?.handle;
@@ -463,6 +478,66 @@ final class LocalVideoPlayerController extends GetxController implements PlayerU
   // ---------------------------------------------------------------------------
   // PlayerUiController: what the shared Core player surface drives.
   // ---------------------------------------------------------------------------
+
+  /// A recording has no room of its own, so the shared danmaku button toggles
+  /// the global switch — the same one the danmaku settings panel shows.
+  @override
+  RxBool get danmakuHidden => SettingsService.to.danmaku.hideDanmaku;
+
+  // The rest of [DanmakuSettingsSource]: a recording has no room overrides, so
+  // every value is the global setting the danmaku panel edits.
+  DanmakuSettingsController get _danmakuSettings => SettingsService.to.danmaku;
+
+  @override
+  RxBool get noEmojiMode => _danmakuSettings.noEmojiMode;
+
+  @override
+  RxDouble get danmakuArea => _danmakuSettings.danmakuArea;
+
+  @override
+  RxDouble get danmakuTopArea => _danmakuSettings.danmakuTopArea;
+
+  @override
+  RxDouble get danmakuBottomArea => _danmakuSettings.danmakuBottomArea;
+
+  @override
+  RxDouble get danmakuSpeed => _danmakuSettings.danmakuSpeed;
+
+  @override
+  RxDouble get danmakuFontSize => _danmakuSettings.danmakuFontSize;
+
+  @override
+  RxInt get danmakuFontWeight => _danmakuSettings.danmakuFontWeight;
+
+  @override
+  RxDouble get danmakuFontBorder => _danmakuSettings.danmakuFontBorder;
+
+  @override
+  RxBool get danmakuMassMode => _danmakuSettings.danmakuMassMode;
+
+  @override
+  RxDouble get danmakuLetterSpacing => _danmakuSettings.danmakuLetterSpacing;
+
+  @override
+  RxInt get danmakuMaxVisibleCount => _danmakuSettings.danmakuMaxVisibleCount;
+
+  @override
+  RxDouble get danmakuOpacity => _danmakuSettings.danmakuOpacity;
+
+  @override
+  RxBool get pipDanmakuScaleAuto => _danmakuSettings.pipDanmakuScaleAuto;
+
+  @override
+  RxDouble get pipDanmakuScaleValue => _danmakuSettings.pipDanmakuScaleValue;
+
+  @override
+  RxBool get enableDanmakuStroke => _danmakuSettings.enableDanmakuStroke;
+
+  @override
+  RxInt get danmakuFps => _danmakuSettings.danmakuFps;
+
+  @override
+  String? get danmakuFontFamilyName => _danmakuSettings.danmakuFontFamilyName.v;
 
   @override
   bool get uiIsPlaying => isPlaying.value;
@@ -536,12 +611,8 @@ final class LocalVideoPlayerController extends GetxController implements PlayerU
   /// live room uses.
   @override
   Widget? buildDanmakuSurface(BuildContext context) {
-    if (!hasDanmaku.value || SettingsService.to.danmaku.hideDanmaku.value) return null;
-    return PlayerDanmakuSurface(
-      controller: danmakuController,
-      settings: const SettingsDanmakuSource(),
-      isVerticalVideo: false,
-    );
+    if (!hasDanmaku.value || danmakuHidden.value) return null;
+    return PlayerDanmakuSurface(controller: danmakuController, settings: this, isVerticalVideo: false);
   }
 
   /// Whether the feed now belongs to the small window rather than this page.

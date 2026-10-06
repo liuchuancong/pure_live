@@ -6,6 +6,7 @@ import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/platform/platform_utils.dart';
 import 'package:pure_live/core/player/kernel/player_kernel_service.dart';
+import 'package:pure_live/core/player/presentation/danmaku/player_danmaku_actions.dart';
 import 'package:pure_live/core/player/presentation/player_ui_controller.dart';
 import 'package:pure_live/domains/recorder/presentation/pages/local_player/local_video_player_controller.dart';
 
@@ -95,11 +96,7 @@ class _VideoSurface extends StatelessWidget {
               // reads whether the recording carries chat and whether the viewer
               // switched danmaku off, and a builder with no observable at all is
               // an error in GetX rather than a static surface.
-              Obx(
-                () => Positioned.fill(
-                  child: controller.buildDanmakuSurface(context) ?? const SizedBox.shrink(),
-                ),
-              ),
+              Obx(() => Positioned.fill(child: controller.buildDanmakuSurface(context) ?? const SizedBox.shrink())),
             ],
           ),
         );
@@ -110,12 +107,7 @@ class _VideoSurface extends StatelessWidget {
 
 /// File name plus how big it is and when it was written.
 class _FileRow extends StatelessWidget {
-  const _FileRow({
-    required this.controller,
-    required this.index,
-    this.dense = false,
-    this.onPicked,
-  });
+  const _FileRow({required this.controller, required this.index, this.dense = false, this.onPicked});
 
   final LocalVideoPlayerController controller;
   final int index;
@@ -159,10 +151,7 @@ class _FileRow extends StatelessWidget {
                 ),
                 child: active
                     ? Icon(Icons.graphic_eq_rounded, size: 15, color: theme.colorScheme.onPrimary)
-                    : Text(
-                        '${index + 1}',
-                        style: TextStyle(fontSize: 11, color: theme.colorScheme.onSurfaceVariant),
-                      ),
+                    : Text('${index + 1}', style: TextStyle(fontSize: 11, color: theme.colorScheme.onSurfaceVariant)),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -239,8 +228,13 @@ class _FileRow extends StatelessWidget {
     }
   }
 
-  Widget _menuRow(IconData icon, String text) =>
-      Row(children: [Icon(icon, size: 18), const SizedBox(width: 10), Text(text, style: const TextStyle(fontSize: 13))]);
+  Widget _menuRow(IconData icon, String text) => Row(
+    children: [
+      Icon(icon, size: 18),
+      const SizedBox(width: 10),
+      Text(text, style: const TextStyle(fontSize: 13)),
+    ],
+  );
 
   Future<void> _promptRename(BuildContext context, String name) async {
     final textController = TextEditingController(text: name);
@@ -344,12 +338,7 @@ class _PlaylistPanel extends StatelessWidget {
             () => ListView.builder(
               padding: EdgeInsets.zero,
               itemCount: controller.videoFiles.length,
-              itemBuilder: (_, i) => _FileRow(
-                controller: controller,
-                index: i,
-                dense: dense,
-                onPicked: onPicked,
-              ),
+              itemBuilder: (_, i) => _FileRow(controller: controller, index: i, dense: dense, onPicked: onPicked),
             ),
           ),
         ),
@@ -391,39 +380,76 @@ Future<void> _enterRecordingPip(LocalVideoPlayerController controller) async {
   }
 }
 
-/// A danmaku on/off chip, offered only while the recording carries chat.
-class _DanmakuChip extends StatelessWidget {
-  const _DanmakuChip({required this.onDark, required this.enabled, required this.onChanged});
+/// The presentation and danmaku actions of the recording page.
+///
+/// The same widgets the live room's bar uses ([PlayerDanmakuButton],
+/// [PlayerDanmakuSettingsButton], [PlayerVideoFitButton]): the viewer gets the
+/// same glyphs, the same danmaku panel and the same six fit modes in both
+/// players. What is left here is only what a *recording* adds: PiP, the
+/// in-app small window and, where there is no panel of its own, the list.
+class _RecordingActions extends StatelessWidget {
+  const _RecordingActions({required this.controller, required this.onDark, this.includePlaylist = false});
 
+  final LocalVideoPlayerController controller;
   final bool onDark;
-  final bool enabled;
-  final ValueChanged<bool> onChanged;
+  final bool includePlaylist;
 
   @override
   Widget build(BuildContext context) {
-    final background = onDark ? Colors.white12 : Theme.of(context).colorScheme.surfaceContainerHighest;
-    final foreground = onDark ? Colors.white : Theme.of(context).colorScheme.onSurfaceVariant;
-    return TextButton.icon(
-      onPressed: () => onChanged(!enabled),
-      style: TextButton.styleFrom(
-        foregroundColor: foreground,
-        backgroundColor: background,
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        minimumSize: const Size(0, 30),
-        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      ),
-      icon: Icon(enabled ? Remix.chat_1_fill : Remix.chat_off_line, size: 15),
-      label: Text(
-        enabled ? i18n('hide_danmaku') : i18n('show_danmaku'),
-        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-      ),
-    );
+    final color = onDark ? Colors.white : Theme.of(context).colorScheme.onSurfaceVariant;
+    return Obx(() {
+      // Danmaku actions only make sense once the chat file has been read.
+      final hasChat = controller.hasDanmaku.value;
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (hasChat) ...[
+            PlayerDanmakuButton(controller: controller, iconColor: color),
+            PlayerDanmakuSettingsButton(controller: controller, iconColor: color),
+          ],
+          PlayerVideoFitButton(labelColor: color),
+          IconButton(
+            color: color,
+            tooltip: i18n('pip_window_play'),
+            icon: const Icon(Remix.picture_in_picture_line),
+            onPressed: () => unawaited(_enterRecordingPip(controller)),
+          ),
+          IconButton(
+            color: color,
+            tooltip: i18n('float_window_play'),
+            icon: const Icon(Remix.picture_in_picture_2_line),
+            onPressed: () => unawaited(controller.enterFloating()),
+          ),
+          if (includePlaylist)
+            IconButton(
+              color: color,
+              tooltip: i18n('recorder_local_player_title'),
+              icon: const Icon(Remix.play_list_line),
+              onPressed: () => _showPlaylist(context, controller),
+            ),
+        ],
+      );
+    });
   }
 }
 
+/// The recording list as a phone sheet.
+void _showPlaylist(BuildContext context, LocalVideoPlayerController controller) {
+  showModalBottomSheet(
+    context: context,
+    backgroundColor: Theme.of(context).colorScheme.surface,
+    showDragHandle: true,
+    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(18))),
+    builder: (_) => SizedBox(
+      height: MediaQuery.sizeOf(context).height * 0.62,
+      child: _PlaylistPanel(controller: controller, dense: true, onPicked: () => Navigator.of(context).pop()),
+    ),
+  );
+}
+
 // ---------------------------------------------------------------------------
-// Phone: the picture owns the screen, the recording's own chrome floats over it
+// Phone: short-video shape — the picture on top, the recording's context panel
+// below, and the file list in a bottom sheet ("选集")
 // ---------------------------------------------------------------------------
 
 class _MobileLayout extends StatefulWidget {
@@ -438,17 +464,11 @@ class _MobileLayout extends StatefulWidget {
 class _MobileLayoutState extends State<_MobileLayout> {
   LocalVideoPlayerController get controller => widget.controller;
 
-  void _showPlaylist() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      showDragHandle: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(18))),
-      builder: (_) => SizedBox(
-        height: MediaQuery.sizeOf(context).height * 0.62,
-        child: _PlaylistPanel(controller: controller, dense: true, onPicked: () => Navigator.of(context).pop()),
-      ),
-    );
+  /// Landscape flips to the fullscreen shape: the picture owns the screen and
+  /// the chrome floats over it, exactly like a live room in fullscreen.
+  bool get isLandscape {
+    final size = MediaQuery.sizeOf(context);
+    return size.width > size.height;
   }
 
   @override
@@ -462,23 +482,226 @@ class _MobileLayoutState extends State<_MobileLayout> {
         if (controller.videoFiles.isEmpty) {
           return SafeArea(child: _emptyState(context, controller, onDark: true));
         }
-        return Stack(
-          fit: StackFit.expand,
-          children: [
-            _VideoSurface(controller: controller),
-            _topBar(context),
-          ],
+        if (isLandscape) {
+          return Stack(
+            fit: StackFit.expand,
+            children: [
+              _VideoSurface(controller: controller, keyboardShortcuts: true),
+              _LandscapeTopBar(controller: controller),
+            ],
+          );
+        }
+        return SafeArea(
+          top: false,
+          child: Column(
+            children: [
+              Expanded(
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    ColoredBox(
+                      color: Colors.black,
+                      child: _VideoSurface(controller: controller),
+                    ),
+                    _PortraitTopBar(controller: controller),
+                  ],
+                ),
+              ),
+              _ContextPanel(controller: controller, onOpenPlaylist: () => _showPlaylist(context, controller)),
+            ],
+          ),
         );
       }),
     );
   }
+}
 
-  /// Back, the file list, the two presentation exits and the danmaku switch.
-  ///
-  /// Kept to a single row over the picture: the library's bar already owns
-  /// play/pause, skip, the timeline and fullscreen, and a second transport row
-  /// would be the duplication this page exists to avoid.
-  Widget _topBar(BuildContext context) {
+/// Portrait chrome over the picture: back, the title, and the fullscreen pill.
+///
+/// The transport lives in the library's own bar over the picture; this row is
+/// only where you are and how to leave.
+class _PortraitTopBar extends StatelessWidget {
+  const _PortraitTopBar({required this.controller});
+
+  final LocalVideoPlayerController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.topCenter,
+      child: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Colors.black87, Colors.transparent],
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(4, 4, 8, 12),
+          child: Row(
+            children: [
+              IconButton(color: Colors.white, icon: const Icon(Icons.arrow_back_rounded), onPressed: () => Get.back()),
+              Expanded(
+                child: Obx(
+                  () => Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        controller.roomTitle ?? i18n('recorder_local_player_title'),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
+                      ),
+                      Text(
+                        '${controller.currentIndex.value + 1}/${controller.videoFiles.length}  ${controller.currentFileName}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(color: Colors.white70, fontSize: 11),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              _FullscreenPill(controller: controller),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The fullscreen pill over the picture: the one affordance the short-video
+/// layout keeps on the video itself, since the library's bar with the real
+/// fullscreen button hides with the rest of the chrome.
+class _FullscreenPill extends StatelessWidget {
+  const _FullscreenPill({required this.controller});
+
+  final LocalVideoPlayerController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white24,
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: () => unawaited(controller.enterLandscapeFullscreen()),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.fullscreen_rounded, size: 18, color: Colors.white),
+              const SizedBox(width: 5),
+              Text(i18n('fullscreen_watch'), style: const TextStyle(color: Colors.white, fontSize: 12.5)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The recording's context below the picture, in the short-video arrangement:
+/// the title and where you are, a row of actions (danmaku, fit, PiP, small
+/// window), a playlist affordance, then a thin progress line that mirrors the
+/// library bar's timeline.
+class _ContextPanel extends StatelessWidget {
+  const _ContextPanel({required this.controller, required this.onOpenPlaylist});
+
+  final LocalVideoPlayerController controller;
+  final VoidCallback onOpenPlaylist;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      color: theme.colorScheme.surface,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            child: Obx(
+              () => Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    controller.roomTitle ?? i18n('recorder_local_player_title'),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 15.5, fontWeight: FontWeight.w600, color: theme.colorScheme.onSurface),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    controller.currentFileName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: _RecordingActions(controller: controller, onDark: false, includePlaylist: false),
+                  ),
+                ),
+                IconButton(
+                  tooltip: i18n('recorder_local_player_title'),
+                  color: theme.colorScheme.onSurfaceVariant,
+                  icon: const Icon(Remix.play_list_line),
+                  onPressed: onOpenPlaylist,
+                ),
+              ],
+            ),
+          ),
+          // A read-only progress mirror: the real scrubber stays in the
+          // library's bar over the picture, this line only says where the
+          // recording is while the panel is up.
+          Obx(() {
+            final durationMs = controller.duration.value.inMilliseconds;
+            final positionMs = controller.position.value.inMilliseconds;
+            final progress = durationMs <= 0 ? 0.0 : (positionMs / durationMs).clamp(0.0, 1.0);
+            return Padding(
+              padding: const EdgeInsets.fromLTRB(16, 2, 16, 14),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(2),
+                child: LinearProgressIndicator(
+                  value: progress,
+                  minHeight: 3,
+                  backgroundColor: theme.colorScheme.surfaceContainerHighest,
+                  color: theme.colorScheme.primary,
+                ),
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+}
+
+/// Landscape keeps floating chrome: the picture is the screen and the actions
+/// sit in the top gradient row.
+class _LandscapeTopBar extends StatelessWidget {
+  const _LandscapeTopBar({required this.controller});
+
+  final LocalVideoPlayerController controller;
+
+  @override
+  Widget build(BuildContext context) {
     return Align(
       alignment: Alignment.topCenter,
       child: Container(
@@ -502,52 +725,18 @@ class _MobileLayoutState extends State<_MobileLayout> {
                 ),
                 Expanded(
                   child: Obx(
-                    () => Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          controller.roomTitle ?? i18n('recorder_local_player_title'),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
-                        ),
-                        Text(
-                          '${controller.currentIndex.value + 1}/${controller.videoFiles.length}  ${controller.currentFileName}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(color: Colors.white70, fontSize: 11),
-                        ),
-                      ],
+                    () => Text(
+                      '${controller.roomTitle ?? i18n('recorder_local_player_title')}  '
+                      '${controller.currentIndex.value + 1}/${controller.videoFiles.length}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
                     ),
                   ),
                 ),
-                Obx(
-                  () => controller.hasDanmaku.value
-                      ? _DanmakuChip(
-                          onDark: true,
-                          enabled: !SettingsService.to.danmaku.hideDanmaku.value,
-                          onChanged: (value) => SettingsService.to.danmaku.hideDanmaku.value = !value,
-                        )
-                      : const SizedBox.shrink(),
-                ),
-                IconButton(
-                  color: Colors.white,
-                  tooltip: i18n('pip_window_play'),
-                  icon: const Icon(Remix.picture_in_picture_line),
-                  onPressed: () => unawaited(_enterRecordingPip(controller)),
-                ),
-                IconButton(
-                  color: Colors.white,
-                  tooltip: i18n('float_window_play'),
-                  icon: const Icon(Remix.picture_in_picture_2_line),
-                  onPressed: () => unawaited(controller.enterFloating()),
-                ),
-                IconButton(
-                  color: Colors.white,
-                  tooltip: i18n('recorder_local_player_title'),
-                  icon: const Icon(Remix.play_list_line),
-                  onPressed: _showPlaylist,
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: _RecordingActions(controller: controller, onDark: true, includePlaylist: true),
                 ),
               ],
             ),
@@ -596,26 +785,7 @@ class _DesktopLayout extends StatelessWidget {
           ),
         ),
         actions: [
-          Obx(
-            () => controller.hasDanmaku.value
-                ? _DanmakuChip(
-                    onDark: false,
-                    enabled: !SettingsService.to.danmaku.hideDanmaku.value,
-                    onChanged: (value) => SettingsService.to.danmaku.hideDanmaku.value = !value,
-                  )
-                : const SizedBox.shrink(),
-          ),
-          const SizedBox(width: 6),
-          IconButton(
-            tooltip: i18n('pip_window_play'),
-            icon: const Icon(Remix.picture_in_picture_line),
-            onPressed: () => unawaited(_enterRecordingPip(controller)),
-          ),
-          IconButton(
-            tooltip: i18n('float_window_play'),
-            icon: const Icon(Remix.picture_in_picture_2_line),
-            onPressed: () => unawaited(controller.enterFloating()),
-          ),
+          _RecordingActions(controller: controller, onDark: false),
           IconButton(
             tooltip: i18n('recorder_open_task_folder'),
             icon: const Icon(Remix.folder_open_line),
@@ -646,10 +816,7 @@ class _DesktopLayout extends StatelessWidget {
               ),
             ),
             const VerticalDivider(width: 1),
-            SizedBox(
-              width: 320,
-              child: _PlaylistPanel(controller: controller),
-            ),
+            SizedBox(width: 320, child: _PlaylistPanel(controller: controller)),
           ],
         );
       }),
