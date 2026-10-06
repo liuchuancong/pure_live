@@ -224,6 +224,11 @@ class RecordingDanmakuPlayer {
   }
 
   void _emit(RecordingDanmakuEntry entry) {
+    // `at` is set even though these items go through `send`: a host that fires
+    // messages one at a time is describing a live room, and the engine ignores
+    // the timestamp there. Carrying the media time anyway means the same items
+    // can be handed to `loadTimeline` — the engine's own media-clock dispatch —
+    // without rebuilding them.
     controller.send(
       BarrageItem(
         content: entry.text,
@@ -231,6 +236,7 @@ class RecordingDanmakuPlayer {
         userName: entry.userName,
         textColor: entry.color,
         fontSize: entry.fontSize,
+        at: Duration(milliseconds: entry.timeMs),
       ),
     );
   }

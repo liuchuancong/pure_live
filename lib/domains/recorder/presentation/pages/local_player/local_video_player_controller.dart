@@ -100,7 +100,12 @@ final class LocalVideoPlayerController extends GetxController implements PlayerU
   /// list would leave those builders with no observable to attach to — which
   /// GetX reports as an error rather than as a stale list. Mutate it in place
   /// (`addAll`, `removeAt`, index assignment) and the list notifies by itself.
-  final RxList<File> videoFiles = RxList<File>();
+  ///
+  /// Built from a growable list: `RxList()`'s default initial value is `const []`,
+  /// so the obvious constructor produces a list whose length cannot be changed —
+  /// `clear()`, `addAll()` and `removeAt()` all throw `UnmodifiableListMixin` at
+  /// runtime while still type-checking.
+  final RxList<File> videoFiles = RxList<File>(<File>[]);
   final currentIndex = 0.obs;
   final isLoading = true.obs;
   final isPlaying = false.obs;
