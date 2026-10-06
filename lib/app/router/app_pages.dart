@@ -25,6 +25,7 @@ import 'package:pure_live/domains/live/presentation/hot_areas/hot_areas_page.dar
 import 'package:pure_live/domains/live/presentation/shield/danmu_shield_page.dart';
 import 'package:pure_live/domains/live/presentation/multiview/multiview_page.dart';
 import 'package:pure_live/domains/account/presentation/account/yy/yy_cookie_page.dart';
+import 'package:pure_live/domains/account/presentation/account/bigo/bigo_cookie_page.dart';
 import 'package:pure_live/domains/live/presentation/areas/favorite_areas_page.dart';
 import 'package:pure_live/domains/live/presentation/area_rooms/area_rooms_page.dart';
 import 'package:pure_live/domains/account/presentation/account/soop/soop_cookie_page.dart';
@@ -153,6 +154,11 @@ class AppPages {
       bindings: [TwitchCookieBinding()],
     ),
     GetPage(name: RoutePath.kYyCookie, page: _smoothPage(() => const YyCookiePage()), bindings: [YyCookieBinding()]),
+    GetPage(
+      name: RoutePath.kBigoCookie,
+      page: _smoothPage(() => const BigoCookiePage()),
+      bindings: [BigoCookieBinding()],
+    ),
 
     GetPage(name: RoutePath.kSoop, page: _smoothPage(() => const SoopCookiePage()), bindings: [SoopCookieBinding()]),
 

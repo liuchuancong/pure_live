@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:pure_live/core/config/cookie_settings_controller.dart';
 import 'package:pure_live/core/models/live_room.dart';
 import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/core/network/request_scope.dart';
@@ -149,12 +150,24 @@ class BigoApi {
   static String _defaultCallback() =>
       'jsonpcallback_${DateTime.now().millisecondsSinceEpoch}_${DateTime.now().microsecondsSinceEpoch % 1000000}';
 
+  /// 账号页配置的 bigo.tv Cookie。Bigo 2026-10 起对匿名会话收紧媒体下发
+  /// （`needLogin:true`、`hls_src` 空，网页端同样只显示"打开App看直播"），
+  /// 登录态 Cookie 是唯一的解法。设置页可能尚未注册（测试/极早启动），读不到就当没有。
+  static String configuredCookie() {
+    try {
+      return CookieSettingsController.to.bigoCookie.value.trim();
+    } catch (_) {
+      return '';
+    }
+  }
+
   static Future<({int status, String body})> _defaultRequest(
     String method,
     Uri uri,
     Map<String, String>? form,
     CancelToken cancel,
   ) async {
+    final cookie = configuredCookie();
     final response = await HttpClient.instance.dio.request<ResponseBody>(
       uri.toString(),
       data: form,
@@ -163,7 +176,7 @@ class BigoApi {
         method: method,
         responseType: ResponseType.stream,
         followRedirects: false,
-        headers: headers,
+        headers: {if (cookie.isNotEmpty) 'Cookie': cookie, ...headers},
         contentType: form == null ? null : Headers.formUrlEncodedContentType,
         validateStatus: (_) => true,
       ),

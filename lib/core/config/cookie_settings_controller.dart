@@ -40,6 +40,7 @@ class CookieSettingsController extends GetxController {
   final RxString twitchCookie = hiveString('twitchCookie', '');
   final RxString soopCookie = hiveString('soopCookie', '');
   final RxString yyCookie = hiveString('yyCookie', '');
+  final RxString bigoCookie = hiveString('bigoCookie', '');
 
   @override
   void onInit() {
@@ -59,6 +60,7 @@ class CookieSettingsController extends GetxController {
       twitchCookie,
       soopCookie,
       yyCookie,
+      bigoCookie,
     ]) {
       final normalized = normalizeAccountCookie(cookie.v);
       if (normalized != cookie.v) cookie.v = normalized;
@@ -82,6 +84,7 @@ class CookieSettingsController extends GetxController {
       twitchCookie,
       soopCookie,
       yyCookie,
+      bigoCookie,
     ]) {
       if (value.v.isNotEmpty) return true;
     }
@@ -110,6 +113,7 @@ class CookieSettingsController extends GetxController {
     twitchCookie.v = '';
     soopCookie.v = '';
     yyCookie.v = '';
+    bigoCookie.v = '';
     bilibiliUid.v = 0;
     clearDouyuSession();
   }
@@ -128,6 +132,7 @@ class CookieSettingsController extends GetxController {
       'twitchCookie': twitchCookie.v,
       'soopCookie': soopCookie.v,
       'yyCookie': yyCookie.v,
+      'bigoCookie': bigoCookie.v,
     };
   }
 
@@ -146,6 +151,7 @@ class CookieSettingsController extends GetxController {
       'twitchCookie': normalizeAccountCookie((json['twitchCookie'] ?? '') as String),
       'soopCookie': normalizeAccountCookie((json['soopCookie'] ?? '') as String),
       'yyCookie': normalizeAccountCookie((json['yyCookie'] ?? '') as String),
+      'bigoCookie': normalizeAccountCookie((json['bigoCookie'] ?? '') as String),
     };
   }
 
@@ -163,6 +169,7 @@ class CookieSettingsController extends GetxController {
     twitchCookie.v = parsed['twitchCookie'];
     soopCookie.v = parsed['soopCookie'];
     yyCookie.v = parsed['yyCookie'];
+    bigoCookie.v = parsed['bigoCookie'];
 
     onRestored?.call();
   }

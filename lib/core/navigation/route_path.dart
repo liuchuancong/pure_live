@@ -90,6 +90,8 @@ class RoutePath {
 
   static const kYyCookie = "/yy_cookie";
 
+  static const kBigoCookie = "/bigo_cookie";
+
   static const kSoop = "/soop";
 
   // WebDavPage

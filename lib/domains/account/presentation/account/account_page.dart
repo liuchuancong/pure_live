@@ -75,6 +75,23 @@ class AccountPage extends GetView<AccountController> {
               );
             }),
             Obx(() {
+              final isLogined = cookie.bigoCookie.v.isNotEmpty;
+              return _buildAccountTile(
+                context,
+                logo: 'assets/images/bigo.png',
+                title: i18n("site_bigo"),
+                subtitle: isLogined ? i18n("logined") : i18n("set_cookie"),
+                isLogined: isLogined,
+                onTap: () => isLogined
+                    ? _showLogoutDialog(
+                        context,
+                        accountName: i18n('site_bigo'),
+                        onConfirm: () => cookie.bigoCookie.v = "",
+                      )
+                    : Get.toNamed(RoutePath.kBigoCookie),
+              );
+            }),
+            Obx(() {
               final isLogined = cookie.douyinCookie.v.isNotEmpty;
               return _buildAccountTile(
                 context,
@@ -330,10 +347,7 @@ class AccountPage extends GetView<AccountController> {
         scrollable: true,
         insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
         title: Text(title),
-        content: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 420),
-          child: Text(message),
-        ),
+        content: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 420), child: Text(message)),
         actionsOverflowDirection: VerticalDirection.down,
         actionsOverflowButtonSpacing: 8,
         actions: [

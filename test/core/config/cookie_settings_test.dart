@@ -78,6 +78,7 @@ void main() {
       cookies.twitchCookie.v = 'twitch-session';
       cookies.soopCookie.v = 'soop-session';
       cookies.yyCookie.v = 'yy-session';
+      cookies.bigoCookie.v = 'bigo-session';
 
       cookies.clearAllCookies();
 
@@ -93,6 +94,7 @@ void main() {
       expect(cookies.twitchCookie.v, isEmpty);
       expect(cookies.soopCookie.v, isEmpty);
       expect(cookies.yyCookie.v, isEmpty);
+      expect(cookies.bigoCookie.v, isEmpty);
     });
 
     test('导出与导入的字段集一致，且值能原样往返', () {

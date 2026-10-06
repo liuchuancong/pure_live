@@ -16,6 +16,7 @@ import 'package:pure_live/domains/account/presentation/account/kuaishou/kuaishou
 import 'package:pure_live/domains/account/presentation/account/soop/soop_cookie_controller.dart';
 import 'package:pure_live/domains/account/presentation/account/twitch/twitch_cookie_controller.dart';
 import 'package:pure_live/domains/account/presentation/account/yy/yy_cookie_controller.dart';
+import 'package:pure_live/domains/account/presentation/account/bigo/bigo_cookie_controller.dart';
 import 'package:pure_live/domains/live/presentation/area_rooms/area_rooms_controller.dart';
 import 'package:pure_live/domains/live/presentation/areas/favorite_areas_controller.dart';
 import 'package:pure_live/domains/live/presentation/hot_areas/hot_areas_controller.dart';
@@ -84,6 +85,13 @@ class YyCookieBinding extends Binding {
   @override
   List<Bind> dependencies() {
     return [Bind.lazyPut(() => YyCookieBindingCookieController())];
+  }
+}
+
+class BigoCookieBinding extends Binding {
+  @override
+  List<Bind> dependencies() {
+    return [Bind.lazyPut(() => BigoCookieBindingCookieController())];
   }
 }
 
