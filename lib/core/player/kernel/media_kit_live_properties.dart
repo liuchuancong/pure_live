@@ -206,13 +206,21 @@ abstract final class MediaKitLiveProperties {
     required Uri uri,
     required String? declaredFormat,
     required String proxy,
+    // Live lines that carry no declared start cannot seek anywhere useful:
+    // with force-seekable on, an engine/video-output rebind makes mpv try to
+    // preserve position and fail ("Cannot seek backward in linear streams"),
+    // clearing the demuxer buffer and forcing a rebuffer. Rotation rooms stamp
+    // a start ([seekStart] true) and must stay seekable to reach it; a local
+    // file ([live] false) is genuinely seekable.
+    bool live = true,
+    bool seekStart = false,
   }) {
     final bool privateInput = isPrivatePlaybackInput(uri);
     final bool playlist = (declaredFormat ?? (isHlsManifestUri(uri) ? 'hls' : null)) == 'hls';
     return <String, String>{
       'http-proxy': privateInput || playsDirectBehindProxy(uri) ? '' : proxy,
       'demuxer-lavf-format': playlist && !privateInput ? 'hls' : '',
-      'force-seekable': playlist ? 'no' : 'yes',
+      'force-seekable': playlist || (live && !seekStart) ? 'no' : 'yes',
       'cache-pause': playlist ? 'no' : 'yes',
     };
   }
@@ -224,6 +232,8 @@ abstract final class MediaKitLiveProperties {
       uri: source.uri,
       declaredFormat: declaredStreamFormatOf(source),
       proxy: PlaybackProxyPolicy.currentNativeUrl(privateInput: false),
+      live: source.isLive,
+      seekStart: hasDeclaredSeekStart(source),
     );
     developer.log('${source.uri.host} -> $properties', name: 'PlaybackProxy');
     for (final entry in properties.entries) {

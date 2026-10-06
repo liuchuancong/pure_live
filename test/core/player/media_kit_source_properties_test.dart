@@ -5,8 +5,14 @@ import 'package:pure_live/core/player/kernel/media_kit_live_properties.dart';
 
 const _proxy = 'http://127.0.0.1:7897';
 
-Map<String, String> _properties(String url, {String? declared}) =>
-    MediaKitLiveProperties.sourceProperties(uri: Uri.parse(url), declaredFormat: declared, proxy: _proxy);
+Map<String, String> _properties(String url, {String? declared, bool live = true, bool seekStart = false}) =>
+    MediaKitLiveProperties.sourceProperties(
+      uri: Uri.parse(url),
+      declaredFormat: declared,
+      proxy: _proxy,
+      live: live,
+      seekStart: seekStart,
+    );
 
 void main() {
   group('按源决定的引擎属性', () {
@@ -20,14 +26,31 @@ void main() {
       });
     });
 
-    test('渐进式源保留可拖动与自动暂停', () {
-      // 数据连续到达，缓存目标凑得齐；B 站轮播房还要靠 seek 落到声明的起播位置。
+    test('普通直播 FLV 关掉强制可 seek', () {
+      // 换绑视频输出时 mpv 会按当前(直播流巨大的)时间戳发起保位置 seek, 线性流
+      // seek 不了又失败, 清掉 demuxer 缓冲引发一次重缓冲, 看起来就是播放-卡顿-又播放。
+      // 普通直播没有合法 seek 目标, 关掉即可。cache-pause 仍保留: 断流时按目标回灌。
       expect(_properties('https://cdn.example.com/live/room.flv'), {
+        'http-proxy': _proxy,
+        'demuxer-lavf-format': '',
+        'force-seekable': 'no',
+        'cache-pause': 'yes',
+      });
+    });
+
+    test('轮播房带声明起播点时保持可 seek', () {
+      // B 站轮播/回放房靠一次 seek 落到平台声明的 video.start, 这条必须仍可 seek。
+      expect(_properties('https://cdn.example.com/live/room.flv', seekStart: true), {
         'http-proxy': _proxy,
         'demuxer-lavf-format': '',
         'force-seekable': 'yes',
         'cache-pause': 'yes',
       });
+    });
+
+    test('本地文件不是直播, 保持可拖动', () {
+      // 本地录播播放页走 SourceType.file, live=false, 进度条要能任意拖动。
+      expect(_properties('/storage/emulated/0/Download/PureLiveRecords/a.mp4', live: false)['force-seekable'], 'yes');
     });
 
     test('平台声明优先于 URL 形状', () {
@@ -61,7 +84,8 @@ void main() {
       expect(_properties('http://localhost:4321/live.flv'), {
         'http-proxy': '',
         'demuxer-lavf-format': '',
-        'force-seekable': 'yes',
+        // 回环 FLV 中继仍是线性直播流, 同样没有合法 seek 目标。
+        'force-seekable': 'no',
         'cache-pause': 'yes',
       });
       expect(_properties('http://[::1]:4321/index.m3u8')['http-proxy'], '');
@@ -79,6 +103,21 @@ void main() {
       final bare = PlayerSource(id: SourceId('live-2'), uri: Uri.parse('https://cdn.example.com/room.flv'));
       expect(playbackStreamFormatMetadata(null), isEmpty);
       expect(declaredStreamFormatOf(bare), isNull);
+    });
+
+    test('声明起播点随源的 metadata 往返, 零值不写键', () {
+      expect(playbackSeekStartMetadata(const Duration(seconds: 30)), isNotEmpty);
+      expect(playbackSeekStartMetadata(Duration.zero), isEmpty);
+
+      final rotation = PlayerSource(
+        id: SourceId('live-3'),
+        uri: Uri.parse('https://cdn.example.com/live/room.flv'),
+        metadata: playbackSeekStartMetadata(const Duration(minutes: 2)),
+      );
+      expect(hasDeclaredSeekStart(rotation), isTrue);
+
+      final plain = PlayerSource(id: SourceId('live-4'), uri: Uri.parse('https://cdn.example.com/room.flv'));
+      expect(hasDeclaredSeekStart(plain), isFalse);
     });
   });
 }
