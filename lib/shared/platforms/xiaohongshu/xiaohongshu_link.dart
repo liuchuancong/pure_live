@@ -1,7 +1,7 @@
-import 'package:pure_live/shared/platforms/live_short_link_session.dart';
-
 import 'xiaohongshu_api.dart';
 import 'xiaohongshu_share.dart';
+
+import 'package:pure_live/shared/platforms/live_short_link_session.dart';
 
 /// Broadcast room identity only. Profile IDs, notes and recommended rooms are
 /// not aliases. Resolve short links only within the observed share hosts/routes.

@@ -33,6 +33,15 @@ class HttpClient {
         createHttpClient: () {
           final client = io.HttpClient();
           client.idleTimeout = const Duration(seconds: 30);
+          // When the app proxy is enabled, Clash (or similar) intercepts
+          // HTTPS traffic and re-signs TLS with its own CA. That certificate
+          // isn't in the system trust chain, so every request through the
+          // proxy would fail with HandshakeException. The user explicitly
+          // enabled the proxy, so we trust the proxy's certificate.
+          client.badCertificateCallback = (cert, host, port) {
+            final proxyCtrl = SettingsService.to.proxy;
+            return proxyCtrl.enableAppProxy.value;
+          };
           client.findProxy = (uri) {
             final proxyCtrl = SettingsService.to.proxy;
             return buildProxyDirective(
