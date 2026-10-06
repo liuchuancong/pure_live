@@ -2225,5 +2225,8 @@
   "fullscreen_watch": "全屏观看",
   "recording_fit_contain": "原始",
   "recording_fit_cover": "铺满",
-  "recording_fit_fill": "拉伸"
+  "recording_fit_fill": "拉伸",
+  "playback_rate": "倍速",
+  "video_fit": "画面比例",
+  "settings_more": "设置"
 }

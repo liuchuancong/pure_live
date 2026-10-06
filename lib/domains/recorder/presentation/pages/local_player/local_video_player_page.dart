@@ -1,13 +1,14 @@
-import 'dart:async';
 import 'dart:io';
+import 'dart:async';
 
-import 'package:media_core_ui/media_core_ui.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/core/index.dart';
+import 'package:media_core_ui/media_core_ui.dart';
+import 'package:pure_live/core/consts/app_consts.dart';
 import 'package:pure_live/core/platform/platform_utils.dart';
 import 'package:pure_live/core/player/kernel/player_kernel_service.dart';
-import 'package:pure_live/core/player/presentation/danmaku/player_danmaku_actions.dart';
 import 'package:pure_live/core/player/presentation/player_ui_controller.dart';
+import 'package:pure_live/core/player/presentation/danmaku/player_danmaku_actions.dart';
 import 'package:pure_live/domains/recorder/presentation/pages/local_player/local_video_player_controller.dart';
 
 /// One recording, played.
@@ -448,8 +449,11 @@ void _showPlaylist(BuildContext context, LocalVideoPlayerController controller) 
 }
 
 // ---------------------------------------------------------------------------
-// Phone: short-video shape — the picture on top, the recording's context panel
-// below, and the file list in a bottom sheet ("选集")
+// Phone: short-video shape, after the reference app — a dark top bar with the
+// title, the speed chip and the ⋮ overflow; the overflow opens the settings
+// bottom sheet (speed / fit / danmaku / PiP / small window); the "选集" bar
+// under the context panel opens the episode list. Landscape is the fullscreen
+// shape.
 // ---------------------------------------------------------------------------
 
 class _MobileLayout extends StatefulWidget {
@@ -476,7 +480,9 @@ class _MobileLayoutState extends State<_MobileLayout> {
     return Scaffold(
       backgroundColor: Colors.black,
       body: Obx(() {
-        if (controller.isLoading.value) {
+        // Scanning the folder is the only true "nothing to show yet" state; once
+        // a file is open the player surface itself carries its own loading.
+        if (controller.isLoading.value && controller.videoFiles.isEmpty) {
           return const Center(child: CircularProgressIndicator());
         }
         if (controller.videoFiles.isEmpty) {
@@ -507,7 +513,7 @@ class _MobileLayoutState extends State<_MobileLayout> {
                   ],
                 ),
               ),
-              _ContextPanel(controller: controller, onOpenPlaylist: () => _showPlaylist(context, controller)),
+              _ContextPanel(controller: controller),
             ],
           ),
         );
@@ -516,10 +522,8 @@ class _MobileLayoutState extends State<_MobileLayout> {
   }
 }
 
-/// Portrait chrome over the picture: back, the title, and the fullscreen pill.
-///
-/// The transport lives in the library's own bar over the picture; this row is
-/// only where you are and how to leave.
+/// Portrait chrome over the picture: back, the title, the speed chip and the
+/// ⋮ overflow — the same three the reference app shows.
 class _PortraitTopBar extends StatelessWidget {
   const _PortraitTopBar({required this.controller});
 
@@ -544,27 +548,22 @@ class _PortraitTopBar extends StatelessWidget {
               IconButton(color: Colors.white, icon: const Icon(Icons.arrow_back_rounded), onPressed: () => Get.back()),
               Expanded(
                 child: Obx(
-                  () => Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        controller.roomTitle ?? i18n('recorder_local_player_title'),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
-                      ),
-                      Text(
-                        '${controller.currentIndex.value + 1}/${controller.videoFiles.length}  ${controller.currentFileName}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(color: Colors.white70, fontSize: 11),
-                      ),
-                    ],
+                  () => Text(
+                    '${controller.roomTitle ?? i18n('recorder_local_player_title')}  '
+                    '第${controller.currentIndex.value + 1}个',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
                   ),
                 ),
               ),
-              _FullscreenPill(controller: controller),
+              _SpeedChip(controller: controller),
+              IconButton(
+                color: Colors.white,
+                tooltip: i18n('settings_more'),
+                icon: const Icon(Icons.more_vert_rounded),
+                onPressed: () => _showSettingsSheet(context, controller),
+              ),
             ],
           ),
         ),
@@ -573,31 +572,35 @@ class _PortraitTopBar extends StatelessWidget {
   }
 }
 
-/// The fullscreen pill over the picture: the one affordance the short-video
-/// layout keeps on the video itself, since the library's bar with the real
-/// fullscreen button hides with the rest of the chrome.
-class _FullscreenPill extends StatelessWidget {
-  const _FullscreenPill({required this.controller});
+/// The "1.0x" chip: tapping it opens the same settings sheet the ⋮ opens,
+/// scrolled to the speed row — one surface, two entries.
+class _SpeedChip extends StatelessWidget {
+  const _SpeedChip({required this.controller});
 
   final LocalVideoPlayerController controller;
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white24,
-      borderRadius: BorderRadius.circular(18),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(18),
-        onTap: () => unawaited(controller.enterLandscapeFullscreen()),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.fullscreen_rounded, size: 18, color: Colors.white),
-              const SizedBox(width: 5),
-              Text(i18n('fullscreen_watch'), style: const TextStyle(color: Colors.white, fontSize: 12.5)),
-            ],
+    return Obx(
+      () => Material(
+        color: Colors.white24,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () => _showSettingsSheet(context, controller),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.speed_rounded, size: 16, color: Colors.white),
+                const SizedBox(width: 4),
+                Text(
+                  '${controller.playbackRate.value.toStringAsFixed(controller.playbackRate.value == controller.playbackRate.value.roundToDouble() ? 1 : 2)}x',
+                  style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -605,15 +608,282 @@ class _FullscreenPill extends StatelessWidget {
   }
 }
 
-/// The recording's context below the picture, in the short-video arrangement:
-/// the title and where you are, a row of actions (danmaku, fit, PiP, small
-/// window), a playlist affordance, then a thin progress line that mirrors the
-/// library bar's timeline.
-class _ContextPanel extends StatelessWidget {
-  const _ContextPanel({required this.controller, required this.onOpenPlaylist});
+/// The reference app's settings bottom sheet: speed, fit, danmaku, PiP, small
+/// window — then the episode bar at the very bottom of the panel opens the
+/// playlist sheet.
+void _showSettingsSheet(BuildContext context, LocalVideoPlayerController controller) {
+  final theme = Theme.of(context);
+  showModalBottomSheet<void>(
+    context: context,
+    backgroundColor: theme.colorScheme.surface,
+    showDragHandle: true,
+    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(18))),
+    builder: (sheetContext) {
+      return SafeArea(
+        top: false,
+        child: Obx(() {
+          final hasChat = controller.hasDanmaku.value;
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _SheetSpeedRow(controller: controller, theme: theme),
+              _SheetFitRow(controller: controller, theme: theme),
+              if (hasChat)
+                _SheetSwitchRow(
+                  theme: theme,
+                  icon: Icons.subtitles_rounded,
+                  title: i18n('danmaku'),
+                  value: !controller.danmakuHidden.value,
+                  onChanged: (v) => controller.danmakuHidden.value = !v,
+                ),
+              _SheetActionRow(
+                theme: theme,
+                icon: Icons.picture_in_picture_rounded,
+                title: i18n('pip_window_play'),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  unawaited(_enterRecordingPip(controller));
+                },
+              ),
+              _SheetActionRow(
+                theme: theme,
+                icon: Icons.picture_in_picture_alt_rounded,
+                title: i18n('float_window_play'),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  unawaited(controller.enterFloating());
+                },
+              ),
+              _SheetActionRow(
+                theme: theme,
+                icon: Icons.playlist_play_rounded,
+                title: i18n('recorder_local_player_title'),
+                trailing: '${controller.videoFiles.length}',
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  unawaited(_openPlaylistSheet(context, controller));
+                },
+              ),
+              const SizedBox(height: 6),
+            ],
+          );
+        }),
+      );
+    },
+  );
+}
+
+/// One settings row: an icon, a label, and a trailing widget or chevron.
+class _SheetRow extends StatelessWidget {
+  const _SheetRow({required this.theme, required this.icon, required this.title, this.trailing, this.onTap});
+
+  final ThemeData theme;
+  final IconData icon;
+  final String title;
+  final Widget? trailing;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
+          children: [
+            Icon(icon, size: 22, color: theme.colorScheme.onSurface),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(title, style: TextStyle(fontSize: 15, color: theme.colorScheme.onSurface)),
+            ),
+            ?trailing,
+            if (onTap != null && trailing == null)
+              Icon(Icons.chevron_right_rounded, size: 20, color: theme.colorScheme.onSurfaceVariant),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SheetActionRow extends StatelessWidget {
+  const _SheetActionRow({
+    required this.theme,
+    required this.icon,
+    required this.title,
+    this.trailing,
+    required this.onTap,
+  });
+
+  final ThemeData theme;
+  final IconData icon;
+  final String title;
+  final String? trailing;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return _SheetRow(
+      theme: theme,
+      icon: icon,
+      title: title,
+      trailing: trailing == null ? null : Text(trailing!),
+      onTap: onTap,
+    );
+  }
+}
+
+class _SheetSwitchRow extends StatelessWidget {
+  const _SheetSwitchRow({
+    required this.theme,
+    required this.icon,
+    required this.title,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final ThemeData theme;
+  final IconData icon;
+  final String title;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return _SheetRow(
+      theme: theme,
+      icon: icon,
+      title: title,
+      trailing: Switch(value: value, onChanged: onChanged),
+    );
+  }
+}
+
+/// The speed row: the label plus one chip per supported rate.
+class _SheetSpeedRow extends StatelessWidget {
+  const _SheetSpeedRow({required this.controller, required this.theme});
 
   final LocalVideoPlayerController controller;
-  final VoidCallback onOpenPlaylist;
+  final ThemeData theme;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      child: Row(
+        children: [
+          Icon(Icons.speed_rounded, size: 22, color: theme.colorScheme.onSurface),
+          const SizedBox(width: 14),
+          Text(i18n('playback_rate'), style: TextStyle(fontSize: 15, color: theme.colorScheme.onSurface)),
+          const SizedBox(width: 12),
+          Expanded(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Obx(
+                () => Row(
+                  children: [
+                    for (final rate in LocalVideoPlayerController.defaultRates)
+                      Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: ChoiceChip(
+                          label: Text('${rate.toStringAsFixed(rate == rate.roundToDouble() ? 1 : 2)}x'),
+                          selected: (controller.playbackRate.value - rate).abs() < 0.001,
+                          onSelected: (_) => unawaited(controller.setRate(rate)),
+                          visualDensity: VisualDensity.compact,
+                          labelStyle: TextStyle(
+                            fontSize: 12.5,
+                            color: (controller.playbackRate.value - rate).abs() < 0.001
+                                ? theme.colorScheme.onPrimary
+                                : theme.colorScheme.onSurface,
+                          ),
+                          selectedColor: theme.colorScheme.primary,
+                          showCheckmark: false,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The fit row: one chip per stored fit mode, the same six the room cycles.
+class _SheetFitRow extends StatelessWidget {
+  const _SheetFitRow({required this.controller, required this.theme});
+
+  final LocalVideoPlayerController controller;
+  final ThemeData theme;
+
+  @override
+  Widget build(BuildContext context) {
+    final options = AppConsts().videoFitType;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      child: Row(
+        children: [
+          Icon(Icons.high_quality_rounded, size: 22, color: theme.colorScheme.onSurface),
+          const SizedBox(width: 14),
+          Text(i18n('video_fit'), style: TextStyle(fontSize: 15, color: theme.colorScheme.onSurface)),
+          const SizedBox(width: 12),
+          Expanded(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Obx(() {
+                final settings = SettingsService.to.player;
+                final current = settings.resolvedVideoFitIndex;
+                return Row(
+                  children: [
+                    for (var i = 0; i < options.length; i++)
+                      Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: ChoiceChip(
+                          label: Text(i18n(options[i]['desc'] as String)),
+                          selected: current == i,
+                          onSelected: (_) => settings.videoFitIndex.v = i,
+                          visualDensity: VisualDensity.compact,
+                          labelStyle: TextStyle(
+                            fontSize: 12.5,
+                            color: current == i ? theme.colorScheme.onPrimary : theme.colorScheme.onSurface,
+                          ),
+                          selectedColor: theme.colorScheme.primary,
+                          showCheckmark: false,
+                        ),
+                      ),
+                  ],
+                );
+              }),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Opens the episode list sheet on top of whatever is showing.
+Future<void> _openPlaylistSheet(BuildContext context, LocalVideoPlayerController controller) {
+  return showModalBottomSheet<void>(
+    context: context,
+    backgroundColor: Theme.of(context).colorScheme.surface,
+    showDragHandle: true,
+    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(18))),
+    builder: (_) => SizedBox(
+      height: MediaQuery.sizeOf(context).height * 0.62,
+      child: _PlaylistPanel(controller: controller, dense: true, onPicked: () => Navigator.of(context).pop()),
+    ),
+  );
+}
+
+/// The recording's context below the picture: the title, the "选集" bar from the
+/// reference app, then a thin progress line mirroring the timeline.
+class _ContextPanel extends StatelessWidget {
+  const _ContextPanel({required this.controller});
+
+  final LocalVideoPlayerController controller;
 
   @override
   Widget build(BuildContext context) {
@@ -648,23 +918,34 @@ class _ContextPanel extends StatelessWidget {
               ),
             ),
           ),
+          // The "选集" bar: a summary of the list and the affordance that opens it.
           Padding(
-            padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: _RecordingActions(controller: controller, onDark: false, includePlaylist: false),
+            padding: const EdgeInsets.fromLTRB(12, 10, 12, 4),
+            child: Obx(
+              () => Material(
+                color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.6),
+                borderRadius: BorderRadius.circular(12),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(12),
+                  onTap: () => unawaited(_openPlaylistSheet(context, controller)),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            '${i18n('recorder_local_player_title')} · ${controller.videoFiles.length}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(fontSize: 13.5, color: theme.colorScheme.onSurface),
+                          ),
+                        ),
+                        Icon(Icons.keyboard_arrow_up_rounded, size: 18, color: theme.colorScheme.onSurfaceVariant),
+                      ],
+                    ),
                   ),
                 ),
-                IconButton(
-                  tooltip: i18n('recorder_local_player_title'),
-                  color: theme.colorScheme.onSurfaceVariant,
-                  icon: const Icon(Remix.play_list_line),
-                  onPressed: onOpenPlaylist,
-                ),
-              ],
+              ),
             ),
           ),
           // A read-only progress mirror: the real scrubber stays in the
@@ -675,7 +956,7 @@ class _ContextPanel extends StatelessWidget {
             final positionMs = controller.position.value.inMilliseconds;
             final progress = durationMs <= 0 ? 0.0 : (positionMs / durationMs).clamp(0.0, 1.0);
             return Padding(
-              padding: const EdgeInsets.fromLTRB(16, 2, 16, 14),
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 14),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(2),
                 child: LinearProgressIndicator(

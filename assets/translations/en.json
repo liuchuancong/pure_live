@@ -2225,5 +2225,8 @@
   "fullscreen_watch": "Watch fullscreen",
   "recording_fit_contain": "Original",
   "recording_fit_cover": "Fill",
-  "recording_fit_fill": "Stretch"
+  "recording_fit_fill": "Stretch",
+  "playback_rate": "Playback speed",
+  "video_fit": "Picture fit",
+  "settings_more": "Settings"
 }
