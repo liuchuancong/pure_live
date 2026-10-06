@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:pure_live/core/index.dart';
+import 'package:pure_live/core/player/presentation/compact_source_orientation.dart';
 import 'package:pure_live/domains/live/domain/global_player_service.dart';
 import 'package:pure_live/core/config/float_window_geometry.dart';
 import 'package:media_core_floating/media_core_floating.dart';
@@ -71,7 +72,7 @@ class FloatingPlayback {
     // instead of restoring the shape of the surface that is gone.
     final entry = OverlayEntry(
       builder: (context) {
-        final isPortraitSurface = _isPortraitSurface(context);
+        final isPortraitSurface = _isPortraitStream();
         return FloatingWindowOverlay(
           visible: isFloatingVideoVisible.stream,
           initiallyVisible: true,
@@ -116,9 +117,13 @@ class FloatingPlayback {
     isFloating.value = true;
   }
 
-  /// Whether the surface the window floats in is taller than it is wide.
-  static bool _isPortraitSurface(BuildContext context) =>
-      FloatWindowGeometry.isPortraitSurface(MediaQuery.maybeSizeOf(context) ?? Size.zero);
+  /// Whether the stream in the window is taller than it is wide.
+  ///
+  /// The window is remembered per *stream* orientation, not per device one: a
+  /// portrait live stream wants a tall small window with its own position, a
+  /// landscape one a wide window of its own, and the viewer expects each to come
+  /// back the way they left it.
+  static bool _isPortraitStream() => CompactSourceOrientation.isPortrait;
 
   Rect? _rememberedFloatRect(bool isPortraitSurface) {
     final geometry = FloatWindowGeometry.decode(SettingsService.to.player.floatWindowGeometry.value);

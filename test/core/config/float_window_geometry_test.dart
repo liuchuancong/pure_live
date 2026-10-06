@@ -55,31 +55,5 @@ void main() {
       expect(emptyHeight.forPortrait(false), isNull);
       expect(notANumber.forPortrait(false), isNull);
     });
-
-    group('surface orientation', () {
-      test('a surface taller than it is wide is portrait', () {
-        expect(FloatWindowGeometry.isPortraitSurface(const Size(400, 800)), isTrue);
-        expect(FloatWindowGeometry.isPortraitSurface(const Size(800, 400)), isFalse);
-      });
-
-      test('a square surface counts as landscape', () {
-        expect(FloatWindowGeometry.isPortraitSurface(const Size(600, 600)), isFalse);
-      });
-
-      test('an unknown or degenerate size counts as landscape', () {
-        expect(FloatWindowGeometry.isPortraitSurface(Size.zero), isFalse);
-        expect(FloatWindowGeometry.isPortraitSurface(const Size(400, 0)), isFalse);
-        expect(FloatWindowGeometry.isPortraitSurface(const Size(double.infinity, 800)), isFalse);
-      });
-
-      test('the two orientations keep their own window', () {
-        final geometry = const FloatWindowGeometry.empty()
-            .withRect(isPortrait: FloatWindowGeometry.isPortraitSurface(const Size(800, 400)), rect: Rect.fromLTWH(1, 2, 3, 4))
-            .withRect(isPortrait: FloatWindowGeometry.isPortraitSurface(const Size(400, 800)), rect: Rect.fromLTWH(5, 6, 7, 8));
-
-        expect(geometry.forPortrait(false), Rect.fromLTWH(1, 2, 3, 4));
-        expect(geometry.forPortrait(true), Rect.fromLTWH(5, 6, 7, 8));
-      });
-    });
   });
 }

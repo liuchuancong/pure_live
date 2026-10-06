@@ -13,18 +13,6 @@ class FloatWindowGeometry {
 
   Rect? forPortrait(bool isPortrait) => isPortrait ? portrait : landscape;
 
-  /// Whether the surface the small window floats in is taller than it is wide.
-  ///
-  /// The window is remembered per surface orientation: a phone held upright and
-  /// the same phone turned sideways have different room on screen, and a size
-  /// that suits one of them is wrong in the other. A size that is unknown or
-  /// degenerate counts as landscape, which is where the anchor places a window
-  /// that has no memory yet.
-  static bool isPortraitSurface(Size size) {
-    if (!size.isFinite || size.isEmpty) return false;
-    return size.height > size.width;
-  }
-
   FloatWindowGeometry withRect({required bool isPortrait, required Rect rect}) {
     return isPortrait
         ? FloatWindowGeometry(landscape: landscape, portrait: rect)

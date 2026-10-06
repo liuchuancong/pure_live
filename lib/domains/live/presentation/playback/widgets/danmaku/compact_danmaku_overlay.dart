@@ -16,7 +16,7 @@ import 'package:pure_live/domains/live/presentation/playback/widgets/video_playe
 /// Only the compact-specific pool sizes and admission interval differ from the
 /// room's renderer.
 class CompactDanmakuOverlay extends StatelessWidget {
-  const CompactDanmakuOverlay({super.key, this.controller, this.barrage});
+  const CompactDanmakuOverlay({super.key, this.controller, this.barrage, this.respectPortraitPolicy = true});
 
   /// The room's controller, while it is alive: its per-room style (font, stroke,
   /// the room's own danmaku toggle) wins, exactly as in the full-size player.
@@ -30,6 +30,14 @@ class CompactDanmakuOverlay extends StatelessWidget {
   /// rendering after the room's controller is gone.
   final BarrageController? barrage;
 
+  /// Whether the room's portrait rule may hide this surface.
+  ///
+  /// The room hides danmaku over a portrait video when the viewer asked it to;
+  /// the in-app small window is a deliberate watch surface the viewer sized and
+  /// placed themselves, so it keeps showing danmaku (the master danmaku switch
+  /// still applies) and turns this off.
+  final bool respectPortraitPolicy;
+
   BarrageController get _barrage => barrage ?? controller!.pipDanmakuController;
 
   @override
@@ -41,7 +49,8 @@ class CompactDanmakuOverlay extends StatelessWidget {
       final portraitMode = SettingsService.to.player.portraitDanmakuMode;
       final hidden =
           (room?.hideDanmaku.value ?? settings.hideDanmaku.v) ||
-          PortraitDanmakuPolicy.hidesDanmaku(isVerticalVideo: isVerticalVideo, mode: portraitMode);
+          (respectPortraitPolicy &&
+              PortraitDanmakuPolicy.hidesDanmaku(isVerticalVideo: isVerticalVideo, mode: portraitMode));
       if (hidden) {
         return const SizedBox.shrink();
       }

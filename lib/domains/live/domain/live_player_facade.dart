@@ -574,6 +574,9 @@ final class LivePlayerFacade {
     return CompactDanmakuOverlay(
       controller: controller is room_surface.VideoController ? controller : null,
       barrage: floatingDanmaku,
+      // The window is sized and placed by the viewer; a portrait stream must not
+      // blank it just because the room's own portrait rule hides danmaku there.
+      respectPortraitPolicy: false,
     );
   }
 
