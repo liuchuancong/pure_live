@@ -609,68 +609,115 @@ class _SpeedChip extends StatelessWidget {
 }
 
 /// The reference app's settings bottom sheet: speed, fit, danmaku, PiP, small
-/// window — then the episode bar at the very bottom of the panel opens the
-/// playlist sheet.
+/// window — grouped into rounded cards like the reference panel, the episode
+/// entry last.
 void _showSettingsSheet(BuildContext context, LocalVideoPlayerController controller) {
   final theme = Theme.of(context);
   showModalBottomSheet<void>(
     context: context,
-    backgroundColor: theme.colorScheme.surface,
+    backgroundColor: theme.colorScheme.surfaceContainerLowest,
     showDragHandle: true,
     shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(18))),
     builder: (sheetContext) {
       return SafeArea(
         top: false,
-        child: Obx(() {
-          final hasChat = controller.hasDanmaku.value;
-          return Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _SheetSpeedRow(controller: controller, theme: theme),
-              _SheetFitRow(controller: controller, theme: theme),
-              if (hasChat)
-                _SheetSwitchRow(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+          child: Obx(() {
+            final hasChat = controller.hasDanmaku.value;
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Playback card: speed and fit chips.
+                _SheetCard(
                   theme: theme,
-                  icon: Icons.subtitles_rounded,
-                  title: i18n('danmaku'),
-                  value: !controller.danmakuHidden.value,
-                  onChanged: (v) => controller.danmakuHidden.value = !v,
+                  children: [
+                    _SheetSpeedRow(controller: controller, theme: theme),
+                    Divider(height: 1, thickness: 0.6, color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
+                    _SheetFitRow(controller: controller, theme: theme),
+                  ],
                 ),
-              _SheetActionRow(
-                theme: theme,
-                icon: Icons.picture_in_picture_rounded,
-                title: i18n('pip_window_play'),
-                onTap: () {
-                  Navigator.of(sheetContext).pop();
-                  unawaited(_enterRecordingPip(controller));
-                },
-              ),
-              _SheetActionRow(
-                theme: theme,
-                icon: Icons.picture_in_picture_alt_rounded,
-                title: i18n('float_window_play'),
-                onTap: () {
-                  Navigator.of(sheetContext).pop();
-                  unawaited(controller.enterFloating());
-                },
-              ),
-              _SheetActionRow(
-                theme: theme,
-                icon: Icons.playlist_play_rounded,
-                title: i18n('recorder_local_player_title'),
-                trailing: '${controller.videoFiles.length}',
-                onTap: () {
-                  Navigator.of(sheetContext).pop();
-                  unawaited(_openPlaylistSheet(context, controller));
-                },
-              ),
-              const SizedBox(height: 6),
-            ],
-          );
-        }),
+                const SizedBox(height: 10),
+                // Presentation card: danmaku switch and the two windows.
+                _SheetCard(
+                  theme: theme,
+                  children: [
+                    if (hasChat) ...[
+                      _SheetSwitchRow(
+                        theme: theme,
+                        icon: Icons.subtitles_rounded,
+                        title: i18n('danmaku'),
+                        value: !controller.danmakuHidden.value,
+                        onChanged: (v) => controller.danmakuHidden.value = !v,
+                      ),
+                      Divider(
+                        height: 1,
+                        thickness: 0.6,
+                        color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+                      ),
+                    ],
+                    _SheetActionRow(
+                      theme: theme,
+                      icon: Icons.picture_in_picture_rounded,
+                      title: i18n('pip_window_play'),
+                      onTap: () {
+                        Navigator.of(sheetContext).pop();
+                        unawaited(_enterRecordingPip(controller));
+                      },
+                    ),
+                    Divider(height: 1, thickness: 0.6, color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
+                    _SheetActionRow(
+                      theme: theme,
+                      icon: Icons.picture_in_picture_alt_rounded,
+                      title: i18n('float_window_play'),
+                      onTap: () {
+                        Navigator.of(sheetContext).pop();
+                        unawaited(controller.enterFloating());
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                // Episodes card.
+                _SheetCard(
+                  theme: theme,
+                  children: [
+                    _SheetActionRow(
+                      theme: theme,
+                      icon: Icons.playlist_play_rounded,
+                      title: i18n('recorder_local_player_title'),
+                      trailing: i18n('local_player_files', args: {'count': '${controller.videoFiles.length}'}),
+                      onTap: () {
+                        Navigator.of(sheetContext).pop();
+                        unawaited(_openPlaylistSheet(context, controller));
+                      },
+                    ),
+                  ],
+                ),
+              ],
+            );
+          }),
+        ),
       );
     },
   );
+}
+
+/// One rounded card grouping sheet rows, the reference panel's container.
+class _SheetCard extends StatelessWidget {
+  const _SheetCard({required this.theme, required this.children});
+
+  final ThemeData theme;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: theme.colorScheme.surface,
+      borderRadius: BorderRadius.circular(16),
+      child: Column(children: children),
+    );
+  }
 }
 
 /// One settings row: an icon, a label, and a trailing widget or chevron.
@@ -878,8 +925,8 @@ Future<void> _openPlaylistSheet(BuildContext context, LocalVideoPlayerController
   );
 }
 
-/// The recording's context below the picture: the title, the "选集" bar from the
-/// reference app, then a thin progress line mirroring the timeline.
+/// The recording's context below the picture: the quick action row, the "选集"
+/// floating bar from the reference app, then a thin progress line.
 class _ContextPanel extends StatelessWidget {
   const _ContextPanel({required this.controller});
 
@@ -897,54 +944,66 @@ class _ContextPanel extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
             child: Obx(
-              () => Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    controller.roomTitle ?? i18n('recorder_local_player_title'),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 15.5, fontWeight: FontWeight.w600, color: theme.colorScheme.onSurface),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    controller.currentFileName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant),
-                  ),
-                ],
+              () => Text(
+                controller.roomTitle ?? i18n('recorder_local_player_title'),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(fontSize: 15.5, fontWeight: FontWeight.w600, color: theme.colorScheme.onSurface),
               ),
             ),
           ),
+          // The quick actions, on the panel where they are reachable with a
+          // thumb: danmaku, fit, PiP, small window.
+          Padding(
+            padding: const EdgeInsets.fromLTRB(8, 2, 8, 0),
+            child: _RecordingActions(controller: controller, onDark: false, includePlaylist: false),
+          ),
           // The "选集" bar: a summary of the list and the affordance that opens it.
           Padding(
-            padding: const EdgeInsets.fromLTRB(12, 10, 12, 4),
+            padding: const EdgeInsets.fromLTRB(12, 6, 12, 6),
             child: Obx(
-              () => Material(
-                color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.6),
-                borderRadius: BorderRadius.circular(12),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(12),
-                  onTap: () => unawaited(_openPlaylistSheet(context, controller)),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            '${i18n('recorder_local_player_title')} · ${controller.videoFiles.length}',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(fontSize: 13.5, color: theme.colorScheme.onSurface),
+              () => Row(
+                children: [
+                  Expanded(
+                    child: Material(
+                      color: theme.colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(14),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(14),
+                        onTap: () => unawaited(_openPlaylistSheet(context, controller)),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  '${i18n('recorder_local_player_title')} · ${controller.currentFileName}',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(fontSize: 13.5, color: theme.colorScheme.onSurface),
+                                ),
+                              ),
+                              SizedBox(
+                                width: 64,
+                                child: Text(
+                                  i18n('local_player_files', args: {'count': '${controller.videoFiles.length}'}),
+                                  textAlign: TextAlign.right,
+                                  maxLines: 1,
+                                  style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant),
+                                ),
+                              ),
+                              Icon(
+                                Icons.keyboard_arrow_up_rounded,
+                                size: 20,
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ],
                           ),
                         ),
-                        Icon(Icons.keyboard_arrow_up_rounded, size: 18, color: theme.colorScheme.onSurfaceVariant),
-                      ],
+                      ),
                     ),
                   ),
-                ),
+                ],
               ),
             ),
           ),
@@ -956,7 +1015,7 @@ class _ContextPanel extends StatelessWidget {
             final positionMs = controller.position.value.inMilliseconds;
             final progress = durationMs <= 0 ? 0.0 : (positionMs / durationMs).clamp(0.0, 1.0);
             return Padding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 14),
+              padding: const EdgeInsets.fromLTRB(16, 2, 16, 12),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(2),
                 child: LinearProgressIndicator(
