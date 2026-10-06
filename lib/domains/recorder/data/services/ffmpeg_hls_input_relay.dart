@@ -12,6 +12,8 @@ import 'package:pure_live/core/stream/hls_master_selection.dart';
 
 import 'package:pure_live/core/stream/hls_session_cookies.dart';
 
+import 'package:pure_live/shared/platforms/live_site.dart' show LiveStreamFacts, LiveStreamFormat;
+
 import 'hls_media_spool.dart';
 import 'hls_body_reader.dart';
 import 'hls_upstream_client.dart';
@@ -219,6 +221,11 @@ class FFmpegHlsInputRelay {
     // Custom media transforms stay on the direct relay path until the
     // prefetch cache can retain manifest-scoped transform ownership.
     HlsManifestMediaTransformResolver? manifestMediaTransform,
+    // The site's declared container/codec facts. When present they are the
+    // authoritative "is this a manifest" answer and a declared unresolved
+    // children set forces the rewrite relay, so recording engages on the same
+    // basis playback's resolveIngestPlan uses instead of the URL shape alone.
+    LiveStreamFacts? facts,
   }) async {
     final arguments = List<String>.of(source);
     final inputIndex = arguments.indexOf('-i');
@@ -233,11 +240,17 @@ class FFmpegHlsInputRelay {
     if (masterSelection != null && upstream != masterSelection.source) {
       throw const FormatException('Selected HLS master does not match input');
     }
+    // A declared format wins over the URL shape; only an undeclared line falls
+    // back to the suffix heuristic. This mirrors the playback ingest decision.
+    final bool declaredManifest = facts == null
+        ? (upstream != null && _isHlsUri(upstream))
+        : facts.format == LiveStreamFormat.hls;
+    final bool declaresRewrite = facts?.unresolvedChildren ?? false;
     if (sourceQueryPolicy != null &&
-        (upstream == null || !_isHlsUri(upstream) || !sourceQueryPolicy.matchesSource(upstream))) {
+        (upstream == null || !declaredManifest || !sourceQueryPolicy.matchesSource(upstream))) {
       throw const FormatException('HLS query policy does not match selected input');
     }
-    if (upstream == null || !_isHlsUri(upstream)) {
+    if (upstream == null || !declaredManifest) {
       if (requestCookies != null || masterSelection != null) throw const FormatException('Missing runtime HLS input');
       return null;
     }
@@ -247,6 +260,7 @@ class FFmpegHlsInputRelay {
     final supportedHost = !kIsWeb && (Platform.isAndroid || Platform.isLinux);
     if (!force &&
         !drainOnStop &&
+        !declaresRewrite &&
         sourceQueryPolicy == null &&
         requestCookies == null &&
         masterSelection == null &&

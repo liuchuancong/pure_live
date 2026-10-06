@@ -16,6 +16,7 @@ import 'package:pure_live/domains/recorder/data/ffmpeg/ffmpeg_event.dart';
 import 'package:pure_live/domains/recorder/data/ffmpeg/ffmpeg_types.dart';
 import 'package:pure_live/domains/recorder/data/services/ffmpeg_hls_input_relay.dart';
 import 'package:pure_live/core/stream/ffmpeg_flv_input_relay.dart';
+import 'package:pure_live/shared/platforms/live_site.dart' show LiveStreamFacts, LiveStreamFormat;
 import 'package:pure_live/domains/recorder/data/services/ffmpeg_tls_trust_store.dart';
 import 'package:pure_live/domains/recorder/data/services/recording_segment_clock.dart';
 
@@ -336,6 +337,7 @@ class FFmpegService {
     HlsRelayDiagnostics? hlsDiagnostics,
     FlvRelayDiagnostics? flvDiagnostics,
     bool hlsPrefetch = false,
+    LiveStreamFacts? facts,
   }) => _start(
     taskId: taskId,
     arguments: arguments,
@@ -345,6 +347,7 @@ class FFmpegService {
     hlsDiagnostics: hlsDiagnostics,
     flvDiagnostics: flvDiagnostics,
     hlsPrefetch: hlsPrefetch,
+    facts: facts,
   );
 
   Future<void> startOwned({
@@ -370,6 +373,7 @@ class FFmpegService {
     HlsRelayDiagnostics? hlsDiagnostics,
     FlvRelayDiagnostics? flvDiagnostics,
     bool hlsPrefetch = false,
+    LiveStreamFacts? facts,
     OwnedRecordSource? ownedSource,
     RecordArgumentsBuilder? buildArguments,
   }) async {
@@ -403,10 +407,17 @@ class FFmpegService {
           sourceQueryPolicy: sourceQueryPolicy,
           diagnostics: hlsDiagnostics,
           enablePrefetch: hlsPrefetch,
+          facts: facts,
         );
         request.check();
+        // Facts are converted to a plain bool before crossing into the core FLV
+        // relay, which must not import the shared LiveStreamFacts type.
         flvInputRelay = liveRecording
-            ? await FFmpegFlvInputRelay.startForArguments(arguments, diagnostics: flvDiagnostics)
+            ? await FFmpegFlvInputRelay.startForArguments(
+                arguments,
+                diagnostics: flvDiagnostics,
+                declaredFlv: facts?.format == LiveStreamFormat.flv,
+              )
             : null;
         request.check();
         inputArguments =

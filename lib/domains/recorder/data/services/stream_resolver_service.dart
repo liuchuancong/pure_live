@@ -39,6 +39,7 @@ class ResolvedRecordStream {
     this.invalidAt,
     this.sourceQueryPolicy,
     this.httpHeaders = const <String, String>{},
+    this.facts,
   }) : inputRecipe = null;
 
   const ResolvedRecordStream.owned({
@@ -52,7 +53,8 @@ class ResolvedRecordStream {
        refreshAt = null,
        invalidAt = null,
        sourceQueryPolicy = null,
-       httpHeaders = const <String, String>{};
+       httpHeaders = const <String, String>{},
+       facts = null;
 
   /// Empty only for an owned input; never pass this compatibility view to FFmpeg.
   final String url;
@@ -77,6 +79,12 @@ class ResolvedRecordStream {
   final DateTime? invalidAt;
   final HlsSourceQueryPolicy? sourceQueryPolicy;
   final Map<String, String> httpHeaders;
+
+  /// The site's declared container/codec facts for [url], or null when the site
+  /// declared none. Playback already drives its ingest decision from these; the
+  /// recorder carries them so its relay engages on the same authoritative basis
+  /// instead of guessing from the URL shape.
+  final LiveStreamFacts? facts;
 
   String get lineLabel => '线路${lineIndex + 1}';
 }
@@ -384,6 +392,7 @@ class StreamResolverService extends GetxService {
       inputRecipe: lineIndex == null || lineIndex == 0 ? resolution.inputRecipe : null,
       urls: validUrls,
       sourceQueryPolicies: resolution.sourceQueryPolicies,
+      streamFacts: resolution.streamFacts,
       httpHeaders: liveroom.httpHeaders,
       refreshTimes: validUrls.map((url) => leaseMetadata?.getPlayUrlRefreshAt(url)?.toUtc()).toList(growable: false),
       invalidTimes: validUrls.map((url) => leaseMetadata?.getPlayUrlInvalidAt(url)?.toUtc()).toList(growable: false),
@@ -421,6 +430,7 @@ class _ResolvedQuality {
     required this.invalidTimes,
     required this.sourceQueryPolicies,
     required this.httpHeaders,
+    this.streamFacts = const <String, LiveStreamFacts>{},
   });
 
   final LiveInputRecipe? inputRecipe;
@@ -435,22 +445,29 @@ class _ResolvedQuality {
   final Map<String, HlsSourceQueryPolicy> sourceQueryPolicies;
   final Map<String, String> httpHeaders;
 
+  /// Per-line container/codec facts declared by the site, keyed by the exact URL
+  /// they describe. Forwarded verbatim from [LivePlayUrlResolution.streamFacts]
+  /// so the recorder's ingest decision reads the same declaration as playback.
+  final Map<String, LiveStreamFacts> streamFacts;
+
   ResolvedRecordStream select(int position) {
     final input = inputRecipe;
     if (input != null) {
       return ResolvedRecordStream.owned(input: input, quality: appliedQuality, qualityCursorId: requestedQualityId);
     }
     final normalizedPosition = position.clamp(0, urls.length - 1);
+    final selectedUrl = urls[normalizedPosition];
     return ResolvedRecordStream(
-      url: urls[normalizedPosition],
+      url: selectedUrl,
       quality: appliedQuality,
       qualityCursorId: requestedQualityId,
       lineIndex: lineIndexes[normalizedPosition],
       candidateUrls: List<String>.unmodifiable([...urls.skip(normalizedPosition), ...urls.take(normalizedPosition)]),
       refreshAt: refreshTimes[normalizedPosition],
       invalidAt: invalidTimes[normalizedPosition],
-      sourceQueryPolicy: sourceQueryPolicies[urls[normalizedPosition]],
+      sourceQueryPolicy: sourceQueryPolicies[selectedUrl],
       httpHeaders: Map<String, String>.unmodifiable(httpHeaders),
+      facts: streamFacts[selectedUrl],
     );
   }
 }

@@ -80,15 +80,18 @@ class FFmpegFlvInputRelay {
   static Future<FFmpegFlvInputRelay?> startForArguments(
     List<String> arguments, {
     FlvRelayDiagnostics? diagnostics,
+    // The site declared this line is an FLV container. When true the relay
+    // engages even without a `.flv` suffix, matching the playback side's
+    // facts-driven decision; the suffix check stays only as the undeclared
+    // fallback. A plain bool so this core relay does not import the shared
+    // LiveStreamFacts type.
+    bool declaredFlv = false,
   }) async {
     final index = arguments.indexOf('-i');
     if (index < 0 || index + 1 >= arguments.length) return null;
     final upstream = Uri.tryParse(arguments[index + 1]);
-    if (upstream == null ||
-        !const {'http', 'https'}.contains(upstream.scheme) ||
-        !upstream.path.toLowerCase().endsWith('.flv')) {
-      return null;
-    }
+    if (upstream == null || !const {'http', 'https'}.contains(upstream.scheme)) return null;
+    if (!declaredFlv && !upstream.path.toLowerCase().endsWith('.flv')) return null;
     diagnostics?._attach();
     final headers = <String, String>{};
     for (var i = 0; i + 1 < index; i++) {
