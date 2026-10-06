@@ -9,6 +9,7 @@ import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/core/network/request_scope.dart';
 
 import 'bigo_token.dart';
+
 import 'package:pure_live/core/network/site_transport_failure.dart';
 
 enum BigoFailure {
@@ -414,7 +415,8 @@ class BigoApi {
     final owner = _ownerId(data['uid']);
     if (owner != expectedOwnerId) throw const BigoException(BigoFailure.identity);
     final login = _boolean(data['needLogin']);
-    final password = _boolean(data['passRoom']);
+    // 公开房间的 `passRoom` 现在会返回 `null`（观察到 2026-10），平台没说限制就按无密码读。
+    final password = data['passRoom'] is bool ? _boolean(data['passRoom']) : false;
     final paid = _text(data['isPaidShow']);
     if (!{'', '0', '1'}.contains(paid)) throw const BigoException(BigoFailure.schema);
     final alive = _binary(data['alive']);
@@ -461,7 +463,10 @@ class BigoApi {
     final title = data['roomTopic'] == null ? '' : _text(data['roomTopic']);
     final category = data['gameTitle'] == null ? '' : _text(data['gameTitle']);
     final rawAvatar = data['avatar'];
-    final avatar = rawAvatar == null || rawAvatar == '' ? null : _httpsUri(_text(rawAvatar)).toString();
+    // 头像放宽到 http(s)：CDN 会下发 http 地址（观察到 2026-10），不能因为一张图
+    // 让整次详情解析失败（与快照同一原则）。
+    final avatarPicture = _picture(rawAvatar == null ? '' : _text(rawAvatar));
+    final avatar = avatarPicture.isEmpty ? null : avatarPicture;
     // 快照放宽到 http(s)（上游 `_picture`）：读不出来就当作没有，不能因为一张图
     // 让整次详情解析失败。
     final snapshot = _picture(data['snapshot'] == null ? '' : _text(data['snapshot']));

@@ -33,9 +33,17 @@ void main() {
         'wire': wire,
       };
 
-      final dio = Dio(
-        BaseOptions(connectTimeout: const Duration(seconds: 15), receiveTimeout: const Duration(seconds: 20)),
-      )..httpClientAdapter = IOHttpClientAdapter(createHttpClient: () => io.HttpClient()..findProxy = (_) => _route());
+      final dio =
+          Dio(BaseOptions(connectTimeout: const Duration(seconds: 15), receiveTimeout: const Duration(seconds: 20)))
+            ..httpClientAdapter = IOHttpClientAdapter(
+              createHttpClient: () {
+                final client = io.HttpClient();
+                client.findProxy = (_) => _route();
+                // 本地代理（Clash 等）MITM 时证书链不是公根，opt-in 探针信任之。
+                client.badCertificateCallback = ((cert, host, port) => _route() != 'DIRECT');
+                return client;
+              },
+            );
 
       Future<({int status, String body})> record(
         String method,
