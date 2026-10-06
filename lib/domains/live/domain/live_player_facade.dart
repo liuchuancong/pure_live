@@ -488,6 +488,19 @@ final class LivePlayerFacade {
   /// used to show a picture with no danmaku.
   final BarrageController floatingDanmaku = BarrageController();
 
+  /// Lines sent while no renderer was attached, in arrival order.
+  ///
+  /// `BarrageController.send` drops a message when no engine is attached (the
+  /// widget attaches it on mount), and the small window's surface mounts after
+  /// the first lines already arrived. Holding them here and flushing once the
+  /// engine exists is the difference between "the window shows danmaku from the
+  /// first message" and "the window is empty until it is reopened".
+  final List<BarrageItem> _floatingDanmakuBacklog = <BarrageItem>[];
+  Timer? _floatingDanmakuFlushTimer;
+
+  /// How many lines this facade has handed to the small window (diagnostics).
+  int floatingDanmakuSent = 0;
+
   /// Feeds the small window's own pool.
   ///
   /// Called for every chat line the session delivers, so the window's danmaku
@@ -498,24 +511,53 @@ final class LivePlayerFacade {
     if (!floating.isAppFloatingActive) return;
     if (msg.message.trim().isEmpty) return;
     final placement = msg.isLocal ? msg.style?.placement : null;
-    floatingDanmaku.send(
-      BarrageItem(
-        content: msg.message,
-        type: switch (placement) {
-          LiveMessagePlacement.top => BarrageType.topFixed,
-          LiveMessagePlacement.bottom => BarrageType.bottomFixed,
-          _ => BarrageType.scroll,
-        },
-        userId: msg.userId,
-        userName: msg.userName,
-        id: msg.messageId,
-        textColor: Color.fromARGB(255, msg.color.r, msg.color.g, msg.color.b),
-        fixedDuration: placement == null ? null : const Duration(seconds: 4),
-      ),
+    final item = BarrageItem(
+      content: msg.message,
+      type: switch (placement) {
+        LiveMessagePlacement.top => BarrageType.topFixed,
+        LiveMessagePlacement.bottom => BarrageType.bottomFixed,
+        _ => BarrageType.scroll,
+      },
+      userId: msg.userId,
+      userName: msg.userName,
+      id: msg.messageId,
+      textColor: Color.fromARGB(255, msg.color.r, msg.color.g, msg.color.b),
+      fixedDuration: placement == null ? null : const Duration(seconds: 4),
     );
+    floatingDanmakuSent++;
+    if (floatingDanmaku.engine == null) {
+      if (_floatingDanmakuBacklog.length >= 200) _floatingDanmakuBacklog.removeAt(0);
+      _floatingDanmakuBacklog.add(item);
+      _floatingDanmakuFlushTimer ??= Timer.periodic(
+        const Duration(milliseconds: 200),
+        (_) => _flushFloatingDanmaku(),
+      );
+      return;
+    }
+    floatingDanmaku.send(item);
+  }
+
+  void _flushFloatingDanmaku() {
+    if (floatingDanmaku.engine == null) {
+      if (!floating.isAppFloatingActive) {
+        _floatingDanmakuBacklog.clear();
+        _floatingDanmakuFlushTimer?.cancel();
+        _floatingDanmakuFlushTimer = null;
+      }
+      return;
+    }
+    for (final item in _floatingDanmakuBacklog) {
+      floatingDanmaku.send(item);
+    }
+    _floatingDanmakuBacklog.clear();
+    _floatingDanmakuFlushTimer?.cancel();
+    _floatingDanmakuFlushTimer = null;
   }
 
   void clearFloatingDanmaku() {
+    _floatingDanmakuBacklog.clear();
+    _floatingDanmakuFlushTimer?.cancel();
+    _floatingDanmakuFlushTimer = null;
     floatingDanmaku.clear();
   }
 
