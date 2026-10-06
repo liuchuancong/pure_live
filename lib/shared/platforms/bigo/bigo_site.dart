@@ -185,18 +185,19 @@ final class BigoSite extends LiveSite
       link: BigoLink.url(status.canonicalSiteId),
       liveStatus: liveStatus,
       // 限制种类：登录/密码房/付费房/公开但拿不到地址（上游 24-2）。
-      restriction: liveStatus == LiveStatus.live ? restriction : null,
+      // 限制种类是平台对**房间本身**说的话，和在不在播是两件事。登录墙下
+      // `alive` 根本不回（状态只能是 unknown，不是下播），原因却明明在答案里；
+      // 只在确认在播时保留限制，等于 bigo 整站被要求登录时观众只剩"未开播"可看。
+      // 公开房间仍然只有确认在播才谈得上限制（下播就是下播，不是受限）。
+      restriction: liveStatus == LiveStatus.live || status.access != BigoAccess.public ? restriction : null,
       onlineViewers: null,
       totalViewers: null,
       notice: notice,
       httpHeaders: BigoApi.headers,
       // 弹幕参数（上游 M5.20）：在播、有房间号、不是密码房（聊天要密码）时给。
-      danmakuData: liveStatus == LiveStatus.live && (room.roomId ?? '').isNotEmpty && restriction != LiveRestriction.password
-          ? BigoDanmakuArgs(
-              siteId: status.canonicalSiteId,
-              ownerId: status.ownerId,
-              roomId: room.roomId!,
-            )
+      danmakuData:
+          liveStatus == LiveStatus.live && (room.roomId ?? '').isNotEmpty && restriction != LiveRestriction.password
+          ? BigoDanmakuArgs(siteId: status.canonicalSiteId, ownerId: status.ownerId, roomId: room.roomId!)
           : null,
       data: includeMedia && liveStatus == LiveStatus.live ? room : null,
     );

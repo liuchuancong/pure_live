@@ -39,6 +39,35 @@ typedef IptvPlayerStarter = Future<bool> Function(LiveRoom liveroom);
 
 enum IptvPlaybackSwitchResult { started, superseded, failed }
 
+/// 房间播不了时的说明：平台标了限制就按限制种类说明原因（"受限=仍在播，
+/// 只是这个客户端看不到"），否则才说未开播/稍后重试。
+@visibleForTesting
+String roomStateMessage(LiveRoom room) {
+  return switch (room.effectiveRestriction) {
+    LiveRestriction.needsLogin => i18n('restriction_needs_login'),
+    LiveRestriction.paid => i18n('restriction_paid'),
+    LiveRestriction.subscribersOnly => i18n('restriction_subscribers_only'),
+    LiveRestriction.private => i18n('restriction_private'),
+    LiveRestriction.appOnly => i18n('restriction_app_only'),
+    LiveRestriction.regionBlocked => i18n('restriction_region_blocked'),
+    LiveRestriction.password => i18n('restriction_password'),
+    LiveRestriction.adult => i18n('restriction_adult'),
+    LiveRestriction.unplayable => i18n('restriction_unplayable'),
+    LiveRestriction.none =>
+      room.effectiveLiveStatus == LiveStatus.banned ? i18n('server_error_retry_later') : i18n('stream_not_live'),
+  };
+}
+
+/// 在播状态未知时该说什么。
+///
+/// "获取直播间信息失败，请重试" 只有在平台**确实没给原因**时才是实话：站点标了
+/// 限制种类（要登录、付费、密码房）时重试改变不了什么，而观众会一直等一个并不
+/// 存在的转发的失败。bigo 的匿名接口从 2026-10 起对每个房间都回 `needLogin`，
+/// 于是整站都落在这句话上。
+@visibleForTesting
+String unknownRoomStatusMessage(LiveRoom? room) =>
+    room != null && room.isRestricted ? roomStateMessage(room) : i18n('get_room_info_failed_retry');
+
 class LivePlayController extends GetxController
     with GetSingleTickerProviderStateMixin, WidgetsBindingObserver
     implements DanmakuSessionHost, PlayerSessionHost {
@@ -798,7 +827,7 @@ class LivePlayController extends GetxController
       // 受限的直播在这里才会失败（站点读不到流是正常的），要按限制种类说明原因，
       // 而不是只把界面置成失败。
       if (liveRoom.isRestricted) {
-        ToastUtil.show(_roomStateMessage(liveRoom));
+        ToastUtil.show(roomStateMessage(liveRoom));
       }
       updateRoom(success: false);
     }
@@ -825,26 +854,8 @@ class LivePlayController extends GetxController
     if (liveRoom.platform != Sites.iptvSite) {
       await _updateFavoriteRoomSnapshot(liveRoom);
     }
-    ToastUtil.show(_roomStateMessage(liveRoom));
+    ToastUtil.show(roomStateMessage(liveRoom));
     _restoreQualityAndLines();
-  }
-
-  /// 房间播不了时的说明：平台标了限制就按限制种类说明原因（"受限=仍在播，
-  /// 只是这个客户端看不到"），否则才说未开播/稍后重试。
-  String _roomStateMessage(LiveRoom room) {
-    return switch (room.effectiveRestriction) {
-      LiveRestriction.needsLogin => i18n('restriction_needs_login'),
-      LiveRestriction.paid => i18n('restriction_paid'),
-      LiveRestriction.subscribersOnly => i18n('restriction_subscribers_only'),
-      LiveRestriction.private => i18n('restriction_private'),
-      LiveRestriction.appOnly => i18n('restriction_app_only'),
-      LiveRestriction.regionBlocked => i18n('restriction_region_blocked'),
-      LiveRestriction.password => i18n('restriction_password'),
-      LiveRestriction.adult => i18n('restriction_adult'),
-      LiveRestriction.unplayable => i18n('restriction_unplayable'),
-      LiveRestriction.none =>
-        room.effectiveLiveStatus == LiveStatus.banned ? i18n('server_error_retry_later') : i18n('stream_not_live'),
-    };
   }
 
   Future<void> _updateFavoriteRoomSnapshot(LiveRoom liveroom) async {
@@ -872,13 +883,14 @@ class LivePlayController extends GetxController
 
   void _handleUnknownStatus() {
     settleUnknownRoomMetadata();
+    final message = unknownRoomStatusMessage(state.value.room.detail);
     if (state.value.player.hasPlaybackSource) {
-      if (Get.currentRoute == '/live_play') ToastUtil.show(i18n('get_room_info_failed_retry'));
+      if (Get.currentRoute == '/live_play') ToastUtil.show(message);
       return;
     }
     unawaited(danmakuController.stopDanmaku());
     if (Get.currentRoute == '/live_play') {
-      ToastUtil.show(i18n('get_room_info_failed_retry'));
+      ToastUtil.show(message);
       setNormalScreen();
       GlobalPlayerService.instance.player.isSystemFullscreen.value = false;
       GlobalPlayerService.instance.player.isWindowFullscreen.value = false;
@@ -892,7 +904,7 @@ class LivePlayController extends GetxController
       isLiving: hasPlaybackSource,
       success: hasPlaybackSource,
       isLoading: false,
-      loadError: i18n('get_room_info_failed_retry'),
+      loadError: unknownRoomStatusMessage(state.value.room.detail),
     );
   }
 

@@ -751,6 +751,40 @@ dio（应用层代理，此处未开=直连）读成功的，中继随后取子�
 所以不在这一轮里单方面改。眼下这台机器的可行动作是：`livecloud.akamaized.net` 直连可达（探测已证明），
 把播放器代理对该 host 留在直连即可播放。
 
+### bigo 整站被要求登录：接口没坏、网络没坏，说的是"请重试"（2026-10-06，已修）
+
+用户报"bigo live 无法获取信息"，并附一句 "bigo API request returned a non-JSON response."。
+先把这句话证伪：把 `tool/probes/bigo_metadata_probe_test.dart`（import 早就指向搬走前的
+`domains/live/data/platforms/...`）修好并扩成**走真房间路径 + 记录每次网络响应 + 连抽 6 间房**，
+两条出口各跑一遍。DIRECT 与 `PROXY 127.0.0.1:7897` 结果一致：
+
+| 这一趟 | 结果 |
+| --- | --- |
+| `ta.bigo.tv/official_website/OInterfaceWeb/vedioList/72` | 200 `application/json`，20 张卡片 |
+| `sec.bigo.sg/v1/webjs/t` 与 `/status` | 200 `application/javascript`，JSONP 前缀对得上，token 拿到了 |
+| `studio/getInternalStudioInfo` | 200 `application/json`，但 **6/6 房间** `needLogin:true`、`alive` 缺省、`hls_src:""`、`roomTopic:""` |
+
+所以既不是"非 JSON"也不是被墙：**上游现在要求登录会话才给匿名接口了**（上游 4.x 在同一条路上抛
+`ApiChanged`，见 `live_core/lib/src/sites/bigo/bigo_api.dart:845`）。本仓没有 bigo 的 cookie 入口
+（`CookieSettingsController` 里就没有 `bigoCookie`），所以能不能播这一半没修，也不该假装修。
+
+修的是**说什么**。两处叠在一起才让观众只看到一句会重试成功的话：
+
+1. `BigoSite._room` 只在 `liveStatus == live` 时保留限制种类。登录墙下 `reportedAlive` 恒为 null
+   （`access != public` 时故意不读 `alive`——"access-gated alive=0 is not a verified offline
+   observation"），状态于是是 unknown，`restrictionOf(loginRequired)` 给出的 `needsLogin` 被丢掉。
+   现在改成"确认在播 **或** 平台声明了受限就保留"，公开房间仍然只有确认在播才谈受限（普通下播
+   不许冒充"需要登录"）。
+2. 状态未知的房间走 `_handleUnknownStatus`，而它以前只说 `get_room_info_failed_retry`，从不看限制。
+   `roomStateMessage` 提为可测的顶层函数，`unknownRoomStatusMessage(room)` 在平台声明了原因时按限制
+   种类说（`restriction_needs_login`＝"该直播需要登录后才能观看。"），没有原因时才是那句重试；
+   `loadError` 同步用它，所以提示消失后界面仍留着原因。
+
+测试：`test/shared/platforms/bigo_login_wall_test.dart`（3 项：登录墙→needsLogin + unknown；公开下播
+→offline 且限制为 null；公开在播有地址→不受限）与 `test/domains/live/unknown_room_status_message_test.dart`
+（3 项）。mutation 各自验过：退回旧的 `liveStatus == live` 条件，第 1 组第一条就红（Actual: null）。
+`_handleUnknownStatus` 里那句替换没有自动化覆盖——它要整套 GetX 房间壳，纯判定部分已单独测到。
+
 ### 还没声明的站点（上游有 format/codec，本仓待补）
 
 **已补（2026-10-04 同批）**：bilibili（直播 `flv`/`ts`/`fmp4` 线路按 `parsePlayUrlResolution` 里的
