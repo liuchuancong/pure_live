@@ -32,7 +32,6 @@ typedef MultiviewGlobalPauseHook = Future<void> Function();
 typedef MultiviewRoomVolumeLoader = double Function(LiveRoom liveroom);
 typedef MultiviewRoomVolumeSaver = Future<void> Function(LiveRoom liveroom, double volume);
 
-///
 class MultiviewController extends GetxController {
   MultiviewController({
     this._streamResolver,

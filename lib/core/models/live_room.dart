@@ -2,7 +2,6 @@ import 'package:pure_live/core/player/core/live_room_volume_manager.dart';
 import 'package:pure_live/core/network/http_header_policy.dart';
 import 'package:pure_live/core/utils/invisible_placeholders.dart';
 
-///
 enum LiveStatus { live, offline, replay, unknown, banned, carousel }
 
 enum LiveRestriction {

@@ -1,4 +1,3 @@
-///
 abstract final class CompactSourceOrientation {
   static bool Function()? read;
 

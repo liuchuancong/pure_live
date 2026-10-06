@@ -1,5 +1,3 @@
-///
-///
 bool isDummyVideoSize({required int width, required int height}) {
   if (width <= 0 || height <= 0) return false;
   final shortSide = width < height ? width : height;

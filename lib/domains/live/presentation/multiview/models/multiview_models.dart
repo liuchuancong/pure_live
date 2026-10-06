@@ -77,7 +77,6 @@ enum MultiviewCellErrorKind {
 
 typedef MultiviewQualityLoader = Future<MultiviewStreamSource> Function(LivePlayQuality quality);
 
-///
 /// An expiring line (Douyu anonymous original quality) and how to renew it.
 class MultiviewSourceLease {
   const MultiviewSourceLease({required this.refreshAt, required this.renew});

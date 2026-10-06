@@ -107,7 +107,6 @@ class _MultiviewPageState extends State<MultiviewPage> {
     unawaited(_exitSafely());
   }
 
-  ///
   Future<void> _exitSafely() async {
     if (_exiting) return;
     _exiting = true;
@@ -1171,7 +1170,6 @@ class _AudioFocusBadge extends StatelessWidget {
   }
 }
 
-///
 class _MultiviewDanmakuLayer extends StatelessWidget {
   const _MultiviewDanmakuLayer({required this.controller, required this.barrageController});
 

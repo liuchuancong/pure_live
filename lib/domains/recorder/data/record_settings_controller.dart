@@ -95,7 +95,6 @@ class RecordSettingsController extends GetxController {
 
   /// =====================================
   /// =====================================
-  ///
   Future<void> updateEnableCacheLimit(bool v) async {
     enableCacheLimit.value = v;
     await _applyCacheLimit();
@@ -150,7 +149,6 @@ class RecordSettingsController extends GetxController {
 
   /// =====================================
   /// =====================================
-  ///
   Future<void> updateAutoReconnect(bool v) async {
     autoReconnect.value = v;
   }
@@ -189,14 +187,12 @@ class RecordSettingsController extends GetxController {
 
   /// =====================================
   /// =====================================
-  ///
   Future<void> updateEnablePolling(bool v) async {
     enablePolling.value = v;
   }
 
   /// =====================================
   /// =====================================
-  ///
   Future<void> updateEnableBackoff(bool v) async {
     enableBackoff.value = v;
   }
@@ -258,7 +254,6 @@ class RecordSettingsController extends GetxController {
 
   /// =====================================
   /// =====================================
-  ///
   Future<void> updatePreferBestStream(bool v) async {
     preferBestStream.value = v;
   }

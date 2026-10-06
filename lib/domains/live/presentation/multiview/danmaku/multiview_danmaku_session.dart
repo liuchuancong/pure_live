@@ -10,7 +10,6 @@ import 'package:pure_live/domains/live/data/favorite_room_controller.dart';
 
 typedef MultiviewDanmakuEngineFactory = LiveDanmaku Function(LiveRoom liveroom);
 
-///
 class MultiviewDanmakuSession {
   MultiviewDanmakuSession({
     required this.engineFactory,

@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:flutter/widgets.dart';
 
-///
 @immutable
 class FloatWindowGeometry {
   const FloatWindowGeometry({this.landscape, this.portrait});

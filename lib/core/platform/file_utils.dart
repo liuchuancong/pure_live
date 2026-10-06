@@ -54,7 +54,6 @@ class FileUtils {
     return RegExp(r"^\d+$").hasMatch(value);
   }
 
-  ///
   static Future<bool> requestStoragePermission() async {
     if (!Platform.isAndroid) return true;
 

@@ -5,7 +5,6 @@ import 'package:flutter/services.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:url_launcher/url_launcher_string.dart';
 
-import 'package:pure_live/core/platform/platform_utils.dart';
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/config/player_settings_controller.dart';
 import 'package:pure_live/core/network/proxy_routing.dart';
@@ -59,9 +58,9 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
                 subtitle: i18n("gpu_decode"),
                 value: SettingsService.to.player.enableCodec,
               ),
-              // RTX VSR, the presets and the manual are mpv features; other
-              // engines ignore the filter chain they configure.
-              if (PlatformUtils.isWindows && engine == PlayerEngine.mediaKit) ...[
+              // The presets and the manual are mpv features on every platform;
+              // RTX VSR is the one that needs a Windows NVIDIA driver.
+              if (engine == PlayerEngine.mediaKit) ...[
                 context.buildTile(
                   icon: Remix.magic_line,
                   title: i18n('player_preset_section'),
@@ -76,13 +75,14 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
                   trailing: const Icon(Remix.arrow_right_s_line),
                   onTap: () => Get.to(() => const PlayerGuidePage()),
                 ),
-                context.buildTile(
-                  icon: Remix.rhythm_line,
-                  title: i18n('super_resolution_section'),
-                  subtitle: i18n('super_resolution_hint'),
-                  trailing: const Icon(Remix.arrow_right_s_line),
-                  onTap: () => Get.to(() => const PlayerSuperResolutionPage()),
-                ),
+                if (Platform.isWindows)
+                  context.buildTile(
+                    icon: Remix.rhythm_line,
+                    title: i18n('super_resolution_section'),
+                    subtitle: i18n('super_resolution_hint'),
+                    trailing: const Icon(Remix.arrow_right_s_line),
+                    onTap: () => Get.to(() => const PlayerSuperResolutionPage()),
+                  ),
               ],
               context.buildSwitchTile(
                 icon: Remix.shut_down_line,

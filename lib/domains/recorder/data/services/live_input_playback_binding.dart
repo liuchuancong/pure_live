@@ -15,7 +15,6 @@ import 'bigo_hls_input.dart';
 import 'fc2_hls_input.dart';
 import 'niconico_hls_input.dart';
 
-///
 typedef BigoPlaybackInputOpener = Future<BigoHlsInput> Function(
   String siteId, {
   required bool recording,

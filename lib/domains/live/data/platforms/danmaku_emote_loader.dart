@@ -6,7 +6,6 @@ import 'package:pure_live/core/logging/core_log.dart';
 import 'package:pure_live/core/models/live_message.dart';
 import 'package:pure_live/core/network/http_client.dart';
 
-///
 class DanmakuEmoteLoader {
   DanmakuEmoteLoader._();
 

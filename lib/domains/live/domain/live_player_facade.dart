@@ -411,8 +411,6 @@ final class LivePlayerFacade {
     return intercepted.isEmpty ? sources : intercepted;
   }
 
-  ///
-  ///
   Future<List<PlayerSource>> _refreshSources(List<PlayerSource> current) async {
     final resolver = _sourceResolver;
     final committed = commit;

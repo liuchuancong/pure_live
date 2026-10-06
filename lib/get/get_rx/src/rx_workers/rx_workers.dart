@@ -27,7 +27,6 @@ class Workers {
   }
 }
 
-///
 /// Called every time [listener] changes. As long as the [condition]
 /// returns true.
 ///

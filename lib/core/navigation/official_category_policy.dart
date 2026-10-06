@@ -1,6 +1,5 @@
 import 'package:pure_live/core/models/live_area.dart';
 
-///
 abstract final class OfficialCategoryPolicy {
   static bool Function(LiveArea area)? isOfficialCategory;
   static Uri? Function(LiveArea area)? officialCategoryUri;

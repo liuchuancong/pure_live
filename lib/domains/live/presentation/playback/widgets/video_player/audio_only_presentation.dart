@@ -2,8 +2,6 @@ import 'package:remixicon/remixicon.dart';
 
 import 'package:pure_live/core/index.dart';
 
-///
-///
 class AudioOnlyPresentation extends StatelessWidget {
   const AudioOnlyPresentation({super.key, required this.room});
 

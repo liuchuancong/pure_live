@@ -11,7 +11,6 @@ class UniPacket extends UniAttribute {
 
   RequestPacket package = RequestPacket();
 
-  ///
   /// @return
   String get servantName {
     return package.sServantName;
@@ -21,7 +20,6 @@ class UniPacket extends UniAttribute {
     package.sServantName = value;
   }
 
-  ///
   /// @return
   String get funcName {
     return package.sFuncName;
@@ -31,7 +29,6 @@ class UniPacket extends UniAttribute {
     package.sFuncName = value;
   }
 
-  ///
   /// @return
   int get requestId {
     return package.iRequestId;

@@ -15,7 +15,6 @@ import 'package:pure_live/core/config/theme_settings_controller.dart';
 import 'package:pure_live/core/config/volume_settings_controller.dart';
 import 'package:pure_live/core/config/window_size_controller.dart';
 
-///
 class SettingsService extends GetxService {
   static SettingsService get to => Get.find<SettingsService>();
 

@@ -109,7 +109,6 @@ class SixRoomDanmaku extends LiveDanmaku {
       ..addAll(servers);
   }
 
-  ///
   @visibleForTesting
   /// The endpoint answers as text/html, so a decoded getJson would be a String.
   static List<String> parseChatServers(String body) {

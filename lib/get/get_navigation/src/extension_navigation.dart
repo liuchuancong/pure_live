@@ -962,7 +962,6 @@ extension GetNavigationExt on GetInterface {
     return searchDelegate(id).offUntil(page, predicate, arguments);
   }
 
-  ///
   /// Push a `page` and pop several pages in the stack
   /// until [predicate] returns true. [predicate] is optional
   ///

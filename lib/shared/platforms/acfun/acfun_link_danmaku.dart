@@ -12,7 +12,6 @@ import 'package:pure_live/shared/platforms/acfun/acfun_danmaku.dart';
 import 'package:pure_live/shared/platforms/acfun/acfun_protobuf.dart';
 import 'package:pure_live/shared/platforms/live_danmaku.dart';
 
-///
 class AcfunLinkDanmaku extends LiveDanmaku {
   AcfunLinkDanmaku();
 

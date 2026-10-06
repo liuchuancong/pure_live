@@ -202,9 +202,6 @@ class _RunningTask {
   const _RunningTask({required this.taskId, required this.future, required this.cancelToken});
 }
 
-///
-///
-///
 /// token.onCancel = () {
 ///   session.cancel();
 /// };
