@@ -11,11 +11,20 @@ import 'package:pure_live/domains/recorder/data/services/cache_service.dart';
 
 typedef RecordDirectoryPicker = Future<String?> Function();
 
+/// Requests the storage access the recording directory needs. Defaults to
+/// [FileUtils.requestStoragePermission], which is a no-op returning true on
+/// non-Android hosts, so only the Android public-directory case can deny.
+typedef RecordStoragePermissionRequest = Future<bool> Function();
+
 class RecordSettingsController extends GetxController {
-  RecordSettingsController({RecordDirectoryPicker? directoryPicker})
-    : _directoryPicker = directoryPicker ?? (() => FilePicker.getDirectoryPath());
+  RecordSettingsController({
+    RecordDirectoryPicker? directoryPicker,
+    RecordStoragePermissionRequest? storagePermission,
+  }) : _directoryPicker = directoryPicker ?? (() => FilePicker.getDirectoryPath()),
+       _storagePermission = storagePermission ?? FileUtils.requestStoragePermission;
 
   final RecordDirectoryPicker _directoryPicker;
+  final RecordStoragePermissionRequest _storagePermission;
   Future<void>? _storageInitialization;
   Future<void>? _cacheLimitApplication;
   int _cacheLimitRevision = 0;
@@ -205,6 +214,16 @@ class RecordSettingsController extends GetxController {
     try {
       final selected = (await _directoryPicker())?.trim() ?? '';
       if (selected.isEmpty || isClosed) return;
+      // The picker hands back a public path (Downloads/Documents). Android 11+
+      // only lets a raw File write there once "All files access" is granted;
+      // the write probe below would otherwise die with EACCES and the user
+      // would see nothing but a generic "path or permission" error. This is a
+      // direct user gesture, so the permission surface belongs here, not only
+      // at recording start. The request is a no-op true off Android.
+      if (!await _storagePermission()) {
+        if (!isClosed) ToastUtil.show(i18n('no_storage'));
+        return;
+      }
       // Startup may still be persisting the default folder. Let that older
       // operation settle so this explicit choice is always committed last.
       await _storageInitialization;
