@@ -397,15 +397,16 @@ class DanmakuController extends GetxController {
     _messageGate.clear();
     _repeatedMessageFilter.clear();
     _similarityFilter.clear();
-    _requestEpoch++;
-    _sessionToken++;
     // The small window keeps the video running after the room's route is gone,
     // and GetX deletes this route-bound controller on that pop. Tearing the
-    // session down here is what left the small window with a picture and no
-    // danmaku: the host asks for the session to be kept, and
-    // LivePlayController.disposeAppFloatingResources stops it when the window
-    // is closed for real.
+    // session down here — or even only bumping the epochs, which invalidates
+    // every installed engine callback — left the window with a picture and no
+    // danmaku at all. The host asks for the session to be kept here, and
+    // LivePlayController.disposeAppFloatingResources stops it when the window is
+    // closed for real.
     if (!_main.keepsDanmakuForFloating) {
+      _requestEpoch++;
+      _sessionToken++;
       final engine = _liveDanmaku;
       if (engine != null) {
         _detachCallbacks(engine);

@@ -1116,10 +1116,21 @@ class LivePlayController extends GetxController
   /// window's lifetime: while it is prepared or showing, the route's pop must
   /// not tear the danmaku session down.
   @override
-  bool get keepsDanmakuForFloating => GlobalPlayerService.instance.player.shouldKeepDanmakuForAppFloating;
+  bool get keepsDanmakuForFloating =>
+      _floatingHandoffPrepared || GlobalPlayerService.instance.player.shouldKeepDanmakuForAppFloating;
+
+  /// Sticky record of "this room is being handed to the small window".
+  ///
+  /// The facade's answer is the live truth, but it is read while the route is
+  /// being torn down and GetX deletes this room's controllers in the same turn;
+  /// a keep decision that flips to false for one instant stops the danmaku
+  /// session for good. Prepared once, cleared when the window is closed for
+  /// real, so the answer cannot be missed by ordering.
+  bool _floatingHandoffPrepared = false;
 
   void prepareAppFloating({Future<void>? routeUnmounted}) {
     _floatingResourcesReleased = false;
+    _floatingHandoffPrepared = true;
     final manager = GlobalPlayerService.instance.player;
     final current = state.value;
     final detail = current.room.detail;
@@ -1153,6 +1164,7 @@ class LivePlayController extends GetxController
   Future<void> disposeAppFloatingResources() async {
     if (_floatingResourcesReleased) return;
     _floatingResourcesReleased = true;
+    _floatingHandoffPrepared = false;
 
     final videoController = state.value.player.videoController;
     await _disposeAppFloatingResourcesAsync(videoController);
