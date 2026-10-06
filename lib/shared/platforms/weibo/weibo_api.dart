@@ -95,6 +95,13 @@ class WeiboApi {
     : _request = request ?? _defaultRequest;
   static const origin = 'https://weibo.com';
   static const headers = {'Referer': 'https://weibo.com/l/wblive/', 'User-Agent': 'Mozilla/5.0'};
+
+  /// 媒体流请求头：weibo CDN 对缺 Referer/UA 的连接不吐数据。UA 用完整桌面串，
+  /// 裸 "Mozilla/5.0" 会被部分边缘节点当异常客户端。
+  static const playHeaders = {
+    'Referer': 'https://weibo.com/l/wblive/',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36',
+  };
   static const responseLimit = 1024 * 1024;
   final WeiboRequest _request;
   final Duration deadline;
@@ -370,9 +377,10 @@ class WeiboApi {
       WeiboAccess.restricted => restrictionOfLimit(detail.watchLimit),
       WeiboAccess.disabled => LiveRestriction.unplayable,
       // 本仓还没有回放录像（`replay_origin_url`）取流，所以回放一律是 unplayable。
-      WeiboAccess.public => detail.state == WeiboBroadcastState.live && detail.mediaUrls.isNotEmpty
-          ? LiveRestriction.none
-          : LiveRestriction.unplayable,
+      WeiboAccess.public =>
+        detail.state == WeiboBroadcastState.live && detail.mediaUrls.isNotEmpty
+            ? LiveRestriction.none
+            : LiveRestriction.unplayable,
     };
   }
 }

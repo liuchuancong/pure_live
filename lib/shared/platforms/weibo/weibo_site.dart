@@ -97,6 +97,9 @@ class WeiboSite extends LiveSite
           status: true,
           audienceMetricType: AudienceMetricType.unknown,
           watching: '',
+          // 播放请求头走 PlaybackHeaderResolver 的 default 分支（房间声明即权威）。
+          // 不带 Referer/UA 时 weibo CDN 建连后不吐数据，表现为“opened but never played”。
+          httpHeaders: WeiboApi.playHeaders,
           notice: i18n('weibo_room_scope'),
         ),
       ),
