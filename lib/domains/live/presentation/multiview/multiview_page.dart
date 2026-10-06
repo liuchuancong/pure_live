@@ -22,20 +22,8 @@ import 'package:pure_live/domains/live/presentation/multiview/danmaku/multiview_
 import 'package:pure_live/domains/live/domain/global_player_service.dart';
 import 'package:pure_live/domains/live/data/platforms/sites.dart';
 
-/// 页面显示状态机：normal（完整界面）→ immersive（隐藏工具条与侧板，
-/// 留悬浮恢复钮）→ fullscreen（仅保留安全区内的退出钮）。
-///
-/// 只影响 chrome 显隐，不触碰布局/格子状态；返回手势与 Esc 均沿
-/// fullscreen/immersive → normal → 退出页面 的单一路径回退。
 enum _DisplayMode { normal, immersive, fullscreen }
 
-/// 多画面同看页面。
-///
-/// 视觉与交互层：按 [MultiviewController] 的布局与格子状态渲染网格，
-/// 提供布局切换（1x1/1x2/2x2/一大多小）、每格清晰度选择、大画面弹幕、
-/// 选台面板（窄屏底部弹窗、宽屏右侧常驻侧板）、音频焦点标识、单格操作
-/// 菜单与沉浸/全屏显示模式。播放资源的创建与释放全部由控制器统一管理，
-/// 本页面不持有任何播放器对象。
 class MultiviewPage extends StatefulWidget {
   const MultiviewPage({super.key});
 
@@ -44,19 +32,14 @@ class MultiviewPage extends StatefulWidget {
 }
 
 class _MultiviewPageState extends State<MultiviewPage> {
-  /// 与首页一致的宽窄屏分界：超过该宽度时选台面板以右侧常驻侧板呈现。
   static const double _wideBreakpoint = 680;
 
-  /// 宽屏侧板宽度，与桌面端设置类页面的侧栏习惯一致。
   static const double _sidePanelWidth = 320;
 
-  /// 一大多小布局的大格与右侧小列的弹性比。
   static const int _focusBigFlex = 3;
 
   static const int _focusSmallFlex = 1;
 
-  /// 一大多小小列首屏可见格数：前三格恰好铺满视口（与固定三格时代的
-  /// 视觉节奏一致），追加格滚动呈现。
   static const int _focusSmallViewportCells = 3;
 
   final ScrollController _focusRailScrollController = ScrollController();
@@ -76,25 +59,16 @@ class _MultiviewPageState extends State<MultiviewPage> {
     );
   }
 
-  /// 当前显示模式；仅 chrome 显隐差异，见 [_DisplayMode]。
   _DisplayMode _displayMode = _DisplayMode.normal;
 
-  /// 安全退出进行中标志：防止连按返回/Esc 重复触发退出序列。
   bool _exiting = false;
 
-  /// focus 大画面底部控制条显隐；点击大画面切换（对齐 live_play
-  /// 点按呼出控制条的交互），晋升/切布局时复位隐藏。
   bool _largeControlsVisible = false;
 
-  /// 选台面板当前的目标格下标。
   int _targetCell = 0;
 
-  /// 布局监听：缩容时把选台目标钳制回有效范围，避免向已不存在的格子提交。
   Worker? _layoutWorker;
 
-  /// 每格 GlobalKey：一大多小晋升时格子跨父级移动（大格槽 ⇄ 小格列），
-  /// 普通 ValueKey 无法跨父级复用元素；GlobalKey 让格子子树整体搬移，
-  /// Video 状态与纹理附着保持不变，切换不闪黑。
   final Map<int, GlobalKey> _cellKeys = {};
 
   MultiviewController get controller => Get.find<MultiviewController>();
@@ -107,9 +81,6 @@ class _MultiviewPageState extends State<MultiviewPage> {
     _targetCell = _firstAssignableCell();
     _layoutWorker = ever<MultiviewLayout>(controller.layout, (_) => _clampTargetCell());
     _focusRailScrollController.addListener(_syncFocusRailVisibility);
-    // 桌面端 Esc 退沉浸/全屏。用全局键盘钩子而非 Focus 节点：
-    // 选台面板搜索框等输入焦点不应抢占 Esc 处理权；
-    // 本路由非栈顶（弹层/上层页面打开）时让位，不干扰其按键语义。
     HardwareKeyboard.instance.addHandler(_handleGlobalKeyEvent);
   }
 
@@ -120,39 +91,23 @@ class _MultiviewPageState extends State<MultiviewPage> {
     _focusRailScrollController.removeListener(_syncFocusRailVisibility);
     _focusRailScrollController.dispose();
     if (Get.isRegistered<MultiviewController>()) controller.setVisibleFocusSmallCells(const []);
-    // 极端路径防御：页面在全屏态被系统直接销毁（路由被移除/上层 offAndTo）
-    // 时恢复系统 UI 与窗口状态。doExitFullScreen 幂等，重复调用安全。
     if (_displayMode == _DisplayMode.fullscreen) {
-      // 页面在全屏态被系统直接销毁时，必须复位桌面壳标题栏标志，
-      // 否则整个应用壳的自绘标题栏永久消失。
       GlobalPlayerService.instance.player.isSystemFullscreen.value = false;
       unawaited(_restoreSystemFullscreen());
     }
     super.dispose();
   }
 
-  /// 返回意图统一入口：非 normal 先回 normal，normal 走安全退出序列。
   void _handleBackIntent({required bool didPop}) {
     if (didPop) return;
     if (_displayMode != _DisplayMode.normal) {
       unawaited(_changeDisplayMode(_DisplayMode.normal));
       return;
     }
-    // normal 态不放行真实 pop：先卸载全部视频外部纹理并等光栅排空，
-    // 再执行显式 pop（见 [_exitSafely] 的竞态说明）。
     unawaited(_exitSafely());
   }
 
-  /// 安全退出序列（规避引擎层「外部纹理注销 vs 合成器」竞态）。
   ///
-  /// 崩溃机理：pop 动画期间 Video 纹理仍存活，光栅线程继续合成多路
-  /// 外部纹理，撞上原生侧纹理注销窗口即空指针。规避时序：
-  /// 1. 同步调用 disposeAll——其内部先同步清空全部格状态，
-  ///    Video 因 status 变 empty 立即从树中卸载，纹理脱离合成器；
-  /// 2. 等待两帧结束，让光栅线程完成一帧不含视频纹理的合成并排空；
-  /// 3. 此时树上已无任何外部纹理，才执行真实 pop。
-  ///
-  /// 控制器 onClose 里对已清空的格再次 disposeAll 是幂等的，无需额外处理。
   Future<void> _exitSafely() async {
     if (_exiting) return;
     _exiting = true;
@@ -171,11 +126,6 @@ class _MultiviewPageState extends State<MultiviewPage> {
     return true;
   }
 
-  /// 切换显示模式，并在 normal↔fullscreen 边界同步系统级全屏。
-  ///
-  /// 复用播放器既有机制 [WindowService]：移动端 immersiveSticky 隐藏
-  /// 状态栏/导航栏，桌面端 windowManager.setFullScreen 无边框占满整屏。
-  /// 沉浸模式维持页内隐藏语义，不触碰系统 UI——两档由此形成明确区分。
   Future<void> _changeDisplayMode(_DisplayMode mode) async {
     if (!mounted || _displayMode == mode) return;
     final previous = _displayMode;
@@ -187,12 +137,8 @@ class _MultiviewPageState extends State<MultiviewPage> {
 
     try {
       if (enterSystemFullscreen) {
-        // 桌面壳自绘标题栏由该全局标志控制显隐（DesktopManager.buildWithTitleBar），
-        // multiview 全屏必须与 live_play 同步置位，否则标题栏残留。
         GlobalPlayerService.instance.player.isSystemFullscreen.value = true;
         await WindowService().doEnterFullScreen();
-        // 手机端进入全屏自动横屏（与普通模式播放的全屏一致）；
-        // 退出时 doExitFullScreen 统一解锁方向，无需在此处理。
         if (PlatformUtils.isMobile) {
           await WindowService().landScape();
         }
@@ -201,8 +147,6 @@ class _MultiviewPageState extends State<MultiviewPage> {
         await _restoreSystemFullscreen();
       }
     } catch (error, stackTrace) {
-      // 系统 UI/窗口管理器调用失败不得让播放页面崩溃；记录后维持页内
-      // 状态机，用户仍可经回退链再次尝试恢复。
       developer.log(
         'MultiviewPage: system fullscreen transition failed',
         name: 'MultiviewPage',
@@ -212,7 +156,6 @@ class _MultiviewPageState extends State<MultiviewPage> {
     }
   }
 
-  /// 恢复系统 UI / 退出窗口全屏；幂等，供所有退出路径与 dispose 防御复用。
   Future<void> _restoreSystemFullscreen() => WindowService().doExitFullScreen();
 
   int _firstAssignableCell() {
@@ -222,7 +165,6 @@ class _MultiviewPageState extends State<MultiviewPage> {
     return 0;
   }
 
-  /// 布局缩容后旧目标格（如 quad 的第 4 格）已不存在，钳制到新容量内。
   void _clampTargetCell() {
     final maxIndex = controller.cells.length - 1;
     if (_targetCell > maxIndex && mounted) {
@@ -230,7 +172,6 @@ class _MultiviewPageState extends State<MultiviewPage> {
     }
   }
 
-  /// 分配成功后把目标推进到下一个空位，连续选台无需反复点击格子。
   void _advanceTarget(int justAssigned) {
     final count = controller.cells.length;
     for (var step = 1; step < count; step++) {
@@ -243,7 +184,6 @@ class _MultiviewPageState extends State<MultiviewPage> {
   }
 
   void _pickRoom(LiveRoom liveroom) {
-    // 防御性钳制：布局切换与选台回调竞态时，提交下标必须仍在当前容量内。
     final target = _targetCell.clamp(0, controller.cells.length - 1);
     unawaited(controller.assignRoom(target, liveroom));
     _advanceTarget(target);
@@ -251,7 +191,6 @@ class _MultiviewPageState extends State<MultiviewPage> {
 
   void _openPickerFor(int cellIndex, {required bool isWide}) {
     setState(() => _targetCell = cellIndex);
-    // 宽屏侧板常驻，点击空格只切换目标高亮；窄屏弹出底部选台弹窗。
     if (isWide) return;
     showModalBottomSheet<void>(
       context: context,
@@ -270,8 +209,6 @@ class _MultiviewPageState extends State<MultiviewPage> {
   }
 
   void _showCellActions(MultiviewCellState state) {
-    // 手机横屏逻辑宽度同样会超过断点，但侧板选台是桌面形态：
-    // 移动端一律走底部弹窗选台，避免横屏时网格被压缩。
     final isWide =
         PlatformUtils.isDesktop &&
         MediaQuery.sizeOf(context).width > _wideBreakpoint &&
@@ -317,7 +254,6 @@ class _MultiviewPageState extends State<MultiviewPage> {
     );
   }
 
-  /// 清晰度列表底部弹窗（长按菜单路径）；点选后换档，当前档打勾。
   void _showQualitySheet(MultiviewCellState state) {
     final qualities = state.qualities;
     showModalBottomSheet<void>(
@@ -378,7 +314,6 @@ class _MultiviewPageState extends State<MultiviewPage> {
           ),
           body: LayoutBuilder(
             builder: (context, constraints) {
-              // 侧板选台是桌面形态；手机横屏保持全宽网格 + 底部弹窗选台。
               final isWide = PlatformUtils.isDesktop && constraints.maxWidth > _wideBreakpoint;
               return Column(
                 children: [
@@ -389,13 +324,10 @@ class _MultiviewPageState extends State<MultiviewPage> {
             },
           ),
         ),
-        // 沉浸：无工具条/侧板/AppBar，仅右下角一个小恢复钮。
-        // 黑底画布让格缝读作视频墙的一部分，与播放器观感一致。
         _DisplayMode.immersive => Scaffold(
           backgroundColor: Colors.black,
           body: Stack(
             children: [
-              // 沉浸/全屏下没有可见侧板：空格点击一律走底部选台弹窗。
               _buildContentArea(isWide: false),
               Positioned(
                 right: 16,
@@ -405,10 +337,6 @@ class _MultiviewPageState extends State<MultiviewPage> {
             ],
           ),
         ),
-        // 全屏：复用 WindowService 真全屏（移动端隐藏系统栏、桌面端无边框
-        // 占满整屏），网格保持 edge-to-edge；左上角仅保留避让刘海/挖孔的
-        // 显式退出钮。返回手势与 Esc 仍是等价回退路径，格子其余区域的
-        // 点击继续只切换音源焦点。
         _DisplayMode.fullscreen => Scaffold(
           backgroundColor: Colors.black,
           body: MultiviewFullscreenSurface(
@@ -421,10 +349,6 @@ class _MultiviewPageState extends State<MultiviewPage> {
     );
   }
 
-  /// 内容区：宽屏且 normal 时为「网格 + 分隔线 + 选台侧板」，否则仅网格。
-  ///
-  /// [isWide] 由调用方按显示模式折算——沉浸/全屏下传 false，
-  /// 保证空格点击仍能唤起选台弹窗而非指向不可见的侧板。
   Widget _buildContentArea({required bool isWide}) {
     if (!isWide) return _buildGrid(isWide: isWide);
     return Row(
@@ -467,7 +391,6 @@ class _MultiviewPageState extends State<MultiviewPage> {
       return Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // 页级弹幕开关（连接管理在核心层，UI 只切显隐开关）。
           Obx(() {
             final enabled = controller.danmakuEnabled.value;
             final theme = Theme.of(context);
@@ -511,7 +434,6 @@ class _MultiviewPageState extends State<MultiviewPage> {
               onPressed: canAdjust ? () => _showVolumeSheet(selectedIndex) : null,
             );
           }),
-          // 小格自动降质联动：仅 focus 布局生效，非 focus 下置灰防误触。
           Obx(() {
             final isFocusLayout = controller.layout.value == MultiviewLayout.focus;
             final enabled = controller.smallCellsLowQuality.value;
@@ -580,7 +502,6 @@ class _MultiviewPageState extends State<MultiviewPage> {
     return Obx(() {
       final layout = controller.layout.value;
       final cells = controller.cells;
-      // 在 Obx 内读取以建立订阅：晋升与弹幕开关变化即时驱动重绘。
       final focused = controller.focusedCellIndex.value;
       final audioFocus = controller.audioFocusIndexState.value;
       final danmakuEnabled = controller.danmakuEnabled.value;
@@ -614,18 +535,12 @@ class _MultiviewPageState extends State<MultiviewPage> {
     });
   }
 
-  /// 一大多小布局：左侧大格（当前聚焦格）+ 右侧可滚动小列。
-  ///
-  /// 窄屏保持同一形态，不做上下变体。格子子树经 GlobalKey 搬移，
-  /// 晋升切换只改变位置，不重建播放画面。小列首屏恰容纳
-  /// [_focusSmallViewportCells] 格，追加格滚动呈现，列尾附「添加画面」槽。
   Widget _buildFocusLayout(
     List<MultiviewCellState> cells, {
     required int focused,
     required bool isWide,
     required bool danmakuEnabled,
   }) {
-    // 核心层已在缩容/释放时钳制 focusedCellIndex，此处再钳一次防竞态越界。
     final bigIndex = focused.clamp(0, cells.length - 1);
     final others = [
       for (var i = 0; i < cells.length; i++)
@@ -645,7 +560,6 @@ class _MultiviewPageState extends State<MultiviewPage> {
                     bigIndex,
                     isWide: isWide,
                     showDanmaku: danmakuEnabled,
-                    // 控制条可见时隐藏左下角清晰度 chip：入口已在控制条内。
                     showQualityEntry: !_largeControlsVisible,
                   ),
                 ),
@@ -659,17 +573,12 @@ class _MultiviewPageState extends State<MultiviewPage> {
           flex: _focusSmallFlex,
           child: LayoutBuilder(
             builder: (context, boxConstraints) {
-              // 固定行高 = 视口高 / 首屏格数：前三格铺满视口，超出滚动。
               final extent = boxConstraints.maxHeight / _focusSmallViewportCells;
               _focusRailCellIndices = others;
               _focusRailItemExtent = extent;
               _focusRailViewportExtent = boxConstraints.maxHeight;
               _syncFocusRailVisibility();
               final canAdd = controller.canAddCell;
-              // 常驻全部子项（SingleChildScrollView + Column），不做虚拟化：
-              // maxCells=9、首屏 3 格的规模下虚拟化是纯负收益——滚动会反复
-              // 销毁/重建 Video（Windows 共享渲染线程纹理重附开销大），且把
-              // GlobalKey 零重建降级为仅视口内成立。滚动行为不变。
               return SingleChildScrollView(
                 controller: _focusRailScrollController,
                 child: Column(
@@ -700,9 +609,6 @@ class _MultiviewPageState extends State<MultiviewPage> {
     );
   }
 
-  /// 大画面底部控制条：按钮集对齐 live_play 底部栏——
-  /// 播放暂停、刷新、弹幕开关、弹幕设置、清晰度、线路、音量、全屏。
-  /// 点击大画面切换显隐（见 [_largeControlsVisible]）。
   Widget _buildLargeControlBar(List<MultiviewCellState> cells, int bigIndex) {
     final state = cells[bigIndex];
     final iconColor = Colors.white.withValues(alpha: 0.92);
@@ -776,7 +682,6 @@ class _MultiviewPageState extends State<MultiviewPage> {
     );
   }
 
-  /// 控制条按钮：视频上的白色图标，统一尺寸。
   Widget _controlBarButton({
     required IconData icon,
     required String tooltip,
@@ -792,7 +697,6 @@ class _MultiviewPageState extends State<MultiviewPage> {
     );
   }
 
-  /// 线路选择弹窗（形态与清晰度弹窗一致）。
   void _showLineSheet(MultiviewCellState state) {
     if (state.lines.isEmpty) return;
     showModalBottomSheet(
@@ -816,7 +720,6 @@ class _MultiviewPageState extends State<MultiviewPage> {
     );
   }
 
-  /// 音量调节弹窗：拖动即时下发并保存所选房间音量（0.0-1.0）。
   void _showVolumeSheet(int cellIndex) {
     var value = controller.cellVolume(cellIndex);
     final room = controller.cells[cellIndex].room;
@@ -872,8 +775,6 @@ class _MultiviewPageState extends State<MultiviewPage> {
     );
   }
 
-  /// 弹幕设置面板：复用 live_play 官方面板（含位置预设/显示区域），
-  /// 经 [MultiviewDanmakuSettingsSource] 透传全局设置。
   void _showDanmakuSettings() {
     showModalBottomSheet(
       context: context,
@@ -916,16 +817,12 @@ class _MultiviewPageState extends State<MultiviewPage> {
       onTap: () {
         switch (status) {
           case MultiviewCellStatus.playing:
-            // 一大多小下点击小格 = 晋升为大画面（声源跟随大画面）；
-            // 新大画面从隐藏控制条开始。
             if (controller.layout.value == MultiviewLayout.focus && controller.focusedCellIndex.value != index) {
-              unawaited(controller.promoteCell(index)); // focusedCellIndex 为 Rx，Obx 自行重绘
+              unawaited(controller.promoteCell(index));
               _largeControlsVisible = false;
               setState(() {});
               return;
             }
-            // focus 大格点击 = 切换控制条显隐（对齐 live_play 点按呼出
-            // 控制条的交互）；其余布局维持原音频焦点行为。
             if (controller.layout.value == MultiviewLayout.focus) {
               setState(() => _largeControlsVisible = !_largeControlsVisible);
               return;
@@ -943,10 +840,6 @@ class _MultiviewPageState extends State<MultiviewPage> {
   }
 }
 
-/// 单格视图：按生命周期状态渲染播放画面、空态、加载与错误占位。
-///
-/// 音频焦点格以主色描边 + 「声音来源」角标突出；目标空格以待选描边提示。
-/// 大画面格（focus 布局）额外承载弹幕层与清晰度入口。
 class _MultiviewCellView extends StatelessWidget {
   const _MultiviewCellView({
     super.key,
@@ -971,7 +864,6 @@ class _MultiviewCellView extends StatelessWidget {
   final VoidCallback? onLongPress;
   final VoidCallback onRetry;
 
-  /// 在大画面上层叠弹幕；由页面按 danmakuEnabled 折算后传入。
   final bool showDanmaku;
   final BarrageController barrageController;
 
@@ -979,7 +871,6 @@ class _MultiviewCellView extends StatelessWidget {
 
   final Future<void> Function(int width, int height) onRenderResize;
 
-  /// 是否显示清晰度入口（仅 focus 布局大画面为 true）。
   final bool showQualityEntry;
   final ValueChanged<int> onSelectQuality;
 
@@ -1013,8 +904,6 @@ class _MultiviewCellView extends StatelessWidget {
       final video = Video(
         controller: videoController,
         controls: NoVideoControls,
-        // multiview 页面自持每格生命周期，禁用 Video 内置的后台暂停策略，
-        // 与主播放器 LivePlay 的单一生命周期权威原则保持一致。
         pauseUponEnteringBackgroundMode: false,
         resumeUponEnteringForegroundMode: false,
       );
@@ -1032,7 +921,6 @@ class _MultiviewCellView extends StatelessWidget {
         fit: StackFit.expand,
         children: [
           videoSurface,
-          // 弹幕层：仅大画面渲染；IgnorePointer 保证不遮挡格子手势。
           if (showDanmaku)
             Positioned.fill(
               child: IgnorePointer(
@@ -1060,17 +948,13 @@ class _MultiviewCellView extends StatelessWidget {
       MultiviewCellStatus.resolving => _buildResolvingContent(),
       MultiviewCellStatus.offline => _buildOfflineContent(theme),
       MultiviewCellStatus.error => _buildErrorContent(theme),
-      // playing 但渲染控制器尚未就绪的瞬间：黑场等待即可。
       MultiviewCellStatus.playing => const SizedBox.shrink(),
     };
   }
 
-  /// 清晰度是否可选：qualities 为空（解析中/失败/不支持换档）时置灰。
   bool get _qualityAvailable =>
       state.status == MultiviewCellStatus.playing && state.qualities.isNotEmpty && state.qualityLoader != null;
 
-  /// 大画面左下角清晰度入口：形态对齐 live_play 的 ResolutionSelector，
-  /// 底色改为视频上的半透明黑以保证可读性。
   Widget _buildQualityEntry(ThemeData theme) {
     if (!_qualityAvailable) return const SizedBox.shrink();
     final currentName = state.qualities[state.qualityIndex.clamp(0, state.qualities.length - 1)].quality;
@@ -1232,7 +1116,6 @@ String _multiviewRoomLabel(LiveRoom? liveroom) {
   return '';
 }
 
-/// 播放中格子左上角的房间名条：平台徽标 + 主播昵称。
 class _RoomNameChip extends StatelessWidget {
   const _RoomNameChip({required this.state});
 
@@ -1265,7 +1148,6 @@ class _RoomNameChip extends StatelessWidget {
   }
 }
 
-/// 音频焦点角标：主色底 + 音量图标，标记当前出声的格子。
 class _AudioFocusBadge extends StatelessWidget {
   const _AudioFocusBadge();
 
@@ -1289,16 +1171,7 @@ class _AudioFocusBadge extends StatelessWidget {
   }
 }
 
-/// 大画面弹幕层。
 ///
-/// 独立 Obx：[_buildBarrageConfig] 在订阅作用域内读取全部弹幕设置 Rx
-/// （字号/速度/透明度/区域/描边/字体/FPS），全局设置变化即时重绘弹幕层
-/// （对照 live_play DanmakuViewer 整段 Obx 包裹的做法）。格子子树的 build
-/// 不在父级 Obx 作用域内，不包裹则设置变化永远不会触达这里。
-///
-/// 竖屏判定用这一格自己的源宽高，而不是主播放器的方向：多画面里每一路直播
-/// 都是独立的一格，拿主播放器的方向代替会让「竖屏弹幕：隐藏/收窄」在真正
-/// 竖屏的小格里失效、在横屏小格里误伤。
 class _MultiviewDanmakuLayer extends StatelessWidget {
   const _MultiviewDanmakuLayer({required this.controller, required this.barrageController});
 
@@ -1320,11 +1193,7 @@ class _MultiviewDanmakuLayer extends StatelessWidget {
 
   Widget _buildLayer(int? width, int? height) {
     return Obx(() {
-      // refreshRateMode 是由该 Rx 派生的普通 getter，
-      // 显式订阅其响应源以覆盖自动帧率模式切换。
       SettingsService.to.app.refreshRateModeName.v;
-      // 宽高都有才判定方向；只有一路已知时按横屏处理（与主播放器
-      // 「拿不到几何就不当竖屏」的保守判定一致）。
       final isVerticalVideo = width != null && height != null && width > 0 && height > 0 && height > width;
       final mode = SettingsService.to.player.portraitDanmakuMode;
       if (PortraitDanmakuPolicy.hidesDanmaku(isVerticalVideo: isVerticalVideo, mode: mode)) {
@@ -1340,11 +1209,6 @@ class _MultiviewDanmakuLayer extends StatelessWidget {
   }
 }
 
-/// 大画面弹幕配置。
-///
-/// 结构照抄 live_play 的 DanmakuViewer（video_controller_panel.dart）既有
-/// 配置；字号/速度/区域等取全局弹幕设置默认值，池容量沿用同组常量。
-/// 竖屏源按 [PortraitDanmakuPolicy] 与房间画面收窄同一份显示区域。
 BarrageConfig _buildBarrageConfig({required bool isVerticalVideo}) {
   final settings = SettingsService.to.danmaku;
   return BarrageConfig(
@@ -1377,13 +1241,10 @@ BarrageConfig _buildBarrageConfig({required bool isVerticalVideo}) {
     pictureCacheMaxSize: 96,
     barragePoolMaxSize: 72,
     textCacheMaxSize: 320,
-    // 弹幕层缩在一个格子里，设备安全区（状态栏/挖孔）是整屏概念，套到格子里
-    // 只会把弹幕整体推下去；小窗弹幕层同样关掉它。
     safeArea: false,
   );
 }
 
-/// 一大多小小列尾部的「添加画面」占位槽。
 class _AddCellSlot extends StatelessWidget {
   const _AddCellSlot({required this.onTap});
 
@@ -1422,7 +1283,6 @@ class _AddCellSlot extends StatelessWidget {
   }
 }
 
-/// 沉浸模式右下角的悬浮恢复钮。
 class _ImmersiveRestoreButton extends StatelessWidget {
   const _ImmersiveRestoreButton({required this.onTap});
 

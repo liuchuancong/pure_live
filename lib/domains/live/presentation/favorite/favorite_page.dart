@@ -204,7 +204,6 @@ class FavoriteTagStrip extends StatelessWidget {
     return Obx(() {
       // Read both reactive values before entering ListView.builder. Its lazy
       // itemBuilder runs outside GetX's dependency collector, which previously
-      // left the visual chip on “全部” while the data filter had already moved
       // to a custom tag.
       final visibleTags = tags.toList(growable: false);
       final activeTagId = selectedTagId.value;

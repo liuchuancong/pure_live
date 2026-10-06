@@ -34,7 +34,6 @@ extension ResetInstance on GetInterface {
   ///
   /// `clearFactory` clears the callbacks registered by [lazyPut]
   /// `clearRouteBindings` clears Instances associated with routes.
-  ///
   bool resetInstance({bool clearRouteBindings = true}) {
     //  if (clearFactory) _factory.clear();
     // deleteAll(force: true);

@@ -1,7 +1,3 @@
-/// GetX 路由依赖装配：每个页面进栈前要 lazyPut 的控制器。
-///
-/// 这些类原先各自占一个 `<页面>_binding.dart`（24 个 7~9 行的小文件），但它们既不是页面
-/// 也不是控制器，只是路由的装配清单，所以收在 app/router 里合成一个文件。
 library;
 
 import 'package:pure_live/core/index.dart' hide SearchController;
@@ -149,10 +145,6 @@ class HotAreasBinding extends Binding {
   }
 }
 
-/// 多画面同看页绑定。
-///
-/// 生产依赖（每格播放器工厂、站点解析器、全局播放暂停钩子）由
-/// [MultiviewController] 构造函数默认装配；测试直接构造控制器并注入假实现。
 class MultiviewBinding extends Binding {
   @override
   List<Bind> dependencies() {

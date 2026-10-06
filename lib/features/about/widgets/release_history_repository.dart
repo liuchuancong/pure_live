@@ -5,7 +5,6 @@ import 'package:pure_live/core/network/race_http.dart';
 import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/core/models/release_model.dart';
 
-
 typedef ReleaseHistoryExternalLauncher = Future<bool> Function(Uri uri);
 typedef ReleaseHistoryDownloadHandler = Future<void> Function(String url, {String? fileName});
 typedef ReleaseHistoryLoader = Future<List<ReleaseModel>> Function();

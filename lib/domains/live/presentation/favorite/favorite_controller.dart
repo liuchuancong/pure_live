@@ -869,7 +869,6 @@ class FavoriteController extends LocalReactivePageController<LiveRoom>
     }
   }
 
-  /// One entry for the failure summary: `小明（douyin/123456，TimeoutException）`.
   String _refreshFailureLabel(LiveRoom liveroom, String reason) {
     final String platform = liveroom.normalizedPlatformId;
     final String roomId = liveroom.roomId?.trim() ?? '';

@@ -2,52 +2,30 @@ import 'package:pure_live/core/player/core/live_room_volume_manager.dart';
 import 'package:pure_live/core/network/http_header_policy.dart';
 import 'package:pure_live/core/utils/invisible_placeholders.dart';
 
-/// 房间的播出状态。
 ///
-/// [carousel] 是平台明确的"轮播"：主播不在，房间在循环播放旧视频（B 站
-/// `live_status` 2）。它既不是直播也不是下播——此前被并进 [offline]，
-/// 于是可播放的轮播房被当成未开播拒掉。
-///
-/// 注意：状态按 `index` 持久化（见 [LiveRoom.toJson]），新增值必须追加在末尾。
 enum LiveStatus { live, offline, replay, unknown, banned, carousel }
 
-/// 一个在播房间里"为什么不能直接播"的原因（上游 4.x 的统一口径）：列表与房间
-/// 页仍显示为在播并标出种类，播放时才说明原因。
-///
-/// 按 **名称** 存进房间 JSON（见 [LiveRoom.toJson]），所以可以任意位置新增种类；
-/// 本版本不认识的名称读成 [none]。
 enum LiveRestriction {
-  /// 没有限制。
   none,
 
-  /// 需要登录才能看。
   needsLogin,
 
-  /// 付费直播或门票。
   paid,
 
-  /// 仅主播的订阅者/会员可见。
   subscribersOnly,
 
-  /// 私密或仅好友可见。
   private,
 
-  /// 只在平台自家 App 内可看。
   appOnly,
 
-  /// 当前地区不可看。
   regionBlocked,
 
-  /// 房间密码保护。
   password,
 
-  /// 平台年龄验证后的成人内容。
   adult,
 
-  /// 平台说在播（或有回放）却没给这个客户端任何流。
   unplayable;
 
-  /// 按名称取限制种类；不认识的名称按 [none] 处理。
   static LiveRestriction fromName(Object? name) => values.asNameMap()[name] ?? none;
 }
 
@@ -321,37 +299,30 @@ class LiveRoom {
   String? platform = 'UNKNOWN';
   List<String> tagIds = [];
 
-  /// 介绍
   String? introduction;
 
-  /// 公告
   String? notice;
 
-  /// 状态
   bool? status;
 
   dynamic data;
 
   dynamic danmakuData;
 
-  /// 是否录播
   bool? isRecord = false;
-  // 直播状态
   LiveStatus? liveStatus;
 
   /// EPG channel id
   String? epgId;
 
-  /// 当前节目
   String? currentProgramme;
 
-  /// 当前节目描述
   String? currentProgrammeDescription;
 
-  String? catchUpUrl; // 时移播放地址
-  bool? isCatchUp; // 是否正在时移
-  int? catchUpStart; // 时移开始时间戳
-  int? catchUpEnd; // 时移结束时间戳
+  String? catchUpUrl;
+  bool? isCatchUp;
+  int? catchUpStart;
+  int? catchUpEnd;
   String? catchUpMode; // M3U provider catch-up mode
   String? catchUpSource; // M3U provider URL template/query
   double? catchUpDays; // Provider archive window
@@ -361,14 +332,10 @@ class LiveRoom {
   /// Local epoch-millisecond timestamp used by the viewing-history UI.
   int? lastWatchedAt;
 
-  /// 本场直播的开播时间（UTC）。平台没给就是 null。
   DateTime? startedAt;
 
-  /// 平台明确说明的观看限制。null 表示这次回答没有提限制；
-  /// [LiveRestriction.none] 表示平台被问过且确实没有限制。
   LiveRestriction? restriction;
 
-  // 添加未命名的默认构造函数
   LiveRoom({
     this.roomId,
     this.userId,
@@ -411,9 +378,6 @@ class LiveRoom {
   }) : liveStatus = liveStatus ?? _legacyStatusToLiveStatus(status: status, isRecord: isRecord),
        tagIds = tagIds ?? [],
        startedAt = startedAt?.toUtc(),
-       // 平台留下的不可见占位字符（快手标题里的 U+FFFC 会画成 "OBJ"）在创建时就
-       // 清掉：这样每个平台、以及已经存进收藏/历史的那份文本都被覆盖到，不用各
-       // 站点自己处理（上游 M13.16 的同一做法）。
        title = stripInvisiblePlaceholders(title ?? ''),
        nick = stripInvisiblePlaceholders(nick ?? ''),
        introduction = stripInvisiblePlaceholdersOrNull(introduction),
@@ -471,7 +435,6 @@ class LiveRoom {
     }
   }
 
-  /// 创建一个新的LiveRoom实例，并用提供的值更新指定字段
   LiveRoom copyWith({
     String? roomId,
     String? userId,
@@ -558,10 +521,8 @@ class LiveRoom {
 
   String get normalizedRoomId => roomId?.trim() ?? '';
 
-  /// 当前生效的限制种类：平台没提过限制就当作 [LiveRestriction.none]。
   LiveRestriction get effectiveRestriction => restriction ?? LiveRestriction.none;
 
-  /// 平台是否明确标出了限制（用于卡片上的标记）。
   bool get isRestricted => effectiveRestriction != LiveRestriction.none;
 
   bool get isCatchUpActive => isCatchUp == true || (catchUpUrl?.trim().isNotEmpty ?? false);
@@ -592,8 +553,6 @@ class LiveRoom {
 
   bool get isLiveNow => effectiveLiveStatus == LiveStatus.live;
 
-  /// 可以尝试打开播放源的状态：直播、回放，以及轮播（B 站的轮播房会给出
-  /// 循环播放的视频源，主播不在也不该被当成未开播拒掉）。
   bool get isPlayableNow =>
       effectiveLiveStatus == LiveStatus.live ||
       effectiveLiveStatus == LiveStatus.replay ||
@@ -684,15 +643,11 @@ class LiveRoom {
       'catchUpCorrectionHours': catchUpCorrectionHours,
       'httpHeaders': HttpHeaderPolicy.normalize(httpHeaders),
       'lastWatchedAt': lastWatchedAt,
-      // v4 键：开播时间按 ISO 8601（UTC）存，限制按名称存；旧备份没有这两个键，
-      // 读出来就是 null。
       'startedAt': startedAt?.toIso8601String(),
       'restriction': restriction?.name,
     };
   }
 
-  /// 开播时间：ISO 8601 文本或 epoch 毫秒都能读（上游 4.x 的同一规则），
-  /// 一律转成 UTC。
   static DateTime? _timeFromJson(Object? value) {
     if (value is num) {
       final millis = value.toInt();
@@ -1009,13 +964,10 @@ extension LiveRoomExtension on LiveRoom {
     if (liveroom == null) return this;
 
     return copyWith(
-      // 上游 A-3：详情页没有标题时保留手上那份的标题（快手房间页本身就没有直播
-      // 标题），此前标题会被详情里的空值覆盖成空。
       title: _getValueIfEmpty(title, liveroom.title),
       area: _getValueIfEmpty(area, liveroom.area),
       nick: _getValueIfEmpty(nick, liveroom.nick),
       avatar: _getValueIfEmpty(avatar, liveroom.avatar),
-      // 限制与开播时间：详情没提时保留手上那份（卡片/关注里已存的值）。
       restriction: restriction ?? liveroom.restriction,
       startedAt: startedAt ?? liveroom.startedAt,
     );

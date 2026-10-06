@@ -27,7 +27,6 @@ class PlayerState {
   bool get hasPlaybackSource => lineCount > 0;
   final Map<String, HlsSourceQueryPolicy> sourceQueryPolicies;
 
-  /// 平台为当前这批线路声明的容器/编码事实，取流接线据此决定要不要本地中继。
   final Map<String, LiveStreamFacts> streamFacts;
   final int currentLineIndex;
   final bool isCurrentRoomAudioOnly;
@@ -143,5 +142,4 @@ class PlayerState {
   );
 }
 
-/// 一次房间数据重载的原因。
 enum ReloadDataType { refresh, changeLine, changeQuality }

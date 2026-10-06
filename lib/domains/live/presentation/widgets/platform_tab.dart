@@ -42,11 +42,8 @@ class PlatformLogo extends StatelessWidget {
   Widget build(BuildContext context) => PlatformLogoAsset(asset: site.logo, size: size);
 }
 
-/// A platform tab: the platform's logo followed by its name.
-///
-/// The 分区 page has drawn the logo since it got platform tabs, while 热门, 关注
-/// and 搜索 showed a bare label - the same platform looked like three different
-/// things depending on the page. Every platform selector builds this one widget.
+/// A platform tab: the platform's logo followed by its name. Every platform
+/// selector builds this one widget.
 class PlatformTab extends StatelessWidget {
   const PlatformTab({super.key, required this.site});
 

@@ -86,7 +86,6 @@ class _ScanCodePageState extends State<ScanCodePage> {
     final custom = widget.syncSettings;
     if (custom != null) return custom(address);
     if (!mounted) return null;
-    // 推送哪些模块由观众在模块页勾选；取消返回 null，不算一次失败的同步。
     final sections = await pickBackupSections(
       direction: BackupSectionDirection.export,
       available: BackupController.tvSectionNames,
@@ -305,7 +304,6 @@ class _ScanCodePageState extends State<ScanCodePage> {
 
     if (!mounted || operation != _operationGeneration) return;
     if (cancelled == true) {
-      // 观众在模块页取消：重新起一次扫码，不报失败。
       await _restartScanner();
       return;
     }

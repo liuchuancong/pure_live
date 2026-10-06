@@ -12,17 +12,14 @@ import 'package:android_intent_plus/android_intent.dart';
 class FileUtils {
   static const String systemHotProviderId = "88888";
 
-  /// 获取文件路径中的纯文件名
   static String getFileName(String fullPath) {
     return fullPath.split(Platform.pathSeparator).last;
   }
 
-  /// 获取不带后缀的文件名
   static String getBaseName(String fullPath) {
     return p.basenameWithoutExtension(fullPath);
   }
 
-  /// 生成基于时间戳和随机数的唯一长整数 ID 字符串
   static String generateUuid() {
     final currentTime = DateTime.now().millisecondsSinceEpoch;
     final randomValue = Random().nextInt(4294967295);
@@ -53,19 +50,11 @@ class FileUtils {
 
   static bool isHostUrl(String value) => parseHttpUrl(value) != null;
 
-  /// 验证字符串是否为纯数字（端口号校验）
   static bool isNumericPort(String value) {
     return RegExp(r"^\d+$").hasMatch(value);
   }
 
-  /// 请求写入应用沙箱之外目录所需的存储权限。
   ///
-  /// Android 11+ 使用「所有文件访问权限」这一特殊权限；Android 10 及以下使用
-  /// 传统的运行时存储权限。应用专属外部目录（`getDownloadsDirectory()`）不需要
-  /// 任何权限，因此只有用户主动选择了公共目录时才会走到这里。
-  ///
-  /// 返回值表示调用结束时的授权状态；「所有文件访问权限」需要用户跳转系统设置
-  /// 页面手动开启，返回 false 时调用方应再校验目标目录是否真的可写。
   static Future<bool> requestStoragePermission() async {
     if (!Platform.isAndroid) return true;
 
@@ -192,8 +181,6 @@ class FileUtils {
           type: 'vnd.android.document/directory',
         );
 
-        // 精简模拟器镜像没有处理 vnd.android.document/directory 的文件管理器。
-        // 未解析到任何界面时必须如实返回失败，否则界面会误报“已打开文件夹”。
         if (await intent.canResolveActivity() != true) {
           return false;
         }

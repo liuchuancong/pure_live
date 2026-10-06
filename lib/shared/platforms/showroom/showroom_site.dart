@@ -30,7 +30,6 @@ class ShowroomSite extends LiveSite
         LiveSiteRecordRoomResolver,
         LivePlayRecoveryResolver,
         LiveSiteExternalRoomResolver {
-  /// 该站点自己的官方房间地址（网页与可选的客户端 scheme）。
   @override
   RoomExternalTarget? externalRoomTarget(LiveRoom liveroom) {
     final id = sanitizedExternalRoomId(liveroom.roomId);
@@ -200,7 +199,6 @@ class ShowroomSite extends LiveSite
       totalViewers: audience,
       audienceMetricType: AudienceMetricType.totalViewers,
       liveStatus: LiveStatus.live,
-      // `premium_room_type` 为 0 是人人可看的普通直播（上游 19-x）。
       restriction: live.restriction,
       httpHeaders: ShowroomApi.mediaHeaders,
     );
@@ -208,7 +206,6 @@ class ShowroomSite extends LiveSite
 
   LiveRoom _detailCard(ShowroomRoom room) {
     final profile = room.profile;
-    // 未开播的房间没有观众数（上游 19-4）：`view_num` 是上一场的残留。
     final audience = profile.isLive ? profile.totalViewers?.toString() : null;
     final qualities = room.streams.map(_quality).toList(growable: false)
       ..sort((left, right) {
@@ -233,7 +230,6 @@ class ShowroomSite extends LiveSite
       restriction: profile.isLive ? profile.restriction : null,
       startedAt: profile.isLive ? profile.startedAt : null,
       data: profile.isLive && qualities.isNotEmpty ? _ShowroomPlayback('${profile.roomId}', qualities) : null,
-      // 弹幕参数（上游 M5.15）：直播中且有评论服务器与订阅键时给。
       danmakuData: profile.isLive && room.chatHost.isNotEmpty && room.chatKey.isNotEmpty
           ? ShowroomDanmakuArgs(roomId: profile.roomId, host: room.chatHost, key: room.chatKey)
           : null,

@@ -256,7 +256,6 @@ class TwitcastingApi {
           audienceMetricType: AudienceMetricType.onlineViewers,
           status: true,
           liveStatus: LiveStatus.live,
-          // 上了锁的直播仍然是"在播"，只是需要房间密码（上游 12-x）。
           restriction: row['is_locked'] == true ? LiveRestriction.password : LiveRestriction.none,
         ),
       );
@@ -313,11 +312,8 @@ class TwitcastingApi {
           channelUri.hasFragment ||
           channelUri.pathSegments.length != 1 ||
           movieUri.pathSegments.length != 3) {
-        // 读不出来的行只丢它自己（上游：坏行不该让整页搜索失败）。
         continue;
       }
-      // 不是"正在直播"的行不列出来；播放包装不存在时，徽章写着 private 的就是
-      // 私密直播，其它的说明平台没给可播的流（上游 12-5）。
       if (row.querySelector('.tw-movie-thumbnail2-badge[data-status="live"]') == null) continue;
       final playable = row.querySelector('.tw-movie-thumbnail2-image-wrapper[data-can-play="true"]') != null;
       final private = !playable &&
@@ -362,8 +358,6 @@ class TwitcastingApi {
   Future<LiveRoom> detail(String input, {bool includeMedia = true, CancelToken? cancel}) async {
     final channel = channelName(input);
     final page = await read(Uri.parse('$origin/$channel'), cancel: cancel);
-    // 要"合言葉"的直播仍然是"在播"，只是本客户端播不了（上游 12-x）：此前直接抛
-    // access，于是连房间信息都看不到。
     if (page.contains('Enter the secret word to access')) {
       return LiveRoom(
         platform: 'twitcasting',
@@ -397,10 +391,6 @@ class TwitcastingApi {
     final movie = object(stream['movie']);
     if (movie['live'] is! bool) throw const TwitcastingException(TwitcastingFailure.schema);
     final live = movie['live'] == true;
-    // 标题优先取直播的 telop（播放器标题下方那行）。只取该元素自己的文本节点，
-    // 话题标签在子元素里，天然被排除；没有 telop 才退回页面的 `twitter:title`
-    // （上游 12-1）。`twitter:description` 不再作为退路：没有 telop 时它是主播
-    // 的简介。
     final telopTag = document.querySelector('.tw-player-page-title-description');
     final telop = telopTag == null
         ? ''
@@ -427,7 +417,6 @@ class TwitcastingApi {
     }
     final movieId = integer(movie['id']);
     if (movieId == null || movieId <= 0) throw const TwitcastingException(TwitcastingFailure.schema);
-    // 弹幕用这一场的 movie id（屏幕名不是它；上游 M5.11）。
     room.danmakuData = TwitcastingDanmakuArgs(movieId: movieId);
     final streams = object(object(stream['tc-hls'])['streams']);
     final qualities = <LivePlayQuality>[];

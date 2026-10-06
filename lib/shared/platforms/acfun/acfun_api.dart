@@ -69,10 +69,8 @@ class AcfunPlayback {
   final String liveId;
   final List<AcfunStreamQuality> qualities;
 
-  /// `availableTickets`：进聊天室要用的票据（上游 M4.10 留给弹幕模块）。
   final List<String> tickets;
 
-  /// `enterRoomAttach`：进房时原样回带。
   final String enterRoomAttach;
 }
 
@@ -83,7 +81,6 @@ class _VisitorSession {
   final String token;
   final DateTime expiresAt;
 
-  /// `acSecurity`：聊天链路注册时用的 Base64 AES-128 密钥；没有就是空串（只影响弹幕）。
   final String security;
 }
 
@@ -216,8 +213,6 @@ class AcfunApi {
         if (type == null || type < 0 || id == null || id < 0 || name.isEmpty) {
           throw const AcfunApiException(AcfunFailureKind.schema);
         }
-        // 「全部」列的是全站直播，与推荐相同，不作为分区列出（上游 10-2；
-        // 3.x 会列出来）。
         if (id == allFilterId) continue;
         result.putIfAbsent((
           type,
@@ -228,7 +223,6 @@ class AcfunApi {
     return List.unmodifiable(result.values);
   }
 
-  /// 「全部」的 filter id：它列的是全站直播（推荐），不是一个分区（上游 10-2）。
   static const int allFilterId = 0;
 
   Future<Map<String, dynamic>> roomInfo(String authorId) async {
@@ -313,7 +307,6 @@ class AcfunApi {
     final payload = object(data['data']);
     final liveId = text(payload['liveId']);
     if (liveId.isEmpty) throw const AcfunApiException(AcfunFailureKind.schema);
-    // 弹幕要用的票据与进房附带串（上游 M4.10 留给弹幕模块）。
     final tickets = <String>[];
     final rawTickets = payload['availableTickets'];
     if (rawTickets is List) {
@@ -330,7 +323,6 @@ class AcfunApi {
     );
   }
 
-  /// 当前访客会话（弹幕参数要用它的 `acSecurity` 与 token）；没有就先登录。
   Future<({String userId, String did, String token, String security})> visitorCredentials() async {
     final session = await _session();
     return (userId: session.userId, did: session.did, token: session.token, security: session.security);

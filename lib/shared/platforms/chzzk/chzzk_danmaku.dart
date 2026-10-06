@@ -7,8 +7,6 @@ import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/core/network/web_socket_util.dart';
 import 'package:pure_live/shared/platforms/live_danmaku.dart';
 
-/// CHZZK 的弹幕参数（上游 M5.16 / M4.U.20）：`chatChannelId` 是这一场的聊天频道
-/// （每场直播换一个），`channelId` 连接用不到，只作标识。
 class ChzzkDanmakuArgs {
   const ChzzkDanmakuArgs({required this.chatChannelId, this.channelId = ''});
 
@@ -16,10 +14,6 @@ class ChzzkDanmakuArgs {
   final String channelId;
 }
 
-/// CHZZK 的聊天（上游 M5.16）：照网站聊天 SDK 的做法——先要访问令牌，再要路由表
-/// （`*​.chat.naver.com` 的会话服务器，随机挑一台、其余轮着来），只读加入，加入后拉
-/// 一次最近聊天；每 20 秒 ping 一次，服务端也会 ping 我们；30 秒静默与 5 秒加入时限。
-/// 被拒加入（302–304）或收到 90102 就结束这一轮。
 class ChzzkDanmaku extends LiveDanmaku {
   ChzzkDanmaku();
 
@@ -86,7 +80,6 @@ class ChzzkDanmaku extends LiveDanmaku {
     }
   }
 
-  /// 访问令牌：最多 3 次（间隔 0.5 秒、1 秒）。
   Future<String?> _accessToken(int generation) async {
     final chatChannelId = _args?.chatChannelId ?? '';
     for (var round = 0; round < 3; round++) {
@@ -111,7 +104,6 @@ class ChzzkDanmaku extends LiveDanmaku {
     return null;
   }
 
-  /// 路由表：只收 `*​.chat.naver.com` 的主机，去重，最多 16 台。
   Future<List<String>> _sessionServers(int generation) async {
     final response = await HttpClient.instance.getJson(
       _routingUrl,
@@ -144,7 +136,6 @@ class ChzzkDanmaku extends LiveDanmaku {
       headers: const <String, String>{'origin': 'https://chzzk.naver.com'},
       onReady: () {
         if (generation != _generation) return;
-        // 只读加入。
         _socket?.sendMessage(json.encode(<String, Object?>{
           'ver': '3',
           'cmd': 100,
@@ -195,14 +186,12 @@ class ChzzkDanmaku extends LiveDanmaku {
     }
     if (decoded is! Map) return;
     final cmd = int.tryParse(decoded['cmd']?.toString() ?? '') ?? 0;
-    // 100 是加入回答；收到它才算连上。
     if (cmd == 100 && !_joined) {
       _joined = true;
       markConnected();
       onReady?.call();
       return;
     }
-    // 被拒加入（302–304）与 90102：这一轮结束。
     if (cmd >= 302 && cmd <= 304) {
       throw StateError('CHZZK：加入被拒（$cmd）');
     }
@@ -216,8 +205,6 @@ class ChzzkDanmaku extends LiveDanmaku {
     }
   }
 
-  /// 只会显示种类 1（文字）、10（捐赠）、11（订阅）且状态 `NORMAL` 的行；名字取
-  /// `profile.nickname`，文字取 `msg`/`content` 去首尾空白。
   LiveMessage? _chatMessage(Object? body) {
     if (body is! Map) return null;
     final type = int.tryParse((body['msgTypeCode'] ?? body['messageTypeCode'])?.toString() ?? '') ?? 1;

@@ -78,8 +78,6 @@ class ShowroomLive {
   final String telop;
   final List<ShowroomStream> streams;
 
-  /// `premium_room_type` 说明的限制（上游 19-x）：0 是普通直播、人人可看 →
-  /// [LiveRestriction.none]；其它取值没有记录说明是什么，留 null（未知）。
   final LiveRestriction? restriction;
 }
 
@@ -134,11 +132,8 @@ class ShowroomProfile {
   final String description;
   final bool isLive;
 
-  /// `current_live_started_at`（Unix 秒）对应的本场开播时间；只有直播详情会给
-  /// （上游 19-x）。读不出来或不在 2000–2100 年就是 null。
   final DateTime? startedAt;
 
-  /// 见 [ShowroomLive.restriction]。
   final LiveRestriction? restriction;
 
   ShowroomProfile withLiveStatus(bool value) => ShowroomProfile(
@@ -164,8 +159,6 @@ class ShowroomRoom {
   final ShowroomProfile profile;
   final List<ShowroomStream> streams;
 
-  /// 评论服务器与这一场的订阅键（上游 M5.15）：`live_info` 的 `bcsvr_host` 与
-  /// `bcsvr_key`；没有就是没有弹幕。
   final String chatHost;
   final String chatKey;
 }
@@ -323,8 +316,6 @@ class ShowroomApi {
     );
   }
 
-  /// `current_live_started_at`（Unix 秒）→ UTC；读不出来或不在 2000–2100 年时
-  /// 返回 null（上游 19-x 的 `startTime` 规则）。
   static DateTime? _startedAt(Object? value) {
     final seconds = _optionalNonNegativeInt(value);
     if (seconds == null || seconds <= 0) return null;
@@ -372,7 +363,6 @@ class ShowroomApi {
     final results = await Future.wait<Object>([profile(roomId, cancel: cancel), liveStatus(roomId, cancel: cancel)]);
     final profileResult = (results[0] as ShowroomProfile).withLiveStatus(results[1] as bool);
     if (!profileResult.isLive) return ShowroomRoom(profileResult, const []);
-    // 评论服务器与订阅键（上游 M5.15）：直播中才有。
     final chat = await commentServer(roomId, cancel: cancel);
     if (!playback) return ShowroomRoom(profileResult, const [], chatHost: chat.host, chatKey: chat.key);
     final media = await streams(roomId, cancel: cancel);
@@ -380,9 +370,6 @@ class ShowroomApi {
     return ShowroomRoom(profileResult, media, chatHost: chat.host, chatKey: chat.key);
   }
 
-  /// `live_info` 的 `bcsvr_host` / `bcsvr_key`（上游 M5.15）：主机必须是
-  /// `showroom-live.com` 或它的子域名（小写、不带端口与路径），键不超过 256 字、
-  /// 不含空白与控制字符（含制表符，否则能借订阅帧拼出别的命令）。
   Future<({String host, String key})> commentServer(int roomId, {CancelToken? cancel}) async {
     if (roomId <= 0) return (host: '', key: '');
     final data = _object(await _get('/api/live/live_info', {'room_id': '$roomId'}, cancel));
@@ -442,9 +429,6 @@ class ShowroomApi {
     );
   }
 
-  /// `premium_room_type` 说明的限制（上游 19-x）：0 是普通直播、人人可看 →
-  /// [LiveRestriction.none]；其它取值没有记录说明是什么，返回 null（未知，不能
-  /// 凭空猜成付费 —— 样本里所有房间都是 0，包括排了付费直播的房间）。
   static LiveRestriction? restrictionOf(Object? premiumRoomType) =>
       _optionalNonNegativeInt(premiumRoomType) == 0 ? LiveRestriction.none : null;
 

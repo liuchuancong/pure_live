@@ -87,7 +87,6 @@ class BackupController extends GetxController {
 
     final filtered = filterBackupSections(data, sections);
     if (!identical(filtered, data)) {
-      // 勾选结果决定这份备份到底有没有带凭据，标记必须跟着走。
       filtered['sensitiveDataIncluded'] =
           includeSensitiveData && (filtered.containsKey('webdav') || filtered.containsKey('cookie'));
     }
@@ -103,15 +102,10 @@ class BackupController extends GetxController {
     return result;
   }
 
-  /// 备份里可单独勾选的顶层模块，顺序即选择页的显示顺序。
-  ///
-  /// 与 [_sectionKeys] 同一个来源：新增一个 section，选择页与导入校验会一起看到它。
   static List<String> get sectionNames => List<String>.unmodifiable(_sectionKeys.keys);
 
-  /// 电视端推送支持的模块：`/api/setSettings` 是扁平负载，只认这几段。
   static const List<String> tvSectionNames = <String>['danmaku', 'favorite', 'history', 'iptv', 'cookie'];
 
-  /// [data] 里实际带了的模块，顺序同 [sectionNames]。
   static List<String> presentSections(Map<String, dynamic> data) {
     return [
       for (final name in _sectionKeys.keys)
@@ -119,9 +113,6 @@ class BackupController extends GetxController {
     ];
   }
 
-  /// 读取备份文件里实际带了的模块；解析不出本程序的备份返回 null。
-  ///
-  /// 返回空列表表示这是一份旧版扁平备份（没有模块划分），调用方只能整份恢复。
   static Future<List<String>?> readBackupSections(File file) async {
     try {
       final data = jsonDecode(await file.readAsString());
@@ -132,9 +123,6 @@ class BackupController extends GetxController {
     }
   }
 
-  /// 只保留勾选的模块。`sections` 为 null 表示不过滤（整份使用）。
-  ///
-  /// 版本这类元字段永远保留，否则过滤后的备份自己就读不出来了。
   static Map<String, dynamic> filterBackupSections(Map<String, dynamic> data, Iterable<String>? sections) {
     if (sections == null) return data;
     final selected = sections.toSet();

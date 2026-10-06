@@ -128,11 +128,9 @@ class M3uParser {
     final name = metadata.displayName.isNotEmpty ? metadata.displayName : attrs['tvg-name'];
     if (name == null || name.isEmpty) throw const FormatException('Missing channel name');
 
-    // 生成唯一频道ID
     final tvgId = attrs['tvg-id'];
     final String uniqueKey;
 
-    // 智能生成唯一键：优先 tvg-id → 其次频道名 → 最后链接
     if (tvgId != null && tvgId.isNotEmpty) {
       uniqueKey = tvgId;
     } else if (name.isNotEmpty) {
@@ -142,7 +140,6 @@ class M3uParser {
     }
     final channelId = '${providerId}_${uniqueKey.hashCode}';
 
-    // 解析频道序号
     int? channelNumber;
     final chnoStr = attrs['tvg-chno'];
     if (chnoStr != null) channelNumber = int.tryParse(chnoStr);
@@ -351,7 +348,6 @@ class M3uParser {
 
   static bool _space(int c) => c == 32 || (c >= 9 && c <= 13);
 
-  /// 自动判断流类型：直播/电影/剧集
   StreamType _inferStreamType(Map<String, String> attrs, String url) {
     final group = attrs['group-title']?.toLowerCase() ?? '';
     final lowerUrl = url.toLowerCase();
@@ -365,7 +361,6 @@ class M3uParser {
     return StreamType.live;
   }
 
-  /// 校验直播地址协议合法性
   bool _isValidStreamUrl(String url) {
     try {
       final uri = Uri.parse(url);
@@ -375,7 +370,6 @@ class M3uParser {
     }
   }
 
-  /// 空字符串转为null
   String? _emptyToNull(String? value) {
     return (value == null || value.isEmpty) ? null : value;
   }
@@ -398,7 +392,6 @@ class _ParsedStream {
   final Map<String, String> headers;
 }
 
-/// 解析结果实体
 class M3uResult {
   final List<Channel> channels;
   final List<String> errors;

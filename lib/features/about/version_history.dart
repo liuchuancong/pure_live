@@ -10,7 +10,6 @@ import 'package:markdown_widget/config/configs.dart';
 import 'package:pure_live/core/models/release_model.dart';
 import 'package:pure_live/features/about/widgets/release_history_repository.dart';
 
-
 class VersionHistoryPage extends StatefulWidget {
   const VersionHistoryPage({super.key, this.openExternalUrl, this.downloadRelease, this.releaseLoader});
 

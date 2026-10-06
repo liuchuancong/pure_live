@@ -6,8 +6,6 @@ import 'package:pure_live/core/models/live_message.dart';
 import 'package:pure_live/core/network/web_socket_util.dart';
 import 'package:pure_live/shared/platforms/live_danmaku.dart';
 
-/// SHOWROOM 的弹幕参数（上游 M5.15）：`host`/`key` 就是 `live_info` 的 `bcsvr_host`
-/// 与 `bcsvr_key`（每场直播一个、所有观众相同）；`roomId` 只用于标识。
 class ShowroomDanmakuArgs {
   const ShowroomDanmakuArgs({required this.roomId, required this.host, required this.key});
 
@@ -16,9 +14,6 @@ class ShowroomDanmakuArgs {
   final String key;
 }
 
-/// SHOWROOM 的评论（上游 M5.15）：连评论服务器，打开后发 `SUB\t<key>` 订阅（服务端**不
-/// 确认**，键不对就只是收不到消息），每 60 秒 `PING\tshowroom`（服务端约 0.3 秒回
-/// `ACK\tshowroom`，它同时喂 180 秒的静默看门狗），只报评论（`t` 1）。
 class ShowroomDanmaku extends LiveDanmaku {
   ShowroomDanmaku();
 
@@ -81,7 +76,6 @@ class ShowroomDanmaku extends LiveDanmaku {
       headers: const <String, String>{'Origin': 'https://www.showroom-live.com'},
       onReady: () {
         if (generation != _generation) return;
-        // 订阅：服务端不确认，收到 MSG 才算真的通。
         _socket?.sendMessage('SUB\t${_args?.key ?? ''}');
         _pingTimer?.cancel();
         _pingTimer = Timer.periodic(_pingInterval, (_) => _socket?.sendMessage(_ping));
@@ -107,7 +101,6 @@ class ShowroomDanmaku extends LiveDanmaku {
     _pingTimer?.cancel();
   }
 
-  /// 下行是 `MSG\t<键>\t<JSON>`；只处理本场的键与 `t` 1 的评论。
   void _handleFrame(String data) {
     if (!data.startsWith('MSG\t')) return;
     final rest = data.substring(4);
@@ -122,7 +115,6 @@ class ShowroomDanmaku extends LiveDanmaku {
       return;
     }
     if (decoded is! Map) return;
-    // 第一次收到本场消息才算连上（订阅没有确认帧）。
     if (!isConnected) {
       markConnected();
       onReady?.call();
@@ -132,10 +124,8 @@ class ShowroomDanmaku extends LiveDanmaku {
     if (message != null) onMessage?.call(message);
   }
 
-  /// `t` 1 的评论：`cm` 文字、`ac` 名字、`u` 用户 id、`created_at`（秒）、`cl` 等级。
   LiveMessage? _comment(Map<dynamic, dynamic> frame) {
     final raw = frame['cm'];
-    // 纯数字的评论（"1"、"2"…）是观众的数数习惯，照常上报。
     final text = switch (raw) {
       String value => value.trim(),
       int value => '$value',

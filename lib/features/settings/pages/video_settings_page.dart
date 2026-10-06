@@ -76,7 +76,6 @@ class _VideoSettingsPageState extends State<VideoSettingsPage> {
         physics: const PureLiveScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         children: [
-          // 音频设置
           context.buildGroupTitle(i18n("audio_settings")),
           context.buildModernCard([
             context.buildSwitchTile(
@@ -118,7 +117,6 @@ class _VideoSettingsPageState extends State<VideoSettingsPage> {
 
           const SizedBox(height: 20),
 
-          // 画质设置
           context.buildGroupTitle(i18n("video_quality_settings")),
           context.buildModernCard([
             Obx(
@@ -155,7 +153,6 @@ class _VideoSettingsPageState extends State<VideoSettingsPage> {
 
           const SizedBox(height: 20),
 
-          // 播放行为设置
           context.buildGroupTitle(i18n("playback_behavior_settings")),
           context.buildModernCard([
             context.buildTile(
@@ -318,7 +315,6 @@ class _VideoSettingsPageState extends State<VideoSettingsPage> {
 
           const SizedBox(height: 20),
 
-          // 弹幕设置
           context.buildGroupTitle(i18n("danmaku_settings")),
           context.buildModernCard([
             Obx(
@@ -617,8 +613,6 @@ class _WindowsPipResetTileState extends State<_WindowsPipResetTile> {
       );
       if (confirmed != true || !mounted || window.isClosed) return;
       window.clearWindowsPipGeometry();
-      // 应用内悬浮窗的位置与尺寸也一起清：同一个按钮说的是「小窗位置和大小」，
-      // 只清系统小窗那套会让悬浮窗继续从旧位置弹出。
       SettingsService.to.player.floatWindowGeometry.value = '';
       ToastUtil.show(i18n('windows_pip_reset_position_success'));
     } finally {

@@ -5,7 +5,6 @@ import '../../dialog/dialog_route.dart';
 import '../../../../instance_manager.dart';
 import '../../../../get_core/get_core.dart';
 
-
 /// Extracts the name of a route based on it's instance type
 /// or null if not possible.
 String? _extractRouteName(Route? route) {

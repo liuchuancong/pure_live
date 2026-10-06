@@ -7,7 +7,6 @@ import 'package:pure_live/domains/live/data/platforms/sites.dart';
 /// `LiveSite.getCategores` always answers with a two-level structure: top-level
 /// categories that each carry their children. The areas page draws a second tab
 /// bar for those top-level categories, which is right for a platform with a
-/// handful of big groups (斗鱼/虎牙/B站) and wrong for one whose groups hold a
 /// couple of entries each - the extra tab layer fragments a list that could be
 /// read in one screen.
 ///

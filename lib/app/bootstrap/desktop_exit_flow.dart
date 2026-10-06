@@ -6,8 +6,6 @@ import 'package:pure_live/core/storage/hive_pref_util.dart';
 import 'package:pure_live/domains/account/presentation/account/bilibili/web_login_controller.dart';
 import 'package:pure_live/core/config/exit_settings_controller.dart';
 
-/// 桌面端的退出流程：先把设置落盘、清掉 B 站网页登录态，再按用户偏好决定是真的
-/// 退出进程还是收进托盘。退出确认弹窗属于这条流程的一部分，所以和它放在一起。
 class DesktopExitFlow {
 static Future<bool>? _activeExitFlow;
 
@@ -73,11 +71,7 @@ static Future<bool>? _activeExitFlow;
     }
   }
 
-  /// 处理时间
-
   static Future<void> _minimizeOrHideDesktopWindow() async {
-    // macOS 上更符合习惯的是最小化到 Dock；直接 hide 在没有托盘/菜单栏入口时
-    // 容易让用户误以为 App 退出。
     if (Platform.isMacOS) {
       await windowManager.minimize();
     } else {
@@ -88,7 +82,6 @@ static Future<bool>? _activeExitFlow;
       }
     }
   }
-
 
   static Future<bool> showExitDialog() {
     final active = _activeExitFlow;

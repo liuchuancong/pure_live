@@ -1,7 +1,5 @@
 import 'package:pure_live/core/index.dart';
 
-/// 通用提示弹窗：要用户确认、在几个选项里选一个、或输入一段文字。
-/// 业务弹窗（弹幕设置、录制、下载目录等）在各自的功能目录里，不放这里。
 class AppPromptDialogs {
   static Future<bool> showAlertDialog(
     String content, {
@@ -25,11 +23,6 @@ class AppPromptDialogs {
     );
     return result ?? false;
   }
-
-  /// 提示弹窗
-  /// - `content` 内容
-  /// - `title` 弹窗标题
-  /// - `confirm` 确认按钮内容，留空为确定
 
   static Future<String?> showEditTextDialog(
     String content, {

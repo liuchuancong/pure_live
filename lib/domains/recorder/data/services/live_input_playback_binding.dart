@@ -15,15 +15,7 @@ import 'bigo_hls_input.dart';
 import 'fc2_hls_input.dart';
 import 'niconico_hls_input.dart';
 
-/// 播放侧的自有输入绑定，与同目录的 [bindLiveInputForRecording] 是同一组
-/// `XxxHlsInput.open(recording:)` 的两个消费者之一。
 ///
-/// 放在录制域的数据层而不是直播域：它适配的是这里的席位获取服务，而直播域反向
-/// 依赖录制域的数据层是一条跨域硬边。直播域只保留函数形状
-/// （`bindLiveInputForPlayback`），实现由 app 启动时装配进来。
-///
-/// 配方里只有公开的程序/频道/清晰度身份，不含会话、授权或本地地址：每次引擎或
-/// 恢复打开都重新取元数据、在同一个源事务里取得自己的输入。
 typedef BigoPlaybackInputOpener = Future<BigoHlsInput> Function(
   String siteId, {
   required bool recording,
@@ -153,7 +145,6 @@ final class NiconicoPlaybackInput {
   }
 }
 
-/// 取消在取得输入之后到达时，输入不能留给没人关闭的回路。
 PlaybackInputLease _lease(Uri uri, Future<void> Function() close, bool Function() isUsable, CancelToken cancel) {
   if (cancel.isCancelled) throw cancel.cancelError!;
   return PlaybackInputLease(uri, close, isUsable: isUsable);

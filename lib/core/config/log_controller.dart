@@ -95,8 +95,6 @@ class LogController extends GetxController {
     }
   }
 
-  /// media_core 的 kernel 日志环（恢复梯/墙/呈现决策）泵进应用日志缓冲，
-  /// 浏览器页即可观测；环被 clear 时游标归零接受重放。
   void _startKernelLogPump() {
     _stopKernelLogPump();
     _drainKernelLogs();

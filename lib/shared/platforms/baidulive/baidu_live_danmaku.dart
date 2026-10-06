@@ -9,8 +9,6 @@ import 'package:pure_live/core/models/live_message.dart';
 import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/shared/platforms/live_danmaku.dart';
 
-/// 百度直播的弹幕参数：房间命令（371）给的三个 HLS 风格消息列表与轮询间隔
-/// （上游 M5.26）。网页在不支持 WebSocket 时就是用它们轮询的。
 class BaiduLiveDanmakuArgs {
   const BaiduLiveDanmakuArgs({
     required this.chatListUrl,
@@ -20,25 +18,17 @@ class BaiduLiveDanmakuArgs {
     this.roomId = '',
   });
 
-  /// 聊天列表（`chat_msg_hls_url`，没有时用 `video.msg_hls_url`）：文本、在线人数、
-  /// 各种通知都在这条上。
   final String chatListUrl;
 
-  /// 可靠消息列表（`reliable_msg_hls_url`）：免费礼物"拍拍"等。
   final String reliableListUrl;
 
-  /// 主播消息列表（`host_msg_hls_url`）；实测常年 404，404 容忍。
   final String hostListUrl;
 
-  /// 轮询间隔（`msg_hls_pull_internal_in_second`，上游限制在 1–10 秒，默认 5 秒）。
   final Duration pollInterval;
 
   final String roomId;
 }
 
-/// 百度直播的弹幕：轮询房间命令给的消息列表（m3u8 播放列表 → gzip JSON 分片），
-/// 不用 WebSocket（上游 M5.26：网页的 IM 走百度闭源 SDK，消息列表是公开签名地址，
-/// 匿名只读即可）。
 class BaiduLiveDanmaku extends LiveDanmaku {
   BaiduLiveDanmaku();
 
@@ -46,7 +36,6 @@ class BaiduLiveDanmaku extends LiveDanmaku {
   var _generation = 0;
   var _running = false;
 
-  /// 见过的分片地址：列表只留最近几个，按地址去重就不会重复上报。
   final Set<String> _seen = <String>{};
   final Map<String, int> _failures = <String, int>{};
 
@@ -73,7 +62,6 @@ class BaiduLiveDanmaku extends LiveDanmaku {
   }
 
   Future<void> _loop(int generation) async {
-    // 上游：先在聊天列表上"加入"（第一次成功的回答算连上），再按间隔轮询。
     while (_running && generation == _generation) {
       try {
         final segments = await _pollOnce(generation);
@@ -93,7 +81,6 @@ class BaiduLiveDanmaku extends LiveDanmaku {
     }
   }
 
-  /// 拉一轮：返回这一轮是否至少有一份列表回答成功（用来判断"加入"）。
   Future<bool> _pollOnce(int generation) async {
     var answered = false;
     for (final url in <String>[_args.chatListUrl, _args.reliableListUrl, _args.hostListUrl]) {
@@ -110,13 +97,11 @@ class BaiduLiveDanmaku extends LiveDanmaku {
     try {
       playlistBytes = await HttpClient.instance.getBytes(listUrl, header: _headers(listUrl));
     } catch (error) {
-      // 主播列表常年 404：容忍；其它列表交给调用方重试。
       if (tolerateNotFound) return false;
       rethrow;
     }
     final text = utf8.decode(playlistBytes, allowMalformed: true);
     if (!text.startsWith('#EXTM3U')) {
-      // 不是播放列表（错误页、JSON 错误）算一次失败。
       return false;
     }
     final base = Uri.tryParse(listUrl);
@@ -143,12 +128,11 @@ class BaiduLiveDanmaku extends LiveDanmaku {
     } catch (error) {
       final attempts = (_failures[segment] ?? 0) + 1;
       _failures[segment] = attempts;
-      if (attempts >= 3) _seen.remove(segment); // 下一轮还在列表里就再试
+      if (attempts >= 3) _seen.remove(segment);
       CoreLog.error('Baidu Live chat segment failed: $error');
     }
   }
 
-  /// 分片是 gzip 压缩的 JSON；传输层解过一次时这里就不再解（看魔数，最多两层）。
   static Uint8List _gunzip(Uint8List bytes) {
     var result = bytes;
     for (var layer = 0; layer < 2; layer++) {
@@ -167,7 +151,7 @@ class BaiduLiveDanmaku extends LiveDanmaku {
     try {
       root = json.decode(utf8.decode(bytes, allowMalformed: true));
     } catch (_) {
-      return; // 不是 JSON 对象：跳过
+      return;
     }
     if (root is! Map) return;
     final list = root['list'];
@@ -185,7 +169,6 @@ class BaiduLiveDanmaku extends LiveDanmaku {
   }
 
   LiveMessage? _decodeMessage(Map<dynamic, dynamic> message) {
-    // 外层只读 type 0（网页的 `handleMessage` 同样只看 0）。
     if (_int(message['type']) != 0) return null;
     final msgId = _int(message['msgid']);
     final createTime = _int(message['create_time']);
@@ -201,7 +184,6 @@ class BaiduLiveDanmaku extends LiveDanmaku {
 
     final type = _text(content['type']) ?? '';
     if (type == '101') {
-      // 在线人数
       final count = _int(_jsonObject(content['data'])?['onlineusercnt']);
       if (count == null || count < 0) return null;
       return LiveMessage(
@@ -229,8 +211,6 @@ class BaiduLiveDanmaku extends LiveDanmaku {
     );
   }
 
-  /// 文本按上游的 `message_type` 规则取；图片/卡片/语音没有文字（语音网页显示
-  /// "[语音] 不支持消息类型"，这里不报）。
   static String? _chatText(Map<String, dynamic> content) {
     final body = _jsonObject(content['message_body']);
     final type = _text(content['message_type']);
@@ -250,7 +230,6 @@ class BaiduLiveDanmaku extends LiveDanmaku {
       default:
         text = _text(content['content']);
     }
-    // 回复：有自己的话就用它。
     final atName = _text(content['at_name']);
     if (atName != null && atName.trim().isNotEmpty && _text(content['at_message_type']) == '0') {
       final own = _text(_jsonObject(body?['txt'])?['word']);
@@ -271,7 +250,6 @@ class BaiduLiveDanmaku extends LiveDanmaku {
   }) {
     final service = _jsonObject(content['service_info']);
     if (service == null) return null;
-    // 别的房间的礼物事件丢掉。
     final roomId = _text(service['room_id']);
     if (_args.roomId.isNotEmpty && roomId != null && roomId.isNotEmpty && roomId != _args.roomId) return null;
     final payload = _jsonObject(service['content']);
@@ -334,7 +312,6 @@ class BaiduLiveDanmaku extends LiveDanmaku {
   }
 }
 
-/// 百度直播礼物事件的内容（上游 M5.26 的 `BaiduLiveGift`）。
 class BaiduLiveGift {
   const BaiduLiveGift({required this.id, required this.name, required this.count, this.isFree = false, this.url = ''});
 

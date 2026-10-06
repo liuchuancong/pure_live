@@ -32,7 +32,6 @@ class WeiboSite extends LiveSite
         LivePlayUrlResolver,
         LivePlayRecoveryResolver,
         LiveSiteExternalRoomResolver {
-  /// 该站点自己的官方房间地址（网页与可选的客户端 scheme）。
   @override
   RoomExternalTarget? externalRoomTarget(LiveRoom liveroom) {
     final id = sanitizedExternalRoomId(liveroom.roomId);
@@ -92,13 +91,10 @@ class WeiboSite extends LiveSite
           title: card.nickname,
           cover: card.cover,
           link: WeiboLink.url(card.liveId),
-          // 快照里列出的都是在播的直播（上游 18-2）。
           liveStatus: LiveStatus.live,
           status: true,
           audienceMetricType: AudienceMetricType.unknown,
           watching: '',
-          // 播放请求头走 PlaybackHeaderResolver 的 default 分支（房间声明即权威）。
-          // 不带 Referer/UA 时 weibo CDN 建连后不吐数据，表现为“opened but never played”。
           httpHeaders: WeiboApi.playHeaders,
           notice: i18n('weibo_room_scope'),
         ),
@@ -155,7 +151,6 @@ class WeiboSite extends LiveSite
       WeiboBroadcastState.replay => LiveStatus.replay,
       WeiboBroadcastState.unknown => LiveStatus.unknown,
     },
-    // 受限/关闭播放的直播仍然是在播，带限制种类（上游 18-4）。
     restriction: WeiboApi.restrictionOf(detail),
     audienceMetricType: AudienceMetricType.unknown,
     watching: '',

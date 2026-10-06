@@ -48,8 +48,6 @@ class PlaybackSourceTransport {
   bool _closed = false;
   Future<void>? _closing;
 
-  /// 全局播放代理指令，但代理出口会被 CDN 拒吐流的主机（Steam 广播按请求 IP
-  /// 做缓存亲和：代理拉清单 200、分片 410）逐条直连。
   static String _perHostProxy(Uri uri) =>
       playsDirectBehindProxy(uri) ? 'DIRECT' : PlaybackProxyPolicy.currentDirective();
 

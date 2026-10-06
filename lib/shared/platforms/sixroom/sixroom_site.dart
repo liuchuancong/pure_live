@@ -24,7 +24,6 @@ final class SixRoomSite extends LiveSite
         LivePlayUrlResolver,
         LivePlayRecoveryResolver,
         LiveSiteExternalRoomResolver {
-  /// 该站点自己的官方房间地址（网页与可选的客户端 scheme）。
   @override
   RoomExternalTarget? externalRoomTarget(LiveRoom liveroom) {
     final id = sanitizedExternalRoomId(liveroom.roomId);
@@ -111,7 +110,6 @@ final class SixRoomSite extends LiveSite
       liveStatus: switch (room.state) {
         SixRoomState.live => LiveStatus.live,
         SixRoomState.offline => LiveStatus.offline,
-        // 私密/黑屏仍然是"在播"，只是带限制种类（上游 31-x）。
         SixRoomState.restricted => LiveStatus.live,
         SixRoomState.unknown => LiveStatus.unknown,
       },
@@ -122,8 +120,6 @@ final class SixRoomSite extends LiveSite
       audienceMetricType: popularity == null ? AudienceMetricType.unknown : AudienceMetricType.popularity,
       notice: notices.join('\n'),
       httpHeaders: SixRoomApi.mediaHeaders(room.roomId),
-      // 弹幕参数（上游 M5.27）：主播用户 id 决定聊天服务器与登录的 roomid；房间号
-      // 只用来做 Referer。没有用户 id 就不连弹幕。
       danmakuData: room.userId.trim().isEmpty
           ? null
           : SixRoomDanmakuArgs(roomId: room.roomId, userId: room.userId.trim()),

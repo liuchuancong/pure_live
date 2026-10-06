@@ -80,9 +80,7 @@ class XiaohongshuLink {
     return uri;
   }
 
-  /// 分享文案是"文字 + 链接 + 文字"（`#xxx正在直播… https://xhslink.com/o/xxx
-  /// 复制本条信息…`），入口原本只认纯链接或裸房间号，整段粘贴什么都搜不到。
-  /// 从文本里抽链接：碰到空白或中文标点即停，再剪掉粘在尾部的句点。
+  /// A share text mixes prose and a link, so a pasted message is searched too.
   static final RegExp _urlInText = RegExp(r'https?://[^\s，。；！？、【】《》「」『』（）·…]+');
 
   static List<String> extractUrls(String raw) {
@@ -102,7 +100,7 @@ class XiaohongshuLink {
     if (session.isClosed) return null;
     final direct = parse(raw);
     if (direct != null) return direct;
-    // 文本里抽出的链接先按本站直播间链接解析，再当短链跟跳。
+    // first as a room link, then as a short link to follow.
     Uri? current = shortUri(raw);
     if (current == null) {
       for (final candidate in extractUrls(raw)) {

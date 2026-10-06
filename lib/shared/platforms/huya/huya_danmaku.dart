@@ -220,9 +220,6 @@ class HuyaDanmaku implements LiveDanmaku {
         ),
       );
     } else if (uri == 2001314) {
-      // 头条通知（`uri 2001314`）的消息体**可能**就是留言板面板（上游 C-9）：是面板就
-      // 直接用它的条目（每条留言立刻上报，空面板表示留言板已空、不必再请求），不是
-      // 面板才照旧后台补拉。
       final fromPanel = HuyaDanmaku.superChatsFromPanel(payload);
       if (fromPanel != null) {
         for (final chat in fromPanel) {
@@ -245,15 +242,11 @@ class HuyaDanmaku implements LiveDanmaku {
       // Reconcile in the background with a small bounded retry window instead.
       _scheduleSuperChatRefresh(_generation);
     } else if (uri == 8001) {
-      // `EndLiveNotice`：主播结束直播（Tars 字段 0 是 lPresenterUid，0 表示没点名）。
-      // 服务器不会关掉这条 socket，3.x 也忽略了它，于是房间一直停在"直播中"
-      // （上游 C-10）。这里照虎牙网页客户端的行为结束这一路弹幕。
       var presenterUid = 0;
       try {
         final raw = TarsInputStream(Uint8List.fromList(payload)).read(0, 0, false);
         presenterUid = raw is int ? raw : 0;
       } catch (_) {
-        // 不是结束通知：当作没收到。
         return;
       }
       final mine = danmakuArgs.uid;
@@ -264,16 +257,12 @@ class HuyaDanmaku implements LiveDanmaku {
     }
   }
 
-  /// `uri 2001314` 的消息体当留言板面板解（上游 C-9）：是面板就返回它的条目
-  /// （**空列表表示留言板已空**，调用方不必再请求），不是面板返回 null（调用方照旧
-  /// 后台补拉）。字段映射与 WUP 补拉共用 `huyaSuperChatsFromPanel`。
   @visibleForTesting
   static List<LiveSuperChatMessage>? superChatsFromPanel(List<int> payload, {DateTime? now}) {
     if (payload.isEmpty) return null;
     final GameEventMessageBoardPanel panel;
     try {
       final bytes = Uint8List.fromList(payload);
-      // 不是面板（连 tag 1 的列表都没有）时不能当成"留言板已空"，那样会丢掉醒目留言。
       if (!TarsInputStream(bytes).skipToTag(1)) return null;
       panel = GameEventMessageBoardPanel()..readFrom(TarsInputStream(bytes));
     } catch (_) {

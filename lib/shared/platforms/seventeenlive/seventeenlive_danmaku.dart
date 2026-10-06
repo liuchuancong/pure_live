@@ -9,27 +9,12 @@ import 'package:pure_live/core/network/web_socket_util.dart';
 import 'package:pure_live/shared/platforms/live_danmaku.dart';
 import 'package:pure_live/shared/platforms/seventeenlive/seventeenlive_api.dart';
 
-/// 17LIVE 的弹幕参数（上游 M5.29）：`roomId` 就是 Ably 的频道名。
 class SeventeenLiveDanmakuArgs {
   const SeventeenLiveDanmakuArgs({required this.roomId});
 
   final String roomId;
 }
 
-/// 17LIVE 的房间聊天（上游 M5.29）：Ably 的 JSON 实时协议。
-///
-/// - 匿名令牌来自 `POST /api/v1/messenger/auth`（`provider` 必须是 1 = Ably，否则说明
-///   平台换了推送服务、连不上）；令牌在服务端拒绝之前一直复用
-/// - socket 是 `wss://17media.realtime.ably.net/?format=json&heartbeats=true&v=3`
-///   （外加官网的三个备用主机），令牌按 ably-js 的顺序放进查询串
-/// - `CONNECTED`(4) 之后发 `ATTACH`(10) 附着频道；`ATTACHED`(11) 算加入；
-///   `DETACHED`(13) 重新附着（10 秒没附着上就换 socket）
-/// - 心跳由**服务端**每 15 秒发，客户端不发；25 秒没消息就换 socket
-/// - `MESSAGE`(15) 里的 `data` 是 **base64 + gzip 的 JSON**：`type` 3 是评论
-///   （`commentMsg`，`isDirty*` 为真则不显示），38 是直播数据
-///   （`liveinfo.liveViewerCount` → 在线人数）
-/// - 令牌错误（40140–40149）丢掉令牌与 socket；连续 3 次被拒（令牌错误或服务端 detach）
-///   就结束这一轮
 class SeventeenLiveDanmaku extends LiveDanmaku {
   SeventeenLiveDanmaku();
 
@@ -105,7 +90,6 @@ class SeventeenLiveDanmaku extends LiveDanmaku {
     }
   }
 
-  /// `POST /api/v1/messenger/auth`：`provider` 必须是 Ably（1），令牌是它的 `token`。
   Future<String?> _requestToken(int generation) async {
     final response = await HttpClient.instance.postJson(
       '${SeventeenLiveApi.apiOrigin}/api/v1/messenger/auth',
@@ -181,7 +165,7 @@ class SeventeenLiveDanmaku extends LiveDanmaku {
     final channel = decoded['channel']?.toString() ?? '';
     final ours = channel.isEmpty || channel == (_args?.roomId ?? '');
     switch (action) {
-      case 4: // CONNECTED：可以附着频道了
+      case 4:
         _socket?.sendMessage(json.encode(<String, Object?>{'action': 10, 'channel': _args?.roomId ?? ''}));
         _joinWatch?.cancel();
         _joinWatch = Timer(_joinTimeout, () {
@@ -198,7 +182,7 @@ class SeventeenLiveDanmaku extends LiveDanmaku {
           onReady?.call();
         }
         break;
-      case 13: // DETACHED：重新附着（10 秒没附着上就换 socket）
+      case 13:
         if (!ours) return;
         _refusals++;
         if (_refusals > _maxRefusals) {
@@ -226,10 +210,10 @@ class SeventeenLiveDanmaku extends LiveDanmaku {
           ended.complete();
         }
         break;
-      case 6: // DISCONNECTED：换 socket
+      case 6:
         if (!ended.isCompleted) ended.complete();
         break;
-      case 17: // AUTH：同一个 socket 上换新令牌
+      case 17:
         unawaited(_reauthorize(_generation));
         break;
       default:
@@ -260,7 +244,6 @@ class SeventeenLiveDanmaku extends LiveDanmaku {
     }
   }
 
-  /// `data` 是 base64 + gzip 的 JSON（官网的 `gzip_base64`）。
   static Map<String, dynamic>? _payload(Object? data) {
     if (data is! String || data.isEmpty) return null;
     try {
@@ -272,7 +255,6 @@ class SeventeenLiveDanmaku extends LiveDanmaku {
     }
   }
 
-  /// `type` 3 是评论（`isDirty*` 为真则不显示），38 是直播数据。
   static LiveMessage? _message(Map<String, dynamic> payload, {required String id}) {
     switch (int.tryParse(payload['type']?.toString() ?? '')) {
       case 3:
@@ -332,6 +314,5 @@ class _AblyError {
   final int code;
   final String message;
 
-  /// 令牌错误（40140–40149）。
   bool get isTokenError => code >= 40140 && code < 40150;
 }

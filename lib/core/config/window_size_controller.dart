@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:pure_live/get/get.dart';
 import 'package:pure_live/core/storage/hive_rx.dart';
 
-//  需要指定显示到哪一个屏幕 可能存在多个显示屏
 class WindowPipGeometry {
   /// Stores the display ID where the PiP window was last displayed.
   final RxString displayId = hiveString('windows_pip_display_id', '');
@@ -19,11 +18,6 @@ class WindowPipGeometry {
   /// Stores the PiP window vertical position.
   final RxDouble windowsPipY = hiveDouble('windows_pip_y', 0.0);
 
-  /// 竖屏源的整套几何。
-  ///
-  /// 横屏记住的矩形套到竖屏源上必然是错的（16:9 的框里放竖屏画面只剩黑边），
-  /// 所以横竖屏各记一套，切换源方向时不需要每次手动调整。键名沿用 2026-08-27
-  /// 就存在的 `windows_pip_portrait_*`，那套实现在后续某次合并里被丢掉了。
   final RxString portraitDisplayId = hiveString('windows_pip_portrait_display_id', '');
 
   /// Stores the portrait PiP window width.
@@ -399,12 +393,6 @@ class WindowSizeController extends GetxController {
     return _normalizePipRect(windowSize, section: 'windowsPip', prefix: 'windowsPip', strict: strict);
   }
 
-  /// 竖屏源的 PiP 矩形。
-  ///
-  /// 与横屏那套共用同一段校验（[_normalizePipRect] 只按前缀取键），所以两套的有限性、
-  /// 上下限与清零规则不会再分叉——2026-08-27 加过的那套竖屏几何就是在一处合并里被整个
-  /// 丢掉的。旧版本把竖屏字段平铺在 `windowsPip` 段里（`portraitWidth` 等），这里一并
-  /// 作为备选键读回，那时的备份仍然可用。
   static Map<String, dynamic> normalizePipPortraitGeometry(Map<String, dynamic> windowSize, {bool strict = false}) {
     return _normalizePipRect(
       windowSize,

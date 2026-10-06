@@ -66,8 +66,6 @@ final class PandaLiveCard {
   final bool isAdult;
   final bool isPassword;
 
-  /// 在播但其实是录播重播（`onAirType`/`liveType` 为 `rec`，标题带 `[녹]`）。
-  /// 它按直播推流、照常可播，但状态是回放（上游 M4.U.25；3.x 显示为直播中）。
   final bool isRerun;
 }
 
@@ -141,12 +139,9 @@ final class PandaLiveRoom {
   final PandaLiveAccess access;
   final List<PandaLiveStream> streams;
 
-  /// `live/play` 给的 Centrifugo 聊天标识与令牌（上游 M5.21）：`channel` 是主播编号
-  /// （不是数字时用主播 userId），令牌约 30 分钟过期；没有就是没有聊天。
   final String chatChannel;
   final String chatToken;
 
-  /// 录播重播（见 [PandaLiveCard.isRerun]）：在播，但状态是回放。
   final bool isRerun;
 }
 
@@ -441,7 +436,6 @@ class PandaLiveApi {
         final manifest = await _read('GET', master, null, referer, token, manifest: true);
         final streams = parseManifest(master, manifest);
         if (streams.isEmpty) throw const PandaLiveException(PandaLiveFailure.mediaUnavailable);
-        // 聊天标识与令牌（上游 M5.21）：`channel` 不是数字时用主播 userId。
         final rawChannel = play['channel']?.toString().trim() ?? '';
         return _liveRoom(
           userId,
@@ -475,7 +469,6 @@ class PandaLiveApi {
     );
   }
 
-  /// 在播的这条是不是录播重播：`onAirType` 或 `liveType` 为 `rec`（上游 M4.U.25）。
   static bool isRerun(Map<String, dynamic> media) =>
       _text(media['onAirType']) == 'rec' || _text(media['liveType']) == 'rec';
 

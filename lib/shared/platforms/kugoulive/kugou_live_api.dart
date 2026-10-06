@@ -81,12 +81,8 @@ final class KugouLiveRoom {
   final String kugouId;
   final String nick;
 
-  /// 房间信息本身没有直播标题（`publicMesg`/`privateMesg` 是公开与私密的聊天
-  /// 公告），所以详情留空标题、由 [LiveRoom.fillFromDetail] 保留卡片上的标题；
-  /// 公告文本走 [notice]（上游 29-2）。
   final String title;
 
-  /// 聊天公告（`publicMesg`、`privateMesg`），没有就是空串。
   final String notice;
   final String avatar;
   final String cover;
@@ -393,9 +389,6 @@ class KugouLiveApi {
     }
     final liveType = _integer(data['liveType']);
     final session = _string(data['liveSessionId']);
-    // `limitType` 是公开聊天限制（谁能发言），不是观看限制：被限制的房间照样
-    // 能给任何人推流（上游实测 FLV/H.264 都能播）。3.x 把它当成观看限制，于是
-    // 这些房间显示未知并拒绝播放；它们现在就是直播中（上游 M4.U.29 根因）。
     final state = liveType == -1
         ? KugouLiveState.offline
         : session.isNotEmpty
@@ -407,7 +400,6 @@ class KugouLiveApi {
       userId: _string(normal['userId']),
       kugouId: _string(normal['kugouId']),
       nick: nick.isEmpty ? 'Kugou Live' : nick,
-      // 房间信息没有直播标题：`publicMesg`/`privateMesg` 是聊天公告（上游 29-2）。
       title: '',
       notice: _firstText([normal['publicMesg'], normal['privateMesg']], fallback: ''),
       avatar: _image(_string(normal['userLogo'])),
@@ -507,8 +499,6 @@ class KugouLiveApi {
     final roomId = KugouLiveLink.parseRoomId(_string(raw['roomId']));
     if (roomId == null) return null;
     final live = _integer(raw['liveStatus'] ?? raw['status'] ?? raw['liveType']);
-    // 任何正的状态值都算在播（6 是手机/游戏直播，上游 29-1）；只有 0/-1 是
-    // 下播，其余未知。
     final state = live != null && live > 0
         ? KugouLiveState.live
         : live == 0 || live == -1

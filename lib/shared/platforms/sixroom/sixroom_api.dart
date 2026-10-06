@@ -79,8 +79,6 @@ final class SixRoomRoom {
   final int? followers;
   final SixRoomState state;
 
-  /// 私密房间 → [LiveRestriction.private]，黑屏（整改/封禁画面）→
-  /// [LiveRestriction.unplayable]；普通房间为 null（平台没说限制）。
   final LiveRestriction? restriction;
   final List<SixRoomVariant> variants;
 
@@ -358,10 +356,6 @@ class SixRoomApi {
       if (roomId == null || !_validUserId(userId) || !seen.add(roomId)) continue;
       final image = item.querySelector('.pic img');
       final nick = _text(item.querySelector('.alias')?.text, fallback: 'Six Rooms');
-      // 搜索结果卡片的状态（上游 31-3；3.x 不读直播标记，于是一律 unknown）：
-      // 带页面直播标记（`i.live`，「直播中」）的是在播；没有标记但链接指向主播
-      // 资料页（`/profile/<room>`，页面给未开播房间的就是这个）的是未开播；
-      // 两者都不说明的保持未知。
       final live = item.querySelector('i.live') != null;
       final linksProfile = Uri.tryParse(Uri.parse(webOrigin).resolve(href).toString())?.pathSegments.first.toLowerCase() ==
           'profile';
@@ -435,8 +429,6 @@ class SixRoomApi {
     final flvTitle = _string(liveInfo['flvtitle']);
     final privateRoom = _truthy(content['isPriveRoom']);
     final blackScreen = _text(_map(content['blackScreenInfo'])?['msg']);
-    // 私密房间与黑屏（平台在整改/封禁画面）仍然是"在播"，只是带限制种类
-    // （上游 31-x）：私密 → private，黑屏 → unplayable；黑屏的文案单独保留。
     final restriction = privateRoom
         ? LiveRestriction.private
         : blackScreen.isNotEmpty

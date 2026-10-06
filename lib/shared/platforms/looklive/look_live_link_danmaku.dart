@@ -10,17 +10,6 @@ import 'package:pure_live/shared/platforms/live_danmaku.dart';
 import 'package:pure_live/shared/platforms/looklive/look_live_danmaku.dart';
 import 'package:pure_live/shared/platforms/looklive/look_live_api.dart';
 
-/// LOOK Live 的聊天（上游 M5.28）：网易云信的聊天室，socket.io 0.9。
-///
-/// - 先向 LOOK 的 API 要聊天服务器（`host:port`），对每台做 socket.io 1 的握手
-///   （`GET https://<host:port>/socket.io/1/?t=<毫秒>`）拿 `<sid>:<心跳>:<关闭>:<传输>`，
-///   再连 `wss://<host:port>/socket.io/1/websocket/<sid>`（传输里必须有 websocket）
-/// - 会话打开（`1::`）后匿名登录（服务 13 命令 2，编号属性表）；服务端每 25 秒发 `2::`
-///   要回显，客户端每 6 个 30 秒的 tick 发一次链接心跳；90 秒静默换 socket、登录 10 秒时限
-/// - 被拒的登录码 408/415/500/503 重连（连续最多 3 次，之后结束）；踢出（13-3）除静默
-///   （4）外都结束
-/// - 只报聊天：文字（类型 0 且 `custom.bizName == 'iplay'`）与 LOOK 的表情（类型 100、
-///   `musiclive_server`、`custom.type` 2601）
 class LookLiveDanmaku extends LiveDanmaku {
   LookLiveDanmaku();
 
@@ -119,7 +108,6 @@ class LookLiveDanmaku extends LiveDanmaku {
     }
   }
 
-  /// 聊天服务器：失败时按上游再问一次（间隔 2 秒）。
   Future<List<({String host, int port})>> _chatServers(int generation) async {
     for (var round = 0; round < 2; round++) {
       if (round > 0) {
@@ -138,7 +126,6 @@ class LookLiveDanmaku extends LiveDanmaku {
   }
 
   Future<void> _runServer(({String host, int port}) server, int generation) async {
-    // 1) socket.io 1 的握手：拿会话 id。
     final handshake = await HttpClient.instance.getText(
       'https://${server.host}:${server.port}/socket.io/1/',
       queryParameters: <String, String>{'t': '${DateTime.now().millisecondsSinceEpoch}'},
@@ -218,14 +205,12 @@ class LookLiveDanmaku extends LiveDanmaku {
     }
   }
 
-  /// socket.io 0.9 可以把多个包放在一帧里：`\ufffd<长度>\ufffd<包>…`。
   static List<String> _packets(String text) {
     if (!text.contains('\ufffd')) return <String>[text];
     final packets = <String>[];
     var index = 0;
     while (index < text.length) {
       if (text.codeUnitAt(index) != 0xfffd) {
-        // 不是分包帧，整段当一个包。
         return <String>[text];
       }
       final lengthEnd = text.indexOf('\ufffd', index + 1);
@@ -296,7 +281,6 @@ class LookLiveDanmaku extends LiveDanmaku {
     if (sid == null || cid == null) return;
     final code = _int(root['code']);
     var body = root['r'];
-    // 通知（4-10/4-11）里包着真正的消息。
     if (sid == 4 && (cid == 10 || cid == 11)) {
       final wrapped = body is List && body.length > 1 ? body[1] : null;
       if (wrapped is! Map) return;
@@ -357,8 +341,6 @@ class LookLiveDanmaku extends LiveDanmaku {
     if (!ended.isCompleted) ended.complete();
   }
 
-  /// 一条聊天室消息：文字（类型 0 且 `custom.bizName == 'iplay'`）或 LOOK 的表情
-  /// （类型 100、来自 `musiclive_server`、`custom.type` 2601）。
   LiveMessage? _chat(Object? raw) {
     if (raw is! Map) return null;
     final custom = _custom(raw['4']);
@@ -413,7 +395,6 @@ class LookLiveDanmaku extends LiveDanmaku {
     );
   }
 
-  /// `custom` 是 JSON 文本；短键（`sp` 1）只展开聊天要用到的那几个键。
   static Map<dynamic, dynamic>? _custom(Object? value) {
     if (value is! String || value.isEmpty) return null;
     final Object? decoded;

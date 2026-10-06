@@ -6,25 +6,12 @@ import 'package:pure_live/core/models/live_message.dart';
 import 'package:pure_live/core/network/web_socket_util.dart';
 import 'package:pure_live/shared/platforms/live_danmaku.dart';
 
-/// KilaKila（克拉克拉）的弹幕参数（上游 M5.13）：`roomId` 就是这一场的房间号
-/// （socket 的 query 用它挑直播）。
 class KilakilaDanmakuArgs {
   const KilakilaDanmakuArgs({required this.roomId});
 
   final String roomId;
 }
 
-/// KilaKila 的聊天（上游 M5.13）：Socket.IO 2 over Engine.IO 3，只用游客房间需要的那
-/// 一小部分。
-///
-/// - 地址 `wss://wim.hongrenshuo.com.cn/socket.io/?roomId=…&appId=111&clientType=1&EIO=3&transport=websocket`
-/// - 打开后立刻发命名空间加入帧 `40/live_chat_room_guest?<query>,`；服务端的 `40` 或
-///   `connect_error` 且 `code` 为 0 算加入（每个 socket 只报一次）；8 秒没加入就换
-///   socket
-/// - 从打开起每 25 秒发 Engine.IO 的 ping `2`（服务端 85 秒收不到就断开）
-/// - 事件 `42["text_message","<JSON>"]`：payload 是 JSON 字符串，里面的
-///   `body.response.content` 又是 JSON 字符串，`content.t` 200 是聊天、637 是房间状态
-///   （`watchNumber` 是当前收听人数）
 class KilakilaDanmaku extends LiveDanmaku {
   KilakilaDanmaku();
 
@@ -99,7 +86,6 @@ class KilakilaDanmaku extends LiveDanmaku {
         _socket?.sendMessage('40$_namespace?${_query(roomId)},');
         _pingTimer?.cancel();
         _pingTimer = Timer.periodic(_pingInterval, (_) => _socket?.sendMessage('2'));
-        // 8 秒没加入就换 socket。
         _joinTimer?.cancel();
         _joinTimer = Timer(const Duration(seconds: 8), () {
           if (generation != _generation || _joined) return;
@@ -130,17 +116,13 @@ class KilakilaDanmaku extends LiveDanmaku {
     _joinTimer?.cancel();
   }
 
-  /// 返回 true 表示要换 socket（服务端离开了命名空间或拒绝）。
   bool _handleFrame(String data) {
     final text = data.trim();
     if (text.isEmpty) return false;
-    // 服务端的 pong 与心跳。
     if (text == '3' || text.startsWith('2')) return false;
-    if (text.startsWith('1')) return true; // 传输层关闭
-    // 命名空间必须是我们加入的那个。
+    if (text.startsWith('1')) return true;
     final rest = text.length > 1 ? text.substring(1) : '';
     if (rest.isNotEmpty && !rest.startsWith(_namespace)) {
-      // `40` 是别的命名空间或没有命名空间：不处理。
       return false;
     }
     final after = rest.length <= _namespace.length ? '' : rest.substring(_namespace.length);
@@ -149,7 +131,7 @@ class KilakilaDanmaku extends LiveDanmaku {
     final kind = text.substring(0, 1);
     switch (kind) {
       case '0':
-        return true; // engine.io open（等 onReady 处理）
+        return true;
       case '4':
         final packet = text.length > 1 ? text.substring(1, 2) : '';
         switch (packet) {
@@ -157,7 +139,7 @@ class KilakilaDanmaku extends LiveDanmaku {
             _markJoined();
             return false;
           case '1':
-            return true; // 41：服务端离开命名空间
+            return true;
           case '4':
             return _handleEvent(body);
           default:
@@ -233,7 +215,6 @@ class KilakilaDanmaku extends LiveDanmaku {
     );
   }
 
-  /// 房间状态（`t` 637）：`c` 是 URL 编码的 JSON，`watchNumber` 是当前收听人数。
   LiveMessage? _audience(Map<dynamic, dynamic> content) {
     final encoded = content['c'];
     if (encoded is! String || encoded.isEmpty) return null;

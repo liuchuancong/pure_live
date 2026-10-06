@@ -1,35 +1,24 @@
 class RecordFileItem {
-  /// 唯一ID
   final String id;
 
-  /// 主播
   final String nick;
 
-  /// 平台
   final String platform;
 
-  /// 标题
   final String title;
 
-  /// 文件路径
   final String path;
 
-  /// 封面
   final String cover;
 
-  /// 文件大小
   final int size;
 
-  /// 视频时长（秒）
   final int duration;
 
-  /// 创建时间
   final DateTime createTime;
 
-  /// 文件名
   final String fileName;
 
-  /// 录制日期
   final String date;
 
   RecordFileItem({

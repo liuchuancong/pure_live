@@ -10,8 +10,6 @@ import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/core/network/web_socket_util.dart';
 import 'package:pure_live/shared/platforms/live_danmaku.dart';
 
-/// 猫耳 FM（Missevan）的弹幕参数（上游 M5.12）：`roomId` 是直播间号；`url` 是进房
-/// 详情给的聊天地址（没有就用平台的 `wss://im.missevan.com/ws`）。
 class MissevanDanmakuArgs {
   const MissevanDanmakuArgs({required this.roomId, this.url});
 
@@ -19,10 +17,6 @@ class MissevanDanmakuArgs {
   final Uri? url;
 }
 
-/// 猫耳 FM 的聊天（上游 M5.12）：每个 connect 先要一个游客会话（`api/user/info` 的
-/// `FM_SESS` Cookie，最多 3 次），再用它握手；加入用带 uuid 的 JSON 文本帧，服务端按
-/// uuid 回答；每 30 秒发文本心跳 `❤️`。服务端的消息是**二进制帧**：1 字节 flag + 24 位
-/// 小端长度 + **Brotli** 流（JSON 对象或数组）。
 class MissevanDanmaku extends LiveDanmaku {
   MissevanDanmaku();
 
@@ -89,7 +83,6 @@ class MissevanDanmaku extends LiveDanmaku {
     }
   }
 
-  /// 游客会话：`api/user/info` 的 `Set-Cookie` 里的 `FM_SESS`；没有它握手会被拒（403）。
   Future<String?> _session(int generation) async {
     for (var attempt = 0; attempt < 3; attempt++) {
       if (attempt > 0) {
@@ -102,9 +95,6 @@ class MissevanDanmaku extends LiveDanmaku {
           header: const <String, String>{'Referer': '$_origin/', 'Origin': _origin},
         );
         if (generation != _generation) return null;
-        // 猫耳一次下发两个 Set-Cookie（`FM_SESS` 与 `FM_SESS.sig`），dio 的
-        // `headers.value()` 在多于一个值时直接抛异常，三次重试会全部吃掉，
-        // 表现成"拿不到游客会话"。逐条找，和上游一致。
         final value = sessionCookie(response.headers['set-cookie'] ?? const <String>[]);
         if (value != null) return value;
         _lastFailure = 'HTTP ${response.statusCode}';
@@ -115,10 +105,6 @@ class MissevanDanmaku extends LiveDanmaku {
     return null;
   }
 
-  /// `Set-Cookie` 整组头里的 `FM_SESS` 值；`FM_SESS.sig` 不需要。
-  ///
-  /// 入参是整组而不是单个拼接值：猫耳同时下发 `FM_SESS` 和 `FM_SESS.sig`，
-  /// 而 dio 的 `Headers.value()` 遇到多个同名头会抛异常。
   @visibleForTesting
   static String? sessionCookie(Iterable<String> setCookie) {
     for (final header in setCookie) {
@@ -216,7 +202,6 @@ class MissevanDanmaku extends LiveDanmaku {
         }
         continue;
       }
-      // 别的房间的消息跳过。
       final room = int.tryParse(item['room_id']?.toString() ?? '');
       if (room != null && '${item['room_id']}' != (_args?.roomId ?? '')) continue;
       if (type == 'message' && (event == 'new' || event == 'danmaku')) {
@@ -232,7 +217,6 @@ class MissevanDanmaku extends LiveDanmaku {
     }
   }
 
-  /// 一帧二进制的读法：1 字节 flag + 24 位小端长度 + Brotli 流。
   static String? _frameText(Object? data) {
     if (data is String) return data;
     if (data is! List<int>) return null;
@@ -282,7 +266,6 @@ class MissevanDanmaku extends LiveDanmaku {
     );
   }
 
-  /// `room`/`statistics`：热度与当前听众（各是整数、不为负）。
   List<LiveMessage> _audience(Object? statistics) {
     if (statistics is! Map) return const <LiveMessage>[];
     final messages = <LiveMessage>[];

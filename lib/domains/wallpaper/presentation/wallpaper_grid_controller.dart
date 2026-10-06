@@ -7,8 +7,6 @@ import 'package:pure_live/domains/wallpaper/domain/wallpaper_catalog.dart';
 /// Compiled-in sources (solid colours, deepin) hand their fixed table over once
 /// and the core slices it locally; the iTab sources ask for a fixed server page
 /// (24 rows, 16 for Bing) and the core either appends it on a phone or turns it
-/// into numbered pages on desktop - the same 刷新 / 上一页 / 页码 / 下一页 /
-/// 每页数量 bar every other list in the app shows.
 class WallpaperLocalGridController extends ServerAllPageController<WallpaperItem> {
   WallpaperLocalGridController(this.source);
 

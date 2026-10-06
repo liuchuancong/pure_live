@@ -16,7 +16,6 @@ import 'package:pure_live/core/consts/platform_ids.dart';
 import 'package:pure_live/shared/platforms/live_external_room.dart';
 
 class YYSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResolver, LiveSiteExternalRoomResolver {
-  /// 该站点自己的官方房间地址（网页与可选的客户端 scheme）。
   @override
   RoomExternalTarget? externalRoomTarget(LiveRoom liveroom) {
     final id = sanitizedExternalRoomId(liveroom.roomId);
@@ -79,7 +78,6 @@ class YYSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResol
   };
 
   /// ============================================================
-  /// 图片
   /// ============================================================
 
   String validImgUrl(String imgUrl) {
@@ -141,7 +139,6 @@ class YYSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResol
   }
 
   /// ============================================================
-  /// 分类
   /// ============================================================
 
   @override
@@ -227,7 +224,6 @@ class YYSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResol
   }
 
   /// ============================================================
-  /// 分类直播间
   /// ============================================================
 
   @override
@@ -284,7 +280,6 @@ class YYSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResol
   }
 
   /// ============================================================
-  /// 获取直播流
   /// ============================================================
 
   ({String cid, String sid}) _channelIds(LiveRoom liveroom) {
@@ -441,7 +436,6 @@ class YYSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResol
   }
 
   /// ============================================================
-  /// 清晰度
   /// ============================================================
 
   @override
@@ -507,7 +501,6 @@ class YYSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResol
   }
 
   /// ============================================================
-  /// 播放地址
   /// ============================================================
 
   @override
@@ -559,7 +552,6 @@ class YYSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResol
   }
 
   /// ============================================================
-  /// 推荐
   /// ============================================================
 
   @override
@@ -602,7 +594,6 @@ class YYSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResol
   }
 
   /// ============================================================
-  /// 分类名称
   /// ============================================================
 
   final Map<String, String> bizAreaNameMap = {};
@@ -638,10 +629,6 @@ class YYSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResol
     return map[biz] ?? presetBizAreaNames[biz] ?? '';
   }
 
-  /// 分区名预置表：不带列表模块的分区（页面里 `biz` 为 null）留不住"从分区页
-  /// 学到的名字"，直接进房时只能靠这张表。上游 M13.16 实测 11 个有房间的分区
-  /// 共 82 个详情得出：综合 的房间自报 `zonghe`（其它分区不用这个键），手机直播
-  /// 的房间带的是内容分区的键（talk、dance…）。学到的名字仍优先。
   static const Map<String, String> presetBizAreaNames = {
     'sing': '音乐',
     'talk': '脱口秀',
@@ -650,15 +637,11 @@ class YYSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResol
     'pretty': '颜值',
     'mc': '喊麦',
     'sport': '体育',
-    // 二次元分区页列的是 car 模块。
     'car': '二次元',
     'game': '王者荣耀',
     'zonghe': '综合',
   };
 
-  /// 房间标题：YY 给没有标题的房间填的是 `<昵称> 正在直播`，这个后缀在列表与
-  /// 详情里只是噪音（搜索的 `channelName`、列表/详情的 `desc` 是同一个值），
-  /// 去掉后缀只留昵称；其它标题原样保留（上游 6-2）。
   static String _title(Object? value) {
     final text = value?.toString() ?? '';
     if (!text.endsWith(_liveTitleSuffix)) return text;
@@ -667,11 +650,9 @@ class YYSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResol
 
   static const String _liveTitleSuffix = '正在直播';
 
-  /// 房间分区名：从分区页学到的优先，其次预置表，最后退回原始 `biz`。
   String areaNameForBiz(String biz) => bizAreaNameMap[biz] ?? presetBizAreaNames[biz] ?? biz;
 
   /// ============================================================
-  /// 房间详情
   /// ============================================================
 
   @override
@@ -707,7 +688,6 @@ class YYSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResol
   }
 
   /// ============================================================
-  /// 房间刷新
   /// ============================================================
 
   @override
@@ -763,7 +743,6 @@ class YYSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResol
   }
 
   /// ============================================================
-  /// 搜索直播间
   /// ============================================================
 
   @override
@@ -809,7 +788,6 @@ class YYSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResol
   }
 
   /// ============================================================
-  /// 搜索主播
   /// ============================================================
 
   @override
@@ -842,7 +820,6 @@ class YYSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResol
 
   @override
   Future<List<LiveSuperChatMessage>> getSuperChatMessage({required LiveRoom liveroom}) {
-    //尚不支持
     return Future.value([]);
   }
 }

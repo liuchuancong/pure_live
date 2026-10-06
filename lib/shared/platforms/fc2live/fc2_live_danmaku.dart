@@ -7,22 +7,12 @@ import 'package:pure_live/core/network/web_socket_util.dart';
 import 'package:pure_live/shared/platforms/fc2live/fc2_api.dart';
 import 'package:pure_live/shared/platforms/live_danmaku.dart';
 
-/// FC2 LIVE 的弹幕参数（上游 M5.22）：频道号。授权（`memberApi.php` +
-/// `getControlServer.php`）由连接自己每次握手现取。
 class Fc2LiveDanmakuArgs {
   const Fc2LiveDanmakuArgs({required this.channelId});
 
   final String channelId;
 }
 
-/// FC2 LIVE 的评论（上游 M5.22）：走 M4.26 的媒体控制 socket——授权约一分钟失效，用过的
-/// 授权再连只会收到 `control_disconnection` 4500，所以**每次握手都取一份新授权**。
-///
-/// - `connect_complete` 算"加入"
-/// - `comment` 里的评论：丢掉加入时重推的历史评论（`history: 1`）与系统评论
-///   （`system_comment`），并按服务端推的 NG 表过滤（照网页对游客的规则）
-/// - `user_count` 只带变化的字段：在线 = 电脑 + 手机，累计同理，和上次不同才报
-/// - `control_disconnection` 换新授权重连；心跳是网页的 `{"name":"heartbeat",…}` 文本帧
 class Fc2LiveDanmaku extends LiveDanmaku {
   Fc2LiveDanmaku({Fc2Api? api}) : _api = api ?? Fc2Api();
 
@@ -40,7 +30,6 @@ class Fc2LiveDanmaku extends LiveDanmaku {
   int? _onlineViewers;
   int? _totalViewers;
 
-  /// 评论颜色按网页评论列表的名字取；`black` 与未知值是弹幕默认的白色。
   static const Map<String, int> _colors = <String, int>{
     'red': 0xE63D37,
     'pink': 0xE13396,
@@ -178,7 +167,6 @@ class Fc2LiveDanmaku extends LiveDanmaku {
         _ng.update(args);
         break;
       case 'control_disconnection':
-        // 授权失效（4500）等：换一份新授权重连。
         final code = args['code']?.toString() ?? '';
         CoreLog.error('FC2 LIVE control disconnection: $code');
         _socket?.close();
@@ -192,7 +180,6 @@ class Fc2LiveDanmaku extends LiveDanmaku {
     if (raw is! List) return;
     for (final entry in raw) {
       if (entry is! Map) continue;
-      // 加入时重推的历史评论与系统评论（打赏、礼物、进出场）不报。
       if (entry['history']?.toString() == '1') continue;
       final body = entry['comment'];
       if (body is! String) continue;
@@ -216,7 +203,6 @@ class Fc2LiveDanmaku extends LiveDanmaku {
     }
   }
 
-  /// `user_count` 只带变化的字段：保留上一次的值，电脑加手机；和变化前不同才报。
   void _reportUserCount(Map<dynamic, dynamic> args) {
     int? read(Object? value) => int.tryParse(value?.toString() ?? '');
     final online = (read(args['pc_user_count']) ?? 0) + (read(args['mobile_user_count']) ?? 0);
@@ -251,7 +237,6 @@ class Fc2LiveDanmaku extends LiveDanmaku {
     }
   }
 
-  /// 文字照网页的显示：去掉 HTML 标签、解字符引用、去首尾空白；空白不报。
   static String? _plainText(String raw) {
     final withoutTags = raw.replaceAll(RegExp(r'<[^>]*>'), '');
     final decoded = withoutTags.replaceAllMapped(RegExp(r'&(#x?[0-9a-fA-F]+|[a-zA-Z]+);'), (match) {
@@ -279,10 +264,6 @@ class Fc2LiveDanmaku extends LiveDanmaku {
   }
 }
 
-/// 网页对评论用的屏蔽表（上游 M5.22 的 `Fc2LiveNgList`）：照网页对"不是主播、没有自己
-/// 屏蔽表的观众"的规则——`admin_ng` 决定 FC2 的表（`admin_*`）用不用，
-/// `shared_ng_level` 1 加上共享表 `share_low`、2 再加 `share_high`；`share_hyper`、
-/// 频道的表与 `keyword`/`user` 总是用。
 class _Fc2NgList {
   final Set<String> _keywords = <String>{};
   final Set<String> _users = <String>{};

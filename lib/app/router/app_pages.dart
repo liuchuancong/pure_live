@@ -83,19 +83,16 @@ class AppPages {
       preventDuplicates: false,
       bindings: [MultiviewBinding()],
     ),
-    //账号设置
     GetPage(
       name: RoutePath.kSettingsAccount,
       page: _smoothPage(() => const AccountPage()),
       bindings: [AccountBinding()],
     ),
-    //哔哩哔哩Web登录
     GetPage(
       name: RoutePath.kBiliBiliWebLogin,
       page: _smoothPage(() => const BiliBiliWebLoginPage()),
       bindings: [BilibiliWebLoginBinding()],
     ),
-    //哔哩哔哩二维码登录
     GetPage(
       name: RoutePath.kBiliBiliQRLogin,
       page: _smoothPage(() => const BiliBiliQRLoginPage()),
@@ -173,10 +170,8 @@ class AppPages {
     GetPage(
       name: RoutePath.kSplash,
       page: () {
-        // 判断是否为夜间模式
         final bool isDarkMode = Get.isDarkMode;
 
-        // 根据模式选择渐变色
         final LinearGradient bgGradient = isDarkMode
             ? const LinearGradient(
                 colors: [Color(0xFF0D1B2A), Color(0xFF1B263B), Color(0xFF141E27)],
@@ -189,7 +184,6 @@ class AppPages {
                 end: Alignment.bottomRight,
               );
 
-        // 夜间模式下的文字颜色
         final Color textColor = isDarkMode ? Colors.white70 : Colors.black54;
 
         return SplashScreen(

@@ -15,17 +15,6 @@ import 'package:pure_live/shared/platforms/kugoulive/kugou_live_danmaku.dart';
 import 'package:pure_live/shared/platforms/kugoulive/kugou_live_link.dart';
 import 'package:pure_live/shared/platforms/live_danmaku.dart';
 
-/// 酷狗直播（繁星）的房间聊天（上游 M5.25）：官网房间页说的那一套。
-///
-/// - 调度器 `socket_scheduler/pc/binary/v2/address.jsonp`（用页面里的 MD5 盐签名）给出三台
-///   聊天主机与一个登录令牌
-/// - 帧是二进制：18 字节头（magic 100、版本 3、type 1、12、命令、长度、其余为零）+ protobuf
-///   的 `SocketProtocol.Message`，其中的 `content` 是该命令自己的消息
-/// - 登录是命令 201（重连时 2201），服务端用状态帧 901 回答：type 4 先到，然后 type 1、
-///   status 1 带会话 `socsid`（或别的 status 带 `errorno`，622 是令牌被拒）
-/// - 心跳是 4 字节帧 `64 00 01 00`，每 10 秒一次，服务端回 `64 00 03 00`
-/// - 消息是 `ContentMessage`（`codec` 1 是 protobuf、0 是 JSON；`compression` 1 是 gzip、
-///   2 是 snappy）：501 是聊天、301005 是观众数；601 礼物不报但要回执（211）
 class KugouLiveLinkDanmaku extends LiveDanmaku {
   KugouLiveLinkDanmaku();
 
@@ -120,7 +109,6 @@ class KugouLiveLinkDanmaku extends LiveDanmaku {
         attempt++;
       }
       if (!_running || generation == _generation) {
-        // 令牌用过一次就不再用了（上游：新 socket 会重新问调度器）。
         _token = null;
       }
       if (!_running || generation != _generation) return;
@@ -135,7 +123,6 @@ class KugouLiveLinkDanmaku extends LiveDanmaku {
     return !age.isNegative && age < _age;
   }
 
-  /// 调度器：三台主机 + 一个登录令牌（失败按页面的退避 1.5 秒、4.5 秒重试）。
   Future<void> _dispatch(int generation) async {
     const delays = <Duration>[Duration(milliseconds: 1500), Duration(milliseconds: 4500)];
     for (var round = 0; round < 3; round++) {
@@ -202,7 +189,6 @@ class KugouLiveLinkDanmaku extends LiveDanmaku {
 
   static final RegExp _tokenPattern = RegExp(r'^[\x21-\x7e]+$');
 
-  /// 调度器的签名：键按顺序、`k=v` 用 `&` 连接，接上盐，取 MD5 十六进制第 8 到 23 位。
   static String _sign(Map<String, String> query) {
     final keys = query.keys.toList()..sort();
     final text = '${keys.map((key) => '$key=${query[key]}').join('&')}$_signSalt';
@@ -249,8 +235,6 @@ class KugouLiveLinkDanmaku extends LiveDanmaku {
     _joinWatch?.cancel();
   }
 
-  // ---------------------------------------------------------------- 发送
-
   Uint8List _loginFrame() {
     final room = int.tryParse(_args?.roomId ?? '') ?? 0;
     final request = AcfunProtoWriter()
@@ -287,7 +271,6 @@ class KugouLiveLinkDanmaku extends LiveDanmaku {
     return _frame(_ackCommand, request.toBytes());
   }
 
-  /// 18 字节头 + protobuf `SocketProtocol.Message{content}`。
   static Uint8List _frame(int command, List<int> content) {
     final message = (AcfunProtoWriter()..bytes(7, content)).toBytes();
     final header = ByteData(18)
@@ -303,12 +286,9 @@ class KugouLiveLinkDanmaku extends LiveDanmaku {
         .toBytes();
   }
 
-  // ---------------------------------------------------------------- 接收
-
   void _handleFrame(Object? data) {
     if (data is! List<int>) return;
     final bytes = data is Uint8List ? data : Uint8List.fromList(data);
-    // 心跳回答：100 00 03 00。
     if (bytes.length >= 4 && bytes[3] == 0) return;
     final packet = _packet(bytes);
     if (packet == null) return;
@@ -363,7 +343,6 @@ class KugouLiveLinkDanmaku extends LiveDanmaku {
     }
   }
 
-  /// 一帧：18 字节头之后是 protobuf 信封。
   (int, Map<String, Object?>)? _packet(Uint8List frame) {
     if (frame.length < 10) return null;
     final view = ByteData.sublistView(frame);
@@ -398,8 +377,6 @@ class KugouLiveLinkDanmaku extends LiveDanmaku {
     'socsid': status.string(7) ?? '',
   };
 
-  /// `ContentMessage{cmd 1, content 2, roomid 3, receiverid 4, senderid 6,
-  /// senderkugouid 7, time 11, ext 14, sinfo 15, codec 16}`。
   static Map<String, Object?> _content(AcfunProtoMessage message, int command) {
     final packet = <String, Object?>{
       'cmd': message.integer(1) ?? 0,
@@ -502,8 +479,6 @@ class KugouLiveLinkDanmaku extends LiveDanmaku {
     return messages;
   }
 
-  /// 粉丝牌：`ext.intimacyVo` 的 `nameplate` 与 `level`（等级 > 0、type 1–4、
-  /// `lightUp` 1 时页面才显示）。
   static ({String name, int level})? _badge(Object? ext) {
     var value = ext;
     if (value is String) {
@@ -523,7 +498,6 @@ class KugouLiveLinkDanmaku extends LiveDanmaku {
     return (name: _text(intimacy['nameplate']), level: level);
   }
 
-  /// 解压：1 是 gzip、2 是 snappy，其余原样；失败返回 null。
   static Uint8List? _uncompress(Uint8List content, int compression) {
     switch (compression) {
       case 1:
@@ -544,8 +518,6 @@ class KugouLiveLinkDanmaku extends LiveDanmaku {
     }
   }
 
-  /// 原始 snappy 块（页面的 snappyjs `uncompressToBuffer`）：先一个 varint 长度，随后是
-  /// 字面量与拷贝。
   static Uint8List _snappy(Uint8List input) {
     var position = 0;
     var length = 0;
@@ -561,7 +533,7 @@ class KugouLiveLinkDanmaku extends LiveDanmaku {
     while (position < input.length) {
       final tag = input[position++];
       switch (tag & 0x03) {
-        case 0: // 字面量
+        case 0:
           var size = tag >> 2;
           if (size < 60) {
             size += 1;
@@ -621,7 +593,6 @@ class KugouLiveLinkDanmaku extends LiveDanmaku {
     return written + size;
   }
 
-  /// 去掉分隔符与方向标记 U+2027–U+202E，再去首尾空白。
   static String _clean(Object? value) => _text(value)
       .replaceAll(RegExp(r'[\u2027-\u202e]'), '')
       .trim();

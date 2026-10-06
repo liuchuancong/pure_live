@@ -7,9 +7,6 @@ import 'package:pure_live/core/network/web_socket_util.dart';
 import 'package:pure_live/shared/platforms/live_danmaku.dart';
 import 'package:pure_live/shared/platforms/pandalive/pandalive_api.dart';
 
-/// PandaTV 的弹幕参数（上游 M5.21）：`channel` 是 `live/play` 答的聊天频道
-/// （不是数字时用主播编号），`token` 是它的 Centrifugo 令牌（约 30 分钟）；`userId`
-/// 用来在令牌快过期时重新调 `live/play` 取新的。
 class PandaLiveDanmakuArgs {
   const PandaLiveDanmakuArgs({required this.userId, required this.channel, required this.token});
 
@@ -18,15 +15,6 @@ class PandaLiveDanmakuArgs {
   final String token;
 }
 
-/// PandaTV（neolive）的 Centrifugo 3.1.1 聊天（上游 M5.21，JSON 协议）。
-///
-/// - `connect`（`{"params":{"token":…,"name":"js"},"id":1}`）→ `subscribe`
-///   （`{"method":1,"params":{"channel":…},"id":2}`）的回复到了才算加入
-/// - 心跳是命令 7，id 从 3 往上数，每 25 秒一次（打开后第一次也在 25 秒时）
-/// - 频道推送是 `{"result":{"channel":…,"data":{"data":<消息>,"offset":<序号>}}}`；
-///   只报聊天（`bj`/`chatter`/`manager`/`support`），消息 id 是 `<channel>:<offset>`
-/// - **令牌到期前 60 秒**重新取令牌并悄悄换 socket（不提示）；换不到就等服务端在
-///   `ttl` 之后断开再按普通断线重连
 class PandaLiveDanmaku extends LiveDanmaku {
   PandaLiveDanmaku({PandaLiveApi? api}) : _api = api ?? PandaLiveApi();
 
@@ -81,7 +69,6 @@ class PandaLiveDanmaku extends LiveDanmaku {
       }
       if (!_running || generation != _generation) return;
       await Future<void>.delayed(Duration(seconds: attempt.clamp(1, 8)));
-      // 每次重连都先取一份新令牌（旧令牌 30 分钟后失效）。
       final refreshed = await _refreshArgs(generation);
       if (!_running || generation != _generation) return;
       if (refreshed != null) _args = refreshed;
@@ -153,7 +140,6 @@ class PandaLiveDanmaku extends LiveDanmaku {
       final result = decoded['result'];
       if (result is! Map) continue;
       if (id is int) {
-        // connect 的回复：按 `ttl` 安排到期前 60 秒换 socket。
         if (id == 1) {
           final ttl = int.tryParse(result['ttl']?.toString() ?? '') ?? 0;
           if (ttl > 60) {
@@ -173,7 +159,6 @@ class PandaLiveDanmaku extends LiveDanmaku {
     }
   }
 
-  /// 只报聊天（`bj`/`chatter`/`manager`/`support`）；消息 id 是 `<频道>:<序号>`。
   LiveMessage? _chat(Map<dynamic, dynamic> message, String channel, Object? offset) {
     final type = message['type']?.toString() ?? '';
     if (!const <String>{'bj', 'chatter', 'manager', 'support'}.contains(type)) return null;
@@ -194,7 +179,6 @@ class PandaLiveDanmaku extends LiveDanmaku {
     );
   }
 
-  /// 令牌快到期：重新取一份并换 socket（不提示）。
   Future<void> _refreshSocket(int generation) async {
     final refreshed = await _refreshArgs(generation);
     if (!_running || generation != _generation || refreshed == null) return;

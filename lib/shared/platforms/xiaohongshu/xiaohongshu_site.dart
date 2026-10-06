@@ -23,7 +23,6 @@ class XiaohongshuSite extends LiveSite
         LivePlayUrlResolver,
         LivePlayRecoveryResolver,
         LiveSiteExternalRoomResolver {
-  /// 该站点自己的官方房间地址（网页与可选的客户端 scheme）。
   @override
   RoomExternalTarget? externalRoomTarget(LiveRoom liveroom) {
     final id = sanitizedExternalRoomId(liveroom.roomId);

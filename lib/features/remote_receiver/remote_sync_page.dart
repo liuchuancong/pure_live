@@ -89,7 +89,6 @@ class _RemoteSyncPageState extends State<RemoteSyncPage> {
       return;
     }
 
-    // 对方发来的模块清单决定这里能勾什么；勾选之外的一律不落到本机。
     final available = BackupController.presentSections(settings);
     List<String>? sections;
     if (available.isNotEmpty) {

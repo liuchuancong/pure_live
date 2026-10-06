@@ -49,11 +49,6 @@ import 'package:pure_live/shared/platforms/empty_danmaku.dart';
 import 'package:pure_live/shared/platforms/live_danmaku_capability.dart';
 
 class Sites {
-  /// Niconico 的 master 播放列表读取器。
-  ///
-  /// 实现建在 recorder 的 HLS 中继上，注册表不该认识录制域，因此由 App 装配层
-  /// 在启动时绑定（见 InitialServices）。未绑定就使用 Niconico 画质目录会立即抛出
-  /// 明确错误，而不是静默拿到空画质。
   static NiconicoMasterReader? niconicoMasterReader;
 
   static Future<String> _missingNiconicoMasterReader(
@@ -63,10 +58,6 @@ class Sites {
     String Function(Uri) findProxy,
   ) => Future.error(StateError('Sites.niconicoMasterReader 未绑定：请在 App 装配层注入 readNiconicoMaster。'));
 
-  /// 每次调用时解析，而不是在构造适配器时取值。
-  ///
-  /// 适配器实例会被 [_supportedSites] 缓存，如果在 App 装配层绑定之前就取到兜底，
-  /// 那一份"未绑定"会被永久缓存下来。这里只做解析转发，因此与初始化顺序无关。
   static Future<String> _resolveNiconicoMaster(
     Uri source,
     String? Function(Uri) cookies,
@@ -74,21 +65,15 @@ class Sites {
     String Function(Uri) findProxy,
   ) => (niconicoMasterReader ?? _missingNiconicoMasterReader)(source, cookies, cancel, findProxy);
 
-  /// 站点是否提供远程弹幕传输。
-  ///
-  /// 由站点自己的弹幕引擎实现决定，通用代码不再维护平台名单：返回
-  /// [EmptyDanmaku] 的站点没有引擎，因此也不会被当成多画面聊天源。
   static bool supportsDanmakuTransport(String? platform) {
     final id = platform?.trim().toLowerCase() ?? '';
     if (id.isEmpty || !isSupported(id) || isRetired(id)) return false;
     return of(id).liveSite.getDanmaku() is! EmptyDanmaku;
   }
 
-  /// 站点的弹幕细节能力；站点未实现 [LiveDanmakuCapability] 时为 null。
   static LiveDanmakuCapability? danmakuCapability(String? platform) {
     final id = platform?.trim().toLowerCase() ?? '';
     if (id.isEmpty || !isSupported(id) || isRetired(id)) return null;
-    // 声明为 Object：LiveSite 与能力接口无关，声明成 LiveSite 时 Dart 不会提升类型。
     final Object site = of(id).liveSite;
     return site is LiveDanmakuCapability ? site : null;
   }

@@ -41,7 +41,6 @@ class NiconicoSite extends LiveSite
         LivePlayRecoveryResolver,
         LivePlayUrlCursorResolver,
         LiveSiteExternalRoomResolver {
-  /// 该站点自己的官方房间地址（网页与可选的客户端 scheme）。
   @override
   RoomExternalTarget? externalRoomTarget(LiveRoom liveroom) {
     final id = sanitizedExternalRoomId(liveroom.roomId);
@@ -145,8 +144,6 @@ class NiconicoSite extends LiveSite
     return (await _directory.search(keyword, page: page, cancel: cancel)).rooms;
   }
 
-  /// 房间身份：节目号（`lv…`）或主播身份（`user/<id>`、`ch<n>`——上游 4.x 的
-  /// "房间即主播"）。两种都收，旧收藏里的节目号照旧可用。
   String _identity(LiveRoom liveroom) {
     final roomId = liveroom.roomId ?? '';
     final platform = liveroom.platform ?? '';
@@ -155,7 +152,6 @@ class NiconicoSite extends LiveSite
     throw const NiconicoException(NiconicoFailure.identity);
   }
 
-  /// 取流与清晰度要的是**节目号**：主播身份先换成它当前在播的节目（一次 watch 页）。
   Future<String> _programIdOf(String roomId) async =>
       NiconicoApi.isProgramId(roomId) ? roomId : await _api.resolveBroadcasterProgram(roomId);
 
@@ -170,7 +166,6 @@ class NiconicoSite extends LiveSite
     };
     return LiveRoom(
       platform: id,
-      // 保留传进来的房间身份：主播房间换场后还是同一个房间。
       roomId: roomId,
       title: watch.title,
       nick: watch.broadcaster,

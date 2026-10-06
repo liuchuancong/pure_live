@@ -25,7 +25,6 @@ final class BigoSite extends LiveSite
         LivePlayUrlResolver,
         LivePlayRecoveryResolver,
         LiveSiteExternalRoomResolver {
-  /// 该站点自己的官方房间地址（网页与可选的客户端 scheme）。
   @override
   RoomExternalTarget? externalRoomTarget(LiveRoom liveroom) {
     final id = sanitizedExternalRoomId(liveroom.roomId);
@@ -145,7 +144,6 @@ final class BigoSite extends LiveSite
       area: 'Bigo Live',
       link: BigoLink.url(card.siteId),
       liveStatus: LiveStatus.live,
-      // 上锁的列表行照常列出、也算在播，只是标成密码房（上游 24-2）。
       restriction: card.locked ? LiveRestriction.password : null,
       watching: viewers ?? '',
       onlineViewers: viewers,
@@ -162,7 +160,6 @@ final class BigoSite extends LiveSite
     final liveStatus = switch ((status.access, status.reportedAlive, room.hls)) {
       (BigoAccess.public, true, Uri()) => LiveStatus.live,
       (BigoAccess.public, false, _) => LiveStatus.offline,
-      // 受限的直播仍然是"在播"（上游 24-2）：只有公开且明确不在播才是下播。
       (_, true, _) => LiveStatus.live,
       _ => LiveStatus.unknown,
     };
@@ -178,23 +175,15 @@ final class BigoSite extends LiveSite
       title: room.title.isEmpty ? room.nickname : room.title,
       nick: room.nickname,
       avatar: room.avatar ?? '',
-      // 封面用直播间截图，头像兜底（上游 24-1）：3.x 与改前都拿头像当封面，
-      // 于是直播间卡片显示的是主播头像而不是画面。
       cover: room.snapshot.isNotEmpty ? room.snapshot : (room.avatar ?? ''),
       area: room.category.isEmpty ? name : room.category,
       link: BigoLink.url(status.canonicalSiteId),
       liveStatus: liveStatus,
-      // 限制种类：登录/密码房/付费房/公开但拿不到地址（上游 24-2）。
-      // 限制种类是平台对**房间本身**说的话，和在不在播是两件事。登录墙下
-      // `alive` 根本不回（状态只能是 unknown，不是下播），原因却明明在答案里；
-      // 只在确认在播时保留限制，等于 bigo 整站被要求登录时观众只剩"未开播"可看。
-      // 公开房间仍然只有确认在播才谈得上限制（下播就是下播，不是受限）。
       restriction: liveStatus == LiveStatus.live || status.access != BigoAccess.public ? restriction : null,
       onlineViewers: null,
       totalViewers: null,
       notice: notice,
       httpHeaders: BigoApi.headers,
-      // 弹幕参数（上游 M5.20）：在播、有房间号、不是密码房（聊天要密码）时给。
       danmakuData:
           liveStatus == LiveStatus.live && (room.roomId ?? '').isNotEmpty && restriction != LiveRestriction.password
           ? BigoDanmakuArgs(siteId: status.canonicalSiteId, ownerId: status.ownerId, roomId: room.roomId!)

@@ -24,7 +24,6 @@ class TikTokSite extends LiveSite
         LivePlayUrlResolver,
         LivePlayRecoveryResolver,
         LiveSiteExternalRoomResolver {
-  /// 该站点自己的官方房间地址（网页与可选的客户端 scheme）。
   @override
   RoomExternalTarget? externalRoomTarget(LiveRoom liveroom) {
     final id = sanitizedExternalRoomId(liveroom.roomId);
@@ -40,10 +39,8 @@ class TikTokSite extends LiveSite
 
   final TikTokApi _api;
 
-  /// 短链解析用的客户端工厂（测试注入用；必须是新客户端，不能是全局单例）。
   final Dio Function()? shortLinkClientFactory;
 
-  /// 短链最多跟 3 次跳转（上游 22-5）。
   static const int _maxShortLinkRedirects = 3;
   static const Duration _shortLinkTimeout = Duration(seconds: 12);
 
@@ -90,7 +87,6 @@ class TikTokSite extends LiveSite
         TikTokState.offline => LiveStatus.offline,
         TikTokState.unknown => LiveStatus.unknown,
       },
-      // 受限的直播仍然是"在播"（上游 22-1），播放时才说明谁可以看。
       restriction: room.state == TikTokState.live ? room.restriction : null,
       startedAt: room.startedAt,
       watching: current ?? '',
@@ -114,8 +110,6 @@ class TikTokSite extends LiveSite
 
   Future<LiveRoom> _detail(LiveRoom liveroom, {required bool includeMedia}) async {
     final data = await _api.room(_roomId(liveroom), includeMedia: includeMedia);
-    // 受限的直播不在这里就报错：房间是按"在播 + 限制"返回的，播放时才说明原因
-    // （上游 22-1）。无限制的直播没有流才是取流失败。
     if (includeMedia &&
         data.state == TikTokState.live &&
         data.restriction == LiveRestriction.none &&
@@ -155,8 +149,6 @@ class TikTokSite extends LiveSite
     CancelToken? cancel,
   }) async {
     if (page != 1 || pageSize < 1) return [];
-    // 短链（vm./vt.tiktok.com）要跟跳转才能拿到房间（上游 22-5）：此前它既不是
-    // 官方链接也不是用户名，于是粘贴短链什么都搜不到。
     final short = TikTokLink.shortUri(keyword);
     final TikTokLink? reference;
     if (short == null) {
@@ -175,8 +167,6 @@ class TikTokSite extends LiveSite
     }
   }
 
-  /// 跟短链跳转，最多 [_maxShortLinkRedirects] 次，返回最终地址；跟不动时返回
-  /// 已经到达的那个地址（null 表示整条链都读不到）。
   Future<String?> _followShortLink(Uri start) async {
     final session = LiveShortLinkSession(timeout: _shortLinkTimeout, clientFactory: shortLinkClientFactory);
     try {

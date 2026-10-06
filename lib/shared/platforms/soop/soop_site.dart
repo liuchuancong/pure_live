@@ -17,7 +17,6 @@ import 'package:pure_live/shared/platforms/live_external_room.dart';
 
 class SoopSite extends LiveSite
     implements LiveSiteRoomRefresher, LiveSiteRecordRoomResolver, LiveSiteExternalRoomResolver {
-  /// 该站点自己的官方房间地址（网页与可选的客户端 scheme）。
   @override
   RoomExternalTarget? externalRoomTarget(LiveRoom liveroom) {
     final path = Uri.encodeComponent(id);
@@ -452,8 +451,6 @@ class SoopSite extends LiveSite
     return getLiveRoomByApi(data, null, liveroom.roomId!);
   }
 
-  /// 展示用文本：SOOP 的标题与昵称带 HTML 实体（`&amp;` 之类），先解码再展示
-  /// （上游 7-2）。
   static String _display(Object? value) {
     final text = value?.toString().trim() ?? '';
     if (text.isEmpty || !text.contains('&')) return text;
@@ -472,7 +469,6 @@ class SoopSite extends LiveSite
     final resultCode = rawResultCode is num
         ? rawResultCode.toInt()
         : int.tryParse(rawResultCode?.toString() ?? '') ?? 0;
-    // 业务码：1成功，-6需要登录，0无直播，‑2屏蔽
     if (resultCode != 1) {
       CoreLog.w("soop channel result code=$resultCode");
       final currentRoom = CurrentLiveRoom.value;
@@ -695,8 +691,6 @@ class SoopSite extends LiveSite
       var cover = item["broad_img"].toString();
       var userId = item["user_id"].toString();
       var title = _display(item["broad_title"]);
-      // `standard_broad_cate_name` 现在的回答已经不带，退回它之前先读
-      // `broad_cate_name`（上游 7-3）。
       var area = _display(item["broad_cate_name"] ?? item["standard_broad_cate_name"]);
       final viewerCount = parseOnlineViewers(Map<dynamic, dynamic>.from(item as Map));
 

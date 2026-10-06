@@ -1,6 +1,5 @@
 library;
 
-
 export 'models/index.dart';
 export 'config/index.dart';
 export 'theme/index.dart';

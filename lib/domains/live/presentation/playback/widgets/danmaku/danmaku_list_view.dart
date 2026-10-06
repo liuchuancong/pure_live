@@ -285,8 +285,6 @@ class DanmakuListViewState extends State<DanmakuListView> {
     return item;
   }
 
-  /// B 站昵称提示条（上游 2eea8022a）：游客连接，或登录失效后仍在收打码昵称时，
-  /// 在消息列表上方常驻一行并提供登录入口；其它站点/情况不占位置。
   Widget _nameHintBar(BuildContext context) {
     if (widget.room.platform != PlatformIds.bilibili) return const SizedBox.shrink();
     final signedIn = CookieSettingsController.to.bilibiliCookie.v.trim().isNotEmpty;
@@ -349,8 +347,6 @@ class DanmakuListViewState extends State<DanmakuListView> {
             borderRadius: radius,
             child: Column(
               children: [
-                // 昵称提示条（上游 2eea8022a）：B 站游客连接会隐藏昵称，登录失效的存储
-                // 登录同样只拿到打码名；点「去登录 / 重新登录」直接进扫码登录。
                 _nameHintBar(context),
                 Expanded(
                   child: Stack(
@@ -523,7 +519,7 @@ class DanmakuItem extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         child: DecoratedBox(
           decoration: BoxDecoration(
-            color: cardBgColor, // 动态背景色
+            color: cardBgColor,
             borderRadius: BorderRadius.circular(10),
             border: Border.all(color: vibrantColor.withValues(alpha: 0.08), width: 0.5),
           ),
@@ -549,7 +545,6 @@ class DanmakuItem extends StatelessWidget {
                     child: Text.rich(
                       TextSpan(
                         children: [
-                          // 发送者头像（上游 2eea8022a）：平台给了才画，取不到就什么都不占。
                           if (danmaku.avatar.isNotEmpty)
                             WidgetSpan(
                               alignment: PlaceholderAlignment.middle,
@@ -566,7 +561,6 @@ class DanmakuItem extends StatelessWidget {
                                 ),
                               ),
                             ),
-                          // 粉丝牌（上游 2eea8022a）：有名字才画，等级为空时只画名字。
                           if (danmaku.fansName.isNotEmpty)
                             WidgetSpan(
                               alignment: PlaceholderAlignment.middle,
@@ -599,7 +593,6 @@ class DanmakuItem extends StatelessWidget {
                               danmaku.message,
                               AppTextStyles.t14.fontSize!,
                               textColor,
-                              // 本条弹幕自带的表情图片（上游 M13.16）。
                               emoteUrls: danmaku.emotes.isEmpty
                                   ? null
                                   : {for (final emote in danmaku.emotes) emote.code: emote.url},
@@ -638,9 +631,6 @@ class EmojiToken {
 }
 
 List<EmojiToken> _parseEmojiTokens(String text, {Map<String, String>? emoteUrls}) {
-  // 本条消息自带的表情（LiveMessage.emotes）优先：它们不一定在全局图集里，所以
-  // 要和图集正则合并成一个分词正则；带它们时也不走缓存（缓存以文本为 key，
-  // 同一条文本在不同消息里表情可能不同）。
   final extras = <String>[if (emoteUrls != null) ...emoteUrls.keys.where((code) => code.isNotEmpty)];
   if (extras.isEmpty) {
     final cached = emojiCache[text];
@@ -712,7 +702,6 @@ List<InlineSpan> parseEmojis(String text, double size, Color color, {Map<String,
       continue;
     }
 
-    // 消息自带的表情：直接用它的图片地址画，图集里没有也能显示。
     final url = emoteUrls?[token.value];
     if (url != null && url.isNotEmpty) {
       spans.add(

@@ -19,7 +19,6 @@ import 'package:pure_live/core/consts/platform_ids.dart';
 import 'package:pure_live/shared/platforms/live_external_room.dart';
 
 class TwitchSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResolver, LiveSiteExternalRoomResolver {
-  /// 该站点自己的官方房间地址（网页与可选的客户端 scheme）。
   @override
   RoomExternalTarget? externalRoomTarget(LiveRoom liveroom) {
     final path = Uri.encodeComponent(id);
@@ -530,7 +529,6 @@ class TwitchSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomR
         shortName: node["slug"],
         areaType: liveCategory.id,
         platform: id,
-        // 图片直连 Twitch 的图片 CDN，不再改写成第三方代理 i2.wp.com（上游 8-7）。
         areaPic: (node["avatarURL"] ?? "").toString(),
         typeName: liveCategory.name,
       );
@@ -918,8 +916,6 @@ class TwitchSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomR
             .toString()
             .appendTxt("?&t=${DateTime.now().millisecondsSinceEpoch ~/ 1000}"),
         nick: node["displayName"],
-        // 搜索的持久化查询能给出频道粉丝数时用上，于是"按粉丝"排序对 Twitch 也有效
-        // （上游 F-SRC-01 的七个平台之一）；查询没给就是空，不影响其它字段。
         followers: node["followers"]?["totalCount"]?.toString() ?? '',
         avatar: node["profileImageURL"].toString(),
         watching: (node["stream"]?["viewersCount"] ?? 0).toString(),
@@ -1005,8 +1001,6 @@ class TwitchSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomR
           _ => false,
         };
         var title = user?.lastBroadcast?.title ?? "";
-        // 在播时详情封面用直播截图，而不是主播头像（上游 8-5）：头像不是这场
-        // 直播的画面；分区取所玩游戏的显示名（上游 8-2）。
         final previewCover = user?.stream?.previewImageUrl ?? '';
         var liveRoom = LiveRoom(
           roomId: list[index].roomId,
@@ -1020,7 +1014,6 @@ class TwitchSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomR
           area: user?.stream?.game?.displayName ?? "",
           status: online,
           liveStatus: online ? LiveStatus.live : LiveStatus.offline,
-          // 在播时 stream.createdAt 就是这场直播的开播时间（上游 8-x）。
           startedAt: online ? _startedAt(user?.stream?.createdAt) : null,
           platform: PlatformIds.twitch,
           link: "$baseUrl/${list[index].roomId}",
@@ -1039,7 +1032,6 @@ class TwitchSite implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomR
     return roomList;
   }
 
-  /// Twitch 的 `createdAt`（ISO 8601）转成 UTC；读不出来就不给。
   static DateTime? _startedAt(Object? value) {
     final raw = value?.toString().trim() ?? '';
     if (raw.isEmpty) return null;

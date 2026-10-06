@@ -90,10 +90,8 @@ final class BaiduLiveRoom {
   final BaiduLiveState state;
   final List<BaiduLiveVariant> variants;
 
-  /// 付费/禁止访问/无可播档位等的限制种类（上游 30-5）；null 表示这次回答没说。
   final LiveRestriction? restriction;
 
-  /// 弹幕参数（上游 M5.26）：房间命令给的消息列表与轮询间隔；没有就是没有弹幕。
   final BaiduLiveDanmakuArgs? danmakuArgs;
 
   BaiduLiveRoom enrich(BaiduLiveRoom known) => BaiduLiveRoom(
@@ -420,9 +418,6 @@ class BaiduLiveApi {
     );
   }
 
-  /// 房间命令 371 给的弹幕参数（上游 M5.26）：三条消息列表（聊天 / 可靠 / 主播）与
-  /// 轮询间隔（限制在 1–10 秒，缺省 5 秒）；没有合规的聊天列表就没有参数
-  /// （仍然可以只读地进房，只是没有弹幕）。
   static BaiduLiveDanmakuArgs? danmakuArgs(
     Map<dynamic, dynamic> command,
     Map<dynamic, dynamic> video, {
@@ -454,8 +449,6 @@ class BaiduLiveApi {
     var uri = Uri.tryParse(raw.trim());
     if (uri == null) return null;
     final host = uri.host.toLowerCase();
-    // `flv-live.bdstatic.com` 的 https 证书与主机名不匹配，必须用 http 播
-    // （上游 30-9）；其余允许的主机保持 http 升 https。
     if (host == 'flv-live.bdstatic.com') {
       if (uri.scheme == 'https' && !uri.hasPort) uri = uri.replace(scheme: 'http');
     } else if (uri.scheme == 'http' && _allowedMediaHost(host)) {
@@ -498,8 +491,6 @@ class BaiduLiveApi {
       add(_text(urls['avc_flv']), 'flv', resolution, 'avc');
       add(_text(urls['flv']), 'flv', resolution, 'avc');
       add(_text(urls['hls']), 'hls', resolution, 'avc');
-      // 上游 4.x 的 HEVC 档位：同一档里另给一条 hevc_flv，编码不同、容器仍是 FLV，
-      // 取流侧靠线路声明的 codec 决定要不要 FFmpeg 转封装。
       add(_text(urls['hevc_flv']), 'flv', resolution, 'hevc');
     }
 
@@ -520,7 +511,6 @@ class BaiduLiveApi {
       add(_text(video['live_flv_url']), 'flv', 0, 'avc');
       add(_text(video['live_flv_url_origin']), 'flv', 0, 'avc');
     }
-    // 源站 HEVC 线路（上游 `hevc_url`）：没有档位表时也会出现。
     add(_text(video['hevc_url']), 'flv', 0, 'hevc');
 
     final variants =
@@ -588,8 +578,6 @@ class BaiduLiveApi {
   }
 
   static BaiduLiveState _detailState(Map<String, Object?> command) {
-    // 付费/禁止访问/封禁不再改状态：它们仍然是在播（或回放），只是带限制种类
-    // （上游 30-5）。此前一律返回 restricted，于是房间显示为"未知"。
     return switch (_integer(command['status'])) {
       0 => BaiduLiveState.live,
       -1 || 1 => BaiduLiveState.preview,
@@ -599,9 +587,6 @@ class BaiduLiveApi {
     };
   }
 
-  /// 详情的限制种类（上游 30-5）：禁止访问/封禁 → unplayable，付费 → paid，
-  /// 在播或回放却一个档位都没有 → unplayable，其余在播/回放 → none，
-  /// 其它状态 → null（没说）。
   static LiveRestriction? _detailRestriction(
     Map<String, Object?> command,
     BaiduLiveState state,

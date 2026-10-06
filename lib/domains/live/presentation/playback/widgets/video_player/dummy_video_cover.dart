@@ -2,14 +2,7 @@ import 'package:remixicon/remixicon.dart';
 
 import 'package:pure_live/core/index.dart';
 
-/// 直播源只给了一路占位视频（例如猫耳 FM 的 16×16 h264）时，盖在画面上的房间封面。
 ///
-/// 和纯音频模式那层一样是**盖住**而不是替换：视频组件留在树上继续解码，帧心跳不
-/// 断，看门狗不会把好好在播的房间判成卡死。区别是这里没有"切回视频"可言——源里
-/// 就没有真画面，所以说明条常驻，免得用户以为卡住了。
-///
-/// 背景必须不透明：底下那路占位视频还在被拉伸着画，半透明就是一层纯色糊在上面。
-/// 整层 [IgnorePointer]：控制层叠在它上面，手势要能落下去。
 class DummyVideoCover extends StatelessWidget {
   const DummyVideoCover({super.key, required this.room});
 
@@ -17,7 +10,6 @@ class DummyVideoCover extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 封面优先，没有就用头像：两者都没有时留纯黑，也比一片拉伸的纯色强。
     final candidates = [room.cover, room.avatar];
     var image = '';
     for (final candidate in candidates) {

@@ -25,7 +25,6 @@ import 'package:pure_live/shared/platforms/live_external_room.dart';
 class DouyinSite
     with LiveDanmakuCapabilityDefaults, DouyinDanmakuCapability
     implements LiveSite, LiveSiteRecordRoomResolver, LiveSiteExternalRoomResolver {
-  /// 该站点自己的官方房间地址（网页与可选的客户端 scheme）。
   @override
   RoomExternalTarget? externalRoomTarget(LiveRoom liveroom) {
     final id = sanitizedExternalRoomId(liveroom.roomId);
@@ -52,7 +51,6 @@ class DouyinSite
 
   static const String kDefaultAuthority = "live.douyin.com";
 
-  /// 用户设置的 cookie
   static String cookie = "";
   static Future<String>? _anonymousCookieRequest;
   static final String _anonymousUserUniqueId = generateAnonymousUserUniqueId();
@@ -438,10 +436,8 @@ class DouyinSite
   }
 
   Future<LiveRoom> getRoomDetailByRoomId(String roomId) async {
-    // 读取房间信息
     var roomData = await _getRoomDataByRoomId(roomId);
 
-    // 通过房间信息获取WebRid
     var webRid = roomData["data"]["room"]["owner"]["web_rid"].toString();
 
     // Current web clients use a 19-digit anonymous visitor ID. Reuse one ID
@@ -453,8 +449,6 @@ class DouyinSite
 
     final status = int.tryParse(room['status']?.toString() ?? '') ?? 0;
 
-    // roomId是一次性的，用户每次重新开播都会生成一个新的roomId
-    // 所以如果roomId对应的直播间状态不是直播中，就通过webRid获取直播间信息
     if (status == 4) {
       var result = await getRoomDetailByWebRid(webRid);
       return result;
@@ -464,7 +458,6 @@ class DouyinSite
     final totalViewers = roomStatus ? douyinTotalViewers(room) : '';
     final onlineViewers = roomStatus ? douyinOnlineViewers(room) : '';
     final nativeAudience = totalViewers.isNotEmpty ? totalViewers : onlineViewers;
-    // 主要是为了获取cookie,用于弹幕websocket连接
     var headers = await getRequestHeaders();
 
     return LiveRoom(
@@ -482,7 +475,6 @@ class DouyinSite
       platform: PlatformIds.douyin,
       area: _detailArea(room, null),
       liveStatus: roomStatus ? LiveStatus.live : LiveStatus.offline,
-      // 在播时 `start_time`（秒）优先，缺失才退 `create_time`（上游 4-x）。
       startedAt: roomStatus ? _douyinStartedAt(room) : null,
       introduction: owner["signature"].toString(),
       notice: "",
@@ -496,9 +488,6 @@ class DouyinSite
     );
   }
 
-  /// 抖音的直播判定（上游 4-1）：`room.status` 优先（2 = 直播中），它缺失时才看
-  /// 信封里的 `room_status`（0 = 直播中，其余为已结束），两者都没有则按 3.x 视为
-  /// 未开播。
   static bool _douyinIsLive(dynamic room, dynamic envelope) {
     final status = int.tryParse(room is Map ? (room['status']?.toString() ?? '') : '');
     if (status != null) return status == 2;
@@ -506,8 +495,6 @@ class DouyinSite
     return roomStatus == 0;
   }
 
-  /// 抖音的开播时间：`start_time`（秒）优先，缺失才退 `create_time`；两个都读不出来
-  /// 或不在 2000–2100 年就不给（上游 4-x）。
   static DateTime? _douyinStartedAt(dynamic room) {
     if (room is! Map) return null;
     for (final key in const ['start_time', 'create_time']) {
@@ -519,10 +506,6 @@ class DouyinSite
     return null;
   }
 
-  /// 详情里的分区（上游 M4.D）：优先游戏名
-  /// （`game_data.game_tag_info.game_tag_name`），否则取 `partition_road_map`
-  /// 里最具体的一层标题（子分区，再到分区）。3.x 这里一律留空，于是游戏房在
-  /// 房间里看不到分区。
   static String _detailArea(dynamic room, dynamic roadMap) {
     String? title(dynamic node) {
       final partition = node is Map ? node['partition'] : null;
@@ -543,9 +526,6 @@ class DouyinSite
     return '';
   }
 
-  /// 通过WebRid获取直播间信息
-  /// - [webRid] 直播间RID
-  /// - 返回直播间信息
   Future<LiveRoom> getRoomDetailByWebRid(String webRid) async {
     try {
       var result = await _getRoomDetailByWebRidApi(webRid);
@@ -556,11 +536,7 @@ class DouyinSite
     return await _getRoomDetailByWebRidHtml(webRid);
   }
 
-  /// 通过WebRid访问直播间API，从API中获取直播间信息
-  /// - [webRid] 直播间RID
-  /// - 返回直播间信息
   Future<LiveRoom> _getRoomDetailByWebRidApi(String webRid) async {
-    // 读取房间信息
     var data = await _getRoomDataByApi(webRid);
 
     var roomData = data["data"][0];
@@ -571,14 +547,11 @@ class DouyinSite
 
     var owner = roomData["owner"];
 
-    // 上游 4-1：enter 的 room 没有 status 时用 `data.room_status` 判定（0 为直播中），
-    // 两者都没有则按 3.x 视为未开播；status 存在时以它为准。
     final roomStatus = _douyinIsLive(roomData, data);
     final totalViewers = roomStatus ? douyinTotalViewers(roomData) : '';
     final onlineViewers = roomStatus ? douyinOnlineViewers(roomData) : '';
     final nativeAudience = totalViewers.isNotEmpty ? totalViewers : onlineViewers;
 
-    // 主要是为了获取cookie,用于弹幕websocket连接
     var headers = await getRequestHeaders();
     return LiveRoom(
       roomId: webRid,
@@ -609,9 +582,6 @@ class DouyinSite
     );
   }
 
-  /// 通过WebRid访问直播间网页，从网页HTML中获取直播间信息
-  /// - [webRid] 直播间RID
-  /// - 返回直播间信息
   Future<LiveRoom> _getRoomDetailByWebRidHtml(String roomId) async {
     var detail = await _getRoomDataByHtml(roomId);
     var webRid = roomId;
@@ -627,7 +597,6 @@ class DouyinSite
     final onlineViewers = roomStatus ? douyinOnlineViewers(roomInfo) : '';
     final nativeAudience = totalViewers.isNotEmpty ? totalViewers : onlineViewers;
 
-    // 主要是为了获取cookie,用于弹幕websocket连接
     var headers = await getRequestHeaders();
 
     return LiveRoom(
@@ -659,8 +628,6 @@ class DouyinSite
     );
   }
 
-  /// 读取用户的唯一ID
-  /// - [webRid] 直播间RID
   // ignore: unused_element
   Future<String> _getUserUniqueId(String webRid) async {
     try {
@@ -671,8 +638,6 @@ class DouyinSite
     }
   }
 
-  /// 进入直播间前需要先获取cookie
-  /// - [webRid] 直播间RID
   Future<String> _getWebCookie(String webRid) async {
     var headResp = await HttpClient.instance.head("https://live.douyin.com/$webRid", header: headers);
     var dyCookie = "";
@@ -691,8 +656,6 @@ class DouyinSite
     return dyCookie;
   }
 
-  /// 通过webRid获取直播间Web信息
-  /// - [webRid] 直播间RID
   Future<Map> _getRoomDataByHtml(String webRid) async {
     var dyCookie = await _getWebCookie(webRid);
     var result = await HttpClient.instance.getText(
@@ -713,8 +676,6 @@ class DouyinSite
     return renderDataJson["state"];
   }
 
-  /// 通过webRid获取直播间Web信息
-  /// - [webRid] 直播间RID
   Future<Map> _getRoomDataByApi(String webRid) async {
     var requestHeader = await getRequestHeaders();
     var queryParams = {
@@ -731,8 +692,6 @@ class DouyinSite
     return result["data"];
   }
 
-  /// 通过roomId获取直播间信息
-  /// - [roomId] 直播间ID
   Future<Map> _getRoomDataByRoomId(String roomId) async {
     var result = await HttpClient.instance.getJson(
       'https://webcast.amemv.com/webcast/room/reflow/info/',
@@ -859,7 +818,6 @@ class DouyinSite
           id: key.toLowerCase(),
           sort: sort,
           data: List<String>.unmodifiable(urls),
-          // 平台为这一档声明的画面尺寸（上游 F.1b）：解码器报出真实尺寸前用它排版。
           declaredAspectRatio: _declaredAspectRatio(
             main: main is Map ? main : null,
             descriptor: descriptor,
@@ -936,10 +894,6 @@ class DouyinSite
     _ => 0,
   };
 
-  /// 平台为这一档声明的画面宽高比（上游 F.1b）：依次看
-  /// `main.width/height`、`main.sdk_params.width/height`、`sdk_params.resolution`、
-  /// 档位描述里的 `resolution`。尺寸要在 120–16384 之间、宽高比在 0.30–3.50 之间，
-  /// 否则不算（`stream_orientation` 与顶层 `extra.width/height` 从不读，和 3.x 一致）。
   static double? _declaredAspectRatio({
     required Map<dynamic, dynamic>? main,
     required Map<dynamic, dynamic> descriptor,
@@ -993,7 +947,6 @@ class DouyinSite
     return Future.value(<LiveSuperChatMessage>[]);
   }
 
-  //生成指定长度的16进制随机字符串
   String generateRandomString(int length) {
     var random = math.Random.secure();
     var values = List<int>.generate(length, (i) => random.nextInt(16));
@@ -1016,7 +969,6 @@ class DouyinSite
     return value.toString();
   }
 
-  // 生成随机的数字
   int generateRandomNumber(int length) {
     var random = math.Random.secure();
     var values = List<int>.generate(length, (i) => random.nextInt(10));

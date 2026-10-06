@@ -10,7 +10,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:pure_live/domains/account/presentation/auth/utils/firebase_manager.dart';
 
-
 class FirebaseEmailAuthBackend {
   const FirebaseEmailAuthBackend();
 

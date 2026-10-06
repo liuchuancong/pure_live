@@ -3,9 +3,7 @@ import 'dart:math';
 class FakeUserAgent {
   static Map get userAgent => getRandomUserAgent();
   static Map getRandomUserAgent() {
-    // 获取随机的设备信息
     final macOSDevicesVersion = macOSDevicesVersions[Random().nextInt(macOSDevicesVersions.length)];
-    // 获取随机的浏览器版本
     final chromeVersion = chromeVersions[Random().nextInt(chromeVersions.length)];
     final sarariVersion = sarariVersions[Random().nextInt(sarariVersions.length)];
     final edgeVersion = edgeVersions[Random().nextInt(edgeVersions.length)];

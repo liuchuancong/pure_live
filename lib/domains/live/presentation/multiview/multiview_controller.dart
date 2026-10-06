@@ -21,32 +21,18 @@ import 'package:pure_live/domains/live/presentation/multiview/danmaku/multiview_
 import 'package:pure_live/domains/live/data/platforms/sites.dart';
 import 'package:pure_live/domains/live/domain/global_player_service.dart';
 
-/// 房间对象 → 可播放源解析器。
-///
-/// 复用站点适配器既有入口（getRoomDetail/getPlayQualites/getPlayUrls），
-/// 禁止在 multiview 内复制解析逻辑；测试注入假实现。
-/// [preferLowest] 为小格自动降质联动服务：true 时默认取最低档（列表末项）。
 typedef MultiviewStreamResolver = Future<MultiviewStreamSource> Function(
   LiveRoom liveroom, {
   required bool preferLowest,
 });
 
-/// 进入 multiview 时暂停全局播放器的钩子。
 typedef MultiviewGlobalPauseHook = Future<void> Function();
 
 /// Loads and saves the per-room volume used by multiview.
 typedef MultiviewRoomVolumeLoader = double Function(LiveRoom liveroom);
 typedef MultiviewRoomVolumeSaver = Future<void> Function(LiveRoom liveroom, double volume);
 
-/// 多画面同看控制器。
 ///
-/// 播放编排归 media_core 的 MultiviewController（墙）：每格播放器、
-/// 卡顿看门狗、重启预算、解码预算、音频互斥都在墙上。pure_live 保留
-/// 业务编排：站点解析、逐格画质/线路切换、签名 URL 租约续期闭包、
-/// 房间音量记忆、页级弹幕会话。
-///
-/// owned 私有协议源以 custom-input recipe 进墙，由 kernel 的
-/// customInputOpener 获取回环租约后打开。
 class MultiviewController extends GetxController {
   MultiviewController({
     this._streamResolver,
@@ -70,7 +56,6 @@ class MultiviewController extends GetxController {
     }
   }
 
-  /// focus 布局的桌面端格子数上限。
   static const int maxCells = 9;
 
   final int maxCellCount;
@@ -216,18 +201,14 @@ class MultiviewController extends GetxController {
     }
   }
 
-  /// 当前布局；初始为四画面。
   final Rx<MultiviewLayout> layout = MultiviewLayout.quad.obs;
 
-  /// focus 布局下当前大画面格下标。
   final RxInt focusedCellIndex = 0.obs;
 
-  /// 单格状态列表，长度恒等于 [layout] 容量。
   final RxList<MultiviewCellState> cells = RxList<MultiviewCellState>(
     List.generate(MultiviewLayout.quad.capacity, MultiviewCellState.empty),
   );
 
-  /// 每格播放状态（供 UI 播放/暂停按钮态）。
   final RxList<bool> playingFlags = RxList<bool>(
     List.generate(MultiviewLayout.quad.capacity, (_) => false, growable: true),
   );
@@ -238,12 +219,6 @@ class MultiviewController extends GetxController {
   final RxBool allMuted = false.obs;
   final RxBool smallCellsLowQuality = false.obs;
 
-  /// 页级弹幕开关。
-  ///
-  /// 不再自持「默认关闭」：普通直播间默认就显示弹幕（全局 `hideDanmaku` 默认关），
-  /// 多画面此前默认关，于是同一个应用里两种播放形态的默认行为分裂——多画面
-  /// 进来永远没有弹幕。这里与全局设置双向同步（见 [onInit]），开关语义、
-  /// 持久化与普通直播间一致。
   final RxBool danmakuEnabled = false.obs;
   final BarrageController barrageController = BarrageController();
 
@@ -276,31 +251,18 @@ class MultiviewController extends GetxController {
 
   final List<Worker> _rxWorkers = <Worker>[];
 
-  /// 每格墙路径的解析上下文（画质表/换档闭包/线路/租约）。
   final Map<int, MultiviewStreamSource> _sourceContexts = {};
 
-  /// 弹幕就绪房间缓存：房间身份键 → 带弹幕连接票据的房间。
-  ///
-  /// 选台面板只提供本地关注/历史里的房间快照，而 `LiveRoom.toJson` 有意不持久化
-  /// `danmakuData`（弹幕票据是短时效凭据，见 [LiveRoom.toJson]）。于是重启后多画面
-  /// 拿到的房间必然没有弹幕参数，[MultiviewDanmakuSession.supportsRoom] 直接为假——
-  /// 弹幕永远连不上。这里在真正要连弹幕时按普通直播间的同一入口
-  /// （`LiveSite.getRoomDetail`，它会带回弹幕票据）补一次，并按房间缓存。
   final Map<String, LiveRoom> _danmakuRooms = {};
 
-  /// 进行中的弹幕房间补取，同一房间并发只发一次请求。
   final Map<String, Future<LiveRoom>> _danmakuRoomLoads = {};
 
-  /// 弹幕房间缓存上限；超出后整片丢弃重建，避免长时间多画面巡台无界增长。
   static const int _danmakuRoomCacheLimit = 16;
 
-  /// 弹幕会话同步代次：焦点/布局/开关连续变化时丢弃迟到的旧房间连接。
   int _danmakuSyncEpoch = 0;
 
-  /// 当前聊天房间键；用于在换房间时清掉上一路的弹幕。
   String? _danmakuRoomKey;
 
-  /// 每格会话音量镜像（房间音量记忆）。
   final Map<int, double> _volumes = {};
 
   wall.MultiviewController? _wall;
@@ -323,8 +285,6 @@ class MultiviewController extends GetxController {
     MultiviewLayout.single => wall.MultiviewLayout.single,
     MultiviewLayout.dual => wall.MultiviewLayout.dual,
     MultiviewLayout.quad => wall.MultiviewLayout.quad,
-    // pure focus 容量为动态 4..maxCells；墙 nine 容量 9 与上限一致，
-    // 一大多小的呈现由页面自持，墙只负责格播放与音频互斥。
     MultiviewLayout.focus => wall.MultiviewLayout.nine,
   };
 
@@ -338,7 +298,6 @@ class MultiviewController extends GetxController {
 
   RxInt get audioFocusIndexState => _audioFocusIndex;
 
-  /// 暴露墙内指定格的 playerId（Windows 视口重设需要定位 kernel 播放器）。
   wall.MultiviewCell? wallCellAt(int index) {
     final controller = _wall;
     if (controller == null || index >= controller.cells.length) return null;
@@ -364,8 +323,6 @@ class MultiviewController extends GetxController {
       everAll([danmakuEnabled, layout, focusedCellIndex, _audioFocusIndex], (_) => unawaited(_syncDanmakuSession())),
     );
     _rxWorkers.add(ever(smallCellsLowQuality, (_) => unawaited(_reconcileSmallCellQualities())));
-    // 弹幕开关与普通直播间共用全局设置：默认跟随 `hideDanmaku`（默认关 = 显示），
-    // 两处开关互相写回，多画面不再有自己的一套默认值。
     danmakuEnabled.value = !SettingsService.to.danmaku.hideDanmaku.v;
     _rxWorkers.add(ever(danmakuEnabled, (enabled) => SettingsService.to.danmaku.hideDanmaku.value = !enabled));
     _rxWorkers.add(
@@ -409,7 +366,6 @@ class MultiviewController extends GetxController {
         return;
       }
       final ready = await _danmakuReadyRoom(room);
-      // 焦点/布局/开关可能在等待期间又变过；迟到的旧房间不得把弹幕拉回去。
       if (token != _danmakuSyncEpoch) return;
       if (!MultiviewDanmakuSession.supportsRoom(ready)) {
         _retargetDanmakuLayer(null);
@@ -428,17 +384,12 @@ class MultiviewController extends GetxController {
     }
   }
 
-  /// 换聊天房间时清掉上一路弹幕：否则上一个直播间的消息会继续在新房间画面上滚动。
   void _retargetDanmakuLayer(String? key) {
     if (_danmakuRoomKey == key) return;
     _danmakuRoomKey = key;
     barrageController.clear();
   }
 
-  /// 取回带着弹幕连接票据的房间；已有票据时原样返回。
-  ///
-  /// 与普通直播间走同一个入口（`getRoomDetail`），不另建解析逻辑；失败时退回
-  /// 原房间，弹幕不可用不得影响播放主链路。
   Future<LiveRoom> _danmakuReadyRoom(LiveRoom room) {
     if (MultiviewDanmakuSession.supportsRoom(room)) return Future<LiveRoom>.value(room);
     final platform = room.platform;
@@ -478,7 +429,6 @@ class MultiviewController extends GetxController {
   }
 
   // ---------------------------------------------------------------------------
-  // 墙状态镜像
   // ---------------------------------------------------------------------------
 
   void _syncFromWall() {
@@ -546,7 +496,6 @@ class MultiviewController extends GetxController {
   }
 
   // ---------------------------------------------------------------------------
-  // 布局与格子管理
   // ---------------------------------------------------------------------------
 
   Future<void> setLayout(MultiviewLayout newLayout) async {
@@ -650,7 +599,6 @@ class MultiviewController extends GetxController {
     return null;
   }
 
-  /// 释放全部格子并回到空墙；对已清空的格幂等。
   Future<void> disposeAll() async {
     if (_closed || isClosed) return;
     for (var i = 0; i < cells.length; i++) {
@@ -677,7 +625,6 @@ class MultiviewController extends GetxController {
   }
 
   // ---------------------------------------------------------------------------
-  // 分配
   // ---------------------------------------------------------------------------
 
   Future<void> assignRoom(int cellIndex, LiveRoom liveroom, {bool fromFrameRecovery = false}) async {
@@ -786,9 +733,6 @@ class MultiviewController extends GetxController {
     unawaited(_syncDanmakuSession());
   }
 
-  /// 墙路径源：URL/请求头/租约到期与续期闭包全部由 pure_live 业务供给。
-  /// owned 私有协议源走 custom-input recipe（createInput 闭包即 recipe），
-  /// 由 kernel 的 customInputOpener 获取回环租约并绕过代理打开。
   wall.MultiviewCellSource _wallSource(int cellIndex, MultiviewStreamSource source) {
     final owned = source.ownedSource;
     final lease = owned == null ? source.leaseFor?.call(source.url) : null;
@@ -841,7 +785,6 @@ class MultiviewController extends GetxController {
   }
 
   // ---------------------------------------------------------------------------
-  // 换画质/线路、播放控制、音量
   // ---------------------------------------------------------------------------
 
   Future<void> setCellQuality(int cellIndex, int qualityIndex) async {
@@ -950,7 +893,6 @@ class MultiviewController extends GetxController {
   }
 
   // ---------------------------------------------------------------------------
-  // 音频焦点
   // ---------------------------------------------------------------------------
 
   Future<void> setAudioFocus(int cellIndex) {
@@ -965,7 +907,6 @@ class MultiviewController extends GetxController {
   }
 
   // ---------------------------------------------------------------------------
-  // 释放
   // ---------------------------------------------------------------------------
 
   Future<void> _teardownSlot(int cellIndex) async {

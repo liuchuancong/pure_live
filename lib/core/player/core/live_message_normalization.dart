@@ -1,8 +1,6 @@
 import 'package:pure_live/core/models/live_message.dart';
 import 'package:media_core_danmaku/media_core_danmaku.dart';
 
-///
-
 DanmakuMessage normalizeLiveMessage(LiveMessage message) {
   return DanmakuMessage(
     type: switch (message.type) {

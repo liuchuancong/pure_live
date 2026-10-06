@@ -16,8 +16,6 @@ export 'package:media_core_presentation/media_core_presentation.dart'
         VideoOrientationKind,
         SourceOrientationOverride;
 
-///
-
 enum PortraitLayoutMode { balanced, immersive, compatibility }
 
 enum PortraitFullscreenPolicy { followSource, followSystem, landscape }

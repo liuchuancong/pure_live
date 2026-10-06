@@ -4,11 +4,6 @@ import 'package:flutter/services.dart';
 import 'package:flame_barrage/flame_barrage.dart';
 import 'package:pure_live/shared/platforms/danmaku_emoji.dart';
 
-/// 站点弹幕表情图集的加载器。
-///
-/// 只认识资源约定（`assets/emo/json/<platform>.json` 与
-/// `assets/emo/images/<platform>/`）与统一模型；各站点的字段结构由站点自己的
-/// [DanmakuEmojiParser] 提供，因此这里没有平台分支。
 class EmojiManager {
   static final EmojiManager instance = EmojiManager._internal();
   factory EmojiManager() => instance;

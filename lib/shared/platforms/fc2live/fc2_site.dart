@@ -25,7 +25,6 @@ final class Fc2Site extends LiveSite
         LivePlayUrlResolver,
         LivePlayRecoveryResolver,
         LiveSiteExternalRoomResolver {
-  /// 该站点自己的官方房间地址（网页与可选的客户端 scheme）。
   @override
   RoomExternalTarget? externalRoomTarget(LiveRoom liveroom) {
     final id = sanitizedExternalRoomId(liveroom.roomId);
@@ -119,11 +118,8 @@ final class Fc2Site extends LiveSite
   }
 
   static LiveRoom _room(Fc2Room room, {required bool includeMedia}) {
-    // 受限的直播仍然是"在播"（上游 26-9）：状态是直播，另带限制种类，
-    // 播放时才说明原因。
     final live = room.state != Fc2State.offline;
     final liveStatus = live ? LiveStatus.live : LiveStatus.offline;
-    // 未开播的详情没有观众数（上游 26-8）：`count`/`total` 是上一场的残留。
     final viewers = live ? room.currentViewers?.toString() : null;
     final totalViewers = live ? room.totalViewers?.toString() : null;
     return LiveRoom(
@@ -149,7 +145,6 @@ final class Fc2Site extends LiveSite
           ? i18n('fc2live_adult_notice')
           : i18n('fc2live_chat_notice'),
       httpHeaders: Fc2Api.mediaHeaders(room.channelId),
-      // 弹幕参数（上游 M5.22）：频道号；授权由连接每次握手现取。
       danmakuData: liveStatus == LiveStatus.live ? Fc2LiveDanmakuArgs(channelId: room.channelId) : null,
       data: includeMedia && liveStatus == LiveStatus.live ? room : null,
     );

@@ -11,7 +11,6 @@ import 'package:pure_live/core/player/core/live_message_normalization.dart';
 import 'package:pure_live/domains/live/presentation/playback/states/live_play_state.dart';
 import 'package:pure_live/domains/live/presentation/playback/controllers/danmaku_session_host.dart';
 
-
 /// Owns exactly one room-bound danmaku session.
 ///
 /// Room switches, setting changes, player reloads and floating-window teardown
@@ -191,7 +190,6 @@ class DanmakuController extends GetxController {
   }
 
   void _installCallbacks(LiveDanmaku engine, LiveRoom liveroom, String key, int token) {
-    // 站点能力在会话安装时解析一次，不要放到每条弹幕的热路径上。
     final danmakuCapability = Sites.danmakuCapability(liveroom.platform);
     engine.onMessage = (msg) {
       if (!_acceptsCallback(engine, key, token)) return;
@@ -210,7 +208,6 @@ class DanmakuController extends GetxController {
             !_similarityFilter.shouldDisplay(msg.message)) {
           return;
         }
-        // 站点专有的昵称提示（例如 B 站游客昵称被打码）由站点自己判定。
         if (!_maskedNameNoticeShown) {
           final userNameNoticeKey = danmakuCapability?.danmakuUserNameNoticeKey(msg.userName);
           if (userNameNoticeKey != null) {
@@ -219,7 +216,6 @@ class DanmakuController extends GetxController {
           }
         }
         _main.addDanmakuMessage(msg);
-        // 画面弹幕要把表情画成图片：引擎只认已解码的图，取图与解码在这里做。
         if (msg.emotes.isNotEmpty) DanmakuEmoteLoader.instance.ensureRegistered(msg.emotes);
         _state.player.videoController?.sendDanmaku(msg);
       } else if (msg.type == LiveMessageType.online) {
@@ -227,13 +223,9 @@ class DanmakuController extends GetxController {
       } else if (msg.type == LiveMessageType.superChat) {
         _main.addAddSuperChat(msg);
       } else if (msg.type == LiveMessageType.gift) {
-        // 平台礼物（如 B 站 SEND_GIFT/COMBO_SEND/GUARD_BUY）：进弹幕列表展示。
-        // 上游 4.x 只上报不显示；本仓列表本来就按消息类型渲染，所以直接显示出来，
-        // 但**不**触发礼物特效（特效应由本机互动或站点自己的开关决定）。
         if (_isBlocked(msg)) return;
         _main.addDanmakuMessage(msg);
       } else if (msg.type == LiveMessageType.notice) {
-        // 平台公告（如 B 站警告/切断直播）：作为系统消息显示在弹幕列表里。
         if (msg.message.isNotEmpty) _main.addSystemMessage(msg.message);
       } else if (msg.type == LiveMessageType.retraction) {
         final target = msg.data;
@@ -269,13 +261,8 @@ class DanmakuController extends GetxController {
     return token == _sessionToken && identical(_liveDanmaku, engine) && (_sessionKey == key || _connectingKey == key);
   }
 
-  /// 打码昵称（B 站游客看到的是「观***」这类）：它**不能**用来屏蔽。按整名匹配
-  /// 的屏蔽表会把所有被打码成同一形态的观众一起挡掉（上游 40dc22279 / 审计 B-1），
-  /// 所以打码名既不参与匹配，也不会被存进屏蔽表。
   static final RegExp _maskedName = RegExp(r'\*{2,}|＊{2,}');
 
-  /// 是否已经见到过打码昵称（B 站游客连接、或登录失效后的存储登录都会这样）。
-  /// 弹幕列表用它决定要不要在顶部常驻一行"昵称被隐藏 · 去登录"（上游 2eea8022a）。
   bool get sawMaskedName => _maskedNameNoticeShown;
 
   bool _isBlocked(LiveMessage message) {
@@ -290,7 +277,6 @@ class DanmakuController extends GetxController {
     _blockedUsers = favorite.blockedDanmakuUsers
         .map((user) => user.trim().toLowerCase())
         .where((user) => user.isNotEmpty)
-        // 历史/导入进来的打码名一并忽略：它们本来会误伤其他观众。
         .where((user) => !_maskedName.hasMatch(user))
         .toSet();
     _blockedKeywords = favorite.shieldList
@@ -379,9 +365,6 @@ class DanmakuController extends GetxController {
     await connectRoom(liveroom);
   }
 
-  /// 站点是否在该房间建立弹幕连接。
-  ///
-  /// 由站点自己的能力声明（默认连接）；通用弹幕代码不再维护平台例外名单。
   bool _connectsDanmaku(String? platform) => Sites.danmakuCapability(platform)?.connectsDanmakuOnRoomEntry ?? true;
 
   bool _isRecoveryAllowed(LiveRoom liveroom) {

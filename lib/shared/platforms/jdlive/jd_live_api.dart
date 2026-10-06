@@ -52,11 +52,8 @@ final class JdLiveRoom {
   final Uri? hls;
   final Uri? flv;
 
-  /// `secret` 1：只在京东 App 里可看（不再是"受限状态"）。
   final bool appOnly;
 
-  /// 谁可以播这场直播：仅 App 可看 → [LiveRestriction.appOnly]，在播却没有
-  /// 任何地址 → [LiveRestriction.unplayable]，其余无限制。
   final LiveRestriction restriction;
 
   JdLiveRoom enrich(JdLiveRoom known) => JdLiveRoom(
@@ -268,18 +265,12 @@ class JdLiveApi {
     final state = _state(_int(data['status']));
     final hls = _mediaUri(data['h5VideoUrl'], extension: '.m3u8');
     final flv = _mediaUri(data['videoUrl'], extension: '.flv');
-    // 两个地址都在但指向不同的流，说明这份回答自相矛盾。
     if (state == JdLiveState.live && hls != null && flv != null && _streamKey(hls) != _streamKey(flv)) {
       throw const JdLiveException(JdLiveFailure.schema);
     }
-    // 在播但一个地址都没有：仍然是"在播"，只是本客户端播不了（上游 28-4），
-    // 此前直接抛 schema 让整个房间读不出来。
     final unplayable = state == JdLiveState.live && hls == null && flv == null;
     return JdLiveRoom(
       liveId: liveId,
-      // 播放回答里没有的字段就留空（上游 28-2）：不编 "JD Live" 这种占位名、
-      // 不把直播 id 当成店铺账号、不拿模糊图当封面或头像。详情由列表卡片的
-      // 记忆（enrich）补齐名字与封面。
       authorId: '',
       nick: '',
       title: '',
@@ -290,7 +281,6 @@ class JdLiveApi {
       hls: hls,
       flv: flv,
       appOnly: appOnly,
-      // `secret` 不再是状态：仅 App 可看是限制种类（上游）。
       restriction: appOnly
           ? LiveRestriction.appOnly
           : unplayable
@@ -339,8 +329,6 @@ class JdLiveApi {
     return _object(root['data']);
   }
 
-  /// 3.x 与改前的状态：`secret` 不再是状态（上游：它是 [JdLiveRoom.appOnly] 的
-  /// 标记，见 [JdLiveRoom.restriction]）。
   static JdLiveState _state(int? status) {
     return switch (status) {
       1 => JdLiveState.live,

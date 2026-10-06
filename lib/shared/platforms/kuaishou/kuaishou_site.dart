@@ -21,7 +21,6 @@ import 'package:pure_live/shared/platforms/live_external_room.dart';
 
 class KuaishouSite
     implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResolver, LiveSiteExternalRoomResolver {
-  /// 该站点自己的官方房间地址（网页与可选的客户端 scheme）。
   @override
   RoomExternalTarget? externalRoomTarget(LiveRoom liveroom) {
     final path = Uri.encodeComponent(id);
@@ -202,12 +201,6 @@ class KuaishouSite
   /// Room pages expose `{h264: ..., hevc: ...}` while list/replay entries are
   /// usually `[<direct adaptationSet descriptor>]`. Multiple descriptors can
   /// represent CDN lines, so URLs of the same quality are merged and deduped.
-  ///
-  /// H.265 里可能有 H.264 没有的档位（4K、蓝光质臻）：3.x 的规则是一旦有
-  /// H.264 就整块丢掉 H.265，于是这些档位永远列不出来。两套都列，H.265 档位在
-  /// 名字与 id 上带 ` · H.265`，并排在所有 H.264 档位之后（上游 M4.D）。
-  /// 在播房间的限制：`playUrls` 里有可播档位就是无限制，一个都没有就是
-  /// [LiveRestriction.unplayable]（上游：平台说在播却没给这个客户端可播的流）。
   static LiveRestriction _liveRestriction(dynamic playUrls) =>
       parsePlayQualities(playUrls).isEmpty ? LiveRestriction.unplayable : LiveRestriction.none;
 
@@ -218,8 +211,6 @@ class KuaishouSite
     for (final rawDescriptor in descriptors) {
       if (rawDescriptor is! Map) continue;
       final sets = <({String suffix, int codecRank, dynamic descriptor})>[];
-      // Prefer AVC for broad hardware compatibility；HEVC 作为另一套档位列出，
-      // 不再因为存在 AVC 就整块丢弃。
       for (final codec in const ['h264', 'avc']) {
         final candidate = rawDescriptor[codec];
         if (_representationsOf(candidate).isNotEmpty) {
@@ -263,7 +254,6 @@ class KuaishouSite
       }
     }
 
-    // H.264 档位在前，H.265 在后；同一编码内按档位从高到低。
     final entries = merged.values.toList(growable: false)
       ..sort((a, b) {
         if (a.codecRank != b.codecRank) return a.codecRank.compareTo(b.codecRank);
@@ -507,10 +497,6 @@ class KuaishouSite
     return loaded;
   }
 
-  /// 房间页的房间状态里取表情表（上游 4-x 的 `emojiTable`）：
-  /// `pcConfig.pcConfig.config["pcLive.webConfig.emojiPanel"]` 的
-  /// `[笑哭] → 图片`（2026-10-01 约 207 个编码）。编码必须是 `[...]` 形式，地址
-  /// 走规范化，取不到地址的条目跳过。
   static Map<String, String> _emojiTable(Map<String, dynamic> state) {
     Map<dynamic, dynamic> fields(Object? value) =>
         value is Map ? value : const <dynamic, dynamic>{};
@@ -562,7 +548,6 @@ class KuaishouSite
       notice: description,
       status: live,
       liveStatus: live ? LiveStatus.live : LiveStatus.offline,
-      // 在播但一个可播清晰度都没有：仍然是"在播"，只是本客户端播不了（上游）。
       restriction: live ? _liveRestriction(liveStream["playUrls"]) : null,
       platform: PlatformIds.kuaishou,
       link: liveStreamId,
@@ -623,7 +608,6 @@ class KuaishouSite
 
   @override
   Future<List<LiveRoom>> searchRooms(String keyword, {int page = 1, int pageSize = 30}) async {
-    // Live-stream search answers anonymous visitors with "服务器繁忙", so the
     // web search page never lists rooms (upstream #881). The streamer search
     // stays public and reports whether each streamer is live.
     final result = await HttpClient.instance.getJson(
@@ -681,7 +665,6 @@ class KuaishouSite
 
   @override
   Future<List<LiveSuperChatMessage>> getSuperChatMessage({required LiveRoom liveroom}) {
-    //尚不支持
     return Future.value([]);
   }
 }

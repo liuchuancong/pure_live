@@ -20,7 +20,6 @@
 ///         Author:    Dave Gandy
 ///         License:   SIL ()
 ///         Homepage:  http://fortawesome.github.com/Font-Awesome/
-///
 library;
 // ignore_for_file: constant_identifier_names
 

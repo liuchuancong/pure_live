@@ -9,14 +9,10 @@ import 'package:pure_live/domains/live/data/platforms/sites.dart';
 import 'package:pure_live/core/navigation/official_category_policy.dart';
 import 'package:pure_live/domains/live/domain/global_player_service.dart';
 
-/// APP页面跳转封装
-/// * 需要参数的页面都应使用此类
-/// * 如不需要参数，可以使用Get.toNamed
 class AppNavigator {
   static bool _openingLiveRoom = false;
   static bool _openingOfficialCategory = false;
 
-  /// 跳转至分类详情
   static Future<void> toCategoryDetail({required Site site, required LiveArea category}) async {
     if (OfficialCategoryPolicy.isOfficial(category)) {
       if (_openingOfficialCategory) return;
@@ -40,7 +36,6 @@ class AppNavigator {
     Get.toNamed(RoutePath.kAreaRooms, arguments: [site, category]);
   }
 
-  /// 跳转至直播间
   static Future<void> toLiveRoomDetail({required LiveRoom liveRoom}) async {
     if (_openingLiveRoom) return;
     final platform = (liveRoom.platform?.trim() ?? '').toLowerCase();
@@ -87,14 +82,10 @@ class AppNavigator {
     await Get.offAndToNamed(RoutePath.kLivePlay, arguments: normalizedRoom, parameters: {"site": platform});
   }
 
-  /// 跳转至多画面同看页面。
-  ///
-  /// 房间分配由页面内交互完成，无需携带参数。
   static Future<void> toMultiview() async {
     await Get.toNamed(RoutePath.kMultiview);
   }
 
-  /// 跳转至哔哩哔哩登录
   static Future toBiliBiliLogin() async {
     var contents = [i18n("sms_login"), i18n("qrcode_login")];
     if (Platform.isAndroid || Platform.isIOS) {

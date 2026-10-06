@@ -23,18 +23,12 @@ class BinaryReader {
 
   int get length => buffer.length;
 
-  /// 从当前流中读取下一个字节，并使流的当前位置提升 1 个字节
-  /// 返回下一个字节(0-255)
   int read() {
     var byte = buffer[position];
     position += 1;
     return byte;
   }
 
-  /// 从当前流中读取指定长度的字节整数，并使流的当前位置提升指定长度。
-  /// [len] 指定长度
-  /// len=1为int8,2为int16,4为int32,8为int64。dart中统一为int类型
-  /// 返回整数
   int readInt(int len) {
     var result = 0;
     // if (len == 1) {
@@ -61,19 +55,12 @@ class BinaryReader {
     return result;
   }
 
-  /// 从当前流中读取指定长度的字节数组，并使流的当前位置提升指定长度。
-  /// [len] 指定长度
-  /// 返回字节数组
   Uint8List readBytes(int len) {
     var bytes = Uint8List.fromList(buffer.getRange(position, position + len).toList());
     position += len;
     return bytes;
   }
 
-  /// 从当前流中读取指定长度的字节浮点数，并使流的当前位置提升指定长度。
-  /// [len] 指定长度
-  /// len=4为float,8为double。dart中统一为double类型
-  /// 返回浮点数
   double readFloat(int len) {
     var result = 0.0;
     var bytes = Uint8List.fromList(buffer.getRange(position, position + len).toList());
@@ -155,7 +142,6 @@ class TarsInputStream {
     return false;
   }
 
-  // 跳到当前结构的结束位置
   void skipToStructEnd() {
     var hd = HeadData();
     do {
@@ -164,7 +150,6 @@ class TarsInputStream {
     } while (hd.type != TarsStructType.STRUCT_END.index);
   }
 
-  // 跳过一个字段
   void skipField() {
     var hd = HeadData();
     readHead(hd);
@@ -265,8 +250,6 @@ class TarsInputStream {
     return data;
   }
 
-  /// 读取整数
-  /// 对应Tars类型：int1、int2、int4、int8
   int readInt(int tag, bool isRequire) {
     var n = 0;
     if (skipToTag(tag)) {
@@ -298,21 +281,15 @@ class TarsInputStream {
     return n;
   }
 
-  /// 读取bool
-  /// 对应Tars类型：int1
   bool readBool(int tag, bool isRequire) {
     return readInt(tag, isRequire) != 0;
   }
 
-  /// 读取单字char
-  /// 对应Tars类型：int
   String readChar(int tag, bool isRequire) {
     var char = readInt(tag, isRequire);
     return String.fromCharCode(char);
   }
 
-  /// 读取字符串
-  /// 对应Tars类型：string1、string4
   String readString(int tag, bool isRequire) {
     var n = '';
     if (skipToTag(tag)) {
@@ -360,8 +337,6 @@ class TarsInputStream {
     return utf8.decode(ss);
   }
 
-  /// 读取浮点数
-  /// 对应Tars类型：double、float
   double readFloat(int tag, bool isRequire) {
     var n = 0.0;
     if (skipToTag(tag)) {
@@ -391,8 +366,6 @@ class TarsInputStream {
     return n;
   }
 
-  /// 读取byte[]
-  /// 对应Tars类型：SimpleList
   Uint8List readBytes(int tag, bool isRequire) {
     var lr = Uint8List(0);
     if (skipToTag(tag)) {
@@ -440,9 +413,6 @@ class TarsInputStream {
     return lr;
   }
 
-  /// 读取Map
-  /// 需要指定键、值的类型
-  /// 对应Tars类型：Map
   Map<K, V> readMap<K, V>(Map<K, V> data, int tag, bool isRequire) {
     Iterable<MapEntry<K, V>> it = data.entries;
     MapEntry<K, V> en = it.first;
@@ -549,8 +519,6 @@ class TarsInputStream {
     return map;
   }
 
-  /// 读取列表
-  /// 对应Tars类型：List
   List<T> readList<T>(dynamic data, int tag, bool isRequire) {
     var ls = <T>[];
     if (skipToTag(tag)) {
@@ -577,8 +545,6 @@ class TarsInputStream {
     return ls;
   }
 
-  /// 读取自定义结构
-  /// 对应Tars类型：TarsStruct
   TarsStruct readTarsStruct(TarsStruct ts, int tag, bool isRequire) {
     if (skipToTag(tag)) {
       var hd = HeadData();

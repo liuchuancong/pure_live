@@ -192,7 +192,6 @@ class _WebDavPageState extends State<WebDavPage> {
     danger: true,
   );
 
-  /// 先勾模块再上传：Cookie / WebDAV 也在模块页里，默认勾选。
   Future<void> _uploadWithSections() async {
     final sections = await pickBackupSections(
       direction: BackupSectionDirection.export,

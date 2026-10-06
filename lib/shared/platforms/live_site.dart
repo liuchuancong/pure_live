@@ -56,12 +56,8 @@ class LivePlayUrlResolution {
     this.streamFacts = const {},
   }) : inputRecipe = null;
 
-  /// 起播位置：只有"点播稿件"式的源用得上（B 站轮播房播的是循环稿件，
-  /// `getRoundPlayVideo` 的 `play_time` 是已经播过的秒数）。直播/回放恒为 0。
   final Duration startAt;
 
-  /// 平台为这一档声明的画面宽高比（上游 F.1b 的"声明图片尺寸"）：解码器报出真实
-  /// 尺寸之前用它排版，避免先按 16:9 画一帧再跳。平台没声明时为 null。
   final double? declaredAspectRatio;
 
   /// Policy-bearing sources are copied and validated together. Keys identify
@@ -365,7 +361,6 @@ extension LiveSitePlayUrlResolution on LiveSite {
     return LivePlayUrlResolution(
       urls: urls,
       appliedQualityData: quality.selectionId,
-      // 平台这一档声明的画面宽高比（上游 F.1b），没有就是 null。
       declaredAspectRatio: quality.declaredAspectRatio,
       streamFacts: site is LivePlayStreamFacts
           ? (site as LivePlayStreamFacts).declareStreamFacts(urls)

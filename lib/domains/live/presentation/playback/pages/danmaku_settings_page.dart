@@ -379,7 +379,6 @@ class _DanmakuSettingsContentState extends State<DanmakuSettingsContent> {
                   theme,
                   title: i18n("pip_danmaku_scale"),
                   value: controller.pipDanmakuScaleValue.value,
-                  // 只做缩小：小窗弹幕不应比主画面弹幕更大。
                   min: DanmakuSettingsController.pipDanmakuScaleMin,
                   max: DanmakuSettingsController.pipDanmakuScaleMax,
                   display: 'x${controller.pipDanmakuScaleValue.value.toStringAsFixed(2)}',

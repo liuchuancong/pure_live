@@ -7,8 +7,6 @@ import 'package:pure_live/core/player/presentation/compact_source_orientation.da
 import 'package:media_core_floating/media_core_floating.dart';
 import 'package:pure_live/domains/live/domain/live_player_facade.dart';
 
-///
-
 class FloatingPlayback {
   FloatingPlayback({required this.facade});
 
@@ -20,10 +18,6 @@ class FloatingPlayback {
   FacadeStreamCommit? _reentrySeed;
   bool _prepared = false;
 
-  /// 房间侧登记的收尾动作（停弹幕、释放 VideoController 等）。
-  ///
-  /// 只有用户主动关闭悬浮窗时才执行：进入房间路由时的让位关闭必须保留这些资源，
-  /// 房间页面还要接着用同一个播放器继续播。
   final List<Future<void> Function()> _pendingOwners = <Future<void> Function()>[];
 
   void prepare({Future<void> Function()? onClose}) {
@@ -33,10 +27,6 @@ class FloatingPlayback {
     _prepared = true;
   }
 
-  /// 用户点悬浮窗的"关闭"：先停播放器，再收起悬浮层并执行房间侧收尾。
-  ///
-  /// 顺序与上游一致（先 close 再收起）；[closeAppFloating] 单独调用只收起悬浮层，
-  /// 不停止播放——那条路径用于进入房间路由/打开别的直播间时让位。
   Future<void> stopFloatingPlayback() async {
     await facade.close();
     await closeAppFloating();
@@ -90,8 +80,6 @@ class FloatingPlayback {
             resizableByDrag: true,
           ),
         ),
-        // 上次显示时的位置与尺寸（按当前源方向选一套）；组件会按当前表面重新夹取，
-        // 所以旋转或改窗口大小之后不会把悬浮窗放到看不见的地方。
         initialRect: _rememberedFloatRect(),
         onRectChanged: _rememberFloatRect,
         child: _FloatingSurface(
@@ -111,13 +99,11 @@ class FloatingPlayback {
     isFloating.value = true;
   }
 
-  /// 悬浮窗上次显示时的矩形；方向由 Core 端口决定（Core 不能反向依赖 live 域）。
   Rect? _rememberedFloatRect() {
     final geometry = FloatWindowGeometry.decode(SettingsService.to.player.floatWindowGeometry.value);
     return geometry.forPortrait(CompactSourceOrientation.isPortrait);
   }
 
-  /// 记住刚稳定下来的矩形：拖动/缩放结束与隐藏时各报一次。
   void _rememberFloatRect(Rect rect) {
     if (!rect.isFinite || rect.isEmpty) return;
     final settings = SettingsService.to.player;
@@ -137,9 +123,6 @@ class FloatingPlayback {
       entry.remove();
     }
     isFloating.value = false;
-    // 房间侧收尾随悬浮窗一起结束（上游同样在收起时释放这些所有者）。放在这里
-    // 而不是只放在"用户点关闭"路径：让位给房间路由/多画面的关闭也必须释放，
-    // 否则旧房间的弹幕连接与 VideoController 会留到下一次关闭才被误执行。
     await _releasePendingOwners();
   }
 }

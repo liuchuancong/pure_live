@@ -1,50 +1,32 @@
 import 'package:pure_live/core/utils/invisible_placeholders.dart';
 
 enum LiveMessageType {
-  /// 聊天
   chat,
 
-  /// 礼物,暂时不支持
   gift,
 
-  /// 在线人数
   online,
 
-  /// 醒目留言
   superChat,
 
-  /// 撤回：平台收回已发过的弹幕（上游 bilibili 的 `RECALL`/超话删除）。
-  /// 它不是一条要显示的弹幕，而是让显示层把命中的消息撤下去。
   retraction,
 
-  /// 系统公告：平台对房间的提示（如 B 站 `WARNING` 警告、`CUT_OFF` 切断直播）。
   notice,
 }
 
-/// 撤回的目标（上游 4.x 的 `LiveRetraction`）：
-/// - [userId]：撤回某个观众发过的消息；
-/// - [messageId]：撤回某一条消息（如 `SUPER_CHAT_MESSAGE_DELETE` 的 id）；
-/// - [all]：撤回全部（平台"清屏"）。
 class LiveRetraction {
   const LiveRetraction({this.userId, this.messageId, this.all = false});
 
-  /// 某个观众的消息。
   const LiveRetraction.user(this.userId) : messageId = null, all = false;
 
-  /// 某一条消息。
   const LiveRetraction.message(this.messageId) : userId = null, all = false;
 
-  /// 全部。
   const LiveRetraction.all() : userId = null, messageId = null, all = true;
 
   final String? userId;
   final String? messageId;
   final bool all;
 
-  /// 这条消息是否被本撤回命中（按用户、按 id 或全清）。
-  ///
-  /// [userId] 与 [userName] 都给：平台给的"用户"可能是 uid（B 站、Twitch）也可能是
-  /// 昵称，两边都比一次才不会被平台差异漏掉；比较不看大小写。
   bool matches({String? userId, String? userName, String? messageId}) {
     if (all) return true;
     final target = this.userId?.trim().toLowerCase();
@@ -111,34 +93,25 @@ class LiveMessageStyle {
 }
 
 class LiveMessage {
-  /// 消息类型
   final LiveMessageType type;
 
-  /// 用户名
   final String userName;
   final String userId;
 
-  /// 信息
   final String message;
 
-  /// 数据
   /// When [type] is [LiveMessageType.online], this is normally a
   /// [LiveAudienceUpdate]. Legacy engines may still send a numeric value.
   final dynamic data;
 
-  /// 弹幕颜色
   final LiveMessageColor color;
 
-  /// 用户等级
   final String userLevel;
 
-  /// 粉丝等级
   final String fansLevel;
 
-  /// 粉丝牌子名
   final String fansName;
 
-  /// 发送者头像地址（上游 2eea8022a 的 `DanmakuSender.avatar`）；平台不给时为空。
   final String avatar;
   final bool isLocal;
 
@@ -152,8 +125,6 @@ class LiveMessage {
   final DateTime? sentAt;
   final LiveMessageStyle? style;
 
-  /// 文本里出现的表情图片（上游 4.x 的 `LiveMessage.emotes`）：平台能给出
-  /// "编码 → 图片"时填上，渲染层可以把它画成图而不是一段文字。默认空。
   final List<LiveEmote> emotes;
 
   LiveMessage({
@@ -173,23 +144,16 @@ class LiveMessage {
     this.style,
     this.emotes = const <LiveEmote>[],
   }) : userName = stripInvisiblePlaceholders(userName),
-       // 弹幕文本同样清掉不可见占位字符：平台在"原本有图"的位置留下的 U+FFFC
-       // 等字符，字体画出来是方块（上游 M13.16 在弹幕运行时统一处理）。
        message = stripInvisiblePlaceholders(message);
 }
 
-/// 文本里的一个表情（上游 4.x 的 `LiveEmote`）：[code] 是文本中出现的编码
-/// （如 `[笑哭]`、`{:name:}`），[url] 是它的图片地址。
 class LiveEmote {
   const LiveEmote({required this.code, required this.url});
 
-  /// 文本里的编码，原样匹配。
   final String code;
 
-  /// 表情图片地址（http/https）。
   final String url;
 
-  /// 从平台给的映射里挑出 [text] 中真正出现的编码。
   static List<LiveEmote> inText(String text, Map<String, String> codes) {
     if (text.isEmpty || codes.isEmpty) return const <LiveEmote>[];
     final found = <LiveEmote>[];

@@ -44,7 +44,6 @@ void rc4Encrypt(int key, List<int> data) {
   }
 }
 
-/// Base64编码并映射到X-Bogus字符表
 String encodeBase64(List<int> data) {
   final out = StringBuffer();
 
@@ -69,7 +68,6 @@ int hexByte(String hex) {
   return int.parse(hex, radix: 16);
 }
 
-/// md5(decode(hexString)) 最后两个字节
 List<int> md5Last2(String hexStr) {
   final bytes = List<int>.generate(16, (i) => hexByte(hexStr.substring(i * 2, i * 2 + 2)));
 
@@ -78,7 +76,6 @@ List<int> md5Last2(String hexStr) {
   return [digest[14], digest[15]];
 }
 
-/// 生成 X-Bogus
 String generateXBogus(String msStub, int counter) {
   if (msStub.length != 32) {
     throw ArgumentError('msStub must be 32-char md5 hex string');

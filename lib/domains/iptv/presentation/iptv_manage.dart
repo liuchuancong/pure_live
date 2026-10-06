@@ -640,10 +640,10 @@ class _IptvManagePageState extends State<IptvManagePage> {
   }
 
   Widget _buildLeadingIconWithBadge(ThemeData theme, ManageItem item, String formatText) {
-    Color badgeColor = theme.colorScheme.primary; // M3U 使用主色
-    if (formatText == 'TXT') badgeColor = Colors.orange; // TXT 亮橙
-    if (formatText == 'EPG') badgeColor = Colors.teal; // Epg/Xml 薄荷绿
-    if (formatText == 'JSON') badgeColor = Colors.purple; // JSON 高级紫
+    Color badgeColor = theme.colorScheme.primary;
+    if (formatText == 'TXT') badgeColor = Colors.orange;
+    if (formatText == 'EPG') badgeColor = Colors.teal;
+    if (formatText == 'JSON') badgeColor = Colors.purple;
     if (formatText == 'GZ' || formatText == 'XML.GZ') {
       badgeColor = theme.brightness == Brightness.dark ? Colors.blueGrey[400]! : Colors.blueGrey[600]!;
     }
@@ -661,7 +661,7 @@ class _IptvManagePageState extends State<IptvManagePage> {
             decoration: BoxDecoration(
               color: badgeColor,
               borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: theme.cardColor, width: 2), // 白色/暗色描边切断视觉背景
+              border: Border.all(color: theme.cardColor, width: 2),
               boxShadow: [
                 BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 4, offset: const Offset(0, 2)),
               ],

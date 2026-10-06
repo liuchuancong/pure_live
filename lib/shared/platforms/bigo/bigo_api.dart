@@ -88,10 +88,8 @@ class BigoStudioStatus {
   final int roomStatus;
   final String roomType;
 
-  /// `passRoom`：房间密码。
   final bool password;
 
-  /// `isPaidShow` 为 1：付费直播。
   final bool paid;
 }
 
@@ -114,7 +112,6 @@ class BigoStudioRoom {
   final String category;
   final String? avatar;
 
-  /// 直播间截图（下播时是上一场的那张）；封面优先用它，头像兜底（上游 24-1）。
   final String snapshot;
   final Uri? hls;
 }
@@ -141,10 +138,6 @@ class BigoApi {
   static const securityOrigin = 'https://sec.bigo.sg/v1/webjs';
   static const webOrigin = 'https://www.bigo.tv';
 
-  /// 请求指纹必须是完整浏览器形态。Bigo 的 WAF 按客户端指纹发降级响应：裸
-  /// `Mozilla/5.0` 之前在 `www.bigo.tv` 的 API 上直接 418，`getInternalStudioInfo`
-  /// 则回 `needLogin:true` 的空壳答案——同一台机器、同一出口 IP，网页能播而应用
-  /// "无法获取房间详情"的差异就在这里。
   static const headers = {
     'Origin': webOrigin,
     'Referer': '$webOrigin/',
@@ -162,9 +155,6 @@ class BigoApi {
   static String _defaultCallback() =>
       'jsonpcallback_${DateTime.now().millisecondsSinceEpoch}_${DateTime.now().microsecondsSinceEpoch % 1000000}';
 
-  /// 账号页配置的 bigo.tv Cookie。Bigo 2026-10 起对匿名会话收紧媒体下发
-  /// （`needLogin:true`、`hls_src` 空，网页端同样只显示"打开App看直播"），
-  /// 登录态 Cookie 是唯一的解法。设置页可能尚未注册（测试/极早启动），读不到就当没有。
   static String configuredCookie() {
     try {
       return CookieSettingsController.to.bigoCookie.value.trim();
@@ -440,7 +430,6 @@ class BigoApi {
     final owner = _ownerId(data['uid']);
     if (owner != expectedOwnerId) throw const BigoException(BigoFailure.identity);
     final login = _boolean(data['needLogin']);
-    // 公开房间的 `passRoom` 现在会返回 `null`（观察到 2026-10），平台没说限制就按无密码读。
     final password = data['passRoom'] is bool ? _boolean(data['passRoom']) : false;
     final paid = _text(data['isPaidShow']);
     if (!{'', '0', '1'}.contains(paid)) throw const BigoException(BigoFailure.schema);
@@ -463,9 +452,6 @@ class BigoApi {
     );
   }
 
-  /// 这场直播的限制种类（上游 24-2）：要登录的是 [LiveRestriction.needsLogin]；
-  /// 受限的按 `passRoom` 区分密码房与付费房；公开但拿不到播放地址的
-  /// （`hls` 为空）是 [LiveRestriction.unplayable]。受限的直播仍然是"在播"。
   static LiveRestriction restrictionOf(BigoStudioStatus status, {required bool hasMedia}) => switch (status.access) {
     BigoAccess.loginRequired => LiveRestriction.needsLogin,
     BigoAccess.restricted => status.password ? LiveRestriction.password : LiveRestriction.paid,
@@ -488,12 +474,8 @@ class BigoApi {
     final title = data['roomTopic'] == null ? '' : _text(data['roomTopic']);
     final category = data['gameTitle'] == null ? '' : _text(data['gameTitle']);
     final rawAvatar = data['avatar'];
-    // 头像放宽到 http(s)：CDN 会下发 http 地址（观察到 2026-10），不能因为一张图
-    // 让整次详情解析失败（与快照同一原则）。
     final avatarPicture = _picture(rawAvatar == null ? '' : _text(rawAvatar));
     final avatar = avatarPicture.isEmpty ? null : avatarPicture;
-    // 快照放宽到 http(s)（上游 `_picture`）：读不出来就当作没有，不能因为一张图
-    // 让整次详情解析失败。
     final snapshot = _picture(data['snapshot'] == null ? '' : _text(data['snapshot']));
     final rawHls = data['hls_src'];
     final hls = rawHls == null || rawHls == '' ? null : _httpsUri(_text(rawHls), hls: true);
@@ -511,7 +493,6 @@ class BigoApi {
     );
   }
 
-  /// 宽松的图片地址（快照）：http(s)、有 host、无 userinfo/fragment，否则空串。
   static String _picture(String source) {
     if (source.isEmpty) return '';
     final uri = Uri.tryParse(source);

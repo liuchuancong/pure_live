@@ -122,7 +122,6 @@ class LiveQualityLabel {
   }
 }
 
-/// 当前码流的本地化说明，不作为请求游标标识。
 extension PlayQualityLabel on LivePlayQuality {
   String get playbackLabel => isPlaybackUnconfirmed
       ? i18nOr('quality_playback_unconfirmed', 'Unconfirmed · $quality', args: {'quality': quality})

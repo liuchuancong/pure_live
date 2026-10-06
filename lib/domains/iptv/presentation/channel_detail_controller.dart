@@ -98,7 +98,6 @@ class ChannelDetailController extends GetxController {
 
     final db = Get.find<DbService>().db;
 
-    // 直接调用你现有的 getProgrammes
     List<database.EpgProgramme> dbProgrammes = await db.getProgrammes(
       epgChannelId: epgChannelId,
       start: startTime,

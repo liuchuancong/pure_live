@@ -54,8 +54,6 @@ class LivePlayPage extends GetView<LivePlayController> {
     });
   }
 
-  /// 系统手势/返回键在播放中离开直播间：进系统 PiP 而不是弹路由挂悬浮窗。
-  /// PiP 不可用或未在播放时返回 false，返回键维持原有出房间行为。
   Future<bool> _enterSystemPipOnBack() async {
     if (!PlatformUtils.isAndroid) return false;
     final manager = GlobalPlayerService.instance.player;
@@ -63,7 +61,6 @@ class LivePlayPage extends GetView<LivePlayController> {
     if (manager.isInPip.value || manager.isPipPreparing.value) return false;
     if (!manager.isPlayingNow) return false;
     try {
-      // 走同一条入口：全屏中按返回进小窗时也要先退出全屏。
       await controller.enterPipPresentation();
       // enablePip completing without throwing means the presentation driver
       // applied the pip request; isInPip itself flips on the driver's change

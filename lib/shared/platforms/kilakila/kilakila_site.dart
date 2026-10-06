@@ -25,7 +25,6 @@ class KilakilaSite extends LiveSite
         LiveCancellableSearch,
         LiveSearchPaginationPolicy,
         LiveSiteExternalRoomResolver {
-  /// 该站点自己的官方房间地址（网页与可选的客户端 scheme）。
   @override
   RoomExternalTarget? externalRoomTarget(LiveRoom liveroom) {
     final id = sanitizedExternalRoomId(liveroom.roomId);
@@ -59,8 +58,6 @@ class KilakilaSite extends LiveSite
     watching: '',
     audienceMetricType: AudienceMetricType.unknown,
     status: snapshot.isLive ? true : null,
-    // status 10 是"已结束"：明确的结束状态按未开播处理，其余未知状态保持
-    // unknown（上游 15-1）。
     liveStatus: snapshot.isLive
         ? LiveStatus.live
         : snapshot.statusCode == 10
@@ -68,7 +65,6 @@ class KilakilaSite extends LiveSite
         : LiveStatus.unknown,
     // watchNumber has no verified concurrent-viewer semantics. Broadcast IDs
     // and signed media remain ephemeral; favorites/backup retain only the UID.
-    // 弹幕参数（上游 M5.13）：socket 的 query 用**房间号**挑直播；在播且有房间号时给。
     danmakuData: snapshot.isLive && snapshot.roomId.trim().isNotEmpty
         ? KilakilaDanmakuArgs(roomId: snapshot.roomId)
         : null,
@@ -199,7 +195,6 @@ class KilakilaSite extends LiveSite
     final owner = await _api.owner(uid);
     final current = owner.currentRoom;
     if (current == null) {
-      // 主播资料卡上没有在播节目就是下播（上游 15-1：此前保留 unknown）。
       return LiveRoom(
         platform: id,
         roomId: owner.userId,

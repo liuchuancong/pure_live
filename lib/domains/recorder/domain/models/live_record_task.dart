@@ -4,7 +4,6 @@ import 'package:pure_live/domains/recorder/data/services/recorder_diagnostics.da
 
 class LiveRecordTask {
   /// =========================
-  /// 基础信息
   /// =========================
 
   final String taskId;
@@ -34,7 +33,6 @@ class LiveRecordTask {
   bool isRecord;
 
   /// =========================
-  /// 当前录制信息
   /// =========================
 
   String? currentUrl;
@@ -49,7 +47,6 @@ class LiveRecordTask {
 
   int? selectedLineIndex;
 
-  /// 输出目录
   String? outputDir;
 
   /// Completed native input attempts whose MPEG-TS segments still need to be
@@ -60,13 +57,10 @@ class LiveRecordTask {
   final List<PendingRecordingAttempt> pendingAttempts;
 
   /// =========================
-  /// 实时录制状态
   /// =========================
 
-  /// 已录制秒数
   int recordedSeconds;
 
-  /// 文件大小 bytes
   int fileSize;
 
   /// ffmpeg speed
@@ -78,14 +72,12 @@ class LiveRecordTask {
   /// fps
   double fps;
 
-  /// 当前frame
   int lastFrame;
 
   /// watchdog
   DateTime? lastUpdate;
 
   /// =========================
-  /// 状态控制
   /// =========================
 
   RecordStatus status;
@@ -146,7 +138,6 @@ class LiveRecordTask {
     this.outputDir,
     List<PendingRecordingAttempt> pendingAttempts = const <PendingRecordingAttempt>[],
 
-    /// 实时信息
     this.recordedSeconds = 0,
     this.fileSize = 0,
     this.recordSpeed = 0,
@@ -155,7 +146,6 @@ class LiveRecordTask {
     this.lastFrame = 0,
     this.lastUpdate,
 
-    /// 状态
     this.status = RecordStatus.waitingLive,
     this.autoReconnect = true,
     this.retryCount = 0,
@@ -168,7 +158,6 @@ class LiveRecordTask {
   }) : pendingAttempts = List<PendingRecordingAttempt>.of(pendingAttempts);
 
   /// =========================
-  /// 从房间创建
   /// =========================
 
   factory LiveRecordTask.fromRoom(LiveRoom liveroom) {
@@ -206,7 +195,6 @@ class LiveRecordTask {
   }
 
   /// =========================
-  /// 更新房间信息
   /// =========================
 
   void updateFromRoom(LiveRoom liveroom) {
@@ -351,7 +339,6 @@ class LiveRecordTask {
     "outputDir": outputDir,
     "pendingAttempts": pendingAttempts.map((attempt) => attempt.toJson()).toList(growable: false),
 
-    /// 实时信息
     "recordedSeconds": recordedSeconds,
     "fileSize": fileSize,
     "recordSpeed": recordSpeed,
@@ -360,7 +347,6 @@ class LiveRecordTask {
     "lastFrame": lastFrame,
     "lastUpdate": lastUpdate?.toIso8601String(),
 
-    /// 状态
     "status": status.index,
     "statusName": status.name,
     "autoReconnect": autoReconnect,
@@ -430,7 +416,6 @@ class LiveRecordTask {
 
       pendingAttempts: _pendingAttempts(json["pendingAttempts"]),
 
-      /// 实时录制
       recordedSeconds: _recordedSeconds(json["recordedSeconds"]),
 
       fileSize: _int(json["fileSize"]),
@@ -445,7 +430,6 @@ class LiveRecordTask {
 
       lastUpdate: _date(json["lastUpdate"]),
 
-      /// 状态
       status: _enumValue(
         RecordStatus.values,
         name: json["statusName"],

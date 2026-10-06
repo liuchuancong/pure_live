@@ -6,11 +6,6 @@ import 'package:url_launcher/url_launcher_string.dart';
 enum RoomExternalOpenResult { opened, unavailable, failed, cancelled }
 
 class RoomExternalOpener {
-  /// 解析房间的官方地址。
-  ///
-  /// 每个站点的域名、分享参数、客户端 scheme 与 id 校验都属于站点自己
-  /// （见 `LiveSiteExternalRoomResolver`）；这里不再维护 `case Sites.xSite:` 分支。
-  /// 站点没实现能力接口时按"没有官方页面"处理——例如 IPTV 只有媒体地址。
   static RoomExternalTarget? resolve(String site, LiveRoom liveroom) {
     final id = site.trim().toLowerCase();
     if (id.isEmpty || !Sites.isSupported(id) || Sites.isRetired(id)) return null;

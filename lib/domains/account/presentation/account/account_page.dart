@@ -188,7 +188,6 @@ class AccountPage extends GetView<AccountController> {
                     ? _showLogoutDialog(
                         context,
                         accountName: i18n('site_douyu'),
-                        // 整组一起清：只抹 cookie 会把长期续期密钥留在本地与备份里。
                         onConfirm: cookie.clearDouyuSession,
                       )
                     // A cookie that no longer holds a session is replaced, not
@@ -312,10 +311,6 @@ class AccountPage extends GetView<AccountController> {
     );
   }
 
-  /// 清除全部凭据：所有平台一起登出，本地存的 Cookie 与斗鱼续期凭据一并删掉。
-  ///
-  /// B 站那条走 [BiliBiliAccountService.logout]，因为它还要清登录 WebView 里的
-  /// Cookie；其余平台只有存下来的字符串。
   void _showClearAllDialog(BuildContext context) {
     unawaited(
       controller.runLogoutTransaction(() async {

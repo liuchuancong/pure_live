@@ -8,13 +8,10 @@ import 'package:pure_live/core/tars/codec/tars_output_stream.dart';
 import 'package:pure_live/core/tars/tup/basic_class_type_util.dart';
 
 class UniAttribute extends TarsStruct {
-  /// 精简版tup，PACKET_TYPE_TUP3类型
   Map<String, Uint8List> newData = {};
 
-  //PACKET_TYPE_TUP类型
   Map<String, Map<String, Uint8List>> oldData = {};
 
-  /// 存储get后的数据 避免多次解析
   Map<String, Object> cachedData = <String, Object>{};
 
   int version = Const.PACKET_TYPE_TUP;
@@ -22,7 +19,6 @@ class UniAttribute extends TarsStruct {
 
   final TarsInputStream inputStream = TarsInputStream(null);
 
-  /// 清除缓存的解析过的数据
   void clearCacheData() {
     cachedData.clear();
   }
@@ -109,7 +105,6 @@ class UniAttribute extends TarsStruct {
       }
     } else if (o is Iterable) {
       listType.add('list');
-      // 如果是Iterable但不是List，可以处理其他类型的集合
       var iterator = o.iterator;
       if (iterator.moveNext()) {
         checkObjectType(listType, iterator.current);
@@ -147,12 +142,10 @@ class UniAttribute extends TarsStruct {
         }
       }
     } else {
-      //兼容tup2
       return get2<T>(name);
     }
   }
 
-  // 获取一个元素,只能用于tup版本2，如果待获取的数据为tup3，则抛异常
   T get2<T>(String name, {T? proxy}) {
     if (version == Const.PACKET_TYPE_TUP3) {
       throw Exception('data is not in tup2 format');
@@ -174,7 +167,6 @@ class UniAttribute extends TarsStruct {
     return o as T;
   }
 
-  /// 获取一个元素,tup新旧版本都兼容
   /// @param Name
   /// @param DefaultObj
   /// @return

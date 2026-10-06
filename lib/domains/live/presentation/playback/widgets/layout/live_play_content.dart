@@ -495,7 +495,6 @@ class LivePlayContent extends StatelessWidget {
         child: Container(
           key: const ValueKey('pip'),
           color: Colors.transparent,
-          // 紧凑小窗是另一棵子树，不会继承房间视图的盖子；选哪一层由同一个判定给。
           child: manager.buildPiPOverlay(
             pictureCover: Obx(
               () =>

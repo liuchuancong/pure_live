@@ -61,7 +61,6 @@ final class LookLiveRoom {
   final String userId;
   final String sessionId;
 
-  /// 房间详情里 `roomInfo.roomId`（聊天室号，登录用它）；没有就是空串。
   final String chatroomId;
   final String title;
   final String nick;
@@ -251,16 +250,12 @@ class LookLiveApi {
     return _object(root['data']);
   }
 
-  /// 聊天服务器地址请求（上游 M5.28）：`POST /weapi/livestream/chat/address`，payload
-  /// `{liveRoomNo, os: 0}`（和别的请求一样加密）。
   static const String chatAddressPath = '/weapi/livestream/chat/address';
 
   static final RegExp _chatAddress = RegExp(
     r'^([a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+):([0-9]{1,5})$',
   );
 
-  /// 回答里 `data.address` 给的聊天服务器（`host:port`），按回答顺序；不是主机名加
-  /// 端口的条目跳过，一个可用的都没有就当作回答读不懂（上游 `ApiChanged`）。
   Future<List<({String host, int port})>> chatServers(String roomId, {CancelToken? cancel}) async {
     final id = LookLiveLink.requireRoomId(roomId);
     final data = await _post(chatAddressPath, <String, Object?>{'liveRoomNo': id, 'os': 0}, cancel: cancel);
@@ -314,9 +309,6 @@ class LookLiveApi {
     if (returnedId != id) throw const LookLiveException(LookLiveFailure.identity);
     final info = _object(data['roomInfo']);
     final liveType = _integer(info['liveType']);
-    // LOOK 的网页客户端把 -10 叫 FORBID：它与 -4（违规整改中）都是封禁；-2 是
-    // 未开播（上游 32-2；3.x 一律 unknown）。封禁的房间不是"直播中"，但状态查询
-    // 本身不该失败，播放时再说明原因。
     final state = switch (_integer(data['liveStatus'])) {
       1 => LookLiveState.live,
       0 || -1 || -2 => LookLiveState.offline,

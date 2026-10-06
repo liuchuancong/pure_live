@@ -83,11 +83,8 @@ class SeventeenLiveRoom {
   final SeventeenLiveState state;
   final List<SeventeenLiveStream> streams;
 
-  /// 谁可以看这场直播（见 [SeventeenLiveApi.restrictionOf]）；锁定的直播仍然是在播，
-  /// null 表示这次回答没说限制。
   final LiveRestriction? restriction;
 
-  /// `beginTime`（Unix 秒）对应的开播时间，仅直播时有意义（上游 33-7）。
   final DateTime? startedAt;
 }
 
@@ -305,9 +302,6 @@ class SeventeenLiveApi {
       0 => SeventeenLiveState.offline,
       _ => SeventeenLiveState.unknown,
     };
-    // 网页客户端的 isLocked 规则：`premiumType` 不是 0 且没被 `paymentInfo.paid`
-    // 解锁的就是锁定的直播（匿名观众从没付过费）。锁定的直播仍然是"在播"，只是
-    // 本客户端播不了（上游 33-x）。
     final restriction = restrictionOf(data['premiumContent']);
     final nickname = _firstText([user['displayName'], user['openID']]);
     final title = _optionalText(data['caption']);
@@ -327,12 +321,10 @@ class SeventeenLiveApi {
       state: state,
       streams: streams,
       restriction: restriction,
-      // `beginTime`（Unix 秒）就是这场直播的开播时间（上游 33-7）。
       startedAt: state == SeventeenLiveState.live ? _startTime(data['beginTime']) : null,
     );
   }
 
-  /// Unix 秒或毫秒转 UTC；超出 2000–2100 或读不出来返回 null。
   static DateTime? _startTime(Object? value) {
     final raw = _integer(value);
     if (raw == null || raw <= 0) return null;
@@ -341,11 +333,6 @@ class SeventeenLiveApi {
     return time.year >= 2000 && time.year <= 2100 ? time : null;
   }
 
-  /// 直播的限制种类（上游 33-x 的 `isLocked` 规则）：没有 `premiumContent`
-  /// （房间回答里省略、搜索行写 null）或 `premiumType` 为 0 是
-  /// [LiveRestriction.none]；1（PAID）是 [LiveRestriction.paid]，2（ARMY，主播的
-  /// 军团成员）是 [LiveRestriction.subscribersOnly]，其它（3、NEW_USER 及以后）
-  /// 是 [LiveRestriction.unplayable]；不是对象则读不出来（null）。
   static LiveRestriction? restrictionOf(Object? premium) {
     if (premium == null) return LiveRestriction.none;
     if (premium is! Map) return null;

@@ -1,9 +1,6 @@
 import 'package:pure_live/shared/platforms/danmaku_emoji.dart';
 import 'package:pure_live/shared/platforms/live_danmaku_capability.dart';
 
-/// B 站弹幕细节：表情字段结构，以及"游客昵称被打码"的提示。
-///
-/// 两者都是 B 站自己的约定，因此留在站点目录里，而不是写成通用弹幕代码里的分支。
 mixin BilibiliDanmakuCapability on LiveDanmakuCapabilityDefaults {
   static final RegExp _maskedName = RegExp(r'\*{2,}|＊{2,}');
 

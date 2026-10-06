@@ -13,7 +13,6 @@ import 'package:pure_live/features/backup/backup_section_picker.dart';
 class BackupRecoveryService {
   Future<String?> createAppSettingsBackup(String backupDirectory) async {
     final backup = Get.find<BackupController>();
-    // 先勾模块再选目录：取消勾选不该先弹一个系统目录框。
     final sections = await pickBackupSections(
       direction: BackupSectionDirection.export,
       available: BackupController.sectionNames,
@@ -67,7 +66,6 @@ class BackupRecoveryService {
       return;
     }
 
-    // 旧版扁平备份没有模块划分，只能整份恢复。
     List<String>? sections;
     if (available.isNotEmpty) {
       sections = await pickBackupSections(direction: BackupSectionDirection.import, available: available);

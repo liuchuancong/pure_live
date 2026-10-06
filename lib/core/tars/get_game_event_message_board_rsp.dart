@@ -4,9 +4,6 @@ import 'package:pure_live/core/tars/codec/tars_input_stream.dart';
 import 'package:pure_live/core/tars/codec/tars_output_stream.dart';
 import 'package:pure_live/core/tars/game_event_message_board_panel.dart';
 
-
-
-
 class GetGameEventMessageBoardRsp extends TarsStruct {
   GameEventMessageBoardPanel tMessageBoardPanel = GameEventMessageBoardPanel();
   @override

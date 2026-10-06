@@ -21,7 +21,5 @@ abstract interface class DanmakuSessionHost {
 
   void addAddSuperChat(LiveMessage msg) {}
 
-  /// 平台撤回了弹幕（上游 4.x 的 `LiveRetraction`）：把命中的消息从聊天列表撤下去。
-  /// 默认什么都不做，宿主按自己的能力实现。
   void removeRetractedMessages(LiveRetraction target) {}
 }

@@ -4,7 +4,6 @@ import 'package:pure_live/core/tars/codec/tars_displayer.dart';
 import 'package:pure_live/core/tars/codec/tars_input_stream.dart';
 import 'package:pure_live/core/tars/codec/tars_output_stream.dart';
 
-
 class GetCdnTokenExReq extends TarsStruct {
   String sFlvUrl = ""; //tag 0
   String sStreamName = ""; //tag 1

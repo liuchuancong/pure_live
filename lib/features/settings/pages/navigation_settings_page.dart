@@ -11,7 +11,6 @@ class NavigationSettingsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    // 1. 定义所有菜单（固定不变）
     final allMenus = [HomeMenu.favorites, HomeMenu.popular, HomeMenu.areas, HomeMenu.record];
 
     return Scaffold(
@@ -36,19 +35,14 @@ class NavigationSettingsPage extends StatelessWidget {
           const SizedBox(height: 16),
           context.buildGroupTitle(i18n("navigation_display_settings")),
           Obx(() {
-            // 2. 关键：按 savedMenuIds 的顺序给 allMenus 排序
             final savedOrder = AppSettingsController.normalizeMenuIds(SettingsService.to.app.savedMenuIds.v);
-            // 给每个菜单一个排序权重：在 savedMenuIds 里的位置，不在里面的排到最后
             final sortedMenus = List<HomeMenu>.from(allMenus);
             sortedMenus.sort((a, b) {
               final indexA = savedOrder.indexOf(a.id);
               final indexB = savedOrder.indexOf(b.id);
-              // 都在列表里：按 savedOrder 顺序排
               if (indexA != -1 && indexB != -1) return indexA.compareTo(indexB);
-              // 只有一个在列表里：在列表里的排前面
               if (indexA != -1) return -1;
               if (indexB != -1) return 1;
-              // 都不在：保持原始顺序
               return 0;
             });
 
@@ -81,7 +75,6 @@ class NavigationSettingsPage extends StatelessWidget {
                 },
                 itemBuilder: (context, index) {
                   final menu = sortedMenus[index];
-                  // 开关状态直接从 savedMenuIds 判断
                   final isVisible = SettingsService.to.app.savedMenuIds.v.contains(menu.id);
 
                   String titleText = "";

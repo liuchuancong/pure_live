@@ -12,20 +12,7 @@ import 'package:pure_live/shared/platforms/acfun/acfun_danmaku.dart';
 import 'package:pure_live/shared/platforms/acfun/acfun_protobuf.dart';
 import 'package:pure_live/shared/platforms/live_danmaku.dart';
 
-/// AcFun 的聊天（上游 M5.9）：快手直播中间平台（`wss://link.xiatou.com/`）的自定义
-/// 二进制协议。
 ///
-/// 一帧是 `0xABCD`、版本 1、头部与载荷长度（大端 `u16 u16 u32 u32`），接着是 protobuf
-/// 的 `PacketHeader`（appId 1、uid 2、instanceId 3、decodedPayloadLen 7、encryptionMode
-/// 8、tokenInfo 9、seqId 10、kpn 12）与载荷：16 字节 IV + **AES-128-CBC** 的
-/// `UpstreamPayload`（command 1、seqId 2、retryCount 3、payloadData 4、subBiz 9）或
-/// `DownstreamPayload`（command 1、seqId 2、errorCode 3、payloadData 4、errorMsg 5）。
-/// 模式 1 用 `acSecurity`（注册交换），模式 2 用注册回答给的会话密钥。
-///
-/// 每次打开：注册 → 回答带来会话密钥与 instanceId → keepAlive + 进房（带票据）→ 进房
-/// 回答的 `heartbeatIntervalMs` 决定心跳间隔（每 5 次心跳带一次 keepAlive）；服务端的
-/// push 都要回执。票据在当前 socket 上换下一个；注册或命令被拒、票据全试过、直播状态
-/// 变化（关播/新开/被封）就换一份新的会话与票据重连。
 class AcfunLinkDanmaku extends LiveDanmaku {
   AcfunLinkDanmaku();
 
@@ -159,7 +146,6 @@ class AcfunLinkDanmaku extends LiveDanmaku {
     _joinWatch?.cancel();
   }
 
-  /// 把 `acSecurity`（Base64）解成 16 字节密钥。
   static Uint8List? _security(String encoded) {
     try {
       final key = base64.decode(encoded);
@@ -174,10 +160,6 @@ class AcfunLinkDanmaku extends LiveDanmaku {
     return tickets[_ticketIndex.clamp(0, tickets.length - 1)];
   }
 
-  // ---------------------------------------------------------------- 发送
-
-  /// `RegisterRequest`：`appInfo 1 {sdkVersion, linkVersion}`、`presenceStatus 4`、
-  /// `appActiveStatus 5`、`instanceId 8`、`ztCommonInfo 11 {kpn, kpf, uid, did}`。
   Uint8List _register() {
     final request = AcfunProtoWriter()
       ..message(
@@ -203,7 +185,6 @@ class AcfunLinkDanmaku extends LiveDanmaku {
   Uint8List _keepAlive() =>
       _send(_keepAliveCommand, (AcfunProtoWriter()..integer(1, 1)..integer(2, 1)).toBytes());
 
-  /// `ZtLiveCsCmd {cmdType 1, payload 2, ticket 3, liveId 4}`。
   Uint8List _roomCommandFrame(String type, AcfunProtoWriter payload, String ticket) => _send(
     _roomCommand,
     (AcfunProtoWriter()
@@ -232,12 +213,10 @@ class AcfunLinkDanmaku extends LiveDanmaku {
     ticket,
   );
 
-  /// push 的回执：不带载荷，头部带 push 的序号（自己的序号不动）。
   Uint8List _pushAck(int seqId) => _send(_lastPushCommand ?? '', null, headerSeq: seqId, advance: false);
 
   String? _lastPushCommand;
 
-  /// 一帧的发法：protobuf 头 + 16 字节 IV + AES-128-CBC 载荷。
   Uint8List _send(String command, List<int>? data, {bool serviceToken = false, int? headerSeq, bool advance = true}) {
     final key = serviceToken ? _securityKey : _sessionKey;
     if (key == null) throw StateError('AcFun link: $command before the register answer');
@@ -280,8 +259,6 @@ class AcfunLinkDanmaku extends LiveDanmaku {
 
   static List<int> _u32(int value) =>
       <int>[(value >> 24) & 0xff, (value >> 16) & 0xff, (value >> 8) & 0xff, value & 0xff];
-
-  // ---------------------------------------------------------------- 接收
 
   Future<void> _handleFrame(Object? event, Completer<void> ended) async {
     if (event is! List<int>) return;
@@ -362,7 +339,6 @@ class AcfunLinkDanmaku extends LiveDanmaku {
     await _refresh(ended, 'Command error $code');
   }
 
-  /// 票据换下一个：同一个 socket 上重新进房；这次加入以来每张都失败过就刷新参数。
   Future<void> _nextTicket(Completer<void> ended) async {
     _ticketFailures++;
     if (_ticketFailures >= _args!.tickets.length) {
@@ -373,7 +349,6 @@ class AcfunLinkDanmaku extends LiveDanmaku {
     _socket?.sendMessage(_enterRoom(_ticket));
   }
 
-  /// 换一份新的会话与票据重连（最多 3 次）。
   Future<void> _refresh(Completer<void> ended, String reason) async {
     final refresh = _args?.refresh;
     if (refresh == null || _refreshes >= _maxRefreshes) {
@@ -396,7 +371,6 @@ class AcfunLinkDanmaku extends LiveDanmaku {
     }
   }
 
-  /// 读一帧：`0xABCD`、版本 1、头部长度、载荷长度、protobuf 头、密封载荷。
   _Packet? _read(List<int> frame) {
     final bytes = frame is Uint8List ? frame : Uint8List.fromList(frame);
     if (bytes.length < 12 || bytes[0] != 0xAB || bytes[1] != 0xCD) return null;
@@ -441,13 +415,11 @@ class AcfunLinkDanmaku extends LiveDanmaku {
     return packet;
   }
 
-  /// `ZtLiveCsCmdAck {type 1, errorCode 2, payload 4}`。
   static ({String type, int code, List<int> payload}) _ack(List<int> payload) {
     final message = AcfunProtoMessage.decode(payload);
     return (type: message.string(1) ?? '', code: message.integer(2) ?? 0, payload: message.bytes(4) ?? const <int>[]);
   }
 
-  /// `ZtLiveScMessage`：`messageType 1`、`compressionType 2`（2 是 gzip）、`payload 3`。
   _Push _push(List<int> payload) {
     final messages = <LiveMessage>[];
     final message = AcfunProtoMessage.decode(payload);
@@ -495,12 +467,9 @@ class AcfunLinkDanmaku extends LiveDanmaku {
     return _Push(messages);
   }
 
-  /// 信号列表 `{1: [signal]}`，每一条单独解，解不开的跳过。
   static List<AcfunProtoMessage> _signals(Uint8List body) =>
       AcfunProtoMessage.decode(body).messages(1);
 
-  /// `CommonActionSignalComment`（`content 1, sendTimeMs 2, userInfo 3 {userId 1,
-  /// nickname 2}`）；没有文字或发送者就不报。
   static LiveMessage? _comment(Uint8List payload) {
     final signal = AcfunProtoMessage.decode(payload);
     final text = signal.string(1) ?? '';

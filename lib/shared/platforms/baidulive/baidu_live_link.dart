@@ -14,7 +14,6 @@ abstract final class BaiduLiveLink {
     final value = raw.trim();
     if (_roomId.hasMatch(value)) return value;
     final uri = Uri.tryParse(value);
-    // https 与 http 都收（上游 30-8；3.x 只认 https），端口必须是该 scheme 的默认端。
     final scheme = uri?.scheme.toLowerCase() ?? '';
     final defaultPort = switch (scheme) {
       'https' => 443,

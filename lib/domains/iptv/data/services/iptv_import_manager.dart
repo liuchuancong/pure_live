@@ -30,7 +30,6 @@ class IptvImportManager {
   static final _mappingLock = Lock();
   static final _importLock = Lock();
 
-  /// 1. 本地文件浏览器选择导入
   Future<bool> importFromLocalPicker() async {
     final result = await FilePicker.pickFile(
       dialogTitle: i18n("select_recover_file"),

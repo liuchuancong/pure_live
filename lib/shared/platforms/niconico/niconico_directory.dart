@@ -99,8 +99,6 @@ class NiconicoDirectory {
     }
     icon ??= social is Map ? social['thumbnailUrl'] : null;
     final count = _count(_object(row['statistics'])['watchCount']);
-    // 房间身份（上游 4.x 的 "房间即主播"）：社区/用户节目归到主播 `user/<id>`，
-    // 频道的归到 `ch<n>`，官方节目仍是节目号——同一个主播换场后还是同一个房间。
     final roomId = _roomIdOf(
       programId: id,
       providerType: row['providerType'],
@@ -124,9 +122,6 @@ class NiconicoDirectory {
     );
   }
 
-  /// 房间身份（上游 `NiconicoApi.roomIdOf`）：`community`/`user` + 用户 id →
-  /// `user/<id>`；`channel` + 频道 id → `ch<n>`；其余（含 `official`，官方节目不是
-  /// 它频道的房间）→ 节目号。
   static String _roomIdOf({
     required String programId,
     required Object? providerType,

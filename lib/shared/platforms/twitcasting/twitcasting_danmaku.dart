@@ -7,21 +7,12 @@ import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/core/network/web_socket_util.dart';
 import 'package:pure_live/shared/platforms/live_danmaku.dart';
 
-/// TwitCasting 的弹幕参数：这场直播的 **movie id**（进房详情里的 `movie.id`，
-/// 上游 M5.11）。屏幕名（`c:xxx`）不是它。
 class TwitcastingDanmakuArgs {
   const TwitcastingDanmakuArgs({required this.movieId});
 
   final int movieId;
 }
 
-/// TwitCasting 的评论流（上游 M5.11）。
-///
-/// 每次握手都要先 `POST eventpubsuburl.php`（表单只有 `movie_id`）换一条带签名的
-/// wss 地址——签名大约一小时过期，而 socket 地址是固定的，所以这里**每次连接都重新
-/// 取地址**（不是复用一条连接反复重连）。服务端 10 秒没别的事件会发一个空数组保活；
-/// 30 秒完全没消息就换掉 socket。只上报 `comment`（礼物要在地址上带 `gift=1`，本实现
-/// 不带）。
 class TwitcastingDanmaku extends LiveDanmaku {
   TwitcastingDanmaku();
 
@@ -33,7 +24,6 @@ class TwitcastingDanmaku extends LiveDanmaku {
   var _generation = 0;
   var _running = false;
 
-  /// 事件 id 去重（最近 400 条）：服务端偶尔重发同一帧。
   final List<String> _seen = <String>[];
 
   @override
@@ -72,7 +62,6 @@ class TwitcastingDanmaku extends LiveDanmaku {
           url: url,
           heartBeatTime: 0,
           headers: _headers(),
-          // 30 秒完全没消息就换掉 socket（上游网页播放器的阈值）。
           inactivityTimeout: const Duration(seconds: 30),
           onMessage: (event) {
             if (generation != _generation) return;
@@ -111,7 +100,6 @@ class TwitcastingDanmaku extends LiveDanmaku {
     }
   }
 
-  /// 取一条新的 wss 地址：只接受 `wss://…twitcasting.tv/…`（含子域名）。
   Future<String?> _requestSocketUrl(int generation) async {
     final movieId = _args?.movieId ?? 0;
     if (movieId <= 0) return null;
@@ -131,8 +119,6 @@ class TwitcastingDanmaku extends LiveDanmaku {
     return uri.toString();
   }
 
-  /// 一帧一个 JSON 数组（一个元素一个事件）；单独一个事件对象按一个元素的数组读，
-  /// 二进制帧按 UTF-8 解。坏 JSON 丢掉整帧。
   void _handleFrame(String data) {
     final text = data.trim();
     if (text.isEmpty) return;
@@ -150,8 +136,6 @@ class TwitcastingDanmaku extends LiveDanmaku {
     }
   }
 
-  /// 只有 `comment` 上报；其余事件类型（`update_comment`、`pin_message`、
-  /// `poll_status_update`、`raid`、`call_*`、`joint_*` 等）一律不报。
   LiveMessage? _comment(Map<dynamic, dynamic> event) {
     if (_text(event['type']) != 'comment') return null;
     final message = _text(event['message'])?.trim() ?? '';

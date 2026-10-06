@@ -24,7 +24,6 @@ final class BaiduLiveSite extends LiveSite
         LivePlayUrlResolver,
         LivePlayRecoveryResolver,
         LiveSiteExternalRoomResolver {
-  /// 该站点自己的官方房间地址（网页与可选的客户端 scheme）。
   @override
   RoomExternalTarget? externalRoomTarget(LiveRoom liveroom) {
     final id = sanitizedExternalRoomId(liveroom.roomId);
@@ -162,7 +161,6 @@ final class BaiduLiveSite extends LiveSite
         BaiduLiveState.preview || BaiduLiveState.offline => LiveStatus.offline,
         BaiduLiveState.restricted || BaiduLiveState.unknown => LiveStatus.unknown,
       },
-      // 付费/禁止访问是在播 + 限制（上游 30-5），播放时才说明原因。
       restriction: room.state == BaiduLiveState.live || room.state == BaiduLiveState.replay ? room.restriction : null,
       watching: online ?? '',
       onlineViewers: online,
@@ -170,7 +168,6 @@ final class BaiduLiveSite extends LiveSite
       audienceMetricType: online == null ? AudienceMetricType.unknown : AudienceMetricType.onlineViewers,
       notice: notice.join('\n'),
       httpHeaders: BaiduLiveApi.mediaHeaders(room.roomId),
-      // 弹幕参数（上游 M5.26）：房间命令给的消息列表；没有就不连弹幕。
       danmakuData: room.danmakuArgs,
       data: includeMedia ? room : null,
     );
@@ -315,8 +312,6 @@ final class BaiduLiveSite extends LiveSite
       return LivePlayUrlResolution(
         urls: urls,
         appliedQualityData: variant.id,
-        // 线路自带容器与编码：HEVC-in-FLV 因此在取流侧走 FFmpeg 转封装，
-        // 播放器与录制端都不需要认平台（上游 4.x 的 LivePlayLine.format/codec）。
         streamFacts: {for (final url in urls) url: (format: format, codec: variant.codec, unresolvedChildren: false)},
       );
     }

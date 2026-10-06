@@ -10,9 +10,6 @@ import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/core/network/web_socket_util.dart';
 import 'package:pure_live/shared/platforms/live_danmaku.dart';
 
-/// 六间房的弹幕参数（上游 M5.27）：`userId` 是主播的用户 id（网页的 `page.rid`，
-/// 决定聊天服务器、也是登录的 `roomid`）；`roomId` 是房间号，只用作取服务器列表的
-/// Referer。进房时放进 `danmakuData`，不多发请求。
 class SixRoomDanmakuArgs {
   const SixRoomDanmakuArgs({required this.roomId, required this.userId});
 
@@ -20,25 +17,11 @@ class SixRoomDanmakuArgs {
   final String userId;
 }
 
-/// 六间房的聊天（上游 M5.27）：房间页的私有聊天 socket，按网页对游客的做法匿名加入。
-///
-/// - `GET /room/getChat.php?rid=<主播用户 id>` 取 `*.6rooms.com` 的服务器列表，
-///   逐个尝试（服务端每次打乱顺序）；响应体是 JSON 但 mime 报的是 `text/html`，
-///   所以按文本取回来自己解（见 [parseChatServers]）
-/// - 打开后发 `command=login`（`uid` 是 1800000000～1899999999 的随机游客号，
-///   `encpass` 为空，`roomid` 是主播的用户 id）；6 秒没等到 `login.success` 换下一台
-/// - 登录成功后 1 秒开始、之后每 16 秒发网页的 `noop` 心跳
-/// - 下行是 `enc=yes|no` + `command=receivemessage` + Base64；`enc=yes` 是原始 DEFLATE
-///   （Base64 里 `+ / =` 写成 `( ) @`），解出 JSON 后按 `typeID` 取公聊（101、110、
-///   1413 列表）与飞屏（108）
-/// - 网页会直接停掉 socket 的 flag（被踢/人满/付费房/密码房/禁止/关房…）以失败结束，
-///   不重连
 class SixRoomDanmaku extends LiveDanmaku {
   SixRoomDanmaku();
 
   static const String _origin = 'https://v.6.cn';
 
-  /// 网页会停掉 socket、不再重连的 flag（被踢、人满、付费、密码、禁言/移出、关房…）。
   static const Set<String> _terminalFlags = <String>{
     '101',
     '102',
@@ -76,7 +59,6 @@ class SixRoomDanmaku extends LiveDanmaku {
     final generation = _generation;
     _running = true;
     _guestId = 1800000000 + Random.secure().nextInt(100000000);
-    // 游客号每次 connect 生成一个（同一次连接里的重连沿用）。
     unawaited(_loop(generation));
   }
 
@@ -127,18 +109,9 @@ class SixRoomDanmaku extends LiveDanmaku {
       ..addAll(servers);
   }
 
-  /// `getChat.php` 的响应体 → `*.6rooms.com:<port>` 聊天服务器列表。
   ///
-  /// 入参是**文本**：这个接口回的是 `Content-Type: text/html; charset=UTF-8`，
-  /// 而 dio 只在 JSON mime 下才解码，所以 `getJson` 拿到的一直是字符串。曾经这里
-  /// 问的是 `response is Map`——永远为假，服务器列表永远是空的，弹幕于是永远停在
-  /// "连接失败，正在重试"。解码放在这里而不是依赖 HTTP 层的 mime 判断，就是这个
-  /// 坑的栅栏（`sixroom_danmaku_servers_test.dart` 用真实响应头钉住它）。
-  ///
-  /// 端口按主播不同（实测 5490 / 5590 / 5690），服务端每次还会打乱顺序，所以
-  /// 列表要按房间取、按顺序轮询。坏响应直接抛给 `_loop` 重试，比静默返回空列表
-  /// 诚实。
   @visibleForTesting
+  /// The endpoint answers as text/html, so a decoded getJson would be a String.
   static List<String> parseChatServers(String body) {
     final response = json.decode(body);
     final websock = response is Map ? response['websock'] : null;
@@ -186,7 +159,6 @@ class SixRoomDanmaku extends LiveDanmaku {
     );
     _socket = socket;
     await socket.connect();
-    // 登录时限 6 秒：没等到 login.success 就换下一个服务器。
     _loginDeadline = Timer(const Duration(seconds: 6), () {
       if (generation != _generation || _loggedIn) return;
       if (!ended.isCompleted) ended.complete();
@@ -211,7 +183,6 @@ class SixRoomDanmaku extends LiveDanmaku {
         markConnected();
         onReady?.call();
         _loginDeadline?.cancel();
-        // 登录成功后 1 秒开始心跳，之后每 16 秒一次。
         _heartbeat?.cancel();
         _heartbeat = Timer(const Duration(seconds: 1), () => _startHeartbeat());
       } else if (content == 'login.failed') {
@@ -224,7 +195,6 @@ class SixRoomDanmaku extends LiveDanmaku {
     if (payload == null) return;
     final flag = payload['flag']?.toString() ?? '';
     if (flag != '001') {
-      // 错误：`content` 是说明文字；网页会停掉 socket 的 flag 直接结束。
       if (_terminalFlags.contains(flag)) {
         onClose?.call('六间房聊天被拒绝：flag $flag');
       }
@@ -235,14 +205,12 @@ class SixRoomDanmaku extends LiveDanmaku {
 
   void _startHeartbeat() {
     _heartbeat?.cancel();
-    // 网页的 `noop` 心跳（`y8vPLwAA` 就是 "noop" 压缩编码后的样子）。
     _socket?.sendMessage('command=sendmessage\r\ncontent=y8vPLwAA\r\n');
     _heartbeat = Timer.periodic(const Duration(seconds: 16), (_) {
       _socket?.sendMessage('command=sendmessage\r\ncontent=y8vPLwAA\r\n');
     });
   }
 
-  /// 按 `typeID` 取公聊（101、110/1413 列表）与飞屏（108）；其余类型不报。
   void _reportMessages(Object? raw, {required int depth}) {
     if (depth > 4) return;
     if (raw is List) {
@@ -285,7 +253,6 @@ class SixRoomDanmaku extends LiveDanmaku {
     );
   }
 
-  /// 文字按网页的读法：先把 `&amp;` 换成 `&`，再解字符引用，去首尾空白；空的不报。
   static String? _plainText(Object? value) {
     if (value is! String) return null;
     final decoded = value.replaceAll('&amp;', '&').replaceAllMapped(
@@ -308,8 +275,6 @@ class SixRoomDanmaku extends LiveDanmaku {
     return trimmed.isEmpty ? null : trimmed;
   }
 
-  /// `content` 的两种编码：`enc=yes` 是原始 DEFLATE（Base64 里 `+ / =` 写成 `( ) @`），
-  /// 否则是标准 Base64。
   static Map<String, dynamic>? _decodePayload(Map<String, String> fields) {
     final raw = fields['content'] ?? '';
     if (raw.isEmpty) return null;
@@ -329,7 +294,6 @@ class SixRoomDanmaku extends LiveDanmaku {
     }
   }
 
-  /// 下行是 `\r\n` 连接、末尾空行的 `key=value` 行。
   static Map<String, String> _explode(String data) {
     final fields = <String, String>{};
     for (final line in data.split(RegExp(r'\r?\n'))) {

@@ -15,8 +15,6 @@ class ChzzkLink {
     } on FormatException {
       return null;
     }
-    // 直播页 `/live/<id>`，以及频道页 `/<id>`（后面最多跟一个页签，如
-    // `/<id>/videos`）都是这个频道（上游 20-4，3.x 只认前者）。
     final candidate = switch (segments) {
       ['live', final id] => id,
       [final id] || [final id, _] => id,

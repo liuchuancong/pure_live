@@ -23,7 +23,6 @@ class SeventeenLiveSite extends LiveSite
         LivePlayUrlResolver,
         LivePlayRecoveryResolver,
         LiveSiteExternalRoomResolver {
-  /// 该站点自己的官方房间地址（网页与可选的客户端 scheme）。
   @override
   RoomExternalTarget? externalRoomTarget(LiveRoom liveroom) {
     final id = sanitizedExternalRoomId(liveroom.roomId);
@@ -108,7 +107,6 @@ class SeventeenLiveSite extends LiveSite
       SeventeenLiveState.offline => LiveStatus.offline,
       SeventeenLiveState.unknown => LiveStatus.unknown,
     },
-    // 被 premiumContent 锁定的直播仍然是在播（上游 33-x），播放时才说明原因。
     restriction: room.state == SeventeenLiveState.live ? room.restriction : null,
     startedAt: room.startedAt,
     watching: '',
@@ -117,7 +115,6 @@ class SeventeenLiveSite extends LiveSite
     audienceMetricType: AudienceMetricType.onlineViewers,
     notice: i18n('seventeen_age_notice'),
     httpHeaders: SeventeenLiveApi.mediaHeaders(room.roomId),
-    // 弹幕参数（上游 M5.29）：房间号就是 Ably 的频道名；在播时给。
     danmakuData: room.state == SeventeenLiveState.live
         ? SeventeenLiveDanmakuArgs(roomId: room.roomId)
         : null,
@@ -186,14 +183,10 @@ class SeventeenLiveSite extends LiveSite
     return rooms.take(pageSize).map((room) => _card(room, includeMedia: false)).toList(growable: false);
   }
 
-  /// 只有 `<scheme>://…` 才算网址、才不拿去搜索：`Re:Zero` 这类带冒号的关键词
-  /// 是要搜的（上游 33-5；3.x 把带 scheme 的都当成网址，于是搜不到）。
   static final RegExp _urlPattern = RegExp('^[a-z][a-z0-9+.-]*://', caseSensitive: false);
 
   static bool _isUrl(String text) => _urlPattern.hasMatch(text.trim());
 
-  /// 送出去的关键词：裁剪空白，超过 100 个 UTF-16 单元就截断（不切断代理对），
-  /// 再裁剪一次（上游 33-5；3.x 遇到更长的就什么都搜不到）。
   static String _searchKeyword(String keyword) {
     var text = keyword.trim();
     if (text.length > 100) {

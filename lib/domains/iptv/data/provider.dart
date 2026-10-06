@@ -20,7 +20,6 @@ class Provider extends Equatable {
 
   /// Whether this provider is builtin
   /// Examples:
-  /// - 热门
   final bool builtin;
 
   /// Whether provider is enabled

@@ -144,7 +144,6 @@ class SearchController extends GetxController {
     }
   }
 
-  /// 判断是否安装了 WebView2
   Future<bool> isWebView2Installed() async {
     if (!Platform.isWindows) return true;
 

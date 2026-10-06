@@ -26,8 +26,6 @@ class CompactDanmakuOverlay extends StatelessWidget {
       final settings = SettingsService.to.danmaku;
       final isVerticalVideo = GlobalPlayerService.instance.player.isVerticalVideo.value;
       final portraitMode = SettingsService.to.player.portraitDanmakuMode;
-      // 竖屏隐藏与主画面同一判定：否则同一个「竖屏弹幕：隐藏」设置只关掉房间画面，
-      // 小窗里仍在滚动。
       final hidden =
           controller.hideDanmaku.value ||
           PortraitDanmakuPolicy.hidesDanmaku(isVerticalVideo: isVerticalVideo, mode: portraitMode);
@@ -44,14 +42,11 @@ class CompactDanmakuOverlay extends StatelessWidget {
       final noEmojiMode = settings.noEmojiMode.v;
       final configuredFontSize = settings.danmakuFontSize.v;
       final configuredFontWeight = settings.danmakuFontWeight.value;
-      // 竖屏源的区域收窄也要跟着来，否则小窗会用主配置的完整区域。
       final area = PortraitDanmakuPolicy.effectiveArea(
         configuredArea: settings.danmakuArea.v,
         isVerticalVideo: isVerticalVideo,
         mode: portraitMode,
       );
-      // 距离顶部/底部是主弹幕设置里的绝对像素内缩，主画面、多画面和控制面板都传了它们；
-      // 小窗这一层此前漏传，于是同一个设置在小窗里完全没有效果。
       final topAreaDistance = settings.danmakuTopArea.v;
       final bottomAreaDistance = settings.danmakuBottomArea.v;
       final speed = settings.danmakuSpeed.v;

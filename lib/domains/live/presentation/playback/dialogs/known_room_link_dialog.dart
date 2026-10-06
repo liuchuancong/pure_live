@@ -30,7 +30,6 @@ class KnownRoomLinkDialog extends StatefulWidget {
   final Future<void> Function(String)? openCast;
   static final _active = <NavigatorState, Future<void>>{};
 
-  /// 播放页菜单/控制栏发起：按已知直播间解析播放直链。
   static Future<void> getPlayUrlByRoomId({
     required BuildContext context,
     required LiveRoom liveroom,
@@ -46,7 +45,6 @@ class KnownRoomLinkDialog extends StatefulWidget {
     notify: notify,
   );
 
-  /// 播放页菜单/控制栏发起：按已知直播间投屏。
   static Future<void> castPlayUrlByRoomId({
     required BuildContext context,
     required LiveRoom liveroom,
@@ -64,8 +62,6 @@ class KnownRoomLinkDialog extends StatefulWidget {
     openCast: openCast,
   );
 
-  /// 这两个入口原先挂在数据层的 LiveUrlTool 上，却要弹对话框——
-  /// 属于页面动作，随对话框一起留在 presentation。
   static Future<void> _showKnownRoomAction({
     required BuildContext context,
     required LiveRoom liveroom,

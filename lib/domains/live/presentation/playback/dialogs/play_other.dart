@@ -235,21 +235,14 @@ class _PlayOtherState extends State<PlayOther> with SingleTickerProviderStateMix
       builder: (context, constraints) {
         const padding = 10.0;
         const spacing = 8.0;
-        // 两种形态按面板内容宽分档，不按"卡片能不能读"分档：手机横屏的右半面板
-        // 只有 370~410 宽，塞卡片要么一列太宽、要么两列小到看不清封面，所以
-        // 窄面板一行一个主播（头像 + 房间名/主播名），平板与桌面才用封面卡片。
         const cardModeMinimumWidth = 520.0;
-        // 底部信息条固定 48；只有无障碍大字号确实需要更高时才让出空间。
         final infoHeight = math.max(48.0, textMetrics.cardFooterHeight);
-        // 头像行固定 72；同样只在大字号下长高，避免房间名/主播名被裁。
         final avatarRowHeight = textMetrics.mobileRowHeight;
 
         final availableWidth = math.max(0.0, constraints.maxWidth - padding * 2);
         final cardMode = availableWidth >= cardModeMinimumWidth;
         final columns = cardMode ? 2 : 1;
         final cardWidth = math.max(0.0, (availableWidth - spacing * (columns - 1)) / columns);
-        // 卡片：16:9 封面 + 信息条；头像行：固定行高。极小视口兜一个最小高度，
-        // 避免负数进入网格代理。
         final rowExtent = cardMode ? math.max(80.0, cardWidth * 9 / 16 + infoHeight) : avatarRowHeight;
 
         return GridView.builder(
@@ -321,10 +314,8 @@ class _RoomSwitchCard extends StatelessWidget {
   final LiveRoom room;
   final bool history;
 
-  /// true = 封面卡片（平板/桌面），false = 头像行（窄面板）。
   final bool cardMode;
 
-  /// 卡片底部标题/昵称信息条的固定高度；头像行不使用。
   final double infoHeight;
   final VoidCallback onTap;
 
@@ -380,7 +371,6 @@ class _RoomSwitchCard extends StatelessWidget {
     );
   }
 
-  /// 平板/桌面：16:9 封面 + 底部房间名/主播名的封面卡片。
   Widget _buildCardLayout(BuildContext context, {required String meta, required String title, required String nick}) {
     return Column(
       children: [
@@ -392,11 +382,6 @@ class _RoomSwitchCard extends StatelessWidget {
     );
   }
 
-  /// 窄面板（手机横屏的右半屏）：一行一个主播 —— 头像 + 房间名/主播名，
-  /// 右侧是平台标签与观众数（历史页签下是观看时间）。
-  ///
-  /// 这个宽度下封面卡片没有出路：一列太宽、两列小到认不出封面，
-  /// 头像行反而一眼能认出是谁在播。
   Widget _buildAvatarLayout(BuildContext context, {required String meta, required String title, required String nick}) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
@@ -453,7 +438,6 @@ class _RoomSwitchCard extends StatelessWidget {
   }
 }
 
-/// 头像行右侧的平台标签：站点本地化名称的小胶囊。
 class _PlatformTag extends StatelessWidget {
   const _PlatformTag({required this.platform});
 

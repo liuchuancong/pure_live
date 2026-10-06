@@ -3,12 +3,6 @@ import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:pure_live/core/stream/hls_source_query_policy.dart';
 
-/// 一次播放输入的类型契约。
-///
-/// 播放内核（core/player）与直播域的传输实现都要用这组类型，原先它们定义在
-/// domains/live/data/stream/playback_source_transport.dart，逼着 Core 反向
-/// import 直播域。类型本身只依赖 dio 与 Core 的查询策略，因此归 Core。
-
 typedef PlaybackInputFactory = Future<PlaybackInputLease> Function(
   String url,
   Map<String, String> headers,

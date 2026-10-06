@@ -5,9 +5,6 @@ import 'package:pure_live/core/models/live_message.dart';
 import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/shared/platforms/live_danmaku.dart';
 
-/// Steam 广播的弹幕参数（上游 M5.23）：`steamId` 是主播的 64 位 Steam id（房间身份）；
-/// `broadcastId` 是进房时 `getbroadcastmpd` 给的"当前这一场"，未开播时为空，连接自己
-/// 会再请求一次。
 class SteamBroadcastDanmakuArgs {
   const SteamBroadcastDanmakuArgs({required this.steamId, this.broadcastId = ''});
 
@@ -15,13 +12,6 @@ class SteamBroadcastDanmakuArgs {
   final String broadcastId;
 }
 
-/// Steam 广播的聊天（上游 M5.23）：照观看页的读法**轮询**，匿名只读。
-///
-/// `getchatinfo` 给出聊天日志的地址模板；先读窗口 0（最近的历史，同时给出下一个窗口
-/// 的时刻与 `initial_delay`）——**它算"已加入"但不报**；之后每个窗口在"聊天日志的时钟"
-/// 走到它时才请求（按固定间隔读会越读越落后，旧窗口会 404）。每行聊天取 `msg`
-/// （去首尾空白，Steam 表情 `ː名字ː` 原样保留）、`persona_name`、`steamid`；平台不给
-/// 消息 id 与时间，两者留空。`getbroadcastmpd` 自己请求时把 `num_viewers` 报成在线人数。
 class SteamBroadcastDanmaku extends LiveDanmaku {
   SteamBroadcastDanmaku();
 
@@ -72,7 +62,6 @@ class SteamBroadcastDanmaku extends LiveDanmaku {
         CoreLog.error('Steam broadcast chat failed: $error');
         onReconnect?.call('Steam 广播弹幕连接失败，正在重试');
         if (failures >= _maxFailuresBeforeResolve) {
-          // 连续失败：重新找这一场的聊天（主播换场就拿到新的 id）。
           _broadcastId = '';
           failures = 0;
         }
@@ -82,7 +71,6 @@ class SteamBroadcastDanmaku extends LiveDanmaku {
     }
   }
 
-  /// `getbroadcastmpd`：拿这一场的 id，并把 `num_viewers` 报成在线人数。
   Future<bool> _resolveBroadcast(int generation) async {
     final steamId = _args?.steamId ?? '';
     final response = await HttpClient.instance.getJson(
@@ -115,7 +103,6 @@ class SteamBroadcastDanmaku extends LiveDanmaku {
     return true;
   }
 
-  /// `getchatinfo`：聊天日志的地址模板（`{0}` 是窗口时刻）。
   Future<String> _chatTemplate(int generation) async {
     final steamId = _args?.steamId ?? '';
     final response = await HttpClient.instance.getJson(
@@ -131,14 +118,12 @@ class SteamBroadcastDanmaku extends LiveDanmaku {
     if (generation != _generation) throw StateError('cancelled');
     final template = response is Map ? response['view_url_template']?.toString().trim() ?? '' : '';
     if (template.isEmpty || !_acceptableChatUrl(template)) {
-      // 这一场不被认（换场了）：让下一次先重新请求 mpd。
       _broadcastId = '';
       throw StateError('Steam 广播：聊天日志地址不可用');
     }
     return template;
   }
 
-  /// 窗口 0（历史，不报）对时，然后按聊天日志的时钟逐个窗口读下去。
   Future<void> _readWindows(String template, int generation) async {
     var nudgeMs = 0;
     var failures = 0;
@@ -161,7 +146,6 @@ class SteamBroadcastDanmaku extends LiveDanmaku {
       if (generation != _generation) return;
       if (answer == null) {
         failures++;
-        // 请求来早了（窗口还没写出来）是 404：把以后的请求推后 10 ms，最多 1 s。
         nudgeMs = (nudgeMs + 10).clamp(0, 1000);
         if (failures >= _maxFailuresBeforeResolve) {
           throw StateError('Steam 广播：聊天日志连续失败');
@@ -175,7 +159,6 @@ class SteamBroadcastDanmaku extends LiveDanmaku {
       }
       window = next;
       if (answer.initialDelayMs > 0) {
-        // 回答带 `initial_delay` 表示重新对时。
         clock = DateTime.now();
         initialDelay = answer.initialDelayMs;
       }
@@ -190,7 +173,7 @@ class SteamBroadcastDanmaku extends LiveDanmaku {
     try {
       response = await HttpClient.instance.getJson(url, header: _chatHeaders());
     } catch (error) {
-      return null; // 404 等：按"请求来早了"处理
+      return null;
     }
     if (generation != _generation) return null;
     if (response is! Map) return null;
@@ -221,8 +204,6 @@ class SteamBroadcastDanmaku extends LiveDanmaku {
     return _SteamChatWindow(messages: messages, nextRequest: nextRequest, initialDelayMs: initialDelay);
   }
 
-  /// 聊天日志地址只收 https、无凭据与片段、端口 443、主机是
-  /// `steambroadcast*.akamaized.net` 或 Steam 的域名。
   static bool _acceptableChatUrl(String raw) {
     final uri = Uri.tryParse(raw);
     if (uri == null || uri.scheme != 'https' || uri.userInfo.isNotEmpty || uri.hasFragment) return false;

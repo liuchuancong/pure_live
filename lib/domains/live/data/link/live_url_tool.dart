@@ -225,9 +225,6 @@ class LiveUrlTool {
         if (session.isClosed || cancel.isCancelled) return [];
         return [shortId, Sites.liveMeSite];
       }
-      // niconico 主播链接（watch/user、watch/ch、用户页、频道页）：房间身份就是主播
-      // （上游 4.x "房间即主播"），所以这里直接用主播 id 开房，**不需要请求**；
-      // 站点在打开房间时再把它换成当前在播的节目。
       final niconicoBroadcaster = NiconicoLink.parseBroadcaster(raw);
       if (niconicoBroadcaster != null) {
         return [niconicoBroadcaster, Sites.niconicoSite];

@@ -24,7 +24,6 @@ final class JdLiveSite extends LiveSite
         LivePlayUrlResolver,
         LivePlayRecoveryResolver,
         LiveSiteExternalRoomResolver {
-  /// 该站点自己的官方房间地址（网页与可选的客户端 scheme）。
   @override
   RoomExternalTarget? externalRoomTarget(LiveRoom liveroom) {
     final id = sanitizedExternalRoomId(liveroom.roomId);
@@ -100,13 +99,11 @@ final class JdLiveSite extends LiveSite
       area: 'JD Live',
       link: JdLiveLink.watchUrl(room.liveId),
       liveStatus: status,
-      // 仅 App 可看/在播但没有地址：仍然是"在播"，标出限制种类（上游统一规则）。
       restriction: status == LiveStatus.live ? room.restriction : null,
       totalViewers: total,
       audienceMetricType: total == null ? AudienceMetricType.unknown : AudienceMetricType.totalViewers,
       notice: room.appOnly ? i18n('jdlive_restricted_notice') : i18n('jdlive_chat_notice'),
       httpHeaders: JdLiveApi.mediaHeaders(room.liveId),
-      // 弹幕参数（上游 M5.24）：直播间号；在播时给。
       danmakuData: status == LiveStatus.live ? JdLiveDanmakuArgs(liveId: room.liveId) : null,
       data: includeMedia ? room : null,
     );

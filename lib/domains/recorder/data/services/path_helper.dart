@@ -23,7 +23,6 @@ class PathHelper {
     return value;
   }
 
-  /// 将主播名、平台名等中文字符串转换为纯拼音的安全路径
   static String toSafePinyin(String text) {
     if (text.trim().isEmpty) return 'unknown';
     final pinyin = getPinyin(text, withTone: false, separator: '');

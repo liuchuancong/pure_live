@@ -7,21 +7,12 @@ import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/core/network/web_socket_util.dart';
 import 'package:pure_live/shared/platforms/live_danmaku.dart';
 
-/// Picarto 的弹幕参数（上游 M5.10）：`channelName` 就是房间身份（频道的名字），
-/// 用来换匿名 JWT。
 class PicartoDanmakuArgs {
   const PicartoDanmakuArgs({required this.channelName});
 
   final String channelName;
 }
 
-/// Picarto 的聊天（上游 M5.10 + B-8）：先向 GraphQL 要一个**匿名 JWT**，再用
-/// `wss://chat.picarto.tv/chat/token=<JWT>` 连（服务端自己保活，**没有客户端心跳**）。
-///
-/// 帧按 `type`/`t` 分：`stream` 给并发观众；`c`/`ct`/`system` 是若干行（按每行自己的
-/// `t` 分：聊天、**打赏即醒目留言**、系统通知）；`raid`/`ns` 各是一条通知；`rm`/`cm` 是
-/// **撤回**（按消息 id / 按用户）；`{"success":false,"code":"JWT_TOKEN"}` 说明令牌被拒，
-/// 换一份重连（最多 3 次）。
 class PicartoDanmaku extends LiveDanmaku {
   PicartoDanmaku();
 
@@ -72,7 +63,6 @@ class PicartoDanmaku extends LiveDanmaku {
         final refreshed = await _runSocket(token, generation);
         attempt = 0;
         if (!refreshed) {
-          // 令牌被拒：换一份重连，最多 3 次。
           _refreshes++;
           if (_refreshes > _maxTokenRefreshes) {
             onClose?.call('Picarto：聊天令牌反复被拒');
@@ -92,7 +82,6 @@ class PicartoDanmaku extends LiveDanmaku {
     }
   }
 
-  /// 匿名 JWT：GraphQL 的 `generateJwtToken(channel_name:)`。
   Future<String?> _requestToken(int generation) async {
     final channel = _args?.channelName ?? '';
     final response = await HttpClient.instance.postJson(
@@ -111,7 +100,6 @@ class PicartoDanmaku extends LiveDanmaku {
     return key;
   }
 
-  /// 返回 true 表示这轮正常结束（不是令牌被拒）。
   Future<bool> _runSocket(String token, int generation) async {
     final ended = Completer<bool>();
     final socket = WebScoketUtils(
@@ -146,7 +134,6 @@ class PicartoDanmaku extends LiveDanmaku {
     return refreshed;
   }
 
-  /// 返回 true 表示令牌被拒（调用方要换一份新令牌）。
   bool _handleFrame(String data) {
     final text = data.trim();
     if (text.isEmpty) return false;
@@ -197,7 +184,7 @@ class PicartoDanmaku extends LiveDanmaku {
       return false;
     }
     if (type == 'c' || type == 'ct' || type == 'system') {
-      if (type == 'system' && root['c']?.toString() == 'b') return false; // 只给管理员看
+      if (type == 'system' && root['c']?.toString() == 'b') return false;
       if (payload is List) {
         for (final line in payload) {
           final message = _line(line, type);
@@ -208,7 +195,6 @@ class PicartoDanmaku extends LiveDanmaku {
     return false;
   }
 
-  /// 一行按自己的 `t` 分：聊天、打赏（`v` 有值或 `ct`）、系统通知。
   LiveMessage? _line(Object? raw, String frameType) {
     if (raw is! Map) return null;
     final type = raw['t']?.toString();
@@ -238,8 +224,6 @@ class PicartoDanmaku extends LiveDanmaku {
     );
   }
 
-  /// 打赏（`x` 是整数的筹码数）当成醒目留言：价格 `x Kudos`，持续 60 秒；
-  /// 打赏给同一直播的多路里**别的频道**（`rn`）时文字前面写清楚。
   LiveMessage? _tip(Map<dynamic, dynamic> line) {
     final chips = line['x'];
     if (chips is! int || chips <= 0) return null;
@@ -277,7 +261,6 @@ class PicartoDanmaku extends LiveDanmaku {
     final raw = line['m'];
     final text = raw is String ? raw.trim() : '';
     if (text.isEmpty) return null;
-    // 网页把 `{link}` 换成链接文字、`{icon}` 换成图标；这里链接取文字、图标丢掉。
     return text
         .replaceAllMapped(RegExp(r'\{link\}'), (_) => '')
         .replaceAllMapped(RegExp(r'\{icon\}'), (_) => '')
@@ -330,7 +313,6 @@ class PicartoDanmaku extends LiveDanmaku {
     data: retraction,
   );
 
-  /// 一行的 id：`id`，否则 `_id`（网页的 `id || _id`）。
   static String _messageId(Map<dynamic, dynamic> line) {
     final raw = line['id'] ?? line['_id'];
     final id = raw is String ? raw.trim() : '';
@@ -343,7 +325,6 @@ class PicartoDanmaku extends LiveDanmaku {
     return DateTime.fromMillisecondsSinceEpoch(value);
   }
 
-  /// 颜色：`#RRGGBB` / `RRGGBB` 认，其它一律白色（弹幕默认）。
   static LiveMessageColor _color(Object? value) {
     final text = _scalar(value).replaceFirst('#', '').trim();
     if (text.length != 6) return LiveMessageColor.white;

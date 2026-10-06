@@ -16,7 +16,6 @@ class PlaylistStorage {
     return playlistDir;
   }
 
-  /// 保存用户导入文件
   static Future<File> saveImportedFile(File sourceFile) async {
     final dir = await _playlistDir();
     final ext = p.extension(sourceFile.path);
@@ -25,7 +24,6 @@ class PlaylistStorage {
     return sourceFile.copy(target.path);
   }
 
-  /// 保存网络 playlist
   static Future<File> saveRemoteContent({required String content, required String extension}) async {
     final dir = await _playlistDir();
     final filename = '${DateTime.now().millisecondsSinceEpoch}_${_uuid.v4()}.$extension';
@@ -34,7 +32,6 @@ class PlaylistStorage {
     return file;
   }
 
-  /// 删除 playlist
   static Future<void> deletePlaylist(String path) async {
     final file = File(path);
     if (await file.exists()) {

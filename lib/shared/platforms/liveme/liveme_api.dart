@@ -35,10 +35,7 @@ class LiveMeException implements Exception, SiteTransportFailure {
   String toString() => 'LiveMe ${kind.name}';
 }
 
-/// 直播状态。受限不再是状态：私密/付费的直播仍然是 [live]，只是带上
-/// [LiveRestriction]（上游 21-5）。
 enum LiveMeState { live, offline, unknown }
-
 
 class LiveMeStream {
   LiveMeStream({required this.qualityId, required this.protocol, required Iterable<Uri> urls})
@@ -87,11 +84,8 @@ class LiveMeRoom {
   final int? likes;
   final LiveMeState state;
 
-  /// 谁可以看这场直播：`ispvt` 1 是私密，`livebptype` 7 或标签写着
-  /// "Paid broadcast" 是付费（上游 21-5：受限的直播仍然是"在播"）。
   final LiveRestriction restriction;
 
-  /// `vtime`（`wsABStime` 是开播时间 + 10h/24h，上游 21-8）转成的 UTC 时间。
   final DateTime? startedAt;
   final List<LiveMeStream> streams;
 }
@@ -289,7 +283,6 @@ class LiveMeApi {
       // fail below.
       if (video['ushortid'] == null) continue;
       final room = _videoRoom(video, includeMedia: false);
-      // 受限的直播也照常列出（上游 21-5：它仍是"在播"，只是标了限制种类）。
       if (seen.add(room.shortId)) rooms.add(room);
     }
     return LiveMeDirectoryPage(rooms: rooms, hasMore: _integer(data['next_page']) == 1);
@@ -344,8 +337,6 @@ class LiveMeApi {
           totalViewers: null,
           heat: null,
           likes: null,
-          // `is_live` 0 就是未开播，对所有 project 一致（上游 21-4）：此前只信
-          // 主 liveme 项目的 0，federated 项目的 0 被留成 pending。
           state: isLive == 1
               ? LiveMeState.live
               : isLive == 0
@@ -483,8 +474,6 @@ class LiveMeApi {
         (expectedVideoId != null && videoId != expectedVideoId)) {
       throw const LiveMeException(LiveMeFailure.identity);
     }
-    // 受限不再是"状态"：直播仍是直播，只是标明谁可以看（上游 21-5；3.x 与改前
-    // 显示为受限/封禁，并把房间挡在搜索结果之外）。
     final restriction = restrictionOf(video);
     final online = _integer(video['online']);
     final status = _integer(video['status']);
@@ -514,16 +503,12 @@ class LiveMeApi {
       state: state,
       restriction: restriction,
       startedAt: state == LiveMeState.live ? _startedAt(video['vtime']) : null,
-      // 受限的直播不读流（读了也播不了，上游只在无限制时读）。
       streams: state == LiveMeState.live && includeMedia && restriction == LiveRestriction.none
           ? _streams(video)
           : const [],
     );
   }
 
-  /// `video_info` 的限制种类，按网页客户端自己的规则：`ispvt` 1 是私密；
-  /// `livebptype` 7 或标签文本 "Paid broadcast"（大小写无关）是付费；其余无限制
-  /// （上游 21-5）。
   static LiveRestriction restrictionOf(Map<String, dynamic> video) {
     if (_integer(video['ispvt']) == 1) return LiveRestriction.private;
     if (_integer(video['livebptype']) == 7) return LiveRestriction.paid;
@@ -535,8 +520,6 @@ class LiveMeApi {
     return LiveRestriction.none;
   }
 
-  /// `hot_label_v2` 可能是 JSON 文本（平台原样发的）也可能是对象；读不出来就当
-  /// 它什么都没说。
   static String _paidLabelText(String raw) {
     if (raw.isEmpty || !raw.trimLeft().startsWith('{')) return raw;
     try {
@@ -547,7 +530,6 @@ class LiveMeApi {
     }
   }
 
-  /// `vtime`：秒或毫秒的 epoch，转成 UTC；读不出来就是 null。
   static DateTime? _startedAt(Object? value) {
     final raw = _integer(value);
     if (raw == null || raw <= 0) return null;

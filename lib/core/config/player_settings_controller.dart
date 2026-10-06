@@ -214,17 +214,9 @@ class PlayerSettingsController extends GetxController {
 
   final RxBool floatPlay = hiveBool('floatPlay', false);
 
-  /// 应用内悬浮窗记住的位置与尺寸（横竖屏各一套），JSON 编码。
-  ///
-  /// 坐标是应用表面内的逻辑坐标；`media_core_floating` 在恢复时会按当前表面重新夹取，
-  /// 所以旋转或改变窗口大小之后不会把悬浮窗丢到看不见的地方。
   final RxString floatWindowGeometry = hiveString('floatWindowGeometry', '');
   final RxBool windowsPipAlwaysOnTop = hiveBool('windowsPipAlwaysOnTop', false);
 
-  /// 小窗是否可以不按视频比例自由拉伸（仅 Windows 小窗）。
-  ///
-  /// 默认关闭时小窗始终等于视频形状，画面没有黑边；开启后可以单独压扁或拉窄窗口，
-  /// 画面按比例适配，在不等的一侧留黑边。
   final RxBool windowsPipFreeAspect = hiveBool('windowsPipFreeAspect', false);
 
   /// Compact-window size policy. [windowsPipBaseSize] is the long side of the

@@ -1,10 +1,8 @@
 import 'dart:convert';
 
 class LivePlayQuality {
-  /// 清晰度
   final String quality;
 
-  /// 清晰度信息
   final dynamic data;
 
   /// Stable platform identifier used to confirm that a requested quality was
@@ -27,8 +25,6 @@ class LivePlayQuality {
     this.declaredAspectRatio,
   });
 
-  /// 平台为这一档声明的画面宽高比（上游 F.1b 的"声明图片尺寸"）。解码器报出真实
-  /// 尺寸之前用它排版；平台没声明时为 null。
   final double? declaredAspectRatio;
 
   LivePlayQuality withPlaybackUnconfirmed(bool value) => value == isPlaybackUnconfirmed

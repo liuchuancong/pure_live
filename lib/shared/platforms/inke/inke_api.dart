@@ -338,13 +338,11 @@ class InkeApi {
       isRecord: false,
       watching: '',
       audienceMetricType: AudienceMetricType.unknown,
-      // `start_time`（Unix 秒）就是这场直播的开播时间（上游 14-x 统一规则）。
       startedAt: _startedAt(info['start_time']),
       data: playback ? [LivePlayQuality(id: 'flv', quality: 'FLV', data: urls)] : null,
     );
   }
 
-  /// `start_time`（Unix 秒）→ UTC；读不出来或不在 2000–2100 年则不给。
   static DateTime? _startedAt(Object? value) {
     final seconds = int.tryParse(_text(value));
     if (seconds == null || seconds <= 0) return null;

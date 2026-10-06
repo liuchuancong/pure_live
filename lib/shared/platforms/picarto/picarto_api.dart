@@ -118,7 +118,6 @@ class PicartoApi {
 
   static String text(Object? raw) => raw is String ? raw.trim() : '';
 
-  /// 搜索资料里的简介：`bio`，HTML 实体解码后为空则不给（上游 11-5）。
   static String? _bio(Map<String, dynamic> profile) {
     final raw = text(profile['bio']);
     if (raw.isEmpty) return null;
@@ -239,7 +238,6 @@ class PicartoApi {
           watching: '',
           followers: followers == null ? '' : '$followers',
           audienceMetricType: AudienceMetricType.unknown,
-          // 搜索结果没有直播标题/封面/观众数，简介取资料的 bio（上游 11-5）。
           introduction: _bio(profile),
           status: online,
           liveStatus: online ? LiveStatus.live : LiveStatus.offline,
@@ -325,8 +323,6 @@ class PicartoApi {
         (detail && channel['private'] is! bool)) {
       throw const PicartoException(PicartoFailure.schema);
     }
-    // 私密频道照常返回成房间，只是标上 private 限制（上游 11-9）：此前直接抛
-    // access，于是在收藏/历史里连房间信息都看不到。
     final private = channel['private'];
     final online = channel['online'] == true;
     final viewers = integer(channel['viewers']);
@@ -350,9 +346,7 @@ class PicartoApi {
       audienceMetricType: AudienceMetricType.onlineViewers,
       status: online,
       liveStatus: online ? LiveStatus.live : LiveStatus.offline,
-      // 平台明说 private 就按 private，明说不是就 none，没说就 null（上游 11-9）。
       restriction: private is bool ? (private ? LiveRestriction.private : LiveRestriction.none) : null,
-      // 弹幕参数（上游 M5.10）：频道名，用来换匿名 JWT；在播才有。
       danmakuData: online ? PicartoDanmakuArgs(channelName: name) : null,
     );
   }
@@ -362,7 +356,6 @@ class PicartoApi {
     final data = object(await read(Uri.parse('$apiOrigin/api/channel/detail/$name'), cancel: cancel));
     final room = parseChannel(object(data['channel']), expectedName: name, detail: true);
     if (!room.isPlayableNow) return (room: room, master: null);
-    // 私密频道不问播放列表（上游 11-9）：平台只会给房主地址，问了也播不了。
     if (room.effectiveRestriction == LiveRestriction.private) return (room: room, master: null);
     final origin = text(object(data['getLoadBalancerUrl'])['origin']);
     if (!RegExp(r'^[a-z0-9]+(?:-[a-z0-9]+)*$').hasMatch(origin) || origin.length > 63) {

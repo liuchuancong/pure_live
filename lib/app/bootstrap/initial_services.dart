@@ -55,13 +55,7 @@ import 'package:pure_live/domains/live/presentation/areas/areas_controller.dart'
 
 class InitialServices {
   static void initGlobalServices() {
-    // 站点注册表不认识的实现由 App 装配层注入：Niconico 的 master 读取器建在
-    // recorder 的 HLS 中继上。必须早于任何 Sites 访问，否则适配器会被缓存成未绑定
-    // 状态。
     Sites.niconicoMasterReader = readNiconicoMaster;
-    // 全局/域长生命周期 Provider 都由 App 装配层注册。Core 的设置门面
-    // SettingsService 只做类型化访问，不再自己 lazyPut 依赖，因此 Core 不会
-    // 反向依赖 Domains/Features。
     Get.put(SettingsService(), permanent: true);
     _registerCoreSettings();
     _registerDomainSettings();
@@ -75,7 +69,6 @@ class InitialServices {
     Get.put(RouteObserverController(), permanent: true);
   }
 
-  /// 平台级偏好：归属 Core，经 SettingsService 门面访问。
   static void _registerCoreSettings() {
     Get.lazyPut(() => StartupController(), fenix: true);
     Get.lazyPut(() => AppSettingsController(), fenix: true);
@@ -91,13 +84,10 @@ class InitialServices {
     Get.lazyPut(() => PageSettingsController(), fenix: true);
     Get.lazyPut(() => FontSettingsController(), fenix: true);
     Get.lazyPut(() => LogController(), fenix: true);
-    // 跨平台共享的 Cookie 凭据存储：所有站点适配器与播放头解析都读它，
-    // 因此是 Core 基础设施，而不是 account 业务域私有状态。
     Get.lazyPut(() => CookieSettingsController(), fenix: true);
     Get.put(ExitSettingsController(), permanent: true);
   }
 
-  /// 业务域与轻量页面的设置 Provider：由所属层提供 `XxxController.to`。
   static void _registerDomainSettings() {
     Get.lazyPut(() => HistoryController(), fenix: true);
     Get.lazyPut(() => FavoriteRoomController(), fenix: true);
@@ -132,7 +122,6 @@ class InitialServices {
     final db = DbService();
     await db.init();
     Get.put<DbService>(db, permanent: true);
-    // 长生命周期 Provider 在 App 装配层注册：Core 不认识具体业务域。
     Get.lazyPut(() => BackgroundController(), fenix: true);
   }
 
@@ -148,35 +137,25 @@ class InitialServices {
     _initHeavyServicesInBackground();
   }
 
-  /// 把 Features/Domains 的实现接到 Core 定义的接口上。
-  ///
-  /// Core 只声明抽象，反向依赖由此消除：具体实现留在各自层，由 App 装配层绑定。
   static void _bindCorePorts() {
     ReleaseHistorySource.provider = ({bool forceRefresh = false}) =>
         ReleaseHistoryRepository.instance.load(forceRefresh: forceRefresh);
-    // Cookie 恢复后刷新 B 站账号会话：时序与原先 Core 内的直接调用一致。
     CookieSettingsController.onRestored = () {
       BiliBiliAccountService.instance.setCookie(CookieSettingsController.to.bilibiliCookie.v);
       BiliBiliAccountService.instance.loadUserInfo();
     };
-    // 多实例新窗口的初始设置由备份控制器导出；"快照内容"属于 Features。
     MultiInstanceSettingsSource.exporter = ({required bool includeSensitiveData}) =>
         BackupController.to.exportAllSettings(includeSensitiveData: includeSensitiveData);
-    // 桌面退出流程含业务与对话框，留在 App；Core 的托盘/关窗入口只调端口。
     DesktopExitPort.exitApplication = DesktopExitFlow.exitDesktopApplication;
     DesktopExitPort.showExitDialog = DesktopExitFlow.showExitDialog;
-    // 「官方分类入口」的判定与目标地址来自 CC 目录。
     OfficialCategoryPolicy.isOfficialCategory = CCCatalog.isOfficialEntry;
     OfficialCategoryPolicy.officialCategoryUri = CCCatalog.officialEntryUri;
-    // 小窗几何按横竖屏两套记忆，方向判定归播放器（画面尺寸），Core 只声明端口。
     CompactSourceOrientation.read = () {
       final player = GlobalPlayerService.instance.player;
       final size = player.handle?.combinedSnapshot.geometry.videoSize;
       if (size == null) return player.isVerticalVideo.value;
       return CompactSourceOrientation.isPortraitSize(size.width.toDouble(), size.height.toDouble());
     };
-    // Huya 播放 UA 是站点适配器的启动预热；原先挂在 Core 的 StartupController
-    // onInit 上，让 Core 反向认识了业务域。
     unawaited(HuyaSite().getHuYaUA());
   }
 

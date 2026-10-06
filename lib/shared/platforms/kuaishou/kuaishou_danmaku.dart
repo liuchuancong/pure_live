@@ -14,8 +14,6 @@ class KuaishouDanmakuArgs {
   final String liveStreamId;
   final String cookie;
 
-  /// 站点的表情表：评论里写的编码（`[笑哭]`）→ 它的图片（https），来自房间页
-  /// （上游 4-x 的 `emojiTable`）；房间是从卡片打开、没读页面时为空。
   final Map<String, String> emotes;
 }
 
@@ -288,7 +286,6 @@ class KuaishouDanmaku implements LiveDanmaku {
             messageId: 'kuaishou:${rawId.isEmpty ? digest : rawId}',
             sentAt: timestamp == null ? null : DateTime.fromMillisecondsSinceEpoch(timestamp),
             color: LiveMessageColor.white,
-            // 评论里的编码在房间页的表情表里能查到图片（上游 M13.16）。
             emotes: emotes.isEmpty ? const <LiveEmote>[] : LiveEmote.inText(content, emotes),
           ),
         );

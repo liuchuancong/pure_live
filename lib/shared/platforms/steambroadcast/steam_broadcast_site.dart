@@ -25,7 +25,6 @@ final class SteamBroadcastSite extends LiveSite
         LivePlayUrlResolver,
         LivePlayRecoveryResolver,
         LiveSiteExternalRoomResolver {
-  /// 该站点自己的官方房间地址（网页与可选的客户端 scheme）。
   @override
   RoomExternalTarget? externalRoomTarget(LiveRoom liveroom) {
     final id = sanitizedExternalRoomId(liveroom.roomId);
@@ -88,7 +87,6 @@ final class SteamBroadcastSite extends LiveSite
       SteamBroadcastState.live => LiveStatus.live,
       SteamBroadcastState.replay => LiveStatus.replay,
       SteamBroadcastState.offline => LiveStatus.offline,
-      // `user_restricted` 是主播账号被限制，按封禁；`unknown` 保持未知。
       SteamBroadcastState.restricted => LiveStatus.banned,
       SteamBroadcastState.unknown => LiveStatus.unknown,
     };
@@ -103,7 +101,6 @@ final class SteamBroadcastSite extends LiveSite
       area: room.game.isEmpty ? 'Steam Community' : room.game,
       link: SteamBroadcastLink.watchUrl(room.steamId),
       liveStatus: status,
-      // `missing_subscription` 是在播 + 订阅者专属（上游 27-x）。
       restriction: room.state == SteamBroadcastState.live || room.state == SteamBroadcastState.replay
           ? room.restriction
           : null,
@@ -114,7 +111,6 @@ final class SteamBroadcastSite extends LiveSite
           ? i18n('steambroadcast_restricted_notice')
           : i18n('steambroadcast_chat_notice'),
       httpHeaders: SteamBroadcastApi.mediaHeaders(room.steamId),
-      // 弹幕参数（上游 M5.23）：主播 Steam id + 这一场的 id（没有就由连接自己请求）。
       danmakuData: SteamBroadcastDanmakuArgs(steamId: room.steamId, broadcastId: room.broadcastId),
       data: includeMedia ? room : null,
     );
@@ -255,9 +251,6 @@ final class SteamBroadcastSite extends LiveSite
       room = _snapshot(await _detail(LiveRoom(roomId: room.steamId, platform: id), includeMedia: true));
     }
     final master = room.master!.toString();
-    // mpv 自己的网络栈读这条 CDN 会确定性挂死（清单能读、分片打开后 18 秒无进展，
-    // 代理与直连都复现；Dart HTTP 读同一棵树全部正常），所以声明子地址不可由原生
-    // 解析器直读，让线路走回环清单中继 —— 与 TwitCasting 同一机制。
     return LivePlayUrlResolution.withSourcePolicies(
       urls: [master],
       sourceQueryPolicies: const {},

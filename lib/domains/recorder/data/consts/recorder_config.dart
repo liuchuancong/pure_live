@@ -6,7 +6,6 @@ import 'package:pure_live/domains/recorder/domain/models/record_file_item.dart';
 
 class RecorderConfig {
   /// =========================
-  /// 默认值
   /// =========================
 
   static const defaultSegmentTime = 300;
@@ -25,29 +24,21 @@ class RecorderConfig {
 
   static const defaultPreferBestStream = true;
 
-  /// 默认读写超时（秒）
   static const defaultRwTimeout = 15;
 
-  /// 默认线程队列大小（用于高码率缓冲）
   static const defaultThreadQueueSize = 2048;
 
   /// =========================
-  /// 轮询配置默认值
   /// =========================
 
-  /// 是否启用轮询挂机
   static const defaultEnablePolling = false;
 
-  /// 开播检测间隔（秒）
   static const defaultLiveCheckInterval = 30;
 
-  /// 是否启用指数退避
   static const defaultEnableBackoff = false;
 
-  /// 最大轮询间隔（秒）
   static const defaultMaxCheckInterval = 300;
 
-  /// 是否允许后台轮询
   static const defaultAutoStartOnBoot = false;
 
   static const defaultUsePinyinForFolder = false;
@@ -92,7 +83,6 @@ class RecorderConfig {
       PlayerConsts.resolutions.contains(value) ? value : PlayerConsts.resolutions.first;
 
   /// =========================
-  /// 分段时长
   /// =========================
 
   static int get segmentTime =>
@@ -102,7 +92,6 @@ class RecorderConfig {
       HivePrefUtil.setInt(RecorderKeys.segmentTime, normalizeSegmentTime(value));
 
   /// =========================
-  /// 最大并发
   /// =========================
 
   static int get maxTaskCount =>
@@ -112,7 +101,6 @@ class RecorderConfig {
       HivePrefUtil.setInt(RecorderKeys.maxTaskCount, normalizeMaxTaskCount(value));
 
   /// =========================
-  /// 自动重连
   /// =========================
 
   static bool get autoReconnect => HivePrefUtil.getBool(RecorderKeys.autoReconnect) ?? defaultAutoReconnect;
@@ -120,7 +108,6 @@ class RecorderConfig {
   static Future<void> setAutoReconnect(bool value) => HivePrefUtil.setBool(RecorderKeys.autoReconnect, value);
 
   /// =========================
-  /// 最大缓存
   /// =========================
 
   static int get maxCacheMB => normalizeMaxCacheMB(HivePrefUtil.getInt(RecorderKeys.maxCacheMB) ?? defaultMaxCacheMB);
@@ -129,7 +116,6 @@ class RecorderConfig {
       HivePrefUtil.setInt(RecorderKeys.maxCacheMB, normalizeMaxCacheMB(value));
 
   /// =========================
-  /// 缓存限制
   /// =========================
 
   static bool get enableCacheLimit => HivePrefUtil.getBool(RecorderKeys.enableCacheLimit) ?? defaultEnableCacheLimit;
@@ -137,7 +123,6 @@ class RecorderConfig {
   static Future<void> setEnableCacheLimit(bool value) => HivePrefUtil.setBool(RecorderKeys.enableCacheLimit, value);
 
   /// =========================
-  /// 保存目录
   /// =========================
 
   static String get recordSavePath => HivePrefUtil.getString(RecorderKeys.recordSavePath) ?? '';
@@ -145,7 +130,6 @@ class RecorderConfig {
   static Future<void> setRecordSavePath(String value) => HivePrefUtil.setString(RecorderKeys.recordSavePath, value);
 
   /// =========================
-  /// 默认画质
   /// =========================
 
   static String get defaultQuality =>
@@ -155,7 +139,6 @@ class RecorderConfig {
       HivePrefUtil.setString(RecorderKeys.defaultQuality, normalizeDefaultQuality(value));
 
   /// =========================
-  /// 最大重试次数
   /// =========================
 
   static int get maxRetryCount =>
@@ -165,7 +148,6 @@ class RecorderConfig {
       HivePrefUtil.setInt(RecorderKeys.maxRetryCount, normalizeMaxRetryCount(value));
 
   /// =========================
-  /// 重试延迟
   /// =========================
 
   static int get retryDelay => normalizeRetryDelay(HivePrefUtil.getInt(RecorderKeys.retryDelay) ?? defaultRetryDelay);
@@ -174,7 +156,6 @@ class RecorderConfig {
       HivePrefUtil.setInt(RecorderKeys.retryDelay, normalizeRetryDelay(value));
 
   /// =========================
-  /// 是否启用轮询
   /// =========================
 
   static bool get enablePolling => HivePrefUtil.getBool(RecorderKeys.enablePolling) ?? defaultEnablePolling;
@@ -182,7 +163,6 @@ class RecorderConfig {
   static Future<void> setEnablePolling(bool value) => HivePrefUtil.setBool(RecorderKeys.enablePolling, value);
 
   /// =========================
-  /// 开播检测间隔
   /// =========================
 
   static int get liveCheckInterval =>
@@ -192,7 +172,6 @@ class RecorderConfig {
       HivePrefUtil.setInt(RecorderKeys.liveCheckInterval, normalizeLiveCheckInterval(value));
 
   /// =========================
-  /// 指数退避
   /// =========================
 
   static bool get enableBackoff => HivePrefUtil.getBool(RecorderKeys.enableBackoff) ?? defaultEnableBackoff;
@@ -200,7 +179,6 @@ class RecorderConfig {
   static Future<void> setEnableBackoff(bool value) => HivePrefUtil.setBool(RecorderKeys.enableBackoff, value);
 
   /// =========================
-  /// 最大轮询间隔
   /// =========================
 
   static int get maxCheckInterval =>
@@ -210,7 +188,6 @@ class RecorderConfig {
       HivePrefUtil.setInt(RecorderKeys.maxCheckInterval, normalizeMaxCheckInterval(value));
 
   /// =========================
-  /// 后台轮询
   /// =========================
 
   static bool get autoStartOnBoot => HivePrefUtil.getBool(RecorderKeys.autoStartOnBoot) ?? defaultAutoStartOnBoot;
@@ -218,7 +195,6 @@ class RecorderConfig {
   static Future<void> setAutoStartOnBoot(bool value) => HivePrefUtil.setBool(RecorderKeys.autoStartOnBoot, value);
 
   /// =========================
-  /// 录制历史
   /// =========================
 
   static Future<void> saveRecordHistory(List<RecordFileItem> history) async {
@@ -239,18 +215,14 @@ class RecorderConfig {
     await HivePrefUtil.remove(RecorderKeys.recordHistory);
   }
 
-  /// 优先选择最高画质轨道 (对应 FFmpeg 的 -map 0:v:0)
   static bool get preferBestStream => HivePrefUtil.getBool(RecorderKeys.preferBestStream) ?? defaultPreferBestStream;
 
   static Future<void> setPreferBestStream(bool value) => HivePrefUtil.setBool(RecorderKeys.preferBestStream, value);
 
-  /// 网络读写超时 (对应 FFmpeg 的 -rw_timeout，单位为秒)
   static int get rwTimeout => normalizeRwTimeout(HivePrefUtil.getInt(RecorderKeys.rwTimeout) ?? defaultRwTimeout);
 
   static Future<void> setRwTimeout(int value) => HivePrefUtil.setInt(RecorderKeys.rwTimeout, normalizeRwTimeout(value));
 
-  /// 线程队列大小 (对应 FFmpeg 的 -thread_queue_size)
-  /// 录制原画建议 2048 或更高，防止由于写入慢导致的丢帧
   static int get threadQueueSize =>
       normalizeThreadQueueSize(HivePrefUtil.getInt(RecorderKeys.threadQueueSize) ?? defaultThreadQueueSize);
 

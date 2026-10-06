@@ -7,9 +7,6 @@ import 'package:flutter/foundation.dart';
 import '../../../get_rx/src/rx_types/rx_types.dart';
 import 'package:pure_live/get/get_utils/src/equality/equality.dart';
 
-
-
-
 extension _Empty on Object {
   bool _isEmpty() {
     final val = this;

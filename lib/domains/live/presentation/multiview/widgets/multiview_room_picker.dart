@@ -5,7 +5,6 @@ import 'package:pure_live/domains/live/data/platforms/sites.dart';
 import 'package:pure_live/domains/live/data/favorite_room_controller.dart';
 import 'package:pure_live/domains/live/data/history_controller.dart';
 
-/// 选台数据来源。
 enum _PickerSource { favorites, history }
 
 @visibleForTesting
@@ -25,19 +24,11 @@ int compareMultiviewRooms(
   );
 }
 
-/// multiview 选台面板内容。
-///
-/// 复用本地关注（FavoritesService/FavoriteRoomController）与观看历史
-/// 两个现成数据源，不新建任何后端逻辑；宽屏右侧常驻侧板与窄屏底部
-/// 弹窗共用同一份内容。点选直播间后通过 [MultiviewRoomPicker.onPicked]
-/// 回调交由页面调用控制器分配到目标格。
 class MultiviewRoomPicker extends StatefulWidget {
   const MultiviewRoomPicker({super.key, required this.cellIndex, required this.onPicked});
 
-  /// 目标格子下标（0 起），标题中展示为 1 起的序号。
   final int cellIndex;
 
-  /// 点选直播间后的回调；由页面负责调用 assignRoom 并关闭弹层。
   final void Function(LiveRoom liveroom) onPicked;
 
   @override
@@ -156,7 +147,6 @@ class _MultiviewRoomPickerState extends State<MultiviewRoomPicker> {
   }
 }
 
-/// 列表项头像：主播头像 + 右下角平台徽标。
 class _RoomTileLeading extends StatelessWidget {
   const _RoomTileLeading({required this.room});
 
@@ -188,7 +178,6 @@ class _RoomTileLeading extends StatelessWidget {
   }
 }
 
-/// 直播状态标识：开播绿点 / 未开播灰字。
 class _LiveStatusBadge extends StatelessWidget {
   const _LiveStatusBadge({required this.room});
 

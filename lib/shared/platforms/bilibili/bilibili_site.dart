@@ -27,7 +27,6 @@ class BiliBiliSite
         LiveSiteRecordRoomResolver,
         LivePlayUrlResolver,
         LiveSiteExternalRoomResolver {
-  /// 该站点自己的官方房间地址（网页与可选的客户端 scheme）。
   @override
   RoomExternalTarget? externalRoomTarget(LiveRoom liveroom) {
     final path = Uri.encodeComponent(id);
@@ -150,8 +149,6 @@ class BiliBiliSite
   @override
   Future<List<LivePlayQuality>> getPlayQualites({required LiveRoom liveroom}) async {
     final result = await _requestPlayInfo(liveroom: liveroom, qualityData: 0);
-    // 轮播房（live_status 2）的 getRoomPlayInfo 不带 playurl_info：它播的是
-    // 循环视频，清晰度只有平台给的那一档，不是空列表。
     if (isCarouselResponse(result)) return [carouselQuality];
     return parsePlayQualities(result);
   }
@@ -176,12 +173,6 @@ class BiliBiliSite
     }
   }
 
-  /// 轮播房的取流路径：`getRoundPlayVideo` 拿到正在循环的稿件，再用
-  /// `x/player/playurl`（html5）取可直接播放的 MP4 分段。
-  ///
-  /// 与上游一致：轮播不做"先看房间状态再决定要不要解析"，只要平台给源就播。
-  /// 唯一的差别是本仓请求头按平台统一注入（Referer 为 live.bilibili.com），
-  /// 上游这里用的是视频页 Referer —— 若某些 CDN 拒收，会表现为轮播起播失败。
   Future<LivePlayUrlResolution> _resolveCarouselVideo(LiveRoom liveroom) async {
     final header = await getHeader();
     final round = await HttpClient.instance.getJson(
@@ -206,19 +197,16 @@ class BiliBiliSite
     );
     final urls = parseVideoPlayUrls(play);
     if (urls.isEmpty) throw const FormatException('Bilibili 轮播视频没有可播放地址');
-    // 就从轮播当前进度接着播（上游 M7.1）。
     return LivePlayUrlResolution(
       urls: urls,
       appliedQualityData: carouselQualityId,
       startAt: video.start,
-      // 轮播房播的是循环稿件（mp4/fmp4 单条 HTTP 响应），不是清单。
       streamFacts: {
         for (final url in urls) url: (format: LiveStreamFormat.other, codec: null, unresolvedChildren: false),
       },
     );
   }
 
-  /// 轮播房那一档清晰度（平台不提供分档，游客最高 480P）。
   static const String carouselQualityId = 'carousel';
 
   static final LivePlayQuality carouselQuality = LivePlayQuality(
@@ -227,7 +215,6 @@ class BiliBiliSite
     data: carouselQualityId,
   );
 
-  /// 这份 `getRoomPlayInfo` 回答是不是"轮播且本客户端没有直播流"。
   static bool isCarouselResponse(dynamic response) {
     if (response is! Map || response['code'] != 0) return false;
     final data = response['data'];
@@ -235,11 +222,6 @@ class BiliBiliSite
     return _status(data['live_status']) == LiveStatus.carousel;
   }
 
-  /// `getRoundPlayVideo` 的 `data`：正在轮播的稿件与分 P。
-  ///
-  /// 回答自带的 `play_url` 已经失效（会跳到错误页），这里不读它。没有
-  /// `bvid` 或 `cid`（没有在轮播，或房间已开播）视为无源。`play_time` 是已经播过
-  /// 的秒数，作为起播位置返回；非数字或 ≤0 从 0 开始（上游 M7.1）。
   static ({String bvid, int cid, Duration start}) parseRoundPlayVideo(dynamic response) {
     if (response is! Map) throw const FormatException('Bilibili round play response is not an object');
     if (response['code'] != 0) {
@@ -257,7 +239,6 @@ class BiliBiliSite
 
   static final RegExp _bvidPattern = RegExp(r'^BV[0-9A-Za-z]{10}$');
 
-  /// `x/player/playurl` 的分段地址：每段的 `url` 与 `backup_url`。
   static List<String> parseVideoPlayUrls(dynamic response) {
     if (response is! Map) throw const FormatException('Bilibili video play response is not an object');
     if (response['code'] != 0) {
@@ -278,7 +259,6 @@ class BiliBiliSite
     return List.unmodifiable(urls);
   }
 
-  /// `live_status`：1 直播、2 轮播、其余下播。
   static LiveStatus _status(Object? value) => switch (int.tryParse(value?.toString() ?? '')) {
     1 => LiveStatus.live,
     2 => LiveStatus.carousel,
@@ -400,8 +380,6 @@ class BiliBiliSite
     for (final candidate in candidates) {
       if (candidate.currentQn != appliedQn || !seen.add(candidate.url)) continue;
       urls.add(candidate.url);
-      // 线路自带容器与编码：B 站直播是单条 HTTP 响应（flv / ts / fmp4），容器由首字节
-      // 决定，不是清单；取流侧据此不去把媒体体当清单探测，HEVC 才走 FFmpeg 转封装。
       final codec = candidate.codec.toLowerCase();
       facts[candidate.url] = (
         format: _streamFormatOf(candidate.format, candidate.url),
@@ -416,8 +394,6 @@ class BiliBiliSite
     );
   }
 
-  /// `flv` 就是 FLV；真正的 HLS 清单按清单处理；其余（`ts`、`fmp4`、轮播的 mp4）
-  /// 都是"一条 HTTP 响应，容器看首字节"，与上游 4.x 的 `StreamFormat.other` 同义。
   static LiveStreamFormat _streamFormatOf(String format, String url) {
     final normalized = format.toLowerCase();
     if (normalized == 'flv') return LiveStreamFormat.flv;
@@ -683,7 +659,6 @@ class BiliBiliSite
   }
 
   Future<(String, String)> _fetchWbiKeys() async {
-    // 获取最新的 img_key 和 sub_key
     var resp = await HttpClient.instance.getJson(
       'https://api.bilibili.com/x/web-interface/nav',
       header: await getHeader(),
@@ -702,27 +677,23 @@ class BiliBiliSite
   }
 
   String getMixinKey(String origin) {
-    // 对 imgKey 和 subKey 进行字符顺序打乱编码
     return mixinKeyEncTab.fold("", (s, i) => s + origin[i]).substring(0, 32);
   }
 
   Future<Map<String, String>> getWbiSign(String url, {bool forceRefresh = false}) async {
     var (imgKey, subKey) = await getWbiKeys(forceRefresh: forceRefresh);
 
-    // 为请求参数进行 wbi 签名
     var mixinKey = getMixinKey(imgKey + subKey);
     var currentTime = DateTime.now().millisecondsSinceEpoch ~/ 1000;
 
     var queryParams = Map<String, String>.from(Uri.parse(url).queryParameters);
 
-    queryParams["wts"] = currentTime.toString(); // 添加 wts 字段
+    queryParams["wts"] = currentTime.toString();
 
-    //按照 key 重排参数
     Map<String, String> map = {};
     var sortedKeys = queryParams.keys.toList()..sort();
     for (var key in sortedKeys) {
       var value = queryParams[key]!;
-      // 过滤 value 中的 "!'()*" 字符
       map[key] = value.toString().split('').where((c) => "!'()*".contains(c) == false).join('');
     }
 
@@ -893,17 +864,11 @@ class BiliBiliSite
       notice: "",
       platform: PlatformIds.bilibili,
       danmakuData: danmakuData,
-      // `room_info.special_type`：1 是付费房（门票），0 普通，2 拜年祭房。付费房
-      // 在播时是 paid；没有这个字段说明平台没说（上游 bilibili 4-x 的
-      // `_restriction`）。
       restriction: _paidRestriction(roomInfo['room_info']?['special_type'], live: live),
-      // 在播时 `room_info.live_start_time`（Unix 秒）就是这场直播的开播时间
-      // （上游 bilibili 4-x）。
       startedAt: live ? _unixTime(roomInfo['room_info']?['live_start_time']) : null,
     );
   }
 
-  /// Unix 秒 → UTC；读不出来或不在 2000–2100 年则不给。
   static DateTime? _unixTime(Object? value) {
     final seconds = value is num ? value.toInt() : int.tryParse(value?.toString().trim() ?? '');
     if (seconds == null || seconds <= 0) return null;
@@ -911,8 +876,6 @@ class BiliBiliSite
     return time.year >= 2000 && time.year <= 2100 ? time : null;
   }
 
-  /// `special_type` 1 且正在直播 → [LiveRestriction.paid]；其它取值 → 无限制；
-  /// 字段缺失或读不出来 → null（平台没说）。
   static LiveRestriction? _paidRestriction(Object? specialType, {required bool live}) {
     final value = specialType is num ? specialType.toInt() : int.tryParse(specialType?.toString().trim() ?? '');
     if (value == null) return null;
@@ -943,7 +906,6 @@ class BiliBiliSite
     var queryList = result["data"]["result"]["live_room"] ?? [];
     for (var item in queryList ?? []) {
       var title = item["title"].toString();
-      //移除title中的<em></em>标签
       title = title.replaceAll(RegExp(r"<.*?em.*?>"), "");
       var roomItem = LiveRoom(
         roomId: item["roomid"].toString(),
@@ -985,7 +947,6 @@ class BiliBiliSite
     var items = <LiveAnchorItem>[];
     for (var item in result["data"]["result"] ?? []) {
       var uname = item["uname"].toString();
-      //移除title中的<em></em>标签
       uname = uname.replaceAll(RegExp(r"<.*?em.*?>"), "");
       var anchorItem = LiveAnchorItem(
         roomId: item["roomid"].toString(),
@@ -1048,7 +1009,6 @@ class BiliBiliSite
       return accessId;
     }
 
-    // 获取 access_id
     var resp = await HttpClient.instance.getText(
       "https://live.bilibili.com/lol",
       queryParameters: {},

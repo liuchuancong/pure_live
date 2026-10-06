@@ -11,19 +11,12 @@ import 'package:pure_live/core/network/web_socket_util.dart';
 import 'package:pure_live/shared/platforms/jdlive/jd_live_api.dart';
 import 'package:pure_live/shared/platforms/live_danmaku.dart';
 
-/// JD Live 的弹幕参数（上游 M5.24）：`liveId` 就是直播间号（也是聊天的 `groupId`）。
 class JdLiveDanmakuArgs {
   const JdLiveDanmakuArgs({required this.liveId});
 
   final String liveId;
 }
 
-/// JD Live 的聊天（上游 M5.24）：**每次握手**都先 POST 一次游客 `liveauth`（不签名，
-/// 表单里的 `body.content` 是页面脚本里写死的密钥与 IV 做的 **AES-128-CBC** 加密）换一个
-/// **一次性** token，再连 `<liveUrl>?token=<token>`。socket 上**什么都不发**，打开就算加入。
-///
-/// 只报观众与主播的聊天（`viewer_send_message` / `anchor_send_message`）与
-/// `get_statistics_result` 的当前/累计观众；`stop_live_broadcast` 结束连接。
 class JdLiveDanmaku extends LiveDanmaku {
   JdLiveDanmaku();
 
@@ -88,8 +81,6 @@ class JdLiveDanmaku extends LiveDanmaku {
     }
   }
 
-  /// 游客 `liveauth`：表单 `loginType`/`appid`/`functionId`/`body`/`t`，`body` 里的
-  /// `content` 是 AES-128-CBC + Base64 的 JSON。
   Future<({Uri socket, String? maskKey})?> _auth(int generation) async {
     final now = DateTime.now();
     final nonce = List<int>.generate(6, (_) => Random.secure().nextInt(10)).join();
@@ -159,7 +150,6 @@ class JdLiveDanmaku extends LiveDanmaku {
       headers: const <String, String>{'origin': JdLiveApi.webOrigin, 'user-agent': JdLiveApi.userAgent},
       onReady: () {
         if (generation != _generation) return;
-        // socket 上什么都不发：打开就算加入。
         markConnected();
         onReady?.call();
       },
@@ -185,7 +175,6 @@ class JdLiveDanmaku extends LiveDanmaku {
     _silenceWatch?.cancel();
   }
 
-  /// 服务端 180 秒没有帧就会断开；这里用更长的 200 秒做静默看门狗。
   void _armSilenceWatch(int generation, Completer<void> ended) {
     _silenceWatch?.cancel();
     _silenceWatch = Timer(const Duration(seconds: 200), () {
@@ -231,7 +220,6 @@ class JdLiveDanmaku extends LiveDanmaku {
     }
   }
 
-  /// 观众与主播的聊天；其它种类（进场、点赞、下单、商品、回复、房间状态）不报。
   LiveMessage? _chat(Map<dynamic, dynamic> event) {
     final body = event['body'];
     if (body is! Map) return null;
@@ -266,8 +254,6 @@ class JdLiveDanmaku extends LiveDanmaku {
     );
   }
 
-  /// `get_statistics_result`：`current_viewer` 是当前观众、`total_viwer`（原文如此）
-  /// 是累计观看；`pv`、`max_viewer`、`message_num` 等不读。
   List<LiveMessage> _audience(Map<dynamic, dynamic> body) {
     final messages = <LiveMessage>[];
     for (final (key, kind) in const <(String, LiveAudienceMetricKind)>[
@@ -290,8 +276,6 @@ class JdLiveDanmaku extends LiveDanmaku {
     return messages;
   }
 
-  /// 二进制帧用 `liveauth` 给的 `msgMaskKey` 解掩码（按密钥字节循环异或）；没有密钥
-  /// 或解出来不是 UTF-8 就丢掉这一帧。
   static String? _unmask(List<int> bytes, String? maskKey) {
     if (maskKey == null || maskKey.isEmpty) return null;
     final key = utf8.encode(maskKey);

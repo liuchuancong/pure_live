@@ -75,7 +75,6 @@ class ChzzkLive {
   final bool isLive;
   final bool timeMachineActive;
 
-  /// 这一场的聊天频道（上游 M5.16）：每场直播换一个，弹幕用它加入；没有就是没有弹幕。
   final String chatChannelId;
   final List<ChzzkMedia> media;
 }
@@ -227,12 +226,8 @@ class ChzzkApi {
     return ChzzkDirectoryPage(lives: rows, nextCursor: nextCursor, hasMore: nextCursor != null && rows.isNotEmpty);
   }
 
-  /// 搜索关键词最长 100 个 UTF-16 单元；更长时截断而不是拒绝（上游 20-5，
-  /// 3.x 是拒绝）。
   static const int maxKeywordLength = 100;
 
-  /// 送去搜索的关键词：裁剪空白，超过 [maxKeywordLength] 就截断（不切断代理对），
-  /// 再裁剪一次；没有可搜的内容时返回空串。
   static String searchKeyword(String keyword) {
     var text = keyword.trim();
     if (text.length > maxKeywordLength) {

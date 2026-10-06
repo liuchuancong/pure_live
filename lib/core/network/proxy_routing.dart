@@ -8,12 +8,9 @@ bool isValidProxyPort(int port) => port >= minProxyPort && port <= maxProxyPort;
 /// endpoint into every application, player and recorder proxy consumer.
 int normalizeStoredProxyPort(int port) => isValidProxyPort(port) ? port : defaultProxyPort;
 
-/// Normalizes a proxy host entered with desktop or mobile input methods.
-///
-/// Chinese keyboards commonly turn an ASCII dot into `。` or `．`. Passing
-/// that value to `HttpClient.findProxy` makes Android try to resolve the whole
-/// string as a DNS name, so an otherwise valid `127.0.0.1` proxy silently
-/// breaks every request.
+/// Normalizes a proxy host typed with a Chinese keyboard: an ASCII dot often
+/// arrives as U+3002 or U+FF0E, and the whole string then gets resolved as one
+/// DNS name, which silently breaks an otherwise valid 127.0.0.1 proxy.
 String normalizeProxyHost(String value) {
   return value
       .trim()

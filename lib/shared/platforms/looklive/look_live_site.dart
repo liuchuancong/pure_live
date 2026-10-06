@@ -25,7 +25,6 @@ final class LookLiveSite extends LiveSite
         LivePlayUrlResolver,
         LivePlayRecoveryResolver,
         LiveSiteExternalRoomResolver {
-  /// 该站点自己的官方房间地址（网页与可选的客户端 scheme）。
   @override
   RoomExternalTarget? externalRoomTarget(LiveRoom liveroom) {
     final id = sanitizedExternalRoomId(liveroom.roomId);
@@ -129,7 +128,6 @@ final class LookLiveSite extends LiveSite
           : (popularity != null ? AudienceMetricType.popularity : AudienceMetricType.unknown),
       notice: notices.join('\n'),
       httpHeaders: LookLiveApi.mediaHeaders(room.roomId),
-      // 弹幕参数（上游 M5.28）：房间号用来问聊天服务器，聊天室号用来登录。
       danmakuData: room.state == LookLiveState.live
           ? LookLiveDanmakuArgs(
               roomId: room.roomId,

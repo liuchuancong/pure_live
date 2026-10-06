@@ -24,7 +24,6 @@ class CCSite
         LiveSiteRecordRoomResolver,
         LiveSiteCategoryDirectoryProvider,
         LiveSiteExternalRoomResolver {
-  /// 该站点自己的官方房间地址（网页与可选的客户端 scheme）。
   @override
   RoomExternalTarget? externalRoomTarget(LiveRoom liveroom) {
     final path = Uri.encodeComponent(id);
@@ -207,7 +206,6 @@ class CCSite
   }
 
   /// CC may omit `vbr` for the untouched stream. Prefer the documented tier
-  /// identity, then use bitrate as a tie-breaker, instead of demoting 原画 to
   /// the bottom because its metadata happens to be absent.
   static int _qualitySort(String rawKey, int bitrateKbps) {
     final key = rawKey.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '');
@@ -269,12 +267,10 @@ class CCSite
               ? AudienceMetricType.popularity
               : AudienceMetricType.onlineViewers,
           avatar: item["purl"],
-          // 推荐卡片只有 `gamename` 这一个分区字段（上游 9-2）。
           area: item["gamename"] ?? item["game_name"] ?? '',
           liveStatus: _onAirStatus(LiveStatus.live, item["title"]),
           status: true,
           platform: PlatformIds.cc,
-          // 推荐卡片同样带开播时间与"有档位即无限制"（上游 cc 9-x）。
           startedAt: _startedAt(_onAirStatus(LiveStatus.live, item['title']), item),
           restriction: _restriction(_onAirStatus(LiveStatus.live, item['title']), item),
         );
@@ -367,7 +363,6 @@ class CCSite
       link: roomInfo['m3u8'],
       userId: roomInfo['cid'].toString(),
       data: roomInfo["quickplay"] ?? roomInfo["stream_list"],
-      // 在播/回放时带开播时间与"有档位即无限制"（上游 cc 9-x）。
       startedAt: _startedAt(_onAirStatus(live ? LiveStatus.live : LiveStatus.offline, roomInfo['title']), roomInfo),
       restriction: _restriction(
         _onAirStatus(live ? LiveStatus.live : LiveStatus.offline, roomInfo['title']),
@@ -376,9 +371,6 @@ class CCSite
     );
   }
 
-  /// 在播/回放时的限制：回答里带档位列表（`stream_list` 非空，或给了
-  /// `quickplay`）就是**无限制** —— 平台把流给任何人；否则这次回答没说（null）。
-  /// CC 这些回答里没有付费/私密/密码状态（上游 cc 9-x）。
   static LiveRestriction? _restriction(LiveStatus status, Map room) {
     if (status != LiveStatus.live && status != LiveStatus.replay) return null;
     final streamList = room['stream_list'];
@@ -387,8 +379,6 @@ class CCSite
     return hasTiers ? LiveRestriction.none : null;
   }
 
-  /// 在播/回放时 `startat`（北京时间 `yyyy-MM-dd HH:mm:ss`）对应的开播时间；
-  /// 不在播时那是上一场的，所以不给（上游 cc 9-x）。
   static DateTime? _startedAt(LiveStatus status, Map room) {
     if (status != LiveStatus.live && status != LiveStatus.replay) return null;
     final raw = room['startat']?.toString().trim() ?? '';
@@ -398,13 +388,9 @@ class CCSite
     if (parts.any((value) => value == null)) return null;
     final year = parts[0]!;
     if (year < 2000) return null;
-    // `startat` 是北京时间（UTC+8），转成 UTC 存。
     return DateTime.utc(year, parts[1]!, parts[2]!, parts[3]!, parts[4]!, parts[5]!).subtract(const Duration(hours: 8));
   }
 
-  /// [status] 之外的一条规则：在播但标题以「【重播】」开头的房间，是官方录播活动
-  /// 的重播——它是回放，但和直播一样可以播（上游 9-3）。CC 没有别的字段能区分：
-  /// `capture_type`、`mode` 之类与真实直播完全一致。
   static LiveStatus _onAirStatus(LiveStatus status, Object? title) =>
       status == LiveStatus.live && (title?.toString() ?? '').trimLeft().startsWith('【重播】') ? LiveStatus.replay : status;
 
@@ -480,7 +466,6 @@ class CCSite
 
   @override
   Future<List<LiveSuperChatMessage>> getSuperChatMessage({required LiveRoom liveroom}) {
-    //尚不支持
     return Future.value([]);
   }
 }

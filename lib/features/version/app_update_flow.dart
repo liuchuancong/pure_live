@@ -5,7 +5,6 @@ import 'package:pure_live/core/widgets/download_apk_dialog.dart';
 import 'package:pure_live/core/widgets/download_directory_dialog.dart';
 import 'package:pure_live/core/config/cache_controller.dart';
 
-
 Uri? updateDownloadUri(String rawUrl) {
   final uri = FileUtils.parseHttpUrl(rawUrl);
   return uri == null || uri.userInfo.isNotEmpty ? null : uri;
@@ -145,10 +144,6 @@ Future<bool> _ensureDownloadDirectorySelected() async {
   return false;
 }
 
-/// 动态申请写入所选下载目录的权限，并确认该目录真的可以写入。
-///
-/// 应用专属的默认目录位于应用沙箱内，不需要任何权限；只有用户自选的公共目录
-/// （例如 `/storage/emulated/0/Download/...`）才会触发系统权限申请。
 Future<bool> _ensureDownloadDirectoryAccess(CacheController cache) async {
   if (!cache.hasCustomDownloadDirectory) return true;
   if (await CacheController.isCustomDownloadDirectoryUsable()) return true;

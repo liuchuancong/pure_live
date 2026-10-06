@@ -58,7 +58,6 @@ class AppInitializer {
     WidgetsFlutterBinding.ensureInitialized();
     configureDecodedImageCache(desktop: PlatformUtils.isDesktop);
     final String instanceId = WindowsMultiInstanceLauncher.instanceIdFromArgs(args);
-    // 一次性交接放在 Core，Features 读它时不必反向认识 App。
     InitialRoomHandoff.offer(WindowsMultiInstanceLauncher.roomFromArgs(args));
     await _initWindowsSingleInstance(args, instanceId);
 
@@ -95,7 +94,6 @@ class AppInitializer {
       log('Windows multi-instance settings ${restored ? 'restored' : 'restore failed'}: $configFilePath');
     }
     configureUpstreamProxyRouting((uri) {
-      // 代理出口会被 CDN 拒绝吐流的主机（Steam 广播清单 200、分片 410）直连取。
       if (playsDirectBehindProxy(uri)) return 'DIRECT';
       final proxy = SettingsService.to.proxy;
       return buildProxyDirective(
@@ -113,8 +111,6 @@ class AppInitializer {
     // failing. Registered here rather than in the domain: the domain only knows
     // the abstraction, and the FFmpeg runtime above is what makes it work.
     GlobalPlayerService.sourceInterceptorFactory = IngestSourceInterceptor.new;
-    // 自有输入（niconico/bigo/fc2 的席位获取）的播放绑定同样在启动时装配：
-    // 直播域只保留函数形状，实现坐在录制域的数据层。
     configureLiveInputPlaybackBinder(bindSiteInputForPlayback);
     configureWebSocketProxyRouting((_) {
       final proxy = SettingsService.to.proxy;

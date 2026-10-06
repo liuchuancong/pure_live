@@ -1,11 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:remixicon/remixicon.dart';
 
-/// 多画面真全屏的公共画布。
-///
-/// 视频网格继续铺满系统全屏；退出按钮单独避让刘海/挖孔，始终保留一条
-/// 可发现、可点击的退出路径。按钮之外的透明区域不拦截格子点击，因此
-/// 原有的音源焦点切换手势保持不变。
 class MultiviewFullscreenSurface extends StatelessWidget {
   const MultiviewFullscreenSurface({super.key, required this.child, required this.onExit, required this.exitTooltip});
 

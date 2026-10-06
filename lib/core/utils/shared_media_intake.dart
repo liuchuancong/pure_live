@@ -52,7 +52,6 @@ class SharedMediaIntake {
   final SharedAttachmentReleaser releaseAttachment;
   final SharedMediaFeedback notifyUnsupported;
 
-  /// Text shared from a platform app ("快来看直播 https://live.bilibili.com/6 …").
   final SharedRoomCommandPredicate isLiveLink;
   final SharedRoomCommandConsumer openLiveLink;
   final SharedMediaErrorReporter _reportError;

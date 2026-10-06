@@ -205,7 +205,6 @@ class FontSettingsController extends GetxController {
       }
     }
 
-    // 处理弹幕字体
     final danmakuController = Get.find<DanmakuSettingsController>();
     final danmakuId = danmakuController.danmakuFontFamilyName.v;
 

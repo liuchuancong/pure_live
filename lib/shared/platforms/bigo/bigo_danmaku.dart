@@ -9,8 +9,6 @@ import 'package:pure_live/core/network/http_client.dart';
 import 'package:pure_live/core/network/web_socket_util.dart';
 import 'package:pure_live/shared/platforms/live_danmaku.dart';
 
-/// BIGO LIVE 的弹幕参数（上游 M5.20）：`siteId` 是 `clientBigoId`、`ownerId` 是主播
-/// 的 `uid`、`roomId` 是主播的 64 位房间号。进房时放进 `danmakuData`，不多发请求。
 class BigoDanmakuArgs {
   const BigoDanmakuArgs({required this.siteId, required this.ownerId, required this.roomId});
 
@@ -19,13 +17,6 @@ class BigoDanmakuArgs {
   final String roomId;
 }
 
-/// BIGO LIVE 的聊天（上游 M5.20）：官网聊天是 `wss.bigolive.tv` 上的**文本** WebSocket
-/// ——事件号（十进制 uri）后面跟 JSON。匿名游客账号由
-/// `studio/getWebSocketLink` 发一次；之后按网页的顺序：回答服务端的质询 → 1 秒后登录 →
-/// 进房 → 要一次观众数 → 每 10 秒 ping 一次。
-///
-/// 只报评论与付费弹幕（`payload.tag` 1/2，内容是 Base64 + UTF-8 的 JSON）与并发观众；
-/// 礼物、爱心、关注、分享、入场、公告都不报。
 class BigoDanmaku extends LiveDanmaku {
   BigoDanmaku();
 
@@ -41,7 +32,6 @@ class BigoDanmaku extends LiveDanmaku {
   var _joined = false;
   var _answeredChallenge = false;
   Timer? _pingTimer;
-  // 游客账号：一次 connect 取一次，断线重连沿用；被拒或加入超时后丢掉重取。
   String _uid = '';
   String _uidToken = '';
   String _deviceId = '';
@@ -86,7 +76,6 @@ class BigoDanmaku extends LiveDanmaku {
         CoreLog.error('BIGO chat failed: $error');
         onReconnect?.call('BIGO 弹幕连接失败，正在重试');
         attempt++;
-        // 登录或进房被拒、加入超时：丢掉这次拿到的游客账号，下一次握手再取。
         _uid = '';
         _uidToken = '';
       }
@@ -95,7 +84,6 @@ class BigoDanmaku extends LiveDanmaku {
     }
   }
 
-  /// 游客账号（`getWebSocketLink`）：`userId` 与 `uidToken`。
   Future<void> _requestAccount(int generation) async {
     final response = await HttpClient.instance.postJson(
       _accountUrl,
@@ -149,14 +137,12 @@ class BigoDanmaku extends LiveDanmaku {
     final (event, payload) = split;
     switch (event) {
       case 79108:
-        // 服务端的质询：按网页的写法签名回答（网页里公开的 MD5，服务端不校验）。
         if (_answeredChallenge) return;
         _answeredChallenge = true;
 
         _answerChallenge(text);
         break;
       case 512535:
-        // 登录回答：`res` 必须是 200。
         if (payload['res']?.toString() != '200') {
           throw StateError('BIGO：登录被拒');
         }
@@ -164,7 +150,6 @@ class BigoDanmaku extends LiveDanmaku {
         _enterRoom();
         break;
       case 11032:
-        // 观众数回答：`total` 是并发观众。
         final total = int.tryParse(payload['total']?.toString() ?? '');
         if (total != null && total >= 0) {
           onMessage?.call(
@@ -179,11 +164,9 @@ class BigoDanmaku extends LiveDanmaku {
         }
         break;
       case 2584:
-        // 房间广播：只有聊天列表里的文字/数字弹幕报。
         _reportBroadcast(payload);
         break;
       case 1304:
-        // 进房回答：接着要一次观众数，并开始心跳。
         if (_joined) return;
         _joined = true;
         markConnected();
@@ -211,7 +194,6 @@ class BigoDanmaku extends LiveDanmaku {
       'redundancy': '1',
       'sign': sign,
     });
-    // 网页在回答后 1 秒登录。
     Timer(const Duration(seconds: 1), () {
       if (_running) _login();
     });
@@ -267,8 +249,6 @@ class BigoDanmaku extends LiveDanmaku {
     });
   }
 
-  /// 房间广播（事件 2584）：聊天列表里的弹幕 `payload.content` 是 Base64 + UTF-8 的
-  /// JSON（`{"n":名字,"m":文字}`）；解不开就丢掉这一条。
   void _reportBroadcast(Map<String, dynamic> payload) {
     final tag = int.tryParse(payload['tag']?.toString() ?? '');
     if (tag != 1 && tag != 2) return;
@@ -307,7 +287,6 @@ class BigoDanmaku extends LiveDanmaku {
     _socket?.sendMessage('$event${json.encode(payload)}');
   }
 
-  /// 一帧是"事件号 + JSON"（服务端有些回答用制表符分隔）。
   static (int, Map<String, dynamic>)? _splitEvent(String raw) {
     final match = RegExp(r'^(\d{1,7})[\t ]?(\{.*)$', dotAll: true).firstMatch(raw);
     if (match == null) return null;

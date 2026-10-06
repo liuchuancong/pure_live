@@ -62,12 +62,8 @@ final class SteamBroadcastRoom {
   final SteamBroadcastState state;
   final Uri? master;
 
-  /// 谁可以看（上游 27-x）：`ready` 是 none，`missing_subscription` 是
-  /// subscribersOnly（在播但只给订阅者），其它回答没说就是 null。
   final LiveRestriction? restriction;
 
-  /// `getbroadcastmpd` 给的"当前这一场"（上游 M5.23）：弹幕用它取聊天日志；未开播时
-  /// 为空，连接会自己再请求一次。
   final String broadcastId;
 
   SteamBroadcastRoom enrich(SteamBroadcastRoom known) => SteamBroadcastRoom(
@@ -317,8 +313,6 @@ class SteamBroadcastApi {
   static SteamBroadcastRoom parseBroadcastJson(Object? value, {required String steamId, required String broadcaster}) {
     final root = _object(value);
     final success = _string(root['success']).toLowerCase();
-    // `missing_subscription` 是"只给订阅者看"的**在播**直播（上游 27-x）：
-    // 它仍然带 master（平台给订阅者的），本客户端按限制拒绝播放。
     final isReplay = root['is_replay'] == true;
     final state = switch (success) {
       'ready' => isReplay ? SteamBroadcastState.replay : SteamBroadcastState.live,
@@ -464,10 +458,6 @@ class SteamBroadcastApi {
     return uri.toString();
   }
 
-  /// Steam 的头像：`avatars.*.steamstatic.com/<hash>.jpg`（卡片上只有 32px）
-  /// 取它的 184px 版本 `<hash>_full.jpg`；Steam 的默认头像（问号）等同于没有
-  /// 头像。其它合法的 https 地址原样返回（上游 27-1；3.x 只认
-  /// `avatars.akamai.steamstatic.com`，现在 Steam 也从 fastly 提供）。
   static String _avatar(Object? value) {
     final raw = _optionalText(value);
     final uri = Uri.tryParse(raw);
@@ -486,7 +476,6 @@ class SteamBroadcastApi {
     return Uri.https(uri.authority, '/${hash}_full.jpg').toString();
   }
 
-  /// Steam 的默认头像（问号）：等同于没有头像。
   static const String _steamDefaultAvatar = 'fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb';
 
   static final RegExp _steamAvatarPath = RegExp(r'^/([0-9a-f]{40})(?:_medium|_full)?\.jpg$');

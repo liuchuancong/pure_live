@@ -24,7 +24,6 @@ class EpgImportManager {
 
   static Future<Directory> _defaultCacheDirectory() => AppPathManager().getDir(AppPathManager.dirIptvCache);
 
-  /// 1. 本地文件浏览器选择导入
   Future<bool> importFromLocalPicker() async {
     final result = await FilePicker.pickFile(
       dialogTitle: i18n("select_recover_file"),
@@ -39,7 +38,6 @@ class EpgImportManager {
     return await importEpgFile(file: file, sourceName: name);
   }
 
-  /// 2. 远程网络订阅 URL 下载导入
   Future<bool> importFromNetworkUrl(
     String url,
     String sourceName, {
@@ -101,7 +99,6 @@ class EpgImportManager {
     return '.xml';
   }
 
-  /// 3. Web 文本字符串恢复导入
   Future<bool> importFromWebString(String fileString, String sourceName) async {
     try {
       final dir = await _cacheDirectory();
@@ -118,7 +115,6 @@ class EpgImportManager {
     }
   }
 
-  /// 4. 从系统 Share 管道媒体数据中恢复 EPG 节目单（已添加安全格式校验）
   Future<bool> importFromSharedMedia(dynamic media) async {
     File? file;
     try {
@@ -301,7 +297,7 @@ class EpgImportManager {
       final channelCompanions = parsedResult.channels.map<database.EpgChannelsCompanion>((e) {
         return database.EpgChannelsCompanion.insert(
           id: database.epgChannelKey(sourceId, e.id),
-          sourceId: sourceId, // 绑定正确的映射主键
+          sourceId: sourceId,
           channelId: e.id,
           displayName: e.displayNames.isNotEmpty ? e.displayNames.first : e.id,
           iconUrl: drift.Value(e.iconUrl),
@@ -317,7 +313,7 @@ class EpgImportManager {
         if (e.channelId.isEmpty || e.title.isEmpty) continue;
         chunk.add(
           database.EpgProgrammesCompanion.insert(
-            sourceId: sourceId, // 绑定正确的映射主键
+            sourceId: sourceId,
             epgChannelId: database.epgChannelKey(sourceId, e.channelId),
             title: e.title,
             start: e.start,

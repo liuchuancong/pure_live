@@ -195,7 +195,6 @@ abstract class _RxImpl<T> extends GetListenable<T> with RxObjectMixin<T> {
   /// secondsRx.call(2);      // This won't trigger any listener, since the value is the same
   /// secondsRx.trigger(2);   // This will trigger the listener independently from the value.
   /// ```
-  ///
   void trigger(T v) {
     var firstRebuild = this.firstRebuild;
     value = v;

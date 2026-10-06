@@ -80,7 +80,6 @@ class WebDavPageController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    // 从全局 WebDavController 读取配置
     configs.assignAll(_webDavController.webDavConfigs.v);
     _restoreSelection();
   }
@@ -374,9 +373,6 @@ class WebDavPageController extends GetxController {
     }
   }
 
-  /// 下载并恢复配置（走新备份系统）
-  ///
-  /// 下载后再让调用方按文件里实际存在的模块勾选一次：勾掉的模块不会落到本机。
   Future<void> downloadFile(
     webdav.File file, {
     required Future<bool> Function() confirmRestore,

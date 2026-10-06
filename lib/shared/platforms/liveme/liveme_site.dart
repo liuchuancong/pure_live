@@ -23,7 +23,6 @@ class LiveMeSite extends LiveSite
         LivePlayUrlResolver,
         LivePlayRecoveryResolver,
         LiveSiteExternalRoomResolver {
-  /// 该站点自己的官方房间地址（网页与可选的客户端 scheme）。
   @override
   RoomExternalTarget? externalRoomTarget(LiveRoom liveroom) {
     final id = sanitizedExternalRoomId(liveroom.roomId);
@@ -87,7 +86,6 @@ class LiveMeSite extends LiveSite
         LiveMeState.offline => LiveStatus.offline,
         LiveMeState.unknown => LiveStatus.unknown,
       },
-      // 受限的直播仍然是"在播"（上游 21-5），播放时才说明原因。
       restriction: room.state == LiveMeState.live ? room.restriction : null,
       startedAt: room.startedAt,
       watching: heat ?? '',

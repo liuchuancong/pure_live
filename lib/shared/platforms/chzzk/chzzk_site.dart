@@ -43,7 +43,6 @@ class ChzzkSite extends LiveSite
         LiveSiteRecordRoomResolver,
         LivePlayRecoveryResolver,
         LiveSiteExternalRoomResolver {
-  /// 该站点自己的官方房间地址（网页与可选的客户端 scheme）。
   @override
   RoomExternalTarget? externalRoomTarget(LiveRoom liveroom) {
     final id = sanitizedExternalRoomId(liveroom.roomId);
@@ -86,14 +85,11 @@ class ChzzkSite extends LiveSite
     audienceMetricType: AudienceMetricType.onlineViewers,
     notice: live.adult ? i18n('chzzk_adult_notice') : null,
     httpHeaders: ChzzkApi.mediaHeaders,
-    // 弹幕参数（上游 M5.16）：这一场的聊天频道；没有就不连弹幕。
     danmakuData: live.chatChannelId.isEmpty
         ? null
         : ChzzkDanmakuArgs(chatChannelId: live.chatChannelId, channelId: live.channel.id),
   );
 
-  /// [channel] 的卡片。当进房详情的 live-detail 说没开播时用 [forceOffline]：
-  /// 频道的 `openLive` 可能还停在 true，但没开播就是没开播（上游 20-7）。
   static LiveRoom _channelCard(ChzzkChannel channel, {bool forceOffline = false}) => LiveRoom(
     platform: 'chzzk',
     roomId: channel.id,
@@ -192,8 +188,6 @@ class ChzzkSite extends LiveSite
   Future<List<LiveRoom>> getCategoryRooms(LiveArea category, {int page = 1, int pageSize = 30}) async =>
       (await getDirectoryPage(page: page, category: category)).rooms;
 
-  /// 搜索每页固定 20 行（上游 20-5）：服务端无论请求多少都回 20 行，按调用方的
-  /// 页长算 offset 会漏掉中间的房间。
   static const int searchPageSize = 20;
 
   @override

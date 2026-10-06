@@ -21,7 +21,6 @@ class BinaryWriter {
     var b = Uint8List(len).buffer;
     var bytes = ByteData.view(b);
     if (len == 1) {
-      //写入byte
       bytes.setUint8(0, value.toUnsigned(8));
     }
     if (len == 2) {
@@ -110,16 +109,11 @@ class TarsOutputStream {
     }
   }
 
-  /// 写入bool
-  /// 对应Tars类型：int1
   void writeBool(bool b, int tag) {
     writeByte(b ? 1 : 0, tag);
   }
 
-  /// 写入字节
-  /// 对应Tars类型：int1
   void writeByte(int b, int tag) {
-    //紧跟1个字节整型数据
     if (b == 0) {
       writeHead(TarsStructType.ZERO_TAG.index, tag);
     } else {
@@ -132,31 +126,24 @@ class TarsOutputStream {
     }
   }
 
-  /// 写入整数型
-  /// 对应Tars类型：int1、int2、int4、int8
   void writeInt(int n, int tag) {
-    //写入byte
-    //紧跟1个字节整型数据
     if (n >= -128 && n <= 127) {
       writeByte(n, tag);
       return;
     }
     //int16
-    //紧跟2个字节整型数据
     if (n >= -32768 && n <= 32767) {
       writeHead(TarsStructType.SHORT.index, tag);
       bw.writeInt(n, 2);
       return;
     }
     //int32
-    //紧跟4个字节整型数据
     if (n >= -2147483648 && n <= 2147483647) {
       writeHead(TarsStructType.INT.index, tag);
       bw.writeInt(n, 4);
       return;
     }
     //int64
-    //紧跟8个字节整型数据
     if (n >= -9223372036854775808 && n <= 9223372036854775807) {
       writeHead(TarsStructType.LONG.index, tag);
       bw.writeInt(n, 8);
@@ -164,27 +151,17 @@ class TarsOutputStream {
     }
   }
 
-  /// 写入浮点数
-  /// 对应Tars类型：float
   void writeFloat(double n, int tag) {
-    //紧跟4个字节浮点型数据
     writeHead(TarsStructType.FLOAT.index, tag);
     bw.writeDouble(n, 4);
   }
 
-  /// 写入双精度浮点数(Double)
-  /// 对应Tars类型：double
   void writeDouble(double n, int tag) {
-    //紧跟8个字节浮点型数据
     writeHead(TarsStructType.DOUBLE.index, tag);
     bw.writeDouble(n, 8);
   }
 
-  /// 写入字符串
-  /// 对应Tars类型：string1、string4
   void writeString(String s, int tag) {
-    //string1:紧跟1个字节长度，再跟内容
-    //string4:紧跟4个字节长度，再跟内容
     var bytes = utf8.encode(s);
     if (bytes.isEmpty) {
       writeHead(TarsStructType.STRING1.index, tag);
@@ -202,20 +179,14 @@ class TarsOutputStream {
     }
   }
 
-  /// 写入byte[]
-  /// 对应Tars类型：SimpleList
   void writeUint8List(Uint8List ls, int tag) {
-    //简单列表（目前用在byte数组），紧跟一个类型字段（目前只支持byte），紧跟一个整型数据表示长度，再跟byte数据
     writeHead(TarsStructType.SIMPLE_LIST.index, tag);
     writeHead(TarsStructType.BYTE.index, 0);
     writeInt(ls.length, 0);
     bw.writeBytes(ls);
   }
 
-  /// 写入Map
-  /// 对应Tars类型：Map
   void writeMap<K, V>(Map<K, V> map, int tag) {
-    //紧跟一个整型数据表示Map的大小，再跟[key, value]对列表
     writeHead(TarsStructType.MAP.index, tag);
     writeInt(map.length, 0);
     for (var item in map.keys) {
@@ -224,10 +195,7 @@ class TarsOutputStream {
     }
   }
 
-  /// 写入列表
-  /// 对应Tars类型：List
   void writeList(List ls, int tag) {
-    //紧跟一个整型数据表示List的大小，再跟元素列表
     writeHead(TarsStructType.LIST.index, tag);
     write(ls.length, 0);
     for (var item in ls) {
@@ -235,8 +203,6 @@ class TarsOutputStream {
     }
   }
 
-  /// 写入自定义结构
-  /// 对应Tars类型：TarsStruct
   void writeTarsStruct(TarsStruct o, int tag) {
     writeHead(TarsStructType.STRUCT_BEGIN.index, tag);
     o.writeTo(this);

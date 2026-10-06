@@ -23,7 +23,6 @@ class InkeSite extends LiveSite
         LiveCancellableSearch,
         LiveSearchPaginationPolicy,
         LiveSiteExternalRoomResolver {
-  /// 该站点自己的官方房间地址（网页与可选的客户端 scheme）。
   @override
   RoomExternalTarget? externalRoomTarget(LiveRoom liveroom) {
     // Preserve Inke's verified UID/broadcast link and official-home fallback.
@@ -119,7 +118,6 @@ class InkeSite extends LiveSite
     }
     if (page != 1) return const [];
     try {
-      // 详情缺名字时就留空：平台名与 "UID <uid>" 这类占位都不编（上游统一规则）。
       return [await _api.detail(uid, playback: false, cancel: cancel)];
     } on InkeException catch (error) {
       if (error.kind == InkeFailure.notFound) return const [];

@@ -55,14 +55,11 @@ Future<List<LiveSuperChatMessage>> getHuyaSuperChatMessageList({
   if (first || messages.isEmpty) {
     return messages;
   } else {
-    // huya 按money->level->countDown 排序 调整为 startTime
     messages.sort((a, b) => a.startTime.compareTo(b.startTime));
     return [messages.last];
   }
 }
 
-/// 把一块留言板面板映射成醒目留言（WUP 补拉与"通知自带面板"共用同一段读法，
-/// 上游 C-9 要求两者字段、时间窗、价格、`huya:<lMessageId>` 完全一致）。
 List<LiveSuperChatMessage> huyaSuperChatsFromPanel(GameEventMessageBoardPanel panel, {DateTime? now}) {
   final at = now ?? DateTime.now();
   final List<LiveSuperChatMessage> messages = [];

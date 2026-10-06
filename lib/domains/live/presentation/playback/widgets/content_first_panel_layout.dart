@@ -50,10 +50,9 @@ ContentFirstPanelLayout resolveContentFirstPanelLayout(Size viewport, ContentFir
   );
 }
 
-/// Number of compact choice columns that fit inside a stream selector pane.
-///
-/// Three columns let common quality sets (for example 蓝光/超清/高清) and CDN
-/// lines remain visible without turning the right-half panel into a tall list.
+/// Number of compact choice columns that fit inside a stream selector pane,
+/// wide enough that a couple of rows stay visible without the right-half panel
+/// turning into a tall list.
 int resolveStreamChoiceColumns(double paneWidth, {int? itemCount}) {
   final availableColumns = switch (paneWidth) {
     >= 340 => 3,
@@ -224,10 +223,6 @@ class RoomHistoryTextMetrics {
   final double tabBarHeight;
   final double cardFooterHeight;
 
-  /// 头像行的行高：上下内边距 + 房间名行 + 2 间距 + 主播名行。
-  ///
-  /// 默认字号下算出来是 50，取 72 就是旧版的固定行高；无障碍大字号时才长高，
-  /// 否则房间名与主播名会被 72px 裁掉。
   final double mobileRowHeight;
   final bool scrollTabs;
 }

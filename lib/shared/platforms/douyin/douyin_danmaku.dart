@@ -231,8 +231,6 @@ class DouyinDanmaku implements LiveDanmaku {
     final resolvedMessageId = commonMessageId.isNotEmpty && commonMessageId != '0'
         ? commonMessageId
         : (envelopeMessageId == '0' ? '' : envelopeMessageId);
-    // 上游 B-5：录制帧里常常只有 `ChatMessage.eventTime`，没有 `Common.createTime`，
-    // 只用后者会让这些消息没有时间。
     final commonTime = chatMessage.hasCommon() ? chatMessage.common.createTime.toInt() : 0;
     final rawCreateTime = commonTime > 0 ? commonTime : chatMessage.eventTime.toInt();
     final sentAt = rawCreateTime <= 0
@@ -242,7 +240,6 @@ class DouyinDanmaku implements LiveDanmaku {
       LiveMessage(
         type: LiveMessageType.chat,
         color: LiveMessageColor.white,
-        //暂不知道具体怎么转换颜色
         // color: chatMessage.common.fullScreenTextColor.
         //     ? LiveMessageColor.white
         //     : LiveMessageColor.numberToColor(color),
@@ -257,9 +254,6 @@ class DouyinDanmaku implements LiveDanmaku {
 
   void unPackWebcastRoomUserSeqMessage(List<int> payload) {
     var roomUserSeqMessage = RoomUserSeqMessage.fromBuffer(payload);
-    // 上游 REG-DOUYIN-008：`total` 是精确的当前在线数，优先用它；展示文本
-    // `onlineUserForAnchor`（30.6万）是分桶后的近似值，只在没有 total 时退回。
-    // `totalUser` 是累计人数，任何时候都不能当成在线数。
     final exactTotal = roomUserSeqMessage.total.toInt();
     final int online;
     if (exactTotal > 0) {
@@ -307,12 +301,6 @@ class DouyinDanmaku implements LiveDanmaku {
     webScoketUtils = null;
   }
 
-  /// 获取Websocket签名
-  /// - [roomId] 房间ID, 例如：7382735338101328680
-  /// - [uniqueId] 用户唯一ID, 例如：7273033021933946427
-  /// 参考代码 hua/stream-rec
-  /// 服务端代码：https://github.com/lovelyyoshino/douyin_python，请自行部署后使用
-  /// 自部署 https://github.com/SlotSun/simple_live_api
   Future<String> getSignature(String roomId, String uniqueId) async {
     try {
       Map<String, dynamic> params = {

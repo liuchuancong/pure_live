@@ -399,7 +399,7 @@ class TopActionBar extends StatelessWidget {
 
                 if (controller.room.platform == Sites.iptvSite)
                   IconButton(
-                    icon: const Icon(Icons.assignment_outlined), // 节目单账本图标
+                    icon: const Icon(Icons.assignment_outlined),
                     tooltip: i18n('view_schedule'),
                     visualDensity: VisualDensity.standard,
                     constraints: const BoxConstraints(
@@ -614,8 +614,6 @@ class PIPButton extends StatelessWidget {
             ? null
             : () async {
                 try {
-                  // 先退出全屏/窗口全屏再请求小窗：直接 enablePip 会让窗口保持
-                  // 系统全屏，小窗里渲染的仍是全屏布局。
                   await controller.livePlayController.enterPipPresentation();
                 } catch (_) {
                   ToastUtil.show(i18n('pip_enter_failed'));
@@ -822,7 +820,6 @@ class DanmakuViewer extends StatelessWidget {
           strokeWidth: controller.danmakuFontBorder.value,
           showStroke: controller.enableDanmakuStroke.value,
           noEmojiMode: controller.noEmojiMode.value,
-          // 海量模式：消息到达即上屏（不再跟排队节奏），且同屏条数不受设置截断。
           realtimeMode: controller.danmakuMassMode.value,
           // One GPU-resident bitmap per visible message — the single most
           // effective switch on low-end GPUs re-rasterizing stroked CJK text

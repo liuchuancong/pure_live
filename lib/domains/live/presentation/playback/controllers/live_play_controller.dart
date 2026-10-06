@@ -39,8 +39,6 @@ typedef IptvPlayerStarter = Future<bool> Function(LiveRoom liveroom);
 
 enum IptvPlaybackSwitchResult { started, superseded, failed }
 
-/// 房间播不了时的说明：平台标了限制就按限制种类说明原因（"受限=仍在播，
-/// 只是这个客户端看不到"），否则才说未开播/稍后重试。
 @visibleForTesting
 String roomStateMessage(LiveRoom room) {
   return switch (room.effectiveRestriction) {
@@ -58,12 +56,6 @@ String roomStateMessage(LiveRoom room) {
   };
 }
 
-/// 在播状态未知时该说什么。
-///
-/// "获取直播间信息失败，请重试" 只有在平台**确实没给原因**时才是实话：站点标了
-/// 限制种类（要登录、付费、密码房）时重试改变不了什么，而观众会一直等一个并不
-/// 存在的转发的失败。bigo 的匿名接口从 2026-10 起对每个房间都回 `needLogin`，
-/// 于是整站都落在这句话上。
 @visibleForTesting
 String unknownRoomStatusMessage(LiveRoom? room) =>
     room != null && room.isRestricted ? roomStateMessage(room) : i18n('get_room_info_failed_retry');
@@ -452,13 +444,6 @@ class LivePlayController extends GetxController
     }
   }
 
-  /// 进入系统画中画：先退出全屏 / 窗口全屏，再请求小窗。
-  ///
-  /// 全屏必须先退出，而且不能指望内核呈现链去做：`WindowService` 直接驱动全屏
-  /// 驱动，链的 `_active` 始终是空的，于是「先释放上一个驱动」那一步不会执行，
-  /// 窗口保持系统全屏——小窗尺寸与画面适配叠在全屏窗口上（画面被裁、全屏控件留在
-  /// 小窗里），退出小窗恢复的也是全屏几何。窗口全屏是应用内布局模式，同样先回到
-  /// 普通模式，否则小窗里渲染的是宽屏布局。
   Future<void> enterPipPresentation() async {
     final player = GlobalPlayerService.instance.player;
     if (player.isSystemFullscreen.value ||
@@ -578,8 +563,6 @@ class LivePlayController extends GetxController
   @override
   void removeRetractedMessages(LiveRetraction target) {
     if (isClosed) return;
-    // 聊天列表与画面弹幕都按目标（观众/单条 id/全部）撤下去；画面侧靠引擎的
-    // `BarrageController.retractWhere`（本仓依赖的 flame_barrage 已支持按条撤回）。
     removeDanmakuWhere(
       (message) => target.matches(userId: message.userId, userName: message.userName, messageId: message.messageId),
     );
@@ -786,9 +769,6 @@ class LivePlayController extends GetxController
       return liveRoom;
     } catch (e) {
       if (!_isRoomLoadCurrent(loadEpoch, requestedRoom)) return LiveRoom();
-      // 这个 catch 兜住的不只是房间信息：取清晰度、绑定自有输入都在这条路上，
-      // 而 toast 只会说"获取直播间信息失败"。不留一行日志，下一次故障就得靠猜
-      // 分辨到底是元数据还是播放阶段坏的。
       developer.log('Room load failed: $e', name: 'LivePlayController');
       updateRoom(isLoading: false, loadError: e.toString());
       ToastUtil.show(i18n('get_room_info_failed_retry'));
@@ -824,8 +804,6 @@ class LivePlayController extends GetxController
         name: 'LivePlayController',
         stackTrace: stackTrace,
       );
-      // 受限的直播在这里才会失败（站点读不到流是正常的），要按限制种类说明原因，
-      // 而不是只把界面置成失败。
       if (liveRoom.isRestricted) {
         ToastUtil.show(roomStateMessage(liveRoom));
       }

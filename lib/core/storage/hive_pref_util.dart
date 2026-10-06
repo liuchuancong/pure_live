@@ -115,18 +115,15 @@ class HivePrefUtil {
     return true;
   }
 
-  /// 删除指定 key
   static Future<bool> remove(String key) async {
     await _box.delete(key);
     return true;
   }
 
-  /// 是否存在 key
   static bool containsKey(String key) {
     return (_writeBatch?.containsKey(key) ?? false) || _box.containsKey(key);
   }
 
-  /// 清空全部
   static Future<bool> clear() async {
     await _box.clear();
     return true;

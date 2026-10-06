@@ -2,18 +2,8 @@ import 'package:remixicon/remixicon.dart';
 
 import 'package:pure_live/core/index.dart';
 
-/// 纯音频模式下盖在画面上的那一层。
 ///
-/// 它**遮住**视频而不是替换视频：视频组件仍挂在树上继续解码与渲染，所以切回视频
-/// 模式是即时的，不必重建纹理、不必重新等首帧，也不会经历"黑屏一下"。代价是被
-/// 盖住的画面仍然在合成——这正是设置项里"原直播源不变，通常不会明显减少流量"
-/// 那句话的意思；真要省电走助眠那条路（关掉视频轨）。
 ///
-/// 背景必须不透明：视频还在下面画着，半透明就等于把画面透出来。
-/// 整层 [IgnorePointer]：控制层叠在它上面，空白处的手势要能继续落到视频区。
-///
-/// 刻意不做呼吸/律动动画：这一层会一直挂在视频区上，一个不停重复的 controller
-/// 等于让这棵子树在整个纯音频模式里持续 60fps 重建——而这个模式本来就是为了省事。
 class AudioOnlyPresentation extends StatelessWidget {
   const AudioOnlyPresentation({super.key, required this.room});
 
@@ -25,7 +15,6 @@ class AudioOnlyPresentation extends StatelessWidget {
       builder: (context, constraints) {
         final maxHeight = constraints.maxHeight;
         final maxWidth = constraints.maxWidth;
-        // 竖屏小窗与横屏全屏差着一个量级，同一套尺寸在小窗里会挤成一片。
         final compact = maxHeight < 500;
         final avatarRadius = compact ? (maxHeight * 0.11).clamp(25.0, 38.0) : 50.0;
 

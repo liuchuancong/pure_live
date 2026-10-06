@@ -9,12 +9,6 @@ typedef OwnedInputRecipe = Future<PlaybackInputLease> Function(CancelToken cance
 
 OwnedInputRecipe? asOwnedInputRecipe(Object? recipe) => recipe is OwnedInputRecipe ? recipe : null;
 
-/// 放进 `kMediaKitCustomInputKey` 的东西：**打开输入的函数**，不是 source 本身。
-///
-/// 这是 [asOwnedInputRecipe] 的另一半——两端必须对齐，而对齐失败不是编译错误
-/// （元数据是 `Map<String, Object?>`），是运行时 `Invalid argument (recipe):
-/// Not an owned-input recipe`，房间直接打不开。FC2 就死在这里：facade 塞了整个
-/// [OwnedPlaybackSource]，而多画面那条路一直塞的是 `createInput`。
 Object customInputMetadataOf(OwnedPlaybackSource source) => source.createInput;
 
 class _OwnedLeaseState {
@@ -41,8 +35,6 @@ Future<void> openOwnedInputOnKernelPlayer(dynamic player, Object recipe) async {
   final lease = await owned(CancelToken());
   state.active = lease;
   try {
-    // 代理与容器格式由 beforeOpen 钩子按源统一决定（自有输入的 `owned:` 协议属于
-    // 本机输入，那里会把 http-proxy 清空），这里不再重复一次判定。
     await mkPlayer.open(mk.Media(lease.uri.toString()), play: true);
   } catch (error) {
     if (identical(state.active, lease)) {

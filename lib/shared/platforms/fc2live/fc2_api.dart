@@ -55,9 +55,6 @@ final class Fc2Room {
   final bool isAdult;
   final DateTime? startedAt;
 
-  /// 谁可以看这场直播（上游 26-9）：目录行看 `pay`/`tid`/`login`，详情看
-  /// `is_limited`/`fee`/`ticketid`/`ticket_only`/`login_only`。受限的直播仍然是
-  /// "在播"（[Fc2State.restricted]），只是标明原因。
   final LiveRestriction restriction;
 }
 
@@ -239,8 +236,6 @@ class Fc2Api {
 
   static Fc2Room _directoryRoom(Map<String, dynamic> data) {
     final id = _channelId(data['id']);
-    // 目录行的限制按站点卡片上的标记，顺序也照它：`pay` 1 与 `tid` 是付费，
-    // `login`（1 登录可见、2 有积分则免费）是要登录（上游 26-9）。
     final restriction = directoryRestriction(
       pay: _int(data['pay']),
       ticket: _int(data['tid']),
@@ -264,18 +259,12 @@ class Fc2Api {
     );
   }
 
-  /// 目录行的限制（上游 26-9）：`pay`（按分钟扣点）与 `tid`（门票/高级直播）是
-  /// [LiveRestriction.paid]；`login` 1/2 是 [LiveRestriction.needsLogin]；全 0 无限制。
   static LiveRestriction directoryRestriction({required int pay, required int ticket, required int login}) {
     if (pay != 0 || ticket != 0) return LiveRestriction.paid;
     if (login != 0) return LiveRestriction.needsLogin;
     return LiveRestriction.none;
   }
 
-  /// 直播详情的限制（上游 26-9）：`is_limited`（站点显示"配信規制中"，FC2 限制
-  /// 了这场直播，会把所有观众请出去）是 [LiveRestriction.unplayable]；`fee`
-  /// （按分钟付费）、`ticketid`、`ticket_only` 是 [LiveRestriction.paid]；
-  /// `login_only` 是 [LiveRestriction.needsLogin]；全 0 无限制。
   static LiveRestriction memberRestriction({
     required int limited,
     required int fee,

@@ -3,12 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:pure_live/get/get.dart';
 import 'package:flutter/foundation.dart';
 
-
-
-
-
-
-
 class GetMaterialApp extends StatelessWidget {
   final GlobalKey<NavigatorState>? navigatorKey;
   final GlobalKey<ScaffoldMessengerState>? scaffoldMessengerKey;
