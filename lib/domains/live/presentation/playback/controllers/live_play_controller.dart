@@ -1111,6 +1111,13 @@ class LivePlayController extends GetxController
     return suppress;
   }
 
+  /// Whether this room hands the video (and therefore the danmaku session) to
+  /// the in-app small window. Mirrors the facade, which owns the floating
+  /// window's lifetime: while it is prepared or showing, the route's pop must
+  /// not tear the danmaku session down.
+  @override
+  bool get keepsDanmakuForFloating => GlobalPlayerService.instance.player.shouldKeepDanmakuForAppFloating;
+
   void prepareAppFloating({Future<void>? routeUnmounted}) {
     _floatingResourcesReleased = false;
     final manager = GlobalPlayerService.instance.player;

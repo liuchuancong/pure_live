@@ -22,6 +22,9 @@ import 'package:pure_live/core/player/kernel/player_kernel_service.dart';
 import 'package:pure_live/core/player/presentation/fullscreen_window.dart' show fullscreenDriver;
 import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
 import 'package:pure_live/domains/live/presentation/playback/widgets/danmaku/compact_danmaku_overlay.dart';
+// media_kit exports its own `VideoController`, so the room's controller needs a
+// prefix to be named at all here.
+import 'package:pure_live/domains/live/presentation/playback/widgets/video_player/video_controller.dart' as room_surface;
 import 'package:media_core_better_player/media_core_better_player.dart' show kBetterPlayerBackendId;
 import 'package:media_core_ijk_player/media_core_ijk_player.dart' show kIjkPlayerBackendId;
 
@@ -477,8 +480,22 @@ final class LivePlayerFacade {
   bool get shouldKeepDanmakuForAppFloating => floating.isAppFloatingActive;
   void prepareAppFloating({Future<void> Function()? onClose, FacadeStreamCommit? session}) =>
       floating.prepare(onClose: onClose);
+
+  /// The danmaku surface of the in-app small window.
+  ///
+  /// Resolved when the overlay builds, not when the window is asked for: the
+  /// window outlives the room's route, so a controller captured at request time
+  /// can already be gone by the first frame. [activeVideoController] is the
+  /// controller the facade still has attached, which is the one that owns
+  /// playback (and therefore the compact barrage controller) while floating.
+  Widget buildFloatingDanmaku(BuildContext context) {
+    final controller = activeVideoController;
+    if (controller is room_surface.VideoController) return CompactDanmakuOverlay(controller: controller);
+    return const SizedBox.shrink();
+  }
+
   Future<void> showAppFloating({Widget Function(BuildContext)? danmakuBuilder}) =>
-      floating.showAppFloating(danmakuBuilder: danmakuBuilder);
+      floating.showAppFloating(danmakuBuilder: danmakuBuilder ?? buildFloatingDanmaku);
   Future<void> closeAppFloating() => floating.closeAppFloating();
   void prepareRoomSessionReentry([LiveRoom? liveroom]) => floating.prepare();
   FacadeStreamCommit? consumeRoomSessionReentry([LiveRoom? liveroom]) {

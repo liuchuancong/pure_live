@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/config/float_window_geometry.dart';
-import 'package:pure_live/core/player/presentation/compact_source_orientation.dart';
 import 'package:media_core_floating/media_core_floating.dart';
 import 'package:pure_live/domains/live/domain/live_player_facade.dart';
 
@@ -63,35 +62,46 @@ class FloatingPlayback {
     }
     isFloatingVideoVisible.value = true;
 
+    // The window is remembered per surface orientation: a phone held upright
+    // and the same phone turned sideways have different room on screen, and a
+    // size that fits one of them is wrong in the other. The orientation is read
+    // inside the builder so a rotation mid-float picks up the other memory
+    // instead of restoring the shape of the surface that is gone.
     final entry = OverlayEntry(
-      builder: (context) => FloatingWindowOverlay(
-        visible: isFloatingVideoVisible.stream,
-        initiallyVisible: true,
-        // 160×90 (the library default) is a thumbnail, not a watchable
-        // window: a 16:9 stream gets a 380×214 surface with a 200×112 drag
-        // floor, still capped at half the screen by maxWidthFraction.
-        placement: const FloatingWindowPlacement(
-          config: FloatingPlacementConfig(
-            width: 380,
-            height: 214,
-            minWidth: 200,
-            minHeight: 112,
-            // A corner grip resizes; dragging the picture still moves the window.
-            resizableByDrag: true,
+      builder: (context) {
+        final isPortraitSurface = _isPortraitSurface(context);
+        return FloatingWindowOverlay(
+          visible: isFloatingVideoVisible.stream,
+          initiallyVisible: true,
+          // 160×90 (the library default) is a thumbnail, not a watchable
+          // window: a 16:9 stream gets a 380×214 surface with a 200×112 drag
+          // floor, still capped at half the screen by maxWidthFraction.
+          placement: const FloatingWindowPlacement(
+            config: FloatingPlacementConfig(
+              width: 380,
+              height: 214,
+              minWidth: 200,
+              minHeight: 112,
+              // Every edge and corner resizes, freely: the viewer picks the
+              // width and the height, and the window keeps what they chose.
+              resizableByDrag: true,
+              resizeHandles: FloatingResizeHandle.all,
+              resizeKeepsAspectRatio: false,
+            ),
           ),
-        ),
-        initialRect: _rememberedFloatRect(),
-        onRectChanged: _rememberFloatRect,
-        child: _FloatingSurface(
-          facade: facade,
-          onExit: () async {
-            final room = facade.room;
-            if (room != null) await AppNavigator.toLiveRoomDetail(liveRoom: room);
-          },
-          onClose: stopFloatingPlayback,
-          danmakuBuilder: danmakuBuilder,
-        ),
-      ),
+          initialRect: _rememberedFloatRect(isPortraitSurface),
+          onRectChanged: (rect) => _rememberFloatRect(isPortraitSurface, rect),
+          child: _FloatingSurface(
+            facade: facade,
+            onExit: () async {
+              final room = facade.room;
+              if (room != null) await AppNavigator.toLiveRoomDetail(liveRoom: room);
+            },
+            onClose: stopFloatingPlayback,
+            danmakuBuilder: danmakuBuilder,
+          ),
+        );
+      },
     );
     final overlay = Overlay.maybeOf(overlayContext, rootOverlay: true) ?? Overlay.of(overlayContext);
     overlay.insert(entry);
@@ -99,17 +109,21 @@ class FloatingPlayback {
     isFloating.value = true;
   }
 
-  Rect? _rememberedFloatRect() {
+  /// Whether the surface the window floats in is taller than it is wide.
+  static bool _isPortraitSurface(BuildContext context) =>
+      FloatWindowGeometry.isPortraitSurface(MediaQuery.maybeSizeOf(context) ?? Size.zero);
+
+  Rect? _rememberedFloatRect(bool isPortraitSurface) {
     final geometry = FloatWindowGeometry.decode(SettingsService.to.player.floatWindowGeometry.value);
-    return geometry.forPortrait(CompactSourceOrientation.isPortrait);
+    return geometry.forPortrait(isPortraitSurface);
   }
 
-  void _rememberFloatRect(Rect rect) {
+  void _rememberFloatRect(bool isPortraitSurface, Rect rect) {
     if (!rect.isFinite || rect.isEmpty) return;
     final settings = SettingsService.to.player;
     final geometry = FloatWindowGeometry.decode(settings.floatWindowGeometry.value);
     settings.floatWindowGeometry.value = geometry
-        .withRect(isPortrait: CompactSourceOrientation.isPortrait, rect: rect)
+        .withRect(isPortrait: isPortraitSurface, rect: rect)
         .encode();
   }
 

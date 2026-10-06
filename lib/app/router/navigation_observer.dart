@@ -5,7 +5,6 @@ import 'package:flutter/scheduler.dart';
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/platform/platform_utils.dart';
 import 'package:pure_live/domains/live/domain/live_player_facade.dart';
-import 'package:pure_live/domains/live/presentation/playback/widgets/danmaku/compact_danmaku_overlay.dart';
 import 'package:pure_live/core/player/presentation/fullscreen_window.dart' show WindowService;
 import 'package:pure_live/domains/live/presentation/playback/controllers/live_play_controller.dart';
 import 'package:pure_live/domains/live/presentation/playback/widgets/layout/live_play_video.dart' show shouldFloatAfterLivePlayExit;
@@ -132,12 +131,10 @@ class LiveRouteObserver extends RouteObserver<PageRoute<dynamic>> {
         final current = Get.currentRoute;
         if (current == RoutePath.kLivePlay || current == RoutePath.kMultiview) return;
 
-        final videoController = controller.state.value.player.videoController;
-        playerManager.showAppFloating(
-          danmakuBuilder: videoController == null
-              ? null
-              : (context) => CompactDanmakuOverlay(controller: videoController),
-        );
+        // The small window's danmaku is the facade's business: it resolves the
+        // controller that still owns playback when the overlay builds, while a
+        // controller read here is gone as soon as the room's route is disposed.
+        playerManager.showAppFloating();
       }),
     );
   }
