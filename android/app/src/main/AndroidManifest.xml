@@ -42,12 +42,7 @@
   <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
   <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
   <application
-
-    <!-- ColorOS 14 (Android 14) predictive back + GetX RouterDelegate 死锁规避:
-         全面屏手势返回会触发 OnBackInvokedCallback 预测路径, 与 GetX 的
-         popRoute 异步应答不兼容, 设置页等卡死; 左上角箭头走的是 programmatic
-         pop 所以不受影响。关掉该开关回落到传统 KeyEvent 返回通道。 -->
- android:label="${appLabel}" android:name="${applicationName}"
+    android:label="${appLabel}" android:name="${applicationName}"
     android:banner="@drawable/banner" android:usesCleartextTraffic="true"
     android:networkSecurityConfig="@xml/network_security_config"
     android:allowBackup="false"
