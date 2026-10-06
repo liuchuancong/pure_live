@@ -48,10 +48,17 @@ bool canAdoptSourceRefresh({
 
 /// Candidate lines for a URL plan, shared by first open, engine switch and
 /// refresh: without the declared container the engine has to probe for it.
+///
+/// [startAt] is the platform's declared play-start (a rotation room's
+/// `video.start`), stamped into every candidate's metadata so the per-source
+/// engine hook can keep those lines seekable while ordinary live lines — for
+/// which a seek can only fail — are not. Only the first open carries it; engine
+/// switch and refresh re-open at the live edge with no pending seek.
 List<PlayerSource> livePlanSources(
   List<String> lines, {
   required Map<String, String> headers,
   required Map<String, LiveStreamFacts> streamFacts,
+  Duration startAt = Duration.zero,
 }) => List<PlayerSource>.unmodifiable(<PlayerSource>[
   for (final url in lines)
     PlayerSource(
@@ -59,7 +66,10 @@ List<PlayerSource> livePlanSources(
       uri: Uri.parse(url),
       type: SourceType.live,
       headers: SourceHeaders(headers),
-      metadata: playbackStreamFormatMetadata(streamFacts[url]?.format.name),
+      metadata: <String, Object?>{
+        ...playbackStreamFormatMetadata(streamFacts[url]?.format.name),
+        ...playbackSeekStartMetadata(startAt),
+      },
     ),
 ]);
 
