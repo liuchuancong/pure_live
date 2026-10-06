@@ -237,6 +237,35 @@ class CacheService extends GetxService {
         RegExp(r'^/data/data(?:/|$)').hasMatch(normalized);
   }
 
+  /// Whether [path] is in an app-private directory that other applications
+  /// (file managers, video players) cannot access.
+  ///
+  /// Android: `/data/user/`, `/data/data/`, and scoped-storage app dirs
+  /// (`/storage/emulated/.../Android/data/<pkg>/`).
+  /// iOS: the app sandbox (`/var/mobile/Containers/Data/Application/`).
+  static bool isPrivatePath(String path) {
+    final normalized = p.normalize(path).replaceAll('\\', '/').toLowerCase();
+
+    if (Platform.isAndroid) {
+      return RegExp(r'^/data/(?:user|user_de)/\d+(?:/|$)').hasMatch(normalized) ||
+          RegExp(r'^/data/data(?:/|$)').hasMatch(normalized) ||
+          normalized.contains('/android/data/');
+    }
+    if (Platform.isIOS) {
+      return normalized.startsWith('/var/mobile/containers/data/application/') ||
+          normalized.startsWith('/private/var/mobile/containers/data/application/');
+    }
+    return false;
+  }
+
+  /// Whether the resolved recording directory is private (inaccessible to
+  /// other apps). Callers should warn the user and suggest picking a public
+  /// directory such as Downloads or Documents.
+  Future<bool> isRecordDirPrivate() async {
+    final dir = await getRecordDir();
+    return isPrivatePath(dir.path);
+  }
+
   String _normalizedAbsolute(String value) {
     if (value.trim().isEmpty) return '';
     var normalized = p.normalize(p.absolute(value));

@@ -421,11 +421,25 @@ class _TaskCard extends GetView<RecorderController> {
           break;
       }
 
+      final hasOutput = task.outputDir != null && task.outputDir!.isNotEmpty;
+
       return Wrap(
         alignment: WrapAlignment.end,
         spacing: 6,
         runSpacing: 4,
         children: [
+          if (hasOutput) ...[
+            OutlinedButton(
+              style: outlineStyle,
+              onPressed: () => controller.openTaskDir(task),
+              child: Text(i18n("recorder_open_task_folder")),
+            ),
+            OutlinedButton(
+              style: outlineStyle,
+              onPressed: () => controller.playTaskVideo(task),
+              child: Text(i18n("recorder_play_video")),
+            ),
+          ],
           deleteButton(),
           FilledButton(style: primaryStyle, onPressed: () => controller.forceStartTask(task), child: Text(text)),
         ],

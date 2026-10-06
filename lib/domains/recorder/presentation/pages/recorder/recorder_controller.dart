@@ -131,6 +131,30 @@ class RecorderController extends GetxService {
     _danmakuTasksWorker = ever<List<LiveRecordTask>>(tasks, _danmakuRecorder.sync);
     _danmakuSettingWorker = ever<bool>(settings.recordDanmaku, (_) => _danmakuRecorder.sync(tasks));
     unawaited(restoreAndAutoPoll());
+    unawaited(_warnIfPrivateRecordDir());
+  }
+
+  bool _privateDirWarningShown = false;
+
+  Future<void> _warnIfPrivateRecordDir() async {
+    if (_privateDirWarningShown || _isClosing) return;
+    final isPrivate = await CacheService.to.isRecordDirPrivate();
+    if (!isPrivate || _isClosing || _privateDirWarningShown) return;
+    _privateDirWarningShown = true;
+    final change = await Get.dialog<bool>(
+      AlertDialog(
+        title: Text(i18n('recorder_private_dir_title')),
+        content: Text(i18n('recorder_private_dir_message')),
+        actions: [
+          TextButton(onPressed: () => Get.back(result: false), child: Text(i18n('recorder_private_dir_ignore'))),
+          FilledButton(onPressed: () => Get.back(result: true), child: Text(i18n('recorder_private_dir_change'))),
+        ],
+      ),
+      barrierDismissible: false,
+    );
+    if (change == true && !_isClosing) {
+      await settings.pickRecordDir();
+    }
   }
 
   /// Opt-in chat capture beside each attempt's video. It only observes task
@@ -951,6 +975,9 @@ class RecorderController extends GetxService {
           // can be admitted atomically; owned inputs bring their own relay.
           hlsPrefetch: true,
           sourceQueryPolicy: resolved.sourceQueryPolicy,
+          // The site's declared container/codec facts drive the same relay
+          // decision playback uses, instead of each relay guessing from the URL.
+          facts: resolved.facts,
         );
       }
       if (identical(_pendingRecorderLeases[task.taskId], pendingLease)) {
@@ -1601,6 +1628,18 @@ class RecorderController extends GetxService {
 
   Future<void> openFileDir() async {
     await FileUtils.openFileOrUrl(await CacheService.to.getDisplayPath());
+  }
+
+  Future<void> openTaskDir(LiveRecordTask task) async {
+    final dir = task.outputDir;
+    if (dir == null || dir.isEmpty) return;
+    await FileUtils.openFileOrUrl(dir);
+  }
+
+  Future<void> playTaskVideo(LiveRecordTask task) async {
+    final dir = task.outputDir;
+    if (dir == null || dir.isEmpty) return;
+    Get.toNamed(RoutePath.kLocalVideoPlayer, arguments: {'dir': dir, 'title': task.title, 'nick': task.nick});
   }
 
   @override

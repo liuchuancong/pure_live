@@ -24,6 +24,7 @@ import 'package:pure_live/domains/live/presentation/shield/danmu_shield_controll
 import 'package:pure_live/domains/live/presentation/tags/tag_management_controller.dart';
 import 'package:pure_live/domains/recorder/data/record_settings_controller.dart';
 import 'package:pure_live/domains/recorder/presentation/pages/recorder/recorder_controller.dart';
+import 'package:pure_live/domains/recorder/presentation/pages/local_player/local_video_player_controller.dart';
 import 'package:pure_live/features/remote_receiver/remote_sync_service.dart';
 import 'package:pure_live/features/toolbox/toolbox_controller.dart';
 import 'package:pure_live/features/version/version_controller.dart';
@@ -198,6 +199,22 @@ class RecorderBinding extends Binding {
   @override
   List<Bind> dependencies() {
     return [Bind.lazyPut(() => RecorderController())];
+  }
+}
+
+class LocalVideoPlayerBinding extends Binding {
+  @override
+  List<Bind> dependencies() {
+    return [
+      Bind.lazyPut(() {
+        final args = Get.arguments as Map<String, dynamic>? ?? const {};
+        return LocalVideoPlayerController(
+          directory: args['dir'] as String? ?? '',
+          roomTitle: args['title'] as String?,
+          roomNick: args['nick'] as String?,
+        );
+      }),
+    ];
   }
 }
 

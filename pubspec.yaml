@@ -132,6 +132,10 @@ dependencies:
     path: F:/media_core/packages/media_core_presentation
   media_core_floating:
     path: F:/media_core/packages/media_core_floating
+  media_core_list_playback:
+    path: F:/media_core/packages/media_core_list_playback
+  media_core_feed:
+    path: F:/media_core/packages/media_core_feed
   media_core_ijk_player:
     path: F:/media_core/packages/media_core_ijk_player
   media_core_better_player:

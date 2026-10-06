@@ -844,10 +844,9 @@ packages:
   floating:
     dependency: transitive
     description:
-      name: floating
-      sha256: e51ce1dbcab3ea83da0ad1b07f2091b99c0e8680184c780a000567f41234d454
-      url: "https://pub.dev"
-    source: hosted
+      path: "../../media_core/packages/floating"
+      relative: true
+    source: path
     version: "6.0.0"
   flutter:
     dependency: "direct main"
@@ -1422,6 +1421,13 @@ packages:
       relative: false
     source: path
     version: "0.1.0"
+  media_core_feed:
+    dependency: "direct main"
+    description:
+      path: "F:/media_core/packages/media_core_feed"
+      relative: false
+    source: path
+    version: "0.1.0"
   media_core_floating:
     dependency: "direct main"
     description:
@@ -1447,6 +1453,13 @@ packages:
     dependency: "direct main"
     description:
       path: "F:/media_core/packages/media_core_ingest"
+      relative: false
+    source: path
+    version: "0.1.0"
+  media_core_list_playback:
+    dependency: "direct main"
+    description:
+      path: "F:/media_core/packages/media_core_list_playback"
       relative: false
     source: path
     version: "0.1.0"

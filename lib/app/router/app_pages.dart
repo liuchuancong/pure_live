@@ -41,6 +41,7 @@ import 'package:pure_live/domains/account/presentation/account/twitch/twitch_coo
 import 'package:pure_live/domains/account/presentation/account/douyin/douyin_cookie_page.dart';
 import 'package:pure_live/domains/account/presentation/account/kuaishou/kuaishou_cookie_page.dart';
 import 'package:pure_live/domains/recorder/presentation/pages/record_settings/record_settings_page.dart';
+import 'package:pure_live/domains/recorder/presentation/pages/local_player/local_video_player_page.dart';
 import 'package:pure_live/domains/live/presentation/favorite/favorite_controller.dart';
 
 // auth
@@ -219,6 +220,11 @@ class AppPages {
       name: RoutePath.kRecordSettings,
       page: _smoothPage(() => const RecordSettingsPage()),
       bindings: [RecordSettingsBinding()],
+    ),
+    GetPage(
+      name: RoutePath.kLocalVideoPlayer,
+      page: _smoothPage(() => const LocalVideoPlayerPage()),
+      bindings: [LocalVideoPlayerBinding()],
     ),
     GetPage(name: RoutePath.kWebSearch, page: _smoothPage(() => const WebSearchPage()), bindings: [WebSearchBinding()]),
 
