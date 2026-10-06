@@ -321,7 +321,14 @@ final class LocalVideoPlayerController extends GetxController implements PlayerU
     if (handle == null) return;
     final duration = handle.duration;
     final clamped = target < Duration.zero ? Duration.zero : (target > duration ? duration : target);
-    await handle.seek(clamped);
+    try {
+      await handle.seek(clamped);
+    } catch (_) {
+      // 拖进度条会密集触发 seek，被新目标取代的旧 seek 以取消异常完成——正常信号。
+      // 弹幕光标仍要对齐最后一次请求的位置。
+      _danmakuPlayer?.seekTo(clamped.inMilliseconds);
+      return;
+    }
     // Replayed chat is position-driven: a seek must move the cursor too, or the
     // next sample looks like a 40-minute jump and the whole recording replays.
     _danmakuPlayer?.seekTo(clamped.inMilliseconds);
@@ -329,7 +336,11 @@ final class LocalVideoPlayerController extends GetxController implements PlayerU
 
   Future<void> setRate(double rate) async {
     playbackRate.value = rate;
-    await _feed?.handle?.setRate(rate);
+    try {
+      await _feed?.handle?.setRate(rate);
+    } catch (_) {
+      // 与 seek 同一族：被新请求取代的旧写入以取消异常完成，不是错误。
+    }
   }
 
   Future<void> cycleRate() async {
@@ -581,7 +592,12 @@ final class LocalVideoPlayerController extends GetxController implements PlayerU
 
   @override
   Future<void> uiSetVolume(double value) async {
-    await _feed?.handle?.setVolume(value.clamp(0.0, 1.0));
+    try {
+      await _feed?.handle?.setVolume(value.clamp(0.0, 1.0));
+    } catch (_) {
+      // 音量手势连续触发时，内核会把被新请求取代的旧写入以取消异常完成——
+      // 这是"这条已过期"的正常信号，不是错误，不该打断手势或冒未处理异常。
+    }
   }
 
   @override
