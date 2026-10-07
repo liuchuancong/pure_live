@@ -592,6 +592,10 @@ final class LocalVideoPlayerController extends GetxController implements PlayerU
     FloatingHandleKeeper.instance.own(
       handle.id.value,
       () async {
+        // 关窗（✕）也要落一次盘：小窗期间没有那条 5 秒定时器在写进度（它随页面
+        // 控制器一起销毁了），不落的话在小窗里看的这段位置就丢了。展开那条已经
+        // 先落盘，这是另一半。
+        await _savePosition();
         _feed?.dispose();
         _feed = null;
       },
