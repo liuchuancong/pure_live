@@ -9,6 +9,7 @@ import 'package:pure_live/core/consts/app_consts.dart';
 import 'package:media_core/media_core.dart' show MediaPlayerView;
 import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 import 'package:pure_live/core/player/presentation/player_back_scope.dart';
+import 'package:pure_live/core/player/presentation/fullscreen_window.dart' show fullscreenDriver;
 import 'package:pure_live/core/player/presentation/windows_pip_driver.dart';
 import 'package:flutter/services.dart' show KeyDownEvent, LogicalKeyboardKey;
 import 'package:pure_live/core/player/presentation/player_ui_controller.dart';
@@ -47,24 +48,23 @@ class LocalVideoPlayerPage extends GetView<LocalVideoPlayerController> {
 ///
 /// It exists because Back here is not a Flutter-level event. Android 13+ hands
 /// the gesture and the button to the Activity, where Flutter registers its own
-/// callback at **DEFAULT** priority — so the route is popped before any
+/// callback at **DEFAULT** priority — so the route can be popped before any
 /// `PopScope` runs. The host keeps a **PRIORITY_OVERLAY** callback instead and
-/// forwards it over `pure_live/predictive_back`, and that interception has to be
-/// switched on for this route. The live room does exactly that through
-/// `PlayerBackScope`.
+/// forwards it over `pure_live/predictive_back`, which is what makes "Back leaves
+/// fullscreen first" possible at all.
 ///
-/// The scope keeps `canPop` false and `presentationActive` false **on purpose**,
-/// so every back reaches [PlayerBackScope.onBackRequest] instead of being left to
-/// the Navigator. The other arrangements were tried and each broke one half of
-/// the rule:
+/// Two mechanisms are therefore wired, and both apply the same rule:
 ///
-/// - a bare `PopScope` never received Android's back at all;
-/// - `canPop: true` while not fullscreen let the route pop before any handler
-///   ran, so the controller never got to answer — which is also why the
-///   in-app back buttons and the system back could disagree.
+/// - `PopScope.canPop` — Flutter's own pipeline. `canPop: false` while fullscreen
+///   means the route *cannot* be popped, so Back can only be answered by leaving
+///   fullscreen. This one works even when the host callback never reaches Dart;
+/// - [PlayerBackScope.onBackRequest] — the host path, for the deliveries Flutter
+///   never sees.
 ///
-/// With the pop owned here, `LocalVideoPlayerController.handleBackRequest` is the
-/// only back rule: fullscreen first, page second.
+/// `canPop` reads the **driver**, not the controller's cached flag: the driver is
+/// the thing that actually owns fullscreen, and its stream reports the settled
+/// value. A stale `false` here is exactly what let one press pop the page out of
+/// fullscreen.
 class _RecordingBackBoundary extends StatefulWidget {
   const _RecordingBackBoundary({required this.controller, required this.child});
 
@@ -78,14 +78,64 @@ class _RecordingBackBoundary extends StatefulWidget {
 class _RecordingBackBoundaryState extends State<_RecordingBackBoundary> {
   LocalVideoPlayerController get controller => widget.controller;
 
+  /// Fullscreen state as a `Listenable`, so `PopScope.canPop` follows it without
+  /// this widget — and therefore the native interception's owner — remounting.
+  late final ValueNotifier<bool> _fullscreenListenable = ValueNotifier<bool>(fullscreenDriver.isAnyFullscreen);
+
+  StreamSubscription<bool>? _fullscreenSub;
+  StreamSubscription<bool>? _controllerFullscreenSub;
+
+  @override
+  void initState() {
+    super.initState();
+    // Both sources are watched, and the value is the OR of them: the driver is
+    // the authority, the controller's flag is the second opinion that covers the
+    // instant between a request and the driver's settled report. While either
+    // says "fullscreen", `canPop` stays false, so Back cannot pop the page.
+    _fullscreenSub = fullscreenDriver.onFullscreenChanged.listen((_) => _syncFullscreen());
+    _controllerFullscreenSub = controller.fullscreenActive.listen((_) => _syncFullscreen());
+    _syncFullscreen();
+  }
+
+  void _syncFullscreen() {
+    final value = fullscreenDriver.isAnyFullscreen || controller.fullscreenActive.value;
+    if (_fullscreenListenable.value != value) _fullscreenListenable.value = value;
+  }
+
+  @override
+  void dispose() {
+    _fullscreenSub?.cancel();
+    _controllerFullscreenSub?.cancel();
+    _fullscreenListenable.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return PlayerBackScope(
-      // The controller answers for fullscreen itself, so this scope never claims
-      // a presentation of its own and never lets the route pop on its own.
-      presentationActive: false,
-      onExitPresentation: () async {},
-      onBackRequest: () => controller.handleBackRequest(),
+    // The scope widget itself never remounts (the native interception is a single
+    // slot), but its `canPop` has to follow fullscreen, so the state reaches it
+    // through a notifier rather than by rebuilding this widget.
+    return ValueListenableBuilder<bool>(
+      valueListenable: _fullscreenListenable,
+      builder: (context, isFullscreen, child) => PlayerBackScope(
+        // This is the load-bearing line, and it is deliberately *not*
+        // `presentationActive: false`. `canPop` is what Flutter's own back
+        // pipeline consults, and it is the only mechanism that works even when
+        // the host's overlay callback never reaches Dart:
+        //
+        // - fullscreen → `canPop` false, so the route cannot be popped at all;
+        //   Back only exits fullscreen and the page stays;
+        // - not fullscreen → `canPop` true, so Back leaves the page.
+        presentationActive: isFullscreen,
+        onExitPresentation: () async {
+          await controller.exitFullscreen();
+        },
+        // Still answered, for the host path that delivers Back to Dart before
+        // Flutter sees it. `handleBackRequest` applies the same rule, so the two
+        // paths cannot disagree.
+        onBackRequest: () => controller.handleBackRequest(),
+        child: child!,
+      ),
       child: widget.child,
     );
   }
