@@ -273,7 +273,9 @@ class _WallpaperPreviewPageState extends State<WallpaperPreviewPage> {
         if (bytes == null) return;
         final bool applied = await _background.applyNetworkImageBytes(bytes);
         if (!applied) {
-          ToastUtil.show(i18n('background_apply_failed', args: <String, String>{'msg': widget.apiSource!.name}));
+          ToastUtil.show(
+            i18n('background_apply_failed', args: <String, String>{'msg': i18n(widget.apiSource!.nameKey)}),
+          );
           return;
         }
       } else {
@@ -592,10 +594,10 @@ class _WallpaperPreviewPageState extends State<WallpaperPreviewPage> {
   String _title(WallpaperItem item) {
     final String? override = widget.title;
     if (override != null && override.isNotEmpty && widget.isApiMode) {
-      return '${widget.apiSource!.name} · $override';
+      return '${i18n(widget.apiSource!.nameKey)} · $override';
     }
     if (override != null && override.isNotEmpty) return override;
-    if (widget.isApiMode) return widget.apiSource!.name;
+    if (widget.isApiMode) return i18n(widget.apiSource!.nameKey);
     final String name = item.name ?? '';
     return name.isNotEmpty ? name : '${i18n('wallpaper_library')} ${_index + 1}';
   }

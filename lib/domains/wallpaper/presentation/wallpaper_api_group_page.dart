@@ -1,4 +1,3 @@
-import 'package:easy_localization/easy_localization.dart';
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/domains/wallpaper/domain/wallpaper_api_catalog.dart';
 import 'package:pure_live/domains/wallpaper/presentation/wallpaper_preview_page.dart';
@@ -28,7 +27,7 @@ class WallpaperApiGroupPage extends StatelessWidget {
 
     final WallpaperApiGroup resolved = group;
     return Scaffold(
-      appBar: AppBar(title: Text(resolved.localizedName(context.locale.languageCode))),
+      appBar: AppBar(title: Text(i18n(resolved.nameKey))),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
         children: <Widget>[
@@ -36,7 +35,7 @@ class WallpaperApiGroupPage extends StatelessWidget {
             for (final WallpaperApiSource source in resolved.sources)
               context.buildTile(
                 icon: Remix.global_line,
-                title: source.name,
+                title: i18n(source.nameKey),
                 subtitle: source.host,
                 trailing: const Icon(Remix.arrow_right_s_line),
                 onTap: () => Get.to<void>(() => WallpaperPreviewPage.api(source)),

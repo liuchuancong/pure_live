@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:pure_live/domains/wallpaper/domain/wallpaper_api_catalog.dart';
 import 'package:pure_live/domains/wallpaper/domain/wallpaper_catalog.dart';
 
 /// The compiled-in wallpaper tree carries no names any more, so the locale
@@ -11,6 +12,13 @@ import 'package:pure_live/domains/wallpaper/domain/wallpaper_catalog.dart';
 /// enumeration test rather than a spot check.
 Map<String, dynamic> _bundle(String path) =>
     Map<String, dynamic>.from(jsonDecode(File(path).readAsStringSync()) as Map<String, dynamic>);
+
+List<String> _missing(Map<String, dynamic> zh, Map<String, dynamic> en, Iterable<String> keys) => <String>[
+  for (final key in keys)
+    if (!zh.containsKey(key) || (zh[key] as String?)?.isEmpty == true) 'zh:$key',
+  for (final key in keys)
+    if (!en.containsKey(key) || (en[key] as String?)?.isEmpty == true) 'en:$key',
+];
 
 void main() {
   final zh = _bundle('assets/translations/zh.json');
@@ -27,15 +35,7 @@ void main() {
   group('壁纸目录标签', () {
     test('每个图源和分组在两个语言包里都有名字', () {
       expect(nameKeys.length, greaterThan(30), reason: '目录没枚举到东西，测试自身失效');
-
-      final missing = <String>[
-        for (final key in nameKeys)
-          if (!zh.containsKey(key) || (zh[key] as String?)?.isEmpty == true) 'zh:$key',
-        for (final key in nameKeys)
-          if (!en.containsKey(key) || (en[key] as String?)?.isEmpty == true) 'en:$key',
-      ];
-
-      expect(missing, isEmpty);
+      expect(_missing(zh, en, nameKeys), isEmpty);
     });
 
     test('分组名按图源命名，两个图源的 nature 不串台', () {
@@ -60,6 +60,29 @@ void main() {
         expect(source.groups.single.hidden, isTrue);
         expect(source.visibleGroups, hasLength(1), reason: '$id 的网格入口靠 visibleGroups');
       }
+    });
+
+    test('随机图源每个分组和每个源都有中英文名字', () {
+      final apiKeys = <String>[
+        for (final WallpaperApiGroup group in kWallpaperApiGroups) ...<String>[
+          group.nameKey,
+          for (final WallpaperApiSource source in group.sources) source.nameKey,
+        ],
+      ];
+
+      // 7 families, 82 endpoints (alcy 的分类在目录里就展开成 11 条)。
+      expect(kWallpaperApiGroups, hasLength(7));
+      expect(apiKeys.length, 7 + 82);
+      expect(apiKeys.toSet().length, apiKeys.length, reason: '两个图源不能共用一行名字');
+      expect(_missing(zh, en, apiKeys), isEmpty);
+    });
+
+    test('随机图源按 id 派生键，分类模板各行独立', () {
+      expect(wallpaperApiGroupNameKey('360'), 'wallpaper_api_group_360');
+      expect(wallpaperApiSourceNameKey('bing_biturl'), 'wallpaper_api_source_bing_biturl');
+      final alcy = kWallpaperApiGroups.firstWhere((group) => group.id == 'alcy');
+      expect(alcy.sources.map((source) => source.nameKey).toSet(), hasLength(12));
+      expect(alcy.sources.map((source) => source.url).toSet().length, alcy.sources.length);
     });
   });
 }
