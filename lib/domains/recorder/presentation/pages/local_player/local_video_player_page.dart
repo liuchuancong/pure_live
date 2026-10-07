@@ -582,21 +582,38 @@ class _RecordingPipOverlayState extends State<_RecordingPipOverlay> {
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
       child: Scaffold(
-        backgroundColor: Colors.black,
+        // Transparent, not black: the compact window is the whole Composition
+        // surface on a phone, and any opaque page background shows as a frame
+        // around the picture. The live room's compact face does the same.
+        backgroundColor: Colors.transparent,
         body: Stack(
           fit: StackFit.expand,
           children: [
+            // No clip while the system draws the window. Android's and iOS's
+            // PiP windows own their own shape, and a 12 px clip here cut the
+            // picture's corners off and let the page behind show through them —
+            // which is exactly what "the window still has a background" was.
+            // The desktop compact window has no such system rounding, so it
+            // keeps its soft corners.
             ClipRRect(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: _isTouchDevice ? BorderRadius.zero : BorderRadius.circular(12),
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  GestureDetector(
-                    onDoubleTap: () => unawaited(_exitPip()),
-                    onTap: widget.controller.togglePlayPause,
-                    onPanStart: (_) => unawaited(windowsPipWindow.startDragging()),
-                    child: MediaPlayerView(handle: handle, fit: BoxFit.contain),
-                  ),
+                  // A touch device hands the window to the system: consuming a
+                  // drag or a tap here stops the native PiP window from being
+                  // dragged and from opening its own play/close menu. The
+                  // desktop compact window has no system gestures, so there the
+                  // surface is the only way to move or pause it.
+                  if (_isTouchDevice)
+                    MediaPlayerView(handle: handle, fit: BoxFit.contain)
+                  else
+                    GestureDetector(
+                      onDoubleTap: () => unawaited(_exitPip()),
+                      onTap: widget.controller.togglePlayPause,
+                      onPanStart: (_) => unawaited(windowsPipWindow.startDragging()),
+                      child: MediaPlayerView(handle: handle, fit: BoxFit.contain),
+                    ),
                   Obx(
                     () => Positioned.fill(
                       child: widget.controller.buildDanmakuSurface(context) ?? const SizedBox.shrink(),
