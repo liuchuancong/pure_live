@@ -83,6 +83,19 @@ String _modifiedOf(File file) {
   }
 }
 
+/// The top inset the page's own chrome has to clear.
+///
+/// `paddingOf` and `viewPaddingOf` agree everywhere this page reads them today,
+/// but they diverge the moment some ancestor consumes the inset (a `SafeArea`
+/// above the bar, or a nested `MediaQuery` a platform view installs): `padding`
+/// becomes zero and the bar slides back under the status bar and the cutout.
+/// The cutout does not care which widget ate the padding, so the larger of the
+/// two is what the bar clears.
+double _safeTopInset(BuildContext context) {
+  final media = MediaQuery.of(context);
+  return media.padding.top > media.viewPadding.top ? media.padding.top : media.viewPadding.top;
+}
+
 /// The video surface: the shared gesture layer over the library's own player.
 ///
 /// The gesture layer sits *above* the picture so a drag anywhere on it means
@@ -180,7 +193,7 @@ class _RecordingPlayerAreaState extends State<_PlayerArea> {
                   // buttons did nothing.
                   if (Get.width > 680 && !controller.fullscreenActive.value)
                     Positioned(
-                      top: 8 + MediaQuery.paddingOf(context).top,
+                      top: 8 + _safeTopInset(context),
                       right: 8 + MediaQuery.paddingOf(context).right,
                       child: _RecordingCornerActions(controller: controller),
                     ),
@@ -1338,7 +1351,7 @@ class _PortraitTopBar extends StatelessWidget {
           ),
         ),
         child: Padding(
-          padding: EdgeInsets.fromLTRB(4, 4 + MediaQuery.paddingOf(context).top, 8, 12),
+          padding: EdgeInsets.fromLTRB(4, 4 + _safeTopInset(context), 8, 12),
           child: Row(
             children: [
               IconButton(

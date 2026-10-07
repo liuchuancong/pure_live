@@ -347,9 +347,14 @@ class TopActionBar extends StatelessWidget {
   Widget build(BuildContext context) {
     // 竖屏窗口态同样会被刘海/状态栏压住：这条栏贴在画面顶部，而窗口态的顶边就是
     // 状态栏的下沿，之前只在全屏时让出内边距，普通竖屏直播的字幕和按钮就有一半
-    // 躲在刘海底下。全屏时沉浸模式把 padding 报成 0，这个读取自然退化为 0，所以
-    // 不需要再按模式分支。
-    final topInset = PlatformUtils.isMobile ? MediaQuery.viewPaddingOf(context).top : 0.0;
+    // 躲在刘海底下。取 padding 与 viewPadding 的较大值：某个祖先 SafeArea 吃掉
+    // 内边距时 padding 会变 0，而刘海不会因为内边距被吃掉就不存在。沉浸全屏时两者
+    // 都是 0，读取自然退化为 0。
+    final topInset = PlatformUtils.isMobile
+        ? (MediaQuery.paddingOf(context).top > MediaQuery.viewPaddingOf(context).top
+              ? MediaQuery.paddingOf(context).top
+              : MediaQuery.viewPaddingOf(context).top)
+        : 0.0;
     return Obx(
       () => AnimatedPositioned(
         top: (controller.showController.value && !controller.showLocked.value) ? 0 : -barHeight,
@@ -1207,8 +1212,12 @@ class BottomActionBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // 与顶栏同一个道理：窗口态下这条栏贴的是屏幕底边，手势导航条正压在上面。
-    // 沉浸全屏时 padding 为 0，读取自然退化为 0。
-    final bottomInset = PlatformUtils.isMobile ? MediaQuery.viewPaddingOf(context).bottom : 0.0;
+    // 同样取较大值，沉浸全屏时两者都是 0。
+    final bottomInset = PlatformUtils.isMobile
+        ? (MediaQuery.paddingOf(context).bottom > MediaQuery.viewPaddingOf(context).bottom
+              ? MediaQuery.paddingOf(context).bottom
+              : MediaQuery.viewPaddingOf(context).bottom)
+        : 0.0;
     return Obx(() {
       bool shouldShow =
           (controller.showController.value || controller.isMenuOpen.value) && !controller.showLocked.value;
