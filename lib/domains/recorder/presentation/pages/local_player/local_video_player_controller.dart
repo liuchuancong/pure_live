@@ -256,6 +256,9 @@ final class LocalVideoPlayerController extends GetxController implements PlayerU
     final initialIndex = await _resumeIndex();
     await _feed!.load(sources, initialIndex: initialIndex);
     currentIndex.value = initialIndex;
+    // 打开即播：feed 的 autoPlay 已请求播放，这里再显式补一次，防止打开后
+    // 停在暂停态（引擎在 surface 就绪前的 pause 竞态）。
+    unawaited(_feed!.play());
 
     _positionSaver = Timer.periodic(const Duration(seconds: 5), (_) => _savePosition());
 

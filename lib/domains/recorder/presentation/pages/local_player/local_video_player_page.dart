@@ -124,6 +124,7 @@ class _VideoSurface extends StatelessWidget {
                 // itself (speed chips, PiP, small window) in fixed English copy;
                 // one entrance each, ours.
                 showOverflowMenu: false,
+                showSkipButtons: true,
                 keepControlsWhilePaused: true,
                 keyboardShortcuts: keyboardShortcuts,
                 onTapVideo: controller.togglePlayPause,
@@ -654,6 +655,18 @@ class _MobileLayout extends StatefulWidget {
 class _MobileLayoutState extends State<_MobileLayout> {
   LocalVideoPlayerController get controller => widget.controller;
 
+  bool _handedToFloating = false;
+
+  /// 返回键的语义跟随视频设置里的"小窗播放"开关（与直播间同一份配置）：
+  /// 开启且正在播放时，退出页面转交小窗；否则正常退出。
+  Future<bool> _onBackRequest() async {
+    final floatPlayEnabled = SettingsService.to.player.floatPlay.v;
+    if (!floatPlayEnabled || !controller.isPlaying.value || _handedToFloating) return true;
+    _handedToFloating = true;
+    await controller.enterFloating();
+    return false;
+  }
+
   /// Landscape flips to the fullscreen shape: the picture owns the screen and
   /// the chrome floats over it, exactly like a live room in fullscreen.
   bool get isLandscape {
@@ -664,59 +677,67 @@ class _MobileLayoutState extends State<_MobileLayout> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: Obx(() {
-        // Picture-in-picture owns the whole body, exactly like the live room:
-        // only the compact picture and its chat are visible — no page chrome.
-        if (controller.isInPip.value) {
-          return _RecordingPipOverlay(controller: controller);
-        }
-        // Scanning the folder is the only true "nothing to show yet" state; once
-        // a file is open the player surface itself carries its own loading.
-        if (controller.isLoading.value && controller.videoFiles.isEmpty) {
-          // Folder scan: a small themed indicator on the video's own black, not
-          // a full-screen white spinner page.
-          return Center(
-            child: SizedBox.square(
-              dimension: 28,
-              child: CircularProgressIndicator(strokeWidth: 2.5, color: theme.colorScheme.primary),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        final shouldLeave = await _onBackRequest();
+        if (shouldLeave && context.mounted) Get.back<void>();
+      },
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        body: Obx(() {
+          // Picture-in-picture owns the whole body, exactly like the live room:
+          // only the compact picture and its chat are visible — no page chrome.
+          if (controller.isInPip.value) {
+            return _RecordingPipOverlay(controller: controller);
+          }
+          // Scanning the folder is the only true "nothing to show yet" state; once
+          // a file is open the player surface itself carries its own loading.
+          if (controller.isLoading.value && controller.videoFiles.isEmpty) {
+            // Folder scan: a small themed indicator on the video's own black, not
+            // a full-screen white spinner page.
+            return Center(
+              child: SizedBox.square(
+                dimension: 28,
+                child: CircularProgressIndicator(strokeWidth: 2.5, color: theme.colorScheme.primary),
+              ),
+            );
+          }
+          if (controller.videoFiles.isEmpty) {
+            return SafeArea(child: _emptyState(context, controller, onDark: true));
+          }
+          if (isLandscape) {
+            return Stack(
+              fit: StackFit.expand,
+              children: [
+                _PlayerArea(controller: controller, keyboardShortcuts: true),
+                _LandscapeTopBar(controller: controller),
+              ],
+            );
+          }
+          return SafeArea(
+            top: false,
+            child: Column(
+              children: [
+                Expanded(
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      ColoredBox(
+                        color: Colors.black,
+                        child: _VideoSurface(controller: controller),
+                      ),
+                      _PortraitTopBar(controller: controller),
+                    ],
+                  ),
+                ),
+                _ContextPanel(controller: controller),
+              ],
             ),
           );
-        }
-        if (controller.videoFiles.isEmpty) {
-          return SafeArea(child: _emptyState(context, controller, onDark: true));
-        }
-        if (isLandscape) {
-          return Stack(
-            fit: StackFit.expand,
-            children: [
-              _PlayerArea(controller: controller, keyboardShortcuts: true),
-              _LandscapeTopBar(controller: controller),
-            ],
-          );
-        }
-        return SafeArea(
-          top: false,
-          child: Column(
-            children: [
-              Expanded(
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    ColoredBox(
-                      color: Colors.black,
-                      child: _VideoSurface(controller: controller),
-                    ),
-                    _PortraitTopBar(controller: controller),
-                  ],
-                ),
-              ),
-              _ContextPanel(controller: controller),
-            ],
-          ),
-        );
-      }),
+        }),
+      ),
     );
   }
 }
