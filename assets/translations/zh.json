@@ -2217,6 +2217,7 @@
   "local_player_pause": "暂停",
   "local_player_back_to_page": "回到页面",
   "local_player_screenshot": "截图",
+  "local_player_back": "返回",
   "local_player_seek_back": "后退 10 秒",
   "local_player_seek_forward": "前进 10 秒",
   "local_player_files": "共 {count} 个录像",

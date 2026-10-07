@@ -244,6 +244,23 @@ class _RecordingCornerActions extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
+          // Fullscreen has no app bar, so the way out lives here: back leaves
+          // the fullscreen shape first, and only a page that is not fullscreen
+          // is allowed to be left (the room's rule, same handler as the
+          // physical back button).
+          Obx(
+            () => !controller.fullscreenActive.value
+                ? const SizedBox.shrink()
+                : IconButton(
+                    color: Colors.white,
+                    iconSize: 20,
+                    tooltip: i18n('local_player_back'),
+                    icon: const Icon(Icons.arrow_back_rounded),
+                    onPressed: () async {
+                      if (await controller.handleBackRequest()) Get.back<void>();
+                    },
+                  ),
+          ),
           Obx(
             () => IconButton(
               color: controller.isAudioOnly.value ? const Color(0xFFFFD166) : Colors.white,
@@ -1747,106 +1764,135 @@ class _DesktopLayout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Obx(() {
-      // 桌面画中画排在全屏之前：窗口的形状决定页面的脸。PiP 请求经内核链时会
-      // 释放全屏，但那一步是驱动的事；只要窗口是紧凑的，就必须渲染紧凑 overlay，
-      // 不能让残留的全屏状态把整页布局留在缩小的窗口里。
-      //
-      // 与直播间一致，整个页面替换成紧凑画面 —— AppBar 等页面 chrome 不能留下，
-      // 否则缩小的窗口里还带着标题栏。
-      if (controller.isInPip.value) {
-        return _RecordingPipOverlay(controller: controller);
-      }
-      // 桌面全屏：与直播间一致，整个页面只剩视频区（Esc/双击退出由库条处理）。
-      if (controller.isFullscreen.value) {
-        return Scaffold(
-          backgroundColor: Colors.black,
-          body: _PlayerArea(controller: controller, keyboardShortcuts: true),
-        );
-      }
-      return Scaffold(
-        appBar: AppBar(
-          titleSpacing: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back_rounded),
-            onPressed: () async {
-              if (await controller.handleBackRequest()) Get.back<void>();
-            },
-          ),
-          title: Obx(
-            () => Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  controller.roomTitle ?? i18n('recorder_local_player_title'),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        // Same rule as the room: back leaves the fullscreen shape first, and
+        // only a page that is not fullscreen is allowed to be left.
+        if (await controller.handleBackRequest() && context.mounted) Get.back<void>();
+      },
+      child: Obx(() {
+        // 桌面画中画排在全屏之前：窗口的形状决定页面的脸。PiP 请求经内核链时会
+        // 释放全屏，但那一步是驱动的事；只要窗口是紧凑的，就必须渲染紧凑 overlay，
+        // 不能让残留的全屏状态把整页布局留在缩小的窗口里。
+        //
+        // 与直播间一致，整个页面替换成紧凑画面 —— AppBar 等页面 chrome 不能留下，
+        // 否则缩小的窗口里还带着标题栏。
+        if (controller.isInPip.value) {
+          return _RecordingPipOverlay(controller: controller);
+        }
+        // 桌面全屏：与直播间一致，整个页面只剩视频区（Esc/双击退出由库条处理）。
+        if (controller.isFullscreen.value) {
+          // A portrait recording keeps its vertical shape in fullscreen: the
+          // picture is contained at full height with the list under it, instead
+          // of being stretched into a landscape frame.
+          if (controller.portraitFullscreen.value) {
+            return Scaffold(
+              backgroundColor: Colors.black,
+              body: SafeArea(
+                child: Column(
+                  children: [
+                    Expanded(child: _PlayerArea(controller: controller, keyboardShortcuts: true)),
+                    const Divider(height: 1),
+                    SizedBox(
+                      height: (MediaQuery.sizeOf(context).height * 0.3).clamp(120.0, 260.0),
+                      child: _PlaylistPanel(controller: controller),
+                    ),
+                  ],
                 ),
-                Text(
-                  controller.videoFiles.isEmpty
-                      ? i18n('recorder_local_player_playlist_empty')
-                      : '${controller.currentFileName}   ${controller.currentIndex.value + 1}/${controller.videoFiles.length}',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontSize: 11, color: theme.colorScheme.onSurfaceVariant),
-                ),
-              ],
-            ),
-          ),
-          actions: const [SizedBox(width: 8)],
-        ),
-        body: Obx(() {
-          // Picture-in-picture owns the whole body, like the live room.
-          if (controller.isInPip.value) {
-            return _RecordingPipOverlay(controller: controller);
-          }
-          if (controller.isLoading.value) {
-            return Center(
-              child: SizedBox.square(
-                dimension: 28,
-                child: CircularProgressIndicator(strokeWidth: 2.5, color: theme.colorScheme.primary),
               ),
             );
           }
-          if (controller.videoFiles.isEmpty) {
-            return _emptyState(context, controller);
-          }
-          final videoPane = Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: ColoredBox(
-                  color: Colors.black,
-                  child: _PlayerArea(controller: controller, keyboardShortcuts: true),
-                ),
+          return Scaffold(
+            backgroundColor: Colors.black,
+            body: _PlayerArea(controller: controller, keyboardShortcuts: true),
+          );
+        }
+        return Scaffold(
+          appBar: AppBar(
+            titleSpacing: 0,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back_rounded),
+              onPressed: () async {
+                if (await controller.handleBackRequest()) Get.back<void>();
+              },
+            ),
+            title: Obx(
+              () => Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    controller.roomTitle ?? i18n('recorder_local_player_title'),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                  ),
+                  Text(
+                    controller.videoFiles.isEmpty
+                        ? i18n('recorder_local_player_playlist_empty')
+                        : '${controller.currentFileName}   ${controller.currentIndex.value + 1}/${controller.videoFiles.length}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 11, color: theme.colorScheme.onSurfaceVariant),
+                  ),
+                ],
               ),
             ),
-          );
-          if (!localPlayerShowsSideBySide(MediaQuery.sizeOf(context).width)) {
-            final panelHeight = (MediaQuery.sizeOf(context).height * 0.4).clamp(150.0, 320.0);
-            return Column(
+            actions: const [SizedBox(width: 8)],
+          ),
+          body: Obx(() {
+            // Picture-in-picture owns the whole body, like the live room.
+            if (controller.isInPip.value) {
+              return _RecordingPipOverlay(controller: controller);
+            }
+            if (controller.isLoading.value) {
+              return Center(
+                child: SizedBox.square(
+                  dimension: 28,
+                  child: CircularProgressIndicator(strokeWidth: 2.5, color: theme.colorScheme.primary),
+                ),
+              );
+            }
+            if (controller.videoFiles.isEmpty) {
+              return _emptyState(context, controller);
+            }
+            final videoPane = Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: ColoredBox(
+                    color: Colors.black,
+                    child: _PlayerArea(controller: controller, keyboardShortcuts: true),
+                  ),
+                ),
+              ),
+            );
+            if (!localPlayerShowsSideBySide(MediaQuery.sizeOf(context).width)) {
+              final panelHeight = (MediaQuery.sizeOf(context).height * 0.4).clamp(150.0, 320.0);
+              return Column(
+                children: [
+                  videoPane,
+                  const Divider(height: 1),
+                  SizedBox(
+                    height: panelHeight,
+                    child: _PlaylistPanel(controller: controller),
+                  ),
+                ],
+              );
+            }
+            return Row(
               children: [
                 videoPane,
-                const Divider(height: 1),
-                SizedBox(
-                  height: panelHeight,
-                  child: _PlaylistPanel(controller: controller),
-                ),
+                const VerticalDivider(width: 1),
+                SizedBox(width: 320, child: _PlaylistPanel(controller: controller)),
               ],
             );
-          }
-          return Row(
-            children: [
-              videoPane,
-              const VerticalDivider(width: 1),
-              SizedBox(width: 320, child: _PlaylistPanel(controller: controller)),
-            ],
-          );
-        }),
-      );
-    });
+          }),
+        );
+      }),
+    );
   }
 }

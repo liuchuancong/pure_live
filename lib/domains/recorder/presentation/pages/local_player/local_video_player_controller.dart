@@ -18,6 +18,7 @@ import 'package:pure_live/core/player/presentation/danmaku/danmaku_surface_setti
 import 'package:pure_live/core/player/presentation/danmaku/player_danmaku_surface.dart';
 import 'package:pure_live/core/player/presentation/fullscreen_window.dart' show WindowService, fullscreenDriver;
 import 'package:pure_live/core/player/presentation/player_presentation_actions.dart';
+import 'package:pure_live/core/player/presentation/compact_source_orientation.dart';
 import 'package:pure_live/core/player/presentation/player_ui_controller.dart';
 import 'package:pure_live/core/player/presentation/windows_pip_driver.dart';
 import 'package:pure_live/core/storage/hive_pref_util.dart';
@@ -216,6 +217,18 @@ final class LocalVideoPlayerController extends GetxController implements PlayerU
   /// 桌面端的全屏形态：为真时页面只渲染视频区（直播全屏的同款行为）。
   final isFullscreen = false.obs;
 
+  /// The fullscreen keeps the picture's own vertical shape: a portrait
+  /// recording goes fullscreen without being rotated or stretched into a
+  /// landscape window, the way the live room's portrait panel fullscreen does.
+  final portraitFullscreen = false.obs;
+
+  /// Whether the picture currently open is taller than it is wide.
+  bool get isPortraitVideo {
+    final size = _feed?.handle?.combinedSnapshot.geometry.videoSize;
+    if (size == null) return false;
+    return CompactSourceOrientation.isPortraitSize(size.width.toDouble(), size.height.toDouble());
+  }
+
   /// 控制栏显隐的单一来源：画面里那条覆盖式底栏按这里走。
   ///
   /// 点一下出现、无操作 5 秒淡出、再点一下立刻收起；桌面鼠标停在画面上时保持
@@ -282,27 +295,46 @@ final class LocalVideoPlayerController extends GetxController implements PlayerU
     final active = fullscreenDriver.isSystemFullscreen;
     fullscreenActive.value = active;
     isFullscreen.value = active;
+    if (!active) portraitFullscreen.value = false;
   }
 
-  Future<void> toggleFullscreen() async {
+  Future<void> toggleFullscreen() => fullscreenActive.value ? exitFullscreen() : enterFullscreen();
+
+  /// Leaving any fullscreen shape. Returns true when there was one to leave.
+  Future<bool> exitFullscreen() async {
+    if (!fullscreenActive.value) return false;
     final isMobile = PlatformUtils.isMobile;
-    final active = fullscreenActive.value;
     if (isMobile) {
-      if (active) {
+      if (!portraitFullscreen.value) {
         await WindowService().verticalScreen();
         await WindowService().followSystemOrientation();
-      } else {
-        await WindowService().landScape();
       }
+      await WindowService().doExitFullScreen();
     } else {
-      if (active) {
-        await WindowService().doExitFullScreen();
-      } else {
-        await WindowService().doEnterFullScreen();
-      }
+      await WindowService().doExitFullScreen();
     }
-    fullscreenActive.value = !active;
-    isFullscreen.value = !isMobile && !active;
+    fullscreenActive.value = false;
+    portraitFullscreen.value = false;
+    isFullscreen.value = false;
+    return true;
+  }
+
+  Future<void> enterFullscreen() async {
+    final isMobile = PlatformUtils.isMobile;
+    final portrait = isPortraitVideo;
+    fullscreenActive.value = true;
+    portraitFullscreen.value = portrait;
+    if (isMobile) {
+      // A landscape recording rotates the whole page into the landscape shape;
+      // a portrait one goes immersive in place, like the room's portrait panel
+      // fullscreen, so the picture stays vertical instead of being stretched.
+      if (!portrait) await WindowService().landScape();
+      await WindowService().doEnterFullScreen();
+      isFullscreen.value = false;
+      return;
+    }
+    await WindowService().doEnterFullScreen();
+    isFullscreen.value = true;
   }
 
   StreamSubscription<bool>? _pipStateSub;
@@ -800,8 +832,15 @@ final class LocalVideoPlayerController extends GetxController implements PlayerU
   /// 返回的统一语义（与直播间一致）：设置里开了"小窗播放"且正在播放时，
   /// 退出页面转交小窗。返回 true 表示真的离开页面。
   Future<bool> handleBackRequest() async {
-    final floatPlayEnabled = SettingsService.to.player.floatPlay.v;
     if (isClosed || _handedToFloating) return true;
+    // Fullscreen first, page second: back leaves the fullscreen shape and
+    // stays on the page, exactly like the live room. Only a page that is not
+    // fullscreen is allowed to be left.
+    if (fullscreenActive.value) {
+      await exitFullscreen();
+      return false;
+    }
+    final floatPlayEnabled = SettingsService.to.player.floatPlay.v;
     if (!floatPlayEnabled || !isPlaying.value) return true;
     _handedToFloating = true;
     await enterFloating();
