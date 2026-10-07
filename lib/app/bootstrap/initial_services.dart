@@ -138,10 +138,6 @@ class InitialServices {
     // Load and register the persisted custom font before MyApp builds its
     // first ThemeData. This makes the selection survive a full process restart.
     await SettingsService.to.font.ensureInitialized();
-    // The panel's cutout is a physical fact that `MediaQuery.padding` stops
-    // reporting once the status bar hides; the player chrome reads this to stay
-    // out of the notch in immersive fullscreen.
-    unawaited(DisplayCutout.refresh());
     await _migrateRoomScopedAudioOnly();
     initLazyControllers();
     _initHeavyServicesInBackground();

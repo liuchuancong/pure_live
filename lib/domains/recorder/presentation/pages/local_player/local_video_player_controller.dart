@@ -335,10 +335,6 @@ final class LocalVideoPlayerController extends GetxController implements PlayerU
       if (!portrait) await WindowService().landScape();
       await WindowService().doEnterFullScreen();
       isFullscreen.value = false;
-      // Immersive mode is exactly when the system stops reporting the cutout, so
-      // the physical reading is taken again once the presentation has settled —
-      // a rotation can also move which edge the notch is on.
-      unawaited(DisplayCutout.refresh());
       return;
     }
     await WindowService().doEnterFullScreen();

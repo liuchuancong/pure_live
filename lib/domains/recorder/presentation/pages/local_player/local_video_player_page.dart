@@ -138,16 +138,13 @@ String _modifiedOf(File file) {
   }
 }
 
-/// The top inset the page's own chrome has to clear.
+/// The bottom inset the control bar's own padding has to add.
 ///
-/// Delegates to [DisplayCutout], which takes the larger of the system inset and
-/// the panel's real cutout. That second number is the reason this bar was only
-/// partly visible in fullscreen: with
-/// `windowLayoutInDisplayCutoutMode=shortEdges` the system collapses its stable
-/// insets the moment the status bar hides, so `MediaQuery.padding` reports zero
-/// exactly when the viewer is immersive — while the notch is still there
-/// physically.
-double _safeTopInset(BuildContext context) => DisplayCutout.topInsetOf(context);
+/// The bar is wrapped in `SafeArea`, but its *gradient* is meant to run to the
+/// screen edge, so the inset is taken as padding here instead of shrinking the
+/// bar: a `SafeArea` around the container would leave a strip of bare picture
+/// under the gradient.
+double _bottomEdgeInset(BuildContext context) => MediaQuery.paddingOf(context).bottom;
 
 /// The video surface: the shared gesture layer over the library's own player.
 ///
@@ -246,7 +243,7 @@ class _RecordingPlayerAreaState extends State<_PlayerArea> {
                   // buttons did nothing.
                   if (Get.width > 680 && !controller.fullscreenActive.value)
                     Positioned(
-                      top: 8 + _safeTopInset(context),
+                      top: 8 + MediaQuery.paddingOf(context).top,
                       right: 8 + MediaQuery.paddingOf(context).right,
                       child: _RecordingCornerActions(controller: controller),
                     ),
@@ -738,7 +735,7 @@ class _RecordingControlBar extends StatelessWidget {
     // bottom of the screen in every shape this page has: on a phone with gesture
     // navigation the seek bar and the transport row sat under the system bar.
     // The inset goes into the padding so the gradient still covers it.
-    final bottomInset = DisplayCutout.bottomInsetOf(context);
+    final bottomInset = _bottomEdgeInset(context);
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
@@ -1421,42 +1418,47 @@ class _PortraitTopBar extends StatelessWidget {
             colors: [Colors.black87, Colors.transparent],
           ),
         ),
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(4, 4 + _safeTopInset(context), 8, 12),
-          child: Row(
-            children: [
-              IconButton(
-                color: Colors.white,
-                icon: const Icon(Icons.arrow_back_rounded),
-                onPressed: () async {
-                  if (await controller.handleBackRequest()) Get.back<void>();
-                },
-              ),
-              Expanded(
-                child: Obx(
-                  () => Text(
-                    '${controller.roomTitle ?? i18n('recorder_local_player_title')}  '
-                    '${i18n('local_player_index_label', args: {'index': '${controller.currentIndex.value + 1}'})}',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+        // `SafeArea` carries the status bar and the notch for this row; the
+        // gradient stays on the container so it still reaches the top edge.
+        child: SafeArea(
+          bottom: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(4, 4, 8, 12),
+            child: Row(
+              children: [
+                IconButton(
+                  color: Colors.white,
+                  icon: const Icon(Icons.arrow_back_rounded),
+                  onPressed: () async {
+                    if (await controller.handleBackRequest()) Get.back<void>();
+                  },
+                ),
+                Expanded(
+                  child: Obx(
+                    () => Text(
+                      '${controller.roomTitle ?? i18n('recorder_local_player_title')}  '
+                      '${i18n('local_player_index_label', args: {'index': '${controller.currentIndex.value + 1}'})}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+                    ),
                   ),
                 ),
-              ),
-              // A portrait fullscreen hides the page's own chrome, so the
-              // picture's actions move here instead of disappearing with the
-              // sheet that normally holds them.
-              Obx(
-                () => controller.fullscreenActive.value
-                    ? _RecordingCornerActions(controller: controller, includeBack: false)
-                    : IconButton(
-                        color: Colors.white,
-                        tooltip: i18n('settings_more'),
-                        icon: const Icon(Icons.more_vert_rounded),
-                        onPressed: () => _showSettingsSheet(context, controller),
-                      ),
-              ),
-            ],
+                // A portrait fullscreen hides the page's own chrome, so the
+                // picture's actions move here instead of disappearing with the
+                // sheet that normally holds them.
+                Obx(
+                  () => controller.fullscreenActive.value
+                      ? _RecordingCornerActions(controller: controller, includeBack: false)
+                      : IconButton(
+                          color: Colors.white,
+                          tooltip: i18n('settings_more'),
+                          icon: const Icon(Icons.more_vert_rounded),
+                          onPressed: () => _showSettingsSheet(context, controller),
+                        ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -1873,7 +1875,7 @@ class _ContextPanel extends StatelessWidget {
               // The panel is the last thing on the page, so it takes the
               // home-indicator inset itself: on a phone held upright the
               // progress line used to sit under the system gesture bar.
-              padding: EdgeInsets.fromLTRB(16, 2, 16, 12 + DisplayCutout.bottomInsetOf(context)),
+              padding: EdgeInsets.fromLTRB(16, 2, 16, 12 + MediaQuery.paddingOf(context).bottom),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(2),
                 child: LinearProgressIndicator(

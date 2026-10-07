@@ -1,6 +1,7 @@
 package com.mystyle.purelive
 
 import android.content.Context
+import android.graphics.Color
 import android.hardware.display.DisplayManager
 import android.media.AudioManager
 import android.net.wifi.WifiManager
@@ -10,6 +11,10 @@ import android.os.Handler
 import android.os.Looper
 import android.os.PowerManager
 import android.view.Display
+import android.view.View
+import android.view.WindowInsets
+import android.view.WindowInsetsController
+import android.view.WindowManager
 import android.window.BackEvent
 import android.window.OnBackAnimationCallback
 import android.window.OnBackInvokedCallback
@@ -24,7 +29,6 @@ class MainActivity : AudioServiceActivity() {
         private const val DISPLAY_MODE_CHANNEL = "pure_live/display_mode"
         private const val BACKGROUND_PLAYBACK_CHANNEL = "pure_live/background_playback"
         private const val PREDICTIVE_BACK_CHANNEL = "pure_live/predictive_back"
-        private const val DISPLAY_CUTOUT_CHANNEL = "pure_live/display_cutout"
         private var playbackWakeLock: PowerManager.WakeLock? = null
         private var playbackWifiLock: WifiManager.WifiLock? = null
         private var activeActivity: WeakReference<MainActivity>? = null
@@ -59,6 +63,7 @@ class MainActivity : AudioServiceActivity() {
             displayModeChannel?.invokeMethod("displayModeChanged", info)
         }
     }
+
     private val displayListener = object : DisplayManager.DisplayListener {
         override fun onDisplayAdded(displayId: Int) = scheduleDisplayModeRefresh()
 
@@ -110,16 +115,75 @@ class MainActivity : AudioServiceActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         activeActivity = WeakReference(this)
+
+        // Enable edge-to-edge so the Flutter surface can extend into the
+        // display cutout area. Flutter's MediaQuery/SafeArea will still
+        // expose the physical safe insets to the Dart side.
+        setupEdgeToEdge()
+    }
+
+    /**
+     * Configures Android edge-to-edge and display-cutout behavior.
+     *
+     * This allows the Flutter surface to occupy the full physical display,
+     * including the area around notches / punch-hole / "cat-ear" displays.
+     *
+     * The actual UI content should use MediaQuery.viewPaddingOf(context)
+     * or SafeArea when it must avoid the cutout and system gesture areas.
+     */
+    private fun setupEdgeToEdge() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            // Android 11+
+            window.setDecorFitsSystemWindows(false)
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                @Suppress("NewApi")
+                window.attributes.layoutInDisplayCutoutMode =
+                    WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+            }
+
+            window.statusBarColor = Color.TRANSPARENT
+            window.navigationBarColor = Color.TRANSPARENT
+
+            window.insetsController?.let { controller ->
+                controller.systemBarsBehavior =
+                    WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            }
+        } else {
+            // Android 9/10
+            @Suppress("DEPRECATION")
+            window.decorView.systemUiVisibility =
+                View.SYSTEM_UI_FLAG_LAYOUT_STABLE or
+                    View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or
+                    View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                @Suppress("DEPRECATION")
+                window.attributes = window.attributes.apply {
+                    layoutInDisplayCutoutMode =
+                        WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+                }
+            }
+
+            @Suppress("DEPRECATION")
+            window.statusBarColor = Color.TRANSPARENT
+
+            @Suppress("DEPRECATION")
+            window.navigationBarColor = Color.TRANSPARENT
+        }
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+
         if (!flutterEngine.plugins.has(RecorderBackgroundPlugin::class.java)) {
             flutterEngine.plugins.add(RecorderBackgroundPlugin())
         }
+
         if (!flutterEngine.plugins.has(NativeHttpPlugin::class.java)) {
             flutterEngine.plugins.add(NativeHttpPlugin())
         }
+
         displayModeChannel = MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
             DISPLAY_MODE_CHANNEL,
@@ -127,38 +191,37 @@ class MainActivity : AudioServiceActivity() {
             channel.setMethodCallHandler { call, result ->
                 when (call.method) {
                     "setHighRefreshRate" -> {
-                        highRefreshRateEnabled = call.argument<Boolean>("enabled") ?: true
+                        highRefreshRateEnabled =
+                            call.argument<Boolean>("enabled") ?: true
+
                         val info = applyPreferredDisplayMode(highRefreshRateEnabled)
                         lastPublishedDisplayModeInfo = info
                         result.success(info)
                     }
 
                     "getDisplayModeInfo" -> result.success(displayModeInfo())
+
                     else -> result.notImplemented()
                 }
             }
         }
+
         MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
             BACKGROUND_PLAYBACK_CHANNEL,
         ).setMethodCallHandler { call, result ->
             when (call.method) {
                 "setKeepAlive" -> {
-                    setPlaybackKeepAlive(call.argument<Boolean>("enabled") ?: false)
+                    setPlaybackKeepAlive(
+                        call.argument<Boolean>("enabled") ?: false,
+                    )
                     result.success(null)
                 }
+
                 else -> result.notImplemented()
             }
         }
-        MethodChannel(
-            flutterEngine.dartExecutor.binaryMessenger,
-            DISPLAY_CUTOUT_CHANNEL,
-        ).setMethodCallHandler { call, result ->
-            when (call.method) {
-                "getInsets" -> result.success(displayCutoutInsets())
-                else -> result.notImplemented()
-            }
-        }
+
         predictiveBackChannel = MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
             PREDICTIVE_BACK_CHANNEL,
@@ -166,13 +229,17 @@ class MainActivity : AudioServiceActivity() {
             channel.setMethodCallHandler { call, result ->
                 when (call.method) {
                     "setEnabled" -> {
-                        setPredictiveBackEnabled(call.argument<Boolean>("enabled") ?: false)
+                        setPredictiveBackEnabled(
+                            call.argument<Boolean>("enabled") ?: false,
+                        )
                         result.success(null)
                     }
+
                     else -> result.notImplemented()
                 }
             }
         }
+
         applyPreferredDisplayMode(highRefreshRateEnabled)
     }
 
@@ -182,52 +249,36 @@ class MainActivity : AudioServiceActivity() {
         }
     }
 
-    /**
-     * The display cutout's own insets, in physical pixels.
-     *
-     * Flutter derives `MediaQuery.padding` from the window's *stable* insets,
-     * and with `windowLayoutInDisplayCutoutMode=shortEdges` those collapse to
-     * zero as soon as the status bar is hidden — which is exactly the immersive
-     * fullscreen a video player spends its time in. The cutout is a physical
-     * feature of the panel and does not go away with the status bar, so the
-     * player needs this number separately to keep its top controls out of the
-     * notch.
-     *
-     * `safeInset*` is used rather than `boundingRects`: a rect covers the whole
-     * notch including the rounded corners, while the safe inset is the distance
-     * Android itself guarantees content has to clear.
-     */
-    private fun displayCutoutInsets(): Map<String, Any> {
-        val empty = mapOf("top" to 0, "bottom" to 0, "left" to 0, "right" to 0)
-        // android.view.DisplayCutout exists from API 28; the whole query is a
-        // no-op below that.
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) return empty
-        val insets = window?.decorView?.rootWindowInsets ?: return empty
-        val cutout = insets.displayCutout ?: return empty
-        return mapOf(
-            "top" to cutout.safeInsetTop,
-            "bottom" to cutout.safeInsetBottom,
-            "left" to cutout.safeInsetLeft,
-            "right" to cutout.safeInsetRight,
-        )
-    }
-
     private fun setPredictiveBackEnabled(enabled: Boolean) {
         if (predictiveBackEnabled == enabled) return
+
         predictiveBackEnabled = enabled
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (enabled) registerPredictiveBack() else unregisterPredictiveBack()
+            if (enabled) {
+                registerPredictiveBack()
+            } else {
+                unregisterPredictiveBack()
+            }
         }
     }
 
     @Suppress("NewApi")
     private fun registerPredictiveBack() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU || predictiveBackRegistered) return
-        val callback = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            predictiveBackAnimationCallback
-        } else {
-            predictiveBackCallback
-        } ?: return
+        if (
+            Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+            predictiveBackRegistered
+        ) {
+            return
+        }
+
+        val callback =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                predictiveBackAnimationCallback
+            } else {
+                predictiveBackCallback
+            } ?: return
+
         onBackInvokedDispatcher.registerOnBackInvokedCallback(
             // Flutter registers its Activity callback at DEFAULT. The live
             // route must run first so fullscreen Back restores the normal
@@ -235,17 +286,29 @@ class MainActivity : AudioServiceActivity() {
             OnBackInvokedDispatcher.PRIORITY_OVERLAY,
             callback,
         )
+
         predictiveBackRegistered = true
     }
 
     @Suppress("NewApi")
     private fun unregisterPredictiveBack() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU || !predictiveBackRegistered) return
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            predictiveBackAnimationCallback?.let(onBackInvokedDispatcher::unregisterOnBackInvokedCallback)
-        } else {
-            predictiveBackCallback?.let(onBackInvokedDispatcher::unregisterOnBackInvokedCallback)
+        if (
+            Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+            !predictiveBackRegistered
+        ) {
+            return
         }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            predictiveBackAnimationCallback?.let(
+                onBackInvokedDispatcher::unregisterOnBackInvokedCallback,
+            )
+        } else {
+            predictiveBackCallback?.let(
+                onBackInvokedDispatcher::unregisterOnBackInvokedCallback,
+            )
+        }
+
         predictiveBackRegistered = false
     }
 
@@ -258,6 +321,7 @@ class MainActivity : AudioServiceActivity() {
             dispatchPresentationBack()
             return
         }
+
         super.onBackPressed()
     }
 
@@ -271,70 +335,123 @@ class MainActivity : AudioServiceActivity() {
     private fun setPlaybackKeepAlive(enabled: Boolean) {
         if (enabled) {
             if (playbackWakeLock == null) {
-                val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
+                val powerManager =
+                    getSystemService(Context.POWER_SERVICE) as PowerManager
+
                 playbackWakeLock = powerManager.newWakeLock(
                     PowerManager.PARTIAL_WAKE_LOCK,
                     "$packageName:backgroundPlayback",
-                ).apply { setReferenceCounted(false) }
-            }
-            if (playbackWakeLock?.isHeld != true) playbackWakeLock?.acquire()
-
-            if (playbackWifiLock == null) {
-                val wifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
-                val mode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    WifiManager.WIFI_MODE_FULL_LOW_LATENCY
-                } else {
-                    WifiManager.WIFI_MODE_FULL_HIGH_PERF
-                }
-                playbackWifiLock = wifiManager.createWifiLock(mode, "$packageName:backgroundPlayback").apply {
+                ).apply {
                     setReferenceCounted(false)
                 }
             }
-            if (playbackWifiLock?.isHeld != true) playbackWifiLock?.acquire()
+
+            if (playbackWakeLock?.isHeld != true) {
+                playbackWakeLock?.acquire()
+            }
+
+            if (playbackWifiLock == null) {
+                val wifiManager =
+                    applicationContext.getSystemService(
+                        Context.WIFI_SERVICE,
+                    ) as WifiManager
+
+                val mode =
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        WifiManager.WIFI_MODE_FULL_LOW_LATENCY
+                    } else {
+                        WifiManager.WIFI_MODE_FULL_HIGH_PERF
+                    }
+
+                playbackWifiLock = wifiManager.createWifiLock(
+                    mode,
+                    "$packageName:backgroundPlayback",
+                ).apply {
+                    setReferenceCounted(false)
+                }
+            }
+
+            if (playbackWifiLock?.isHeld != true) {
+                playbackWifiLock?.acquire()
+            }
         } else {
-            if (playbackWifiLock?.isHeld == true) playbackWifiLock?.release()
-            if (playbackWakeLock?.isHeld == true) playbackWakeLock?.release()
+            if (playbackWifiLock?.isHeld == true) {
+                playbackWifiLock?.release()
+            }
+
+            if (playbackWakeLock?.isHeld == true) {
+                playbackWakeLock?.release()
+            }
         }
     }
 
     override fun onResume() {
         super.onResume()
+
         // Keep physical volume controls attached to media whenever this
         // window is foreground, including before a player acquires focus and
         // after returning from a dialog, browser, PiP, or another activity.
         setVolumeControlStream(AudioManager.STREAM_MUSIC)
+
         scheduleDisplayModeRefresh(delayMillis = 0)
-        if (predictiveBackEnabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+
+        if (
+            predictiveBackEnabled &&
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+        ) {
             registerPredictiveBack()
         }
     }
 
     override fun onStop() {
         unregisterDisplayListener()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) unregisterPredictiveBack()
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            unregisterPredictiveBack()
+        }
+
         super.onStop()
     }
 
     override fun onDestroy() {
-        if (activeActivity?.get() === this) activeActivity = null
+        if (activeActivity?.get() === this) {
+            activeActivity = null
+        }
+
         mainHandler.removeCallbacks(displayModeRefresh)
         displayModeChannel = null
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) unregisterPredictiveBack()
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            unregisterPredictiveBack()
+        }
+
         predictiveBackChannel = null
+
         super.onDestroy()
     }
 
     private fun registerDisplayListener() {
         if (displayListenerRegistered) return
-        val displayManager = getSystemService(Context.DISPLAY_SERVICE) as DisplayManager
-        displayManager.registerDisplayListener(displayListener, mainHandler)
+
+        val displayManager =
+            getSystemService(Context.DISPLAY_SERVICE) as DisplayManager
+
+        displayManager.registerDisplayListener(
+            displayListener,
+            mainHandler,
+        )
+
         displayListenerRegistered = true
     }
 
     private fun unregisterDisplayListener() {
         if (!displayListenerRegistered) return
-        val displayManager = getSystemService(Context.DISPLAY_SERVICE) as DisplayManager
+
+        val displayManager =
+            getSystemService(Context.DISPLAY_SERVICE) as DisplayManager
+
         displayManager.unregisterDisplayListener(displayListener)
+
         displayListenerRegistered = false
         mainHandler.removeCallbacks(displayModeRefresh)
     }
@@ -346,39 +463,59 @@ class MainActivity : AudioServiceActivity() {
 
     @Suppress("DEPRECATION")
     private fun activeDisplay(): Display? =
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) display else windowManager.defaultDisplay
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            display
+        } else {
+            windowManager.defaultDisplay
+        }
 
     private fun applyPreferredDisplayMode(enabled: Boolean): Map<String, Any> {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return displayModeInfo()
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+            return displayModeInfo()
+        }
+
         val activeDisplay = activeDisplay() ?: return displayModeInfo()
         val currentMode = activeDisplay.mode
+
         val compatibleModes = activeDisplay.supportedModes.filter {
             it.physicalWidth == currentMode.physicalWidth &&
                 it.physicalHeight == currentMode.physicalHeight
         }
+
         val preferredMode = compatibleModes.maxWithOrNull(
-            compareBy<Display.Mode> { it.refreshRate }.thenBy { it.modeId },
+            compareBy<Display.Mode> { it.refreshRate }
+                .thenBy { it.modeId },
         ) ?: currentMode
 
         val attributes = window.attributes
+
         // Android recommends preferredRefreshRate when only the refresh rate
         // should change. Pinning preferredDisplayModeId as well can force a
         // heavy vendor mode transition and leaves less room for the scheduler
         // to reconcile Flutter, video and PiP surfaces.
         val targetModeId = 0
-        val targetRefreshRate = if (enabled) preferredMode.refreshRate else 0f
+        val targetRefreshRate =
+            if (enabled) preferredMode.refreshRate else 0f
+
         if (
             attributes.preferredDisplayModeId != targetModeId ||
-            kotlin.math.abs(attributes.preferredRefreshRate - targetRefreshRate) > 0.01f
+            kotlin.math.abs(
+                attributes.preferredRefreshRate - targetRefreshRate,
+            ) > 0.01f
         ) {
             attributes.preferredDisplayModeId = targetModeId
             attributes.preferredRefreshRate = targetRefreshRate
             window.attributes = attributes
         }
-        return displayModeInfo(if (enabled) preferredMode else currentMode)
+
+        return displayModeInfo(
+            if (enabled) preferredMode else currentMode,
+        )
     }
 
-    private fun displayModeInfo(preferredMode: Display.Mode? = null): Map<String, Any> {
+    private fun displayModeInfo(
+        preferredMode: Display.Mode? = null,
+    ): Map<String, Any> {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
             return mapOf(
                 "enabled" to highRefreshRateEnabled,
@@ -391,21 +528,33 @@ class MainActivity : AudioServiceActivity() {
 
         val activeDisplay = activeDisplay()
             ?: return mapOf("enabled" to highRefreshRateEnabled)
+
         val currentMode = activeDisplay.mode
+
         val compatibleModes = activeDisplay.supportedModes.filter {
             it.physicalWidth == currentMode.physicalWidth &&
                 it.physicalHeight == currentMode.physicalHeight
         }
+
         val rates = compatibleModes
             .map { it.refreshRate.toDouble() }
-            .distinctBy { kotlin.math.round(it * 100).toInt() }
+            .distinctBy {
+                kotlin.math.round(it * 100).toInt()
+            }
             .sorted()
-        val bestMode = preferredMode ?: compatibleModes.maxByOrNull { it.refreshRate } ?: currentMode
+
+        val bestMode =
+            preferredMode ?: compatibleModes.maxByOrNull {
+                it.refreshRate
+            } ?: currentMode
 
         return mapOf(
             "enabled" to highRefreshRateEnabled,
             "currentRefreshRate" to currentMode.refreshRate.toDouble(),
-            "maxRefreshRate" to (rates.maxOrNull() ?: currentMode.refreshRate.toDouble()),
+            "maxRefreshRate" to (
+                rates.maxOrNull()
+                    ?: currentMode.refreshRate.toDouble()
+                ),
             "preferredRefreshRate" to bestMode.refreshRate.toDouble(),
             "supportedRefreshRates" to rates,
             "width" to currentMode.physicalWidth,
