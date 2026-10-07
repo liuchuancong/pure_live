@@ -1,4 +1,4 @@
-name: pure_live
+﻿name: pure_live
 description: 纯粹直播,一款开源的第三方多平台直播聚合播放器.
 publish_to: none
 version: 3.1.17+4106
@@ -114,40 +114,98 @@ dependencies:
   # 全部经 media_core 适配包再导出获取, 这里只保留 wakelock_plus
   # (media_core 未覆盖的独立工具包)。
   wakelock_plus: ^1.3.3 # 与 media_core_media_kit 的引擎依赖链对齐
+  #
+  # media_core 从本地绝对路径 (F:/media_core/...) 改成 git 依赖, 统一指向
+  # https://github.com/liuchuancong/media_core 的同一个提交 5b04714。换机器、CI 和
+  # 别人 clone 之后都不再依赖本机目录布局。
+  #
+  # 17 个子包共用同一个 url/ref, 只有子目录不同。各写一份 url/ref 迟早会漂移
+  # 成"两个仓库版本混用", 所以这里宁可重复也保持一致。
   media_core:
-    path: F:/media_core/packages/media_core
+    git:
+      url: https://github.com/liuchuancong/media_core
+      ref: 5b047145422758d983a3724e689d8aa4b7d06863
+      path: packages/media_core
   media_core_media_kit:
-    path: F:/media_core/packages/media_core_media_kit
+    git:
+      url: https://github.com/liuchuancong/media_core
+      ref: 5b047145422758d983a3724e689d8aa4b7d06863
+      path: packages/media_core_media_kit
   media_core_ui:
-    path: F:/media_core/packages/media_core_ui
+    git:
+      url: https://github.com/liuchuancong/media_core
+      ref: 5b047145422758d983a3724e689d8aa4b7d06863
+      path: packages/media_core_ui
   media_core_pip:
-    path: F:/media_core/packages/media_core_pip
+    git:
+      url: https://github.com/liuchuancong/media_core
+      ref: 5b047145422758d983a3724e689d8aa4b7d06863
+      path: packages/media_core_pip
   media_core_fullscreen:
-    path: F:/media_core/packages/media_core_fullscreen
+    git:
+      url: https://github.com/liuchuancong/media_core
+      ref: 5b047145422758d983a3724e689d8aa4b7d06863
+      path: packages/media_core_fullscreen
   media_core_multiview:
-    path: F:/media_core/packages/media_core_multiview
+    git:
+      url: https://github.com/liuchuancong/media_core
+      ref: 5b047145422758d983a3724e689d8aa4b7d06863
+      path: packages/media_core_multiview
   media_core_ingest:
-    path: F:/media_core/packages/media_core_ingest
+    git:
+      url: https://github.com/liuchuancong/media_core
+      ref: 5b047145422758d983a3724e689d8aa4b7d06863
+      path: packages/media_core_ingest
   media_core_presentation:
-    path: F:/media_core/packages/media_core_presentation
+    git:
+      url: https://github.com/liuchuancong/media_core
+      ref: 5b047145422758d983a3724e689d8aa4b7d06863
+      path: packages/media_core_presentation
   media_core_floating:
-    path: F:/media_core/packages/media_core_floating
+    git:
+      url: https://github.com/liuchuancong/media_core
+      ref: 5b047145422758d983a3724e689d8aa4b7d06863
+      path: packages/media_core_floating
   media_core_list_playback:
-    path: F:/media_core/packages/media_core_list_playback
+    git:
+      url: https://github.com/liuchuancong/media_core
+      ref: 5b047145422758d983a3724e689d8aa4b7d06863
+      path: packages/media_core_list_playback
   media_core_feed:
-    path: F:/media_core/packages/media_core_feed
+    git:
+      url: https://github.com/liuchuancong/media_core
+      ref: 5b047145422758d983a3724e689d8aa4b7d06863
+      path: packages/media_core_feed
   media_core_ijk_player:
-    path: F:/media_core/packages/media_core_ijk_player
+    git:
+      url: https://github.com/liuchuancong/media_core
+      ref: 5b047145422758d983a3724e689d8aa4b7d06863
+      path: packages/media_core_ijk_player
   media_core_better_player:
-    path: F:/media_core/packages/media_core_better_player
+    git:
+      url: https://github.com/liuchuancong/media_core
+      ref: 5b047145422758d983a3724e689d8aa4b7d06863
+      path: packages/media_core_better_player
   media_core_danmaku:
-    path: F:/media_core/packages/media_core_danmaku
+    git:
+      url: https://github.com/liuchuancong/media_core
+      ref: 5b047145422758d983a3724e689d8aa4b7d06863
+      path: packages/media_core_danmaku
   media_core_mediasession:
-    path: F:/media_core/packages/media_core_mediasession
+    git:
+      url: https://github.com/liuchuancong/media_core
+      ref: 5b047145422758d983a3724e689d8aa4b7d06863
+      path: packages/media_core_mediasession
   media_core_live:
-    path: F:/media_core/packages/media_core_live
+    git:
+      url: https://github.com/liuchuancong/media_core
+      ref: 5b047145422758d983a3724e689d8aa4b7d06863
+      path: packages/media_core_live
   media_core_logging:
-    path: F:/media_core/packages/media_core_logging
+    git:
+      url: https://github.com/liuchuancong/media_core
+      ref: 5b047145422758d983a3724e689d8aa4b7d06863
+      path: packages/media_core_logging
 
   # -------------------------- 数据存储/数据库 --------------------------
   hive_ce: ^2.20.0 # Hive本地数据库

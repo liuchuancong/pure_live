@@ -844,9 +844,11 @@ packages:
   floating:
     dependency: transitive
     description:
-      path: "../../media_core/packages/floating"
-      relative: true
-    source: path
+      path: "packages/floating"
+      ref: "5b047145422758d983a3724e689d8aa4b7d06863"
+      resolved-ref: "5b047145422758d983a3724e689d8aa4b7d06863"
+      url: "https://github.com/liuchuancong/media_core"
+    source: git
     version: "6.0.0"
   flutter:
     dependency: "direct main"
@@ -1403,135 +1405,173 @@ packages:
   media_core:
     dependency: "direct main"
     description:
-      path: "F:/media_core/packages/media_core"
-      relative: false
-    source: path
+      path: "packages/media_core"
+      ref: "5b047145422758d983a3724e689d8aa4b7d06863"
+      resolved-ref: "5b047145422758d983a3724e689d8aa4b7d06863"
+      url: "https://github.com/liuchuancong/media_core"
+    source: git
     version: "0.1.0"
   media_core_better_player:
     dependency: "direct main"
     description:
-      path: "F:/media_core/packages/media_core_better_player"
-      relative: false
-    source: path
+      path: "packages/media_core_better_player"
+      ref: "5b047145422758d983a3724e689d8aa4b7d06863"
+      resolved-ref: "5b047145422758d983a3724e689d8aa4b7d06863"
+      url: "https://github.com/liuchuancong/media_core"
+    source: git
     version: "0.1.0"
   media_core_danmaku:
     dependency: "direct main"
     description:
-      path: "F:/media_core/packages/media_core_danmaku"
-      relative: false
-    source: path
+      path: "packages/media_core_danmaku"
+      ref: "5b047145422758d983a3724e689d8aa4b7d06863"
+      resolved-ref: "5b047145422758d983a3724e689d8aa4b7d06863"
+      url: "https://github.com/liuchuancong/media_core"
+    source: git
     version: "0.1.0"
   media_core_feed:
     dependency: "direct main"
     description:
-      path: "F:/media_core/packages/media_core_feed"
-      relative: false
-    source: path
+      path: "packages/media_core_feed"
+      ref: "5b047145422758d983a3724e689d8aa4b7d06863"
+      resolved-ref: "5b047145422758d983a3724e689d8aa4b7d06863"
+      url: "https://github.com/liuchuancong/media_core"
+    source: git
     version: "0.1.0"
   media_core_floating:
     dependency: "direct main"
     description:
-      path: "F:/media_core/packages/media_core_floating"
-      relative: false
-    source: path
+      path: "packages/media_core_floating"
+      ref: "5b047145422758d983a3724e689d8aa4b7d06863"
+      resolved-ref: "5b047145422758d983a3724e689d8aa4b7d06863"
+      url: "https://github.com/liuchuancong/media_core"
+    source: git
     version: "0.1.0"
   media_core_fullscreen:
     dependency: "direct main"
     description:
-      path: "F:/media_core/packages/media_core_fullscreen"
-      relative: false
-    source: path
+      path: "packages/media_core_fullscreen"
+      ref: "5b047145422758d983a3724e689d8aa4b7d06863"
+      resolved-ref: "5b047145422758d983a3724e689d8aa4b7d06863"
+      url: "https://github.com/liuchuancong/media_core"
+    source: git
     version: "0.1.0"
   media_core_ijk_player:
     dependency: "direct main"
     description:
-      path: "F:/media_core/packages/media_core_ijk_player"
-      relative: false
-    source: path
+      path: "packages/media_core_ijk_player"
+      ref: "5b047145422758d983a3724e689d8aa4b7d06863"
+      resolved-ref: "5b047145422758d983a3724e689d8aa4b7d06863"
+      url: "https://github.com/liuchuancong/media_core"
+    source: git
     version: "0.1.0"
   media_core_ingest:
     dependency: "direct main"
     description:
-      path: "F:/media_core/packages/media_core_ingest"
-      relative: false
-    source: path
+      path: "packages/media_core_ingest"
+      ref: "5b047145422758d983a3724e689d8aa4b7d06863"
+      resolved-ref: "5b047145422758d983a3724e689d8aa4b7d06863"
+      url: "https://github.com/liuchuancong/media_core"
+    source: git
     version: "0.1.0"
   media_core_list_playback:
     dependency: "direct main"
     description:
-      path: "F:/media_core/packages/media_core_list_playback"
-      relative: false
-    source: path
+      path: "packages/media_core_list_playback"
+      ref: "5b047145422758d983a3724e689d8aa4b7d06863"
+      resolved-ref: "5b047145422758d983a3724e689d8aa4b7d06863"
+      url: "https://github.com/liuchuancong/media_core"
+    source: git
     version: "0.1.0"
   media_core_live:
     dependency: "direct main"
     description:
-      path: "F:/media_core/packages/media_core_live"
-      relative: false
-    source: path
+      path: "packages/media_core_live"
+      ref: "5b047145422758d983a3724e689d8aa4b7d06863"
+      resolved-ref: "5b047145422758d983a3724e689d8aa4b7d06863"
+      url: "https://github.com/liuchuancong/media_core"
+    source: git
     version: "0.1.0"
   media_core_logging:
     dependency: "direct main"
     description:
-      path: "F:/media_core/packages/media_core_logging"
-      relative: false
-    source: path
+      path: "packages/media_core_logging"
+      ref: "5b047145422758d983a3724e689d8aa4b7d06863"
+      resolved-ref: "5b047145422758d983a3724e689d8aa4b7d06863"
+      url: "https://github.com/liuchuancong/media_core"
+    source: git
     version: "0.1.0"
   media_core_media_kit:
     dependency: "direct main"
     description:
-      path: "F:/media_core/packages/media_core_media_kit"
-      relative: false
-    source: path
+      path: "packages/media_core_media_kit"
+      ref: "5b047145422758d983a3724e689d8aa4b7d06863"
+      resolved-ref: "5b047145422758d983a3724e689d8aa4b7d06863"
+      url: "https://github.com/liuchuancong/media_core"
+    source: git
     version: "0.1.0"
   media_core_mediasession:
     dependency: "direct main"
     description:
-      path: "F:/media_core/packages/media_core_mediasession"
-      relative: false
-    source: path
+      path: "packages/media_core_mediasession"
+      ref: "5b047145422758d983a3724e689d8aa4b7d06863"
+      resolved-ref: "5b047145422758d983a3724e689d8aa4b7d06863"
+      url: "https://github.com/liuchuancong/media_core"
+    source: git
     version: "0.1.0"
   media_core_memory:
     dependency: transitive
     description:
-      path: "../../media_core/packages/media_core_memory"
-      relative: true
-    source: path
+      path: "packages/media_core_memory"
+      ref: "5b047145422758d983a3724e689d8aa4b7d06863"
+      resolved-ref: "5b047145422758d983a3724e689d8aa4b7d06863"
+      url: "https://github.com/liuchuancong/media_core"
+    source: git
     version: "0.1.0"
   media_core_multiview:
     dependency: "direct main"
     description:
-      path: "F:/media_core/packages/media_core_multiview"
-      relative: false
-    source: path
+      path: "packages/media_core_multiview"
+      ref: "5b047145422758d983a3724e689d8aa4b7d06863"
+      resolved-ref: "5b047145422758d983a3724e689d8aa4b7d06863"
+      url: "https://github.com/liuchuancong/media_core"
+    source: git
     version: "0.1.0"
   media_core_pip:
     dependency: "direct main"
     description:
-      path: "F:/media_core/packages/media_core_pip"
-      relative: false
-    source: path
+      path: "packages/media_core_pip"
+      ref: "5b047145422758d983a3724e689d8aa4b7d06863"
+      resolved-ref: "5b047145422758d983a3724e689d8aa4b7d06863"
+      url: "https://github.com/liuchuancong/media_core"
+    source: git
     version: "0.1.0"
   media_core_presentation:
     dependency: "direct main"
     description:
-      path: "F:/media_core/packages/media_core_presentation"
-      relative: false
-    source: path
+      path: "packages/media_core_presentation"
+      ref: "5b047145422758d983a3724e689d8aa4b7d06863"
+      resolved-ref: "5b047145422758d983a3724e689d8aa4b7d06863"
+      url: "https://github.com/liuchuancong/media_core"
+    source: git
     version: "0.1.0"
   media_core_ui:
     dependency: "direct main"
     description:
-      path: "F:/media_core/packages/media_core_ui"
-      relative: false
-    source: path
+      path: "packages/media_core_ui"
+      ref: "5b047145422758d983a3724e689d8aa4b7d06863"
+      resolved-ref: "5b047145422758d983a3724e689d8aa4b7d06863"
+      url: "https://github.com/liuchuancong/media_core"
+    source: git
     version: "0.1.0"
   media_core_win32:
     dependency: transitive
     description:
-      path: "../../media_core/packages/media_core_win32"
-      relative: true
-    source: path
+      path: "packages/media_core_win32"
+      ref: "5b047145422758d983a3724e689d8aa4b7d06863"
+      resolved-ref: "5b047145422758d983a3724e689d8aa4b7d06863"
+      url: "https://github.com/liuchuancong/media_core"
+    source: git
     version: "0.1.0"
   media_kit:
     dependency: transitive

@@ -584,6 +584,7 @@ jobs:
             ninja-build \
             pkg-config \
             libgtk-3-dev \
+            libmpv-dev \
             liblzma-dev \
             libasound2-dev \
             libayatana-appindicator3-dev \
@@ -650,31 +651,17 @@ jobs:
             --class-name AppConfig
 
       # -----------------------------------------------------
-      # mimalloc
+      # Native FFmpeg
       # -----------------------------------------------------
 
+      # Seeds the ffmpeg_kit Native Assets cache with the pinned Linux archive.
+      # Without it the hook fetches a different builder release and the
+      # `verify_ffmpeg_native.py --stage-linux` step below rejects it on the hash.
+      # (This step used to fetch a mimalloc tarball into the build directory;
+      # nothing in this repository references mimalloc, so it only cost time.)
       - name: Prefetch verified Linux native sources
         shell: bash
-        run: |
-          set -euo pipefail
-
-          archive_dir="build/linux/x64/release"
-          archive="$archive_dir/mimalloc-2.1.2.tar.gz"
-
-          mkdir -p "$archive_dir"
-
-          curl \
-            --fail \
-            --location \
-            --retry 6 \
-            --retry-all-errors \
-            https://github.com/microsoft/mimalloc/archive/refs/tags/v2.1.2.tar.gz \
-            --output "$archive.tmp"
-
-          echo "5179c8f5cf1237d2300e2d8559a7bc55  $archive.tmp" |
-            md5sum --check --strict
-
-          mv "$archive.tmp" "$archive"
+        run: bash tool/prefetch_linux_native.sh
 
       # -----------------------------------------------------
       # Build
