@@ -9,12 +9,12 @@ import 'package:pure_live/core/consts/app_consts.dart';
 import 'package:media_core/media_core.dart' show MediaPlayerView;
 import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 import 'package:pure_live/core/player/presentation/player_back_scope.dart';
-import 'package:pure_live/core/player/presentation/fullscreen_window.dart' show fullscreenDriver;
 import 'package:pure_live/core/player/presentation/windows_pip_driver.dart';
 import 'package:flutter/services.dart' show KeyDownEvent, LogicalKeyboardKey;
 import 'package:pure_live/core/player/presentation/player_ui_controller.dart';
 import 'package:pure_live/core/player/presentation/compact_playback_progress.dart';
 import 'package:pure_live/core/player/presentation/danmaku/player_danmaku_actions.dart';
+import 'package:pure_live/core/player/presentation/fullscreen_window.dart' show fullscreenDriver;
 import 'package:pure_live/domains/recorder/presentation/pages/local_player/local_video_player_controller.dart';
 
 /// One recording, played.
@@ -309,12 +309,17 @@ class _RecordingPlayerAreaState extends State<_PlayerArea> {
                     keyboardShortcuts: widget.keyboardShortcuts,
                     onSurfaceTap: _onSurfaceTap,
                   ),
-                  // The picture's own entries float here on a roomy window. NOT
-                  // while the page is fullscreen: the fullscreen chrome draws
-                  // them in its top bar, and two copies of the same row landed on
-                  // top of each other — the upper one took the tap, so the visible
-                  // buttons did nothing.
-                  if (Get.width > 680 && !controller.fullscreenActive.value)
+                  // The picture's own entries — audio-only, screenshot, small
+                  // window — float at the top-right. Desktop fullscreen needs
+                  // them too: it has no app bar and no other row to carry them,
+                  // which is why they used to vanish exactly when the window went
+                  // fullscreen. (The control bar at the bottom only holds the
+                  // transport, volume, rate, fit and fullscreen controls.)
+                  //
+                  // On a phone the fullscreen shape draws its own top bar, so the
+                  // row is skipped there to avoid two copies of the same buttons
+                  // landing on top of each other.
+                  if (Get.width > 680 && !(controller.fullscreenActive.value && _isTouchDevice))
                     Positioned(
                       top: 8 + _edgeInsets(context).top,
                       right: 8 + _edgeInsets(context).right,
