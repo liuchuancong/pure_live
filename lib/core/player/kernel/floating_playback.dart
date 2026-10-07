@@ -133,9 +133,7 @@ class FloatingPlayback {
     if (!rect.isFinite || rect.isEmpty) return;
     final settings = SettingsService.to.player;
     final geometry = FloatWindowGeometry.decode(settings.floatWindowGeometry.value);
-    settings.floatWindowGeometry.value = geometry
-        .withRect(isPortrait: isPortraitSurface, rect: rect)
-        .encode();
+    settings.floatWindowGeometry.value = geometry.withRect(isPortrait: isPortraitSurface, rect: rect).encode();
   }
 
   Future<void> closeAppFloating() async {
@@ -242,7 +240,7 @@ class _FloatingSurfaceState extends State<_FloatingSurface> {
                     final isPlay = snapshot.data ?? true;
                     return IconButton.filledTonal(
                       iconSize: 44,
-                      tooltip: isPlay ? '暂停' : '播放',
+                      tooltip: i18n(isPlay ? 'player_pause' : 'player_play'),
                       style: IconButton.styleFrom(backgroundColor: Colors.black54, foregroundColor: Colors.white),
                       icon: Icon(isPlay ? Icons.pause_rounded : Icons.play_arrow_rounded),
                       onPressed: () {
@@ -266,9 +264,13 @@ class _FloatingSurfaceState extends State<_FloatingSurface> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    _cornerButton(icon: Icons.open_in_full_rounded, semanticLabel: '回到直播间', onTap: widget.onExit),
+                    _cornerButton(
+                      icon: Icons.open_in_full_rounded,
+                      semanticLabel: i18n('player_back_to_room'),
+                      onTap: widget.onExit,
+                    ),
                     const SizedBox(width: 4),
-                    _cornerButton(icon: Icons.close_rounded, semanticLabel: '关闭', onTap: widget.onClose),
+                    _cornerButton(icon: Icons.close_rounded, semanticLabel: i18n('close'), onTap: widget.onClose),
                   ],
                 ),
               ),

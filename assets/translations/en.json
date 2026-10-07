@@ -2642,5 +2642,8 @@
   "live_quality_480p": "480P",
   "live_quality_360p": "360P",
   "live_quality_id": "Quality {id}",
-  "live_quality_source_suffix": " (source)"
+  "live_quality_source_suffix": " (source)",
+  "player_play": "Play",
+  "player_pause": "Pause",
+  "player_back_to_room": "Back to the room"
 }

@@ -2642,5 +2642,8 @@
   "live_quality_480p": "480P 流畅",
   "live_quality_360p": "360P 极速",
   "live_quality_id": "清晰度 {id}",
-  "live_quality_source_suffix": "（原画）"
+  "live_quality_source_suffix": "（原画）",
+  "player_play": "播放",
+  "player_pause": "暂停",
+  "player_back_to_room": "回到直播间"
 }
