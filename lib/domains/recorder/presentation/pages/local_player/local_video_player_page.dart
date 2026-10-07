@@ -141,8 +141,16 @@ class _RecordingPlayerAreaState extends State<_PlayerArea> {
       controller.revealControls();
       return KeyEventResult.handled;
     }
-    if (key == LogicalKeyboardKey.keyF || key == LogicalKeyboardKey.escape) {
+    if (key == LogicalKeyboardKey.keyF) {
       unawaited(controller.toggleFullscreen());
+      controller.revealControls();
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.escape) {
+      // Escape only ever leaves a mode: while fullscreen it drops back to the
+      // page, and outside fullscreen it must not open one.
+      if (!controller.fullscreenActive.value) return KeyEventResult.ignored;
+      unawaited(controller.exitFullscreen());
       controller.revealControls();
       return KeyEventResult.handled;
     }
@@ -1828,11 +1836,12 @@ class _DesktopLayout extends StatelessWidget {
             actions: const [SizedBox(width: 8)],
           ),
           body: Obx(() {
-            // Picture-in-picture owns the whole body, like the live room.
-            if (controller.isInPip.value) {
-              return _RecordingPipOverlay(controller: controller);
-            }
-            if (controller.isLoading.value) {
+            // The PiP branch above already owns the whole page, so no second
+            // check here. Scanning the folder is the only true "nothing to show
+            // yet" state: a reload that still has files on screen keeps showing
+            // the player instead of swapping it for a spinner, like the mobile
+            // layout does.
+            if (controller.isLoading.value && controller.videoFiles.isEmpty) {
               return Center(
                 child: SizedBox.square(
                   dimension: 28,
