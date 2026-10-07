@@ -28,8 +28,13 @@ class LocalVideoPlayerPage extends GetView<LocalVideoPlayerController> {
 
   @override
   Widget build(BuildContext context) {
-    if (Get.width <= 680) return _MobileLayout(controller: controller);
-    return _DesktopLayout(controller: controller);
+    // The keyboard owner sits above the layout switch: a resize that flips
+    // narrow/wide, or a presentation change that replaces the page's shape,
+    // must not take the focus node with it.
+    return RecordingKeyboardShortcuts(
+      controller: controller,
+      child: Get.width <= 680 ? _MobileLayout(controller: controller) : _DesktopLayout(controller: controller),
+    );
   }
 }
 
@@ -123,6 +128,117 @@ class _RecordingPlayerAreaState extends State<_PlayerArea> {
 
   void _onSurfaceDoubleTap() => unawaited(controller.toggleFullscreen());
 
+  @override
+  Widget build(BuildContext context) {
+    return GetBuilder<LocalVideoPlayerController>(
+      builder: (_) {
+        final handle = controller.handle;
+        if (handle == null) return const ColoredBox(color: Colors.black);
+        return Obx(() {
+          if (controller.isInPip.value) {
+            return _RecordingPipOverlay(controller: controller);
+          }
+          final visible = controller.controlsVisible.value;
+          return MouseRegion(
+            onEnter: (_) => controller.setControlsHovering(true),
+            onExit: (_) => controller.setControlsHovering(false),
+            cursor: visible ? MouseCursor.defer : SystemMouseCursors.none,
+            child: GestureDetector(
+              behavior: HitTestBehavior.translucent,
+              onDoubleTap: _onSurfaceDoubleTap,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  _RecordingVideoFace(
+                    controller: controller,
+                    keyboardShortcuts: widget.keyboardShortcuts,
+                    onSurfaceTap: _onSurfaceTap,
+                  ),
+                  if (Get.width > 680)
+                    Positioned(top: 8, right: 8, child: _RecordingCornerActions(controller: controller)),
+                  // The bar rides above the picture, revealed by the rules above.
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: IgnorePointer(
+                      ignoring: !visible,
+                      child: AnimatedOpacity(
+                        opacity: visible ? 1 : 0,
+                        duration: const Duration(milliseconds: 200),
+                        child: _RecordingControlBar(controller: controller),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        });
+      },
+    );
+  }
+}
+
+/// Page-level keyboard owner, the shape the live room uses.
+///
+/// The recorder used to carry its key handler on a Focus inside the player
+/// area. Every presentation change rebuilds that subtree — fullscreen and PiP
+/// replace the page's shape — and the focus node went away with it, so the
+/// keys stopped answering exactly when the viewer is fullscreen and wants them
+/// most. Living above the shape switch keeps one node alive, and the node is
+/// re-asserted after a transition because the desktop window's fullscreen
+/// change can drop the OS-level focus along with it.
+class RecordingKeyboardShortcuts extends StatefulWidget {
+  const RecordingKeyboardShortcuts({super.key, required this.controller, required this.child});
+
+  final LocalVideoPlayerController controller;
+  final Widget child;
+
+  @override
+  State<RecordingKeyboardShortcuts> createState() => _RecordingKeyboardShortcutsState();
+}
+
+class _RecordingKeyboardShortcutsState extends State<RecordingKeyboardShortcuts> {
+  final FocusNode _node = FocusNode(debugLabel: 'LocalVideoPlayerKeys');
+
+  final List<StreamSubscription<bool>> _presentationSubs = <StreamSubscription<bool>>[];
+
+  LocalVideoPlayerController get controller => widget.controller;
+
+  @override
+  void initState() {
+    super.initState();
+    for (final presentation in <RxBool>[
+      controller.fullscreenActive,
+      controller.portraitFullscreen,
+      controller.isFullscreen,
+      controller.isInPip,
+    ]) {
+      _presentationSubs.add(presentation.listen((_) => _reassertFocus()));
+    }
+    _reassertFocus();
+  }
+
+  @override
+  void dispose() {
+    for (final subscription in _presentationSubs) {
+      subscription.cancel();
+    }
+    _node.dispose();
+    super.dispose();
+  }
+
+  /// Takes focus back after a transition, and only when nothing else holds it:
+  /// a dialog, menu or text field the viewer opened keeps the keyboard.
+  void _reassertFocus() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _node.hasFocus) return;
+      if (FocusManager.instance.primaryFocus != null) return;
+      _node.requestFocus();
+    });
+  }
+
   KeyEventResult _handleKey(FocusNode node, KeyEvent event) {
     if (event is! KeyDownEvent) return KeyEventResult.ignored;
     final key = event.logicalKey;
@@ -147,11 +263,16 @@ class _RecordingPlayerAreaState extends State<_PlayerArea> {
       return KeyEventResult.handled;
     }
     if (key == LogicalKeyboardKey.escape) {
-      // Escape only ever leaves a mode: while fullscreen it drops back to the
-      // page, and outside fullscreen it must not open one.
-      if (!controller.fullscreenActive.value) return KeyEventResult.ignored;
-      unawaited(controller.exitFullscreen());
-      controller.revealControls();
+      // Escape only ever leaves a mode: fullscreen drops back to the page, and
+      // outside it pops the route — desktop Flutter does not turn an unhandled
+      // Escape into a Navigator pop, and PopScope still decides whether that
+      // leaves the page or hands the feed to the small window.
+      if (controller.fullscreenActive.value) {
+        unawaited(controller.exitFullscreen());
+        controller.revealControls();
+        return KeyEventResult.handled;
+      }
+      unawaited(Navigator.of(context).maybePop());
       return KeyEventResult.handled;
     }
     if (key == LogicalKeyboardKey.arrowUp || key == LogicalKeyboardKey.arrowDown) {
@@ -168,57 +289,7 @@ class _RecordingPlayerAreaState extends State<_PlayerArea> {
 
   @override
   Widget build(BuildContext context) {
-    return GetBuilder<LocalVideoPlayerController>(
-      builder: (_) {
-        final handle = controller.handle;
-        if (handle == null) return const ColoredBox(color: Colors.black);
-        return Focus(
-          autofocus: true,
-          onKeyEvent: _handleKey,
-          child: Obx(() {
-            if (controller.isInPip.value) {
-              return _RecordingPipOverlay(controller: controller);
-            }
-            final visible = controller.controlsVisible.value;
-            return MouseRegion(
-              onEnter: (_) => controller.setControlsHovering(true),
-              onExit: (_) => controller.setControlsHovering(false),
-              cursor: visible ? MouseCursor.defer : SystemMouseCursors.none,
-              child: GestureDetector(
-                behavior: HitTestBehavior.translucent,
-                onDoubleTap: _onSurfaceDoubleTap,
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    _RecordingVideoFace(
-                      controller: controller,
-                      keyboardShortcuts: widget.keyboardShortcuts,
-                      onSurfaceTap: _onSurfaceTap,
-                    ),
-                    if (Get.width > 680)
-                      Positioned(top: 8, right: 8, child: _RecordingCornerActions(controller: controller)),
-                    // The bar rides above the picture, revealed by the rules above.
-                    Positioned(
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      child: IgnorePointer(
-                        ignoring: !visible,
-                        child: AnimatedOpacity(
-                          opacity: visible ? 1 : 0,
-                          duration: const Duration(milliseconds: 200),
-                          child: _RecordingControlBar(controller: controller),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }),
-        );
-      },
-    );
+    return Focus(focusNode: _node, autofocus: true, onKeyEvent: _handleKey, child: widget.child);
   }
 }
 
