@@ -38,21 +38,78 @@ class LocalVideoPlayerPage extends GetView<LocalVideoPlayerController> {
     // where Flutter's own callback has DEFAULT priority and pops the route
     // before any `PopScope` runs. [PlayerBackScope] registers a
     // PRIORITY_OVERLAY interception through the host channel, which is the only
-    // reason the live room's "back leaves fullscreen first" works at all. This
-    // page used a bare `PopScope`, so its Back never reached the handler and the
-    // route simply popped.
+    // reason the live room's "back leaves fullscreen first" works at all.
     return RecordingKeyboardShortcuts(
       controller: controller,
-      child: PlayerBackScope(
-        // Fullscreen is the controller's own state, not a mode this scope reads;
-        // [LocalVideoPlayerController.handleBackRequest] answers for it — it
-        // leaves fullscreen first, then hands the feed to the small window, and
-        // only then reports that the page may be left.
-        presentationActive: false,
-        onExitPresentation: () async {},
-        onBackRequest: controller.handleBackRequest,
+      child: _RecordingBackBoundary(
+        controller: controller,
         child: Get.width <= 680 ? _MobileLayout(controller: controller) : _DesktopLayout(controller: controller),
       ),
+    );
+  }
+}
+
+/// The recording player's system-Back owner.
+///
+/// It exists because Back here is not a Flutter-level event. Android 13+ hands
+/// the gesture and the button to the Activity, where Flutter registers its own
+/// callback at **DEFAULT** priority — so the route is popped before any
+/// `PopScope` runs. The host keeps a **PRIORITY_OVERLAY** callback instead and
+/// forwards it over `pure_live/predictive_back`, and that interception has to be
+/// switched on for this route. The live room does exactly that through
+/// `PlayerBackScope`.
+///
+/// A bare `PopScope` here looked right and never received the event; a scope
+/// whose `presentationActive` was hardcoded false was no better, because
+/// `canPop: true` is precisely what lets the route pop before any handler runs.
+///
+/// So the fullscreen state is handed to the scope as its presentation. The scope
+/// itself stays a single widget for the whole route — it must, because the
+/// native interception has one callback slot — and the state is pushed in by a
+/// listener on the controller's own observable.
+class _RecordingBackBoundary extends StatefulWidget {
+  const _RecordingBackBoundary({required this.controller, required this.child});
+
+  final LocalVideoPlayerController controller;
+  final Widget child;
+
+  @override
+  State<_RecordingBackBoundary> createState() => _RecordingBackBoundaryState();
+}
+
+class _RecordingBackBoundaryState extends State<_RecordingBackBoundary> {
+  StreamSubscription<bool>? _fullscreenSub;
+  bool _fullscreen = false;
+
+  LocalVideoPlayerController get controller => widget.controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _fullscreen = controller.fullscreenActive.value;
+    _fullscreenSub = controller.fullscreenActive.listen((value) {
+      if (!mounted || value == _fullscreen) return;
+      setState(() => _fullscreen = value);
+    });
+  }
+
+  @override
+  void dispose() {
+    _fullscreenSub?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return PlayerBackScope(
+      // `canPop` follows the real state. A scope that kept saying false here is
+      // what let Android pop the page straight out of fullscreen.
+      presentationActive: _fullscreen,
+      onExitPresentation: () async {
+        await controller.exitFullscreen();
+      },
+      onBackRequest: () => controller.handleBackRequest(),
+      child: widget.child,
     );
   }
 }
@@ -1204,8 +1261,9 @@ class _PlaylistPanel extends StatelessWidget {
               padding: EdgeInsets.zero,
               itemCount: controller.videoFiles.length,
               itemBuilder: (_, i) => _FileRow(controller: controller, index: i, dense: dense, onPicked: onPicked),
-            
-              physics: const PureLiveScrollPhysics(),),
+
+              physics: const PureLiveScrollPhysics(),
+            ),
           ),
         ),
       ],
@@ -1410,8 +1468,12 @@ void _showSettingsSheet(BuildContext context, LocalVideoPlayerController control
           padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
           child: Obx(() {
             final hasChat = controller.hasDanmaku.value;
-            return Column(
-              mainAxisSize: MainAxisSize.min,
+            // Speed + fit + the danmaku switch + audio-only + screenshot + PiP +
+            // the episode entry is taller than 90% of a short phone window: the
+            // last card used to run 44 pixels past the sheet and paint into the
+            // overflow gutter. Scrolling only when the sheet cannot fit keeps the
+            // tall-window shape untouched.
+            return FittingSheetBody(
               children: [
                 // Playback card: speed and fit chips.
                 _SheetCard(
@@ -1927,116 +1989,116 @@ class _DesktopLayout extends StatelessWidget {
       if (controller.isInPip.value) {
         return _RecordingPipOverlay(controller: controller);
       }
-        if (controller.isFullscreen.value) {
-          // A portrait recording keeps its vertical shape in fullscreen: the
-          // picture is contained at full height with the list under it, instead
-          // of being stretched into a landscape frame.
-          if (controller.portraitFullscreen.value) {
-            return Scaffold(
-              backgroundColor: Colors.black,
-              body: SafeArea(
-                child: Column(
-                  children: [
-                    Expanded(child: _PlayerArea(controller: controller, keyboardShortcuts: true)),
-                    const Divider(height: 1),
-                    SizedBox(
-                      height: (MediaQuery.sizeOf(context).height * 0.3).clamp(120.0, 260.0),
-                      child: _PlaylistPanel(controller: controller),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }
+      if (controller.isFullscreen.value) {
+        // A portrait recording keeps its vertical shape in fullscreen: the
+        // picture is contained at full height with the list under it, instead
+        // of being stretched into a landscape frame.
+        if (controller.portraitFullscreen.value) {
           return Scaffold(
             backgroundColor: Colors.black,
-            body: _PlayerArea(controller: controller, keyboardShortcuts: true),
-          );
-        }
-        return Scaffold(
-          appBar: AppBar(
-            titleSpacing: 0,
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back_rounded),
-              onPressed: () async {
-                if (await controller.handleBackRequest()) Get.back<void>();
-              },
-            ),
-            title: Obx(
-              () => Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
+            body: SafeArea(
+              child: Column(
                 children: [
-                  Text(
-                    controller.roomTitle ?? i18n('recorder_local_player_title'),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-                  ),
-                  Text(
-                    controller.videoFiles.isEmpty
-                        ? i18n('recorder_local_player_playlist_empty')
-                        : '${controller.currentFileName}   ${controller.currentIndex.value + 1}/${controller.videoFiles.length}',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 11, color: theme.colorScheme.onSurfaceVariant),
-                  ),
-                ],
-              ),
-            ),
-            actions: const [SizedBox(width: 8)],
-          ),
-          body: Obx(() {
-            // The PiP branch above already owns the whole page, so no second
-            // check here. Scanning the folder is the only true "nothing to show
-            // yet" state: a reload that still has files on screen keeps showing
-            // the player instead of swapping it for a spinner, like the mobile
-            // layout does.
-            if (controller.isLoading.value && controller.videoFiles.isEmpty) {
-              return Center(
-                child: SizedBox.square(
-                  dimension: 28,
-                  child: CircularProgressIndicator(strokeWidth: 2.5, color: theme.colorScheme.primary),
-                ),
-              );
-            }
-            if (controller.videoFiles.isEmpty) {
-              return _emptyState(context, controller);
-            }
-            final videoPane = Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: ColoredBox(
-                    color: Colors.black,
-                    child: _PlayerArea(controller: controller, keyboardShortcuts: true),
-                  ),
-                ),
-              ),
-            );
-            if (!localPlayerShowsSideBySide(MediaQuery.sizeOf(context).width)) {
-              final panelHeight = (MediaQuery.sizeOf(context).height * 0.4).clamp(150.0, 320.0);
-              return Column(
-                children: [
-                  videoPane,
+                  Expanded(child: _PlayerArea(controller: controller, keyboardShortcuts: true)),
                   const Divider(height: 1),
                   SizedBox(
-                    height: panelHeight,
+                    height: (MediaQuery.sizeOf(context).height * 0.3).clamp(120.0, 260.0),
                     child: _PlaylistPanel(controller: controller),
                   ),
                 ],
-              );
-            }
-            return Row(
+              ),
+            ),
+          );
+        }
+        return Scaffold(
+          backgroundColor: Colors.black,
+          body: _PlayerArea(controller: controller, keyboardShortcuts: true),
+        );
+      }
+      return Scaffold(
+        appBar: AppBar(
+          titleSpacing: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_rounded),
+            onPressed: () async {
+              if (await controller.handleBackRequest()) Get.back<void>();
+            },
+          ),
+          title: Obx(
+            () => Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  controller.roomTitle ?? i18n('recorder_local_player_title'),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                ),
+                Text(
+                  controller.videoFiles.isEmpty
+                      ? i18n('recorder_local_player_playlist_empty')
+                      : '${controller.currentFileName}   ${controller.currentIndex.value + 1}/${controller.videoFiles.length}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 11, color: theme.colorScheme.onSurfaceVariant),
+                ),
+              ],
+            ),
+          ),
+          actions: const [SizedBox(width: 8)],
+        ),
+        body: Obx(() {
+          // The PiP branch above already owns the whole page, so no second
+          // check here. Scanning the folder is the only true "nothing to show
+          // yet" state: a reload that still has files on screen keeps showing
+          // the player instead of swapping it for a spinner, like the mobile
+          // layout does.
+          if (controller.isLoading.value && controller.videoFiles.isEmpty) {
+            return Center(
+              child: SizedBox.square(
+                dimension: 28,
+                child: CircularProgressIndicator(strokeWidth: 2.5, color: theme.colorScheme.primary),
+              ),
+            );
+          }
+          if (controller.videoFiles.isEmpty) {
+            return _emptyState(context, controller);
+          }
+          final videoPane = Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: ColoredBox(
+                  color: Colors.black,
+                  child: _PlayerArea(controller: controller, keyboardShortcuts: true),
+                ),
+              ),
+            ),
+          );
+          if (!localPlayerShowsSideBySide(MediaQuery.sizeOf(context).width)) {
+            final panelHeight = (MediaQuery.sizeOf(context).height * 0.4).clamp(150.0, 320.0);
+            return Column(
               children: [
                 videoPane,
-                const VerticalDivider(width: 1),
-                SizedBox(width: 320, child: _PlaylistPanel(controller: controller)),
+                const Divider(height: 1),
+                SizedBox(
+                  height: panelHeight,
+                  child: _PlaylistPanel(controller: controller),
+                ),
               ],
             );
-          }),
-        );
-      });
+          }
+          return Row(
+            children: [
+              videoPane,
+              const VerticalDivider(width: 1),
+              SizedBox(width: 320, child: _PlaylistPanel(controller: controller)),
+            ],
+          );
+        }),
+      );
+    });
   }
 }

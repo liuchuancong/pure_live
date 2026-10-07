@@ -36,7 +36,13 @@ class PlayerBackScope extends StatefulWidget {
   });
 
   /// Whether a presentation currently owns the page (fullscreen, PiP, small
-  /// window). Read on every Back, so it tracks the observables behind it.
+  /// window).
+  ///
+  /// Read on every Back and on every build, so a host whose presentation is one
+  /// of its own observables keeps this scope a single stable widget and lets the
+  /// getter answer — mounting a second scope (or remounting this one) to follow
+  /// the state is how a host ends up with two owners of the one native callback
+  /// slot.
   final bool presentationActive;
 
   /// Leaves that presentation. The page stays.
