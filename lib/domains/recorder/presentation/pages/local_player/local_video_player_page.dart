@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:ui';
 import 'dart:async';
 
 import 'package:remixicon/remixicon.dart';
@@ -143,7 +144,41 @@ String _modifiedOf(File file) {
 /// `viewPadding` is the raw inset the system reports — nothing above this page
 /// consumes it, so it is exactly what a positioned control adds itself. The
 /// picture underneath stays full-bleed; only the bars move in.
-EdgeInsets _edgeInsets(BuildContext context) => MediaQuery.viewPaddingOf(context);
+EdgeInsets _edgeInsets(BuildContext context) {
+  final mediaQuery = MediaQuery.of(context);
+  final viewPadding = mediaQuery.viewPadding;
+
+  double left = viewPadding.left;
+  double top = viewPadding.top;
+  double right = viewPadding.right;
+  double bottom = viewPadding.bottom;
+
+  for (final feature in mediaQuery.displayFeatures) {
+    if (feature.type != DisplayFeatureType.cutout) {
+      continue;
+    }
+
+    final bounds = feature.bounds;
+
+    if (bounds.left <= 0) {
+      left = left > bounds.width ? left : bounds.width;
+    }
+
+    if (bounds.top <= 0) {
+      top = top > bounds.height ? top : bounds.height;
+    }
+
+    if (bounds.right >= mediaQuery.size.width) {
+      right = right > bounds.width ? right : bounds.width;
+    }
+
+    if (bounds.bottom >= mediaQuery.size.height) {
+      bottom = bottom > bounds.height ? bottom : bounds.height;
+    }
+  }
+
+  return EdgeInsets.fromLTRB(left, top, right, bottom);
+}
 
 /// The video surface: the shared gesture layer over the library's own player.
 ///
@@ -399,7 +434,6 @@ class _RecordingCornerActions extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(20)),
       padding: const EdgeInsets.symmetric(horizontal: 2),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -412,41 +446,53 @@ class _RecordingCornerActions extends StatelessWidget {
             Obx(
               () => !controller.fullscreenActive.value
                   ? const SizedBox.shrink()
-                  : IconButton(
-                      color: Colors.white,
-                      iconSize: 20,
-                      tooltip: i18n('local_player_back'),
-                      icon: const Icon(Icons.arrow_back_rounded),
-                      onPressed: () async {
-                        if (await controller.handleBackRequest()) Get.back<void>();
-                      },
+                  : SizedBox(
+                      width: 32,
+                      child: IconButton(
+                        color: Colors.white,
+                        iconSize: 20,
+                        tooltip: i18n('local_player_back'),
+                        icon: const Icon(Icons.arrow_back_rounded),
+                        onPressed: () async {
+                          if (await controller.handleBackRequest()) Navigator.of(Get.context!).pop();
+                        },
+                      ),
                     ),
             ),
           Obx(
-            () => IconButton(
-              color: controller.isAudioOnly.value ? const Color(0xFFFFD166) : Colors.white,
-              iconSize: 20,
-              tooltip: controller.isAudioOnly.value ? i18n('restore_video_mode') : i18n('switch_audio_only_mode'),
-              icon: Icon(controller.isAudioOnly.value ? Remix.headphone_fill : Remix.headphone_line),
-              onPressed: () => controller.isAudioOnly.toggle(),
+            () => SizedBox(
+              width: 32,
+              child: IconButton(
+                color: controller.isAudioOnly.value ? const Color(0xFFFFD166) : Colors.white,
+                iconSize: 20,
+                tooltip: controller.isAudioOnly.value ? i18n('restore_video_mode') : i18n('switch_audio_only_mode'),
+                icon: Icon(controller.isAudioOnly.value ? Remix.headphone_fill : Remix.headphone_line),
+                onPressed: () => controller.isAudioOnly.toggle(),
+              ),
             ),
           ),
-          IconButton(
-            color: Colors.white,
-            iconSize: 20,
-            tooltip: i18n('local_player_screenshot'),
-            icon: const Icon(Icons.photo_camera_rounded),
-            onPressed: () async {
-              final name = await controller.saveScreenshot();
-              ToastUtil.show(name ?? i18n('path_or_permission_error'));
-            },
+          SizedBox(
+            width: 32,
+            child: IconButton(
+              color: Colors.white,
+              iconSize: 20,
+              tooltip: i18n('local_player_screenshot'),
+              icon: const Icon(Icons.photo_camera_rounded),
+              onPressed: () async {
+                final name = await controller.saveScreenshot();
+                ToastUtil.show(name ?? i18n('path_or_permission_error'));
+              },
+            ),
           ),
-          IconButton(
-            color: Colors.white,
-            iconSize: 20,
-            tooltip: i18n('pip_window_play'),
-            icon: const Icon(Remix.picture_in_picture_line),
-            onPressed: () => unawaited(_enterRecordingPip(controller)),
+          SizedBox(
+            width: 32,
+            child: IconButton(
+              color: Colors.white,
+              iconSize: 20,
+              tooltip: i18n('pip_window_play'),
+              icon: const Icon(Remix.picture_in_picture_line),
+              onPressed: () => unawaited(_enterRecordingPip(controller)),
+            ),
           ),
         ],
       ),
@@ -679,7 +725,7 @@ class _RecordingPipOverlayState extends State<_RecordingPipOverlay> {
                         semanticLabel: i18n('close'),
                         onTap: () async {
                           await _exitPip();
-                          if (Get.currentRoute == RoutePath.kLocalVideoPlayer) Get.back<void>();
+                          if (Get.currentRoute == RoutePath.kLocalVideoPlayer) Navigator.of(Get.context!).pop();
                         },
                       ),
                     ],
@@ -1432,7 +1478,9 @@ class _PortraitTopBar extends StatelessWidget {
                 color: Colors.white,
                 icon: const Icon(Icons.arrow_back_rounded),
                 onPressed: () async {
-                  if (await controller.handleBackRequest()) Get.back<void>();
+                  if (await controller.handleBackRequest()) {
+                    Navigator.of(Get.context!).pop();
+                  }
                 },
               ),
               Expanded(
@@ -1914,6 +1962,7 @@ class _LandscapeTopBar extends StatelessWidget {
     // adds the raw system inset itself, so a sideways cutout and the status bar
     // are both cleared without shrinking the picture.
     final padding = _edgeInsets(context);
+
     return Align(
       alignment: Alignment.topCenter,
       child: Container(
@@ -1932,7 +1981,7 @@ class _LandscapeTopBar extends StatelessWidget {
                 color: Colors.white,
                 icon: const Icon(Icons.arrow_back_rounded),
                 onPressed: () async {
-                  if (await controller.handleBackRequest()) Get.back<void>();
+                  if (await controller.handleBackRequest()) Navigator.of(Get.context!).pop();
                 },
               ),
               Expanded(
@@ -1954,7 +2003,7 @@ class _LandscapeTopBar extends StatelessWidget {
               IconButton(
                 color: Colors.white,
                 tooltip: i18n('recorder_local_player_title'),
-                icon: const Icon(Remix.play_list_line),
+                icon: const Icon(Remix.list_view),
                 onPressed: () => unawaited(_openPlaylistSheet(context, controller)),
               ),
             ],
@@ -2034,7 +2083,7 @@ class _DesktopLayout extends StatelessWidget {
           leading: IconButton(
             icon: const Icon(Icons.arrow_back_rounded),
             onPressed: () async {
-              if (await controller.handleBackRequest()) Get.back<void>();
+              if (await controller.handleBackRequest()) Navigator.of(Get.context!).pop();
             },
           ),
           title: Obx(

@@ -1,29 +1,29 @@
+import 'dart:io';
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 
-import 'package:flame_barrage/flame_barrage.dart';
-import 'package:media_core/media_core.dart' hide PlatformUtils;
-import 'package:media_core_feed/media_core_feed.dart';
-import 'package:media_core_list_playback/media_core_list_playback.dart';
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/domains/live/domain/global_player_service.dart';
-import 'package:pure_live/core/config/danmaku_settings_controller.dart';
+import 'package:flame_barrage/flame_barrage.dart';
+import 'package:media_core_feed/media_core_feed.dart';
 import 'package:pure_live/core/platform/file_utils.dart';
-import 'package:pure_live/core/platform/platform_utils.dart';
-import 'package:screen_brightness_platform_interface/screen_brightness_platform_interface.dart';
-import 'package:pure_live/core/player/kernel/floating_handle_keeper.dart';
-import 'package:pure_live/core/player/kernel/player_kernel_service.dart';
-import 'package:pure_live/core/player/presentation/danmaku/danmaku_surface_settings.dart';
-import 'package:pure_live/core/player/presentation/danmaku/player_danmaku_surface.dart';
-import 'package:pure_live/core/player/presentation/fullscreen_window.dart' show WindowService, fullscreenDriver;
-import 'package:pure_live/core/player/presentation/player_presentation_actions.dart';
-import 'package:pure_live/core/player/presentation/compact_source_orientation.dart';
-import 'package:pure_live/core/player/presentation/player_ui_controller.dart';
-import 'package:pure_live/core/player/presentation/windows_pip_driver.dart';
 import 'package:pure_live/core/storage/hive_pref_util.dart';
-import 'package:pure_live/domains/recorder/presentation/pages/local_player/recording_danmaku_track.dart';
+import 'package:pure_live/core/platform/platform_utils.dart';
+import 'package:media_core/media_core.dart' hide PlatformUtils;
+import 'package:media_core_list_playback/media_core_list_playback.dart';
+import 'package:pure_live/core/config/danmaku_settings_controller.dart';
+import 'package:pure_live/core/player/kernel/player_kernel_service.dart';
+import 'package:pure_live/domains/live/domain/global_player_service.dart';
+import 'package:pure_live/core/player/kernel/floating_handle_keeper.dart';
+import 'package:pure_live/core/player/presentation/windows_pip_driver.dart';
+import 'package:pure_live/core/player/presentation/player_ui_controller.dart';
+import 'package:pure_live/core/player/presentation/compact_source_orientation.dart';
+import 'package:pure_live/core/player/presentation/player_presentation_actions.dart';
+import 'package:pure_live/core/player/presentation/danmaku/player_danmaku_surface.dart';
+import 'package:pure_live/core/player/presentation/danmaku/danmaku_surface_settings.dart';
+import 'package:screen_brightness_platform_interface/screen_brightness_platform_interface.dart';
 import 'package:pure_live/domains/recorder/presentation/pages/local_player/recording_resume.dart';
+import 'package:pure_live/domains/recorder/presentation/pages/local_player/recording_danmaku_track.dart';
+import 'package:pure_live/core/player/presentation/fullscreen_window.dart' show WindowService, fullscreenDriver;
 
 /// Persistent [PlaybackProgressStore] backed by Hive.
 ///
@@ -651,7 +651,7 @@ final class LocalVideoPlayerController extends GetxController implements PlayerU
       },
     );
     await _kernel.enterFloating(handle.id);
-    if (Get.currentRoute == RoutePath.kLocalVideoPlayer) Get.back();
+    if (Get.currentRoute == RoutePath.kLocalVideoPlayer) Navigator.of(Get.context!).pop();
   }
 
   /// The system picture-in-picture window, the same presentation the live room

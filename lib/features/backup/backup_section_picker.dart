@@ -102,7 +102,7 @@ class _BackupSectionPickerPageState extends State<BackupSectionPickerPage> {
               key: const ValueKey('backup-section-confirm'),
               onPressed: _selected.isEmpty
                   ? null
-                  : () => Get.back<List<String>>(result: _selected.toList(growable: false)),
+                  : () => Navigator.of(Get.context!).pop(_selected.toList(growable: false)),
               child: Text(i18n('confirm')),
             ),
           ),

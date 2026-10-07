@@ -1,9 +1,9 @@
 import 'dart:async';
 
-import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/domains/account/data/bilibili_account_service.dart';
 import 'package:pure_live/core/network/cookie_sanitizer.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:pure_live/domains/account/data/bilibili_account_service.dart';
 
 const String bilibiliWebLoginUrl = 'https://passport.bilibili.com/login';
 
@@ -187,7 +187,7 @@ class BiliBiliWebLoginController extends GetxController {
   }
 
   static void _finishLogin() {
-    Get.back(result: true);
+    Navigator.of(Get.context!).pop(true);
   }
 
   static Future<void> _navigateToQrLogin() async {
