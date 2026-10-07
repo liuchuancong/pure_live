@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:media_core_media_kit/media_core_media_kit.dart' show mpvListOptionCommand;
+import 'package:media_core_media_kit/media_core_media_kit.dart' show mpvListOptionCommands;
 import 'package:path/path.dart' as path;
 import 'package:pure_live/core/player/super_resolution.dart';
 
@@ -70,23 +70,24 @@ void main() {
   });
 
   group('mpv 列表选项的写法', () {
-    test('链路变成 change-list 的逗号条目，而不是整串一个文件', () {
+    test('先 clr 再逐条 append，逗号串不作为参数出现', () {
       final chain = superResolutionChain(SuperResolutionMode.quality, pack)!;
+      final commands = mpvListOptionCommands('glsl-shaders', chain);
 
-      expect(mpvListOptionCommand('glsl-shaders', chain), <String>[
-        'change-list',
-        'glsl-shaders',
-        'set',
-        chain.join(','),
-      ]);
+      expect(commands.first, <String>['change-list', 'glsl-shaders', 'clr', '']);
+      expect(commands.length, chain.length + 1);
+      for (var i = 0; i < chain.length; i++) {
+        expect(commands[i + 1], <String>['change-list', 'glsl-shaders', 'append', chain[i]]);
+      }
+      // mpv 现在只认 {a,b} 那种列表写法，裸串是一条；命令本身也不报"这条被当成了
+      // 几项"，所以挂载数由适配层回读 glsl-shaders-count 复核。这里钉住的是
+      // 没有任何参数装着多条路径。
+      expect(commands.every((command) => command.every((argument) => !argument.contains(','))), isTrue);
     });
 
-    test('空链路是清空，不是一个空条目', () {
-      expect(mpvListOptionCommand('glsl-shaders', const <String>[]), <String>[
-        'change-list',
-        'glsl-shaders',
-        'clr',
-        '',
+    test('空链只剩一次 clr', () {
+      expect(mpvListOptionCommands('glsl-shaders', const <String>[]), <List<String>>[
+        <String>['change-list', 'glsl-shaders', 'clr', ''],
       ]);
     });
   });
