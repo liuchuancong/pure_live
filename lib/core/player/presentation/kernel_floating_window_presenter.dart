@@ -154,7 +154,7 @@ class _KernelFloatingSurface extends StatefulWidget {
 }
 
 class _KernelFloatingSurfaceState extends State<_KernelFloatingSurface> {
-  static const Duration _autoHideAfter = Duration(seconds: 3);
+  static const Duration _autoHideAfter = Duration(seconds: 5);
 
   bool _hovered = false;
   bool _pinned = false;
