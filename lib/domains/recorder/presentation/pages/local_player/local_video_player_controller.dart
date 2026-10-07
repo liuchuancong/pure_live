@@ -497,7 +497,13 @@ final class LocalVideoPlayerController extends GetxController implements PlayerU
       },
       // Expanding the window means "give me the page back", so it reopens this
       // folder's player; the file itself resumes from the saved position.
+      // That position has to be written *here*: the periodic saver died with the
+      // page, so without this the reopened page resumes from the moment the
+      // window was opened — and if the viewer floated inside the first five
+      // seconds, the handover save removed the entry entirely and the recording
+      // starts over from zero.
       onExpand: () async {
+        await _savePosition();
         Get.toNamed(
           RoutePath.kLocalVideoPlayer,
           arguments: <String, dynamic>{'dir': directory, 'title': roomTitle, 'nick': roomNick},
