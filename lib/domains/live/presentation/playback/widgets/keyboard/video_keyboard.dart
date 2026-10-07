@@ -5,13 +5,59 @@ import 'package:pure_live/core/index.dart';
 import 'package:pure_live/domains/live/presentation/playback/widgets/video_player/video_controller.dart';
 import 'package:pure_live/domains/live/domain/global_player_service.dart';
 
-class VideoKeyboardShortcuts extends StatelessWidget {
+class VideoKeyboardShortcuts extends StatefulWidget {
   final VideoController? controller;
   final Widget child;
 
   const VideoKeyboardShortcuts({super.key, required this.controller, required this.child});
 
+  @override
+  State<VideoKeyboardShortcuts> createState() => _VideoKeyboardShortcutsState();
+}
+
+class _VideoKeyboardShortcutsState extends State<VideoKeyboardShortcuts> {
+  /// The room's own focus scope, held for the life of the page.
+  ///
+  /// Entering or leaving a presentation (fullscreen, widescreen, PiP) rebuilds
+  /// the content below, and on desktop the window's fullscreen transition can
+  /// drop the OS-level focus with it. An `autofocus: true` that already fired
+  /// does not come back on its own, which is what made Space/Escape stop
+  /// answering exactly in fullscreen. Re-asserting after every presentation
+  /// change fixes that without stealing the keyboard from anything that
+  /// currently holds it.
+  final FocusScopeNode _node = FocusScopeNode(debugLabel: 'VideoKeyboardShortcuts');
+
+  final List<StreamSubscription<bool>> _presentationSubs = <StreamSubscription<bool>>[];
+
+  @override
+  void initState() {
+    super.initState();
+    final player = GlobalPlayerService.instance.player;
+    for (final flag in <RxBool>[player.isInPip, player.isSystemFullscreen, player.isWindowFullscreen]) {
+      _presentationSubs.add(flag.listen((_) => _reassertFocus()));
+    }
+    _reassertFocus();
+  }
+
+  @override
+  void dispose() {
+    for (final subscription in _presentationSubs) {
+      subscription.cancel();
+    }
+    _node.dispose();
+    super.dispose();
+  }
+
+  void _reassertFocus() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _node.hasFocus) return;
+      if (FocusManager.instance.primaryFocus != null) return;
+      _node.requestFocus();
+    });
+  }
+
   void _handleEscape(BuildContext context) {
+    final controller = widget.controller;
     // A popup/opaque route owns its focus and its first Escape. HardwareKeyboard
     // global handlers also run when Flutter has already handled the same key,
     // which used to change the room presentation behind an open menu.
@@ -49,7 +95,7 @@ class VideoKeyboardShortcuts extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = this.controller;
+    final controller = widget.controller;
     return CallbackShortcuts(
       bindings: {
         const SingleActivator(LogicalKeyboardKey.escape, includeRepeats: false): () => _handleEscape(context),
@@ -80,7 +126,7 @@ class VideoKeyboardShortcuts extends StatelessWidget {
       },
       // Rooms with no initialized player still need a focus target. Descendant
       // controls/text inputs retain their own focus and key handling priority.
-      child: FocusScope(autofocus: true, child: child),
+      child: FocusScope(node: _node, autofocus: true, child: widget.child),
     );
   }
 }
