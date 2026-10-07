@@ -2091,26 +2091,12 @@ class _DesktopLayout extends StatelessWidget {
         return _RecordingPipOverlay(controller: controller);
       }
       if (controller.isFullscreen.value) {
-        // A portrait recording keeps its vertical shape in fullscreen: the
-        // picture is contained at full height with the list under it, instead
-        // of being stretched into a landscape frame.
-        if (controller.portraitFullscreen.value) {
-          return Scaffold(
-            backgroundColor: Colors.black,
-            body: SafeArea(
-              child: Column(
-                children: [
-                  Expanded(child: _PlayerArea(controller: controller, keyboardShortcuts: true)),
-                  const Divider(height: 1),
-                  SizedBox(
-                    height: (MediaQuery.sizeOf(context).height * 0.3).clamp(120.0, 260.0),
-                    child: _PlaylistPanel(controller: controller),
-                  ),
-                ],
-              ),
-            ),
-          );
-        }
+        // Fullscreen is fullscreen on every platform: the picture and nothing
+        // else. This branch used to keep a playlist panel under a portrait
+        // recording, which is the black band with the file row that showed up
+        // along the bottom on a desktop monitor — the same chrome the phone's
+        // fullscreen already dropped. A portrait picture is simply contained in
+        // the frame, which is what the mobile landscape shape does too.
         return Scaffold(
           backgroundColor: Colors.black,
           body: _PlayerArea(controller: controller, keyboardShortcuts: true),
