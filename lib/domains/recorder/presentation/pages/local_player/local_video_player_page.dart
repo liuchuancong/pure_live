@@ -81,10 +81,6 @@ PlayerControlsTheme _controlsTheme(ThemeData theme) {
 /// window (desktop). PiP and the small window go through this controller, so
 /// their page-side behavior (state tracking, handle handover) applies.
 PlayerControlActions _recordingActions(LocalVideoPlayerController controller) {
-  // 库条的全屏按钮按 canExit 恒定分流到 exit 闭包，因此 enter/exit 都接同一个
-  // 状态感知的切换器，一次点击就是一次翻转。
-  // PiP 与小窗不进库条：视频右下的悬浮行已提供（移动端竖屏面板同款），
-  // 两处都给会出现一对重复按钮。
   return PlayerControlActions(
     enterFullscreen: controller.toggleFullscreen,
     exitFullscreen: controller.toggleFullscreen,
@@ -117,23 +113,16 @@ class _RecordingPlayerAreaState extends State<_PlayerArea> {
   LocalVideoPlayerController get controller => widget.controller;
 
   void _onSurfaceTap() {
-    // 触屏：点一下亮栏，再点一下收栏（直播间同一约定）。
     if (_isTouchDevice) {
       controller.toggleControls();
       return;
     }
-    // 桌面保留原来的语义：单击切播放，同时把 5 秒倒计时重新上弦。
     unawaited(controller.togglePlayPause());
     controller.revealControls();
   }
 
-  /// 双击画面 = 进/出全屏，直播间同款。
   void _onSurfaceDoubleTap() => unawaited(controller.toggleFullscreen());
 
-  /// 本页自管的快捷键，与直播间同一套键位（space/K 播放暂停、←/→ ±10s、
-  /// ↑/↓ 音量、f/Esc 全屏切换）。挂在页面自己的 Focus 上而不是库条 stage——
-  /// 页面结构重建（Obx 切换、全屏形态替换）会把 stage 的焦点甩掉，之后所有
-  /// 键盘事件就再也到不了播放器。
   KeyEventResult _handleKey(FocusNode node, KeyEvent event) {
     if (event is! KeyDownEvent) return KeyEventResult.ignored;
     final key = event.logicalKey;
@@ -186,7 +175,6 @@ class _RecordingPlayerAreaState extends State<_PlayerArea> {
             return MouseRegion(
               onEnter: (_) => controller.setControlsHovering(true),
               onExit: (_) => controller.setControlsHovering(false),
-              // 隐藏时连光标一起收掉——直播全屏的同款行为。
               cursor: visible ? MouseCursor.defer : SystemMouseCursors.none,
               child: GestureDetector(
                 behavior: HitTestBehavior.translucent,
@@ -226,11 +214,9 @@ class _RecordingPlayerAreaState extends State<_PlayerArea> {
   }
 }
 
-/// 画面右上角的三个入口：仅音频 / 截图 / 画中画。
-///
-/// 它们原来挤在底部控制条里，跟着控制条一起淡出。可这三个是"换一种看法"的
-/// 入口，不是播放进度的一部分 —— 想截图、想转画中画的时候，那条栏往往已经
-/// 收起来了。常驻在右上角后一眼就在；竖屏录像两侧的黑边正好把这块位置空出来。
+/// The picture's top-right cluster: back (while fullscreen), audio-only,
+/// screenshot and picture-in-picture. Shown on wide windows; on narrow ones
+/// the same entries live in the settings sheet.
 class _RecordingCornerActions extends StatelessWidget {
   const _RecordingCornerActions({required this.controller});
 
@@ -316,13 +302,11 @@ class _RecordingVideoFace extends StatelessWidget {
             actions: _recordingActions(controller),
             theme: _controlsTheme(Theme.of(context)),
             fit: BoxFit.contain,
-            // 全部控制都归本页自己的底栏；库条不再渲染任何一层。
             showControls: false,
             keyboardShortcuts: keyboardShortcuts,
             onTapVideo: onSurfaceTap,
           ),
           Obx(() => Positioned.fill(child: controller.buildDanmakuSurface(context) ?? const SizedBox.shrink())),
-          // 仅音频：黑掉画面、声音继续（省电，与直播同语义）。
           Obx(
             () => controller.isAudioOnly.value
                 ? Positioned.fill(
@@ -407,7 +391,6 @@ class _RecordingPipOverlayState extends State<_RecordingPipOverlay> {
   bool get _isTouchDevice =>
       defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS;
 
-  // 触屏的系统 PiP 是独立窗口且自带控件，页面 overlay 不会显示；桌面保留 hover。
   bool get _showControls => !_isTouchDevice && _hovered;
 
   Future<void> _exitPip() => widget.controller.exitPip();
@@ -420,8 +403,6 @@ class _RecordingPipOverlayState extends State<_RecordingPipOverlay> {
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
       child: Scaffold(
-        // 紧凑窗口自带黑底：PiP 时这一层 Scaffold 就是整个页面，透明会把主题
-        // 背景（浅色）透成圆角外的一圈白边。
         backgroundColor: Colors.black,
         body: Stack(
           fit: StackFit.expand,
@@ -445,7 +426,6 @@ class _RecordingPipOverlayState extends State<_RecordingPipOverlay> {
                 ],
               ),
             ),
-            // 进度条：小窗里也要能拖，不只是看得见时间。跟控件同一套 hover 显隐。
             Positioned(
               left: 8,
               right: 8,
@@ -474,7 +454,9 @@ class _RecordingPipOverlayState extends State<_RecordingPipOverlay> {
                   child: Obx(
                     () => IconButton.filledTonal(
                       iconSize: 56,
-                      tooltip: widget.controller.isPlaying.value ? '暂停' : '播放',
+                      tooltip: widget.controller.isPlaying.value
+                          ? i18n('local_player_pause')
+                          : i18n('local_player_play'),
                       style: IconButton.styleFrom(backgroundColor: Colors.black45, foregroundColor: Colors.white),
                       icon: Icon(widget.controller.isPlaying.value ? Icons.pause_rounded : Icons.play_arrow_rounded),
                       onPressed: widget.controller.togglePlayPause,
@@ -494,11 +476,15 @@ class _RecordingPipOverlayState extends State<_RecordingPipOverlay> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      _pipControlButton(icon: Icons.open_in_full_rounded, semanticLabel: '回到页面', onTap: _exitPip),
+                      _pipControlButton(
+                        icon: Icons.open_in_full_rounded,
+                        semanticLabel: i18n('local_player_back_to_page'),
+                        onTap: _exitPip,
+                      ),
                       const SizedBox(width: 6),
                       _pipControlButton(
                         icon: Icons.close_rounded,
-                        semanticLabel: '关闭',
+                        semanticLabel: i18n('close'),
                         onTap: () async {
                           await _exitPip();
                           if (Get.currentRoute == RoutePath.kLocalVideoPlayer) Get.back<void>();
@@ -563,8 +549,6 @@ class _RecordingControlBar extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(12, 22, 12, 4),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          // 窄窗口里收起音量滑条（见 recordingVolumeSliderMinWidth），静音开关
-          // 留着——它是这条栏上唯一的声音入口。
           final showVolumeSlider = constraints.maxWidth >= recordingVolumeSliderMinWidth;
           return Column(
             mainAxisSize: MainAxisSize.min,
@@ -617,7 +601,7 @@ class _RecordingControlBar extends StatelessWidget {
                     () => IconButton(
                       color: Colors.white,
                       iconSize: 26,
-                      tooltip: controller.isPlaying.value ? '暂停' : '播放',
+                      tooltip: controller.isPlaying.value ? i18n('local_player_pause') : i18n('local_player_play'),
                       icon: Icon(controller.isPlaying.value ? Icons.pause_rounded : Icons.play_arrow_rounded),
                       onPressed: controller.togglePlayPause,
                     ),
@@ -625,14 +609,14 @@ class _RecordingControlBar extends StatelessWidget {
                   IconButton(
                     color: Colors.white,
                     iconSize: 26,
-                    tooltip: '快退 10 秒',
+                    tooltip: i18n('local_player_seek_back'),
                     icon: const Icon(Icons.replay_10_rounded),
                     onPressed: () => unawaited(controller.seekBy(const Duration(seconds: -10))),
                   ),
                   IconButton(
                     color: Colors.white,
                     iconSize: 26,
-                    tooltip: '快进 10 秒',
+                    tooltip: i18n('local_player_seek_forward'),
                     icon: const Icon(Icons.forward_10_rounded),
                     onPressed: () => unawaited(controller.seekBy(const Duration(seconds: 10))),
                   ),
@@ -715,7 +699,7 @@ class _VolumeControlsState extends State<_VolumeControls> {
         IconButton(
           color: Colors.white,
           iconSize: 22,
-          tooltip: muted ? '取消静音' : '静音',
+          tooltip: muted ? i18n('local_player_unmute') : i18n('local_player_mute'),
           icon: Icon(
             muted
                 ? Icons.volume_off_rounded
@@ -1120,7 +1104,6 @@ Widget _emptyState(BuildContext context, LocalVideoPlayerController controller, 
 // ---------------------------------------------------------------------------
 // Phone: short-video shape, after the reference app — a dark top bar with the
 // title, the speed chip and the ⋮ overflow; the overflow opens the settings
-// bottom sheet (speed / fit / danmaku / PiP / small window); the "选集" bar
 // under the context panel opens the episode list. Landscape is the fullscreen
 // shape.
 // ---------------------------------------------------------------------------
@@ -1246,7 +1229,7 @@ class _PortraitTopBar extends StatelessWidget {
                 child: Obx(
                   () => Text(
                     '${controller.roomTitle ?? i18n('recorder_local_player_title')}  '
-                    '第${controller.currentIndex.value + 1}个',
+                    '${i18n('local_player_index_label', args: {'index': '${controller.currentIndex.value + 1}'})}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
@@ -1593,7 +1576,6 @@ Future<void> _openPlaylistSheet(BuildContext context, LocalVideoPlayerController
   );
 }
 
-/// The recording's context below the picture: the quick action row, the "选集"
 /// floating bar from the reference app, then a thin progress line.
 class _ContextPanel extends StatelessWidget {
   const _ContextPanel({required this.controller});
@@ -1782,16 +1764,10 @@ class _DesktopLayout extends StatelessWidget {
         if (await controller.handleBackRequest() && context.mounted) Get.back<void>();
       },
       child: Obx(() {
-        // 桌面画中画排在全屏之前：窗口的形状决定页面的脸。PiP 请求经内核链时会
-        // 释放全屏，但那一步是驱动的事；只要窗口是紧凑的，就必须渲染紧凑 overlay，
-        // 不能让残留的全屏状态把整页布局留在缩小的窗口里。
         //
-        // 与直播间一致，整个页面替换成紧凑画面 —— AppBar 等页面 chrome 不能留下，
-        // 否则缩小的窗口里还带着标题栏。
         if (controller.isInPip.value) {
           return _RecordingPipOverlay(controller: controller);
         }
-        // 桌面全屏：与直播间一致，整个页面只剩视频区（Esc/双击退出由库条处理）。
         if (controller.isFullscreen.value) {
           // A portrait recording keeps its vertical shape in fullscreen: the
           // picture is contained at full height with the list under it, instead
