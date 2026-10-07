@@ -36,21 +36,36 @@ final class KernelFloatingWindowPresenter implements FloatingWindowPresenter {
 
   OverlayEntry? _entry;
 
-  /// The window's last rect, remembered through the same settings entry the
-  /// live room's small window uses — per stream orientation, the same slot:
-  /// the viewer asked for one small-window behaviour, not one per surface.
-  Rect? _rememberedRect() {
+  /// The window's last rect for a picture of this shape, remembered through
+  /// the same settings entry the live room's small window uses.
+  ///
+  /// The shape comes from the player being floated, not from
+  /// [CompactSourceOrientation]: that global reads the live room's player, so
+  /// a recording would have opened in whatever orientation the last live
+  /// stream had — a vertical video in a horizontal window. Portrait and
+  /// landscape keep separate slots, exactly like the room's window.
+  Rect? _rememberedRect(bool isPortrait) {
     final geometry = FloatWindowGeometry.decode(SettingsService.to.player.floatWindowGeometry.value);
-    return geometry.forPortrait(CompactSourceOrientation.isPortrait);
+    return geometry.forPortrait(isPortrait);
   }
 
-  void _rememberRect(Rect rect) {
+  void _rememberRect(bool isPortrait, Rect rect) {
     if (!rect.isFinite || rect.isEmpty) return;
     final settings = SettingsService.to.player;
     final geometry = FloatWindowGeometry.decode(settings.floatWindowGeometry.value);
-    settings.floatWindowGeometry.value = geometry
-        .withRect(isPortrait: CompactSourceOrientation.isPortrait, rect: rect)
-        .encode();
+    settings.floatWindowGeometry.value = geometry.withRect(isPortrait: isPortrait, rect: rect).encode();
+  }
+
+  /// The floated picture's size: what the driver was told, or the handle's own
+  /// snapshot when no host ever fed the driver a size. Null means there is no
+  /// shape to follow yet.
+  Size? _floatedVideoSize(PlayerId playerId, FloatingWindowRequest request) {
+    if (request.videoWidth > 0 && request.videoHeight > 0) {
+      return Size(request.videoWidth.toDouble(), request.videoHeight.toDouble());
+    }
+    final snapshot = kernel.get(playerId)?.combinedSnapshot.geometry.videoSize;
+    if (snapshot == null) return null;
+    return Size(snapshot.width.toDouble(), snapshot.height.toDouble());
   }
 
   @override
@@ -62,12 +77,18 @@ final class KernelFloatingWindowPresenter implements FloatingWindowPresenter {
     final overlayContext = Get.overlayContext;
     if (overlayContext == null) return;
     final playerId = PlayerId(request.playerId);
+    final size = _floatedVideoSize(playerId, request);
+    final isPortrait = size != null && CompactSourceOrientation.isPortraitSize(size.width, size.height);
+    final width = size?.width.round() ?? 0;
+    final height = size?.height.round() ?? 0;
     final entry = OverlayEntry(
       builder: (context) => FloatingWindowOverlay(
         visible: driver.onFloatingChanged,
         initiallyVisible: driver.isFloating,
-        videoWidth: request.videoWidth == 0 ? null : request.videoWidth,
-        videoHeight: request.videoHeight == 0 ? null : request.videoHeight,
+        // The overlay derives the window's shape from this size, which is what
+        // opens a vertical recording as a tall window instead of a wide one.
+        videoWidth: width > 0 ? width : null,
+        videoHeight: height > 0 ? height : null,
         // Same placement the live room's window ships with: every edge and
         // corner resizes freely (the viewer picks width and height), and the
         // window may use the whole surface.
@@ -83,8 +104,8 @@ final class KernelFloatingWindowPresenter implements FloatingWindowPresenter {
             resizeKeepsAspectRatio: false,
           ),
         ),
-        initialRect: _rememberedRect(),
-        onRectChanged: _rememberRect,
+        initialRect: _rememberedRect(isPortrait),
+        onRectChanged: (rect) => _rememberRect(isPortrait, rect),
         // The corner actions belong to the surface below, not to the library's
         // own built-in buttons: the live room's small window draws its own
         // expand/close pair that appears with the rest of the controls, and the

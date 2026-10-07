@@ -113,11 +113,26 @@ Future<List<PipWorkArea>> _readWorkAreas() async {
   return areas;
 }
 
+/// Whether the compact window is showing a taller-than-wide picture.
+///
+/// The PiP driver is what was told the video's shape (`onVideoSize`), so it
+/// answers for whichever player is inside it. The global
+/// [CompactSourceOrientation] reader is the live room's player — a recording
+/// that borrowed it would get the remembered bounds of whatever the last live
+/// stream's orientation was. Unknown size falls back to that reader, which is
+/// the behaviour the room has always had.
+bool get windowsPipShowsPortraitVideo {
+  final width = windowsPipDriver.videoWidth;
+  final height = windowsPipDriver.videoHeight;
+  if (width <= 0 || height <= 0) return CompactSourceOrientation.isPortrait;
+  return CompactSourceOrientation.isPortraitSize(width.toDouble(), height.toDouble());
+}
+
 PipSavedBounds? _readSavedBounds() {
   final windowSettings = SettingsService.to.window;
   final pip = windowSettings.windowsPip;
   if (!windowSettings.rememberPipPosition.value) return null;
-  if (CompactSourceOrientation.isPortrait) {
+  if (windowsPipShowsPortraitVideo) {
     if (!pip.portraitHasValidBounds) return null;
     return PipSavedBounds(
       displayId: pip.portraitDisplayId.value,
@@ -143,7 +158,7 @@ PipSavedBounds? _readSavedBounds() {
 
 void _writeSavedBounds(Size size, Offset position, String displayId) {
   final pip = SettingsService.to.window.windowsPip;
-  if (CompactSourceOrientation.isPortrait) {
+  if (windowsPipShowsPortraitVideo) {
     pip.updatePortrait(size, position, displayId);
     return;
   }
