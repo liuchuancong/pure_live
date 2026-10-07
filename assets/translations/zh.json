@@ -2234,5 +2234,17 @@
   "recording_fit_fill": "拉伸",
   "playback_rate": "倍速",
   "video_fit": "画面比例",
-  "settings_more": "设置"
+  "settings_more": "设置",
+  "player_preset_balanced": "标准（引擎默认）",
+  "player_preset_balanced_desc": "全部交给引擎自己决定, 仅附加直播所需的解复用与缓存调优。大多数设备和网络下这是最稳的选择, 也是其它预设的基线。",
+  "player_preset_compat": "Android 硬解兼容",
+  "player_preset_compat_desc": "Android 上改用 mediacodec_embed 直出表面并强制 mediacodec 硬解。适合默认 gl/ffmpeg 路径出现花屏、绿屏或音画不同步的机型。",
+  "player_preset_rtxVsr": "RTX 视频超分辨率",
+  "player_preset_rtxVsr_desc": "Windows + NVIDIA 显卡专用: d3d11va 硬解并启用 RTX Video Super Resolution 超分滤镜, 把低清晰度源放大到高分辨率屏幕上观看。",
+  "player_preset_lowEnd": "低配流畅",
+  "player_preset_lowEnd_desc": "软解线程数上限 2、lowres 降采样、跳过非参考帧环路滤波、缩小缓冲。把 CPU 交给画面本身, 适合核显或老机器。",
+  "player_preset_stableNetwork": "弱网稳定",
+  "player_preset_stableNetwork_desc": "加大解复用缓冲与预读、开启强制可拖动与重连退避。用内存换卡顿, 适合跨网、跨运营商或信号边缘的直播源。",
+  "player_preset_lowLatency": "低延迟",
+  "player_preset_lowLatency_desc": "最小缓冲 + 解码/渲染双端丢帧, 牺牲抗抖动换低延迟。适合赛事直播、连麦互动等时效优先的场景。"
 }

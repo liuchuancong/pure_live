@@ -2234,5 +2234,17 @@
   "recording_fit_fill": "Stretch",
   "playback_rate": "Playback speed",
   "video_fit": "Picture fit",
-  "settings_more": "Settings"
+  "settings_more": "Settings",
+  "player_preset_balanced": "Standard (engine defaults)",
+  "player_preset_balanced_desc": "Everything left to the engine, plus the live-stream demuxer and cache tuning. The safest choice on most devices and networks, and the baseline every other preset builds on.",
+  "player_preset_compat": "Android hardware-decode compat",
+  "player_preset_compat_desc": "On Android, switch to the mediacodec_embed surface and force mediacodec decoding. For devices where the default gl/ffmpeg path shows glitches, a green screen or drifting audio.",
+  "player_preset_rtxVsr": "RTX Video Super Resolution",
+  "player_preset_rtxVsr_desc": "Windows + NVIDIA only: d3d11va decoding plus the RTX Video Super Resolution filter, upscaling low-definition sources onto high-resolution screens.",
+  "player_preset_lowEnd": "Smooth on weak hardware",
+  "player_preset_lowEnd_desc": "Software decoding capped at 2 threads, lowres downsampling, skipped loop filters and a smaller buffer. Hands the CPU back to the picture; for iGPUs and old machines.",
+  "player_preset_stableNetwork": "Stable on weak networks",
+  "player_preset_stableNetwork_desc": "Bigger demuxer buffers and read-ahead, forced seekability and reconnect backoff. Trades memory for fewer stalls on cross-network or edge-signal streams.",
+  "player_preset_lowLatency": "Low latency",
+  "player_preset_lowLatency_desc": "Minimum buffering with frame dropping on both decoder and render side, trading jitter tolerance for delay. For sports, duets and anything time-critical."
 }

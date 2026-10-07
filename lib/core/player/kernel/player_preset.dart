@@ -148,37 +148,15 @@ class PlayerEngineOutput {
 
 /// Everything a preset spells out, as data.
 extension PlayerPresetDetail on PlayerPresetId {
-  /// Display name.
-  String get nameZh => switch (this) {
-    PlayerPresetId.balanced => '标准（引擎默认）',
-    PlayerPresetId.compat => 'Android 硬解兼容',
-    PlayerPresetId.rtxVsr => 'RTX 视频超分辨率',
-    PlayerPresetId.lowEnd => '低配流畅',
-    PlayerPresetId.stableNetwork => '弱网稳定',
-    PlayerPresetId.lowLatency => '低延迟',
-  };
+  /// Translation key of the preset's display name.
+  ///
+  /// The name lives in the locale files like every other user-visible string:
+  /// a table here would be one more place that shows Chinese in an English
+  /// interface.
+  String get nameKey => 'player_preset_$name';
 
-  /// One-paragraph explanation shown on the guide page.
-  String get descriptionZh => switch (this) {
-    PlayerPresetId.balanced =>
-      '全部交给引擎自己决定, 仅附加直播所需的解复用与缓存调优。'
-          '大多数设备和网络下这是最稳的选择, 也是其它预设的基线。',
-    PlayerPresetId.compat =>
-      'Android 上改用 mediacodec_embed 直出表面并强制 mediacodec 硬解。'
-          '适合默认 gl/ffmpeg 路径出现花屏、绿屏或音画不同步的机型。',
-    PlayerPresetId.rtxVsr =>
-      'Windows + NVIDIA 显卡专用: d3d11va 硬解并启用 RTX Video Super '
-          'Resolution 超分滤镜, 把低清晰度源放大到高分辨率屏幕上观看。',
-    PlayerPresetId.lowEnd =>
-      '软解线程数上限 2、lowres 降采样、跳过非参考帧环路滤波、缩小缓冲。'
-          '把 CPU 交给画面本身, 适合核显或老机器。',
-    PlayerPresetId.stableNetwork =>
-      '加大解复用缓冲与预读、开启强制可拖动与重连退避。'
-          '用内存换卡顿, 适合跨网、跨运营商或信号边缘的直播源。',
-    PlayerPresetId.lowLatency =>
-      '最小缓冲 + 解码/渲染双端丢帧, 牺牲抗抖动换低延迟。'
-          '适合追赛事直播、连麦互动等时效优先的场景。',
-  };
+  /// Translation key of the one-paragraph explanation on the guide page.
+  String get descriptionKey => 'player_preset_${name}_desc';
 
   /// Whether this preset applies on the current platform at all.
   bool get availableOnCurrentPlatform => switch (this) {
