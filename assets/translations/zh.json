@@ -2215,6 +2215,7 @@
   "local_player_delete_failed": "删除失败",
   "local_player_play": "播放",
   "local_player_pause": "暂停",
+  "local_player_back_to_page": "回到页面",
   "local_player_seek_back": "后退 10 秒",
   "local_player_seek_forward": "前进 10 秒",
   "local_player_files": "共 {count} 个录像",

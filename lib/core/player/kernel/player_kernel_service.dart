@@ -81,6 +81,11 @@ class PlayerKernelService {
   static Future<void> ensureInitialized() async {
     MediaKitPlayerAdapter.ensureInitialized();
 
+    // The desktop chrome asks the window, not a player, whether the picture is
+    // compact, and the driver is what makes it compact. Start mirroring it
+    // before any player can ask for the mode.
+    observeWindowsPipState();
+
     // Output settings ride two rails: mpv-property changes (hwdec, tuning
     // table, shaders, ao, ...) apply to the live engine through engine
     // options; a render-context change (vo / custom-output switch) needs a

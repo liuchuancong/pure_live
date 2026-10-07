@@ -126,7 +126,10 @@ class DesktopManager {
         OverlayEntry(
           builder: (_) => Obx(() {
             final fullscreen = GlobalPlayerService.instance.player.isSystemFullscreen.value;
-            final pipMode = GlobalPlayerService.instance.player.isInPip.value;
+            // The window's own shape, not one player's report: the live facade
+            // knows only about the live room, so a recording in PiP left the
+            // chrome painted over the compact picture.
+            final pipMode = windowsPipActive.value;
             return Column(
               children: [
                 if (!fullscreen && !pipMode) const CustomTitleBar(),

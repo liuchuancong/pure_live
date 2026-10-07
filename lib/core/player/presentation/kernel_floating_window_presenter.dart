@@ -5,7 +5,9 @@ import 'package:flutter/foundation.dart';
 import 'package:pure_live/core/player/kernel/floating_handle_keeper.dart';
 import 'package:pure_live/core/config/settings_service.dart';
 import 'package:pure_live/core/config/float_window_geometry.dart';
+import 'package:pure_live/core/player/presentation/compact_playback_clock.dart';
 import 'package:pure_live/core/player/presentation/compact_source_orientation.dart';
+import 'package:pure_live/core/utils/i18n.dart';
 import 'package:pure_live/get/get.dart';
 import 'package:media_core_floating/media_core_floating.dart';
 import 'package:media_core/media_core.dart'
@@ -83,20 +85,29 @@ final class KernelFloatingWindowPresenter implements FloatingWindowPresenter {
         ),
         initialRect: _rememberedRect(),
         onRectChanged: _rememberRect,
-        // Leave the window: the driver goes back to normal (which hides this
-        // entry) and the keeper releases the handle the page handed over, so a
-        // feed that outlived its page is disposed exactly once, here. Expanding
-        // asks the host for the full page back instead of only closing.
-        onExpand: () async {
-          await kernel.exitFloating(playerId);
-          await FloatingHandleKeeper.instance.expand(playerId.value);
-          await FloatingHandleKeeper.instance.release(playerId.value);
-        },
-        onClose: () async {
-          await kernel.exitFloating(playerId);
-          await FloatingHandleKeeper.instance.release(playerId.value);
-        },
-        child: _KernelFloatingSurface(kernel: kernel, playerId: playerId),
+        // The corner actions belong to the surface below, not to the library's
+        // own built-in buttons: the live room's small window draws its own
+        // expand/close pair that appears with the rest of the controls, and the
+        // built-ins are always-on text glyphs that made the two windows look
+        // like different features.
+        child: _KernelFloatingSurface(
+          kernel: kernel,
+          playerId: playerId,
+          // Leave the window: the driver goes back to normal (which hides this
+          // entry) and the keeper releases the handle the page handed over, so a
+          // feed that outlived its page is disposed exactly once, here.
+          // Expanding asks the host for the full page back instead of only
+          // closing.
+          onExpand: () async {
+            await kernel.exitFloating(playerId);
+            await FloatingHandleKeeper.instance.expand(playerId.value);
+            await FloatingHandleKeeper.instance.release(playerId.value);
+          },
+          onClose: () async {
+            await kernel.exitFloating(playerId);
+            await FloatingHandleKeeper.instance.release(playerId.value);
+          },
+        ),
       ),
     );
     final overlay = Overlay.maybeOf(overlayContext, rootOverlay: true) ?? Overlay.of(overlayContext);
@@ -122,12 +133,21 @@ final class KernelFloatingWindowPresenter implements FloatingWindowPresenter {
 /// leave behind, so a tap pins the controls and a timer releases them, while a
 /// desktop window shows them while the pointer is inside. Play/pause is the
 /// primary action, centered at a size a thumb can hit; expand and close stay
-/// in the corner.
+/// in the corner. The clock rides the same reveal because a recording is the
+/// media that has a duration, and in a window this small the viewer wants to
+/// know where they are in it.
 class _KernelFloatingSurface extends StatefulWidget {
-  const _KernelFloatingSurface({required this.kernel, required this.playerId});
+  const _KernelFloatingSurface({
+    required this.kernel,
+    required this.playerId,
+    required this.onExpand,
+    required this.onClose,
+  });
 
   final PlayerKernel kernel;
   final PlayerId playerId;
+  final Future<void> Function() onExpand;
+  final Future<void> Function() onClose;
 
   @override
   State<_KernelFloatingSurface> createState() => _KernelFloatingSurfaceState();
@@ -217,7 +237,7 @@ class _KernelFloatingSurfaceState extends State<_KernelFloatingSurface> {
               child: Center(
                 child: IconButton.filledTonal(
                   iconSize: 44,
-                  tooltip: _playing ? '暂停' : '播放',
+                  tooltip: _playing ? i18n('local_player_pause') : i18n('local_player_play'),
                   style: IconButton.styleFrom(backgroundColor: Colors.black54, foregroundColor: Colors.white),
                   icon: Icon(_playing ? Icons.pause_rounded : Icons.play_arrow_rounded),
                   onPressed: _togglePlayPause,
@@ -225,8 +245,75 @@ class _KernelFloatingSurfaceState extends State<_KernelFloatingSurface> {
               ),
             ),
           ),
+          // The same corner pair the live room's small window draws, with the
+          // same reveal: it is one feature seen from two players, not two.
+          Positioned(
+            top: 4,
+            right: 4,
+            child: IgnorePointer(
+              ignoring: !_showControls,
+              child: AnimatedOpacity(
+                opacity: _showControls ? 1 : 0,
+                duration: const Duration(milliseconds: 160),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _cornerButton(
+                      icon: Icons.open_in_full_rounded,
+                      semanticLabel: i18n('local_player_back_to_page'),
+                      onTap: widget.onExpand,
+                    ),
+                    const SizedBox(width: 4),
+                    _cornerButton(icon: Icons.close_rounded, semanticLabel: i18n('close'), onTap: widget.onClose),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            left: 6,
+            bottom: 6,
+            child: IgnorePointer(
+              ignoring: !_showControls,
+              child: AnimatedOpacity(
+                opacity: _showControls ? 1 : 0,
+                duration: const Duration(milliseconds: 160),
+                child: handle == null || handle.disposed
+                    ? const SizedBox.shrink()
+                    : StreamBuilder<PlayerTransportState>(
+                        stream: handle.playbackStream,
+                        initialData: handle.playback,
+                        builder: (context, snapshot) {
+                          final state = snapshot.data;
+                          return CompactPlaybackClock(
+                            position: state?.position ?? Duration.zero,
+                            duration: state?.duration ?? Duration.zero,
+                          );
+                        },
+                      ),
+              ),
+            ),
+          ),
         ],
       ),
+    );
+  }
+
+  Widget _cornerButton({
+    required IconData icon,
+    required String semanticLabel,
+    required Future<void> Function() onTap,
+  }) {
+    return IconButton(
+      iconSize: 20,
+      visualDensity: VisualDensity.compact,
+      tooltip: semanticLabel,
+      style: IconButton.styleFrom(backgroundColor: Colors.black54, foregroundColor: Colors.white),
+      icon: Icon(icon),
+      onPressed: () {
+        unawaited(onTap());
+        _restartAutoHide();
+      },
     );
   }
 }

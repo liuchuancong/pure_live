@@ -2215,6 +2215,7 @@
   "local_player_delete_failed": "Delete failed",
   "local_player_play": "Play",
   "local_player_pause": "Pause",
+  "local_player_back_to_page": "Back to page",
   "local_player_seek_back": "Back 10 seconds",
   "local_player_seek_forward": "Forward 10 seconds",
   "local_player_files": "{count} recordings",

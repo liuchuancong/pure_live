@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/painting.dart' show Offset, Rect, Size;
 import 'package:flutter/widgets.dart' show WidgetsBinding;
 import 'package:media_core/media_core.dart' show PresentationLifecycleHooks;
@@ -6,6 +8,7 @@ import 'package:pure_live/core/player/presentation/compact_source_orientation.da
 import 'package:pure_live/core/config/settings_service.dart';
 import 'package:pure_live/core/config/window_size_controller.dart';
 import 'package:pure_live/core/logging/core_log.dart';
+import 'package:pure_live/get/get.dart' show RxBool;
 import 'package:screen_retriever/screen_retriever.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -160,4 +163,27 @@ Future<void> captureWindowsWindowGeometry(void Function(Size size) writeNormal) 
     return;
   }
   writeNormal(await windowManager.getSize());
+}
+
+/// Whether the window is right now the compact picture-in-picture window.
+///
+/// The live room used to be the only PiP host, so the desktop chrome asked the
+/// live facade whether a PiP was up. A recording in PiP left that answer
+/// false, and the app's title bar stayed painted above the compact picture.
+/// The driver is the authority on the window's shape — it is the one that
+/// shrinks it, for whichever player is inside — so the chrome reads this
+/// mirror of the driver instead of any one player's state.
+final RxBool windowsPipActive = RxBool(false);
+
+StreamSubscription<bool>? _pipStateSub;
+
+/// Mirrors the driver's PiP transitions into [windowsPipActive].
+///
+/// Called once from the kernel bootstrap: a listener that starts after the
+/// first transition misses it, and the title bar then stays on the compact
+/// window for the rest of the session.
+void observeWindowsPipState() {
+  if (_pipStateSub != null) return;
+  windowsPipActive.value = windowsPipDriver.isPip;
+  _pipStateSub = windowsPipDriver.onPipChanged.listen((pip) => windowsPipActive.value = pip);
 }
