@@ -1315,6 +1315,25 @@ void _showSettingsSheet(BuildContext context, LocalVideoPlayerController control
                         color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
                       ),
                     ],
+                    _SheetSwitchRow(
+                      theme: theme,
+                      icon: Icons.headphones_rounded,
+                      title: i18n('audio_only_mode'),
+                      value: controller.isAudioOnly.value,
+                      onChanged: (v) => controller.isAudioOnly.value = v,
+                    ),
+                    Divider(height: 1, thickness: 0.6, color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
+                    _SheetActionRow(
+                      theme: theme,
+                      icon: Icons.photo_camera_rounded,
+                      title: i18n('local_player_screenshot'),
+                      onTap: () async {
+                        Navigator.of(sheetContext).pop();
+                        final name = await controller.saveScreenshot();
+                        ToastUtil.show(name ?? i18n('path_or_permission_error'));
+                      },
+                    ),
+                    Divider(height: 1, thickness: 0.6, color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
                     _SheetActionRow(
                       theme: theme,
                       icon: Icons.picture_in_picture_rounded,
@@ -1322,16 +1341,6 @@ void _showSettingsSheet(BuildContext context, LocalVideoPlayerController control
                       onTap: () {
                         Navigator.of(sheetContext).pop();
                         unawaited(_enterRecordingPip(controller));
-                      },
-                    ),
-                    Divider(height: 1, thickness: 0.6, color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
-                    _SheetActionRow(
-                      theme: theme,
-                      icon: Icons.picture_in_picture_alt_rounded,
-                      title: i18n('float_window_play'),
-                      onTap: () {
-                        Navigator.of(sheetContext).pop();
-                        unawaited(controller.enterFloating());
                       },
                     ),
                   ],
