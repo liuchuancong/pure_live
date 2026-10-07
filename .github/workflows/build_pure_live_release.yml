@@ -87,17 +87,33 @@ jobs:
           curl --fail --location --retry 3 "https://storage.googleapis.com/flutter_infra_release/releases/$FLUTTER_LINUX_ARCHIVE" --output "$archive"
           echo "$FLUTTER_LINUX_SHA256  $archive" | sha256sum --check --strict
           tar --extract --file "$archive" --directory "$RUNNER_TEMP"
+          sdk="$RUNNER_TEMP/flutter"
+          if [[ ! -x "$sdk/bin/flutter" ]]; then
+            echo "No Flutter SDK at $sdk after extracting $archive." >&2
+            exit 1
+          fi
           # The hash above is only meaningful for the version it was published
           # with. A bumped FLUTTER_VERSION with a stale hash (or a mirrored
           # archive) would otherwise pass the checksum and build with the wrong
           # SDK, so the extracted SDK is compared against the pin as well.
-          extracted_version="$(cut -d' ' -f1 < "$RUNNER_TEMP/flutter/version")"
+          #
+          # Recent SDK archives dropped the root `version` file; the pin now
+          # lives in the cache manifest, and an archive that predates that is
+          # still read the old way. Asking the SDK itself is the last resort.
+          version_json="$sdk/bin/cache/flutter.version.json"
+          if [[ -f "$version_json" ]]; then
+            extracted_version="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["frameworkVersion"])' "$version_json")"
+          elif [[ -f "$sdk/version" ]]; then
+            extracted_version="$(cut -d' ' -f1 < "$sdk/version")"
+          else
+            extracted_version="$("$sdk/bin/flutter" --version --machine | python3 -c 'import json,sys; print(json.load(sys.stdin)["frameworkVersion"])')"
+          fi
           if [[ "$extracted_version" != "$FLUTTER_VERSION" ]]; then
             echo "Flutter archive is $extracted_version but FLUTTER_VERSION is $FLUTTER_VERSION." >&2
             echo "Update FLUTTER_VERSION, FLUTTER_LINUX_ARCHIVE and FLUTTER_LINUX_SHA256 together." >&2
             exit 1
           fi
-          echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
+          echo "$sdk/bin" >> "$GITHUB_PATH"
       - name: Verify Flutter SDK
         run: flutter --version
       - name: Resolve packages
@@ -478,17 +494,33 @@ jobs:
           curl --fail --location --retry 3 "https://storage.googleapis.com/flutter_infra_release/releases/$FLUTTER_LINUX_ARCHIVE" --output "$archive"
           echo "$FLUTTER_LINUX_SHA256  $archive" | sha256sum --check --strict
           tar --extract --file "$archive" --directory "$RUNNER_TEMP"
+          sdk="$RUNNER_TEMP/flutter"
+          if [[ ! -x "$sdk/bin/flutter" ]]; then
+            echo "No Flutter SDK at $sdk after extracting $archive." >&2
+            exit 1
+          fi
           # The hash above is only meaningful for the version it was published
           # with. A bumped FLUTTER_VERSION with a stale hash (or a mirrored
           # archive) would otherwise pass the checksum and build with the wrong
           # SDK, so the extracted SDK is compared against the pin as well.
-          extracted_version="$(cut -d' ' -f1 < "$RUNNER_TEMP/flutter/version")"
+          #
+          # Recent SDK archives dropped the root `version` file; the pin now
+          # lives in the cache manifest, and an archive that predates that is
+          # still read the old way. Asking the SDK itself is the last resort.
+          version_json="$sdk/bin/cache/flutter.version.json"
+          if [[ -f "$version_json" ]]; then
+            extracted_version="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["frameworkVersion"])' "$version_json")"
+          elif [[ -f "$sdk/version" ]]; then
+            extracted_version="$(cut -d' ' -f1 < "$sdk/version")"
+          else
+            extracted_version="$("$sdk/bin/flutter" --version --machine | python3 -c 'import json,sys; print(json.load(sys.stdin)["frameworkVersion"])')"
+          fi
           if [[ "$extracted_version" != "$FLUTTER_VERSION" ]]; then
             echo "Flutter archive is $extracted_version but FLUTTER_VERSION is $FLUTTER_VERSION." >&2
             echo "Update FLUTTER_VERSION, FLUTTER_LINUX_ARCHIVE and FLUTTER_LINUX_SHA256 together." >&2
             exit 1
           fi
-          echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
+          echo "$sdk/bin" >> "$GITHUB_PATH"
       - name: Verify Flutter SDK
         run: flutter --version
       - name: Resolve packages
