@@ -101,6 +101,40 @@ bool startsInSystemHomeGestureZone({required Offset localPosition, required Size
 
 const double portraitFullscreenBottomBarHeight = portraitFullscreenControlsHeight;
 
+/// The minimum a fullscreen control bar keeps clear of the top edge.
+///
+/// A device whose panel physically reserves the notch can report a zero top
+/// inset once the status bar hides (immersive fullscreen) — the notch does not
+/// go away with the status bar. This is the floor the bar falls back to in that
+/// case only: the height of a phone status bar, which is what the cutout occupies
+/// and what the bar cleared a moment earlier.
+const double fullscreenBlindTopInset = 28;
+
+/// The top inset a player's control bar adds, with the immersive fallback.
+@visibleForTesting
+double playerBarTopInset({required double viewPaddingTop, required bool portraitFullscreen}) {
+  if (viewPaddingTop > 0) return viewPaddingTop;
+  return portraitFullscreen ? fullscreenBlindTopInset : 0;
+}
+
+/// The system safe area a control bar adds to its own position.
+///
+/// The picture is full-bleed — nobody wraps it in a `SafeArea`, because that
+/// would shrink the video — so every bar has to place itself. `viewPadding` is
+/// the raw system inset and is deliberately used instead of `padding`: a
+/// `SafeArea` anywhere above a bar *consumes* the padding, and a bar that reads
+/// zero slides back under the status bar or the gesture bar. That is exactly how
+/// the portrait fullscreen bar ended up under the notch.
+EdgeInsets playerBarInsets(BuildContext context, {bool portraitFullscreen = false}) {
+  final view = MediaQuery.viewPaddingOf(context);
+  return EdgeInsets.fromLTRB(
+    view.left,
+    playerBarTopInset(viewPaddingTop: view.top, portraitFullscreen: portraitFullscreen),
+    view.right,
+    view.bottom,
+  );
+}
+
 @visibleForTesting
 String fullscreenActionLabelKey(bool expanded) => expanded ? 'exit_fullscreen' : 'enter_fullscreen';
 
@@ -295,7 +329,13 @@ class _VideoControllerPanelState extends State<VideoControllerPanel> {
                 ),
                 LockButton(controller: controller),
                 const PortraitStreamDiagnosticsBadge(),
-                TopActionBar(controller: controller, barHeight: barHeight),
+                TopActionBar(
+                  controller: controller,
+                  barHeight: barHeight,
+                  // A portrait fullscreen owns the whole screen, so its top bar is
+                  // the one that has to clear the notch on its own.
+                  portraitFullscreen: screenMode == VideoMode.portraitFullscreen,
+                ),
                 BottomActionBar(
                   controller: controller,
                   barHeight: bottomBarHeight,
@@ -338,19 +378,21 @@ class ErrorWidget extends StatelessWidget {
 
 // Top action bar widgets
 class TopActionBar extends StatelessWidget {
-  const TopActionBar({super.key, required this.controller, required this.barHeight});
+  const TopActionBar({super.key, required this.controller, required this.barHeight, this.portraitFullscreen = false});
 
   final VideoController controller;
   final double barHeight;
 
+  /// Whether this bar is the whole screen's top chrome, which is what makes the
+  /// immersive-notch fallback apply.
+  final bool portraitFullscreen;
+
   @override
   Widget build(BuildContext context) {
     // The picture fills the panel; only this bar has to stay out of the notch.
-    // `viewPadding` is the raw inset the system reports (it is not consumed by a
-    // `SafeArea` anywhere above), so it is the number a positioned control has to
-    // add itself: top edges clear the notch and the status bar, left/right edges
-    // clear a sideways cutout.
-    final padding = MediaQuery.viewPaddingOf(context);
+    // The inset is the raw system one, so this works whether the bar is over a
+    // windowed video or a portrait fullscreen that owns the whole screen.
+    final padding = playerBarInsets(context, portraitFullscreen: portraitFullscreen);
     return Obx(
       () => AnimatedPositioned(
         top: controller.showController.value && !controller.showLocked.value ? 0 : -(barHeight + padding.top),
@@ -1216,7 +1258,7 @@ class BottomActionBar extends StatelessWidget {
     // Same rule as the top bar, at the other edge: the picture stays full-bleed
     // and this bar adds the raw system inset itself so it clears the gesture bar
     // (and a sideways cutout) instead of sitting under them.
-    final padding = MediaQuery.viewPaddingOf(context);
+    final padding = playerBarInsets(context);
     return Obx(() {
       bool shouldShow =
           (controller.showController.value || controller.isMenuOpen.value) && !controller.showLocked.value;
