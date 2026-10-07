@@ -368,12 +368,7 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
         title: title,
         subtitle:
             (locked ? '${i18n('player_output_locked_by_preset')} · ' : '') +
-            mpvOptionLabel(
-              kind,
-              normalizedMpvOption(kind, value.value, defaultTargetPlatform),
-              defaultTargetPlatform,
-              zh: Get.locale?.languageCode == 'zh',
-            ),
+            mpvOptionLabel(kind, normalizedMpvOption(kind, value.value, defaultTargetPlatform)),
         trailing: const Icon(Remix.arrow_right_s_line),
         onTap: () => Get.to(() => MpvOptionPage(kind: kind, title: title, value: value)),
       ),

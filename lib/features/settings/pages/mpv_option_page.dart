@@ -14,8 +14,7 @@ class MpvOptionPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final platform = defaultTargetPlatform;
-    final zh = Get.locale?.languageCode == 'zh';
-    final options = mpvOptionsForPlatform(kind, platform, zh: zh);
+    final options = mpvOptionsForPlatform(kind, platform);
     final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(title: Text(title)),

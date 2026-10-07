@@ -17,19 +17,18 @@ import 'package:media_core/media_core.dart';
 /// the CNN chain in realtime.
 enum SuperResolutionMode {
   /// No shaders mounted.
-  off('关闭', '默认渲染, 不挂载任何超分滤镜'),
+  off,
 
   /// Efficiency chain: lighter CNN models, for GPUs that cannot hold the
   /// quality chain at realtime.
-  efficiency('效率档', '轻量 Anime4K 卷积链, GPU 负担小, 适合核显或高刷屏'),
+  efficiency,
 
   /// Quality chain: the heaviest models, sharpest result.
-  quality('质量档', '完整 Anime4K 卷积链, 效果最好, 需要独立显卡');
+  quality;
 
-  const SuperResolutionMode(this.label, this.descriptionZh);
-
-  final String label;
-  final String descriptionZh;
+  /// Readable name and explanation live in the locale files, keyed off [name].
+  String get labelKey => 'super_resolution_mode_$name';
+  String get descriptionKey => 'super_resolution_mode_${name}_desc';
 
   static SuperResolutionMode fromName(String? name) {
     return SuperResolutionMode.values.firstWhere((mode) => mode.name == name, orElse: () => SuperResolutionMode.off);

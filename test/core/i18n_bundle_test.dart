@@ -1,13 +1,19 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:pure_live/core/player/kernel/mpv_option_labels.dart';
+import 'package:pure_live/core/player/super_resolution.dart';
 
-/// 语言包的两条不变量。
+/// 语言包的三条不变量。
 ///
 /// 缺键在界面上的表现不是报错，而是把**键名本身**画出来（"1.2count_k"、
 /// "sixroom_chat_notice"），所以只有测试能挡住它。曾经 zh 有 `count_wan`、en 没有，
 /// 反过来 `count_k` 也是——两边各缺一个，谁都没发现。
+///
+/// 第三条针对拼出来的键：mpv 的选项标签由 `kind + 存储值` 推导，字面量扫描
+/// 永远扫不到，所以只能反过来枚举设置页真正会摆出来的每一项。
 Map<String, dynamic> _bundle(String path) {
   final decoded = jsonDecode(File(path).readAsStringSync());
   return decoded is Map ? Map<String, dynamic>.from(decoded) : <String, dynamic>{};
@@ -57,6 +63,47 @@ void main() {
 
       expect(missingZh, isEmpty, reason: 'zh.json 缺这些被引用的键');
       expect(missingEn, isEmpty, reason: 'en.json 缺这些被引用的键');
+    });
+
+    test('mpv 选项与超分模式拼出来的键两个包都有', () {
+      final missing = <String>[];
+      final collisions = <String, Set<String>>{};
+
+      void require(MpvOptionKind kind, String value) {
+        final key = mpvOptionLabelKey(kind, value);
+        (collisions[key] ??= <String>{}).add(value);
+        if (!zh.containsKey(key)) missing.add('zh:$key');
+        if (!en.containsKey(key)) missing.add('en:$key');
+      }
+
+      for (final platform in TargetPlatform.values) {
+        for (final kind in MpvOptionKind.values) {
+          for (final option in mpvOptionsForPlatform(kind, platform)) {
+            require(kind, option.key);
+          }
+        }
+      }
+      for (final mode in SuperResolutionMode.values) {
+        expect(zh.containsKey(mode.labelKey), isTrue, reason: 'zh 缺 ${mode.labelKey}');
+        expect(en.containsKey(mode.labelKey), isTrue, reason: 'en 缺 ${mode.labelKey}');
+        expect(zh.containsKey(mode.descriptionKey), isTrue, reason: 'zh 缺 ${mode.descriptionKey}');
+        expect(en.containsKey(mode.descriptionKey), isTrue, reason: 'en 缺 ${mode.descriptionKey}');
+      }
+
+      expect(missing, isEmpty, reason: '设置页会把这些项直接画成键名');
+      for (final entry in collisions.entries) {
+        expect(entry.value, hasLength(1), reason: '${entry.key} 同时对应 ${entry.value}，标签会串台');
+      }
+    });
+
+    test('标签键按 kind 分命名空间，标点换成下划线', () {
+      expect(mpvOptionLabelKey(MpvOptionKind.videoOutput, 'gpu-next'), 'mpv_option_video_output_gpu_next');
+      expect(mpvOptionLabelKey(MpvOptionKind.hwdecCodecs, 'h264,hevc,vp9'), 'mpv_option_hwdec_codecs_h264_hevc_vp9');
+      // 'sdl' 在视频输出和音频输出里是两个东西，不能共用一行。
+      expect(
+        mpvOptionLabelKey(MpvOptionKind.audioOutput, 'sdl'),
+        isNot(mpvOptionLabelKey(MpvOptionKind.videoOutput, 'sdl')),
+      );
     });
   });
 }

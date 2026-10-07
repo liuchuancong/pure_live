@@ -29,8 +29,8 @@ class PlayerSuperResolutionPage extends GetView<SettingsService> {
               child: Card(
                 margin: EdgeInsets.zero,
                 child: ListTile(
-                  title: Text(mode.label, style: theme.textTheme.titleMedium),
-                  subtitle: Text(mode.descriptionZh, style: theme.textTheme.bodySmall),
+                  title: Text(i18n(mode.labelKey), style: theme.textTheme.titleMedium),
+                  subtitle: Text(i18n(mode.descriptionKey), style: theme.textTheme.bodySmall),
                   trailing: Obx(() {
                     final active =
                         SuperResolutionMode.fromName(SettingsService.to.player.superResolutionMode.v) == mode;

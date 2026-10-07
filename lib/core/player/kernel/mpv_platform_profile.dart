@@ -1,18 +1,25 @@
 import 'package:flutter/foundation.dart';
 import 'package:pure_live/core/player/kernel/player_consts.dart';
 
-const Map<String, String> _iosVideoOutputDrivers = <String, String>{'auto': 'ok', 'libmpv': 'libmpv'};
+/// Platform driver catalogues.
+///
+/// Only the accepted keys and their display order matter here; the readable
+/// name for a value lives in the locale files (see `mpvOptionLabelKey`), so a
+/// row that exists on one platform cannot show a Windows-only description on
+/// another. The values below are placeholders that keep the maps readable as
+/// `key -> key`.
+const Map<String, String> _iosVideoOutputDrivers = <String, String>{'auto': 'auto', 'libmpv': 'libmpv'};
 const Map<String, String> _iosAudioOutputDrivers = <String, String>{
   'auto': 'auto',
-  'audiounit': 'audiounit (iOS only)',
-  'null': 'null (No audio output)',
+  'audiounit': 'audiounit',
+  'null': 'null',
 };
 const Map<String, String> _androidAudioOutputDrivers = <String, String>{
-  'auto': 'auto (Automatic fallback)',
-  'audiotrack': 'audiotrack (Android AudioTrack)',
-  'aaudio': 'aaudio (Android 8.0+)',
-  'opensles': 'opensles (Legacy fallback)',
-  'null': 'null (No audio output)',
+  'auto': 'auto',
+  'audiotrack': 'audiotrack',
+  'aaudio': 'aaudio',
+  'opensles': 'opensles',
+  'null': 'null',
 };
 const Map<String, String> _iosHardwareDecoders = <String, String>{
   'auto': 'auto',
@@ -35,22 +42,18 @@ const Map<String, String> _iosHardwareDecoders = <String, String>{
 /// mpv consumers, not to the embedded player settings.
 // Per the mpv manual. The embedded player renders through libmpv's render
 // API (the Flutter texture); windowed drivers draw into mpv's own window and
-// are offered with an explicit warning label for users who want them anyway
-// (D3D11 interop performance, standalone-style rendering). Each entry's
-// second value is the severity marker consumed by the settings UI.
+// are still offered for users who want them anyway (D3D11 interop performance,
+// standalone-style rendering) — their locale rows carry the warning.
 const Map<String, String> _windowsVideoOutputDrivers = <String, String>{
-  'auto': 'ok',
-  'libmpv': 'ok',
-  'gpu': 'window',
-  'gpu-next': 'window',
-  'direct3d': 'window',
-  'null': 'novideo',
+  'auto': 'auto',
+  'libmpv': 'libmpv',
+  'gpu': 'gpu',
+  'gpu-next': 'gpu-next',
+  'direct3d': 'direct3d',
+  'null': 'null',
 };
 
-const Map<String, String> _desktopVideoOutputDrivers = <String, String>{
-  'auto': 'ok',
-  'libmpv': 'libmpv',
-};
+const Map<String, String> _desktopVideoOutputDrivers = <String, String>{'auto': 'auto', 'libmpv': 'libmpv'};
 
 Map<String, String> mpvVideoOutputDriversForPlatform(TargetPlatform platform) {
   if (platform == TargetPlatform.iOS) return _iosVideoOutputDrivers;
@@ -62,12 +65,12 @@ Map<String, String> mpvVideoOutputDriversForPlatform(TargetPlatform platform) {
 // mpv manual, audio output drivers on Windows: wasapi (default since
 // mpv 0.30), win32 (waveOut, legacy), sdl2, pcm (dump), null.
 const Map<String, String> _windowsAudioOutputDrivers = <String, String>{
-  'auto': 'auto（引擎默认）',
-  'wasapi': 'wasapi（Windows 默认，推荐）',
-  'win32': 'win32（waveOut 旧通道）',
-  'sdl': 'sdl（跨平台兜底）',
-  'pcm': 'pcm（转储到文件）',
-  'null': 'null（无声音）',
+  'auto': 'auto',
+  'wasapi': 'wasapi',
+  'win32': 'win32',
+  'sdl': 'sdl',
+  'pcm': 'pcm',
+  'null': 'null',
 };
 
 const Map<String, String> _linuxAudioOutputDrivers = <String, String>{
@@ -75,14 +78,14 @@ const Map<String, String> _linuxAudioOutputDrivers = <String, String>{
   'alsa': 'alsa',
   'pipewire': 'pipewire',
   'sdl': 'sdl',
-  'null': 'null (不输出音频)',
+  'null': 'null',
 };
 
 const Map<String, String> _macosAudioOutputDrivers = <String, String>{
   'auto': 'auto',
   'audiounit': 'audiounit',
   'sdl': 'sdl',
-  'null': 'null (不输出音频)',
+  'null': 'null',
 };
 
 // mpv manual, hardware decoding on Windows (d3d11 / nvdec family).
