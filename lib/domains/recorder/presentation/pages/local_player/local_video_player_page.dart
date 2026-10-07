@@ -1327,6 +1327,11 @@ class _DesktopLayout extends StatelessWidget {
           body: _PlayerArea(controller: controller, keyboardShortcuts: true),
         );
       }
+      // 桌面画中画：与直播间一致，整个页面替换成紧凑画面 —— AppBar 等页面
+      // chrome 不能留下，否则缩小的窗口里还带着标题栏。
+      if (controller.isInPip.value) {
+        return _RecordingPipOverlay(controller: controller);
+      }
       return Scaffold(
         appBar: AppBar(
           titleSpacing: 0,
