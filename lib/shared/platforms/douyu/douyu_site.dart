@@ -340,7 +340,12 @@ class DouyuSite
     final appliedRate = rawRate is num && rawRate.isFinite && rawRate == rawRate.roundToDouble()
         ? rawRate.toInt()
         : int.tryParse(rawRate?.toString().trim() ?? '');
-    final url = parsePlayUrl(playData);
+    var url = parsePlayUrl(playData);
+    // 海外/部分匿名会话会拿到 5 分钟即失效的 ws CDN 线（expire=300&fcdn=ws）；
+    // 附加 expire=0 让 CDN 按默认时长签发（simple_live 同款补丁）。
+    if (url.contains('expire=300') && url.contains('fcdn=ws')) {
+      url = '$url&expire=0';
+    }
     _rememberIssued(url, issuedAt);
     return LivePlayUrlResolution(
       urls: List<String>.unmodifiable([url]),
