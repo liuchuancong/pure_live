@@ -1,7 +1,7 @@
+import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/domains/wallpaper/domain/wallpaper_api_catalog.dart';
 import 'package:pure_live/domains/wallpaper/presentation/wallpaper_api_group_page.dart';
-import 'package:remixicon/remixicon.dart';
 
 /// The random-wallpaper APIs, grouped.
 ///
@@ -17,6 +17,7 @@ class WallpaperApiPage extends StatelessWidget {
       appBar: AppBar(title: Text(i18n('wallpaper_api_group'))),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+        physics: const PureLiveScrollPhysics(),
         children: <Widget>[
           context.buildModernCard(<Widget>[
             for (final WallpaperApiGroup group in kWallpaperApiGroups)

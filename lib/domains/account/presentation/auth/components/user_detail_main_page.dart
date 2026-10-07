@@ -1,11 +1,11 @@
 import 'dart:async';
 
+import 'package:remixicon/remixicon.dart';
+import 'package:pure_live/core/index.dart';
+import 'package:flutter_json/flutter_json.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter_json/flutter_json.dart';
-import 'package:pure_live/core/index.dart';
 import 'package:pure_live/domains/account/presentation/auth/models/user_config_model.dart';
-import 'package:remixicon/remixicon.dart';
 
 class FirebaseUserConfigDocumentLoader {
   const FirebaseUserConfigDocumentLoader();
@@ -175,6 +175,7 @@ class _UserDetailConfigMainPageState extends State<UserDetailConfigMainPage> {
         final rawPreviewHeight = constraints.maxHeight < 520 ? 280.0 : constraints.maxHeight * 0.58;
         return ListView(
           padding: const EdgeInsets.only(bottom: 20),
+          physics: const PureLiveScrollPhysics(),
           children: [
             _buildProfileCard(theme, email, verText, createTimeStr, syncTimeStr),
             Padding(

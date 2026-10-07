@@ -1,14 +1,14 @@
-import 'package:easy_localization/easy_localization.dart';
-import 'package:file_picker/file_picker.dart';
+import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/core/index.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:pure_live/core/models/background_config.dart';
+import 'package:pure_live/domains/wallpaper/domain/wallpaper_catalog.dart';
 import 'package:pure_live/domains/wallpaper/data/wallpaper_media_store.dart';
 import 'package:pure_live/domains/wallpaper/domain/background_controller.dart';
-import 'package:pure_live/domains/wallpaper/domain/wallpaper_catalog.dart';
 import 'package:pure_live/domains/wallpaper/presentation/wallpaper_api_page.dart';
 import 'package:pure_live/domains/wallpaper/presentation/wallpaper_items_page.dart';
 import 'package:pure_live/domains/wallpaper/presentation/wallpaper_library_page.dart';
-import 'package:remixicon/remixicon.dart';
 
 /// Background settings: what the background is, how it is drawn, and where to
 /// get a new one.
@@ -54,6 +54,7 @@ class _WallpaperPageState extends State<WallpaperPage> {
     return Scaffold(
       appBar: AppBar(title: Text(i18n('ui_background_settings'))),
       body: ListView(
+        physics: const PureLiveScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(16, 4, 16, 32),
         children: [
           context.buildGroupTitle(i18n('wallpaper_display_group')),

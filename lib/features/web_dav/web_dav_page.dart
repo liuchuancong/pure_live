@@ -4,11 +4,11 @@ import 'package:mime/mime.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/core/index.dart';
 import 'package:webdav_client/webdav_client.dart' as webdav;
-import 'package:pure_live/features/backup/backup_controller.dart';
-import 'package:pure_live/features/backup/backup_section_picker.dart';
 import 'package:pure_live/features/web_dav/web_dav_help.dart';
 import 'package:pure_live/features/web_dav/web_dav_config.dart';
+import 'package:pure_live/features/backup/backup_controller.dart';
 import 'package:pure_live/features/web_dav/web_dav_controller.dart';
+import 'package:pure_live/features/backup/backup_section_picker.dart';
 
 class WebDavPage extends StatefulWidget {
   const WebDavPage({super.key});
@@ -122,6 +122,7 @@ class _WebDavPageState extends State<WebDavPage> {
       backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
       child: ListView(
         padding: EdgeInsets.zero,
+        physics: const PureLiveScrollPhysics(),
         children: [
           SizedBox(height: kToolbarHeight),
           Obx(() {

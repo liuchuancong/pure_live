@@ -1,8 +1,8 @@
-import 'package:pure_live/core/index.dart';
-import 'package:pure_live/domains/wallpaper/data/wallpaper_repository.dart';
-import 'package:pure_live/domains/wallpaper/domain/wallpaper_catalog.dart';
-import 'package:pure_live/domains/wallpaper/presentation/wallpaper_items_page.dart';
 import 'package:remixicon/remixicon.dart';
+import 'package:pure_live/core/index.dart';
+import 'package:pure_live/domains/wallpaper/domain/wallpaper_catalog.dart';
+import 'package:pure_live/domains/wallpaper/data/wallpaper_repository.dart';
+import 'package:pure_live/domains/wallpaper/presentation/wallpaper_items_page.dart';
 
 /// The groups of one picture source.
 ///
@@ -29,6 +29,7 @@ class WallpaperGalleryPage extends StatelessWidget {
       body: groups.isEmpty
           ? AppStatusView(type: AppStatusType.empty, title: i18n('background_no_category'), subtitle: '')
           : ListView(
+              physics: const PureLiveScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
               children: <Widget>[
                 context.buildModernCard(<Widget>[

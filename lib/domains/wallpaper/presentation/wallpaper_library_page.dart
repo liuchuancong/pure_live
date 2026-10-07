@@ -1,9 +1,9 @@
-import 'package:pure_live/core/index.dart';
-import 'package:pure_live/domains/wallpaper/data/wallpaper_repository.dart';
-import 'package:pure_live/domains/wallpaper/domain/wallpaper_catalog.dart';
-import 'package:pure_live/domains/wallpaper/presentation/wallpaper_gallery_page.dart';
-import 'package:pure_live/domains/wallpaper/presentation/wallpaper_items_page.dart';
 import 'package:remixicon/remixicon.dart';
+import 'package:pure_live/core/index.dart';
+import 'package:pure_live/domains/wallpaper/domain/wallpaper_catalog.dart';
+import 'package:pure_live/domains/wallpaper/data/wallpaper_repository.dart';
+import 'package:pure_live/domains/wallpaper/presentation/wallpaper_items_page.dart';
+import 'package:pure_live/domains/wallpaper/presentation/wallpaper_gallery_page.dart';
 
 /// The picture library: one row per picture source.
 ///
@@ -23,6 +23,7 @@ class WallpaperLibraryPage extends StatelessWidget {
       body: sources.isEmpty
           ? AppStatusView(type: AppStatusType.empty, title: i18n('background_catalog_empty'), subtitle: '')
           : ListView(
+              physics: const PureLiveScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
               children: <Widget>[
                 context.buildModernCard(<Widget>[

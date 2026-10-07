@@ -651,6 +651,11 @@ class _RecordingControlBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final primary = theme.colorScheme.primary;
+    // The bar is pinned to the bottom of the picture, and the picture reaches the
+    // bottom of the screen in every shape this page has: on a phone with gesture
+    // navigation the seek bar and the transport row sat under the system bar.
+    // The inset goes into the padding so the gradient still covers it.
+    final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
@@ -659,7 +664,7 @@ class _RecordingControlBar extends StatelessWidget {
           colors: [Colors.transparent, Colors.black87],
         ),
       ),
-      padding: const EdgeInsets.fromLTRB(12, 22, 12, 4),
+      padding: EdgeInsets.fromLTRB(12, 22, 12, 4 + bottomInset),
       child: LayoutBuilder(
         builder: (context, constraints) {
           final showVolumeSlider = constraints.maxWidth >= recordingVolumeSliderMinWidth;
@@ -1781,7 +1786,10 @@ class _ContextPanel extends StatelessWidget {
             final positionMs = controller.position.value.inMilliseconds;
             final progress = durationMs <= 0 ? 0.0 : (positionMs / durationMs).clamp(0.0, 1.0);
             return Padding(
-              padding: const EdgeInsets.fromLTRB(16, 2, 16, 12),
+              // The panel is the last thing on the page, so it takes the
+              // home-indicator inset itself: on a phone held upright the
+              // progress line used to sit under the system gesture bar.
+              padding: EdgeInsets.fromLTRB(16, 2, 16, 12 + MediaQuery.viewPaddingOf(context).bottom),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(2),
                 child: LinearProgressIndicator(

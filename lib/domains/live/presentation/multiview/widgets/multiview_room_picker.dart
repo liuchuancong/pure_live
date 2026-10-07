@@ -139,7 +139,8 @@ class _MultiviewRoomPickerState extends State<MultiviewRoomPicker> {
                         onTap: () => widget.onPicked(room),
                       );
                     },
-                  ),
+                  
+                    physics: const PureLiveScrollPhysics(),),
           ),
         ],
       );

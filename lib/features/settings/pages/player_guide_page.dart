@@ -1,9 +1,8 @@
 import 'dart:io';
 
 import 'package:remixicon/remixicon.dart';
-import 'package:url_launcher/url_launcher_string.dart';
-
 import 'package:pure_live/core/index.dart';
+import 'package:url_launcher/url_launcher_string.dart';
 
 /// The player manual: concepts, every setting and what it does, organized in
 /// collapsible chapters. Pure documentation — nothing here mutates state.
@@ -115,6 +114,7 @@ class _PlayerGuidePageState extends State<PlayerGuidePage> {
       appBar: AppBar(title: Text(i18n('player_guide_title'))),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
+        physics: const PureLiveScrollPhysics(),
         children: [
           _buildIntroCard(context, theme),
           for (var i = 0; i < _guideChapters.length; i++)

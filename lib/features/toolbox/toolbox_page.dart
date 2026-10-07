@@ -16,6 +16,7 @@ class ToolBoxPage extends GetView<ToolBoxController> {
       appBar: AppBar(title: Text(i18n("toolbox_title")), centerTitle: true, elevation: 0),
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+        physics: const PureLiveScrollPhysics(),
         children: [
           // Section 1: Jump to Room
           _buildToolCard(

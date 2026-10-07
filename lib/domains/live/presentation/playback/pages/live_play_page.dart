@@ -1,11 +1,11 @@
-import 'package:pure_live/core/platform/platform_utils.dart';
 import 'package:pure_live/core/index.dart';
+import 'package:pure_live/core/platform/platform_utils.dart';
+import 'package:pure_live/domains/live/domain/global_player_service.dart';
+import 'package:pure_live/core/player/presentation/player_back_scope.dart';
+import 'package:pure_live/domains/live/presentation/playback/states/ui_state.dart';
 import 'package:pure_live/domains/live/presentation/playback/widgets/keyboard/video_keyboard.dart';
-import 'package:pure_live/domains/live/presentation/playback/widgets/layout/live_play_back_scope.dart';
 import 'package:pure_live/domains/live/presentation/playback/widgets/layout/live_play_content.dart';
 import 'package:pure_live/domains/live/presentation/playback/controllers/live_play_controller.dart';
-import 'package:pure_live/domains/live/presentation/playback/states/ui_state.dart';
-import 'package:pure_live/domains/live/domain/global_player_service.dart';
 
 class LivePlayPage extends GetView<LivePlayController> {
   const LivePlayPage({super.key});
@@ -45,7 +45,7 @@ class LivePlayPage extends GetView<LivePlayController> {
         child: Container(color: canvasColor, width: double.infinity, height: double.infinity, child: content),
       );
 
-      return LivePlayBackScope(
+      return PlayerBackScope(
         presentationActive: presentationActive,
         onExitPresentation: controller.exitPresentationForSystemBack,
         onBackRequest: _enterSystemPipOnBack,
