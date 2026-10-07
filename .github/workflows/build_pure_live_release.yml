@@ -48,24 +48,13 @@ permissions:
 concurrency:
   group: manual-build-${{ github.ref }}
   cancel-in-progress: false
-env:
-  # The Flutter SDK pin. These three values move together, and the same version
-  # is pinned in .fvmrc and in .github/workflows/feature-build.yml and
-  # build-ios-unsigned.yml:
-  #
-  #   FLUTTER_VERSION        must equal .fvmrc's "flutter"
-  #   FLUTTER_LINUX_ARCHIVE  the official stable/linux archive for that version
-  #   FLUTTER_LINUX_SHA256   that archive's sha256
-  #
-  # To upgrade: take all three from the official manifest
-  # https://storage.googleapis.com/flutter_infra_release/releases/releases_linux.json
-  # (the `current_release.stable` hash identifies the release entry carrying
-  # `archive` and `sha256`), update .fvmrc, then confirm with `flutter --version`
-  # — each "Install pinned Flutter SDK" step re-checks the extracted SDK against
-  # FLUTTER_VERSION and fails loudly if the archive and the hash disagree.
-  FLUTTER_VERSION: 3.47.5
-  FLUTTER_LINUX_ARCHIVE: stable/linux/flutter_linux_3.47.5-stable.tar.xz
-  FLUTTER_LINUX_SHA256: 2132e990f236f8d22e7c6314b29a191a95b10d7cbcfec9b4e2e303d996652cbb
+# The Flutter SDK is not pinned in this workflow: every job builds with the
+# latest stable release. The jobs installing from the official archive
+# (quality, linux) resolve version, archive and sha256 at run time from
+# https://storage.googleapis.com/flutter_infra_release/releases/releases_linux.json
+# (the current_release.stable hash selects the release entry); the other jobs
+# use subosito/flutter-action with channel: stable. Local development keeps
+# its own pin in .fvmrc.
 jobs:
   quality:
     name: Analyze, test and probe
@@ -79,25 +68,46 @@ jobs:
         with:
           distribution: zulu
           java-version: "26"
-      - name: Install pinned Flutter SDK from the official archive
+      - name: Install latest stable Flutter SDK from the official archive
         shell: bash
         run: |
           set -euo pipefail
-          archive="$RUNNER_TEMP/flutter-linux.tar.xz"
-          curl --fail --location --retry 3 "https://storage.googleapis.com/flutter_infra_release/releases/$FLUTTER_LINUX_ARCHIVE" --output "$archive"
-          echo "$FLUTTER_LINUX_SHA256  $archive" | sha256sum --check --strict
-          tar --extract --file "$archive" --directory "$RUNNER_TEMP"
+          manifest="$RUNNER_TEMP/flutter-releases-linux.json"
+          curl --fail --location --retry 3 \
+            "https://storage.googleapis.com/flutter_infra_release/releases/releases_linux.json" \
+            --output "$manifest"
+          # No version or hash is pinned here: the manifest's current stable
+          # pointer selects the release entry, and that same entry provides
+          # the archive path and sha256 used to verify the download.
+          read -r version archive expected_sha256 < <(
+            python3 - "$manifest" <<'PY'
+          import json, sys
+          manifest = json.load(open(sys.argv[1], encoding="utf-8"))
+          stable = manifest["current_release"]["stable"]
+          for release in manifest["releases"]:
+              if release.get("hash") == stable and release.get("channel") == "stable":
+                  print(release["version"], release["archive"], release["sha256"])
+                  break
+          else:
+              raise SystemExit("no stable release entry matches current_release.stable")
+          PY
+          )
+          archive_path="$RUNNER_TEMP/flutter-linux.tar.xz"
+          curl --fail --location --retry 3 \
+            "https://storage.googleapis.com/flutter_infra_release/releases/$archive" \
+            --output "$archive_path"
+          echo "$expected_sha256  $archive_path" | sha256sum --check --strict
+          tar --extract --file "$archive_path" --directory "$RUNNER_TEMP"
           sdk="$RUNNER_TEMP/flutter"
           if [[ ! -x "$sdk/bin/flutter" ]]; then
             echo "No Flutter SDK at $sdk after extracting $archive." >&2
             exit 1
           fi
-          # The hash above is only meaningful for the version it was published
-          # with. A bumped FLUTTER_VERSION with a stale hash (or a mirrored
-          # archive) would otherwise pass the checksum and build with the wrong
-          # SDK, so the extracted SDK is compared against the pin as well.
+          # The manifest hash only guards the download. The extracted SDK is
+          # still compared against the manifest's own version so a wrong or
+          # partially extracted archive fails loudly instead of building.
           #
-          # Recent SDK archives dropped the root `version` file; the pin now
+          # Recent SDK archives dropped the root `version` file; the version
           # lives in the cache manifest, and an archive that predates that is
           # still read the old way. Asking the SDK itself is the last resort.
           version_json="$sdk/bin/cache/flutter.version.json"
@@ -108,9 +118,8 @@ jobs:
           else
             extracted_version="$("$sdk/bin/flutter" --version --machine | python3 -c 'import json,sys; print(json.load(sys.stdin)["frameworkVersion"])')"
           fi
-          if [[ "$extracted_version" != "$FLUTTER_VERSION" ]]; then
-            echo "Flutter archive is $extracted_version but FLUTTER_VERSION is $FLUTTER_VERSION." >&2
-            echo "Update FLUTTER_VERSION, FLUTTER_LINUX_ARCHIVE and FLUTTER_LINUX_SHA256 together." >&2
+          if [[ "$extracted_version" != "$version" ]]; then
+            echo "Flutter archive contains $extracted_version but the manifest selected $version." >&2
             exit 1
           fi
           echo "$sdk/bin" >> "$GITHUB_PATH"
@@ -150,7 +159,7 @@ jobs:
           cache: gradle
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
           cache: true
       - name: Configure Android signing
         shell: bash
@@ -296,7 +305,7 @@ jobs:
           Set-Content -Path $configPath -Value $content
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
           cache: true
       - name: Enable Flutter Windows
         run: flutter config --enable-windows-desktop
@@ -484,25 +493,46 @@ jobs:
             libxext-dev \
             libxfixes-dev \
             libxcb1-dev
-      - name: Install pinned Flutter SDK from the official archive
+      - name: Install latest stable Flutter SDK from the official archive
         shell: bash
         run: |
           set -euo pipefail
-          archive="$RUNNER_TEMP/flutter-linux.tar.xz"
-          curl --fail --location --retry 3 "https://storage.googleapis.com/flutter_infra_release/releases/$FLUTTER_LINUX_ARCHIVE" --output "$archive"
-          echo "$FLUTTER_LINUX_SHA256  $archive" | sha256sum --check --strict
-          tar --extract --file "$archive" --directory "$RUNNER_TEMP"
+          manifest="$RUNNER_TEMP/flutter-releases-linux.json"
+          curl --fail --location --retry 3 \
+            "https://storage.googleapis.com/flutter_infra_release/releases/releases_linux.json" \
+            --output "$manifest"
+          # No version or hash is pinned here: the manifest's current stable
+          # pointer selects the release entry, and that same entry provides
+          # the archive path and sha256 used to verify the download.
+          read -r version archive expected_sha256 < <(
+            python3 - "$manifest" <<'PY'
+          import json, sys
+          manifest = json.load(open(sys.argv[1], encoding="utf-8"))
+          stable = manifest["current_release"]["stable"]
+          for release in manifest["releases"]:
+              if release.get("hash") == stable and release.get("channel") == "stable":
+                  print(release["version"], release["archive"], release["sha256"])
+                  break
+          else:
+              raise SystemExit("no stable release entry matches current_release.stable")
+          PY
+          )
+          archive_path="$RUNNER_TEMP/flutter-linux.tar.xz"
+          curl --fail --location --retry 3 \
+            "https://storage.googleapis.com/flutter_infra_release/releases/$archive" \
+            --output "$archive_path"
+          echo "$expected_sha256  $archive_path" | sha256sum --check --strict
+          tar --extract --file "$archive_path" --directory "$RUNNER_TEMP"
           sdk="$RUNNER_TEMP/flutter"
           if [[ ! -x "$sdk/bin/flutter" ]]; then
             echo "No Flutter SDK at $sdk after extracting $archive." >&2
             exit 1
           fi
-          # The hash above is only meaningful for the version it was published
-          # with. A bumped FLUTTER_VERSION with a stale hash (or a mirrored
-          # archive) would otherwise pass the checksum and build with the wrong
-          # SDK, so the extracted SDK is compared against the pin as well.
+          # The manifest hash only guards the download. The extracted SDK is
+          # still compared against the manifest's own version so a wrong or
+          # partially extracted archive fails loudly instead of building.
           #
-          # Recent SDK archives dropped the root `version` file; the pin now
+          # Recent SDK archives dropped the root `version` file; the version
           # lives in the cache manifest, and an archive that predates that is
           # still read the old way. Asking the SDK itself is the last resort.
           version_json="$sdk/bin/cache/flutter.version.json"
@@ -513,9 +543,8 @@ jobs:
           else
             extracted_version="$("$sdk/bin/flutter" --version --machine | python3 -c 'import json,sys; print(json.load(sys.stdin)["frameworkVersion"])')"
           fi
-          if [[ "$extracted_version" != "$FLUTTER_VERSION" ]]; then
-            echo "Flutter archive is $extracted_version but FLUTTER_VERSION is $FLUTTER_VERSION." >&2
-            echo "Update FLUTTER_VERSION, FLUTTER_LINUX_ARCHIVE and FLUTTER_LINUX_SHA256 together." >&2
+          if [[ "$extracted_version" != "$version" ]]; then
+            echo "Flutter archive contains $extracted_version but the manifest selected $version." >&2
             exit 1
           fi
           echo "$sdk/bin" >> "$GITHUB_PATH"
@@ -641,7 +670,7 @@ jobs:
           xcodebuild -version
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
           cache: true
       - name: Resolve packages
         run: flutter pub get --enforce-lockfile
@@ -910,7 +939,6 @@ jobs:
           WORKFLOW: ${{ github.workflow }}
           RUN_ID: ${{ github.run_id }}
           RUN_NUMBER: ${{ github.run_number }}
-          FLUTTER_VERSION: ${{ env.FLUTTER_VERSION }}
         run: |
           set -euo pipefail
           python <<'PY'
@@ -918,6 +946,26 @@ jobs:
           import os
           from datetime import datetime, timezone
           from pathlib import Path
+
+          def latest_stable_flutter_version():
+              # The build jobs resolve their SDK independently; this records
+              # the stable version from the same official manifest. Falls back
+              # to a generic marker if the manifest is unreachable.
+              import urllib.request
+              try:
+                  with urllib.request.urlopen(
+                      "https://storage.googleapis.com/flutter_infra_release/releases/releases_linux.json",
+                      timeout=30,
+                  ) as response:
+                      manifest = json.load(response)
+                  stable = manifest["current_release"]["stable"]
+                  for release in manifest["releases"]:
+                      if release.get("hash") == stable and release.get("channel") == "stable":
+                          return release["version"]
+              except Exception:
+                  pass
+              return "stable"
+
           artifacts = []
           for path in sorted(Path("artifacts").rglob("*")):
               if path.is_file():
@@ -936,7 +984,7 @@ jobs:
               "run_id": int(os.environ["RUN_ID"]),
               "run_number": int(os.environ["RUN_NUMBER"]),
               "actor": os.environ["ACTOR"],
-              "flutter_version": os.environ["FLUTTER_VERSION"],
+              "flutter_version": latest_stable_flutter_version(),
               "generated_at": datetime.now(timezone.utc).isoformat(),
               "build_options": {
                   "android": "${{ inputs.build_android }}",
