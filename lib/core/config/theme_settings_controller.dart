@@ -11,7 +11,7 @@ class ThemeSettingsController extends GetxController {
   static const double minSpacing = 0;
   static const double maxSpacing = 64;
   static final String defaultThemeColorHex = Colors.blue.hex;
-  static final Set<String> _loadingStyleKeys = AppConsts.allStyles.map((item) => item['key']!).toSet();
+  static final Set<String> _loadingStyleKeys = AppConsts.loadingStyleKeys.toSet();
 
   final List<Worker> _workers = [];
   final RxString themeModeName = hiveString('themeMode', defaultThemeModeName);

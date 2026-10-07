@@ -71,12 +71,10 @@ class ThemeSettingsPage extends GetView<SettingsService> {
                 stackTrailingOnNarrow: true,
                 trailing: Obx(() {
                   final String currentKey = SettingsService.to.theme.resolvedLoadingStyle;
-                  final bool isZh = Get.locale?.languageCode == 'zh';
-                  final Map<String, String> currentItem = AppConsts.allStyles.firstWhere(
-                    (item) => item['key'] == currentKey,
-                    orElse: () => {'key': 'default', 'nameEn': 'Default Ring', 'nameZh': '默认圆环'},
-                  );
-                  final String displayName = isZh ? currentItem['nameZh']! : currentItem['nameEn']!;
+                  final String style = AppConsts.loadingStyleKeys.contains(currentKey)
+                      ? currentKey
+                      : AppConsts.defaultLoadingStyleKey;
+                  final String displayName = i18n(AppConsts.loadingStyleLabel(style));
 
                   return Text(
                     displayName,

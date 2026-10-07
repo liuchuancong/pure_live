@@ -24,7 +24,7 @@ class _LoadingStyleSettingsPageState extends State<LoadingStyleSettingsPage> wit
   }
 
   Future<bool> colorPickerDialog() async {
-    final bool isZh = Get.locale?.languageCode == 'zh';
+    final isZh = Get.locale?.languageCode == 'zh';
     final initialColor = SettingsService.to.theme.loadingStyleColor ?? Theme.of(context).colorScheme.primary;
     return showAppColorPickerDialog(
       context: context,
@@ -390,7 +390,6 @@ class _LoadingStyleSettingsPageState extends State<LoadingStyleSettingsPage> wit
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isZh = Get.locale?.languageCode == 'zh';
     final double screenWidth = MediaQuery.of(context).size.width;
     final double textScale = MediaQuery.textScalerOf(context).scale(1);
     int crossAxisCount = 3;
@@ -476,9 +475,8 @@ class _LoadingStyleSettingsPageState extends State<LoadingStyleSettingsPage> wit
                 childAspectRatio: childAspectRatio,
               ),
               delegate: SliverChildBuilderDelegate((context, index) {
-                final item = AppConsts.allStyles[index];
-                final String key = item['key']!;
-                final String displayName = isZh ? item['nameZh']! : item['nameEn']!;
+                final String key = AppConsts.loadingStyleKeys[index];
+                final String displayName = i18n(AppConsts.loadingStyleLabel(key));
 
                 return Obx(() {
                   final bool isSelected = SettingsService.to.theme.resolvedLoadingStyle == key;
@@ -539,7 +537,7 @@ class _LoadingStyleSettingsPageState extends State<LoadingStyleSettingsPage> wit
                     ),
                   );
                 });
-              }, childCount: AppConsts.allStyles.length),
+              }, childCount: AppConsts.loadingStyleKeys.length),
             ),
           ),
         ],
