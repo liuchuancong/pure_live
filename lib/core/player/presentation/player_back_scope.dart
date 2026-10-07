@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:pure_live/core/player/presentation/android_predictive_back_service.dart';
+import 'package:pure_live/get/get.dart';
 
 /// The routes that currently have a player on screen.
 ///
@@ -147,17 +148,29 @@ class _PlayerBackScopeState extends State<PlayerBackScope> {
 
   void _onBackCancelled() {}
 
+  /// Leaves the route, the way the player pages have always done it.
+  ///
+  /// Resolved from `Get.context` rather than from this widget's own context: a
+  /// host is allowed to start tearing itself down before it answers (the
+  /// multiview disposes every cell, waits a frame and only then leaves), and a
+  /// request issued from an element that is already deactivating would throw
+  /// "Looking up a deactivated widget's ancestor".
+  Future<void> _leaveRoute() async {
+    final rootContext = Get.context ?? context;
+    if (!rootContext.mounted) return;
+    await Navigator.of(rootContext).maybePop();
+  }
+
   Future<void> _handleNativeBack() async {
     if (_handlingBack || !mounted) return;
 
     _handlingBack = true;
     try {
-      final navigator = Navigator.of(context);
       final route = ModalRoute.of(context);
 
       // A dialog, sheet, or popup opened above the player owns the first Back.
       if (route?.isCurrent == false) {
-        await navigator.maybePop();
+        await _leaveRoute();
         return;
       }
 
@@ -169,7 +182,7 @@ class _PlayerBackScopeState extends State<PlayerBackScope> {
         // [onBackRequest] and reports whether it consumed the gesture.
         final handled = await widget.onBackRequest?.call() ?? false;
         if (!handled) {
-          await navigator.maybePop();
+          await _leaveRoute();
         }
       }
     } finally {

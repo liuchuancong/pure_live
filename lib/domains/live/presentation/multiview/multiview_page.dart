@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'dart:developer' as developer;
 
 import 'package:flutter/services.dart';
@@ -8,6 +8,7 @@ import 'package:flame_barrage/flame_barrage.dart';
 import 'package:media_core/media_core.dart' show PlayerId;
 import 'package:media_core_media_kit/media_core_media_kit.dart';
 import 'package:pure_live/core/player/presentation/fullscreen_window.dart';
+import 'package:pure_live/core/player/presentation/player_back_scope.dart';
 import 'package:pure_live/core/platform/platform_utils.dart';
 import 'package:pure_live/domains/live/presentation/multiview/multiview_controller.dart';
 import 'package:pure_live/core/player/kernel/player_kernel_service.dart';
@@ -96,15 +97,6 @@ class _MultiviewPageState extends State<MultiviewPage> {
       unawaited(_restoreSystemFullscreen());
     }
     super.dispose();
-  }
-
-  void _handleBackIntent({required bool didPop}) {
-    if (didPop) return;
-    if (_displayMode != _DisplayMode.normal) {
-      unawaited(_changeDisplayMode(_DisplayMode.normal));
-      return;
-    }
-    unawaited(_exitSafely());
   }
 
   Future<void> _exitSafely() async {
@@ -290,9 +282,29 @@ class _MultiviewPageState extends State<MultiviewPage> {
 
   @override
   Widget build(BuildContext context) {
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, _) => _handleBackIntent(didPop: didPop),
+    // The grid owns Android Back through [PlayerBackScope], exactly like the live
+    // room and the recording player. A bare `PopScope` is not enough on Android
+    // 13+: the system hands Back to the Activity, where Flutter registers its
+    // callback at DEFAULT priority, so the *host's* PRIORITY_OVERLAY callback —
+    // the one this scope installs — decides first. Without it the immersive and
+    // fullscreen grids never saw Back at all.
+    //
+    // The scope also keeps `canPop` false while a mode is active, so the route
+    // cannot be popped out from under a fullscreen grid.
+    return PlayerBackScope(
+      presentationActive: _displayMode != _DisplayMode.normal,
+      onExitPresentation: () => _changeDisplayMode(_DisplayMode.normal),
+      onBackRequest: () async {
+        if (_exiting) return true;
+        if (_displayMode != _DisplayMode.normal) {
+          await _changeDisplayMode(_DisplayMode.normal);
+          return true;
+        }
+        // Leaving is this page's own job: it disposes every cell and waits for the
+        // frame that clears them before the route goes away.
+        unawaited(_exitSafely());
+        return true;
+      },
       child: switch (_displayMode) {
         _DisplayMode.normal => Scaffold(
           appBar: AppBar(

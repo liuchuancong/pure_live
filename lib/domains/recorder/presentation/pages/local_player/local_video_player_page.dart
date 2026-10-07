@@ -133,7 +133,18 @@ class _RecordingBackBoundaryState extends State<_RecordingBackBoundary> {
         // Still answered, for the host path that delivers Back to Dart before
         // Flutter sees it. `handleBackRequest` applies the same rule, so the two
         // paths cannot disagree.
-        onBackRequest: () => controller.handleBackRequest(),
+        onBackRequest: () async {
+          if (await controller.handleBackRequest()) {
+            // The controller said "leave the page", and the page leaves it
+            // itself. Leaving this to Flutter's default pop is what failed
+            // before: with `canPop` true the platform is allowed to resolve the
+            // back on its own, and on this device it did not — the page simply
+            // stayed. An explicit pop is deterministic.
+            await Navigator.of(Get.context!).maybePop();
+          }
+          // The route is never left by the platform here; this scope owns it.
+          return true;
+        },
         child: child!,
       ),
       child: widget.child,
