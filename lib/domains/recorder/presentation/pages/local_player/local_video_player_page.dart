@@ -9,6 +9,7 @@ import 'package:pure_live/core/platform/platform_utils.dart';
 import 'package:media_core/media_core.dart' show MediaPlayerView;
 import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 import 'package:pure_live/core/player/presentation/windows_pip_driver.dart';
+import 'package:pure_live/core/player/presentation/compact_playback_progress.dart';
 import 'package:pure_live/core/player/presentation/player_ui_controller.dart';
 import 'package:pure_live/core/player/presentation/danmaku/player_danmaku_actions.dart';
 import 'package:pure_live/domains/recorder/presentation/pages/local_player/local_video_player_controller.dart';
@@ -226,6 +227,26 @@ class _RecordingPipOverlayState extends State<_RecordingPipOverlay> {
                     ),
                   ),
                 ],
+              ),
+            ),
+            // 进度条：小窗里也要能拖，不只是看得见时间。跟控件同一套 hover 显隐。
+            Positioned(
+              left: 8,
+              right: 8,
+              bottom: 8,
+              child: IgnorePointer(
+                ignoring: !_showControls,
+                child: AnimatedOpacity(
+                  opacity: _showControls ? 1 : 0,
+                  duration: const Duration(milliseconds: 160),
+                  child: Obx(
+                    () => CompactPlaybackProgress(
+                      position: widget.controller.position.value,
+                      duration: widget.controller.duration.value,
+                      onSeek: (target) => unawaited(widget.controller.seekTo(target)),
+                    ),
+                  ),
+                ),
               ),
             ),
             Center(
@@ -1330,17 +1351,21 @@ class _DesktopLayout extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Obx(() {
+      // 桌面画中画排在全屏之前：窗口的形状决定页面的脸。PiP 请求经内核链时会
+      // 释放全屏，但那一步是驱动的事；只要窗口是紧凑的，就必须渲染紧凑 overlay，
+      // 不能让残留的全屏状态把整页布局留在缩小的窗口里。
+      //
+      // 与直播间一致，整个页面替换成紧凑画面 —— AppBar 等页面 chrome 不能留下，
+      // 否则缩小的窗口里还带着标题栏。
+      if (controller.isInPip.value) {
+        return _RecordingPipOverlay(controller: controller);
+      }
       // 桌面全屏：与直播间一致，整个页面只剩视频区（Esc/双击退出由库条处理）。
       if (controller.isFullscreen.value) {
         return Scaffold(
           backgroundColor: Colors.black,
           body: _PlayerArea(controller: controller, keyboardShortcuts: true),
         );
-      }
-      // 桌面画中画：与直播间一致，整个页面替换成紧凑画面 —— AppBar 等页面
-      // chrome 不能留下，否则缩小的窗口里还带着标题栏。
-      if (controller.isInPip.value) {
-        return _RecordingPipOverlay(controller: controller);
       }
       return Scaffold(
         appBar: AppBar(

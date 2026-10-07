@@ -16,7 +16,7 @@ import 'package:pure_live/core/player/kernel/floating_handle_keeper.dart';
 import 'package:pure_live/core/player/kernel/player_kernel_service.dart';
 import 'package:pure_live/core/player/presentation/danmaku/danmaku_surface_settings.dart';
 import 'package:pure_live/core/player/presentation/danmaku/player_danmaku_surface.dart';
-import 'package:pure_live/core/player/presentation/fullscreen_window.dart' show WindowService;
+import 'package:pure_live/core/player/presentation/fullscreen_window.dart' show WindowService, fullscreenDriver;
 import 'package:pure_live/core/player/presentation/player_presentation_actions.dart';
 import 'package:pure_live/core/player/presentation/player_ui_controller.dart';
 import 'package:pure_live/core/player/presentation/windows_pip_driver.dart';
@@ -177,6 +177,13 @@ final class LocalVideoPlayerController extends GetxController implements PlayerU
     // 与直播间同一来源的画中画状态：桌面端窗口被驱动缩成小窗时，页面据此把
     // 自己的内容换成紧凑 overlay（直播的 _PipOverlayView 的录像对应物）。
     _pipStateSub = windowsPipDriver.onPipChanged.listen((pip) => isInPip.value = pip);
+    // 全屏的真值是驱动，不是这个控制器里的 Rx —— 直播间就是这么办的
+    // （facade 监听 fullscreenDriver 再同步自己的 isSystemFullscreen）。PiP
+    // 请求经过内核链时会把全屏释放掉，本地乐观翻转的状态不知道这件事：于是
+    // 缩小的窗口里还在渲染"全屏只剩视频区"那一支，退出 PiP 后窗口已经恢复
+    // 正常、页面却还留着全屏形状。
+    _fullscreenStateSub = fullscreenDriver.onFullscreenChanged.listen((_) => _syncFullscreenFromDriver());
+    _syncFullscreenFromDriver();
     _scanAndOpen();
   }
 
@@ -189,6 +196,15 @@ final class LocalVideoPlayerController extends GetxController implements PlayerU
   /// 全屏切换的单一事实状态：库条的全屏按钮按 canExit 恒定分流到 exit 闭包，
   /// 所以 enter/exit 两个闭包都必须是“按当前状态翻转”的切换器。
   final fullscreenActive = false.obs;
+
+  /// 桌面的全屏形状由驱动说了算：镜像过来，页面和切换按钮都读同一份真值。
+  /// 移动端的全屏是方向锁，不在这条链上，保持原来的本地语义。
+  void _syncFullscreenFromDriver() {
+    if (PlatformUtils.isMobile) return;
+    final active = fullscreenDriver.isSystemFullscreen;
+    fullscreenActive.value = active;
+    isFullscreen.value = active;
+  }
 
   Future<void> toggleFullscreen() async {
     final isMobile = PlatformUtils.isMobile;
@@ -212,6 +228,8 @@ final class LocalVideoPlayerController extends GetxController implements PlayerU
   }
 
   StreamSubscription<bool>? _pipStateSub;
+
+  StreamSubscription<bool>? _fullscreenStateSub;
 
   Future<void> _scanAndOpen() async {
     isLoading.value = true;
@@ -696,6 +714,7 @@ final class LocalVideoPlayerController extends GetxController implements PlayerU
   @override
   void onClose() {
     _pipStateSub?.cancel();
+    _fullscreenStateSub?.cancel();
     if (_handedToFloating) {
       // The window is showing this feed: leave the handle and the position
       // saver alone, and keep the window up while the page disappears.
