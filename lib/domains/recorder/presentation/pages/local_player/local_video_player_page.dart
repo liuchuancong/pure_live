@@ -8,6 +8,7 @@ import 'package:pure_live/core/consts/app_consts.dart';
 import 'package:media_core/media_core.dart' show MediaPlayerView;
 import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 import 'package:flutter/services.dart' show KeyDownEvent, LogicalKeyboardKey;
+import 'package:pure_live/core/player/presentation/player_back_scope.dart';
 import 'package:pure_live/core/player/presentation/windows_pip_driver.dart';
 import 'package:pure_live/core/player/presentation/player_ui_controller.dart';
 import 'package:pure_live/core/player/presentation/compact_playback_progress.dart';
@@ -31,9 +32,27 @@ class LocalVideoPlayerPage extends GetView<LocalVideoPlayerController> {
     // The keyboard owner sits above the layout switch: a resize that flips
     // narrow/wide, or a presentation change that replaces the page's shape,
     // must not take the focus node with it.
+    //
+    // The back scope sits above it for the same reason, and because the route's
+    // Back is not a Flutter-level event: Android 13+ hands it to the Activity,
+    // where Flutter's own callback has DEFAULT priority and pops the route
+    // before any `PopScope` runs. [PlayerBackScope] registers a
+    // PRIORITY_OVERLAY interception through the host channel, which is the only
+    // reason the live room's "back leaves fullscreen first" works at all. This
+    // page used a bare `PopScope`, so its Back never reached the handler and the
+    // route simply popped.
     return RecordingKeyboardShortcuts(
       controller: controller,
-      child: Get.width <= 680 ? _MobileLayout(controller: controller) : _DesktopLayout(controller: controller),
+      child: PlayerBackScope(
+        // Fullscreen is the controller's own state, not a mode this scope reads;
+        // [LocalVideoPlayerController.handleBackRequest] answers for it — it
+        // leaves fullscreen first, then hands the feed to the small window, and
+        // only then reports that the page may be left.
+        presentationActive: false,
+        onExitPresentation: () async {},
+        onBackRequest: controller.handleBackRequest,
+        child: Get.width <= 680 ? _MobileLayout(controller: controller) : _DesktopLayout(controller: controller),
+      ),
     );
   }
 }
@@ -1224,74 +1243,69 @@ class _MobileLayoutState extends State<_MobileLayout> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, _) async {
-        if (didPop) return;
-        final shouldLeave = await controller.handleBackRequest();
-        if (shouldLeave && context.mounted) Get.back<void>();
-      },
-      child: Scaffold(
-        backgroundColor: Colors.black,
-        body: Obx(() {
-          // Picture-in-picture owns the whole body, exactly like the live room:
-          // only the compact picture and its chat are visible — no page chrome.
-          if (controller.isInPip.value) {
-            return _RecordingPipOverlay(controller: controller);
-          }
-          // Scanning the folder is the only true "nothing to show yet" state; once
-          // a file is open the player surface itself carries its own loading.
-          if (controller.isLoading.value && controller.videoFiles.isEmpty) {
-            // Folder scan: a small themed indicator on the video's own black, not
-            // a full-screen white spinner page.
-            return Center(
-              child: SizedBox.square(
-                dimension: 28,
-                child: CircularProgressIndicator(strokeWidth: 2.5, color: theme.colorScheme.primary),
-              ),
-            );
-          }
-          if (controller.videoFiles.isEmpty) {
-            return SafeArea(child: _emptyState(context, controller, onDark: true));
-          }
-          // The page's SHAPE follows the fullscreen state, not the device's
-          // orientation. Rotating the phone used to be enough to be "fullscreen"
-          // — which is how the page ended up in a fullscreen-looking shape with
-          // the episode panel still under it, and how leaving fullscreen changed
-          // nothing on screen: the shape was already the rotated one.
-          final fullscreen = controller.fullscreenActive.value;
-          final landscapeShape = fullscreen || isLandscape;
-          if (landscapeShape) {
-            return Stack(
-              fit: StackFit.expand,
-              children: [
-                _PlayerArea(controller: controller, keyboardShortcuts: true),
-                _LandscapeTopBar(controller: controller, showCornerActions: fullscreen),
-              ],
-            );
-          }
-          return SafeArea(
-            top: false,
-            child: Column(
-              children: [
-                Expanded(
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      ColoredBox(
-                        color: Colors.black,
-                        child: _PlayerArea(controller: controller),
-                      ),
-                      _PortraitTopBar(controller: controller),
-                    ],
-                  ),
-                ),
-                _ContextPanel(controller: controller),
-              ],
+    // Back belongs to the page's [PlayerBackScope] above this layout: a bare
+    // `PopScope` here never received Android's back at all, and a second handler
+    // would answer the same gesture twice on the platforms where it does.
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Obx(() {
+        // Picture-in-picture owns the whole body, exactly like the live room:
+        // only the compact picture and its chat are visible — no page chrome.
+        if (controller.isInPip.value) {
+          return _RecordingPipOverlay(controller: controller);
+        }
+        // Scanning the folder is the only true "nothing to show yet" state; once
+        // a file is open the player surface itself carries its own loading.
+        if (controller.isLoading.value && controller.videoFiles.isEmpty) {
+          // Folder scan: a small themed indicator on the video's own black, not
+          // a full-screen white spinner page.
+          return Center(
+            child: SizedBox.square(
+              dimension: 28,
+              child: CircularProgressIndicator(strokeWidth: 2.5, color: theme.colorScheme.primary),
             ),
           );
-        }),
-      ),
+        }
+        if (controller.videoFiles.isEmpty) {
+          return SafeArea(child: _emptyState(context, controller, onDark: true));
+        }
+        // The page's SHAPE follows the fullscreen state, not the device's
+        // orientation. Rotating the phone used to be enough to be "fullscreen"
+        // — which is how the page ended up in a fullscreen-looking shape with
+        // the episode panel still under it, and how leaving fullscreen changed
+        // nothing on screen: the shape was already the rotated one.
+        final fullscreen = controller.fullscreenActive.value;
+        final landscapeShape = fullscreen || isLandscape;
+        if (landscapeShape) {
+          return Stack(
+            fit: StackFit.expand,
+            children: [
+              _PlayerArea(controller: controller, keyboardShortcuts: true),
+              _LandscapeTopBar(controller: controller, showCornerActions: fullscreen),
+            ],
+          );
+        }
+        return SafeArea(
+          top: false,
+          child: Column(
+            children: [
+              Expanded(
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    ColoredBox(
+                      color: Colors.black,
+                      child: _PlayerArea(controller: controller),
+                    ),
+                    _PortraitTopBar(controller: controller),
+                  ],
+                ),
+              ),
+              _ContextPanel(controller: controller),
+            ],
+          ),
+        );
+      }),
     );
   }
 }
@@ -1884,19 +1898,14 @@ class _DesktopLayout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, _) async {
-        if (didPop) return;
-        // Same rule as the room: back leaves the fullscreen shape first, and
-        // only a page that is not fullscreen is allowed to be left.
-        if (await controller.handleBackRequest() && context.mounted) Get.back<void>();
-      },
-      child: Obx(() {
-        //
-        if (controller.isInPip.value) {
-          return _RecordingPipOverlay(controller: controller);
-        }
+    // Back is the page's [PlayerBackScope] above this layout: same rule as the
+    // room — it leaves the fullscreen shape first and only lets a page that is
+    // not fullscreen be left — but exactly one handler owns it.
+    return Obx(() {
+      //
+      if (controller.isInPip.value) {
+        return _RecordingPipOverlay(controller: controller);
+      }
         if (controller.isFullscreen.value) {
           // A portrait recording keeps its vertical shape in fullscreen: the
           // picture is contained at full height with the list under it, instead
@@ -2007,7 +2016,6 @@ class _DesktopLayout extends StatelessWidget {
             );
           }),
         );
-      }),
-    );
+      });
   }
 }

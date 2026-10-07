@@ -1,9 +1,24 @@
 import 'package:flutter/services.dart';
 
-/// Bridges Android's native back dispatcher to the active live-room
-/// presentation. Flutter's route PopScope remains the fallback for older or
-/// unsupported embeddings, while Android 13+ gets a callback that runs before
-/// the Navigator pops the room route.
+/// Bridges Android's native back dispatcher to the player route on screen.
+///
+/// This is not a convenience wrapper around `PopScope`. On Android 13+ the
+/// system back gesture and button are delivered to the Activity's
+/// `OnBackInvokedDispatcher`, where Flutter registers its own callback at
+/// DEFAULT priority — so the route is popped before `PopScope` is ever consulted
+/// unless the host registers first. `MainActivity` therefore keeps a
+/// PRIORITY_OVERLAY callback that forwards every back to Dart through this
+/// channel; `PopScope` stays the fallback for older or unsupported embeddings.
+///
+/// Responsibilities:
+///
+/// - turn the native back callback into a Dart callback
+/// - enable and disable that interception for the route that owns it
+///
+/// It does not:
+///
+/// - decide what back means (a route's back scope does)
+/// - pop routes
 class AndroidPredictiveBackService {
   AndroidPredictiveBackService._();
 
