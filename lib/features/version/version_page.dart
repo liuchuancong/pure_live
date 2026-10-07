@@ -98,6 +98,26 @@ class VersionPage extends GetView<VersionController> {
               ),
               const SizedBox(height: 20),
             ],
+            if (PlatformUtils.isLinux) ...[
+              _buildPlatformCard(
+                context,
+                title: "Linux",
+                subtitle: i18n("linux_desc"),
+                icon: Remix.ubuntu_line,
+                children: [
+                  _buildDownloadSection(context, title: i18n("deb_installer"), urls: controller.linuxDebUrl.value),
+                  const SizedBox(height: 16),
+                  _buildDownloadSection(context, title: i18n("portable_package"), urls: controller.linuxZipUrl.value),
+                  const SizedBox(height: 16),
+                  _buildDownloadSection(
+                    context,
+                    title: i18n("portable_tar_package"),
+                    urls: controller.linuxTarGzUrl.value,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+            ],
 
             context.buildGroupTitle(i18n("update_log")),
             const SizedBox(height: 8),

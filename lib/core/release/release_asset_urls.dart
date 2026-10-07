@@ -156,6 +156,20 @@ class ReleaseAssetUrls {
     extensions: const <String>['.tar.gz'],
   );
 
+  /// Linux x64 DEB package.
+  String? get linuxX64Deb => _find(
+    requiredKeywords: const <String>['linux', 'x64'],
+    preferredKeywords: const <String>[],
+    extensions: const <String>['.deb'],
+  );
+
+  /// Linux x64 portable ZIP.
+  String? get linuxX64Zip => _find(
+    requiredKeywords: const <String>['linux', 'x64'],
+    preferredKeywords: const <String>[],
+    extensions: const <String>['.zip'],
+  );
+
   /// iOS arm64 TrollStore IPA.
   String? get iosArm64TrollStore => _find(
     requiredKeywords: const <String>['ios', 'trollstore'],
@@ -190,6 +204,8 @@ class ReleaseAssetUrls {
     add('macos-universal.dmg', macosUniversalDmg);
     add('macos-universal.zip', macosUniversalZip);
     add('linux-x64.tar.gz', linuxX64);
+    add('linux-x64.deb', linuxX64Deb);
+    add('linux-x64.zip', linuxX64Zip);
     add('ios-arm64-trollstore.ipa', iosArm64TrollStore);
     add('ios-arm64-unsigned-app.zip', iosArm64UnsignedApp);
 

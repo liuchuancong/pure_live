@@ -25,6 +25,10 @@ class VersionController extends GetxController {
 
   final macosUrl = ''.obs;
 
+  final linuxDebUrl = ''.obs;
+  final linuxZipUrl = ''.obs;
+  final linuxTarGzUrl = ''.obs;
+
   late PackageInfo packageInfo;
 
   final loading = true.obs;
@@ -72,6 +76,10 @@ class VersionController extends GetxController {
       windowsPortableUrl.value = assetUrls['windows-x64-portable.zip'] ?? '';
 
       macosUrl.value = assetUrls['macos-universal.dmg'] ?? assetUrls['macos-universal.zip'] ?? '';
+
+      linuxDebUrl.value = assetUrls['linux-x64.deb'] ?? '';
+      linuxZipUrl.value = assetUrls['linux-x64.zip'] ?? '';
+      linuxTarGzUrl.value = assetUrls['linux-x64.tar.gz'] ?? '';
     } catch (_) {
       error.value = true;
       _clearReleaseState();
@@ -102,5 +110,8 @@ class VersionController extends GetxController {
     windowsMsixUrl.value = '';
     windowsPortableUrl.value = '';
     macosUrl.value = '';
+    linuxDebUrl.value = '';
+    linuxZipUrl.value = '';
+    linuxTarGzUrl.value = '';
   }
 }

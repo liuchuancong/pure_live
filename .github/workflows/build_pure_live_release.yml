@@ -14,7 +14,7 @@ on:
         type: boolean
         default: false
       build_linux:
-        description: Build Linux x64 portable archive
+        description: Build Linux x64 DEB and portable archives
         required: true
         type: boolean
         default: false
@@ -433,7 +433,7 @@ jobs:
           if-no-files-found: error
           retention-days: 3
   linux:
-    name: Linux x64 portable
+    name: Linux x64 DEB + portable
     if: >-
       ${{ always() &&
         github.event_name == 'workflow_dispatch' &&
@@ -555,18 +555,70 @@ jobs:
           FULL_VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //; s/[`"'"'"']//g')
           echo "version=${FULL_VERSION%%+*}" >> "$GITHUB_OUTPUT"
           echo "artifact_version=${FULL_VERSION/+/-}" >> "$GITHUB_OUTPUT"
-      - name: Create portable archive
+      - name: Create portable archives
         shell: bash
+        # The bundle at this point carries the staged FFmpeg runtime, so the
+        # portable tar.gz and zip are complete packages.
         run: |
           set -euo pipefail
           VERSION="${{ steps.version.outputs.artifact_version }}"
           tar -C build/linux/x64/release/bundle -czf "PureLive-${VERSION}-linux-x64.tar.gz" .
+          (cd build/linux/x64/release/bundle && zip -qr "$GITHUB_WORKSPACE/PureLive-${VERSION}-linux-x64.zip" .)
+      - name: Install pinned Linux packager
+        run: |
+          dart pub global activate fastforge 0.6.0
+          echo "$HOME/.pub-cache/bin" >> "$GITHUB_PATH"
+      - name: Package Linux DEB
+        shell: bash
+        # fastforge re-runs `flutter build linux` internally (there is no
+        # --skip-build), and the CMake install resets the bundle, so the staged
+        # FFmpeg runtime is gone again afterwards and gets re-staged below.
+        env:
+          PURELIVE_BUILD_SOURCE: github-manual
+        run: |
+          set -euo pipefail
+          size_kb=$(du -sk build/linux/x64/release/bundle | cut -f1)
+          sed -i "s/^installed_size: .*/installed_size: ${size_kb}/" linux/packaging/deb/make_config.yaml
+          fastforge package \
+            --platform linux \
+            --targets deb \
+            --skip-clean \
+            --build-dart-define "PURELIVE_BUILD_SOURCE=${PURELIVE_BUILD_SOURCE}"
+          ls -lh dist/
+      - name: Restore FFmpeg runtime in rebuilt bundle
+        run: |
+          python3 tool/verify_ffmpeg_native.py linux build/linux/x64/release/bundle --stage-linux
+      - name: Inject FFmpeg runtime into DEB
+        shell: bash
+        # fastforge packaged the DEB from its own rebuild, before the verified
+        # runtime was staged back into the bundle, so the library is injected
+        # and the result re-verified before the package is accepted.
+        run: |
+          set -euo pipefail
+          VERSION="${{ steps.version.outputs.artifact_version }}"
+          deb_source=$(find dist -type f -name '*.deb' -print -quit)
+          if [[ -z "$deb_source" ]]; then
+            echo "DEB package not found under dist/." >&2
+            exit 1
+          fi
+          work="$RUNNER_TEMP/deb-repack"
+          rm -rf "$work"
+          dpkg-deb --raw-extract "$deb_source" "$work"
+          install -D -m 644 \
+            build/linux/x64/release/bundle/lib/libffmpegkit.so \
+            "$work/usr/share/pure_live/lib/libffmpegkit.so"
+          dpkg-deb --build --root-owner-group "$work" "PureLive-${VERSION}-linux-x64.deb"
+          dpkg-deb --field "PureLive-${VERSION}-linux-x64.deb" Package Version Architecture Depends
+          dpkg-deb --contents "PureLive-${VERSION}-linux-x64.deb" | grep -F 'usr/share/pure_live/lib/libffmpegkit.so' > /dev/null
+          ls -lh "PureLive-${VERSION}-linux-x64.tar.gz" "PureLive-${VERSION}-linux-x64.zip" "PureLive-${VERSION}-linux-x64.deb"
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: pure-live-linux-x64
           path: |
             PureLive-*-linux-x64.tar.gz
+            PureLive-*-linux-x64.zip
+            PureLive-*-linux-x64.deb
           if-no-files-found: error
           retention-days: 3
   apple:
@@ -937,7 +989,8 @@ jobs:
           - 统一 SHA256 校验文件：[**ANDROID_SHA256SUM.txt**](https://github.com/liuchuancong/pure_live/releases/download/$RELEASE_TAG/ANDROID_SHA256SUM.txt)
           ### 🐧 Linux 版
           - Linux x64
-          - Portable tar.gz
+          - **DEB 安装包**：适合 Debian/Ubuntu 及其衍生发行版
+          - **Portable ZIP / tar.gz**：解压即用，无需安装
           ### 🍎 iOS 版
           - unsigned iOS device application
           - TrollStore / ad-hoc IPA

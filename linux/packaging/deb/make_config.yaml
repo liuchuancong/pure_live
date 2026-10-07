@@ -1,0 +1,27 @@
+# fastforge (0.6.0) deb target config, read from
+# linux/packaging/deb/make_config.yaml when `fastforge package --platform
+# linux --targets deb` runs in build_pure_live_release.yml. Field names and
+# semantics follow fastforge's MakeDebConfig; installed_size is rewritten from
+# the built bundle size by the packaging step. The install layout comes from
+# fastforge itself: the bundle goes to /usr/share/pure_live/ and a postinst
+# symlink exposes /usr/bin/pure_live.
+display_name: 纯粹直播
+package_name: pure-live
+maintainer:
+  name: liuchuancong
+  email: 17792321552@163.com
+priority: optional
+section: x11
+installed_size: 500000
+essential: false
+icon: assets/icons/icon.png
+generic_name: Livestream Player
+keywords:
+  - Livestream
+  - Video
+categories:
+  - AudioVideo
+  - Audio
+  - Video
+  - Network
+startup_notify: true
