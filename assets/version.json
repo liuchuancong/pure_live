@@ -1,23 +1,23 @@
 {
-  "version": "3.1.17",
-  "build_number": 4106,
-  "version_num": 301074106,
+  "version": "3.1.18",
+  "build_number": 4107,
+  "version_num": 301184107,
   "android_abis": [
     "armeabi-v7a",
     "arm64-v8a",
     "x86_64"
   ],
-  "version_desc": "version: 3.1.17\n版本更新：\n- 斗鱼原画不再每 5 分钟断流（#35）：到期前约 45 秒在后台取得新链接，旧连接继续播放，直到新连接到达一个还没播到的关键帧再接上；两条链接的时间戳在同一条时间线上，播放不卡顿、不重复、不重新缓冲。单个直播间与多画面都已接入；换链接失败时仍回退到断流自动重连。\n-  Android ARMv7 与 x86_64 改用自编 mpv 0.41.0 + FFmpeg 9.0.2 播放库，三种架构解码能力一致（包括旧式 HEVC FLV）。\n- 下线 Kick：kick.com 全部接口被 Cloudflare 按 TLS 指纹拦截，只有 Android 与 Windows 能勉强绕过。现支持 33 个直播平台 + IPTV；已关注的 Kick 主播和分享链接会提示「该平台已下线」。\n- Linux 安装包将自带 libmpv 依赖的 VA-API 等库，不再需要手动安装 libva-wayland2（源码已包含，下次发布 Linux 包时生效）。",
+  "version_desc": "version: 3.1.18\n版本更新：\n- 播放稳定性：斗鱼原画不再每 5 分钟断流（#35），到期前后台换链、关键帧处接续，单房间与多画面都生效；播放输入统一到回环管线，TwitCasting 这类\"分片为相对地址\"的线路不再打不开，旧式 HEVC FLV 与中途换链由 FFmpeg/中继处理。\n- 平台：下线 Kick（接口被 Cloudflare 拦截）；现支持 33 个直播平台 + IPTV。\n- Android：ARMv7 与 x86_64 改用自编 mpv 0.41.0 + FFmpeg 9.0.2，三种架构解码能力一致；设置里新增\"播放内核一键配置\"，并修复硬解兼容。\n- 全屏与返回：直播、录像、多画面的控制栏避开刘海与手势条，全屏先退全屏，桌面全屏不再误退页面。\n- 录像播放页：小窗/画中画/仅音频/截图/±10 秒跳转、可拖进度条、窄窗口上下布局，退出小窗接着播。\n- 界面与会话：文案基本全部进语言包，语言切换不再有硬编码残留；直播间空格/Esc/F/M 快捷键可测可切；壁纸/背景贯穿整个 App（弹窗与菜单保持不透明）。",
   "prerelease": false,
-  "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.1.17",
+  "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.1.18",
   "platforms": {
     "android": {
-      "version": "3.1.17",
-      "build_number": 4106,
-      "version_num": 301074106,
-      "version_desc": "version: 3.1.17\n版本更新：\n- 斗鱼原画不再每 5 分钟断流（#35）：到期前约 45 秒在后台取得新链接，旧连接继续播放，直到新连接到达一个还没播到的关键帧再接上；两条链接的时间戳在同一条时间线上，播放不卡顿、不重复、不重新缓冲。单个直播间与多画面都已接入；换链接失败时仍回退到断流自动重连。\n-  Android ARMv7 与 x86_64 改用自编 mpv 0.41.0 + FFmpeg 9.0.2 播放库，三种架构解码能力一致（包括旧式 HEVC FLV）。\n- 下线 Kick：kick.com 全部接口被 Cloudflare 按 TLS 指纹拦截，只有 Android 与 Windows 能勉强绕过。现支持 33 个直播平台 + IPTV；已关注的 Kick 主播和分享链接会提示「该平台已下线」。\n- Linux 安装包将自带 libmpv 依赖的 VA-API 等库，不再需要手动安装 libva-wayland2（源码已包含，下次发布 Linux 包时生效）。",
+      "version": "3.1.18",
+      "build_number": 4107,
+      "version_num": 301174107,
+      "version_desc": "version: 3.1.18\n版本更新：\n- 播放稳定性：斗鱼原画不再每 5 分钟断流（#35），到期前后台换链、关键帧处接续，单房间与多画面都生效；播放输入统一到回环管线，TwitCasting 这类\"分片为相对地址\"的线路不再打不开，旧式 HEVC FLV 与中途换链由 FFmpeg/中继处理。\n- 平台：下线 Kick（接口被 Cloudflare 拦截）；现支持 33 个直播平台 + IPTV。\n- Android：ARMv7 与 x86_64 改用自编 mpv 0.41.0 + FFmpeg 9.0.2，三种架构解码能力一致；设置里新增\"播放内核一键配置\"，并修复硬解兼容。\n- 全屏与返回：直播、录像、多画面的控制栏避开刘海与手势条，全屏先退全屏，桌面全屏不再误退页面。\n- 录像播放页：小窗/画中画/仅音频/截图/±10 秒跳转、可拖进度条、窄窗口上下布局，退出小窗接着播。\n- 界面与会话：文案基本全部进语言包，语言切换不再有硬编码残留；直播间空格/Esc/F/M 快捷键可测可切；壁纸/背景贯穿整个 App（弹窗与菜单保持不透明）。",
       "prerelease": false,
-      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.1.17",
+      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.1.18",
       "android_abis": [
         "armeabi-v7a",
         "arm64-v8a",
@@ -25,37 +25,37 @@
       ]
     },
     "windows": {
-      "version": "3.1.17",
-      "build_number": 4106,
-      "version_num": 301074106,
-      "version_desc": "version: 3.1.17\n版本更新：\n- 斗鱼原画不再每 5 分钟断流（#35）：到期前约 45 秒在后台取得新链接，旧连接继续播放，直到新连接到达一个还没播到的关键帧再接上；两条链接的时间戳在同一条时间线上，播放不卡顿、不重复、不重新缓冲。单个直播间与多画面都已接入；换链接失败时仍回退到断流自动重连。\n-  Android ARMv7 与 x86_64 改用自编 mpv 0.41.0 + FFmpeg 9.0.2 播放库，三种架构解码能力一致（包括旧式 HEVC FLV）。\n- 下线 Kick：kick.com 全部接口被 Cloudflare 按 TLS 指纹拦截，只有 Android 与 Windows 能勉强绕过。现支持 33 个直播平台 + IPTV；已关注的 Kick 主播和分享链接会提示「该平台已下线」。\n- Linux 安装包将自带 libmpv 依赖的 VA-API 等库，不再需要手动安装 libva-wayland2（源码已包含，下次发布 Linux 包时生效）。",
+      "version": "3.1.18",
+      "build_number": 4107,
+      "version_num": 301174107,
+      "version_desc": "version: 3.1.18\n版本更新：\n- 播放稳定性：斗鱼原画不再每 5 分钟断流（#35），到期前后台换链、关键帧处接续，单房间与多画面都生效；播放输入统一到回环管线，TwitCasting 这类\"分片为相对地址\"的线路不再打不开，旧式 HEVC FLV 与中途换链由 FFmpeg/中继处理。\n- 平台：下线 Kick（接口被 Cloudflare 拦截）；现支持 33 个直播平台 + IPTV。\n- Android：ARMv7 与 x86_64 改用自编 mpv 0.41.0 + FFmpeg 9.0.2，三种架构解码能力一致；设置里新增\"播放内核一键配置\"，并修复硬解兼容。\n- 全屏与返回：直播、录像、多画面的控制栏避开刘海与手势条，全屏先退全屏，桌面全屏不再误退页面。\n- 录像播放页：小窗/画中画/仅音频/截图/±10 秒跳转、可拖进度条、窄窗口上下布局，退出小窗接着播。\n- 界面与会话：文案基本全部进语言包，语言切换不再有硬编码残留；直播间空格/Esc/F/M 快捷键可测可切；壁纸/背景贯穿整个 App（弹窗与菜单保持不透明）。",
       "prerelease": false,
-      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.1.17",
+      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.1.18",
       "windows_msix_available": true
     },
     "linux": {
-      "version": "3.1.17",
-      "build_number": 4106,
-      "version_num": 301074106,
-      "version_desc": "version: 3.1.17\n版本更新：\n- 斗鱼原画不再每 5 分钟断流（#35）：到期前约 45 秒在后台取得新链接，旧连接继续播放，直到新连接到达一个还没播到的关键帧再接上；两条链接的时间戳在同一条时间线上，播放不卡顿、不重复、不重新缓冲。单个直播间与多画面都已接入；换链接失败时仍回退到断流自动重连。\n-  Android ARMv7 与 x86_64 改用自编 mpv 0.41.0 + FFmpeg 9.0.2 播放库，三种架构解码能力一致（包括旧式 HEVC FLV）。\n- 下线 Kick：kick.com 全部接口被 Cloudflare 按 TLS 指纹拦截，只有 Android 与 Windows 能勉强绕过。现支持 33 个直播平台 + IPTV；已关注的 Kick 主播和分享链接会提示「该平台已下线」。\n- Linux 安装包将自带 libmpv 依赖的 VA-API 等库，不再需要手动安装 libva-wayland2（源码已包含，下次发布 Linux 包时生效）。",
+      "version": "3.1.18",
+      "build_number": 4107,
+      "version_num": 301174107,
+      "version_desc": "version: 3.1.18\n版本更新：\n- 播放稳定性：斗鱼原画不再每 5 分钟断流（#35），到期前后台换链、关键帧处接续，单房间与多画面都生效；播放输入统一到回环管线，TwitCasting 这类\"分片为相对地址\"的线路不再打不开，旧式 HEVC FLV 与中途换链由 FFmpeg/中继处理。\n- 平台：下线 Kick（接口被 Cloudflare 拦截）；现支持 33 个直播平台 + IPTV。\n- Android：ARMv7 与 x86_64 改用自编 mpv 0.41.0 + FFmpeg 9.0.2，三种架构解码能力一致；设置里新增\"播放内核一键配置\"，并修复硬解兼容。\n- 全屏与返回：直播、录像、多画面的控制栏避开刘海与手势条，全屏先退全屏，桌面全屏不再误退页面。\n- 录像播放页：小窗/画中画/仅音频/截图/±10 秒跳转、可拖进度条、窄窗口上下布局，退出小窗接着播。\n- 界面与会话：文案基本全部进语言包，语言切换不再有硬编码残留；直播间空格/Esc/F/M 快捷键可测可切；壁纸/背景贯穿整个 App（弹窗与菜单保持不透明）。",
       "prerelease": false,
-      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.1.17"
+      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.1.18"
     },
     "macos": {
-      "version": "3.1.17",
-      "build_number": 4106,
-      "version_num": 301074106,
-      "version_desc": "version: 3.1.17\n版本更新：\n- 斗鱼原画不再每 5 分钟断流（#35）：到期前约 45 秒在后台取得新链接，旧连接继续播放，直到新连接到达一个还没播到的关键帧再接上；两条链接的时间戳在同一条时间线上，播放不卡顿、不重复、不重新缓冲。单个直播间与多画面都已接入；换链接失败时仍回退到断流自动重连。\n-  Android ARMv7 与 x86_64 改用自编 mpv 0.41.0 + FFmpeg 9.0.2 播放库，三种架构解码能力一致（包括旧式 HEVC FLV）。\n- 下线 Kick：kick.com 全部接口被 Cloudflare 按 TLS 指纹拦截，只有 Android 与 Windows 能勉强绕过。现支持 33 个直播平台 + IPTV；已关注的 Kick 主播和分享链接会提示「该平台已下线」。\n- Linux 安装包将自带 libmpv 依赖的 VA-API 等库，不再需要手动安装 libva-wayland2（源码已包含，下次发布 Linux 包时生效）。",
+      "version": "3.1.18",
+      "build_number": 4107,
+      "version_num": 301174107,
+      "version_desc": "version: 3.1.18\n版本更新：\n- 播放稳定性：斗鱼原画不再每 5 分钟断流（#35），到期前后台换链、关键帧处接续，单房间与多画面都生效；播放输入统一到回环管线，TwitCasting 这类\"分片为相对地址\"的线路不再打不开，旧式 HEVC FLV 与中途换链由 FFmpeg/中继处理。\n- 平台：下线 Kick（接口被 Cloudflare 拦截）；现支持 33 个直播平台 + IPTV。\n- Android：ARMv7 与 x86_64 改用自编 mpv 0.41.0 + FFmpeg 9.0.2，三种架构解码能力一致；设置里新增\"播放内核一键配置\"，并修复硬解兼容。\n- 全屏与返回：直播、录像、多画面的控制栏避开刘海与手势条，全屏先退全屏，桌面全屏不再误退页面。\n- 录像播放页：小窗/画中画/仅音频/截图/±10 秒跳转、可拖进度条、窄窗口上下布局，退出小窗接着播。\n- 界面与会话：文案基本全部进语言包，语言切换不再有硬编码残留；直播间空格/Esc/F/M 快捷键可测可切；壁纸/背景贯穿整个 App（弹窗与菜单保持不透明）。",
       "prerelease": false,
-      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.1.17"
+      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.1.18"
     },
     "ios": {
-      "version": "3.1.17",
-      "build_number": 4106,
-      "version_num": 301074106,
-      "version_desc": "version: 3.1.17\n版本更新：\n- 斗鱼原画不再每 5 分钟断流（#35）：到期前约 45 秒在后台取得新链接，旧连接继续播放，直到新连接到达一个还没播到的关键帧再接上；两条链接的时间戳在同一条时间线上，播放不卡顿、不重复、不重新缓冲。单个直播间与多画面都已接入；换链接失败时仍回退到断流自动重连。\n-  Android ARMv7 与 x86_64 改用自编 mpv 0.41.0 + FFmpeg 9.0.2 播放库，三种架构解码能力一致（包括旧式 HEVC FLV）。\n- 下线 Kick：kick.com 全部接口被 Cloudflare 按 TLS 指纹拦截，只有 Android 与 Windows 能勉强绕过。现支持 33 个直播平台 + IPTV；已关注的 Kick 主播和分享链接会提示「该平台已下线」。\n- Linux 安装包将自带 libmpv 依赖的 VA-API 等库，不再需要手动安装 libva-wayland2（源码已包含，下次发布 Linux 包时生效）。",
+      "version": "3.1.18",
+      "build_number": 4107,
+      "version_num": 301174107,
+      "version_desc": "version: 3.1.18\n版本更新：\n- 播放稳定性：斗鱼原画不再每 5 分钟断流（#35），到期前后台换链、关键帧处接续，单房间与多画面都生效；播放输入统一到回环管线，TwitCasting 这类\"分片为相对地址\"的线路不再打不开，旧式 HEVC FLV 与中途换链由 FFmpeg/中继处理。\n- 平台：下线 Kick（接口被 Cloudflare 拦截）；现支持 33 个直播平台 + IPTV。\n- Android：ARMv7 与 x86_64 改用自编 mpv 0.41.0 + FFmpeg 9.0.2，三种架构解码能力一致；设置里新增\"播放内核一键配置\"，并修复硬解兼容。\n- 全屏与返回：直播、录像、多画面的控制栏避开刘海与手势条，全屏先退全屏，桌面全屏不再误退页面。\n- 录像播放页：小窗/画中画/仅音频/截图/±10 秒跳转、可拖进度条、窄窗口上下布局，退出小窗接着播。\n- 界面与会话：文案基本全部进语言包，语言切换不再有硬编码残留；直播间空格/Esc/F/M 快捷键可测可切；壁纸/背景贯穿整个 App（弹窗与菜单保持不透明）。",
       "prerelease": false,
-      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.1.17"
+      "download_url": "https://github.com/liuchuancong/pure_live/releases/tag/v3.1.18"
     }
   }
 }
