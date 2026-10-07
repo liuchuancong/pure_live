@@ -3,12 +3,15 @@ import 'dart:async';
 
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/core/index.dart';
+import 'package:flutter/foundation.dart' show defaultTargetPlatform;
+import 'package:media_core/media_core.dart' show MediaPlayerView;
 import 'package:media_core_ui/media_core_ui.dart';
 import 'package:pure_live/core/consts/app_consts.dart';
 import 'package:pure_live/core/platform/platform_utils.dart';
 import 'package:pure_live/core/player/kernel/player_kernel_service.dart';
 import 'package:pure_live/core/player/presentation/player_ui_controller.dart';
 import 'package:pure_live/core/player/presentation/danmaku/player_danmaku_actions.dart';
+import 'package:pure_live/core/player/presentation/windows_pip_driver.dart';
 import 'package:pure_live/domains/recorder/presentation/pages/local_player/local_video_player_controller.dart';
 
 /// One recording, played.
@@ -105,6 +108,150 @@ class _VideoSurface extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+/// The video area as the layouts consume it: the normal surface, or — while the
+/// desktop window is in the picture-in-picture shape — the compact overlay,
+/// which is the live room's own PiP face (rounded contain picture, hover
+/// play/pause, corner restore/close, replayed chat) driving the recording.
+class _PlayerArea extends StatelessWidget {
+  const _PlayerArea({required this.controller, this.keyboardShortcuts = false});
+
+  final LocalVideoPlayerController controller;
+  final bool keyboardShortcuts;
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      if (controller.isInPip.value) {
+        return _RecordingPipOverlay(controller: controller);
+      }
+      return _VideoSurface(controller: controller, keyboardShortcuts: keyboardShortcuts);
+    });
+  }
+}
+
+/// The compact face the recording shows while the desktop window is in PiP.
+///
+/// Deliberately the live room's [_PipOverlayView] shape: rounded contain
+/// picture, single tap toggles playback, double tap leaves PiP, dragging the
+/// picture moves the window (the compact frame has no title bar), a hover
+/// reveals a large center play/pause plus the corner restore/close pair, and
+/// the replayed chat keeps flowing over the picture.
+class _RecordingPipOverlay extends StatefulWidget {
+  const _RecordingPipOverlay({required this.controller});
+
+  final LocalVideoPlayerController controller;
+
+  @override
+  State<_RecordingPipOverlay> createState() => _RecordingPipOverlayState();
+}
+
+class _RecordingPipOverlayState extends State<_RecordingPipOverlay> {
+  bool _hovered = false;
+
+  bool get _isTouchDevice =>
+      defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS;
+
+  // 触屏的系统 PiP 是独立窗口且自带控件，页面 overlay 不会显示；桌面保留 hover。
+  bool get _showControls => !_isTouchDevice && _hovered;
+
+  Future<void> _exitPip() => widget.controller.exitPip();
+
+  @override
+  Widget build(BuildContext context) {
+    final handle = widget.controller.handle;
+    if (handle == null) return const ColoredBox(color: Colors.black);
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  GestureDetector(
+                    onDoubleTap: () => unawaited(_exitPip()),
+                    onTap: widget.controller.togglePlayPause,
+                    onPanStart: (_) => unawaited(windowsPipWindow.startDragging()),
+                    child: MediaPlayerView(handle: handle, fit: BoxFit.contain),
+                  ),
+                  Obx(
+                    () => Positioned.fill(
+                      child: widget.controller.buildDanmakuSurface(context) ?? const SizedBox.shrink(),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Center(
+              child: IgnorePointer(
+                ignoring: !_showControls,
+                child: AnimatedOpacity(
+                  opacity: _showControls ? 1 : 0,
+                  duration: const Duration(milliseconds: 160),
+                  child: Obx(
+                    () => IconButton.filledTonal(
+                      iconSize: 56,
+                      tooltip: widget.controller.isPlaying.value ? '暂停' : '播放',
+                      style: IconButton.styleFrom(backgroundColor: Colors.black45, foregroundColor: Colors.white),
+                      icon: Icon(widget.controller.isPlaying.value ? Icons.pause_rounded : Icons.play_arrow_rounded),
+                      onPressed: widget.controller.togglePlayPause,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              right: 8,
+              top: 8,
+              child: IgnorePointer(
+                ignoring: !_showControls,
+                child: AnimatedOpacity(
+                  opacity: _showControls ? 1 : 0,
+                  duration: const Duration(milliseconds: 160),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _pipControlButton(icon: Icons.open_in_full_rounded, semanticLabel: '回到页面', onTap: _exitPip),
+                      const SizedBox(width: 6),
+                      _pipControlButton(
+                        icon: Icons.close_rounded,
+                        semanticLabel: '关闭',
+                        onTap: () async {
+                          await _exitPip();
+                          Get.back<void>();
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _pipControlButton({
+    required IconData icon,
+    required String semanticLabel,
+    required Future<void> Function() onTap,
+  }) {
+    return IconButton(
+      iconSize: 26,
+      tooltip: semanticLabel,
+      style: IconButton.styleFrom(backgroundColor: Colors.black45, foregroundColor: Colors.white),
+      icon: Icon(icon),
+      onPressed: () => unawaited(onTap()),
     );
   }
 }
@@ -503,7 +650,7 @@ class _MobileLayoutState extends State<_MobileLayout> {
           return Stack(
             fit: StackFit.expand,
             children: [
-              _VideoSurface(controller: controller, keyboardShortcuts: true),
+              _PlayerArea(controller: controller, keyboardShortcuts: true),
               _LandscapeTopBar(controller: controller),
             ],
           );
@@ -1161,7 +1308,7 @@ class _DesktopLayout extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                   child: ColoredBox(
                     color: Colors.black,
-                    child: _VideoSurface(controller: controller, keyboardShortcuts: true),
+                    child: _PlayerArea(controller: controller, keyboardShortcuts: true),
                   ),
                 ),
               ),

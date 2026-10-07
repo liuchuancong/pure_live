@@ -1,10 +1,13 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:pure_live/core/player/kernel/floating_handle_keeper.dart';
+import 'package:pure_live/core/storage/hive_pref_util.dart';
 import 'package:pure_live/get/get.dart';
 import 'package:media_core_floating/media_core_floating.dart';
-import 'package:media_core/media_core.dart' show MediaPlayerView, PlayerId, PlayerKernel;
+import 'package:media_core/media_core.dart'
+    show MediaPlayerView, PlayerHandle, PlayerHandlePlayback, PlayerId, PlayerKernel, PlayerTransportState;
 
 /// Host small-window surface for the kernel's shared [FloatingDriver].
 ///
@@ -15,6 +18,12 @@ import 'package:media_core/media_core.dart' show MediaPlayerView, PlayerId, Play
 /// live room's own floating path (which never goes through the driver) is
 /// untouched, and any host that calls `kernel.enterFloating(playerId)` — the
 /// local video player today — gets a window for that exact handle.
+///
+/// The window's geometry and its control surface mirror what the live room's
+/// own small window shows, so both windows look and behave the same: every edge
+/// resizes freely, the position is remembered, a tap pins the controls for a
+/// few seconds (hover on desktop), the primary play/pause sits centered, and
+/// the expand/close pair stays in the corner.
 final class KernelFloatingWindowPresenter implements FloatingWindowPresenter {
   KernelFloatingWindowPresenter({required this.kernel, required this.driver});
 
@@ -22,6 +31,28 @@ final class KernelFloatingWindowPresenter implements FloatingWindowPresenter {
   final FloatingDriver driver;
 
   OverlayEntry? _entry;
+
+  /// The last window rect, remembered across open/close cycles. The live
+  /// room's window persists its rect through settings; a local-storage key
+  /// keeps this one independent so the two windows never overwrite each
+  /// other's last position.
+  static const _rectKey = 'kernelFloatingWindow.rect';
+  Rect? _remembered;
+
+  Rect? _rememberedRect() {
+    if (_remembered != null) return _remembered;
+    final raw = HivePrefUtil.getString(_rectKey);
+    if (raw == null || raw.isEmpty) return null;
+    final parts = raw.split(',').map(double.tryParse).toList();
+    if (parts.length != 4 || parts.any((v) => v == null)) return null;
+    return _remembered = Rect.fromLTWH(parts[0]!, parts[1]!, parts[2]!, parts[3]!);
+  }
+
+  void _rememberRect(Rect rect) {
+    if (!rect.isFinite || rect.isEmpty) return;
+    _remembered = rect;
+    HivePrefUtil.setString(_rectKey, '${rect.left},${rect.top},${rect.width},${rect.height}');
+  }
 
   @override
   bool get isSupported => true;
@@ -38,17 +69,23 @@ final class KernelFloatingWindowPresenter implements FloatingWindowPresenter {
         initiallyVisible: driver.isFloating,
         videoWidth: request.videoWidth == 0 ? null : request.videoWidth,
         videoHeight: request.videoHeight == 0 ? null : request.videoHeight,
-        // Corner grip resizes; dragging the picture still moves the window. A
-        // 160x90 library default is a thumbnail, not a watchable surface.
+        // Same placement the live room's window ships with: every edge and
+        // corner resizes freely (the viewer picks width and height), and the
+        // window may use the whole surface.
         placement: const FloatingWindowPlacement(
           config: FloatingPlacementConfig(
             width: 380,
             height: 214,
             minWidth: 200,
             minHeight: 112,
+            maxWidthFraction: 1.0,
             resizableByDrag: true,
+            resizeHandles: FloatingResizeHandle.all,
+            resizeKeepsAspectRatio: false,
           ),
         ),
+        initialRect: _rememberedRect(),
+        onRectChanged: _rememberRect,
         // Leave the window: the driver goes back to normal (which hides this
         // entry) and the keeper releases the handle the page handed over, so a
         // feed that outlived its page is disposed exactly once, here. Expanding
@@ -81,25 +118,118 @@ final class KernelFloatingWindowPresenter implements FloatingWindowPresenter {
   }
 }
 
-/// Renders the video of [playerId] for as long as the kernel still holds it.
+/// Renders the video of [playerId] for as long as the kernel still holds it,
+/// with the control surface the live room's small window shows.
 ///
-/// The local feed drives one stable handle and only re-opens its source between
-/// items, so [MediaPlayerView] (which follows the handle's own source and
-/// backend events) tracks the current video without this widget re-resolving.
-/// A disposed handle collapses to black rather than touching a released adapter.
-class _KernelFloatingSurface extends StatelessWidget {
+/// Control visibility splits by input device: a touch screen has no pointer to
+/// leave behind, so a tap pins the controls and a timer releases them, while a
+/// desktop window shows them while the pointer is inside. Play/pause is the
+/// primary action, centered at a size a thumb can hit; expand and close stay
+/// in the corner.
+class _KernelFloatingSurface extends StatefulWidget {
   const _KernelFloatingSurface({required this.kernel, required this.playerId});
 
   final PlayerKernel kernel;
   final PlayerId playerId;
 
   @override
+  State<_KernelFloatingSurface> createState() => _KernelFloatingSurfaceState();
+}
+
+class _KernelFloatingSurfaceState extends State<_KernelFloatingSurface> {
+  static const Duration _autoHideAfter = Duration(seconds: 3);
+
+  bool _hovered = false;
+  bool _pinned = false;
+  Timer? _hideTimer;
+  StreamSubscription<PlayerTransportState>? _playbackSub;
+  bool _playing = true;
+
+  bool get _isTouchDevice =>
+      defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS;
+
+  bool get _showControls => _isTouchDevice ? _pinned : _hovered;
+
+  PlayerHandle? get _handle => widget.kernel.get(widget.playerId);
+
+  @override
+  void initState() {
+    super.initState();
+    final handle = _handle;
+    if (handle != null) {
+      _playing = handle.isPlaying;
+      _playbackSub = handle.playbackStream.listen((state) {
+        if (mounted) setState(() => _playing = state.isPlaying);
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _hideTimer?.cancel();
+    _playbackSub?.cancel();
+    super.dispose();
+  }
+
+  void _togglePlayPause() {
+    final handle = _handle;
+    if (handle == null || handle.disposed) return;
+    unawaited(_playing ? handle.pause() : handle.play());
+    _restartAutoHide();
+  }
+
+  void _tapSurface() {
+    if (!_isTouchDevice) {
+      _togglePlayPause();
+      return;
+    }
+    setState(() => _pinned = !_pinned);
+    _restartAutoHide();
+  }
+
+  void _restartAutoHide() {
+    _hideTimer?.cancel();
+    if (!_pinned) return;
+    _hideTimer = Timer(_autoHideAfter, () {
+      if (mounted) setState(() => _pinned = false);
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final handle = kernel.get(playerId);
-    if (handle == null || handle.disposed) return const ColoredBox(color: Colors.black);
-    return ColoredBox(
-      color: Colors.black,
-      child: MediaPlayerView(handle: handle, fit: BoxFit.contain),
+    final handle = _handle;
+    final video = handle == null || handle.disposed
+        ? const ColoredBox(color: Colors.black)
+        : MediaPlayerView(handle: handle, fit: BoxFit.contain);
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          video,
+          Positioned.fill(
+            child: GestureDetector(behavior: HitTestBehavior.opaque, onTap: _tapSurface),
+          ),
+          IgnorePointer(
+            ignoring: !_showControls,
+            child: AnimatedOpacity(
+              opacity: _showControls ? 1 : 0,
+              duration: const Duration(milliseconds: 160),
+              child: Center(
+                child: IconButton.filledTonal(
+                  iconSize: 44,
+                  tooltip: _playing ? '暂停' : '播放',
+                  style: IconButton.styleFrom(backgroundColor: Colors.black54, foregroundColor: Colors.white),
+                  icon: Icon(_playing ? Icons.pause_rounded : Icons.play_arrow_rounded),
+                  onPressed: _togglePlayPause,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

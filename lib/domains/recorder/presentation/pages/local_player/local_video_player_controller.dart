@@ -18,6 +18,7 @@ import 'package:pure_live/core/player/presentation/danmaku/player_danmaku_surfac
 import 'package:pure_live/core/player/presentation/fullscreen_window.dart' show WindowService;
 import 'package:pure_live/core/player/presentation/player_presentation_actions.dart';
 import 'package:pure_live/core/player/presentation/player_ui_controller.dart';
+import 'package:pure_live/core/player/presentation/windows_pip_driver.dart';
 import 'package:pure_live/core/storage/hive_pref_util.dart';
 import 'package:pure_live/domains/recorder/presentation/pages/local_player/recording_danmaku_track.dart';
 
@@ -160,8 +161,15 @@ final class LocalVideoPlayerController extends GetxController implements PlayerU
   void onInit() {
     super.onInit();
     _progressStore = HivePlaybackProgressStore('$_progressKeyPrefix$directory');
+    // 与直播间同一来源的画中画状态：桌面端窗口被驱动缩成小窗时，页面据此把
+    // 自己的内容换成紧凑 overlay（直播的 _PipOverlayView 的录像对应物）。
+    _pipStateSub = windowsPipDriver.onPipChanged.listen((pip) => isInPip.value = pip);
     _scanAndOpen();
   }
+
+  /// Whether the desktop window is currently in the picture-in-picture shape.
+  final isInPip = false.obs;
+  StreamSubscription<bool>? _pipStateSub;
 
   Future<void> _scanAndOpen() async {
     isLoading.value = true;
@@ -636,6 +644,7 @@ final class LocalVideoPlayerController extends GetxController implements PlayerU
 
   @override
   void onClose() {
+    _pipStateSub?.cancel();
     if (_handedToFloating) {
       // The window is showing this feed: leave the handle and the position
       // saver alone, and keep the window up while the page disappears.
