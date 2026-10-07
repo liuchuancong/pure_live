@@ -1101,13 +1101,13 @@ class _ContextPanel extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-            child: Obx(
-              () => Text(
-                controller.roomTitle ?? i18n('recorder_local_player_title'),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontSize: 15.5, fontWeight: FontWeight.w600, color: theme.colorScheme.onSurface),
-              ),
+            // 标题在进入页面时就固定了：这里没有任何 observable，包 Obx 只会
+            // 抛 ObxError 并把面板撑爆（red ErrorWidget 比面板高几个数量级）。
+            child: Text(
+              controller.roomTitle ?? i18n('recorder_local_player_title'),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 15.5, fontWeight: FontWeight.w600, color: theme.colorScheme.onSurface),
             ),
           ),
           // The quick actions, on the panel where they are reachable with a
