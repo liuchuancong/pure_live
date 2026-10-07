@@ -63,6 +63,16 @@ class _PlayerBackScopeState extends State<PlayerBackScope> {
   final AndroidPredictiveBackService _nativeBack = AndroidPredictiveBackService.instance;
   bool _handlingBack = false;
 
+  /// This scope's entry in the service's route table.
+  ///
+  /// Registered once and reused across rebuilds, so re-registering the same route
+  /// replaces the entry instead of leaving a stale one behind.
+  late final AndroidPredictiveBackCallbacks _callbacks;
+
+  /// The route that owns this scope, resolved once — the route does not change
+  /// while the element lives, and `dispose` can no longer read a valid context.
+  Route<dynamic>? _route;
+
   bool get _usesNativeBack => !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
 
   @override
@@ -70,16 +80,27 @@ class _PlayerBackScopeState extends State<PlayerBackScope> {
     super.initState();
     if (!_usesNativeBack) return;
     _nativeBack.initialize();
-    _nativeBack.onBackStarted = _onBackStarted;
-    _nativeBack.onBackProgress = _onBackProgress;
-    _nativeBack.onBackCancelled = _onBackCancelled;
-    _nativeBack.onBackInvoked = _handleNativeBack;
+    _callbacks = AndroidPredictiveBackCallbacks(
+      onBackStarted: _onBackStarted,
+      onBackProgress: _onBackProgress,
+      onBackCancelled: _onBackCancelled,
+      onBackInvoked: _handleNativeBack,
+    );
 
     // Own Android Back for the whole player route, not only after a
     // presentation observable has rebuilt. Registering once here removes the
     // transition window in which Flutter's own Activity callback could pop the
     // route before the presentation callback was installed.
     unawaited(_setNativeBackEnabled(true));
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_usesNativeBack) return;
+    _route = ModalRoute.of(context) ?? _route;
+    final route = _route;
+    if (route != null) _nativeBack.attach(route, _callbacks);
   }
 
   Future<void> _setNativeBackEnabled(bool enabled) async {
@@ -142,13 +163,15 @@ class _PlayerBackScopeState extends State<PlayerBackScope> {
   @override
   void dispose() {
     if (_usesNativeBack) {
-      _nativeBack.onBackStarted = null;
-      _nativeBack.onBackProgress = null;
-      _nativeBack.onBackCancelled = null;
-      _nativeBack.onBackInvoked = null;
-      // Disable unconditionally: dispose can race the asynchronous enable,
-      // and leaving the callback registered would consume Back on Home.
-      unawaited(_setNativeBackEnabled(false));
+      // Detach this scope's own entry and nothing else: the recording player
+      // re-mounts its scope when it changes layout, and clearing shared callback
+      // fields here disarmed the route that stayed on screen — Back then fell
+      // through to the route pop, so one press left the page from fullscreen.
+      final route = _route;
+      if (route != null) _nativeBack.detach(route, _callbacks);
+      // Only the last owner switches the interception off; while another route
+      // still holds it, Back has to keep reaching that route.
+      if (!_nativeBack.hasOwner) unawaited(_setNativeBackEnabled(false));
     }
     super.dispose();
   }
