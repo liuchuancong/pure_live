@@ -80,7 +80,7 @@ PlayerControlsTheme _controlsTheme(ThemeData theme) {
 /// phone; the live room instead locks landscape (mobile) or fullscreens the
 /// window (desktop). PiP and the small window go through this controller, so
 /// their page-side behavior (state tracking, handle handover) applies.
-PlayerControlActions _recordingActions(LocalVideoPlayerController controller, ThemeData theme) {
+PlayerControlActions _recordingActions(LocalVideoPlayerController controller) {
   // 库条的全屏按钮按 canExit 恒定分流到 exit 闭包，因此 enter/exit 都接同一个
   // 状态感知的切换器，一次点击就是一次翻转。
   // PiP 与小窗不进库条：视频右下的悬浮行已提供（移动端竖屏面板同款），
@@ -91,93 +91,195 @@ PlayerControlActions _recordingActions(LocalVideoPlayerController controller, Th
   );
 }
 
-class _VideoSurface extends StatelessWidget {
-  const _VideoSurface({required this.controller, this.keyboardShortcuts = false});
-
-  final LocalVideoPlayerController controller;
-  final bool keyboardShortcuts;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return GetBuilder<LocalVideoPlayerController>(
-      builder: (_) {
-        final handle = controller.handle;
-        if (handle == null) return const ColoredBox(color: Colors.black);
-        return PlayerGestureLayer(
-          controller: controller,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              MediaCorePlayerView(
-                handle: handle,
-                actions: _recordingActions(controller, theme),
-                theme: _controlsTheme(theme),
-                fit: BoxFit.contain,
-                // The library's bar carries play/pause, skip, the timeline,
-                // speed, fullscreen and picture-in-picture; the page adds only
-                // the recording-specific actions on top.
-                showControls: true,
-                // The page draws its own header over the picture; the library's
-                // top bar would stack a second title row in the same corner.
-                showTopBar: false,
-                // The library's overflow menu repeats abilities this page hosts
-                // itself (speed chips, PiP, small window) in fixed English copy;
-                // one entrance each, ours.
-                showOverflowMenu: false,
-                showSkipButtons: true,
-                keepControlsWhilePaused: true,
-                keyboardShortcuts: keyboardShortcuts,
-                onTapVideo: controller.togglePlayPause,
-              ),
-              // The build is inside the `Obx` on purpose: `buildDanmakuSurface`
-              // reads whether the recording carries chat and whether the viewer
-              // switched danmaku off, and a builder with no observable at all is
-              // an error in GetX rather than a static surface.
-              Obx(() => Positioned.fill(child: controller.buildDanmakuSurface(context) ?? const SizedBox.shrink())),
-              // Fit / PiP / small window ride just above the transport bar, the
-              // row the live room keeps these in — not in a page header.
-              Positioned(
-                right: 10,
-                bottom: 64,
-                child: _RecordingActions(controller: controller, onDark: true, includePlaylist: false),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-}
-
-/// The video area as the layouts consume it: the normal surface, or — while the
-/// desktop window is in the picture-in-picture shape — the compact overlay,
-/// which is the live room's own PiP face (rounded contain picture, hover
-/// play/pause, corner restore/close, replayed chat) driving the recording.
-class _PlayerArea extends StatelessWidget {
+/// The video area the layouts consume: the picture, the gesture layer, the
+/// replayed chat, and the recording control bar styled after the live room's
+/// own bottom bar.
+///
+/// Visibility follows the same rules the room's panel follows: on desktop the
+/// bar shows while the pointer is over the picture and hides when it leaves,
+/// on touch a tap toggles it, and while playing it hides itself after a few
+/// seconds. When hidden the cursor disappears too — the live room's
+/// fullscreen behavior. While paused the bar stays up.
+class _PlayerArea extends StatefulWidget {
   const _PlayerArea({required this.controller, this.keyboardShortcuts = false});
 
   final LocalVideoPlayerController controller;
   final bool keyboardShortcuts;
 
   @override
+  State<_PlayerArea> createState() => _RecordingPlayerAreaState();
+}
+
+class _RecordingPlayerAreaState extends State<_PlayerArea> {
+  bool get _isTouchDevice =>
+      defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS;
+
+  LocalVideoPlayerController get controller => widget.controller;
+
+  void _onSurfaceTap() {
+    // 触屏：点一下亮栏，再点一下收栏（直播间同一约定）。
+    if (_isTouchDevice) {
+      controller.toggleControls();
+      return;
+    }
+    // 桌面保留原来的语义：单击切播放，同时把 5 秒倒计时重新上弦。
+    unawaited(controller.togglePlayPause());
+    controller.revealControls();
+  }
+
+  /// 双击画面 = 进/出全屏，直播间同款。
+  void _onSurfaceDoubleTap() => unawaited(controller.toggleFullscreen());
+
+  @override
   Widget build(BuildContext context) {
-    return Obx(() {
-      if (controller.isInPip.value) {
-        return _RecordingPipOverlay(controller: controller);
-      }
-      return _VideoSurface(controller: controller, keyboardShortcuts: keyboardShortcuts);
-    });
+    return GetBuilder<LocalVideoPlayerController>(
+      builder: (_) {
+        final handle = controller.handle;
+        if (handle == null) return const ColoredBox(color: Colors.black);
+        return Obx(() {
+          if (controller.isInPip.value) {
+            return _RecordingPipOverlay(controller: controller);
+          }
+          final visible = controller.controlsVisible.value;
+          return MouseRegion(
+            onEnter: (_) => controller.setControlsHovering(true),
+            onExit: (_) => controller.setControlsHovering(false),
+            // 隐藏时连光标一起收掉——直播全屏的同款行为。
+            cursor: visible ? MouseCursor.defer : SystemMouseCursors.none,
+            child: GestureDetector(
+              behavior: HitTestBehavior.translucent,
+              onDoubleTap: _onSurfaceDoubleTap,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  _RecordingVideoFace(
+                    controller: controller,
+                    keyboardShortcuts: widget.keyboardShortcuts,
+                    onSurfaceTap: _onSurfaceTap,
+                  ),
+                  // The bar rides above the picture, revealed by the rules above.
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: IgnorePointer(
+                      ignoring: !visible,
+                      child: AnimatedOpacity(
+                        opacity: visible ? 1 : 0,
+                        duration: const Duration(milliseconds: 200),
+                        child: _RecordingControlBar(controller: controller),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        });
+      },
+    );
   }
 }
 
-/// The compact face the recording shows while the desktop window is in PiP.
+/// The picture face: gesture layer over the (chrome-less) library view, the
+/// replayed chat between them, and the audio-only shroud on top of all.
+class _RecordingVideoFace extends StatelessWidget {
+  const _RecordingVideoFace({required this.controller, required this.keyboardShortcuts, required this.onSurfaceTap});
+
+  final LocalVideoPlayerController controller;
+  final bool keyboardShortcuts;
+  final VoidCallback onSurfaceTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final handle = controller.handle;
+    if (handle == null) return const ColoredBox(color: Colors.black);
+    return PlayerGestureLayer(
+      controller: controller,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          MediaCorePlayerView(
+            handle: handle,
+            actions: _recordingActions(controller),
+            theme: _controlsTheme(Theme.of(context)),
+            fit: BoxFit.contain,
+            // 全部控制都归本页自己的底栏；库条不再渲染任何一层。
+            showControls: false,
+            keyboardShortcuts: keyboardShortcuts,
+            onTapVideo: onSurfaceTap,
+          ),
+          Obx(() => Positioned.fill(child: controller.buildDanmakuSurface(context) ?? const SizedBox.shrink())),
+          // 仅音频：黑掉画面、声音继续（省电，与直播同语义）。
+          Obx(
+            () => controller.isAudioOnly.value
+                ? Positioned.fill(
+                    child: ColoredBox(
+                      color: Colors.black,
+                      child: Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Remix.headphone_fill, size: 56, color: Colors.white70),
+                            const SizedBox(height: 14),
+                            Text(
+                              controller.roomTitle ?? i18n('recorder_local_player_title'),
+                              textAlign: TextAlign.center,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700),
+                            ),
+                            const SizedBox(height: 10),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                              decoration: BoxDecoration(
+                                color: Colors.white12,
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Remix.headphone_line, size: 14, color: Colors.white70),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    i18n('audio_only_mode'),
+                                    style: const TextStyle(color: Colors.white70, fontSize: 12),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  )
+                : const SizedBox.shrink(),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Puts the recording into the system picture-in-picture window.
 ///
-/// Deliberately the live room's [_PipOverlayView] shape: rounded contain
-/// picture, single tap toggles playback, double tap leaves PiP, dragging the
-/// picture moves the window (the compact frame has no title bar), a hover
-/// reveals a large center play/pause plus the corner restore/close pair, and
-/// the replayed chat keeps flowing over the picture.
+/// The controller drives the same Core transition the live room uses, so the
+/// window is shaped, placed and remembered identically; a platform without a
+/// working implementation reports it instead of failing silently.
+Future<void> _enterRecordingPip(LocalVideoPlayerController controller) async {
+  try {
+    await controller.enterPip();
+  } catch (_) {
+    ToastUtil.show(i18n('pip_enter_failed'));
+  }
+}
+
+/// The compact face the recording shows while the window is in PiP.
+///
+/// Deliberately the live room's PiP face: rounded contain picture, single tap
+/// toggles playback, double tap leaves PiP, dragging the picture moves the
+/// window, a hover reveals a large center play/pause plus the corner
+/// restore/close pair, and the replayed chat keeps flowing over the picture.
 class _RecordingPipOverlay extends StatefulWidget {
   const _RecordingPipOverlay({required this.controller});
 
@@ -287,7 +389,7 @@ class _RecordingPipOverlayState extends State<_RecordingPipOverlay> {
                         semanticLabel: '关闭',
                         onTap: () async {
                           await _exitPip();
-                          Get.back<void>();
+                          if (Get.currentRoute == RoutePath.kLocalVideoPlayer) Get.back<void>();
                         },
                       ),
                     ],
@@ -312,6 +414,343 @@ class _RecordingPipOverlayState extends State<_RecordingPipOverlay> {
       style: IconButton.styleFrom(backgroundColor: Colors.black45, foregroundColor: Colors.white),
       icon: Icon(icon),
       onPressed: () => unawaited(onTap()),
+    );
+  }
+}
+
+String _fmtTime(Duration d) {
+  String two(int v) => v.toString().padLeft(2, '0');
+  final h = d.inHours;
+  final m = d.inMinutes % 60;
+  final sec = d.inSeconds % 60;
+  return h > 0 ? '$h:$m:${two(sec)}' : '$m:${two(sec)}';
+}
+
+/// The recording control bar, laid out like the live room's bottom bar:
+/// timeline on top, then play / skip pair / volume / rate on the left and
+/// fit / audio-only / screenshot / PiP / fullscreen on the right.
+class _RecordingControlBar extends StatelessWidget {
+  const _RecordingControlBar({required this.controller});
+
+  final LocalVideoPlayerController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final primary = theme.colorScheme.primary;
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Colors.transparent, Colors.black87],
+        ),
+      ),
+      padding: const EdgeInsets.fromLTRB(12, 22, 12, 4),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Timeline row.
+          Row(
+            children: [
+              Obx(
+                () => Text(
+                  _fmtTime(controller.position.value),
+                  style: const TextStyle(color: Colors.white, fontSize: 11),
+                ),
+              ),
+              Expanded(
+                child: Obx(() {
+                  final durationMs = controller.duration.value.inMilliseconds;
+                  final positionMs = controller.position.value.inMilliseconds;
+                  final max = durationMs <= 0 ? 1.0 : durationMs / 1000.0;
+                  final value = (positionMs / 1000.0).clamp(0.0, max);
+                  return SliderTheme(
+                    data: SliderTheme.of(context).copyWith(
+                      trackHeight: 3,
+                      thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
+                      overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
+                      activeTrackColor: primary,
+                      inactiveTrackColor: Colors.white24,
+                      thumbColor: primary,
+                      overlayColor: primary.withValues(alpha: 0.2),
+                    ),
+                    child: Slider(
+                      value: value,
+                      max: max,
+                      onChanged: (v) => unawaited(controller.seekTo(Duration(milliseconds: (v * 1000).round()))),
+                    ),
+                  );
+                }),
+              ),
+              Obx(
+                () => Text(
+                  _fmtTime(controller.duration.value),
+                  style: const TextStyle(color: Colors.white, fontSize: 11),
+                ),
+              ),
+            ],
+          ),
+          // Button row.
+          Row(
+            children: [
+              Obx(
+                () => IconButton(
+                  color: Colors.white,
+                  iconSize: 26,
+                  tooltip: controller.isPlaying.value ? '暂停' : '播放',
+                  icon: Icon(controller.isPlaying.value ? Icons.pause_rounded : Icons.play_arrow_rounded),
+                  onPressed: controller.togglePlayPause,
+                ),
+              ),
+              IconButton(
+                color: Colors.white,
+                iconSize: 22,
+                tooltip: '快退 10 秒',
+                icon: const Icon(Icons.replay_10_rounded),
+                onPressed: () => unawaited(controller.seekBy(const Duration(seconds: -10))),
+              ),
+              IconButton(
+                color: Colors.white,
+                iconSize: 22,
+                tooltip: '快进 10 秒',
+                icon: const Icon(Icons.forward_10_rounded),
+                onPressed: () => unawaited(controller.seekBy(const Duration(seconds: 10))),
+              ),
+              Obx(
+                () => controller.hasDanmaku.value
+                    ? Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          PlayerDanmakuButton(controller: controller, iconColor: Colors.white),
+                          PlayerDanmakuSettingsButton(controller: controller, iconColor: Colors.white),
+                        ],
+                      )
+                    : const SizedBox.shrink(),
+              ),
+              _VolumeControls(controller: controller),
+              _RateButton(controller: controller),
+              const Spacer(),
+              _FitButton(),
+              Obx(
+                () => IconButton(
+                  color: controller.isAudioOnly.value ? const Color(0xFFFFD166) : Colors.white,
+                  iconSize: 22,
+                  tooltip: controller.isAudioOnly.value ? i18n('restore_video_mode') : i18n('switch_audio_only_mode'),
+                  icon: Icon(controller.isAudioOnly.value ? Remix.headphone_fill : Remix.headphone_line),
+                  onPressed: () => controller.isAudioOnly.toggle(),
+                ),
+              ),
+              IconButton(
+                color: Colors.white,
+                iconSize: 22,
+                tooltip: '截图',
+                icon: const Icon(Icons.photo_camera_rounded),
+                onPressed: () async {
+                  final name = await controller.saveScreenshot();
+                  ToastUtil.show(name ?? i18n('path_or_permission_error'));
+                },
+              ),
+              IconButton(
+                color: Colors.white,
+                iconSize: 22,
+                tooltip: i18n('pip_window_play'),
+                icon: const Icon(Remix.picture_in_picture_line),
+                onPressed: () => unawaited(_enterRecordingPip(controller)),
+              ),
+              Obx(
+                () => IconButton(
+                  color: Colors.white,
+                  iconSize: 24,
+                  tooltip: i18n('fullscreen_watch'),
+                  icon: Icon(
+                    controller.fullscreenActive.value ? Icons.fullscreen_exit_rounded : Icons.fullscreen_rounded,
+                  ),
+                  onPressed: controller.toggleFullscreen,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Volume icon plus a compact slider, the live room's transport arrangement.
+class _VolumeControls extends StatefulWidget {
+  const _VolumeControls({required this.controller});
+
+  final LocalVideoPlayerController controller;
+
+  @override
+  State<_VolumeControls> createState() => _VolumeControlsState();
+}
+
+class _VolumeControlsState extends State<_VolumeControls> {
+  double? _volume;
+  double _lastAudible = 1.0;
+
+  LocalVideoPlayerController get controller => widget.controller;
+
+  @override
+  void initState() {
+    super.initState();
+    controller.uiVolume().then((v) {
+      if (mounted && v != null) setState(() => _volume = v);
+    });
+  }
+
+  Future<void> _write(double v) async {
+    setState(() => _volume = v);
+    await controller.uiSetVolume(v);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final volume = _volume ?? 1.0;
+    final muted = volume <= 0.001;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        IconButton(
+          color: Colors.white,
+          iconSize: 22,
+          tooltip: muted ? '取消静音' : '静音',
+          icon: Icon(
+            muted
+                ? Icons.volume_off_rounded
+                : volume < 0.5
+                ? Icons.volume_down_rounded
+                : Icons.volume_up_rounded,
+          ),
+          onPressed: () {
+            if (muted) {
+              unawaited(_write(_lastAudible <= 0.001 ? 1.0 : _lastAudible));
+            } else {
+              _lastAudible = volume;
+              unawaited(_write(0.0));
+            }
+          },
+        ),
+        SizedBox(
+          width: 100,
+          child: SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              trackHeight: 2.5,
+              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
+              overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
+              activeTrackColor: Theme.of(context).colorScheme.primary,
+              inactiveTrackColor: Colors.white24,
+              thumbColor: Theme.of(context).colorScheme.primary,
+              overlayColor: Colors.transparent,
+            ),
+            child: Slider(value: volume, max: 1.0, onChanged: (v) => unawaited(_write(v))),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// The speed label; tapping opens the rate dialog like the room's bar.
+class _RateButton extends StatelessWidget {
+  const _RateButton({required this.controller});
+
+  final LocalVideoPlayerController controller;
+
+  Future<void> _pick(BuildContext context) async {
+    final theme = Theme.of(context);
+    final rate = await showDialog<double>(
+      context: context,
+      builder: (dialogContext) => SimpleDialog(
+        title: Text(i18n('playback_rate')),
+        children: [
+          for (final rate in LocalVideoPlayerController.defaultRates)
+            SimpleDialogOption(
+              onPressed: () => Navigator.of(dialogContext).pop(rate),
+              child: Obx(() {
+                final current = controller.playbackRate.value;
+                final selected = (current - rate).abs() < 0.001;
+                return Row(
+                  children: [
+                    SizedBox(
+                      width: 20,
+                      child: selected ? Icon(Icons.check_rounded, size: 20, color: theme.colorScheme.primary) : null,
+                    ),
+                    const SizedBox(width: 10),
+                    Text('${rate.toStringAsFixed(rate == rate.roundToDouble() ? 1 : 2)}x'),
+                  ],
+                );
+              }),
+            ),
+        ],
+      ),
+    );
+    if (rate != null) await controller.setRate(rate);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(
+      () => TextButton(
+        onPressed: () => unawaited(_pick(context)),
+        child: Text(
+          '${controller.playbackRate.value.toStringAsFixed(controller.playbackRate.value == controller.playbackRate.value.roundToDouble() ? 1 : 2)}x',
+          style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
+        ),
+      ),
+    );
+  }
+}
+
+/// The fit label; tapping opens the six stored fit modes like the room's bar.
+class _FitButton extends StatelessWidget {
+  const _FitButton();
+
+  Future<void> _pick(BuildContext context) async {
+    final theme = Theme.of(context);
+    final options = AppConsts().videoFitType;
+    final settings = SettingsService.to.player;
+    final picked = await showDialog<int>(
+      context: context,
+      builder: (dialogContext) => SimpleDialog(
+        title: Text(i18n('video_fit')),
+        children: [
+          for (var i = 0; i < options.length; i++)
+            SimpleDialogOption(
+              onPressed: () => Navigator.of(dialogContext).pop(i),
+              child: Obx(() {
+                final current = settings.resolvedVideoFitIndex;
+                final selected = current == i;
+                return Row(
+                  children: [
+                    SizedBox(
+                      width: 20,
+                      child: selected ? Icon(Icons.check_rounded, size: 20, color: theme.colorScheme.primary) : null,
+                    ),
+                    const SizedBox(width: 10),
+                    Text(i18n(options[i]['desc'] as String)),
+                  ],
+                );
+              }),
+            ),
+        ],
+      ),
+    );
+    if (picked != null) settings.videoFitIndex.v = picked;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(
+      () => TextButton(
+        onPressed: () => unawaited(_pick(context)),
+        child: Text(
+          i18n(AppConsts().videoFitType[SettingsService.to.player.resolvedVideoFitIndex]['desc'] as String),
+          style: const TextStyle(color: Colors.white, fontSize: 13),
+        ),
+      ),
     );
   }
 }
@@ -578,19 +1017,6 @@ Widget _emptyState(BuildContext context, LocalVideoPlayerController controller, 
   );
 }
 
-/// Puts the recording into the system picture-in-picture window.
-///
-/// The controller drives the same Core transition the live room uses, so the
-/// window is shaped, placed and remembered identically; a platform without a
-/// working implementation reports it instead of failing silently.
-Future<void> _enterRecordingPip(LocalVideoPlayerController controller) async {
-  try {
-    await controller.enterPip();
-  } catch (_) {
-    ToastUtil.show(i18n('pip_enter_failed'));
-  }
-}
-
 /// The presentation and danmaku actions of the recording page.
 ///
 /// The same widgets the live room's bar uses ([PlayerDanmakuButton],
@@ -611,6 +1037,8 @@ class _RecordingActions extends StatelessWidget {
     return Obx(() {
       // Danmaku actions only make sense once the chat file has been read.
       final hasChat = controller.hasDanmaku.value;
+      // 弹幕开关与设置仍在这排（小屏够得着）；比例/倍速/画中画/截图/全屏
+      // 已统一收进视频底栏，小窗由设置里的"小窗播放"开关在返回时触发。
       return Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -618,19 +1046,6 @@ class _RecordingActions extends StatelessWidget {
             PlayerDanmakuButton(controller: controller, iconColor: color),
             PlayerDanmakuSettingsButton(controller: controller, iconColor: color),
           ],
-          PlayerVideoFitButton(labelColor: color),
-          IconButton(
-            color: color,
-            tooltip: i18n('pip_window_play'),
-            icon: const Icon(Remix.picture_in_picture_line),
-            onPressed: () => unawaited(_enterRecordingPip(controller)),
-          ),
-          IconButton(
-            color: color,
-            tooltip: i18n('float_window_play'),
-            icon: const Icon(Remix.picture_in_picture_2_line),
-            onPressed: () => unawaited(controller.enterFloating()),
-          ),
           if (includePlaylist)
             IconButton(
               color: color,
@@ -678,18 +1093,6 @@ class _MobileLayout extends StatefulWidget {
 class _MobileLayoutState extends State<_MobileLayout> {
   LocalVideoPlayerController get controller => widget.controller;
 
-  bool _handedToFloating = false;
-
-  /// 返回键的语义跟随视频设置里的"小窗播放"开关（与直播间同一份配置）：
-  /// 开启且正在播放时，退出页面转交小窗；否则正常退出。
-  Future<bool> _onBackRequest() async {
-    final floatPlayEnabled = SettingsService.to.player.floatPlay.v;
-    if (!floatPlayEnabled || !controller.isPlaying.value || _handedToFloating) return true;
-    _handedToFloating = true;
-    await controller.enterFloating();
-    return false;
-  }
-
   /// Landscape flips to the fullscreen shape: the picture owns the screen and
   /// the chrome floats over it, exactly like a live room in fullscreen.
   bool get isLandscape {
@@ -704,7 +1107,7 @@ class _MobileLayoutState extends State<_MobileLayout> {
       canPop: false,
       onPopInvokedWithResult: (didPop, _) async {
         if (didPop) return;
-        final shouldLeave = await _onBackRequest();
+        final shouldLeave = await controller.handleBackRequest();
         if (shouldLeave && context.mounted) Get.back<void>();
       },
       child: Scaffold(
@@ -749,7 +1152,7 @@ class _MobileLayoutState extends State<_MobileLayout> {
                     children: [
                       ColoredBox(
                         color: Colors.black,
-                        child: _VideoSurface(controller: controller),
+                        child: _PlayerArea(controller: controller),
                       ),
                       _PortraitTopBar(controller: controller),
                     ],
@@ -788,7 +1191,13 @@ class _PortraitTopBar extends StatelessWidget {
           padding: EdgeInsets.fromLTRB(4, 4 + MediaQuery.paddingOf(context).top, 8, 12),
           child: Row(
             children: [
-              IconButton(color: Colors.white, icon: const Icon(Icons.arrow_back_rounded), onPressed: () => Get.back()),
+              IconButton(
+                color: Colors.white,
+                icon: const Icon(Icons.arrow_back_rounded),
+                onPressed: () async {
+                  if (await controller.handleBackRequest()) Get.back<void>();
+                },
+              ),
               Expanded(
                 child: Obx(
                   () => Text(
@@ -1304,7 +1713,9 @@ class _LandscapeTopBar extends StatelessWidget {
                 IconButton(
                   color: Colors.white,
                   icon: const Icon(Icons.arrow_back_rounded),
-                  onPressed: () => Get.back(),
+                  onPressed: () async {
+                    if (await controller.handleBackRequest()) Get.back<void>();
+                  },
                 ),
                 Expanded(
                   child: Obx(
@@ -1372,6 +1783,12 @@ class _DesktopLayout extends StatelessWidget {
       return Scaffold(
         appBar: AppBar(
           titleSpacing: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_rounded),
+            onPressed: () async {
+              if (await controller.handleBackRequest()) Get.back<void>();
+            },
+          ),
           title: Obx(
             () => Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1433,7 +1850,10 @@ class _DesktopLayout extends StatelessWidget {
               children: [
                 videoPane,
                 const Divider(height: 1),
-                SizedBox(height: panelHeight, child: _PlaylistPanel(controller: controller)),
+                SizedBox(
+                  height: panelHeight,
+                  child: _PlaylistPanel(controller: controller),
+                ),
               ],
             );
           }

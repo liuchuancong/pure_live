@@ -191,8 +191,85 @@ final class LocalVideoPlayerController extends GetxController implements PlayerU
   /// Whether the desktop window is currently in the picture-in-picture shape.
   final isInPip = false.obs;
 
+  /// 仅音频（省电）：画面黑掉、声音继续。直播同款语义，录像没有专门
+  /// presentation，直接在表面盖黑。
+  final isAudioOnly = false.obs;
+
+  /// 把当前帧截图存进录像目录，返回提示用的文件名。
+  Future<String?> saveScreenshot() async {
+    final handle = _feed?.handle;
+    if (handle == null || handle.disposed) return null;
+    try {
+      final shot = await handle.captureScreenshot();
+      if (shot == null || shot.bytes.isEmpty) return null;
+      final dir = Directory(directory);
+      if (!await dir.exists()) await dir.create(recursive: true);
+      final stamp = DateTime.now().millisecondsSinceEpoch;
+      final file = File('$directory${Platform.pathSeparator}screenshot_$stamp.png');
+      await file.writeAsBytes(shot.bytes);
+      return file.uri.pathSegments.last;
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// 桌面端的全屏形态：为真时页面只渲染视频区（直播全屏的同款行为）。
   final isFullscreen = false.obs;
+
+  /// 控制栏显隐的单一来源：画面里那条覆盖式底栏按这里走。
+  ///
+  /// 点一下出现、无操作 5 秒淡出、再点一下立刻收起；桌面鼠标停在画面上时保持
+  /// 显示。暂停不再把栏留住 —— 直播间的自动隐藏同样不看播放状态，停在暂停画
+  /// 面上的一条常驻栏只会挡住画面。
+  final controlsVisible = true.obs;
+
+  static const Duration controlsHideDelay = Duration(seconds: 5);
+
+  Timer? _controlsHideTimer;
+  bool _controlsHovering = false;
+
+  void revealControls({bool armTimer = true}) {
+    controlsVisible.value = true;
+    if (armTimer) armControlsHide();
+  }
+
+  void hideControls() {
+    _controlsHideTimer?.cancel();
+    _controlsHideTimer = null;
+    controlsVisible.value = false;
+  }
+
+  /// 触屏的一次点击：有栏就收掉，没栏就亮出来。
+  void toggleControls() {
+    if (controlsVisible.value) {
+      hideControls();
+    } else {
+      revealControls();
+    }
+  }
+
+  /// 重新计时；鼠标还停在画面上时不倒计时。
+  void armControlsHide() {
+    _controlsHideTimer?.cancel();
+    _controlsHideTimer = null;
+    if (_controlsHovering) return;
+    _controlsHideTimer = Timer(controlsHideDelay, () {
+      _controlsHideTimer = null;
+      if (_controlsHovering) return;
+      controlsVisible.value = false;
+    });
+  }
+
+  void setControlsHovering(bool hovering) {
+    _controlsHovering = hovering;
+    if (hovering) {
+      _controlsHideTimer?.cancel();
+      _controlsHideTimer = null;
+      controlsVisible.value = true;
+    } else {
+      armControlsHide();
+    }
+  }
 
   /// 全屏切换的单一事实状态：库条的全屏按钮按 canExit 恒定分流到 exit 闭包，
   /// 所以 enter/exit 两个闭包都必须是“按当前状态翻转”的切换器。
@@ -348,6 +425,11 @@ final class LocalVideoPlayerController extends GetxController implements PlayerU
   void _onItemState(FeedItemState state) {
     isPlaying.value = state == FeedItemState.playing;
     if (state == FeedItemState.playing) {
+      // 时长不依赖第一条 transport 样本：开始播就同步一次，进度条立刻有总时长。
+      final handle = _feed?.handle;
+      if (handle != null && handle.duration > Duration.zero) {
+        duration.value = handle.duration;
+      }
       final index = currentIndex.value;
       unawaited(
         resumePosition().then((resumed) {
@@ -711,6 +793,17 @@ final class LocalVideoPlayerController extends GetxController implements PlayerU
   /// Whether the feed now belongs to the small window rather than this page.
   bool _handedToFloating = false;
 
+  /// 返回的统一语义（与直播间一致）：设置里开了"小窗播放"且正在播放时，
+  /// 退出页面转交小窗。返回 true 表示真的离开页面。
+  Future<bool> handleBackRequest() async {
+    final floatPlayEnabled = SettingsService.to.player.floatPlay.v;
+    if (isClosed || _handedToFloating) return true;
+    if (!floatPlayEnabled || !isPlaying.value) return true;
+    _handedToFloating = true;
+    await enterFloating();
+    return false;
+  }
+
   @override
   void onClose() {
     _pipStateSub?.cancel();
@@ -725,6 +818,7 @@ final class LocalVideoPlayerController extends GetxController implements PlayerU
       return;
     }
     _positionSaver?.cancel();
+    _controlsHideTimer?.cancel();
     unawaited(_savePosition());
     _stateSub?.cancel();
     _transportSub?.cancel();

@@ -6,6 +6,7 @@ import 'iptv_programme_policy.dart';
 
 import 'package:flutter/scheduler.dart';
 import 'package:pure_live/core/index.dart';
+import 'package:media_core/media_core.dart';
 import 'package:battery_plus/battery_plus.dart';
 import 'package:flame_barrage/flame_barrage.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
@@ -17,14 +18,12 @@ import 'package:pure_live/domains/live/domain/live_player_facade.dart';
 import 'package:pure_live/core/player/core/portrait_stream_support.dart';
 import 'package:pure_live/domains/live/domain/global_player_service.dart';
 import 'package:pure_live/core/player/presentation/fullscreen_window.dart';
-import 'package:pure_live/core/player/presentation/danmaku/player_danmaku_surface.dart';
-import 'package:pure_live/core/player/presentation/player_ui_controller.dart';
 import 'package:pure_live/domains/iptv/data/iptv_settings_controller.dart';
 import 'package:pure_live/domains/iptv/data/local/database.dart' as database;
-import 'package:media_core/media_core.dart'
-    show ErrorClassifier, PlayerErrorCategory, PlayerErrorCode, PlayerException, PlayerHandle;
+import 'package:pure_live/core/player/presentation/player_ui_controller.dart';
 import 'package:pure_live/domains/live/presentation/playback/states/ui_state.dart';
 import 'package:pure_live/domains/live/presentation/playback/states/player_state.dart';
+import 'package:pure_live/core/player/presentation/danmaku/player_danmaku_surface.dart';
 import 'package:screen_brightness_platform_interface/screen_brightness_platform_interface.dart';
 import 'package:pure_live/domains/live/presentation/playback/controllers/live_play_controller.dart';
 import 'package:pure_live/domains/live/presentation/playback/widgets/danmaku/danmaku_message_actions.dart';
@@ -339,7 +338,7 @@ class VideoController with ChangeNotifier implements DanmakuSettingsSource, Play
   // accessibility scan on phones, so controls could disappear before a user
   // reached Fullscreen or the local composer. Four seconds matches common
   // media-control behavior while any focused editor/menu still pins the bar.
-  static const _controllerHideDelay = Duration(seconds: 4);
+  static const _controllerHideDelay = Duration(seconds: 5);
   static const _fullscreenDelay = Duration(milliseconds: 1000);
   static const _volumeHideDelay = Duration(seconds: 1);
   static const _epgLookBackDays = 2;
@@ -394,6 +393,8 @@ class VideoController with ChangeNotifier implements DanmakuSettingsSource, Play
 
   final hideDanmaku = false.obs;
   @override
+  RxBool get danmakuHidden => hideDanmaku;
+  @override
   final noEmojiMode = false.obs;
   @override
   final danmakuArea = 1.0.obs;
@@ -426,6 +427,7 @@ class VideoController with ChangeNotifier implements DanmakuSettingsSource, Play
   final enableDanmakuStroke = true.obs;
   @override
   final danmakuFps = 60.obs;
+
   /// The room's own font override, if it has one.
   ///
   /// Named for the room rather than for the interface's `danmakuFontFamilyName`

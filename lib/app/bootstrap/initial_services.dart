@@ -6,6 +6,7 @@ import 'package:pure_live/core/release/release_history_source.dart';
 import 'package:pure_live/core/platform/multi_instance_settings_source.dart';
 import 'package:pure_live/core/platform/desktop_exit_port.dart';
 import 'package:pure_live/core/navigation/official_category_policy.dart';
+import 'package:pure_live/core/player/presentation/danmaku/danmaku_surface_settings.dart';
 import 'package:pure_live/core/player/presentation/compact_source_orientation.dart';
 import 'package:pure_live/domains/live/domain/global_player_service.dart';
 import 'package:pure_live/shared/platforms/cc/cc_catalog.dart';
@@ -65,7 +66,12 @@ class InitialServices {
     // frame. A direct, post-registration owner also avoids the old
     // lazy-then-permanent collision in GetX.
     Get.put(IptvSettingsController(), permanent: true);
-    Get.put(LocalInteractionController(), permanent: true);
+    final localInteraction = LocalInteractionController();
+    Get.put(localInteraction, permanent: true);
+    // The shared danmaku panel looks the composer up by its Core contract, not
+    // by this concrete class: the panel must not know which domain registered it,
+    // and a recording has nothing to register at all.
+    Get.put<DanmakuLocalInteraction>(localInteraction, permanent: true);
     Get.put(RouteObserverController(), permanent: true);
   }
 

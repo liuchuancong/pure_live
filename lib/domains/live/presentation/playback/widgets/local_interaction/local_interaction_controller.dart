@@ -1,4 +1,5 @@
 import 'package:pure_live/core/index.dart';
+import 'package:pure_live/core/player/presentation/danmaku/danmaku_surface_settings.dart';
 import 'package:pure_live/domains/live/data/platforms/sites.dart';
 
 class LocalGift {
@@ -83,7 +84,8 @@ class LocalDanmakuPreset {
   final int fixedDurationMs;
 }
 
-class LocalInteractionController extends GetxController {
+class LocalInteractionController extends GetxController implements DanmakuLocalInteraction {
+  @override
   final RxBool enabled = hiveBool('localInteraction.enabled', true);
   final RxString userName = hiveString('localInteraction.userName', 'Pure Live');
   final RxString selectedTitle = hiveString('localInteraction.title', 'listener');

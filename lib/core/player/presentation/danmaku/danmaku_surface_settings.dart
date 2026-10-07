@@ -1,8 +1,8 @@
-import 'package:pure_live/core/config/danmaku_settings_controller.dart';
-import 'package:pure_live/core/config/settings_service.dart';
-import 'package:pure_live/core/player/core/portrait_stream_support.dart' show PortraitDanmakuMode;
-import 'package:pure_live/core/storage/hive_rx.dart' show HiveRxExtension;
 import 'package:pure_live/get/get.dart';
+import 'package:pure_live/core/config/settings_service.dart';
+import 'package:pure_live/core/config/danmaku_settings_controller.dart';
+import 'package:pure_live/core/storage/hive_rx.dart' show HiveRxExtension;
+import 'package:pure_live/core/player/core/portrait_stream_support.dart' show PortraitDanmakuMode;
 
 /// The danmaku configuration a player surface renders with.
 ///
@@ -21,6 +21,13 @@ import 'package:pure_live/get/get.dart';
 /// - store them (the settings page does)
 /// - render anything
 abstract interface class DanmakuSettingsSource {
+  /// Whether this surface's barrage is hidden.
+  ///
+  /// A room keeps its own switch so one room can be silent while another shows
+  /// chat; every other source follows the global setting. The shared danmaku
+  /// button toggles whichever this returns.
+  RxBool get danmakuHidden;
+
   RxBool get noEmojiMode;
 
   RxDouble get danmakuArea;
@@ -67,6 +74,9 @@ class SettingsDanmakuSource implements DanmakuSettingsSource {
   const SettingsDanmakuSource();
 
   DanmakuSettingsController get _settings => SettingsService.to.danmaku;
+
+  @override
+  RxBool get danmakuHidden => _settings.hideDanmaku;
 
   @override
   RxBool get noEmojiMode => _settings.noEmojiMode;
@@ -118,6 +128,18 @@ class SettingsDanmakuSource implements DanmakuSettingsSource {
 
   @override
   String? get danmakuFontFamilyName => _settings.danmakuFontFamilyName.v;
+}
+
+/// The local-chat composer switch a live room offers in the danmaku panel.
+///
+/// Composing a message into a room is a room capability: it needs a platform
+/// account, a socket and a place in the local list. The shared settings surface
+/// therefore asks for this small contract and hides the switch when no host
+/// registered one — which is what lets a replayed recording show the same panel
+/// without pretending it can send chat.
+abstract interface class DanmakuLocalInteraction {
+  /// Whether sent messages are echoed locally without reaching the platform.
+  RxBool get enabled;
 }
 
 /// What a portrait picture does to the barrage over it.
