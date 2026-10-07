@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:pure_live/core/player/kernel/floating_handle_keeper.dart';
 import 'package:pure_live/core/config/settings_service.dart';
 import 'package:pure_live/core/config/float_window_geometry.dart';
-import 'package:pure_live/core/player/presentation/compact_playback_clock.dart';
+import 'package:pure_live/core/player/presentation/compact_playback_progress.dart';
 import 'package:pure_live/core/player/presentation/compact_source_orientation.dart';
 import 'package:pure_live/core/utils/i18n.dart';
 import 'package:pure_live/get/get.dart';
@@ -133,9 +133,9 @@ final class KernelFloatingWindowPresenter implements FloatingWindowPresenter {
 /// leave behind, so a tap pins the controls and a timer releases them, while a
 /// desktop window shows them while the pointer is inside. Play/pause is the
 /// primary action, centered at a size a thumb can hit; expand and close stay
-/// in the corner. The clock rides the same reveal because a recording is the
-/// media that has a duration, and in a window this small the viewer wants to
-/// know where they are in it.
+/// in the corner. The seek bar rides the same reveal: a recording is the media
+/// that has a duration, and in a window this small the viewer wants to know —
+/// and set — where they are in it.
 class _KernelFloatingSurface extends StatefulWidget {
   const _KernelFloatingSurface({
     required this.kernel,
@@ -272,6 +272,7 @@ class _KernelFloatingSurfaceState extends State<_KernelFloatingSurface> {
           ),
           Positioned(
             left: 6,
+            right: 6,
             bottom: 6,
             child: IgnorePointer(
               ignoring: !_showControls,
@@ -285,9 +286,10 @@ class _KernelFloatingSurfaceState extends State<_KernelFloatingSurface> {
                         initialData: handle.playback,
                         builder: (context, snapshot) {
                           final state = snapshot.data;
-                          return CompactPlaybackClock(
+                          return CompactPlaybackProgress(
                             position: state?.position ?? Duration.zero,
                             duration: state?.duration ?? Duration.zero,
+                            onSeek: (target) => unawaited(handle.seek(target)),
                           );
                         },
                       ),
