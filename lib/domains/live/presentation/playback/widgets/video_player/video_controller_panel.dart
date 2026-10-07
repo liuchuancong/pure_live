@@ -4,8 +4,8 @@ import 'dart:async';
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/utils/event_bus.dart';
-import 'package:pure_live/core/utils/live_quality_label.dart';
 import 'package:pure_live/core/platform/platform_utils.dart';
+import 'package:pure_live/core/utils/live_quality_label.dart';
 import 'package:pure_live/domains/live/data/platforms/sites.dart';
 import 'package:pure_live/core/player/core/portrait_stream_support.dart';
 import 'package:pure_live/domains/live/domain/global_player_service.dart';
@@ -345,136 +345,141 @@ class TopActionBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // The bar sits at the very top of the panel, so the page's own top chrome
-    // would land under the status bar and the notch. `SafeArea` is what clears
-    // it: the system reports the safe inset, and the bar keeps its own height
-    // instead of a hand-computed inset.
+    // The picture fills the panel; only this bar has to stay out of the notch.
+    // `viewPadding` is the raw inset the system reports (it is not consumed by a
+    // `SafeArea` anywhere above), so it is the number a positioned control has to
+    // add itself: top edges clear the notch and the status bar, left/right edges
+    // clear a sideways cutout.
+    final padding = MediaQuery.viewPaddingOf(context);
     return Obx(
       () => AnimatedPositioned(
-        top: (controller.showController.value && !controller.showLocked.value) ? 0 : -barHeight,
+        top: controller.showController.value && !controller.showLocked.value ? 0 : -(barHeight + padding.top),
         left: 0,
         right: 0,
-        height: barHeight,
+        height: barHeight + padding.top,
         duration: const Duration(milliseconds: 300),
         child: ControlHoverRegion(
           enabled: controller.showController.value && !controller.showLocked.value,
           onEnter: controller.onMouseEnterController,
           onExit: controller.onMouseExitController,
-          child: SafeArea(
-            bottom: false,
-            child: Container(
-              height: barHeight,
-              alignment: Alignment.bottomLeft,
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.bottomCenter,
-                  end: Alignment.topCenter,
-                  colors: [Colors.transparent, Colors.black45],
-                ),
+          child: Container(
+            height: barHeight + padding.top,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.bottomCenter,
+                end: Alignment.topCenter,
+                colors: [Colors.transparent, Colors.black45],
               ),
-              child: Row(
-                children: [
-                  for (final slot in resolveTopActionLeadingSlots(
-                    fullscreen: GlobalPlayerService.instance.player.fullscreenUI,
-                    android: PlatformUtils.isAndroid,
-                  ))
-                    switch (slot) {
-                      TopActionLeadingSlot.back => BackButton(controller: controller),
-                      TopActionLeadingSlot.datetime => const DatetimeInfo(key: ValueKey('fullscreen-leading-time')),
-                      TopActionLeadingSlot.battery => BatteryInfo(
-                        key: const ValueKey('fullscreen-leading-battery'),
-                        controller: controller,
-                      ),
-                    },
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            _liveRoomTitle(controller.room),
-                            overflow: TextOverflow.ellipsis,
-                            style: AppTextStyles.t16.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              decoration: TextDecoration.none,
-                            ),
-                          ),
-                          if (_liveProgramme(controller.room) case final programme?) ...[
-                            const SizedBox(height: 2),
+            ),
+            child: Padding(
+              padding: EdgeInsets.only(top: padding.top, left: 8 + padding.left, right: 8 + padding.right),
+              child: SizedBox(
+                height: barHeight,
+                child: Row(
+                  children: [
+                    for (final slot in resolveTopActionLeadingSlots(
+                      fullscreen: GlobalPlayerService.instance.player.fullscreenUI,
+                      android: PlatformUtils.isAndroid,
+                    ))
+                      switch (slot) {
+                        TopActionLeadingSlot.back => BackButton(controller: controller),
+                        TopActionLeadingSlot.datetime => const DatetimeInfo(key: ValueKey('fullscreen-leading-time')),
+                        TopActionLeadingSlot.battery => BatteryInfo(
+                          key: const ValueKey('fullscreen-leading-battery'),
+                          controller: controller,
+                        ),
+                      },
+
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
                             Text(
-                              "${i18n('now_playing')}: $programme",
+                              _liveRoomTitle(controller.room),
                               overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.85),
+                              style: AppTextStyles.t16.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
                                 decoration: TextDecoration.none,
                               ),
                             ),
+                            if (_liveProgramme(controller.room) case final programme?) ...[
+                              const SizedBox(height: 2),
+                              Text(
+                                "${i18n('now_playing')}: $programme",
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.85),
+                                  decoration: TextDecoration.none,
+                                ),
+                              ),
+                            ],
                           ],
-                        ],
+                        ),
                       ),
                     ),
-                  ),
 
-                  if (controller.room.platform == Sites.iptvSite)
-                    IconButton(
-                      icon: const Icon(Icons.assignment_outlined),
-                      tooltip: i18n('view_schedule'),
-                      visualDensity: VisualDensity.standard,
-                      constraints: const BoxConstraints(
-                        minWidth: kMinInteractiveDimension,
-                        minHeight: kMinInteractiveDimension,
-                      ),
-                      color: Colors.white,
-                      onPressed: () => _showSchedule(context),
-                    ),
-                  for (final slot in resolveTopActionTrailingSlots(
-                    fullscreen: GlobalPlayerService.instance.player.fullscreenUI,
-                    android: PlatformUtils.isAndroid,
-                    windows: PlatformUtils.isWindows,
-                  ))
-                    switch (slot) {
-                      TopActionTrailingSlot.roomHistory => IconButton(
-                        key: const ValueKey('fullscreen-room-history'),
-                        icon: const Icon(Icons.swap_horiz_outlined),
-                        tooltip: i18n('switch_live_room'),
+                    if (controller.room.platform == Sites.iptvSite)
+                      IconButton(
+                        icon: const Icon(Icons.assignment_outlined),
+                        tooltip: i18n('view_schedule'),
                         visualDensity: VisualDensity.standard,
                         constraints: const BoxConstraints(
                           minWidth: kMinInteractiveDimension,
                           minHeight: kMinInteractiveDimension,
                         ),
                         color: Colors.white,
-                        onPressed: () {
-                          unawaited(
-                            showDialog<void>(
-                              context: context,
-                              builder: (_) => PlayOther(controller: controller.livePlayController),
-                            ),
-                          );
-                        },
-                        style: IconButton.styleFrom(backgroundColor: Colors.black26),
+                        onPressed: () => _showSchedule(context),
                       ),
-                      TopActionTrailingSlot.datetime => const DatetimeInfo(),
-                      TopActionTrailingSlot.battery => BatteryInfo(controller: controller),
-                      TopActionTrailingSlot.audioOnly => AudioOnlyButton(
-                        key: const ValueKey('playback-action-audio-only'),
-                        controller: controller,
-                      ),
-                      TopActionTrailingSlot.cast => CastButton(
-                        key: const ValueKey('playback-action-cast'),
-                        controller: controller,
-                      ),
-                      TopActionTrailingSlot.pip => PIPButton(
-                        key: GlobalPlayerService.instance.player.fullscreenUI
-                            ? const ValueKey('fullscreen-pip-shortcut')
-                            : const ValueKey('playback-action-pip'),
-                        controller: controller,
-                      ),
-                    },
-                ],
+
+                    for (final slot in resolveTopActionTrailingSlots(
+                      fullscreen: GlobalPlayerService.instance.player.fullscreenUI,
+                      android: PlatformUtils.isAndroid,
+                      windows: PlatformUtils.isWindows,
+                    ))
+                      switch (slot) {
+                        TopActionTrailingSlot.roomHistory => IconButton(
+                          key: const ValueKey('fullscreen-room-history'),
+                          icon: const Icon(Icons.swap_horiz_outlined),
+                          tooltip: i18n('switch_live_room'),
+                          visualDensity: VisualDensity.standard,
+                          constraints: const BoxConstraints(
+                            minWidth: kMinInteractiveDimension,
+                            minHeight: kMinInteractiveDimension,
+                          ),
+                          color: Colors.white,
+                          onPressed: () {
+                            unawaited(
+                              showDialog<void>(
+                                context: context,
+                                builder: (_) => PlayOther(controller: controller.livePlayController),
+                              ),
+                            );
+                          },
+                          style: IconButton.styleFrom(backgroundColor: Colors.black26),
+                        ),
+                        TopActionTrailingSlot.datetime => const DatetimeInfo(),
+                        TopActionTrailingSlot.battery => BatteryInfo(controller: controller),
+                        TopActionTrailingSlot.audioOnly => AudioOnlyButton(
+                          key: const ValueKey('playback-action-audio-only'),
+                          controller: controller,
+                        ),
+                        TopActionTrailingSlot.cast => CastButton(
+                          key: const ValueKey('playback-action-cast'),
+                          controller: controller,
+                        ),
+                        TopActionTrailingSlot.pip => PIPButton(
+                          key: GlobalPlayerService.instance.player.fullscreenUI
+                              ? const ValueKey('fullscreen-pip-shortcut')
+                              : const ValueKey('playback-action-pip'),
+                          controller: controller,
+                        ),
+                      },
+                  ],
+                ),
               ),
             ),
           ),
@@ -1208,9 +1213,10 @@ class BottomActionBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // The bar sits at the very bottom of the panel, where the gesture bar (and,
-    // sideways, a cutout) would sit on top of it. `SafeArea` clears it, so the
-    // bar keeps its own height.
+    // Same rule as the top bar, at the other edge: the picture stays full-bleed
+    // and this bar adds the raw system inset itself so it clears the gesture bar
+    // (and a sideways cutout) instead of sitting under them.
+    final padding = MediaQuery.viewPaddingOf(context);
     return Obx(() {
       bool shouldShow =
           (controller.showController.value || controller.isMenuOpen.value) && !controller.showLocked.value;
@@ -1224,87 +1230,84 @@ class BottomActionBar extends StatelessWidget {
           child: PortraitFullscreenRestoreGestureRegion(
             enabled: portraitFullscreen,
             onRestore: () => unawaited(controller.exitPortraitFullScreen()),
-            child: SafeArea(
-              top: false,
-              child: Container(
-                height: barHeight,
-                alignment: Alignment.bottomLeft,
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [Colors.transparent, Colors.black45],
-                  ),
+            child: Container(
+              height: barHeight,
+              alignment: Alignment.bottomLeft,
+              padding: EdgeInsets.fromLTRB(8 + padding.left, 0, 8 + padding.right, padding.bottom),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Colors.transparent, Colors.black45],
                 ),
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final fullscreen = GlobalPlayerService.instance.player.fullscreenUI;
-                    if (portraitFullscreen) {
-                      return _buildPortraitFullscreenLayout();
-                    }
-                    final compact = constraints.maxWidth < 760;
-                    final left = _buildLeftActions(compact: fullscreen && compact);
-                    final right = _buildRightActions(compact: compact);
+              ),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final fullscreen = GlobalPlayerService.instance.player.fullscreenUI;
+                  if (portraitFullscreen) {
+                    return _buildPortraitFullscreenLayout();
+                  }
+                  final compact = constraints.maxWidth < 760;
+                  final left = _buildLeftActions(compact: fullscreen && compact);
+                  final right = _buildRightActions(compact: compact);
 
-                    if (fullscreen) {
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        child: Row(
-                          children: [
-                            left,
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Align(
-                                alignment: Alignment.center,
-                                child: ConstrainedBox(
-                                  constraints: const BoxConstraints(maxWidth: 420),
-                                  child: FullscreenLocalDanmakuComposer(controller: controller),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            right,
-                          ],
-                        ),
-                      );
-                    }
-
-                    // The inline bar scrolls when a phone is too narrow for
-                    // every action. Fullscreen stays pinned outside the scroll
-                    // view: as the last item it used to be clipped off-screen.
-                    final pinExpand = !GlobalPlayerService.instance.player.isWindowFullscreen.value;
-                    final inlineRight = _buildRightActions(compact: false, includeExpand: !pinExpand);
-                    return Row(
-                      children: [
-                        Expanded(
-                          child: LayoutBuilder(
-                            builder: (context, scrollConstraints) => SingleChildScrollView(
-                              scrollDirection: Axis.horizontal,
-                              physics: const PureLiveBoundedScrollPhysics(),
-                              clipBehavior: Clip.hardEdge,
+                  if (fullscreen) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: Row(
+                        children: [
+                          left,
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Align(
+                              alignment: Alignment.center,
                               child: ConstrainedBox(
-                                constraints: BoxConstraints(minWidth: scrollConstraints.maxWidth),
-                                child: Padding(
-                                  padding: const EdgeInsets.only(left: 8),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [left, inlineRight],
-                                  ),
+                                constraints: const BoxConstraints(maxWidth: 420),
+                                child: FullscreenLocalDanmakuComposer(controller: controller),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          right,
+                        ],
+                      ),
+                    );
+                  }
+
+                  // The inline bar scrolls when a phone is too narrow for
+                  // every action. Fullscreen stays pinned outside the scroll
+                  // view: as the last item it used to be clipped off-screen.
+                  final pinExpand = !GlobalPlayerService.instance.player.isWindowFullscreen.value;
+                  final inlineRight = _buildRightActions(compact: false, includeExpand: !pinExpand);
+                  return Row(
+                    children: [
+                      Expanded(
+                        child: LayoutBuilder(
+                          builder: (context, scrollConstraints) => SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            physics: const PureLiveBoundedScrollPhysics(),
+                            clipBehavior: Clip.hardEdge,
+                            child: ConstrainedBox(
+                              constraints: BoxConstraints(minWidth: scrollConstraints.maxWidth),
+                              child: Padding(
+                                padding: const EdgeInsets.only(left: 8),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [left, inlineRight],
                                 ),
                               ),
                             ),
                           ),
                         ),
-                        if (pinExpand)
-                          Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: ExpandButton(controller: controller),
-                          ),
-                      ],
-                    );
-                  },
-                ),
+                      ),
+                      if (pinExpand)
+                        Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: ExpandButton(controller: controller),
+                        ),
+                    ],
+                  );
+                },
               ),
             ),
           ),

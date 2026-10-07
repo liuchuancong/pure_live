@@ -138,13 +138,12 @@ String _modifiedOf(File file) {
   }
 }
 
-/// The bottom inset the control bar's own padding has to add.
+/// The system safe area the page's own chrome has to add.
 ///
-/// The bar is wrapped in `SafeArea`, but its *gradient* is meant to run to the
-/// screen edge, so the inset is taken as padding here instead of shrinking the
-/// bar: a `SafeArea` around the container would leave a strip of bare picture
-/// under the gradient.
-double _bottomEdgeInset(BuildContext context) => MediaQuery.paddingOf(context).bottom;
+/// `viewPadding` is the raw inset the system reports — nothing above this page
+/// consumes it, so it is exactly what a positioned control adds itself. The
+/// picture underneath stays full-bleed; only the bars move in.
+EdgeInsets _edgeInsets(BuildContext context) => MediaQuery.viewPaddingOf(context);
 
 /// The video surface: the shared gesture layer over the library's own player.
 ///
@@ -243,8 +242,8 @@ class _RecordingPlayerAreaState extends State<_PlayerArea> {
                   // buttons did nothing.
                   if (Get.width > 680 && !controller.fullscreenActive.value)
                     Positioned(
-                      top: 8 + MediaQuery.paddingOf(context).top,
-                      right: 8 + MediaQuery.paddingOf(context).right,
+                      top: 8 + _edgeInsets(context).top,
+                      right: 8 + _edgeInsets(context).right,
                       child: _RecordingCornerActions(controller: controller),
                     ),
                   // The bar rides above the picture, revealed by the rules above.
@@ -734,8 +733,8 @@ class _RecordingControlBar extends StatelessWidget {
     // The bar is pinned to the bottom of the picture, and the picture reaches the
     // bottom of the screen in every shape this page has: on a phone with gesture
     // navigation the seek bar and the transport row sat under the system bar.
-    // The inset goes into the padding so the gradient still covers it.
-    final bottomInset = _bottomEdgeInset(context);
+    // The inset goes into the padding so the gradient still covers the edge.
+    final padding = _edgeInsets(context);
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
@@ -744,7 +743,7 @@ class _RecordingControlBar extends StatelessWidget {
           colors: [Colors.transparent, Colors.black87],
         ),
       ),
-      padding: EdgeInsets.fromLTRB(12, 22, 12, 4 + bottomInset),
+      padding: EdgeInsets.fromLTRB(12 + padding.left, 22, 12 + padding.right, 4 + padding.bottom),
       child: LayoutBuilder(
         builder: (context, constraints) {
           final showVolumeSlider = constraints.maxWidth >= recordingVolumeSliderMinWidth;
@@ -1371,25 +1370,27 @@ class _MobileLayoutState extends State<_MobileLayout> {
             ],
           );
         }
-        return SafeArea(
-          top: false,
-          child: Column(
-            children: [
-              Expanded(
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    ColoredBox(
-                      color: Colors.black,
-                      child: _PlayerArea(controller: controller),
-                    ),
-                    _PortraitTopBar(controller: controller),
-                  ],
-                ),
+        // No `SafeArea` around this shape on purpose. A `SafeArea` here consumes
+        // the insets for everything below it, so the bars inside — which add
+        // `viewPadding` themselves — would read zero and slide back under the
+        // status bar and the gesture bar. Each bar owns its own inset instead:
+        // the top bar its top/side inset, the context panel its bottom one.
+        return Column(
+          children: [
+            Expanded(
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  ColoredBox(
+                    color: Colors.black,
+                    child: _PlayerArea(controller: controller),
+                  ),
+                  _PortraitTopBar(controller: controller),
+                ],
               ),
-              _ContextPanel(controller: controller),
-            ],
-          ),
+            ),
+            _ContextPanel(controller: controller),
+          ],
         );
       }),
     );
@@ -1408,6 +1409,11 @@ class _PortraitTopBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // The picture fills the page; this row is what has to stay out of the notch.
+    // `viewPadding` is the raw system inset — nothing above consumes it — so the
+    // bar adds it to its own padding. The gradient stays on the container so it
+    // still reaches the top edge behind the status bar.
+    final padding = _edgeInsets(context);
     return Align(
       alignment: Alignment.topCenter,
       child: Container(
@@ -1418,47 +1424,42 @@ class _PortraitTopBar extends StatelessWidget {
             colors: [Colors.black87, Colors.transparent],
           ),
         ),
-        // `SafeArea` carries the status bar and the notch for this row; the
-        // gradient stays on the container so it still reaches the top edge.
-        child: SafeArea(
-          bottom: false,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(4, 4, 8, 12),
-            child: Row(
-              children: [
-                IconButton(
-                  color: Colors.white,
-                  icon: const Icon(Icons.arrow_back_rounded),
-                  onPressed: () async {
-                    if (await controller.handleBackRequest()) Get.back<void>();
-                  },
-                ),
-                Expanded(
-                  child: Obx(
-                    () => Text(
-                      '${controller.roomTitle ?? i18n('recorder_local_player_title')}  '
-                      '${i18n('local_player_index_label', args: {'index': '${controller.currentIndex.value + 1}'})}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
-                    ),
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(4 + padding.left, 4 + padding.top, 8 + padding.right, 12),
+          child: Row(
+            children: [
+              IconButton(
+                color: Colors.white,
+                icon: const Icon(Icons.arrow_back_rounded),
+                onPressed: () async {
+                  if (await controller.handleBackRequest()) Get.back<void>();
+                },
+              ),
+              Expanded(
+                child: Obx(
+                  () => Text(
+                    '${controller.roomTitle ?? i18n('recorder_local_player_title')}  '
+                    '${i18n('local_player_index_label', args: {'index': '${controller.currentIndex.value + 1}'})}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
                   ),
                 ),
-                // A portrait fullscreen hides the page's own chrome, so the
-                // picture's actions move here instead of disappearing with the
-                // sheet that normally holds them.
-                Obx(
-                  () => controller.fullscreenActive.value
-                      ? _RecordingCornerActions(controller: controller, includeBack: false)
-                      : IconButton(
-                          color: Colors.white,
-                          tooltip: i18n('settings_more'),
-                          icon: const Icon(Icons.more_vert_rounded),
-                          onPressed: () => _showSettingsSheet(context, controller),
-                        ),
-                ),
-              ],
-            ),
+              ),
+              // A portrait fullscreen hides the page's own chrome, so the
+              // picture's actions move here instead of disappearing with the
+              // sheet that normally holds them.
+              Obx(
+                () => controller.fullscreenActive.value
+                    ? _RecordingCornerActions(controller: controller, includeBack: false)
+                    : IconButton(
+                        color: Colors.white,
+                        tooltip: i18n('settings_more'),
+                        icon: const Icon(Icons.more_vert_rounded),
+                        onPressed: () => _showSettingsSheet(context, controller),
+                      ),
+              ),
+            ],
           ),
         ),
       ),
@@ -1875,7 +1876,7 @@ class _ContextPanel extends StatelessWidget {
               // The panel is the last thing on the page, so it takes the
               // home-indicator inset itself: on a phone held upright the
               // progress line used to sit under the system gesture bar.
-              padding: EdgeInsets.fromLTRB(16, 2, 16, 12 + MediaQuery.paddingOf(context).bottom),
+              padding: EdgeInsets.fromLTRB(16, 2, 16, 12 + _edgeInsets(context).bottom),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(2),
                 child: LinearProgressIndicator(
@@ -1909,6 +1910,10 @@ class _LandscapeTopBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Same rule as the portrait bar: the picture stays full-bleed and this row
+    // adds the raw system inset itself, so a sideways cutout and the status bar
+    // are both cleared without shrinking the picture.
+    final padding = _edgeInsets(context);
     return Align(
       alignment: Alignment.topCenter,
       child: Container(
@@ -1919,43 +1924,40 @@ class _LandscapeTopBar extends StatelessWidget {
             colors: [Colors.black87, Colors.transparent],
           ),
         ),
-        child: SafeArea(
-          bottom: false,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(4, 4, 8, 12),
-            child: Row(
-              children: [
-                IconButton(
-                  color: Colors.white,
-                  icon: const Icon(Icons.arrow_back_rounded),
-                  onPressed: () async {
-                    if (await controller.handleBackRequest()) Get.back<void>();
-                  },
-                ),
-                Expanded(
-                  child: Obx(
-                    () => Text(
-                      '${controller.roomTitle ?? i18n('recorder_local_player_title')}  '
-                      '${controller.currentIndex.value + 1}/${controller.videoFiles.length}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
-                    ),
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(4 + padding.left, 4 + padding.top, 8 + padding.right, 12),
+          child: Row(
+            children: [
+              IconButton(
+                color: Colors.white,
+                icon: const Icon(Icons.arrow_back_rounded),
+                onPressed: () async {
+                  if (await controller.handleBackRequest()) Get.back<void>();
+                },
+              ),
+              Expanded(
+                child: Obx(
+                  () => Text(
+                    '${controller.roomTitle ?? i18n('recorder_local_player_title')}  '
+                    '${controller.currentIndex.value + 1}/${controller.videoFiles.length}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
                   ),
                 ),
-                if (showCornerActions) _RecordingCornerActions(controller: controller, includeBack: false),
-                // The portrait layout reaches the episode list through the panel
-                // under the picture; the landscape shape has no panel, so the
-                // list needs its own entry here or a rotated phone cannot change
-                // recording at all.
-                IconButton(
-                  color: Colors.white,
-                  tooltip: i18n('recorder_local_player_title'),
-                  icon: const Icon(Remix.play_list_line),
-                  onPressed: () => unawaited(_openPlaylistSheet(context, controller)),
-                ),
-              ],
-            ),
+              ),
+              if (showCornerActions) _RecordingCornerActions(controller: controller, includeBack: false),
+              // The portrait layout reaches the episode list through the panel
+              // under the picture; the landscape shape has no panel, so the
+              // list needs its own entry here or a rotated phone cannot change
+              // recording at all.
+              IconButton(
+                color: Colors.white,
+                tooltip: i18n('recorder_local_player_title'),
+                icon: const Icon(Remix.play_list_line),
+                onPressed: () => unawaited(_openPlaylistSheet(context, controller)),
+              ),
+            ],
           ),
         ),
       ),
