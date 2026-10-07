@@ -2626,5 +2626,21 @@
   "player_guide_platform_android": "Android",
   "player_guide_platform_windows": "Windows",
   "player_guide_manual_title": "Player manual: mpv official docs",
-  "player_guide_manual_hint": "Start from the symptom table; look up any setting in the glossary chapter."
+  "player_guide_manual_hint": "Start from the symptom table; look up any setting in the glossary chapter.",
+  "live_quality_original": "Original",
+  "live_quality_blu_ray": "Blu-ray",
+  "live_quality_super_hd": "Ultra HD",
+  "live_quality_hd": "HD",
+  "live_quality_sd": "Standard",
+  "live_quality_smooth": "Smooth",
+  "live_quality_auto": "Auto",
+  "live_quality_default": "Default",
+  "live_quality_dolby": "Dolby",
+  "live_quality_2k": "2K",
+  "live_quality_1080p": "1080P",
+  "live_quality_720p": "720P",
+  "live_quality_480p": "480P",
+  "live_quality_360p": "360P",
+  "live_quality_id": "Quality {id}",
+  "live_quality_source_suffix": " (source)"
 }

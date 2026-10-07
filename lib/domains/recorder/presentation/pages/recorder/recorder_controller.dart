@@ -1,7 +1,6 @@
 import 'package:pure_live/shared/platforms/live_quality_discovery.dart';
 import 'package:pure_live/domains/recorder/data/services/recording_bitrate_window.dart';
 import 'package:pure_live/domains/recorder/data/services/live_input_recording_binder.dart';
-import 'package:pure_live/core/utils/live_quality_label.dart';
 
 import 'dart:async';
 import 'dart:convert';
@@ -945,7 +944,7 @@ class RecorderController extends GetxService {
 
       task
         ..currentUrl = ownedSource == null ? resolved.url : null
-        ..selectedQuality = resolved.quality.playbackLabel
+        ..selectedQuality = resolved.quality.quality
         ..selectedQualityId = resolved.qualityCursorId
         ..selectedLineIndex = resolved.lineIndex
         ..selectedLine = resolved.lineLabel

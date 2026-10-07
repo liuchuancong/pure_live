@@ -1,7 +1,9 @@
 import 'package:pure_live/core/utils/i18n.dart';
 import 'package:pure_live/core/models/live_play_quality.dart';
-/// Converts platform SDK quality codes into stable user-facing Chinese labels
-/// without changing the opaque identifier used to request that stream.
+
+/// Converts platform SDK quality codes into stable labels without changing the
+/// opaque identifier used to request that stream. The wording a user sees comes
+/// from [qualityDisplayName], which maps these labels onto the locale bundles.
 class LiveQualityLabel {
   const LiveQualityLabel._();
 
@@ -33,7 +35,7 @@ class LiveQualityLabel {
     if (raw.isNotEmpty) return raw;
     if (bitrate != null && bitrate > 0) return _bitrateLabel(bitrate);
     final idText = id?.toString().trim() ?? '';
-    return idText.isEmpty ? '默认' : '清晰度 $idText';
+    return idText.isEmpty ? '默认' : '$liveQualityIdPrefix$idText';
   }
 
   static String? _bilibili(String token, Object? id) {
@@ -89,7 +91,7 @@ class LiveQualityLabel {
     final match = RegExp(r'(\d{3,4})p(?:\s*(\d{2,3}))?', caseSensitive: false).firstMatch(raw);
     if (match != null) {
       final fps = match.group(2) ?? '';
-      return '${match.group(1)}P$fps${source ? '（原画）' : ''}';
+      return '${match.group(1)}P$fps${source ? liveQualitySourceSuffix : ''}';
     }
     return source ? '原画' : _generic(token);
   }
@@ -122,8 +124,61 @@ class LiveQualityLabel {
   }
 }
 
+/// The twitch source marker [LiveQualityLabel.normalize] appends to a measured
+/// resolution, kept as one constant because the display layer replaces it.
+const String liveQualitySourceSuffix = '（原画）';
+
+/// Locale rows for the two generated labels; named so the bundle test can
+/// require them without duplicating the strings.
+const String liveQualityIdKey = 'live_quality_id';
+const String liveQualitySourceSuffixKey = 'live_quality_source_suffix';
+const String liveQualityIdPrefix = '清晰度 ';
+
+/// The fixed vocabulary the normalizer answers with, mapped to its locale row.
+///
+/// The internal label stays as it is on purpose: `LivePlayQuality.selectionId`
+/// falls back to it when a platform gives no explicit id, and the recorder's
+/// stored preference and its saved task records compare against it. A label
+/// that changed with the interface language would therefore break quality
+/// matching and history written under another locale, so only this display
+/// mapping is localized - the same split `PlayerConsts.resolutionLabelKeys`
+/// uses for the stored 原画/蓝光4M values. Exposed because the test that keeps
+/// the locale rows in step with the normalizer needs to enumerate it.
+const Map<String, String> liveQualityDisplayKeys = <String, String>{
+  '原画': 'live_quality_original',
+  '蓝光': 'live_quality_blu_ray',
+  '超清': 'live_quality_super_hd',
+  '高清': 'live_quality_hd',
+  '标清': 'live_quality_sd',
+  '流畅': 'live_quality_smooth',
+  '自动': 'live_quality_auto',
+  '默认': 'live_quality_default',
+  '杜比': 'live_quality_dolby',
+  '2K 超清': 'live_quality_2k',
+  '1080P 高清': 'live_quality_1080p',
+  '720P 清晰': 'live_quality_720p',
+  '480P 流畅': 'live_quality_480p',
+  '360P 极速': 'live_quality_360p',
+};
+
+/// [label] as the current locale spells it; anything the normalizer did not
+/// produce (a bitrate, a raw site name) is already display text and passes
+/// through untouched.
+String qualityDisplayName(String label) {
+  final key = liveQualityDisplayKeys[label];
+  if (key != null) return i18nOr(key, label);
+  final idText = label.startsWith(liveQualityIdPrefix) ? label.substring(liveQualityIdPrefix.length) : null;
+  if (idText != null) {
+    return i18nOr(liveQualityIdKey, label, args: <String, String>{'id': idText});
+  }
+  if (label.contains(liveQualitySourceSuffix)) {
+    return label.replaceAll(liveQualitySourceSuffix, i18nOr(liveQualitySourceSuffixKey, liveQualitySourceSuffix));
+  }
+  return label;
+}
+
 extension PlayQualityLabel on LivePlayQuality {
   String get playbackLabel => isPlaybackUnconfirmed
-      ? i18nOr('quality_playback_unconfirmed', 'Unconfirmed · $quality', args: {'quality': quality})
-      : quality;
+      ? i18nOr('quality_playback_unconfirmed', 'Unconfirmed · $quality', args: {'quality': qualityDisplayName(quality)})
+      : qualityDisplayName(quality);
 }

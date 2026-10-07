@@ -2626,5 +2626,21 @@
   "player_guide_platform_android": "Android",
   "player_guide_platform_windows": "Windows",
   "player_guide_manual_title": "播放手册：mpv 官方文档",
-  "player_guide_manual_hint": "遇到问题先看「症状对照」；想理解某个设置是什么，在「基础概念」和各章里查。"
+  "player_guide_manual_hint": "遇到问题先看「症状对照」；想理解某个设置是什么，在「基础概念」和各章里查。",
+  "live_quality_original": "原画",
+  "live_quality_blu_ray": "蓝光",
+  "live_quality_super_hd": "超清",
+  "live_quality_hd": "高清",
+  "live_quality_sd": "标清",
+  "live_quality_smooth": "流畅",
+  "live_quality_auto": "自动",
+  "live_quality_default": "默认",
+  "live_quality_dolby": "杜比",
+  "live_quality_2k": "2K 超清",
+  "live_quality_1080p": "1080P 高清",
+  "live_quality_720p": "720P 清晰",
+  "live_quality_480p": "480P 流畅",
+  "live_quality_360p": "360P 极速",
+  "live_quality_id": "清晰度 {id}",
+  "live_quality_source_suffix": "（原画）"
 }

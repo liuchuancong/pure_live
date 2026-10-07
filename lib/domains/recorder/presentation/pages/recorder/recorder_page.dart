@@ -1,6 +1,7 @@
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/network/image_cache_manager.dart';
+import 'package:pure_live/core/utils/live_quality_label.dart';
 import 'package:pure_live/domains/recorder/domain/models/record_status.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:pure_live/domains/recorder/domain/models/live_record_task.dart';
@@ -560,7 +561,13 @@ class _TaskCard extends GetView<RecorderController> {
                         runSpacing: 6,
                         children: [
                           _Tag(text: task.platform.toUpperCase(), icon: Remix.plant_fill, color: _platformColor()),
-                          _miniInfo(Icons.high_quality_rounded, task.selectedQuality ?? i18n("recorder_auto"), theme),
+                          _miniInfo(
+                            Icons.high_quality_rounded,
+                            task.selectedQuality == null
+                                ? i18n("recorder_auto")
+                                : qualityDisplayName(task.selectedQuality!),
+                            theme,
+                          ),
                           if (task.selectedLine?.isNotEmpty == true)
                             _miniInfo(Icons.alt_route_rounded, task.selectedLine!, theme),
                           _miniInfo(audienceIcon, audienceText, theme),
