@@ -206,7 +206,9 @@ class _RecordingPipOverlayState extends State<_RecordingPipOverlay> {
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
       child: Scaffold(
-        backgroundColor: Colors.transparent,
+        // 紧凑窗口自带黑底：PiP 时这一层 Scaffold 就是整个页面，透明会把主题
+        // 背景（浅色）透成圆角外的一圈白边。
+        backgroundColor: Colors.black,
         body: Stack(
           fit: StackFit.expand,
           children: [
