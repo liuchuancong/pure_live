@@ -157,6 +157,9 @@ class _RecordingPlayerAreaState extends State<_PlayerArea> {
                     keyboardShortcuts: widget.keyboardShortcuts,
                     onSurfaceTap: _onSurfaceTap,
                   ),
+                  // 右上角常驻的三个入口：它们不跟着底栏一起淡出（见
+                  // _RecordingCornerActions）。
+                  Positioned(top: 8, right: 8, child: _RecordingCornerActions(controller: controller)),
                   // The bar rides above the picture, revealed by the rules above.
                   Positioned(
                     left: 0,
@@ -177,6 +180,56 @@ class _RecordingPlayerAreaState extends State<_PlayerArea> {
           );
         });
       },
+    );
+  }
+}
+
+/// 画面右上角的三个入口：仅音频 / 截图 / 画中画。
+///
+/// 它们原来挤在底部控制条里，跟着控制条一起淡出。可这三个是"换一种看法"的
+/// 入口，不是播放进度的一部分 —— 想截图、想转画中画的时候，那条栏往往已经
+/// 收起来了。常驻在右上角后一眼就在；竖屏录像两侧的黑边正好把这块位置空出来。
+class _RecordingCornerActions extends StatelessWidget {
+  const _RecordingCornerActions({required this.controller});
+
+  final LocalVideoPlayerController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(20)),
+      padding: const EdgeInsets.symmetric(horizontal: 2),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Obx(
+            () => IconButton(
+              color: controller.isAudioOnly.value ? const Color(0xFFFFD166) : Colors.white,
+              iconSize: 20,
+              tooltip: controller.isAudioOnly.value ? i18n('restore_video_mode') : i18n('switch_audio_only_mode'),
+              icon: Icon(controller.isAudioOnly.value ? Remix.headphone_fill : Remix.headphone_line),
+              onPressed: () => controller.isAudioOnly.toggle(),
+            ),
+          ),
+          IconButton(
+            color: Colors.white,
+            iconSize: 20,
+            tooltip: i18n('local_player_screenshot'),
+            icon: const Icon(Icons.photo_camera_rounded),
+            onPressed: () async {
+              final name = await controller.saveScreenshot();
+              ToastUtil.show(name ?? i18n('path_or_permission_error'));
+            },
+          ),
+          IconButton(
+            color: Colors.white,
+            iconSize: 20,
+            tooltip: i18n('pip_window_play'),
+            icon: const Icon(Remix.picture_in_picture_line),
+            onPressed: () => unawaited(_enterRecordingPip(controller)),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -428,7 +481,9 @@ String _fmtTime(Duration d) {
 
 /// The recording control bar, laid out like the live room's bottom bar:
 /// timeline on top, then play / skip pair / volume / rate on the left and
-/// fit / audio-only / screenshot / PiP / fullscreen on the right.
+/// fit / fullscreen on the right. The audio-only, screenshot and picture-in-
+/// picture entries are not here — they live in [_RecordingCornerActions],
+/// where they stay reachable after this bar fades out.
 class _RecordingControlBar extends StatelessWidget {
   const _RecordingControlBar({required this.controller});
 
@@ -532,32 +587,6 @@ class _RecordingControlBar extends StatelessWidget {
               _RateButton(controller: controller),
               const Spacer(),
               _FitButton(),
-              Obx(
-                () => IconButton(
-                  color: controller.isAudioOnly.value ? const Color(0xFFFFD166) : Colors.white,
-                  iconSize: 22,
-                  tooltip: controller.isAudioOnly.value ? i18n('restore_video_mode') : i18n('switch_audio_only_mode'),
-                  icon: Icon(controller.isAudioOnly.value ? Remix.headphone_fill : Remix.headphone_line),
-                  onPressed: () => controller.isAudioOnly.toggle(),
-                ),
-              ),
-              IconButton(
-                color: Colors.white,
-                iconSize: 22,
-                tooltip: '截图',
-                icon: const Icon(Icons.photo_camera_rounded),
-                onPressed: () async {
-                  final name = await controller.saveScreenshot();
-                  ToastUtil.show(name ?? i18n('path_or_permission_error'));
-                },
-              ),
-              IconButton(
-                color: Colors.white,
-                iconSize: 22,
-                tooltip: i18n('pip_window_play'),
-                icon: const Icon(Remix.picture_in_picture_line),
-                onPressed: () => unawaited(_enterRecordingPip(controller)),
-              ),
               Obx(
                 () => IconButton(
                   color: Colors.white,
