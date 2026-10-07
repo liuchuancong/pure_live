@@ -182,6 +182,35 @@ final class LocalVideoPlayerController extends GetxController implements PlayerU
 
   /// Whether the desktop window is currently in the picture-in-picture shape.
   final isInPip = false.obs;
+
+  /// 桌面端的全屏形态：为真时页面只渲染视频区（直播全屏的同款行为）。
+  final isFullscreen = false.obs;
+
+  /// 全屏切换的单一事实状态：库条的全屏按钮按 canExit 恒定分流到 exit 闭包，
+  /// 所以 enter/exit 两个闭包都必须是“按当前状态翻转”的切换器。
+  final fullscreenActive = false.obs;
+
+  Future<void> toggleFullscreen() async {
+    final isMobile = PlatformUtils.isMobile;
+    final active = fullscreenActive.value;
+    if (isMobile) {
+      if (active) {
+        await WindowService().verticalScreen();
+        await WindowService().followSystemOrientation();
+      } else {
+        await WindowService().landScape();
+      }
+    } else {
+      if (active) {
+        await WindowService().doExitFullScreen();
+      } else {
+        await WindowService().doEnterFullScreen();
+      }
+    }
+    fullscreenActive.value = !active;
+    isFullscreen.value = !isMobile && !active;
+  }
+
   StreamSubscription<bool>? _pipStateSub;
 
   Future<void> _scanAndOpen() async {

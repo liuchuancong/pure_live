@@ -8,11 +8,9 @@ import 'package:pure_live/core/consts/app_consts.dart';
 import 'package:pure_live/core/platform/platform_utils.dart';
 import 'package:media_core/media_core.dart' show MediaPlayerView;
 import 'package:flutter/foundation.dart' show defaultTargetPlatform;
-import 'package:pure_live/core/player/presentation/fullscreen_window.dart';
 import 'package:pure_live/core/player/presentation/windows_pip_driver.dart';
 import 'package:pure_live/core/player/presentation/player_ui_controller.dart';
 import 'package:pure_live/core/player/presentation/danmaku/player_danmaku_actions.dart';
-import 'package:pure_live/core/player/presentation/fullscreen_window.dart' show WindowService;
 import 'package:pure_live/domains/recorder/presentation/pages/local_player/local_video_player_controller.dart';
 
 /// One recording, played.
@@ -82,23 +80,11 @@ PlayerControlsTheme _controlsTheme(ThemeData theme) {
 /// window (desktop). PiP and the small window go through this controller, so
 /// their page-side behavior (state tracking, handle handover) applies.
 PlayerControlActions _recordingActions(LocalVideoPlayerController controller, ThemeData theme) {
-  final isMobile = PlatformUtils.isMobile;
+  // 库条的全屏按钮按 canExit 恒定分流到 exit 闭包，因此 enter/exit 都接同一个
+  // 状态感知的切换器，一次点击就是一次翻转。
   return PlayerControlActions(
-    enterFullscreen: () async {
-      if (isMobile) {
-        await WindowService().landScape();
-      } else {
-        await WindowService().doEnterFullScreen();
-      }
-    },
-    exitFullscreen: () async {
-      if (isMobile) {
-        await WindowService().verticalScreen();
-        await WindowService().followSystemOrientation();
-      } else {
-        await WindowService().doExitFullScreen();
-      }
-    },
+    enterFullscreen: controller.toggleFullscreen,
+    exitFullscreen: controller.toggleFullscreen,
     enterPip: () => controller.enterPip(),
     enterFloating: () => controller.enterFloating(),
   );
@@ -134,6 +120,10 @@ class _VideoSurface extends StatelessWidget {
                 // The page draws its own header over the picture; the library's
                 // top bar would stack a second title row in the same corner.
                 showTopBar: false,
+                // The library's overflow menu repeats abilities this page hosts
+                // itself (speed chips, PiP, small window) in fixed English copy;
+                // one entrance each, ours.
+                showOverflowMenu: false,
                 keepControlsWhilePaused: true,
                 keyboardShortcuts: keyboardShortcuts,
                 onTapVideo: controller.togglePlayPause,
@@ -143,6 +133,13 @@ class _VideoSurface extends StatelessWidget {
               // switched danmaku off, and a builder with no observable at all is
               // an error in GetX rather than a static surface.
               Obx(() => Positioned.fill(child: controller.buildDanmakuSurface(context) ?? const SizedBox.shrink())),
+              // Fit / PiP / small window ride just above the transport bar, the
+              // row the live room keeps these in — not in a page header.
+              Positioned(
+                right: 10,
+                bottom: 64,
+                child: _RecordingActions(controller: controller, onDark: true, includePlaylist: false),
+              ),
             ],
           ),
         );
@@ -1301,76 +1298,84 @@ class _DesktopLayout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Scaffold(
-      appBar: AppBar(
-        titleSpacing: 0,
-        title: Obx(
-          () => Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                controller.roomTitle ?? i18n('recorder_local_player_title'),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-              ),
-              Text(
-                controller.videoFiles.isEmpty
-                    ? i18n('recorder_local_player_playlist_empty')
-                    : '${controller.currentFileName}   ${controller.currentIndex.value + 1}/${controller.videoFiles.length}',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(fontSize: 11, color: theme.colorScheme.onSurfaceVariant),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          _RecordingActions(controller: controller, onDark: false),
-          IconButton(
-            tooltip: i18n('recorder_open_task_folder'),
-            icon: const Icon(Remix.folder_open_line),
-            onPressed: () => unawaited(controller.openFileDir()),
-          ),
-          const SizedBox(width: 8),
-        ],
-      ),
-      body: Obx(() {
-        // Picture-in-picture owns the whole body, like the live room.
-        if (controller.isInPip.value) {
-          return _RecordingPipOverlay(controller: controller);
-        }
-        if (controller.isLoading.value) {
-          return Center(
-            child: SizedBox.square(
-              dimension: 28,
-              child: CircularProgressIndicator(strokeWidth: 2.5, color: theme.colorScheme.primary),
+    return Obx(() {
+      // 桌面全屏：与直播间一致，整个页面只剩视频区（Esc/双击退出由库条处理）。
+      if (controller.isFullscreen.value) {
+        return Scaffold(
+          backgroundColor: Colors.black,
+          body: _PlayerArea(controller: controller, keyboardShortcuts: true),
+        );
+      }
+      return Scaffold(
+        appBar: AppBar(
+          titleSpacing: 0,
+          title: Obx(
+            () => Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  controller.roomTitle ?? i18n('recorder_local_player_title'),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                ),
+                Text(
+                  controller.videoFiles.isEmpty
+                      ? i18n('recorder_local_player_playlist_empty')
+                      : '${controller.currentFileName}   ${controller.currentIndex.value + 1}/${controller.videoFiles.length}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 11, color: theme.colorScheme.onSurfaceVariant),
+                ),
+              ],
             ),
-          );
-        }
-        if (controller.videoFiles.isEmpty) {
-          return _emptyState(context, controller);
-        }
-        return Row(
-          children: [
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: ColoredBox(
-                    color: Colors.black,
-                    child: _PlayerArea(controller: controller, keyboardShortcuts: true),
+          ),
+          actions: [
+            IconButton(
+              tooltip: i18n('recorder_open_task_folder'),
+              icon: const Icon(Remix.folder_open_line),
+              onPressed: () => unawaited(controller.openFileDir()),
+            ),
+            const SizedBox(width: 8),
+          ],
+        ),
+        body: Obx(() {
+          // Picture-in-picture owns the whole body, like the live room.
+          if (controller.isInPip.value) {
+            return _RecordingPipOverlay(controller: controller);
+          }
+          if (controller.isLoading.value) {
+            return Center(
+              child: SizedBox.square(
+                dimension: 28,
+                child: CircularProgressIndicator(strokeWidth: 2.5, color: theme.colorScheme.primary),
+              ),
+            );
+          }
+          if (controller.videoFiles.isEmpty) {
+            return _emptyState(context, controller);
+          }
+          return Row(
+            children: [
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: ColoredBox(
+                      color: Colors.black,
+                      child: _PlayerArea(controller: controller, keyboardShortcuts: true),
+                    ),
                   ),
                 ),
               ),
-            ),
-            const VerticalDivider(width: 1),
-            SizedBox(width: 320, child: _PlaylistPanel(controller: controller)),
-          ],
-        );
-      }),
-    );
+              const VerticalDivider(width: 1),
+              SizedBox(width: 320, child: _PlaylistPanel(controller: controller)),
+            ],
+          );
+        }),
+      );
+    });
   }
 }
