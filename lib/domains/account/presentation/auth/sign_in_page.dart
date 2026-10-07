@@ -18,7 +18,7 @@ class _SignInPageState extends State<SignInPage> {
   Future<void> _handleSignInComplete(UserCredential credential) async {
     final user = credential.user;
     if (user == null) return;
-    final String email = user.email ?? "未公开邮箱";
+    final String email = user.email ?? i18n('account_email_undisclosed');
     String providerStr = "Email";
     if (user.providerData.any((info) => info.providerId == 'github.com')) {
       providerStr = "GitHub";

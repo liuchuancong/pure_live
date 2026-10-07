@@ -13,9 +13,10 @@ class TagManagementController extends GetxController {
   final RxList<LiveTag> tags = <LiveTag>[].obs;
   final Lock _stateMutationLock = Lock();
   int _lastGeneratedTagId = 0;
-  static const Map<String, String> allTag = {'all': '全部'};
-  static String get allTagKey => allTag.keys.first;
-  static String get allTagLabel => allTag.values.first;
+  /// The id the tag filter uses for "no tag chosen". The row's label comes from
+  /// `recorder_tab_all` at the only place that draws it; keeping a second
+  /// Chinese copy here invited the two to disagree.
+  static const String allTagKey = 'all';
   @override
   void onInit() {
     super.onInit();

@@ -2645,5 +2645,7 @@
   "live_quality_source_suffix": "（原画）",
   "player_play": "播放",
   "player_pause": "暂停",
-  "player_back_to_room": "回到直播间"
+  "player_back_to_room": "回到直播间",
+  "account_email_undisclosed": "未公开邮箱",
+  "live_sc_read_failed": "SC读取失败"
 }

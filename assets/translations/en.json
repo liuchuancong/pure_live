@@ -2645,5 +2645,7 @@
   "live_quality_source_suffix": " (source)",
   "player_play": "Play",
   "player_pause": "Pause",
-  "player_back_to_room": "Back to the room"
+  "player_back_to_room": "Back to the room",
+  "account_email_undisclosed": "No email shared",
+  "live_sc_read_failed": "Super Chat lookup failed"
 }

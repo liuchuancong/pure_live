@@ -346,7 +346,7 @@ class LivePlayController extends GetxController
       addBatchSuperChat(sc);
     } catch (e) {
       if (!isClosed && !_ownerClosed && _isRoomLoadCurrent(loadEpoch, liveroom)) {
-        addSystemMessage("SC读取失败");
+        addSystemMessage(i18n('live_sc_read_failed'));
       }
     }
   }
