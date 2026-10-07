@@ -20,13 +20,15 @@ void main() {
       });
     });
 
-    test('渐进式源保留可拖动与自动暂停', () {
-      // 数据连续到达，缓存目标凑得齐；B 站轮播房还要靠 seek 落到声明的起播位置。
+    test('远端渐进式源按直播对待——不再 cache-pause', () {
+      // FLV 等远端渐进式直播没有"缓存目标凑齐"的时刻：cache-pause 会让播放
+      // 两秒后停进缓冲再续播（"先播后暂停再加载"）。本机/回环文件是点播，
+      // 那套假设才成立（见"本机输入"用例）。
       expect(_properties('https://cdn.example.com/live/room.flv'), {
         'http-proxy': _proxy,
         'demuxer-lavf-format': '',
-        'force-seekable': 'yes',
-        'cache-pause': 'yes',
+        'force-seekable': 'no',
+        'cache-pause': 'no',
       });
     });
 

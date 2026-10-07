@@ -209,11 +209,16 @@ abstract final class MediaKitLiveProperties {
   }) {
     final bool privateInput = isPrivatePlaybackInput(uri);
     final bool playlist = (declaredFormat ?? (isHlsManifestUri(uri) ? 'hls' : null)) == 'hls';
+    // 远端渐进式流（FLV 等）一律按直播对待：直播数据没有"缓存目标凑齐"的
+    // 那一刻，cache-pause 只会播两秒后停进缓冲再续播——观察到的
+    // "先播后暂停再加载"就是它。本机/回环输入（file、127.0.0.1）是点播，
+    // 保留 cache-pause 那套假设。
+    final bool liveProgressive = !privateInput && !playlist;
     return <String, String>{
       'http-proxy': privateInput || playsDirectBehindProxy(uri) ? '' : proxy,
       'demuxer-lavf-format': playlist && !privateInput ? 'hls' : '',
-      'force-seekable': playlist ? 'no' : 'yes',
-      'cache-pause': playlist ? 'no' : 'yes',
+      'force-seekable': playlist || liveProgressive ? 'no' : 'yes',
+      'cache-pause': playlist || liveProgressive ? 'no' : 'yes',
     };
   }
 
