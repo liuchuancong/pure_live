@@ -7,27 +7,27 @@ on:
         description: Build Android Release APKs for all ABIs
         required: true
         type: boolean
-        default: false
+        default: true
       build_windows:
         description: Build Windows EXE, MSIX and portable ZIP
         required: true
         type: boolean
-        default: false
+        default: true
       build_linux:
         description: Build Linux x64 DEB and portable archives
         required: true
         type: boolean
-        default: false
+        default: true
       build_macos:
         description: Build macOS universal application archive
         required: true
         type: boolean
-        default: false
+        default: true
       build_ios:
         description: Build unsigned iOS app and TrollStore IPA
         required: true
         type: boolean
-        default: false
+        default: true
       run_quality:
         description: Run analyze, tests and public interface probes first
         required: true
@@ -255,10 +255,9 @@ jobs:
       ${{ always() &&
         github.event_name == 'workflow_dispatch' &&
         inputs.build_windows &&
-        (needs.quality.result == 'success' || needs.quality.result == 'skipped') &&
-        (!inputs.build_android || needs.android.result == 'success')
+        (needs.quality.result == 'success' || needs.quality.result == 'skipped')
       }}
-    needs: [quality, android]
+    needs: [quality]
     runs-on: windows-latest
     timeout-minutes: 35
     steps:
@@ -438,10 +437,9 @@ jobs:
       ${{ always() &&
         github.event_name == 'workflow_dispatch' &&
         inputs.build_linux &&
-        (needs.quality.result == 'success' || needs.quality.result == 'skipped') &&
-        (!inputs.build_android || needs.android.result == 'success') &&
-        (!inputs.build_windows || needs.windows.result == 'success') }}
-    needs: [quality, android, windows]
+        (needs.quality.result == 'success' || needs.quality.result == 'skipped')
+      }}
+    needs: [quality]
     runs-on: ubuntu-24.04
     timeout-minutes: 35
     steps:
@@ -627,11 +625,8 @@ jobs:
       ${{ always() &&
         github.event_name == 'workflow_dispatch' &&
         (inputs.build_macos || inputs.build_ios) &&
-        (needs.quality.result == 'success' || needs.quality.result == 'skipped') &&
-        (!inputs.build_android || needs.android.result == 'success') &&
-        (!inputs.build_windows || needs.windows.result == 'success') &&
-        (!inputs.build_linux || needs.linux.result == 'success') }}
-    needs: [quality, android, windows, linux]
+        (needs.quality.result == 'success' || needs.quality.result == 'skipped') }}
+    needs: [quality]
     runs-on: macos-15
     timeout-minutes: 90
     steps:
