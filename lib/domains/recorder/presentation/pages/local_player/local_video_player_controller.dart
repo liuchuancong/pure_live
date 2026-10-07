@@ -7,6 +7,7 @@ import 'package:media_core/media_core.dart' hide PlatformUtils;
 import 'package:media_core_feed/media_core_feed.dart';
 import 'package:media_core_list_playback/media_core_list_playback.dart';
 import 'package:pure_live/core/index.dart';
+import 'package:pure_live/domains/live/domain/global_player_service.dart';
 import 'package:pure_live/core/config/danmaku_settings_controller.dart';
 import 'package:pure_live/core/platform/file_utils.dart';
 import 'package:pure_live/core/platform/platform_utils.dart';
@@ -157,9 +158,21 @@ final class LocalVideoPlayerController extends GetxController implements PlayerU
     return size.width / size.height;
   }
 
+  /// 从直播间进入本页时，直播间的播放器还挂在路由栈下面继续出声、其视频层
+  /// 也仍在合成：录像播放开始前把它暂停，返回直播间时由观众自己继续。
+  void _pauseLivePlayback() {
+    try {
+      final live = GlobalPlayerService.instance.player;
+      if (live.isPlayingNow) unawaited(live.pause());
+    } catch (_) {
+      // 直播内核未初始化（非直播间路径打开）时无事可做。
+    }
+  }
+
   @override
   void onInit() {
     super.onInit();
+    _pauseLivePlayback();
     _progressStore = HivePlaybackProgressStore('$_progressKeyPrefix$directory');
     // 与直播间同一来源的画中画状态：桌面端窗口被驱动缩成小窗时，页面据此把
     // 自己的内容换成紧凑 overlay（直播的 _PipOverlayView 的录像对应物）。
