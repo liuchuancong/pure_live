@@ -53,19 +53,18 @@ class LocalVideoPlayerPage extends GetView<LocalVideoPlayerController> {
 /// switched on for this route. The live room does exactly that through
 /// `PlayerBackScope`.
 ///
-/// A bare `PopScope` here looked right and never received the event; a scope
-/// whose `presentationActive` was hardcoded false was no better, because
-/// `canPop: true` is precisely what lets the route pop before any handler runs.
+/// The scope keeps `canPop` false and `presentationActive` false **on purpose**,
+/// so every back reaches [PlayerBackScope.onBackRequest] instead of being left to
+/// the Navigator. The other arrangements were tried and each broke one half of
+/// the rule:
 ///
-/// So the fullscreen state is handed to the scope as its presentation:
+/// - a bare `PopScope` never received Android's back at all;
+/// - `canPop: true` while not fullscreen let the route pop before any handler
+///   ran, so the controller never got to answer — which is also why the
+///   in-app back buttons and the system back could disagree.
 ///
-/// - fullscreen → `canPop` is false, Back leaves fullscreen and keeps the page;
-/// - not fullscreen → `canPop` is true, and the controller still gets a say
-///   first, only so the feed can be handed to the small window — the live room's
-///   own "back floats the player" rule.
-/// The scope stays one widget for the whole route — it must, because the native
-/// interception has a single callback slot — and the fullscreen state is pushed
-/// into it by a listener on the controller's own observable.
+/// With the pop owned here, `LocalVideoPlayerController.handleBackRequest` is the
+/// only back rule: fullscreen first, page second.
 class _RecordingBackBoundary extends StatefulWidget {
   const _RecordingBackBoundary({required this.controller, required this.child});
 
@@ -77,36 +76,15 @@ class _RecordingBackBoundary extends StatefulWidget {
 }
 
 class _RecordingBackBoundaryState extends State<_RecordingBackBoundary> {
-  StreamSubscription<bool>? _fullscreenSub;
-  bool _fullscreen = false;
-
   LocalVideoPlayerController get controller => widget.controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _fullscreen = controller.fullscreenActive.value;
-    _fullscreenSub = controller.fullscreenActive.listen((value) {
-      if (!mounted || value == _fullscreen) return;
-      setState(() => _fullscreen = value);
-    });
-  }
-
-  @override
-  void dispose() {
-    _fullscreenSub?.cancel();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
     return PlayerBackScope(
-      // `canPop` follows the real state: a scope that kept saying false here is
-      // what let Android pop the page straight out of fullscreen.
-      presentationActive: _fullscreen,
-      onExitPresentation: () async {
-        await controller.exitFullscreen();
-      },
+      // The controller answers for fullscreen itself, so this scope never claims
+      // a presentation of its own and never lets the route pop on its own.
+      presentationActive: false,
+      onExitPresentation: () async {},
       onBackRequest: () => controller.handleBackRequest(),
       child: widget.child,
     );

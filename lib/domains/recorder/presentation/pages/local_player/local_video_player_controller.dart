@@ -833,22 +833,21 @@ final class LocalVideoPlayerController extends GetxController implements PlayerU
   /// Whether the feed now belongs to the small window rather than this page.
   bool _handedToFloating = false;
 
-  /// 返回的统一语义（与直播间一致）：设置里开了"小窗播放"且正在播放时，
-  /// 退出页面转交小窗。返回 true 表示真的离开页面。
+  /// 返回的两段语义，仅此两条：
+  ///
+  /// - 全屏中 → 退出全屏，留在页面；
+  /// - 不是全屏 → 离开当前页面。
+  ///
+  /// 返回 true 表示调用方应当离开路由。小窗播放是**独立入口**（页面上的小窗按钮，
+  /// 以及 [uiRequestExit] 那条库内退出），返回键不做转交：把两件事混在一条返回键上，
+  /// 会出现"按了返回却没离开页面"这种和需求不符的结果。
   Future<bool> handleBackRequest() async {
-    if (isClosed || _handedToFloating) return true;
-    // Fullscreen first, page second: back leaves the fullscreen shape and
-    // stays on the page, exactly like the live room. Only a page that is not
-    // fullscreen is allowed to be left.
+    if (isClosed) return true;
     if (fullscreenActive.value) {
       await exitFullscreen();
       return false;
     }
-    final floatPlayEnabled = SettingsService.to.player.floatPlay.v;
-    if (!floatPlayEnabled || !isPlaying.value) return true;
-    _handedToFloating = true;
-    await enterFloating();
-    return false;
+    return true;
   }
 
   @override
