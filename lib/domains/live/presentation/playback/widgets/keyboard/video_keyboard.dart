@@ -93,42 +93,87 @@ class _VideoKeyboardShortcutsState extends State<VideoKeyboardShortcuts> {
     }
   }
 
+  /// The keys whose meaning is decided by [resolveVideoKeyAction]. Escape and
+  /// the dedicated media-play/media-pause keys are bound separately below:
+  /// Escape leaves a presentation (see [resolveEscapePresentationAction]) and
+  /// those two are not toggles.
+  static const List<SingleActivator> _playbackActivators = <SingleActivator>[
+    SingleActivator(LogicalKeyboardKey.space),
+    SingleActivator(LogicalKeyboardKey.keyK),
+    SingleActivator(LogicalKeyboardKey.keyR),
+    SingleActivator(LogicalKeyboardKey.keyF),
+    SingleActivator(LogicalKeyboardKey.arrowUp),
+    SingleActivator(LogicalKeyboardKey.arrowDown),
+  ];
+
+  static const double _volumeStep = 0.05;
+
+  void _run(VideoKeyAction action) {
+    final controller = widget.controller;
+    switch (action) {
+      case VideoKeyAction.none:
+        break;
+      case VideoKeyAction.togglePlay:
+        unawaited(GlobalPlayerService.instance.player.togglePlayPause());
+      case VideoKeyAction.refresh:
+        if (controller != null) unawaited(controller.refresh());
+      case VideoKeyAction.toggleFullscreen:
+        if (controller != null) unawaited(controller.toggleFullScreen());
+      case VideoKeyAction.volumeUp:
+        if (controller != null) _adjustVolume(controller, _volumeStep);
+      case VideoKeyAction.volumeDown:
+        if (controller != null) _adjustVolume(controller, -_volumeStep);
+    }
+  }
+
+  void _adjustVolume(VideoController controller, double step) {
+    unawaited(() async {
+      final volume = await controller.volume();
+      if (volume == null) return;
+      final next = (volume + step).clamp(0.0, 1.0);
+      await controller.setVolume(next);
+      controller.updateVolumn(next);
+    }());
+  }
+
   @override
   Widget build(BuildContext context) {
     final controller = widget.controller;
     return CallbackShortcuts(
       bindings: {
         const SingleActivator(LogicalKeyboardKey.escape, includeRepeats: false): () => _handleEscape(context),
-        const SingleActivator(LogicalKeyboardKey.mediaPlay): () => GlobalPlayerService.instance.player.resume(),
-        const SingleActivator(LogicalKeyboardKey.mediaPause): () => GlobalPlayerService.instance.player.pause(),
-        const SingleActivator(LogicalKeyboardKey.mediaPlayPause): () =>
-            GlobalPlayerService.instance.player.togglePlayPause(),
-        const SingleActivator(LogicalKeyboardKey.space): () => GlobalPlayerService.instance.player.togglePlayPause(),
-        if (controller != null) const SingleActivator(LogicalKeyboardKey.keyR): () => controller.refresh(),
-        if (controller != null)
-          const SingleActivator(LogicalKeyboardKey.arrowUp): () async {
-            double? volume = await controller.volume();
-            if (volume == null) return;
-            volume = volume + 0.05;
-            volume = volume.clamp(0.0, 1.0);
-            await controller.setVolume(volume);
-            controller.updateVolumn(volume);
-          },
-        if (controller != null)
-          const SingleActivator(LogicalKeyboardKey.arrowDown): () async {
-            double? volume = await controller.volume();
-            if (volume == null) return;
-            volume = volume - 0.05;
-            volume = volume.clamp(0.0, 1.0);
-            await controller.setVolume(volume);
-            controller.updateVolumn(volume);
-          },
+        const SingleActivator(LogicalKeyboardKey.mediaPlay): () =>
+            unawaited(GlobalPlayerService.instance.player.resume()),
+        const SingleActivator(LogicalKeyboardKey.mediaPause): () =>
+            unawaited(GlobalPlayerService.instance.player.pause()),
+        const SingleActivator(LogicalKeyboardKey.mediaPlayPause): () => _run(VideoKeyAction.togglePlay),
+        for (final activator in _playbackActivators)
+          activator: () => _run(resolveVideoKeyAction(activator.trigger, hasController: controller != null)),
       },
       // Rooms with no initialized player still need a focus target. Descendant
       // controls/text inputs retain their own focus and key handling priority.
       child: FocusScope(node: _node, autofocus: true, child: widget.child),
     );
   }
+}
+
+/// What one key means on the room surface.
+enum VideoKeyAction { none, togglePlay, refresh, toggleFullscreen, volumeUp, volumeDown }
+
+/// The room's key map, as a decision instead of a pile of closures.
+///
+/// A room whose player never initialized has no [VideoController], and the
+/// controller-bound keys must then resolve to nothing rather than throw: the
+/// transport keys (play/pause) live on the global player and keep working.
+@visibleForTesting
+VideoKeyAction resolveVideoKeyAction(LogicalKeyboardKey key, {required bool hasController}) {
+  if (key == LogicalKeyboardKey.space || key == LogicalKeyboardKey.keyK) return VideoKeyAction.togglePlay;
+  if (!hasController) return VideoKeyAction.none;
+  if (key == LogicalKeyboardKey.keyR) return VideoKeyAction.refresh;
+  if (key == LogicalKeyboardKey.keyF) return VideoKeyAction.toggleFullscreen;
+  if (key == LogicalKeyboardKey.arrowUp) return VideoKeyAction.volumeUp;
+  if (key == LogicalKeyboardKey.arrowDown) return VideoKeyAction.volumeDown;
+  return VideoKeyAction.none;
 }
 
 @visibleForTesting
