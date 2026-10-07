@@ -31,31 +31,38 @@ class CompactPlaybackProgress extends StatelessWidget {
 
     final clamped = position.inMilliseconds.clamp(0, total).toDouble();
 
-    return Container(
-      padding: const EdgeInsets.fromLTRB(8, 0, 8, 0),
-      decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(10)),
-      child: Row(
-        children: [
-          Text(formatPlaybackTime(position), style: _timeStyle),
-          Expanded(
-            child: onSeek == null
-                ? LinearProgressIndicator(value: clamped / total, minHeight: 14)
-                : SliderTheme(
-                    data: SliderTheme.of(context).copyWith(
-                      trackHeight: 3,
-                      thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
-                      overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
+    // The compact surfaces (the in-app small window, the PiP face) are bare
+    // Stacks with no Scaffold or Card above them, and a Slider insists on a
+    // Material ancestor — without this wrapper the whole bar throws in a debug
+    // build and the window shows no progress at all.
+    return Material(
+      type: MaterialType.transparency,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(8, 0, 8, 0),
+        decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(10)),
+        child: Row(
+          children: [
+            Text(formatPlaybackTime(position), style: _timeStyle),
+            Expanded(
+              child: onSeek == null
+                  ? LinearProgressIndicator(value: clamped / total, minHeight: 14)
+                  : SliderTheme(
+                      data: SliderTheme.of(context).copyWith(
+                        trackHeight: 3,
+                        thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+                        overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
+                      ),
+                      child: Slider(
+                        value: clamped,
+                        max: total.toDouble(),
+                        onChanged: (value) {},
+                        onChangeEnd: (value) => onSeek?.call(Duration(milliseconds: value.round())),
+                      ),
                     ),
-                    child: Slider(
-                      value: clamped,
-                      max: total.toDouble(),
-                      onChanged: (value) {},
-                      onChangeEnd: (value) => onSeek?.call(Duration(milliseconds: value.round())),
-                    ),
-                  ),
-          ),
-          Text(formatPlaybackTime(duration), style: _timeStyle),
-        ],
+            ),
+            Text(formatPlaybackTime(duration), style: _timeStyle),
+          ],
+        ),
       ),
     );
   }

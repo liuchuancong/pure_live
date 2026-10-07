@@ -60,6 +60,36 @@ void main() {
     expect(seeks.single.inMinutes, lessThanOrEqualTo(10));
   });
 
+  testWidgets('没有 Scaffold 的紧凑表面也能画（Slider 要 Material 祖先）', (tester) async {
+    // 小窗 / PiP 就是一层裸 Stack：运行日志里这条曾经直接抛
+    // "No Material widget found"，整个进度条画不出来。用 Overlay + 方向包住
+    // ——和真实的小窗一样有 Overlay，但没有 Material。
+    await tester.pumpWidget(
+      Directionality(
+        textDirection: TextDirection.ltr,
+        child: Overlay(
+          initialEntries: <OverlayEntry>[
+            OverlayEntry(
+              builder: (context) => Center(
+                child: SizedBox(
+                  width: 320,
+                  child: CompactPlaybackProgress(
+                    position: const Duration(seconds: 3),
+                    duration: _sixteenMinutes,
+                    onSeek: (_) {},
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    expect(tester.takeException(), isNull);
+    expect(find.byType(Slider), findsOneWidget);
+  });
+
   test('一小时以内 m:ss，超过一小时补上小时位', () {
     expect(formatPlaybackTime(const Duration(seconds: 9)), '0:09');
     expect(formatPlaybackTime(const Duration(minutes: 12, seconds: 5)), '12:05');
