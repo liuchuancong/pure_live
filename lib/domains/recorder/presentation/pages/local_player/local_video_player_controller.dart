@@ -22,6 +22,7 @@ import 'package:pure_live/core/player/presentation/player_ui_controller.dart';
 import 'package:pure_live/core/player/presentation/windows_pip_driver.dart';
 import 'package:pure_live/core/storage/hive_pref_util.dart';
 import 'package:pure_live/domains/recorder/presentation/pages/local_player/recording_danmaku_track.dart';
+import 'package:pure_live/domains/recorder/presentation/pages/local_player/recording_resume.dart';
 
 /// Persistent [PlaybackProgressStore] backed by Hive.
 ///
@@ -300,11 +301,10 @@ final class LocalVideoPlayerController extends GetxController implements PlayerU
     if (store == null || handle == null || videoFiles.isEmpty) return null;
     final file = videoFiles[currentIndex.value];
     final saved = await store.positionOf(file.path);
-    if (saved != null && saved.inSeconds > 5 && saved < handle.duration - const Duration(seconds: 10)) {
-      await handle.seek(saved);
-      return saved;
-    }
-    return null;
+    final target = recordingResumeTarget(saved: saved, duration: handle.duration);
+    if (target == null) return null;
+    await handle.seek(target);
+    return target;
   }
 
   /// Starts parsing the chat file that belongs to the recording at [index].
