@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:pure_live/core/player/kernel/floating_handle_keeper.dart';
-import 'package:pure_live/core/storage/hive_pref_util.dart';
+import 'package:pure_live/core/config/settings_service.dart';
+import 'package:pure_live/core/config/float_window_geometry.dart';
+import 'package:pure_live/core/player/presentation/compact_source_orientation.dart';
 import 'package:pure_live/get/get.dart';
 import 'package:media_core_floating/media_core_floating.dart';
 import 'package:media_core/media_core.dart'
@@ -32,26 +34,21 @@ final class KernelFloatingWindowPresenter implements FloatingWindowPresenter {
 
   OverlayEntry? _entry;
 
-  /// The last window rect, remembered across open/close cycles. The live
-  /// room's window persists its rect through settings; a local-storage key
-  /// keeps this one independent so the two windows never overwrite each
-  /// other's last position.
-  static const _rectKey = 'kernelFloatingWindow.rect';
-  Rect? _remembered;
-
+  /// The window's last rect, remembered through the same settings entry the
+  /// live room's small window uses — per stream orientation, the same slot:
+  /// the viewer asked for one small-window behaviour, not one per surface.
   Rect? _rememberedRect() {
-    if (_remembered != null) return _remembered;
-    final raw = HivePrefUtil.getString(_rectKey);
-    if (raw == null || raw.isEmpty) return null;
-    final parts = raw.split(',').map(double.tryParse).toList();
-    if (parts.length != 4 || parts.any((v) => v == null)) return null;
-    return _remembered = Rect.fromLTWH(parts[0]!, parts[1]!, parts[2]!, parts[3]!);
+    final geometry = FloatWindowGeometry.decode(SettingsService.to.player.floatWindowGeometry.value);
+    return geometry.forPortrait(CompactSourceOrientation.isPortrait);
   }
 
   void _rememberRect(Rect rect) {
     if (!rect.isFinite || rect.isEmpty) return;
-    _remembered = rect;
-    HivePrefUtil.setString(_rectKey, '${rect.left},${rect.top},${rect.width},${rect.height}');
+    final settings = SettingsService.to.player;
+    final geometry = FloatWindowGeometry.decode(settings.floatWindowGeometry.value);
+    settings.floatWindowGeometry.value = geometry
+        .withRect(isPortrait: CompactSourceOrientation.isPortrait, rect: rect)
+        .encode();
   }
 
   @override

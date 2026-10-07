@@ -3,15 +3,16 @@ import 'dart:async';
 
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/core/index.dart';
-import 'package:flutter/foundation.dart' show defaultTargetPlatform;
-import 'package:media_core/media_core.dart' show MediaPlayerView;
 import 'package:media_core_ui/media_core_ui.dart';
 import 'package:pure_live/core/consts/app_consts.dart';
 import 'package:pure_live/core/platform/platform_utils.dart';
-import 'package:pure_live/core/player/kernel/player_kernel_service.dart';
+import 'package:media_core/media_core.dart' show MediaPlayerView;
+import 'package:flutter/foundation.dart' show defaultTargetPlatform;
+import 'package:pure_live/core/player/presentation/fullscreen_window.dart';
+import 'package:pure_live/core/player/presentation/windows_pip_driver.dart';
 import 'package:pure_live/core/player/presentation/player_ui_controller.dart';
 import 'package:pure_live/core/player/presentation/danmaku/player_danmaku_actions.dart';
-import 'package:pure_live/core/player/presentation/windows_pip_driver.dart';
+import 'package:pure_live/core/player/presentation/fullscreen_window.dart' show WindowService;
 import 'package:pure_live/domains/recorder/presentation/pages/local_player/local_video_player_controller.dart';
 
 /// One recording, played.
@@ -66,6 +67,43 @@ String _modifiedOf(File file) {
 /// replayed chat is drawn between the two. No second transport bar is built
 /// here on purpose: the library's bar is the same one every other surface in the
 /// app shows.
+/// The control-bar palette the recording page shows: the library's Material
+/// bar with its fixed red accent replaced by the app theme's primary — the
+/// same color the live room's own controls follow.
+PlayerControlsTheme _controlsTheme(ThemeData theme) {
+  final primary = theme.colorScheme.primary;
+  return PlayerControlsTheme.material().copyWith(accent: primary, progressPlayed: primary, progressThumb: primary);
+}
+
+/// The bar's presentation actions, routed the way the live room routes them.
+///
+/// The kernel's default fullscreen is a desktop window request and a no-op on a
+/// phone; the live room instead locks landscape (mobile) or fullscreens the
+/// window (desktop). PiP and the small window go through this controller, so
+/// their page-side behavior (state tracking, handle handover) applies.
+PlayerControlActions _recordingActions(LocalVideoPlayerController controller, ThemeData theme) {
+  final isMobile = PlatformUtils.isMobile;
+  return PlayerControlActions(
+    enterFullscreen: () async {
+      if (isMobile) {
+        await WindowService().landScape();
+      } else {
+        await WindowService().doEnterFullScreen();
+      }
+    },
+    exitFullscreen: () async {
+      if (isMobile) {
+        await WindowService().verticalScreen();
+        await WindowService().followSystemOrientation();
+      } else {
+        await WindowService().doExitFullScreen();
+      }
+    },
+    enterPip: () => controller.enterPip(),
+    enterFloating: () => controller.enterFloating(),
+  );
+}
+
 class _VideoSurface extends StatelessWidget {
   const _VideoSurface({required this.controller, this.keyboardShortcuts = false});
 
@@ -74,11 +112,11 @@ class _VideoSurface extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return GetBuilder<LocalVideoPlayerController>(
       builder: (_) {
         final handle = controller.handle;
         if (handle == null) return const ColoredBox(color: Colors.black);
-        final kernel = PlayerKernelService.instance.kernel;
         return PlayerGestureLayer(
           controller: controller,
           child: Stack(
@@ -86,7 +124,8 @@ class _VideoSurface extends StatelessWidget {
             children: [
               MediaCorePlayerView(
                 handle: handle,
-                actions: KernelPlayerControlActions(kernel: kernel, playerId: handle.id),
+                actions: _recordingActions(controller, theme),
+                theme: _controlsTheme(theme),
                 fit: BoxFit.contain,
                 // The library's bar carries play/pause, skip, the timeline,
                 // speed, fullscreen and picture-in-picture; the page adds only
@@ -631,6 +670,11 @@ class _MobileLayoutState extends State<_MobileLayout> {
     return Scaffold(
       backgroundColor: Colors.black,
       body: Obx(() {
+        // Picture-in-picture owns the whole body, exactly like the live room:
+        // only the compact picture and its chat are visible — no page chrome.
+        if (controller.isInPip.value) {
+          return _RecordingPipOverlay(controller: controller);
+        }
         // Scanning the folder is the only true "nothing to show yet" state; once
         // a file is open the player surface itself carries its own loading.
         if (controller.isLoading.value && controller.videoFiles.isEmpty) {
@@ -1293,8 +1337,17 @@ class _DesktopLayout extends StatelessWidget {
         ],
       ),
       body: Obx(() {
+        // Picture-in-picture owns the whole body, like the live room.
+        if (controller.isInPip.value) {
+          return _RecordingPipOverlay(controller: controller);
+        }
         if (controller.isLoading.value) {
-          return const Center(child: CircularProgressIndicator());
+          return Center(
+            child: SizedBox.square(
+              dimension: 28,
+              child: CircularProgressIndicator(strokeWidth: 2.5, color: theme.colorScheme.primary),
+            ),
+          );
         }
         if (controller.videoFiles.isEmpty) {
           return _emptyState(context, controller);
