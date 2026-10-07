@@ -100,6 +100,7 @@ class _VideoKeyboardShortcutsState extends State<VideoKeyboardShortcuts> {
   static const List<SingleActivator> _playbackActivators = <SingleActivator>[
     SingleActivator(LogicalKeyboardKey.space),
     SingleActivator(LogicalKeyboardKey.keyK),
+    SingleActivator(LogicalKeyboardKey.keyM),
     SingleActivator(LogicalKeyboardKey.keyR),
     SingleActivator(LogicalKeyboardKey.keyF),
     SingleActivator(LogicalKeyboardKey.arrowUp),
@@ -115,6 +116,8 @@ class _VideoKeyboardShortcutsState extends State<VideoKeyboardShortcuts> {
         break;
       case VideoKeyAction.togglePlay:
         unawaited(GlobalPlayerService.instance.player.togglePlayPause());
+      case VideoKeyAction.toggleMute:
+        if (controller != null) _toggleMute(controller);
       case VideoKeyAction.refresh:
         if (controller != null) unawaited(controller.refresh());
       case VideoKeyAction.toggleFullscreen:
@@ -133,6 +136,26 @@ class _VideoKeyboardShortcutsState extends State<VideoKeyboardShortcuts> {
       final next = (volume + step).clamp(0.0, 1.0);
       await controller.setVolume(next);
       controller.updateVolumn(next);
+    }());
+  }
+
+  /// The level M puts back. Mute is a toggle, not "set zero": a room muted
+  /// at 40% comes back at 40%, not at full volume.
+  double? _lastAudibleVolume;
+
+  void _toggleMute(VideoController controller) {
+    unawaited(() async {
+      final volume = await controller.volume();
+      if (volume == null) return;
+      if (volume > 0.001) {
+        _lastAudibleVolume = volume;
+        await controller.setVolume(0);
+        controller.updateVolumn(0);
+        return;
+      }
+      final back = _lastAudibleVolume ?? 1.0;
+      await controller.setVolume(back);
+      controller.updateVolumn(back);
     }());
   }
 
@@ -158,7 +181,7 @@ class _VideoKeyboardShortcutsState extends State<VideoKeyboardShortcuts> {
 }
 
 /// What one key means on the room surface.
-enum VideoKeyAction { none, togglePlay, refresh, toggleFullscreen, volumeUp, volumeDown }
+enum VideoKeyAction { none, togglePlay, toggleMute, refresh, toggleFullscreen, volumeUp, volumeDown }
 
 /// The room's key map, as a decision instead of a pile of closures.
 ///
@@ -171,6 +194,7 @@ VideoKeyAction resolveVideoKeyAction(LogicalKeyboardKey key, {required bool hasC
   if (!hasController) return VideoKeyAction.none;
   if (key == LogicalKeyboardKey.keyR) return VideoKeyAction.refresh;
   if (key == LogicalKeyboardKey.keyF) return VideoKeyAction.toggleFullscreen;
+  if (key == LogicalKeyboardKey.keyM) return VideoKeyAction.toggleMute;
   if (key == LogicalKeyboardKey.arrowUp) return VideoKeyAction.volumeUp;
   if (key == LogicalKeyboardKey.arrowDown) return VideoKeyAction.volumeDown;
   return VideoKeyAction.none;

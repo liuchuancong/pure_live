@@ -18,6 +18,7 @@ void main() {
       final gated = <(LogicalKeyboardKey, VideoKeyAction)>[
         (LogicalKeyboardKey.keyR, VideoKeyAction.refresh),
         (LogicalKeyboardKey.keyF, VideoKeyAction.toggleFullscreen),
+        (LogicalKeyboardKey.keyM, VideoKeyAction.toggleMute),
         (LogicalKeyboardKey.arrowUp, VideoKeyAction.volumeUp),
         (LogicalKeyboardKey.arrowDown, VideoKeyAction.volumeDown),
       ];
