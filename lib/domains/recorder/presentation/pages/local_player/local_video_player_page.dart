@@ -502,105 +502,112 @@ class _RecordingControlBar extends StatelessWidget {
         ),
       ),
       padding: const EdgeInsets.fromLTRB(12, 22, 12, 4),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Timeline row.
-          Row(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // 窄窗口里收起音量滑条（见 recordingVolumeSliderMinWidth），静音开关
+          // 留着——它是这条栏上唯一的声音入口。
+          final showVolumeSlider = constraints.maxWidth >= recordingVolumeSliderMinWidth;
+          return Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Obx(
-                () => Text(
-                  _fmtTime(controller.position.value),
-                  style: const TextStyle(color: Colors.white, fontSize: 11),
-                ),
-              ),
-              Expanded(
-                child: Obx(() {
-                  final durationMs = controller.duration.value.inMilliseconds;
-                  final positionMs = controller.position.value.inMilliseconds;
-                  final max = durationMs <= 0 ? 1.0 : durationMs / 1000.0;
-                  final value = (positionMs / 1000.0).clamp(0.0, max);
-                  return SliderTheme(
-                    data: SliderTheme.of(context).copyWith(
-                      trackHeight: 3,
-                      thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
-                      overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
-                      activeTrackColor: primary,
-                      inactiveTrackColor: Colors.white24,
-                      thumbColor: primary,
-                      overlayColor: primary.withValues(alpha: 0.2),
+              // Timeline row.
+              Row(
+                children: [
+                  Obx(
+                    () => Text(
+                      _fmtTime(controller.position.value),
+                      style: const TextStyle(color: Colors.white, fontSize: 11),
                     ),
-                    child: Slider(
-                      value: value,
-                      max: max,
-                      onChanged: (v) => unawaited(controller.seekTo(Duration(milliseconds: (v * 1000).round()))),
-                    ),
-                  );
-                }),
-              ),
-              Obx(
-                () => Text(
-                  _fmtTime(controller.duration.value),
-                  style: const TextStyle(color: Colors.white, fontSize: 11),
-                ),
-              ),
-            ],
-          ),
-          // Button row.
-          Row(
-            children: [
-              Obx(
-                () => IconButton(
-                  color: Colors.white,
-                  iconSize: 26,
-                  tooltip: controller.isPlaying.value ? '暂停' : '播放',
-                  icon: Icon(controller.isPlaying.value ? Icons.pause_rounded : Icons.play_arrow_rounded),
-                  onPressed: controller.togglePlayPause,
-                ),
-              ),
-              IconButton(
-                color: Colors.white,
-                iconSize: 22,
-                tooltip: '快退 10 秒',
-                icon: const Icon(Icons.replay_10_rounded),
-                onPressed: () => unawaited(controller.seekBy(const Duration(seconds: -10))),
-              ),
-              IconButton(
-                color: Colors.white,
-                iconSize: 22,
-                tooltip: '快进 10 秒',
-                icon: const Icon(Icons.forward_10_rounded),
-                onPressed: () => unawaited(controller.seekBy(const Duration(seconds: 10))),
-              ),
-              Obx(
-                () => controller.hasDanmaku.value
-                    ? Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          PlayerDanmakuButton(controller: controller, iconColor: Colors.white),
-                          PlayerDanmakuSettingsButton(controller: controller, iconColor: Colors.white),
-                        ],
-                      )
-                    : const SizedBox.shrink(),
-              ),
-              _VolumeControls(controller: controller),
-              _RateButton(controller: controller),
-              const Spacer(),
-              _FitButton(),
-              Obx(
-                () => IconButton(
-                  color: Colors.white,
-                  iconSize: 24,
-                  tooltip: i18n('fullscreen_watch'),
-                  icon: Icon(
-                    controller.fullscreenActive.value ? Icons.fullscreen_exit_rounded : Icons.fullscreen_rounded,
                   ),
-                  onPressed: controller.toggleFullscreen,
-                ),
+                  Expanded(
+                    child: Obx(() {
+                      final durationMs = controller.duration.value.inMilliseconds;
+                      final positionMs = controller.position.value.inMilliseconds;
+                      final max = durationMs <= 0 ? 1.0 : durationMs / 1000.0;
+                      final value = (positionMs / 1000.0).clamp(0.0, max);
+                      return SliderTheme(
+                        data: SliderTheme.of(context).copyWith(
+                          trackHeight: 3,
+                          thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
+                          overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
+                          activeTrackColor: primary,
+                          inactiveTrackColor: Colors.white24,
+                          thumbColor: primary,
+                          overlayColor: primary.withValues(alpha: 0.2),
+                        ),
+                        child: Slider(
+                          value: value,
+                          max: max,
+                          onChanged: (v) => unawaited(controller.seekTo(Duration(milliseconds: (v * 1000).round()))),
+                        ),
+                      );
+                    }),
+                  ),
+                  Obx(
+                    () => Text(
+                      _fmtTime(controller.duration.value),
+                      style: const TextStyle(color: Colors.white, fontSize: 11),
+                    ),
+                  ),
+                ],
+              ),
+              // Button row.
+              Row(
+                children: [
+                  Obx(
+                    () => IconButton(
+                      color: Colors.white,
+                      iconSize: 26,
+                      tooltip: controller.isPlaying.value ? '暂停' : '播放',
+                      icon: Icon(controller.isPlaying.value ? Icons.pause_rounded : Icons.play_arrow_rounded),
+                      onPressed: controller.togglePlayPause,
+                    ),
+                  ),
+                  IconButton(
+                    color: Colors.white,
+                    iconSize: 22,
+                    tooltip: '快退 10 秒',
+                    icon: const Icon(Icons.replay_10_rounded),
+                    onPressed: () => unawaited(controller.seekBy(const Duration(seconds: -10))),
+                  ),
+                  IconButton(
+                    color: Colors.white,
+                    iconSize: 22,
+                    tooltip: '快进 10 秒',
+                    icon: const Icon(Icons.forward_10_rounded),
+                    onPressed: () => unawaited(controller.seekBy(const Duration(seconds: 10))),
+                  ),
+                  Obx(
+                    () => controller.hasDanmaku.value
+                        ? Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              PlayerDanmakuButton(controller: controller, iconColor: Colors.white),
+                              PlayerDanmakuSettingsButton(controller: controller, iconColor: Colors.white),
+                            ],
+                          )
+                        : const SizedBox.shrink(),
+                  ),
+                  _VolumeControls(controller: controller, showSlider: showVolumeSlider),
+                  _RateButton(controller: controller),
+                  const Spacer(),
+                  _FitButton(),
+                  Obx(
+                    () => IconButton(
+                      color: Colors.white,
+                      iconSize: 24,
+                      tooltip: i18n('fullscreen_watch'),
+                      icon: Icon(
+                        controller.fullscreenActive.value ? Icons.fullscreen_exit_rounded : Icons.fullscreen_rounded,
+                      ),
+                      onPressed: controller.toggleFullscreen,
+                    ),
+                  ),
+                ],
               ),
             ],
-          ),
-        ],
+          );
+        },
       ),
     );
   }
@@ -608,9 +615,13 @@ class _RecordingControlBar extends StatelessWidget {
 
 /// Volume icon plus a compact slider, the live room's transport arrangement.
 class _VolumeControls extends StatefulWidget {
-  const _VolumeControls({required this.controller});
+  const _VolumeControls({required this.controller, this.showSlider = true});
 
   final LocalVideoPlayerController controller;
+
+  /// Narrow layouts drop the slider and keep only the mute toggle; the row
+  /// cannot carry both.
+  final bool showSlider;
 
   @override
   State<_VolumeControls> createState() => _VolumeControlsState();
@@ -662,21 +673,22 @@ class _VolumeControlsState extends State<_VolumeControls> {
             }
           },
         ),
-        SizedBox(
-          width: 100,
-          child: SliderTheme(
-            data: SliderTheme.of(context).copyWith(
-              trackHeight: 2.5,
-              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
-              overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
-              activeTrackColor: Theme.of(context).colorScheme.primary,
-              inactiveTrackColor: Colors.white24,
-              thumbColor: Theme.of(context).colorScheme.primary,
-              overlayColor: Colors.transparent,
+        if (widget.showSlider)
+          SizedBox(
+            width: 100,
+            child: SliderTheme(
+              data: SliderTheme.of(context).copyWith(
+                trackHeight: 2.5,
+                thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
+                overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
+                activeTrackColor: Theme.of(context).colorScheme.primary,
+                inactiveTrackColor: Colors.white24,
+                thumbColor: Theme.of(context).colorScheme.primary,
+                overlayColor: Colors.transparent,
+              ),
+              child: Slider(value: volume, max: 1.0, onChanged: (v) => unawaited(_write(v))),
             ),
-            child: Slider(value: volume, max: 1.0, onChanged: (v) => unawaited(_write(v))),
           ),
-        ),
       ],
     );
   }
@@ -1783,6 +1795,13 @@ const double localPlayerSideBySideMinWidth = 760;
 
 /// Whether the desktop recording player splits picture and list side by side.
 bool localPlayerShowsSideBySide(double windowWidth) => windowWidth >= localPlayerSideBySideMinWidth;
+
+/// The narrowest control row that can still carry the 100 px volume slider.
+///
+/// At 504 px the row needed 554 px — the run log's "RenderFlex overflowed by
+/// 50 pixels on the right" — so below this width the slider is dropped and the
+/// 40 px mute toggle stays: it is the only sound control on this bar.
+const double recordingVolumeSliderMinWidth = 520;
 
 class _DesktopLayout extends StatelessWidget {
   const _DesktopLayout({required this.controller});
