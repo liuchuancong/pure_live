@@ -5,12 +5,12 @@ import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/core/index.dart';
 import 'package:media_core_ui/media_core_ui.dart';
 import 'package:pure_live/core/consts/app_consts.dart';
-import 'package:pure_live/core/platform/platform_utils.dart';
 import 'package:media_core/media_core.dart' show MediaPlayerView;
 import 'package:flutter/foundation.dart' show defaultTargetPlatform;
+import 'package:flutter/services.dart' show KeyDownEvent, LogicalKeyboardKey;
 import 'package:pure_live/core/player/presentation/windows_pip_driver.dart';
-import 'package:pure_live/core/player/presentation/compact_playback_progress.dart';
 import 'package:pure_live/core/player/presentation/player_ui_controller.dart';
+import 'package:pure_live/core/player/presentation/compact_playback_progress.dart';
 import 'package:pure_live/core/player/presentation/danmaku/player_danmaku_actions.dart';
 import 'package:pure_live/domains/recorder/presentation/pages/local_player/local_video_player_controller.dart';
 
@@ -28,7 +28,7 @@ class LocalVideoPlayerPage extends GetView<LocalVideoPlayerController> {
 
   @override
   Widget build(BuildContext context) {
-    if (PlatformUtils.isMobile) return _MobileLayout(controller: controller);
+    if (Get.width <= 680) return _MobileLayout(controller: controller);
     return _DesktopLayout(controller: controller);
   }
 }
@@ -130,55 +130,97 @@ class _RecordingPlayerAreaState extends State<_PlayerArea> {
   /// 双击画面 = 进/出全屏，直播间同款。
   void _onSurfaceDoubleTap() => unawaited(controller.toggleFullscreen());
 
+  /// 本页自管的快捷键，与直播间同一套键位（space/K 播放暂停、←/→ ±10s、
+  /// ↑/↓ 音量、f/Esc 全屏切换）。挂在页面自己的 Focus 上而不是库条 stage——
+  /// 页面结构重建（Obx 切换、全屏形态替换）会把 stage 的焦点甩掉，之后所有
+  /// 键盘事件就再也到不了播放器。
+  KeyEventResult _handleKey(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+    final key = event.logicalKey;
+    if (key == LogicalKeyboardKey.space || key == LogicalKeyboardKey.keyK) {
+      unawaited(controller.togglePlayPause());
+      controller.revealControls();
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.arrowLeft) {
+      unawaited(controller.seekBy(const Duration(seconds: -10)));
+      controller.revealControls();
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.arrowRight) {
+      unawaited(controller.seekBy(const Duration(seconds: 10)));
+      controller.revealControls();
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.keyF || key == LogicalKeyboardKey.escape) {
+      unawaited(controller.toggleFullscreen());
+      controller.revealControls();
+      return KeyEventResult.handled;
+    }
+    if (key == LogicalKeyboardKey.arrowUp || key == LogicalKeyboardKey.arrowDown) {
+      unawaited(() async {
+        final current = await controller.uiVolume() ?? 1.0;
+        final next = (current + (key == LogicalKeyboardKey.arrowUp ? 0.1 : -0.1)).clamp(0.0, 1.0);
+        await controller.uiSetVolume(next);
+      }());
+      controller.revealControls();
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
+  }
+
   @override
   Widget build(BuildContext context) {
     return GetBuilder<LocalVideoPlayerController>(
       builder: (_) {
         final handle = controller.handle;
         if (handle == null) return const ColoredBox(color: Colors.black);
-        return Obx(() {
-          if (controller.isInPip.value) {
-            return _RecordingPipOverlay(controller: controller);
-          }
-          final visible = controller.controlsVisible.value;
-          return MouseRegion(
-            onEnter: (_) => controller.setControlsHovering(true),
-            onExit: (_) => controller.setControlsHovering(false),
-            // 隐藏时连光标一起收掉——直播全屏的同款行为。
-            cursor: visible ? MouseCursor.defer : SystemMouseCursors.none,
-            child: GestureDetector(
-              behavior: HitTestBehavior.translucent,
-              onDoubleTap: _onSurfaceDoubleTap,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  _RecordingVideoFace(
-                    controller: controller,
-                    keyboardShortcuts: widget.keyboardShortcuts,
-                    onSurfaceTap: _onSurfaceTap,
-                  ),
-                  // 右上角常驻的三个入口：它们不跟着底栏一起淡出（见
-                  // _RecordingCornerActions）。
-                  Positioned(top: 8, right: 8, child: _RecordingCornerActions(controller: controller)),
-                  // The bar rides above the picture, revealed by the rules above.
-                  Positioned(
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    child: IgnorePointer(
-                      ignoring: !visible,
-                      child: AnimatedOpacity(
-                        opacity: visible ? 1 : 0,
-                        duration: const Duration(milliseconds: 200),
-                        child: _RecordingControlBar(controller: controller),
+        return Focus(
+          autofocus: true,
+          onKeyEvent: _handleKey,
+          child: Obx(() {
+            if (controller.isInPip.value) {
+              return _RecordingPipOverlay(controller: controller);
+            }
+            final visible = controller.controlsVisible.value;
+            return MouseRegion(
+              onEnter: (_) => controller.setControlsHovering(true),
+              onExit: (_) => controller.setControlsHovering(false),
+              // 隐藏时连光标一起收掉——直播全屏的同款行为。
+              cursor: visible ? MouseCursor.defer : SystemMouseCursors.none,
+              child: GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onDoubleTap: _onSurfaceDoubleTap,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    _RecordingVideoFace(
+                      controller: controller,
+                      keyboardShortcuts: widget.keyboardShortcuts,
+                      onSurfaceTap: _onSurfaceTap,
+                    ),
+                    if (Get.width > 680)
+                      Positioned(top: 8, right: 8, child: _RecordingCornerActions(controller: controller)),
+                    // The bar rides above the picture, revealed by the rules above.
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      child: IgnorePointer(
+                        ignoring: !visible,
+                        child: AnimatedOpacity(
+                          opacity: visible ? 1 : 0,
+                          duration: const Duration(milliseconds: 200),
+                          child: _RecordingControlBar(controller: controller),
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          );
-        });
+            );
+          }),
+        );
       },
     );
   }
@@ -565,14 +607,14 @@ class _RecordingControlBar extends StatelessWidget {
                   ),
                   IconButton(
                     color: Colors.white,
-                    iconSize: 22,
+                    iconSize: 26,
                     tooltip: '快退 10 秒',
                     icon: const Icon(Icons.replay_10_rounded),
                     onPressed: () => unawaited(controller.seekBy(const Duration(seconds: -10))),
                   ),
                   IconButton(
                     color: Colors.white,
-                    iconSize: 22,
+                    iconSize: 26,
                     tooltip: '快进 10 秒',
                     icon: const Icon(Icons.forward_10_rounded),
                     onPressed: () => unawaited(controller.seekBy(const Duration(seconds: 10))),
@@ -588,8 +630,8 @@ class _RecordingControlBar extends StatelessWidget {
                           )
                         : const SizedBox.shrink(),
                   ),
-                  _VolumeControls(controller: controller, showSlider: showVolumeSlider),
-                  _RateButton(controller: controller),
+                  if (Get.width > 680) _VolumeControls(controller: controller, showSlider: showVolumeSlider),
+                  if (Get.width > 680) _RateButton(controller: controller),
                   const Spacer(),
                   _FitButton(),
                   Obx(
@@ -1058,62 +1100,6 @@ Widget _emptyState(BuildContext context, LocalVideoPlayerController controller, 
   );
 }
 
-/// The presentation and danmaku actions of the recording page.
-///
-/// The same widgets the live room's bar uses ([PlayerDanmakuButton],
-/// [PlayerDanmakuSettingsButton], [PlayerVideoFitButton]): the viewer gets the
-/// same glyphs, the same danmaku panel and the same six fit modes in both
-/// players. What is left here is only what a *recording* adds: PiP, the
-/// in-app small window and, where there is no panel of its own, the list.
-class _RecordingActions extends StatelessWidget {
-  const _RecordingActions({required this.controller, required this.onDark, this.includePlaylist = false});
-
-  final LocalVideoPlayerController controller;
-  final bool onDark;
-  final bool includePlaylist;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = onDark ? Colors.white : Theme.of(context).colorScheme.onSurfaceVariant;
-    return Obx(() {
-      // Danmaku actions only make sense once the chat file has been read.
-      final hasChat = controller.hasDanmaku.value;
-      // 弹幕开关与设置仍在这排（小屏够得着）；比例/倍速/画中画/截图/全屏
-      // 已统一收进视频底栏，小窗由设置里的"小窗播放"开关在返回时触发。
-      return Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (hasChat) ...[
-            PlayerDanmakuButton(controller: controller, iconColor: color),
-            PlayerDanmakuSettingsButton(controller: controller, iconColor: color),
-          ],
-          if (includePlaylist)
-            IconButton(
-              color: color,
-              tooltip: i18n('recorder_local_player_title'),
-              icon: const Icon(Icons.playlist_play_rounded),
-              onPressed: () => _showPlaylist(context, controller),
-            ),
-        ],
-      );
-    });
-  }
-}
-
-/// The recording list as a phone sheet.
-void _showPlaylist(BuildContext context, LocalVideoPlayerController controller) {
-  showModalBottomSheet(
-    context: context,
-    backgroundColor: Theme.of(context).colorScheme.surface,
-    showDragHandle: true,
-    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(18))),
-    builder: (_) => SizedBox(
-      height: MediaQuery.sizeOf(context).height * 0.62,
-      child: _PlaylistPanel(controller: controller, dense: true, onPicked: () => Navigator.of(context).pop()),
-    ),
-  );
-}
-
 // ---------------------------------------------------------------------------
 // Phone: short-video shape, after the reference app — a dark top bar with the
 // title, the speed chip and the ⋮ overflow; the overflow opens the settings
@@ -1250,7 +1236,6 @@ class _PortraitTopBar extends StatelessWidget {
                   ),
                 ),
               ),
-              _SpeedChip(controller: controller),
               IconButton(
                 color: Colors.white,
                 tooltip: i18n('settings_more'),
@@ -1258,42 +1243,6 @@ class _PortraitTopBar extends StatelessWidget {
                 onPressed: () => _showSettingsSheet(context, controller),
               ),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// The "1.0x" chip: tapping it opens the same settings sheet the ⋮ opens,
-/// scrolled to the speed row — one surface, two entries.
-class _SpeedChip extends StatelessWidget {
-  const _SpeedChip({required this.controller});
-
-  final LocalVideoPlayerController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    return Obx(
-      () => Material(
-        color: Colors.white24,
-        borderRadius: BorderRadius.circular(16),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: () => _showSettingsSheet(context, controller),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.speed_rounded, size: 16, color: Colors.white),
-                const SizedBox(width: 4),
-                Text(
-                  '${controller.playbackRate.value.toStringAsFixed(controller.playbackRate.value == controller.playbackRate.value.roundToDouble() ? 1 : 2)}x',
-                  style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
-                ),
-              ],
-            ),
           ),
         ),
       ),
@@ -1636,8 +1585,6 @@ class _ContextPanel extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-            // 标题在进入页面时就固定了：这里没有任何 observable，包 Obx 只会
-            // 抛 ObxError 并把面板撑爆（red ErrorWidget 比面板高几个数量级）。
             child: Text(
               controller.roomTitle ?? i18n('recorder_local_player_title'),
               maxLines: 1,
@@ -1645,13 +1592,6 @@ class _ContextPanel extends StatelessWidget {
               style: TextStyle(fontSize: 15.5, fontWeight: FontWeight.w600, color: theme.colorScheme.onSurface),
             ),
           ),
-          // The quick actions, on the panel where they are reachable with a
-          // thumb: danmaku, fit, PiP, small window.
-          Padding(
-            padding: const EdgeInsets.fromLTRB(8, 2, 8, 0),
-            child: _RecordingActions(controller: controller, onDark: false, includePlaylist: false),
-          ),
-          // The "选集" bar: a summary of the list and the affordance that opens it.
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 6, 12, 6),
             child: Obx(
@@ -1769,10 +1709,6 @@ class _LandscapeTopBar extends StatelessWidget {
                     ),
                   ),
                 ),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: _RecordingActions(controller: controller, onDark: true, includePlaylist: true),
-                ),
               ],
             ),
           ),
@@ -1889,9 +1825,6 @@ class _DesktopLayout extends StatelessWidget {
               ),
             ),
           );
-          // 主从两栏只在画面还看得清的时候成立。列表栏固定 320，加分隔线与内边距
-          // 要 345，而窗口最小能缩到 400 —— 那时视频只剩一条几十像素的黑带。窄
-          // 窗口改成画面在上、列表在下。
           if (!localPlayerShowsSideBySide(MediaQuery.sizeOf(context).width)) {
             final panelHeight = (MediaQuery.sizeOf(context).height * 0.4).clamp(150.0, 320.0);
             return Column(
