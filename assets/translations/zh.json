@@ -2246,5 +2246,12 @@
   "player_preset_stableNetwork": "弱网稳定",
   "player_preset_stableNetwork_desc": "加大解复用缓冲与预读、开启强制可拖动与重连退避。用内存换卡顿, 适合跨网、跨运营商或信号边缘的直播源。",
   "player_preset_lowLatency": "低延迟",
-  "player_preset_lowLatency_desc": "最小缓冲 + 解码/渲染双端丢帧, 牺牲抗抖动换低延迟。适合赛事直播、连麦互动等时效优先的场景。"
+  "player_preset_lowLatency_desc": "最小缓冲 + 解码/渲染双端丢帧, 牺牲抗抖动换低延迟。适合赛事直播、连麦互动等时效优先的场景。",
+  "player_one_click_title": "一键推荐配置",
+  "player_one_click_subtitle": "把播放内核参数恢复到「标准」预设，撤销之前的手动调优并重建播放器。",
+  "player_one_click_confirm_title": "应用推荐配置？",
+  "player_one_click_confirm_body": "将把播放内核参数设为「{preset}」，随后重建播放器；当前画面会短暂中断。",
+  "player_one_click_applied": "已应用「{preset}」",
+  "player_compat_fix_title": "花屏 / 绿屏修复",
+  "player_compat_fix_subtitle": "改用 mediacodec_embed 直出表面并强制硬解，仅 Android 提供；音画不同步或画面撕裂时也先试这个。"
 }

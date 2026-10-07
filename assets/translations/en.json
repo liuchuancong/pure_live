@@ -2246,5 +2246,12 @@
   "player_preset_stableNetwork": "Stable on weak networks",
   "player_preset_stableNetwork_desc": "Bigger demuxer buffers and read-ahead, forced seekability and reconnect backoff. Trades memory for fewer stalls on cross-network or edge-signal streams.",
   "player_preset_lowLatency": "Low latency",
-  "player_preset_lowLatency_desc": "Minimum buffering with frame dropping on both decoder and render side, trading jitter tolerance for delay. For sports, duets and anything time-critical."
+  "player_preset_lowLatency_desc": "Minimum buffering with frame dropping on both decoder and render side, trading jitter tolerance for delay. For sports, duets and anything time-critical.",
+  "player_one_click_title": "One-click recommended setup",
+  "player_one_click_subtitle": "Restores the player kernel to the Standard preset, undoing manual tuning, and rebuilds the engine.",
+  "player_one_click_confirm_title": "Apply the recommended setup?",
+  "player_one_click_confirm_body": "Sets the player kernel to \"{preset}\" and rebuilds the engine; the picture will restart briefly.",
+  "player_one_click_applied": "Applied \"{preset}\"",
+  "player_compat_fix_title": "Glitch / green-screen fix",
+  "player_compat_fix_subtitle": "Switches to the mediacodec_embed surface with forced hardware decoding. Android only; try it for drifting audio or torn pictures too."
 }

@@ -75,6 +75,24 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
                   trailing: const Icon(Remix.arrow_right_s_line),
                   onTap: () => Get.to(() => const PlayerGuidePage()),
                 ),
+                // The two one-tap actions the guide only describes: a viewer
+                // whose picture is broken should not have to open a manual,
+                // find the recipe, then hunt which of the six presets it is.
+                context.buildTile(
+                  icon: Remix.tools_line,
+                  title: i18n('player_one_click_title'),
+                  subtitle: i18n('player_one_click_subtitle'),
+                  trailing: const Icon(Remix.arrow_right_s_line),
+                  onTap: () => _applyPresetWithConfirm(context, PlayerPresetId.balanced),
+                ),
+                if (Platform.isAndroid)
+                  context.buildTile(
+                    icon: Remix.tools_line,
+                    title: i18n('player_compat_fix_title'),
+                    subtitle: i18n('player_compat_fix_subtitle'),
+                    trailing: const Icon(Remix.arrow_right_s_line),
+                    onTap: () => _applyPresetWithConfirm(context, PlayerPresetId.compat),
+                  ),
                 if (Platform.isWindows)
                   context.buildTile(
                     icon: Remix.rhythm_line,
@@ -106,6 +124,29 @@ class PlayerKernelSettingsPage extends GetView<SettingsService> {
 
   String _activePlayerKey() =>
       normalizeVideoPlayerKeyForPlatform(SettingsService.to.player.videoPlayerKey.v, defaultTargetPlatform);
+
+  /// Applies one preset after naming it, so the tap is never a surprise.
+  ///
+  /// Writing the preset goes through the same path the preset page uses: the
+  /// output settings it takes over (surface, hardware decoder) are marked
+  /// locked on the tiles that show them, and the engine rebuild rides the
+  /// existing settings dispatcher rather than a second one here.
+  Future<void> _applyPresetWithConfirm(BuildContext context, PlayerPresetId preset) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(i18n('player_one_click_confirm_title')),
+        content: Text(i18n('player_one_click_confirm_body', args: {'preset': i18n(preset.nameKey)})),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: Text(i18n('cancel'))),
+          FilledButton(onPressed: () => Navigator.of(dialogContext).pop(true), child: Text(i18n('confirm'))),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    SettingsService.to.player.applyPreset(preset);
+    ToastUtil.show(i18n('player_one_click_applied', args: {'preset': i18n(preset.nameKey)}));
+  }
 
   /// The proxy state is read inside its own Obx so toggling it does not rebuild
   /// the whole kernel card.
