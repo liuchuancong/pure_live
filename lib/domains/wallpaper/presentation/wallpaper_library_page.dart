@@ -1,4 +1,3 @@
-import 'package:easy_localization/easy_localization.dart';
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/domains/wallpaper/data/wallpaper_repository.dart';
 import 'package:pure_live/domains/wallpaper/domain/wallpaper_catalog.dart';
@@ -30,7 +29,7 @@ class WallpaperLibraryPage extends StatelessWidget {
                   for (final WallpaperSource source in sources)
                     context.buildTile(
                       icon: Remix.image_line,
-                      title: source.localizedName(context.locale.languageCode),
+                      title: i18n(source.nameKey),
                       // No item counts: the lists are paged, so a number would
                       // either be a guess or cost one request per row.
                       subtitle: source.categorized && source.visibleGroups.length > 1

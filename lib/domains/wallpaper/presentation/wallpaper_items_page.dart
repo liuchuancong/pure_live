@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:easy_localization/easy_localization.dart';
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/domains/wallpaper/data/wallpaper_repository.dart';
 import 'package:pure_live/domains/wallpaper/domain/background_controller.dart';
@@ -68,7 +67,7 @@ class _WallpaperItemsPageState extends State<WallpaperItemsPage> {
         sourceId: source.id,
         groupId: group.id,
         kind: source.kind,
-        title: group.localizedName(Get.locale?.languageCode ?? 'zh'),
+        title: i18n(group.nameKey),
         initialIndex: index,
       ),
     );
@@ -79,7 +78,7 @@ class _WallpaperItemsPageState extends State<WallpaperItemsPage> {
     final WallpaperSource? source = _source;
     final WallpaperGroup? group = _group;
     final BasePageScrollAndStateBone<WallpaperItem>? controller = _controller;
-    final String title = group == null ? i18n('wallpaper_library') : group.localizedName(context.locale.languageCode);
+    final String title = group == null ? i18n('wallpaper_library') : i18n(group.nameKey);
 
     return Scaffold(
       // The wallpaper painted by AppBackgroundLayer stays visible behind the

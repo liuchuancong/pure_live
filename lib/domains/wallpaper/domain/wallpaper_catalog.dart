@@ -11,6 +11,21 @@ library;
 /// What kind of media an entry describes.
 enum WallpaperKind { image, video, gradient }
 
+/// Locale key of a source's display name.
+///
+/// Derived from the identifier instead of carried next to it: the catalog is a
+/// `const` tree, so a row could always be added with an empty name or a name
+/// only in one language, and the browser would paint the blank. One derivation
+/// plus the bundle test makes a missing label a test failure.
+String wallpaperSourceNameKey(String id) => 'wallpaper_source_${wallpaperNameSlug(id)}';
+
+/// Locale key of a group's display name, namespaced by its source because
+/// `nature` exists in the official set and in Wallhaven at the same time.
+String wallpaperGroupNameKey(String sourceId, String groupId) =>
+    'wallpaper_group_${wallpaperNameSlug(sourceId)}_${wallpaperNameSlug(groupId)}';
+
+String wallpaperNameSlug(String value) => value.replaceAll(RegExp(r'[^A-Za-z0-9]+'), '_').toLowerCase();
+
 /// One colour stop of a gradient.
 class WallpaperGradientStop {
   final String color;
@@ -61,11 +76,9 @@ class WallpaperItem {
 class WallpaperGroup {
   final String id;
 
-  /// Primary display name.
-  final String name;
-
-  /// English display name; may be empty.
-  final String nameEn;
+  /// The source this group belongs to; its identifier namespaces [nameKey] so
+  /// two sources can both offer a `nature` group.
+  final String sourceId;
 
   /// Value of the source's own filter parameter. Empty means "no filter", which
   /// is how Wallhaven's *popular* group is requested.
@@ -80,24 +93,18 @@ class WallpaperGroup {
 
   const WallpaperGroup({
     required this.id,
-    required this.name,
+    required this.sourceId,
     required this.count,
-    this.nameEn = '',
     this.apiQuery = '',
     this.hidden = false,
   });
 
-  String localizedName(String languageCode) {
-    if (languageCode == 'zh') return name.isNotEmpty ? name : nameEn;
-    return nameEn.isNotEmpty ? nameEn : name;
-  }
+  String get nameKey => wallpaperGroupNameKey(sourceId, id);
 }
 
 /// A top-level group of wallpapers.
 class WallpaperSource {
   final String id;
-  final String name;
-  final String nameEn;
   final WallpaperKind kind;
   final bool categorized;
   final int count;
@@ -105,18 +112,13 @@ class WallpaperSource {
 
   const WallpaperSource({
     required this.id,
-    required this.name,
     required this.kind,
     required this.categorized,
     required this.groups,
-    this.nameEn = '',
     this.count = 0,
   });
 
-  String localizedName(String languageCode) {
-    if (languageCode == 'zh') return name.isNotEmpty ? name : nameEn;
-    return nameEn.isNotEmpty ? nameEn : name;
-  }
+  String get nameKey => wallpaperSourceNameKey(id);
 
   /// Groups the browser lists. Single-group sources surface only their one
   /// entry, and empty groups are dropped.
@@ -159,112 +161,80 @@ class WallpaperCatalog {
   List<WallpaperSource> get imageSources =>
       sources.where((source) => source.kind == WallpaperKind.image).toList(growable: false);
 
-  static WallpaperSource _single(String id, String name, String nameEn, WallpaperKind kind, int count) =>
-      WallpaperSource(
-        id: id,
-        name: name,
-        nameEn: nameEn,
-        kind: kind,
-        categorized: false,
-        count: count,
-        groups: <WallpaperGroup>[WallpaperGroup(id: 'all', name: name, nameEn: nameEn, count: count, hidden: true)],
-      );
+  static WallpaperSource _single(String id, WallpaperKind kind, int count) => WallpaperSource(
+    id: id,
+    kind: kind,
+    categorized: false,
+    count: count,
+    groups: <WallpaperGroup>[WallpaperGroup(id: 'all', sourceId: id, count: count, hidden: true)],
+  );
 
   /// The compiled-in source tree.
   ///
   /// Group counts are hints for the subtitles; the grid reports the real number
-  /// once a page loads.
+  /// once a page loads. Names never appear here: they live in the locale bundles,
+  /// keyed by the source and group identifiers below.
   factory WallpaperCatalog.builtIn() {
     // The "all" bucket of the official set is absent by design: it overlaps the
     // seven groups and would only duplicate content.
-    WallpaperSource images(
-      String id,
-      String name,
-      String nameEn,
-      bool categorized,
-      List<(String, String, String, int)> groups,
-    ) => WallpaperSource(
+    WallpaperSource images(String id, bool categorized, List<(String, int)> groups) => WallpaperSource(
       id: id,
-      name: name,
-      nameEn: nameEn,
       kind: WallpaperKind.image,
       categorized: categorized,
-      count: groups.fold(0, (sum, group) => sum + group.$4),
+      count: groups.fold(0, (sum, group) => sum + group.$2),
       groups: <WallpaperGroup>[
-        for (final (groupId, groupZh, groupEn, count) in groups)
-          WallpaperGroup(
-            id: groupId,
-            name: groupZh,
-            nameEn: groupEn,
-            apiQuery: groupId,
-            count: count,
-            hidden: !categorized,
-          ),
+        for (final (String groupId, int count) in groups)
+          WallpaperGroup(id: groupId, sourceId: id, apiQuery: groupId, count: count, hidden: !categorized),
       ],
     );
 
+    const List<(String, String, int)> wallhavenGroups = <(String, String, int)>[
+      ('popular', '', 233),
+      ('minimalism', 'id:2278', 240),
+      ('patterns', 'id:869', 240),
+      ('landscape', 'id:711', 240),
+      ('nature', 'id:37', 240),
+      ('cosplay', 'id:12757', 240),
+      ('spiderman', 'id:2319', 240),
+      ('ghibli', 'id:1748', 240),
+      ('naruto', 'id:78174', 219),
+      ('sci-fi', 'id:14', 240),
+      ('anime', 'id:1', 240),
+      ('anime-girls', 'id:5', 240),
+      ('cyberpunk', 'id:376', 240),
+      ('pixel-art', 'id:2321', 240),
+      ('artwork', 'id:323', 240),
+      ('cityscape', 'id:479', 240),
+      ('digital-art', 'id:13', 240),
+      ('fantasy-art', 'id:853', 240),
+      ('final-fantasy', 'id:997', 240),
+    ];
+
     return WallpaperCatalog(
       sources: <WallpaperSource>[
-        images(WallpaperSourceIds.official, '官方壁纸', 'Official', true, const <(String, String, String, int)>[
-          ('nature', '自然', 'Nature', 240),
-          ('acg', '动漫', 'Anime', 240),
-          ('art', '艺术', 'Art', 155),
-          ('architecture', '建筑', 'Architecture', 28),
-          ('life', '生命', 'Life', 31),
-          ('geometry', '纹理', 'Texture', 72),
-          ('other', '其他', 'Other', 240),
+        images(WallpaperSourceIds.official, true, const <(String, int)>[
+          ('nature', 240),
+          ('acg', 240),
+          ('art', 155),
+          ('architecture', 28),
+          ('life', 31),
+          ('geometry', 72),
+          ('other', 240),
         ]),
         WallpaperSource(
           id: WallpaperSourceIds.wallhaven,
-          name: 'Wallhaven',
-          nameEn: 'Wallhaven',
           kind: WallpaperKind.image,
           categorized: true,
-          count: 4532,
-          groups: const <WallpaperGroup>[
-            WallpaperGroup(id: 'popular', name: '热门', nameEn: 'Popular', count: 233),
-            WallpaperGroup(id: 'minimalism', name: '极简主义', nameEn: 'Minimalism', apiQuery: 'id:2278', count: 240),
-            WallpaperGroup(id: 'patterns', name: '图案', nameEn: 'Patterns', apiQuery: 'id:869', count: 240),
-            WallpaperGroup(id: 'landscape', name: '风景', nameEn: 'Landscape', apiQuery: 'id:711', count: 240),
-            WallpaperGroup(id: 'nature', name: '自然', nameEn: 'Nature', apiQuery: 'id:37', count: 240),
-            WallpaperGroup(id: 'cosplay', name: 'Cosplay', nameEn: 'Cosplay', apiQuery: 'id:12757', count: 240),
-            WallpaperGroup(id: 'spiderman', name: '蜘蛛侠', nameEn: 'Spider-Man', apiQuery: 'id:2319', count: 240),
-            WallpaperGroup(id: 'ghibli', name: '吉卜力', nameEn: 'Ghibli', apiQuery: 'id:1748', count: 240),
-            WallpaperGroup(id: 'naruto', name: '火影忍者', nameEn: 'Naruto', apiQuery: 'id:78174', count: 219),
-            WallpaperGroup(id: 'sci-fi', name: '科幻', nameEn: 'Sci-Fi', apiQuery: 'id:14', count: 240),
-            WallpaperGroup(id: 'anime', name: '日漫', nameEn: 'Anime', apiQuery: 'id:1', count: 240),
-            WallpaperGroup(id: 'anime-girls', name: '动漫女孩', nameEn: 'Anime Girls', apiQuery: 'id:5', count: 240),
-            WallpaperGroup(id: 'cyberpunk', name: '赛博朋克', nameEn: 'Cyberpunk', apiQuery: 'id:376', count: 240),
-            WallpaperGroup(id: 'pixel-art', name: '像素艺术', nameEn: 'Pixel Art', apiQuery: 'id:2321', count: 240),
-            WallpaperGroup(id: 'artwork', name: 'Artwork', nameEn: 'Artwork', apiQuery: 'id:323', count: 240),
-            WallpaperGroup(id: 'cityscape', name: 'Cityscape', nameEn: 'Cityscape', apiQuery: 'id:479', count: 240),
-            WallpaperGroup(
-              id: 'digital-art',
-              name: 'Digital Art',
-              nameEn: 'Digital Art',
-              apiQuery: 'id:13',
-              count: 240,
-            ),
-            WallpaperGroup(
-              id: 'fantasy-art',
-              name: 'Fantasy Art',
-              nameEn: 'Fantasy Art',
-              apiQuery: 'id:853',
-              count: 240,
-            ),
-            WallpaperGroup(
-              id: 'final-fantasy',
-              name: 'Final Fantasy',
-              nameEn: 'Final Fantasy',
-              apiQuery: 'id:997',
-              count: 240,
-            ),
+          count: wallhavenGroups.fold(0, (sum, group) => sum + group.$3),
+          groups: <WallpaperGroup>[
+            for (final (String groupId, String apiQuery, int count) in wallhavenGroups)
+              WallpaperGroup(id: groupId, sourceId: WallpaperSourceIds.wallhaven, apiQuery: apiQuery, count: count),
           ],
         ),
-        _single(WallpaperSourceIds.bing, '必应壁纸', 'Bing', WallpaperKind.image, 2030),
-        _single(WallpaperSourceIds.deepin, 'deepin', 'deepin', WallpaperKind.image, 26),
-        _single(WallpaperSourceIds.video, '动态壁纸', 'Live Wallpapers', WallpaperKind.video, 125),
-        _single(WallpaperSourceIds.solidColor, '纯色渐变', 'Colors', WallpaperKind.gradient, 151),
+        _single(WallpaperSourceIds.bing, WallpaperKind.image, 2030),
+        _single(WallpaperSourceIds.deepin, WallpaperKind.image, 26),
+        _single(WallpaperSourceIds.video, WallpaperKind.video, 125),
+        _single(WallpaperSourceIds.solidColor, WallpaperKind.gradient, 151),
       ],
     );
   }
