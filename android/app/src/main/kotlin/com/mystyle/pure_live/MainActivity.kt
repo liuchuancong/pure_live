@@ -24,6 +24,7 @@ class MainActivity : AudioServiceActivity() {
         private const val DISPLAY_MODE_CHANNEL = "pure_live/display_mode"
         private const val BACKGROUND_PLAYBACK_CHANNEL = "pure_live/background_playback"
         private const val PREDICTIVE_BACK_CHANNEL = "pure_live/predictive_back"
+        private const val DISPLAY_CUTOUT_CHANNEL = "pure_live/display_cutout"
         private var playbackWakeLock: PowerManager.WakeLock? = null
         private var playbackWifiLock: WifiManager.WifiLock? = null
         private var activeActivity: WeakReference<MainActivity>? = null
@@ -149,6 +150,15 @@ class MainActivity : AudioServiceActivity() {
                 else -> result.notImplemented()
             }
         }
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            DISPLAY_CUTOUT_CHANNEL,
+        ).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "getInsets" -> result.success(displayCutoutInsets())
+                else -> result.notImplemented()
+            }
+        }
         predictiveBackChannel = MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,
             PREDICTIVE_BACK_CHANNEL,
@@ -170,6 +180,36 @@ class MainActivity : AudioServiceActivity() {
         if (predictiveBackEnabled) {
             predictiveBackChannel?.invokeMethod("backInvoked", null)
         }
+    }
+
+    /**
+     * The display cutout's own insets, in physical pixels.
+     *
+     * Flutter derives `MediaQuery.padding` from the window's *stable* insets,
+     * and with `windowLayoutInDisplayCutoutMode=shortEdges` those collapse to
+     * zero as soon as the status bar is hidden — which is exactly the immersive
+     * fullscreen a video player spends its time in. The cutout is a physical
+     * feature of the panel and does not go away with the status bar, so the
+     * player needs this number separately to keep its top controls out of the
+     * notch.
+     *
+     * `safeInset*` is used rather than `boundingRects`: a rect covers the whole
+     * notch including the rounded corners, while the safe inset is the distance
+     * Android itself guarantees content has to clear.
+     */
+    private fun displayCutoutInsets(): Map<String, Any> {
+        val empty = mapOf("top" to 0, "bottom" to 0, "left" to 0, "right" to 0)
+        // android.view.DisplayCutout exists from API 28; the whole query is a
+        // no-op below that.
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) return empty
+        val insets = window?.decorView?.rootWindowInsets ?: return empty
+        val cutout = insets.displayCutout ?: return empty
+        return mapOf(
+            "top" to cutout.safeInsetTop,
+            "bottom" to cutout.safeInsetBottom,
+            "left" to cutout.safeInsetLeft,
+            "right" to cutout.safeInsetRight,
+        )
     }
 
     private fun setPredictiveBackEnabled(enabled: Boolean) {

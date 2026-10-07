@@ -4,8 +4,8 @@ import 'dart:async';
 import 'package:remixicon/remixicon.dart';
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/utils/event_bus.dart';
-import 'package:pure_live/core/platform/platform_utils.dart';
 import 'package:pure_live/core/utils/live_quality_label.dart';
+import 'package:pure_live/core/platform/platform_utils.dart';
 import 'package:pure_live/domains/live/data/platforms/sites.dart';
 import 'package:pure_live/core/player/core/portrait_stream_support.dart';
 import 'package:pure_live/domains/live/domain/global_player_service.dart';
@@ -345,16 +345,10 @@ class TopActionBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 竖屏窗口态同样会被刘海/状态栏压住：这条栏贴在画面顶部，而窗口态的顶边就是
-    // 状态栏的下沿，之前只在全屏时让出内边距，普通竖屏直播的字幕和按钮就有一半
-    // 躲在刘海底下。取 padding 与 viewPadding 的较大值：某个祖先 SafeArea 吃掉
-    // 内边距时 padding 会变 0，而刘海不会因为内边距被吃掉就不存在。沉浸全屏时两者
-    // 都是 0，读取自然退化为 0。
-    final topInset = PlatformUtils.isMobile
-        ? (MediaQuery.paddingOf(context).top > MediaQuery.viewPaddingOf(context).top
-              ? MediaQuery.paddingOf(context).top
-              : MediaQuery.viewPaddingOf(context).top)
-        : 0.0;
+    // 竖屏窗口态会被刘海/状态栏压住，沉浸全屏更麻烦：`shortEdges` 下系统一旦隐藏
+    // 状态栏就把稳定内边距报成 0，而刘海是面板的物理特征、不会跟着消失。取系统内边距
+    // 与真实挖孔安全区的较大值，两种形态都对。
+    final topInset = PlatformUtils.isMobile ? DisplayCutout.topInsetOf(context) : 0.0;
     return Obx(
       () => AnimatedPositioned(
         top: (controller.showController.value && !controller.showLocked.value) ? 0 : -barHeight,
@@ -1211,13 +1205,9 @@ class BottomActionBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 与顶栏同一个道理：窗口态下这条栏贴的是屏幕底边，手势导航条正压在上面。
-    // 同样取较大值，沉浸全屏时两者都是 0。
-    final bottomInset = PlatformUtils.isMobile
-        ? (MediaQuery.paddingOf(context).bottom > MediaQuery.viewPaddingOf(context).bottom
-              ? MediaQuery.paddingOf(context).bottom
-              : MediaQuery.viewPaddingOf(context).bottom)
-        : 0.0;
+    // 与顶栏同一个道理：这条栏贴的是屏幕底边，手势导航条正压在上面，挖孔屏在
+    // 横屏时还有一侧的挖孔安全区。
+    final bottomInset = PlatformUtils.isMobile ? DisplayCutout.bottomInsetOf(context) : 0.0;
     return Obx(() {
       bool shouldShow =
           (controller.showController.value || controller.isMenuOpen.value) && !controller.showLocked.value;

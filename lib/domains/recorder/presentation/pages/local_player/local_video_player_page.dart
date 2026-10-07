@@ -7,9 +7,9 @@ import 'package:media_core_ui/media_core_ui.dart';
 import 'package:pure_live/core/consts/app_consts.dart';
 import 'package:media_core/media_core.dart' show MediaPlayerView;
 import 'package:flutter/foundation.dart' show defaultTargetPlatform;
-import 'package:flutter/services.dart' show KeyDownEvent, LogicalKeyboardKey;
 import 'package:pure_live/core/player/presentation/player_back_scope.dart';
 import 'package:pure_live/core/player/presentation/windows_pip_driver.dart';
+import 'package:flutter/services.dart' show KeyDownEvent, LogicalKeyboardKey;
 import 'package:pure_live/core/player/presentation/player_ui_controller.dart';
 import 'package:pure_live/core/player/presentation/compact_playback_progress.dart';
 import 'package:pure_live/core/player/presentation/danmaku/player_danmaku_actions.dart';
@@ -32,13 +32,6 @@ class LocalVideoPlayerPage extends GetView<LocalVideoPlayerController> {
     // The keyboard owner sits above the layout switch: a resize that flips
     // narrow/wide, or a presentation change that replaces the page's shape,
     // must not take the focus node with it.
-    //
-    // The back scope sits above it for the same reason, and because the route's
-    // Back is not a Flutter-level event: Android 13+ hands it to the Activity,
-    // where Flutter's own callback has DEFAULT priority and pops the route
-    // before any `PopScope` runs. [PlayerBackScope] registers a
-    // PRIORITY_OVERLAY interception through the host channel, which is the only
-    // reason the live room's "back leaves fullscreen first" works at all.
     return RecordingKeyboardShortcuts(
       controller: controller,
       child: _RecordingBackBoundary(
@@ -63,10 +56,15 @@ class LocalVideoPlayerPage extends GetView<LocalVideoPlayerController> {
 /// whose `presentationActive` was hardcoded false was no better, because
 /// `canPop: true` is precisely what lets the route pop before any handler runs.
 ///
-/// So the fullscreen state is handed to the scope as its presentation. The scope
-/// itself stays a single widget for the whole route — it must, because the
-/// native interception has one callback slot — and the state is pushed in by a
-/// listener on the controller's own observable.
+/// So the fullscreen state is handed to the scope as its presentation:
+///
+/// - fullscreen → `canPop` is false, Back leaves fullscreen and keeps the page;
+/// - not fullscreen → `canPop` is true, and the controller still gets a say
+///   first, only so the feed can be handed to the small window — the live room's
+///   own "back floats the player" rule.
+/// The scope stays one widget for the whole route — it must, because the native
+/// interception has a single callback slot — and the fullscreen state is pushed
+/// into it by a listener on the controller's own observable.
 class _RecordingBackBoundary extends StatefulWidget {
   const _RecordingBackBoundary({required this.controller, required this.child});
 
@@ -102,7 +100,7 @@ class _RecordingBackBoundaryState extends State<_RecordingBackBoundary> {
   @override
   Widget build(BuildContext context) {
     return PlayerBackScope(
-      // `canPop` follows the real state. A scope that kept saying false here is
+      // `canPop` follows the real state: a scope that kept saying false here is
       // what let Android pop the page straight out of fullscreen.
       presentationActive: _fullscreen,
       onExitPresentation: () async {
@@ -142,16 +140,14 @@ String _modifiedOf(File file) {
 
 /// The top inset the page's own chrome has to clear.
 ///
-/// `paddingOf` and `viewPaddingOf` agree everywhere this page reads them today,
-/// but they diverge the moment some ancestor consumes the inset (a `SafeArea`
-/// above the bar, or a nested `MediaQuery` a platform view installs): `padding`
-/// becomes zero and the bar slides back under the status bar and the cutout.
-/// The cutout does not care which widget ate the padding, so the larger of the
-/// two is what the bar clears.
-double _safeTopInset(BuildContext context) {
-  final media = MediaQuery.of(context);
-  return media.padding.top > media.viewPadding.top ? media.padding.top : media.viewPadding.top;
-}
+/// Delegates to [DisplayCutout], which takes the larger of the system inset and
+/// the panel's real cutout. That second number is the reason this bar was only
+/// partly visible in fullscreen: with
+/// `windowLayoutInDisplayCutoutMode=shortEdges` the system collapses its stable
+/// insets the moment the status bar hides, so `MediaQuery.padding` reports zero
+/// exactly when the viewer is immersive — while the notch is still there
+/// physically.
+double _safeTopInset(BuildContext context) => DisplayCutout.topInsetOf(context);
 
 /// The video surface: the shared gesture layer over the library's own player.
 ///
@@ -725,7 +721,7 @@ class _RecordingControlBar extends StatelessWidget {
     // bottom of the screen in every shape this page has: on a phone with gesture
     // navigation the seek bar and the transport row sat under the system bar.
     // The inset goes into the padding so the gradient still covers it.
-    final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
+    final bottomInset = DisplayCutout.bottomInsetOf(context);
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
@@ -1468,12 +1464,8 @@ void _showSettingsSheet(BuildContext context, LocalVideoPlayerController control
           padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
           child: Obx(() {
             final hasChat = controller.hasDanmaku.value;
-            // Speed + fit + the danmaku switch + audio-only + screenshot + PiP +
-            // the episode entry is taller than 90% of a short phone window: the
-            // last card used to run 44 pixels past the sheet and paint into the
-            // overflow gutter. Scrolling only when the sheet cannot fit keeps the
-            // tall-window shape untouched.
-            return FittingSheetBody(
+            return Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 // Playback card: speed and fit chips.
                 _SheetCard(
@@ -1864,7 +1856,7 @@ class _ContextPanel extends StatelessWidget {
               // The panel is the last thing on the page, so it takes the
               // home-indicator inset itself: on a phone held upright the
               // progress line used to sit under the system gesture bar.
-              padding: EdgeInsets.fromLTRB(16, 2, 16, 12 + MediaQuery.viewPaddingOf(context).bottom),
+              padding: EdgeInsets.fromLTRB(16, 2, 16, 12 + DisplayCutout.bottomInsetOf(context)),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(2),
                 child: LinearProgressIndicator(
