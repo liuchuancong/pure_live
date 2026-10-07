@@ -1198,7 +1198,6 @@ class BottomActionBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 全屏时手势条/小白条会压住贴底的这条栏：栏高与内容一起让出内边距。
     final bottomInset = GlobalPlayerService.instance.player.fullscreenUI && PlatformUtils.isMobile
         ? MediaQuery.viewPaddingOf(context).bottom
         : 0.0;
@@ -1371,8 +1370,8 @@ class BottomActionBar extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (GlobalPlayerService.instance.player.isWindowFullscreen.value ||
-            GlobalPlayerService.instance.player.isSystemFullscreen.value) ...[
+        if (GlobalPlayerService.instance.player.isWindowFullscreen.value && !compact ||
+            GlobalPlayerService.instance.player.isSystemFullscreen.value && !compact) ...[
           FullscreenStreamSelectorButton(controller: controller),
         ],
         // These two belong to the PORTRAIT fullscreen bar. Rendering them in
@@ -1380,7 +1379,7 @@ class BottomActionBar extends StatelessWidget {
         // off-screen after the video-fit option landed (v3.15 report).
         if (PlatformUtils.isMobile && portraitPinned) PortraitFullscreenDisplayModeButton(controller: controller),
         if (PlatformUtils.isMobile && portraitPinned) PortraitOrientationButton(controller: controller),
-        if (!compact) const PlayerVideoFitButton(),
+        const PlayerVideoFitButton(),
         if (Platform.isWindows) OverlayVolumeControl(controller: controller),
         if (Platform.isWindows &&
             controller.supportWindowFull &&
