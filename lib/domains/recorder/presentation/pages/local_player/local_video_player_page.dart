@@ -82,11 +82,11 @@ PlayerControlsTheme _controlsTheme(ThemeData theme) {
 PlayerControlActions _recordingActions(LocalVideoPlayerController controller, ThemeData theme) {
   // 库条的全屏按钮按 canExit 恒定分流到 exit 闭包，因此 enter/exit 都接同一个
   // 状态感知的切换器，一次点击就是一次翻转。
+  // PiP 与小窗不进库条：视频右下的悬浮行已提供（移动端竖屏面板同款），
+  // 两处都给会出现一对重复按钮。
   return PlayerControlActions(
     enterFullscreen: controller.toggleFullscreen,
     exitFullscreen: controller.toggleFullscreen,
-    enterPip: () => controller.enterPip(),
-    enterFloating: () => controller.enterFloating(),
   );
 }
 
@@ -1331,14 +1331,7 @@ class _DesktopLayout extends StatelessWidget {
               ],
             ),
           ),
-          actions: [
-            IconButton(
-              tooltip: i18n('recorder_open_task_folder'),
-              icon: const Icon(Remix.folder_open_line),
-              onPressed: () => unawaited(controller.openFileDir()),
-            ),
-            const SizedBox(width: 8),
-          ],
+          actions: const [SizedBox(width: 8)],
         ),
         body: Obx(() {
           // Picture-in-picture owns the whole body, like the live room.
