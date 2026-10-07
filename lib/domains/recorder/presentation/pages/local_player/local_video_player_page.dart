@@ -1311,6 +1311,16 @@ class _LandscapeTopBar extends StatelessWidget {
 // Desktop: picture and list side by side
 // ---------------------------------------------------------------------------
 
+/// The narrowest window in which the desktop player still splits into picture
+/// beside list. The list pane is a fixed 320 px and the picture keeps its
+/// padding, while the window's own floor is 400 px: below this threshold the
+/// split leaves the video a narrow black strip, so the list moves under the
+/// picture instead.
+const double localPlayerSideBySideMinWidth = 760;
+
+/// Whether the desktop recording player splits picture and list side by side.
+bool localPlayerShowsSideBySide(double windowWidth) => windowWidth >= localPlayerSideBySideMinWidth;
+
 class _DesktopLayout extends StatelessWidget {
   const _DesktopLayout({required this.controller});
 
@@ -1375,20 +1385,34 @@ class _DesktopLayout extends StatelessWidget {
           if (controller.videoFiles.isEmpty) {
             return _emptyState(context, controller);
           }
-          return Row(
-            children: [
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: ColoredBox(
-                      color: Colors.black,
-                      child: _PlayerArea(controller: controller, keyboardShortcuts: true),
-                    ),
-                  ),
+          final videoPane = Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: ColoredBox(
+                  color: Colors.black,
+                  child: _PlayerArea(controller: controller, keyboardShortcuts: true),
                 ),
               ),
+            ),
+          );
+          // 主从两栏只在画面还看得清的时候成立。列表栏固定 320，加分隔线与内边距
+          // 要 345，而窗口最小能缩到 400 —— 那时视频只剩一条几十像素的黑带。窄
+          // 窗口改成画面在上、列表在下。
+          if (!localPlayerShowsSideBySide(MediaQuery.sizeOf(context).width)) {
+            final panelHeight = (MediaQuery.sizeOf(context).height * 0.4).clamp(150.0, 320.0);
+            return Column(
+              children: [
+                videoPane,
+                const Divider(height: 1),
+                SizedBox(height: panelHeight, child: _PlaylistPanel(controller: controller)),
+              ],
+            );
+          }
+          return Row(
+            children: [
+              videoPane,
               const VerticalDivider(width: 1),
               SizedBox(width: 320, child: _PlaylistPanel(controller: controller)),
             ],
