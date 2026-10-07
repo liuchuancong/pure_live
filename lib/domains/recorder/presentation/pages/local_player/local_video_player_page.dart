@@ -154,8 +154,17 @@ class _RecordingPlayerAreaState extends State<_PlayerArea> {
                     keyboardShortcuts: widget.keyboardShortcuts,
                     onSurfaceTap: _onSurfaceTap,
                   ),
-                  if (Get.width > 680)
-                    Positioned(top: 8, right: 8, child: _RecordingCornerActions(controller: controller)),
+                  // The picture's own entries float here on a roomy window. NOT
+                  // while the page is fullscreen: the fullscreen chrome draws
+                  // them in its top bar, and two copies of the same row landed on
+                  // top of each other — the upper one took the tap, so the visible
+                  // buttons did nothing.
+                  if (Get.width > 680 && !controller.fullscreenActive.value)
+                    Positioned(
+                      top: 8 + MediaQuery.paddingOf(context).top,
+                      right: 8 + MediaQuery.paddingOf(context).right,
+                      child: _RecordingCornerActions(controller: controller),
+                    ),
                   // The bar rides above the picture, revealed by the rules above.
                   Positioned(
                     left: 0,
@@ -293,13 +302,18 @@ class _RecordingKeyboardShortcutsState extends State<RecordingKeyboardShortcuts>
   }
 }
 
-/// The picture's top-right cluster: back (while fullscreen), audio-only,
-/// screenshot and picture-in-picture. Shown on wide windows; on narrow ones
-/// the same entries live in the settings sheet.
+/// The picture's top-right cluster: back, audio-only, screenshot and
+/// picture-in-picture.
+///
+/// It floats over a roomy window's picture, and the fullscreen chrome reuses the
+/// same row inside its top bar — there [includeBack] is false, because that bar
+/// already has the page's back button and two back arrows in one row is a coin
+/// toss for the viewer.
 class _RecordingCornerActions extends StatelessWidget {
-  const _RecordingCornerActions({required this.controller});
+  const _RecordingCornerActions({required this.controller, this.includeBack = true});
 
   final LocalVideoPlayerController controller;
+  final bool includeBack;
 
   @override
   Widget build(BuildContext context) {
@@ -313,19 +327,20 @@ class _RecordingCornerActions extends StatelessWidget {
           // the fullscreen shape first, and only a page that is not fullscreen
           // is allowed to be left (the room's rule, same handler as the
           // physical back button).
-          Obx(
-            () => !controller.fullscreenActive.value
-                ? const SizedBox.shrink()
-                : IconButton(
-                    color: Colors.white,
-                    iconSize: 20,
-                    tooltip: i18n('local_player_back'),
-                    icon: const Icon(Icons.arrow_back_rounded),
-                    onPressed: () async {
-                      if (await controller.handleBackRequest()) Get.back<void>();
-                    },
-                  ),
-          ),
+          if (includeBack)
+            Obx(
+              () => !controller.fullscreenActive.value
+                  ? const SizedBox.shrink()
+                  : IconButton(
+                      color: Colors.white,
+                      iconSize: 20,
+                      tooltip: i18n('local_player_back'),
+                      icon: const Icon(Icons.arrow_back_rounded),
+                      onPressed: () async {
+                        if (await controller.handleBackRequest()) Get.back<void>();
+                      },
+                    ),
+            ),
           Obx(
             () => IconButton(
               color: controller.isAudioOnly.value ? const Color(0xFFFFD166) : Colors.white,
@@ -1152,7 +1167,8 @@ class _PlaylistPanel extends StatelessWidget {
               padding: EdgeInsets.zero,
               itemCount: controller.videoFiles.length,
               itemBuilder: (_, i) => _FileRow(controller: controller, index: i, dense: dense, onPicked: onPicked),
-            ),
+            
+              physics: const PureLiveScrollPhysics(),),
           ),
         ),
       ],
@@ -1199,8 +1215,7 @@ class _MobileLayout extends StatefulWidget {
 class _MobileLayoutState extends State<_MobileLayout> {
   LocalVideoPlayerController get controller => widget.controller;
 
-  /// Landscape flips to the fullscreen shape: the picture owns the screen and
-  /// the chrome floats over it, exactly like a live room in fullscreen.
+  /// Whether the phone is currently held sideways.
   bool get isLandscape {
     final size = MediaQuery.sizeOf(context);
     return size.width > size.height;
@@ -1239,12 +1254,19 @@ class _MobileLayoutState extends State<_MobileLayout> {
           if (controller.videoFiles.isEmpty) {
             return SafeArea(child: _emptyState(context, controller, onDark: true));
           }
-          if (isLandscape) {
+          // The page's SHAPE follows the fullscreen state, not the device's
+          // orientation. Rotating the phone used to be enough to be "fullscreen"
+          // — which is how the page ended up in a fullscreen-looking shape with
+          // the episode panel still under it, and how leaving fullscreen changed
+          // nothing on screen: the shape was already the rotated one.
+          final fullscreen = controller.fullscreenActive.value;
+          final landscapeShape = fullscreen || isLandscape;
+          if (landscapeShape) {
             return Stack(
               fit: StackFit.expand,
               children: [
                 _PlayerArea(controller: controller, keyboardShortcuts: true),
-                _LandscapeTopBar(controller: controller),
+                _LandscapeTopBar(controller: controller, showCornerActions: fullscreen),
               ],
             );
           }
@@ -1274,8 +1296,11 @@ class _MobileLayoutState extends State<_MobileLayout> {
   }
 }
 
-/// Portrait chrome over the picture: back, the title, the speed chip and the
-/// ⋮ overflow — the same three the reference app shows.
+/// Portrait chrome over the picture: back, the title, and the same picture
+/// actions the landscape bar carries while the page is fullscreen.
+///
+/// Outside fullscreen the portrait page keeps its normal app chrome: the back
+/// button and the ⋮ overflow, with the same entries one sheet deeper.
 class _PortraitTopBar extends StatelessWidget {
   const _PortraitTopBar({required this.controller});
 
@@ -1315,11 +1340,18 @@ class _PortraitTopBar extends StatelessWidget {
                   ),
                 ),
               ),
-              IconButton(
-                color: Colors.white,
-                tooltip: i18n('settings_more'),
-                icon: const Icon(Icons.more_vert_rounded),
-                onPressed: () => _showSettingsSheet(context, controller),
+              // A portrait fullscreen hides the page's own chrome, so the
+              // picture's actions move here instead of disappearing with the
+              // sheet that normally holds them.
+              Obx(
+                () => controller.fullscreenActive.value
+                    ? _RecordingCornerActions(controller: controller, includeBack: false)
+                    : IconButton(
+                        color: Colors.white,
+                        tooltip: i18n('settings_more'),
+                        icon: const Icon(Icons.more_vert_rounded),
+                        onPressed: () => _showSettingsSheet(context, controller),
+                      ),
               ),
             ],
           ),
@@ -1755,10 +1787,17 @@ class _ContextPanel extends StatelessWidget {
 
 /// Landscape keeps floating chrome: the picture is the screen and the actions
 /// sit in the top gradient row.
+///
+/// [showCornerActions] adds the picture's own entries — audio-only, screenshot
+/// and picture-in-picture — while the page is fullscreen. They used to live in a
+/// separate overlay gated on `width > 680`, which a phone in landscape does not
+/// reach: the three buttons existed on a tablet and were simply absent on a
+/// phone, so "the top-right buttons do not respond" was them never being there.
 class _LandscapeTopBar extends StatelessWidget {
-  const _LandscapeTopBar({required this.controller});
+  const _LandscapeTopBar({required this.controller, this.showCornerActions = false});
 
   final LocalVideoPlayerController controller;
+  final bool showCornerActions;
 
   @override
   Widget build(BuildContext context) {
@@ -1795,6 +1834,17 @@ class _LandscapeTopBar extends StatelessWidget {
                       style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
                     ),
                   ),
+                ),
+                if (showCornerActions) _RecordingCornerActions(controller: controller, includeBack: false),
+                // The portrait layout reaches the episode list through the panel
+                // under the picture; the landscape shape has no panel, so the
+                // list needs its own entry here or a rotated phone cannot change
+                // recording at all.
+                IconButton(
+                  color: Colors.white,
+                  tooltip: i18n('recorder_local_player_title'),
+                  icon: const Icon(Remix.play_list_line),
+                  onPressed: () => unawaited(_openPlaylistSheet(context, controller)),
                 ),
               ],
             ),

@@ -288,11 +288,15 @@ final class LocalVideoPlayerController extends GetxController implements PlayerU
   /// 所以 enter/exit 两个闭包都必须是“按当前状态翻转”的切换器。
   final fullscreenActive = false.obs;
 
-  /// 桌面的全屏形状由驱动说了算：镜像过来，页面和切换按钮都读同一份真值。
-  /// 移动端的全屏是方向锁，不在这条链上，保持原来的本地语义。
+  /// 全屏的真值是驱动，不是这里乐观翻转的 Rx。
+  ///
+  /// 桌面端窗口被缩成小窗、或系统/手势退出全屏时，驱动先变、页面后知；移动端
+  /// 同样如此 —— 之前这里对移动端直接 return，手机上全屏状态只有 enterFullscreen
+  /// 里的乐观赋值，驱动把它收掉之后页面还以为在全屏，于是"物理返回先退全屏"
+  /// 这一步永远看到 false，直接就把页面弹掉了。
   void _syncFullscreenFromDriver() {
-    if (PlatformUtils.isMobile) return;
     final active = fullscreenDriver.isSystemFullscreen;
+    if (fullscreenActive.value == active && isFullscreen.value == active) return;
     fullscreenActive.value = active;
     isFullscreen.value = active;
     if (!active) portraitFullscreen.value = false;
