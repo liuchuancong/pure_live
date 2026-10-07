@@ -216,6 +216,13 @@ class _VideoControllerPanelState extends State<VideoControllerPanel> {
                   );
                 }),
                 GestureDetector(
+                  // Opaque on purpose: this detector is what reveals and hides
+                  // the bars, and its only child is the shared gesture layer,
+                  // which paints nothing and declares itself translucent. With
+                  // the default `deferToChild` the whole tap surface stopped
+                  // hit-testing and tapping the video no longer showed the
+                  // controls at all.
+                  behavior: HitTestBehavior.opaque,
                   onTapDown: (details) {
                     _lastTapGlobalPosition = details.globalPosition;
                     _lastTapLocalPosition = details.localPosition;

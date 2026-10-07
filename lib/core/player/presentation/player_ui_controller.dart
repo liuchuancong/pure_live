@@ -248,10 +248,14 @@ class PlayerGestureLayerState extends State<PlayerGestureLayer> {
         }
       },
       child: GestureDetector(
-        // The layer owns the drag even where nothing is painted, which is how a
-        // page stacks it under its own overlays: the video widget below is
-        // opaque only to the tap targets the page itself adds.
-        behavior: HitTestBehavior.translucent,
+        // Opaque on purpose: this layer paints nothing and its only child is an
+        // empty expanding `Stack`, so `deferToChild` left the whole gesture
+        // surface out of hit testing — a drag did nothing, and in the room panel
+        // the tap layer stacked above it stopped receiving taps as well, which is
+        // what made tapping the video unable to show the controls. Being a
+        // hit-test target blocks nothing: this still reports a miss, so a control
+        // bar above keeps its taps and a picture below keeps its own gestures.
+        behavior: HitTestBehavior.opaque,
         onVerticalDragStart: _onVerticalDragStart,
         onVerticalDragUpdate: _onVerticalDragUpdate,
         onVerticalDragEnd: _onVerticalDragEnd,
