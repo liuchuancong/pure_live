@@ -135,6 +135,14 @@ jobs:
             --env-files .env,.env.prod \
             --class-name AppConfig
       - name: Build Android release APKs for all ABIs
+        env:
+          # CI runners are ephemeral, so the configuration cache would be
+          # stored but never reused. With android/gradle.properties keeping
+          # problems=fail, storing is also a hard gate: unpinned latest-stable
+          # Flutter requests its own NDK and AGP bootstraps it via sdkmanager
+          # during configuration, which fails the store after the whole build.
+          # Local builds keep the cache enabled and actually reuse it.
+          GRADLE_OPTS: -Dorg.gradle.configuration-cache=false
         run: |
           flutter build apk \
             --release \
