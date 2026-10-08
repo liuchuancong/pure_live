@@ -70,21 +70,61 @@ retryDelay)翻译成 media_core 的策略对象。这条结论单独记 ADR(0020
 | `CancellationToken`(平台侧) | `TaskCancelToken` + `TaskCancelledException` | 纯 Dart 侧必须自有类型(media_core 依赖 Flutter),按 ADR 0016 的镜像+映射处理;"取消不是失败"(models §20 不变量 9)两侧一致 |
 | `TaskId = String`(typedef) | `final class TaskId extends Equatable implements Comparable<TaskId>` | 跨层必做 String ↔ 值对象转换;命名空间按 contracts §3 分开(`media_core.player.*` / `purelive.*`) |
 
-## 2. 下一步(W3 实际要写的东西)
+## 2. W3 要写的东西
 
-前置结论清楚之后,W3 的候选工作顺序:
+盘点结论落定后的顺序(第 1 条已完成,见 §2.1):
 
-1. `pure_live_media`:`MediaTicket → MediaSource/SourceDescriptor` 映射(含 `MediaTrackType` 与
-   `SourceHeaders`)、`MediaTicketPolicy → 内核策略` 映射、错误与恢复原因互译。
-2. `MediaPlan`:平台侧只保留"选哪条 ticket / 何时预取换链"的编排,不落第二套 plan 模型(models §2 已定)。
-3. 假引擎跑通"播一个假源":M2 的另一半验收口径;media_core 有 `testing/` 目录,先查它有没有现成假引擎再用
+1. ~~`pure_live_media`:`MediaTicket → MediaSource` 映射~~ —— 已落。
+2. 假引擎跑通"播一个假源":M2 的另一半验收口径;media_core 有 `testing/` 目录,先查它有没有现成假引擎再用
    自己的。
-4. Watchdog:先用 media_core 的 recovery/ + `player_handle_recovery.dart`,只在"票据到期预取"这一层加平台侧
+3. Watchdog:先用 media_core 的 recovery/ + `player_handle_recovery.dart`,只在"票据到期预取"这一层加平台侧
    调度(docs/media/watchdog.md 与 recovery.md 的对应关系要按 §1.3 重写,不能照原样实现)。
+4. `MediaTicketRefreshInfo`(`refreshBefore`,models §11)仍未落 —— 到期预取的提前量没有落点,是第 3 条的前置。
 
-## 3. 已知欠账
+### 2.1 已完成:`pure_live_media` 的票据映射(15 测试)
 
-- docs/media/{watchdog,recovery,line-switch,media-plan,media-architecture}.md 是在盘点之前写的,里面把 Recovery /
-  Watchdog 描述成 PureLive 要建的东西。§1.3 的结论与它们冲突,需要按 ADR 0020 修订,不能让文档继续指向一套
-  不该存在的实现。
-- 本波尚未运行任何真实播放器;全部结论来自源码盘点。
+包从纯 Dart 骨架重脚手架为 Flutter 包(`tool/scaffold_package.ps1 -Flutter -Force`,原因:mapping 的一侧是
+media_core,而它 `dependencies: flutter: sdk: flutter`),依赖 = `media_core`(git,与应用同一 ref)+
+`pure_live_platform` + `flutter_test`。护栏允许 integrations → 模型伞包(ADR 0018 的共享模型规则只排除
+foundation 层)。
+
+落地的三个映射(字段级、无反射,任何一侧加字段这里就编译不过或测试就红):
+
+- `media_track_mapping.dart`:平台 `MediaTrack` ↔ 内核 `MediaTrack`,含 `MediaTrackType` 逐值互转;
+  **空 header map 映射为 null**(内核里"没写"= 继承源级头,"空"= 明确不发头)。
+- `ticket_source.dart`:`MediaTicket` → `MediaSource`。无 tracks → `ProgressiveMediaSource(url)`,essence 由
+  `MediaKind` 推(`music → audio`);单条 track → progressive;多条 → `CompositeMediaSource` 按 essence 分组并
+  **保持原顺序**(平台顺序即内核候选优先级);只有字幕的多条退回 ticket 自身 url,因为
+  `CompositeMediaSource` 断言至少一条 video/audio。`live` 取 `kind == live || metadata.isLive`。
+- `ticket_policy.dart`:`MediaTicketPolicy` → `RecoveryPolicy` / `FallbackPolicy`。只映射票据真有的意图:
+  `allowRetry → enabled`、`retryDelay → retryDelay`、`allowRefresh → allowSourceFallback`、
+  `allowEngineFallback → allowBackendFallback`、`allowLineFallback → allowLineFallback`;
+  重试次数与退避沿用内核默认(票据不带这两个字段);`downgradeQualityOnFailure` 显式为 false,因为 PureLive
+  的画质变更是"带另一个 SelectionRef 重新 resolve",不是播放中降级;`allowRedirect` / `seamlessRefresh`
+  在内核无对应,留在平台侧。
+
+规则表与边界写在包 README。
+
+## 3. 验证证据
+
+| 命令 | 结果 |
+|---|---|
+| `packages/integrations/media` → `flutter analyze` | No issues found(47.7s) |
+| `packages/integrations/media` → `flutter test` | **15 全绿**,跑在真实 `flutter test` 上、对钉住的 media_core ref(不是对桩) |
+| `flutter pub get --offline`(仓库根) | Got dependencies;media_core 复用应用同一 git checkout,未新增解析 |
+| `dart analyze packages` / `dart analyze .` | No issues found |
+| `dart run tool/check_architecture.dart --strict` | `packages=25 errors=0 warnings=0` |
+| `dart format --output=none --set-exit-if-changed packages tool/check_*.dart` | 127 文件 0 changed |
+
+事故记录:`dart format ../../..` 误从包目录指到仓库根,把 `third_party/built_in_kotlin/**`(53 个 vendored
+文件)与 `apps/pure_live` 的 3 个生成文件、`tool/probes/**` 3 个 v1 探针一并重格式化。已用 `git checkout --`
+全部还原,工作树只剩本包改动。**教训:格式化命令的路径必须写死为 `packages` + 明确的工具脚本,不用相对上溯。**
+
+## 4. 已知欠账
+
+- docs/media/{watchdog,recovery,line-switch,media-plan,media-architecture}.md 与 §1.3 的结论冲突,需按 ADR 0020
+  修订;不能让文档继续指向一套不该存在的实现。
+- 映射之外还没有"播"的动作:没有引擎适配、没有假引擎、没有票据到期预取。M2 的另一半仍未达成。
+- media_core 侧的 `MediaSourcePlan` / planner 本波**只读不调**:plan 由内核生成,平台不在中间再造一层
+  (models §2 的规定)。接线真正调 planner 时,需要补一段"plan 结果 → 平台诊断"的映射。
+

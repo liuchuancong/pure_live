@@ -5,5 +5,14 @@
 // Created: 2026-10-08
 ///
 /// Layer: integrations. Allowed dependencies: layer L0 foundation; vendor SDKs may only be referenced from this layer.
+/// It also reads the shared model umbrella (docs/adr/0018-contract-package-split.md), which is the vocabulary
+/// this layer maps onto the kernel.
 /// See docs/architecture/dependency-rules.md and the package README.
+///
+/// This package is where the platform boundary crosses into media_core: nothing below the ticket knows about
+/// ContentRef, and nothing above it knows about PlayerHandle.
 library;
+
+export 'src/media_track_mapping.dart';
+export 'src/ticket_policy.dart';
+export 'src/ticket_source.dart';

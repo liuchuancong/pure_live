@@ -1,10 +1,29 @@
 # GENERATED-BY: tool/scaffold_package.ps1
 name: pure_live_media
-description: "media_core 播放内核接线与引擎适配"
+description: "media_core 播放内核接线:MediaTicket 与内核源/计划/策略的映射,引擎适配与假引擎测试台"
 publish_to: none
 resolution: workspace
 
 environment:
   sdk: ^3.13.0
 
-# Add dependencies from the matrix in docs/architecture/dependency-rules.md section 3.
+dependencies:
+  flutter:
+    sdk: flutter
+  # Add dependencies from the matrix in docs/architecture/dependency-rules.md section 3.
+  # The kernel is a git dependency with 26 packages sharing one url and ref; only the core one is needed
+  # here, because the mapping layer touches sources, plans, policy and errors, not an engine. The ref is the
+  # one apps/pure_live/pubspec.yaml pins, so pub resolves a single checkout for the workspace.
+  media_core:
+    git:
+      url: https://github.com/liuchuancong/media_core
+      ref: 5b047145422758d983a3724e689d8aa4b7d06863
+      path: packages/media_core
+  pure_live_platform:
+    path: ../../ecosystem/platform
+
+dev_dependencies:
+  # The mapping is pure functions, but media_core pulls in the Flutter SDK, so its tests run on the Flutter
+  # test runner rather than `dart test`.
+  flutter_test:
+    sdk: flutter
