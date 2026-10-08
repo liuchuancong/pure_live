@@ -30,6 +30,10 @@ enum ExtensionCapability {
 }
 
 /// The minimum permission vocabulary an extension can be granted.
+///
+/// docs/plugin/plugin-permission.md section 1 is the plugin-facing list and calls the cookie permission
+/// `cookies`; the canonical name here stays `cookie` because the models document (platform-models.md
+/// section 12) is normative, and the alias is mapped when a manifest is read.
 enum Permission {
   network,
   cookie,
@@ -42,6 +46,12 @@ enum Permission {
   localServer,
   media,
   device,
+
+  /// Reading and writing files the user explicitly chose, through the files package.
+  filesystem,
+
+  /// Location. Default denied and never granted quietly (plugin-permission.md section 2).
+  location,
 }
 
 /// Where an extension came from. Descriptive only: it never carries secrets.

@@ -19,6 +19,7 @@ export 'src/models/diagnostics/diagnostic_event.dart';
 export 'src/models/error/platform_error_info.dart';
 export 'src/models/extension/extension_descriptor.dart';
 export 'src/models/extension/extension_type.dart';
+export 'src/models/extension/plugin_manifest.dart';
 export 'src/models/identifiers.dart';
 export 'src/models/media/media_ticket.dart';
 export 'src/models/network/cookie.dart';
