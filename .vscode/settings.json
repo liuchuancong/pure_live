@@ -1,4 +1,14 @@
 {
-  "python-envs.defaultEnvManager": "ms-python.python:system",
-  "cmake.sourceDirectory": "D:/flutter/pure_live/linux"
+    "python-envs.defaultEnvManager": "ms-python.python:system",
+    "cmake.sourceDirectory": "D:/flutter/pure_live/linux",
+    "[dart]": {
+        "editor.defaultFormatter": "Dart-Code.dart-code",
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.fixAll": "explicit"
+        }
+    },
+
+    "dart.lineLength": 100,
+    "dart.previewFlutterUiGuides": true
 }
