@@ -1,0 +1,39 @@
+# Module: .github/workflows/architecture.yml
+# Purpose: Run the v2 architecture guard and the repository tooling regression suites on every change.
+name: Architecture
+
+on:
+  push:
+    branches: [master, v2]
+  pull_request:
+  workflow_dispatch:
+
+# The guard only reads the repository; it never needs write access.
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    name: Package layout and dependency direction
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: stable
+          cache: true
+      - name: Verify Flutter SDK
+        run: flutter --version
+      - name: Resolve packages
+        run: flutter pub get --enforce-lockfile
+      - name: Architecture guard
+        run: dart run tool/check_architecture.dart --strict
+      - name: Analyzer
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+      - name: Architecture guard regression suite
+        shell: pwsh
+        run: ./tool/test_check_architecture.ps1
+      - name: Package scaffolder regression suite
+        shell: pwsh
+        run: ./tool/test_scaffold_package.ps1

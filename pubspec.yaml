@@ -26,6 +26,14 @@ workspace:
   - packages/integrations/media
 
 # 全仓统一裁决的依赖覆盖:workspace 里只有根包可以声明。
+# Dependencies of repository tooling only; the hub itself ships no code.
+# yaml is already resolved in the lockfile as a transitive dependency of the build
+# toolchain, so this adds no new package to the graph: tool/check_architecture.dart
+# needs a real YAML parser to read pubspec files, and a hand-rolled one would let a
+# misplaced dependency slip through the architecture gate.
+dev_dependencies:
+  yaml: ^3.1.2
+
 dependency_overrides:
   # media_kit 链与 better_player_plus 对 wakelock_plus 的约束无交集,
   # 与 media_core 工作区同样以 override 对齐
