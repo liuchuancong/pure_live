@@ -561,6 +561,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.1.2"
+  dart_mcp:
+    dependency: transitive
+    description:
+      name: dart_mcp
+      sha256: "852b51da915d679be8d051e2e3b6c68ed19fe685f1c676bb35272a2d73ceac7a"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.5.2"
   dart_sm:
     dependency: "direct main"
     description:
@@ -1231,6 +1239,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.17.4"
+  fluttersdk_artisan:
+    dependency: "direct main"
+    description:
+      name: fluttersdk_artisan
+      sha256: "0505f45eb66252c1901d38ffede0ee5ed0181200e9ee2dec76eb73c58e8f43c7"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.18"
+  fluttersdk_dusk:
+    dependency: "direct dev"
+    description:
+      name: fluttersdk_dusk
+      sha256: d220ae0920cbb519e4abc59d35bdfef903cd10af46fff8754690e32b1af377ac
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.18"
   fluttersdk_wind:
     dependency: "direct main"
     description:
@@ -1522,6 +1546,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.12.0"
+  json_rpc_2:
+    dependency: transitive
+    description:
+      name: json_rpc_2
+      sha256: "82dfd37d3b2e5030ae4729e1d7f5538cbc45eb1c73d618b9272931facac3bec1"
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.1.0"
   json_serializable:
     dependency: "direct dev"
     description:

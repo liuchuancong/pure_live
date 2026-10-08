@@ -8,6 +8,8 @@ analyzer:
     - "**/*_zh_CN.dart"
     - "**/*.js"
     - build/**
+    # v1 原代码整体移入 legacy:仅作协议参考,不参与 v2 构建与分析。
+    - legacy/**
     # Device captures, build records and one-off forensic helpers live here;
     # they are evidence artifacts rather than application source.
     - local-artifacts/**

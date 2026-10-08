@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "fluttersdk": {
+      "command": "dart",
+      "args": [
+        "run",
+        ":dispatcher",
+        "mcp:serve"
+      ],
+      "cwd": "."
+    }
+  }
+}
