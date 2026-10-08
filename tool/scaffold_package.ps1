@@ -1,4 +1,4 @@
-# requires PowerShell 5.1+
+﻿# requires PowerShell 5.1+
 # Module: tool/scaffold_package.ps1
 # Purpose: Generate layer-conformant PureLive v2 package skeletons and register them in the root pub workspace.
 # Author: liuchuancong

@@ -1,4 +1,4 @@
-# requires PowerShell 5.1+
+﻿# requires PowerShell 5.1+
 # Module: tool/test_scaffold_package.ps1
 # Purpose: Regression tests for tool/scaffold_package.ps1: package layout, encoding, templates and workspace registration.
 # Author: liuchuancong
