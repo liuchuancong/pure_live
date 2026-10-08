@@ -33,6 +33,32 @@
 `NetworkTransport` 仍无 dio 实现:适配属于组装 `ExtensionContext` 的那一层(随 `ecosystem/extension` 落),
 所以本包保持纯 Dart 且策略可离线测。**这条链路目前没有被真实 HTTP 验证过。**
 
+### 1.3 `packages/ecosystem/task`(19 测试)
+
+规范:`platform-contracts.md` §16、`platform-infrastructure.md` §7.3。文档把 TaskScheduler 记在 W3,但
+`ExtensionContext` 要注入它,故提前落接口与内存实现。
+
+| 件 | 内容 |
+|---|---|
+| 模型侧新增 | `TaskDescriptor` / `TaskPriority` / `TaskState` / `TaskStatus` / `TaskResult`(models §13);`TaskStatus` 带 `taskId`(广播流里没有它就无法归属) |
+| 契约 | `Task`(descriptor / run / cancel)、`TaskContext`(取消令牌 + 进度上报)、`TaskScheduler`(submit / cancel / pause / resume / find / running / pending / updates)、`TaskHandle` |
+| 实现 | `InMemoryTaskScheduler`:优先级槽位调度、`deduplicationKey` 去重(返回同一 handle 而不是起第二个)、终态留存有界(默认 64) |
+
+被测试钉住的规则:
+
+- 取消 = 终态 `cancelled`,结果码 `task.cancelled` 且 `recoverable: true`,`handle.result` **正常 complete 不抛**
+  (models §20 不变量 9:取消不是普通失败)。
+- `pause` 只对 pending 有效并返回 bool;运行中的协作式暂停契约里没定义,不假装支持。
+- 任务 `throw` 与返回 `TaskResult(success: false)` 都记 `failed`,状态不取决于任务选了哪种表达。
+- `find()` 的留存有界,而 `TaskHandle` 读自己那条 entry:淘汰动作不得把已完成任务变成假状态。
+
+已知边界(不提前设计):单 isolate 无持久化,进程重启不恢复 pending;
+`networkRequired` / `backgroundAllowed` 暂为记录字段,调度器不据此门控 —— 没有设备状态源就判,等于写一段
+假装已生效的逻辑;`TaskContext` 也暂不带 `traceId`,理由同上,trace 随 `ecosystem/extension` 的
+`ExtensionContext` 一起接。
+
+顺带:护栏新规则当场抓到 scaffold 留下的 `.gitkeep`(task 包两个),已删除 —— 证明该规则会抓到自己的工具。
+
 ## 2. 顺带修掉的工程缺陷
 
 | 缺陷 | 处理 |
@@ -47,21 +73,20 @@
 | 命令 | 结果 |
 |---|---|
 | `packages/ecosystem/permission` → `dart analyze` / `dart test` | No issues found;**35 全绿** |
-| `packages/ecosystem/platform` → `dart analyze` / `dart test` | No issues found;**68 全绿**(新增 permission/network/cookie 31 条) |
+| `packages/ecosystem/task` → `dart analyze` / `dart test` | No issues found;**19 全绿** |
+| `packages/ecosystem/platform` → `dart analyze` / `dart test` | No issues found;**82 全绿**(新增 permission/network/cookie 31 条 + task 13 条) |
 | 仓库根 `dart analyze .` | **No issues found!** |
-| `dart format --output=none --set-exit-if-changed packages` | 94 文件 0 changed(收敛稳定) |
-| `dart run tool/check_architecture.dart --strict` | `packages=22 errors=0 warnings=0` |
+| `dart run tool/check_architecture.dart --strict` | `packages=23 errors=0 warnings=0` |
+| `dart format --output=none --set-exit-if-changed packages` | 102 文件 0 changed(收敛稳定) |
 | `tool/test_check_architecture.ps1` | **PASS: 19 assertions across 17 cases**(含新增 stale-scaffold-marker 反例) |
 | `dart run tool/check_workflow_yaml.dart` | 4 个 workflow/action 文件解析通过 |
 | 护栏非空转验证 | 临时放置 `packages/foundation/utils/lib/src/.gitkeep` → 报 `stale-scaffold-marker` 且 `errors=1`,删除后回 0 |
 
 ## 4. 余下项(W2 未完成部分)
 
-1. `packages/ecosystem/task`:`Task` / `TaskScheduler` 契约与内存实现(deduplicationKey 去重、优先级、
-   pause/resume/cancel)。文档把 TaskScheduler 记在 W3,但 `ExtensionContext` 需要它,故提前到 W2 落接口与实现。
-2. `packages/ecosystem/extension`:`Extension` / `ExtensionHandle` / `ExtensionRuntime` / `RuntimeInstance` /
+1. `packages/ecosystem/extension`:`Extension` / `ExtensionHandle` / `ExtensionRuntime` / `RuntimeInstance` /
    `Source` 契约、`ExtensionGateway` 实现(注册、`canHandle` 选择、生命周期状态机、`incompatible` 与结构化错误)、
    `ExtensionContext` 注入边界与 dio 版 `NetworkTransport` 适配。
-3. `packages/ecosystem/plugin_api` + PluginRuntime / ScriptSandbox **接口**(JS 装载与沙箱实现随 W10)。
-4. M2 的另一半"媒体管线能播一个假源"属 W3,未开始。
-5. 权限与网络至今只有离线断言;真实站点(403 / 重定向 / 超大响应)要在 W4 Bilibili 参考实现上跑一次才算验收。
+2. `packages/ecosystem/plugin_api` + PluginRuntime / ScriptSandbox **接口**(JS 装载与沙箱实现随 W10)。
+3. M2 的另一半"媒体管线能播一个假源"属 W3,未开始。
+4. 权限、网络与任务至今只有离线断言;真实站点(403 / 重定向 / 超大响应)要在 W4 Bilibili 参考实现上跑一次才算验收。
