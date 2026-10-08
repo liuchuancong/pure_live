@@ -1,0 +1,25 @@
+# GENERATED-BY: tool/scaffold_package.ps1
+name: pure_live_extension
+description: "扩展统一入口:ExtensionGateway、Runtime 选择与生命周期、Source 契约与 ExtensionContext 注入边界"
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.13.0
+
+# Add dependencies from the matrix in docs/architecture/dependency-rules.md section 3.
+dependencies:
+  pure_live_diagnostics:
+    path: ../../foundation/diagnostics
+  pure_live_platform:
+    path: ../platform
+  # The gateway is where the horizontal platform services are assembled into an ExtensionContext, so it
+  # depends on two sibling ecosystem packages. That edge is whitelisted in tool/check_architecture.dart and
+  # written into docs/architecture/dependency-rules.md section 4; nothing else in the layer may take it.
+  pure_live_permission:
+    path: ../permission
+  pure_live_task:
+    path: ../task
+
+dev_dependencies:
+  test: ^1.26.0
