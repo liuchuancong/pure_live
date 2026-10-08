@@ -37,12 +37,21 @@
 
 ## 3. 已知未完成(搬家带来的欠账,不含乐观声明)
 
-1. **`tool/` 下约 30 个脚本仍假设"仓库根即 Flutter 工程"**(`$repoRoot` 直接 join `lib/`、`android/`、`pubspec.yaml`、`build/`、`.dart_tool/`)。这些脚本现在会指向不存在的路径。需要引入统一的 app-root 解析并把应用作用域路径改到 `apps/pure_live/`。**未做,未验证。**
-2. **CI 未改**:`.github/workflows/build_pure_live_release.yml` 在仓库根执行 `flutter build apk/macos/ios/linux` 并写 `android/key.properties`、`assets/releases.json`;`update_releases.yml` 同样按旧路径 diff。搬家后这些步骤会失败。`tool/update_releases.py`、`tool/publish_local_release.ps1` 同理。**未做。**
-3. `tool/validate_architecture.py` 仍按 v1 的 `lib/app -> core -> shared -> domains -> features` 校验,对 `packages/**` 完全不检查;M1 要求的护栏 `tool/check_architecture.dart` 尚未落地(任务 #5)。
-4. `.fvmrc` 钉 3.47.5,机器上实际是 PATH 里的 Flutter 3.47.6,`tool/flutterw.ps1` 会静默回退。**待用户定**:提 `.fvmrc` 到 3.47.6,还是装 3.47.5。
-5. `fluttersdk_artisan` / `fluttersdk_dusk` 与 `.mcp.json`、`apps/pure_live/bin/dispatcher.dart`、`apps/pure_live/lib/app/_plugins.g.dart` 是别处引入的框架栈,`docs/` 全体系无一处提到它。本轮只把它的路径改对(`.mcp.json` cwd → `apps/pure_live`),**未做取舍**。
-6. 分支**不可运行**:`apps/pure_live/lib/` 只剩 artisan 生成的两个空文件,没有 `main.dart`;`pubspec.yaml` 的 `flutter: assets/fonts` 段仍指向 v1 资源清单。可运行性随 W2 运行时与组合根重建恢复。
+### 3.1 已随搬家改完的部分
+
+- `tool/build_local_release.ps1`、`tool/publish_local_release.ps1`、`tool/validate_build_policy.ps1`、`tool/sync_owner_refs.ps1`、`tool/update_releases.py`、`tool/audit_repository.py`、`tool/audit_built_in_kotlin.py` 里的应用作用域路径改到 `apps/pure_live/`(前三个脚本新增 `$appRoot`);`.dart_tool/` 与 `pubspec.lock` 仍在仓库根,是 pub workspace 的正确位置,未改。
+- 设备类脚本(`android_*_smoke.ps1` 等)只按仓库根取 `tool/` 与 `local-artifacts/`,不受搬家影响 —— 逐条核对过,没有应用路径假设。
+- 验证:89 个 `tool/*.ps1` 全部 AST 解析通过(0 失败);`python tool/audit_repository.py` 可运行;`tool/test_scaffold_package.ps1` 仍 PASS 55/55。
+
+### 3.2 仍未完成
+
+1. **发布工作流未搬家**:`.github/workflows/build_pure_live_release.yml` 里 `flutter pub get`(L76/131/254/426/512)、`flutter test`(L85)、`flutter build apk|linux|macos|ios`(L147/434/523/588)默认在仓库根执行,`android/key.properties`(L124)、MSIX `certificate_path`(L246)、APK 改名与校验(L155/179/190)、产物 `path:`(L197/360/481/580/681)与 `assets/version.json`(L752)、`assets/releases.json`(L899-964)都还指旧位置。需要逐 step 加 `working-directory: apps/pure_live` 并改路径 —— 但 `python tool/interface_probe.py`、`.\tool\prefetch_windows_native.ps1` 这类仓库级调用必须留在根 cwd,所以不能整 job 统一设默认目录。**未做,且本机无法执行验证。**
+2. `tool/validate_architecture.py` 仍按 v1 的 `lib/app -> core -> shared -> domains -> features` 校验,对 `packages/**` 完全不检查;M1 要求的 `tool/check_architecture.dart` 未落地(任务 #5)。
+3. v1 内容耦合的质量规则残留:`tool/audit_repository.py` 现在报 9 条 error,其中 `live_back_invariant_missing` 指向已删除的 `lib/modules/live_play/**`,`workflow_default_true` 指向发布工作流;`tool/validate_build_policy.ps1` 在**搬家之前**就会失败 —— 它要求 `.agents/skills/pure-live-build/SKILL.md`,该文件从未入库(`git show 12eefc302` 已核实)。这三类都要随任务 #5 一起重定义,不做单点修补。
+4. `tool/audit_built_in_kotlin.py` 因本机缺 Java 21 而失败(环境欠账,非搬家引入)。
+5. `.fvmrc` 钉 3.47.5,机器上实际是 PATH 里的 Flutter 3.47.6,`tool/flutterw.ps1` 会静默回退。**待用户定**:提 `.fvmrc` 到 3.47.6,还是装 3.47.5。
+6. `fluttersdk_artisan` / `fluttersdk_dusk` 与 `.mcp.json`、`apps/pure_live/bin/dispatcher.dart`、`apps/pure_live/lib/app/_plugins.g.dart` 是别处引入的框架栈,`docs/` 全体系无一处提到它。本轮只把 `.mcp.json` 的 cwd 改到 `apps/pure_live`,**未做取舍**。
+7. 分支**不可运行**:`apps/pure_live/lib/` 只剩 artisan 生成的两个空文件,没有 `main.dart`;`pubspec.yaml` 的 `flutter: assets/fonts` 段仍指向 v1 资源清单。可运行性随 W2 运行时与组合根重建恢复。
 
 ## 4. 环境事故(会影响后续会话)
 
