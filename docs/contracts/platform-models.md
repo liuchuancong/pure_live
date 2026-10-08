@@ -309,7 +309,9 @@ class MediaAlternative { final MediaTicket ticket; final String? label; final St
 ## 12. Permission / Network / Cookie 模型
 
 ```dart
-enum Permission { network, cookie, account, storage, cache, notification, background, clipboard, localServer, media, device }
+enum Permission { network, cookie, account, storage, cache, notification, background, clipboard, localServer, media, device, filesystem, location }
+// filesystem / location 由 W2 按 docs/plugin/plugin-permission.md §1 追加(append-only,见 architecture/evolution.md);
+// 插件文档写 cookies,规范拼写是 cookie,映射在 pure_live_plugin_api 的 permissionAliases。
 enum PermissionState { unknown, denied, granted, restricted }
 
 class PermissionGrant {

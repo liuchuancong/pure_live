@@ -15,6 +15,13 @@ media          直接贡献 MediaTicket 的播放能力
 location       位置(默认拒绝)
 ```
 
+> **规范名以枚举为准**:`platform-models.md` §12 的 `Permission` 是权威拼写,本节是插件面向的清单。两处不同处
+> 已由 `pure_live_plugin_api` 的 `permissionAliases` 对齐 —— 本节写 `cookies`,枚举是 `cookie`。
+> 本节要求而枚举原先缺的 `filesystem` 与 `location` 已追加进枚举(append-only,见
+> [../architecture/evolution.md](../architecture/evolution.md));枚举里另有 `cache` / `localServer` / `device`
+> 三项供平台侧使用,插件不声明也拿不到。
+> 声明了本节之外的名字 = `plugin.unknown_permission` 直接拒绝安装,不会静默降级。
+
 ## 2. 授权模型
 
 - **权限最小化(I8)**:插件只能访问声明过的权限;未声明即调用 → 运行时拒绝 + 诊断记录。

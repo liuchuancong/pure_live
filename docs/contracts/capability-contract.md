@@ -69,3 +69,9 @@ metadata、recommendation、auth、account、epg、repository)随定义其调用
 `qualities(ContentRef)`(见 [../sources/live/source-contract.md](../sources/live/source-contract.md))属于其中的
 quality/line 一组。
 
+插件仍可以在 Manifest 里声明这些名字(§1 名单就是插件面的合法词表),但粗路由集 `ExtensionCapability`
+([platform-contracts.md](platform-contracts.md) §5)没有对应条目时不产生路由,`pure_live_plugin_api` 的清单
+校验也不因此拒绝安装。拼写差异一处:`lyric`(本节)/ `lyrics`(枚举),由 `capabilityAliases` 对齐。
+名单一致性由两侧各自对着本文钉住:`pure_live_capability` 断言 `CapabilityKind` 覆盖 §1 全部名字,
+`pure_live_plugin_api` 断言 `pluginCapabilityNames` 等于 §1 名单 —— 改本文必须同时改两处。
+

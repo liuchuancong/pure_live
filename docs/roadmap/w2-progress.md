@@ -83,10 +83,31 @@
 契约的两份拷贝,漂移了编译期看不出来),并用两条回归用例钉住范围:网关走这条边必须通过,**别的生态包走同一
 条边必须报 `layer-direction`**。
 
+### 1.5 `packages/ecosystem/plugin_api`(24 测试)
+
+规范:`plugin-contract.md` §1/§2、`plugin-manifest.md` §1-3、`plugin-lifecycle.md` §1-2、
+`plugin-permission.md` §1、`plugin-sandbox.md`、`provider-contract.md` §2(HostBridge)。
+
+| 件 | 内容 |
+|---|---|
+| 现在就能强制 | `PluginManifestValidator`:未知能力名 / 未知权限名 / apiVersion 超出 min-max 区间 / id 不是反向域名形状 / 没有任何能力声明 → **拒绝安装**并给出结构化 `PluginIssue`(`plugin.unknown_capability`、`plugin.unknown_permission`、`plugin.api_incompatible`、`plugin.id_shape`、`plugin.no_capabilities`、`plugin.manifest_invalid`) |
+| 词表桥接 | 清单 → 网关要的 `ExtensionDescriptor`:`type=plugin`、`protocol=pure_live_plugin`、`platformApiVersion=apiVersion`、权限表解析成 `Set<Permission>` 作为天花板。于是"Manifest 不能动态扩权"在 permission 包里就有机械执行 |
+| 生命周期 | `PluginLifecycle` 迁移表:`installed → verified → loaded → initialized → enabled ⇄ disabled`,**disabled 回 enabled 必须重过 initialized**(桥要重注入、权限按当时声明重认);表里没有的转移抛 `PluginLifecycleException`;`uninstalled` 无后继;每次合法转移回调 `onChanged`(§2 要求发事件) |
+| 接口(仅接口) | `PluginRuntime`(native/js/data 共同形状)、`HostBridge` + `PluginNetwork` / `PluginCookieAccess` / `PluginKvStore` / `PluginEventSink`、`ScriptSandbox` / `ScriptSandboxFactory` / `SandboxPolicy`(默认拒绝 fs / 进程 / native API / FFI / 系统命令 / 任意 socket)/ `SandboxLimits`(超时、输出体积、并发) |
+
+依赖方向:plugin_api 只依赖 `pure_live_platform`,**不**依赖 `pure_live_extension` / `pure_live_permission`。
+桥接口的类型全是平台模型(`NetworkRequest` / `NetworkResponse` / `Cookie`),所以既没有第二套词表,也没有
+同层边;把 `ExtensionNetwork` 适配成 `PluginNetwork` 是宿主(同时接两边)的活。理由写在
+`packages/ecosystem/plugin_api/README.md`:JS 插件不可能持有 Dart 的 `ExtensionNetwork` 对象,桥本来就是
+子集。
+
 ## 2. 顺带修掉的工程缺陷
 
 | 缺陷 | 处理 |
 |---|---|
+| 权限词表三处不一致:`plugin-permission.md` §1 写 `cookies`(枚举是 `cookie`),并要求 `filesystem` / `location`(枚举里没有);`capability-contract.md` §1 写 `lyric`(`ExtensionCapability.lyrics`) | 以枚举为规范名,别名在 `PluginManifestValidator.permissionAliases` / `capabilityAliases` 映射;`filesystem` 与 `location` 按 append-only 追加进 `Permission`;三处文档各自标注以谁为准,并说明改文档必须同时改两侧测试 |
+| `plugin-manifest.md` §1 的示例声明 `danmaku` / `comment` / `subtitle` / `auth`,而粗路由集 `ExtensionCapability`(platform-contracts §5)没有这些项 —— 按"未知能力名一律拒绝"的字面读法,**文档自己的示例会被自己的校验器拒绝** | 拆成两件事:插件面名单(§1,22 项)决定"是否合法声明",平台路由集决定"有没有路由条目"。校验器按前者拒绝、按后者映射,`pure_live_plugin_api` README 与 capability-contract §5 都写清了这个区分 |
+| 包 README 手写时把公共面写成 `lib/pure_live_plugin.dart`(实际是 `lib/pure_live_plugin_api.dart`) | 已改正 |
 | `dart format` 不从仓库根 `analysis_options.yaml` 继承 `formatter.page_width`,包目录按默认 80 列跑,而 `docs/development/coding-style.md` 写的是 120 —— W1 的包其实从没按文档格式化过 | `analysis_options.package.yaml` 补 `formatter.page_width: 120`(经实测:`include` 链上的 formatter 设置**会**被读到),全量重格式化并加 CI 步骤 `--set-exit-if-changed`(范围 = `packages` + 两个护栏脚本;`tool/probes/**` 是 v1 opt-in 探针,顺手改到的格式化已还原) |
 | 10 个包的 `lib/src/.gitkeep` 在目录已有真实文件后仍留存 | 删除;护栏新增 `stale-scaffold-marker` 规则,并在回归里加"占位符留在已填充目录必须报错"的用例(fixture 生成器同步改成写真实文件时不再放占位符,免得 import 用例顺带触发别的规则) |
 | `coding-style.md` 写"中文注释",与 `DEVELOPMENT_STANDARDS.md` §4"代码注释一律英文"冲突 | 以 DEVELOPMENT_STANDARDS 为准:代码注释英文,`docs/` 与包 README 中文;已改写该条 |
@@ -99,15 +120,20 @@
 | `packages/ecosystem/permission` → `dart analyze` / `dart test` | No issues found;**35 全绿** |
 | `packages/ecosystem/task` → `dart analyze` / `dart test` | No issues found;**19 全绿** |
 | `packages/ecosystem/extension` → `dart analyze` / `dart test` | No issues found;**27 全绿**(网关与真实 permission/task 包一起跑,ADR 0019 那条边因此不只是纸面可用) |
-| `packages/ecosystem/platform` → `dart analyze` / `dart test` | No issues found;**82 全绿**(新增 permission/network/cookie 31 条 + task 13 条) |
+| `packages/ecosystem/platform` → `dart analyze` / `dart test` | No issues found;**80 全绿**(W1 的 37 + permission/network/cookie 31 + task 12) |
+| 逐包全量跑(21 个有测试的包,`dart test -j 1`) | **全部 All tests passed**;合计 **408 测试** = L0 194 + platform 80 + capability 29 + permission 35 + task 19 + extension 27 + plugin_api 24 |
 | 仓库根 `dart analyze .` | **No issues found!** |
-| `dart run tool/check_architecture.dart --strict` | `packages=24 errors=0 warnings=0` |
-| `dart format --output=none --set-exit-if-changed packages tool/check_*.dart` | 114 文件 0 changed(收敛稳定) |
+| `dart run tool/check_architecture.dart --strict` | `packages=25 errors=0 warnings=0` |
+| `dart format --output=none --set-exit-if-changed packages tool/check_*.dart` | 123 文件 0 changed(收敛稳定) |
 | `tool/test_check_architecture.ps1` | **PASS: 21 assertions across 19 cases** —— 含 stale-scaffold-marker 反例、ADR 0019 白名单"网关可走 / 别家走同一边必须报错"两条 |
 | `dart run tool/check_workflow_yaml.dart` | 4 个 workflow/action 文件解析通过 |
 | 护栏非空转验证 | 临时放置 `packages/foundation/utils/lib/src/.gitkeep` → 报 `stale-scaffold-marker` 且 `errors=1`,删除后回 0 |
 
 ## 4. 余下项(W2 未完成部分)
+
+> 环境注意(会影响后续会话):本机 `dart test` 默认并发**间歇性**报
+> `HandshakeException: Connection terminated during handshake`(无栈、`dart analyze` / `dart run` 正常),
+> 加 `-j 1` 即稳定通过。全仓逐包验证请用 `dart test -j 1`;这不是包的失败,别照着它去改代码。
 
 1. `packages/ecosystem/plugin_api` + PluginRuntime / ScriptSandbox **接口**(JS 装载与沙箱实现随 W10)。
 2. M2 的另一半"媒体管线能播一个假源"属 W3,未开始。
