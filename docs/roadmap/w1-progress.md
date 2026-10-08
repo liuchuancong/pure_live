@@ -62,11 +62,19 @@
 - 15:47–16:12:共享 Flutter SDK 的 `bin/cache/dart-sdk` 被反复改名成 0 字节 `dart-sdk.oldN`,`dart`/`flutter` 全部不可用;16:12 一次更新成功后自清,现 Flutter 3.47.6 / Dart 3.13.5 可用。嫌疑是常驻的 VS Code Dart language-server/tooling-daemon 锁住 `dart.exe`。本轮未杀任何进程。
 - 16:35–16:37:工作树被**本会话之外**的动作改动过 —— `tool/` 下 184 个受控文件从磁盘消失(index 完好),`analysis_options.yaml` 被替换成 122 字节的通用 flutter_lints 配置。我用 `git restore` 复原了两者(复原前把那份 122 字节配置另存到 `/tmp/foreign-analysis_options-1635.yaml`,未直接丢弃),并按新目录形态重写了 exclude。期间丢失的 `tool/scaffold_package.ps1` 改写版与未受控的旧测试脚本已按规范重写。**若另有会话在同一工作树并行施工,需要先协调,否则会互相覆盖。**
 
-## 5. W1 余下(按依赖顺序)
+## 5. W1 状态与余下项
 
-1. ~~补 §3.1/§3.2 的脚本与 CI 路径迁移~~ —— 已做:7 个脚本改 `$appRoot`、发布工作流四个 job 加 `defaults.run.working-directory`、`update_releases.yml` 与 get-version 动作跟进;证据见 §2。
-2. ~~`packages/ecosystem/platform` 骨架 + 核心模型~~ —— 已落:`packages/ecosystem/platform`(`pure_live_platform`)实现 §19 首切片 14 类模型,37 个测试通过。media_core 复用盘点的结论是**复用不了**:media_core 的 pubspec 声明 `flutter: sdk: flutter`,与"伞包必须纯 Dart"直接冲突,因此 `MediaTrack` 改为平台镜像 + 接线层映射;同时发现 dependency-rules 的 foundation `platform` 与 package-architecture 的伞包 `pure_live_platform` 撞名(pub 要求包名唯一),foundation 侧改名 `platform_info`。两条都记在 [../adr/0016-platform-media-track-mirror.md](../adr/0016-platform-media-track-mirror.md)。
-3. foundation 各包实装 + 单测,序:utils → logging → network → storage/auth → cache/events → diagnostics → files/platform_info → backup/sync/release/l10n。
-4. ~~架构护栏~~ —— 已落 `tool/check_architecture.dart` + `tool/test_check_architecture.ps1`(14 例 15 断言)+ `.github/workflows/architecture.yml`;v1 的 `tool/validate_architecture.py` 已删除。
-5. 契约测试框架(providers 能力契约 + `fixtures/` 录制响应)。
-6. TVBox 运行时决策落地:参考 `webtv-main`(catvod + chaquo 的 `base/spider.py` Python 爬虫基类)与 `serious_python`(已在应用 dev_dependencies),见 [../architecture/external-ecosystem.md](../architecture/external-ecosystem.md)。
+已完成(每项都有测试或门禁证据,见 §2 与 git log):
+
+- 目录形态与 pub workspace(ADR 0015)、包脚手架与回归、架构护栏与 CI(ADR 0015/0016/0017 全落)
+- `packages/ecosystem/platform`:§19 首切片 14 类模型,37 测试
+- **L0 全部 14 包实装完**:utils 36、logging 10、network 12、storage 16、auth 14、cache 11、events 5、diagnostics 9、files 22、release 15、l10n 19、platform_info 13、backup 11、sync 11 —— 合计 **241 测试全绿**(逐包 `dart test`,不是估算)
+- 脚本与 CI 路径迁移(§3.1/§3.2)
+- TVBox 运行时决策(ADR 0017)+ `integrations/python_runtime`、`ecosystem/external_tvbox` 骨架
+
+余下:
+
+1. **契约测试框架 + capability/plugin_api 的 Dart 形态**:W1 的最后一格。做法是先落 `packages/ecosystem/capability`(Live/Vod/Music/Search/Feed/Auth/Danmaku/Subtitle 能力接口)与 `packages/ecosystem/plugin_api`(Manifest/Permission/生命周期),再把契约测试作为 `package:pure_live_capability/testing.dart` 二级导出,供 W4 第一个参考插件(Bilibili)直接套用。
+2. `.fvmrc` 3.47.5 与实际 3.47.6 的不一致(§3.2 第 5 条)仍待用户定。
+3. artisan 栈取舍(§3.2 第 6 条)仍待定;`serious_python` 在应用 `pubspec.yaml` 里还挂在 dev_dependencies,等 `python_runtime` 实装时移到 dependencies 并由 integrations 层持有。
+
