@@ -20,6 +20,11 @@ import '../content/content_ref.dart';
 /// (docs/contracts/platform-models.md section 11 forbids merging the two).
 enum MediaKind { live, vod, music, file }
 
+/// Which essence a track carries. Mirrors media_core's `MediaTrackType` one for one
+/// (packages/media_core/lib/source/media_track_type.dart); it is not [MediaKind], which classifies the
+/// resource as a whole rather than one stream inside it.
+enum MediaTrackType { video, audio, subtitle }
+
 /// How the resource is transported.
 enum MediaProtocol { http, https, hls, dash, rtmp, rtsp, websocket, file, unknown }
 
@@ -40,7 +45,7 @@ final class MediaTrack {
   factory MediaTrack.fromJson(Map<String, Object?> json) {
     return MediaTrack(
       uri: Uri.parse(requireString(json, 'uri', 'media_ticket')),
-      kind: enumByName(MediaKind.values, json['kind'] as String?) ?? MediaKind.vod,
+      kind: enumByName(MediaTrackType.values, json['kind'] as String?) ?? MediaTrackType.video,
       headers: _stringMap(json['headers']),
       mimeType: json['mimeType'] as String?,
       codec: json['codec'] as String?,
@@ -52,7 +57,9 @@ final class MediaTrack {
   }
 
   final Uri uri;
-  final MediaKind kind;
+
+  /// Which essence this track carries, not what the resource as a whole is.
+  final MediaTrackType kind;
 
   /// Per-stream request headers; DASH and HLS essences routinely need their own.
   final Map<String, String> headers;
@@ -211,6 +218,8 @@ final class MediaTicket {
   /// Stable ticket identity; equality is by this id alone (section 16).
   final String id;
   final Uri uri;
+
+  /// What the resource semantically is.
   final MediaKind kind;
   final MediaProtocol protocol;
 

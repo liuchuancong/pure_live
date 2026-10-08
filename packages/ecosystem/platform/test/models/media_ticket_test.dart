@@ -26,7 +26,9 @@ void main() {
       createdAt: DateTime.utc(2026, 10, 8, 12),
       expiresAt: DateTime.utc(2026, 10, 8, 13),
       headers: const <String, String>{'Referer': 'https://example.com/'},
-      tracks: <MediaTrack>[MediaTrack(uri: Uri.parse('https://example.com/v.mpd'), kind: MediaKind.vod, codec: 'avc1')],
+      tracks: <MediaTrack>[
+        MediaTrack(uri: Uri.parse('https://example.com/v.mpd'), kind: MediaTrackType.video, codec: 'avc1'),
+      ],
       source: const ContentRef(sourceId: 's', contentId: 'c', kind: ContentKind.movie),
     );
 
@@ -36,6 +38,10 @@ void main() {
     expect(decoded.protocol, MediaProtocol.dash);
     expect(decoded.headers['Referer'], 'https://example.com/');
     expect(decoded.tracks.single.codec, 'avc1');
+    // The track kind is the essence, not the resource type: a DASH video essence inside a live ticket is
+    // still video, which is why MediaTrackType is separate from MediaKind.
+    expect(decoded.tracks.single.kind, MediaTrackType.video);
+    expect(decoded.kind, MediaKind.vod);
     expect(decoded.source, ticket.source);
     expect(decoded.expiresAt, ticket.expiresAt);
   });
@@ -87,6 +93,26 @@ void main() {
 
     expect(json['kind'], 'live');
     expect(json['protocol'], 'hls');
+  });
+
+  test('test_mediaTrack_jsonRoundTrip_keepsTheEssenceType', () {
+    // media_core's MediaTrack carries a MediaTrackType (packages/media_core/lib/source/media_track.dart),
+    // so the mirror has to keep three essences and not reuse MediaKind for a stream inside a ticket.
+    final track = MediaTrack(
+      uri: Uri.parse('https://example.com/audio.mpd'),
+      kind: MediaTrackType.audio,
+      language: 'zh',
+    );
+    final decoded = MediaTrack.fromJson(track.toJson());
+
+    expect(decoded.kind, MediaTrackType.audio);
+    expect(decoded.language, 'zh');
+  });
+
+  test('test_mediaTrack_fromJson_unknownEssenceFallsBackToVideo', () {
+    final decoded = MediaTrack.fromJson(<String, Object?>{'uri': 'https://example.com/v.mpd', 'kind': 'karaoke'});
+
+    expect(decoded.kind, MediaTrackType.video);
   });
 
   test('test_resolveRequest_defaults_allowFallbackAndNormalIntent', () {
