@@ -4,6 +4,12 @@
 // Author: liuchuancong
 // Created: 2026-10-08
 ///
-/// Layer: foundation. Allowed dependencies: pub.dev packages only; foundation packages do not depend on each other (utils and logging are leaf packages).
+/// Layer: foundation. Allowed dependencies: pub.dev packages only, plus the utils and logging leaves.
 /// See docs/architecture/dependency-rules.md and the package README.
+///
+/// The application binds KeyValueStore and SecureStore to a real backend in its composition root, so
+/// everything above foundation can be tested without Flutter.
 library;
+
+export 'src/migration.dart';
+export 'src/stores.dart';
