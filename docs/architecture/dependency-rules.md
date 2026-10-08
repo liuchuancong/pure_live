@@ -24,7 +24,7 @@ L5 Providers/Plugins(与 L2-L4 平级,只向下依赖)
 | L4 Features | repository:live/vod/music/iptv/recorder/settings/search/home/account/backup;UI:live_ui/vod_ui/music_ui/iptv_ui/recorder_ui/settings_ui/account_ui/backup_ui/home_ui |
 | L5 Providers | bilibili(live+vod 参考实现)、douyu、huya、douyin、twitch、youtube 等 33+ 站、music sources、tvbox adapters、iptv sources、第三方插件 |
 
-目录形态:仓库根 `foundation/ ecosystem/ services/ ui/ features/ plugins/` 各层一目录、每能力一包;包名 `pure_live_<name>`,目录用短名。
+目录形态:`packages/<层>/<短名>`,层 = `foundation/ integrations/ ecosystem/ services/ ui/ features/ providers/`;应用壳在 `apps/pure_live`,仓库根 `pubspec.yaml` 是 pub workspace hub。包名 `pure_live_<短名>`,目录用短名。形态决策见 [../adr/0015-monorepo-layout.md](../adr/0015-monorepo-layout.md)。
 
 ## 3. 逐层依赖细则
 

@@ -1,0 +1,59 @@
+# W1 进度(目录形态与 Foundation 骨架)
+
+> 验收口径来自 [milestones.md](milestones.md) 的 M1:契约定稿、全仓骨架 analyze 绿、护栏进 CI。
+> 工程规范按 [../DEVELOPMENT_STANDARDS.md](../DEVELOPMENT_STANDARDS.md);目录形态按 [../adr/0015-monorepo-layout.md](../adr/0015-monorepo-layout.md)。
+> 本文件只记 `v2` 分支的实际状态,不写计划外的乐观结论。
+
+## 1. 本轮完成的两个阶段
+
+### 1.1 目录形态重排(ADR 0015)
+
+| 动作 | 结果 |
+|---|---|
+| 删除 v1 代码 | `legacy/`(860 个受控文件)整体删除;需要回看 v1 实现走 git 历史(`020f47ffb` 之前)或外部参考仓 `pure_live_TV` |
+| 应用壳搬家 | 根 `lib/ android/ ios/ linux/ macos/ windows/ assets/ bin/ pubspec.yaml .metadata devtools_options.yaml build.yaml firebase.json` → `apps/pure_live/`;`assets/` 2095 个文件随迁(Flutter 资源必须位于应用包内) |
+| 包伞目录 | 先前误放在仓库根的 `foundation/`、`integrations/` → `packages/foundation/`、`packages/integrations/` |
+| vendored 插件 | `plugins/built_in_kotlin/` → `third_party/built_in_kotlin/`(422 文件),应用内 `path:` 改 `../../third_party/...`,hub 覆盖项改 `third_party/...` |
+| workspace hub | 根新建 `pubspec.yaml`(包名 `pure_live_workspace`,无代码),`dependency_overrides` 整体上移(pub 只允许 hub 声明);应用包写 `resolution: workspace` |
+
+### 1.2 脚手架与骨架
+
+- `tool/scaffold_package.ps1` 重写:目标路径 `packages/<层>/<名>`、`-Description` 必填(禁占位符)、代码与配置注释英文、barrel 带 `Module/Purpose/Author/Created` 文件头、不再留注释掉的示例依赖、层规则表含 `providers`、未替换占位符直接抛错、LF + 无 BOM。
+  修掉的真实缺陷:`Set-Content -Encoding utf8` 写 BOM;双引号 here-string 把 `` `f `` 解释成换页符;`[Parameter(Mandatory)][string[]]` 会拒绝含空行的数组(这正是第一次批量生成 16 连失败的根因);插入 workspace 时用逗号包裹导致返回嵌套数组。
+- `tool/test_scaffold_package.ps1` 新建:19 个用例、55 条断言,命名按规范 §6 的 `test_<函数>_<场景>_<期望>`;每个用例在 `%TEMP%` 独立 scratch 仓里跑,不碰真实工作树。**结果:PASS 55/55。**
+- L0 骨架 16 包:`packages/foundation/{utils,logging,network,auth,storage,files,platform,cache,events,diagnostics,backup,sync,release,l10n}` + `packages/integrations/{firebase,media}`,每包 pubspec/README(职责一句话)/CHANGELOG/barrel/包级 analysis/`lib/src`/test 占位,全部登记进 hub。
+
+## 2. 验证证据
+
+| 命令 | 结果 |
+|---|---|
+| `powershell -File tool/test_scaffold_package.ps1` | `PASS: 55 assertions across 19 cases` |
+| `tool/flutterw.ps1 pub get`(仓库根) | `Got dependencies!`;单一 `pubspec.lock` 在根;`package_config.json` 内 `pure_live*` 共 18 项(应用 + 16 包 + hub) |
+| `dart analyze .`(仓库根) | **No issues found!** |
+| 包内 `dart analyze`(如 `packages/foundation/utils`) | No issues found —— 证明 `include: ../../../analysis_options.package.yaml` 链生效 |
+| 门禁非空转验证 | 往包内注入 `print` → 报 `avoid_print`;删除后回 0 |
+| 密钥忽略覆盖 `git check-ignore` | `apps/pure_live/android/key.properties`、`apps/pure_live/assets/keystore/*.jks`、`apps/pure_live/build/**`、`apps/pure_live/.dart_tool/**`、`apps/pure_live/android/.gradle/**` 全部仍被忽略 |
+| 结构漂移扫描(16 包 × 必备文件/包名/include/workspace 登记/断链/BOM/CRLF) | 0 problems |
+
+## 3. 已知未完成(搬家带来的欠账,不含乐观声明)
+
+1. **`tool/` 下约 30 个脚本仍假设"仓库根即 Flutter 工程"**(`$repoRoot` 直接 join `lib/`、`android/`、`pubspec.yaml`、`build/`、`.dart_tool/`)。这些脚本现在会指向不存在的路径。需要引入统一的 app-root 解析并把应用作用域路径改到 `apps/pure_live/`。**未做,未验证。**
+2. **CI 未改**:`.github/workflows/build_pure_live_release.yml` 在仓库根执行 `flutter build apk/macos/ios/linux` 并写 `android/key.properties`、`assets/releases.json`;`update_releases.yml` 同样按旧路径 diff。搬家后这些步骤会失败。`tool/update_releases.py`、`tool/publish_local_release.ps1` 同理。**未做。**
+3. `tool/validate_architecture.py` 仍按 v1 的 `lib/app -> core -> shared -> domains -> features` 校验,对 `packages/**` 完全不检查;M1 要求的护栏 `tool/check_architecture.dart` 尚未落地(任务 #5)。
+4. `.fvmrc` 钉 3.47.5,机器上实际是 PATH 里的 Flutter 3.47.6,`tool/flutterw.ps1` 会静默回退。**待用户定**:提 `.fvmrc` 到 3.47.6,还是装 3.47.5。
+5. `fluttersdk_artisan` / `fluttersdk_dusk` 与 `.mcp.json`、`apps/pure_live/bin/dispatcher.dart`、`apps/pure_live/lib/app/_plugins.g.dart` 是别处引入的框架栈,`docs/` 全体系无一处提到它。本轮只把它的路径改对(`.mcp.json` cwd → `apps/pure_live`),**未做取舍**。
+6. 分支**不可运行**:`apps/pure_live/lib/` 只剩 artisan 生成的两个空文件,没有 `main.dart`;`pubspec.yaml` 的 `flutter: assets/fonts` 段仍指向 v1 资源清单。可运行性随 W2 运行时与组合根重建恢复。
+
+## 4. 环境事故(会影响后续会话)
+
+- 15:47–16:12:共享 Flutter SDK 的 `bin/cache/dart-sdk` 被反复改名成 0 字节 `dart-sdk.oldN`,`dart`/`flutter` 全部不可用;16:12 一次更新成功后自清,现 Flutter 3.47.6 / Dart 3.13.5 可用。嫌疑是常驻的 VS Code Dart language-server/tooling-daemon 锁住 `dart.exe`。本轮未杀任何进程。
+- 16:35–16:37:工作树被**本会话之外**的动作改动过 —— `tool/` 下 184 个受控文件从磁盘消失(index 完好),`analysis_options.yaml` 被替换成 122 字节的通用 flutter_lints 配置。我用 `git restore` 复原了两者(复原前把那份 122 字节配置另存到 `/tmp/foreign-analysis_options-1635.yaml`,未直接丢弃),并按新目录形态重写了 exclude。期间丢失的 `tool/scaffold_package.ps1` 改写版与未受控的旧测试脚本已按规范重写。**若另有会话在同一工作树并行施工,需要先协调,否则会互相覆盖。**
+
+## 5. W1 余下(按依赖顺序)
+
+1. 补 §3.1/§3.2 的脚本与 CI 路径迁移(一个独立 commit,含 `tool/` 单元测试跑通作为证据)。
+2. `packages/ecosystem/platform` 骨架 + 核心模型 `ContentRef` / `MediaTicket`,按 [../contracts/platform-contracts.md](../contracts/platform-contracts.md)、[../contracts/platform-models.md](../contracts/platform-models.md);动手前先做 media_core 复用盘点(models §2:MediaTrack / TaskCancelToken / 错误分类直接复用,`SourceDescriptor` 命名冲突经接线层别名)。
+3. foundation 各包实装 + 单测,序:utils → logging → network → storage/auth → cache/events → diagnostics → files/platform → backup/sync/release/l10n。
+4. 架构护栏 `tool/check_architecture.dart`:校验 `packages/<层>/<名>` 形态、逐层 import 方向、例外白名单、包级 analysis include 一致性;替换 §3.3 的失效脚本并接 CI。
+5. 契约测试框架(providers 能力契约 + `fixtures/` 录制响应)。
+6. TVBox 运行时决策落地:参考 `webtv-main`(catvod + chaquo 的 `base/spider.py` Python 爬虫基类)与 `serious_python`(已在应用 dev_dependencies),见 [../architecture/external-ecosystem.md](../architecture/external-ecosystem.md)。

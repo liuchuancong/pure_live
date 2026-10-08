@@ -1,6 +1,6 @@
 # ADR 0002:包分层(Package Layering)
 
-- 状态:已接受(2026-10-08)
+- 状态:已接受(2026-10-08)。目录形态一节由 [0015-monorepo-layout.md](0015-monorepo-layout.md) 修订(层目录改挂到 `packages/` 下),分层数量与依赖规则不变。
 
 ## 背景
 

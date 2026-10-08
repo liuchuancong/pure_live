@@ -1,40 +1,43 @@
 # 包架构
 
-> 工程组织:melos 单仓多包;每包单一职责、单一 barrel;脚手架 `tool/scaffold_package.ps1` 保证结构零漂移。
+> 工程组织:单仓多包。**实装用 pub workspace**(仓库根 `pubspec.yaml` 的 `workspace:` 列成员,成员写 `resolution: workspace`,共用根 lockfile);melos 可后叠在同一份列表上。每包单一职责、单一 barrel;脚手架 `tool/scaffold_package.ps1` 保证结构零漂移。
 
 ## 1. 仓库目录
 
 ```text
-pure_live/
-├── app/                    # 应用壳(组合根)
-├── foundation/             # L0:每关切面一包
-│   ├── utils/ logging/ network/ auth/ storage/ files/ platform/
-│   ├── cache/ events/ diagnostics/
-│   └── backup/ sync/ release/ l10n/
-├── integrations/           # L0.5
-│   ├── firebase/ media/
-├── ecosystem/              # L1
-│   ├── platform/           # pure_live_platform:平台契约+模型伞包(纯 Dart,禁 Flutter 依赖)
-│   ├── plugin_api/ plugin_host/ plugin_registry/
-│   ├── extension/ resolver/ identity/ permission/ task/
-│   ├── capability/ content/ repository/
-│   ├── external/ external_tvbox/ external_lx_music/ external_m3u/ external_xmltv/
-│   ├── theme/ background/ danmaku/
-├── services/               # L2
-│   ├── search/ history/ favorites/ playlist/ links/ feed/
-│   ├── download/ remote/ cast/ fonts/ emote/
-├── ui/                     # L3
-│   ├── design/ ui_kit/ adaptive/ lyric/ player_ui/
-├── features/               # L4
-│   ├── home/ live/ vod/ music/ iptv/ recorder/ search/ settings/ account/ backup/
-├── plugins/                # L5 Providers
-│   ├── bilibili/ douyu/ huya/ douyin/ twitch/ youtube/ …(33+ 站)
-│   ├── music/ tvbox/ iptv/ community/
-├── docs/                   # 本文档体系
-└── melos.yaml
+pure_live/                        # 仓库根 = pub workspace hub(pubspec.yaml 只有成员清单与 dependency_overrides)
+├── apps/pure_live/               # 应用壳(唯一组合根):lib/ + 原生工程 + assets/ + bin/ + tool/
+├── packages/
+│   ├── foundation/               # L0:每关切面一包
+│   │   ├── utils/ logging/ network/ auth/ storage/ files/ platform/
+│   │   ├── cache/ events/ diagnostics/
+│   │   └── backup/ sync/ release/ l10n/
+│   ├── integrations/             # L0.5
+│   │   ├── firebase/ media/
+│   ├── ecosystem/                # L1
+│   │   ├── platform/             # pure_live_platform:平台契约+模型伞包(纯 Dart,禁 Flutter 依赖)
+│   │   ├── plugin_api/ plugin_host/ plugin_registry/
+│   │   ├── extension/ resolver/ identity/ permission/ task/
+│   │   ├── capability/ content/ repository/
+│   │   ├── external/ external_tvbox/ external_lx_music/ external_m3u/ external_xmltv/
+│   │   ├── theme/ background/ danmaku/
+│   ├── services/                 # L2
+│   │   ├── search/ history/ favorites/ playlist/ links/ feed/
+│   │   ├── download/ remote/ cast/ fonts/ emote/
+│   ├── ui/                       # L3
+│   │   ├── design/ ui_kit/ adaptive/ lyric/ player_ui/
+│   ├── features/                 # L4
+│   │   ├── home/ live/ vod/ music/ iptv/ recorder/ search/ settings/ account/ backup/
+│   └── providers/                # L5 Providers(原 docs 里的 plugins/;根目录 plugins/ 已被 vendored 插件占用)
+│       ├── bilibili/ douyu/ huya/ douyin/ twitch/ youtube/ …(33+ 站)
+│       ├── music/ tvbox/ iptv/ community/
+├── third_party/                  # vendored 上游源码与补丁(built_in_kotlin、media_kit fork)
+├── fixtures/                     # 跨包共享的录制样本(jar / m3u / 站点响应)
+├── tool/                         # 仓库级脚本入口(构建 / 质量 / 发布 / 设备)
+└── docs/                         # 本文档体系
 ```
 
-melos glob:`packages:` 指向上述全部目录(排除 app 与 example)。
+成员登记在根 `pubspec.yaml` 的 `workspace:` 列表里,由脚手架自动维护;`apps/pure_live` 也是成员。melos 若接入,直接复用这份列表,不再另立 glob。目录形态的决策与迁移后果见 [../adr/0015-monorepo-layout.md](../adr/0015-monorepo-layout.md)。
 
 ## 2. 每类包的内部模板
 
