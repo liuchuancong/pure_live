@@ -1,6 +1,6 @@
 name: Read PureLive version
 description: >
-  Parse `version:` from pubspec.yaml into the display form (build number
+  Parse `version:` from apps/pure_live/pubspec.yaml into the display form (build number
   stripped) and the artifact form ('+' replaced by '-') used in file names.
 outputs:
   version:
@@ -16,6 +16,6 @@ runs:
       shell: bash
       run: |
         set -euo pipefail
-        full_version="$(grep '^version:' pubspec.yaml | sed 's/version: //; s/[`"'"'"']//g')"
+        full_version="$(grep '^version:' "$GITHUB_WORKSPACE/apps/pure_live/pubspec.yaml" | sed 's/version: //; s/[`"'"'"']//g')"
         echo "version=${full_version%%+*}" >> "$GITHUB_OUTPUT"
         echo "artifact_version=${full_version/+/-}" >> "$GITHUB_OUTPUT"

@@ -75,13 +75,16 @@ jobs:
       - name: Resolve packages
         run: flutter pub get --enforce-lockfile
       - name: Generate production AppConfig
+        working-directory: apps/pure_live
         run: |
           dart run enven \
-            --env-files .env,.env.prod \
+            --env-files ../../.env,../../.env.prod \
             --class-name AppConfig
       - name: Analyze
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
       - name: Test
+        # Widget and unit tests live with the application package.
+        working-directory: apps/pure_live
         run: flutter test --concurrency=12
       - name: Probe public interfaces
         run: python tool/interface_probe.py
@@ -96,6 +99,11 @@ jobs:
       }}
     runs-on: ubuntu-latest
     timeout-minutes: 55
+    defaults:
+      run:
+        # The Flutter project lives in apps/pure_live since ADR 0015, so every build step of this
+        # job runs there. Repository-level steps below address the root through GITHUB_WORKSPACE.
+        working-directory: apps/pure_live
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
@@ -132,7 +140,7 @@ jobs:
       - name: Generate production AppConfig
         run: |
           dart run enven \
-            --env-files .env,.env.prod \
+            --env-files ../../.env,../../.env.prod \
             --class-name AppConfig
       - name: Build Android release APKs for all ABIs
         env:
@@ -195,10 +203,10 @@ jobs:
         with:
           name: pure-live-android
           path: |
-            PureLive-*-android-arm64-v8a-release.apk
-            PureLive-*-android-armeabi-v7a-release.apk
-            PureLive-*-android-x86_64-release.apk
-            ANDROID_SHA256SUM.txt
+            apps/pure_live/PureLive-*-android-arm64-v8a-release.apk
+            apps/pure_live/PureLive-*-android-armeabi-v7a-release.apk
+            apps/pure_live/PureLive-*-android-x86_64-release.apk
+            apps/pure_live/ANDROID_SHA256SUM.txt
           if-no-files-found: error
           retention-days: 3
   windows:
@@ -212,6 +220,11 @@ jobs:
     needs: [quality]
     runs-on: windows-latest
     timeout-minutes: 35
+    defaults:
+      run:
+        # The Flutter project lives in apps/pure_live since ADR 0015, so every build step of this
+        # job runs there. Repository-level steps below address the root through GITHUB_WORKSPACE.
+        working-directory: apps/pure_live
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Decode MSIX Certificate
@@ -254,11 +267,12 @@ jobs:
         run: flutter pub get --enforce-lockfile
       - name: Prefetch verified Firebase C++ SDK
         shell: pwsh
-        run: .\tool\prefetch_windows_native.ps1
+        run: |
+          & "$env:GITHUB_WORKSPACE\tool\prefetch_windows_native.ps1"
       - name: Generate production AppConfig
         run: |
           dart run enven `
-            --env-files .env,.env.prod `
+            --env-files ../../.env,../../.env.prod `
             --class-name AppConfig
       - name: Install pinned Windows packagers
         shell: pwsh
@@ -358,9 +372,9 @@ jobs:
         with:
           name: pure-live-windows
           path: |
-            PureLive-*-windows-x64-setup.exe
-            PureLive-*-windows-x64.msix
-            PureLive-*-windows-x64-portable.zip
+            apps/pure_live/PureLive-*-windows-x64-setup.exe
+            apps/pure_live/PureLive-*-windows-x64.msix
+            apps/pure_live/PureLive-*-windows-x64-portable.zip
           if-no-files-found: error
           retention-days: 3
   linux:
@@ -374,6 +388,11 @@ jobs:
     needs: [quality]
     runs-on: ubuntu-24.04
     timeout-minutes: 35
+    defaults:
+      run:
+        # The Flutter project lives in apps/pure_live since ADR 0015, so every build step of this
+        # job runs there. Repository-level steps below address the root through GITHUB_WORKSPACE.
+        working-directory: apps/pure_live
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Install Linux desktop dependencies
@@ -427,7 +446,7 @@ jobs:
       - name: Generate production AppConfig
         run: |
           dart run enven \
-            --env-files .env,.env.prod \
+            --env-files ../../.env,../../.env.prod \
             --class-name AppConfig
       - name: Build Linux release
         run: |
@@ -442,7 +461,7 @@ jobs:
           set -euo pipefail
           VERSION="${{ steps.version.outputs.artifact_version }}"
           tar -C build/linux/x64/release/bundle -czf "PureLive-${VERSION}-linux-x64.tar.gz" .
-          (cd build/linux/x64/release/bundle && zip -qr "$GITHUB_WORKSPACE/PureLive-${VERSION}-linux-x64.zip" .)
+          (cd build/linux/x64/release/bundle && zip -qr "$GITHUB_WORKSPACE/apps/pure_live/PureLive-${VERSION}-linux-x64.zip" .)
       - name: Install pinned Linux packager
         run: |
           dart pub global activate fastforge "$FASTFORGE_VERSION"
@@ -479,9 +498,9 @@ jobs:
         with:
           name: pure-live-linux-x64
           path: |
-            PureLive-*-linux-x64.tar.gz
-            PureLive-*-linux-x64.zip
-            PureLive-*-linux-x64.deb
+            apps/pure_live/PureLive-*-linux-x64.tar.gz
+            apps/pure_live/PureLive-*-linux-x64.zip
+            apps/pure_live/PureLive-*-linux-x64.deb
           if-no-files-found: error
           retention-days: 3
   apple:
@@ -494,6 +513,11 @@ jobs:
     needs: [quality]
     runs-on: macos-15
     timeout-minutes: 90
+    defaults:
+      run:
+        # The Flutter project lives in apps/pure_live since ADR 0015, so every build step of this
+        # job runs there. Repository-level steps below address the root through GITHUB_WORKSPACE.
+        working-directory: apps/pure_live
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Select Xcode 26 toolchain
@@ -513,7 +537,7 @@ jobs:
       - name: Generate production AppConfig
         run: |
           dart run enven \
-            --env-files .env,.env.prod \
+            --env-files ../../.env,../../.env.prod \
             --class-name AppConfig
       - uses: ./.github/actions/get-version
         id: version
@@ -578,8 +602,8 @@ jobs:
         with:
           name: pure-live-macos
           path: |
-            PureLive-*-macos-universal.zip
-            PureLive-*-macos-universal.dmg
+            apps/pure_live/PureLive-*-macos-universal.zip
+            apps/pure_live/PureLive-*-macos-universal.dmg
           if-no-files-found: error
           retention-days: 3
       - name: Build iOS device application
@@ -658,7 +682,7 @@ jobs:
           mkdir -p "$WORK_DIR/Payload"
           cp -R "$APP" "$WORK_DIR/Payload/Runner.app"
           cd "$WORK_DIR"
-          zip -r -q "$GITHUB_WORKSPACE/PureLive-${VERSION}-ios-arm64-trollstore.ipa" Payload
+          zip -r -q "$GITHUB_WORKSPACE/apps/pure_live/PureLive-${VERSION}-ios-arm64-trollstore.ipa" Payload
       - name: Verify TrollStore IPA
         if: ${{ inputs.build_ios }}
         shell: bash
@@ -679,8 +703,8 @@ jobs:
         with:
           name: pure-live-ios
           path: |
-            PureLive-*-ios-arm64-unsigned-app.zip
-            PureLive-*-ios-arm64-trollstore.ipa
+            apps/pure_live/PureLive-*-ios-arm64-unsigned-app.zip
+            apps/pure_live/PureLive-*-ios-arm64-trollstore.ipa
           if-no-files-found: error
           retention-days: 7
   publish-release:
@@ -749,7 +773,7 @@ jobs:
         id: version
         uses: juliangruber/read-file-action@271ff311a4947af354c6abcd696a306553b9ec18 # v1
         with:
-          path: assets/version.json
+          path: apps/pure_live/assets/version.json
       - name: Generate BUILD_METADATA.json
         shell: bash
         env:
@@ -923,7 +947,7 @@ jobs:
               text=True,
           )
           release = json.loads(result.stdout)
-          path = Path("assets/releases.json")
+          path = Path("apps/pure_live/assets/releases.json")
           if path.exists():
               data = json.loads(path.read_text(encoding="utf-8"))
           else:
@@ -957,11 +981,11 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          if [[ -z "$(git status --porcelain -- assets/releases.json)" ]]; then
-            echo "assets/releases.json has no changes."
+          if [[ -z "$(git status --porcelain -- apps/pure_live/assets/releases.json)" ]]; then
+            echo "apps/pure_live/assets/releases.json has no changes."
             exit 0
           fi
-          git add assets/releases.json
+          git add apps/pure_live/assets/releases.json
           git commit -m "chore: update releases.json for $RELEASE_TAG [skip ci]"
           git pull --rebase origin master
           git push origin master
