@@ -8,7 +8,7 @@
 | 目录 | 内容 |
 |---|---|
 | [architecture/](architecture/) | 总体架构、系统总览、运行时、**平台扩展基础设施(Extension Gateway)**、**外部生态直接导入(TVBox/LX Music 不转换插件)**、依赖规则、包架构、演进策略 |
-| [contracts/](contracts/) | 七大契约:插件/能力/内容/媒体/Provider/主题/Repository |
+| [contracts/](contracts/) | **平台契约与模型(platform-contracts / platform-models)** + 七大契约:插件/能力/内容/媒体/Provider/主题/Repository |
 | [plugin/](plugin/) | 插件体系:三种形态、Manifest、生命周期、权限、安全、开发指南 |
 | [content/](content/) | 统一内容模型:ContentRef / ContentItem / MediaItem / Collection / Playlist |
 | [media/](media/) | 统一媒体管线:MediaTicket / MediaPlan / 会话 / 队列 / 恢复 / 看门狗 / 换线 / 录制 / 引擎适配 |

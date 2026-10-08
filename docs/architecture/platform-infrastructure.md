@@ -3,6 +3,7 @@
 > 文档状态:定稿 / Architecture Decision
 > 定位:独立于具体业务的**平台扩展基础设施**——Extension Gateway 是最上层入口,Source → Repository → Provider → Resolver → MediaTicket 是核心数据链,Identity / Permission / Task / Diagnostics 是贯穿全链的横向基础设施。
 > 核心范围:Extension Gateway、External Runtime、Source、Repository、Resolver、Identity、Permission、Task、Diagnostics。
+> **接口级契约与数据模型见 [../contracts/platform-contracts.md](../contracts/platform-contracts.md) 与 [../contracts/platform-models.md](../contracts/platform-models.md)**(其中 Dart 代码为规格示例;实现前先跑 media_core 复用盘点,见 models §2)。
 
 ## 1. 概述
 

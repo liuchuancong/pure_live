@@ -14,6 +14,7 @@ pure_live/
 ├── integrations/           # L0.5
 │   ├── firebase/ media/
 ├── ecosystem/              # L1
+│   ├── platform/           # pure_live_platform:平台契约+模型伞包(纯 Dart,禁 Flutter 依赖)
 │   ├── plugin_api/ plugin_host/ plugin_registry/
 │   ├── extension/ resolver/ identity/ permission/ task/
 │   ├── capability/ content/ repository/
