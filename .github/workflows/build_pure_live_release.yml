@@ -52,7 +52,7 @@ concurrency:
 # subosito/flutter-action (channel: stable) — no SDK version is pinned in this
 # workflow. Local development keeps its own pin in .fvmrc.
 env:
-  FASTFORGE_VERSION: "0.6.0"
+  FASTFORGE_VERSION: "0.6.12"
 jobs:
   quality:
     name: Analyze, test and probe
