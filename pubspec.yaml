@@ -8,6 +8,7 @@ environment:
 
 workspace:
   - apps/pure_live
+  - packages/ecosystem/external_tvbox
   - packages/ecosystem/platform
   - packages/foundation/auth
   - packages/foundation/backup
@@ -25,6 +26,7 @@ workspace:
   - packages/foundation/utils
   - packages/integrations/firebase
   - packages/integrations/media
+  - packages/integrations/python_runtime
 
 # 全仓统一裁决的依赖覆盖:workspace 里只有根包可以声明。
 # Dependencies of repository tooling only; the hub itself ships no code.

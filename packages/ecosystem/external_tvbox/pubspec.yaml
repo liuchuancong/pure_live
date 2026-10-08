@@ -1,0 +1,10 @@
+# GENERATED-BY: tool/scaffold_package.ps1
+name: pure_live_external_tvbox
+description: "TVBox 仓库与 spider 源适配:经 Python 宿主映射成 ContentRef 与 MediaTicket"
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.13.0
+
+# Add dependencies from the matrix in docs/architecture/dependency-rules.md section 3.

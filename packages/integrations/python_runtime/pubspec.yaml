@@ -1,0 +1,10 @@
+# GENERATED-BY: tool/scaffold_package.ps1
+name: pure_live_python_runtime
+description: "serious_python 嵌入式 CPython 宿主:启动、生命周期与本机 HTTP 端点"
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.13.0
+
+# Add dependencies from the matrix in docs/architecture/dependency-rules.md section 3.

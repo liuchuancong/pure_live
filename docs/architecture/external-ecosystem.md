@@ -20,6 +20,19 @@ External Source → External Runtime → PureLive Unified Model → Feature → 
 
 例:TVBox JSON → TVBox Runtime → ContentRef/MediaItem/MediaTicket → VOD/Live;LX Music Source → LX Music Runtime → MusicItem/Lyric/MediaTicket → Music Feature → Media Core。
 
+### 2.1 运行时宿主(ADR 0017)
+
+外部生态里**带代码**的部分(TVBox spider 脚本、LX Music 源脚本)跑在嵌入式 CPython 上,宿主是 `serious_python`,唯一封装点是 `packages/integrations/python_runtime`:
+
+```text
+Dart (external_tvbox) --本机 HTTP--> CPython (spider 实现) --受控出网--> 站点
+```
+
+- Dart **不直接调用** Python 函数:serious_python 的模型是两侧通过 Python 程序暴露的 API(HTTP / socket / SQLite / 文件)通信,本仓取本机 HTTP。
+- spider 接口面按 `webtv-main` 的 `chaquo/src/main/python/base/spider.py` 对齐(`homeContent` / `categoryContent` / `detailContent` / `searchContent` / `playerContent` / `liveContent` / `localProxy` / `action` / `destroy`),不另造协议。
+- 纯数据源(TVBox 仓库 JSON、M3U、XMLTV)不需要 Python:解析在 Dart 侧完成,只有源脚本自带可执行逻辑时才走上面的宿主。
+- CPython 版本用 `SERIOUS_PYTHON_VERSION` 钉一档,写进构建配置;运行时出网不绕过权限体系(与 JS 插件只能走 PluginNetwork 同规则)。
+
 ## 3. Plugin 与 External Source 的区别(必须区分)
 
 | | PureLive Plugin | External Source |

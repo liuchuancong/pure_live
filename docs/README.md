@@ -19,7 +19,7 @@
 | [diagnostics/](diagnostics/) | 日志 / 追踪 / 播放诊断 / 崩溃报告 |
 | [development/](development/) | 环境搭建 / 编码规范 / 包开发 / 插件开发 / 测试 / 发布 |
 | [migration/](migration/) | v1→v2 迁移:数据库 / 设置 / 插件 |
-| [adr/](adr/) | 架构决策记录 0001-0016 |
+| [adr/](adr/) | 架构决策记录 0001-0017 |
 | [roadmap/](roadmap/) | v2 路线图 / 里程碑 / 发布计划 / **W1 实施进度与决策记录** |
 
 ## 阅读顺序(新人)

@@ -54,6 +54,8 @@ const Map<String, Set<String>> kApprovedExceptions = <String, Set<String>>{
   'pure_live_backup': <String>{'pure_live_auth'},
   'pure_live_player_ui': <String>{'pure_live_media'},
   'pure_live_ui_kit': <String>{'pure_live_design'},
+  // ADR 0017: an external ecosystem runtime must sit on the embedded CPython host.
+  'pure_live_external_tvbox': <String>{'pure_live_python_runtime'},
 };
 
 /// A package discovered on disk, with the dependencies declared in its pubspec.

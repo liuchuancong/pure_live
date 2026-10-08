@@ -17,7 +17,7 @@ L5 Providers/Plugins(与 L2-L4 平级,只向下依赖)
 | 层 | 包 |
 |---|---|
 | L0 Foundation | utils, logging, network, auth, storage, files, platform_info, **cache**, **events**, **diagnostics**, backup, sync, release, l10n |
-| L0.5 Integrations | firebase(**保留**), media(media_core 接线) |
+| L0.5 Integrations | firebase(**保留**), media(media_core 接线), **python_runtime**(serious_python 嵌入式 CPython 宿主) |
 | L1 Ecosystem | plugin_api, plugin_host, plugin_registry, extension(gateway), resolver, identity, permission, task, capability, content, external_tvbox / lx_music / m3u / xmltv, theme, background, danmaku |
 | L2 Services | search, history, favorites, playlist, links, feed, download, remote, cast, fonts, emote |
 | L3 UI | design, ui_kit(唯一 import fluttersdk_wind), adaptive, lyric, player_ui |
@@ -46,6 +46,7 @@ L5 Providers/Plugins(与 L2-L4 平级,只向下依赖)
 | sync → firebase | 云同步数据面 |
 | backup → auth | 同步凭据 |
 | player_ui → media | 控制层需要播放状态 |
+| external_tvbox → python_runtime | 外部生态运行时必须宿主在嵌入式 CPython 上(见 [../adr/0017-tvbox-python-runtime.md](../adr/0017-tvbox-python-runtime.md)) |
 
 ## 5. 架构不变量(I1-I10)
 

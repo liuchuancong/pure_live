@@ -224,6 +224,18 @@ function test_checkarchitecture_approvedexception_isallowed {
     Assert-True -Condition ($result.Exit -eq 0) -Message "sync -> firebase is on the exception list, got: $($result.Text)"
 }
 
+function test_checkarchitecture_runtimeExceptionEdge_isallowed {
+    param([string] $Dir)
+    # ADR 0017 puts the TVBox adapter on top of the Python host, which is an L1 to L0.5 edge and is
+    # approved explicitly rather than by loosening the layer table.
+    Add-FixtureMember -Dir $Dir -Path 'packages/integrations/python_runtime'
+    Add-FixturePackage -Dir $Dir -RelPath 'packages/integrations/python_runtime'
+    Add-FixtureMember -Dir $Dir -Path 'packages/ecosystem/external_tvbox'
+    Add-FixturePackage -Dir $Dir -RelPath 'packages/ecosystem/external_tvbox' -Deps @('pure_live_python_runtime')
+    $result = Invoke-Guard -Dir $Dir
+    Assert-True -Condition ($result.Exit -eq 0) -Message "external_tvbox -> python_runtime is whitelisted, got: $($result.Text)"
+}
+
 function test_checkarchitecture_dependencyonapp_reports_error {
     param([string] $Dir)
     Add-FixtureMember -Dir $Dir -Path 'packages/providers/bilibili'
