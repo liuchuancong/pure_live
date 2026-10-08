@@ -9,6 +9,13 @@
 | 禁止依赖 | 任何反向依赖;禁止依赖应用壳(唯一组合根,I9);同层互依(除规则明示例外) |
 | 公共面 | 只有 `lib/pure_live_files.dart`;内部实现放 `lib/src/` |
 
+## 内容
+
+- `file_names.dart` —— `sanitizeFileName`(非法字符 / 控制字符 / 前后缀空白 / Windows 保留名 / 只截词干保住扩展名)、`disambiguateName`(`a (1).mp4` 式让位)、`resolveWithin`(**目录逃逸守卫**:拒绝绝对 key 与 `..` 逃出的结果)
+- `paths.dart` —— `DirectoryPolicy`(应用绑 path_provider)、`writeTextAtomically`(临时文件 + rename,崩溃不会留下半截设置)、`mimeTypeFor`
+
+名字来自站点或导入的播放列表,就是攻击者可控文本;`resolveWithin` 集中做一次归一化,好过每个调用者各自记得防 `../`。
+
 ## 结构
 
 - `pubspec.yaml` / `analysis_options.yaml` / `CHANGELOG.md` / `README.md` / `test/` —— 所有包必备

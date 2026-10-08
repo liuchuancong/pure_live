@@ -4,6 +4,13 @@
 // Author: liuchuancong
 // Created: 2026-10-08
 ///
-/// Layer: foundation. Allowed dependencies: pub.dev packages only; foundation packages do not depend on each other (utils and logging are leaf packages).
+/// Layer: foundation. Allowed dependencies: pub.dev packages only, plus the utils and logging leaves.
 /// See docs/architecture/dependency-rules.md and the package README.
+///
+/// Directory lookup is a platform plugin, so this package declares DirectoryPolicy and the app binds
+/// it; the name, traversal and write helpers here are pure and testable.
+
 library;
+
+export 'src/file_names.dart';
+export 'src/paths.dart';
