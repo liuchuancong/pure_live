@@ -1,151 +1,186 @@
-# pure_live v2 架构文档(决策稿 v0.2)
+# pure_live v2 架构文档(决策稿 v0.3)
 
-> 状态:**待拍板**。本文只做架构决策材料,未写任何业务代码。
-> 分支:`v2`。v0.1 → v0.2 变更:**从"迁移式"改为"重写式"**;模块按域全部细分;新增插件生态设计(内容源插件化 + 主题用户可导入)。
-> v1 代码与 TV 端代码在 v2 中的定位:**协议与交互的参考**(接口地址、参数、弹幕协议、页面交互),不是搬运对象。
+> 状态:**推荐定稿**。v0.2 → v0.3:包细分落到"每个包装什么、谁依赖谁、包内长什么样、以后怎么加功能"的最终颗粒度,并给出工程化护栏。未写业务代码。
+> 分支:`v2`。生态愿景(内容源插件化 / 主题用户导入 / 首页用户编排)维持 v0.2 不变。
 
-## 1. 产品愿景与架构原则
+## 1. 发行走过的路:从发行项目提炼的四条铁律
 
-**愿景**:不只是"又一个直播聚合播放器",而是一个**生态宿主**——
-- 内容源(直播平台 / B 站视频 / 音乐源)像 lx-music 的自定义音源一样**以插件形式导入**;
-- 主题由用户**导入**(令牌文件,不执行代码);
-- 用户可以高度自定义:装哪些源、用什么主题、哪些模块进入首页。
+| 经验来源 | 铁律 | 在 v2 的落法 |
+|---|---|---|
+| flutter/packages(FlutterFire 等 federated 插件) | **契约与实现分离**:先有 platform_interface 契约包,实现各自独立,靠契约测试保兼容 | `pure_live_plugin_api` 就是契约包;内置 Dart 源与 JS 脚本源都只对契约负责,靠同一套契约测试 |
+| VGV(Very Good Ventures)大量交付项目 | **repository 与 UI 分包**,域逻辑可脱离 UI 测试、可被第二个消费方复用 | v2 每个域包内部强制 `data/domain/presentation` 分层;**拆出独立 repository 包的触发条件是"出现第二个消费方"**(如 TV 复用),不预拆 |
+| dart_simple_live(simple_live_core / simple_live_app / console) | **core 承载全部站点适配,app 只是壳**——同一 core 被手机/TV/CLI 三个壳复用 | 33 站适配全部在 `sources/` 层,`app` 壳与未来 TV 壳都消费同一批包 |
+| media_core(自家,26 包) | **每包单一职责 + 单 barrel 导出 + example 集成验证**;melos 统一驱动 | 工程模板照搬;内核直接复用不重写 |
 
-**架构原则(重写式)**
-1. v1/TV 代码只读三样东西:协议细节(API endpoint/参数/加密)、弹幕协议、页面交互流程。代码零搬运。
-2. 内核不重写:播放/弹幕/录制引擎复用 media_core(v2 的模块在内核之上做业务与插件化)。
-3. 依赖单向、每包单一职责;包粒度按"能独立改名/替换/测试"划分。
-4. 一切用户可扩展的东西都是**数据或脚本**,不是编译进 App 的 Dart(保证平台合规与热更新能力)。
+**结构性防腐规则**(写进 CI 护栏,不是口头约定):
+- L0 foundation 不得 import 任何内部包;L1 ecosystem 只准 import foundation;L2 sources 只准 import plugin_api+foundation,**不准 import 其他 source**;L3 ui 只准 import foundation+ecosystem;L4 features 只准 import ui+ecosystem+foundation(经 plugin_api 用源);`app` 是唯一全知者。
+- 每包只允许一个 barrel(`lib/<包名>.dart`),外部只能 import barrel。
+- 业务代码禁止直接 `import 'package:fluttersdk_wind/...'`(只有 `pure_live_ui_kit` 可以)。
 
-## 2. 总体形态:melos 单仓多包(仿 media_core)
+## 2. 包细分总表(最终颗粒度)
 
 ```
 pure_live(v2)
 ├── melos.yaml
-├── app/                        # 应用壳(见 §4;平台目录 android/ios/... 暂留仓库根,§9-6)
+├── app/                                  # 应用壳
 ├── packages/
-│   ├── foundation/             # 第 0 层:基础设施(无业务语义)
-│   ├── ecosystem/              # 第 1 层:插件生态(契约 + 宿主 + 主题引擎)
-│   ├── sources/                # 第 2 层:内容源(内置源以"插件"形态实现)
-│   ├── ui/                     # 第 3 层:UI 基座(设计令牌/组件库/自适应)
-│   └── features/               # 第 4 层:业务域(直播/视频/音乐/IPTV/录制/备份/设置)
+│   ├── foundation/                       # L0 基础设施
+│   │   ├── pure_live_utils               # 公用方法
+│   │   ├── pure_live_network             # 网络请求底座
+│   │   ├── pure_live_auth                # 身份验证
+│   │   ├── pure_live_storage             # 存储聚合
+│   │   ├── pure_live_files               # 文件处理器
+│   │   ├── pure_live_platform            # 平台处理
+│   │   ├── pure_live_backup              # 备份引擎
+│   │   └── pure_live_logging             # 日志
+│   ├── ecosystem/                        # L1 插件生态
+│   │   ├── pure_live_plugin_api          # 源插件契约(+契约测试套件)
+│   │   ├── pure_live_plugin_host         # JS 沙箱宿主 + 注册表/权限
+│   │   └── pure_live_theme               # 主题引擎(令牌文件)
+│   ├── sources/                          # L2 内容源(一站一包,长尾并包)
+│   │   ├── source_bilibili/              # live + vod 双 capability
+│   │   ├── source_douyu/  source_huya/  source_douyin/
+│   │   ├── source_cc/  source_kuaishou/ …(大站各一包)
+│   │   ├── source_music_builtin/         # 内置音乐源(样例音源)
+│   │   └── source_misc/                  # 长尾小站并包
+│   ├── ui/                               # L3 UI 基座
+│   │   ├── pure_live_design              # 设计令牌唯一权威
+│   │   ├── pure_live_ui_kit              # 组件库(唯一 import wind 处)
+│   │   └── pure_live_adaptive            # TV/手机/桌面自适应
+│   └── features/                         # L4 业务域
+│       ├── pure_live_live                # 直播域
+│       ├── pure_live_vod                 # 点播/B 站视频域
+│       ├── pure_live_music               # 音乐域
+│       ├── pure_live_iptv                # IPTV 域
+│       ├── pure_live_recorder            # 录制域
+│       ├── pure_live_settings            # 设置域(含账号管理 UI)
+│       ├── pure_live_backup_ui           # 备份/同步的 UI 侧
+│       └── pure_live_home                # 首页编排(用户可定制模块)
 ```
 
-## 3. 包细分清单(全量)
+共 **8 + 3 + (大站数+2) + 3 + 8 ≈ 30+ 包**。粒度原则:一个包 = 一种"可独立替换/独立测试/能一句话说清职责"的能力;拆分预则是**新增能力先做目录,出现第二个消费方或超过 ~800 行再升包**。
 
-### 3.1 foundation — 基础设施层(你点名的:网络请求/身份验证/公用方法/文件处理/平台处理/备份)
+## 3. 每个包的内部契约(包内模板)
 
-| 包 | 职责 | 要点 |
+### 3.1 foundation 包模板
+```
+packages/foundation/pure_live_network/
+├── lib/
+│   ├── pure_live_network.dart      # 唯一 barrel:导出公开类型(HttpClient、AuthInterceptor、CookieStore…)
+│   └── src/
+│       ├── client/                 # dio 组装、超时/重试策略
+│       ├── interceptors/           # 风控头、UA、日志(接 logging)
+│       └── cookies/                # cookie jar 持久化(接 storage)
+├── test/                           # 纯 Dart 单测(无 UI)
+└── pubspec.yaml                    # dependencies 只含三方包 + L0 兄弟包(白名单见矩阵)
+```
+各 foundation 包职责边界(防止"core 变垃圾场"的久经考验做法):
+
+| 包 | 装什么 | 明确不装 |
 |---|---|---|
-| `pure_live_utils` | 公用方法:时间/数字/文本(拼音)/校验/编解码(hashlib、crypto、dart_sm、html 解析) | 零 Flutter 依赖可单测 |
-| `pure_live_network` | 网络请求底座:dio 组装、拦截器、cookie jar、UA/风控头策略、重试、 talker_dio_logger、charset(gbk) | 统一出口,所有源插件经它发请求(统一日志/代理/风控) |
-| `pure_live_auth` | 身份验证:凭据保险箱(secure_storage)、各平台会话/Cookie 生命周期、扫码/账密/Token 登录流程契约、登出清理 | 不含具体平台逻辑;平台登录在 sources 内实现,auth 提供保险箱与流程契约 |
-| `pure_live_storage` | 存储聚合:hive_ce(kvp)、drift+drift_flutter(关系型)、缓存管理、secure_storage 封装 | 唯一持久化出口;迁移 v1 数据留接口 |
-| `pure_live_files` | 文件处理器:导入/导出(pick/拖拽)、Saf、m3u/json 解析、哈希校验、临时目录管理 | 与 desktop_drop/file_picker 对接 |
-| `pure_live_platform` | 平台处理:method channels、窗口/托盘/开机(桌面)、TV 遥控 dpad、深链接(app_links)、分享接入、亮度/音量/电池 | 平台差异在这里消失,上层只见接口 |
-| `pure_live_backup` | 备份:设置/收藏/歌单/订阅的导出导入、WebDAV/局域网(bonsoir)同步、版本化合并策略 | 数据格式版本化,向前兼容 |
-| `pure_live_logging` | talker 装配、分级日志、诊断导出 | 与 network 的 dio logger 串联 |
+| utils | 时间/数字/文本(拼音/模糊匹配)/编解码/hash | 任何 Flutter Widget、任何 IO |
+| network | dio 客户端工厂、拦截器、cookie、UA 池、gbk 转码 | 具体站点的 API 定义 |
+| auth | 凭据保险箱(secure_storage)、会话生命周期、登录流程状态机契约 | 任何站点登录的具体实现(在 sources) |
+| storage | hive/drift/sqlite3_flutter_libs 装配、kv 接口、缓存目录策略 | 业务表结构(在 features) |
+| files | pick/拖拽接入、m3u/json 读写、Saf、哈希校验、临时目录 | 备份语义(在 backup) |
+| platform | 窗口/托盘/协议注册/深链接/dpad/亮度音量/电池的**接口 + 各平台实现** | 任何业务调用决策 |
+| backup | 备份格式(版本化)、导出导入引擎、WebDAV/LAN 同步 | 备份的 UI |
+| logging | talker 装配、分级、诊断导出 | 业务日志埋点(各包自己埋) |
 
-### 3.2 ecosystem — 插件生态层(本次新增的核心)
+### 3.2 ecosystem 包模板
+- `plugin_api`:契约类型(`SourcePlugin`、`LiveCapability/VodCapability/MusicCapability`、`ThemeTokenFile`、`HostBridge`)+ **`contract_test/` 契约测试套件**(内置源与 JS 源都要跑同一套,保证"插件"二字成立)。这是全仓最稳定的包,改它 = 发契约版本。
+- `plugin_host`:flutter_js 沙箱桥(仓库已 vendored AGP9 补丁)、插件注册表、生命周期(导入/启用/禁用/更新/删除)、权限裁决、内置源加载器。
+- `theme`:令牌文件 schema + 校验、令牌 → WindThemeData / Material ColorScheme 构建、导入导出。主题 = 数据,永不执行代码。
 
-| 包 | 职责 |
-|---|---|
-| `pure_live_plugin_api` | **插件契约**:源插件接口(直播/点播/音乐三类 capability)、主题令牌 schema、宿主桥(host bridge)协议、API 版本号 |
-| `pure_live_plugin_host` | **插件宿主**:JS 沙箱(flutter_js,仓库已有 AGP9 vendored 补丁)、插件注册表/生命周期(导入-启用-禁用-更新-删除)、权限声明与信任提示、内置插件的加载器 |
-| `pure_live_theme` | **主题引擎**:主题 = 令牌数据文件(JSON,不执行代码);导入/导出/分享;由令牌构建 WindThemeData + Material ColorScheme;跟随明暗 |
-
-### 3.3 sources — 内容源层(内置源也以插件形态实现,证明契约)
-
-- **Dart 内置源**(协议复杂、需要原生性能的):每平台一包——`source_bilibili`、`source_douyu`、`source_huya`、`source_douyin`、`source_cc`、`source_kuaishou`……(33 站按平台一包,长尾小站可合并 `source_misc`)。B 站包内含 live + vod 两个 capability。
-- **JS 脚本源**(用户可导入的生态源):lx-music 式 `.js` 插件,跑在 plugin_host 的沙箱里。**远期兼容目标:能直接跑 lx-music 的 user-api 音源脚本**(lx 源脚本本就是 JS,只需实现其 API 面的 shim)。
-- 契约(设计草图,定稿在 plugin_api 包):
-
+### 3.3 source 包模板(以 source_bilibili 为例)
 ```
-SourcePlugin(元数据: id/name/version/类型 live|vod|music/权限声明)
- ├─ LiveCapability:   目录/搜索/清晰度/线路取流 → StreamHandle(media_core 可播)
- ├─ VodCapability:    分类/搜索/详情/选集/取流/弹幕
- ├─ MusicCapability:  搜索/歌单/歌词/播放地址
- └─ 宿主桥: http(走统一 network)/kv 存储/剪贴板/通知(白名单)
+packages/sources/source_bilibili/
+├── lib/src/
+│   ├── live/        # 直播 capability:目录/播放/弹幕协议(protobuf)
+│   ├── vod/         # 点播 capability:ugc/pgc/详情/选集(协议词典:TV modules/vod)
+│   ├── auth/        # 扫码/账密登录(调用 pure_live_auth 保险箱)
+│   └── models/      # freezed 模型
+└── test/
+    └── fixtures/    # 录制的 HTTP 响应快照 → 离线协议测试
 ```
+源测试策略(维护性的关键):**fixtures 快照测试**——把真实 API 响应录制进 `test/fixtures/`,CI 离线跑断言解析正确;协议失效时只需更新快照重录,不依赖外部服务波动。
 
-### 3.4 ui — UI 基座层(你点名的:不同平台的 UI 与组件库)
+### 3.4 feature 包模板(VGV 分层的包内化)
+```
+packages/features/pure_live_live/
+├── lib/src/
+│   ├── data/         # repository 实现:经 plugin_api 消费源,经 storage 持久化
+│   ├── domain/       # 实体/用例(纯 Dart,可单测)
+│   └── presentation/ # Riverpod controllers + wind 页面(页面只用 ui_kit 组件)
+└── test/             # domain 单测 + controller 测试 + 关键 widget 测试
+```
+**repository/UI 拆包规则**:域包内部先分层;当第二个消费方出现(如 TV 壳要复用 vod 数据层)→ 把 `data/domain` 升为 `pure_live_vod_repository` 包,presentation 留在原包。不预先拆,避免 30 包膨胀到 45 包。
 
-| 包 | 职责 |
-|---|---|
-| `pure_live_design` | 设计令牌(颜色/间距/圆角/字重/动效曲线)的唯一权威定义;消费 theme 引擎的令牌文件 |
-| `pure_live_ui_kit` | 组件库:语义组件(LiveRoomCard/PlayerControlBar/SettingSection…)、**唯一允许 import fluttersdk_wind 的包**(wind 断供时唯一替换点) |
-| `pure_live_adaptive` | 平台自适应:TV(dpad 焦点树)/手机/桌面的布局策略、断点、输入法/键盘行为 |
+### 3.5 ui 包模板
+- `design`:令牌常量 + 令牌类型 + 明暗两套默认值;**零 widget 依赖**(纯数据),theme 引擎读用户主题文件覆盖它。
+- `ui_kit`:语义组件(`LiveRoomCard`、`PlayerControlBar`、`SettingSection`、`EmptyPlaceholder`…),内部用 wind className 实现,对外只暴露 Dart 参数;**不含路由、不含业务 provider**。
+- `adaptive`:断点/平台策略(TV 焦点树、桌面 hover/滚轮、手机手势),输出布局决策给 feature 用。
 
-### 3.5 features — 业务域层(每个域一包,域内 domain/data/presentation 分层)
+### 3.6 app 壳
+只做:ProviderScope 组装(Riverpod overrides 把各包实现接起来 = 组合根)、go_router 装配(各 feature 暴露 `RouteBase` 列表,壳负责挂载)、平台初始化序列。**app 是唯一知道所有包的层**。
 
-`feature_live`、`feature_vod`、`feature_music`、`feature_iptv`、`feature_recorder`、`feature_settings`、`feature_backup`(备份的 UI 侧,引擎在 foundation)、`feature_home`(首页编排:用户决定哪些模块上首页——生态定制化的入口)。
+## 4. 依赖矩阵(CI 护栏按此机械校验)
 
-## 4. 应用壳(app)
+| 包↓ 依赖→ | utils | network | auth | storage | files | platform | backup | logging | plugin_api | plugin_host | theme | design | ui_kit | adaptive | sources | features |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| utils / logging | — | | | | | | | | | | | | | | | |
+| network / storage / files / platform | ✅ | — | | | | | | ✅ | | | | | | | | |
+| auth | ✅ | ✅ | — | ✅ | | | | ✅ | | | | | | | | |
+| backup | ✅ | ✅ | | ✅ | ✅ | | — | ✅ | | | | | | | | |
+| plugin_api | ✅ | | | | | | | ✅ | — | | | | | | | |
+| plugin_host / theme | ✅ | ✅ | | ✅ | ✅ | | | ✅ | ✅ | — | | | | | | |
+| design | ✅ | | | | | | | | | | | — | | | | |
+| ui_kit | ✅ | | | | | | | | | | ✅ | ✅ | — | | | |
+| adaptive | ✅ | | | | | ✅ | | | | | ✅ | ✅ | ✅ | — | | |
+| sources/* | ✅ | ✅ | ✅ | | | | | ✅ | ✅ | | | | | | 同层禁止 | |
+| features/* | ✅ | | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | | ✅ | ✅ | ✅ | ✅ | 经 api | 同层禁止 |
+| app | 全部 | | | | | | | | | | | | | | | 全部 |
 
-只做四件事:melos 装配 + `ProviderScope` + 路由组装(go_router,按 feature 注册子路由)+ 平台初始化序列。**不含任何业务**;平台目录(android/ios/windows/linux/macos)挂在仓库根,供 `flutter run/build` 使用。
+护栏工具:`tool/check_architecture.dart`(v2 新写,替代 v1 的 validate_architecture.py)——扫描每包 import,按矩阵报错;W1 交付。
 
-## 5. 插件生态设计(核心章节)
+## 5. 工程化保障(确保后续维护与添加功能)
 
-### 5.1 两类插件、一套契约
-1. **Dart 内置源**:编译进 App,实现同一套 capability 接口。第一方源用它(协议复杂、性能要求高,如 B 站 protobuf 弹幕)。
-2. **JS 脚本插件**:用户导入的 `.js` 文件(本地文件 / URL / 二维码),跑在 flutter_js 沙箱。面向:长尾直播源、音乐音源(lx-music user-api 兼容是远期目标)、点播源。
+1. **melos 脚本**:`melos run analyze / test / gen / fix`(按包过滤);`melos run gen` = 各包 build_runner(freezed/json/riverpod/drift/hive 生成物一律 `*.g.dart`/`*.freezed.dart` 入 `.gitignore`?**不**——v1 经验:生成物入库可让 CI 免跑 build_runner;但 riverpod/freezed 冲突多 → 折中:drift/hive 生成物入库,riverpod/freezed CI 生成)。
+2. **契约测试**:plugin_api 的 `contract_test/` 对每个内置源与 JS 桥执行同一断言集;源契约版本号写入 `SourcePlugin.apiVersion`,宿主按版本降级或拒绝。
+3. **fixtures 快照**:每个 source 包录制真实响应,离线断言;网络抖动不影响 CI。
+4. **新功能剧本("加一个直播平台")**:复制 source 模板 → 按 v1 协议词典实现 LiveCapability → 录 fixtures → 契约测试绿 → 在宿主注册表登记 → 首页可选模块自动出现。**不碰 app、不碰其他包**。
+5. **新域剧本("加一个内容形态")**:plugin_api 增 capability(发契约 minor 版)→ sources 实现 → feature 包 UI → app 挂路由。
+6. **DI 约定**:各包只暴露 Riverpod provider;`app/` 用 overrides 组合实现。包之间永不 `Get.put`/手动单例。
+7. **版本策略**:melos 统一版本(lockstep),CHANGELOG 按包段落;plugin_api 单独 semver(它是生态接口)。
 
-### 5.2 主题 = 数据,不是代码
-主题文件 = 令牌 JSON(颜色/圆角/间距/字重/背景图引用),由 `pure_live_theme` 校验后构建 WindThemeData + Material ColorScheme。用户可导入/导出/分享主题文件;不执行任何代码,无安全面。壁纸/背景跟随主题打包。
+## 6. 生态设计(承 v0.2,不重复展开)
 
-### 5.3 信任与权限模型
-- 脚本插件声明权限(网络域名白名单、存储配额、是否需要凭据读取),导入时明示。
-- 网络必须走宿主桥(统一 dio),插件拿不到裸 socket → 可审计、可缓存、可断网。
-- 凭据默认不开放给脚本插件;`pure_live_auth` 对脚本只暴露"当前是否已登录"布尔级信息。
+两类插件一套契约(Dart 内置源 / 用户可导入 JS 脚本源,flutter_js 沙箱)、主题 = 令牌数据文件、权限白名单与凭据隔离、首页模块用户编排、lx-music 音源脚本兼容留接口不承诺——细节见 git 历史版本 v0.2(434ae3f31)与本文 §3.2/§3.3。
 
-### 5.4 生态冷启动
-- 首发即以"全部内置源 = 插件"验证契约(防止契约只对第三方成立)。
-- 插件分发:先本地导入 + URL;插件市场(索引 JSON)后置。
-
-## 6. UI 选型(维持 v0.1 结论,补充插件相关)
-
-- Material 3 底座 + wind 样式层;**只允许 `pure_live_ui_kit` import wind**(单一替换点)。
-- 暗色:`WindThemeData(brightness:)` 按 themeMode 切换,由 theme 引擎构建。
-- 主题令牌文件 schema 与 `pure_live_design` 的令牌一一对应,用户主题即令牌覆盖表。
-- wind 1.8.1 风险照旧(16h 新库),由 ui_kit 单点隔离。
-
-## 7. 依赖(已解析通过,见 v0.1 §5,不重复)
-
-版本坑与新增包清单同 v0.1 §5;本轮无新增运行时依赖(dusk/artisan/telescope/magic_deeplink 均不引入,结论同前)。
-
-## 8. 参考项目的新定位(重写式)
-
-| 参考 | v2 中怎么用 |
-|---|---|
-| pure_live_TV `modules/vod` | **协议参考**:bilibili ugc/pgc/弹幕/音乐 API 的端点、参数、模型字段;交互流程参考。代码不搬 |
-| lx-music mobile/desktop | **生态范式参考**:音源脚本机制(apiSource/userApi)、歌单/收藏/同步的数据模型;远期兼容其音源脚本 |
-| media_core/packages | **工程模板**:melos、每包单 barrel、example 验证;同时是内核依赖 |
-| v1 pure_live | **协议词典**:33 站适配器的 endpoint/风控头/弹幕协议;迁移时照着重写,不复制文件 |
-
-## 9. 路线图(重写式 waves)
+## 7. 路线图(waves)
 
 | 波 | 内容 | 完成标志 |
 |---|---|---|
-| W0(已完成) | pubspec 现代化 + 本文档 | — |
-| W1 | melos 化 + foundation 8 包骨架 + 契约 v0(plugin_api) | 包可解析、契约评审通过 |
-| W2 | UI 基座:design 令牌 + theme 引擎(令牌 JSON 导入导出)+ ui_kit 首批组件 + 应用壳 | 全平台启动见可切换主题的壳 |
-| W3 | 插件宿主:flutter_js 沙箱 + 注册表/权限 + 第一个 JS demo 插件 | JS 插件可导入并发请求 |
-| W4 | 首个 Dart 内置源(bilibili:live capability)打通播放 | 真机看 B 站直播 |
-| W5 | live 其余平台源(协议照 v1 词典重写)+ live 域完成 | 直播域可用 |
-| W6 | vod 域(B 站协议参考 TV) | B 站视频可播 |
-| W7 | music 域(参考 lx-music;内置音源先行) | 音乐可播 |
-| W8 | iptv/recorder/backup/settings + v1 数据迁移接口 | 功能齐 |
-| W9 | 生态打磨:JS 源 SDK 文档/示例、lx 音源兼容评估、插件分享 | — |
+| W0 ✅ | pubspec 现代化 + 本文档 | — |
+| W1 | melos 化 + 全部空包骨架(按 §2 树)+ `check_architecture.dart` 护栏 + plugin_api 契约 v0 | `melos analyze` 绿;护栏在 CI 跑 |
+| W2 | foundation 8 包实做(utils/network/logging 先行) | 单测绿 |
+| W3 | design/theme/ui_kit 首批组件 + app 壳 + adaptive | 全平台启动,可切换用户主题 |
+| W4 | plugin_host 沙箱 + JS demo 插件 | JS 插件导入/请求/禁用全流程 |
+| W5 | source_bilibili(live)契约测试 + 真机播放 | 直播第一个源跑通 |
+| W6 | 其余大站源 + live 域 | 直播域可用 |
+| W7 | vod 域(协议词典:TV vod) | B 站视频可播 |
+| W8 | music 域(参考 lx-music) | 音乐可播 |
+| W9 | iptv / recorder / backup / settings / home + v1 数据迁移器 | 功能齐 |
+| W10 | 生态打磨:JS SDK 文档、示例插件、(评估)lx 源兼容 | 发布 v2 首版 |
 
-## 10. 待拍板问题(第 2 轮)
+## 8. 剩余决策点(比 v0.2 少了,这轮我直接做了大部分主)
 
-1. **长尾小站归并**:`source_misc` 一包兜底 vs 严格一站一包?(建议:大站一站一包,长尾并包)
-2. **JS 插件的语言边界**:只支持 JS,还是契约层预留 Lua/其他?(建议:只 JS,flutter_js 现成)
-3. **lx 音源兼容**:作为 W9 目标还是直接砍掉?(建议:留接口不承诺)
-4. **`feature_*` 命名**:保留 `feature_` 前缀还是直接 `live/vod/music`?(建议:直接能力名,更干净)
-5. **app 壳位置**:仓库根(app/ + 平台目录)还是 `apps/pure_live/`?(建议:根,理由同前:CI/签名路径成本)
-6. **数据迁移**:v1 的收藏/配置要不要官方迁移器?(建议:W8 做 hive→新存储 的一次性迁移器)
-7. **theme 文件格式**:纯 JSON 令牌覆盖表,还是带 manifest 的 zip(含壁纸资源)?(建议:zip 包,清单+资源)
+已替你定(有异议再改):长尾小站并 `source_misc`;插件只支持 JS;域包内分层不预拆 repository;`app/` 留仓库根;melos lockstep 版本;drift/hive 生成物入库、riverpod/freezed CI 生成。
 
-## 附录 A:v2 pubspec 差异(同 v0.1 §5,未变)
-## 附录 B:wind 快速上手(同 v0.1 附录 B,未变)
+仍需你一句话:
+1. **firebase 去留**(留 = CI/账号同步不动;弃 = 改 Windows 预取脚本;建议 W9 前保留)
+2. **theme 文件格式**(建议 zip:manifest + 令牌 JSON + 壁纸资源)
+3. **v1 数据迁移器**做不做(建议 W9 做一次性 hive → 新存储)
+
+## 附录 A:v2 pubspec 差异(同 v0.1 §5)
+## 附录 B:wind 快速上手(同 v0.1 附录 B)
