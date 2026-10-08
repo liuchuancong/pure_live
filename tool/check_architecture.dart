@@ -138,9 +138,7 @@ void main(List<String> args) {
     final label = finding.isWarning ? 'warn' : 'error';
     stdout.writeln('$label ${finding.rule}: ${finding.subject} - ${finding.detail}');
   }
-  stdout.writeln(
-    'packages=${packages.length} errors=${errors.length} warnings=${warnings.length}',
-  );
+  stdout.writeln('packages=${packages.length} errors=${errors.length} warnings=${warnings.length}');
   if (errors.isNotEmpty || (strict && warnings.isNotEmpty)) {
     exitCode = 1;
   }
@@ -207,11 +205,7 @@ String domainOf(String relativePath) {
 }
 
 /// Reports members on disk that the root does not list, and listed members that are gone.
-List<Finding> checkRegistration(
-  Directory root,
-  List<String> members,
-  Map<String, PackageInfo> packages,
-) {
+List<Finding> checkRegistration(Directory root, List<String> members, Map<String, PackageInfo> packages) {
   final findings = <Finding>[];
   final listed = members.toSet();
   for (final layer in kLayers) {
@@ -223,11 +217,7 @@ List<Finding> checkRegistration(
       if (entry is! File || entry.uri.pathSegments.last != 'pubspec.yaml') {
         continue;
       }
-      final relative = entry.path
-          .substring(root.path.length + 1)
-          .replaceAll(r'\', '/')
-          .split('/pubspec.yaml')
-          .first;
+      final relative = entry.path.substring(root.path.length + 1).replaceAll(r'\', '/').split('/pubspec.yaml').first;
       if (!listed.contains(relative)) {
         findings.add(Finding('unregistered-package', relative, 'exists on disk but is missing from workspace:'));
       }
@@ -256,23 +246,27 @@ List<Finding> checkLayout(Directory root, PackageInfo package) {
   }
   for (final directory in internalLayout(package)) {
     if (!FileSystemEntity.isDirectorySync('${root.path}/${package.relativePath}/$directory')) {
-      findings.add(Finding('layout-drift', package.relativePath, '$directory/ is required for the ${package.layer} layer'));
+      findings.add(
+        Finding('layout-drift', package.relativePath, '$directory/ is required for the ${package.layer} layer'),
+      );
     }
   }
   final include = File('${root.path}/${package.relativePath}/analysis_options.yaml').readAsStringSync();
   final expectedInclude = '${'../' * package.relativePath.split('/').length}analysis_options.package.yaml';
   if (!include.contains('include: $expectedInclude')) {
-    findings.add(Finding('analyzer-drift', package.relativePath, 'analysis_options.yaml must include $expectedInclude'));
+    findings.add(
+      Finding('analyzer-drift', package.relativePath, 'analysis_options.yaml must include $expectedInclude'),
+    );
   }
   return findings;
 }
 
 /// The per-layer internal directory template from package-architecture.md section 2.
 List<String> internalLayout(PackageInfo package) => switch (package.layer) {
-      'features' => const <String>['lib/src/data', 'lib/src/domain', 'lib/src/presentation'],
-      'providers' => const <String>['lib/src/models', 'fixtures'],
-      _ => const <String>['lib/src'],
-    };
+  'features' => const <String>['lib/src/data', 'lib/src/domain', 'lib/src/presentation'],
+  'providers' => const <String>['lib/src/models', 'fixtures'],
+  _ => const <String>['lib/src'],
+};
 
 /// Enforces the dependency direction between layers, plus the approved exception table.
 List<Finding> checkDependencies(PackageInfo package, Map<String, PackageInfo> byName) {
@@ -280,7 +274,13 @@ List<Finding> checkDependencies(PackageInfo package, Map<String, PackageInfo> by
   final allowed = kAllowedLayers[package.layer] ?? const <String>{};
   for (final dependency in package.dependencies) {
     if (dependency == 'pure_live') {
-      findings.add(Finding('depend-on-app', package.name, 'only the composition root may be depended on, never the app itself (I9)'));
+      findings.add(
+        Finding(
+          'depend-on-app',
+          package.name,
+          'only the composition root may be depended on, never the app itself (I9)',
+        ),
+      );
       continue;
     }
     if (!dependency.startsWith('pure_live_')) {
@@ -288,7 +288,9 @@ List<Finding> checkDependencies(PackageInfo package, Map<String, PackageInfo> by
     }
     final target = byName[dependency];
     if (target == null) {
-      findings.add(Finding('unknown-dependency', package.name, 'depends on $dependency which is not a workspace member'));
+      findings.add(
+        Finding('unknown-dependency', package.name, 'depends on $dependency which is not a workspace member'),
+      );
       continue;
     }
     if (allowed.contains(target.layer)) {
@@ -303,7 +305,9 @@ List<Finding> checkDependencies(PackageInfo package, Map<String, PackageInfo> by
     if (isApprovedException(package, target)) {
       continue;
     }
-    findings.add(Finding('layer-direction', package.name, '${package.layer} may not depend on ${target.layer} ($dependency)'));
+    findings.add(
+      Finding('layer-direction', package.name, '${package.layer} may not depend on ${target.layer} ($dependency)'),
+    );
   }
   return findings;
 }

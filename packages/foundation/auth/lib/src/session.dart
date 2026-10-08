@@ -15,11 +15,7 @@ enum AccountStatus { unknown, loggedOut, loggedIn, expired, disabled }
 
 /// A reference to a stored secret, never the secret itself.
 final class CredentialHandle {
-  const CredentialHandle({
-    required this.providerId,
-    required this.accountId,
-    required this.key,
-  });
+  const CredentialHandle({required this.providerId, required this.accountId, required this.key});
 
   /// The storage key for this credential. Exposed for the store, not for logging.
   final String key;
@@ -70,23 +66,17 @@ final class AccountProfile {
   }
 
   factory AccountProfile.fromJson(Map<String, Object?> json) => AccountProfile(
-        providerId: json['providerId']! as String,
-        accountId: json['accountId']! as String,
-        displayName: json['displayName'] as String? ?? '',
-        avatarUrl: json['avatarUrl'] as String?,
-        vipLabel: json['vipLabel'] as String?,
-      );
+    providerId: json['providerId']! as String,
+    accountId: json['accountId']! as String,
+    displayName: json['displayName'] as String? ?? '',
+    avatarUrl: json['avatarUrl'] as String?,
+    vipLabel: json['vipLabel'] as String?,
+  );
 }
 
 /// The state of one login, including when it stops being valid.
 final class AuthSession {
-  const AuthSession({
-    required this.handle,
-    required this.method,
-    required this.status,
-    this.expiresAt,
-    this.profile,
-  });
+  const AuthSession({required this.handle, required this.method, required this.status, this.expiresAt, this.profile});
 
   final CredentialHandle handle;
   final AuthMethod method;
@@ -107,13 +97,8 @@ final class AuthSession {
     return expiry != null && !now.toUtc().isBefore(expiry);
   }
 
-  AuthSession withStatus(AccountStatus next) => AuthSession(
-        handle: handle,
-        method: method,
-        status: next,
-        expiresAt: expiresAt,
-        profile: profile,
-      );
+  AuthSession withStatus(AccountStatus next) =>
+      AuthSession(handle: handle, method: method, status: next, expiresAt: expiresAt, profile: profile);
 
   /// A copy safe to put in a diagnostic report: identity and status, no credential.
   Map<String, Object?> toDiagnosticJson() {

@@ -9,19 +9,14 @@ import 'package:test/test.dart';
 void main() {
   late FixedClock clock;
 
-  CacheHub hubWith({
-    CachePolicy? image,
-    CachePolicy? media,
-    CachePolicy fallback = const CachePolicy(),
-  }) =>
-      CacheHub(
-        clock: clock,
-        defaultPolicy: fallback,
-        policies: <CacheNamespace, CachePolicy>{
-          if (image != null) CacheNamespace.image: image,
-          if (media != null) CacheNamespace.media: media,
-        },
-      );
+  CacheHub hubWith({CachePolicy? image, CachePolicy? media, CachePolicy fallback = const CachePolicy()}) => CacheHub(
+    clock: clock,
+    defaultPolicy: fallback,
+    policies: <CacheNamespace, CachePolicy>{
+      if (image != null) CacheNamespace.image: image,
+      if (media != null) CacheNamespace.media: media,
+    },
+  );
 
   setUp(() => clock = FixedClock(DateTime.utc(2026, 10, 8, 12)));
 
@@ -47,9 +42,7 @@ void main() {
   });
 
   test('test_namespaceCache_lru_evictsTheLeastRecentlyRead', () {
-    final hub = hubWith(
-      image: const CachePolicy(maxEntries: 2, eviction: CacheEviction.leastRecentlyUsed),
-    );
+    final hub = hubWith(image: const CachePolicy(maxEntries: 2, eviction: CacheEviction.leastRecentlyUsed));
     final cache = hub.of(CacheNamespace.image);
 
     cache.write('a', 1);
@@ -65,9 +58,7 @@ void main() {
   });
 
   test('test_namespaceCache_fifo_evictsTheOldestWritten', () {
-    final hub = hubWith(
-      image: const CachePolicy(maxEntries: 2, eviction: CacheEviction.firstInFirstOut),
-    );
+    final hub = hubWith(image: const CachePolicy(maxEntries: 2, eviction: CacheEviction.firstInFirstOut));
     final cache = hub.of(CacheNamespace.image);
 
     cache.write('a', 1);
@@ -135,10 +126,7 @@ void main() {
 
     expect(usage, hasLength(CacheNamespace.values.length));
     expect(hub.totalBytes, 7);
-    expect(
-      usage.firstWhere((item) => item.namespace == CacheNamespace.danmaku).entries,
-      1,
-    );
+    expect(usage.firstWhere((item) => item.namespace == CacheNamespace.danmaku).entries, 1);
   });
 
   test('test_cacheHub_policyFallsBackToTheDefault', () {

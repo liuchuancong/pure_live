@@ -50,8 +50,7 @@ final class LocaleTag {
     return null;
   }
 
-  static String _titleCase(String value) =>
-      '${value[0].toUpperCase()}${value.substring(1).toLowerCase()}';
+  static String _titleCase(String value) => '${value[0].toUpperCase()}${value.substring(1).toLowerCase()}';
 
   final String language;
 
@@ -72,20 +71,13 @@ final class LocaleTag {
 
   @override
   String toString() {
-    final parts = <String>[
-      language,
-      if (script != null) script!,
-      if (region != null) region!,
-    ];
+    final parts = <String>[language, if (script != null) script!, if (region != null) region!];
     return parts.join('-');
   }
 
   @override
   bool operator ==(Object other) {
-    return other is LocaleTag &&
-        other.language == language &&
-        other.script == script &&
-        other.region == region;
+    return other is LocaleTag && other.language == language && other.script == script && other.region == region;
   }
 
   @override
@@ -96,11 +88,7 @@ final class LocaleTag {
 ///
 /// [available] is tried as given; the resolution order is exact, then language plus script, then bare
 /// language, then [fallback]. A Traditional Chinese request therefore never lands on Simplified.
-String? resolveLocale({
-  required String requested,
-  required List<String> available,
-  String fallback = 'en',
-}) {
+String? resolveLocale({required String requested, required List<String> available, String fallback = 'en'}) {
   final wanted = LocaleTag.tryParse(requested);
   if (wanted == null) {
     return available.contains(fallback) ? fallback : null;
@@ -181,11 +169,7 @@ PluralCategory pluralCategory(int count, {String language = 'en'}) {
 ///
 /// A missing `other` form is a bug in the translation, so the raw count is returned rather than throwing
 /// inside a widget build.
-String pluralize(
-  int count, {
-  required Map<PluralCategory, String> forms,
-  String language = 'en',
-}) {
+String pluralize(int count, {required Map<PluralCategory, String> forms, String language = 'en'}) {
   final category = pluralCategory(count, language: language);
   final template = forms[category] ?? forms[PluralCategory.other];
   if (template == null) {

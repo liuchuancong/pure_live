@@ -111,11 +111,9 @@ final class Logger {
 
   bool isEnabled(LogLevel level) => router.isEnabled(name, level);
 
-  void debug(String message, {Map<String, Object?>? fields}) =>
-      _write(LogLevel.debug, message, fields: fields);
+  void debug(String message, {Map<String, Object?>? fields}) => _write(LogLevel.debug, message, fields: fields);
 
-  void info(String message, {Map<String, Object?>? fields}) =>
-      _write(LogLevel.info, message, fields: fields);
+  void info(String message, {Map<String, Object?>? fields}) => _write(LogLevel.info, message, fields: fields);
 
   void warning(String message, {Map<String, Object?>? fields, Object? error, StackTrace? stackTrace}) =>
       _write(LogLevel.warning, message, fields: fields, error: error, stackTrace: stackTrace);
@@ -126,13 +124,7 @@ final class Logger {
   void fatal(String message, {Map<String, Object?>? fields, Object? error, StackTrace? stackTrace}) =>
       _write(LogLevel.fatal, message, fields: fields, error: error, stackTrace: stackTrace);
 
-  void _write(
-    LogLevel level,
-    String message, {
-    Map<String, Object?>? fields,
-    Object? error,
-    StackTrace? stackTrace,
-  }) {
+  void _write(LogLevel level, String message, {Map<String, Object?>? fields, Object? error, StackTrace? stackTrace}) {
     if (!isEnabled(level)) {
       return;
     }

@@ -81,10 +81,7 @@ void main() {
 
   group('decideUpdate', () {
     test('test_decideUpdate_newerBuildExists_isAvailable', () {
-      final decision = decideUpdate(
-        current: AppVersion.parse('4.0.0+5000'),
-        latest: AppVersion.parse('4.0.0+5010'),
-      );
+      final decision = decideUpdate(current: AppVersion.parse('4.0.0+5000'), latest: AppVersion.parse('4.0.0+5010'));
 
       expect(decision.action, UpdateAction.available);
       expect(decision.shouldUpdate, isTrue);
@@ -92,10 +89,7 @@ void main() {
     });
 
     test('test_decideUpdate_upToDate_isNone', () {
-      final decision = decideUpdate(
-        current: AppVersion.parse('4.0.0+5010'),
-        latest: AppVersion.parse('4.0.0+5000'),
-      );
+      final decision = decideUpdate(current: AppVersion.parse('4.0.0+5010'), latest: AppVersion.parse('4.0.0+5000'));
 
       expect(decision.action, UpdateAction.none);
       expect(decision.shouldUpdate, isFalse);

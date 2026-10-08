@@ -41,13 +41,7 @@ void main() {
 
   test('test_sourceDescriptor_equal_ignoresConfigChanges', () {
     // Enabling or refreshing a source is not a change of identity.
-    const base = SourceDescriptor(
-      id: 's',
-      extensionId: 'e',
-      runtimeId: 'r',
-      uri: 'u',
-      type: SourceType.url,
-    );
+    const base = SourceDescriptor(id: 's', extensionId: 'e', runtimeId: 'r', uri: 'u', type: SourceType.url);
     const edited = SourceDescriptor(
       id: 's',
       extensionId: 'e',
@@ -61,10 +55,7 @@ void main() {
   });
 
   test('test_sourceStatus_json_keepsTimestampsInUtc', () {
-    final status = SourceStatus(
-      state: SourceState.ready,
-      lastUpdatedAt: DateTime.utc(2026, 10, 8, 1),
-    );
+    final status = SourceStatus(state: SourceState.ready, lastUpdatedAt: DateTime.utc(2026, 10, 8, 1));
     final decoded = SourceStatus.fromJson(status.toJson());
 
     expect(decoded.lastUpdatedAt, DateTime.utc(2026, 10, 8, 1));
@@ -186,10 +177,7 @@ void main() {
 
   test('test_platformErrorInfo_fromJson_keepsNullCategory_whenWriterOmittedIt', () {
     // Section 16: a null means "the protocol did not say", which is not the same as "unknown".
-    final decoded = PlatformErrorInfo.fromJson(const <String, Object?>{
-      'code': 'media.unavailable',
-      'message': 'gone',
-    });
+    final decoded = PlatformErrorInfo.fromJson(const <String, Object?>{'code': 'media.unavailable', 'message': 'gone'});
 
     expect(decoded.category, isNull);
   });
@@ -207,11 +195,13 @@ void main() {
   test('test_platformErrorInfo_fromJson_reportsTheMissingField', () {
     expect(
       () => PlatformErrorInfo.fromJson(const <String, Object?>{'message': 'no code'}),
-      throwsA(isA<FormatException>().having(
-        (error) => error.message,
-        'message',
-        contains('platform_error_info is missing required field "code"'),
-      )),
+      throwsA(
+        isA<FormatException>().having(
+          (error) => error.message,
+          'message',
+          contains('platform_error_info is missing required field "code"'),
+        ),
+      ),
     );
   });
 

@@ -51,9 +51,7 @@ final class DiagnosticEvent {
       resolverId: json['resolverId'] as String?,
       taskId: json['taskId'] as String?,
       content: json['content'] == null ? null : ContentRef.fromJson(asObjectMap(json['content'])),
-      error: json['error'] == null
-          ? null
-          : PlatformErrorInfo.fromJson(asObjectMap(json['error'])),
+      error: json['error'] == null ? null : PlatformErrorInfo.fromJson(asObjectMap(json['error'])),
       metadata: asObjectMap(json['metadata']),
     );
   }
@@ -157,8 +155,7 @@ final class DiagnosticSpan {
       operation: requireString(json, 'operation', 'diagnostic_event'),
       startedAt: parseUtc(json['startedAt']) ?? DateTime.utc(1970),
       completedAt: parseUtc(json['completedAt']),
-      status: enumByName(DiagnosticSpanStatus.values, json['status'] as String?) ??
-          DiagnosticSpanStatus.running,
+      status: enumByName(DiagnosticSpanStatus.values, json['status'] as String?) ?? DiagnosticSpanStatus.running,
       metadata: asObjectMap(json['metadata']),
     );
   }

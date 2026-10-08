@@ -38,10 +38,7 @@ void main() {
   test('test_runGuarded_syncThrow_isReportedAndReturnsTrue', () async {
     final caught = <Object>[];
 
-    final failed = await runGuarded(
-      () => throw StateError('sync'),
-      onError: (error, stackTrace) => caught.add(error),
-    );
+    final failed = await runGuarded(() => throw StateError('sync'), onError: (error, stackTrace) => caught.add(error));
 
     expect(failed, isTrue);
     expect(caught.single, isA<StateError>());
@@ -78,10 +75,7 @@ void main() {
   test('test_runGuarded_success_reportsNoError', () async {
     var calls = 0;
 
-    final failed = await runGuarded(
-      () => calls++,
-      onError: (error, stackTrace) => calls += 100,
-    );
+    final failed = await runGuarded(() => calls++, onError: (error, stackTrace) => calls += 100);
 
     expect(failed, isFalse);
     expect(calls, 1);

@@ -10,16 +10,7 @@ import '../../support/json.dart';
 import '../identifiers.dart';
 
 /// What a repository can serve.
-enum RepositoryCapability {
-  list,
-  detail,
-  search,
-  category,
-  recommendation,
-  resolve,
-  playlist,
-  epg,
-}
+enum RepositoryCapability { list, detail, search, category, recommendation, resolve, playlist, epg }
 
 /// Which parser family reads the repository, from docs/contracts/repository-contract.md section 1.
 enum RepositoryParser { tvboxJson, m3u, epgXmltv, opml, plugin, unknown }
@@ -82,20 +73,7 @@ final class RepositoryDescriptor {
 }
 
 /// What a provider serves inside a repository.
-enum ProviderType {
-  live,
-  vod,
-  music,
-  album,
-  artist,
-  lyrics,
-  playlist,
-  epg,
-  search,
-  detail,
-  resolve,
-  recommendation,
-}
+enum ProviderType { live, vod, music, album, artist, lyrics, playlist, epg, search, detail, resolve, recommendation }
 
 /// One provider of one repository.
 final class ProviderDescriptor {

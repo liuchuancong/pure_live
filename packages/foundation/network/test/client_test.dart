@@ -25,11 +25,7 @@ final class _ScriptedAdapter implements HttpClientAdapter {
   int get callCount => _calls;
 
   @override
-  Future<ResponseBody> fetch(
-    RequestOptions options,
-    Stream<Uint8List>? requestStream,
-    Future<void>? cancelFuture,
-  ) {
+  Future<ResponseBody> fetch(RequestOptions options, Stream<Uint8List>? requestStream, Future<void>? cancelFuture) {
     requests.add(options);
     final index = _calls < outcomes.length ? _calls : outcomes.length - 1;
     _calls++;
@@ -46,16 +42,12 @@ ResponseBody _body(String text, int status, {Map<String, String>? headers}) {
     status,
     headers: <String, List<String>>{
       'content-type': <String>['application/json'],
-      for (final entry in (headers ?? const <String, String>{}).entries)
-        entry.key: <String>[entry.value],
+      for (final entry in (headers ?? const <String, String>{}).entries) entry.key: <String>[entry.value],
     },
   );
 }
 
-NetworkSettings _fast({int attempts = 3}) => NetworkSettings(
-      attempts: attempts,
-      retryDelay: Duration.zero,
-    );
+NetworkSettings _fast({int attempts = 3}) => NetworkSettings(attempts: attempts, retryDelay: Duration.zero);
 
 void main() {
   test('test_client_ok_returnsBodyAndSendsUserAgent', () async {
@@ -65,10 +57,7 @@ void main() {
     final client = NetworkClient(
       settings: _fast(),
       adapter: adapter,
-      options: BaseOptions(
-        headers: <String, String>{'user-agent': 'PureLiveTest'},
-        validateStatus: (_) => true,
-      ),
+      options: BaseOptions(headers: <String, String>{'user-agent': 'PureLiveTest'}, validateStatus: (_) => true),
     );
 
     final json = await client.getJson('https://example.com/api');
@@ -79,27 +68,25 @@ void main() {
   });
 
   test('test_client_notFound_failsOnceWithoutRetry', () async {
-    final adapter = _ScriptedAdapter(<Future<ResponseBody> Function(RequestOptions)>[
-      (_) async => _body('nope', 404),
-    ]);
+    final adapter = _ScriptedAdapter(<Future<ResponseBody> Function(RequestOptions)>[(_) async => _body('nope', 404)]);
     final client = NetworkClient(settings: _fast(attempts: 3), adapter: adapter);
 
     await expectLater(
       client.get('https://example.com/gone'),
-      throwsA(isA<NetworkFailure>()
-          .having((f) => f.kind, 'kind', NetworkFailureKind.httpStatus)
-          .having((f) => f.statusCode, 'statusCode', 404)
-          .having((f) => f.retryable, 'retryable', isFalse)
-          .having((f) => f.code, 'code', 'network.http_status')),
+      throwsA(
+        isA<NetworkFailure>()
+            .having((f) => f.kind, 'kind', NetworkFailureKind.httpStatus)
+            .having((f) => f.statusCode, 'statusCode', 404)
+            .having((f) => f.retryable, 'retryable', isFalse)
+            .having((f) => f.code, 'code', 'network.http_status'),
+      ),
     );
     expect(adapter.callCount, 1);
     client.close();
   });
 
   test('test_client_serverError_retriesUpToTheAttemptBudget', () async {
-    final adapter = _ScriptedAdapter(<Future<ResponseBody> Function(RequestOptions)>[
-      (_) async => _body('boom', 503),
-    ]);
+    final adapter = _ScriptedAdapter(<Future<ResponseBody> Function(RequestOptions)>[(_) async => _body('boom', 503)]);
     final client = NetworkClient(settings: _fast(attempts: 3), adapter: adapter);
 
     await expectLater(client.get('https://example.com/flaky'), throwsA(isA<NetworkFailure>()));
@@ -129,9 +116,11 @@ void main() {
 
     await expectLater(
       client.get('https://example.com/private'),
-      throwsA(isA<NetworkFailure>()
-          .having((f) => f.kind, 'kind', NetworkFailureKind.forbidden)
-          .having((f) => f.code, 'code', 'network.forbidden')),
+      throwsA(
+        isA<NetworkFailure>()
+            .having((f) => f.kind, 'kind', NetworkFailureKind.forbidden)
+            .having((f) => f.code, 'code', 'network.forbidden'),
+      ),
     );
     expect(adapter.callCount, 1);
     client.close();
@@ -140,9 +129,9 @@ void main() {
   test('test_client_connectionTimeout_isRetriedAsTimeout', () async {
     final adapter = _ScriptedAdapter(<Future<ResponseBody> Function(RequestOptions)>[
       (_) async => throw DioException(
-            type: DioExceptionType.connectionTimeout,
-            requestOptions: RequestOptions(path: 'https://example.com/slow'),
-          ),
+        type: DioExceptionType.connectionTimeout,
+        requestOptions: RequestOptions(path: 'https://example.com/slow'),
+      ),
       (_) async => _body('{"ok":1}', 200),
     ]);
     final client = NetworkClient(settings: _fast(attempts: 2), adapter: adapter);
@@ -158,18 +147,20 @@ void main() {
   test('test_client_timeoutThenFailure_reportsTimeoutCode', () async {
     final adapter = _ScriptedAdapter(<Future<ResponseBody> Function(RequestOptions)>[
       (_) async => throw DioException(
-            type: DioExceptionType.receiveTimeout,
-            requestOptions: RequestOptions(path: 'https://example.com/slow'),
-          ),
+        type: DioExceptionType.receiveTimeout,
+        requestOptions: RequestOptions(path: 'https://example.com/slow'),
+      ),
     ]);
     final client = NetworkClient(settings: _fast(attempts: 2), adapter: adapter);
 
     await expectLater(
       client.get('https://example.com/slow'),
-      throwsA(isA<NetworkFailure>()
-          .having((f) => f.kind, 'kind', NetworkFailureKind.timeout)
-          .having((f) => f.code, 'code', 'network.timeout')
-          .having((f) => f.retryable, 'retryable', isTrue)),
+      throwsA(
+        isA<NetworkFailure>()
+            .having((f) => f.kind, 'kind', NetworkFailureKind.timeout)
+            .having((f) => f.code, 'code', 'network.timeout')
+            .having((f) => f.retryable, 'retryable', isTrue),
+      ),
     );
     expect(adapter.callCount, 2);
     client.close();
@@ -178,18 +169,20 @@ void main() {
   test('test_client_cancelledRequest_isNotRetried', () async {
     final adapter = _ScriptedAdapter(<Future<ResponseBody> Function(RequestOptions)>[
       (_) async => throw DioException(
-            type: DioExceptionType.cancel,
-            requestOptions: RequestOptions(path: 'https://example.com/live'),
-          ),
+        type: DioExceptionType.cancel,
+        requestOptions: RequestOptions(path: 'https://example.com/live'),
+      ),
     ]);
     final client = NetworkClient(settings: _fast(attempts: 5), adapter: adapter);
     final token = CancelToken();
 
     await expectLater(
       client.get('https://example.com/live', cancelToken: token),
-      throwsA(isA<NetworkFailure>()
-          .having((f) => f.kind, 'kind', NetworkFailureKind.cancelled)
-          .having((f) => f.retryable, 'retryable', isFalse)),
+      throwsA(
+        isA<NetworkFailure>()
+            .having((f) => f.kind, 'kind', NetworkFailureKind.cancelled)
+            .having((f) => f.retryable, 'retryable', isFalse),
+      ),
     );
     expect(adapter.callCount, 1);
     client.close();
@@ -206,26 +199,22 @@ void main() {
 
     await expectLater(
       client.get('https://example.com/huge'),
-      throwsA(isA<NetworkFailure>()
-          .having((f) => f.kind, 'kind', NetworkFailureKind.responseTooLarge)
-          .having((f) => f.code, 'code', 'network.response_too_large')),
+      throwsA(
+        isA<NetworkFailure>()
+            .having((f) => f.kind, 'kind', NetworkFailureKind.responseTooLarge)
+            .having((f) => f.code, 'code', 'network.response_too_large'),
+      ),
     );
     client.close();
   });
 
   test('test_client_emptyBody_reportsTheUrlThatFailed', () async {
-    final adapter = _ScriptedAdapter(<Future<ResponseBody> Function(RequestOptions)>[
-      (_) async => _body('', 200),
-    ]);
+    final adapter = _ScriptedAdapter(<Future<ResponseBody> Function(RequestOptions)>[(_) async => _body('', 200)]);
     final client = NetworkClient(settings: _fast(attempts: 1), adapter: adapter);
 
     await expectLater(
       client.getJson('https://example.com/empty'),
-      throwsA(isA<NetworkFailure>().having(
-        (f) => f.toString(),
-        'description',
-        contains('https://example.com/empty'),
-      )),
+      throwsA(isA<NetworkFailure>().having((f) => f.toString(), 'description', contains('https://example.com/empty'))),
     );
     client.close();
   });
@@ -238,11 +227,7 @@ void main() {
 
     await expectLater(
       client.getJson('https://example.com/list'),
-      throwsA(isA<NetworkFailure>().having(
-        (f) => f.cause! as String,
-        'cause',
-        contains('expected a JSON object'),
-      )),
+      throwsA(isA<NetworkFailure>().having((f) => f.cause! as String, 'cause', contains('expected a JSON object'))),
     );
     client.close();
   });
@@ -254,11 +239,7 @@ void main() {
       (_) async => _body('again', 500),
       (_) async => _body('{"ok":1}', 200),
     ]);
-    final client = NetworkClient(
-      settings: _fast(attempts: 2),
-      adapter: adapter,
-      logger: router.logger('network'),
-    );
+    final client = NetworkClient(settings: _fast(attempts: 2), adapter: adapter, logger: router.logger('network'));
 
     await client.getJson('https://example.com/v.m3u8?token=abc');
 

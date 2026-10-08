@@ -9,12 +9,7 @@
 
 /// A released version: three semantic parts plus a numeric build.
 final class AppVersion implements Comparable<AppVersion> {
-  const AppVersion({
-    required this.major,
-    required this.minor,
-    required this.patch,
-    required this.build,
-  });
+  const AppVersion({required this.major, required this.minor, required this.patch, required this.build});
 
   /// Parses `4.0.0+5000` or `4.0.0`. A missing build is zero, not unknown.
   ///
@@ -122,12 +117,7 @@ enum UpdateAction {
 
 /// The outcome of comparing an installed app against a release feed.
 final class UpdateDecision {
-  const UpdateDecision({
-    required this.action,
-    required this.current,
-    this.latest,
-    this.reason,
-  });
+  const UpdateDecision({required this.action, required this.current, this.latest, this.reason});
 
   final UpdateAction action;
   final AppVersion current;
@@ -145,11 +135,7 @@ final class UpdateDecision {
 ///
 /// A release below [minimumSupported] is forced even when [latest] is only a build bump, because staying
 /// would keep a client pointed at a protocol it can no longer satisfy.
-UpdateDecision decideUpdate({
-  required AppVersion current,
-  AppVersion? latest,
-  AppVersion? minimumSupported,
-}) {
+UpdateDecision decideUpdate({required AppVersion current, AppVersion? latest, AppVersion? minimumSupported}) {
   if (minimumSupported != null && current < minimumSupported) {
     return UpdateDecision(
       action: UpdateAction.forced,

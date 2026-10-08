@@ -25,9 +25,8 @@ final class _Remote implements RemoteStore {
 
 final class _Local implements LocalStore {
   _Local(Map<String, SyncRecord>? existing, {List<SyncRecord>? pending})
-      : _existing = Map<String, SyncRecord>.of(existing ?? <String, SyncRecord>{}),
-        _pending = pending ?? <SyncRecord>[];
-
+    : _existing = Map<String, SyncRecord>.of(existing ?? <String, SyncRecord>{}),
+      _pending = pending ?? <SyncRecord>[];
 
   final Map<String, SyncRecord> _existing;
   final List<SyncRecord> _pending;
@@ -59,9 +58,9 @@ void main() {
   test('test_syncEngine_pull_appliesUnknownKeys', () async {
     final local = _Local(<String, SyncRecord>{});
     final engine = SyncEngine(
-      remote: _Remote(records: <SyncRecord>[
-        SyncRecord(key: 'favorites.a', value: 1, updatedAt: _t1),
-      ]),
+      remote: _Remote(
+        records: <SyncRecord>[SyncRecord(key: 'favorites.a', value: 1, updatedAt: _t1)],
+      ),
       local: local,
       isCredentialKey: _isCredentialKey,
     );
@@ -78,9 +77,9 @@ void main() {
       'favorites.a': SyncRecord(key: 'favorites.a', value: 'old', updatedAt: _t1),
     });
     final engine = SyncEngine(
-      remote: _Remote(records: <SyncRecord>[
-        SyncRecord(key: 'favorites.a', value: 'new', updatedAt: _t2),
-      ]),
+      remote: _Remote(
+        records: <SyncRecord>[SyncRecord(key: 'favorites.a', value: 'new', updatedAt: _t2)],
+      ),
       local: local,
       isCredentialKey: _isCredentialKey,
     );
@@ -96,9 +95,9 @@ void main() {
       'favorites.a': SyncRecord(key: 'favorites.a', value: 'newer', updatedAt: _t2),
     });
     final engine = SyncEngine(
-      remote: _Remote(records: <SyncRecord>[
-        SyncRecord(key: 'favorites.a', value: 'older', updatedAt: _t1),
-      ]),
+      remote: _Remote(
+        records: <SyncRecord>[SyncRecord(key: 'favorites.a', value: 'older', updatedAt: _t1)],
+      ),
       local: local,
       isCredentialKey: _isCredentialKey,
     );
@@ -115,9 +114,9 @@ void main() {
       'favorites.a': SyncRecord(key: 'favorites.a', value: 'remote-copy', updatedAt: _t1),
     });
     final engine = SyncEngine(
-      remote: _Remote(records: <SyncRecord>[
-        SyncRecord(key: 'favorites.a', value: 'incoming', updatedAt: _t1),
-      ]),
+      remote: _Remote(
+        records: <SyncRecord>[SyncRecord(key: 'favorites.a', value: 'incoming', updatedAt: _t1)],
+      ),
       local: local,
       isCredentialKey: _isCredentialKey,
     );
@@ -133,9 +132,9 @@ void main() {
       'favorites.a': SyncRecord(key: 'favorites.a', value: 'local', updatedAt: _t1),
     });
     final engine = SyncEngine(
-      remote: _Remote(records: <SyncRecord>[
-        SyncRecord(key: 'favorites.a', value: 'remote', updatedAt: _t2),
-      ]),
+      remote: _Remote(
+        records: <SyncRecord>[SyncRecord(key: 'favorites.a', value: 'remote', updatedAt: _t2)],
+      ),
       local: local,
       isCredentialKey: _isCredentialKey,
       policy: ConflictPolicy.localWins,
@@ -149,9 +148,9 @@ void main() {
       'playlist.x': SyncRecord(key: 'playlist.x', value: 'alive', updatedAt: _t1),
     });
     final engine = SyncEngine(
-      remote: _Remote(records: <SyncRecord>[
-        SyncRecord(key: 'playlist.x', deleted: true, updatedAt: _t2),
-      ]),
+      remote: _Remote(
+        records: <SyncRecord>[SyncRecord(key: 'playlist.x', deleted: true, updatedAt: _t2)],
+      ),
       local: local,
       isCredentialKey: _isCredentialKey,
     );
@@ -165,10 +164,12 @@ void main() {
   test('test_syncEngine_pull_neverAppliesCredentialKeys', () async {
     final local = _Local(<String, SyncRecord>{});
     final engine = SyncEngine(
-      remote: _Remote(records: <SyncRecord>[
-        SyncRecord(key: 'auth.secret.bilibili', value: 'stolen', updatedAt: _t1),
-        SyncRecord(key: 'favorites.ok', value: 1, updatedAt: _t1),
-      ]),
+      remote: _Remote(
+        records: <SyncRecord>[
+          SyncRecord(key: 'auth.secret.bilibili', value: 'stolen', updatedAt: _t1),
+          SyncRecord(key: 'favorites.ok', value: 1, updatedAt: _t1),
+        ],
+      ),
       local: local,
       isCredentialKey: _isCredentialKey,
     );
@@ -190,11 +191,7 @@ void main() {
       ],
     );
 
-    final report = await SyncEngine(
-      remote: remote,
-      local: local,
-      isCredentialKey: _isCredentialKey,
-    ).push();
+    final report = await SyncEngine(remote: remote, local: local, isCredentialKey: _isCredentialKey).push();
 
     expect(report.pushed, 1);
     expect(report.refusedCredentials, 1);

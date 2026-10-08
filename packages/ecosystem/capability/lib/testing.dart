@@ -23,11 +23,7 @@ import 'src/capabilities.dart';
 /// [code] is stable and machine-read: it is the key a plugin report groups by, so changing one is a breaking
 /// change to this entrypoint even though the message text is free to move.
 final class ContractViolation {
-  const ContractViolation({
-    required this.code,
-    required this.capability,
-    required this.message,
-  });
+  const ContractViolation({required this.code, required this.capability, required this.message});
 
   final String code;
 
@@ -35,11 +31,7 @@ final class ContractViolation {
   final String capability;
   final String message;
 
-  Map<String, Object?> toJson() => <String, Object?>{
-    'code': code,
-    'capability': capability,
-    'message': message,
-  };
+  Map<String, Object?> toJson() => <String, Object?>{'code': code, 'capability': capability, 'message': message};
 
   @override
   String toString() => '[$code] $capability: $message';
@@ -76,15 +68,8 @@ abstract interface class ContractSubject {
 }
 
 /// Runs every applicable suite over [subject]: declarations first, then each implemented capability.
-Future<List<ContractViolation>> checkCapabilityContract(
-  ContractSubject subject,
-) async {
-  final violations = <ContractViolation>[
-    ...checkCapabilityDeclarations(
-      subject.declaredCapabilities,
-      subject.source,
-    ),
-  ];
+Future<List<ContractViolation>> checkCapabilityContract(ContractSubject subject) async {
+  final violations = <ContractViolation>[...checkCapabilityDeclarations(subject.declaredCapabilities, subject.source)];
   final source = subject.source;
   if (source is ResolveCapability) {
     violations.addAll(await checkResolveContract(source, subject.probe));
@@ -105,10 +90,7 @@ Future<List<ContractViolation>> checkCapabilityContract(
 ///
 /// Only the kinds with a method set in this package are checkable; the rest report nothing here and land
 /// with the wave that defines their calls, rather than being declared satisfied by an empty check.
-List<ContractViolation> checkCapabilityDeclarations(
-  CapabilitySet declared,
-  Object source,
-) {
+List<ContractViolation> checkCapabilityDeclarations(CapabilitySet declared, Object source) {
   final violations = <ContractViolation>[];
   for (final kind in declared.kinds) {
     final missing = _missingInterfaces(kind, source);
@@ -117,8 +99,7 @@ List<ContractViolation> checkCapabilityDeclarations(
         ContractViolation(
           code: 'contract.declaration.missing_interface',
           capability: 'declaration',
-          message:
-              'declares ${kind.name} but the source is not ${missing.join(', ')}',
+          message: 'declares ${kind.name} but the source is not ${missing.join(', ')}',
         ),
       );
     }
@@ -127,10 +108,7 @@ List<ContractViolation> checkCapabilityDeclarations(
 }
 
 /// Resolves the probe reference and re-resolves it for each refresh reason the host can raise.
-Future<List<ContractViolation>> checkResolveContract(
-  ResolveCapability capability,
-  ContractProbe probe,
-) async {
+Future<List<ContractViolation>> checkResolveContract(ResolveCapability capability, ContractProbe probe) async {
   final at = DateTime.now().toUtc();
   final violations = <ContractViolation>[];
 
@@ -146,15 +124,9 @@ Future<List<ContractViolation>> checkResolveContract(
       ),
     ];
   }
-  violations.addAll(
-    _ticketViolations(ticket, probe.playableRef, at, 'resolve'),
-  );
+  violations.addAll(_ticketViolations(ticket, probe.playableRef, at, 'resolve'));
 
-  for (final reason in const <RefreshReason>[
-    RefreshReason.expiring,
-    RefreshReason.expired,
-    RefreshReason.manual,
-  ]) {
+  for (final reason in const <RefreshReason>[RefreshReason.expiring, RefreshReason.expired, RefreshReason.manual]) {
     final MediaTicket refreshed;
     try {
       refreshed = await capability.refresh(ticket, reason);
@@ -168,16 +140,13 @@ Future<List<ContractViolation>> checkResolveContract(
       );
       continue;
     }
-    violations.addAll(
-      _ticketViolations(refreshed, probe.playableRef, at, 'refresh'),
-    );
+    violations.addAll(_ticketViolations(refreshed, probe.playableRef, at, 'refresh'));
     if (refreshed.id == ticket.id && refreshed.uri == ticket.uri) {
       violations.add(
         ContractViolation(
           code: 'contract.refresh.not_fresh',
           capability: 'resolve',
-          message:
-              'refresh($reason) returned the same ticket it was given, so the link never changed',
+          message: 'refresh($reason) returned the same ticket it was given, so the link never changed',
         ),
       );
     }
@@ -186,23 +155,14 @@ Future<List<ContractViolation>> checkResolveContract(
 }
 
 /// Browses one page and opens the detail of the first item it returned.
-Future<List<ContractViolation>> checkBrowseContract(
-  BrowseCapability capability,
-  ContractProbe probe,
-) async {
+Future<List<ContractViolation>> checkBrowseContract(BrowseCapability capability, ContractProbe probe) async {
   final violations = <ContractViolation>[];
 
   final PageResult<ContentSummary> page;
   try {
     page = await capability.browse(probe.browseQuery);
   } catch (error) {
-    return [
-      ContractViolation(
-        code: 'contract.browse.threw',
-        capability: 'browse',
-        message: 'browse failed: $error',
-      ),
-    ];
+    return [ContractViolation(code: 'contract.browse.threw', capability: 'browse', message: 'browse failed: $error')];
   }
 
   violations.addAll([
@@ -250,8 +210,7 @@ Future<List<ContractViolation>> checkBrowseContract(
         ContractViolation(
           code: 'contract.browse.detail_ref_mismatch',
           capability: 'browse',
-          message:
-              'detail asked for ${ref.contentId} and answered ${detail.ref.contentId}',
+          message: 'detail asked for ${ref.contentId} and answered ${detail.ref.contentId}',
         ),
       );
     }
@@ -261,10 +220,7 @@ Future<List<ContractViolation>> checkBrowseContract(
 }
 
 /// Searches the probe keyword.
-Future<List<ContractViolation>> checkSearchContract(
-  SearchCapability capability,
-  ContractProbe probe,
-) async {
+Future<List<ContractViolation>> checkSearchContract(SearchCapability capability, ContractProbe probe) async {
   final PageResult<ContentSummary> page;
   try {
     page = await capability.search(probe.searchQuery);
@@ -287,8 +243,7 @@ Future<List<ContractViolation>> checkSearchContract(
       ContractViolation(
         code: 'contract.search.empty',
         capability: 'search',
-        message:
-            'the probe keyword ${probe.searchQuery.keyword} matched nothing, so this run cannot prove search',
+        message: 'the probe keyword ${probe.searchQuery.keyword} matched nothing, so this run cannot prove search',
       ),
     );
   }
@@ -296,21 +251,12 @@ Future<List<ContractViolation>> checkSearchContract(
 }
 
 /// Reads the front page.
-Future<List<ContractViolation>> checkFeedContract(
-  FeedCapability capability,
-  ContractProbe probe,
-) async {
+Future<List<ContractViolation>> checkFeedContract(FeedCapability capability, ContractProbe probe) async {
   final PageResult<ContentSummary> page;
   try {
     page = await capability.feed(PageRequest.first);
   } catch (error) {
-    return [
-      ContractViolation(
-        code: 'contract.feed.threw',
-        capability: 'feed',
-        message: 'feed failed: $error',
-      ),
-    ];
+    return [ContractViolation(code: 'contract.feed.threw', capability: 'feed', message: 'feed failed: $error')];
   }
 
   final seen = <ContentRef>{};
@@ -334,39 +280,24 @@ Future<List<ContractViolation>> checkFeedContract(
       ContractViolation(
         code: 'contract.feed.empty',
         capability: 'feed',
-        message:
-            'the front page returned nothing while declaring FeedCapability',
+        message: 'the front page returned nothing while declaring FeedCapability',
       ),
     );
   }
   return violations;
 }
 
-List<String> _missingInterfaces(CapabilityKind kind, Object source) =>
-    switch (kind) {
-      CapabilityKind.live ||
-      CapabilityKind.vod ||
-      CapabilityKind.music ||
-      CapabilityKind.iptv => <String>[
-        if (source is! BrowseCapability) 'BrowseCapability',
-        if (source is! ResolveCapability) 'ResolveCapability',
-      ],
-      CapabilityKind.search =>
-        source is! SearchCapability
-            ? const <String>['SearchCapability']
-            : const <String>[],
-      CapabilityKind.feed =>
-        source is! FeedCapability
-            ? const <String>['FeedCapability']
-            : const <String>[],
-      _ => const <String>[],
-    };
+List<String> _missingInterfaces(CapabilityKind kind, Object source) => switch (kind) {
+  CapabilityKind.live || CapabilityKind.vod || CapabilityKind.music || CapabilityKind.iptv => <String>[
+    if (source is! BrowseCapability) 'BrowseCapability',
+    if (source is! ResolveCapability) 'ResolveCapability',
+  ],
+  CapabilityKind.search => source is! SearchCapability ? const <String>['SearchCapability'] : const <String>[],
+  CapabilityKind.feed => source is! FeedCapability ? const <String>['FeedCapability'] : const <String>[],
+  _ => const <String>[],
+};
 
-List<ContractViolation> _pageViolations<T>(
-  PageResult<T> page,
-  PageRequest requested,
-  String capability,
-) {
+List<ContractViolation> _pageViolations<T>(PageResult<T> page, PageRequest requested, String capability) {
   return <ContractViolation>[
     if (page.page != requested.page)
       ContractViolation(
@@ -387,11 +318,7 @@ List<ContractViolation> _pageViolations<T>(
   ];
 }
 
-List<ContractViolation> _summaryViolations(
-  List<ContentSummary> items,
-  ContractProbe probe,
-  String capability,
-) {
+List<ContractViolation> _summaryViolations(List<ContentSummary> items, ContractProbe probe, String capability) {
   final violations = <ContractViolation>[];
   for (final item in items) {
     if (item.ref.sourceId != probe.sourceId) {
@@ -399,8 +326,7 @@ List<ContractViolation> _summaryViolations(
         ContractViolation(
           code: 'contract.$capability.foreign_source',
           capability: capability,
-          message:
-              'handed out a ref for source ${item.ref.sourceId}; a source may only name its own content',
+          message: 'handed out a ref for source ${item.ref.sourceId}; a source may only name its own content',
         ),
       );
     }
@@ -417,20 +343,14 @@ List<ContractViolation> _summaryViolations(
   return violations;
 }
 
-List<ContractViolation> _ticketViolations(
-  MediaTicket ticket,
-  ContentRef requested,
-  DateTime now,
-  String capability,
-) {
+List<ContractViolation> _ticketViolations(MediaTicket ticket, ContentRef requested, DateTime now, String capability) {
   final violations = <ContractViolation>[];
   if (ticket.uri.scheme.isEmpty) {
     violations.add(
       ContractViolation(
         code: 'contract.$capability.uri_scheme',
         capability: capability,
-        message:
-            'ticket ${ticket.id} has a uri with no scheme, so nothing can fetch it',
+        message: 'ticket ${ticket.id} has a uri with no scheme, so nothing can fetch it',
       ),
     );
   }
@@ -439,8 +359,7 @@ List<ContractViolation> _ticketViolations(
       ContractViolation(
         code: 'contract.$capability.protocol_unknown',
         capability: capability,
-        message:
-            'ticket ${ticket.id} does not say how it is transported, so no plan can be built for it',
+        message: 'ticket ${ticket.id} does not say how it is transported, so no plan can be built for it',
       ),
     );
   }
@@ -449,8 +368,7 @@ List<ContractViolation> _ticketViolations(
       ContractViolation(
         code: 'contract.$capability.wrong_source_content',
         capability: capability,
-        message:
-            'asked for ${requested.contentId} and got a ticket attributed to ${ticket.source!.contentId}',
+        message: 'asked for ${requested.contentId} and got a ticket attributed to ${ticket.source!.contentId}',
       ),
     );
   }
@@ -469,8 +387,7 @@ List<ContractViolation> _ticketViolations(
         ContractViolation(
           code: 'contract.$capability.expiry_in_past',
           capability: capability,
-          message:
-              'ticket ${ticket.id} was already expired when it was handed over',
+          message: 'ticket ${ticket.id} was already expired when it was handed over',
         ),
       );
     }
@@ -481,8 +398,7 @@ List<ContractViolation> _ticketViolations(
         ContractViolation(
           code: 'contract.$capability.track_uri_scheme',
           capability: capability,
-          message:
-              'ticket ${ticket.id} carries a ${track.kind.name} track with a schemeless uri',
+          message: 'ticket ${ticket.id} carries a ${track.kind.name} track with a schemeless uri',
         ),
       );
     }

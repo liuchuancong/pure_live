@@ -43,7 +43,9 @@ void main() {
     final engine = BackupEngine(
       sources: <DomainSource>[
         _Source('settings', <String, Object?>{'player.engine': 'mpv'}),
-        _Source('favorites', <String, Object?>{'list': <String>['a', 'b']}),
+        _Source('favorites', <String, Object?>{
+          'list': <String>['a', 'b'],
+        }),
       ],
       isCredentialKey: _isCredentialKey,
       appVersion: '4.0.0+5000',
@@ -61,10 +63,7 @@ void main() {
   test('test_backupEngine_neverWritesCredentialKeys', () async {
     final engine = BackupEngine(
       sources: <DomainSource>[
-        _Source('settings', <String, Object?>{
-          'player.engine': 'mpv',
-          'auth.secret.bilibili.uid': 'super-private',
-        }),
+        _Source('settings', <String, Object?>{'player.engine': 'mpv', 'auth.secret.bilibili.uid': 'super-private'}),
       ],
       isCredentialKey: _isCredentialKey,
     );
@@ -197,10 +196,7 @@ void main() {
     final bundle = BackupBundle(
       manifest: manifest,
       payload: <String, Map<String, Object?>>{
-        'settings': <String, Object?>{
-          'player.engine': 'mpv',
-          'auth.secret.bilibili.uid': 'stolen',
-        },
+        'settings': <String, Object?>{'player.engine': 'mpv', 'auth.secret.bilibili.uid': 'stolen'},
       },
     );
 
@@ -215,7 +211,9 @@ void main() {
 
   test('test_restoreEngine_unknownDomainIsSkippedNotFailed', () async {
     final bundle = await BackupEngine(
-      sources: <DomainSource>[_Source('legacy', <String, Object?>{'a': 1})],
+      sources: <DomainSource>[
+        _Source('legacy', <String, Object?>{'a': 1}),
+      ],
       isCredentialKey: _isCredentialKey,
     ).build(clock: clock);
 
@@ -237,7 +235,9 @@ void main() {
         createdAt: DateTime.utc(2026),
         domains: const <BackupDomain>[BackupDomain(name: 'settings', keyCount: 1, bytes: 1)],
       ),
-      payload: const <String, Map<String, Object?>>{'settings': <String, Object?>{'a': 1}},
+      payload: const <String, Map<String, Object?>>{
+        'settings': <String, Object?>{'a': 1},
+      },
     );
 
     await expectLater(

@@ -29,6 +29,9 @@ jobs:
         run: flutter pub get --enforce-lockfile
       - name: Architecture guard
         run: dart run tool/check_architecture.dart --strict
+      - name: Format check
+        # The v2 surface only: tool/probes holds opt-in v1 native probes that are not style-gated.
+        run: dart format --output=none --set-exit-if-changed packages tool/check_architecture.dart tool/check_workflow_yaml.dart
       - name: Workflow YAML syntax
         run: dart run tool/check_workflow_yaml.dart
       - name: Analyzer

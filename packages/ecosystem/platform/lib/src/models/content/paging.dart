@@ -18,34 +18,18 @@ final class PageRequest {
   final int page;
   final int pageSize;
 
-  Map<String, Object?> toJson() => <String, Object?>{
-    'page': page,
-    'pageSize': pageSize,
-  };
+  Map<String, Object?> toJson() => <String, Object?>{'page': page, 'pageSize': pageSize};
 
-  factory PageRequest.fromJson(Map<String, Object?> json) => PageRequest(
-    page: (json['page'] as num?)?.toInt() ?? 1,
-    pageSize: (json['pageSize'] as num?)?.toInt() ?? 20,
-  );
+  factory PageRequest.fromJson(Map<String, Object?> json) =>
+      PageRequest(page: (json['page'] as num?)?.toInt() ?? 1, pageSize: (json['pageSize'] as num?)?.toInt() ?? 20);
 }
 
 /// One page of results.
 final class PageResult<T> {
-  const PageResult({
-    required this.items,
-    required this.page,
-    required this.pageSize,
-    this.hasMore = false,
-    this.total,
-  });
+  const PageResult({required this.items, required this.page, required this.pageSize, this.hasMore = false, this.total});
 
   /// An empty page, used when a source answered but had nothing for this query.
-  const PageResult.empty()
-    : items = const <Never>[],
-      page = 1,
-      pageSize = 0,
-      hasMore = false,
-      total = 0;
+  const PageResult.empty() : items = const <Never>[], page = 1, pageSize = 0, hasMore = false, total = 0;
 
   final List<T> items;
   final int page;
@@ -60,9 +44,7 @@ final class PageResult<T> {
 
   bool get isEmpty => items.isEmpty;
 
-  Map<String, Object?> toJson(
-    Map<String, Object?> Function(T item) encodeItem,
-  ) {
+  Map<String, Object?> toJson(Map<String, Object?> Function(T item) encodeItem) {
     return <String, Object?>{
       'items': items.map(encodeItem).toList(growable: false),
       'page': page,
@@ -167,10 +149,7 @@ final class SelectionRef {
   final String id;
   final String? label;
 
-  Map<String, Object?> toJson() => <String, Object?>{
-    'id': id,
-    if (label != null) 'label': label,
-  };
+  Map<String, Object?> toJson() => <String, Object?>{'id': id, if (label != null) 'label': label};
 
   factory SelectionRef.fromJson(Map<String, Object?> json) =>
       SelectionRef(json['id']! as String, label: json['label'] as String?);

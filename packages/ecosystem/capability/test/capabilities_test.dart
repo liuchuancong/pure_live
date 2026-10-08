@@ -50,17 +50,11 @@ void main() {
     final widened = original.withKind(CapabilityKind.search);
 
     expect(original.kinds, <CapabilityKind>{CapabilityKind.live});
-    expect(widened.kinds, <CapabilityKind>{
-      CapabilityKind.live,
-      CapabilityKind.search,
-    });
+    expect(widened.kinds, <CapabilityKind>{CapabilityKind.live, CapabilityKind.search});
   });
 
   test('test_capabilitySet_jsonRoundTrip_preservesKinds', () {
-    const set = CapabilitySet(<CapabilityKind>{
-      CapabilityKind.vod,
-      CapabilityKind.feed,
-    });
+    const set = CapabilitySet(<CapabilityKind>{CapabilityKind.vod, CapabilityKind.feed});
 
     final decoded = CapabilitySet.fromJson(set.toJson());
 
@@ -75,9 +69,7 @@ void main() {
     });
 
     expect(set.kinds, <CapabilityKind>{CapabilityKind.live});
-    expect(const CapabilitySet.empty().toJson(), <String, Object?>{
-      'kinds': <String>[],
-    });
+    expect(const CapabilitySet.empty().toJson(), <String, Object?>{'kinds': <String>[]});
   });
 
   test('test_capabilitySet_fromJson_missingKey_returnsEmptySet', () {
@@ -85,10 +77,7 @@ void main() {
   });
 
   test('test_capabilitySet_toString_listsKindsForLogs', () {
-    const set = CapabilitySet(<CapabilityKind>{
-      CapabilityKind.live,
-      CapabilityKind.search,
-    });
+    const set = CapabilitySet(<CapabilityKind>{CapabilityKind.live, CapabilityKind.search});
     expect('$set', contains('live'));
     expect('$set', contains('search'));
   });

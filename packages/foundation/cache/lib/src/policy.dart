@@ -7,17 +7,7 @@
 // directory, they pick one of these so quota and cleanup stay meaningful.
 
 /// What a cache entry is for.
-enum CacheNamespace {
-  image,
-  media,
-  music,
-  subtitle,
-  danmaku,
-  plugin,
-  metadata,
-  epg,
-  fonts,
-}
+enum CacheNamespace { image, media, music, subtitle, danmaku, plugin, metadata, epg, fonts }
 
 /// Which entry to drop when a namespace is over its quota.
 enum CacheEviction {
@@ -65,9 +55,5 @@ final class CacheUsage {
   final int entries;
   final int bytes;
 
-  Map<String, Object?> toJson() => <String, Object?>{
-        'namespace': namespace.name,
-        'entries': entries,
-        'bytes': bytes,
-      };
+  Map<String, Object?> toJson() => <String, Object?>{'namespace': namespace.name, 'entries': entries, 'bytes': bytes};
 }

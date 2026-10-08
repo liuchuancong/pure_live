@@ -21,17 +21,7 @@ import '../content/content_ref.dart';
 enum MediaKind { live, vod, music, file }
 
 /// How the resource is transported.
-enum MediaProtocol {
-  http,
-  https,
-  hls,
-  dash,
-  rtmp,
-  rtsp,
-  websocket,
-  file,
-  unknown,
-}
+enum MediaProtocol { http, https, hls, dash, rtmp, rtsp, websocket, file, unknown }
 
 /// One stream inside a ticket: video essence, audio essence or subtitle.
 final class MediaTrack {
@@ -281,7 +271,5 @@ Map<String, String> _stringMap(Object? value) {
   if (value is! Map) {
     return const <String, String>{};
   }
-  return Map<String, String>.fromEntries(
-    value.entries.map((entry) => MapEntry('${entry.key}', '${entry.value}')),
-  );
+  return Map<String, String>.fromEntries(value.entries.map((entry) => MapEntry('${entry.key}', '${entry.value}')));
 }

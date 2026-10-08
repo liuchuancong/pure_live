@@ -15,9 +15,7 @@ Map<String, Object?> asObjectMap(Object? value) {
   if (value is! Map) {
     return const <String, Object?>{};
   }
-  return Map<String, Object?>.fromEntries(
-    value.entries.map((entry) => MapEntry('${entry.key}', entry.value)),
-  );
+  return Map<String, Object?>.fromEntries(value.entries.map((entry) => MapEntry('${entry.key}', entry.value)));
 }
 
 /// Returns the entries of [value] that are themselves JSON objects.

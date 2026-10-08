@@ -5,11 +5,7 @@
 import 'package:pure_live_platform/pure_live_platform.dart';
 import 'package:test/test.dart';
 
-MediaTicket _ticket({
-  String id = 'ticket-1',
-  DateTime? expiresAt,
-  String uri = 'https://example.com/index.m3u8',
-}) {
+MediaTicket _ticket({String id = 'ticket-1', DateTime? expiresAt, String uri = 'https://example.com/index.m3u8'}) {
   return MediaTicket(
     id: id,
     uri: Uri.parse(uri),
@@ -30,9 +26,7 @@ void main() {
       createdAt: DateTime.utc(2026, 10, 8, 12),
       expiresAt: DateTime.utc(2026, 10, 8, 13),
       headers: const <String, String>{'Referer': 'https://example.com/'},
-      tracks: <MediaTrack>[
-        MediaTrack(uri: Uri.parse('https://example.com/v.mpd'), kind: MediaKind.vod, codec: 'avc1'),
-      ],
+      tracks: <MediaTrack>[MediaTrack(uri: Uri.parse('https://example.com/v.mpd'), kind: MediaKind.vod, codec: 'avc1')],
       source: const ContentRef(sourceId: 's', contentId: 'c', kind: ContentKind.movie),
     );
 
@@ -96,7 +90,9 @@ void main() {
   });
 
   test('test_resolveRequest_defaults_allowFallbackAndNormalIntent', () {
-    const request = ResolveRequest(ref: ContentRef(sourceId: 's', contentId: 'c', kind: ContentKind.vod));
+    const request = ResolveRequest(
+      ref: ContentRef(sourceId: 's', contentId: 'c', kind: ContentKind.vod),
+    );
 
     expect(request.allowFallback, isTrue);
     expect(request.context.intent, PlaybackIntent.normal);
@@ -106,7 +102,10 @@ void main() {
   test('test_resolveResult_jsonRoundTrip_keepsTicketOrder', () {
     final result = ResolveResult(
       source: const ContentRef(sourceId: 's', contentId: 'c', kind: ContentKind.vod),
-      tickets: <MediaTicket>[_ticket(id: 'first'), _ticket(id: 'second')],
+      tickets: <MediaTicket>[
+        _ticket(id: 'first'),
+        _ticket(id: 'second'),
+      ],
       createdAt: DateTime.utc(2026, 10, 8, 12),
       selection: const MediaSelectionPolicy(preferredQuality: '1080p', preferLowLatency: true),
     );
@@ -132,11 +131,13 @@ void main() {
     // A ticket without its id is corrupt, not merely unknown: the reader says which model failed.
     expect(
       () => ResolveResult.fromJson(resultJson),
-      throwsA(isA<FormatException>().having(
-        (e) => e.message,
-        'message',
-        contains('media_ticket is missing required field "id"'),
-      )),
+      throwsA(
+        isA<FormatException>().having(
+          (e) => e.message,
+          'message',
+          contains('media_ticket is missing required field "id"'),
+        ),
+      ),
     );
   });
 }

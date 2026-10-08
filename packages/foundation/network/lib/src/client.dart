@@ -95,13 +95,7 @@ final class NetworkClient {
     Map<String, dynamic>? queryParameters,
     CancelToken? cancelToken,
   }) {
-    return _send(
-      url,
-      method: 'GET',
-      headers: headers,
-      queryParameters: queryParameters,
-      cancelToken: cancelToken,
-    );
+    return _send(url, method: 'GET', headers: headers, queryParameters: queryParameters, cancelToken: cancelToken);
   }
 
   /// GET that decodes a JSON object, failing with [NetworkFailureKind.unknown] on a malformed body.
@@ -147,7 +141,14 @@ final class NetworkClient {
     CancelToken? cancelToken,
   }) {
     return retryAsync<Response<String>>(
-      () => _once(url, method: method, body: body, headers: headers, queryParameters: queryParameters, cancelToken: cancelToken),
+      () => _once(
+        url,
+        method: method,
+        body: body,
+        headers: headers,
+        queryParameters: queryParameters,
+        cancelToken: cancelToken,
+      ),
       attempts: _settings.attempts,
       delay: _settings.retryDelay,
       shouldRetry: (error) => error is NetworkFailure && error.retryable,
@@ -173,11 +174,7 @@ final class NetworkClient {
         data: body,
         queryParameters: queryParameters,
         cancelToken: cancelToken,
-        options: Options(
-          method: method,
-          headers: headers,
-          responseType: ResponseType.plain,
-        ),
+        options: Options(method: method, headers: headers, responseType: ResponseType.plain),
       );
       return _check(response, method: method, url: url, started: started);
     } on DioException catch (error) {
@@ -231,9 +228,7 @@ final class NetworkClient {
       DioExceptionType.receiveTimeout => NetworkFailureKind.timeout,
       DioExceptionType.cancel => NetworkFailureKind.cancelled,
       DioExceptionType.badCertificate || DioExceptionType.connectionError => NetworkFailureKind.unreachable,
-      _ => error.error is NetworkFailure
-          ? (error.error as NetworkFailure).kind
-          : NetworkFailureKind.unreachable,
+      _ => error.error is NetworkFailure ? (error.error as NetworkFailure).kind : NetworkFailureKind.unreachable,
     };
     return NetworkFailure(
       kind: kind,
@@ -262,12 +257,7 @@ final class NetworkClient {
 /// Decodes a JSON object body, reporting the url that failed rather than throwing a bare FormatException.
 Map<String, Object?> decodeJsonObject(String body, {required String url}) {
   if (body.trim().isEmpty) {
-    throw NetworkFailure(
-      kind: NetworkFailureKind.unknown,
-      method: 'GET',
-      url: url,
-      cause: 'empty body',
-    );
+    throw NetworkFailure(kind: NetworkFailureKind.unknown, method: 'GET', url: url, cause: 'empty body');
   }
   final decoded = jsonDecode(body);
   if (decoded is! Map) {

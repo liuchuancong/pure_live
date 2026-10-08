@@ -2,8 +2,12 @@
 
 ## 语言与格式
 
-- Dart 3.13 / flutter_lints;格式化 `dart format`(page_width 120,仓库 analysis_options 为准)。
-- 中文注释与文档;**注释只写代码说不出的约束**,不写流水账。
+- Dart 3.13 / flutter_lints;格式化 `dart format`(page_width 120)。包目录的宽度取自
+  [../../analysis_options.package.yaml](../../analysis_options.package.yaml) 的 `formatter.page_width`:
+  格式化器**不会**从仓库根的 `analysis_options.yaml` 继承这个值,所以两处都要写,
+  `.github/workflows/architecture.yml` 的 `dart format --set-exit-if-changed` 负责守住。
+- **代码注释一律英文**(见 [../DEVELOPMENT_STANDARDS.md](../DEVELOPMENT_STANDARDS.md) §4,含文件头 Module/Purpose/Author/Created);
+  本 `docs/` 体系与包 README 用中文。注释只写代码说不出的约束,不写流水账。
 
 ## 架构级红线(护栏 + Review 双查)
 

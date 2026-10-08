@@ -85,8 +85,7 @@ final class PlatformErrorInfo {
       // An absent key stays null; a key this reader does not know degrades to `unknown`.
       category: json['category'] == null
           ? null
-          : enumByName(PlatformErrorCategory.values, json['category'] as String?) ??
-                PlatformErrorCategory.unknown,
+          : enumByName(PlatformErrorCategory.values, json['category'] as String?) ?? PlatformErrorCategory.unknown,
       retryable: json['retryable'] as bool? ?? false,
       recoverable: json['recoverable'] as bool? ?? false,
       // Unknown keys are tolerated on purpose: an older reader must not break on a newer writer.

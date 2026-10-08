@@ -25,13 +25,10 @@ final class AuthExpiry {
 
 /// Stores credentials in a [SecureStore] and their non-secret state in a [KeyValueStore].
 final class CredentialStore {
-  CredentialStore({
-    required SecretVault secrets,
-    required SessionBox settings,
-    Clock? clock,
-  }) : _secrets = secrets,
-       _settings = settings,
-       _clock = clock ?? systemClock;
+  CredentialStore({required SecretVault secrets, required SessionBox settings, Clock? clock})
+    : _secrets = secrets,
+      _settings = settings,
+      _clock = clock ?? systemClock;
 
   static const String _secretPrefix = authSecretKeyPrefix;
   static const String _sessionPrefix = authSessionKeyPrefix;
@@ -134,10 +131,7 @@ final class CredentialStore {
   /// Deletes everything this package owns; used by "sign out of all accounts" and by tests.
   Future<void> clearAll() async {
     for (final session in await sessions()) {
-      await clearAccount(
-        providerId: session.handle.providerId,
-        accountId: session.handle.accountId,
-      );
+      await clearAccount(providerId: session.handle.providerId, accountId: session.handle.accountId);
     }
   }
 
@@ -167,11 +161,7 @@ final class CredentialStore {
     final fields = Map<String, Object?>.from(raw);
     final profileJson = fields['profile'];
     return AuthSession(
-      handle: CredentialHandle(
-        providerId: providerId,
-        accountId: accountId,
-        key: _secretKey(providerId, accountId),
-      ),
+      handle: CredentialHandle(providerId: providerId, accountId: accountId, key: _secretKey(providerId, accountId)),
       method: _byName(AuthMethod.values, fields['method'] as String?) ?? AuthMethod.token,
       status: _byName(AccountStatus.values, fields['status'] as String?) ?? AccountStatus.unknown,
       expiresAt: fields['expiresAt'] == null ? null : DateTime.parse('${fields['expiresAt']}').toUtc(),

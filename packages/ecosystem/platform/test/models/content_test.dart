@@ -42,10 +42,7 @@ void main() {
     const base = ContentRef(sourceId: 's', contentId: 'c', kind: ContentKind.vod);
     expect(base, isNot(equals(const ContentRef(sourceId: 'other', contentId: 'c', kind: ContentKind.vod))));
     expect(base, isNot(equals(const ContentRef(sourceId: 's', contentId: 'c', kind: ContentKind.movie))));
-    expect(
-      base,
-      isNot(equals(const ContentRef(sourceId: 's', contentId: 'c', kind: ContentKind.vod, parentId: 'p'))),
-    );
+    expect(base, isNot(equals(const ContentRef(sourceId: 's', contentId: 'c', kind: ContentKind.vod, parentId: 'p'))));
   });
 
   test('test_contentRef_fromJson_toleratesUnknownFieldsAndMissingOptionals', () {
@@ -63,11 +60,7 @@ void main() {
   });
 
   test('test_contentRef_fromJson_degradesUnknownEnumToKnownValue', () {
-    final ref = ContentRef.fromJson(<String, Object?>{
-      'sourceId': 's',
-      'contentId': 'c',
-      'kind': 'karaoke',
-    });
+    final ref = ContentRef.fromJson(<String, Object?>{'sourceId': 's', 'contentId': 'c', 'kind': 'karaoke'});
 
     expect(ref.kind, ContentKind.vod);
   });

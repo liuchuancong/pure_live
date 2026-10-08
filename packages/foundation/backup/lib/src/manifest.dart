@@ -17,17 +17,13 @@ final class BackupDomain {
   final int keyCount;
   final int bytes;
 
-  Map<String, Object?> toJson() => <String, Object?>{
-        'name': name,
-        'keyCount': keyCount,
-        'bytes': bytes,
-      };
+  Map<String, Object?> toJson() => <String, Object?>{'name': name, 'keyCount': keyCount, 'bytes': bytes};
 
   factory BackupDomain.fromJson(Map<String, Object?> json) => BackupDomain(
-        name: json['name']! as String,
-        keyCount: (json['keyCount'] as num?)?.toInt() ?? 0,
-        bytes: (json['bytes'] as num?)?.toInt() ?? 0,
-      );
+    name: json['name']! as String,
+    keyCount: (json['keyCount'] as num?)?.toInt() ?? 0,
+    bytes: (json['bytes'] as num?)?.toInt() ?? 0,
+  );
 }
 
 /// The header of a backup archive.

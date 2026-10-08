@@ -85,11 +85,7 @@ final class EventBus {
 }
 
 class _Subscription {
-  _Subscription({
-    required this.matches,
-    required this.deliver,
-    required this.controller,
-  });
+  _Subscription({required this.matches, required this.deliver, required this.controller});
 
   final bool Function(AppEvent event) matches;
   final void Function(AppEvent event) deliver;

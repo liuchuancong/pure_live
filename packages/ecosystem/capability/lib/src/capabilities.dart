@@ -63,11 +63,7 @@ abstract interface class ResolveCapability {
   ///
   /// The rule the contract test enforces: a ticket that will stop working must carry `expiresAt`, because
   /// that is the only signal the host has to prefetch a replacement before playback dies.
-  Future<MediaTicket> resolve(
-    ContentRef ref, {
-    SelectionRef? quality,
-    SelectionRef? line,
-  });
+  Future<MediaTicket> resolve(ContentRef ref, {SelectionRef? quality, SelectionRef? line});
 
   /// Replaces [expired] with a fresh ticket for the same content.
   Future<MediaTicket> refresh(MediaTicket expired, RefreshReason reason);
@@ -88,19 +84,12 @@ final class CapabilitySet {
 
   bool supports(CapabilityKind kind) => kinds.contains(kind);
 
-  CapabilitySet withKind(CapabilityKind kind) =>
-      CapabilitySet({...kinds, kind});
+  CapabilitySet withKind(CapabilityKind kind) => CapabilitySet({...kinds, kind});
 
-  Map<String, Object?> toJson() => <String, Object?>{
-    'kinds': kinds.map((kind) => kind.name).toList(growable: false),
-  };
+  Map<String, Object?> toJson() => <String, Object?>{'kinds': kinds.map((kind) => kind.name).toList(growable: false)};
 
-  factory CapabilitySet.fromJson(Map<String, Object?> json) => CapabilitySet(
-    (json['kinds'] as List? ?? const <Object?>[])
-        .map(_byName)
-        .whereType<CapabilityKind>()
-        .toSet(),
-  );
+  factory CapabilitySet.fromJson(Map<String, Object?> json) =>
+      CapabilitySet((json['kinds'] as List? ?? const <Object?>[]).map(_byName).whereType<CapabilityKind>().toSet());
 
   static CapabilityKind? _byName(Object? item) {
     for (final kind in CapabilityKind.values) {
@@ -112,6 +101,5 @@ final class CapabilitySet {
   }
 
   @override
-  String toString() =>
-      'CapabilitySet(${kinds.map((kind) => kind.name).join(',')})';
+  String toString() => 'CapabilitySet(${kinds.map((kind) => kind.name).join(',')})';
 }

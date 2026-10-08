@@ -77,10 +77,7 @@ void main() {
         return 7;
       }
 
-      final results = await Future.wait(<Future<int>>[
-        flight.run('room-1', work),
-        flight.run('room-1', work),
-      ]);
+      final results = await Future.wait(<Future<int>>[flight.run('room-1', work), flight.run('room-1', work)]);
 
       expect(results, <int>[7, 7]);
       expect(runs, 1);
@@ -118,11 +115,7 @@ void main() {
     test('test_retryAsync_firstAttemptSucceeds_noRetry', () async {
       var calls = 0;
 
-      final value = await retryAsync<int>(
-        () async => ++calls,
-        attempts: 3,
-        sleep: noWait,
-      );
+      final value = await retryAsync<int>(() async => ++calls, attempts: 3, sleep: noWait);
 
       expect(value, 1);
       expect(calls, 1);
@@ -221,19 +214,13 @@ void main() {
     });
 
     test('test_retryAsync_zeroAttempts_isRejected', () async {
-      await expectLater(
-        retryAsync<int>(() async => 1, attempts: 0),
-        throwsA(isA<ArgumentError>()),
-      );
+      await expectLater(retryAsync<int>(() async => 1, attempts: 0), throwsA(isA<ArgumentError>()));
     });
   });
 
   group('collections', () {
     test('test_groupBy_preservesFirstSeenKeyOrder', () {
-      final grouped = groupBy<String, String>(
-        <String>['b-1', 'a-1', 'b-2'],
-        (item) => item.split('-').first,
-      );
+      final grouped = groupBy<String, String>(<String>['b-1', 'a-1', 'b-2'], (item) => item.split('-').first);
 
       expect(grouped.keys, <String>['b', 'a']);
       expect(grouped['b'], <String>['b-1', 'b-2']);

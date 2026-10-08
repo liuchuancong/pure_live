@@ -18,18 +18,7 @@ enum SourceType { url, file, script, builtin, repository }
 /// created = not started, detecting = protocol being identified, validating = format and configuration
 /// checks, loading = first load, ready = usable, refreshing = updating, degraded = partly usable,
 /// error = failed, disabled = turned off by user or platform, disposed = runtime resources released.
-enum SourceState {
-  created,
-  detecting,
-  validating,
-  loading,
-  ready,
-  refreshing,
-  degraded,
-  error,
-  disabled,
-  disposed,
-}
+enum SourceState { created, detecting, validating, loading, ready, refreshing, degraded, error, disabled, disposed }
 
 /// Per-source settings. Defaults follow docs/contracts/platform-models.md section 5.
 final class SourceConfig {
@@ -82,12 +71,12 @@ final class SourceConfig {
 
   @override
   int get hashCode => Object.hash(
-        enabled,
-        refreshInterval,
-        userAgent,
-        Object.hashAllUnordered(headers.keys),
-        Object.hashAllUnordered(headers.values),
-      );
+    enabled,
+    refreshInterval,
+    userAgent,
+    Object.hashAllUnordered(headers.keys),
+    Object.hashAllUnordered(headers.values),
+  );
 }
 
 /// A configured external source.
@@ -170,9 +159,7 @@ final class SourceStatus {
       state: enumByName(SourceState.values, json['state'] as String?) ?? SourceState.created,
       lastUpdatedAt: parseUtc(json['lastUpdatedAt']),
       nextRefreshAt: parseUtc(json['nextRefreshAt']),
-      error: json['error'] == null
-          ? null
-          : PlatformErrorInfo.fromJson(asObjectMap(json['error'])),
+      error: json['error'] == null ? null : PlatformErrorInfo.fromJson(asObjectMap(json['error'])),
       metadata: asObjectMap(json['metadata']),
     );
   }
@@ -201,9 +188,7 @@ Map<String, String> _stringMap(Object? value) {
   if (value is! Map) {
     return const <String, String>{};
   }
-  return Map<String, String>.fromEntries(
-    value.entries.map((entry) => MapEntry('${entry.key}', '${entry.value}')),
-  );
+  return Map<String, String>.fromEntries(value.entries.map((entry) => MapEntry('${entry.key}', '${entry.value}')));
 }
 
 bool _sameStringMap(Map<String, String> a, Map<String, String> b) {

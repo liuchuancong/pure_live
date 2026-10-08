@@ -16,11 +16,7 @@ const String schemaVersionKey = 'platform.schema_version';
 
 /// One entry of the old key to new key table.
 final class KeyMapping {
-  const KeyMapping({
-    required this.from,
-    required this.to,
-    this.convert,
-  });
+  const KeyMapping({required this.from, required this.to, this.convert});
 
   final String from;
   final String to;
@@ -33,13 +29,10 @@ final class KeyMapping {
 
 /// What a migration run did.
 final class MigrationReport {
-  MigrationReport({
-    List<String>? migrated,
-    List<String>? ignored,
-    Map<String, String>? failures,
-  }) : migrated = List<String>.unmodifiable(migrated ?? const <String>[]),
-       ignored = List<String>.unmodifiable(ignored ?? const <String>[]),
-       failures = Map<String, String>.unmodifiable(failures ?? const <String, String>{});
+  MigrationReport({List<String>? migrated, List<String>? ignored, Map<String, String>? failures})
+    : migrated = List<String>.unmodifiable(migrated ?? const <String>[]),
+      ignored = List<String>.unmodifiable(ignored ?? const <String>[]),
+      failures = Map<String, String>.unmodifiable(failures ?? const <String, String>{});
 
   /// Keys copied into the target store.
   final List<String> migrated;
@@ -53,8 +46,7 @@ final class MigrationReport {
   bool get isClean => ignored.isEmpty && failures.isEmpty;
 
   @override
-  String toString() =>
-      'MigrationReport(migrated=${migrated.length}, ignored=${ignored.length}, failures=$failures)';
+  String toString() => 'MigrationReport(migrated=${migrated.length}, ignored=${ignored.length}, failures=$failures)';
 }
 
 /// Copies settings from one store to another using a key table.
@@ -67,16 +59,11 @@ final class SettingsMigrator {
   ///
   /// A conversion that throws is recorded against the target key and the run continues: losing one setting
   /// must not block the migration of the rest.
-  Future<MigrationReport> run({
-    required KeyValueStore source,
-    required KeyValueStore target,
-  }) async {
+  Future<MigrationReport> run({required KeyValueStore source, required KeyValueStore target}) async {
     final migrated = <String>[];
     final ignored = <String>[];
     final failures = <String, String>{};
-    final bySource = <String, KeyMapping>{
-      for (final mapping in mappings) mapping.from: mapping,
-    };
+    final bySource = <String, KeyMapping>{for (final mapping in mappings) mapping.from: mapping};
 
     for (final key in await source.keys()) {
       final mapping = bySource[key];

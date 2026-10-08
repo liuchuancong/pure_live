@@ -103,12 +103,7 @@ void main() {
 
   test('test_logRecord_timestamp_isNormalizedToUtc', () {
     final local = DateTime(2026, 10, 8, 6);
-    final record = LogRecord(
-      timestamp: local,
-      level: LogLevel.info,
-      logger: 'x',
-      message: 'm',
-    );
+    final record = LogRecord(timestamp: local, level: LogLevel.info, logger: 'x', message: 'm');
 
     // A log line in local time cannot be ordered across devices, so the record normalizes on entry.
     expect(record.timestamp.isUtc, isTrue);

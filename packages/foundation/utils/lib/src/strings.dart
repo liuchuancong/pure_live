@@ -89,16 +89,19 @@ String redactQuery(
   }
   final prefix = url.substring(0, mark + 1);
   final query = url.substring(mark + 1);
-  final rewritten = query.split('&').map((part) {
-    final equals = part.indexOf('=');
-    if (equals < 1) {
-      return part;
-    }
-    final name = part.substring(0, equals).toLowerCase();
-    if (!sensitiveQueryKeys.contains(name)) {
-      return part;
-    }
-    return '${part.substring(0, equals)}=$redactedPlaceholder';
-  }).join('&');
+  final rewritten = query
+      .split('&')
+      .map((part) {
+        final equals = part.indexOf('=');
+        if (equals < 1) {
+          return part;
+        }
+        final name = part.substring(0, equals).toLowerCase();
+        if (!sensitiveQueryKeys.contains(name)) {
+          return part;
+        }
+        return '${part.substring(0, equals)}=$redactedPlaceholder';
+      })
+      .join('&');
   return '$prefix$rewritten';
 }

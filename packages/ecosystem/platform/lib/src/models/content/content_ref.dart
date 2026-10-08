@@ -201,12 +201,12 @@ final class ContentDetail {
   });
 
   factory ContentDetail.fromJson(Map<String, Object?> json) => ContentDetail(
-        summary: ContentSummary.fromJson(asObjectMap(json['summary'])),
-        description: json['description'] as String?,
-        children: asObjectMapList(json['children']).map(ContentRef.fromJson).toList(growable: false),
-        tags: asObjectMapList(json['tags']).map(ContentTag.fromJson).toList(growable: false),
-        metadata: asObjectMap(json['metadata']),
-      );
+    summary: ContentSummary.fromJson(asObjectMap(json['summary'])),
+    description: json['description'] as String?,
+    children: asObjectMapList(json['children']).map(ContentRef.fromJson).toList(growable: false),
+    tags: asObjectMapList(json['tags']).map(ContentTag.fromJson).toList(growable: false),
+    metadata: asObjectMap(json['metadata']),
+  );
 
   final ContentSummary summary;
   final String? description;

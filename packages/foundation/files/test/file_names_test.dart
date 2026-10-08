@@ -138,10 +138,7 @@ void main() {
 
       await writeTextAtomically(target, 'x');
 
-      expect(
-        workdir.listSync().whereType<File>().where((file) => file.path.endsWith('.tmp')),
-        isEmpty,
-      );
+      expect(workdir.listSync().whereType<File>().where((file) => file.path.endsWith('.tmp')), isEmpty);
     });
   });
 }

@@ -162,14 +162,14 @@ final class ExtensionDescriptor {
 
   @override
   int get hashCode => Object.hash(
-        id,
-        version,
-        protocol,
-        protocolVersion,
-        type,
-        Object.hashAllUnordered(capabilities),
-        Object.hashAllUnordered(permissions),
-      );
+    id,
+    version,
+    protocol,
+    protocolVersion,
+    type,
+    Object.hashAllUnordered(capabilities),
+    Object.hashAllUnordered(permissions),
+  );
 }
 
 /// Lifecycle states an extension moves through; see docs/contracts/plugin-lifecycle.md.
@@ -190,22 +190,16 @@ enum ExtensionLifecycleState {
 
 /// A point-in-time status of an extension.
 final class ExtensionStatus {
-  const ExtensionStatus({
-    required this.extensionId,
-    required this.lifecycle,
-    required this.health,
-    this.error,
-  });
+  const ExtensionStatus({required this.extensionId, required this.lifecycle, required this.health, this.error});
 
   factory ExtensionStatus.fromJson(Map<String, Object?> json) {
     return ExtensionStatus(
       extensionId: requireString(json, 'extensionId', 'extension_descriptor'),
-      lifecycle: enumByName(ExtensionLifecycleState.values, json['lifecycle'] as String?) ??
+      lifecycle:
+          enumByName(ExtensionLifecycleState.values, json['lifecycle'] as String?) ??
           ExtensionLifecycleState.discovered,
       health: enumByName(RuntimeHealth.values, json['health'] as String?) ?? RuntimeHealth.unavailable,
-      error: json['error'] == null
-          ? null
-          : PlatformErrorInfo.fromJson(asObjectMap(json['error'])),
+      error: json['error'] == null ? null : PlatformErrorInfo.fromJson(asObjectMap(json['error'])),
     );
   }
 
@@ -231,10 +225,7 @@ Set<ExtensionCapability> _capabilities(Object? value) {
   if (value is! List) {
     return const <ExtensionCapability>{};
   }
-  return value
-      .map((item) => enumByName(ExtensionCapability.values, '$item'))
-      .whereType<ExtensionCapability>()
-      .toSet();
+  return value.map((item) => enumByName(ExtensionCapability.values, '$item')).whereType<ExtensionCapability>().toSet();
 }
 
 Set<Permission> _permissions(Object? value) {

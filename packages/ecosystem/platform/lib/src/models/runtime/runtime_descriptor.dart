@@ -33,9 +33,9 @@ final class RuntimeDescriptor {
       protocols: _strings(json['protocols']).toSet(),
       supportedTypes: json['supportedTypes'] is List
           ? (json['supportedTypes'] as List)
-              .map((item) => enumByName(ExtensionType.values, '$item'))
-              .whereType<ExtensionType>()
-              .toSet()
+                .map((item) => enumByName(ExtensionType.values, '$item'))
+                .whereType<ExtensionType>()
+                .toSet()
           : const <ExtensionType>{},
     );
   }
@@ -71,13 +71,8 @@ final class RuntimeDescriptor {
   }
 
   @override
-  int get hashCode => Object.hash(
-        id,
-        name,
-        version,
-        Object.hashAllUnordered(protocols),
-        Object.hashAllUnordered(supportedTypes),
-      );
+  int get hashCode =>
+      Object.hash(id, name, version, Object.hashAllUnordered(protocols), Object.hashAllUnordered(supportedTypes));
 }
 
 /// Observed condition of a runtime, including the failure that produced it when there is one.
@@ -88,9 +83,7 @@ final class RuntimeStatus {
     return RuntimeStatus(
       health: enumByName(RuntimeHealth.values, json['health'] as String?) ?? RuntimeHealth.unavailable,
       lastCheckAt: parseUtc(json['lastCheckAt']),
-      error: json['error'] == null
-          ? null
-          : PlatformErrorInfo.fromJson(asObjectMap(json['error'])),
+      error: json['error'] == null ? null : PlatformErrorInfo.fromJson(asObjectMap(json['error'])),
     );
   }
 

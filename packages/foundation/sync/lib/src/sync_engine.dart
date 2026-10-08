@@ -13,12 +13,7 @@ import 'package:pure_live_utils/pure_live_utils.dart';
 /// One synced item. A deleted record is kept as a tombstone so a deletion propagates instead of looking
 /// like an absent key.
 final class SyncRecord {
-  const SyncRecord({
-    required this.key,
-    required this.updatedAt,
-    this.value,
-    this.deleted = false,
-  });
+  const SyncRecord({required this.key, required this.updatedAt, this.value, this.deleted = false});
 
   final String key;
   final DateTime updatedAt;
@@ -26,18 +21,18 @@ final class SyncRecord {
   final bool deleted;
 
   Map<String, Object?> toJson() => <String, Object?>{
-        'key': key,
-        'updatedAt': updatedAt.toUtc().toIso8601String(),
-        'deleted': deleted,
-        if (!deleted) 'value': value,
-      };
+    'key': key,
+    'updatedAt': updatedAt.toUtc().toIso8601String(),
+    'deleted': deleted,
+    if (!deleted) 'value': value,
+  };
 
   factory SyncRecord.fromJson(Map<String, Object?> json) => SyncRecord(
-        key: json['key']! as String,
-        updatedAt: (DateTime.tryParse('${json['updatedAt']}') ?? DateTime.utc(1970)).toUtc(),
-        value: json['deleted'] == true ? null : json['value'],
-        deleted: json['deleted'] as bool? ?? false,
-      );
+    key: json['key']! as String,
+    updatedAt: (DateTime.tryParse('${json['updatedAt']}') ?? DateTime.utc(1970)).toUtc(),
+    value: json['deleted'] == true ? null : json['value'],
+    deleted: json['deleted'] as bool? ?? false,
+  );
 }
 
 /// Where a sync has reached. Opaque to callers; monotonic per store.
@@ -130,13 +125,7 @@ final class SyncEngine {
       safe.add(record);
     }
     if (safe.isEmpty) {
-      return SyncReport(
-        applied: 0,
-        conflicts: 0,
-        pushed: 0,
-        refusedCredentials: refused,
-        cursor: from,
-      );
+      return SyncReport(applied: 0, conflicts: 0, pushed: 0, refusedCredentials: refused, cursor: from);
     }
 
     final existing = await local.readAll();

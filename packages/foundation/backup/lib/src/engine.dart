@@ -46,9 +46,7 @@ final class BackupEngine {
     final payload = <String, Map<String, Object?>>{};
     for (final source in sources) {
       final snapshot = await source.snapshot();
-      final safe = Map<String, Object?>.fromEntries(
-        snapshot.entries.where((entry) => !isCredentialKey(entry.key)),
-      );
+      final safe = Map<String, Object?>.fromEntries(snapshot.entries.where((entry) => !isCredentialKey(entry.key)));
       payload[source.name] = safe;
       domains.add(BackupDomain(name: source.name, keyCount: safe.length, bytes: _sizeOf(safe)));
     }
@@ -103,9 +101,7 @@ final class RestoreEngine {
       final values = bundle.payload[domain.name] ?? const <String, Object?>{};
       final refused = values.keys.where(isCredentialKey).length;
       skippedCredentials += refused;
-      final safe = Map<String, Object?>.fromEntries(
-        values.entries.where((entry) => !isCredentialKey(entry.key)),
-      );
+      final safe = Map<String, Object?>.fromEntries(values.entries.where((entry) => !isCredentialKey(entry.key)));
       try {
         await target.restore(safe);
         results[domain.name] = DomainOutcome.applied;

@@ -13,9 +13,28 @@ final RegExp _illegalNameChars = RegExp(r'[<>:"/\\|?*\x00-\x1F]');
 
 /// Names Windows refuses regardless of extension.
 const Set<String> _reservedWindowsNames = <String>{
-  'CON', 'PRN', 'AUX', 'NUL',
-  'COM1', 'COM2', 'COM3', 'COM4', 'COM5', 'COM6', 'COM7', 'COM8', 'COM9',
-  'LPT1', 'LPT2', 'LPT3', 'LPT4', 'LPT5', 'LPT6', 'LPT7', 'LPT8', 'LPT9',
+  'CON',
+  'PRN',
+  'AUX',
+  'NUL',
+  'COM1',
+  'COM2',
+  'COM3',
+  'COM4',
+  'COM5',
+  'COM6',
+  'COM7',
+  'COM8',
+  'COM9',
+  'LPT1',
+  'LPT2',
+  'LPT3',
+  'LPT4',
+  'LPT5',
+  'LPT6',
+  'LPT7',
+  'LPT8',
+  'LPT9',
 };
 
 /// The longest name we keep, leaving room for a collision suffix.
@@ -24,11 +43,7 @@ const int maxFileNameLength = 120;
 /// Makes [candidate] usable as a single file name.
 ///
 /// Never returns an empty string: an empty name would silently collide with every other empty name.
-String sanitizeFileName(
-  String candidate, {
-  String fallback = 'untitled',
-  int maxLength = maxFileNameLength,
-}) {
+String sanitizeFileName(String candidate, {String fallback = 'untitled', int maxLength = maxFileNameLength}) {
   var name = candidate.replaceAll(_illegalNameChars, '').trim();
   // A leading dot would hide the file, and trailing dots and spaces are trimmed by Windows silently.
   name = name.replaceAll(RegExp(r'^\.+'), '').replaceAll(RegExp(r'[ .]+$'), '');

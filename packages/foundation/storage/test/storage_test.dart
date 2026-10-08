@@ -94,10 +94,8 @@ void main() {
       final source = MemoryKeyValueStore();
       await source.write('v1.orphan', 1);
 
-      final report = await const SettingsMigrator(mappings: <KeyMapping>[]).run(
-        source: source,
-        target: MemoryKeyValueStore(),
-      );
+      final report = await const SettingsMigrator(mappings: <KeyMapping>[])
+          .run(source: source, target: MemoryKeyValueStore());
 
       expect(report.ignored, <String>['v1.orphan']);
       expect(report.isClean, isFalse);

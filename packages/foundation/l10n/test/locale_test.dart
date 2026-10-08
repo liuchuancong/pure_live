@@ -56,28 +56,13 @@ void main() {
 
   group('resolveLocale', () {
     test('test_resolveLocale_exactMatch_wins', () {
-      expect(
-        resolveLocale(requested: 'zh_CN', available: <String>['en', 'zh_CN', 'zh_TW']),
-        'zh_CN',
-      );
+      expect(resolveLocale(requested: 'zh_CN', available: <String>['en', 'zh_CN', 'zh_TW']), 'zh_CN');
     });
 
     test('test_resolveLocale_traditionalNeverFallsBackToSimplified', () {
       // The whole point of the script step: zh-Hant must not silently become zh-Hans.
-      expect(
-        resolveLocale(
-          requested: 'zh-Hant-TW',
-          available: <String>['en', 'zh-Hans-CN'],
-        ),
-        'en',
-      );
-      expect(
-        resolveLocale(
-          requested: 'zh-Hant-TW',
-          available: <String>['en', 'zh-Hant-HK'],
-        ),
-        'zh-Hant-HK',
-      );
+      expect(resolveLocale(requested: 'zh-Hant-TW', available: <String>['en', 'zh-Hans-CN']), 'en');
+      expect(resolveLocale(requested: 'zh-Hant-TW', available: <String>['en', 'zh-Hant-HK']), 'zh-Hant-HK');
     });
 
     test('test_resolveLocale_bareLanguageMatch_returnsTheAvailableVariant', () {
@@ -130,10 +115,7 @@ void main() {
     });
 
     test('test_pluralize_substitutesTheCount', () {
-      const forms = <PluralCategory, String>{
-        PluralCategory.one: '{} room',
-        PluralCategory.other: '{} rooms',
-      };
+      const forms = <PluralCategory, String>{PluralCategory.one: '{} room', PluralCategory.other: '{} rooms'};
 
       expect(pluralize(1, forms: forms), '1 room');
       expect(pluralize(4, forms: forms), '4 rooms');
@@ -141,10 +123,7 @@ void main() {
 
     test('test_pluralize_missingOtherForm_returnsTheRawCount', () {
       // A translation gap must not throw inside a widget build.
-      expect(
-        pluralize(4, forms: <PluralCategory, String>{PluralCategory.one: '{} room'}),
-        '4',
-      );
+      expect(pluralize(4, forms: <PluralCategory, String>{PluralCategory.one: '{} room'}), '4');
     });
   });
 }

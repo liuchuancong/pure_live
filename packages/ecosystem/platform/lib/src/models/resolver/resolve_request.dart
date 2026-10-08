@@ -64,11 +64,7 @@ final class ResolveContext {
 
 /// A request to turn content into something playable.
 final class ResolveRequest {
-  const ResolveRequest({
-    required this.ref,
-    this.context = const ResolveContext(),
-    this.allowFallback = true,
-  });
+  const ResolveRequest({required this.ref, this.context = const ResolveContext(), this.allowFallback = true});
 
   factory ResolveRequest.fromJson(Map<String, Object?> json) {
     return ResolveRequest(
@@ -85,11 +81,7 @@ final class ResolveRequest {
   final bool allowFallback;
 
   Map<String, Object?> toJson() {
-    return <String, Object?>{
-      'ref': ref.toJson(),
-      'context': context.toJson(),
-      'allowFallback': allowFallback,
-    };
+    return <String, Object?>{'ref': ref.toJson(), 'context': context.toJson(), 'allowFallback': allowFallback};
   }
 }
 
@@ -106,8 +98,7 @@ final class MediaSelectionPolicy {
   factory MediaSelectionPolicy.fromJson(Map<String, Object?> json) {
     return MediaSelectionPolicy(
       preferredQuality: json['preferredQuality'] as String?,
-      preferredProtocol:
-          enumByName(MediaProtocol.values, json['preferredProtocol'] as String?),
+      preferredProtocol: enumByName(MediaProtocol.values, json['preferredProtocol'] as String?),
       preferredFormat: json['preferredFormat'] as String?,
       preferLowLatency: json['preferLowLatency'] as bool? ?? false,
       preferStable: json['preferStable'] as bool? ?? true,

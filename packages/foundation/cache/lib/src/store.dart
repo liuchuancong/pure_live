@@ -16,8 +16,8 @@ import 'policy.dart';
 
 class _CacheEntry {
   _CacheEntry({required this.key, required this.value, required this.bytes, required DateTime at})
-      : storedAt = at.toUtc(),
-        lastUsedAt = at.toUtc();
+    : storedAt = at.toUtc(),
+      lastUsedAt = at.toUtc();
 
   final String key;
   final Object? value;
@@ -28,11 +28,7 @@ class _CacheEntry {
 
 /// A cache scoped to a single namespace.
 final class NamespaceCache {
-  NamespaceCache._({
-    required this.namespace,
-    required this.policy,
-    required this.clock,
-  });
+  NamespaceCache._({required this.namespace, required this.policy, required this.clock});
 
   final CacheNamespace namespace;
   final CachePolicy policy;
@@ -64,12 +60,7 @@ final class NamespaceCache {
   ///
   /// Returns the entries evicted to stay inside the policy, so a caller can log or meter the pressure.
   List<String> write(String key, Object? value, {int bytes = 1}) {
-    _entries[key] = _CacheEntry(
-      key: key,
-      value: value,
-      bytes: bytes < 0 ? 0 : bytes,
-      at: clock(),
-    );
+    _entries[key] = _CacheEntry(key: key, value: value, bytes: bytes < 0 ? 0 : bytes, at: clock());
     return _enforceLimits();
   }
 
@@ -81,11 +72,7 @@ final class NamespaceCache {
 
   List<String> get keys => _entries.keys.toList(growable: false);
 
-  CacheUsage usage() => CacheUsage(
-        namespace: namespace,
-        entries: _entries.length,
-        bytes: _totalBytes(),
-      );
+  CacheUsage usage() => CacheUsage(namespace: namespace, entries: _entries.length, bytes: _totalBytes());
 
   bool _isStale(_CacheEntry entry) {
     final ttl = policy.ttl;
@@ -99,8 +86,7 @@ final class NamespaceCache {
 
   List<String> _enforceLimits() {
     final evicted = <String>[];
-    while (_entries.isNotEmpty &&
-        (_totalBytes() > policy.maxBytes || _entries.length > policy.maxEntries)) {
+    while (_entries.isNotEmpty && (_totalBytes() > policy.maxBytes || _entries.length > policy.maxEntries)) {
       final victim = _pickVictim();
       if (victim == null) {
         break;
@@ -136,11 +122,7 @@ final class CacheHub {
       for (final namespace in CacheNamespace.values) namespace: policies[namespace] ?? defaultPolicy,
     };
     for (final namespace in CacheNamespace.values) {
-      _caches[namespace] = NamespaceCache._(
-        namespace: namespace,
-        policy: _resolved[namespace]!,
-        clock: _clock,
-      );
+      _caches[namespace] = NamespaceCache._(namespace: namespace, policy: _resolved[namespace]!, clock: _clock);
     }
   }
 

@@ -59,9 +59,7 @@ final class LogRecord {
     for (final entry in fields.entries) {
       final value = entry.value;
       if (value is Map && entry.key.toLowerCase().contains('header')) {
-        redacted[entry.key] = redactHeaders(
-          value.map((key, dynamic value) => MapEntry('$key', '$value')),
-        );
+        redacted[entry.key] = redactHeaders(value.map((key, dynamic value) => MapEntry('$key', '$value')));
         continue;
       }
       if (value is String && entry.key.toLowerCase().contains('url')) {

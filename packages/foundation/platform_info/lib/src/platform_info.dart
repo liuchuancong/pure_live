@@ -111,11 +111,7 @@ final class PlatformCapabilities {
 ///
 /// [os] is the lowercase operating system name from Platform.operatingSystem; `android` plus
 /// [isTelevisionDevice] is Android TV, which is a different product in every other respect.
-PlatformKind detectPlatform({
-  required String os,
-  bool isTelevisionDevice = false,
-  bool isWeb = false,
-}) {
+PlatformKind detectPlatform({required String os, bool isTelevisionDevice = false, bool isWeb = false}) {
   if (isWeb) {
     return PlatformKind.web;
   }
