@@ -9,6 +9,11 @@
 | 禁止依赖 | 任何反向依赖;禁止依赖应用壳(唯一组合根,I9);同层互依(除规则明示例外) |
 | 公共面 | 只有 `lib/pure_live_events.dart`;内部实现放 `lib/src/` |
 
+## 内容
+
+- `event_bus.dart` —— `AppEvent` / `SimpleEvent` / `EventBus`:按声明类型投递,订阅前的事件不回放(要当前状态去问拥有它的组件,这正是"不许拿事件总线代替接口依赖"的落点),`dispose` 后 `emit` 静默返回而不是抛
+
+## 
 ## 结构
 
 - `pubspec.yaml` / `analysis_options.yaml` / `CHANGELOG.md` / `README.md` / `test/` —— 所有包必备

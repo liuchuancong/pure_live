@@ -4,6 +4,11 @@
 // Author: liuchuancong
 // Created: 2026-10-08
 ///
-/// Layer: foundation. Allowed dependencies: pub.dev packages only; foundation packages do not depend on each other (utils and logging are leaf packages).
+/// Layer: foundation. Allowed dependencies: pub.dev packages only, plus the utils and logging leaves.
 /// See docs/architecture/dependency-rules.md and the package README.
+///
+/// Mechanism only. The event and trace types that leave the device live in pure_live_platform, so this L0
+/// package never points upward at the ecosystem layer.
 library;
+
+export 'src/recording.dart';
