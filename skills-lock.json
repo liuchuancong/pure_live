@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "wind-ui": {
+      "source": "fluttersdk/ai",
+      "sourceType": "github",
+      "skillPath": "skills/wind-ui/SKILL.md",
+      "computedHash": "364902da486f9b09a42a7755117c17c532f646aeeabb6ec2b97dc66864759164"
+    }
+  }
+}
