@@ -12,10 +12,10 @@ import sys
 
 
 ROOT = Path(__file__).resolve().parents[1]
-GRADLE_PROPERTIES = ROOT / "android" / "gradle.properties"
-SETTINGS = ROOT / "android" / "settings.gradle.kts"
-APP_GRADLE = ROOT / "android" / "app" / "build.gradle.kts"
-GRADLE_WRAPPER = ROOT / "android" / "gradle" / "wrapper" / "gradle-wrapper.properties"
+GRADLE_PROPERTIES = ROOT / "apps" / "pure_live" / "android" / "gradle.properties"
+SETTINGS = ROOT / "apps" / "pure_live" / "android" / "settings.gradle.kts"
+APP_GRADLE = ROOT / "apps" / "pure_live" / "android" / "app" / "build.gradle.kts"
+GRADLE_WRAPPER = ROOT / "apps" / "pure_live" / "android" / "gradle" / "wrapper" / "gradle-wrapper.properties"
 LOCAL_PLUGIN_ROOTS = (
     ROOT / "plugins" / "built_in_kotlin",
     ROOT / "plugins" / "flv_lzc",

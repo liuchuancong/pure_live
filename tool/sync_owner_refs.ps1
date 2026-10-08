@@ -62,11 +62,11 @@ $tvRepo = Get-Setting 'PURELIVE_TV_REPOSITORY'
 # rewritten when its repository name matches, whatever owner it currently
 # carries - that is what makes the owner rename work.
 $targets = @(
-    @{ Path = 'pubspec.yaml'; Repo = $nativeRepo; Owner = $nativeOwner; Note = 'native bundles (ffmpeg_kit_extended_config)' },
+    @{ Path = 'apps/pure_live/pubspec.yaml'; Repo = $nativeRepo; Owner = $nativeOwner; Note = 'native bundles (ffmpeg_kit_extended_config)' },
     @{ Path = 'tool/prefetch_android_native.ps1'; Repo = $nativeRepo; Owner = $nativeOwner; Note = 'native bundles (Android prefetch)' },
     @{ Path = 'third_party/media_kit/hook/native_bundles.json'; Repo = $nativeRepo; Owner = $nativeOwner; Note = 'native bundles (libmpv)' },
-    @{ Path = 'assets/version.json'; Repo = $selfRepo; Owner = $selfOwner; Note = 'download link' },
-    @{ Path = 'assets/releases.json'; Repo = $selfRepo; Owner = $selfOwner; Note = 'release history' },
+    @{ Path = 'apps/pure_live/assets/version.json'; Repo = $selfRepo; Owner = $selfOwner; Note = 'download link' },
+    @{ Path = 'apps/pure_live/assets/releases.json'; Repo = $selfRepo; Owner = $selfOwner; Note = 'release history' },
     @{ Path = '.github/workflows/build_pure_live_release.yml'; Repo = $selfRepo; Owner = $selfOwner; Note = 'release notes and asset links' },
     @{ Path = '.github/workflows/feature-build.yml'; Repo = $selfRepo; Owner = $selfOwner; Note = 'release notes and asset links' },
     @{ Path = '.github/workflows/audit-upstream.yml'; Repo = $selfRepo; Owner = $selfOwner; Note = 'upstream comparison remote' },

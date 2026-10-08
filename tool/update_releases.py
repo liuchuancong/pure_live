@@ -7,7 +7,7 @@ import os
 # GitHub Actions 中自动使用当前仓库，本地运行时默认使用维护分支仓库。
 REPOSITORY = os.environ.get("GITHUB_REPOSITORY", "liuchuancong/pure_live")
 UPSTREAM_REPOSITORY = "liuchuancong/pure_live"
-OUTPUT_FILE = "assets/releases.json"
+OUTPUT_FILE = "apps/pure_live/assets/releases.json"
 PAGE_SIZE = 100
 
 def format_size(size):

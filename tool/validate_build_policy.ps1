@@ -3,6 +3,7 @@ param()
 
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
+$appRoot = Join-Path $repoRoot 'apps\pure_live'  # the Flutter project owns pubspec, assets and the MSIX config
 
 # Windows PowerShell 5.1 decodes a UTF-8 script without a BOM through the
 # active ANSI code page. Non-ASCII UI semantics can then become different
@@ -41,7 +42,7 @@ $requiredFiles = @(
     'tool\verify_android_apk.ps1',
     'tool\publish_local_release.ps1',
     'tool\prefetch_windows_native.ps1',
-    'android\gradle.properties'
+    'apps\pure_live\android\gradle.properties'
 )
 foreach ($relativePath in $requiredFiles) {
     if (-not (Test-Path -LiteralPath (Join-Path $repoRoot $relativePath) -PathType Leaf)) {
@@ -193,7 +194,7 @@ if ($positionalAdbCalls.Count -gt 0) {
 }
 
 $properties = @{}
-foreach ($line in Get-Content -LiteralPath (Join-Path $repoRoot 'android\gradle.properties')) {
+foreach ($line in Get-Content -LiteralPath (Join-Path $repoRoot 'apps\pure_live\android\gradle.properties')) {
     if ($line -match '^([^#!][^=]+)=(.*)$') {
         $properties[$Matches[1].Trim()] = $Matches[2].Trim()
     }
@@ -673,15 +674,15 @@ foreach ($marker in @(
     }
 }
 
-$pubspecText = Get-Content -LiteralPath (Join-Path $repoRoot 'pubspec.yaml') -Raw
+$pubspecText = Get-Content -LiteralPath (Join-Path $appRoot 'pubspec.yaml') -Raw
 if ($pubspecText -notmatch '(?m)^version:\s*([0-9]+\.[0-9]+\.[0-9]+)\+([0-9]+)\s*$') {
     throw 'pubspec.yaml must expose a semantic version and numeric build.'
 }
 $displayVersion = $Matches[1]
 $buildNumber = [int]$Matches[2]
 $releaseTag = "v$displayVersion"
-$versionFeed = Get-Content -LiteralPath (Join-Path $repoRoot 'assets\version.json') -Raw -Encoding UTF8 | ConvertFrom-Json
-$msixConfig = Get-Content -LiteralPath (Join-Path $repoRoot 'windows\packaging\msix\make_config.yaml') -Raw
+$versionFeed = Get-Content -LiteralPath (Join-Path $appRoot 'assets\version.json') -Raw -Encoding UTF8 | ConvertFrom-Json
+$msixConfig = Get-Content -LiteralPath (Join-Path $appRoot 'windows\packaging\msix\make_config.yaml') -Raw
 $windowsDisplayVersion = $versionFeed.platforms.windows.version
 $windowsBuildNumber = [int]$versionFeed.platforms.windows.build_number
 if ($msixConfig -notmatch "(?m)^msix_version:\s*$([regex]::Escape($windowsDisplayVersion))\.$windowsBuildNumber\s*$") {

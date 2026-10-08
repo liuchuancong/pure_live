@@ -18,6 +18,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
+$appRoot = Join-Path $repoRoot 'apps\pure_live'  # the Flutter project: pubspec, native projects, assets
 $flutterw = Join-Path $PSScriptRoot 'flutterw.ps1'
 . (Join-Path $PSScriptRoot 'build_resource_guard.ps1')
 
@@ -31,7 +32,7 @@ if ($RequireReleaseSigning -and ($Target -ne 'AndroidArm64' -or $Configuration -
 $gradleWorkers = if ($DedicatedBuild) { 20 } else { 16 }
 $configurationLower = $Configuration.ToLowerInvariant()
 $configurationDirectory = if ($Configuration -eq 'Release') { 'Release' } else { 'Debug' }
-$versionLine = Select-String -Path (Join-Path $repoRoot 'pubspec.yaml') -Pattern '^version:\s*(\S+)' | Select-Object -First 1
+$versionLine = Select-String -Path (Join-Path $appRoot 'pubspec.yaml') -Pattern '^version:\s*(\S+)' | Select-Object -First 1
 if (-not $versionLine) { throw 'pubspec.yaml version was not found.' }
 $repositoryFullVersion = $versionLine.Matches[0].Groups[1].Value
 $fullVersion = $repositoryFullVersion
@@ -41,7 +42,7 @@ if ($Target -eq 'WindowsX64') {
     # Maintained platforms can intentionally be released at different
     # versions. Always build Windows from its platform feed entry rather than
     # silently stamping the newer Android/pubspec version onto the EXE.
-    $versionFeedPath = Join-Path $repoRoot 'assets\version.json'
+    $versionFeedPath = Join-Path $appRoot 'assets\version.json'
     $versionFeed = Get-Content -LiteralPath $versionFeedPath -Raw -Encoding utf8 | ConvertFrom-Json
     if (-not $versionFeed.platforms.windows.version -or -not $versionFeed.platforms.windows.build_number) {
         throw 'assets/version.json is missing the Windows platform version.'
@@ -73,7 +74,7 @@ $commandLog = Join-Path $recordDirectory "$([DateTime]::UtcNow.ToString('yyyyMMd
 Set-Content -LiteralPath $commandLog -Value '' -Encoding utf8
 $incrementalStateBefore = if ($Target -eq 'AndroidArm64') {
     (Test-Path -LiteralPath (Join-Path $repoRoot 'build\app')) -or
-        (Test-Path -LiteralPath (Join-Path $repoRoot 'android\.gradle'))
+        (Test-Path -LiteralPath (Join-Path $appRoot 'android\.gradle'))
 } else {
     Test-Path -LiteralPath (Join-Path $repoRoot 'build\windows\x64')
 }
@@ -116,7 +117,7 @@ function Invoke-PureLiveLoggedFlutter {
 }
 
 function Test-AndroidReleaseSigning {
-    $propertiesPath = Join-Path $repoRoot 'android\key.properties'
+    $propertiesPath = Join-Path $appRoot 'android\key.properties'
     if (-not (Test-Path -LiteralPath $propertiesPath)) { return $false }
 
     $properties = @{}
@@ -131,7 +132,7 @@ function Test-AndroidReleaseSigning {
 
     $storeFile = $properties['storeFile']
     if (-not [IO.Path]::IsPathRooted($storeFile)) {
-        $storeFile = Join-Path (Join-Path $repoRoot 'android\app') $storeFile
+        $storeFile = Join-Path (Join-Path $appRoot 'android\app') $storeFile
     }
     return Test-Path -LiteralPath $storeFile -PathType Leaf
 }
@@ -141,7 +142,7 @@ if ($RequireReleaseSigning -and -not $hasReleaseSigning) {
     throw 'Android release signing was required, but android/key.properties is missing or incomplete.'
 }
 
-Push-Location $repoRoot
+Push-Location $appRoot
 try {
     if ($FullRegression) {
         & (Join-Path $PSScriptRoot 'local_ci.ps1') -Scope Full -TestConcurrency 12

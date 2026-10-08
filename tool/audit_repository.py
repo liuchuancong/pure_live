@@ -95,15 +95,15 @@ def category(path: str) -> str:
         ("platform_interfaces", ("lib/core/",)),
         ("persisted_settings", ("lib/common/services/settings/",)),
         ("navigation", ("lib/routes/", "lib/get/")),
-        ("native_android", ("android/",)),
-        ("native_windows", ("windows/",)),
-        ("native_apple", ("ios/", "macos/")),
-        ("native_linux", ("linux/",)),
+        ("native_android", ("apps/pure_live/android/",)),
+        ("native_windows", ("apps/pure_live/windows/",)),
+        ("native_apple", ("apps/pure_live/ios/", "apps/pure_live/macos/")),
+        ("native_linux", ("apps/pure_live/linux/",)),
         ("release_build", (".github/", "tool/",)),
-        ("dependencies", ("pubspec.yaml", "pubspec.lock", "plugins/", "third_party/")),
+        ("dependencies", ("apps/pure_live/pubspec.yaml", "pubspec.lock", "packages/", "third_party/")),
         ("tests", ("test/",)),
-        ("assets_docs", ("assets/", "docs/")),
-        ("app_source", ("lib/",)),
+        ("assets_docs", ("apps/pure_live/assets/", "docs/")),
+        ("app_source", ("apps/pure_live/lib/",)),
     )
     for name, prefixes in rules:
         if any(path == prefix or path.startswith(prefix) for prefix in prefixes):
@@ -172,7 +172,7 @@ def main() -> int:
             continue
         text_count += 1
 
-        if rel.startswith("lib/"):
+        if rel.startswith("apps/pure_live/lib/"):
             lifecycle_inventory["timer_periodic"] += text.count("Timer.periodic(")
             lifecycle_inventory["stream_listen"] += text.count(".listen(")
             lifecycle_inventory["empty_catch"] += len(empty_catch.findall(text))
@@ -241,10 +241,10 @@ def main() -> int:
     audited_names = {relative(path) for path in files}
     for forbidden in audited_names:
         lower = forbidden.lower()
-        if lower.endswith((".jks", ".keystore", ".p12", ".pfx")) or lower == "android/key.properties":
+        if lower.endswith((".jks", ".keystore", ".p12", ".pfx")) or lower.endswith("android/key.properties"):
             errors.append({"rule": "tracked_signing_material", "path": forbidden})
 
-    pubspec = (ROOT / "pubspec.yaml").read_text(encoding="utf-8")
+    pubspec = (ROOT / "apps" / "pure_live" / "pubspec.yaml").read_text(encoding="utf-8")
     for match in re.finditer(r"(?m)^\s+ref:\s*['\"]?([^'\"\s#]+)", pubspec):
         reference = match.group(1)
         if not SHA40_PATTERN.fullmatch(reference):
@@ -255,7 +255,7 @@ def main() -> int:
                 "reference": reference,
             })
 
-    manifest_path = ROOT / "android/app/src/main/AndroidManifest.xml"
+    manifest_path = ROOT / "apps/pure_live/android/app/src/main/AndroidManifest.xml"
     manifest = manifest_path.read_text(encoding="utf-8")
     callback_values = re.findall(r'android:enableOnBackInvokedCallback="([^"]+)"', manifest)
     if not callback_values or any(value != "true" for value in callback_values):

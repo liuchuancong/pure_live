@@ -13,6 +13,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
+$appRoot = Join-Path $repoRoot 'apps\pure_live'  # the Flutter project: pubspec, native projects, assets
 $releaseNotesPath = $null
 if (-not $ArtifactDirectory) {
     $ArtifactDirectory = Get-ChildItem (Join-Path $repoRoot 'local-artifacts') -Directory |
@@ -23,7 +24,7 @@ if (-not $ArtifactDirectory -or -not (Test-Path -LiteralPath $ArtifactDirectory)
 }
 if (-not (Get-Command gh -ErrorAction SilentlyContinue)) { throw 'GitHub CLI (gh) is required.' }
 
-Push-Location $repoRoot
+Push-Location $appRoot
 try {
     if (git status --porcelain) { throw 'Commit all changes before publishing.' }
     $versionLine = Select-String -Path 'pubspec.yaml' -Pattern '^version:\s*(\S+)' | Select-Object -First 1
