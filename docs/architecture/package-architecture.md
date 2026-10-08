@@ -9,7 +9,7 @@ pure_live/                        # 仓库根 = pub workspace hub(pubspec.yaml �
 ├── apps/pure_live/               # 应用壳(唯一组合根):lib/ + 原生工程 + assets/ + bin/ + tool/
 ├── packages/
 │   ├── foundation/               # L0:每关切面一包
-│   │   ├── utils/ logging/ network/ auth/ storage/ files/ platform/
+│   │   ├── utils/ logging/ network/ auth/ storage/ files/ platform_info/
 │   │   ├── cache/ events/ diagnostics/
 │   │   └── backup/ sync/ release/ l10n/
 │   ├── integrations/             # L0.5
@@ -49,6 +49,8 @@ pure_live/                        # 仓库根 = pub workspace hub(pubspec.yaml �
 ## 3. 命名与版本
 
 - 包名 `pure_live_<name>`;目录用短名(`foundation/network/` → `pure_live_network`)。
+- 包名必须全仓唯一,目录短名与包名一一对应:平台能力探测包因此叫 `platform_info`(`pure_live_platform_info`),
+  把 `pure_live_platform` 留给 §1 里的生态伞包(模型与契约)。
 - melos lockstep 统一版本;`pure_live_plugin_api` 独立 semver(生态接口)。
 - 生成物折中:drift/hive 生成物入库(免 CI build_runner);riverpod/freezed 由 CI 生成。
 

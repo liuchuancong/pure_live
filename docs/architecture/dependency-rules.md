@@ -16,7 +16,7 @@ L5 Providers/Plugins(与 L2-L4 平级,只向下依赖)
 
 | 层 | 包 |
 |---|---|
-| L0 Foundation | utils, logging, network, auth, storage, files, platform, **cache**, **events**, **diagnostics**, backup, sync, release, l10n |
+| L0 Foundation | utils, logging, network, auth, storage, files, platform_info, **cache**, **events**, **diagnostics**, backup, sync, release, l10n |
 | L0.5 Integrations | firebase(**保留**), media(media_core 接线) |
 | L1 Ecosystem | plugin_api, plugin_host, plugin_registry, extension(gateway), resolver, identity, permission, task, capability, content, external_tvbox / lx_music / m3u / xmltv, theme, background, danmaku |
 | L2 Services | search, history, favorites, playlist, links, feed, download, remote, cast, fonts, emote |

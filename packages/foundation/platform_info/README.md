@@ -1,4 +1,4 @@
-# pure_live_platform
+# pure_live_platform_info
 
 > 职责:平台能力探测与 Android、iOS、桌面、Web 适配
 
@@ -7,7 +7,7 @@
 | 层 | foundation(见 [依赖规则](../../../docs/architecture/dependency-rules.md)) |
 | 允许依赖 | 仅 pub.dev 三方包;L0 各包互不依赖(utils、logging 是人人可用的叶子)。 |
 | 禁止依赖 | 任何反向依赖;禁止依赖应用壳(唯一组合根,I9);同层互依(除规则明示例外) |
-| 公共面 | 只有 `lib/pure_live_platform.dart`;内部实现放 `lib/src/` |
+| 公共面 | 只有 `lib/pure_live_platform_info.dart`;内部实现放 `lib/src/` |
 
 ## 结构
 

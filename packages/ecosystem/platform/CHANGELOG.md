@@ -5,4 +5,4 @@ repository-wide release train, see docs/architecture/package-architecture.md sec
 
 ## Unreleased
 
-- Skeleton created for layer foundation as `pure_live_platform`: no dependencies and no implementation yet.
+- Skeleton created for layer ecosystem as `pure_live_platform`: no dependencies and no implementation yet.

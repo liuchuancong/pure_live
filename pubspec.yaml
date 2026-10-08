@@ -8,6 +8,7 @@ environment:
 
 workspace:
   - apps/pure_live
+  - packages/ecosystem/platform
   - packages/foundation/auth
   - packages/foundation/backup
   - packages/foundation/cache
@@ -17,7 +18,7 @@ workspace:
   - packages/foundation/l10n
   - packages/foundation/logging
   - packages/foundation/network
-  - packages/foundation/platform
+  - packages/foundation/platform_info
   - packages/foundation/release
   - packages/foundation/storage
   - packages/foundation/sync

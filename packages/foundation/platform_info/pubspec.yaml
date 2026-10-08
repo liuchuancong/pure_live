@@ -1,5 +1,5 @@
 # GENERATED-BY: tool/scaffold_package.ps1
-name: pure_live_platform
+name: pure_live_platform_info
 description: "平台能力探测与 Android、iOS、桌面、Web 适配"
 publish_to: none
 resolution: workspace

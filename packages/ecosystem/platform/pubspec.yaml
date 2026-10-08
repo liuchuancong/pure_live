@@ -1,0 +1,14 @@
+# GENERATED-BY: tool/scaffold_package.ps1
+name: pure_live_platform
+description: "平台契约与共享模型伞包:Extension/Source/Repository/Content/Resolver/MediaTicket/Error/Diagnostics 的数据定义"
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.13.0
+
+# Add dependencies from the matrix in docs/architecture/dependency-rules.md section 3.
+
+dev_dependencies:
+  # Test-only; the package itself stays dependency free.
+  test: ^1.26.0

@@ -1,6 +1,6 @@
 // GENERATED-BY: tool/scaffold_package.ps1
-// Module: lib/pure_live_platform.dart
-// Purpose: Public barrel of pure_live_platform; the only import surface other packages may use.
+// Module: lib/pure_live_platform_info.dart
+// Purpose: Public barrel of pure_live_platform_info; the only import surface other packages may use.
 // Author: liuchuancong
 // Created: 2026-10-08
 ///
