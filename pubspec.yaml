@@ -1,7 +1,7 @@
-﻿name: pure_live
+name: pure_live
 description: 纯粹直播,一款开源的第三方多平台直播聚合播放器.
 publish_to: none
-version: 3.1.18+4107
+version: 4.0.0+5000
 
 environment:
   sdk: ^3.13.0
@@ -12,6 +12,35 @@ dependencies:
 
   flutter_localizations:
     sdk: flutter
+
+  # -------------------------- v2 架构栈 --------------------------
+  # UI: fluttersdk_wind (Tailwind 风格 className 样式) + Material 底座
+  fluttersdk_wind: ^1.8.1
+  # 状态管理: Riverpod 取代 vendored GetX(lib/get 已随 v1 移除)
+  flutter_riverpod: ^3.3.2
+  riverpod_annotation: ^4.0.3
+  freezed_annotation: ^3.1.0
+  json_annotation: ^4.12.0
+  # 路由: go_router 取代 GetX 路由
+  go_router: ^18.0.1
+  go_transitions: ^0.8.4
+  # 全平台适配: TV 方向键导航 + 屏幕适配
+  dpad: ^3.0.0
+  flutter_screenutil_plus: ^1.5.0
+  flutter_animate: ^4.5.2
+  flutter_virtual_scroll: ^0.1.1
+  marquee_list: ^1.0.0
+  alfred: ^1.1.3 # web_remote 局域网远控 HTTP 服务
+  hexcolor: ^3.1.3
+  intl: ^0.20.2
+  # v2 新增:现代化基础设施
+  flutter_secure_storage: ^11.2.0 # 登录凭据/Cookie 安全存储(全平台含 Linux libsecret)
+  audio_session: ^0.2.2 # 音频焦点与会话中断(拔耳机暂停/来电让路)
+  talker_flutter: ^5.1.20 # 现代日志套件(含应用内日志查看)
+  talker_dio_logger: ^5.1.20 # dio 请求/响应日志 —— 站点爬虫调试核心工具
+  desktop_drop: ^0.6.0 # 桌面端拖拽导入(IPTV m3u 等)
+  shimmer: ^3.0.0 # 骨架屏加载占位
+  drift_flutter: ^0.3.1 # drift 平台自适应数据库构建
 
   hashlib: ^2.0.0 # 哈希计算工具
   crypto: ^3.0.7 # 加密解密工具库
@@ -57,14 +86,9 @@ dependencies:
   flutter_spinkit: ^5.2.2
   loading_animation_widget: ^1.3.0
   loading_indicator: ^4.0.2
-  # 本地引擎仓库（与下面 F:/media_core 同款绝对路径依赖）：本仓用到了它 0.0.8 上
-  # 新增的宿主撤回接口 `BarrageController.retractWhere`（弹幕撤回要按条撤下已上屏
-  # 的消息），pub.dev 上的 0.0.8 还没有这个接口。
   flame_barrage: ^0.0.9
 
   # Keep this exact: 0.6.2 preserves argv through FFmpeg/FFprobe/FFplay.
-  # Platform URL overrides below select our verified FFmpeg 9.0.2 bundles;
-  # prefetch gates pin the Android and Windows archive hashes.
   ffmpeg_kit_extended_flutter: 0.6.2
   bonsoir: ^7.1.5 # LAN device discovery for settings sync
 
@@ -96,8 +120,6 @@ dependencies:
   android_intent_plus: ^6.0.0
 
   # -------------------------- 设备/系统权限/硬件 --------------------------
-  # Brightness gestures are mobile-only. Depend on the mobile implementations
-  # directly so desktop builds never register a physical-monitor DDC/CI plugin.
   screen_brightness_platform_interface: ^2.1.2
   screen_brightness_android: ^2.1.6
   screen_brightness_ios: ^2.1.4
@@ -110,17 +132,10 @@ dependencies:
   mobile_scanner:
     path: plugins/built_in_kotlin/mobile_scanner
 
-  # 播放器引擎 (media_kit / media_kit_video / flv_lzc) 不在此声明:
-  # 全部经 media_core 适配包再导出获取, 这里只保留 wakelock_plus
-  # (media_core 未覆盖的独立工具包)。
+  # 播放器引擎经 media_core 适配包再导出获取, 这里只保留 wakelock_plus。
   wakelock_plus: ^1.3.3 # 与 media_core_media_kit 的引擎依赖链对齐
   #
-  # media_core 从本地绝对路径 (F:/media_core/...) 改成 git 依赖, 统一指向
-  # https://github.com/liuchuancong/media_core 的同一个提交 5b04714。换机器、CI 和
-  # 别人 clone 之后都不再依赖本机目录布局。
-  #
-  # 17 个子包共用同一个 url/ref, 只有子目录不同。各写一份 url/ref 迟早会漂移
-  # 成"两个仓库版本混用", 所以这里宁可重复也保持一致。
+  # media_core 走 git 依赖, 18 个子包共用同一个 url/ref, 只有子目录不同。
   media_core:
     git:
       url: https://github.com/liuchuancong/media_core
@@ -261,7 +276,7 @@ dependencies:
   stop_watch_timer: ^3.2.2 # 计时器
 
   qr: ^4.0.0 # Bilibili 登录二维码矩阵；绘制由应用控制
-  easy_localization: ^3.0.8 #多语言
+  easy_localization: ^3.0.8 # 多语言
   app_links: ^7.2.1
   scroll_animator: 0.3.0
 
@@ -287,6 +302,8 @@ dependency_overrides:
   hooks: ^2.2.0 # Native Assets 构建 hooks 兼容
   code_assets: ^2.1.0 # media_kit Native Assets 2 and FFmpeg hook compatibility
   xml: ^7.0.1 # webdav_client xml7兼容盖
+  mime: ^2.1.0 # media_core 需 mime ^2.1.0，与 alfred 的 ^1.0.0 冲突；alfred 仅用 MimeMultipartTransformer/MimeMultipart（2.x 未变），覆盖安全
+  equatable: ^3.0.0 # media_core 需 equatable ^3.0.0；app 与 flutter_screenutil_plus 均为 extends Equatable + props（3.x 兼容），覆盖安全
 
 
 # 开发依赖
@@ -296,15 +313,21 @@ dev_dependencies:
   integration_test: # on-device checks of native channels (integration_test/)
     sdk: flutter
   shared_preferences: ^2.5.5 # widget tests mock localization persistence
-  change_app_package_name: ^1.5.0 # 修改应用包名
   build_runner: ^2.4.15 # 代码生成器
   flutter_launcher_icons: ^0.14.4 # 应用图标生成
   msix: ^3.16.12 # Windows安装包打包
-  intl_utils: ^2.8.11 # 国际化工具
   flutter_lints: ^6.0.0 # 代码规范检查
   dmg: ^0.1.7 # macOS安装包打包
   drift_dev: ^2.35.0
   enven: ^1.3.0
+  # v2 代码生成
+  riverpod_generator: ^4.0.4 # Riverpod 依赖生成
+  riverpod_lint: ^3.1.9 # Riverpod 官方 lint(需 analysis_options 启用 custom_lint)
+  freezed: ^4.0.2 # freezed 模型生成
+  json_serializable: ^6.14.0 # JSON 序列化生成
+  go_router_builder: ^4.5.0 # 类型安全路由生成
+  hive_ce_generator: ^1.11.2 # Hive 适配器生成
+  flutter_native_splash: ^2.4.6 # 原生冷启动屏生成(Android12+/桌面)
 
 # 应用图标配置
 flutter_icons:
