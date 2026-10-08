@@ -92,3 +92,5 @@
 4. `MediaTicketRefreshInfo`(`supported/expiresAt/refreshBefore`,platform-models §11)未进首切片(§19 未列),
    到期预取的"提前量"因此还没有落点;随 media 接线一并补。
 
+W1 之后接着做的是 W2,进度与验证记在 [w2-progress.md](w2-progress.md)。
+
