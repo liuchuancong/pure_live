@@ -16,8 +16,8 @@ pure_live/
 ├── ecosystem/              # L1
 │   ├── plugin_api/ plugin_host/ plugin_registry/
 │   ├── extension/ resolver/ identity/ permission/ task/
-│   ├── capability/ content/
-│   ├── external_tvbox/ external_lx_music/ external_m3u/ external_xmltv/
+│   ├── capability/ content/ repository/
+│   ├── external/ external_tvbox/ external_lx_music/ external_m3u/ external_xmltv/
 │   ├── theme/ background/ danmaku/
 ├── services/               # L2
 │   ├── search/ history/ favorites/ playlist/ links/ feed/

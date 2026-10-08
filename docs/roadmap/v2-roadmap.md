@@ -28,11 +28,11 @@ ContentRef 业务面:History / Favorite / Playlist / Feed / Search / Link。
 
 ## W6 — Music
 
-MusicIdentity / MusicResolver / 内置源 / Lyric / Playlist。
+MusicIdentity / MusicResolver / 内置源 / Lyric / Playlist。**LX Music 源直接导入**(LxMusicRuntime 兼容运行环境,原接口保持原样,不转换插件)。
 
 ## W7 — TVBox
 
-单仓 / 多仓 / JSON / M3U / EPG / Universal VOD。
+单仓 / 多仓 / JSON / M3U / EPG / Universal VOD。全部**直接导入直接运行**(TvBoxRuntime External Source 路径),不转换成 PureLive 插件(见 [../architecture/external-ecosystem.md](../architecture/external-ecosystem.md))。
 
 ## W8 — 直播生态铺量
 

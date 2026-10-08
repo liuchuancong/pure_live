@@ -74,24 +74,28 @@ class ExtensionDescriptor {
 Runtime 负责理解外部协议,而**不要求外部协议遵循 PureLive API**:
 
 ```dart
-abstract interface class ExternalRuntime {
+abstract interface class ExternalSourceRuntime {
   String get type;
   String get version;
-  bool canHandle(ExtensionDescriptor descriptor);
-  Future<RuntimeInstance> load(ExtensionDescriptor descriptor);
+  bool canHandle(ExternalSourceDescriptor source);
+  Future<ExternalSourceInstance> load(ExternalSourceDescriptor source);
 }
 ```
+
+用户导入的是 **ExternalSourceDescriptor**(id/uri/name?/type?/metadata),不是 Plugin;协议经 **Source Detector** 自动识别(URL/文件 → 识别 → Runtime),也允许显式指定;**ExternalSourceManager** 统一管理添加/删除/启停/刷新/优先级;远程 Source 用 ETag/Last-Modified 增量更新;SourcePriority(如 A=100/B=80/C=50)驱动 Resolver 降级顺序,与 LineFallback/MediaTicket/Recovery 结合。
 
 ```text
 Extension Gateway
  ├── PureLivePluginRuntime
  ├── TvBoxRuntime        ─┐
  ├── LxMusicRuntime       ├→ 各自独立包:pure_live_external_tvbox / lx_music / m3u / xmltv
- ├── M3uRuntime          ─┘
+ ├── M3uRuntime          ─┘   (伞包 pure_live_external:api/runtime/detector/manager/model)
  └── XmlTvRuntime
 ```
 
 不同 Runtime 最终输出同一组统一模型:Capability / Repository / Provider / Resolver / Content / MediaTicket。
+
+> **TVBox 单仓/多仓、LX Music 源等外部生态直接导入直接运行,不要求也不允许强制转换成 PureLive 插件格式**;协议适配 ≠ Plugin 转换。完整规范(区分表/能力映射/分数据 TTL 缓存/本地文件/增量更新/"添加来源"UX)见 [external-ecosystem.md](external-ecosystem.md)。
 
 ## 5. Source 与 Repository
 
