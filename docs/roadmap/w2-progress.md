@@ -59,6 +59,30 @@
 
 顺带:护栏新规则当场抓到 scaffold 留下的 `.gitkeep`(task 包两个),已删除 —— 证明该规则会抓到自己的工具。
 
+### 1.4 `packages/ecosystem/extension`(27 测试)
+
+规范:`platform-contracts.md` §4/§6/§7/§8/§19、`platform-infrastructure.md` §3。
+
+| 件 | 内容 |
+|---|---|
+| 契约 | `Extension` / `ExtensionHandle` / `ExtensionRuntime` / `RuntimeInstance` / `Source` / `ExtensionGateway` / `ExtensionGatewayException` |
+| 状态机 | `register → identified`(无匹配 Runtime 或 API 版本不合 → `incompatible` 并**留记录可查**);`load: identified/error → loading → validating → ready`;`start: ready → running`;`stop: running → stopping → ready`;`disable` 停+dispose 保留记录;`unload` 删记录 |
+| 运行时选择 | `RuntimeRegistry`:按 `canHandle` 取首个匹配,同 id 覆盖(协议实现可升级) |
+| 注入边界 | `ExtensionContext`(network / cookies / permissions / tasks / cache / storage / diagnostics);cache 与 storage 是**按扩展构造的视图**,隔离不依赖扩展自己写对命名空间 |
+| 观测 | 每次状态变化 = 一条 `ExtensionStatus`(stream)+ 一条 `extension.<state>` 诊断事件,同源产生 |
+
+对契约示例的两处有意形状差异(已写进包 README 与本文):`ExtensionRuntime` 用 `RuntimeDescriptor` 代替
+裸 `id/version`;`load(descriptor, context)` 多了 context —— §19 规定服务只能经 `ExtensionContext` 取得,而
+构造扩展实例的正是运行时。`changes` stream 同理:§17 要求 `extension.load/error` 可观测,不该让调用方轮询。
+
+新增三个生命周期错误码并回写 models §14:`extension.disabled` / `extension.state_invalid` /
+`extension.already_registered`。
+
+**ADR 0019**:网关装配 `ExtensionContext` 需要 `pure_live_permission` 与 `pure_live_task`,而三者同层。
+选择在护栏里白名单这一条定向边(而不是在网关内重抄一份 PermissionManager/TaskScheduler 接口 —— 那会变成同一
+契约的两份拷贝,漂移了编译期看不出来),并用两条回归用例钉住范围:网关走这条边必须通过,**别的生态包走同一
+条边必须报 `layer-direction`**。
+
 ## 2. 顺带修掉的工程缺陷
 
 | 缺陷 | 处理 |
@@ -74,19 +98,21 @@
 |---|---|
 | `packages/ecosystem/permission` → `dart analyze` / `dart test` | No issues found;**35 全绿** |
 | `packages/ecosystem/task` → `dart analyze` / `dart test` | No issues found;**19 全绿** |
+| `packages/ecosystem/extension` → `dart analyze` / `dart test` | No issues found;**27 全绿**(网关与真实 permission/task 包一起跑,ADR 0019 那条边因此不只是纸面可用) |
 | `packages/ecosystem/platform` → `dart analyze` / `dart test` | No issues found;**82 全绿**(新增 permission/network/cookie 31 条 + task 13 条) |
 | 仓库根 `dart analyze .` | **No issues found!** |
-| `dart run tool/check_architecture.dart --strict` | `packages=23 errors=0 warnings=0` |
-| `dart format --output=none --set-exit-if-changed packages` | 102 文件 0 changed(收敛稳定) |
-| `tool/test_check_architecture.ps1` | **PASS: 19 assertions across 17 cases**(含新增 stale-scaffold-marker 反例) |
+| `dart run tool/check_architecture.dart --strict` | `packages=24 errors=0 warnings=0` |
+| `dart format --output=none --set-exit-if-changed packages tool/check_*.dart` | 114 文件 0 changed(收敛稳定) |
+| `tool/test_check_architecture.ps1` | **PASS: 21 assertions across 19 cases** —— 含 stale-scaffold-marker 反例、ADR 0019 白名单"网关可走 / 别家走同一边必须报错"两条 |
 | `dart run tool/check_workflow_yaml.dart` | 4 个 workflow/action 文件解析通过 |
 | 护栏非空转验证 | 临时放置 `packages/foundation/utils/lib/src/.gitkeep` → 报 `stale-scaffold-marker` 且 `errors=1`,删除后回 0 |
 
 ## 4. 余下项(W2 未完成部分)
 
-1. `packages/ecosystem/extension`:`Extension` / `ExtensionHandle` / `ExtensionRuntime` / `RuntimeInstance` /
-   `Source` 契约、`ExtensionGateway` 实现(注册、`canHandle` 选择、生命周期状态机、`incompatible` 与结构化错误)、
-   `ExtensionContext` 注入边界与 dio 版 `NetworkTransport` 适配。
-2. `packages/ecosystem/plugin_api` + PluginRuntime / ScriptSandbox **接口**(JS 装载与沙箱实现随 W10)。
-3. M2 的另一半"媒体管线能播一个假源"属 W3,未开始。
-4. 权限、网络与任务至今只有离线断言;真实站点(403 / 重定向 / 超大响应)要在 W4 Bilibili 参考实现上跑一次才算验收。
+1. `packages/ecosystem/plugin_api` + PluginRuntime / ScriptSandbox **接口**(JS 装载与沙箱实现随 W10)。
+2. M2 的另一半"媒体管线能播一个假源"属 W3,未开始。
+3. `NetworkTransport` 的 dio 适配(架在 `pure_live_network` 上)与 `ExtensionCache` / `ExtensionStorage` 的持久
+   实现尚未落地:网关目前用内存默认实现,所以权限、网络、任务与网关四条都只有离线断言;真实站点
+   (403 / 重定向 / 超大响应)要在 W4 Bilibili 参考实现上跑一次才算验收。
+4. `ExtensionGateway.supportedApiVersions` 默认为空 = 不做版本检查;插件一旦能声明 `platformApiVersion`,
+   组合根必须显式给出接受范围,否则 platform-contracts.md §23 的兼容性判定形同不存在。
