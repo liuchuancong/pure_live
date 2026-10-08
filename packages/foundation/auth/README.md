@@ -9,6 +9,13 @@
 | 禁止依赖 | 任何反向依赖;禁止依赖应用壳(唯一组合根,I9);同层互依(除规则明示例外) |
 | 公共面 | 只有 `lib/pure_live_auth.dart`;内部实现放 `lib/src/` |
 
+## 内容
+
+- `session.dart` —— `AuthMethod` / `AccountStatus` / `CredentialHandle`(凭据句柄,不含明文)/ `AccountProfile` / `AuthSession`(过期判定接 `Clock`)
+- `credential_store.dart` —— `CredentialStore`:凭据写 `SecureStore`、会话状态写 `KeyValueStore`;`clearAccount` 一次清干净;`expiryEvents` 通知宿主该弹登录了;`describeForDiagnostics` 与 `isAuthOwnedKey` 保证凭据不进诊断包、不进备份
+
+按 [docs/security/credential-storage.md](../../../docs/security/credential-storage.md):本包是凭据的唯一读写方,Provider 只拿句柄发已认证请求;凭据不参与 backup/sync,跨设备走重新认证。
+
 ## 结构
 
 - `pubspec.yaml` / `analysis_options.yaml` / `CHANGELOG.md` / `README.md` / `test/` —— 所有包必备

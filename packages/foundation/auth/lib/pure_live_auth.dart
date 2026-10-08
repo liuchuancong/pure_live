@@ -4,6 +4,12 @@
 // Author: liuchuancong
 // Created: 2026-10-08
 ///
-/// Layer: foundation. Allowed dependencies: pub.dev packages only; foundation packages do not depend on each other (utils and logging are leaf packages).
+/// Layer: foundation. Allowed dependencies: pub.dev packages only, plus the utils and logging leaves.
 /// See docs/architecture/dependency-rules.md and the package README.
+///
+/// Providers receive a CredentialHandle, never plaintext: docs/security/credential-storage.md makes this
+/// package the only reader and writer of credentials.
 library;
+
+export 'src/credential_store.dart';
+export 'src/session.dart';
