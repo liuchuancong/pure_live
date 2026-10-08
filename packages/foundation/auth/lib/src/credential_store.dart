@@ -10,9 +10,9 @@
 
 import 'dart:async';
 
-import 'package:pure_live_storage/pure_live_storage.dart';
 import 'package:pure_live_utils/pure_live_utils.dart';
 
+import 'ports.dart';
 import 'session.dart';
 
 /// Where a session was lost, so the host can decide whether to prompt for a re-login.
@@ -26,8 +26,8 @@ final class AuthExpiry {
 /// Stores credentials in a [SecureStore] and their non-secret state in a [KeyValueStore].
 final class CredentialStore {
   CredentialStore({
-    required SecureStore secrets,
-    required KeyValueStore settings,
+    required SecretVault secrets,
+    required SessionBox settings,
     Clock? clock,
   }) : _secrets = secrets,
        _settings = settings,
@@ -36,8 +36,8 @@ final class CredentialStore {
   static const String _secretPrefix = authSecretKeyPrefix;
   static const String _sessionPrefix = authSessionKeyPrefix;
 
-  final SecureStore _secrets;
-  final KeyValueStore _settings;
+  final SecretVault _secrets;
+  final SessionBox _settings;
   final Clock _clock;
   final StreamController<AuthExpiry> _expiry = StreamController<AuthExpiry>.broadcast();
 
@@ -60,7 +60,7 @@ final class CredentialStore {
       accountId: accountId,
       key: _secretKey(providerId, accountId),
     );
-    await _secrets.writeSecret(handle.key, secret);
+    await _secrets.write(handle.key, secret);
     await _writeSession(
       handle,
       AuthSession(
@@ -75,7 +75,7 @@ final class CredentialStore {
     return handle;
   }
 
-  Future<String?> readSecret(CredentialHandle handle) => _secrets.readSecret(handle.key);
+  Future<String?> readSecret(CredentialHandle handle) => _secrets.read(handle.key);
 
   /// Reads a session and reports it as expired if the clock says so, without mutating storage.
   Future<AuthSession?> sessionOf(String providerId, String accountId) async {
@@ -127,7 +127,7 @@ final class CredentialStore {
   /// Callers must not clean up parts of this themselves: a leftover key is how a v1 douyu session survived
   /// logout.
   Future<void> clearAccount({required String providerId, required String accountId}) async {
-    await _secrets.removeSecret(_secretKey(providerId, accountId));
+    await _secrets.remove(_secretKey(providerId, accountId));
     await _settings.remove('$_sessionPrefix$providerId.$accountId');
   }
 

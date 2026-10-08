@@ -3,19 +3,19 @@
 // Author: liuchuancong
 // Created: 2026-10-08
 import 'package:pure_live_auth/pure_live_auth.dart';
-import 'package:pure_live_storage/pure_live_storage.dart';
+
 import 'package:pure_live_utils/pure_live_utils.dart';
 import 'package:test/test.dart';
 
 void main() {
-  late MemorySecureStore secrets;
-  late MemoryKeyValueStore settings;
+  late MemorySecretVault secrets;
+  late MemorySessionBox settings;
   late FixedClock clock;
   late CredentialStore store;
 
   setUp(() {
-    secrets = MemorySecureStore();
-    settings = MemoryKeyValueStore();
+    secrets = MemorySecretVault();
+    settings = MemorySessionBox();
     clock = FixedClock(DateTime.utc(2026, 10, 8, 12));
     store = CredentialStore(secrets: secrets, settings: settings, clock: clock);
   });
@@ -108,7 +108,7 @@ void main() {
 
     expect(await store.readSecret(handle), isNull);
     expect(await store.sessionOf('bilibili', 'uid-1'), isNull);
-    expect(await secrets.secretKeys(), isEmpty);
+    expect(await secrets.keys(), isEmpty);
     expect(await settings.keys(), isEmpty);
   });
 
@@ -138,7 +138,7 @@ void main() {
     await store.clearAll();
 
     expect(await store.sessions(), isEmpty);
-    expect(await secrets.secretKeys(), isEmpty);
+    expect(await secrets.keys(), isEmpty);
   });
 
   test('test_describeForDiagnostics_containsNoCredential', () async {

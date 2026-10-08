@@ -9,9 +9,8 @@ environment:
 
 # Add dependencies from the matrix in docs/architecture/dependency-rules.md section 3.
 dependencies:
-  pure_live_storage:
-    path: ../storage
-  # utils and logging are the two L0 leaves every package may use.
+  # utils is one of the two L0 leaves every package may use. Storage is reached through the narrow ports
+  # in ports.dart instead: an L0 package may not depend on another L0 package.
   pure_live_utils:
     path: ../utils
 

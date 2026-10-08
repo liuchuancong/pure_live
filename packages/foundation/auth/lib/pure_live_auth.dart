@@ -12,4 +12,5 @@
 library;
 
 export 'src/credential_store.dart';
+export 'src/ports.dart';
 export 'src/session.dart';
