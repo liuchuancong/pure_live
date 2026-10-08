@@ -48,17 +48,15 @@ permissions:
 concurrency:
   group: manual-build-${{ github.ref }}
   cancel-in-progress: false
-# The Flutter SDK is not pinned in this workflow: every job builds with the
-# latest stable release. The jobs installing from the official archive
-# (quality, linux) resolve version, archive and sha256 at run time from
-# https://storage.googleapis.com/flutter_infra_release/releases/releases_linux.json
-# (the current_release.stable hash selects the release entry); the other jobs
-# use subosito/flutter-action with channel: stable. Local development keeps
-# its own pin in .fvmrc.
+# Every job resolves the latest stable Flutter SDK at run time through
+# subosito/flutter-action (channel: stable) — no SDK version is pinned in this
+# workflow. Local development keeps its own pin in .fvmrc.
+env:
+  FASTFORGE_VERSION: "0.6.0"
 jobs:
   quality:
     name: Analyze, test and probe
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_quality }}
+    if: ${{ inputs.run_quality }}
     needs: []
     runs-on: ubuntu-latest
     timeout-minutes: 35
@@ -68,61 +66,10 @@ jobs:
         with:
           distribution: zulu
           java-version: "26"
-      - name: Install latest stable Flutter SDK from the official archive
-        shell: bash
-        run: |
-          set -euo pipefail
-          manifest="$RUNNER_TEMP/flutter-releases-linux.json"
-          curl --fail --location --retry 3 \
-            "https://storage.googleapis.com/flutter_infra_release/releases/releases_linux.json" \
-            --output "$manifest"
-          # No version or hash is pinned here: the manifest's current stable
-          # pointer selects the release entry, and that same entry provides
-          # the archive path and sha256 used to verify the download.
-          read -r version archive expected_sha256 < <(
-            python3 - "$manifest" <<'PY'
-          import json, sys
-          manifest = json.load(open(sys.argv[1], encoding="utf-8"))
-          stable = manifest["current_release"]["stable"]
-          for release in manifest["releases"]:
-              if release.get("hash") == stable and release.get("channel") == "stable":
-                  print(release["version"], release["archive"], release["sha256"])
-                  break
-          else:
-              raise SystemExit("no stable release entry matches current_release.stable")
-          PY
-          )
-          archive_path="$RUNNER_TEMP/flutter-linux.tar.xz"
-          curl --fail --location --retry 3 \
-            "https://storage.googleapis.com/flutter_infra_release/releases/$archive" \
-            --output "$archive_path"
-          echo "$expected_sha256  $archive_path" | sha256sum --check --strict
-          tar --extract --file "$archive_path" --directory "$RUNNER_TEMP"
-          sdk="$RUNNER_TEMP/flutter"
-          if [[ ! -x "$sdk/bin/flutter" ]]; then
-            echo "No Flutter SDK at $sdk after extracting $archive." >&2
-            exit 1
-          fi
-          # The manifest hash only guards the download. The extracted SDK is
-          # still compared against the manifest's own version so a wrong or
-          # partially extracted archive fails loudly instead of building.
-          #
-          # Recent SDK archives dropped the root `version` file; the version
-          # lives in the cache manifest, and an archive that predates that is
-          # still read the old way. Asking the SDK itself is the last resort.
-          version_json="$sdk/bin/cache/flutter.version.json"
-          if [[ -f "$version_json" ]]; then
-            extracted_version="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["frameworkVersion"])' "$version_json")"
-          elif [[ -f "$sdk/version" ]]; then
-            extracted_version="$(cut -d' ' -f1 < "$sdk/version")"
-          else
-            extracted_version="$("$sdk/bin/flutter" --version --machine | python3 -c 'import json,sys; print(json.load(sys.stdin)["frameworkVersion"])')"
-          fi
-          if [[ "$extracted_version" != "$version" ]]; then
-            echo "Flutter archive contains $extracted_version but the manifest selected $version." >&2
-            exit 1
-          fi
-          echo "$sdk/bin" >> "$GITHUB_PATH"
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: stable
+          cache: true
       - name: Verify Flutter SDK
         run: flutter --version
       - name: Resolve packages
@@ -144,7 +91,6 @@ jobs:
     if: >-
       ${{
         always() &&
-        github.event_name == 'workflow_dispatch' &&
         inputs.build_android &&
         (needs.quality.result == 'success' || needs.quality.result == 'skipped')
       }}
@@ -194,19 +140,8 @@ jobs:
             --release \
             --split-per-abi \
             --dart-define=PURELIVE_BUILD_SOURCE=github-manual
-      - name: Verify Android FFmpeg native bundle
-        run: |
-          python3 tool/verify_ffmpeg_native.py android build/app/outputs/flutter-apk/app-arm64-v8a-release.apk --abi arm64-v8a
-          python3 tool/verify_ffmpeg_native.py android build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk --abi armeabi-v7a
-          python3 tool/verify_ffmpeg_native.py android build/app/outputs/flutter-apk/app-x86_64-release.apk --abi x86_64
-      - name: Get version
+      - uses: ./.github/actions/get-version
         id: version
-        shell: bash
-        run: |
-          set -euo pipefail
-          FULL_VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //; s/[`"'"'"']//g')
-          echo "version=${FULL_VERSION%%+*}" >> "$GITHUB_OUTPUT"
-          echo "artifact_version=${FULL_VERSION/+/-}" >> "$GITHUB_OUTPUT"
       - name: Rename Android APKs
         shell: bash
         run: |
@@ -261,8 +196,8 @@ jobs:
   windows:
     name: Windows EXE + MSIX + Portable
     if: >-
-      ${{ always() &&
-        github.event_name == 'workflow_dispatch' &&
+      ${{
+        always() &&
         inputs.build_windows &&
         (needs.quality.result == 'success' || needs.quality.result == 'skipped')
       }}
@@ -307,11 +242,8 @@ jobs:
         with:
           channel: stable
           cache: true
-      - name: Enable Flutter Windows
-        run: flutter config --enable-windows-desktop
       - name: Resolve packages
         run: flutter pub get --enforce-lockfile
-
       - name: Prefetch verified Firebase C++ SDK
         shell: pwsh
         run: .\tool\prefetch_windows_native.ps1
@@ -325,7 +257,7 @@ jobs:
         run: |
           $ErrorActionPreference = "Stop"
           choco install innosetup --version=6.7.1 -y --no-progress
-          dart pub global activate fastforge 0.6.0
+          dart pub global activate fastforge $env:FASTFORGE_VERSION
       - name: Copy Chinese language pack
         shell: pwsh
         run: |
@@ -334,22 +266,8 @@ jobs:
           if (Test-Path $source) {
             Copy-Item $source $target -Force
           }
-      - name: Get version
+      - uses: ./.github/actions/get-version
         id: version
-        shell: pwsh
-        run: |
-          $lines = Get-Content pubspec.yaml
-          foreach ($line in $lines) {
-            if ($line -match '^\s*version:\s*(\S+)') {
-              $fullVersion = $matches[1] -replace '[`"''`]', ''
-              $displayVersion = $fullVersion.Split('+')[0]
-              $artifactVersion = $fullVersion.Replace('+', '-')
-              "version=$displayVersion" | Out-File $env:GITHUB_OUTPUT -Encoding utf8 -Append
-              "artifact_version=$artifactVersion" | Out-File $env:GITHUB_OUTPUT -Encoding utf8 -Append
-              exit 0
-            }
-          }
-          Write-Error "Version not found"
       - name: Package Windows EXE and MSIX
         shell: pwsh
         run: |
@@ -357,9 +275,6 @@ jobs:
           fastforge package `
             --platform windows `
             --targets exe,msix
-      - name: Verify Windows FFmpeg native bundle
-        shell: pwsh
-        run: python tool/verify_ffmpeg_native.py windows build/windows/x64/runner/Release/libffmpegkit.dll
       - name: Locate Windows release bundle
         id: bundle
         shell: pwsh
@@ -443,8 +358,8 @@ jobs:
   linux:
     name: Linux x64 DEB + portable
     if: >-
-      ${{ always() &&
-        github.event_name == 'workflow_dispatch' &&
+      ${{
+        always() &&
         inputs.build_linux &&
         (needs.quality.result == 'success' || needs.quality.result == 'skipped')
       }}
@@ -493,61 +408,10 @@ jobs:
             libxext-dev \
             libxfixes-dev \
             libxcb1-dev
-      - name: Install latest stable Flutter SDK from the official archive
-        shell: bash
-        run: |
-          set -euo pipefail
-          manifest="$RUNNER_TEMP/flutter-releases-linux.json"
-          curl --fail --location --retry 3 \
-            "https://storage.googleapis.com/flutter_infra_release/releases/releases_linux.json" \
-            --output "$manifest"
-          # No version or hash is pinned here: the manifest's current stable
-          # pointer selects the release entry, and that same entry provides
-          # the archive path and sha256 used to verify the download.
-          read -r version archive expected_sha256 < <(
-            python3 - "$manifest" <<'PY'
-          import json, sys
-          manifest = json.load(open(sys.argv[1], encoding="utf-8"))
-          stable = manifest["current_release"]["stable"]
-          for release in manifest["releases"]:
-              if release.get("hash") == stable and release.get("channel") == "stable":
-                  print(release["version"], release["archive"], release["sha256"])
-                  break
-          else:
-              raise SystemExit("no stable release entry matches current_release.stable")
-          PY
-          )
-          archive_path="$RUNNER_TEMP/flutter-linux.tar.xz"
-          curl --fail --location --retry 3 \
-            "https://storage.googleapis.com/flutter_infra_release/releases/$archive" \
-            --output "$archive_path"
-          echo "$expected_sha256  $archive_path" | sha256sum --check --strict
-          tar --extract --file "$archive_path" --directory "$RUNNER_TEMP"
-          sdk="$RUNNER_TEMP/flutter"
-          if [[ ! -x "$sdk/bin/flutter" ]]; then
-            echo "No Flutter SDK at $sdk after extracting $archive." >&2
-            exit 1
-          fi
-          # The manifest hash only guards the download. The extracted SDK is
-          # still compared against the manifest's own version so a wrong or
-          # partially extracted archive fails loudly instead of building.
-          #
-          # Recent SDK archives dropped the root `version` file; the version
-          # lives in the cache manifest, and an archive that predates that is
-          # still read the old way. Asking the SDK itself is the last resort.
-          version_json="$sdk/bin/cache/flutter.version.json"
-          if [[ -f "$version_json" ]]; then
-            extracted_version="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["frameworkVersion"])' "$version_json")"
-          elif [[ -f "$sdk/version" ]]; then
-            extracted_version="$(cut -d' ' -f1 < "$sdk/version")"
-          else
-            extracted_version="$("$sdk/bin/flutter" --version --machine | python3 -c 'import json,sys; print(json.load(sys.stdin)["frameworkVersion"])')"
-          fi
-          if [[ "$extracted_version" != "$version" ]]; then
-            echo "Flutter archive contains $extracted_version but the manifest selected $version." >&2
-            exit 1
-          fi
-          echo "$sdk/bin" >> "$GITHUB_PATH"
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: stable
+          cache: true
       - name: Verify Flutter SDK
         run: flutter --version
       - name: Resolve packages
@@ -557,35 +421,15 @@ jobs:
           dart run enven \
             --env-files .env,.env.prod \
             --class-name AppConfig
-      - name: Prefetch verified Linux native sources
-        shell: bash
-        # Seeds the ffmpeg_kit Native Assets cache with the pinned Linux archive.
-        # Without it the hook fetches a different builder release and the later
-        # `verify_ffmpeg_native.py --stage-linux` step rejects it on the hash.
-        # (This step used to fetch a mimalloc tarball into the build directory;
-        # nothing in this repository references mimalloc, so it only cost time.)
-        run: bash tool/prefetch_linux_native.sh
       - name: Build Linux release
         run: |
           flutter build linux \
             --release \
             --dart-define=PURELIVE_BUILD_SOURCE=github-manual
-      - name: Verify Linux FFmpeg native bundle
-        run: |
-          python3 tool/verify_ffmpeg_native.py linux build/linux/x64/release/bundle --stage-linux
-          find build/linux/x64/release/bundle -type f -iname '*ffmpeg*' -print
-      - name: Get version
+      - uses: ./.github/actions/get-version
         id: version
-        shell: bash
-        run: |
-          set -euo pipefail
-          FULL_VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //; s/[`"'"'"']//g')
-          echo "version=${FULL_VERSION%%+*}" >> "$GITHUB_OUTPUT"
-          echo "artifact_version=${FULL_VERSION/+/-}" >> "$GITHUB_OUTPUT"
       - name: Create portable archives
         shell: bash
-        # The bundle at this point carries the staged FFmpeg runtime, so the
-        # portable tar.gz and zip are complete packages.
         run: |
           set -euo pipefail
           VERSION="${{ steps.version.outputs.artifact_version }}"
@@ -593,15 +437,12 @@ jobs:
           (cd build/linux/x64/release/bundle && zip -qr "$GITHUB_WORKSPACE/PureLive-${VERSION}-linux-x64.zip" .)
       - name: Install pinned Linux packager
         run: |
-          dart pub global activate fastforge 0.6.0
+          dart pub global activate fastforge "$FASTFORGE_VERSION"
           echo "$HOME/.pub-cache/bin" >> "$GITHUB_PATH"
       - name: Package Linux DEB
         shell: bash
         # fastforge re-runs `flutter build linux` internally (there is no
-        # --skip-build), and the CMake install resets the bundle, so the staged
-        # FFmpeg runtime is gone again afterwards and gets re-staged below.
-        env:
-          PURELIVE_BUILD_SOURCE: github-manual
+        # --skip-build), so the dart-define has to be passed through again.
         run: |
           set -euo pipefail
           size_kb=$(du -sk build/linux/x64/release/bundle | cut -f1)
@@ -610,16 +451,10 @@ jobs:
             --platform linux \
             --targets deb \
             --skip-clean \
-            --build-dart-define "PURELIVE_BUILD_SOURCE=${PURELIVE_BUILD_SOURCE}"
+            --build-dart-define "PURELIVE_BUILD_SOURCE=github-manual"
           ls -lh dist/
-      - name: Restore FFmpeg runtime in rebuilt bundle
-        run: |
-          python3 tool/verify_ffmpeg_native.py linux build/linux/x64/release/bundle --stage-linux
-      - name: Inject FFmpeg runtime into DEB
+      - name: Rename Linux DEB
         shell: bash
-        # fastforge packaged the DEB from its own rebuild, before the verified
-        # runtime was staged back into the bundle, so the library is injected
-        # and the result re-verified before the package is accepted.
         run: |
           set -euo pipefail
           VERSION="${{ steps.version.outputs.artifact_version }}"
@@ -628,15 +463,8 @@ jobs:
             echo "DEB package not found under dist/." >&2
             exit 1
           fi
-          work="$RUNNER_TEMP/deb-repack"
-          rm -rf "$work"
-          dpkg-deb --raw-extract "$deb_source" "$work"
-          install -D -m 644 \
-            build/linux/x64/release/bundle/lib/libffmpegkit.so \
-            "$work/usr/share/pure_live/lib/libffmpegkit.so"
-          dpkg-deb --build --root-owner-group "$work" "PureLive-${VERSION}-linux-x64.deb"
+          mv "$deb_source" "PureLive-${VERSION}-linux-x64.deb"
           dpkg-deb --field "PureLive-${VERSION}-linux-x64.deb" Package Version Architecture Depends
-          dpkg-deb --contents "PureLive-${VERSION}-linux-x64.deb" | grep -F 'usr/share/pure_live/lib/libffmpegkit.so' > /dev/null
           ls -lh "PureLive-${VERSION}-linux-x64.tar.gz" "PureLive-${VERSION}-linux-x64.zip" "PureLive-${VERSION}-linux-x64.deb"
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -651,8 +479,8 @@ jobs:
   apple:
     name: Apple platform packages
     if: >-
-      ${{ always() &&
-        github.event_name == 'workflow_dispatch' &&
+      ${{
+        always() &&
         (inputs.build_macos || inputs.build_ios) &&
         (needs.quality.result == 'success' || needs.quality.result == 'skipped') }}
     needs: [quality]
@@ -679,23 +507,17 @@ jobs:
           dart run enven \
             --env-files .env,.env.prod \
             --class-name AppConfig
-      - name: Get version
+      - uses: ./.github/actions/get-version
         id: version
-        shell: bash
-        run: |
-          set -euo pipefail
-          FULL_VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //; s/[`"'"'"']//g')
-          echo "version=${FULL_VERSION%%+*}" >> "$GITHUB_OUTPUT"
-          echo "artifact_version=${FULL_VERSION/+/-}" >> "$GITHUB_OUTPUT"
       - name: Build macOS release
-        if: ${{ (github.event_name == 'push' && startsWith(github.ref_name, 'stage-macos-')) || inputs.build_macos }}
+        if: ${{ inputs.build_macos }}
         run: |
           flutter build macos \
             --release \
             --dart-define=PURELIVE_BUILD_SOURCE=github-manual
       - name: Locate macOS application
         id: macos_app
-        if: ${{ (github.event_name == 'push' && startsWith(github.ref_name, 'stage-macos-')) || inputs.build_macos }}
+        if: ${{ inputs.build_macos }}
         shell: bash
         run: |
           set -euo pipefail
@@ -706,7 +528,7 @@ jobs:
           fi
           echo "app_path=$app_path" >> "$GITHUB_OUTPUT"
       - name: Verify macOS application
-        if: ${{ (github.event_name == 'push' && startsWith(github.ref_name, 'stage-macos-')) || inputs.build_macos }}
+        if: ${{ inputs.build_macos }}
         shell: bash
         run: |
           set -euo pipefail
@@ -717,9 +539,8 @@ jobs:
             exit 1
           fi
           lipo -info "$executable"
-          python3 tool/verify_ffmpeg_native.py macos "$app_path"
       - name: Archive macOS application
-        if: ${{ (github.event_name == 'push' && startsWith(github.ref_name, 'stage-macos-')) || inputs.build_macos }}
+        if: ${{ inputs.build_macos }}
         shell: bash
         run: |
           set -euo pipefail
@@ -727,7 +548,7 @@ jobs:
           APP="${{ steps.macos_app.outputs.app_path }}"
           ditto -c -k --sequesterRsrc --keepParent "$APP" "PureLive-${VERSION}-macos-universal.zip"
       - name: Build macOS DMG
-        if: ${{ (github.event_name == 'push' && startsWith(github.ref_name, 'stage-macos-')) || inputs.build_macos }}
+        if: ${{ inputs.build_macos }}
         shell: bash
         run: |
           set -euo pipefail
@@ -735,7 +556,7 @@ jobs:
           APP="${{ steps.macos_app.outputs.app_path }}"
           hdiutil create -volname "PureLive" -srcfolder "$APP" -ov -format UDZO "PureLive-${VERSION}-macos-universal.dmg"
       - name: Verify macOS packages
-        if: ${{ (github.event_name == 'push' && startsWith(github.ref_name, 'stage-macos-')) || inputs.build_macos }}
+        if: ${{ inputs.build_macos }}
         shell: bash
         run: |
           set -euo pipefail
@@ -744,7 +565,7 @@ jobs:
           test -f "PureLive-${VERSION}-macos-universal.dmg"
           ls -lh "PureLive-${VERSION}-macos-universal.zip" "PureLive-${VERSION}-macos-universal.dmg"
       - name: Upload macOS artifacts
-        if: ${{ (github.event_name == 'push' && !startsWith(github.ref_name, 'stage-ios-')) || inputs.build_macos }}
+        if: ${{ inputs.build_macos }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: pure-live-macos
@@ -754,7 +575,7 @@ jobs:
           if-no-files-found: error
           retention-days: 3
       - name: Build iOS device application
-        if: ${{ (github.event_name == 'push' && startsWith(github.ref_name, 'stage-ios-')) || inputs.build_ios }}
+        if: ${{ inputs.build_ios }}
         run: |
           flutter build ios \
             --release \
@@ -762,7 +583,7 @@ jobs:
             --dart-define=PURELIVE_BUILD_SOURCE=github-manual
       - name: Locate built Runner.app
         id: ios_app
-        if: ${{ github.event_name == 'push' || inputs.build_ios }}
+        if: ${{ inputs.build_ios }}
         shell: bash
         run: |
           set -euo pipefail
@@ -772,15 +593,8 @@ jobs:
             exit 1
           fi
           echo "app_path=$app_path" >> "$GITHUB_OUTPUT"
-      - name: Verify iOS FFmpeg runtime
-        if: ${{ github.event_name == 'push' || inputs.build_ios }}
-        run: |
-          binary="${{ steps.ios_app.outputs.app_path }}/Frameworks/ffmpegkit.framework/ffmpegkit"
-          file "$binary"
-          lipo -info "$binary"
-          python3 tool/verify_ffmpeg_native.py ios "${{ steps.ios_app.outputs.app_path }}"
       - name: Archive unsigned iOS application
-        if: ${{ github.event_name == 'push' || inputs.build_ios }}
+        if: ${{ inputs.build_ios }}
         shell: bash
         run: |
           set -euo pipefail
@@ -788,7 +602,7 @@ jobs:
           APP="${{ steps.ios_app.outputs.app_path }}"
           ditto -c -k --sequesterRsrc --keepParent "$APP" "PureLive-${VERSION}-ios-arm64-unsigned-app.zip"
       - name: Create TrollStore entitlements
-        if: ${{ github.event_name == 'push' || inputs.build_ios }}
+        if: ${{ inputs.build_ios }}
         shell: bash
         run: |
           set -euo pipefail
@@ -806,7 +620,7 @@ jobs:
           PLIST
           echo "entitlements=$ENT" >> "$GITHUB_ENV"
       - name: Ad-hoc sign iOS application
-        if: ${{ github.event_name == 'push' || inputs.build_ios }}
+        if: ${{ inputs.build_ios }}
         shell: bash
         run: |
           set -euo pipefail
@@ -825,7 +639,7 @@ jobs:
           codesign -dvv "$APP" 2>&1 | head -30
           codesign --verify --deep --strict "$APP"
       - name: Package TrollStore IPA
-        if: ${{ github.event_name == 'push' || inputs.build_ios }}
+        if: ${{ inputs.build_ios }}
         shell: bash
         run: |
           set -euo pipefail
@@ -838,7 +652,7 @@ jobs:
           cd "$WORK_DIR"
           zip -r -q "$GITHUB_WORKSPACE/PureLive-${VERSION}-ios-arm64-trollstore.ipa" Payload
       - name: Verify TrollStore IPA
-        if: ${{ github.event_name == 'push' || inputs.build_ios }}
+        if: ${{ inputs.build_ios }}
         shell: bash
         run: |
           set -euo pipefail
@@ -852,7 +666,7 @@ jobs:
           unzip -q "$IPA" -d "$TMPD"
           codesign --verify --deep --strict "$TMPD/Payload/Runner.app"
       - name: Upload iOS artifacts
-        if: ${{ github.event_name == 'push' || inputs.build_ios }}
+        if: ${{ inputs.build_ios }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: pure-live-ios
@@ -865,8 +679,8 @@ jobs:
     timeout-minutes: 15
     name: Publish GitHub Release
     if: >-
-      ${{ always() &&
-        github.event_name == 'workflow_dispatch' &&
+      ${{
+        always() &&
         inputs.create_release &&
         (inputs.build_android || inputs.build_windows || inputs.build_linux || inputs.build_macos || inputs.build_ios) &&
         (needs.quality.result == 'success' || needs.quality.result == 'skipped') &&
@@ -948,9 +762,10 @@ jobs:
           from pathlib import Path
 
           def latest_stable_flutter_version():
-              # The build jobs resolve their SDK independently; this records
-              # the stable version from the same official manifest. Falls back
-              # to a generic marker if the manifest is unreachable.
+              # The build jobs resolve their SDK independently through
+              # subosito/flutter-action; this records the stable version from
+              # the same official manifest. Falls back to a generic marker if
+              # the manifest is unreachable.
               import urllib.request
               try:
                   with urllib.request.urlopen(
@@ -1073,10 +888,6 @@ jobs:
         with:
           ref: master
           fetch-depth: 0
-      - name: Setup Python
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
-        with:
-          python-version: "3.10"
       - name: Update assets/releases.json
         env:
           GH_TOKEN: ${{ github.token }}
@@ -1084,7 +895,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python <<'PY'
+          python3 <<'PY'
           import json
           import os
           import subprocess

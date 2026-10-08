@@ -1,0 +1,21 @@
+name: Read PureLive version
+description: >
+  Parse `version:` from pubspec.yaml into the display form (build number
+  stripped) and the artifact form ('+' replaced by '-') used in file names.
+outputs:
+  version:
+    description: Display version, e.g. 3.1.18.
+    value: ${{ steps.parse.outputs.version }}
+  artifact_version:
+    description: File-name-safe version, e.g. 3.1.18-4107.
+    value: ${{ steps.parse.outputs.artifact_version }}
+runs:
+  using: composite
+  steps:
+    - id: parse
+      shell: bash
+      run: |
+        set -euo pipefail
+        full_version="$(grep '^version:' pubspec.yaml | sed 's/version: //; s/[`"'"'"']//g')"
+        echo "version=${full_version%%+*}" >> "$GITHUB_OUTPUT"
+        echo "artifact_version=${full_version/+/-}" >> "$GITHUB_OUTPUT"
