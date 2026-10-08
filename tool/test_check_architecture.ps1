@@ -240,6 +240,32 @@ function test_checkarchitecture_runtimeExceptionEdge_isallowed {
     Assert-True -Condition ($result.Exit -eq 0) -Message "external_tvbox -> python_runtime is whitelisted, got: $($result.Text)"
 }
 
+function test_checkarchitecture_gatewayServiceEdge_reports_nothing {
+    param([string] $Dir)
+    # ADR 0019: the gateway assembles ExtensionContext out of the permission and task packages. That is a
+    # same-layer edge, allowed for this one package and for nothing else.
+    foreach ($rel in @('packages/ecosystem/platform', 'packages/ecosystem/permission', 'packages/ecosystem/task', 'packages/ecosystem/extension')) {
+        Add-FixtureMember -Dir $Dir -Path $rel
+        Add-FixturePackage -Dir $Dir -RelPath $rel
+    }
+    Add-FixturePackage -Dir $Dir -RelPath 'packages/ecosystem/extension' -Deps @('pure_live_platform', 'pure_live_permission', 'pure_live_task')
+    Add-FixturePackage -Dir $Dir -RelPath 'packages/ecosystem/permission' -Deps @('pure_live_platform')
+    Add-FixturePackage -Dir $Dir -RelPath 'packages/ecosystem/task' -Deps @('pure_live_platform')
+    $result = Invoke-Guard -Dir $Dir
+    Assert-True -Condition ($result.Exit -eq 0) -Message "extension -> permission/task is whitelisted, got: $($result.Text)"
+}
+
+function test_checkarchitecture_siblingTakingTheServiceEdge_reports_error {
+    param([string] $Dir)
+    # The whitelist names the gateway, not the layer: another ecosystem package reaching for permission must fail.
+    Add-FixtureMember -Dir $Dir -Path 'packages/ecosystem/permission'
+    Add-FixturePackage -Dir $Dir -RelPath 'packages/ecosystem/permission'
+    Add-FixtureMember -Dir $Dir -Path 'packages/ecosystem/content'
+    Add-FixturePackage -Dir $Dir -RelPath 'packages/ecosystem/content' -Deps @('pure_live_permission')
+    $result = Invoke-Guard -Dir $Dir
+    Assert-True -Condition ($result.Text.Contains('layer-direction') -and $result.Text.Contains('pure_live_permission')) -Message 'only the gateway may take the permission edge'
+}
+
 function test_checkarchitecture_dependencyonapp_reports_error {
     param([string] $Dir)
     Add-FixtureMember -Dir $Dir -Path 'packages/providers/bilibili'

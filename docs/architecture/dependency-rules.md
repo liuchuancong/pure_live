@@ -46,7 +46,9 @@ L5 Providers/Plugins(与 L2-L4 平级,只向下依赖)
 | sync → firebase | 云同步数据面 |
 | backup → auth | 同步凭据 |
 | player_ui → media | 控制层需要播放状态 |
+| ui_kit → design | 组件底座就是设计令牌(护栏同表已有,此前漏记于文档) |
 | external_tvbox → python_runtime | 外部生态运行时必须宿主在嵌入式 CPython 上(见 [../adr/0017-tvbox-python-runtime.md](../adr/0017-tvbox-python-runtime.md)) |
+| extension → permission / task | 网关是 `ExtensionContext` 的装配点,只能定向依赖这两个服务包(见 [../adr/0019-gateway-service-edges.md](../adr/0019-gateway-service-edges.md)) |
 
 ## 5. 架构不变量(I1-I10)
 

@@ -370,7 +370,10 @@ class PlatformErrorInfo {          // 可序列化错误表示(运行时错误�
 enum PlatformErrorCategory { extension, source, repository, provider, identity, resolver, network, permission, auth, task, media, storage, configuration, timeout, cancellation, unknown }
 ```
 
-标准错误码:`extension.not_found/incompatible/load_failed`、`source.invalid/unreachable/parse_failed/refresh_failed`、`repository.unavailable/parse_failed`、`provider.unsupported/not_found`、`identity.not_found/ambiguous`、`resolver.unsupported/failed/timeout`、`network.timeout/unreachable/forbidden/rate_limited/response_too_large`、`permission.denied/restricted`、`auth.required/expired/invalid`、`task.cancelled/timeout/failed`、`media.unsupported/expired/unavailable`。插件自定义码必须带命名空间(`tvbox.parse_failed`、`lxmusic.script_failed`)。
+标准错误码:`extension.not_found/incompatible/load_failed/disabled/state_invalid/already_registered`
+(后三个由 W2 网关补充:`disabled` = 用户关掉后不得再 load;`state_invalid` = 生命周期转移不合法,例如
+未 ready 就 start;`already_registered` = 同一 id 未 unload 前重复注册)、
+`source.invalid/unreachable/parse_failed/refresh_failed`、`repository.unavailable/parse_failed`、`provider.unsupported/not_found`、`identity.not_found/ambiguous`、`resolver.unsupported/failed/timeout`、`network.timeout/unreachable/forbidden/rate_limited/response_too_large`、`permission.denied/restricted`、`auth.required/expired/invalid`、`task.cancelled/timeout/failed`、`media.unsupported/expired/unavailable`。插件自定义码必须带命名空间(`tvbox.parse_failed`、`lxmusic.script_failed`)。
 
 ## 15. 聚合 / 账号 / EPG / 音乐 / 导入模型
 
