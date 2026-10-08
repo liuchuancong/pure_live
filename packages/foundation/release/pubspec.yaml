@@ -8,3 +8,7 @@ environment:
   sdk: ^3.13.0
 
 # Add dependencies from the matrix in docs/architecture/dependency-rules.md section 3.
+# No runtime dependency: pure decision logic over values the application supplies.
+
+dev_dependencies:
+  test: ^1.26.0

@@ -4,6 +4,11 @@
 // Author: liuchuancong
 // Created: 2026-10-08
 ///
-/// Layer: foundation. Allowed dependencies: pub.dev packages only; foundation packages do not depend on each other (utils and logging are leaf packages).
+/// Layer: foundation. Allowed dependencies: pub.dev packages only, plus the utils and logging leaves.
 /// See docs/architecture/dependency-rules.md and the package README.
+///
+/// The update check reads a feed; deciding what to do with it happens here, once.
+
 library;
+
+export 'src/version.dart';
