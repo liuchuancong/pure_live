@@ -297,6 +297,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.0.11"
+  build_cli_annotations:
+    dependency: transitive
+    description:
+      name: build_cli_annotations
+      sha256: e563c2e01de8974566a1998410d3f6f03521788160a02503b0b1f1a46c7b3d95
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.1.1"
   build_config:
     dependency: transitive
     description:
@@ -873,6 +881,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.1.1"
+  fjs:
+    dependency: "direct main"
+    description:
+      name: fjs
+      sha256: baebbebbc1695627b55f437bc6a48e5eb31c75b293f0c1d14874e17c37b0fd5f
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.3.2"
   flame:
     dependency: transitive
     description:
@@ -1093,6 +1109,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.4.3"
+  flutter_rust_bridge:
+    dependency: transitive
+    description:
+      name: flutter_rust_bridge
+      sha256: ec69331e2335ab4d456c0a9fc700892c2c85b72b9c0cb39df3ecfe8833d5d5c8
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.13.0"
   flutter_screenutil_plus:
     dependency: "direct main"
     description:

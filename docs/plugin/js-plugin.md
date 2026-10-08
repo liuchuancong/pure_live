@@ -1,6 +1,6 @@
 # JS Plugin
 
-> 第三方生态插件:JS 脚本跑在 flutter_js 沙箱(仓库 `plugins/built_in_kotlin/flutter_js` 已含 AGP9 兼容补丁)。
+> 第三方生态插件:JS 脚本跑在 fjs ^3.3.2 沙箱(Rust + QuickJS 高性能 JS 运行时)。
 
 ## 1. 适用
 

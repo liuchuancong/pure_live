@@ -16,6 +16,8 @@ dependencies:
   # -------------------------- v2 架构栈 --------------------------
   # UI: fluttersdk_wind (Tailwind 风格 className 样式) + Material 底座
   fluttersdk_wind: ^1.8.1
+  # JS 插件沙箱(Rust + QuickJS),替代 v1 vendored flutter_js
+  fjs: ^3.3.2
   # 状态管理: Riverpod 取代 vendored GetX(lib/get 已随 v1 移除)
   flutter_riverpod: ^3.3.2
   riverpod_annotation: ^4.0.3

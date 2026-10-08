@@ -7,7 +7,7 @@
 | 形态 | 运行方式 | 适合 | 文档 |
 |---|---|---|---|
 | **Native Plugin** | Dart 编译进 App(或预编译分发) | Bilibili 等核心源、高性能媒体能力、系统级能力 | [native-plugin.md](native-plugin.md) |
-| **JS Plugin** | flutter_js 沙箱解释执行 | 网站解析、API、搜索、影视源、音乐源、小型数据适配器 | [js-plugin.md](js-plugin.md) |
+| **JS Plugin** | fjs 沙箱解释执行 | 网站解析、API、搜索、影视源、音乐源、小型数据适配器 | [js-plugin.md](js-plugin.md) |
 | **Data Plugin** | 纯数据解析,无代码 | TVBox JSON、多仓、M3U、EPG、XMLTV、OPML | [data-plugin.md](data-plugin.md) |
 
 ## 2. 核心机制

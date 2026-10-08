@@ -1,6 +1,6 @@
 # Plugin Sandbox
 
-> JS 插件的隔离执行环境(flutter_js)。
+> JS 插件的隔离执行环境(fjs ^3.3.2,Rust + QuickJS)。
 
 ## 边界
 

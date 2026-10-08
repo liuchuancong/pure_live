@@ -8,7 +8,7 @@
 
 ## 决策
 
-三形态插件:Native(Dart 编译,官方/高性能)、JS(flutter_js 沙箱,第三方生态)、Data(TVBox/M3U/EPG 无代码)。Manifest 静态声明 capabilities/permissions/apiVersion;生命周期 Installed→…→Uninstalled;安装必经安全管线。详细:[../plugin/plugin-overview.md](../plugin/plugin-overview.md)。
+三形态插件:Native(Dart 编译,官方/高性能)、JS(fjs 沙箱,第三方生态)、Data(TVBox/M3U/EPG 无代码)。Manifest 静态声明 capabilities/permissions/apiVersion;生命周期 Installed→…→Uninstalled;安装必经安全管线。详细:[../plugin/plugin-overview.md](../plugin/plugin-overview.md)。
 
 ## 后果
 

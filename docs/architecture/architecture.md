@@ -83,7 +83,7 @@ ContentRef → Provider → MediaTicket → MediaPlan
 - **外部生态直接导入**:TVBox 单仓/多仓、LX Music 源、M3U、XMLTV 经各自 External Runtime 直接运行,**不要求也不允许强制转换成 PureLive 插件格式**——详见 [external-ecosystem.md](external-ecosystem.md)。
 - 播放内核 = 外部 [media_core](https://github.com/liuchuancong/media_core) workspace(git 依赖),**不依赖 PureLive、不被 PureLive 反向进入**;PureLive v2 只做其上的业务编排。
 - UI 样式层 = fluttersdk_wind,只有 `pure_live_ui_kit` 允许直接 import(见 [../ui/ui-kit.md](../ui/ui-kit.md))。
-- JS 插件沙箱 = flutter_js(仓库 `plugins/built_in_kotlin/flutter_js` 已含 AGP9 补丁)。
+- JS 插件沙箱 = fjs ^3.3.2(Rust + QuickJS 高性能 JS 运行时)。
 - 工程组织 = melos 单仓多包,分层清单见 [package-architecture.md](package-architecture.md);第一参考插件 = **Bilibili**(同时覆盖 Live/VOD/Search/Feed/Danmaku/Auth,最大程度验证生态链,见 [../roadmap/v2-roadmap.md](../roadmap/v2-roadmap.md))。
 - 协议词典:33 站适配协议以 v1 `lib/shared/platforms` 与 pure_live_TV `lib/modules/vod` 为准,重写不复製。
 
