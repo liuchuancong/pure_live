@@ -48,8 +48,8 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-          if ! git diff --quiet -- assets/releases.json; then
-            git add assets/releases.json
+          if ! git diff --quiet -- apps/pure_live/assets/releases.json; then
+            git add apps/pure_live/assets/releases.json
             git commit -m "chore: update releases.json [skip ci]"
 
             git pull --rebase origin master
