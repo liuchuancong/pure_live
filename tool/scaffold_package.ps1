@@ -36,8 +36,9 @@
     The package needs the Flutter SDK (ui layer, feature UI, provider view side). Pure Dart is the default.
 
 .PARAMETER Force
-    Rewrite the scaffold-owned files (pubspec, README, CHANGELOG, analysis_options, barrel) and add missing
-    directories. Never deletes or overwrites hand-written code under lib/src/ or test/.
+    Rewrite the scaffold-owned files (pubspec, README, CHANGELOG, analysis_options) and add missing
+    directories. Never deletes hand-written code under lib/src/ or test/, and never rewrites the barrel:
+    once a package exports anything the barrel is owned by the package.
 
 .EXAMPLE
     .\tool\scaffold_package.ps1 foundation/utils -Description "Value types and dependency-free extensions"
@@ -327,7 +328,12 @@ function Write-PackageLayout {
         if (-not (Test-Path -LiteralPath $full)) { New-Item -ItemType Directory -Force -Path $full | Out-Null }
     }
     Write-TextFile -FilePath (Join-Path $PkgDir 'pubspec.yaml') -Content $Text.Pubspec
-    Write-TextFile -FilePath (Join-Path (Join-Path $PkgDir 'lib') "$PackageName.dart") -Content $Text.Barrel
+    # The barrel gains export lines the moment the package has code, so it is created once and then
+    # owned by whoever writes the package; -Force must not erase those exports.
+    $barrelPath = Join-Path (Join-Path $PkgDir 'lib') "$PackageName.dart"
+    if (-not (Test-Path -LiteralPath $barrelPath)) {
+        Write-TextFile -FilePath $barrelPath -Content $Text.Barrel
+    }
     Write-TextFile -FilePath (Join-Path $PkgDir 'README.md') -Content $Text.Readme
     Write-TextFile -FilePath (Join-Path $PkgDir 'CHANGELOG.md') -Content $Text.Changelog
     Write-TextFile -FilePath (Join-Path $PkgDir 'analysis_options.yaml') -Content $Text.Analyzer
