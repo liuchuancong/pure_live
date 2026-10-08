@@ -20,6 +20,10 @@ ExtensionGateway(统一入口:注册/发现/类型识别/Runtime 选择/生命�
 
 MediaTicket / MediaPlan / PlayerKernel 接线 / Recovery / Watchdog。
 
+> **按 [../adr/0020-media-core-owns-recovery.md](../adr/0020-media-core-owns-recovery.md) 修正范围**:Recovery、Fallback、
+> 任务队列与看门狗的检测—切换循环在 media_core 里已存在,W3 不再造第二套;本波只做票据↔源与策略映射、
+> 到期预取调度,并用假引擎打通播放。实测盘点见 [w3-progress.md](w3-progress.md) §1。
+
 ## W4 — 第一参考插件:Bilibili
 
 覆盖 Live / VOD / Search / Feed / Danmaku / Auth —— 用它验证完整生态链(内容链 + 媒体链)。

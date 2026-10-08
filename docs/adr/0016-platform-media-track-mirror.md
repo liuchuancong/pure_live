@@ -28,6 +28,23 @@ L1 反向依赖 L0.5 同样违反分层。
 4. 顺带修正同类命名冲突:foundation 的平台探测包改名 `platform_info`(`pure_live_platform_info`),
    因为 `pure_live_platform` 这个名字按 §18 属于生态伞包,而 pub 要求 workspace 内包名唯一。
 
+### 修订(2026-10-08,W3 盘点)
+
+第 1 条写的"逐一对应"当场被 `docs/roadmap/w3-progress.md` §1.2 的盘点否掉一半:字段名对得上,**`kind` 的类型
+对不上**。media_core 的 `MediaTrack.kind` 是 `MediaTrackType{video, audio, subtitle}`
+(`packages/media_core/lib/source/media_track_type.dart:24`),说的是"这条流是哪种 essence";
+平台镜像当时错写成 `MediaKind{live, vod, music, file}`,那是"这段资源整体是什么"。照原样接线会把 DASH 的
+音频 essence 标成 `vod`。平台已补 `MediaTrackType` 镜像并改回 `MediaTrack.kind`,`MediaTicket.kind` 保持
+`MediaKind`。
+
+同一次盘点还确认了一处映射义务:`headers` 在 media_core 是值对象 `SourceHeaders`
+(`source/source_headers.dart:8`,内部持有不可变 map,导出 `toMap()`),镜像用 `Map<String, String>`。
+接线层的转换函数必须显式走 `toMap()` / 构造,不能当同类型直接传。
+
+教训写在这里而不是只写在代码注释里:**"字段名一致"不等于"字段级镜像"**。盘点必须以类型定义文件为准,
+不能以模型文档的字段列表为准。
+
+
 ## 后果
 
 - 正:边界模型不绑播放器实现,Invariant 1/2/10 由类型系统而非约定保证;TV 壳未来可只依赖纯 Dart 层。
