@@ -258,7 +258,33 @@ List<Finding> checkLayout(Directory root, PackageInfo package) {
       Finding('analyzer-drift', package.relativePath, 'analysis_options.yaml must include $expectedInclude'),
     );
   }
+  for (final marker in _staleSkeletonMarkers(root, package)) {
+    findings.add(
+      Finding('stale-scaffold-marker', marker, 'a .gitkeep only belongs in a directory that is otherwise empty'),
+    );
+  }
   return findings;
+}
+
+/// Skeleton markers left behind in directories that now hold real files.
+List<String> _staleSkeletonMarkers(Directory root, PackageInfo package) {
+  final found = <String>[];
+  for (final area in <String>['lib', 'test']) {
+    final directory = Directory('${root.path}/${package.relativePath}/$area');
+    if (!directory.existsSync()) {
+      continue;
+    }
+    for (final entity in directory.listSync(recursive: true)) {
+      if (entity is! File || !entity.path.endsWith('.gitkeep')) {
+        continue;
+      }
+      final parent = Directory(entity.path.substring(0, entity.path.length - '.gitkeep'.length));
+      if (parent.existsSync() && parent.listSync().length > 1) {
+        found.add(entity.path.substring(root.path.length + 1).replaceAll('\\', '/'));
+      }
+    }
+  }
+  return found;
 }
 
 /// The per-layer internal directory template from package-architecture.md section 2.

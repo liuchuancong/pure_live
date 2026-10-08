@@ -137,6 +137,10 @@ function Add-FixturePackage {
     }
     Write-File -Path (Join-Path $pkgDir 'test\.gitkeep')
     foreach ($inner in Get-FixtureInternalDirs -RelPath $RelPath) {
+        # When a real source file is written into lib/src the skeleton marker must not stay there: the guard
+        # reports a .gitkeep in a populated directory as stale-scaffold-marker, and these fixtures would
+        # otherwise carry a finding that has nothing to do with the rule under test.
+        if ($Imports.Count -gt 0 -and $inner -eq 'lib/src') { continue }
         Write-File -Path (Join-Path $pkgDir (($inner -replace '/', '\') + '\.gitkeep'))
     }
     if ($Imports.Count -gt 0) {
@@ -275,6 +279,15 @@ function test_checkarchitecture_featuresmissinglayer_reports_error {
     Remove-Item -LiteralPath (Join-Path $Dir 'packages\features\live\repository\lib\src\presentation') -Recurse -Force
     $result = Invoke-Guard -Dir $Dir
     Assert-True -Condition ($result.Text.Contains('layout-drift') -and $result.Text.Contains('presentation')) -Message 'the features internal layout is enforced'
+}
+
+function test_checkarchitecture_stalescaffoldmarker_reports_error {
+    param([string] $Dir)
+    Add-FixtureMember -Dir $Dir -Path 'packages/foundation/utils'
+    Add-FixturePackage -Dir $Dir -RelPath 'packages/foundation/utils' -Imports @("import 'dart:async';")
+    Write-File -Path (Join-Path $Dir 'packages\foundation\utils\lib\src\.gitkeep')
+    $result = Invoke-Guard -Dir $Dir
+    Assert-True -Condition ($result.Text.Contains('stale-scaffold-marker') -and $result.Exit -ne 0) -Message 'a skeleton marker left in a populated directory is reported'
 }
 
 function test_checkarchitecture_featuresuiownrepository_isallowed {
