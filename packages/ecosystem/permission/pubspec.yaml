@@ -1,0 +1,18 @@
+# GENERATED-BY: tool/scaffold_package.ps1
+name: pure_live_permission
+description: "权限契约:最小授权判定、扩展网络出口策略与按扩展隔离的 Cookie 存储"
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.13.0
+
+# Add dependencies from the matrix in docs/architecture/dependency-rules.md section 3.
+dependencies:
+  # Decisions, requests, responses and errors are all typed with the shared platform models; this package
+  # adds behaviour, not vocabulary.
+  pure_live_platform:
+    path: ../platform
+
+dev_dependencies:
+  test: ^1.26.0
