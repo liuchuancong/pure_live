@@ -8,3 +8,7 @@ environment:
   sdk: ^3.13.0
 
 # Add dependencies from the matrix in docs/architecture/dependency-rules.md section 3.
+# This package is the leaf of the graph and stays free of runtime dependencies on purpose.
+
+dev_dependencies:
+  test: ^1.26.0
