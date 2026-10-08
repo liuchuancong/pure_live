@@ -9,6 +9,14 @@
 | 禁止依赖 | 任何反向依赖;禁止依赖应用壳(唯一组合根,I9);同层互依(除规则明示例外) |
 | 公共面 | 只有 `lib/pure_live_backup.dart`;内部实现放 `lib/src/` |
 
+## 内容
+
+- `manifest.dart` —— `BackupDomain` / `BackupManifest`(带 `validate`:拒绝声明含凭据的档、拒绝不认识的 schema 版本、拒绝重名域)+ `RestoreReport` / `DomainOutcome`
+- `engine.dart` —— `BackupEngine.build` 与 `RestoreEngine.apply`:**逐域隔离**,一个域失败只记在它自己头上,重试可以只喂 `onlyDomains`;两端都用注入的 `isCredentialKey` 拒凭据(手改的档也带不进来)
+
+不支持的 schema 版本是**整包拒绝**,不做部分应用:半恢复的设置看起来跟恢复成功一模一样。
+
+## 
 ## 结构
 
 - `pubspec.yaml` / `analysis_options.yaml` / `CHANGELOG.md` / `README.md` / `test/` —— 所有包必备
