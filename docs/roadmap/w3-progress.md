@@ -72,14 +72,15 @@ retryDelay)翻译成 media_core 的策略对象。这条结论单独记 ADR(0020
 
 ## 2. W3 要写的东西
 
-盘点结论落定后的顺序(第 1 条已完成,见 §2.1):
+盘点结论落定后的顺序(第 1、2 条已完成):
 
-1. ~~`pure_live_media`:`MediaTicket → MediaSource` 映射~~ —— 已落。
-2. 假引擎跑通"播一个假源":M2 的另一半验收口径;media_core 有 `testing/` 目录,先查它有没有现成假引擎再用
-   自己的。
+1. ~~`pure_live_media`:`MediaTicket → MediaSource` 映射~~ —— 已落(§2.1)。
+2. ~~假引擎跑通"播一个假源"~~ —— 已落(§2.2),M2 的另一半在**接线层面**达成。
 3. Watchdog:先用 media_core 的 recovery/ + `player_handle_recovery.dart`,只在"票据到期预取"这一层加平台侧
    调度(docs/media/watchdog.md 与 recovery.md 的对应关系要按 §1.3 重写,不能照原样实现)。
 4. `MediaTicketRefreshInfo`(`refreshBefore`,models §11)仍未落 —— 到期预取的提前量没有落点,是第 3 条的前置。
+5. 引擎适配(media_kit / ijk / better_player 等)与真实设备播放:第 2 条只证明接线到得了引擎,不代表任何
+   真机在播。
 
 ### 2.1 已完成:`pure_live_media` 的票据映射(15 测试)
 
@@ -105,12 +106,40 @@ foundation 层)。
 
 规则表与边界写在包 README。
 
+### 2.2 已完成:假引擎端到端播放(5 测试,`test/fake_engine_playback_test.dart`)
+
+先按 §2 的要求查了 media_core 有没有现成假引擎 —— **有**:`package:media_core/testing/library.dart` 是它自己
+公开的测试替身库(`FakePlayerAdapter` / `FakePlayerAdapterFactory` / `TestScenarios` / `TestSessionFactory` /
+`FakeClock` …),因此本波不自建假引擎,只写一个把 adapter 收集起来的 `PlayerAdapterFactory`。
+
+跑通的路径是真实内核,不是替身调用链:
+
+```text
+platform.MediaTicket → toCoreSource() → PlayerKernel.registerBackend(fake)
+→ kernel.createFromMedia() → DefaultMediaSourcePlanner.plan() → PlayerHandle
+→ initialize() → open(PlayerSource) → play() → stop()
+```
+
+被断言的事实:
+
+- 引擎收到的 `PlayerSource.uri` **就是**票据里那个 url(映射没有重新推导、没有丢 scheme);
+- VOD / live 两种票据都能落到 open;
+- 多条 essence 的票据在内核里仍是 `CompositeMediaSource`,配 `CompositeSupport.native` 时走 composite plan;
+- **能力不合的引擎在起播之前就被拒**:换成只声明单 url 能力的 backend(`compositeSupport` 默认 none),
+  planner 出 `UnsupportedPlan`,`createFromMedia` 抛 `UnsupportedError`,并且**一个 adapter 都没被创建** ——
+  这正是 ADR 0020 "判断归内核"的实际形状,平台侧不提前替内核决定;
+- `initialize → open → play → stop` 的调用次序由 adapter 自己记录的调用序列证明。
+
+边界(必须与成就分开写):这一条证明的是**接线能到引擎**,不是任何真机在播。media_kit / ijk / better_player
+适配与设备验收还没有。
+
 ## 3. 验证证据
 
 | 命令 | 结果 |
 |---|---|
-| `packages/integrations/media` → `flutter analyze` | No issues found(47.7s) |
-| `packages/integrations/media` → `flutter test` | **15 全绿**,跑在真实 `flutter test` 上、对钉住的 media_core ref(不是对桩) |
+| `packages/integrations/media` → `flutter analyze` | No issues found |
+| `packages/integrations/media` → `flutter test` | **20 全绿**(15 条映射 + 5 条假引擎端到端播放),跑在真实 `flutter test` 上、对钉住的 media_core ref(不是对桩) |
+| 假引擎播放的路径 | `PlayerKernel.createFromMedia` 走内核自己的 planner(`DefaultMediaSourcePlanner`)与 `PlayerHandle.initialize/open/play/stop`;`FakePlayerAdapter` 来自 media_core 自带的 `testing/library.dart` |
 | `flutter pub get --offline`(仓库根) | Got dependencies;media_core 复用应用同一 git checkout,未新增解析 |
 | `dart analyze packages` / `dart analyze .` | No issues found |
 | `dart run tool/check_architecture.dart --strict` | `packages=25 errors=0 warnings=0` |
@@ -124,7 +153,12 @@ foundation 层)。
 
 - docs/media/{watchdog,recovery,line-switch,media-plan,media-architecture}.md 与 §1.3 的结论冲突,需按 ADR 0020
   修订;不能让文档继续指向一套不该存在的实现。
-- 映射之外还没有"播"的动作:没有引擎适配、没有假引擎、没有票据到期预取。M2 的另一半仍未达成。
+- 播放只在**假引擎**上打通:没有真实引擎适配(media_kit / ijk / better_player),没有真机验收,也没有画面/音频
+  输出证据。M2 的"能播一个假源"达成,"能播"这件事本身还没达成。
+- 到期预取(ticket refresh 的平台侧调度)与 `MediaTicketRefreshInfo.refreshBefore` 仍未落,所以"票据快到期就换链"
+  这条链路目前只有模型没有动作。
+- 内核的 recovery/ 与 `player_handle_recovery.dart` 还没有被平台侧调用过一次;ADR 0020 说判断归内核,但本波没有
+  触发过一次恢复,这条结论目前只有静态依据。
 - media_core 侧的 `MediaSourcePlan` / planner 本波**只读不调**:plan 由内核生成,平台不在中间再造一层
   (models §2 的规定)。接线真正调 planner 时,需要补一段"plan 结果 → 平台诊断"的映射。
 
