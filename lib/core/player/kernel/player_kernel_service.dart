@@ -15,6 +15,7 @@ import 'package:media_core_ijk_player/media_core_ijk_player.dart';
 import 'package:media_core_logging/media_core_logging.dart' as mlog;
 import 'package:media_core_mediasession/media_core_mediasession.dart';
 import 'package:pure_live/core/player/kernel/media_kit_live_properties.dart';
+import 'package:pure_live/core/player/kernel/open_volume.dart';
 import 'package:media_core_better_player/media_core_better_player.dart';
 import 'package:pure_live/core/config/player_settings_controller.dart';
 
@@ -42,6 +43,12 @@ class PlayerKernelService {
           customInputOpener: openOwnedInputOnKernelPlayer,
           beforeOpen: (player, source) async {
             attachMpvLogForwarder(player);
+            final initialVolume = OpenVolume.resolve(source);
+            if (initialVolume != null) {
+              try {
+                await player.setVolume(initialVolume * 100.0);
+              } catch (_) {}
+            }
             await MediaKitLiveProperties.applyToSource(player, source);
           },
           videoControllerConfigurationBuilder: MediaKitLiveProperties.buildVideoControllerConfiguration,

@@ -136,11 +136,15 @@ abstract final class MediaKitLiveProperties {
     // those produce sound-without-picture or a rogue mpv window.
     final vo = segment.customPlayerOutput && segment.videoOutputDriver.trim() == 'libmpv' ? 'libmpv' : null;
 
-    return mkv.VideoControllerConfiguration(
-      vo: vo,
-      hwdec: segment.customPlayerOutput ? _normalize(segment.videoHardwareDecoder) : null,
-      enableHardwareAcceleration: segment.enableCodec,
-    );
+    var hwdec = segment.customPlayerOutput ? _normalize(segment.videoHardwareDecoder) : null;
+    // NativeVideoController.create rewrites a null hwdec to 'auto'. That would
+    // resurrect VideoToolbox exactly where build() forces 'no' — its decode
+    // path is unstable with the Flutter texture surface and crashes macOS on
+    // room entry — and it would also override an enableCodec=false choice on
+    // every platform. 'no' has to travel as an explicit value.
+    if (!segment.enableCodec || Platform.isMacOS) hwdec ??= 'no';
+
+    return mkv.VideoControllerConfiguration(vo: vo, hwdec: hwdec, enableHardwareAcceleration: segment.enableCodec);
   }
 
   /// Normalises a pick; empty/auto leaves the engine default.

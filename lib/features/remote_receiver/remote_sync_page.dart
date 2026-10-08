@@ -70,19 +70,6 @@ class _RemoteSyncPageState extends State<RemoteSyncPage> {
   }
 
   Future<void> _receiveFromDevice(String ip, int port) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(i18n('remote_sync_receive')),
-        content: Text(i18n('remote_sync_receive_confirm')),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: Text(i18n('cancel'))),
-          FilledButton(onPressed: () => Navigator.of(dialogContext).pop(true), child: Text(i18n('confirm'))),
-        ],
-      ),
-    );
-    if (confirm != true) return;
-
     final settings = await service.getRemoteSettings(ip, port);
     if (settings == null) {
       ToastUtil.show(i18n('remote_sync_receive_failed'));

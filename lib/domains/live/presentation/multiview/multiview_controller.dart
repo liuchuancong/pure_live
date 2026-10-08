@@ -14,6 +14,7 @@ import 'package:media_core_multiview/media_core_multiview.dart' as wall;
 import 'package:pure_live/shared/platforms/live_quality_discovery.dart';
 import 'package:pure_live/domains/live/domain/live_input_playback_binder.dart';
 import 'package:pure_live/core/player/kernel/player_kernel_service.dart';
+import 'package:pure_live/core/player/kernel/open_volume.dart';
 import 'package:pure_live/core/player/kernel/owned_input_opener.dart';
 import 'package:pure_live/domains/live/presentation/multiview/models/multiview_models.dart';
 import 'package:pure_live/domains/live/presentation/playback/controllers/player_controller.dart';
@@ -737,9 +738,16 @@ class MultiviewController extends GetxController {
     final lease = owned == null ? source.leaseFor?.call(source.url) : null;
     final room = cells[cellIndex].room;
     final uri = owned == null ? Uri.parse(source.url) : Uri(scheme: 'owned', path: owned.identity);
-    final metadata = owned == null
-        ? const <String, Object?>{}
-        : <String, Object?>{kMediaKitCustomInputKey: customInputMetadataOf(owned)};
+    // The wall applies its audio mode only after a cell opens, so a fresh
+    // engine otherwise starts at 100% and pops before the room's own volume
+    // (or the wall mute) lands. Declare the start level on the source.
+    final roomVolume = _volumes[cellIndex] ?? (room == null ? 1.0 : _roomVolumeLoader(room).clamp(0.0, 1.0));
+    final holdsAudio =
+        !allMuted.value && (layout.value != MultiviewLayout.focus || cellIndex == focusedCellIndex.value);
+    final metadata = <String, Object?>{
+      OpenVolume.metadataKey: holdsAudio ? roomVolume : 0.0,
+      if (owned != null) kMediaKitCustomInputKey: customInputMetadataOf(owned),
+    };
     return wall.MultiviewCellSource(
       source: mc.PlayerSource(
         id: mc.SourceId('multiview-$cellIndex-${owned?.identity ?? source.url.hashCode}'),

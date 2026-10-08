@@ -6,7 +6,6 @@ import 'package:bonsoir/bonsoir.dart';
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/storage/hive_pref_util.dart';
 import 'package:pure_live/core/platform/platform_utils.dart';
-import 'package:pure_live/core/platform/local_network_access.dart';
 import 'package:pure_live/features/backup/backup_controller.dart';
 import 'package:pure_live/features/remote_receiver/remote_sync_device.dart';
 import 'package:pure_live/features/remote_receiver/remote_sync_protocol.dart';
@@ -144,9 +143,6 @@ class RemoteSyncService extends GetxController {
     _running = true;
 
     try {
-      // Android 17 blocks LAN sockets without the local-network permission.
-      if (!await LocalNetworkAccess.ensure()) return;
-
       await _refreshNetworkInfo();
 
       if (_disposed || localIp.value.isEmpty) {

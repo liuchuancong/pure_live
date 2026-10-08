@@ -21,6 +21,7 @@ import 'package:pure_live/core/player/kernel/floating_playback.dart';
 import 'package:pure_live/core/player/presentation/windows_pip_driver.dart';
 import 'package:pure_live/core/player/core/portrait_stream_support.dart';
 import 'package:pure_live/core/player/kernel/player_kernel_service.dart';
+import 'package:pure_live/core/player/kernel/open_volume.dart';
 import 'package:pure_live/core/player/presentation/fullscreen_window.dart' show fullscreenDriver;
 import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
 import 'package:pure_live/domains/live/presentation/playback/widgets/danmaku/compact_danmaku_overlay.dart';
@@ -162,6 +163,9 @@ final class LivePlayerFacade {
     final committed = sourceSelection is PlaybackSourceQualitySelection ? sourceSelection : null;
     final streamFacts = committed?.streamFacts ?? const <String, LiveStreamFacts>{};
 
+    // Declared before the open so libmpv starts at the room's level; a
+    // post-open setVolume let one 100% frame of audio through first.
+    OpenVolume.pending = liveroom?.getSavedVolume().clamp(0.0, 1.0);
     await _controller.play(
       LiveSourceRequest(
         sources: await _intercept(
@@ -216,6 +220,7 @@ final class LivePlayerFacade {
     _room = liveroom;
     _lastHeaders = const {};
     _lastLines = const [];
+    OpenVolume.pending = liveroom.getSavedVolume().clamp(0.0, 1.0);
     await _controller.play(
       LiveSourceRequest(sources: await _intercept([ownedPlanSource(source, liveroom)])),
       preferredBackend: backendIdOfEngine(preferredEngine),
