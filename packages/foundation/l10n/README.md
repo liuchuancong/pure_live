@@ -9,6 +9,13 @@
 | 禁止依赖 | 任何反向依赖;禁止依赖应用壳(唯一组合根,I9);同层互依(除规则明示例外) |
 | 公共面 | 只有 `lib/pure_live_l10n.dart`;内部实现放 `lib/src/` |
 
+## 内容
+
+- `locale.dart` —— `LocaleTag`(`zh` / `zh_CN` / `zh-Hans-CN` 解析)、`resolveLocale`(精确 → 语言+书写系统 → 语言 → 兜底,**指定了 script 的请求绝不落到另一套书写系统**)、`isRightToLeft`、`pluralCategory` / `pluralize`(en / zh / ru 规则,缺 `other` 时返回裸计数而不是在 build 里抛)
+
+翻译资源本身在应用侧;这里只回答"该用哪一份"和"这个数怎么说"。
+
+## 
 ## 结构
 
 - `pubspec.yaml` / `analysis_options.yaml` / `CHANGELOG.md` / `README.md` / `test/` —— 所有包必备
