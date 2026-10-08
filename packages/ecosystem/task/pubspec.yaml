@@ -1,0 +1,17 @@
+# GENERATED-BY: tool/scaffold_package.ps1
+name: pure_live_task
+description: "统一后台任务调度:Task 契约、优先级队列、按 deduplicationKey 去重与取消语义"
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.13.0
+
+# Add dependencies from the matrix in docs/architecture/dependency-rules.md section 3.
+dependencies:
+  # TaskDescriptor, TaskStatus and TaskResult are platform models; this package only schedules them.
+  pure_live_platform:
+    path: ../platform
+
+dev_dependencies:
+  test: ^1.26.0
