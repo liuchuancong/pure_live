@@ -8,3 +8,13 @@ environment:
   sdk: ^3.13.0
 
 # Add dependencies from the matrix in docs/architecture/dependency-rules.md section 3.
+dependencies:
+  dio: ^5.9.0
+  # utils and logging are the two L0 leaves every package may use.
+  pure_live_logging:
+    path: ../logging
+  pure_live_utils:
+    path: ../utils
+
+dev_dependencies:
+  test: ^1.26.0

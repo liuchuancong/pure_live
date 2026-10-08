@@ -4,6 +4,10 @@
 // Author: liuchuancong
 // Created: 2026-10-08
 ///
-/// Layer: foundation. Allowed dependencies: pub.dev packages only; foundation packages do not depend on each other (utils and logging are leaf packages).
+/// Layer: foundation. Allowed dependencies: pub.dev packages only; foundation packages do not depend on
+/// each other except the utils and logging leaves.
 /// See docs/architecture/dependency-rules.md and the package README.
 library;
+
+export 'src/client.dart';
+export 'src/failure.dart';
