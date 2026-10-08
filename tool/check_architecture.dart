@@ -34,6 +34,13 @@ const List<String> kLayers = <String>[
 /// utils and logging as the exception: they are the leaves every other package may use.
 const Set<String> kLeafPackages = <String>{'pure_live_utils', 'pure_live_logging'};
 
+/// The shared model umbrella every layer above L0 may depend on.
+///
+/// docs/contracts/platform-models.md section 18 makes pure_live_platform the single home of the contract
+/// and model types, so an ecosystem, services, ui, features or providers package has to reach it; that is
+/// a downward edge to shared vocabulary, not a cycle between siblings.
+const Set<String> kSharedModelPackages = <String>{'pure_live_platform'};
+
 /// Layers a package of the given layer may depend on, from docs/architecture/dependency-rules.md section 3.
 const Map<String, Set<String>> kAllowedLayers = <String, Set<String>>{
   'foundation': <String>{},
@@ -288,6 +295,9 @@ List<Finding> checkDependencies(PackageInfo package, Map<String, PackageInfo> by
       continue;
     }
     if (kLeafPackages.contains(target.name)) {
+      continue;
+    }
+    if (kSharedModelPackages.contains(target.name) && package.layer != 'foundation') {
       continue;
     }
     if (isApprovedException(package, target)) {

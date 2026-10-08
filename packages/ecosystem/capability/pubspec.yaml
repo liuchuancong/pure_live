@@ -1,0 +1,18 @@
+# GENERATED-BY: tool/scaffold_package.ps1
+name: pure_live_capability
+description: "能力契约:Live/Vod/Music/Search/Feed/Auth/Danmaku/Subtitle 等接口与其契约测试断言"
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.13.0
+
+# Add dependencies from the matrix in docs/architecture/dependency-rules.md section 3.
+dependencies:
+  # Every capability method is typed with the shared content/media models; this package adds no models of
+  # its own, so the platform umbrella is its only non-leaf dependency.
+  pure_live_platform:
+    path: ../platform
+
+dev_dependencies:
+  test: ^1.26.0

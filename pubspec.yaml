@@ -8,6 +8,7 @@ environment:
 
 workspace:
   - apps/pure_live
+  - packages/ecosystem/capability
   - packages/ecosystem/external_tvbox
   - packages/ecosystem/platform
   - packages/foundation/auth

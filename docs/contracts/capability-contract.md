@@ -42,3 +42,30 @@ Future<MediaTicket> refresh(MediaTicket expired, RefreshReason reason);
 ## 4. 契约测试
 
 每个 Capability 都有 Contract Test(`LiveProviderContractTest` 等),**内置源与 JS 源跑同一套断言**;第三方插件交付前必须通过对应契约测试(见 [../development/testing.md](../development/testing.md))。
+
+断言实现:`package:pure_live_capability/testing.dart`。它不依赖 `package:test`,而是返回
+`List<ContractViolation>`(每条带稳定 `code`),因此单测、插件校验 CLI 与设备端自检跑同一条路径;
+错误码清单与 `expiresAt` 的读法见
+[包 README](../../packages/ecosystem/capability/README.md)。
+
+## 5. 实现落点与名称对应
+
+§1/§3 用的是文档名,代码里的实际形状以
+[platform-models.md](platform-models.md) §7/§9/§11 为准(实现包:`packages/ecosystem/capability`):
+
+| 文档名 | 实现名 |
+|---|---|
+| `Page<T>` | `PageResult<T>` |
+| `ContentItem` / `SearchItem` | `ContentSummary` |
+| `CategoryRef? category, Cursor? cursor` | `ContentQuery`(category / keyword / `PageRequest`) |
+| `SearchRequest` | `SearchQuery` |
+| `QualityRef` / `LineRef` | `SelectionRef` |
+| `LiveDetail` | `ContentDetail` |
+| `LiveCapability`…(§1 命名) | `CapabilityKind` 枚举项 + `BrowseCapability` / `SearchCapability` / `ResolveCapability` / `FeedCapability` 方法集 |
+
+方法集尚未定义的 kind(danmaku、subtitle、lyric、comment、chapter、quality、line、history、favorite、playlist、
+metadata、recommendation、auth、account、epg、repository)随定义其调用的那一批补接口与断言;在此之前
+`checkCapabilityDeclarations` 对它们既不报违规也不算通过,以免一个空检查被误读成"已覆盖"。
+`qualities(ContentRef)`(见 [../sources/live/source-contract.md](../sources/live/source-contract.md))属于其中的
+quality/line 一组。
+
