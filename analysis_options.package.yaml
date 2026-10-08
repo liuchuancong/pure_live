@@ -1,0 +1,18 @@
+# v2 包级 analysis_options 模板:tool/scaffold_package.ps1 生成的每个包都 include 本文件。
+# 只写不依赖具体 package 的规则;应用(组合根)侧规则见 analysis_options.yaml。
+analyzer:
+  exclude:
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+  language:
+    strict-casts: true
+    strict-inference: true
+    strict-raw-types: true
+
+linter:
+  rules:
+    always_declare_return_types: true
+    avoid_print: true
+    directives_ordering: true
+    prefer_relative_imports: true
+    unnecessary_lambdas: true
