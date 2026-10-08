@@ -18,7 +18,7 @@ L5 Providers/Plugins(与 L2-L4 平级,只向下依赖)
 |---|---|
 | L0 Foundation | utils, logging, network, auth, storage, files, platform, **cache**, **events**, **diagnostics**, backup, sync, release, l10n |
 | L0.5 Integrations | firebase(**保留**), media(media_core 接线) |
-| L1 Ecosystem | plugin_api, plugin_host, plugin_registry, theme, background, danmaku |
+| L1 Ecosystem | plugin_api, plugin_host, plugin_registry, extension(gateway), resolver, identity, permission, task, capability, content, external_tvbox / lx_music / m3u / xmltv, theme, background, danmaku |
 | L2 Services | search, history, favorites, playlist, links, feed, download, remote, cast, fonts, emote |
 | L3 UI | design, ui_kit(唯一 import fluttersdk_wind), adaptive, lyric, player_ui |
 | L4 Features | repository:live/vod/music/iptv/recorder/settings/search/home/account/backup;UI:live_ui/vod_ui/music_ui/iptv_ui/recorder_ui/settings_ui/account_ui/backup_ui/home_ui |
@@ -64,6 +64,7 @@ L5 Providers/Plugins(与 L2-L4 平级,只向下依赖)
 
 ## 6. 禁止清单
 
+- 平台扩展链反向依赖:`TVBox Runtime → TV UI`、`LX Music Runtime → Music UI`、`Source → Player`、`Repository → GoRouter`、`Resolver → Widget`(平台基础设施禁令,见 [platform-infrastructure.md](platform-infrastructure.md);该链本身单向:External Runtime → Extension → Capability → Content)。
 - Feature UI 直接调用第三方 API(I3)。
 - Plugin 直接调用 PlayerAdapter(I1/I5)。
 - `BilibiliHistory/DouyuHistory/MusicHistory` 这类平台前缀业务类型——历史/收藏/播放列表一律建在 ContentRef 上(见 [../services/history.md](../services/history.md))。

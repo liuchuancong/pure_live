@@ -22,6 +22,8 @@ main()
 
 | Runtime | 职责 | 主文档 |
 |---|---|---|
+| ExtensionGateway | 扩展统一入口:注册/发现/类型识别/Runtime 选择/生命周期/隔离 | [platform-infrastructure.md](platform-infrastructure.md) |
+| TaskScheduler | 统一后台任务调度(优先级/去重/重试):源刷新/仓库更新/插件更新/Ticket 刷新/缓存维护 | [platform-infrastructure.md](platform-infrastructure.md) |
 | PluginRuntime | 插件装载、校验、沙箱、生命周期状态机 | [../plugin/plugin-lifecycle.md](../plugin/plugin-lifecycle.md) |
 | CapabilityRuntime | CapabilityRegistry:发现/查询/按 capability 取 Provider 列表 | [../contracts/capability-contract.md](../contracts/capability-contract.md) |
 | ContentRuntime | ContentRef 解析、跨域内容寻址 | [../content/content-ref.md](../content/content-ref.md) |

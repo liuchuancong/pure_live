@@ -10,9 +10,9 @@ Capability / ContentRef / MediaTicket / PluginManifest / Permission / Provider �
 
 melos 化、包脚手架、架构护栏、契约测试框架、核心模型(ContentRef/MediaTicket 等)。
 
-## W2 — Plugin Runtime
+## W2 — Plugin Runtime + Extension Gateway
 
-PluginRuntime / Registry / Permission / Sandbox。
+ExtensionGateway(统一入口:注册/发现/类型识别/Runtime 选择/生命周期)/ PluginRuntime / Registry / Permission / Sandbox / ExternalRuntime 框架(仅接口;首个外部运行时 TvBox 在 W7 落地)。TaskScheduler 随 W3 一并落地。
 
 ## W3 — Media
 
