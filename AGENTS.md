@@ -9,24 +9,29 @@
 
 ## Project map
 
-Layering is `app -> core, shared, domains, features`; `core -> nothing above`;
-`shared -> core, shared`; `domains/X -> core, shared, domains/X`;
-`features -> core, shared, domains`. Within a domain:
-`presentation -> domain (abstractions)`, `data -> domain (abstractions)`.
-`tool/validate_architecture.py --strict` enforces this and runs in CI
-(`.github/workflows/architecture.yml`).
+Layering is L0 `packages/foundation` -> L0.5 `packages/integrations` -> L1 `packages/ecosystem`
+-> L2 `packages/services` -> L3 `packages/ui` -> L4 `packages/features` -> app, with L5
+`packages/providers` beside L2-L4 pointing only downward. Direction is strictly one way, and
+same-layer edges are forbidden except the documented exceptions.
+`dart run tool/check_architecture.dart --strict` enforces this and runs in CI
+(`.github/workflows/architecture.yml`); the rules and the whitelist live in
+[docs/architecture/dependency-rules.md](docs/architecture/dependency-rules.md).
 
-- `lib/app/`: bootstrap, DI assembly, router. No business implementation.
-- `lib/core/`: platform APIs, player kernel, settings/credential store, common UI.
-- `lib/shared/platforms/`: the site adapters (bilibili, douyu, huya, ...) and the
-  platform contract (`live_site`, `live_danmaku`, `live_directory`, ...) that
-  playback, recording and account all use.
-- `lib/domains/`: business domains (live, iptv, account, recorder, wallpaper),
-  each self-contained as `data` + `domain` + `presentation`.
-- `lib/features/`: lightweight independent pages.
-- `test/`: deterministic Dart/Widget tests; `tool/probes/`: opt-in external/native probes.
-- `tool/`: local quality/build/release entrypoints; `docs/`: feature and acceptance evidence.
-- `android/`, `windows/`: primary targets; other platform directories remain community-verified.
+- Root `pubspec.yaml`: pub workspace hub - member list and `dependency_overrides`, no code.
+- `apps/pure_live/`: the only composition root - bootstrap, DI, router, native projects, assets.
+- `packages/<layer>/<name>/`: one capability per package, created only by
+  `tool/scaffold_package.ps1`; a package exports through one barrel and keeps internals in `lib/src/`.
+- `packages/providers/<site>/`: site adapters (bilibili, douyu, huya, ...) implementing the
+  capability contracts; they never reach the player.
+- `third_party/`: vendored upstream sources and patches, excluded from the quality gate.
+- `fixtures/`: recorded samples shared by two or more packages; provider-specific fixtures stay
+  inside the provider package.
+- `tool/`: repository entrypoints (build, quality, release, device); `tool/probes/` is opt-in.
+- `docs/`: architecture, contracts and acceptance evidence; `docs/roadmap/w1-progress.md` records
+  the current migration state, including what is still unfixed.
+- Tests live in the package that owns the behaviour; app-level tests stay in `apps/pure_live/test/`.
+- `apps/pure_live/android/` and `apps/pure_live/windows/` are the primary targets; other platform
+  directories remain community-verified.
 
 ## Maintenance scope and triage
 
