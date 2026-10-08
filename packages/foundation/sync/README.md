@@ -9,6 +9,13 @@
 | 禁止依赖 | 任何反向依赖;禁止依赖应用壳(唯一组合根,I9);同层互依(除规则明示例外) |
 | 公共面 | 只有 `lib/pure_live_sync.dart`;内部实现放 `lib/src/` |
 
+## 内容
+
+- `sync_engine.dart` —— `SyncRecord`(删除走 tombstone)、`SyncCursor`、`ConflictPolicy`(remoteWins / localWins / newestWins,**时间戳相同按远端**,因为对端已经应用过那一版)、`SyncEngine.pull` / `push`
+
+远端是**端口**不是依赖:[dependency-rules §4](../../../docs/architecture/dependency-rules.md) 把 sync → firebase 列为批准例外,但厂商 SDK 由应用绑定,这样这个包不需要网络也能测。凭据两端都不参与同步。
+
+## 
 ## 结构
 
 - `pubspec.yaml` / `analysis_options.yaml` / `CHANGELOG.md` / `README.md` / `test/` —— 所有包必备
