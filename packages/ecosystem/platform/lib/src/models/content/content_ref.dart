@@ -189,3 +189,42 @@ final class ContentSummary {
     };
   }
 }
+
+/// The full record for one item: its summary, its children and its tags.
+final class ContentDetail {
+  const ContentDetail({
+    required this.summary,
+    this.description,
+    this.children = const <ContentRef>[],
+    this.tags = const <ContentTag>[],
+    this.metadata = const <String, Object?>{},
+  });
+
+  factory ContentDetail.fromJson(Map<String, Object?> json) => ContentDetail(
+        summary: ContentSummary.fromJson(asObjectMap(json['summary'])),
+        description: json['description'] as String?,
+        children: asObjectMapList(json['children']).map(ContentRef.fromJson).toList(growable: false),
+        tags: asObjectMapList(json['tags']).map(ContentTag.fromJson).toList(growable: false),
+        metadata: asObjectMap(json['metadata']),
+      );
+
+  final ContentSummary summary;
+  final String? description;
+
+  /// Episodes of a series, tracks of an album, channels of a playlist.
+  final List<ContentRef> children;
+  final List<ContentTag> tags;
+  final Map<String, Object?> metadata;
+
+  ContentRef get ref => summary.ref;
+
+  Map<String, Object?> toJson() {
+    return <String, Object?>{
+      'summary': summary.toJson(),
+      if (description != null) 'description': description,
+      if (children.isNotEmpty) 'children': children.map((ref) => ref.toJson()).toList(growable: false),
+      if (tags.isNotEmpty) 'tags': tags.map((tag) => tag.toJson()).toList(growable: false),
+      if (metadata.isNotEmpty) 'metadata': metadata,
+    };
+  }
+}

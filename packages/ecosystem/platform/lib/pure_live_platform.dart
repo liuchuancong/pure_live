@@ -14,6 +14,7 @@
 library;
 
 export 'src/models/content/content_ref.dart';
+export 'src/models/content/paging.dart';
 export 'src/models/diagnostics/diagnostic_event.dart';
 export 'src/models/error/platform_error_info.dart';
 export 'src/models/extension/extension_descriptor.dart';
