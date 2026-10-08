@@ -36,7 +36,8 @@
 | 结构漂移扫描(16 包 × 必备文件/包名/include/workspace 登记/断链/BOM/CRLF) | 0 problems |
 | 架构护栏 `dart run tool/check_architecture.dart --strict` | `packages=17 errors=0 warnings=0` |
 | 护栏回归 `tool/test_check_architecture.ps1` | **PASS: 15 assertions across 14 cases**(含"故意违规必须被抓到"的反例:层向上依赖、依赖 app、未登记成员、缺文件、include 被改、features 缺内层、ui_kit 之外 import wind、provider 引播放器) |
-| CI 入口 | 新增 `.github/workflows/architecture.yml`:pub get → 护栏 --strict → analyze → 两套 PS 回归。**本机无法执行 workflow,仅验证了其中每条命令。** |
+| `dart run tool/check_workflow_yaml.dart` | 4 个 workflow/action 文件全部解析通过。这个检查当场抓到一个真实缺陷:`run: & "$env:..."` 以 `&` 开头会被 YAML 当锚点,已改块标量 |
+| CI 入口 | 新增 `.github/workflows/architecture.yml`:pub get → 护栏 --strict → workflow YAML → analyze → 两套 PS 回归。**本机无法执行 workflow,仅验证了其中每条命令。** |
 
 ## 3. 已知未完成(搬家带来的欠账,不含乐观声明)
 
@@ -48,7 +49,7 @@
 
 ### 3.2 仍未完成
 
-1. **发布工作流未搬家**:`.github/workflows/build_pure_live_release.yml` 里 `flutter pub get`(L76/131/254/426/512)、`flutter test`(L85)、`flutter build apk|linux|macos|ios`(L147/434/523/588)默认在仓库根执行,`android/key.properties`(L124)、MSIX `certificate_path`(L246)、APK 改名与校验(L155/179/190)、产物 `path:`(L197/360/481/580/681)与 `assets/version.json`(L752)、`assets/releases.json`(L899-964)都还指旧位置。需要逐 step 加 `working-directory: apps/pure_live` 并改路径 —— 但 `python tool/interface_probe.py`、`.\tool\prefetch_windows_native.ps1` 这类仓库级调用必须留在根 cwd,所以不能整 job 统一设默认目录。**未做,且本机无法执行验证。**
+1. 发布工作流已搬家:`android / windows / linux / apple` 四个 job 加 `defaults.run.working-directory: apps/pure_live`,`quality` 只给 `dart run enven` 与 `flutter test` 两步加(其余步骤仍按仓库根)。随之改掉的根依赖:`enven --env-files` 改 `../../.env,../../.env.prod`;`./.github/actions/get-version` 改用 `$GITHUB_WORKSPACE/apps/pure_live/pubspec.yaml`,不再依赖调用方 cwd;`tool/prefetch_windows_native.ps1` 走 `$env:GITHUB_WORKSPACE`;APK/安装包产物 `path:`、`assets/version.json`、`assets/releases.json`(含 `update_releases.yml`)全部指到新位置。**本机跑不了 workflow,只做了 YAML 解析与逐条路径核对。**
 2. ~~`tool/validate_architecture.py` 仍按 v1 布局校验~~ —— 已由 `tool/check_architecture.dart` 取代并删除;护栏与回归见 §2,CI 入口是 `.github/workflows/architecture.yml`。
 3. v1 内容耦合的质量规则残留:`tool/audit_repository.py` 现在报 9 条 error,其中 `live_back_invariant_missing` 指向已删除的 `lib/modules/live_play/**`,`workflow_default_true` 指向发布工作流;`tool/validate_build_policy.ps1` 在**搬家之前**就会失败 —— 它要求 `.agents/skills/pure-live-build/SKILL.md`,该文件从未入库(`git show 12eefc302` 已核实)。这三类都要按 v2 语义重定义,不做单点修补。
 4. `tool/audit_built_in_kotlin.py` 因本机缺 Java 21 而失败(环境欠账,非搬家引入)。

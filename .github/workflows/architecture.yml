@@ -29,6 +29,8 @@ jobs:
         run: flutter pub get --enforce-lockfile
       - name: Architecture guard
         run: dart run tool/check_architecture.dart --strict
+      - name: Workflow YAML syntax
+        run: dart run tool/check_workflow_yaml.dart
       - name: Analyzer
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
       - name: Architecture guard regression suite
