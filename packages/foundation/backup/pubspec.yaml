@@ -1,0 +1,10 @@
+# GENERATED-BY: tool/scaffold_package.ps1
+name: pure_live_backup
+description: "本地备份与恢复,不含凭据明文"
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.13.0
+
+# Add dependencies from the matrix in docs/architecture/dependency-rules.md section 3.

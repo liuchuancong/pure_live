@@ -1,0 +1,10 @@
+# GENERATED-BY: tool/scaffold_package.ps1
+name: pure_live_sync
+description: "云同步数据面,依赖 integrations/firebase"
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.13.0
+
+# Add dependencies from the matrix in docs/architecture/dependency-rules.md section 3.

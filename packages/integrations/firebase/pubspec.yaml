@@ -1,0 +1,10 @@
+# GENERATED-BY: tool/scaffold_package.ps1
+name: pure_live_firebase
+description: "Firebase 厂商 SDK 接线,唯一允许直接依赖处"
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.13.0
+
+# Add dependencies from the matrix in docs/architecture/dependency-rules.md section 3.

@@ -1,0 +1,4 @@
+# GENERATED-BY: tool/scaffold_package.ps1
+# Every package inherits the shared package rules from the repository root so one rule change lands
+# in all packages at once. Do not add package-local lint configuration here.
+include: ../../../analysis_options.package.yaml

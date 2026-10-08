@@ -8,6 +8,22 @@ environment:
 
 workspace:
   - apps/pure_live
+  - packages/foundation/auth
+  - packages/foundation/backup
+  - packages/foundation/cache
+  - packages/foundation/diagnostics
+  - packages/foundation/events
+  - packages/foundation/files
+  - packages/foundation/l10n
+  - packages/foundation/logging
+  - packages/foundation/network
+  - packages/foundation/platform
+  - packages/foundation/release
+  - packages/foundation/storage
+  - packages/foundation/sync
+  - packages/foundation/utils
+  - packages/integrations/firebase
+  - packages/integrations/media
 
 # 全仓统一裁决的依赖覆盖:workspace 里只有根包可以声明。
 dependency_overrides:
