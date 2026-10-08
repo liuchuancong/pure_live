@@ -440,6 +440,10 @@ packages/pure_live_platform/lib/
 └── contracts/                     # 接口定义(Extension/Gateway/Runtime/Source/Repository/Provider/Resolver/Refresher/PermissionManager/TaskScheduler/…)
 ```
 
+> **实现落点以 [../adr/0018-contract-package-split.md](../adr/0018-contract-package-split.md) 为准**:本节示例写的是
+> 单一伞包,实际形态是**模型集中在 `pure_live_platform`,行为契约按子系统分包**
+> (`capability` / `extension` / `permission` / `task` / …)。`pure_live_platform` 不建 `contracts/` 目录。
+
 ## 19. 首实现优先级(不要一次实现全部)
 
 最小首切片(TVBox 播放通)需要:
