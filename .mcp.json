@@ -7,7 +7,7 @@
         ":dispatcher",
         "mcp:serve"
       ],
-      "cwd": "."
+      "cwd": "apps/pure_live"
     }
   }
 }

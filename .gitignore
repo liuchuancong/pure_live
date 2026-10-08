@@ -32,10 +32,11 @@ migrate_working_dir/
 .flutter-plugins-dependencies
 .pub-cache/
 .pub/
-/build/
-/android/build/
-/android/.gradle/
-/android/.kotlin/
+# The application shell lives in apps/pure_live, so its generated output is nested there.
+build/
+apps/pure_live/android/build/
+apps/pure_live/android/.gradle/
+apps/pure_live/android/.kotlin/
 /local-artifacts/
 /local-smoke/
 /.local-build/
@@ -48,20 +49,20 @@ app.*.symbols
 app.*.map.json
 
 # Android Studio will place build artifacts here
-/android/app/debug
-/android/app/profile
-/android/app/release
+apps/pure_live/android/app/debug
+apps/pure_live/android/app/profile
+apps/pure_live/android/app/release
 
-/android/key.properties
+# Signing material never belongs in the repository. The global key patterns below
+# are the safety net; these rules name the locations the build actually writes to.
+apps/pure_live/android/key.properties
 **/*.jks
 **/*.keystore
 **/*.pfx
 **/*.key
 **/*.csr
-/assets/keystore/
-
-# /assets/keystore/
-/assets/pure_live_web/
+apps/pure_live/assets/keystore/
+apps/pure_live/assets/pure_live_web/
 
 # FVM Version Cache
 .fvm/

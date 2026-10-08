@@ -1,0 +1,12 @@
+# AppId 的值唯一标识此应用。
+# 不要在其他应用的安装程序中使用相同的 AppId 值。
+app_id: 7B973E89-76D9-430B-81E2-9DB393C8C042
+publisher: PureLive
+publisher_url: https://github.com/liuchuancong/pure_live
+display_name: 纯粹直播
+create_desktop_icon: true
+setup_icon_file: windows\runner\resources\app_icon.ico
+script_template: inno_setup.iss
+locales:
+  - en
+  - zh
