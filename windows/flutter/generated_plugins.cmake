@@ -10,12 +10,14 @@ list(APPEND FLUTTER_PLUGIN_LIST
   charset_converter
   cloud_firestore
   connectivity_plus
+  desktop_drop
   dynamic_color
   ffmpeg_kit_extended_flutter
   firebase_auth
   firebase_core
   flutter_acrylic
   flutter_inappwebview_windows
+  flutter_secure_storage_windows
   media_kit_video
   permission_handler_windows
   screen_retriever_windows

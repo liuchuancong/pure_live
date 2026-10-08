@@ -13,12 +13,14 @@
 #include <charset_converter/charset_converter_plugin.h>
 #include <cloud_firestore/cloud_firestore_plugin_c_api.h>
 #include <connectivity_plus/connectivity_plus_windows_plugin.h>
+#include <desktop_drop/desktop_drop_plugin.h>
 #include <dynamic_color/dynamic_color_plugin_c_api.h>
 #include <ffmpeg_kit_extended_flutter/ffmpeg_kit_extended_flutter_plugin.h>
 #include <firebase_auth/firebase_auth_plugin_c_api.h>
 #include <firebase_core/firebase_core_plugin_c_api.h>
 #include <flutter_acrylic/flutter_acrylic_plugin.h>
 #include <flutter_inappwebview_windows/flutter_inappwebview_windows_plugin_c_api.h>
+#include <flutter_secure_storage_windows/flutter_secure_storage_windows_plugin.h>
 #include <media_kit_video/media_kit_video_plugin_c_api.h>
 #include <permission_handler_windows/permission_handler_windows_plugin.h>
 #include <screen_retriever_windows/screen_retriever_windows_plugin_c_api.h>
@@ -43,6 +45,8 @@ void RegisterPlugins(flutter::PluginRegistry* registry) {
       registry->GetRegistrarForPlugin("CloudFirestorePluginCApi"));
   ConnectivityPlusWindowsPluginRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("ConnectivityPlusWindowsPlugin"));
+  DesktopDropPluginRegisterWithRegistrar(
+      registry->GetRegistrarForPlugin("DesktopDropPlugin"));
   DynamicColorPluginCApiRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("DynamicColorPluginCApi"));
   FfmpegKitExtendedFlutterPluginRegisterWithRegistrar(
@@ -55,6 +59,8 @@ void RegisterPlugins(flutter::PluginRegistry* registry) {
       registry->GetRegistrarForPlugin("FlutterAcrylicPlugin"));
   FlutterInappwebviewWindowsPluginCApiRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("FlutterInappwebviewWindowsPluginCApi"));
+  FlutterSecureStorageWindowsPluginRegisterWithRegistrar(
+      registry->GetRegistrarForPlugin("FlutterSecureStorageWindowsPlugin"));
   MediaKitVideoPluginCApiRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("MediaKitVideoPluginCApi"));
   PermissionHandlerWindowsPluginRegisterWithRegistrar(

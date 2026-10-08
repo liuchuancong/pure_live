@@ -5,9 +5,11 @@
 list(APPEND FLUTTER_PLUGIN_LIST
   app_links_linux
   charset_converter
+  desktop_drop
   dynamic_color
   ffmpeg_kit_extended_flutter
   flutter_acrylic
+  flutter_secure_storage_linux
   media_kit_video
   screen_retriever_linux
   url_launcher_linux
