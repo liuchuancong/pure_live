@@ -9,6 +9,13 @@
 | 禁止依赖 | 任何反向依赖;禁止依赖应用壳(唯一组合根,I9);同层互依(除规则明示例外) |
 | 公共面 | 只有 `lib/pure_live_cache.dart`;内部实现放 `lib/src/` |
 
+## 内容
+
+- `policy.dart` —— `CacheNamespace`(docs/services/cache.md 那 9 个)、`CachePolicy`(ttl / maxBytes / maxEntries / 淘汰法)、`CacheUsage`
+- `store.dart` —— `CacheHub` 按命名空间发 `NamespaceCache`;`NamespaceCache` 上**没有**接命名空间参数的方法,所以一个插件读不到、清不掉别人的条目
+
+这是内存层。磁盘层用同一套 `CachePolicy` 接在后面,两边对"超容量"的判断才一致。`write()` 返回本次被逐出的 key,方便上层记压力指标。
+
 ## 结构
 
 - `pubspec.yaml` / `analysis_options.yaml` / `CHANGELOG.md` / `README.md` / `test/` —— 所有包必备

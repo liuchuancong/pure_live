@@ -4,6 +4,12 @@
 // Author: liuchuancong
 // Created: 2026-10-08
 ///
-/// Layer: foundation. Allowed dependencies: pub.dev packages only; foundation packages do not depend on each other (utils and logging are leaf packages).
+/// Layer: foundation. Allowed dependencies: pub.dev packages only, plus the utils and logging leaves.
 /// See docs/architecture/dependency-rules.md and the package README.
+///
+/// Business code and plugins do not create their own cache: they take a namespace from CacheHub, so quota
+/// and the settings screen cleanup stay accurate.
 library;
+
+export 'src/policy.dart';
+export 'src/store.dart';
