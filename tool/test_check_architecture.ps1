@@ -180,6 +180,23 @@ function test_checkarchitecture_unregisteredpackage_reports_error {
     Assert-True -Condition ($result.Exit -eq 1 -and $result.Text.Contains('unregistered-package')) -Message 'a package missing from workspace: is reported'
 }
 
+function test_checkarchitecture_foundationLeafDependency_isallowed {
+    param([string] $Dir)
+    # dependency-rules.md section 3: L0 packages do not depend on each other, except the utils and
+    # logging leaves that everyone may use.
+    Add-FixtureMember -Dir $Dir -Path 'packages/foundation/utils'
+    Add-FixturePackage -Dir $Dir -RelPath 'packages/foundation/utils'
+    Add-FixtureMember -Dir $Dir -Path 'packages/foundation/logging'
+    Add-FixturePackage -Dir $Dir -RelPath 'packages/foundation/logging' -Deps @('pure_live_utils')
+    Add-FixtureMember -Dir $Dir -Path 'packages/foundation/cache'
+    Add-FixturePackage -Dir $Dir -RelPath 'packages/foundation/cache' -Deps @('pure_live_network')
+    Add-FixtureMember -Dir $Dir -Path 'packages/foundation/network'
+    Add-FixturePackage -Dir $Dir -RelPath 'packages/foundation/network'
+    $result = Invoke-Guard -Dir $Dir
+    Assert-True -Condition (-not $result.Text.Contains('layer-direction: pure_live_logging')) -Message 'a leaf dependency inside L0 is allowed'
+    Assert-True -Condition ($result.Text.Contains('layer-direction: pure_live_cache')) -Message 'a non-leaf L0 to L0 edge is still refused'
+}
+
 function test_checkarchitecture_listedbutmissingmember_reports_error {
     param([string] $Dir)
     Add-FixtureMember -Dir $Dir -Path 'packages/foundation/gone'

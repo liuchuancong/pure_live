@@ -28,7 +28,7 @@ L5 Providers/Plugins(与 L2-L4 平级,只向下依赖)
 
 ## 3. 逐层依赖细则
 
-- **L0**:互不依赖(utils/logging 是人人可用的叶子);只依赖 pub.dev 三方。
+- **L0**:互不依赖,**唯一例外**是人人可用的叶子 `utils` 与 `logging`(任何包都可依赖它们,含 L0 内部);只依赖 pub.dev 三方。护栏 `tool/check_architecture.dart` 的 `kLeafPackages` 就是这条例外的白名单。
 - **L0.5**:→ L0。
 - **L1**:→ L0。
 - **L2 services**:→ L0 + L1(plugin_api)。

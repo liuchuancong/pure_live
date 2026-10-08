@@ -8,3 +8,10 @@ environment:
   sdk: ^3.13.0
 
 # Add dependencies from the matrix in docs/architecture/dependency-rules.md section 3.
+dependencies:
+  # utils is one of the two L0 leaves every package may use, including another L0 package.
+  pure_live_utils:
+    path: ../utils
+
+dev_dependencies:
+  test: ^1.26.0

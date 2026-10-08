@@ -28,6 +28,12 @@ const List<String> kLayers = <String>[
   'providers',
 ];
 
+/// Foundation packages everyone may depend on.
+///
+/// docs/architecture/dependency-rules.md section 3 says L0 packages do not depend on each other, and names
+/// utils and logging as the exception: they are the leaves every other package may use.
+const Set<String> kLeafPackages = <String>{'pure_live_utils', 'pure_live_logging'};
+
 /// Layers a package of the given layer may depend on, from docs/architecture/dependency-rules.md section 3.
 const Map<String, Set<String>> kAllowedLayers = <String, Set<String>>{
   'foundation': <String>{},
@@ -277,6 +283,9 @@ List<Finding> checkDependencies(PackageInfo package, Map<String, PackageInfo> by
       continue;
     }
     if (allowed.contains(target.layer)) {
+      continue;
+    }
+    if (kLeafPackages.contains(target.name)) {
       continue;
     }
     if (isApprovedException(package, target)) {
