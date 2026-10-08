@@ -1,0 +1,19 @@
+# GENERATED-BY: tool/scaffold_package.ps1
+name: pure_live_plugin_api
+description: "插件清单与生命周期:Manifest 校验、安装管线阶段、PluginRuntime / HostBridge / ScriptSandbox 接口"
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.13.0
+
+# Add dependencies from the matrix in docs/architecture/dependency-rules.md section 3.
+dependencies:
+  # The manifest is a platform model and the bridge speaks NetworkRequest, NetworkResponse and Cookie, which
+  # are also platform models. Nothing here reaches for a sibling contract package: the plugin-facing surface
+  # is a subset, adapted to the real services by whoever wires the host.
+  pure_live_platform:
+    path: ../platform
+
+dev_dependencies:
+  test: ^1.26.0

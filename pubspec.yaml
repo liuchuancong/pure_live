@@ -13,6 +13,7 @@ workspace:
   - packages/ecosystem/external_tvbox
   - packages/ecosystem/permission
   - packages/ecosystem/platform
+  - packages/ecosystem/plugin_api
   - packages/ecosystem/task
   - packages/foundation/auth
   - packages/foundation/backup
