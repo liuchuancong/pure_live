@@ -34,7 +34,8 @@
 | 门禁非空转验证 | 往包内注入 `print` → 报 `avoid_print`;删除后回 0 |
 | 密钥忽略覆盖 `git check-ignore` | `apps/pure_live/android/key.properties`、`apps/pure_live/assets/keystore/*.jks`、`apps/pure_live/build/**`、`apps/pure_live/.dart_tool/**`、`apps/pure_live/android/.gradle/**` 全部仍被忽略 |
 | 结构漂移扫描(16 包 × 必备文件/包名/include/workspace 登记/断链/BOM/CRLF) | 0 problems |
-| 架构护栏 `dart run tool/check_architecture.dart --strict` | `packages=17 errors=0 warnings=0` |
+| 架构护栏 `dart run tool/check_architecture.dart --strict` | `packages=21 errors=0 warnings=0` |
+| 能力契约 `packages/ecosystem/capability` | 包内 `dart analyze` No issues found;`dart test` **29 全绿**;`pure_live_platform` 侧因 `RefreshReason` 改名回文档集合(9 项)重跑 37 全绿 |
 | 护栏回归 `tool/test_check_architecture.ps1` | **PASS: 15 assertions across 14 cases**(含"故意违规必须被抓到"的反例:层向上依赖、依赖 app、未登记成员、缺文件、include 被改、features 缺内层、ui_kit 之外 import wind、provider 引播放器) |
 | `dart run tool/check_workflow_yaml.dart` | 4 个 workflow/action 文件全部解析通过。这个检查当场抓到一个真实缺陷:`run: & "$env:..."` 以 `&` 开头会被 YAML 当锚点,已改块标量 |
 | CI 入口 | 新增 `.github/workflows/architecture.yml`:pub get → 护栏 --strict → workflow YAML → analyze → 两套 PS 回归。**本机无法执行 workflow,仅验证了其中每条命令。** |
@@ -71,10 +72,22 @@
 - **L0 全部 14 包实装完**:utils 36、logging 10、network 12、storage 16、auth 14、cache 11、events 5、diagnostics 9、files 22、release 15、l10n 19、platform_info 13、backup 11、sync 11 —— 合计 **241 测试全绿**(逐包 `dart test`,不是估算)
 - 脚本与 CI 路径迁移(§3.1/§3.2)
 - TVBox 运行时决策(ADR 0017)+ `integrations/python_runtime`、`ecosystem/external_tvbox` 骨架
+- **能力契约与契约测试框架**:`packages/ecosystem/capability` —— `CapabilityKind`(§1 全部 22 个 kind 名)、
+  `BrowseCapability` / `SearchCapability` / `ResolveCapability` / `FeedCapability` / `CapabilitySet`,
+  以及二级入口 `lib/testing.dart`(`ContractProbe` / `ContractSubject` / `checkCapabilityContract`,返回带稳定
+  `code` 的 `ContractViolation` 清单,不绑 `package:test`,所以单测与插件校验 CLI 跑同一套断言)。
+  错误码表与 `expiresAt` 的读法写在包 README;文档名→实现名的对应写进
+  [capability-contract.md](../contracts/capability-contract.md) §5。
+  顺带修掉一处与文档不符:`RefreshReason` 先前用了自造的四值,现按 media-contract §3 / media-ticket §2 的
+  九值(`expiring/expired/networkError/http403/http404/decodeError/manual/qualityChanged/lineChanged`)落地,
+  因为 evolution.md 规定枚举一经发布不得改名或重排。
 
 余下:
 
-1. **契约测试框架 + capability/plugin_api 的 Dart 形态**:W1 的最后一格。做法是先落 `packages/ecosystem/capability`(Live/Vod/Music/Search/Feed/Auth/Danmaku/Subtitle 能力接口)与 `packages/ecosystem/plugin_api`(Manifest/Permission/生命周期),再把契约测试作为 `package:pure_live_capability/testing.dart` 二级导出,供 W4 第一个参考插件(Bilibili)直接套用。
+1. `packages/ecosystem/plugin_api`(Manifest/Permission/生命周期)与契约测试的**插件侧装载**;
+   能力断言本身已就位,W4 第一个参考插件(Bilibili)可直接套用。
 2. `.fvmrc` 3.47.5 与实际 3.47.6 的不一致(§3.2 第 5 条)仍待用户定。
 3. artisan 栈取舍(§3.2 第 6 条)仍待定;`serious_python` 在应用 `pubspec.yaml` 里还挂在 dev_dependencies,等 `python_runtime` 实装时移到 dependencies 并由 integrations 层持有。
+4. `MediaTicketRefreshInfo`(`supported/expiresAt/refreshBefore`,platform-models §11)未进首切片(§19 未列),
+   到期预取的"提前量"因此还没有落点;随 media 接线一并补。
 
