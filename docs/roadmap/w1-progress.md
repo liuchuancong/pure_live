@@ -35,7 +35,8 @@
 | 密钥忽略覆盖 `git check-ignore` | `apps/pure_live/android/key.properties`、`apps/pure_live/assets/keystore/*.jks`、`apps/pure_live/build/**`、`apps/pure_live/.dart_tool/**`、`apps/pure_live/android/.gradle/**` 全部仍被忽略 |
 | 结构漂移扫描(16 包 × 必备文件/包名/include/workspace 登记/断链/BOM/CRLF) | 0 problems |
 | 架构护栏 `dart run tool/check_architecture.dart --strict` | `packages=21 errors=0 warnings=0` |
-| 能力契约 `packages/ecosystem/capability` | 包内 `dart analyze` No issues found;`dart test` **29 全绿**;`pure_live_platform` 侧因 `RefreshReason` 改名回文档集合(9 项)重跑 37 全绿 |
+| 能力契约 `packages/ecosystem/capability` | 包内 `dart analyze` No issues found;`dart test` **29 全绿**;`pure_live_platform` 侧因 `RefreshReason` 改名回文档集合(9 项)重跑全绿 |
+| 格式化宽度缺陷(本轮发现并修) | `dart format` **不会**从仓库根 `analysis_options.yaml` 继承 `formatter.page_width`,包目录里按默认 80 列跑,与 `docs/development/coding-style.md` 规定的 120 打架 —— W1 写的包其实从没被真正格式化过。已在 `analysis_options.package.yaml` 补 `formatter.page_width: 120`,全量 `dart format packages tool/check_*.dart` 收敛(87 文件,复跑 0 changed),并加 CI 步骤 `--set-exit-if-changed`。`tool/probes/**` 三个 v1 探针被顺手改到的格式化已 `git checkout` 还原,不混进本批 |
 | 护栏回归 `tool/test_check_architecture.ps1` | **PASS: 15 assertions across 14 cases**(含"故意违规必须被抓到"的反例:层向上依赖、依赖 app、未登记成员、缺文件、include 被改、features 缺内层、ui_kit 之外 import wind、provider 引播放器) |
 | `dart run tool/check_workflow_yaml.dart` | 4 个 workflow/action 文件全部解析通过。这个检查当场抓到一个真实缺陷:`run: & "$env:..."` 以 `&` 开头会被 YAML 当锚点,已改块标量 |
 | CI 入口 | 新增 `.github/workflows/architecture.yml`:pub get → 护栏 --strict → workflow YAML → analyze → 两套 PS 回归。**本机无法执行 workflow,仅验证了其中每条命令。** |
@@ -68,8 +69,8 @@
 已完成(每项都有测试或门禁证据,见 §2 与 git log):
 
 - 目录形态与 pub workspace(ADR 0015)、包脚手架与回归、架构护栏与 CI(ADR 0015/0016/0017 全落)
-- `packages/ecosystem/platform`:§19 首切片 14 类模型,37 测试
-- **L0 全部 14 包实装完**:utils 36、logging 10、network 12、storage 16、auth 14、cache 11、events 5、diagnostics 9、files 22、release 15、l10n 19、platform_info 13、backup 11、sync 11 —— 合计 **241 测试全绿**(逐包 `dart test`,不是估算)
+- `packages/ecosystem/platform`:§19 首切片 14 类模型 + §9 分页/选择模型 + §12 权限与网络模型,68 测试
+- **L0 全部 14 包实装完**:utils 36、logging 10、network 12、storage 16、auth 14、cache 11、events 5、diagnostics 9、files 22、release 15、l10n 19、platform_info 13、backup 11、sync 11 —— L0 合计 **194 测试**(逐包 `dart test` 实跑,不是估算;先前记的 241 是把这几项加错了)
 - 脚本与 CI 路径迁移(§3.1/§3.2)
 - TVBox 运行时决策(ADR 0017)+ `integrations/python_runtime`、`ecosystem/external_tvbox` 骨架
 - **能力契约与契约测试框架**:`packages/ecosystem/capability` —— `CapabilityKind`(§1 全部 22 个 kind 名)、
