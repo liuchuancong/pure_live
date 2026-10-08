@@ -64,9 +64,9 @@
 
 ## 5. W1 余下(按依赖顺序)
 
-1. 补 §3.1/§3.2 的脚本与 CI 路径迁移(一个独立 commit,含 `tool/` 单元测试跑通作为证据)。
-2. `packages/ecosystem/platform` 骨架 + 核心模型 `ContentRef` / `MediaTicket`,按 [../contracts/platform-contracts.md](../contracts/platform-contracts.md)、[../contracts/platform-models.md](../contracts/platform-models.md);动手前先做 media_core 复用盘点(models §2:MediaTrack / TaskCancelToken / 错误分类直接复用,`SourceDescriptor` 命名冲突经接线层别名)。
-3. foundation 各包实装 + 单测,序:utils → logging → network → storage/auth → cache/events → diagnostics → files/platform → backup/sync/release/l10n。
-4. 架构护栏 `tool/check_architecture.dart`:校验 `packages/<层>/<名>` 形态、逐层 import 方向、例外白名单、包级 analysis include 一致性;替换 §3.3 的失效脚本并接 CI。
+1. ~~补 §3.1/§3.2 的脚本与 CI 路径迁移~~ —— 已做:7 个脚本改 `$appRoot`、发布工作流四个 job 加 `defaults.run.working-directory`、`update_releases.yml` 与 get-version 动作跟进;证据见 §2。
+2. ~~`packages/ecosystem/platform` 骨架 + 核心模型~~ —— 已落:`packages/ecosystem/platform`(`pure_live_platform`)实现 §19 首切片 14 类模型,37 个测试通过。media_core 复用盘点的结论是**复用不了**:media_core 的 pubspec 声明 `flutter: sdk: flutter`,与"伞包必须纯 Dart"直接冲突,因此 `MediaTrack` 改为平台镜像 + 接线层映射;同时发现 dependency-rules 的 foundation `platform` 与 package-architecture 的伞包 `pure_live_platform` 撞名(pub 要求包名唯一),foundation 侧改名 `platform_info`。两条都记在 [../adr/0016-platform-media-track-mirror.md](../adr/0016-platform-media-track-mirror.md)。
+3. foundation 各包实装 + 单测,序:utils → logging → network → storage/auth → cache/events → diagnostics → files/platform_info → backup/sync/release/l10n。
+4. ~~架构护栏~~ —— 已落 `tool/check_architecture.dart` + `tool/test_check_architecture.ps1`(14 例 15 断言)+ `.github/workflows/architecture.yml`;v1 的 `tool/validate_architecture.py` 已删除。
 5. 契约测试框架(providers 能力契约 + `fixtures/` 录制响应)。
 6. TVBox 运行时决策落地:参考 `webtv-main`(catvod + chaquo 的 `base/spider.py` Python 爬虫基类)与 `serious_python`(已在应用 dev_dependencies),见 [../architecture/external-ecosystem.md](../architecture/external-ecosystem.md)。
