@@ -70,9 +70,20 @@ apps/pure_live/assets/pure_live_web/
 # FVM Version Cache
 .fvm/
 **/.make_config.yaml
-# apps/ 目录仅为历史构建产物残留,不入库
-apps/
 
 # 构建产物一律不入库
 **/build/
 native-assets/
+
+# The app shell lives in apps/pure_live; the native project directories at the
+# repository root are Flutter regeneration residue from commands run at the root.
+# Never commit them - the real platform projects are apps/pure_live/<platform>/.
+/android/
+/ios/
+/linux/
+/macos/
+/windows/
+**/ephemeral/
+**/.gradle/
+**/GeneratedPluginRegistrant.*
+**/local.properties
