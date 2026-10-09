@@ -1,22 +1,22 @@
 import 'dart:io';
 import 'dart:ui';
 import 'dart:async';
-
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:pure_live/core/index.dart';
-import 'package:pure_live/core/platform/desktop_exit_port.dart';
-import 'package:pure_live/core/platform/desktop_tray_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_acrylic/flutter_acrylic.dart';
-import 'package:pure_live/core/player/presentation/windows_pip_driver.dart';
 import 'package:pure_live/core/storage/hive_pref_util.dart';
 import 'package:pure_live/core/platform/platform_utils.dart';
+import 'package:pure_live/core/platform/desktop_exit_port.dart';
 import 'package:pure_live/core/platform/share_command_codec.dart';
+import 'package:pure_live/core/platform/desktop_tray_service.dart';
+import 'package:pure_live/core/config/window_size_controller.dart';
 import 'package:pure_live/core/platform/share_command_handler.dart';
 import 'package:pure_live/core/widgets/share_command_import_dialog.dart';
-import 'package:pure_live/core/config/window_size_controller.dart';
 import 'package:pure_live/domains/live/domain/global_player_service.dart';
+import 'package:pure_live/core/player/presentation/windows_pip_driver.dart';
+
 
 class DesktopTrayMenuCoordinator {
   Future<void>? _activeTransaction;
@@ -130,6 +130,14 @@ class DesktopManager {
             // knows only about the live room, so a recording in PiP left the
             // chrome painted over the compact picture.
             final pipMode = windowsPipActive.value;
+            if (fullscreen && !pipMode) {
+              return Stack(
+                children: [
+                  Positioned.fill(child: content),
+                  const Positioned(top: 0, right: 0, child: FullscreenWindowControls()),
+                ],
+              );
+            }
             return Column(
               children: [
                 if (!fullscreen && !pipMode) const CustomTitleBar(),
@@ -399,6 +407,45 @@ class CustomTitleBar extends StatelessWidget {
         ),
       );
     });
+  }
+}
+
+class FullscreenWindowControls extends StatelessWidget {
+  const FullscreenWindowControls({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    const iconColor = Colors.white;
+    return Container(
+      color: Colors.black.withValues(alpha: 0.35),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          WindowControlButton(
+            semanticLabel: i18nOr('window_minimize', 'Minimize window'),
+            failureMessage: i18nOr('window_close_action_failed', 'The window action failed. Try again.'),
+            icon: Icons.remove,
+            iconColor: iconColor,
+            hoverColor: Colors.white.withValues(alpha: 0.12),
+            onPressed: () async {
+              await windowManager.minimize();
+            },
+          ),
+          WindowControlButton(
+            semanticLabel: i18nOr('window_close', 'Close window'),
+            failureMessage: i18nOr('window_close_action_failed', 'The window action failed. Try again.'),
+            icon: Icons.close,
+            iconColor: iconColor,
+            hoverIconColor: Colors.white,
+            hoverColor: const Color(0xFFE81123),
+            isClose: true,
+            onPressed: () async {
+              await DesktopManager.handleWindowClose();
+            },
+          ),
+        ],
+      ),
+    );
   }
 }
 
