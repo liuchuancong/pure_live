@@ -62,7 +62,9 @@ const Map<String, Set<String>> kApprovedExceptions = <String, Set<String>>{
   'pure_live_player_ui': <String>{'pure_live_media'},
   'pure_live_ui_kit': <String>{'pure_live_design'},
   // ADR 0017: an external ecosystem runtime must sit on the embedded CPython host.
-  'pure_live_external_tvbox': <String>{'pure_live_python_runtime'},
+  // The universal adapter answers the capability contracts for spider-backed
+  // sites; the spider itself stays behind the SpiderHandle seam.
+  'pure_live_external_tvbox': <String>{'pure_live_python_runtime', 'pure_live_capability'},
   // ADR 0019: the gateway is where ExtensionContext is assembled from the permission and task packages.
   'pure_live_extension': <String>{'pure_live_permission', 'pure_live_task'},
   // ADR 0021: CapabilityResolver lifts a source's ResolveCapability into the platform's Resolver.

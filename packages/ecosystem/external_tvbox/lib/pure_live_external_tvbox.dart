@@ -7,3 +7,8 @@
 /// Layer: ecosystem. Allowed dependencies: layer L0 foundation; contract and model packages are pure Dart and must not depend on Flutter.
 /// See docs/architecture/dependency-rules.md and the package README.
 library;
+
+export 'src/data_source_runtime.dart';
+export 'src/spider_contract.dart';
+export 'src/spider_vod_provider.dart';
+export 'src/tvbox_repository.dart';
