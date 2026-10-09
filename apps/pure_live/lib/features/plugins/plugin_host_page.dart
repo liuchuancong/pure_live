@@ -101,6 +101,38 @@ final class _PluginHostPageState extends ConsumerState<PluginHostPage> {
     });
   }
 
+  Future<void> _importFromUrl() async {
+    final controller = TextEditingController();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('从链接导入'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(hintText: '插件、TVBox 配置或 M3U 的 http(s) 链接'),
+        ),
+        actions: <Widget>[
+          TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('取消')),
+          FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: const Text('导入')),
+        ],
+      ),
+    );
+    // Capture before disposal: the text outlives the controller, not the reverse.
+    final url = controller.text.trim();
+    controller.dispose();
+    if (confirmed != true || url.isEmpty) {
+      return;
+    }
+    final runtime = ref.read(runtimeProvider);
+    await _run(() async {
+      final installed = await importPluginUrl(runtime, runtime.pluginStore, url);
+      if (mounted) {
+        setState(() => _message = '已导入 \${installed.manifest.name},打开开关启用');
+      }
+    });
+  }
+
   Future<void> _toggle(InstalledPlugin plugin, bool enabled) async {
     final runtime = ref.read(runtimeProvider);
     final store = runtime.pluginStore;
@@ -146,6 +178,7 @@ final class _PluginHostPageState extends ConsumerState<PluginHostPage> {
         title: const Text('插件'),
         actions: <Widget>[
           IconButton(icon: const Icon(Icons.file_open_outlined), tooltip: '导入插件文件', onPressed: _busy ? null : _import),
+          IconButton(icon: const Icon(Icons.link), tooltip: '从链接导入', onPressed: _busy ? null : _importFromUrl),
           IconButton(
             icon: const Icon(Icons.playlist_add),
             tooltip: '导入 M3U / TVBox 配置',

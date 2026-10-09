@@ -163,7 +163,7 @@ Future<PluginLoadReport> loadEnabledPlugins(PureLiveRuntime runtime, PluginStore
 Future<void> _loadOne(PureLiveRuntime runtime, PluginStore store, InstalledPlugin installed) async {
   final manifest = installed.manifest;
   if (manifest.runtime == PluginRuntimeKind.data) {
-    await _loadDataPlugin(runtime, manifest, store);
+    await _loadDataPlugin(runtime, manifest, store, installed);
     return;
   }
   // A music-kind plugin is an lx user-api script: it is hosted directly (the
@@ -218,7 +218,12 @@ Future<void> _loadOne(PureLiveRuntime runtime, PluginStore store, InstalledPlugi
 /// A data plugin serves straight from its config: M3U playlists and the live
 /// groups of a TVBox repo become one playlist source; spider sites are named
 /// as pending rather than registered unable to serve.
-Future<void> _loadDataPlugin(PureLiveRuntime runtime, PluginManifest manifest, PluginStore store) async {
+Future<void> _loadDataPlugin(
+  PureLiveRuntime runtime,
+  PluginManifest manifest,
+  PluginStore store,
+  InstalledPlugin installed,
+) async {
   final content = await store.readContent(manifest.id);
   final Object parsed;
   if (content.trimLeft().startsWith('#EXTM3U')) {
@@ -257,7 +262,7 @@ Future<void> _loadDataPlugin(PureLiveRuntime runtime, PluginManifest manifest, P
   } else {
     throw StateError('配置不是 M3U、单仓或多仓形态');
   }
-  await _loadSpiderSites(runtime, manifest, sites, notes);
+  await _loadSpiderSites(runtime, manifest, sites, notes, originUrl: installed.originUrl);
   if (channels.isEmpty && notes.isEmpty) {
     throw StateError('配置里没有可播放的频道');
   }
@@ -289,13 +294,14 @@ Future<void> _loadSpiderSites(
   PureLiveRuntime runtime,
   PluginManifest manifest,
   List<TvBoxSite> sites,
-  List<String> notes,
-) async {
+  List<String> notes, {
+  Uri? originUrl,
+}) async {
   var loaded = 0;
   var pending = 0;
   for (final site in sites) {
     try {
-      final provider = await _spawnSiteProvider(runtime, manifest, site);
+      final provider = await _spawnSiteProvider(runtime, manifest, site, originUrl: originUrl);
       runtime.capabilities.register(
         ProviderRegistration(
           sourceId: provider.sourceId,
@@ -320,16 +326,31 @@ Future<void> _loadSpiderSites(
   }
 }
 
-Future<SpiderVodProvider> _spawnSiteProvider(PureLiveRuntime runtime, PluginManifest manifest, TvBoxSite site) async {
+Future<SpiderVodProvider> _spawnSiteProvider(
+  PureLiveRuntime runtime,
+  PluginManifest manifest,
+  TvBoxSite site, {
+  Uri? originUrl,
+}) async {
   final api = site.api.trim();
   final isJs = api.endsWith('.js');
   final isPy = api.endsWith('.py');
   if (!isJs && !isPy) {
     throw StateError('spider 代码不是可直接取用的 .js/.py(${api.isEmpty ? '空 api' : 'csp 内置或 jar 成员'})');
   }
-  final uri = Uri.tryParse(api);
-  if (uri == null || (uri.scheme != 'http' && uri.scheme != 'https')) {
-    throw StateError('spider 地址必须是 http(s) 绝对路径');
+  var uri = Uri.tryParse(api);
+  if (uri == null) {
+    throw StateError('spider 地址无法解析: $api');
+  }
+  if (uri.scheme.isEmpty) {
+    // Relative to where the config came from; a file import without origin
+    // cannot resolve one, which is named rather than guessed.
+    if (originUrl == null) {
+      throw StateError('spider 是相对路径且配置没有来源地址');
+    }
+    uri = originUrl.resolve(api);
+  } else if (uri.scheme != 'http' && uri.scheme != 'https') {
+    throw StateError('spider 地址必须是 http(s)');
   }
   final response = await runtime.network.get(api, headers: const <String, String>{'accept': '*/*'});
   final status = response.statusCode ?? 0;
@@ -362,6 +383,32 @@ Future<InstalledPlugin> importPluginFile(PluginStore store, String path, {String
   return store.install(bundle);
 }
 
+/// Imports a plugin or config from a URL - the common TVBox flow. The origin
+/// is recorded so relative spider paths inside the config resolve later.
+Future<InstalledPlugin> importPluginUrl(
+  PureLiveRuntime runtime,
+  PluginStore store,
+  String url, {
+  String? displayName,
+}) async {
+  final uri = Uri.parse(url.trim());
+  final response = await runtime.network.get(uri.toString(), headers: const <String, String>{'accept': '*/*'});
+  final status = response.statusCode ?? 0;
+  if (status < 200 || status >= 300) {
+    throw StateError('下载失败 status=$status');
+  }
+  final text = response.data ?? '';
+  if (looksLikeLxMusicScript(text)) {
+    return importLxMusicScript(store, text, displayName ?? uri.pathSegments.lastOrNull ?? uri.toString());
+  }
+  if (text.trimLeft().startsWith('#EXTM3U')) {
+    final manifest = _deriveDataManifest(text, displayName ?? uri.pathSegments.lastOrNull ?? 'IPTV');
+    return store.installData(manifest: manifest, content: text, originUrl: uri);
+  }
+  final bundle = const PluginBundleParser().parse(text);
+  return store.install(bundle, originUrl: uri);
+}
+
 /// lx user-api scripts announce themselves by using the lx api surface; they
 /// carry no manifest header, so the shell derives one. The name comes from the
 /// file, the id from the content hash: re-importing is an idempotent upgrade.
@@ -391,8 +438,12 @@ Future<InstalledPlugin> importLxMusicScript(PluginStore store, String text, Stri
 /// capability).
 Future<InstalledPlugin> importDataFile(PluginStore store, String path, {required String name}) async {
   final content = await File(path).readAsString();
+  return store.installData(manifest: _deriveDataManifest(content, name), content: content);
+}
+
+PluginManifest _deriveDataManifest(String content, String name) {
   final hash = crypto.md5.convert(utf8.encode(content)).toString().substring(0, 10);
-  final manifest = PluginManifest(
+  return PluginManifest(
     id: 'data.$hash',
     name: name,
     version: '1.0.0',
@@ -402,7 +453,6 @@ Future<InstalledPlugin> importDataFile(PluginStore store, String path, {required
     permissionNames: const <String>{},
     origin: PluginOrigin.localFile,
   );
-  return store.installData(manifest: manifest, content: content);
 }
 
 /// Disables a plugin and takes its registrations off the registry. Uninstall

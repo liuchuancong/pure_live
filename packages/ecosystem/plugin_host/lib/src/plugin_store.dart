@@ -21,11 +21,20 @@ import 'plugin_bundle.dart';
 
 /// One plugin as the store has it on disk.
 final class InstalledPlugin {
-  const InstalledPlugin({required this.manifest, required this.enabled, required this.installedAt});
+  const InstalledPlugin({
+    required this.manifest,
+    required this.enabled,
+    required this.installedAt,
+    this.originUrl,
+  });
 
   final PluginManifest manifest;
   final bool enabled;
   final DateTime installedAt;
+
+  /// Where an imported config came from, when it was a URL. Relative spider
+  /// paths inside the config resolve against this.
+  final Uri? originUrl;
 
   String get id => manifest.id;
 }
@@ -53,7 +62,7 @@ final class PluginStore {
   /// Validates and persists one bundle. An already-installed id is replaced:
   /// upgrading a plugin is installing the next version, and the enable state
   /// carries over so an update does not silently turn a source off.
-  Future<InstalledPlugin> install(PluginBundle bundle) async {
+  Future<InstalledPlugin> install(PluginBundle bundle, {Uri? originUrl}) async {
     final result = _validator.validate(bundle.manifest);
     if (!result.isAccepted) {
       final details = result.errors.map((issue) => issue.toString()).join('; ');
@@ -68,6 +77,7 @@ final class PluginStore {
     final state = <String, Object?>{
       'enabled': existing?['enabled'] ?? false,
       'installedAt': DateTime.now().toUtc().toIso8601String(),
+      if (originUrl != null) 'originUrl': originUrl.toString(),
     };
     await File(_statePath(bundle.manifest.id)).writeAsString(jsonEncode(state), flush: true);
     return InstalledPlugin(
@@ -79,7 +89,7 @@ final class PluginStore {
 
   /// Installs a data plugin (TVBox config, M3U playlist): configuration only,
   /// with a parser-derived manifest and a content file instead of code.
-  Future<InstalledPlugin> installData({required PluginManifest manifest, required String content}) async {
+  Future<InstalledPlugin> installData({required PluginManifest manifest, required String content, Uri? originUrl}) async {
     final result = _validator.validate(manifest);
     if (!result.isAccepted) {
       final details = result.errors.map((issue) => issue.toString()).join('; ');
@@ -89,7 +99,11 @@ final class PluginStore {
     await directory.create(recursive: true);
     await File(_manifestPath(manifest.id)).writeAsString(jsonEncode(manifest.toJson()), flush: true);
     await File(_contentPath(manifest.id)).writeAsString(content, flush: true);
-    final state = <String, Object?>{'enabled': false, 'installedAt': DateTime.now().toUtc().toIso8601String()};
+    final state = <String, Object?>{
+      'enabled': false,
+      'installedAt': DateTime.now().toUtc().toIso8601String(),
+      if (originUrl != null) 'originUrl': originUrl.toString(),
+    };
     await File(_statePath(manifest.id)).writeAsString(jsonEncode(state), flush: true);
     return InstalledPlugin(
       manifest: manifest,
@@ -124,6 +138,7 @@ final class PluginStore {
           manifest: manifest,
           enabled: state['enabled'] as bool? ?? false,
           installedAt: DateTime.tryParse('${state['installedAt']}') ?? DateTime.fromMillisecondsSinceEpoch(0),
+          originUrl: state['originUrl'] is String ? Uri.tryParse(state['originUrl']! as String) : null,
         ),
       );
     }
