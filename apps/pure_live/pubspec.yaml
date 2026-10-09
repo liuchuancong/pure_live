@@ -178,6 +178,8 @@ dependencies:
     path: ../../packages/ecosystem/js_runtime
   pure_live_external_tvbox:
     path: ../../packages/ecosystem/external_tvbox
+  pure_live_python_runtime:
+    path: ../../packages/integrations/python_runtime
 
   # -------------------------- 数据存储/数据库 --------------------------
   hive_ce: ^2.20.0 # Hive本地数据库

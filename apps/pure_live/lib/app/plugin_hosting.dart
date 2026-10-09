@@ -22,6 +22,7 @@ import 'package:pure_live_js_runtime/pure_live_js_runtime.dart';
 import 'package:pure_live_permission/pure_live_permission.dart';
 import 'package:pure_live_platform/pure_live_platform.dart';
 import 'package:pure_live_plugin_api/pure_live_plugin_api.dart';
+import 'package:pure_live_python_runtime/pure_live_python_runtime.dart';
 import 'package:pure_live_plugin_host/pure_live_plugin_host.dart';
 
 import 'runtime.dart';
@@ -209,12 +210,10 @@ Future<void> _loadDataPlugin(PureLiveRuntime runtime, PluginManifest manifest, P
     parsed = const TvBoxConfigParser().parse(content);
   }
   final List<TvBoxChannel> channels;
-  var note = '';
+  final notes = <String>[];
   if (parsed is TvBoxSingleRepo) {
     channels = <TvBoxChannel>[for (final group in parsed.lives) ...group.channels];
-    if (parsed.sites.isNotEmpty) {
-      note = '${parsed.sites.length} 个 spider 站点待运行时接入';
-    }
+    await _loadSpiderSites(runtime, manifest, parsed.sites, notes);
   } else if (parsed is List<TvBoxChannel>) {
     channels = parsed;
   } else {
@@ -223,23 +222,97 @@ Future<void> _loadDataPlugin(PureLiveRuntime runtime, PluginManifest manifest, P
     // work.
     throw StateError('多仓配置没有可直接播放的内容,先导入其中的单仓');
   }
-  if (channels.isEmpty) {
-    throw StateError(note.isEmpty ? '配置里没有可播放的频道' : note);
+  if (channels.isEmpty && notes.isEmpty) {
+    throw StateError('配置里没有可播放的频道');
   }
-  final built = playlistContent(manifest.id, channels);
-  runtime.capabilities.register(
-    ProviderRegistration(
-      sourceId: manifest.id,
-      extensionId: manifest.id,
-      provider: built.provider,
-      capabilities: const CapabilitySet(<CapabilityKind>{CapabilityKind.live, CapabilityKind.feed}),
-    ),
-  );
+  if (channels.isNotEmpty) {
+    final built = playlistContent(manifest.id, channels);
+    runtime.capabilities.register(
+      ProviderRegistration(
+        sourceId: manifest.id,
+        extensionId: manifest.id,
+        provider: built.provider,
+        capabilities: const CapabilitySet(<CapabilityKind>{CapabilityKind.live, CapabilityKind.feed}),
+      ),
+    );
+    notes.add(built.summary);
+  }
   runtime.diagnostics.emit(
     'plugin.dataLoaded',
     extensionId: manifest.id,
-    metadata: <String, Object?>{'summary': built.summary, if (note.isNotEmpty) 'note': note},
+    metadata: <String, Object?>{'summary': notes.join(' / ')},
   );
+}
+
+/// Loads a repo's spider sites: each site whose api names a fetchable .js or
+/// .py file gets its spider running and a SpiderVodProvider on the registry.
+/// Anything else - csp_ built-ins, jar members, relative paths with no base -
+/// is named as pending: the framework registers what it can run, never what it
+/// cannot.
+Future<void> _loadSpiderSites(
+  PureLiveRuntime runtime,
+  PluginManifest manifest,
+  List<TvBoxSite> sites,
+  List<String> notes,
+) async {
+  var loaded = 0;
+  var pending = 0;
+  for (final site in sites) {
+    try {
+      final provider = await _spawnSiteProvider(runtime, manifest, site);
+      runtime.capabilities.register(
+        ProviderRegistration(
+          sourceId: provider.sourceId,
+          extensionId: manifest.id,
+          provider: provider,
+          capabilities: const CapabilitySet(<CapabilityKind>{CapabilityKind.vod, CapabilityKind.search}),
+        ),
+      );
+      loaded++;
+    } catch (error) {
+      pending++;
+      runtime.diagnostics.emit(
+        'plugin.spiderPending',
+        extensionId: manifest.id,
+        level: DiagnosticLevel.warning,
+        metadata: <String, Object?>{'site': site.key, 'api': site.api, 'reason': '$error'},
+      );
+    }
+  }
+  if (sites.isNotEmpty) {
+    notes.add('站点 $loaded 可用 / $pending 待接入');
+  }
+}
+
+Future<SpiderVodProvider> _spawnSiteProvider(PureLiveRuntime runtime, PluginManifest manifest, TvBoxSite site) async {
+  final api = site.api.trim();
+  final isJs = api.endsWith('.js');
+  final isPy = api.endsWith('.py');
+  if (!isJs && !isPy) {
+    throw StateError('spider 代码不是可直接取用的 .js/.py(${api.isEmpty ? '空 api' : 'csp 内置或 jar 成员'})');
+  }
+  final uri = Uri.tryParse(api);
+  if (uri == null || (uri.scheme != 'http' && uri.scheme != 'https')) {
+    throw StateError('spider 地址必须是 http(s) 绝对路径');
+  }
+  final response = await runtime.network.get(api, headers: const <String, String>{'accept': '*/*'});
+  final status = response.statusCode ?? 0;
+  if (status < 200 || status >= 300) {
+    throw StateError('spider 下载失败 status=$status');
+  }
+  final code = response.data ?? '';
+  final siteRef = SpiderSite(key: site.key, name: site.name, extend: site.ext);
+  if (isJs) {
+    final handle = await JsSpiderHandle.spawn(
+      key: site.key,
+      source: code,
+      bridge: RuntimeHostBridge(pluginId: '${manifest.id}.${site.key}', manifest: manifest, runtime: runtime),
+    );
+    return SpiderVodProvider(site: siteRef, handle: handle);
+  }
+  await PythonSpiderHost.installSpider(runtime.dataDirectory, site.key, code);
+  final handle = await PythonSpiderHost.spawn(key: site.key, extend: site.ext, dataDirectory: runtime.dataDirectory);
+  return SpiderVodProvider(site: siteRef, handle: handle);
 }
 
 /// Reads one imported file, validates it and stores it. Returns the install
