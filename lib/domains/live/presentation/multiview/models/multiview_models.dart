@@ -92,6 +92,7 @@ class MultiviewStreamSource {
   const MultiviewStreamSource({
     required this.url,
     required this.headers,
+    this.detail,
     this.qualities = const <LivePlayQuality>[],
     this.qualityIndex = 0,
     this.qualityLoader,
@@ -103,6 +104,7 @@ class MultiviewStreamSource {
 
   const MultiviewStreamSource.owned({
     required OwnedPlaybackSource source,
+    this.detail,
     this.qualities = const <LivePlayQuality>[],
     this.qualityIndex = 0,
     this.qualityLoader,
@@ -113,6 +115,10 @@ class MultiviewStreamSource {
        lineIndex = 0,
        sourceQueryPolicies = const {},
        leaseFor = null;
+
+  /// Room detail fetched while resolving this source; carries the danmaku
+  /// ticket so the chat session needs no second detail request.
+  final LiveRoom? detail;
 
   /// A public factory; the private URI stays inside the per-cell transport.
   final OwnedPlaybackSource? ownedSource;

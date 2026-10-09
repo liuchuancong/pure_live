@@ -1,12 +1,13 @@
-import 'dart:developer' as developer;
 import 'dart:async';
+import 'dart:developer' as developer;
 
-import 'package:media_core_danmaku/media_core_danmaku.dart';
-import 'package:pure_live/core/player/core/live_message_normalization.dart';
 import 'package:pure_live/core/index.dart';
+import 'package:media_core_danmaku/media_core_danmaku.dart';
 import 'package:pure_live/shared/platforms/live_danmaku.dart';
 import 'package:pure_live/domains/live/data/platforms/sites.dart';
 import 'package:pure_live/domains/live/data/favorite_room_controller.dart';
+import 'package:pure_live/core/player/core/live_message_normalization.dart';
+import 'package:pure_live/shared/platforms/huya/huya_danmaku.dart' show HuyaDanmakuArgs;
 
 typedef MultiviewDanmakuEngineFactory = LiveDanmaku Function(LiveRoom liveroom);
 
@@ -35,6 +36,8 @@ class MultiviewDanmakuSession {
 
   String? get sessionKey => _sessionKey;
 
+  bool get isConnected => _engine?.isConnected ?? false;
+
   /// Empty/unsupported remote transports never create a multiview chat session.
   static bool isSupportedPlatform(String? platform) => Sites.supportsDanmakuTransport(platform);
 
@@ -43,6 +46,7 @@ class MultiviewDanmakuSession {
     final data = liveroom.danmakuData;
     if (data == null) return false;
     if (data is String && data.isEmpty) return false;
+    if (data is HuyaDanmakuArgs && data.topSid <= 0) return false;
     return true;
   }
 

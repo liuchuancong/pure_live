@@ -3,11 +3,11 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:pure_live/core/logging/core_log.dart';
-import 'package:pure_live/shared/platforms/huya/huya_utils.dart';
 import 'package:pure_live/core/models/live_message.dart';
 import 'package:pure_live/core/tars/codec/tars_struct.dart';
 import 'package:pure_live/core/network/web_socket_util.dart';
 import 'package:pure_live/shared/platforms/live_danmaku.dart';
+import 'package:pure_live/shared/platforms/huya/huya_utils.dart';
 import 'package:pure_live/core/tars/codec/tars_input_stream.dart';
 import 'package:pure_live/core/tars/codec/tars_output_stream.dart';
 import 'package:pure_live/core/tars/game_event_message_board_panel.dart';
@@ -133,7 +133,7 @@ class HuyaDanmaku implements LiveDanmaku {
   }
 
   void joinRoom() {
-    var joinData = getJoinData(danmakuArgs.uid);
+    var joinData = getJoinData(danmakuArgs.topSid);
     webScoketUtils?.sendMessage(joinData);
   }
 
