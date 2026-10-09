@@ -110,6 +110,7 @@ class LiveDirectoryController extends BasePageScrollAndStateBone<LiveRoom> {
   @override
   void setPageSize(int? newSize) {
     if (newSize == null || newSize < 1 || newSize == pageSize.value || _disposed) return;
+    persistUserPageSize(newSize);
     _refreshBuffer = null;
     final firstIndex = usesDesktopPagination ? (_visiblePage - 1) * pageSize.value : 0;
     pageSize.value = newSize;

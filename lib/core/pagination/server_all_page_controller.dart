@@ -46,6 +46,7 @@ abstract class ServerAllPageController<T> extends BasePageScrollAndStateBone<T> 
   @override
   void setPageSize(int? newSize) {
     if (isClosed || newSize == null || pageSize.value == newSize || _rawAllData == null) return;
+    persistUserPageSize(newSize);
     if (!usesDesktopPagination) {
       pageSize.value = newSize;
       return;
