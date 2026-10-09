@@ -1,0 +1,21 @@
+# GENERATED-BY: tool/scaffold_package.ps1
+name: pure_live_feed
+description: "首页 Feed 聚合:经 CapabilityRegistry 枚举 FeedCapability、按源分节、游标贯穿与单源失败隔离"
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.13.0
+
+# Add dependencies from the matrix in docs/architecture/dependency-rules.md section 3.
+dependencies:
+  # The feed vocabulary (ContentSummary / PageRequest / PageResult) belongs to the platform models.
+  pure_live_platform:
+    path: ../../ecosystem/platform
+  # Home consumes FeedCapability through the registry and never names a source (feed.md rule 1 and
+  # provider-contract.md section 3), so discovery is the only L1 surface this package needs.
+  pure_live_capability:
+    path: ../../ecosystem/capability
+
+dev_dependencies:
+  test: ^1.26.0

@@ -60,7 +60,7 @@
 于是本波的落地顺序:注册表(已落)→ 录制通道 → Bilibili 内容链(browse / detail / search / feed / resolve / refresh,
 跑同一套契约断言)→ danmaku 与 auth 契约定稿 → 媒体链接到 W3 的 resolver 与 media 映射。
 
-## 1.5 W4 的主体被卡住期间先落的消费端:`packages/services/search`(13 测试)
+## 3. 主体被卡住期间先落的消费端:聚合搜索(13 测试)
 
 §2 那两条前置(真实响应录制、danmaku/auth 的方法集)都不是我一个人能定的:前者要么有联网授权、要么先造录制通道,
 后者是改契约。但**消费 discovery 的那一侧不需要等它**,而 provider-contract §3 与 services/search.md 都已经把
@@ -86,7 +86,23 @@ L2 的第一个包因此是 `pure_live_search`,依赖只有 `pure_live_platform`
 两处刻意的不做:结果**先到先显示**需要一条流式接口,而那是 UI 的分批渲染决定,现在加等于猜;按
 直播/视频/音乐/频道分组是呈现规则,留在 UI。空关键词则相反 —— 它必须**一个请求都不发**,因为 N 个源的
 空关键词就是 N 次无意义请求,包 README 把这条与它的理由写在一起。
-## 3. 验证证据
+## 4. 消费端的另一半:Feed 聚合(13 测试)
+
+`packages/services/feed` 与搜索同一个理由:`feed.md` 已经把 `FeedSource[] → FeedAggregator → FeedSection[] → Home`
+与"Home 不直接依赖 Bilibili/Douyu/Music"写死,这一段不需要 provider 就能落。三条判断值得单独记:
+
+- **节的顺序是注册顺序**,不是到达顺序。测试故意让第一个源慢 40ms、第二个秒回,断言出来仍是 `[slow, quick]` ——
+  否则用户的首页会因为某站点今天响应慢而换一次布局,而布局是用户自己排的。
+- **`FeedSection` 没有标题**。文档草图写了"标题",但同一篇文档又说"首页模块编排是用户数据(sync 范围)";
+  标题既然属于编排,聚合器再造一个就是同一块砖位有两个真相。这条差异写进包 README,而不是悄悄改掉。
+- **"不出现在 Feed"不等于"无声消失"**。声明了 feed 却拿不出 `FeedCapability` 的源被跳过,但进 `skips` 带
+  `notCapable` 与原因;空结果、超时、异常同样各留一条。用户装了插件却看不到砖位时,得有人说得清为什么。
+
+坏数据按节就地处理:指向别源的行丢弃并计入 `foreignItems`,同节内重复 ref 保留第一条并计入 `duplicateItems`
+(`contract.feed.duplicate_ref`);**跨源不去重** —— ref 里带着源,两个源给同一片段是两条不同的推荐。
+没做的:"关注更新 / 历史『继续看』"两类 FeedSource 要 favorites / history 服务,它们还不存在。
+
+## 5. 验证证据
 | 命令 | 结果 |
 |---|---|
 | `packages/ecosystem/capability` → `dart analyze .` | No issues found |
@@ -97,9 +113,10 @@ L2 的第一个包因此是 `pure_live_search`,依赖只有 `pure_live_platform`
 | `dart format --output=none --set-exit-if-changed packages tool/check_architecture.dart` | 148 文件 0 changed |
 | `powershell -File tool/test_check_architecture.ps1` | PASS: 23 assertions across 21 cases |
 | `packages/services/search` → `dart analyze .` / `dart test -j 1` | No issues found;**13 全绿**(并发与收窄 5 + 失败隔离 4 + 数据规则 4) |
-| 新增 L2 包后的护栏与分析 | `packages=27 errors=0 warnings=0`;`dart analyze packages` No issues found |
+| `packages/services/feed` → `dart analyze .` / `dart test -j 1` | No issues found;**13 全绿**(选源 3 + 隔离 4 + 数据规则 4 + 分页 2) |
+| 两个 L2 包之后 | `packages=28 errors=0 warnings=0`;`dart analyze packages` No issues found;格式化 156 文件 0 changed |
 
-## 4. 已知欠账
+## 6. 已知欠账
 
 - `CapabilityRegistry` 现在**在组合根里**(`runtime.capabilities`,见 w2-progress.md §1.7),但**注册动作还没有人做**:
   谁在扩展 enable 时把 provider 放进去、谁在 unload 时 `unregisterExtension`,要等第一个真实 provider(W4 的 Bilibili)
@@ -113,3 +130,5 @@ L2 的第一个包因此是 `pure_live_search`,依赖只有 `pure_live_platform`
   (上一条欠账)。`onlySources` 是为 provider-contract §3 的"站内搜索共用一套类型"留的参数,不是已经接好的流程。
 - 结果是**全部落定才返回**。首屏要先到先显示需要一条流式接口,而它取决于 UI 怎么分批渲染 —— 现在定等于猜。
 - 搜索历史与热搜没做:历史记录归业务面(W5),热词(`hotword`)在 capability-contract §3 里还没有调用面。
+- 两个消费端(搜索、Feed)还**没有在组合根里出现**:`CapabilitySearchAggregator` 与 `CapabilityFeedAggregator`
+  都要 `CapabilityRegistry`,而注册表仍是空的(§1 的欠账)。它们现在是可测的机制,不是跑起来的流程。
