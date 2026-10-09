@@ -21,6 +21,23 @@ foreach ($case in $cases) {
     }
     Write-Host "PASS $($case.Name)"
 }
+# Resolve-PureLiveProjectPath is what keeps a Flutter command pointed at apps/pure_live after ADR 0015,
+# so it is checked without starting Flutter too.
+$projectCases = @(
+    @{Name='root-caller';RepoRoot='C:\work\pure_live';WorkRoot='C:\work\pure_live';Caller='C:\work\pure_live';Expected='C:\work\pure_live'},
+    @{Name='app-subdirectory';RepoRoot='C:\work\pure_live';WorkRoot='C:\work\pure_live';Caller='C:\work\pure_live\apps\pure_live';Expected='C:\work\pure_live\apps\pure_live'},
+    @{Name='short-path-space';RepoRoot='C:\work\pure_live';WorkRoot='P:\pure_live';Caller='C:\work\pure_live\apps\pure_live';Expected='P:\pure_live\apps\pure_live'},
+    @{Name='outside-repository';RepoRoot='C:\work\pure_live';WorkRoot='C:\work\pure_live';Caller='C:\other';Expected='C:\work\pure_live'},
+    @{Name='case-insensitive-root';RepoRoot='C:\work\pure_live';WorkRoot='C:\work\pure_live';Caller='c:\WORK\pure_live\tool';Expected='C:\work\pure_live\tool'},
+    @{Name='trailing-separators';RepoRoot='C:\work\pure_live';WorkRoot='C:\work\pure_live';Caller='C:\work\pure_live\apps\pure_live';Expected='C:\work\pure_live\apps\pure_live'}
+)
+foreach ($case in $projectCases) {
+    $actual = Resolve-PureLiveProjectPath -RepoRoot $case.RepoRoot -WorkRoot $case.WorkRoot -CallerPath $case.Caller
+    if ($actual -cne $case.Expected) {
+        throw "project-path $($case.Name): expected '$($case.Expected)', got '$actual'"
+    }
+    Write-Host "PASS project-path $($case.Name)"
+}
 # Validate the changed wrapper without starting Flutter or touching build state.
 $errors = $null
 [void][Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot 'flutterw.ps1'), [ref]$null, [ref]$errors)

@@ -218,6 +218,14 @@ if ($requiresTestSubstPath -or $isWindowsDesktopBuild -or ($requiresBuildShortPa
     }
 }
 
+# A caller inside apps/pure_live must keep running there: since ADR 0015 the Flutter project is not the
+# repository root, and `flutter test` / `flutter analyze` resolve their paths against the project they are
+# given. The short-path logic above only decides which path space the root is reached through.
+$workDir = Resolve-PureLiveProjectPath `
+    -RepoRoot $repoRoot `
+    -WorkRoot $workDir `
+    -CallerPath (Resolve-PureLiveSubstPath -Path (Get-Location).Path -Mappings $substMappings)
+
 Push-Location $workDir
 $flutterExitCode = 0
 $previousErrorActionPreference = $ErrorActionPreference
