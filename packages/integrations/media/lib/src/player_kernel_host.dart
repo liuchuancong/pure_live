@@ -16,7 +16,9 @@ import 'ticket_source.dart';
 
 // The handle type is part of this package's public contract: hosts hold handles from [MediaKernelHost.open]
 // and render them with [MediaSurface], without ever importing the engine package themselves.
-export 'package:media_core/media_core.dart' show PlayerAdapter, PlayerHandle;
+// PlayerHandleRecovery rides along because reportFailure is an extension method: exporting only the class
+// would leave the host unable to hand `handle.reportFailure` to the watchdog.
+export 'package:media_core/media_core.dart' show PlayerAdapter, PlayerHandle, PlayerHandleRecovery;
 
 /// The process's playback kernel with the media_kit backend registered.
 ///
