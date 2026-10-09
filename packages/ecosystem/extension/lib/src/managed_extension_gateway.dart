@@ -34,18 +34,27 @@ final class ManagedExtensionGateway implements ExtensionGateway {
     required TaskScheduler tasks,
     DiagnosticTracer? diagnostics,
     this.supportedApiVersions = const <String>{},
+    ExtensionCache Function(ExtensionDescriptor descriptor)? cacheFactory,
+    ExtensionStorage Function(ExtensionDescriptor descriptor)? storageFactory,
   }) : _runtimes = runtimes,
        _permissions = permissions,
        _network = network,
        _cookies = cookies,
        _tasks = tasks,
-       _diagnostics = diagnostics;
+       _diagnostics = diagnostics,
+       // The defaults are per-run and in memory. A host that must keep a plugin's settings across a restart
+       // passes the persistent views (persistent_context.dart); the gateway cannot choose for it, because
+       // choosing means deciding where the file lives.
+       _cacheFactory = cacheFactory ?? ((descriptor) => InMemoryExtensionCache()),
+       _storageFactory = storageFactory ?? ((descriptor) => InMemoryExtensionStorage());
 
   final RuntimeRegistry _runtimes;
   final PermissionManager _permissions;
   final ExtensionNetwork _network;
   final ExtensionCookieStore _cookies;
   final TaskScheduler _tasks;
+  final ExtensionCache Function(ExtensionDescriptor descriptor) _cacheFactory;
+  final ExtensionStorage Function(ExtensionDescriptor descriptor) _storageFactory;
 
   /// The platform API revisions this build accepts. Empty means no check, which is the right default for a
   /// single-version app and the wrong default as soon as a plugin can declare one.
@@ -289,7 +298,13 @@ final class ManagedExtensionGateway implements ExtensionGateway {
     required ExtensionLifecycleState state,
     PlatformErrorInfo? error,
   }) {
-    final entry = _Record(descriptor: descriptor, runtime: _runtimes.byId(runtimeId), runtimeId: runtimeId);
+    final entry = _Record(
+      descriptor: descriptor,
+      runtime: _runtimes.byId(runtimeId),
+      runtimeId: runtimeId,
+      cache: _cacheFactory(descriptor),
+      storage: _storageFactory(descriptor),
+    );
     entry.state = state;
     entry.error = error;
     _records[descriptor.id] = entry;
@@ -299,16 +314,23 @@ final class ManagedExtensionGateway implements ExtensionGateway {
 
 /// The gateway's bookkeeping for one registered extension.
 class _Record {
-  _Record({required this.descriptor, required this.runtime, required this.runtimeId});
+  _Record({
+    required this.descriptor,
+    required this.runtime,
+    required this.runtimeId,
+    required this.cache,
+    required this.storage,
+  });
 
   final ExtensionDescriptor descriptor;
   final ExtensionRuntime? runtime;
   final RuntimeId runtimeId;
 
-  /// Scoped views: created with the record and dropped with it, so a reloaded extension does not inherit
-  /// the previous run's cached rows.
-  final ExtensionCache cache = InMemoryExtensionCache();
-  final ExtensionStorage storage = InMemoryExtensionStorage();
+  /// Scoped views: created with the record and dropped with it. Which views the gateway builds is the
+  /// composition root's choice (in memory per run, or persistent per extension) - see the constructor's
+  /// `cacheFactory` / `storageFactory`.
+  final ExtensionCache cache;
+  final ExtensionStorage storage;
 
   RuntimeInstance? instance;
   ExtensionLifecycleState state = ExtensionLifecycleState.discovered;

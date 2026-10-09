@@ -59,7 +59,7 @@
 
 顺带:护栏新规则当场抓到 scaffold 留下的 `.gitkeep`(task 包两个),已删除 —— 证明该规则会抓到自己的工具。
 
-### 1.4 `packages/ecosystem/extension`(27 测试)
+### 1.4 `packages/ecosystem/extension`(W2 波内 27 测试 → 现 53,见 §1.6 与 w3-progress)
 
 规范:`platform-contracts.md` §4/§6/§7/§8/§19、`platform-infrastructure.md` §3。
 
@@ -101,6 +101,43 @@
 `packages/ecosystem/plugin_api/README.md`:JS 插件不可能持有 Dart 的 `ExtensionNetwork` 对象,桥本来就是
 子集。
 
+### 1.6 W2 收尾:持久 KV 底座与落盘视图(storage +18、extension +19 测试)
+
+§4 原第 2 条(持久实现)与第 1 条(plugin_api 接口)一起收掉:第 1 条其实在 W2 波内就落了
+(`plugin_runtime.dart` / `host_bridge.dart` / `sandbox.dart` 三件都在包里),此前只是清单没跟着改。
+
+**`pure_live_storage` 的 `FileKeyValueStore`**(单文件 JSON,首次访问载入、写穿、串行队列):
+
+- 写 = 写临时文件 + `rename`。改名覆盖已存在目标在 Windows 上是**可用**的(先探过再写代码),所以不需要
+  "先删再改"这种会把窗口期变成"文件不见了"的写法。
+- **读不懂就不覆盖**:文件存在但不是对象形状 → `StoreCorruptedException`,之后的 `write` 同样拒绝。
+  空文件是唯一例外(那是首次写入中途被杀留下的,里面从来没有数据)。
+- **编码失败 = 什么都没发生**:先编码候选 map 再动内存与磁盘。测试的钉子是"写入 `DateTime` 之后,原来的值还在、
+  新键不在 `keys()` 里、文件字节与之前逐字相同"。
+- 所有操作走一条队列(`_serialised`),失败的操作不卡死队列(有专门一条测试)。
+
+**`pure_live_extension` 的 `PersistentExtensionCache` / `PersistentExtensionStorage`**(§19 的"实现可换而
+Extension API 不变"第一次真的被换过一次):
+
+- 命名空间 `extension.<id>.cache.<key>` / `extension.<id>.storage.<key>`,前缀由视图添加。所以"隔离"不靠调用方
+  传对字符串:扩展就算把别人的属主写进键名(`extension.B.cache.token`),得到的仍是自己名下的那一个键。这条有测试。
+- TTL 存**到期时刻**而不是时长:存时长的话,重启后的进程会拿自己的时钟重新计时,等于每次都把 TTL 续满。
+- 缓存行读不懂 → 按未命中处理并**删掉那一行**,而不抛错:错的未命中代价是回源一次,抛错的代价是扩展起不来。
+  `ExtensionStorage` 不做这种宽容(设置读不出来是事故,不是缓存失效)。
+- 视图只收可 JSON 序列化的值,写不下当场 `ArgumentError`;内存视图没有这条限制 —— 这是两者唯一的语义差异,
+  而它必须在这里失败,不能等重启后那一行悄悄消失。
+- 网关加了 `cacheFactory` / `storageFactory`,**默认不变**(内存、随记录丢弃,原有那条"重载不继承上次缓存行"
+  的测试仍然绿),所以本条没有改变任何现有扩展的行为。集成测试把两个网关接同一个 store,证明设置与缓存行都能
+  跨"重启"读回,且另一个扩展名下的视图读不到。
+
+一处**被测出来而不是想出来**的缺陷:`keys()` 最初用 `read()` 投影,于是"存了 null 的行"被当成"没有这一行"筛掉,
+而内存视图会把它列出来。改成内部 `_Row(present, value)` 把"存在"与"值非空"分开,并补了一条
+`test_keys_keepsARowWhoseValueIsNull`。
+
+一处文档与实现的**命名分歧**:platform-contracts.md §19 把这两件叫 `PlatformCache` / `PlatformStorage`,
+而代码、ADR 0019 与网关字段用的是 `ExtensionCache` / `ExtensionStorage`。以代码名为准(改名会牵动已发布契约面),
+分歧已在 §19 就地标注。
+
 ## 2. 顺带修掉的工程缺陷
 
 | 缺陷 | 处理 |
@@ -129,17 +166,34 @@
 | `dart run tool/check_workflow_yaml.dart` | 4 个 workflow/action 文件解析通过 |
 | 护栏非空转验证 | 临时放置 `packages/foundation/utils/lib/src/.gitkeep` → 报 `stale-scaffold-marker` 且 `errors=1`,删除后回 0 |
 
+W2 收尾(§1.6)复跑:
+
+| 命令 | 结果 |
+|---|---|
+| `packages/foundation/storage` → `dart analyze .` / `dart test -j 1` | No issues found;**34 全绿** = 原有 16 + `FileKeyValueStore` 18 |
+| `packages/ecosystem/extension` → `dart analyze .` / `dart test -j 1` | No issues found;**53 全绿** = 原有 34 + 持久视图 18 + 网关接缝集成 1 |
+| 磁盘行为依赖的平台事实 | Windows 上 `File.rename` **可以**覆盖已存在的目标(先探针验证再写实现),所以"临时文件 + rename"不需要先删目标 —— 那会把窗口期变成"文件不见了" |
+| 护栏与格式化 | 见 [w3-progress.md](w3-progress.md) §3:resolver 波之后 `packages=26 errors=0`、`142 文件 0 changed`、护栏回归 21 例 23 断言全过 |
+
 ## 4. 余下项(W2 未完成部分)
 
 > 环境注意(会影响后续会话):本机 `dart test` 默认并发**间歇性**报
 > `HandshakeException: Connection terminated during handshake`(无栈、`dart analyze` / `dart run` 正常),
 > 加 `-j 1` 即稳定通过。全仓逐包验证请用 `dart test -j 1`;这不是包的失败,别照着它去改代码。
 
-1. `packages/ecosystem/plugin_api` + PluginRuntime / ScriptSandbox **接口**(JS 装载与沙箱实现随 W10)。
-2. `ExtensionCache` / `ExtensionStorage` 的持久实现(Drift / KV 底座)仍由接线层待补:目前只有内存默认实现。
+1. ~~`packages/ecosystem/plugin_api` + PluginRuntime / ScriptSandbox **接口**~~ —— 已落(§1.5,三件接口都在包里);
+   JS 装载与沙箱**实现**随 W10。
+2. ~~`ExtensionCache` / `ExtensionStorage` 的持久实现~~ —— 已落(§1.6)。底座选的是 `pure_live_storage` 的
+   `FileKeyValueStore` 而不是 Drift:Drift 是应用组合根的选择,生态层要的是 `KeyValueStore` 接口。
 3. `NetworkTransport` 的 `pure_live_network` 适配**已落**(`extension` 的 `NetworkClientTransport`),但它和
    权限、网络、任务、网关一样只有离线断言:测试用的是脚本化 adapter。真实站点
    (403 / 重定向 / 超大响应)要在 W4 Bilibili 参考实现上跑一次才算验收。
 4. M2 的另一半"媒体管线能播一个假源"已在 W3 达成(接线层),见 [w3-progress.md](w3-progress.md) §2.2。
 5. `ExtensionGateway.supportedApiVersions` 默认为空 = 不做版本检查;插件一旦能声明 `platformApiVersion`,
    组合根必须显式给出接受范围,否则 platform-contracts.md §23 的兼容性判定形同不存在。
+6. 落盘视图留了两处口子(§1.6 里也写了,记在这里是为了不让它被当成已解决):
+   - **卸载不清 data**:`ExtensionStorage` 契约没有 `clear()`(§19 就没有),网关也只有 `unload` 不叫 uninstall。
+     清理只能由持有 `KeyValueStore` 的一方按 `ExtensionNamespace` 前缀做,而那需要一个真正的卸载入口。
+   - **磁盘缓存没有条数上限**:过期只在读这一行或列键时被剔除。AGENTS.md 把"有界缓存"列为要守的性质,而策略该是
+     哪种(按属主分桶的 LRU、需要写入时间戳;还是宿主定期 prune)要等 W4 的 Bilibili 参考插件真的用上缓存再定,
+     现在定等于猜。

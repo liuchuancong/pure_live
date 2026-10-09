@@ -126,10 +126,13 @@ class FakeTransport implements NetworkTransport {
 
 /// The wiring a host would build, assembled from the real service packages.
 class GatewayHarness {
-  GatewayHarness({Set<String> supportedApiVersions = const <String>{}})
-    : permissions = PolicyPermissionManager(store: InMemoryPermissionStore(), prompt: const GrantDeclaredPrompts()),
-      tasks = InMemoryTaskScheduler(),
-      runtimes = RuntimeRegistry() {
+  GatewayHarness({
+    Set<String> supportedApiVersions = const <String>{},
+    ExtensionCache Function(ExtensionDescriptor descriptor)? cacheFactory,
+    ExtensionStorage Function(ExtensionDescriptor descriptor)? storageFactory,
+  }) : permissions = PolicyPermissionManager(store: InMemoryPermissionStore(), prompt: const GrantDeclaredPrompts()),
+       tasks = InMemoryTaskScheduler(),
+       runtimes = RuntimeRegistry() {
     final network = PolicyBackedExtensionNetwork(permissions: permissions, transport: FakeTransport());
     gateway = ManagedExtensionGateway(
       runtimes: runtimes,
@@ -138,6 +141,8 @@ class GatewayHarness {
       cookies: PolicyBackedCookieStore(permissions: permissions, jar: InMemoryCookieJar()),
       tasks: tasks,
       supportedApiVersions: supportedApiVersions,
+      cacheFactory: cacheFactory,
+      storageFactory: storageFactory,
     );
   }
 

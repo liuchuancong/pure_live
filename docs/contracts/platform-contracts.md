@@ -291,6 +291,8 @@ abstract interface class TaskScheduler {
 
 - PlatformCache:`get/put/remove/clear(namespace,key,ttl)`;命名空间必须含属主(例 `extension.tvbox.source_001.repository`)。
 - PlatformStorage:持久配置,与缓存分离;插件 MUST NOT 直接访问 Drift/Hive/SQLite/SharedPreferences/应用文件系统——实现可换而 Extension API 不变。
+  > 名称以代码为准:这两件在实现里叫 `ExtensionCache` / `ExtensionStorage`
+  > (`packages/ecosystem/extension/lib/src/context.dart`),本节用的是旧称;分命名空间与落盘实现见 [../roadmap/w2-progress.md](../roadmap/w2-progress.md) §1.6。
 - **ExtensionContext 是插件的主依赖注入边界**:
 
 ```dart

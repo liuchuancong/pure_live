@@ -17,6 +17,11 @@ dependencies:
     path: ../../foundation/network
   pure_live_platform:
     path: ../platform
+  # The persistent cache and storage views sit on the L0 key/value interface, which is what lets an extension
+  # keep rows across a restart without ever touching Drift/Hive/the file system itself
+  # (platform-contracts.md section 19).
+  pure_live_storage:
+    path: ../../foundation/storage
   # The gateway is where the horizontal platform services are assembled into an ExtensionContext, so it
   # depends on two sibling ecosystem packages. That edge is whitelisted in tool/check_architecture.dart and
   # written into docs/architecture/dependency-rules.md section 4; nothing else in the layer may take it.

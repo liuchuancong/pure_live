@@ -18,6 +18,8 @@
 - `lib/src/context.dart` —— `ExtensionContext` 注入边界 + `ExtensionCache` / `ExtensionStorage` / `DiagnosticTracer` 与其内存实现
 - `lib/src/gateway.dart` —— `ExtensionGateway` 契约与 `ExtensionGatewayException`
 - `lib/src/managed_extension_gateway.dart` —— 生命周期状态机与运行时选择
+- `lib/src/persistent_context.dart` —— `PersistentExtensionCache` / `PersistentExtensionStorage`:按属主分命名空间的落盘视图
+- `lib/src/network_transport_bridge.dart` —— `ExtensionNetwork` 的 `pure_live_network` 适配
 
 ## 生命周期(platform-infrastructure.md §3)
 
@@ -50,8 +52,16 @@
 - `supportedApiVersions` 默认空 = 不做版本检查;插件可声明 `platformApiVersion` 时必须由组合根显式给值。
 - 本包**不**装 JS/Python:PluginRuntime、TvBoxRuntime 等是 `ExtensionRuntime` 的实现,分别落在
   `ecosystem/plugin_api`(W2 接口)与 `ecosystem/external_tvbox`(W7)。
-- `ExtensionCache` / `ExtensionStorage` 的默认实现是内存的;换成 Drift/KV 底座由接线层注入,扩展侧 API 不变
-  (§19 "实现可换而 Extension API 不变")。
+- `ExtensionCache` / `ExtensionStorage` 的**默认**实现是内存且随记录一起丢弃(重载不继承上一次的缓存行);
+  要留就注入 `PersistentExtensionCache` / `PersistentExtensionStorage`(§19 "实现可换而 Extension API 不变")。
+  网关的两个工厂参数 `cacheFactory` / `storageFactory` 就是这道接缝 —— 网关自己不决定文件在哪儿。
+- 落盘视图的命名空间是 `extension.<id>.cache.<key>` / `extension.<id>.storage.<key>`(§19 要求含属主)。前缀由视图
+  添加,扩展猜不到别人的字符串:它写出的键永远落在自己名下。
+- 落盘视图只收可 JSON 序列化的值,写不下当场 `ArgumentError`;内存视图没这条限制(它原样持有对象)。这是两条
+  实现唯一的语义差异,所以宁可在这里失败,也不要重启之后发现那一行悄悄没了。
+- 磁盘缓存**没有条数上限**:过期只在"读这一行"或"列出键"时剔除,一个只写不列的扩展仍会把文件写大。
+- 卸载一个扩展要清掉它的 `storage` 行,而 `ExtensionStorage` 契约里没有 `clear()`(§19 就没有),
+  所以清理只能由持有 `KeyValueStore` 的一方按 `ExtensionNamespace` 前缀做。
 
 ## 网络出口的落地(`NetworkClientTransport`)
 

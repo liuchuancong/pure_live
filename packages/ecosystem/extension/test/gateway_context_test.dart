@@ -5,6 +5,7 @@
 import 'package:pure_live_extension/pure_live_extension.dart';
 import 'package:pure_live_permission/pure_live_permission.dart';
 import 'package:pure_live_platform/pure_live_platform.dart';
+import 'package:pure_live_storage/pure_live_storage.dart';
 import 'package:pure_live_task/pure_live_task.dart';
 import 'package:test/test.dart';
 
@@ -132,6 +133,47 @@ void main() {
     final second = await loadContext();
 
     expect(await second.cache.read('repository'), isNull, reason: 'a reload must not inherit the old run');
+  });
+
+  test('test_load_withPersistentViews_settingsOutliveTheGateway', () async {
+    // The default views are per-run (the test above). Passing the persistent ones is how a host says a
+    // plugin's rows should still be there after a restart, and this is the seam it uses.
+    final store = MemoryKeyValueStore();
+    ExtensionCache cacheFor(ExtensionDescriptor descriptor) =>
+        PersistentExtensionCache(store: store, extensionId: descriptor.id);
+    ExtensionStorage storageFor(ExtensionDescriptor descriptor) =>
+        PersistentExtensionStorage(store: store, extensionId: descriptor.id);
+
+    final firstLog = InstanceLog();
+    final first = GatewayHarness(cacheFactory: cacheFor, storageFactory: storageFor);
+    first.runtimes.register(FakeRuntime(log: firstLog));
+    await first.gateway.register(first.descriptor());
+    await first.gateway.load('purelive.fake.one');
+
+    final context = firstLog.contexts.single;
+    expect(context.storage, isA<PersistentExtensionStorage>());
+    expect(context.cache, isA<PersistentExtensionCache>());
+    await context.storage.write('quality', '1080p');
+    await context.cache.write('repository', 'rows');
+
+    final secondLog = InstanceLog();
+    final second = GatewayHarness(cacheFactory: cacheFor, storageFactory: storageFor);
+    second.runtimes.register(FakeRuntime(log: secondLog));
+    await second.gateway.register(second.descriptor());
+    await second.gateway.load('purelive.fake.one');
+
+    final reloaded = secondLog.contexts.single;
+    expect(await reloaded.storage.read('quality'), '1080p');
+    expect(await reloaded.cache.read('repository'), 'rows');
+
+    // A different extension in the same build still cannot read them.
+    final otherLog = InstanceLog();
+    final other = GatewayHarness(cacheFactory: cacheFor, storageFactory: storageFor);
+    other.runtimes.register(FakeRuntime(log: otherLog));
+    await other.gateway.register(other.descriptor(id: 'purelive.fake.two'));
+    await other.gateway.load('purelive.fake.two');
+
+    expect(await otherLog.contexts.single.storage.read('quality'), isNull);
   });
 
   test('test_taskScheduler_isTheOneTheHostWired', () async {
