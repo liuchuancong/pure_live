@@ -7,27 +7,27 @@ on:
         description: Build Android Release APKs for all ABIs
         required: true
         type: boolean
-        default: true
+        default: false
       build_windows:
         description: Build Windows EXE, MSIX and portable ZIP
         required: true
         type: boolean
-        default: true
+        default: false
       build_linux:
         description: Build Linux x64 DEB and portable archives
         required: true
         type: boolean
-        default: true
+        default: false
       build_macos:
         description: Build macOS universal application archive
         required: true
         type: boolean
-        default: true
+        default: false
       build_ios:
         description: Build unsigned iOS app and TrollStore IPA
         required: true
         type: boolean
-        default: true
+        default: false
       run_quality:
         description: Run analyze, tests and public interface probes first
         required: true
@@ -211,13 +211,16 @@ jobs:
           retention-days: 3
   windows:
     name: Windows EXE + MSIX + Portable
+    # Platform stages run serially (BUILD_POLICY.md serial-platform-stages): one hosted platform at a time,
+    # and a skipped upstream stage still lets a deselected job through its own input guard.
     if: >-
       ${{
         always() &&
         inputs.build_windows &&
-        (needs.quality.result == 'success' || needs.quality.result == 'skipped')
+        (needs.quality.result == 'success' || needs.quality.result == 'skipped') &&
+        (needs.android.result == 'success' || needs.android.result == 'skipped')
       }}
-    needs: [quality]
+    needs: [quality, android]
     runs-on: windows-latest
     timeout-minutes: 35
     defaults:
@@ -383,9 +386,11 @@ jobs:
       ${{
         always() &&
         inputs.build_linux &&
-        (needs.quality.result == 'success' || needs.quality.result == 'skipped')
+        (needs.quality.result == 'success' || needs.quality.result == 'skipped') &&
+        (needs.android.result == 'success' || needs.android.result == 'skipped') &&
+        (needs.windows.result == 'success' || needs.windows.result == 'skipped')
       }}
-    needs: [quality]
+    needs: [quality, android, windows]
     runs-on: ubuntu-24.04
     timeout-minutes: 35
     defaults:
@@ -509,8 +514,11 @@ jobs:
       ${{
         always() &&
         (inputs.build_macos || inputs.build_ios) &&
-        (needs.quality.result == 'success' || needs.quality.result == 'skipped') }}
-    needs: [quality]
+        (needs.quality.result == 'success' || needs.quality.result == 'skipped') &&
+        (needs.android.result == 'success' || needs.android.result == 'skipped') &&
+        (needs.windows.result == 'success' || needs.windows.result == 'skipped') &&
+        (needs.linux.result == 'success' || needs.linux.result == 'skipped') }}
+    needs: [quality, android, windows, linux]
     runs-on: macos-15
     timeout-minutes: 90
     defaults:

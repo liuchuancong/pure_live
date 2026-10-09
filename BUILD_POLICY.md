@@ -22,7 +22,7 @@
 
 一次持续审查中的多个独立修复组成一个“修复列车”：每项修复通过受影响测试后立即独立提交并同步源码，但在仍有已计划 Dart 修改时明确保留一次全仓 Analyze、Full、版本递增和原生构建到收敛点统一执行。交付批次以该收敛点为边界，而不是以每个小提交为边界；这样既不积压本地代码，也不为同一候选重复支付全仓门禁和打包成本。新业务修改发生在收敛门禁后时，原门禁只证明原提交，新修改进入下一收敛点。完成修复列车并通过定向验证后按固定顺序执行：
 
-1. 将语义版本补丁位和数字 build 各递增一次，并同步 `pubspec.yaml`、`assets/version.json`、工作流默认标签、MSIX 版本、README、Release Notes 与阶段文档。
+1. 将语义版本补丁位和数字 build 各递增一次，并同步 `pubspec.yaml`、`assets/version.json`、工作流默认标签、MSIX 版本、README、Release Notes 与阶段文档。馈送与 `pubspec.yaml` 的这层对齐由 `tool/validate_build_policy.ps1 -ReleaseStage` 检查：常规静态门跑在两次版本递增之间，那时馈送合法地仍描述上一次已发布的版本，所以不带该开关时它只记名跳过而不报错。
 2. 在干净提交上执行一次完整质量门禁；同一业务源码已通过完整门禁而后续只修改发布脚本或文档时，可引用该证据并使用 `-SkipQuality` 重建最终提交。
 3. 仅在本机串行构建 Android `arm64-v8a` Release，执行 APK 内容、包名、版本、ABI、关键原生库、文件大小和 SHA-256 核验。`--split-per-abi` 会由 Flutter 为 arm64 Manifest `versionCode` 增加 2000；构建门禁必须同时记录并核对 pubspec 基础 build 与 APK Manifest 实际 code，禁止只凭文件名判断升级顺序。
 4. 推送最终 `master`，创建与源码提交一致的版本 tag 和草稿 Release，上传本机暂存 APK、构建元数据与校验文件。

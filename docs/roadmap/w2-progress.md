@@ -406,8 +406,13 @@ FFmpeg 收口(§1.8(2) 收尾)复跑:
     **这一项已修**(5 个文件按原归属恢复,7 处原生工程路径改到 `$appRoot`,细节见 [w1-progress.md](w1-progress.md)
     §3.2 第 3 条);现在停在 `tool/validate_build_policy.ps1:336` 的 `plugins\flv_lzc\android\build.gradle` ——
     v1 vendored 插件、`lib/modules/**`、`lib/player/**`、三个 v1 workflow 与 `lib/gen/env.g.dart` 属同一类,
-    要重定义而不是改路径。之后 preflight 还有 8 个 `test_android_recording_*` / `test_android_*` 设备邻近脚本与
-    `validate_device_ui_map.py`。
+    要重定义而不是改路径。**2026-10-09 之后:这一段已经推到只剩 python。** `validate_build_policy.ps1` 在本分支
+    首次 exit 0(11 条记名跳过 + 两条按 v2 形态重定义的检查 + 顺带修掉发布工作流的两处真实违规与
+    `sync_owner_refs.ps1` 的 5 条死路径,全部细节见 [w1-progress.md](w1-progress.md) §3.2 第 3 条),而它后面的
+    9 个 PowerShell 步骤(`test_subst_path.ps1` 与 8 个 `test_android_*` 只读回归)**逐个单独跑也都是 exit 0**。
+    于是 `repository_preflight` 剩下的唯一阻塞点就是那条 python 事实:`validate_device_ui_map.py` 起,以及
+    `repository_audit` 的 5 个 unittest + `audit_repository.py`(v1 规则残留 9 条 error)+
+    `audit_built_in_kotlin.py`(要 Java 21)。让入口能选解释器是下一步该做的机械活,不是判定活。
     `repository_audit` 跑 5 个 python unittest,其中 `test_acceptance_status_alignment.py` 校验的 `ACCEPTANCE_*`
     文档已在 `5a06d9d22` 删除。叠加本机 python 事实,这一整段今天既不适用也跑不动。**修它需要先逐项判定去留**
     (哪些是 v2 还要的机制、哪些随 v1 一起走),那是独立清理任务而不是本轮的顺手改动;在此之前 Full 的失败不

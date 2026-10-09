@@ -67,14 +67,25 @@
      后者是 `UPSTREAM_REVIEW_POLICY.md` §19 要求复制成 `docs/UPSTREAM_AUDIT_<SHA>.md` 的那份,删了它等于让流程
      无表可填)、`audit-upstream.yml`(47 行,`workflow_dispatch` + `permissions: contents: read`,只出机器证据;
      恢复时把 `python` 改成 `python3`,并注记 v2 分支上 `upstream/master` 就是 v1 维护线)。
-     `validate_build_policy.ps1` 另有 7 处原生工程路径仍指仓库根,已改到 `$appRoot`(android/windows 工程在
-     `apps/pure_live` 下都满足**已经跑到**的原检查:app `build.gradle.kts` 的 minSdk 26 与
-     configuration-cache 兼容标记、manifest 不覆写 FFmpegKit minSdk、CMake 的 app-local MSVC 运行库、
-     安装包升级清理段、`flutter_window.cpp` 的子控制器拆除顺序)。
-     **门禁仍未绿**:下一个失败点在 `tool/validate_build_policy.ps1:336` 的 `plugins\flv_lzc\android\build.gradle`
-     (v1 vendored 插件),它之后的 `$appRoot` 根 `android\build.gradle.kts` 检查还没轮到,再后面是
-     `lib/modules/**`、`lib/player/**`(v1 代码已删)、三个 v1 workflow
-     (`feature-build.yml` / `stage-hosted-artifacts.yml` / `publish-staged-release.yml`)与 `lib/gen/env.g.dart`。
+   - **2026-10-09 收尾:`validate_build_policy.ps1` 在本分支首次全绿**(11 条记名跳过,打印在 stdout,不静默)。
+     做法是给每个"主题已不在本分支"的检查加存在性判定:`plugins/flv_lzc/**` 的 vendored 16 KB AAR 与哈希钉、
+     `sign-staged-android.yml` / `feature-build.yml` / `local-signed-android.yml` / `publish-staged-release.yml`
+     四条 hosted 路线、`lib/modules/**` 与 `lib/player/**` 的呈现/返回/恢复不变量、三个 workflow 的发布 tag
+     默认值、`lib/gen/env.g.dart` 的生成态 owner 断言。两条不是"跳过"而是**按 v2 形态重定义**并继续生效:
+     fplayer 改为断言 app 侧 `rootProject.project(":flv_lzc").projectDir.resolve("libs")` + `includeModule(...)`
+     且禁止再指回不存在的 `../plugins/flv_lzc`;fastforge 改为断言"字面版本钉在 workflow envs 里 +
+     `activate fastforge $env:FASTFORGE_VERSION`",不再硬写 `0.6.0`。版本馈送对齐移到
+     `tool/validate_build_policy.ps1 -ReleaseStage`(馈送描述已发布版本,pubspec 是下一次发布的版本,两者在
+     两次递增之间本就不同 —— 归属写进 BUILD_POLICY.md §1.1 第 1 步)。
+     **这一趟抓出两个真实缺陷并已修**:`build_pure_live_release.yml` 的 5 个 `build_*` 输入 `default: true`
+     违反已记录的 `manual-workflow-defaults-off`(现在全为 false,`quality` 本就受 `inputs.run_quality` 控制);
+     同文件 windows/linux/apple 三个 job 各自 `needs: [quality]` **并行**跑,违反 `serial-platform-stages`
+     (现在串成 quality → android → windows → linux → apple,`if:` 里对上游阶段补了
+     `success || skipped` 判据,未选中的平台仍是 skipped 而不阻塞下游)。另修 `tool/sync_owner_refs.ps1` 的
+     清单:5 项指向 v2 没有的文件(`third_party/media_kit/hook/native_bundles.json` —— media_kit 从 Pub 解析,
+     其 bundle 目录不在本仓库;三个已删 workflow 共 4 条),留着它们等于每次发布检查都为"故意删掉的文件"报警。
+     `tool/audit_repository.py` 的 9 条 error 与 `audit_built_in_kotlin.py` 的 Java 21 依赖仍未处理,见
+     [w2-progress.md](w2-progress.md) §4 第 10 条与本节环境注意。
      这些要按 v2 语义重定义或按来源记录后删除 —— 不是路径改写能解决的,保持"独立任务"原判。
 4. `tool/audit_built_in_kotlin.py` 因本机缺 Java 21 而失败(环境欠账,非搬家引入)。
 5. `.fvmrc` 钉 3.47.5,机器上实际是 PATH 里的 Flutter 3.47.6,`tool/flutterw.ps1` 会静默回退。**待用户定**:提 `.fvmrc` 到 3.47.6,还是装 3.47.5。

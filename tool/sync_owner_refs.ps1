@@ -61,19 +61,19 @@ $tvRepo = Get-Setting 'PURELIVE_TV_REPOSITORY'
 # One entry per file: the repository whose URLs belong to which role. A URL is
 # rewritten when its repository name matches, whatever owner it currently
 # carries - that is what makes the owner rename work.
+#
+# The list is v2's. It no longer carries third_party/media_kit/hook/native_bundles.json (media_kit resolves
+# from Pub, whose bundle catalog is not a file this repository can rename through) or the three hosted
+# staging workflows the v2 branch does not have; a missing entry is reported as a problem on purpose, so
+# keeping dead paths here would make every release check cry about files that were removed on purpose.
 $targets = @(
     @{ Path = 'apps/pure_live/pubspec.yaml'; Repo = $nativeRepo; Owner = $nativeOwner; Note = 'native bundles (ffmpeg_kit_extended_config)' },
     @{ Path = 'tool/prefetch_android_native.ps1'; Repo = $nativeRepo; Owner = $nativeOwner; Note = 'native bundles (Android prefetch)' },
-    @{ Path = 'third_party/media_kit/hook/native_bundles.json'; Repo = $nativeRepo; Owner = $nativeOwner; Note = 'native bundles (libmpv)' },
     @{ Path = 'apps/pure_live/assets/version.json'; Repo = $selfRepo; Owner = $selfOwner; Note = 'download link' },
     @{ Path = 'apps/pure_live/assets/releases.json'; Repo = $selfRepo; Owner = $selfOwner; Note = 'release history' },
     @{ Path = '.github/workflows/build_pure_live_release.yml'; Repo = $selfRepo; Owner = $selfOwner; Note = 'release notes and asset links' },
-    @{ Path = '.github/workflows/feature-build.yml'; Repo = $selfRepo; Owner = $selfOwner; Note = 'release notes and asset links' },
     @{ Path = '.github/workflows/audit-upstream.yml'; Repo = $selfRepo; Owner = $selfOwner; Note = 'upstream comparison remote' },
-    @{ Path = '.github/workflows/stage-hosted-artifacts.yml'; Repo = $selfRepo; Owner = $selfOwner; Note = 'staged asset links' },
-    @{ Path = '.github/workflows/publish-staged-release.yml'; Repo = $selfRepo; Owner = $selfOwner; Note = 'staged asset links' },
-    @{ Path = '.github/workflows/build_pure_live_release.yml'; Repo = $tvRepo; Owner = $selfOwner; Note = 'TV repository link' },
-    @{ Path = '.github/workflows/feature-build.yml'; Repo = $tvRepo; Owner = $selfOwner; Note = 'TV repository link' }
+    @{ Path = '.github/workflows/build_pure_live_release.yml'; Repo = $tvRepo; Owner = $selfOwner; Note = 'TV repository link' }
 )
 
 $problems = New-Object System.Collections.Generic.List[string]
