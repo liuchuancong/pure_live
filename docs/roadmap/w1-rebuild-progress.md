@@ -81,10 +81,46 @@
 - **没有接真实站点**:W4 的两处卡点(录制授权、danmaku/auth 契约定稿)原样未动,demo 源不替代它们。
 - 资产清单仍是 v1 全量(2095 个文件),按 w1-progress §3.2 第 7 条留给 UI 波筛。
 
-## 5. 下一步(按优先序,等方向确认即动工)
+## 5. 重建第二段(2026-10-09 同日续,媒体链与第一个真实 provider)
 
-1. **媒体链接线**(建议优先):`ResolveCapability` → `MediaTicket` → 引擎适配 → 房间页可播假流,
-   顺带补 `MediaTicketRefreshInfo`(platform-models §11 遗留)。这才是"初始版本能播"的最后一块。
-2. **第一个真实 provider**:虎牙按 dart_simple_live-dev 参照取数(用户已定边界:照搬、无注释/测试),
-   或 bilibili 等录制通道打通。
-3. `native-assets/` 预取件补齐后把装配测试真跑一遍(当前"改了形状没实跑"是本轮唯一未验证的改动)。
+### 5.1 `626d3ed9e` 媒体链接线(房间页可播)
+
+- `packages/integrations/media` 持有引擎后端 `media_core_media_kit`(vendored 引擎只进集成层),新增
+  `MediaKernelHost`(进程内唯一 `PlayerKernel`,注册 media_kit 后端,`open(ticket)` 走既有
+  `toCoreSource` 映射)与 `MediaSurface`(渲染 handle;引擎类型显式判别,第二后端出现时在此加分支,
+  不做盲 cast)。应用从头到尾只见 ticket → handle → surface,不 import 引擎包。
+- demo 源实现 `ResolveCapability`:每个房间出一张公共测试 HLS 流(Mux 资产)的票,**如实记为 vod**,
+  永不过期且 `refresh.supported=false`(契约:没有截止时间就不发明一个)。
+- 房间页:从入口带 `ContentRef`(首页卡片 `extra`),经能力注册表找到该源的 `ResolveCapability` 出票
+  → `runtime.media.open` → `MediaSurface`;裸深度链接(无 ref)保留诚实占位面;失败显示错误 + 重试;
+  页面拥有 handle 并在 dispose 时关闭(会话所有权:离开房间即结束播放)。
+- runtime 装配 `MediaKernelHost`;入口在 binding 后跑 `ensureInitialized()`;runtime dispose 关内核。
+
+### 5.2 `a72321a9a` 虎牙 provider(第一个真实站点)
+
+- `packages/providers/huya`:feed 读公共网页推荐列表(`cache.php getLiveListByPage`)→
+  `ContentSummary`(封面/主播/分区/热度);resolve 走 `mp.huya.com profileRoom`,取第一条 CDN 线路,
+  HLS 地址拼装;antiCode 带 `fm` 模板时按 web 签名算法重建 `wsSecret`(保留完整模板、uid 32 位轮转、
+  wsTime 租约检查),算法来自 v1 维护线(origin/master `lib/shared/platforms/huya/huya_site.dart`,
+  其本身同步自 dart_simple_live)。**按 UPSTREAM_REVIEW_POLICY:这是照协议知识的新实现,没有任何
+  上游提交/文件经此进入;处置 = rewrite(契约面全新、实现重写)**。
+- 本切片刻意比 v1 线小:无登录 Cookie、无 TARS token 租约、无清晰度/线路选择(匿名 HLS,够打通
+  feed→房间→播放);refresh 从票 id 解出房间号重新 resolve(租约以分钟计,不发明死线)。
+- 已注册为内置源(与 demo 并列);首页卡片渲染真实封面(加载失败回退占位图标)。
+
+### 5.3 第二段验证与边界
+
+| 项 | 结果 |
+|---|---|
+| `dart analyze` / 护栏 | 全绿;护栏 `packages=34 errors=0`(新增 huya 后) |
+| `pub get` | 通过;**网络持续握手失败时 `pub get --offline` 可用**(全依赖已入缓存,git 依赖也已缓存) |
+| 端点/播放实测 | **未做**(本轮无设备授权):虎牙端点与签名逻辑逐行对照 v1 维护线,但真实响应未验;demo 测试流为公共服务,可达性未验 |
+| flutter test | 仍未跑(native-assets 前置未补齐,见 §2) |
+
+## 6. 下一步
+
+1. **设备验证**(需用户授权设备会话):虎牙推荐列表/房间取流真机实测;房间页播放(Windows 先行,
+   media_kit 桌面链路 v1 已验证)。
+2. `native-assets/` 预取件补齐后把装配测试真跑一遍。
+3. 虎牙补齐分类浏览(`BrowseCapability`)+ 搜索;清晰度/线路选择进 `SelectionRef` 语义。
+4. 媒体看门狗/换源接线(`integrations/media` 的 watchdog/ticket_swap 已有,尚未接进房间页会话)。
