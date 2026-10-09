@@ -7,4 +7,14 @@ resolution: workspace
 environment:
   sdk: ^3.13.0
 
-# Add dependencies from the matrix in docs/architecture/dependency-rules.md section 3.
+dependencies:
+  flutter:
+    sdk: flutter
+  # Embedded CPython. The spider code itself is plain stdlib python: the
+  # worker loop talks to this package's local HTTP gateway, so no pip
+  # dependency is required for the framework to run a spider.
+  serious_python: ^5.0.0
+  # The spider contract this package executes. Same-layer exception, the
+  # mirror of external_tvbox -> python_runtime (dependency-rules.md section 4).
+  pure_live_external_tvbox:
+    path: ../../ecosystem/external_tvbox

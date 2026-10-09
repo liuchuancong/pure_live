@@ -7,3 +7,7 @@
 /// Layer: integrations. Allowed dependencies: layer L0 foundation; vendor SDKs may only be referenced from this layer.
 /// See docs/architecture/dependency-rules.md and the package README.
 library;
+
+export 'src/local_gateway.dart';
+export 'src/python_spider_host.dart';
+export 'src/spider_worker.py.dart';
