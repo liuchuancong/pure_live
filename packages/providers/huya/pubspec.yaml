@@ -1,0 +1,19 @@
+# GENERATED-BY: tool/scaffold_package.ps1
+name: pure_live_huya
+description: "Huya live source: recommend feed and HLS resolve per the v1-maintained protocol notes"
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.13.0
+
+dependencies:
+  # Endpoint signing (wsSecret rebuild over the fm template) and the network client come from their owning
+  # packages; huya adds no vendor SDK of its own.
+  crypto: ^3.0.7
+  pure_live_capability:
+    path: ../../ecosystem/capability
+  pure_live_network:
+    path: ../../foundation/network
+  pure_live_platform:
+    path: ../../ecosystem/platform

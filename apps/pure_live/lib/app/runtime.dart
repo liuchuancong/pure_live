@@ -22,6 +22,7 @@ import 'package:pure_live_extension/pure_live_extension.dart';
 import 'package:pure_live_favorites/pure_live_favorites.dart';
 import 'package:pure_live_feed/pure_live_feed.dart';
 import 'package:pure_live_history/pure_live_history.dart';
+import 'package:pure_live_huya/pure_live_huya.dart';
 import 'package:pure_live_media/pure_live_media.dart';
 import 'package:pure_live_network/pure_live_network.dart';
 import 'package:pure_live_permission/pure_live_permission.dart';
@@ -207,14 +208,23 @@ final class PureLiveRuntime {
 ///
 /// The composition root is the one place allowed to name a concrete source (AGENTS.md I9): a provider a
 /// plugin loads goes through the gateway, but a built-in has no plugin, so the app itself puts it on the
-/// registry. The demo source keeps the feed chain demonstrable until the first real site provider lands
-/// (W4); tests boot [PureLiveRuntime] without this call, so their fixtures stay the only content.
+/// registry. Tests boot [PureLiveRuntime] without this call, so their fixtures stay the only content.
 PureLiveRuntime registerBuiltInSources(PureLiveRuntime runtime) {
   runtime.capabilities.register(
     ProviderRegistration(
       sourceId: demoSourceId,
       extensionId: 'built-in.demo',
       provider: const DemoLiveSource(),
+      capabilities: const CapabilitySet(<CapabilityKind>{CapabilityKind.feed, CapabilityKind.live}),
+    ),
+  );
+  // The first real site: recommend feed and anonymous HLS resolve. The source
+  // is app-owned like every built-in, so its transport lives for the process.
+  runtime.capabilities.register(
+    ProviderRegistration(
+      sourceId: huyaSourceId,
+      extensionId: 'built-in.huya',
+      provider: HuyaSource(),
       capabilities: const CapabilitySet(<CapabilityKind>{CapabilityKind.feed, CapabilityKind.live}),
     ),
   );

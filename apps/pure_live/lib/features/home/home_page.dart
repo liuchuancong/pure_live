@@ -116,11 +116,22 @@ final class _RoomCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             Expanded(
-              child: Container(
-                alignment: Alignment.center,
-                color: theme.colorScheme.surfaceContainerHigh,
-                child: Icon(Icons.live_tv, size: 32, color: theme.colorScheme.outline),
-              ),
+              child: item.cover == null
+                  ? Container(
+                      alignment: Alignment.center,
+                      color: theme.colorScheme.surfaceContainerHigh,
+                      child: Icon(Icons.live_tv, size: 32, color: theme.colorScheme.outline),
+                    )
+                  : Image.network(
+                      item.cover!,
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                      errorBuilder: (context, error, stackTrace) => Container(
+                        alignment: Alignment.center,
+                        color: theme.colorScheme.surfaceContainerHigh,
+                        child: Icon(Icons.live_tv, size: 32, color: theme.colorScheme.outline),
+                      ),
+                    ),
             ),
             Padding(
               padding: const EdgeInsets.all(8),

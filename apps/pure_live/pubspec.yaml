@@ -170,6 +170,8 @@ dependencies:
     path: ../../packages/providers/demo
   pure_live_media:
     path: ../../packages/integrations/media
+  pure_live_huya:
+    path: ../../packages/providers/huya
 
   # -------------------------- 数据存储/数据库 --------------------------
   hive_ce: ^2.20.0 # Hive本地数据库
