@@ -10,5 +10,7 @@ environment:
 dependencies:
   pure_live_capability:
     path: ../capability
+  pure_live_js_runtime:
+    path: ../js_runtime
   pure_live_platform:
     path: ../platform

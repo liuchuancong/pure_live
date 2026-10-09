@@ -67,7 +67,7 @@ const Map<String, Set<String>> kApprovedExceptions = <String, Set<String>>{
   // The python host implements the spider contract the adapter defines; the
   // edge is the mirror of the adapter's dependency on the runtime.
   'pure_live_python_runtime': <String>{'pure_live_external_tvbox'},
-  'pure_live_external_tvbox': <String>{'pure_live_python_runtime', 'pure_live_capability'},
+  'pure_live_external_tvbox': <String>{'pure_live_python_runtime', 'pure_live_capability', 'pure_live_js_runtime'},
   // ADR 0019: the gateway is where ExtensionContext is assembled from the permission and task packages.
   'pure_live_extension': <String>{'pure_live_permission', 'pure_live_task'},
   // ADR 0021: CapabilityResolver lifts a source's ResolveCapability into the platform's Resolver.

@@ -9,6 +9,7 @@
 library;
 
 export 'src/data_source_runtime.dart';
+export 'src/js_spider_handle.dart';
 export 'src/spider_contract.dart';
 export 'src/spider_vod_provider.dart';
 export 'src/tvbox_repository.dart';
