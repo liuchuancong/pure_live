@@ -11,5 +11,6 @@
 /// and the settings screen cleanup stay accurate.
 library;
 
+export 'src/disk_tier.dart';
 export 'src/policy.dart';
 export 'src/store.dart';
