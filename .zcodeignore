@@ -1,0 +1,119 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+__pycache__/
+*.swp
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# The .vscode folder contains launch configuration and tasks you configure in
+# VS Code which you may wish to be included in version control, so this line
+# is commented out by default.
+#.vscode/
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+# The application shell lives in apps/pure_live, so its generated output is nested there.
+build/
+apps/pure_live/android/build/
+apps/pure_live/android/.gradle/
+apps/pure_live/android/.kotlin/
+/local-artifacts/
+/local-smoke/
+/.local-build/
+/build-audit-*
+# Native build inputs staged by tool/prefetch_android_native.ps1 and consumed by the ffmpeg_kit
+# Native Assets hook through its local override. They are pinned by SHA-256, not by Git.
+/native-assets/
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# Android Studio will place build artifacts here
+apps/pure_live/android/app/debug
+apps/pure_live/android/app/profile
+apps/pure_live/android/app/release
+
+# Signing material never belongs in the repository. The global key patterns below
+# are the safety net; these rules name the locations the build actually writes to.
+apps/pure_live/android/key.properties
+**/*.jks
+**/*.keystore
+**/*.pfx
+**/*.key
+**/*.csr
+apps/pure_live/assets/keystore/
+apps/pure_live/assets/pure_live_web/
+
+# FVM Version Cache
+.fvm/
+**/.make_config.yaml
+
+# 构建产物一律不入库
+**/build/
+native-assets/
+
+# The app shell lives in apps/pure_live; the native project directories at the
+# repository root are Flutter regeneration residue from commands run at the root.
+# Never commit them - the real platform projects are apps/pure_live/<platform>/.
+/android/
+/ios/
+/linux/
+/macos/
+/windows/
+**/ephemeral/
+**/.gradle/
+**/GeneratedPluginRegistrant.*
+**/local.properties
+
+# ===== ↑ 以上同步自 .gitignore（「从 .gitignore 同步」只重写以上部分）=====
+.git/
+.hg/
+node_modules/
+bower_components/
+jspm_packages/
+site-packages/
+venv/
+coverage/
+htmlcov/
+lcov-report/
+cmakefiles/
+cmake-build-*/
+bazel-*/
+pods/
+deriveddata/
+storybook-static/
+playwright-report/
+test-results/
+allure-results/
+allure-report/
+cdk.out/
+*.egg-info/
+*.dist-info/
+eggs/
+pip-wheel-metadata/
+wheels/
+# ----- ↑ 以上为 ZCode 默认排除规则（自定义规则请写在本行下方，不会被同步/恢复改动）-----
+# 自定义规则写在下方（本行提示可删除）

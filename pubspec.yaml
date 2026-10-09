@@ -19,6 +19,16 @@ workspace:
   - packages/ecosystem/plugin_host
   - packages/ecosystem/resolver
   - packages/ecosystem/task
+  - packages/features/account
+  - packages/features/backup
+  - packages/features/home
+  - packages/features/iptv
+  - packages/features/live
+  - packages/features/music
+  - packages/features/recorder
+  - packages/features/search
+  - packages/features/settings
+  - packages/features/vod
   - packages/foundation/auth
   - packages/foundation/backup
   - packages/foundation/cache
@@ -37,13 +47,26 @@ workspace:
   - packages/integrations/media
   - packages/integrations/python_runtime
   - packages/providers/bilibili
+  - packages/providers/community
   - packages/providers/demo
+  - packages/providers/douyin
+  - packages/providers/douyu
   - packages/providers/huya
+  - packages/providers/iptv
+  - packages/providers/music
+  - packages/providers/tvbox
+  - packages/providers/twitch
+  - packages/providers/youtube
   - packages/services/favorites
   - packages/services/feed
   - packages/services/history
   - packages/services/playlist
   - packages/services/search
+  - packages/ui/adaptive
+  - packages/ui/design
+  - packages/ui/lyric
+  - packages/ui/player_ui
+  - packages/ui/ui_kit
 
 # 全仓统一裁决的依赖覆盖:workspace 里只有根包可以声明。
 # Dependencies of repository tooling only; the hub itself ships no code.

@@ -1,0 +1,20 @@
+# pure_live_lyric
+
+> 职责:UI layer package: lyric (skeleton; capabilities fill per package-architecture.md)
+
+| 项 | 规则 |
+|---|---|
+| 层 | ui(见 [依赖规则](../../../docs/architecture/dependency-rules.md)) |
+| 允许依赖 | -> design(ui_kit -> design 单向)+ L0 + theme;只有 ui_kit 可 import fluttersdk_wind。 |
+| 禁止依赖 | 任何反向依赖;禁止依赖应用壳(唯一组合根,I9);同层互依(除规则明示例外) |
+| 公共面 | 只有 `lib/pure_live_lyric.dart`;内部实现放 `lib/src/` |
+
+## 结构
+
+- `pubspec.yaml` / `analysis_options.yaml` / `CHANGELOG.md` / `README.md` / `test/` —— 所有包必备
+- `lib/src`
+
+## 验证
+
+- 分析:`dart analyze`(纯 Dart)或 `flutter analyze`(带 `-Flutter`)
+- 测试:`dart test`(纯 Dart)或 `flutter test`(带 `-Flutter`)
