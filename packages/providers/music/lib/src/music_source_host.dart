@@ -95,6 +95,16 @@ final class MusicSourceScriptHost {
   /// The script identity once lx.send('inited') arrived.
   Future<MusicScriptInfo> get inited => _inited.future;
 
+  /// Attaches to a sandbox another host already loaded the script in. The lx
+  /// environment must already be present: an lx script evaluated inside a
+  /// plugin runtime's sandbox carries it because that runtime evaluated the
+  /// script against this package's prelude... no - it does not. Attach is only
+  /// valid when the loading host evaluated [lxApiPrelude] itself; otherwise
+  /// use [spawn].
+  static MusicSourceScriptHost attach({required String scriptId, required FjsJsSandbox sandbox}) {
+    return MusicSourceScriptHost._(scriptId: scriptId, sandbox: sandbox);
+  }
+
   /// Evaluates the lx environment and the script itself. The script is plain
   /// top-level code: it registers with lx.on / lx.send during evaluation.
   static Future<MusicSourceScriptHost> spawn({

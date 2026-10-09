@@ -24,6 +24,7 @@ import 'package:pure_live_favorites/pure_live_favorites.dart';
 import 'package:pure_live_feed/pure_live_feed.dart';
 import 'package:pure_live_history/pure_live_history.dart';
 import 'package:pure_live_media/pure_live_media.dart';
+import 'package:pure_live_music/pure_live_music.dart';
 import 'package:pure_live_plugin_host/pure_live_plugin_host.dart';
 import 'package:pure_live_network/pure_live_network.dart';
 import 'package:pure_live_permission/pure_live_permission.dart';
@@ -182,6 +183,11 @@ final class PureLiveRuntime {
 
   /// The installed-plugin directory this shell loads from.
   final PluginStore pluginStore;
+
+  /// Music source hosts keyed by plugin id: an imported lx-music user-api
+  /// script answers musicUrl/lyric/pic here. The music feature reads this
+  /// map; nothing else touches it.
+  final Map<String, MusicSourceScriptHost> musicHosts = <String, MusicSourceScriptHost>{};
 
   /// The playback kernel with the media_kit backend. Opened from tickets; the app entry point runs
   /// [MediaKernelHost.ensureInitialized] before the first surface is built.

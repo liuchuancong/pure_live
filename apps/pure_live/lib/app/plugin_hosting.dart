@@ -22,6 +22,7 @@ import 'package:pure_live_js_runtime/pure_live_js_runtime.dart';
 import 'package:pure_live_permission/pure_live_permission.dart';
 import 'package:pure_live_platform/pure_live_platform.dart';
 import 'package:pure_live_plugin_api/pure_live_plugin_api.dart';
+import 'package:pure_live_music/pure_live_music.dart';
 import 'package:pure_live_python_runtime/pure_live_python_runtime.dart';
 import 'package:pure_live_plugin_host/pure_live_plugin_host.dart';
 
@@ -165,6 +166,21 @@ Future<void> _loadOne(PureLiveRuntime runtime, PluginStore store, InstalledPlugi
     await _loadDataPlugin(runtime, manifest, store);
     return;
   }
+  // A music-kind plugin is an lx user-api script: it is hosted directly (the
+  // lx environment and the script are one evaluation), not
+  // capability-registered - music resolve speaks its own vocabulary, which
+  // the music feature consumes from runtime.musicHosts.
+  if (manifest.capabilityNames.contains('music')) {
+    final musicHost = await MusicSourceScriptHost.spawn(
+      scriptId: manifest.id,
+      name: manifest.name,
+      source: await store.readSource(installed.id),
+      bridge: RuntimeHostBridge(pluginId: manifest.id, manifest: manifest, runtime: runtime),
+    );
+    await musicHost.awaitInited();
+    runtime.musicHosts[manifest.id] = musicHost;
+    return;
+  }
   final source = await store.readSource(installed.id);
   final pluginRuntime = JsPluginRuntime(
     source: source,
@@ -185,6 +201,7 @@ Future<void> _loadOne(PureLiveRuntime runtime, PluginStore store, InstalledPlugi
     if (live != null) ...<CapabilityKind>[CapabilityKind.live, CapabilityKind.feed],
     if (search != null) CapabilityKind.search,
   };
+  // (music-only plugins returned above)
   if (kinds.isEmpty || (live == null && search == null)) {
     throw StateError('plugin serves no capability this shell consumes');
   }
@@ -210,18 +227,37 @@ Future<void> _loadDataPlugin(PureLiveRuntime runtime, PluginManifest manifest, P
     parsed = const TvBoxConfigParser().parse(content);
   }
   final List<TvBoxChannel> channels;
+  final sites = <TvBoxSite>[];
   final notes = <String>[];
   if (parsed is TvBoxSingleRepo) {
     channels = <TvBoxChannel>[for (final group in parsed.lives) ...group.channels];
-    await _loadSpiderSites(runtime, manifest, parsed.sites, notes);
+    sites.addAll(parsed.sites);
   } else if (parsed is List<TvBoxChannel>) {
     channels = parsed;
+  } else if (parsed is TvBoxMultiRepo) {
+    // The multi-repo resolves here: one fetch per named repo, failures kept
+    // per url, and whatever came back is merged as if the multi-repo had
+    // inlined it.
+    final result = await TvBoxRepoFetcher(client: runtime.network).fetch(parsed);
+    for (final failure in result.failures) {
+      notes.add('${failure.url} 失败:${failure.error}');
+    }
+    if (result.isAllFailed) {
+      throw StateError('多仓里的仓库全部拉取失败');
+    }
+    channels = <TvBoxChannel>[];
+    for (final fetched in result.repos) {
+      final config = fetched.config;
+      if (config is TvBoxSingleRepo) {
+        channels.addAll([for (final group in config.lives) ...group.channels]);
+        sites.addAll(config.sites);
+      }
+    }
+    notes.add('已拉取 ${result.repos.length} 个仓库');
   } else {
-    // A multi-repo carries no servable content itself; it names other repos
-    // and the host fetches them one by one, which is import work, not load
-    // work.
-    throw StateError('多仓配置没有可直接播放的内容,先导入其中的单仓');
+    throw StateError('配置不是 M3U、单仓或多仓形态');
   }
+  await _loadSpiderSites(runtime, manifest, sites, notes);
   if (channels.isEmpty && notes.isEmpty) {
     throw StateError('配置里没有可播放的频道');
   }
@@ -317,10 +353,36 @@ Future<SpiderVodProvider> _spawnSiteProvider(PureLiveRuntime runtime, PluginMani
 /// Reads one imported file, validates it and stores it. Returns the install
 /// record so the page can show what arrived. Disabled on install: the user
 /// turns a plugin on deliberately, from the management page.
-Future<InstalledPlugin> importPluginFile(PluginStore store, String path) async {
+Future<InstalledPlugin> importPluginFile(PluginStore store, String path, {String? displayName}) async {
   final text = await File(path).readAsString();
+  if (looksLikeLxMusicScript(text)) {
+    return importLxMusicScript(store, text, displayName ?? path);
+  }
   final bundle = const PluginBundleParser().parse(text);
   return store.install(bundle);
+}
+
+/// lx user-api scripts announce themselves by using the lx api surface; they
+/// carry no manifest header, so the shell derives one. The name comes from the
+/// file, the id from the content hash: re-importing is an idempotent upgrade.
+bool looksLikeLxMusicScript(String text) {
+  return text.contains('lx.on') && text.contains('EVENT_NAMES.request') ||
+      text.contains('lx.send') && text.contains('lx.request');
+}
+
+Future<InstalledPlugin> importLxMusicScript(PluginStore store, String text, String displayName) async {
+  final hash = crypto.md5.convert(utf8.encode(text)).toString().substring(0, 10);
+  final manifest = PluginManifest(
+    id: 'lx.$hash',
+    name: displayName,
+    version: '1.0.0',
+    apiVersion: 1,
+    runtime: PluginRuntimeKind.js,
+    capabilityNames: const <String>{'music'},
+    permissionNames: const <String>{'network'},
+    origin: PluginOrigin.localFile,
+  );
+  return store.install(PluginBundle(manifest: manifest, source: text));
 }
 
 /// Installs a data plugin from an imported M3U or TVBox config file. The id

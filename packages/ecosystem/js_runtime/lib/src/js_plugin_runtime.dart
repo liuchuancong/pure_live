@@ -43,6 +43,12 @@ final class JsPluginRuntime implements PluginRuntime {
   /// empty before.
   Set<String> get registeredGroups => _groups;
 
+  /// The live sandbox, while the plugin is enabled. Hosts that speak a second
+  /// vocabulary over the same script (a music feature reading an lx script,
+  /// say) attach their own facade to this sandbox instead of spawning a second
+  /// engine - two engines per plugin would double every global the script set.
+  FjsJsSandbox? get sandbox => _sandbox;
+
   @override
   Future<void> load(PluginManifest manifest, HostBridge bridge) async {
     if (_sandbox != null) {
