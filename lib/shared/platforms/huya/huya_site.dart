@@ -78,6 +78,15 @@ class HuyaSite
   static const Duration _transportRefreshAge = Duration(seconds: 100);
   static const Duration _transportInvalidAge = Duration(seconds: 125);
 
+  /// 当前详情房间是否属于虎牙 4K VIP 范围(白名单,见 huya_vip_room_id.dart)。
+  ///
+  /// 同步自 dart_simple_live:在详情加载时记录。4K 清晰度本身对所有用户
+  /// 过滤(播放需要虎牙 VIP 会员身份,见 parsePlayQualities);该字段为
+  /// 将来按"用户 VIP 状态 + 房间白名单"放行 4K 保留。上游同样只写不读,
+  /// 保留记录点以便两边的字段语义保持同步。
+  // ignore: unused_field
+  bool _isVipRoom = false;
+
   @override
   DateTime? getPlayUrlRefreshAt(String url, {DateTime? now}) {
     final current = (now ?? DateTime.now()).toUtc();
@@ -282,6 +291,11 @@ class HuyaSite
 
   /// Exposes only rates returned by Huya. The old fallback invented a 2000
   /// could only reopen the same source stream while the UI claimed a change.
+  ///
+  /// 4K 一律剔除:虎牙 4K 是 VIP 房间专属且播放需要虎牙 VIP 会员身份
+  /// (同步自 dart_simple_live 的 "huya 4K needs vip"),列出后普通用户
+  /// 选中只会 403。VIP 房间白名单状态记录在 _isVipRoom,供将来按用户
+  /// VIP 状态放行。
   @visibleForTesting
   static List<LivePlayQuality> parsePlayQualities(HuyaUrlDataModel data) {
     final playbackLines = List<HuyaLineModel>.unmodifiable(data.lines);
@@ -289,6 +303,10 @@ class HuyaSite
     final unique = <int, HuyaBitRateModel>{};
     for (final rate in rates) {
       if (rate.bitRate < 0 || rate.name.trim().isEmpty) continue;
+      // huya 4K needs vip:实测 VIP 房间的档位为 "4K"(br=20000)与
+      // "4K HDR"(br=20100)两种形态,按前缀剔除全部 4K 档;上游的精确
+      // 匹配 '4K' 会漏掉 "4K HDR",此处按其意图修正。
+      if (rate.name.startsWith('4K')) continue;
       unique.putIfAbsent(rate.bitRate, () => rate);
     }
     final qualities = unique.values
@@ -624,6 +642,8 @@ class HuyaSite
   Future<LiveRoom> _loadRoomDetail({required LiveRoom liveroom, required bool allowUiFallback}) async {
     final roomId = liveroom.roomId ?? '';
     final platform = liveroom.platform ?? '';
+    // 4K VIP 范围白名单在详情入口记录(与 dart_simple_live 一致)。
+    _isVipRoom = huya_utils.isVipRoom(roomId);
     var resultText = await HttpClient.instance.getText(
       'https://mp.huya.com/cache.php',
       queryParameters: <String, dynamic>{
@@ -1221,7 +1241,10 @@ class HuyaSite
   @visibleForTesting
   static GetCdnTokenExReq buildNativePlaybackTokenRequest(HuyaLineModel line) => GetCdnTokenExReq()
     ..sStreamName = line.streamName
-    ..tId = (HuyaUserId()..sHuYaUA = 'pc_exe&7060000&official');
+    // 随机 SDK UA(adr/ios/huya_nftv/pc_exe × 随机子版本 × API Level),
+    // 取代固定 'pc_exe&7060000&official';固定 UA 更易被风控识别
+    // (同步自 dart_simple_live 的 getCdnTokenInfoEx)。
+    ..tId = (HuyaUserId()..sHuYaUA = HuyaRequestParams.requestHuyaUA);
 
   @visibleForTesting
   static BaseTarsHttp createCdnTokenClient(Map<String, String> headers) {

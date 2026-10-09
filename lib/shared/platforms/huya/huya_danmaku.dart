@@ -43,6 +43,10 @@ class HuyaDanmaku implements LiveDanmaku {
   final List<Duration> _superChatRetryDelays;
   final Set<LiveSuperChatMessage> _emittedSuperChats = <LiveSuperChatMessage>{};
   static const int _maxRememberedSuperChats = 512;
+
+  /// 醒目留言在弹幕区的播报形态:"xxx(来自一元上头条)"。
+  static final RegExp _headlineScRegex = RegExp(r'\(来自.+?上头条\)');
+
   Future<void>? _superChatRefreshFuture;
   bool _superChatRefreshQueued = false;
 
@@ -195,6 +199,13 @@ class HuyaDanmaku implements LiveDanmaku {
       final messageNotice = HYMessage();
       messageNotice.readFrom(TarsInputStream(Uint8List.fromList(payload)));
       final color = messageNotice.bulletFormat.fontColor;
+      // "xxx(来自 XX 上头条)" 是醒目留言在弹幕区的播报。消息板 WUP 尚未
+      // 更新时该播报先到,靠它触发一次后台重拉把这条 SC 补上——与
+      // 2001314 通知共用同一条刷新管线(同步自 dart_simple_live 的 callSc
+      // 触发;我们走带重试与去重的 _scheduleSuperChatRefresh,不阻塞解码)。
+      if (_headlineScRegex.hasMatch(messageNotice.content)) {
+        _scheduleSuperChatRefresh(_generation);
+      }
       onMessage?.call(
         LiveMessage(
           type: LiveMessageType.chat,
