@@ -49,14 +49,33 @@ W4 的 provider 一到就能直接接进搜索/Feed/收藏这条消费链。
 端口也刻意与收藏不同形状(`all`/`upsert`/`remove` 整份列表),因为有序列表本身就是记录的形状,
 按行寻址只会把下标数学藏起来。
 
+### 1.6 已落:`packages/services/history`(23 测试)
+
+规范来自 [../services/history.md](../services/history.md)。这一包里有两条是被测试逼出来的判断,不是先想好的:
+
+- **行身份不能是 `ContentRef ==`**。第一次实现按 ref 相等找行,于是
+  `record(parentedRef, …)` 之后再 `record(bareRef, …)` 会把同一集写成两行 —— 平台的 ref 相等**含 `parentId`**。
+  现在身份是 `(sourceId, contentId, kind)`,`parentId` 退回它本来的角色:记录的一列,由剧集聚合读。
+  两条测试钉住它(一条"少写父级仍是同一行",一条"同 id 不同 kind 是两行")。
+- **节流挡下的行必须会回来,且不能复活**。`minWriteInterval` 期间最新行留在内存,到期写入或 `flush()` 落盘;
+  而 `remove` / `removeSeries` / `clear` 必须同时清掉挂起行,否则用户删掉的历史会在下一次 flush 里回来。
+  默认节流为 0:机制放在知道"这一行是进度"的那层,数字交给看得见网络与磁盘的一方 —— 文档没给数。
+
+其余按文档落:长度未知**不等于**已看完(`isCompleted` 只在有长度且到端点时为真)、时间线按 `updatedAt` 倒序、
+域由 kind 推导且 `stream`/`playlist` 落 `other` 不猜、`series(parentId)` 出"看到第 N 集"、
+搜索是本地标题匹配(推论:**没快照的行在搜索框里搜不到**,写成了一条测试而不是留着当惊喜)。
+
+快照字段是文档没写而我补的:history.md 没要求存 title/cover,但收藏与歌单都要求,而一栏空白砖位是同一个
+"源失效"问题挪到另一页。补在何处、为何补,写在包 README 而不是悄悄做。
+
 ## 2. W5 剩下的
 
 | 件 | 状态 | 缺什么 |
 |---|---|---|
-| History | 未落 | 记录点(播放开始/退出/进度节流)要接到播放会话上;会话归属这件事在 w3-progress §4 还是欠账 |
+| History | **数据面已落**(§1.6) | 三个记录点(`record` / `finish` / `flush`)还没有调用方:播放会话归属是 w3-progress §4 的欠账;v1 各域历史的站点 id → sourceId 映射也没接 |
 | Playlist | **已落**(§1.5) | 队列与 `PlaybackQueue` 的实例化衔接还没做(要播放会话归属) |
 | Link | 未落 | [../services/links.md](../services/links.md) 的分享/解析链路要先确认它是否依赖 W4 的解析结果 |
-| Feed 的另两类源 | 未落 | "关注更新 / 历史继续看"分别要 favorites 之外的关注模型与 History 落地 |
+| Feed 的另两类源 | 部分可做 | "继续看"现在能接了(`HistoryService.continueWatching`);"关注更新"仍要一个源侧关注模型,favorites.md 明确说那不是收藏 |
 | 收藏的开播状态 | 未落 | 需要一个能批量问"开播了没"的 capability;capability-contract §3 里没有这个方法集,定了就是猜 |
 | sync / v1 迁移 | 未落 | 要 [../migration/v1-to-v2.md](../migration/v1-to-v2.md) 的 ContentRef 重写表 |
 
@@ -67,8 +86,9 @@ W4 的 provider 一到就能直接接进搜索/Feed/收藏这条消费链。
 | `packages/services/favorites` → `dart analyze .` / `dart test -j 1` | No issues found;**13 全绿**(快照 4 + 分组 7 + 列表 2) |
 | `packages/services/favorites` → `dart test -j 1`(持久化组) | 含真文件往返与"文档不是列表就报错"两条,合计 13 = 4 + 7 + 2 |
 | `packages/services/playlist` → `dart analyze .` / `dart test -j 1` | No issues found;**16 全绿**(顺序 7 + 条目 3 + 登记 3 + 持久化 3) |
+| `packages/services/history` → `dart analyze .` / `dart test -j 1` | No issues found;**23 全绿**(记录 7 + 节流 5 + 剧集 3 + 时间线 5 + 域映射 1 + 持久化 2) |
 | 源失效可见这条规则 | `test_list_rendersFromTheStoredSnapshotWithNoSourceAnywhere`:整条读路只碰仓库,收藏页要渲染不需要任何源在场 |
-| `dart run tool/check_architecture.dart --strict` | `packages=30 errors=0 warnings=0`(feed / favorites / playlist 三包入册后) |
+| `dart run tool/check_architecture.dart --strict` | `packages=31 errors=0 warnings=0`(feed / favorites / playlist / history 四包入册后) |
 | `dart analyze packages` / `dart format --output=none --set-exit-if-changed packages tool/check_architecture.dart` | No issues found;160 文件 0 changed |
 | `powershell -File tool/test_check_architecture.ps1` | PASS: 23 assertions across 21 cases |
 

@@ -1,0 +1,21 @@
+# GENERATED-BY: tool/scaffold_package.ps1
+name: pure_live_history
+description: "跨域观看历史:ContentRef 为键、进度节流、parentId 剧集聚合与继续观看"
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.13.0
+
+# Add dependencies from the matrix in docs/architecture/dependency-rules.md section 3.
+dependencies:
+  # A history record is keyed by ContentRef and snapshots a ContentSummary; both are platform models.
+  pure_live_platform:
+    path: ../../ecosystem/platform
+  # The binding today is key/value; docs/services/history.md names Drift, and the fine-grained repository
+  # port is what lets that swap happen without touching this layer's callers.
+  pure_live_storage:
+    path: ../../foundation/storage
+
+dev_dependencies:
+  test: ^1.26.0
