@@ -40,8 +40,12 @@
 
 ## 接线状态
 
-`NetworkTransport` 由上层用 `pure_live_network` 实现(该适配随 `ecosystem/extension` 的 `ExtensionContext`
-组装一起落),所以本包现在是纯 Dart、可离线测;诊断事件出口也在那一步接(`platform-contracts.md` §17)。
+`NetworkTransport` 已由 `pure_live_extension` 的 `NetworkClientTransport` 实现(架在 `pure_live_network` 的
+`NetworkClient.sendBytes` 上),本包因此保持纯 Dart、可离线测。诊断事件出口也在那一步接
+(`platform-contracts.md` §17)。
+
+**这条链路没有被真实 HTTP 验证过**:桥的测试用脚本化 adapter,没有一次真连站点。到 W4 Bilibili 之前,
+它的验收状态是"策略与桥有离线证明,线上无证据"。
 
 ## 验证
 

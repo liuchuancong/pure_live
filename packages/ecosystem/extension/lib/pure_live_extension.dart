@@ -13,5 +13,6 @@ export 'src/context.dart';
 export 'src/extension.dart';
 export 'src/gateway.dart';
 export 'src/managed_extension_gateway.dart';
+export 'src/network_transport_bridge.dart';
 export 'src/runtime.dart';
 export 'src/source.dart';

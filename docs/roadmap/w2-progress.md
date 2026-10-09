@@ -136,9 +136,10 @@
 > 加 `-j 1` 即稳定通过。全仓逐包验证请用 `dart test -j 1`;这不是包的失败,别照着它去改代码。
 
 1. `packages/ecosystem/plugin_api` + PluginRuntime / ScriptSandbox **接口**(JS 装载与沙箱实现随 W10)。
-2. M2 的另一半"媒体管线能播一个假源"属 W3,未开始。
-3. `NetworkTransport` 的 dio 适配(架在 `pure_live_network` 上)与 `ExtensionCache` / `ExtensionStorage` 的持久
-   实现尚未落地:网关目前用内存默认实现,所以权限、网络、任务与网关四条都只有离线断言;真实站点
+2. `ExtensionCache` / `ExtensionStorage` 的持久实现(Drift / KV 底座)仍由接线层待补:目前只有内存默认实现。
+3. `NetworkTransport` 的 `pure_live_network` 适配**已落**(`extension` 的 `NetworkClientTransport`),但它和
+   权限、网络、任务、网关一样只有离线断言:测试用的是脚本化 adapter。真实站点
    (403 / 重定向 / 超大响应)要在 W4 Bilibili 参考实现上跑一次才算验收。
-4. `ExtensionGateway.supportedApiVersions` 默认为空 = 不做版本检查;插件一旦能声明 `platformApiVersion`,
+4. M2 的另一半"媒体管线能播一个假源"已在 W3 达成(接线层),见 [w3-progress.md](w3-progress.md) §2.2。
+5. `ExtensionGateway.supportedApiVersions` 默认为空 = 不做版本检查;插件一旦能声明 `platformApiVersion`,
    组合根必须显式给出接受范围,否则 platform-contracts.md §23 的兼容性判定形同不存在。

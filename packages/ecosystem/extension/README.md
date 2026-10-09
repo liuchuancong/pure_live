@@ -52,7 +52,22 @@
   `ecosystem/plugin_api`(W2 接口)与 `ecosystem/external_tvbox`(W7)。
 - `ExtensionCache` / `ExtensionStorage` 的默认实现是内存的;换成 Drift/KV 底座由接线层注入,扩展侧 API 不变
   (§19 "实现可换而 Extension API 不变")。
-- `NetworkTransport` 的 dio 适配尚未落地,所以真实站点路径未验证。
+
+## 网络出口的落地(`NetworkClientTransport`)
+
+`ExtensionContext.network` 需要有人真的把请求发出去。`src/network_transport_bridge.dart` 是那一层:
+平台的 `NetworkRequest` → `pure_live_network` 的 `NetworkClient.sendBytes` → 平台的 `NetworkResponse`。
+有四件事值得单独说:
+
+- **HTTP 实现留在 L0**:本包不 import dio(只有测试 import,列在 dev_dependencies),所以 L0 换实现不会波及契约;
+- **L0 的 `NetworkFailure` 在这里翻成 `ExtensionNetworkException` + `PlatformErrorInfo`**:扩展看不到 foundation
+  类型,否则每次 L0 改动都是插件可见的破坏;错误码直接用 `failure.code`(W1 已按 models §14 对齐);
+- **策略夹过的超时必须真的传到客户端**:`request.effectiveTimeout` 作为 per-request receive timeout 交下去,
+  否则 `NetworkLimits.maxTimeout` 只是纸面数字。
+- 借来的 `NetworkClient` 不由本 transport 关闭(默认 `ownsClient == false` 当 client 是传进来的)。
+
+真实站点仍**没有**跑过:测试用脚本化 adapter。到 W4 Bilibili 之前,这条链路的验收状态是"策略与桥有离线证明,
+线上无证据"。
 
 ## 验证
 

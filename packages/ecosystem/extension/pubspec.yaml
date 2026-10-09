@@ -11,6 +11,10 @@ environment:
 dependencies:
   pure_live_diagnostics:
     path: ../../foundation/diagnostics
+  # The network exit needs a real HTTP implementation underneath it; keeping that in the foundation layer is
+  # what lets the policy in pure_live_permission stay testable without a socket.
+  pure_live_network:
+    path: ../../foundation/network
   pure_live_platform:
     path: ../platform
   # The gateway is where the horizontal platform services are assembled into an ExtensionContext, so it
@@ -23,3 +27,6 @@ dependencies:
 
 dev_dependencies:
   test: ^1.26.0
+  # Only the tests import dio: they script a HttpClientAdapter so the bridge is exercised without a socket.
+  # Production code in this package reaches the network through pure_live_network's own types.
+  dio: ^5.9.0
