@@ -1,5 +1,5 @@
 // Module: lib/main.dart
-// Purpose: The entry point: initialise the binding, boot the runtime, hand it to its host.
+// Purpose: The entry point: initialise the binding, boot the runtime, start the app.
 // Author: liuchuancong
 // Created: 2026-10-09
 //
@@ -10,11 +10,17 @@
 // dispose exists for tests and for a later lifecycle host that tears the runtime down between sessions.
 
 import 'package:flutter/widgets.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'app/host.dart';
+import 'app/app.dart';
+import 'app/di.dart';
 import 'app/runtime.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(PureLiveApp(runtime: await PureLiveRuntime.boot()));
+  final runtime = await PureLiveRuntime.boot();
+  runApp(
+    // Riverpod 3 no longer exports the Override type name; pass the override as-is.
+    ProviderScope(overrides: [runtimeProvider.overrideWithValue(runtime)], child: const PureLiveApp()),
+  );
 }

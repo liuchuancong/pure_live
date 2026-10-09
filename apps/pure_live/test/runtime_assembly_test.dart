@@ -9,8 +9,10 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:pure_live/app/host.dart';
+import 'package:pure_live/app/app.dart';
+import 'package:pure_live/app/di.dart';
 import 'package:pure_live/app/runtime.dart';
 import 'package:pure_live_capability/pure_live_capability.dart';
 import 'package:pure_live_extension/pure_live_extension.dart';
@@ -355,11 +357,12 @@ void main() {
         ),
       );
 
-      await tester.pumpWidget(PureLiveApp(runtime: runtime));
+      await tester.pumpWidget(
+        ProviderScope(overrides: [runtimeProvider.overrideWithValue(runtime)], child: const PureLiveApp()),
+      );
+      await tester.pump();
 
-      expect(find.text('运行时已装配'), findsOneWidget);
-      expect(find.text('能力发现: 1 个 provider'), findsOneWidget);
-      expect(find.textContaining('extension.purelive.sample'), findsNothing);
+      expect(find.text('已注册 1 个内容源,首页 Feed 接入在下一波落地'), findsOneWidget);
     });
   });
 }
