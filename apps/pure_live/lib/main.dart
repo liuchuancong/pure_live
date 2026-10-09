@@ -24,7 +24,23 @@ Future<void> main() async {
   // The engine needs the binding ready before its first surface; doing it here keeps every widget below
   // free of engine start-up concerns.
   MediaKernelHost.ensureInitialized();
+  // System media surfaces are opt-in and app-level (manifest/notification
+  // requirements). Enable before the runtime so the first kernel takes the
+  // driver; a refusing platform only costs the surfaces, not the app.
+  Object? mediaSessionError;
+  try {
+    await MediaSessionBootstrap.enable();
+  } catch (error) {
+    mediaSessionError = error;
+  }
   final runtime = registerBuiltInSources(await PureLiveRuntime.boot());
+  if (mediaSessionError != null) {
+    runtime.diagnostics.emit(
+      'media.sessionUnavailable',
+      level: platform.DiagnosticLevel.warning,
+      metadata: <String, Object?>{'error': '$mediaSessionError'},
+    );
+  }
   // Installed-and-enabled plugins join the registry before the first frame, so
   // the home feed opens with them already present. A broken script is recorded
   // and skipped; it never fails the boot.

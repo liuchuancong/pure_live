@@ -13,6 +13,8 @@
 /// ContentRef, and nothing above it knows about PlayerHandle.
 library;
 
+export 'package:media_core_mediasession/media_core_mediasession.dart' show MediaSessionBootstrap;
+
 export 'src/media_track_mapping.dart';
 export 'src/playback_trace.dart';
 export 'src/player_kernel_host.dart';
