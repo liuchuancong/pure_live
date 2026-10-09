@@ -12,5 +12,7 @@
 
 library;
 
+export 'src/atomic_file.dart';
+
 export 'src/file_names.dart';
 export 'src/paths.dart';

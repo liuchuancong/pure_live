@@ -13,3 +13,4 @@
 library;
 
 export 'src/locale.dart';
+export 'src/translation_bundle.dart';

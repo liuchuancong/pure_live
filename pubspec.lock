@@ -1701,6 +1701,15 @@ packages:
       url: "https://github.com/liuchuancong/media_core"
     source: git
     version: "0.1.0"
+  media_core_ui:
+    dependency: transitive
+    description:
+      path: "packages/media_core_ui"
+      ref: "5b047145422758d983a3724e689d8aa4b7d06863"
+      resolved-ref: "5b047145422758d983a3724e689d8aa4b7d06863"
+      url: "https://github.com/liuchuancong/media_core"
+    source: git
+    version: "0.1.0"
   media_kit:
     dependency: transitive
     description:

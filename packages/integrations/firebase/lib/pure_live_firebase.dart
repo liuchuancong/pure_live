@@ -7,3 +7,5 @@
 /// Layer: integrations. Allowed dependencies: layer L0 foundation; vendor SDKs may only be referenced from this layer.
 /// See docs/architecture/dependency-rules.md and the package README.
 library;
+
+export 'src/firebase_bootstrap.dart';

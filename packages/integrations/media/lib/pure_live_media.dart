@@ -14,6 +14,7 @@
 library;
 
 export 'package:media_core/media_core.dart' show PlayerConfig;
+export 'package:media_core_ui/media_core_ui.dart' show MediaCorePlayerView, PlayerControlsStyle;
 export 'package:media_core_mediasession/media_core_mediasession.dart' show MediaSessionBootstrap;
 
 export 'src/media_track_mapping.dart';
