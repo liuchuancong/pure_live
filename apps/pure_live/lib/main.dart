@@ -16,6 +16,10 @@ import 'package:pure_live_platform/pure_live_platform.dart' as platform;
 
 import 'app/app.dart';
 import 'app/di.dart';
+
+import 'dart:convert';
+
+import 'app/appearance.dart';
 import 'app/plugin_hosting.dart';
 import 'app/runtime.dart';
 
@@ -53,8 +57,15 @@ Future<void> main() async {
       metadata: <String, Object?>{'error': entry.value},
     );
   }
+  final savedAppearance = await runtime.keyValueStore.read('appearance');
+  final appearance = savedAppearance is String
+      ? AppearanceConfig.fromJson(jsonDecode(savedAppearance) as Map<String, Object?>)
+      : const AppearanceConfig();
   runApp(
     // Riverpod 3 no longer exports the Override type name; pass the override as-is.
-    ProviderScope(overrides: [runtimeProvider.overrideWithValue(runtime)], child: const PureLiveApp()),
+    ProviderScope(
+      overrides: [runtimeProvider.overrideWithValue(runtime), loadedAppearanceProvider.overrideWithValue(appearance)],
+      child: const PureLiveApp(),
+    ),
   );
 }

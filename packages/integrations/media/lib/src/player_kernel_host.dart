@@ -40,8 +40,8 @@ final class MediaKernelHost {
   ///
   /// Autoplay is on: a ticket exists because the user asked for playback, and the kernel's config default
   /// matches that intent. The caller owns the returned handle and must [core.PlayerHandle.dispose] it.
-  Future<core.PlayerHandle> open(platform.MediaTicket ticket) {
-    return _kernel.createFromMedia(toCoreSource(ticket));
+  Future<core.PlayerHandle> open(platform.MediaTicket ticket, {core.PlayerConfig? config}) {
+    return _kernel.createFromMedia(toCoreSource(ticket), config: config ?? core.PlayerConfig.defaults);
   }
 
   /// Tears the kernel down. Every handle opened from it must be disposed first.
