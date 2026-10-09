@@ -72,6 +72,41 @@ final class ContentMetadata {
   }
 }
 
+/// One entry of a source's category table. [parentId] builds the tree when a
+/// source groups two levels (channel group -> sub-category); a flat source
+/// leaves it null. The id is what a ContentQuery.category carries back.
+final class ContentCategory {
+  const ContentCategory({required this.id, required this.name, this.parentId, this.icon});
+
+  factory ContentCategory.fromJson(Map<String, Object?> json) => ContentCategory(
+    id: requireString(json, 'id', 'content_category'),
+    name: requireString(json, 'name', 'content_category'),
+    parentId: json['parentId'] as String?,
+    icon: json['icon'] as String?,
+  );
+
+  final String id;
+  final String name;
+  final String? parentId;
+  final String? icon;
+
+  Map<String, Object?> toJson() => <String, Object?>{
+    'id': id,
+    'name': name,
+    if (parentId != null) 'parentId': parentId,
+    if (icon != null) 'icon': icon,
+  };
+
+  @override
+  bool operator ==(Object other) => other is ContentCategory && other.id == id && other.parentId == parentId;
+
+  @override
+  int get hashCode => Object.hash(id, parentId);
+
+  @override
+  String toString() => 'ContentCategory($id $name)';
+}
+
 /// A tag as one source labels content.
 final class ContentTag {
   const ContentTag({required this.id, required this.name});

@@ -62,6 +62,10 @@ class _ConformingSource implements BrowseCapability, SearchCapability, ResolveCa
       _page(_items(3), request, hasMore: hasMore);
 
   @override
+  @override
+  Future<List<ContentCategory>> categories() async => const <ContentCategory>[];
+
+  @override
   Future<PageResult<ContentSummary>> browse(ContentQuery query) async => page(query.page);
 
   @override

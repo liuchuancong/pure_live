@@ -37,12 +37,26 @@ const List<({String id, String title, String subtitle})> demoRooms = <({String i
 /// Playback serves a public test HLS stream (Mux's Big Buck Bunny asset) so the
 /// media chain is exercisable end to end; the resource is a VOD file and the
 /// ticket says so honestly instead of pretending to be a running broadcast.
-final class DemoLiveSource implements FeedCapability, ResolveCapability {
+final class DemoLiveSource implements BrowseCapability, FeedCapability, ResolveCapability {
   const DemoLiveSource();
 
   /// The stream every demo room plays. `final` not `const`: [Uri.parse] is a
   /// method call, which a const initializer cannot contain.
   static final Uri demoStreamUrl = Uri.parse('https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8');
+
+  @override
+  Future<List<ContentCategory>> categories() async => const <ContentCategory>[];
+
+  @override
+  Future<PageResult<ContentSummary>> browse(ContentQuery query) => feed(query.page);
+
+  @override
+  Future<ContentDetail> detail(ContentRef ref) async {
+    return ContentDetail(
+      summary: ContentSummary(ref: ref, title: '直播间 ${ref.contentId}', subtitle: 'Demo 直播源'),
+      description: '示例源的房间详情',
+    );
+  }
 
   @override
   Future<PageResult<ContentSummary>> feed(PageRequest page) async {
@@ -59,7 +73,15 @@ final class DemoLiveSource implements FeedCapability, ResolveCapability {
           subtitle: room.subtitle,
         ),
     ];
-    return PageResult<ContentSummary>(items: items, page: 1, pageSize: page.pageSize, total: items.length);
+    // The demo list is static and whole: declaring singleShot is the honest
+    // reading, and it exercises the mode the fixed-page sources never use.
+    return PageResult<ContentSummary>(
+      items: items,
+      page: 1,
+      pageSize: page.pageSize,
+      total: items.length,
+      mode: PageMode.singleShot,
+    );
   }
 
   @override

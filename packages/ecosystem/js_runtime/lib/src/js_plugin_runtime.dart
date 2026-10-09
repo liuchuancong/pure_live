@@ -118,6 +118,19 @@ final class JsPluginRuntime implements PluginRuntime {
   /// The search group, when the plugin registered one.
   JsSearchAdapter? searchAdapter() => _groups.contains('search') ? JsSearchAdapter(runtime: this) : null;
 
+  /// Dispatch that treats "no registration implements this" as null instead
+  /// of an error - the distinction optional methods need.
+  Future<Map<String, Object?>?> _dispatchOrNull(String group, String method) async {
+    try {
+      return await _dispatch(group, method, const <String, Object?>{});
+    } on StateError catch (error) {
+      if ('${error}'.contains('no registration implements')) {
+        return null;
+      }
+      rethrow;
+    }
+  }
+
   Future<Map<String, Object?>> _dispatch(String group, String method, Map<String, Object?> args) async {
     final sandbox = _requireServing();
     final outcome = await sandbox.dispatch(group, method, args);
@@ -143,6 +156,21 @@ final class JsLiveAdapter implements BrowseCapability, ResolveCapability {
   JsLiveAdapter({required JsPluginRuntime runtime}) : _runtime = runtime;
 
   final JsPluginRuntime _runtime;
+
+  @override
+  Future<List<ContentCategory>> categories() async {
+    // categories is optional in the JS surface: a plugin without it has no
+    // category UI, which is a shape, not a failure.
+    final answer = await _runtime._dispatchOrNull('live', 'categories');
+    if (answer == null) {
+      return const <ContentCategory>[];
+    }
+    final rows = (answer['result'] as List?) ?? (answer['items'] as List?) ?? const [];
+    return <ContentCategory>[
+      for (final row in rows)
+        if (_asObjectMap(row) != null) ContentCategory.fromJson(_asObjectMap(row)!),
+    ];
+  }
 
   @override
   Future<PageResult<ContentSummary>> browse(ContentQuery query) async {
@@ -206,5 +234,7 @@ PageResult<ContentSummary> _pageFrom(Map<String, Object?> answer) {
     page: (answer['page'] as num?)?.toInt() ?? 1,
     pageSize: (answer['pageSize'] as num?)?.toInt() ?? items.length,
     hasMore: answer['hasMore'] as bool? ?? false,
+    mode: PageMode.values.where((mode) => mode.name == answer['mode']).firstOrNull ?? PageMode.fixedPage,
+    nextCursor: answer['nextCursor'] as String?,
   );
 }

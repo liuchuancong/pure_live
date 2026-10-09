@@ -65,6 +65,20 @@ final class SpiderVodProvider implements BrowseCapability, SearchCapability, Res
   }
 
   @override
+  Future<List<ContentCategory>> categories() async {
+    // The spider contract carries the category table on homeContent; reading
+    // it here keeps category chips available before the first browse.
+    final home = await _call('homeContent', () => _handle.homeContent(const <String, Object?>{}));
+    if (home == null) {
+      return const <ContentCategory>[];
+    }
+    _classes = parseSpiderClasses(home);
+    return <ContentCategory>[
+      for (final spiderClass in _classes) ContentCategory(id: spiderClass.typeId, name: spiderClass.typeName),
+    ];
+  }
+
+  @override
   Future<PageResult<ContentSummary>> browse(ContentQuery query) async {
     final category = query.category;
     final page = query.page;
@@ -80,7 +94,13 @@ final class SpiderVodProvider implements BrowseCapability, SearchCapability, Res
           for (final row in featured)
             if (row is Map) _summary(parseSpiderVod(Map<String, Object?>.from(row))),
       ];
-      return PageResult<ContentSummary>(items: vods, page: 1, pageSize: page.pageSize, hasMore: false);
+      return PageResult<ContentSummary>(
+        items: vods,
+        page: 1,
+        pageSize: page.pageSize,
+        hasMore: false,
+        mode: PageMode.fixedPage,
+      );
     }
     final answer = await _call(
       'categoryContent',
@@ -93,6 +113,7 @@ final class SpiderVodProvider implements BrowseCapability, SearchCapability, Res
       pageSize: page.pageSize,
       hasMore: spiderPage.hasMore,
       total: spiderPage.total,
+      mode: PageMode.fixedPage,
     );
   }
 

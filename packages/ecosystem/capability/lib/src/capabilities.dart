@@ -45,6 +45,11 @@ enum CapabilityKind {
 
 /// A source that can list and describe content.
 abstract interface class BrowseCapability {
+  /// The source's own category table, in the order the source exposes it.
+  /// Empty means the source has no categories: the consumer then shows only
+  /// the home listing and must not invent a category UI.
+  Future<List<ContentCategory>> categories();
+
   /// One page of a category listing. Pass an empty [ContentQuery] for the home listing.
   Future<PageResult<ContentSummary>> browse(ContentQuery query);
 

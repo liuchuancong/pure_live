@@ -13,7 +13,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pure_live_capability/pure_live_capability.dart';
-import 'package:pure_live_external_tvbox/pure_live_external_tvbox.dart';
 import 'package:pure_live_platform/pure_live_platform.dart';
 
 import '../../app/di.dart';
@@ -28,7 +27,7 @@ final class VodSourcePage extends ConsumerStatefulWidget {
 }
 
 final class _VodSourcePageState extends ConsumerState<VodSourcePage> {
-  List<SpiderClass> _classes = const <SpiderClass>[];
+  List<ContentCategory> _classes = const <ContentCategory>[];
   String? _selected;
   final List<ContentSummary> _items = <ContentSummary>[];
   int _nextPage = 1;
@@ -65,15 +64,16 @@ final class _VodSourcePageState extends ConsumerState<VodSourcePage> {
       _error = null;
     });
     await _fetch(provider, replace: true);
-    // The class table fills on the first home browse; read it after that call
-    // so the chips appear without a second request.
-    final runtime = ref.read(runtimeProvider);
-    final entry = runtime.capabilities.all
-        .where((registration) => registration.sourceId == widget.sourceId)
-        .firstOrNull;
-    final providerObject = entry?.provider;
-    if (providerObject is SpiderVodProvider && mounted) {
-      setState(() => _classes = providerObject.classes);
+    // Categories are a contract method now, not a spider-specific detail: any
+    // source that serves them gets chips, any source without them gets the
+    // plain home grid.
+    try {
+      final categories = await provider.categories();
+      if (mounted) {
+        setState(() => _classes = categories);
+      }
+    } catch (_) {
+      // A failing category table leaves the home grid; it is decoration.
     }
   }
 
@@ -140,13 +140,13 @@ final class _VodSourcePageState extends ConsumerState<VodSourcePage> {
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 children: <Widget>[
-                  for (final spiderClass in _classes)
+                  for (final category in _classes)
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 4),
                       child: ChoiceChip(
-                        label: Text(spiderClass.typeName),
-                        selected: _selected == spiderClass.typeId,
-                        onSelected: (_) => _open(spiderClass.typeId),
+                        label: Text(category.name),
+                        selected: _selected == category.id,
+                        onSelected: (_) => _open(category.id),
                       ),
                     ),
                 ],

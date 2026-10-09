@@ -30,7 +30,12 @@ final class PlaylistLiveSource implements BrowseCapability, ResolveCapability {
   final Map<String, List<TvBoxChannel>> _groups;
 
   /// The category names this source serves, in playlist order.
-  List<String> get categories => _groups.keys.toList(growable: false);
+  List<String> get categoryNames => _groups.keys.toList(growable: false);
+
+  @override
+  Future<List<ContentCategory>> categories() async => <ContentCategory>[
+    for (final group in _groups.keys) ContentCategory(id: group, name: group),
+  ];
 
   int get channelCount => _groups.values.fold(0, (sum, channels) => sum + channels.length);
 
@@ -131,6 +136,6 @@ final class DataPluginContent {
 /// Builds the servable content of a data plugin from its parsed playlist.
 DataPluginContent playlistContent(SourceId sourceId, List<TvBoxChannel> channels) {
   final source = PlaylistLiveSource(sourceId: sourceId, channels: channels);
-  final groups = source.categories.length;
+  final groups = source.categoryNames.length;
   return DataPluginContent(provider: source, summary: '${source.channelCount} 频道 / $groups 分组');
 }

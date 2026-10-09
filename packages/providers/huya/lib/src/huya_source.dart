@@ -47,6 +47,70 @@ final class HuyaSource implements FeedCapability, BrowseCapability, SearchCapabi
   @override
   Future<PageResult<ContentSummary>> feed(PageRequest page) => _listRooms(const <String, Object?>{}, page);
 
+  /// The parsed category table, cached for the process: the config endpoint
+  /// is small and changes rarely.
+  List<ContentCategory>? _categoryTree;
+
+  @override
+  Future<List<ContentCategory>> categories() async {
+    final cached = _categoryTree;
+    if (cached != null) {
+      return cached;
+    }
+    // Four top groups, the ids the web config has always used; each answer's
+    // gid field has shipped in four historical shapes (map / double / int /
+    // string), so the parse converges every shape instead of trusting one.
+    const topGroups = <(String, String)>[('1', '网游'), ('2', '单机'), ('8', '娱乐'), ('3', '手游')];
+    final tree = <ContentCategory>[];
+    for (final (bussType, groupName) in topGroups) {
+      tree.add(ContentCategory(id: bussType, name: groupName));
+      try {
+        final result = await _client.getJson(
+          'https://live.cdn.huya.com/liveconfig/game/bussLive',
+          headers: <String, String>{'user-agent': _userAgent},
+          queryParameters: <String, Object?>{'bussType': bussType},
+        );
+        final rows = result['data'] as List?;
+        if (rows == null) {
+          continue;
+        }
+        for (final row in rows) {
+          if (row is! Map) {
+            continue;
+          }
+          final gid = _gid(row['gid']);
+          if (gid.isEmpty) {
+            continue;
+          }
+          tree.add(
+            ContentCategory(
+              id: gid,
+              name: '${row['gameFullName'] ?? ''}',
+              parentId: bussType,
+              icon: 'https://huyaimg.msstatic.com/cdnimage/game/$gid-MS.jpg',
+            ),
+          );
+        }
+      } on FormatException {
+        // One group failing to answer keeps its node and the rest of the
+        // tree; a category browser with three of four groups beats none.
+      }
+    }
+    _categoryTree = tree;
+    return tree;
+  }
+
+  /// Converges the four historical gid shapes to one string.
+  static String _gid(Object? raw) {
+    if (raw is Map) {
+      return '${raw['value'] ?? ''}'.split(',').first.trim();
+    }
+    if (raw is num) {
+      return raw.toInt().toString();
+    }
+    return '${raw ?? ''}'.trim();
+  }
+
   @override
   Future<PageResult<ContentSummary>> browse(ContentQuery query) {
     // An empty category is the home listing, which for huya is the recommend

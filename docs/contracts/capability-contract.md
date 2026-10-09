@@ -39,6 +39,28 @@ Future<MediaTicket> refresh(MediaTicket expired, RefreshReason reason);
 
 业务规则落在契约里:取流必须返回 **MediaTicket**(含 `expiresAt`),宿主据此做到期预取换链——源实现方免费获得断流防护(见 [../media/media-ticket.md](../media/media-ticket.md))。
 
+### 3.1 分类表(categories)与分页语义(2026-10-09 细分)
+
+```dart
+/// 源自带的分类表;空 = 源无分类,消费方不得自造分类 UI
+Future<List<ContentCategory>> categories();
+```
+
+- `ContentCategory{id, name, parentId?, icon?}`;`parentId` 表达两级树,平铺源留空;`id` 即
+  `ContentQuery.category` 回传值。
+- 分类表可选:没有分类是**形态**,不是失败;JS 面未实现 `live.categories` 视为空表。
+
+**分页三态**(platform-models §9 `PageMode`),由源在**每个应答**里声明,消费方按模式读字段、不得假设:
+
+| 模式 | 语义 | 消费规则 |
+|---|---|---|
+| `fixedPage` | 一页码 + 页大小经典表 | 下一页 = `page+1`;`hasMore=false` 即止 |
+| `cursor` | 服务器自定义游标 | 应答带 `nextCursor`,下一页必须经 `PageRequest.cursor` 回传,**page 数字无意义** |
+| `singleShot` | 一次全量 | `items` 即全部,`hasMore` 恒 false,请求第 2 页返回空 |
+
+源说谎的代价归源:声明 `cursor` 却不带 `nextCursor`,或 `singleShot` 却称 `hasMore`,契约测试按违规处理
+(与 `contract.browse.page_mismatch` 同表)。
+
 ## 4. 契约测试
 
 每个 Capability 都有 Contract Test(`LiveProviderContractTest` 等),**内置源与 JS 源跑同一套断言**;第三方插件交付前必须通过对应契约测试(见 [../development/testing.md](../development/testing.md))。

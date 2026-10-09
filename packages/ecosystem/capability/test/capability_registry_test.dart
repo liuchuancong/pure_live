@@ -19,6 +19,9 @@ PageResult<ContentSummary> _page() => PageResult<ContentSummary>(
 /// Browse + resolve, which is what a content source is.
 class _VideoSource implements BrowseCapability, ResolveCapability {
   @override
+  Future<List<ContentCategory>> categories() async => const <ContentCategory>[];
+
+  @override
   Future<PageResult<ContentSummary>> browse(ContentQuery query) async => _page();
 
   @override

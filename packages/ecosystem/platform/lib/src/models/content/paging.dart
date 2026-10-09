@@ -9,38 +9,89 @@
 import '../../support/json.dart';
 import 'content_ref.dart';
 
+/// How a source pages its listings. The source declares the mode on every
+/// answer; the consumer reads the fields the mode names and must not assume.
+/// Sources in the wild genuinely differ: fixed page tables, opaque server
+/// cursors, and lists that simply come back whole.
+enum PageMode {
+  /// One-based page numbers with a page size; the classic table.
+  fixedPage,
+
+  /// The answer carries [PageResult.nextCursor]; the next request passes it
+  /// back as [PageRequest.cursor] and the page number is meaningless.
+  cursor,
+
+  /// The answer is the whole list. hasMore is always false by definition, and
+  /// asking for page 2 returns empty.
+  singleShot,
+}
+
 /// Which page to fetch. Page numbers are one-based, matching every protocol this app speaks.
 final class PageRequest {
-  const PageRequest({this.page = 1, this.pageSize = 20});
+  const PageRequest({this.page = 1, this.pageSize = 20, this.cursor});
 
   static const PageRequest first = PageRequest();
 
   final int page;
   final int pageSize;
 
-  Map<String, Object?> toJson() => <String, Object?>{'page': page, 'pageSize': pageSize};
+  /// The server-defined continuation token from the previous answer. When set
+  /// it wins over [page]: a cursor-mode source ignores page numbers entirely.
+  final String? cursor;
 
-  factory PageRequest.fromJson(Map<String, Object?> json) =>
-      PageRequest(page: (json['page'] as num?)?.toInt() ?? 1, pageSize: (json['pageSize'] as num?)?.toInt() ?? 20);
+  Map<String, Object?> toJson() => <String, Object?>{
+    'page': page,
+    'pageSize': pageSize,
+    if (cursor != null) 'cursor': cursor,
+  };
+
+  factory PageRequest.fromJson(Map<String, Object?> json) => PageRequest(
+    page: (json['page'] as num?)?.toInt() ?? 1,
+    pageSize: (json['pageSize'] as num?)?.toInt() ?? 20,
+    cursor: json['cursor'] as String?,
+  );
 }
 
 /// One page of results.
 final class PageResult<T> {
-  const PageResult({required this.items, required this.page, required this.pageSize, this.hasMore = false, this.total});
+  const PageResult({
+    required this.items,
+    required this.page,
+    required this.pageSize,
+    this.hasMore = false,
+    this.total,
+    this.mode = PageMode.fixedPage,
+    this.nextCursor,
+  });
 
   /// An empty page, used when a source answered but had nothing for this query.
-  const PageResult.empty() : items = const <Never>[], page = 1, pageSize = 0, hasMore = false, total = 0;
+  const PageResult.empty()
+    : items = const <Never>[],
+      page = 1,
+      pageSize = 0,
+      hasMore = false,
+      total = 0,
+      mode = PageMode.fixedPage,
+      nextCursor = null;
 
   final List<T> items;
   final int page;
   final int pageSize;
 
   /// Whether another page may exist. A source that cannot tell must say false rather than guess true,
-  /// because a true here keeps a list spinning forever.
+  /// because a true here keeps a list spinning forever. A singleShot answer
+  /// carries false by definition.
   final bool hasMore;
 
   /// Total count when the protocol reports one.
   final int? total;
+
+  /// How to read this answer and ask for the next one.
+  final PageMode mode;
+
+  /// The continuation token for cursor-mode sources; null otherwise. The next
+  /// request sends it back as PageRequest.cursor.
+  final String? nextCursor;
 
   bool get isEmpty => items.isEmpty;
 
@@ -51,6 +102,8 @@ final class PageResult<T> {
       'pageSize': pageSize,
       if (hasMore) 'hasMore': true,
       if (total != null) 'total': total,
+      'mode': mode.name,
+      if (nextCursor != null) 'nextCursor': nextCursor,
     };
   }
 }
