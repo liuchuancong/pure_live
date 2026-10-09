@@ -15,8 +15,16 @@
 - `lib/src/permission_manager.dart` —— `PermissionDecision` 与 `PermissionManager`(register / check / request / revoke / refuse / held)
 - `lib/src/policy_permission_manager.dart` —— 最小授权实现
 - `lib/src/ports.dart` —— `PermissionStore` / `PermissionPrompt` 两个端口与其内存实现
+- `lib/src/key_value_permission_store.dart` —— `KeyValuePermissionStore`:把 grant 存进 L0 的 `KeyValueStore`
 - `lib/src/extension_network.dart` —— `ExtensionNetwork`(插件唯一网络出口)、`NetworkLimits`、`NetworkTransport` 端口
 - `lib/src/extension_cookie_store.dart` —— `ExtensionCookieStore`、`CookieJar` 端口与按扩展隔离的实现
+
+`KeyValuePermissionStore` 依赖 `pure_live_storage` 的 `KeyValueStore` 接口(向下到 L0,不是新词汇):
+存什么后端由组合根决定,本包不知道文件、Drift 或 Hive 的存在。键形状是
+`permission.<extensionId>/<permission.name>` —— 分隔符必须是 `/`,因为扩展 id 本身带点,
+用 `.` 做前缀扫描会让 `purelive.a` 的清理顺手删掉 `purelive.ab` 的授权。
+读不懂的记录按"没问过"处理并删掉:一条永远解析不了的记录如果留着,等于每次加载都要重新决定怎么处理它,
+而"没问过"是唯一还能被回答的状态。
 
 数据模型(`Permission` / `PermissionGrant` / `PermissionScope` / `NetworkRequest` / `NetworkResponse` /
 `Cookie`)在 `pure_live_platform`,归属划分见 [docs/adr/0018-contract-package-split.md](../../../docs/adr/0018-contract-package-split.md)。
@@ -28,6 +36,10 @@
 2. **未注册即无授权**:没 `register` 过的 extensionId,任何权限都拿不到。
 3. **默认失败关闭**:不接 prompt 时用 `RejectAllPrompts`,忘记接线等于拒绝,而不是放开网络。
 4. **拒绝要留存**:`refuse` 与 prompt 答 `denied` 都写记录,下一次 `request` 不再重问;`revoke` 才回到 `unknown`。
+   - 这条与"记录能持久"合起来有一个必须显式守的推论:**接了持久 store 之后,占位 prompt 不能答 `denied`**。
+     `RejectAllPrompts` 是内存时期的安全默认,但它的答会被写下来,而写下来的 `denied` 永不重问 ——
+     于是"没人替用户做过决定"会变成"用户做过否定决定",且重启后仍然成立。没有授权 UI 时用
+     `UnaskedPrompts`(答 `unknown`:这次拒绝,但不冒充用户的选择,下次仍然可问)。
 5. **过期不是拒绝**:`expiresAt` 到期后 `check` 报 `unknown`(可再申请),而不是 `denied`。
 6. **网络按 host 作用域**:grant 带 `PermissionScope.hosts`;`*.example.com` 只覆盖子域,不含裸域。
    `ExtensionNetwork` 在**响应落地之后**再核一次 `finalUri`,重定向逃授权直接 `permission.restricted`。

@@ -13,6 +13,10 @@ dependencies:
   # adds behaviour, not vocabulary.
   pure_live_platform:
     path: ../platform
+  # KeyValuePermissionStore keeps grants in the L0 key/value interface, so which backend persists them (file,
+  # Drift, nothing) stays the composition root's call rather than this package's.
+  pure_live_storage:
+    path: ../../foundation/storage
 
 dev_dependencies:
   test: ^1.26.0

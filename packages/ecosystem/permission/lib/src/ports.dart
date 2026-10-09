@@ -94,6 +94,24 @@ final class PresetPrompts implements PermissionPrompt {
   ) async => answers[permission] ?? PermissionState.denied;
 }
 
+/// Answers "nobody has decided yet", which is the state that stays re-askable.
+///
+/// A durable store changes what a placeholder prompt means: [RejectAllPrompts] answers `denied`, and a stored
+/// denial is deliberately never re-prompted (the manager treats it as somebody already having said no). Pair
+/// the two and a build without a prompt UI would brick every extension on its first request - a refusal the
+/// user never made, kept forever. Until the settings screen exists, refusing without recording is the
+/// fail-closed answer that still leaves the question open.
+final class UnaskedPrompts implements PermissionPrompt {
+  const UnaskedPrompts();
+
+  @override
+  Future<PermissionState> decide(
+    ExtensionDescriptor descriptor,
+    Permission permission,
+    PermissionScope requestedScope,
+  ) async => PermissionState.unknown;
+}
+
 /// Approves exactly what the descriptor declared and nothing else.
 ///
 /// Only safe for sources the platform ships itself: a built-in extension's descriptor is reviewed with the

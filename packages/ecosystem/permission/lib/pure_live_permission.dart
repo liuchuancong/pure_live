@@ -14,6 +14,7 @@ library;
 
 export 'src/extension_cookie_store.dart';
 export 'src/extension_network.dart';
+export 'src/key_value_permission_store.dart';
 export 'src/permission_manager.dart';
 export 'src/policy_permission_manager.dart';
 export 'src/ports.dart';
