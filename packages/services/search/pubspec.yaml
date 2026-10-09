@@ -1,0 +1,21 @@
+# GENERATED-BY: tool/scaffold_package.ps1
+name: pure_live_search
+description: "聚合搜索:按 CapabilityRegistry 枚举搜索源、并发查询、超时与失败隔离、按源分桶的部分结果"
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.13.0
+
+# Add dependencies from the matrix in docs/architecture/dependency-rules.md section 3.
+dependencies:
+  # The search vocabulary (SearchQuery / ContentSummary / PageResult) belongs to the platform models.
+  pure_live_platform:
+    path: ../../ecosystem/platform
+  # Discovery is the registry's job: this service reads CapabilityRegistry and the SearchCapability it
+  # enumerates, and never names a source itself (docs/contracts/provider-contract.md section 3).
+  pure_live_capability:
+    path: ../../ecosystem/capability
+
+dev_dependencies:
+  test: ^1.26.0
