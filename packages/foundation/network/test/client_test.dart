@@ -248,4 +248,112 @@ void main() {
     expect(retry.fields['playUrl'], isNot(contains('abc')));
     client.close();
   });
+
+  group('sendBytes', () {
+    test('test_sendBytes_keepsTheBodyAsBytesAndJoinsRepeatedHeaders', () async {
+      final adapter = _ScriptedAdapter(<Future<ResponseBody> Function(RequestOptions)>[
+        (_) async => ResponseBody.fromBytes(
+          <int>[0, 1, 2, 250],
+          200,
+          headers: <String, List<String>>{
+            'content-type': <String>['application/octet-stream', 'raw'],
+            'x-line': <String>{'a', 'b'}.toList(),
+          },
+        ),
+      ]);
+      final client = NetworkClient(settings: _fast(), adapter: adapter);
+
+      final response = await client.sendBytes('https://example.test/segment.ts');
+
+      expect(response.bytes, <int>[0, 1, 2, 250]);
+      expect(response.size, 4);
+      expect(response.statusCode, 200);
+      expect(response.isSuccess, isTrue);
+      expect(response.headers['content-type'], 'application/octet-stream, raw');
+      // A caller that logs a RawResponse must still not be able to print a body.
+      expect('${response.toString()}', contains('4 bytes'));
+      expect('${response.toString()}', isNot(contains('250')));
+      client.close();
+    });
+
+    test('test_sendBytes_reportsTheUrlThatAnswered', () async {
+      final adapter = _ScriptedAdapter(<Future<ResponseBody> Function(RequestOptions)>[
+        (_) async => _body('payload', 200),
+      ]);
+      final client = NetworkClient(settings: _fast(), adapter: adapter);
+
+      final response = await client.sendBytes('https://cdn.example.test/v1/track.mp4');
+
+      expect(response.uri, Uri.parse('https://cdn.example.test/v1/track.mp4'));
+      expect(adapter.requests.single.responseType, ResponseType.bytes);
+      client.close();
+    });
+
+    test('test_sendBytes_declaredLengthOverTheCeiling_isRefusedBeforeTheBody', () async {
+      final adapter = _ScriptedAdapter(<Future<ResponseBody> Function(RequestOptions)>[
+        (_) async => _body('small', 200, headers: <String, String>{'content-length': '999999999'}),
+      ]);
+      final client = NetworkClient(
+        settings: NetworkSettings(attempts: 1, retryDelay: Duration.zero, maxResponseBytes: 1024),
+        adapter: adapter,
+      );
+
+      await expectLater(
+        client.sendBytes('https://example.test/huge'),
+        throwsA(
+          isA<NetworkFailure>()
+              .having((f) => f.kind, 'kind', NetworkFailureKind.responseTooLarge)
+              .having((f) => f.code, 'code', 'network.response_too_large'),
+        ),
+      );
+      client.close();
+    });
+
+    test('test_sendBytes_undeclaredButActualBodyOverTheCeiling_isRefused', () async {
+      // Chunked responses send no content-length, so the ceiling still has to hold after the bytes arrive.
+      final adapter = _ScriptedAdapter(<Future<ResponseBody> Function(RequestOptions)>[
+        (_) async => ResponseBody.fromBytes(List<int>.filled(4096, 7), 200),
+      ]);
+      final client = NetworkClient(
+        settings: NetworkSettings(attempts: 1, retryDelay: Duration.zero, maxResponseBytes: 1024),
+        adapter: adapter,
+      );
+
+      await expectLater(
+        client.sendBytes('https://example.test/chunked'),
+        throwsA(isA<NetworkFailure>().having((f) => f.cause, 'cause', contains('4096 bytes'))),
+      );
+      client.close();
+    });
+
+    test('test_sendBytes_errorStatuses_keepTheSameCodesAsTextRequests', () async {
+      for (final (status, code) in <(int, String)>[(403, 'network.forbidden'), (429, 'network.rate_limited')]) {
+        final adapter = _ScriptedAdapter(<Future<ResponseBody> Function(RequestOptions)>[
+          (_) async => _body('denied', status),
+        ]);
+        final client = NetworkClient(
+          settings: NetworkSettings(attempts: 1, retryDelay: Duration.zero),
+          adapter: adapter,
+        );
+
+        await expectLater(
+          client.sendBytes('https://example.test/private'),
+          throwsA(
+            isA<NetworkFailure>().having((f) => f.code, 'code', code).having((f) => f.statusCode, 'status', status),
+          ),
+        );
+        client.close();
+      }
+    });
+
+    test('test_sendBytes_perRequestTimeout_reachesTheAdapter', () async {
+      final adapter = _ScriptedAdapter(<Future<ResponseBody> Function(RequestOptions)>[(_) async => _body('ok', 200)]);
+      final client = NetworkClient(settings: _fast(), adapter: adapter);
+
+      await client.sendBytes('https://example.test/slow', timeout: const Duration(seconds: 3));
+
+      expect(adapter.requests.single.receiveTimeout, const Duration(seconds: 3));
+      client.close();
+    });
+  });
 }

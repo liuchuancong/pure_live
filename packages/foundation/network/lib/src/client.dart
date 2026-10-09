@@ -188,6 +188,24 @@ final class NetworkClient {
     required String url,
     required DateTime started,
   }) {
+    _validate(response, method: method, url: url);
+    _log?.debug(
+      'request completed',
+      fields: <String, Object?>{
+        'method': method,
+        'playUrl': url,
+        'status': response.statusCode,
+        'elapsedMs': _clock().difference(started).inMilliseconds,
+      },
+    );
+    return response;
+  }
+
+  /// Rejects an oversized or failed response before a caller sees the body.
+  ///
+  /// The size test reads `content-length` rather than the decoded bytes on purpose: the point is to refuse
+  /// the download, and waiting for 200 MB to arrive to measure it defeats that.
+  void _validate(Response<dynamic> response, {required String method, required String url}) {
     final lengthHeader = response.headers.value('content-length');
     final length = int.tryParse(lengthHeader ?? '');
     if (length != null && length > _settings.maxResponseBytes) {
@@ -209,16 +227,80 @@ final class NetworkClient {
         retryable: _isRetryableStatus(status),
       );
     }
-    _log?.debug(
-      'request completed',
-      fields: <String, Object?>{
-        'method': method,
-        'playUrl': url,
-        'status': status,
-        'elapsedMs': _clock().difference(started).inMilliseconds,
-      },
+  }
+
+  /// Performs a request and keeps the body as bytes.
+  ///
+  /// This exists for bodies that must not be decoded as text: a media segment, a protobuf spider payload, or
+  /// a repository file whose encoding the site never declares. The url in the result is the one that actually
+  /// answered, which is the only way a caller can notice a redirect that left the host it was granted.
+  Future<RawResponse> sendBytes(
+    String url, {
+    String method = 'GET',
+    Object? body,
+    Map<String, String>? headers,
+    Map<String, dynamic>? queryParameters,
+    Duration? timeout,
+    CancelToken? cancelToken,
+  }) {
+    return retryAsync<RawResponse>(
+      () => _onceBytes(
+        url,
+        method: method,
+        body: body,
+        headers: headers,
+        queryParameters: queryParameters,
+        timeout: timeout,
+        cancelToken: cancelToken,
+      ),
+      attempts: _settings.attempts,
+      delay: _settings.retryDelay,
+      shouldRetry: (error) => error is NetworkFailure && error.retryable,
+      onRetry: (error, wait) => _log?.warning(
+        'retrying request',
+        fields: <String, Object?>{'method': method, 'playUrl': url, 'waitMs': wait.inMilliseconds},
+      ),
     );
-    return response;
+  }
+
+  Future<RawResponse> _onceBytes(
+    String url, {
+    required String method,
+    Object? body,
+    Map<String, String>? headers,
+    Map<String, dynamic>? queryParameters,
+    Duration? timeout,
+    CancelToken? cancelToken,
+  }) async {
+    try {
+      final response = await _dio.request<List<int>>(
+        url,
+        data: body,
+        queryParameters: queryParameters,
+        cancelToken: cancelToken,
+        options: Options(method: method, headers: headers, responseType: ResponseType.bytes, receiveTimeout: timeout),
+      );
+      _validate(response, method: method, url: url);
+      final actual = response.realUri;
+      final bytes = response.data ?? const <int>[];
+      if (bytes.length > _settings.maxResponseBytes) {
+        throw NetworkFailure(
+          kind: NetworkFailureKind.responseTooLarge,
+          method: method,
+          url: url,
+          statusCode: response.statusCode,
+          cause: 'body of ${bytes.length} bytes exceeds ${_settings.maxResponseBytes}',
+        );
+      }
+      return RawResponse(
+        statusCode: response.statusCode ?? 0,
+        uri: actual,
+        headers: response.headers.map.map((name, values) => MapEntry<String, String>(name, values.join(', '))),
+        bytes: bytes,
+      );
+    } on DioException catch (error) {
+      throw _classify(error, method: method, url: url);
+    }
   }
 
   NetworkFailure _classify(DioException error, {required String method, required String url}) {
@@ -269,4 +351,26 @@ Map<String, Object?> decodeJsonObject(String body, {required String url}) {
     );
   }
   return Map<String, Object?>.from(decoded);
+}
+
+/// A response kept as bytes, with the identity of the url that answered.
+///
+/// [uri] is the *effective* location: a request granted for one host that was redirected to another is only
+/// detectable from here, because the caller's own url is the one it already knew.
+final class RawResponse {
+  const RawResponse({required this.statusCode, required this.uri, required this.headers, required this.bytes});
+
+  final int statusCode;
+  final Uri uri;
+
+  /// Repeated headers are joined with `, `, which is how HTTP spells them on the wire.
+  final Map<String, String> headers;
+  final List<int> bytes;
+
+  int get size => bytes.length;
+
+  bool get isSuccess => statusCode >= 200 && statusCode < 300;
+
+  @override
+  String toString() => 'RawResponse($statusCode ${uri.host}, $size bytes)';
 }
