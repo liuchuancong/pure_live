@@ -18,6 +18,7 @@ import '../features/room/room_page.dart';
 import '../features/search/search_page.dart';
 import '../features/settings/settings_page.dart';
 import '../features/shell/app_shell.dart';
+import '../features/vod/vod_detail_page.dart';
 
 /// Root locations of the three navigation branches, index-aligned with the
 /// destinations in [AppShell].
@@ -45,6 +46,13 @@ GoRouter buildGoRouter() {
       ),
       GoRoute(path: '/search', builder: (context, state) => const SearchPage()),
       GoRoute(path: '/plugins', builder: (context, state) => const PluginHostPage()),
+      GoRoute(
+        path: '/vod/:sourceId/:vodId',
+        builder: (context, state) => VodDetailPage(
+          sourceId: state.pathParameters['sourceId']!,
+          vodId: Uri.decodeComponent(state.pathParameters['vodId']!),
+        ),
+      ),
       GoRoute(
         path: '/room/:roomId',
         builder: (context, state) => RoomPage(

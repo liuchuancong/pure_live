@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pure_live_feed/pure_live_feed.dart';
+import 'package:pure_live_capability/pure_live_capability.dart';
 import 'package:pure_live_platform/pure_live_platform.dart';
 
 import '../../app/di.dart';
@@ -21,6 +22,36 @@ import '../../app/di.dart';
 final feedProvider = FutureProvider.autoDispose<FeedResult>((ref) async {
   final runtime = ref.watch(runtimeProvider);
   return runtime.feed.feed(PageRequest.first);
+});
+
+/// Every vod-capable source's home listing, kept per source so one broken
+/// source shows as skipped instead of vanishing.
+final class VodHomeSection {
+  const VodHomeSection({required this.sourceId, this.page, this.error});
+
+  final String sourceId;
+  final PageResult<ContentSummary>? page;
+  final String? error;
+}
+
+final vodHomesProvider = FutureProvider.autoDispose<List<VodHomeSection>>((ref) async {
+  final runtime = ref.watch(runtimeProvider);
+  final sections = <VodHomeSection>[];
+  for (final entry in runtime.capabilities.all) {
+    if (!entry.capabilities.supports(CapabilityKind.vod)) {
+      continue;
+    }
+    final provider = entry.provider;
+    if (provider is! BrowseCapability) {
+      continue;
+    }
+    try {
+      sections.add(VodHomeSection(sourceId: entry.sourceId, page: await provider.browse(const ContentQuery())));
+    } catch (error) {
+      sections.add(VodHomeSection(sourceId: entry.sourceId, error: '$error'));
+    }
+  }
+  return sections;
 });
 
 final class HomePage extends ConsumerWidget {
@@ -47,7 +78,7 @@ final class HomePage extends ConsumerWidget {
                     children: <Widget>[SizedBox(height: constraints.maxHeight, child: const _EmptyFeed())],
                   ),
                 )
-              : _FeedSections(sections: result.sections),
+              : _FeedSections(sections: result.sections, vodHomes: ref.watch(vodHomesProvider)),
         ),
       ),
     );
@@ -55,9 +86,10 @@ final class HomePage extends ConsumerWidget {
 }
 
 final class _FeedSections extends StatelessWidget {
-  const _FeedSections({required this.sections});
+  const _FeedSections({required this.sections, required this.vodHomes});
 
   final List<FeedSection> sections;
+  final AsyncValue<List<VodHomeSection>> vodHomes;
 
   @override
   Widget build(BuildContext context) {
@@ -71,7 +103,93 @@ final class _FeedSections extends StatelessWidget {
           ),
           _RoomGrid(items: section.items),
         ],
+        ..._vodWidgets(context),
       ],
+    );
+  }
+
+  List<Widget> _vodWidgets(BuildContext context) {
+    final theme = Theme.of(context);
+    final homes = vodHomes.value;
+    if (homes == null || homes.isEmpty) {
+      return const <Widget>[];
+    }
+    return <Widget>[
+      Padding(
+        padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+        child: Text('影视', style: theme.textTheme.titleMedium),
+      ),
+      for (final home in homes) ...<Widget>[
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+          child: Text(
+            home.error ?? home.sourceId,
+            style: home.error == null
+                ? theme.textTheme.labelLarge
+                : theme.textTheme.labelLarge?.copyWith(color: theme.colorScheme.error),
+          ),
+        ),
+        if (home.page != null && home.page!.items.isNotEmpty)
+          SizedBox(
+            height: 200,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: home.page!.items.length,
+              separatorBuilder: (context, index) => const SizedBox(width: 8),
+              itemBuilder: (context, index) {
+                final item = home.page!.items[index];
+                return SizedBox(width: 110, child: _VodCard(item: item));
+              },
+            ),
+          ),
+      ],
+    ];
+  }
+}
+
+/// A poster card for vod content; navigates to the vod detail surface.
+final class _VodCard extends StatelessWidget {
+  const _VodCard({required this.item});
+
+  final ContentSummary item;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      margin: EdgeInsets.zero,
+      child: InkWell(
+        onTap: () => context.push('/vod/${item.ref.sourceId}/${Uri.encodeComponent(item.ref.contentId)}'),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Expanded(
+              child: item.cover == null
+                  ? Container(
+                      alignment: Alignment.center,
+                      color: theme.colorScheme.surfaceContainerHigh,
+                      child: Icon(Icons.movie_outlined, color: theme.colorScheme.outline),
+                    )
+                  : Image.network(
+                      item.cover!,
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                      errorBuilder: (context, error, stackTrace) => Container(
+                        alignment: Alignment.center,
+                        color: theme.colorScheme.surfaceContainerHigh,
+                        child: Icon(Icons.movie_outlined, color: theme.colorScheme.outline),
+                      ),
+                    ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(6),
+              child: Text(item.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: theme.textTheme.bodySmall),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
