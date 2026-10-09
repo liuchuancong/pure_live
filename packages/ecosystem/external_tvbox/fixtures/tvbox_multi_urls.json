@@ -1,0 +1,7 @@
+{
+  "urls": [
+    "https://example.com/repos/one.json",
+    { "url": "https://example.com/repos/two.json", "name": "二仓" },
+    "./repos/three.json"
+  ]
+}
