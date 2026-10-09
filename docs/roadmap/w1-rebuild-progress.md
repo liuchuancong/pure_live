@@ -131,10 +131,24 @@ packages 架子没搭完之前不写任何站点代码。原 §5/§6 里"斗鱼 
 
 验证:analyze 全绿;护栏 `packages=36 errors=0`。**未实测**:JS 插件真机导入与 fjs 引擎运行未验证(需要设备会话)——A1 的 prelude/桥接协议是按 fjs 3.3.2 文档 API 写的,首次真机导入可能要修一轮,这是下一段第一优先。
 
+### 5ter. 第四段(同日夜,A4/A5:TVBox 框架按 spider 契约成型)
+
+参考定址:webtv-main(C:\Users\XA-158\Downloads\webtv-main,spider.py 即契约)、newBV-main(B站视频)、dart_simple_live-dev(直播取数)。
+
+| 提交 | 内容 |
+|---|---|
+| `64c394890` | **A4 框架**:SpiderHandle 契约镜像(spider.py 全方法集)+ 宽容结果映射器($$$ 剧集表/class/vod/page/play)+ **SpiderVodProvider 通用适配器**(任意运行时的 spider → browse/search/resolve;剧集播放坐标进 ref.metadata,equality 不含 metadata;parse=1 如实标 needsSniff)+ 单仓(sites ext/jar/lives)/多仓(urls/storeHouse)/M3U 解析 + PlaylistLiveSource(M3U 零运行时可播,分组即分类) |
+| `3fef78830` | **data 插件闭环**:PluginStore.installData(派生 Manifest + content.txt,id=内容哈希,重导入=幂等升级);启动装载 data 分支(M3U/TVBox lives → PlaylistLiveSource 注册;spider 站点记 pending 不假装能播;多仓如实报"先导入单仓");插件页第二个导入入口 |
+| `56d95ec0e` | **A5 python_runtime**:纯 stdlib Python worker(轮询网关取任务/SourceFileLoader 装载 spider/自动 init/回传结果或 traceback;注入 fetch/cache/log 形如 webtv base)+ LocalSpiderGateway(本机单端口 /poll /result /log /cache 有界 TTL——webtv Proxy.getUrl 模式)+ PythonSpiderHost(SeriousPython.runProgram 一次拉起,每调用一任务、调用方超时);serious_python 从 app dev_deps 移入本包 |
+| `6a2677da0` | **JS spider 宿主**:JsSpiderHandle 把脚本的全局契约函数包进沙箱注册机制,装载时断言方法面;spider 契约至此三种执行形态齐:内置适配器 / fjs / serious_python |
+
+护栏 `packages=36 errors=0`;全仓 analyze 绿。**未实测**:fjs 真机导入、serious_python 嵌入解释器真机启动(两者都按文档 API 写,首次真机各可能要修一轮)。spider 的 drpy 兼容层、分页语义细分、分类树契约 = 插件细节阶段(参照 master/dart_simple_live-dev)。
+
 ## 6. 下一步
 
-1. **设备验证**(需用户授权设备会话):虎牙推荐列表/房间取流真机实测;房间页播放(Windows 先行,
-   media_kit 桌面链路 v1 已验证)。
-2. `native-assets/` 预取件补齐后把装配测试真跑一遍。
-3. 虎牙补齐分类浏览(`BrowseCapability`)+ 搜索;清晰度/线路选择进 `SelectionRef` 语义。
-4. 媒体看门狗/换源接线(`integrations/media` 的 watchdog/ticket_swap 已有,尚未接进房间页会话)。
+1. **真机验证一轮**(需设备会话):导入示例 JS 插件(docs/plugin/examples/demo-live-plugin.js)→
+   首页分节 → 房间播放;导入 M3U → 频道播放;fjs 与 serious_python 两个嵌入运行时的首次真机修正。
+2. 媒体看门狗/换源已接进房间页(w1-rebuild §5.1),剩:TVBox 站点接入壳的注册路径
+   (SpiderVodProvider + JsSpiderHandle/PythonSpiderHost 按 sites.type 选择运行时)。
+3. 插件细节阶段:分类树/分页语义契约(参照 master 与 dart_simple_live-dev)、drpy 兼容层、
+   B站视频插件(newBV)、直播站铺量。
