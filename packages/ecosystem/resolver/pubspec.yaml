@@ -1,0 +1,21 @@
+# GENERATED-BY: tool/scaffold_package.ps1
+name: pure_live_resolver
+description: "解析契约:Resolver 与注册表、按能力解析的适配器、候选降级与票据换链"
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.13.0
+
+# Add dependencies from the matrix in docs/architecture/dependency-rules.md section 3.
+dependencies:
+  pure_live_platform:
+    path: ../platform
+  # A Resolver is the platform-facing shape of a source's ResolveCapability, and lifting one into the other is
+  # this package's whole job. That needs the capability contract, so the same-layer edge is whitelisted in
+  # tool/check_architecture.dart and recorded in docs/architecture/dependency-rules.md section 4 (ADR 0021).
+  pure_live_capability:
+    path: ../capability
+
+dev_dependencies:
+  test: ^1.26.0

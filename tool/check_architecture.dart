@@ -65,6 +65,8 @@ const Map<String, Set<String>> kApprovedExceptions = <String, Set<String>>{
   'pure_live_external_tvbox': <String>{'pure_live_python_runtime'},
   // ADR 0019: the gateway is where ExtensionContext is assembled from the permission and task packages.
   'pure_live_extension': <String>{'pure_live_permission', 'pure_live_task'},
+  // ADR 0021: CapabilityResolver lifts a source's ResolveCapability into the platform's Resolver.
+  'pure_live_resolver': <String>{'pure_live_capability'},
 };
 
 /// A package discovered on disk, with the dependencies declared in its pubspec.

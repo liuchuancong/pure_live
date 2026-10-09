@@ -265,6 +265,32 @@ function test_checkarchitecture_siblingTakingTheServiceEdge_reports_error {
     $result = Invoke-Guard -Dir $Dir
     Assert-True -Condition ($result.Text.Contains('layer-direction') -and $result.Text.Contains('pure_live_permission')) -Message 'only the gateway may take the permission edge'
 }
+function test_checkarchitecture_resolverCapabilityEdge_reports_nothing {
+    param([string] $Dir)
+    # ADR 0021: CapabilityResolver lifts a source's ResolveCapability into the platform's Resolver,
+    # which needs the capability contract from the same layer.
+    foreach ($rel in @('packages/ecosystem/platform', 'packages/ecosystem/capability')) {
+        Add-FixtureMember -Dir $Dir -Path $rel
+        Add-FixturePackage -Dir $Dir -RelPath $rel
+    }
+    Add-FixtureMember -Dir $Dir -Path 'packages/ecosystem/resolver'
+    Add-FixturePackage -Dir $Dir -RelPath 'packages/ecosystem/resolver' -Deps @('pure_live_platform', 'pure_live_capability')
+    $result = Invoke-Guard -Dir $Dir
+    Assert-True -Condition ($result.Exit -eq 0) -Message "resolver -> capability is whitelisted, got: $($result.Text)"
+}
+
+function test_checkarchitecture_otherPackageTakingTheCapabilityEdge_reports_error {
+    param([string] $Dir)
+    # The whitelist names the resolver, not the layer: a different ecosystem package must not reach for capability.
+    Add-FixtureMember -Dir $Dir -Path 'packages/ecosystem/platform'
+    Add-FixturePackage -Dir $Dir -RelPath 'packages/ecosystem/platform'
+    Add-FixtureMember -Dir $Dir -Path 'packages/ecosystem/capability'
+    Add-FixturePackage -Dir $Dir -RelPath 'packages/ecosystem/capability' -Deps @('pure_live_platform')
+    Add-FixtureMember -Dir $Dir -Path 'packages/ecosystem/extension'
+    Add-FixturePackage -Dir $Dir -RelPath 'packages/ecosystem/extension' -Deps @('pure_live_capability')
+    $result = Invoke-Guard -Dir $Dir
+    Assert-True -Condition ($result.Text.Contains('layer-direction') -and $result.Text.Contains('pure_live_capability')) -Message 'only the resolver may take the capability edge'
+}
 
 function test_checkarchitecture_dependencyonapp_reports_error {
     param([string] $Dir)

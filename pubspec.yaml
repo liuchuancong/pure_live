@@ -14,6 +14,7 @@ workspace:
   - packages/ecosystem/permission
   - packages/ecosystem/platform
   - packages/ecosystem/plugin_api
+  - packages/ecosystem/resolver
   - packages/ecosystem/task
   - packages/foundation/auth
   - packages/foundation/backup
