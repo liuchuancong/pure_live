@@ -225,6 +225,26 @@ dependencies:
       ref: 5b047145422758d983a3724e689d8aa4b7d06863
       path: packages/media_core_logging
 
+  # -------------------------- v2 分层包(组合根)--------------------------
+  # AGENTS.md I9:只有这里允许同时看见所有层。运行时装配写在 lib/app/runtime.dart,
+  # 每层的公共面仍是各自 barrel —— 应用不 import 包的 lib/src/。
+  pure_live_platform:
+    path: ../../packages/ecosystem/platform
+  pure_live_capability:
+    path: ../../packages/ecosystem/capability
+  pure_live_permission:
+    path: ../../packages/ecosystem/permission
+  pure_live_task:
+    path: ../../packages/ecosystem/task
+  pure_live_extension:
+    path: ../../packages/ecosystem/extension
+  pure_live_resolver:
+    path: ../../packages/ecosystem/resolver
+  pure_live_network:
+    path: ../../packages/foundation/network
+  pure_live_storage:
+    path: ../../packages/foundation/storage
+
   # -------------------------- 数据存储/数据库 --------------------------
   hive_ce: ^2.20.0 # Hive本地数据库
   hive_ce_flutter: ^2.3.3 # Hive Flutter集成
