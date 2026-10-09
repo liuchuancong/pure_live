@@ -10,5 +10,10 @@
     },
 
     "dart.lineLength": 100,
-    "dart.previewFlutterUiGuides": true
+    "dart.previewFlutterUiGuides": true,
+    "yaml.validate": true,
+    "yaml.schemas": {
+        "https://json.schemastore.org/github-action.json": [".github/actions/*/action.yml", ".github/actions/*/action.yaml"],
+        "https://json.schemastore.org/github-workflow.json": [".github/workflows/*.yml", ".github/workflows/*.yaml"]
+    }
 }
