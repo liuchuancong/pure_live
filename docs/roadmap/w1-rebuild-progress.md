@@ -117,6 +117,20 @@
 | 端点/播放实测 | **未做**(本轮无设备授权):虎牙端点与签名逻辑逐行对照 v1 维护线,但真实响应未验;demo 测试流为公共服务,可达性未验 |
 | flutter test | 仍未跑(native-assets 前置未补齐,见 §2) |
 
+## 5bis. 重建第三段(同日晚,方向对齐:架构优先,壳即插件宿主)
+
+使用者纠偏:v2 的形态是**壳 + 插件导入**(类似 TVBox 的导入模型),站点不做进壳里,B 站视频同样以插件接入;
+packages 架子没搭完之前不写任何站点代码。原 §5/§6 里"斗鱼 provider 批量移植"一条据此作废。
+
+| 提交 | 内容 |
+|---|---|
+| `7e956825c` | **A1 JS 运行时**(`ecosystem/js_runtime`):每插件一个 fjs 引擎(console+timers,无内建 fetch——请求必须过 PluginNetwork 白名单);`PureLive.registerPlugin` 宿主协议;能力调用走 JSON 边界 dispatch;enable 读注册并裁剪到 Manifest 声明(多暴露即违规);JsLiveAdapter/JsSearchAdapter 交付契约对象;超时/超容返回 SandboxOutcome 不炸宿主。护栏+依赖规则登记同层例外 js_runtime → plugin_api/capability |
+| `c3db13b5f` | **A2 导入通道**(`ecosystem/plugin_host`):单文件格式 = 头部 `PureLive-Plugin-Manifest` JSON 注释块 + 脚本;解析不执行代码,校验永远先于装载;PluginStore 落盘 plugins/<id>/{manifest.json,plugin.js,state.json}(三文件:脚本损坏不连坐声明,启用位是用户数据);升级保留启用位;卸载只删代码不删 kv。豁免 plugin_host → plugin_api |
+| `6f58a9c6e` | **A3 壳改造**:RuntimeHostBridge(网络走权限出口绑定插件 id、kv 走命名空间、cookies 走共享权限 jar、事件进诊断);启动时 loadEnabledPlugins 把已启用插件装进能力注册表(单脚本损坏只记诊断不炸启动);/plugins 管理页(导入/启停/卸载);**删除硬编码虎牙注册**——壳不再内置任何站点,demo 源降级为种子数据(文档注明这是 registerBuiltInSources 永远唯一的注册项) |
+| `11e6ea400` | **示例插件** `docs/plugin/examples/demo-live-plugin.js`:live+search 两组能力、kv 计数、http 桥实测,可直接从管理页导入验证"导入→启用→首页分节→房间播放"全链 |
+
+验证:analyze 全绿;护栏 `packages=36 errors=0`。**未实测**:JS 插件真机导入与 fjs 引擎运行未验证(需要设备会话)——A1 的 prelude/桥接协议是按 fjs 3.3.2 文档 API 写的,首次真机导入可能要修一轮,这是下一段第一优先。
+
 ## 6. 下一步
 
 1. **设备验证**(需用户授权设备会话):虎牙推荐列表/房间取流真机实测;房间页播放(Windows 先行,
