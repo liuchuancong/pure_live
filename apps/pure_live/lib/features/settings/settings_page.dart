@@ -6,6 +6,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../app/di.dart';
@@ -30,6 +31,13 @@ final class SettingsPage extends ConsumerWidget {
             leading: const Icon(Icons.extension_outlined),
             title: const Text('已注册内容源'),
             subtitle: Text('${runtime.capabilities.length} 个'),
+          ),
+          ListTile(
+            leading: const Icon(Icons.widgets_outlined),
+            title: const Text('插件管理'),
+            subtitle: const Text('导入站点与影视源插件'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push('/plugins'),
           ),
           ListTile(
             leading: const Icon(Icons.account_tree_outlined),

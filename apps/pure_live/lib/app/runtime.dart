@@ -22,8 +22,8 @@ import 'package:pure_live_extension/pure_live_extension.dart';
 import 'package:pure_live_favorites/pure_live_favorites.dart';
 import 'package:pure_live_feed/pure_live_feed.dart';
 import 'package:pure_live_history/pure_live_history.dart';
-import 'package:pure_live_huya/pure_live_huya.dart';
 import 'package:pure_live_media/pure_live_media.dart';
+import 'package:pure_live_plugin_host/pure_live_plugin_host.dart';
 import 'package:pure_live_network/pure_live_network.dart';
 import 'package:pure_live_permission/pure_live_permission.dart';
 import 'package:pure_live_playlist/pure_live_playlist.dart';
@@ -43,6 +43,8 @@ final class PureLiveRuntime {
     required this.diagnostics,
     required this.runtimes,
     required this.gateway,
+    required this.cookies,
+    required this.pluginStore,
     required this.media,
     required this.capabilities,
     required this.resolvers,
@@ -84,6 +86,8 @@ final class PureLiveRuntime {
     final tasks = InMemoryTaskScheduler();
     final diagnostics = InMemoryDiagnosticTracer();
     final runtimes = RuntimeRegistry();
+    final cookies = InMemoryCookieJar();
+    final pluginStore = PluginStore(root: Directory('${directory.path}${Platform.pathSeparator}plugins'));
 
     final gateway = ManagedExtensionGateway(
       runtimes: runtimes,
@@ -92,7 +96,7 @@ final class PureLiveRuntime {
         permissions: permissions,
         transport: NetworkClientTransport(client: network),
       ),
-      cookies: PolicyBackedCookieStore(permissions: permissions, jar: InMemoryCookieJar()),
+      cookies: PolicyBackedCookieStore(permissions: permissions, jar: cookies),
       tasks: tasks,
       diagnostics: diagnostics,
       supportedApiVersions: supportedApiVersions,
@@ -128,6 +132,8 @@ final class PureLiveRuntime {
       tasks: tasks,
       diagnostics: diagnostics,
       gateway: gateway,
+      cookies: cookies,
+      pluginStore: pluginStore,
       media: media,
       capabilities: capabilities,
       runtimes: runtimes,
@@ -169,6 +175,13 @@ final class PureLiveRuntime {
   final InMemoryDiagnosticTracer diagnostics;
   final ManagedExtensionGateway gateway;
 
+  /// The in-process cookie jars, one namespace per plugin or extension. Shared
+  /// by the gateway and the plugin bridge so both paths see the same cookies.
+  final InMemoryCookieJar cookies;
+
+  /// The installed-plugin directory this shell loads from.
+  final PluginStore pluginStore;
+
   /// The playback kernel with the media_kit backend. Opened from tickets; the app entry point runs
   /// [MediaKernelHost.ensureInitialized] before the first surface is built.
   final MediaKernelHost media;
@@ -204,11 +217,12 @@ final class PureLiveRuntime {
   }
 }
 
-/// Registers the content sources compiled into the app binary.
+/// Registers the seed source compiled into the app binary.
 ///
-/// The composition root is the one place allowed to name a concrete source (AGENTS.md I9): a provider a
-/// plugin loads goes through the gateway, but a built-in has no plugin, so the app itself puts it on the
-/// registry. Tests boot [PureLiveRuntime] without this call, so their fixtures stay the only content.
+/// The shell hosts plugins; it does not ship sites. The demo source is seed
+/// data so the feed and playback chains are demonstrable before the first
+/// plugin is imported, and it is the only thing this function will ever
+/// register. Real sources arrive through install -> enable -> registry.
 PureLiveRuntime registerBuiltInSources(PureLiveRuntime runtime) {
   runtime.capabilities.register(
     ProviderRegistration(
@@ -216,20 +230,6 @@ PureLiveRuntime registerBuiltInSources(PureLiveRuntime runtime) {
       extensionId: 'built-in.demo',
       provider: const DemoLiveSource(),
       capabilities: const CapabilitySet(<CapabilityKind>{CapabilityKind.feed, CapabilityKind.live}),
-    ),
-  );
-  // The first real site: recommend feed and anonymous HLS resolve. The source
-  // is app-owned like every built-in, so its transport lives for the process.
-  runtime.capabilities.register(
-    ProviderRegistration(
-      sourceId: huyaSourceId,
-      extensionId: 'built-in.huya',
-      provider: HuyaSource(),
-      capabilities: const CapabilitySet(<CapabilityKind>{
-        CapabilityKind.feed,
-        CapabilityKind.live,
-        CapabilityKind.search,
-      }),
     ),
   );
   return runtime;

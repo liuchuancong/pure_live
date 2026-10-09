@@ -12,9 +12,11 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pure_live_media/pure_live_media.dart';
+import 'package:pure_live_platform/pure_live_platform.dart' as platform;
 
 import 'app/app.dart';
 import 'app/di.dart';
+import 'app/plugin_hosting.dart';
 import 'app/runtime.dart';
 
 Future<void> main() async {
@@ -23,6 +25,18 @@ Future<void> main() async {
   // free of engine start-up concerns.
   MediaKernelHost.ensureInitialized();
   final runtime = registerBuiltInSources(await PureLiveRuntime.boot());
+  // Installed-and-enabled plugins join the registry before the first frame, so
+  // the home feed opens with them already present. A broken script is recorded
+  // and skipped; it never fails the boot.
+  final pluginReport = await loadEnabledPlugins(runtime, runtime.pluginStore);
+  for (final entry in pluginReport.failed.entries) {
+    runtime.diagnostics.emit(
+      'plugin.loadFailed',
+      extensionId: entry.key,
+      level: platform.DiagnosticLevel.error,
+      metadata: <String, Object?>{'error': entry.value},
+    );
+  }
   runApp(
     // Riverpod 3 no longer exports the Override type name; pass the override as-is.
     ProviderScope(overrides: [runtimeProvider.overrideWithValue(runtime)], child: const PureLiveApp()),
