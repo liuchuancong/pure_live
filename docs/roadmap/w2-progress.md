@@ -138,6 +138,65 @@ Extension API 不变"第一次真的被换过一次):
 而代码、ADR 0019 与网关字段用的是 `ExtensionCache` / `ExtensionStorage`。以代码名为准(改名会牵动已发布契约面),
 分歧已在 §19 就地标注。
 
+### 1.7 组合根重建:apps/pure_live 装起 v2 运行时(app 侧 7 测试)
+
+w1-progress 待办 7 写的是"分支**不可运行** …… 可运行性随 W2 运行时与组合根重建恢复"。W2 与 W3 都没有做这件事,
+所以它一直是欠着的:W1 搬家之后 `apps/pure_live/lib/` 只剩 artisan 生成的两个空文件,没有 `main.dart`,
+app 的 pubspec 也没引用 v2 栈里任何一个包 —— 换句话说 W2/W3 交付的那些包**没有任何一处被装起来过**。
+
+本增量按 [runtime.md](../architecture/runtime.md) §1 的冷启动顺序落了它已有代码支撑的那几段:
+
+| 段 | 装配 |
+|---|---|
+| CacheRuntime(部分) | `FileKeyValueStore`(仓库根数据目录下的 `extensions.json`)+ 每扩展 `PersistentExtensionCache` / `PersistentExtensionStorage` |
+| DiagnosticRuntime(部分) | `InMemoryDiagnosticTracer`(512 条环形) |
+| Permission | `PolicyPermissionManager` + `InMemoryPermissionStore` |
+| Network | `NetworkClient` → `NetworkClientTransport` → `PolicyBackedExtensionNetwork`(权限门在这条链的最前面) |
+| Cookie | `PolicyBackedCookieStore` + `InMemoryCookieJar` |
+| PluginRuntime / CapabilityRuntime | `ManagedExtensionGateway`(带 §1.6 的两道工厂)+ `RuntimeRegistry` + `CapabilityRegistry` |
+| Resolver | `ResolverRegistry` + `ResolverChain`(w3-progress §4 说的"没有装配点"从此有了) |
+| **MediaRuntime** | **不装**:还没有引擎适配(w3-progress §4),在这里 new 一个 `PlayerKernel` 只是装配一个没人能驱动的对象 |
+
+`main.dart` 先 binding 再 boot(路径解析走平台通道),首帧之前运行时就已经是完整的;`host.dart` 只做一件事 ——
+把"装了哪些东西"列出来。它不是 UI:UI 层的波会换掉它,而现在没有它分支就跑不起来。
+
+7 条测试钉的是**只有组合根会错的那类事实**(包测试测不到):
+
+- `identical(context.tasks, runtime.tasks)` 与 `identical(context.permissions, runtime.permissions)`:
+  一个进程一个调度器/一个授权器;复制一份就等于把插件的工作放到平台限额之外。
+- 未声明 `network` 的扩展调 `context.network.send` → 拿到 `permission.denied` 而**不是**网络错误码,
+  也就是说到不了 socket。这是"网关的网络确实用的是这个 permission manager"的唯一可观测证据。
+- `resolverChain` 读的确实是同一个 `resolvers` 注册表(空 → `resolver.unsupported`,注册后 → 出票)。
+- `supportedApiVersions` 这道门由根决定:默认空 = 不检查;给 `{'2'}` 之后,声明 `1` 的插件在 `register`
+  就被拒并且记录停在 `incompatible`,声明 `2` 的正常到 `ready`。
+- durability:扩展经 `context.storage/cache` 写的行**落在磁盘上那个 json 里**(断言直接读文件看命名空间键),
+  第二次 boot 只共用目录就能读回 —— §1.6 那句"实现可换而 Extension API 不变"到这里才算被真的换过一次。
+- 两个扩展共用一个 store 也读不到彼此的行。
+
+### 1.8 顺带挖出的两处工具链失效(都在 W1 那次搬家之后)
+
+这两条不是"改进",是**验证链路本身已经不成立**,所以必须记在进度里:
+
+1. **`tool/flutterw.ps1` 无论调用方在哪,都 `Push-Location $workDir`(= 仓库根)。** ADR 0015 之后 Flutter 项目在
+   `apps/pure_live`,于是 `flutter test/analyze` 一律在 hub 上跑:路径解析成 `D:/flutter/pure_live/test/...`
+   然后报"Does not exist",而 hub 没有 flutter 依赖,根本不是一个 Flutter 工程。修法是新增
+   `Resolve-PureLiveProjectPath`(把调用方目录映射进所选的短路径空间:物理 / junction / SUBST 三种都成立),
+   调用方在仓库根时行为**逐字不变**;`tool/test_subst_path.ps1` 加了 6 条不起 Flutter 的用例钉住它,
+   其中包括"仓库外的调用目录退回根"这条保守分支。
+2. **`ffmpeg_kit_extended_flutter` 的构建钩子把"应用目录"算成 package_config 的上两级。**
+   pub workspace 把 `package_config.json` 放在仓库根,所以钩子看到的是 hub 的 pubspec,读不到
+   `ffmpeg_kit_extended_config`,退回它自己的默认值 `base + small` —— 与本应用声明的 `small: false` 不一致,
+   而且本机缓存里只有非 small 那一份,于是 `flutter test` 在原生资源阶段尝试联网下载并死于
+   `HandshakeException`。已在根 pubspec 镜像这段配置(注释写明应用侧才是权威、两处不一致时产物按 hub 走,
+   上游修好 workspace 感知后删除)。这条的代价要说清楚:**在没有代理的机器上,此前所有 app 侧
+   `flutter test` / `build` 都会在这里失败**,而不是只在测试里。
+
+`tool/local_ci.ps1` 仍然假定 Flutter 工程在仓库根(`flutter pub get` / `test` / `analyze` 都在 `$repoRoot`,
+格式化排除项还写着搬家前的 `plugins/built_in_kotlin/` 与 `lib/core/scripts/douyin_sign.dart`),
+因此它现在不能用作本波的验证入口。本轮验证走的是守卫内的直接命令:
+`Enter-PureLiveHeavyTaskSlot` → `tool/flutterw.ps1 test/analyze`(cwd = apps/pure_live)→ `Exit-PureLiveHeavyTaskSlot`。
+local_ci 的适配单独一票,不塞进本波。
+
 ## 2. 顺带修掉的工程缺陷
 
 | 缺陷 | 处理 |
@@ -149,6 +208,8 @@ Extension API 不变"第一次真的被换过一次):
 | 10 个包的 `lib/src/.gitkeep` 在目录已有真实文件后仍留存 | 删除;护栏新增 `stale-scaffold-marker` 规则,并在回归里加"占位符留在已填充目录必须报错"的用例(fixture 生成器同步改成写真实文件时不再放占位符,免得 import 用例顺带触发别的规则) |
 | `coding-style.md` 写"中文注释",与 `DEVELOPMENT_STANDARDS.md` §4"代码注释一律英文"冲突 | 以 DEVELOPMENT_STANDARDS 为准:代码注释英文,`docs/` 与包 README 中文;已改写该条 |
 | W1 记录里 "241 测试" 是逐包数字加错(实际 194) | 已在 w1-progress.md 更正,并改为按逐包实跑数字记录 |
+| `tool/flutterw.ps1` 把 Flutter 工程固定在仓库根,ADR 0015 之后 app 侧任何 `test`/`analyze` 都跑不起来 | 见 §1.8(1):新增 `Resolve-PureLiveProjectPath` + 6 条用例 |
+| FFmpegKit 构建钩子在 workspace 下读不到应用配置,退回默认 bundle 并联网重下 | 见 §1.8(2):根 pubspec 镜像该配置段,并写明权威在哪一侧 |
 
 ## 3. 验证证据
 
@@ -165,6 +226,18 @@ Extension API 不变"第一次真的被换过一次):
 | `tool/test_check_architecture.ps1` | **PASS: 21 assertions across 19 cases** —— 含 stale-scaffold-marker 反例、ADR 0019 白名单"网关可走 / 别家走同一边必须报错"两条 |
 | `dart run tool/check_workflow_yaml.dart` | 4 个 workflow/action 文件解析通过 |
 | 护栏非空转验证 | 临时放置 `packages/foundation/utils/lib/src/.gitkeep` → 报 `stale-scaffold-marker` 且 `errors=1`,删除后回 0 |
+
+组合根(§1.7)验证 —— 全部经 `tool/build_resource_guard.ps1` 的租约,`tool/flutterw.ps1` 在 `apps/pure_live` 下执行:
+
+| 命令 | 结果 |
+|---|---|
+| `apps/pure_live` → `flutter pub get --offline` | Got dependencies(新增 8 个 workspace 路径依赖) |
+| `apps/pure_live` → `flutter test --no-pub test/runtime_assembly_test.dart` | **7 全绿**(装配 4 + 持久化 2 + 宿主 widget 1) |
+| `apps/pure_live` → `flutter analyze --no-pub` | No issues found(修掉两条:一处未用 import、一个未用测试参数) |
+| 原生资源 | FFmpegKit 钩子改用本机已有的 `bundle-base-windows-x86_64-shared-lgpl`,不再下载 |
+| `tool/test_subst_path.ps1` | PASS:8 条 SUBST + 6 条 project-path + wrapper syntax |
+| `dart analyze packages` / `--strict` 护栏 / 格式化 | No issues found;`packages=26 errors=0`;显式路径 153 文件 0 changed |
+| **仍未恢复** | `tool/local_ci.ps1` 的 Flutter 阶段仍指向仓库根,不能作为本波验证入口;分支能 `flutter test`,但**没有做过设备/构建验收** |
 
 W2 收尾(§1.6)复跑:
 
@@ -191,7 +264,13 @@ W2 收尾(§1.6)复跑:
 4. M2 的另一半"媒体管线能播一个假源"已在 W3 达成(接线层),见 [w3-progress.md](w3-progress.md) §2.2。
 5. `ExtensionGateway.supportedApiVersions` 默认为空 = 不做版本检查;插件一旦能声明 `platformApiVersion`,
    组合根必须显式给出接受范围,否则 platform-contracts.md §23 的兼容性判定形同不存在。
-6. 落盘视图留了两处口子(§1.6 里也写了,记在这里是为了不让它被当成已解决):
+6. `tool/local_ci.ps1` 需要适配 ADR 0015 之后的目录(Flutter 阶段进 `apps/pure_live`,格式化排除项改到
+   `third_party/**` 与 `apps/pure_live/lib/core/scripts/douyin_sign.dart`),并给"改了依赖必须重写 lockfile"
+   留一个开关(现在它固定 `pub get --enforce-lockfile`)。这是本波之后紧接着的一票。
+7. 组合根只装到 §1.7 那张表的范围:`InMemoryPermissionStore` 让授权与拒绝**活不过重启**(每次开机重新问一遍),
+   `MediaRuntime` 没有装(没有引擎适配),`RuntimeRegistry` 是空的(没有运行时可注册)。前两条各有明确落点,
+   第三条随 W3 的引擎适配。
+8. 落盘视图留了两处口子(§1.6 里也写了,记在这里是为了不让它被当成已解决):
    - **卸载不清 data**:`ExtensionStorage` 契约没有 `clear()`(§19 就没有),网关也只有 `unload` 不叫 uninstall。
      清理只能由持有 `KeyValueStore` 的一方按 `ExtensionNamespace` 前缀做,而那需要一个真正的卸载入口。
    - **磁盘缓存没有条数上限**:过期只在读这一行或列键时被剔除。AGENTS.md 把"有界缓存"列为要守的性质,而策略该是

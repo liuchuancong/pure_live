@@ -242,6 +242,7 @@ models §11 的 `MediaTicketRefreshInfo{supported, expiresAt, refreshBefore}` �
 - `MediaTicketRefreshInfo` 现在有**读它的一方**了(§2.4 的预取时刻、§2.6 的换链闸),但**没有写它的一方**:
   只有真实 provider 在 `ResolveCapability.resolve` 里回填 `refresh`,这些字段才生效。在此之前它们对任何源都是 null,
   行为等同"源没给建议 → 用全局默认提前量"。
-- `ResolverRegistry` 还没有装配点:注册表与链是纯对象,app 侧(唯一组合根,I9)尚未把源注册进来,
+- ~~`ResolverRegistry` 还没有装配点~~:组合根已落(见 [w2-progress.md](w2-progress.md) §1.7,`runtime.resolvers`
+  与 `runtime.resolverChain`),但**还没有人往里注册源** —— 那要等 W4 的第一个 provider;注册表与链本身是纯对象,
   也没有把 `ResolveCapability` 从扩展上下文递到 `CapabilityResolver`。这属于 W4 的 DI 活。
 

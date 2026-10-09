@@ -58,6 +58,10 @@
 5. `.fvmrc` 钉 3.47.5,机器上实际是 PATH 里的 Flutter 3.47.6,`tool/flutterw.ps1` 会静默回退。**待用户定**:提 `.fvmrc` 到 3.47.6,还是装 3.47.5。
 6. `fluttersdk_artisan` / `fluttersdk_dusk` 与 `.mcp.json`、`apps/pure_live/bin/dispatcher.dart`、`apps/pure_live/lib/app/_plugins.g.dart` 是别处引入的框架栈,`docs/` 全体系无一处提到它。本轮只把 `.mcp.json` 的 cwd 改到 `apps/pure_live`,**未做取舍**。
 7. 分支**不可运行**:`apps/pure_live/lib/` 只剩 artisan 生成的两个空文件,没有 `main.dart`;`pubspec.yaml` 的 `flutter: assets/fonts` 段仍指向 v1 资源清单。可运行性随 W2 运行时与组合根重建恢复。
+   > **2026-10-09 更新**:这一条的前半已经收掉 —— `main.dart` / `app/runtime.dart` / `app/host.dart` 落了,
+   > `flutter test` 与 `flutter analyze` 在 `apps/pure_live` 下都是绿的,见
+   > [w2-progress.md](w2-progress.md) §1.7。后半**未处理**:资源清单仍是 v1 那一份(2095 个文件随迁而来,
+   > 里面哪些还要用要按 UI 波的决定筛),设备与构建验收也仍然没有做过。
 
 ## 4. 环境事故(会影响后续会话)
 

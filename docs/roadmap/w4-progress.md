@@ -74,8 +74,9 @@
 
 ## 4. 已知欠账
 
-- `CapabilityRegistry` 还**没有装配点**:谁在扩展 enable 时注册、谁在 unload 时注销,是组合根(app)的活;
-  在 W4 的 Bilibili 之前它仍然只是一份可测的机制。
+- `CapabilityRegistry` 现在**在组合根里**(`runtime.capabilities`,见 w2-progress.md §1.7),但**注册动作还没有人做**:
+  谁在扩展 enable 时把 provider 放进去、谁在 unload 时 `unregisterExtension`,要等第一个真实 provider(W4 的 Bilibili)
+  或第一个内置扩展出现才有主语。在那之前它仍然只是一份可测的机制。
 - 注册表不校验声明真伪(见上)。若将来出现"声明与实现都齐但语义不符"的源,`providersFor` 会照单全收,
   而那属于契约测试的更细断言面,不是索引该补的东西。
 - `ContentPriority` 一类的排序需求一旦真的出现(例如多源聚合里"优先某站"),得先定它属于
