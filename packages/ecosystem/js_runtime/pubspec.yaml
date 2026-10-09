@@ -1,0 +1,17 @@
+# GENERATED-BY: tool/scaffold_package.ps1
+name: pure_live_js_runtime
+description: "The JS plugin host: fjs sandbox implementing the plugin_api sandbox and runtime contracts"
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.13.0
+
+dependencies:
+  fjs: ^3.3.2
+  pure_live_capability:
+    path: ../../ecosystem/capability
+  pure_live_platform:
+    path: ../../ecosystem/platform
+  pure_live_plugin_api:
+    path: ../../ecosystem/plugin_api

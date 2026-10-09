@@ -67,6 +67,10 @@ const Map<String, Set<String>> kApprovedExceptions = <String, Set<String>>{
   'pure_live_extension': <String>{'pure_live_permission', 'pure_live_task'},
   // ADR 0021: CapabilityResolver lifts a source's ResolveCapability into the platform's Resolver.
   'pure_live_resolver': <String>{'pure_live_capability'},
+  // The JS host implements the plugin_api sandbox and runtime contracts and
+  // publishes its adapters as capability objects; the plugin system and its
+  // execution engine are one domain (docs/plugin/js-plugin.md).
+  'pure_live_js_runtime': <String>{'pure_live_plugin_api', 'pure_live_capability'},
 };
 
 /// A package discovered on disk, with the dependencies declared in its pubspec.
