@@ -303,11 +303,10 @@ Future<SpiderVodProvider> _spawnSiteProvider(PureLiveRuntime runtime, PluginMani
   final code = response.data ?? '';
   final siteRef = SpiderSite(key: site.key, name: site.name, extend: site.ext);
   if (isJs) {
-    final handle = await JsSpiderHandle.spawn(
-      key: site.key,
-      source: code,
-      bridge: RuntimeHostBridge(pluginId: '${manifest.id}.${site.key}', manifest: manifest, runtime: runtime),
-    );
+    final bridge = RuntimeHostBridge(pluginId: '${manifest.id}.${site.key}', manifest: manifest, runtime: runtime);
+    final SpiderHandle handle = looksLikeDrpyModule(code)
+        ? await JsDrpySpiderHandle.spawn(key: site.key, source: code, bridge: bridge)
+        : await JsSpiderHandle.spawn(key: site.key, source: code, bridge: bridge);
     return SpiderVodProvider(site: siteRef, handle: handle);
   }
   await PythonSpiderHost.installSpider(runtime.dataDirectory, site.key, code);

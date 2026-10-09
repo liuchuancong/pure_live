@@ -146,6 +146,26 @@ final class FjsJsSandbox implements ScriptSandbox {
   @override
   Future<SandboxOutcome> evaluate(SandboxUnit unit) => _evaluateCode(unit.source);
 
+  /// Registers and evaluates one ES module in this sandbox. Module code may
+  /// use import/export; imports resolve against modules already registered in
+  /// this engine. Assigning to `globalThis` inside the module is how its
+  /// surface becomes reachable from later script evaluations.
+  Future<SandboxOutcome> evaluateModuleSource(String moduleName, String source) async {
+    final engine = _engine;
+    if (_disposed || engine == null) {
+      return SandboxOutcome(failure: SandboxFailure.crashed, elapsed: Duration.zero, message: 'sandbox is closed');
+    }
+    final watch = Stopwatch()..start();
+    try {
+      await engine.evaluateModule(
+        module: fjs.JsModule.code(module: moduleName, code: source),
+      );
+      return SandboxOutcome(failure: SandboxFailure.none, elapsed: watch.elapsed);
+    } catch (error) {
+      return SandboxOutcome(failure: SandboxFailure.threw, elapsed: watch.elapsed, message: '$error');
+    }
+  }
+
   /// Calls a capability method on the plugin's registration and returns the
   /// JSON string it answered with. This is the runtime's real entry; `evaluate`
   /// covers the load-time script itself.
