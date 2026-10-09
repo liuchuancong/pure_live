@@ -60,8 +60,33 @@
 于是本波的落地顺序:注册表(已落)→ 录制通道 → Bilibili 内容链(browse / detail / search / feed / resolve / refresh,
 跑同一套契约断言)→ danmaku 与 auth 契约定稿 → 媒体链接到 W3 的 resolver 与 media 映射。
 
-## 3. 验证证据
+## 1.5 W4 的主体被卡住期间先落的消费端:`packages/services/search`(13 测试)
 
+§2 那两条前置(真实响应录制、danmaku/auth 的方法集)都不是我一个人能定的:前者要么有联网授权、要么先造录制通道,
+后者是改契约。但**消费 discovery 的那一侧不需要等它**,而 provider-contract §3 与 services/search.md 都已经把
+发现入口写死了 —— 所以先把聚合搜索落下来,等第一个 provider 出现时它面对的是"接进一条已经在跑的链",
+而不是再交一个孤立对象。
+
+L2 的第一个包因此是 `pure_live_search`,依赖只有 `pure_live_platform`(词表)与 `pure_live_capability`(能力接口 +
+`CapabilityRegistry`)。这条 L2→L1 的边我写进了依赖规则 §3 并限定在**契约面**:L2 可以用能力接口和注册表,
+**不**用网关/权限/任务/解析器这些运行时服务 —— 那些是组合根注进来的。护栏只查方向,所以这条界线由 review 守,
+文档里也这么写了(不假装它是机械强制的)。
+
+实现照 services/search.md 的四条失败规则逐条落,每条都有测试:
+
+| 规则 | 落法 | 被钉住的测试 |
+|---|---|---|
+| 并发查询 + 超时 | `perProviderTimeout`(默认 8s),到点的源记 `timedOut` | 一个永不完成的源 + 一个快源:快源的结果仍然返回 |
+| 失败隔离 | 源抛出的异常收进 `failed.detail`,不外溢 | `test_search_sourceThrows_isRecordedNotRethrown` |
+| 部分结果可用 | 结果按源分桶,`answered` / `problems` 两个视图 | 同上两条 |
+| 无结果源静默标记 | `empty` 与 `failed` 是两种结局(empty 不带 detail) | `test_search_answersWithNothing_isMarkedEmptyNotFailed` |
+| 结果必须是自己的内容 | 指向别源的条目在这里丢弃并计数(`contract.search.foreign_source` 的第二道) | `test_search_dropsItemsBelongingToAnotherSource` |
+| 不硬编码源 | 只经 `providersFor(search)` 选择,`onlySources` 是站内搜索的收窄 | 两条 onlySources 测试 |
+
+两处刻意的不做:结果**先到先显示**需要一条流式接口,而那是 UI 的分批渲染决定,现在加等于猜;按
+直播/视频/音乐/频道分组是呈现规则,留在 UI。空关键词则相反 —— 它必须**一个请求都不发**,因为 N 个源的
+空关键词就是 N 次无意义请求,包 README 把这条与它的理由写在一起。
+## 3. 验证证据
 | 命令 | 结果 |
 |---|---|
 | `packages/ecosystem/capability` → `dart analyze .` | No issues found |
@@ -71,6 +96,8 @@
 | `dart run tool/check_architecture.dart --strict` | `packages=26 errors=0 warnings=0`(注册表落在 capability 包内,没有新增依赖边) |
 | `dart format --output=none --set-exit-if-changed packages tool/check_architecture.dart` | 148 文件 0 changed |
 | `powershell -File tool/test_check_architecture.ps1` | PASS: 23 assertions across 21 cases |
+| `packages/services/search` → `dart analyze .` / `dart test -j 1` | No issues found;**13 全绿**(并发与收窄 5 + 失败隔离 4 + 数据规则 4) |
+| 新增 L2 包后的护栏与分析 | `packages=27 errors=0 warnings=0`;`dart analyze packages` No issues found |
 
 ## 4. 已知欠账
 
@@ -81,3 +108,8 @@
   而那属于契约测试的更细断言面,不是索引该补的东西。
 - `ContentPriority` 一类的排序需求一旦真的出现(例如多源聚合里"优先某站"),得先定它属于
   `SourceConfig` 还是注册表条目,不要在两个地方各放一份。
+
+- 聚合搜索还**没有装配点**:`CapabilitySearchAggregator` 要的是 `CapabilityRegistry`,而注册表现在是空的
+  (上一条欠账)。`onlySources` 是为 provider-contract §3 的"站内搜索共用一套类型"留的参数,不是已经接好的流程。
+- 结果是**全部落定才返回**。首屏要先到先显示需要一条流式接口,而它取决于 UI 怎么分批渲染 —— 现在定等于猜。
+- 搜索历史与热搜没做:历史记录归业务面(W5),热词(`hotword`)在 capability-contract §3 里还没有调用面。

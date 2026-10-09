@@ -31,7 +31,10 @@ L5 Providers/Plugins(与 L2-L4 平级,只向下依赖)
 - **L0**:互不依赖,**唯一例外**是人人可用的叶子 `utils` 与 `logging`(任何包都可依赖它们,含 L0 内部);只依赖 pub.dev 三方。护栏 `tool/check_architecture.dart` 的 `kLeafPackages` 就是这条例外的白名单。
 - **L0.5**:→ L0。
 - **L1**:→ L0,外加共享模型伞包 `pure_live_platform`(见 [../contracts/platform-models.md](../contracts/platform-models.md) §18);L2-L5 同理可依赖该伞包。
-- **L2 services**:→ L0 + L1(plugin_api)。
+- **L2 services**:→ L0 + L1 的**契约面** —— `pure_live_platform` 伞包与 `pure_live_capability`
+  (能力接口与 `CapabilityRegistry`;provider-contract.md §3 规定搜索/Feed 的发现入口就是它,所以这条边是
+  文档要求,不是新开的口子)。L2 **不**依赖 L1 的运行时服务包(plugin_api / extension / permission / task / resolver),
+  那些由组合根注入进来;护栏只查方向,这条界线靠 review 守(见 [../roadmap/w4-progress.md](../roadmap/w4-progress.md) §3)。
 - **L3 ui**:→ design 单向(ui_kit→design)+ L0 + theme。
 - **L4 features**:repository → L0 + plugin_api + services;UI 包 → **本域 repository** + services + ui + ecosystem;同层禁互依。
 - **L5 sources**:→ L0 + plugin_api(经 host 注入的沙箱桥);同层禁互依;**不得触碰 PlayerAdapter**。
