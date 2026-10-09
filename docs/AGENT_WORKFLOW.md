@@ -80,10 +80,11 @@ v1 的 `ACCEPTANCE_*`、`ISSUE_TRIAGE_LEDGER_3_2_0.md` 等归属文件随 v1 文
 - `tool/local_ci.ps1 -Scope Focused -TestPath <路径> [-Analyze] [-OfflinePub] [-SkipPubGet] [-RefreshLockfile]`:
   受影响代码的验证。它会在同一次运行里格式化改动的 Dart 文件,所以不要再加一次纯格式化重试。
   `-SkipPubGet` 在依赖清单有变动时会拒绝;那种情况用 `-RefreshLockfile`。
-- `tool/local_ci.ps1 -Scope Full`:交付质量门。⚠ **v2 上它还不是可用的门**:`repository_preflight` 的第一个检查
-  `validate_build_policy.ps1` 就因 `$requiredFiles` 指向已删除的 v1 skill/模板/workflow 而抛错,后面还跟着 8 个
-  设备邻近脚本与若干 python 门(本机裸 `python` 是坏的,见 `docs/roadmap/w2-progress.md` §4 第 10 条与其环境注意)。
-  逐条判定属于独立清理任务;在此之前 Full 的失败**不作为缺陷证据**,Focused 才是当前入口。
+- `tool/local_ci.ps1 -Scope Full`:交付质量门。⚠ **v2 上它还不是可用的门**:`repository_preflight` 的
+  `validate_build_policy.ps1` 停在 v1 内容耦合的检查(`plugins/flv_lzc/**`、`lib/modules/**`、`lib/player/**`、
+  三个 v1 workflow),后面还跟着 8 个设备邻近脚本与若干 python 门(本机裸 `python` 是坏的,见
+  `docs/roadmap/w2-progress.md` §4 第 10 条与其环境注意)。逐条判定属于独立清理任务;在此之前 Full 的失败
+  **不作为缺陷证据**,Focused 才是当前入口。
 - `dart run tool/check_architecture.dart --strict`:分层护栏;回归用例是 `tool/test_check_architecture.ps1`。
 - `dart run tool/check_workflow_yaml.dart`:workflow/action 的 YAML 解析检查。
 - `tool/scaffold_package.ps1`:新包唯一入口(AGENTS.md 的项目地图要求)。

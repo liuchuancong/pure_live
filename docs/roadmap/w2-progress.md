@@ -402,9 +402,12 @@ FFmpeg 收口(§1.8(2) 收尾)复跑:
      哪种(按属主分桶的 LRU、需要写入时间戳;还是宿主定期 prune)要等 W4 的 Bilibili 参考插件真的用上缓存再定,
      现在定等于猜。
 10. **`local_ci.ps1 -Scope Full` / `-IncludeRepositoryChecks` 的仓库阶段还是 v1 的**,不能当成 v2 的交付门:
-    `repository_preflight` 的第一个检查 `validate_build_policy.ps1` 就抛 —— 它的 `$requiredFiles` 有 5 项指向已删
-    文件(skill 两份、模板两份、`audit-upstream.yml`),逐条归属见 [w1-progress.md](w1-progress.md) §3.2 第 3 条
-    的更正;之后还有 8 个 `test_android_recording_*` / `test_android_*` 设备邻近脚本与 `validate_device_ui_map.py`。
+    `repository_preflight` 的 `validate_build_policy.ps1` 原先因 `$requiredFiles` 有 5 项指向已删文件而第一个抛错,
+    **这一项已修**(5 个文件按原归属恢复,7 处原生工程路径改到 `$appRoot`,细节见 [w1-progress.md](w1-progress.md)
+    §3.2 第 3 条);现在停在 `tool/validate_build_policy.ps1:336` 的 `plugins\flv_lzc\android\build.gradle` ——
+    v1 vendored 插件、`lib/modules/**`、`lib/player/**`、三个 v1 workflow 与 `lib/gen/env.g.dart` 属同一类,
+    要重定义而不是改路径。之后 preflight 还有 8 个 `test_android_recording_*` / `test_android_*` 设备邻近脚本与
+    `validate_device_ui_map.py`。
     `repository_audit` 跑 5 个 python unittest,其中 `test_acceptance_status_alignment.py` 校验的 `ACCEPTANCE_*`
     文档已在 `5a06d9d22` 删除。叠加本机 python 事实,这一整段今天既不适用也跑不动。**修它需要先逐项判定去留**
     (哪些是 v2 还要的机制、哪些随 v1 一起走),那是独立清理任务而不是本轮的顺手改动;在此之前 Full 的失败不

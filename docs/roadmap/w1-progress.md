@@ -61,6 +61,21 @@
      `local_ci.ps1` 的 `repository_preflight` **第一个检查就抛**(见 [w2-progress.md](w2-progress.md) §4 第 10 条)。
      重定义仍是独立任务:先决定这四类东西在 v2 是否还要(build/maintenance skill 的角色已由 `AGENTS.md` +
      `docs/AGENT_WORKFLOW.md` 承担?模板是否并入 `docs/development/`?),再改清单,不做单点修补。
+   - **2026-10-09 又推进了一段(仍未结束)**:上面 5 个缺失文件已全部按原归属恢复 —— 两份 skill 路由器
+     (`.agents/skills/pure-live-{build,maintenance}/SKILL.md`,内容只指向 BUILD_POLICY / MAINTENANCE_POLICY /
+     AGENT_WORKFLOW,不复写规则)、两份模板(`docs/BUG_TRIAGE_TEMPLATE.md`、`docs/UPSTREAM_AUDIT_TEMPLATE.md`,
+     后者是 `UPSTREAM_REVIEW_POLICY.md` §19 要求复制成 `docs/UPSTREAM_AUDIT_<SHA>.md` 的那份,删了它等于让流程
+     无表可填)、`audit-upstream.yml`(47 行,`workflow_dispatch` + `permissions: contents: read`,只出机器证据;
+     恢复时把 `python` 改成 `python3`,并注记 v2 分支上 `upstream/master` 就是 v1 维护线)。
+     `validate_build_policy.ps1` 另有 7 处原生工程路径仍指仓库根,已改到 `$appRoot`(android/windows 工程在
+     `apps/pure_live` 下都满足**已经跑到**的原检查:app `build.gradle.kts` 的 minSdk 26 与
+     configuration-cache 兼容标记、manifest 不覆写 FFmpegKit minSdk、CMake 的 app-local MSVC 运行库、
+     安装包升级清理段、`flutter_window.cpp` 的子控制器拆除顺序)。
+     **门禁仍未绿**:下一个失败点在 `tool/validate_build_policy.ps1:336` 的 `plugins\flv_lzc\android\build.gradle`
+     (v1 vendored 插件),它之后的 `$appRoot` 根 `android\build.gradle.kts` 检查还没轮到,再后面是
+     `lib/modules/**`、`lib/player/**`(v1 代码已删)、三个 v1 workflow
+     (`feature-build.yml` / `stage-hosted-artifacts.yml` / `publish-staged-release.yml`)与 `lib/gen/env.g.dart`。
+     这些要按 v2 语义重定义或按来源记录后删除 —— 不是路径改写能解决的,保持"独立任务"原判。
 4. `tool/audit_built_in_kotlin.py` 因本机缺 Java 21 而失败(环境欠账,非搬家引入)。
 5. `.fvmrc` 钉 3.47.5,机器上实际是 PATH 里的 Flutter 3.47.6,`tool/flutterw.ps1` 会静默回退。**待用户定**:提 `.fvmrc` 到 3.47.6,还是装 3.47.5。
 6. `fluttersdk_artisan` / `fluttersdk_dusk` 与 `.mcp.json`、`apps/pure_live/bin/dispatcher.dart`、`apps/pure_live/lib/app/_plugins.g.dart` 是别处引入的框架栈,`docs/` 全体系无一处提到它。本轮只把 `.mcp.json` 的 cwd 改到 `apps/pure_live`,**未做取舍**。

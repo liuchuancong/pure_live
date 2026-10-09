@@ -223,11 +223,11 @@ if ($properties['kotlin.daemon.jvmargs'] -notmatch '-Xmx4g') {
     throw 'Kotlin daemon policy must use a 4 GiB heap.'
 }
 
-$androidAppBuild = Get-Content -LiteralPath (Join-Path $repoRoot 'android\app\build.gradle.kts') -Raw
+$androidAppBuild = Get-Content -LiteralPath (Join-Path $appRoot 'android\app\build.gradle.kts') -Raw
 if ($androidAppBuild -notmatch '(?m)^\s*minSdk\s*=\s*26\s*$') {
     throw 'Android minSdk must match the FFmpegKit native API 26 floor.'
 }
-$androidManifest = Get-Content -LiteralPath (Join-Path $repoRoot 'android\app\src\main\AndroidManifest.xml') -Raw
+$androidManifest = Get-Content -LiteralPath (Join-Path $appRoot 'android\app\src\main\AndroidManifest.xml') -Raw
 if ($androidManifest -match 'overrideLibrary="com\.akashskypatel\.ffmpeg_kit_extended_flutter"') {
     throw 'Android manifest must not bypass the FFmpegKit native minSdk requirement.'
 }
@@ -266,7 +266,7 @@ foreach ($marker in @(
     if (-not $buildScript.Contains($marker)) { throw "Build script policy marker is missing: $marker" }
 }
 
-$windowsCmake = Get-Content -LiteralPath (Join-Path $repoRoot 'windows\CMakeLists.txt') -Raw
+$windowsCmake = Get-Content -LiteralPath (Join-Path $appRoot 'windows\CMakeLists.txt') -Raw
 foreach ($marker in @(
     'include(InstallRequiredSystemLibraries)',
     'CMAKE_INSTALL_UCRT_LIBRARIES FALSE',
@@ -278,7 +278,7 @@ foreach ($marker in @(
     }
 }
 
-$windowsInstaller = Get-Content -LiteralPath (Join-Path $repoRoot 'windows\packaging\exe\local_release.iss') -Raw
+$windowsInstaller = Get-Content -LiteralPath (Join-Path $appRoot 'windows\packaging\exe\local_release.iss') -Raw
 foreach ($marker in @(
     '[InstallDelete]',
     'Type: filesandordirs; Name: "{app}\data"',
@@ -290,7 +290,7 @@ foreach ($marker in @(
     }
 }
 
-$windowsFlutterRunner = Get-Content -LiteralPath (Join-Path $repoRoot 'windows\runner\flutter_window.cpp') -Raw
+$windowsFlutterRunner = Get-Content -LiteralPath (Join-Path $appRoot 'windows\runner\flutter_window.cpp') -Raw
 if ($windowsFlutterRunner -notmatch '(?s)FlutterWindow::~FlutterWindow\(\)\s*\{.*?Destroy\(\);.*?\}') {
     throw 'Windows FlutterWindow must destroy its child controller while derived teardown guards are still alive.'
 }
@@ -335,7 +335,7 @@ foreach ($marker in @(
 
 $fplayerPluginBuildPath = Join-Path $repoRoot 'plugins\flv_lzc\android\build.gradle'
 $fplayerPluginBuild = Get-Content -LiteralPath $fplayerPluginBuildPath -Raw
-$androidRootBuild = Get-Content -LiteralPath (Join-Path $repoRoot 'android\build.gradle.kts') -Raw
+$androidRootBuild = Get-Content -LiteralPath (Join-Path $appRoot 'android\build.gradle.kts') -Raw
 $fplayerCoreVersion = '1.0.4-purelive16k'
 $fplayerCoreRelativePath =
     "plugins\flv_lzc\android\libs\io\github\flutterplayer\fplayer-core\$fplayerCoreVersion\fplayer-core-$fplayerCoreVersion.aar"
@@ -545,7 +545,7 @@ foreach ($marker in @(
     }
 }
 
-$androidManifest = Get-Content -LiteralPath (Join-Path $repoRoot 'android\app\src\main\AndroidManifest.xml') -Raw
+$androidManifest = Get-Content -LiteralPath (Join-Path $appRoot 'android\app\src\main\AndroidManifest.xml') -Raw
 if ($androidManifest -match 'enableOnBackInvokedCallback="false"') {
     throw 'Android predictive back must not be disabled.'
 }
