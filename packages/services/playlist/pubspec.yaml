@@ -1,0 +1,20 @@
+# GENERATED-BY: tool/scaffold_package.ps1
+name: pure_live_playlist
+description: "用户播放队列:歌单/连播/稍后再看,ContentRef 有序条目加快照,跨源混排"
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.13.0
+
+# Add dependencies from the matrix in docs/architecture/dependency-rules.md section 3.
+dependencies:
+  # A playlist row is a ContentRef plus its ContentSummary snapshot; both belong to the platform models.
+  pure_live_platform:
+    path: ../../ecosystem/platform
+  # The binding today is key/value (docs/content/playlist.md names settings_repository/backup for later).
+  pure_live_storage:
+    path: ../../foundation/storage
+
+dev_dependencies:
+  test: ^1.26.0

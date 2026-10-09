@@ -31,12 +31,30 @@ W4 的 provider 一到就能直接接进搜索/Feed/收藏这条消费链。
 内部整份重写无所谓,但文档点名 Drift 并把收藏纳入 sync,若把"整份读写"写进接口,换到数据库那天它就是灾难。
 这条与 §1.9 的 `KeyValuePermissionStore` 同一个划法。
 
+### 1.5 已落:`packages/services/playlist`(16 测试)
+
+规范来自 [../content/playlist.md](../content/playlist.md)。与收藏最要紧的区别是**行的身份**:歌单是序列,
+所以身份是下标而不是 ref,同一条内容可以排两次(M3U 就这么干)。这条差异决定了三个 API 形状:
+
+- `removeItem(index)` / `moveItem(from, to)` 按下标操作,`indexOfFirst(ref)` 只回答"第一个在哪" ——
+  它不假装能定位用户心里那一行。
+- `moveItem` 的两个下标**按移动前的列表读**,因为那是拖拽手柄报出来的坐标;删除留下的空位在服务里补齐,
+  而不是让每个调用方各自记住。`to` 允许等于长度(拖过最后一行)。第一版按"删除后的空间"实现,
+  是那条 `moveItem(0, 2)` 的测试把它拽回来的 —— 单元测试在这里的作用是把 API 直觉固定住。
+- 收藏是集合(ref 唯一,重复添加刷新快照),歌单是序列(允许重复)。两包同一个 `ContentRef`,
+  两种身份规则,README 各写各的,不合并成一个"通用列表"。
+
+`playMode`(顺序/随机/单曲循环)**只存不执行**:文档明确 Playlist 是用户资产、`PlaybackQueue` 是会话状态,
+所以随机序列的种子与"避免连续重复"这类事不在这里定,现在定就是把会话状态搬进用户资产。
+端口也刻意与收藏不同形状(`all`/`upsert`/`remove` 整份列表),因为有序列表本身就是记录的形状,
+按行寻址只会把下标数学藏起来。
+
 ## 2. W5 剩下的
 
 | 件 | 状态 | 缺什么 |
 |---|---|---|
 | History | 未落 | 记录点(播放开始/退出/进度节流)要接到播放会话上;会话归属这件事在 w3-progress §4 还是欠账 |
-| Playlist | 未落 | 未读 [../content/playlist.md](../content/playlist.md) 与 [../content/collection.md](../content/collection.md) 定型;大概率与收藏共用一套仓库形状 |
+| Playlist | **已落**(§1.5) | 队列与 `PlaybackQueue` 的实例化衔接还没做(要播放会话归属) |
 | Link | 未落 | [../services/links.md](../services/links.md) 的分享/解析链路要先确认它是否依赖 W4 的解析结果 |
 | Feed 的另两类源 | 未落 | "关注更新 / 历史继续看"分别要 favorites 之外的关注模型与 History 落地 |
 | 收藏的开播状态 | 未落 | 需要一个能批量问"开播了没"的 capability;capability-contract §3 里没有这个方法集,定了就是猜 |
@@ -48,8 +66,9 @@ W4 的 provider 一到就能直接接进搜索/Feed/收藏这条消费链。
 |---|---|
 | `packages/services/favorites` → `dart analyze .` / `dart test -j 1` | No issues found;**13 全绿**(快照 4 + 分组 7 + 列表 2) |
 | `packages/services/favorites` → `dart test -j 1`(持久化组) | 含真文件往返与"文档不是列表就报错"两条,合计 13 = 4 + 7 + 2 |
+| `packages/services/playlist` → `dart analyze .` / `dart test -j 1` | No issues found;**16 全绿**(顺序 7 + 条目 3 + 登记 3 + 持久化 3) |
 | 源失效可见这条规则 | `test_list_rendersFromTheStoredSnapshotWithNoSourceAnywhere`:整条读路只碰仓库,收藏页要渲染不需要任何源在场 |
-| `dart run tool/check_architecture.dart --strict` | `packages=29 errors=0 warnings=0`(feed 与 favorites 两包入册后) |
+| `dart run tool/check_architecture.dart --strict` | `packages=30 errors=0 warnings=0`(feed / favorites / playlist 三包入册后) |
 | `dart analyze packages` / `dart format --output=none --set-exit-if-changed packages tool/check_architecture.dart` | No issues found;160 文件 0 changed |
 | `powershell -File tool/test_check_architecture.ps1` | PASS: 23 assertions across 21 cases |
 

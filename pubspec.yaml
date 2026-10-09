@@ -35,6 +35,7 @@ workspace:
   - packages/integrations/python_runtime
   - packages/services/favorites
   - packages/services/feed
+  - packages/services/playlist
   - packages/services/search
 
 # 全仓统一裁决的依赖覆盖:workspace 里只有根包可以声明。
