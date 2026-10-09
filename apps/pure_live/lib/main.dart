@@ -11,6 +11,7 @@
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pure_live_media/pure_live_media.dart';
 
 import 'app/app.dart';
 import 'app/di.dart';
@@ -18,6 +19,9 @@ import 'app/runtime.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // The engine needs the binding ready before its first surface; doing it here keeps every widget below
+  // free of engine start-up concerns.
+  MediaKernelHost.ensureInitialized();
   final runtime = registerBuiltInSources(await PureLiveRuntime.boot());
   runApp(
     // Riverpod 3 no longer exports the Override type name; pass the override as-is.

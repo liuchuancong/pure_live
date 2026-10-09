@@ -22,6 +22,7 @@ import 'package:pure_live_extension/pure_live_extension.dart';
 import 'package:pure_live_favorites/pure_live_favorites.dart';
 import 'package:pure_live_feed/pure_live_feed.dart';
 import 'package:pure_live_history/pure_live_history.dart';
+import 'package:pure_live_media/pure_live_media.dart';
 import 'package:pure_live_network/pure_live_network.dart';
 import 'package:pure_live_permission/pure_live_permission.dart';
 import 'package:pure_live_playlist/pure_live_playlist.dart';
@@ -41,6 +42,7 @@ final class PureLiveRuntime {
     required this.diagnostics,
     required this.runtimes,
     required this.gateway,
+    required this.media,
     required this.capabilities,
     required this.resolvers,
     required this.resolverChain,
@@ -115,6 +117,8 @@ final class PureLiveRuntime {
     );
     final playlists = PlaylistsService(repository: KeyValuePlaylistRepository(_domainStore(directory, 'playlists')));
 
+    final media = MediaKernelHost();
+
     return PureLiveRuntime(
       dataDirectory: directory,
       network: network,
@@ -123,6 +127,7 @@ final class PureLiveRuntime {
       tasks: tasks,
       diagnostics: diagnostics,
       gateway: gateway,
+      media: media,
       capabilities: capabilities,
       runtimes: runtimes,
       resolvers: resolvers,
@@ -163,6 +168,10 @@ final class PureLiveRuntime {
   final InMemoryDiagnosticTracer diagnostics;
   final ManagedExtensionGateway gateway;
 
+  /// The playback kernel with the media_kit backend. Opened from tickets; the app entry point runs
+  /// [MediaKernelHost.ensureInitialized] before the first surface is built.
+  final MediaKernelHost media;
+
   /// Discovery: provider registration lives here so a plugin's Enabled state has exactly one thing to
   /// toggle (provider-contract.md section 3).
   final CapabilityRegistry capabilities;
@@ -189,6 +198,7 @@ final class PureLiveRuntime {
 
   Future<void> dispose() async {
     await tasks.dispose();
+    await media.dispose();
     network.close();
   }
 }

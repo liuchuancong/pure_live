@@ -9,6 +9,7 @@
 // on TV where the navigation chrome must not be reachable.
 
 import 'package:go_router/go_router.dart';
+import 'package:pure_live_platform/pure_live_platform.dart';
 
 import '../features/follow/follow_page.dart';
 import '../features/home/home_page.dart';
@@ -42,7 +43,12 @@ GoRouter buildGoRouter() {
       ),
       GoRoute(
         path: '/room/:roomId',
-        builder: (context, state) => RoomPage(roomId: state.pathParameters['roomId']!),
+        builder: (context, state) => RoomPage(
+          roomId: state.pathParameters['roomId']!,
+          // The card hands the ref over so the room can resolve a ticket from the source it came from;
+          // a deep link without an extra still opens the room on its placeholder surface.
+          contentRef: state.extra is ContentRef ? state.extra! as ContentRef : null,
+        ),
       ),
     ],
   );

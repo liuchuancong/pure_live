@@ -15,6 +15,7 @@ library;
 
 export 'src/media_track_mapping.dart';
 export 'src/playback_trace.dart';
+export 'src/player_kernel_host.dart';
 export 'src/ticket_policy.dart';
 export 'src/ticket_source.dart';
 export 'src/ticket_swap.dart';

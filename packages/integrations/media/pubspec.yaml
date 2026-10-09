@@ -19,6 +19,13 @@ dependencies:
       url: https://github.com/liuchuancong/media_core
       ref: 5b047145422758d983a3724e689d8aa4b7d06863
       path: packages/media_core
+  # The engine backend. Vendored engines stay in this layer (dependency-rules.md); the app only ever sees
+  # the facade and the surface widget exported from the barrel.
+  media_core_media_kit:
+    git:
+      url: https://github.com/liuchuancong/media_core
+      ref: 5b047145422758d983a3724e689d8aa4b7d06863
+      path: packages/media_core_media_kit
   pure_live_platform:
     path: ../../ecosystem/platform
 

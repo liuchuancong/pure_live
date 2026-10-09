@@ -1456,6 +1456,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.0"
+  js:
+    dependency: transitive
+    description:
+      name: js
+      sha256: "53385261521cc4a0c4658fd0ad07a7d14591cf8fc33abbceae306ddb974888dc"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.7.2"
   json_annotation:
     dependency: transitive
     description:
@@ -1626,6 +1634,15 @@ packages:
       url: "https://github.com/liuchuancong/media_core"
     source: git
     version: "0.1.0"
+  media_core_media_kit:
+    dependency: transitive
+    description:
+      path: "packages/media_core_media_kit"
+      ref: "5b047145422758d983a3724e689d8aa4b7d06863"
+      resolved-ref: "5b047145422758d983a3724e689d8aa4b7d06863"
+      url: "https://github.com/liuchuancong/media_core"
+    source: git
+    version: "0.1.0"
   media_core_memory:
     dependency: transitive
     description:
@@ -1635,6 +1652,24 @@ packages:
       url: "https://github.com/liuchuancong/media_core"
     source: git
     version: "0.1.0"
+  media_kit:
+    dependency: transitive
+    description:
+      path: media_kit
+      ref: "803c4a27912091db6f839d48d1b984a0d9f588c7"
+      resolved-ref: "803c4a27912091db6f839d48d1b984a0d9f588c7"
+      url: "https://github.com/Predidit/media-kit.git"
+    source: git
+    version: "1.1.11"
+  media_kit_video:
+    dependency: transitive
+    description:
+      path: media_kit_video
+      ref: "803c4a27912091db6f839d48d1b984a0d9f588c7"
+      resolved-ref: "803c4a27912091db6f839d48d1b984a0d9f588c7"
+      url: "https://github.com/Predidit/media-kit.git"
+    source: git
+    version: "1.2.5"
   meta:
     dependency: transitive
     description:
@@ -2106,6 +2141,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.28.0"
+  safe_local_storage:
+    dependency: transitive
+    description:
+      name: safe_local_storage
+      sha256: "494b982d5edb71030650ea463d939670e91b232b588323dc75229d2c5f23e7b7"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.0.6"
   screen_brightness_android:
     dependency: transitive
     description:
@@ -2710,6 +2753,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.7.0"
+  uri_parser:
+    dependency: transitive
+    description:
+      name: uri_parser
+      sha256: "051c62e5f693de98ca9f130ee707f8916e2266945565926be3ff20659f7853ce"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.0.2"
   uri_to_file:
     dependency: transitive
     description:
@@ -2854,6 +2905,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.8.1"
+  wakelock_plus_ohos:
+    dependency: transitive
+    description:
+      name: wakelock_plus_ohos
+      sha256: b22af297411555b5ec0fe43ec2960cd5f019dd23b83853214ebe6dcc97b337bd
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.0.3"
   wakelock_plus_platform_interface:
     dependency: transitive
     description:

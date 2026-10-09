@@ -33,8 +33,16 @@ const List<({String id, String title, String subtitle})> demoRooms = <({String i
 
 /// The demo live source. Const-constructible and dependency-free: registering it
 /// costs nothing and it can answer forever without a socket.
-final class DemoLiveSource implements FeedCapability {
+///
+/// Playback serves a public test HLS stream (Mux's Big Buck Bunny asset) so the
+/// media chain is exercisable end to end; the resource is a VOD file and the
+/// ticket says so honestly instead of pretending to be a running broadcast.
+final class DemoLiveSource implements FeedCapability, ResolveCapability {
   const DemoLiveSource();
+
+  /// The stream every demo room plays. `final` not `const`: [Uri.parse] is a
+  /// method call, which a const initializer cannot contain.
+  static final Uri demoStreamUrl = Uri.parse('https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8');
 
   @override
   Future<PageResult<ContentSummary>> feed(PageRequest page) async {
@@ -52,5 +60,27 @@ final class DemoLiveSource implements FeedCapability {
         ),
     ];
     return PageResult<ContentSummary>(items: items, page: 1, pageSize: page.pageSize, total: items.length);
+  }
+
+  @override
+  Future<MediaTicket> resolve(ContentRef ref, {SelectionRef? quality, SelectionRef? line}) async {
+    // The stream never expires, so there is no expiresAt to declare: the contract makes that the source's
+    // signal that no prefetch is needed, not a field to invent a deadline for.
+    return MediaTicket(
+      id: '$demoSourceId/${ref.contentId}',
+      uri: demoStreamUrl,
+      kind: MediaKind.vod,
+      protocol: MediaProtocol.hls,
+      createdAt: DateTime.now().toUtc(),
+      refresh: const MediaTicketRefreshInfo(supported: false),
+      metadata: const MediaPlaybackMetadata(isLive: false),
+    );
+  }
+
+  @override
+  Future<MediaTicket> refresh(MediaTicket expired, RefreshReason reason) async {
+    // A static url cannot go stale, so a refresh request returns the same ticket; the id is kept stable
+    // so diagnostics can see the swap replaced like with like.
+    return expired;
   }
 }

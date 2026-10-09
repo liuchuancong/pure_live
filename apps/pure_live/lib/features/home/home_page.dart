@@ -111,7 +111,7 @@ final class _RoomCard extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       margin: EdgeInsets.zero,
       child: InkWell(
-        onTap: () => context.push('/room/${item.ref.contentId}'),
+        onTap: () => context.push('/room/${item.ref.contentId}', extra: item.ref),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
