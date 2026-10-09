@@ -13,3 +13,4 @@ library;
 
 export 'src/engine.dart';
 export 'src/manifest.dart';
+export 'src/webdav_store.dart';

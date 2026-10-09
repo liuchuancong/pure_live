@@ -12,6 +12,7 @@ dependencies:
   # utils is one of the two L0 leaves every package may use; it supplies the Clock seam.
   pure_live_utils:
     path: ../utils
+  webdav_client: ^1.2.2
 
 dev_dependencies:
   test: ^1.26.0
