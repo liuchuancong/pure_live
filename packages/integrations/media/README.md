@@ -15,6 +15,7 @@
 - `lib/src/ticket_source.dart` —— `MediaTicket` → `MediaSource`(Progressive / Composite)
 - `lib/src/ticket_policy.dart` —— `MediaTicketPolicy` → 内核 `RecoveryPolicy` / `FallbackPolicy`
 - `lib/src/watchdog.dart` —— 播放看门狗:票据到期/预取、位置停滞、起播超时
+- `lib/src/playback_trace.dart` —— 一次播放的证据链 `PlaybackTrace` 与可导出报告(强制脱敏)
 
 media_core 钉的是应用 pubspec 里同一个 ref(`5b04714542…`),全 workspace 共用一份 checkout。
 
@@ -66,6 +67,26 @@ media_core 钉的是应用 pubspec 里同一个 ref(`5b04714542…`),全 workspa
 
 注入形式是 `reportFailure: handle.reportFailure`(函数而非 `PlayerHandle`):`PlayerHandle` 是 final class
 不许 implement,而持有 handle 的一方本来就该决定故障送到哪里。
+
+## 播放诊断轨迹(docs/diagnostics/playback-diagnostics.md)
+
+`PlaybackTrace` 是"一次播放 = 一条链"的载体:阶段(`request/resolve/ticketIssued/prepare/started/buffering/
+ticketRefreshed/lineSwitched/engineSwitched/failed/stopped`)、票据记录、网络摘要、末端故障。
+`report()` 出的是**可直接发给别人的 map**,`environment` 由调用方给(平台/引擎/网络类型)。
+
+脱敏在这里强制,不在调用方自觉:
+
+- 票据只留 **host**,url 的 path/query 不进报告 —— 媒体 url 的 query 经常就是签名 token;
+- 自由文本(detail / 网络摘要 / environment 的字符串值)统一过 `redactText`:
+  **每个** query 参数都删(不是只删第一个),`authorization|cookie|set-cookie|x-api-key|x-auth-token|
+  token|password|secret` 形状的键值整段删除 —— 整段而不是到第一个空格,因为
+  `Authorization: Bearer <token>` 的 secret 就在第二个词上(这条是被测试抓出来的,不是想到的);
+- 无故障时报告里没有 `fault` 键,不写一个假的 `null` 结构。
+
+`classifyFault()` 把故障归到**能修它的那一方**(`docs/diagnostics/playback-diagnostics.md` 的反馈闭环):
+`resolver.* / source.* / repository.* / provider.*`(以及 permission/auth 类)→ 源插件;
+`network.*` 或网络类 → 传输;`media.*` → 引擎;认不出的归 `unknown` 而不是硬猜。
+插件自定义码(`tvbox.script_failed` 这种带命名空间的)靠 category 落到正确的归属。
 
 ## 边界
 

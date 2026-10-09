@@ -14,6 +14,7 @@
 library;
 
 export 'src/media_track_mapping.dart';
+export 'src/playback_trace.dart';
 export 'src/ticket_policy.dart';
 export 'src/ticket_source.dart';
 export 'src/watchdog.dart';

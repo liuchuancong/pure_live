@@ -74,6 +74,8 @@ retryDelay)翻译成 media_core 的策略对象。这条结论单独记 ADR(0020
 
 盘点结论落定后的顺序(第 1—4 条已完成):
 
+0. 播放诊断:`docs/diagnostics/playback-diagnostics.md` 的轨迹与导出报告已落(§2.5);**"设置 → 诊断 → 导出"
+   的 UI 与文件落盘还没有**,那是 feature 层的活。
 1. ~~`pure_live_media`:`MediaTicket → MediaSource` 映射~~ —— 已落(§2.1)。
 2. ~~假引擎跑通"播一个假源"~~ —— 已落(§2.2),M2 的另一半在**接线层面**达成。
 3. ~~票据到期与预取调度(平台侧看门狗)~~ —— 已落(§2.3)。
@@ -166,12 +168,24 @@ models §11 的 `MediaTicketRefreshInfo{supported, expiresAt, refreshBefore}` �
 处理(那不是"不必调度")。`nextRefreshAt` 里 `ticket.expiresAt` 优先于建议自带的 `expiresAt`,因为 §11 说前者
 才是权威期限。
 
+### 2.5 已完成:播放诊断轨迹与导出报告(12 测试,`lib/src/playback_trace.dart`)
+
+`docs/diagnostics/playback-diagnostics.md` 的目标是把"复现不了"变成"能导出证据链",所以这里落的是**记录 +
+脱敏导出**:`PlaybackTrace` 存阶段/票据/网络摘要/末端故障,`report()` 出可直接外发的 map。
+
+脱敏不做成调用方的责任(文档写的是"报告不含凭据与个人数据(脱敏强制)"):票据只留 host,query 全删,
+自由文本过 `redactText`,environment 的字符串值同样过。测试里有一条专门盯
+`Authorization: Bearer <token>` —— 值类若停在第一个空格,secret 就从第二个词漏出去了,这条是**测出来的**不是想到的。
+
+`classifyFault()` 按文档的反馈闭环把故障归给能修它的一方(源插件 / network / media),而不是统一句"播放失败";
+带命名空间的插件自定义码(`tvbox.*`)靠 `category` 落归属,不硬猜 unknown 之外的类别。
+
 ## 3. 验证证据
 
 | 命令 | 结果 |
 |---|---|
 | `packages/integrations/media` → `flutter analyze` | No issues found |
-| `packages/integrations/media` → `flutter test` | **39 全绿** = 15 条票据映射 + 5 条假引擎端到端播放 + 19 条看门狗判定与动作;跑在真实 `flutter test` 上、对钉住的 media_core ref(不是对桩) |
+| `packages/integrations/media` → `flutter test` | **51 全绿** = 15 票据映射 + 5 假引擎端到端播放 + 19 看门狗 + 12 播放诊断轨迹;跑在真实 `flutter test` 上、对钉住的 media_core ref(不是对桩) |
 | `packages/ecosystem/platform` → `dart test -j 1` | **89 全绿**(+7 条 `MediaTicketRefreshInfo` 调度与往返) |
 | 假引擎播放的路径 | `PlayerKernel.createFromMedia` 走内核自己的 planner(`DefaultMediaSourcePlanner`)与 `PlayerHandle.initialize/open/play/stop`;`FakePlayerAdapter` 来自 media_core 自带的 `testing/library.dart` |
 | 看门狗 → 阶梯的证据 | 断言 `handle.recoveryFailure.source == RecoveryFailureSource.watchdog`(真实 handle,不是替身回调) |
