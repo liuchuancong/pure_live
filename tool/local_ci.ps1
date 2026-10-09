@@ -21,6 +21,7 @@ $repoRoot = Split-Path -Parent $PSScriptRoot
 # audit output path stay root-relative.
 $appRoot = Join-Path $repoRoot 'apps\pure_live'
 $flutterw = Join-Path $PSScriptRoot 'flutterw.ps1'
+$pythonw = Join-Path $PSScriptRoot 'pythonw.ps1'
 . (Join-Path $PSScriptRoot 'build_resource_guard.ps1')
 
 $shouldAnalyze = $Analyze.IsPresent -or $Scope -eq 'Full'
@@ -131,7 +132,7 @@ try {
         & (Join-Path $PSScriptRoot 'test_android_room_tag_assignment_smoke.ps1')
         & (Join-Path $PSScriptRoot 'test_android_share_intake_smoke.ps1')
 
-        python (Join-Path $PSScriptRoot 'validate_device_ui_map.py')
+        & $pythonw (Join-Path $PSScriptRoot 'validate_device_ui_map.py')
         Assert-PureLiveCommandSucceeded 'Device UI map validation'
         $phaseClock.Stop()
         $phaseSeconds.repository_preflight = [Math]::Round($phaseClock.Elapsed.TotalSeconds, 3)
@@ -175,25 +176,25 @@ try {
     if ($runRepositoryChecks) {
         $activePhase = 'repository_audit'
         $phaseClock = [Diagnostics.Stopwatch]::StartNew()
-        python -m unittest discover -s (Join-Path $PSScriptRoot 'tests') -p test_repository_secret_audit.py
+        & $pythonw -m unittest discover -s (Join-Path $PSScriptRoot 'tests') -p test_repository_secret_audit.py
         Assert-PureLiveCommandSucceeded 'Repository secret audit regression tests'
 
-        python -m unittest discover -s (Join-Path $PSScriptRoot 'tests') -p test_cc_interface_probe.py
+        & $pythonw -m unittest discover -s (Join-Path $PSScriptRoot 'tests') -p test_cc_interface_probe.py
         Assert-PureLiveCommandSucceeded 'CC interface probe regression tests'
 
-        python -m unittest discover -s (Join-Path $PSScriptRoot 'tests') -p test_assemble_ffmpeg_android_aar.py
+        & $pythonw -m unittest discover -s (Join-Path $PSScriptRoot 'tests') -p test_assemble_ffmpeg_android_aar.py
         Assert-PureLiveCommandSucceeded 'FFmpeg Android AAR assembly regression tests'
 
-        python -m unittest discover -s (Join-Path $PSScriptRoot 'tests') -p test_verify_ffmpeg_native.py
+        & $pythonw -m unittest discover -s (Join-Path $PSScriptRoot 'tests') -p test_verify_ffmpeg_native.py
         Assert-PureLiveCommandSucceeded 'FFmpeg native asset verification regression tests'
 
-        python -m unittest discover -s (Join-Path $PSScriptRoot 'tests') -p test_acceptance_status_alignment.py
+        & $pythonw -m unittest discover -s (Join-Path $PSScriptRoot 'tests') -p test_acceptance_status_alignment.py
         Assert-PureLiveCommandSucceeded 'Acceptance status alignment regression tests'
 
-        python (Join-Path $PSScriptRoot 'audit_repository.py') --output $repositoryAuditPath
+        & $pythonw (Join-Path $PSScriptRoot 'audit_repository.py') --output $repositoryAuditPath
         Assert-PureLiveCommandSucceeded 'Whole repository integrity audit'
 
-        python (Join-Path $PSScriptRoot 'audit_built_in_kotlin.py')
+        & $pythonw (Join-Path $PSScriptRoot 'audit_built_in_kotlin.py')
         Assert-PureLiveCommandSucceeded 'Built-in Kotlin audit'
         $phaseClock.Stop()
         $phaseSeconds.repository_audit = [Math]::Round($phaseClock.Elapsed.TotalSeconds, 3)
@@ -295,7 +296,7 @@ try {
     if ($Scope -eq 'Full' -and -not $SkipInterfaces) {
         $activePhase = 'interface_probes'
         $phaseClock = [Diagnostics.Stopwatch]::StartNew()
-        python (Join-Path $PSScriptRoot 'interface_probe.py')
+        & $pythonw (Join-Path $PSScriptRoot 'interface_probe.py')
         Assert-PureLiveCommandSucceeded 'Public interface probes'
         $phaseClock.Stop()
         $phaseSeconds.interface_probes = [Math]::Round($phaseClock.Elapsed.TotalSeconds, 3)

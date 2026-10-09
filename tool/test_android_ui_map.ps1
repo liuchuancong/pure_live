@@ -154,7 +154,9 @@ Write-Output 'PASS K90 PiP settings cache matches measured bounds'
 & $runnerPath -Validate -Profile 'k90pro_portrait_1200x2608'
 Write-Output 'PASS android_ui accepts semantic route assertions'
 
-& python (Join-Path $PSScriptRoot 'validate_device_ui_map.py')
+# `python` on PATH may be an interpreter that cannot start at all; the wrapper picks one that can and returns
+# its exit code, which the check below reads.
+& (Join-Path $PSScriptRoot 'pythonw.ps1') (Join-Path $PSScriptRoot 'validate_device_ui_map.py')
 if ($LASTEXITCODE -ne 0) {
     throw "validate_device_ui_map.py exited with code $LASTEXITCODE."
 }

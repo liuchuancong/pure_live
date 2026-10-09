@@ -84,8 +84,10 @@
      `success || skipped` 判据,未选中的平台仍是 skipped 而不阻塞下游)。另修 `tool/sync_owner_refs.ps1` 的
      清单:5 项指向 v2 没有的文件(`third_party/media_kit/hook/native_bundles.json` —— media_kit 从 Pub 解析,
      其 bundle 目录不在本仓库;三个已删 workflow 共 4 条),留着它们等于每次发布检查都为"故意删掉的文件"报警。
-     `tool/audit_repository.py` 的 9 条 error 与 `audit_built_in_kotlin.py` 的 Java 21 依赖仍未处理,见
-     [w2-progress.md](w2-progress.md) §4 第 10 条与本节环境注意。
+     `tool/audit_repository.py` 现在跑起来报 `errors=4`(数字来自本轮实测;先前记的 9 条里有几条随脚本与文档
+     变动已经消失),其中 `live_back_invariant_missing` 仍指向已删除的 `lib/modules/live_play/**`。
+     python 侧的解释器阻塞已由 `tool/pythonw.ps1` 解决(见 [w2-progress.md](w2-progress.md) §4 第 10 条),
+     所以这些规则 + `audit_built_in_kotlin.py` 的 Java 21 依赖是**判定与环境**欠账,不再是"跑不了"。
      这些要按 v2 语义重定义或按来源记录后删除 —— 不是路径改写能解决的,保持"独立任务"原判。
 4. `tool/audit_built_in_kotlin.py` 因本机缺 Java 21 而失败(环境欠账,非搬家引入)。
 5. `.fvmrc` 钉 3.47.5,机器上实际是 PATH 里的 Flutter 3.47.6,`tool/flutterw.ps1` 会静默回退。**待用户定**:提 `.fvmrc` 到 3.47.6,还是装 3.47.5。

@@ -413,6 +413,15 @@ FFmpeg 收口(§1.8(2) 收尾)复跑:
     于是 `repository_preflight` 剩下的唯一阻塞点就是那条 python 事实:`validate_device_ui_map.py` 起,以及
     `repository_audit` 的 5 个 unittest + `audit_repository.py`(v1 规则残留 9 条 error)+
     `audit_built_in_kotlin.py`(要 Java 21)。让入口能选解释器是下一步该做的机械活,不是判定活。
+    **那件机械活随后就做掉了:** 新增 `tool/pythonw.ps1`(按 `flutterw.ps1` 的约定探测解释器并转发退出码 ——
+    候选 `python` → `python3` → `py -3`,只有能打印自身版本者才算可用;`PURE_LIVE_PYTHON` 可显式钉死),
+    `local_ci.ps1` 的 9 处与 `test_android_ui_map.ps1` 的 1 处 python 调用全部改走它。实测
+    `validate_device_ui_map.py` 通过(4 profiles / 170 points / 41 sequences),解释器不再是阻塞。
+    audit 阶段因此**跑起来并露出真实失败**:`audit_repository.py` 报 `errors=4`,其中
+    `live_back_invariant_missing` 指向已删除的 `lib/modules/live_play/**`;`tool/tests` 的 unittest 因 v1 主题
+    缺失而失败(`lib/core/sites.dart`、`docs/ACCEPTANCE_MATRIX_3_1_0.md` 的 FileNotFoundError,及
+    `test_release_workflow_data` 的 import 失败)。**Full 剩下的阻塞从此全是判定活** —— 环境因素已排除,
+    这些规则要么按 v2 语义重写,要么按来源记录后删除。
     `repository_audit` 跑 5 个 python unittest,其中 `test_acceptance_status_alignment.py` 校验的 `ACCEPTANCE_*`
     文档已在 `5a06d9d22` 删除。叠加本机 python 事实,这一整段今天既不适用也跑不动。**修它需要先逐项判定去留**
     (哪些是 v2 还要的机制、哪些随 v1 一起走),那是独立清理任务而不是本轮的顺手改动;在此之前 Full 的失败不
