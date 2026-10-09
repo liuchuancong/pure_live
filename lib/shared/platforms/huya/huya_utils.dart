@@ -1,12 +1,12 @@
 import 'dart:math';
 
-import 'huya_request_params.dart';
 import 'huya_vip_room_id.dart';
+import 'huya_request_params.dart';
 
 import 'package:pure_live/core/tars/types.dart';
-import 'package:pure_live/core/tars/game_event_message_board_panel.dart';
 import 'package:pure_live/core/models/live_message.dart';
 import 'package:pure_live/core/tars/base_tars_http.dart';
+import 'package:pure_live/core/tars/game_event_message_board_panel.dart';
 import 'package:pure_live/core/tars/get_game_event_message_board_rsp.dart';
 import 'package:pure_live/core/tars/get_game_event_message_board_req.dart';
 
@@ -17,11 +17,6 @@ int rotl64(int t) {
   return high | rotatedLow;
 }
 
-/// 房间是否在虎牙 4K VIP 范围内的白名单里。
-///
-/// 同步自 dart_simple_live:4K 清晰度仅对这些房间提供,且播放需要虎牙
-/// VIP 会员身份;当前与上游一致只在详情加载时记录,4K 的过滤本身在
-/// 清晰度解析处(parsePlayQualities)按"需要 VIP"一律剔除。
 bool isVipRoom(String roomId) => huyaVipRoomIds.contains(roomId);
 
 BaseTarsHttp createHuyaMessageBoardClient() {

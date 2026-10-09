@@ -29,6 +29,8 @@ class BiliBiliSite
         LiveSiteExternalRoomResolver {
   @override
   RoomExternalTarget? externalRoomTarget(LiveRoom liveroom) {
+    final id = sanitizedExternalRoomId(liveroom.roomId);
+    if (id == null) return null;
     final path = Uri.encodeComponent(id);
     return RoomExternalTarget(web: 'https://live.bilibili.com/$path', native: 'bilibili://live/$path');
   }

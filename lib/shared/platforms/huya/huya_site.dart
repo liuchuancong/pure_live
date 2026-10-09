@@ -6,29 +6,29 @@ import 'package:crypto/crypto.dart';
 import 'package:pure_live/core/index.dart';
 import 'package:pure_live/core/tars/types.dart';
 import 'package:pure_live/core/logging/app_log.dart';
-import 'package:pure_live/core/network/race_http.dart';
-import 'package:pure_live/core/models/live_category.dart';
 import 'package:pure_live/core/logging/core_log.dart';
-import 'package:pure_live/core/models/live_anchor_item.dart';
+import 'package:pure_live/core/network/race_http.dart';
 import 'package:pure_live/core/network/http_client.dart';
-import 'package:pure_live/core/models/live_play_quality.dart';
-import 'package:pure_live/shared/platforms/live_site.dart';
-import 'package:pure_live/shared/platforms/huya/huya_danmaku.dart';
-import 'package:pure_live/core/release/github_mirror.dart';
 import 'package:pure_live/core/tars/base_tars_http.dart';
+import 'package:pure_live/core/consts/platform_ids.dart';
+import 'package:pure_live/core/models/live_category.dart';
+import 'package:pure_live/shared/platforms/live_site.dart';
+import 'package:pure_live/core/release/github_mirror.dart';
+import 'package:pure_live/core/models/live_anchor_item.dart';
+import 'package:pure_live/core/models/live_play_quality.dart';
 import 'package:pure_live/shared/platforms/live_danmaku.dart';
+import 'package:pure_live/core/utils/live_quality_label.dart';
 import 'package:pure_live/core/tars/get_cdn_token_ex_req.dart';
 import 'package:pure_live/core/tars/get_cdn_token_ex_resp.dart';
+import 'package:pure_live/shared/platforms/huya/huya_danmaku.dart';
+import 'package:pure_live/shared/platforms/current_live_room.dart';
+import 'package:pure_live/shared/platforms/live_external_room.dart';
+import 'package:pure_live/core/config/cookie_settings_controller.dart';
+import 'package:pure_live/shared/platforms/live_danmaku_capability.dart';
 import 'package:pure_live/shared/platforms/huya/huya_request_params.dart';
 import 'package:pure_live/shared/platforms/huya/huya_transport_policy.dart';
-import 'package:pure_live/shared/platforms/huya/huya_utils.dart' as huya_utils;
-import 'package:pure_live/core/utils/live_quality_label.dart';
-import 'package:pure_live/shared/platforms/current_live_room.dart';
-import 'package:pure_live/core/config/cookie_settings_controller.dart';
-import 'package:pure_live/core/consts/platform_ids.dart';
-import 'package:pure_live/shared/platforms/live_danmaku_capability.dart';
 import 'package:pure_live/shared/platforms/huya/huya_danmaku_capability.dart';
-import 'package:pure_live/shared/platforms/live_external_room.dart';
+import 'package:pure_live/shared/platforms/huya/huya_utils.dart' as huya_utils;
 
 class HuyaSite
     with LiveDanmakuCapabilityDefaults, HuyaDanmakuCapability
@@ -42,6 +42,8 @@ class HuyaSite
         LiveSiteExternalRoomResolver {
   @override
   RoomExternalTarget? externalRoomTarget(LiveRoom liveroom) {
+    final id = sanitizedExternalRoomId(liveroom.roomId);
+    if (id == null) return null;
     final path = Uri.encodeComponent(id);
     final args = liveroom.danmakuData;
     return RoomExternalTarget(

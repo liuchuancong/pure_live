@@ -26,6 +26,8 @@ class MissevanSite extends LiveSite
         LiveSiteExternalRoomResolver {
   @override
   RoomExternalTarget? externalRoomTarget(LiveRoom liveroom) {
+    final id = sanitizedExternalRoomId(liveroom.roomId);
+    if (id == null) return null;
     final path = Uri.encodeComponent(id);
     return RoomExternalTarget(web: 'https://fm.missevan.com/live/$path');
   }

@@ -23,6 +23,8 @@ class KuaishouSite
     implements LiveSite, LiveSiteRoomRefresher, LiveSiteRecordRoomResolver, LiveSiteExternalRoomResolver {
   @override
   RoomExternalTarget? externalRoomTarget(LiveRoom liveroom) {
+    final id = sanitizedExternalRoomId(liveroom.roomId);
+    if (id == null) return null;
     final path = Uri.encodeComponent(id);
     final stream = liveroom.link?.trim() ?? '';
     final encoded = Uri.encodeQueryComponent(stream);

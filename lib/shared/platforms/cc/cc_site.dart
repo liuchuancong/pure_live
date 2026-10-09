@@ -26,6 +26,8 @@ class CCSite
         LiveSiteExternalRoomResolver {
   @override
   RoomExternalTarget? externalRoomTarget(LiveRoom liveroom) {
+    final id = sanitizedExternalRoomId(liveroom.roomId);
+    if (id == null) return null;
     final path = Uri.encodeComponent(id);
     final user = sanitizedExternalRoomId(liveroom.userId);
     return RoomExternalTarget(
