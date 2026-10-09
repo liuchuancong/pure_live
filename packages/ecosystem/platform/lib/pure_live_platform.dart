@@ -27,6 +27,7 @@ export 'src/models/network/network_request.dart';
 export 'src/models/permission/permission_grant.dart';
 export 'src/models/repository/repository_descriptor.dart';
 export 'src/models/resolver/resolve_request.dart';
+export 'src/models/resolver/resolver_descriptor.dart';
 export 'src/models/runtime/runtime_descriptor.dart';
 export 'src/models/source/source_descriptor.dart';
 export 'src/models/task/task_models.dart';
