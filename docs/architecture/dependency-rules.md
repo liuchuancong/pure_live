@@ -54,6 +54,7 @@ L5 Providers/Plugins(与 L2-L4 平级,只向下依赖)
 | extension → permission / task | 网关是 `ExtensionContext` 的装配点,只能定向依赖这两个服务包(见 [../adr/0019-gateway-service-edges.md](../adr/0019-gateway-service-edges.md)) |
 | resolver → capability | `Resolver` 是 `ResolveCapability` 的平台形状,适配器必须能看到被适配的契约(见 [../adr/0021-resolver-capability-edge.md](../adr/0021-resolver-capability-edge.md)) |
 | js_runtime → plugin_api / capability | JS 宿主实现的正是 plugin_api 的沙箱与运行时契约,并把适配器以能力对象交付(见 [../plugin/js-plugin.md](../plugin/js-plugin.md)) |
+| plugin_host → plugin_api | 安装器直接调用 plugin_api 的 Manifest 校验器,权限天花板只有一处裁决(见 [../plugin/plugin-manifest.md](../plugin/plugin-manifest.md)) |
 
 ## 5. 架构不变量(I1-I10)
 

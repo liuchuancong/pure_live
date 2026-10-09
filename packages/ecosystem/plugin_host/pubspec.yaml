@@ -1,0 +1,14 @@
+# GENERATED-BY: tool/scaffold_package.ps1
+name: pure_live_plugin_host
+description: "Plugin install pipeline: bundle parsing, manifest validation, on-disk store and per-plugin state"
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.13.0
+
+dependencies:
+  pure_live_platform:
+    path: ../../ecosystem/platform
+  pure_live_plugin_api:
+    path: ../../ecosystem/plugin_api

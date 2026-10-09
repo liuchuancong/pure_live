@@ -71,6 +71,9 @@ const Map<String, Set<String>> kApprovedExceptions = <String, Set<String>>{
   // publishes its adapters as capability objects; the plugin system and its
   // execution engine are one domain (docs/plugin/js-plugin.md).
   'pure_live_js_runtime': <String>{'pure_live_plugin_api', 'pure_live_capability'},
+  // The installer runs the plugin_api validator - the manifest ceiling is one
+  // judgement, made in one place, not re-derived per consumer.
+  'pure_live_plugin_host': <String>{'pure_live_plugin_api'},
 };
 
 /// A package discovered on disk, with the dependencies declared in its pubspec.
