@@ -232,6 +232,26 @@ local_ci 端到端通过,只声称它的目录假设已经纠正、失败点已�
 `objects.githubusercontent.com` 现在连 TLS 握手都过不去,报 `HttpException: 信号灯超时时间已到`)。
 本轮对 app 的验证因此只有静态的 `flutter analyze`(No issues found),运行时验证与那条测试一起等工件落定;
 store 本身的行为由 permission 包的 11 条测试覆盖,其中一条直接用 `FileKeyValueStore` 走真实文件往返。
+### 1.10 迁移流程落地(storage +10 测试,共 44)
+
+做 W5 的历史/收藏时撞上一个空档:`docs/migration/*.md` 写的是**流程 + 键名表**,而 `pure_live_storage` 里只有
+`SettingsMigrator`(键映射执行器)与 `SchemaMigrator`(版本步进),没有"确认 → 逐域 → 计数校验 → 标记完成"这一层。
+键名表这次**没有实现**:v1 的具体键不在本仓(legacy 已删),编一组出来测试会全绿、真迁移会全错。
+所以落的是流程,键名留给各域自己的 spec 带。
+
+三条值得单独说的:
+
+- **"v1 只读"是结构,不是注释**。`MigrationDomainSpec` 只给一个 `read`(流)与一个"写 v2"的回调,迁移器拿不到
+  改 v1 的手 —— 文档把这条列为原则,靠 API 形状守比靠自觉可靠。
+- **断点续迁靠日志,不靠幂性等对方**。`KeyValueMigrationJournal` 记每域已迁键与已完成域:reader 半路断掉时,
+  已写的键先落账,重试就只补剩下的(有测试:第一次写 r1/r2,重试只写 r3,且 r1/r2 不再写);
+  已完成的域连读都不读。代价也写了:键值后端要带一份键列表,Drift 绑定该换成按行标记 —— 换的是这个类。
+- **单条失败 ≠ 域失败**。映射抛 `MigrationReject` 或随便抛什么,都只是那一行进"待处理"桶,域照常完成;
+  而"写 v2 失败"的记录**不记账**,下次重试会再试它一次。计数不平(`scanned != migrated + rejected`)或
+  `expectedCount` 不符时该域不标记完成,并出现在 `discrepancies` 里 —— 这正是 database-migration.md 第 4 步。
+
+确认默认 `false`:向导没拿到"是"就一个字节都不动(v1-to-v2.md 的"绝不清空"在这层的形状)。
+
 ## 2. 顺带修掉的工程缺陷
 
 | 缺陷 | 处理 |
@@ -266,7 +286,7 @@ W2 收尾(§1.6)复跑:
 
 | 命令 | 结果 |
 |---|---|
-| `packages/foundation/storage` → `dart analyze .` / `dart test -j 1` | No issues found;**34 全绿** = 原有 16 + `FileKeyValueStore` 18 |
+| `packages/foundation/storage` → `dart analyze .` / `dart test -j 1` | No issues found;**44 全绿** = 原有 16 + `FileKeyValueStore` 18 + `MigrationRunner` 10 |
 | `packages/ecosystem/extension` → `dart analyze .` / `dart test -j 1` | No issues found;**53 全绿** = 原有 34 + 持久视图 18 + 网关接缝集成 1 |
 | 磁盘行为依赖的平台事实 | Windows 上 `File.rename` **可以**覆盖已存在的目标(先探针验证再写实现),所以"临时文件 + rename"不需要先删目标 —— 那会把窗口期变成"文件不见了" |
 | 护栏与格式化 | 见 [w3-progress.md](w3-progress.md) §3:resolver 波之后 `packages=26 errors=0`、`142 文件 0 changed`、护栏回归 21 例 23 断言全过 |
