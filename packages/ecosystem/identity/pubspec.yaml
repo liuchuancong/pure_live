@@ -1,0 +1,21 @@
+# GENERATED-BY: tool/scaffold_package.ps1
+name: pure_live_identity
+description: "内容身份:跨源同一内容的识别、置信度门槛与换源索引(身份不重写 ContentRef)"
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.13.0
+
+# Add dependencies from the matrix in docs/architecture/dependency-rules.md section 3.
+dependencies:
+  # Identity is computed over ContentRef / ContentSummary; no provider type is visible from here.
+  pure_live_platform:
+    path: ../platform
+  # The remembered answers (identity -> refs, and a user's one-time confirmation) are user data, so they go
+  # through the L0 key/value interface the composition root binds.
+  pure_live_storage:
+    path: ../../foundation/storage
+
+dev_dependencies:
+  test: ^1.26.0

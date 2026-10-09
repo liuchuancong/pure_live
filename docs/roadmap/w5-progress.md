@@ -68,6 +68,35 @@ W4 的 provider 一到就能直接接进搜索/Feed/收藏这条消费链。
 快照字段是文档没写而我补的:history.md 没要求存 title/cover,但收藏与歌单都要求,而一栏空白砖位是同一个
 "源失效"问题挪到另一页。补在何处、为何补,写在包 README 而不是悄悄做。
 
+### 1.7 已落:`packages/ecosystem/identity`(19 测试)
+
+"换源播放"的前提层。规范是 [../content/content-identity.md](../content/content-identity.md):权威编号优先,
+然后 title + 创作者 + 合集 + 时长的模糊匹配,阈值可配,置信度不足**不强并**而是让用户确认一次并记住。
+
+四条门槛值得单独写,因为它们都是"宁可不并"的方向:
+
+| 情形 | 结论 | 为什么 |
+|---|---|---|
+| 同 scheme 同值 | 同一(1.0) | 编号就是为这个用的 |
+| 同 scheme 不同值 | **不同**,且压过其它全部相符 | 两个 ISRC 不同的录音不会因为标题/歌手/时长全一样就是一首歌 —— 那正是现场版/剪辑版/另一版 |
+| 只有标题可比 | 最多候选,永不自动并 | 这层存在的理由就是"两个源都叫《Call Me》不代表同一内容" |
+| 时长超出容差 | 最多候选 | 时长不一致最像另一个版本,而不是元数据打错了 |
+
+置信度是**可比字段里相符的权重占比**:一侧没有的字段整个从分母里去掉 —— 把缺席当反对票,等于专门罚元数据少的源。
+门槛(自动并 0.9 / 候选 0.55)写在 `IdentityPolicy` 里可调,README 明确标它们是**策略不是事实**:还没有拿真实
+目录校准过。
+
+身份与引用的关系按规则 3 落死:没有权威编号的内容,身份 id 就是**首次使用那个 ref 的 key**;成员 ref 另外存一份,
+`refKey` 当成不透明字符串**永不反解**(contentId 里带 `/` 是合法的,反解会把内容撕错),`alternatives()` 返回
+当初注册时的完整 ref(kind 也在)。确认只并身份、不改 ref,所以历史/收藏的主键不受身份层影响。
+
+两处冲突记下来:①`dependency-rules.md` §2 把 `identity` 放 L1,content-identity.md §2 说"是 services 层能力"
+—— 实质(provider 之间不感知)由"本包不 import 任何 provider"守,目录按冻结清单走;②分数不落库,只存
+ref→身份 + 成员 + 事实,策略调整后重算幂等,存分数反而要迁移历史。
+
+**没接进任何流程**:搜索/Feed 还不跨源去重,收藏/历史还没用 `alternatives()` 换源,provider 侧要不要往
+`metadata.extra` 里填编号是 W4/W6 的事。这层现在是可测的机制。
+
 ## 2. W5 剩下的
 
 | 件 | 状态 | 缺什么 |
@@ -84,11 +113,12 @@ W4 的 provider 一到就能直接接进搜索/Feed/收藏这条消费链。
 | 命令 | 结果 |
 |---|---|
 | `packages/services/favorites` → `dart analyze .` / `dart test -j 1` | No issues found;**13 全绿**(快照 4 + 分组 7 + 列表 2) |
+| `packages/ecosystem/identity` → `dart analyze .` / `dart test -j 1` | No issues found;**19 全绿**(matcher 12 + 序列化 2 + 索引 5) |
 | `packages/services/favorites` → `dart test -j 1`(持久化组) | 含真文件往返与"文档不是列表就报错"两条,合计 13 = 4 + 7 + 2 |
 | `packages/services/playlist` → `dart analyze .` / `dart test -j 1` | No issues found;**16 全绿**(顺序 7 + 条目 3 + 登记 3 + 持久化 3) |
 | `packages/services/history` → `dart analyze .` / `dart test -j 1` | No issues found;**23 全绿**(记录 7 + 节流 5 + 剧集 3 + 时间线 5 + 域映射 1 + 持久化 2) |
 | 源失效可见这条规则 | `test_list_rendersFromTheStoredSnapshotWithNoSourceAnywhere`:整条读路只碰仓库,收藏页要渲染不需要任何源在场 |
-| `dart run tool/check_architecture.dart --strict` | `packages=31 errors=0 warnings=0`(feed / favorites / playlist / history 四包入册后) |
+| `dart run tool/check_architecture.dart --strict` | `packages=32 errors=0 warnings=0`(identity 入册后) |
 | `dart analyze packages` / `dart format --output=none --set-exit-if-changed packages tool/check_architecture.dart` | No issues found;160 文件 0 changed |
 | `powershell -File tool/test_check_architecture.ps1` | PASS: 23 assertions across 21 cases |
 
