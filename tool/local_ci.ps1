@@ -15,6 +15,10 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
+# ADR 0015 moved the app: the repository root is the pub workspace hub, and the only Flutter project here is
+# apps/pure_live. Every flutter pub get / test / analyze therefore runs there, while git, the audits and the
+# audit output path stay root-relative.
+$appRoot = Join-Path $repoRoot 'apps\pure_live'
 $flutterw = Join-Path $PSScriptRoot 'flutterw.ps1'
 . (Join-Path $PSScriptRoot 'build_resource_guard.ps1')
 
@@ -29,14 +33,39 @@ if ($Scope -eq 'Full' -and $SkipPubGet) {
     throw 'Full validation must resolve the locked dependency graph.'
 }
 foreach ($path in $resolvedTests) {
-    if (-not (Test-Path -LiteralPath (Join-Path $repoRoot $path))) {
+    if (-not (Test-Path -LiteralPath $path) -and
+        -not (Test-Path -LiteralPath (Join-Path $repoRoot $path)) -and
+        -not (Test-Path -LiteralPath (Join-Path $appRoot $path))) {
         throw "Focused test path does not exist: $path"
     }
 }
+# flutter test resolves its arguments against the Flutter project, so a caller may name a file either the way
+# it appears in the repository (apps/pure_live/test/x_test.dart) or from inside the app (test/x_test.dart).
+$appTestPaths = @($resolvedTests | ForEach-Object {
+    $asGiven = $_ -replace '\\', '/'
+    if ($asGiven.StartsWith('apps/pure_live/')) { $asGiven.Substring('apps/pure_live/'.Length) } else { $asGiven }
+})
 
 function Assert-PureLiveCommandSucceeded {
     param([Parameter(Mandatory = $true)][string] $Label)
     if ($LASTEXITCODE -ne 0) { throw "$Label exited with code $LASTEXITCODE." }
+}
+
+# Flutter resolves a project from its working directory, and since ADR 0015 the only Flutter project in this
+# repository is the app. Everything else in this script - git, audits, the record - stays at the root.
+function Invoke-PureLiveFlutterInApp {
+    param(
+        [Parameter(Mandatory = $true)][string] $Label,
+        [Parameter(Mandatory = $true)][string[]] $Arguments
+    )
+
+    Push-Location $appRoot
+    try {
+        & $flutterw @Arguments
+    } finally {
+        Pop-Location
+    }
+    Assert-PureLiveCommandSucceeded $Label
 }
 
 $taskName = "quality-$($Scope.ToLowerInvariant())"
@@ -121,8 +150,7 @@ try {
     else {
         [string[]] $pubArgs = @('pub', 'get', '--enforce-lockfile')
         if ($OfflinePub) { $pubArgs += '--offline' }
-        & $flutterw @pubArgs
-        Assert-PureLiveCommandSucceeded 'Locked dependency resolution'
+        Invoke-PureLiveFlutterInApp -Label 'Locked dependency resolution' -Arguments $pubArgs
     }
     $phaseClock.Stop()
     $phaseSeconds.dependency_resolution = [Math]::Round($phaseClock.Elapsed.TotalSeconds, 3)
@@ -166,8 +194,12 @@ try {
     $phaseSeconds.native_prefetch = [Math]::Round($phaseClock.Elapsed.TotalSeconds, 3)
     $activePhase = $null
 
-    # This file vendors JavaScript in raw Dart strings and stays outside format.
-    $formatExclusions = @('lib/core/scripts/douyin_sign.dart')
+    # An allow-list, because the deny-list this replaced still named plugins/built_in_kotlin/ after ADR 0015
+    # moved the vendored sources to third_party/ - a stale deny-list silently formats files it no longer
+    # covers, which is exactly how a formatting run once churned 53 vendored Kotlin-patch files.
+    $ownedPrefixes = @('packages/', 'apps/pure_live/lib/', 'apps/pure_live/test/', 'tool/')
+    $generatedSuffixes = @('.g.dart', '.g.part', '.freezed.dart', '.mocks.dart', '.pb.dart')
+    $generatedMarkers = @('/build/', '/.dart_tool/', '/generated/')
     # Wrap the complete pipeline in an array expression. With no changed Dart
     # files PowerShell otherwise assigns $null, which has no Count in strict mode.
     $dartFiles = @(
@@ -175,12 +207,17 @@ try {
             git diff --name-only --diff-filter=ACMR HEAD -- '*.dart'
             git ls-files --others --exclude-standard -- '*.dart'
         ) | Where-Object {
-            $_ -and
-            $_ -notin $formatExclusions -and
-            -not $_.StartsWith('plugins/built_in_kotlin/', [StringComparison]::OrdinalIgnoreCase) -and
-            -not $_.StartsWith('plugins/flv_lzc/', [StringComparison]::OrdinalIgnoreCase) -and
-            -not $_.StartsWith('third_party/media_kit_video/', [StringComparison]::OrdinalIgnoreCase) -and
-            (Test-Path -LiteralPath $_)
+            # $path is bound first: inside a nested Where-Object, $_ names the prefix or suffix, so reusing it
+            # for the file would compare a path against itself and always match.
+            $path = $_
+            if ([string]::IsNullOrWhiteSpace($path)) { return $false }
+            $isOwned = @($ownedPrefixes | Where-Object { $path.StartsWith($_) }).Count -gt 0
+            $isGenerated = @($generatedSuffixes | Where-Object { $path.EndsWith($_) }).Count -gt 0
+            $hasGeneratedMarker = @($generatedMarkers | Where-Object { $path.Contains($_) }).Count -gt 0
+            $isOwned -and
+            -not $isGenerated -and
+            -not $hasGeneratedMarker -and
+            (Test-Path -LiteralPath (Join-Path $repoRoot $path))
         } | Sort-Object -Unique
     )
     if ($dartFiles.Count -gt 0) {
@@ -207,8 +244,9 @@ try {
         $activePhase = 'flutter_tests'
         $phaseClock = [Diagnostics.Stopwatch]::StartNew()
         # Keep all affected files in one test process so concurrency is bounded once.
-        & $flutterw test --no-pub "--concurrency=$TestConcurrency" @testAssetArgs @resolvedTests
-        Assert-PureLiveCommandSucceeded 'Focused Flutter tests'
+        Invoke-PureLiveFlutterInApp -Label 'Focused Flutter tests' -Arguments (
+            @('test', '--no-pub', "--concurrency=$TestConcurrency") + $testAssetArgs + $appTestPaths
+        )
         $phaseClock.Stop()
         $phaseSeconds.flutter_tests = [Math]::Round($phaseClock.Elapsed.TotalSeconds, 3)
         $activePhase = $null
@@ -219,8 +257,9 @@ try {
         $activePhase = 'flutter_analyze'
         $phaseClock = [Diagnostics.Stopwatch]::StartNew()
         $analyzeInvocationCount++
-        & $flutterw analyze --no-pub --no-fatal-infos --no-fatal-warnings
-        Assert-PureLiveCommandSucceeded 'Flutter Analyze'
+        Invoke-PureLiveFlutterInApp `
+            -Label 'Flutter Analyze' `
+            -Arguments @('analyze', '--no-pub', '--no-fatal-infos', '--no-fatal-warnings')
         $phaseClock.Stop()
         $phaseSeconds.flutter_analyze = [Math]::Round($phaseClock.Elapsed.TotalSeconds, 3)
         $activePhase = $null
@@ -229,8 +268,9 @@ try {
     if ($Scope -eq 'Full') {
         $activePhase = 'flutter_tests'
         $phaseClock = [Diagnostics.Stopwatch]::StartNew()
-        & $flutterw test --no-pub "--concurrency=$TestConcurrency" @testAssetArgs
-        Assert-PureLiveCommandSucceeded 'Full Flutter test suite'
+        Invoke-PureLiveFlutterInApp -Label 'Full Flutter test suite' -Arguments (
+            @('test', '--no-pub', "--concurrency=$TestConcurrency") + $testAssetArgs
+        )
         $phaseClock.Stop()
         $phaseSeconds.flutter_tests = [Math]::Round($phaseClock.Elapsed.TotalSeconds, 3)
         $activePhase = $null
