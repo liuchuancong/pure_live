@@ -15,6 +15,7 @@
 - `lib/src/ticket_source.dart` —— `MediaTicket` → `MediaSource`(Progressive / Composite)
 - `lib/src/ticket_policy.dart` —— `MediaTicketPolicy` → 内核 `RecoveryPolicy` / `FallbackPolicy`
 - `lib/src/watchdog.dart` —— 播放看门狗:票据到期/预取、位置停滞、起播超时
+- `lib/src/ticket_swap.dart` —— `TicketSwapper`:看门狗提出要换之后真正取票、重开、回到原位置、按用户意愿续播
 - `lib/src/playback_trace.dart` —— 一次播放的证据链 `PlaybackTrace` 与可导出报告(强制脱敏)
 
 media_core 钉的是应用 pubspec 里同一个 ref(`5b04714542…`),全 workspace 共用一份 checkout。
@@ -94,6 +95,23 @@ ticketRefreshed/lineSwitched/engineSwitched/failed/stopped`)、票据记录、�
 - 映射是显式逐字段(不是反射),任一侧加字段这里就编译不过或测试就红。
 - 本包不 import flutter 之外的宿主能力;引擎适配(media_kit / ijk / better_player)与"假引擎"测试台尚未落,
   当前只有票据 → 源/策略。
+
+## 换链的执行端(`TicketSwapper`)
+
+看门狗只提出"要换",真去换的是这里。顺序是**先取票,后动播放器**:
+
+1. 记下当前位置与"当时是否在播";
+2. 向注入的 `replace` 回调要新票据 —— 它是组合根接 `pure_live_resolver` 的 `CapabilityTicketRefresher` 的地方。
+   本包在 L0.5,不能反向依赖 L1 的解析器,所以这里只收一个回调;
+3. 取票失败 → **什么都不开**,播放继续,错误原样上抛;
+4. 成功才 `openMedia(autoPlay: false)` → 位置非 0 才 `seek` 回去 → 原本在播才 `play`。
+
+三条不那么显眼但必须写下来的:直播边缘位置是 0,**不 seek**(把直播拖回 0 是回退或卡死);
+用户暂停时**不 resume**(暂停是用户给的答案,不是换链能替它改的东西);并发两次 `swap` 合并成一次
+(预取撞上手动刷新时,排队只会让第二次把刚装好的票据再换掉)。
+
+它保证的是**顺序**与"失败不打断播放",不保证听不出来:重开一个源在某些引擎上就是有一下,
+`MediaTicketPolicy.seamlessRefresh` 在内核里没有对应物可以要求无缝交接(见 `ticket_policy.dart` 的映射表)。
 
 ## 验证
 

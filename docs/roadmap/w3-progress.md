@@ -81,7 +81,7 @@ retryDelay)翻译成 media_core 的策略对象。这条结论单独记 ADR(0020
 3. ~~票据到期与预取调度(平台侧看门狗)~~ —— 已落(§2.3)。
 4. ~~`MediaTicketRefreshInfo`(`refreshBefore`,models §11)~~ —— 已落(§2.4),预取提前量改为"逐票建议优先、
    全局默认兜底"。
-5. ~~`packages/ecosystem/resolver` 与换链的读侧闸~~ —— 已落(§2.6)。
+5. ~~`packages/ecosystem/resolver`、换链的读侧闸与执行端~~ —— 已落(§2.6 读侧、§2.7 执行)。
 6. 引擎适配(media_kit / ijk / better_player)与真实设备播放:前两条证明的是接线到得了引擎,不代表任何
    真机在播。
 7. Watchdog 的其余三项监控(帧心跳、适配器错误、缓冲率细节)**不做**:内核已经在报,重复判定就是 ADR 0020
@@ -207,12 +207,31 @@ models §11 的 `MediaTicketRefreshInfo{supported, expiresAt, refreshBefore}` �
 登记进 `kApprovedExceptions` 与依赖规则 §4,护栏回归补了正例与反例各一条(别的生态包伸手拿 capability 仍被
 `layer-direction` 拦下)。
 
+### 2.7 已完成:换链的执行端(`lib/src/ticket_swap.dart`,media 包 56 测试)
+
+§2.3 留下的「看门狗只会提出要换,不会真的换」补上了。`TicketSwapper` 的顺序是**先取票、后动播放器**:
+记下位置与在播状态 → 向回调要新票据 → 取到才 `openMedia(autoPlay: false)` → 位置非 0 才 `seek` 回去 →
+原本在播才 `play`。四条判断各有一条测试钉:
+
+- 取票失败**什么都不开**(openedSources 数量不变、错误原样上抛)。换链失败的成本本该等于不换,
+  而不是先打断正在看的流再说没换成。
+- 用户暂停时不 resume。暂停是用户给的答案,不属于换链该改的东西。
+- 直播边缘位置为 0 时不 seek。把直播拖回 0 是回退或卡死,不是「恢复进度」。
+- 并发两次 `swap` 合并成一次。预取撞上手动刷新时,排队只会让第二次把刚装好的票据再换掉。
+
+依赖方向上有一处**故意不做**:本包在 integrations(L0.5),`CapabilityTicketRefresher` 在 ecosystem(L1),
+所以这里不 import resolver,只收 `TicketReplacement` 回调,由组合根把两边接上 —— 反过来的边就是护栏报的
+`layer-direction`。测试因此是在真实内核 + media_core 自带假引擎上断言调用顺序,不是对桩。
+
+边界:保证的是顺序与「失败不打断播放」,**不保证听不出来**。重开一个源在某些引擎上就是有一下,
+`seamlessRefresh` 在内核侧没有可要求无缝交接的对应物(§1.4 映射表已记为留在平台侧)。
+
 ## 3. 验证证据
 
 | 命令 | 结果 |
 |---|---|
 | `packages/integrations/media` → `flutter analyze` | No issues found |
-| `packages/integrations/media` → `flutter test` | **51 全绿** = 15 票据映射 + 5 假引擎端到端播放 + 19 看门狗 + 12 播放诊断轨迹;跑在真实 `flutter test` 上、对钉住的 media_core ref(不是对桩) |
+| `packages/integrations/media` → `flutter test` | **56 全绿** = 15 票据映射 + 5 假引擎端到端播放 + 19 看门狗 + 12 播放诊断轨迹 + 5 换链执行端;跑在真实 `flutter test` 上、对钉住的 media_core ref(不是对桩) |
 | `packages/ecosystem/platform` → `dart test -j 1` | **100 全绿**(89 + 11 条 `ResolverDescriptor`:词汇钉死、`serves` 全表、JSON 往返与"未知 kind 落回 vod") |
 | `packages/ecosystem/resolver` → `dart analyze .` / `dart test -j 1` | No issues found;**30 全绿** = 注册表与降级链 14 + 能力适配与换链闸 16。两条被**改的是断言**而不是代码:等值候选的注册序、`ContentKind.movie` 只有一个候选服务 |
 | 假引擎播放的路径 | `PlayerKernel.createFromMedia` 走内核自己的 planner(`DefaultMediaSourcePlanner`)与 `PlayerHandle.initialize/open/play/stop`;`FakePlayerAdapter` 来自 media_core 自带的 `testing/library.dart` |
@@ -234,9 +253,9 @@ models §11 的 `MediaTicketRefreshInfo{supported, expiresAt, refreshBefore}` �
   修订;不能让文档继续指向一套不该存在的实现。
 - 播放只在**假引擎**上打通:没有真实引擎适配(media_kit / ijk / better_player),没有真机验收,也没有画面/音频
   输出证据。M2 的"能播一个假源"达成,"能播"这件事本身还没达成。
-- 换链的**读侧闸与执行原语**已落(§2.6:`CapabilityTicketRefresher.refresh`),但**接线还没有**:看门狗的
-  `onTicketRefresh` 由谁调、拿到新票据后怎么 `handle.open` 上去(且要保住会话与进度,docs/media/media-ticket.md §4)
-  仍待播放会话归属定下来。目前看门狗只会"提出要换",不会真的换。
+- ~~换链的执行端~~ 已落(§2.7:`TicketSwapper`)。**还缺的是「谁来调」**:看门狗的 `onTicketRefresh` 与
+  `TicketSwapper.swap` 各自都在,但把两者接到一个播放会话上(会话归谁持有、退出时谁 dispose)仍是本节的
+  第一条欠账 —— 它要等 UI/feature 波真的开始播东西,而不是现在凭想象接。
 - 内核阶梯被**触发过**一次(测试里 `reportFailure` 进到 `handle.recoveryFailure`),但没有走完一轮恢复:
   没有候选线路、没有 `RecoveryLadderEvent` 断言。真实恢复路径的验证随引擎适配一起做。
 - `MediaTicketRefreshInfo` 现在有**读它的一方**了(§2.4 的预取时刻、§2.6 的换链闸),但**没有写它的一方**:
