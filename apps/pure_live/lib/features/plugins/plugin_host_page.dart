@@ -79,6 +79,28 @@ final class _PluginHostPageState extends ConsumerState<PluginHostPage> {
     });
   }
 
+  Future<void> _importData() async {
+    final files = await FilePicker.pickFiles(
+      allowedExtensions: <String>['m3u', 'm3u8', 'json', 'txt'],
+      type: FileType.custom,
+    );
+    if (files.isEmpty) {
+      return;
+    }
+    final path = files.single.path;
+    if (path == null) {
+      return;
+    }
+    final store = ref.read(runtimeProvider).pluginStore;
+    final name = files.single.name;
+    await _run(() async {
+      await importDataFile(store, path, name: name);
+      if (mounted) {
+        setState(() => _message = '已导入数据源 \$name(配置内容即插件),打开开关启用');
+      }
+    });
+  }
+
   Future<void> _toggle(InstalledPlugin plugin, bool enabled) async {
     final runtime = ref.read(runtimeProvider);
     final store = runtime.pluginStore;
@@ -124,6 +146,11 @@ final class _PluginHostPageState extends ConsumerState<PluginHostPage> {
         title: const Text('插件'),
         actions: <Widget>[
           IconButton(icon: const Icon(Icons.file_open_outlined), tooltip: '导入插件文件', onPressed: _busy ? null : _import),
+          IconButton(
+            icon: const Icon(Icons.playlist_add),
+            tooltip: '导入 M3U / TVBox 配置',
+            onPressed: _busy ? null : _importData,
+          ),
         ],
       ),
       body: _busy

@@ -77,6 +77,30 @@ final class PluginStore {
     );
   }
 
+  /// Installs a data plugin (TVBox config, M3U playlist): configuration only,
+  /// with a parser-derived manifest and a content file instead of code.
+  Future<InstalledPlugin> installData({required PluginManifest manifest, required String content}) async {
+    final result = _validator.validate(manifest);
+    if (!result.isAccepted) {
+      final details = result.errors.map((issue) => issue.toString()).join('; ');
+      throw PluginInstallException('${manifest.id} refused: $details');
+    }
+    final directory = _directoryFor(manifest.id);
+    await directory.create(recursive: true);
+    await File(_manifestPath(manifest.id)).writeAsString(jsonEncode(manifest.toJson()), flush: true);
+    await File(_contentPath(manifest.id)).writeAsString(content, flush: true);
+    final state = <String, Object?>{'enabled': false, 'installedAt': DateTime.now().toUtc().toIso8601String()};
+    await File(_statePath(manifest.id)).writeAsString(jsonEncode(state), flush: true);
+    return InstalledPlugin(
+      manifest: manifest,
+      enabled: false,
+      installedAt: DateTime.parse(state['installedAt']! as String),
+    );
+  }
+
+  /// The stored content of one data plugin.
+  Future<String> readContent(String id) => File(_contentPath(id)).readAsString();
+
   /// Every installed plugin, id-ordered so the management page is stable.
   Future<List<InstalledPlugin>> list() async {
     if (!await _pluginsRoot.exists()) {
@@ -137,6 +161,8 @@ final class PluginStore {
   String _manifestPath(String id) => '${_directoryFor(id).path}${Platform.pathSeparator}manifest.json';
 
   String _sourcePath(String id) => '${_directoryFor(id).path}${Platform.pathSeparator}plugin.js';
+
+  String _contentPath(String id) => '${_directoryFor(id).path}${Platform.pathSeparator}content.txt';
 
   String _statePath(String id) => '${_directoryFor(id).path}${Platform.pathSeparator}state.json';
 

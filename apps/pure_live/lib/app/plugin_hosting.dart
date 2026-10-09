@@ -11,10 +11,13 @@
 // adapter lives here because this is the one place allowed to see both the
 // runtime's services and the plugin-sized vocabulary (AGENTS.md I9).
 
+import 'dart:convert';
 import 'dart:io';
 
+import 'package:crypto/crypto.dart' as crypto;
 import 'package:pure_live_capability/pure_live_capability.dart';
 import 'package:pure_live_extension/pure_live_extension.dart';
+import 'package:pure_live_external_tvbox/pure_live_external_tvbox.dart';
 import 'package:pure_live_js_runtime/pure_live_js_runtime.dart';
 import 'package:pure_live_permission/pure_live_permission.dart';
 import 'package:pure_live_platform/pure_live_platform.dart';
@@ -157,6 +160,10 @@ Future<PluginLoadReport> loadEnabledPlugins(PureLiveRuntime runtime, PluginStore
 
 Future<void> _loadOne(PureLiveRuntime runtime, PluginStore store, InstalledPlugin installed) async {
   final manifest = installed.manifest;
+  if (manifest.runtime == PluginRuntimeKind.data) {
+    await _loadDataPlugin(runtime, manifest, store);
+    return;
+  }
   final source = await store.readSource(installed.id);
   final pluginRuntime = JsPluginRuntime(
     source: source,
@@ -190,6 +197,51 @@ Future<void> _loadOne(PureLiveRuntime runtime, PluginStore store, InstalledPlugi
   );
 }
 
+/// A data plugin serves straight from its config: M3U playlists and the live
+/// groups of a TVBox repo become one playlist source; spider sites are named
+/// as pending rather than registered unable to serve.
+Future<void> _loadDataPlugin(PureLiveRuntime runtime, PluginManifest manifest, PluginStore store) async {
+  final content = await store.readContent(manifest.id);
+  final Object parsed;
+  if (content.trimLeft().startsWith('#EXTM3U')) {
+    parsed = const M3uParser().parse(content);
+  } else {
+    parsed = const TvBoxConfigParser().parse(content);
+  }
+  final List<TvBoxChannel> channels;
+  var note = '';
+  if (parsed is TvBoxSingleRepo) {
+    channels = <TvBoxChannel>[for (final group in parsed.lives) ...group.channels];
+    if (parsed.sites.isNotEmpty) {
+      note = '${parsed.sites.length} 个 spider 站点待运行时接入';
+    }
+  } else if (parsed is List<TvBoxChannel>) {
+    channels = parsed;
+  } else {
+    // A multi-repo carries no servable content itself; it names other repos
+    // and the host fetches them one by one, which is import work, not load
+    // work.
+    throw StateError('多仓配置没有可直接播放的内容,先导入其中的单仓');
+  }
+  if (channels.isEmpty) {
+    throw StateError(note.isEmpty ? '配置里没有可播放的频道' : note);
+  }
+  final built = playlistContent(manifest.id, channels);
+  runtime.capabilities.register(
+    ProviderRegistration(
+      sourceId: manifest.id,
+      extensionId: manifest.id,
+      provider: built.provider,
+      capabilities: const CapabilitySet(<CapabilityKind>{CapabilityKind.live, CapabilityKind.feed}),
+    ),
+  );
+  runtime.diagnostics.emit(
+    'plugin.dataLoaded',
+    extensionId: manifest.id,
+    metadata: <String, Object?>{'summary': built.summary, if (note.isNotEmpty) 'note': note},
+  );
+}
+
 /// Reads one imported file, validates it and stores it. Returns the install
 /// record so the page can show what arrived. Disabled on install: the user
 /// turns a plugin on deliberately, from the management page.
@@ -197,6 +249,26 @@ Future<InstalledPlugin> importPluginFile(PluginStore store, String path) async {
   final text = await File(path).readAsString();
   final bundle = const PluginBundleParser().parse(text);
   return store.install(bundle);
+}
+
+/// Installs a data plugin from an imported M3U or TVBox config file. The id
+/// is the content hash, so re-importing the same file is an idempotent
+/// upgrade, and the manifest is derived per data-plugin.md (no code, live
+/// capability).
+Future<InstalledPlugin> importDataFile(PluginStore store, String path, {required String name}) async {
+  final content = await File(path).readAsString();
+  final hash = crypto.md5.convert(utf8.encode(content)).toString().substring(0, 10);
+  final manifest = PluginManifest(
+    id: 'data.$hash',
+    name: name,
+    version: '1.0.0',
+    apiVersion: 1,
+    runtime: PluginRuntimeKind.data,
+    capabilityNames: const <String>{'live'},
+    permissionNames: const <String>{},
+    origin: PluginOrigin.localFile,
+  );
+  return store.installData(manifest: manifest, content: content);
 }
 
 /// Disables a plugin and takes its registrations off the registry. Uninstall
