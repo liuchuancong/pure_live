@@ -10,6 +10,9 @@ Capability / ContentRef / MediaTicket / PluginManifest / Permission / Provider �
 
 melos 化、包脚手架、架构护栏、契约测试框架、核心模型(ContentRef/MediaTicket 等)。
 
+> 2026-10-09 重建:按当前状态从 W1 重新出发,清基线、收欠账、应用壳成为真应用,demo 源打通
+> 注册 → 能力注册表 → Feed 聚合 → 首页整条链,见 [w1-rebuild-progress.md](w1-rebuild-progress.md)。
+
 **实现前置**:契约与模型按 [../contracts/platform-contracts.md](../contracts/platform-contracts.md) / [platform-models.md](../contracts/platform-models.md) 执行;动手前先跑 **media_core 复用盘点**(models §2:MediaTrack/TaskCancelToken/错误分类等直接复用,SourceDescriptor 命名冲突经接线层别名);最小首切片模型清单见 models §19。
 
 ## W2 — Plugin Runtime + Extension Gateway

@@ -1,5 +1,8 @@
 # W1 进度(目录形态与 Foundation 骨架)
 
+> 2026-10-09:本文件是 W1 首轮推进的历史记录;按当前状态从 W1 重新出发的重建与其后续见
+> [w1-rebuild-progress.md](w1-rebuild-progress.md)(基线清理、W1 欠账收尾、应用壳、demo 源链路)。
+
 > 验收口径来自 [milestones.md](milestones.md) 的 M1:契约定稿、全仓骨架 analyze 绿、护栏进 CI。
 > 工程规范按 [../DEVELOPMENT_STANDARDS.md](../DEVELOPMENT_STANDARDS.md);目录形态按 [../adr/0015-monorepo-layout.md](../adr/0015-monorepo-layout.md)。
 > 本文件只记 `v2` 分支的实际状态,不写计划外的乐观结论。
