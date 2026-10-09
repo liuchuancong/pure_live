@@ -115,6 +115,66 @@ void main() {
     expect(decoded.kind, MediaTrackType.video);
   });
 
+  group('MediaTicketRefreshInfo', () {
+    final deadline = DateTime.utc(2026, 10, 9, 12, 5);
+    const defaultLead = Duration(seconds: 45);
+
+    test('test_nextRefreshAt_unsupportedSource_schedulesNothing', () {
+      const info = MediaTicketRefreshInfo(supported: false);
+
+      expect(info.nextRefreshAt(ticketExpiry: deadline, defaultLead: defaultLead), isNull);
+    });
+
+    test('test_nextRefreshAt_ticketDeadlineIsAuthoritative', () {
+      // Advice that disagrees about the deadline must not move it: the ticket field wins.
+      final info = MediaTicketRefreshInfo(expiresAt: deadline);
+
+      expect(info.nextRefreshAt(ticketExpiry: null, defaultLead: defaultLead), deadline.subtract(defaultLead));
+      expect(
+        info.nextRefreshAt(ticketExpiry: deadline.add(const Duration(minutes: 10)), defaultLead: defaultLead),
+        deadline.add(const Duration(minutes: 10)).subtract(defaultLead),
+      );
+    });
+
+    test('test_nextRefreshAt_noDeadlineAnywhere_schedulesNothing', () {
+      expect(const MediaTicketRefreshInfo().nextRefreshAt(ticketExpiry: null, defaultLead: defaultLead), isNull);
+    });
+
+    test('test_nextRefreshAt_advisedLeadBeatsTheDefault', () {
+      const info = MediaTicketRefreshInfo(refreshBefore: Duration(minutes: 5));
+
+      expect(
+        info.nextRefreshAt(ticketExpiry: deadline, defaultLead: defaultLead),
+        deadline.subtract(const Duration(minutes: 5)),
+      );
+    });
+
+    test('test_nextRefreshAt_zeroOrNegativeLeadMeansAtTheDeadline', () {
+      for (final lead in <Duration>[Duration.zero, const Duration(seconds: -30)]) {
+        final info = MediaTicketRefreshInfo(refreshBefore: lead);
+
+        expect(
+          info.nextRefreshAt(ticketExpiry: deadline, defaultLead: defaultLead),
+          deadline,
+          reason: '$lead',
+        );
+      }
+    });
+
+    test('test_mediaTicket_jsonRoundTrip_keepsTheRefreshAdvice', () {
+      final ticket = _ticketWith(refresh: const MediaTicketRefreshInfo(refreshBefore: Duration(seconds: 90)));
+
+      final decoded = MediaTicket.fromJson(ticket.toJson());
+
+      expect(decoded.refresh?.supported, isTrue);
+      expect(decoded.refresh?.refreshBefore, const Duration(seconds: 90));
+    });
+
+    test('test_mediaTicket_withoutRefresh_staysAbsent', () {
+      expect(MediaTicket.fromJson(_ticket().toJson()).refresh, isNull);
+    });
+  });
+
   test('test_resolveRequest_defaults_allowFallbackAndNormalIntent', () {
     const request = ResolveRequest(
       ref: ContentRef(sourceId: 's', contentId: 'c', kind: ContentKind.vod),
@@ -166,4 +226,16 @@ void main() {
       ),
     );
   });
+}
+
+MediaTicket _ticketWith({MediaTicketRefreshInfo? refresh}) {
+  return MediaTicket(
+    id: 'ticket-refresh',
+    uri: Uri.parse('https://example.test/index.m3u8'),
+    kind: MediaKind.live,
+    protocol: MediaProtocol.hls,
+    createdAt: DateTime.utc(2026, 10, 9),
+    expiresAt: DateTime.utc(2026, 10, 9, 12, 5),
+    refresh: refresh,
+  );
 }

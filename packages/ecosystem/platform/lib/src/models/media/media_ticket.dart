@@ -85,6 +85,66 @@ final class MediaTrack {
   }
 }
 
+/// What a source says about keeping one ticket alive.
+///
+/// docs/contracts/platform-models.md section 11 defines it alongside [MediaTicketPolicy], and the two are
+/// deliberately separate: the policy is what the *platform* is permitted to do, this is what the *source* is
+/// able to do. A source may permit nothing while the policy allows everything, and the intersection is what
+/// a scheduler may act on.
+final class MediaTicketRefreshInfo {
+  const MediaTicketRefreshInfo({this.supported = true, this.expiresAt, this.refreshBefore});
+
+  factory MediaTicketRefreshInfo.fromJson(Map<String, Object?> json) => MediaTicketRefreshInfo(
+    supported: json['supported'] as bool? ?? true,
+    expiresAt: parseUtc(json['expiresAt']),
+    refreshBefore: parseDurationMs(json['refreshBeforeMs']),
+  );
+
+  /// Whether this resource can be re-fetched at all. A one-shot signed url sets this false, and asking for a
+  /// replacement early would then produce a second url that nothing uses.
+  final bool supported;
+
+  /// The source's own expiry statement, which can differ from the ticket's when a protocol reports it in a
+  /// second place; the ticket field stays authoritative for the deadline.
+  final DateTime? expiresAt;
+
+  /// How long before expiry a replacement should be requested (docs/media/media-contract.md section 2's
+  /// `refreshBefore`, the "T-45s" in docs/media/media-ticket.md section 3).
+  final Duration? refreshBefore;
+
+  /// When a replacement should be asked for, or null when there is nothing to schedule.
+  ///
+  /// Null comes from two different reasons and the caller should not have to re-derive them: [supported]
+  /// false means a replacement does not exist (a one-shot signed url), and no deadline means the protocol
+  /// never said when this one dies. [defaultLead] is the platform's fallback for a source that gives advice
+  /// about expiry but not about timing, which is most of them.
+  DateTime? nextRefreshAt({required DateTime? ticketExpiry, required Duration defaultLead}) {
+    if (!supported) {
+      return null;
+    }
+    final deadline = ticketExpiry ?? expiresAt;
+    if (deadline == null) {
+      return null;
+    }
+    final lead = refreshBefore ?? defaultLead;
+    // A source that advises a negative or zero lead means "replace it as soon as you can", which is the
+    // deadline itself rather than a moment before it; refusing to schedule would be the worse reading.
+    if (lead.isNegative || lead == Duration.zero) {
+      return deadline;
+    }
+    return deadline.subtract(lead);
+  }
+
+  Map<String, Object?> toJson() => <String, Object?>{
+    if (!supported) 'supported': false,
+    if (expiresAt != null) 'expiresAt': formatUtc(expiresAt),
+    if (refreshBefore != null) 'refreshBeforeMs': durationMs(refreshBefore),
+  };
+
+  @override
+  String toString() => 'MediaTicketRefreshInfo(supported: $supported, lead: ${refreshBefore?.inSeconds}s)';
+}
+
 /// Descriptive fields for a UI or a media session. No playback state.
 final class MediaPlaybackMetadata {
   const MediaPlaybackMetadata({
@@ -197,6 +257,7 @@ final class MediaTicket {
     this.policy = const MediaTicketPolicy(),
     this.metadata = const MediaPlaybackMetadata(),
     this.source,
+    this.refresh,
   });
 
   factory MediaTicket.fromJson(Map<String, Object?> json) {
@@ -212,6 +273,7 @@ final class MediaTicket {
       policy: MediaTicketPolicy.fromJson(asObjectMap(json['policy'])),
       metadata: MediaPlaybackMetadata.fromJson(asObjectMap(json['metadata'])),
       source: json['source'] == null ? null : ContentRef.fromJson(asObjectMap(json['source'])),
+      refresh: json['refresh'] == null ? null : MediaTicketRefreshInfo.fromJson(asObjectMap(json['refresh'])),
     );
   }
 
@@ -239,6 +301,10 @@ final class MediaTicket {
   /// The content this ticket was resolved for, kept so a refresh can be attributed without a lookup.
   final ContentRef? source;
 
+  /// What the source itself said about refreshing this ticket. Null means it never answered, which the
+  /// scheduler treats as "no advice", not as "impossible".
+  final MediaTicketRefreshInfo? refresh;
+
   /// Whether the ticket can still be handed to a player right now.
   bool isExpiredAt(DateTime now) {
     final expiry = expiresAt;
@@ -255,6 +321,7 @@ final class MediaTicket {
       if (headers.isNotEmpty) 'headers': headers,
       if (tracks.isNotEmpty) 'tracks': _tracksToJson(tracks),
       if (expiresAt != null) 'expiresAt': formatUtc(expiresAt),
+      if (refresh != null) 'refresh': refresh!.toJson(),
       'policy': policy.toJson(),
       'metadata': metadata.toJson(),
       if (source != null) 'source': source!.toJson(),
