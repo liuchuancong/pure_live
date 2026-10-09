@@ -128,7 +128,7 @@ final class _PluginHostPageState extends ConsumerState<PluginHostPage> {
     await _run(() async {
       final installed = await importPluginUrl(runtime, runtime.pluginStore, url);
       if (mounted) {
-        setState(() => _message = '已导入 \${installed.manifest.name},打开开关启用');
+        setState(() => _message = '已导入 ${installed.manifest.name},打开开关启用');
       }
     });
   }
