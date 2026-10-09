@@ -91,7 +91,12 @@ class DanmakuManager {
     videoController.danmakuFps.value = dm.danmakuFps.v;
     videoController.roomDanmakuFontFamily.value = dm.danmakuFontFamilyName.v;
 
-    workers.add(ever<bool>(videoController.hideDanmaku, (data) => dm.hideDanmaku.v = data));
+    // 房间内"画面弹幕"开关是房间本地状态:只隐藏画面覆盖层,不写回全局
+    // hideDanmaku。此前的双向同步会把一次画面隐藏放大成全局关闭——弹幕
+    // 连接被拆除(侧边栏列表随之断流)、控制栏的弹幕按钮也因全局门控
+    // (video_controller_panel 对 !hideDanmaku 的过滤)一起消失,房间里
+    // 没有任何入口可以重新打开。全局开关只属于设置页:它仍是新房间的
+    // 初始值与连接总闸(见 danmaku_controller / live_play_controller)。
 
     final List<Rx> visualProperties = [
       videoController.danmakuArea,
