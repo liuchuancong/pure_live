@@ -54,6 +54,13 @@
 1. 发布工作流已搬家:`android / windows / linux / apple` 四个 job 加 `defaults.run.working-directory: apps/pure_live`,`quality` 只给 `dart run enven` 与 `flutter test` 两步加(其余步骤仍按仓库根)。随之改掉的根依赖:`enven --env-files` 改 `../../.env,../../.env.prod`;`./.github/actions/get-version` 改用 `$GITHUB_WORKSPACE/apps/pure_live/pubspec.yaml`,不再依赖调用方 cwd;`tool/prefetch_windows_native.ps1` 走 `$env:GITHUB_WORKSPACE`;APK/安装包产物 `path:`、`assets/version.json`、`assets/releases.json`(含 `update_releases.yml`)全部指到新位置。**本机跑不了 workflow,只做了 YAML 解析与逐条路径核对。**
 2. ~~`tool/validate_architecture.py` 仍按 v1 布局校验~~ —— 已由 `tool/check_architecture.dart` 取代并删除;护栏与回归见 §2,CI 入口是 `.github/workflows/architecture.yml`。
 3. v1 内容耦合的质量规则残留:`tool/audit_repository.py` 现在报 9 条 error,其中 `live_back_invariant_missing` 指向已删除的 `lib/modules/live_play/**`,`workflow_default_true` 指向发布工作流;`tool/validate_build_policy.ps1` 在**搬家之前**就会失败 —— 它要求 `.agents/skills/pure-live-build/SKILL.md`,该文件从未入库(`git show 12eefc302` 已核实)。这三类都要按 v2 语义重定义,不做单点修补。
+   - **2026-10-09 更正这一条的细节**:"从未入库"是错的。`git log --diff-filter=D` 显示缺失项各有归属:
+     `.agents/skills/pure-live-{build,maintenance}/SKILL.md` 由 `b5436983e` 删,`docs/BUG_TRIAGE_TEMPLATE.md` 与
+     `docs/UPSTREAM_AUDIT_TEMPLATE.md` 由 `5a06d9d22`(v2 文档重建)删,`.github/workflows/audit-upstream.yml` 由
+     `4a0cf09fe` 删。`validate_build_policy.ps1` 的 `$requiredFiles` 现在共 5 项指在这些已删文件上,所以它在
+     `local_ci.ps1` 的 `repository_preflight` **第一个检查就抛**(见 [w2-progress.md](w2-progress.md) §4 第 10 条)。
+     重定义仍是独立任务:先决定这四类东西在 v2 是否还要(build/maintenance skill 的角色已由 `AGENTS.md` +
+     `docs/AGENT_WORKFLOW.md` 承担?模板是否并入 `docs/development/`?),再改清单,不做单点修补。
 4. `tool/audit_built_in_kotlin.py` 因本机缺 Java 21 而失败(环境欠账,非搬家引入)。
 5. `.fvmrc` 钉 3.47.5,机器上实际是 PATH 里的 Flutter 3.47.6,`tool/flutterw.ps1` 会静默回退。**待用户定**:提 `.fvmrc` 到 3.47.6,还是装 3.47.5。
 6. `fluttersdk_artisan` / `fluttersdk_dusk` 与 `.mcp.json`、`apps/pure_live/bin/dispatcher.dart`、`apps/pure_live/lib/app/_plugins.g.dart` 是别处引入的框架栈,`docs/` 全体系无一处提到它。本轮只把 `.mcp.json` 的 cwd 改到 `apps/pure_live`,**未做取舍**。

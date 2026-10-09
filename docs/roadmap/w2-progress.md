@@ -345,6 +345,18 @@ FFmpeg 收口(§1.8(2) 收尾)复跑:
 > 环境注意(会影响后续会话):本机 `dart test` 默认并发**间歇性**报
 > `HandshakeException: Connection terminated during handshake`(无栈、`dart analyze` / `dart run` 正常),
 > 加 `-j 1` 即稳定通过。全仓逐包验证请用 `dart test -j 1`;这不是包的失败,别照着它去改代码。
+>
+> 第二条环境事实:本机裸 `python` / `python3` 解析到 `D:\Software\msys64\mingw64\bin\python.exe`,它缺标准库,
+> 任何脚本一进门就 `ModuleNotFoundError: No module named 'encodings'`(Git Bash 与 PowerShell 同一路径)。
+> 能用的是 `py -3`(3.9.13)。因此 `tool/local_ci.ps1` 的 python 类步骤、`tool/audit_repository.py`、
+> `tool/interface_probe.py` 在这里**都跑不了**,而 `tool/validate_agent_workflow.py` 自称需要 Python 3.11+,
+> `py -3` 也满足不了。看到这些步骤"失败"时先确认是哪条事实,别照着它去改代码。
+
+`5a06d9d22` 那次"删 v1 遗留文档"删多了:`AGENTS.md`、`CLAUDE.md`、`BUILD_POLICY.md`、`MAINTENANCE_POLICY.md`
+和 `tool/DEVICE_UI_MAP.md` 仍然链接 `docs/AGENT_WORKFLOW.md` 与 `docs/ANDROID_DEVICE_TEST_ROTATION.md`。
+两份都已按 v2 的实际入口重建(前者保留 `#model-and-task-handoff` 这个被 AGENTS.md 直接链接的锚点;后者只留
+仍然成立的租约与设备边界,v1 的逐日调度段不重建)。**同类风险记下来:删文档之前要先反查引用方,删被引用的
+文件不等于删掉那条规则。**
 
 1. ~~`packages/ecosystem/plugin_api` + PluginRuntime / ScriptSandbox **接口**~~ —— 已落(§1.5,三件接口都在包里);
    JS 装载与沙箱**实现**随 W10。
@@ -389,3 +401,11 @@ FFmpeg 收口(§1.8(2) 收尾)复跑:
    - **磁盘缓存没有条数上限**:过期只在读这一行或列键时被剔除。AGENTS.md 把"有界缓存"列为要守的性质,而策略该是
      哪种(按属主分桶的 LRU、需要写入时间戳;还是宿主定期 prune)要等 W4 的 Bilibili 参考插件真的用上缓存再定,
      现在定等于猜。
+10. **`local_ci.ps1 -Scope Full` / `-IncludeRepositoryChecks` 的仓库阶段还是 v1 的**,不能当成 v2 的交付门:
+    `repository_preflight` 的第一个检查 `validate_build_policy.ps1` 就抛 —— 它的 `$requiredFiles` 有 5 项指向已删
+    文件(skill 两份、模板两份、`audit-upstream.yml`),逐条归属见 [w1-progress.md](w1-progress.md) §3.2 第 3 条
+    的更正;之后还有 8 个 `test_android_recording_*` / `test_android_*` 设备邻近脚本与 `validate_device_ui_map.py`。
+    `repository_audit` 跑 5 个 python unittest,其中 `test_acceptance_status_alignment.py` 校验的 `ACCEPTANCE_*`
+    文档已在 `5a06d9d22` 删除。叠加本机 python 事实,这一整段今天既不适用也跑不动。**修它需要先逐项判定去留**
+    (哪些是 v2 还要的机制、哪些随 v1 一起走),那是独立清理任务而不是本轮的顺手改动;在此之前 Full 的失败不
+    作缺陷证据,Focused(§3)才是当前可用入口。

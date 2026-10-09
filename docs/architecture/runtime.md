@@ -19,7 +19,9 @@ main()
 ```
 
 > 实现落点(第一增量,2026-10-09):`apps/pure_live/lib/app/runtime.dart` 按上面的顺序装配了
-> 缓存/存储、诊断、权限、网络、Cookie、扩展网关、能力注册表与解析器注册表;
+> 缓存/存储、诊断、权限、网络、Cookie、扩展网关、能力注册表与解析器注册表;同一份能力注册表还被
+> `pure_live_search` / `pure_live_feed` 两个聚合器共用,收藏/历史/歌单三个用户数据服务各占一个文件
+> (见 [../roadmap/w5-progress.md](../roadmap/w5-progress.md) §1.8)。
 > `MediaRuntime` / `ContentRuntime` / `AccountRuntime` / `SyncRuntime` / `ThemeRuntime` 还没有可装的东西
 > (没有引擎适配、没有 UI 波、没有 provider 注册),范围与欠账见 [../roadmap/w2-progress.md](../roadmap/w2-progress.md) §1.7。
 

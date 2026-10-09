@@ -19,8 +19,9 @@
 | [diagnostics/](diagnostics/) | 日志 / 追踪 / 播放诊断 / 崩溃报告 |
 | [development/](development/) | 环境搭建 / 编码规范 / 包开发 / 插件开发 / 测试 / 发布 |
 | [migration/](migration/) | v1→v2 迁移:数据库 / 设置 / 插件 |
-| [adr/](adr/) | 架构决策记录 0001-0020 |
-| [roadmap/](roadmap/) | v2 路线图 / 里程碑 / 发布计划 / **W1、W2 与 W3 实施进度与决策记录** |
+| [adr/](adr/) | 架构决策记录 0001-0021 |
+| [roadmap/](roadmap/) | v2 路线图 / 里程碑 / 发布计划 / **W1-W5 实施进度、验证证据与已知欠账台账** |
+| 根级流程文档 | [AGENT_WORKFLOW.md](AGENT_WORKFLOW.md)(按改动选证据、Issue 快速通道、本地入口、模型/任务交接)与 [ANDROID_DEVICE_TEST_ROTATION.md](ANDROID_DEVICE_TEST_ROTATION.md)(共享实机租约与设备边界);二者由 `AGENTS.md` / `BUILD_POLICY.md` 链接,规则的所有权仍在那两份文件里 |
 
 ## 阅读顺序(新人)
 

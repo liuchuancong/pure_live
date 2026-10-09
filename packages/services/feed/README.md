@@ -40,7 +40,13 @@ feed.md 写 `FeedSection[](标题 + FeedItem[] + cursor)`。实现里 `FeedSecti
 
 ## 还没做的
 
-- "关注更新 / 历史『继续看』"这两类 FeedSource 需要 favorites / history 服务,它们还不存在;那两种节要等它们落地。
+- "关注更新 / 历史『继续看』"这两类 FeedSource:**服务已经落地**(favorites / history,组合根已装配,
+  见 [../../../docs/roadmap/w5-progress.md](../../../docs/roadmap/w5-progress.md) §1.8),但**接不进本包的形状**。
+  `FeedSection` 带 `sourceId`,而聚合器把 `item.ref.sourceId != section.sourceId` 的行判成 foreign 丢掉
+  (`lib/src/feed_aggregator.dart:159`)—— "继续看"天生跨源,照今天的形状进去会被整节清空。要么加一层
+  `FeedSource` 抽象、由来源自己声明是否按源过滤,要么回到 feed.md 的原形状(标题 + items + cursor)再补源
+  信息;两种都是改契约,要 ADR,不在本包顺手做。"关注更新"还另外缺一个源侧关注模型(favorites.md 明确说
+  关注不是收藏)。
 - 分节渲染、砖位大小与"手动添加入口"是 UI 的事。
 - 结果是全部落定才返回,与聚合搜索同一个理由:先到先显示需要 UI 侧的分批渲染决定。
 
