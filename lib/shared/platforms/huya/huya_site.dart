@@ -200,9 +200,24 @@ class HuyaSite
 
     List<LiveArea> subs = [];
     for (var item in result["data"]) {
-      var gid = (item["gid"])?.toInt().toString();
+      // bussLive 的 gid 字段有四种历史形态:Map(value 为逗号分隔、取第一个)、
+      // double、int、String。当前 API 实测只出 double/int,但直接 toInt()
+      // 在 Map/String 形态下会抛类型错误——类目列表整页失败。对齐参考实现
+      // 逐形态收敛。
+      final rawGid = item["gid"];
+      final String gid;
+      if (rawGid is Map) {
+        gid = rawGid["value"].toString().split(",").first;
+      } else if (rawGid is double) {
+        gid = rawGid.toInt().toString();
+      } else if (rawGid is int) {
+        gid = rawGid.toString();
+      } else {
+        gid = rawGid?.toString() ?? '';
+      }
+      if (gid.isEmpty) continue;
       var subCategory = LiveArea(
-        areaId: gid!,
+        areaId: gid,
         areaName: item["gameFullName"].toString(),
         areaType: liveCategory.id,
         platform: PlatformIds.huya,
