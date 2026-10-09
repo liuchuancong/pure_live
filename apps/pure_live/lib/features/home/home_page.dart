@@ -15,6 +15,7 @@ import 'package:pure_live_feed/pure_live_feed.dart';
 import 'package:pure_live_capability/pure_live_capability.dart';
 import 'package:pure_live_platform/pure_live_platform.dart';
 
+import '../../app/appearance.dart';
 import '../../app/di.dart';
 
 /// One aggregated feed page. Invalidated by pull-to-refresh, which asks for
@@ -60,9 +61,15 @@ final class HomePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final feed = ref.watch(feedProvider);
+    final background = ref.watch(appearanceProvider).background;
+    // The background layer sits behind the whole router; a page that wants to
+    // show it only has to draw its scaffold transparent.
+    final showBackground = background.isActive;
     return Scaffold(
+      backgroundColor: showBackground ? Colors.transparent : null,
       appBar: AppBar(
         title: const Text('纯粹直播'),
+        backgroundColor: showBackground ? Colors.transparent : null,
         actions: <Widget>[
           IconButton(icon: const Icon(Icons.search), tooltip: '搜索', onPressed: () => context.push('/search')),
         ],

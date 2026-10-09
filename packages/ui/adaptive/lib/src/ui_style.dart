@@ -77,13 +77,107 @@ final class AdaptiveStyleRegistry {
     factory: _buildMaterial,
   );
 
-  static ThemeData _buildMaterial(ColorScheme scheme, TextTheme? textTheme, TargetPlatform platform) {
-    return ThemeData(
-      useMaterial3: true,
-      colorScheme: scheme,
-      appBarTheme: AppBarTheme(backgroundColor: scheme.surface, centerTitle: false),
-      navigationBarTheme: NavigationBarThemeData(backgroundColor: scheme.surfaceContainer),
-      navigationRailTheme: NavigationRailThemeData(backgroundColor: scheme.surface),
+  /// The default registry: material in full, the other five as distinct
+  /// visual variants built from documented ThemeData knobs - platform (which
+  /// changes the rendered controls), density, corner geometry and the
+  /// decoration thickness. Dedicated packages replace a variant when a style
+  /// needs what ThemeData cannot express.
+  AdaptiveStyleRegistry.withAllVariants() : this(styles: _allVariantEntries());
+
+  static List<StyleEntry> _allVariantEntries() => <StyleEntry>[
+    defaultMaterialEntry,
+    StyleEntry(style: AdaptiveUiStyle.cupertino, defaultSeed: const Color(0xFF007AFF), factory: _buildCupertino),
+    StyleEntry(style: AdaptiveUiStyle.fluent, defaultSeed: const Color(0xFF0078D4), factory: _buildFluent),
+    StyleEntry(style: AdaptiveUiStyle.macos, defaultSeed: const Color(0xFF0A84FF), factory: _buildMacos),
+    StyleEntry(style: AdaptiveUiStyle.neumorphic, defaultSeed: const Color(0xFF8A8A9E), factory: _buildNeumorphic),
+    StyleEntry(style: AdaptiveUiStyle.yaru, defaultSeed: const Color(0xFFE95420), factory: _buildYaru),
+  ];
+
+  static ThemeData _base(ColorScheme scheme) => ThemeData(
+    useMaterial3: true,
+    colorScheme: scheme,
+    appBarTheme: AppBarTheme(backgroundColor: scheme.surface, centerTitle: false),
+    navigationBarTheme: NavigationBarThemeData(backgroundColor: scheme.surfaceContainer),
+    navigationRailTheme: NavigationRailThemeData(backgroundColor: scheme.surface),
+  );
+
+  static ThemeData _buildMaterial(ColorScheme scheme, TextTheme? textTheme, TargetPlatform platform) => _base(scheme);
+
+  static ThemeData _buildCupertino(ColorScheme scheme, TextTheme? textTheme, TargetPlatform platform) {
+    // iOS controls (switches, sliders, progress) come from the platform;
+    // continuous corners and comfortable density carry the rest.
+    return _base(scheme).copyWith(
+      platform: TargetPlatform.iOS,
+      visualDensity: VisualDensity.comfortable,
+      cardTheme: const CardThemeData(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(14))),
+      ),
+      inputDecorationTheme: const InputDecorationTheme(
+        border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(14))),
+      ),
+    );
+  }
+
+  static ThemeData _buildFluent(ColorScheme scheme, TextTheme? textTheme, TargetPlatform platform) {
+    // Windows/Fluent reads dense and square: acrylic-like surfaces, 4px
+    // geometry, compact controls.
+    return _base(scheme).copyWith(
+      platform: TargetPlatform.windows,
+      visualDensity: VisualDensity.compact,
+      cardTheme: const CardThemeData(shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(4)))),
+      inputDecorationTheme: const InputDecorationTheme(
+        border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(4))),
+      ),
+      splashFactory: InkSparkle.splashFactory,
+    );
+  }
+
+  static ThemeData _buildMacos(ColorScheme scheme, TextTheme? textTheme, TargetPlatform platform) {
+    return _base(scheme).copyWith(
+      platform: TargetPlatform.macOS,
+      visualDensity: VisualDensity.standard,
+      cardTheme: const CardThemeData(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(10))),
+      ),
+      sliderTheme: const SliderThemeData(trackShape: RoundedRectSliderTrackShape()),
+    );
+  }
+
+  static ThemeData _buildNeumorphic(ColorScheme scheme, TextTheme? textTheme, TargetPlatform platform) {
+    // The soft-plastic feel through surface treatment: same-hue surfaces,
+    // zero elevation with hairline outlines, generous radii.
+    final surface = scheme.surfaceContainerHighest;
+    return _base(scheme).copyWith(
+      scaffoldBackgroundColor: surface,
+      cardTheme: CardThemeData(
+        color: surface,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: const BorderRadius.all(Radius.circular(20)),
+          side: BorderSide(color: scheme.outlineVariant),
+        ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: surface,
+        border: OutlineInputBorder(
+          borderRadius: const BorderRadius.all(Radius.circular(20)),
+          borderSide: BorderSide(color: scheme.outlineVariant),
+        ),
+      ),
+    );
+  }
+
+  static ThemeData _buildYaru(ColorScheme scheme, TextTheme? textTheme, TargetPlatform platform) {
+    // Ubuntu-adjacent: linux controls, warm rounded geometry, bold app bar.
+    return _base(scheme).copyWith(
+      platform: TargetPlatform.linux,
+      appBarTheme: AppBarTheme(
+        backgroundColor: scheme.surface,
+        centerTitle: false,
+        titleTextStyle: TextStyle(color: scheme.onSurface, fontWeight: FontWeight.w700, fontSize: 20),
+      ),
+      filledButtonTheme: FilledButtonThemeData(style: FilledButton.styleFrom(shape: const StadiumBorder())),
     );
   }
 }

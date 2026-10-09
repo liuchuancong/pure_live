@@ -28,7 +28,7 @@ final class PureLiveApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final GoRouter router = ref.watch(routerProvider);
     final appearance = ref.watch(appearanceProvider);
-    final registry = AdaptiveStyleRegistry();
+    final registry = AdaptiveStyleRegistry.withAllVariants();
     return MaterialApp.router(
       title: '纯粹直播',
       theme: registry.themeFor(appearance.style, Brightness.light, appearance.seed),

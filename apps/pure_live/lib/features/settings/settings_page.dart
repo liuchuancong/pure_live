@@ -81,7 +81,7 @@ final class _AppearanceSection extends ConsumerWidget {
           trailing: DropdownButton<AdaptiveUiStyle>(
             value: appearance.style,
             items: <DropdownMenuItem<AdaptiveUiStyle>>[
-              for (final style in AdaptiveStyleRegistry().available)
+              for (final style in AdaptiveStyleRegistry.withAllVariants().available)
                 DropdownMenuItem(value: style, child: Text(style.label)),
             ],
             onChanged: (style) => style == null ? null : controller.update(appearance.copyWith(style: style)),
