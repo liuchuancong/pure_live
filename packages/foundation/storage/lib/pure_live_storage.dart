@@ -11,5 +11,6 @@
 /// everything above foundation can be tested without Flutter.
 library;
 
+export 'src/file_key_value_store.dart';
 export 'src/migration.dart';
 export 'src/stores.dart';

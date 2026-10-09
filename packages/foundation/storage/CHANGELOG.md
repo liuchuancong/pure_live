@@ -5,4 +5,7 @@ repository-wide release train, see docs/architecture/package-architecture.md sec
 
 ## Unreleased
 
-- Skeleton created for layer foundation as `pure_live_storage`: no dependencies and no implementation yet.
+- `KeyValueStore` / `SecureStore` 接口、类型化读取与内存实现;`SettingsMigrator` 与 `SchemaMigrator`
+  (W1 首切片:设置迁移边界)。
+- `FileKeyValueStore`:单文件 JSON 实现 —— 首次访问载入、每次改动写穿、临时文件 + rename、操作串行化。
+  读不懂的文件抛 `StoreCorruptedException` 并拒绝后续写入;不能序列化的值不改内存,也不改磁盘。
