@@ -86,7 +86,7 @@ final class PlaylistLiveSource implements BrowseCapability, ResolveCapability {
             kind: MediaKind.live,
             protocol: url.path.endsWith('.m3u8') ? MediaProtocol.hls : MediaProtocol.http,
             createdAt: DateTime.now().toUtc(),
-            headers: const <String, String>{'user-agent': 'PureLive'},
+            headers: <String, String>{'user-agent': 'PureLive', ...channel.headers},
             refresh: const MediaTicketRefreshInfo(supported: false),
             metadata: const MediaPlaybackMetadata(isLive: true),
           );

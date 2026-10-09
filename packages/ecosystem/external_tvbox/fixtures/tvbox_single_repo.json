@@ -1,0 +1,59 @@
+{
+  "spider": "./spider.jar;md5;abcdef1234567890abcdef1234567890",
+  "wallpaper": "https://example.com/wall.jpg",
+  "sites": [
+    {
+      "key": "csp_XPath",
+      "name": "_xpath内置",
+      "type": 3,
+      "api": "csp_XPath",
+      "searchable": 1,
+      "quickSearch": 1,
+      "filterable": 1
+    },
+    {
+      "key": "js_sample",
+      "name": "JS样例站",
+      "type": 3,
+      "api": "https://example.com/spiders/sample.js",
+      "ext": "https://example.com/ext/sample.json",
+      "jar": "./jar/custom.jar",
+      "searchable": 1
+    },
+    {
+      "key": "py_sample",
+      "name": "Python样例站",
+      "type": 3,
+      "api": "https://example.com/spiders/py_sample.py",
+      "ext": {
+        "site": "https://example.com/api"
+      }
+    },
+    {
+      "key": "broken_no_api",
+      "name": "缺api的站",
+      "type": 0
+    }
+  ],
+  "lives": [
+    {
+      "group": "redirect",
+      "channels": [
+        {
+          "name": "CCTV1 综合",
+          "urls": [
+            "proxy://https://example.com/cctv1.m3u8",
+            "https://backup.example.com/cctv1.m3u8"
+          ]
+        }
+      ]
+    },
+    {
+      "group": "港澳台",
+      "channels": [
+        { "name": "TVB Jade", "urls": ["https://example.com/tvb.m3u8"] },
+        { "name": "凤凰中文", "urls": ["https://example.com/phxc.m3u8"] }
+      ]
+    }
+  ]
+}

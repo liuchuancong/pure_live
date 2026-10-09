@@ -11,4 +11,5 @@
 
 library;
 
+export 'src/update_feed.dart';
 export 'src/version.dart';

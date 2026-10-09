@@ -172,6 +172,10 @@ dependencies:
     path: ../../packages/integrations/media
   pure_live_bilibili:
     path: ../../packages/providers/bilibili
+  pure_live_backup:
+    path: ../../packages/foundation/backup
+  pure_live_release:
+    path: ../../packages/foundation/release
   pure_live_music:
     path: ../../packages/providers/music
   pure_live_design:

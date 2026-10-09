@@ -9,11 +9,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
+import 'dart:convert';
+import 'dart:io';
+import 'dart:typed_data';
+
+import 'package:flutter/foundation.dart' show defaultTargetPlatform;
+import 'package:file_picker/file_picker.dart';
 import 'package:pure_live_adaptive/pure_live_adaptive.dart';
+import 'package:pure_live_release/pure_live_release.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:pure_live_design/pure_live_design.dart';
 
 import '../../app/appearance.dart';
 import '../../app/di.dart';
+import '../../app/user_backup.dart';
 
 final class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
@@ -27,6 +36,25 @@ final class SettingsPage extends ConsumerWidget {
         children: <Widget>[
           const _SectionHeader('外观'),
           const _AppearanceSection(),
+          const _SectionHeader('通用'),
+          ListTile(
+            leading: const Icon(Icons.system_update),
+            title: const Text('检查更新'),
+            subtitle: const Text('从发布源获取最新版本'),
+            onTap: () => _checkUpdate(context, ref),
+          ),
+          ListTile(
+            leading: const Icon(Icons.backup_outlined),
+            title: const Text('备份用户数据'),
+            subtitle: const Text('收藏、历史、歌单与外观导出为文件'),
+            onTap: () => _exportBackup(context, ref),
+          ),
+          ListTile(
+            leading: const Icon(Icons.restore),
+            title: const Text('恢复用户数据'),
+            subtitle: const Text('从备份文件恢复,恢复后需重启应用'),
+            onTap: () => _importBackup(context, ref),
+          ),
           const _SectionHeader('运行时'),
           ListTile(
             leading: const Icon(Icons.folder_outlined),
@@ -242,6 +270,126 @@ Future<void> _editBackground(BuildContext context, AppearanceController controll
       ),
     ),
   );
+}
+
+/// The release feed this build checks. One source of truth for the shell.
+const String kReleaseFeedUrl = 'https://raw.githubusercontent.com/liuchuancong/pure_live/master/assets/releases.json';
+
+UpdateTarget _currentTarget() {
+  return switch (defaultTargetPlatform) {
+    TargetPlatform.android => UpdateTarget.android,
+    TargetPlatform.windows => UpdateTarget.windows,
+    TargetPlatform.linux => UpdateTarget.linux,
+    TargetPlatform.macOS => UpdateTarget.macos,
+    _ => UpdateTarget.windows,
+  };
+}
+
+Future<void> _checkUpdate(BuildContext context, WidgetRef ref) async {
+  final messenger = ScaffoldMessenger.of(context);
+  final info = await PackageInfo.fromPlatform();
+  final checker = UpdateChecker(feedUrl: kReleaseFeedUrl, target: _currentTarget());
+  messenger.showSnackBar(const SnackBar(content: Text('正在检查更新…')));
+  final result = await checker.check(AppVersion.parse(info.version));
+  if (!context.mounted) {
+    return;
+  }
+  final decision = result.decide();
+  final theme = Theme.of(context);
+  await showDialog<void>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: Text(decision.shouldUpdate ? '发现新版本 ${result.entry!.title}' : '已是最新版本'),
+      content: SizedBox(
+        width: 420,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            if (result.error != null) Text('检查失败:${result.error}', style: theme.textTheme.bodySmall),
+            if (result.error == null)
+              Text(
+                '当前版本 ${info.version} · 最新 ${result.entry!.version.full} (${result.entry!.date})',
+                style: theme.textTheme.bodySmall,
+              ),
+            if (decision.reason != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  decision.reason!,
+                  style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.error),
+                ),
+              ),
+            if (result.entry?.changelog != null && result.entry!.changelog!.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text(
+                  result.entry!.changelog!,
+                  maxLines: 10,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodySmall,
+                ),
+              ),
+          ],
+        ),
+      ),
+      actions: <Widget>[
+        if (result.entry?.githubUrl != null)
+          TextButton(
+            onPressed: () => launchUrl(Uri.parse(result.entry!.githubUrl!), mode: LaunchMode.externalApplication),
+            child: const Text('打开发布页'),
+          ),
+        if (result.asset != null)
+          FilledButton(
+            onPressed: () => launchUrl(Uri.parse(result.asset!.url), mode: LaunchMode.externalApplication),
+            child: const Text('下载安装包'),
+          ),
+        TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('关闭')),
+      ],
+    ),
+  );
+}
+
+Future<void> _exportBackup(BuildContext context, WidgetRef ref) async {
+  final runtime = ref.read(runtimeProvider);
+  final document = await buildUserBackup(runtime);
+  final bytes = utf8.encode(const JsonEncoder.withIndent('  ').convert(document));
+  final destination = await FilePicker.saveFile(fileName: 'purelive-backup.json', bytes: Uint8List.fromList(bytes));
+  if (destination == null || !context.mounted) {
+    return;
+  }
+  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('已导出到 \$destination')));
+}
+
+Future<void> _importBackup(BuildContext context, WidgetRef ref) async {
+  final files = await FilePicker.pickFiles(allowedExtensions: <String>['json'], type: FileType.custom);
+  final path = files.isEmpty ? null : files.single.path;
+  if (path == null || !context.mounted) {
+    return;
+  }
+  // Everything the flow needs is captured before the first await: no
+  // BuildContext use crosses an async gap.
+  final runtime = ref.read(runtimeProvider);
+  final messenger = ScaffoldMessenger.of(context);
+  try {
+    final document = decodeBackupDocument(await File(path).readAsString());
+    final (lines, _) = await restoreUserBackup(runtime, document);
+    final summary = lines.join('\n');
+    if (!context.mounted) {
+      messenger.showSnackBar(const SnackBar(content: Text('恢复完成,重启应用后生效')));
+      return;
+    }
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('恢复完成'),
+        content: Text('$summary\n重启应用后生效。'),
+        actions: <Widget>[TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('知道了'))],
+      ),
+    );
+  } catch (error) {
+    messenger.showSnackBar(SnackBar(content: Text('恢复失败:$error')));
+  }
 }
 
 /// Reads the real package identity from the platform. Kept separate so the

@@ -35,7 +35,8 @@ final class TvBoxSite {
           ? ''
           : (json['ext'] is Map || json['ext'] is List ? jsonEncode(json['ext']) : '${json['ext']}'),
       jar: '${json['jar'] ?? ''}',
-      searchable: json['searchable'] as bool? ?? false,
+      // Real configs write 1/0, true/false or "1"; all converge here.
+      searchable: _asBool(json['searchable']),
     );
   }
 
@@ -71,11 +72,32 @@ final class TvBoxSite {
 /// or more urls (multi-source failover is a repo convention, which is why urls
 /// is a list).
 final class TvBoxChannel {
-  const TvBoxChannel({required this.name, required this.group, required this.urls});
+  const TvBoxChannel({
+    required this.name,
+    required this.group,
+    required this.urls,
+    this.headers = const <String, String>{},
+  });
 
   final String name;
   final String group;
   final List<Uri> urls;
+
+  /// Per-stream request headers, the EXTVLCOPT rows of an M3U playlist. IPTV
+  /// cdns answer 403 without the user agent the list names.
+  final Map<String, String> headers;
+}
+
+/// Converges the truthy spellings configs use.
+bool _asBool(Object? value) {
+  if (value is bool) {
+    return value;
+  }
+  if (value is num) {
+    return value != 0;
+  }
+  final text = '${value ?? ''}'.trim().toLowerCase();
+  return text == 'true' || text == '1';
 }
 
 /// One lives group of a single TVBox repo.
@@ -129,9 +151,11 @@ final class TvBoxConfigParser {
   const TvBoxConfigParser();
 
   TvBoxConfig parse(String text) {
+    // Real configs ship with a UTF-8 BOM more often than not; jsonDecode
+    // refuses it, so it goes before anything looks at the text.
     final Object? decoded;
     try {
-      decoded = jsonDecode(text);
+      decoded = jsonDecode(text.replaceFirst('﻿', '').trim());
     } on FormatException catch (error) {
       throw FormatException('TVBox config is not JSON: ${error.message}');
     }
@@ -224,9 +248,14 @@ final class M3uParser {
   const M3uParser();
 
   List<TvBoxChannel> parse(String text, {String fallbackGroup = 'IPTV'}) {
+    // A UTF-8 BOM breaks the first attribute match; strip it once here.
+    if (text.startsWith('﻿')) {
+      text = text.substring(1);
+    }
     final entries = <TvBoxChannel>[];
     String pendingName = '';
     String pendingGroup = fallbackGroup;
+    var pendingHeaders = <String, String>{};
 
     for (final rawLine in const LineSplitter().convert(text)) {
       final line = rawLine.trim();
@@ -236,13 +265,30 @@ final class M3uParser {
       if (line.startsWith('#EXTINF')) {
         pendingName = _attribute(line, 'tvg-name') ?? _afterComma(line);
         pendingGroup = _attribute(line, 'group-title') ?? fallbackGroup;
+        pendingHeaders = <String, String>{};
+        continue;
+      }
+      if (line.startsWith('#EXTVLCOPT')) {
+        // The one transport option IPTV lists actually use: per-channel
+        // request headers, written http-user-agent=... / http-referrer=...
+        final option = _afterColon(line);
+        final separator = option.indexOf('=');
+        if (separator > 0) {
+          final name = option.substring(0, separator).trim().toLowerCase();
+          final value = option.substring(separator + 1).trim();
+          if (name == 'http-user-agent') {
+            pendingHeaders['user-agent'] = value;
+          } else if (name == 'http-referrer') {
+            pendingHeaders['referer'] = value;
+          }
+        }
         continue;
       }
       if (line.startsWith('#')) {
         continue;
       }
       final uri = Uri.tryParse(line);
-      if (uri == null || uri.host.isEmpty) {
+      if (uri == null || (uri.host.isEmpty && uri.scheme.isEmpty)) {
         continue;
       }
       if (pendingName.isEmpty) {
@@ -250,10 +296,24 @@ final class M3uParser {
       }
       // The playlist convention is one url per EXTINF row; a bare url lands
       // under the last group seen.
-      entries.add(TvBoxChannel(name: pendingName, group: pendingGroup, urls: <Uri>[uri]));
+      entries.add(
+        TvBoxChannel(
+          name: pendingName,
+          group: pendingGroup,
+          urls: <Uri>[uri],
+          headers: Map<String, String>.of(pendingHeaders),
+        ),
+      );
       pendingName = '';
+      pendingHeaders = <String, String>{};
     }
     return entries;
+  }
+
+  /// The value after "#EXTVLCOPT:".
+  String _afterColon(String line) {
+    final colon = line.indexOf(':');
+    return colon < 0 ? '' : line.substring(colon + 1).trim();
   }
 
   String? _attribute(String line, String name) {

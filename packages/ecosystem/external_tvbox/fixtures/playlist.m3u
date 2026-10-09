@@ -1,0 +1,11 @@
+#EXTM3U x-tvg-url="https://example.com/epg.xml"
+#EXTINF:-1 tvg-id="cctv1.fhd" tvg-name="CCTV1" tvg-logo="https://example.com/cctv1.png" group-title="央视频道",CCTV-1 综合
+#EXTVLCOPT:http-user-agent=IPTV/1.0
+#EXTVLCOPT:http-referrer=https://example.com/
+https://example.com/live/cctv1.m3u8
+#EXTINF:-1 tvg-id="cctv5" group-title="央视频道" tvg-logo="https://example.com/cctv5.png",CCTV-5 体育
+https://example.com/live/cctv5.m3u8
+#EXTINF:-1 group-title="地方台",广东珠江
+https://example.com/live/gdzj.m3u8
+#EXTINF:-1,无分组直链
+https://example.com/live/bare.mp4

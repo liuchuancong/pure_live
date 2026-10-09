@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tv generator-info-name="purelive-test">
+  <channel id="cctv1.fhd">
+    <display-name lang="zh">CCTV-1 综合</display-name>
+    <display-name lang="zh">CCTV1</display-name>
+    <icon src="https://example.com/cctv1.png" />
+  </channel>
+  <channel id="cctv5">
+    <display-name lang="zh">CCTV-5 体育</display-name>
+  </channel>
+  <programme start="20261010000000 +0800" stop="20261010080000 +0800" channel="cctv1.fhd">
+    <title lang="zh">清晨剧场</title>
+    <desc lang="zh">早间连播剧目。</desc>
+  </programme>
+  <programme start="20261010080000 +0800" stop="20261010120000 +0800" channel="cctv1.fhd">
+    <title lang="zh">新闻三十分</title>
+  </programme>
+  <programme start="20261010020000 +0800" stop="20261010040000 +0800" channel="cctv5">
+    <title lang="zh">体育晨报</title>
+  </programme>
+</tv>

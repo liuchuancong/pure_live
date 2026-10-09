@@ -1,0 +1,6 @@
+{
+  "storeHouse": [
+    { "sourceName": "仓库一", "sourceUrl": "https://example.com/repos/one.json" },
+    { "sourceName": "仓库二", "sourceUrl": "https://example.com/repos/two.json" }
+  ]
+}
