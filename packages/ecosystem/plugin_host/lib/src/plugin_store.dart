@@ -21,12 +21,7 @@ import 'plugin_bundle.dart';
 
 /// One plugin as the store has it on disk.
 final class InstalledPlugin {
-  const InstalledPlugin({
-    required this.manifest,
-    required this.enabled,
-    required this.installedAt,
-    this.originUrl,
-  });
+  const InstalledPlugin({required this.manifest, required this.enabled, required this.installedAt, this.originUrl});
 
   final PluginManifest manifest;
   final bool enabled;
@@ -69,17 +64,29 @@ final class PluginStore {
       throw PluginInstallException('${bundle.manifest.id} refused: $details');
     }
     final directory = _directoryFor(bundle.manifest.id);
-    await directory.create(recursive: true);
-    await File(_manifestPath(bundle.manifest.id)).writeAsString(jsonEncode(bundle.manifest.toJson()), flush: true);
-    await File(_sourcePath(bundle.manifest.id)).writeAsString(bundle.source, flush: true);
-
+    final staging = Directory('${directory.path}.staging');
+    if (await staging.exists()) {
+      await staging.delete(recursive: true);
+    }
+    await staging.create(recursive: true);
+    await File('${staging.path}${Platform.pathSeparator}manifest.json')
+        .writeAsString(jsonEncode(bundle.manifest.toJson()), flush: true);
+    await File('${staging.path}${Platform.pathSeparator}plugin.js').writeAsString(bundle.source, flush: true);
     final existing = await _readState(bundle.manifest.id);
     final state = <String, Object?>{
       'enabled': existing?['enabled'] ?? false,
       'installedAt': DateTime.now().toUtc().toIso8601String(),
       if (originUrl != null) 'originUrl': originUrl.toString(),
     };
-    await File(_statePath(bundle.manifest.id)).writeAsString(jsonEncode(state), flush: true);
+    await File('${staging.path}${Platform.pathSeparator}state.json').writeAsString(jsonEncode(state), flush: true);
+    // The swap keeps states clean: the staging directory only appears once
+    // every file is complete, so a crash mid-install leaves either the
+    // previous plugin or the staging remnant (cleaned by the next install),
+    // never a half-written live directory.
+    if (await directory.exists()) {
+      await directory.delete(recursive: true);
+    }
+    await staging.rename(directory.path);
     return InstalledPlugin(
       manifest: bundle.manifest,
       enabled: state['enabled']! as bool,
@@ -89,22 +96,35 @@ final class PluginStore {
 
   /// Installs a data plugin (TVBox config, M3U playlist): configuration only,
   /// with a parser-derived manifest and a content file instead of code.
-  Future<InstalledPlugin> installData({required PluginManifest manifest, required String content, Uri? originUrl}) async {
+  Future<InstalledPlugin> installData({
+    required PluginManifest manifest,
+    required String content,
+    Uri? originUrl,
+  }) async {
     final result = _validator.validate(manifest);
     if (!result.isAccepted) {
       final details = result.errors.map((issue) => issue.toString()).join('; ');
       throw PluginInstallException('${manifest.id} refused: $details');
     }
     final directory = _directoryFor(manifest.id);
-    await directory.create(recursive: true);
-    await File(_manifestPath(manifest.id)).writeAsString(jsonEncode(manifest.toJson()), flush: true);
-    await File(_contentPath(manifest.id)).writeAsString(content, flush: true);
+    final staging = Directory('${directory.path}.staging');
+    if (await staging.exists()) {
+      await staging.delete(recursive: true);
+    }
+    await staging.create(recursive: true);
+    await File('${staging.path}${Platform.pathSeparator}manifest.json')
+        .writeAsString(jsonEncode(manifest.toJson()), flush: true);
+    await File('${staging.path}${Platform.pathSeparator}content.txt').writeAsString(content, flush: true);
     final state = <String, Object?>{
       'enabled': false,
       'installedAt': DateTime.now().toUtc().toIso8601String(),
       if (originUrl != null) 'originUrl': originUrl.toString(),
     };
-    await File(_statePath(manifest.id)).writeAsString(jsonEncode(state), flush: true);
+    await File('${staging.path}${Platform.pathSeparator}state.json').writeAsString(jsonEncode(state), flush: true);
+    if (await directory.exists()) {
+      await directory.delete(recursive: true);
+    }
+    await staging.rename(directory.path);
     return InstalledPlugin(
       manifest: manifest,
       enabled: false,

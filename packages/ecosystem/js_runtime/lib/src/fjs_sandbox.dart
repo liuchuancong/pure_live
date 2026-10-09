@@ -50,6 +50,7 @@ final class FjsJsSandbox implements ScriptSandbox {
 
   fjs.JsEngine? _engine;
   bool _disposed = false;
+  int _activeEvaluations = 0;
 
   /// Hook for hosts that extend the bridge with their own api names. Consulted
   /// when [api] matches none of the built-in ports; returning null surfaces
@@ -72,6 +73,13 @@ final class FjsJsSandbox implements ScriptSandbox {
       builtins: fjs.JsBuiltinOptions(console: true, timers: true),
     );
     await engine.init(bridge: _handleBridgeCall);
+    // Resource limits from the policy, applied to the engine the script runs
+    // in: a plugin that allocates without bound gets stopped by the runtime
+    // instead of taking the host's memory with it.
+    const megabyte = 1024 * 1024;
+    await engine.setMemoryLimit(limit: BigInt.from(128 * megabyte));
+    await engine.setGcThreshold(threshold: BigInt.from(16 * megabyte));
+    await engine.setMaxStackSize(limit: BigInt.from(512 * 1024));
     await engine.eval(source: fjs.JsCode.code(jsHostPrelude));
     _engine = engine;
   }
@@ -198,6 +206,25 @@ final class FjsJsSandbox implements ScriptSandbox {
     if (_disposed || engine == null) {
       return SandboxOutcome(failure: SandboxFailure.crashed, elapsed: Duration.zero, message: 'sandbox is closed');
     }
+    // The policy's concurrency cap, enforced per sandbox: one plugin running
+    // maxConcurrentScripts evaluations is at its budget, and further calls
+    // fail fast instead of queueing into a hidden backlog.
+    if (_activeEvaluations >= policy.limits.maxConcurrentScripts) {
+      return SandboxOutcome(
+        failure: SandboxFailure.threw,
+        elapsed: Duration.zero,
+        message: 'concurrent script budget exhausted (\${policy.limits.maxConcurrentScripts})',
+      );
+    }
+    _activeEvaluations++;
+    try {
+      return await _evaluateCodeUnchecked(engine, code, usePromise: usePromise);
+    } finally {
+      _activeEvaluations--;
+    }
+  }
+
+  Future<SandboxOutcome> _evaluateCodeUnchecked(fjs.JsEngine engine, String code, {bool usePromise = false}) async {
     final watch = Stopwatch()..start();
     try {
       final evaluation = engine.eval(
