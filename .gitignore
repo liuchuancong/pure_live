@@ -70,3 +70,9 @@ apps/pure_live/assets/pure_live_web/
 # FVM Version Cache
 .fvm/
 **/.make_config.yaml
+# apps/ 目录仅为历史构建产物残留,不入库
+apps/
+
+# 构建产物一律不入库
+**/build/
+native-assets/
