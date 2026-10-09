@@ -33,6 +33,7 @@ workspace:
   - packages/integrations/firebase
   - packages/integrations/media
   - packages/integrations/python_runtime
+  - packages/services/favorites
   - packages/services/feed
   - packages/services/search
 

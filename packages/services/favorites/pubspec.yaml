@@ -1,0 +1,21 @@
+# GENERATED-BY: tool/scaffold_package.ps1
+name: pure_live_favorites
+description: "跨域收藏夹:ContentRef 为键、快照元数据留存、分组与手动/时间排序"
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.13.0
+
+# Add dependencies from the matrix in docs/architecture/dependency-rules.md section 3.
+dependencies:
+  # Favourites are keyed by ContentRef and snapshot ContentSummary; both belong to the platform models.
+  pure_live_platform:
+    path: ../../ecosystem/platform
+  # The binding today is key/value; the repository interface is what keeps a later Drift binding (the store
+  # docs/services/favorites.md names) from changing anything above it.
+  pure_live_storage:
+    path: ../../foundation/storage
+
+dev_dependencies:
+  test: ^1.26.0

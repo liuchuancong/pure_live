@@ -36,6 +36,9 @@ MediaTicket / MediaPlan / PlayerKernel 接线 / Recovery / Watchdog。
 
 ContentRef 业务面:History / Favorite / Playlist / Feed / Search / Link。
 
+> 进度见 [w5-progress.md](w5-progress.md):收藏(Favorites)已落,先于 W4 的 provider 是因为
+> W4 剩下的部分要外部输入(录制授权、danmaku/auth 契约定稿),而这一面不吃它们。跳波不是改序。
+
 ## W6 — Music
 
 MusicIdentity / MusicResolver / 内置源 / Lyric / Playlist。**LX Music 源直接导入**(LxMusicRuntime 兼容运行环境,原接口保持原样,不转换插件)。
