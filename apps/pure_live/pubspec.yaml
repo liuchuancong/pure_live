@@ -170,6 +170,8 @@ dependencies:
     path: ../../packages/providers/demo
   pure_live_media:
     path: ../../packages/integrations/media
+  pure_live_bilibili:
+    path: ../../packages/providers/bilibili
   pure_live_plugin_host:
     path: ../../packages/ecosystem/plugin_host
   pure_live_plugin_api:

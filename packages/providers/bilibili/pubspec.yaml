@@ -1,0 +1,17 @@
+# GENERATED-BY: tool/scaffold_package.ps1
+name: pure_live_bilibili
+description: "Bilibili vod source: popular listing, search and guest playback per the newBV protocol notes"
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.13.0
+
+dependencies:
+  crypto: ^3.0.7
+  pure_live_capability:
+    path: ../../ecosystem/capability
+  pure_live_network:
+    path: ../../foundation/network
+  pure_live_platform:
+    path: ../../ecosystem/platform

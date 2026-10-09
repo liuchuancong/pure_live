@@ -36,6 +36,7 @@ workspace:
   - packages/integrations/firebase
   - packages/integrations/media
   - packages/integrations/python_runtime
+  - packages/providers/bilibili
   - packages/providers/demo
   - packages/providers/huya
   - packages/services/favorites
