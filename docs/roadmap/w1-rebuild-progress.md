@@ -144,6 +144,15 @@ packages 架子没搭完之前不写任何站点代码。原 §5/§6 里"斗鱼 
 
 护栏 `packages=36 errors=0`;全仓 analyze 绿。**未实测**:fjs 真机导入、serious_python 嵌入解释器真机启动(两者都按文档 API 写,首次真机各可能要修一轮)。spider 的 drpy 兼容层、分页语义细分、分类树契约 = 插件细节阶段(参照 master/dart_simple_live-dev)。
 
+### 5quater. 第五段(同日夜,TVBox 全链在壳内打通)
+
+| 提交 | 内容 |
+|---|---|
+| `29ccb226d` | **站点注册路径**:data 插件装载时逐站点按 api 选运行时(.js → JsSpiderHandle/fjs,.py → 落盘+PythonSpiderHost),每个站点成为 `tvbox.<key>` 的 SpiderVodProvider(vod+search);csp 内置/jar 成员/相对路径/下载失败逐站点记 pending 诊断——只注册能跑的,不注册跑不了的 |
+| `5692ceffd` | **影视面 UI**:首页直播 Feed 下方按源出海报横滑区(逐源隔离,坏源报名字不静默消失);`/vod/:sourceId/:vodId` 详情页(封面/简介/剧集列表)→ 剧集进房间播放器(ref.metadata 带播放坐标) |
+
+**TVBox 至此端到端**:导入单仓 → lives 进首页直播区 + spider 站点自动起运行时注册 → 首页海报 → 详情/剧集 → 房间播放。全程无任何站点写死在壳里。
+
 ## 6. 下一步
 
 1. **真机验证一轮**(需设备会话):导入示例 JS 插件(docs/plugin/examples/demo-live-plugin.js)→
