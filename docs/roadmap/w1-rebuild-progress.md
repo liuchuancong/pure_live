@@ -153,6 +153,16 @@ packages 架子没搭完之前不写任何站点代码。原 §5/§6 里"斗鱼 
 
 **TVBox 至此端到端**:导入单仓 → lives 进首页直播区 + spider 站点自动起运行时注册 → 首页海报 → 详情/剧集 → 房间播放。全程无任何站点写死在壳里。
 
+### 5quinquies. 第六段(同日夜,契约细分 + drpy + B站源)
+
+| 提交 | 内容 |
+|---|---|
+| `e592642a2` | **契约细分第一刀**:PageMode 三态(fixedPage/cursor/singleShot,PageRequest.cursor + PageResult.mode/nextCursor)+ BrowseCapability.categories() 分类树契约;六实现方同步;capability-contract §3.1 |
+| `b076e73df` | **drpy 层**:JsDrpySpiderHandle(ES 模块形态,evaluateModuleSource + wrapper + req/http shim 走 PluginNetwork);站点装载按源形态自动选 handle;cheerio/cat 库故意不 vendoring(待政策审查) |
+| `4a79a796c` | **B站视频源**(native):popular + WBI 签名搜索 + view 详情(pages 全成剧集)+ 游客 try_look 播放(durl mp4 + bilibili referer);无登录/大会员/pgc/弹幕,如实记录 |
+
+护栏 `packages=37 errors=0`。B站端点未实测。**至此三大目标的框架与首个内容源全齐**。
+
 ## 6. 下一步
 
 1. **真机验证一轮**(需设备会话):导入示例 JS 插件(docs/plugin/examples/demo-live-plugin.js)→
