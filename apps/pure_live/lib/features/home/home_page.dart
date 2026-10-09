@@ -30,7 +30,12 @@ final class HomePage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final feed = ref.watch(feedProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('纯粹直播')),
+      appBar: AppBar(
+        title: const Text('纯粹直播'),
+        actions: <Widget>[
+          IconButton(icon: const Icon(Icons.search), tooltip: '搜索', onPressed: () => context.push('/search')),
+        ],
+      ),
       body: feed.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stackTrace) => _FeedError(onRetry: () => ref.invalidate(feedProvider)),

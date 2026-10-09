@@ -14,6 +14,7 @@ import 'package:pure_live_platform/pure_live_platform.dart';
 import '../features/follow/follow_page.dart';
 import '../features/home/home_page.dart';
 import '../features/room/room_page.dart';
+import '../features/search/search_page.dart';
 import '../features/settings/settings_page.dart';
 import '../features/shell/app_shell.dart';
 
@@ -41,6 +42,7 @@ GoRouter buildGoRouter() {
           ),
         ],
       ),
+      GoRoute(path: '/search', builder: (context, state) => const SearchPage()),
       GoRoute(
         path: '/room/:roomId',
         builder: (context, state) => RoomPage(

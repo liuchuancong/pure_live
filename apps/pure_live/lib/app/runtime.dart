@@ -225,7 +225,11 @@ PureLiveRuntime registerBuiltInSources(PureLiveRuntime runtime) {
       sourceId: huyaSourceId,
       extensionId: 'built-in.huya',
       provider: HuyaSource(),
-      capabilities: const CapabilitySet(<CapabilityKind>{CapabilityKind.feed, CapabilityKind.live}),
+      capabilities: const CapabilitySet(<CapabilityKind>{
+        CapabilityKind.feed,
+        CapabilityKind.live,
+        CapabilityKind.search,
+      }),
     ),
   );
   return runtime;
