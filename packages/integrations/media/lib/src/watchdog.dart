@@ -122,19 +122,45 @@ WatchdogDecision decidePlaybackHealth({
     final expiry = ticket.expiresAt;
     if (expiry != null) {
       final at = sample.at.toUtc();
-      if (!at.isBefore(expiry)) {
+      final expired = !at.isBefore(expiry);
+      final refresh = ticket.refresh;
+
+      if (refresh != null && !refresh.supported) {
+        // The source's own "this url is one-shot" beats the platform's permission to try: a doomed
+        // re-resolve still costs a resolve, and on a live stream that is a stall the viewer sees.
         return WatchdogDecision(
-          action: WatchdogAction.refreshTicket,
-          detail: 'ticket ${ticket.id} expired at $expiry',
-          since: expiry,
+          action: WatchdogAction.nothing,
+          detail:
+              'ticket ${ticket.id} ${expired ? 'expired' : 'expires'} at $expiry '
+              'and the source says it cannot be replaced',
         );
       }
-      if (ticket.policy.allowRefresh && at.isAfter(expiry.subtract(thresholds.prefetchLead))) {
-        return WatchdogDecision(
-          action: WatchdogAction.prefetchTicket,
-          detail: 'ticket ${ticket.id} expires at $expiry, within the ${thresholds.prefetchLead.inSeconds}s lead',
-          since: expiry,
-        );
+      if (expired) {
+        return ticket.policy.allowRefresh
+            ? WatchdogDecision(
+                action: WatchdogAction.refreshTicket,
+                detail: 'ticket ${ticket.id} expired at $expiry',
+                since: expiry,
+              )
+            : WatchdogDecision(
+                action: WatchdogAction.nothing,
+                detail: 'ticket ${ticket.id} expired at $expiry and its policy forbids a refresh',
+              );
+      }
+      if (ticket.policy.allowRefresh) {
+        // The ticket's own advice wins over the global lead; the global value is the fallback for a source
+        // that says when it dies but not how early to replace it.
+        final lead = refresh?.refreshBefore ?? thresholds.prefetchLead;
+        final start = expiry.subtract(lead);
+        if (!at.isBefore(start)) {
+          return WatchdogDecision(
+            action: WatchdogAction.prefetchTicket,
+            detail:
+                'ticket ${ticket.id} expires at $expiry, within the ${lead.inSeconds}s lead '
+                '(${expiry.difference(at).inSeconds}s left)',
+            since: expiry,
+          );
+        }
       }
     }
   }

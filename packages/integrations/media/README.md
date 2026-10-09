@@ -45,16 +45,21 @@ media_core 钉的是应用 pubspec 里同一个 ref(`5b04714542…`),全 workspa
 | 监控项 | 判定 | 动作 |
 |---|---|---|
 | 票据过期 | `now >= expiresAt` | `refreshTicket` → `onTicketRefresh(RefreshReason.expired)` |
-| 到期预取 | `expiresAt - prefetchLead < now < expiresAt` 且 `policy.allowRefresh` | `prefetchTicket` → `onTicketRefresh(expiring)` |
-| 无进度心跳 | 位置不变 + `phase == buffering` 且停滞 ≥ `stallTimeout` | `reportStall` → `handle.reportFailure(source: watchdog)` |
+| 到期预取 | `now >= expiresAt - lead`,其中 `lead = ticket.refresh.refreshBefore ?? prefetchLead` | `prefetchTicket` → `onTicketRefresh(expiring)` |
+| 无进度心跳 | 位置不变 + `phase == buffering` 且停滞 ≥ `stallTimeout` | `reportStall` → `reportFailure(source: watchdog)` |
 | 起播超时 | `phase == preparing` 且已超 `startTimeout` 无首帧 | `reportStartTimeout` → 同上 |
+
+预取提前量的**优先级**:`MediaTicketRefreshInfo.refreshBefore`(源自己的建议)> `WatchdogThresholds.prefetchLead`
+(全局默认)。源说 `refreshBefore` 为 0 或负数时按"到期即换"处理,而不是当成"不必调度"。
 
 判定规则里刻意"不做"的部分:
 
+- **源说 `refresh.supported == false` 就完全不排**:一次性签名 url 换不到新链接,过期也不报 ——
+  `policy.allowRefresh` 是"平台允许试",`supported` 是"源能不能给",两者取交集。
 - **`paused` / `idle` 下时钟冻结不算故障**:那是用户意图(AGENTS.md 保 pause 意图),否则看门狗会在观众
   背后把播放继续下去。
 - **票据没说 `expiresAt` 就不猜**:静态 m3u8 永不过期,若把"没有 TTL"当成"快过期",就会对一条好流反复换链。
-- **`policy.allowRefresh == false` 时不预取**:换链是被源禁止的,提前请求只是浪费一次解析。
+- **`policy.allowRefresh == false` 时不预取也不换链**,过期时给一条写明"策略禁止刷新"的诊断而不是静默。
 - 到期**优先于**停滞:链路已经死了,先换链再谈心跳。
 - 一次只允许一个换链在飞:`_refreshInFlight`,否则一条 30 秒才回来的重解析会被每个采样点各催一次。
 - 看门狗**只发起**恢复:它不执行阶梯,阶梯归 `handle.reportFailure` 之后的内核。

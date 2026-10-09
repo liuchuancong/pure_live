@@ -72,17 +72,16 @@ retryDelay)翻译成 media_core 的策略对象。这条结论单独记 ADR(0020
 
 ## 2. W3 要写的东西
 
-盘点结论落定后的顺序(第 1—3 条已完成):
+盘点结论落定后的顺序(第 1—4 条已完成):
 
 1. ~~`pure_live_media`:`MediaTicket → MediaSource` 映射~~ —— 已落(§2.1)。
 2. ~~假引擎跑通"播一个假源"~~ —— 已落(§2.2),M2 的另一半在**接线层面**达成。
 3. ~~票据到期与预取调度(平台侧看门狗)~~ —— 已落(§2.3)。
 4. 引擎适配(media_kit / ijk / better_player)与真实设备播放:前两条证明的是接线到得了引擎,不代表任何
    真机在播。
-5. `MediaTicketRefreshInfo`(`refreshBefore`,models §11)仍未落:目前预取提前量来自
-   `WatchdogThresholds.prefetchLead`(全局默认 + 每源可覆写的入口),而票据**自身**建议的提前量还没有字段;
-   两者合并的规则要等 resolver 真正返回 per-ticket 建议时再定,不提前发明。
-6. Watchdog 的其余三项监控(帧心跳、适配器错误、缓冲率细节)**不做**:内核已经在报,重复判定就是 ADR 0020
+4. ~~`MediaTicketRefreshInfo`(`refreshBefore`,models §11)~~ —— 已落(§2.4),预取提前量改为"逐票建议优先、
+   全局默认兜底"。
+5. Watchdog 的其余三项监控(帧心跳、适配器错误、缓冲率细节)**不做**:内核已经在报,重复判定就是 ADR 0020
    反对的多方救火。触发后的"降画质建议 / 追帧"两个动作也没有实现,它们需要 UI 与直播时钟源,随各波落地。
 
 ### 2.1 已完成:`pure_live_media` 的票据映射(15 测试)
@@ -136,7 +135,7 @@ platform.MediaTicket → toCoreSource() → PlayerKernel.registerBackend(fake)
 边界(必须与成就分开写):这一条证明的是**接线能到引擎**,不是任何真机在播。media_kit / ijk / better_player
 适配与设备验收还没有。
 
-### 2.3 已完成:平台侧看门狗(17 测试,`lib/src/watchdog.dart`)
+### 2.3 已完成:平台侧看门狗(现 19 测试,`lib/src/watchdog.dart`)
 
 `docs/media/watchdog.md` 的五项监控里,只有两项是平台能观察的,盘点也证实内核把这两项留给宿主:
 `kernel/player_handle_recovery.dart:176` 明写"之后再停的时钟是 position-stall watchdog 的活",而票据 TTL 根本
@@ -153,12 +152,27 @@ platform.MediaTicket → toCoreSource() → PlayerKernel.registerBackend(fake)
 一次只允许一个换链在飞。真实链路那条测试断言的是
 `handle.recoveryFailure.source == RecoveryFailureSource.watchdog`,即"报到了阶梯里",而不是"回调被调了"。
 
+### 2.4 已完成:票据刷新信息与逐票预取提前量
+
+models §11 的 `MediaTicketRefreshInfo{supported, expiresAt, refreshBefore}` 补上,挂在 `MediaTicket.refresh`
+(可空:null = 源没说过,不等于"不可能换")。这同时补掉了 §2 原来那条"预取提前量没有逐票落点"的欠账。
+
+两个模型的分工写进了注释,因为它们很容易被合成一个:`MediaTicketPolicy` 是**平台被允许做什么**,
+`MediaTicketRefreshInfo` 是**源自己能给什么**。`policy.allowRefresh == true` 而 `refresh.supported == false`
+是真实存在的组合(一次性签名 url),此时**源的限制优先**:换链注定失败,而在直播上那一次失败的代价是观众看得见
+的卡顿。
+
+预取时刻 = `expiresAt - (refresh.refreshBefore ?? thresholds.prefetchLead)`;建议值为 0 或负数按"到期即换"
+处理(那不是"不必调度")。`nextRefreshAt` 里 `ticket.expiresAt` 优先于建议自带的 `expiresAt`,因为 §11 说前者
+才是权威期限。
+
 ## 3. 验证证据
 
 | 命令 | 结果 |
 |---|---|
 | `packages/integrations/media` → `flutter analyze` | No issues found |
-| `packages/integrations/media` → `flutter test` | **37 全绿** = 15 条票据映射 + 5 条假引擎端到端播放 + 17 条看门狗判定与动作;跑在真实 `flutter test` 上、对钉住的 media_core ref(不是对桩) |
+| `packages/integrations/media` → `flutter test` | **39 全绿** = 15 条票据映射 + 5 条假引擎端到端播放 + 19 条看门狗判定与动作;跑在真实 `flutter test` 上、对钉住的 media_core ref(不是对桩) |
+| `packages/ecosystem/platform` → `dart test -j 1` | **89 全绿**(+7 条 `MediaTicketRefreshInfo` 调度与往返) |
 | 假引擎播放的路径 | `PlayerKernel.createFromMedia` 走内核自己的 planner(`DefaultMediaSourcePlanner`)与 `PlayerHandle.initialize/open/play/stop`;`FakePlayerAdapter` 来自 media_core 自带的 `testing/library.dart` |
 | 看门狗 → 阶梯的证据 | 断言 `handle.recoveryFailure.source == RecoveryFailureSource.watchdog`(真实 handle,不是替身回调) |
 | 环境 | `flutter test` 每次会触发一次 pub 解析;本网络下只有先 `flutter pub get --offline` 才不报 `Connection terminated during handshake`。已把这条顺序固定下来 |
@@ -177,10 +191,11 @@ platform.MediaTicket → toCoreSource() → PlayerKernel.registerBackend(fake)
   修订;不能让文档继续指向一套不该存在的实现。
 - 播放只在**假引擎**上打通:没有真实引擎适配(media_kit / ijk / better_player),没有真机验收,也没有画面/音频
   输出证据。M2 的"能播一个假源"达成,"能播"这件事本身还没达成。
-- 到期预取(ticket refresh 的平台侧调度)与 `MediaTicketRefreshInfo.refreshBefore` 仍未落,所以"票据快到期就换链"
-  这条链路目前只有模型没有动作。
-- 内核的 recovery/ 与 `player_handle_recovery.dart` 还没有被平台侧调用过一次;ADR 0020 说判断归内核,但本波没有
-  触发过一次恢复,这条结论目前只有静态依据。
-- media_core 侧的 `MediaSourcePlan` / planner 本波**只读不调**:plan 由内核生成,平台不在中间再造一层
-  (models §2 的规定)。接线真正调 planner 时,需要补一段"plan 结果 → 平台诊断"的映射。
+- 换链的**执行端**还没有:`onTicketRefresh` 回调由谁去重新 resolve、拿到新票据后怎么 `handle.open` 上去
+  (且要保住会话与进度,docs/media/media-ticket.md §4),要等 resolver(W4 之前)与播放会话归属定下来。目前
+  看门狗只会"提出要换",不会真的换。
+- 内核阶梯被**触发过**一次(测试里 `reportFailure` 进到 `handle.recoveryFailure`),但没有走完一轮恢复:
+  没有候选线路、没有 `RecoveryLadderEvent` 断言。真实恢复路径的验证随引擎适配一起做。
+- `MediaTicketRefreshInfo` 目前只有模型与读法,**没有任何 resolver 会填它**:字段是先给 W4/W7 用的,不是
+  "已生效"。
 

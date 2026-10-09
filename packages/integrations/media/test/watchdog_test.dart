@@ -18,7 +18,7 @@ import 'support/fake_engine.dart';
 
 final DateTime _t0 = DateTime.utc(2026, 10, 9, 12);
 
-platform.MediaTicket _ticket({Duration? lifetime, bool allowRefresh = true}) {
+platform.MediaTicket _ticket({Duration? lifetime, bool allowRefresh = true, platform.MediaTicketRefreshInfo? refresh}) {
   return platform.MediaTicket(
     id: 'ticket-1',
     uri: Uri.parse('https://example.test/master.m3u8'),
@@ -27,6 +27,7 @@ platform.MediaTicket _ticket({Duration? lifetime, bool allowRefresh = true}) {
     createdAt: _t0,
     expiresAt: lifetime == null ? null : _t0.add(lifetime),
     policy: platform.MediaTicketPolicy(allowRefresh: allowRefresh),
+    refresh: refresh,
     metadata: const platform.MediaPlaybackMetadata(isLive: true),
   );
 }
@@ -94,6 +95,43 @@ void main() {
       );
 
       expect(decision.action, WatchdogAction.nothing);
+    });
+
+    test('test_decide_sourceThatCannotBeReplaced_isLeftAlone', () {
+      // policy.allowRefresh says the platform may try; the source saying "one-shot url" says there is
+      // nothing to try. The source's no wins, because a doomed re-resolve still costs a resolve.
+      final withAdvice = _ticket(lifetime: const Duration(minutes: 5));
+      final decided = decidePlaybackHealth(
+        sample: _sample(at: _t0.add(const Duration(minutes: 4, seconds: 30))),
+        ticket: platform.MediaTicket(
+          id: withAdvice.id,
+          uri: withAdvice.uri,
+          kind: withAdvice.kind,
+          protocol: withAdvice.protocol,
+          createdAt: withAdvice.createdAt,
+          expiresAt: withAdvice.expiresAt,
+          refresh: const platform.MediaTicketRefreshInfo(supported: false),
+        ),
+        thresholds: _thresholds,
+      );
+
+      expect(decided.action, WatchdogAction.nothing);
+      expect(decided.detail, contains('cannot be replaced'));
+    });
+
+    test('test_decide_advisedLeadBeatsTheGlobalOne', () {
+      // The source advises 5 minutes of lead on a 30 minute ticket: that is the only reason this sample
+      // (25 minutes in) is inside a window at all - the global 45s lead would still be far away.
+      final decision = decidePlaybackHealth(
+        sample: _sample(at: _t0.add(const Duration(minutes: 25))),
+        ticket: _ticket(
+          lifetime: const Duration(minutes: 30),
+          refresh: const platform.MediaTicketRefreshInfo(refreshBefore: Duration(minutes: 5)),
+        ),
+        thresholds: _thresholds,
+      );
+
+      expect(decision.action, WatchdogAction.prefetchTicket);
     });
 
     test('test_decide_refreshForbiddenByPolicy_isLeftAlone', () {
