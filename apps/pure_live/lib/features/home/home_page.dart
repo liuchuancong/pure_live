@@ -120,13 +120,25 @@ final class _FeedSections extends StatelessWidget {
         child: Text('影视', style: theme.textTheme.titleMedium),
       ),
       for (final home in homes) ...<Widget>[
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-          child: Text(
-            home.error ?? home.sourceId,
-            style: home.error == null
-                ? theme.textTheme.labelLarge
-                : theme.textTheme.labelLarge?.copyWith(color: theme.colorScheme.error),
+        InkWell(
+          onTap: home.error == null ? () => context.push('/vodsource/${home.sourceId}') : null,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Text(
+                  home.error ?? home.sourceId,
+                  style: home.error == null
+                      ? theme.textTheme.labelLarge
+                      : theme.textTheme.labelLarge?.copyWith(color: theme.colorScheme.error),
+                ),
+                if (home.error == null) ...<Widget>[
+                  const SizedBox(width: 4),
+                  Icon(Icons.chevron_right, size: 16, color: theme.colorScheme.outline),
+                ],
+              ],
+            ),
           ),
         ),
         if (home.page != null && home.page!.items.isNotEmpty)

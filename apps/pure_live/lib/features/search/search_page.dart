@@ -143,7 +143,12 @@ final class _SearchResults extends StatelessWidget {
                     ),
               title: Text(item.title, maxLines: 1, overflow: TextOverflow.ellipsis),
               subtitle: Text(item.subtitle ?? '', maxLines: 1, overflow: TextOverflow.ellipsis),
-              onTap: () => context.push('/room/${item.ref.contentId}', extra: item.ref),
+              onTap: () => context.push(
+                item.ref.kind == ContentKind.vod
+                    ? '/vod/${item.ref.sourceId}/${Uri.encodeComponent(item.ref.contentId)}'
+                    : '/room/${item.ref.contentId}',
+                extra: item.ref,
+              ),
             ),
         ],
         for (final problem in aggregate.problems)
