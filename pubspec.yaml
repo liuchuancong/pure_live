@@ -65,3 +65,13 @@ dependency_overrides:
   code_assets: ^2.1.0 # media_kit Native Assets 2 and FFmpeg hook compatibility
   mime: ^2.1.0 # media_core 需 mime ^2.1.0，与 alfred 的 ^1.0.0 冲突；alfred 仅用 MimeMultipartTransformer/MimeMultipart（2.x 未变），覆盖安全
   equatable: ^3.0.0 # media_core 需 equatable ^3.0.0；app 与 flutter_screenutil_plus 均为 extends Equatable + props（3.x 兼容），覆盖安全
+
+# ffmpeg_kit_extended_flutter 的构建钩子用 .dart_tool/package_config.json 反推应用目录(取 dirname 两次)。
+# pub workspace 把这份文件放在仓库根,所以它读到的是本文件而不是 apps/pure_live/pubspec.yaml;找不到配置就退回
+# 插件自己的默认值(base + small),那既与应用声明的 small: false 不符,也要重新下载一份本机缓存里没有的 bundle,
+# 于是无网络时 flutter test / build 直接失败。这段必须与 apps/pure_live 的同名段取值一致 —— 应用侧那份是权威,
+# 两处不一致时构建产物按本文件走(钩子只看得到这里)。上游修好 workspace 感知之后应当删掉这里。
+ffmpeg_kit_extended_config:
+  type: base
+  gpl: false
+  small: false
