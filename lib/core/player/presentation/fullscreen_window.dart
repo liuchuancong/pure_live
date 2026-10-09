@@ -125,12 +125,15 @@ class WindowService {
     try {
       if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
         // Host-owned policy on mobile: the status bar styling and the
-        // orientation release are this app's theming and orientation rules.
+        // orientation restore are this app's theming and orientation rules.
         // The system UI mode itself is restored by the driver below.
         SystemChrome.setSystemUIOverlayStyle(
           const SystemUiOverlayStyle(statusBarIconBrightness: Brightness.dark, statusBarBrightness: Brightness.light),
         );
-        await SystemChrome.setPreferredOrientations(const <DeviceOrientation>[]);
+        // 手机退全屏回竖屏:iOS 只解除限制(空数组 = 跟随系统)并不会主动把
+        // 已经横着的界面转回来,设备会一直停在横屏。平板等大屏不锁方向
+        // (verticalScreen 内部守卫直接跳过),保持自由旋转。
+        await verticalScreen();
       }
       await fullscreenDriver.initialize();
       await _applyPresentation(PresentationRequest.normal());
