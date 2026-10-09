@@ -7,4 +7,14 @@ resolution: workspace
 environment:
   sdk: ^3.13.0
 
-# Add dependencies from the matrix in docs/architecture/dependency-rules.md section 3.
+dependencies:
+  crypto: ^3.0.7
+  pointycastle: ^4.0.0
+  pure_live_capability:
+    path: ../../ecosystem/capability
+  pure_live_js_runtime:
+    path: ../../ecosystem/js_runtime
+  pure_live_platform:
+    path: ../../ecosystem/platform
+  pure_live_plugin_api:
+    path: ../../ecosystem/plugin_api

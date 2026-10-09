@@ -7,3 +7,7 @@
 /// Layer: providers. Allowed dependencies: L0 foundation plus L1 plugin_api through the sandbox bridge injected by the host; providers never depend on each other and never touch PlayerAdapter (invariants I1 and I5).
 /// See docs/architecture/dependency-rules.md and the package README.
 library;
+
+export 'src/lx_crypto.dart';
+export 'src/lx_music_host.dart';
+export 'src/lx_prelude.dart';

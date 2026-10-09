@@ -51,6 +51,12 @@ final class FjsJsSandbox implements ScriptSandbox {
   fjs.JsEngine? _engine;
   bool _disposed = false;
 
+  /// Hook for hosts that extend the bridge with their own api names. Consulted
+  /// when [api] matches none of the built-in ports; returning null surfaces
+  /// the unknown-api error. This is how the lx-music host adds its crypto and
+  /// zlib endpoints without coupling this package to them.
+  Future<Object?>? Function(String api, Map<String, Object?> payload)? extendedApiHandler;
+
   /// Brings the engine up and installs the host prelude. Split from the
   /// constructor because engine creation is asynchronous and fallible.
   Future<void> start() async {
@@ -112,6 +118,10 @@ final class FjsJsSandbox implements ScriptSandbox {
       case 'manifest':
         return _bridge.manifest.toJson();
       default:
+        final handler = extendedApiHandler;
+        if (handler != null) {
+          return handler(api, Map<String, Object?>.from(options));
+        }
         throw StateError('unknown host api: $api');
     }
   }
