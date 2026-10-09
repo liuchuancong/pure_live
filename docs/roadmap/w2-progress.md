@@ -15,7 +15,7 @@
 已定为:**可序列化数据模型集中在 `pure_live_platform`,带注入边界的行为契约按子系统分包**;
 `pure_live_platform` 不建 `contracts/` 目录,§18 原文处标注以 ADR 0018 为准。
 
-### 1.2 `packages/ecosystem/permission`(35 测试)
+### 1.2 `packages/ecosystem/permission`(W2 波内 35 测试 → 现 46,持久 grant 见 §1.9)
 
 规范:`platform-contracts.md` §15、`platform-infrastructure.md` §7.2。
 
@@ -207,6 +207,31 @@ app 的 pubspec 也没引用 v2 栈里任何一个包 —— 换句话说 W2/W3 
 不存在",而是进到 app 工程的原生资源构建,并最终停在上面第 2 条那个 FFmpeg 契约上 —— 因此本轮**不声称**
 local_ci 端到端通过,只声称它的目录假设已经纠正、失败点已经前移到真实的环境问题上。
 
+### 1.9 授权记录持久化(permission +11 测试,组合根改用持久 store)
+
+§4 第 8 条的那笔欠账(每次开机把授权与拒绝问一遍)收掉:`KeyValuePermissionStore` 把 grant 存进
+`pure_live_storage` 的 `KeyValueStore`,组合根现在写 `permissions.json`。选文件而不是 Drift 的理由与 §1.6 一样:
+生态层要的是接口,后端是组合根的决定。
+
+三件事值得单独写:
+
+1. **键形状不是可有可无的**。扩展 id 本身是反向域名(`purelive.bilibili`),所以 `permission.<id>.<name>`
+   这种前缀扫描会让清理 `purelive.a` 顺手删掉 `purelive.ab` 的全部授权。分隔符改成 `/`
+   (`permission.<id>/<name>`),并有一条测试专门用这对会混的 id 钉住它。
+2. **读不懂的记录按"没问过"处理并删掉**。留着它意味着每次加载都要重新决定怎么处理一条永远解析不了的记录;
+   而把它当成 grant 是反方向的错(等于凭空授权)。`unknown` 是唯一还能被回答的状态。
+3. **持久化让"默认拒绝"这个占位实现变得危险**。端口的规则是拒绝留存,而 manager 对已记录的 `denied`
+   **不再重问**(那是设计意图:有人说过不要)。内存 store 时 `RejectAllPrompts` 只是fail-closed;
+   store 一旦持久,它答出来的 `denied` 会被写下来 —— 于是"没人替用户做过决定"变成"用户做过否定决定",
+   重启仍然成立,而没有 UI 的现在没有 `revoke` 的入口。所以新增 `UnaskedPrompts`(答 `unknown`:这次拒绝,
+   但不冒充用户的选择),并把它作为组合根的默认;这条推论写进了包 README 的规则 4。
+
+组合根侧加了 `boot(permissionPrompt:)` 接缝,并加了一条 app 测试(`purelive.grantor` 授权后重启仍然有效,
+且第二个 runtime 用 `UnaskedPrompts` 也不需要重问)。**这条 app 测试今天没跑到**:app 侧 `flutter test` 仍被
+§1.8(2) 的 FFmpeg 原生工件卡住(钩子要的 `bundle-base-...-shared-small-lgpl.zip` 本机没有,而
+`objects.githubusercontent.com` 现在连 TLS 握手都过不去,报 `HttpException: 信号灯超时时间已到`)。
+本轮对 app 的验证因此只有静态的 `flutter analyze`(No issues found),运行时验证与那条测试一起等工件落定;
+store 本身的行为由 permission 包的 11 条测试覆盖,其中一条直接用 `FileKeyValueStore` 走真实文件往返。
 ## 2. 顺带修掉的工程缺陷
 
 | 缺陷 | 处理 |
@@ -256,6 +281,8 @@ W2 收尾(§1.6)复跑:
 | FFmpegKit 原生资源 | 见 §1.8(2):钩子要的是上游 small 那份,本机既没有也下不到;仓库固定的非 small 那份已用 prefetch 复原 |
 | `tool/local_ci.ps1 -Scope Focused -TestPath test/runtime_assembly_test.dart -SkipPubGet -Analyze` | 失败点已从"测试文件不存在"前移到 app 的原生资源构建(证明目录修复生效),最终因 FFmpeg 契约停下(§1.8(2)) |
 | `tool/prefetch_android_native.ps1 -SkipAndroidMedia` | exit 0;Verified `bundle-base-windows-x86_64-shared-lgpl.zip`(复原被钩子删除的固定件) |
+| `packages/ecosystem/permission` → `dart analyze .` / `dart test -j 1` | No issues found;**46 全绿** = 原有 35 + 持久 grant 11(含一条真文件往返) |
+| §1.9 的 app 侧 | `flutter analyze` No issues found;`flutter test` **未能执行**(停在 FFmpeg 工件,见 §1.8(2)),所以那条重启保持的测试尚未跑到 |
 | `tool/test_subst_path.ps1` | PASS:8 条 SUBST + 6 条 project-path + wrapper syntax |
 | `dart analyze packages` / `--strict` 护栏 / 格式化 | No issues found;`packages=26 errors=0`;显式路径 153 文件 0 changed |
 | **仍未通过** | `tool/local_ci.ps1` 目录假设已纠正,但 Focused 停在 FFmpeg 原生资源(§1.8(2)),所以端到端未通过;分支现在**能编译、能起**(此前不能),但**没有做过设备/构建验收** |
@@ -284,9 +311,11 @@ W2 收尾(§1.6)复跑:
 7. **FFmpeg 原生工件的 provenance 归属要有人定**(§1.8(2)):插件钩子按上游校验和验收,仓库钉的是自己重烤的
    `native-ffmpeg-9.0.2-b1` 工件,两者对同一个文件名给出不同哈希。不解决就会在"能连上校验主机"的那次构建里
    悄悄删掉固定件、换回上游版本。
-8. 组合根只装到 §1.7 那张表的范围:`InMemoryPermissionStore` 让授权与拒绝**活不过重启**(每次开机重新问一遍),
-   `MediaRuntime` 没有装(没有引擎适配),`RuntimeRegistry` 是空的(没有运行时可注册)。前两条各有明确落点,
-   第三条随 W3 的引擎适配。
+8. 组合根只装到 §1.7 那张表的范围:`MediaRuntime` 没有装(没有引擎适配),`RuntimeRegistry` 是空的
+   (没有运行时可注册),而授权 UI 还没有 —— 现在默认 `UnaskedPrompts`,第三方扩展**一律拿不到权限**,
+   直到设置界面能真答一次为止;§1.9 把 store 换成持久之后,这条从"每次重问"变成"问了能留下"。
+   还欠一个入口:用户对某条已记录的 `denied` 反悔时,需要一处 `revoke` 的设置项(内存时代无所谓,
+   持久化之后那是唯一的重问路径)。
 9. 落盘视图留了两处口子(§1.6 里也写了,记在这里是为了不让它被当成已解决):
    - **卸载不清 data**:`ExtensionStorage` 契约没有 `clear()`(§19 就没有),网关也只有 `unload` 不叫 uninstall。
      清理只能由持有 `KeyValueStore` 的一方按 `ExtensionNamespace` 前缀做,而那需要一个真正的卸载入口。

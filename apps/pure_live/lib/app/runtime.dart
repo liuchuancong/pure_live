@@ -45,13 +45,26 @@ final class PureLiveRuntime {
   /// [supportedApiVersions] is empty by default, which means the gateway checks no plugin's API revision -
   /// correct for a build with one API version, wrong as soon as a plugin can declare one
   /// (platform-contracts.md section 23).
+  ///
+  /// [permissionPrompt] defaults to [UnaskedPrompts] because grants are durable now: the placeholder that
+  /// refuses outright ([RejectAllPrompts]) answers `denied`, and a stored denial is deliberately never
+  /// re-asked, so a build without a prompt UI would record refusals no user made and keep them across every
+  /// restart. The settings screen replaces this with the dialog that actually answers.
   static Future<PureLiveRuntime> boot({
     Directory? dataDirectory,
     Set<String> supportedApiVersions = const <String>{},
+    PermissionPrompt permissionPrompt = const UnaskedPrompts(),
   }) async {
     final directory = dataDirectory ?? await _defaultDataDirectory();
     final store = FileKeyValueStore(filePath: '${directory.path}${Platform.pathSeparator}extensions.json');
-    final permissions = PolicyPermissionManager(store: InMemoryPermissionStore());
+    // A separate file from the extension rows: one corrupt record set must not take the other down with it,
+    // and a platform grant is not an extension's data to clear.
+    final permissions = PolicyPermissionManager(
+      store: KeyValuePermissionStore(
+        FileKeyValueStore(filePath: '${directory.path}${Platform.pathSeparator}permissions.json'),
+      ),
+      prompt: permissionPrompt,
+    );
     final network = NetworkClient();
     final tasks = InMemoryTaskScheduler();
     final diagnostics = InMemoryDiagnosticTracer();

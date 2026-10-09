@@ -98,8 +98,15 @@ final class _MarkerTask implements Task {
   Future<void> cancel() async {}
 }
 
-Future<PureLiveRuntime> _boot({Set<String> supportedApiVersions = const <String>{}}) async {
-  final runtime = await PureLiveRuntime.boot(dataDirectory: _dir, supportedApiVersions: supportedApiVersions);
+Future<PureLiveRuntime> _boot({
+  Set<String> supportedApiVersions = const <String>{},
+  PermissionPrompt permissionPrompt = const UnaskedPrompts(),
+}) async {
+  final runtime = await PureLiveRuntime.boot(
+    dataDirectory: _dir,
+    supportedApiVersions: supportedApiVersions,
+    permissionPrompt: permissionPrompt,
+  );
   runtime.runtimes.register(_CapturingRuntime());
   return runtime;
 }
@@ -234,6 +241,26 @@ void main() {
 
       expect(await two.storage.read('token'), isNull);
       await runtime.dispose();
+    });
+
+    test('test_grantedPermission_stillHoldsAfterAReboot', () async {
+      // The whole point of making grants durable: an answer given once is not asked again on the next boot,
+      // and the second runtime does not even need a prompt that can answer.
+      final first = await _boot(permissionPrompt: const GrantDeclaredPrompts());
+      await first.gateway.register(_descriptor(id: 'purelive.grantor'));
+      await first.gateway.load('purelive.grantor');
+      final context = (first.runtimes.all.single as _CapturingRuntime).contexts.single;
+
+      expect((await context.permissions.request('purelive.grantor', Permission.network)).allowed, isTrue);
+      await first.dispose();
+
+      final second = await _boot();
+      await second.gateway.register(_descriptor(id: 'purelive.grantor'));
+
+      final remembered = await second.permissions.check('purelive.grantor', Permission.network);
+      expect(remembered.allowed, isTrue);
+      expect(remembered.state, PermissionState.granted);
+      await second.dispose();
     });
   });
 
