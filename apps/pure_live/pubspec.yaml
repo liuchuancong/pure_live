@@ -244,6 +244,16 @@ dependencies:
     path: ../../packages/foundation/network
   pure_live_storage:
     path: ../../packages/foundation/storage
+  pure_live_favorites:
+    path: ../../packages/services/favorites
+  pure_live_feed:
+    path: ../../packages/services/feed
+  pure_live_history:
+    path: ../../packages/services/history
+  pure_live_playlist:
+    path: ../../packages/services/playlist
+  pure_live_search:
+    path: ../../packages/services/search
 
   # -------------------------- 数据存储/数据库 --------------------------
   hive_ce: ^2.20.0 # Hive本地数据库

@@ -16,6 +16,7 @@ import 'package:pure_live_capability/pure_live_capability.dart';
 import 'package:pure_live_extension/pure_live_extension.dart';
 import 'package:pure_live_permission/pure_live_permission.dart';
 import 'package:pure_live_platform/pure_live_platform.dart';
+import 'package:pure_live_playlist/pure_live_playlist.dart';
 import 'package:pure_live_resolver/pure_live_resolver.dart';
 import 'package:pure_live_task/pure_live_task.dart';
 
@@ -98,18 +99,27 @@ final class _MarkerTask implements Task {
   Future<void> cancel() async {}
 }
 
-Future<PureLiveRuntime> _boot({
+Future<PureLiveRuntime> _bootAt(
+  Directory directory, {
   Set<String> supportedApiVersions = const <String>{},
   PermissionPrompt permissionPrompt = const UnaskedPrompts(),
 }) async {
+  if (!directory.existsSync()) {
+    await directory.create(recursive: true);
+  }
   final runtime = await PureLiveRuntime.boot(
-    dataDirectory: _dir,
+    dataDirectory: directory,
     supportedApiVersions: supportedApiVersions,
     permissionPrompt: permissionPrompt,
   );
   runtime.runtimes.register(_CapturingRuntime());
   return runtime;
 }
+
+Future<PureLiveRuntime> _boot({
+  Set<String> supportedApiVersions = const <String>{},
+  PermissionPrompt permissionPrompt = const UnaskedPrompts(),
+}) => _bootAt(_dir, supportedApiVersions: supportedApiVersions, permissionPrompt: permissionPrompt);
 
 /// Boots, registers and loads one extension, returning the runtime with the context it injected.
 Future<(PureLiveRuntime, ExtensionContext)> _loaded({
@@ -264,9 +274,78 @@ void main() {
     });
   });
 
+  group('test_service_assembly', () {
+    test('test_userRows_writtenThroughTheServices_landOnTheirOwnFilesAndOutliveTheReboot', () async {
+      // The root is what decides that a favourite, a position and a queue are durable; each package can only
+      // prove it reads the repository it was handed. A first add with no caller-side initialize() is the
+      // other half of that: boot is what makes the service ready for its user.
+      final directory = Directory('${_dir.path}${Platform.pathSeparator}domains');
+      final first = await _bootAt(directory);
+      final ref = ContentRef(sourceId: 'purelive.sample', contentId: 'ep-1', kind: ContentKind.vod);
+      final summary = ContentSummary(ref: ref, title: '第一集');
+
+      await first.favorites.add(ref, summary);
+      await first.history.record(ref, const Duration(minutes: 7), duration: const Duration(minutes: 45));
+      final queue = await first.playlists.create('later', '稍后看');
+      await first.playlists.addItem(queue.id, PlaylistItem(ref: ref, snapshot: summary));
+      await first.dispose();
+
+      // One file per domain, because the file is the unit both the v1 migrator and a backup address: a
+      // corrupt favourites document must not take the watch history down with it. Each holds only its own
+      // document, and none of them shares a file with a plugin's rows - an extension clear or a plugin data
+      // loss cannot reach user data that lives somewhere else (docs/services/favorites.md makes these
+      // sync-owned).
+      final path = directory.path;
+      final documents = <String, String>{
+        'favorites.json': 'favorites.entries',
+        'history.json': 'history',
+        'playlists.json': 'playlists',
+      };
+      for (final entry in documents.entries) {
+        final stored =
+            jsonDecode(File('$path${Platform.pathSeparator}${entry.key}').readAsStringSync()) as Map<String, Object?>;
+        expect(stored.containsKey(entry.value), isTrue, reason: entry.key);
+        expect(stored.keys.where((key) => key.startsWith('extension.')), isEmpty, reason: entry.key);
+      }
+
+      final reboot = await _bootAt(directory);
+      expect((await reboot.favorites.list()).map((entry) => entry.ref), <ContentRef>[ref]);
+      expect((await reboot.history.timeline()).single.position, const Duration(minutes: 7));
+      expect((await reboot.playlists.get('later')).items, hasLength(1));
+      await reboot.dispose();
+    });
+
+    test('test_searchAndFeedAggregators_readTheRegistryTheRootHandsProvidersTo', () async {
+      final runtime = await _boot();
+      expect((await runtime.search.search(const SearchQuery(keyword: 'anything'))).outcomes, isEmpty);
+      expect((await runtime.feed.feed(PageRequest.first)).sections, isEmpty);
+
+      runtime.capabilities.register(
+        ProviderRegistration(
+          sourceId: 'purelive.stub',
+          extensionId: 'purelive.stub',
+          provider: _StubSource('purelive.stub'),
+          capabilities: const CapabilitySet(<CapabilityKind>{CapabilityKind.search, CapabilityKind.feed}),
+        ),
+      );
+
+      // One registration, both aggregators: if either held its own registry, a source could be searchable
+      // while never reaching Home, and "enabled" would stop meaning anything.
+      final searched = await runtime.search.search(const SearchQuery(keyword: 'anything'));
+      expect(searched.outcomes.map((outcome) => outcome.sourceId), <String>['purelive.stub']);
+      final fed = await runtime.feed.feed(PageRequest.first);
+      expect(fed.sections.map((section) => section.sourceId), <String>['purelive.stub']);
+      expect(fed.allItems.map((item) => item.title), <String>['purelive.stub/row']);
+      await runtime.dispose();
+    });
+  });
+
   group('test_host', () {
     testWidgets('test_host_rendersTheAssembledRuntime', (tester) async {
-      final runtime = await _boot();
+      // boot() now writes the favourites default folder, and a widget test body runs on the binding's fake
+      // clock: real file I/O only completes inside tester.runAsync, otherwise the await never returns and the
+      // test hangs instead of failing.
+      final runtime = (await tester.runAsync(() => _boot()))!;
       runtime.capabilities.register(
         ProviderRegistration(
           sourceId: 'purelive.sample.vod',
@@ -283,6 +362,26 @@ void main() {
       expect(find.textContaining('extension.purelive.sample'), findsNothing);
     });
   });
+}
+
+/// A source registered by a plugin, answering both aggregators the root wires.
+final class _StubSource implements SearchCapability, FeedCapability {
+  _StubSource(this.sourceId);
+
+  final SourceId sourceId;
+
+  ContentSummary get _row => ContentSummary(
+    ref: ContentRef(sourceId: sourceId, contentId: 'row', kind: ContentKind.vod),
+    title: '$sourceId/row',
+  );
+
+  @override
+  Future<PageResult<ContentSummary>> search(SearchQuery query) async =>
+      PageResult<ContentSummary>(items: <ContentSummary>[_row], page: query.page.page, pageSize: query.page.pageSize);
+
+  @override
+  Future<PageResult<ContentSummary>> feed(PageRequest page) async =>
+      PageResult<ContentSummary>(items: <ContentSummary>[_row], page: page.page, pageSize: page.pageSize);
 }
 
 /// A resolver that answers one live reference, so the chain test can tell "wired" from "empty".

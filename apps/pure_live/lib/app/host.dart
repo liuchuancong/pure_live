@@ -45,6 +45,8 @@ final class PureLiveApp extends StatelessWidget {
     '扩展网关': runtime.gateway.runtimeType.toString(),
     '能力发现': '${runtime.capabilities.length} 个 provider',
     '解析器': '${runtime.resolvers.all.length} 个候选',
+    '用户数据': '收藏 / 历史 / 歌单,各自一个文件',
+    '聚合': '搜索与首页 Feed 读同一份能力注册表',
     '诊断': '${runtime.diagnostics.events.length} 条(容量 512)',
   };
 }

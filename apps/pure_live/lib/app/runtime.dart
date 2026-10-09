@@ -9,17 +9,23 @@
 //
 // This file is the one place that is allowed to know every layer. It assembles what exists today: the cache
 // and storage namespaces, permissions, tasks, the extension gateway with its capability and resolver
-// registries. The media runtime is deliberately absent - no engine adapter is wired yet (w3-progress §4), so
-// constructing a PlayerKernel here would assemble an object nothing can drive.
+// registries, the user-data services (favourites / history / playlists) and the two aggregators that read the
+// capability registry. The media runtime is deliberately absent - no engine adapter is wired yet
+// (w3-progress §4), so constructing a PlayerKernel here would assemble an object nothing can drive.
 
 import 'dart:io';
 
 import 'package:path_provider/path_provider.dart';
 import 'package:pure_live_capability/pure_live_capability.dart';
 import 'package:pure_live_extension/pure_live_extension.dart';
+import 'package:pure_live_favorites/pure_live_favorites.dart';
+import 'package:pure_live_feed/pure_live_feed.dart';
+import 'package:pure_live_history/pure_live_history.dart';
 import 'package:pure_live_network/pure_live_network.dart';
 import 'package:pure_live_permission/pure_live_permission.dart';
+import 'package:pure_live_playlist/pure_live_playlist.dart';
 import 'package:pure_live_resolver/pure_live_resolver.dart';
+import 'package:pure_live_search/pure_live_search.dart';
 import 'package:pure_live_storage/pure_live_storage.dart';
 import 'package:pure_live_task/pure_live_task.dart';
 
@@ -37,6 +43,11 @@ final class PureLiveRuntime {
     required this.capabilities,
     required this.resolvers,
     required this.resolverChain,
+    required this.favorites,
+    required this.history,
+    required this.playlists,
+    required this.search,
+    required this.feed,
   });
 
   /// Assembles the stack. [dataDirectory] is a parameter rather than a lookup so a test can boot into a
@@ -85,7 +96,24 @@ final class PureLiveRuntime {
       storageFactory: (descriptor) => PersistentExtensionStorage(store: store, extensionId: descriptor.id),
     );
 
+    final capabilities = CapabilityRegistry();
     final resolvers = ResolverRegistry();
+
+    // One file per user-data domain: that is the unit docs/migration/ migrates and the unit a backup/sync
+    // export works on, so a corrupt favourites document cannot take the watch history down with it - and
+    // neither one is an extension's data to clear.
+    final favorites = FavoritesService(repository: KeyValueFavoriteRepository(_domainStore(directory, 'favorites')));
+    // The default folder must exist before the first add; deciding when a service is ready for its user is
+    // the root's job, because no package can know whether the host has finished booting.
+    await favorites.initialize();
+    final history = HistoryService(
+      repository: KeyValueHistoryRepository(_domainStore(directory, 'history')),
+      // Unthrottled on purpose: history.md names "进度节流" as a record point but gives no interval, and any
+      // number this file invented would be a silent policy about how much progress a crash may lose.
+      // w5-progress §4 keeps the choice with the host that can see the disk and the network.
+    );
+    final playlists = PlaylistsService(repository: KeyValuePlaylistRepository(_domainStore(directory, 'playlists')));
+
     return PureLiveRuntime(
       dataDirectory: directory,
       network: network,
@@ -94,12 +122,24 @@ final class PureLiveRuntime {
       tasks: tasks,
       diagnostics: diagnostics,
       gateway: gateway,
-      capabilities: CapabilityRegistry(),
+      capabilities: capabilities,
       runtimes: runtimes,
       resolvers: resolvers,
       resolverChain: ResolverChain(registry: resolvers),
+      favorites: favorites,
+      history: history,
+      playlists: playlists,
+      // Both aggregators read the registry above: a provider a plugin registers becomes searchable and
+      // lands on the front page without a second list to keep in step.
+      search: CapabilitySearchAggregator(providers: capabilities),
+      feed: CapabilityFeedAggregator(providers: capabilities),
     );
   }
+
+  /// The store one user-data domain owns. Named by domain rather than by service, because the file is the
+  /// unit a migrator and a backup both address.
+  static FileKeyValueStore _domainStore(Directory directory, String domain) =>
+      FileKeyValueStore(filePath: '${directory.path}${Platform.pathSeparator}$domain.json');
 
   /// Where the runtime's files live. Named for the runtime rather than one feature so a second store does
   /// not scatter itself into its own directory.
@@ -134,6 +174,17 @@ final class PureLiveRuntime {
   /// request allows fallback.
   final ResolverRegistry resolvers;
   final ResolverChain resolverChain;
+
+  /// The user's own content lists (docs/services/). Each one is durable on its own from the first write, so a
+  /// restart is not a reason to lose a favourite, a queue or a position.
+  final FavoritesService favorites;
+  final HistoryService history;
+  final PlaylistsService playlists;
+
+  /// Aggregation over [capabilities]: the search page and Home both read the registry this root hands to
+  /// plugins, so "a source is enabled" has exactly one meaning.
+  final SearchAggregator search;
+  final FeedAggregator feed;
 
   Future<void> dispose() async {
     await tasks.dispose();

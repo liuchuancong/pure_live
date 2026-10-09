@@ -97,6 +97,33 @@ ref→身份 + 成员 + 事实,策略调整后重算幂等,存分数反而要迁
 **没接进任何流程**:搜索/Feed 还不跨源去重,收藏/历史还没用 `alternatives()` 换源,provider 侧要不要往
 `metadata.extra` 里填编号是 W4/W6 的事。这层现在是可测的机制。
 
+### 1.8 装配点:三个用户数据服务与两个聚合器进组合根
+
+§4 的第一条欠账("没有装配点")收了:`PureLiveRuntime.boot` 现在装 `favorites` / `history` / `playlists`,
+并把 `search` / `feed` 两个聚合器指向**同一个** `CapabilityRegistry`。
+
+- **一个域一个文件**(`favorites.json` / `history.json` / `playlists.json`,与 `extensions.json`、
+  `permissions.json` 并列)。理由是文件正好是 `docs/migration/` 与备份/sync 各自操作的那个单位:一个域的
+  文档损坏不该把另一个域带走,而用户数据也不该住在扩展的命名空间里 —— 那条 `extension.<id>.<area>.<key>`
+  前缀规则意味着二者即便同库也不会撞键,但"不撞键"不等于"该放在一起"。
+- **`favorites.initialize()` 在 boot 里调用**:`add()` 要求默认分组已存在(`_requireFolder`),而"服务什么时候
+  算可给用户用"是宿主决定、包不能自己知道的事(包不知道自己是不是在开机流程里)。测试里那一次首装 add
+  没有让调用方先 initialize,就是在钉这条。
+- **两个聚合器共用一份注册表**:如果各自持一份,一个源就可能"能搜到但永不上首页",而 provider 的
+  Enabled 状态就失去唯一含义(provider-contract §3 要求注册表是它唯一要拨的东西)。
+- **节流数字仍然不给**:`HistoryService.minWriteInterval` 保持 `Duration.zero`。history.md 把"进度节流"列成
+  记录点却没给间隔,而任何一个这里填上的数字都是"崩溃可以丢多少进度"的静默策略。等播放会话归属那条
+  欠账(w3-progress §4)落地、有一个真能看到网络与磁盘的调用方时再定;`flush()` 的调用方按包 README 是
+  **会话退出**,不是根。
+
+装配的是机制,不是流程:三个服务从此有 durable 的落点,但 `record` / `finish` 仍无人调用,UI 也没有
+消费方。这一条与 §2 的"继续看 / 关注更新"是同一件事的两半。
+
+一个只有组合根才会暴露的坑,记在这里:boot 里那次 `initialize()` 让 `test_host` 那个 widget 测试**挂死**
+(不是失败)。`testWidgets` 的 body 跑在 binding 的假时钟里,真文件 I/O 的 await 在里面永远不会返回,
+而 `--timeout=45s` 也不会触发 —— 表现为"最后一条测试之后再无输出"。改法是把它包进
+`tester.runAsync(...)`,这也是这条约束今后在 app 侧测试里的写法。
+
 ## 2. W5 剩下的
 
 | 件 | 状态 | 缺什么 |
@@ -105,6 +132,7 @@ ref→身份 + 成员 + 事实,策略调整后重算幂等,存分数反而要迁
 | Playlist | **已落**(§1.5) | 队列与 `PlaybackQueue` 的实例化衔接还没做(要播放会话归属) |
 | Link | 未落 | [../services/links.md](../services/links.md) 的分享/解析链路要先确认它是否依赖 W4 的解析结果 |
 | Feed 的另两类源 | 部分可做 | "继续看"现在能接了(`HistoryService.continueWatching`);"关注更新"仍要一个源侧关注模型,favorites.md 明确说那不是收藏 |
+| 历史『继续看』真接进 Feed | **卡在一个形状问题,不是缺代码** | `FeedSection` 带 `sourceId`,而聚合器把 `item.ref.sourceId != section.sourceId` 的行判成 foreign 丢掉(`feed_aggregator.dart:159`)—— "继续看"天生跨源,照今天的形状进去会被整节清空。要么给 `FeedSource` 一层抽象、由来源自己声明是否按源过滤,要么回到 feed.md 的原形状(标题 + items + cursor)再补源信息;两种都是改契约,要 ADR,不在这里顺手做 |
 | 收藏的开播状态 | 未落 | 需要一个能批量问"开播了没"的 capability;capability-contract §3 里没有这个方法集,定了就是猜 |
 | sync / v1 迁移 | 未落 | 要 [../migration/v1-to-v2.md](../migration/v1-to-v2.md) 的 ContentRef 重写表 |
 
@@ -122,10 +150,22 @@ ref→身份 + 成员 + 事实,策略调整后重算幂等,存分数反而要迁
 | `dart analyze packages` / `dart format --output=none --set-exit-if-changed packages tool/check_architecture.dart` | No issues found;160 文件 0 changed |
 | `powershell -File tool/test_check_architecture.ps1` | PASS: 23 assertions across 21 cases |
 
+§1.8 的装配点(组合根侧),全部经 `tool/build_resource_guard.ps1` 租约、`tool/flutterw.ps1` 在 `apps/pure_live` 下执行:
+
+| 命令 | 结果 |
+|---|---|
+| `apps/pure_live` → `flutter pub get --offline` | Got dependencies;app 新增 5 个 workspace 路径包(favorites / feed / history / playlist / search),`pubspec.lock` **无变化**(workspace 内路径依赖不入锁文件) |
+| `apps/pure_live` → `flutter test --no-pub --concurrency=1 test/runtime_assembly_test.dart` | **10 全绿** = 装配 4 + 持久化 3 + 服务装配 2 + 宿主 1 |
+| `apps/pure_live` → `flutter analyze --no-pub` | No issues found |
+| 挂死诊断(记录一次非失败的现象) | 加入服务后 `test_host` 不再返回,`--timeout=45s` 也不触发,日志停在 `+9: test_host` 且没有 `(tearDownAll)` 行 —— 定位到 widget 测试的假时钟不派发真 I/O,`tester.runAsync` 包好后同一条命令回到 10 全绿 |
+| `dart run tool/check_architecture.dart --strict` | `packages=32 errors=0 warnings=0` —— 本次没有新包,护栏也**不覆盖** `apps/`:组合根可以看见所有层是 AGENTS.md I9 的既定例外,不是护栏漏检 |
+| `dart format` 本次改动的三个 Dart 文件 | runtime.dart / runtime_assembly_test.dart 有换行级重排,绿跑之后复跑同一条命令确认(§3 第一行即复跑结果) |
+
 ## 4. 已知欠账
 
-- `FavoritesService` 还没有装配点:组合根里没有它(app 现在装的是 store/权限/网关/注册表那一层),
-  UI 也没有消费方。它是可测的机制,不是跑起来的流程。
+- ~~`FavoritesService` 还没有装配点~~ —— 已落(§1.8):三个用户数据服务与两个聚合器都进了组合根,
+  各域一个文件,聚合器共用那一份 `CapabilityRegistry`。**UI 消费方仍然没有**,所以它们是"装了且能持久",
+  还不是"跑起来的流程"。
 - 收藏没有条数上限,也**故意**没有:文档没给上限,而这里任何一个数字都是用户数据的静默丢失。
   真需要界时应该由 sync/设置面给策略,而不是由存储层猜。
 - `add` 每次要扫一遍全部条目找同 ref(O(n))。今天这个量级无所谓,Drift 绑定应当按 ref 直接定位 ——
