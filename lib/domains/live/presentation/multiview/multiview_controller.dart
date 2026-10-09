@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:developer' as developer;
+import 'dart:io';
 
 import 'package:pure_live/core/index.dart';
 import 'package:flame_barrage/flame_barrage.dart';
@@ -745,7 +746,9 @@ class MultiviewController extends GetxController {
     final holdsAudio =
         !allMuted.value && (layout.value != MultiviewLayout.focus || cellIndex == focusedCellIndex.value);
     final metadata = <String, Object?>{
-      OpenVolume.metadataKey: holdsAudio ? roomVolume : 0.0,
+      // 手机端滑杆控制的是系统音量,音频格增益恒定 1.0(与单房间一致,
+      // 否则房间记忆音量会静默减半实际响度);桌面端保留各格记忆音量。
+      OpenVolume.metadataKey: holdsAudio ? (Platform.isAndroid || Platform.isIOS ? 1.0 : roomVolume) : 0.0,
       if (owned != null) kMediaKitCustomInputKey: customInputMetadataOf(owned),
     };
     return wall.MultiviewCellSource(

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:pure_live/get/get.dart';
@@ -165,7 +166,7 @@ final class LivePlayerFacade {
 
     // Declared before the open so libmpv starts at the room's level; a
     // post-open setVolume let one 100% frame of audio through first.
-    OpenVolume.pending = liveroom?.getSavedVolume().clamp(0.0, 1.0);
+    OpenVolume.pending = _openVolumeFor(liveroom);
     await _controller.play(
       LiveSourceRequest(
         sources: await _intercept(
@@ -202,7 +203,7 @@ final class LivePlayerFacade {
       committed?.currentQuality ?? currentQuality,
       streamFacts: streamFacts,
     );
-    if (liveroom != null) await setVolume(liveroom.getSavedVolume().clamp(0.0, 1.0));
+    if (liveroom != null) await setVolume(_openVolumeFor(liveroom));
   }
 
   Future<void> playOwned(
@@ -220,7 +221,7 @@ final class LivePlayerFacade {
     _room = liveroom;
     _lastHeaders = const {};
     _lastLines = const [];
-    OpenVolume.pending = liveroom.getSavedVolume().clamp(0.0, 1.0);
+    OpenVolume.pending = _openVolumeFor(liveroom);
     await _controller.play(
       LiveSourceRequest(sources: await _intercept([ownedPlanSource(source, liveroom)])),
       preferredBackend: backendIdOfEngine(preferredEngine),
@@ -233,7 +234,7 @@ final class LivePlayerFacade {
       committed?.currentQuality ?? currentQuality,
       source: source,
     );
-    await setVolume(liveroom.getSavedVolume().clamp(0.0, 1.0));
+    await setVolume(_openVolumeFor(liveroom));
   }
 
   void _publishCommit(
@@ -284,6 +285,15 @@ final class LivePlayerFacade {
   Future<void> pause() => _controller.pause();
   Future<void> resume() => _controller.resume();
   Future<void> setVolume(double volume) => _controller.setVolume(volume.clamp(0.0, 1.0));
+
+  /// 系统音量滑杆平台(Android/iOS)上,房间内滑杆控制的是系统音量;
+  /// 播放器内部增益必须恒定 1.0 —— 开屏若应用房间记忆音量(默认 0.5),
+  /// 滑杆显示 100% 而实际只有一半增益,用户既看不到也改不了这层衰减。
+  /// 无系统音量控制的平台保留房间记忆音量。
+  double _openVolumeFor(LiveRoom? room) {
+    if (Platform.isAndroid || Platform.isIOS) return 1.0;
+    return (room?.getSavedVolume() ?? 1.0).clamp(0.0, 1.0);
+  }
   Future<void> setAudioOnly(bool audioOnly) => _controller.setAudioOnly(audioOnly);
   void setPresentationVisible(bool visible) => _controller.setPresentationVisible(visible);
 
