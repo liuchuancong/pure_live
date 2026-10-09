@@ -17,6 +17,7 @@ import 'dart:io';
 
 import 'package:path_provider/path_provider.dart';
 import 'package:pure_live_capability/pure_live_capability.dart';
+import 'package:pure_live_demo/pure_live_demo.dart';
 import 'package:pure_live_extension/pure_live_extension.dart';
 import 'package:pure_live_favorites/pure_live_favorites.dart';
 import 'package:pure_live_feed/pure_live_feed.dart';
@@ -190,4 +191,22 @@ final class PureLiveRuntime {
     await tasks.dispose();
     network.close();
   }
+}
+
+/// Registers the content sources compiled into the app binary.
+///
+/// The composition root is the one place allowed to name a concrete source (AGENTS.md I9): a provider a
+/// plugin loads goes through the gateway, but a built-in has no plugin, so the app itself puts it on the
+/// registry. The demo source keeps the feed chain demonstrable until the first real site provider lands
+/// (W4); tests boot [PureLiveRuntime] without this call, so their fixtures stay the only content.
+PureLiveRuntime registerBuiltInSources(PureLiveRuntime runtime) {
+  runtime.capabilities.register(
+    ProviderRegistration(
+      sourceId: demoSourceId,
+      extensionId: 'built-in.demo',
+      provider: const DemoLiveSource(),
+      capabilities: const CapabilitySet(<CapabilityKind>{CapabilityKind.feed, CapabilityKind.live}),
+    ),
+  );
+  return runtime;
 }

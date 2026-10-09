@@ -34,6 +34,7 @@ workspace:
   - packages/integrations/firebase
   - packages/integrations/media
   - packages/integrations/python_runtime
+  - packages/providers/demo
   - packages/services/favorites
   - packages/services/feed
   - packages/services/history

@@ -18,7 +18,7 @@ import 'app/runtime.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  final runtime = await PureLiveRuntime.boot();
+  final runtime = registerBuiltInSources(await PureLiveRuntime.boot());
   runApp(
     // Riverpod 3 no longer exports the Override type name; pass the override as-is.
     ProviderScope(overrides: [runtimeProvider.overrideWithValue(runtime)], child: const PureLiveApp()),

@@ -353,16 +353,20 @@ void main() {
           sourceId: 'purelive.sample.vod',
           extensionId: 'purelive.sample',
           provider: Object(),
-          capabilities: const CapabilitySet(<CapabilityKind>{CapabilityKind.vod}),
+          // The home tab lists feed-capable sources, so the registration declares the feed kind the
+          // _StubSource at the bottom of this file actually implements.
+          capabilities: const CapabilitySet(<CapabilityKind>{CapabilityKind.feed}),
         ),
       );
 
       await tester.pumpWidget(
         ProviderScope(overrides: [runtimeProvider.overrideWithValue(runtime)], child: const PureLiveApp()),
       );
-      await tester.pump();
+      await tester.pumpAndSettle();
 
-      expect(find.text('已注册 1 个内容源,首页 Feed 接入在下一波落地'), findsOneWidget);
+      // The home tab renders the stub source's rows as cards: one row registered, one card on screen.
+      expect(find.text('purelive.stub/row'), findsOneWidget);
+      expect(find.textContaining('extension.purelive.sample'), findsNothing);
     });
   });
 }
