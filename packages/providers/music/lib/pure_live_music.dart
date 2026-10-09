@@ -8,6 +8,6 @@
 /// See docs/architecture/dependency-rules.md and the package README.
 library;
 
-export 'src/lx_crypto.dart';
-export 'src/lx_music_host.dart';
-export 'src/lx_prelude.dart';
+export 'src/music_script_crypto.dart';
+export 'src/music_source_host.dart';
+export 'src/music_source_prelude.dart';

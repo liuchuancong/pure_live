@@ -1,4 +1,4 @@
-// Module: lib/src/lx_music_host.dart
+// Module: lib/src/music_source_host.dart
 // Purpose: The lx-music source host: runs a user-api script in the sandbox and
 // answers musicUrl / lyric / pic through its request handler.
 // Author: liuchuancong
@@ -17,14 +17,14 @@ import 'dart:convert';
 import 'package:pure_live_js_runtime/pure_live_js_runtime.dart';
 import 'package:pure_live_plugin_api/pure_live_plugin_api.dart';
 
-import 'lx_crypto.dart';
-import 'lx_prelude.dart';
+import 'music_script_crypto.dart';
+import 'music_source_prelude.dart';
 
 /// One source a script announced through lx.send('inited').
-final class LxSourceInfo {
-  const LxSourceInfo({required this.name, required this.actions, required this.qualitys});
+final class MusicSourceInfo {
+  const MusicSourceInfo({required this.name, required this.actions, required this.qualitys});
 
-  factory LxSourceInfo.fromJson(Map<String, Object?> json) => LxSourceInfo(
+  factory MusicSourceInfo.fromJson(Map<String, Object?> json) => MusicSourceInfo(
     name: '${json['name'] ?? ''}',
     actions: [for (final action in (json['actions'] as List? ?? const [])) '$action'],
     qualitys: [for (final quality in (json['qualitys'] as List? ?? const [])) '$quality'],
@@ -40,8 +40,8 @@ final class LxSourceInfo {
 }
 
 /// The whole script identity, as lx.send('inited') carried it.
-final class LxScriptInfo {
-  LxScriptInfo({
+final class MusicScriptInfo {
+  MusicScriptInfo({
     required this.id,
     required this.name,
     required this.sources,
@@ -60,20 +60,20 @@ final class LxScriptInfo {
 
   /// source key -> what it serves, for example wy -> {name: 网易云, actions:
   /// [musicUrl, lyric], qualitys: [128k, 320k, flac]}.
-  final Map<String, LxSourceInfo> sources;
+  final Map<String, MusicSourceInfo> sources;
 
-  factory LxScriptInfo.fromJson(String id, Map<String, Object?> json) {
+  factory MusicScriptInfo.fromJson(String id, Map<String, Object?> json) {
     final rawSources = json['sources'] ?? const <String, Object?>{};
-    return LxScriptInfo(
+    return MusicScriptInfo(
       id: id,
       name: '${json['name'] ?? id}',
       version: json['version']?.toString(),
       author: json['author']?.toString(),
       homepage: json['homepage']?.toString(),
       description: json['description']?.toString(),
-      sources: <String, LxSourceInfo>{
+      sources: <String, MusicSourceInfo>{
         for (final entry in (rawSources is Map ? rawSources : const <String, Object?>{}).entries)
-          '${entry.key}': LxSourceInfo.fromJson(
+          '${entry.key}': MusicSourceInfo.fromJson(
             entry.value is Map ? Map<String, Object?>.from(entry.value as Map) : const {},
           ),
       },
@@ -82,22 +82,22 @@ final class LxScriptInfo {
 }
 
 /// One lx user-api script in one sandbox.
-final class LxMusicApiHost {
-  LxMusicApiHost._({required this.scriptId, required FjsJsSandbox sandbox}) : _sandbox = sandbox {
+final class MusicSourceScriptHost {
+  MusicSourceScriptHost._({required this.scriptId, required FjsJsSandbox sandbox}) : _sandbox = sandbox {
     sandbox.extendedApiHandler = _handleExtendedApi;
   }
 
   final String scriptId;
   final FjsJsSandbox _sandbox;
-  final Completer<LxScriptInfo> _inited = Completer<LxScriptInfo>();
+  final Completer<MusicScriptInfo> _inited = Completer<MusicScriptInfo>();
   bool _disposed = false;
 
   /// The script identity once lx.send('inited') arrived.
-  Future<LxScriptInfo> get inited => _inited.future;
+  Future<MusicScriptInfo> get inited => _inited.future;
 
   /// Evaluates the lx environment and the script itself. The script is plain
   /// top-level code: it registers with lx.on / lx.send during evaluation.
-  static Future<LxMusicApiHost> spawn({
+  static Future<MusicSourceScriptHost> spawn({
     required String scriptId,
     required String name,
     required String source,
@@ -105,7 +105,7 @@ final class LxMusicApiHost {
     SandboxPolicy policy = const SandboxPolicy(),
   }) async {
     final sandbox = FjsJsSandbox(pluginId: scriptId, policy: policy, bridge: bridge);
-    final host = LxMusicApiHost._(scriptId: scriptId, sandbox: sandbox);
+    final host = MusicSourceScriptHost._(scriptId: scriptId, sandbox: sandbox);
     await sandbox.start();
     // currentScriptInfo is the script's own identity, defined before it runs.
     final scriptInfo = <String, String>{'name': name};
@@ -113,7 +113,7 @@ final class LxMusicApiHost {
       SandboxUnit(
         pluginId: scriptId,
         key: 'lx.prelude',
-        source: 'globalThis.__LxScriptInfo = ${jsonEncode(scriptInfo)};\n$lxApiPrelude',
+        source: 'globalThis.__MusicScriptInfo = ${jsonEncode(scriptInfo)};\n$musicSourceApiPrelude',
       ),
     );
     if (!outcome.isClean) {
@@ -133,7 +133,7 @@ final class LxMusicApiHost {
   Future<Object?>? _handleExtendedApi(String api, Map<String, Object?> payload) {
     switch (api) {
       case 'lx.inited':
-        final info = LxScriptInfo.fromJson(scriptId, payload);
+        final info = MusicScriptInfo.fromJson(scriptId, payload);
         if (!_inited.isCompleted) {
           _inited.complete(info);
         }
@@ -143,13 +143,13 @@ final class LxMusicApiHost {
         // page, not to a source script's popup.
         return Future.value(<String, Object?>{'ok': true});
       default:
-        return handleLxCryptoApi(api, payload);
+        return handleMusicScriptCryptoApi(api, payload);
     }
   }
 
   /// Waits for lx.send('inited') with a hard deadline, then returns the
   /// announced sources.
-  Future<LxScriptInfo> awaitInited({Duration timeout = const Duration(seconds: 15)}) {
+  Future<MusicScriptInfo> awaitInited({Duration timeout = const Duration(seconds: 15)}) {
     return inited.timeout(
       timeout,
       onTimeout: () => throw TimeoutException('lx script $scriptId never called lx.send("inited")'),
@@ -167,7 +167,7 @@ final class LxMusicApiHost {
       SandboxUnit(
         pluginId: scriptId,
         key: 'lx.$action',
-        source: 'globalThis.__lx_dispatch_request(${jsonEncode(payload)})',
+        source: 'globalThis.__music_source_dispatch_request(${jsonEncode(payload)})',
       ),
     );
     if (!outcome.isClean || outcome.value == null) {

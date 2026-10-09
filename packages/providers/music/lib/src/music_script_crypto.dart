@@ -1,4 +1,4 @@
-// Module: lib/src/lx_crypto.dart
+// Module: lib/src/music_script_crypto.dart
 // Purpose: The Dart side of the lx crypto/zlib bridge endpoints.
 // Author: liuchuancong
 // Created: 2026-10-09
@@ -18,7 +18,7 @@ import 'package:pointycastle/export.dart';
 
 /// Answers one crypto/zlib api call, or null when [api] is not one of these.
 /// Throwing inside is fine: the sandbox reports the message to the script.
-Future<Object?>? handleLxCryptoApi(String api, Map<String, Object?> payload) {
+Future<Object?>? handleMusicScriptCryptoApi(String api, Map<String, Object?> payload) {
   switch (api) {
     case 'crypto.md5':
       return Future.value(md5lib.md5.convert(utf8.encode('${payload['text'] ?? ''}')).toString());

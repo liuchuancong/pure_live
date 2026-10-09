@@ -1,4 +1,4 @@
-// Module: lib/src/lx_prelude.dart
+// Module: lib/src/music_source_prelude.dart
 // Purpose: The lx-music user-api environment injected before a source script.
 // Author: liuchuancong
 // Created: 2026-10-09
@@ -11,8 +11,8 @@
 // base64, hex, latin1); anything else fails naming the encoding, not silently
 // corrupting bytes.
 
-const String lxApiPrelude = r'''
-var __LxBytes = (function () {
+const String musicSourceApiPrelude = r'''
+var __ScriptBytes = (function () {
   'use strict';
   var b64Chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 
@@ -105,63 +105,63 @@ var __LxBytes = (function () {
   };
 })();
 
-var __LxBuffer = (function () {
+var __ScriptByteBuffer = (function () {
   'use strict';
   function normalize(value) {
-    if (value && value.__isLxBuffer) return value.bytes;
+    if (value && value.__isScriptByteBuffer) return value.bytes;
     if (value instanceof Uint8Array) return Array.prototype.slice.call(value);
     return null;
   }
 
-  function LxBuffer(bytes) {
-    this.__isLxBuffer = true;
+  function ScriptByteBuffer(bytes) {
+    this.__isScriptByteBuffer = true;
     this.bytes = bytes || [];
     this.length = this.bytes.length;
   }
 
-  LxBuffer.prototype.toString = function (encoding) {
+  ScriptByteBuffer.prototype.toString = function (encoding) {
     var enc = (encoding || 'utf8').toLowerCase();
-    if (enc === 'utf8' || enc === 'utf-8') return __LxBytes.utf8Decode(this.bytes);
-    if (enc === 'base64') return __LxBytes.b64Encode(this.bytes);
-    if (enc === 'hex') return __LxBytes.hexEncode(this.bytes);
-    if (enc === 'latin1' || enc === 'binary' || enc === 'ascii') return __LxBytes.latin1Decode(this.bytes);
+    if (enc === 'utf8' || enc === 'utf-8') return __ScriptBytes.utf8Decode(this.bytes);
+    if (enc === 'base64') return __ScriptBytes.b64Encode(this.bytes);
+    if (enc === 'hex') return __ScriptBytes.hexEncode(this.bytes);
+    if (enc === 'latin1' || enc === 'binary' || enc === 'ascii') return __ScriptBytes.latin1Decode(this.bytes);
     throw new Error('lx buffer: unsupported encoding ' + encoding);
   };
 
-  LxBuffer.from = function (value, encoding) {
-    if (value && value.__isLxBuffer) return new LxBuffer(value.bytes.slice());
-    if (value instanceof Uint8Array || Array.isArray(value)) return new LxBuffer(Array.prototype.slice.call(value));
+  ScriptByteBuffer.from = function (value, encoding) {
+    if (value && value.__isScriptByteBuffer) return new ScriptByteBuffer(value.bytes.slice());
+    if (value instanceof Uint8Array || Array.isArray(value)) return new ScriptByteBuffer(Array.prototype.slice.call(value));
     var enc = (encoding || 'utf8').toLowerCase();
-    if (enc === 'utf8' || enc === 'utf-8') return new LxBuffer(__LxBytes.utf8Encode(String(value)));
-    if (enc === 'base64') return new LxBuffer(__LxBytes.b64Decode(String(value)));
-    if (enc === 'hex') return new LxBuffer(__LxBytes.hexDecode(String(value)));
+    if (enc === 'utf8' || enc === 'utf-8') return new ScriptByteBuffer(__ScriptBytes.utf8Encode(String(value)));
+    if (enc === 'base64') return new ScriptByteBuffer(__ScriptBytes.b64Decode(String(value)));
+    if (enc === 'hex') return new ScriptByteBuffer(__ScriptBytes.hexDecode(String(value)));
     if (enc === 'latin1' || enc === 'binary' || enc === 'ascii') {
       var out = [];
       for (var i = 0; i < String(value).length; i++) out.push(String(value).charCodeAt(i) & 0xff);
-      return new LxBuffer(out);
+      return new ScriptByteBuffer(out);
     }
     throw new Error('lx buffer.from: unsupported encoding ' + encoding);
   };
 
-  return LxBuffer;
+  return ScriptByteBuffer;
 })();
 
-var Buffer = __LxBuffer;
+var Buffer = __ScriptByteBuffer;
 
-var __LxState = {
+var __SourceScriptState = {
   events: { request: null },
   inited: false,
   apiInfo: null,
   updateAlertShown: false,
 };
 
-var __LxInvoke = {
+var __SourceScriptInvoke = {
   // The host calls this with {data:{action, source, info}}; the script's
   // handler answers through its callback, mirroring the desktop's two-arg
   // (params, callback) shape.
   request: function (payloadJson) {
     return new Promise(function (resolve) {
-      if (!__LxState.events.request) {
+      if (!__SourceScriptState.events.request) {
         resolve(JSON.stringify({ __error__: 'request handler not registered' }));
         return;
       }
@@ -174,7 +174,7 @@ var __LxInvoke = {
         }
       }, 30000);
       try {
-        __LxState.events.request(payload.data, function (err, result) {
+        __SourceScriptState.events.request(payload.data, function (err, result) {
           if (settled) return;
           settled = true;
           clearTimeout(timer);
@@ -226,14 +226,14 @@ var lx = (function () {
     },
     send: function (name, data) {
       if (name === EVENT_NAMES.inited) {
-        if (__LxState.inited) return Promise.reject(new Error('Script is inited'));
-        __LxState.inited = true;
-        __LxState.apiInfo = data || {};
+        if (__SourceScriptState.inited) return Promise.reject(new Error('Script is inited'));
+        __SourceScriptState.inited = true;
+        __SourceScriptState.apiInfo = data || {};
         return callApi('lx.inited', data || {});
       }
       if (name === EVENT_NAMES.updateAlert) {
-        if (__LxState.updateAlertShown) return Promise.reject(new Error('The update alert can only be called once.'));
-        __LxState.updateAlertShown = true;
+        if (__SourceScriptState.updateAlertShown) return Promise.reject(new Error('The update alert can only be called once.'));
+        __SourceScriptState.updateAlertShown = true;
         return callApi('lx.updateAlert', data || {});
       }
       return Promise.reject(new Error('The event is not supported: ' + name));
@@ -242,7 +242,7 @@ var lx = (function () {
       if (name !== EVENT_NAMES.request) {
         return Promise.reject(new Error('The event is not supported: ' + name));
       }
-      __LxState.events.request = handler;
+      __SourceScriptState.events.request = handler;
       return Promise.resolve();
     },
     utils: {
@@ -253,15 +253,15 @@ var lx = (function () {
         },
         aesEncrypt: function (buffer, mode, key, iv) {
           return callApi('crypto.aesEncrypt', {
-            dataB64: __LxBytes.b64Encode(normalizeBytes(buffer)),
+            dataB64: __ScriptBytes.b64Encode(normalizeBytes(buffer)),
             mode: String(mode),
-            keyB64: __LxBytes.b64Encode(normalizeBytes(key)),
-            ivB64: iv === undefined ? '' : __LxBytes.b64Encode(normalizeBytes(iv)),
+            keyB64: __ScriptBytes.b64Encode(normalizeBytes(key)),
+            ivB64: iv === undefined ? '' : __ScriptBytes.b64Encode(normalizeBytes(iv)),
           }).then(function (b64) { return Buffer.from(b64, 'base64'); });
         },
         rsaEncrypt: function (buffer, key) {
           return callApi('crypto.rsaEncrypt', {
-            dataB64: __LxBytes.b64Encode(normalizeBytes(buffer)),
+            dataB64: __ScriptBytes.b64Encode(normalizeBytes(buffer)),
             key: String(key),
           }).then(function (b64) { return Buffer.from(b64, 'base64'); });
         },
@@ -272,29 +272,29 @@ var lx = (function () {
       },
       zlib: {
         inflate: function (buf) {
-          return callApi('zlib.inflate', { dataB64: __LxBytes.b64Encode(normalizeBytes(buf)) })
+          return callApi('zlib.inflate', { dataB64: __ScriptBytes.b64Encode(normalizeBytes(buf)) })
             .then(function (b64) { return Buffer.from(b64, 'base64'); });
         },
         deflate: function (data) {
-          return callApi('zlib.deflate', { dataB64: __LxBytes.b64Encode(normalizeBytes(data)) })
+          return callApi('zlib.deflate', { dataB64: __ScriptBytes.b64Encode(normalizeBytes(data)) })
             .then(function (b64) { return Buffer.from(b64, 'base64'); });
         },
       },
     },
-    currentScriptInfo: globalThis.__LxScriptInfo || {},
+    currentScriptInfo: globalThis.__MusicScriptInfo || {},
   };
 
   function normalizeBytes(value) {
-    if (value && value.__isLxBuffer) return value.bytes;
+    if (value && value.__isScriptByteBuffer) return value.bytes;
     if (value instanceof Uint8Array) return Array.prototype.slice.call(value);
     if (Array.isArray(value)) return value;
-    if (typeof value === 'string') return __LxBytes.utf8Encode(value);
+    if (typeof value === 'string') return __ScriptBytes.utf8Encode(value);
     throw new Error('expected a Buffer');
   }
 })();
 
-globalThis.__lx_dispatch_request = __LxInvoke.request;
+globalThis.__music_source_dispatch_request = __SourceScriptInvoke.request;
 ''';
 
 /// The name of the dispatcher the host evaluates against.
-const String lxDispatchName = '__lx_dispatch_request';
+const String musicSourceDispatchName = '__music_source_dispatch_request';
