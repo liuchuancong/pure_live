@@ -338,6 +338,7 @@ FFmpeg 收口(§1.8(2) 收尾)复跑:
 | `git check-ignore native-assets/…zip` | 命中 `.gitignore:46:/native-assets/`,17.2 MB 的二进制不进库 |
 | `dart run tool/check_architecture.dart --strict` | `packages=32 errors=0 warnings=0`(§1.7 那张表写的 26 是当时的包数,identity/services 落完已涨到 32) |
 | `dart format --output=none --set-exit-if-changed` 护栏路径 | 181 文件 **0 changed**(`tool/probes/` 有 3 份预存未格式化文件,属 opt-in 目录,不在闸门内) |
+| `tool/local_ci.ps1 -Scope Focused -TestPath test/runtime_assembly_test.dart -RefreshLockfile -OfflinePub -Analyze` | exit 0:新增的 `Dependency manifest refresh` 阶段跑 `pub get --offline`(不带 `--enforce-lockfile`)→ 10 测试全绿 → analyze 干净;`pubspec.lock` 逐字节未变,即"刷新路径执行了且当前依赖图无漂移"。两个禁止组合(`-Scope Full -RefreshLockfile`、`-RefreshLockfile -SkipPubGet`)都当场抛错 |
 
 ## 4. 余下项(W2 未完成部分)
 
@@ -358,9 +359,10 @@ FFmpeg 收口(§1.8(2) 收尾)复跑:
 6. `tool/local_ci.ps1` 的目录假设**已纠正**(§1.8(1)):Flutter 三个阶段改在 `apps/pure_live` 里跑,格式化改成
    "只碰自己拥有的路径"的白名单(packages / apps/pure_live 的 lib+test / tool),并排除 `*.g.dart`、`/build/`、
    `/.dart_tool/`、`/generated/` —— 旧的黑名单还写着搬家前的 `plugins/built_in_kotlin/`,那正是误格式化 53 个
-   vendored 文件的成因。**端到端已跑通**(§3 那条 `-OfflinePub -Analyze` 记录,exit 0)。**仍欠一笔**:
-   "改了依赖必须重写锁文件"没有开关(现在固定 `pub get --enforce-lockfile`),所以改过 pubspec 的那一轮只能
-   放弃 `-SkipPubGet` 走离线解析 —— 它拒绝跳过是对的,但缺一个"允许重写锁"的显式档位。
+   vendored 文件的成因。**端到端已跑通**(§3 那条 `-OfflinePub -Analyze` 记录,exit 0)。之前欠的那笔开关
+   也补上了:`-RefreshLockfile` 走 `flutter pub get`(不带 `--enforce-lockfile`),与 `-SkipPubGet` 互斥、
+   且 `-Scope Full` 拒绝 —— 全量验证必须按已提交的锁文件解析,"锁该动了"只是 Focused 里的决定。改完依赖之后
+   `-SkipPubGet` 的报错现在直接指名这个开关。
 7. ~~**FFmpeg 原生工件的 provenance 归属要有人定**~~ —— 已收口(§1.8(2) 收尾):既不 patch 钩子也不改用上游
    bundle,而是用钩子自带的**本地路径 override** 把来源钉在 `native-assets/`,由
    `tool/prefetch_android_native.ps1` 校验哈希后落盘。"能连上校验主机就悄悄删固定件"这条路径已经不存在。

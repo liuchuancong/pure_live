@@ -6,6 +6,7 @@ param(
     [switch] $Analyze,
     [switch] $OfflinePub,
     [switch] $SkipPubGet,
+    [switch] $RefreshLockfile,
     [switch] $SkipInterfaces,
     [switch] $SkipTestAssets,
     [switch] $IncludeRepositoryChecks,
@@ -31,6 +32,12 @@ if ($Scope -eq 'Focused' -and $resolvedTests.Count -eq 0 -and -not $shouldAnalyz
 }
 if ($Scope -eq 'Full' -and $SkipPubGet) {
     throw 'Full validation must resolve the locked dependency graph.'
+}
+if ($RefreshLockfile -and $SkipPubGet) {
+    throw '-RefreshLockfile and -SkipPubGet contradict each other: one resolves the graph, the other forbids it.'
+}
+if ($Scope -eq 'Full' -and $RefreshLockfile) {
+    throw 'Full validation resolves against the committed lockfile; a refresh is a Focused decision.'
 }
 foreach ($path in $resolvedTests) {
     if (-not (Test-Path -LiteralPath $path) -and
@@ -76,6 +83,7 @@ $commandDescription = if ($Scope -eq 'Full') {
         $(if ($shouldAnalyze) { ' -Analyze' } else { '' }) +
         $(if ($OfflinePub) { ' -OfflinePub' } else { '' }) +
         $(if ($SkipPubGet) { ' -SkipPubGet' } else { '' }) +
+        $(if ($RefreshLockfile) { ' -RefreshLockfile' } else { '' }) +
         $(if ($SkipTestAssets) { ' -SkipTestAssets' } else { '' }) +
         $(if ($IncludeRepositoryChecks) { ' -IncludeRepositoryChecks' } else { '' })
 }
@@ -143,9 +151,17 @@ try {
                 Where-Object { $_ -match '(^|/)pubspec\.(yaml|lock)$' }
         )
         if ($dependencyChanges.Count -gt 0) {
-            throw "-SkipPubGet is invalid because dependency manifests changed: $($dependencyChanges -join ', ')"
+            throw "-SkipPubGet is invalid because dependency manifests changed: $($dependencyChanges -join ', '). Resolve them with -RefreshLockfile."
         }
         Write-Host 'Locked dependency resolution skipped: manifests unchanged and package_config is present.'
+    }
+    elseif ($RefreshLockfile) {
+        # --enforce-lockfile is the right default and the wrong command straight after a pubspec edit: the
+        # lock it checks has not been written yet. This switch is the caller saying "the lock is expected to
+        # move", so the record still shows which mode resolved the graph.
+        [string[]] $pubArgs = @('pub', 'get')
+        if ($OfflinePub) { $pubArgs += '--offline' }
+        Invoke-PureLiveFlutterInApp -Label 'Dependency manifest refresh' -Arguments $pubArgs
     }
     else {
         [string[]] $pubArgs = @('pub', 'get', '--enforce-lockfile')
