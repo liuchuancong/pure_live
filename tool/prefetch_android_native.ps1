@@ -125,13 +125,13 @@ function Get-FFmpegBuilderProfile {
     }
 }
 
-function Reset-FFmpegWindowsExtractionIfNeeded {
+function Reset-FFmpegHookCacheIfNeeded {
     param(
-        [Parameter(Mandatory = $true)][string]$HookWindowsRoot,
+        [Parameter(Mandatory = $true)][string]$HookCacheRoot,
         [Parameter(Mandatory = $true)][string]$BuilderVersion
     )
 
-    $stampPath = Join-Path $HookWindowsRoot '.pure-live-builder-version'
+    $stampPath = Join-Path $HookCacheRoot '.pure-live-builder-version'
     $installedVersion = if (Test-Path -LiteralPath $stampPath) {
         (Get-Content -LiteralPath $stampPath -Raw).Trim()
     } else {
@@ -139,20 +139,21 @@ function Reset-FFmpegWindowsExtractionIfNeeded {
     }
     if ($installedVersion -eq $BuilderVersion) { return }
 
-    $extractionPath = Join-Path $HookWindowsRoot 'bundle-base-windows-x86_64-shared-lgpl'
-    if (Test-Path -LiteralPath $extractionPath) {
-        $resolvedRepo = [IO.Path]::GetFullPath($repoRoot).TrimEnd('\')
-        $resolvedTarget = [IO.Path]::GetFullPath($extractionPath)
-        $expectedRoot = [IO.Path]::GetFullPath(
-            (Join-Path $repoRoot '.dart_tool\hooks_runner\shared\ffmpeg_kit_extended_flutter\build\ffmpeg_kit_cache\windows')
-        ).TrimEnd('\')
-        if (-not $resolvedTarget.StartsWith("$expectedRoot\", [StringComparison]::OrdinalIgnoreCase) -or
-            -not $resolvedTarget.StartsWith("$resolvedRepo\", [StringComparison]::OrdinalIgnoreCase)) {
-            throw "Refusing to reset unexpected FFmpeg extraction path: $resolvedTarget"
-        }
-        Remove-Item -LiteralPath $resolvedTarget -Recurse -Force
+    $resolvedRoot = [IO.Path]::GetFullPath($HookCacheRoot).TrimEnd('\')
+    $resolvedRepo = [IO.Path]::GetFullPath($repoRoot).TrimEnd('\')
+    $expectedSuffix = Join-Path '.dart_tool' (Join-Path 'hooks_runner' (Join-Path 'shared' (
+        Join-Path 'ffmpeg_kit_extended_flutter' (Join-Path 'build' 'ffmpeg_kit_cache'))))
+    if (-not $resolvedRoot.StartsWith($resolvedRepo, [StringComparison]::OrdinalIgnoreCase) -or
+        -not $resolvedRoot.EndsWith($expectedSuffix, [StringComparison]::OrdinalIgnoreCase)) {
+        throw "Refusing to reset unexpected FFmpeg hook cache path: $resolvedRoot"
     }
-    New-Item -ItemType Directory -Force -Path $HookWindowsRoot | Out-Null
+    if (Test-Path -LiteralPath $resolvedRoot) {
+        # Artifacts of another builder release share these file names, so size and
+        # name equality cannot tell them apart: drop the whole derived cache.
+        Remove-Item -LiteralPath $resolvedRoot -Recurse -Force
+    }
+    New-Item -ItemType Directory -Force -Path (Join-Path $resolvedRoot 'windows') | Out-Null
+    New-Item -ItemType Directory -Force -Path (Join-Path $resolvedRoot 'android') | Out-Null
     Set-Content -LiteralPath $stampPath -Value $BuilderVersion -NoNewline
 }
 
@@ -160,6 +161,12 @@ $ffmpegProfile = Get-FFmpegBuilderProfile
 $ffmpegBuilderVersion = $ffmpegProfile.BuilderVersion
 $ffmpegCacheVersion = $ffmpegProfile.CacheVersion
 $ffmpegHookCacheRoot = Join-Path $repoRoot '.dart_tool\hooks_runner\shared\ffmpeg_kit_extended_flutter\build\ffmpeg_kit_cache'
+# The ffmpeg_kit_extended_flutter hook reads its per-platform override from the pubspec, and a local
+# override path resolves against the app root it infers from .dart_tool/package_config.json - the repo
+# root, since a pub workspace keeps that file at the top. An override URL would make the hook
+# re-download on every build, so the verified artifacts are staged here and the hook copies from disk.
+$ffmpegStagingRoot = Join-Path $repoRoot 'native-assets'
+New-Item -ItemType Directory -Force -Path $ffmpegStagingRoot | Out-Null
 Write-Host "FFmpeg native profile: package $($ffmpegProfile.PackageVersion), builder $ffmpegBuilderVersion, native $ffmpegCacheVersion"
 
 function Get-MediaKitBundleCatalog {
@@ -203,7 +210,7 @@ if (-not $SkipAndroidMedia) {
     $ffmpegAndroidName = 'bundle-base-shared-lgpl-release.aar'
     Install-VerifiedAsset `
         -Name $ffmpegAndroidName `
-        -Destination (Join-Path $ffmpegHookCacheRoot "android\$ffmpegAndroidName") `
+        -Destination (Join-Path $ffmpegStagingRoot $ffmpegAndroidName) `
         -CachePath (Join-Path $persistentRoot "ffmpeg-kit\v$ffmpegCacheVersion-android\$ffmpegAndroidName") `
         -Url $ffmpegProfile.AndroidUrl `
         -Sha256 $ffmpegProfile.AndroidSha256
@@ -215,13 +222,12 @@ if (-not $SkipAndroidMedia) {
 # builder version from pubspec.lock so rolling the Dart package backward or
 # forward can never silently mix another release's native FFmpeg binaries.
 $ffmpegWindowsName = 'bundle-base-windows-x86_64-shared-lgpl.zip'
-$ffmpegWindowsRoot = Join-Path $ffmpegHookCacheRoot 'windows'
-Reset-FFmpegWindowsExtractionIfNeeded `
-    -HookWindowsRoot $ffmpegWindowsRoot `
+Reset-FFmpegHookCacheIfNeeded `
+    -HookCacheRoot $ffmpegHookCacheRoot `
     -BuilderVersion $ffmpegCacheVersion
 Install-VerifiedAsset `
     -Name $ffmpegWindowsName `
-    -Destination (Join-Path $ffmpegWindowsRoot $ffmpegWindowsName) `
+    -Destination (Join-Path $ffmpegStagingRoot $ffmpegWindowsName) `
     -CachePath (Join-Path $persistentRoot "ffmpeg-kit\v$ffmpegCacheVersion-windows\$ffmpegWindowsName") `
     -Url $ffmpegProfile.WindowsUrl `
     -Sha256 $ffmpegProfile.WindowsSha256

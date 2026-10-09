@@ -72,6 +72,8 @@ Windows Release 便携包与安装程序必须在应用根目录随包携带
 
 Windows Firebase C++ SDK 由 `tool/prefetch_windows_native.ps1` 在构建前按插件声明版本预取：断点续传并重试大型归档，核对服务端长度与 ZIP 结构，写入 SHA256 记录，校验解压后的版本头文件，并通过 `FIREBASE_CPP_SDK_DIR` 避免 CMake 误复用旧版本的通用 `extracted` 目录。
 
+FFmpegKit 原生工件由 `tool/prefetch_android_native.ps1` 在任何 Flutter 阶段之前预取：`pubspec.lock` 决定 builder profile，按钉住的 SHA256 复核后把工件落进不入库的 `native-assets/`，`apps/pure_live/pubspec.yaml` 与根 pubspec 的 `ffmpeg_kit_extended_config` 用**本地路径** override 指向它。钩子因此既不联网重下，也不会拿上游校验去判本仓库自烤件"损坏"并删除缓存件；代价是顺序成了契约——新克隆或 `flutter clean` 之后缺 `native-assets/` 时钩子直接报 `Local override not found`，`tool/local_ci.ps1` 与 `tool/build_local_release.ps1` 已把预取排在调用 Flutter 之前。
+
 ## 4. 验证策略
 
 - 上游同步先执行 [`UPSTREAM_REVIEW_POLICY.md`](UPSTREAM_REVIEW_POLICY.md)：冻结完整提交，运行

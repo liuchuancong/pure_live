@@ -198,14 +198,31 @@ app 的 pubspec 也没引用 v2 栈里任何一个包 —— 换句话说 W2/W3 
      `%LOCALAPPDATA%/PureLive/native-cache` 复原(17.2 MB,SHA256 已核对:
      `tool/prefetch_android_native.ps1 -SkipAndroidMedia`)。机器状态不劣于本轮开始之前。
    - 撤回后钩子回到默认的 small 那份:本机没有,而 `objects.githubusercontent.com` 此刻 TLS 握手失败,
-     所以 app 侧 `flutter test` 今天过不了原生资源这一步。这是**环境与上游契约**问题,不是 §1.7 的装配问题。
-   - 真正的修法要先定 provenance 归属:要么按 `third_party/` 的既有做法给这个插件的钩子打补丁,让它认项目
-     自己的固定件;要么改用上游发布的 bundle 并同步改三处哈希。两者都是构建决策,不该由"在根上补一段 yaml"掩盖。
+     所以 app 侧 `flutter test` 当时过不了原生资源这一步。这是**环境与上游契约**问题,不是 §1.7 的装配问题。
+   - 收尾(本轮):provenance 归属不再"等人定",因为插件本来就留了正确的口子 —— `hook/build.dart:237` 读
+     `config[targetOS.name]` 作为该平台的工件来源,值既可以是 URL 也可以是**本地路径**,而本地分支
+     (`hook/build.dart:260-276`)只做"存在即按大小比对后拷进它自己的缓存目录",**既不联网也不取上游校验和**。
+     于是两 pubspec 的 `windows`/`android` 键改成本地相对路径 `native-assets/…`:
+     - URL override 也被排除,因为它每次构建都重下(`hook/build.dart:251-258`),把 app 侧验证绑在网络健康上;
+     - 不带 override 的默认分支更危险:它在缓存件已存在时仍去取上游 `sha256.txt`,与本仓库钉的 `e61684a9…`
+       必然不符,判定"损坏"就删件(`hook/build.dart:333-350`)—— 是否触发取决于那一刻连不连得上,
+       这正是 §1.8(2) 一开始把固定件弄丢的机制;
+     - 来源因此**由本仓库钉死**:`tool/prefetch_android_native.ps1` 的 0.6.2 profile 校验哈希后把工件落进
+       `native-assets/`(不入库,已加 `.gitignore` 规则),钩子只从那里取;`tool/verify_ffmpeg_native.py` 与
+       `tool/build_local_release.ps1` 继续复核钩子真正消费的目录,三层各司其职。
+   - **代价是一条顺序约束**:`native-assets/` 不入库,新克隆或 `flutter clean` 之后必须先跑 prefetch 再跑
+     test/build,否则钩子报 `Local override not found`。`tool/local_ci.ps1` 与 `tool/build_local_release.ps1`
+     都已经在 Flutter 阶段之前调用它,所以这条在既定入口里自动成立;裸敲 `flutter test` 才会撞上,报错也是
+     指名道姓的缺件,不是网络超时。
+   - 预取脚本顺带修了一处会静默混件的旧逻辑:版本戳原来只记在 `windows/` 子目录、只删解包目录,而不同
+     builder 版本的 zip/aar **同名**,靠大小比对认不出来。现在戳记在缓存根,版本一变就把 windows+android
+     两份派生缓存整体丢弃(路径仍在白名单内才动手),由钩子重新从 `native-assets/` 拷入。
 
 `tool/local_ci.ps1` 的目录适配在同一轮落了(见 §4 第 6 条):`flutter pub get` / `test` / `analyze` 三个阶段
-改到 `apps/pure_live` 里执行,格式化改成"只碰自己拥有的路径"的白名单。修好之后 Focused 跑起来不再是"测试文件
-不存在",而是进到 app 工程的原生资源构建,并最终停在上面第 2 条那个 FFmpeg 契约上 —— 因此本轮**不声称**
-local_ci 端到端通过,只声称它的目录假设已经纠正、失败点已经前移到真实的环境问题上。
+改到 `apps/pure_live` 里执行,格式化改成"只碰自己拥有的路径"的白名单。上面第 2 条收口之后,这条链路第一次
+端到端跑通:`-Scope Focused -TestPath test/runtime_assembly_test.dart -OfflinePub -Analyze` 依次通过锁定解析、
+原生资源预取、8 条组合根测试与 `flutter analyze`(§3 那张表有数值)。**仍然**没有设备/构建验收 ——
+Focused 证明的是"装得起来、测得动",不是"能在真机上播"。
 
 ### 1.9 授权记录持久化(permission +11 测试,组合根改用持久 store)
 
@@ -227,11 +244,14 @@ local_ci 端到端通过,只声称它的目录假设已经纠正、失败点已�
    但不冒充用户的选择),并把它作为组合根的默认;这条推论写进了包 README 的规则 4。
 
 组合根侧加了 `boot(permissionPrompt:)` 接缝,并加了一条 app 测试(`purelive.grantor` 授权后重启仍然有效,
-且第二个 runtime 用 `UnaskedPrompts` 也不需要重问)。**这条 app 测试今天没跑到**:app 侧 `flutter test` 仍被
+且第二个 runtime 用 `UnaskedPrompts` 也不需要重问)。**写这一段时它没跑到**:app 侧 `flutter test` 当时被
 §1.8(2) 的 FFmpeg 原生工件卡住(钩子要的 `bundle-base-...-shared-small-lgpl.zip` 本机没有,而
-`objects.githubusercontent.com` 现在连 TLS 握手都过不去,报 `HttpException: 信号灯超时时间已到`)。
-本轮对 app 的验证因此只有静态的 `flutter analyze`(No issues found),运行时验证与那条测试一起等工件落定;
+`objects.githubusercontent.com` 那时连 TLS 握手都过不去,报 `HttpException: 信号灯超时时间已到`)。
+所以那一轮对 app 的验证只有静态的 `flutter analyze`(No issues found),运行时验证与那条测试一起等工件落定;
 store 本身的行为由 permission 包的 11 条测试覆盖,其中一条直接用 `FileKeyValueStore` 走真实文件往返。
+**该等待已在 §1.8(2) 收尾时结束**:`test_grantedPermission_stillHoldsAfterAReboot` 现在真跑过并通过(§3),
+这条记录的"未验证"状态随之作废 —— 保留原文是为了记下当时的结论是怎么被环境挡住又解开的。
+
 ### 1.10 迁移流程落地(storage +10 测试,共 44)
 
 做 W5 的历史/收藏时撞上一个空档:`docs/migration/*.md` 写的是**流程 + 键名表**,而 `pure_live_storage` 里只有
@@ -264,7 +284,7 @@ store 本身的行为由 permission 包的 11 条测试覆盖,其中一条直接
 | `coding-style.md` 写"中文注释",与 `DEVELOPMENT_STANDARDS.md` §4"代码注释一律英文"冲突 | 以 DEVELOPMENT_STANDARDS 为准:代码注释英文,`docs/` 与包 README 中文;已改写该条 |
 | W1 记录里 "241 测试" 是逐包数字加错(实际 194) | 已在 w1-progress.md 更正,并改为按逐包实跑数字记录 |
 | `tool/flutterw.ps1` 把 Flutter 工程固定在仓库根,ADR 0015 之后 app 侧任何 `test`/`analyze` 都跑不起来 | 见 §1.8(1):新增 `Resolve-PureLiveProjectPath` + 6 条用例 |
-| FFmpegKit 构建钩子在 workspace 下读不到应用配置,退回默认 bundle 并联网重下 | 见 §1.8(2):根 pubspec 镜像该配置段,并写明权威在哪一侧 |
+| FFmpegKit 构建钩子在 workspace 下读不到应用配置,退回默认 bundle 并联网重下 | 见 §1.8(2):根 pubspec 镜像该配置段并写明权威在哪一侧,再把 `windows`/`android` 两个键钉成 `native-assets/` 的**本地路径 override** —— 钩子既不联网也不按上游校验和删件 |
 
 ## 3. 验证证据
 
@@ -296,16 +316,28 @@ W2 收尾(§1.6)复跑:
 | 命令 | 结果 |
 |---|---|
 | `apps/pure_live` → `flutter pub get --offline` | Got dependencies(新增 8 个 workspace 路径依赖) |
-| `apps/pure_live` → `flutter test --no-pub test/runtime_assembly_test.dart` | **7 全绿**(装配 4 + 持久化 2 + 宿主 widget 1) |
+| `apps/pure_live` → `flutter test --no-pub test/runtime_assembly_test.dart` | **8 全绿**(装配 4 + 持久化 3 + 宿主 widget 1);§1.9 之后多了"grant 活得过重启"这一条 |
 | `apps/pure_live` → `flutter analyze --no-pub` | No issues found(修掉两条:一处未用 import、一个未用测试参数) |
-| FFmpegKit 原生资源 | 见 §1.8(2):钩子要的是上游 small 那份,本机既没有也下不到;仓库固定的非 small 那份已用 prefetch 复原 |
-| `tool/local_ci.ps1 -Scope Focused -TestPath test/runtime_assembly_test.dart -SkipPubGet -Analyze` | 失败点已从"测试文件不存在"前移到 app 的原生资源构建(证明目录修复生效),最终因 FFmpeg 契约停下(§1.8(2)) |
-| `tool/prefetch_android_native.ps1 -SkipAndroidMedia` | exit 0;Verified `bundle-base-windows-x86_64-shared-lgpl.zip`(复原被钩子删除的固定件) |
+| FFmpegKit 原生资源 | 见 §1.8(2):钩子改走**本地路径 override**,从 `native-assets/` 拷件,全程不联网、不取上游校验和;日志行为 `Using local override path: native-assets/bundle-base-windows-x86_64-shared-lgpl.zip` |
+| `tool/local_ci.ps1 -Scope Focused -TestPath test/runtime_assembly_test.dart -OfflinePub -Analyze` | **exit 0**,首次端到端通过:锁定解析 → prefetch(先于 Flutter 阶段)→ 8 测试全绿 → analyze `No issues found`,质量记录 `local-artifacts/build-records/20261009T040959920Z-quality-focused.json`。`-SkipPubGet` 会正确拒绝(依赖清单已改),所以这轮用 `-OfflinePub` |
+| `tool/prefetch_android_native.ps1 -SkipAndroidMedia` | exit 0;`Verified bundle-base-windows-x86_64-shared-lgpl.zip` —— 从持久缓存按 `e61684a9…` 复核后落进 `native-assets/`,同时清掉上一轮 small 回退留下的派生缓存 |
 | `packages/ecosystem/permission` → `dart analyze .` / `dart test -j 1` | No issues found;**46 全绿** = 原有 35 + 持久 grant 11(含一条真文件往返) |
-| §1.9 的 app 侧 | `flutter analyze` No issues found;`flutter test` **未能执行**(停在 FFmpeg 工件,见 §1.8(2)),所以那条重启保持的测试尚未跑到 |
+| §1.9 的 app 侧 | `flutter analyze` No issues found;`flutter test` **8 全绿**,其中 `test_grantedPermission_stillHoldsAfterAReboot` 是真跑过的 —— 上一轮它只被静态读过 |
 | `tool/test_subst_path.ps1` | PASS:8 条 SUBST + 6 条 project-path + wrapper syntax |
 | `dart analyze packages` / `--strict` 护栏 / 格式化 | No issues found;`packages=26 errors=0`;显式路径 153 文件 0 changed |
-| **仍未通过** | `tool/local_ci.ps1` 目录假设已纠正,但 Focused 停在 FFmpeg 原生资源(§1.8(2)),所以端到端未通过;分支现在**能编译、能起**(此前不能),但**没有做过设备/构建验收** |
+| **仍未通过** | 没有**设备/构建验收**:Focused 证明的是装得起来、测得动,不是真机能播;原生工件的 macOS/iOS/Linux 三支仍走各自默认路径,没有像 windows/android 一样钉到本地 override |
+
+FFmpeg 收口(§1.8(2) 收尾)复跑:
+
+| 命令 | 结果 |
+|---|---|
+| `tool/prefetch_android_native.ps1 -SkipAndroidMedia` | exit 0,两条 `Verified` 全部命中持久缓存,**零网络请求**;`native-assets/bundle-base-windows-x86_64-shared-lgpl.zip` 就位 |
+| `apps/pure_live` → guarded `flutter pub get --offline` + `flutter test --no-pub test/runtime_assembly_test.dart` | exit 0,8 全绿;钩子日志 `Using local override path: native-assets/…`(上一轮同一行是 `Using remote override URL: …` 然后 `SocketException … github.com`) |
+| 工件完整性 | `native-assets/` 里那份 zip 的 SHA256 = `e61684a9…`,与 prefetch profile、`tool/verify_ffmpeg_native.py`、`tool/build_local_release.ps1` 三处钉的一致;钩子拷进自己缓存目录后由后两个工具复核 |
+| 冷启动(清空 `ffmpeg_kit_cache/` 后) | `tool/prefetch_android_native.ps1 -SkipAndroidMedia` 重建空缓存根 → guarded `flutter test --no-pub` 仍 8 全绿;钩子自己从 `native-assets/` 拷件并解包,等价于 `flutter clean` 之后的第一次构建 |
+| `git check-ignore native-assets/…zip` | 命中 `.gitignore:46:/native-assets/`,17.2 MB 的二进制不进库 |
+| `dart run tool/check_architecture.dart --strict` | `packages=32 errors=0 warnings=0`(§1.7 那张表写的 26 是当时的包数,identity/services 落完已涨到 32) |
+| `dart format --output=none --set-exit-if-changed` 护栏路径 | 181 文件 **0 changed**(`tool/probes/` 有 3 份预存未格式化文件,属 opt-in 目录,不在闸门内) |
 
 ## 4. 余下项(W2 未完成部分)
 
@@ -326,11 +358,24 @@ W2 收尾(§1.6)复跑:
 6. `tool/local_ci.ps1` 的目录假设**已纠正**(§1.8(1)):Flutter 三个阶段改在 `apps/pure_live` 里跑,格式化改成
    "只碰自己拥有的路径"的白名单(packages / apps/pure_live 的 lib+test / tool),并排除 `*.g.dart`、`/build/`、
    `/.dart_tool/`、`/generated/` —— 旧的黑名单还写着搬家前的 `plugins/built_in_kotlin/`,那正是误格式化 53 个
-   vendored 文件的成因。**仍欠两笔**:端到端跑通被 §1.8(2) 的 FFmpeg 契约挡住;以及"改了依赖必须重写锁文件"
-   没有开关(现在固定 `pub get --enforce-lockfile`)。
-7. **FFmpeg 原生工件的 provenance 归属要有人定**(§1.8(2)):插件钩子按上游校验和验收,仓库钉的是自己重烤的
-   `native-ffmpeg-9.0.2-b1` 工件,两者对同一个文件名给出不同哈希。不解决就会在"能连上校验主机"的那次构建里
-   悄悄删掉固定件、换回上游版本。
+   vendored 文件的成因。**端到端已跑通**(§3 那条 `-OfflinePub -Analyze` 记录,exit 0)。**仍欠一笔**:
+   "改了依赖必须重写锁文件"没有开关(现在固定 `pub get --enforce-lockfile`),所以改过 pubspec 的那一轮只能
+   放弃 `-SkipPubGet` 走离线解析 —— 它拒绝跳过是对的,但缺一个"允许重写锁"的显式档位。
+7. ~~**FFmpeg 原生工件的 provenance 归属要有人定**~~ —— 已收口(§1.8(2) 收尾):既不 patch 钩子也不改用上游
+   bundle,而是用钩子自带的**本地路径 override** 把来源钉在 `native-assets/`,由
+   `tool/prefetch_android_native.ps1` 校验哈希后落盘。"能连上校验主机就悄悄删固定件"这条路径已经不存在。
+   留下两笔要盯的:
+   - **顺序成了契约**:`native-assets/` 不入库,`prefetch` 必须在 `test`/`build` 之前。仓库入口
+     (`local_ci.ps1`、`build_local_release.ps1`)都自己调,但 `.github/workflows/build_pure_live_release.yml`
+     的 android/windows 两个 job 还没有这一步 —— 手工触发发布时会在钩子里报 `Local override not found`。
+     这一条**故意留在欠账里**:那两个 job 跑在 ubuntu/windows runner 上,而
+     `tool/prefetch_android_native.ps1` 是按 Windows 写的 —— 路径用 `Join-Path … 'a\b'` 反斜杠拼接、持久缓存取
+     `$env:LOCALAPPDATA`,在 Linux pwsh 下会生成字面含 `\` 的目录名(工件仍能落到 `native-assets/`,但缓存复用与
+     media_kit 那几路 seeding 会失效)。要在 runner 上补这一步,得先把脚本改成平台无关再在对应 runner 上验一次,
+     而这台机器验不了 —— 与其加一条只能靠读过的 CI 步骤,不如把它记成显式欠账。
+   - **只钉了 windows/android**:macOS/iOS/Linux 仍走钩子默认路径(取上游并按上游校验和验收)。Linux 是本机
+     之外的 runner 平台,CI 的 quality job 在 ubuntu 上跑 `flutter test` 因此不受本次改动影响;但一旦要在那三支
+     上也用自烤件,得同样加本地 override + 预取,不能只改 `tool/verify_ffmpeg_native.py` 里那三行哈希。
 8. 组合根只装到 §1.7 那张表的范围:`MediaRuntime` 没有装(没有引擎适配),`RuntimeRegistry` 是空的
    (没有运行时可注册),而授权 UI 还没有 —— 现在默认 `UnaskedPrompts`,第三方扩展**一律拿不到权限**,
    直到设置界面能真答一次为止;§1.9 把 store 换成持久之后,这条从"每次重问"变成"问了能留下"。

@@ -71,3 +71,16 @@ dependency_overrides:
   code_assets: ^2.1.0 # media_kit Native Assets 2 and FFmpeg hook compatibility
   mime: ^2.1.0 # media_core 需 mime ^2.1.0，与 alfred 的 ^1.0.0 冲突；alfred 仅用 MimeMultipartTransformer/MimeMultipart（2.x 未变），覆盖安全
   equatable: ^3.0.0 # media_core 需 equatable ^3.0.0；app 与 flutter_screenutil_plus 均为 extends Equatable + props（3.x 兼容），覆盖安全
+
+# 与 apps/pure_live/pubspec.yaml 的同名段取值必须一致。ffmpeg_kit_extended_flutter 的构建钩子用
+# .dart_tool/package_config.json 反推"应用目录"(取 dirname 两次),而 pub workspace 把这份文件放在仓库根,
+# 所以钩子只看得到本文件:这里不写,应用声明的 base / 非 small 就被忽略,它回退到的上游 small 包连解包路径都对不上
+# (hook 期望 <name>/<name>/*)。权威在应用侧,这段是插件发现方式逼出来的镜像,上游修好 workspace 感知后应删除。
+# 两个平台键是本地路径 override(不下载、不做上游哈希校验),指向 native-assets/ 下由
+# tool/prefetch_android_native.ps1 校验哈希后落盘的工件;该目录不入库,顺序必须是 prefetch 在 test/build 之前。
+ffmpeg_kit_extended_config:
+  type: base
+  gpl: false
+  small: false
+  windows: native-assets/bundle-base-windows-x86_64-shared-lgpl.zip
+  android: native-assets/bundle-base-shared-lgpl-release.aar

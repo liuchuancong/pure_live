@@ -41,6 +41,9 @@ apps/pure_live/android/.kotlin/
 /local-smoke/
 /.local-build/
 /build-audit-*
+# Native build inputs staged by tool/prefetch_android_native.ps1 and consumed by the ffmpeg_kit
+# Native Assets hook through its local override. They are pinned by SHA-256, not by Git.
+/native-assets/
 
 # Symbolication related
 app.*.symbols

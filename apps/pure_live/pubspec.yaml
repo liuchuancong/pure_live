@@ -380,7 +380,17 @@ flutter:
       fonts:
         - asset: assets/fonts/MiSans-Regular.ttf
 # FFmpeg配置
+#
+# windows/android 两行是工件来源的 override,取本地路径而不是 URL:钩子的 URL 分支每次构建都重新下载,
+# 而不带 override 的默认分支去 akashskypatel/ffmpeg-kit-builders 取"同名文件"并按上游 sha256.txt 校验,
+# 对本仓库钉的自烤件必然校验失败 —— 失败即删缓存件。override 分支跳过上游校验,来源改由
+# tool/prefetch_android_native.ps1 的 0.6.2 profile(哈希 e61684a9…/c6c9b1ff…)钉,tool/verify_ffmpeg_native.py
+# 与 tool/build_local_release.ps1 复核钩子真正消费的件 —— provenance 收回本仓库,不跟上游一起漂。
+# 相对路径按钩子从 .dart_tool/package_config.json 反推出的应用根解析,即仓库根;native-assets/ 不入库,
+# 新克隆或 flutter clean 之后必须先跑 prefetch 再跑 test/build,否则钩子报 "Local override not found"。
 ffmpeg_kit_extended_config:
   type: base
   gpl: false
   small: false
+  windows: native-assets/bundle-base-windows-x86_64-shared-lgpl.zip
+  android: native-assets/bundle-base-shared-lgpl-release.aar
